@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<codetemplate	xmlns="http://schemas.borland.com/Delphi/2005/codetemplates"
+				version="1.0.0">
+	<template name="enumcp" invoke="auto">
+		<description>
+		Enumerates child controls in tab order with predicate.
+		</description>
+		<author>
+		Zuo Baoquan (Paul)
+		</author>
+		<point name="container">
+			<text>
+				container
+			</text>
+			<hint>
+				Container control
+			</hint>
+		</point>
+		<code language="Delphi" context="methodbody" delimiter="|"><![CDATA[
+EnumerateControls(|container|,
+|*|function(control: TWinControl): Boolean
+|*|begin
+|*||*||end|
+|*|end,
+|*|procedure(control: TWinControl)
+|*|begin
+|*||*|
+|*|end
+);
+		]]>
+		</code>
+	</template>
+</codetemplate>
