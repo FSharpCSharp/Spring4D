@@ -41,8 +41,9 @@ type
     defaultButton: TMessageDialogButton): TModalResult;
 
   /// <summary>
-  /// TDialog
+  /// Encapsulates common message dialogs.
   /// </summary>
+  /// <author>HR168, Paul</author>
   TDialog = class
   private
     class constructor Create;

@@ -1,4 +1,4 @@
-program CallBackDemo;
+program CallbackDemo;
 
 {$APPTYPE CONSOLE}
 
@@ -8,7 +8,7 @@ uses
 type
   TWindowsEnumerator = class
   private
-    fCallBack: TCallBackFunc;
+    fCallback: TCallbackFunc;
     { The class instance method must be declared as "stdcall". }
     procedure AddWindowCaption(handle: THandle; list: TStrings); stdcall;
   public
@@ -30,11 +30,11 @@ end;
 procedure TWindowsEnumerator.GetWindowNames(list: TStrings);
 begin
   CheckArgumentNotNull(list, 'list');
-  if not Assigned(fCallBack) then
+  if not Assigned(fCallback) then
   begin
-    fCallBack := TCallBack.Create(Self, @TWindowsEnumerator.AddWindowCaption);
+    fCallback := TCallBack.Create(Self, @TWindowsEnumerator.AddWindowCaption);
   end;
-  Windows.EnumWindows(fCallBack, lParam(list));
+  Windows.EnumWindows(fCallback, lParam(list));
 end;
 
 var

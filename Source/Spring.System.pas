@@ -29,8 +29,8 @@
 { TODO: TFileSearcher Class }
 { TODO: TFileSystemWatcher Class }
 { TODO: TClipboardWatcher }
-{ TODO: TMultiCastDelegate }
 { TODO: TUri class }
+{ TODO: TMultiCastDelegate }
 
 unit Spring.System;
 
@@ -180,6 +180,19 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'ILockable'}
+
+  ILockable = interface
+    procedure Lock;
+    procedure Unlock;
+    function TryLock: Boolean;
+//    function GetIsLocked: Boolean;
+//    property IsLocked: Boolean read GetIsLocked;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'IValueProvider<T>, TValueProvider<T>'}
 
   /// <summary>
@@ -302,7 +315,7 @@ type
 //    class function ConvertToBase64String(const buffer: TBytes): string;
 //    class function ConvertToHexString(const buffer: Pointer; count: Integer; prefixType: THexPrefixType; const delimiter: string = ' '): string; overload;
     class function GetByte(const buffer; const index: Integer): Byte; static;
-    class procedure SetByte(const buffer; const index: Integer; const value: Byte); static;
+    class procedure SetByte(var buffer; const index: Integer; const value: Byte); static;
     class function BytesOf(const value: Byte; count: Integer): TBytes; static;
     function Copy(startIndex, count: Integer): TBytes;
     function EnsureSize(size: Integer; value: Byte): TBytes; overload; experimental;
@@ -348,7 +361,7 @@ type
   public
     class procedure CheckArgument<T>(const value: T; const argumentName: string); overload;
     class procedure CheckArgument<T>(const value: Integer; const argumentName: string); overload;
-//    class procedure ForEach<T{: enum}>(const proc: TProc<T>);
+//    class procedure ForEach<T{: enum}>(proc: TProc<T>);
     class function IsValid<T>(const value: T): Boolean; overload;
     class function IsValid<T>(const value: Integer): Boolean; overload;
 //    class function GetDisplayName<T>(const value: T): string; overload;
@@ -978,7 +991,7 @@ type
   {$REGION 'TDriveInfo'}
 
   /// <summary>
-  /// TDriveType
+  /// Drive Type Enumeration
   /// </summary>
   TDriveType = (
     dtUnknown,          // The type of drive is unknown.
@@ -993,8 +1006,13 @@ type
   /// <summary>
   /// Provides access to information on a drive.
   /// </summary>
+  /// <remarks>
+  /// Use TDriveInfo.GetDrives method to retrieve all drives of the computer.
+  /// Caller must check IsReady property before using TDriveInfo.
+  /// </remarks>
   TDriveInfo = record
   private
+    fDriveName: string;
     fRootDirectory: string;
     fAvailableFreeSpace: Int64;
     fTotalSize: Int64;
@@ -1009,24 +1027,23 @@ type
     function GetDriveType: TDriveType;
     function GetDriveTypeString: string;
     function GetIsReady: Boolean;
-    function GetRootDirectory: string;
     function GetTotalFreeSpace: Int64;
     function GetTotalSize: Int64;
     function GetVolumeLabel: string;
     procedure SetVolumeLabel(const Value: string);
   private
-    procedure CheckIsReady;
-    procedure Loaded;
+    procedure UpdateProperties;
   public
     constructor Create(const driveName: string);
     class function GetDrives: TArray<TDriveInfo>; static;
+    procedure CheckIsReady;
     property AvailableFreeSpace: Int64 read GetAvailableFreeSpace;
     property DriveFormat: string read GetDriveFormat;
     property DriveType: TDriveType read GetDriveType;
     property DriveTypeString: string read GetDriveTypeString;
     property IsReady: Boolean read GetIsReady;
-    property Name: string read fRootDirectory;
-    property RootDirectory: string read GetRootDirectory;
+    property Name: string read fDriveName;
+    property RootDirectory: string read fRootDirectory;
     property TotalFreeSpace: Int64 read GetTotalFreeSpace;
     property TotalSize: Int64 read GetTotalSize;
     property VolumeLabel: string read GetVolumeLabel write SetVolumeLabel;
@@ -1081,10 +1098,10 @@ type
   TCallbackFunc = TFunc<Pointer>;
 
   /// <summary>
-  /// Adapt class instance (object) method to normal callback function
+  /// Adapt class instance (object) method to windows standard callback function.
   /// </summary>
   /// <remarks>
-  /// Both the object method and the callback function should be declared as stdcall.
+  /// Both the object method and the callback function need to be declared as stdcall.
   /// </remarks>
   TCallback = class(TInterfacedObject, TCallbackFunc)
   private
@@ -2133,13 +2150,15 @@ var
   bytes: TBytes;
   index: Integer;
   i: Integer;
+const
+  HexCharSet: TSysCharSet = ['0'..'9', 'a'..'f', 'A'..'F'];
 begin
   s := StringReplace(s, '0x', '', [rfIgnoreCase, rfReplaceAll]);
   SetLength(text, Length(s));
   index := 0;
   for i := 1 to Length(s) do
   begin
-    if CharInSet(s[i], ['0'..'9', 'a'..'f', 'A'..'F']) then
+    if CharInSet(s[i], HexCharSet) then
     begin
       Inc(index);
       text[index] := s[i];
@@ -2280,21 +2299,14 @@ begin
 end;
 
 class function TBuffer.GetByte(const buffer; const index: Integer): Byte;
-var
-  p: PByte;
 begin
-  p := @buffer;
-  Result := p[index];
+  Result := PByte(@buffer)[index];
 end;
 
-class procedure TBuffer.SetByte(const buffer; const index: Integer;
+class procedure TBuffer.SetByte(var buffer; const index: Integer;
   const value: Byte);
-var
-  p: PByte;
 begin
-  p := @buffer;
-  Inc(p, index);
-  p^ := value;
+  PByte(@buffer)[index] := value;
 end;
 
 class operator TBuffer.Implicit(const value: TBytes): TBuffer;
@@ -2556,7 +2568,8 @@ var
   translationCount: Integer;
   dummy: DWORD;
 begin
-//  Finalize(Self);  // TODO: BUG-FIX: WHY NOT INITIALIZE RECORD AUTOMATICALLY?
+//  Finalize(Self);
+// TODO: BUG-FIX: WHY NOT INITIALIZE RECORD AUTOMATICALLY?
   fFileName := fileName;
   CheckFileExists(fFileName);
   // GetFileVersionInfo modifies the filename parameter data while parsing.
@@ -2640,7 +2653,7 @@ end;
 
 function TFileVersionInfo.ToString: string;
 begin
-  result := Format(SFileVersionInfoFormat, [
+  Result := Format(SFileVersionInfoFormat, [
     FileName,
     InternalName,
     OriginalFilename,
@@ -3942,6 +3955,8 @@ begin
       Assert(False);
     end;
   end;
+  Assert(Length(fRootDirectory) = 3, 'Length of fRootDirectory should be 3.');
+  fDriveName := Copy(fRootDirectory, 1, 2);
 end;
 
 class function TDriveInfo.GetDrives: TArray<TDriveInfo>;
@@ -3961,11 +3976,11 @@ procedure TDriveInfo.CheckIsReady;
 begin
   if not IsReady then
   begin
-    raise EIOException.CreateResFmt(@SDriveNotReady, [fRootDirectory]);
+    raise EIOException.CreateResFmt(@SDriveNotReady, [fDriveName]);
   end;
 end;
 
-procedure TDriveInfo.Loaded;
+procedure TDriveInfo.UpdateProperties;
 begin
   CheckIsReady;
   Win32Check(SysUtils.GetDiskFreeSpaceEx(
@@ -3988,13 +4003,13 @@ end;
 
 function TDriveInfo.GetAvailableFreeSpace: Int64;
 begin
-  Loaded;
+  UpdateProperties;
   Result := fAvailableFreeSpace;
 end;
 
 function TDriveInfo.GetDriveFormat: string;
 begin
-  Loaded;
+  UpdateProperties;
   Result := fFileSystemName;
 end;
 
@@ -4025,26 +4040,21 @@ begin
   Result := Result and (SysUtils.DiskSize(Ord(fRootDirectory[1]) - $40) > -1);
 end;
 
-function TDriveInfo.GetRootDirectory: string;
-begin
-  Result := fRootDirectory;
-end;
-
 function TDriveInfo.GetTotalFreeSpace: Int64;
 begin
-  Loaded;
+  UpdateProperties;
   Result := fTotalFreeSpace;
 end;
 
 function TDriveInfo.GetTotalSize: Int64;
 begin
-  Loaded;
+  UpdateProperties;
   Result := fTotalSize;
 end;
 
 function TDriveInfo.GetVolumeLabel: string;
 begin
-  Loaded;
+  UpdateProperties;
   Result := fVolumeName;
 end;
 

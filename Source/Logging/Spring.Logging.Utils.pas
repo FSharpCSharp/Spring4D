@@ -123,11 +123,13 @@ end;
 {$REGION 'TReusableStringWriter'}
 
 type
-  TStringWriterHack = class(TTextWriter)
-  private
-    fBuilder: TStringBuilder;
-    fOwnsBuilder: Boolean;
-  end;
+  {$HINTS OFF}
+    TStringWriterHack = class(TTextWriter)
+    private
+      fBuilder: TStringBuilder;
+      fOwnsBuilder: Boolean;
+    end;
+  {$HINTS ON}
 
 procedure TReusableStringWriter.Reset(maxCapacity, defaultSize: Integer);
 var

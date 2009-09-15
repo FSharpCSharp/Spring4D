@@ -33,8 +33,8 @@ unit Spring.Patterns;
 interface
 
 uses
-  Classes, Contnrs, Windows, SysUtils, TypInfo
-  {$IFDEF SUPPORTS_GENERICS}, Generics.Defaults, Generics.Collections {$ENDIF};
+  Classes, Contnrs, Windows, SysUtils, TypInfo,
+  Generics.Defaults, Generics.Collections;
 
 type
   {$REGION 'Singleton Pattern'}

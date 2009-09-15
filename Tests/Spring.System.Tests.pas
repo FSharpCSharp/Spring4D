@@ -77,10 +77,18 @@ type
     procedure TestFormatException;
   end;
 
-  TBufferTestCase = class(TTestCase)
+  TBufferTestCase = class abstract(TTestCase)
   protected
     fBuffer: TBuffer;
     fBytes: TBytes;
+  end;
+
+  TTestBuffer = class(TBufferTestCase)
+  private
+    fInteger: Integer;
+  published
+    procedure TestGetByte;
+    procedure TestSetByte;
   end;
 
   TTestEmptyBuffer = class(TBufferTestCase)
@@ -702,7 +710,7 @@ var
   expected: AnsiString;
 begin
   bytes := BytesOf('ABCÖÐ¹ú');
-  expected := StringOf(bytes);
+  expected := AnsiString(StringOf(bytes));
   fBuffer := bytes;
   CheckEquals(expected, fBuffer.ToAnsiString);
 end;
@@ -786,6 +794,30 @@ end;
 procedure TTestFiveBytesBuffer.TestIsEmpty;
 begin
   CheckFalse(fBuffer.IsEmpty);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestBuffer'}
+
+procedure TTestBuffer.TestGetByte;
+begin
+  fInteger := $12345678;
+  CheckEquals($78, TBuffer.GetByte(fInteger, 0));
+  CheckEquals($56, TBuffer.GetByte(fInteger, 1));
+  CheckEquals($34, TBuffer.GetByte(fInteger, 2));
+  CheckEquals($12, TBuffer.GetByte(fInteger, 3));
+end;
+
+procedure TTestBuffer.TestSetByte;
+begin
+  fInteger := 0;
+  TBuffer.SetByte(fInteger, 0, $78);
+  TBuffer.SetByte(fInteger, 1, $56);
+  TBuffer.SetByte(fInteger, 2, $34);
+  TBuffer.SetByte(fInteger, 3, $12);
+  CheckEquals($12345678, fInteger);
 end;
 
 {$ENDREGION}

@@ -1,0 +1,54 @@
+==============================================================================
+
+Delphi Spring Framework Road Map
+
+==============================================================================
+
+V0.1	2009-10-12
+Spring.System
+Spring.Collections
+Spring.Dialogs
+Spring.Communications
+Spring.Validation
+
++IoC Container
+
++FileSystemWatcher, ClipboardWatcher, FileSystemEntry, FileSearcher, etc.
+
+
+V0.2	2009-10-26
++Logging
+
+
+V0.3	2009-11-09
+
++Crytography:
+
+1. Hash Algorithms
+* MD5 (128 bits, 16 Bytes)
+* SHA-1
+* SHA-256
+* SHA-512
+
+2. Checksum Algorithms
+* CRC-16
+* CRC-32
+
+3. Encryption Algorithms
+* DES
+* TripleDES
+* AES
+
+
+V0.4	2009-11-23
+
++Configurations
++Reusable Design Patterns
++Common Domain Objects (TMoney, TCurrency, TQuantity, TUnit, TDateTime, TDate, TTime, TRange<T>, TParty£¬TLocation, TAddress, etc.)
++Scheduler (Spring.Scheduler, Based on Quartz and Quartz.Net projects)
++Network
++Navigation
++Expressions
+
+V0.5	2009-12-07
+Data Binding & ORM (Delphi Entity Framework)

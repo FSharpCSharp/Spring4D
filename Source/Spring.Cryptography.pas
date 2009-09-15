@@ -45,11 +45,6 @@ Encryption Algorithms
 * TripleDES
 * AES
 
-Text-Format
-* Base-64 Encoding/Decoding
-
-Random Generator
-
 *)
 
 

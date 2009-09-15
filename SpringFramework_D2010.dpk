@@ -1,0 +1,75 @@
+package SpringFramework_D2010;
+
+{$R *.res}
+{$ALIGN 8}
+{$ASSERTIONS ON}
+{$BOOLEVAL OFF}
+{$DEBUGINFO ON}
+{$EXTENDEDSYNTAX ON}
+{$IMPORTEDDATA ON}
+{$IOCHECKS ON}
+{$LOCALSYMBOLS ON}
+{$LONGSTRINGS ON}
+{$OPENSTRINGS ON}
+{$OPTIMIZATION OFF}
+{$OVERFLOWCHECKS OFF}
+{$RANGECHECKS OFF}
+{$REFERENCEINFO OFF}
+{$SAFEDIVIDE OFF}
+{$STACKFRAMES OFF}
+{$TYPEDADDRESS OFF}
+{$VARSTRINGCHECKS ON}
+{$WRITEABLECONST OFF}
+{$MINENUMSIZE 1}
+{$IMAGEBASE $400000}
+{$IMPLICITBUILD ON}
+{$DEFINE DEBUG}
+
+requires
+  rtl,
+  vcl,
+  dbrtl,
+  xmlrtl,
+  adortl;
+
+contains
+  Spring.Adapters in 'Source\Spring.Adapters.pas',
+  Spring.Collections in 'Source\Spring.Collections.pas',
+  Spring.Core in 'Source\Spring.Core.pas',
+  Spring.Cryptography in 'Source\Spring.Cryptography.pas',
+  Spring.Data in 'Source\Spring.Data.pas',
+  Spring.Data.ADOClient in 'Source\Spring.Data.ADOClient.pas',
+  Spring.Expressions in 'Source\Spring.Expressions.pas',
+  Spring.Helpers in 'Source\Spring.Helpers.pas',
+  Spring.Navigation in 'Source\Spring.Navigation.pas',
+  Spring.Core.Objects in 'Source\Spring.Core.Objects.pas',
+  Spring.Patterns in 'Source\Spring.Patterns.pas',
+  Spring.Resources in 'Source\Spring.Resources.pas',
+  Spring.System in 'Source\Spring.System.pas',
+  Spring.Network in 'Source\Spring.Network.pas',
+  Spring.Validation in 'Source\Spring.Validation.pas',
+  Spring.Win32API in 'Source\Spring.Win32API.pas',
+  Spring.Dialogs in 'Source\Spring.Dialogs.pas',
+  Spring.Logging.Utils in 'Source\Logging\Spring.Logging.Utils.pas',
+  Spring.Logging.Appenders in 'Source\Logging\Spring.Logging.Appenders.pas',
+  Spring.Logging.Core.Logger in 'Source\Logging\Spring.Logging.Core.Logger.pas',
+  Spring.Logging.Core in 'Source\Logging\Spring.Logging.Core.pas',
+  Spring.Logging.Filters in 'Source\Logging\Spring.Logging.Filters.pas',
+  Spring.Logging.Layouts in 'Source\Logging\Spring.Logging.Layouts.pas',
+  Spring.Logging.Repositories in 'Source\Logging\Spring.Logging.Repositories.pas',
+  Spring.Logging.Resources in 'Source\Logging\Spring.Logging.Resources.pas',
+  MD5Impl in 'Source\Cryptography\MD5Impl.pas',
+  AESImpl in 'Source\Cryptography\AESImpl.pas',
+  CRCImpl in 'Source\Cryptography\CRCImpl.pas',
+  DESImpl in 'Source\Cryptography\DESImpl.pas',
+  Spring.Logging in 'Source\Spring.Logging.pas',
+  Spring.Scheduler in 'Source\Spring.Scheduler.pas',
+  Spring.Communications in 'Source\Spring.Communications.pas',
+  Spring.Communications.Sockets in 'Source\Communications\Spring.Communications.Sockets.pas';
+
+end.
+
+
+
+
+

@@ -42,7 +42,7 @@ type
     procedure TestNormalString;
   end;
 
-  TSymmetricAlgorithmTestCase = class(TTestCase)
+  TSymmetricAlgorithmTestCase = class abstract(TTestCase)
   protected
     fActualBuffer: TBuffer;
     fInputBuffer: TBuffer;
@@ -88,13 +88,13 @@ end;
 
 procedure TTestDES.TestCase1;
 const
-  inData1: array [0 .. 7] of Byte = ($07, $56, $D8, $E0, $77, $47, $61, $D2);
-  outData1: array [0 .. 7] of Byte = ($0C, $D3, $DA, $02, $00, $21, $DC, $09);
-  key1: array [0 .. 7] of Byte = ($01, $70, $F1, $75, $46, $8F, $B5, $E6);
+  inputData: array [0 .. 7] of Byte = ($07, $56, $D8, $E0, $77, $47, $61, $D2);
+  outputData: array [0 .. 7] of Byte = ($0C, $D3, $DA, $02, $00, $21, $DC, $09);
+  key: array [0 .. 7] of Byte = ($01, $70, $F1, $75, $46, $8F, $B5, $E6);
 begin
-  fInputBuffer := TBuffer.Create(inData1);
-  fOutputBuffer := TBuffer.Create(outData1);
-  fKey := TBuffer.Create(key1);
+  fInputBuffer := TBuffer.Create(inputData);
+  fOutputBuffer := TBuffer.Create(outputData);
+  fKey := TBuffer.Create(key);
 
   fActualBuffer := TDES.Encrypt(fInputBuffer, fKey);
   CheckTrue(fActualBuffer.Equals(fOutputBuffer));
@@ -105,13 +105,13 @@ end;
 
 procedure TTestDES.TestCase2;
 const
-  inData2: array [0 .. 7] of Byte = ($48, $0D, $39, $00, $6E, $E7, $62, $F2);
-  outData2: array [0 .. 7] of Byte = ($A1, $F9, $91, $55, $41, $02, $0B, $56);
-  key2: array [0 .. 7] of Byte = ($02, $58, $16, $16, $46, $29, $B0, $07);
+  inputData: array [0 .. 7] of Byte = ($48, $0D, $39, $00, $6E, $E7, $62, $F2);
+  outputData: array [0 .. 7] of Byte = ($A1, $F9, $91, $55, $41, $02, $0B, $56);
+  key: array [0 .. 7] of Byte = ($02, $58, $16, $16, $46, $29, $B0, $07);
 begin
-  fInputBuffer := TBuffer.Create(inData2);
-  fOutputBuffer := TBuffer.Create(outData2);
-  fKey := TBuffer.Create(key2);
+  fInputBuffer := TBuffer.Create(inputData);
+  fOutputBuffer := TBuffer.Create(outputData);
+  fKey := TBuffer.Create(key);
 
   fActualBuffer := TDES.Encrypt(fInputBuffer, fKey);
   CheckTrue(fActualBuffer.Equals(fOutputBuffer));

@@ -1,6 +1,6 @@
 {***************************************************************************}
 {                                                                           }
-{               Delphi Spring Project                                       }
+{               Delphi Spring Framework                                     }
 {                                                                           }
 {               Copyright (C) 2008-2009 Zuo Baoquan                         }
 {                                                                           }
@@ -22,22 +22,44 @@
 {                                                                           }
 {***************************************************************************}
 
-{$IFNDEF SPRING_INC}
-{$DEFINE SPRING_INC}
+unit Spring.Communications.Tests;
 
-{$I jedi.inc}                // Import JEDI Development environment directives
+interface
 
-{$IFNDEF DELPHI2010_UP}
-  {$MESSAGE ERROR 'Delphi Spring Framework should be compiled in Delphi 2010 or later.'}
-{$ENDIF}
+uses
+  TestFramework,
+  SysUtils,
+  Spring.System,
+  Spring.Communications;
 
-{$IFDEF DELPHI2006_UP}
-  {$DEFINE SUPPORTS_REGION}  // Enable REGION Directive in Delphi 2006 or later.
-{$ENDIF}
+type
+  TTestCommunicationsServer = class(TTestCase)
+  strict private
+    fServer: ICommunicationsServer;
+  public
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestConnection;
+  end;
 
-{.$SCOPEDENUMS ON}           // Enable Scoped Enumerations
+implementation
 
-{$WARN UNIT_PLATFORM OFF}    // Turn off UNIT_PLATFORM warning
-{$WARN SYMBOL_PLATFORM OFF}  // Turn off SYMBOL_PLATFORM warning
+procedure TTestCommunicationsServer.SetUp;
+begin
+end;
 
-{$ENDIF ~SPRING_INC}
+procedure TTestCommunicationsServer.TearDown;
+begin
+end;
+
+procedure TTestCommunicationsServer.TestConnection;
+begin
+
+end;
+
+initialization
+  RegisterTest(TTestCommunicationsServer.Suite);
+
+end.
+

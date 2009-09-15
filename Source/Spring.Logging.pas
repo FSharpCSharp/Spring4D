@@ -1,4 +1,3 @@
-
 {***************************************************************************}
 {                                                                           }
 {               Delphi Spring Framework                                     }
@@ -197,9 +196,8 @@ var
   xmlNode: IXMLNode;
 begin
   xml := LoadXMLDocument(xmlFileName);
-  xmlNode := xml.DocumentElement; (GetLoggerRepository as
-      IXmlRepositoryConfigurator)
-  .Configure(xmlNode);
+  xmlNode := xml.DocumentElement;
+  (GetLoggerRepository as IXmlRepositoryConfigurator).Configure(xmlNode);
 end;
 
 class function TLogManager.GetLogger(const name: string): ILogger;
@@ -265,6 +263,7 @@ class procedure TXmlConfigurator.Config;
 begin
 
 end;
+
 {$ENDREGION}
 
 
