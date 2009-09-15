@@ -213,7 +213,7 @@ end;
 
 procedure TLogger.AddAppender(const appender: IAppender);
 begin
-  CheckArgumentNotNull(appender, 'appender');
+  TArgument.CheckNotNull(appender, 'appender');
   fAppenderAttachableLock.BeginWrite;
   try
     GetAppenderAttachable.AddAppender(appender);
@@ -264,7 +264,7 @@ end;
 
 function TLogger.RemoveAppender(const appender: IAppender): IAppender;
 begin
-  CheckArgumentNotNull(appender, 'appender');
+  TArgument.CheckNotNull(appender, 'appender');
   fAppenderAttachableLock.BeginWrite;
   try
     Result := GetAppenderAttachable.RemoveAppender(appender);

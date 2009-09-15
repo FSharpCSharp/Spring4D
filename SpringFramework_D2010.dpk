@@ -65,7 +65,8 @@ contains
   Spring.Logging in 'Source\Spring.Logging.pas',
   Spring.Scheduler in 'Source\Spring.Scheduler.pas',
   Spring.Communications in 'Source\Spring.Communications.pas',
-  Spring.Communications.Sockets in 'Source\Communications\Spring.Communications.Sockets.pas';
+  Spring.Communications.Sockets in 'Source\Communications\Spring.Communications.Sockets.pas',
+  Spring.EntityFramework in 'Source\Spring.EntityFramework.pas';
 
 end.
 

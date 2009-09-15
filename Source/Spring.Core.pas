@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Core;
+unit Spring.Core experimental;
 
 {$I Spring.inc}
 

@@ -24,7 +24,7 @@
 
 { TODO: Complete TNetwork, TNetworkWatcher }
 
-unit Spring.Network;
+unit Spring.Network experimental;
 
 {$I Spring.inc}
 

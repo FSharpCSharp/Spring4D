@@ -384,7 +384,7 @@ class function TContainer.CreateDictionary<TKey, TValue>(capacity: Integer;
 var
   dictionary: TDictionary<TKey,TValue>;
 begin
-  CheckArgumentRange(capacity >= 0, 'capacity');
+  TArgument.CheckRange(capacity >= 0, 'capacity');
   dictionary := TDictionary<TKey,TValue>.Create(capacity, comparer);
   Result := TDictionaryAdapter<TKey, TValue>.Create(dictionary, coOwned);
 end;

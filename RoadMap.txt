@@ -10,19 +10,17 @@ Spring.Collections
 Spring.Dialogs
 Spring.Communications
 Spring.Validation
+Spring.Navigation
 
-+IoC Container
 
-+FileSystemWatcher, ClipboardWatcher, FileSystemEntry, FileSearcher, etc.
++IoC Container (Supports Constructor Injection, Setter Injection)
+
++Spring.Logging
 
 
 V0.2	2009-10-26
-+Logging
 
-
-V0.3	2009-11-09
-
-+Crytography:
++Spring.Crytography:
 
 1. Hash Algorithms
 * MD5 (128 bits, 16 Bytes)
@@ -39,16 +37,22 @@ V0.3	2009-11-09
 * TripleDES
 * AES
 
++TFileSystemWatcher, TClipboardWatcher, TFileSystemEntry, TFileSearcher, TFileMapping, etc.
+
+
+V0.3	2009-11-09
+
++Spring.Configurations
++Reusable Design Patterns
++Common Domain Objects (TMoney, TCurrency, TQuantity, TUnit, TDateTime, TDate, TTime, TRange<T>, TParty£¬TLocation, TAddress, etc.)
+
 
 V0.4	2009-11-23
 
-+Configurations
-+Reusable Design Patterns
-+Common Domain Objects (TMoney, TCurrency, TQuantity, TUnit, TDateTime, TDate, TTime, TRange<T>, TParty£¬TLocation, TAddress, etc.)
-+Scheduler (Spring.Scheduler, Based on Quartz and Quartz.Net projects)
++Spring.Scheduler (Based on Quartz and Quartz.Net projects)
 +Network
-+Navigation
 +Expressions
++TUri
 
 V0.5	2009-12-07
 Data Binding & ORM (Delphi Entity Framework)

@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Patterns;
+unit Spring.Patterns experimental;
 
 {$I Spring.inc}
 
@@ -431,7 +431,7 @@ var
   p: Pointer;
 begin
   p := PPointer(@observer)^;
-  CheckArgumentNotNull(p <> nil, 'observer');
+  TArgument.CheckNotNull(p, 'observer');
 end;
 
 procedure TObservable<T>.DoObserverAdded(const observer: T);

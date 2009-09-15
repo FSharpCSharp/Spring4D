@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Adapters;
+unit Spring.Adapters experimental;
 
 interface
 
@@ -140,7 +140,7 @@ var
   intf: IInterface;
   guid: TGuid;
 begin
-  CheckArgumentNotNull(adaptableType <> nil, 'adaptableType');
+  TArgument.CheckNotNull(adaptableType, 'adaptableType');
   adapterType := TypeInfo(TAdapter);
   factory := GetFactory(adaptableType, adapterType);
   if factory = nil then
@@ -254,7 +254,7 @@ var
   typeData: PTypeData;
   i: Integer;
 begin
-  CheckArgumentNotNull(typeInfo <> nil, 'typeInfo');
+  TArgument.CheckNotNull(typeInfo, 'typeInfo');
   list := TList<PTypeInfo>.Create;
   try
     while typeInfo <> nil do
@@ -306,8 +306,8 @@ procedure TAdapterManager.RegisterAdapters(const factory: IAdapterFactory;
 var
   list: TList<IAdapterFactory>;
 begin
-  CheckArgumentNotNull(factory <> nil, 'factory');
-  CheckArgumentNotNull(adaptableType <> nil, 'adaptableType');
+  TArgument.CheckNotNull(factory, 'factory');
+  TArgument.CheckNotNull(adaptableType, 'adaptableType');
   Assert(fDictionary <> nil, 'fDictionary should not be nil.');
   Lock(fDictionary,
     procedure
@@ -331,7 +331,7 @@ end;
 
 procedure TAdapterManager.UnregisterAdapters(const factory: IAdapterFactory);
 begin
-  CheckArgumentNotNull(factory <> nil, 'factory');
+  TArgument.CheckNotNull(factory <> nil, 'factory');
   Lock(fDictionary,
     procedure
     var
@@ -356,8 +356,8 @@ procedure TAdapterManager.UnregisterAdapters(const factory: IAdapterFactory;
 var
   factories: TList<IAdapterFactory>;
 begin
-  CheckArgumentNotNull(factory <> nil, 'factory');
-  CheckArgumentNotNull(adaptableType <> nil, 'adaptableType');
+  TArgument.CheckNotNull(factory, 'factory');
+  TArgument.CheckNotNull(adaptableType, 'adaptableType');
   Lock(fDictionary,
     procedure
     begin

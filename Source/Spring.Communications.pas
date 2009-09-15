@@ -110,13 +110,13 @@ type
   /// Represents a communications server.
   /// </summary>
   ICommunicationsServer = interface
-    /// <summary>
-    /// Start Listening
-    /// </summary>
     procedure Start;
     procedure ShutDown;
   end;
 
+  /// <summary>
+  /// Represents a communications client.
+  /// </summary>
   ICommunicationsClient = interface
 
   end;

@@ -26,7 +26,7 @@
 {TODO -oOwner -cGeneral : TSizeHelper}
 {TODO -oOwner -cGeneral : TPointHelper}
 
-unit Spring.Helpers;
+unit Spring.Helpers experimental;
 
 {$I Spring.inc}
 

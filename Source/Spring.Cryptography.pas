@@ -48,7 +48,7 @@ Encryption Algorithms
 *)
 
 
-unit Spring.Cryptography;
+unit Spring.Cryptography experimental;
 
 {$I Spring.inc}
 
@@ -187,7 +187,7 @@ end;
 class function THashAlgorithm.ComputeHash(const buffer: array of Byte; startIndex,
   count: Integer): TBuffer;
 begin
-  CheckBufferRange(buffer, startIndex, count);
+  TArgument.CheckRange(buffer, startIndex, count);
   Result := DoComputeHash(PByte(@buffer), count);
 end;
 
@@ -273,7 +273,7 @@ end;
 class function TSymmetricAlgorithm.Encrypt(const buffer: array of Byte; startIndex,
   count: Integer; const key: TBuffer): TBuffer;
 begin
-  CheckBufferRange(buffer, startIndex, count);
+  TArgument.CheckRange(buffer, startIndex, count);
   Result := DoEncrypt(@buffer[startIndex], count, key);
 end;
 
@@ -309,7 +309,7 @@ end;
 class function TSymmetricAlgorithm.Decrypt(const buffer: array of Byte; startIndex,
   count: Integer; const key: TBuffer): TBuffer;
 begin
-  CheckBufferRange(buffer, startIndex, count);
+  TArgument.CheckRange(buffer, startIndex, count);
   Result := DoEncrypt(@buffer[startIndex], count, key);
 end;
 

@@ -29,7 +29,7 @@ end;
 
 procedure TWindowsEnumerator.GetWindowNames(list: TStrings);
 begin
-  CheckArgumentNotNull(list, 'list');
+  TArgument.CheckNotNull(list, 'list');
   if not Assigned(fCallback) then
   begin
     fCallback := TCallBack.Create(Self, @TWindowsEnumerator.AddWindowCaption);

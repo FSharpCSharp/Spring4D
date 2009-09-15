@@ -24,11 +24,12 @@
 
 { TODO: Complete TServiceController class }
 { TODO: Complete TOperatingSystem class (ProductName) }
-{ TODO: IAsyncResult }
 { TODO: TFileSystemEntry }
 { TODO: TFileSearcher Class }
 { TODO: TFileSystemWatcher Class }
 { TODO: TClipboardWatcher }
+
+{ TODO: IAsyncResult }
 { TODO: TUri class }
 { TODO: TMultiCastDelegate }
 
@@ -347,10 +348,41 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TArgument'}
+
+  /// <summary>
+  /// Provides static methods to check arguments.
+  /// </summary>
+  TArgument = record
+  public
+    class procedure CheckTrue(condition: Boolean; const argumentName: string); static; inline;
+    class procedure CheckFalse(condition: Boolean; const argumentName: string); static; inline;
+    class procedure CheckNotNull(condition: Boolean; const argumentName: string); overload; static; inline;
+    class procedure CheckNotNull(obj: TObject; const argumentName: string); overload; static; inline;
+    class procedure CheckNotNull(p: Pointer; const argumentName: string); overload; static; inline;
+    class procedure CheckNotNull(const intf: IInterface; const argumentName: string); overload; static; inline;
+    class procedure CheckEnum<T{:enum}>(const value: T; const argumentName: string); overload; static; inline;
+    class procedure CheckEnum<T>(const value: Integer; const argumentName: string); overload; static; inline;
+    class procedure CheckRange(condition: Boolean; const argumentName: string); overload; static; inline;
+    /// <summary>
+    /// Determines whether a range, specified by startIndex and count, is valid
+    /// for a byte array.
+    /// </summary>
+    /// <remarks>
+    /// startIndex starts from 0.
+    /// </remarks>
+    class procedure CheckRange(const buffer: array of Byte; const startIndex, count: Integer); overload; static;
+    class procedure CheckRange(const buffer: array of Char; const startIndex, count: Integer); overload; static;
+    class procedure CheckRange(const length, startIndex, count: Integer); overload; static; inline;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'TEnum'}
 
   /// <summary>
-  /// Provides useful functions to manipulate Enumeration type
+  /// Provides static methods to manipulate Enumeration type
   /// </summary>
   TEnum = class sealed(TValueType)
   private
@@ -359,14 +391,9 @@ type
     { Internal function without range check }
     class function ConvertToInteger<T>(const value: T): Integer;
   public
-    class procedure CheckArgument<T>(const value: T; const argumentName: string); overload;
-    class procedure CheckArgument<T>(const value: Integer; const argumentName: string); overload;
 //    class procedure ForEach<T{: enum}>(proc: TProc<T>);
     class function IsValid<T>(const value: T): Boolean; overload;
     class function IsValid<T>(const value: Integer): Boolean; overload;
-//    class function GetDisplayName<T>(const value: T): string; overload;
-//    class function GetDisplayName<T>(const value: Integer): string; overload;
-//    class function GetDisplayNames<T>: TStringDynArray;
     class function GetName<T>(const value: T): string; overload;
     class function GetName<T>(const value: Integer): string; overload;
     class function GetNames<T>: TStringDynArray;
@@ -384,14 +411,14 @@ type
 
   {$REGION 'IDelegate<T>'}
 
-  IDelegate<T: IInterface> = interface
+  IDelegate<T> = interface
     procedure Add(const delegate: T);
     procedure Remove(const delegate: T);
     procedure Clear;
     procedure Invoke(proc: TProc<T>);
   end;
 
-  TDelegate<T: IInterface> = class(TInterfacedObject, IDelegate<T>)
+  TDelegate<T> = class(TInterfacedObject, IDelegate<T>)
   private
     fList: TList<T>;
   public
@@ -1054,9 +1081,9 @@ type
 
   {$REGION 'TFileSystemEntry (NOT READY)'}
 
-  TFileSystemEntry = record
-
-  end;
+//  TFileSystemEntry = record
+//
+//  end;
 
   {$ENDREGION}
 
@@ -1067,8 +1094,8 @@ type
   /// Listens to the file system change notifications and raises events when a
   /// directory, or file in a directory, changes.
   /// </summary>
-  TFileSystemWatcher = record
-  end;
+//  TFileSystemWatcher = record
+//  end;
 
   {$ENDREGION}
 
@@ -1139,26 +1166,6 @@ type
 
   
   {$REGION 'Global Routines'}
-
-  procedure CheckArgument(condition: Boolean; const msg: string); inline;
-
-  procedure CheckArgumentNotNull(condition: Boolean; const argumentName: string); inline; overload;
-  procedure CheckArgumentNotNull(obj: TObject; const argumentName: string); inline; overload;
-  procedure CheckArgumentNotNull(const intf: IInterface; const argumentName: string); inline; overload;
-
-  procedure CheckArgumentRange(condition: Boolean; const argumentName: string); inline;
-
-  /// <summary>
-  /// Determines whether a range, specified by startIndex and count, is valid
-  /// for a byte array.
-  /// </summary>
-  procedure CheckBufferRange(const buffer: array of Byte; const startIndex, count: Integer); overload;
-
-  /// <summary>
-  /// Determines whether a range, specified by startIndex and count, is valid
-  /// for a char array.
-  /// </summary>
-  procedure CheckBufferRange(const buffer: array of Char; const startIndex, count: Integer); overload;
 
   /// <summary>
   /// Determines whether a specified file exists. It will raise an
@@ -1366,62 +1373,6 @@ var
 
 {$REGION 'Global Routines'}
 
-procedure CheckArgument(condition: Boolean; const msg: string);
-begin
-  if not condition then
-  begin
-    raise EArgumentException.Create(msg);
-  end;
-end;
-
-procedure CheckArgumentNotNull(condition: Boolean; const argumentName: string);
-begin
-  if not condition then
-  begin
-    raise EArgumentNullException.CreateFmt(SArgumentNullException, [argumentName]);
-  end;
-end;
-
-procedure CheckArgumentNotNull(obj: TObject; const argumentName: string);
-begin
-  CheckArgumentNotNull(obj <> nil, argumentName);
-end;
-
-procedure CheckArgumentNotNull(const intf: IInterface; const argumentName: string);
-begin
-  CheckArgumentNotNull(intf <> nil, argumentName);
-end;
-
-procedure CheckArgumentRange(condition: Boolean; const argumentName: string);
-begin
-  if not condition then
-  begin
-    raise EArgumentOutOfRangeException.Create(argumentName);
-  end;
-end;
-
-procedure CheckBufferRange(const buffer: array of Byte; const startIndex, count: Integer);
-begin
-  CheckArgumentRange(startIndex >= 0, 'startIndex');
-  CheckArgumentRange(count >= 0, 'count');
-  if count > 0 then
-  begin
-    CheckArgumentRange(startIndex < Length(buffer), 'startIndex');
-    CheckArgumentRange(startIndex + count <= Length(buffer), 'count');
-  end;
-end;
-
-procedure CheckBufferRange(const buffer: array of Char; const startIndex, count: Integer);
-begin
-  CheckArgumentRange(startIndex >= 0, 'startIndex');
-  CheckArgumentRange(count >= 0, 'count');
-  if count > 0 then
-  begin
-    CheckArgumentRange(startIndex < Length(buffer), 'startIndex');
-    CheckArgumentRange(startIndex + count <= Length(buffer), 'count');
-  end;
-end;
-
 procedure CheckFileExists(const fileName: string);
 begin
   if not FileExists(fileName) then
@@ -1475,7 +1426,7 @@ var
   end;
 begin
   if (buffer = nil) or (len = 0) then Exit;
-  CheckArgumentRange(len >= 0, 'len');
+  TArgument.CheckRange(len >= 0, 'len');
   head := buffer;
   tail := head + len - 1;
   p := head;
@@ -1519,7 +1470,7 @@ end;
 function TryGetPropInfo(const instance: TObject; const propertyName: string;
   out propInfo: PPropInfo): Boolean;
 begin
-  CheckArgumentNotNull(instance, 'instance');
+  TArgument.CheckNotNull(instance, 'instance');
   propInfo := GetPropInfo(instance, propertyName);
   Result := propInfo <> nil;
 end;
@@ -1539,8 +1490,8 @@ end;
 
 procedure Lock(obj: TObject; proc: TProc);
 begin
-  CheckArgumentNotNull(obj, 'obj');
-  CheckArgumentNotNull(Assigned(proc), 'proc');
+  TArgument.CheckNotNull(obj, 'obj');
+  TArgument.CheckNotNull(Assigned(proc), 'proc');
   System.MonitorEnter(obj);
   try
     proc;
@@ -1551,8 +1502,8 @@ end;
 
 procedure UpdateStrings(strings: TStrings; proc: TProc);
 begin
-  CheckArgumentNotNull(strings, 'strings');
-  CheckArgumentNotNull(Assigned(proc), 'proc');
+  TArgument.CheckNotNull(strings, 'strings');
+  TArgument.CheckNotNull(Assigned(proc), 'proc');
   strings.BeginUpdate;
   try
     strings.Clear;
@@ -1573,8 +1524,8 @@ var
   list: TList;
   i: Integer;
 begin
-  CheckArgumentNotNull(container, 'container');
-  CheckArgumentNotNull(Assigned(callback), 'callback');
+  TArgument.CheckNotNull(container, 'container');
+  TArgument.CheckNotNull(Assigned(callback), 'callback');
   list := TList.Create;
   try
     container.GetTabOrderList(list);
@@ -1600,8 +1551,8 @@ end;
 
 procedure EnumerateDataSet(dataSet: TDataSet; proc: TProc);
 begin
-  CheckArgumentNotNull(dataSet, 'dataSet');
-  CheckArgumentNotNull(Assigned(proc), 'proc');
+  TArgument.CheckNotNull(dataSet, 'dataSet');
+  TArgument.CheckNotNull(Assigned(proc), 'proc');
   dataSet.DisableControls;
   try
     dataSet.First;
@@ -1965,23 +1916,6 @@ begin
   Move(value, Result, SizeOf(T));
 end;
 
-class procedure TEnum.CheckArgument<T>(const value: T; const argumentName: string);
-var
-  intValue: Integer;
-begin
-  intValue := TEnum.ConvertToInteger<T>(value);
-  TEnum.CheckArgument<T>(intValue, argumentName);
-end;
-
-class procedure TEnum.CheckArgument<T>(const value: Integer; const argumentName: string);
-begin
-  if not TEnum.Isvalid<T>(value) then
-    raise EInvalidEnumArgumentException.CreateFmt(
-      EInvalidEnumArgument,
-      [argumentName, TRtti.GetTypeName<T>, value]
-    );
-end;
-
 class function TEnum.IsValid<T>(const value: Integer): Boolean;
 var
   data: PTypeData;
@@ -2004,7 +1938,7 @@ class function TEnum.GetName<T>(const value: Integer): string;
 var
   info: PTypeInfo;
 begin
-  CheckArgument<T>(value, 'value');
+  TArgument.CheckEnum<T>(value, 'value');
   info := GetEnumTypeInfo<T>;
   Result := GetEnumName(info, value);
 end;
@@ -2035,7 +1969,7 @@ end;
 
 class function TEnum.GetValue<T>(const value: T): Integer;
 begin
-  TEnum.CheckArgument<T>(value, 'value');
+  TArgument.CheckEnum<T>(value, 'value');
   Result := TEnum.ConvertToInteger<T>(value);
 end;
 
@@ -2079,18 +2013,123 @@ end;
 
 class function TEnum.Parse<T>(const value: Integer): T;
 begin
-  TEnum.CheckArgument<T>(value, 'value');
-  Move(value, Result, SizeOf(T));
+  if not TEnum.TryParse<T>(value, Result) then
+    raise EFormatException.CreateFmt(SIncorrectFormat, [IntToStr(value)]);
 end;
 
 class function TEnum.Parse<T>(const value: string): T;
+begin
+  if not TEnum.TryParse<T>(value, Result) then
+    raise EFormatException.CreateFmt(SIncorrectFormat, [value]);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TArgument'}
+
+class procedure TArgument.CheckTrue(condition: Boolean;
+  const argumentName: string);
+begin
+  if not condition then
+  begin
+    raise EArgumentException.Create(argumentName);
+  end;
+end;
+
+class procedure TArgument.CheckFalse(condition: Boolean;
+  const argumentName: string);
+begin
+  if condition then
+  begin
+    raise EArgumentException.Create(argumentName);
+  end;
+end;
+
+class procedure TArgument.CheckNotNull(condition: Boolean;
+  const argumentName: string);
+begin
+  if not condition then
+  begin
+    raise EArgumentNullException.Create(argumentName);
+  end;
+end;
+
+class procedure TArgument.CheckNotNull(p: Pointer; const argumentName: string);
+begin
+  TArgument.CheckNotNull(p <> nil, argumentName);
+end;
+
+class procedure TArgument.CheckNotNull(const intf: IInterface;
+  const argumentName: string);
+begin
+  TArgument.CheckNotNull(intf <> nil, argumentName);
+end;
+
+class procedure TArgument.CheckNotNull(obj: TObject;
+  const argumentName: string);
+begin
+  TArgument.CheckNotNull(obj <> nil, argumentName);
+end;
+
+class procedure TArgument.CheckEnum<T>(const value: T;
+  const argumentName: string);
 var
-  pInfo: PTypeInfo;
   intValue: Integer;
 begin
-  pInfo := TEnum.GetEnumTypeInfo<T>;
-  intValue := GetEnumValue(pInfo, value);
-  Result := TEnum.Parse<T>(intValue);
+  intValue := TEnum.ConvertToInteger<T>(value);    // No Range Check
+  TArgument.CheckEnum<T>(intValue, argumentName);
+end;
+
+class procedure TArgument.CheckEnum<T>(const value: Integer;
+  const argumentName: string);
+var
+  msg: string;
+begin
+  if not TEnum.IsValid<T>(value) then
+  begin
+    msg := Format(
+      SInvalidEnumArgument,
+      [argumentName, TRtti.GetTypeName<T>, value]
+    );
+    raise EInvalidEnumArgumentException.Create(msg);
+  end;
+end;
+
+class procedure TArgument.CheckRange(condition: Boolean;
+  const argumentName: string);
+begin
+  if not condition then
+  begin
+    raise EArgumentOutOfRangeException.Create(argumentName);
+  end;
+end;
+
+class procedure TArgument.CheckRange(const buffer: array of Byte;
+  const startIndex, count: Integer);
+begin
+  TArgument.CheckRange(Length(buffer), startIndex, count);
+end;
+
+class procedure TArgument.CheckRange(const buffer: array of Char;
+  const startIndex, count: Integer);
+begin
+  TArgument.CheckRange(Length(buffer), startIndex, count);
+end;
+
+class procedure TArgument.CheckRange(const length, startIndex,
+  count: Integer);
+const
+  StartIndexArgName = 'startIndex';
+  CountArgName = 'count';
+begin
+  TArgument.CheckRange(startIndex >= 0, StartIndexArgName);
+  TArgument.CheckRange(count >= 0, CountArgName);
+  if count > 0 then
+  begin
+    TArgument.CheckRange(startIndex < length, StartIndexArgName);
+    TArgument.CheckRange(startIndex + count <= length, CountArgName);
+  end;
 end;
 
 {$ENDREGION}
@@ -2105,7 +2144,7 @@ end;
 
 constructor TBuffer.Create(const buffer: array of Byte; startIndex, count: Integer);
 begin
-  CheckBufferRange(buffer, startIndex, count);
+  TArgument.CheckRange(buffer, startIndex, count);
   Create(@buffer[startIndex], count);
 end;
 
@@ -2132,14 +2171,14 @@ end;
 
 function TBuffer.Copy(startIndex, count: Integer): TBytes;
 begin
-  CheckBufferRange(fBytes, startIndex, count);
+  TArgument.CheckRange(fBytes, startIndex, count);
   SetLength(Result, count);
   Move(fBytes[startIndex], Result[0], count);
 end;
 
 class function TBuffer.BytesOf(const value: Byte; count: Integer): TBytes;
 begin
-  CheckArgumentRange(count >= 0, 'count');
+  TArgument.CheckRange(count >= 0, 'count');
   SetLength(Result, count);
   FillChar(Result, count, value);
 end;
@@ -2288,13 +2327,13 @@ end;
 
 function TBuffer.GetByteValue(const index: Integer): Byte;
 begin
-  CheckArgumentRange((index >= 0) and (index < Size), 'index');
+  TArgument.CheckRange((index >= 0) and (index < Size), 'index');
   Result := fBytes[index];
 end;
 
 procedure TBuffer.SetByteValue(const index: Integer; const value: Byte);
 begin
-  CheckArgumentRange((index >= 0) and (index < Size), 'index');
+  TArgument.CheckRange((index >= 0) and (index < Size), 'index');
   fBytes[index] := value;
 end;
 
@@ -2407,8 +2446,8 @@ end;
 constructor TVersion.InternalCreate(defined, major, minor, build, reversion: Integer);
 begin
   Assert(defined in [2, 3, 4], '"defined" should be in [2, 3, 4].');
-  CheckArgumentRange(IsDefined(major), 'major');
-  CheckArgumentRange(IsDefined(minor), 'minor');
+  TArgument.CheckRange(IsDefined(major), 'major');
+  TArgument.CheckRange(IsDefined(minor), 'minor');
   fMajor := major;
   fMinor := minor;
   case defined of
@@ -2419,14 +2458,14 @@ begin
     end;
     3:
     begin
-      CheckArgumentRange(IsDefined(build), 'build');
+      TArgument.CheckRange(IsDefined(build), 'build');
       fBuild := build;
       fReversion := fCUndefined;
     end;
     4:
     begin
-      CheckArgumentRange(IsDefined(build), 'build');
-      CheckArgumentRange(IsDefined(reversion), 'reversion');
+      TArgument.CheckRange(IsDefined(build), 'build');
+      TArgument.CheckRange(IsDefined(reversion), 'reversion');
       fBuild := build;
       fReversion := reversion;
     end;
@@ -2492,22 +2531,21 @@ end;
 
 function TVersion.ToString(fieldCount: Integer): string;
 begin
+  TArgument.CheckRange(fieldCount in [0..4], 'fieldCount');
   case fieldCount of
     0: Result := '';
     1: Result := Format('%d', [major]);
     2: Result := Format('%d.%d', [major, minor]);
     3:
     begin
-      CheckArgument(IsDefined(build), SIllegalFieldCount);
+      TArgument.CheckTrue(IsDefined(build), SIllegalFieldCount);
       Result := Format('%d.%d.%d', [major, minor, build]);
     end;
     4:
     begin
-      CheckArgument(IsDefined(build) and IsDefined(reversion), SIllegalFieldCount);
+      TArgument.CheckTrue(IsDefined(build) and IsDefined(reversion), SIllegalFieldCount);
       Result := Format('%d.%d.%d.%d', [major, minor, build, reversion]);
     end;
-    else
-      raise EArgumentOutOfRangeException.Create('fieldCount');
   end;
 end;
 
@@ -2994,7 +3032,7 @@ var
     end;
   end;
 begin
-  TEnum.CheckArgument<TEnvironmentVariableTarget>(target, 'target');
+  TArgument.CheckEnum<TEnvironmentVariableTarget>(target, 'target');
   if target = evtProcess then
   begin
     Result := GetProcessEnvironmentVariable;
@@ -3057,8 +3095,8 @@ var
   i: Integer;
 
 begin
-  CheckArgumentNotNull(list, 'list');
-  TEnum.CheckArgument<TEnvironmentVariableTarget>(target, 'target');
+  TArgument.CheckNotNull(list, 'list');
+  TArgument.CheckEnum<TEnvironmentVariableTarget>(target, 'target');
   if target = evtProcess then
   begin
     GetProcessEnvironmentVariables(list);
@@ -3091,7 +3129,7 @@ var
   registry: TRegistry;
   key: string;
 begin
-  TEnum.CheckArgument<TEnvironmentVariableTarget>(target, 'target');
+  TArgument.CheckEnum<TEnvironmentVariableTarget>(target, 'target');
   if target = evtProcess then
   begin
     Win32Check(Windows.SetEnvironmentVariable(PChar(variable), PChar(value)));
@@ -3704,7 +3742,7 @@ var
   ticks: DWORD;
   n: Integer;
 begin
-  TEnum.CheckArgument<TServiceStatus>(desiredStatus, 'desiredStatus');
+  TArgument.CheckEnum<TServiceStatus>(desiredStatus, 'desiredStatus');
   Open(SERVICE_QUERY_STATUS);
   try
     UpdateStatus;

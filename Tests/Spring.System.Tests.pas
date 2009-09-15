@@ -392,19 +392,20 @@ begin
   CheckEquals(Integer(dtNetwork), Integer(driveType));
   Check(TEnum.TryParse<TDriveType>('dtNetwork', driveType));
   CheckEquals(Integer(dtNetwork), Integer(driveType));
+
   CheckFalse(TEnum.TryParse<TDriveType>(Integer(Low(TDriveType)) - 1, driveType));
   CheckFalse(TEnum.TryParse<TDriveType>('dummy', driveType));
 end;
 
 procedure TTestEnum.TestParseIntegerException;
 begin
-  ExpectedException := EInvalidEnumArgumentException;
+  ExpectedException := EFormatException;
   TEnum.Parse<TDriveType>(Integer(Low(TDriveType))-1);
 end;
 
 procedure TTestEnum.TestParseStringException;
 begin
-  ExpectedException := EInvalidEnumArgumentException;
+  ExpectedException := EFormatException;
   TEnum.Parse<TDriveType>('dummy');
 end;
 

@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.EntityFramework;  // Spring.Data.Entity
+unit Spring.EntityFramework experimental;  // Spring.Data.Entity
 
 {$I Spring.inc}
 

@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Validation;
+unit Spring.Validation experimental;
 
 {$I Spring.inc}
 
@@ -127,6 +127,7 @@ type
     property Title: string read fTitle write fTitle;
     property Description: string read fDescription write fDescription;
   end;
+
 
   {$REGION 'Validators'}
 

@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Schedule;  { TODO: Rename to Spring.Scheduler }
+unit Spring.Scheduler;
 
 interface
 

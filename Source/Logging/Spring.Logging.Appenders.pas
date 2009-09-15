@@ -142,7 +142,7 @@ end;
 
 procedure TAppenderAttachable.AddAppender(const appender: IAppender);
 begin
-  CheckArgumentNotNull(appender, 'appender');
+  TArgument.CheckNotNull(appender, 'appender');
   fList.Add(appender);
 end;
 
@@ -180,7 +180,7 @@ end;
 function TAppenderAttachable.RemoveAppender(
   const appender: IAppender): IAppender;
 begin
-  CheckArgumentNotNull(appender, 'appender');
+  TArgument.CheckNotNull(appender, 'appender');
   Result := appender;
   fList.Remove(Result);
 end;
@@ -196,7 +196,7 @@ end;
 
 procedure TAppenderBase.AddFilter(const filter: IFilter);
 begin
-  CheckArgumentNotNull(filter, 'filter');
+  TArgument.CheckNotNull(filter, 'filter');
   if fHeadFilter = nil then
   begin
     fHeadFilter := filter;

@@ -22,12 +22,11 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Core.Objects;
+unit Spring.Core.Objects experimental;
 
 {$I Spring.inc}
 
-{ TODO: TMoney, TCurrency, TQuantity, TUnit, TTimePoint (TDateTime, TDate, TTime),
-  TRange<T>, TRatio }
+{ TODO: TMoney, TCurrency, TQuantity, TUnit, TRange<T>, TRatio, TTimePoint (TDateTime, TDate, TTime) }
 
 interface
 
@@ -46,11 +45,10 @@ type
     property Denominator: T read fDenominator;
   end;
 
-
-  {$REGION 'TMoney'}
-
   TCurrency = record
   end;
+
+  {$REGION 'TMoney'}
 
   TMoney = record
   private

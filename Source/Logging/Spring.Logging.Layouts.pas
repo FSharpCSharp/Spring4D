@@ -97,7 +97,7 @@ end;
 
 procedure TSimpleLayout.Format(writer: TTextWriter; const event: TLoggingEvent);
 begin
-  CheckArgumentNotNull(event, 'event');
+  TArgument.CheckNotNull(event, 'event');
   writer.Write(event.Level.Name);
   writer.Write(' - ');
   event.WriteRenderedMessage(writer);

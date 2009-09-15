@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Data.ADOClient;
+unit Spring.Data.ADOClient experimental;
 
 {$I Spring.inc}
 

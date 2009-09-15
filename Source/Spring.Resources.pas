@@ -46,7 +46,8 @@ resourcestring
   SNoTypeInfo          = 'No type information found.';
   SUnexpectedTypeKind  = 'Unexpected type kind: %s.';
   SNotEnumeratedType   = 'Type "%s" is not enumerated type.';
-  EInvalidEnumArgument = 'Invalid enum argument %s for %s, Actual value: %d.';
+  SInvalidEnumArgument = 'Invalid enum argument %0:s for %1:s, actual value: %2:d.';
+  SIncorrectFormat     = 'Unable to convert %s.';
   SIllegalFieldCount   = 'fieldCount is more than the number of components defined in the current Version object.';
 
   SFileVersionInfoFormat =

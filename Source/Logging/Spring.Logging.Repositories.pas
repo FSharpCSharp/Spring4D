@@ -359,7 +359,7 @@ end;
 
 function THierarchy.IsDisabled(const level: TLevel): Boolean;
 begin
-  CheckArgumentNotNull(not level.IsNull, 'level');
+  TArgument.CheckNotNull(not level.IsNull, 'level');
   Result := not Configured or (Threshold > level);
 end;
 
