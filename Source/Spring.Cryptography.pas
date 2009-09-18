@@ -22,6 +22,8 @@
 {                                                                           }
 {***************************************************************************}
 
+{ TODO: REDESIGN Spring.Cryptography }
+
 {TODO: Support PaddingMode}
 {TODO: Support IV}
 {TODO: Support ECB}

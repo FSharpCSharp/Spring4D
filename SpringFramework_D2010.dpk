@@ -22,6 +22,7 @@ package SpringFramework_D2010;
 {$WRITEABLECONST OFF}
 {$MINENUMSIZE 1}
 {$IMAGEBASE $400000}
+{$DESCRIPTION 'Delphi Spring Framework'}
 {$IMPLICITBUILD ON}
 {$DEFINE DEBUG}
 
@@ -44,7 +45,7 @@ contains
   Spring.Navigation in 'Source\Spring.Navigation.pas',
   Spring.Core.Objects in 'Source\Spring.Core.Objects.pas',
   Spring.Patterns in 'Source\Spring.Patterns.pas',
-  Spring.Resources in 'Source\Spring.Resources.pas',
+  Spring.ResourceStrings in 'Source\Spring.ResourceStrings.pas',
   Spring.System in 'Source\Spring.System.pas',
   Spring.Network in 'Source\Spring.Network.pas',
   Spring.Validation in 'Source\Spring.Validation.pas',
@@ -57,7 +58,7 @@ contains
   Spring.Logging.Filters in 'Source\Logging\Spring.Logging.Filters.pas',
   Spring.Logging.Layouts in 'Source\Logging\Spring.Logging.Layouts.pas',
   Spring.Logging.Repositories in 'Source\Logging\Spring.Logging.Repositories.pas',
-  Spring.Logging.Resources in 'Source\Logging\Spring.Logging.Resources.pas',
+  Spring.Logging.ResourceStrings in 'Source\Logging\Spring.Logging.ResourceStrings.pas',
   MD5Impl in 'Source\Cryptography\MD5Impl.pas',
   AESImpl in 'Source\Cryptography\AESImpl.pas',
   CRCImpl in 'Source\Cryptography\CRCImpl.pas',
@@ -66,7 +67,9 @@ contains
   Spring.Scheduler in 'Source\Spring.Scheduler.pas',
   Spring.Communications in 'Source\Spring.Communications.pas',
   Spring.Communications.Sockets in 'Source\Communications\Spring.Communications.Sockets.pas',
-  Spring.EntityFramework in 'Source\Spring.EntityFramework.pas';
+  Spring.EntityFramework in 'Source\Spring.EntityFramework.pas',
+  Spring.Configurations in 'Source\Spring.Configurations.pas',
+  Spring.Resources in 'Source\Spring.Resources.pas';
 
 end.
 

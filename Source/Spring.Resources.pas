@@ -26,79 +26,12 @@ unit Spring.Resources;
 
 interface
 
-resourcestring
-  SNotSupportedException       = '%s is not supported.';
-  SNotImplementedException     = '%s is not implemented.';
-  SArgumentOutOfRangeException = 'ArgumentOutOfRangeException: %s';
-  SArgumentNullException       = 'ArgumentNullException: %s';
-  SFileNotFoundException       = 'File not found: %s';
-  SDirectoryNotFoundException  = 'Directory not found: %s';
-  SNullableTypeHasNoValue      = 'Invalid operation, Nullable type has no value.';
-  SCannotAssignPointerToNullable='Cannot assigned non-null pointer to nullable type.';
-  STypeNotRegistered            = '%s was not registered.';
-  SCannotModifyReadOnlyValue    = 'Cannot modify read-only value.';
-  SServiceNotExists             = 'The service "%s" does not exist.';
-  STimeoutException             = 'Timeout';
-//  SEnumNotStarted              = 'Enum not started.';
-//  SEnumEnded                   = 'Enum ended.';
-//  SNotSupported_EnumReset      = 'RESET has not been supported.';
-
-  SNoTypeInfo          = 'No type information found.';
-  SUnexpectedTypeKind  = 'Unexpected type kind: %s.';
-  SNotEnumeratedType   = 'Type "%s" is not enumerated type.';
-  SInvalidEnumArgument = 'Invalid enum argument %0:s for %1:s, actual value: %2:d.';
-  SIncorrectFormat     = 'Unable to convert %s.';
-  SIllegalFieldCount   = 'fieldCount is more than the number of components defined in the current Version object.';
-
-  SFileVersionInfoFormat =
-    'File:             %s' + #13#10 +
-    'InternalName:     %s' + #13#10 +
-    'OriginalFilename: %s' + #13#10 +
-    'FileVersion:      %s' + #13#10 +
-    'FileDescription:  %s' + #13#10 +
-    'Product:          %s' + #13#10 +
-    'ProductVersion:   %s' + #13#10 +
-    'Debug:            %s' + #13#10 +
-    'Patched:          %s' + #13#10 +
-    'PreRelease:       %s' + #13#10 +
-    'PrivateBuild:     %s' + #13#10 +
-    'SpecialBuild:     %s' + #13#10 +
-    'Language:         %s' + #13#10;
-
-  SUnknownDescription  = 'Unknown';
-  SVersionDescription  = 'Version';
-//  SOSVersionStringFormat = '%S Version %s %s';
-
-  SSizeStringFormat    = '%s %s';   // e.g. '20.5 MB'
-
-  SByteDescription     = 'Byte';
-  SBytesDescription    = 'Bytes';
-  SKBDescription       = 'KB';
-  SMBDescription       = 'MB';
-  SGBDescription       = 'GB';
-  STBDescription       = 'TB';
-
-  SDriveNotReady              = 'Drive "%S" is not ready.';
-
-  SUnknownDriveDescription    = 'Unknown Drive';
-  SNoRootDirectoryDescription = 'No Root Directory';
-  SRemovableDescription       = 'Removable Drive';
-  SFixedDescription           = 'Fixed Drive';
-  SNetworkDescription         = 'Network Drive';
-  SCDRomDescription           = 'CD-Rom Drive';
-  SRamDescription             = 'Ram Drive';
-
-  SNoAdapterFound = 'Type %s has no adapter for %s.';
-
-  SValidationRequired    = '%S is required.';
-  SValidationRange       = '%s must be between %s and %s.';
-  SValidationMinValue    = '%s must not be less than %s.';
-  SValidationMaxValue    = '%s must not be greater than %s.';
-  SValidationMinLength   = '%s must have at least %d characters.';
-  SValidationMaxLength   = '%s must have at most %d characters.';
-
-  SRepositoryNotFound          = 'Repository not registered for %s.';
-  SObjectContextNotAvailable   = 'ObjectContext is not available.';
+type
+  IResource = interface
+    function GetExists: Boolean;
+    function CreateRelative(const relativePath: string): IResource;
+    property Exists: Boolean read GetExists;
+  end;
 
 implementation
 

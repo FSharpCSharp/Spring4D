@@ -9,10 +9,13 @@
 			<Projects Include="SpringFrameworkTests.dproj">
 				<Dependencies/>
 			</Projects>
-			<Projects Include="Examples\Environment\EnvironmentDemo.dproj">
+			<Projects Include="Examples\Environment\Environments.dproj">
 				<Dependencies/>
 			</Projects>
-			<Projects Include="Examples\CallBack\CallbackDemo.dproj">
+			<Projects Include="Examples\CallBack\Callback.dproj">
+				<Dependencies/>
+			</Projects>
+			<Projects Include="Examples\Navigation\Source\Navigation.dproj">
 				<Dependencies/>
 			</Projects>
 		</ItemGroup>
@@ -41,32 +44,41 @@
 		<Target Name="SpringFrameworkTests:Make">
 			<MSBuild Targets="Make" Projects="SpringFrameworkTests.dproj"/>
 		</Target>
-		<Target Name="EnvironmentDemo">
-			<MSBuild Projects="Examples\Environment\EnvironmentDemo.dproj"/>
+		<Target Name="Environments">
+			<MSBuild Projects="Examples\Environment\Environments.dproj"/>
 		</Target>
-		<Target Name="EnvironmentDemo:Clean">
-			<MSBuild Targets="Clean" Projects="Examples\Environment\EnvironmentDemo.dproj"/>
+		<Target Name="Environments:Clean">
+			<MSBuild Targets="Clean" Projects="Examples\Environment\Environments.dproj"/>
 		</Target>
-		<Target Name="EnvironmentDemo:Make">
-			<MSBuild Targets="Make" Projects="Examples\Environment\EnvironmentDemo.dproj"/>
+		<Target Name="Environments:Make">
+			<MSBuild Targets="Make" Projects="Examples\Environment\Environments.dproj"/>
 		</Target>
-		<Target Name="CallbackDemo">
-			<MSBuild Projects="Examples\CallBack\CallbackDemo.dproj"/>
+		<Target Name="Callback">
+			<MSBuild Projects="Examples\CallBack\Callback.dproj"/>
 		</Target>
-		<Target Name="CallbackDemo:Clean">
-			<MSBuild Targets="Clean" Projects="Examples\CallBack\CallbackDemo.dproj"/>
+		<Target Name="Callback:Clean">
+			<MSBuild Targets="Clean" Projects="Examples\CallBack\Callback.dproj"/>
 		</Target>
-		<Target Name="CallbackDemo:Make">
-			<MSBuild Targets="Make" Projects="Examples\CallBack\CallbackDemo.dproj"/>
+		<Target Name="Callback:Make">
+			<MSBuild Targets="Make" Projects="Examples\CallBack\Callback.dproj"/>
+		</Target>
+		<Target Name="Navigation">
+			<MSBuild Projects="Examples\Navigation\Source\Navigation.dproj"/>
+		</Target>
+		<Target Name="Navigation:Clean">
+			<MSBuild Targets="Clean" Projects="Examples\Navigation\Source\Navigation.dproj"/>
+		</Target>
+		<Target Name="Navigation:Make">
+			<MSBuild Targets="Make" Projects="Examples\Navigation\Source\Navigation.dproj"/>
 		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="SpringFramework_D2010;SpringFrameworkTests;EnvironmentDemo;CallbackDemo"/>
+			<CallTarget Targets="SpringFramework_D2010;SpringFrameworkTests;Environments;Callback;Navigation"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="SpringFramework_D2010:Clean;SpringFrameworkTests:Clean;EnvironmentDemo:Clean;CallbackDemo:Clean"/>
+			<CallTarget Targets="SpringFramework_D2010:Clean;SpringFrameworkTests:Clean;Environments:Clean;Callback:Clean;Navigation:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="SpringFramework_D2010:Make;SpringFrameworkTests:Make;EnvironmentDemo:Make;CallbackDemo:Make"/>
+			<CallTarget Targets="SpringFramework_D2010:Make;SpringFrameworkTests:Make;Environments:Make;Callback:Make;Navigation:Make"/>
 		</Target>
 		<Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 	</Project>

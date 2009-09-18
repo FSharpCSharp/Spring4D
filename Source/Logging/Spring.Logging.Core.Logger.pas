@@ -39,7 +39,7 @@ uses
   SysUtils,
   Spring.System,
   Spring.Collections,
-  Spring.Resources,
+  Spring.ResourceStrings,
   Spring.Logging,
   Spring.Logging.Core;
 

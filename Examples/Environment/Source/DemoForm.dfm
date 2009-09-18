@@ -22,21 +22,17 @@ object frmDemo: TfrmDemo
     Top = 65
     Width = 672
     Height = 426
-    ActivePage = tsServiceController
+    ActivePage = tsGeneral
     Align = alClient
     TabOrder = 0
     OnChange = pgcMainChange
     object tsGeneral: TTabSheet
       Caption = 'General'
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object Label5: TLabel
         AlignWithMargins = True
         Left = 3
         Top = 3
-        Width = 233
+        Width = 658
         Height = 13
         Align = alTop
         Caption = 'Global Variables && Environment Members'
@@ -46,6 +42,7 @@ object frmDemo: TfrmDemo
         Font.Name = 'Tahoma'
         Font.Style = [fsBold]
         ParentFont = False
+        ExplicitWidth = 233
       end
       object vleGeneral: TValueListEditor
         AlignWithMargins = True
@@ -67,10 +64,6 @@ object frmDemo: TfrmDemo
     object tsEnvironmentVariables: TTabSheet
       Caption = 'Environment Variables'
       ImageIndex = 2
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object vleEnvironment: TValueListEditor
         AlignWithMargins = True
         Left = 3
@@ -130,15 +123,11 @@ object frmDemo: TfrmDemo
     object tsSpecialFolders: TTabSheet
       Caption = 'Special Folders'
       ImageIndex = 1
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object Label4: TLabel
         AlignWithMargins = True
         Left = 3
         Top = 3
-        Width = 491
+        Width = 658
         Height = 13
         Align = alTop
         Caption = 
@@ -150,6 +139,7 @@ object frmDemo: TfrmDemo
         Font.Name = 'Tahoma'
         Font.Style = [fsBold]
         ParentFont = False
+        ExplicitWidth = 491
       end
       object vleSpecialFolders: TValueListEditor
         AlignWithMargins = True
@@ -170,15 +160,11 @@ object frmDemo: TfrmDemo
     object tsNetwork: TTabSheet
       Caption = 'Network'
       ImageIndex = 3
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object Label7: TLabel
         AlignWithMargins = True
         Left = 3
         Top = 3
-        Width = 389
+        Width = 658
         Height = 13
         Align = alTop
         Caption = 
@@ -190,6 +176,7 @@ object frmDemo: TfrmDemo
         Font.Name = 'Tahoma'
         Font.Style = [fsBold]
         ParentFont = False
+        ExplicitWidth = 389
       end
       object vleNetwork: TValueListEditor
         AlignWithMargins = True
@@ -210,15 +197,11 @@ object frmDemo: TfrmDemo
     object tsDriveInfo: TTabSheet
       Caption = 'Drive Info'
       ImageIndex = 4
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object Label6: TLabel
         AlignWithMargins = True
         Left = 3
         Top = 3
-        Width = 598
+        Width = 658
         Height = 13
         Align = alTop
         Caption = 
@@ -230,6 +213,7 @@ object frmDemo: TfrmDemo
         Font.Name = 'Tahoma'
         Font.Style = [fsBold]
         ParentFont = False
+        ExplicitWidth = 598
       end
       object mmoDriveInfo: TMemo
         AlignWithMargins = True

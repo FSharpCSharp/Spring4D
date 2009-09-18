@@ -43,6 +43,8 @@ type
 
   TContainer = class;
 
+//  TCollectionNotification = Generics.Collections.TCollectionNotification;
+
   /// <summary>
   /// Supports a simple iteration over a generic collection.
   /// </summary>

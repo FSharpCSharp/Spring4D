@@ -39,7 +39,7 @@ uses
   Spring.System,
   Spring.Collections,
   Spring.Patterns,
-  Spring.Resources,
+  Spring.ResourceStrings,
   Spring.Logging.Core;
 
 type
@@ -50,8 +50,7 @@ type
   TLogicalThreadContext = class;
 
   /// <summary>
-  /// The ILogger interface is used by application to log messages into the
-  /// Spring.Logging framework.
+  /// The ILogger interface is used by application to log messages.
   /// </summary>
   ILogger = interface
     ['{803DC36C-03FE-4C5C-B8BE-9CB79076DCB2}']

@@ -22,6 +22,8 @@
 {                                                                           }
 {***************************************************************************}
 
+{ TODO: REDESIGN THE VALIDATION FRAMEWORK & SUPPORTS ATTRIBUTES }
+
 unit Spring.Validation experimental;
 
 {$I Spring.inc}
@@ -36,7 +38,7 @@ uses
 type
   IValidator      = interface;
   IValueProvider  = interface;
-  TBaseValidator  = class;
+  TValidatorBase  = class;
   TValidatorGroup = class;
 
   IValidator = interface
@@ -52,7 +54,7 @@ type
     property DisplayName: string read GetDisplayName;
   end;
 
-  TBaseValidator = class(TInterfacedObject, IValidator)
+  TValidatorBase = class(TInterfacedObject, IValidator)
   private
     fIsValid: Boolean;
     fErrorMessage: string;
@@ -131,12 +133,12 @@ type
 
   {$REGION 'Validators'}
 
-  TRequiredValidator = class(TBaseValidator, IRequiredValidator)
+  TRequiredValidator = class(TValidatorBase, IRequiredValidator)
   protected
     function DoValidate(const value: Variant; out errorMessage: string): Boolean; override;
   end;
 
-  TRangeValidator = class(TBaseValidator)
+  TRangeValidator = class(TValidatorBase)
   private
     fMinValue: Variant;
     fMaxValue: Variant;
@@ -149,7 +151,7 @@ type
     property MaxValue: Variant read fMaxValue;
   end;
 
-  TMinLengthValidator = class(TBaseValidator)
+  TMinLengthValidator = class(TValidatorBase)
   private
     fMinLength: Integer;
   protected
@@ -160,7 +162,7 @@ type
     property MinLength: Integer read fMinLength;
   end;
 
-  TMaxLengthValidator = class(TBaseValidator)
+  TMaxLengthValidator = class(TValidatorBase)
   private
     fMaxLength: Integer;
   protected
@@ -180,23 +182,23 @@ type
     coLessThanOrEqualTo
   );
 
-  TCompareValidator = class(TBaseValidator)
+  TCompareValidator = class(TValidatorBase)
 
   end;
 
-  TRegularExpressionValidator = class(TBaseValidator)
+  TRegularExpressionValidator = class(TValidatorBase)
 
   end;
 
-  TUrlValidator = class(TBaseValidator)
+  TUrlValidator = class(TValidatorBase)
 
   end;
 
-  TEmailValidator = class(TBaseValidator)
+  TEmailValidator = class(TValidatorBase)
 
   end;
 
-  TISBNValidator = class(TBaseValidator)
+  TISBNValidator = class(TValidatorBase)
 
   end;
 
@@ -205,7 +207,7 @@ type
 
 implementation
 
-uses Spring.Resources;
+uses Spring.ResourceStrings;
 
 
 {$REGION 'TObjectPropertyValueProvider'}
@@ -254,25 +256,25 @@ end;
 
 {$REGION 'TBaseValidator'}
 
-constructor TBaseValidator.Create(const provider: IValueProvider);
+constructor TValidatorBase.Create(const provider: IValueProvider);
 begin
   inherited Create;
   fProvider := provider;
   fIsValid := True;
 end;
 
-function TBaseValidator.DoAccept(const value: Variant): Boolean;
+function TValidatorBase.DoAccept(const value: Variant): Boolean;
 begin
   Result := True;
 end;
 
-function TBaseValidator.DoValidate(const value: Variant;
+function TValidatorBase.DoValidate(const value: Variant;
   out errorMessage: string): Boolean;
 begin
   Result := True;
 end;
 
-procedure TBaseValidator.Validate;
+procedure TValidatorBase.Validate;
 var
   value: Variant;
 begin
@@ -288,22 +290,22 @@ begin
   end;
 end;
 
-function TBaseValidator.GetDisplayName: string;
+function TValidatorBase.GetDisplayName: string;
 begin
   Result := Provider.DisplayName;
 end;
 
-function TBaseValidator.GetValue: Variant;
+function TValidatorBase.GetValue: Variant;
 begin
   Result := Provider.Value;
 end;
 
-function TBaseValidator.GetErrorMessage: string;
+function TValidatorBase.GetErrorMessage: string;
 begin
   Result := fErrorMessage;
 end;
 
-function TBaseValidator.GetIsValid: Boolean;
+function TValidatorBase.GetIsValid: Boolean;
 begin
   Result := fIsValid;
 end;

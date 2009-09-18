@@ -29,7 +29,7 @@ interface
 uses
   Classes, SysUtils, TypInfo,
   Generics.Defaults, Generics.Collections,
-  Spring.System, Spring.Patterns, Spring.Helpers, Spring.Resources;
+  Spring.System, Spring.Patterns, Spring.Helpers, Spring.ResourceStrings;
 
 type
   IAdaptable      = interface;

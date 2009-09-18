@@ -160,6 +160,7 @@ type
 
 implementation
 
+
 {$REGION 'TTestSplitString'}
 
 procedure TTestSplitString.TestEmptyString;

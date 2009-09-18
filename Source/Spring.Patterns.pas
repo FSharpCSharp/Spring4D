@@ -261,7 +261,7 @@ type
 implementation
 
 uses
-  Spring.System, Spring.Helpers, Spring.Resources;
+  Spring.System, Spring.Helpers, Spring.ResourceStrings;
 
 
 {$REGION 'TSingletonManager'}

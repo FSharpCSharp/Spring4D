@@ -35,7 +35,7 @@ uses
   SysUtils,
   Spring.System,
   Spring.Collections,
-  Spring.Resources,
+  Spring.ResourceStrings,
   Spring.Logging.Core;
 
 type

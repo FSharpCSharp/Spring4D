@@ -22,11 +22,20 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Scheduler;
-
-{$I Spring.inc}
+unit Spring.Logging.ResourceStrings;
 
 interface
+
+resourcestring
+  SAllDescription      = 'ALL';     // '所有'
+  STraceDescription    = 'TRACE';   // '跟踪'
+  SDebugDescription    = 'DEBUG';   // '调试'
+  SInfoDescription     = 'INFO';    // '信息'
+  SWarnDescription     = 'WARN';    // '警告'
+  SErrorDescription    = 'ERROR';   // '错误'
+  SFatalDescription    = 'FATAL';   // '致命错误'
+  SOffDescription      = 'OFF';     // '关闭'
+
 
 implementation
 

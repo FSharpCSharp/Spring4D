@@ -43,7 +43,7 @@ uses
   Spring.System,
   Spring.Collections,
   Spring.Patterns,
-  Spring.Resources;
+  Spring.ResourceStrings;
 
 type
   { Forward Declarations }
@@ -318,7 +318,7 @@ uses
   Spring.Logging.Filters,
   Spring.Logging.Utils,
   Spring.Logging.Repositories,
-  Spring.Logging.Resources;
+  Spring.Logging.ResourceStrings;
 
 
 {$IFDEF SUPPORTS_REGION} {$REGION 'TLevel'} {$ENDIF}

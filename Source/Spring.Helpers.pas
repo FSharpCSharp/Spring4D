@@ -74,15 +74,31 @@ type
   public
     function CreateSnapshot<T: TPersistent, constructor>: ISnapshot;
     procedure Restore(const snapshot: ISnapshot);
-  end;
+  end experimental;
 
   (*
+
+  /// <summary>
+  /// TPointHelper
+  /// </summary>
+  TPointHelper = record helper for TPoint
+
+  end;
+
+  /// <summary>
+  /// TSizeHelper
+  /// </summary>
+  TSizeHelper = record helper for TSize
+
+  end;
+
   /// <summary>
   /// TRectHelper
   /// </summary>
   TRectHelper = record helper for TRect
 
   end;
+
   //*)
 
 implementation

@@ -24,6 +24,8 @@
 
 unit Spring.Navigation;
 
+{$I Spring.inc}
+
 interface
 
 uses
@@ -40,30 +42,30 @@ type
   end;
 
   /// <summary>
-  /// Navigation Location
+  /// Represents a navigatable location
   /// </summary>
   ILocatable = interface(IDisplayName)
     procedure Locate;
   end;
 
   /// <summary>
-  /// Track navigation history of a user.
+  /// Tracks navigation history.
   /// </summary>
   INavigationHistory = interface
     {$REGION 'Property Getters & Setters'}
       function GetCanGoBack: Boolean;
       function GetCanGoForward: Boolean;
       function GetCurrentLocation: ILocatable;
-      procedure SetCurrentLocation(const value: ILocatable);
     {$ENDREGION}
     procedure GoBack;
     procedure GoForward;
+    procedure GoToLocation(const location: ILocatable);
     function GetLocations: ICollection<ILocatable>;
-//    function GetBackList: ICollection<ILocatable>;
-//    function GetForwardList: ICollection<ILocatable>;
+    function GetBackList: ICollection<ILocatable>;
+    function GetForwardList: ICollection<ILocatable>;
     property CanGoBack: Boolean read GetCanGoBack;
     property CanGoForward: Boolean read GetCanGoForward;
-    property CurrentLocation: ILocatable read GetCurrentLocation write SetCurrentLocation;
+    property CurrentLocation: ILocatable read GetCurrentLocation;
   end;
 
   ENavigationHistory = class(Exception);
@@ -78,18 +80,18 @@ type
     function GetCanGoBack: Boolean;
     function GetCanGoForward: Boolean;
     function GetCurrentLocation: ILocatable;
-    procedure SetCurrentLocation(const value: ILocatable);
   public
     constructor Create;
     destructor Destroy; override;
     procedure GoBack;
     procedure GoForward;
+    procedure GoToLocation(const location: ILocatable);
     function GetLocations: ICollection<ILocatable>;
     function GetBackList: ICollection<ILocatable>;
     function GetForwardList: ICollection<ILocatable>;
     property CanGoBack: Boolean read GetCanGoBack;
     property CanGoForward: Boolean read GetCanGoForward;
-    property CurrentLocation: ILocatable read GetCurrentLocation write SetCurrentLocation;
+    property CurrentLocation: ILocatable read GetCurrentLocation;
   end;
 
   TLocatableList = TListAdapter<ILocatable>;
@@ -109,7 +111,7 @@ end;
 destructor TNavigationHistory.Destroy;
 begin
 
-  inherited;
+  inherited Destroy;
 end;
 
 procedure TNavigationHistory.GoBack;
@@ -124,6 +126,11 @@ begin
   if fForwardList.Count = 0 then
     raise ENavigationHistory.Create('Forward List is empty.');
   //
+end;
+
+procedure TNavigationHistory.GoToLocation(const location: ILocatable);
+begin
+
 end;
 
 function TNavigationHistory.GetLocations: ICollection<ILocatable>;
@@ -154,15 +161,6 @@ end;
 function TNavigationHistory.GetCurrentLocation: ILocatable;
 begin
   Result := fCurrentLocation;
-end;
-
-procedure TNavigationHistory.SetCurrentLocation(const value: ILocatable);
-begin
-  if fCurrentLocation <> value then
-  begin
-    fCurrentLocation := value;
-    // TODO: SetCurrentLocation;
-  end;
 end;
 
 end.

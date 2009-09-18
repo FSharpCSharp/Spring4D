@@ -24,14 +24,15 @@
 
 { TODO: Complete TServiceController class }
 { TODO: Complete TOperatingSystem class (ProductName) }
+
 { TODO: TFileSystemEntry }
 { TODO: TFileSearcher Class }
+
 { TODO: TFileSystemWatcher Class }
 { TODO: TClipboardWatcher }
 
 { TODO: IAsyncResult }
 { TODO: TUri class }
-{ TODO: TMultiCastDelegate }
 
 unit Spring.System;
 
@@ -63,13 +64,13 @@ uses
   Generics.Collections,
   Spring.Win32API,
   Spring.Patterns,
-  Spring.Resources;
+  Spring.ResourceStrings;
 
 type
   {$REGION 'Type Aliases'}
 
   /// <summary>
-  /// Declares a dynamic array of Bytes.
+  /// Represents a dynamic array of Byte.
   /// </summary>
   TBytes = SysUtils.TBytes;
 
@@ -84,8 +85,7 @@ type
   TTimeSpan = TimeSpan.TTimeSpan;
 
   /// <summary>
-  /// Provides a set of methods and properties that you can use to accurately
-  /// measure elapsed time.
+  /// Provides a set of methods and properties to accurately measure elapsed time.
   /// </summary>
   TStopwatch = Diagnostics.TStopwatch;
 
@@ -151,44 +151,193 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TExceptionHelper (NOT READY)'}
+  {$REGION 'TArgument'}
 
   /// <summary>
-  /// Provides functions to check an argument or raise an exception.
+  /// Provides static methods to check arguments.
   /// </summary>
-  TExceptionHelper = record
-
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TObjectHolder<T>'}
-
-  /// <summary>
-  /// Manages object's lifetime by anonymous methods (TFunc<T>),
-  /// which is implemented as a reference-counting interface in Delphi for Win32.
-  /// </summary>
-  TObjectHolder<T: class> = class(TInterfacedObject, TFunc<T>)
-  private
-    fObject: T;
+  /// <remarks>
+  /// All arguments of public methods, including global routines, class and record methods,
+  /// should be checked.
+  /// </remarks>
+  TArgument = record
   public
-    constructor Create(obj: T);
-    destructor Destroy; override;
-    function Invoke: T;
+    class procedure CheckTrue(condition: Boolean; const argumentName: string); static; inline;
+    class procedure CheckFalse(condition: Boolean; const argumentName: string); static; inline;
+    class procedure CheckNotNull(condition: Boolean; const argumentName: string); overload; static; inline;
+    class procedure CheckNotNull(obj: TObject; const argumentName: string); overload; static; inline;
+    class procedure CheckNotNull(p: Pointer; const argumentName: string); overload; static; inline;
+    class procedure CheckNotNull(const intf: IInterface; const argumentName: string); overload; static; inline;
+    class procedure CheckEnum<T{:enum}>(const value: T; const argumentName: string); overload; static; inline;
+    class procedure CheckEnum<T>(const value: Integer; const argumentName: string); overload; static; inline;
+    class procedure CheckRange(condition: Boolean; const argumentName: string); overload; static; inline;
+    /// <summary>
+    /// Determines whether a range, specified by startIndex and count, is valid
+    /// for a byte array.
+    /// </summary>
+    /// <remarks>
+    /// startIndex starts from 0.
+    /// </remarks>
+    class procedure CheckRange(const buffer: array of Byte; const startIndex, count: Integer); overload; static;
+    /// <summary>
+    /// Determines whether a range, specified by startIndex and count, is valid
+    /// for a char array.
+    /// </summary>
+    /// <remarks>
+    /// startIndex starts from 0.
+    /// </remarks>
+    class procedure CheckRange(const buffer: array of Char; const startIndex, count: Integer); overload; static;
+    /// <summary>
+    /// Determines whether a range, specified by startIndex and count, is valid
+    /// for a length.
+    /// </summary>
+    /// <remarks>
+    /// startIndex starts from 0.
+    /// </remarks>
+    class procedure CheckRange(const length, startIndex, count: Integer); overload; static; inline;
   end;
 
   {$ENDREGION}
 
 
-  {$REGION 'ILockable'}
+  {$REGION 'TBuffer (Experimental)'}
 
-  ILockable = interface
-    procedure Lock;
-    procedure Unlock;
-    function TryLock: Boolean;
-//    function GetIsLocked: Boolean;
-//    property IsLocked: Boolean read GetIsLocked;
+  /// <summary>
+  /// Represents a series of bytes in memory.
+  /// </summary>
+  /// <remarks>
+  /// </remarks>
+  TBuffer = record
+  strict private
+    fBytes: TBytes;
+    function GetIsEmpty: Boolean;
+    function GetMemory: PByte;
+    function GetSize: Integer;
+    function GetByteValue(const index: Integer): Byte;
+    procedure SetByteValue(const index: Integer; const value: Byte);
+  public
+    constructor Create(const buffer: Pointer; size: Integer); overload;
+    constructor Create(const buffer: array of Byte); overload;
+    constructor Create(const buffer: array of Byte; startIndex, count: Integer); overload;
+    constructor Create(const s: UnicodeString); overload;
+    constructor Create(const s: WideString); overload;
+    constructor Create(const s: RawByteString); overload;
+    class function FromHexString(s: UnicodeString): TBuffer; static;
+//    class function FromBase64String(const s: UnicodeString): TBuffer; static;
+//    class function ConvertFromBase64String(const s: string): TBytes;
+//    class function ConvertFromHexString(const s: UnicodeString): TBytes;
+//    class function ConvertToBase64String(const buffer: TBytes): string;
+//    class function ConvertToHexString(const buffer: Pointer; count: Integer;
+//      const prefix: string; const delimiter: string = ' '): string; overload;
+//    class function ConvertToHexString(const buffer: array of Byte;
+//      const prefix: string; const delimiter: string = ' '): string; overload;
+//    class function ConvertToHexString(const buffer: array of Char;
+//      const prefix: string; const delimiter: string = ' '): string; overload;
+//    class function ConvertToHexString(const s: UnicodeString;
+//      const prefix: string; const delimiter: string = ' '): string; overload;
+//    class function ConvertToHexString(const s: WideString;
+//      const prefix: string; const delimiter: string = ' '): string; overload;
+//    class function ConvertToHexString(const s: RawByteString;
+//      const prefix: string; const delimiter: string = ' '): string; overload;
+    class function GetByte(const buffer; const index: Integer): Byte; static;
+    class procedure SetByte(var buffer; const index: Integer; const value: Byte); static;
+    class function BytesOf(const value: Byte; count: Integer): TBytes; static;
+    function Copy(startIndex, count: Integer): TBytes;
+    function EnsureSize(size: Integer; value: Byte): TBytes; overload; experimental;
+    function EnsureSize(size: Integer; value: AnsiChar): TBytes; overload; experimental;
+    function Equals(const buffer: array of Byte): Boolean; overload;
+    function Equals(const buffer: TBuffer): Boolean; overload;
+    function ToBytes: TBytes;
+    function ToString: string;
+    function ToWideString: WideString;
+    function ToAnsiString: RawByteString;
+    function ToUtf8String: UTF8String;
+//    function ToBase64String: string;
+    function ToHexString: string; overload;
+    function ToHexString(const prefix: string; const delimiter: string = ' '): string; overload;
+    property IsEmpty: Boolean read GetIsEmpty;
+    property Memory: PByte read GetMemory;
+    property Size: Integer read GetSize;
+    property Bytes[const index: Integer]: Byte read GetByteValue write SetByteValue; default;
+    { Operators }
+    class operator Implicit(const value: TBytes): TBuffer;
+    class operator Implicit(const value: TBuffer): TBytes;
+    class operator Explicit(const value: TBytes): TBuffer;
+    class operator Explicit(const value: TBuffer): TBytes;
+    class operator Add(const left, right: TBuffer): TBuffer;
+    class operator Equal(const left, right: TBuffer): Boolean;
+    class operator NotEqual(const left, right: TBuffer): Boolean;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TValueType (NOT READY)'}
+
+  TValueType = class abstract(TInterfacedObject)
+
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TEnum'}
+
+  /// <summary>
+  /// Provides static methods to manipulate Enumeration type
+  /// </summary>
+  TEnum = class sealed(TValueType)
+  private
+    class function GetEnumTypeInfo<T>: PTypeInfo;
+    class function GetEnumTypeData<T>: PTypeData;
+    { Internal function without range check }
+    class function ConvertToInteger<T>(const value: T): Integer;
+  public
+    class function IsValid<T>(const value: T): Boolean; overload;
+    class function IsValid<T>(const value: Integer): Boolean; overload;
+    class function GetName<T>(const value: T): string; overload;
+    class function GetName<T>(const value: Integer): string; overload;
+    class function GetNames<T>: TStringDynArray;
+    class function GetValue<T>(const value: T): Integer; overload;
+    class function GetValue<T>(const value: string): Integer; overload;
+    class function GetValues<T>: TIntegerDynArray;
+    class function TryParse<T>(const value: Integer; out enum: T): Boolean; overload;
+    class function TryParse<T>(const value: string; out enum: T): Boolean; overload;
+    class function Parse<T>(const value: Integer): T; overload;
+    class function Parse<T>(const value: string): T; overload;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TNullable<T>'}
+
+  /// <summary>
+  /// Represents an object whose underlying type is a value type that can also
+  /// be assigned nil like a reference type.
+  /// </summary>
+  TNullable<T> = record
+  strict private
+    fValue: T;
+    fHasValue: string;
+    function GetValue: T;
+    function GetHasValue: Boolean;
+  private
+    const fCHasValue = 'HasValue';  // DO NOT LOCALIZE
+  public
+    constructor Create(const value: T); overload;
+    constructor Create(const value: Variant); overload;
+    function GetValueOrDefault: T; overload;
+    function GetValueOrDefault(const default: T): T; overload;
+    property HasValue: Boolean read GetHasValue;
+    property Value: T read GetValue;
+    { Conversion }
+    class operator Implicit(const value: TNullable<T>): T;
+    class operator Implicit(const value: T): TNullable<T>;
+    class operator Implicit(const value: TNullable<T>): Variant;
+    class operator Implicit(const value: Variant): TNullable<T>;
+    class operator Implicit(value: Pointer): TNullable<T>;
+    class operator Explicit(const value: TNullable<T>): T;
   end;
 
   {$ENDREGION}
@@ -255,6 +404,24 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TObjectHolder<T>'}
+
+  /// <summary>
+  /// Manages object's lifetime by anonymous methods (TFunc<T>),
+  /// which is implemented as a reference-counting interface in Delphi for Win32.
+  /// </summary>
+  TObjectHolder<T: class> = class(TInterfacedObject, TFunc<T>)
+  private
+    fObject: T;
+  public
+    constructor Create(obj: T);
+    destructor Destroy; override;
+    function Invoke: T;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'TRtti'}
 
   /// <summary>
@@ -278,138 +445,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TValueType (NOT READY)'}
-
-  TValueType = class abstract(TInterfacedObject)
-
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TBuffer (Experimental)'}
-
-  /// <summary>
-  /// Represents a series of bytes in memory.
-  /// </summary>
-  /// <remarks>
-  /// </remarks>
-  TBuffer = record
-  strict private
-    fBytes: TBytes;
-    function GetIsEmpty: Boolean;
-    function GetMemory: PByte;
-    function GetSize: Integer;
-    function GetByteValue(const index: Integer): Byte;
-    procedure SetByteValue(const index: Integer; const value: Byte);
-  public
-    constructor Create(const buffer: Pointer; size: Integer); overload;
-    constructor Create(const buffer: array of Byte); overload;
-    constructor Create(const buffer: array of Byte; startIndex, count: Integer); overload;
-    constructor Create(const s: UnicodeString); overload;
-    constructor Create(const s: WideString); overload;
-    constructor Create(const s: RawByteString); overload;
-    class function FromHexString(s: UnicodeString): TBuffer; static;
-//    class function FromBase64String(const s: UnicodeString): TBuffer; static;
-//    class function ConvertFromBase64String(const s: string): TBytes;
-//    class function ConvertFromHexString(const s: UnicodeString): TBytes;
-//    class function ConvertToBase64String(const buffer: TBytes): string;
-//    class function ConvertToHexString(const buffer: Pointer; count: Integer; prefixType: THexPrefixType; const delimiter: string = ' '): string; overload;
-    class function GetByte(const buffer; const index: Integer): Byte; static;
-    class procedure SetByte(var buffer; const index: Integer; const value: Byte); static;
-    class function BytesOf(const value: Byte; count: Integer): TBytes; static;
-    function Copy(startIndex, count: Integer): TBytes;
-    function EnsureSize(size: Integer; value: Byte): TBytes; overload; experimental;
-    function EnsureSize(size: Integer; value: AnsiChar): TBytes; overload; experimental;
-    function Equals(const buffer: array of Byte): Boolean; overload;
-    function Equals(const buffer: TBuffer): Boolean; overload;
-    function ToBytes: TBytes;
-    function ToString: string;
-    function ToWideString: WideString;
-    function ToAnsiString: RawByteString;
-    function ToUtf8String: UTF8String;
-//    function ToBase64String: string;
-    function ToHexString: string; overload;
-    function ToHexString(const prefix: string; const delimiter: string = ' '): string; overload;
-    property IsEmpty: Boolean read GetIsEmpty;
-    property Memory: PByte read GetMemory;
-    property Size: Integer read GetSize;
-    property Bytes[const index: Integer]: Byte read GetByteValue write SetByteValue; default;
-    { Operators }
-    class operator Implicit(const value: TBytes): TBuffer;
-    class operator Implicit(const value: TBuffer): TBytes;
-    class operator Explicit(const value: TBytes): TBuffer;
-    class operator Explicit(const value: TBuffer): TBytes;
-    class operator Add(const left, right: TBuffer): TBuffer;
-    class operator Equal(const left, right: TBuffer): Boolean;
-    class operator NotEqual(const left, right: TBuffer): Boolean;
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TArgument'}
-
-  /// <summary>
-  /// Provides static methods to check arguments.
-  /// </summary>
-  TArgument = record
-  public
-    class procedure CheckTrue(condition: Boolean; const argumentName: string); static; inline;
-    class procedure CheckFalse(condition: Boolean; const argumentName: string); static; inline;
-    class procedure CheckNotNull(condition: Boolean; const argumentName: string); overload; static; inline;
-    class procedure CheckNotNull(obj: TObject; const argumentName: string); overload; static; inline;
-    class procedure CheckNotNull(p: Pointer; const argumentName: string); overload; static; inline;
-    class procedure CheckNotNull(const intf: IInterface; const argumentName: string); overload; static; inline;
-    class procedure CheckEnum<T{:enum}>(const value: T; const argumentName: string); overload; static; inline;
-    class procedure CheckEnum<T>(const value: Integer; const argumentName: string); overload; static; inline;
-    class procedure CheckRange(condition: Boolean; const argumentName: string); overload; static; inline;
-    /// <summary>
-    /// Determines whether a range, specified by startIndex and count, is valid
-    /// for a byte array.
-    /// </summary>
-    /// <remarks>
-    /// startIndex starts from 0.
-    /// </remarks>
-    class procedure CheckRange(const buffer: array of Byte; const startIndex, count: Integer); overload; static;
-    class procedure CheckRange(const buffer: array of Char; const startIndex, count: Integer); overload; static;
-    class procedure CheckRange(const length, startIndex, count: Integer); overload; static; inline;
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TEnum'}
-
-  /// <summary>
-  /// Provides static methods to manipulate Enumeration type
-  /// </summary>
-  TEnum = class sealed(TValueType)
-  private
-    class function GetEnumTypeInfo<T>: PTypeInfo;
-    class function GetEnumTypeData<T>: PTypeData;
-    { Internal function without range check }
-    class function ConvertToInteger<T>(const value: T): Integer;
-  public
-//    class procedure ForEach<T{: enum}>(proc: TProc<T>);
-    class function IsValid<T>(const value: T): Boolean; overload;
-    class function IsValid<T>(const value: Integer): Boolean; overload;
-    class function GetName<T>(const value: T): string; overload;
-    class function GetName<T>(const value: Integer): string; overload;
-    class function GetNames<T>: TStringDynArray;
-    class function GetValue<T>(const value: T): Integer; overload;
-    class function GetValue<T>(const value: string): Integer; overload;
-    class function GetValues<T>: TIntegerDynArray;
-    class function TryParse<T>(const value: Integer; out enum: T): Boolean; overload;
-    class function TryParse<T>(const value: string; out enum: T): Boolean; overload;
-    class function Parse<T>(const value: Integer): T; overload;
-    class function Parse<T>(const value: string): T; overload;
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'IDelegate<T>'}
+  {$REGION 'IDelegate<T> (Experimental)'}
 
   IDelegate<T> = interface
     procedure Add(const delegate: T);
@@ -418,7 +454,7 @@ type
     procedure Invoke(proc: TProc<T>);
   end;
 
-  TDelegate<T> = class(TInterfacedObject, IDelegate<T>)
+  TDelegate<T> = class(TInterfacedObject, IDelegate<T>, IInterface)
   private
     fList: TList<T>;
   public
@@ -437,39 +473,6 @@ type
 //  TType = class abstract(TSingleton)
 //
 //  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TNullable<T>'}
-
-  /// <summary>
-  /// Represents an object whose underlying type is a value type that can also
-  /// be assigned nil like a reference type.
-  /// </summary>
-  TNullable<T> = record
-  strict private
-    fValue: T;
-    fHasValue: string;
-    function GetValue: T;
-    function GetHasValue: Boolean;
-  private
-    const fCHasValue = 'HasValue';  // DO NOT LOCALIZE
-  public
-    constructor Create(const value: T); overload;
-    constructor Create(const value: Variant); overload;
-    function GetValueOrDefault: T; overload;
-    function GetValueOrDefault(const default: T): T; overload;
-    property HasValue: Boolean read GetHasValue;
-    property Value: T read GetValue;
-    { Conversion }
-    class operator Implicit(const value: TNullable<T>): T;
-    class operator Implicit(const value: T): TNullable<T>;
-    class operator Implicit(const value: TNullable<T>): Variant;
-    class operator Implicit(const value: Variant): TNullable<T>;
-    class operator Implicit(value: Pointer): TNullable<T>;
-    class operator Explicit(const value: TNullable<T>): T;
-  end;
 
   {$ENDREGION}
 
@@ -832,7 +835,7 @@ type
     class function  ExpandEnvironmentVariables(const variable: string): string; static;
     class property CommandLine: string read GetCommandLine;
     class property CurrentDirectory: string read GetCurrentDirectory write SetCurrentDirectory;
-    class property IsAdmin: Boolean read GetIsAdmin;
+    class property IsAdmin: Boolean read GetIsAdmin; { experimental }
     class property MachineName: string read GetMachineName;
     class property NewLine: string read GetNewLine;
     class property OperatingSystem: TOperatingSystem read GetOperatingSystem;
@@ -848,7 +851,7 @@ type
   end;
 
   /// <summary>
-  /// Represents a type alias of TEnvironment class.
+  /// Provides a type alias for TEnvironment class.
   /// </summary>
   Environment = TEnvironment;
 
@@ -1125,7 +1128,7 @@ type
   TCallbackFunc = TFunc<Pointer>;
 
   /// <summary>
-  /// Adapt class instance (object) method to windows standard callback function.
+  /// Adapts class instance (object) method as Windows standard callback function.
   /// </summary>
   /// <remarks>
   /// Both the object method and the callback function need to be declared as stdcall.
@@ -1140,6 +1143,19 @@ type
   end;
 
   
+  {$ENDREGION}
+
+
+  {$REGION 'ILockable (NOT READY)'}
+
+//  ILockable = interface
+//    procedure Lock;
+//    procedure Unlock;
+//    function TryLock: Boolean;
+////    function GetIsLocked: Boolean;
+////    property IsLocked: Boolean read GetIsLocked;
+//  end;
+
   {$ENDREGION}
 
 
@@ -1235,7 +1251,8 @@ type
   function VarIsNullOrEmpty(const value: Variant; trimWhiteSpace: Boolean = False): Boolean;
 
   /// <summary>
-  ///
+  /// Obtains a mutual-exclusion lock for the given object, executes a procedure
+  /// and then release the lock.
   /// </summary>
   procedure Lock(obj: TObject; proc: TProc); inline;
 
@@ -1251,7 +1268,7 @@ type
   procedure EnumerateControls(container: TWinControl; predicate: TPredicate<TWinControl>; callback: TProc<TWinControl>); overload;
 
   /// <summary>
-  /// Walkthrough all dataset records
+  /// Walkthrough all dataset records from the first one.
   /// </summary>
   procedure EnumerateDataSet(dataSet: TDataSet; proc: TProc);
 
@@ -1587,440 +1604,6 @@ end;
 function TInterfaceBase._Release: Integer;
 begin
   Result := -1;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TObjectHolder<T>'}
-
-constructor TObjectHolder<T>.Create(obj: T);
-begin
-  inherited Create;
-  fObject := obj;
-end;
-
-destructor TObjectHolder<T>.Destroy;
-begin
-  fObject.Free;
-  inherited Destroy;
-end;
-
-function TObjectHolder<T>.Invoke: T;
-begin
-  Result := fObject;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TValueProvider<T>'}
-
-constructor TValueProvider<T>.Create;
-begin
-  Create(Default(T), nil);
-end;
-
-constructor TValueProvider<T>.Create(const value: T);
-begin
-  Create(value, nil);
-end;
-
-constructor TValueProvider<T>.Create(const value: T;
-  cleanUpProc: TCleanUpProc<T>);
-begin
-  inherited Create;
-  fValue := value;
-  fCleanUpProc := cleanUpProc;
-end;
-
-destructor TValueProvider<T>.Destroy;
-begin
-  if Assigned(fCleanUpProc) then
-    fCleanUpProc(fValue);
-  inherited Destroy;
-end;
-
-function TValueProvider<T>.GetValue: T;
-begin
-  Result := fValue;
-end;
-
-function TValueProvider<T>.GetIsReadOnly: Boolean;
-begin
-  Result := False;
-end;
-
-procedure TValueProvider<T>.SetValue(const value: T);
-begin
-  if IsReadOnly then
-  begin
-    raise ENotSupportedException.Create(SCannotModifyReadOnlyValue);
-  end;
-  fValue := value;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TValueHolder<T>'}
-
-constructor TValueHolder<T>.Create(const value: T);
-begin
-  Create(value, nil);
-end;
-
-constructor TValueHolder<T>.Create(const value: T; cleanUpProc: TCleanUpProc<T>);
-var
-  provider: IValueProvider<T>;
-begin
-  provider := TValueProvider<T>.Create(value, cleanUpProc);
-  Create(provider);
-end;
-
-constructor TValueHolder<T>.Create(const valueProvider: IValueProvider<T>);
-begin
-  fProvider := valueProvider;
-end;
-
-procedure TValueHolder<T>.ProviderNeeded;
-begin
-  if fProvider = nil then
-  begin
-    fProvider := TValueProvider<T>.Create;
-  end;
-end;
-
-function TValueHolder<T>.GetValue: T;
-begin
-  if fProvider <> nil then
-  begin
-    Result := fProvider.Value;
-  end
-  else
-  begin
-    Result := Default(T);
-  end;
-end;
-
-procedure TValueHolder<T>.SetValue(const Value: T);
-begin
-  ProviderNeeded;
-  fProvider.Value := value;
-end;
-
-class operator TValueHolder<T>.Implicit(const value: T): TValueHolder<T>;
-begin
-  Result := TValueHolder<T>.Create(value);
-end;
-
-class operator TValueHolder<T>.Implicit(const valueHolder: TValueHolder<T>): T;
-begin
-  Result := valueHolder.Value;
-end;
-
-class operator TValueHolder<T>.Implicit(
-  const valueProvider: IValueProvider<T>): TValueHolder<T>;
-begin
-  Result := TValueHolder<T>.Create(valueProvider);
-end;
-
-class operator TValueHolder<T>.Implicit(
-  const valueHolder: TValueHolder<T>): IValueProvider<T>;
-begin
-  valueHolder.ProviderNeeded;
-  Result := valueHolder.fProvider;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TNullable<T>'}
-
-constructor TNullable<T>.Create(const value: T);
-begin
-  fValue := value;
-  fHasValue := fCHasValue;
-end;
-
-constructor TNullable<T>.Create(const value: Variant);
-var
-  v: TValue;
-begin
-  if not VarIsNullOrEmpty(value) then
-  begin
-    v := TValue.FromVariant(value);
-    fValue := v.AsType<T>;
-    fHasValue := fCHasValue;
-  end;
-end;
-
-function TNullable<T>.GetHasValue: Boolean;
-begin
-  Result := Length(fHasValue) > 0;
-end;
-
-function TNullable<T>.GetValue: T;
-begin
-  if not HasValue then
-  begin
-    raise EInvalidOperation.Create(SNullableTypeHasNoValue);
-  end;
-  Result := fValue;
-end;
-
-function TNullable<T>.GetValueOrDefault: T;
-begin
-  if HasValue then
-    Result := value
-  else
-    Result := Default(T);
-end;
-
-function TNullable<T>.GetValueOrDefault(const default: T): T;
-begin
-  if HasValue then
-    Result := value
-  else
-    Result := default;
-end;
-
-class operator TNullable<T>.Implicit(const value: T): TNullable<T>;
-begin
-  Result := TNullable<T>.Create(value);
-end;
-
-class operator TNullable<T>.Implicit(const value: TNullable<T>): T;
-begin
-  Result := value.value;
-end;
-
-class operator TNullable<T>.Implicit(const value: TNullable<T>): Variant;
-var
-  v: TValue;
-begin
-  if value.HasValue then
-  begin
-    v := TValue.From<T>(value.Value);
-    Result := v.AsVariant;
-  end
-  else
-  begin
-    Result := Null;  // Null or Empty ?
-  end;
-end;
-
-class operator TNullable<T>.Implicit(const value: Variant): TNullable<T>;
-var
-  v: TValue;
-begin
-  if not VarIsNullOrEmpty(value) then
-  begin
-    v := TValue.FromVariant(value);
-    Result := TNullable<T>.Create(v.AsType<T>)
-  end
-  else
-  begin
-    Result.fHasValue := '';
-  end;
-end;
-
-class operator TNullable<T>.Implicit(value: Pointer): TNullable<T>;
-begin
-  if value = nil then
-  begin
-    Result.fHasValue := '';
-  end
-  else
-  begin
-    raise EInvalidOperation.Create(SCannotAssignPointerToNullable);
-  end;
-end;
-
-class operator TNullable<T>.Explicit(const value: TNullable<T>): T;
-begin
-  Result := value.value;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TRtti'}
-
-class procedure TRtti.CheckTypeKind<T>(const typeKind: TypInfo.TTypeKind);
-begin
-  TRtti.CheckTypeKind<T>([typeKind]);
-end;
-
-class procedure TRtti.CheckTypeKind<T>(const typeKinds: TypInfo.TTypeKinds);
-var
-  typeInfo: PTypeInfo;
-begin
-  typeInfo := TRtti.GetTypeInfo<T>;
-  if not (typeInfo.Kind in typeKinds) then
-    raise ERttiException.CreateFmt(SUnexpectedTypeKind, [TRtti.GetTypeName<T>]);
-end;
-
-class function TRtti.GetTypeName<T>: string;
-begin
-  Result := TypInfo.GetTypeName(TRtti.GetTypeInfo<T>);
-end;
-
-class function TRtti.GetTypeKind<T>: TypInfo.TTypeKind;
-begin
-  Result := TRtti.GetTypeInfo<T>.Kind;
-end;
-
-class function TRtti.GetTypeInfo<T>: PTypeInfo;
-begin
-  Result := System.TypeInfo(T);
-  if Result = nil then
-    raise ERttiException.Create(SNoTypeInfo);
-end;
-
-class function TRtti.GetFullName(typeInfo: PTypeInfo): string;
-begin
-  Result := TypInfo.GetTypeName(typeInfo);
-end;
-
-class function TRtti.GetTypeData<T>: PTypeData;
-var
-  info: PTypeInfo;
-begin
-  info := TRtti.GetTypeInfo<T>;
-  Result := TypInfo.GetTypeData(info);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TEnum'}
-
-class function TEnum.GetEnumTypeInfo<T>: PTypeInfo;
-begin
-  TRtti.CheckTypeKind<T>(tkEnumeration);
-  Result := TRtti.GetTypeInfo<T>;
-end;
-
-class function TEnum.GetEnumTypeData<T>: PTypeData;
-var
-  typeInfo: PTypeInfo;
-begin
-  typeInfo := TEnum.GetEnumTypeInfo<T>;
-  Result := GetTypeData(typeInfo);
-end;
-
-class function TEnum.ConvertToInteger<T>(const value: T): Integer;
-begin
-  Result := 0;  // *MUST* initialize Result
-  Move(value, Result, SizeOf(T));
-end;
-
-class function TEnum.IsValid<T>(const value: Integer): Boolean;
-var
-  data: PTypeData;
-begin
-  TRtti.CheckTypeKind<T>(tkEnumeration);
-  data := TRtti.GetTypeData<T>;
-  Assert(data <> nil, 'data must not be nil.');
-  Result := (value >= data.MinValue) and (value <= data.MaxValue);
-end;
-
-class function TEnum.IsValid<T>(const value: T): Boolean;
-var
-  intValue: Integer;
-begin
-  intValue := TEnum.ConvertToInteger<T>(value);
-  Result := TEnum.IsValid<T>(intValue);
-end;
-
-class function TEnum.GetName<T>(const value: Integer): string;
-var
-  info: PTypeInfo;
-begin
-  TArgument.CheckEnum<T>(value, 'value');
-  info := GetEnumTypeInfo<T>;
-  Result := GetEnumName(info, value);
-end;
-
-class function TEnum.GetName<T>(const value: T): string;
-var
-  intValue: Integer;
-begin
-  intValue := TEnum.ConvertToInteger<T>(value);
-  Result := TEnum.GetName<T>(intValue);
-end;
-
-class function TEnum.GetNames<T>: TStringDynArray;
-var
-  typeData: PTypeData;
-  p: PShortString;
-  i: Integer;
-begin
-  typeData := TEnum.GetEnumTypeData<T>;
-  SetLength(Result, typeData.MaxValue - typeData.MinValue + 1);
-  p := @typedata.NameList;
-  for i := 0 to High(Result) do
-  begin
-    Result[i] := UTF8ToString(p^);
-    Inc(Integer(p), Length(p^)+1);
-  end;
-end;
-
-class function TEnum.GetValue<T>(const value: T): Integer;
-begin
-  TArgument.CheckEnum<T>(value, 'value');
-  Result := TEnum.ConvertToInteger<T>(value);
-end;
-
-class function TEnum.GetValue<T>(const value: string): Integer;
-var
-  temp: T;
-begin
-  temp := TEnum.Parse<T>(value);
-  Result := TEnum.ConvertToInteger<T>(temp);
-end;
-
-class function TEnum.GetValues<T>: TIntegerDynArray;
-var
-  typeData: PTypeData;
-  i: Integer;
-begin
-  typeData := TEnum.GetEnumTypeData<T>;
-  SetLength(Result, typeData.MaxValue - typeData.MinValue + 1);
-  for i := 0 to High(Result) do
-  begin
-    Result[i] := i;
-  end;
-end;
-
-class function TEnum.TryParse<T>(const value: Integer; out enum: T): Boolean;
-begin
-  Result := TEnum.IsValid<T>(value);
-  if Result then
-    Move(value, enum, SizeOf(T));
-end;
-
-class function TEnum.TryParse<T>(const value: string; out enum: T): Boolean;
-var
-  pInfo: PTypeInfo;
-  intValue: Integer;
-begin
-  pInfo := TEnum.GetEnumTypeInfo<T>;
-  intValue := GetEnumValue(pInfo, value);
-  Result := TEnum.TryParse<T>(intValue, enum);
-end;
-
-class function TEnum.Parse<T>(const value: Integer): T;
-begin
-  if not TEnum.TryParse<T>(value, Result) then
-    raise EFormatException.CreateFmt(SIncorrectFormat, [IntToStr(value)]);
-end;
-
-class function TEnum.Parse<T>(const value: string): T;
-begin
-  if not TEnum.TryParse<T>(value, Result) then
-    raise EFormatException.CreateFmt(SIncorrectFormat, [value]);
 end;
 
 {$ENDREGION}
@@ -2383,6 +1966,440 @@ end;
 class operator TBuffer.NotEqual(const left, right: TBuffer): Boolean;
 begin
   Result := not left.Equals(right);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TEnum'}
+
+class function TEnum.GetEnumTypeInfo<T>: PTypeInfo;
+begin
+  TRtti.CheckTypeKind<T>(tkEnumeration);
+  Result := TRtti.GetTypeInfo<T>;
+end;
+
+class function TEnum.GetEnumTypeData<T>: PTypeData;
+var
+  typeInfo: PTypeInfo;
+begin
+  typeInfo := TEnum.GetEnumTypeInfo<T>;
+  Result := GetTypeData(typeInfo);
+end;
+
+class function TEnum.ConvertToInteger<T>(const value: T): Integer;
+begin
+  Result := 0;  // *MUST* initialize Result
+  Move(value, Result, SizeOf(T));
+end;
+
+class function TEnum.IsValid<T>(const value: Integer): Boolean;
+var
+  data: PTypeData;
+begin
+  TRtti.CheckTypeKind<T>(tkEnumeration);
+  data := TRtti.GetTypeData<T>;
+  Assert(data <> nil, 'data must not be nil.');
+  Result := (value >= data.MinValue) and (value <= data.MaxValue);
+end;
+
+class function TEnum.IsValid<T>(const value: T): Boolean;
+var
+  intValue: Integer;
+begin
+  intValue := TEnum.ConvertToInteger<T>(value);
+  Result := TEnum.IsValid<T>(intValue);
+end;
+
+class function TEnum.GetName<T>(const value: Integer): string;
+var
+  info: PTypeInfo;
+begin
+  TArgument.CheckEnum<T>(value, 'value');
+  info := GetEnumTypeInfo<T>;
+  Result := GetEnumName(info, value);
+end;
+
+class function TEnum.GetName<T>(const value: T): string;
+var
+  intValue: Integer;
+begin
+  intValue := TEnum.ConvertToInteger<T>(value);
+  Result := TEnum.GetName<T>(intValue);
+end;
+
+class function TEnum.GetNames<T>: TStringDynArray;
+var
+  typeData: PTypeData;
+  p: PShortString;
+  i: Integer;
+begin
+  typeData := TEnum.GetEnumTypeData<T>;
+  SetLength(Result, typeData.MaxValue - typeData.MinValue + 1);
+  p := @typedata.NameList;
+  for i := 0 to High(Result) do
+  begin
+    Result[i] := UTF8ToString(p^);
+    Inc(Integer(p), Length(p^)+1);
+  end;
+end;
+
+class function TEnum.GetValue<T>(const value: T): Integer;
+begin
+  TArgument.CheckEnum<T>(value, 'value');
+  Result := TEnum.ConvertToInteger<T>(value);
+end;
+
+class function TEnum.GetValue<T>(const value: string): Integer;
+var
+  temp: T;
+begin
+  temp := TEnum.Parse<T>(value);
+  Result := TEnum.ConvertToInteger<T>(temp);
+end;
+
+class function TEnum.GetValues<T>: TIntegerDynArray;
+var
+  typeData: PTypeData;
+  i: Integer;
+begin
+  typeData := TEnum.GetEnumTypeData<T>;
+  SetLength(Result, typeData.MaxValue - typeData.MinValue + 1);
+  for i := 0 to High(Result) do
+  begin
+    Result[i] := i;
+  end;
+end;
+
+class function TEnum.TryParse<T>(const value: Integer; out enum: T): Boolean;
+begin
+  Result := TEnum.IsValid<T>(value);
+  if Result then
+    Move(value, enum, SizeOf(T));
+end;
+
+class function TEnum.TryParse<T>(const value: string; out enum: T): Boolean;
+var
+  pInfo: PTypeInfo;
+  intValue: Integer;
+begin
+  pInfo := TEnum.GetEnumTypeInfo<T>;
+  intValue := GetEnumValue(pInfo, value);
+  Result := TEnum.TryParse<T>(intValue, enum);
+end;
+
+class function TEnum.Parse<T>(const value: Integer): T;
+begin
+  if not TEnum.TryParse<T>(value, Result) then
+    raise EFormatException.CreateFmt(SIncorrectFormat, [IntToStr(value)]);
+end;
+
+class function TEnum.Parse<T>(const value: string): T;
+begin
+  if not TEnum.TryParse<T>(value, Result) then
+    raise EFormatException.CreateFmt(SIncorrectFormat, [value]);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TNullable<T>'}
+
+constructor TNullable<T>.Create(const value: T);
+begin
+  fValue := value;
+  fHasValue := fCHasValue;
+end;
+
+constructor TNullable<T>.Create(const value: Variant);
+var
+  v: TValue;
+begin
+  if not VarIsNullOrEmpty(value) then
+  begin
+    v := TValue.FromVariant(value);
+    fValue := v.AsType<T>;
+    fHasValue := fCHasValue;
+  end;
+end;
+
+function TNullable<T>.GetHasValue: Boolean;
+begin
+  Result := Length(fHasValue) > 0;
+end;
+
+function TNullable<T>.GetValue: T;
+begin
+  if not HasValue then
+  begin
+    raise EInvalidOperation.Create(SNullableTypeHasNoValue);
+  end;
+  Result := fValue;
+end;
+
+function TNullable<T>.GetValueOrDefault: T;
+begin
+  if HasValue then
+    Result := value
+  else
+    Result := Default(T);
+end;
+
+function TNullable<T>.GetValueOrDefault(const default: T): T;
+begin
+  if HasValue then
+    Result := value
+  else
+    Result := default;
+end;
+
+class operator TNullable<T>.Implicit(const value: T): TNullable<T>;
+begin
+  Result := TNullable<T>.Create(value);
+end;
+
+class operator TNullable<T>.Implicit(const value: TNullable<T>): T;
+begin
+  Result := value.value;
+end;
+
+class operator TNullable<T>.Implicit(const value: TNullable<T>): Variant;
+var
+  v: TValue;
+begin
+  if value.HasValue then
+  begin
+    v := TValue.From<T>(value.Value);
+    Result := v.AsVariant;
+  end
+  else
+  begin
+    Result := Null;
+  end;
+end;
+
+class operator TNullable<T>.Implicit(const value: Variant): TNullable<T>;
+var
+  v: TValue;
+begin
+  if not VarIsNullOrEmpty(value) then
+  begin
+    v := TValue.FromVariant(value);
+    Result := TNullable<T>.Create(v.AsType<T>)
+  end
+  else
+  begin
+    Result.fHasValue := '';
+  end;
+end;
+
+class operator TNullable<T>.Implicit(value: Pointer): TNullable<T>;
+begin
+  if value = nil then
+  begin
+    Result.fHasValue := '';
+  end
+  else
+  begin
+    raise EInvalidOperation.Create(SCannotAssignPointerToNullable);
+  end;
+end;
+
+class operator TNullable<T>.Explicit(const value: TNullable<T>): T;
+begin
+  Result := value.value;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TObjectHolder<T>'}
+
+constructor TObjectHolder<T>.Create(obj: T);
+begin
+  inherited Create;
+  fObject := obj;
+end;
+
+destructor TObjectHolder<T>.Destroy;
+begin
+  fObject.Free;
+  inherited Destroy;
+end;
+
+function TObjectHolder<T>.Invoke: T;
+begin
+  Result := fObject;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TValueProvider<T>'}
+
+constructor TValueProvider<T>.Create;
+begin
+  Create(Default(T), nil);
+end;
+
+constructor TValueProvider<T>.Create(const value: T);
+begin
+  Create(value, nil);
+end;
+
+constructor TValueProvider<T>.Create(const value: T;
+  cleanUpProc: TCleanUpProc<T>);
+begin
+  inherited Create;
+  fValue := value;
+  fCleanUpProc := cleanUpProc;
+end;
+
+destructor TValueProvider<T>.Destroy;
+begin
+  if Assigned(fCleanUpProc) then
+    fCleanUpProc(fValue);
+  inherited Destroy;
+end;
+
+function TValueProvider<T>.GetValue: T;
+begin
+  Result := fValue;
+end;
+
+function TValueProvider<T>.GetIsReadOnly: Boolean;
+begin
+  Result := False;
+end;
+
+procedure TValueProvider<T>.SetValue(const value: T);
+begin
+  if IsReadOnly then
+  begin
+    raise ENotSupportedException.Create(SCannotModifyReadOnlyValue);
+  end;
+  fValue := value;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TValueHolder<T>'}
+
+constructor TValueHolder<T>.Create(const value: T);
+begin
+  Create(value, nil);
+end;
+
+constructor TValueHolder<T>.Create(const value: T; cleanUpProc: TCleanUpProc<T>);
+var
+  provider: IValueProvider<T>;
+begin
+  provider := TValueProvider<T>.Create(value, cleanUpProc);
+  Create(provider);
+end;
+
+constructor TValueHolder<T>.Create(const valueProvider: IValueProvider<T>);
+begin
+  fProvider := valueProvider;
+end;
+
+procedure TValueHolder<T>.ProviderNeeded;
+begin
+  if fProvider = nil then
+  begin
+    fProvider := TValueProvider<T>.Create;
+  end;
+end;
+
+function TValueHolder<T>.GetValue: T;
+begin
+  if fProvider <> nil then
+  begin
+    Result := fProvider.Value;
+  end
+  else
+  begin
+    Result := Default(T);
+  end;
+end;
+
+procedure TValueHolder<T>.SetValue(const Value: T);
+begin
+  ProviderNeeded;
+  fProvider.Value := value;
+end;
+
+class operator TValueHolder<T>.Implicit(const value: T): TValueHolder<T>;
+begin
+  Result := TValueHolder<T>.Create(value);
+end;
+
+class operator TValueHolder<T>.Implicit(const valueHolder: TValueHolder<T>): T;
+begin
+  Result := valueHolder.Value;
+end;
+
+class operator TValueHolder<T>.Implicit(
+  const valueProvider: IValueProvider<T>): TValueHolder<T>;
+begin
+  Result := TValueHolder<T>.Create(valueProvider);
+end;
+
+class operator TValueHolder<T>.Implicit(
+  const valueHolder: TValueHolder<T>): IValueProvider<T>;
+begin
+  valueHolder.ProviderNeeded;
+  Result := valueHolder.fProvider;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TRtti'}
+
+class procedure TRtti.CheckTypeKind<T>(const typeKind: TypInfo.TTypeKind);
+begin
+  TRtti.CheckTypeKind<T>([typeKind]);
+end;
+
+class procedure TRtti.CheckTypeKind<T>(const typeKinds: TypInfo.TTypeKinds);
+var
+  typeInfo: PTypeInfo;
+begin
+  typeInfo := TRtti.GetTypeInfo<T>;
+  if not (typeInfo.Kind in typeKinds) then
+    raise ERttiException.CreateFmt(SUnexpectedTypeKind, [TRtti.GetTypeName<T>]);
+end;
+
+class function TRtti.GetTypeName<T>: string;
+begin
+  Result := TypInfo.GetTypeName(TRtti.GetTypeInfo<T>);
+end;
+
+class function TRtti.GetTypeKind<T>: TypInfo.TTypeKind;
+begin
+  Result := TRtti.GetTypeInfo<T>.Kind;
+end;
+
+class function TRtti.GetTypeInfo<T>: PTypeInfo;
+begin
+  Result := System.TypeInfo(T);
+  if Result = nil then
+    raise ERttiException.Create(SNoTypeInfo);
+end;
+
+class function TRtti.GetFullName(typeInfo: PTypeInfo): string;
+begin
+  Result := TypInfo.GetTypeName(typeInfo);
+end;
+
+class function TRtti.GetTypeData<T>: PTypeData;
+var
+  info: PTypeInfo;
+begin
+  info := TRtti.GetTypeInfo<T>;
+  Result := TypInfo.GetTypeData(info);
 end;
 
 {$ENDREGION}

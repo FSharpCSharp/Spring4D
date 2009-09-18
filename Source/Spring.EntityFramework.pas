@@ -323,7 +323,7 @@ type
 implementation
 
 uses
-  Spring.Resources;
+  Spring.ResourceStrings;
 
 
 {$REGION 'TEntityID'}

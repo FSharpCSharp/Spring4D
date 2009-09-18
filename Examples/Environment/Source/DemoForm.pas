@@ -29,7 +29,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Grids, ValEdit, ComCtrls, StdCtrls, StrUtils, ExtCtrls, XPMan,
-  Generics.Collections;
+  Generics.Collections, Sockets;
 
 type
   TfrmDemo = class(TForm)
@@ -176,7 +176,7 @@ begin
     Strings.AddOrUpdate('Environment.ProcessorCount', IntToStr(Environment.ProcessorCount));
     Strings.AddOrUpdate('Environment.ProcessorArchitecture', TEnum.GetName<TProcessorArchitecture>(Environment.ProcessorArchitecture));
     Strings.AddOrUpdate('Environment.TickCount', IntToStr(Environment.TickCount));
-    Strings.AddOrUpdate('Environment.NewLine', Environment.NewLine);
+    Strings.AddOrUpdate('Environment.NewLine', TBuffer.Create(Environment.NewLine).ToHexString('$'));
   end;
 end;
 

@@ -24,24 +24,28 @@
 
 unit Spring.Communications;
 
+{$I Spring.inc}
+
 interface
 
 uses
   Classes,
   SysUtils,
-  Spring.System;
+  XMLIntf,
+  Generics.Collections,
+  Spring.System,
+  Spring.Collections,
+  Spring.Patterns;
 
 type
   ITrackBytes = interface;
   IConnection = interface;
-  ISession = interface;
   IDataPacket = interface;
+  ICommunicationsServer = interface;
+//  ICommunicationsClient = interface;
+  ISession = interface;
   IMessage = interface;
-  IMessageHandler = interface;
-
-//  IRunnable = interface
-//    procedure Run;
-//  end;
+//  IMessageHandler = interface;
 
   /// <summary>
   /// Tracks network activity
@@ -53,21 +57,23 @@ type
     property BytesReceived: Int64 read GetBytesReceived;
   end;
 
+  TConnectionNotifyEvent = procedure(const sender: IConnection) of object;
+
   /// <summary>
-  /// Represents an incoming or outgoing connection.
+  /// Represents an incoming connection or outgoing connection.
   /// </summary>
   IConnection = interface(ITrackBytes)
     procedure Open;
     procedure Close;
-    procedure Send(const dataPacket: IDataPacket);
-    procedure Recieve(out dataPacket: IDataPacket);
-  end;
-
-  /// <summary>
-  /// Represents a business session between server side and client side.
-  /// </summary>
-  ISession = interface
-
+//    procedure SendStream(stream: TStream);
+//    procedure ReceiveStream(stream: TStream);
+    procedure SendBuffer(const buffer: Pointer; count: Integer);
+    procedure ReceiveBuffer(var buffer: Pointer; count: Integer);
+    function  GetOnDataReceived: TConnectionNotifyEvent;
+    procedure SetOnDataReceived(const value: TConnectionNotifyEvent);
+    property OnDataReceived: TConnectionNotifyEvent read GetOnDataReceived write SetOnDataReceived;
+//    property RemoteAddress: string;
+//    property Type: string;
   end;
 
   /// <summary>
@@ -75,52 +81,217 @@ type
   /// </summary>
   IDataPacket = interface
     ['{8ED02ECF-59D7-4943-B26D-8AF85F03D7E8}']
-//    function GetAsBuffer: TBuffer;
-//    property AsBuffer: TBuffer read GetAsBuffer;
-  end;
-
-  ITransmission = interface
-
-  end;
-
-  TDataPacket = class
-
+    function GetAsStream: TStream;
+    property AsStream: TStream read GetAsStream;
   end;
 
   /// <summary>
-  /// Represents an integrated logical domain data.
+  /// Defines a simple data packet format.
   /// </summary>
-  IMessage = interface
-    ['{98A357D4-EFF6-4602-85FD-ABBDDD557267}']
-  end;
+  TSimpleDataPacket = class
+  private
+    type
+      THeadRec = packed record
+        HeadFlag:  Byte;      // $CC
+        DataSize:  Integer;
+        SentSize:  Integer;
+        TotalSize: Integer;   // Message Size
+        Reserved:  array[0..31] of Byte;
+      end;
 
-  /// <summary>
-  /// Represents a handler for a message
-  /// </summary>
-  IMessageHandler = interface
-    ['{DDC0C554-C9F8-459F-9CBA-D4C1F62C6F57}']
-    procedure HandleMessage(const msg: IMessage);
-  end;
-
-  TMessageBuffer = class
-
+      TTailRec = packed record
+        Mac:       Integer;
+        TailFlag:  Byte;      // $DD
+      end;
+  private
+    fData: TBytes;
   end;
 
   /// <summary>
   /// Represents a communications server.
   /// </summary>
-  ICommunicationsServer = interface
+  ICommunicationsServer = interface //(IObservable<ICommunicationsServerListener>)
+    procedure Configure(properties: TStrings);
     procedure Start;
     procedure ShutDown;
+    function GetSessions: ICollection<ISession>;
+    property Sessions: ICollection<ISession> read GetSessions;
   end;
 
   /// <summary>
-  /// Represents a communications client.
+  ///
   /// </summary>
-  ICommunicationsClient = interface
+  ICommunicationsPortal = interface
 
   end;
 
+  IMessage = interface
+//    procedure SaveToStream(stream: TStream; startIndex, count: Integer);
+  end;
+
+  /// <summary>
+  /// Represents a session between server and client.
+  /// </summary>
+  ISession = interface
+//    procedure Send(const msg: IMessage);
+//    procedure Receive(out msg: IMessage); overload;
+//    procedure Receive(out msg: IMessage; progressMonitor: IProgressMonitor); overload;
+    function GetConnection: IConnection;
+    property Connection: IConnection read GetConnection;
+  end;
+
+  ISessionFactory = interface
+    function CreateSession(const connection: IConnection): ISession;
+  end;
+
+  TSessionBase = class(TInterfaceBase, ISession)
+  private
+    fConnection: IConnection;
+    function GetConnection: IConnection;
+  public
+    constructor Create(const connection: IConnection);
+//    procedure DoClientDataReceived(const connection: IConnection); virtual;
+    property Connection: IConnection read GetConnection;
+  end;
+
+  TSessionNotification = (
+    snAdded,
+    snRemoved
+  );
+  
+  /// <summary>
+  /// Provides a simple implementation for communications server.
+  /// </summary>
+  /// <remarks>
+  /// Thread-Safety.
+  /// </remarks>
+  TCommunicationsServer = class(TInterfaceBase, ICommunicationsServer)
+  private
+    fSessions: IDictionary<TObject, ISession>;
+    fSessionsLock: IReadWriteSync;
+    function GetSessions: ICollection<ISession>;
+  protected
+    property SessionsLock: IReadWriteSync read fSessionsLock;
+    function CreateSession(const connection: IConnection): ISession; virtual;
+    function FindSession(nativeConnection: TObject): ISession;
+    procedure Notify(sender: TObject; const session: ISession; action: TSessionNotification); virtual;
+    procedure DoAddSession(sender: TObject; const session: ISession); virtual;
+    procedure DoRemoveSession(sender: TObject; const session: ISession); virtual;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure Configure(properties: TStrings); overload; virtual;
+//    procedure Configure(const xmlNode: IXmlNode); overload; virtual;
+    procedure Start; virtual;
+    procedure ShutDown; virtual;
+    property Sessions: ICollection<ISession> read GetSessions;
+  end;
+
+  TConnectionList = TListAdapter<IConnection>;
+
+  TSessionList = TListAdapter<ISession>;
+
+  ECommunicationsException = class(Exception);
+
 implementation
+
+{$REGION 'TCommunicationsServer'}
+
+constructor TCommunicationsServer.Create;
+begin
+  inherited Create;
+  fSessionsLock := TMREWSync.Create;
+end;
+
+destructor TCommunicationsServer.Destroy;
+begin
+
+  inherited;
+end;
+
+function TCommunicationsServer.CreateSession(
+  const connection: IConnection): ISession;
+begin
+  raise ENotImplementedException.Create('CreateSession not implemented.');
+end;
+
+function TCommunicationsServer.FindSession(nativeConnection: TObject): ISession;
+begin
+  Result := fSessions[nativeConnection];
+end;
+
+procedure TCommunicationsServer.Notify(sender: TObject; 
+  const session: ISession; action: TSessionNotification);
+begin
+  SessionsLock.BeginWrite;
+  try
+    case action of
+      snAdded:
+      begin
+        DoAddSession(sender, session);
+      end;
+      snRemoved:
+      begin
+        DoRemoveSession(sender, session);
+      end;
+    end;
+  finally
+    SessionsLock.EndWrite;
+  end;
+end;
+
+procedure TCommunicationsServer.DoAddSession(sender: TObject; const session: ISession);
+begin
+  fSessions.Add(sender, session);
+end;
+
+procedure TCommunicationsServer.DoRemoveSession(sender: TObject; const session: ISession);
+begin
+  fSessions.Remove(sender);
+end;
+
+procedure TCommunicationsServer.Configure(properties: TStrings);
+begin
+end;
+
+procedure TCommunicationsServer.Start;
+begin
+end;
+
+procedure TCommunicationsServer.ShutDown;
+begin
+end;
+
+function TCommunicationsServer.GetSessions: ICollection<ISession>;
+begin
+  SessionsLock.BeginRead;
+  try
+    if fSessions = nil then
+    begin
+      fSessions := TContainer.CreateDictionary<TObject, ISession>;
+    end;
+    Result := fSessions.Values;
+  finally
+    SessionsLock.EndRead;
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TSessionBase'}
+
+constructor TSessionBase.Create(const connection: IConnection);
+begin
+  inherited Create;
+  fConnection := connection;
+end;
+
+function TSessionBase.GetConnection: IConnection;
+begin
+  Result := fConnection;
+end;
+
+{$ENDREGION}
 
 end.

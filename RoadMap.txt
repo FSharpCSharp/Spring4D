@@ -1,26 +1,36 @@
 ==============================================================================
 
-Delphi Spring Framework Road Map
+Delphi Spring Framework Roadmap
 
 ==============================================================================
 
 V0.1	2009-10-12
-Spring.System
-Spring.Collections
-Spring.Dialogs
-Spring.Communications
-Spring.Validation
-Spring.Navigation
+> Spring.System
+> Spring.Collections
+> Spring.Dialogs
+> Spring.Validation
+> Spring.Navigation
 
 
-+IoC Container (Supports Constructor Injection, Setter Injection)
++Spring.Communications
+
++Spring.Configurations
+
++Spring.Resources
 
 +Spring.Logging
+Logging Services
 
+>>Spring.System namespace
 
-V0.2	2009-10-26
++TFileSystemWatcher
++TClipboardWatcher
++TFileMapping
 
-+Spring.Crytography:
++TFileSystemEntry
++TFileSearcher
+
+>>Spring.Crytography:
 
 1. Hash Algorithms
 * MD5 (128 bits, 16 Bytes)
@@ -37,22 +47,34 @@ V0.2	2009-10-26
 * TripleDES
 * AES
 
-+TFileSystemWatcher, TClipboardWatcher, TFileSystemEntry, TFileSearcher, TFileMapping, etc.
+
+V0.2	2009-10-26
+
++Spring.IoC
+IoC Container (Supports Constructor Injection, Setter Injection, Configuration)
+
++Reusable Design Patterns
++Common Domain Objects (TMoney, TCurrency, TQuantity, TUnit, TTimePoint(TDateTime, TDate, TTime), TRange<T>, TParty£¬TGroup, TPerson, TLocation, TAddress, etc.)
++Spring.Scheduler (Based on Quartz and Quartz.Net projects)
 
 
 V0.3	2009-11-09
 
-+Spring.Configurations
-+Reusable Design Patterns
-+Common Domain Objects (TMoney, TCurrency, TQuantity, TUnit, TDateTime, TDate, TTime, TRange<T>, TParty£¬TLocation, TAddress, etc.)
+Spring.System namespace
+
++Single Application Instance
+
++TBigInteger
++TBigDecimal
+
++TUri
 
 
 V0.4	2009-11-23
 
-+Spring.Scheduler (Based on Quartz and Quartz.Net projects)
-+Network
-+Expressions
-+TUri
++Spring.Network
++Spring.Expressions
+
 
 V0.5	2009-12-07
-Data Binding & ORM (Delphi Entity Framework)
+Considering and Investigating Data Binding & ORM (Entity Framework)
