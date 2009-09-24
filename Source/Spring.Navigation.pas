@@ -29,8 +29,11 @@ unit Spring.Navigation;
 interface
 
 uses
-  Classes, SysUtils, Generics.Collections, RTTI,
-  Spring.System, Spring.Collections;
+  Classes,
+  SysUtils,
+  Generics.Collections,
+  Spring.System,
+  Spring.Collections;
 
 type
   /// <summary>

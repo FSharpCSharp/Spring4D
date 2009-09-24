@@ -69,7 +69,8 @@ contains
   Spring.Communications.Sockets in 'Source\Communications\Spring.Communications.Sockets.pas',
   Spring.EntityFramework in 'Source\Spring.EntityFramework.pas',
   Spring.Configurations in 'Source\Spring.Configurations.pas',
-  Spring.Resources in 'Source\Spring.Resources.pas';
+  Spring.Resources in 'Source\Spring.Resources.pas',
+  Spring.Communications.Core in 'Source\Communications\Spring.Communications.Core.pas';
 
 end.
 

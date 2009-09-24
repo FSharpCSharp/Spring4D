@@ -24,6 +24,8 @@
 
 unit Spring.Communications.Sockets;
 
+{$I Spring.inc}
+
 interface
 
 uses
@@ -32,20 +34,21 @@ uses
   ScktComp,
   Generics.Collections,
   Spring.System,
-  Spring.Communications;
+  Spring.Communications,
+  Spring.Communications.Core;
 
 type
-  TSocketIncomingConnection = class;
+  TIncomingSocketConnection = class;
+  TSocketServerPortal = class;
 
-  TSocketCommunicationsServer = class(TCommunicationsServer)
+  TSocketServerPortal = class(TPortalBase)
   private
     fServerSocket: TServerSocket;
+    fTimeout: Integer;
   protected
-    function GetIsConfigured: Boolean; virtual;
+    function GetIsConfigured: Boolean; override;
     procedure DoGetThread(sender: TObject; clientSocket: TServerClientWinSocket;
       var socketThread: TServerClientThread); virtual;
-    procedure DoClientConnect(sender: TObject; socket: TCustomWinSocket); virtual;
-    procedure DoClientDisconnect(sender: TObject; socket: TCustomWinSocket); virtual;
   public
     constructor Create;
     destructor Destroy; override;
@@ -54,208 +57,148 @@ type
     procedure ShutDown; override;
   end;
 
-  TSocketIncomingConnection = class(TInterfaceBase, IConnection)
+  TIncomingSocketConnection = class(TConnectionBase)
   strict private
-    fServer: ICommunicationsServer;
     fSocket: TServerClientWinSocket;
     fSocketStream: TWinSocketStream;
-    fBytesSent: Int64;
-    fBytesReceived: Int64;
-    fOnDataReceived: TConnectionNotifyEvent;
-    function GetBytesSent: Int64;
-    function GetBytesReceived: Int64;
-    function GetOnDataReceived: TConnectionNotifyEvent;
-    procedure SetOnDataReceived(const value: TConnectionNotifyEvent);
   protected
-    procedure HandleCommunications; virtual;
+    procedure DoConnect; override;
+    procedure DoDisconnect; override;
+    procedure DoReceiveBuffer(var buffer: Pointer; count: Integer); override;
+    function GetConnected: Boolean; override;
+    function DoWaitForData(timeout: Integer): Boolean; override;
     property ClientSocket: TServerClientWinSocket read fSocket;
   public
     constructor Create(clientSocket: TServerClientWinSocket);
     destructor Destroy; override;
-    procedure Open;
-    procedure Close;
-    procedure SendStream(stream: TStream);
-    procedure SendBuffer(const buffer: Pointer; count: Integer);
-    procedure ReceiveStream(stream: TStream);
-    procedure ReceiveBuffer(var buffer: Pointer; count: Integer);
-    property BytesSent: Int64 read GetBytesSent;
-    property BytesReceived: Int64 read GetBytesReceived;
-    property OnDataReceived: TConnectionNotifyEvent read GetOnDataReceived write SetOnDataReceived;
+    procedure SendBuffer(const buffer: Pointer; count: Integer); override;
   end;
 
-  TSocketIncomingThread = class(TServerClientThread)
-  private
-    fConnection: TSocketIncomingConnection;
+  TIncomingSocketThread = class(TServerClientThread)
   protected
+    fPortal: TSocketServerPortal;
     procedure ClientExecute; override;
   public
-    constructor Create(connection: TSocketIncomingConnection);
+    constructor Create(portal: TSocketServerPortal; serverClientSocket: TServerClientWinSocket);
   end;
 
 implementation
 
-{$REGION 'TSocketClientConnection'}
 
-constructor TSocketIncomingConnection.Create(clientSocket: TServerClientWinSocket);
+{$REGION 'TSocketServerPortal'}
+
+constructor TSocketServerPortal.Create;
+begin
+  fServerSocket := TServerSocket.Create(nil);
+  fServerSocket.ServerType := stThreadBlocking;
+  fServerSocket.OnGetThread := DoGetThread;
+  fTimeout := 0;
+end;
+
+destructor TSocketServerPortal.Destroy;
+begin
+  fServerSocket.Free;
+  inherited Destroy;
+end;
+
+procedure TSocketServerPortal.Configure(properties: TStrings);
+begin
+  fServerSocket.Port := StrToIntDef(properties.Values['Port'], 0);
+  fTimeout := StrToIntDef(properties.Values['Timeout'], 0);
+end;
+
+procedure TSocketServerPortal.Start;
+begin
+  fServerSocket.Open;
+end;
+
+procedure TSocketServerPortal.ShutDown;
+begin
+  fServerSocket.Close;
+end;
+
+procedure TSocketServerPortal.DoGetThread(sender: TObject;
+  clientSocket: TServerClientWinSocket; var socketThread: TServerClientThread);
+begin
+  socketThread := TIncomingSocketThread.Create(Self, clientSocket);
+end;
+
+function TSocketServerPortal.GetIsConfigured: Boolean;
+begin
+  Result := fServerSocket.Port > 0;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TIncomingSocketConnection'}
+
+constructor TIncomingSocketConnection.Create(clientSocket: TServerClientWinSocket);
 begin
   inherited Create;
   fSocket := clientSocket;
   fSocketStream := TWinSocketStream.Create(fSocket, 0);
 end;
 
-destructor TSocketIncomingConnection.Destroy;
+destructor TIncomingSocketConnection.Destroy;
 begin
   fSocketStream.Free;
   inherited Destroy;
 end;
 
-procedure TSocketIncomingConnection.HandleCommunications;
-begin
-  if fSocketStream.WaitForData(500) then
-  begin
-    if Assigned(fOnDataReceived) then
-      fOnDataReceived(Self);
-  end;
-end;
-
-procedure TSocketIncomingConnection.Open;
+procedure TIncomingSocketConnection.DoConnect;
 begin
 //  fSocket.Open('', '', '', 0);
 end;
 
-procedure TSocketIncomingConnection.Close;
+procedure TIncomingSocketConnection.DoDisconnect;
 begin
   fSocket.Close;
 end;
 
-procedure TSocketIncomingConnection.SendStream(stream: TStream);
+function TIncomingSocketConnection.GetConnected: Boolean;
 begin
-  fSocketStream.CopyFrom(stream, stream.Size);
+  Result := fSocket.Connected;
 end;
 
-procedure TSocketIncomingConnection.SendBuffer(const buffer: Pointer;
+procedure TIncomingSocketConnection.SendBuffer(const buffer: Pointer;
   count: Integer);
 begin
   fSocketStream.WriteBuffer(buffer, count);
 end;
 
-procedure TSocketIncomingConnection.ReceiveBuffer(var buffer: Pointer;
+procedure TIncomingSocketConnection.DoReceiveBuffer(var buffer: Pointer;
   count: Integer);
 begin
   fSocketStream.ReadBuffer(buffer, count);
 end;
 
-procedure TSocketIncomingConnection.ReceiveStream(stream: TStream);
+function TIncomingSocketConnection.DoWaitForData(timeout: Integer): Boolean;
 begin
-  stream.CopyFrom(fSocketStream, fSocketStream.Size);
-end;
-
-function TSocketIncomingConnection.GetBytesSent: Int64;
-begin
-  Result := fBytesSent;
-end;
-
-function TSocketIncomingConnection.GetBytesReceived: Int64;
-begin
-  Result := fBytesReceived;
-end;
-
-function TSocketIncomingConnection.GetOnDataReceived: TConnectionNotifyEvent;
-begin
-  Result := fOnDataReceived;
-end;
-
-procedure TSocketIncomingConnection.SetOnDataReceived(
-  const value: TConnectionNotifyEvent);
-begin
-  fOnDataReceived := value;
+  Result := fSocketStream.WaitForData(timeout);
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TSocketCommunicationsServer'}
+{$REGION 'TIncomingSocketThread'}
 
-constructor TSocketCommunicationsServer.Create;
+constructor TIncomingSocketThread.Create(portal: TSocketServerPortal;
+  serverClientSocket: TServerClientWinSocket);
 begin
-  fServerSocket := TServerSocket.Create(nil);
-  fServerSocket.ServerType := stThreadBlocking;
-  fServerSocket.OnGetThread := DoGetThread;
-  fServerSocket.OnClientConnect := DoClientConnect;
-  fServerSocket.OnClientDisconnect := DoClientDisconnect;
+  inherited Create(False, serverClientSocket);
+  fPortal := portal;
 end;
 
-destructor TSocketCommunicationsServer.Destroy;
-begin
-  fServerSocket.Free;
-  inherited Destroy;
-end;
-
-procedure TSocketCommunicationsServer.Configure(properties: TStrings);
-begin
-  fServerSocket.Port := StrToIntDef(properties.Values['Port'], 0);
-end;
-
-procedure TSocketCommunicationsServer.DoClientConnect(sender: TObject;
-  socket: TCustomWinSocket);
+procedure TIncomingSocketThread.ClientExecute;
 var
-  connection: TSocketIncomingConnection;
-  session: ISession;
+  connection: IConnection;
 begin
-  connection := TSocketIncomingConnection.Create(socket as TServerClientWinSocket);
-  session := CreateSession(connection);
-  Notify(socket, session, snAdded);
-end;
-
-procedure TSocketCommunicationsServer.DoClientDisconnect(sender: TObject;
-  socket: TCustomWinSocket);
-var
-  session: ISession;
-begin
-  session := FindSession(socket);
-  Notify(socket, session, snRemoved);
-end;
-
-procedure TSocketCommunicationsServer.DoGetThread(sender: TObject;
-  clientSocket: TServerClientWinSocket; var socketThread: TServerClientThread);
-var
-  session: ISession;
-begin
-  session := FindSession(clientSocket);
-  socketThread := TSocketIncomingThread.Create(session.Connection as TSocketIncomingConnection);
-end;
-
-function TSocketCommunicationsServer.GetIsConfigured: Boolean;
-begin
-  Result := fServerSocket.Port > 0;
-end;
-
-procedure TSocketCommunicationsServer.Start;
-begin
-  fServerSocket.Open;
-end;
-
-procedure TSocketCommunicationsServer.ShutDown;
-begin
-  fServerSocket.Close;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TServerSocketThread'}
-
-constructor TSocketIncomingThread.Create(connection: TSocketIncomingConnection);
-begin
-  inherited Create(False, connection.ClientSocket);
-  fConnection := connection;
-end;
-
-procedure TSocketIncomingThread.ClientExecute;
-begin
-  while not Terminated and ClientSocket.Connected do
-  begin
-    fConnection.HandleCommunications;
+  connection := TIncomingSocketConnection.Create(ClientSocket);
+  try
+    fPortal.ExecuteConnection(connection);
+  finally
+    connection := nil;
   end;
 end;
 

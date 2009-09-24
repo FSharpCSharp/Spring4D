@@ -37,7 +37,7 @@ type
   end;
 
   IConfiguration = interface
-
+    
   end;
 
   IConfigurationStore = interface

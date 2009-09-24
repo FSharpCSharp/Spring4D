@@ -32,244 +32,396 @@ uses
   Classes,
   SysUtils,
   XMLIntf,
+  Math,
   Generics.Collections,
   Spring.System,
   Spring.Collections,
   Spring.Patterns;
 
 type
-  ITrackBytes = interface;
+  ITrackActivity = interface;
   IConnection = interface;
-  IDataPacket = interface;
   ICommunicationsServer = interface;
-//  ICommunicationsClient = interface;
+  // ICommunicationsClient = interface;
   ISession = interface;
   IMessage = interface;
-//  IMessageHandler = interface;
+  IMessageHandler = interface;
 
   /// <summary>
   /// Tracks network activity
   /// </summary>
-  ITrackBytes = interface
+  ITrackActivity = interface
+
+  {$REGION 'Property Getters & Setters'}
     function GetBytesSent: Int64;
     function GetBytesReceived: Int64;
+    function GetElapsedTime: TTimeSpan;
+  {$ENDREGION}
+
     property BytesSent: Int64 read GetBytesSent;
     property BytesReceived: Int64 read GetBytesReceived;
+    property ElapsedTime: TTimeSpan read GetElapsedTime;
   end;
-
-  TConnectionNotifyEvent = procedure(const sender: IConnection) of object;
 
   /// <summary>
   /// Represents an incoming connection or outgoing connection.
   /// </summary>
-  IConnection = interface(ITrackBytes)
+  IConnection = interface(ITrackActivity)
+
+  {$REGION 'Property Getters & Setters'}
+    function GetConnected: Boolean;
+    function GetTimeout: Integer;
+    procedure SetConnected(const value: Boolean);
+    procedure SetTimeout(const value: Integer);
+  {$ENDREGION}
+
     procedure Open;
     procedure Close;
-//    procedure SendStream(stream: TStream);
-//    procedure ReceiveStream(stream: TStream);
-    procedure SendBuffer(const buffer: Pointer; count: Integer);
-    procedure ReceiveBuffer(var buffer: Pointer; count: Integer);
-    function  GetOnDataReceived: TConnectionNotifyEvent;
-    procedure SetOnDataReceived(const value: TConnectionNotifyEvent);
-    property OnDataReceived: TConnectionNotifyEvent read GetOnDataReceived write SetOnDataReceived;
-//    property RemoteAddress: string;
-//    property Type: string;
+    procedure SendBuffer(const buffer: Pointer; bufferSize: Integer);
+    procedure ReceiveBuffer(var buffer: Pointer; bufferSize: Integer);
+    
+    property Connected: Boolean read GetConnected write SetConnected;
+    property Timeout: Integer read GetTimeout write SetTimeout;
   end;
-
+  
   /// <summary>
-  /// Represents a single physical data packet
+  /// Represents a communications server listener.
   /// </summary>
-  IDataPacket = interface
-    ['{8ED02ECF-59D7-4943-B26D-8AF85F03D7E8}']
-    function GetAsStream: TStream;
-    property AsStream: TStream read GetAsStream;
-  end;
-
-  /// <summary>
-  /// Defines a simple data packet format.
-  /// </summary>
-  TSimpleDataPacket = class
-  private
-    type
-      THeadRec = packed record
-        HeadFlag:  Byte;      // $CC
-        DataSize:  Integer;
-        SentSize:  Integer;
-        TotalSize: Integer;   // Message Size
-        Reserved:  array[0..31] of Byte;
-      end;
-
-      TTailRec = packed record
-        Mac:       Integer;
-        TailFlag:  Byte;      // $DD
-      end;
-  private
-    fData: TBytes;
+  ICommunicationsServerListener = interface
+    procedure OnSessionBegin(const session: ISession);
+    procedure OnSessionIdle(const session: ISession);
+    procedure OnSessionEnd(const session: ISession);
   end;
 
   /// <summary>
   /// Represents a communications server.
   /// </summary>
-  ICommunicationsServer = interface //(IObservable<ICommunicationsServerListener>)
-    procedure Configure(properties: TStrings);
+  ICommunicationsServer = interface(IObservable<ICommunicationsServerListener>)
     procedure Start;
     procedure ShutDown;
     function GetSessions: ICollection<ISession>;
-    property Sessions: ICollection<ISession> read GetSessions;
+    property Sessions: ICollection<ISession>read GetSessions;
   end;
 
+  TConnectionNotification = (
+    cnConnect,
+    cnCommunicate,
+    cnDisconnect
+  );
+
+  TConnectionEventHandler = reference to procedure(const sender: IConnection; 
+    notification: TConnectionNotification);
+
+  /// <summary>
+  /// Represents a communications portal, listening for incoming connection requests.
+  /// </summary>
+  IPortal = interface
+
+  {$REGION 'Property Getters & Setters'}
+    function GetIsConfigured: Boolean;
+    function GetEventHandler: TConnectionEventHandler;
+    procedure SetEventHandler(const value: TConnectionEventHandler);
+  {$ENDREGION}
+
+    procedure Configure(properties: TStrings);
+    procedure Start;
+    procedure ShutDown;
+    property IsConfigured: Boolean read GetIsConfigured;
+    property EventHandler: TConnectionEventHandler read GetEventHandler write SetEventHandler;
+  end;
+
+  /// <summary>
+  /// Represents a message.
+  /// </summary>
+  IMessage = interface
+    procedure SaveToStream(stream: TStream; offSet, count: Integer);
+    function GetSize: Integer;
+    property Size: Integer read GetSize;
+  end;
+
+  /// <summary>
+  /// Represents a message handler.
+  /// </summary>
+  IMessageHandler = interface
+    ['{DDC0C554-C9F8-459F-9CBA-D4C1F62C6F57}']
+    procedure HandleMessage(const &message: IMessage);
+  end;
+
+  /// <summary>
+  /// Represents a session between a communications server and a client.
+  /// </summary>
+  ISession = interface
+    procedure Execute;
+    procedure Send(const &message: IMessage);
+    // procedure Receive(out &message: IMessage); overload;
+//    function GetConnection: IConnection;
+//    function GetOnIdle: TSessionNotifyEvent;
+//    procedure SetOnIdle(const value: TSessionNotifyEvent);
+//    property Connection: IConnection read GetConnection;
+//    property OnIdle: TSessionNotifyEvent read GetOnIdle write SetOnIdle;
+  end;
+
+  IDataPacketFormat = interface
+    function GetHeaderSize: Integer;
+    function GetFooterSize: Integer;
+//    function IsValidDataPacket(const buffer: Pointer; count: Integer): Boolean;
+//    function GetDataSize(const buffer: Pointer; count: Integer): Boolean;
+//    function GetMessageSize(const buffer: Pointer; count: Integer): Boolean;
+//    procedure ExtractMessage(dataPacket: TStream);
+    property HeaderSize: Integer read GetHeaderSize;
+    property FooterSize: Integer read GetFooterSize;
+  end;
+    
   /// <summary>
   ///
   /// </summary>
-  ICommunicationsPortal = interface
-
-  end;
-
-  IMessage = interface
-//    procedure SaveToStream(stream: TStream; startIndex, count: Integer);
+  TDataPacketBuilder = class
+  strict private
+    fStream: TCustomMemoryStream;
+    fMaxPacketSize: Integer;
+    function GetStream: TCustomMemoryStream;
+    procedure SetMaxPacketSize(const value: Integer);
+  protected
+    procedure DoWriteHeader(stream: TStream); virtual;
+    procedure DoWriteData(stream: TStream); virtual;
+    procedure DoWriteFooter(stream: TStream); virtual;
+    function WriteHeader: TDataPacketBuilder;
+    function WriteData: TDataPacketBuilder;
+    function WriteFooter: TDataPacketBuilder;
+    function GetMaxDataSize: Integer; virtual;
+    function GetFooterSize: Integer; virtual;
+    function GetHeaderSize: Integer; virtual;
+    property Stream: TCustomMemoryStream read GetStream;
+    property MaxDataSize: Integer read GetMaxDataSize;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure Reset; virtual;
+    function MoveNext: Boolean; virtual; abstract;
+    property DataPacketStream: TCustomMemoryStream read fStream;
+    property MaxPacketSize: Integer read fMaxPacketSize write SetMaxPacketSize;
+    property HeaderSize: Integer read GetHeaderSize;
+    property FooterSize: Integer read GetFooterSize;
   end;
 
   /// <summary>
-  /// Represents a session between server and client.
+  /// ISessionFactory
   /// </summary>
-  ISession = interface
-//    procedure Send(const msg: IMessage);
-//    procedure Receive(out msg: IMessage); overload;
-//    procedure Receive(out msg: IMessage; progressMonitor: IProgressMonitor); overload;
-    function GetConnection: IConnection;
-    property Connection: IConnection read GetConnection;
-  end;
-
   ISessionFactory = interface
     function CreateSession(const connection: IConnection): ISession;
   end;
 
-  TSessionBase = class(TInterfaceBase, ISession)
-  private
-    fConnection: IConnection;
-    function GetConnection: IConnection;
-  public
-    constructor Create(const connection: IConnection);
-//    procedure DoClientDataReceived(const connection: IConnection); virtual;
-    property Connection: IConnection read GetConnection;
-  end;
-
-  TSessionNotification = (
-    snAdded,
-    snRemoved
-  );
-  
   /// <summary>
   /// Provides a simple implementation for communications server.
   /// </summary>
   /// <remarks>
   /// Thread-Safety.
   /// </remarks>
-  TCommunicationsServer = class(TInterfaceBase, ICommunicationsServer)
+  TCommunicationsServer = class(TObservable<ICommunicationsServerListener>, ICommunicationsServer, IInterface)
   private
-    fSessions: IDictionary<TObject, ISession>;
+    fSessionFactory: ISessionFactory;
+    fPortals: IList<IPortal>;
+    fPortalsLock: IReadWriteSync;
+    fSessions: IDictionary<IConnection, ISession>;
     fSessionsLock: IReadWriteSync;
     function GetSessions: ICollection<ISession>;
   protected
-    property SessionsLock: IReadWriteSync read fSessionsLock;
+    procedure DoHandleConnectionEvent(const connection: IConnection; notification: TConnectionNotification); virtual;
+    procedure DoClientConnect(const connection: IConnection); virtual;
+    procedure DoClientCommunicate(const connection: IConnection); virtual;
+    procedure DoClientDisconnect(const connection: IConnection); virtual;
+    procedure DoSessionBegin(const session: ISession); virtual;
+    procedure DoSessionEnd(const session: ISession); virtual;
     function CreateSession(const connection: IConnection): ISession; virtual;
-    function FindSession(nativeConnection: TObject): ISession;
-    procedure Notify(sender: TObject; const session: ISession; action: TSessionNotification); virtual;
-    procedure DoAddSession(sender: TObject; const session: ISession); virtual;
-    procedure DoRemoveSession(sender: TObject; const session: ISession); virtual;
+    function GetSession(const connection: IConnection): ISession;
+    property SessionsLock: IReadWriteSync read fSessionsLock;
+    property PortalsLock: IReadWriteSync read fPortalsLock;
   public
-    constructor Create;
+    constructor Create(const sessionFactory: ISessionFactory);
     destructor Destroy; override;
-    procedure Configure(properties: TStrings); overload; virtual;
-//    procedure Configure(const xmlNode: IXmlNode); overload; virtual;
+    procedure AddPortal(const portal: IPortal);
+    procedure RemovePortal(const portal: IPortal);
     procedure Start; virtual;
     procedure ShutDown; virtual;
     property Sessions: ICollection<ISession> read GetSessions;
+    property Portals: IList<IPortal> read fPortals;
   end;
-
-  TConnectionList = TListAdapter<IConnection>;
-
-  TSessionList = TListAdapter<ISession>;
 
   ECommunicationsException = class(Exception);
 
+  TPortalList = TListAdapter<IPortal>;
+  TConnectionList = TListAdapter<IConnection>;
+  TSessionList = TListAdapter<ISession>;
+
 implementation
+
+uses 
+  Spring.Communications.Core;
+
 
 {$REGION 'TCommunicationsServer'}
 
-constructor TCommunicationsServer.Create;
+constructor TCommunicationsServer.Create(const sessionFactory: ISessionFactory);
 begin
   inherited Create;
+  TArgument.CheckNotNull(sessionFactory, 'sessionFactory');
+  fSessionFactory := sessionFactory;
+  fPortals := TContainer.CreateList<IPortal>;
+  fPortalsLock := TMREWSync.Create;
+  fSessions := TContainer.CreateDictionary<IConnection, ISession>;
   fSessionsLock := TMREWSync.Create;
 end;
 
 destructor TCommunicationsServer.Destroy;
 begin
+  ShutDown;
+  inherited Destroy;
+end;
 
-  inherited;
+procedure TCommunicationsServer.AddPortal(const portal: IPortal);
+begin
+  TArgument.CheckNotNull(portal, 'portal');
+  PortalsLock.BeginWrite;
+  try
+    fPortals.Add(portal);
+    portal.EventHandler := DoHandleConnectionEvent;
+  finally
+    PortalsLock.EndWrite;
+  end;
+end;
+
+procedure TCommunicationsServer.RemovePortal(const portal: IPortal);
+begin
+  TArgument.CheckNotNull(portal, 'portal');
+  PortalsLock.BeginWrite;
+  try
+    fPortals.Remove(portal);
+    portal.EventHandler := nil;
+  finally
+    PortalsLock.EndWrite;
+  end;
 end;
 
 function TCommunicationsServer.CreateSession(
   const connection: IConnection): ISession;
 begin
-  raise ENotImplementedException.Create('CreateSession not implemented.');
+  Result := fSessionFactory.CreateSession(connection);
 end;
 
-function TCommunicationsServer.FindSession(nativeConnection: TObject): ISession;
+function TCommunicationsServer.GetSession(const connection: IConnection): ISession;
 begin
-  Result := fSessions[nativeConnection];
+  SessionsLock.BeginRead;
+  try
+    Result := fSessions[connection];
+  finally
+    SessionsLock.EndRead;
+  end;
 end;
 
-procedure TCommunicationsServer.Notify(sender: TObject; 
-  const session: ISession; action: TSessionNotification);
+procedure TCommunicationsServer.DoClientConnect(const connection: IConnection);
+var
+  session: ISession;
 begin
   SessionsLock.BeginWrite;
   try
-    case action of
-      snAdded:
-      begin
-        DoAddSession(sender, session);
-      end;
-      snRemoved:
-      begin
-        DoRemoveSession(sender, session);
-      end;
-    end;
+    session := CreateSession(connection);
+    fSessions.Add(connection, session);
+    DoSessionBegin(session);
   finally
     SessionsLock.EndWrite;
   end;
 end;
 
-procedure TCommunicationsServer.DoAddSession(sender: TObject; const session: ISession);
+procedure TCommunicationsServer.DoClientCommunicate(
+  const connection: IConnection);
+var
+  session: ISession;
 begin
-  fSessions.Add(sender, session);
+  session := GetSession(connection);
+  session.Execute;
 end;
 
-procedure TCommunicationsServer.DoRemoveSession(sender: TObject; const session: ISession);
+procedure TCommunicationsServer.DoClientDisconnect(
+  const connection: IConnection);
+var
+  session: ISession;
 begin
-  fSessions.Remove(sender);
+  SessionsLock.BeginWrite;
+  try
+    session := GetSession(connection);
+    fSessions.Remove(connection);
+    DoSessionEnd(session);
+  finally
+    SessionsLock.EndWrite;
+  end;
 end;
 
-procedure TCommunicationsServer.Configure(properties: TStrings);
+procedure TCommunicationsServer.DoHandleConnectionEvent(
+  const connection: IConnection; notification: TConnectionNotification);
 begin
+  case notification of
+    cnConnect:      DoClientConnect(connection);
+    cnCommunicate:  DoClientCommunicate(connection);
+    cnDisconnect:   DoClientDisconnect(connection);
+  end;
+end;
+
+procedure TCommunicationsServer.DoSessionBegin(const session: ISession);
+begin
+  // TODO: Thread-Safety
+  NotifyObservers(
+    procedure(listener: ICommunicationsServerListener)
+    begin
+      listener.OnSessionBegin(session);
+    end
+  );
+end;
+
+procedure TCommunicationsServer.DoSessionEnd(const session: ISession);
+begin
+  // TODO: Thread-Safety
+  NotifyObservers(
+    procedure(listener: ICommunicationsServerListener)
+    begin
+      listener.OnSessionEnd(session);
+    end
+  );
 end;
 
 procedure TCommunicationsServer.Start;
+var
+  portal: IPortal;
 begin
+  PortalsLock.BeginRead;
+  try
+    for portal in Portals do
+    begin
+      portal.Start;
+    end;
+  finally
+    PortalsLock.EndRead;
+  end;
 end;
 
 procedure TCommunicationsServer.ShutDown;
+var
+  portal: IPortal;
 begin
+  PortalsLock.BeginRead;
+  try
+    for portal in Portals do
+    begin
+      portal.ShutDown;
+    end;
+  finally
+    PortalsLock.EndRead;
+  end;
 end;
 
 function TCommunicationsServer.GetSessions: ICollection<ISession>;
 begin
   SessionsLock.BeginRead;
   try
-    if fSessions = nil then
-    begin
-      fSessions := TContainer.CreateDictionary<TObject, ISession>;
-    end;
     Result := fSessions.Values;
   finally
     SessionsLock.EndRead;
@@ -279,17 +431,87 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TSessionBase'}
+{$REGION 'TDataPacketBuilder'}
 
-constructor TSessionBase.Create(const connection: IConnection);
+type
+  TMemoryStreamHacker = class(Classes.TMemoryStream);
+
+constructor TDataPacketBuilder.Create;
 begin
   inherited Create;
-  fConnection := connection;
+  fStream := TMemoryStream.Create;
+  MaxPacketSize := 1024 * 4;
 end;
 
-function TSessionBase.GetConnection: IConnection;
+destructor TDataPacketBuilder.Destroy;
 begin
-  Result := fConnection;
+  fStream.Free;
+  inherited Destroy;
+end;
+
+function TDataPacketBuilder.GetMaxDataSize: Integer;
+begin
+  Result := MaxPacketSize - HeaderSize - FooterSize;
+end;
+
+function TDataPacketBuilder.GetHeaderSize: Integer;
+begin
+  Result := 0;
+end;
+
+function TDataPacketBuilder.GetFooterSize: Integer;
+begin
+  Result := 0;
+end;
+
+procedure TDataPacketBuilder.Reset;
+begin
+  fStream.Size := 0;  // fStream.Position := 0;
+end;
+
+function TDataPacketBuilder.WriteHeader: TDataPacketBuilder;
+begin
+  DoWriteHeader(Stream);
+  Result := Self;
+end;
+
+function TDataPacketBuilder.WriteData: TDataPacketBuilder;
+begin
+  DoWriteData(Stream);
+  Result := Self;
+end;
+
+function TDataPacketBuilder.WriteFooter: TDataPacketBuilder;
+begin
+  DoWriteFooter(Stream);
+  Result := Self;
+end;
+
+procedure TDataPacketBuilder.DoWriteHeader(stream: TStream);
+begin
+end;
+
+procedure TDataPacketBuilder.DoWriteData(stream: TStream);
+begin
+end;
+
+procedure TDataPacketBuilder.DoWriteFooter(stream: TStream);
+begin
+end;
+
+function TDataPacketBuilder.GetStream: TCustomMemoryStream;
+begin
+  if fStream = nil then
+  begin
+    fStream := TMemoryStream.Create;
+  end;
+  Result := fStream;
+end;
+
+procedure TDataPacketBuilder.SetMaxPacketSize(const value: Integer);
+begin
+  fMaxPacketSize := value;
+  TMemoryStreamHacker(fStream).Capacity := fMaxPacketSize;
 end;
 
 {$ENDREGION}

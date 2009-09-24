@@ -27,6 +27,9 @@ unit Spring.ResourceStrings;
 interface
 
 resourcestring
+
+  {$REGION 'Spring.System'}
+
   SNotSupportedException       = '%s is not supported.';
   SNotImplementedException     = '%s is not implemented.';
   SArgumentOutOfRangeException = 'ArgumentOutOfRangeException: %s';
@@ -42,6 +45,7 @@ resourcestring
 //  SEnumNotStarted              = 'Enum not started.';
 //  SEnumEnded                   = 'Enum ended.';
 //  SNotSupported_EnumReset      = 'RESET has not been supported.';
+
 
   SNoTypeInfo          = 'No type information found.';
   SUnexpectedTypeKind  = 'Unexpected type kind: %s.';
@@ -88,7 +92,17 @@ resourcestring
   SCDRomDescription           = 'CD-Rom Drive';
   SRamDescription             = 'Ram Drive';
 
-  SNoAdapterFound = 'Type %s has no adapter for %s.';
+  {$ENDREGION}
+
+
+  {$REGION 'Spring.Communications'}
+
+  SConnectionTimeout   = 'Connection Timeout.';
+
+  {$ENDREGION}
+
+
+  {$REGION 'Spring.Validation'}
 
   SValidationRequired    = '%S is required.';
   SValidationRange       = '%s must be between %s and %s.';
@@ -96,6 +110,11 @@ resourcestring
   SValidationMaxValue    = '%s must not be greater than %s.';
   SValidationMinLength   = '%s must have at least %d characters.';
   SValidationMaxLength   = '%s must have at most %d characters.';
+
+  {$ENDREGION}
+
+
+  SNoAdapterFound = 'Type %s has no adapter for %s.';
 
   SRepositoryNotFound          = 'Repository not registered for %s.';
   SObjectContextNotAvailable   = 'ObjectContext is not available.';

@@ -72,7 +72,7 @@ type
   IObservable<T> = interface
     procedure AddObserver(const observer: T);
     procedure RemoveObserver(const observer: T);
-    procedure NotifyObservers(proc: TProc<T>);
+    procedure NotifyObservers(callback: TProc<T>);
   end;
 
   // inherits from TAggregatedObject?

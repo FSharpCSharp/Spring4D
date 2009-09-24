@@ -89,6 +89,7 @@ type
   published
     procedure TestGetByte;
     procedure TestSetByte;
+    procedure TestBytesOf;
   end;
 
   TTestEmptyBuffer = class(TBufferTestCase)
@@ -802,6 +803,23 @@ end;
 
 
 {$REGION 'TTestBuffer'}
+
+procedure TTestBuffer.TestBytesOf;
+var
+  bytes: TBytes;
+  item: Byte;
+begin
+  bytes := TBuffer.BytesOf(0, 16);
+  for item in bytes do
+  begin
+    CheckEquals(item, 0);
+  end;
+  bytes := TBuffer.BytesOf($AB, 16);
+  for item in bytes do
+  begin
+    CheckEquals(item, $AB);
+  end;
+end;
 
 procedure TTestBuffer.TestGetByte;
 begin

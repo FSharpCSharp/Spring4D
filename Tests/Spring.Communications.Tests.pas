@@ -27,8 +27,9 @@ unit Spring.Communications.Tests;
 interface
 
 uses
-  TestFramework,
+  Classes,
   SysUtils,
+  TestFramework,
   Spring.System,
   Spring.Communications;
 
@@ -41,6 +42,29 @@ type
     procedure TearDown; override;
   published
     procedure TestConnection;
+  end;
+
+  TMockMessage = class(TInterfaceBase, IMessage)
+  private
+    fStream: TStream;
+    function GetSize: Integer;
+  public
+    constructor Create(stream: TStream);
+    destructor Destroy; override;
+    procedure SaveToStream(stream: TStream; startIndex, count: Integer);
+    property Size: Integer read GetSize;
+  end;
+
+  TTestSimpleDataPacketBuilder = class(TTestCase)
+  strict private
+//    fBuilder: TSimpleDataPacketBuilder;
+    fStream: TStringStream;
+    fMessage: TMockMessage;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestOnePacket;
   end;
 
 implementation
@@ -56,6 +80,57 @@ end;
 procedure TTestCommunicationsServer.TestConnection;
 begin
 
+end;
+
+{ TTestSimpleDataPacketBuilder }
+
+procedure TTestSimpleDataPacketBuilder.SetUp;
+begin
+  inherited;
+//  fBuilder := TSimpleDataPacketBuilder.Create;
+  fStream := TStringStream.Create;
+  fMessage := TMockMessage.Create(fStream);
+end;
+
+procedure TTestSimpleDataPacketBuilder.TearDown;
+begin
+  inherited;
+//  fBuilder.Free;
+  fStream.Free;
+  fMessage.Free;
+end;
+
+procedure TTestSimpleDataPacketBuilder.TestOnePacket;
+begin
+//  fStream.WriteString('Hello, World!');
+//  fBuilder.ToDataPacket;
+//  fBuilder.HeaderSize
+//  fBuilder.ToDataPacket;
+end;
+
+{ TMockMessage }
+
+constructor TMockMessage.Create(stream: TStream);
+begin
+  inherited Create;
+  fStream := stream;
+end;
+
+destructor TMockMessage.Destroy;
+begin
+  inherited Destroy;
+end;
+
+function TMockMessage.GetSize: Integer;
+begin
+  Result := fStream.Size;
+end;
+
+procedure TMockMessage.SaveToStream(stream: TStream; startIndex,
+  count: Integer);
+begin
+  fStream.Position := startIndex;
+  stream.CopyFrom(fStream, count);
 end;
 
 initialization

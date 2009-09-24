@@ -190,6 +190,10 @@ type
 
   end;
 
+  TFileNameValidator = class(TValidatorBase)
+
+  end;
+
   TUrlValidator = class(TValidatorBase)
 
   end;

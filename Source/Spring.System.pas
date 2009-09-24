@@ -123,6 +123,8 @@ type
 
   {$REGION 'Exceptions'}
 
+  Exception = SysUtils.Exception;
+
   ENotSupportedException    = SysUtils.ENotSupportedException;
   ENotImplementedException  = class(Exception);
 
@@ -189,7 +191,7 @@ type
     class procedure CheckRange(const buffer: array of Char; const startIndex, count: Integer); overload; static;
     /// <summary>
     /// Determines whether a range, specified by startIndex and count, is valid
-    /// for a length.
+    /// for a specified length.
     /// </summary>
     /// <remarks>
     /// startIndex starts from 0.
@@ -213,53 +215,65 @@ type
     function GetIsEmpty: Boolean;
     function GetMemory: PByte;
     function GetSize: Integer;
-    function GetByteValue(const index: Integer): Byte;
-    procedure SetByteValue(const index: Integer; const value: Byte);
+    function GetByteItem(const index: Integer): Byte;
+    procedure SetByteItem(const index: Integer; const value: Byte);
   public
-    constructor Create(const buffer: Pointer; size: Integer); overload;
+    constructor Create(const buffer: Pointer; count: Integer); overload;
+    constructor Create(const buffer: Pointer; startIndex, count: Integer); overload;
     constructor Create(const buffer: array of Byte); overload;
     constructor Create(const buffer: array of Byte; startIndex, count: Integer); overload;
     constructor Create(const s: UnicodeString); overload;
     constructor Create(const s: WideString); overload;
     constructor Create(const s: RawByteString); overload;
+
     class function FromHexString(s: UnicodeString): TBuffer; static;
-//    class function FromBase64String(const s: UnicodeString): TBuffer; static;
-//    class function ConvertFromBase64String(const s: string): TBytes;
-//    class function ConvertFromHexString(const s: UnicodeString): TBytes;
-//    class function ConvertToBase64String(const buffer: TBytes): string;
-//    class function ConvertToHexString(const buffer: Pointer; count: Integer;
-//      const prefix: string; const delimiter: string = ' '): string; overload;
-//    class function ConvertToHexString(const buffer: array of Byte;
-//      const prefix: string; const delimiter: string = ' '): string; overload;
-//    class function ConvertToHexString(const buffer: array of Char;
-//      const prefix: string; const delimiter: string = ' '): string; overload;
-//    class function ConvertToHexString(const s: UnicodeString;
-//      const prefix: string; const delimiter: string = ' '): string; overload;
-//    class function ConvertToHexString(const s: WideString;
-//      const prefix: string; const delimiter: string = ' '): string; overload;
-//    class function ConvertToHexString(const s: RawByteString;
-//      const prefix: string; const delimiter: string = ' '): string; overload;
-    class function GetByte(const buffer; const index: Integer): Byte; static;
+
+  //    class function ConvertToHexString(const buffer: Pointer; count: Integer): string; overload;
+  //    class function ConvertToHexString(const buffer: array of Byte): string; overload;
+  //    class function ConvertToHexString(const buffer: array of Char): string; overload;
+  //    class function ConvertToHexString(const s: UnicodeString): string; overload;
+  //    class function ConvertToHexString(const s: WideString): string; overload;
+  //    class function ConvertToHexString(const s: RawByteString): string; overload;
+
+  //    class function ConvertToHexString(const buffer: Pointer; count: Integer;
+  //      const prefix: string; const delimiter: string = ' '): string; overload;
+  //    class function ConvertToHexString(const buffer: array of Byte;
+  //      const prefix: string; const delimiter: string = ' '): string; overload;
+  //    class function ConvertToHexString(const buffer: array of Char;
+  //      const prefix: string; const delimiter: string = ' '): string; overload;
+  //    class function ConvertToHexString(const s: UnicodeString;
+  //      const prefix: string; const delimiter: string = ' '): string; overload;
+  //    class function ConvertToHexString(const s: WideString;
+  //      const prefix: string; const delimiter: string = ' '): string; overload;
+  //    class function ConvertToHexString(const s: RawByteString;
+  //      const prefix: string; const delimiter: string = ' '): string; overload;
+
+    class function  BytesOf(const value: Byte; count: Integer): TBytes; static;
+    class function  GetByte(const buffer; const index: Integer): Byte; static;
     class procedure SetByte(var buffer; const index: Integer; const value: Byte); static;
-    class function BytesOf(const value: Byte; count: Integer): TBytes; static;
+
     function Copy(startIndex, count: Integer): TBytes;
-    function EnsureSize(size: Integer; value: Byte): TBytes; overload; experimental;
-    function EnsureSize(size: Integer; value: AnsiChar): TBytes; overload; experimental;
+    function EnsureSize(size: Integer; value: Byte = 0): TBytes; overload; experimental;
+    function EnsureSize(size: Integer; value: AnsiChar = #0): TBytes; overload; experimental;
+
     function Equals(const buffer: array of Byte): Boolean; overload;
     function Equals(const buffer: TBuffer): Boolean; overload;
+
     function ToBytes: TBytes;
     function ToString: string;
     function ToWideString: WideString;
     function ToAnsiString: RawByteString;
     function ToUtf8String: UTF8String;
-//    function ToBase64String: string;
+
     function ToHexString: string; overload;
     function ToHexString(const prefix: string; const delimiter: string = ' '): string; overload;
+
     property IsEmpty: Boolean read GetIsEmpty;
     property Memory: PByte read GetMemory;
     property Size: Integer read GetSize;
-    property Bytes[const index: Integer]: Byte read GetByteValue write SetByteValue; default;
-    { Operators }
+    property Bytes[const index: Integer]: Byte read GetByteItem write SetByteItem; default;
+
+    { Operator Overloads }
     class operator Implicit(const value: TBytes): TBuffer;
     class operator Implicit(const value: TBuffer): TBytes;
     class operator Explicit(const value: TBytes): TBuffer;
@@ -1180,7 +1194,7 @@ type
 
   {$ENDREGION}
 
-  
+
   {$REGION 'Global Routines'}
 
   /// <summary>
@@ -1241,12 +1255,20 @@ type
   /// </summary>
   procedure Synchronize(threadProc: TThreadProcedure);
 
+  /// <summary>
+  /// Try getting property information of an object.
+  /// </summary>
   function TryGetPropInfo(const instance: TObject; const propertyName: string;
     out propInfo: PPropInfo): Boolean;
 
   /// <summary>
-  /// Determines if a Variant is null or empty. The parameter "trimeWhiteSpace"
-  /// is an option only for string Variant.
+  /// Try setting focus to a control.
+  /// </summary>
+  function TryFocusControl(control: TWinControl): Boolean;
+
+  /// <summary>
+  /// Determines if a variant is null or empty. The parameter "trimeWhiteSpace"
+  /// is an option only for string variant.
   /// </summary>
   function VarIsNullOrEmpty(const value: Variant; trimWhiteSpace: Boolean = False): Boolean;
 
@@ -1270,7 +1292,7 @@ type
   /// <summary>
   /// Walkthrough all dataset records from the first one.
   /// </summary>
-  procedure EnumerateDataSet(dataSet: TDataSet; proc: TProc);
+  procedure EnumerateDataSet(dataSet: TDataSet; proc: TProc); experimental;
 
   {$ENDREGION}
 
@@ -1490,6 +1512,16 @@ begin
   TArgument.CheckNotNull(instance, 'instance');
   propInfo := GetPropInfo(instance, propertyName);
   Result := propInfo <> nil;
+end;
+
+function TryFocusControl(control: TWinControl): Boolean;
+begin
+  TArgument.CheckNotNull(control, 'control');
+  Result := control.Showing and control.CanFocus;
+  if Result then
+  begin
+    control.SetFocus;
+  end;
 end;
 
 function VarIsNullOrEmpty(const value: Variant; trimWhiteSpace: Boolean): Boolean;
@@ -1720,6 +1752,21 @@ end;
 
 {$REGION 'TBuffer'}
 
+constructor TBuffer.Create(const buffer: Pointer; count: Integer);
+begin
+  TArgument.CheckRange(count >= 0, 'count');
+  SetLength(fBytes, count);
+  Move(buffer^, fBytes[0], count);
+end;
+
+constructor TBuffer.Create(const buffer: Pointer; startIndex, count: Integer);
+begin
+  TArgument.CheckRange(startIndex >= 0, 'startIndex');
+  TArgument.CheckRange(count >= 0, 'count');
+  SetLength(fBytes, count);
+  Move(PByte(buffer)[startIndex], fBytes[0], count);
+end;
+
 constructor TBuffer.Create(const buffer: array of Byte);
 begin
   Create(@buffer[0], Length(buffer));
@@ -1729,12 +1776,6 @@ constructor TBuffer.Create(const buffer: array of Byte; startIndex, count: Integ
 begin
   TArgument.CheckRange(buffer, startIndex, count);
   Create(@buffer[startIndex], count);
-end;
-
-constructor TBuffer.Create(const buffer: Pointer; size: Integer);
-begin
-  SetLength(fBytes, size);
-  Move(buffer^, fBytes[0], size);
 end;
 
 constructor TBuffer.Create(const s: UnicodeString);
@@ -1763,7 +1804,7 @@ class function TBuffer.BytesOf(const value: Byte; count: Integer): TBytes;
 begin
   TArgument.CheckRange(count >= 0, 'count');
   SetLength(Result, count);
-  FillChar(Result, count, value);
+  FillChar(Result[0], count, value);
 end;
 
 class function TBuffer.FromHexString(s: UnicodeString): TBuffer;
@@ -1908,13 +1949,13 @@ begin
   Result := PByte(fBytes);
 end;
 
-function TBuffer.GetByteValue(const index: Integer): Byte;
+function TBuffer.GetByteItem(const index: Integer): Byte;
 begin
   TArgument.CheckRange((index >= 0) and (index < Size), 'index');
   Result := fBytes[index];
 end;
 
-procedure TBuffer.SetByteValue(const index: Integer; const value: Byte);
+procedure TBuffer.SetByteItem(const index: Integer; const value: Byte);
 begin
   TArgument.CheckRange((index >= 0) and (index < Size), 'index');
   fBytes[index] := value;

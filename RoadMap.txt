@@ -23,12 +23,17 @@ Logging Services
 
 >>Spring.System namespace
 
++TFileMappingView
++TFileMappingStream
+
++TUri
+
++TFileSearcher
++TFileSystemEntry
+
 +TFileSystemWatcher
 +TClipboardWatcher
-+TFileMapping
 
-+TFileSystemEntry
-+TFileSearcher
 
 >>Spring.Crytography:
 
@@ -55,10 +60,11 @@ IoC Container (Supports Constructor Injection, Setter Injection, Configuration)
 
 +Reusable Design Patterns
 +Common Domain Objects (TMoney, TCurrency, TQuantity, TUnit, TTimePoint(TDateTime, TDate, TTime), TRange<T>, TParty£¬TGroup, TPerson, TLocation, TAddress, etc.)
-+Spring.Scheduler (Based on Quartz and Quartz.Net projects)
 
 
 V0.3	2009-11-09
+
++Spring.Scheduler (Based on Quartz and Quartz.Net projects)
 
 Spring.System namespace
 
@@ -67,7 +73,6 @@ Spring.System namespace
 +TBigInteger
 +TBigDecimal
 
-+TUri
 
 
 V0.4	2009-11-23
