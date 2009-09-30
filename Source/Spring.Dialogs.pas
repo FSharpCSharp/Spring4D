@@ -43,7 +43,8 @@ type
   /// <summary>
   /// Encapsulates common message dialogs.
   /// </summary>
-  /// <author>HR168, Paul</author>
+  /// <author>Paul</author>
+  /// <author>HR168</author>
   TDialog = class
   private
     class constructor Create;

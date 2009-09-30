@@ -22,14 +22,20 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Adapters experimental;
+unit Spring.Adapters experimental;   // Spring.Plugins
 
 interface
 
 uses
-  Classes, SysUtils, TypInfo,
-  Generics.Defaults, Generics.Collections,
-  Spring.System, Spring.Patterns, Spring.Helpers, Spring.ResourceStrings;
+  Classes,
+  SysUtils,
+  TypInfo,
+  Generics.Defaults,
+  Generics.Collections,
+  Spring.System,
+  Spring.DesignPatterns,
+  Spring.Helpers,
+  Spring.ResourceStrings;
 
 type
   IAdaptable      = interface;
@@ -56,7 +62,7 @@ type
 //    procedure UnregisterAdapters(const factory: IAdapterFactory);
   end;
 
-  TAdapterManager = class sealed(TSingleton)
+  TAdapterManager = class sealed(TSingleton<TAdapterManager>)
   private
     type
       TLookupKey = record
@@ -71,8 +77,8 @@ type
       lookupTable: TDictionary<TLookupKey, IAdapterFactory>);
     function GetFactory(adaptableType, adapterType: PTypeInfo): IAdapterFactory;
   protected
-    constructor InternalCreate; override;
-    destructor InternalDestroy; override;
+    procedure DoCreate; override;
+    procedure DoDestroy; override;
   public
     function HasAdapter<TAdapter: IInterface>(const adaptableObject: TObject): Boolean; overload;
     function HasAdapter<TAdapter: IInterface>(const adaptableObject; adaptableType: PTypeInfo): Boolean; overload;
@@ -83,7 +89,6 @@ type
     procedure UnregisterAdapters(const factory: IAdapterFactory); overload;
     procedure UnregisterAdapters(const factory: IAdapterFactory; adaptableType: PTypeInfo); overload;
     procedure UnregisterAll;
-    class function GetInstance: TAdapterManager;
   end;
 
   EAdapterException = class(Exception);
@@ -94,18 +99,18 @@ implementation
 
 function AdapterManager: TAdapterManager;
 begin
-  Result := TAdapterManager.GetInstance;
+  Result := TAdapterManager.Instance;
 end;
 
 { TAdapterManager }
 
-constructor TAdapterManager.InternalCreate;
+procedure TAdapterManager.DoCreate;
 begin
   inherited;
   fDictionary := TObjectDictionary<PTypeInfo, TList<IAdapterFactory>>.Create([doOwnsValues]);
 end;
 
-destructor TAdapterManager.InternalDestroy;
+procedure TAdapterManager.DoDestroy;
 begin
   fDictionary.Free;
   inherited;
@@ -388,11 +393,6 @@ end;
 procedure TAdapterManager.FlushLookup;
 begin
   FreeAndNil(fLookup);
-end;
-
-class function TAdapterManager.GetInstance: TAdapterManager;
-begin
-  Result := TAdapterManager(inherited GetInstance);
 end;
 
 end.

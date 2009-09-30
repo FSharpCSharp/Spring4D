@@ -4,44 +4,42 @@ Delphi Spring Framework Roadmap
 
 ==============================================================================
 
-V0.1	2009-10-12
+
+-----------------------------------------------------------------------------
+V0.1.0	2009-10-27    (Initial Release)
+-----------------------------------------------------------------------------
+
 > Spring.System
-> Spring.Collections
-> Spring.Dialogs
-> Spring.Validation
-> Spring.Navigation
+> Spring.System.IO
 
+>>Spring.System.IO namespace
 
-+Spring.Communications
++ TFileMapping, TFileMappingView
++ TFileMappingStream
 
-+Spring.Configurations
+* TFileSystemWatcher
 
-+Spring.Resources
+* TFileSearcher
+* TFileEnumerator  (EnumerateFiles, EnumerateDirectories, EnumerateFileSystemEntries)
+* TFileSystemEntry
 
-+Spring.Logging
+>>Spring.Configuration
+
+>>Spring.Logging
 Logging Services
 
->>Spring.System namespace
+>>Spring.IoC
+IoC Container (Supports Constructor Injection, Setter Injection, Configuration)
 
-+TFileMappingView
-+TFileMappingStream
-
-+TUri
-
-+TFileSearcher
-+TFileSystemEntry
-
-+TFileSystemWatcher
-+TClipboardWatcher
-
-
->>Spring.Crytography:
+>>Spring.Security.Cryptography:
 
 1. Hash Algorithms
 * MD5 (128 bits, 16 Bytes)
 * SHA-1
 * SHA-256
 * SHA-512
+* MAC Triple DES (Keyed Hash Algorithms)
+( MAC is short for Message Authentication Code )
 
 2. Checksum Algorithms
 * CRC-16
@@ -52,34 +50,72 @@ Logging Services
 * TripleDES
 * AES
 
++Refactoring Design Patterns
 
-V0.2	2009-10-26
+Delphi Spring Framework Coding Standards
+* License
+* Namespaces
+* Class Template
+* Identation & Captial
+* SVN
+* Unicode Notes
 
-+Spring.IoC
-IoC Container (Supports Constructor Injection, Setter Injection, Configuration)
+(Optional)
 
-+Reusable Design Patterns
-+Common Domain Objects (TMoney, TCurrency, TQuantity, TUnit, TTimePoint(TDateTime, TDate, TTime), TRange<T>, TParty£¬TGroup, TPerson, TLocation, TAddress, etc.)
+> Spring.Validation
+> Spring.Navigation
+
+>>Spring.Communications
+
+-----------------------------------------------------------------------------
+V0.1.x	2009-11-09
+-----------------------------------------------------------------------------
 
 
-V0.3	2009-11-09
+-----------------------------------------------------------------------------
+V0.2.0	2009-11-23
+-----------------------------------------------------------------------------
 
-+Spring.Scheduler (Based on Quartz and Quartz.Net projects)
+>>Spring.System
++TUri
++TRegex class (Regular Expressions Wrapper)
 
-Spring.System namespace
-
-+Single Application Instance
++TClipboardWatcher
 
 +TBigInteger
 +TBigDecimal
 
++Base64 Encoding/Decoding
 
++Single Application Instance
+* Single instance
+* Pass command parameters
+* Restore the existed application
 
-V0.4	2009-11-23
+>>Spring.Resources
 
-+Spring.Network
+>>Spring.Localization.Chinese
+* HIGH  Simplified Chinese and Traditional Chinese Conversion £¨¼ò·±Ìå×ª»»£©
+* HIGH  Pinyin £¨Æ´Òô£©
+* HIGH  Currency Symbol £¨»õ±Ò·ûºÅ£©
+* LOW   Lunar Calendar £¨ÒõÀú£©
+
+>>Spring.System.Net
+
+-----------------------------------------------------------------------------
+V0.2.x	2009-12-07
+-----------------------------------------------------------------------------
+Bug-Fixes
+
+-----------------------------------------------------------------------------
+V0.3.0	2009-12-28
+-----------------------------------------------------------------------------
+>>Spring Entity Framework
+Considering and Investigating Data Binding & ORM
+
 +Spring.Expressions
 
++Common Domain Objects (TMoney, TCurrency, TQuantity, TUnit, TTimePoint(TDateTime, TDate, TTime), TRange<T>, TParty£¬TGroup, TPerson, TLocation, TAddress, etc.)
 
-V0.5	2009-12-07
-Considering and Investigating Data Binding & ORM (Entity Framework)
+>>Spring.Scheduler (Based on Quartz and Quartz.Net projects)
+

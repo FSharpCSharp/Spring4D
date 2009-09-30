@@ -33,7 +33,11 @@ unit Spring.Helpers experimental;
 interface
 
 uses
-  Classes, Types, SysUtils, ComObj, Spring.Patterns;
+  Classes,
+  Types,
+  SysUtils,
+  ComObj,
+  Spring.DesignPatterns;
 
 type
   /// <summary>
@@ -58,7 +62,7 @@ type
     class function Create(const objectAddress, methodAddress: Pointer): TMethod; static;
   end;
 
-  ISnapshot = Spring.Patterns.ISnapshot;
+  ISnapshot = Spring.DesignPatterns.ISnapshot;
 
   TPersistentSnapshot = class(TInterfacedObject, ISnapshot, IInterface)
   private

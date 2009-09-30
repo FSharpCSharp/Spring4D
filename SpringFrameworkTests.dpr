@@ -29,8 +29,7 @@ uses
   Spring.System,
   Spring.System.Tests in 'Tests\Spring.System.Tests.pas',
   Spring.Helpers.Tests in 'Tests\Spring.Helpers.Tests.pas',
-  Spring.Cryptography.Tests in 'Tests\Spring.Cryptography.Tests.pas',
-  Spring.Communications.Tests in 'Tests\Spring.Communications.Tests.pas';
+  Spring.Security.Tests in 'Tests\Spring.Security.Tests.pas';
 
 {$R *.RES}
 

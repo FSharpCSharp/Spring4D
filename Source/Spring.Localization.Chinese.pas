@@ -1,4 +1,4 @@
-{***************************************************************************}
+﻿{***************************************************************************}
 {                                                                           }
 {               Delphi Spring Framework                                     }
 {                                                                           }
@@ -22,16 +22,17 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Resources;
+(*
+ * TODO-List:
+ * 1. [HIGH]  Pinyin（拼音）
+ * 2. [HIGH]  Simplified Chinese and Traditional Chinese Conversion（简繁体转换）
+ * 3. [HIGH]  Currency Symbol（货币符号）
+ * 4. [LOW]   Lunar Calendar（阴历）
+ *)
+
+unit Spring.Localization.Chinese;
 
 interface
-
-//type
-//  IResource = interface
-//    function GetExists: Boolean;
-//    function CreateRelative(const relativePath: string): IResource;
-//    property Exists: Boolean read GetExists;
-//  end;
 
 implementation
 

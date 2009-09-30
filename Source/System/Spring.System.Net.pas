@@ -24,7 +24,7 @@
 
 { TODO: Complete TNetwork, TNetworkWatcher }
 
-unit Spring.Network experimental;
+unit Spring.System.Net experimental;
 
 {$I Spring.inc}
 
@@ -32,7 +32,7 @@ interface
 
 uses
   Classes, Windows, SysUtils, ActiveX, ComObj, WinSock, WinInet,
-  Spring.System, Spring.Win32API, Spring.Patterns;
+  Spring.System, Spring.Win32API, Spring.DesignPatterns;
 
 type
   {$REGION 'TNetwork (Experimental)'}
@@ -42,11 +42,11 @@ type
     nsOffline
   );
 
-  INetworkEvents = interface
-    procedure OnStatusChanged(status: TNetworkStatus);
-  end;
+//  INetworkEvents = interface
+//    procedure OnStatusChanged(status: TNetworkStatus);
+//  end;
 
-  TNetwork = class sealed(TSingleton)
+  TNetwork = class sealed(TSingleton<TNetwork>)
   private
     class function GetIsAvailable: Boolean; static;
     class function GetStatus: TNetworkStatus; static;

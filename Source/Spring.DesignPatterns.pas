@@ -22,46 +22,64 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Patterns experimental;
+unit Spring.DesignPatterns experimental;
 
 {$I Spring.inc}
 
-{ TODO: Refactor & Optimize TSingleton }
 { TODO: Command Pattern with Undo/Redo }
 { TODO: Memento Pattern }
 
 interface
 
 uses
-  Classes, Contnrs, Windows, SysUtils, TypInfo,
-  Generics.Defaults, Generics.Collections;
+  Classes,
+  Contnrs,
+  Windows,
+  SysUtils,
+  SyncObjs,
+  TypInfo,
+  Generics.Defaults,
+  Generics.Collections,
+  Spring.System;
 
 type
   {$REGION 'Singleton Pattern'}
 
   /// <summary>
-  /// Provides thread-safe singleton pattern implementation
+  /// Provides a simple, fast and thread-safe Singleton Pattern implementation.
   /// </summary>
   /// <description>
+  /// Singleton Pattern is defined as:
   /// Ensure a class only has one instance, and provide a global point of access to it.
   /// </description>
   /// <remarks>
-  /// Concrete Singleton Classes should override InternalCreate/InternalDestroy
-  /// insteading of the public Create/Destroy.
+  /// 1. Use Instance class property to get the singleton instance.
+  /// 2. Concrete Singleton Classes may override DoCreate/DoDestroy if necessary.
+  /// 3. Do not call Create/Free methods, otherwise an EInvalidOp exception will be raised.
   /// </remarks>
-  TSingleton = class abstract(TObject, IInterface)
+  /// <example>
+  /// <code>
+  ///   TApplicationContext = class(TSingleton<TApplicationContext>)
+  ///   protected
+  ///     procedure DoCreate; override;
+  ///     procedure DoDestroy; override;
+  ///   end;
+  /// </code>
+  /// </example>
+  TSingleton<T: class> = class(TInterfaceBase)
+  strict private
+    class var fInstance: T;
+    class destructor Destroy;
+    class procedure FreeSingleton(var obj: T); static;
+    class function CreateSingleton: T; static;
+    class function GetInstance: T; static;
   protected
-    { IInterface }
-    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
-    function _AddRef: Integer; stdcall;
-    function _Release: Integer; stdcall;
-  protected
-    constructor InternalCreate; virtual;
-    destructor InternalDestroy; virtual;
+    procedure DoCreate; virtual;
+    procedure DoDestroy; virtual;
   public
-    constructor Create; deprecated 'Use GetInstance function insteading of Create.';
+    constructor Create;
     destructor Destroy; override;
-    class function GetInstance: TSingleton;
+    class property Instance: T read GetInstance;
   end;
 
   {$ENDREGION}
@@ -69,40 +87,38 @@ type
 
   {$REGION 'Observer Pattern'}
 
+  /// <summary>
+  /// Represents an observable subject.
+  /// </summary>
   IObservable<T> = interface
     procedure AddObserver(const observer: T);
     procedure RemoveObserver(const observer: T);
     procedure NotifyObservers(callback: TProc<T>);
   end;
 
-  // inherits from TAggregatedObject?
-  // OnValidate, OnObserverAdded, OnObserverRemoved
-  TObservable<T> = class(TInterfacedObject, IObservable<T>, IInterface)
+  TObservable<T> = class(TInterfaceBase, IObservable<T>, IInterface)
   strict private
     fObservers: TList<T>;
-    fAutoDestroy: Boolean;
     function GetObservers: TList<T>;
-  protected
-    { IInterface }
-    function _Release: Integer; stdcall;
   protected
     procedure Validate(const observer: T); virtual;
     procedure DoObserverAdded(const observer: T); virtual;
     procedure DoObserverRemoved(const observer: T); virtual;
     procedure Notify(const observer: T; action: TCollectionNotification); virtual;
-    procedure NotifyObservers(callback: TProc<T>); virtual;
     property Observers: TList<T> read GetObservers;
   public
-    constructor Create(autoDestroy: Boolean = True);
     destructor Destroy; override;
     procedure AddObserver(const observer: T);
     procedure RemoveObserver(const observer: T);
+    procedure NotifyObservers(callback: TProc<T>); virtual;
   end;
 
   {$ENDREGION}
 
 
   {$REGION 'Command Pattern (NOT READY)'}
+
+  (*
 
   ICommand = interface
     procedure Execute;
@@ -131,10 +147,12 @@ type
 //    procedure Redo;
   end;
 
+  //*)
+
   {$ENDREGION}
 
 
-  {$REGION 'Memento or Snapshot Pattern'}
+  {$REGION 'Memento or Snapshot Pattern (Experimental)'}
 
   /// <summary>
   /// IRestorable<T>
@@ -217,12 +235,12 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'Registry Pattern'}
+  {$REGION 'Registry Pattern (Experimental)'}
 
   /// <summary>
   /// Repsents type-handler mapping registry
   /// </summary>
-  TRegistry<TType, THandler> = class(TSingleton)
+  TRegistry<TType, THandler> = class(TSingleton<TRegistry<TType, THandler>>)
   strict private
     fOwnsType: Boolean;
     fOwnsHandler: Boolean;
@@ -230,8 +248,8 @@ type
   protected
     fDictionary: TDictionary<TType, THandler>;
     property Dictionary: TDictionary<TType, THandler> read fDictionary;
-    constructor InternalCreate; override;
-    destructor InternalDestroy; override;
+    procedure DoCreate; override;
+    procedure DoDestroy; override;
     procedure DoKeyNotify(sender: TObject; const item: TType; action: TCollectionNotification);
     procedure DoValueNotify(sender: TObject; const item: THandler; action: TCollectionNotification);
   public
@@ -242,7 +260,6 @@ type
     procedure Unregister(const &type: TType); overload; virtual;
     procedure Unregister(const handler: THandler); overload; virtual;
     procedure UnregisterAll;
-    class function GetInstance: TRegistry<TType, THandler>;
     property Types: TEnumerable<TType> read GetTypes;
     property OwnsType: Boolean read fOwnsType write fOwnsType;
     property OwnsHandler: Boolean read fOwnsHandler write fOwnsHandler;
@@ -261,169 +278,75 @@ type
 implementation
 
 uses
-  Spring.System, Spring.Helpers, Spring.ResourceStrings;
+  Spring.ResourceStrings;
 
+{$REGION 'TSingleton<T>'}
 
-{$REGION 'TSingletonManager'}
-
-type
-  /// <summary>
-  /// TSingletonManager
-  /// </summary>
-  TSingletonManager = class
-  private
-    fList: TObjectList;
-  public
-    constructor Create;
-    procedure Add(singleton: TSingleton);
-    procedure Remove(singleton: TSingleton);
-    procedure Clear;
-    function TryFindInstance(singletonClass: TClass; out instance: TSingleton): Boolean;
-  end;
-
-//---------------------------------------------------------------------------
-
-var
-  _SingletonCriticalSection: TRTLCriticalSection;
-  _SingletonManager: TSingletonManager;
-
-function SingletonManager: TSingletonManager;
+class destructor TSingleton<T>.Destroy;
 begin
-  if _SingletonManager = nil then
+  FreeSingleton(fInstance);
+end;
+
+class procedure TSingleton<T>.FreeSingleton(var obj: T);
+begin
+  if obj <> nil then
   begin
-    _SingletonManager := TSingletonManager.Create;
+    TSingleton<T>(obj).DoDestroy;
+    TSingleton<T>(obj).FreeInstance;
+    obj := nil;
   end;
-  Result := _SingletonManager;
 end;
 
-//---------------------------------------------------------------------------
-
-constructor TSingletonManager.Create;
+class function TSingleton<T>.CreateSingleton: T;
 begin
-  inherited Create;
-  fList := TObjectList.Create(False);
+  Result := T(T.NewInstance);
+  TSingleton<T>(Result).DoCreate;
 end;
 
-procedure TSingletonManager.Add(singleton: TSingleton);
-begin
-  Assert(not TryFindInstance(singleton.ClassType, singleton));
-  fList.Add(singleton);
-end;
-
-procedure TSingletonManager.Remove(singleton: TSingleton);
-begin
-  fList.Remove(singleton);
-  singleton.InternalDestroy;
-end;
-
-procedure TSingletonManager.Clear;
-begin
-  while fList.Count > 0 do
-  begin
-    TSingleton(fList.Extract(fList.Last)).InternalDestroy;
-  end;
-  fList.Free;
-end;
-
-function TSingletonManager.TryFindInstance(singletonClass: TClass;
-  out instance: TSingleton): Boolean;
+class function TSingleton<T>.GetInstance: T;
 var
-  index: Integer;
+  obj: T;
 begin
-  index := fList.FindInstanceOf(singletonClass);
-  Result := index > -1;
-  if Result then
-    instance := TSingleton(fList[index]);
+  if fInstance = nil then
+  begin
+    obj := CreateSingleton;
+    if InterlockedCompareExchangePointer(PPointer(@fInstance)^, PPointer(@obj)^, nil) <> nil then
+    begin
+      FreeSingleton(obj);
+    end;
+  end;
+  Result := fInstance;
 end;
 
-{$ENDREGION}
-
-
-{$REGION 'TSingleton'}
-
-constructor TSingleton.InternalCreate;
+constructor TSingleton<T>.Create;
 begin
-  inherited Create;
+  raise EInvalidOperation.Create(SInvalidOperation_SingletonCreate);
 end;
 
-destructor TSingleton.InternalDestroy;
-begin
-  inherited Destroy;
-end;
-
-constructor TSingleton.Create;
-begin
-  raise ENotSupportedException.CreateFmt(SNotSupportedException, ['Create method']);
-end;
-
-destructor TSingleton.Destroy;
+destructor TSingleton<T>.Destroy;
 begin
   if ExceptObject = nil then
-    raise ENotSupportedException.CreateFmt(SNotSupportedException, ['Destroy or Free method']);
+    raise EInvalidOperation.Create(SInvalidOperation_SingletonDestroy);
 end;
 
-class function TSingleton.GetInstance: TSingleton;
-var
-  typeData: PTypeData;
+procedure TSingleton<T>.DoCreate;
 begin
-  EnterCriticalSection(_SingletonCriticalSection);
-  try
-    typeData := GetTypeData(ClassInfo);
-    Assert(typeData <> nil, 'typeData should not be nil.');
-    if not SingletonManager.TryFindInstance(typeData.ClassType, Result) then
-    begin
-      Result := TSingleton(NewInstance);
-      SingletonManager.Add(Result);
-      Result.InternalCreate;
-    end;
-  finally
-    LeaveCriticalSection(_SingletonCriticalSection);
-  end;
 end;
 
-function TSingleton.QueryInterface(const IID: TGUID; out Obj): HResult;
+procedure TSingleton<T>.DoDestroy;
 begin
-  if GetInterface(IID, obj) then
-    Result := S_OK
-  else
-    Result := E_NOINTERFACE;
 end;
 
-function TSingleton._AddRef: Integer;
-begin
-  Result := -1;
-end;
-
-function TSingleton._Release: Integer;
-begin
-  Result := -1;
-end;
 
 {$ENDREGION}
 
 
 {$REGION 'TObservable<T>'}
 
-{$IFDEF SUPPORTS_GENERICS}
-
-constructor TObservable<T>.Create(autoDestroy: Boolean);
-begin
-  inherited Create;
-  fAutoDestroy := autoDestroy;
-end;
-
 destructor TObservable<T>.Destroy;
 begin
   fObservers.Free;
   inherited Destroy;
-end;
-
-function TObservable<T>._Release: Integer;
-begin
-  if fAutoDestroy then
-    Result := inherited _Release
-  else
-    InterlockedDecrement(FRefCount);
 end;
 
 procedure TObservable<T>.Validate(const observer: T);
@@ -491,8 +414,6 @@ begin
   end;
   Result := fObservers;
 end;
-
-{$ENDIF ~SUPPORTS_GENERICS}
 
 {$ENDREGION}
 
@@ -607,9 +528,9 @@ end;
 
 {$IFDEF SUPPORTS_GENERICS}
 
-constructor TRegistry<TType, THandler>.InternalCreate;
+procedure TRegistry<TType, THandler>.DoCreate;
 begin
-  inherited InternalCreate;
+  inherited DoCreate;
   fDictionary := TDictionary<TType, THandler>.Create;
   fDictionary.OnKeyNotify := DoKeyNotify;
   fDictionary.OnValueNotify := DoValueNotify;
@@ -617,10 +538,10 @@ begin
   fOwnsHandler := TRtti.GetTypeKind<THandler> = tkClass;
 end;
 
-destructor TRegistry<TType, THandler>.InternalDestroy;
+procedure TRegistry<TType, THandler>.DoDestroy;
 begin
   fDictionary.Free;
-  inherited InternalDestroy;
+  inherited DoDestroy;
 end;
 
 procedure TRegistry<TType, THandler>.DoKeyNotify(sender: TObject; const item: TType; action: TCollectionNotification);
@@ -649,11 +570,6 @@ end;
 function TRegistry<TType, THandler>.Contains(const &type: TType): Boolean;
 begin
   Result := fDictionary.ContainsKey(&type);
-end;
-
-class function TRegistry<TType, THandler>.GetInstance: TRegistry<TType, THandler>;
-begin
-  Result := TRegistry<TType, THandler>(inherited GetInstance);
 end;
 
 function TRegistry<TType, THandler>.TryGetHandler(const &type: TType;
@@ -748,14 +664,5 @@ end;
 
 {$ENDREGION}
 
-
-initialization
-  InitializeCriticalSection(_SingletonCriticalSection);
-
-finalization
-  if _SingletonManager <> nil then
-    _SingletonManager.Clear;
-  FreeAndNil(_SingletonManager);
-  DeleteCriticalSection(_SingletonCriticalSection);
 
 end.

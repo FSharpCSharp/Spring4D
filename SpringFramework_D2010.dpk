@@ -44,10 +44,10 @@ contains
   Spring.Helpers in 'Source\Spring.Helpers.pas',
   Spring.Navigation in 'Source\Spring.Navigation.pas',
   Spring.Core.Objects in 'Source\Spring.Core.Objects.pas',
-  Spring.Patterns in 'Source\Spring.Patterns.pas',
+  Spring.DesignPatterns in 'Source\Spring.DesignPatterns.pas',
   Spring.ResourceStrings in 'Source\Spring.ResourceStrings.pas',
   Spring.System in 'Source\Spring.System.pas',
-  Spring.Network in 'Source\Spring.Network.pas',
+  Spring.System.Net in 'Source\System\Spring.System.Net.pas',
   Spring.Validation in 'Source\Spring.Validation.pas',
   Spring.Win32API in 'Source\Spring.Win32API.pas',
   Spring.Dialogs in 'Source\Spring.Dialogs.pas',
@@ -59,20 +59,23 @@ contains
   Spring.Logging.Layouts in 'Source\Logging\Spring.Logging.Layouts.pas',
   Spring.Logging.Repositories in 'Source\Logging\Spring.Logging.Repositories.pas',
   Spring.Logging.ResourceStrings in 'Source\Logging\Spring.Logging.ResourceStrings.pas',
-  MD5Impl in 'Source\Cryptography\MD5Impl.pas',
-  AESImpl in 'Source\Cryptography\AESImpl.pas',
-  CRCImpl in 'Source\Cryptography\CRCImpl.pas',
-  DESImpl in 'Source\Cryptography\DESImpl.pas',
   Spring.Logging in 'Source\Spring.Logging.pas',
   Spring.Scheduler in 'Source\Spring.Scheduler.pas',
   Spring.Communications in 'Source\Spring.Communications.pas',
   Spring.Communications.Sockets in 'Source\Communications\Spring.Communications.Sockets.pas',
   Spring.EntityFramework in 'Source\Spring.EntityFramework.pas',
-  Spring.Configurations in 'Source\Spring.Configurations.pas',
+  Spring.Configuration in 'Source\Spring.Configuration.pas',
   Spring.Resources in 'Source\Spring.Resources.pas',
-  Spring.Communications.Core in 'Source\Communications\Spring.Communications.Core.pas';
+  Spring.Communications.Core in 'Source\Communications\Spring.Communications.Core.pas',
+  Spring.Localization.Chinese in 'Source\Spring.Localization.Chinese.pas',
+  Spring.System.IO in 'Source\System\Spring.System.IO.pas',
+  MD5Impl in 'Source\Cryptography\MD5Impl.pas',
+  AESImpl in 'Source\Cryptography\AESImpl.pas',
+  CRCImpl in 'Source\Cryptography\CRCImpl.pas',
+  DESImpl in 'Source\Cryptography\DESImpl.pas';
 
 end.
+
 
 
 

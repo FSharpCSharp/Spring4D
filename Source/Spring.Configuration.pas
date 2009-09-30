@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Configurations;
+unit Spring.Configuration;
 
 {$I Spring.inc}
 

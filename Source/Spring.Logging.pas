@@ -38,7 +38,7 @@ uses
   TypInfo,
   Spring.System,
   Spring.Collections,
-  Spring.Patterns,
+  Spring.DesignPatterns,
   Spring.ResourceStrings,
   Spring.Logging.Core;
 
@@ -55,12 +55,16 @@ type
   ILogger = interface
     ['{803DC36C-03FE-4C5C-B8BE-9CB79076DCB2}']
   {$REGION 'Property Getters & Setters'}
+//    function GetIsTraceEnabled: Boolean;
     function GetIsDebugEnabled: Boolean;
     function GetIsInfoEnabled: Boolean;
     function GetIsWarnEnabled: Boolean;
     function GetIsErrorEnabled: Boolean;
     function GetIsFatalEnabled: Boolean;
   {$ENDREGION}
+//    procedure Trace(const msg: string); overload;
+//    procedure Trace(const msg: string; e: Exception); overload;
+//    procedure TraceFormat(const format: string; const args: array of const );
     procedure Debug(const msg: string); overload;
     procedure Debug(const msg: string; e: Exception); overload;
     procedure DebugFormat(const format: string; const args: array of const );
@@ -76,6 +80,19 @@ type
     procedure Fatal(const msg: string); overload;
     procedure Fatal(const msg: string; e: Exception); overload;
     procedure FatalFormat(const format: string; const args: array of const );
+//    procedure Trace<T>(const obj: T); overload;
+//    procedure Trace<T>(const obj: T; e: Exception); overload;
+//    procedure Debug<T>(const obj: T); overload;
+//    procedure Debug<T>(const obj: T; e: Exception); overload;
+//    procedure Info<T>(const obj: T); overload;
+//    procedure Info<T>(const obj: T; e: Exception); overload;
+//    procedure Warn<T>(const obj: T); overload;
+//    procedure Warn<T>(const obj: T; e: Exception); overload;
+//    procedure Error<T>(const obj: T); overload;
+//    procedure Error<T>(const obj: T; e: Exception); overload;
+//    procedure Fatal<T>(const obj: T); overload;
+//    procedure Fatal<T>(const obj: T; e: Exception); overload;
+//    property IsTraceEnabled: Boolean read GetIsTraceEnabled;
     property IsDebugEnabled: Boolean read GetIsDebugEnabled;
     property IsInfoEnabled: Boolean read GetIsInfoEnabled;
     property IsWarnEnabled: Boolean read GetIsWarnEnabled;

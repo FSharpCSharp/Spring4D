@@ -39,7 +39,8 @@ uses
   TestExtensions,
   Generics.Defaults,
   Spring.System,
-  Spring.Patterns,
+  Spring.System.IO,
+  Spring.DesignPatterns,
   Spring.Core;
 
 type
@@ -591,22 +592,21 @@ end;
 {$REGION 'TTestSingleton'}
 
 type
-  TTestableSingleton = class(TSingleton)
+  TTestableSingleton = class(TSingleton<TTestableSingleton>)
   end;
 
 procedure TTestSingleton.TestGetInstance;
 var
-  singleton: TSingleton;
+  singleton: TTestableSingleton;
 begin
-  singleton := TTestableSingleton.GetInstance;
+  singleton := TTestableSingleton.Instance;
   CheckNotNull(singleton);
-  CheckSame(singleton, TTestableSingleton.GetInstance);
-  CheckTrue(singleton <> TSingleton.GetInstance);
+  CheckSame(singleton, TTestableSingleton.Instance);
 end;
 
 procedure TTestSingleton.TestCreate;
 begin
-  ExpectedException := ENotSupportedException;
+  ExpectedException := EInvalidOperation;
   {$HINTS OFF}
   TTestableSingleton.Create;
   {$HINTS ON}
@@ -614,8 +614,8 @@ end;
 
 procedure TTestSingleton.TestFree;
 begin
-  ExpectedException := ENotSupportedException;
-  TTestableSingleton.GetInstance.Free;
+  ExpectedException := EInvalidOperation;
+  TTestableSingleton.Instance.Free;
 end;
 
 {$ENDREGION}

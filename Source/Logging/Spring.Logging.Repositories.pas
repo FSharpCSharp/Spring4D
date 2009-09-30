@@ -38,7 +38,7 @@ uses
   Generics.Collections,
   Spring.System,
   Spring.Collections,
-  Spring.Patterns,
+  Spring.DesignPatterns,
   Spring.ResourceStrings,
   Spring.Logging,
   Spring.Logging.Core,

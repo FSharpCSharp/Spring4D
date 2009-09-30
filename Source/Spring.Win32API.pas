@@ -340,6 +340,7 @@ function GetAdaptersInfo; external iphlpapilib name 'GetAdaptersInfo';
 function QueryServiceConfig2A; external advapi32 name 'QueryServiceConfig2A';
 function QueryServiceConfig2W; external advapi32 name 'QueryServiceConfig2W';
 function QueryServiceConfig2; external advapi32 name 'QueryServiceConfig2' + AWSuffix;
+
 function EnumServicesStatusExA; external advapi32 name 'EnumServicesStatusExA';
 function EnumServicesStatusExW; external advapi32 name 'EnumServicesStatusExW';
 function EnumServicesStatusEx; external advapi32 name 'EnumServicesStatusEx' + AWSuffix;

@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Cryptography.Tests;
+unit Spring.Security.Tests;
 
 interface
 

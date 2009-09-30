@@ -25,10 +25,6 @@
 { TODO: Complete TServiceController class }
 { TODO: Complete TOperatingSystem class (ProductName) }
 
-{ TODO: TFileSystemEntry }
-{ TODO: TFileSearcher Class }
-
-{ TODO: TFileSystemWatcher Class }
 { TODO: TClipboardWatcher }
 
 { TODO: IAsyncResult }
@@ -57,17 +53,17 @@ uses
   Registry,
   WinSvc,
   TimeSpan,
+  Character,
   Diagnostics,
-  IOUtils,
   RTTI,
   Generics.Defaults,
   Generics.Collections,
   Spring.Win32API,
-  Spring.Patterns,
+//  Spring.Patterns,
   Spring.ResourceStrings;
 
 type
-  {$REGION 'Type Aliases'}
+  {$REGION 'Simple Types & Aliases'}
 
   /// <summary>
   /// Represents a dynamic array of Byte.
@@ -89,19 +85,23 @@ type
   /// </summary>
   TStopwatch = Diagnostics.TStopwatch;
 
+  PTypeInfo = TypInfo.PTypeInfo;
 
-  TSearchOption   = IOUtils.TSearchOption;
-  TPathPrefixType = IOUtils.TPathPrefixType;
+  TCharacter = Character.TCharacter;
 
-  TDirectory      = IOUtils.TDirectory;
-  TPath           = IOUtils.TPath;
-  TFile           = IOUtils.TFile;
+//  UTF16Char = UCS2Char;
+//  UTF32Char = UCS4Char;
 
-  TFileAttribute  = IOUtils.TFileAttribute;
-  TFileAttributes = IOUtils.TFileAttributes;
-  TFileMode       = IOUtils.TFileMode;
-  TFileAccess     = IOUtils.TFileAccess;
-  TFileShare      = IOUtils.TFileShare;
+  TIntegerRec = packed record
+    B1: Byte;
+    B2: Byte;
+    B3: Byte;
+    B4: Byte;
+  end;
+
+  TInt32Rec = TIntegerRec;
+
+  TInt64Rec = SysUtils.Int64Rec;
 
   {$ENDREGION}
 
@@ -131,6 +131,8 @@ type
   EInvalidOperation         = SysUtils.EInvalidOp;
   EInvalidCastException     = SysUtils.EConvertError;
 
+  EInsufficientMemoryException = class(EOutOfMemory);
+
   EFormatException          = class(Exception);
   EIndexOutOfRangeException = class(Exception);
 
@@ -156,48 +158,52 @@ type
   {$REGION 'TArgument'}
 
   /// <summary>
-  /// Provides static methods to check arguments.
+  /// Provides static methods to check arguments and raise argument exceptions.
   /// </summary>
   /// <remarks>
   /// All arguments of public methods, including global routines, class and record methods,
   /// should be checked.
   /// </remarks>
   TArgument = record
+  strict private
+    class procedure DoCheckIndex(const length, index, indexBase: Integer); overload; static; inline;
+    class procedure DoCheckRange(const length, startIndex, count, indexBase: Integer); overload; static; inline;
+  private
+    class procedure DoCheckArrayIndex(const length, index: Integer); static; inline;
+    class procedure DoCheckArrayRange(const length, startIndex, count: Integer); static; inline;
+    class procedure DoCheckStringIndex(const length, index: Integer); static; inline;
+    class procedure DoCheckStringRange(const length, startIndex, count: Integer); static; inline;
   public
     class procedure CheckTrue(condition: Boolean; const argumentName: string); static; inline;
     class procedure CheckFalse(condition: Boolean; const argumentName: string); static; inline;
-    class procedure CheckNotNull(condition: Boolean; const argumentName: string); overload; static; inline;
+
     class procedure CheckNotNull(obj: TObject; const argumentName: string); overload; static; inline;
     class procedure CheckNotNull(p: Pointer; const argumentName: string); overload; static; inline;
     class procedure CheckNotNull(const intf: IInterface; const argumentName: string); overload; static; inline;
+    class procedure CheckNotNull(condition: Boolean; const argumentName: string); overload; static; inline;
+
     class procedure CheckEnum<T{:enum}>(const value: T; const argumentName: string); overload; static; inline;
     class procedure CheckEnum<T>(const value: Integer; const argumentName: string); overload; static; inline;
-    class procedure CheckRange(condition: Boolean; const argumentName: string); overload; static; inline;
-    /// <summary>
-    /// Determines whether a range, specified by startIndex and count, is valid
-    /// for a byte array.
-    /// </summary>
-    /// <remarks>
-    /// startIndex starts from 0.
-    /// </remarks>
+
+    class procedure CheckRange(const buffer: array of Byte; const index: Integer); overload; static;
     class procedure CheckRange(const buffer: array of Byte; const startIndex, count: Integer); overload; static;
-    /// <summary>
-    /// Determines whether a range, specified by startIndex and count, is valid
-    /// for a char array.
-    /// </summary>
-    /// <remarks>
-    /// startIndex starts from 0.
-    /// </remarks>
+    class procedure CheckRange(const buffer: array of Char; const index: Integer); overload; static;
     class procedure CheckRange(const buffer: array of Char; const startIndex, count: Integer); overload; static;
-    /// <summary>
-    /// Determines whether a range, specified by startIndex and count, is valid
-    /// for a specified length.
-    /// </summary>
-    /// <remarks>
-    /// startIndex starts from 0.
-    /// </remarks>
-    class procedure CheckRange(const length, startIndex, count: Integer); overload; static; inline;
+    class procedure CheckRange(const s: string; const index: Integer); overload; static; inline;
+    class procedure CheckRange(const s: string; const startIndex, count: Integer); overload; static; inline;
+    class procedure CheckRange(const s: WideString; const index: Integer); overload; static; inline;
+    class procedure CheckRange(const s: WideString; const startIndex, count: Integer); overload; static; inline;
+    class procedure CheckRange(const s: RawByteString; const index: Integer); overload; static; inline;
+    class procedure CheckRange(const s: RawByteString; const startIndex, count: Integer); overload; static; inline;
+    class procedure CheckRange(condition: Boolean; const argumentName: string); overload; static; inline;
+
+    class procedure RaiseArgumentException(const argumentName: string); overload; static; inline;
+    class procedure RaiseArgumentNullException(const argumentName: string); overload; static; inline;
+    class procedure RaiseArgumentOutOfRangeException(const argumentName: string); overload; static; inline;
+    class procedure RaiseInvalidEnumArgumentException(const argumentName: string); overload; static; inline;
   end;
+
+  TArg = TArgument;
 
   {$ENDREGION}
 
@@ -222,42 +228,34 @@ type
     constructor Create(const buffer: Pointer; startIndex, count: Integer); overload;
     constructor Create(const buffer: array of Byte); overload;
     constructor Create(const buffer: array of Byte; startIndex, count: Integer); overload;
-    constructor Create(const s: UnicodeString); overload;
+    constructor Create(const s: string); overload;
     constructor Create(const s: WideString); overload;
     constructor Create(const s: RawByteString); overload;
 
-    class function FromHexString(s: UnicodeString): TBuffer; static;
+    class function FromHexString(const s: string): TBuffer; static;
+    class function ConvertToHexString(const buffer: Pointer; count: Integer): string; overload; static;
+    class function ConvertToHexString(const buffer: Pointer; count: Integer;
+      const prefix: string; const delimiter: string = ' '): string; overload; static;
 
-  //    class function ConvertToHexString(const buffer: Pointer; count: Integer): string; overload;
-  //    class function ConvertToHexString(const buffer: array of Byte): string; overload;
-  //    class function ConvertToHexString(const buffer: array of Char): string; overload;
-  //    class function ConvertToHexString(const s: UnicodeString): string; overload;
-  //    class function ConvertToHexString(const s: WideString): string; overload;
-  //    class function ConvertToHexString(const s: RawByteString): string; overload;
-
-  //    class function ConvertToHexString(const buffer: Pointer; count: Integer;
-  //      const prefix: string; const delimiter: string = ' '): string; overload;
-  //    class function ConvertToHexString(const buffer: array of Byte;
-  //      const prefix: string; const delimiter: string = ' '): string; overload;
-  //    class function ConvertToHexString(const buffer: array of Char;
-  //      const prefix: string; const delimiter: string = ' '): string; overload;
-  //    class function ConvertToHexString(const s: UnicodeString;
-  //      const prefix: string; const delimiter: string = ' '): string; overload;
-  //    class function ConvertToHexString(const s: WideString;
-  //      const prefix: string; const delimiter: string = ' '): string; overload;
-  //    class function ConvertToHexString(const s: RawByteString;
-  //      const prefix: string; const delimiter: string = ' '): string; overload;
-
-    class function  BytesOf(const value: Byte; count: Integer): TBytes; static;
-    class function  GetByte(const buffer; const index: Integer): Byte; static;
+    class function BytesOf(const value: Byte; count: Integer): TBytes; static;
+    class function GetByte(const buffer; const index: Integer): Byte; static;
     class procedure SetByte(var buffer; const index: Integer; const value: Byte); static;
 
-    function Copy(startIndex, count: Integer): TBytes;
-    function EnsureSize(size: Integer; value: Byte = 0): TBytes; overload; experimental;
-    function EnsureSize(size: Integer; value: AnsiChar = #0): TBytes; overload; experimental;
+//    procedure CopyTo(var dest: array of Byte; index, count: Integer);
 
-    function Equals(const buffer: array of Byte): Boolean; overload;
+    function Copy(startIndex, count: Integer): TBytes;
+
+    function Left(count: Integer): TBytes;
+    function Mid(startIndex, count: Integer): TBytes;
+    function Right(count: Integer): TBytes;
+
+    function EnsureSize(size: Integer): TBytes; overload;
+    function EnsureSize(size: Integer; value: Byte): TBytes; overload;
+    function EnsureSize(size: Integer; value: AnsiChar): TBytes; overload;
+
     function Equals(const buffer: TBuffer): Boolean; overload;
+    function Equals(const buffer: array of Byte): Boolean; overload;
+    function Equals(const buffer: Pointer; count: Integer): Boolean; overload;
 
     function ToBytes: TBytes;
     function ToString: string;
@@ -286,6 +284,18 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TBufferStream (NOT READY)'}
+
+  /// <summary>
+  /// Provides a reusable memory stream.
+  /// </summary>
+//  TBufferStream = class(TCustomMemoryStream)
+//
+//  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'TValueType (NOT READY)'}
 
   TValueType = class abstract(TInterfacedObject)
@@ -298,7 +308,7 @@ type
   {$REGION 'TEnum'}
 
   /// <summary>
-  /// Provides static methods to manipulate Enumeration type
+  /// Provides static methods to manipulate Enumeration type.
   /// </summary>
   TEnum = class sealed(TValueType)
   private
@@ -345,7 +355,7 @@ type
     function GetValueOrDefault(const default: T): T; overload;
     property HasValue: Boolean read GetHasValue;
     property Value: T read GetValue;
-    { Conversion }
+    { Operator Overloads }
     class operator Implicit(const value: TNullable<T>): T;
     class operator Implicit(const value: T): TNullable<T>;
     class operator Implicit(const value: TNullable<T>): Variant;
@@ -439,7 +449,7 @@ type
   {$REGION 'TRtti'}
 
   /// <summary>
-  /// Provides some Rtti utilities for parameterized type (Generics)
+  /// Provides static methods to get RTTI information of parameterized type.
   /// </summary>
   TRtti = class
   public
@@ -872,7 +882,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TServiceController (Experimental)'}
+  {$REGION 'TServiceController (NOT COMPLETED)'}
 
   TServiceType = (
     stKernelDriver,       // A Kernel device driver such as a hard disk or other low-level hardware device driver.
@@ -1032,92 +1042,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TDriveInfo'}
-
-  /// <summary>
-  /// Drive Type Enumeration
-  /// </summary>
-  TDriveType = (
-    dtUnknown,          // The type of drive is unknown.
-    dtNoRootDirectory,  // The drive does not have a root directory.
-    dtRemovable,        // The drive is a removable storage device, such as a floppy disk drive or a USB flash drive.
-    dtFixed,            // The drive is a fixed disk.
-    dtNetwork,          // The drive is a network drive.
-    dtCDRom,            // The drive is an optical disc device, such as a CD or DVD-ROM.
-    dtRam               // The drive is a RAM disk.
-  );
-
-  /// <summary>
-  /// Provides access to information on a drive.
-  /// </summary>
-  /// <remarks>
-  /// Use TDriveInfo.GetDrives method to retrieve all drives of the computer.
-  /// Caller must check IsReady property before using TDriveInfo.
-  /// </remarks>
-  TDriveInfo = record
-  private
-    fDriveName: string;
-    fRootDirectory: string;
-    fAvailableFreeSpace: Int64;
-    fTotalSize: Int64;
-    fTotalFreeSpace: Int64;
-    fVolumeName: array[0..MAX_PATH] of Char;
-    fFileSystemName: array[0..MAX_PATH] of Char;
-    fSerialNumber: DWORD;
-    fMaximumComponentLength: DWORD;
-    fFileSystemFlags: DWORD;
-    function GetAvailableFreeSpace: Int64;
-    function GetDriveFormat: string;
-    function GetDriveType: TDriveType;
-    function GetDriveTypeString: string;
-    function GetIsReady: Boolean;
-    function GetTotalFreeSpace: Int64;
-    function GetTotalSize: Int64;
-    function GetVolumeLabel: string;
-    procedure SetVolumeLabel(const Value: string);
-  private
-    procedure UpdateProperties;
-  public
-    constructor Create(const driveName: string);
-    class function GetDrives: TArray<TDriveInfo>; static;
-    procedure CheckIsReady;
-    property AvailableFreeSpace: Int64 read GetAvailableFreeSpace;
-    property DriveFormat: string read GetDriveFormat;
-    property DriveType: TDriveType read GetDriveType;
-    property DriveTypeString: string read GetDriveTypeString;
-    property IsReady: Boolean read GetIsReady;
-    property Name: string read fDriveName;
-    property RootDirectory: string read fRootDirectory;
-    property TotalFreeSpace: Int64 read GetTotalFreeSpace;
-    property TotalSize: Int64 read GetTotalSize;
-    property VolumeLabel: string read GetVolumeLabel write SetVolumeLabel;
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TFileSystemEntry (NOT READY)'}
-
-//  TFileSystemEntry = record
-//
-//  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TFileSystemWatcher (NOT READY)'}
-
-  /// <summary>
-  /// Listens to the file system change notifications and raises events when a
-  /// directory, or file in a directory, changes.
-  /// </summary>
-//  TFileSystemWatcher = record
-//  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TLifetimeWatcher'}
+  {$REGION 'TLifetimeWatcher (Experimental)'}
 
   /// <summary>
   /// TLifetimeWatcher
@@ -1134,7 +1059,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TCallback'}
+  {$REGION 'TCallbackFunc'}
 
   /// <summary>
   /// TCallbackFunc
@@ -1304,17 +1229,6 @@ const
   OneMB: Int64 = 1048576;         // 1MB = 1024 KB
   OneGB: Int64 = 1073741824;      // 1GB = 1024 MB
   OneTB: Int64 = 1099511627776;   // 1TB = 1024 GB
-
-const
-  DriveTypeStrings: array[TDriveType] of string = (
-    SUnknownDriveDescription,
-    SNoRootDirectoryDescription,
-    SRemovableDescription,
-    SFixedDescription,
-    SNetworkDescription,
-    SCDRomDescription,
-    SRamDescription
-  );
 
 const
   OSVersionTypeStrings: array[TOSVersionType] of string = (
@@ -1643,12 +1557,61 @@ end;
 
 {$REGION 'TArgument'}
 
+class procedure TArgument.DoCheckArrayIndex(const length, index: Integer);
+begin
+  DoCheckIndex(length, index, 0);
+end;
+
+class procedure TArgument.DoCheckArrayRange(const length, startIndex,
+  count: Integer);
+begin
+  TArgument.DoCheckRange(length, startIndex, count, 0);
+end;
+
+class procedure TArgument.DoCheckStringIndex(const length, index: Integer);
+begin
+  DoCheckIndex(length, index, 1);
+end;
+
+class procedure TArgument.DoCheckStringRange(const length, startIndex,
+  count: Integer);
+begin
+  TArgument.DoCheckRange(length, startIndex, count, 1);
+end;
+
+class procedure TArgument.DoCheckIndex(const length, index, indexBase: Integer);
+const
+  IndexArgName = 'index';
+begin
+  if (index < indexBase) or (index > length - indexBase - 1) then
+  begin
+    TArgument.RaiseArgumentOutOfRangeException(IndexArgName);
+  end;
+end;
+
+class procedure TArgument.DoCheckRange(const length, startIndex,
+  count, indexBase: Integer);
+const
+  StartIndexArgName = 'startIndex';
+  CountArgName = 'count';
+begin
+  TArgument.CheckRange(
+    (startIndex >= indexBase) and (startIndex <= indexBase + length - 1),
+    StartIndexArgName
+  );
+  TArgument.CheckRange(count >= 0, CountArgName);
+  if count > 0 then
+  begin
+    TArgument.CheckRange(startIndex + count <= indexBase + length, CountArgName);
+  end;
+end;
+
 class procedure TArgument.CheckTrue(condition: Boolean;
   const argumentName: string);
 begin
   if not condition then
   begin
-    raise EArgumentException.Create(argumentName);
+    TArgument.RaiseArgumentException(argumentName);
   end;
 end;
 
@@ -1657,7 +1620,7 @@ class procedure TArgument.CheckFalse(condition: Boolean;
 begin
   if condition then
   begin
-    raise EArgumentException.Create(argumentName);
+    TArgument.RaiseArgumentException(argumentName);
   end;
 end;
 
@@ -1666,7 +1629,7 @@ class procedure TArgument.CheckNotNull(condition: Boolean;
 begin
   if not condition then
   begin
-    raise EArgumentNullException.Create(argumentName);
+    TArgument.RaiseArgumentNullException(argumentName);
   end;
 end;
 
@@ -1716,35 +1679,89 @@ class procedure TArgument.CheckRange(condition: Boolean;
 begin
   if not condition then
   begin
-    raise EArgumentOutOfRangeException.Create(argumentName);
+    TArgument.RaiseArgumentOutOfRangeException(argumentName);
   end;
 end;
 
 class procedure TArgument.CheckRange(const buffer: array of Byte;
   const startIndex, count: Integer);
 begin
-  TArgument.CheckRange(Length(buffer), startIndex, count);
+  TArgument.DoCheckArrayRange(Length(buffer), startIndex, count);
 end;
 
 class procedure TArgument.CheckRange(const buffer: array of Char;
   const startIndex, count: Integer);
 begin
-  TArgument.CheckRange(Length(buffer), startIndex, count);
+  TArgument.DoCheckArrayRange(Length(buffer), startIndex, count);
 end;
 
-class procedure TArgument.CheckRange(const length, startIndex,
-  count: Integer);
-const
-  StartIndexArgName = 'startIndex';
-  CountArgName = 'count';
+class procedure TArgument.CheckRange(const buffer: array of Byte;
+  const index: Integer);
 begin
-  TArgument.CheckRange(startIndex >= 0, StartIndexArgName);
-  TArgument.CheckRange(count >= 0, CountArgName);
-  if count > 0 then
-  begin
-    TArgument.CheckRange(startIndex < length, StartIndexArgName);
-    TArgument.CheckRange(startIndex + count <= length, CountArgName);
-  end;
+  TArgument.DoCheckArrayIndex(Length(buffer), index);
+end;
+
+class procedure TArgument.CheckRange(const buffer: array of Char;
+  const index: Integer);
+begin
+  TArgument.DoCheckArrayIndex(Length(buffer), index);
+end;
+
+class procedure TArgument.CheckRange(const s: string; const index: Integer);
+begin
+  TArgument.DoCheckStringIndex(Length(s), index);
+end;
+
+class procedure TArgument.CheckRange(const s: string; const startIndex,
+  count: Integer);
+begin
+  TArgument.DoCheckStringRange(Length(s), startIndex, count);
+end;
+
+class procedure TArgument.CheckRange(const s: WideString; const index: Integer);
+begin
+  TArgument.DoCheckStringIndex(Length(s), index);
+end;
+
+class procedure TArgument.CheckRange(const s: WideString; const startIndex,
+  count: Integer);
+begin
+  TArgument.DoCheckStringRange(Length(s), startIndex, count);
+end;
+
+class procedure TArgument.CheckRange(const s: RawByteString;
+  const index: Integer);
+begin
+  TArgument.DoCheckStringIndex(Length(s), index);
+end;
+
+class procedure TArgument.CheckRange(const s: RawByteString; const startIndex,
+  count: Integer);
+begin
+  TArgument.DoCheckStringRange(Length(s), startIndex, count);
+end;
+
+class procedure TArgument.RaiseArgumentException(const argumentName: string);
+begin
+  raise EArgumentException.Create(argumentName);
+end;
+
+class procedure TArgument.RaiseArgumentNullException(
+  const argumentName: string);
+begin
+  raise EArgumentNullException.Create(argumentName);
+end;
+
+class procedure TArgument.RaiseArgumentOutOfRangeException(
+  const argumentName: string);
+begin
+  raise EArgumentOutOfRangeException.Create(argumentName);
+end;
+
+class procedure TArgument.RaiseInvalidEnumArgumentException(
+  const argumentName: string);
+begin
+  raise EInvalidEnumArgumentException.Create(argumentName);
 end;
 
 {$ENDREGION}
@@ -1778,7 +1795,7 @@ begin
   Create(@buffer[startIndex], count);
 end;
 
-constructor TBuffer.Create(const s: UnicodeString);
+constructor TBuffer.Create(const s: string);
 begin
   Create(PByte(s), Length(s) * SizeOf(Char));
 end;
@@ -1793,13 +1810,6 @@ begin
   Create(PByte(s), Length(s));
 end;
 
-function TBuffer.Copy(startIndex, count: Integer): TBytes;
-begin
-  TArgument.CheckRange(fBytes, startIndex, count);
-  SetLength(Result, count);
-  Move(fBytes[startIndex], Result[0], count);
-end;
-
 class function TBuffer.BytesOf(const value: Byte; count: Integer): TBytes;
 begin
   TArgument.CheckRange(count >= 0, 'count');
@@ -1807,8 +1817,22 @@ begin
   FillChar(Result[0], count, value);
 end;
 
-class function TBuffer.FromHexString(s: UnicodeString): TBuffer;
+class function TBuffer.GetByte(const buffer; const index: Integer): Byte;
+begin
+  TArgument.CheckRange(index >= 0, 'index');
+  Result := PByte(@buffer)[index];
+end;
+
+class procedure TBuffer.SetByte(var buffer; const index: Integer;
+  const value: Byte);
+begin
+  TArgument.CheckRange(index >= 0, 'index');
+  PByte(@buffer)[index] := value;
+end;
+
+class function TBuffer.FromHexString(const s: string): TBuffer;
 var
+  buffer: string;
   text: string;
   bytes: TBytes;
   index: Integer;
@@ -1816,20 +1840,100 @@ var
 const
   HexCharSet: TSysCharSet = ['0'..'9', 'a'..'f', 'A'..'F'];
 begin
-  s := StringReplace(s, '0x', '', [rfIgnoreCase, rfReplaceAll]);
-  SetLength(text, Length(s));
+  buffer := StringReplace(s, '0x', '', [rfIgnoreCase, rfReplaceAll]);
+  SetLength(text, Length(buffer));
   index := 0;
-  for i := 1 to Length(s) do
+  for i := 1 to Length(buffer) do
   begin
-    if CharInSet(s[i], HexCharSet) then
+    if CharInSet(buffer[i], HexCharSet) then
     begin
       Inc(index);
-      text[index] := s[i];
+      text[index] := buffer[i];
     end;
   end;
   SetLength(bytes, index div 2);
   Classes.HexToBin(PChar(text), PByte(bytes), Length(bytes));
   Result := TBuffer.Create(bytes);
+end;
+
+class function TBuffer.ConvertToHexString(const buffer: Pointer;
+  count: Integer): string;
+begin
+  SetLength(Result, count * 2);
+  Classes.BinToHex(buffer, PChar(Result), count);
+end;
+
+class function TBuffer.ConvertToHexString(const buffer: Pointer; count: Integer;
+  const prefix, delimiter: string): string;
+const
+  Convert: array[0..15] of Char = '0123456789ABCDEF';
+var
+  p: PByte;
+  stringBuilder: TStringBuilder;
+  captacity: Integer;
+  text: array[0..1] of Char;
+  i: Integer;
+begin
+  if count = 0 then Exit('');
+  p := buffer;
+  captacity := (Length(prefix) + 2 + Length(delimiter)) * count;
+  stringBuilder := TStringBuilder.Create(captacity);
+  try
+    stringBuilder.Append(prefix);
+    text[0] := Convert[p[0] shr 4];
+    text[1] := Convert[p[0] and $0F];
+    stringBuilder.Append(text);
+    for i := 1 to count - 1 do
+    begin
+      stringBuilder.Append(delimiter);
+      stringBuilder.Append(prefix);
+      text[0] := Convert[p[i] shr 4];
+      text[1] := Convert[p[i] and $0F];
+      stringBuilder.Append(text);
+    end;
+    Result := stringBuilder.ToString;
+  finally
+    stringBuilder.Free;
+  end;
+end;
+
+//procedure TBuffer.CopyTo(var dest: array of Byte; index: Integer);
+//begin
+//  TArgument.CheckRange(index >= 0, 'index');
+//  if Length(dest) - index < Size then
+//  begin
+//    raise EInsufficientMemoryException.Create(SInsufficientMemoryException);
+//  end;
+//  Move(fBytes[0], dest[index], Size);
+//end;
+
+function TBuffer.Copy(startIndex, count: Integer): TBytes;
+begin
+  Result := Mid(startIndex, count);
+end;
+
+function TBuffer.Left(count: Integer): TBytes;
+begin
+  TArgument.CheckRange((count >= 0) and (count <= Size), 'count');
+  Result := Mid(0, count);
+end;
+
+function TBuffer.Mid(startIndex, count: Integer): TBytes;
+begin
+  TArgument.CheckRange(fBytes, startIndex, count);
+  SetLength(Result, count);
+  Move(fBytes[startIndex], Result[0], count);
+end;
+
+function TBuffer.Right(count: Integer): TBytes;
+begin
+  TArgument.CheckRange((count >= 0) and (count <= Size), 'count');
+  Result := Mid(Size - count, count);
+end;
+
+function TBuffer.EnsureSize(size: Integer): TBytes;
+begin
+  Result := Self.EnsureSize(size, 0);
 end;
 
 function TBuffer.EnsureSize(size: Integer; value: Byte): TBytes;
@@ -1842,7 +1946,7 @@ begin
   end
   else
   begin
-    Result := Self.Copy(0, size);
+    Result := Self.ToBytes;
   end;
 end;
 
@@ -1851,18 +1955,21 @@ begin
   Result := Self.EnsureSize(size, Byte(value));
 end;
 
-function TBuffer.Equals(const buffer: array of Byte): Boolean;
-begin
-  Result := Length(fBytes) = Length(buffer);
-  if Result then
-  begin
-    Result := CompareMem(@fBytes[0], @buffer[0], Length(fBytes));
-  end;
-end;
-
 function TBuffer.Equals(const buffer: TBuffer): Boolean;
 begin
   Result := Equals(buffer.fBytes);
+end;
+
+function TBuffer.Equals(const buffer: array of Byte): Boolean;
+begin
+  Result := (Size = Length(buffer)) and
+    CompareMem(Memory, @buffer[0], Size);
+end;
+
+function TBuffer.Equals(const buffer: Pointer; count: Integer): Boolean;
+begin
+  TArgument.CheckRange(count >= 0, 'count');
+  Result := (count = Self.Size) and CompareMem(Self.Memory, buffer, count);
 end;
 
 function TBuffer.ToString: string;
@@ -1897,41 +2004,12 @@ end;
 
 function TBuffer.ToHexString: string;
 begin
-  SetLength(Result, Self.Size * 2);
-  Classes.BinToHex(fBytes[0], PChar(Result), Self.Size);
+  Result := TBuffer.ConvertToHexString(Memory, Size)
 end;
 
 function TBuffer.ToHexString(const prefix: string; const delimiter: string): string;
-const
-  Convert: array[0..15] of Char = '0123456789ABCDEF';
-var
-  prefixLength: Integer;
-  stringBuilder: TStringBuilder;
-  captacity: Integer;
-  text: array[0..1] of Char;
-  i: Integer;
 begin
-  if Length(fBytes) = 0 then Exit('');
-  prefixLength := Length(prefix);
-  captacity := (prefixLength + 2 + Length(delimiter)) * Length(fBytes);
-  stringBuilder := TStringBuilder.Create(captacity);
-  try
-    stringBuilder.Append(prefix);
-    text[0] := Convert[fBytes[0] shr 4];
-    text[1] := Convert[fBytes[0] and $F];
-    stringBuilder.Append(text);
-    for i := 1 to Length(fBytes) - 1 do
-    begin
-      stringBuilder.Append(delimiter);
-      stringBuilder.Append(prefix);
-      text[0] := Convert[fBytes[i] shr 4];
-      text[1] := Convert[fBytes[i] and $F];
-      stringBuilder.Append(text);
-    end;
-    Result := stringBuilder.ToString;
-  finally
-    stringBuilder.Free;
-  end;
+  Result := TBuffer.ConvertToHexString(Memory, Size, prefix, delimiter);
 end;
 
 function TBuffer.GetSize: Integer;
@@ -1959,17 +2037,6 @@ procedure TBuffer.SetByteItem(const index: Integer; const value: Byte);
 begin
   TArgument.CheckRange((index >= 0) and (index < Size), 'index');
   fBytes[index] := value;
-end;
-
-class function TBuffer.GetByte(const buffer; const index: Integer): Byte;
-begin
-  Result := PByte(@buffer)[index];
-end;
-
-class procedure TBuffer.SetByte(var buffer; const index: Integer;
-  const value: Byte);
-begin
-  PByte(@buffer)[index] := value;
 end;
 
 class operator TBuffer.Implicit(const value: TBytes): TBuffer;
@@ -2664,8 +2731,8 @@ var
   translationCount: Integer;
   dummy: DWORD;
 begin
-//  Finalize(Self);
-// TODO: BUG-FIX: WHY NOT INITIALIZE RECORD AUTOMATICALLY?
+  Finalize(Self);
+  ZeroMemory(@Self, SizeOf(Self));
   fFileName := fileName;
   CheckFileExists(fFileName);
   // GetFileVersionInfo modifies the filename parameter data while parsing.
@@ -3278,7 +3345,7 @@ const
   PROCESSOR_ARCHITECTURE_IA32_ON_WIN64  = 10;
   PROCESSOR_ARCHITECTURE_IA64           = 6;
 begin
-  FillChar(systemInfo, Sizeof(systemInfo), 0);
+  ZeroMemory(@systemInfo, Sizeof(systemInfo));
   Windows.GetSystemInfo(systemInfo);
   case systemInfo.wProcessorArchitecture of
     PROCESSOR_ARCHITECTURE_INTEL:
@@ -3296,7 +3363,7 @@ class function TEnvironment.GetProcessorCount: Integer;
 var
   systemInfo: TSystemInfo;
 begin
-  FillChar(systemInfo, Sizeof(systemInfo), 0);
+  ZeroMemory(@systemInfo, Sizeof(systemInfo));
   Windows.GetSystemInfo(systemInfo);
   Result := systemInfo.dwNumberOfProcessors;
 end;
@@ -3506,7 +3573,7 @@ const
   );
 begin
   TServiceController.GetManagerHandleHolder(machineName, managerHandle);
-  resumeHandle := 0;  // set resumeHandle to zero the first time
+  resumeHandle := 0;  // Set resumeHandle to zero the first time
   returnValue := EnumServicesStatusEx(
     managerHandle,
     SC_ENUM_PROCESS_INFO,
@@ -4014,155 +4081,6 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TDriveInfo'}
-
-constructor TDriveInfo.Create(const driveName: string);
-var
-  s: string;
-begin
-  s := UpperCase(driveName);
-  if not (Length(s) in [1..3]) or not CharInSet(s[1], ['A'..'Z']) then
-  begin
-    raise EArgumentException.Create('driveName');
-  end;
-  case Length(s) of
-    1:
-    begin
-      fRootDirectory := s + DriveDelim + PathDelim;
-    end;
-    2:
-    begin
-      if s[2] <> DriveDelim then
-      begin
-        raise EArgumentException.Create('driveName');
-      end;
-      fRootDirectory := s + PathDelim;
-    end;
-    3:
-    begin
-      if s[2] <> DriveDelim then
-        raise EArgumentException.Create('driveName');
-      if s[3] <> PathDelim then
-        raise EArgumentException.Create('driveName');
-      fRootDirectory := s;
-    end;
-    else
-    begin
-      Assert(False);
-    end;
-  end;
-  Assert(Length(fRootDirectory) = 3, 'Length of fRootDirectory should be 3.');
-  fDriveName := Copy(fRootDirectory, 1, 2);
-end;
-
-class function TDriveInfo.GetDrives: TArray<TDriveInfo>;
-var
-  drives: TStringDynArray;
-  i: Integer;
-begin
-  drives := Environment.GetLogicalDrives;
-  SetLength(Result, Length(drives));
-  for i := 0 to High(drives) do
-  begin
-    Result[i] := TDriveInfo.Create(drives[i]);
-  end;
-end;
-
-procedure TDriveInfo.CheckIsReady;
-begin
-  if not IsReady then
-  begin
-    raise EIOException.CreateResFmt(@SDriveNotReady, [fDriveName]);
-  end;
-end;
-
-procedure TDriveInfo.UpdateProperties;
-begin
-  CheckIsReady;
-  Win32Check(SysUtils.GetDiskFreeSpaceEx(
-    PChar(fRootDirectory),
-    fAvailableFreeSpace,
-    fTotalSize,
-    @fTotalFreeSpace
-  ));
-  Win32Check(Windows.GetVolumeInformation(
-    PChar(fRootDirectory),
-    fVolumeName,
-    Length(fVolumeName),
-    @fSerialNumber,
-    fMaximumComponentLength,
-    fFileSystemFlags,
-    fFileSystemName,
-    Length(fFileSystemName)
-  ));
-end;
-
-function TDriveInfo.GetAvailableFreeSpace: Int64;
-begin
-  UpdateProperties;
-  Result := fAvailableFreeSpace;
-end;
-
-function TDriveInfo.GetDriveFormat: string;
-begin
-  UpdateProperties;
-  Result := fFileSystemName;
-end;
-
-function TDriveInfo.GetDriveType: TDriveType;
-var
-  value: Cardinal;
-begin
-  value := Windows.GetDriveType(PChar(fRootDirectory));
-  case value of
-    DRIVE_NO_ROOT_DIR:  Result := dtNoRootDirectory;
-    DRIVE_REMOVABLE:    Result := dtRemovable;
-    DRIVE_FIXED:        Result := dtFixed;
-    DRIVE_REMOTE:       Result := dtNetwork;
-    DRIVE_CDROM:        Result := dtCDRom;
-    DRIVE_RAMDISK:      Result := dtRam;
-    else                Result := dtUnknown;  // DRIVE_UNKNOWN
-  end;
-end;
-
-function TDriveInfo.GetDriveTypeString: string;
-begin
-  Result := DriveTypeStrings[Self.DriveType];
-end;
-
-function TDriveInfo.GetIsReady: Boolean;
-begin
-  Result := Length(fRootDirectory) > 0;
-  Result := Result and (SysUtils.DiskSize(Ord(fRootDirectory[1]) - $40) > -1);
-end;
-
-function TDriveInfo.GetTotalFreeSpace: Int64;
-begin
-  UpdateProperties;
-  Result := fTotalFreeSpace;
-end;
-
-function TDriveInfo.GetTotalSize: Int64;
-begin
-  UpdateProperties;
-  Result := fTotalSize;
-end;
-
-function TDriveInfo.GetVolumeLabel: string;
-begin
-  UpdateProperties;
-  Result := fVolumeName;
-end;
-
-procedure TDriveInfo.SetVolumeLabel(const Value: string);
-begin
-  CheckIsReady;
-  Win32Check(Windows.SetVolumeLabel(PChar(fRootDirectory), PChar(value)));
-end;
-
-{$ENDREGION}
-
-
 {$REGION 'TLifetimeWatcher'}
 
 constructor TLifetimeWatcher.Create(const proc: TProc);
@@ -4284,6 +4202,6 @@ initialization
   ApplicationVersion := ApplicationVersionInfo.FileVersionNumber;
   ApplicationVersionString := ApplicationVersionInfo.FileVersion;
 
-finalization               
+finalization
   
 end.

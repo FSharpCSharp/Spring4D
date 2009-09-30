@@ -18,6 +18,9 @@
 			<Projects Include="Examples\Navigation\Source\Navigation.dproj">
 				<Dependencies/>
 			</Projects>
+			<Projects Include="Bin\Console.dproj">
+				<Dependencies/>
+			</Projects>
 		</ItemGroup>
 		<ProjectExtensions>
 			<Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -71,14 +74,23 @@
 		<Target Name="Navigation:Make">
 			<MSBuild Targets="Make" Projects="Examples\Navigation\Source\Navigation.dproj"/>
 		</Target>
+		<Target Name="Console">
+			<MSBuild Projects="Bin\Console.dproj"/>
+		</Target>
+		<Target Name="Console:Clean">
+			<MSBuild Targets="Clean" Projects="Bin\Console.dproj"/>
+		</Target>
+		<Target Name="Console:Make">
+			<MSBuild Targets="Make" Projects="Bin\Console.dproj"/>
+		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="SpringFramework_D2010;SpringFrameworkTests;Environments;Callback;Navigation"/>
+			<CallTarget Targets="SpringFramework_D2010;SpringFrameworkTests;Environments;Callback;Navigation;Console"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="SpringFramework_D2010:Clean;SpringFrameworkTests:Clean;Environments:Clean;Callback:Clean;Navigation:Clean"/>
+			<CallTarget Targets="SpringFramework_D2010:Clean;SpringFrameworkTests:Clean;Environments:Clean;Callback:Clean;Navigation:Clean;Console:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="SpringFramework_D2010:Make;SpringFrameworkTests:Make;Environments:Make;Callback:Make;Navigation:Make"/>
+			<CallTarget Targets="SpringFramework_D2010:Make;SpringFrameworkTests:Make;Environments:Make;Callback:Make;Navigation:Make;Console:Make"/>
 		</Target>
 		<Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 	</Project>

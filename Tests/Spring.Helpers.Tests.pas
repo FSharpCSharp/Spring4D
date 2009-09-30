@@ -30,7 +30,7 @@ interface
 
 uses
   Classes, SysUtils, Graphics, TestFramework,
-  Spring.System, Spring.Helpers, Spring.Patterns;
+  Spring.System, Spring.Helpers, Spring.DesignPatterns;
 
 type
   TTestGuidHelper = class(TTestCase)

@@ -57,7 +57,11 @@ unit Spring.Cryptography experimental;
 interface
 
 uses
-  Classes, Windows, SysUtils, Math, Spring.System;
+  Classes,
+  Windows,
+  SysUtils,
+  Math,
+  Spring.System;
 
 type
   /// <summary>
@@ -357,7 +361,7 @@ var
 begin
   SetLength(inBuffer, 8);
   SetLength(outBuffer, 8);
-  keyBuffer := key.EnsureSize(8, #0);
+  keyBuffer := key.EnsureSize(8);
   if count mod 8 <> 0 then
   begin
     blockCount := count div 8 + 1;
@@ -393,7 +397,7 @@ var
 begin
   SetLength(inBuffer, 8);
   SetLength(outBuffer, 8);
-  keyBuffer := key.EnsureSize(8, #0);
+  keyBuffer := key.EnsureSize(8);
   p := buffer;
   for i := 0 to count div 8 - 1 do
   begin
@@ -438,12 +442,12 @@ var
   bytesLeft: Integer;
   p: PByte;
 begin
-  keyBuffer := key.EnsureSize(24, #0);
-  key1 := keyBuffer.Copy(0, 8);
-  key2 := keyBuffer.Copy(8, 8);
+  keyBuffer := key.EnsureSize(24);
+  key1 := keyBuffer.Left(8);
+  key2 := keyBuffer.Mid(8, 8);
   if key.Size > 16 then
   begin
-    key3 := keyBuffer.Copy(16, 8);
+    key3 := keyBuffer.Right(8);
   end
   else
   begin
@@ -467,12 +471,12 @@ var
   bytesLeft: Integer;
   p: PByte;
 begin
-  keyBuffer := key.EnsureSize(24, #0);
-  key1 := keyBuffer.Copy(0, 8);
-  key2 := keyBuffer.Copy(8, 8);
+  keyBuffer := key.EnsureSize(24);
+  key1 := keyBuffer.Left(8);
+  key2 := keyBuffer.Mid(8, 8);
   if key.Size > 16 then
   begin
-    key3 := keyBuffer.Copy(16, 8);
+    key3 := keyBuffer.Right(8);
   end
   else
   begin

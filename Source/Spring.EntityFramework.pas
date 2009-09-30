@@ -29,9 +29,19 @@ unit Spring.EntityFramework experimental;  // Spring.Data.Entity
 interface
 
 uses
-  Classes, Contnrs, Windows, SysUtils, DateUtils, DB, Variants,
-  Generics.Defaults, Generics.Collections,
-  Spring.System, Spring.Collections, Spring.Data, Spring.Patterns,
+  Classes,
+  Contnrs,
+  Windows,
+  SysUtils,
+  DateUtils,
+  DB,
+  Variants,
+  Generics.Defaults,
+  Generics.Collections,
+  Spring.System,
+  Spring.Collections,
+  Spring.Data,
+  Spring.DesignPatterns,
   Spring.Helpers;
 
 type
@@ -142,7 +152,7 @@ type
   TEntityObjectClass = class of TEntity;
 
   /// <summary>
-  /// Entity Object
+  /// Represents an abstract domain object with an identity.
   /// </summary>
   TEntity = class abstract(TDomainObject, IIdentifiable)
   private
@@ -154,12 +164,16 @@ type
     function GetIsNew: Boolean;
     function GetIsModified: Boolean;
     function GetIsDeleted: Boolean;
+    function GetChangeTracker: IEntityChangeTracker;
   protected
-    fChangeTracker: IEntityChangeTracker;
-    function GetEntitySetName: string; virtual;
+    { TODO: Pull up to TDomainObject }
     procedure SetPropertyValue<T>(const propertyName: string; var currentValue: T; const newValue: T); inline;
     procedure PropertyChanging(const name: string); virtual;
     procedure PropertyChanged(const name: string); virtual;
+  protected
+    fChangeTracker: IEntityChangeTracker;
+    property ChangeTracker: IEntityChangeTracker read GetChangeTracker;
+    function GetEntitySetName: string; virtual;
     procedure SetID(const value: TEntityID); virtual;
     property IsLoaded: Boolean read fIsLoaded;
   public
@@ -278,7 +292,6 @@ type
   /// </summary>
   TRepositoryRegistry = class(TClassRegistry<TClass, IInterface>)
   public
-    class function GetInstance: TRepositoryRegistry;
     class function GetRepository(classType: TClass): IRepository<TObject>; overload;
     class function GetRepository<T: class>: IRepository<T>; overload;
     class procedure RegisterRepository<T: class>(const repository: IRepository<T>);
@@ -287,7 +300,7 @@ type
 
   TObjectNotification = (onAdded, onChanged, onDeleted);
 
-  TObjectContext = class abstract(TSingleton, IEntityContext, IEntityMap, IInterface)
+  TObjectContext = class abstract(TSingleton<TObjectContext>, IEntityContext, IEntityMap, IInterface)
   private
     fObjectStateManager: TObjectStateManager;
     fListeners: TDictionary<TClass, TList<IObjectNotification>>;
@@ -298,8 +311,8 @@ type
     { IEntityMap }
     function TryFindOne(const entitySetName: string; const entityID: TEntityID; out entity: TObject): Boolean;
   protected
-    constructor InternalCreate; override;
-    destructor InternalDestroy; override;
+    procedure DoCreate; override;
+    procedure DoDestroy; override;
   public
     procedure AddListener(const listener: IObjectNotification);
     procedure RemoveListener(const listener: IObjectNotification);
@@ -451,7 +464,7 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TEntityObject'}
+{$REGION 'TEntity'}
 
 constructor TEntity.Create;
 begin
@@ -488,23 +501,28 @@ end;
 
 procedure TEntity.PropertyChanging(const name: string);
 begin
-  if fChangeTracker <> nil then
+  if ChangeTracker <> nil then
   begin
-    fChangeTracker.OnPropertyChanging(name);
+    ChangeTracker.OnPropertyChanging(name);
   end;
 end;
 
 procedure TEntity.PropertyChanged(const name: string);
 begin
-  if (fChangeTracker <> nil) then
+  if (ChangeTracker <> nil) then
   begin
-    fChangeTracker.OnPropertyChanged(name);
+    ChangeTracker.OnPropertyChanged(name);
   end;
 end;
 
 function TEntity.GetID: TEntityID;
 begin
   Result := fID;
+end;
+
+function TEntity.GetChangeTracker: IEntityChangeTracker;
+begin
+  Result := fChangeTracker;
 end;
 
 function TEntity.GetEntitySetName: string;
@@ -514,8 +532,8 @@ end;
 
 function TEntity.GetEntityState: TEntityState;
 begin
-  if fChangeTracker <> nil then
-    Result := fChangeTracker.EntityState
+  if ChangeTracker <> nil then
+    Result := ChangeTracker.EntityState
   else
     Result := esDetached;
 end;
@@ -765,16 +783,11 @@ end;
 
 {$REGION 'TRepositoryRegistry'}
 
-class function TRepositoryRegistry.GetInstance: TRepositoryRegistry;
-begin
-  Result := TRepositoryRegistry(inherited GetInstance);
-end;
-
 class function TRepositoryRegistry.GetRepository(classType: TClass): IRepository<TObject>;
 var
   repository: IInterface;
 begin
-  if GetInstance.TryGetHandler(classType, repository) then
+  if Instance.TryGetHandler(classType, repository) then
   begin
     IInterface(Result) := repository;
   end
@@ -798,7 +811,7 @@ var
   classType: TClass;
 begin
   classType := TRtti.GetTypeData<T>.ClassType;
-  GetInstance.&Register(classType, repository);
+  Instance.&Register(classType, repository);
 end;
 
 class procedure TRepositoryRegistry.UnregisterRepository<T>;
@@ -806,7 +819,7 @@ var
   classType: TClass;
 begin
   classType := TRtti.GetTypeData<T>.ClassType;
-  GetInstance.Unregister(classType);
+  Instance.Unregister(classType);
 end;
 
 {$ENDREGION}
@@ -814,18 +827,18 @@ end;
 
 {$REGION 'TObjectContext'}
 
-constructor TObjectContext.InternalCreate;
+procedure TObjectContext.DoCreate;
 begin
-  inherited InternalCreate;
+  inherited DoCreate;
   fObjectStateManager := TObjectStateManager.Create;
   fListeners := TObjectDictionary<TClass, TList<IObjectNotification>>.Create([doOwnsValues]);
 end;
 
-destructor TObjectContext.InternalDestroy;
+procedure TObjectContext.DoDestroy;
 begin
   fObjectStateManager.Free;
   fListeners.Free;
-  inherited InternalDestroy;
+  inherited DoDestroy;
 end;
 
 function TObjectContext.TryFindOne(const entitySetName: string;

@@ -36,7 +36,7 @@ uses
 type
   TTestCommunicationsServer = class(TTestCase)
   strict private
-    fServer: ICommunicationsServer;
+    fServer: ICommunicationServer;
   public
     procedure SetUp; override;
     procedure TearDown; override;

@@ -29,8 +29,12 @@ unit Spring.Core experimental;
 interface
 
 uses
-  Classes, SysUtils, TypInfo,
-  Spring.System, Spring.Collections, Spring.Patterns;
+  Classes,
+  SysUtils,
+  TypInfo,
+  Spring.System,
+  Spring.Collections,
+  Spring.DesignPatterns;
 
 type
   IEditableObject         = interface;

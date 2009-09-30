@@ -42,10 +42,7 @@ resourcestring
   SCannotModifyReadOnlyValue    = 'Cannot modify read-only value.';
   SServiceNotExists             = 'The service "%s" does not exist.';
   STimeoutException             = 'Timeout';
-//  SEnumNotStarted              = 'Enum not started.';
-//  SEnumEnded                   = 'Enum ended.';
-//  SNotSupported_EnumReset      = 'RESET has not been supported.';
-
+  SInsufficientMemoryException  = 'Insufficient memory.';
 
   SNoTypeInfo          = 'No type information found.';
   SUnexpectedTypeKind  = 'Unexpected type kind: %s.';
@@ -92,7 +89,16 @@ resourcestring
   SCDRomDescription           = 'CD-Rom Drive';
   SRamDescription             = 'Ram Drive';
 
+//  SEnumNotStarted              = 'Enum not started.';
+//  SEnumEnded                   = 'Enum ended.';
+//  SNotSupported_EnumReset      = 'RESET has not been supported.';
+
   {$ENDREGION}
+
+
+  // Spring.DesignPatterns
+  SInvalidOperation_SingletonCreate   = 'Use Instance class property instead.';
+  SInvalidOperation_SingletonDestroy  = 'Invalid Operation: Free/Destroy';
 
 
   {$REGION 'Spring.Communications'}

@@ -83,7 +83,7 @@ var
 implementation
 
 uses
-  ShellAPI, TypInfo, Spring.System, Spring.Network;
+  ShellAPI, TypInfo, Spring.System, Spring.System.IO, Spring.System.Net;
 
 {$R *.dfm}
 

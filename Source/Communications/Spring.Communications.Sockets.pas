@@ -38,10 +38,10 @@ uses
   Spring.Communications.Core;
 
 type
+  TSocketPortal = class;
   TIncomingSocketConnection = class;
-  TSocketServerPortal = class;
 
-  TSocketServerPortal = class(TPortalBase)
+  TSocketPortal = class(TPortalBase)
   private
     fServerSocket: TServerSocket;
     fTimeout: Integer;
@@ -64,7 +64,7 @@ type
   protected
     procedure DoConnect; override;
     procedure DoDisconnect; override;
-    procedure DoReceiveBuffer(var buffer: Pointer; count: Integer); override;
+    procedure DoReceiveBuffer(const buffer: Pointer; count: Integer); override;
     function GetConnected: Boolean; override;
     function DoWaitForData(timeout: Integer): Boolean; override;
     property ClientSocket: TServerClientWinSocket read fSocket;
@@ -76,10 +76,10 @@ type
 
   TIncomingSocketThread = class(TServerClientThread)
   protected
-    fPortal: TSocketServerPortal;
+    fPortal: TSocketPortal;
     procedure ClientExecute; override;
   public
-    constructor Create(portal: TSocketServerPortal; serverClientSocket: TServerClientWinSocket);
+    constructor Create(portal: TSocketPortal; serverClientSocket: TServerClientWinSocket);
   end;
 
 implementation
@@ -87,7 +87,7 @@ implementation
 
 {$REGION 'TSocketServerPortal'}
 
-constructor TSocketServerPortal.Create;
+constructor TSocketPortal.Create;
 begin
   fServerSocket := TServerSocket.Create(nil);
   fServerSocket.ServerType := stThreadBlocking;
@@ -95,35 +95,35 @@ begin
   fTimeout := 0;
 end;
 
-destructor TSocketServerPortal.Destroy;
+destructor TSocketPortal.Destroy;
 begin
   fServerSocket.Free;
   inherited Destroy;
 end;
 
-procedure TSocketServerPortal.Configure(properties: TStrings);
+procedure TSocketPortal.Configure(properties: TStrings);
 begin
   fServerSocket.Port := StrToIntDef(properties.Values['Port'], 0);
   fTimeout := StrToIntDef(properties.Values['Timeout'], 0);
 end;
 
-procedure TSocketServerPortal.Start;
+procedure TSocketPortal.Start;
 begin
   fServerSocket.Open;
 end;
 
-procedure TSocketServerPortal.ShutDown;
+procedure TSocketPortal.ShutDown;
 begin
   fServerSocket.Close;
 end;
 
-procedure TSocketServerPortal.DoGetThread(sender: TObject;
+procedure TSocketPortal.DoGetThread(sender: TObject;
   clientSocket: TServerClientWinSocket; var socketThread: TServerClientThread);
 begin
   socketThread := TIncomingSocketThread.Create(Self, clientSocket);
 end;
 
-function TSocketServerPortal.GetIsConfigured: Boolean;
+function TSocketPortal.GetIsConfigured: Boolean;
 begin
   Result := fServerSocket.Port > 0;
 end;
@@ -167,10 +167,10 @@ begin
   fSocketStream.WriteBuffer(buffer, count);
 end;
 
-procedure TIncomingSocketConnection.DoReceiveBuffer(var buffer: Pointer;
+procedure TIncomingSocketConnection.DoReceiveBuffer(const buffer: Pointer;
   count: Integer);
 begin
-  fSocketStream.ReadBuffer(buffer, count);
+  fSocketStream.ReadBuffer(buffer^, count);
 end;
 
 function TIncomingSocketConnection.DoWaitForData(timeout: Integer): Boolean;
@@ -183,7 +183,7 @@ end;
 
 {$REGION 'TIncomingSocketThread'}
 
-constructor TIncomingSocketThread.Create(portal: TSocketServerPortal;
+constructor TIncomingSocketThread.Create(portal: TSocketPortal;
   serverClientSocket: TServerClientWinSocket);
 begin
   inherited Create(False, serverClientSocket);
