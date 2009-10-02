@@ -4,7 +4,7 @@
 {                                                                           }
 {               Copyright (C) 2008-2009 Zuo Baoquan                         }
 {                                                                           }
-{               http://www.zuobaoquan.com (Simplified Chinese)              }
+{               http://delphi-spring-framework.googlecode.com               }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -26,8 +26,8 @@ unit Spring.DesignPatterns experimental;
 
 {$I Spring.inc}
 
-{ TODO: Command Pattern with Undo/Redo }
-{ TODO: Memento Pattern }
+{ TODO: Design Command Pattern with Undo/Redo }
+{ TODO: Redesign Memento Pattern & Registry Pattern }
 
 interface
 
@@ -54,25 +54,25 @@ type
   /// </description>
   /// <remarks>
   /// 1. Use Instance class property to get the singleton instance.
-  /// 2. Concrete Singleton Classes may override DoCreate/DoDestroy if necessary.
+  /// 2. Concrete Singleton Class may override DoCreate/DoDestroy if necessary.
   /// 3. Do not call Create/Free methods, otherwise an EInvalidOp exception will be raised.
   /// </remarks>
   /// <example>
   /// <code>
-  ///   TApplicationContext = class(TSingleton<TApplicationContext>)
+  ///   TApplicationContext = class(TSingletonBase<TApplicationContext>)
   ///   protected
   ///     procedure DoCreate; override;
   ///     procedure DoDestroy; override;
   ///   end;
   /// </code>
   /// </example>
-  TSingleton<T: class> = class(TInterfaceBase)
+  TSingletonBase<T: class> = class(TInterfaceBase)
   strict private
     class var fInstance: T;
     class destructor Destroy;
-    class procedure FreeSingleton(var obj: T); static;
-    class function CreateSingleton: T; static;
     class function GetInstance: T; static;
+    class function CreateSingleton: T; static;
+    class procedure FreeSingleton(var obj: T); static;
   protected
     procedure DoCreate; virtual;
     procedure DoDestroy; virtual;
@@ -111,6 +111,29 @@ type
     procedure AddObserver(const observer: T);
     procedure RemoveObserver(const observer: T);
     procedure NotifyObservers(callback: TProc<T>); virtual;
+  end;
+
+//  TObservableSingleton<T> = class(TSingleton<T>, IObservable<T>, IInterface)
+//
+//  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'Memento or Snapshot Pattern (Experimental)'}
+
+  /// <summary>
+  /// IRestorable<T>
+  /// </summary>
+  IRestorable<T> = interface
+    function CreateSnapshot: T;
+    procedure Restore(const snapshot: T);
+  end;
+
+  /// <summary>
+  /// ISnapshot
+  /// </summary>
+  ISnapshot = interface
   end;
 
   {$ENDREGION}
@@ -152,33 +175,20 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'Memento or Snapshot Pattern (Experimental)'}
-
-  /// <summary>
-  /// IRestorable<T>
-  /// </summary>
-  IRestorable<T> = interface
-    function CreateSnapshot: T;
-    procedure Restore(const snapshot: T);
-  end;
-
-  /// <summary>
-  /// ISnapshot
-  /// </summary>
-  ISnapshot = interface
-  end;
-
-  {$ENDREGION}
-
-
   {$REGION 'Specification Pattern (Experimental)'}
 
+  /// <summary>
+  /// ISpecification<T>
+  /// </summary>
+  /// <remarks>
+  /// Consider: how to work with ORM?
+  /// </remarks>
   ISpecification<T> = interface
     function IsSatisfiedBy(const obj: T): Boolean;
   end;
 
   /// <summary>
-  /// Provides the easy-going specification holder with operator overloading.
+  /// Provides the easy-going specification holder with operator overloads.
   /// </summary>
   TSpecification<T> = record
   private
@@ -240,7 +250,7 @@ type
   /// <summary>
   /// Repsents type-handler mapping registry
   /// </summary>
-  TRegistry<TType, THandler> = class(TSingleton<TRegistry<TType, THandler>>)
+  TRegistry<TType, THandler> = class(TSingletonBase<TRegistry<TType, THandler>>)
   strict private
     fOwnsType: Boolean;
     fOwnsHandler: Boolean;
@@ -280,33 +290,22 @@ implementation
 uses
   Spring.ResourceStrings;
 
-{$REGION 'TSingleton<T>'}
 
-class destructor TSingleton<T>.Destroy;
+{$REGION 'TSingletonBase<T>'}
+
+class destructor TSingletonBase<T>.Destroy;
 begin
   FreeSingleton(fInstance);
 end;
 
-class procedure TSingleton<T>.FreeSingleton(var obj: T);
-begin
-  if obj <> nil then
-  begin
-    TSingleton<T>(obj).DoDestroy;
-    TSingleton<T>(obj).FreeInstance;
-    obj := nil;
-  end;
-end;
-
-class function TSingleton<T>.CreateSingleton: T;
-begin
-  Result := T(T.NewInstance);
-  TSingleton<T>(Result).DoCreate;
-end;
-
-class function TSingleton<T>.GetInstance: T;
+class function TSingletonBase<T>.GetInstance: T;
 var
   obj: T;
 begin
+  if not T.InheritsFrom(TSingletonBase<T>) then
+  begin
+    raise EInvalidOperation.Create(SInvalidOperation_MustInheritFromSingletonBase);
+  end;
   if fInstance = nil then
   begin
     obj := CreateSingleton;
@@ -318,22 +317,38 @@ begin
   Result := fInstance;
 end;
 
-constructor TSingleton<T>.Create;
+class function TSingletonBase<T>.CreateSingleton: T;
+begin
+  Result := T(T.NewInstance);
+  TSingletonBase<T>(Result).DoCreate;
+end;
+
+class procedure TSingletonBase<T>.FreeSingleton(var obj: T);
+begin
+  if obj <> nil then
+  begin
+    TSingletonBase<T>(obj).DoDestroy;
+    TSingletonBase<T>(obj).FreeInstance;
+    obj := nil;
+  end;
+end;
+
+constructor TSingletonBase<T>.Create;
 begin
   raise EInvalidOperation.Create(SInvalidOperation_SingletonCreate);
 end;
 
-destructor TSingleton<T>.Destroy;
+destructor TSingletonBase<T>.Destroy;
 begin
   if ExceptObject = nil then
     raise EInvalidOperation.Create(SInvalidOperation_SingletonDestroy);
 end;
 
-procedure TSingleton<T>.DoCreate;
+procedure TSingletonBase<T>.DoCreate;
 begin
 end;
 
-procedure TSingleton<T>.DoDestroy;
+procedure TSingletonBase<T>.DoDestroy;
 begin
 end;
 

@@ -4,7 +4,7 @@
 {                                                                           }
 {               Copyright (C) 2008-2009 Zuo Baoquan                         }
 {                                                                           }
-{               http://www.zuobaoquan.com (Simplified Chinese)              }
+{               http://delphi-spring-framework.googlecode.com               }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -97,6 +97,7 @@ resourcestring
 
 
   // Spring.DesignPatterns
+  SInvalidOperation_MustInheritFromSingletonBase = 'The class %s must inherit from TSingletonBase<%s>.';
   SInvalidOperation_SingletonCreate   = 'Use Instance class property instead.';
   SInvalidOperation_SingletonDestroy  = 'Invalid Operation: Free/Destroy';
 

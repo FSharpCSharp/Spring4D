@@ -18,7 +18,7 @@
 			<Projects Include="Examples\Navigation\Source\Navigation.dproj">
 				<Dependencies/>
 			</Projects>
-			<Projects Include="Bin\Console.dproj">
+			<Projects Include="Console.dproj">
 				<Dependencies/>
 			</Projects>
 		</ItemGroup>
@@ -75,13 +75,13 @@
 			<MSBuild Targets="Make" Projects="Examples\Navigation\Source\Navigation.dproj"/>
 		</Target>
 		<Target Name="Console">
-			<MSBuild Projects="Bin\Console.dproj"/>
+			<MSBuild Projects="Console.dproj"/>
 		</Target>
 		<Target Name="Console:Clean">
-			<MSBuild Targets="Clean" Projects="Bin\Console.dproj"/>
+			<MSBuild Targets="Clean" Projects="Console.dproj"/>
 		</Target>
 		<Target Name="Console:Make">
-			<MSBuild Targets="Make" Projects="Bin\Console.dproj"/>
+			<MSBuild Targets="Make" Projects="Console.dproj"/>
 		</Target>
 		<Target Name="Build">
 			<CallTarget Targets="SpringFramework_D2010;SpringFrameworkTests;Environments;Callback;Navigation;Console"/>

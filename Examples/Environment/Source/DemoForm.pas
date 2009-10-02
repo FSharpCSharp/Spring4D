@@ -4,7 +4,7 @@
 {                                                                           }
 {               Copyright (C) 2007-2009 Zuo Baoquan                         }
 {                                                                           }
-{               http://www.zuobaoquan.com (Simplified Chinese)              }
+{               http://delphi-spring-framework.googlecode.com               }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }

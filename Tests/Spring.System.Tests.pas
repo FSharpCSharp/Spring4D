@@ -4,7 +4,7 @@
 {                                                                           }
 {               Copyright (C) 2008-2009 Zuo Baoquan                         }
 {                                                                           }
-{               http://www.zuobaoquan.com (Simplified Chinese)              }
+{               http://delphi-spring-framework.googlecode.com               }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -592,7 +592,7 @@ end;
 {$REGION 'TTestSingleton'}
 
 type
-  TTestableSingleton = class(TSingleton<TTestableSingleton>)
+  TTestableSingleton = class(TSingletonBase<TTestableSingleton>)
   end;
 
 procedure TTestSingleton.TestGetInstance;

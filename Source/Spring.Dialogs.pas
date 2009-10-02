@@ -4,7 +4,7 @@
 {                                                                           }
 {               Copyright (C) 2008-2009 Zuo Baoquan                         }
 {                                                                           }
-{               http://www.zuobaoquan.com (Simplified Chinese)              }
+{               http://delphi-spring-framework.googlecode.com               }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -45,7 +45,7 @@ type
   /// </summary>
   /// <author>Paul</author>
   /// <author>HR168</author>
-  TDialog = class
+  TMessageBox = class
   private
     class constructor Create;
     class var fMessageDialogProc: TMessageDialogShowProc;
@@ -53,22 +53,22 @@ type
     class function ShowMessageDialog(const text, caption: string;
       dialogType: TMsgDlgType; buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult;
   public
-    { Information Dialogs }
+    { Information Message Box }
     class function Info(const text: string; const buttons: TMessageDialogButtons = [mbOK]): TModalResult; overload;
     class function Info(const text: string; const buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult; overload;
     class function Info(const text, caption: string; const buttons: TMessageDialogButtons = [mbOK]): TModalResult; overload;
     class function Info(const text, caption: string; const buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult; overload;
-    { Warning Dialogs }
+    { Warning Message Box }
     class function Warn(const text: string; const buttons: TMessageDialogButtons = [mbOK]): TModalResult; overload;
     class function Warn(const text: string; const buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult; overload;
     class function Warn(const text, caption: string; const buttons: TMessageDialogButtons = [mbOK]): TModalResult; overload;
     class function Warn(const text, caption: string; const buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult; overload;
-    { Error Dialogs }
+    { Error Message Box }
     class function Error(const text: string; const buttons: TMessageDialogButtons = [mbOK]): TModalResult; overload;
     class function Error(const text: string; const buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult; overload;
     class function Error(const text, caption: string; const buttons: TMessageDialogButtons = [mbOK]): TModalResult; overload;
     class function Error(const text, caption: string; const buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult; overload;
-    { Confirm Dialogs }
+    { Confirm Message Box }
     class function Confirm(const text: string; const buttons: TMessageDialogButtons = [mbYes, mbNo]): TModalResult; overload;
     class function Confirm(const text: string; const buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult; overload;
     class function Confirm(const text, caption: string; const buttons: TMessageDialogButtons = [mbOK]): TModalResult; overload;
@@ -76,6 +76,8 @@ type
   public
     class property MessageDialogProc: TMessageDialogShowProc read fMessageDialogProc write fMessageDialogProc;
   end;
+
+  TDialog = TMessageBox deprecated 'Use TMessageBox instead.';
 
 const
   { Copied from Dialogs.pas }
@@ -111,12 +113,12 @@ const
 
 { TDialog }
 
-class constructor TDialog.Create;
+class constructor TMessageBox.Create;
 begin
   fMessageDialogProc := ShowMessageDialog;
 end;
 
-class function TDialog.GetDefaultButton(
+class function TMessageBox.GetDefaultButton(
   const buttons: TMessageDialogButtons): TMessageDialogButton;
 begin
   if mbOk in Buttons then
@@ -127,7 +129,7 @@ begin
     Result := mbRetry;
 end;
 
-class function TDialog.ShowMessageDialog(const text, caption: string;
+class function TMessageBox.ShowMessageDialog(const text, caption: string;
   dialogType: TMsgDlgType; buttons: TMessageDialogButtons;
   defaultButton: TMessageDialogButton): TModalResult;
 begin
@@ -141,92 +143,92 @@ begin
   end;
 end;
 
-class function TDialog.Confirm(const text, caption: string;
+class function TMessageBox.Confirm(const text, caption: string;
   const buttons: TMessageDialogButtons): TModalResult;
 begin
   Result := Confirm(text, caption, buttons, GetDefaultButton(buttons));
 end;
 
-class function TDialog.Confirm(const text, caption: string; const buttons: TMessageDialogButtons;
+class function TMessageBox.Confirm(const text, caption: string; const buttons: TMessageDialogButtons;
   defaultButton: TMessageDialogButton): TModalResult;
 begin
   Result := ShowMessageDialog(text, caption, mtConfirmation, buttons, defaultButton);
 end;
 
-class function TDialog.Confirm(const text: string; const buttons: TMessageDialogButtons): TModalResult;
+class function TMessageBox.Confirm(const text: string; const buttons: TMessageDialogButtons): TModalResult;
 begin
   Result := Confirm(text, SConfirm, buttons, GetDefaultButton(buttons));
 end;
 
-class function TDialog.Confirm(const text: string; const buttons: TMessageDialogButtons;
+class function TMessageBox.Confirm(const text: string; const buttons: TMessageDialogButtons;
   defaultButton: TMessageDialogButton): TModalResult;
 begin
   Result := Confirm(text, SConfirm, buttons, defaultButton);
 end;
 
-class function TDialog.Info(const text: string;
+class function TMessageBox.Info(const text: string;
   const buttons: TMessageDialogButtons): TModalResult;
 begin
   Result := Info(text, SInformation, buttons, GetDefaultButton(buttons));
 end;
 
-class function TDialog.Info(const text: string;
+class function TMessageBox.Info(const text: string;
   const buttons: TMessageDialogButtons;
   defaultButton: TMessageDialogButton): TModalResult;
 begin
   Result := Info(text, SInformation, buttons, defaultButton);
 end;
 
-class function TDialog.Info(const text, caption: string;
+class function TMessageBox.Info(const text, caption: string;
   const buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult;
 begin
   Result := ShowMessageDialog(text, caption, mtInformation, buttons, defaultButton);
 end;
 
-class function TDialog.Info(const text, caption: string; const buttons: TMessageDialogButtons): TModalResult;
+class function TMessageBox.Info(const text, caption: string; const buttons: TMessageDialogButtons): TModalResult;
 begin
   Result := Info(text, caption, buttons, GetDefaultButton(buttons));
 end;
 
-class function TDialog.Warn(const text: string; const buttons: TMessageDialogButtons;
+class function TMessageBox.Warn(const text: string; const buttons: TMessageDialogButtons;
   defaultButton: TMessageDialogButton): TModalResult;
 begin
   Result := Warn(text, SWarning, buttons, defaultButton);
 end;
 
-class function TDialog.Warn(const text: string; const buttons: TMessageDialogButtons): TModalResult;
+class function TMessageBox.Warn(const text: string; const buttons: TMessageDialogButtons): TModalResult;
 begin
   Result := Warn(text, SWarning, buttons, GetDefaultButton(buttons));
 end;
 
-class function TDialog.Warn(const text, caption: string; const buttons: TMessageDialogButtons;
+class function TMessageBox.Warn(const text, caption: string; const buttons: TMessageDialogButtons;
   defaultButton: TMessageDialogButton): TModalResult;
 begin
   Result := ShowMessageDialog(text, caption, mtWarning, buttons, defaultButton);
 end;
 
-class function TDialog.Warn(const text, caption: string; const buttons: TMessageDialogButtons): TModalResult;
+class function TMessageBox.Warn(const text, caption: string; const buttons: TMessageDialogButtons): TModalResult;
 begin
   Result := Warn(text, caption, buttons, GetDefaultButton(buttons));
 end;
 
-class function TDialog.Error(const text, caption: string; const buttons: TMessageDialogButtons): TModalResult;
+class function TMessageBox.Error(const text, caption: string; const buttons: TMessageDialogButtons): TModalResult;
 begin
   Result := Error(text, caption, buttons, GetDefaultButton(buttons));
 end;
 
-class function TDialog.Error(const text, caption: string; const buttons: TMessageDialogButtons;
+class function TMessageBox.Error(const text, caption: string; const buttons: TMessageDialogButtons;
   defaultButton: TMessageDialogButton): TModalResult;
 begin
   Result := ShowMessageDialog(text, caption, mtError, buttons, defaultButton);
 end;
 
-class function TDialog.Error(const text: string; const buttons: TMessageDialogButtons): TModalResult;
+class function TMessageBox.Error(const text: string; const buttons: TMessageDialogButtons): TModalResult;
 begin
   Result := Error(text, SError, buttons, GetDefaultButton(buttons));
 end;
 
-class function TDialog.Error(const text: string; const buttons: TMessageDialogButtons;
+class function TMessageBox.Error(const text: string; const buttons: TMessageDialogButtons;
   defaultButton: TMessageDialogButton): TModalResult;
 begin
   Result := Error(text, SError, buttons, defaultButton);

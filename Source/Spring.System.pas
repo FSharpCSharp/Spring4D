@@ -4,7 +4,7 @@
 {                                                                           }
 {               Copyright (C) 2008-2009 Zuo Baoquan                         }
 {                                                                           }
-{               http://www.zuobaoquan.com (Simplified Chinese)              }
+{               http://delphi-spring-framework.googlecode.com               }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -59,7 +59,6 @@ uses
   Generics.Defaults,
   Generics.Collections,
   Spring.Win32API,
-//  Spring.Patterns,
   Spring.ResourceStrings;
 
 type
@@ -258,10 +257,10 @@ type
     function Equals(const buffer: Pointer; count: Integer): Boolean; overload;
 
     function ToBytes: TBytes;
-    function ToString: string;
-    function ToWideString: WideString;
-    function ToAnsiString: RawByteString;
-    function ToUtf8String: UTF8String;
+    function ToString: string; experimental;
+    function ToWideString: WideString; experimental;
+    function ToAnsiString: RawByteString; experimental;
+    function ToUtf8String: UTF8String; experimental;
 
     function ToHexString: string; overload;
     function ToHexString(const prefix: string; const delimiter: string = ' '): string; overload;
@@ -1081,7 +1080,7 @@ type
     function Invoke: Pointer;
   end;
 
-  
+
   {$ENDREGION}
 
 
@@ -1378,8 +1377,9 @@ var
     end;
   end;
 begin
-  if (buffer = nil) or (len = 0) then Exit;
   TArgument.CheckRange(len >= 0, 'len');
+
+  if (buffer = nil) or (len = 0) then Exit;
   head := buffer;
   tail := head + len - 1;
   p := head;
@@ -1405,7 +1405,6 @@ var
 begin
   if (buffer = nil) or (buffer^ = #0) then Exit;
   p := buffer;
-//  SetLength(Result, 0);
   while p^ <> #0 do
   begin
     entry := p;
@@ -1424,6 +1423,7 @@ function TryGetPropInfo(const instance: TObject; const propertyName: string;
   out propInfo: PPropInfo): Boolean;
 begin
   TArgument.CheckNotNull(instance, 'instance');
+
   propInfo := GetPropInfo(instance, propertyName);
   Result := propInfo <> nil;
 end;
@@ -1431,6 +1431,7 @@ end;
 function TryFocusControl(control: TWinControl): Boolean;
 begin
   TArgument.CheckNotNull(control, 'control');
+
   Result := control.Showing and control.CanFocus;
   if Result then
   begin
@@ -1455,6 +1456,7 @@ procedure Lock(obj: TObject; proc: TProc);
 begin
   TArgument.CheckNotNull(obj, 'obj');
   TArgument.CheckNotNull(Assigned(proc), 'proc');
+
   System.MonitorEnter(obj);
   try
     proc;
@@ -1467,6 +1469,7 @@ procedure UpdateStrings(strings: TStrings; proc: TProc);
 begin
   TArgument.CheckNotNull(strings, 'strings');
   TArgument.CheckNotNull(Assigned(proc), 'proc');
+
   strings.BeginUpdate;
   try
     strings.Clear;
@@ -1489,6 +1492,7 @@ var
 begin
   TArgument.CheckNotNull(container, 'container');
   TArgument.CheckNotNull(Assigned(callback), 'callback');
+
   list := TList.Create;
   try
     container.GetTabOrderList(list);
@@ -1516,6 +1520,7 @@ procedure EnumerateDataSet(dataSet: TDataSet; proc: TProc);
 begin
   TArgument.CheckNotNull(dataSet, 'dataSet');
   TArgument.CheckNotNull(Assigned(proc), 'proc');
+
   dataSet.DisableControls;
   try
     dataSet.First;
@@ -1772,6 +1777,7 @@ end;
 constructor TBuffer.Create(const buffer: Pointer; count: Integer);
 begin
   TArgument.CheckRange(count >= 0, 'count');
+
   SetLength(fBytes, count);
   Move(buffer^, fBytes[0], count);
 end;
@@ -1780,6 +1786,7 @@ constructor TBuffer.Create(const buffer: Pointer; startIndex, count: Integer);
 begin
   TArgument.CheckRange(startIndex >= 0, 'startIndex');
   TArgument.CheckRange(count >= 0, 'count');
+
   SetLength(fBytes, count);
   Move(PByte(buffer)[startIndex], fBytes[0], count);
 end;
@@ -1792,6 +1799,7 @@ end;
 constructor TBuffer.Create(const buffer: array of Byte; startIndex, count: Integer);
 begin
   TArgument.CheckRange(buffer, startIndex, count);
+
   Create(@buffer[startIndex], count);
 end;
 
@@ -1813,6 +1821,7 @@ end;
 class function TBuffer.BytesOf(const value: Byte; count: Integer): TBytes;
 begin
   TArgument.CheckRange(count >= 0, 'count');
+
   SetLength(Result, count);
   FillChar(Result[0], count, value);
 end;
@@ -1820,6 +1829,7 @@ end;
 class function TBuffer.GetByte(const buffer; const index: Integer): Byte;
 begin
   TArgument.CheckRange(index >= 0, 'index');
+
   Result := PByte(@buffer)[index];
 end;
 
@@ -1827,6 +1837,7 @@ class procedure TBuffer.SetByte(var buffer; const index: Integer;
   const value: Byte);
 begin
   TArgument.CheckRange(index >= 0, 'index');
+
   PByte(@buffer)[index] := value;
 end;
 
@@ -2124,6 +2135,7 @@ var
   info: PTypeInfo;
 begin
   TArgument.CheckEnum<T>(value, 'value');
+
   info := GetEnumTypeInfo<T>;
   Result := GetEnumName(info, value);
 end;
@@ -2155,6 +2167,7 @@ end;
 class function TEnum.GetValue<T>(const value: T): Integer;
 begin
   TArgument.CheckEnum<T>(value, 'value');
+
   Result := TEnum.ConvertToInteger<T>(value);
 end;
 
@@ -4203,5 +4216,6 @@ initialization
   ApplicationVersionString := ApplicationVersionInfo.FileVersion;
 
 finalization
-  
+
 end.
+

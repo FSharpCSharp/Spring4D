@@ -4,7 +4,7 @@
 {                                                                           }
 {               Copyright (C) 2008-2009 Zuo Baoquan                         }
 {                                                                           }
-{               http://www.zuobaoquan.com (Simplified Chinese)              }
+{               http://delphi-spring-framework.googlecode.com               }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -46,7 +46,7 @@ type
 //    procedure OnStatusChanged(status: TNetworkStatus);
 //  end;
 
-  TNetwork = class sealed(TSingleton<TNetwork>)
+  TNetwork = class sealed(TSingletonBase<TNetwork>)
   private
     class function GetIsAvailable: Boolean; static;
     class function GetStatus: TNetworkStatus; static;

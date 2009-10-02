@@ -4,7 +4,7 @@
 {                                                                           }
 {               Copyright (C) 2008-2009 Zuo Baoquan                         }
 {                                                                           }
-{               http://www.zuobaoquan.com (Simplified Chinese)              }
+{               http://delphi-spring-framework.googlecode.com               }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -300,7 +300,7 @@ type
 
   TObjectNotification = (onAdded, onChanged, onDeleted);
 
-  TObjectContext = class abstract(TSingleton<TObjectContext>, IEntityContext, IEntityMap, IInterface)
+  TObjectContext = class abstract(TSingletonBase<TObjectContext>, IEntityContext, IEntityMap, IInterface)
   private
     fObjectStateManager: TObjectStateManager;
     fListeners: TDictionary<TClass, TList<IObjectNotification>>;

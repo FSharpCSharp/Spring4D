@@ -4,7 +4,7 @@
 {                                                                           }
 {               Copyright (C) 2008-2009 Zuo Baoquan                         }
 {                                                                           }
-{               http://www.zuobaoquan.com (Simplified Chinese)              }
+{               http://delphi-spring-framework.googlecode.com               }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -21,6 +21,8 @@
 {  limitations under the License.                                           }
 {                                                                           }
 {***************************************************************************}
+
+{ TODO: REDESIGN Spring.Adapters (Spring.Plugins) }
 
 unit Spring.Adapters experimental;   // Spring.Plugins
 
@@ -62,7 +64,7 @@ type
 //    procedure UnregisterAdapters(const factory: IAdapterFactory);
   end;
 
-  TAdapterManager = class sealed(TSingleton<TAdapterManager>)
+  TAdapterManager = class sealed(TSingletonBase<TAdapterManager>)
   private
     type
       TLookupKey = record
