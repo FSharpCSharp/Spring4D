@@ -4,7 +4,7 @@
 (*                                                *)
 (**************************************************)
 
-unit DESImpl;
+unit Spring.Cryptography.DESImpl;
 
 interface
 

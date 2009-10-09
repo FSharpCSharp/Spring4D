@@ -1,10 +1,10 @@
 {***************************************************************************}
 {                                                                           }
-{               Delphi Spring Framework                                     }
+{           Delphi Spring Framework                                         }
 {                                                                           }
-{               Copyright (C) 2008-2009 Zuo Baoquan                         }
+{           Copyright (C) 2009-2010 Delphi Spring Framework                 }
 {                                                                           }
-{               http://delphi-spring-framework.googlecode.com               }
+{           http://delphi-spring-framework.googlecode.com                   }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-{ TODO: REDESIGN THE VALIDATION FRAMEWORK & SUPPORTS ATTRIBUTES }
+{ TODO: REDESIGN THE VALIDATION FRAMEWORK & SUPPORT ATTRIBUTES }
 
 unit Spring.Validation experimental;
 

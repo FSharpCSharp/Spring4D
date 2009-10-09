@@ -1,10 +1,10 @@
 {***************************************************************************}
 {                                                                           }
-{               Delphi Spring Framework                                     }
+{           Delphi Spring Framework                                         }
 {                                                                           }
-{               Copyright (C) 2008-2009 Zuo Baoquan                         }
+{           Copyright (C) 2009-2010 Delphi Spring Framework                 }
 {                                                                           }
-{               http://delphi-spring-framework.googlecode.com               }
+{           http://delphi-spring-framework.googlecode.com                   }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -180,7 +180,9 @@ type
 implementation
 
 uses
-  MD5Impl, CRCImpl, DESImpl;
+  Spring.Cryptography.MD5Impl,
+  Spring.Cryptography.CRCImpl,
+  Spring.Cryptography.DESImpl;
 
 
 {$REGION 'THashAlgorithm'}
@@ -376,13 +378,13 @@ begin
   for i := 0 to blockCount - 2 do
   begin
     Move(p^, inBuffer[0], 8);
-    DESImpl.EncryData(keyBuffer, inBuffer, outBuffer);
+    Spring.Cryptography.DESImpl.EncryData(keyBuffer, inBuffer, outBuffer);
     Result := Result + outBuffer;
     Inc(p, 8);
   end;
   Move(p^, inBuffer[0], 8 - paddingSize);
   FillChar(inBuffer[8-paddingSize-1], paddingSize, 0);   // TODO: Padding
-  DESImpl.EncryData(keyBuffer, inBuffer, outBuffer);
+  Spring.Cryptography.DESImpl.EncryData(keyBuffer, inBuffer, outBuffer);
   Result := Result + outBuffer;
 end;
 
@@ -402,7 +404,7 @@ begin
   for i := 0 to count div 8 - 1 do
   begin
     Move(p^, inBuffer[0], 8);
-    DESImpl.DecryData(keyBuffer, inBuffer, outBuffer);
+    Spring.Cryptography.DESImpl.DecryData(keyBuffer, inBuffer, outBuffer);
     Result := Result + outBuffer;
     Inc(p, 8);
   end;

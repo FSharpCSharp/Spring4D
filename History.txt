@@ -1,0 +1,23 @@
+2009-10-09	V0.1.0.466
+[IMPORTANT]
+-Removed the following 4 projects from the roadmap, now just focus on the core fundamental library.
+1. Spring Entity Framework
+2. Spring Communications Framework
+3. Spring ConnectionManager Component
+4. Spring Data Form Framework
+-Removed Spring.Core, Spring.Core.Objects and Spring.Objects
+-Removed Spring.Data.* and Spring.EntityFramework
+-Removed Spring.Communications.*
+
++Added some initial code on IoC Container (Spring.IoC)
++Added TVolatile<T> to implement the Volatile keyword in .net (experimental)
++Added TArgument.CheckTypeKind
+*Both the parameters "argument" of TArgument.CheckTrue and TArgument.CheckFalse were changed to "msg".
+*Updated Copyright headers
+*Moved readme_*.txt to Documents folder
+*Renamed SpringFramework_2010.* to DelphiSpringFramework_2010.*
+*Reorganized subfolders in the Source folder (Need to update the Library path & Browsing path)
+*Renamed Spring.Collections.TContainer to TConainers
+*Renamed the customized interfaces IEnumerator<T> and IEnumerable<T> in Spring.Collections to IEnumeratorEx<T> and IEnumerableEx<T> to avoid the L817 internal error.
+*Redesigned the Singleton Pattern using TSingleton class, which is more like a singleton instance container, insteading of TSingletonBase<T>
+*TPersistentSnapshot and TPersistentHelper in Spring.Helpers are now marked as deprecated, and may be removed later.

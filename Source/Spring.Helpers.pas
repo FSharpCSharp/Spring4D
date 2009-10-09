@@ -1,10 +1,10 @@
 {***************************************************************************}
 {                                                                           }
-{               Delphi Spring Framework                                     }
+{           Delphi Spring Framework                                         }
 {                                                                           }
-{               Copyright (C) 2008-2009 Zuo Baoquan                         }
+{           Copyright (C) 2009-2010 Delphi Spring Framework                 }
 {                                                                           }
-{               http://delphi-spring-framework.googlecode.com               }
+{           http://delphi-spring-framework.googlecode.com                   }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -25,6 +25,7 @@
 {TODO -oOwner -cGeneral : TRectHelper}
 {TODO -oOwner -cGeneral : TSizeHelper}
 {TODO -oOwner -cGeneral : TPointHelper}
+{TODO -oOwner -cGeneral : TControlHelper}
 
 unit Spring.Helpers experimental;
 
@@ -41,7 +42,7 @@ uses
 
 type
   /// <summary>
-  /// TGuid record helper
+  /// Record helper for TGuid
   /// </summary>
   TGuidHelper = record helper for TGuid
   private
@@ -72,33 +73,24 @@ type
   public
     constructor Create(snapshot: TPersistent);
     destructor Destroy; override;
-  end;
+  end deprecated;
 
   TPersistentHelper = class helper for TPersistent
   public
     function CreateSnapshot<T: TPersistent, constructor>: ISnapshot;
     procedure Restore(const snapshot: ISnapshot);
-  end experimental;
+  end deprecated;
 
   (*
 
-  /// <summary>
-  /// TPointHelper
-  /// </summary>
   TPointHelper = record helper for TPoint
 
   end;
 
-  /// <summary>
-  /// TSizeHelper
-  /// </summary>
   TSizeHelper = record helper for TSize
 
   end;
 
-  /// <summary>
-  /// TRectHelper
-  /// </summary>
   TRectHelper = record helper for TRect
 
   end;

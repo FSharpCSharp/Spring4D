@@ -1,10 +1,10 @@
 {***************************************************************************}
 {                                                                           }
-{               Delphi Spring Framework                                     }
+{           Delphi Spring Framework                                         }
 {                                                                           }
-{               Copyright (C) 2008-2009 Zuo Baoquan                         }
+{           Copyright (C) 2009-2010 Delphi Spring Framework                 }
 {                                                                           }
-{               http://delphi-spring-framework.googlecode.com               }
+{           http://delphi-spring-framework.googlecode.com                   }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -225,14 +225,14 @@ end;
 
 function THierarchy.GetAppenders: ICollection<IAppender>;
 begin
-  Result := TContainer.CreateList<IAppender>;
+  Result := TContainers.CreateList<IAppender>;
 end;
 
 function THierarchy.GetCurrentLoggers: ICollection<ILogger>;
 var
   node: TObject;
 begin
-  Result := TContainer.CreateList<ILogger>;
+  Result := TContainers.CreateList<ILogger>;
   for node in fLoggers.Values do
   begin
     if node is TLogger then

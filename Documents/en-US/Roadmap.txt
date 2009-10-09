@@ -4,34 +4,46 @@ Delphi Spring Framework Roadmap
 
 ==============================================================================
 
+(DRAFT-NOT PUBLISHED)
 
 -----------------------------------------------------------------------------
 V0.1.0	2009-10-27    (Initial Release)
 -----------------------------------------------------------------------------
 
-> Spring.System
-> Spring.System.IO
+>>Spring.IoC
+IoC Container (Supports Constructor Injection, Setter Injection, Configuration)
 
 >>Spring.System.IO namespace
 
 + TFileMapping, TFileMappingView
 + TFileMappingStream
 
-* TFileSystemWatcher
-
 * TFileSearcher
 * TFileEnumerator  (EnumerateFiles, EnumerateDirectories, EnumerateFileSystemEntries)
 * TFileSystemEntry
+
+* TFileSystemWatcher
 
 >>Spring.Configuration
 
 >>Spring.Logging
 Logging Services
 
->>Spring.IoC
-IoC Container (Supports Constructor Injection, Setter Injection, Configuration)
++Refactoring Design Patterns
 
->>Spring.Security.Cryptography:
++"Delphi Spring Framework Coding Standards"
+* License
+* Namespaces
+* Class Template
+* Identation & Captial
+* SVN
+* Unicode Notes
+
+> Spring.Validation
+> Spring.Navigation
+
+
+>>Spring.Cryptography:
 
 1. Hash Algorithms
 * MD5 (128 bits, 16 Bytes)
@@ -49,23 +61,6 @@ IoC Container (Supports Constructor Injection, Setter Injection, Configuration)
 * DES
 * TripleDES
 * AES
-
-+Refactoring Design Patterns
-
-Delphi Spring Framework Coding Standards
-* License
-* Namespaces
-* Class Template
-* Identation & Captial
-* SVN
-* Unicode Notes
-
-(Optional)
-
-> Spring.Validation
-> Spring.Navigation
-
->>Spring.Communications
 
 -----------------------------------------------------------------------------
 V0.1.x	2009-11-09
@@ -110,12 +105,10 @@ Bug-Fixes
 -----------------------------------------------------------------------------
 V0.3.0	2009-12-28
 -----------------------------------------------------------------------------
->>Spring Entity Framework
-Considering and Investigating Data Binding & ORM
 
 +Spring.Expressions
 
-+Common Domain Objects (TMoney, TCurrency, TQuantity, TUnit, TTimePoint(TDateTime, TDate, TTime), TRange<T>, TParty£¬TGroup, TPerson, TLocation, TAddress, etc.)
++Common Domain Objects (TMoney, TCurrency, TQuantity, TUnit, TTimePoint(TDateTime, TDate, TTime), TRange<T>, etc.)
 
 >>Spring.Scheduler (Based on Quartz and Quartz.Net projects)
 

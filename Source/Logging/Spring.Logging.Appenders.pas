@@ -1,10 +1,10 @@
 {***************************************************************************}
 {                                                                           }
-{               Delphi Spring Framework                                     }
+{           Delphi Spring Framework                                         }
 {                                                                           }
-{               Copyright (C) 2008-2009 Zuo Baoquan                         }
+{           Copyright (C) 2009-2010 Delphi Spring Framework                 }
 {                                                                           }
-{               http://delphi-spring-framework.googlecode.com               }
+{           http://delphi-spring-framework.googlecode.com                   }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -131,7 +131,7 @@ uses Spring.Logging.Utils;
 constructor TAppenderAttachable.Create;
 begin
   inherited Create;
-  fList := TContainer.CreateList<IAppender>;
+  fList := TContainers.CreateList<IAppender>;
 end;
 
 destructor TAppenderAttachable.Destroy;

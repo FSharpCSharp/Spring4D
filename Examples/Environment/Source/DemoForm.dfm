@@ -28,15 +28,11 @@ object frmDemo: TfrmDemo
     OnChange = pgcMainChange
     object tsGeneral: TTabSheet
       Caption = 'General'
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object Label5: TLabel
         AlignWithMargins = True
         Left = 3
         Top = 3
-        Width = 233
+        Width = 658
         Height = 13
         Align = alTop
         Caption = 'Global Variables && Environment Members'
@@ -46,6 +42,7 @@ object frmDemo: TfrmDemo
         Font.Name = 'Tahoma'
         Font.Style = [fsBold]
         ParentFont = False
+        ExplicitWidth = 233
       end
       object vleGeneral: TValueListEditor
         AlignWithMargins = True

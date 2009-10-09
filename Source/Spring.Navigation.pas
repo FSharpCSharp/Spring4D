@@ -1,10 +1,10 @@
 {***************************************************************************}
 {                                                                           }
-{               Delphi Spring Framework                                     }
+{           Delphi Spring Framework                                         }
 {                                                                           }
-{               Copyright (C) 2008-2009 Zuo Baoquan                         }
+{           Copyright (C) 2009-2010 Delphi Spring Framework                 }
 {                                                                           }
-{               http://delphi-spring-framework.googlecode.com               }
+{           http://delphi-spring-framework.googlecode.com                   }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -106,9 +106,9 @@ implementation
 constructor TNavigationHistory.Create;
 begin
   inherited Create;
-  fLocations := TContainer.CreateList<ILocatable>;
-  fBackList := TContainer.CreateList<ILocatable>;
-  fForwardList := TContainer.CreateList<ILocatable>;
+  fLocations := TContainers.CreateList<ILocatable>;
+  fBackList := TContainers.CreateList<ILocatable>;
+  fForwardList := TContainers.CreateList<ILocatable>;
 end;
 
 destructor TNavigationHistory.Destroy;

@@ -22,17 +22,18 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Resources;
+program EnvironmentDemo;
 
-interface
+uses
+  Classes,
+  Forms,
+  DemoForm in 'Source\DemoForm.pas' {frmDemo};
 
-//type
-//  IResource = interface
-//    function GetExists: Boolean;
-//    function CreateRelative(const relativePath: string): IResource;
-//    property Exists: Boolean read GetExists;
-//  end;
+{$R *.res}
 
-implementation
-
+begin
+  Application.Initialize;
+  Application.MainFormOnTaskbar := True;
+  Application.CreateForm(TfrmDemo, frmDemo);
+  Application.Run;
 end.

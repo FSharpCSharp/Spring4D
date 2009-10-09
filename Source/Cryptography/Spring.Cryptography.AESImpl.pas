@@ -7,7 +7,7 @@
 (*                                                *)
 (**************************************************)
 
-unit AESImpl;
+unit Spring.Cryptography.AESImpl;
 
 interface
 

@@ -1,10 +1,10 @@
 {***************************************************************************}
 {                                                                           }
-{               Delphi Spring Framework                                     }
+{           Delphi Spring Framework                                         }
 {                                                                           }
-{               Copyright (C) 2008-2009 Zuo Baoquan                         }
+{           Copyright (C) 2009-2010 Delphi Spring Framework                 }
 {                                                                           }
-{               http://delphi-spring-framework.googlecode.com               }
+{           http://delphi-spring-framework.googlecode.com                   }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -32,8 +32,12 @@ resourcestring
 
   SNotSupportedException       = '%s is not supported.';
   SNotImplementedException     = '%s is not implemented.';
+
   SArgumentOutOfRangeException = 'ArgumentOutOfRangeException: %s';
   SArgumentNullException       = 'ArgumentNullException: %s';
+  SInvalidEnumArgument         = 'Invalid enum argument: %s';
+  SUnexpectedTypeKindArgument  = 'Unexpected type kind %s for the argument %s.';
+
   SFileNotFoundException       = 'File not found: %s';
   SDirectoryNotFoundException  = 'Directory not found: %s';
   SNullableTypeHasNoValue      = 'Invalid operation, Nullable type has no value.';
@@ -47,7 +51,6 @@ resourcestring
   SNoTypeInfo          = 'No type information found.';
   SUnexpectedTypeKind  = 'Unexpected type kind: %s.';
   SNotEnumeratedType   = 'Type "%s" is not enumerated type.';
-  SInvalidEnumArgument = 'Invalid enum argument %0:s for %1:s, actual value: %2:d.';
   SIncorrectFormat     = 'Unable to convert %s.';
   SIllegalFieldCount   = 'fieldCount is more than the number of components defined in the current Version object.';
 

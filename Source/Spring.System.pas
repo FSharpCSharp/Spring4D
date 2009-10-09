@@ -1,10 +1,10 @@
 {***************************************************************************}
 {                                                                           }
-{               Delphi Spring Framework                                     }
+{           Delphi Spring Framework                                         }
 {                                                                           }
-{               Copyright (C) 2008-2009 Zuo Baoquan                         }
+{           Copyright (C) 2009-2010 Delphi Spring Framework                 }
 {                                                                           }
-{               http://delphi-spring-framework.googlecode.com               }
+{           http://delphi-spring-framework.googlecode.com                   }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -29,6 +29,7 @@
 
 { TODO: IAsyncResult }
 { TODO: TUri class }
+{ TODO: TBigInteger class }
 
 unit Spring.System;
 
@@ -84,7 +85,10 @@ type
   /// </summary>
   TStopwatch = Diagnostics.TStopwatch;
 
-  PTypeInfo = TypInfo.PTypeInfo;
+  PTypeInfo  = TypInfo.PTypeInfo;
+
+  TTypeKind  = TypInfo.TTypeKind;
+  TTypeKinds = TypInfo.TTypeKinds;
 
   TCharacter = Character.TCharacter;
 
@@ -101,21 +105,6 @@ type
   TInt32Rec = TIntegerRec;
 
   TInt64Rec = SysUtils.Int64Rec;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TInterfaceBase'}
-
-  /// <summary>
-  /// Provides a default implementation of IInterface without reference-counting
-  /// </summary>
-  TInterfaceBase= class(TObject, IInterface)
-  protected
-    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
-    function _AddRef: Integer; stdcall;
-    function _Release: Integer; stdcall;
-  end;
 
   {$ENDREGION}
 
@@ -154,6 +143,21 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TInterfaceBase'}
+
+  /// <summary>
+  /// Provides a default implementation of IInterface without reference-counting
+  /// </summary>
+  TInterfaceBase= class(TObject, IInterface)
+  protected
+    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
+    function _AddRef: Integer; stdcall;
+    function _Release: Integer; stdcall;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'TArgument'}
 
   /// <summary>
@@ -173,8 +177,8 @@ type
     class procedure DoCheckStringIndex(const length, index: Integer); static; inline;
     class procedure DoCheckStringRange(const length, startIndex, count: Integer); static; inline;
   public
-    class procedure CheckTrue(condition: Boolean; const argumentName: string); static; inline;
-    class procedure CheckFalse(condition: Boolean; const argumentName: string); static; inline;
+    class procedure CheckTrue(condition: Boolean; const msg: string); static; inline;
+    class procedure CheckFalse(condition: Boolean; const msg: string); static; inline;
 
     class procedure CheckNotNull(obj: TObject; const argumentName: string); overload; static; inline;
     class procedure CheckNotNull(p: Pointer; const argumentName: string); overload; static; inline;
@@ -195,6 +199,8 @@ type
     class procedure CheckRange(const s: RawByteString; const index: Integer); overload; static; inline;
     class procedure CheckRange(const s: RawByteString; const startIndex, count: Integer); overload; static; inline;
     class procedure CheckRange(condition: Boolean; const argumentName: string); overload; static; inline;
+
+    class procedure CheckTypeKind(typeInfo: PTypeInfo; const expectedTypeKinds: TTypeKinds; const argumentName: string); static; inline;
 
     class procedure RaiseArgumentException(const argumentName: string); overload; static; inline;
     class procedure RaiseArgumentNullException(const argumentName: string); overload; static; inline;
@@ -291,6 +297,28 @@ type
 //  TBufferStream = class(TCustomMemoryStream)
 //
 //  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TVolatile<T>'}
+
+  /// <summary>
+  /// Enforces an ordering constraint on memory operations.
+  /// </summary>
+  TVolatile<T> = record
+  private
+    fValue: T;
+    function GetValue: T;
+    procedure SetValue(const newValue: T);
+  public
+    property Value: T read GetValue write SetValue;
+    { Operator Overloads }
+    class operator Implicit(const value: T): TVolatile<T>;
+    class operator Implicit(const value: TVolatile<T>): T;
+    class operator Equal(const left, right: TVolatile<T>): Boolean;
+    class operator NotEqual(const left, right: TVolatile<T>): Boolean;
+  end;
 
   {$ENDREGION}
 
@@ -493,7 +521,7 @@ type
 
   {$REGION 'TType (NOT READY)'}
 
-//  TType = class abstract(TSingleton)
+//  TType = class abstract(TSingletonBase<TType>)
 //
 //  end;
 
@@ -676,7 +704,7 @@ type
   /// <summary>
   /// Represents information about the operating system.
   /// </summary>
-  TOperatingSystem = class // sealed(TSingleton)
+  TOperatingSystem = class //(TSingletonBase<TOperatingSystem>) // [DCC FATAL ERROR]F2084: INTERNAL ERROR URW1111
   strict private
     fEdition: string;
     fPlatformType: TOSPlatformType;
@@ -689,13 +717,14 @@ type
     function GetVersionString: string;
     function GetOSVersionType(platformType: TOSPlatformType; productType: TOSProductType;
       majorVersion, minorVersion: Integer): TOSVersionType;
-  strict private
-    class var
-      fInstance: TOperatingSystem;
-    class constructor Create; overload;
+  private // TEMP
+    class var fInstance: TOperatingSystem;
+    class function GetInstance: TOperatingSystem; static;
+    class constructor Create;
     class destructor Destroy;
+  protected
+    procedure DoCreate; { override; }
   public
-    constructor Create; overload;
     function ToString: string; override;
 //    property Edition: string read fEdition;
     property IsWin9x: Boolean read GetIsWin9x;
@@ -706,7 +735,7 @@ type
     property Version: TVersion read fVersion;
     property VersionString: string read GetVersionString;
     property VersionType: TOSVersionType read fVersionType;
-    class property Instance: TOperatingSystem read fInstance;
+    class property Instance: TOperatingSystem read GetInstance;
   end;
 
   {$ENDREGION}
@@ -874,7 +903,7 @@ type
   end;
 
   /// <summary>
-  /// Provides a type alias for TEnvironment class.
+  /// Represents a type alias of TEnvironment class.
   /// </summary>
   Environment = TEnvironment;
 
@@ -1309,6 +1338,8 @@ const
   {$ENDREGION}
 
 
+{ TODO: Use class constructor to optimize these variables }
+
 var
   ApplicationPath: string;
   ApplicationVersion: TVersion;
@@ -1612,20 +1643,20 @@ begin
 end;
 
 class procedure TArgument.CheckTrue(condition: Boolean;
-  const argumentName: string);
+  const msg: string);
 begin
   if not condition then
   begin
-    TArgument.RaiseArgumentException(argumentName);
+    raise EArgumentException.Create(msg);
   end;
 end;
 
 class procedure TArgument.CheckFalse(condition: Boolean;
-  const argumentName: string);
+  const msg: string);
 begin
   if condition then
   begin
-    TArgument.RaiseArgumentException(argumentName);
+    raise EArgumentException.Create(msg);
   end;
 end;
 
@@ -1746,6 +1777,16 @@ begin
   TArgument.DoCheckStringRange(Length(s), startIndex, count);
 end;
 
+class procedure TArgument.CheckTypeKind(typeInfo: PTypeInfo;
+  const expectedTypeKinds: TTypeKinds; const argumentName: string);
+begin
+  TArgument.CheckNotNull(typeInfo, argumentName);
+  if not (typeInfo.Kind in expectedTypeKinds) then
+  begin
+    raise EArgumentException.CreateFmt(SUnexpectedTypeKindArgument, [typeInfo.Name, argumentName]);
+  end;
+end;
+
 class procedure TArgument.RaiseArgumentException(const argumentName: string);
 begin
   raise EArgumentException.Create(argumentName);
@@ -1754,19 +1795,19 @@ end;
 class procedure TArgument.RaiseArgumentNullException(
   const argumentName: string);
 begin
-  raise EArgumentNullException.Create(argumentName);
+  raise EArgumentNullException.CreateFmt(SArgumentNullException, [argumentName]);
 end;
 
 class procedure TArgument.RaiseArgumentOutOfRangeException(
   const argumentName: string);
 begin
-  raise EArgumentOutOfRangeException.Create(argumentName);
+  raise EArgumentOutOfRangeException.CreateFmt(SArgumentOutOfRangeException, [argumentName]);
 end;
 
 class procedure TArgument.RaiseInvalidEnumArgumentException(
   const argumentName: string);
 begin
-  raise EInvalidEnumArgumentException.Create(argumentName);
+  raise EInvalidEnumArgumentException.CreateFmt(SInvalidEnumArgument, [argumentName]);
 end;
 
 {$ENDREGION}
@@ -2908,6 +2949,7 @@ end;
 class constructor TOperatingSystem.Create;
 begin
   fInstance := TOperatingSystem.Create;
+  fInstance.DoCreate;
 end;
 
 class destructor TOperatingSystem.Destroy;
@@ -2915,7 +2957,12 @@ begin
   FreeAndNil(fInstance);
 end;
 
-constructor TOperatingSystem.Create;
+class function TOperatingSystem.GetInstance: TOperatingSystem;
+begin
+  Result := fInstance;
+end;
+
+procedure TOperatingSystem.DoCreate;
 var
   versionInfo: TOSVersionInfoEx;
 begin
@@ -4209,6 +4256,42 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TVolatile<T>'}
+
+function TVolatile<T>.GetValue: T;
+begin
+  MemoryBarrier;
+  Result := fValue;
+end;
+
+procedure TVolatile<T>.SetValue(const newValue: T);
+begin
+  MemoryBarrier;
+  fValue := newValue;
+end;
+
+class operator TVolatile<T>.Implicit(const value: T): TVolatile<T>;
+begin
+  Result.Value := value;
+end;
+
+class operator TVolatile<T>.Implicit(const value: TVolatile<T>): T;
+begin
+  Result := value.Value;
+end;
+
+class operator TVolatile<T>.Equal(const left, right: TVolatile<T>): Boolean;
+begin
+  Result := TEqualityComparer<T>.Default.Equals(left, right);
+end;
+
+class operator TVolatile<T>.NotEqual(const left, right: TVolatile<T>): Boolean;
+begin
+  Result := not TEqualityComparer<T>.Default.Equals(left, right);
+end;
+
+{$ENDREGION}
+
 initialization
   ApplicationPath := ExtractFilePath(ParamStr(0));
   ApplicationVersionInfo := TFileVersionInfo.GetVersionInfo(ParamStr(0));
@@ -4218,4 +4301,3 @@ initialization
 finalization
 
 end.
-

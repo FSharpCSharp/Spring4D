@@ -3,19 +3,16 @@
 			<ProjectGuid>{54F590C9-22AC-49C1-BABD-952A3AD7092C}</ProjectGuid>
 		</PropertyGroup>
 		<ItemGroup>
-			<Projects Include="SpringFramework_D2010.dproj">
+			<Projects Include="DelphiSpringFramework_D2010.dproj">
 				<Dependencies/>
 			</Projects>
 			<Projects Include="SpringFrameworkTests.dproj">
 				<Dependencies/>
 			</Projects>
-			<Projects Include="Examples\Environment\Environments.dproj">
+			<Projects Include="Examples\Environment\EnvironmentDemo.dproj">
 				<Dependencies/>
 			</Projects>
 			<Projects Include="Examples\CallBack\Callback.dproj">
-				<Dependencies/>
-			</Projects>
-			<Projects Include="Examples\Navigation\Source\Navigation.dproj">
 				<Dependencies/>
 			</Projects>
 			<Projects Include="Console.dproj">
@@ -29,14 +26,14 @@
 				<Default.Personality/>
 			</BorlandProject>
 		</ProjectExtensions>
-		<Target Name="SpringFramework_D2010">
-			<MSBuild Projects="SpringFramework_D2010.dproj"/>
+		<Target Name="DelphiSpringFramework_D2010">
+			<MSBuild Projects="DelphiSpringFramework_D2010.dproj"/>
 		</Target>
-		<Target Name="SpringFramework_D2010:Clean">
-			<MSBuild Targets="Clean" Projects="SpringFramework_D2010.dproj"/>
+		<Target Name="DelphiSpringFramework_D2010:Clean">
+			<MSBuild Targets="Clean" Projects="DelphiSpringFramework_D2010.dproj"/>
 		</Target>
-		<Target Name="SpringFramework_D2010:Make">
-			<MSBuild Targets="Make" Projects="SpringFramework_D2010.dproj"/>
+		<Target Name="DelphiSpringFramework_D2010:Make">
+			<MSBuild Targets="Make" Projects="DelphiSpringFramework_D2010.dproj"/>
 		</Target>
 		<Target Name="SpringFrameworkTests">
 			<MSBuild Projects="SpringFrameworkTests.dproj"/>
@@ -47,14 +44,14 @@
 		<Target Name="SpringFrameworkTests:Make">
 			<MSBuild Targets="Make" Projects="SpringFrameworkTests.dproj"/>
 		</Target>
-		<Target Name="Environments">
-			<MSBuild Projects="Examples\Environment\Environments.dproj"/>
+		<Target Name="EnvironmentDemo">
+			<MSBuild Projects="Examples\Environment\EnvironmentDemo.dproj"/>
 		</Target>
-		<Target Name="Environments:Clean">
-			<MSBuild Targets="Clean" Projects="Examples\Environment\Environments.dproj"/>
+		<Target Name="EnvironmentDemo:Clean">
+			<MSBuild Targets="Clean" Projects="Examples\Environment\EnvironmentDemo.dproj"/>
 		</Target>
-		<Target Name="Environments:Make">
-			<MSBuild Targets="Make" Projects="Examples\Environment\Environments.dproj"/>
+		<Target Name="EnvironmentDemo:Make">
+			<MSBuild Targets="Make" Projects="Examples\Environment\EnvironmentDemo.dproj"/>
 		</Target>
 		<Target Name="Callback">
 			<MSBuild Projects="Examples\CallBack\Callback.dproj"/>
@@ -64,15 +61,6 @@
 		</Target>
 		<Target Name="Callback:Make">
 			<MSBuild Targets="Make" Projects="Examples\CallBack\Callback.dproj"/>
-		</Target>
-		<Target Name="Navigation">
-			<MSBuild Projects="Examples\Navigation\Source\Navigation.dproj"/>
-		</Target>
-		<Target Name="Navigation:Clean">
-			<MSBuild Targets="Clean" Projects="Examples\Navigation\Source\Navigation.dproj"/>
-		</Target>
-		<Target Name="Navigation:Make">
-			<MSBuild Targets="Make" Projects="Examples\Navigation\Source\Navigation.dproj"/>
 		</Target>
 		<Target Name="Console">
 			<MSBuild Projects="Console.dproj"/>
@@ -84,13 +72,13 @@
 			<MSBuild Targets="Make" Projects="Console.dproj"/>
 		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="SpringFramework_D2010;SpringFrameworkTests;Environments;Callback;Navigation;Console"/>
+			<CallTarget Targets="DelphiSpringFramework_D2010;SpringFrameworkTests;EnvironmentDemo;Callback;Console"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="SpringFramework_D2010:Clean;SpringFrameworkTests:Clean;Environments:Clean;Callback:Clean;Navigation:Clean;Console:Clean"/>
+			<CallTarget Targets="DelphiSpringFramework_D2010:Clean;SpringFrameworkTests:Clean;EnvironmentDemo:Clean;Callback:Clean;Console:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="SpringFramework_D2010:Make;SpringFrameworkTests:Make;Environments:Make;Callback:Make;Navigation:Make;Console:Make"/>
+			<CallTarget Targets="DelphiSpringFramework_D2010:Make;SpringFrameworkTests:Make;EnvironmentDemo:Make;Callback:Make;Console:Make"/>
 		</Target>
 		<Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 	</Project>

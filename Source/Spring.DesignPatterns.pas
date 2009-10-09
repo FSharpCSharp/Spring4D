@@ -1,10 +1,10 @@
 {***************************************************************************}
 {                                                                           }
-{               Delphi Spring Framework                                     }
+{           Delphi Spring Framework                                         }
 {                                                                           }
-{               Copyright (C) 2008-2009 Zuo Baoquan                         }
+{           Copyright (C) 2009-2010 Delphi Spring Framework                 }
 {                                                                           }
-{               http://delphi-spring-framework.googlecode.com               }
+{           http://delphi-spring-framework.googlecode.com                   }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -37,13 +37,38 @@ uses
   Windows,
   SysUtils,
   SyncObjs,
-  TypInfo,
+  TypInfo,    IOUtils,
   Generics.Defaults,
   Generics.Collections,
   Spring.System;
 
 type
-  {$REGION 'Singleton Pattern'}
+  {$REGION 'TSingleton'}
+
+  /// <summary>
+  /// Provides a portal to get the single instance of a class. It also keeps track
+  /// of the lifecycle of the instances and will free them in reversed order.
+  /// </summary>
+  /// <description>
+  /// Singleton Pattern is defined as:
+  /// Ensure a class only has one instance, and provide a global point of access to it.
+  /// </description>
+  TSingleton = record
+  strict private
+    class var
+      fMappings: TDictionary<TClass, TObject>;
+      fInstances: TObjectList;
+      fCriticalSection: TCriticalSection;
+    class constructor Create;
+    class destructor Destroy;
+  public
+    class function GetInstance<T: class, constructor>: T; static;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TSingletonBase<T> (DEPRECATED & WILL BE REMOVED IN THE NEXT RELEASE)'}
 
   /// <summary>
   /// Provides a simple, fast and thread-safe Singleton Pattern implementation.
@@ -66,7 +91,7 @@ type
   ///   end;
   /// </code>
   /// </example>
-  TSingletonBase<T: class> = class(TInterfaceBase)
+  TSingletonBase<T: class> = class abstract(TInterfaceBase)
   strict private
     class var fInstance: T;
     class destructor Destroy;
@@ -80,7 +105,7 @@ type
     constructor Create;
     destructor Destroy; override;
     class property Instance: T read GetInstance;
-  end;
+  end deprecated;
 
   {$ENDREGION}
 
@@ -96,6 +121,9 @@ type
     procedure NotifyObservers(callback: TProc<T>);
   end;
 
+  /// <summary>
+  /// TObservable<T>
+  /// </summary>
   TObservable<T> = class(TInterfaceBase, IObservable<T>, IInterface)
   strict private
     fObservers: TList<T>;
@@ -113,7 +141,7 @@ type
     procedure NotifyObservers(callback: TProc<T>); virtual;
   end;
 
-//  TObservableSingleton<T> = class(TSingleton<T>, IObservable<T>, IInterface)
+//  TObservableSingleton<T> = class(TSingletonBase<T>, IObservable<T>, IInterface)
 //
 //  end;
 
@@ -273,17 +301,16 @@ type
     property Types: TEnumerable<TType> read GetTypes;
     property OwnsType: Boolean read fOwnsType write fOwnsType;
     property OwnsHandler: Boolean read fOwnsHandler write fOwnsHandler;
-  end;
+  end deprecated;
 
   { TClassRegistry, match most specific class type }
   TClassRegistry<TClassType, THandler> = class(TRegistry<TClassType, THandler>)
   public
     function Contains(const &type: TClassType): Boolean; override;
     function TryGetHandler(const &type: TClassType; out handler: THandler): Boolean; override;
-  end;
+  end deprecated;
 
   {$ENDREGION}
-
 
 implementation
 
@@ -352,6 +379,40 @@ procedure TSingletonBase<T>.DoDestroy;
 begin
 end;
 
+
+{$ENDREGION}
+
+
+{$REGION 'TSingleton'}
+
+class constructor TSingleton.Create;
+begin
+  fMappings := TDictionary<TClass, TObject>.Create(4);
+  fInstances := TObjectList.Create(True);
+  fCriticalSection := TCriticalSection.Create;
+end;
+
+class destructor TSingleton.Destroy;
+begin
+  fCriticalSection.Free;
+  fInstances.Free;
+  fMappings.Free;
+end;
+
+class function TSingleton.GetInstance<T>: T;
+begin
+  fCriticalSection.Enter;
+  try
+    if not fMappings.TryGetValue(T, TObject(Result)) then
+    begin
+      Result := T.Create;
+      fMappings.Add(T, Result);
+      fInstances.Add(Result);
+    end;
+  finally
+    fCriticalSection.Leave;
+  end;
+end;
 
 {$ENDREGION}
 
@@ -541,8 +602,6 @@ end;
 
 {$REGION 'TRegistry<TType, THandler>'}
 
-{$IFDEF SUPPORTS_GENERICS}
-
 procedure TRegistry<TType, THandler>.DoCreate;
 begin
   inherited DoCreate;
@@ -641,8 +700,6 @@ begin
   fDictionary.Clear;
 end;
 
-{$ENDIF ~SUPPORTS_GENERICS}
-
 {$ENDREGION}
 
 
@@ -678,6 +735,5 @@ begin
 end;
 
 {$ENDREGION}
-
 
 end.

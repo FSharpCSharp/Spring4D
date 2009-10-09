@@ -1,10 +1,10 @@
 {***************************************************************************}
 {                                                                           }
-{               Delphi Spring Framework                                     }
+{           Delphi Spring Framework                                         }
 {                                                                           }
-{               Copyright (C) 2008-2009 Zuo Baoquan                         }
+{           Copyright (C) 2009-2010 Delphi Spring Framework                 }
 {                                                                           }
-{               http://delphi-spring-framework.googlecode.com               }
+{           http://delphi-spring-framework.googlecode.com                   }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -22,6 +22,10 @@
 {                                                                           }
 {***************************************************************************}
 
+{ TODO: Add IQueue<T>, ISet<T> }
+
+{ TODO: Consider Non-Generic interfaces }
+
 unit Spring.Collections;
 
 {$I Spring.inc}
@@ -34,21 +38,21 @@ uses
 
 type
   { Forward Declarations }
-  IEnumerator<T> = interface;
-  IEnumerable<T> = interface;
+  IEnumeratorEx<T> = interface;
+  IEnumerableEx<T> = interface;
 //  IEnumerableExtensions<T> = interface;
   ICollection<T> = interface;
   IList<T> = interface;
   IDictionary<TKey, TValue> = interface;
 
-  TContainer = class;
+  TContainers = class;
 
 //  TCollectionNotification = Generics.Collections.TCollectionNotification;
 
   /// <summary>
   /// Supports a simple iteration over a generic collection.
   /// </summary>
-  IEnumerator<T> = interface
+  IEnumeratorEx<T> = interface
     function GetCurrent: T;
     function MoveNext: Boolean;
     procedure Reset;
@@ -59,14 +63,14 @@ type
   /// Exposes the enumerator, which supports a simple iteration over a
   /// collection of a specified type.
   /// </summary>
-  IEnumerable<T> = interface
-    function GetEnumerator: IEnumerator<T>;
+  IEnumerableEx<T> = interface
+    function GetEnumerator: IEnumeratorEx<T>;
   end;
 
   /// <summary>
-  /// Provides Extension methods for IEnumerable<T>
+  /// Provides Extension methods for IEnumerableEx<T>
   /// </summary>
-//  IEnumerableExtensions<T> = interface(IEnumerable<T>)
+//  IEnumerableExtensions<T> = interface(IEnumerableEx<T>)
 //    { Aggregation }
 //    function Max: T;
 //    function Min: T;
@@ -79,7 +83,7 @@ type
   /// <summary>
   /// Defines methods to manipulate generic collections.
   /// </summary>
-  ICollection<T> = interface(IEnumerable<T>)  // IEnumerableExtensions<T>
+  ICollection<T> = interface(IEnumerableEx<T>)  // IEnumerableExtensions<T>
     {$REGION 'Property Getters & Setters'}
       function GetIsEmpty: Boolean;
       function GetCount: Integer;
@@ -144,14 +148,14 @@ type
   /// Containers Facade
   /// </summary>
   /// <remarks>
-  /// Developers should use TContainer class to create container instance,
+  /// Developers should use TContainers class to create container instance,
   /// insteading of using the concrete classes, such as TListAdapter<T>,
   /// TDictionaryAdapter<TKey, TValue>, etc.
   /// </remarks>
-  TContainer = class
+  TContainers = class
   public
-//    class function CreateEnumerator<T>(collection: TEnumerable<T>): IEnumerator<T>; overload;
-//    class function CreateEnumerator<T>(enumerator: TEnumerator<T>): IEnumerator<T>; overload;
+//    class function CreateEnumerator<T>(collection: TEnumerable<T>): IEnumeratorEx<T>; overload;
+//    class function CreateEnumerator<T>(enumerator: TEnumerator<T>): IEnumeratorEx<T>; overload;
     class function CreateList<T>: IList<T>; overload;
     class function CreateList<T>(const comparer: IComparer<T>): IList<T>; overload;
     class function CreateList<T: class>(ownsObjects: Boolean): IList<T>; overload;
@@ -169,20 +173,20 @@ type
   /// Implements IEnumerableExtension<T>
   /// </summary>
   /// TEnumerable
-//  TEnumerableExtensions<T> = class(TAggregatedObject, IEnumerableExtensions<T>, IEnumerable<T>, IInterface)
+//  TEnumerableExtensions<T> = class(TAggregatedObject, IEnumerableExtensions<T>, IEnumerableEx<T>, IInterface)
 //  private
 //    fCollection: Pointer;
-//    function GetCollection: IEnumerable<T>;
+//    function GetCollection: IEnumerableEx<T>;
 //  public
-//    constructor Create(const collection: IEnumerable<T>);
-//    function GetEnumerator: IEnumerator<T>;
-//    property Collection: IEnumerable<T> read GetCollection;
+//    constructor Create(const collection: IEnumerableEx<T>);
+//    function GetEnumerator: IEnumeratorEx<T>;
+//    property Collection: IEnumerableEx<T> read GetCollection;
 //  end;
 
   /// <summary>
   /// TEnumeratorAdapter<T>
   /// </summary>
-  TEnumeratorAdapter<T> = class(TInterfacedObject, IEnumerator<T>, IInterface)
+  TEnumeratorAdapter<T> = class(TInterfacedObject, IEnumeratorEx<T>, IInterface)
   private
     fEnumerator: TEnumerator<T>;
   public
@@ -198,7 +202,7 @@ type
   /// <summary>
   /// TListAdapter<T>
   /// </summary>
-  TListAdapter<T> = class(TInterfacedObject, IList<T>, ICollection<T>, IEnumerable<T>, IInterface)
+  TListAdapter<T> = class(TInterfacedObject, IList<T>, ICollection<T>, IEnumerableEx<T>, IInterface)
   protected
     fList: TList<T>;
     fOwnership: TCollectionOwnership;
@@ -206,7 +210,7 @@ type
     function GetIsEmpty: Boolean;
     function GetIsReadOnly: Boolean; virtual;
     function GetItem(index: Integer): T;
-    function GetEnumerator: IEnumerator<T>;
+    function GetEnumerator: IEnumeratorEx<T>;
     procedure SetItem(index: Integer; const Value: T);
   public
     constructor Create(list: TList<T>; ownership: TCollectionOwnership = coReference); overload;
@@ -229,7 +233,7 @@ type
   /// <summary>
   /// TDictionaryAdapter<TKey, TValue>
   /// </summary>
-  TDictionaryAdapter<TKey, TValue> = class(TInterfacedObject, IDictionary<TKey, TValue>, ICollection<TPair<TKey, TValue>>, IEnumerable<TPair<TKey, TValue>>, IInterface)
+  TDictionaryAdapter<TKey, TValue> = class(TInterfacedObject, IDictionary<TKey, TValue>, ICollection<TPair<TKey, TValue>>, IEnumerableEx<TPair<TKey, TValue>>, IInterface)
   private
     fDictionary: TDictionary<TKey,TValue>;
     fOwnership: TCollectionOwnership;
@@ -240,7 +244,7 @@ type
       /// <summary>
       /// Provides a read-only ICollection<TKey> implementation
       /// </summary>
-      TKeyCollection = class(TInterfacedObject, ICollection<TKey>, IEnumerable<TKey>, IInterface)
+      TKeyCollection = class(TInterfacedObject, ICollection<TKey>, IEnumerableEx<TKey>, IInterface)
       private
         fDictionary: TDictionary<TKey,TValue>;
       protected
@@ -250,7 +254,7 @@ type
       public
         constructor Create(dictionary: TDictionary<TKey,TValue>);
         { IEnumerable<TKey> }
-        function GetEnumerator: IEnumerator<TKey>;
+        function GetEnumerator: IEnumeratorEx<TKey>;
         { ICollection<TKey> }
         procedure Add(const item: TKey); overload;
         procedure Clear;
@@ -266,7 +270,7 @@ type
       /// <summary>
       /// Provides a read-only ICollection<TValue> implementation
       /// </summary>
-      TValueCollection = class(TInterfacedObject, ICollection<TValue>, IEnumerable<TValue>, IInterface)
+      TValueCollection = class(TInterfacedObject, ICollection<TValue>, IEnumerableEx<TValue>, IInterface)
       private
         fDictionary: TDictionary<TKey, TValue>;
       protected
@@ -276,7 +280,7 @@ type
       public
         constructor Create(dictionary: TDictionary<TKey,TValue>);
         { IEnumerable<TValue> }
-        function GetEnumerator: IEnumerator<TValue>;
+        function GetEnumerator: IEnumeratorEx<TValue>;
         { ICollection<TValue> }
         procedure Add(const item: TValue); overload;
         procedure Clear;
@@ -289,8 +293,8 @@ type
         property IsReadOnly: Boolean read GetIsReadOnly;
       end;
   public
-    { Implements IEnumerable<TPair<TKey, TValue>> }
-    function GetEnumerator: IEnumerator<TPair<TKey,TValue>>;
+    { Implements IEnumerableEx<TPair<TKey, TValue>> }
+    function GetEnumerator: IEnumeratorEx<TPair<TKey,TValue>>;
     { Implements ICollection<TPair<TKey, TValue>> }
     function GetCount: Integer;
     function GetIsEmpty: Boolean;
@@ -323,7 +327,7 @@ type
     property Values: ICollection<TValue> read GetValues;
   end;
 
-//  TReadOnlyCollection<T> = class(TInterfacedObject, IList<T>, ICollection<T>, IEnumerable<T>, IInterface)
+//  TReadOnlyCollection<T> = class(TInterfacedObject, IList<T>, ICollection<T>, IEnumerableEx<T>, IInterface)
 //  end;
 
 //  TObservableCollection<T> = class(TInterfacedObject, IList<T>)
@@ -338,12 +342,12 @@ uses
 
 {$REGION 'TContainer'}
 
-class function TContainer.CreateList<T>: IList<T>;
+class function TContainers.CreateList<T>: IList<T>;
 begin
   Result := TListAdapter<T>.Create;
 end;
 
-class function TContainer.CreateList<T>(const comparer: IComparer<T>): IList<T>;
+class function TContainers.CreateList<T>(const comparer: IComparer<T>): IList<T>;
 var
   list: TList<T>;
 begin
@@ -351,12 +355,12 @@ begin
   Result := TListAdapter<T>.Create(list, coOwned);
 end;
 
-class function TContainer.CreateList<T>(ownsObjects: Boolean): IList<T>;
+class function TContainers.CreateList<T>(ownsObjects: Boolean): IList<T>;
 begin
-  Result := TContainer.CreateList<T>(ownsObjects, TComparer<T>.Default);
+  Result := TContainers.CreateList<T>(ownsObjects, TComparer<T>.Default);
 end;
 
-class function TContainer.CreateList<T>(ownsObjects: Boolean;
+class function TContainers.CreateList<T>(ownsObjects: Boolean;
   const comparer: IComparer<T>): IList<T>;
 var
   list: TObjectList<T>;
@@ -365,23 +369,23 @@ begin
   Result := TListAdapter<T>.Create(list, coOwned);
 end;
 
-class function TContainer.CreateDictionary<TKey, TValue>: IDictionary<TKey, TValue>;
+class function TContainers.CreateDictionary<TKey, TValue>: IDictionary<TKey, TValue>;
 begin
-  Result := TContainer.CreateDictionary<TKey,TValue>(0, TEqualityComparer<TKey>.Default);
+  Result := TContainers.CreateDictionary<TKey,TValue>(0, TEqualityComparer<TKey>.Default);
 end;
 
-class function TContainer.CreateDictionary<TKey, TValue>(
+class function TContainers.CreateDictionary<TKey, TValue>(
   capacity: Integer): IDictionary<TKey, TValue>;
 begin
-  Result := TContainer.CreateDictionary<TKey, TValue>(capacity, TEqualityComparer<TKey>.Default);
+  Result := TContainers.CreateDictionary<TKey, TValue>(capacity, TEqualityComparer<TKey>.Default);
 end;
 
-class function TContainer.CreateDictionary<TKey, TValue>(const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TValue>;
+class function TContainers.CreateDictionary<TKey, TValue>(const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TValue>;
 begin
-  Result := TContainer.CreateDictionary<TKey, TValue>(0, comparer);
+  Result := TContainers.CreateDictionary<TKey, TValue>(0, comparer);
 end;
 
-class function TContainer.CreateDictionary<TKey, TValue>(capacity: Integer;
+class function TContainers.CreateDictionary<TKey, TValue>(capacity: Integer;
   const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TValue>;
 var
   dictionary: TDictionary<TKey,TValue>;
@@ -391,20 +395,20 @@ begin
   Result := TDictionaryAdapter<TKey, TValue>.Create(dictionary, coOwned);
 end;
 
-class function TContainer.CreateDictionary<TKey, TValue>(
+class function TContainers.CreateDictionary<TKey, TValue>(
   ownerships: TDictionaryOwnerships): IDictionary<TKey, TValue>;
 begin
-  Result := TContainer.CreateDictionary<TKey, TValue>(ownerships, 0, TEqualityComparer<TKey>.Default);
+  Result := TContainers.CreateDictionary<TKey, TValue>(ownerships, 0, TEqualityComparer<TKey>.Default);
 end;
 
-class function TContainer.CreateDictionary<TKey, TValue>(
+class function TContainers.CreateDictionary<TKey, TValue>(
   ownerships: TDictionaryOwnerships;
   capacity: Integer): IDictionary<TKey, TValue>;
 begin
-  Result := TContainer.CreateDictionary<TKey, TValue>(ownerships, capacity, TEqualityComparer<TKey>.Default);
+  Result := TContainers.CreateDictionary<TKey, TValue>(ownerships, capacity, TEqualityComparer<TKey>.Default);
 end;
 
-class function TContainer.CreateDictionary<TKey, TValue>(
+class function TContainers.CreateDictionary<TKey, TValue>(
   ownerships: TDictionaryOwnerships; capacity: Integer;
   const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TValue>;
 var
@@ -456,18 +460,18 @@ end;
 
 {$REGION 'TEnumerableExtensions<T>'}
 
-//constructor TEnumerableExtensions<T>.Create(const collection: IEnumerable<T>);
+//constructor TEnumerableExtensions<T>.Create(const collection: IEnumerableEx<T>);
 //begin
 //  inherited Create(collection);
 //  fCollection := Pointer(collection);  // Weak Reference
 //end;
 //
-//function TEnumerableExtensions<T>.GetCollection: IEnumerable<T>;
+//function TEnumerableExtensions<T>.GetCollection: IEnumerableEx<T>;
 //begin
-//  Result := IEnumerable<T>(fCollection);
+//  Result := IEnumerableEx<T>(fCollection);
 //end;
 //
-//function TEnumerableExtensions<T>.GetEnumerator: IEnumerator<T>;
+//function TEnumerableExtensions<T>.GetEnumerator: IEnumeratorEx<T>;
 //begin
 //  Result := GetCollection.GetEnumerator;
 //end;
@@ -548,7 +552,7 @@ begin
   Result := fList.Count;
 end;
 
-function TListAdapter<T>.GetEnumerator: IEnumerator<T>;
+function TListAdapter<T>.GetEnumerator: IEnumeratorEx<T>;
 begin
   Result := TEnumeratorAdapter<T>.Create(fList);
 end;
@@ -593,7 +597,7 @@ begin
   inherited Destroy;
 end;
 
-function TDictionaryAdapter<TKey, TValue>.GetEnumerator: IEnumerator<TPair<TKey, TValue>>;
+function TDictionaryAdapter<TKey, TValue>.GetEnumerator: IEnumeratorEx<TPair<TKey, TValue>>;
 begin
   Result := TEnumeratorAdapter<TPair<TKey, TValue>>.Create(fDictionary);
 end;
@@ -783,7 +787,7 @@ begin
   end;
 end;
 
-function TDictionaryAdapter<TKey, TValue>.TKeyCollection.GetEnumerator: IEnumerator<TKey>;
+function TDictionaryAdapter<TKey, TValue>.TKeyCollection.GetEnumerator: IEnumeratorEx<TKey>;
 begin
   Result := TEnumeratorAdapter<TKey>.Create(fDictionary.Keys);
 end;
@@ -857,7 +861,7 @@ begin
   end;
 end;
 
-function TDictionaryAdapter<TKey, TValue>.TValueCollection.GetEnumerator: IEnumerator<TValue>;
+function TDictionaryAdapter<TKey, TValue>.TValueCollection.GetEnumerator: IEnumeratorEx<TValue>;
 begin
   Result := TEnumeratorAdapter<TValue>.Create(fDictionary.Values);
 end;
