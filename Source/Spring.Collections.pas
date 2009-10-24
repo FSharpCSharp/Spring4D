@@ -26,6 +26,8 @@
 
 { TODO: Consider Non-Generic interfaces }
 
+{ TODO: Consider LINQ-Like Enumerable Extension }
+
 unit Spring.Collections;
 
 {$I Spring.inc}
@@ -46,8 +48,6 @@ type
   IDictionary<TKey, TValue> = interface;
 
   TContainers = class;
-
-//  TCollectionNotification = Generics.Collections.TCollectionNotification;
 
   /// <summary>
   /// Supports a simple iteration over a generic collection.
@@ -170,20 +170,6 @@ type
   end;
 
   /// <summary>
-  /// Implements IEnumerableExtension<T>
-  /// </summary>
-  /// TEnumerable
-//  TEnumerableExtensions<T> = class(TAggregatedObject, IEnumerableExtensions<T>, IEnumerableEx<T>, IInterface)
-//  private
-//    fCollection: Pointer;
-//    function GetCollection: IEnumerableEx<T>;
-//  public
-//    constructor Create(const collection: IEnumerableEx<T>);
-//    function GetEnumerator: IEnumeratorEx<T>;
-//    property Collection: IEnumerableEx<T> read GetCollection;
-//  end;
-
-  /// <summary>
   /// TEnumeratorAdapter<T>
   /// </summary>
   TEnumeratorAdapter<T> = class(TInterfacedObject, IEnumeratorEx<T>, IInterface)
@@ -213,7 +199,7 @@ type
     function GetEnumerator: IEnumeratorEx<T>;
     procedure SetItem(index: Integer; const Value: T);
   public
-    constructor Create(list: TList<T>; ownership: TCollectionOwnership = coReference); overload;
+    constructor Create(list: TList<T>; ownership: TCollectionOwnership = coReference);
     destructor Destroy; override;
     procedure Add(const item: T);
     procedure Clear;
@@ -310,7 +296,7 @@ type
     property IsReadOnly: Boolean read GetIsReadOnly;
   public
     constructor Create(dictionary: TDictionary<TKey,TValue>;
-      ownership: TCollectionOwnership = coReference); overload;
+      ownership: TCollectionOwnership = coReference);
     destructor Destroy; override;
     { Implements IDictionary<TKey,TValue> }
     function GetItem(const key: TKey): TValue;
@@ -337,14 +323,17 @@ type
 implementation
 
 uses
-  Spring.System;
+  Spring.System, Spring.ResourceStrings;
 
 
-{$REGION 'TContainer'}
+{$REGION 'TContainers'}
 
 class function TContainers.CreateList<T>: IList<T>;
+var
+  list: TList<T>;
 begin
-  Result := TListAdapter<T>.Create;
+  list := TList<T>.Create;
+  Result := TListAdapter<T>.Create(list, coOwned);
 end;
 
 class function TContainers.CreateList<T>(const comparer: IComparer<T>): IList<T>;
@@ -452,7 +441,7 @@ end;
 
 procedure TEnumeratorAdapter<T>.Reset;
 begin
-  raise EInvalidOperation.Create('SCannotResetEnumerator');
+  raise EInvalidOperation.CreateRes(@SCannotResetEnumerator);
 end;
 
 {$ENDREGION}

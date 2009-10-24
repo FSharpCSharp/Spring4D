@@ -22,17 +22,46 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Resources;
+unit Spring.DesignPatterns.Tests;
+
+{$I Spring.inc}
 
 interface
 
-//type
-//  IResource = interface
-//    function GetExists: Boolean;
-//    function CreateRelative(const relativePath: string): IResource;
-//    property Exists: Boolean read GetExists;
-//  end;
+uses
+  Classes,
+  SysUtils,
+  TestFramework,
+  TestExtensions,
+  Generics.Defaults,
+  Spring.System,
+  Spring.DesignPatterns;
+
+type
+  TTestSingleton = class(TTestcase)
+  published
+    procedure TestGetInstance;
+  end;
 
 implementation
+
+{$REGION 'TTestSingleton'}
+
+type
+  TSingletonObject = class
+  end;
+
+procedure TTestSingleton.TestGetInstance;
+var
+  obj1, obj2: TSingletonObject;
+begin
+  obj1 := TSingleton.GetInstance<TSingletonObject>;
+  obj2 := TSingleton.GetInstance<TSingletonObject>;
+  CheckNotNull(obj1, 'obj1');
+  CheckNotNull(obj2, 'obj2');
+  CheckSame(obj1, obj2);
+end;
+
+{$ENDREGION}
 
 end.

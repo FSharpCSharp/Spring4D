@@ -43,8 +43,8 @@ uses
   Spring.System,
   Spring.System.Tests in 'Tests\Spring.System.Tests.pas',
   Spring.Helpers.Tests in 'Tests\Spring.Helpers.Tests.pas',
-  Spring.Cryptography.Tests in 'Tests\Spring.Cryptography.Tests.pas',
-  Spring.IoC.Tests in 'Tests\Spring.IoC.Tests.pas';
+  Spring.IoC.Tests in 'Tests\Spring.IoC.Tests.pas',
+  Spring.DesignPatterns.Tests in 'Tests\Spring.DesignPatterns.Tests.pas';
 
 {$R *.RES}
 
@@ -61,13 +61,13 @@ begin
     TRepeatedTest.Create(TTestNullableInteger.Suite, 3)
   ]);
 
-  RegisterTests('Spring Cryptography Tests', [
-    TTestMD5.Suite,
-    TTestDES.Suite,
-    TTestTripleDES.Suite
-  ]);
+//  RegisterTests('Spring Cryptography Tests', [
+//    TTestMD5.Suite,
+//    TTestDES.Suite,
+//    TTestTripleDES.Suite
+//  ]);
 
-  RegisterTests('Spring Patterns Tests', [
+  RegisterTests('Spring DesignPatterns Tests', [
     TTestSingleton.Suite
   ]);
 

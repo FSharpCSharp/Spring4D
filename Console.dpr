@@ -35,6 +35,7 @@ uses
   IOUtils,
   SysUtils,
   Rtti,
+  TypInfo,
   SyncObjs,
   Generics.Collections,
   Spring.System,
@@ -43,6 +44,7 @@ uses
 
 begin
   try
+
   except
     on E: Exception do
       Writeln(E.ClassName, ': ', E.Message);

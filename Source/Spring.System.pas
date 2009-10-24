@@ -22,15 +22,6 @@
 {                                                                           }
 {***************************************************************************}
 
-{ TODO: Complete TServiceController class }
-{ TODO: Complete TOperatingSystem class (ProductName) }
-
-{ TODO: TClipboardWatcher }
-
-{ TODO: IAsyncResult }
-{ TODO: TUri class }
-{ TODO: TBigInteger class }
-
 unit Spring.System;
 
 {$I Spring.inc}
@@ -52,15 +43,12 @@ uses
   ShlObj,
   DB,
   Registry,
-  WinSvc,
   TimeSpan,
   Character,
   Diagnostics,
-  RTTI,
+  Rtti,
   Generics.Defaults,
-  Generics.Collections,
-  Spring.Win32API,
-  Spring.ResourceStrings;
+  Generics.Collections;
 
 type
   {$REGION 'Simple Types & Aliases'}
@@ -86,7 +74,6 @@ type
   TStopwatch = Diagnostics.TStopwatch;
 
   PTypeInfo  = TypInfo.PTypeInfo;
-
   TTypeKind  = TypInfo.TTypeKind;
   TTypeKinds = TypInfo.TTypeKinds;
 
@@ -146,9 +133,9 @@ type
   {$REGION 'TInterfaceBase'}
 
   /// <summary>
-  /// Provides a default implementation of IInterface without reference-counting
+  /// Provides a non-reference-counted IInterface implementation.
   /// </summary>
-  TInterfaceBase= class(TObject, IInterface)
+  TInterfaceBase= class abstract(TObject, IInterface)
   protected
     function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
     function _AddRef: Integer; stdcall;
@@ -170,7 +157,6 @@ type
   TArgument = record
   strict private
     class procedure DoCheckIndex(const length, index, indexBase: Integer); overload; static; inline;
-    class procedure DoCheckRange(const length, startIndex, count, indexBase: Integer); overload; static; inline;
   private
     class procedure DoCheckArrayIndex(const length, index: Integer); static; inline;
     class procedure DoCheckArrayRange(const length, startIndex, count: Integer); static; inline;
@@ -184,9 +170,10 @@ type
     class procedure CheckNotNull(p: Pointer; const argumentName: string); overload; static; inline;
     class procedure CheckNotNull(const intf: IInterface; const argumentName: string); overload; static; inline;
     class procedure CheckNotNull(condition: Boolean; const argumentName: string); overload; static; inline;
+    class procedure CheckNotNull<T>(const value: T; const argumentName: string); overload; static; inline;
 
     class procedure CheckEnum<T{:enum}>(const value: T; const argumentName: string); overload; static; inline;
-    class procedure CheckEnum<T>(const value: Integer; const argumentName: string); overload; static; inline;
+    class procedure CheckEnum<T{:enum}>(const value: Integer; const argumentName: string); overload; static; inline;
 
     class procedure CheckRange(const buffer: array of Byte; const index: Integer); overload; static;
     class procedure CheckRange(const buffer: array of Byte; const startIndex, count: Integer); overload; static;
@@ -199,10 +186,11 @@ type
     class procedure CheckRange(const s: RawByteString; const index: Integer); overload; static; inline;
     class procedure CheckRange(const s: RawByteString; const startIndex, count: Integer); overload; static; inline;
     class procedure CheckRange(condition: Boolean; const argumentName: string); overload; static; inline;
+    class procedure CheckRange(const length, startIndex, count: Integer; const indexBase: Integer = 0); overload; static; inline;
 
     class procedure CheckTypeKind(typeInfo: PTypeInfo; const expectedTypeKinds: TTypeKinds; const argumentName: string); static; inline;
 
-    class procedure RaiseArgumentException(const argumentName: string); overload; static; inline;
+    class procedure RaiseArgumentException(const msg: string); overload; static; inline;
     class procedure RaiseArgumentNullException(const argumentName: string); overload; static; inline;
     class procedure RaiseArgumentOutOfRangeException(const argumentName: string); overload; static; inline;
     class procedure RaiseInvalidEnumArgumentException(const argumentName: string); overload; static; inline;
@@ -301,7 +289,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TVolatile<T>'}
+  {$REGION 'TVolatile<T> (Experimental)'}
 
   /// <summary>
   /// Enforces an ordering constraint on memory operations.
@@ -323,39 +311,30 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TValueType (NOT READY)'}
-
-  TValueType = class abstract(TInterfacedObject)
-
-  end;
-
-  {$ENDREGION}
-
-
   {$REGION 'TEnum'}
 
   /// <summary>
   /// Provides static methods to manipulate Enumeration type.
   /// </summary>
-  TEnum = class sealed(TValueType)
+  TEnum = record
   private
-    class function GetEnumTypeInfo<T>: PTypeInfo;
-    class function GetEnumTypeData<T>: PTypeData;
+    class function GetEnumTypeInfo<T{:enum}>: PTypeInfo; static;
+    class function GetEnumTypeData<T{:enum}>: PTypeData; static;
     { Internal function without range check }
-    class function ConvertToInteger<T>(const value: T): Integer;
+    class function ConvertToInteger<T{:enum}>(const value: T): Integer; static;
   public
-    class function IsValid<T>(const value: T): Boolean; overload;
-    class function IsValid<T>(const value: Integer): Boolean; overload;
-    class function GetName<T>(const value: T): string; overload;
-    class function GetName<T>(const value: Integer): string; overload;
-    class function GetNames<T>: TStringDynArray;
-    class function GetValue<T>(const value: T): Integer; overload;
-    class function GetValue<T>(const value: string): Integer; overload;
-    class function GetValues<T>: TIntegerDynArray;
-    class function TryParse<T>(const value: Integer; out enum: T): Boolean; overload;
-    class function TryParse<T>(const value: string; out enum: T): Boolean; overload;
-    class function Parse<T>(const value: Integer): T; overload;
-    class function Parse<T>(const value: string): T; overload;
+    class function IsValid<T{:enum}>(const value: T): Boolean; overload; static;
+    class function IsValid<T{:enum}>(const value: Integer): Boolean; overload; static;
+    class function GetName<T{:enum}>(const value: T): string; overload; static;
+    class function GetName<T{:enum}>(const value: Integer): string; overload; static;
+    class function GetNames<T{:enum}>: TStringDynArray; static;
+    class function GetValue<T{:enum}>(const value: T): Integer; overload; static;
+    class function GetValue<T{:enum}>(const value: string): Integer; overload; static;
+    class function GetValues<T{:enum}>: TIntegerDynArray; static;
+    class function TryParse<T{:enum}>(const value: Integer; out enum: T): Boolean; overload; static;
+    class function TryParse<T{:enum}>(const value: string; out enum: T): Boolean; overload; static;
+    class function Parse<T{:enum}>(const value: Integer): T; overload; static;
+    class function Parse<T{:enum}>(const value: string): T; overload; static;
   end;
 
   {$ENDREGION}
@@ -394,7 +373,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'IValueProvider<T>, TValueProvider<T>'}
+  {$REGION 'IValueProvider<T>, TValueProvider<T> (Experimental)'}
 
   /// <summary>
   /// IValueProvider<T>
@@ -429,7 +408,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TValueHolder<T>'}
+  {$REGION 'TValueHolder<T> (Experimental)'}
 
   /// <summary>
   /// Wraps value-type
@@ -455,42 +434,18 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TObjectHolder<T>'}
+  {$REGION 'TLifetimeWatcher (Experimental)'}
 
   /// <summary>
-  /// Manages object's lifetime by anonymous methods (TFunc<T>),
-  /// which is implemented as a reference-counting interface in Delphi for Win32.
+  /// TLifetimeWatcher
   /// </summary>
-  TObjectHolder<T: class> = class(TInterfacedObject, TFunc<T>)
+  /// <author>BARRY KELLY</author>
+  TLifetimeWatcher = class(TInterfacedObject)
   private
-    fObject: T;
+    fProc: TProc;
   public
-    constructor Create(obj: T);
+    constructor Create(const proc: TProc);
     destructor Destroy; override;
-    function Invoke: T;
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TRtti'}
-
-  /// <summary>
-  /// Provides static methods to get RTTI information of parameterized type.
-  /// </summary>
-  TRtti = class
-  public
-    class procedure CheckTypeKind<T>(const typeKind: TypInfo.TTypeKind); overload;
-    class procedure CheckTypeKind<T>(const typeKinds: TypInfo.TTypeKinds); overload;
-    class function GetTypeInfo<T>: PTypeInfo;
-    class function GetTypeData<T>: PTypeData;
-    class function GetTypeKind<T>: TypInfo.TTypeKind;
-    class function GetTypeName<T>: string;
-    { TODO: TRtti.GetFullName }
-    class function GetFullName(typeInfo: PTypeInfo): string;
-//    class function GetType<T>(const obj: T): IType<T>;
-//    class function GetFullQualifiedName<T>: string;
-//    class function IsManagedType<T>: Boolean;
   end;
 
   {$ENDREGION}
@@ -519,11 +474,49 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TType (NOT READY)'}
+  {$REGION 'TObjectHolder<T>'}
 
-//  TType = class abstract(TSingletonBase<TType>)
-//
-//  end;
+  /// <summary>
+  /// Manages object's lifetime by anonymous method (TFunc<T>),
+  /// which is implemented as a reference-counted interface in Delphi for Win32.
+  /// </summary>
+  TObjectHolder<T: class> = class(TInterfacedObject, TFunc<T>)
+  private
+    fObject: T;
+  public
+    constructor Create(obj: T);
+    destructor Destroy; override;
+    function Invoke: T;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TRtti'}
+
+  /// <summary>
+  /// Provides static methods to get RTTI information of parameterized type.
+  /// </summary>
+  TRtti = record
+  private
+    class var
+      fContext: TRttiContext;
+    class constructor Create;
+    class destructor Destroy;
+  public
+    class procedure CheckTypeKind<T>(const typeKind: TypInfo.TTypeKind); overload; static;
+    class procedure CheckTypeKind<T>(const typeKinds: TypInfo.TTypeKinds); overload; static;
+    class function IsManagedType<T>: Boolean; static;
+    class function IsNullReference<T>(const value: T): Boolean; overload; static;
+    class function IsNullReference(const value; typeInfo: PTypeInfo): Boolean; overload; static;
+    class function GetTypeInfo<T>: PTypeInfo; static;
+    class function GetTypeData<T>: PTypeData; static;
+    class function GetTypeKind<T>: TypInfo.TTypeKind; static;
+    class function GetTypeName<T>: string; static;
+    class function GetFullName(typeInfo: PTypeInfo): string; overload; static;
+    class function GetFullName<T>: string; overload; static;
+//    class function GetType<T>(const obj: T): IType<T>;
+  end;
 
   {$ENDREGION}
 
@@ -562,7 +555,7 @@ type
     property MinorReversion: Int16 read GetMinorReversion;
     property Build: Integer read fBuild;
     property Reversion: Integer read fReversion;
-    { Comparison Operators }
+    { Operator Overloads }
     class operator Equal(const left, right: TVersion): Boolean;
     class operator NotEqual(const left, right: TVersion): Boolean;
     class operator GreaterThan(const left, right: TVersion): Boolean;
@@ -658,7 +651,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TOperatingSystem (Experimental)'}
+  {$REGION 'TOperatingSystem'}
 
   TOSPlatformType = (
     ptUnknown,
@@ -704,29 +697,24 @@ type
   /// <summary>
   /// Represents information about the operating system.
   /// </summary>
-  TOperatingSystem = class //(TSingletonBase<TOperatingSystem>) // [DCC FATAL ERROR]F2084: INTERNAL ERROR URW1111
+  TOperatingSystem = class sealed
   strict private
-    fEdition: string;
     fPlatformType: TOSPlatformType;
     fProductType: TOSProductType;
     fServicePack: string;
     fVersion: TVersion;
     fVersionType: TOSVersionType;
+    function GetIsWin3x: Boolean;
     function GetIsWin9x: Boolean;
     function GetIsWinNT: Boolean;
     function GetVersionString: string;
+  private
     function GetOSVersionType(platformType: TOSPlatformType; productType: TOSProductType;
       majorVersion, minorVersion: Integer): TOSVersionType;
-  private // TEMP
-    class var fInstance: TOperatingSystem;
-    class function GetInstance: TOperatingSystem; static;
-    class constructor Create;
-    class destructor Destroy;
-  protected
-    procedure DoCreate; { override; }
   public
+    constructor Create;
     function ToString: string; override;
-//    property Edition: string read fEdition;
+    property IsWin3x: Boolean read GetIsWin3x;
     property IsWin9x: Boolean read GetIsWin9x;
     property IsWinNT: Boolean read GetIsWinNT;
     property PlatformType: TOSPlatformType read fPlatformType;
@@ -735,7 +723,6 @@ type
     property Version: TVersion read fVersion;
     property VersionString: string read GetVersionString;
     property VersionType: TOSVersionType read fVersionType;
-    class property Instance: TOperatingSystem read GetInstance;
   end;
 
   {$ENDREGION}
@@ -852,7 +839,17 @@ type
   /// </summary>
   TEnvironment = record
   private
-    class function CreateRegistry(target: TEnvironmentVariableTarget; out key: string): TRegistry; static;
+    class var
+      fOperatingSystem: TOperatingSystem;
+      fApplicationPath: string;
+      fApplicationVersionInfo: TFileVersionInfo;
+      fApplicationVersion: TVersion;
+      fApplicationVersionString: string;
+      class constructor Create;
+      class destructor Destroy;
+  private
+    class procedure OpenEnvironmentVariableKey(registry: TRegistry;
+      target: TEnvironmentVariableTarget; keyAccess: Cardinal); static;
     class function GetCurrentVersionKey: string; static;
     class procedure GetProcessEnvironmentVariables(list: TStrings); static;
   private
@@ -866,7 +863,6 @@ type
     class function GetUserInteractive: Boolean; static;
     class function GetCommandLine: string; static;
     class function GetSystemDirectory: string; static;
-    class function GetOperatingSystem: TOperatingSystem; static;
     class function GetProcessorCount: Integer; static;
     class function GetProcessorArchitecture: TProcessorArchitecture; static;
     class function GetRegisteredOrganization: string; static;
@@ -885,12 +881,16 @@ type
     class procedure SetEnvironmentVariable(const variable, value: string); overload; static;
     class procedure SetEnvironmentVariable(const variable, value: string; target: TEnvironmentVariableTarget); overload; static;
     class function  ExpandEnvironmentVariables(const variable: string): string; static;
+    class property ApplicationPath: string read fApplicationPath;
+    class property ApplicationVersion: TVersion read fApplicationVersion;
+    class property ApplicationVersionInfo: TFileVersionInfo read fApplicationVersionInfo;
+    class property ApplicationVersionString: string read fApplicationVersionString;
     class property CommandLine: string read GetCommandLine;
     class property CurrentDirectory: string read GetCurrentDirectory write SetCurrentDirectory;
     class property IsAdmin: Boolean read GetIsAdmin; { experimental }
     class property MachineName: string read GetMachineName;
     class property NewLine: string read GetNewLine;
-    class property OperatingSystem: TOperatingSystem read GetOperatingSystem;
+    class property OperatingSystem: TOperatingSystem read fOperatingSystem;
     class property ProcessorCount: Integer read GetProcessorCount;
     class property ProcessorArchitecture: TProcessorArchitecture read GetProcessorArchitecture;
     class property RegisteredOrganization: string read GetRegisteredOrganization;
@@ -906,183 +906,6 @@ type
   /// Represents a type alias of TEnvironment class.
   /// </summary>
   Environment = TEnvironment;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TServiceController (NOT COMPLETED)'}
-
-  TServiceType = (
-    stKernelDriver,       // A Kernel device driver such as a hard disk or other low-level hardware device driver.
-    stFileSystemDriver,   // A file system driver, which is also a Kernel device driver.
-    stAdapter,            // A service for a hardware device that requires its own driver.
-    stRecognizerDriver,   // A file system driver used during startup to determine the file systems present on the system.
-    stWin32OwnProcess,    // A Win32 program that can be started by the Service Controller and that obeys the service control protocol. This type of Win32 service runs in a process by itself.
-    stWin32ShareProcess,  // A Win32 service that can share a process with other Win32 services.
-    stInteractiveProcess  // A service that can communicate with the desktop.
-  );
-
-  TServiceTypes = set of TServiceType;
-
-  TServiceStatus = (
-    ssUnknown,            // The status is unknown.
-    ssStopped,            // The service is not running.
-    ssStartPending,       // The service is starting.
-    ssStopPending,        // The service is stopping.
-    ssRunning,            // The service is running.
-    ssContinuePending,    // The service continue is pending.
-    ssPausePending,       // The service pause is pending.
-    ssPaused              // The service is paused.
-  );
-
-  TServiceStartMode = (
-    smBoot,
-    smSystem,
-    smAutomatic,
-    smManual,
-    smDisabled
-  );
-
-  TServiceAccount = (
-    LocalService,         // An account that acts as a non-privileged user on the local computer, and presents anonymous credentials to any remote server.
-    NetworkService,       // An account that provides extensive local privileges, and presents the computer's credentials to any remote server.
-    LocalSystem,          // An account, used by the service control manager, that has extensive privileges on the local computer and acts as the computer on the network.
-    User                  // An account defined by a specific user on the network.
-  );
-
-  TServiceControlAccepted = (
-    caStop,               // SERVICE_ACCEPT_STOP
-    caPauseAndResume,     // SERVICE_ACCEPT_PAUSE_CONTINUE
-    caShutdown            // SERVICE_ACCEPT_SHUTDOWN
-  );
-
-  TServiceControls = set of TServiceControlAccepted;
-
-  /// <summary>
-  /// Represents a Windows service and allows you to connect to a running or
-  /// stopped service, manipulate it, or get information about it.
-  /// </summary>
-  TServiceController = record
-  private
-    type
-      TServiceKind = (
-        skDrive,  // SERVICE_DRIVER (0x0000000B)
-        skWin32   // SERVICE_WIN32  (0x00000030)
-      );
-      TServiceAction = (
-        saStart,
-        saStop,
-        saPause,
-        saResume
-      );
-    const
-      fCInvalidServiceHandle: THandle = 0;
-      fCPendingStatusSet = [
-        ssStartPending,
-        ssStopPending,
-        ssContinuePending,
-        ssPausePending
-      ];
-  strict private
-    fManagerHandle: TValueHolder<THandle>;
-    fServiceHandle: TValueHolder<THandle>;
-    fServiceStatusProcess: TServiceStatusProcess;
-    fServiceConfig: TValueHolder<PQueryServiceConfig>;
-    fStatus: TServiceStatus;
-    fDisplayName: string;
-    fServiceName: string;
-    fMachineName: string;
-    fDescription: string;
-    fFileName:    string;
-    fServiceType: TServiceTypes;
-    fStartMode: TServiceStartMode;
-    fCanStop: Boolean;
-    fCanPauseAndResume: Boolean;
-    fCanShutdown: Boolean;
-    fDependentServices: TArray<TServiceController>;
-    fServicesDependedOn: TArray<TServiceController>;
-    function GetDisplayName: string;
-    function GetMachineName: string;
-    function GetDescription: string;
-    function GetServiceName: string;
-    function GetServiceType: TServiceTypes;
-    function GetServiceHandle: THandle;
-    function GetStatus: TServiceStatus;
-    function GetStartMode: TServiceStartMode;
-    function GetCanPauseAndResume: Boolean;
-    function GetCanStop: Boolean;
-    function GetCanShutdown: Boolean;
-    function GetExists: Boolean;
-    function GetDependentServices: TArray<TServiceController>;
-    function GetServicesDependedOn: TArray<TServiceController>;
-  private
-    fIsLoaded: Boolean;
-    procedure Loaded;
-    procedure ManagerHandleNeeded;
-    procedure Open(desiredAccess: Cardinal);
-    procedure Close;
-    procedure PerformAction(action: TServiceAction);
-    procedure UpdateStatus;
-    procedure UpdateConfig;
-    procedure UpdateDescription;
-    procedure UpdateDependentServices;
-    function ParseStatus(const value: Cardinal): TServiceStatus;
-    function ParseServiceTypes(const value: Cardinal): TServiceTypes;
-    function ParseStartMode(const value: Cardinal): TServiceStartMode;
-  private
-    constructor Create(const serviceName, machineName: string; const managerHandle: TValueHolder<THandle>); overload;
-    class procedure GetManagerHandleHolder(const machineName: string; out handleHolder: TValueHolder<THandle>); static;
-    class procedure GetHandleHolder(handle: THandle; out valueHolder: TValueHolder<THandle>); static;
-    class procedure InternalEnumServices(const machineName: string; serviceKind: TServiceKind; out services: TArray<TServiceController>); static;
-  public
-    constructor Create(const serviceName: string); overload;
-    constructor Create(const serviceName, machineName: string); overload;
-    class function GetDevices: TArray<TServiceController>; overload; static;
-    class function GetDevices(const machineName: string): TArray<TServiceController>; overload; static;
-    class function GetServices: TArray<TServiceController>; overload; static;
-    class function GetServices(const machineName: string): TArray<TServiceController>; overload; static;
-    procedure ExecuteCommand(command: Integer);
-    procedure Start; overload;
-    procedure Start(const args: array of string); overload;
-    procedure Stop;
-    procedure Pause;
-    procedure Resume;
-    procedure Restart;
-    procedure Refresh;
-    procedure WaitForStatus(status: TServiceStatus); overload;
-    procedure WaitForStatus(desiredStatus: TServiceStatus; const timeout: TTimeSpan); overload;
-    property DisplayName: string read GetDisplayName;
-    property Description: string read GetDescription;
-    property MachineName: string read GetMachineName;
-    property ServiceName: string read GetServiceName;
-    property Status: TServiceStatus read GetStatus;
-    property ServiceHandle: THandle read GetServiceHandle;
-    property ServiceType: TServiceTypes read GetServiceType;
-    property StartMode: TServiceStartMode read GetStartMode;
-    property CanStop: Boolean read GetCanStop;
-    property CanPauseAndResume: Boolean read GetCanPauseAndResume;
-    property CanShutdown: Boolean read GetCanShutdown;
-    property Exists: Boolean read GetExists;
-    property DependentServices: TArray<TServiceController> read GetDependentServices;
-    property ServicesDependedOn: TArray<TServiceController> read GetServicesDependedOn;
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TLifetimeWatcher (Experimental)'}
-
-  /// <summary>
-  /// TLifetimeWatcher
-  /// </summary>
-  /// <author>BARRY KELLY</author>
-  TLifetimeWatcher = class(TInterfacedObject)
-  private
-    fProc: TProc;
-  public
-    constructor Create(const proc: TProc);
-    destructor Destroy; override;
-  end;
 
   {$ENDREGION}
 
@@ -1113,15 +936,79 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'ILockable (NOT READY)'}
+  {$REGION 'TLifetimeType & Related Attributes'}
 
-//  ILockable = interface
-//    procedure Lock;
-//    procedure Unlock;
-//    function TryLock: Boolean;
-////    function GetIsLocked: Boolean;
-////    property IsLocked: Boolean read GetIsLocked;
+  /// <summary>
+  /// Lifetime Type Enumeration
+  /// </summary>
+  TLifetimeType = (
+    ltUnknown,
+    ltSingleton,
+    ltTransient,
+    ltPerThread,
+    ltPooled,
+    ltCustom
+  );
+
+  TLifetimeAttribute = class abstract(TCustomAttribute)
+  private
+    fLifetimeType: TLifetimeType;
+  public
+    constructor Create(lifetimeType: TLifetimeType);
+    property LifetimeType: TLifetimeType read fLifetimeType;
+  end;
+
+  SingletonAttribute = class(TLifetimeAttribute)
+  public
+    constructor Create;
+  end;
+
+  TransientAttribute = class(TLifetimeAttribute)
+  public
+    constructor Create;
+  end;
+
+//  PerThreadAttribute = class(TLifetimeAttribute)
+//  public
+//    constructor Create;
 //  end;
+
+//  PooledAttribute = class(TLifetimeAttribute)
+//  end;
+
+//  CustomLifetimeAttribute = class(TLifetimeAttribute)
+//  private
+//    fLifetimeManagerType: PTypeInfo;
+//  end;
+
+//  DependencyAttribute = class(TCustomAttribute)
+//  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'Lifecycle Interfaces'}
+
+  IInitializable = interface
+    ['{A36BB399-E592-4DFB-A091-EDBA3BE0648B}']
+    procedure Initialize;
+  end;
+
+  IStartable = interface
+    ['{8D0252A1-7993-44AA-B0D9-326019B58E78}']
+    procedure Start;
+    procedure Stop;
+  end;
+
+  IDisposable = interface
+    ['{6708F9BF-0237-462F-AFA2-DF8EF21939EB}']
+    procedure Dispose;
+  end;
+
+  IRecyclable = interface
+    ['{85114F41-70E5-4AF4-A375-E445D4619E4D}']
+    procedure Recycle;
+  end;
 
   {$ENDREGION}
 
@@ -1149,6 +1036,12 @@ type
 
 
   {$REGION 'Global Routines'}
+
+  function ApplicationPath: string;
+
+  function ApplicationVersion: TVersion;
+
+  function ApplicationVersionString: string;
 
   /// <summary>
   /// Determines whether a specified file exists. It will raise an
@@ -1182,7 +1075,6 @@ type
   /// <summary>
   /// Returns a string array that contains the substrings in the buffer that are
   /// delimited by null char (#0) and ends with an additional null char.
-  /// e.g.
   /// </summary>
   /// <example>
   /// <code>
@@ -1193,7 +1085,7 @@ type
   ///   s: string;
   /// begin
   ///   buffer := 'C:'#0'D:'#0'E:'#0#0;
-  ///   strings := SplitNullTerminatedStrings(PChar(buffer));
+  ///   strings := SplitString(PChar(buffer));
   ///   for s in strings do
   ///   begin
   ///     Writeln(s);
@@ -1201,12 +1093,20 @@ type
   /// end;
   /// </code>
   /// </example>
+  function SplitString(const buffer: PChar): TStringDynArray; overload;
+
   function SplitNullTerminatedStrings(const buffer: PChar): TStringDynArray;
+    deprecated 'Use SpitString instead.';
 
   /// <summary>
   /// Synchronize
   /// </summary>
   procedure Synchronize(threadProc: TThreadProcedure);
+
+  /// <summary>
+  /// Queue
+  /// </summary>
+  procedure Queue(threadProc: TThreadProcedure);
 
   /// <summary>
   /// Try getting property information of an object.
@@ -1217,7 +1117,10 @@ type
   /// <summary>
   /// Try setting focus to a control.
   /// </summary>
+  function TrySetFocus(control: TWinControl): Boolean;
+
   function TryFocusControl(control: TWinControl): Boolean;
+    deprecated 'Use TrySetFocus instead.';
 
   /// <summary>
   /// Determines if a variant is null or empty. The parameter "trimeWhiteSpace"
@@ -1227,14 +1130,14 @@ type
 
   /// <summary>
   /// Obtains a mutual-exclusion lock for the given object, executes a procedure
-  /// and then release the lock.
+  /// and then releases the lock.
   /// </summary>
   procedure Lock(obj: TObject; proc: TProc); inline;
 
   /// <summary>
   /// Update strings by calling BeginUpdate and EndUpdate
   /// </summary>
-  procedure UpdateStrings(strings: TStrings; proc: TProc);
+  procedure UpdateStrings(strings: TStrings; proc: TProc); inline;
 
   /// <summary>
   /// Walkthrough all child controls in tab-order, recursively.
@@ -1257,22 +1160,6 @@ const
   OneMB: Int64 = 1048576;         // 1MB = 1024 KB
   OneGB: Int64 = 1073741824;      // 1GB = 1024 MB
   OneTB: Int64 = 1099511627776;   // 1TB = 1024 GB
-
-const
-  OSVersionTypeStrings: array[TOSVersionType] of string = (
-    SUnknownDescription,
-    'Microsoft Windows 95',           // DEPRECATED
-    'Microsoft Windows 98',           // DEPRECATED
-    'Microsoft Windows ME',           // DEPRECATED
-    'Microsoft Windows NT 3.51',      // DEPRECATED
-    'Microsoft Windows NT 4',         // DEPRECATED
-    'Microsoft Windows Server 2000',
-    'Microsoft Windows XP',
-    'Microsoft Windows Server 2003',
-    'Microsoft Windows Vista',
-    'Microsoft Windows Server 2008',
-    'Microsoft Windows 7'
-  );
 
 const
   SpecialFolderCSIDLs: array[TSpecialFolder] of Integer = (
@@ -1338,29 +1225,52 @@ const
   {$ENDREGION}
 
 
-{ TODO: Use class constructor to optimize these variables }
-
-var
-  ApplicationPath: string;
-  ApplicationVersion: TVersion;
-  ApplicationVersionString: string;
-
 implementation
 
 uses
-  ComObj;
+  ComObj,
+  Spring.Win32API,
+  Spring.ResourceStrings;
 
-var
-  ApplicationVersionInfo: TFileVersionInfo;
+const
+  OSVersionTypeStrings: array[TOSVersionType] of string = (
+    SUnknownDescription,
+    'Microsoft Windows 95',           // DEPRECATED
+    'Microsoft Windows 98',           // DEPRECATED
+    'Microsoft Windows ME',           // DEPRECATED
+    'Microsoft Windows NT 3.51',      // DEPRECATED
+    'Microsoft Windows NT 4',         // DEPRECATED
+    'Microsoft Windows Server 2000',
+    'Microsoft Windows XP',
+    'Microsoft Windows Server 2003',
+    'Microsoft Windows Vista',
+    'Microsoft Windows Server 2008',
+    'Microsoft Windows 7'
+  );
 
 
 {$REGION 'Global Routines'}
+
+function ApplicationPath: string;
+begin
+  Result := TEnvironment.ApplicationPath;
+end;
+
+function ApplicationVersion: TVersion;
+begin
+  Result := TEnvironment.ApplicationVersion;
+end;
+
+function ApplicationVersionString: string;
+begin
+  Result := TEnvironment.ApplicationVersionString;
+end;
 
 procedure CheckFileExists(const fileName: string);
 begin
   if not FileExists(fileName) then
   begin
-    raise EFileNotFoundException.CreateFmt(SFileNotFoundException, [fileName]);
+    raise EFileNotFoundException.CreateResFmt(@SFileNotFoundException, [fileName]);
   end;
 end;
 
@@ -1368,7 +1278,7 @@ procedure CheckDirectoryExists(const directory: string);
 begin
   if not DirectoryExists(directory) then
   begin
-    raise EDirectoryNotFoundException.CreateFmt(SDirectoryNotFoundException, [directory]);
+    raise EDirectoryNotFoundException.CreateResFmt(@SDirectoryNotFoundException, [directory]);
   end;
 end;
 
@@ -1429,7 +1339,7 @@ begin
   end;
 end;
 
-function SplitNullTerminatedStrings(const buffer: PChar): TStringDynArray;
+function SplitString(const buffer: PChar): TStringDynArray;
 var
   p: PChar;
   entry: string;
@@ -1445,9 +1355,19 @@ begin
   end;
 end;
 
+function SplitNullTerminatedStrings(const buffer: PChar): TStringDynArray;
+begin
+  Result := SplitString(buffer);
+end;
+
 procedure Synchronize(threadProc: TThreadProcedure);
 begin
   TThread.Synchronize(nil, threadProc);
+end;
+
+procedure Queue(threadProc: TThreadProcedure);
+begin
+  TThread.Queue(nil, threadProc);
 end;
 
 function TryGetPropInfo(const instance: TObject; const propertyName: string;
@@ -1459,7 +1379,7 @@ begin
   Result := propInfo <> nil;
 end;
 
-function TryFocusControl(control: TWinControl): Boolean;
+function TrySetFocus(control: TWinControl): Boolean;
 begin
   TArgument.CheckNotNull(control, 'control');
 
@@ -1468,6 +1388,11 @@ begin
   begin
     control.SetFocus;
   end;
+end;
+
+function TryFocusControl(control: TWinControl): Boolean;
+begin
+  Result := TrySetFocus(control);
 end;
 
 function VarIsNullOrEmpty(const value: Variant; trimWhiteSpace: Boolean): Boolean;
@@ -1601,7 +1526,7 @@ end;
 class procedure TArgument.DoCheckArrayRange(const length, startIndex,
   count: Integer);
 begin
-  TArgument.DoCheckRange(length, startIndex, count, 0);
+  TArgument.CheckRange(length, startIndex, count, 0);
 end;
 
 class procedure TArgument.DoCheckStringIndex(const length, index: Integer);
@@ -1612,7 +1537,7 @@ end;
 class procedure TArgument.DoCheckStringRange(const length, startIndex,
   count: Integer);
 begin
-  TArgument.DoCheckRange(length, startIndex, count, 1);
+  TArgument.CheckRange(length, startIndex, count, 1);
 end;
 
 class procedure TArgument.DoCheckIndex(const length, index, indexBase: Integer);
@@ -1625,7 +1550,7 @@ begin
   end;
 end;
 
-class procedure TArgument.DoCheckRange(const length, startIndex,
+class procedure TArgument.CheckRange(const length, startIndex,
   count, indexBase: Integer);
 const
   StartIndexArgName = 'startIndex';
@@ -1684,6 +1609,14 @@ class procedure TArgument.CheckNotNull(obj: TObject;
   const argumentName: string);
 begin
   TArgument.CheckNotNull(obj <> nil, argumentName);
+end;
+
+class procedure TArgument.CheckNotNull<T>(const value: T; const argumentName: string);
+begin
+  if TRtti.IsNullReference<T>(value) then
+  begin
+    TArgument.RaiseArgumentNullException(argumentName);
+  end;
 end;
 
 class procedure TArgument.CheckEnum<T>(const value: T;
@@ -1783,31 +1716,31 @@ begin
   TArgument.CheckNotNull(typeInfo, argumentName);
   if not (typeInfo.Kind in expectedTypeKinds) then
   begin
-    raise EArgumentException.CreateFmt(SUnexpectedTypeKindArgument, [typeInfo.Name, argumentName]);
+    raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument, [typeInfo.Name, argumentName]);
   end;
 end;
 
-class procedure TArgument.RaiseArgumentException(const argumentName: string);
+class procedure TArgument.RaiseArgumentException(const msg: string);
 begin
-  raise EArgumentException.Create(argumentName);
+  raise EArgumentException.Create(msg);
 end;
 
 class procedure TArgument.RaiseArgumentNullException(
   const argumentName: string);
 begin
-  raise EArgumentNullException.CreateFmt(SArgumentNullException, [argumentName]);
+  raise EArgumentNullException.CreateResFmt(@SArgumentNullException, [argumentName]);
 end;
 
 class procedure TArgument.RaiseArgumentOutOfRangeException(
   const argumentName: string);
 begin
-  raise EArgumentOutOfRangeException.CreateFmt(SArgumentOutOfRangeException, [argumentName]);
+  raise EArgumentOutOfRangeException.CreateResFmt(@SArgumentOutOfRangeException, [argumentName]);
 end;
 
 class procedure TArgument.RaiseInvalidEnumArgumentException(
   const argumentName: string);
 begin
-  raise EInvalidEnumArgumentException.CreateFmt(SInvalidEnumArgument, [argumentName]);
+  raise EInvalidEnumArgumentException.CreateResFmt(@SInvalidEnumArgument, [argumentName]);
 end;
 
 {$ENDREGION}
@@ -1954,7 +1887,7 @@ end;
 //  TArgument.CheckRange(index >= 0, 'index');
 //  if Length(dest) - index < Size then
 //  begin
-//    raise EInsufficientMemoryException.Create(SInsufficientMemoryException);
+//    raise EInsufficientMemoryException.CreateRes(@SInsufficientMemoryException);
 //  end;
 //  Move(fBytes[0], dest[index], Size);
 //end;
@@ -2253,13 +2186,13 @@ end;
 class function TEnum.Parse<T>(const value: Integer): T;
 begin
   if not TEnum.TryParse<T>(value, Result) then
-    raise EFormatException.CreateFmt(SIncorrectFormat, [IntToStr(value)]);
+    raise EFormatException.CreateResFmt(@SIncorrectFormat, [IntToStr(value)]);
 end;
 
 class function TEnum.Parse<T>(const value: string): T;
 begin
   if not TEnum.TryParse<T>(value, Result) then
-    raise EFormatException.CreateFmt(SIncorrectFormat, [value]);
+    raise EFormatException.CreateResFmt(@SIncorrectFormat, [value]);
 end;
 
 {$ENDREGION}
@@ -2294,7 +2227,7 @@ function TNullable<T>.GetValue: T;
 begin
   if not HasValue then
   begin
-    raise EInvalidOperation.Create(SNullableTypeHasNoValue);
+    raise EInvalidOperation.CreateRes(@SNullableTypeHasNoValue);
   end;
   Result := fValue;
 end;
@@ -2322,7 +2255,7 @@ end;
 
 class operator TNullable<T>.Implicit(const value: TNullable<T>): T;
 begin
-  Result := value.value;
+  Result := value.Value;
 end;
 
 class operator TNullable<T>.Implicit(const value: TNullable<T>): Variant;
@@ -2347,7 +2280,7 @@ begin
   if not VarIsNullOrEmpty(value) then
   begin
     v := TValue.FromVariant(value);
-    Result := TNullable<T>.Create(v.AsType<T>)
+    Result := TNullable<T>.Create(v.AsType<T>);
   end
   else
   begin
@@ -2363,13 +2296,13 @@ begin
   end
   else
   begin
-    raise EInvalidOperation.Create(SCannotAssignPointerToNullable);
+    raise EInvalidOperation.CreateRes(@SCannotAssignPointerToNullable);
   end;
 end;
 
 class operator TNullable<T>.Explicit(const value: TNullable<T>): T;
 begin
-  Result := value.value;
+  Result := value.Value;
 end;
 
 {$ENDREGION}
@@ -2438,7 +2371,7 @@ procedure TValueProvider<T>.SetValue(const value: T);
 begin
   if IsReadOnly then
   begin
-    raise ENotSupportedException.Create(SCannotModifyReadOnlyValue);
+    raise ENotSupportedException.CreateRes(@SCannotModifyReadOnlyValue);
   end;
   fValue := value;
 end;
@@ -2518,7 +2451,84 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TLifetimeWatcher'}
+
+constructor TLifetimeWatcher.Create(const proc: TProc);
+begin
+  inherited Create;
+  fProc := proc;
+end;
+
+destructor TLifetimeWatcher.Destroy;
+begin
+  if Assigned(fProc) then
+    fProc;
+  inherited Destroy;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TDelegate<T>'}
+
+destructor TDelegate<T>.Destroy;
+begin
+  fList.Free;
+  inherited Destroy;
+end;
+
+procedure TDelegate<T>.Add(const delegate: T);
+begin
+  if fList = nil then
+  begin
+    fList := TList<T>.Create;
+  end;
+  fList.Add(delegate);
+end;
+
+procedure TDelegate<T>.Remove(const delegate: T);
+begin
+  if fList <> nil then
+  begin
+    fList.Remove(delegate);
+  end;
+end;
+
+procedure TDelegate<T>.Clear;
+begin
+  if fList <> nil then
+  begin
+    fList.Clear;
+  end;
+end;
+
+procedure TDelegate<T>.Invoke(proc: TProc<T>);
+var
+  delegate: T;
+begin
+  if fList <> nil then
+  begin
+    for delegate in fList do
+    begin
+      proc(delegate);
+    end;
+  end;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TRtti'}
+
+class constructor TRtti.Create;
+begin
+  fContext := TRttiContext.Create;
+end;
+
+class destructor TRtti.Destroy;
+begin
+  fContext.Free;
+end;
 
 class procedure TRtti.CheckTypeKind<T>(const typeKind: TypInfo.TTypeKind);
 begin
@@ -2531,7 +2541,34 @@ var
 begin
   typeInfo := TRtti.GetTypeInfo<T>;
   if not (typeInfo.Kind in typeKinds) then
-    raise ERttiException.CreateFmt(SUnexpectedTypeKind, [TRtti.GetTypeName<T>]);
+    raise ERttiException.CreateResFmt(@SUnexpectedTypeKind, [TRtti.GetTypeName<T>]);
+end;
+
+class function TRtti.IsManagedType<T>: Boolean;
+var
+  typeInfo: PTypeInfo;
+begin
+  typeInfo := TRtti.GetTypeInfo<T>;
+  Result := Rtti.IsManaged(typeInfo);
+end;
+
+class function TRtti.IsNullReference<T>(const value: T): Boolean;
+var
+  localTypeInfo: PTypeInfo;
+begin
+  localTypeInfo := TypeInfo(T);
+  Result := TRtti.IsNullReference(value, localTypeInfo);
+end;
+
+//  TTypeKind = (tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+//    tkString, tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString,
+//    tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray, tkUString,
+//    tkClassRef, tkPointer, tkProcedure);
+class function TRtti.IsNullReference(const value; typeInfo: PTypeInfo): Boolean;
+begin
+  Result := (typeInfo <> nil) and
+    (typeInfo.Kind in [tkPointer, tkClass, tkClassRef, tkInterface, tkProcedure, tkMethod]);
+  Result := Result and not Assigned(@value);
 end;
 
 class function TRtti.GetTypeName<T>: string;
@@ -2548,12 +2585,21 @@ class function TRtti.GetTypeInfo<T>: PTypeInfo;
 begin
   Result := System.TypeInfo(T);
   if Result = nil then
-    raise ERttiException.Create(SNoTypeInfo);
+    raise ERttiException.CreateRes(@SNoTypeInfo);
 end;
 
 class function TRtti.GetFullName(typeInfo: PTypeInfo): string;
 begin
-  Result := TypInfo.GetTypeName(typeInfo);
+  TArgument.CheckNotNull(typeInfo, 'typeInfo');
+  Result := fContext.GetType(typeInfo).QualifiedName;
+end;
+
+class function TRtti.GetFullName<T>: string;
+var
+  typeInfo: PTypeInfo;
+begin
+  typeInfo := TRtti.GetTypeInfo<T>;
+  Result := TRtti.GetFullName(typeInfo);
 end;
 
 class function TRtti.GetTypeData<T>: PTypeData;
@@ -2946,26 +2992,11 @@ end;
 
 {$REGION 'TOperatingSystem'}
 
-class constructor TOperatingSystem.Create;
-begin
-  fInstance := TOperatingSystem.Create;
-  fInstance.DoCreate;
-end;
-
-class destructor TOperatingSystem.Destroy;
-begin
-  FreeAndNil(fInstance);
-end;
-
-class function TOperatingSystem.GetInstance: TOperatingSystem;
-begin
-  Result := fInstance;
-end;
-
-procedure TOperatingSystem.DoCreate;
+constructor TOperatingSystem.Create;
 var
   versionInfo: TOSVersionInfoEx;
 begin
+  inherited Create;
   ZeroMemory(@versionInfo, SizeOf(versionInfo));
   versionInfo.dwOSVersionInfoSize := SizeOf(versionInfo);
   Win32Check(Windows.GetVersionEx(versionInfo));
@@ -3057,6 +3088,11 @@ begin
   end;
 end;
 
+function TOperatingSystem.GetIsWin3x: Boolean;
+begin
+  Result := Self.PlatformType = ptWin3x;
+end;
+
 function TOperatingSystem.GetIsWin9x: Boolean;
 begin
   Result := Self.PlatformType = ptWin9x;
@@ -3076,6 +3112,20 @@ end;
 
 
 {$REGION 'TEnvironment'}
+
+class constructor TEnvironment.Create;
+begin
+  fApplicationPath := ExtractFilePath(ParamStr(0));
+  fApplicationVersionInfo := TFileVersionInfo.GetVersionInfo(ParamStr(0));
+  fApplicationVersion := fApplicationVersionInfo.FileVersionNumber;
+  fApplicationVersionString := fApplicationVersionInfo.FileVersion;
+  fOperatingSystem := TOperatingSystem.Create;
+end;
+
+class destructor TEnvironment.Destroy;
+begin
+  fOperatingSystem.Free;
+end;
 
 class function TEnvironment.GetCommandLineArgs: TStringDynArray;
 var
@@ -3123,7 +3173,7 @@ begin
   len := Windows.GetLogicalDriveStrings(0, nil);
   SetLength(buffer, len);
   Windows.GetLogicalDriveStrings(len * SizeOf(Char), PChar(buffer));
-  Result := SplitNullTerminatedStrings(PChar(buffer));
+  Result := SplitString(PChar(buffer));
 end;
 
 class procedure TEnvironment.GetLogicalDrives(list: TStrings);
@@ -3157,13 +3207,12 @@ class function TEnvironment.GetFolderPath(const folder: TSpecialFolder): string;
 var
   pidl : PItemIDList;
   buffer: array[0..MAX_PATH-1] of Char;
-  returnCode: HRESULT;
-  hasToken: Boolean;
+//  returnCode: HRESULT;
   hToken : THandle;
 begin
   if TryGetAccessToken(hToken) then
   try
-    returnCode := ShlObj.SHGetFolderLocation(INVALID_HANDLE_VALUE,
+    ShlObj.SHGetFolderLocation(INVALID_HANDLE_VALUE,
       SpecialFolderCSIDLs[folder], hToken, 0, pidl);
     ShlObj.SHGetPathFromIDList(pidl, @buffer[0]);
     Result := buffer;
@@ -3172,20 +3221,27 @@ begin
   end;
 end;
 
-class function TEnvironment.CreateRegistry(
-  target: TEnvironmentVariableTarget; out key: string): TRegistry;
+class procedure TEnvironment.OpenEnvironmentVariableKey(registry: TRegistry;
+  target: TEnvironmentVariableTarget; keyAccess: Cardinal);
+var
+  key: string;
 begin
-  Assert(target in [evtUser, evtMachine], 'Illegal argument: target');
-  Result := TRegistry.Create;
+  Assert(registry <> nil, 'registry should not be nil.');
+  Assert(target in [evtUser, evtMachine], Format('Illegal target: %d.', [Integer(target)]));
   if target = evtUser then
   begin
-    Result.RootKey := HKEY_CURRENT_USER;
+    registry.RootKey := HKEY_CURRENT_USER;
     key := 'Environment';
   end
   else
   begin
-    Result.RootKey := HKEY_LOCAL_MACHINE;
+    registry.RootKey := HKEY_LOCAL_MACHINE;
     key := 'System\CurrentControlSet\Control\Session Manager\Environment';
+  end;
+  registry.Access := keyAccess;
+  if not registry.OpenKey(key, False) then
+  begin
+    raise EOSError.CreateResFmt(@SCannotAccessRegistryKey, [key]);
   end;
 end;
 
@@ -3199,7 +3255,6 @@ class function TEnvironment.GetEnvironmentVariable(const variable: string;
   target: TEnvironmentVariableTarget): string;
 var
   registry: TRegistry;
-  key: string;
 
   function GetProcessEnvironmentVariable: string;
   var
@@ -3223,9 +3278,10 @@ begin
     Result := GetProcessEnvironmentVariable;
     Exit;
   end;
-  registry := TEnvironment.CreateRegistry(target, key);
+  registry := TRegistry.Create;
   try
-    if registry.OpenKeyReadOnly(key) and registry.ValueExists(variable) then
+    OpenEnvironmentVariableKey(registry, target, KEY_READ);
+    if registry.ValueExists(variable) then
     begin
       Result := registry.GetDataAsString(variable);
     end
@@ -3246,7 +3302,7 @@ begin
   Assert(list <> nil, 'list should not be nil.');
   p := Windows.GetEnvironmentStrings;
   try
-    strings := SplitNullTerminatedStrings(p);
+    strings := SplitString(p);
     UpdateStrings(list,
       procedure
       var
@@ -3254,7 +3310,7 @@ begin
       begin
         for s in strings do
         begin
-          if (Length(s) > 0) and (s[1] <> '=') then // Skip entries starts with '='
+          if (Length(s) > 0) and (s[1] <> '=') then // Skip entries start with '='
           begin
             list.Add(s);
           end;
@@ -3275,10 +3331,8 @@ class procedure TEnvironment.GetEnvironmentVariables(list: TStrings;
   target: TEnvironmentVariableTarget);
 var
   registry: TRegistry;
-  key: string;
   value: string;
   i: Integer;
-
 begin
   TArgument.CheckNotNull(list, 'list');
   TArgument.CheckEnum<TEnvironmentVariableTarget>(target, 'target');
@@ -3287,16 +3341,14 @@ begin
     GetProcessEnvironmentVariables(list);
     Exit;
   end;
-  registry := TEnvironment.CreateRegistry(target, key);
+  registry := TRegistry.Create;
   try
-    if registry.OpenKeyReadOnly(key) then
+    OpenEnvironmentVariableKey(registry, target, KEY_READ);
+    registry.GetValueNames(list);
+    for i := 0 to list.Count - 1 do
     begin
-      registry.GetValueNames(list);
-      for i := 0 to list.Count - 1 do
-      begin
-        value := registry.GetDataAsString(list[i]);
-        list[i] := list[i] + list.NameValueSeparator + value;
-      end;
+      value := registry.GetDataAsString(list[i]);
+      list[i] := list[i] + list.NameValueSeparator + value;
     end;
   finally
     registry.Free;
@@ -3312,7 +3364,6 @@ class procedure TEnvironment.SetEnvironmentVariable(const variable,
   value: string; target: TEnvironmentVariableTarget);
 var
   registry: TRegistry;
-  key: string;
 begin
   TArgument.CheckEnum<TEnvironmentVariableTarget>(target, 'target');
   if target = evtProcess then
@@ -3320,17 +3371,17 @@ begin
     Win32Check(Windows.SetEnvironmentVariable(PChar(variable), PChar(value)));
     Exit;
   end;
-  registry := TEnvironment.CreateRegistry(target, key);
+  registry := TRegistry.Create;
   try
-    registry.Access := KEY_WRITE;
-    if not registry.OpenKey(key, False) then
+    OpenEnvironmentVariableKey(registry, target, KEY_WRITE);
+    if Pos('%', value) > 0 then
     begin
-      raise EArgumentException.Create('variable');
-    end;
-    if AnsiPos('%', value) > 0 then
-      registry.WriteExpandString(variable, value)
+      registry.WriteExpandString(variable, value);
+    end
     else
+    begin
       registry.WriteString(variable, value);
+    end;
     SendMessage(HWND_BROADCAST, WM_SETTINGCHANGE, 0, Integer(PChar('Environment')));
   finally
     registry.Free;
@@ -3389,11 +3440,6 @@ end;
 class function TEnvironment.GetNewLine: string;
 begin
   Result := System.sLineBreak;
-end;
-
-class function TEnvironment.GetOperatingSystem: TOperatingSystem;
-begin
-  Result := TOperatingSystem.Instance;
 end;
 
 class function TEnvironment.GetProcessorArchitecture: TProcessorArchitecture;
@@ -3563,602 +3609,6 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TServiceController'}
-
-constructor TServiceController.Create(const serviceName: string);
-begin
-  Create(serviceName, '');
-end;
-
-constructor TServiceController.Create(const serviceName, machineName: string);
-begin
-  Create(serviceName, machineName, fCInvalidServiceHandle);
-end;
-
-constructor TServiceController.Create(const serviceName,
-  machineName: string; const managerHandle: TValueHolder<THandle>);
-begin
-  fServiceName := serviceName;
-  fMachineName := machineName;
-  fManagerHandle := managerHandle;
-  fIsLoaded := False;
-end;
-
-class procedure TServiceController.GetManagerHandleHolder(
-  const machineName: string; out handleHolder: TValueHolder<THandle>);
-var
-  handle: THandle;
-begin
-  handle := OpenSCManager(
-    PChar(machineName),
-    SERVICES_ACTIVE_DATABASE,
-    SC_MANAGER_ALL_ACCESS
-  );
-  Win32Check(handle <> fCInvalidServiceHandle);
-  GetHandleHolder(handle, handleHolder);
-end;
-
-class procedure TServiceController.GetHandleHolder(handle: THandle;
-  out valueHolder: TValueHolder<THandle>);
-begin
-  valueHolder := TValueHolder<THandle>.Create(
-    handle,
-    procedure(var serviceHandle: THandle)
-    begin
-      if serviceHandle <> fCInvalidServiceHandle then
-      begin
-        Win32Check(CloseServiceHandle(serviceHandle));
-      end;
-      serviceHandle := fCInvalidServiceHandle;
-    end
-  );
-end;
-
-class procedure TServiceController.InternalEnumServices(const machineName: string;
-  serviceKind: TServiceKind; out services: TArray<TServiceController>);
-var
-  managerHandle: TValueHolder<THandle>;
-  bufferSize: DWORD;
-  bytesNeeded: DWORD;
-  servicesReturned: DWORD;
-  resumeHandle: THandle;
-  returnValue: BOOL;
-  serviceName: string;
-  serviceArray, pService: PEnumServiceStatusProcess;
-  i: Integer;
-const
-  serviceTypes: array[TServiceKind] of Cardinal = (
-    SERVICE_DRIVER,
-    SERVICE_WIN32
-  );
-begin
-  TServiceController.GetManagerHandleHolder(machineName, managerHandle);
-  resumeHandle := 0;  // Set resumeHandle to zero the first time
-  returnValue := EnumServicesStatusEx(
-    managerHandle,
-    SC_ENUM_PROCESS_INFO,
-    serviceTypes[serviceKind],
-    SERVICE_STATE_ALL,
-    nil,
-    0,
-    bytesNeeded,
-    servicesReturned,
-    resumeHandle,
-    nil
-  );
-  if not returnValue and (GetLastError <> ERROR_MORE_DATA) then
-  begin
-    RaiseLastOSError;
-  end;
-  bufferSize := bytesNeeded;
-  serviceArray := AllocMem(bytesNeeded);
-  try
-    returnValue := EnumServicesStatusEx(
-      managerHandle,
-      SC_ENUM_PROCESS_INFO,
-      serviceTypes[serviceKind],
-      SERVICE_STATE_ALL,
-      PByte(serviceArray),
-      bufferSize,
-      bytesNeeded,
-      servicesReturned,
-      resumeHandle,
-      nil
-    );
-    Win32Check(returnValue);
-    SetLength(services, servicesReturned);
-    pService := serviceArray;
-    for i := 0 to servicesReturned - 1 do
-    begin
-      serviceName := pService.lpServiceName;
-      services[i] := TServiceController.Create(serviceName, machineName, managerHandle);
-      Inc(pService);
-    end;
-  finally
-    FreeMem(serviceArray);
-  end;
-end;
-
-procedure TServiceController.ManagerHandleNeeded;
-begin
-  if fManagerHandle.Value = fCInvalidServiceHandle then
-  begin
-    GetManagerHandleHolder(fMachineName, fManagerHandle);
-    Assert(fManagerHandle.Value <> fCInvalidServiceHandle);
-  end;
-end;
-
-procedure TServiceController.UpdateStatus;
-var
-  bytesNeeded: Cardinal;
-begin
-  Assert(fServiceHandle.Value <> fCInvalidServiceHandle, 'Invalid fServiceHandle');
-  Win32Check(QueryServiceStatusEx(
-    fServiceHandle,
-    SC_STATUS_PROCESS_INFO,
-    PByte(@fServiceStatusProcess),
-    SizeOf(fServiceStatusProcess),
-    bytesNeeded
-  ));
-  fStatus := ParseStatus(fServiceStatusProcess.dwCurrentState);
-  fCanStop := fServiceStatusProcess.dwControlsAccepted and SERVICE_ACCEPT_SHUTDOWN <> 0;
-  fCanPauseAndResume := fServiceStatusProcess.dwControlsAccepted and SERVICE_ACCEPT_PAUSE_CONTINUE <> 0;
-  fCanShutdown := fServiceStatusProcess.dwControlsAccepted and SERVICE_ACCEPT_SHUTDOWN <> 0;
-end;
-
-procedure TServiceController.UpdateConfig;
-var
-  bufferSize,
-  bytesNeeded: Cardinal;
-  serviceConfig: WinSvc.PQueryServiceConfig;
-  list: TStringDynArray;
-  serviceName: string;
-  i: Integer;
-begin
-  Assert(fServiceHandle.Value <> fCInvalidServiceHandle, 'Invalid fServiceHandle');
-  if not QueryServiceConfig(fServiceHandle, nil, 0, bytesNeeded) and
-    (GetLastError <> ERROR_INSUFFICIENT_BUFFER) then
-  begin
-    RaiseLastOSError;
-  end;
-  bufferSize := bytesNeeded;
-  serviceConfig := AllocMem(bytesNeeded);
-  fServiceConfig := TValueHolder<WinSvc.PQueryServiceConfig>.Create(
-    serviceConfig,
-    procedure(var serviceConfig: WinSvc.PQueryServiceConfig)
-    begin
-      Dispose(serviceConfig);
-    end
-  );
-  Win32Check(QueryServiceConfig(fServiceHandle, fServiceConfig, bufferSize, bytesNeeded));
-  with fServiceConfig.Value^ do
-  begin
-    fServiceType := ParseServiceTypes(dwServiceType);
-    fStartMode := ParseStartMode(dwStartType);
-    fDisplayName := lpDisplayName;
-    fFileName := lpBinaryPathName;
-    list := SplitNullTerminatedStrings(lpDependencies);
-  end;
-  // TODO: Handle SC_GROUP_IDENTIFIER
-  SetLength(fServicesDependedOn, Length(list));
-  for i := 0 to High(list) do
-  begin
-    serviceName := list[i];
-    fServicesDependedOn[i] := TServiceController.Create(serviceName);
-  end;
-end;
-
-procedure TServiceController.UpdateDependentServices;
-begin
-  // EnumDependentServices
-end;
-
-procedure TServiceController.UpdateDescription;
-var
-  bufferSize,
-  bytesNeeded: Cardinal;
-  buffer: TBytes;
-begin
-  Assert(fServiceHandle.Value <> fCInvalidServiceHandle, 'Invalid fServiceHandle');
-  if not QueryServiceConfig2(fServiceHandle, SERVICE_CONFIG_DESCRIPTION, nil, 0, bytesNeeded) and
-    (GetLastError <> ERROR_INSUFFICIENT_BUFFER) then
-  begin
-    RaiseLastOSError;
-  end;
-  bufferSize := bytesNeeded;
-  SetLength(buffer, bufferSize);
-  Win32Check(QueryServiceConfig2(fServiceHandle, SERVICE_CONFIG_DESCRIPTION, PByte(buffer), bufferSize, bytesNeeded));
-  fDescription := PServiceDescription(buffer).lpDescription;
-end;
-
-procedure TServiceController.Loaded;
-begin
-  if not fIsLoaded then
-  begin
-    Refresh;
-    fIsLoaded := True;
-  end;
-end;
-
-procedure TServiceController.Open(desiredAccess: Cardinal);
-begin
-  Assert(desiredAccess and not SERVICE_ALL_ACCESS = 0, 'Invalid desiredAccess.');
-  ManagerHandleNeeded;
-  fServiceHandle := OpenService(fManagerHandle, PChar(fServiceName), desiredAccess);
-  if fServiceHandle.Value = fCInvalidServiceHandle then
-  case GetLastError of
-    ERROR_SERVICE_DOES_NOT_EXIST:
-    begin
-      raise EOSError.CreateFmt(SServiceNotExists, [fServiceName]);
-    end;
-    else
-    begin
-      RaiseLastOSError;
-    end;
-  end;
-end;
-
-procedure TServiceController.Close;
-begin
-  if fServiceHandle.Value <> fCInvalidServiceHandle then
-  begin
-    CloseServiceHandle(fServiceHandle);
-    fServiceHandle := fCInvalidServiceHandle;
-  end;
-end;
-
-procedure TServiceController.Refresh;
-begin
-  Open(SERVICE_QUERY_STATUS or SERVICE_QUERY_CONFIG or SERVICE_CONFIG_DESCRIPTION);
-  try
-    UpdateStatus;
-    UpdateConfig;
-    UpdateDescription;
-    UpdateDependentServices;
-  finally
-    Close;
-  end;
-end;
-
-procedure TServiceController.ExecuteCommand(command: Integer);
-begin
-
-end;
-
-procedure TServiceController.PerformAction(action: TServiceAction);
-var
-  serviceStatus: WinSvc.TServiceStatus;
-const
-  AccessArray: array[TServiceAction] of DWORD = (
-    SERVICE_START,              // saStart
-    SERVICE_STOP,               // saStop
-    SERVICE_PAUSE_CONTINUE,     // saPause
-    SERVICE_PAUSE_CONTINUE      // saResume
-  );
-  ControlArray: array[TServiceAction] of DWORD = (
-    0,                          // saStart
-    SERVICE_CONTROL_STOP,       // saStop
-    SERVICE_CONTROL_PAUSE,      // saPause
-    SERVICE_CONTROL_CONTINUE    // saResume
-  );
-begin
-  Assert(action in [saStop, saPause, saResume]);
-  Open(AccessArray[action] or SERVICE_QUERY_STATUS);
-  try
-    UpdateStatus;
-    serviceStatus := WinSvc.PServiceStatus(@fServiceStatusProcess)^;
-    Win32Check(ControlService(fServiceHandle, ControlArray[action], serviceStatus));
-  finally
-    Close;
-  end;
-end;
-
-procedure TServiceController.Start;
-begin
-  Start([]);
-end;
-
-procedure TServiceController.Start(const args: array of string);
-var
-  pArgs: PChar;
-  i: Integer;
-  argCount: Integer;
-type
-  PStrArray = ^TStrArray;
-  TStrArray = array[0..32767] of PChar;
-begin
-  Open(SERVICE_START or SERVICE_QUERY_STATUS);
-  try
-    if Length(args) = 0 then
-    begin
-      pArgs := nil;
-      argCount := 0;
-    end
-    else
-    begin
-      argCount := Length(args) + 1;
-      pArgs := AllocMem(argCount * SizeOf(PChar));
-      PStrArray(pArgs)^[0] := PChar(fServiceName);
-      for i := 0 to High(args) do
-      begin
-        PStrArray(pArgs)^[i+1] := PChar(args[i]);
-      end;
-    end;
-    Win32Check(StartService(fServiceHandle, argCount, pArgs));
-  finally
-    FreeMem(pArgs);
-    Close;
-  end;
-end;
-
-procedure TServiceController.Stop;
-begin
-  PerformAction(saStop);
-end;
-
-procedure TServiceController.Pause;
-begin
-  PerformAction(saPause);
-end;
-
-procedure TServiceController.Resume;
-begin
-  PerformAction(saResume);
-end;
-
-procedure TServiceController.Restart;
-begin
-  Stop;
-  WaitForStatus(ssStopped);
-  Start;
-end;
-
-procedure TServiceController.WaitForStatus(status: TServiceStatus);
-begin
-  WaitForStatus(status, TTimeSpan.Create(Windows.INFINITE));
-end;
-
-procedure TServiceController.WaitForStatus(desiredStatus: TServiceStatus;
-  const timeout: TTimeSpan);
-var
-  oldCheckPoint: DWORD;
-  startTickCount: DWORD;
-  waitTime: DWORD;
-  ticks: DWORD;
-  n: Integer;
-begin
-  TArgument.CheckEnum<TServiceStatus>(desiredStatus, 'desiredStatus');
-  Open(SERVICE_QUERY_STATUS);
-  try
-    UpdateStatus;
-    startTickCount := GetTickCount;
-    oldCheckPoint := fServiceStatusProcess.dwCheckPoint;
-    n := 0;
-    while fStatus <> desiredStatus do
-    begin
-      // FROM <MSDN Library>:
-      // Do not wait longer than the wait hint. A good interval is
-      // one-tenth the wait hint, but no less than 1 second and no
-      // more than 10 seconds.
-      waitTime := fServiceStatusProcess.dwWaitHint div 10;
-      if waitTime < 1000 then
-        waitTime := 1000
-      else if waitTime > 10000 then
-        waitTime := 10000;
-      Sleep(waitTime);
-      Inc(n);
-      UpdateStatus;
-      ticks := GetTickCount - startTickCount;
-      if fStatus = desiredStatus then Break;
-      if fServiceStatusProcess.dwCheckPoint > oldCheckPoint then
-      begin
-        // The service is making progress.
-        startTickCount := GetTickCount;
-        oldCheckPoint := fServiceStatusProcess.dwCheckPoint;
-      end
-      else if ticks > fServiceStatusProcess.dwWaitHint then
-      begin
-        // No progress made within the wait hint.
-        Break;
-      end
-      else if ticks > timeout.Ticks  then
-      begin
-        raise ETimeoutException.Create(STimeoutException);
-      end;
-    end;
-    if fStatus <> desiredStatus then
-    begin
-      RaiseLastOSError;
-    end;
-  finally
-    Close;
-  end;
-end;
-
-function TServiceController.ParseServiceTypes(const value: Cardinal): TServiceTypes;
-begin
-  Result := [];
-  if value and SERVICE_ADAPTER <> 0 then
-    Include(Result, stAdapter);
-  if value and SERVICE_FILE_SYSTEM_DRIVER <> 0 then
-    Include(Result, stFileSystemDriver);
-  if value and SERVICE_INTERACTIVE_PROCESS <> 0 then
-    Include(Result, stInteractiveProcess);
-  if value and SERVICE_KERNEL_DRIVER <> 0 then
-    Include(Result, stKernelDriver);
-  if value and SERVICE_RECOGNIZER_DRIVER <> 0 then
-    Include(Result, stRecognizerDriver);
-  if value and SERVICE_WIN32_OWN_PROCESS <> 0 then
-    Include(Result, stWin32OwnProcess);
-  if value and SERVICE_WIN32_SHARE_PROCESS <> 0 then
-    Include(Result, stWin32ShareProcess);
-end;
-
-function TServiceController.ParseStartMode(const value: Cardinal): TServiceStartMode;
-begin
-  case value of
-    SERVICE_BOOT_START:   Result := smBoot;
-    SERVICE_SYSTEM_START: Result := smSystem;
-    SERVICE_AUTO_START:   Result := smAutomatic;
-    SERVICE_DEMAND_START: Result := smManual;
-    SERVICE_DISABLED:     Result := smDisabled;
-    else
-    begin
-      raise EArgumentException.CreateFmt(SArgumentOutOfRangeException, [IntToStr(value)]);
-    end;
-  end;
-end;
-
-function TServiceController.ParseStatus(const value: Cardinal): TServiceStatus;
-begin
-  case value of
-    SERVICE_STOPPED:           Result := ssStopped;
-    SERVICE_START_PENDING:     Result := ssStartPending;
-    SERVICE_STOP_PENDING:      Result := ssStopPending;
-    SERVICE_RUNNING:           Result := ssRunning;
-    SERVICE_CONTINUE_PENDING:  Result := ssContinuePending;
-    SERVICE_PAUSE_PENDING:     Result := ssPausePending;
-    SERVICE_PAUSED:            Result := ssPaused;
-    else
-    begin
-      raise EArgumentException.CreateFmt(SArgumentOutOfRangeException, [IntToStr(value)]);
-    end;
-  end;
-end;
-
-class function TServiceController.GetDevices: TArray<TServiceController>;
-begin
-  TServiceController.InternalEnumServices('', skDrive, Result);
-end;
-
-class function TServiceController.GetDevices(const machineName: string): TArray<TServiceController>;
-begin
-  TServiceController.InternalEnumServices(machineName, skDrive, Result);
-end;
-
-class function TServiceController.GetServices: TArray<TServiceController>;
-begin
-  TServiceController.InternalEnumServices('', skWin32, Result);
-end;
-
-class function TServiceController.GetServices(
-  const machineName: string): TArray<TServiceController>;
-begin
-  TServiceController.InternalEnumServices(machineName, skWin32, Result);
-end;
-
-function TServiceController.GetDisplayName: string;
-begin
-  Loaded;
-  Result := fDisplayName;
-end;
-
-function TServiceController.GetMachineName: string;
-begin
-  Loaded;
-  Result := fMachineName;
-end;
-
-function TServiceController.GetServiceHandle: THandle;
-begin
-  Loaded;
-  Result := fServiceHandle;
-end;
-
-function TServiceController.GetServiceName: string;
-begin
-  Loaded;
-  Result := fServiceName;
-end;
-
-function TServiceController.GetServiceType: TServiceTypes;
-begin
-  Loaded;
-  Result := fServiceType;
-end;
-
-function TServiceController.GetStartMode: TServiceStartMode;
-begin
-  Loaded;
-  Result := fStartMode;
-end;
-
-function TServiceController.GetDescription: string;
-begin
-  Loaded;
-  Result := fDescription;
-end;
-
-function TServiceController.GetStatus: TServiceStatus;
-begin
-  Loaded;
-  Result := fStatus;
-end;
-
-function TServiceController.GetCanStop: Boolean;
-begin
-  Loaded;
-  Result := fCanStop;
-end;
-
-function TServiceController.GetCanPauseAndResume: Boolean;
-begin
-  Loaded;
-  Result := fCanPauseAndResume;
-end;
-
-function TServiceController.GetCanShutdown: Boolean;
-begin
-  Loaded;
-  Result := fCanShutdown;
-end;
-
-function TServiceController.GetExists: Boolean;
-var
-  serviceHandle: THandle;
-begin
-  ManagerHandleNeeded;
-  serviceHandle := OpenService(fManagerHandle, PChar(fServiceName), SERVICE_QUERY_STATUS);
-  Result := serviceHandle <> fCInvalidServiceHandle;
-  if Result then
-  begin
-    CloseServiceHandle(serviceHandle);
-  end;
-end;
-
-function TServiceController.GetServicesDependedOn: TArray<TServiceController>;
-begin
-  Loaded;
-  Result := fServicesDependedOn;
-end;
-
-function TServiceController.GetDependentServices: TArray<TServiceController>;
-begin
-  Loaded;
-  Result := fDependentServices;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TLifetimeWatcher'}
-
-constructor TLifetimeWatcher.Create(const proc: TProc);
-begin
-  inherited Create;
-  fProc := proc;
-end;
-
-destructor TLifetimeWatcher.Destroy;
-begin
-  if Assigned(fProc) then
-    fProc;
-  inherited Destroy;
-end;
-
-{$ENDREGION}
-
-
 {$REGION 'TCallback'}
 
 type
@@ -4207,55 +3657,6 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TDelegate<T>'}
-
-destructor TDelegate<T>.Destroy;
-begin
-  fList.Free;
-  inherited Destroy;
-end;
-
-procedure TDelegate<T>.Add(const delegate: T);
-begin
-  if fList = nil then
-  begin
-    fList := TList<T>.Create;
-  end;
-  fList.Add(delegate);
-end;
-
-procedure TDelegate<T>.Remove(const delegate: T);
-begin
-  if fList <> nil then
-  begin
-    fList.Remove(delegate);
-  end;
-end;
-
-procedure TDelegate<T>.Clear;
-begin
-  if fList <> nil then
-  begin
-    fList.Clear;
-  end;
-end;
-
-procedure TDelegate<T>.Invoke(proc: TProc<T>);
-var
-  delegate: T;
-begin
-  if fList <> nil then
-  begin
-    for delegate in fList do
-    begin
-      proc(delegate);
-    end;
-  end;
-end;
-
-{$ENDREGION}
-
-
 {$REGION 'TVolatile<T>'}
 
 function TVolatile<T>.GetValue: T;
@@ -4292,12 +3693,32 @@ end;
 
 {$ENDREGION}
 
-initialization
-  ApplicationPath := ExtractFilePath(ParamStr(0));
-  ApplicationVersionInfo := TFileVersionInfo.GetVersionInfo(ParamStr(0));
-  ApplicationVersion := ApplicationVersionInfo.FileVersionNumber;
-  ApplicationVersionString := ApplicationVersionInfo.FileVersion;
 
-finalization
+{$REGION 'LifetimeType Attributes'}
+
+{ TLifetimeAttribute }
+
+constructor TLifetimeAttribute.Create(lifetimeType: TLifetimeType);
+begin
+  inherited Create;
+  fLifetimeType := lifetimeType;
+end;
+
+{ SingletonAttribute }
+
+constructor SingletonAttribute.Create;
+begin
+  inherited Create(TLifetimeType.ltSingleton);
+end;
+
+{ TransientAttribute }
+
+constructor TransientAttribute.Create;
+begin
+  inherited Create(TLifetimeType.ltTransient);
+end;
+
+{$ENDREGION}
+
 
 end.

@@ -39,8 +39,7 @@ uses
   TestExtensions,
   Generics.Defaults,
   Spring.System,
-  Spring.System.IO,
-  Spring.DesignPatterns;
+  Spring.System.IO;
 
 type
   TTestSplitString = class(TTestCase)
@@ -151,13 +150,6 @@ type
     procedure TestFromVariant;
   end;
 
-  TTestSingleton = class(TTestcase)
-  published
-    procedure TestGetInstance;
-    procedure TestCreate;
-    procedure TestFree;
-  end;
-
 
 implementation
 
@@ -254,20 +246,20 @@ end;
 procedure TTestSplitNullTerminatedStrings.TestEmpty;
 begin
   fBuffer := TCharArray.Create(#0);
-  fStrings := SplitNullTerminatedStrings(PChar(fBuffer));
+  fStrings := SplitString(PChar(fBuffer));
   CheckEquals(0, Length(fStrings));
 end;
 
 procedure TTestSplitNullTerminatedStrings.TestNil;
 begin
-  fStrings := SplitNullTerminatedStrings(nil);
+  fStrings := SplitString(nil);
   CheckEquals(0, Length(fStrings));
 end;
 
 procedure TTestSplitNullTerminatedStrings.TestOneEntry;
 begin
   fBuffer := TCharArray.Create('C', ':', #0, #0);
-  fStrings := SplitNullTerminatedStrings(PChar(fBuffer));
+  fStrings := SplitString(PChar(fBuffer));
   CheckEquals(1, Length(fStrings));
   CheckEquals('C:', fStrings[0]);
 end;
@@ -275,7 +267,7 @@ end;
 procedure TTestSplitNullTerminatedStrings.TestThreeEntries;
 begin
   fBuffer := TCharArray.Create('C', ':', #0, 'D', ':', #0, 'E', ':', #0, #0);
-  fStrings := SplitNullTerminatedStrings(PChar(fBuffer));
+  fStrings := SplitString(PChar(fBuffer));
   CheckEquals(3, Length(fStrings));
   CheckEquals('C:', fStrings[0]);
   CheckEquals('D:', fStrings[1]);
@@ -285,7 +277,7 @@ end;
 procedure TTestSplitNullTerminatedStrings.TestVariousStrings;
 begin
   fBuffer := TCharArray.Create('A', 'B', 'C', #0, 'D', 'E', #0, 'F', #0, #0);
-  fStrings := SplitNullTerminatedStrings(PChar(fBuffer));
+  fStrings := SplitString(PChar(fBuffer));
   CheckEquals(3, Length(fStrings));
   CheckEquals('ABC', fStrings[0]);
   CheckEquals('DE', fStrings[1]);
@@ -583,38 +575,6 @@ begin
   fInteger := TNullable<Integer>.Create(value);
   CheckTrue(fInteger.HasValue);
   CheckEquals(ExpectedInteger, fInteger.Value);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TTestSingleton'}
-
-type
-  TTestableSingleton = class(TSingletonBase<TTestableSingleton>)
-  end;
-
-procedure TTestSingleton.TestGetInstance;
-var
-  singleton: TTestableSingleton;
-begin
-  singleton := TTestableSingleton.Instance;
-  CheckNotNull(singleton);
-  CheckSame(singleton, TTestableSingleton.Instance);
-end;
-
-procedure TTestSingleton.TestCreate;
-begin
-  ExpectedException := EInvalidOperation;
-  {$HINTS OFF}
-  TTestableSingleton.Create;
-  {$HINTS ON}
-end;
-
-procedure TTestSingleton.TestFree;
-begin
-  ExpectedException := EInvalidOperation;
-  TTestableSingleton.Instance.Free;
 end;
 
 {$ENDREGION}

@@ -33,20 +33,22 @@ resourcestring
   SNotSupportedException       = '%s is not supported.';
   SNotImplementedException     = '%s is not implemented.';
 
-  SArgumentOutOfRangeException = 'ArgumentOutOfRangeException: %s';
-  SArgumentNullException       = 'ArgumentNullException: %s';
+  SArgumentOutOfRangeException = 'EArgumentOutOfRangeException: %s';
+  SArgumentNullException       = 'EArgumentNullException: %s';
   SInvalidEnumArgument         = 'Invalid enum argument: %s';
   SUnexpectedTypeKindArgument  = 'Unexpected type kind %s for the argument %s.';
 
-  SFileNotFoundException       = 'File not found: %s';
-  SDirectoryNotFoundException  = 'Directory not found: %s';
-  SNullableTypeHasNoValue      = 'Invalid operation, Nullable type has no value.';
-  SCannotAssignPointerToNullable='Cannot assigned non-null pointer to nullable type.';
-  STypeNotRegistered            = '%s was not registered.';
-  SCannotModifyReadOnlyValue    = 'Cannot modify read-only value.';
-  SServiceNotExists             = 'The service "%s" does not exist.';
-  STimeoutException             = 'Timeout';
-  SInsufficientMemoryException  = 'Insufficient memory.';
+  SCannotAccessRegistryKey     = 'Cannot access the registry key: %s.';
+
+  SFileNotFoundException          = 'File not found: %s';
+  SDirectoryNotFoundException     = 'Directory not found: %s';
+  SNullableTypeHasNoValue         = 'Invalid operation, Nullable type has no value.';
+  SCannotAssignPointerToNullable  ='Cannot assigned non-null pointer to nullable type.';
+  STypeNotRegistered              = '%s was not registered.';
+  SCannotModifyReadOnlyValue      = 'Cannot modify read-only value.';
+  SServiceNotExists               = 'The service "%s" does not exist.';
+  STimeoutException               = 'Timeout';
+  SInsufficientMemoryException    = 'Insufficient memory.';
 
   SNoTypeInfo          = 'No type information found.';
   SUnexpectedTypeKind  = 'Unexpected type kind: %s.';
@@ -92,42 +94,28 @@ resourcestring
   SCDRomDescription           = 'CD-Rom Drive';
   SRamDescription             = 'Ram Drive';
 
-//  SEnumNotStarted              = 'Enum not started.';
-//  SEnumEnded                   = 'Enum ended.';
-//  SNotSupported_EnumReset      = 'RESET has not been supported.';
+  {$ENDREGION}
+
+
+  {$REGION 'Spring.Collections'}
+
+  SCannotResetEnumerator = 'Cannot reset the enumerator.';
 
   {$ENDREGION}
 
 
-  // Spring.DesignPatterns
-  SInvalidOperation_MustInheritFromSingletonBase = 'The class %s must inherit from TSingletonBase<%s>.';
-  SInvalidOperation_SingletonCreate   = 'Use Instance class property instead.';
-  SInvalidOperation_SingletonDestroy  = 'Invalid Operation: Free/Destroy';
+  {$REGION 'Spring.Logging'}
 
-
-  {$REGION 'Spring.Communications'}
-
-  SConnectionTimeout   = 'Connection Timeout.';
-
-  {$ENDREGION}
-
-
-  {$REGION 'Spring.Validation'}
-
-  SValidationRequired    = '%S is required.';
-  SValidationRange       = '%s must be between %s and %s.';
-  SValidationMinValue    = '%s must not be less than %s.';
-  SValidationMaxValue    = '%s must not be greater than %s.';
-  SValidationMinLength   = '%s must have at least %d characters.';
-  SValidationMaxLength   = '%s must have at most %d characters.';
+  SAllDescription      = 'ALL';
+  STraceDescription    = 'TRACE';
+  SDebugDescription    = 'DEBUG';
+  SInfoDescription     = 'INFO';
+  SWarnDescription     = 'WARN';
+  SErrorDescription    = 'ERROR';
+  SFatalDescription    = 'FATAL';
+  SOffDescription      = 'OFF';
 
   {$ENDREGION}
-
-
-  SNoAdapterFound = 'Type %s has no adapter for %s.';
-
-  SRepositoryNotFound          = 'Repository not registered for %s.';
-  SObjectContextNotAvailable   = 'ObjectContext is not available.';
 
 implementation
 

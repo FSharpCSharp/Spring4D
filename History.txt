@@ -1,3 +1,17 @@
+2009-10-24	v0.1.0.542
++Added two TRtti.IsNullReference methods to determine if a variable is a null reference
++Added TSynchronizedObservable<T> (Spring.DesignPatterns) to ensure thread-safety
++More code templates are added to "Code Templates" folder (see "Using Code Templates.txt" in the Documents folder)
+*TObservable<T> now inherits from TInterfacedObject, insteading of TInterfaceBase.
+*TServiceController and related types are moved from Spring.System to Spring.Utils
+*SplitNullTerminatedStrings is now deprecated, use SplitString instead
+*TryFocusControl is now deprecated, use TrySetFocus instead
+#Bug-Fixes 
+	* TContainers.CreateList<T>
+-Removed Spring.Logging.Resources (Merged into Spring.Resources)
+-Removed TSingletonBase<T>, TRegistry<T> and TClassRegistry classes
+-Removed many units and classes (logging, cryptography, validation, etc.) that will be completed in later releases.
+
 2009-10-09	V0.1.0.466
 [IMPORTANT]
 -Removed the following 4 projects from the roadmap, now just focus on the core fundamental library.
@@ -10,7 +24,7 @@
 -Removed Spring.Communications.*
 
 +Added some initial code on IoC Container (Spring.IoC)
-+Added TVolatile<T> to implement the Volatile keyword in .net (experimental)
++Added TVolatile<T> to implement the volatile keyword in .net (experimental)
 +Added TArgument.CheckTypeKind
 *Both the parameters "argument" of TArgument.CheckTrue and TArgument.CheckFalse were changed to "msg".
 *Updated Copyright headers

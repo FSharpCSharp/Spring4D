@@ -31,8 +31,16 @@ unit Spring.System.Net experimental;
 interface
 
 uses
-  Classes, Windows, SysUtils, ActiveX, ComObj, WinSock, WinInet,
-  Spring.System, Spring.Win32API, Spring.DesignPatterns;
+  Classes,
+  Windows,
+  SysUtils,
+  ActiveX,
+  ComObj,
+  WinSock,
+  WinInet,
+  Spring.System,
+  Spring.Win32API,
+  Spring.DesignPatterns;
 
 type
   {$REGION 'TNetwork (Experimental)'}
@@ -46,7 +54,7 @@ type
 //    procedure OnStatusChanged(status: TNetworkStatus);
 //  end;
 
-  TNetwork = class sealed(TSingletonBase<TNetwork>)
+  TNetwork = class sealed
   private
     class function GetIsAvailable: Boolean; static;
     class function GetStatus: TNetworkStatus; static;

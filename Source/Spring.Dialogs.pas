@@ -43,7 +43,7 @@ type
   /// <summary>
   /// Encapsulates common message dialogs.
   /// </summary>
-  /// <author>Paul</author>
+  /// <author>Zuo Baoquan (Paul)</author>
   /// <author>HR168</author>
   TMessageBox = class
   private
@@ -111,7 +111,7 @@ const
   SInformation = '';
   SConfirm = '';
 
-{ TDialog }
+{ TMessageBox }
 
 class constructor TMessageBox.Create;
 begin

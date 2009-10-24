@@ -34,14 +34,27 @@ Logging Services
 +"Delphi Spring Framework Coding Standards"
 * License
 * Namespaces
-* Class Template
-* Identation & Captial
+* Unit Template
+* Identation & Capitalization
 * SVN
-* Unicode Notes
+* Notes (Unicode & Thread-Safety)
+
+-----------------------------------------------------------------------------
+V0.1.x	2009-11-09
+-----------------------------------------------------------------------------
+
+
+-----------------------------------------------------------------------------
+V0.2.0	2009-11-23
+-----------------------------------------------------------------------------
+
+>>Spring.Objects
+Common Domain Objects (TMoney, TCurrency, TQuantity, TUnit, TRange<T>, TTimePoint(TDateTime, TDate, TTime), etc.)
 
 > Spring.Validation
 > Spring.Navigation
 
+>>Spring.Resources
 
 >>Spring.Cryptography:
 
@@ -62,40 +75,17 @@ Logging Services
 * TripleDES
 * AES
 
------------------------------------------------------------------------------
-V0.1.x	2009-11-09
------------------------------------------------------------------------------
-
-
------------------------------------------------------------------------------
-V0.2.0	2009-11-23
------------------------------------------------------------------------------
-
 >>Spring.System
 +TUri
 +TRegex class (Regular Expressions Wrapper)
 
-+TClipboardWatcher
-
 +TBigInteger
 +TBigDecimal
 
++TWideCharSet
++Extended Arrays (TDynamicArray<T>, etc.)
+
 +Base64 Encoding/Decoding
-
-+Single Application Instance
-* Single instance
-* Pass command parameters
-* Restore the existed application
-
->>Spring.Resources
-
->>Spring.Localization.Chinese
-* HIGH  Simplified Chinese and Traditional Chinese Conversion £¨¼ò·±Ìå×ª»»£©
-* HIGH  Pinyin £¨Æ´Òô£©
-* HIGH  Currency Symbol £¨»õ±Ò·ûºÅ£©
-* LOW   Lunar Calendar £¨ÒõÀú£©
-
->>Spring.System.Net
 
 -----------------------------------------------------------------------------
 V0.2.x	2009-12-07
@@ -106,9 +96,22 @@ Bug-Fixes
 V0.3.0	2009-12-28
 -----------------------------------------------------------------------------
 
-+Spring.Expressions
-
-+Common Domain Objects (TMoney, TCurrency, TQuantity, TUnit, TTimePoint(TDateTime, TDate, TTime), TRange<T>, etc.)
+>>Spring.Localization.Chinese
+* HIGH  Simplified Chinese and Traditional Chinese Conversion £¨¼ò·±Ìå×ª»»£©
+* HIGH  Pinyin £¨Æ´Òô£©
+* HIGH  Currency Symbol £¨»õ±Ò·ûºÅ£©
+* LOW   Lunar Calendar £¨ÒõÀú£©
 
 >>Spring.Scheduler (Based on Quartz and Quartz.Net projects)
 
+>>Spring.System.Net
+TNetwork
+
+>>Spring.Utils
+
++TClipboardWatcher
+
++Single Application Instance
+* Single instance
+* Pass command parameters
+* Restore the existed application

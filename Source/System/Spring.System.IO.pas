@@ -22,19 +22,6 @@
 {                                                                           }
 {***************************************************************************}
 
-(*
-
-+TFileMapping
-+TFileMappingView
-+TFileMappingStream
-
-+TFileSearcher
-+TFileSystemEntry
-
-+TFileSystemWatcher
-
-*)
-
 unit Spring.System.IO;
 
 {$I Spring.inc}
@@ -250,36 +237,6 @@ type
     destructor Destroy; override;
     property FileName: string read fFileName;
   end;
-
-
-  {$REGION 'TFileSystemEntry (NOT READY)'}
-
-//  TFileSystemEntry = record
-//
-//  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TFileSearcher (NOT READY)'}
-
-//  TFileSearcher = class
-//
-//  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TFileSystemWatcher (NOT READY)'}
-
-  /// <summary>
-  /// Listens to the file system change notifications and raises events when a
-  /// directory, or file in a directory, changes.
-  /// </summary>
-//  TFileSystemWatcher = record
-//  end;
-
-  {$ENDREGION}
 
 
 implementation

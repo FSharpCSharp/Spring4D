@@ -32,11 +32,14 @@ uses
   Spring.IoC;
 
 type
-  TTestContainer = class abstract(TTestCase)
+  TContainerTestCase = class abstract(TTestCase)
   protected
     fContainer: TContainer;
     procedure SetUp; override;
     procedure TearDown; override;
+  end;
+
+  TTestContainer = class abstract(TContainerTestCase)
   published
     procedure TestInterfaceWithGuid;
     procedure TestInterfaceWithoutGuid;
@@ -53,7 +56,7 @@ type
   IFoo = interface
     ['{96163ACB-E3FD-412E-A9A6-5084CE1BC25A}']
     function GetName: string;
-    property Name: string read GetName;
+    property Name: string read GetName;    
   end;
 
   TFoo = class(TInterfacedObject, IFoo, IInterface)
@@ -89,6 +92,20 @@ type
     property Intf: IFoo read fIntf;
   end;
 
+{ TContainerTestCase }
+
+procedure TContainerTestCase.SetUp;
+begin
+  inherited;
+  fContainer := TContainer.Create;
+end;
+
+procedure TContainerTestCase.TearDown;
+begin
+  fContainer.Free;
+  inherited;
+end;
+
 { TFoo }
 
 constructor TFoo.Create;
@@ -110,18 +127,6 @@ begin
 end;
 
 { TTestContainer }
-
-procedure TTestContainer.SetUp;
-begin
-  inherited;
-  fContainer := TContainer.Create();
-end;
-
-procedure TTestContainer.TearDown;
-begin
-  fContainer.Free;
-  inherited;
-end;
 
 procedure TTestContainer.TestInterfaceWithGuid;
 var
@@ -182,17 +187,17 @@ procedure TTestContainer.TestTransient;
 var
   obj1, obj2: TBase;
 begin
-//  fContainer.RegisterComponent<TBase, TDerived>(ltTransient);
-//  obj1 := fContainer.Resolve<TBase>;
-//  obj2 := fContainer.Resolve<TBase>;
-//  try
-//    CheckNotNull(obj1);
-//    CheckNotNull(obj2);
-//    CheckTrue(obj1 <> obj2);
-//  finally
-//    obj1.Free;
-//    obj2.Free;
-//  end;
+  fContainer.RegisterComponent<TBase, TDerived>(ltTransient);
+  obj1 := fContainer.Resolve<TBase>;
+  obj2 := fContainer.Resolve<TBase>;
+  try
+    CheckNotNull(obj1, 'obj1');
+    CheckNotNull(obj2, 'obj2');
+    CheckTrue(obj1 <> obj2, 'obj1 should not be the same as obj2.');
+  finally
+    obj1.Free;
+    obj2.Free;
+  end;
 end;
 
 end.

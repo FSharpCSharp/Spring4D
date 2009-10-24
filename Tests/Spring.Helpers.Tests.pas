@@ -46,7 +46,7 @@ type
   published
     procedure TestFont;
     procedure TestStrings;
-  end;
+  end; { deprecated }
 
 
 implementation

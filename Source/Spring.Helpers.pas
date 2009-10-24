@@ -100,7 +100,7 @@ type
 implementation
 
 
-{$IFDEF SUPPORTS_REGION} {$REGION 'TGuidHelper'} {$ENDIF}
+{$REGION 'TGuidHelper'}
 
 class function TGuidHelper.Create(const guidString: string): TGuid;
 begin
@@ -154,10 +154,10 @@ end;
 //  Result := not left.Equals(right);
 //end;
 
-{$IFDEF SUPPORTS_REGION} {$ENDREGION} {$ENDIF}
+{$ENDREGION}
 
 
-{$IFDEF SUPPORTS_REGION} {$REGION 'TMethodHelper'} {$ENDIF}
+{$REGION 'TMethodHelper'}
 
 class function TMethodHelper.Create(const objectAddress,
   methodAddress: Pointer): TMethod;
@@ -166,10 +166,10 @@ begin
   Result.Data := objectAddress;
 end;
 
-{$IFDEF SUPPORTS_REGION} {$ENDREGION} {$ENDIF}
+{$ENDREGION}
 
 
-{$IFDEF SUPPORTS_REGION} {$REGION 'TPersistentSnapshot'} {$ENDIF}
+{$REGION 'TPersistentSnapshot'}
 
 constructor TPersistentSnapshot.Create(snapshot: TPersistent);
 begin
@@ -183,10 +183,10 @@ begin
   inherited Destroy;
 end;
 
-{$IFDEF SUPPORTS_REGION} {$ENDREGION} {$ENDIF}
+{$ENDREGION}
 
 
-{$IFDEF SUPPORTS_REGION} {$REGION 'TPersistentHelper'} {$ENDIF}
+{$REGION 'TPersistentHelper'}
 
 function TPersistentHelper.CreateSnapshot<T>: ISnapshot;
 var
@@ -210,6 +210,6 @@ begin
   end;
 end;
 
-{$IFDEF SUPPORTS_REGION} {$ENDREGION} {$ENDIF}
+{$ENDREGION}
 
 end.
