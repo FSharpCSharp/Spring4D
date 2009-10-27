@@ -61,13 +61,12 @@ contains
   Spring.Win32API in 'Source\Spring.Win32API.pas',
   Spring.Collections in 'Source\Spring.Collections.pas',
   Spring.DesignPatterns in 'Source\Spring.DesignPatterns.pas',
-  Spring.Dialogs in 'Source\Spring.Dialogs.pas',
   Spring.Helpers in 'Source\Spring.Helpers.pas',
   Spring.IoC in 'Source\Spring.IoC.pas',
   Spring.ResourceStrings in 'Source\Spring.ResourceStrings.pas',
   Spring.System in 'Source\Spring.System.pas',
-  Spring.System.Net in 'Source\System\Spring.System.Net.pas',
-  Spring.System.IO in 'Source\System\Spring.System.IO.pas',
+  Spring.IoC.Core in 'Source\IoC\Spring.IoC.Core.pas',
+  Spring.IoC.LifetimeManager in 'Source\IoC\Spring.IoC.LifetimeManager.pas',
   Spring.Utils in 'Source\Spring.Utils.pas';
 
 end.

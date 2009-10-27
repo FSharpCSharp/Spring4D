@@ -27,9 +27,24 @@ unit DemoForm;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, Grids, ValEdit, ComCtrls, StdCtrls, StrUtils, ExtCtrls, XPMan,
-  Generics.Collections, Sockets;
+  Windows,
+  Messages,
+  SysUtils,
+  Variants,
+  Classes,
+  Graphics,
+  Controls,
+  Forms,
+  Dialogs,
+  Grids,
+  ValEdit,
+  ComCtrls,
+  StdCtrls,
+  StrUtils,
+  ExtCtrls,
+  XPMan,
+  Sockets,
+  Generics.Collections;
 
 type
   TfrmDemo = class(TForm)
@@ -86,8 +101,6 @@ uses
   ShellAPI,
   TypInfo,
   Spring.System,
-  Spring.System.IO,
-  Spring.System.Net,
   Spring.Utils;
 
 {$R *.dfm}
@@ -191,25 +204,25 @@ begin
 end;
 
 procedure TfrmDemo.InitializeServices;
-var
-  service: TServiceController;
-  listItem: TListItem;
+//var
+//  service: TServiceController;
+//  listItem: TListItem;
 begin
-  with lvServices.Items do
-  begin
-    BeginUpdate;
-    try
-      for service in TServiceController.GetServices do
-      begin
-        listItem := Add;
-        listItem.Caption := service.DisplayName;
-        listItem.SubItems.Add(TEnum.GetName<TServiceStatus>(service.Status));
-        listItem.SubItems.Add(service.Description);
-      end;
-    finally
-      EndUpdate;
-    end;
-  end;
+//  with lvServices.Items do
+//  begin
+//    BeginUpdate;
+//    try
+//      for service in TServiceController.GetServices do
+//      begin
+//        listItem := Add;
+//        listItem.Caption := service.DisplayName;
+//        listItem.SubItems.Add(TEnum.GetName<TServiceStatus>(service.Status));
+//        listItem.SubItems.Add(service.Description);
+//      end;
+//    finally
+//      EndUpdate;
+//    end;
+//  end;
 end;
 
 procedure TfrmDemo.InitializeSpecialFolders;

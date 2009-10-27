@@ -28,7 +28,7 @@
 function (|argument|: |argumentType|): Boolean
 begin
 |*||end|
-end;]]>
+end]]>
 		</code>
 	</template>
 </codetemplate>

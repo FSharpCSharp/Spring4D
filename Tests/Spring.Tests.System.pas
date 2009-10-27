@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.System.Tests;
+unit Spring.Tests.System;
 
 {$I Spring.inc}
 
@@ -38,8 +38,7 @@ uses
   TestFramework,
   TestExtensions,
   Generics.Defaults,
-  Spring.System,
-  Spring.System.IO;
+  Spring.System;
 
 type
   TTestSplitString = class(TTestCase)
@@ -637,11 +636,8 @@ begin
 end;
 
 procedure TTestFiveBytesBuffer.TestSizeIsFive;
-var
-  n: Byte;
 begin
   CheckEquals(5, fBuffer.Size);
-  n := fBuffer.Memory[2];
 end;
 
 procedure TTestFiveBytesBuffer.TestToBytes;

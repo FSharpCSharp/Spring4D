@@ -56,6 +56,20 @@ resourcestring
   SIncorrectFormat     = 'Unable to convert %s.';
   SIllegalFieldCount   = 'fieldCount is more than the number of components defined in the current Version object.';
 
+  SUnknownOSDescription      = 'Unknown Operating System';
+  SWin95Description          = 'Microsoft Windows 95';
+  SWin98Description          = 'Microsoft Windows 98';
+  SWinMEDescription          = 'Microsoft Windows ME';
+  SWinNT351Description       = 'Microsoft Windows NT 3.51';
+  SWinNT40Description        = 'Microsoft Windows NT 4';
+  SWinServer2000Description  = 'Microsoft Windows Server 2000';
+  SWinXPDescription          = 'Microsoft Windows XP';
+  SWinServer2003Description  = 'Microsoft Windows Server 2003';
+  SWinVistaDescription       = 'Microsoft Windows Vista';
+  SWinServer2008Description  = 'Microsoft Windows Server 2008';
+  SWin7Description           = 'Microsoft Windows 7';
+
+
   SFileVersionInfoFormat =
     'File:             %s' + #13#10 +
     'InternalName:     %s' + #13#10 +

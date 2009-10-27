@@ -22,7 +22,7 @@ object frmDemo: TfrmDemo
     Top = 65
     Width = 672
     Height = 426
-    ActivePage = tsGeneral
+    ActivePage = tsDriveInfo
     Align = alClient
     TabOrder = 0
     OnChange = pgcMainChange
@@ -244,6 +244,7 @@ object frmDemo: TfrmDemo
     object tsServiceController: TTabSheet
       Caption = 'Service Controller'
       ImageIndex = 5
+      TabVisible = False
       ExplicitLeft = 0
       ExplicitTop = 0
       ExplicitWidth = 0
@@ -317,17 +318,17 @@ object frmDemo: TfrmDemo
     object Label2: TLabel
       Left = 10
       Top = 34
-      Width = 234
+      Width = 273
       Height = 13
-      Caption = 'For more information, please visit my homepage:'
+      Caption = 'For more information, please visit the project homepage:'
     end
     object lblHomepage: TLabel
-      Left = 250
+      Left = 289
       Top = 34
-      Width = 165
+      Width = 268
       Height = 14
       Cursor = crHandPoint
-      Caption = 'http://www.zuobaoquan.com'
+      Caption = 'http://delphi-spring-framework.googlecode.com/'
       Color = clBtnFace
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clHotLight

@@ -63,40 +63,6 @@ type
     class function Create(const objectAddress, methodAddress: Pointer): TMethod; static;
   end;
 
-  ISnapshot = Spring.DesignPatterns.ISnapshot;
-
-  TPersistentSnapshot = class(TInterfacedObject, ISnapshot, IInterface)
-  private
-    fSnapshot: TPersistent;
-  protected
-    property Snapshot: TPersistent read fSnapshot;
-  public
-    constructor Create(snapshot: TPersistent);
-    destructor Destroy; override;
-  end deprecated;
-
-  TPersistentHelper = class helper for TPersistent
-  public
-    function CreateSnapshot<T: TPersistent, constructor>: ISnapshot;
-    procedure Restore(const snapshot: ISnapshot);
-  end deprecated;
-
-  (*
-
-  TPointHelper = record helper for TPoint
-
-  end;
-
-  TSizeHelper = record helper for TSize
-
-  end;
-
-  TRectHelper = record helper for TRect
-
-  end;
-
-  //*)
-
 implementation
 
 
@@ -164,50 +130,6 @@ class function TMethodHelper.Create(const objectAddress,
 begin
   Result.Code := methodAddress;
   Result.Data := objectAddress;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TPersistentSnapshot'}
-
-constructor TPersistentSnapshot.Create(snapshot: TPersistent);
-begin
-  inherited Create;
-  fSnapshot := snapshot;
-end;
-
-destructor TPersistentSnapshot.Destroy;
-begin
-  fSnapshot.Free;
-  inherited Destroy;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TPersistentHelper'}
-
-function TPersistentHelper.CreateSnapshot<T>: ISnapshot;
-var
-  storage: T;
-begin
-  storage := T.Create;
-  try
-    storage.Assign(Self);
-  except
-    storage.Free;
-    raise;
-  end;
-  Result := TPersistentSnapshot.Create(storage);
-end;
-
-procedure TPersistentHelper.Restore(const snapshot: ISnapshot);
-begin
-  if snapshot is TPersistentSnapshot then
-  begin
-    Assign(TPersistentSnapshot(snapshot).Snapshot);
-  end;
 end;
 
 {$ENDREGION}

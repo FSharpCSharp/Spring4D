@@ -20,7 +20,7 @@
 function: |returnType|
 begin
 |*||end|
-end;]]>
+end]]>
 		</code>
 	</template>
 </codetemplate>

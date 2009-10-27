@@ -1,7 +1,19 @@
+2009-10-27	v0.1.1.558
+First Release
+
+2009-10-26	v0.1.0.555
+-Removed TPersistentSnapshot and TPersistentHelper
+-Removed IValueProvider<T>, TValueProvider<T> and TValueHolder<T>
+-Removed IDelegate<T> and TDelegate<T>
+*Moved TDriveInfo to Spring.System
+*Spring.System.IO and Spring.System.Net were merged into Spring.Utils
+*Spring.Dialogs were merged into Spring.Utils
+*TContainers (Spring.Collections) are now deprecated, use TCollections instead.
+
 2009-10-24	v0.1.0.542
 +Added two TRtti.IsNullReference methods to determine if a variable is a null reference
 +Added TSynchronizedObservable<T> (Spring.DesignPatterns) to ensure thread-safety
-+More code templates are added to "Code Templates" folder (see "Using Code Templates.txt" in the Documents folder)
++More code templates are added to "Code Templates" folder (see "Using Live Templates.txt" in the Documents folder)
 *TObservable<T> now inherits from TInterfacedObject, insteading of TInterfaceBase.
 *TServiceController and related types are moved from Spring.System to Spring.Utils
 *SplitNullTerminatedStrings is now deprecated, use SplitString instead

@@ -22,15 +22,20 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Helpers.Tests;
+unit Spring.Tests.Helpers;
 
 {$I Spring.inc}
 
 interface
 
 uses
-  Classes, SysUtils, Graphics, TestFramework,
-  Spring.System, Spring.Helpers, Spring.DesignPatterns;
+  Classes,
+  SysUtils,
+  Graphics,
+  TestFramework,
+  Spring.System,
+  Spring.Helpers,
+  Spring.DesignPatterns;
 
 type
   TTestGuidHelper = class(TTestCase)
@@ -42,17 +47,11 @@ type
     procedure TestToQuotedString;
   end;
 
-  TTestPersistentSnapshot = class(TTestCase)
-  published
-    procedure TestFont;
-    procedure TestStrings;
-  end; { deprecated }
-
 
 implementation
 
 
-{$IFDEF SUPPORTS_REGION} {$REGION 'TTestGuidHelper'} {$ENDIF}
+{$REGION 'TTestGuidHelper'}
 
 procedure TTestGuidHelper.TestNewGUID;
 var
@@ -104,59 +103,6 @@ begin
   CheckEquals(QuotedStr(GuidString), guid.ToQuotedString);
 end;
 
-{$IFDEF SUPPORTS_REGION} {$ENDREGION} {$ENDIF}
-
-
-{$IFDEF SUPPORTS_REGION} {$REGION 'TTestPersistentSnapshot'} {$ENDIF}
-
-procedure TTestPersistentSnapshot.TestFont;
-var
-  font: TFont;
-  snapshot: ISnapshot;
-const
-  OriginalSize = 9;
-  OriginalColor = clRed;
-begin
-  font := TFont.Create;
-  try
-    font.Size := OriginalSize;
-    font.Color := OriginalColor;
-    snapshot := font.CreateSnapshot<TFont>;    // OR TSnapshot<TFont>.Create(font);
-    try
-      font.Size := OriginalSize + 2;
-      font.Color := Pred(OriginalColor);
-    finally
-      font.Restore(snapshot);
-    end;
-    CheckEquals(OriginalSize, font.Size);
-    CheckEquals(OriginalColor, font.Color);
-  finally
-    font.Free;
-  end;
-end;
-
-procedure TTestPersistentSnapshot.TestStrings;
-var
-  strings: TStrings;
-  snapshot: ISnapshot;
-const
-  OriginalText = 'Hello'#13#10'World'#13#10;
-begin
-  strings := TStringList.Create;
-  try
-    strings.Text := OriginalText;
-    snapshot := strings.CreateSnapshot<TStringList>;
-    try
-      strings.Add('Dummy');
-    finally
-      strings.Restore(snapshot);
-    end;
-    CheckEquals(OriginalText, strings.Text);
-  finally
-    strings.Free;
-  end;
-end;
-
-{$IFDEF SUPPORTS_REGION} {$ENDREGION} {$ENDIF}
+{$ENDREGION}
 
 end.

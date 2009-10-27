@@ -7,54 +7,42 @@ Delphi Spring Framework Roadmap
 (DRAFT-NOT PUBLISHED)
 
 -----------------------------------------------------------------------------
-V0.1.0	2009-10-27    (Initial Release)
+V0.1.1	2009-10-27    (Initial Release)
 -----------------------------------------------------------------------------
 
 >>Spring.IoC
-IoC Container (Supports Constructor Injection, Setter Injection, Configuration)
+IoC Container (Supports Constructor Injection, Property Injection, Configuration)
 
->>Spring.System.IO namespace
+>>Spring.Utils namespace
 
 + TFileMapping, TFileMappingView
 + TFileMappingStream
 
-* TFileSearcher
-* TFileEnumerator  (EnumerateFiles, EnumerateDirectories, EnumerateFileSystemEntries)
-* TFileSystemEntry
-
-* TFileSystemWatcher
-
->>Spring.Configuration
-
->>Spring.Logging
-Logging Services
-
-+Refactoring Design Patterns
-
 +"Delphi Spring Framework Coding Standards"
-* License
-* Namespaces
-* Unit Template
-* Identation & Capitalization
-* SVN
-* Notes (Unicode & Thread-Safety)
 
 -----------------------------------------------------------------------------
 V0.1.x	2009-11-09
 -----------------------------------------------------------------------------
-
+#Bug-fixes
+*Complete IoC Container
 
 -----------------------------------------------------------------------------
 V0.2.0	2009-11-23
 -----------------------------------------------------------------------------
 
->>Spring.Objects
-Common Domain Objects (TMoney, TCurrency, TQuantity, TUnit, TRange<T>, TTimePoint(TDateTime, TDate, TTime), etc.)
+(Poll)
 
 > Spring.Validation
 > Spring.Navigation
+> Spring.Numbering
 
->>Spring.Resources
+>>Spring.Logging
+Logging Services
+
+------------------------------------------------------------------------------
+
+>>Spring.Objects
+Common Domain Objects (TMoney, TCurrency, TQuantity, TUnit, TRange<T>, etc.)
 
 >>Spring.Cryptography:
 
@@ -75,6 +63,10 @@ Common Domain Objects (TMoney, TCurrency, TQuantity, TUnit, TRange<T>, TTimePoin
 * TripleDES
 * AES
 
+>>Spring.Resources
+
+>>Spring.Configuration
+
 >>Spring.System
 +TUri
 +TRegex class (Regular Expressions Wrapper)
@@ -86,6 +78,7 @@ Common Domain Objects (TMoney, TCurrency, TQuantity, TUnit, TRange<T>, TTimePoin
 +Extended Arrays (TDynamicArray<T>, etc.)
 
 +Base64 Encoding/Decoding
++BCD and String Conversion
 
 -----------------------------------------------------------------------------
 V0.2.x	2009-12-07
@@ -96,22 +89,32 @@ Bug-Fixes
 V0.3.0	2009-12-28
 -----------------------------------------------------------------------------
 
->>Spring.Localization.Chinese
-* HIGH  Simplified Chinese and Traditional Chinese Conversion £¨¼ò·±Ìå×ª»»£©
-* HIGH  Pinyin £¨Æ´Òô£©
-* HIGH  Currency Symbol £¨»õ±Ò·ûºÅ£©
-* LOW   Lunar Calendar £¨ÒõÀú£©
-
->>Spring.Scheduler (Based on Quartz and Quartz.Net projects)
-
->>Spring.System.Net
-TNetwork
-
 >>Spring.Utils
+*TNetwork
+
+* TFileSearcher
+* TFileEnumerator  (EnumerateFiles, EnumerateDirectories, EnumerateFileSystemEntries)
+* TFileSystemEntry
+* TFileSystemWatcher
 
 +TClipboardWatcher
+
++TServiceController
 
 +Single Application Instance
 * Single instance
 * Pass command parameters
 * Restore the existed application
+
++TRecycleBin
+
+>>Spring.Localization.Chinese
+* Simplified Chinese and Traditional Chinese Conversion£¨¼ò·±Ìå×ª»»£©
+* Pinyin£¨Æ´Òô£©
+* Currency Symbol£¨»õ±Ò·ûºÅ£©
+* Lunar Calendar£¨ÒõÀú£©
+
+>> LINQ-like collection extensions
+
+>>Spring.Scheduler (Based on Quartz and Quartz.Net projects)
+

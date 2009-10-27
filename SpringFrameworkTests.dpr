@@ -41,10 +41,11 @@ uses
   GUITestRunner,
   TextTestRunner,
   Spring.System,
-  Spring.System.Tests in 'Tests\Spring.System.Tests.pas',
-  Spring.Helpers.Tests in 'Tests\Spring.Helpers.Tests.pas',
-  Spring.IoC.Tests in 'Tests\Spring.IoC.Tests.pas',
-  Spring.DesignPatterns.Tests in 'Tests\Spring.DesignPatterns.Tests.pas';
+  Spring.Tests.System in 'Tests\Spring.Tests.System.pas',
+  Spring.Tests.Helpers in 'Tests\Spring.Tests.Helpers.pas',
+  Spring.Tests.IoC in 'Tests\Spring.Tests.IoC.pas',
+  Spring.Tests.DesignPatterns in 'Tests\Spring.Tests.DesignPatterns.pas',
+  Spring.Tests.IoC.LifetimeManager in 'Tests\Spring.Tests.IoC.LifetimeManager.pas';
 
 {$R *.RES}
 
@@ -76,6 +77,8 @@ begin
   ]);
 
   RegisterTests('Spring IoC Tests', [
+    TTestSingletonLifetimeManager.Suite,
+    TTestTransientLifetimeManager.Suite,
     TTestContainer.Suite
   ]);
 end;

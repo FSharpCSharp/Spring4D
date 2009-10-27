@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.DesignPatterns.Tests;
+unit Spring.Tests.DesignPatterns;
 
 {$I Spring.inc}
 

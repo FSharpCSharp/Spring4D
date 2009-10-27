@@ -36,752 +36,603 @@ uses
   Classes,
   Windows,
   SysUtils,
+  Controls,
+  Dialogs,
   WinSvc,
-  Spring.Win32API,
-  Spring.System;
+  IOUtils,
+  Generics.Collections,
+  Spring.System,
+  Spring.Win32API;
 
 type
-  {$REGION 'TServiceController (NOT COMPLETED)'}
+  {$REGION 'TMessageBox'}
 
-  TServiceType = (
-    stKernelDriver,       // A Kernel device driver such as a hard disk or other low-level hardware device driver.
-    stFileSystemDriver,   // A file system driver, which is also a Kernel device driver.
-    stAdapter,            // A service for a hardware device that requires its own driver.
-    stRecognizerDriver,   // A file system driver used during startup to determine the file systems present on the system.
-    stWin32OwnProcess,    // A Win32 program that can be started by the Service Controller and that obeys the service control protocol. This type of Win32 service runs in a process by itself.
-    stWin32ShareProcess,  // A Win32 service that can share a process with other Win32 services.
-    stInteractiveProcess  // A service that can communicate with the desktop.
-  );
+  TMessageDialogButton  = Dialogs.TMsgDlgBtn;
+  TMessageDialogButtons = Dialogs.TMsgDlgButtons;
 
-  TServiceTypes = set of TServiceType;
-
-  TServiceStatus = (
-    ssUnknown,            // The status is unknown.
-    ssStopped,            // The service is not running.
-    ssStartPending,       // The service is starting.
-    ssStopPending,        // The service is stopping.
-    ssRunning,            // The service is running.
-    ssContinuePending,    // The service continue is pending.
-    ssPausePending,       // The service pause is pending.
-    ssPaused              // The service is paused.
-  );
-
-  TServiceStartMode = (
-    smBoot,
-    smSystem,
-    smAutomatic,
-    smManual,
-    smDisabled
-  );
-
-  TServiceAccount = (
-    LocalService,         // An account that acts as a non-privileged user on the local computer, and presents anonymous credentials to any remote server.
-    NetworkService,       // An account that provides extensive local privileges, and presents the computer's credentials to any remote server.
-    LocalSystem,          // An account, used by the service control manager, that has extensive privileges on the local computer and acts as the computer on the network.
-    User                  // An account defined by a specific user on the network.
-  );
-
-  TServiceControlAccepted = (
-    caStop,               // SERVICE_ACCEPT_STOP
-    caPauseAndResume,     // SERVICE_ACCEPT_PAUSE_CONTINUE
-    caShutdown            // SERVICE_ACCEPT_SHUTDOWN
-  );
-
-  TServiceControls = set of TServiceControlAccepted;
+  TMessageDialogShowProc = reference to function(const text, caption: string;
+    dialogType: TMsgDlgType; buttons: TMessageDialogButtons;
+    defaultButton: TMessageDialogButton): TModalResult;
 
   /// <summary>
-  /// Represents a Windows service and allows you to connect to a running or
-  /// stopped service, manipulate it, or get information about it.
+  /// Encapsulates common message dialogs.
   /// </summary>
-  TServiceController = record
+  /// <author>Zuo Baoquan (Paul)</author>
+  /// <author>HR168</author>
+  TMessageBox = class
   private
-    type
-      TServiceKind = (
-        skDrive,  // SERVICE_DRIVER (0x0000000B)
-        skWin32   // SERVICE_WIN32  (0x00000030)
-      );
-      TServiceAction = (
-        saStart,
-        saStop,
-        saPause,
-        saResume
-      );
-    const
-      fCInvalidServiceHandle: THandle = 0;
-      fCPendingStatusSet = [
-        ssStartPending,
-        ssStopPending,
-        ssContinuePending,
-        ssPausePending
-      ];
-  strict private
-    fManagerHandle: TValueHolder<THandle>;
-    fServiceHandle: TValueHolder<THandle>;
-    fServiceStatusProcess: TServiceStatusProcess;
-    fServiceConfig: TValueHolder<PQueryServiceConfig>;
-    fStatus: TServiceStatus;
-    fDisplayName: string;
-    fServiceName: string;
-    fMachineName: string;
-    fDescription: string;
-    fFileName:    string;
-    fServiceType: TServiceTypes;
-    fStartMode: TServiceStartMode;
-    fCanStop: Boolean;
-    fCanPauseAndResume: Boolean;
-    fCanShutdown: Boolean;
-    fDependentServices: TArray<TServiceController>;
-    fServicesDependedOn: TArray<TServiceController>;
-    function GetDisplayName: string;
-    function GetMachineName: string;
-    function GetDescription: string;
-    function GetServiceName: string;
-    function GetServiceType: TServiceTypes;
-    function GetServiceHandle: THandle;
-    function GetStatus: TServiceStatus;
-    function GetStartMode: TServiceStartMode;
-    function GetCanPauseAndResume: Boolean;
-    function GetCanStop: Boolean;
-    function GetCanShutdown: Boolean;
-    function GetExists: Boolean;
-    function GetDependentServices: TArray<TServiceController>;
-    function GetServicesDependedOn: TArray<TServiceController>;
-  private
-    fIsLoaded: Boolean;
-    procedure Loaded;
-    procedure ManagerHandleNeeded;
-    procedure Open(desiredAccess: Cardinal);
-    procedure Close;
-    procedure PerformAction(action: TServiceAction);
-    procedure UpdateStatus;
-    procedure UpdateConfig;
-    procedure UpdateDescription;
-    procedure UpdateDependentServices;
-    function ParseStatus(const value: Cardinal): TServiceStatus;
-    function ParseServiceTypes(const value: Cardinal): TServiceTypes;
-    function ParseStartMode(const value: Cardinal): TServiceStartMode;
-  private
-    constructor Create(const serviceName, machineName: string; const managerHandle: TValueHolder<THandle>); overload;
-    class procedure GetManagerHandleHolder(const machineName: string; out handleHolder: TValueHolder<THandle>); static;
-    class procedure GetHandleHolder(handle: THandle; out valueHolder: TValueHolder<THandle>); static;
-    class procedure InternalEnumServices(const machineName: string; serviceKind: TServiceKind; out services: TArray<TServiceController>); static;
+    class constructor Create;
+    class var fMessageDialogProc: TMessageDialogShowProc;
+    class function GetDefaultButton(const buttons: TMessageDialogButtons): TMessageDialogButton; inline;
+    class function ShowMessageDialog(const text, caption: string;
+      dialogType: TMsgDlgType; buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult;
   public
-    constructor Create(const serviceName: string); overload;
-    constructor Create(const serviceName, machineName: string); overload;
-    class function GetDevices: TArray<TServiceController>; overload; static;
-    class function GetDevices(const machineName: string): TArray<TServiceController>; overload; static;
-    class function GetServices: TArray<TServiceController>; overload; static;
-    class function GetServices(const machineName: string): TArray<TServiceController>; overload; static;
-    procedure ExecuteCommand(command: Integer);
-    procedure Start; overload;
-    procedure Start(const args: array of string); overload;
-    procedure Stop;
-    procedure Pause;
-    procedure Resume;
-    procedure Restart;
-    procedure Refresh;
-    procedure WaitForStatus(status: TServiceStatus); overload;
-    procedure WaitForStatus(desiredStatus: TServiceStatus; const timeout: TTimeSpan); overload;
-    property DisplayName: string read GetDisplayName;
-    property Description: string read GetDescription;
-    property MachineName: string read GetMachineName;
-    property ServiceName: string read GetServiceName;
-    property Status: TServiceStatus read GetStatus;
-    property ServiceHandle: THandle read GetServiceHandle;
-    property ServiceType: TServiceTypes read GetServiceType;
-    property StartMode: TServiceStartMode read GetStartMode;
-    property CanStop: Boolean read GetCanStop;
-    property CanPauseAndResume: Boolean read GetCanPauseAndResume;
-    property CanShutdown: Boolean read GetCanShutdown;
-    property Exists: Boolean read GetExists;
-    property DependentServices: TArray<TServiceController> read GetDependentServices;
-    property ServicesDependedOn: TArray<TServiceController> read GetServicesDependedOn;
+    { Information Message Box }
+    class function Info(const text: string; const buttons: TMessageDialogButtons = [mbOK]): TModalResult; overload;
+    class function Info(const text: string; const buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult; overload;
+    class function Info(const text, caption: string; const buttons: TMessageDialogButtons = [mbOK]): TModalResult; overload;
+    class function Info(const text, caption: string; const buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult; overload;
+    { Warning Message Box }
+    class function Warn(const text: string; const buttons: TMessageDialogButtons = [mbOK]): TModalResult; overload;
+    class function Warn(const text: string; const buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult; overload;
+    class function Warn(const text, caption: string; const buttons: TMessageDialogButtons = [mbOK]): TModalResult; overload;
+    class function Warn(const text, caption: string; const buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult; overload;
+    { Error Message Box }
+    class function Error(const text: string; const buttons: TMessageDialogButtons = [mbOK]): TModalResult; overload;
+    class function Error(const text: string; const buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult; overload;
+    class function Error(const text, caption: string; const buttons: TMessageDialogButtons = [mbOK]): TModalResult; overload;
+    class function Error(const text, caption: string; const buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult; overload;
+    { Confirm Message Box }
+    class function Confirm(const text: string; const buttons: TMessageDialogButtons = [mbYes, mbNo]): TModalResult; overload;
+    class function Confirm(const text: string; const buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult; overload;
+    class function Confirm(const text, caption: string; const buttons: TMessageDialogButtons = [mbOK]): TModalResult; overload;
+    class function Confirm(const text, caption: string; const buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult; overload;
+  public
+    class property MessageDialogProc: TMessageDialogShowProc read fMessageDialogProc write fMessageDialogProc;
   end;
 
+  TDialog = TMessageBox deprecated 'Use TMessageBox instead.';
+
+const
+  { Copied from Dialogs.pas }
+  mbYesNo = [mbYes, mbNo];
+  mbYesNoCancel = [mbYes, mbNo, mbCancel];
+  mbYesAllNoAllCancel = [mbYes, mbYesToAll, mbNo, mbNoToAll, mbCancel];
+  mbOKCancel = [mbOK, mbCancel];
+  mbAbortRetryIgnore = [mbAbort, mbRetry, mbIgnore];
+  mbAbortIgnore = [mbAbort, mbIgnore];
+
+const
+  { Copied from Controls.pas }
+  mrNone     = 0;
+  mrOk       = IDOK;
+  mrCancel   = IDCANCEL;
+  mrAbort    = IDABORT;
+  mrRetry    = IDRETRY;
+  mrIgnore   = IDIGNORE;
+  mrYes      = IDYES;
+  mrNo       = IDNO;
+  mrAll      = mrNo + 1;
+  mrNoToAll  = mrAll + 1;
+  mrYesToAll = mrNoToAll + 1;
+  mrClose    = mrYesToAll + 1;
+
   {$ENDREGION}
+
+
+type
+  {$REGION 'TNetwork (Experimental)'}
+
+  TNetworkStatus = (
+    nsOnline,
+    nsOffline
+  );
+
+  TNetwork = class sealed
+  private
+    class function GetIsAvailable: Boolean; static;
+    class function GetStatus: TNetworkStatus; static;
+    class property Status: TNetworkStatus read GetStatus;
+  public
+    class function GetMacAddress: string; overload;
+//    function GetMacAddress(const hostNameOrAddress: string): string; overload; static;
+    class function GetIPAddress: string; overload;
+//    function GetIPAddress(const hostName: string): string; overload; static;
+    class function GetPublicIPAddress: string;
+//    class procedure Ping(const hostNameOrAddress: string);
+    class property IsAvailable: Boolean read GetIsAvailable;
+  end experimental;
+
+  {$ENDREGION}
+
+
+  TFileMapping        = class;
+  TFileMappingView    = class;
+  TFileMappingStream  = class;
+
+  TFileMappingAccess = (
+    ReadWrite,	      // Read and write access to the file.
+    Read,             // Read-only access to the file.
+    Write,            // Write-only access to file.
+    CopyOnWrite,      // Read and write access to the file, with the restriction that any write operations will not be seen by other processes.
+    ReadExecute,      // Read access to the file that can store and run executable code.
+    ReadWriteExecute	// Read and write access to the file that can can store and run executable code.
+  );
+
+  /// <summary>
+  /// Represents a memory-mapped file.
+  /// </summary>
+  TFileMapping = class
+  private
+    fHandle: THandle;
+    fViews: TList<TFileMappingView>;
+  protected
+    procedure Notify(view: TFileMappingView; action: TCollectionNotification); virtual;
+  public
+    constructor Create(fileHandle: THandle; access: TFileMappingAccess; const maximumSize: Int64);
+    destructor Destroy; override;
+    function GetFileView(const offset: Int64; size: Cardinal): TFileMappingView;
+    property Handle: THandle read fHandle;
+  end;
+
+  /// <summary>
+  /// Represents a file view of a file mapping object.
+  /// </summary>
+  /// <remarks>
+  /// The offset must be a multiple of fCAllocationGranularity.
+  /// </remarks>
+  TFileMappingView = class
+  private
+    fFileMapping: TFileMapping;
+    fMemory: Pointer;   // Base Address
+  private
+    class var
+      fCAllocationGranularity: Cardinal;  // Memory Allocation Granularity of the System
+    class constructor Create;
+  public
+    constructor Create(fileMapping: TFileMapping; const offset: Int64; size: Cardinal);
+    destructor Destroy; override;
+    procedure Flush;
+    property Memory: Pointer read fMemory;
+  end;
+
+  // NOT READY
+  TFileMappingStream = class(TCustomMemoryStream)
+  private
+    fFileMapping: TFileMapping;
+    fFileName: string;
+    fFileHandle: THandle;
+  protected
+    function CreateFileHandle(const fileName: string; mode: TFileMode;
+      access: TFileAccess; share: TFileShare): THandle;
+  public
+    constructor Create(const fileName: string; mode: TFileMode); overload;
+    constructor Create(const fileName: string; mode: TFileMode; access: TFileAccess); overload;
+    constructor Create(const fileName: string; mode: TFileMode; access: TFileAccess; share: TFileShare); overload;
+    constructor Create(const fileName: string; mode: TFileMode; access: TFileAccess; share: TFileShare; fileMappingAccess: TFileMappingAccess); overload;
+    destructor Destroy; override;
+    property FileName: string read fFileName;
+  end;
+
+var
+  GetPublicIPAddressMethod: function: string;
+  ExtractIPAddressMethod:   function(const htmlText: string): string;
+
+var
+  DefaultPingUrl: string            = 'http://www.google.com';  // DO NOT LOCALIZE
+  DefaultPingUrl2: string           = 'http://www.sina.com';    // DO NOT LOCALIZE
+  DefaultPublicIPAddressUrl: string = 'http://www.whatismyip.com/automation/n09230945.asp'; // DO NOT LOCALIZE
 
 
 implementation
 
 uses
+  ActiveX,
+  ComObj,
+  WinSock,
+  WinInet,
   Spring.ResourceStrings;
 
-{$REGION 'TServiceController'}
+{$REGION 'Routines'}
 
-constructor TServiceController.Create(const serviceName: string);
-begin
-  Create(serviceName, '');
-end;
-
-constructor TServiceController.Create(const serviceName, machineName: string);
-begin
-  Create(serviceName, machineName, fCInvalidServiceHandle);
-end;
-
-constructor TServiceController.Create(const serviceName,
-  machineName: string; const managerHandle: TValueHolder<THandle>);
-begin
-  fServiceName := serviceName;
-  fMachineName := machineName;
-  fManagerHandle := managerHandle;
-  fIsLoaded := False;
-end;
-
-class procedure TServiceController.GetManagerHandleHolder(
-  const machineName: string; out handleHolder: TValueHolder<THandle>);
+function _GetPublicIPAddress: string;
 var
-  handle: THandle;
+  xml: OleVariant;
 begin
-  handle := OpenSCManager(
-    PChar(machineName),
-    SERVICES_ACTIVE_DATABASE,
-    SC_MANAGER_ALL_ACCESS
-  );
-  Win32Check(handle <> fCInvalidServiceHandle);
-  GetHandleHolder(handle, handleHolder);
+  xml := CreateOleObject('Microsoft.XMLHTTP');
+  xml.Open('GET', DefaultPublicIPAddressUrl, False);
+  xml.Send;
+  Result := ExtractIPAddressMethod(xml.responseText);
 end;
 
-class procedure TServiceController.GetHandleHolder(handle: THandle;
-  out valueHolder: TValueHolder<THandle>);
+function _ExtractIPAddress(const htmlText: string): string;
 begin
-  valueHolder := TValueHolder<THandle>.Create(
-    handle,
-    procedure(var serviceHandle: THandle)
-    begin
-      if serviceHandle <> fCInvalidServiceHandle then
-      begin
-        Win32Check(CloseServiceHandle(serviceHandle));
-      end;
-      serviceHandle := fCInvalidServiceHandle;
-    end
-  );
-end;
-
-class procedure TServiceController.InternalEnumServices(const machineName: string;
-  serviceKind: TServiceKind; out services: TArray<TServiceController>);
-var
-  managerHandle: TValueHolder<THandle>;
-  bufferSize: DWORD;
-  bytesNeeded: DWORD;
-  servicesReturned: DWORD;
-  resumeHandle: THandle;
-  returnValue: BOOL;
-  serviceName: string;
-  serviceArray, pService: PEnumServiceStatusProcess;
-  i: Integer;
-const
-  serviceTypes: array[TServiceKind] of Cardinal = (
-    SERVICE_DRIVER,
-    SERVICE_WIN32
-  );
-begin
-  TServiceController.GetManagerHandleHolder(machineName, managerHandle);
-  resumeHandle := 0;  // Set resumeHandle to zero the first time
-  returnValue := EnumServicesStatusEx(
-    managerHandle,
-    SC_ENUM_PROCESS_INFO,
-    serviceTypes[serviceKind],
-    SERVICE_STATE_ALL,
-    nil,
-    0,
-    bytesNeeded,
-    servicesReturned,
-    resumeHandle,
-    nil
-  );
-  if not returnValue and (GetLastError <> ERROR_MORE_DATA) then
-  begin
-    RaiseLastOSError;
-  end;
-  bufferSize := bytesNeeded;
-  serviceArray := AllocMem(bytesNeeded);
-  try
-    returnValue := EnumServicesStatusEx(
-      managerHandle,
-      SC_ENUM_PROCESS_INFO,
-      serviceTypes[serviceKind],
-      SERVICE_STATE_ALL,
-      PByte(serviceArray),
-      bufferSize,
-      bytesNeeded,
-      servicesReturned,
-      resumeHandle,
-      nil
-    );
-    Win32Check(returnValue);
-    SetLength(services, servicesReturned);
-    pService := serviceArray;
-    for i := 0 to servicesReturned - 1 do
-    begin
-      serviceName := pService.lpServiceName;
-      services[i] := TServiceController.Create(serviceName, machineName, managerHandle);
-      Inc(pService);
-    end;
-  finally
-    FreeMem(serviceArray);
-  end;
-end;
-
-procedure TServiceController.ManagerHandleNeeded;
-begin
-  if fManagerHandle.Value = fCInvalidServiceHandle then
-  begin
-    GetManagerHandleHolder(fMachineName, fManagerHandle);
-    Assert(fManagerHandle.Value <> fCInvalidServiceHandle);
-  end;
-end;
-
-procedure TServiceController.UpdateStatus;
-var
-  bytesNeeded: Cardinal;
-begin
-  Assert(fServiceHandle.Value <> fCInvalidServiceHandle, 'Invalid fServiceHandle');
-  Win32Check(QueryServiceStatusEx(
-    fServiceHandle,
-    SC_STATUS_PROCESS_INFO,
-    PByte(@fServiceStatusProcess),
-    SizeOf(fServiceStatusProcess),
-    bytesNeeded
-  ));
-  fStatus := ParseStatus(fServiceStatusProcess.dwCurrentState);
-  fCanStop := fServiceStatusProcess.dwControlsAccepted and SERVICE_ACCEPT_SHUTDOWN <> 0;
-  fCanPauseAndResume := fServiceStatusProcess.dwControlsAccepted and SERVICE_ACCEPT_PAUSE_CONTINUE <> 0;
-  fCanShutdown := fServiceStatusProcess.dwControlsAccepted and SERVICE_ACCEPT_SHUTDOWN <> 0;
-end;
-
-procedure TServiceController.UpdateConfig;
-var
-  bufferSize,
-  bytesNeeded: Cardinal;
-  serviceConfig: WinSvc.PQueryServiceConfig;
-  list: TStringDynArray;
-  serviceName: string;
-  i: Integer;
-begin
-  Assert(fServiceHandle.Value <> fCInvalidServiceHandle, 'Invalid fServiceHandle');
-  if not QueryServiceConfig(fServiceHandle, nil, 0, bytesNeeded) and
-    (GetLastError <> ERROR_INSUFFICIENT_BUFFER) then
-  begin
-    RaiseLastOSError;
-  end;
-  bufferSize := bytesNeeded;
-  serviceConfig := AllocMem(bytesNeeded);
-  fServiceConfig := TValueHolder<WinSvc.PQueryServiceConfig>.Create(
-    serviceConfig,
-    procedure(var serviceConfig: WinSvc.PQueryServiceConfig)
-    begin
-      Dispose(serviceConfig);
-    end
-  );
-  Win32Check(QueryServiceConfig(fServiceHandle, fServiceConfig, bufferSize, bytesNeeded));
-  with fServiceConfig.Value^ do
-  begin
-    fServiceType := ParseServiceTypes(dwServiceType);
-    fStartMode := ParseStartMode(dwStartType);
-    fDisplayName := lpDisplayName;
-    fFileName := lpBinaryPathName;
-    list := SplitString(lpDependencies);
-  end;
-  // TODO: Handle SC_GROUP_IDENTIFIER
-  SetLength(fServicesDependedOn, Length(list));
-  for i := 0 to High(list) do
-  begin
-    serviceName := list[i];
-    fServicesDependedOn[i] := TServiceController.Create(serviceName);
-  end;
-end;
-
-procedure TServiceController.UpdateDependentServices;
-begin
-  // EnumDependentServices
-end;
-
-procedure TServiceController.UpdateDescription;
-var
-  bufferSize,
-  bytesNeeded: Cardinal;
-  buffer: TBytes;
-begin
-  Assert(fServiceHandle.Value <> fCInvalidServiceHandle, 'Invalid fServiceHandle');
-  if not QueryServiceConfig2(fServiceHandle, SERVICE_CONFIG_DESCRIPTION, nil, 0, bytesNeeded) and
-    (GetLastError <> ERROR_INSUFFICIENT_BUFFER) then
-  begin
-    RaiseLastOSError;
-  end;
-  bufferSize := bytesNeeded;
-  SetLength(buffer, bufferSize);
-  Win32Check(QueryServiceConfig2(fServiceHandle, SERVICE_CONFIG_DESCRIPTION, PByte(buffer), bufferSize, bytesNeeded));
-  fDescription := PServiceDescription(buffer).lpDescription;
-end;
-
-procedure TServiceController.Loaded;
-begin
-  if not fIsLoaded then
-  begin
-    Refresh;
-    fIsLoaded := True;
-  end;
-end;
-
-procedure TServiceController.Open(desiredAccess: Cardinal);
-begin
-  Assert(desiredAccess and not SERVICE_ALL_ACCESS = 0, 'Invalid desiredAccess.');
-  ManagerHandleNeeded;
-  fServiceHandle := OpenService(fManagerHandle, PChar(fServiceName), desiredAccess);
-  if fServiceHandle.Value = fCInvalidServiceHandle then
-  case GetLastError of
-    ERROR_SERVICE_DOES_NOT_EXIST:
-    begin
-      raise EOSError.CreateResFmt(@SServiceNotExists, [fServiceName]);
-    end;
-    else
-    begin
-      RaiseLastOSError;
-    end;
-  end;
-end;
-
-procedure TServiceController.Close;
-begin
-  if fServiceHandle.Value <> fCInvalidServiceHandle then
-  begin
-    CloseServiceHandle(fServiceHandle);
-    fServiceHandle := fCInvalidServiceHandle;
-  end;
-end;
-
-procedure TServiceController.Refresh;
-begin
-  Open(SERVICE_QUERY_STATUS or SERVICE_QUERY_CONFIG or SERVICE_CONFIG_DESCRIPTION);
-  try
-    UpdateStatus;
-    UpdateConfig;
-    UpdateDescription;
-    UpdateDependentServices;
-  finally
-    Close;
-  end;
-end;
-
-procedure TServiceController.ExecuteCommand(command: Integer);
-begin
-
-end;
-
-procedure TServiceController.PerformAction(action: TServiceAction);
-var
-  serviceStatus: WinSvc.TServiceStatus;
-const
-  AccessArray: array[TServiceAction] of DWORD = (
-    SERVICE_START,              // saStart
-    SERVICE_STOP,               // saStop
-    SERVICE_PAUSE_CONTINUE,     // saPause
-    SERVICE_PAUSE_CONTINUE      // saResume
-  );
-  ControlArray: array[TServiceAction] of DWORD = (
-    0,                          // saStart
-    SERVICE_CONTROL_STOP,       // saStop
-    SERVICE_CONTROL_PAUSE,      // saPause
-    SERVICE_CONTROL_CONTINUE    // saResume
-  );
-begin
-  Assert(action in [saStop, saPause, saResume]);
-  Open(AccessArray[action] or SERVICE_QUERY_STATUS);
-  try
-    UpdateStatus;
-    serviceStatus := WinSvc.PServiceStatus(@fServiceStatusProcess)^;
-    Win32Check(ControlService(fServiceHandle, ControlArray[action], serviceStatus));
-  finally
-    Close;
-  end;
-end;
-
-procedure TServiceController.Start;
-begin
-  Start([]);
-end;
-
-procedure TServiceController.Start(const args: array of string);
-var
-  pArgs: PChar;
-  i: Integer;
-  argCount: Integer;
-type
-  PStrArray = ^TStrArray;
-  TStrArray = array[0..32767] of PChar;
-begin
-  Open(SERVICE_START or SERVICE_QUERY_STATUS);
-  try
-    if Length(args) = 0 then
-    begin
-      pArgs := nil;
-      argCount := 0;
-    end
-    else
-    begin
-      argCount := Length(args) + 1;
-      pArgs := AllocMem(argCount * SizeOf(PChar));
-      PStrArray(pArgs)^[0] := PChar(fServiceName);
-      for i := 0 to High(args) do
-      begin
-        PStrArray(pArgs)^[i+1] := PChar(args[i]);
-      end;
-    end;
-    Win32Check(StartService(fServiceHandle, argCount, pArgs));
-  finally
-    FreeMem(pArgs);
-    Close;
-  end;
-end;
-
-procedure TServiceController.Stop;
-begin
-  PerformAction(saStop);
-end;
-
-procedure TServiceController.Pause;
-begin
-  PerformAction(saPause);
-end;
-
-procedure TServiceController.Resume;
-begin
-  PerformAction(saResume);
-end;
-
-procedure TServiceController.Restart;
-begin
-  Stop;
-  WaitForStatus(ssStopped);
-  Start;
-end;
-
-procedure TServiceController.WaitForStatus(status: TServiceStatus);
-begin
-  WaitForStatus(status, TTimeSpan.Create(Windows.INFINITE));
-end;
-
-procedure TServiceController.WaitForStatus(desiredStatus: TServiceStatus;
-  const timeout: TTimeSpan);
-var
-  oldCheckPoint: DWORD;
-  startTickCount: DWORD;
-  waitTime: DWORD;
-  ticks: DWORD;
-//  n: Integer;
-begin
-  TArgument.CheckEnum<TServiceStatus>(desiredStatus, 'desiredStatus');
-  Open(SERVICE_QUERY_STATUS);
-  try
-    UpdateStatus;
-    startTickCount := GetTickCount;
-    oldCheckPoint := fServiceStatusProcess.dwCheckPoint;
-//    n := 0;
-    while fStatus <> desiredStatus do
-    begin
-      // FROM <MSDN Library>:
-      // Do not wait longer than the wait hint. A good interval is
-      // one-tenth the wait hint, but no less than 1 second and no
-      // more than 10 seconds.
-      waitTime := fServiceStatusProcess.dwWaitHint div 10;
-      if waitTime < 1000 then
-        waitTime := 1000
-      else if waitTime > 10000 then
-        waitTime := 10000;
-      Sleep(waitTime);
-//      Inc(n);
-      UpdateStatus;
-      ticks := GetTickCount - startTickCount;
-      if fStatus = desiredStatus then Break;
-      if fServiceStatusProcess.dwCheckPoint > oldCheckPoint then
-      begin
-        // The service is making progress.
-        startTickCount := GetTickCount;
-        oldCheckPoint := fServiceStatusProcess.dwCheckPoint;
-      end
-      else if ticks > fServiceStatusProcess.dwWaitHint then
-      begin
-        // No progress made within the wait hint.
-        Break;
-      end
-      else if ticks > timeout.Ticks  then
-      begin
-        raise ETimeoutException.CreateRes(@STimeoutException);
-      end;
-    end;
-    if fStatus <> desiredStatus then
-    begin
-      RaiseLastOSError;
-    end;
-  finally
-    Close;
-  end;
-end;
-
-function TServiceController.ParseServiceTypes(const value: Cardinal): TServiceTypes;
-begin
-  Result := [];
-  if value and SERVICE_ADAPTER <> 0 then
-    Include(Result, stAdapter);
-  if value and SERVICE_FILE_SYSTEM_DRIVER <> 0 then
-    Include(Result, stFileSystemDriver);
-  if value and SERVICE_INTERACTIVE_PROCESS <> 0 then
-    Include(Result, stInteractiveProcess);
-  if value and SERVICE_KERNEL_DRIVER <> 0 then
-    Include(Result, stKernelDriver);
-  if value and SERVICE_RECOGNIZER_DRIVER <> 0 then
-    Include(Result, stRecognizerDriver);
-  if value and SERVICE_WIN32_OWN_PROCESS <> 0 then
-    Include(Result, stWin32OwnProcess);
-  if value and SERVICE_WIN32_SHARE_PROCESS <> 0 then
-    Include(Result, stWin32ShareProcess);
-end;
-
-function TServiceController.ParseStartMode(const value: Cardinal): TServiceStartMode;
-begin
-  case value of
-    SERVICE_BOOT_START:   Result := smBoot;
-    SERVICE_SYSTEM_START: Result := smSystem;
-    SERVICE_AUTO_START:   Result := smAutomatic;
-    SERVICE_DEMAND_START: Result := smManual;
-    SERVICE_DISABLED:     Result := smDisabled;
-    else
-    begin
-      raise EArgumentException.CreateResFmt(@SArgumentOutOfRangeException, [IntToStr(value)]);
-    end;
-  end;
-end;
-
-function TServiceController.ParseStatus(const value: Cardinal): TServiceStatus;
-begin
-  case value of
-    SERVICE_STOPPED:           Result := ssStopped;
-    SERVICE_START_PENDING:     Result := ssStartPending;
-    SERVICE_STOP_PENDING:      Result := ssStopPending;
-    SERVICE_RUNNING:           Result := ssRunning;
-    SERVICE_CONTINUE_PENDING:  Result := ssContinuePending;
-    SERVICE_PAUSE_PENDING:     Result := ssPausePending;
-    SERVICE_PAUSED:            Result := ssPaused;
-    else
-    begin
-      raise EArgumentException.CreateResFmt(@SArgumentOutOfRangeException, [IntToStr(value)]);
-    end;
-  end;
-end;
-
-class function TServiceController.GetDevices: TArray<TServiceController>;
-begin
-  TServiceController.InternalEnumServices('', skDrive, Result);
-end;
-
-class function TServiceController.GetDevices(const machineName: string): TArray<TServiceController>;
-begin
-  TServiceController.InternalEnumServices(machineName, skDrive, Result);
-end;
-
-class function TServiceController.GetServices: TArray<TServiceController>;
-begin
-  TServiceController.InternalEnumServices('', skWin32, Result);
-end;
-
-class function TServiceController.GetServices(
-  const machineName: string): TArray<TServiceController>;
-begin
-  TServiceController.InternalEnumServices(machineName, skWin32, Result);
-end;
-
-function TServiceController.GetDisplayName: string;
-begin
-  Loaded;
-  Result := fDisplayName;
-end;
-
-function TServiceController.GetMachineName: string;
-begin
-  Loaded;
-  Result := fMachineName;
-end;
-
-function TServiceController.GetServiceHandle: THandle;
-begin
-  Loaded;
-  Result := fServiceHandle;
-end;
-
-function TServiceController.GetServiceName: string;
-begin
-  Loaded;
-  Result := fServiceName;
-end;
-
-function TServiceController.GetServiceType: TServiceTypes;
-begin
-  Loaded;
-  Result := fServiceType;
-end;
-
-function TServiceController.GetStartMode: TServiceStartMode;
-begin
-  Loaded;
-  Result := fStartMode;
-end;
-
-function TServiceController.GetDescription: string;
-begin
-  Loaded;
-  Result := fDescription;
-end;
-
-function TServiceController.GetStatus: TServiceStatus;
-begin
-  Loaded;
-  Result := fStatus;
-end;
-
-function TServiceController.GetCanStop: Boolean;
-begin
-  Loaded;
-  Result := fCanStop;
-end;
-
-function TServiceController.GetCanPauseAndResume: Boolean;
-begin
-  Loaded;
-  Result := fCanPauseAndResume;
-end;
-
-function TServiceController.GetCanShutdown: Boolean;
-begin
-  Loaded;
-  Result := fCanShutdown;
-end;
-
-function TServiceController.GetExists: Boolean;
-var
-  serviceHandle: THandle;
-begin
-  ManagerHandleNeeded;
-  serviceHandle := OpenService(fManagerHandle, PChar(fServiceName), SERVICE_QUERY_STATUS);
-  Result := serviceHandle <> fCInvalidServiceHandle;
-  if Result then
-  begin
-    CloseServiceHandle(serviceHandle);
-  end;
-end;
-
-function TServiceController.GetServicesDependedOn: TArray<TServiceController>;
-begin
-  Loaded;
-  Result := fServicesDependedOn;
-end;
-
-function TServiceController.GetDependentServices: TArray<TServiceController>;
-begin
-  Loaded;
-  Result := fDependentServices;
+  Result := Trim(htmlText);
 end;
 
 {$ENDREGION}
 
+
+{$REGION 'TMessageBox'}
+
+{ TMessageBox }
+
+class constructor TMessageBox.Create;
+begin
+  fMessageDialogProc := ShowMessageDialog;
+end;
+
+class function TMessageBox.GetDefaultButton(
+  const buttons: TMessageDialogButtons): TMessageDialogButton;
+begin
+  if mbOk in Buttons then
+    Result := mbOk
+  else if mbYes in Buttons then
+    Result := mbYes
+  else
+    Result := mbRetry;
+end;
+
+class function TMessageBox.ShowMessageDialog(const text, caption: string;
+  dialogType: TMsgDlgType; buttons: TMessageDialogButtons;
+  defaultButton: TMessageDialogButton): TModalResult;
+begin
+  if caption = '' then
+  begin
+    Result := MessageDlg(text, dialogType, buttons, -1, defaultButton);
+  end
+  else
+  begin
+    Result := Dialogs.TaskMessageDlg(caption, text, dialogType, buttons, -1, defaultButton);
+  end;
+end;
+
+class function TMessageBox.Confirm(const text, caption: string;
+  const buttons: TMessageDialogButtons): TModalResult;
+begin
+  Result := Confirm(text, caption, buttons, GetDefaultButton(buttons));
+end;
+
+class function TMessageBox.Confirm(const text, caption: string; const buttons: TMessageDialogButtons;
+  defaultButton: TMessageDialogButton): TModalResult;
+begin
+  Result := ShowMessageDialog(text, caption, mtConfirmation, buttons, defaultButton);
+end;
+
+class function TMessageBox.Confirm(const text: string; const buttons: TMessageDialogButtons): TModalResult;
+begin
+  Result := Confirm(text, '', buttons, GetDefaultButton(buttons));
+end;
+
+class function TMessageBox.Confirm(const text: string; const buttons: TMessageDialogButtons;
+  defaultButton: TMessageDialogButton): TModalResult;
+begin
+  Result := Confirm(text, '', buttons, defaultButton);
+end;
+
+class function TMessageBox.Info(const text: string;
+  const buttons: TMessageDialogButtons): TModalResult;
+begin
+  Result := Info(text, '', buttons, GetDefaultButton(buttons));
+end;
+
+class function TMessageBox.Info(const text: string;
+  const buttons: TMessageDialogButtons;
+  defaultButton: TMessageDialogButton): TModalResult;
+begin
+  Result := Info(text, '', buttons, defaultButton);
+end;
+
+class function TMessageBox.Info(const text, caption: string;
+  const buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult;
+begin
+  Result := ShowMessageDialog(text, caption, mtInformation, buttons, defaultButton);
+end;
+
+class function TMessageBox.Info(const text, caption: string; const buttons: TMessageDialogButtons): TModalResult;
+begin
+  Result := Info(text, caption, buttons, GetDefaultButton(buttons));
+end;
+
+class function TMessageBox.Warn(const text: string; const buttons: TMessageDialogButtons;
+  defaultButton: TMessageDialogButton): TModalResult;
+begin
+  Result := Warn(text, '', buttons, defaultButton);
+end;
+
+class function TMessageBox.Warn(const text: string; const buttons: TMessageDialogButtons): TModalResult;
+begin
+  Result := Warn(text, '', buttons, GetDefaultButton(buttons));
+end;
+
+class function TMessageBox.Warn(const text, caption: string; const buttons: TMessageDialogButtons;
+  defaultButton: TMessageDialogButton): TModalResult;
+begin
+  Result := ShowMessageDialog(text, caption, mtWarning, buttons, defaultButton);
+end;
+
+class function TMessageBox.Warn(const text, caption: string; const buttons: TMessageDialogButtons): TModalResult;
+begin
+  Result := Warn(text, caption, buttons, GetDefaultButton(buttons));
+end;
+
+class function TMessageBox.Error(const text, caption: string; const buttons: TMessageDialogButtons): TModalResult;
+begin
+  Result := Error(text, caption, buttons, GetDefaultButton(buttons));
+end;
+
+class function TMessageBox.Error(const text, caption: string; const buttons: TMessageDialogButtons;
+  defaultButton: TMessageDialogButton): TModalResult;
+begin
+  Result := ShowMessageDialog(text, caption, mtError, buttons, defaultButton);
+end;
+
+class function TMessageBox.Error(const text: string; const buttons: TMessageDialogButtons): TModalResult;
+begin
+  Result := Error(text, '', buttons, GetDefaultButton(buttons));
+end;
+
+class function TMessageBox.Error(const text: string; const buttons: TMessageDialogButtons;
+  defaultButton: TMessageDialogButton): TModalResult;
+begin
+  Result := Error(text, '', buttons, defaultButton);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TNetwork'}
+
+class function TNetwork.GetMacAddress: string;
+var
+  adapterInfo: array[0..3] of IP_ADAPTER_INFO;
+  pAdapterInfo: PIP_ADAPTER_INFO;
+  len: Cardinal;
+  dwBufLen: Cardinal;
+  dwStatus: DWORD;
+begin
+  Result := '';
+  FillChar(adapterInfo, SizeOf(adapterInfo), 0);
+  pAdapterInfo := @adapterInfo[0];
+  dwBufLen := SizeOf(adapterInfo);
+  dwStatus := GetAdaptersInfo(pAdapterInfo, dwBufLen);
+  if (dwStatus = ERROR_SUCCESS) and (pAdapterInfo <> nil) then
+  begin
+    len := 0;
+    while len < pAdapterInfo.AddressLength do
+    begin
+      Result := Result + IntToHex(PByte(@pAdapterInfo.Address[len])^, 2) + '-';
+      Inc(len, 1);
+    end;
+    SetLength(Result, Length(Result) - 1);
+  end;
+end;
+
+class function TNetwork.GetPublicIPAddress: string;
+begin
+  Result := GetPublicIPAddressMethod;
+end;
+
+class function TNetwork.GetIPAddress: string;
+var
+  rc: Integer;
+  data: TWSAData;
+  hostName: AnsiString;
+  hostEnt: PHostEnt;
+  sockAddr: TSockAddrIn;
+begin
+  rc := Winsock.WSAStartup(MakeWord(1, 1), data);
+  if rc = 0 then
+  try
+    hostName := AnsiString(Environment.MachineName);
+    hostEnt := Winsock.GetHostByName(PAnsiChar(hostName));
+    if hostEnt <> nil then
+    begin
+      sockAddr.sin_addr.S_addr := Longint(PLongint(hostEnt^.h_addr_list^)^);
+      Result := string(Winsock.inet_ntoa(sockAddr.sin_addr));
+    end;
+  finally
+    Winsock.WSACleanup;
+  end;
+end;
+
+class function TNetwork.GetIsAvailable: Boolean;
+begin
+  Result := TNetwork.Status = nsOnline;
+end;
+
+class function TNetwork.GetStatus: TNetworkStatus;
+var
+  flags: DWORD;
+  available: Boolean;
+begin
+  available := InternetGetConnectedState(@flags, 0) and
+    (InternetCheckConnection(PChar(DefaultPingUrl), 1, 0) or
+      (InternetCheckConnection(PChar(DefaultPingUrl2), 1, 0))
+    );
+  if available then
+    Result := nsOnline
+  else
+    Result := nsOffline;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TFileMapping'}
+
+constructor TFileMapping.Create(fileHandle: THandle; access: TFileMappingAccess;
+  const maximumSize: Int64);
+//var
+//  fSecurityAttributes: TSecurityAttributes;
+begin
+  inherited Create;
+  fHandle := CreateFileMapping(
+    fileHandle,
+    nil,
+    PAGE_READWRITE,
+    TInt64Rec(maximumSize).Hi,
+    TInt64Rec(maximumSize).Lo,
+    nil
+  );
+  Win32Check(fHandle <> 0);
+end;
+
+destructor TFileMapping.Destroy;
+begin
+  if fHandle <> 0 then
+  begin
+    CloseHandle(fHandle);
+  end;
+  fViews.Free;
+  inherited Destroy;
+end;
+
+procedure TFileMapping.Notify(view: TFileMappingView; action: TCollectionNotification);
+begin
+  if fViews = nil then
+  begin
+    fViews := TObjectList<TFileMappingView>.Create(True);
+  end;
+  case action of
+    cnAdded:
+    begin
+      fViews.Add(view);
+    end;
+    cnRemoved, cnExtracted:
+    begin
+      fViews.Remove(view);
+    end;
+  end;
+end;
+
+function TFileMapping.GetFileView(const offset: Int64; size: Cardinal): TFileMappingView;
+begin
+  Result := TFileMappingView.Create(Self, offset, size);   // Its lifecycle is automatically managed by fViews.
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TFileMappingView'}
+
+class constructor TFileMappingView.Create;
+var
+  systemInfo: TSystemInfo;
+begin
+  GetSystemInfo(systemInfo);
+  fCAllocationGranularity := systemInfo.dwAllocationGranularity;
+end;
+
+constructor TFileMappingView.Create(fileMapping: TFileMapping;
+  const offset: Int64; size: Cardinal);
+var
+  desiredAccess: DWORD;
+begin
+  TArgument.CheckNotNull(fileMapping, 'fileMapping');
+
+  inherited Create;
+  fFileMapping := fileMapping;
+  desiredAccess := FILE_MAP_ALL_ACCESS;    // TEMP
+  fMemory := MapViewOfFile(
+    fileMapping.Handle,
+    desiredAccess,
+    Int64Rec(offset).Hi,
+    Int64Rec(offset).Lo,
+    size
+  );
+  Win32Check(fMemory <> nil);
+
+  fFileMapping.Notify(Self, cnAdded);
+end;
+
+destructor TFileMappingView.Destroy;
+begin
+  if fMemory <> nil then
+  begin
+    UnmapViewOfFile(fMemory);
+  end;
+  fFileMapping.Notify(Self, cnRemoved);
+  inherited Destroy;
+end;
+
+procedure TFileMappingView.Flush;
+begin
+  Win32Check(FlushViewOfFile(fMemory, 0));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TFileMappingStream'}
+
+constructor TFileMappingStream.Create(const fileName: string; mode: TFileMode);
+begin
+  Create(fileName, mode, TFileAccess.faReadWrite, TFileShare.fsNone, TFileMappingAccess.ReadWrite);
+end;
+
+constructor TFileMappingStream.Create(const fileName: string; mode: TFileMode;
+  access: TFileAccess);
+begin
+  Create(fileName, mode, access, TFileShare.fsNone, TFileMappingAccess.ReadWrite);
+end;
+
+constructor TFileMappingStream.Create(const fileName: string; mode: TFileMode;
+  access: TFileAccess; share: TFileShare);
+begin
+  Create(fileName, mode, access, share, TFileMappingAccess.ReadWrite);
+end;
+
+constructor TFileMappingStream.Create(const fileName: string; mode: TFileMode;
+  access: TFileAccess; share: TFileShare;
+  fileMappingAccess: TFileMappingAccess);
+begin
+  inherited Create;
+  fFileName := fileName;
+  fFileHandle := CreateFileHandle(fileName, mode, access, share);
+//  fFileMapping := TFileMapping.Create(fFileMapping, fileMappingAccess, 0);
+end;
+
+destructor TFileMappingStream.Destroy;
+begin
+  fFileMapping.Free;
+  CloseHandle(fFileHandle);
+  inherited Destroy;
+end;
+
+function TFileMappingStream.CreateFileHandle(const fileName: string;
+  mode: TFileMode; access: TFileAccess; share: TFileShare): THandle;
+var
+  fileMode: Word;
+  fileRights: Word;
+const
+  FileAccessMappings: array[TFileAccess] of Word = (
+    fmOpenRead,         // faRead
+    fmOpenWrite,        // faWrite
+    fmOpenReadWrite     // faReadWrite
+  );
+
+  FileShareMappings: array[TFileShare] of Word = (
+    fmShareExclusive,   // fsNone
+    fmShareDenyWrite,   // fsRead
+    fmShareDenyRead,    // fsWrite
+    fmShareDenyNone     // fsReadWrite
+  );
+begin
+  fileMode := FileAccessMappings[access];
+  fileRights := FileShareMappings[share];
+//  if mode = TFileMode.fmCreateNew then
+  Result := THandle(SysUtils.FileCreate(fileName, fileMode, fileRights));
+end;
+
+{$ENDREGION}
+
+initialization
+  GetPublicIPAddressMethod := _GetPublicIPAddress;
+  ExtractIPAddressMethod := _ExtractIPAddress;
+  OleInitialize(nil);
+
+finalization
+  OleUninitialize;
 
 end.

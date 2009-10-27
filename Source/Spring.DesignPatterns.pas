@@ -22,12 +22,12 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.DesignPatterns experimental;
+unit Spring.DesignPatterns;
 
 {$I Spring.inc}
 
 { TODO: Design Command Pattern with Undo/Redo }
-{ TODO: Redesign Memento Pattern & Registry Pattern }
+{ TODO: Redesign Memento Pattern }
 
 interface
 
@@ -47,12 +47,8 @@ type
 
   /// <summary>
   /// Provides a portal to get the single instance of a class. It also keeps track
-  /// of the lifecycle of the instances and will free them in reversed order.
+  /// of the lifetime of the instances and will free them in reversed order.
   /// </summary>
-  /// <description>
-  /// Singleton Pattern is defined as:
-  /// Ensure a class only has one instance, and provide a global point of access to it.
-  /// </description>
   TSingleton = record
   strict private
     class var

@@ -23,9 +23,7 @@
 {***************************************************************************}
 
 { TODO: Add IQueue<T>, ISet<T> }
-
 { TODO: Consider Non-Generic interfaces }
-
 { TODO: Consider LINQ-Like Enumerable Extension }
 
 unit Spring.Collections;
@@ -35,8 +33,10 @@ unit Spring.Collections;
 interface
 
 uses
-  Classes, SysUtils,
-  Generics.Defaults, Generics.Collections;
+  Classes,
+  SysUtils,
+  Generics.Defaults,
+  Generics.Collections;
 
 type
   { Forward Declarations }
@@ -47,7 +47,7 @@ type
   IList<T> = interface;
   IDictionary<TKey, TValue> = interface;
 
-  TContainers = class;
+  TCollections = class;
 
   /// <summary>
   /// Supports a simple iteration over a generic collection.
@@ -145,14 +145,14 @@ type
   TDictionaryOwnerships = Generics.Collections.TDictionaryOwnerships;
 
   /// <summary>
-  /// Containers Facade
+  /// Collections Facade
   /// </summary>
   /// <remarks>
-  /// Developers should use TContainers class to create container instance,
+  /// Developers should use TCollections class to create collection instance,
   /// insteading of using the concrete classes, such as TListAdapter<T>,
   /// TDictionaryAdapter<TKey, TValue>, etc.
   /// </remarks>
-  TContainers = class
+  TCollections = class
   public
 //    class function CreateEnumerator<T>(collection: TEnumerable<T>): IEnumeratorEx<T>; overload;
 //    class function CreateEnumerator<T>(enumerator: TEnumerator<T>): IEnumeratorEx<T>; overload;
@@ -168,6 +168,8 @@ type
     class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships; capacity: Integer): IDictionary<TKey, TValue>; overload;
     class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships; capacity: Integer; const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TValue>; overload;
   end;
+
+  TContainers = TCollections deprecated 'Use TCollections instead.';
 
   /// <summary>
   /// TEnumeratorAdapter<T>
@@ -328,7 +330,7 @@ uses
 
 {$REGION 'TContainers'}
 
-class function TContainers.CreateList<T>: IList<T>;
+class function TCollections.CreateList<T>: IList<T>;
 var
   list: TList<T>;
 begin
@@ -336,7 +338,7 @@ begin
   Result := TListAdapter<T>.Create(list, coOwned);
 end;
 
-class function TContainers.CreateList<T>(const comparer: IComparer<T>): IList<T>;
+class function TCollections.CreateList<T>(const comparer: IComparer<T>): IList<T>;
 var
   list: TList<T>;
 begin
@@ -344,12 +346,12 @@ begin
   Result := TListAdapter<T>.Create(list, coOwned);
 end;
 
-class function TContainers.CreateList<T>(ownsObjects: Boolean): IList<T>;
+class function TCollections.CreateList<T>(ownsObjects: Boolean): IList<T>;
 begin
-  Result := TContainers.CreateList<T>(ownsObjects, TComparer<T>.Default);
+  Result := TCollections.CreateList<T>(ownsObjects, TComparer<T>.Default);
 end;
 
-class function TContainers.CreateList<T>(ownsObjects: Boolean;
+class function TCollections.CreateList<T>(ownsObjects: Boolean;
   const comparer: IComparer<T>): IList<T>;
 var
   list: TObjectList<T>;
@@ -358,23 +360,23 @@ begin
   Result := TListAdapter<T>.Create(list, coOwned);
 end;
 
-class function TContainers.CreateDictionary<TKey, TValue>: IDictionary<TKey, TValue>;
+class function TCollections.CreateDictionary<TKey, TValue>: IDictionary<TKey, TValue>;
 begin
-  Result := TContainers.CreateDictionary<TKey,TValue>(0, TEqualityComparer<TKey>.Default);
+  Result := TCollections.CreateDictionary<TKey,TValue>(0, TEqualityComparer<TKey>.Default);
 end;
 
-class function TContainers.CreateDictionary<TKey, TValue>(
+class function TCollections.CreateDictionary<TKey, TValue>(
   capacity: Integer): IDictionary<TKey, TValue>;
 begin
-  Result := TContainers.CreateDictionary<TKey, TValue>(capacity, TEqualityComparer<TKey>.Default);
+  Result := TCollections.CreateDictionary<TKey, TValue>(capacity, TEqualityComparer<TKey>.Default);
 end;
 
-class function TContainers.CreateDictionary<TKey, TValue>(const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TValue>;
+class function TCollections.CreateDictionary<TKey, TValue>(const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TValue>;
 begin
-  Result := TContainers.CreateDictionary<TKey, TValue>(0, comparer);
+  Result := TCollections.CreateDictionary<TKey, TValue>(0, comparer);
 end;
 
-class function TContainers.CreateDictionary<TKey, TValue>(capacity: Integer;
+class function TCollections.CreateDictionary<TKey, TValue>(capacity: Integer;
   const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TValue>;
 var
   dictionary: TDictionary<TKey,TValue>;
@@ -384,20 +386,20 @@ begin
   Result := TDictionaryAdapter<TKey, TValue>.Create(dictionary, coOwned);
 end;
 
-class function TContainers.CreateDictionary<TKey, TValue>(
+class function TCollections.CreateDictionary<TKey, TValue>(
   ownerships: TDictionaryOwnerships): IDictionary<TKey, TValue>;
 begin
-  Result := TContainers.CreateDictionary<TKey, TValue>(ownerships, 0, TEqualityComparer<TKey>.Default);
+  Result := TCollections.CreateDictionary<TKey, TValue>(ownerships, 0, TEqualityComparer<TKey>.Default);
 end;
 
-class function TContainers.CreateDictionary<TKey, TValue>(
+class function TCollections.CreateDictionary<TKey, TValue>(
   ownerships: TDictionaryOwnerships;
   capacity: Integer): IDictionary<TKey, TValue>;
 begin
-  Result := TContainers.CreateDictionary<TKey, TValue>(ownerships, capacity, TEqualityComparer<TKey>.Default);
+  Result := TCollections.CreateDictionary<TKey, TValue>(ownerships, capacity, TEqualityComparer<TKey>.Default);
 end;
 
-class function TContainers.CreateDictionary<TKey, TValue>(
+class function TCollections.CreateDictionary<TKey, TValue>(
   ownerships: TDictionaryOwnerships; capacity: Integer;
   const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TValue>;
 var

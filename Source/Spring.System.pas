@@ -30,13 +30,11 @@ interface
 
 uses
   Classes,
-  Contnrs,
   Windows,
   Messages,
   SysUtils,
   Types,
   TypInfo,
-  StrUtils,
   Controls,
   Variants,
   ShellAPI,
@@ -277,18 +275,6 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TBufferStream (NOT READY)'}
-
-  /// <summary>
-  /// Provides a reusable memory stream.
-  /// </summary>
-//  TBufferStream = class(TCustomMemoryStream)
-//
-//  end;
-
-  {$ENDREGION}
-
-
   {$REGION 'TVolatile<T> (Experimental)'}
 
   /// <summary>
@@ -306,7 +292,7 @@ type
     class operator Implicit(const value: TVolatile<T>): T;
     class operator Equal(const left, right: TVolatile<T>): Boolean;
     class operator NotEqual(const left, right: TVolatile<T>): Boolean;
-  end;
+  end experimental;
 
   {$ENDREGION}
 
@@ -347,13 +333,13 @@ type
   /// be assigned nil like a reference type.
   /// </summary>
   TNullable<T> = record
+  private
+    const fCHasValue = 'HasValue';  // DO NOT LOCALIZE
   strict private
     fValue: T;
     fHasValue: string;
     function GetValue: T;
     function GetHasValue: Boolean;
-  private
-    const fCHasValue = 'HasValue';  // DO NOT LOCALIZE
   public
     constructor Create(const value: T); overload;
     constructor Create(const value: Variant); overload;
@@ -368,67 +354,6 @@ type
     class operator Implicit(const value: Variant): TNullable<T>;
     class operator Implicit(value: Pointer): TNullable<T>;
     class operator Explicit(const value: TNullable<T>): T;
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'IValueProvider<T>, TValueProvider<T> (Experimental)'}
-
-  /// <summary>
-  /// IValueProvider<T>
-  /// </summary>
-  IValueProvider<T> = interface
-    function GetValue: T;
-    function GetIsReadOnly: Boolean;
-    procedure SetValue(const value: T);
-    property Value: T read GetValue write SetValue;
-    property IsReadOnly: Boolean read GetIsReadOnly;
-  end;
-
-  TCleanUpProc<T> = reference to procedure(var arg: T);
-
-  TValueProvider<T> = class(TInterfacedObject, IValueProvider<T>, IInterface)
-  private
-    fValue: T;
-    fCleanUpProc: TCleanUpProc<T>;
-    function GetValue: T;
-    procedure SetValue(const value: T);
-  protected
-    function GetIsReadOnly: Boolean; virtual;
-  public
-    constructor Create; overload;
-    constructor Create(const value: T); overload;
-    constructor Create(const value: T; cleanUpProc: TCleanUpProc<T>); overload;
-    destructor Destroy; override;
-    property Value: T read GetValue write SetValue;
-    property IsReadOnly: Boolean read GetIsReadOnly;
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TValueHolder<T> (Experimental)'}
-
-  /// <summary>
-  /// Wraps value-type
-  /// </summary>
-  TValueHolder<T> = record
-  strict private
-    fProvider: IValueProvider<T>;
-    procedure ProviderNeeded;
-    function  GetValue: T;
-    procedure SetValue(const Value: T);
-  public
-    constructor Create(const value: T); overload;
-    constructor Create(const value: T; cleanUpProc: TCleanUpProc<T>); overload;
-    constructor Create(const valueProvider: IValueProvider<T>); overload;
-    property Value: T read GetValue write SetValue;
-    { Conversion }
-    class operator Implicit(const value: T): TValueHolder<T>;
-    class operator Implicit(const valueHolder: TValueHolder<T>): T;
-    class operator Implicit(const valueProvider: IValueProvider<T>): TValueHolder<T>;
-    class operator Implicit(const valueHolder: TValueHolder<T>): IValueProvider<T>;
   end;
 
   {$ENDREGION}
@@ -451,30 +376,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'IDelegate<T> (Experimental)'}
-
-  IDelegate<T> = interface
-    procedure Add(const delegate: T);
-    procedure Remove(const delegate: T);
-    procedure Clear;
-    procedure Invoke(proc: TProc<T>);
-  end;
-
-  TDelegate<T> = class(TInterfacedObject, IDelegate<T>, IInterface)
-  private
-    fList: TList<T>;
-  public
-    destructor Destroy; override;
-    procedure Add(const delegate: T);
-    procedure Remove(const delegate: T);
-    procedure Clear;
-    procedure Invoke(proc: TProc<T>);
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TObjectHolder<T>'}
+  {$REGION 'TObjectHolder<T> (Experimental)'}
 
   /// <summary>
   /// Manages object's lifetime by anonymous method (TFunc<T>),
@@ -487,7 +389,7 @@ type
     constructor Create(obj: T);
     destructor Destroy; override;
     function Invoke: T;
-  end;
+  end experimental;
 
   {$ENDREGION}
 
@@ -527,6 +429,8 @@ type
   /// Represents version number in the format of "major.minor[.build[.revision]]"
   /// </summary>
   TVersion = record
+  private
+    const fCUndefined: Integer = -1;
   strict private
     fMajor: Integer;
     fMinor: Integer;
@@ -534,8 +438,6 @@ type
     fReversion: Integer;  // -1 if undefined.
     function GetMajorReversion: Int16;
     function GetMinorReversion: Int16;
-  private
-    const fCUndefined: Integer = -1;
   private
     constructor InternalCreate(defined, major, minor, build, reversion: Integer);
     function CompareComponent(a, b: Integer): Integer;
@@ -646,6 +548,70 @@ type
     property IsPreRelease: Boolean read GetIsPreRelease;
     property IsSpecialBuild: Boolean read GetIsSpecialBuild;
     property IsPrivateBuild: Boolean read GetIsPrivateBuild;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TDriveInfo'}
+
+  /// <summary>
+  /// Drive Type Enumeration
+  /// </summary>
+  TDriveType = (
+    dtUnknown,          // The type of drive is unknown.
+    dtNoRootDirectory,  // The drive does not have a root directory.
+    dtRemovable,        // The drive is a removable storage device, such as a floppy disk drive or a USB flash drive.
+    dtFixed,            // The drive is a fixed disk.
+    dtNetwork,          // The drive is a network drive.
+    dtCDRom,            // The drive is an optical disc device, such as a CD or DVD-ROM.
+    dtRam               // The drive is a RAM disk.
+  );
+
+  /// <summary>
+  /// Provides access to information on a drive.
+  /// </summary>
+  /// <remarks>
+  /// Use TDriveInfo.GetDrives method to retrieve all drives of the computer.
+  /// Caller must check IsReady property before using TDriveInfo.
+  /// </remarks>
+  TDriveInfo = record
+  private
+    fDriveName: string;
+    fRootDirectory: string;
+    fAvailableFreeSpace: Int64;
+    fTotalSize: Int64;
+    fTotalFreeSpace: Int64;
+    fVolumeName: array[0..MAX_PATH] of Char;
+    fFileSystemName: array[0..MAX_PATH] of Char;
+    fSerialNumber: DWORD;
+    fMaximumComponentLength: DWORD;
+    fFileSystemFlags: DWORD;
+    function GetAvailableFreeSpace: Int64;
+    function GetDriveFormat: string;
+    function GetDriveType: TDriveType;
+    function GetDriveTypeString: string;
+    function GetIsReady: Boolean;
+    function GetTotalFreeSpace: Int64;
+    function GetTotalSize: Int64;
+    function GetVolumeLabel: string;
+    procedure SetVolumeLabel(const Value: string);
+  private
+    procedure UpdateProperties;
+  public
+    constructor Create(const driveName: string);
+    class function GetDrives: TArray<TDriveInfo>; static;
+    procedure CheckIsReady;
+    property AvailableFreeSpace: Int64 read GetAvailableFreeSpace;
+    property DriveFormat: string read GetDriveFormat;
+    property DriveType: TDriveType read GetDriveType;
+    property DriveTypeString: string read GetDriveTypeString;
+    property IsReady: Boolean read GetIsReady;
+    property Name: string read fDriveName;
+    property RootDirectory: string read fRootDirectory;
+    property TotalFreeSpace: Int64 read GetTotalFreeSpace;
+    property TotalSize: Int64 read GetTotalSize;
+    property VolumeLabel: string read GetVolumeLabel write SetVolumeLabel;
   end;
 
   {$ENDREGION}
@@ -918,11 +884,19 @@ type
   TCallbackFunc = TFunc<Pointer>;
 
   /// <summary>
-  /// Adapts class instance (object) method as Windows standard callback function.
+  /// Adapts class instance (object) method as standard callback function.
   /// </summary>
   /// <remarks>
   /// Both the object method and the callback function need to be declared as stdcall.
   /// </remarks>
+  /// <example>
+  /// <code>
+  /// private
+  ///   fCallback: TCallbackFunc;
+  /// //...
+  /// fCallback := CreateCallback(Self, @TSomeClass.SomeMethod);
+  /// </code>
+  /// </example>
   TCallback = class(TInterfacedObject, TCallbackFunc)
   private
     fInstance: Pointer;
@@ -932,11 +906,10 @@ type
     function Invoke: Pointer;
   end;
 
-
   {$ENDREGION}
 
 
-  {$REGION 'TLifetimeType & Related Attributes'}
+  {$REGION 'TLifetimeType & Related Attributes (Experimental)'}
 
   /// <summary>
   /// Lifetime Type Enumeration
@@ -987,7 +960,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'Lifecycle Interfaces'}
+  {$REGION 'Lifecycle Interfaces (Experimental)'}
 
   IInitializable = interface
     ['{A36BB399-E592-4DFB-A091-EDBA3BE0648B}']
@@ -1013,28 +986,6 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'IAsyncResult (NOT READY)'}
-
-  (*
-
-  /// <summary>
-  /// Represents the status of an asynchronous operation.
-  /// </summary>
-  IAsyncResult = interface
-    function GetIsCompleted: Boolean;
-    property IsCompleted: Boolean read GetIsCompleted;
-  end;
-
-  /// <summary>
-  /// TAsyncCallback
-  /// </summary>
-  TAsyncCallback = reference to procedure(const result: IAsyncResult);
-
-  //*)
-
-  {$ENDREGION}
-
-
   {$REGION 'Global Routines'}
 
   function ApplicationPath: string;
@@ -1055,6 +1006,9 @@ type
   /// </summary>
   procedure CheckDirectoryExists(const directory: string);
 
+  /// <summary>
+  /// CreateCallback
+  /// </summary>
   function CreateCallback(objectAddress: TObject; methodAddress: Pointer): TCallbackFunc;
 
   /// <summary>
@@ -1233,19 +1187,30 @@ uses
   Spring.ResourceStrings;
 
 const
+  DriveTypeStrings: array[TDriveType] of string = (
+    SUnknownDriveDescription,
+    SNoRootDirectoryDescription,
+    SRemovableDescription,
+    SFixedDescription,
+    SNetworkDescription,
+    SCDRomDescription,
+    SRamDescription
+  );
+
+const
   OSVersionTypeStrings: array[TOSVersionType] of string = (
-    SUnknownDescription,
-    'Microsoft Windows 95',           // DEPRECATED
-    'Microsoft Windows 98',           // DEPRECATED
-    'Microsoft Windows ME',           // DEPRECATED
-    'Microsoft Windows NT 3.51',      // DEPRECATED
-    'Microsoft Windows NT 4',         // DEPRECATED
-    'Microsoft Windows Server 2000',
-    'Microsoft Windows XP',
-    'Microsoft Windows Server 2003',
-    'Microsoft Windows Vista',
-    'Microsoft Windows Server 2008',
-    'Microsoft Windows 7'
+    SUnknownOSDescription,
+    SWin95Description,
+    SWin98Description,
+    SWinMEDescription,
+    SWinNT351Description,
+    SWinNT40Description,
+    SWinServer2000Description,
+    SWinXPDescription,
+    SWinServer2003Description,
+    SWinVistaDescription,
+    SWinServer2008Description,
+    SWin7Description
   );
 
 
@@ -2330,127 +2295,6 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TValueProvider<T>'}
-
-constructor TValueProvider<T>.Create;
-begin
-  Create(Default(T), nil);
-end;
-
-constructor TValueProvider<T>.Create(const value: T);
-begin
-  Create(value, nil);
-end;
-
-constructor TValueProvider<T>.Create(const value: T;
-  cleanUpProc: TCleanUpProc<T>);
-begin
-  inherited Create;
-  fValue := value;
-  fCleanUpProc := cleanUpProc;
-end;
-
-destructor TValueProvider<T>.Destroy;
-begin
-  if Assigned(fCleanUpProc) then
-    fCleanUpProc(fValue);
-  inherited Destroy;
-end;
-
-function TValueProvider<T>.GetValue: T;
-begin
-  Result := fValue;
-end;
-
-function TValueProvider<T>.GetIsReadOnly: Boolean;
-begin
-  Result := False;
-end;
-
-procedure TValueProvider<T>.SetValue(const value: T);
-begin
-  if IsReadOnly then
-  begin
-    raise ENotSupportedException.CreateRes(@SCannotModifyReadOnlyValue);
-  end;
-  fValue := value;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TValueHolder<T>'}
-
-constructor TValueHolder<T>.Create(const value: T);
-begin
-  Create(value, nil);
-end;
-
-constructor TValueHolder<T>.Create(const value: T; cleanUpProc: TCleanUpProc<T>);
-var
-  provider: IValueProvider<T>;
-begin
-  provider := TValueProvider<T>.Create(value, cleanUpProc);
-  Create(provider);
-end;
-
-constructor TValueHolder<T>.Create(const valueProvider: IValueProvider<T>);
-begin
-  fProvider := valueProvider;
-end;
-
-procedure TValueHolder<T>.ProviderNeeded;
-begin
-  if fProvider = nil then
-  begin
-    fProvider := TValueProvider<T>.Create;
-  end;
-end;
-
-function TValueHolder<T>.GetValue: T;
-begin
-  if fProvider <> nil then
-  begin
-    Result := fProvider.Value;
-  end
-  else
-  begin
-    Result := Default(T);
-  end;
-end;
-
-procedure TValueHolder<T>.SetValue(const Value: T);
-begin
-  ProviderNeeded;
-  fProvider.Value := value;
-end;
-
-class operator TValueHolder<T>.Implicit(const value: T): TValueHolder<T>;
-begin
-  Result := TValueHolder<T>.Create(value);
-end;
-
-class operator TValueHolder<T>.Implicit(const valueHolder: TValueHolder<T>): T;
-begin
-  Result := valueHolder.Value;
-end;
-
-class operator TValueHolder<T>.Implicit(
-  const valueProvider: IValueProvider<T>): TValueHolder<T>;
-begin
-  Result := TValueHolder<T>.Create(valueProvider);
-end;
-
-class operator TValueHolder<T>.Implicit(
-  const valueHolder: TValueHolder<T>): IValueProvider<T>;
-begin
-  valueHolder.ProviderNeeded;
-  Result := valueHolder.fProvider;
-end;
-
-{$ENDREGION}
-
-
 {$REGION 'TLifetimeWatcher'}
 
 constructor TLifetimeWatcher.Create(const proc: TProc);
@@ -2464,55 +2308,6 @@ begin
   if Assigned(fProc) then
     fProc;
   inherited Destroy;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TDelegate<T>'}
-
-destructor TDelegate<T>.Destroy;
-begin
-  fList.Free;
-  inherited Destroy;
-end;
-
-procedure TDelegate<T>.Add(const delegate: T);
-begin
-  if fList = nil then
-  begin
-    fList := TList<T>.Create;
-  end;
-  fList.Add(delegate);
-end;
-
-procedure TDelegate<T>.Remove(const delegate: T);
-begin
-  if fList <> nil then
-  begin
-    fList.Remove(delegate);
-  end;
-end;
-
-procedure TDelegate<T>.Clear;
-begin
-  if fList <> nil then
-  begin
-    fList.Clear;
-  end;
-end;
-
-procedure TDelegate<T>.Invoke(proc: TProc<T>);
-var
-  delegate: T;
-begin
-  if fList <> nil then
-  begin
-    for delegate in fList do
-    begin
-      proc(delegate);
-    end;
-  end;
 end;
 
 {$ENDREGION}
@@ -2985,6 +2780,155 @@ begin
   len := 0;
   VerQueryValue(fBlock, PChar(subBlock), Pointer(data), len);
   Result := data;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TDriveInfo'}
+
+constructor TDriveInfo.Create(const driveName: string);
+var
+  s: string;
+begin
+  s := UpperCase(driveName);
+  if not (Length(s) in [1..3]) or not CharInSet(s[1], ['A'..'Z']) then
+  begin
+    raise EArgumentException.Create('driveName');
+  end;
+  case Length(s) of
+    1:
+    begin
+      fRootDirectory := s + DriveDelim + PathDelim;
+    end;
+    2:
+    begin
+      if s[2] <> DriveDelim then
+      begin
+        raise EArgumentException.Create('driveName');
+      end;
+      fRootDirectory := s + PathDelim;
+    end;
+    3:
+    begin
+      if s[2] <> DriveDelim then
+        raise EArgumentException.Create('driveName');
+      if s[3] <> PathDelim then
+        raise EArgumentException.Create('driveName');
+      fRootDirectory := s;
+    end;
+    else
+    begin
+      Assert(False);
+    end;
+  end;
+  Assert(Length(fRootDirectory) = 3, 'Length of fRootDirectory should be 3.');
+  fDriveName := Copy(fRootDirectory, 1, 2);
+end;
+
+class function TDriveInfo.GetDrives: TArray<TDriveInfo>;
+var
+  drives: TStringDynArray;
+  i: Integer;
+begin
+  drives := Environment.GetLogicalDrives;
+  SetLength(Result, Length(drives));
+  for i := 0 to High(drives) do
+  begin
+    Result[i] := TDriveInfo.Create(drives[i]);
+  end;
+end;
+
+procedure TDriveInfo.CheckIsReady;
+begin
+  if not IsReady then
+  begin
+    raise EIOException.CreateResFmt(@SDriveNotReady, [fDriveName]);
+  end;
+end;
+
+procedure TDriveInfo.UpdateProperties;
+begin
+  CheckIsReady;
+  Win32Check(SysUtils.GetDiskFreeSpaceEx(
+    PChar(fRootDirectory),
+    fAvailableFreeSpace,
+    fTotalSize,
+    @fTotalFreeSpace
+  ));
+  Win32Check(Windows.GetVolumeInformation(
+    PChar(fRootDirectory),
+    fVolumeName,
+    Length(fVolumeName),
+    @fSerialNumber,
+    fMaximumComponentLength,
+    fFileSystemFlags,
+    fFileSystemName,
+    Length(fFileSystemName)
+  ));
+end;
+
+function TDriveInfo.GetAvailableFreeSpace: Int64;
+begin
+  UpdateProperties;
+  Result := fAvailableFreeSpace;
+end;
+
+function TDriveInfo.GetDriveFormat: string;
+begin
+  UpdateProperties;
+  Result := fFileSystemName;
+end;
+
+function TDriveInfo.GetDriveType: TDriveType;
+var
+  value: Cardinal;
+begin
+  value := Windows.GetDriveType(PChar(fRootDirectory));
+  case value of
+    DRIVE_NO_ROOT_DIR:  Result := dtNoRootDirectory;
+    DRIVE_REMOVABLE:    Result := dtRemovable;
+    DRIVE_FIXED:        Result := dtFixed;
+    DRIVE_REMOTE:       Result := dtNetwork;
+    DRIVE_CDROM:        Result := dtCDRom;
+    DRIVE_RAMDISK:      Result := dtRam;
+    else                Result := dtUnknown;  // DRIVE_UNKNOWN
+  end;
+end;
+
+function TDriveInfo.GetDriveTypeString: string;
+begin
+  Result := DriveTypeStrings[Self.DriveType];
+end;
+
+function TDriveInfo.GetIsReady: Boolean;
+begin
+  Result := Length(fRootDirectory) > 0;
+  Result := Result and (SysUtils.DiskSize(Ord(fRootDirectory[1]) - $40) > -1);
+end;
+
+function TDriveInfo.GetTotalFreeSpace: Int64;
+begin
+  UpdateProperties;
+  Result := fTotalFreeSpace;
+end;
+
+function TDriveInfo.GetTotalSize: Int64;
+begin
+  UpdateProperties;
+  Result := fTotalSize;
+end;
+
+function TDriveInfo.GetVolumeLabel: string;
+begin
+  UpdateProperties;
+  Result := fVolumeName;
+end;
+
+procedure TDriveInfo.SetVolumeLabel(const Value: string);
+begin
+  CheckIsReady;
+  Win32Check(Windows.SetVolumeLabel(PChar(fRootDirectory), PChar(value)));
 end;
 
 {$ENDREGION}
