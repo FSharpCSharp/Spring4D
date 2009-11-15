@@ -38,14 +38,15 @@ uses
 type
   TLifetimeManagerBase = class abstract(TInterfacedObject, ILifetimeManager, IInterface)
   private
-    fActivator: IComponentActivator;
     fModel: TComponentModel;
+    function GetActivator: IComponentActivator;
+  protected
+    property ComponentActivator: IComponentActivator read GetActivator;
+    property Model: TComponentModel read fModel;
   public
-    constructor Create(const activator: IComponentActivator; model: TComponentModel);
+    constructor Create(model: TComponentModel);
     function GetInstance: TObject; virtual; abstract;
     procedure Release(instance: TObject); virtual; abstract;
-    property Activator: IComponentActivator read fActivator;
-    property Model: TComponentModel read fModel;
   end;
 
   TSingletonLifetimeManager = class(TLifetimeManagerBase)
@@ -63,18 +64,21 @@ type
     procedure Release(instance: TObject); override;
   end;
 
-
 implementation
 
 
 {$REGION 'TLifetimeManagerBase'}
 
-constructor TLifetimeManagerBase.Create(const activator: IComponentActivator;
-  model: TComponentModel);
+constructor TLifetimeManagerBase.Create(model: TComponentModel);
 begin
+  TArgument.CheckNotNull(model, 'model');
   inherited Create;
-  fActivator := activator;
   fModel := model;
+end;
+
+function TLifetimeManagerBase.GetActivator: IComponentActivator;
+begin
+  Result := fModel.ComponentActivator;
 end;
 
 {$ENDREGION}
@@ -88,12 +92,12 @@ var
 begin
   if fInstance = nil then
   begin
-    localInstance := fActivator.CreateInstance(fModel);
+    localInstance := ComponentActivator.CreateInstance(fModel);
     if InterlockedCompareExchangePointer(Pointer(fInstance), localInstance, nil) <> nil then
     begin
       localInstance.Free;
     end
-    else if fInstance is TInterfacedObject then // Reference-Counting
+    else if fInstance is TInterfacedObject then // Keep another reference
     begin
       fInstance.GetInterface(IInterface, fLifetimeWatcher);
     end
@@ -121,7 +125,7 @@ end;
 
 function TTransientLifetimeManager.GetInstance: TObject;
 begin
-  Result := Activator.CreateInstance(Model);
+  Result := ComponentActivator.CreateInstance(Model);
 end;
 
 procedure TTransientLifetimeManager.Release(instance: TObject);
@@ -131,6 +135,4 @@ end;
 
 {$ENDREGION}
 
-
 end.
-

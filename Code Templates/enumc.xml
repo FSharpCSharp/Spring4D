@@ -8,17 +8,17 @@
 		<author>                  
 		Zuo Baoquan (Paul)
 		</author>
-		<point name="container">
+		<point name="parentControl">
 			<text>
-				container
+				parentControl
 			</text>
 			<hint>
-				Container control
+				Parent control
 			</hint>
 		</point>
 		<code language="Delphi" context="methodbody" delimiter="|"><![CDATA[
-EnumerateControls(|container|,
-|*|procedure(control: TWinControl)
+EnumerateControls(|parentControl|,
+|*|function(control: TWinControl): Boolean
 |*|begin
 |*||*||end|
 |*|end

@@ -18,7 +18,7 @@
 		</point>
 		<code language="Delphi" context="methodbody" delimiter="|"><![CDATA[
 EnumerateDataSet(|dataSet|,
-|*|procedure
+|*|function: Boolean
 |*|begin
 |*||*||end|
 |*|end

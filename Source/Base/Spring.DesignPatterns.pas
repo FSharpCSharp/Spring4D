@@ -70,14 +70,14 @@ type
   /// Represents an observable subject.
   /// </summary>
   IObservable<T> = interface
-    procedure AddObserver(const observer: T);
-    procedure RemoveObserver(const observer: T);
-    procedure NotifyObservers(callback: TProc<T>);
+    procedure AddListener(const listener: T);
+    procedure RemoveListener(const listener: T);
+    procedure NotifyListeners(callback: TProc<T>);
   end;
 
-  TObserverNotification = (
-    onAdded,
-    onRemoved
+  TListenerNotification = (
+    lnAdded,
+    lnRemoved
   );
 
   /// <summary>
@@ -85,20 +85,20 @@ type
   /// </summary>
   TObservable<T> = class(TInterfacedObject, IObservable<T>, IInterface)
   private
-    fObservers: TList<T>;
+    fListeners: TList<T>;
   protected
-    procedure Validate(const observer: T); virtual;
-    procedure DoObserverAdded(const observer: T); virtual;
-    procedure DoObserverRemoved(const observer: T); virtual;
-    procedure Notify(const observer: T; action: TObserverNotification); virtual;
-    function Contains(const observer: T): Boolean; virtual;
-    function GetObservers: TList<T>; virtual;
-    property Observers: TList<T> read GetObservers;
+    procedure Validate(const listener: T); virtual;
+    procedure DoListenerAdded(const listener: T); virtual;
+    procedure DoListenerRemoved(const listener: T); virtual;
+    procedure Notify(const listener: T; action: TListenerNotification); virtual;
+    function Contains(const listener: T): Boolean; virtual;
+    function GetListeners: TList<T>; virtual;
+    property Listeners: TList<T> read GetListeners;
   public
     destructor Destroy; override;
-    procedure AddObserver(const observer: T); virtual;
-    procedure RemoveObserver(const observer: T); virtual;
-    procedure NotifyObservers(callback: TProc<T>); virtual;
+    procedure AddListener(const listener: T); virtual;
+    procedure RemoveListener(const listener: T); virtual;
+    procedure NotifyListeners(callback: TProc<T>); virtual;
   end;
 
   /// <summary>
@@ -108,13 +108,13 @@ type
   /// </remarks>
   TSynchronizedObservable<T> = class(TObservable<T>, IObservable<T>, IInterface)
   protected
-    fObserversLock: IReadWriteSync;
-    function Contains(const observer: T): Boolean; override;
+    fListenersLock: IReadWriteSync;
+    function Contains(const listener: T): Boolean; override;
   public
     constructor Create;
-    procedure AddObserver(const observer: T); override;
-    procedure RemoveObserver(const observer: T); override;
-    procedure NotifyObservers(callback: TProc<T>); override;
+    procedure AddListener(const listener: T); override;
+    procedure RemoveListener(const listener: T); override;
+    procedure NotifyListeners(callback: TProc<T>); override;
   end;
 
   {$ENDREGION}
@@ -176,6 +176,18 @@ type
     function IsSatisfiedBy(const obj: T): Boolean; virtual; abstract;
   end;
 
+  TUnarySpecification<T> = class abstract(TSpecificationBase<T>)
+  protected
+    fSpecification: ISpecification<T>;
+  public
+    constructor Create(const specification: ISpecification<T>);
+  end;
+
+  TLogicalNotSpecification<T> = class sealed(TUnarySpecification<T>)
+  public
+    function IsSatisfiedBy(const obj: T): Boolean; override;
+  end;
+
   TBinarySpecification<T> = class abstract(TSpecificationBase<T>)
   protected
     fLeft: ISpecification<T>;
@@ -184,24 +196,12 @@ type
     constructor Create(const left, right: ISpecification<T>);
   end;
 
-  TUnarySpecification<T> = class abstract(TSpecificationBase<T>)
-  protected
-    fSpecification: ISpecification<T>;
-  public
-    constructor Create(const specification: ISpecification<T>);
-  end;
-
   TLogicalAndSpecification<T> = class sealed(TBinarySpecification<T>)
   public
     function IsSatisfiedBy(const obj: T): Boolean; override;
   end;
 
   TLogicalOrSpecification<T> = class sealed(TBinarySpecification<T>)
-  public
-    function IsSatisfiedBy(const obj: T): Boolean; override;
-  end;
-
-  TLogicalNotSpecification<T> = class sealed(TUnarySpecification<T>)
   public
     function IsSatisfiedBy(const obj: T): Boolean; override;
   end;
@@ -252,76 +252,82 @@ end;
 
 destructor TObservable<T>.Destroy;
 begin
-  fObservers.Free;
+  fListeners.Free;
   inherited Destroy;
 end;
 
-function TObservable<T>.Contains(const observer: T): Boolean;
+function TObservable<T>.Contains(const listener: T): Boolean;
 begin
-  Result := Observers.Contains(observer);
+  Result := Listeners.Contains(listener);
 end;
 
-procedure TObservable<T>.Validate(const observer: T);
+procedure TObservable<T>.Validate(const listener: T);
 begin
-  TArgument.CheckNotNull<T>(observer, 'observer');
+  TArgument.CheckNotNull<T>(listener, 'listener');
 end;
 
-procedure TObservable<T>.DoObserverAdded(const observer: T);
-begin
-end;
-
-procedure TObservable<T>.DoObserverRemoved(const observer: T);
+procedure TObservable<T>.DoListenerAdded(const listener: T);
 begin
 end;
 
-procedure TObservable<T>.Notify(const observer: T;
-  action: TObserverNotification);
+procedure TObservable<T>.DoListenerRemoved(const listener: T);
+begin
+end;
+
+procedure TObservable<T>.Notify(const listener: T;
+  action: TListenerNotification);
 begin
   case action of
-    onAdded:
+    lnAdded:
     begin
-      Observers.Add(observer);
-      DoObserverAdded(observer);
+      Listeners.Add(listener);
+      DoListenerAdded(listener);
     end;
-    onRemoved:
+    lnRemoved:
     begin
-      Observers.Remove(observer);
-      DoObserverRemoved(observer);
+      Listeners.Remove(listener);
+      DoListenerRemoved(listener);
     end;
   end;
 end;
 
-procedure TObservable<T>.AddObserver(const observer: T);
+procedure TObservable<T>.AddListener(const listener: T);
 begin
-  Validate(observer);
-  if not Contains(observer) then
-    Notify(observer, onAdded);
+  Validate(listener);
+  if not Contains(listener) then
+  begin
+    Notify(listener, lnAdded);
+  end;
 end;
 
-procedure TObservable<T>.RemoveObserver(const observer: T);
+procedure TObservable<T>.RemoveListener(const listener: T);
 begin
-  Validate(observer);
-  if Contains(observer) then
-    Notify(observer, onRemoved);
+  Validate(listener);
+  if Contains(listener) then
+  begin
+    Notify(listener, lnRemoved);
+  end;
 end;
 
-procedure TObservable<T>.NotifyObservers(callback: TProc<T>);
+procedure TObservable<T>.NotifyListeners(callback: TProc<T>);
 var
-  observer: T;
+  listener: T;
 begin
-  for observer in Observers do
+  TArgument.CheckNotNull(Assigned(callback), 'callback');
+
+  for listener in Listeners do
   begin
-    callback(observer);
+    callback(listener);
   end;
 end;
 
-function TObservable<T>.GetObservers: TList<T>;
+function TObservable<T>.GetListeners: TList<T>;
 begin
-  if fObservers = nil then
+  if fListeners = nil then
   begin
-    fObservers := TList<T>.Create;
+    fListeners := TList<T>.Create;
   end;
-  Result := fObservers;
+  Result := fListeners;
 end;
 
 {$ENDREGION}
@@ -332,47 +338,47 @@ end;
 constructor TSynchronizedObservable<T>.Create;
 begin
   inherited Create;
-  fObserversLock := TMREWSync.Create;
-  fObservers := TList<T>.Create;
+  fListenersLock := TMREWSync.Create;
+  fListeners := TList<T>.Create;
 end;
 
-procedure TSynchronizedObservable<T>.AddObserver(const observer: T);
+procedure TSynchronizedObservable<T>.AddListener(const listener: T);
 begin
-  fObserversLock.BeginWrite;
+  fListenersLock.BeginWrite;
   try
-    inherited AddObserver(observer);
+    inherited AddListener(listener);
   finally
-    fObserversLock.EndWrite;
+    fListenersLock.EndWrite;
   end;
 end;
 
-procedure TSynchronizedObservable<T>.RemoveObserver(const observer: T);
+procedure TSynchronizedObservable<T>.RemoveListener(const listener: T);
 begin
-  fObserversLock.BeginWrite;
+  fListenersLock.BeginWrite;
   try
-    inherited RemoveObserver(observer);
+    inherited RemoveListener(listener);
   finally
-    fObserversLock.EndWrite;
+    fListenersLock.EndWrite;
   end;
 end;
 
-procedure TSynchronizedObservable<T>.NotifyObservers(callback: TProc<T>);
+procedure TSynchronizedObservable<T>.NotifyListeners(callback: TProc<T>);
 begin
-  fObserversLock.BeginRead;
+  fListenersLock.BeginRead;
   try
-    inherited NotifyObservers(callback);
+    inherited NotifyListeners(callback);
   finally
-    fObserversLock.EndRead;
+    fListenersLock.EndRead;
   end;
 end;
 
-function TSynchronizedObservable<T>.Contains(const observer: T): Boolean;
+function TSynchronizedObservable<T>.Contains(const listener: T): Boolean;
 begin
-  fObserversLock.BeginRead;
+  fListenersLock.BeginRead;
   try
-    Result := inherited Contains(observer);
+    Result := inherited Contains(listener);
   finally
-    fObserversLock.EndRead;
+    fListenersLock.EndRead;
   end;
 end;
 

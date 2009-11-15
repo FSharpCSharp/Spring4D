@@ -3,28 +3,21 @@
 				version="1.0.0">
 	<template name="enumcp" invoke="auto">
 		<description>
-		Enumerates child controls in tab order with predicate.
+		Enumerates child components
 		</description>
 		<author>
 		Zuo Baoquan (Paul)
 		</author>
-		<point name="container">
+		<point name="owner">
 			<text>
-				container
+				owner
 			</text>
-			<hint>
-				Container control
-			</hint>
 		</point>
 		<code language="Delphi" context="methodbody" delimiter="|"><![CDATA[
-EnumerateControls(|container|,
-|*|function(control: TWinControl): Boolean
+EnumerateComponents(|owner|,
+|*|function(component: TComponent): Boolean
 |*|begin
 |*||*||end|
-|*|end,
-|*|procedure(control: TWinControl)
-|*|begin
-|*||*|
 |*|end
 );
 		]]>

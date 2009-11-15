@@ -33,6 +33,7 @@ uses
   Windows,
   Messages,
   SysUtils,
+  DateUtils,
   Types,
   TypInfo,
   Controls,
@@ -85,9 +86,12 @@ type
     B2: Byte;
     B3: Byte;
     B4: Byte;
-  end;
+  end experimental;
 
+{$WARNINGS OFF}
   TInt32Rec = TIntegerRec;
+{$WARNINGS ON}
+
 
   TInt64Rec = SysUtils.Int64Rec;
 
@@ -96,7 +100,7 @@ type
 
   {$REGION 'Exceptions'}
 
-  Exception = SysUtils.Exception;
+//  Exception = SysUtils.Exception;
 
   ENotSupportedException    = SysUtils.ENotSupportedException;
   ENotImplementedException  = class(Exception);
@@ -119,9 +123,8 @@ type
   EDirectoryNotFoundException   = SysUtils.EDirectoryNotFoundException;
   EDriveNotFoundException       = class(EIOException);
 
-  EArithmeticException = EMathError;
-
-  ETimeoutException = class(Exception);
+//  EArithmeticException = EMathError;
+//  ETimeoutException = class(Exception);
 
   ERttiException = class(Exception);
 
@@ -425,6 +428,9 @@ type
 
   {$REGION 'TVersion'}
 
+  // NOTE: Consider use the delphi style: major.minor[.release[.build]],
+  // that will break the current code.
+
   /// <summary>
   /// Represents version number in the format of "major.minor[.build[.revision]]"
   /// </summary>
@@ -464,7 +470,7 @@ type
     class operator GreaterThanOrEqual(const left, right: TVersion): Boolean;
     class operator LessThan(const left, right: TVersion): Boolean;
     class operator LessThanOrEqual(const left, right: TVersion): Boolean;
-  end;
+  end experimental;
 
   {$ENDREGION}
 
@@ -814,11 +820,6 @@ type
       class constructor Create;
       class destructor Destroy;
   private
-    class procedure OpenEnvironmentVariableKey(registry: TRegistry;
-      target: TEnvironmentVariableTarget; keyAccess: Cardinal); static;
-    class function GetCurrentVersionKey: string; static;
-    class procedure GetProcessEnvironmentVariables(list: TStrings); static;
-  private
     class function GetCurrentDirectory: string; static;
     class function GetMachineName: string; static;
     class function GetIsAdmin: Boolean; static;
@@ -834,6 +835,11 @@ type
     class function GetRegisteredOrganization: string; static;
     class function GetRegisteredOwner: string; static;
     class procedure SetCurrentDirectory(const value: string); static;
+  private
+    class procedure OpenEnvironmentVariableKey(registry: TRegistry;
+      target: TEnvironmentVariableTarget; keyAccess: Cardinal); static;
+    class function GetCurrentVersionKey: string; static;
+    class procedure GetProcessEnvironmentVariables(list: TStrings); static;
   public
     class function  GetCommandLineArgs: TStringDynArray; overload; static;
     class procedure GetCommandLineArgs(list: TStrings); overload; static;
@@ -904,6 +910,32 @@ type
     constructor Create(objectAddress: TObject; methodAddress: Pointer);
     destructor Destroy; override;
     function Invoke: Pointer;
+  end; // Consider hide the implementation.
+
+  {$ENDREGION}
+
+
+  {$REGION 'Lifecycle Interfaces (Experimental)'}
+
+  IInitializable = interface
+    ['{A36BB399-E592-4DFB-A091-EDBA3BE0648B}']
+    procedure Initialize;
+  end;
+
+  IStartable = interface
+    ['{8D0252A1-7993-44AA-B0D9-326019B58E78}']
+    procedure Start;
+    procedure Stop;
+  end;
+
+  IRecyclable = interface
+    ['{85114F41-70E5-4AF4-A375-E445D4619E4D}']
+    procedure Recycle;
+  end;
+
+  IDisposable = interface
+    ['{6708F9BF-0237-462F-AFA2-DF8EF21939EB}']
+    procedure Dispose;
   end;
 
   {$ENDREGION}
@@ -923,7 +955,10 @@ type
     ltCustom
   );
 
-  TLifetimeAttribute = class abstract(TCustomAttribute)
+  /// <summary>
+  /// Abstract Lifetime Attribute class
+  /// </summary>
+  TLifetimeAttributeBase = class abstract(TCustomAttribute)
   private
     fLifetimeType: TLifetimeType;
   public
@@ -931,12 +966,18 @@ type
     property LifetimeType: TLifetimeType read fLifetimeType;
   end;
 
-  SingletonAttribute = class(TLifetimeAttribute)
+  /// <summary>
+  /// Singleton Attribute
+  /// </summary>
+  SingletonAttribute = class(TLifetimeAttributeBase)
   public
     constructor Create;
   end;
 
-  TransientAttribute = class(TLifetimeAttribute)
+  /// <summary>
+  /// Transient Attribute
+  /// </summary>
+  TransientAttribute = class(TLifetimeAttributeBase)
   public
     constructor Create;
   end;
@@ -949,39 +990,17 @@ type
 //  PooledAttribute = class(TLifetimeAttribute)
 //  end;
 
-//  CustomLifetimeAttribute = class(TLifetimeAttribute)
-//  private
-//    fLifetimeManagerType: PTypeInfo;
+//  TCustomLifetimeAttribute = class abstract(TLifetimeAttribute)
 //  end;
 
-//  DependencyAttribute = class(TCustomAttribute)
+  /// <summary>
+  /// Injection Attribute
+  /// </summary>
+  InjectionAttribute = class(TCustomAttribute)
+  end;
+
+//  ComponentAttribute = class(TCustomAttribute)
 //  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'Lifecycle Interfaces (Experimental)'}
-
-  IInitializable = interface
-    ['{A36BB399-E592-4DFB-A091-EDBA3BE0648B}']
-    procedure Initialize;
-  end;
-
-  IStartable = interface
-    ['{8D0252A1-7993-44AA-B0D9-326019B58E78}']
-    procedure Start;
-    procedure Stop;
-  end;
-
-  IDisposable = interface
-    ['{6708F9BF-0237-462F-AFA2-DF8EF21939EB}']
-    procedure Dispose;
-  end;
-
-  IRecyclable = interface
-    ['{85114F41-70E5-4AF4-A375-E445D4619E4D}']
-    procedure Recycle;
-  end;
 
   {$ENDREGION}
 
@@ -995,14 +1014,14 @@ type
   function ApplicationVersionString: string;
 
   /// <summary>
-  /// Determines whether a specified file exists. It will raise an
-  /// EFileNotFoundException exception when not found.
+  /// Determines whether a specified file exists. An EFileNotFoundException
+  /// exception will be raised when not found.
   /// </summary>
   procedure CheckFileExists(const fileName: string);
 
   /// <summary>
-  /// Determines whether a specified directory exists. It will raise an
-  /// EDirectoryNotFoundException exception when not found.
+  /// Determines whether a specified directory exists. An EDirectoryNotFoundException
+  /// exception will be raised when not found.
   /// </summary>
   procedure CheckDirectoryExists(const directory: string);
 
@@ -1069,8 +1088,22 @@ type
     out propInfo: PPropInfo): Boolean;
 
   /// <summary>
+  /// Try parsing a string to a datetime value based on the specified format.
+  /// Returns True if the input string matches the format.
+  /// </summary>
+  function TryParseDateTime(const s, format: string; out value: TDateTime): Boolean;
+
+  /// <summary>
+  /// Parses a string to a datetime value based on the specified format.
+  /// An EConvertError exception will be raised if failed to parse the string.
+  /// </summary>
+  function ParseDateTime(const s, format: string): TDateTime;
+
+  /// <summary>
   /// Try setting focus to a control.
   /// </summary>
+  /// <remarks>
+  /// </remarks>
   function TrySetFocus(control: TWinControl): Boolean;
 
   function TryFocusControl(control: TWinControl): Boolean;
@@ -1078,7 +1111,7 @@ type
 
   /// <summary>
   /// Determines if a variant is null or empty. The parameter "trimeWhiteSpace"
-  /// is an option only for string variant.
+  /// is an option only for strings.
   /// </summary>
   function VarIsNullOrEmpty(const value: Variant; trimWhiteSpace: Boolean = False): Boolean;
 
@@ -1094,15 +1127,22 @@ type
   procedure UpdateStrings(strings: TStrings; proc: TProc); inline;
 
   /// <summary>
+  /// Enumerates all child components, recursively.
+  /// </summary>
+  /// <param name="callback">Returning false will stop the enumeration.</param>
+  procedure EnumerateComponents(owner: TComponent; callback: TFunc<TComponent, Boolean>);
+
+  /// <summary>
   /// Walkthrough all child controls in tab-order, recursively.
   /// </summary>
-  procedure EnumerateControls(container: TWinControl; callback: TProc<TWinControl>); overload;
-  procedure EnumerateControls(container: TWinControl; predicate: TPredicate<TWinControl>; callback: TProc<TWinControl>); overload;
+  /// <param name="callback">Returning false will stop the enumeration.</param>
+  procedure EnumerateControls(parentControl: TWinControl; callback: TFunc<TWinControl, Boolean>);
 
   /// <summary>
   /// Walkthrough all dataset records from the first one.
   /// </summary>
-  procedure EnumerateDataSet(dataSet: TDataSet; proc: TProc); experimental;
+  /// <param name="callback">Returning false will stop the enumeration.</param>
+  procedure EnumerateDataSet(dataSet: TDataSet; callback: TFunc<Boolean>);
 
   {$ENDREGION}
 
@@ -1360,6 +1400,68 @@ begin
   Result := TrySetFocus(control);
 end;
 
+function TryParseDateTime(const s, format: string; out value: TDateTime): Boolean;
+var
+  localString: string;
+  stringFormat: string;
+  year, month, day: Word;
+  hour, minute, second, milliSecond: Word;
+
+  function ExtractElementDef(const element: string; const defaultValue: Integer = 0): Integer;
+  var
+    position: Integer;
+  begin
+    position := Pos(element, stringFormat);
+    if position > 0 then
+    begin
+      Result := StrToInt(Copy(localString, position, Length(element)));
+    end
+    else
+    begin
+      Result := defaultValue;
+    end;
+  end;
+begin
+  localString := Trim(s);
+  stringFormat := UpperCase(format);
+  Result := Length(localString) = Length(stringFormat);
+  if Result then
+  try
+    year := ExtractElementDef('YYYY', 0);
+    if year = 0 then
+    begin
+      year := ExtractElementDef('YY', 1899);
+      if year < 1899 then
+      begin
+        Inc(year, (DateUtils.YearOf(Today) div 100) * 100);
+      end;
+    end;
+    month := ExtractElementDef('MM', 12);
+    day := ExtractElementDef('DD', 30);
+    hour := ExtractElementDef('HH');
+    minute := ExtractElementDef('NN');
+    second := ExtractElementDef('SS');
+    milliSecond := ExtractElementDef('ZZZ');
+    value := EncodeDateTime(year, month, day, hour, minute, second, milliSecond);
+  except
+    Result := False;
+  end;
+end;
+
+function ParseDateTime(const s, format: string): TDateTime;
+begin
+  if not TryParseDateTime(s, format, Result) then
+  begin
+    raise EConvertError.CreateResFmt(@SInvalidDateTime, [s]);
+  end;
+end;
+
+//procedure RaiseAbstractClassException(classType: TClass);
+//begin
+//  TArgument.CheckNotNull(classType, 'classType');
+//  raise EAbstractError.CreateResFmt(@SAbstractClassCreation, [classType.ClassName]);
+//end;
+
 function VarIsNullOrEmpty(const value: Variant; trimWhiteSpace: Boolean): Boolean;
 var
   s: string;
@@ -1400,36 +1502,42 @@ begin
   end;
 end;
 
-procedure EnumerateControls(container: TWinControl; callback: TProc<TWinControl>);
+procedure EnumerateComponents(owner: TComponent; callback: TFunc<TComponent, Boolean>);
+var
+  component: TComponent;
 begin
-  EnumerateControls(container, nil, callback);
+  TArgument.CheckNotNull(owner, 'owner');
+  TArgument.CheckNotNull(Assigned(callback), 'callback');
+
+  for component in owner do
+  begin
+    if not callback(component) then
+    begin
+      Exit;
+    end;
+    if component.ComponentCount > 0 then
+    begin
+      EnumerateComponents(component, callback);
+    end;
+  end;
 end;
 
-procedure EnumerateControls(container: TWinControl;
-  predicate: TPredicate<TWinControl>; callback: TProc<TWinControl>); overload;
+procedure EnumerateControls(parentControl: TWinControl; callback: TFunc<TWinControl, Boolean>);
 var
   list: TList;
   i: Integer;
 begin
-  TArgument.CheckNotNull(container, 'container');
+  TArgument.CheckNotNull(parentControl, 'parentControl');
   TArgument.CheckNotNull(Assigned(callback), 'callback');
 
   list := TList.Create;
   try
-    container.GetTabOrderList(list);
-    if Assigned(predicate) then
+    parentControl.GetTabOrderList(list);
+    for i := 0 to list.Count - 1 do
     begin
-      for i := 0 to list.Count - 1 do
+      if not callback(TWinControl(list[i])) then
       begin
-        if predicate(list[i]) then
-          callback(TWinControl(list[i]));
-      end;
-    end
-    else
-    begin
-      for i := 0 to list.Count - 1 do
-      begin
-        callback(TWinControl(list[i]));
+        Exit;
       end;
     end;
   finally
@@ -1437,17 +1545,16 @@ begin
   end;
 end;
 
-procedure EnumerateDataSet(dataSet: TDataSet; proc: TProc);
+procedure EnumerateDataSet(dataSet: TDataSet; callback: TFunc<Boolean>);
 begin
   TArgument.CheckNotNull(dataSet, 'dataSet');
-  TArgument.CheckNotNull(Assigned(proc), 'proc');
+  TArgument.CheckNotNull(Assigned(callback), 'callback');
 
   dataSet.DisableControls;
   try
     dataSet.First;
-    while not dataSet.Eof do
+    while not dataSet.Eof and callback do
     begin
-      proc;
       dataSet.Next;
     end;
   finally
@@ -3642,7 +3749,7 @@ end;
 
 { TLifetimeAttribute }
 
-constructor TLifetimeAttribute.Create(lifetimeType: TLifetimeType);
+constructor TLifetimeAttributeBase.Create(lifetimeType: TLifetimeType);
 begin
   inherited Create;
   fLifetimeType := lifetimeType;

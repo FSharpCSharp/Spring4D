@@ -1,3 +1,55 @@
+2009-11-15	v0.1.2.560
+
+<Breaking Changes>:
+
+[Project]
+The Delphi Spring Framework has been splited into the following projects:
+* Spring.Base.dpk
+* Spring.Core.dpk
+* Spring.Tests.dpr
+The source folders were reorganized. (Base, Core)
+Note: Please uninstall the prior version and update the library path.
+
+[Spring.System]
+* Redesigned EnumerateControls and EnumerateDataSet. (No predicate overloads)
+The callback parameter were renamed from TProc (or TProc<T>) to TFunc<Boolean> (or TFunc<T, Boolean>).
+Returning False in the callback will stop the enumeration. Corresponsive live templates were updated.
+
+[Spring.DesignPatterns]
+* Renamed all methods of IObservable<T> and the implementation classes.
+IObservable<T> = interface
+  procedure AddListener(const listener: T);
+  procedure RemoveListener(const listener: T);
+  procedure NotifyListeners(callback: TProc<T>);
+end;
+
+[Live Templates]
+enumcp -> EnumerateComponents
+argnotnull -> argn (TArgument.CheckNotNull)
+argenum -> arge (TArgument.CheckEnum<T>)
+
+<Other Changes>:
+[Spring.IOC]
+Implemneted an initial light-weight IoC Container which supports:
+* Constructor, property, method and even field injection
+* Supports different lifetime manager (Singleton/Transient, etc)
+* Strongly-Typed interfaces
+* Fluent style of Registration and Injection
+* Bootstrap
+* Check Circular Dependencies
+
+[Next Step]
+* Supports primitive arguments.
+* Supports Lifecycle interfaces (IInitializable, IStartable, etc)
+* Thread safety
+
+[Spring.System]
++Added EnumerateComponents (shortcut: enumcp)
++Added TryParseDateTime and ParseDateTime
+
+[Spring.Collections]
+*Moved the adapter classes (e.g. TListAdapter<T>) to Spring.Collections.Adapters
+
 2009-10-27	v0.1.1.558
 First Release
 

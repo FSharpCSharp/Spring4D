@@ -29,7 +29,6 @@ interface
 uses
   TestFramework,
   Spring.System,
-  Spring.IoC,
   Spring.IoC.Core,
   Spring.IoC.LifetimeManager;
 
@@ -42,6 +41,7 @@ type
         fModel: TComponentModel;
       public
         function CreateInstance(model: TComponentModel): TObject;
+        procedure DestroyInstance(instance: TObject);
         property Model: TComponentModel read fModel;
       end;
 
@@ -50,6 +50,7 @@ type
         fModel: TComponentModel;
       public
         function CreateInstance(model: TComponentModel): TObject;
+        procedure DestroyInstance(instance: TObject);
         property Model: TComponentModel read fModel;
       end;
 
@@ -82,6 +83,10 @@ type
     procedure TestReferences;
   end;
 
+  TTestPerThreadLifetimeManager = class(TLifetimeManagerTestCase)
+
+  end;
+
 implementation
 
 { TLifetimeManagerTestCase }
@@ -91,6 +96,7 @@ begin
   inherited;
   fModel := TComponentModel.Create('', nil, nil);
   fActivator := TMockObjectActivator.Create;
+  fModel.ComponentActivator := fActivator;
 end;
 
 procedure TLifetimeManagerTestCase.TearDown;
@@ -100,21 +106,12 @@ begin
   inherited;
 end;
 
-{ TLifetimeManagerTestCase.TMockComponentActivator }
-
-function TLifetimeManagerTestCase.TMockObjectActivator.CreateInstance(
-  model: TComponentModel): TObject;
-begin
-  Result := TMockObject.Create;
-  fModel := model;
-end;
-
 { TSingletonLifetimeTestCase }
 
 procedure TTestSingletonLifetimeManager.SetUp;
 begin
   inherited;
-  fLifetimeManager := TSingletonLifetimeManager.Create(fActivator, fModel);
+  fLifetimeManager := TSingletonLifetimeManager.Create(fModel);
 end;
 
 procedure TTestSingletonLifetimeManager.TearDown;
@@ -129,10 +126,15 @@ var
 begin
   obj1 := fLifetimeManager.GetInstance;
   obj2 := fLifetimeManager.GetInstance;
-  CheckIs(obj1, TMockObject, 'obj1');
-  CheckIs(obj2, TMockObject, 'obj2');
-  CheckSame(obj1, obj2);
-  CheckSame(fActivator.Model, fModel);
+  try
+    CheckIs(obj1, TMockObject, 'obj1');
+    CheckIs(obj2, TMockObject, 'obj2');
+    CheckSame(obj1, obj2);
+    CheckSame(fActivator.Model, fModel);
+  finally
+    fLifetimeManager.Release(obj1);
+    fLifetimeManager.Release(obj2);
+  end;
 end;
 
 { TTestTransientLifetimeManager }
@@ -140,7 +142,7 @@ end;
 procedure TTestTransientLifetimeManager.SetUp;
 begin
   inherited;
-  fLifetimeManager := TTransientLifetimeManager.Create(fActivator, fModel);
+  fLifetimeManager := TTransientLifetimeManager.Create(fModel);
 end;
 
 procedure TTestTransientLifetimeManager.TearDown;
@@ -166,6 +168,21 @@ begin
   end;
 end;
 
+{ TLifetimeManagerTestCase.TMockComponentActivator }
+
+function TLifetimeManagerTestCase.TMockObjectActivator.CreateInstance(
+  model: TComponentModel): TObject;
+begin
+  Result := TMockObject.Create;
+  fModel := model;
+end;
+
+procedure TLifetimeManagerTestCase.TMockObjectActivator.DestroyInstance(
+  instance: TObject);
+begin
+
+end;
+
 { TLifetimeManagerTestCase.TMockInterfacedObjectActivator }
 
 function TLifetimeManagerTestCase.TMockInterfacedObjectActivator.CreateInstance(
@@ -173,6 +190,12 @@ function TLifetimeManagerTestCase.TMockInterfacedObjectActivator.CreateInstance(
 begin
   Result := TMockInterfacedObject.Create;
   fModel := model;
+end;
+
+procedure TLifetimeManagerTestCase.TMockInterfacedObjectActivator.DestroyInstance(
+  instance: TObject);
+begin
+
 end;
 
 end.

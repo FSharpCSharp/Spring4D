@@ -25,11 +25,11 @@
 {$IFNDEF SPRING_INC}
 {$DEFINE SPRING_INC}
 
-{$I jedi.inc}                // Import JEDI Development environment directives
+{.$I jedi.inc}                // Import JEDI Development environment directives
 
-{$IFNDEF DELPHI2010_UP}
+{$IF RTLVersion < 21.0}
   {$MESSAGE ERROR 'Delphi Spring Framework should be compiled in Delphi 2010 or later.'}
-{$ENDIF}
+{$IFEND}
 
 {$IFDEF DELPHI2006_UP}
   {$DEFINE SUPPORTS_REGION}  // Enable REGION Directive in Delphi 2006 or later.

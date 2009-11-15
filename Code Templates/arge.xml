@@ -1,13 +1,21 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <codetemplate	xmlns="http://schemas.borland.com/Delphi/2005/codetemplates"
 				version="1.0.0">
-	<template name="argnotnull" invoke="auto">
+	<template name="arge" invoke="auto">
 		<description>
-		TArgument.CheckNotNull
+		TArgument.CheckEnum
 		</description>
 		<author>                  
 		Zuo Baoquan (Paul)
 		</author>
+		<point name="T">
+			<text>
+				T
+			</text>
+			<hint>
+				Type
+			</hint>
+		</point>
 		<point name="argument">
 			<text>
 				argument
@@ -17,7 +25,7 @@
 			</hint>
 		</point>
 		<code language="Delphi" context="methodbody" delimiter="|"><![CDATA[
-TArgument.CheckNotNull(|argument|, '|argument|');|end|]]>
+TArgument.CheckEnum<|T|>(|argument|, '|argument|');|end|]]>
 		</code>
 	</template>
 </codetemplate>

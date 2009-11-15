@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-program SpringFrameworkTests;
+program Spring.Tests;
 
 {.$DEFINE CONSOLE_TESTRUNNER}
 
@@ -45,7 +45,8 @@ uses
   Spring.Tests.Helpers in 'Tests\Spring.Tests.Helpers.pas',
   Spring.Tests.IoC in 'Tests\Spring.Tests.IoC.pas',
   Spring.Tests.DesignPatterns in 'Tests\Spring.Tests.DesignPatterns.pas',
-  Spring.Tests.IoC.LifetimeManager in 'Tests\Spring.Tests.IoC.LifetimeManager.pas';
+  Spring.Tests.IoC.LifetimeManager in 'Tests\Spring.Tests.IoC.LifetimeManager.pas',
+  Spring.Tests.IoC.Components in 'Tests\Spring.Tests.IoC.Components.pas';
 
 {$R *.RES}
 
@@ -54,6 +55,7 @@ begin
   RegisterTests('Spring System Tests', [
     TTestSplitString.Suite,
     TTestSplitNullTerminatedStrings.Suite,
+    TTestTryParseDateTime.Suite,
     TTestVersion.Suite,
     TTestEnum.Suite,
     TTestBuffer.Suite,
@@ -79,7 +81,8 @@ begin
   RegisterTests('Spring IoC Tests', [
     TTestSingletonLifetimeManager.Suite,
     TTestTransientLifetimeManager.Suite,
-    TTestContainer.Suite
+    TTestContainer.Suite,
+    TTestCircularDependency.Suite
   ]);
 end;
 

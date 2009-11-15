@@ -5,7 +5,7 @@ Using Live Templates
 
 1. What's the Live Templates?
 ----------------------------------------------------------------------------------------------
-Live templates, which are introduced since Delphi 2005 (or higher?), are reusable code statements that are accessible from the Code Editor. You can insert pre-defined code segments into your code or add your own code snippets to the Template window.
+Live templates, which are introduced since Delphi 2006, are reusable code statements that are accessible from the Code Editor. You can insert pre-defined code segments into your code or add your own code snippets to the Template window.
 
 Note: If a template has one or more jump points that are editable, it will automatically enter SyncEdit mode when you are inserting it into your code. The jump points allow you to navigate between different areas of the template, using the Tab key and SHIFT+Tab keys. Pressing ESC, Enter,or pressing the Tab key from the last jump point exits SyncEdit mode and puts the Code Editor back into regular edit mode.
 
@@ -25,7 +25,7 @@ c. Enjoy it!
 The live templates introduced by delphi spring framework can be divide into the following groups:
 
 a. Properties (Class/Record/Interface)
-Simple Grammar: [i] prop [array] [f|g] [f|s]
+Simple Grammar: [i] <prop> [array] [f|g] [f|s]
 
 i: 	Interface (Including declaration of getter and/or setter)
 array: 	Array properties (e.g. property Items[const index: Integer]: TObject)
@@ -38,7 +38,7 @@ argnotnull	TArgument.CheckNotNull(argument, 'argument');
 argenum		TArgument.CheckEnum<T>(argument, 'argument');
 
 enumc		EnumerateControls
-enumcp		EnumerateControls (with predicate)
+enumcp		EnumerateComponents
 enumd		EnumerateDataSet
 
 lock		Lock
@@ -53,21 +53,21 @@ c. Common Anonymous Methods
 procedure
 begin
   |end|
-end;
+end
 
 *funca: (Anonymous Function)
 
 function: |Boolean|
 begin
   |end|
-end;
+end
 
 *preda: (Anonymous Predicate)
 
 function (|item|: |TObject|): Boolean
 begin
   |end|
-end;
+end
 
 note: |end| means the endpoint.
 

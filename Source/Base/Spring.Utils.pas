@@ -57,8 +57,6 @@ type
   /// <summary>
   /// Encapsulates common message dialogs.
   /// </summary>
-  /// <author>Zuo Baoquan (Paul)</author>
-  /// <author>HR168</author>
   TMessageBox = class
   private
     class constructor Create;
@@ -254,8 +252,6 @@ end;
 
 
 {$REGION 'TMessageBox'}
-
-{ TMessageBox }
 
 class constructor TMessageBox.Create;
 begin

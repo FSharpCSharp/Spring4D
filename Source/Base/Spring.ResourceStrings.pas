@@ -40,6 +40,8 @@ resourcestring
 
   SCannotAccessRegistryKey     = 'Cannot access the registry key: %s.';
 
+  SAbstractClassCreation       = 'Cannot create the abstract class: %s.';
+
   SFileNotFoundException          = 'File not found: %s';
   SDirectoryNotFoundException     = 'Directory not found: %s';
   SNullableTypeHasNoValue         = 'Invalid operation, Nullable type has no value.';
@@ -50,10 +52,13 @@ resourcestring
   STimeoutException               = 'Timeout';
   SInsufficientMemoryException    = 'Insufficient memory.';
 
+  SUnexpectedParameterLength = 'Unexpected parameter length.';
+
   SNoTypeInfo          = 'No type information found.';
   SUnexpectedTypeKind  = 'Unexpected type kind: %s.';
   SNotEnumeratedType   = 'Type "%s" is not enumerated type.';
   SIncorrectFormat     = 'Unable to convert %s.';
+  SInvalidDateTime     = '"%S" is not a valid date and time.';
   SIllegalFieldCount   = 'fieldCount is more than the number of components defined in the current Version object.';
 
   SUnknownOSDescription      = 'Unknown Operating System';
@@ -114,6 +119,18 @@ resourcestring
   {$REGION 'Spring.Collections'}
 
   SCannotResetEnumerator = 'Cannot reset the enumerator.';
+
+  {$ENDREGION}
+
+
+  {$REGION 'Spring.IoC'}
+
+  SNonGuidInterfaceServicesAreNotSupported = 'Non-Guid Interface Services are not supported.';
+  SCircularDependencyDetected = 'A circle was detected when trying to resolve the dependency: %s.';
+  SCannotResolveDependency = 'Cannot resolve the dependency: %s.';
+  SUnexpectedDependencyParameterType = 'Unexpected dependency parameter type.';
+  SNoComponentFound = 'No component was registered for the service type: %s.';
+  SLifetimeManagerWasExpected = 'LifetimeTypeManager was expected.';
 
   {$ENDREGION}
 

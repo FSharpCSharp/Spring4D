@@ -31,6 +31,7 @@ interface
 uses
   Classes,
   TypInfo,
+  DateUtils,
   SysUtils,
   Graphics,
   Variants,
@@ -50,6 +51,14 @@ type
     procedure TestEmptyEntry;
     procedure TestMoreEntries;
     procedure TestRemoveEmptyEntries;
+  end;
+
+  TTestTryParseDateTime = class(TTestCase)
+  published
+    procedure TestParseDate;
+    procedure TestParseTime;
+    procedure TestParseDateTime;
+    procedure TestFailedCases;
   end;
 
   TTestSplitNullTerminatedStrings = class(TTestCase)
@@ -119,6 +128,11 @@ type
   end;
 
   TTestRtti = class(TTestCase)
+  published
+
+  end;
+
+  TTestArgument = class(TTestCase)
   published
 
   end;
@@ -547,14 +561,16 @@ begin
 end;
 
 procedure TTestNullableInteger.TestException;
+var
+  n: Integer;
 begin
   ExpectedException := EInvalidOperation;
-  fInteger.Value;
+  n := fInteger.Value;
 end;
 
 procedure TTestNullableInteger.TestLocalVariable;
 var
-  dirtyValue: TNullable<Integer>;  { live in stack }
+  dirtyValue: TNullable<Integer>;  { lives in stack }
 begin
   CheckFalse(dirtyValue.HasValue);
 end;
@@ -568,8 +584,10 @@ begin
   value := Null;
   fInteger := TNullable<Integer>.Create(value);
   CheckFalse(fInteger.HasValue);
+
   fInteger := value;
   CheckFalse(fInteger.HasValue);
+
   value := ExpectedInteger;
   fInteger := TNullable<Integer>.Create(value);
   CheckTrue(fInteger.HasValue);
@@ -793,6 +811,69 @@ begin
   TBuffer.SetByte(fInteger, 2, $34);
   TBuffer.SetByte(fInteger, 3, $12);
   CheckEquals($12345678, fInteger);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestTryParseDateTime'}
+
+procedure TTestTryParseDateTime.TestParseDate;
+var
+  actual, expected: TDateTime;
+begin
+  expected := EncodeDate(2009, 10, 18);
+
+  CheckTrue(TryParseDateTime('20091018', 'YYYYMMDD', actual));
+  CheckTrue(SameDateTime(actual, expected));
+
+  CheckTrue(TryParseDateTime('091018', 'YYMMDD', actual));
+  CheckTrue(SameDateTime(actual, expected));
+
+  CheckTrue(TryParseDateTime('10-18-2009', 'MM-DD-YYYY', actual));
+  CheckTrue(SameDateTime(actual, expected));
+
+  CheckTrue(TryParseDateTime(' 2009-10-18 ', 'YYYY-MM-DD', actual));
+  CheckTrue(SameDateTime(actual, expected));
+end;
+
+procedure TTestTryParseDateTime.TestParseTime;
+var
+  actual, expected: TDateTime;
+begin
+  expected := EncodeTime(12, 10, 18, 35);
+  CheckTrue(TryParseDateTime('12:10:18.035', 'hh:nn:ss.zzz', actual));
+  CheckTrue(SameDateTime(actual, expected));
+
+  expected := EncodeTime(12, 10, 0, 0);
+  CheckTrue(TryParseDateTime('12:10 ', 'hh:nn', actual));
+  CheckTrue(SameDateTime(actual, expected));
+end;
+
+procedure TTestTryParseDateTime.TestParseDateTime;
+var
+  actual, expected: TDateTime;
+begin
+  expected := EncodeDateTime(2009, 10, 18, 12, 30, 59, 200);
+  CheckTrue(TryParseDateTime('2009-10-18 12:30:59.200', 'YYYY-MM-DD HH:NN:SS.ZZZ', actual));
+  CheckTrue(SameDateTime(actual, expected));
+
+  expected := EncodeDateTime(2009, 10, 18, 12, 30, 59, 200);
+  CheckTrue(TryParseDateTime('20091018123059200', 'YYYYMMDDHHNNSSZZZ', actual));
+  CheckTrue(SameDateTime(actual, expected));
+end;
+
+procedure TTestTryParseDateTime.TestFailedCases;
+var
+  value: TDateTime;
+begin
+  CheckFalse(TryParseDateTime('', 'YYYYMMDD', value));
+  CheckFalse(TryParseDateTime(' ', 'YYYYMMDD', value));
+  CheckFalse(TryParseDateTime('2009', 'YYYYMMDD', value));
+  CheckFalse(TryParseDateTime('2009080', 'YYYYMMDD', value));
+  CheckFalse(TryParseDateTime('2009080A', 'YYYYMMDD', value));
+  CheckFalse(TryParseDateTime('200908011230', 'YYYYMMDDHHNNSS', value));
+  CheckFalse(TryParseDateTime('20090801123007', 'YYYYMMDDHHNNSSZZZ', value));
 end;
 
 {$ENDREGION}

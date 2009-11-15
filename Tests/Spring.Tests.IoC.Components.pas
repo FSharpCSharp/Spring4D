@@ -1,10 +1,10 @@
 {***************************************************************************}
 {                                                                           }
-{               Delphi Spring Framework                                     }
+{           Delphi Spring Framework                                         }
 {                                                                           }
-{               Copyright (C) 2008-2009 Zuo Baoquan                         }
+{           Copyright (C) 2009-2010 Delphi Spring Framework                 }
 {                                                                           }
-{               http://delphi-spring-framework.googlecode.com               }
+{           http://delphi-spring-framework.googlecode.com                   }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -22,57 +22,15 @@
 {                                                                           }
 {***************************************************************************}
 
-package DelphiSpringFramework_D2010;
+unit Spring.Tests.IoC.Components;
 
-{$R *.res}
-{$ALIGN 8}
-{$ASSERTIONS ON}
-{$BOOLEVAL OFF}
-{$DEBUGINFO ON}
-{$EXTENDEDSYNTAX ON}
-{$IMPORTEDDATA ON}
-{$IOCHECKS ON}
-{$LOCALSYMBOLS ON}
-{$LONGSTRINGS ON}
-{$OPENSTRINGS ON}
-{$OPTIMIZATION OFF}
-{$OVERFLOWCHECKS OFF}
-{$RANGECHECKS OFF}
-{$REFERENCEINFO OFF}
-{$SAFEDIVIDE OFF}
-{$STACKFRAMES OFF}
-{$TYPEDADDRESS OFF}
-{$VARSTRINGCHECKS ON}
-{$WRITEABLECONST OFF}
-{$MINENUMSIZE 1}
-{$IMAGEBASE $400000}
-{$DESCRIPTION 'Delphi Spring Framework'}
-{$IMPLICITBUILD ON}
-{$DEFINE DEBUG}
+interface
 
-requires
-  rtl,
-  vcl,
-  dbrtl,
-  xmlrtl,
-  adortl;
+uses
+  TestFramework,
+  Spring.System,
+  Spring.IoC.Core;
 
-contains
-  Spring.Win32API in 'Source\Spring.Win32API.pas',
-  Spring.Collections in 'Source\Spring.Collections.pas',
-  Spring.DesignPatterns in 'Source\Spring.DesignPatterns.pas',
-  Spring.Helpers in 'Source\Spring.Helpers.pas',
-  Spring.IoC in 'Source\Spring.IoC.pas',
-  Spring.ResourceStrings in 'Source\Spring.ResourceStrings.pas',
-  Spring.System in 'Source\Spring.System.pas',
-  Spring.IoC.Core in 'Source\IoC\Spring.IoC.Core.pas',
-  Spring.IoC.LifetimeManager in 'Source\IoC\Spring.IoC.LifetimeManager.pas',
-  Spring.Utils in 'Source\Spring.Utils.pas';
+implementation
 
 end.
-
-
-
-
-
-

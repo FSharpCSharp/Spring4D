@@ -31,15 +31,17 @@ program Console;
 uses
   FastMM4,
   Classes,
+  Controls,
   Windows,
-  IOUtils,
+  IOUtils,  FileCtrl,
   SysUtils,
   Rtti,
   TypInfo,
-  SyncObjs,
+  SyncObjs,  Variants,
   Generics.Collections,
   Spring.System,
-  Spring.IoC,
+//  Spring.IoC,
+  Spring.Collections,
   Spring.DesignPatterns;
 
 begin
@@ -49,4 +51,6 @@ begin
     on E: Exception do
       Writeln(E.ClassName, ': ', E.Message);
   end;
+  Readln;
+
 end.
