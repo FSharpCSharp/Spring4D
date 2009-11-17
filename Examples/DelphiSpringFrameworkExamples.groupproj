@@ -1,0 +1,48 @@
+﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+		<PropertyGroup>
+			<ProjectGuid>{AC475501-C781-4DA7-89D8-53279532A1AF}</ProjectGuid>
+		</PropertyGroup>
+		<ItemGroup>
+			<Projects Include="Callback\Callback.dproj">
+				<Dependencies/>
+			</Projects>
+			<Projects Include="Environment\EnvironmentDemo.dproj">
+				<Dependencies/>
+			</Projects>
+		</ItemGroup>
+		<ProjectExtensions>
+			<Borland.Personality>Default.Personality.12</Borland.Personality>
+			<Borland.ProjectType/>
+			<BorlandProject>
+				<Default.Personality/>
+			</BorlandProject>
+		</ProjectExtensions>
+		<Target Name="Callback">
+			<MSBuild Projects="Callback\Callback.dproj"/>
+		</Target>
+		<Target Name="Callback:Clean">
+			<MSBuild Targets="Clean" Projects="Callback\Callback.dproj"/>
+		</Target>
+		<Target Name="Callback:Make">
+			<MSBuild Targets="Make" Projects="Callback\Callback.dproj"/>
+		</Target>
+		<Target Name="EnvironmentDemo">
+			<MSBuild Projects="Environment\EnvironmentDemo.dproj"/>
+		</Target>
+		<Target Name="EnvironmentDemo:Clean">
+			<MSBuild Targets="Clean" Projects="Environment\EnvironmentDemo.dproj"/>
+		</Target>
+		<Target Name="EnvironmentDemo:Make">
+			<MSBuild Targets="Make" Projects="Environment\EnvironmentDemo.dproj"/>
+		</Target>
+		<Target Name="Build">
+			<CallTarget Targets="Callback;EnvironmentDemo"/>
+		</Target>
+		<Target Name="Clean">
+			<CallTarget Targets="Callback:Clean;EnvironmentDemo:Clean"/>
+		</Target>
+		<Target Name="Make">
+			<CallTarget Targets="Callback:Make;EnvironmentDemo:Make"/>
+		</Target>
+		<Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+	</Project>

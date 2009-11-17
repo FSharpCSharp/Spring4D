@@ -1,3 +1,23 @@
+2009-11-15	v0.1.2.561
+* Reorganized all project folders to make it more clear. Sorry but please update the library path.
+--[Spring.Base]
+----Bin
+----Lib
+----Source
+----Tests
+--[Spring.Core]
+----Bin
+----Lib
+----Source
+------IoC
+----Tests
+* Updated the dependencies and the search folders of the projects.
+* Warning free now.
+* Refactoring some code of IoC.
+* Redesigned some IoC test cases.
+* Added FastMM494.zip to the "Third Party" folder.
+* Removed the incompleted documents.
+
 2009-11-15	v0.1.2.560
 
 <Breaking Changes>:
