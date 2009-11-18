@@ -56,22 +56,22 @@ type
     procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); override;
   end;
 
-  TConstructorsInspector = class(TRegistrationInspectorBase)
+  TConstructorInspector = class(TRegistrationInspectorBase)
   protected
     procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); override;
   end;
 
-  TPropertiesInspector = class(TRegistrationInspectorBase)
+  TPropertyInspector = class(TRegistrationInspectorBase)
   protected
     procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); override;
   end;
 
-  TMethodsInspector = class(TRegistrationInspectorBase)
+  TMethodInspector = class(TRegistrationInspectorBase)
   protected
     procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); override;
   end;
 
-  TFieldsInspector = class(TRegistrationInspectorBase)
+  TFieldInspector = class(TRegistrationInspectorBase)
   protected
     procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); override;
   end;
@@ -126,17 +126,16 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TConstructorsInspector'}
+{$REGION 'TConstructorInspector'}
 
-function CanInject(const parameters: TArray<TRttiParameter>): Boolean;
+function ValidateParameters(const parameters: TArray<TRttiParameter>): Boolean;
 var
   parameter: TRttiParameter;
 begin
   Result := True;
   for parameter in parameters do
   begin
-    if not parameter.ParamType.IsClassOrInterface or
-      (parameter.Flags * [pfVar, pfOut] <> []) or (parameter.ParamType.Handle = nil) then
+    if (parameter.Flags * [pfVar, pfOut] <> []) or (parameter.ParamType.Handle = nil) then
     begin
       Result := False;
       Break;
@@ -144,7 +143,7 @@ begin
   end;
 end;
 
-procedure TConstructorsInspector.DoProcessModel(
+procedure TConstructorInspector.DoProcessModel(
   const context: IContainerContext; model: TComponentModel);
 var
   constructorCandidate: IInjection;
@@ -153,10 +152,10 @@ var
 begin
   for method in model.ComponentType.GetMethods do
   begin
-    if method.IsConstructor and method.IsPublic then
+    if method.IsConstructor then
     begin
       parameters := method.GetParameters;
-      if not CanInject(parameters) then
+      if not ValidateParameters(parameters) then
       begin
         Continue;
       end;
@@ -169,9 +168,9 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TPropertiesInspector'}
+{$REGION 'TPropertyInspector'}
 
-procedure TPropertiesInspector.DoProcessModel(const context: IContainerContext;
+procedure TPropertyInspector.DoProcessModel(const context: IContainerContext;
   model: TComponentModel);
 var
   propertyMember: TRttiProperty;
@@ -179,7 +178,7 @@ var
 begin
   for propertyMember in model.ComponentType.GetProperties do
   begin
-    if propertyMember.IsWritable and propertyMember.PropertyType.IsClassOrInterface and
+    if propertyMember.IsWritable and
       propertyMember.HasCustomAttribute<InjectionAttribute> then
     begin
       injectableMember := TPropertyInjection.Create(model, propertyMember);
@@ -191,9 +190,9 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TMethodsInspector'}
+{$REGION 'TMethodInspector'}
 
-procedure TMethodsInspector.DoProcessModel(const context: IContainerContext;
+procedure TMethodInspector.DoProcessModel(const context: IContainerContext;
   model: TComponentModel);
 var
   method: TRttiMethod;
@@ -202,10 +201,11 @@ var
 begin
   for method in model.ComponentType.GetMethods do
   begin
-    if not method.IsClassMethod and method.HasCustomAttribute<InjectionAttribute> then
+    if (method.MethodKind in [mkProcedure, mkFunction]) and
+      method.HasCustomAttribute<InjectionAttribute> then
     begin
       parameters := method.GetParameters;
-      if not CanInject(parameters) then
+      if not ValidateParameters(parameters) then
       begin
         Continue;
       end;
@@ -218,9 +218,9 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TFieldsInspector'}
+{$REGION 'TFieldInspector'}
 
-procedure TFieldsInspector.DoProcessModel(const context: IContainerContext;
+procedure TFieldInspector.DoProcessModel(const context: IContainerContext;
   model: TComponentModel);
 var
   field: TRttiField;
@@ -228,8 +228,7 @@ var
 begin
   for field in model.ComponentType.GetFields do
   begin
-    if field.FieldType.IsClassOrInterface and
-      field.HasCustomAttribute<InjectionAttribute> then
+    if field.HasCustomAttribute<InjectionAttribute> then
     begin
       injection := TFieldInjection.Create(model, field);
       model.Fields.Add(injection);
@@ -247,7 +246,14 @@ procedure TComponentActivatorInspector.DoProcessModel(
 begin
   if model.ComponentActivator = nil then
   begin
-    model.ComponentActivator := TDefaultComponentActivator.Create(context.DependencyResolver);
+    if not Assigned(model.ActivatorDelegate) then
+    begin
+      model.ComponentActivator := TDefaultComponentActivator.Create(model, context.DependencyResolver);
+    end
+    else
+    begin
+      model.ComponentActivator := TDelegateComponentActivator.Create(model);
+    end;
   end;
 end;
 

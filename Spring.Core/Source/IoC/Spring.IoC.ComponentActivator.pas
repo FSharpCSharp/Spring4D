@@ -37,7 +37,21 @@ uses
   Spring.IoC.Core;
 
 type
-  TDefaultComponentActivator = class(TInterfacedObject, IComponentActivator, IInterface)
+  TComponentActivatorBase = class abstract(TInterfacedObject, IComponentActivator, IInterface)
+  private
+    fComponentModel: TComponentModel;
+  protected
+    property ComponentModel: TComponentModel read fComponentModel;
+  public
+    constructor Create(componentModel: TComponentModel);
+    function CreateInstance: TObject; virtual; abstract;
+    procedure DestroyInstance(instance: TObject); virtual;
+  end;
+
+  /// <summary>
+  /// Activates an instance by using reflection and injection.
+  /// </summary>
+  TDefaultComponentActivator = class(TComponentActivatorBase)
   private
     fResolver: IDependencyResolver;
     function GetEligibleConstructor(model: TComponentModel): IInjection; virtual;
@@ -45,49 +59,69 @@ type
       const arguments: TArray<TValue>): TObject;
     procedure ExecuteInjections(instance: TObject; const injections: IList<IInjection>);
   public
-    constructor Create(const resolver: IDependencyResolver);
-    function CreateInstance(componentModel: TComponentModel): TObject;
-    procedure DestroyInstance(instance: TObject);
+    constructor Create(componentModel: TComponentModel; const resolver: IDependencyResolver);
+    function CreateInstance: TObject; override;
+  end;
+
+  /// <summary>
+  /// Activates an instance by using a TActivatorDelegate delegate.
+  /// </summary>
+  TDelegateComponentActivator = class(TComponentActivatorBase)
+  public
+    function CreateInstance: TObject; override;
   end;
 
 implementation
 
 uses
-  Spring.Helpers;
+  Spring.Helpers,
+  Spring.IoC.ResourceStrings;
+
+
+{$REGION 'TComponentActivatorBase'}
+
+constructor TComponentActivatorBase.Create(componentModel: TComponentModel);
+begin
+  TArgument.CheckNotNull(componentModel, 'componentModel');
+  inherited Create;
+  fComponentModel := componentModel;
+end;
+
+procedure TComponentActivatorBase.DestroyInstance(instance: TObject);
+begin
+  instance.Free;
+end;
+
+{$ENDREGION}
+
 
 {$REGION 'TDefaultComponentActivator'}
 
-constructor TDefaultComponentActivator.Create(const resolver: IDependencyResolver);
+constructor TDefaultComponentActivator.Create(componentModel: TComponentModel;
+  const resolver: IDependencyResolver);
 begin
   TArgument.CheckNotNull(resolver, 'resolver');
-  inherited Create;
+  inherited Create(componentModel);
   fResolver := resolver;
 end;
 
-function TDefaultComponentActivator.CreateInstance(
-  componentModel: TComponentModel): TObject;
+function TDefaultComponentActivator.CreateInstance: TObject;
 var
   componentType: TRttiInstanceType;
   constructorInjection: IInjection;
   constructorArguments: TArray<TValue>;
 begin
-  TArgument.CheckNotNull(componentModel, 'componentModel');
-  constructorInjection := GetEligibleConstructor(componentModel);
+  constructorInjection := GetEligibleConstructor(fComponentModel);
   constructorArguments := fResolver.ResolveDependencies(constructorInjection);
-  componentType := componentModel.ComponentType as TRttiInstanceType;
+  componentType := fComponentModel.ComponentType as TRttiInstanceType;
   Result := InternalCreateInstance(
     componentType.MetaclassType,
     (constructorInjection.MemberType as TRttiMethod),
     constructorArguments
   );
-  ExecuteInjections(Result, componentModel.Properties);
-  ExecuteInjections(Result, componentModel.Methods);
-  ExecuteInjections(Result, componentModel.Fields);
-end;
-
-procedure TDefaultComponentActivator.DestroyInstance(instance: TObject);
-begin
-
+  ExecuteInjections(Result, fComponentModel.Properties);
+  ExecuteInjections(Result, fComponentModel.Methods);
+  ExecuteInjections(Result, fComponentModel.Fields);
 end;
 
 procedure TDefaultComponentActivator.ExecuteInjections(instance: TObject;
@@ -141,7 +175,6 @@ begin
   Result := classType.NewInstance;
   try
     constructorMethod.Invoke(Result, arguments);
-    Result.AfterConstruction;
   except
     on Exception do
     begin
@@ -149,8 +182,33 @@ begin
       raise;
     end;
   end;
+  try
+    Result.AfterConstruction;
+  except
+    on Exception do
+    begin
+      Result.BeforeDestruction;
+      Result.Destroy;
+      raise;
+    end;
+  end;
 end;
 
 {$ENDREGION}
+
+
+{$REGION 'TDelegateComponentActivator'}
+
+function TDelegateComponentActivator.CreateInstance: TObject;
+begin
+  if not Assigned(fComponentModel.ActivatorDelegate) then
+  begin
+    raise EActivatorException.CreateRes(@SActivatorDelegateExpected);
+  end;
+  Result := fComponentModel.ActivatorDelegate.Invoke;
+end;
+
+{$ENDREGION}
+
 
 end.

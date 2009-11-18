@@ -47,24 +47,30 @@ type
     fContainerContext: IContainerContext;
     fRttiContext: TRttiContext;
     fInspectors: TList<IRegistrationInspector>;
-    fModels: TList<TComponentModel>;
+    fModels: TDictionary<PTypeInfo, TComponentModel>;
+    fServiceTypeMappings: TDictionary<PTypeInfo, TArray<TComponentModel>>;
+//    fSyncRoot: IReadWriteSync;
   protected
     procedure CheckServiceType(serviceType: TRttiType);
-    function AddComponentModel(const name: string; serviceTypeInfo,
-      componentTypeInfo: PTypeInfo; lifetimeType: TLifetimeType): TComponentModel; virtual;
+    procedure AddComponentModel(model: TComponentModel);
     procedure ProcessModel(model: TComponentModel); virtual;
+    function GetFullTypeName(typeInfo: PTypeInfo): string;
+    function CreateComponentModel(const name: string; serviceTypeInfo,
+      componentTypeInfo: PTypeInfo; lifetimeType: TLifetimeType;
+      activatorDelegate: TActivatorDelegate): TComponentModel; virtual;
   public
     constructor Create(const context: IContainerContext);
     destructor Destroy; override;
     procedure AddInspector(const inspector: IRegistrationInspector);
     procedure RemoveInspector(const inspector: IRegistrationInspector);
     procedure ClearInspectors;
-    procedure RegisterType(const name: string; serviceTypeInfo, componentTypeInfo: PTypeInfo; lifetimeType: TLifetimeType);
+    procedure RegisterType(const name: string; serviceTypeInfo, componentTypeInfo: PTypeInfo;
+      lifetimeType: TLifetimeType; activatorDelegate: TActivatorDelegate);
     procedure UnregisterAll;
     function FindOne(serviceType: PTypeInfo): TComponentModel; overload;
     function FindOne(serviceType: PTypeInfo; const name: string): TComponentModel; overload;
     function FindOneByComponentType(componentType: PTypeInfo): TComponentModel;
-    function GetFullTypeName(typeInfo: PTypeInfo): string;
+    function FindAll(serviceType: PTypeInfo): TArray<TComponentModel>;
     function HasServiceType(serviceType: PTypeInfo): Boolean;
   end;
 
@@ -83,13 +89,15 @@ begin
   inherited Create;
   fContainerContext := context;
   fRttiContext := TRttiContext.Create;
-  fModels := TObjectList<TComponentModel>.Create;
+  fModels := TObjectDictionary<PTypeInfo, TComponentModel>.Create([doOwnsValues]);
+  fServiceTypeMappings := TDictionary<PTypeInfo, TArray<TComponentModel>>.Create;
   fInspectors := TList<IRegistrationInspector>.Create;
 end;
 
 destructor TServiceRegistry.Destroy;
 begin
   fInspectors.Free;
+  fServiceTypeMappings.Free;
   fModels.Free;
   fRttiContext.Free;
   inherited Destroy;
@@ -121,7 +129,8 @@ begin
 end;
 
 procedure TServiceRegistry.RegisterType(const name: string; serviceTypeInfo,
-  componentTypeInfo: PTypeInfo; lifetimeType: TLifetimeType);
+  componentTypeInfo: PTypeInfo; lifetimeType: TLifetimeType;
+  activatorDelegate: TActivatorDelegate);
 var
   model: TComponentModel;
 begin
@@ -131,17 +140,21 @@ begin
   TArgument.CheckEnum<TLifetimeType>(lifetimeType, 'lifetimeType');
   { TODO: Determine whether componentTypeInfo is assignable to serviceTypeInfo }
 
-  model := AddComponentModel(name, serviceTypeInfo, componentTypeInfo, lifetimeType);
+  model := CreateComponentModel(name, serviceTypeInfo, componentTypeInfo,
+    lifetimeType, activatorDelegate);
+  AddComponentModel(model);
   ProcessModel(model);
 end;
 
 procedure TServiceRegistry.UnregisterAll;
 begin
+  fServiceTypeMappings.Clear;
   fModels.Clear;
 end;
 
-function TServiceRegistry.AddComponentModel(const name: string;
-  serviceTypeInfo, componentTypeInfo: PTypeInfo; lifetimeType: TLifetimeType): TComponentModel;
+function TServiceRegistry.CreateComponentModel(const name: string;
+  serviceTypeInfo, componentTypeInfo: PTypeInfo; lifetimeType: TLifetimeType;
+  activatorDelegate: TActivatorDelegate): TComponentModel;
 var
   serviceType: TRttiType;
   componentType: TRttiInstanceType;
@@ -166,7 +179,25 @@ begin
   // TODO: Handle Duplication (AddOrUpdate)
   Result := TComponentModel.Create(name, serviceType, componentType);
   Result.LifetimeType := lifetimeType;
-  fModels.Add(Result);
+  Result.ActivatorDelegate := activatorDelegate;
+end;
+
+procedure TServiceRegistry.AddComponentModel(model: TComponentModel);
+var
+  models: TArray<TComponentModel>;
+begin
+  Assert(model <> nil, 'model should not be nil.');
+  fModels.AddOrSetValue(model.ComponentTypeInfo, model);
+  if not fServiceTypeMappings.TryGetValue(model.ServiceTypeInfo, models) then
+  begin
+    models := TArray<TComponentModel>.Create(model);
+  end
+  else
+  begin
+    SetLength(models, Length(models) + 1);
+    models[High(models)] := model;
+  end;
+  fServiceTypeMappings.AddOrSetValue(model.ServiceTypeInfo, models);
 end;
 
 procedure TServiceRegistry.ProcessModel(model: TComponentModel);
@@ -180,41 +211,43 @@ begin
 end;
 
 function TServiceRegistry.FindOne(serviceType: PTypeInfo): TComponentModel;
-var
-  model: TComponentModel;
 begin
-  Result := nil;
-  for model in fModels do
-  begin
-    if model.ServiceType.Handle = serviceType then
-    begin
-      Result := model;
-      Break;
-    end;
-  end;
+  Result := FindOne(serviceType, '');
 end;
 
 function TServiceRegistry.FindOne(serviceType: PTypeInfo;
   const name: string): TComponentModel;
+var
+  models: TArray<TComponentModel>;
+  model: TComponentModel;
 begin
-  Result := FindOne(serviceType);
+  Result := nil;
+  if fServiceTypeMappings.TryGetValue(serviceType, models) then
+  begin
+    if Length(models) = 0 then Exit;
+    if name = '' then Exit(models[0]);
+    for model in models do
+    begin
+      if SameText(model.Name, name) then
+      begin
+        Exit(model);
+      end;
+    end;
+  end;
 end;
 
 function TServiceRegistry.FindOneByComponentType(
   componentType: PTypeInfo): TComponentModel;
-var
-  model: TComponentModel;
 begin
   TArgument.CheckNotNull(componentType, 'componentType');
-  Result := nil;
-  for model in fModels do
-  begin
-    if model.ComponentType.Handle = componentType then
-    begin
-      Result := model;
-      Break;
-    end;
-  end;
+  fModels.TryGetValue(componentType, Result);
+end;
+
+function TServiceRegistry.FindAll(
+  serviceType: PTypeInfo): TArray<TComponentModel>;
+begin
+  TArgument.CheckNotNull(serviceType, 'serviceType');
+  fServiceTypeMappings.TryGetValue(serviceType, Result);
 end;
 
 function TServiceRegistry.GetFullTypeName(typeInfo: PTypeInfo): string;

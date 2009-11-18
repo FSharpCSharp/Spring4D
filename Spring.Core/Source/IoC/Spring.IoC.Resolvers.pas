@@ -42,6 +42,7 @@ type
   private
     fRegistry: IServiceRegistry;
     fDependencies: TList<PTypeInfo>;
+    function CanResolveDependency(dependency: TRttiType; const arguments: TArray<TValue>): Boolean;
   public
     constructor Create(const serviceRegistry: IServiceRegistry);
     destructor Destroy; override;
@@ -80,17 +81,25 @@ begin
   inherited Destroy;
 end;
 
+function TDependencyResolver.CanResolveDependency(dependency: TRttiType;
+  const arguments: TArray<TValue>): Boolean;
+begin
+  Result := dependency.IsClassOrInterface and
+    fRegistry.HasServiceType(dependency.Handle);
+end;
+
 function TDependencyResolver.CanResolve(
   const member: IInjection): Boolean;
 var
   dependency: TRttiType;
+  injectionArguments: TArray<TValue>;
 begin
   TArgument.CheckNotNull(member, 'member');
   Result := True;
+  member.Model.InjectionArguments.TryGetValue(member.MemberType, injectionArguments);
   for dependency in member.GetDependencies do
   begin
-    if not dependency.IsClassOrInterface or
-      not fRegistry.HasServiceType(dependency.Handle) then  // TODO: CanResolve (TEMP)
+    if not CanResolveDependency(dependency, injectionArguments) then
     begin
       Result := False;
       Break;
@@ -174,12 +183,12 @@ begin
   TArgument.CheckTypeKind(typeInfo, [tkClass, tkInterface], 'typeInfo');
 
   Result := nil;
-  model := fRegistry.FindOne(typeInfo);
+  model := fRegistry.FindOne(typeInfo, name);
   if model = nil then
   begin
     if typeInfo.Kind = tkClass then
     begin
-      fRegistry.RegisterType('', typeInfo, typeInfo, ltTransient);
+      fRegistry.RegisterType('', typeInfo, typeInfo, ltTransient, nil);
       Result := Resolve(typeInfo, '');
       Exit;
     end

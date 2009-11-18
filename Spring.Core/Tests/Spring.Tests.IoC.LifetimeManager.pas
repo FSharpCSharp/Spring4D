@@ -41,16 +41,8 @@ type
       private
         fModel: TComponentModel;
       public
-        function CreateInstance(model: TComponentModel): TObject;
-        procedure DestroyInstance(instance: TObject);
-        property Model: TComponentModel read fModel;
-      end;
-
-      TMockInterfacedObjectActivator = class(TInterfaceBase, IComponentActivator, IInterface)
-      private
-        fModel: TComponentModel;
-      public
-        function CreateInstance(model: TComponentModel): TObject;
+        constructor Create(model: TComponentModel);
+        function CreateInstance: TObject;
         procedure DestroyInstance(instance: TObject);
         property Model: TComponentModel read fModel;
       end;
@@ -101,7 +93,7 @@ begin
     fContext.GetType(TMockObject),
     fContext.GetType(TMockObject).AsInstance
   );
-  fActivator := TMockObjectActivator.Create;
+  fActivator := TMockObjectActivator.Create(fModel);
   fModel.ComponentActivator := fActivator;
 end;
 
@@ -139,8 +131,8 @@ begin
     CheckSame(obj1, obj2);
     CheckSame(fActivator.Model, fModel);
   finally
-    fLifetimeManager.Release(obj1);
-    fLifetimeManager.Release(obj2);
+    fLifetimeManager.ReleaseInstance(obj1);
+    fLifetimeManager.ReleaseInstance(obj2);
   end;
 end;
 
@@ -170,36 +162,26 @@ begin
     CheckTrue(obj1 <> obj2);
     CheckSame(fActivator.Model, fModel);
   finally
-    fLifetimeManager.Release(obj1);
-    fLifetimeManager.Release(obj2);
+    fLifetimeManager.ReleaseInstance(obj1);
+    fLifetimeManager.ReleaseInstance(obj2);
   end;
 end;
 
 { TLifetimeManagerTestCase.TMockComponentActivator }
 
-function TLifetimeManagerTestCase.TMockObjectActivator.CreateInstance(
-  model: TComponentModel): TObject;
+constructor TLifetimeManagerTestCase.TMockObjectActivator.Create(
+  model: TComponentModel);
+begin
+  inherited Create;
+  fModel := model;
+end;
+
+function TLifetimeManagerTestCase.TMockObjectActivator.CreateInstance: TObject;
 begin
   Result := TMockObject.Create;
-  fModel := model;
 end;
 
 procedure TLifetimeManagerTestCase.TMockObjectActivator.DestroyInstance(
-  instance: TObject);
-begin
-
-end;
-
-{ TLifetimeManagerTestCase.TMockInterfacedObjectActivator }
-
-function TLifetimeManagerTestCase.TMockInterfacedObjectActivator.CreateInstance(
-  model: TComponentModel): TObject;
-begin
-  Result := TMockInterfacedObject.Create;
-  fModel := model;
-end;
-
-procedure TLifetimeManagerTestCase.TMockInterfacedObjectActivator.DestroyInstance(
   instance: TObject);
 begin
 

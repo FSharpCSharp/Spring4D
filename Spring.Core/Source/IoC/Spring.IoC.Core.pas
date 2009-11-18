@@ -49,6 +49,9 @@ type
   ILifetimeManager = interface;
   IComponentActivator = interface;
 
+  TActivatorDelegate = reference to function: TObject;
+  TActivatorDelegate<T> = reference to function: T;
+
   /// <summary>
   /// Injection Type Enumeration
   /// </summary>
@@ -87,18 +90,15 @@ type
 
     // Registration
     procedure RegisterType(const name: string; serviceType, componentType: PTypeInfo;
-      lifetimeType: TLifetimeType); // lifetimeManager: ILifetimeManager;
+      lifetimeType: TLifetimeType; activatorDelegate: TActivatorDelegate); // lifetimeManager: ILifetimeManager;
     procedure UnregisterAll;
 
     // Query
-//    function FindOne(predicate: TPredicate<TComponentModel>): TComponentModel;
     function FindOne(serviceType: PTypeInfo): TComponentModel; overload;
     function FindOne(serviceType: PTypeInfo; const name: string): TComponentModel; overload;
     function FindOneByComponentType(componentType: PTypeInfo): TComponentModel;
-//    function FindAll(serviceType: PTypeInfo): TArray<TComponentModel>;
-    function GetFullTypeName(typeInfo: PTypeInfo): string;
+    function FindAll(serviceType: PTypeInfo): TArray<TComponentModel>;
     function HasServiceType(serviceType: PTypeInfo): Boolean;
-//    function HasModel(const componentName: string): Boolean;
   end;
 
   /// <summary>
@@ -109,19 +109,30 @@ type
     procedure ProcessModel(const context: IContainerContext; model: TComponentModel);
   end;
 
-  /// <summary>
-  /// Manages the lifetime of components.
-  /// </summary>
   ILifetimeManager = interface
     ['{7DF9A902-B07A-468B-B201-B4561A921CF5}']
     function GetInstance: TObject;
-    procedure Release(instance: TObject);
+    procedure ReleaseInstance(instance: TObject);
   end;
+
+  (*
+  IObjectActivator = interface
+    ['{F827E7B0-FBAA-48CA-9DAE-A21E68AF5F22}']
+    function CreateInstance: TObject;
+    procedure DestroyInstance(instance: TObject);
+  end;
+
+  // MinPoolSize, MaxPoolSize, Timeout
+  IObjectPool<T> = interface
+    ['{C3318FC1-8674-4733-A5F8-4DB660751915}']
+    function GetInstance: T;
+    procedure Release(instance: T);
+  end;
+  //*)
 
   IComponentActivator = interface
     ['{752F2CDE-222C-4D8B-B344-BB7BCA9EAB9E}']
-    function CreateInstance(model: TComponentModel): TObject;
-    procedure DestroyInstance(instance: TObject);
+    function CreateInstance: TObject;
   end;
 
   /// <summary>
@@ -178,17 +189,22 @@ type
     fProperties: IList<IInjection>;
     fMethods: IList<IInjection>;
     fFields: IList<IInjection>;
+    fActivatorDelegate: TActivatorDelegate;
     function GetConstructors: IList<IInjection>;
     function GetProperties: IList<IInjection>;
     function GetMethods: IList<IInjection>;
     function GetFields: IList<IInjection>;
     function GetInjectionArguments: TDictionary<TRttiMember, TArray<TValue>>;
+    function GetComponentTypeInfo: PTypeInfo;
+    function GetServiceTypeInfo: PTypeInfo;
   public
     constructor Create(const name: string; serviceType: TRttiType; componentType: TRttiInstanceType);
     procedure AddOrUpdateInjectionArguments(member: TRttiMember; const arguments: array of TValue);
     property Name: string read fName;
     property ServiceType: TRttiType read fServiceType;
+    property ServiceTypeInfo: PTypeInfo read GetServiceTypeInfo;
     property ComponentType: TRttiInstanceType read fComponentType;
+    property ComponentTypeInfo: PTypeInfo read GetComponentTypeInfo;
     property ComponentActivator: IComponentActivator read fComponentActivator write fComponentActivator;
     property LifetimeType: TLifetimeType read fLifetimeType write fLifetimeType;
     property LifetimeManager: ILifetimeManager read fLifetimeManager write fLifetimeManager;
@@ -196,6 +212,7 @@ type
     property Properties: IList<IInjection> read GetProperties;
     property Methods: IList<IInjection> read GetMethods;
     property Fields: IList<IInjection> read GetFields;
+    property ActivatorDelegate: TActivatorDelegate read fActivatorDelegate write fActivatorDelegate;
     property InjectionArguments: TDictionary<TRttiMember, TArray<TValue>> read GetInjectionArguments;
   end;
 
@@ -203,6 +220,7 @@ type
   ERegistrationException = class(EContainerException);
   EResolveException = class(EContainerException);
   ECircularDependencyException = class(EResolveException);
+  EActivatorException = class(EContainerException);
 
 implementation
 
@@ -283,6 +301,16 @@ begin
     fInjectionArguments := TDictionary<TRttiMember, TArray<TValue>>.Create;
   end;
   Result := fInjectionArguments;
+end;
+
+function TComponentModel.GetServiceTypeInfo: PTypeInfo;
+begin
+  Result := ServiceType.Handle;
+end;
+
+function TComponentModel.GetComponentTypeInfo: PTypeInfo;
+begin
+  Result := ComponentType.Handle;
 end;
 
 {$ENDREGION}

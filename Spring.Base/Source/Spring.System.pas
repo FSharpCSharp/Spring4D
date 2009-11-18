@@ -919,7 +919,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'Lifecycle Interfaces (Experimental)'}
+  {$REGION 'Lifecycle Interfaces'}
 
   IInitializable = interface
     ['{A36BB399-E592-4DFB-A091-EDBA3BE0648B}']
@@ -986,15 +986,15 @@ type
     constructor Create;
   end;
 
-//  PerThreadAttribute = class(TLifetimeAttribute)
+//  PerThreadAttribute = class(TLifetimeAttributeBase)
 //  public
 //    constructor Create;
 //  end;
 
-//  PooledAttribute = class(TLifetimeAttribute)
+//  PooledAttribute = class(TLifetimeAttributeBase)
 //  end;
 
-//  TCustomLifetimeAttribute = class abstract(TLifetimeAttribute)
+//  TCustomLifetimeAttribute = class abstract(TLifetimeAttributeBase)
 //  end;
 
   /// <summary>

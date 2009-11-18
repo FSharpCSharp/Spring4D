@@ -32,7 +32,9 @@ begin
     TTestTransientLifetimeManager.Suite,
     TTestEmptyContainer.Suite,
     TTestSimpleContainer.Suite,
-    TTestMemberInjection.Suite,
+    TTestDifferentServiceImplementations.Suite,
+    TTestPrimitiveArguments.Suite,
+    TTestMemberInjections.Suite,
     TTestDirectCircularDependency.Suite,
     TTestCrossedCircularDependency.Suite
   ]);

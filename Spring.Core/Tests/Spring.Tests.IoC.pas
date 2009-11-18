@@ -22,8 +22,6 @@
 {                                                                           }
 {***************************************************************************}
 
-{ TODO: Redesign the test cases to be more clear. }
-
 unit Spring.Tests.IoC;
 
 {$I Spring.inc}
@@ -54,6 +52,7 @@ type
 //    procedure TestResolveUnknownClassService;
     procedure TestRegisterNonGuidInterfaceService;
     procedure TestRegisterGenericInterfaceService;
+    procedure TestResolveAll;
   end;
 
   TTestSimpleContainer = class(TContainerTestCase)
@@ -66,15 +65,51 @@ type
     procedure TestTransient;
   end;
 
-  TTestMemberInjection = class(TContainerTestCase)
+  TTestDifferentServiceImplementations = class(TContainerTestCase)
+  private
+    fDefault: INameService;
+    fNameService: INameService;
+    fAnotherNameService: INameService;
+    fServices: TArray<INameService>;
   protected
-    fComponent: TFoo2;
     procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestDefault;
+    procedure TestNameService;
+    procedure TestAnotherNameService;
+    procedure TestResolveAll;
+  end;
+
+  TTestPrimitiveArguments = class(TContainerTestCase)
+  private
+    fPrimitive: IPrimitive;
+    fExpectedInteger: Integer;
+    fExpectedString: string;
+  protected
+    procedure SetUp; override;
+  published
+    procedure TestNameService;
+    procedure TestIntegerArgument;
+    procedure TestStringArgument;
+  end;
+
+  TTestMemberInjections = class(TContainerTestCase)
+  private
+    fNameService: INameService;
+    fInjectionExplorer: IInjectionExplorer;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
   published
     procedure TestConstructorInjection;
     procedure TestMethodInjection;
     procedure TestPropertyInjection;
     procedure TestFieldInjection;
+//    procedure TestInjectConstructor;
+//    procedure TestInjectMethod;
+//    procedure TestInjectProperty;
+//    procedure TestInjectField;
   end;
 
   TTestDirectCircularDependency = class(TContainerTestCase)
@@ -137,6 +172,14 @@ begin
   fContainer.RegisterType<INonGuid<TObject>, TNonGuid<TObject>>;
 end;
 
+procedure TTestEmptyContainer.TestResolveAll;
+var
+  services: TArray<INameService>;
+begin
+  services := fContainer.ResolveAll<INameService>;
+  CheckEquals(0, Length(services));
+end;
+
 {$ENDREGION}
 
 
@@ -151,7 +194,7 @@ begin
   try
     CheckNotNull(service, 'service should not be nil.');
     CheckTrue(service is TNameService, 'service should be a TNameService instance.');
-    CheckEquals(TNameService.DefaultNameString, service.Name);
+    CheckEquals(TNameService.NameString, service.Name);
   finally
     fContainer.Release(service);
   end;
@@ -159,13 +202,13 @@ end;
 
 procedure TTestSimpleContainer.TestAbstractClassService;
 var
-  service: TNameServiceBase;
+  service: TAgeServiceBase;
 begin
-  fContainer.RegisterType<TNameServiceBase, TNameService>;
-  service := fContainer.Resolve<TNameServiceBase>;
+  fContainer.RegisterType<TAgeServiceBase, TAgeServiceImpl>;
+  service := fContainer.Resolve<TAgeServiceBase>;
   try
-    CheckIs(service, TNameService, 'service should be a TNameService instance.');
-    CheckEquals(TNameService.DefaultNameString, service.Name);
+    CheckIs(service, TAgeServiceImpl, 'service should be a TNameService instance.');
+    CheckEquals(TAgeServiceImpl.DefaultAge, service.Age);
   finally
     fContainer.Release(service);
   end;
@@ -179,7 +222,7 @@ begin
   service := fContainer.Resolve<TNameService>;
   try
     CheckNotNull(service, 'service should not be null.');
-    CheckEquals(TNameService.DefaultNameString, service.Name);
+    CheckEquals(TNameService.NameString, service.Name);
   finally
     fContainer.Release(service);
   end;
@@ -187,26 +230,30 @@ end;
 
 procedure TTestSimpleContainer.TestBootstrap;
 var
-  foo: TFoo2;
+  component: TBootstrapComponent;
 begin
-  fContainer.RegisterType<INameService, TNameService>;
-  foo := fContainer.Resolve<TFoo2>;
+  fContainer.RegisterType<INameService, TNameService>(ltSingleton);
+  fContainer.RegisterType<TAgeServiceBase, TAgeServiceImpl>(ltSingleton);
+  component := fContainer.Resolve<TBootstrapComponent>;
   try
-    CheckNotNull(foo);
-    CheckEquals(TNameService.DefaultNameString, foo.ConstructorInjection.Name);
+    CheckNotNull(component);
+    CheckEquals(TNameService.NameString, component.NameService.Name);
+    CheckEquals(TAgeServiceImpl.DefaultAge, component.AgeService.Age);
   finally
-    fContainer.Release(foo);
+    fContainer.Release(component);
   end;
 end;
 
 procedure TTestSimpleContainer.TestSingleton;
 var
-  obj1, obj2: TBase;
+  obj1, obj2: TAgeServiceBase;
 begin
-  fContainer.RegisterType<TBase, TDerived>(ltSingleton);
-  obj1 := fContainer.Resolve<TBase>;
-  obj2 := fContainer.Resolve<TBase>;
+  fContainer.RegisterType<TAgeServiceBase, TAgeServiceImpl>(ltSingleton);
+  obj1 := fContainer.Resolve<TAgeServiceBase>;
+  obj2 := fContainer.Resolve<TAgeServiceBase>;
   try
+    CheckNotNull(obj1, 'obj1 should not be nil');
+    CheckNotNull(obj2, 'obj2 should not be nil');
     CheckSame(obj1, obj2, 'obj1 should be the same as obj2.');
   finally
     fContainer.Release(obj1);
@@ -216,14 +263,14 @@ end;
 
 procedure TTestSimpleContainer.TestTransient;
 var
-  obj1, obj2: TBase;
+  obj1, obj2: TAgeServiceBase;
 begin
-  fContainer.RegisterType<TBase, TDerived>(ltTransient);
-  obj1 := fContainer.Resolve<TBase>;
-  obj2 := fContainer.Resolve<TBase>;
+  fContainer.RegisterType<TAgeServiceBase, TAgeServiceImpl>(ltTransient);
+  obj1 := fContainer.Resolve<TAgeServiceBase>;
+  obj2 := fContainer.Resolve<TAgeServiceBase>;
   try
-    CheckNotNull(obj1, 'obj1');
-    CheckNotNull(obj2, 'obj2');
+    CheckNotNull(obj1, 'obj1 should not be nil');
+    CheckNotNull(obj2, 'obj2 should not be nil');
     CheckTrue(obj1 <> obj2, 'obj1 should not be the same as obj2.');
   finally
     fContainer.Release(obj1);
@@ -234,38 +281,135 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TTestMemberInjection'}
+{$REGION 'TTestDifferentImplementations'}
 
-procedure TTestMemberInjection.SetUp;
+procedure TTestDifferentServiceImplementations.SetUp;
 begin
   inherited SetUp;
+  fContainer.RegisterType<INameService, TNameService>('default', ltSingleton);
+  fContainer.RegisterType<INameService, TAnotherNameService>('another');
+  fDefault := fContainer.Resolve<INameService>;
+  fNameService := fContainer.Resolve<INameService>('default');
+  fAnotherNameService := fContainer.Resolve<INameService>('another');
+  fServices := fContainer.ResolveAll<INameService>;
+end;
+
+procedure TTestDifferentServiceImplementations.TearDown;
+begin
+  fContainer.Release(fAnotherNameService);
+  fContainer.Release(fNameService);
+  inherited TearDown;
+end;
+
+procedure TTestDifferentServiceImplementations.TestDefault;
+begin
+  CheckTrue(fDefault is TNameService);
+  CheckEquals(TNameService.NameString, fDefault.Name);
+end;
+
+procedure TTestDifferentServiceImplementations.TestNameService;
+begin
+  CheckSame(fDefault, fNameService);
+end;
+
+procedure TTestDifferentServiceImplementations.TestAnotherNameService;
+begin
+  CheckNotNull(fAnotherNameService, 'fAnotherNameService should not be nil.');
+  CheckTrue(fAnotherNameService is TAnotherNameService, 'fAnotherNameService should be an instance of TAnotherNameService.');
+  CheckEquals(TAnotherNameService.NameString, fAnotherNameService.Name);
+end;
+
+procedure TTestDifferentServiceImplementations.TestResolveAll;
+begin
+  CheckEquals(2, Length(fServices), 'Count of fServices should be 2.');
+  CheckTrue(fServices[0] is TNameService);
+  CheckTrue(fServices[1] is TAnotherNameService);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestPrimitiveArguments'}
+
+procedure TTestPrimitiveArguments.SetUp;
+begin
+  inherited SetUp;
+  fExpectedInteger := 26;
+  fExpectedString := 'String';
   fContainer.RegisterType<INameService, TNameService>;
-  fContainer.RegisterType<TFoo2Base, TFoo2>(ltSingleton);
-  try
-    fComponent := fContainer.Resolve<TFoo2Base> as TFoo2;
-  except on e: Exception do
-    Fail('fService should be an instance of TFoo2. exception: ' + e.Message);
-  end;
+  fContainer.RegisterType<IPrimitive, TPrimitiveComponent>(
+    function: TPrimitiveComponent
+    begin
+      Result := TPrimitiveComponent.Create(
+        fContainer.Resolve<INameService>,
+        fExpectedInteger,
+        fExpectedString
+      );
+    end
+  );
+  fPrimitive := fContainer.Resolve<IPrimitive>;
+  Assert(fPrimitive <> nil, 'fPrimitive should not be nil.');
+  Assert(fPrimitive.NameService <> nil, 'fPrimitive.NameService should not be nil.');
 end;
 
-procedure TTestMemberInjection.TestConstructorInjection;
+procedure TTestPrimitiveArguments.TestNameService;
 begin
-  CheckTrue(fComponent.ConstructorInjection is TNameService);
+  CheckNotNull(fPrimitive.NameService, 'NameService should not be nil.');
+  CheckTrue(fPrimitive.NameService is TNameService, 'Unexpected type.');
+  CheckEquals(TNameService.NameString, fPrimitive.NameService.Name);
 end;
 
-procedure TTestMemberInjection.TestPropertyInjection;
+procedure TTestPrimitiveArguments.TestIntegerArgument;
 begin
-  CheckTrue(fComponent.PropertyInjection is TNameService);
+  CheckEquals(fExpectedInteger, fPrimitive.IntegerArg);
 end;
 
-procedure TTestMemberInjection.TestMethodInjection;
+procedure TTestPrimitiveArguments.TestStringArgument;
 begin
-  CheckTrue(fComponent.MethodInjection is TNameService);
+  CheckEquals(fExpectedString, fPrimitive.StringArg);
 end;
 
-procedure TTestMemberInjection.TestFieldInjection;
+{$ENDREGION}
+
+
+{$REGION 'TTestMemberInjections'}
+
+procedure TTestMemberInjections.SetUp;
 begin
-  CheckTrue(fComponent.FieldInjection is TNameService);
+  inherited SetUp;
+  fContainer.RegisterType<INameService, TNameService>(ltSingleton);
+  fContainer.RegisterType<IInjectionExplorer, TInjectionServiceImpl>(ltSingleton);
+  fNameService := fContainer.Resolve<INameService>;
+  Assert(fNameService is TNameService, 'fNameService should be TNameService.');
+  Assert(fNameService.Name = TNameService.NameString, 'fNameService.Name is wrong.');
+  fInjectionExplorer := fContainer.Resolve<IInjectionExplorer>;
+end;
+
+procedure TTestMemberInjections.TearDown;
+begin
+  fContainer.Release(fInjectionExplorer);
+  fContainer.Release(fNameService);
+  inherited TearDown;
+end;
+
+procedure TTestMemberInjections.TestConstructorInjection;
+begin
+  CheckSame(fNameService, fInjectionExplorer.ConstructorInjection);
+end;
+
+procedure TTestMemberInjections.TestPropertyInjection;
+begin
+  CheckSame(fNameService, fInjectionExplorer.PropertyInjection);
+end;
+
+procedure TTestMemberInjections.TestMethodInjection;
+begin
+  CheckSame(fNameService, fInjectionExplorer.MethodInjection);
+end;
+
+procedure TTestMemberInjections.TestFieldInjection;
+begin
+  CheckSame(fNameService, fInjectionExplorer.FieldInjection);
 end;
 
 {$ENDREGION}

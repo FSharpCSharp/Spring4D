@@ -35,6 +35,11 @@ resourcestring
   SNoComponentFound = 'No component was registered for the service type: %s.';
   SLifetimeManagerWasExpected = 'LifetimeTypeManager was expected.';
   SMethodMustBeConstructor = 'The constructorMethod should be a constructor method.';
+  SNoSuchMember = 'No such member: "%s".';
+  SComponentNotFound = 'Cannot found the component registered.';
+  SUnexpectedLifetimeType = 'Unexpected lifetimeType.';
+
+  SActivatorDelegateExpected = 'An activator delegate was expected.';
 
 
   {$REGION 'Spring.Logging'}

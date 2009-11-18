@@ -6,11 +6,11 @@
 			<Projects Include="Spring.Base\Spring.Base.dproj">
 				<Dependencies/>
 			</Projects>
-			<Projects Include="Spring.Core\Spring.Core.dproj">
-				<Dependencies/>
-			</Projects>
 			<Projects Include="Spring.Base\Spring.Base.Tests.dproj">
 				<Dependencies>Spring.Base\Spring.Base.dproj</Dependencies>
+			</Projects>
+			<Projects Include="Spring.Core\Spring.Core.dproj">
+				<Dependencies/>
 			</Projects>
 			<Projects Include="Spring.Core\Spring.Core.Tests.dproj">
 				<Dependencies>Spring.Core\Spring.Core.dproj</Dependencies>
@@ -35,15 +35,6 @@
 		<Target Name="Spring_Base:Make">
 			<MSBuild Targets="Make" Projects="Spring.Base\Spring.Base.dproj"/>
 		</Target>
-		<Target Name="Spring_Core">
-			<MSBuild Projects="Spring.Core\Spring.Core.dproj"/>
-		</Target>
-		<Target Name="Spring_Core:Clean">
-			<MSBuild Targets="Clean" Projects="Spring.Core\Spring.Core.dproj"/>
-		</Target>
-		<Target Name="Spring_Core:Make">
-			<MSBuild Targets="Make" Projects="Spring.Core\Spring.Core.dproj"/>
-		</Target>
 		<Target DependsOnTargets="Spring.Base" Name="Spring_Base_Tests">
 			<MSBuild Projects="Spring.Base\Spring.Base.Tests.dproj"/>
 		</Target>
@@ -52,6 +43,15 @@
 		</Target>
 		<Target DependsOnTargets="Spring.Base:Make" Name="Spring_Base_Tests:Make">
 			<MSBuild Targets="Make" Projects="Spring.Base\Spring.Base.Tests.dproj"/>
+		</Target>
+		<Target Name="Spring_Core">
+			<MSBuild Projects="Spring.Core\Spring.Core.dproj"/>
+		</Target>
+		<Target Name="Spring_Core:Clean">
+			<MSBuild Targets="Clean" Projects="Spring.Core\Spring.Core.dproj"/>
+		</Target>
+		<Target Name="Spring_Core:Make">
+			<MSBuild Targets="Make" Projects="Spring.Core\Spring.Core.dproj"/>
 		</Target>
 		<Target DependsOnTargets="Spring.Core" Name="Spring_Core_Tests">
 			<MSBuild Projects="Spring.Core\Spring.Core.Tests.dproj"/>
@@ -72,13 +72,13 @@
 			<MSBuild Targets="Make" Projects="Console\Console.dproj"/>
 		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="Spring_Base;Spring_Core;Spring_Base_Tests;Spring_Core_Tests;Console"/>
+			<CallTarget Targets="Spring_Base;Spring_Base_Tests;Spring_Core;Spring_Core_Tests;Console"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="Spring_Base:Clean;Spring_Core:Clean;Spring_Base_Tests:Clean;Spring_Core_Tests:Clean;Console:Clean"/>
+			<CallTarget Targets="Spring_Base:Clean;Spring_Base_Tests:Clean;Spring_Core:Clean;Spring_Core_Tests:Clean;Console:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="Spring_Base:Make;Spring_Core:Make;Spring_Base_Tests:Make;Spring_Core_Tests:Make;Console:Make"/>
+			<CallTarget Targets="Spring_Base:Make;Spring_Base_Tests:Make;Spring_Core:Make;Spring_Core_Tests:Make;Console:Make"/>
 		</Target>
 		<Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 	</Project>

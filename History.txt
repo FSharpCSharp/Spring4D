@@ -1,4 +1,14 @@
-2009-11-15	v0.1.2.561
+2009-11-18	v0.1.2.565
+[IoC Container]
+* Register different components implementation (identified by name) for a service.
+* Use TContainer.ResolveAll to resolve all available service implementations.
+* Use TContainer.Release to release an instance of a component.
+* Added some RegisterType overloads with an activatorDelegate parameter, which is an anonymous method that returns a new instance (also support primitive arguments) insteading of using reflection and injection.
+* For those components which implemnt the IInitializable(or IDisposable) interface, the Initialize (or Dispose) method will be automtically called after the construction (or before the destruction)of an instance.
+* Continue refactoring code and test cases.
+* Fixed some bugs
+
+2009-11-17	v0.1.2.561
 * Reorganized all project folders to make it more clear. Sorry but please update the library path.
 --[Spring.Base]
 ----Bin
@@ -12,7 +22,7 @@
 ------IoC
 ----Tests
 * Updated the dependencies and the search folders of the projects.
-* Warning free now.
+* Warning free now. (No complier warnings)
 * Refactoring some code of IoC.
 * Redesigned some IoC test cases.
 * Added FastMM494.zip to the "Third Party" folder.

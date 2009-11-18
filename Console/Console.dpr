@@ -41,7 +41,8 @@ uses
   Generics.Collections,
   Spring.System,
   Spring.Collections,
-  Spring.DesignPatterns;
+  Spring.DesignPatterns,
+  Spring.IoC.Core;
 
 begin
   try
@@ -51,5 +52,4 @@ begin
       Writeln(E.ClassName, ': ', E.Message);
   end;
   Readln;
-
 end.

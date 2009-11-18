@@ -45,13 +45,13 @@ type
   /// Represents an Inversion of Control (IoC) container.
   /// </summary>
   /// <remarks>
-  /// <p>Neither normal interfaces nor generic interfaces have a guid identifier,
+  /// Neither normal interfaces nor generic interfaces have a guid identifier,
   /// so we can not determine whether an object supports a non-guid interface,
-  /// further more, we can not safely cast an object to a non-guid interface
+  /// furthermore, we can not safely cast an object to a non-guid interface
   /// variable. For these reasons, it's a pity that the two kinds of
   /// interfaces are not yet supported by the Spring IoC container.
   /// If you have a good idea, please drop me an email:
-  /// baoquan.zuo[at]gmail.com (Paul). Thanks!</p>
+  /// baoquan.zuo[at]gmail.com (Paul). Thanks!
   /// </remarks>
   TContainer = class(TInterfaceBase, IContainerContext, IInterface)
   private
@@ -64,38 +64,49 @@ type
     function GetDependencyResolver: IDependencyResolver;
     property DependencyResolver: IDependencyResolver read GetDependencyResolver;
   protected
+    procedure InitializeServiceInspectors; virtual;
+    function RegisterType(const name: string; serviceType, componentType: PTypeInfo;
+      lifetimeType: TLifetimeType; activatorDelegate: TActivatorDelegate): TContainer; overload;
+    function Resolve(typeInfo: PTypeInfo; const name: string): TValue; overload;
+  protected
+    { Reserved Injection Methods }
     function FindEligibleMember(componentType: TRttiInstanceType; injectionType: TInjectionType;
       const memberName: string; argumentCount: Integer): TRttiMember;
-    procedure InitializeServiceInspectors; virtual;
     procedure InjectMember(componentType: PTypeInfo; injectionType: TInjectionType;
       const memberName: string; const arguments: array of TValue); virtual;
-    function RegisterType(const name: string; serviceType, componentType: PTypeInfo;
-      lifetimeType: TLifetimeType): TContainer; overload;
-    function Resolve(typeInfo: PTypeInfo; const name: string): TValue; overload;
+    function InjectConstructor<TComponentType: class>(const arguments: array of TValue): TContainer;
+    function InjectProperty<TComponentType: class>(const propertyName: string; const value: TValue): TContainer;
+    function InjectMethod<TComponentType: class>(const methodName: string; const arguments: array of TValue): TContainer;
+    function InjectField<TComponentType: class>(const fieldName: string; const value: TValue): TContainer;
   public
     constructor Create;
     destructor Destroy; override;
     procedure AfterConstruction; override;
 
     function RegisterType<TServiceType; TComponentType: TServiceType>: TContainer; overload;
+    function RegisterType<TServiceType; TComponentType: TServiceType>(
+      activatorDelegate: TActivatorDelegate<TComponentType>): TContainer; overload;
+
     function RegisterType<TServiceType; TComponentType: TServiceType>(lifetimeType: TLifetimeType): TContainer; overload;
-//    function RegisterType<TServiceType; TComponentType: TServiceType>(const lifetimeManager: ILifetimeManager): TContainer; overload;
+    function RegisterType<TServiceType; TComponentType: TServiceType>(lifetimeType: TLifetimeType;
+      activatorDelegate: TActivatorDelegate<TComponentType>): TContainer; overload;
+
     function RegisterType<TServiceType; TComponentType: TServiceType>(const name: string): TContainer; overload;
-    function RegisterType<TServiceType; TComponentType: TServiceType>(const name: string; lifetimeType: TLifetimeType): TContainer; overload;
-//    function RegisterType<TServiceType; TComponentType: TServiceType>(const name: string;const lifetimeManager: ILifetimeManager): TContainer; overload;
+    function RegisterType<TServiceType; TComponentType: TServiceType>(
+      const name: string; activatorDelegate: TActivatorDelegate<TComponentType>): TContainer; overload;
+
+    function RegisterType<TServiceType; TComponentType: TServiceType>(const name: string;
+      lifetimeType: TLifetimeType): TContainer; overload;
+    function RegisterType<TServiceType; TComponentType: TServiceType>(
+      const name: string; lifetimeType: TLifetimeType;
+      activatorDelegate: TActivatorDelegate<TComponentType>): TContainer; overload;
 
 //    function RegisterInstance<T>(instance: T): TContainer;
-
-    { Experimental Injection Methods }
-    function InjectConstructor<TComponentType: class>(const arguments: array of TValue): TContainer;
-    function InjectProperty<TComponentType: class>(const propertyName: string; const value: TValue): TContainer;
-    function InjectMethod<TComponentType: class>(const methodName: string; const arguments: array of TValue): TContainer;
-    function InjectField<TComponentType: class>(const fieldName: string; const value: TValue): TContainer;
 
     function Resolve<T>: T; overload;
     function Resolve<T>(const name: string): T; overload;
 
-//    function ResolveAll<TServiceType>: TArray<TServiceType>;
+    function ResolveAll<TServiceType>: TArray<TServiceType>;
 
     { Experimental Release Methods }
     procedure Release(instance: TObject); overload;
@@ -146,10 +157,10 @@ begin
   inspectors := TArray<IRegistrationInspector>.Create(
     TLifetimeInspector.Create,
     TComponentActivatorInspector.Create,
-    TConstructorsInspector.Create,
-    TPropertiesInspector.Create,
-    TMethodsInspector.Create,
-    TFieldsInspector.Create
+    TConstructorInspector.Create,
+    TPropertyInspector.Create,
+    TMethodInspector.Create,
+    TFieldInspector.Create
   );
   for inspector in inspectors do
   begin
@@ -180,7 +191,7 @@ begin
 //    end;
     else
     begin
-      raise ERegistrationException.Create('Unsupported lifetimeType.');
+      raise ERegistrationException.CreateRes(@SUnexpectedLifetimeType);
     end;
   end;
 end;
@@ -192,31 +203,65 @@ end;
 
 function TContainer.RegisterType<TServiceType, TComponentType>: TContainer;
 begin
-  Result := RegisterType('', TypeInfo(TServiceType), TypeInfo(TComponentType), ltUnknown);
+  Result := RegisterType('', TypeInfo(TServiceType), TypeInfo(TComponentType),
+    ltUnknown, nil);
+end;
+
+function TContainer.RegisterType<TServiceType, TComponentType>(
+  activatorDelegate: TActivatorDelegate<TComponentType>): TContainer;
+begin
+  Result := RegisterType('', TypeInfo(TServiceType), TypeInfo(TComponentType),
+    ltUnknown, TActivatorDelegate(activatorDelegate));
 end;
 
 function TContainer.RegisterType<TServiceType, TComponentType>(
   lifetimeType: TLifetimeType): TContainer;
 begin
-  Result := RegisterType('', TypeInfo(TServiceType), TypeInfo(TComponentType), lifetimeType);
+  Result := RegisterType('', TypeInfo(TServiceType), TypeInfo(TComponentType),
+    lifetimeType, nil);
+end;
+
+function TContainer.RegisterType<TServiceType, TComponentType>(
+  lifetimeType: TLifetimeType;
+  activatorDelegate: TActivatorDelegate<TComponentType>): TContainer;
+begin
+  Result := RegisterType('', TypeInfo(TServiceType), TypeInfo(TComponentType),
+    lifetimeType, TActivatorDelegate(activatorDelegate));
 end;
 
 function TContainer.RegisterType<TServiceType, TComponentType>(
   const name: string): TContainer;
 begin
-  Result := RegisterType(name, TypeInfo(TServiceType), TypeInfo(TComponentType), ltUnknown);
+  Result := RegisterType(name, TypeInfo(TServiceType), TypeInfo(TComponentType), ltUnknown, nil);
+end;
+
+function TContainer.RegisterType<TServiceType, TComponentType>(
+  const name: string; activatorDelegate: TActivatorDelegate<TComponentType>): TContainer;
+begin
+  Result := RegisterType(name, TypeInfo(TServiceType), TypeInfo(TComponentType),
+    ltUnknown, TActivatorDelegate(activatorDelegate));
 end;
 
 function TContainer.RegisterType<TServiceType, TComponentType>(
   const name: string; lifetimeType: TLifetimeType): TContainer;
 begin
-  Result := RegisterType(name, TypeInfo(TServiceType), TypeInfo(TComponentType), lifetimeType);
+  Result := RegisterType(name, TypeInfo(TServiceType), TypeInfo(TComponentType),
+    lifetimeType, nil);
+end;
+
+function TContainer.RegisterType<TServiceType, TComponentType>(
+  const name: string; lifetimeType: TLifetimeType;
+  activatorDelegate: TActivatorDelegate<TComponentType>): TContainer;
+begin
+  Result := RegisterType(name, TypeInfo(TServiceType), TypeInfo(TComponentType),
+    lifetimeType, TActivatorDelegate(activatorDelegate));
 end;
 
 function TContainer.RegisterType(const name: string; serviceType,
-  componentType: PTypeInfo; lifetimeType: TLifetimeType): TContainer;
+  componentType: PTypeInfo; lifetimeType: TLifetimeType;
+  activatorDelegate: TActivatorDelegate): TContainer;
 begin
-  fServiceRegistry.RegisterType(name, serviceType, componentType, lifetimeType);
+  fServiceRegistry.RegisterType(name, serviceType, componentType, lifetimeType, activatorDelegate);
   Result := Self;
 end;
 
@@ -255,7 +300,7 @@ begin
     end;
     else
     begin
-      raise EContainerException.Create('Unexpected injectionType.');
+      raise EContainerException.CreateRes(@SUnexpectedLifetimeType);
     end;
   end;
 end;
@@ -271,12 +316,12 @@ begin
   model := fServiceRegistry.FindOneByComponentType(componentType);
   if model = nil then
   begin
-    raise EContainerException.Create('No component was found');
+    raise EContainerException.CreateRes(@SComponentNotFound);
   end;
   member := FindEligibleMember(model.ComponentType, injectionType, memberName, Length(arguments));
   if member = nil then
   begin
-    raise EContainerException.Create('No member was matched');
+    raise EContainerException.CreateResFmt(@SNoSuchMember, [memberName]);
   end;
   model.AddOrUpdateInjectionArguments(member, arguments);
 end;
@@ -310,10 +355,7 @@ begin
 end;
 
 function TContainer.Resolve<T>: T;
-//var
-//  name: string;
 begin
-//  name := TRtti.GetFullName(TypeInfo(T));
   Result := Resolve<T>('');
 end;
 
@@ -321,7 +363,6 @@ function TContainer.Resolve<T>(const name: string): T;
 var
   value: TValue;
 begin
-  TRtti.CheckTypeKind<T>([tkClass, tkInterface]);
   value := Resolve(TypeInfo(T), name);
   Result := value.AsType<T>;
 end;
@@ -332,13 +373,35 @@ begin
   Result := fServiceResolver.Resolve(typeInfo, name);
 end;
 
+function TContainer.ResolveAll<TServiceType>: TArray<TServiceType>;
+var
+  models: TArray<TComponentModel>;
+  model: TComponentModel;
+  value: TValue;
+  i: Integer;
+begin
+  TArgument.CheckTypeKind(TypeInfo(TServiceType), [tkClass, tkInterface], 'TServiceType');
+  models := fServiceRegistry.FindAll(TypeInfo(TServiceType));
+  SetLength(Result, Length(models));
+  for i := 0 to High(models) do
+  begin
+    model := models[i];
+    value := fServiceResolver.Resolve(model.ServiceTypeInfo, model.Name);
+    Result[i] := value.AsType<TServiceType>;
+  end;
+end;
+
 procedure TContainer.Release(instance: TObject);
 var
   model: TComponentModel;
 begin
   TArgument.CheckNotNull(instance, 'instance');
   model := fServiceRegistry.FindOneByComponentType(instance.ClassInfo);
-  model.LifetimeManager.Release(instance);
+  if model = nil then
+  begin
+    raise EContainerException.CreateRes(@SComponentNotFound);
+  end;
+  model.LifetimeManager.ReleaseInstance(instance);
 end;
 
 procedure TContainer.Release(instance: IInterface);
