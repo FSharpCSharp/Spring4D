@@ -10,13 +10,13 @@
 				<Dependencies>Spring.Base\Spring.Base.dproj</Dependencies>
 			</Projects>
 			<Projects Include="Spring.Core\Spring.Core.dproj">
-				<Dependencies/>
+				<Dependencies>Spring.Base\Spring.Base.dproj</Dependencies>
 			</Projects>
 			<Projects Include="Spring.Core\Spring.Core.Tests.dproj">
 				<Dependencies>Spring.Core\Spring.Core.dproj</Dependencies>
 			</Projects>
 			<Projects Include="Console\Console.dproj">
-				<Dependencies/>
+				<Dependencies>Spring.Base\Spring.Base.dproj;Spring.Core\Spring.Core.dproj</Dependencies>
 			</Projects>
 		</ItemGroup>
 		<ProjectExtensions>
@@ -44,13 +44,13 @@
 		<Target DependsOnTargets="Spring.Base:Make" Name="Spring_Base_Tests:Make">
 			<MSBuild Targets="Make" Projects="Spring.Base\Spring.Base.Tests.dproj"/>
 		</Target>
-		<Target Name="Spring_Core">
+		<Target DependsOnTargets="Spring.Base" Name="Spring_Core">
 			<MSBuild Projects="Spring.Core\Spring.Core.dproj"/>
 		</Target>
-		<Target Name="Spring_Core:Clean">
+		<Target DependsOnTargets="Spring.Base:Clean" Name="Spring_Core:Clean">
 			<MSBuild Targets="Clean" Projects="Spring.Core\Spring.Core.dproj"/>
 		</Target>
-		<Target Name="Spring_Core:Make">
+		<Target DependsOnTargets="Spring.Base:Make" Name="Spring_Core:Make">
 			<MSBuild Targets="Make" Projects="Spring.Core\Spring.Core.dproj"/>
 		</Target>
 		<Target DependsOnTargets="Spring.Core" Name="Spring_Core_Tests">
@@ -62,13 +62,13 @@
 		<Target DependsOnTargets="Spring.Core:Make" Name="Spring_Core_Tests:Make">
 			<MSBuild Targets="Make" Projects="Spring.Core\Spring.Core.Tests.dproj"/>
 		</Target>
-		<Target Name="Console">
+		<Target DependsOnTargets="Spring.Base;Spring.Core" Name="Console">
 			<MSBuild Projects="Console\Console.dproj"/>
 		</Target>
-		<Target Name="Console:Clean">
+		<Target DependsOnTargets="Spring.Base:Clean;Spring.Core:Clean" Name="Console:Clean">
 			<MSBuild Targets="Clean" Projects="Console\Console.dproj"/>
 		</Target>
-		<Target Name="Console:Make">
+		<Target DependsOnTargets="Spring.Base:Make;Spring.Core:Make" Name="Console:Make">
 			<MSBuild Targets="Make" Projects="Console\Console.dproj"/>
 		</Target>
 		<Target Name="Build">

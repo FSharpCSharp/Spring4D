@@ -40,11 +40,11 @@ uses
 type
   TDependencyResolver = class(TInterfacedObject, IDependencyResolver, IInterface)
   private
-    fRegistry: IServiceRegistry;
+    fRegistry: IComponentRegistry;
     fDependencies: TList<PTypeInfo>;
     function CanResolveDependency(dependency: TRttiType; const arguments: TArray<TValue>): Boolean;
   public
-    constructor Create(const serviceRegistry: IServiceRegistry);
+    constructor Create(const serviceRegistry: IComponentRegistry);
     destructor Destroy; override;
     function CanResolve(const member: IInjection): Boolean; overload;
     function ResolveDependencies(const member: IInjection): TArray<TValue>; overload;
@@ -52,9 +52,10 @@ type
 
   TServiceResolver = class(TInterfacedObject, IServiceResolver, IInterface)
   private
-    fRegistry: IServiceRegistry;
+    fContext: IContainerContext;
+    fRegistry: IComponentRegistry;
   public
-    constructor Create(const serviceRegistry: IServiceRegistry);
+    constructor Create(context: IContainerContext; const serviceRegistry: IComponentRegistry);
     function CanResolve(typeInfo: PTypeInfo): Boolean;
     function Resolve(typeInfo: PTypeInfo; const name: string): TValue;
   end;
@@ -64,11 +65,13 @@ implementation
 uses
   Spring.Helpers,
   Spring.ResourceStrings,
+  Spring.IoC.ComponentActivator,
+  Spring.IoC.LifetimeManager,
   Spring.IoC.ResourceStrings;
 
 { TDependencyResolver }
 
-constructor TDependencyResolver.Create(const serviceRegistry: IServiceRegistry);
+constructor TDependencyResolver.Create(const serviceRegistry: IComponentRegistry);
 begin
   inherited Create;
   fRegistry := serviceRegistry;
@@ -124,11 +127,11 @@ begin
     if fDependencies.Contains(dependency.Handle) then
     begin
       raise ECircularDependencyException.CreateResFmt(
-        @SCircularDependencyDetected, 
+        @SCircularDependencyDetected,
         [dependency.Name]
       );
     end;
-    model := fRegistry.FindOne(dependency.Handle);
+    model := fRegistry.FindOneByServiceType(dependency.Handle);
     if model = nil then
     begin
       raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
@@ -159,10 +162,13 @@ end;
 
 { TServiceResolver }
 
-constructor TServiceResolver.Create(const serviceRegistry: IServiceRegistry);
+constructor TServiceResolver.Create(context: IContainerContext;
+  const serviceRegistry: IComponentRegistry);
 begin
+  TArgument.CheckNotNull(context, 'context');
   TArgument.CheckNotNull(serviceRegistry, 'serviceRegistry');
   inherited Create;
+  fContext := context;
   fRegistry := serviceRegistry;
 end;
 
@@ -183,19 +189,10 @@ begin
   TArgument.CheckTypeKind(typeInfo, [tkClass, tkInterface], 'typeInfo');
 
   Result := nil;
-  model := fRegistry.FindOne(typeInfo, name);
+  model := fRegistry.FindOneByServiceType(typeInfo, name);
   if model = nil then
   begin
-    if typeInfo.Kind = tkClass then
-    begin
-      fRegistry.RegisterType('', typeInfo, typeInfo, ltTransient, nil);
-      Result := Resolve(typeInfo, '');
-      Exit;
-    end
-    else
-    begin
-      raise EResolveException.CreateResFmt(@SNoComponentFound, [GetTypeName(typeInfo)]);
-    end;
+    raise EResolveException.CreateResFmt(@SNoComponentFound, [GetTypeName(typeInfo)]);
   end;
   if model.LifetimeManager = nil then
   begin

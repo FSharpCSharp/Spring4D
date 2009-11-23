@@ -45,13 +45,12 @@ type
   public
     constructor Create(componentModel: TComponentModel);
     function CreateInstance: TObject; virtual; abstract;
-    procedure DestroyInstance(instance: TObject); virtual;
   end;
 
   /// <summary>
-  /// Activates an instance by using reflection and injection.
+  /// Activates an instance by reflection.
   /// </summary>
-  TDefaultComponentActivator = class(TComponentActivatorBase)
+  TReflectionComponentActivator = class(TComponentActivatorBase)
   private
     fResolver: IDependencyResolver;
     function GetEligibleConstructor(model: TComponentModel): IInjection; virtual;
@@ -64,7 +63,7 @@ type
   end;
 
   /// <summary>
-  /// Activates an instance by using a TActivatorDelegate delegate.
+  /// Activates an instance by a TActivatorDelegate delegate.
   /// </summary>
   TDelegateComponentActivator = class(TComponentActivatorBase)
   public
@@ -87,17 +86,12 @@ begin
   fComponentModel := componentModel;
 end;
 
-procedure TComponentActivatorBase.DestroyInstance(instance: TObject);
-begin
-  instance.Free;
-end;
-
 {$ENDREGION}
 
 
-{$REGION 'TDefaultComponentActivator'}
+{$REGION 'TReflectionComponentActivator'}
 
-constructor TDefaultComponentActivator.Create(componentModel: TComponentModel;
+constructor TReflectionComponentActivator.Create(componentModel: TComponentModel;
   const resolver: IDependencyResolver);
 begin
   TArgument.CheckNotNull(resolver, 'resolver');
@@ -105,7 +99,7 @@ begin
   fResolver := resolver;
 end;
 
-function TDefaultComponentActivator.CreateInstance: TObject;
+function TReflectionComponentActivator.CreateInstance: TObject;
 var
   componentType: TRttiInstanceType;
   constructorInjection: IInjection;
@@ -124,7 +118,7 @@ begin
   ExecuteInjections(Result, fComponentModel.Fields);
 end;
 
-procedure TDefaultComponentActivator.ExecuteInjections(instance: TObject;
+procedure TReflectionComponentActivator.ExecuteInjections(instance: TObject;
   const injections: IList<IInjection>);
 var
   member: IInjection;
@@ -140,7 +134,7 @@ begin
   end;
 end;
 
-function TDefaultComponentActivator.GetEligibleConstructor(
+function TReflectionComponentActivator.GetEligibleConstructor(
   model: TComponentModel): IInjection;
 var
   candidate: IInjection;
@@ -169,7 +163,7 @@ begin
   Result := winner;
 end;
 
-function TDefaultComponentActivator.InternalCreateInstance(classType: TClass;
+function TReflectionComponentActivator.InternalCreateInstance(classType: TClass;
   constructorMethod: TRttiMethod; const arguments: TArray<TValue>): TObject;
 begin
   Result := classType.NewInstance;

@@ -1,10 +1,18 @@
+2009-11-22	v0.1.2.566
+[IoC]
+Added fluent-style registration named as RegisterComponent<T> and RegisterComponent(typeInfo).
+Added Build method
+Added Typed-Injections
+RegisterType overloads are now deprecated.
+
+
 2009-11-18	v0.1.2.565
 [IoC Container]
 * Register different components implementation (identified by name) for a service.
 * Use TContainer.ResolveAll to resolve all available service implementations.
 * Use TContainer.Release to release an instance of a component.
 * Added some RegisterType overloads with an activatorDelegate parameter, which is an anonymous method that returns a new instance (also support primitive arguments) insteading of using reflection and injection.
-* For those components which implemnt the IInitializable(or IDisposable) interface, the Initialize (or Dispose) method will be automtically called after the construction (or before the destruction)of an instance.
+* For those components which implement the IInitializable(or IDisposable) interface, the Initialize (or Dispose) method will be automtically called after the construction (or before the destruction)of an instance.
 * Continue refactoring code and test cases.
 * Fixed some bugs
 

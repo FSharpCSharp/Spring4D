@@ -37,9 +37,9 @@ contains
   Spring.IoC.Injection in 'Source\IoC\Spring.IoC.Injection.pas',
   Spring.IoC.LifetimeManager in 'Source\IoC\Spring.IoC.LifetimeManager.pas',
   Spring.IoC in 'Source\IoC\Spring.IoC.pas',
-  Spring.IoC.Registration.Inspectors in 'Source\IoC\Spring.IoC.Registration.Inspectors.pas',
   Spring.IoC.Registration in 'Source\IoC\Spring.IoC.Registration.pas',
   Spring.IoC.Resolvers in 'Source\IoC\Spring.IoC.Resolvers.pas',
-  Spring.IoC.ResourceStrings in 'Source\IoC\Spring.IoC.ResourceStrings.pas';
+  Spring.IoC.ResourceStrings in 'Source\IoC\Spring.IoC.ResourceStrings.pas',
+  Spring.IoC.Builder in 'Source\IoC\Spring.IoC.Builder.pas';
 
 end.

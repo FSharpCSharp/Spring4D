@@ -77,10 +77,13 @@ type
 
   TRttiTypeHelper =  class helper for TRttiType
   private
+    function GetAsInterface: TRttiInterfaceType;
     function GetIsClass: Boolean;
     function GetIsInterface: Boolean;
     function GetIsClassOrInterface: Boolean;
   public
+//    function GetInterfaces: TArray<TRttiInterfaceType>;
+    property AsInterface: TRttiInterfaceType read GetAsInterface;
     property IsClassOrInterface: Boolean read GetIsClassOrInterface;
     property IsClass: Boolean read GetIsClass;
     property IsInterface: Boolean read GetIsInterface;
@@ -237,6 +240,11 @@ begin
 end;
 
 { TRttiTypeHelper }
+
+function TRttiTypeHelper.GetAsInterface: TRttiInterfaceType;
+begin
+  Result := Self as TRttiInterfaceType;
+end;
 
 function TRttiTypeHelper.GetIsClass: Boolean;
 begin

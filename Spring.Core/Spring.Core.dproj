@@ -55,10 +55,10 @@
 			<DCCReference Include="Source\IoC\Spring.IoC.Injection.pas"/>
 			<DCCReference Include="Source\IoC\Spring.IoC.LifetimeManager.pas"/>
 			<DCCReference Include="Source\IoC\Spring.IoC.pas"/>
-			<DCCReference Include="Source\IoC\Spring.IoC.Registration.Inspectors.pas"/>
 			<DCCReference Include="Source\IoC\Spring.IoC.Registration.pas"/>
 			<DCCReference Include="Source\IoC\Spring.IoC.Resolvers.pas"/>
 			<DCCReference Include="Source\IoC\Spring.IoC.ResourceStrings.pas"/>
+			<DCCReference Include="Source\IoC\Spring.IoC.Builder.pas"/>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>
 			</BuildConfiguration>

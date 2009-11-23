@@ -15,6 +15,7 @@ program Spring.Core.Tests;
 {$ENDIF}
 
 uses
+  FastMM4,
   Forms,
   TestFramework,
   GUITestRunner,
@@ -33,8 +34,9 @@ begin
     TTestEmptyContainer.Suite,
     TTestSimpleContainer.Suite,
     TTestDifferentServiceImplementations.Suite,
-    TTestPrimitiveArguments.Suite,
-    TTestMemberInjections.Suite,
+    TTestActivatorDelegate.Suite,
+    TTestTypedInjectionByCoding.Suite,
+    TTestTypedInjectionsByAttribute.Suite,
     TTestDirectCircularDependency.Suite,
     TTestCrossedCircularDependency.Suite
   ]);

@@ -41,7 +41,7 @@ uses
 type
   TInjectionBase = class abstract(TInterfacedObject, IInjection, IInterface)
   private
-    fModel: TComponentModel;
+    fModel: TComponentModel;  // Consider remove the dependency of TComponentModel
     fMember: TRttiMember;
     fDependencies: TArray<TRttiType>;
     function GetDependencyCount: Integer;

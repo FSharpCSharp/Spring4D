@@ -36,6 +36,9 @@ resourcestring
   SLifetimeManagerWasExpected = 'LifetimeTypeManager was expected.';
   SMethodMustBeConstructor = 'The constructorMethod should be a constructor method.';
   SNoSuchMember = 'No such member: "%s".';
+  SNoSuchMethod = 'No such method: "%s".';
+  SNoSuchProperty = 'No such property: "%s".';
+  SNoSuchField = 'No such field: "%s".';
   SComponentNotFound = 'Cannot found the component registered.';
   SUnexpectedLifetimeType = 'Unexpected lifetimeType.';
 

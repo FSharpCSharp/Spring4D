@@ -43,7 +43,6 @@ type
       public
         constructor Create(model: TComponentModel);
         function CreateInstance: TObject;
-        procedure DestroyInstance(instance: TObject);
         property Model: TComponentModel read fModel;
       end;
 
@@ -89,10 +88,7 @@ procedure TLifetimeManagerTestCase.SetUp;
 begin
   inherited;
   fContext := TRttiContext.Create;
-  fModel := TComponentModel.Create('',
-    fContext.GetType(TMockObject),
-    fContext.GetType(TMockObject).AsInstance
-  );
+  fModel := TComponentModel.Create(fContext.GetType(TMockObject).AsInstance);
   fActivator := TMockObjectActivator.Create(fModel);
   fModel.ComponentActivator := fActivator;
 end;
@@ -179,12 +175,6 @@ end;
 function TLifetimeManagerTestCase.TMockObjectActivator.CreateInstance: TObject;
 begin
   Result := TMockObject.Create;
-end;
-
-procedure TLifetimeManagerTestCase.TMockObjectActivator.DestroyInstance(
-  instance: TObject);
-begin
-
 end;
 
 end.

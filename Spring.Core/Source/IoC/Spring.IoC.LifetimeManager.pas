@@ -41,9 +41,9 @@ type
     fModel: TComponentModel;
     function GetActivator: IComponentActivator;
   protected
-    function TryGetInterface(instance: TObject; const IID: TGUID; out intf): Boolean;
     procedure DoAfterConstruction(instance: TObject); virtual;
     procedure DoBeforeDestruction(instance: TObject); virtual;
+    function TryGetInterfaceWithoutCopy(instance: TObject; const IID: TGUID; out intf): Boolean;
     property ComponentActivator: IComponentActivator read GetActivator;
     property Model: TComponentModel read fModel;
   public
@@ -72,9 +72,6 @@ implementation
 
 {$REGION 'TLifetimeManagerBase'}
 
-type
-  TInterfacedObjectHack = class(TInterfacedObject);
-
 constructor TLifetimeManagerBase.Create(model: TComponentModel);
 begin
   TArgument.CheckNotNull(model, 'model');
@@ -82,7 +79,18 @@ begin
   fModel := model;
 end;
 
-function TLifetimeManagerBase.TryGetInterface(instance: TObject;
+type
+  /// <summary>
+  /// Provides access to the protected fRefCount field of TInterfacedObject.
+  /// </summary>
+  TInterfacedObjectHack = class(TInterfacedObject);
+
+/// <remarks>
+/// The IInterface._AddRef method will be automatically called by the compiler
+/// when TObject.GetInterface method was invoked. So we should decrease the protected
+/// fRefCount of an TInterfacedObject instance.
+/// </remarks>
+function TLifetimeManagerBase.TryGetInterfaceWithoutCopy(instance: TObject;
   const IID: TGUID; out intf): Boolean;
 var
   localIntf: Pointer; // weak-reference
@@ -101,7 +109,7 @@ procedure TLifetimeManagerBase.DoAfterConstruction(instance: TObject);
 var
   intf: Pointer;
 begin
-  if TryGetInterface(instance, IInitializable, intf) then
+  if TryGetInterfaceWithoutCopy(instance, IInitializable, intf) then
   begin
     IInitializable(intf).Initialize;
   end;
@@ -111,7 +119,7 @@ procedure TLifetimeManagerBase.DoBeforeDestruction(instance: TObject);
 var
   intf: Pointer;
 begin
-  if TryGetInterface(instance, IDisposable, intf) then
+  if TryGetInterfaceWithoutCopy(instance, IDisposable, intf) then
   begin
     IDisposable(intf).Dispose;
   end;

@@ -128,7 +128,7 @@ type
     function GetStringArg: string;
   public
     constructor Create(const nameService: INameService; integerArg: Integer;
-      const stringArg: string); overload;
+      const stringArg: string);
     property NameService: INameService read fNameService;
     property IntegerArg: Integer read fIntegerArg;
     property StringArg: string read fStringArg;
@@ -153,7 +153,27 @@ type
     property FieldInjection: INameService read GetFieldInjection;
   end;
 
-  TInjectionServiceImpl = class(TInterfacedObject, IInjectionExplorer)
+  TInjectionExplorer = class(TInterfacedObject, IInjectionExplorer)
+  private
+    fConstructorInjection: INameService;
+    fPropertyInjection: INameService;
+    fMethodInjection: INameService;
+    fFieldInjection: INameService;
+  protected
+    { Implements IInjectionService }
+    function GetConstructorInjection: INameService;
+    function GetPropertyInjection: INameService;
+    function GetMethodInjection: INameService;
+    function GetFieldInjection: INameService;
+  public
+    constructor Create(const service: INameService); overload;
+    constructor Create(const nameService: INameService; const anotherService: INameService); overload;
+    procedure SetMethodInjection(const value: INameService);
+    property PropertyInjection: INameService read fPropertyInjection write fPropertyInjection;
+  end;
+
+//  [AutoWired]
+  TInjectionExplorerComponent = class(TInterfacedObject, IInjectionExplorer)
   private
     fConstructorInjection: INameService;
     fPropertyInjection: INameService;
@@ -318,41 +338,80 @@ begin
   Result := fStringArg;
 end;
 
-{ TInjectionServiceImpl }
+{ TInjectionExplorer }
 
-constructor TInjectionServiceImpl.Create(const service: INameService);
+constructor TInjectionExplorer.Create(const service: INameService);
 begin
   inherited Create;
   fConstructorInjection := service;
 end;
 
-constructor TInjectionServiceImpl.Create(const nameService: INameService;
+constructor TInjectionExplorer.Create(const nameService: INameService;
   const anotherService: INameService);
 begin
   raise Exception.Create('This constructor should not be called.');
 end;
 
-function TInjectionServiceImpl.GetConstructorInjection: INameService;
+function TInjectionExplorer.GetConstructorInjection: INameService;
 begin
   Result := fConstructorInjection;
 end;
 
-function TInjectionServiceImpl.GetPropertyInjection: INameService;
+function TInjectionExplorer.GetPropertyInjection: INameService;
 begin
   Result := fPropertyInjection;
 end;
 
-function TInjectionServiceImpl.GetMethodInjection: INameService;
+function TInjectionExplorer.GetMethodInjection: INameService;
 begin
   Result := fMethodInjection;
 end;
 
-function TInjectionServiceImpl.GetFieldInjection: INameService;
+function TInjectionExplorer.GetFieldInjection: INameService;
 begin
   Result := fFieldInjection;
 end;
 
-procedure TInjectionServiceImpl.SetMethodInjection(const value: INameService);
+procedure TInjectionExplorer.SetMethodInjection(const value: INameService);
+begin
+  fMethodInjection := value;
+end;
+
+{ TInjectionExplorerComponent }
+
+constructor TInjectionExplorerComponent.Create(const service: INameService);
+begin
+  inherited Create;
+  fConstructorInjection := service;
+end;
+
+constructor TInjectionExplorerComponent.Create(const nameService: INameService;
+  const anotherService: INameService);
+begin
+  raise Exception.Create('This constructor should not be called.');
+end;
+
+function TInjectionExplorerComponent.GetConstructorInjection: INameService;
+begin
+  Result := fConstructorInjection;
+end;
+
+function TInjectionExplorerComponent.GetPropertyInjection: INameService;
+begin
+  Result := fPropertyInjection;
+end;
+
+function TInjectionExplorerComponent.GetMethodInjection: INameService;
+begin
+  Result := fMethodInjection;
+end;
+
+function TInjectionExplorerComponent.GetFieldInjection: INameService;
+begin
+  Result := fFieldInjection;
+end;
+
+procedure TInjectionExplorerComponent.SetMethodInjection(const value: INameService);
 begin
   fMethodInjection := value;
 end;

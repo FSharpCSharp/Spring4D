@@ -1001,10 +1001,33 @@ type
   /// Injection Attribute
   /// </summary>
   InjectionAttribute = class(TCustomAttribute)
+  private
+    fName: string;
+    function GetHasName: Boolean;
+  public
+    constructor Create; overload;
+    constructor Create(const name: string); overload;
+    property Name: string read fName;
+    property HasName: Boolean read GetHasName;
   end;
 
-//  ComponentAttribute = class(TCustomAttribute)
-//  end;
+  //(*
+
+  /// <summary>
+  /// ImplementsAttribute
+  /// </summary>
+  ImplementsAttribute = class(TCustomAttribute)
+  private
+    fServiceType: PTypeInfo;
+    fName: string;
+  public
+    constructor Create(serviceType: PTypeInfo); overload;
+    constructor Create(serviceType: PTypeInfo; const name: string); overload;
+    property ServiceType: PTypeInfo read fServiceType;
+    property Name: string read fName;
+  end;
+
+  //*)
 
   {$ENDREGION}
 
@@ -3753,7 +3776,7 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'LifetimeType Attributes'}
+{$REGION 'Attributes'}
 
 { TLifetimeAttribute }
 
@@ -3777,7 +3800,39 @@ begin
   inherited Create(TLifetimeType.ltTransient);
 end;
 
-{$ENDREGION}
+{ InjectionAttribute }
 
+constructor InjectionAttribute.Create;
+begin
+  Create('');
+end;
+
+constructor InjectionAttribute.Create(const name: string);
+begin
+  inherited Create;
+  fName := name;
+end;
+
+function InjectionAttribute.GetHasName: Boolean;
+begin
+  Result := fName <> '';
+end;
+
+{ ComponentAttribute }
+
+constructor ImplementsAttribute.Create(serviceType: PTypeInfo);
+begin
+  Create(serviceType, '');
+end;
+
+constructor ImplementsAttribute.Create(serviceType: PTypeInfo;
+  const name: string);
+begin
+  inherited Create;
+  fServiceType := serviceType;
+  fName := name;
+end;
+
+{$ENDREGION}
 
 end.
