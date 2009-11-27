@@ -59,19 +59,21 @@ type
   private
     fRegistry: IComponentRegistry;
     fBuilder: IComponentBuilder;
-    fRegistrationManager: TRegistrationManager;
     fServiceResolver: IServiceResolver;
     fDependencyResolver: IDependencyResolver;
+    fInjectionFactory: IInjectionFactory;
+    fRegistrationManager: TRegistrationManager;
   protected
     { Implements IContainerContext }
-    function CreateLifetimeManager(model: TComponentModel): ILifetimeManager;
     function GetDependencyResolver: IDependencyResolver;
+    function GetInjectionFactory: IInjectionFactory;
+    function CreateLifetimeManager(model: TComponentModel): ILifetimeManager;
     property DependencyResolver: IDependencyResolver read GetDependencyResolver;
+    property InjectionFactory: IInjectionFactory read GetInjectionFactory;
   protected
     procedure InitializeServiceInspectors; virtual;
     function DoRegisterType(const name: string; serviceType, componentType: PTypeInfo;
       lifetimeType: TLifetimeType; activatorDelegate: TActivatorDelegate): TContainer; overload;
-    function Resolve(typeInfo: PTypeInfo; const name: string): TValue; overload;
   public
     constructor Create;
     destructor Destroy; override;
@@ -86,8 +88,14 @@ type
 
     function Resolve<T>: T; overload;
     function Resolve<T>(const name: string): T; overload;
+    function Resolve(typeInfo: PTypeInfo): TValue; overload;
+    function Resolve(typeInfo: PTypeInfo; const name: string): TValue; overload;
 
-    function ResolveAll<TServiceType>: TArray<TServiceType>;
+    function ResolveAll<TServiceType>: TArray<TServiceType>; overload;
+    function ResolveAll(serviceType: PTypeInfo): TArray<TValue>; overload;
+
+    function HasService(serviceType: PTypeInfo): Boolean; overload;
+    function HasService(serviceType: PTypeInfo; const name: string): Boolean; overload;
 
     { Experimental Release Methods }
     procedure Release(instance: TObject); overload;
@@ -120,6 +128,7 @@ type
   EContainerException = Spring.IoC.Core.EContainerException;
   ERegistrationException = Spring.IoC.Core.ERegistrationException;
   EResolveException = Spring.IoC.Core.EResolveException;
+  EUnsatisfiedDependencyException = Spring.IoC.Core.EUnsatisfiedDependencyException;
   ECircularDependencyException = Spring.IoC.Core.ECircularDependencyException;
   EActivatorException = Spring.IoC.Core.EActivatorException;
 
@@ -140,9 +149,10 @@ begin
   inherited Create;
   fRegistry := TComponentRegistry.Create(Self);
   fBuilder := TComponentBuilder.Create(Self, fRegistry);
-  fRegistrationManager := TRegistrationManager.Create(fRegistry);
   fServiceResolver := TServiceResolver.Create(Self, fRegistry);
   fDependencyResolver := TDependencyResolver.Create(fRegistry);
+  fInjectionFactory := TInjectionFactory.Create;
+  fRegistrationManager := TRegistrationManager.Create(fRegistry);
   InitializeServiceInspectors;
 end;
 
@@ -167,6 +177,7 @@ begin
   inspectors := TArray<IBuilderInspector>.Create(
     TLifetimeInspector.Create,
     TComponentActivatorInspector.Create,
+    TInjectionInspector.Create,
     TConstructorInspector.Create,
     TPropertyInspector.Create,
     TMethodInspector.Create,
@@ -209,6 +220,11 @@ end;
 function TContainer.GetDependencyResolver: IDependencyResolver;
 begin
   Result := fDependencyResolver;
+end;
+
+function TContainer.GetInjectionFactory: IInjectionFactory;
+begin
+  Result := fInjectionFactory;
 end;
 
 function TContainer.RegisterType<TServiceType, TComponentType>: TContainer;
@@ -291,9 +307,22 @@ begin
   Result := fRegistrationManager.RegisterComponent(componentType);
 end;
 
-function TContainer.Resolve<T>: T;
+function TContainer.HasService(serviceType: PTypeInfo): Boolean;
 begin
-  Result := Resolve<T>('');
+  Result := fRegistry.HasServiceType(serviceType);
+end;
+
+function TContainer.HasService(serviceType: PTypeInfo; const name: string): Boolean;
+begin
+  Result := fRegistry.FindOneByServiceType(serviceType, name) <> nil;
+end;
+
+function TContainer.Resolve<T>: T;
+var
+  value: TValue;
+begin
+  value := Resolve(TypeInfo(T));
+  Result := value.AsType<T>;
 end;
 
 function TContainer.Resolve<T>(const name: string): T;
@@ -304,6 +333,11 @@ begin
   Result := value.AsType<T>;
 end;
 
+function TContainer.Resolve(typeInfo: PTypeInfo): TValue;
+begin
+  Result := Resolve(typeInfo, '');
+end;
+
 function TContainer.Resolve(typeInfo: PTypeInfo; const name: string): TValue;
 var
   model: TComponentModel;
@@ -312,7 +346,7 @@ begin
   if not fRegistry.HasServiceType(typeInfo) and (typeInfo.Kind = tkClass) then
   begin
     RegisterComponent(typeInfo).Implements(typeInfo, name);
-    model := fRegistry.FindOneByComponentType(typeInfo);
+    model := fRegistry.FindOne(typeInfo);
     fBuilder.Build(model);
   end;
   Result := fServiceResolver.Resolve(typeInfo, name);
@@ -336,12 +370,29 @@ begin
   end;
 end;
 
+function TContainer.ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
+var
+  models: TArray<TComponentModel>;
+  model: TComponentModel;
+  i: Integer;
+begin
+  TArgument.CheckNotNull(serviceType, 'serviceType');
+  TArgument.CheckTypeKind(serviceType, [tkClass, tkInterface], 'TServiceType');
+  models := fRegistry.FindAll(serviceType);
+  SetLength(Result, Length(models));
+  for i := 0 to High(models) do
+  begin
+    model := models[i];
+    Result[i] := fServiceResolver.Resolve(model.ServiceTypeInfo, model.Name);
+  end;
+end;
+
 procedure TContainer.Release(instance: TObject);
 var
   model: TComponentModel;
 begin
   TArgument.CheckNotNull(instance, 'instance');
-  model := fRegistry.FindOneByComponentType(instance.ClassInfo);
+  model := fRegistry.FindOne(instance.ClassInfo);
   if model = nil then
   begin
     raise EContainerException.CreateRes(@SComponentNotFound);

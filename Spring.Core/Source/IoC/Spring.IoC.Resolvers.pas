@@ -35,6 +35,7 @@ uses
   TypInfo,
   Generics.Collections,
   Spring.System,
+  Spring.Collections,
   Spring.IoC.Core;
 
 type
@@ -44,10 +45,10 @@ type
     fDependencies: TList<PTypeInfo>;
     function CanResolveDependency(dependency: TRttiType; const arguments: TArray<TValue>): Boolean;
   public
-    constructor Create(const serviceRegistry: IComponentRegistry);
+    constructor Create(const registry: IComponentRegistry);
     destructor Destroy; override;
-    function CanResolve(const member: IInjection): Boolean; overload;
-    function ResolveDependencies(const member: IInjection): TArray<TValue>; overload;
+    function CanResolve(const injection: IInjection): Boolean; overload;
+    function ResolveDependencies(const injection: IInjection): TArray<TValue>; overload;
   end;
 
   TServiceResolver = class(TInterfacedObject, IServiceResolver, IInterface)
@@ -55,7 +56,7 @@ type
     fContext: IContainerContext;
     fRegistry: IComponentRegistry;
   public
-    constructor Create(context: IContainerContext; const serviceRegistry: IComponentRegistry);
+    constructor Create(context: IContainerContext; const registry: IComponentRegistry);
     function CanResolve(typeInfo: PTypeInfo): Boolean;
     function Resolve(typeInfo: PTypeInfo; const name: string): TValue;
   end;
@@ -71,10 +72,11 @@ uses
 
 { TDependencyResolver }
 
-constructor TDependencyResolver.Create(const serviceRegistry: IComponentRegistry);
+constructor TDependencyResolver.Create(const registry: IComponentRegistry);
 begin
+  TArgument.CheckNotNull(registry, 'registry');
   inherited Create;
-  fRegistry := serviceRegistry;
+  fRegistry := registry;
   fDependencies := TList<PTypeInfo>.Create;
 end;
 
@@ -92,17 +94,18 @@ begin
 end;
 
 function TDependencyResolver.CanResolve(
-  const member: IInjection): Boolean;
+  const injection: IInjection): Boolean;
 var
   dependency: TRttiType;
-  injectionArguments: TArray<TValue>;
+  injectionInfo: TInjectionInfo;
+//  injectionArguments: TArray<TValue>;
 begin
-  TArgument.CheckNotNull(member, 'member');
+  TArgument.CheckNotNull(injection, 'injection');
   Result := True;
-  member.Model.InjectionArguments.TryGetValue(member.MemberType, injectionArguments);
-  for dependency in member.GetDependencies do
+  injection.Model.InjectionArguments.TryGetValue(injection, injectionInfo);
+  for dependency in injection.GetDependencies do
   begin
-    if not CanResolveDependency(dependency, injectionArguments) then
+    if not CanResolveDependency(dependency, injectionInfo.Arguments) then
     begin
       Result := False;
       Break;
@@ -111,18 +114,26 @@ begin
 end;
 
 function TDependencyResolver.ResolveDependencies(
-  const member: IInjection): TArray<TValue>;
+  const injection: IInjection): TArray<TValue>;
 var
   dependency: TRttiType;
   model: TComponentModel;
+  injectionInfo: TInjectionInfo;
+//  arguments: TArray<TValue>;
   instance: TObject;
   localInterface: Pointer;
   index: Integer;
+  name: string;
 begin
-  TArgument.CheckNotNull(member, 'member');
-  SetLength(Result, member.DependencyCount);
+  TArgument.CheckNotNull(injection, 'injection');
+  SetLength(Result, injection.DependencyCount);
+  injection.Model.InjectionArguments.TryGetValue(injection, injectionInfo);
+  if (Length(injectionInfo.Arguments) > 0) and (Length(injectionInfo.Arguments) <> injection.DependencyCount) then
+  begin
+    raise EResolveException.Create('Unsatisified arguments.');
+  end;
   index := 0;
-  for dependency in member.GetDependencies do
+  for dependency in injection.GetDependencies do
   begin
     if fDependencies.Contains(dependency.Handle) then
     begin
@@ -131,7 +142,20 @@ begin
         [dependency.Name]
       );
     end;
-    model := fRegistry.FindOneByServiceType(dependency.Handle);
+    if (Length(injectionInfo.Arguments) > 0) then // Use arguments
+    begin
+      if dependency.IsClassOrInterface then
+      begin
+        name := injectionInfo.Arguments[index].AsString;
+      end
+      else
+      begin
+        Result[index] := injectionInfo.Arguments[index];
+        Inc(index);
+        Continue;
+      end;
+    end;
+    model := fRegistry.FindOneByServiceType(dependency.Handle, name);
     if model = nil then
     begin
       raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
@@ -153,7 +177,11 @@ begin
     end
     else
     begin
-      raise EResolveException.CreateRes(@SUnexpectedDependencyParameterType);
+      if Length(injectionInfo.Arguments) = 0 then
+      begin
+        raise EResolveException.Create('No arguments');
+      end;
+      Result[index] := injectionInfo.Arguments[index];
     end;
     Assert(not Result[index].IsEmpty);
     Inc(index);
@@ -163,13 +191,13 @@ end;
 { TServiceResolver }
 
 constructor TServiceResolver.Create(context: IContainerContext;
-  const serviceRegistry: IComponentRegistry);
+  const registry: IComponentRegistry);
 begin
   TArgument.CheckNotNull(context, 'context');
-  TArgument.CheckNotNull(serviceRegistry, 'serviceRegistry');
+  TArgument.CheckNotNull(registry, 'registry');
   inherited Create;
   fContext := context;
-  fRegistry := serviceRegistry;
+  fRegistry := registry;
 end;
 
 function TServiceResolver.CanResolve(typeInfo: PTypeInfo): Boolean;
@@ -181,22 +209,43 @@ end;
 function TServiceResolver.Resolve(typeInfo: PTypeInfo;
   const name: string): TValue;
 var
+  models: TArray<TComponentModel>;
   model: TComponentModel;
+  item: TComponentModel;
   instance: TObject;
   localInterface: Pointer;
 begin
   TArgument.CheckNotNull(typeInfo, 'typeInfo');
   TArgument.CheckTypeKind(typeInfo, [tkClass, tkInterface], 'typeInfo');
 
-  Result := nil;
-  model := fRegistry.FindOneByServiceType(typeInfo, name);
-  if model = nil then
+  models := fRegistry.FindAll(typeInfo);
+  if Length(models) = 0 then
   begin
-    raise EResolveException.CreateResFmt(@SNoComponentFound, [GetTypeName(typeInfo)]);
+    raise EResolveException.CreateResFmt(@SNoComponentRegistered, [GetTypeName(typeInfo)]);
+  end;
+  if Length(models) = 1 then
+  begin
+    model := models[0];
+  end
+  else
+  begin
+    model := nil;
+    for item in models do
+    begin
+      if SameText(item.Name, name) then
+      begin
+        model := item;
+      end;
+    end;
+    if model = nil then
+    begin
+      raise EUnsatisfiedDependencyException.CreateResFmt(@SUnsatisfiedDependency,
+        [GetTypeName(typeInfo), name]);
+    end;
   end;
   if model.LifetimeManager = nil then
   begin
-    raise EResolveException.CreateRes(@SLifetimeManagerWasExpected);
+    raise EResolveException.CreateRes(@SLifetimeManagerNeeded);
   end;
   instance := model.LifetimeManager.GetInstance;
   case typeInfo.Kind of

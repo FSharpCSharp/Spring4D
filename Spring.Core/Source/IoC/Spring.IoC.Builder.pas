@@ -70,6 +70,11 @@ type
     procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); override;
   end;
 
+  TInjectionInspector = class(TInspectorBase)
+  protected
+    procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); override;
+  end;
+
   TConstructorInspector = class(TInspectorBase)
   protected
     procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); override;
@@ -93,6 +98,9 @@ type
 implementation
 
 uses
+  Spring.Collections,
+  Spring.DesignPatterns,
+  Spring.Reflection,
   Spring.IoC.Injection,
   Spring.IoC.ComponentActivator,
   Spring.Helpers;
@@ -201,64 +209,21 @@ end;
 
 {$REGION 'TConstructorInspector'}
 
-function ValidateParameters(const parameters: TArray<TRttiParameter>): Boolean;
-var
-  parameter: TRttiParameter;
-begin
-  Result := True;
-  for parameter in parameters do
-  begin
-    if (parameter.Flags * [pfVar, pfOut] <> []) or (parameter.ParamType.Handle = nil) then
-    begin
-      Result := False;
-      Break;
-    end;
-  end;
-end;
-
 procedure TConstructorInspector.DoProcessModel(
   const context: IContainerContext; model: TComponentModel);
 var
-  constructorCandidate: IInjection;
+  predicate: TPredicate<TRttiMethod>;
+  injection: IInjection;
   method: TRttiMethod;
-  parameters: TArray<TRttiParameter>;
 begin
-  if not model.Constructors.IsEmpty then Exit;  // TEMP
-
-  for method in model.ComponentType.GetMethods do
+  if not model.ConstructorInjections.IsEmpty then Exit;  // TEMP
+  predicate := TMethodFilters.IsConstructor and
+    not TMethodFilters.HasParameterFlags([pfVar, pfOut]);
+  for method in model.ComponentType.GetMethods.Where(predicate) do
   begin
-    if method.IsConstructor then
-    begin
-      parameters := method.GetParameters;
-      if not ValidateParameters(parameters) then
-      begin
-        Continue;
-      end;
-      constructorCandidate := TConstructorInjection.Create(model, method);
-      model.Constructors.Add(constructorCandidate);
-    end;
-  end;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TPropertyInspector'}
-
-procedure TPropertyInspector.DoProcessModel(const context: IContainerContext;
-  model: TComponentModel);
-var
-  propertyMember: TRttiProperty;
-  injectableMember: IInjection;
-begin
-  for propertyMember in model.ComponentType.GetProperties do
-  begin
-    if propertyMember.IsWritable and
-      propertyMember.HasCustomAttribute<InjectionAttribute> then
-    begin
-      injectableMember := TPropertyInjection.Create(model, propertyMember);
-      model.Properties.Add(injectableMember);
-    end;
+    injection := context.InjectionFactory.CreateConstructorInjection(model);
+    injection.Initialize(method);
+    model.ConstructorInjections.Add(injection);
   end;
 end;
 
@@ -270,23 +235,40 @@ end;
 procedure TMethodInspector.DoProcessModel(const context: IContainerContext;
   model: TComponentModel);
 var
+  condition: TPredicate<TRttiMethod>;
   method: TRttiMethod;
-  parameters: TArray<TRttiParameter>;
   injection: IInjection;
 begin
-  for method in model.ComponentType.GetMethods do
+  condition := TMethodFilters.IsInstanceMethod and
+    TMethodFilters.HasAttribute(InjectionAttribute) and
+    not TMethodFilters.HasParameterFlags([pfOut, pfVar]);
+  for method in model.ComponentType.GetMethods.Where(condition) do
   begin
-    if (method.MethodKind in [mkProcedure, mkFunction]) and
-      method.HasCustomAttribute<InjectionAttribute> then
-    begin
-      parameters := method.GetParameters;
-      if not ValidateParameters(parameters) then
-      begin
-        Continue;
-      end;
-      injection := TMethodInjection.Create(model, method);
-      model.Methods.Add(injection);
-    end;
+    injection := context.InjectionFactory.CreateMethodInjection(model);
+    injection.Initialize(method);
+    model.MethodInjections.Add(injection);
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TPropertyInspector'}
+
+procedure TPropertyInspector.DoProcessModel(const context: IContainerContext;
+  model: TComponentModel);
+var
+  condition: TPredicate<TRttiProperty>;
+  propertyMember: TRttiProperty;
+  injection: IInjection;
+begin
+  condition := TPropertyFilters.IsInvokable and
+    TPropertyFilters.HasAttribute(InjectionAttribute);
+  for propertyMember in model.ComponentType.GetProperties.Where(condition) do
+  begin
+    injection := context.InjectionFactory.CreatePropertyInjection(model);
+    injection.Initialize(propertyMember);
+    model.PropertyInjections.Add(injection);
   end;
 end;
 
@@ -298,16 +280,16 @@ end;
 procedure TFieldInspector.DoProcessModel(const context: IContainerContext;
   model: TComponentModel);
 var
+  condition: TPredicate<TRttiField>;
   field: TRttiField;
   injection: IInjection;
 begin
-  for field in model.ComponentType.GetFields do
+  condition := TFieldFilters.HasAttribute(InjectionAttribute);
+  for field in model.ComponentType.GetFields.Where(condition) do
   begin
-    if field.HasCustomAttribute<InjectionAttribute> then
-    begin
-      injection := TFieldInjection.Create(model, field);
-      model.Fields.Add(injection);
-    end;
+    injection := context.InjectionFactory.CreateFieldInjection(model);
+    injection.Initialize(field);
+    model.FieldInjections.Add(injection);
   end;
 end;
 
@@ -334,5 +316,123 @@ end;
 
 {$ENDREGION}
 
+
+{$REGION 'TInjectionInspector'}
+
+{ TODO: TInjectionInspector.DoProcessModel }
+procedure TInjectionInspector.DoProcessModel(const context: IContainerContext;
+  model: TComponentModel);
+var
+  injection: IInjection;
+  injectionInfo: TInjectionInfo;
+  arguments: TArray<TValue>;
+//  argument: TValue;
+  method: TRttiMethod;
+//  member: TRttiMember;
+  parameters: TArray<TRttiParameter>;
+  parameter: TRttiParameter;
+  matched: Boolean;
+  i: Integer;
+begin
+  for injection in model.ConstructorInjections do
+  begin
+    if not injection.HasTarget then
+    begin
+      if model.InjectionArguments.TryGetValue(injection, injectionInfo) then
+      begin
+        arguments := injectionInfo.Arguments;
+      end
+      else
+      begin
+        SetLength(arguments, 0);
+      end;
+      matched := False;
+      for method in model.ComponentType.GetMethods do
+      begin
+        if not method.IsConstructor then Continue;
+        parameters := method.GetParameters;
+        matched := Length(parameters) = Length(arguments);
+        if matched then
+        begin
+          for i := 0 to Length(parameters) - 1 do
+          begin
+            parameter := parameters[i];
+            if parameter.ParamType.IsClassOrInterface then
+            begin
+              matched := arguments[i].IsType<string>;
+              matched := matched and context.HasService(parameter.ParamType.Handle, arguments[i].AsString);
+            end
+            else
+            begin
+              matched := arguments[i].IsType(parameter.ParamType.Handle);
+            end;
+          end;
+          if matched then
+          begin
+            injection.Initialize(method);
+            Break;
+          end;
+        end;
+      end;
+      if not matched then
+      begin
+        raise EContainerException.Create('Injection is invalid.');
+      end;
+    end;
+  end;
+
+  for injection in model.MethodInjections do
+  begin
+    if not injection.HasTarget then
+    begin
+      if model.InjectionArguments.TryGetValue(injection, injectionInfo) then
+      begin
+        arguments := injectionInfo.Arguments;
+      end
+      else
+      begin
+        SetLength(arguments, 0);
+      end;
+      matched := False;
+      for method in model.ComponentType.GetMethods do
+      begin
+        if not SameText(method.Name, injectionInfo.TargetName) then
+        begin
+          Continue;
+        end;
+        parameters := method.GetParameters;
+        matched := Length(parameters) = Length(arguments);
+        if matched then
+        begin
+          for i := 0 to Length(parameters) - 1 do
+          begin
+            parameter := parameters[i];
+            if parameter.ParamType.IsClassOrInterface then
+            begin
+              matched := arguments[i].IsType<string>;
+              matched := matched and context.HasService(parameter.ParamType.Handle, arguments[i].AsString);
+            end
+            else
+            begin
+              matched := arguments[i].IsType(parameter.ParamType.Handle);
+            end;
+          end;
+          if matched then
+          begin
+            injection.Initialize(method);
+            Break;
+          end;
+        end;
+      end;
+      if not matched then
+      begin
+        raise EContainerException.Create('Injection is invalid.');
+      end;
+    end;
+  end;
+  { TODO: Handle Property & Field Injections }
+end;
+
+{$ENDREGION}
 
 end.

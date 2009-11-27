@@ -22,8 +22,6 @@
 {                                                                           }
 {***************************************************************************}
 
-{ TODO: Test RegisterComponent (Generic fluent-style registration) }
-
 unit Spring.Tests.IoC;
 
 {$I Spring.inc}
@@ -48,7 +46,6 @@ type
   TTestEmptyContainer = class(TContainerTestCase)
   published
     procedure TestResolveUnknownIntferfaceService;
-    // TODO: TestResolveUnknownClassService
 //    procedure TestResolveUnknownClassService;
     procedure TestRegisterNonGuidInterfaceService;
     procedure TestRegisterGenericInterfaceService;
@@ -69,7 +66,6 @@ type
   // Same Service, Different Implementations
   TTestDifferentServiceImplementations = class(TContainerTestCase)
   private
-    fDefault: INameService;
     fNameService: INameService;
     fAnotherNameService: INameService;
     fServices: TArray<INameService>;
@@ -77,10 +73,10 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   published
-    procedure TestDefault;
     procedure TestNameService;
     procedure TestAnotherNameService;
     procedure TestResolveAll;
+    procedure TestUnsatisfiedDependency;
   end;
 
   TTestActivatorDelegate = class(TContainerTestCase)
@@ -119,6 +115,23 @@ type
   TTestTypedInjectionsByAttribute = class(TTypedInjectionTestCase)
   protected
     procedure DoRegisterComponents; override;
+  end;
+
+  { TODO: Support Primitive values }
+  TTestNamedInjections = class(TContainerTestCase)
+  private
+    fExplorer: IInjectionExplorer;
+//    fConstructorInjection: INameService;
+//    fPropertyInjection: INameService;
+//    fMethodInjection: INameService;
+//    fFieldInjection: INameService;
+  protected
+    procedure SetUp; override;
+  published
+    procedure TestConstructorInjection;
+    procedure TestMethodInjection;
+    procedure TestPropertyInjection;
+    procedure TestFieldInjection;
   end;
 
   TTestDirectCircularDependency = class(TContainerTestCase)
@@ -313,7 +326,6 @@ begin
   fContainer.RegisterComponent<TNameService>.Implements<INameService>('default').AsSingleton;
   fContainer.RegisterComponent<TAnotherNameService>.Implements<INameService>('another');
   fContainer.Build;
-  fDefault := fContainer.Resolve<INameService>;
   fNameService := fContainer.Resolve<INameService>('default');
   fAnotherNameService := fContainer.Resolve<INameService>('another');
   fServices := fContainer.ResolveAll<INameService>;
@@ -326,15 +338,11 @@ begin
   inherited TearDown;
 end;
 
-procedure TTestDifferentServiceImplementations.TestDefault;
-begin
-  CheckTrue(fDefault is TNameService);
-  CheckEquals(TNameService.NameString, fDefault.Name);
-end;
-
 procedure TTestDifferentServiceImplementations.TestNameService;
 begin
-  CheckSame(fDefault, fNameService);
+  CheckNotNull(fNameService, 'fNameService should not be nil.');
+  CheckTrue(fNameService is TNameService, 'fNameService should be an instance of TNameService.');
+  CheckEquals(TNameService.NameString, fNameService.Name);
 end;
 
 procedure TTestDifferentServiceImplementations.TestAnotherNameService;
@@ -349,6 +357,16 @@ begin
   CheckEquals(2, Length(fServices), 'Count of fServices should be 2.');
   CheckTrue(fServices[0] is TNameService);
   CheckTrue(fServices[1] is TAnotherNameService);
+end;
+
+/// <remarks>
+/// EUnsatisfiedDependencyException will be raised when resolving a service type
+//  with an ambiguous name.
+/// </remarks>
+procedure TTestDifferentServiceImplementations.TestUnsatisfiedDependency;
+begin
+  ExpectedException := EUnsatisfiedDependencyException;
+  fContainer.Resolve<INameService>;
 end;
 
 {$ENDREGION}
@@ -521,6 +539,53 @@ var
 begin
   ExpectedException := ECircularDependencyException;
   egg := fContainer.Resolve<IEgg>;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestNamedInjections'}
+
+procedure TTestNamedInjections.SetUp;
+begin
+  inherited SetUp;
+  fContainer.RegisterComponent<TNameService>
+    .Implements<INameService>('default');
+  fContainer.RegisterComponent<TAnotherNameService>
+    .Implements<INameService>('another');
+  fContainer.RegisterComponent<TInjectionExplorer>
+    .Implements<IInjectionExplorer>
+    .InjectConstructor(['default'])
+    .InjectProperty('PropertyInjection', 'another')
+    .InjectMethod('SetMethodInjection', ['another'])
+    .InjectField('fFieldInjection', 'default')
+    .AsSingleton;
+  fContainer.Build;
+  fExplorer := fContainer.Resolve<IInjectionExplorer>;
+end;
+
+procedure TTestNamedInjections.TestConstructorInjection;
+begin
+  CheckNotNull(fExplorer.ConstructorInjection);
+  CheckEquals(TNameService.NameString, fExplorer.ConstructorInjection.Name);
+end;
+
+procedure TTestNamedInjections.TestPropertyInjection;
+begin
+  CheckNotNull(fExplorer.PropertyInjection);
+  CheckEquals(TAnotherNameService.NameString, fExplorer.PropertyInjection.Name);
+end;
+
+procedure TTestNamedInjections.TestMethodInjection;
+begin
+  CheckNotNull(fExplorer.MethodInjection);
+  CheckEquals(TAnotherNameService.NameString, fExplorer.MethodInjection.Name);
+end;
+
+procedure TTestNamedInjections.TestFieldInjection;
+begin
+  CheckNotNull(fExplorer.FieldInjection);
+  CheckEquals(TNameService.NameString, fExplorer.FieldInjection.Name);
 end;
 
 {$ENDREGION}

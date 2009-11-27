@@ -29,16 +29,22 @@ interface
 resourcestring
 
   SNonGuidInterfaceServicesAreNotSupported = 'Non-Guid Interface Services are not supported.';
+  SIncompatibleTypes = 'The component type "%s" is incompatible with the service type "%s".';
   SCircularDependencyDetected = 'A circle was detected when trying to resolve the dependency: %s.';
   SCannotResolveDependency = 'Cannot resolve the dependency: %s.';
   SUnexpectedDependencyParameterType = 'Unexpected dependency parameter type.';
-  SNoComponentFound = 'No component was registered for the service type: %s.';
-  SLifetimeManagerWasExpected = 'LifetimeTypeManager was expected.';
+  SNoComponentRegistered = 'No component was registered for the service type: %s.';
+  SUnsatisfiedConstructorParameters = 'Unsatisfied parameters for constructor.';
+  SUnsatisfiedMethodParameterTypes = 'Unsatisfied parameter types for the method: %s.';
+  SUnsatisfiedDependency = 'Unsatisfied dependency for the service type "%0:s" which named "%1:s".';
+  SLifetimeManagerNeeded = 'LifetimeTypeManager was expected.';
   SMethodMustBeConstructor = 'The constructorMethod should be a constructor method.';
   SNoSuchMember = 'No such member: "%s".';
   SNoSuchMethod = 'No such method: "%s".';
   SNoSuchProperty = 'No such property: "%s".';
   SNoSuchField = 'No such field: "%s".';
+  SInjectionTargetNeeded = 'Injection target needed.';
+  SUnsatisfiedTarget = 'Unsatisfied target: "%s".';
   SComponentNotFound = 'Cannot found the component registered.';
   SUnexpectedLifetimeType = 'Unexpected lifetimeType.';
 

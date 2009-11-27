@@ -110,12 +110,12 @@ begin
   componentType := fComponentModel.ComponentType as TRttiInstanceType;
   Result := InternalCreateInstance(
     componentType.MetaclassType,
-    (constructorInjection.MemberType as TRttiMethod),
+    (constructorInjection.Target as TRttiMethod),
     constructorArguments
   );
-  ExecuteInjections(Result, fComponentModel.Properties);
-  ExecuteInjections(Result, fComponentModel.Methods);
-  ExecuteInjections(Result, fComponentModel.Fields);
+  ExecuteInjections(Result, fComponentModel.PropertyInjections);
+  ExecuteInjections(Result, fComponentModel.MethodInjections);
+  ExecuteInjections(Result, fComponentModel.FieldInjections);
 end;
 
 procedure TReflectionComponentActivator.ExecuteInjections(instance: TObject;
@@ -144,9 +144,9 @@ begin
   winner := nil;
   maxCount := -1;
 
-  for candidate in model.Constructors do
+  for candidate in model.ConstructorInjections do
   begin
-    if candidate.MemberType.HasCustomAttribute<InjectionAttribute> then
+    if candidate.Target.HasCustomAttribute<InjectionAttribute> then
     begin
       winner := candidate;
       Break;
@@ -163,6 +163,9 @@ begin
   Result := winner;
 end;
 
+type
+  TInterfacedObjectHack = class(TInterfacedObject);
+
 function TReflectionComponentActivator.InternalCreateInstance(classType: TClass;
   constructorMethod: TRttiMethod; const arguments: TArray<TValue>): TObject;
 begin
@@ -172,7 +175,11 @@ begin
   except
     on Exception do
     begin
-      Result.Destroy;
+      if Result is TInterfacedObject then
+      begin
+        Dec(TInterfacedObjectHack(Result).FRefCount);
+      end;
+      Result.Free;
       raise;
     end;
   end;
@@ -181,8 +188,7 @@ begin
   except
     on Exception do
     begin
-      Result.BeforeDestruction;
-      Result.Destroy;
+      Result.Free;
       raise;
     end;
   end;

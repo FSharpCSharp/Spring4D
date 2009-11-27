@@ -29,11 +29,24 @@ interface
 uses
   TestFramework,
   Rtti,
+  SysUtils,
   Spring.System,
   Spring.IoC.Core,
   Spring.IoC.LifetimeManager;
 
 type
+  TMockContext = class(TInterfacedObject, IContainerContext)
+  private
+    function GetDependencyResolver: IDependencyResolver;
+    function GetInjectionFactory: IInjectionFactory;
+  public
+    function HasService(serviceType: PTypeInfo): Boolean; overload;
+    function HasService(serviceType: PTypeInfo; const name: string): Boolean; overload;
+    function CreateLifetimeManager(model: TComponentModel): ILifetimeManager;
+    property DependencyResolver: IDependencyResolver read GetDependencyResolver;
+    property InjectionFactory: IInjectionFactory read GetInjectionFactory;
+  end;
+
   TLifetimeManagerTestCase = class abstract(TTestCase)
   private
     type
@@ -52,6 +65,7 @@ type
       TMockInterfacedObject = class(TInterfacedObject)
       end;
   protected
+    fContainerContext: IContainerContext;
     fContext: TRttiContext;
     fLifetimeManager: ILifetimeManager;
     fModel: TComponentModel;
@@ -87,8 +101,9 @@ implementation
 procedure TLifetimeManagerTestCase.SetUp;
 begin
   inherited;
+  fContainerContext := TMockContext.Create;
   fContext := TRttiContext.Create;
-  fModel := TComponentModel.Create(fContext.GetType(TMockObject).AsInstance);
+  fModel := TComponentModel.Create(fContainerContext, fContext.GetType(TMockObject).AsInstance);
   fActivator := TMockObjectActivator.Create(fModel);
   fModel.ComponentActivator := fActivator;
 end;
@@ -98,6 +113,7 @@ begin
   fActivator.Free;
   fModel.Free;
   fContext.Free;
+  fContainerContext := nil;
   inherited;
 end;
 
@@ -175,6 +191,35 @@ end;
 function TLifetimeManagerTestCase.TMockObjectActivator.CreateInstance: TObject;
 begin
   Result := TMockObject.Create;
+end;
+
+{ TMockContext }
+
+function TMockContext.CreateLifetimeManager(
+  model: TComponentModel): ILifetimeManager;
+begin
+  raise Exception.Create('CreateLifetimeManager');
+end;
+
+function TMockContext.GetDependencyResolver: IDependencyResolver;
+begin
+  raise Exception.Create('GetDependencyResolver');
+end;
+
+function TMockContext.GetInjectionFactory: IInjectionFactory;
+begin
+  raise Exception.Create('GetInjectionFactory');
+end;
+
+function TMockContext.HasService(serviceType: PTypeInfo): Boolean;
+begin
+  raise Exception.Create('HasService');
+end;
+
+function TMockContext.HasService(serviceType: PTypeInfo;
+  const name: string): Boolean;
+begin
+  raise Exception.Create('HasService');
 end;
 
 end.

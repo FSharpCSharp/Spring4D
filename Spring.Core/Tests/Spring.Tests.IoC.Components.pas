@@ -142,11 +142,14 @@ type
   IInjectionExplorer = interface
     ['{47439E73-A21E-48DB-A1C9-0A14639FFC01}']
     {$REGION 'Property Getters and Setters'}
-      function GetConstructorInjection: INameService;
-      function GetPropertyInjection: INameService;
-      function GetMethodInjection: INameService;
-      function GetFieldInjection: INameService;
+
+    function GetConstructorInjection: INameService;
+    function GetPropertyInjection: INameService;
+    function GetMethodInjection: INameService;
+    function GetFieldInjection: INameService;
+
     {$ENDREGION}
+
     property ConstructorInjection: INameService read GetConstructorInjection;
     property PropertyInjection: INameService read GetPropertyInjection;
     property MethodInjection: INameService read GetMethodInjection;

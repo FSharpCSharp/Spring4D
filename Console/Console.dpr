@@ -44,129 +44,97 @@ uses
   Spring.System,
   Spring.Collections,
   Spring.DesignPatterns,
+  Spring.Reflection,
+  Spring.Helpers,
   Spring.IoC;
 
-(*
 type
-  IEmailSender = interface
-  //...
+  IA = interface
+    ['{CE7F702E-76CD-4667-A5BE-0F5B1D5B1D12}']
+    procedure DoSomething;
   end;
 
-  ILogger = interface
-  //...
+  IB = interface(IA)
+    ['{65403FE3-9EF2-4AD2-984F-F138E232D60F}']
+    procedure DoSomething;
   end;
 
-  INetworkObservable = interface
-  //...
+  TA = class(TInterfacedObject, IA, IInterface)
+    procedure DoSomething; virtual; abstract;
   end;
 
-//  [Singleton]
-//  [Singleton]
-//  [Implements(TypeInfo(IEmailSender), 'network.emailsender']
-//  [Implements(TypeInfo(INetworkObservable), 'network.observable']
-
-  TLogger = class(TInterfacedObject, ILogger)
-  //...
+  TB = class(TInterfacedObject, IA, IB, IInterface)
+    procedure DoSomething; virtual; abstract;
   end;
-  
-  {$STRONGLINKTYPES ON} 
-  TNetworkService = class(TInterfacedObject, IEmailSender, INetworkObservable)
-  private
-    fLogger: ILogger;
-  public
-    // [Injection]
-    constructor Create(logger: ILogger); overload;
-    constructor Create(logger: ILogger; port: Integer); overload;
-  //...
-  end;
-
-  TUserRegistrationForm = class(TForm)
-  private
-    // [Injection]
-    fEmailSender: IEmailSender;
-  //...
-  end;
-
-//*)
 
 var
   aType: TRttiType;
-//  container: TContainer;
+  method: TRttiMethod;
+  container: TContainer;
+  args: TArray<Integer>;
+
+procedure Test;
+var
+  list: IList<Integer>;
+  collection: IEnumerableEx<Integer>;
+  obj: TInterfacedObject;
+  item: Integer;
+begin
+  list := TCollections.CreateList<Integer>;
+  list.Add(1);
+  list.Add(2);
+  list.Add(3);
+  list.Add(4);
+  list.Add(5);
+  Writeln(list.Count);
+  Writeln(list.First);
+  Writeln(list.FirstOrDefault);
+  Writeln(list.Last);
+  Writeln(list.LastOrDefault);
+  collection := list.Where(
+    function(value: Integer): Boolean
+    begin
+      Result := value = 2;
+    end
+  );
+  Writeln(list.Count, TInterfacedObject(list).RefCount);
+  obj := TInterfacedObject(collection);
+  Writeln(collection.Count, TInterfacedObject(collection).RefCount);
+    for item in collection do
+    begin
+      Writeln(item);
+    end;
+//  collection := nil;
+//  list := nil;
+end;
+
+procedure PrintInterfaces(classType: TClass);
+var
+  table: PInterfaceTable;
+  i: Integer;
+begin
+  table := classType.GetInterfaceTable;
+  for i := 0 to table.EntryCount - 1 do
+  begin
+    Writeln(table.Entries[i].IID.ToString);
+  end;
+end;
 
 begin
   try
-    with TRttiContext.Create do
+    aType := TRttiContext.Create.GetType(TContainer);
+    for method in aType.GetMethods.Where(TMethodFilters.IsInstanceMethod()) do
     begin
-      aType := FindType('Spring.IoC.TContainer');
-      if aType <> nil then
-      begin
-        Writeln(aType.ToString);
-      end;
-      aType := FindType('TContainer');
-      if aType <> nil then
-      begin
-        Writeln(aType.ToString);
-      end;
+      Writeln(method.Parent.Name,  method.ToString);
     end;
-//    // case #1
-//    container.RegisterComponent<TLogger>;           // Implements ILogger
-//    container.RegisterComponent<TNetworkService>;   // Implements IEmailSender and INetworkObservable
-//    form := container.Resolve<TUserRegistrationForm>(Application);  // Bootstrap
-
-//    // case #2
-//    container.RegisterComponent<TLogger>;           
-//    container.RegisterComponent<TNetworkService>;
-//      .DelegateTo(
-//        function: TNetworkService
-//        begin
-//          Result := TNetworkService.Create(
-//            container.Resolve<ILogger>,
-//            80
-//          );
-//          Result.SomeProperty := SomeValue;
-//          Result.Start;
-//        end
-//      );
-//    form := container.Resolve<TUserRegistrationForm>(Application);  // Bootstrap
-
-
-//    // case #3
-//    container.RegisterComponent<TNetworkService>
-//      .Implements<IEmailSender>('network.emailsender')
-//      .Implements<INetworkObservable>('network.observable')
-//      .DelegateTo(
-//        function: TNetworkService
-//        begin
-//          Result := TNetworkService.Create(
-//            container.Resolve<ILogger>,
-//            80
-//          );
-//          Result.SomeProperty := SomeValue;
-//          Result.Start;
-//        end
-//      )
-//      .AsSingleton;
-//    form := container.Resolve<TUserRegistrationForm>(Application);  // Bootstrap
-
-//    // case #4
-//    container.RegisterComponent<TNetworkService>
-//      .Implements<IEmailSender>('network.emailsender')
-//      .Implements<INetworkObservable>('network.observable')
-//      .InjectConstructor(['${logger}', 80]);
-//      .InjectProperty('propertyName', '${network}')
-//      .InjectMethod('methodName', ['arg1', arg2, arg3])
-//      .InjectField('fieldName', 'fieldValue')
-//      .AsSingleton;
-//    form := container.Resolve<TUserRegistrationForm>(Application);  // Bootstrap
-
-//    // register decorations
-//    container.RegisterDecorations<IEmailSender>([TSecurity, TValidation, TSomethingElse]);
-//    container.RegisterDecorations<IEmailSender>('network.emailsender', [TSecurity, TValidation, TSomethingElse]);
-//
-//
-//    form := container.Resolve<TUserRegistrationForm>(
-//      ???
-//    );
+    Writeln('----------------------------------------------------');
+    method := aType.GetConstructors.First;
+    Writeln(method.ToString);
+    Test;
+    Writeln('----------------------------------------------------');
+    PrintInterfaces(TA);
+    Writeln('----------------------------------------------------');
+    PrintInterfaces(TB);
   except
     on E: Exception do
       Writeln(E.ClassName, ': ', E.Message);

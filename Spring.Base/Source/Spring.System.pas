@@ -36,11 +36,9 @@ uses
   DateUtils,
   Types,
   TypInfo,
-  Controls,
   Variants,
   ShellAPI,
   ShlObj,
-  DB,
   Registry,
   TimeSpan,
   Character,
@@ -75,6 +73,8 @@ type
   PTypeInfo  = TypInfo.PTypeInfo;
   TTypeKind  = TypInfo.TTypeKind;
   TTypeKinds = TypInfo.TTypeKinds;
+
+  TAttributeClass = class of TCustomAttribute;
 
   TCharacter = Character.TCharacter;
 
@@ -392,37 +392,6 @@ type
     constructor Create(obj: T);
     destructor Destroy; override;
     function Invoke: T;
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TRtti'}
-
-  /// <summary>
-  /// Provides static methods to get RTTI information of parameterized type.
-  /// </summary>
-  TRtti = record
-  private
-    class var
-      fContext: TRttiContext;
-    class constructor Create;
-    {$HINTS OFF}
-    class destructor Destroy;
-    {$HINTS ON}
-  public
-    class procedure CheckTypeKind<T>(const typeKind: TypInfo.TTypeKind); overload; static;
-    class procedure CheckTypeKind<T>(const typeKinds: TypInfo.TTypeKinds); overload; static;
-    class function IsManagedType<T>: Boolean; static;
-    class function IsNullReference<T>(const value: T): Boolean; overload; static;
-    class function IsNullReference(const value; typeInfo: PTypeInfo): Boolean; overload; static;
-    class function GetTypeInfo<T>: PTypeInfo; static;
-    class function GetTypeData<T>: PTypeData; static;
-    class function GetTypeKind<T>: TypInfo.TTypeKind; static;
-    class function GetTypeName<T>: string; static;
-    class function GetFullName(typeInfo: PTypeInfo): string; overload; static;
-    class function GetFullName<T>: string; overload; static;
-//    class function GetType<T>(const obj: T): IType<T>;
   end;
 
   {$ENDREGION}
@@ -1127,16 +1096,6 @@ type
   function ParseDateTime(const s, format: string): TDateTime;
 
   /// <summary>
-  /// Try setting focus to a control.
-  /// </summary>
-  /// <remarks>
-  /// </remarks>
-  function TrySetFocus(control: TWinControl): Boolean;
-
-  function TryFocusControl(control: TWinControl): Boolean;
-    deprecated 'Use TrySetFocus instead.';
-
-  /// <summary>
   /// Determines if a variant is null or empty. The parameter "trimeWhiteSpace"
   /// is an option only for strings.
   /// </summary>
@@ -1152,24 +1111,6 @@ type
   /// Update strings by calling BeginUpdate and EndUpdate
   /// </summary>
   procedure UpdateStrings(strings: TStrings; proc: TProc); inline;
-
-  /// <summary>
-  /// Enumerates all child components, recursively.
-  /// </summary>
-  /// <param name="callback">Returning false will stop the enumeration.</param>
-  procedure EnumerateComponents(owner: TComponent; callback: TFunc<TComponent, Boolean>);
-
-  /// <summary>
-  /// Walkthrough all child controls in tab-order, recursively.
-  /// </summary>
-  /// <param name="callback">Returning false will stop the enumeration.</param>
-  procedure EnumerateControls(parentControl: TWinControl; callback: TFunc<TWinControl, Boolean>);
-
-  /// <summary>
-  /// Walkthrough all dataset records from the first one.
-  /// </summary>
-  /// <param name="callback">Returning false will stop the enumeration.</param>
-  procedure EnumerateDataSet(dataSet: TDataSet; callback: TFunc<Boolean>);
 
   {$ENDREGION}
 
@@ -1250,6 +1191,7 @@ implementation
 
 uses
   ComObj,
+  Spring.Reflection,
   Spring.Win32API,
   Spring.ResourceStrings;
 
@@ -1411,22 +1353,6 @@ begin
   Result := propInfo <> nil;
 end;
 
-function TrySetFocus(control: TWinControl): Boolean;
-begin
-  TArgument.CheckNotNull(control, 'control');
-
-  Result := control.Showing and control.CanFocus;
-  if Result then
-  begin
-    control.SetFocus;
-  end;
-end;
-
-function TryFocusControl(control: TWinControl): Boolean;
-begin
-  Result := TrySetFocus(control);
-end;
-
 function TryParseDateTime(const s, format: string; out value: TDateTime): Boolean;
 var
   localString: string;
@@ -1526,66 +1452,6 @@ begin
     proc;
   finally
     strings.EndUpdate;
-  end;
-end;
-
-procedure EnumerateComponents(owner: TComponent; callback: TFunc<TComponent, Boolean>);
-var
-  component: TComponent;
-begin
-  TArgument.CheckNotNull(owner, 'owner');
-  TArgument.CheckNotNull(Assigned(callback), 'callback');
-
-  for component in owner do
-  begin
-    if not callback(component) then
-    begin
-      Exit;
-    end;
-    if component.ComponentCount > 0 then
-    begin
-      EnumerateComponents(component, callback);
-    end;
-  end;
-end;
-
-procedure EnumerateControls(parentControl: TWinControl; callback: TFunc<TWinControl, Boolean>);
-var
-  list: TList;
-  i: Integer;
-begin
-  TArgument.CheckNotNull(parentControl, 'parentControl');
-  TArgument.CheckNotNull(Assigned(callback), 'callback');
-
-  list := TList.Create;
-  try
-    parentControl.GetTabOrderList(list);
-    for i := 0 to list.Count - 1 do
-    begin
-      if not callback(TWinControl(list[i])) then
-      begin
-        Exit;
-      end;
-    end;
-  finally
-    list.Free;
-  end;
-end;
-
-procedure EnumerateDataSet(dataSet: TDataSet; callback: TFunc<Boolean>);
-begin
-  TArgument.CheckNotNull(dataSet, 'dataSet');
-  TArgument.CheckNotNull(Assigned(callback), 'callback');
-
-  dataSet.DisableControls;
-  try
-    dataSet.First;
-    while not dataSet.Eof and callback do
-    begin
-      dataSet.Next;
-    end;
-  finally
-    dataSet.EnableControls;
   end;
 end;
 
@@ -2442,101 +2308,6 @@ begin
   if Assigned(fProc) then
     fProc;
   inherited Destroy;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TRtti'}
-
-class constructor TRtti.Create;
-begin
-  fContext := TRttiContext.Create;
-end;
-
-class destructor TRtti.Destroy;
-begin
-  fContext.Free;
-end;
-
-class procedure TRtti.CheckTypeKind<T>(const typeKind: TypInfo.TTypeKind);
-begin
-  TRtti.CheckTypeKind<T>([typeKind]);
-end;
-
-class procedure TRtti.CheckTypeKind<T>(const typeKinds: TypInfo.TTypeKinds);
-var
-  typeInfo: PTypeInfo;
-begin
-  typeInfo := TRtti.GetTypeInfo<T>;
-  if not (typeInfo.Kind in typeKinds) then
-    raise ERttiException.CreateResFmt(@SUnexpectedTypeKind, [TRtti.GetTypeName<T>]);
-end;
-
-class function TRtti.IsManagedType<T>: Boolean;
-var
-  typeInfo: PTypeInfo;
-begin
-  typeInfo := TRtti.GetTypeInfo<T>;
-  Result := Rtti.IsManaged(typeInfo);
-end;
-
-class function TRtti.IsNullReference<T>(const value: T): Boolean;
-var
-  localTypeInfo: PTypeInfo;
-begin
-  localTypeInfo := TypeInfo(T);
-  Result := TRtti.IsNullReference(value, localTypeInfo);
-end;
-
-//  TTypeKind = (tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
-//    tkString, tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString,
-//    tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray, tkUString,
-//    tkClassRef, tkPointer, tkProcedure);
-class function TRtti.IsNullReference(const value; typeInfo: PTypeInfo): Boolean;
-begin
-  Result := (typeInfo <> nil) and
-    (typeInfo.Kind in [tkPointer, tkClass, tkClassRef, tkInterface, tkProcedure, tkMethod]);
-  Result := Result and not Assigned(@value);
-end;
-
-class function TRtti.GetTypeName<T>: string;
-begin
-  Result := TypInfo.GetTypeName(TRtti.GetTypeInfo<T>);
-end;
-
-class function TRtti.GetTypeKind<T>: TypInfo.TTypeKind;
-begin
-  Result := TRtti.GetTypeInfo<T>.Kind;
-end;
-
-class function TRtti.GetTypeInfo<T>: PTypeInfo;
-begin
-  Result := System.TypeInfo(T);
-  if Result = nil then
-    raise ERttiException.CreateRes(@SNoTypeInfo);
-end;
-
-class function TRtti.GetFullName(typeInfo: PTypeInfo): string;
-begin
-  TArgument.CheckNotNull(typeInfo, 'typeInfo');
-  Result := fContext.GetType(typeInfo).QualifiedName;
-end;
-
-class function TRtti.GetFullName<T>: string;
-var
-  typeInfo: PTypeInfo;
-begin
-  typeInfo := TRtti.GetTypeInfo<T>;
-  Result := TRtti.GetFullName(typeInfo);
-end;
-
-class function TRtti.GetTypeData<T>: PTypeData;
-var
-  info: PTypeInfo;
-begin
-  info := TRtti.GetTypeInfo<T>;
-  Result := TypInfo.GetTypeData(info);
 end;
 
 {$ENDREGION}

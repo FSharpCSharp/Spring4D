@@ -38,7 +38,8 @@ uses
   SysUtils,
   Controls,
   Dialogs,
-  WinSvc,
+  DB,
+//  WinSvc,
   IOUtils,
   Generics.Collections,
   Spring.System,
@@ -222,6 +223,40 @@ var
   DefaultPublicIPAddressUrl: string = 'http://www.whatismyip.com/automation/n09230945.asp'; // DO NOT LOCALIZE
 
 
+{$REGION 'Routines'}
+
+  /// <summary>
+  /// Try setting focus to a control.
+  /// </summary>
+  /// <remarks>
+  /// </remarks>
+  function TrySetFocus(control: TWinControl): Boolean;
+
+  function TryFocusControl(control: TWinControl): Boolean;
+    deprecated 'Use TrySetFocus instead.';
+
+  /// <summary>
+  /// Enumerates all child components, recursively.
+  /// </summary>
+  /// <param name="callback">Returning false will stop the enumeration.</param>
+  procedure EnumerateComponents(owner: TComponent; callback: TFunc<TComponent, Boolean>);
+
+  /// <summary>
+  /// Walkthrough all child controls in tab-order, recursively.
+  /// </summary>
+  /// <param name="callback">Returning false will stop the enumeration.</param>
+  procedure EnumerateControls(parentControl: TWinControl; callback: TFunc<TWinControl, Boolean>);
+
+  /// <summary>
+  /// Walkthrough all dataset records from the first one.
+  /// </summary>
+  /// <param name="callback">Returning false will stop the enumeration.</param>
+  procedure EnumerateDataSet(dataSet: TDataSet; callback: TFunc<Boolean>);
+
+
+{$ENDREGION}
+
+
 implementation
 
 uses
@@ -232,6 +267,83 @@ uses
   Spring.ResourceStrings;
 
 {$REGION 'Routines'}
+
+function TrySetFocus(control: TWinControl): Boolean;
+begin
+  TArgument.CheckNotNull(control, 'control');
+
+  Result := control.Showing and control.CanFocus;
+  if Result then
+  begin
+    control.SetFocus;
+  end;
+end;
+
+function TryFocusControl(control: TWinControl): Boolean;
+begin
+  Result := TrySetFocus(control);
+end;
+
+procedure EnumerateComponents(owner: TComponent; callback: TFunc<TComponent, Boolean>);
+var
+  component: TComponent;
+begin
+  TArgument.CheckNotNull(owner, 'owner');
+  TArgument.CheckNotNull(Assigned(callback), 'callback');
+
+  for component in owner do
+  begin
+    if not callback(component) then
+    begin
+      Exit;
+    end;
+    if component.ComponentCount > 0 then
+    begin
+      EnumerateComponents(component, callback);
+    end;
+  end;
+end;
+
+procedure EnumerateControls(parentControl: TWinControl; callback: TFunc<TWinControl, Boolean>);
+var
+  list: TList;
+  i: Integer;
+begin
+  TArgument.CheckNotNull(parentControl, 'parentControl');
+  TArgument.CheckNotNull(Assigned(callback), 'callback');
+
+  list := TList.Create;
+  try
+    parentControl.GetTabOrderList(list);
+    for i := 0 to list.Count - 1 do
+    begin
+      if not callback(TWinControl(list[i])) then
+      begin
+        Exit;
+      end;
+    end;
+  finally
+    list.Free;
+  end;
+end;
+
+procedure EnumerateDataSet(dataSet: TDataSet; callback: TFunc<Boolean>);
+begin
+  TArgument.CheckNotNull(dataSet, 'dataSet');
+  TArgument.CheckNotNull(Assigned(callback), 'callback');
+
+  dataSet.DisableControls;
+  try
+    dataSet.First;
+    while not dataSet.Eof and callback do
+    begin
+      dataSet.Next;
+    end;
+  finally
+    dataSet.EnableControls;
+  end;
+end;
+
 
 function _GetPublicIPAddress: string;
 var

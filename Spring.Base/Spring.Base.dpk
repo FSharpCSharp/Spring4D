@@ -24,6 +24,7 @@ package Spring.Base;
 {$IMAGEBASE $400000}
 {$DESCRIPTION 'Delphi Spring Framework Base Class Library'}
 {$IMPLICITBUILD ON}
+{$DEFINE DEBUG}
 
 requires
   rtl,
@@ -31,13 +32,16 @@ requires
   dbrtl;
 
 contains
+  Spring.System in 'Source\Spring.System.pas',
   Spring.Collections.Adapters in 'Source\Spring.Collections.Adapters.pas',
   Spring.Collections in 'Source\Spring.Collections.pas',
   Spring.DesignPatterns in 'Source\Spring.DesignPatterns.pas',
   Spring.Helpers in 'Source\Spring.Helpers.pas',
   Spring.ResourceStrings in 'Source\Spring.ResourceStrings.pas',
-  Spring.System in 'Source\Spring.System.pas',
   Spring.Utils in 'Source\Spring.Utils.pas',
-  Spring.Win32API in 'Source\Spring.Win32API.pas';
+  Spring.Win32API in 'Source\Spring.Win32API.pas',
+  Spring.Reflection in 'Source\Spring.Reflection.pas',
+  Spring.Reflection.Filters in 'Source\Spring.Reflection.Filters.pas',
+  Spring.Collections.Extensions in 'Source\Spring.Collections.Extensions.pas';
 
 end.

@@ -43,8 +43,7 @@ type
   private
     fEnumerator: TEnumerator<T>;
   public
-    constructor Create(collection: TEnumerable<T>); overload;
-    constructor Create(enumerator: TEnumerator<T>); overload;
+    constructor Create(collection: TEnumerable<T>);
     destructor Destroy; override;
     function GetCurrent: T;
     function MoveNext: Boolean;
@@ -55,116 +54,122 @@ type
   /// <summary>
   /// TListAdapter<T>
   /// </summary>
-  TListAdapter<T> = class(TInterfacedObject, IList<T>, ICollection<T>, IEnumerableEx<T>, IInterface)
+  TListAdapter<T> = class(TEnumerableBase<T>, IList<T>, ICollection<T>,
+    IEnumerableEx<T>, IEnumerable_<T>, IInterface)
   protected
     fList: TList<T>;
     fOwnership: TCollectionOwnership;
-    function GetCount: Integer;
-    function GetIsEmpty: Boolean;
     function GetIsReadOnly: Boolean; virtual;
     function GetItem(index: Integer): T;
-    function GetEnumerator: IEnumeratorEx<T>;
     procedure SetItem(index: Integer; const Value: T);
+  protected
+    function GetCount: Integer; override;
+    function GetIsEmpty: Boolean; override;
   public
     constructor Create(list: TList<T>; ownership: TCollectionOwnership = coReference);
     destructor Destroy; override;
+
+    function GetEnumerator: IEnumeratorEx<T>; override;
+    function Contains(const item: T): Boolean; override;
+    function ToArray: TArray<T>; override;
+    function ToList: IList<T>; override;
+
     procedure Add(const item: T);
     procedure Clear;
     procedure Insert(index: Integer; const item: T);
     procedure RemoveAt(index: Integer);
     function Extract(const item: T): T;
-    function Contains(const item: T): Boolean;
     function IndexOf(const item: T): Integer;
     function Remove(const item: T): Boolean;
-    function ToArray: TArray<T>;
     property Items[index: Integer]: T read GetItem write SetItem; default;
-    property Count: Integer read GetCount;
-    property IsEmpty: Boolean read GetIsEmpty;
     property IsReadOnly: Boolean read GetIsReadOnly;
   end;
 
   /// <summary>
   /// TDictionaryAdapter<TKey, TValue>
   /// </summary>
-  TDictionaryAdapter<TKey, TValue> = class(TInterfacedObject, IDictionary<TKey, TValue>, ICollection<TPair<TKey, TValue>>, IEnumerableEx<TPair<TKey, TValue>>, IInterface)
-  private
-    fDictionary: TDictionary<TKey,TValue>;
-    fOwnership: TCollectionOwnership;
-    fKeys: ICollection<TKey>;
-    fValues: ICollection<TValue>;
+  TDictionaryAdapter<TKey, TValue> = class(TEnumerableBase<TPair<TKey, TValue>>,
+    IDictionary<TKey, TValue>, ICollection<TPair<TKey, TValue>>,
+    IEnumerableEx<TPair<TKey, TValue>>, IEnumerable_<TPair<TKey, TValue>>, IInterface)
   private
     type
       /// <summary>
       /// Provides a read-only ICollection<TKey> implementation
       /// </summary>
-      TKeyCollection = class(TInterfacedObject, ICollection<TKey>, IEnumerableEx<TKey>, IInterface)
+      TKeyCollection = class(TEnumerableBase<TKey>, ICollection<TKey>,
+        IEnumerableEx<TKey>, IEnumerable_<TKey>, IInterface)
       private
         fDictionary: TDictionary<TKey,TValue>;
       protected
-        function GetCount: Integer;
-        function GetIsEmpty: Boolean;
+        function GetCount: Integer; override;
+        function GetIsEmpty: Boolean; override;
         function GetIsReadOnly: Boolean;
       public
         constructor Create(dictionary: TDictionary<TKey,TValue>);
         { IEnumerable<TKey> }
-        function GetEnumerator: IEnumeratorEx<TKey>;
+        function GetEnumerator: IEnumeratorEx<TKey>; override;
+        { IEnumerableEx<TKey> }
+        function Contains(const item: TKey): Boolean; override;
+        function ToArray: TArray<TKey>; override;
         { ICollection<TKey> }
         procedure Add(const item: TKey); overload;
         procedure Clear;
-        function  Contains(const item: TKey): Boolean;
         function Remove(const item: TKey): Boolean; overload;
         function Extract(const item: TKey): TKey;
-        function ToArray: TArray<TKey>;
-        property Count: Integer read GetCount;
-        property IsEmpty: Boolean read GetIsEmpty;
-        property IsReadOnly: Boolean read GetIsReadOnly;
       end;
 
       /// <summary>
       /// Provides a read-only ICollection<TValue> implementation
       /// </summary>
-      TValueCollection = class(TInterfacedObject, ICollection<TValue>, IEnumerableEx<TValue>, IInterface)
+      TValueCollection = class(TEnumerableBase<TValue>, ICollection<TValue>,
+        IEnumerableEx<TValue>, IEnumerable_<TValue>, IInterface)
       private
         fDictionary: TDictionary<TKey, TValue>;
-      protected
-        function GetCount: Integer;
-        function GetIsEmpty: Boolean;
         function GetIsReadOnly: Boolean;
+      protected
+        function GetCount: Integer; override;
+        function GetIsEmpty: Boolean; override;
       public
         constructor Create(dictionary: TDictionary<TKey,TValue>);
-        { IEnumerable<TValue> }
-        function GetEnumerator: IEnumeratorEx<TValue>;
+        { _IEnumerable<TValue> }
+        function GetEnumerator: IEnumeratorEx<TValue>; override;
+        { IEnumerableEx<TValue> }
+        function Contains(const item: TValue): Boolean; override;
+        function ToArray: TArray<TValue>; override;
         { ICollection<TValue> }
         procedure Add(const item: TValue); overload;
         procedure Clear;
-        function  Contains(const item: TValue): Boolean;
         function Remove(const item: TValue): Boolean; overload;
         function Extract(const item: TValue): TValue;
-        function ToArray: TArray<TValue>;
-        property Count: Integer read GetCount;
-        property IsEmpty: Boolean read GetIsEmpty;
         property IsReadOnly: Boolean read GetIsReadOnly;
       end;
-  public
-    { Implements IEnumerableEx<TPair<TKey, TValue>> }
-    function GetEnumerator: IEnumeratorEx<TPair<TKey,TValue>>;
-    { Implements ICollection<TPair<TKey, TValue>> }
-    function GetCount: Integer;
-    function GetIsEmpty: Boolean;
-    function GetIsReadOnly: Boolean;
-    procedure Add(const item: TPair<TKey,TValue>); overload;
-    procedure Clear;
-    function  Contains(const item: TPair<TKey,TValue>): Boolean;
-    function Remove(const item: TPair<TKey,TValue>): Boolean; overload;
-    function Extract(const item: TPair<TKey,TValue>): TPair<TKey,TValue>;
-    function ToArray: TArray<TPair<TKey,TValue>>;
-    property Count: Integer read GetCount;
-    property IsEmpty: Boolean read GetIsEmpty;
-    property IsReadOnly: Boolean read GetIsReadOnly;
+  private
+    fDictionary: TDictionary<TKey,TValue>;
+    fOwnership: TCollectionOwnership;
+    fKeys: ICollection<TKey>;
+    fValues: ICollection<TValue>;
   public
     constructor Create(dictionary: TDictionary<TKey,TValue>;
       ownership: TCollectionOwnership = coReference);
     destructor Destroy; override;
+
+    { Implements IEnumerableEx<TPair<TKey, TValue>> }
+    function GetCount: Integer; override;
+    function GetIsEmpty: Boolean; override;
+    function Contains(const item: TPair<TKey,TValue>): Boolean; override;
+    function GetEnumerator: IEnumeratorEx<TPair<TKey,TValue>>; override;
+    function ToArray: TArray<TPair<TKey,TValue>>; override;
+    property Count: Integer read GetCount;
+    property IsEmpty: Boolean read GetIsEmpty;
+
+    { Implements ICollection<TPair<TKey, TValue>> }
+    function GetIsReadOnly: Boolean;
+    procedure Add(const item: TPair<TKey,TValue>); overload;
+    procedure Clear;
+    function Remove(const item: TPair<TKey,TValue>): Boolean; overload;
+    function Extract(const item: TPair<TKey,TValue>): TPair<TKey,TValue>;
+    property IsReadOnly: Boolean read GetIsReadOnly;
+
     { Implements IDictionary<TKey,TValue> }
     function GetItem(const key: TKey): TValue;
     function GetKeys: ICollection<TKey>;
@@ -187,15 +192,10 @@ uses
 
 {$REGION 'TEnumeratorAdapter<T>'}
 
-constructor TEnumeratorAdapter<T>.Create(enumerator: TEnumerator<T>);
-begin
-  inherited Create;
-  fEnumerator := enumerator;
-end;
-
 constructor TEnumeratorAdapter<T>.Create(collection: TEnumerable<T>);
 begin
-  Create(collection.GetEnumerator);
+  inherited Create;
+  fEnumerator := collection.GetEnumerator;
 end;
 
 destructor TEnumeratorAdapter<T>.Destroy;
@@ -290,14 +290,19 @@ begin
   end;
 end;
 
-function TListAdapter<T>.GetCount: Integer;
+function TListAdapter<T>.ToList: IList<T>;
 begin
-  Result := fList.Count;
+  Result := Self;
 end;
 
 function TListAdapter<T>.GetEnumerator: IEnumeratorEx<T>;
 begin
   Result := TEnumeratorAdapter<T>.Create(fList);
+end;
+
+function TListAdapter<T>.GetCount: Integer;
+begin
+  Result := fList.Count;
 end;
 
 function TListAdapter<T>.GetIsEmpty: Boolean;

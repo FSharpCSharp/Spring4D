@@ -20,6 +20,7 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
+			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
 			<DCC_DependencyCheckOutputName>F:\Users\Public\Documents\RAD Studio\7.0\Bpl\Spring.Base.bpl</DCC_DependencyCheckOutputName>
 			<DCC_Description>Delphi Spring Framework Base Class Library</DCC_Description>
@@ -38,7 +39,6 @@
 			<DCC_DebugInformation>false</DCC_DebugInformation>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2)'!=''">
-			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
 			<DCC_DebugDCUs>true</DCC_DebugDCUs>
 		</PropertyGroup>
 		<ItemGroup>
@@ -48,14 +48,17 @@
 			<DCCReference Include="rtl.dcp"/>
 			<DCCReference Include="vcl.dcp"/>
 			<DCCReference Include="dbrtl.dcp"/>
+			<DCCReference Include="Source\Spring.System.pas"/>
 			<DCCReference Include="Source\Spring.Collections.Adapters.pas"/>
 			<DCCReference Include="Source\Spring.Collections.pas"/>
 			<DCCReference Include="Source\Spring.DesignPatterns.pas"/>
 			<DCCReference Include="Source\Spring.Helpers.pas"/>
 			<DCCReference Include="Source\Spring.ResourceStrings.pas"/>
-			<DCCReference Include="Source\Spring.System.pas"/>
 			<DCCReference Include="Source\Spring.Utils.pas"/>
 			<DCCReference Include="Source\Spring.Win32API.pas"/>
+			<DCCReference Include="Source\Spring.Reflection.pas"/>
+			<DCCReference Include="Source\Spring.Reflection.Filters.pas"/>
+			<DCCReference Include="Source\Spring.Collections.Extensions.pas"/>
 			<None Include="Source\Spring.inc"/>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>

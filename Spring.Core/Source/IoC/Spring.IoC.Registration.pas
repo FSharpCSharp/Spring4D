@@ -62,8 +62,8 @@ type
     function GetComponentModel(componentTypeInfo: PTypeInfo): TComponentModel;
     function FindOneByServiceType(serviceType: PTypeInfo): TComponentModel; overload;
     function FindOneByServiceType(serviceType: PTypeInfo; const name: string): TComponentModel; overload;
-    function FindOneByComponentType(componentType: PTypeInfo): TComponentModel;
-    function FindAll: ICollection<TComponentModel>; overload;
+    function FindOne(componentType: PTypeInfo): TComponentModel;
+    function FindAll: TArray<TComponentModel>; overload;
     function FindAll(serviceType: PTypeInfo): TArray<TComponentModel>; overload;
     function HasServiceType(serviceType: PTypeInfo): Boolean;
   end;
@@ -168,6 +168,7 @@ type
 implementation
 
 uses
+  Spring.Reflection,
   Spring.Helpers,
   Spring.ResourceStrings,
   Spring.IoC.ResourceStrings;
@@ -227,7 +228,11 @@ begin
   begin
     raise ERegistrationException.CreateRes(@SNonGuidInterfaceServicesAreNotSupported);
   end;
-  { TODO: Check IsAssignable }
+  if not TRtti.IsAssignable(componentType, serviceType) then
+  begin
+    raise ERegistrationException.CreateResFmt(@SIncompatibleTypes, [
+      GetTypeName(componentType), GetTypeName(serviceType)]);
+  end;
   model := GetComponentModel(componentType);
   model.ServiceType := serviceTypeObject;
   model.Name := name;
@@ -258,11 +263,11 @@ function TComponentRegistry.GetComponentModel(
 var
   componentType: TRttiInstanceType;
 begin
-  TArgument.CheckNotNull(componentTypeInfo, 'componentType');
+  TArgument.CheckNotNull(componentTypeInfo, 'componentTypeInfo');
   if not fModels.TryGetValue(componentTypeInfo, Result) then
   begin
     componentType := fRttiContext.GetType(componentTypeInfo).AsInstance;
-    Result := TComponentModel.Create(componentType);
+    Result := TComponentModel.Create(fContainerContext, componentType);
     AddComponentModel(Result);
   end;
 end;
@@ -293,16 +298,16 @@ begin
   end;
 end;
 
-function TComponentRegistry.FindAll: ICollection<TComponentModel>;
-begin
-  Result := fModels.Values;
-end;
-
-function TComponentRegistry.FindOneByComponentType(
+function TComponentRegistry.FindOne(
   componentType: PTypeInfo): TComponentModel;
 begin
   TArgument.CheckNotNull(componentType, 'componentType');
   fModels.TryGetValue(componentType, Result);
+end;
+
+function TComponentRegistry.FindAll: TArray<TComponentModel>;
+begin
+  Result := fModels.Values.ToArray;  // TEMP
 end;
 
 function TComponentRegistry.FindAll(

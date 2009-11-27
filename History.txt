@@ -1,3 +1,15 @@
+2009-11-27
+[Breaking Changes]
+- The EnumerateComponents, EnumerateControls, EnumerateDataSet and TrySetFocus methods in Spring.System were moved to Spring.Utils.
+- Spring.System.TRtti was moved to Spring.Reflection
+
+[Changes]
+- Added TRtti.IsAssignable(typeFrom, typeTo)
+- The Spring.Reflection.TxxxFilters classes were introduced to help developers select eligible members easier by applying the Specification Pattern.
+- Introduced LINQ-like enumerable extensions (First, FirstOrDefault, Last, LastOrDefault, Where, etc.) which locates in the IEnumerableEx<T>.
+- Added a new class helper TRttiType, which provides the ability to filter members (constructors/methods/properties/fields).
+- Bug-fixes (TSpecification<T>)
+
 2009-11-22	v0.1.2.566
 [IoC]
 Added fluent-style registration named as RegisterComponent<T> and RegisterComponent(typeInfo).

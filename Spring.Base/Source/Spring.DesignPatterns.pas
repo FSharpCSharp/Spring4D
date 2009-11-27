@@ -39,8 +39,7 @@ uses
   SyncObjs,
   TypInfo,
   Generics.Defaults,
-  Generics.Collections,
-  Spring.System;
+  Generics.Collections;
 
 type
   {$REGION 'TSingleton'}
@@ -49,6 +48,9 @@ type
   /// Provides a portal to get the single instance of a class. It also keeps track
   /// of the lifetime of the instances and will free them in reversed order.
   /// </summary>
+  /// <remarks>
+  /// Consider use IoC to apply the singleton pattern.
+  /// </remarks>
   TSingleton = record
   strict private
     class var
@@ -163,17 +165,20 @@ type
     function IsSatisfiedBy(const obj: T): Boolean;
     class operator Implicit(const specification: ISpecification<T>): TSpecification<T>;
     class operator Implicit(const specification: TSpecification<T>): ISpecification<T>;
+    class operator Implicit(const specification: TSpecification<T>): TPredicate<T>;
     class operator Explicit(const specification: ISpecification<T>): TSpecification<T>;
     class operator Explicit(const specification: TSpecification<T>): ISpecification<T>;
     class operator LogicalAnd(const left, right: TSpecification<T>): TSpecification<T>;
     class operator LogicalOr(const left, right: TSpecification<T>): TSpecification<T>;
-    class operator LogicalNot(const specification:TSpecification<T>) : TSpecification<T>;
+    class operator LogicalNot(const value:TSpecification<T>) : TSpecification<T>;
   end;
 
   /// <summary>
   /// Provides the abstract base class for Specification
   /// </summary>
-  TSpecificationBase<T> = class abstract(TInterfacedObject, ISpecification<T>)
+  TSpecificationBase<T> = class abstract(TInterfacedObject, ISpecification<T>, TPredicate<T>, IInterface)
+  protected
+    function Invoke(arg: T): Boolean; virtual;
   public
     function IsSatisfiedBy(const obj: T): Boolean; virtual; abstract;
   end;
@@ -213,6 +218,7 @@ type
 implementation
 
 uses
+  Spring.System,
   Spring.ResourceStrings;
 
 
@@ -265,7 +271,6 @@ end;
 
 procedure TObservable<T>.Validate(const listener: T);
 begin
-  TArgument.CheckNotNull<T>(listener, 'listener');
 end;
 
 procedure TObservable<T>.DoListenerAdded(const listener: T);
@@ -387,7 +392,113 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TSpecificationBase<T>'}
+
+function TSpecificationBase<T>.Invoke(arg: T): Boolean;
+begin
+  Result := IsSatisfiedBy(arg);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TSpecification<T>'}
+
+function TSpecification<T>.IsSatisfiedBy(const obj: T): Boolean;
+begin
+  Result := (fSpecification <> nil) and fSpecification.IsSatisfiedBy(obj)
+end;
+
+class operator TSpecification<T>.Implicit(
+  const specification: ISpecification<T>): TSpecification<T>;
+begin
+  Result.fSpecification := specification;
+end;
+
+class operator TSpecification<T>.Implicit(
+  const specification: TSpecification<T>): ISpecification<T>;
+begin
+  Result := specification.fSpecification;
+end;
+
+class operator TSpecification<T>.Implicit(
+  const specification: TSpecification<T>): TPredicate<T>;
+var
+  internalSpecification: ISpecification<T>;
+begin
+  internalSpecification := specification;
+  if internalSpecification is TSpecificationBase<T> then
+  begin
+    Result := TSpecificationBase<T>(internalSpecification);
+  end
+  else if internalSpecification <> nil then
+  begin
+    Result :=
+      function(arg: T): Boolean
+      begin
+        Result := internalSpecification.IsSatisfiedBy(arg);
+      end;
+  end
+  else
+  begin
+    Result := nil;
+  end;
+end;
+
+class operator TSpecification<T>.Explicit(
+  const specification: ISpecification<T>): TSpecification<T>;
+begin
+  Result.fSpecification := specification;
+end;
+
+class operator TSpecification<T>.Explicit(
+  const specification: TSpecification<T>): ISpecification<T>;
+begin
+  Result := specification.fSpecification;
+end;
+
+class operator TSpecification<T>.LogicalAnd(const left,
+  right: TSpecification<T>): TSpecification<T>;
+var
+  specification: ISpecification<T>;
+begin
+  specification := TLogicalAndSpecification<T>.Create(ISpecification<T>(left),
+    ISpecification<T>(right));
+  Result := TSpecification<T>(specification);
+end;
+
+class operator TSpecification<T>.LogicalOr(const left,
+  right: TSpecification<T>): TSpecification<T>;
+var
+  specification: ISpecification<T>;
+begin
+  specification := TLogicalOrSpecification<T>.Create(ISpecification<T>(left),
+    ISpecification<T>(right));
+  Result := TSpecification<T>(specification);
+end;
+
+class operator TSpecification<T>.LogicalNot(
+  const value: TSpecification<T>): TSpecification<T>;
+var
+  specification: ISpecification<T>;
+begin
+  specification := TLogicalNotSpecification<T>.Create(ISpecification<T>(value));
+  Result := TSpecification<T>(specification);
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'Logical Specifications'}
+
+{ TUnarySpecification<T> }
+
+constructor TUnarySpecification<T>.Create(
+  const specification: ISpecification<T>);
+begin
+  inherited Create;
+  fSpecification := specification;
+end;
 
 { TBinarySpecification<T> }
 
@@ -397,15 +508,6 @@ begin
   inherited Create;
   fLeft := left;
   fRight := right;
-end;
-
-{ TUnarySpecification<T> }
-
-constructor TUnarySpecification<T>.Create(
-  const specification: ISpecification<T>);
-begin
-  inherited Create;
-  fSpecification := specification;
 end;
 
 { TLogicalAndSpecification<T> }
@@ -427,67 +529,6 @@ end;
 function TLogicalNotSpecification<T>.IsSatisfiedBy(const obj: T): Boolean;
 begin
   Result := not fSpecification.IsSatisfiedBy(obj);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TSpecification<T>'}
-
-function TSpecification<T>.IsSatisfiedBy(const obj: T): Boolean;
-begin
-  Result := fSpecification.IsSatisfiedBy(obj)
-end;
-
-class operator TSpecification<T>.Implicit(
-  const specification: ISpecification<T>): TSpecification<T>;
-begin
-  Result.fSpecification := specification;
-end;
-
-class operator TSpecification<T>.Implicit(
-  const specification: TSpecification<T>): ISpecification<T>;
-begin
-  Result := specification.fSpecification;
-end;
-
-class operator TSpecification<T>.Explicit(
-  const specification: ISpecification<T>): TSpecification<T>;
-begin
-  Result.fSpecification := specification;
-end;
-
-class operator TSpecification<T>.Explicit(
-  const specification: TSpecification<T>): ISpecification<T>;
-begin
-  Result := specification.fSpecification;
-end;
-
-class operator TSpecification<T>.LogicalAnd(const left,
-  right: TSpecification<T>): TSpecification<T>;
-var
-  specification: ISpecification<T>;
-begin
-  specification := TLogicalAndSpecification<T>.Create(ISpecification<T>(left), ISpecification<T>(right));
-  Result := TSpecification<T>(specification);
-end;
-
-class operator TSpecification<T>.LogicalOr(const left,
-  right: TSpecification<T>): TSpecification<T>;
-var
-  specification: ISpecification<T>;
-begin
-  specification := TLogicalOrSpecification<T>.Create(ISpecification<T>(left), ISpecification<T>(right));
-  Result := TSpecification<T>(specification);
-end;
-
-class operator TSpecification<T>.LogicalNot(
-  const specification: TSpecification<T>): TSpecification<T>;
-var
-  spec: ISpecification<T>;
-begin
-  spec := TLogicalNotSpecification<T>.Create(ISpecification<T>(spec));
-  Result := TSpecification<T>(spec);
 end;
 
 {$ENDREGION}

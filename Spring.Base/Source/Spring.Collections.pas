@@ -43,7 +43,6 @@ type
   { Forward Declarations }
   IEnumeratorEx<T> = interface;
   IEnumerableEx<T> = interface;
-//  IEnumerableExtensions<T> = interface;
   ICollection<T> = interface;
   IList<T> = interface;
   IDictionary<TKey, TValue> = interface;
@@ -61,43 +60,49 @@ type
   end;
 
   /// <summary>
-  /// Exposes the enumerator, which supports a simple iteration over a
-  /// collection of a specified type.
+  /// Infrastructure. Exposes the enumerator, which supports a simple
+  /// iteration over a collection of a specified type.
   /// </summary>
-  IEnumerableEx<T> = interface
+  IEnumerable_<T> = interface
     function GetEnumerator: IEnumeratorEx<T>;
   end;
 
   /// <summary>
-  /// Provides Extension methods for IEnumerableEx<T>
+  /// Provides enumerable extension methods for _IEnumerable<T>
   /// </summary>
-//  IEnumerableExtensions<T> = interface(IEnumerableEx<T>)
-//    { Aggregation }
-//    function Max: T;
-//    function Min: T;
-//
-//    function Where(const predicate: TPredicate<T>): IEnumerableExtensions<T>;
-//    function ToArray: TArray<T>;
-//    function ToList: IList<T>;
-//  end;
+  IEnumerableEx<T> = interface(IEnumerable_<T>)
+    {$REGION 'Property Getters & Setters'}
+      function GetCount: Integer;
+      function GetIsEmpty: Boolean;
+    {$ENDREGION}
+    function First: T; overload;
+    function First(const predicate: TPredicate<T>): T; overload;
+    function FirstOrDefault: T; overload;
+    function FirstOrDefault(const predicate: TPredicate<T>): T; overload;
+    function Last: T; overload;
+    function Last(const predicate: TPredicate<T>): T; overload;
+    function LastOrDefault: T; overload;
+    function LastOrDefault(const predicate: TPredicate<T>): T; overload;
+    function Where(const predicate: TPredicate<T>): IEnumerableEx<T>;
+    function Contains(const item: T): Boolean; overload;
+    function Contains(const item: T; const comparer: IEqualityComparer<T>): Boolean; overload;
+    function ToArray: TArray<T>;
+    function ToList: IList<T>;
+    property Count: Integer read GetCount;
+    property IsEmpty: Boolean read GetIsEmpty;
+  end;
 
   /// <summary>
   /// Defines methods to manipulate generic collections.
   /// </summary>
-  ICollection<T> = interface(IEnumerableEx<T>)  // IEnumerableExtensions<T>
+  ICollection<T> = interface(IEnumerableEx<T>)
     {$REGION 'Property Getters & Setters'}
-      function GetIsEmpty: Boolean;
-      function GetCount: Integer;
       function GetIsReadOnly: Boolean;
     {$ENDREGION}
     procedure Add(const item: T); overload;
     procedure Clear;
-    function  Contains(const item: T): Boolean;
     function Remove(const item: T): Boolean; overload;
 //    function Extract(const item: T): T;
-    function ToArray: TArray<T>;                // experimental
-    property Count: Integer read GetCount;
-    property IsEmpty: Boolean read GetIsEmpty;  // experimental
     property IsReadOnly: Boolean read GetIsReadOnly;
   end;
 
@@ -156,8 +161,6 @@ type
   /// </remarks>
   TCollections = class
   public
-//    class function CreateEnumerator<T>(collection: TEnumerable<T>): IEnumeratorEx<T>; overload;
-//    class function CreateEnumerator<T>(enumerator: TEnumerator<T>): IEnumeratorEx<T>; overload;
     class function CreateList<T>: IList<T>; overload;
     class function CreateList<T>(const comparer: IComparer<T>): IList<T>; overload;
     class function CreateList<T: class>(ownsObjects: Boolean): IList<T>; overload;
@@ -173,6 +176,53 @@ type
 
   TContainers = TCollections deprecated 'Use TCollections instead.';
 
+  /// <summary>
+  /// Provides an abstract base class for IEnumeratorEx<T>.
+  /// </summary>
+  TEnumeratorBase<T> = class abstract(TInterfacedObject, IEnumeratorEx<T>, IInterface)
+  protected
+    function GetCurrent: T; virtual; abstract;
+  public
+    function MoveNext: Boolean; virtual; abstract;
+    procedure Reset; virtual;
+    property Current: T read GetCurrent;
+  end;
+
+  /// <summary>
+  /// Provides a default implementation for IEnumerableEx<T> (Extension Methods).
+  /// </summary>
+  /// <remarks>
+  /// Since generic interfaces can not be implemented by delegation, it's reasonable that
+  /// Inheriting from TEnumerableBase<T> directly.
+  /// </remarks>
+  TEnumerableBase<T> = class abstract(TInterfacedObject,
+    IEnumerableEx<T>, IEnumerable_<T>, IInterface)
+  protected
+    function GetCount: Integer; virtual;
+    function GetIsEmpty: Boolean; virtual;
+    function TryGetFirst(out value: T): Boolean; virtual;
+    function TryGetLast(out value: T): Boolean; virtual;
+  public
+    { _IEnumerable<T> }
+    function GetEnumerator: IEnumeratorEx<T>; virtual; abstract;
+    { IEnumerableEx<T> }
+    function First: T; overload; virtual;
+    function First(const predicate: TPredicate<T>): T; overload; virtual;
+    function FirstOrDefault: T; overload; virtual;
+    function FirstOrDefault(const predicate: TPredicate<T>): T; overload; virtual;
+    function Last: T; overload; virtual;
+    function Last(const predicate: TPredicate<T>): T; overload; virtual;
+    function LastOrDefault: T; overload; virtual;
+    function LastOrDefault(const predicate: TPredicate<T>): T; overload; virtual;
+    function Where(const predicate: TPredicate<T>): IEnumerableEx<T>; virtual;
+    function Contains(const item: T): Boolean; overload; virtual;
+    function Contains(const item: T; const comparer: IEqualityComparer<T>): Boolean; overload; virtual;
+    function ToArray: TArray<T>; virtual;
+    function ToList: IList<T>; virtual;
+    property Count: Integer read GetCount;
+    property IsEmpty: Boolean read GetIsEmpty;
+  end;
+
 //  TReadOnlyCollection<T> = class(TInterfacedObject, IList<T>, ICollection<T>, IEnumerableEx<T>, IInterface)
 //  end;
 
@@ -184,7 +234,7 @@ implementation
 
 uses
   Spring.Collections.Adapters,
-  Spring.ResourceStrings;
+  Spring.ResourceStrings, Spring.Collections.Extensions;
 
 
 {$REGION 'TCollections'}
@@ -266,6 +316,167 @@ var
 begin
   dictionary := TObjectDictionary<TKey, TValue>.Create(ownerships, capacity, comparer);
   Result := TDictionaryAdapter<TKey, TValue>.Create(dictionary, coOwned);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TEnumeratorBase<T>'}
+
+procedure TEnumeratorBase<T>.Reset;
+begin
+  raise ENotSupportedException.CreateRes(@SCannotResetEnumerator);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TEnumerableBase<T>'}
+
+function TEnumerableBase<T>.Contains(const item: T): Boolean;
+var
+  comparer: IEqualityComparer<T>;
+begin
+//  TArgument.CheckNotNull<T>(item, 'item');
+  comparer := TEqualityComparer<T>.Default;
+  Result := Contains(item, comparer);
+end;
+
+function TEnumerableBase<T>.Contains(const item: T;
+  const comparer: IEqualityComparer<T>): Boolean;
+var
+  enumerator: IEnumeratorEx<T>;
+begin
+//  TArgument.CheckNotNull<T>(item, 'item');
+  enumerator := GetEnumerator;
+  Result := False;
+  while enumerator.MoveNext do
+  begin
+    if comparer.Equals(enumerator.Current, item) then
+    begin
+      Exit(True);
+    end;
+  end;
+end;
+
+function TEnumerableBase<T>.TryGetFirst(out value: T): Boolean;
+var
+  enumerator: IEnumeratorEx<T>;
+begin
+  enumerator := GetEnumerator;
+  Result := enumerator.MoveNext;
+  if Result then
+  begin
+    value := enumerator.Current;
+  end
+end;
+
+function TEnumerableBase<T>.TryGetLast(out value: T): Boolean;
+var
+  enumerator: IEnumeratorEx<T>;
+  hasNext: Boolean;
+begin
+  enumerator := GetEnumerator;
+  Result := enumerator.MoveNext;
+  hasNext := Result;
+  while hasNext do
+  begin
+    value := enumerator.Current;
+    hasNext := enumerator.MoveNext;
+  end;
+end;
+
+function TEnumerableBase<T>.First: T;
+begin
+  if not TryGetFirst(Result) then
+  begin
+    raise EInvalidOperation.Create('First');  // TEMP
+  end;
+end;
+
+function TEnumerableBase<T>.First(const predicate: TPredicate<T>): T;
+begin
+  Result := Where(predicate).First; // TEMP
+end;
+
+function TEnumerableBase<T>.FirstOrDefault: T;
+begin
+  if not TryGetFirst(Result) then
+  begin
+    Result := Default(T);
+  end;
+end;
+
+function TEnumerableBase<T>.FirstOrDefault(const predicate: TPredicate<T>): T;
+begin
+  Result := Where(predicate).FirstOrDefault; // TEMP
+end;
+
+function TEnumerableBase<T>.Last: T;
+begin
+  if not TryGetLast(Result) then
+  begin
+    raise EInvalidOperation.Create('Last');  // TEMP
+  end;
+end;
+
+function TEnumerableBase<T>.Last(const predicate: TPredicate<T>): T;
+begin
+  Result := Where(predicate).Last;  // TEMP
+end;
+
+function TEnumerableBase<T>.LastOrDefault: T;
+begin
+  if not TryGetLast(Result) then
+  begin
+    Result := Default(T);
+  end;
+end;
+
+function TEnumerableBase<T>.LastOrDefault(const predicate: TPredicate<T>): T;
+begin
+  Result := Where(predicate).LastOrDefault;  // TEMP
+end;
+
+function TEnumerableBase<T>.Where(
+  const predicate: TPredicate<T>): IEnumerableEx<T>;
+begin
+  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
+  Result := TEnumerableWithPredicate<T>.Create(Self, predicate);
+end;
+
+function TEnumerableBase<T>.ToArray: TArray<T>;
+begin
+  Result := ToList.ToArray;
+end;
+
+function TEnumerableBase<T>.ToList: IList<T>;
+var
+  enumerator: IEnumeratorEx<T>;
+begin
+  Result := TCollections.CreateList<T>;
+  enumerator := GetEnumerator;
+  while enumerator.MoveNext do
+  begin
+    Result.Add(enumerator.Current);
+  end;
+end;
+
+function TEnumerableBase<T>.GetCount: Integer;
+var
+  enumerator: IEnumeratorEx<T>;
+begin
+  Result := 0;
+  enumerator := GetEnumerator;
+  while enumerator.MoveNext do
+  begin
+    Inc(Result);
+  end;
+end;
+
+function TEnumerableBase<T>.GetIsEmpty: Boolean;
+begin
+  Result := not GetEnumerator.MoveNext;
 end;
 
 {$ENDREGION}

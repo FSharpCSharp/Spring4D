@@ -35,6 +35,11 @@ uses
   TypInfo,
   Rtti,
   ComObj,
+  Generics.Collections,
+  Spring.System,
+  Spring.Collections,
+  Spring.Reflection.Filters,
+  Spring.Reflection,
   Spring.DesignPatterns;
 
 type
@@ -65,6 +70,11 @@ type
     class function Create(const objectAddress, methodAddress: Pointer): TMethod; static;
   end;
 
+  TArrayHelper = class helper for TArray
+  public
+    class function CreateArray<T>(const values: array of T): TArray<T>;
+  end;
+
   {$REGION 'Class helpers for Enhanced Rtti (Reflection)'}
 
   TRttiObjectHelper = class helper for TRttiObject
@@ -81,12 +91,23 @@ type
     function GetIsClass: Boolean;
     function GetIsInterface: Boolean;
     function GetIsClassOrInterface: Boolean;
+  protected
+    function InternalGetConstructors(enumerateBaseType: Boolean = True): IEnumerableEx<TRttiMethod>;
+    function InternalGetMethods(enumerateBaseType: Boolean = True): IEnumerableEx<TRttiMethod>;
+    function InternalGetProperties(enumerateBaseType: Boolean = True): IEnumerableEx<TRttiProperty>;
+    function InternalGetFields(enumerateBaseType: Boolean = True): IEnumerableEx<TRttiField>;
   public
+    function GetConstructors: IEnumerableEx<TRttiMethod>; overload;
+    function GetMethods: IEnumerableEx<TRttiMethod>; overload;
+    function GetProperties: IEnumerableEx<TRttiProperty>; overload;
+    function GetFields: IEnumerableEx<TRttiField>; overload;
+//    function GetMembers: IEnumerableEx<TRttiMember>;
+
 //    function GetInterfaces: TArray<TRttiInterfaceType>;
-    property AsInterface: TRttiInterfaceType read GetAsInterface;
-    property IsClassOrInterface: Boolean read GetIsClassOrInterface;
     property IsClass: Boolean read GetIsClass;
     property IsInterface: Boolean read GetIsInterface;
+    property IsClassOrInterface: Boolean read GetIsClassOrInterface;
+    property AsInterface: TRttiInterfaceType read GetAsInterface;
   end;
 
   TRttiMemberHelper = class helper for TRttiMember
@@ -95,12 +116,20 @@ type
     function GetIsProtected: Boolean;
     function GetIsPublic: Boolean;
     function GetIsPublished: Boolean;
+    function GetIsConstructor: Boolean;
+    function GetIsProperty: Boolean;
+    function GetIsMethod: Boolean;
+    function GetIsField: Boolean;
   public
-//    procedure InvokeMember(instance: TValue; const args: TArray<TValue>);
-//    procedure InvokeMember(instance: TObject; const args: TArray<TValue>);
+//    procedure InvokeMember(instance: TValue; const arguments: array of TValue);
+//    procedure InvokeMember(instance: TObject; const arguments: array of TValue);
     function AsProperty: TRttiProperty;
     function AsMethod: TRttiMethod;
     function AsField: TRttiField;
+    property IsConstructor: Boolean read GetIsConstructor;
+    property IsProperty: Boolean read GetIsProperty;
+    property IsMethod: Boolean read GetIsMethod;
+    property IsField: Boolean read GetIsField;
     property IsPrivate: Boolean read GetIsPrivate;
     property IsProtected: Boolean read GetIsProtected;
     property IsPublic: Boolean read GetIsPublic;
@@ -192,6 +221,22 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TArrayHelper'}
+
+class function TArrayHelper.CreateArray<T>(const values: array of T): TArray<T>;
+var
+  i: Integer;
+begin
+  SetLength(Result, Length(values));
+  for i := 0 to High(values) do
+  begin
+    Result[i] := values[i];
+  end;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'Rtti Class Helpers'}
 
 { TRttiObjectHelper }
@@ -219,7 +264,6 @@ end;
 
 function TRttiObjectHelper.GetCustomAttributes<T>: TArray<T>;
 var
-//  attributes: TArray<TCustomAttribute>;
   attribute: TCustomAttribute;
 begin
   for attribute in GetAttributes do
@@ -240,6 +284,98 @@ begin
 end;
 
 { TRttiTypeHelper }
+
+function TRttiTypeHelper.InternalGetConstructors(
+  enumerateBaseType: Boolean): IEnumerableEx<TRttiMethod>;
+var
+  func: TGetRttiMembersFunc<TRttiMethod>;
+begin
+  func :=
+    function(targetType: TRttiType): TArray<TRttiMethod>
+    begin
+      Result := targetType.GetDeclaredMethods;
+    end;
+  Result := TRttiMemberEnumerableEx<TRttiMethod>.Create(
+    Self,
+    func,
+    enumerateBaseType,
+    TMethodFilters.IsConstructor()
+  );
+end;
+
+function TRttiTypeHelper.InternalGetMethods(
+  enumerateBaseType: Boolean): IEnumerableEx<TRttiMethod>;
+var
+  func: TGetRttiMembersFunc<TRttiMethod>;
+begin
+  func :=
+    function(targetType: TRttiType): TArray<TRttiMethod>
+    begin
+      Result := targetType.GetDeclaredMethods;
+    end;
+  Result := TRttiMemberEnumerableEx<TRttiMethod>.Create(
+    Self,
+    func,
+    enumerateBaseType,
+    nil
+  );
+end;
+
+function TRttiTypeHelper.InternalGetProperties(
+  enumerateBaseType: Boolean): IEnumerableEx<TRttiProperty>;
+var
+  func: TGetRttiMembersFunc<TRttiProperty>;
+begin
+  func :=
+    function(targetType: TRttiType): TArray<TRttiProperty>
+    begin
+      Result := targetType.GetDeclaredProperties;
+    end;
+  Result := TRttiMemberEnumerableEx<TRttiProperty>.Create(
+    Self,
+    func,
+    enumerateBaseType,
+    nil
+  );
+end;
+
+function TRttiTypeHelper.InternalGetFields(
+  enumerateBaseType: Boolean): IEnumerableEx<TRttiField>;
+var
+  func: TGetRttiMembersFunc<TRttiField>;
+begin
+  func :=
+    function(targetType: TRttiType): TArray<TRttiField>
+    begin
+      Result := targetType.GetDeclaredFields;
+    end;
+  Result := TRttiMemberEnumerableEx<TRttiField>.Create(
+    Self,
+    func,
+    enumerateBaseType,
+    nil
+  );
+end;
+
+function TRttiTypeHelper.GetConstructors: IEnumerableEx<TRttiMethod>;
+begin
+  Result := InternalGetConstructors;
+end;
+
+function TRttiTypeHelper.GetMethods: IEnumerableEx<TRttiMethod>;
+begin
+  Result := InternalGetMethods;
+end;
+
+function TRttiTypeHelper.GetProperties: IEnumerableEx<TRttiProperty>;
+begin
+  Result := InternalGetProperties;
+end;
+
+function TRttiTypeHelper.GetFields: IEnumerableEx<TRttiField>;
+begin
+  Result := InternalGetFields;
+end;
 
 function TRttiTypeHelper.GetAsInterface: TRttiInterfaceType;
 begin
@@ -285,6 +421,26 @@ begin
   Result := Self as TRttiField;
 end;
 
+function TRttiMemberHelper.GetIsConstructor: Boolean;
+begin
+  Result := (Self is TRttiMethod) and TRttiMethod(Self).IsConstructor;
+end;
+
+function TRttiMemberHelper.GetIsProperty: Boolean;
+begin
+  Result := Self is TRttiProperty;
+end;
+
+function TRttiMemberHelper.GetIsMethod: Boolean;
+begin
+  Result := Self is TRttiMethod;
+end;
+
+function TRttiMemberHelper.GetIsField: Boolean;
+begin
+  Result := Self is TRttiField;
+end;
+
 function TRttiMemberHelper.GetIsPrivate: Boolean;
 begin
   Result := Visibility = mvPrivate;
@@ -306,6 +462,5 @@ begin
 end;
 
 {$ENDREGION}
-
 
 end.

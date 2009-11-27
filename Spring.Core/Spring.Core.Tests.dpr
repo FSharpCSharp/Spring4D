@@ -37,6 +37,7 @@ begin
     TTestActivatorDelegate.Suite,
     TTestTypedInjectionByCoding.Suite,
     TTestTypedInjectionsByAttribute.Suite,
+    TTestNamedInjections.Suite,
     TTestDirectCircularDependency.Suite,
     TTestCrossedCircularDependency.Suite
   ]);
