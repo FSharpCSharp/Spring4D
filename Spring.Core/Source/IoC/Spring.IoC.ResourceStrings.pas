@@ -30,6 +30,7 @@ resourcestring
 
   SNonGuidInterfaceServicesAreNotSupported = 'Non-Guid Interface Services are not supported.';
   SIncompatibleTypes = 'The component type "%s" is incompatible with the service type "%s".';
+  SDuplicatedName = 'Duplicated name found: "%s".';
   SCircularDependencyDetected = 'A circle was detected when trying to resolve the dependency: %s.';
   SCannotResolveDependency = 'Cannot resolve the dependency: %s.';
   SUnexpectedDependencyParameterType = 'Unexpected dependency parameter type.';
@@ -38,6 +39,9 @@ resourcestring
   SUnsatisfiedMethodParameterTypes = 'Unsatisfied parameter types for the method: %s.';
   SUnsatisfiedDependency = 'Unsatisfied dependency for the service type "%0:s" which named "%1:s".';
   SLifetimeManagerNeeded = 'LifetimeTypeManager was expected.';
+  SUnresovableInjection = 'Unresovable injection.';
+  SMemberHasNoTarget = 'The member injection "%s" has no target.';
+  SUnsatisfiedConstructor = 'Unsatisfied constructor.';
   SMethodMustBeConstructor = 'The constructorMethod should be a constructor method.';
   SNoSuchMember = 'No such member: "%s".';
   SNoSuchMethod = 'No such method: "%s".';

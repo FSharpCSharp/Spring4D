@@ -1,3 +1,6 @@
+2009-11-29
+- A component can now be registered with several services by the Implements method.
+
 2009-11-27
 [Breaking Changes]
 - The EnumerateComponents, EnumerateControls, EnumerateDataSet and TrySetFocus methods in Spring.System were moved to Spring.Utils.

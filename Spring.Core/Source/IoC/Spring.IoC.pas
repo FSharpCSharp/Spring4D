@@ -36,7 +36,7 @@ uses
   Generics.Collections,
   Spring.System,
   Spring.Collections,
-  Spring.DesignPatterns,
+//  Spring.DesignPatterns,
   Spring.IoC.Core,
   Spring.IoC.Registration;
 
@@ -177,7 +177,7 @@ begin
   inspectors := TArray<IBuilderInspector>.Create(
     TLifetimeInspector.Create,
     TComponentActivatorInspector.Create,
-    TInjectionInspector.Create,
+    TInjectionTargetInspector.Create,
     TConstructorInspector.Create,
     TPropertyInspector.Create,
     TMethodInspector.Create,
@@ -309,12 +309,12 @@ end;
 
 function TContainer.HasService(serviceType: PTypeInfo): Boolean;
 begin
-  Result := fRegistry.HasServiceType(serviceType);
+  Result := fRegistry.HasService(serviceType);
 end;
 
 function TContainer.HasService(serviceType: PTypeInfo; const name: string): Boolean;
 begin
-  Result := fRegistry.FindOneByServiceType(serviceType, name) <> nil;
+  Result := fRegistry.HasService(serviceType, name);
 end;
 
 function TContainer.Resolve<T>: T;
@@ -343,7 +343,7 @@ var
   model: TComponentModel;
 begin
   TArgument.CheckTypeKind(typeInfo, [tkClass, tkInterface], 'typeInfo');
-  if not fRegistry.HasServiceType(typeInfo) and (typeInfo.Kind = tkClass) then
+  if not fRegistry.HasService(typeInfo, name) and (typeInfo.Kind = tkClass) then
   begin
     RegisterComponent(typeInfo).Implements(typeInfo, name);
     model := fRegistry.FindOne(typeInfo);
@@ -352,39 +352,45 @@ begin
   Result := fServiceResolver.Resolve(typeInfo, name);
 end;
 
+//// [Internal Error URW1111]
+//function TContainer.ResolveAll<TServiceType>: TArray<TServiceType>;
+//var
+//  serviceType: PTypeInfo;
+//  instances: TArray<TValue>;
+//  i: Integer;
+//begin
+//  serviceType := TypeInfo(TServiceType);
+//  instances := fServiceResolver.ResolveAll(serviceType);
+//  SetLength(Result, Length(Instances));
+//  for i := 0 to High(instances) do
+//  begin
+//    Result[i] := instances[i].AsType<TServiceType>;
+//  end;
+//end;
+
 function TContainer.ResolveAll<TServiceType>: TArray<TServiceType>;
 var
-  models: TArray<TComponentModel>;
+  serviceType: PTypeInfo;
+  models: IList<TComponentModel>;
   model: TComponentModel;
   value: TValue;
   i: Integer;
 begin
-  TArgument.CheckTypeKind(TypeInfo(TServiceType), [tkClass, tkInterface], 'TServiceType');
-  models := fRegistry.FindAll(TypeInfo(TServiceType));
-  SetLength(Result, Length(models));
-  for i := 0 to High(models) do
+  serviceType := TypeInfo(TServiceType);
+  TArgument.CheckTypeKind(serviceType, [tkClass, tkInterface], 'serviceType');
+  models := fRegistry.FindAll(serviceType).ToList;
+  SetLength(Result, models.Count);
+  for i := 0 to models.Count - 1 do
   begin
     model := models[i];
-    value := fServiceResolver.Resolve(model.ServiceTypeInfo, model.Name);
+    value := Resolve(serviceType, model.GetServiceName(serviceType));
     Result[i] := value.AsType<TServiceType>;
   end;
 end;
 
 function TContainer.ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
-var
-  models: TArray<TComponentModel>;
-  model: TComponentModel;
-  i: Integer;
 begin
-  TArgument.CheckNotNull(serviceType, 'serviceType');
-  TArgument.CheckTypeKind(serviceType, [tkClass, tkInterface], 'TServiceType');
-  models := fRegistry.FindAll(serviceType);
-  SetLength(Result, Length(models));
-  for i := 0 to High(models) do
-  begin
-    model := models[i];
-    Result[i] := fServiceResolver.Resolve(model.ServiceTypeInfo, model.Name);
-  end;
+  Result := fServiceResolver.ResolveAll(serviceType);
 end;
 
 procedure TContainer.Release(instance: TObject);

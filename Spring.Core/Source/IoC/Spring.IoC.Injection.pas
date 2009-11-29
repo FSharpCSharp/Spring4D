@@ -43,21 +43,25 @@ type
   private
     fModel: TComponentModel;  // Consider remove the dependency of TComponentModel
     fTarget: TRttiMember;
+    fTargetName: string;
     fDependencies: TArray<TRttiType>;
     function GetDependencyCount: Integer;
     function GetTarget: TRttiMember;
     function GetModel: TComponentModel;
     function GetHasTarget: Boolean;
+    function GetTargetName: string;
   protected
     procedure Validate(target: TRttiMember); virtual;
     procedure DoInject(instance: TObject; const arguments: array of TValue); virtual; abstract;
     procedure InitializeDependencies(out dependencies: TArray<TRttiType>); virtual; abstract;
   public
-    constructor Create(model: TComponentModel);
+    constructor Create(model: TComponentModel); overload;
+    constructor Create(model: TComponentModel; const targetName: string); overload;
     procedure Initialize(target: TRttiMember); virtual;
     procedure Inject(instance: TObject; const arguments: array of TValue);
     function GetDependencies: TArray<TRttiType>;
     property Target: TRttiMember read GetTarget;
+    property TargetName: string read GetTargetName;
     property HasTarget: Boolean read GetHasTarget;
     property DependencyCount: Integer read GetDependencyCount;
     property Model: TComponentModel read GetModel;
@@ -99,9 +103,9 @@ type
   TInjectionFactory = class(TInterfacedObject, IInjectionFactory)
   public
     function CreateConstructorInjection(model: TComponentModel): IInjection;
-    function CreatePropertyInjection(model: TComponentModel): IInjection;
-    function CreateMethodInjection(model: TComponentModel): IInjection;
-    function CreateFieldInjection(model: TComponentModel): IInjection;
+    function CreateMethodInjection(model: TComponentModel; const methodName: string): IInjection;
+    function CreatePropertyInjection(model: TComponentModel; const propertyName: string): IInjection;
+    function CreateFieldInjection(model: TComponentModel; const fieldName: string): IInjection;
   end;
 
 implementation
@@ -116,9 +120,15 @@ uses
 
 constructor TInjectionBase.Create(model: TComponentModel);
 begin
-  TArgument.CheckNotNull(model, 'model');
+  Create(model, '');
+end;
+
+constructor TInjectionBase.Create(model: TComponentModel;
+  const targetName: string);
+begin
   inherited Create;
   fModel := model;
+  fTargetName := targetName;
 end;
 
 procedure TInjectionBase.Initialize(target: TRttiMember);
@@ -152,6 +162,11 @@ end;
 function TInjectionBase.GetTarget: TRttiMember;
 begin
   Result := fTarget;
+end;
+
+function TInjectionBase.GetTargetName: string;
+begin
+  Result := fTargetName;
 end;
 
 function TInjectionBase.GetHasTarget: Boolean;
@@ -302,22 +317,22 @@ begin
   Result := TConstructorInjection.Create(model);
 end;
 
-function TInjectionFactory.CreatePropertyInjection(
-  model: TComponentModel): IInjection;
+function TInjectionFactory.CreateMethodInjection(
+  model: TComponentModel; const methodName: string): IInjection;
 begin
-  Result := TPropertyInjection.Create(model);
+  Result := TMethodInjection.Create(model, methodName);
 end;
 
-function TInjectionFactory.CreateMethodInjection(
-  model: TComponentModel): IInjection;
+function TInjectionFactory.CreatePropertyInjection(
+  model: TComponentModel; const propertyName: string): IInjection;
 begin
-  Result := TMethodInjection.Create(model);
+  Result := TPropertyInjection.Create(model, propertyName);
 end;
 
 function TInjectionFactory.CreateFieldInjection(
-  model: TComponentModel): IInjection;
+  model: TComponentModel; const fieldName: string): IInjection;
 begin
-  Result := TFieldInjection.Create(model);
+  Result := TFieldInjection.Create(model, fieldName);
 end;
 
 {$ENDREGION}

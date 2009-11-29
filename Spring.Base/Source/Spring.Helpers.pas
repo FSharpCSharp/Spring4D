@@ -97,6 +97,7 @@ type
     function InternalGetProperties(enumerateBaseType: Boolean = True): IEnumerableEx<TRttiProperty>;
     function InternalGetFields(enumerateBaseType: Boolean = True): IEnumerableEx<TRttiField>;
   public
+//    function GetAllConstructors: IEnumerableEx<TRttiMethod>; overload;
     function GetConstructors: IEnumerableEx<TRttiMethod>; overload;
     function GetMethods: IEnumerableEx<TRttiMethod>; overload;
     function GetProperties: IEnumerableEx<TRttiProperty>; overload;

@@ -88,6 +88,23 @@ type
   {$ENDREGION}
 
 
+  IAgeService = interface
+    ['{E859410D-9980-47A9-8EA7-120C35F6BDCC}']
+    function GetAge: Integer;
+    property Age: Integer read GetAge;
+  end;
+
+  TNameAgeComponent = class(TInterfacedObject, INameService, IAgeService)
+  private
+    function GetName: string;
+    function GetAge: Integer;
+  public
+    property Name: string read GetName;
+    property Age: Integer read GetAge;
+    const NameString: string = 'Complex';
+    const DefaultAge: Integer = 100;
+  end;
+
   {$REGION 'TBootstrapComponent'}
 
   TBootstrapComponent = class
@@ -121,6 +138,8 @@ type
     fNameService: INameService;
     fIntegerArg: Integer;
     fStringArg: string;
+    fIntegerProperty: Integer;
+    fStringProperty: string;
   protected
     { IPrimitive }
     function GetNameService: INameService;
@@ -132,6 +151,8 @@ type
     property NameService: INameService read fNameService;
     property IntegerArg: Integer read fIntegerArg;
     property StringArg: string read fStringArg;
+    property IntegerProperty: Integer read fIntegerProperty;
+    property StringProperty: string read fStringProperty;
   end;
 
   {$ENDREGION}
@@ -441,6 +462,18 @@ constructor TEgg.Create(const chicken: IChicken);
 begin
   inherited Create;
   fChicken := chicken;
+end;
+
+{ TNameAgeComponent }
+
+function TNameAgeComponent.GetAge: Integer;
+begin
+  Result := TNameAgeComponent.DefaultAge;
+end;
+
+function TNameAgeComponent.GetName: string;
+begin
+  Result := TNameAgeComponent.NameString;
 end;
 
 end.

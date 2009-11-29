@@ -34,6 +34,7 @@ begin
     TTestEmptyContainer.Suite,
     TTestSimpleContainer.Suite,
     TTestDifferentServiceImplementations.Suite,
+    TTestImplementsDifferentServices.Suite,
     TTestActivatorDelegate.Suite,
     TTestTypedInjectionByCoding.Suite,
     TTestTypedInjectionsByAttribute.Suite,

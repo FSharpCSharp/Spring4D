@@ -43,7 +43,7 @@ type
   private
     fRegistry: IComponentRegistry;
     fDependencies: TList<PTypeInfo>;
-    function CanResolveDependency(dependency: TRttiType; const arguments: TArray<TValue>): Boolean;
+    function CanResolveDependency(dependency: TRttiType; const argument: TValue): Boolean;
   public
     constructor Create(const registry: IComponentRegistry);
     destructor Destroy; override;
@@ -57,8 +57,9 @@ type
     fRegistry: IComponentRegistry;
   public
     constructor Create(context: IContainerContext; const registry: IComponentRegistry);
-    function CanResolve(typeInfo: PTypeInfo): Boolean;
-    function Resolve(typeInfo: PTypeInfo; const name: string): TValue;
+    function CanResolve(serviceType: PTypeInfo): Boolean;
+    function Resolve(serviceType: PTypeInfo; const name: string): TValue;
+    function ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
   end;
 
 implementation
@@ -87,29 +88,62 @@ begin
 end;
 
 function TDependencyResolver.CanResolveDependency(dependency: TRttiType;
-  const arguments: TArray<TValue>): Boolean;
+  const argument: TValue): Boolean;
 begin
-  Result := dependency.IsClassOrInterface and
-    fRegistry.HasServiceType(dependency.Handle);
+  if dependency.IsClassOrInterface then
+  begin
+    if argument.IsEmpty then
+    begin
+      Result := fRegistry.HasService(dependency.Handle);
+    end
+    else
+    begin
+      Result := argument.IsType<string> and
+        fRegistry.HasService(dependency.Handle, argument.AsString);
+    end;
+  end
+  else
+  begin
+    Result := argument.IsType(dependency.Handle);
+  end;
 end;
 
 function TDependencyResolver.CanResolve(
   const injection: IInjection): Boolean;
 var
+  dependencies: TArray<TRttiType>;
   dependency: TRttiType;
-  injectionInfo: TInjectionInfo;
-//  injectionArguments: TArray<TValue>;
+  arguments: TArray<TValue>;
+  i: Integer;
 begin
   TArgument.CheckNotNull(injection, 'injection');
+  dependencies := injection.GetDependencies;
+  arguments := injection.Model.GetInjectionArguments(injection);
   Result := True;
-  injection.Model.InjectionArguments.TryGetValue(injection, injectionInfo);
-  for dependency in injection.GetDependencies do
+  if Length(dependencies) = Length(arguments) then
   begin
-    if not CanResolveDependency(dependency, injectionInfo.Arguments) then
+    for i := 0 to High(dependencies) do
     begin
-      Result := False;
-      Break;
+      dependency := dependencies[i];
+      if not CanResolveDependency(dependency, arguments[i]) then
+      begin
+        Exit(False);
+      end;
     end;
+  end
+  else if Length(arguments) = 0 then
+  begin
+    for dependency in dependencies do
+    begin
+      if not CanResolveDependency(dependency, TValue.Empty) then
+      begin
+        Exit(False);
+      end;
+    end;
+  end
+  else
+  begin
+    Exit(False);
   end;
 end;
 
@@ -118,8 +152,7 @@ function TDependencyResolver.ResolveDependencies(
 var
   dependency: TRttiType;
   model: TComponentModel;
-  injectionInfo: TInjectionInfo;
-//  arguments: TArray<TValue>;
+  arguments: TArray<TValue>;
   instance: TObject;
   localInterface: Pointer;
   index: Integer;
@@ -127,8 +160,8 @@ var
 begin
   TArgument.CheckNotNull(injection, 'injection');
   SetLength(Result, injection.DependencyCount);
-  injection.Model.InjectionArguments.TryGetValue(injection, injectionInfo);
-  if (Length(injectionInfo.Arguments) > 0) and (Length(injectionInfo.Arguments) <> injection.DependencyCount) then
+  arguments := injection.Model.GetInjectionArguments(injection);
+  if (Length(arguments) > 0) and (Length(arguments) <> injection.DependencyCount) then
   begin
     raise EResolveException.Create('Unsatisified arguments.');
   end;
@@ -142,20 +175,20 @@ begin
         [dependency.Name]
       );
     end;
-    if (Length(injectionInfo.Arguments) > 0) then // Use arguments
+    if (Length(arguments) > 0) then // Use arguments
     begin
       if dependency.IsClassOrInterface then
       begin
-        name := injectionInfo.Arguments[index].AsString;
+        name := arguments[index].AsString;
       end
       else
       begin
-        Result[index] := injectionInfo.Arguments[index];
+        Result[index] := arguments[index];
         Inc(index);
         Continue;
       end;
     end;
-    model := fRegistry.FindOneByServiceType(dependency.Handle, name);
+    model := fRegistry.FindOne(dependency.Handle, name);
     if model = nil then
     begin
       raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
@@ -177,11 +210,11 @@ begin
     end
     else
     begin
-      if Length(injectionInfo.Arguments) = 0 then
+      if Length(arguments) = 0 then
       begin
         raise EResolveException.Create('No arguments');
       end;
-      Result[index] := injectionInfo.Arguments[index];
+      Result[index] := arguments[index];
     end;
     Assert(not Result[index].IsEmpty);
     Inc(index);
@@ -200,47 +233,43 @@ begin
   fRegistry := registry;
 end;
 
-function TServiceResolver.CanResolve(typeInfo: PTypeInfo): Boolean;
+function TServiceResolver.CanResolve(serviceType: PTypeInfo): Boolean;
 begin
   // TODO: CanResolve
   Result := True;
 end;
 
-function TServiceResolver.Resolve(typeInfo: PTypeInfo;
+function TServiceResolver.Resolve(serviceType: PTypeInfo;
   const name: string): TValue;
 var
-  models: TArray<TComponentModel>;
+  models: IEnumerableEx<TComponentModel>;
   model: TComponentModel;
-  item: TComponentModel;
   instance: TObject;
   localInterface: Pointer;
 begin
-  TArgument.CheckNotNull(typeInfo, 'typeInfo');
-  TArgument.CheckTypeKind(typeInfo, [tkClass, tkInterface], 'typeInfo');
+  TArgument.CheckTypeKind(serviceType, [tkClass, tkInterface], 'serviceType');
 
-  models := fRegistry.FindAll(typeInfo);
-  if Length(models) = 0 then
+  models := fRegistry.FindAll(serviceType);
+  if models.IsEmpty then
   begin
-    raise EResolveException.CreateResFmt(@SNoComponentRegistered, [GetTypeName(typeInfo)]);
+    raise EResolveException.CreateResFmt(@SNoComponentRegistered, [GetTypeName(serviceType)]);
   end;
-  if Length(models) = 1 then
+  if (models.Count = 1) and (name = '') then
   begin
-    model := models[0];
+    model := models.First;
   end
   else
   begin
-    model := nil;
-    for item in models do
-    begin
-      if SameText(item.Name, name) then
+    model := models.Where(
+      function(item: TComponentModel): Boolean
       begin
-        model := item;
-      end;
-    end;
+        Result := item.Services.ContainsKey(name);
+      end
+    ).FirstOrDefault;
     if model = nil then
     begin
       raise EUnsatisfiedDependencyException.CreateResFmt(@SUnsatisfiedDependency,
-        [GetTypeName(typeInfo), name]);
+        [GetTypeName(serviceType), name]);
     end;
   end;
   if model.LifetimeManager = nil then
@@ -248,16 +277,32 @@ begin
     raise EResolveException.CreateRes(@SLifetimeManagerNeeded);
   end;
   instance := model.LifetimeManager.GetInstance;
-  case typeInfo.Kind of
+  case serviceType.Kind of
     tkClass:
     begin
       Result := instance;
     end;
     tkInterface:
     begin
-      instance.GetInterface(GetTypeData(typeInfo).Guid, localInterface);
-      TValue.MakeWithoutCopy(@localInterface, typeInfo, Result);
+      instance.GetInterface(GetTypeData(serviceType).Guid, localInterface);
+      TValue.MakeWithoutCopy(@localInterface, serviceType, Result);
     end;
+  end;
+end;
+
+function TServiceResolver.ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
+var
+  models: IList<TComponentModel>;
+  model: TComponentModel;
+  i: Integer;
+begin
+  TArgument.CheckTypeKind(serviceType, [tkClass, tkInterface], 'serviceType');
+  models := fRegistry.FindAll(serviceType).ToList;
+  SetLength(Result, models.Count);
+  for i := 0 to models.Count - 1 do
+  begin
+    model := models[i];
+    Result[i] := Resolve(serviceType, model.GetServiceName(serviceType));
   end;
 end;
 

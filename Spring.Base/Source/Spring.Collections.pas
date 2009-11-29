@@ -131,9 +131,9 @@ type
       procedure SetItem(const key: TKey; const value: TValue);
     {$ENDREGION}
     procedure Add(const key: TKey; const value: TValue); overload;
+//    procedure AddOrSetValue(const key: TKey; const value: TValue);
     procedure Remove(const key: TKey); overload;
     function ContainsKey(const key: TKey): Boolean;
-//    procedure AddOrSetValue(const key: TKey; const value: TValue);
 //    function ExtractPair(const key: TKey): TPair<TKey, TValue>;
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;

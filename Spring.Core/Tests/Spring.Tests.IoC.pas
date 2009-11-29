@@ -51,6 +51,7 @@ type
     procedure TestRegisterGenericInterfaceService;
     procedure TestRegisterUnassignableService;
     procedure TestResolveAll;
+    procedure TestResolveAllNonGeneric;
   end;
 
   TTestSimpleContainer = class(TContainerTestCase)
@@ -69,6 +70,7 @@ type
     fNameService: INameService;
     fAnotherNameService: INameService;
     fServices: TArray<INameService>;
+    fServiceValues: TArray<TValue>;
   protected
     procedure SetUp; override;
     procedure TearDown; override;
@@ -76,7 +78,21 @@ type
     procedure TestNameService;
     procedure TestAnotherNameService;
     procedure TestResolveAll;
+    procedure TestResolveAllNonGeneric;
     procedure TestUnsatisfiedDependency;
+  end;
+
+  // Same Component, Different Services
+  TTestImplementsDifferentServices = class(TContainerTestCase)
+  private
+    fNameService: INameService;
+    fAgeService: IAgeService;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestNameService;
+    procedure TestAgeService;
   end;
 
   TTestActivatorDelegate = class(TContainerTestCase)
@@ -121,10 +137,6 @@ type
   TTestNamedInjections = class(TContainerTestCase)
   private
     fExplorer: IInjectionExplorer;
-//    fConstructorInjection: INameService;
-//    fPropertyInjection: INameService;
-//    fMethodInjection: INameService;
-//    fFieldInjection: INameService;
   protected
     procedure SetUp; override;
   published
@@ -150,6 +162,7 @@ type
   end;
 
 implementation
+
 
 {$REGION 'TContainerTestCase'}
 
@@ -205,6 +218,14 @@ var
   services: TArray<INameService>;
 begin
   services := fContainer.ResolveAll<INameService>;
+  CheckEquals(0, Length(services));
+end;
+
+procedure TTestEmptyContainer.TestResolveAllNonGeneric;
+var
+  services: TArray<TValue>;
+begin
+  services := fContainer.ResolveAll(TypeInfo(INameService));
   CheckEquals(0, Length(services));
 end;
 
@@ -268,8 +289,10 @@ begin
   fContainer.Build;
   component := fContainer.Resolve<TBootstrapComponent>;
   try
-    CheckNotNull(component);
+    CheckNotNull(component, 'component should not be nil.');
+    CheckNotNull(component.NameService, 'NameService');
     CheckEquals(TNameService.NameString, component.NameService.Name);
+    CheckNotNull(component.AgeService, 'AgeService');
     CheckEquals(TAgeServiceImpl.DefaultAge, component.AgeService.Age);
   finally
     fContainer.Release(component);
@@ -329,6 +352,7 @@ begin
   fNameService := fContainer.Resolve<INameService>('default');
   fAnotherNameService := fContainer.Resolve<INameService>('another');
   fServices := fContainer.ResolveAll<INameService>;
+  fServiceValues := fContainer.ResolveAll(TypeInfo(INameService));
 end;
 
 procedure TTestDifferentServiceImplementations.TearDown;
@@ -357,6 +381,13 @@ begin
   CheckEquals(2, Length(fServices), 'Count of fServices should be 2.');
   CheckTrue(fServices[0] is TNameService);
   CheckTrue(fServices[1] is TAnotherNameService);
+end;
+
+procedure TTestDifferentServiceImplementations.TestResolveAllNonGeneric;
+begin
+  CheckEquals(2, Length(fServiceValues), 'Count of fServiceValues should be 2.');
+  CheckTrue((fServiceValues[0].AsType<INameService>) is TNameService);
+  CheckTrue((fServiceValues[1].AsType<INameService>) is TAnotherNameService);
 end;
 
 /// <remarks>
@@ -589,5 +620,42 @@ begin
 end;
 
 {$ENDREGION}
+
+{ TTestImplementsDifferentServices }
+
+procedure TTestImplementsDifferentServices.SetUp;
+begin
+  inherited SetUp;
+  fContainer.RegisterComponent<TNameService>
+    .Implements<INameService>('another');
+  fContainer.RegisterComponent<TNameAgeComponent>
+    .Implements<INameService>('default')
+    .Implements<IAgeService>
+    .AsSingleton;
+  fContainer.Build;
+  fNameService := fContainer.Resolve<INameService>('default');
+  fAgeService := fContainer.Resolve<IAgeService>;
+  Assert(fNameService <> nil, 'fNameService should not be nil.');
+  Assert(fAgeService <> nil, 'fAgeService should not be nil.');
+end;
+
+procedure TTestImplementsDifferentServices.TearDown;
+begin
+  fContainer.Release(fAgeService);
+  fContainer.Release(fNameService);
+  inherited TearDown;
+end;
+
+procedure TTestImplementsDifferentServices.TestNameService;
+begin
+  Check(fNameService is TNameAgeComponent);
+  CheckEquals(TNameAgeComponent.NameString, fNameService.Name);
+end;
+
+procedure TTestImplementsDifferentServices.TestAgeService;
+begin
+  Check(fAgeService is TNameAgeComponent);
+  CheckEquals(TNameAgeComponent.DefaultAge, fAgeService.Age);
+end;
 
 end.

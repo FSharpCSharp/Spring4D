@@ -106,6 +106,10 @@ var
   constructorArguments: TArray<TValue>;
 begin
   constructorInjection := GetEligibleConstructor(fComponentModel);
+  if constructorInjection = nil then
+  begin
+    raise EActivatorException.CreateRes(@SUnsatisfiedConstructor);
+  end;
   constructorArguments := fResolver.ResolveDependencies(constructorInjection);
   componentType := fComponentModel.ComponentType as TRttiInstanceType;
   Result := InternalCreateInstance(
@@ -209,6 +213,5 @@ begin
 end;
 
 {$ENDREGION}
-
 
 end.
