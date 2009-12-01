@@ -37,13 +37,16 @@ uses
   Spring.IoC.Core;
 
 type
+  /// <summary>
+  /// Abstract ComponentActivator
+  /// </summary>
   TComponentActivatorBase = class abstract(TInterfacedObject, IComponentActivator, IInterface)
   private
-    fComponentModel: TComponentModel;
+    fModel: TComponentModel;
   protected
-    property ComponentModel: TComponentModel read fComponentModel;
+    property Model: TComponentModel read fModel;
   public
-    constructor Create(componentModel: TComponentModel);
+    constructor Create(model: TComponentModel);
     function CreateInstance: TObject; virtual; abstract;
   end;
 
@@ -58,7 +61,7 @@ type
       const arguments: TArray<TValue>): TObject;
     procedure ExecuteInjections(instance: TObject; const injections: IList<IInjection>);
   public
-    constructor Create(componentModel: TComponentModel; const resolver: IDependencyResolver);
+    constructor Create(model: TComponentModel; const resolver: IDependencyResolver);
     function CreateInstance: TObject; override;
   end;
 
@@ -79,11 +82,10 @@ uses
 
 {$REGION 'TComponentActivatorBase'}
 
-constructor TComponentActivatorBase.Create(componentModel: TComponentModel);
+constructor TComponentActivatorBase.Create(model: TComponentModel);
 begin
-  TArgument.CheckNotNull(componentModel, 'componentModel');
   inherited Create;
-  fComponentModel := componentModel;
+  fModel := model;
 end;
 
 {$ENDREGION}
@@ -91,11 +93,10 @@ end;
 
 {$REGION 'TReflectionComponentActivator'}
 
-constructor TReflectionComponentActivator.Create(componentModel: TComponentModel;
+constructor TReflectionComponentActivator.Create(model: TComponentModel;
   const resolver: IDependencyResolver);
 begin
-  TArgument.CheckNotNull(resolver, 'resolver');
-  inherited Create(componentModel);
+  inherited Create(model);
   fResolver := resolver;
 end;
 
@@ -105,36 +106,33 @@ var
   constructorInjection: IInjection;
   constructorArguments: TArray<TValue>;
 begin
-  constructorInjection := GetEligibleConstructor(fComponentModel);
+  constructorInjection := GetEligibleConstructor(fModel);
   if constructorInjection = nil then
   begin
     raise EActivatorException.CreateRes(@SUnsatisfiedConstructor);
   end;
   constructorArguments := fResolver.ResolveDependencies(constructorInjection);
-  componentType := fComponentModel.ComponentType as TRttiInstanceType;
+  componentType := fModel.ComponentType as TRttiInstanceType;
   Result := InternalCreateInstance(
     componentType.MetaclassType,
     (constructorInjection.Target as TRttiMethod),
     constructorArguments
   );
-  ExecuteInjections(Result, fComponentModel.PropertyInjections);
-  ExecuteInjections(Result, fComponentModel.MethodInjections);
-  ExecuteInjections(Result, fComponentModel.FieldInjections);
+  ExecuteInjections(Result, fModel.PropertyInjections);
+  ExecuteInjections(Result, fModel.MethodInjections);
+  ExecuteInjections(Result, fModel.FieldInjections);
 end;
 
 procedure TReflectionComponentActivator.ExecuteInjections(instance: TObject;
   const injections: IList<IInjection>);
 var
-  member: IInjection;
+  injection: IInjection;
   arguments: TArray<TValue>;
 begin
-  for member in injections do
+  for injection in injections do
   begin
-    if fResolver.CanResolve(member) then
-    begin
-      arguments := fResolver.ResolveDependencies(member);
-      member.Inject(instance, arguments);
-    end;
+    arguments := fResolver.ResolveDependencies(injection);
+    injection.Inject(instance, arguments);
   end;
 end;
 
@@ -154,8 +152,8 @@ begin
     begin
       winner := candidate;
       Break;
-    end
-    else if fResolver.CanResolve(candidate) then
+    end;
+    if fResolver.CanResolveDependencies(candidate) then
     begin
       if candidate.DependencyCount > maxCount then
       begin
@@ -205,11 +203,11 @@ end;
 
 function TDelegateComponentActivator.CreateInstance: TObject;
 begin
-  if not Assigned(fComponentModel.ActivatorDelegate) then
+  if not Assigned(fModel.ActivatorDelegate) then
   begin
     raise EActivatorException.CreateRes(@SActivatorDelegateExpected);
   end;
-  Result := fComponentModel.ActivatorDelegate.Invoke;
+  Result := fModel.ActivatorDelegate.Invoke;
 end;
 
 {$ENDREGION}

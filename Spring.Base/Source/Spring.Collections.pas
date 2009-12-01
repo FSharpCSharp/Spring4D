@@ -22,10 +22,6 @@
 {                                                                           }
 {***************************************************************************}
 
-{ TODO: Add IQueue<T>, ISet<T> }
-{ TODO: Consider Non-Generic interfaces }
-{ TODO: Consider LINQ-Like Enumerable Extension }
-
 unit Spring.Collections;
 
 {$I Spring.inc}
@@ -68,7 +64,7 @@ type
   end;
 
   /// <summary>
-  /// Provides enumerable extension methods for _IEnumerable<T>
+  /// Provides limited LINQ-like enumerable extension methods for IEnumerable<T>.
   /// </summary>
   IEnumerableEx<T> = interface(IEnumerable_<T>)
     {$REGION 'Property Getters & Setters'}
@@ -203,7 +199,7 @@ type
     function TryGetFirst(out value: T): Boolean; virtual;
     function TryGetLast(out value: T): Boolean; virtual;
   public
-    { _IEnumerable<T> }
+    { IEnumerable<T> }
     function GetEnumerator: IEnumeratorEx<T>; virtual; abstract;
     { IEnumerableEx<T> }
     function First: T; overload; virtual;
@@ -223,7 +219,10 @@ type
     property IsEmpty: Boolean read GetIsEmpty;
   end;
 
-//  TReadOnlyCollection<T> = class(TInterfacedObject, IList<T>, ICollection<T>, IEnumerableEx<T>, IInterface)
+//  TReadOnlyCollection<T> = class(TInterfacedObject, ICollection<T>, IEnumerableEx<T>, IInterface)
+//  end;
+
+//  TReadOnlyList<T> = class(TReadOnlyCollection<T>, IList<T>, ICollection<T>, IEnumerableEx<T>, IInterface)
 //  end;
 
 //  TObservableCollection<T> = class(TInterfacedObject, IList<T>)
@@ -234,7 +233,8 @@ implementation
 
 uses
   Spring.Collections.Adapters,
-  Spring.ResourceStrings, Spring.Collections.Extensions;
+  Spring.Collections.Extensions,
+  Spring.ResourceStrings;
 
 
 {$REGION 'TCollections'}
@@ -422,7 +422,7 @@ end;
 
 function TEnumerableBase<T>.Last(const predicate: TPredicate<T>): T;
 begin
-  Result := Where(predicate).Last;  // TEMP
+  Result := Where(predicate).Last;
 end;
 
 function TEnumerableBase<T>.LastOrDefault: T;
@@ -435,7 +435,7 @@ end;
 
 function TEnumerableBase<T>.LastOrDefault(const predicate: TPredicate<T>): T;
 begin
-  Result := Where(predicate).LastOrDefault;  // TEMP
+  Result := Where(predicate).LastOrDefault;
 end;
 
 function TEnumerableBase<T>.Where(

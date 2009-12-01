@@ -1,3 +1,8 @@
+2009-12-1
+- Refactoring dependency resolvers
+- Added Named/Valued Injections By applying the Injection attribute on members/parameters.
+- Removed the deprecated RegisterType methods of the TContainer class.
+
 2009-11-29
 - A component can now be registered with several services by the Implements method.
 

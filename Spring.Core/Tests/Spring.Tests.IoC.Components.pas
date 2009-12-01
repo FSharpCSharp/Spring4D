@@ -196,7 +196,6 @@ type
     property PropertyInjection: INameService read fPropertyInjection write fPropertyInjection;
   end;
 
-//  [AutoWired]
   TInjectionExplorerComponent = class(TInterfacedObject, IInjectionExplorer)
   private
     fConstructorInjection: INameService;
@@ -220,6 +219,29 @@ type
     property PropertyInjection: INameService read fPropertyInjection write fPropertyInjection;
   end;
 
+  TInjectionComponent = class(TInterfacedObject, IInjectionExplorer)
+  private
+    fConstructorInjection: INameService;
+    fPropertyInjection: INameService;
+    fMethodInjection: INameService;
+    [Injection('default')]
+    fFieldInjection: INameService;
+  protected
+    { Implements IInjectionService }
+    function GetConstructorInjection: INameService;
+    function GetPropertyInjection: INameService;
+    function GetMethodInjection: INameService;
+    function GetFieldInjection: INameService;
+  public
+    [Injection]
+    constructor Create([Injection('default')] const service: INameService); overload;
+    constructor Create(const nameService: INameService; const anotherService: INameService); overload;
+    [Injection]
+    procedure SetMethodInjection([Injection('another')]const value: INameService);
+    [Injection('another')]
+    property PropertyInjection: INameService read fPropertyInjection write fPropertyInjection;
+  end;
+
   {$ENDREGION}
 
 
@@ -234,7 +256,7 @@ type
   INonGuid<T> = interface
   end;
 
-  TNonGuid<T> = class(TInterfacedObject, INonGuid<T>)
+  TNonGuid<T> = class(TInterfacedObject, INonGuid<T>, IInterface)
   end;
 
   {$ENDREGION}
@@ -274,6 +296,7 @@ type
   end;
 
   {$ENDREGION}
+
 
 implementation
 
@@ -474,6 +497,45 @@ end;
 function TNameAgeComponent.GetName: string;
 begin
   Result := TNameAgeComponent.NameString;
+end;
+
+{ TInjectionComponent }
+
+constructor TInjectionComponent.Create(const service: INameService);
+begin
+  inherited Create;
+  fConstructorInjection := service;
+end;
+
+constructor TInjectionComponent.Create(const nameService,
+  anotherService: INameService);
+begin
+  raise Exception.Create('The constructor should not be called.');
+end;
+
+function TInjectionComponent.GetConstructorInjection: INameService;
+begin
+  Result := fConstructorInjection;
+end;
+
+function TInjectionComponent.GetFieldInjection: INameService;
+begin
+  Result := fFieldInjection;
+end;
+
+function TInjectionComponent.GetMethodInjection: INameService;
+begin
+  Result := fMethodInjection;
+end;
+
+function TInjectionComponent.GetPropertyInjection: INameService;
+begin
+  Result := fPropertyInjection;
+end;
+
+procedure TInjectionComponent.SetMethodInjection(const value: INameService);
+begin
+  fMethodInjection := value;
 end;
 
 end.

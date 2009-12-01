@@ -52,21 +52,22 @@ type
   protected
     procedure CheckIsNonGuidInterface(serviceType: TRttiType);
     procedure Validate(componentType, serviceType: PTypeInfo; var serviceName: string);
-    function GetFullTypeName(serviceType: TRttiType): string;
+    function GetDefaultTypeName(serviceType: TRttiType): string;
   public
     constructor Create(const context: IContainerContext);
     destructor Destroy; override;
-    procedure AddServiceType(componentType, serviceType: PTypeInfo); overload;
-    procedure AddServiceType(componentType, serviceType: PTypeInfo; const name: string); overload;
-    procedure Clear;
-    function GetComponentModel(componentTypeInfo: PTypeInfo): TComponentModel;
+    procedure RegisterService(componentType, serviceType: PTypeInfo); overload;
+    procedure RegisterService(componentType, serviceType: PTypeInfo; const name: string); overload;
+    procedure UnregisterAll;
+    function GetComponent(componentTypeInfo: PTypeInfo): TComponentModel;
+    function HasComponent(componentType: PTypeInfo): Boolean;
+    function HasService(serviceType: PTypeInfo): Boolean; overload;
+    function HasService(const name: string): Boolean; overload;
+    function HasService(serviceType: PTypeInfo; const name: string): Boolean; overload;
     function FindOne(componentType: PTypeInfo): TComponentModel; overload;
-    function FindOne(serviceType: PTypeInfo; const name: string): TComponentModel; overload;
+    function FindOne(const name: string): TComponentModel; overload;
     function FindAll: IEnumerableEx<TComponentModel>; overload;
     function FindAll(serviceType: PTypeInfo): IEnumerableEx<TComponentModel>; overload;
-    function HasService(serviceType: PTypeInfo): Boolean; overload;
-    function HasService(serviceType: PTypeInfo; const name: string): Boolean; overload;
-    function HasService(const name: string): Boolean; overload;
   end;
 
   /// <summary>
@@ -217,7 +218,7 @@ begin
   end;
   if serviceName = '' then
   begin
-    serviceName := GetFullTypeName(serviceTypeObject);
+    serviceName := GetDefaultTypeName(serviceTypeObject);
   end;
   if HasService(serviceName) then
   begin
@@ -225,20 +226,20 @@ begin
   end;
 end;
 
-procedure TComponentRegistry.Clear;
+procedure TComponentRegistry.UnregisterAll;
 begin
   fServiceNameMappings.Clear;
   fServiceTypeMappings.Clear;
   fModels.Clear;
 end;
 
-procedure TComponentRegistry.AddServiceType(componentType,
+procedure TComponentRegistry.RegisterService(componentType,
   serviceType: PTypeInfo);
 begin
-  AddServiceType(componentType, serviceType, '');
+  RegisterService(componentType, serviceType, '');
 end;
 
-procedure TComponentRegistry.AddServiceType(componentType,
+procedure TComponentRegistry.RegisterService(componentType,
   serviceType: PTypeInfo; const name: string);
 var
   model: TComponentModel;
@@ -249,7 +250,7 @@ begin
   TArgument.CheckNotNull(serviceType, 'serviceType');
   serviceName := name;
   Validate(componentType, serviceType, serviceName);
-  model := GetComponentModel(componentType);
+  model := GetComponent(componentType);
   model.Services.Add(serviceName, serviceType);
   if not fServiceTypeMappings.TryGetValue(serviceType, models) then
   begin
@@ -264,7 +265,7 @@ begin
   fServiceNameMappings.Add(serviceName, model);
 end;
 
-function TComponentRegistry.GetComponentModel(
+function TComponentRegistry.GetComponent(
   componentTypeInfo: PTypeInfo): TComponentModel;
 var
   componentType: TRttiInstanceType;
@@ -278,39 +279,12 @@ begin
   end;
 end;
 
-function TComponentRegistry.FindOne(serviceType: PTypeInfo;
-  const name: string): TComponentModel;
-var
-  models: TArray<TComponentModel>;
-  model: TComponentModel;
-  serviceName: string;
+function TComponentRegistry.FindOne(const name: string): TComponentModel;
 begin
-  TArgument.CheckNotNull(serviceType, 'serviceType');
-  Result := nil;
-  if fServiceTypeMappings.TryGetValue(serviceType, models) then
-  begin
-    if Length(models) = 0 then Exit;
-    serviceName := name;
-    if serviceName = '' then
-    begin
-      if Length(models) = 1 then
-      begin
-        Exit(models[0]);
-      end;
-      serviceName := GetFullTypeName(fRttiContext.GetType(serviceType));
-    end;
-    for model in models do
-    begin
-      if model.Services.ContainsKey(serviceName) then
-      begin
-        Exit(model);
-      end;
-    end;
-  end;
+  fServiceNameMappings.TryGetValue(name, Result);
 end;
 
-function TComponentRegistry.FindOne(
-  componentType: PTypeInfo): TComponentModel;
+function TComponentRegistry.FindOne(componentType: PTypeInfo): TComponentModel;
 begin
   TArgument.CheckNotNull(componentType, 'componentType');
   fModels.TryGetValue(componentType, Result);
@@ -340,18 +314,7 @@ begin
   Result := list;
 end;
 
-function TComponentRegistry.HasService(serviceType: PTypeInfo): Boolean;
-begin
-  Result := FindOne(serviceType, '') <> nil;
-end;
-
-function TComponentRegistry.HasService(serviceType: PTypeInfo;
-  const name: string): Boolean;
-begin
-  Result := FindOne(serviceType, name) <> nil;
-end;
-
-function TComponentRegistry.GetFullTypeName(serviceType: TRttiType): string;
+function TComponentRegistry.GetDefaultTypeName(serviceType: TRttiType): string;
 begin
   Assert(serviceType <> nil, 'serviceType should not be nil');
   if serviceType.IsPublicType then
@@ -364,9 +327,31 @@ begin
   end;
 end;
 
+function TComponentRegistry.HasComponent(componentType: PTypeInfo): Boolean;
+begin
+  TArgument.CheckNotNull(componentType, 'componentType');
+  Result := fModels.ContainsKey(componentType);
+end;
+
+function TComponentRegistry.HasService(serviceType: PTypeInfo): Boolean;
+begin
+  TArgument.CheckNotNull(serviceType, 'serviceType');
+  Result := fServiceTypeMappings.ContainsKey(serviceType);
+end;
+
 function TComponentRegistry.HasService(const name: string): Boolean;
 begin
   Result := fServiceNameMappings.ContainsKey(name);
+end;
+
+function TComponentRegistry.HasService(serviceType: PTypeInfo;
+  const name: string): Boolean;
+var
+  model: TComponentModel;
+begin
+  TArgument.CheckNotNull(serviceType, 'serviceType');
+  Result := fServiceNameMappings.TryGetValue(name, model) and
+    model.HasService(serviceType);
 end;
 
 {$ENDREGION}
@@ -386,20 +371,20 @@ end;
 function TRegistration.GetComponentModel: TComponentModel;
 begin
   Assert(fRegistry <> nil, 'fRegistry should not be nil');
-  Result := fRegistry.GetComponentModel(fComponentType);
+  Result := fRegistry.GetComponent(fComponentType);
   Assert(Result <> nil, 'Result should not be nil');
 end;
 
 function TRegistration.Implements(serviceType: PTypeInfo): TRegistration;
 begin
-  fRegistry.AddServiceType(fComponentType, serviceType);
+  fRegistry.RegisterService(fComponentType, serviceType);
   Result := Self;
 end;
 
 function TRegistration.Implements(serviceType: PTypeInfo;
   const name: string): TRegistration;
 begin
-  fRegistry.AddServiceType(fComponentType, serviceType, name);
+  fRegistry.RegisterService(fComponentType, serviceType, name);
   Result := Self;
 end;
 

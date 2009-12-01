@@ -971,13 +971,13 @@ type
   /// </summary>
   InjectionAttribute = class(TCustomAttribute)
   private
-    fName: string;
-    function GetHasName: Boolean;
+    fValue: string;
+    function GetHasValue: Boolean;
   public
     constructor Create; overload;
-    constructor Create(const name: string); overload;
-    property Name: string read fName;
-    property HasName: Boolean read GetHasName;
+    constructor Create(const value: string); overload;
+    property Value: string read fValue;
+    property HasValue: Boolean read GetHasValue;
   end;
 
   //(*
@@ -3578,15 +3578,15 @@ begin
   Create('');
 end;
 
-constructor InjectionAttribute.Create(const name: string);
+constructor InjectionAttribute.Create(const value: string);
 begin
   inherited Create;
-  fName := name;
+  fValue := value;
 end;
 
-function InjectionAttribute.GetHasName: Boolean;
+function InjectionAttribute.GetHasValue: Boolean;
 begin
-  Result := fName <> '';
+  Result := fValue <> '';
 end;
 
 { ComponentAttribute }

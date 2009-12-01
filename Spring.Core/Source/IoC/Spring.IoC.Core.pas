@@ -51,11 +51,7 @@ type
   IComponentActivator = interface;
 
   TActivatorDelegate = reference to function: TObject;
-  TActivatorDelegate<T{:class}> = reference to function: T;
-
-//  TComponentActivatorDelegate = reference to function(context: IContainerContext): TObject;
-//  TComponentActivatorDelegate<T{:class}> = reference to function(context: IContainerContext): T;
-
+  TActivatorDelegate<T: class> = reference to function: T;
 
   /// <summary>
   /// IContainerContext
@@ -68,15 +64,10 @@ type
     function GetInjectionFactory: IInjectionFactory;
 
     {$ENDREGION}
-
     function HasService(serviceType: PTypeInfo): Boolean; overload;
-    function HasService(serviceType: PTypeInfo; const name: string): Boolean; overload;
-//    function Resolve(serviceType: PTypeInfo): TValue; overload;
-//    function Resolve(serviceType: PTypeInfo; const name: string): TValue; overload;
-//    function CanInject(model: TComponentModel; member: TRttiMember): Boolean;
-//    function CreateInjection(model: TComponentModel; member: TRttiMember): IInjection;
+    function HasService(const name: string): Boolean; overload;
+//    function GetServiceType(const name: string): PTypeInfo;
     function CreateLifetimeManager(model: TComponentModel): ILifetimeManager;
-//    property ComponentRegistry: IComponentRegistry;
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
     property DependencyResolver: IDependencyResolver read GetDependencyResolver;
   end;
@@ -86,22 +77,22 @@ type
   /// </summary>
   IComponentRegistry = interface
     ['{CBCA1D0F-1244-4AB4-AB07-091053932166}']
-//    function AddComponentModel(componentType: PTypeInfo): TComponentModel;
-    procedure AddServiceType(componentType, serviceType: PTypeInfo); overload;
-    procedure AddServiceType(componentType, serviceType: PTypeInfo; const name: string); overload;
 
-    procedure Clear;
+    procedure RegisterService(componentType, serviceType: PTypeInfo); overload;
+    procedure RegisterService(componentType, serviceType: PTypeInfo; const name: string); overload;
+    procedure UnregisterAll;
 
-    // Query
+    function GetComponent(componentType: PTypeInfo): TComponentModel;
+    function HasComponent(componentType: PTypeInfo): Boolean;
+    function HasService(serviceType: PTypeInfo): Boolean; overload;
+    function HasService(const name: string): Boolean; overload;
+    function HasService(serviceType: PTypeInfo; const name: string): Boolean; overload;
+//    function GetServiceType(const name: string): PTypeInfo;
+
     function FindOne(componentType: PTypeInfo): TComponentModel; overload;
-    function FindOne(serviceType: PTypeInfo; const name: string): TComponentModel; overload;
+    function FindOne(const name: string): TComponentModel; overload;
     function FindAll: IEnumerableEx<TComponentModel>; overload;
     function FindAll(serviceType: PTypeInfo): IEnumerableEx<TComponentModel>; overload;
-    function HasService(serviceType: PTypeInfo): Boolean; overload;
-    function HasService(serviceType: PTypeInfo; const name: string): Boolean; overload;
-
-    function GetComponentModel(componentType: PTypeInfo): TComponentModel;
-//    property Components[componentType: PTypeInfo]: TComponentModel;
   end;
 
   IComponentBuilder = interface
@@ -132,15 +123,13 @@ type
     procedure ReleaseInstance(instance: TObject);
   end;
 
+  /// <summary>
+  /// Component Activator
+  /// </summary>
   IComponentActivator = interface
     ['{752F2CDE-222C-4D8B-B344-BB7BCA9EAB9E}']
-//    function CreateInstance(context: IContainerContext; model: TComponentModel): TObject;
     function CreateInstance: TObject;
   end;
-
-//  IFilter<T> = interface
-//    function Accept(const item: T): Boolean;
-//  end;
 
   /// <summary>
   /// Represents an injection of a member.
@@ -159,7 +148,7 @@ type
     {$ENDREGION}
     procedure Initialize(target: TRttiMember);
     procedure Inject(instance: TObject; const arguments: array of TValue);
-    function GetDependencies: TArray<TRttiType>; // IEnumerableEx<>
+    function GetDependencies: TArray<TRttiType>;
     property DependencyCount: Integer read GetDependencyCount;
     property Target: TRttiMember read GetTarget;
     property TargetName: string read GetTargetName;
@@ -167,6 +156,9 @@ type
     property Model: TComponentModel read GetModel;
   end;
 
+  /// <summary>
+  /// Injection Factory
+  /// </summary>
   IInjectionFactory = interface
     ['{EA75E648-C3EB-4CE7-912A-AB82B12BBD87}']
     function CreateConstructorInjection(model: TComponentModel): IInjection;
@@ -175,22 +167,45 @@ type
     function CreateFieldInjection(model: TComponentModel; const fieldName: string): IInjection;
   end;
 
-  /// <summary>
-  /// Resolves services.
-  /// </summary>
-  IServiceResolver = interface
-    ['{14669EBA-4E57-4DF4-919D-377D8E90144C}']
-    function CanResolve(serviceType: PTypeInfo): Boolean;
-    function Resolve(serviceType: PTypeInfo; const name: string): TValue;
-    function ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
-  end;
+//  IConstructorSelector = interface
+//    ['{1CB36E23-84B6-462C-A21D-0EE8BEDBDE1D}']
+//    function SelectEligibleConstructor(const context: IContainerContext; componentType: TRttiInstanceType);
+//  end;
+
+//  ITypeConverter = interface
+//    ['{0FC28D39-C191-4BA4-B56E-410932018A1E}']
+//    function CanConvert(const value: TValue; targetType: TRttiType): Boolean;
+//    function TryConvert(const value: TValue; targetType: TRttiType; out targetValue: TValue): Boolean;
+//  end;
 
   IDependencyResolver = interface
     ['{15ADEA1D-7C3F-48D5-8E85-84B4332AFF5F}']
-//    function CanResolve(const injection: IInjection; const arguments: TArray<TValue>): Boolean;
-//    function ResolveDependencies(const injection: IInjection; const arguments: TArray<TValue>): TArray<TValue>;
-    function CanResolve(const member: IInjection): Boolean;
-    function ResolveDependencies(const member: IInjection): TArray<TValue>;
+//    function CanResolveDependency(dependency: TRttiType): Boolean; overload;
+//    function CanResolveDependency(dependency: TRttiType; const argument: TValue): Boolean; overload;
+//    function ResolveDependency(dependency: TRttiType): TValue; overload;
+//    function ResolveDependency(dependency: TRttiType; const argument: TValue): TValue; overload;
+
+    function CanResolveDependencies(dependencies: TArray<TRttiType>): Boolean; overload;
+    function CanResolveDependencies(dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean; overload;
+    function ResolveDependencies(dependencies: TArray<TRttiType>): TArray<TValue>; overload;
+    function ResolveDependencies(dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): TArray<TValue>; overload;
+
+    function CanResolveDependencies(const injection: IInjection): Boolean; overload;
+    function CanResolveDependencies(const injection: IInjection; const arguments: TArray<TValue>): Boolean; overload;
+    function ResolveDependencies(const injection: IInjection): TArray<TValue>; overload;
+    function ResolveDependencies(const injection: IInjection; const arguments: TArray<TValue>): TArray<TValue>; overload;
+  end;
+
+  /// <summary>
+  /// Resolves services.
+  /// </summary>
+  IServiceResolver = interface // (IDependencyResolver)
+    ['{14669EBA-4E57-4DF4-919D-377D8E90144C}']
+    function CanResolve(serviceType: PTypeInfo): Boolean; overload;
+    function CanResolve(const name: string): Boolean; overload;
+    function Resolve(serviceType: PTypeInfo): TValue; overload;
+    function Resolve(const name: string): TValue; overload;
+    function ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
   end;
 
   /// <summary>
@@ -213,8 +228,6 @@ type
     function GetComponentTypeInfo: PTypeInfo;
     function GetInjectionFactory: IInjectionFactory;
   protected
-    procedure UpdateInjectionArguments(const injection: IInjection;
-      targetName: string; const arguments: array of TValue);
     function GetServices: IDictionary<string, PTypeInfo>;
     function GetConstructorInjections: IList<IInjection>;
     function GetMethodInjections: IList<IInjection>;
@@ -245,16 +258,19 @@ type
 
     {$ENDREGION}
 
+    function HasService(serviceType: PTypeInfo): Boolean;
     function GetServiceName(serviceType: PTypeInfo): string;
+    function GetServiceType(const name: string): PTypeInfo;
     function GetInjectionArguments(const injection: IInjection): TArray<TValue>;
+    procedure UpdateInjectionArguments(const injection: IInjection; const arguments: array of TValue);
 
     property ComponentType: TRttiInstanceType read fComponentType;
     property ComponentTypeInfo: PTypeInfo read GetComponentTypeInfo;
     property Services: IDictionary<string, PTypeInfo> read GetServices;
 
-    property ComponentActivator: IComponentActivator read fComponentActivator write fComponentActivator;
     property LifetimeType: TLifetimeType read fLifetimeType write fLifetimeType;
     property LifetimeManager: ILifetimeManager read fLifetimeManager write fLifetimeManager;
+    property ComponentActivator: IComponentActivator read fComponentActivator write fComponentActivator;
     property ActivatorDelegate: TActivatorDelegate read fActivatorDelegate write fActivatorDelegate;
 
     property ConstructorInjections: IList<IInjection> read GetConstructorInjections;
@@ -288,8 +304,6 @@ uses
 constructor TComponentModel.Create(context: IContainerContext;
   componentType: TRttiInstanceType);
 begin
-  TArgument.CheckNotNull(context, 'context');
-  TArgument.CheckNotNull(componentType, 'componentType');
   inherited Create;
   fContext := context;
   fComponentType := componentType;
@@ -343,7 +357,7 @@ begin
   end;
   Result := InjectionFactory.CreateMethodInjection(Self, methodName);
   Result.Initialize(method);
-  MethodInjections.Add(Result);  // TEMP
+  MethodInjections.Add(Result);
 end;
 
 function TComponentModel.InjectProperty(const propertyName: string): IInjection;
@@ -375,8 +389,9 @@ begin
 end;
 
 procedure TComponentModel.UpdateInjectionArguments(const injection: IInjection;
-  targetName: string; const arguments: array of TValue);
+  const arguments: array of TValue);
 begin
+  TArgument.CheckNotNull(injection, 'injection');
   Injections.Add(injection, TArray.CreateArray<TValue>(arguments));
 end;
 
@@ -386,7 +401,7 @@ var
 begin
   injection := InjectionFactory.CreateConstructorInjection(Self);
   ConstructorInjections.Add(injection);
-  UpdateInjectionArguments(injection, '', arguments);
+  UpdateInjectionArguments(injection, arguments);
 end;
 
 procedure TComponentModel.InjectMethod(const methodName: string;
@@ -396,7 +411,7 @@ var
 begin
   injection := InjectionFactory.CreateMethodInjection(Self, methodName);
   MethodInjections.Add(injection);
-  UpdateInjectionArguments(injection, methodName, arguments);
+  UpdateInjectionArguments(injection, arguments);
 end;
 
 procedure TComponentModel.InjectProperty(const propertyName: string;
@@ -405,7 +420,7 @@ var
   injection: IInjection;
 begin
   injection := InjectProperty(propertyName);
-  UpdateInjectionArguments(injection, propertyName, value);
+  UpdateInjectionArguments(injection, value);
 end;
 
 procedure TComponentModel.InjectField(const fieldName: string;
@@ -414,7 +429,7 @@ var
   injection: IInjection;
 begin
   injection := InjectField(fieldName);
-  UpdateInjectionArguments(injection, fieldName, value);
+  UpdateInjectionArguments(injection, value);
 end;
 
 function TComponentModel.GetInjectionArguments(
@@ -461,6 +476,12 @@ begin
   Result := fPropertyInjections;
 end;
 
+
+function TComponentModel.HasService(serviceType: PTypeInfo): Boolean;
+begin
+  Result := fServices.Values.Contains(serviceType);
+end;
+
 function TComponentModel.GetServiceName(serviceType: PTypeInfo): string;
 var
   item: TPair<string, PTypeInfo>;
@@ -474,6 +495,11 @@ begin
       Exit(item.Key);
     end;
   end;
+end;
+
+function TComponentModel.GetServiceType(const name: string): PTypeInfo;
+begin
+  Result := fServices[name];
 end;
 
 function TComponentModel.GetServices: IDictionary<string, PTypeInfo>;

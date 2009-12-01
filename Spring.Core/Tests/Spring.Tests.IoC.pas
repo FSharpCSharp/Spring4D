@@ -80,6 +80,7 @@ type
     procedure TestResolveAll;
     procedure TestResolveAllNonGeneric;
     procedure TestUnsatisfiedDependency;
+    procedure TestUnsatisfiedDependencyOfBootstrap;
   end;
 
   // Same Component, Different Services
@@ -134,16 +135,27 @@ type
   end;
 
   { TODO: Support Primitive values }
-  TTestNamedInjections = class(TContainerTestCase)
+  TNamedInjectionsTestCase = class(TContainerTestCase)
   private
     fExplorer: IInjectionExplorer;
   protected
+    procedure DoRegisterComponents; virtual;
     procedure SetUp; override;
   published
     procedure TestConstructorInjection;
     procedure TestMethodInjection;
     procedure TestPropertyInjection;
     procedure TestFieldInjection;
+  end;
+
+  TTestNamedInjectionsByCoding = class(TNamedInjectionsTestCase)
+  protected
+    procedure DoRegisterComponents; override;
+  end;
+
+  TTestNamedInjectionsByAttribute = class(TNamedInjectionsTestCase)
+  protected
+    procedure DoRegisterComponents; override;
   end;
 
   TTestDirectCircularDependency = class(TContainerTestCase)
@@ -286,6 +298,7 @@ var
 begin
   fContainer.RegisterComponent<TNameService>.Implements<INameService>.AsSingleton;
   fContainer.RegisterComponent<TAgeServiceImpl>.Implements<TAgeServiceBase>.AsSingleton;
+  fContainer.RegisterComponent<TBootstrapComponent>;
   fContainer.Build;
   component := fContainer.Resolve<TBootstrapComponent>;
   try
@@ -346,8 +359,11 @@ end;
 procedure TTestDifferentServiceImplementations.SetUp;
 begin
   inherited SetUp;
-  fContainer.RegisterComponent<TNameService>.Implements<INameService>('default').AsSingleton;
-  fContainer.RegisterComponent<TAnotherNameService>.Implements<INameService>('another');
+  fContainer.RegisterComponent<TNameService>
+    .Implements<INameService>('default')
+    .AsSingleton;
+  fContainer.RegisterComponent<TAnotherNameService>
+    .Implements<INameService>('another');
   fContainer.Build;
   fNameService := fContainer.Resolve<INameService>('default');
   fAnotherNameService := fContainer.Resolve<INameService>('another');
@@ -398,6 +414,12 @@ procedure TTestDifferentServiceImplementations.TestUnsatisfiedDependency;
 begin
   ExpectedException := EUnsatisfiedDependencyException;
   fContainer.Resolve<INameService>;
+end;
+
+procedure TTestDifferentServiceImplementations.TestUnsatisfiedDependencyOfBootstrap;
+begin
+  ExpectedException := EUnsatisfiedDependencyException;
+  fContainer.Resolve<TBootstrapComponent>;
 end;
 
 {$ENDREGION}
@@ -575,15 +597,57 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TTestNamedInjections'}
+{$REGION 'TNamedInjectionsTestCase'}
 
-procedure TTestNamedInjections.SetUp;
+procedure TNamedInjectionsTestCase.DoRegisterComponents;
+begin
+  fContainer.RegisterComponent<TNameService>
+    .Implements<INameService>('default')
+    .AsSingleton;
+  fContainer.RegisterComponent<TAnotherNameService>
+    .Implements<INameService>('another')
+    .AsSingleton;
+end;
+
+procedure TNamedInjectionsTestCase.SetUp;
 begin
   inherited SetUp;
-  fContainer.RegisterComponent<TNameService>
-    .Implements<INameService>('default');
-  fContainer.RegisterComponent<TAnotherNameService>
-    .Implements<INameService>('another');
+  DoRegisterComponents;
+  fContainer.Build;
+  fExplorer := fContainer.Resolve<IInjectionExplorer>;
+end;
+
+procedure TNamedInjectionsTestCase.TestConstructorInjection;
+begin
+  CheckNotNull(fExplorer.ConstructorInjection);
+  CheckEquals(TNameService.NameString, fExplorer.ConstructorInjection.Name);
+end;
+
+procedure TNamedInjectionsTestCase.TestPropertyInjection;
+begin
+  CheckNotNull(fExplorer.PropertyInjection);
+  CheckEquals(TAnotherNameService.NameString, fExplorer.PropertyInjection.Name);
+end;
+
+procedure TNamedInjectionsTestCase.TestMethodInjection;
+begin
+  CheckNotNull(fExplorer.MethodInjection);
+  CheckEquals(TAnotherNameService.NameString, fExplorer.MethodInjection.Name);
+end;
+
+procedure TNamedInjectionsTestCase.TestFieldInjection;
+begin
+  CheckNotNull(fExplorer.FieldInjection);
+  CheckEquals(TNameService.NameString, fExplorer.FieldInjection.Name);
+end;
+
+{$ENDREGION}
+
+{ TTestNamedInjectionsByCoding }
+
+procedure TTestNamedInjectionsByCoding.DoRegisterComponents;
+begin
+  inherited DoRegisterComponents;
   fContainer.RegisterComponent<TInjectionExplorer>
     .Implements<IInjectionExplorer>
     .InjectConstructor(['default'])
@@ -591,35 +655,16 @@ begin
     .InjectMethod('SetMethodInjection', ['another'])
     .InjectField('fFieldInjection', 'default')
     .AsSingleton;
-  fContainer.Build;
-  fExplorer := fContainer.Resolve<IInjectionExplorer>;
 end;
 
-procedure TTestNamedInjections.TestConstructorInjection;
+{ TTestNamedInjectionsByAttribute }
+
+procedure TTestNamedInjectionsByAttribute.DoRegisterComponents;
 begin
-  CheckNotNull(fExplorer.ConstructorInjection);
-  CheckEquals(TNameService.NameString, fExplorer.ConstructorInjection.Name);
+  inherited DoRegisterComponents;
+  fContainer.RegisterComponent<TInjectionComponent>
+    .Implements<IInjectionExplorer>;
 end;
-
-procedure TTestNamedInjections.TestPropertyInjection;
-begin
-  CheckNotNull(fExplorer.PropertyInjection);
-  CheckEquals(TAnotherNameService.NameString, fExplorer.PropertyInjection.Name);
-end;
-
-procedure TTestNamedInjections.TestMethodInjection;
-begin
-  CheckNotNull(fExplorer.MethodInjection);
-  CheckEquals(TAnotherNameService.NameString, fExplorer.MethodInjection.Name);
-end;
-
-procedure TTestNamedInjections.TestFieldInjection;
-begin
-  CheckNotNull(fExplorer.FieldInjection);
-  CheckEquals(TNameService.NameString, fExplorer.FieldInjection.Name);
-end;
-
-{$ENDREGION}
 
 { TTestImplementsDifferentServices }
 

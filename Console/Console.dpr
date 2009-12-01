@@ -47,7 +47,6 @@ uses
 
 begin
   try
-
   except
     on E: Exception do
       Writeln(E.ClassName, ': ', E.Message);

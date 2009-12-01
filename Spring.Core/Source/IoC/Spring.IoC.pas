@@ -36,7 +36,6 @@ uses
   Generics.Collections,
   Spring.System,
   Spring.Collections,
-//  Spring.DesignPatterns,
   Spring.IoC.Core,
   Spring.IoC.Registration;
 
@@ -72,8 +71,6 @@ type
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
   protected
     procedure InitializeServiceInspectors; virtual;
-    function DoRegisterType(const name: string; serviceType, componentType: PTypeInfo;
-      lifetimeType: TLifetimeType; activatorDelegate: TActivatorDelegate): TContainer; overload;
   public
     constructor Create;
     destructor Destroy; override;
@@ -81,50 +78,27 @@ type
     function RegisterComponent<TComponentType: class>: TRegistration<TComponentType>; overload;
     function RegisterComponent(componentType: PTypeInfo): TRegistration; overload;
 
-//    function RegisterDecorations<TServiceType>(const decorationClasses: array of TClass): TContainer;
 //    function RegisterInstance<T>(instance: T): TContainer;
+//    function RegisterDecorations<TServiceType>(const decorationClasses: array of TClass): TContainer;
 
     procedure Build; // SetUp or BuildUp
 
     function Resolve<T>: T; overload;
     function Resolve<T>(const name: string): T; overload;
     function Resolve(typeInfo: PTypeInfo): TValue; overload;
-    function Resolve(typeInfo: PTypeInfo; const name: string): TValue; overload;
+    function Resolve(const name: string): TValue; overload;
 
     function ResolveAll<TServiceType>: TArray<TServiceType>; overload;
     function ResolveAll(serviceType: PTypeInfo): TArray<TValue>; overload;
 
     function HasService(serviceType: PTypeInfo): Boolean; overload;
-    function HasService(serviceType: PTypeInfo; const name: string): Boolean; overload;
+    function HasService(const name: string): Boolean; overload;
 
     { Experimental Release Methods }
     procedure Release(instance: TObject); overload;
     procedure Release(instance: IInterface); overload;
-
-    {$REGION 'Deprecated RegisterType Methods'}
-
-    function RegisterType<TServiceType; TComponentType: TServiceType>: TContainer; overload; deprecated 'Use RegisterComponent instead.';
-    function RegisterType<TServiceType; TComponentType: TServiceType>(
-      activatorDelegate: TActivatorDelegate<TComponentType>): TContainer; overload; deprecated 'Use RegisterComponent instead.';
-
-    function RegisterType<TServiceType; TComponentType: TServiceType>(lifetimeType: TLifetimeType): TContainer; overload;
-    function RegisterType<TServiceType; TComponentType: TServiceType>(lifetimeType: TLifetimeType;
-      activatorDelegate: TActivatorDelegate<TComponentType>): TContainer; overload; deprecated 'Use RegisterComponent instead.';
-
-    function RegisterType<TServiceType; TComponentType: TServiceType>(const name: string): TContainer; overload; deprecated 'Use RegisterComponent instead.';
-    function RegisterType<TServiceType; TComponentType: TServiceType>(
-      const name: string; activatorDelegate: TActivatorDelegate<TComponentType>): TContainer; overload; deprecated 'Use RegisterComponent instead.';
-
-    function RegisterType<TServiceType; TComponentType: TServiceType>(const name: string;
-      lifetimeType: TLifetimeType): TContainer; overload; deprecated 'Use RegisterComponent instead.';
-    function RegisterType<TServiceType; TComponentType: TServiceType>(
-      const name: string; lifetimeType: TLifetimeType;
-      activatorDelegate: TActivatorDelegate<TComponentType>): TContainer; overload; deprecated 'Use RegisterComponent instead.';
-
-    {$ENDREGION}
   end;
 
-  // TEMP
   EContainerException = Spring.IoC.Core.EContainerException;
   ERegistrationException = Spring.IoC.Core.ERegistrationException;
   EResolveException = Spring.IoC.Core.EResolveException;
@@ -150,7 +124,7 @@ begin
   fRegistry := TComponentRegistry.Create(Self);
   fBuilder := TComponentBuilder.Create(Self, fRegistry);
   fServiceResolver := TServiceResolver.Create(Self, fRegistry);
-  fDependencyResolver := TDependencyResolver.Create(fRegistry);
+  fDependencyResolver := TDependencyResolver.Create(Self, fRegistry);
   fInjectionFactory := TInjectionFactory.Create;
   fRegistrationManager := TRegistrationManager.Create(fRegistry);
   InitializeServiceInspectors;
@@ -160,7 +134,7 @@ destructor TContainer.Destroy;
 begin
   fRegistrationManager.Free;
   fBuilder.ClearInspectors;
-  fRegistry.Clear;
+  fRegistry.UnregisterAll;
   inherited Destroy;
 end;
 
@@ -227,76 +201,6 @@ begin
   Result := fInjectionFactory;
 end;
 
-function TContainer.RegisterType<TServiceType, TComponentType>: TContainer;
-begin
-  Result := DoRegisterType('', TypeInfo(TServiceType), TypeInfo(TComponentType),
-    ltUnknown, nil);
-end;
-
-function TContainer.RegisterType<TServiceType, TComponentType>(
-  activatorDelegate: TActivatorDelegate<TComponentType>): TContainer;
-begin
-  Result := DoRegisterType('', TypeInfo(TServiceType), TypeInfo(TComponentType),
-    ltUnknown, TActivatorDelegate(activatorDelegate));
-end;
-
-function TContainer.RegisterType<TServiceType, TComponentType>(
-  lifetimeType: TLifetimeType): TContainer;
-begin
-  Result := DoRegisterType('', TypeInfo(TServiceType), TypeInfo(TComponentType),
-    lifetimeType, nil);
-end;
-
-function TContainer.RegisterType<TServiceType, TComponentType>(
-  lifetimeType: TLifetimeType;
-  activatorDelegate: TActivatorDelegate<TComponentType>): TContainer;
-begin
-  Result := DoRegisterType('', TypeInfo(TServiceType), TypeInfo(TComponentType),
-    lifetimeType, TActivatorDelegate(activatorDelegate));
-end;
-
-function TContainer.RegisterType<TServiceType, TComponentType>(
-  const name: string): TContainer;
-begin
-  Result := DoRegisterType(name, TypeInfo(TServiceType), TypeInfo(TComponentType), ltUnknown, nil);
-end;
-
-function TContainer.RegisterType<TServiceType, TComponentType>(
-  const name: string; activatorDelegate: TActivatorDelegate<TComponentType>): TContainer;
-begin
-  Result := DoRegisterType(name, TypeInfo(TServiceType), TypeInfo(TComponentType),
-    ltUnknown, TActivatorDelegate(activatorDelegate));
-end;
-
-function TContainer.RegisterType<TServiceType, TComponentType>(
-  const name: string; lifetimeType: TLifetimeType): TContainer;
-begin
-  Result := DoRegisterType(name, TypeInfo(TServiceType), TypeInfo(TComponentType),
-    lifetimeType, nil);
-end;
-
-function TContainer.RegisterType<TServiceType, TComponentType>(
-  const name: string; lifetimeType: TLifetimeType;
-  activatorDelegate: TActivatorDelegate<TComponentType>): TContainer;
-begin
-  Result := DoRegisterType(name, TypeInfo(TServiceType), TypeInfo(TComponentType),
-    lifetimeType, TActivatorDelegate(activatorDelegate));
-end;
-
-function TContainer.DoRegisterType(const name: string; serviceType,
-  componentType: PTypeInfo; lifetimeType: TLifetimeType;
-  activatorDelegate: TActivatorDelegate): TContainer;
-var
-  model: TComponentModel;
-begin
-  model := fRegistry.GetComponentModel(componentType);
-  model.LifetimeType := lifetimeType;
-  model.ActivatorDelegate := activatorDelegate;
-  fRegistry.AddServiceType(componentType, serviceType);
-  fBuilder.Build(model);
-  Result := Self;
-end;
-
 function TContainer.RegisterComponent<TComponentType>: TRegistration<TComponentType>;
 begin
   Result := fRegistrationManager.RegisterComponent<TComponentType>;
@@ -312,9 +216,9 @@ begin
   Result := fRegistry.HasService(serviceType);
 end;
 
-function TContainer.HasService(serviceType: PTypeInfo; const name: string): Boolean;
+function TContainer.HasService(const name: string): Boolean;
 begin
-  Result := fRegistry.HasService(serviceType, name);
+  Result := fRegistry.HasService(name);
 end;
 
 function TContainer.Resolve<T>: T;
@@ -329,44 +233,32 @@ function TContainer.Resolve<T>(const name: string): T;
 var
   value: TValue;
 begin
-  value := Resolve(TypeInfo(T), name);
+  value := Resolve(name);
   Result := value.AsType<T>;
 end;
 
 function TContainer.Resolve(typeInfo: PTypeInfo): TValue;
-begin
-  Result := Resolve(typeInfo, '');
-end;
-
-function TContainer.Resolve(typeInfo: PTypeInfo; const name: string): TValue;
 var
   model: TComponentModel;
 begin
-  TArgument.CheckTypeKind(typeInfo, [tkClass, tkInterface], 'typeInfo');
-  if not fRegistry.HasService(typeInfo, name) and (typeInfo.Kind = tkClass) then
+  // TODO: How to support bootstrap
+  if not fRegistry.HasService(typeInfo) and (typeInfo.Kind = tkClass) then
   begin
-    RegisterComponent(typeInfo).Implements(typeInfo, name);
+    RegisterComponent(typeInfo).Implements(typeInfo);
     model := fRegistry.FindOne(typeInfo);
     fBuilder.Build(model);
+    Result := fServiceResolver.Resolve(model.GetServiceName(typeInfo));
+  end
+  else
+  begin
+    Result := fServiceResolver.Resolve(typeInfo);
   end;
-  Result := fServiceResolver.Resolve(typeInfo, name);
 end;
 
-//// [Internal Error URW1111]
-//function TContainer.ResolveAll<TServiceType>: TArray<TServiceType>;
-//var
-//  serviceType: PTypeInfo;
-//  instances: TArray<TValue>;
-//  i: Integer;
-//begin
-//  serviceType := TypeInfo(TServiceType);
-//  instances := fServiceResolver.ResolveAll(serviceType);
-//  SetLength(Result, Length(Instances));
-//  for i := 0 to High(instances) do
-//  begin
-//    Result[i] := instances[i].AsType<TServiceType>;
-//  end;
-//end;
+function TContainer.Resolve(const name: string): TValue;
+begin
+  Result := fServiceResolver.Resolve(name);
+end;
 
 function TContainer.ResolveAll<TServiceType>: TArray<TServiceType>;
 var
@@ -377,13 +269,12 @@ var
   i: Integer;
 begin
   serviceType := TypeInfo(TServiceType);
-  TArgument.CheckTypeKind(serviceType, [tkClass, tkInterface], 'serviceType');
   models := fRegistry.FindAll(serviceType).ToList;
   SetLength(Result, models.Count);
   for i := 0 to models.Count - 1 do
   begin
     model := models[i];
-    value := Resolve(serviceType, model.GetServiceName(serviceType));
+    value := Resolve(model.GetServiceName(serviceType));
     Result[i] := value.AsType<TServiceType>;
   end;
 end;

@@ -35,10 +35,12 @@ resourcestring
   SCannotResolveDependency = 'Cannot resolve the dependency: %s.';
   SUnexpectedDependencyParameterType = 'Unexpected dependency parameter type.';
   SNoComponentRegistered = 'No component was registered for the service type: %s.';
+  SInvalidServiceName = 'Invalid service name: "%s".';
   SUnsatisfiedConstructorParameters = 'Unsatisfied parameters for constructor.';
   SUnsatisfiedMethodParameterTypes = 'Unsatisfied parameter types for the method: %s.';
-  SUnsatisfiedDependency = 'Unsatisfied dependency for the service type "%0:s" which named "%1:s".';
-  SLifetimeManagerNeeded = 'LifetimeTypeManager was expected.';
+  SUnsatisfiedDependency = 'Unsatisfied dependency for the service type "%0:s".';
+  SUnsatisfiedResolutionArgumentCount = 'Unsatisfied resolution argument count.';
+  SLifetimeManagerMissing = 'LifetimeTypeManager was expected.';
   SUnresovableInjection = 'Unresovable injection.';
   SMemberHasNoTarget = 'The member injection "%s" has no target.';
   SUnsatisfiedConstructor = 'Unsatisfied constructor.';

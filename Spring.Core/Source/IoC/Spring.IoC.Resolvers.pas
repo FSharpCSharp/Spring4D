@@ -41,24 +41,45 @@ uses
 type
   TDependencyResolver = class(TInterfacedObject, IDependencyResolver, IInterface)
   private
+    fContext: IContainerContext;
     fRegistry: IComponentRegistry;
-    fDependencies: TList<PTypeInfo>;
-    function CanResolveDependency(dependency: TRttiType; const argument: TValue): Boolean;
+    fDependencyTypes: TList<TRttiType>;
+  protected
+    procedure CheckCircularDependency(dependency: TRttiType);
+    procedure ConstructValue(dependency: TRttiType; instance: TObject; out value: TValue);
+    function GetEligibleModel(dependency: TRttiType; const argument: TValue): TComponentModel;
   public
-    constructor Create(const registry: IComponentRegistry);
+    constructor Create(const context: IContainerContext; const registry: IComponentRegistry);
     destructor Destroy; override;
-    function CanResolve(const injection: IInjection): Boolean; overload;
+
+    function CanResolveDependency(dependency: TRttiType): Boolean; overload;
+    function CanResolveDependency(dependency: TRttiType; const argument: TValue): Boolean; overload;
+    function ResolveDependency(dependency: TRttiType): TValue; overload;
+    function ResolveDependency(dependency: TRttiType; const argument: TValue): TValue; overload;
+
+    function CanResolveDependencies(dependencies: TArray<TRttiType>): Boolean; overload;
+    function CanResolveDependencies(dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean; overload;
+    function ResolveDependencies(dependencies: TArray<TRttiType>): TArray<TValue>; overload;
+    function ResolveDependencies(dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): TArray<TValue>; overload;
+
+    function CanResolveDependencies(const injection: IInjection): Boolean; overload;
+    function CanResolveDependencies(const injection: IInjection; const arguments: TArray<TValue>): Boolean; overload;
     function ResolveDependencies(const injection: IInjection): TArray<TValue>; overload;
+    function ResolveDependencies(const injection: IInjection; const arguments: TArray<TValue>): TArray<TValue>; overload;
   end;
 
   TServiceResolver = class(TInterfacedObject, IServiceResolver, IInterface)
   private
     fContext: IContainerContext;
     fRegistry: IComponentRegistry;
+  protected
+    function DoResolve(model: TComponentModel; serviceType: PTypeInfo): TValue;
   public
     constructor Create(context: IContainerContext; const registry: IComponentRegistry);
-    function CanResolve(serviceType: PTypeInfo): Boolean;
-    function Resolve(serviceType: PTypeInfo; const name: string): TValue;
+    function CanResolve(serviceType: PTypeInfo): Boolean; overload;
+    function CanResolve(const name: string): Boolean; overload;
+    function Resolve(serviceType: PTypeInfo): TValue; overload;
+    function Resolve(const name: string): TValue; overload;
     function ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
   end;
 
@@ -71,35 +92,117 @@ uses
   Spring.IoC.LifetimeManager,
   Spring.IoC.ResourceStrings;
 
-{ TDependencyResolver }
+{$REGION 'TDependencyResolver'}
 
-constructor TDependencyResolver.Create(const registry: IComponentRegistry);
+constructor TDependencyResolver.Create(const context: IContainerContext;
+  const registry: IComponentRegistry);
 begin
-  TArgument.CheckNotNull(registry, 'registry');
   inherited Create;
+  fContext := context;
   fRegistry := registry;
-  fDependencies := TList<PTypeInfo>.Create;
+  fDependencyTypes := TList<TRttiType>.Create;
 end;
 
 destructor TDependencyResolver.Destroy;
 begin
-  fDependencies.Free;
+  fDependencyTypes.Free;
   inherited Destroy;
+end;
+
+function TDependencyResolver.GetEligibleModel(dependency: TRttiType;
+  const argument: TValue): TComponentModel;
+var
+  models: IEnumerableEx<TComponentModel>;
+  name: string;
+begin
+  if argument.IsEmpty then
+  begin
+    models := fRegistry.FindAll(dependency.Handle);
+    if models.Count > 1 then
+    begin
+      raise EUnsatisfiedDependencyException.CreateResFmt(@SUnsatisfiedDependency,
+        [dependency.Name]);
+    end;
+    Result := models.First;
+  end
+  else
+  begin
+    name := argument.AsString;
+    Result := fRegistry.FindOne(name);
+    if Result = nil then
+    begin
+      raise EResolveException.CreateResFmt(@SInvalidServiceName, [name]);
+    end;
+    if not Result.HasService(dependency.Handle) then
+    begin
+      raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
+    end;
+  end;
+end;
+
+procedure TDependencyResolver.ConstructValue(dependency: TRttiType;
+  instance: TObject; out value: TValue);
+var
+  localInterface: Pointer;
+begin
+  Assert(dependency <> nil, 'dependency should not be nil.');
+  Assert(instance <> nil, 'instance should not be nil.');
+  if dependency.IsClass then
+  begin
+    value := instance;
+  end
+  else if dependency.IsInterface then
+  begin
+    instance.GetInterface(GetTypeData(dependency.Handle).Guid, localInterface);
+    TValue.MakeWithoutCopy(@localInterface, dependency.Handle, value);
+  end
+  else
+  begin
+    value := TValue.Empty;
+  end;
+end;
+
+procedure TDependencyResolver.CheckCircularDependency(dependency: TRttiType);
+begin
+  Assert(dependency <> nil, 'dependency should not be nil.');
+  if fDependencyTypes.Contains(dependency) then
+  begin
+    raise ECircularDependencyException.CreateResFmt(
+      @SCircularDependencyDetected,
+      [dependency.Name]
+    );
+  end;
+end;
+
+function TDependencyResolver.CanResolveDependency(
+  dependency: TRttiType): Boolean;
+begin
+  Result := CanResolveDependency(dependency, TValue.Empty);
 end;
 
 function TDependencyResolver.CanResolveDependency(dependency: TRttiType;
   const argument: TValue): Boolean;
+//var
+//  predicate: TPredicate<TComponentModel>;
 begin
   if dependency.IsClassOrInterface then
   begin
     if argument.IsEmpty then
     begin
-      Result := fRegistry.HasService(dependency.Handle);
+      Result := fRegistry.FindAll(dependency.Handle).Count = 1;
     end
     else
     begin
+//      predicate := 
+//        function (c: TComponentModel): Boolean
+//        begin
+//          Result := c.HasService(dependency.Handle);
+//        end;
+//      Result := argument.IsType<string> and
+//        fRegistry.FindAll(dependency.Handle).Any(predicate);
       Result := argument.IsType<string> and
-        fRegistry.HasService(dependency.Handle, argument.AsString);
+        fRegistry.HasService(argument.AsString);
+//        fRegistry.HasService(dependency.Handle, argument.AsString);
     end;
   end
   else
@@ -108,17 +211,45 @@ begin
   end;
 end;
 
-function TDependencyResolver.CanResolve(
-  const injection: IInjection): Boolean;
+function TDependencyResolver.ResolveDependency(dependency: TRttiType): TValue;
+begin
+  Result := ResolveDependency(dependency, TValue.Empty);
+end;
+
+function TDependencyResolver.ResolveDependency(dependency: TRttiType;
+  const argument: TValue): TValue;
 var
-  dependencies: TArray<TRttiType>;
+  model: TComponentModel;
+  instance: TObject;
+begin
+  TArgument.CheckNotNull(dependency, 'dependency');
+  if not dependency.IsClassOrInterface then
+  begin
+    Exit(argument);
+  end;
+  CheckCircularDependency(dependency);
+  model := GetEligibleModel(dependency, argument);
+  fDependencyTypes.Add(dependency);
+  try
+    instance := model.LifetimeManager.GetInstance;
+  finally
+    fDependencyTypes.Remove(dependency);
+  end;
+  ConstructValue(dependency, instance, Result);
+end;
+
+function TDependencyResolver.CanResolveDependencies(
+  dependencies: TArray<TRttiType>): Boolean;
+begin
+  Result := CanResolveDependencies(dependencies, nil);
+end;
+
+function TDependencyResolver.CanResolveDependencies(
+  dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean;
+var
   dependency: TRttiType;
-  arguments: TArray<TValue>;
   i: Integer;
 begin
-  TArgument.CheckNotNull(injection, 'injection');
-  dependencies := injection.GetDependencies;
-  arguments := injection.Model.GetInjectionArguments(injection);
   Result := True;
   if Length(dependencies) = Length(arguments) then
   begin
@@ -148,86 +279,91 @@ begin
 end;
 
 function TDependencyResolver.ResolveDependencies(
-  const injection: IInjection): TArray<TValue>;
+  dependencies: TArray<TRttiType>): TArray<TValue>;
+begin
+  Result := ResolveDependencies(dependencies, nil);
+end;
+
+function TDependencyResolver.ResolveDependencies(
+  dependencies: TArray<TRttiType>;
+  const arguments: TArray<TValue>): TArray<TValue>;
 var
   dependency: TRttiType;
-  model: TComponentModel;
-  arguments: TArray<TValue>;
-  instance: TObject;
-  localInterface: Pointer;
-  index: Integer;
-  name: string;
+  hasArgument: Boolean;
+  i: Integer;
 begin
-  TArgument.CheckNotNull(injection, 'injection');
-  SetLength(Result, injection.DependencyCount);
-  arguments := injection.Model.GetInjectionArguments(injection);
-  if (Length(arguments) > 0) and (Length(arguments) <> injection.DependencyCount) then
+  hasArgument := Length(arguments) > 0;
+  if hasArgument and (Length(arguments) <> Length(dependencies)) then
   begin
-    raise EResolveException.Create('Unsatisified arguments.');
+    raise EResolveException.CreateRes(@SUnsatisfiedResolutionArgumentCount);
   end;
-  index := 0;
-  for dependency in injection.GetDependencies do
+  SetLength(Result, Length(dependencies));
+  if hasArgument then
   begin
-    if fDependencies.Contains(dependency.Handle) then
+    for i := 0 to High(dependencies) do
     begin
-      raise ECircularDependencyException.CreateResFmt(
-        @SCircularDependencyDetected,
-        [dependency.Name]
-      );
+      dependency := dependencies[i];
+      Result[i] := ResolveDependency(dependency, arguments[i]);
     end;
-    if (Length(arguments) > 0) then // Use arguments
+  end
+  else
+  begin
+    for i := 0 to High(dependencies) do
     begin
-      if dependency.IsClassOrInterface then
-      begin
-        name := arguments[index].AsString;
-      end
-      else
-      begin
-        Result[index] := arguments[index];
-        Inc(index);
-        Continue;
-      end;
+      dependency := dependencies[i];
+      Result[i] := ResolveDependency(dependency, TValue.Empty);
     end;
-    model := fRegistry.FindOne(dependency.Handle, name);
-    if model = nil then
-    begin
-      raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
-    end;
-    fDependencies.Add(dependency.Handle);
-    try
-      instance := model.LifetimeManager.GetInstance;
-    finally
-      fDependencies.Remove(dependency.Handle);
-    end;
-    if dependency.IsClass then
-    begin
-      Result[index] := instance;
-    end
-    else if dependency.IsInterface then
-    begin
-      instance.GetInterface(GetTypeData(dependency.Handle).Guid, localInterface);
-      TValue.MakeWithoutCopy(@localInterface, dependency.Handle, Result[index]);
-    end
-    else
-    begin
-      if Length(arguments) = 0 then
-      begin
-        raise EResolveException.Create('No arguments');
-      end;
-      Result[index] := arguments[index];
-    end;
-    Assert(not Result[index].IsEmpty);
-    Inc(index);
   end;
 end;
 
-{ TServiceResolver }
+function TDependencyResolver.CanResolveDependencies(
+  const injection: IInjection): Boolean;
+var
+  arguments: TArray<TValue>;
+begin
+  TArgument.CheckNotNull(injection, 'injection');
+  arguments := injection.Model.GetInjectionArguments(injection);
+  Result := CanResolveDependencies(injection, arguments);
+end;
+
+function TDependencyResolver.CanResolveDependencies(const injection: IInjection;
+  const arguments: TArray<TValue>): Boolean;
+var
+  dependencyTypes: TArray<TRttiType>;
+begin
+  TArgument.CheckNotNull(injection, 'injection');
+  dependencyTypes := injection.GetDependencies;
+  Result := CanResolveDependencies(dependencyTypes, arguments);
+end;
+
+function TDependencyResolver.ResolveDependencies(
+  const injection: IInjection): TArray<TValue>;
+var
+  dependencyArguments: TArray<TValue>;
+begin
+  TArgument.CheckNotNull(injection, 'injection');
+  dependencyArguments := injection.Model.GetInjectionArguments(injection);
+  Result := ResolveDependencies(injection, dependencyArguments);
+end;
+
+function TDependencyResolver.ResolveDependencies(const injection: IInjection;
+  const arguments: TArray<TValue>): TArray<TValue>;
+var
+  dependencyTypes: TArray<TRttiType>;
+begin
+  TArgument.CheckNotNull(injection, 'injection');
+  dependencyTypes := injection.GetDependencies;
+  Result := ResolveDependencies(dependencyTypes, arguments);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TServiceResolver'}
 
 constructor TServiceResolver.Create(context: IContainerContext;
   const registry: IComponentRegistry);
 begin
-  TArgument.CheckNotNull(context, 'context');
-  TArgument.CheckNotNull(registry, 'registry');
   inherited Create;
   fContext := context;
   fRegistry := registry;
@@ -235,48 +371,28 @@ end;
 
 function TServiceResolver.CanResolve(serviceType: PTypeInfo): Boolean;
 begin
-  // TODO: CanResolve
-  Result := True;
+  Result := fRegistry.HasService(serviceType);
 end;
 
-function TServiceResolver.Resolve(serviceType: PTypeInfo;
-  const name: string): TValue;
+function TServiceResolver.CanResolve(const name: string): Boolean;
+begin
+  Result := fRegistry.HasService(name);
+end;
+
+function TServiceResolver.DoResolve(model: TComponentModel;
+  serviceType: PTypeInfo): TValue;
 var
-  models: IEnumerableEx<TComponentModel>;
-  model: TComponentModel;
   instance: TObject;
   localInterface: Pointer;
 begin
-  TArgument.CheckTypeKind(serviceType, [tkClass, tkInterface], 'serviceType');
-
-  models := fRegistry.FindAll(serviceType);
-  if models.IsEmpty then
-  begin
-    raise EResolveException.CreateResFmt(@SNoComponentRegistered, [GetTypeName(serviceType)]);
-  end;
-  if (models.Count = 1) and (name = '') then
-  begin
-    model := models.First;
-  end
-  else
-  begin
-    model := models.Where(
-      function(item: TComponentModel): Boolean
-      begin
-        Result := item.Services.ContainsKey(name);
-      end
-    ).FirstOrDefault;
-    if model = nil then
-    begin
-      raise EUnsatisfiedDependencyException.CreateResFmt(@SUnsatisfiedDependency,
-        [GetTypeName(serviceType), name]);
-    end;
-  end;
+  Assert(model <> nil, 'model should not be nil.');
+  Assert(serviceType <> nil, 'serviceType should not be nil.');
   if model.LifetimeManager = nil then
   begin
-    raise EResolveException.CreateRes(@SLifetimeManagerNeeded);
+    raise EResolveException.CreateRes(@SLifetimeManagerMissing);
   end;
   instance := model.LifetimeManager.GetInstance;
+  Assert(instance <> nil, 'instance should not be nil.');
   case serviceType.Kind of
     tkClass:
     begin
@@ -290,20 +406,56 @@ begin
   end;
 end;
 
+function TServiceResolver.Resolve(serviceType: PTypeInfo): TValue;
+var
+  serviceName: string;
+  models: IEnumerableEx<TComponentModel>;
+  model: TComponentModel;
+begin
+  serviceName := GetTypeName(serviceType);
+  models := fRegistry.FindAll(serviceType);
+  if models.IsEmpty then
+  begin
+    raise EResolveException.CreateResFmt(@SNoComponentRegistered, [serviceName]);
+  end;
+  if models.Count > 1 then
+  begin
+    raise EUnsatisfiedDependencyException.CreateResFmt(@SUnsatisfiedDependency,
+      [serviceName]);
+  end;
+  model := models.First;
+  Result := DoResolve(model, serviceType);
+end;
+
+function TServiceResolver.Resolve(const name: string): TValue;
+var
+  model: TComponentModel;
+  serviceType: PTypeInfo;
+begin
+  model := fRegistry.FindOne(name);
+  if model = nil then
+  begin
+    raise EResolveException.CreateResFmt(@SInvalidServiceName, [name]);
+  end;
+  serviceType := model.GetServiceType(name);
+  Result := DoResolve(model, serviceType);
+end;
+
 function TServiceResolver.ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
 var
   models: IList<TComponentModel>;
   model: TComponentModel;
   i: Integer;
 begin
-  TArgument.CheckTypeKind(serviceType, [tkClass, tkInterface], 'serviceType');
   models := fRegistry.FindAll(serviceType).ToList;
   SetLength(Result, models.Count);
   for i := 0 to models.Count - 1 do
   begin
     model := models[i];
-    Result[i] := Resolve(serviceType, model.GetServiceName(serviceType));
+    Result[i] := DoResolve(model, serviceType);
   end;
 end;
+
+{$ENDREGION}
 
 end.

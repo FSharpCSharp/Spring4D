@@ -125,11 +125,11 @@ implementation
 
 uses
   Spring.Collections,
-//  Spring.DesignPatterns,
   Spring.Reflection,
   Spring.IoC.Injection,
   Spring.IoC.ComponentActivator,
-  Spring.Helpers, Spring.IoC.ResourceStrings;
+  Spring.Helpers,
+  Spring.IoC.ResourceStrings;
 
 
 {$REGION 'TComponentBuilder'}
@@ -241,6 +241,11 @@ var
   predicate: TPredicate<TRttiMethod>;
   injection: IInjection;
   method: TRttiMethod;
+  parameters: TArray<TRttiParameter>;
+  parameter: TRttiParameter;
+  arguments: TArray<TValue>;
+  attribute: InjectionAttribute;
+  i: Integer;
 begin
   if not model.ConstructorInjections.IsEmpty then Exit;  // TEMP
   predicate := TMethodFilters.IsConstructor and
@@ -249,6 +254,21 @@ begin
   begin
     injection := context.InjectionFactory.CreateConstructorInjection(model);
     injection.Initialize(method);
+    parameters := method.GetParameters;
+    SetLength(arguments, Length(parameters));
+    for i := 0 to High(parameters) do
+    begin
+      parameter := parameters[i];
+      if parameter.TryGetCustomAttribute<InjectionAttribute>(attribute) and attribute.HasValue then
+      begin
+        arguments[i] := attribute.Value;
+      end
+      else
+      begin
+        arguments[i] := TValue.Empty;
+      end;
+    end;
+    model.UpdateInjectionArguments(injection, arguments);
     model.ConstructorInjections.Add(injection);
   end;
 end;
@@ -264,6 +284,11 @@ var
   condition: TPredicate<TRttiMethod>;
   method: TRttiMethod;
   injection: IInjection;
+  parameters: TArray<TRttiParameter>;
+  parameter: TRttiParameter;
+  arguments: TArray<TValue>;
+  attribute: InjectionAttribute;
+  i: Integer;
 begin
   condition := TMethodFilters.IsInstanceMethod and
     TMethodFilters.HasAttribute(InjectionAttribute) and
@@ -272,6 +297,21 @@ begin
   begin
     injection := context.InjectionFactory.CreateMethodInjection(model, method.Name);
     injection.Initialize(method);
+    parameters := method.GetParameters;
+    SetLength(arguments, Length(parameters));
+    for i := 0 to High(parameters) do
+    begin
+      parameter := parameters[i];
+      if parameter.TryGetCustomAttribute<InjectionAttribute>(attribute) and attribute.HasValue then
+      begin
+        arguments[i] := attribute.Value;
+      end
+      else
+      begin
+        arguments[i] := TValue.Empty;
+      end;
+    end;
+    model.UpdateInjectionArguments(injection, arguments);
     model.MethodInjections.Add(injection);
   end;
 end;
@@ -287,6 +327,7 @@ var
   condition: TPredicate<TRttiProperty>;
   propertyMember: TRttiProperty;
   injection: IInjection;
+  attribute: InjectionAttribute;
 begin
   condition := TPropertyFilters.IsInvokable and
     TPropertyFilters.HasAttribute(InjectionAttribute);
@@ -294,6 +335,10 @@ begin
   begin
     injection := context.InjectionFactory.CreatePropertyInjection(model, propertyMember.Name);
     injection.Initialize(propertyMember);
+    if propertyMember.TryGetCustomAttribute<InjectionAttribute>(attribute) and attribute.HasValue then
+    begin
+      model.UpdateInjectionArguments(injection, [attribute.Value]);
+    end;
     model.PropertyInjections.Add(injection);
   end;
 end;
@@ -309,12 +354,17 @@ var
   condition: TPredicate<TRttiField>;
   field: TRttiField;
   injection: IInjection;
+  attribute: InjectionAttribute;
 begin
   condition := TFieldFilters.HasAttribute(InjectionAttribute);
   for field in model.ComponentType.GetFields.Where(condition) do
   begin
     injection := context.InjectionFactory.CreateFieldInjection(model, field.Name);
     injection.Initialize(field);
+    if field.TryGetCustomAttribute<InjectionAttribute>(attribute) and attribute.HasValue then
+    begin
+      model.UpdateInjectionArguments(injection, [attribute.Value]);
+    end;
     model.FieldInjections.Add(injection);
   end;
 end;
@@ -422,7 +472,6 @@ end;
 constructor TInjectableMethodFilter.Create(const context: IContainerContext;
   model: TComponentModel; const injection: IInjection);
 begin
-  TArgument.CheckNotNull(model, 'model');
   inherited Create;
   fContext := context;
   fModel := model;
@@ -433,31 +482,17 @@ end;
 function TInjectableMethodFilter.IsSatisfiedBy(
   const method: TRttiMethod): Boolean;
 var
+  dependencies: TArray<TRttiType>;
   parameters: TArray<TRttiParameter>;
-  parameter: TRttiParameter;
   i: Integer;
 begin
   parameters := method.GetParameters;
-  Result := Length(parameters) = Length(fArguments);
-  if Result then
+  SetLength(dependencies, Length(parameters));
+  for i := 0 to High(dependencies) do
   begin
-    for i := 0 to Length(parameters) - 1 do
-    begin
-      parameter := parameters[i];
-      if fArguments[i].IsType(parameter.ParamType.Handle) then
-        Continue;
-      if parameter.ParamType.IsClassOrInterface then
-      begin
-        Result := fArguments[i].IsType<string> and
-          fContext.HasService(parameter.ParamType.Handle, fArguments[i].AsString);
-      end
-      else
-      begin
-        Result := False;
-      end;
-      if not Result then Break;
-    end;
+    dependencies[i] := parameters[i].ParamType;
   end;
+  Result := fContext.DependencyResolver.CanResolveDependencies(dependencies, fArguments);
 end;
 
 {$ENDREGION}

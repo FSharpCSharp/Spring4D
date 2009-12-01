@@ -41,7 +41,7 @@ type
     function GetInjectionFactory: IInjectionFactory;
   public
     function HasService(serviceType: PTypeInfo): Boolean; overload;
-    function HasService(serviceType: PTypeInfo; const name: string): Boolean; overload;
+    function HasService(const name: string): Boolean; overload;
     function CreateLifetimeManager(model: TComponentModel): ILifetimeManager;
     property DependencyResolver: IDependencyResolver read GetDependencyResolver;
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
@@ -211,13 +211,12 @@ begin
   raise Exception.Create('GetInjectionFactory');
 end;
 
-function TMockContext.HasService(serviceType: PTypeInfo): Boolean;
+function TMockContext.HasService(const name: string): Boolean;
 begin
   raise Exception.Create('HasService');
 end;
 
-function TMockContext.HasService(serviceType: PTypeInfo;
-  const name: string): Boolean;
+function TMockContext.HasService(serviceType: PTypeInfo): Boolean;
 begin
   raise Exception.Create('HasService');
 end;
