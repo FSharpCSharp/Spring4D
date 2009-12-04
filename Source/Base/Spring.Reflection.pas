@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Reflection.Filters;
+unit Spring.Reflection;
 
 {$I Spring.inc}
 
@@ -39,6 +39,42 @@ uses
   Spring.DesignPatterns;
 
 type
+  TGetRttiMembersFunc<T> = reference to function(targetType: TRttiType): TArray<T>;
+
+  /// <summary>
+  /// TRttiMemberEnumerable<T>
+  /// </summary>
+  TRttiMemberEnumerableEx<T: TRttiMember> = class(TEnumerableBase<T>,
+    IEnumerableEx<T>, IEnumerable_<T>, IInterface)
+  private
+    type
+      TEnumerator = class(TEnumeratorBase<T>)
+      private
+        fCollection: TRttiMemberEnumerableEx<T>;
+        fTargetType: TRttiType;
+        fMembers: TArray<T>;
+        fIndex: Integer;
+      protected
+        procedure Initialize(targetType: TRttiType);
+        function GetCurrent: T; override;
+      public
+        constructor Create(collection: TRttiMemberEnumerableEx<T>);
+        function MoveNext: Boolean; override;
+      end;
+  private
+    fParentType: TRttiType;
+    fGetMembersFunc: TGetRttiMembersFunc<T>;
+    fEnumerateBaseType: Boolean;
+    fPredicate: TPredicate<T>;
+  public
+    constructor Create(parentType: TRttiType; const func: TGetRttiMembersFunc<T>;
+      enumerateBaseType: Boolean); overload;
+    constructor Create(parentType: TRttiType; const func: TGetRttiMembersFunc<T>;
+      enumerateBaseType: Boolean; const predicate: TPredicate<T>); overload;
+    function GetEnumerator: IEnumeratorEx<T>; override;
+    function Where(const predicate: TPredicate<T>): IEnumerableEx<T>; override;
+  end;
+
   /// <summary>
   /// Provides static methods to create specifications to filter TRttiMember objects.
   /// </summary>
@@ -56,13 +92,9 @@ type
   end;
 
   TMemberFilters = class(TFiltersBase<TRttiMember>);
-
   TMethodFilters = class(TFiltersBase<TRttiMethod>);
-
   TPropertyFilters = class(TFiltersBase<TRttiProperty>);
-
   TFieldFilters = class(TFiltersBase<TRttiField>);
-
 
   TMemberSpecificationBase<T: TRttiMember> = class abstract(TSpecificationBase<T>)
   protected
@@ -142,23 +174,269 @@ type
     constructor Create(const flags: TParamFlags);
   end;
 
+type
+  /// <summary>
+  /// The TInternalRttiMemberHelper class was copied from Spring.Helpers, as
+  /// An URW1111 internal error will occured when this unit uses Spring.Helpers.
+  /// </summary>
+  TInternalRttiMemberHelper = class helper for TRttiMember
+  private
+    function GetIsPrivate: Boolean;
+    function GetIsProtected: Boolean;
+    function GetIsPublic: Boolean;
+    function GetIsPublished: Boolean;
+    function GetIsConstructor: Boolean;
+    function GetIsProperty: Boolean;
+    function GetIsMethod: Boolean;
+    function GetIsField: Boolean;
+  public
+//    procedure InvokeMember(instance: TValue; const arguments: array of TValue);
+//    procedure InvokeMember(instance: TObject; const arguments: array of TValue);
+    function AsProperty: TRttiProperty;
+    function AsMethod: TRttiMethod;
+    function AsField: TRttiField;
+    property IsConstructor: Boolean read GetIsConstructor;
+    property IsProperty: Boolean read GetIsProperty;
+    property IsMethod: Boolean read GetIsMethod;
+    property IsField: Boolean read GetIsField;
+    property IsPrivate: Boolean read GetIsPrivate;
+    property IsProtected: Boolean read GetIsProtected;
+    property IsPublic: Boolean read GetIsPublic;
+    property IsPublished: Boolean read GetIsPublished;
+  end;
+
+
 implementation
 
 uses
-  Generics.Collections,
-  Spring.Helpers;
+  Spring.ResourceStrings;
 
 
-{ TMemberSpecificationBase }
+{$REGION 'Internal Class Helpers'}
+
+{ TInternalRttiMemberHelper }
+
+function TInternalRttiMemberHelper.AsProperty: TRttiProperty;
+begin
+  Result := Self as TRttiProperty;
+end;
+
+function TInternalRttiMemberHelper.AsMethod: TRttiMethod;
+begin
+  Result := Self as TRttiMethod;
+end;
+
+function TInternalRttiMemberHelper.AsField: TRttiField;
+begin
+  Result := Self as TRttiField;
+end;
+
+function TInternalRttiMemberHelper.GetIsConstructor: Boolean;
+begin
+  Result := (Self is TRttiMethod) and TRttiMethod(Self).IsConstructor;
+end;
+
+function TInternalRttiMemberHelper.GetIsProperty: Boolean;
+begin
+  Result := Self is TRttiProperty;
+end;
+
+function TInternalRttiMemberHelper.GetIsMethod: Boolean;
+begin
+  Result := Self is TRttiMethod;
+end;
+
+function TInternalRttiMemberHelper.GetIsField: Boolean;
+begin
+  Result := Self is TRttiField;
+end;
+
+function TInternalRttiMemberHelper.GetIsPrivate: Boolean;
+begin
+  Result := Visibility = mvPrivate;
+end;
+
+function TInternalRttiMemberHelper.GetIsProtected: Boolean;
+begin
+  Result := Visibility = mvProtected;
+end;
+
+function TInternalRttiMemberHelper.GetIsPublic: Boolean;
+begin
+  Result := Visibility = mvPublic;
+end;
+
+function TInternalRttiMemberHelper.GetIsPublished: Boolean;
+begin
+  Result := Visibility = mvPublished;
+end;
+
+
+{$ENDREGION}
+
+
+{$REGION 'TRttiMemberEnumerable<T>'}
+
+constructor TRttiMemberEnumerableEx<T>.Create(parentType: TRttiType;
+  const func: TGetRttiMembersFunc<T>; enumerateBaseType: Boolean);
+begin
+  Create(parentType, func, enumerateBaseType, nil);
+end;
+
+constructor TRttiMemberEnumerableEx<T>.Create(parentType: TRttiType;
+  const func: TGetRttiMembersFunc<T>; enumerateBaseType: Boolean;
+  const predicate: TPredicate<T>);
+begin
+  inherited Create;
+  fParentType := parentType;
+  fGetMembersFunc := func;
+  fEnumerateBaseType := enumerateBaseType;
+  fPredicate := predicate;
+end;
+
+function TRttiMemberEnumerableEx<T>.GetEnumerator: IEnumeratorEx<T>;
+begin
+  Result := TEnumerator.Create(Self);
+end;
+
+function TRttiMemberEnumerableEx<T>.Where(
+  const predicate: TPredicate<T>): IEnumerableEx<T>;
+var
+  finalPredicate: TPredicate<T>;
+begin
+  if not Assigned(fPredicate) then
+  begin
+    finalPredicate := predicate;
+  end
+  else
+  begin
+    finalPredicate :=
+      function(value: T): Boolean
+      begin
+        Result := fPredicate(value) and predicate(value);
+      end;
+  end;
+  Result := TRttiMemberEnumerableEx<T>.Create(fParentType, fGetMembersFunc,
+    fEnumerateBaseType, finalPredicate);
+end;
+
+{ TRttiMemberEnumerableEx<T>.TEnumerator }
+
+constructor TRttiMemberEnumerableEx<T>.TEnumerator.Create(
+  collection: TRttiMemberEnumerableEx<T>);
+begin
+  inherited Create;
+  fCollection := collection;
+  Initialize(fCollection.fParentType);
+end;
+
+procedure TRttiMemberEnumerableEx<T>.TEnumerator.Initialize(
+  targetType: TRttiType);
+begin
+  fTargetType := targetType;
+  if Assigned(fTargetType) then
+  begin
+    fMembers := fCollection.fGetMembersFunc(fTargetType);
+  end
+  else
+  begin
+    SetLength(fMembers, 0);
+  end;
+  fIndex := -1;
+end;
+
+function TRttiMemberEnumerableEx<T>.TEnumerator.MoveNext: Boolean;
+begin
+  Result := fIndex < Length(fMembers) - 1;
+  if Result then
+  begin
+    Inc(fIndex);
+    if Assigned(fCollection.fPredicate) and not fCollection.fPredicate(Current) then
+    begin
+      Result := MoveNext;
+    end;
+  end
+  else if fCollection.fEnumerateBaseType and (fTargetType <> nil) then
+  begin
+    Initialize(fTargetType.BaseType);
+    Exit(MoveNext);
+  end;
+end;
+
+function TRttiMemberEnumerableEx<T>.TEnumerator.GetCurrent: T;
+begin
+  Result := fMembers[fIndex];
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TMemberSpecificationBase<T>'}
 
 function TMemberSpecificationBase<T>.IsSatisfiedBy(
   const member: T): Boolean;
 begin
-//  TArgument.CheckNotNull(member, 'member');
+//  TArgument.CheckNotNull<T>(member, 'member');
   Result := Accept(member);
 end;
 
-{ THasAttributeSpec }
+{$ENDREGION}
+
+
+{$REGION 'TFiltersBase<T>'}
+
+class function TFiltersBase<T>.HasAttribute(
+  attributeClass: TAttributeClass): TSpecification<T>;
+begin
+  Result := THasAttributeFilter<T>.Create(attributeClass);
+end;
+
+class function TFiltersBase<T>.HasParameterTypes(
+  const types: array of PTypeInfo): TSpecification<T>;
+begin
+  Result := THasParameterTypesFilter<T>.Create(types);
+end;
+
+class function TFiltersBase<T>.HasParameterFlags(
+  const flags: TParamFlags): TSpecification<T>;
+begin
+  Result := THasParameterFlagsFilter<T>.Create(flags);
+end;
+
+class function TFiltersBase<T>.IsNamed(const name: string): TSpecification<T>;
+begin
+  Result := TNameFilter<T>.Create(name);
+end;
+
+class function TFiltersBase<T>.IsTypeOf(typeInfo: PTypeInfo): TSpecification<T>;
+begin
+  Result := TTypeFilter<T>.Create(typeInfo);
+end;
+
+class function TFiltersBase<T>.IsTypeOf<TType>: TSpecification<T>;
+begin
+  Result := IsTypeOf(TypeInfo(TType));
+end;
+
+class function TFiltersBase<T>.IsConstructor: TSpecification<T>;
+begin
+  Result := TConstructorFilter<T>.Create;
+end;
+
+class function TFiltersBase<T>.IsInstanceMethod: TSpecification<T>;
+begin
+  Result := TInstanceMethodFilter<T>.Create;
+end;
+
+class function TFiltersBase<T>.IsInvokable: TSpecification<T>;
+begin
+  Result := TInvokableFilter<T>.Create;
+end;
+
+{$ENDREGION}
+
+
+{ THasAttributeFilter }
 
 constructor THasAttributeFilter<T>.Create(attributeClass: TAttributeClass);
 begin
@@ -221,9 +499,15 @@ end;
 { THasParameterTypesFilter<T> }
 
 constructor THasParameterTypesFilter<T>.Create(const types: array of PTypeInfo);
+var
+  i: Integer;
 begin
   inherited Create;
-  fTypes := TArray.CreateArray<PTypeInfo>(types);
+  SetLength(fTypes, Length(types));
+  for i := 0 to High(types) do
+  begin
+    fTypes[i] := types[i];
+  end;
 end;
 
 function THasParameterTypesFilter<T>.Accept(const member: T): Boolean;
@@ -317,56 +601,6 @@ begin
   Result := member.IsMethod and not member.AsMethod.IsClassMethod;
 end;
 
-{$REGION 'TFiltersBase<T>'}
-
-class function TFiltersBase<T>.HasAttribute(
-  attributeClass: TAttributeClass): TSpecification<T>;
-begin
-  Result := THasAttributeFilter<T>.Create(attributeClass);
-end;
-
-class function TFiltersBase<T>.HasParameterTypes(
-  const types: array of PTypeInfo): TSpecification<T>;
-begin
-  Result := THasParameterTypesFilter<T>.Create(types);
-end;
-
-class function TFiltersBase<T>.HasParameterFlags(
-  const flags: TParamFlags): TSpecification<T>;
-begin
-  Result := THasParameterFlagsFilter<T>.Create(flags);
-end;
-
-class function TFiltersBase<T>.IsNamed(const name: string): TSpecification<T>;
-begin
-  Result := TNameFilter<T>.Create(name);
-end;
-
-class function TFiltersBase<T>.IsTypeOf(typeInfo: PTypeInfo): TSpecification<T>;
-begin
-  Result := TTypeFilter<T>.Create(typeInfo);
-end;
-
-class function TFiltersBase<T>.IsTypeOf<TType>: TSpecification<T>;
-begin
-  Result := IsTypeOf(TypeInfo(TType));
-end;
-
-class function TFiltersBase<T>.IsConstructor: TSpecification<T>;
-begin
-  Result := TConstructorFilter<T>.Create;
-end;
-
-class function TFiltersBase<T>.IsInstanceMethod: TSpecification<T>;
-begin
-  Result := TInstanceMethodFilter<T>.Create;
-end;
-
-class function TFiltersBase<T>.IsInvokable: TSpecification<T>;
-begin
-  Result := TInvokableFilter<T>.Create;
-end;
-
-{$ENDREGION}
-
 end.
+
+

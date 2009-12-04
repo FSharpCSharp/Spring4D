@@ -38,15 +38,15 @@ uses
   SysUtils,
   SyncObjs,
   TypInfo,
-  Generics.Defaults,
   Generics.Collections;
 
 type
-  {$REGION 'TSingleton'}
+  {$REGION 'Singleton Pattern'}
 
   /// <summary>
-  /// Provides a portal to get the single instance of a class. It also keeps track
-  /// of the lifetime of the instances and will free them in reversed order.
+  /// Provides a portal to get the single instance of a concrete class which
+  /// must have a default constructor. It also keeps track of the lifetime
+  /// of the instances and will free them in reversed order.
   /// </summary>
   /// <remarks>
   /// Consider use IoC to apply the singleton pattern.
@@ -108,8 +108,6 @@ type
   /// <summary>
   /// TSynchronizedObservable<T>
   /// </summary>
-  /// <remarks>
-  /// </remarks>
   TSynchronizedObservable<T> = class(TObservable<T>, IObservable<T>, IInterface)
   protected
     fListenersLock: IReadWriteSync;
@@ -120,6 +118,10 @@ type
     procedure RemoveListener(const listener: T); override;
     procedure NotifyListeners(callback: TProc<T>); override;
   end;
+
+//  TAsyncObservable<T> = class(TInterfacedObject, IObservable<T>, IInterface)
+//
+//  end;
 
   {$ENDREGION}
 
@@ -321,7 +323,6 @@ var
   listener: T;
 begin
   TArgument.CheckNotNull(Assigned(callback), 'callback');
-
   for listener in Listeners do
   begin
     callback(listener);

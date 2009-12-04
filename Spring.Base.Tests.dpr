@@ -40,10 +40,9 @@ uses
   TestExtensions,
   GUITestRunner,
   TextTestRunner,
-  Spring.System,
-  Spring.Tests.DesignPatterns in 'Tests\Spring.Tests.DesignPatterns.pas',
-  Spring.Tests.Helpers in 'Tests\Spring.Tests.Helpers.pas',
-  Spring.Tests.System in 'Tests\Spring.Tests.System.pas';
+  Spring.Tests.DesignPatterns in 'Tests\Base\Spring.Tests.DesignPatterns.pas',
+  Spring.Tests.Helpers in 'Tests\Base\Spring.Tests.Helpers.pas',
+  Spring.Tests.System in 'Tests\Base\Spring.Tests.System.pas';
 
 {$R *.RES}
 

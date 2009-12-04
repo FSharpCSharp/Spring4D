@@ -38,9 +38,8 @@ uses
   Generics.Collections,
   Spring.System,
   Spring.Collections,
-  Spring.Reflection.Filters,
-  Spring.Reflection,
-  Spring.DesignPatterns;
+  Spring.DesignPatterns,
+  Spring.Reflection;
 
 type
   /// <summary>

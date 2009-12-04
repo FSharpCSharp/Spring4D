@@ -20,9 +20,9 @@ uses
   TestFramework,
   GUITestRunner,
   TextTestRunner,
-  Spring.Tests.IoC.Components in 'Tests\Spring.Tests.IoC.Components.pas',
-  Spring.Tests.IoC.LifetimeManager in 'Tests\Spring.Tests.IoC.LifetimeManager.pas',
-  Spring.Tests.IoC in 'Tests\Spring.Tests.IoC.pas';
+  Spring.Tests.IoC.Components in 'Tests\Core\IoC\Spring.Tests.IoC.Components.pas',
+  Spring.Tests.IoC.LifetimeManager in 'Tests\Core\IoC\Spring.Tests.IoC.LifetimeManager.pas',
+  Spring.Tests.IoC in 'Tests\Core\IoC\Spring.Tests.IoC.pas';
 
 {$R *.RES}
 

@@ -197,6 +197,9 @@ type
     class procedure RaiseInvalidEnumArgumentException(const argumentName: string); overload; static; inline;
   end;
 
+  /// <summary>
+  /// Represents a type alias of the TArgument class.
+  /// </summary>
   TArg = TArgument;
 
   {$ENDREGION}
@@ -324,6 +327,38 @@ type
     class function TryParse<T{:enum}>(const value: string; out enum: T): Boolean; overload; static;
     class function Parse<T{:enum}>(const value: Integer): T; overload; static;
     class function Parse<T{:enum}>(const value: string): T; overload; static;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TRtti'}
+
+  /// <summary>
+  /// Provides static methods to get RTTI information of parameterized type.
+  /// </summary>
+  TRtti = record
+  private
+    class var
+      fContext: TRttiContext;
+    class constructor Create;
+  {$HINTS OFF}
+    class destructor Destroy;
+  {$HINTS ON}
+  public
+    class procedure CheckTypeKind<T>(const typeKind: TypInfo.TTypeKind); overload; static;
+    class procedure CheckTypeKind<T>(const typeKinds: TypInfo.TTypeKinds); overload; static;
+    class function IsManagedType<T>: Boolean; static;
+    class function IsNullReference<T>(const value: T): Boolean; overload; static;
+    class function IsNullReference(const value; typeInfo: PTypeInfo): Boolean; overload; static;
+    class function IsAssignable(typeFrom, typeTo: PTypeInfo): Boolean; overload; static;
+    class function GetTypeInfo<T>: PTypeInfo; static;
+    class function GetTypeData<T>: PTypeData; static;
+    class function GetTypeKind<T>: TypInfo.TTypeKind; static;
+    class function GetTypeName<T>: string; static;
+    class function GetFullName(typeInfo: PTypeInfo): string; overload; static;
+    class function GetFullName<T>: string; overload; static;
+//    class function GetType<T>(const obj: T): IType<T>;
   end;
 
   {$ENDREGION}
@@ -501,6 +536,9 @@ type
     constructor Create(const fileName: string);
     procedure LoadVersionResource(const resource: TFileVersionResource);
   public
+    /// <summary>
+    /// Returns a TFileVersionInfo object.
+    /// </summary>
     class function GetVersionInfo(fileName: string): TFileVersionInfo; static;
     function ToString: string;
     property Exists: Boolean read fExists;
@@ -673,6 +711,9 @@ type
 
   {$REGION 'Special Folder Enumeration'}
 
+  /// <summary>
+  /// Special Folder Enumeration
+  /// </summary>
   TSpecialFolder = (
     sfDesktop,                // <desktop>
     sfInternet,               // Internet Explorer (icon on desktop)
@@ -858,7 +899,7 @@ type
   {$REGION 'TCallbackFunc'}
 
   /// <summary>
-  /// TCallbackFunc
+  /// Defines an anonymous function which returns a callback pointer.
   /// </summary>
   TCallbackFunc = TFunc<Pointer>;
 
@@ -1003,10 +1044,19 @@ type
 
   {$REGION 'Global Routines'}
 
+  /// <summary>
+  /// Returns the path of the application.
+  /// </summary>
   function ApplicationPath: string;
 
+  /// <summary>
+  /// Returns the version number of the application.
+  /// </summary>
   function ApplicationVersion: TVersion;
 
+  /// <summary>
+  /// Returns the version information of the application.
+  /// </summary>
   function ApplicationVersionString: string;
 
   /// <summary>
@@ -1022,7 +1072,7 @@ type
   procedure CheckDirectoryExists(const directory: string);
 
   /// <summary>
-  /// CreateCallback
+  /// Creates a standard callback function which was adapted from a instance method.
   /// </summary>
   function CreateCallback(objectAddress: TObject; methodAddress: Pointer): TCallbackFunc;
 
@@ -1087,13 +1137,13 @@ type
   /// Try parsing a string to a datetime value based on the specified format.
   /// Returns True if the input string matches the format.
   /// </summary>
-  function TryParseDateTime(const s, format: string; out value: TDateTime): Boolean;
+  function TryParseDateTime(const s, format: string; out value: TDateTime): Boolean; // experimental;
 
   /// <summary>
   /// Parses a string to a datetime value based on the specified format.
   /// An EConvertError exception will be raised if failed to parse the string.
   /// </summary>
-  function ParseDateTime(const s, format: string): TDateTime;
+  function ParseDateTime(const s, format: string): TDateTime; // experimental;
 
   /// <summary>
   /// Determines if a variant is null or empty. The parameter "trimeWhiteSpace"
@@ -1108,7 +1158,7 @@ type
   procedure Lock(obj: TObject; proc: TProc); inline;
 
   /// <summary>
-  /// Update strings by calling BeginUpdate and EndUpdate
+  /// Updates an instance of TStrings by calling its BeginUpdate and EndUpdate.
   /// </summary>
   procedure UpdateStrings(strings: TStrings; proc: TProc); inline;
 
@@ -1191,7 +1241,6 @@ implementation
 
 uses
   ComObj,
-  Spring.Reflection,
   Spring.Win32API,
   Spring.ResourceStrings;
 
@@ -1258,6 +1307,8 @@ end;
 
 function CreateCallback(objectAddress: TObject; methodAddress: Pointer): TCallbackFunc;
 begin
+  TArgument.CheckNotNull(objectAddress, 'objectAddress');
+  TArgument.CheckNotNull(methodAddress, 'methodAddress');
   Result := TCallback.Create(objectAddress, methodAddress);
 end;
 
@@ -2158,6 +2209,137 @@ class function TEnum.Parse<T>(const value: string): T;
 begin
   if not TEnum.TryParse<T>(value, Result) then
     raise EFormatException.CreateResFmt(@SIncorrectFormat, [value]);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TRtti'}
+
+class constructor TRtti.Create;
+begin
+  fContext := TRttiContext.Create;
+end;
+
+class destructor TRtti.Destroy;
+begin
+  fContext.Free;
+end;
+
+class procedure TRtti.CheckTypeKind<T>(const typeKind: TypInfo.TTypeKind);
+begin
+  TRtti.CheckTypeKind<T>([typeKind]);
+end;
+
+class procedure TRtti.CheckTypeKind<T>(const typeKinds: TypInfo.TTypeKinds);
+var
+  typeInfo: PTypeInfo;
+begin
+  typeInfo := TRtti.GetTypeInfo<T>;
+  if not (typeInfo.Kind in typeKinds) then
+    raise ERttiException.CreateResFmt(@SUnexpectedTypeKind, [TRtti.GetTypeName<T>]);
+end;
+
+class function TRtti.IsAssignable(typeFrom, typeTo: PTypeInfo): Boolean;
+var
+  dataFrom, dataTo: PTypeData;
+begin
+  TArgument.CheckNotNull(typeFrom, 'typeFrom');
+  TArgument.CheckNotNull(typeTo, 'typeTo');
+  if typeFrom = typeTo then
+  begin
+    Exit(True);
+  end;
+  dataFrom := TypInfo.GetTypeData(typeFrom);
+  dataTo := TypInfo.GetTypeData(typeTo);
+  if (typeFrom.Kind = tkClass) and (typeTo.Kind = tkClass) then
+  begin
+    Result := dataFrom.ClassType.InheritsFrom(dataTo.ClassType);
+  end
+  else if (typeFrom.Kind = tkClass) and (typeTo.Kind = tkInterface) then
+  begin
+    Result := (ifHasGuid in dataTo.IntfFlags) and
+      Supports(dataFrom.ClassType, dataTo.Guid);
+  end
+  else if (typeFrom.Kind = tkInterface) and (typeTo.Kind = tkInterface) then
+  begin
+    Result := Assigned(dataFrom.IntfParent) and (dataFrom.IntfParent^ = typeTo);
+    while not Result and Assigned(dataFrom.IntfParent) do
+    begin
+      Result := dataFrom.IntfParent^ = typeTo;
+      dataFrom := TypInfo.GetTypeData(dataFrom.IntfParent^);
+    end;
+  end
+  else
+  begin
+    Result := False;
+  end;
+end;
+
+class function TRtti.IsManagedType<T>: Boolean;
+var
+  typeInfo: PTypeInfo;
+begin
+  typeInfo := TRtti.GetTypeInfo<T>;
+  Result := Rtti.IsManaged(typeInfo);
+end;
+
+class function TRtti.IsNullReference<T>(const value: T): Boolean;
+var
+  localTypeInfo: PTypeInfo;
+begin
+  localTypeInfo := TypeInfo(T);
+  Result := TRtti.IsNullReference(value, localTypeInfo);
+end;
+
+//  TTypeKind = (tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+//    tkString, tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString,
+//    tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray, tkUString,
+//    tkClassRef, tkPointer, tkProcedure);
+class function TRtti.IsNullReference(const value; typeInfo: PTypeInfo): Boolean;
+begin
+  Result := (typeInfo <> nil) and
+    (typeInfo.Kind in [tkPointer, tkClass, tkClassRef, tkInterface, tkProcedure, tkMethod]);
+  Result := Result and not Assigned(@value);
+end;
+
+class function TRtti.GetTypeName<T>: string;
+begin
+  Result := TypInfo.GetTypeName(TRtti.GetTypeInfo<T>);
+end;
+
+class function TRtti.GetTypeKind<T>: TypInfo.TTypeKind;
+begin
+  Result := TRtti.GetTypeInfo<T>.Kind;
+end;
+
+class function TRtti.GetTypeInfo<T>: PTypeInfo;
+begin
+  Result := System.TypeInfo(T);
+  if Result = nil then
+    raise ERttiException.CreateRes(@SNoTypeInfo);
+end;
+
+class function TRtti.GetFullName(typeInfo: PTypeInfo): string;
+begin
+  TArgument.CheckNotNull(typeInfo, 'typeInfo');
+  Result := fContext.GetType(typeInfo).QualifiedName;
+end;
+
+class function TRtti.GetFullName<T>: string;
+var
+  typeInfo: PTypeInfo;
+begin
+  typeInfo := TRtti.GetTypeInfo<T>;
+  Result := TRtti.GetFullName(typeInfo);
+end;
+
+class function TRtti.GetTypeData<T>: PTypeData;
+var
+  info: PTypeInfo;
+begin
+  info := TRtti.GetTypeInfo<T>;
+  Result := TypInfo.GetTypeData(info);
 end;
 
 {$ENDREGION}

@@ -1,10 +1,10 @@
 ﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 		<PropertyGroup>
-			<ProjectGuid>{D7EA9EEC-EED3-4FAA-9F0C-D1A779D8EEFB}</ProjectGuid>
-			<MainSource>Spring.Core.dpk</MainSource>
+			<ProjectGuid>{441618C8-BB6C-4BB1-A8AA-988C6A9168EF}</ProjectGuid>
+			<ProjectVersion>12.0</ProjectVersion>
 			<Config Condition="'$(Config)'==''">Debug</Config>
 			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
-			<ProjectVersion>12.0</ProjectVersion>
+			<MainSource>Spring.Core.Tests.dpr</MainSource>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
 			<Base>true</Base>
@@ -20,45 +20,39 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
-			<DesignOnlyPackage>false</DesignOnlyPackage>
-			<DCC_UnitSearchPath>..\Spring.Base\Source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
-			<DCC_DependencyCheckOutputName>F:\Users\Public\Documents\RAD Studio\7.0\Bpl\Spring.Core.bpl</DCC_DependencyCheckOutputName>
-			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;$(DCC_UnitAlias)</DCC_UnitAlias>
-			<GenPackage>true</GenPackage>
-			<GenDll>true</GenDll>
-			<DCC_Description>Delphi Spring Framework Core Library</DCC_Description>
-			<DCC_DcuOutput>Lib</DCC_DcuOutput>
+			<DCC_UnitSearchPath>$(BDS)\Source\DUnit\src;Source\Base;Source\Base\Collections;Source\Core\IoC;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_Define>_CONSOLE_TESTRUNNER;$(DCC_Define)</DCC_Define>
+			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
+			<DCC_DependencyCheckOutputName>Spring.Core.Tests.exe</DCC_DependencyCheckOutputName>
+			<DCC_UsePackage>vcl;rtl;vclx;vclimg;vclactnband;dbrtl;vcldb;bdertl;vcldbx;vcltouch;xmlrtl;dsnap;dsnapcon;TeeUI;Tee;TeeDB;vclib;ibxpress;adortl;IndyCore;IndySystem;IndyProtocols;inet;intrawebdb_100_140;Intraweb_100_140;VclSmp;vclie;websnap;webdsnap;inetdb;inetdbbde;inetdbxpress;soaprtl;vclribbon;dbexpress;DbxCommonDriver;DataSnapIndy10ServerTransport;DataSnapProviderClient;DataSnapServer;DbxClientDriver;DBXInterBaseDriver;DBXMySQLDriver;dbxcds;DBXFirebirdDriver;DBXSybaseASEDriver;DBXSybaseASADriver;DBXOracleDriver;DBXMSSQLDriver;DBXInformixDriver;DBXDb2Driver</DCC_UsePackage>
 			<DCC_ImageBase>00400000</DCC_ImageBase>
 			<DCC_Platform>x86</DCC_Platform>
-			<DCC_ExeOutput>Bin</DCC_ExeOutput>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_1)'!=''">
+			<DCC_DependencyCheckOutputName>Bin\Release\Spring.Core.Tests.exe</DCC_DependencyCheckOutputName>
+			<DCC_UnitSearchPath>Source\Base;Source\Base\Collections;Source\Core\IoC;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_ExeOutput>Bin\Release</DCC_ExeOutput>
+			<DCC_DcuOutput>Lib\Release</DCC_DcuOutput>
 			<DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
 			<DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
 			<DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
 			<DCC_DebugInformation>false</DCC_DebugInformation>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2)'!=''">
+			<DCC_DependencyCheckOutputName>Bin\Debug\Spring.Core.Tests.exe</DCC_DependencyCheckOutputName>
+			<DCC_ExeOutput>Bin\Debug</DCC_ExeOutput>
+			<DCC_DcuOutput>Lib\Debug</DCC_DcuOutput>
+			<DCC_Optimize>false</DCC_Optimize>
 			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
 			<DCC_DebugDCUs>true</DCC_DebugDCUs>
 		</PropertyGroup>
 		<ItemGroup>
-			<DelphiCompile Include="Spring.Core.dpk">
+			<DelphiCompile Include="Spring.Core.Tests.dpr">
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
-			<DCCReference Include="rtl.dcp"/>
-			<DCCReference Include="vcl.dcp"/>
-			<DCCReference Include="dbrtl.dcp"/>
-			<DCCReference Include="Spring.Base.dcp"/>
-			<DCCReference Include="Source\IoC\Spring.IoC.ComponentActivator.pas"/>
-			<DCCReference Include="Source\IoC\Spring.IoC.Core.pas"/>
-			<DCCReference Include="Source\IoC\Spring.IoC.Injection.pas"/>
-			<DCCReference Include="Source\IoC\Spring.IoC.LifetimeManager.pas"/>
-			<DCCReference Include="Source\IoC\Spring.IoC.pas"/>
-			<DCCReference Include="Source\IoC\Spring.IoC.Registration.pas"/>
-			<DCCReference Include="Source\IoC\Spring.IoC.Resolvers.pas"/>
-			<DCCReference Include="Source\IoC\Spring.IoC.ResourceStrings.pas"/>
-			<DCCReference Include="Source\IoC\Spring.IoC.Builder.pas"/>
+			<DCCReference Include="Tests\Core\IoC\Spring.Tests.IoC.Components.pas"/>
+			<DCCReference Include="Tests\Core\IoC\Spring.Tests.IoC.LifetimeManager.pas"/>
+			<DCCReference Include="Tests\Core\IoC\Spring.Tests.IoC.pas"/>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>
 			</BuildConfiguration>
@@ -74,24 +68,21 @@
 		<Import Project="$(BDS)\Bin\CodeGear.Delphi.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')"/>
 		<ProjectExtensions>
 			<Borland.Personality>Delphi.Personality.12</Borland.Personality>
-			<Borland.ProjectType>Package</Borland.ProjectType>
+			<Borland.ProjectType/>
 			<BorlandProject>
 				<Delphi.Personality>
-					<Source>
-						<Source Name="MainSource">Spring.Core.dpk</Source>
-					</Source>
 					<Parameters>
 						<Parameters Name="UseLauncher">False</Parameters>
 						<Parameters Name="LoadAllSymbols">True</Parameters>
 						<Parameters Name="LoadUnspecifiedSymbols">False</Parameters>
 					</Parameters>
 					<VersionInfo>
-						<VersionInfo Name="IncludeVerInfo">True</VersionInfo>
+						<VersionInfo Name="IncludeVerInfo">False</VersionInfo>
 						<VersionInfo Name="AutoIncBuild">False</VersionInfo>
-						<VersionInfo Name="MajorVer">0</VersionInfo>
-						<VersionInfo Name="MinorVer">1</VersionInfo>
-						<VersionInfo Name="Release">2</VersionInfo>
-						<VersionInfo Name="Build">565</VersionInfo>
+						<VersionInfo Name="MajorVer">1</VersionInfo>
+						<VersionInfo Name="MinorVer">0</VersionInfo>
+						<VersionInfo Name="Release">0</VersionInfo>
+						<VersionInfo Name="Build">0</VersionInfo>
 						<VersionInfo Name="Debug">False</VersionInfo>
 						<VersionInfo Name="PreRelease">False</VersionInfo>
 						<VersionInfo Name="Special">False</VersionInfo>
@@ -102,8 +93,8 @@
 					</VersionInfo>
 					<VersionInfoKeys>
 						<VersionInfoKeys Name="CompanyName"/>
-						<VersionInfoKeys Name="FileDescription">Delphi Spring Framework Core Library</VersionInfoKeys>
-						<VersionInfoKeys Name="FileVersion">0.1.2.565</VersionInfoKeys>
+						<VersionInfoKeys Name="FileDescription"/>
+						<VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName"/>
 						<VersionInfoKeys Name="LegalCopyright"/>
 						<VersionInfoKeys Name="LegalTrademarks"/>
@@ -116,6 +107,9 @@
 						<Excluded_Packages Name="$(BDS)\bin\dcloffice2k140.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
 						<Excluded_Packages Name="$(BDS)\bin\dclofficexp140.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
 					</Excluded_Packages>
+					<Source>
+						<Source Name="MainSource">Spring.Core.Tests.dpr</Source>
+					</Source>
 				</Delphi.Personality>
 			</BorlandProject>
 			<ProjectFileVersion>12</ProjectFileVersion>
