@@ -90,7 +90,7 @@ uses
   Spring.ResourceStrings,
   Spring.IoC.ComponentActivator,
   Spring.IoC.LifetimeManager,
-  Spring.IoC.ResourceStrings;
+  Spring.Core.ResourceStrings;
 
 {$REGION 'TDependencyResolver'}
 

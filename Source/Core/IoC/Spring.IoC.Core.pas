@@ -58,16 +58,16 @@ type
   /// </summary>
   IContainerContext = interface
     ['{9E90EADB-A720-4394-A5E0-5DF0550C1E92}']
-    {$REGION 'Property Getters & Setters'}
-
+  {$REGION 'Property Getters & Setters'}
+    function GetComponentRegistry: IComponentRegistry;
     function GetDependencyResolver: IDependencyResolver;
     function GetInjectionFactory: IInjectionFactory;
-
-    {$ENDREGION}
+  {$ENDREGION}
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(const name: string): Boolean; overload;
 //    function GetServiceType(const name: string): PTypeInfo;
     function CreateLifetimeManager(model: TComponentModel): ILifetimeManager;
+    property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
     property DependencyResolver: IDependencyResolver read GetDependencyResolver;
   end;
@@ -297,7 +297,7 @@ uses
   Spring.ResourceStrings,
   Spring.Helpers,
   Spring.Reflection,
-  Spring.IoC.ResourceStrings;
+  Spring.Core.ResourceStrings;
 
 {$REGION 'TComponentModel'}
 
@@ -475,7 +475,6 @@ begin
   end;
   Result := fPropertyInjections;
 end;
-
 
 function TComponentModel.HasService(serviceType: PTypeInfo): Boolean;
 begin

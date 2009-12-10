@@ -20,7 +20,7 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
-			<DCC_UnitSearchPath>Source\Base;Source\Base\Collections;Source\Core\IoC;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UnitSearchPath>Source\Base;Source\Base\Collections;Source\Core\;Source\Core\IoC;Source\Core\Numbering;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DesignOnlyPackage>false</DesignOnlyPackage>
 			<DCC_DependencyCheckOutputName>F:\Users\Public\Documents\RAD Studio\7.0\Bpl\Spring.Core.bpl</DCC_DependencyCheckOutputName>
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;$(DCC_UnitAlias)</DCC_UnitAlias>
@@ -50,6 +50,7 @@
 			<DCCReference Include="rtl.dcp"/>
 			<DCCReference Include="vcl.dcp"/>
 			<DCCReference Include="dbrtl.dcp"/>
+			<DCCReference Include="xmlrtl.dcp"/>
 			<DCCReference Include="Spring.Base.dcp"/>
 			<DCCReference Include="Source\Core\IoC\Spring.IoC.Builder.pas"/>
 			<DCCReference Include="Source\Core\IoC\Spring.IoC.ComponentActivator.pas"/>
@@ -59,7 +60,10 @@
 			<DCCReference Include="Source\Core\IoC\Spring.IoC.pas"/>
 			<DCCReference Include="Source\Core\IoC\Spring.IoC.Registration.pas"/>
 			<DCCReference Include="Source\Core\IoC\Spring.IoC.Resolvers.pas"/>
-			<DCCReference Include="Source\Core\IoC\Spring.IoC.ResourceStrings.pas"/>
+			<DCCReference Include="Source\Core\Spring.Core.ResourceStrings.pas"/>
+			<DCCReference Include="Source\Core\Numbering\Spring.Numbering.pas"/>
+			<DCCReference Include="Source\Core\Numbering\Spring.Numbering.Rules.pas"/>
+			<DCCReference Include="Source\Core\Numbering\Spring.Numbering.Utils.pas"/>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>
 			</BuildConfiguration>

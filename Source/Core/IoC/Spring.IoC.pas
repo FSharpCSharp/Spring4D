@@ -62,15 +62,17 @@ type
     fDependencyResolver: IDependencyResolver;
     fInjectionFactory: IInjectionFactory;
     fRegistrationManager: TRegistrationManager;
+    function GetComponentRegistry: IComponentRegistry;
   protected
     { Implements IContainerContext }
     function GetDependencyResolver: IDependencyResolver;
     function GetInjectionFactory: IInjectionFactory;
     function CreateLifetimeManager(model: TComponentModel): ILifetimeManager;
+    property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
     property DependencyResolver: IDependencyResolver read GetDependencyResolver;
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
   protected
-    procedure InitializeServiceInspectors; virtual;
+    procedure InitializeInspectors; virtual;
   public
     constructor Create;
     destructor Destroy; override;
@@ -81,7 +83,7 @@ type
 //    function RegisterInstance<T>(instance: T): TContainer;
 //    function RegisterDecorations<TServiceType>(const decorationClasses: array of TClass): TContainer;
 
-    procedure Build; // SetUp or BuildUp
+    procedure Build;
 
     function Resolve<T>: T; overload;
     function Resolve<T>(const name: string): T; overload;
@@ -114,7 +116,7 @@ uses
   Spring.IoC.LifetimeManager,
   Spring.IoC.Injection,
   Spring.IoC.Resolvers,
-  Spring.IoC.ResourceStrings;
+  Spring.Core.ResourceStrings;
 
 {$REGION 'TContainer'}
 
@@ -127,7 +129,7 @@ begin
   fDependencyResolver := TDependencyResolver.Create(Self, fRegistry);
   fInjectionFactory := TInjectionFactory.Create;
   fRegistrationManager := TRegistrationManager.Create(fRegistry);
-  InitializeServiceInspectors;
+  InitializeInspectors;
 end;
 
 destructor TContainer.Destroy;
@@ -143,7 +145,7 @@ begin
   fBuilder.BuildAll;
 end;
 
-procedure TContainer.InitializeServiceInspectors;
+procedure TContainer.InitializeInspectors;
 var
   inspectors: TArray<IBuilderInspector>;
   inspector: IBuilderInspector;
@@ -151,6 +153,7 @@ begin
   inspectors := TArray<IBuilderInspector>.Create(
     TLifetimeInspector.Create,
     TComponentActivatorInspector.Create,
+//    TImplementsAttributeInspector.Create,
     TInjectionTargetInspector.Create,
     TConstructorInspector.Create,
     TPropertyInspector.Create,
@@ -189,6 +192,11 @@ begin
       raise ERegistrationException.CreateRes(@SUnexpectedLifetimeType);
     end;
   end;
+end;
+
+function TContainer.GetComponentRegistry: IComponentRegistry;
+begin
+  Result := fRegistry;
 end;
 
 function TContainer.GetDependencyResolver: IDependencyResolver;

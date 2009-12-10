@@ -241,6 +241,7 @@ end;
 
 procedure TfrmDemo.InitializeNetwork;
 begin
+  {$WARNINGS OFF}
   with vleNetwork.Strings do
   begin
     AddOrUpdate('IsAvailable', BoolToStr(TNetwork.IsAvailable, True));
@@ -252,6 +253,7 @@ begin
       AddOrUpdate('GetPublicIPAddress', e.ClassName + ': ' + e.Message);
     end;
   end;
+  {$WARNINGS ON}
 end;
 
 procedure TfrmDemo.InitializeDriveInfo;

@@ -4,7 +4,7 @@
 			<ProjectVersion>12.0</ProjectVersion>
 			<Config Condition="'$(Config)'==''">Debug</Config>
 			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
-			<MainSource>Spring.Base.Tests.dpr</MainSource>
+			<MainSource>Spring.Tests.dpr</MainSource>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
 			<Base>true</Base>
@@ -22,16 +22,16 @@
 		<PropertyGroup Condition="'$(Base)'!=''">
 			<DCC_UNIT_PLATFORM>false</DCC_UNIT_PLATFORM>
 			<DCC_SYMBOL_PLATFORM>false</DCC_SYMBOL_PLATFORM>
-			<DCC_UnitSearchPath>$(BDS)\Source\DUnit\src;Source\Base;Source\Base\Collections;Source\;Tests\Base;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UnitSearchPath>$(BDS)\Source\DUnit\src;Source\Base;Source\Base\Collections;Source\Core;Source\Core\IoC;Source\Core\Numbering;Tests\Base;Tests\Core;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DCC_Define>_CONSOLE_TESTRUNNER;$(DCC_Define)</DCC_Define>
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
-			<DCC_DependencyCheckOutputName>Spring.Base.Tests.exe</DCC_DependencyCheckOutputName>
+			<DCC_DependencyCheckOutputName>Spring.Tests.exe</DCC_DependencyCheckOutputName>
 			<DCC_UsePackage>vcl;rtl;vclx;vclactnband;dbrtl;vcldb;vcldbx;bdertl;xmlrtl;dsnap;dsnapcon;adortl;IndyCore;IndySystem;IndyProtocols;VclSmp;vclie;inet;websnap;webdsnap;inetdb;inetdbbde;inetdbxpress;soaprtl;vclribbon;dbexpress;DbxCommonDriver;DataSnapIndy10ServerTransport;DataSnapProviderClient;DataSnapServer;DbxClientDriver;DBXInterBaseDriver;DBXMySQLDriver;dbxcds;DBXSybaseASEDriver;DBXSybaseASADriver;DBXOracleDriver;DBXMSSQLDriver;DBXInformixDriver;DBXDb2Driver</DCC_UsePackage>
 			<DCC_ImageBase>00400000</DCC_ImageBase>
 			<DCC_Platform>x86</DCC_Platform>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_1)'!=''">
-			<DCC_DependencyCheckOutputName>Bin\Release\Spring.Base.Tests.exe</DCC_DependencyCheckOutputName>
+			<DCC_DependencyCheckOutputName>Bin\Release\Spring.Tests.exe</DCC_DependencyCheckOutputName>
 			<DCC_ExeOutput>Bin\Release</DCC_ExeOutput>
 			<DCC_DcuOutput>Lib\Release</DCC_DcuOutput>
 			<DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
@@ -40,7 +40,7 @@
 			<DCC_DebugInformation>false</DCC_DebugInformation>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2)'!=''">
-			<DCC_DependencyCheckOutputName>Bin\Debug\Spring.Base.Tests.exe</DCC_DependencyCheckOutputName>
+			<DCC_DependencyCheckOutputName>Bin\Debug\Spring.Tests.exe</DCC_DependencyCheckOutputName>
 			<DCC_ExeOutput>Bin\Debug</DCC_ExeOutput>
 			<DCC_DcuOutput>Lib\Debug</DCC_DcuOutput>
 			<DCC_Optimize>false</DCC_Optimize>
@@ -48,12 +48,17 @@
 			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
 		</PropertyGroup>
 		<ItemGroup>
-			<DelphiCompile Include="Spring.Base.Tests.dpr">
+			<DelphiCompile Include="Spring.Tests.dpr">
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
 			<DCCReference Include="Tests\Base\Spring.Tests.DesignPatterns.pas"/>
 			<DCCReference Include="Tests\Base\Spring.Tests.Helpers.pas"/>
 			<DCCReference Include="Tests\Base\Spring.Tests.System.pas"/>
+			<DCCReference Include="Tests\Core\Spring.Tests.Numbering.pas"/>
+			<DCCReference Include="Tests\Core\Spring.Tests.IoC.pas"/>
+			<DCCReference Include="Tests\Core\Spring.Tests.IoC.LifetimeManager.pas"/>
+			<DCCReference Include="Tests\Core\Spring.Tests.IoC.Components.pas"/>
+			<DCCReference Include="Tests\Base\Spring.Tests.Utils.pas"/>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>
 			</BuildConfiguration>
@@ -94,7 +99,7 @@
 					</VersionInfo>
 					<VersionInfoKeys>
 						<VersionInfoKeys Name="CompanyName"/>
-						<VersionInfoKeys Name="FileDescription"/>
+						<VersionInfoKeys Name="FileDescription">Delphi Spring Framework Unit Tests</VersionInfoKeys>
 						<VersionInfoKeys Name="FileVersion">0.1.2.1050</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName"/>
 						<VersionInfoKeys Name="LegalCopyright"/>
@@ -105,7 +110,7 @@
 						<VersionInfoKeys Name="Comments"/>
 					</VersionInfoKeys>
 					<Source>
-						<Source Name="MainSource">Spring.Base.Tests.dpr</Source>
+						<Source Name="MainSource">Spring.Tests.dpr</Source>
 					</Source>
 					<isVersionControl>
 						<isVersionControl Name="isVersionControlID"/>

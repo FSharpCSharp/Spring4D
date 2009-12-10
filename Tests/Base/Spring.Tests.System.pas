@@ -111,7 +111,7 @@ type
     procedure TestMemoryIsNil;
   end;
 
-  TTestFiveBytesBuffer = class(TBufferTestCase)
+  TTestFiveByteBuffer = class(TBufferTestCase)
   protected
     procedure SetUp; override;
   published
@@ -165,6 +165,9 @@ type
 
 
 implementation
+
+uses
+  Spring.Utils;
 
 
 {$REGION 'TTestSplitString'}
@@ -642,21 +645,21 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TTestFiveBytesBuffer'}
+{$REGION 'TTestFiveByteBuffer'}
 
-procedure TTestFiveBytesBuffer.SetUp;
+procedure TTestFiveByteBuffer.SetUp;
 begin
   inherited;
   fBytes := TBytes.Create($01, $10, $AB, $CD, $EF);
   fBuffer := TBuffer.Create(fBytes);
 end;
 
-procedure TTestFiveBytesBuffer.TestSizeIsFive;
+procedure TTestFiveByteBuffer.TestSizeIsFive;
 begin
   CheckEquals(5, fBuffer.Size);
 end;
 
-procedure TTestFiveBytesBuffer.TestToBytes;
+procedure TTestFiveByteBuffer.TestToBytes;
 var
   bytes: TBytes;
 begin
@@ -667,7 +670,7 @@ begin
     'ToBytes should return a new allocated TBytes.');
 end;
 
-procedure TTestFiveBytesBuffer.TestToString;
+procedure TTestFiveByteBuffer.TestToString;
 var
   bytes: TBytes;
   expected: string;
@@ -680,7 +683,7 @@ begin
   {$WARNINGS ON}
 end;
 
-procedure TTestFiveBytesBuffer.TestToAnsiString;
+procedure TTestFiveByteBuffer.TestToAnsiString;
 var
   bytes: TBytes;
   expected: AnsiString;
@@ -693,7 +696,7 @@ begin
   {$WARNINGS ON}
 end;
 
-procedure TTestFiveBytesBuffer.TestToHexString;
+procedure TTestFiveByteBuffer.TestToHexString;
 var
   actual: string;
 begin
@@ -713,7 +716,7 @@ begin
   CheckEquals('0x01 0x10 0xAB 0xCD 0xEF', actual);
 end;
 
-procedure TTestFiveBytesBuffer.TestBytes;
+procedure TTestFiveByteBuffer.TestBytes;
 var
   i: Integer;
 begin
@@ -723,13 +726,13 @@ begin
   end;
 end;
 
-procedure TTestFiveBytesBuffer.TestEquals;
+procedure TTestFiveByteBuffer.TestEquals;
 begin
   CheckTrue(fBuffer.Equals(fBytes));
   CheckTrue(not fBuffer.Equals(Copy(fBytes, 0, 1)));
 end;
 
-procedure TTestFiveBytesBuffer.TestFromHexString;
+procedure TTestFiveByteBuffer.TestFromHexString;
 var
   buffer: TBuffer;
 begin
@@ -758,7 +761,7 @@ begin
   CheckTrue(buffer.IsEmpty);
 end;
 
-procedure TTestFiveBytesBuffer.TestImplicitConversion;
+procedure TTestFiveByteBuffer.TestImplicitConversion;
 var
   bytes: TBytes;
 begin
@@ -769,7 +772,7 @@ begin
   CheckTrue(Integer(fBuffer.Memory) = Integer(fBytes));  // Check Reference
 end;
 
-procedure TTestFiveBytesBuffer.TestIsEmpty;
+procedure TTestFiveByteBuffer.TestIsEmpty;
 begin
   CheckFalse(fBuffer.IsEmpty);
 end;

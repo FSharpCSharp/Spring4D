@@ -1,3 +1,11 @@
+2009-12-9
+- The utility classes (TEnvironment, TDriveInfo, TOperatingSystem, TFileVersionInfo) and some global functions (ApplicationPath, ApplicationVersion and ApplicationVersionString) were moved to Spring.Utils.pas
+- Merged Spring.Tests.Base and Spring.Tests.Core into Spring.Tests
+- Added a flexible Base-N Calculator to Spring.Utils
+- Introduced a generic Number Generator which locates in Spring.Numbering.
+- Added a simple implementation of the INumberSource, which locates in Spring.Numbering.Utils, using ADODB and MSSQLServer (Supports effective Row-Lock).
+- Supports the ImplementsAttribute which will tell the IoC Container which service is implemented by the component.
+
 2009-12-1
 - Refactoring dependency resolvers
 - Added Named/Valued Injections By applying the Injection attribute on members/parameters.
@@ -155,5 +163,5 @@ First Release
 *Reorganized subfolders in the Source folder (Need to update the Library path & Browsing path)
 *Renamed Spring.Collections.TContainer to TConainers
 *Renamed the customized interfaces IEnumerator<T> and IEnumerable<T> in Spring.Collections to IEnumeratorEx<T> and IEnumerableEx<T> to avoid the L817 internal error.
-*Redesigned the Singleton Pattern using TSingleton class, which is more like a singleton instance container, insteading of TSingletonBase<T>
+*Redesigned the Singleton Pattern using TSingleton class, which is more like a singleton instances container, insteading of TSingletonBase<T>
 *TPersistentSnapshot and TPersistentHelper in Spring.Helpers are now marked as deprecated, and may be removed later.

@@ -71,6 +71,11 @@ type
     procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); override;
   end;
 
+//  TImplementsAttributeInspector = class(TInspectorBase)
+//  protected
+//    procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); override;
+//  end;
+
   // InjectionAttributeInspector
   TConstructorInspector = class(TInspectorBase)
   protected
@@ -129,7 +134,7 @@ uses
   Spring.IoC.Injection,
   Spring.IoC.ComponentActivator,
   Spring.Helpers,
-  Spring.IoC.ResourceStrings;
+  Spring.Core.ResourceStrings;
 
 
 {$REGION 'TComponentBuilder'}
@@ -335,7 +340,8 @@ begin
   begin
     injection := context.InjectionFactory.CreatePropertyInjection(model, propertyMember.Name);
     injection.Initialize(propertyMember);
-    if propertyMember.TryGetCustomAttribute<InjectionAttribute>(attribute) and attribute.HasValue then
+    if propertyMember.TryGetCustomAttribute<InjectionAttribute>(attribute) and
+      attribute.HasValue then
     begin
       model.UpdateInjectionArguments(injection, [attribute.Value]);
     end;

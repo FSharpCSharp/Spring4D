@@ -122,6 +122,9 @@ resourcestring
 
   {$ENDREGION}
 
+  SAtLeastTwoElements = 'There must be at least two elements.';
+  SIllegalArgumentQuantity = 'Invalid argument "quantity": %d.';
+
 implementation
 
 end.

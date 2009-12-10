@@ -112,7 +112,7 @@ implementation
 
 uses
   Spring.ResourceStrings,
-  Spring.IoC.ResourceStrings,
+  Spring.Core.ResourceStrings,
   Spring.Helpers;
 
 

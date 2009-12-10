@@ -24,6 +24,7 @@ package Spring.Base;
 {$IMAGEBASE $400000}
 {$DESCRIPTION 'Delphi Spring Framework Base Class Library'}
 {$IMPLICITBUILD ON}
+{$DEFINE DEBUG}
 
 requires
   rtl,

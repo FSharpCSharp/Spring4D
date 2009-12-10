@@ -22,6 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
+/// <summary>
+/// Declares the fundamental types and rountines in the Delphi Spring Framework.
+/// </summary>
 unit Spring.System;
 
 {$I Spring.inc}
@@ -31,15 +34,11 @@ interface
 uses
   Classes,
   Windows,
-  Messages,
   SysUtils,
   DateUtils,
   Types,
   TypInfo,
   Variants,
-  ShellAPI,
-  ShlObj,
-  Registry,
   TimeSpan,
   Character,
   Diagnostics,
@@ -91,7 +90,6 @@ type
 {$WARNINGS OFF}
   TInt32Rec = TIntegerRec;
 {$WARNINGS ON}
-
 
   TInt64Rec = SysUtils.Int64Rec;
 
@@ -346,11 +344,18 @@ type
     class destructor Destroy;
   {$HINTS ON}
   public
+    /// <summary>
+    /// Determines whether the type kind of the paramized type argument "T" is as expected.
+    /// </summary>
+    /// <exception cref="ERttiException">raised when typeKind was not as expected.</exception>
     class procedure CheckTypeKind<T>(const typeKind: TypInfo.TTypeKind); overload; static;
     class procedure CheckTypeKind<T>(const typeKinds: TypInfo.TTypeKinds); overload; static;
     class function IsManagedType<T>: Boolean; static;
     class function IsNullReference<T>(const value: T): Boolean; overload; static;
     class function IsNullReference(const value; typeInfo: PTypeInfo): Boolean; overload; static;
+    /// <summary>
+    /// Returns true if the typeFrom is assignable to the typeTo.
+    /// </summary>
     class function IsAssignable(typeFrom, typeTo: PTypeInfo): Boolean; overload; static;
     class function GetTypeInfo<T>: PTypeInfo; static;
     class function GetTypeData<T>: PTypeData; static;
@@ -366,10 +371,12 @@ type
 
   {$REGION 'TNullable<T>'}
 
+type
   /// <summary>
-  /// Represents an object whose underlying type is a value type that can also
+  /// Represents an "object" whose underlying type is a value type that can also
   /// be assigned nil like a reference type.
   /// </summary>
+  /// <typeparam name="T">The underlying value type of the TNullable<T> generic type.</typeparam>
   TNullable<T> = record
   private
     const fCHasValue = 'HasValue';  // DO NOT LOCALIZE
@@ -379,11 +386,29 @@ type
     function GetValue: T;
     function GetHasValue: Boolean;
   public
+    /// <summary>
+    /// Initializes a new instance of the TNullable<T> structure to the specified value.
+    /// </summary>
     constructor Create(const value: T); overload;
+    /// <summary>
+    /// Initializes a new instance of the TNullable<T> structure to the specified value.
+    /// </summary>
     constructor Create(const value: Variant); overload;
+    /// <summary>
+    /// Retrieves the value of the current TNullable<T> object, or the object's default value.
+    /// </summary>
     function GetValueOrDefault: T; overload;
+    /// <summary>
+    /// Retrieves the value of the current Nullable<T> object, or the specified default value.
+    /// </summary>
     function GetValueOrDefault(const default: T): T; overload;
+    /// <summary>
+    /// Gets a value indicating whether the current Nullable<T> object has a value.
+    /// </summary>
     property HasValue: Boolean read GetHasValue;
+    /// <summary>
+    /// Gets the value of the current Nullable<T> value.
+    /// </summary>
     property Value: T read GetValue;
     { Operator Overloads }
     class operator Implicit(const value: TNullable<T>): T;
@@ -400,9 +425,8 @@ type
   {$REGION 'TLifetimeWatcher (Experimental)'}
 
   /// <summary>
-  /// TLifetimeWatcher
+  /// Represents a lifetime watcher.
   /// </summary>
-  /// <author>BARRY KELLY</author>
   TLifetimeWatcher = class(TInterfacedObject)
   private
     fProc: TProc;
@@ -434,12 +458,13 @@ type
 
   {$REGION 'TVersion (Experimental)'}
 
-  // NOTE: Consider use the delphi style: major.minor[.release[.build]],
-  // that will break the current code.
-
   /// <summary>
-  /// Represents version number in the format of "major.minor[.build[.revision]]"
+  /// Represents a version number in the format of "major.minor[.build[.revision]]",
+  /// which is different from the delphi style format "major.minor[.release[.build]]".
   /// </summary>
+  /// <remarks>
+  /// Supports Operator Overloads.
+  /// </remarks>
   TVersion = record
   private
     const fCUndefined: Integer = -1;
@@ -481,421 +506,6 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TFileVersionInfo'}
-
-  /// <summary>
-  /// Provides version information for a physical file on disk.
-  /// </summary>
-  TFileVersionInfo = record
-  private
-    type
-      TLangAndCodePage = record
-        Language: Word;
-        CodePage: Word;
-      end;
-
-      TLangAndCodePageArray  = array[0..9] of TLangAndCodePage;
-      PTLangAndCodePageArray = ^TLangAndCodePageArray;
-
-      TFileVersionResource = record
-      private
-        fBlock: Pointer;
-        fLanguage: Word;
-        fCodePage: Word;
-      public
-        constructor Create(block: Pointer; language, codePage: Word);
-        function ReadString(const stringName: string): string;
-        property Language: Word read fLanguage;
-        property CodePage: Word read fCodePage;
-      end;
-  strict private
-    fExists: Boolean;
-    fFileFlags: DWORD;
-    fComments: string;
-    fCompanyName: string;
-    fFileName: string;
-    fFileVersion: string;
-    fFileVersionNumber: TVersion;
-    fFileDescription: string;
-    fProductName: string;
-    fProductVersion: string;
-    fProductVersionNumber: TVersion;
-    fInternalName: string;
-    fLanguage: string;
-    fLegalCopyright: string;
-    fLegalTrademarks: string;
-    fOriginalFilename: string;
-    fPrivateBuild: string;
-    fSpecialBuild: string;
-    function GetIsDebug: Boolean;
-    function GetIsPatched: Boolean;
-    function GetIsPreRelease: Boolean;
-    function GetIsPrivateBuild: Boolean;
-    function GetIsSpecialBuild: Boolean;
-  private
-    constructor Create(const fileName: string);
-    procedure LoadVersionResource(const resource: TFileVersionResource);
-  public
-    /// <summary>
-    /// Returns a TFileVersionInfo object.
-    /// </summary>
-    class function GetVersionInfo(fileName: string): TFileVersionInfo; static;
-    function ToString: string;
-    property Exists: Boolean read fExists;
-    property Comments: string read fComments;
-    property CompanyName: string read fCompanyName;
-    property FileName: string read fFileName;
-    property FileDescription: string read fFileDescription;
-    property FileVersion: string read fFileVersion;
-    property FileVersionNumber: TVersion read fFileVersionNumber;
-    property InternalName: string read fInternalName;
-    property Language: string read fLanguage;
-    property LegalCopyright: string read fLegalCopyright;
-    property LegalTrademarks: string read fLegalTrademarks;
-    property OriginalFilename: string read fOriginalFilename;
-    property ProductName: string read fProductName;
-    property ProductVersion: string read fProductVersion;
-    property ProductVersionNumber: TVersion read fProductVersionNumber;
-    property PrivateBuild: string read fPrivateBuild;
-    property SpecialBuild: string read fSpecialBuild;
-    property IsDebug: Boolean read GetIsDebug;
-    property IsPatched: Boolean read GetIsPatched;
-    property IsPreRelease: Boolean read GetIsPreRelease;
-    property IsSpecialBuild: Boolean read GetIsSpecialBuild;
-    property IsPrivateBuild: Boolean read GetIsPrivateBuild;
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TDriveInfo'}
-
-  /// <summary>
-  /// Drive Type Enumeration
-  /// </summary>
-  TDriveType = (
-    dtUnknown,          // The type of drive is unknown.
-    dtNoRootDirectory,  // The drive does not have a root directory.
-    dtRemovable,        // The drive is a removable storage device, such as a floppy disk drive or a USB flash drive.
-    dtFixed,            // The drive is a fixed disk.
-    dtNetwork,          // The drive is a network drive.
-    dtCDRom,            // The drive is an optical disc device, such as a CD or DVD-ROM.
-    dtRam               // The drive is a RAM disk.
-  );
-
-  /// <summary>
-  /// Provides access to information on a drive.
-  /// </summary>
-  /// <remarks>
-  /// Use TDriveInfo.GetDrives method to retrieve all drives of the computer.
-  /// Caller must check IsReady property before using TDriveInfo.
-  /// </remarks>
-  TDriveInfo = record
-  private
-    fDriveName: string;
-    fRootDirectory: string;
-    fAvailableFreeSpace: Int64;
-    fTotalSize: Int64;
-    fTotalFreeSpace: Int64;
-    fVolumeName: array[0..MAX_PATH] of Char;
-    fFileSystemName: array[0..MAX_PATH] of Char;
-    fSerialNumber: DWORD;
-    fMaximumComponentLength: DWORD;
-    fFileSystemFlags: DWORD;
-    function GetAvailableFreeSpace: Int64;
-    function GetDriveFormat: string;
-    function GetDriveType: TDriveType;
-    function GetDriveTypeString: string;
-    function GetIsReady: Boolean;
-    function GetTotalFreeSpace: Int64;
-    function GetTotalSize: Int64;
-    function GetVolumeLabel: string;
-    procedure SetVolumeLabel(const Value: string);
-  private
-    procedure UpdateProperties;
-  public
-    constructor Create(const driveName: string);
-    class function GetDrives: TArray<TDriveInfo>; static;
-    procedure CheckIsReady;
-    property AvailableFreeSpace: Int64 read GetAvailableFreeSpace;
-    property DriveFormat: string read GetDriveFormat;
-    property DriveType: TDriveType read GetDriveType;
-    property DriveTypeString: string read GetDriveTypeString;
-    property IsReady: Boolean read GetIsReady;
-    property Name: string read fDriveName;
-    property RootDirectory: string read fRootDirectory;
-    property TotalFreeSpace: Int64 read GetTotalFreeSpace;
-    property TotalSize: Int64 read GetTotalSize;
-    property VolumeLabel: string read GetVolumeLabel write SetVolumeLabel;
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TOperatingSystem'}
-
-  TOSPlatformType = (
-    ptUnknown,
-    ptWin3x,
-    ptWin9x,
-    ptWinNT
-  );
-
-  TOSVersionType = (
-    vtUnknown,
-    vtWin95,            // DEPRECATED
-    vtWin98,            // DEPRECATED
-    vtWinME,            // DEPRECATED
-    vtWinNT351,         // DEPRECATED
-    vtWinNT4,           // DEPRECATED
-    vtWinServer2000,
-    vtWinXP,
-    vtWinServer2003,
-    vtWinVista,
-    vtWinServer2008,
-    vtWin7
-  );
-
-  TOSProductType = (
-    ptInvalid,
-    ptWorkstation,
-    ptServer,
-    ptDomainController
-  );
-
-  TOSSuiteType = (
-    etUnknown,
-    etWorkStation,
-    etServer,
-    etAdvancedServer,
-    etPersonal,
-    etProfessional,
-    etDatacenterServer,
-    etEnterprise,
-    etWebEdition
-  );
-
-  /// <summary>
-  /// Represents information about the operating system.
-  /// </summary>
-  TOperatingSystem = class sealed
-  strict private
-    fPlatformType: TOSPlatformType;
-    fProductType: TOSProductType;
-    fServicePack: string;
-    fVersion: TVersion;
-    fVersionType: TOSVersionType;
-    function GetIsWin3x: Boolean;
-    function GetIsWin9x: Boolean;
-    function GetIsWinNT: Boolean;
-    function GetVersionString: string;
-  private
-    function GetOSVersionType(platformType: TOSPlatformType; productType: TOSProductType;
-      majorVersion, minorVersion: Integer): TOSVersionType;
-  public
-    constructor Create;
-    function ToString: string; override;
-    property IsWin3x: Boolean read GetIsWin3x;
-    property IsWin9x: Boolean read GetIsWin9x;
-    property IsWinNT: Boolean read GetIsWinNT;
-    property PlatformType: TOSPlatformType read fPlatformType;
-    property ProductType: TOSProductType read fProductType;
-    property ServicePack: string read fServicePack;
-    property Version: TVersion read fVersion;
-    property VersionString: string read GetVersionString;
-    property VersionType: TOSVersionType read fVersionType;
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'Special Folder Enumeration'}
-
-  /// <summary>
-  /// Special Folder Enumeration
-  /// </summary>
-  TSpecialFolder = (
-    sfDesktop,                // <desktop>
-    sfInternet,               // Internet Explorer (icon on desktop)
-    sfPrograms,               // Start Menu\Programs
-    sfControls,               // My Computer\Control Panel
-    sfPrinters,               // My Computer\Printers
-    sfPersonal,               // My Documents
-    sfFavorites,              // <user name>\Favorites
-    sfStartup,                // Start Menu\Programs\Startup
-    sfRecent,                 // <user name>\Recent
-    sfSendTo,                 // <user name>\SendTo
-    sfBitBucket,              // <desktop>\Recycle Bin
-    sfStartMenu,              // <user name>\Start Menu
-    { For Windows >= XP }
-    sfMyDocuments,            // logical "My Documents" desktop icon
-    sfMyMusic,                // "My Music" folder
-    { For Windows >= XP }
-    sfMyVideo,                // "My Videos" folder
-    sfDesktopDirectory,       // <user name>\Desktop
-    sfDrives,                 // My Computer
-    sfNetwork,                // Network Neighborhood (My Network Places)
-    sfNethood,                // <user name>\nethood
-    sfFonts,                  // windows\fonts
-    sfTemplates,              // <user name>\Templates
-    sfCommonStartMenu,        // All Users\Start Menu
-    sfCommonPrograms,         // All Users\Start Menu\Programs
-    sfCommonStartup,          // All Users\Startup
-    sfCommonDesktopDirectory, // All Users\Desktop
-    sfAppData,                // <user name>\Application Data
-    sfPrinthood,              // <user name>\PrintHood
-    sfLocalAppData,           // <user name>\Local Settings\Applicaiton Data (non roaming)
-    sfALTStartup,             // non localized startup
-    sfCommonALTStartup,       // non localized common startup
-    sfCommonFavorites,        // All Users\Favorites
-    sfInternetCache,          // <user name>\Local Settings\Temporary Internet Files
-    sfCookies,                // <user name>\Cookies
-    sfHistory,                // <user name>\Local Settings\History
-    sfCommonAppData,          // All Users\Application Data
-    sfWindows,                // GetWindowsDirectory()
-    sfSystem,                 // GetSystemDirectory()
-    sfProgramFiles,           // C:\Program Files
-    sfMyPictures,             // C:\Program Files\My Pictures
-    sfProfile,                // USERPROFILE
-    sfSystemX86,              // x86 system directory on RISC
-    sfProgramFilesX86,        // x86 C:\Program Files on RISC
-    sfProgramFilesCommon,     // C:\Program Files\Common
-    sfProgramFilesCommonX86,  // x86 Program Files\Common on RISC
-    sfCommonTemplates,        // All Users\Templates
-    sfCommonDocuments,        // All Users\Documents
-    sfCommonAdminTools,       // All Users\Start Menu\Programs\Administrative Tools
-    sfAdminTools,             // <user name>\Start Menu\Programs\Administrative Tools
-    sfConnections,            // Network and Dial-up Connections
-    { For Windows >= XP }
-    sfCommonMusic,            // All Users\My Music
-    { For Windows >= XP }
-    sfCommonPictures,         // All Users\My Pictures
-    { For Windows >= XP }
-    sfCommonVideo,            // All Users\My Video
-    sfResources,              // Resource Direcotry
-    sfResourcesLocalized,     // Localized Resource Direcotry
-    sfCommonOEMLinks,         // Links to All Users OEM specific apps
-    { For Windows >= XP }
-    sfCDBurnArea,             // USERPROFILE\Local Settings\Application Data\Microsoft\CD Burning
-    sfComputersNearMe         // Computers Near Me (computered from Workgroup membership)
-  );
-
-  {$ENDREGION}
-
-
-  {$REGION 'TEnvironment'}
-
-  /// <summary>
-  /// Specifies the location where an environment variable is stored or
-  /// retrieved in a set or get operation.
-  /// </summary>
-  TEnvironmentVariableTarget = (
-    /// <summary>
-    /// The environment variable is stored or retrieved from the environment
-    /// block associated with the current process.
-    /// </summary>
-    evtProcess,
-    /// <summary>
-    /// The environment variable is stored or retrieved from the
-    /// HKEY_CURRENT_USER\Environment key in the Windows operating system registry.
-    /// </summary>
-    evtUser,
-    /// <summary>
-    /// The environment variable is stored or retrieved from the
-    /// HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment key
-    /// in the Windows operating system registry.
-    /// </summary>
-    evtMachine
-  );
-
-  /// <summary>
-  /// Identifies the processor and bits-per-word of the platform targeted by an executable.
-  /// </summary>
-  TProcessorArchitecture = (
-    paUnknown,    // Unknown processor
-    paX86,        // Intel x86 and compatible microprocessors.
-    paIA64,       // 64-bit Intel and compatible microprocessors.
-    paAmd64       // 64-bit AMD microprocessors.
-  );
-
-  /// <summary>
-  /// Provides information about, and means to manipulate, the current environment.
-  /// </summary>
-  TEnvironment = record
-  private
-    class var
-      fOperatingSystem: TOperatingSystem;
-      fApplicationPath: string;
-      fApplicationVersionInfo: TFileVersionInfo;
-      fApplicationVersion: TVersion;
-      fApplicationVersionString: string;
-      class constructor Create;
-      {$HINTS OFF}
-      class destructor Destroy;
-      {$HINTS ON}
-  private
-    class function GetCurrentDirectory: string; static;
-    class function GetMachineName: string; static;
-    class function GetIsAdmin: Boolean; static;
-    class function GetUserDomainName: string; static;
-    class function GetUserName: string; static;
-    class function GetTickCount: Cardinal; static;
-    class function GetNewLine: string; static;
-    class function GetUserInteractive: Boolean; static;
-    class function GetCommandLine: string; static;
-    class function GetSystemDirectory: string; static;
-    class function GetProcessorCount: Integer; static;
-    class function GetProcessorArchitecture: TProcessorArchitecture; static;
-    class function GetRegisteredOrganization: string; static;
-    class function GetRegisteredOwner: string; static;
-    class procedure SetCurrentDirectory(const value: string); static;
-  private
-    class procedure OpenEnvironmentVariableKey(registry: TRegistry;
-      target: TEnvironmentVariableTarget; keyAccess: Cardinal); static;
-    class function GetCurrentVersionKey: string; static;
-    class procedure GetProcessEnvironmentVariables(list: TStrings); static;
-  public
-    class function  GetCommandLineArgs: TStringDynArray; overload; static;
-    class procedure GetCommandLineArgs(list: TStrings); overload; static;
-    class function  GetLogicalDrives: TStringDynArray; overload; static;
-    class procedure GetLogicalDrives(list: TStrings); overload; static;
-    class function  GetFolderPath(const folder: TSpecialFolder): string; static;
-    class function  GetEnvironmentVariable(const variable: string): string; overload; static;
-    class function  GetEnvironmentVariable(const variable: string; target: TEnvironmentVariableTarget): string; overload; static;
-    class procedure GetEnvironmentVariables(list: TStrings); overload; static;
-    class procedure GetEnvironmentVariables(list: TStrings; target: TEnvironmentVariableTarget); overload; static;
-    class procedure SetEnvironmentVariable(const variable, value: string); overload; static;
-    class procedure SetEnvironmentVariable(const variable, value: string; target: TEnvironmentVariableTarget); overload; static;
-    class function  ExpandEnvironmentVariables(const variable: string): string; static;
-    class property ApplicationPath: string read fApplicationPath;
-    class property ApplicationVersion: TVersion read fApplicationVersion;
-    class property ApplicationVersionInfo: TFileVersionInfo read fApplicationVersionInfo;
-    class property ApplicationVersionString: string read fApplicationVersionString;
-    class property CommandLine: string read GetCommandLine;
-    class property CurrentDirectory: string read GetCurrentDirectory write SetCurrentDirectory;
-    class property IsAdmin: Boolean read GetIsAdmin; { experimental }
-    class property MachineName: string read GetMachineName;
-    class property NewLine: string read GetNewLine;
-    class property OperatingSystem: TOperatingSystem read fOperatingSystem;
-    class property ProcessorCount: Integer read GetProcessorCount;
-    class property ProcessorArchitecture: TProcessorArchitecture read GetProcessorArchitecture;
-    class property RegisteredOrganization: string read GetRegisteredOrganization;
-    class property RegisteredOwner: string read GetRegisteredOwner;
-    class property SystemDirectory: string read GetSystemDirectory;
-    class property TickCount: Cardinal read GetTickCount;
-    class property UserDomainName: string read GetUserDomainName;
-    class property UserName: string read GetUserName;
-    class property UserInteractive: Boolean read GetUserInteractive;
-  end;
-
-  /// <summary>
-  /// Represents a type alias of TEnvironment class.
-  /// </summary>
-  Environment = TEnvironment;
-
-  {$ENDREGION}
-
-
   {$REGION 'TCallbackFunc'}
 
   /// <summary>
@@ -909,7 +519,7 @@ type
   /// <remarks>
   /// Both the object method and the callback function need to be declared as stdcall.
   /// </remarks>
-  /// <example>
+  /// <example>This sample shows how to call <see cref="CreateCallback"/> method.
   /// <code>
   /// private
   ///   fCallback: TCallbackFunc;
@@ -961,16 +571,43 @@ type
   /// Lifetime Type Enumeration
   /// </summary>
   TLifetimeType = (
+    /// <summary>
+    /// Unknown lifetime type.
+    /// </summary>
     ltUnknown,
+    /// <summary>
+    /// Single instance.
+    /// </summary>
     ltSingleton,
+    /// <summary>
+    /// Different instances.
+    /// </summary>
     ltTransient,
+    /// <summary>
+    /// Every thread has a single instance.
+    /// </summary>
+    /// <remarks>
+    /// Not Implemented yet.
+    /// </remarks>
     ltPerThread,
+    /// <summary>
+    /// Instances are transient except that they are recyclable.
+    /// </summary>
+    /// <remarks>
+    /// Not Implemented yet.
+    /// </remarks>
     ltPooled,
+    /// <summary>
+    /// Customized lifetime type.
+    /// </summary>
+    /// <remarks>
+    /// Not Implemented yet.
+    /// </remarks>
     ltCustom
   );
 
   /// <summary>
-  /// Abstract Lifetime Attribute class
+  /// Represents an abstract lifetime attribute class.
   /// </summary>
   TLifetimeAttributeBase = class abstract(TCustomAttribute)
   private
@@ -981,7 +618,7 @@ type
   end;
 
   /// <summary>
-  /// Singleton Attribute
+  /// Applies this attribute when a component shares the single instance.
   /// </summary>
   SingletonAttribute = class(TLifetimeAttributeBase)
   public
@@ -989,7 +626,7 @@ type
   end;
 
   /// <summary>
-  /// Transient Attribute
+  /// This attribute is the default option.
   /// </summary>
   TransientAttribute = class(TLifetimeAttributeBase)
   public
@@ -1008,7 +645,9 @@ type
 //  end;
 
   /// <summary>
-  /// Injection Attribute
+  /// Applies InjectionAttribute to injectable instance members of a
+  /// class. e.g. constructors, methods, properties and even fields.
+  /// Also works on parameters of a method.
   /// </summary>
   InjectionAttribute = class(TCustomAttribute)
   private
@@ -1021,10 +660,9 @@ type
     property HasValue: Boolean read GetHasValue;
   end;
 
-  //(*
-
   /// <summary>
-  /// ImplementsAttribute
+  /// Applies this attribute to tell the container which service is implemented by the
+  /// component. In addition, a service name can be specified.
   /// </summary>
   ImplementsAttribute = class(TCustomAttribute)
   private
@@ -1037,27 +675,10 @@ type
     property Name: string read fName;
   end;
 
-  //*)
-
   {$ENDREGION}
 
 
   {$REGION 'Global Routines'}
-
-  /// <summary>
-  /// Returns the path of the application.
-  /// </summary>
-  function ApplicationPath: string;
-
-  /// <summary>
-  /// Returns the version number of the application.
-  /// </summary>
-  function ApplicationVersion: TVersion;
-
-  /// <summary>
-  /// Returns the version information of the application.
-  /// </summary>
-  function ApplicationVersionString: string;
 
   /// <summary>
   /// Determines whether a specified file exists. An EFileNotFoundException
@@ -1074,10 +695,12 @@ type
   /// <summary>
   /// Creates a standard callback function which was adapted from a instance method.
   /// </summary>
+  /// <param name="objectAddress">address of an instance</param>
+  /// <param name="methodAddress">address of an instance method</param>
   function CreateCallback(objectAddress: TObject; methodAddress: Pointer): TCallbackFunc;
 
   /// <summary>
-  /// SplitString
+  /// Overloads. SplitString
   /// </summary>
   /// <remarks>
   /// Each element of separator defines a separate delimiter character. If two
@@ -1092,7 +715,7 @@ type
     removeEmptyEntries: Boolean = False): TStringDynArray; overload;
 
   /// <summary>
-  /// Returns a string array that contains the substrings in the buffer that are
+  /// Overloads. Returns a string array that contains the substrings in the buffer that are
   /// delimited by null char (#0) and ends with an additional null char.
   /// </summary>
   /// <example>
@@ -1114,22 +737,34 @@ type
   /// </example>
   function SplitString(const buffer: PChar): TStringDynArray; overload;
 
+  /// <summary>
+  /// Deprecated. Use the SplitString(PChar) method instead.
+  /// </summary>
   function SplitNullTerminatedStrings(const buffer: PChar): TStringDynArray;
     deprecated 'Use SpitString instead.';
 
   /// <summary>
-  /// Synchronize
+  /// Executes a method call within the main thread.
   /// </summary>
+  /// <param name="threadProc">An anonymous method that will be executed.</param>
+  /// <exception cref="EArgumentNullException">Raised if threadProc was not assigned.</exception>
+  /// <seealso cref="TThread.Synchronize"/>
   procedure Synchronize(threadProc: TThreadProcedure);
 
   /// <summary>
-  /// Queue
+  /// Asynchronously executes a method call within the main thread.
   /// </summary>
+  /// <param name="threadProc">An anonymous method that will be executed.</param>
+  /// <exception cref="EArgumentNullException">Raised if threadProc was not assigned.</exception>
+  /// <seealso cref="TThread.Queue"/>
   procedure Queue(threadProc: TThreadProcedure);
 
   /// <summary>
   /// Try getting property information of an object.
   /// </summary>
+  /// <returns>Returns true if the instance has the specified property and the
+  /// property has property information. </returns>
+  /// <exception cref="EArgumentNullException">if instance is nil.</exception>
   function TryGetPropInfo(const instance: TObject; const propertyName: string;
     out propInfo: PPropInfo): Boolean;
 
@@ -1137,6 +772,10 @@ type
   /// Try parsing a string to a datetime value based on the specified format.
   /// Returns True if the input string matches the format.
   /// </summary>
+  /// <param name="s">the input string</param>
+  /// <param name="format">the format of datetime</param>
+  /// <param name="value">output datetime value</param>
+  /// <returns>Returns True if the input string can be parsed.</returns>
   function TryParseDateTime(const s, format: string; out value: TDateTime): Boolean; // experimental;
 
   /// <summary>
@@ -1168,71 +807,22 @@ type
   {$REGION 'Constants'}
 
 const
-  OneKB: Int64 = 1024;            // 1KB = 1024 Bytes
+  /// <summary>
+  /// Represents bytes of one KB.
+  /// </summary>
+  OneKB: Int64 = 1024;
+  /// <summary>
+  /// Represents bytes of one MB.
+  /// </summary>
   OneMB: Int64 = 1048576;         // 1MB = 1024 KB
+  /// <summary>
+  /// Represents bytes of one GB.
+  /// </summary>
   OneGB: Int64 = 1073741824;      // 1GB = 1024 MB
+  /// <summary>
+  /// Represents bytes of one TB.
+  /// </summary>
   OneTB: Int64 = 1099511627776;   // 1TB = 1024 GB
-
-const
-  SpecialFolderCSIDLs: array[TSpecialFolder] of Integer = (
-    CSIDL_DESKTOP,                  // <desktop>
-    CSIDL_INTERNET,                 // Internet Explorer (icon on desktop)
-    CSIDL_PROGRAMS,                 // Start Menu\Programs
-    CSIDL_CONTROLS,                 // My Computer\Control Panel
-    CSIDL_PRINTERS,                 // My Computer\Printers
-    CSIDL_PERSONAL,                 // My Documents.  This is equivalent to CSIDL_MYDOCUMENTS in XP and above
-    CSIDL_FAVORITES,                // <user name>\Favorites
-    CSIDL_STARTUP,                  // Start Menu\Programs\Startup
-    CSIDL_RECENT,                   // <user name>\Recent
-    CSIDL_SENDTO,                   // <user name>\SendTo
-    CSIDL_BITBUCKET,                // <desktop>\Recycle Bin
-    CSIDL_STARTMENU,                // <user name>\Start Menu
-    CSIDL_MYDOCUMENTS,              // logical "My Documents" desktop icon
-    CSIDL_MYMUSIC,                  // "My Music" folder
-    CSIDL_MYVIDEO,                  // "My Video" folder
-    CSIDL_DESKTOPDIRECTORY,         // <user name>\Desktop
-    CSIDL_DRIVES,                   // My Computer
-    CSIDL_NETWORK,                  // Network Neighborhood (My Network Places)
-    CSIDL_NETHOOD,                  // <user name>\nethood
-    CSIDL_FONTS,                    // windows\fonts
-    CSIDL_TEMPLATES,
-    CSIDL_COMMON_STARTMENU,         // All Users\Start Menu
-    CSIDL_COMMON_PROGRAMS,          // All Users\Start Menu\Programs
-    CSIDL_COMMON_STARTUP,           // All Users\Startup
-    CSIDL_COMMON_DESKTOPDIRECTORY,  // All Users\Desktop
-    CSIDL_APPDATA,                  // <user name>\Application Data
-    CSIDL_PRINTHOOD,                // <user name>\PrintHood
-    CSIDL_LOCAL_APPDATA,            // <user name>\Local Settings\Application Data (non roaming)
-    CSIDL_ALTSTARTUP,               // non localized startup
-    CSIDL_COMMON_ALTSTARTUP,        // non localized common startup
-    CSIDL_COMMON_FAVORITES,
-    CSIDL_INTERNET_CACHE,
-    CSIDL_COOKIES,
-    CSIDL_HISTORY,
-    CSIDL_COMMON_APPDATA,           // All Users\Application Data
-    CSIDL_WINDOWS,                  // GetWindowsDirectory()
-    CSIDL_SYSTEM,                   // GetSystemDirectory()
-    CSIDL_PROGRAM_FILES,            // C:\Program Files
-    CSIDL_MYPICTURES,               // C:\Program Files\My Pictures
-    CSIDL_PROFILE,                  // USERPROFILE
-    CSIDL_SYSTEMX86,                // x86 system directory on RISC
-    CSIDL_PROGRAM_FILESX86,         // x86 C:\Program Files on RISC
-    CSIDL_PROGRAM_FILES_COMMON,     // C:\Program Files\Common
-    CSIDL_PROGRAM_FILES_COMMONX86,  // x86 C:\Program Files\Common on RISC
-    CSIDL_COMMON_TEMPLATES,         // All Users\Templates
-    CSIDL_COMMON_DOCUMENTS,         // All Users\Documents
-    CSIDL_COMMON_ADMINTOOLS,        // All Users\Start Menu\Programs\Administrative Tools
-    CSIDL_ADMINTOOLS,               // <user name>\Start Menu\Programs\Administrative Tools
-    CSIDL_CONNECTIONS,              // Network and Dial-up Connections
-    CSIDL_COMMON_MUSIC,             // All Users\My Music
-    CSIDL_COMMON_PICTURES,          // All Users\My Pictures
-    CSIDL_COMMON_VIDEO,             // All Users\My Video
-    CSIDL_RESOURCES,                // Resource Directory
-    CSIDL_RESOURCES_LOCALIZED,      // Localized Resource Directory
-    CSIDL_COMMON_OEM_LINKS,         // Links to All Users OEM specific apps
-    CSIDL_CDBURN_AREA,              // USERPROFILE\Local Settings\Application Data\Microsoft\CD Burning
-    CSIDL_COMPUTERSNEARME           // Computers Near Me (computered from Workgroup membership)
-  );
 
   {$ENDREGION}
 
@@ -1241,53 +831,10 @@ implementation
 
 uses
   ComObj,
-  Spring.Win32API,
   Spring.ResourceStrings;
-
-const
-  DriveTypeStrings: array[TDriveType] of string = (
-    SUnknownDriveDescription,
-    SNoRootDirectoryDescription,
-    SRemovableDescription,
-    SFixedDescription,
-    SNetworkDescription,
-    SCDRomDescription,
-    SRamDescription
-  );
-
-const
-  OSVersionTypeStrings: array[TOSVersionType] of string = (
-    SUnknownOSDescription,
-    SWin95Description,
-    SWin98Description,
-    SWinMEDescription,
-    SWinNT351Description,
-    SWinNT40Description,
-    SWinServer2000Description,
-    SWinXPDescription,
-    SWinServer2003Description,
-    SWinVistaDescription,
-    SWinServer2008Description,
-    SWin7Description
-  );
 
 
 {$REGION 'Global Routines'}
-
-function ApplicationPath: string;
-begin
-  Result := TEnvironment.ApplicationPath;
-end;
-
-function ApplicationVersion: TVersion;
-begin
-  Result := TEnvironment.ApplicationVersion;
-end;
-
-function ApplicationVersionString: string;
-begin
-  Result := TEnvironment.ApplicationVersionString;
-end;
 
 procedure CheckFileExists(const fileName: string);
 begin
@@ -1387,11 +934,13 @@ end;
 
 procedure Synchronize(threadProc: TThreadProcedure);
 begin
+  TArgument.CheckNotNull(Assigned(threadProc), 'threadProc');
   TThread.Synchronize(nil, threadProc);
 end;
 
 procedure Queue(threadProc: TThreadProcedure);
 begin
+  TArgument.CheckNotNull(Assigned(threadProc), 'threadProc');
   TThread.Queue(nil, threadProc);
 end;
 
@@ -1399,7 +948,6 @@ function TryGetPropInfo(const instance: TObject; const propertyName: string;
   out propInfo: PPropInfo): Boolean;
 begin
   TArgument.CheckNotNull(instance, 'instance');
-
   propInfo := GetPropInfo(instance, propertyName);
   Result := propInfo <> nil;
 end;
@@ -2700,946 +2248,6 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TFileVersionInfo'}
-
-constructor TFileVersionInfo.Create(const fileName: string);
-var
-  block: Pointer;
-  fixedFileInfo: PVSFixedFileInfo;
-  translations: PTLangAndCodePageArray;
-  size: DWORD;
-  valueSize: DWORD;
-  translationSize: Cardinal;
-  translationCount: Integer;
-  dummy: DWORD;
-begin
-  Finalize(Self);
-  ZeroMemory(@Self, SizeOf(Self));
-  fFileName := fileName;
-  CheckFileExists(fFileName);
-  // GetFileVersionInfo modifies the filename parameter data while parsing.
-  // Copy the string const into a local variable to create a writeable copy.
-  UniqueString(fFileName);
-  size := GetFileVersionInfoSize(PChar(fFileName), dummy);
-  fExists := size <> 0;
-  if fExists then
-  begin
-    block := AllocMem(size);
-    try
-      Win32Check(Windows.GetFileVersionInfo(
-        PChar(fFileName),
-        0,
-        size,
-        block
-      ));
-      Win32Check(VerQueryValue(
-        block,
-        '\',
-        Pointer(fixedFileInfo),
-        valueSize
-      ));
-      Win32Check(VerQueryValue(
-        block,
-        '\VarFileInfo\Translation',
-        Pointer(translations),
-        translationSize
-      ));
-      fFileVersionNumber := TVersion.Create(
-        HiWord(fixedFileInfo.dwFileVersionMS),
-        LoWord(fixedFileInfo.dwFileVersionMS),
-        HiWord(fixedFileInfo.dwFileVersionLS),
-        LoWord(fixedFileInfo.dwFileVersionLS)
-      );
-      fProductVersionNumber := TVersion.Create(
-        HiWord(fixedFileInfo.dwProductVersionMS),
-        LoWord(fixedFileInfo.dwProductVersionMS),
-        HiWord(fixedFileInfo.dwProductVersionLS),
-        LoWord(fixedFileInfo.dwProductVersionLS)
-      );
-      fFileFlags := fixedFileInfo.dwFileFlags;
-      translationCount := translationSize div SizeOf(TLangAndCodePage);
-      if translationCount > 0 then
-      begin
-        LoadVersionResource(
-          TFileVersionResource.Create(
-            block,
-            translations[0].Language,
-            translations[0].CodePage
-          )
-        );
-      end;
-    finally
-      FreeMem(block);
-    end;
-  end;
-end;
-
-class function TFileVersionInfo.GetVersionInfo(
-  fileName: string): TFileVersionInfo;
-begin
-  fileName := Environment.ExpandEnvironmentVariables(fileName);
-  Result := TFileVersionInfo.Create(fileName);
-end;
-
-procedure TFileVersionInfo.LoadVersionResource(const resource: TFileVersionResource);
-begin
-  fCompanyName := resource.ReadString('CompanyName');
-  fFileDescription := resource.ReadString('FileDescription');
-  fFileVersion := resource.ReadString('FileVersion');
-  fInternalName := resource.ReadString('InternalName');
-  fLegalCopyright := resource.ReadString('LegalCopyright');
-  fLegalTrademarks := resource.ReadString('LegalTrademarks');
-  fOriginalFilename := resource.ReadString('OriginalFilename');
-  fProductName := resource.ReadString('ProductName');
-  fProductVersion := resource.ReadString('ProductVersion');
-  fComments := resource.ReadString('Comments');
-  fLanguage := Languages.NameFromLocaleID[resource.Language];
-end;
-
-function TFileVersionInfo.ToString: string;
-begin
-  Result := Format(SFileVersionInfoFormat, [
-    FileName,
-    InternalName,
-    OriginalFilename,
-    FileVersion,
-    FileDescription,
-    ProductName,
-    ProductVersion,
-    BoolToStr(IsDebug, True),
-    BoolToStr(IsPatched, True),
-    BoolToStr(IsPreRelease, True),
-    BoolToStr(IsPrivateBuild, True),
-    BoolToStr(IsSpecialBuild, True),
-    Language
-  ]);
-end;
-
-function TFileVersionInfo.GetIsDebug: Boolean;
-begin
-  Result := (fFileFlags and VS_FF_DEBUG) <> 0;
-end;
-
-function TFileVersionInfo.GetIsPatched: Boolean;
-begin
-  Result := (fFileFlags and VS_FF_PATCHED) <> 0;
-end;
-
-function TFileVersionInfo.GetIsPreRelease: Boolean;
-begin
-  Result := (fFileFlags and VS_FF_PRERELEASE) <> 0;
-end;
-
-function TFileVersionInfo.GetIsPrivateBuild: Boolean;
-begin
-  Result := (fFileFlags and VS_FF_PRIVATEBUILD) <> 0;
-end;
-
-function TFileVersionInfo.GetIsSpecialBuild: Boolean;
-begin
-  Result := (fFileFlags and VS_FF_SPECIALBUILD) <> 0;
-end;
-
-{ TFileVersionInfo.TFileVersionData }
-
-constructor TFileVersionInfo.TFileVersionResource.Create(block: Pointer;
-  language, codePage: Word);
-begin
-  fBlock := block;
-  fLanguage := language;
-  fCodePage := codePage;
-end;
-
-function TFileVersionInfo.TFileVersionResource.ReadString(
-  const stringName: string): string;
-var
-  subBlock: string;
-  data: PChar;
-  len: Cardinal;
-const
-  SubBlockFormat = '\StringFileInfo\%4.4x%4.4x\%s';   // do not localize
-begin
-  subBlock := Format(
-    SubBlockFormat,
-    [fLanguage, fCodePage, stringName]
-  );
-  data := nil;
-  len := 0;
-  VerQueryValue(fBlock, PChar(subBlock), Pointer(data), len);
-  Result := data;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TDriveInfo'}
-
-constructor TDriveInfo.Create(const driveName: string);
-var
-  s: string;
-begin
-  s := UpperCase(driveName);
-  if not (Length(s) in [1..3]) or not CharInSet(s[1], ['A'..'Z']) then
-  begin
-    raise EArgumentException.Create('driveName');
-  end;
-  case Length(s) of
-    1:
-    begin
-      fRootDirectory := s + DriveDelim + PathDelim;
-    end;
-    2:
-    begin
-      if s[2] <> DriveDelim then
-      begin
-        raise EArgumentException.Create('driveName');
-      end;
-      fRootDirectory := s + PathDelim;
-    end;
-    3:
-    begin
-      if s[2] <> DriveDelim then
-        raise EArgumentException.Create('driveName');
-      if s[3] <> PathDelim then
-        raise EArgumentException.Create('driveName');
-      fRootDirectory := s;
-    end;
-    else
-    begin
-      Assert(False);
-    end;
-  end;
-  Assert(Length(fRootDirectory) = 3, 'Length of fRootDirectory should be 3.');
-  fDriveName := Copy(fRootDirectory, 1, 2);
-end;
-
-class function TDriveInfo.GetDrives: TArray<TDriveInfo>;
-var
-  drives: TStringDynArray;
-  i: Integer;
-begin
-  drives := Environment.GetLogicalDrives;
-  SetLength(Result, Length(drives));
-  for i := 0 to High(drives) do
-  begin
-    Result[i] := TDriveInfo.Create(drives[i]);
-  end;
-end;
-
-procedure TDriveInfo.CheckIsReady;
-begin
-  if not IsReady then
-  begin
-    raise EIOException.CreateResFmt(@SDriveNotReady, [fDriveName]);
-  end;
-end;
-
-procedure TDriveInfo.UpdateProperties;
-begin
-  CheckIsReady;
-  Win32Check(SysUtils.GetDiskFreeSpaceEx(
-    PChar(fRootDirectory),
-    fAvailableFreeSpace,
-    fTotalSize,
-    @fTotalFreeSpace
-  ));
-  Win32Check(Windows.GetVolumeInformation(
-    PChar(fRootDirectory),
-    fVolumeName,
-    Length(fVolumeName),
-    @fSerialNumber,
-    fMaximumComponentLength,
-    fFileSystemFlags,
-    fFileSystemName,
-    Length(fFileSystemName)
-  ));
-end;
-
-function TDriveInfo.GetAvailableFreeSpace: Int64;
-begin
-  UpdateProperties;
-  Result := fAvailableFreeSpace;
-end;
-
-function TDriveInfo.GetDriveFormat: string;
-begin
-  UpdateProperties;
-  Result := fFileSystemName;
-end;
-
-function TDriveInfo.GetDriveType: TDriveType;
-var
-  value: Cardinal;
-begin
-  value := Windows.GetDriveType(PChar(fRootDirectory));
-  case value of
-    DRIVE_NO_ROOT_DIR:  Result := dtNoRootDirectory;
-    DRIVE_REMOVABLE:    Result := dtRemovable;
-    DRIVE_FIXED:        Result := dtFixed;
-    DRIVE_REMOTE:       Result := dtNetwork;
-    DRIVE_CDROM:        Result := dtCDRom;
-    DRIVE_RAMDISK:      Result := dtRam;
-    else                Result := dtUnknown;  // DRIVE_UNKNOWN
-  end;
-end;
-
-function TDriveInfo.GetDriveTypeString: string;
-begin
-  Result := DriveTypeStrings[Self.DriveType];
-end;
-
-function TDriveInfo.GetIsReady: Boolean;
-begin
-  Result := Length(fRootDirectory) > 0;
-  Result := Result and (SysUtils.DiskSize(Ord(fRootDirectory[1]) - $40) > -1);
-end;
-
-function TDriveInfo.GetTotalFreeSpace: Int64;
-begin
-  UpdateProperties;
-  Result := fTotalFreeSpace;
-end;
-
-function TDriveInfo.GetTotalSize: Int64;
-begin
-  UpdateProperties;
-  Result := fTotalSize;
-end;
-
-function TDriveInfo.GetVolumeLabel: string;
-begin
-  UpdateProperties;
-  Result := fVolumeName;
-end;
-
-procedure TDriveInfo.SetVolumeLabel(const Value: string);
-begin
-  CheckIsReady;
-  Win32Check(Windows.SetVolumeLabel(PChar(fRootDirectory), PChar(value)));
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TOperatingSystem'}
-
-constructor TOperatingSystem.Create;
-var
-  versionInfo: TOSVersionInfoEx;
-begin
-  inherited Create;
-  ZeroMemory(@versionInfo, SizeOf(versionInfo));
-  versionInfo.dwOSVersionInfoSize := SizeOf(versionInfo);
-  Win32Check(Windows.GetVersionEx(versionInfo));
-  case versionInfo.dwPlatformId of
-    VER_PLATFORM_WIN32s:        fPlatformType := ptWin3x;
-    VER_PLATFORM_WIN32_WINDOWS: fPlatformType := ptWin9x;
-    VER_PLATFORM_WIN32_NT:      fPlatformType := ptWinNT;
-    else fPlatformType := ptUnknown;
-  end;
-  fProductType := ptInvalid;
-  case versionInfo.wProductType of
-    VER_NT_WORKSTATION:       fProductType := ptWorkstation;
-    VER_NT_DOMAIN_CONTROLLER: fProductType := ptDomainController;
-    VER_NT_SERVER:            fProductType := ptServer;
-  end;
-  fVersion := TVersion.Create(
-    versionInfo.dwMajorVersion,
-    versionInfo.dwMinorVersion,
-    versionInfo.dwBuildNumber
-  );
-  fVersionType := GetOSVersionType(
-    fPlatformType,
-    fProductType,
-    versionInfo.dwMajorVersion,
-    versionInfo.dwMinorVersion
-  );
-  fServicePack := versionInfo.szCSDVersion;
-end;
-
-function TOperatingSystem.GetOSVersionType(platformType: TOSPlatformType;
-  productType: TOSProductType; majorVersion, minorVersion: Integer): TOSVersionType;
-begin
-  Result := vtUnknown;
-  case platformType of
-    ptWin9x:
-    begin
-      if majorVersion = 4 then
-      case minorVersion of
-        0:  Result := vtWin95;
-        10: Result := vtWin98;
-        90: Result := vtWinMe;
-      end;
-    end;
-    ptWinNT:
-    begin
-      if (majorVersion = 3) and (minorVersion = 51) then
-      begin
-        Result := vtWinNT351;
-      end
-      else if (majorVersion = 4) and (minorVersion = 0) then
-      begin
-        Result := vtWinNT4;
-      end
-      else if majorVersion = 5 then
-      case minorVersion of
-        0: Result := vtWinServer2000;
-        1: Result := vtWinXP;
-        2: Result := vtWinServer2003;
-      end
-      else if majorVersion = 6 then
-      case minorVersion of
-        0:
-        begin
-          if productType = ptWorkstation then
-            Result := vtWinVista
-          else
-            Result := vtWinServer2008;
-        end;
-        1:
-        begin
-          if productType = ptWorkstation then
-            Result := vtWin7
-          else
-            Result := vtWinServer2008;   { TODO: WinServer2008 R2 }
-        end;
-      end;
-    end;
-  end;
-end;
-
-function TOperatingSystem.ToString: string;
-begin
-  Result := OSVersionTypeStrings[fVersionType];
-  if fVersionType <> vtUnknown then
-  begin
-    Result := Result + ' Version ' + fVersion.ToString;
-    if ServicePack <> '' then
-      Result := Result + ' ' + ServicePack;
-  end;
-end;
-
-function TOperatingSystem.GetIsWin3x: Boolean;
-begin
-  Result := Self.PlatformType = ptWin3x;
-end;
-
-function TOperatingSystem.GetIsWin9x: Boolean;
-begin
-  Result := Self.PlatformType = ptWin9x;
-end;
-
-function TOperatingSystem.GetIsWinNT: Boolean;
-begin
-  Result := Self.PlatformType = ptWinNT;
-end;
-
-function TOperatingSystem.GetVersionString: string;
-begin
-  Result := ToString;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TEnvironment'}
-
-class constructor TEnvironment.Create;
-begin
-  fApplicationPath := ExtractFilePath(ParamStr(0));
-  fApplicationVersionInfo := TFileVersionInfo.GetVersionInfo(ParamStr(0));
-  fApplicationVersion := fApplicationVersionInfo.FileVersionNumber;
-  fApplicationVersionString := fApplicationVersionInfo.FileVersion;
-  fOperatingSystem := TOperatingSystem.Create;
-end;
-
-class destructor TEnvironment.Destroy;
-begin
-  fOperatingSystem.Free;
-end;
-
-class function TEnvironment.GetCommandLineArgs: TStringDynArray;
-var
-  pArgs: PPWideChar;
-  count: Integer;
-  i: Integer;
-begin
-  pArgs := ShellAPI.CommandLineToArgvW(PWideChar(Windows.GetCommandLineW), count);
-  if pArgs <> nil then
-  try
-    SetLength(Result, count);
-    for i := 0 to count - 1 do
-    begin
-      Result[i] := string(pArgs^);
-      Inc(pArgs);
-    end;
-  finally
-    Windows.LocalFree(HLocal(pArgs));
-  end;
-end;
-
-class procedure TEnvironment.GetCommandLineArgs(list: TStrings);
-var
-  args: TStringDynArray;
-begin
-  args := GetCommandLineArgs;
-  UpdateStrings(list,
-    procedure
-    var
-      i: Integer;
-    begin
-      for i := 0 to High(args) do
-      begin
-        list.Add(args[i]);
-      end;
-    end
-  );
-end;
-
-class function TEnvironment.GetLogicalDrives: TStringDynArray;
-var
-  len: Cardinal;
-  buffer: string;
-begin
-  len := Windows.GetLogicalDriveStrings(0, nil);
-  SetLength(buffer, len);
-  Windows.GetLogicalDriveStrings(len * SizeOf(Char), PChar(buffer));
-  Result := SplitString(PChar(buffer));
-end;
-
-class procedure TEnvironment.GetLogicalDrives(list: TStrings);
-var
-  drives: TStringDynArray;
-begin
-  drives := TEnvironment.GetLogicalDrives;
-  UpdateStrings(list,
-    procedure
-    var
-      drive: string;
-    begin
-      for drive in drives do
-      begin
-        list.Add(drive);
-      end;
-    end
-  );
-end;
-
-function TryGetAccessToken(out hToken: THandle): Boolean;
-begin
-  Result := Windows.OpenThreadToken(GetCurrentThread, TOKEN_QUERY, TRUE, hToken);
-  if not Result and (Windows.GetLastError = ERROR_NO_TOKEN) then
-  begin
-    Result := Windows.OpenProcessToken(GetCurrentProcess, TOKEN_QUERY, hToken);
-  end;
-end;
-
-class function TEnvironment.GetFolderPath(const folder: TSpecialFolder): string;
-var
-  pidl : PItemIDList;
-  buffer: array[0..MAX_PATH-1] of Char;
-//  returnCode: HRESULT;
-  hToken : THandle;
-begin
-  if TryGetAccessToken(hToken) then
-  try
-    ShlObj.SHGetFolderLocation(INVALID_HANDLE_VALUE,
-      SpecialFolderCSIDLs[folder], hToken, 0, pidl);
-    ShlObj.SHGetPathFromIDList(pidl, @buffer[0]);
-    Result := buffer;
-  finally
-    CloseHandle(hToken);
-  end;
-end;
-
-class procedure TEnvironment.OpenEnvironmentVariableKey(registry: TRegistry;
-  target: TEnvironmentVariableTarget; keyAccess: Cardinal);
-var
-  key: string;
-begin
-  Assert(registry <> nil, 'registry should not be nil.');
-  Assert(target in [evtUser, evtMachine], Format('Illegal target: %d.', [Integer(target)]));
-  if target = evtUser then
-  begin
-    registry.RootKey := HKEY_CURRENT_USER;
-    key := 'Environment';
-  end
-  else
-  begin
-    registry.RootKey := HKEY_LOCAL_MACHINE;
-    key := 'System\CurrentControlSet\Control\Session Manager\Environment';
-  end;
-  registry.Access := keyAccess;
-  if not registry.OpenKey(key, False) then
-  begin
-    raise EOSError.CreateResFmt(@SCannotAccessRegistryKey, [key]);
-  end;
-end;
-
-class function TEnvironment.GetEnvironmentVariable(
-  const variable: string): string;
-begin
-  Result := TEnvironment.GetEnvironmentVariable(variable, evtProcess);
-end;
-
-class function TEnvironment.GetEnvironmentVariable(const variable: string;
-  target: TEnvironmentVariableTarget): string;
-var
-  registry: TRegistry;
-
-  function GetProcessEnvironmentVariable: string;
-  var
-    len: DWORD;
-  begin
-    len := Windows.GetEnvironmentVariable(PChar(variable), nil, 0);
-    if len > 0 then
-    begin
-      SetLength(Result, len - 1);
-      Windows.GetEnvironmentVariable(PChar(variable), PChar(Result), len);
-    end
-    else
-    begin
-      Result := '';
-    end;
-  end;
-begin
-  TArgument.CheckEnum<TEnvironmentVariableTarget>(target, 'target');
-  if target = evtProcess then
-  begin
-    Result := GetProcessEnvironmentVariable;
-    Exit;
-  end;
-  registry := TRegistry.Create;
-  try
-    OpenEnvironmentVariableKey(registry, target, KEY_READ);
-    if registry.ValueExists(variable) then
-    begin
-      Result := registry.GetDataAsString(variable);
-    end
-    else
-    begin
-      Result := '';
-    end;
-  finally
-    registry.Free;
-  end;
-end;
-
-class procedure TEnvironment.GetProcessEnvironmentVariables(list: TStrings);
-var
-  p: PChar;
-  strings: TStringDynArray;
-begin
-  Assert(list <> nil, 'list should not be nil.');
-  p := Windows.GetEnvironmentStrings;
-  try
-    strings := SplitString(p);
-    UpdateStrings(list,
-      procedure
-      var
-        s: string;
-      begin
-        for s in strings do
-        begin
-          if (Length(s) > 0) and (s[1] <> '=') then // Skip entries start with '='
-          begin
-            list.Add(s);
-          end;
-        end;
-      end
-    );
-  finally
-    Win32Check(Windows.FreeEnvironmentStrings(p));
-  end;
-end;
-
-class procedure TEnvironment.GetEnvironmentVariables(list: TStrings);
-begin
-  TEnvironment.GetEnvironmentVariables(list, evtProcess);
-end;
-
-class procedure TEnvironment.GetEnvironmentVariables(list: TStrings;
-  target: TEnvironmentVariableTarget);
-var
-  registry: TRegistry;
-  value: string;
-  i: Integer;
-begin
-  TArgument.CheckNotNull(list, 'list');
-  TArgument.CheckEnum<TEnvironmentVariableTarget>(target, 'target');
-  if target = evtProcess then
-  begin
-    GetProcessEnvironmentVariables(list);
-    Exit;
-  end;
-  registry := TRegistry.Create;
-  try
-    OpenEnvironmentVariableKey(registry, target, KEY_READ);
-    registry.GetValueNames(list);
-    for i := 0 to list.Count - 1 do
-    begin
-      value := registry.GetDataAsString(list[i]);
-      list[i] := list[i] + list.NameValueSeparator + value;
-    end;
-  finally
-    registry.Free;
-  end;
-end;
-
-class procedure TEnvironment.SetEnvironmentVariable(const variable, value: string);
-begin
-  TEnvironment.SetEnvironmentVariable(variable, value, evtProcess);
-end;
-
-class procedure TEnvironment.SetEnvironmentVariable(const variable,
-  value: string; target: TEnvironmentVariableTarget);
-var
-  registry: TRegistry;
-begin
-  TArgument.CheckEnum<TEnvironmentVariableTarget>(target, 'target');
-  if target = evtProcess then
-  begin
-    Win32Check(Windows.SetEnvironmentVariable(PChar(variable), PChar(value)));
-    Exit;
-  end;
-  registry := TRegistry.Create;
-  try
-    OpenEnvironmentVariableKey(registry, target, KEY_WRITE);
-    if Pos('%', value) > 0 then
-    begin
-      registry.WriteExpandString(variable, value);
-    end
-    else
-    begin
-      registry.WriteString(variable, value);
-    end;
-    SendMessage(HWND_BROADCAST, WM_SETTINGCHANGE, 0, Integer(PChar('Environment')));
-  finally
-    registry.Free;
-  end;
-end;
-
-class function TEnvironment.ExpandEnvironmentVariables(
-  const variable: string): string;
-var
-  len: Cardinal;
-begin
-  len := MAX_PATH;
-  SetLength(Result, len);
-  len := Windows.ExpandEnvironmentStrings(PChar(variable), PChar(Result), len);
-  Win32Check(len > 0);
-  SetLength(Result, len - 1);
-end;
-
-class function TEnvironment.GetCommandLine: string;
-begin
-  Result := Windows.GetCommandLine;
-end;
-
-class function TEnvironment.GetCurrentDirectory: string;
-var
-  size: DWORD;
-begin
-  size := Windows.GetCurrentDirectory(0, nil);
-  SetLength(Result, size - 1);
-  Windows.GetCurrentDirectory(size, PChar(Result));
-end;
-
-class function TEnvironment.GetCurrentVersionKey: string;
-const
-  HKLM_CURRENT_VERSION_NT      = 'SOFTWARE\Microsoft\Windows NT\CurrentVersion';
-  HKLM_CURRENT_VERSION_WINDOWS = 'SOFTWARE\Microsoft\Windows\CurrentVersion';
-begin
-  if OperatingSystem.IsWinNT then
-    Result := HKLM_CURRENT_VERSION_NT
-  else
-    Result := HKLM_CURRENT_VERSION_WINDOWS;
-end;
-
-class function TEnvironment.GetMachineName: string;
-var
-  size: Cardinal;
-begin
-  size := MAX_COMPUTERNAME_LENGTH + 1;
-  SetLength(Result, size);
-  if GetComputerName(PChar(Result), size) then
-  begin
-    SetLength(Result, size);
-  end;
-end;
-
-class function TEnvironment.GetNewLine: string;
-begin
-  Result := System.sLineBreak;
-end;
-
-class function TEnvironment.GetProcessorArchitecture: TProcessorArchitecture;
-var
-  systemInfo: TSystemInfo;
-const
-  PROCESSOR_ARCHITECTURE_INTEL          = 0;
-  PROCESSOR_ARCHITECTURE_AMD64          = 9;
-  PROCESSOR_ARCHITECTURE_IA32_ON_WIN64  = 10;
-  PROCESSOR_ARCHITECTURE_IA64           = 6;
-begin
-  ZeroMemory(@systemInfo, Sizeof(systemInfo));
-  Windows.GetSystemInfo(systemInfo);
-  case systemInfo.wProcessorArchitecture of
-    PROCESSOR_ARCHITECTURE_INTEL:
-      Result := paX86;
-    PROCESSOR_ARCHITECTURE_IA64:
-      Result := paIA64;
-    PROCESSOR_ARCHITECTURE_AMD64:
-      Result := paAmd64;
-    else
-      Result := paUnknown;
-  end;
-end;
-
-class function TEnvironment.GetProcessorCount: Integer;
-var
-  systemInfo: TSystemInfo;
-begin
-  ZeroMemory(@systemInfo, Sizeof(systemInfo));
-  Windows.GetSystemInfo(systemInfo);
-  Result := systemInfo.dwNumberOfProcessors;
-end;
-
-class function TEnvironment.GetRegisteredOrganization: string;
-begin
-  Result := ComObj.GetRegStringValue(
-    GetCurrentVersionKey,
-    'RegisteredOrganization',  // DO NOT LOCALIZE
-    HKEY_LOCAL_MACHINE
-  );
-end;
-
-class function TEnvironment.GetRegisteredOwner: string;
-begin
-  Result := ComObj.GetRegStringValue(
-    GetCurrentVersionKey,
-    'RegisteredOwner',  // DO NOT LOCALIZE
-    HKEY_LOCAL_MACHINE
-  );
-end;
-
-class function TEnvironment.GetSystemDirectory: string;
-begin
-  Result := TEnvironment.GetFolderPath(sfSystem);
-end;
-
-class function TEnvironment.GetUserDomainName: string;
-var
-  hasToken: Boolean;
-  hToken : THandle;
-  ptiUser: PSIDAndAttributes;
-  cbti   : DWORD;
-  snu    : SID_NAME_USE;
-  userSize, domainSize: Cardinal;
-  userName: string;
-begin
-  ptiUser := nil;
-  userSize := 0;
-  domainSize := 0;
-  hasToken := Windows.OpenThreadToken(GetCurrentThread, TOKEN_QUERY, TRUE, hToken);
-  if not hasToken and (Windows.GetLastError = ERROR_NO_TOKEN) then
-  begin
-    hasToken := Windows.OpenProcessToken(GetCurrentProcess, TOKEN_QUERY, hToken);
-  end;
-  if hasToken then
-  try
-    Windows.GetTokenInformation(hToken, TokenUser, nil, 0, cbti);
-    ptiUser := AllocMem(cbti);
-    if Windows.GetTokenInformation(hToken, TokenUser, ptiUser, cbti, cbti) then
-    begin
-      if not Windows.LookupAccountSid(nil, ptiUser.Sid, nil, userSize, nil, domainSize, snu) and
-        (Windows.GetLastError = ERROR_INSUFFICIENT_BUFFER) then
-      begin
-        SetLength(userName, userSize - 1);
-        SetLength(Result, domainSize - 1);
-        Win32Check(Windows.LookupAccountSid(nil, ptiUser.Sid, PChar(userName), userSize,
-          PChar(Result), domainSize, snu));
-      end;
-    end;
-  finally
-    Windows.CloseHandle(hToken);
-    FreeMem(ptiUser);
-  end;
-end;
-
-class function TEnvironment.GetUserInteractive: Boolean;
-begin
-  { TODO: UserInteractive }
-  Result := True;
-end;
-
-class function TEnvironment.GetUserName: string;
-var
-  size: Cardinal;
-begin
-  size := 255;
-  SetLength(Result, size);
-  Win32Check(Windows.GetUserName(PChar(Result), size));
-  SetLength(Result, size - 1);
-end;
-
-/// http://www.gumpi.com/Blog/2007/10/02/EKON11PromisedEntry3.aspx
-/// <author>Daniel Wischnewski</author>
-class function TEnvironment.GetIsAdmin: Boolean;
-const
-  SECURITY_NT_AUTHORITY: TSIDIdentifierAuthority = (Value: (0, 0, 0, 0, 0, 5));
-  SECURITY_BUILTIN_DOMAIN_RID = $00000020;
-  DOMAIN_ALIAS_RID_ADMINS = $00000220;
-  SE_GROUP_ENABLED = $00000004;
-var
-  hAccessToken: THandle;
-  ptgGroups: PTokenGroups;
-  dwInfoBufferSize: DWORD;
-  psidAdministrators: PSID;
-  x: Integer;
-  bSuccess: BOOL;
-begin
-  Result   := False;
-  bSuccess := OpenThreadToken(GetCurrentThread, TOKEN_QUERY, True, hAccessToken);
-  if not bSuccess then
-    if GetLastError = ERROR_NO_TOKEN then
-      bSuccess := OpenProcessToken(GetCurrentProcess, TOKEN_QUERY, hAccessToken);
-  if bSuccess then
-  begin
-    GetTokenInformation(hAccessToken, TokenGroups, nil, 0, dwInfoBufferSize);
-    ptgGroups := GetMemory(dwInfoBufferSize);
-    bSuccess := GetTokenInformation(hAccessToken, TokenGroups, ptgGroups, dwInfoBufferSize, dwInfoBufferSize);
-    CloseHandle(hAccessToken);
-    if bSuccess then
-    begin
-      AllocateAndInitializeSid(SECURITY_NT_AUTHORITY, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, psidAdministrators);
-      for x := 0 to ptgGroups.GroupCount - 1 do
-      begin
-        if (SE_GROUP_ENABLED = (ptgGroups.Groups[x].Attributes and SE_GROUP_ENABLED)) and EqualSid(psidAdministrators, ptgGroups.Groups[x].Sid) then
-        begin
-          Result := True;
-          Break;
-        end;
-      end;
-      FreeSid(psidAdministrators);
-    end;
-    FreeMem(ptgGroups);
-  end;
-end;
-
-class function TEnvironment.GetTickCount: Cardinal;
-begin
-  Result := Windows.GetTickCount;
-end;
-
-class procedure TEnvironment.SetCurrentDirectory(const value: string);
-begin
-  Win32Check(Windows.SetCurrentDirectory(PChar(value)));
-end;
-
-{$ENDREGION}
-
-
 {$REGION 'TCallback'}
 
 type
@@ -3731,7 +2339,7 @@ end;
 
 {$REGION 'Attributes'}
 
-{ TLifetimeAttribute }
+{ TLifetimeAttributeBase }
 
 constructor TLifetimeAttributeBase.Create(lifetimeType: TLifetimeType);
 begin
@@ -3771,7 +2379,7 @@ begin
   Result := fValue <> '';
 end;
 
-{ ComponentAttribute }
+{ ImplementsAttribute }
 
 constructor ImplementsAttribute.Create(serviceType: PTypeInfo);
 begin

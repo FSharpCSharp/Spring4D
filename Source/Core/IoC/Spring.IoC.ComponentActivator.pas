@@ -77,7 +77,7 @@ implementation
 
 uses
   Spring.Helpers,
-  Spring.IoC.ResourceStrings;
+  Spring.Core.ResourceStrings;
 
 
 {$REGION 'TComponentActivatorBase'}

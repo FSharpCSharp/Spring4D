@@ -50,6 +50,7 @@ type
     fServiceTypeMappings: TDictionary<PTypeInfo, TArray<TComponentModel>>;
     fServiceNameMappings: TDictionary<string, TComponentModel>;
   protected
+    procedure OnComponentModelAdded(model: TComponentModel);
     procedure CheckIsNonGuidInterface(serviceType: TRttiType);
     procedure Validate(componentType, serviceType: PTypeInfo; var serviceName: string);
     function GetDefaultTypeName(serviceType: TRttiType): string;
@@ -173,7 +174,7 @@ uses
   Spring.Reflection,
   Spring.Helpers,
   Spring.ResourceStrings,
-  Spring.IoC.ResourceStrings;
+  Spring.Core.ResourceStrings;
 
 {$REGION 'TComponentRegistry'}
 
@@ -276,6 +277,7 @@ begin
     componentType := fRttiContext.GetType(componentTypeInfo).AsInstance;
     Result := TComponentModel.Create(fContainerContext, componentType);
     fModels.Add(componentTypeInfo, Result);
+    OnComponentModelAdded(Result);
   end;
 end;
 
@@ -352,6 +354,19 @@ begin
   TArgument.CheckNotNull(serviceType, 'serviceType');
   Result := fServiceNameMappings.TryGetValue(name, model) and
     model.HasService(serviceType);
+end;
+
+procedure TComponentRegistry.OnComponentModelAdded(model: TComponentModel);
+var
+  attributes: TArray<ImplementsAttribute>;
+  attribute: ImplementsAttribute;
+begin
+  attributes := model.ComponentType.GetCustomAttributes<ImplementsAttribute>;
+  for attribute in attributes do
+  begin
+    RegisterService(model.ComponentTypeInfo, attribute.ServiceType, attribute.Name);
+  end;
+  // TODO: GetInterfaces
 end;
 
 {$ENDREGION}
@@ -601,11 +616,13 @@ function TRegistrationManager.RegisterComponent(
 begin
   TArgument.CheckNotNull(componentType, 'componentType');
   Result := TRegistration.Create(fRegistry, componentType);
+  fRegistry.GetComponent(componentType);
 end;
 
 function TRegistrationManager.RegisterComponent<TComponentType>: TRegistration<TComponentType>;
 begin
   Result := TRegistration<TComponentType>.Create(fRegistry);
+  fRegistry.GetComponent(TypeInfo(TComponentType));
 end;
 
 {$ENDREGION}

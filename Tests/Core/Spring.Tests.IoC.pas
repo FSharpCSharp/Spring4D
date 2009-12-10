@@ -80,7 +80,7 @@ type
     procedure TestResolveAll;
     procedure TestResolveAllNonGeneric;
     procedure TestUnsatisfiedDependency;
-    procedure TestUnsatisfiedDependencyOfBootstrap;
+//    procedure TestUnsatisfiedDependencyOfBootstrap;
   end;
 
   // Same Component, Different Services
@@ -134,7 +134,6 @@ type
     procedure DoRegisterComponents; override;
   end;
 
-  { TODO: Support Primitive values }
   TNamedInjectionsTestCase = class(TContainerTestCase)
   private
     fExplorer: IInjectionExplorer;
@@ -171,6 +170,11 @@ type
   published
     procedure TestResolveChicken;
     procedure TestResolveEgg;
+  end;
+
+  TTestImplementsAttribute = class(TContainerTestCase)
+  published
+    procedure TestImplements;
   end;
 
 implementation
@@ -281,7 +285,7 @@ procedure TTestSimpleContainer.TestServiceSameAsComponent;
 var
   service: TNameService;
 begin
-  fContainer.RegisterComponent<TNameService>.Implements<TNameService>;
+  fContainer.RegisterComponent<TNameService>; //.Implements<TNameService>;
   fContainer.Build;
   service := fContainer.Resolve<TNameService>;
   try
@@ -407,7 +411,7 @@ begin
 end;
 
 /// <remarks>
-/// EUnsatisfiedDependencyException will be raised when resolving a service type
+/// An EUnsatisfiedDependencyException will be raised when resolving a service type
 //  with an ambiguous name.
 /// </remarks>
 procedure TTestDifferentServiceImplementations.TestUnsatisfiedDependency;
@@ -416,11 +420,11 @@ begin
   fContainer.Resolve<INameService>;
 end;
 
-procedure TTestDifferentServiceImplementations.TestUnsatisfiedDependencyOfBootstrap;
-begin
-  ExpectedException := EUnsatisfiedDependencyException;
-  fContainer.Resolve<TBootstrapComponent>;
-end;
+//procedure TTestDifferentServiceImplementations.TestUnsatisfiedDependencyOfBootstrap;
+//begin
+//  ExpectedException := EUnsatisfiedDependencyException;
+//  fContainer.Resolve<TBootstrapComponent>;
+//end;
 
 {$ENDREGION}
 
@@ -643,7 +647,8 @@ end;
 
 {$ENDREGION}
 
-{ TTestNamedInjectionsByCoding }
+
+{$REGION 'TTestNamedInjectionsByCoding'}
 
 procedure TTestNamedInjectionsByCoding.DoRegisterComponents;
 begin
@@ -657,7 +662,10 @@ begin
     .AsSingleton;
 end;
 
-{ TTestNamedInjectionsByAttribute }
+{$ENDREGION}
+
+
+{$REGION 'TTestNamedInjectionsByAttribute'}
 
 procedure TTestNamedInjectionsByAttribute.DoRegisterComponents;
 begin
@@ -666,7 +674,10 @@ begin
     .Implements<IInjectionExplorer>;
 end;
 
-{ TTestImplementsDifferentServices }
+{$ENDREGION}
+
+
+{$REGION 'TTestImplementsDifferentServices'}
 
 procedure TTestImplementsDifferentServices.SetUp;
 begin
@@ -701,6 +712,44 @@ procedure TTestImplementsDifferentServices.TestAgeService;
 begin
   Check(fAgeService is TNameAgeComponent);
   CheckEquals(TNameAgeComponent.DefaultAge, fAgeService.Age);
+end;
+
+{$ENDREGION}
+
+
+type
+  IS1 = interface
+    ['{E6DE68D5-988C-4817-880E-58903EE8B78C}']
+  end;
+
+  IS2 = interface
+    ['{0DCC1BD5-28C1-4A94-8667-AC72BA25C682}']
+  end;
+
+  TS1 = class(TInterfacedObject, IS1)
+  end;
+
+  [Implements(TypeInfo(IS1), 'b')]
+  [Implements(TypeInfo(IS2))]
+  TS2 = class(TInterfacedObject, IS1, IS2)
+  end;
+
+{ TTestImplementsAttribute }
+
+procedure TTestImplementsAttribute.TestImplements;
+var
+  s1: IS1;
+  s2: IS2;
+begin
+  fContainer.RegisterComponent<TS1>.Implements<IS1>('a');
+  fContainer.RegisterComponent<TS2>;
+  fContainer.Build;
+  s1 := fContainer.Resolve<IS1>('a');
+  CheckTrue(s1 is TS1, 'a');
+  s1 := fContainer.Resolve<IS1>('b');
+  CheckTrue(s1 is TS2, 'b');
+  s2 := fContainer.Resolve<IS2>;
+  CheckTrue(s2 is TS2, 's2');
 end;
 
 end.

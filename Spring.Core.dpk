@@ -29,9 +29,12 @@ requires
   rtl,
   vcl,
   dbrtl,
+  xmlrtl,
   Spring.Base;
 
 contains
+  ADODB,
+  ADOConst,
   Spring.IoC.Builder in 'Source\Core\IoC\Spring.IoC.Builder.pas',
   Spring.IoC.ComponentActivator in 'Source\Core\IoC\Spring.IoC.ComponentActivator.pas',
   Spring.IoC.Core in 'Source\Core\IoC\Spring.IoC.Core.pas',
@@ -40,6 +43,11 @@ contains
   Spring.IoC in 'Source\Core\IoC\Spring.IoC.pas',
   Spring.IoC.Registration in 'Source\Core\IoC\Spring.IoC.Registration.pas',
   Spring.IoC.Resolvers in 'Source\Core\IoC\Spring.IoC.Resolvers.pas',
-  Spring.IoC.ResourceStrings in 'Source\Core\IoC\Spring.IoC.ResourceStrings.pas';
+  Spring.Core.ResourceStrings in 'Source\Core\Spring.Core.ResourceStrings.pas',
+  Spring.Numbering in 'Source\Core\Numbering\Spring.Numbering.pas',
+  Spring.Numbering.Rules in 'Source\Core\Numbering\Spring.Numbering.Rules.pas',
+  Spring.Numbering.Utils in 'Source\Core\Numbering\Spring.Numbering.Utils.pas';
 
 end.
+
+

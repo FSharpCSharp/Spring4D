@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-program Spring.Base.Tests;
+program Spring.Tests;
 
 {.$DEFINE CONSOLE_TESTRUNNER}
 
@@ -42,13 +42,18 @@ uses
   TextTestRunner,
   Spring.Tests.DesignPatterns in 'Tests\Base\Spring.Tests.DesignPatterns.pas',
   Spring.Tests.Helpers in 'Tests\Base\Spring.Tests.Helpers.pas',
-  Spring.Tests.System in 'Tests\Base\Spring.Tests.System.pas';
+  Spring.Tests.System in 'Tests\Base\Spring.Tests.System.pas',
+  Spring.Tests.Numbering in 'Tests\Core\Spring.Tests.Numbering.pas',
+  Spring.Tests.IoC in 'Tests\Core\Spring.Tests.IoC.pas',
+  Spring.Tests.IoC.LifetimeManager in 'Tests\Core\Spring.Tests.IoC.LifetimeManager.pas',
+  Spring.Tests.IoC.Components in 'Tests\Core\Spring.Tests.IoC.Components.pas',
+  Spring.Tests.Utils in 'Tests\Base\Spring.Tests.Utils.pas';
 
 {$R *.RES}
 
 procedure RegisterTestCases;
 begin
-  RegisterTests('Spring System Tests', [
+  RegisterTests('Spring.Tests.System', [
     TTestSplitString.Suite,
     TTestSplitNullTerminatedStrings.Suite,
     TTestTryParseDateTime.Suite,
@@ -56,23 +61,52 @@ begin
     TTestEnum.Suite,
     TTestBuffer.Suite,
     TTestEmptyBuffer.Suite,
-    TTestFiveBytesBuffer.Suite,
+    TTestFiveByteBuffer.Suite,
     TRepeatedTest.Create(TTestNullableInteger.Suite, 3)
   ]);
 
-//  RegisterTests('Spring Cryptography Tests', [
+  RegisterTests('Spring.Tests.DesignPatterns', [
+    TTestSingleton.Suite
+  ]);
+
+  RegisterTests('Spring.Tests.Utils', [
+    TTestDecimalCalculator.Suite,
+    TTestHexCalculator.Suite,
+    TTestBaseNineCalculator.Suite
+  ]);
+
+  RegisterTests('Spring.Tests.Helpers', [
+    TTestGuidHelper.Suite
+  ]);
+
+//  RegisterTests('Spring.Tests.Cryptography', [
 //    TTestMD5.Suite,
 //    TTestDES.Suite,
 //    TTestTripleDES.Suite
 //  ]);
 
-  RegisterTests('Spring DesignPatterns Tests', [
-    TTestSingleton.Suite
+  RegisterTests('Spring.Tests.IoC', [
+    TTestSingletonLifetimeManager.Suite,
+    TTestTransientLifetimeManager.Suite,
+    TTestEmptyContainer.Suite,
+    TTestSimpleContainer.Suite,
+    TTestDifferentServiceImplementations.Suite,
+    TTestImplementsDifferentServices.Suite,
+    TTestActivatorDelegate.Suite,
+    TTestTypedInjectionByCoding.Suite,
+    TTestTypedInjectionsByAttribute.Suite,
+    TTestNamedInjectionsByCoding.Suite,
+    TTestNamedInjectionsByAttribute.Suite,
+    TTestDirectCircularDependency.Suite,
+    TTestCrossedCircularDependency.Suite,
+    TTestImplementsAttribute.Suite
   ]);
 
-  RegisterTests('Spring Helpers Tests', [
-    TTestGuidHelper.Suite
+  RegisterTests('Spring.Tests.Numbering', [
+    TTestNumberRuleBuilder.Suite
   ]);
+
+
 end;
 
 begin

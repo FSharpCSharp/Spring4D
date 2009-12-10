@@ -22,11 +22,15 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.IoC.ResourceStrings;
+unit Spring.Core.ResourceStrings;
+
+{$I Spring.inc}
 
 interface
 
 resourcestring
+
+  // Spring.IoC.*
 
   SNonGuidInterfaceServicesAreNotSupported = 'Non-Guid Interface Services are not supported.';
   SIncompatibleTypes = 'The component type "%s" is incompatible with the service type "%s".';
@@ -57,7 +61,7 @@ resourcestring
   SActivatorDelegateExpected = 'An activator delegate was expected.';
 
 
-  {$REGION 'Spring.Logging'}
+  // Spring.Logging
 
 //  SAllDescription      = 'ALL';
 //  STraceDescription    = 'TRACE';
@@ -68,7 +72,16 @@ resourcestring
 //  SFatalDescription    = 'FATAL';
 //  SOffDescription      = 'OFF';
 
-  {$ENDREGION}
+  // Spring.Numbering
+
+  SIllegalNumber           = 'Illegal number: "%s".';
+  SIllegalNumberLength     = 'Illegal number length: "%s".';
+  SIllegalElement          = 'Illegal number element.';
+  SUnexpectedCode          = 'Illegal number element. "%S" was unexpected.';
+  SIllegalNumberEndsWith   = 'Illegal number: "%0:S". It can not end with "%1:S"';
+  SInvalidDateTime         = '"%S" is not a valid date and time';
+  SNumberOutOfRange        = '"%S"''s out of range.';
+  SNumberOverflow          = 'The number "%s" will be overflow.';
 
 implementation
 

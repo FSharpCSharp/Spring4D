@@ -39,10 +39,12 @@ type
   private
     function GetDependencyResolver: IDependencyResolver;
     function GetInjectionFactory: IInjectionFactory;
+    function GetComponentRegistry: IComponentRegistry;
   public
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(const name: string): Boolean; overload;
     function CreateLifetimeManager(model: TComponentModel): ILifetimeManager;
+    property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
     property DependencyResolver: IDependencyResolver read GetDependencyResolver;
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
   end;
@@ -199,6 +201,11 @@ function TMockContext.CreateLifetimeManager(
   model: TComponentModel): ILifetimeManager;
 begin
   raise Exception.Create('CreateLifetimeManager');
+end;
+
+function TMockContext.GetComponentRegistry: IComponentRegistry;
+begin
+  raise Exception.Create('GetComponentRegistry');
 end;
 
 function TMockContext.GetDependencyResolver: IDependencyResolver;
