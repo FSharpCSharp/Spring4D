@@ -49,7 +49,8 @@ type
   /// of the instances and will free them in reversed order.
   /// </summary>
   /// <remarks>
-  /// Consider use IoC to apply the singleton pattern.
+  /// This class just demonstrates how to apply the classical Singleton Pattern.
+  /// It's recommended to use the Spring IoC container which is more flexible.
   /// </remarks>
   TSingleton = record
   strict private

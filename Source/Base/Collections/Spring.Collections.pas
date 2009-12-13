@@ -37,36 +37,16 @@ uses
 
 type
   { Forward Declarations }
-  IEnumeratorEx<T> = interface;
   IEnumerableEx<T> = interface;
   ICollection<T> = interface;
   IList<T> = interface;
   IDictionary<TKey, TValue> = interface;
-
   TCollections = class;
-
-  /// <summary>
-  /// Supports a simple iteration over a generic collection.
-  /// </summary>
-  IEnumeratorEx<T> = interface
-    function GetCurrent: T;
-    function MoveNext: Boolean;
-    procedure Reset;
-    property Current: T read GetCurrent;
-  end;
-
-  /// <summary>
-  /// Infrastructure. Exposes the enumerator, which supports a simple
-  /// iteration over a collection of a specified type.
-  /// </summary>
-  IEnumerable_<T> = interface
-    function GetEnumerator: IEnumeratorEx<T>;
-  end;
 
   /// <summary>
   /// Provides limited LINQ-like enumerable extension methods for IEnumerable<T>.
   /// </summary>
-  IEnumerableEx<T> = interface(IEnumerable_<T>)
+  IEnumerableEx<T> = interface(IEnumerable<T>)
     {$REGION 'Property Getters & Setters'}
       function GetCount: Integer;
       function GetIsEmpty: Boolean;
@@ -92,9 +72,9 @@ type
   /// Defines methods to manipulate generic collections.
   /// </summary>
   ICollection<T> = interface(IEnumerableEx<T>)
-    {$REGION 'Property Getters & Setters'}
-      function GetIsReadOnly: Boolean;
-    {$ENDREGION}
+  {$REGION 'Property Getters & Setters'}
+    function GetIsReadOnly: Boolean;
+  {$ENDREGION}
     procedure Add(const item: T); overload;
     procedure Clear;
     function Remove(const item: T): Boolean; overload;
@@ -106,10 +86,10 @@ type
   /// Represents a collection of objects that can be individually accessed by index.
   /// </summary>
   IList<T> = interface(ICollection<T>)
-    {$REGION 'Property Getters & Setters'}
-      function GetItem(index: Integer): T;
-      procedure SetItem(index: Integer; const item: T);
-    {$ENDREGION}
+  {$REGION 'Property Getters & Setters'}
+    function GetItem(index: Integer): T;
+    procedure SetItem(index: Integer; const item: T);
+  {$ENDREGION}
     procedure Insert(index: Integer; const item: T);
     procedure RemoveAt(index: Integer);
     function IndexOf(const item: T): Integer;
@@ -120,12 +100,12 @@ type
   /// Represents a generic collection of key/value pairs.
   /// </summary>
   IDictionary<TKey, TValue> = interface(ICollection<TPair<TKey, TValue>>)
-    {$REGION 'Property Getters & Setters'}
-      function GetItem(const key: TKey): TValue;
-      function GetKeys: ICollection<TKey>;
-      function GetValues: ICollection<TValue>;
-      procedure SetItem(const key: TKey; const value: TValue);
-    {$ENDREGION}
+  {$REGION 'Property Getters & Setters'}
+    function GetItem(const key: TKey): TValue;
+    function GetKeys: ICollection<TKey>;
+    function GetValues: ICollection<TValue>;
+    procedure SetItem(const key: TKey; const value: TValue);
+  {$ENDREGION}
     procedure Add(const key: TKey; const value: TValue); overload;
 //    procedure AddOrSetValue(const key: TKey; const value: TValue);
     procedure Remove(const key: TKey); overload;
@@ -173,35 +153,41 @@ type
   TContainers = TCollections deprecated 'Use TCollections instead.';
 
   /// <summary>
-  /// Provides an abstract base class for IEnumeratorEx<T>.
+  /// Provides an abstract implementation for IEnumerator<T>.
   /// </summary>
-  TEnumeratorBase<T> = class abstract(TInterfacedObject, IEnumeratorEx<T>, IInterface)
+  TEnumeratorBase<T> = class abstract(TInterfacedObject, IEnumerator<T>, IEnumerator, IInterface)
   protected
-    function GetCurrent: T; virtual; abstract;
+    function DoGetCurrent: T; virtual; abstract;
+    function IEnumerator<T>.GetCurrent = DoGetCurrent;
   public
+    function GetCurrent: TObject; virtual;
     function MoveNext: Boolean; virtual; abstract;
     procedure Reset; virtual;
-    property Current: T read GetCurrent;
+    property Current: T read DoGetCurrent;
+  end;
+
+  /// <summary>
+  /// Provides an abstract implementation IEnumerable<T>.
+  /// </summary>
+  TEnumerableBase<T> = class abstract(TInterfacedObject, IEnumerable<T>, IEnumerable, IInterface)
+  protected
+    function DoGetEnumerator: IEnumerator<T>; virtual; abstract;
+    function IEnumerable<T>.GetEnumerator = DoGetEnumerator;
+  public
+    function GetEnumerator: IEnumerator; virtual;
   end;
 
   /// <summary>
   /// Provides a default implementation for IEnumerableEx<T> (Extension Methods).
   /// </summary>
-  /// <remarks>
-  /// Since generic interfaces can not be implemented by delegation, it's reasonable that
-  /// Inheriting from TEnumerableBase<T> directly.
-  /// </remarks>
-  TEnumerableBase<T> = class abstract(TInterfacedObject,
-    IEnumerableEx<T>, IEnumerable_<T>, IInterface)
+  TEnumerableEx<T> = class abstract(TEnumerableBase<T>, IEnumerableEx<T>,
+    IEnumerable<T>, IEnumerable, IInterface)
   protected
     function GetCount: Integer; virtual;
     function GetIsEmpty: Boolean; virtual;
     function TryGetFirst(out value: T): Boolean; virtual;
     function TryGetLast(out value: T): Boolean; virtual;
   public
-    { IEnumerable<T> }
-    function GetEnumerator: IEnumeratorEx<T>; virtual; abstract;
-    { IEnumerableEx<T> }
     function First: T; overload; virtual;
     function First(const predicate: TPredicate<T>): T; overload; virtual;
     function FirstOrDefault: T; overload; virtual;
@@ -232,6 +218,7 @@ type
 implementation
 
 uses
+  TypInfo,
   Spring.Collections.Adapters,
   Spring.Collections.Extensions,
   Spring.ResourceStrings;
@@ -323,6 +310,24 @@ end;
 
 {$REGION 'TEnumeratorBase<T>'}
 
+{ TODO: Consider support (boxing & unboxing) TEnumeratorBase<T>.GetCurrent: TObject }
+function TEnumeratorBase<T>.GetCurrent: TObject;
+var
+  typeKind: TTypeKind;
+  value: T;
+begin
+  value := DoGetCurrent;
+  typeKind := PTypeInfo(TypeInfo(T)).Kind;
+  if typeKind = tkClass then
+  begin
+    Pointer(Result) := PPointer(@value)^;
+  end
+  else
+  begin
+    raise ENotImplementedException.Create('function GetCurrent: TObject;');
+  end;
+end;
+
 procedure TEnumeratorBase<T>.Reset;
 begin
   raise ENotSupportedException.CreateRes(@SCannotResetEnumerator);
@@ -333,22 +338,32 @@ end;
 
 {$REGION 'TEnumerableBase<T>'}
 
-function TEnumerableBase<T>.Contains(const item: T): Boolean;
+function TEnumerableBase<T>.GetEnumerator: IEnumerator;
+begin
+  Result := DoGetEnumerator;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TEnumerableEx<T>'}
+
+function TEnumerableEx<T>.Contains(const item: T): Boolean;
 var
   comparer: IEqualityComparer<T>;
 begin
-//  TArgument.CheckNotNull<T>(item, 'item');
+  TArgument.CheckNotNull<T>(item, 'item');
   comparer := TEqualityComparer<T>.Default;
   Result := Contains(item, comparer);
 end;
 
-function TEnumerableBase<T>.Contains(const item: T;
+function TEnumerableEx<T>.Contains(const item: T;
   const comparer: IEqualityComparer<T>): Boolean;
 var
-  enumerator: IEnumeratorEx<T>;
+  enumerator: IEnumerator<T>;
 begin
-//  TArgument.CheckNotNull<T>(item, 'item');
-  enumerator := GetEnumerator;
+  TArgument.CheckNotNull<T>(item, 'item');
+  enumerator := DoGetEnumerator;
   Result := False;
   while enumerator.MoveNext do
   begin
@@ -359,11 +374,11 @@ begin
   end;
 end;
 
-function TEnumerableBase<T>.TryGetFirst(out value: T): Boolean;
+function TEnumerableEx<T>.TryGetFirst(out value: T): Boolean;
 var
-  enumerator: IEnumeratorEx<T>;
+  enumerator: IEnumerator<T>;
 begin
-  enumerator := GetEnumerator;
+  enumerator := DoGetEnumerator;
   Result := enumerator.MoveNext;
   if Result then
   begin
@@ -371,12 +386,12 @@ begin
   end
 end;
 
-function TEnumerableBase<T>.TryGetLast(out value: T): Boolean;
+function TEnumerableEx<T>.TryGetLast(out value: T): Boolean;
 var
-  enumerator: IEnumeratorEx<T>;
+  enumerator: IEnumerator<T>;
   hasNext: Boolean;
 begin
-  enumerator := GetEnumerator;
+  enumerator := DoGetEnumerator;
   Result := enumerator.MoveNext;
   hasNext := Result;
   while hasNext do
@@ -386,7 +401,7 @@ begin
   end;
 end;
 
-function TEnumerableBase<T>.First: T;
+function TEnumerableEx<T>.First: T;
 begin
   if not TryGetFirst(Result) then
   begin
@@ -394,12 +409,12 @@ begin
   end;
 end;
 
-function TEnumerableBase<T>.First(const predicate: TPredicate<T>): T;
+function TEnumerableEx<T>.First(const predicate: TPredicate<T>): T;
 begin
   Result := Where(predicate).First; // TEMP
 end;
 
-function TEnumerableBase<T>.FirstOrDefault: T;
+function TEnumerableEx<T>.FirstOrDefault: T;
 begin
   if not TryGetFirst(Result) then
   begin
@@ -407,12 +422,12 @@ begin
   end;
 end;
 
-function TEnumerableBase<T>.FirstOrDefault(const predicate: TPredicate<T>): T;
+function TEnumerableEx<T>.FirstOrDefault(const predicate: TPredicate<T>): T;
 begin
   Result := Where(predicate).FirstOrDefault; // TEMP
 end;
 
-function TEnumerableBase<T>.Last: T;
+function TEnumerableEx<T>.Last: T;
 begin
   if not TryGetLast(Result) then
   begin
@@ -420,12 +435,12 @@ begin
   end;
 end;
 
-function TEnumerableBase<T>.Last(const predicate: TPredicate<T>): T;
+function TEnumerableEx<T>.Last(const predicate: TPredicate<T>): T;
 begin
   Result := Where(predicate).Last;
 end;
 
-function TEnumerableBase<T>.LastOrDefault: T;
+function TEnumerableEx<T>.LastOrDefault: T;
 begin
   if not TryGetLast(Result) then
   begin
@@ -433,50 +448,50 @@ begin
   end;
 end;
 
-function TEnumerableBase<T>.LastOrDefault(const predicate: TPredicate<T>): T;
+function TEnumerableEx<T>.LastOrDefault(const predicate: TPredicate<T>): T;
 begin
   Result := Where(predicate).LastOrDefault;
 end;
 
-function TEnumerableBase<T>.Where(
+function TEnumerableEx<T>.Where(
   const predicate: TPredicate<T>): IEnumerableEx<T>;
 begin
   TArgument.CheckNotNull(Assigned(predicate), 'predicate');
   Result := TEnumerableWithPredicate<T>.Create(Self, predicate);
 end;
 
-function TEnumerableBase<T>.ToArray: TArray<T>;
+function TEnumerableEx<T>.ToArray: TArray<T>;
 begin
   Result := ToList.ToArray;
 end;
 
-function TEnumerableBase<T>.ToList: IList<T>;
+function TEnumerableEx<T>.ToList: IList<T>;
 var
-  enumerator: IEnumeratorEx<T>;
+  enumerator: IEnumerator<T>;
 begin
   Result := TCollections.CreateList<T>;
-  enumerator := GetEnumerator;
+  enumerator := DoGetEnumerator;
   while enumerator.MoveNext do
   begin
     Result.Add(enumerator.Current);
   end;
 end;
 
-function TEnumerableBase<T>.GetCount: Integer;
+function TEnumerableEx<T>.GetCount: Integer;
 var
-  enumerator: IEnumeratorEx<T>;
+  enumerator: IEnumerator<T>;
 begin
   Result := 0;
-  enumerator := GetEnumerator;
+  enumerator := DoGetEnumerator;
   while enumerator.MoveNext do
   begin
     Inc(Result);
   end;
 end;
 
-function TEnumerableBase<T>.GetIsEmpty: Boolean;
+function TEnumerableEx<T>.GetIsEmpty: Boolean;
 begin
-  Result := not GetEnumerator.MoveNext;
+  Result := not DoGetEnumerator.MoveNext;
 end;
 
 {$ENDREGION}

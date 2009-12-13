@@ -105,6 +105,19 @@ type
     const DefaultAge: Integer = 100;
   end;
 
+  IAnotherService = interface
+    ['{6BE967C9-C4EE-40FD-805D-B48320A0F510}']
+  end;
+
+  TInitializableComponent = class(TInterfacedObject, IInitializable, IAnotherService)
+  private
+    fIsInitialized: Boolean;
+  public
+    procedure Initialize;
+    property IsInitialized: Boolean read fIsInitialized;
+  end;
+
+
   {$REGION 'TBootstrapComponent'}
 
   TBootstrapComponent = class
@@ -536,6 +549,13 @@ end;
 procedure TInjectionComponent.SetMethodInjection(const value: INameService);
 begin
   fMethodInjection := value;
+end;
+
+{ TInitializableComponent }
+
+procedure TInitializableComponent.Initialize;
+begin
+  fIsInitialized := True;
 end;
 
 end.

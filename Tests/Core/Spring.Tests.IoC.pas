@@ -29,6 +29,7 @@ unit Spring.Tests.IoC;
 interface
 
 uses
+  Classes,
   SysUtils,
   TestFramework,
   Spring.System,
@@ -62,6 +63,8 @@ type
     procedure TestBootstrap;
     procedure TestSingleton;
     procedure TestTransient;
+    procedure TestPerThread;
+    procedure TestInitializable;
   end;
 
   // Same Service, Different Implementations
@@ -175,6 +178,13 @@ type
   TTestImplementsAttribute = class(TContainerTestCase)
   published
     procedure TestImplements;
+  end;
+
+  TTestRegisterInterfaces = class(TContainerTestCase)
+  published
+    procedure TestOneService;
+    procedure TestOneServices;
+    procedure TestInheritedService;
   end;
 
 implementation
@@ -353,6 +363,68 @@ begin
     fContainer.Release(obj1);
     fContainer.Release(obj2);
   end;
+end;
+
+type
+  TTestSingletonThread = class(TThread)
+  protected
+    fContainer: TContainer;
+    fService1: INameService;
+    fService2: INameService;
+    procedure Execute; override;
+  public
+    constructor Create(container: TContainer);
+    property Service1: INameService read fService1;
+    property Service2: INameService read fService2;
+  end;
+
+{ TTestSingletonThread }
+
+constructor TTestSingletonThread.Create(container: TContainer);
+begin
+  inherited Create(False);
+  fContainer := container;
+end;
+
+procedure TTestSingletonThread.Execute;
+begin
+  fService1 := fContainer.Resolve<INameService>;
+  fService2 := fContainer.Resolve<INameService>;
+end;
+
+procedure TTestSimpleContainer.TestPerThread;
+var
+  thread1, thread2: TTestSingletonThread;
+begin
+  fContainer.RegisterComponent<TNameService>
+    .Implements<INameService>
+    .AsSingletonPerThread;
+  fContainer.Build;
+  thread1 := TTestSingletonThread.Create(fContainer);
+  thread2 := TTestSingletonThread.Create(fContainer);
+  try
+    thread1.WaitFor;
+    thread2.WaitFor;
+    CheckTrue(thread1.Service1 is TNameService, 'thread1.Service1 should be TNameService.');
+    CheckTrue(thread2.Service1 is TNameService, 'thread2.Service1 should be TNameService.');
+    CheckSame(thread1.Service1, thread1.Service2, 'thread1');
+    CheckSame(thread2.Service1, thread2.Service2, 'thread2');
+    CheckTrue(thread1.Service1 <> thread2.Service2, 'thread1 and thread2 should own different instances.');
+  finally
+    thread1.Free;
+    thread2.Free;
+  end;
+end;
+
+procedure TTestSimpleContainer.TestInitializable;
+var
+  service: IAnotherService;
+begin
+  fContainer.RegisterComponent<TInitializableComponent>;
+  fContainer.Build;
+  service := fContainer.Resolve<IAnotherService>;
+  CheckTrue(service is TInitializableComponent, 'Unknown component.');
+  CheckTrue(TInitializableComponent(service).IsInitialized, 'IsInitialized should be true.');
 end;
 
 {$ENDREGION}
@@ -750,6 +822,52 @@ begin
   CheckTrue(s1 is TS2, 'b');
   s2 := fContainer.Resolve<IS2>;
   CheckTrue(s2 is TS2, 's2');
+end;
+
+type
+  TComplex = class(TNameAgeComponent, IAnotherService)
+  end;
+
+{ TTestRegisterInterfaces }
+
+procedure TTestRegisterInterfaces.TestOneService;
+var
+  service: INameService;
+begin
+  fContainer.RegisterComponent<TNameService>;
+  fContainer.Build;
+  service := fContainer.Resolve<INameService>;
+  CheckTrue(service is TNameService);
+end;
+
+procedure TTestRegisterInterfaces.TestOneServices;
+var
+  s1: INameService;
+  s2: IAgeService;
+begin
+  fContainer.RegisterComponent<TNameAgeComponent>;
+  fContainer.Build;
+  s1 := fContainer.Resolve<INameService>;
+  s2 := fContainer.Resolve<IAgeService>;
+  CheckTrue(s1 is TNameAgeComponent, 's1');
+  CheckTrue(s2 is TNameAgeComponent, 's2');
+end;
+
+procedure TTestRegisterInterfaces.TestInheritedService;
+var
+  s1: INameService;
+  s2: IAgeService;
+  s3: IAnotherService;
+begin
+  Assert(TypeInfo(IAnotherService) <> nil);
+  fContainer.RegisterComponent<TComplex>;
+  fContainer.Build;
+  s1 := fContainer.Resolve<INameService>;
+  s2 := fContainer.Resolve<IAgeService>;
+  s3 := fContainer.Resolve<IAnotherService>;
+  CheckTrue(s1 is TComplex, 's1');
+  CheckTrue(s2 is TComplex, 's2');
+  CheckTrue(s3 is TComplex, 's3');
 end;
 
 end.

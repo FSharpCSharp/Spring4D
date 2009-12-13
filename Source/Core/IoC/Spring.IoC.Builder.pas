@@ -61,6 +61,11 @@ type
     procedure ProcessModel(const context: IContainerContext; model: TComponentModel);
   end;
 
+  TInterfaceInspector = class(TInspectorBase)
+  protected
+    procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); override;
+  end;
+
   TLifetimeInspector = class(TInspectorBase)
   protected
     procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); override;
@@ -226,6 +231,11 @@ begin
     if model.ComponentType.TryGetCustomAttribute<TLifetimeAttributeBase>(attribute) then
     begin
       model.LifetimeType := attribute.LifetimeType;
+      if attribute is PooledAttribute then
+      begin
+        model.MinPoolsize := PooledAttribute(attribute).MinPoolsize;
+        model.MaxPoolsize := PooledAttribute(attribute).MaxPoolsize;
+      end;
     end
     else
     begin
@@ -499,6 +509,28 @@ begin
     dependencies[i] := parameters[i].ParamType;
   end;
   Result := fContext.DependencyResolver.CanResolveDependencies(dependencies, fArguments);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TInterfaceInspector'}
+
+procedure TInterfaceInspector.DoProcessModel(const context: IContainerContext;
+  model: TComponentModel);
+var
+  services: IEnumerableEx<TRttiInterfaceType>;
+  service: TRttiInterfaceType;
+begin
+  if not model.Services.IsEmpty then Exit;
+  services := model.ComponentType.GetInterfaces;
+  for service in services do
+  begin
+    if (service.BaseType <> nil) and not model.HasService(service.Handle) then
+    begin
+      context.ComponentRegistry.RegisterService(model.ComponentTypeInfo, service.Handle);
+    end;
+  end;
 end;
 
 {$ENDREGION}

@@ -23,6 +23,7 @@ package Spring.Core;
 {$MINENUMSIZE 1}
 {$IMAGEBASE $400000}
 {$DESCRIPTION 'Delphi Spring Framework Core Library'}
+{$RUNONLY}
 {$IMPLICITBUILD ON}
 
 requires
@@ -46,7 +47,8 @@ contains
   Spring.Core.ResourceStrings in 'Source\Core\Spring.Core.ResourceStrings.pas',
   Spring.Numbering in 'Source\Core\Numbering\Spring.Numbering.pas',
   Spring.Numbering.Rules in 'Source\Core\Numbering\Spring.Numbering.Rules.pas',
-  Spring.Numbering.Utils in 'Source\Core\Numbering\Spring.Numbering.Utils.pas';
+  Spring.Numbering.Utils in 'Source\Core\Numbering\Spring.Numbering.Utils.pas',
+  Spring.Pool in 'Source\Core\Pool\Spring.Pool.pas';
 
 end.
 

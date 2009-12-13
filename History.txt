@@ -1,3 +1,36 @@
+2009-12-12
+[Pool]
+- Introduced a generic Object Pooling API which is in Spring.Pool.
+
+[IoC]
+- Added the SingletonPerThread lifetime type. Use the AsSingletonPerThread method when invoking RegisterComponent<T> or Use the SingletonPerThread attribute.
+- Added the Pooled lifetime type. Use PooledAttribute with initialPoolSize & maxPoolSize parameters. Use the AsPooled method when registering a component.
+- All guid interfaces implemented by the target component will be automatically registered as services without using the Implements<T> method any more.
+
+[Numbering]
+- DatetimeRule now supports the 'WW' format which means the week of one day based on the ISO 8601 standard.
+
+[Collections]
+- IEnumerableEx now inherits from the System.IEnumerable<T> insteading of the prior version. IEnumerable_<T> and IEnumeratorEx<T> were removed. (Boxing & Unboxing have not been supported yet.)
+- Fixed a interface lifetime bug. (TDictionaryAdapter<T>)
+
+[System]
+- Added a Lock overload which supports an interface which can be safely casted to an object.
+- The Lock methods and UpdateStrings are now not inlined since the show stopper (Bug QC#80304).
+- Some types and aliases (TStopwatch, TCharacter, TIntegerRec, TInt32Rec and TInt64Rec) are marked as deprecated and will be removed later.
+
+[Reflection]
+- Added the TActivator type to create an instance by reflection.
+
+[Utils]
+- Moved TFileVersionInfo, TFileMapping and releated types to Spring.Utils.Files
+- Moved TNetwork to Spring.Utils.Network
+
+[Project] 
+- Spring.Base & Spring.Core are now used as runtime package.
+- Reorganized the Examples folder. More examples will be added later.
+
+
 2009-12-9
 - The utility classes (TEnvironment, TDriveInfo, TOperatingSystem, TFileVersionInfo) and some global functions (ApplicationPath, ApplicationVersion and ApplicationVersionString) were moved to Spring.Utils.pas
 - Merged Spring.Tests.Base and Spring.Tests.Core into Spring.Tests
@@ -6,13 +39,16 @@
 - Added a simple implementation of the INumberSource, which locates in Spring.Numbering.Utils, using ADODB and MSSQLServer (Supports effective Row-Lock).
 - Supports the ImplementsAttribute which will tell the IoC Container which service is implemented by the component.
 
+
 2009-12-1
 - Refactoring dependency resolvers
 - Added Named/Valued Injections By applying the Injection attribute on members/parameters.
 - Removed the deprecated RegisterType methods of the TContainer class.
 
+
 2009-11-29
 - A component can now be registered with several services by the Implements method.
+
 
 2009-11-27
 [Breaking Changes]
@@ -25,6 +61,7 @@
 - Introduced LINQ-like enumerable extensions (First, FirstOrDefault, Last, LastOrDefault, Where, etc.) which locates in the IEnumerableEx<T>.
 - Added a new class helper TRttiType, which provides the ability to filter members (constructors/methods/properties/fields).
 - Bug-fixes (TSpecification<T>)
+
 
 2009-11-22	v0.1.2.566
 [IoC]

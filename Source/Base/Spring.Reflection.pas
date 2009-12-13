@@ -22,6 +22,8 @@
 {                                                                           }
 {***************************************************************************}
 
+{ TODO: -oOwner -cGeneral : TActivator.CreateInstance }
+
 unit Spring.Reflection;
 
 {$I Spring.inc}
@@ -39,26 +41,37 @@ uses
   Spring.DesignPatterns;
 
 type
+  IObjectActivator = interface
+    ['{CE05FB89-3467-449E-81EA-A5AEECAB7BB8}']
+    function CreateInstance: TObject;
+  end;
+
+  TActivator = record
+  public
+    class function CreateInstance(instanceType: TRttiInstanceType;
+      constructorMethod: TRttiMethod; const arguments: array of TValue): TObject; static;
+  end;
+
   TGetRttiMembersFunc<T> = reference to function(targetType: TRttiType): TArray<T>;
 
   /// <summary>
   /// TRttiMemberEnumerable<T>
   /// </summary>
-  TRttiMemberEnumerableEx<T: TRttiMember> = class(TEnumerableBase<T>,
-    IEnumerableEx<T>, IEnumerable_<T>, IInterface)
+  TRttiMemberEnumerable<T: TRttiMember> = class(TEnumerableEx<T>,
+    IEnumerableEx<T>, IEnumerable<T>, IEnumerable, IInterface)
   private
     type
       TEnumerator = class(TEnumeratorBase<T>)
       private
-        fCollection: TRttiMemberEnumerableEx<T>;
+        fCollection: TRttiMemberEnumerable<T>;
         fTargetType: TRttiType;
         fMembers: TArray<T>;
         fIndex: Integer;
       protected
         procedure Initialize(targetType: TRttiType);
-        function GetCurrent: T; override;
+        function DoGetCurrent: T; override;
       public
-        constructor Create(collection: TRttiMemberEnumerableEx<T>);
+        constructor Create(collection: TRttiMemberEnumerable<T>);
         function MoveNext: Boolean; override;
       end;
   private
@@ -66,12 +79,13 @@ type
     fGetMembersFunc: TGetRttiMembersFunc<T>;
     fEnumerateBaseType: Boolean;
     fPredicate: TPredicate<T>;
+  protected
+    function DoGetEnumerator: IEnumerator<T>; override;
   public
     constructor Create(parentType: TRttiType; const func: TGetRttiMembersFunc<T>;
       enumerateBaseType: Boolean); overload;
     constructor Create(parentType: TRttiType; const func: TGetRttiMembersFunc<T>;
       enumerateBaseType: Boolean; const predicate: TPredicate<T>); overload;
-    function GetEnumerator: IEnumeratorEx<T>; override;
     function Where(const predicate: TPredicate<T>): IEnumerableEx<T>; override;
   end;
 
@@ -179,7 +193,7 @@ type
   /// The TInternalRttiMemberHelper class was copied from Spring.Helpers, as
   /// An URW1111 internal error will occured when this unit uses Spring.Helpers.
   /// </summary>
-  TInternalRttiMemberHelper = class helper for TRttiMember
+  _InternalRttiMemberHelper = class helper for TRttiMember
   private
     function GetIsPrivate: Boolean;
     function GetIsProtected: Boolean;
@@ -216,57 +230,57 @@ uses
 
 { TInternalRttiMemberHelper }
 
-function TInternalRttiMemberHelper.AsProperty: TRttiProperty;
+function _InternalRttiMemberHelper.AsProperty: TRttiProperty;
 begin
   Result := Self as TRttiProperty;
 end;
 
-function TInternalRttiMemberHelper.AsMethod: TRttiMethod;
+function _InternalRttiMemberHelper.AsMethod: TRttiMethod;
 begin
   Result := Self as TRttiMethod;
 end;
 
-function TInternalRttiMemberHelper.AsField: TRttiField;
+function _InternalRttiMemberHelper.AsField: TRttiField;
 begin
   Result := Self as TRttiField;
 end;
 
-function TInternalRttiMemberHelper.GetIsConstructor: Boolean;
+function _InternalRttiMemberHelper.GetIsConstructor: Boolean;
 begin
   Result := (Self is TRttiMethod) and TRttiMethod(Self).IsConstructor;
 end;
 
-function TInternalRttiMemberHelper.GetIsProperty: Boolean;
+function _InternalRttiMemberHelper.GetIsProperty: Boolean;
 begin
   Result := Self is TRttiProperty;
 end;
 
-function TInternalRttiMemberHelper.GetIsMethod: Boolean;
+function _InternalRttiMemberHelper.GetIsMethod: Boolean;
 begin
   Result := Self is TRttiMethod;
 end;
 
-function TInternalRttiMemberHelper.GetIsField: Boolean;
+function _InternalRttiMemberHelper.GetIsField: Boolean;
 begin
   Result := Self is TRttiField;
 end;
 
-function TInternalRttiMemberHelper.GetIsPrivate: Boolean;
+function _InternalRttiMemberHelper.GetIsPrivate: Boolean;
 begin
   Result := Visibility = mvPrivate;
 end;
 
-function TInternalRttiMemberHelper.GetIsProtected: Boolean;
+function _InternalRttiMemberHelper.GetIsProtected: Boolean;
 begin
   Result := Visibility = mvProtected;
 end;
 
-function TInternalRttiMemberHelper.GetIsPublic: Boolean;
+function _InternalRttiMemberHelper.GetIsPublic: Boolean;
 begin
   Result := Visibility = mvPublic;
 end;
 
-function TInternalRttiMemberHelper.GetIsPublished: Boolean;
+function _InternalRttiMemberHelper.GetIsPublished: Boolean;
 begin
   Result := Visibility = mvPublished;
 end;
@@ -275,15 +289,56 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TActivator'}
+
+type
+  TInterfacedObjectHack = class(TInterfacedObject);
+
+class function TActivator.CreateInstance(instanceType: TRttiInstanceType;
+  constructorMethod: TRttiMethod; const arguments: array of TValue): TObject;
+var
+  classType: TClass;
+begin
+  TArgument.CheckNotNull(instanceType, 'instanceType');
+  TArgument.CheckNotNull(constructorMethod, 'constructorMethod');
+  classType := instanceType.MetaclassType;
+  Result := classType.NewInstance;
+  try
+    constructorMethod.Invoke(Result, arguments);
+  except
+    on Exception do
+    begin
+      if Result is TInterfacedObject then
+      begin
+        Dec(TInterfacedObjectHack(Result).FRefCount);
+      end;
+      Result.Free;
+      raise;
+    end;
+  end;
+  try
+    Result.AfterConstruction;
+  except
+    on Exception do
+    begin
+      Result.Free;
+      raise;
+    end;
+  end;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TRttiMemberEnumerable<T>'}
 
-constructor TRttiMemberEnumerableEx<T>.Create(parentType: TRttiType;
+constructor TRttiMemberEnumerable<T>.Create(parentType: TRttiType;
   const func: TGetRttiMembersFunc<T>; enumerateBaseType: Boolean);
 begin
   Create(parentType, func, enumerateBaseType, nil);
 end;
 
-constructor TRttiMemberEnumerableEx<T>.Create(parentType: TRttiType;
+constructor TRttiMemberEnumerable<T>.Create(parentType: TRttiType;
   const func: TGetRttiMembersFunc<T>; enumerateBaseType: Boolean;
   const predicate: TPredicate<T>);
 begin
@@ -294,12 +349,12 @@ begin
   fPredicate := predicate;
 end;
 
-function TRttiMemberEnumerableEx<T>.GetEnumerator: IEnumeratorEx<T>;
+function TRttiMemberEnumerable<T>.DoGetEnumerator: IEnumerator<T>;
 begin
   Result := TEnumerator.Create(Self);
 end;
 
-function TRttiMemberEnumerableEx<T>.Where(
+function TRttiMemberEnumerable<T>.Where(
   const predicate: TPredicate<T>): IEnumerableEx<T>;
 var
   finalPredicate: TPredicate<T>;
@@ -316,21 +371,21 @@ begin
         Result := fPredicate(value) and predicate(value);
       end;
   end;
-  Result := TRttiMemberEnumerableEx<T>.Create(fParentType, fGetMembersFunc,
+  Result := TRttiMemberEnumerable<T>.Create(fParentType, fGetMembersFunc,
     fEnumerateBaseType, finalPredicate);
 end;
 
 { TRttiMemberEnumerableEx<T>.TEnumerator }
 
-constructor TRttiMemberEnumerableEx<T>.TEnumerator.Create(
-  collection: TRttiMemberEnumerableEx<T>);
+constructor TRttiMemberEnumerable<T>.TEnumerator.Create(
+  collection: TRttiMemberEnumerable<T>);
 begin
   inherited Create;
   fCollection := collection;
   Initialize(fCollection.fParentType);
 end;
 
-procedure TRttiMemberEnumerableEx<T>.TEnumerator.Initialize(
+procedure TRttiMemberEnumerable<T>.TEnumerator.Initialize(
   targetType: TRttiType);
 begin
   fTargetType := targetType;
@@ -345,7 +400,7 @@ begin
   fIndex := -1;
 end;
 
-function TRttiMemberEnumerableEx<T>.TEnumerator.MoveNext: Boolean;
+function TRttiMemberEnumerable<T>.TEnumerator.MoveNext: Boolean;
 begin
   Result := fIndex < Length(fMembers) - 1;
   if Result then
@@ -363,7 +418,7 @@ begin
   end;
 end;
 
-function TRttiMemberEnumerableEx<T>.TEnumerator.GetCurrent: T;
+function TRttiMemberEnumerable<T>.TEnumerator.DoGetCurrent: T;
 begin
   Result := fMembers[fIndex];
 end;

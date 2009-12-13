@@ -20,7 +20,9 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
-			<DCC_UnitSearchPath>Source\Base;Source\Base\Collections;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<RuntimeOnlyPackage>true</RuntimeOnlyPackage>
+			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
+			<DCC_UnitSearchPath>Source\Base;Source\Base\Collections;Source\Base\Utils;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
 			<DCC_DependencyCheckOutputName>F:\Users\Public\Documents\RAD Studio\7.0\Bpl\Spring.Base.bpl</DCC_DependencyCheckOutputName>
 			<DCC_Description>Delphi Spring Framework Base Class Library</DCC_Description>
@@ -39,7 +41,6 @@
 			<DCC_DebugInformation>false</DCC_DebugInformation>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2)'!=''">
-			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
 			<DCC_DcuOutput>Lib\Debug</DCC_DcuOutput>
 			<DCC_DebugDCUs>true</DCC_DebugDCUs>
 		</PropertyGroup>
@@ -53,13 +54,15 @@
 			<DCCReference Include="Source\Base\Spring.DesignPatterns.pas"/>
 			<DCCReference Include="Source\Base\Spring.ResourceStrings.pas"/>
 			<DCCReference Include="Source\Base\Spring.System.pas"/>
-			<DCCReference Include="Source\Base\Spring.Utils.pas"/>
 			<DCCReference Include="Source\Base\Spring.Win32API.pas"/>
 			<DCCReference Include="Source\Base\Spring.Reflection.pas"/>
 			<DCCReference Include="Source\Base\Spring.Helpers.pas"/>
 			<DCCReference Include="Source\Base\Collections\Spring.Collections.Adapters.pas"/>
 			<DCCReference Include="Source\Base\Collections\Spring.Collections.Extensions.pas"/>
 			<DCCReference Include="Source\Base\Collections\Spring.Collections.pas"/>
+			<DCCReference Include="Source\Base\Utils\Spring.Utils.Files.pas"/>
+			<DCCReference Include="Source\Base\Utils\Spring.Utils.pas"/>
+			<DCCReference Include="Source\Base\Utils\Spring.Utils.Network.pas"/>
 			<None Include="Source\Base\Spring.inc"/>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>

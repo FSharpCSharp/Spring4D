@@ -3,10 +3,13 @@
 			<ProjectGuid>{AC475501-C781-4DA7-89D8-53279532A1AF}</ProjectGuid>
 		</PropertyGroup>
 		<ItemGroup>
-			<Projects Include="Callback\Callback.dproj">
+			<Projects Include="Base\System\Callback\Callback.dproj">
 				<Dependencies/>
 			</Projects>
-			<Projects Include="Environment\EnvironmentDemo.dproj">
+			<Projects Include="Base\Utils\Environment\EnvironmentDemo.dproj">
+				<Dependencies/>
+			</Projects>
+			<Projects Include="Core\Numbering\Numbering.dproj">
 				<Dependencies/>
 			</Projects>
 		</ItemGroup>
@@ -18,31 +21,40 @@
 			</BorlandProject>
 		</ProjectExtensions>
 		<Target Name="Callback">
-			<MSBuild Projects="Callback\Callback.dproj"/>
+			<MSBuild Projects="Base\System\Callback\Callback.dproj"/>
 		</Target>
 		<Target Name="Callback:Clean">
-			<MSBuild Targets="Clean" Projects="Callback\Callback.dproj"/>
+			<MSBuild Targets="Clean" Projects="Base\System\Callback\Callback.dproj"/>
 		</Target>
 		<Target Name="Callback:Make">
-			<MSBuild Targets="Make" Projects="Callback\Callback.dproj"/>
+			<MSBuild Targets="Make" Projects="Base\System\Callback\Callback.dproj"/>
 		</Target>
 		<Target Name="EnvironmentDemo">
-			<MSBuild Projects="Environment\EnvironmentDemo.dproj"/>
+			<MSBuild Projects="Base\Utils\Environment\EnvironmentDemo.dproj"/>
 		</Target>
 		<Target Name="EnvironmentDemo:Clean">
-			<MSBuild Targets="Clean" Projects="Environment\EnvironmentDemo.dproj"/>
+			<MSBuild Targets="Clean" Projects="Base\Utils\Environment\EnvironmentDemo.dproj"/>
 		</Target>
 		<Target Name="EnvironmentDemo:Make">
-			<MSBuild Targets="Make" Projects="Environment\EnvironmentDemo.dproj"/>
+			<MSBuild Targets="Make" Projects="Base\Utils\Environment\EnvironmentDemo.dproj"/>
+		</Target>
+		<Target Name="Numbering">
+			<MSBuild Projects="Core\Numbering\Numbering.dproj"/>
+		</Target>
+		<Target Name="Numbering:Clean">
+			<MSBuild Targets="Clean" Projects="Core\Numbering\Numbering.dproj"/>
+		</Target>
+		<Target Name="Numbering:Make">
+			<MSBuild Targets="Make" Projects="Core\Numbering\Numbering.dproj"/>
 		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="Callback;EnvironmentDemo"/>
+			<CallTarget Targets="Callback;EnvironmentDemo;Numbering"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="Callback:Clean;EnvironmentDemo:Clean"/>
+			<CallTarget Targets="Callback:Clean;EnvironmentDemo:Clean;Numbering:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="Callback:Make;EnvironmentDemo:Make"/>
+			<CallTarget Targets="Callback:Make;EnvironmentDemo:Make;Numbering:Make"/>
 		</Target>
 		<Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 	</Project>

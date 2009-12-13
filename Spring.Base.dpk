@@ -23,6 +23,7 @@ package Spring.Base;
 {$MINENUMSIZE 1}
 {$IMAGEBASE $400000}
 {$DESCRIPTION 'Delphi Spring Framework Base Class Library'}
+{$RUNONLY}
 {$IMPLICITBUILD ON}
 {$DEFINE DEBUG}
 
@@ -35,12 +36,14 @@ contains
   Spring.DesignPatterns in 'Source\Base\Spring.DesignPatterns.pas',
   Spring.ResourceStrings in 'Source\Base\Spring.ResourceStrings.pas',
   Spring.System in 'Source\Base\Spring.System.pas',
-  Spring.Utils in 'Source\Base\Spring.Utils.pas',
   Spring.Win32API in 'Source\Base\Spring.Win32API.pas',
   Spring.Reflection in 'Source\Base\Spring.Reflection.pas',
   Spring.Helpers in 'Source\Base\Spring.Helpers.pas',
   Spring.Collections.Adapters in 'Source\Base\Collections\Spring.Collections.Adapters.pas',
   Spring.Collections.Extensions in 'Source\Base\Collections\Spring.Collections.Extensions.pas',
-  Spring.Collections in 'Source\Base\Collections\Spring.Collections.pas';
+  Spring.Collections in 'Source\Base\Collections\Spring.Collections.pas',
+  Spring.Utils.Files in 'Source\Base\Utils\Spring.Utils.Files.pas',
+  Spring.Utils in 'Source\Base\Utils\Spring.Utils.pas',
+  Spring.Utils.Network in 'Source\Base\Utils\Spring.Utils.Network.pas';
 
 end.

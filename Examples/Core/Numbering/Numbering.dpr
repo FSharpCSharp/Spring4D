@@ -22,49 +22,75 @@
 {                                                                           }
 {***************************************************************************}
 
-{ This project is used for personal test purpose. }
-
-program Console;
+program Numbering;
 
 {$APPTYPE CONSOLE}
 
 uses
-  FastMM4,
-  Classes,
-  Controls,
-  Windows,
-  IOUtils,
   SysUtils,
-  Rtti,
-  TypInfo,
-  SyncObjs,
-  Generics.Collections,
   Spring.System,
-  Spring.Collections,
-  Spring.DesignPatterns,
-  Spring.Reflection,
-  Spring.Helpers;
+  Spring.Numbering;
+
+type
+  /// <summary>
+  /// Represents a mock number souce which might be a file or a database table.
+  /// </summary>
+  TMockNumberSouce = class(TInterfacedObject, INumberSource)
+  private
+    fLastNumber: string;
+  public
+    constructor Create(const lastNumber: string);
+    procedure UpdateNumber(proc: TNumberProc);
+    property LastNumber: string read fLastNumber;
+  end;
+
+{ TMockNumberSouce }
+
+constructor TMockNumberSouce.Create(const lastNumber: string);
+begin
+  inherited Create;
+  fLastNumber := lastNumber;
+end;
+
+procedure TMockNumberSouce.UpdateNumber(proc: TNumberProc);
+begin
+  TArgument.CheckNotNull(Assigned(proc), 'proc');
+  proc(fLastNumber);
+end;
+
+//---------------------------------------------------------------------------
+
+function CreateNumberRule: INumberRule;
+var
+  builder: TNumberRuleBuilder;
+begin
+  builder := TNumberRuleBuilder.Create;
+  builder.AddCode('RK');
+  builder.AddDateTime('YYYYMM');
+  builder.AddDigits('000000', '999999');
+  Result := builder.ToRule;
+end;
+
+//---------------------------------------------------------------------------
 
 var
-  list: IList<Integer>;
-  s: string;
-  value: Integer;
-
+  rule: INumberRule;
+  source: INumberSource;
+  generator: INumberGenerator;
+  i: Integer;
 begin
   try
-    list := TCollections.CreateList<Integer>;
-    with list do
+    rule := CreateNumberRule;
+    source := TMockNumberSouce.Create('RK200912000001');
+    generator := TNumberGenerator.Create(rule, source);
+    for i := 0 to 10 do
     begin
-      Add(2);
-      Add(3);
-    end;
-    for value in list do
-    begin
-      Writeln(value);
+      Writeln(generator.NextNumber);
     end;
   except
     on E: Exception do
       Writeln(E.ClassName, ': ', E.Message);
   end;
+  Writeln('Press Enter to quit.');
   Readln;
 end.

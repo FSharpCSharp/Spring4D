@@ -67,7 +67,7 @@ type
   /// <summary>
   /// Provides a set of methods and properties to accurately measure elapsed time.
   /// </summary>
-  TStopwatch = Diagnostics.TStopwatch;
+  TStopwatch = Diagnostics.TStopwatch deprecated;
 
   PTypeInfo  = TypInfo.PTypeInfo;
   TTypeKind  = TypInfo.TTypeKind;
@@ -75,23 +75,20 @@ type
 
   TAttributeClass = class of TCustomAttribute;
 
-  TCharacter = Character.TCharacter;
-
-//  UTF16Char = UCS2Char;
-//  UTF32Char = UCS4Char;
+  TCharacter = Character.TCharacter deprecated;
 
   TIntegerRec = packed record
     B1: Byte;
     B2: Byte;
     B3: Byte;
     B4: Byte;
-  end experimental;
+  end  deprecated;
 
 {$WARNINGS OFF}
-  TInt32Rec = TIntegerRec;
+  TInt32Rec = TIntegerRec deprecated;
 {$WARNINGS ON}
 
-  TInt64Rec = SysUtils.Int64Rec;
+  TInt64Rec = SysUtils.Int64Rec deprecated;
 
   {$ENDREGION}
 
@@ -441,17 +438,21 @@ type
   {$REGION 'TObjectHolder<T> (Experimental)'}
 
   /// <summary>
-  /// Manages object's lifetime by anonymous method (TFunc<T>),
+  /// Manages object's lifetime by an anonymous method (TFunc<T>),
   /// which is implemented as a reference-counted interface in Delphi for Win32.
   /// </summary>
   TObjectHolder<T: class> = class(TInterfacedObject, TFunc<T>)
   private
     fObject: T;
+    fLifetimeWatcher: IInterface;
   public
-    constructor Create(obj: T);
+    constructor Create(obj: T); overload;
+    constructor Create(obj: T; const lifetimeWatcher: IInterface); overload;
     destructor Destroy; override;
     function Invoke: T;
   end;
+
+  TObjectHolder = TObjectHolder<TObject>;
 
   {$ENDREGION}
 
@@ -586,10 +587,7 @@ type
     /// <summary>
     /// Every thread has a single instance.
     /// </summary>
-    /// <remarks>
-    /// Not Implemented yet.
-    /// </remarks>
-    ltPerThread,
+    ltSingletonPerThread,
     /// <summary>
     /// Instances are transient except that they are recyclable.
     /// </summary>
@@ -633,13 +631,26 @@ type
     constructor Create;
   end;
 
-//  PerThreadAttribute = class(TLifetimeAttributeBase)
-//  public
-//    constructor Create;
-//  end;
+  /// <summary>
+  /// Applies this attribute when a component shares the single instance per thread.
+  /// </summary>
+  SingletonPerThreadAttribute = class(TLifetimeAttributeBase)
+  public
+    constructor Create;
+  end;
 
-//  PooledAttribute = class(TLifetimeAttributeBase)
-//  end;
+  /// <summary>
+  /// Represents that the target component can be pooled.
+  /// </summary>
+  PooledAttribute = class(TLifetimeAttributeBase)
+  private
+    fMinPoolsize: Integer;
+    fMaxPoolsize: Integer;
+  public
+    constructor Create(minPoolSize, maxPoolSize: Integer);
+    property MinPoolsize: Integer read fMinPoolsize;
+    property MaxPoolsize: Integer read fMaxPoolsize;
+  end;
 
 //  TCustomLifetimeAttribute = class abstract(TLifetimeAttributeBase)
 //  end;
@@ -794,12 +805,13 @@ type
   /// Obtains a mutual-exclusion lock for the given object, executes a procedure
   /// and then releases the lock.
   /// </summary>
-  procedure Lock(obj: TObject; proc: TProc); inline;
+  procedure Lock(obj: TObject; const proc: TProc); overload; // inline;
+  procedure Lock(const intf: IInterface; const proc: TProc); overload; // inline;
 
   /// <summary>
   /// Updates an instance of TStrings by calling its BeginUpdate and EndUpdate.
   /// </summary>
-  procedure UpdateStrings(strings: TStrings; proc: TProc); inline;
+  procedure UpdateStrings(strings: TStrings; proc: TProc); // inline;
 
   {$ENDREGION}
 
@@ -1027,7 +1039,7 @@ begin
   end;
 end;
 
-procedure Lock(obj: TObject; proc: TProc);
+procedure Lock(obj: TObject; const proc: TProc);
 begin
   TArgument.CheckNotNull(obj, 'obj');
   TArgument.CheckNotNull(Assigned(proc), 'proc');
@@ -1038,6 +1050,15 @@ begin
   finally
     System.MonitorExit(obj);
   end;
+end;
+
+procedure Lock(const intf: IInterface; const proc: TProc);
+var
+  obj: TObject;
+begin
+  TArgument.CheckNotNull(intf, 'intf');
+  obj := TObject(intf);
+  Lock(obj, proc);
 end;
 
 procedure UpdateStrings(strings: TStrings; proc: TProc);
@@ -2006,14 +2027,34 @@ end;
 {$REGION 'TObjectHolder<T>'}
 
 constructor TObjectHolder<T>.Create(obj: T);
+var
+  lifetimeWatcher: IInterface;
+begin
+  TArgument.CheckNotNull(PPointer(@obj)^, 'obj');
+  if obj.InheritsFrom(TInterfacedObject) then
+  begin
+    obj.GetInterface(IInterface, lifetimeWatcher);
+  end
+  else
+  begin
+    lifetimeWatcher := nil;
+  end;
+  Create(obj, lifetimeWatcher);
+end;
+
+constructor TObjectHolder<T>.Create(obj: T; const lifetimeWatcher: IInterface);
 begin
   inherited Create;
   fObject := obj;
+  fLifetimeWatcher := lifetimeWatcher;
 end;
 
 destructor TObjectHolder<T>.Destroy;
 begin
-  fObject.Free;
+  if fLifetimeWatcher = nil then
+  begin
+    fObject.Free;
+  end;
   inherited Destroy;
 end;
 
@@ -2361,6 +2402,13 @@ begin
   inherited Create(TLifetimeType.ltTransient);
 end;
 
+{ SingletonPerThreadAttribute }
+
+constructor SingletonPerThreadAttribute.Create;
+begin
+  inherited Create(TLifetimeType.ltSingletonPerThread);
+end;
+
 { InjectionAttribute }
 
 constructor InjectionAttribute.Create;
@@ -2392,6 +2440,15 @@ begin
   inherited Create;
   fServiceType := serviceType;
   fName := name;
+end;
+
+{ PooledAttribute }
+
+constructor PooledAttribute.Create(minPoolSize, maxPoolSize: Integer);
+begin
+  inherited Create(ltPooled);
+  fMinPoolsize := minPoolSize;
+  fMaxPoolsize := maxPoolsize;
 end;
 
 {$ENDREGION}

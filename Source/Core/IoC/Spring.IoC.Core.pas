@@ -36,7 +36,8 @@ uses
   Generics.Collections,
   Spring.System,
   Spring.Collections,
-  Spring.DesignPatterns;
+  Spring.DesignPatterns,
+  Spring.Reflection;
 
 type
   { Forward Declarations }
@@ -48,7 +49,6 @@ type
   IInjection = interface;
   IInjectionFactory = interface;
   ILifetimeManager = interface;
-  IComponentActivator = interface;
 
   TActivatorDelegate = reference to function: TObject;
   TActivatorDelegate<T: class> = reference to function: T;
@@ -126,10 +126,12 @@ type
   /// <summary>
   /// Component Activator
   /// </summary>
-  IComponentActivator = interface
-    ['{752F2CDE-222C-4D8B-B344-BB7BCA9EAB9E}']
-    function CreateInstance: TObject;
-  end;
+  IComponentActivator = IObjectActivator;
+
+//  IComponentActivator = interface
+//    ['{752F2CDE-222C-4D8B-B344-BB7BCA9EAB9E}']
+//    function CreateInstance: TObject;
+//  end;
 
   /// <summary>
   /// Represents an injection of a member.
@@ -219,6 +221,8 @@ type
     fLifetimeManager: ILifetimeManager;
     fComponentActivator: IComponentActivator;
     fActivatorDelegate: TActivatorDelegate;
+    fMinPoolsize: Integer;
+    fMaxPoolsize: Integer;
     fServices: IDictionary<string, PTypeInfo>;
     fConstructorInjections: IList<IInjection>;
     fMethodInjections: IList<IInjection>;
@@ -267,6 +271,8 @@ type
     property ComponentType: TRttiInstanceType read fComponentType;
     property ComponentTypeInfo: PTypeInfo read GetComponentTypeInfo;
     property Services: IDictionary<string, PTypeInfo> read GetServices;
+    property MinPoolsize: Integer read fMinPoolsize write fMinPoolsize;
+    property MaxPoolsize: Integer read fMaxPoolsize write fMaxPoolsize;
 
     property LifetimeType: TLifetimeType read fLifetimeType write fLifetimeType;
     property LifetimeManager: ILifetimeManager read fLifetimeManager write fLifetimeManager;
@@ -296,7 +302,6 @@ implementation
 uses
   Spring.ResourceStrings,
   Spring.Helpers,
-  Spring.Reflection,
   Spring.Core.ResourceStrings;
 
 {$REGION 'TComponentModel'}

@@ -34,6 +34,7 @@ uses
   Rtti,
   Spring.System,
   Spring.Collections,
+  Spring.Reflection,
   Spring.IoC.Core;
 
 type
@@ -57,8 +58,6 @@ type
   private
     fResolver: IDependencyResolver;
     function GetEligibleConstructor(model: TComponentModel): IInjection; virtual;
-    function InternalCreateInstance(classType: TClass; constructorMethod: TRttiMethod;
-      const arguments: TArray<TValue>): TObject;
     procedure ExecuteInjections(instance: TObject; const injections: IList<IInjection>);
   public
     constructor Create(model: TComponentModel; const resolver: IDependencyResolver);
@@ -102,7 +101,6 @@ end;
 
 function TReflectionComponentActivator.CreateInstance: TObject;
 var
-  componentType: TRttiInstanceType;
   constructorInjection: IInjection;
   constructorArguments: TArray<TValue>;
 begin
@@ -112,10 +110,9 @@ begin
     raise EActivatorException.CreateRes(@SUnsatisfiedConstructor);
   end;
   constructorArguments := fResolver.ResolveDependencies(constructorInjection);
-  componentType := fModel.ComponentType as TRttiInstanceType;
-  Result := InternalCreateInstance(
-    componentType.MetaclassType,
-    (constructorInjection.Target as TRttiMethod),
+  Result := TActivator.CreateInstance(
+    fModel.ComponentType,
+    constructorInjection.Target.AsMethod,
     constructorArguments
   );
   ExecuteInjections(Result, fModel.PropertyInjections);
@@ -163,37 +160,6 @@ begin
     end;
   end;
   Result := winner;
-end;
-
-type
-  TInterfacedObjectHack = class(TInterfacedObject);
-
-function TReflectionComponentActivator.InternalCreateInstance(classType: TClass;
-  constructorMethod: TRttiMethod; const arguments: TArray<TValue>): TObject;
-begin
-  Result := classType.NewInstance;
-  try
-    constructorMethod.Invoke(Result, arguments);
-  except
-    on Exception do
-    begin
-      if Result is TInterfacedObject then
-      begin
-        Dec(TInterfacedObjectHack(Result).FRefCount);
-      end;
-      Result.Free;
-      raise;
-    end;
-  end;
-  try
-    Result.AfterConstruction;
-  except
-    on Exception do
-    begin
-      Result.Free;
-      raise;
-    end;
-  end;
 end;
 
 {$ENDREGION}

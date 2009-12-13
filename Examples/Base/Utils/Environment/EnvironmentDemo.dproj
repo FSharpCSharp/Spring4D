@@ -27,15 +27,18 @@
 			<DCC_Platform>x86</DCC_Platform>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_1)'!=''">
+			<DCC_DependencyCheckOutputName>Bin\Release\EnvironmentDemo.exe</DCC_DependencyCheckOutputName>
+			<DCC_ExeOutput>Bin\Release</DCC_ExeOutput>
+			<DCC_DcuOutput>Lib\Release</DCC_DcuOutput>
 			<DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
 			<DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
 			<DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
 			<DCC_DebugInformation>false</DCC_DebugInformation>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2)'!=''">
-			<DCC_DependencyCheckOutputName>Bin\EnvironmentDemo.exe</DCC_DependencyCheckOutputName>
-			<DCC_ExeOutput>Bin</DCC_ExeOutput>
-			<DCC_DcuOutput>Lib</DCC_DcuOutput>
+			<DCC_DependencyCheckOutputName>Bin\Debug\EnvironmentDemo.exe</DCC_DependencyCheckOutputName>
+			<DCC_ExeOutput>Bin\Debug</DCC_ExeOutput>
+			<DCC_DcuOutput>Lib\Debug</DCC_DcuOutput>
 			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
 			<DCC_DebugDCUs>true</DCC_DebugDCUs>
 		</PropertyGroup>
@@ -78,7 +81,7 @@
 						<VersionInfo Name="MajorVer">1</VersionInfo>
 						<VersionInfo Name="MinorVer">0</VersionInfo>
 						<VersionInfo Name="Release">1</VersionInfo>
-						<VersionInfo Name="Build">92</VersionInfo>
+						<VersionInfo Name="Build">95</VersionInfo>
 						<VersionInfo Name="Debug">False</VersionInfo>
 						<VersionInfo Name="PreRelease">False</VersionInfo>
 						<VersionInfo Name="Special">False</VersionInfo>
@@ -90,7 +93,7 @@
 					<VersionInfoKeys>
 						<VersionInfoKeys Name="CompanyName"/>
 						<VersionInfoKeys Name="FileDescription"/>
-						<VersionInfoKeys Name="FileVersion">1.0.1.92</VersionInfoKeys>
+						<VersionInfoKeys Name="FileVersion">1.0.1.95</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName"/>
 						<VersionInfoKeys Name="LegalCopyright"/>
 						<VersionInfoKeys Name="LegalTrademarks"/>

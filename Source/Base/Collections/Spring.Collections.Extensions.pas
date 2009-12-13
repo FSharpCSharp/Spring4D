@@ -40,46 +40,46 @@ type
   /// <summary>
   /// TEnumeratorDecorator<T>
   /// </summary>
-  TEnumeratorDecorator<T> = class abstract(TInterfacedObject, IEnumeratorEx<T>, IInterface)
+  TEnumeratorDecorator<T> = class abstract(TEnumeratorBase<T>)
   private
-    fEnumerator: IEnumeratorEx<T>;
+    fEnumerator: IEnumerator<T>;
   protected
-    function GetCurrent: T; virtual;
-    property Enumerator: IEnumeratorEx<T> read fEnumerator;
+    function DoGetCurrent: T; override;
+    property Enumerator: IEnumerator<T> read fEnumerator;
   public
-    constructor Create(const enumerator: IEnumeratorEx<T>);
-    function MoveNext: Boolean; virtual;
-    procedure Reset; virtual;
-    property Current: T read GetCurrent;
+    constructor Create(const enumerator: IEnumerator<T>);
+    function MoveNext: Boolean; override;
+    procedure Reset; override;
   end;
 
   /// <summary>
   /// TEnumerableDecorator<T>
   /// </summary>
-  TEnumerableDecorator<T> = class abstract(TEnumerableBase<T>)
+  TEnumerableDecorator<T> = class abstract(TEnumerableEx<T>)
   private
-    fCollection: IEnumerable_<T>;
+    fCollection: IEnumerable<T>;
   protected
-    property Collection: IEnumerable_<T> read fCollection;
+    function DoGetEnumerator: IEnumerator<T>; override;
+    property Collection: IEnumerable<T> read fCollection;
   public
-    constructor Create(const collection: IEnumerable_<T>);
-    function GetEnumerator: IEnumeratorEx<T>; override;
+    constructor Create(const collection: IEnumerable<T>);
   end;
 
   TEnumeratorWithPredicate<T> = class(TEnumeratorDecorator<T>)
   private
     fPredicate: TPredicate<T>;
   public
-    constructor Create(const enumerator: IEnumeratorEx<T>; const predicate: TPredicate<T>);
+    constructor Create(const enumerator: IEnumerator<T>; const predicate: TPredicate<T>);
     function MoveNext: Boolean; override;
   end;
 
   TEnumerableWithPredicate<T> = class(TEnumerableDecorator<T>)
   private
     fPredicate: TPredicate<T>;
+  protected
+    function DoGetEnumerator: IEnumerator<T>; override;
   public
-    constructor Create(const collection: IEnumerable_<T>; const predicate: TPredicate<T>);
-    function GetEnumerator: IEnumeratorEx<T>; override;
+    constructor Create(const collection: IEnumerable<T>; const predicate: TPredicate<T>);
   end;
 
 implementation
@@ -87,13 +87,13 @@ implementation
 
 {$REGION 'TEnumerableDecorator<T>'}
 
-constructor TEnumerableDecorator<T>.Create(const collection: IEnumerable_<T>);
+constructor TEnumerableDecorator<T>.Create(const collection: IEnumerable<T>);
 begin
   inherited Create;
   fCollection := collection;
 end;
 
-function TEnumerableDecorator<T>.GetEnumerator: IEnumeratorEx<T>;
+function TEnumerableDecorator<T>.DoGetEnumerator: IEnumerator<T>;
 begin
   Result := fCollection.GetEnumerator;
 end;
@@ -103,13 +103,13 @@ end;
 
 {$REGION 'TEnumeratorDecorator<T>'}
 
-constructor TEnumeratorDecorator<T>.Create(const enumerator: IEnumeratorEx<T>);
+constructor TEnumeratorDecorator<T>.Create(const enumerator: IEnumerator<T>);
 begin
   inherited Create;
   fEnumerator := enumerator;
 end;
 
-function TEnumeratorDecorator<T>.GetCurrent: T;
+function TEnumeratorDecorator<T>.DoGetCurrent: T;
 begin
   Result := fEnumerator.Current;
 end;
@@ -130,7 +130,7 @@ end;
 {$REGION 'TEnumeratorWithPredicate<T>'}
 
 constructor TEnumeratorWithPredicate<T>.Create(
-  const enumerator: IEnumeratorEx<T>; const predicate: TPredicate<T>);
+  const enumerator: IEnumerator<T>; const predicate: TPredicate<T>);
 begin
   inherited Create(enumerator);
   fPredicate := predicate;
@@ -151,13 +151,13 @@ end;
 {$REGION 'TEnumerableWithPredicate'}
 
 constructor TEnumerableWithPredicate<T>.Create(
-  const collection: IEnumerable_<T>; const predicate: TPredicate<T>);
+  const collection: IEnumerable<T>; const predicate: TPredicate<T>);
 begin
   inherited Create(collection);
   fPredicate := predicate;
 end;
 
-function TEnumerableWithPredicate<T>.GetEnumerator: IEnumeratorEx<T>;
+function TEnumerableWithPredicate<T>.DoGetEnumerator: IEnumerator<T>;
 begin
   Result := TEnumeratorWithPredicate<T>.Create(Collection.GetEnumerator, fPredicate);
 end;

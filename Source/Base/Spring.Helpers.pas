@@ -103,11 +103,21 @@ type
     function GetFields: IEnumerableEx<TRttiField>; overload;
 //    function GetMembers: IEnumerableEx<TRttiMember>;
 
-//    function GetInterfaces: TArray<TRttiInterfaceType>;
+    function GetInterfaces: IEnumerableEx<TRttiInterfaceType>;
+
     property IsClass: Boolean read GetIsClass;
     property IsInterface: Boolean read GetIsInterface;
     property IsClassOrInterface: Boolean read GetIsClassOrInterface;
     property AsInterface: TRttiInterfaceType read GetAsInterface;
+  end;
+
+  TInterfaceTypesCache = record
+  strict private
+    class var fCContext: TRttiContext;
+    class var fCTypes: IDictionary<TGuid, TRttiInterfaceType>;
+    class constructor Create;
+  public
+    class function TryGetType(const guid: TGUID; out aType: TRttiInterfaceType): Boolean; static;
   end;
 
   TRttiMemberHelper = class helper for TRttiMember
@@ -295,7 +305,7 @@ begin
     begin
       Result := targetType.GetDeclaredMethods;
     end;
-  Result := TRttiMemberEnumerableEx<TRttiMethod>.Create(
+  Result := TRttiMemberEnumerable<TRttiMethod>.Create(
     Self,
     func,
     enumerateBaseType,
@@ -313,7 +323,7 @@ begin
     begin
       Result := targetType.GetDeclaredMethods;
     end;
-  Result := TRttiMemberEnumerableEx<TRttiMethod>.Create(
+  Result := TRttiMemberEnumerable<TRttiMethod>.Create(
     Self,
     func,
     enumerateBaseType,
@@ -331,7 +341,7 @@ begin
     begin
       Result := targetType.GetDeclaredProperties;
     end;
-  Result := TRttiMemberEnumerableEx<TRttiProperty>.Create(
+  Result := TRttiMemberEnumerable<TRttiProperty>.Create(
     Self,
     func,
     enumerateBaseType,
@@ -349,7 +359,7 @@ begin
     begin
       Result := targetType.GetDeclaredFields;
     end;
-  Result := TRttiMemberEnumerableEx<TRttiField>.Create(
+  Result := TRttiMemberEnumerable<TRttiField>.Create(
     Self,
     func,
     enumerateBaseType,
@@ -380,6 +390,43 @@ end;
 function TRttiTypeHelper.GetAsInterface: TRttiInterfaceType;
 begin
   Result := Self as TRttiInterfaceType;
+end;
+
+function TRttiTypeHelper.GetInterfaces: IEnumerableEx<TRttiInterfaceType>;
+var
+  list: IDictionary<TGUID, TRttiInterfaceType>;
+  classType: TClass;
+  table: PInterfaceTable;
+  entry: TInterfaceEntry;
+  aType: TRttiInterfaceType;
+  i: Integer;
+begin
+  if Self.IsClass then
+  begin
+    list := TCollections.CreateDictionary<TGUID, TRttiInterfaceType>;
+    classType := Self.AsInstance.MetaclassType;
+    while classType <> nil do
+    begin
+      table := classType.GetInterfaceTable;
+      if table <> nil then
+      begin
+        for i := 0 to table.EntryCount - 1 do
+        begin
+          entry := table.Entries[i];
+        {$WARNINGS OFF}
+          if not list.ContainsKey(entry.IID) and
+            not entry.IID.IsEmpty and
+            TInterfaceTypesCache.TryGetType(entry.IID, aType) then
+          begin
+            list[entry.IID] := aType;
+          end;
+        {$WARNINGS ON}
+        end;
+      end;
+      classType := classType.ClassParent;
+    end;
+    Result := list.Values;
+  end;
 end;
 
 function TRttiTypeHelper.GetIsClass: Boolean;
@@ -462,5 +509,30 @@ begin
 end;
 
 {$ENDREGION}
+
+{ TInterfaceTypesCache }
+
+class constructor TInterfaceTypesCache.Create;
+var
+  types: TArray<TRttiType>;
+  item: TRttiType;
+begin
+  fCContext := TRttiContext.Create;
+  types := fCContext.GetTypes;
+  fCTypes := TCollections.CreateDictionary<TGuid, TRttiInterfaceType>;
+  for item in types do
+  begin
+    if item.IsInterface and item.AsInterface.HasGuid then
+    begin
+      fCTypes.Add(item.AsInterface.GUID, item.AsInterface);
+    end;
+  end;
+end;
+
+class function TInterfaceTypesCache.TryGetType(const guid: TGUID;
+  out aType: TRttiInterfaceType): Boolean;
+begin
+  Result := fCTypes.TryGetValue(guid, aType);
+end;
 
 end.

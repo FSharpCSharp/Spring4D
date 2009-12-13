@@ -63,14 +63,14 @@ resourcestring
 
   // Spring.Logging
 
-//  SAllDescription      = 'ALL';
-//  STraceDescription    = 'TRACE';
-//  SDebugDescription    = 'DEBUG';
-//  SInfoDescription     = 'INFO';
-//  SWarnDescription     = 'WARN';
-//  SErrorDescription    = 'ERROR';
-//  SFatalDescription    = 'FATAL';
-//  SOffDescription      = 'OFF';
+  SAllDescription      = 'ALL';
+  STraceDescription    = 'TRACE';
+  SDebugDescription    = 'DEBUG';
+  SInfoDescription     = 'INFO';
+  SWarnDescription     = 'WARN';
+  SErrorDescription    = 'ERROR';
+  SFatalDescription    = 'FATAL';
+  SOffDescription      = 'OFF';
 
   // Spring.Numbering
 

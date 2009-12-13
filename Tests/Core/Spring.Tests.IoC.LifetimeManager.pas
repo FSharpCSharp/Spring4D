@@ -36,7 +36,7 @@ uses
 
 type
   TMockContext = class(TInterfacedObject, IContainerContext)
-  private
+  public
     function GetDependencyResolver: IDependencyResolver;
     function GetInjectionFactory: IInjectionFactory;
     function GetComponentRegistry: IComponentRegistry;
@@ -49,23 +49,22 @@ type
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
   end;
 
-  TLifetimeManagerTestCase = class abstract(TTestCase)
+  TMockObjectActivator = class(TInterfaceBase, IComponentActivator, IInterface)
   private
-    type
-      TMockObjectActivator = class(TInterfaceBase, IComponentActivator, IInterface)
-      private
-        fModel: TComponentModel;
-      public
-        constructor Create(model: TComponentModel);
-        function CreateInstance: TObject;
-        property Model: TComponentModel read fModel;
-      end;
+    fModel: TComponentModel;
+  public
+    constructor Create(model: TComponentModel);
+    function CreateInstance: TObject;
+    property Model: TComponentModel read fModel;
+  end;
 
-      TMockObject = class
-      end;
+  TMockObject = class
+  end;
 
-      TMockInterfacedObject = class(TInterfacedObject)
-      end;
+  TMockInterfacedObject = class(TInterfacedObject)
+  end;
+
+  TLifetimeManagerTestCase = class abstract(TTestCase)
   protected
     fContainerContext: IContainerContext;
     fContext: TRttiContext;
@@ -181,16 +180,16 @@ begin
   end;
 end;
 
-{ TLifetimeManagerTestCase.TMockComponentActivator }
+{ TMockComponentActivator }
 
-constructor TLifetimeManagerTestCase.TMockObjectActivator.Create(
+constructor TMockObjectActivator.Create(
   model: TComponentModel);
 begin
   inherited Create;
   fModel := model;
 end;
 
-function TLifetimeManagerTestCase.TMockObjectActivator.CreateInstance: TObject;
+function TMockObjectActivator.CreateInstance: TObject;
 begin
   Result := TMockObject.Create;
 end;

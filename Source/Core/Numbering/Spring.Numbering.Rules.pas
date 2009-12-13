@@ -22,8 +22,8 @@
 {                                                                           }
 {***************************************************************************}
 
+{ TODO: Consider support variable length }
 { TODO: Add GetEndNumber to INumberRule }
-{ TODO: Refactor TDateTimePartRule, Supports the "WW" (means Week, 01-52) format. }
 
 unit Spring.Numbering.Rules;
 
@@ -133,6 +133,13 @@ type
     function GetLastNumber: string; override;
   end;
 
+  /// <remarks>
+  /// WeekOf uses the ISO 8601 standard to define the week of the year.
+  /// That is, a week is defined as running from Monday through Sunday,
+  /// and the first week of the year is the one that includes the first
+  /// Thursday of the year (the first week that includes four or more days
+  /// in the year).
+  /// </remarks>
   TDateTimePartRule = class(TNumberRuleBase, ISequenceResetTrigger)
   private
     fFormat: string;
@@ -179,53 +186,6 @@ uses
   DateUtils,
   StrUtils,
   Spring.Core.ResourceStrings;
-
-{ Routines }
-
-function TryStrToDateTime(const s: string; out value: TDateTime; format: string): Boolean;
-var
-  year, month, day: Word;
-  hour, minute, second, milliSecond: Word;
-
-  function ExtractElement(const element: string; const defaultValue: Integer = 0): Integer;
-  var
-    p: Integer;
-  begin
-    p := Pos(element, format);
-    if p > 0 then
-    begin
-      Result := StrToInt(Copy(s, p, Length(element)));
-    end
-    else
-    begin
-      Result := defaultValue;
-    end;
-  end;
-begin
-  format := UpperCase(format);
-  Result := Length(s) = Length(format);
-  if Result then
-  try
-    year := ExtractElement('YYYY');
-    if year = 0 then
-      year := ExtractElement('YY', 1900);
-    month := ExtractElement('MM', 1);
-    day := ExtractElement('DD', 1);
-    hour := ExtractElement('HH');
-    minute := ExtractElement('NN');
-    second := ExtractElement('SS');
-    milliSecond := ExtractElement('ZZZ');
-    value := EncodeDateTime(year, month, day, hour, minute, second, milliSecond);
-  except
-    Result := False;
-  end;
-end;
-
-function StrToDateTime(const s, format: string): TDateTime;
-begin
-  if not TryStrToDateTime(s, Result, format) then
-    raise EConvertError.CreateFmt(SInvalidDateTime, [s]);
-end;
 
 {$REGION 'TNumberRuleBase'}
 
@@ -368,7 +328,6 @@ begin
   index := 1;
   for i := 0 to High(fRules) do
   begin
-    // TODO: consider support variable length
     Result[i] := Copy(number, index, fRules[i].MinLength);
     Inc(index, fRules[i].MinLength);
   end;
@@ -543,31 +502,13 @@ begin
 end;
 
 function TDateTimePartRule.CanTrigger(const value: string): Boolean;
-var
-  d1, d2: TDateTime;
-  year1, month1, day1: Word;
-  year2, month2, day2: Word;
 begin
-  d1 := StrToDateTime(value, fFormat);
-  d2 := StrToDateTime(GetDateTimeString, fFormat);
-  DecodeDate(d1, year1, month1, day1);
-  DecodeDate(d2, year2, month2, day2);
-  Result := (year1 <> year2) or (month1 <> month2) or (day1 <> day2);
+  Result := not SameText(GetDateTimeString, value);
 end;
 
 function TDateTimePartRule.Validate(const number: string; out errorMessage: string): Boolean;
-var
-  value: TDateTime;
 begin
   Result := inherited Validate(number, errorMessage);
-  if Result then
-  begin
-    Result := TryStrToDateTime(number, value, fFormat);
-    if not Result then
-    begin
-      errorMessage := SysUtils.Format(SInvalidDateTime, [number]);
-    end;
-  end;
 end;
 
 function TDateTimePartRule.DoGetSystemDateTime: TDateTime;
@@ -576,8 +517,38 @@ begin
 end;
 
 function TDateTimePartRule.GetDateTimeString: string;
+var
+  value: TDateTime;
+  startDay: TDateTime;
+  endDay: TDateTime;
+  week: Integer;
 begin
-  Result := FormatDateTime(fFormat, fFunc);
+  value := fFunc;
+  week := WeekOf(value);
+  startDay := StartOfTheWeek(value);
+  endDay := EndOfTheWeek(value);
+  Result := fFormat;
+  if (Pos('WW', fFormat) = 0) or (YearOf(startDay) = YearOf(endDay)) then
+  begin
+    Result := StringReplace(Result, 'YYYY', FormatDateTime('YYYY', value), [rfIgnoreCase]);
+    Result := StringReplace(Result, 'YYYY', FormatDateTime('YY', value), [rfIgnoreCase]);
+  end
+  else if week = 1 then
+  begin
+    Result := StringReplace(Result, 'YYYY', FormatDateTime('YYYY', endDay), [rfIgnoreCase]);
+    Result := StringReplace(Result, 'YYYY', FormatDateTime('YY', endDay), [rfIgnoreCase]);
+  end
+  else
+  begin
+    Result := StringReplace(Result, 'YYYY', FormatDateTime('YYYY', startDay), [rfIgnoreCase]);
+    Result := StringReplace(Result, 'YYYY', FormatDateTime('YY', startDay), [rfIgnoreCase]);
+  end;
+  Result := StringReplace(Result, 'MM', FormatDateTime('MM', value), [rfIgnoreCase]);
+  Result := StringReplace(Result, 'DD', FormatDateTime('DD', value), [rfIgnoreCase]);
+  Result := StringReplace(Result, 'WW', SysUtils.Format('%.2d', [week]), [rfIgnoreCase]);
+  Result := StringReplace(Result, 'HH', FormatDateTime('HH', value), [rfIgnoreCase]);
+  Result := StringReplace(Result, 'NN', FormatDateTime('NN', value), [rfIgnoreCase]);
+  Result := StringReplace(Result, 'ZZZ', FormatDateTime('ZZZ', value), [rfIgnoreCase]);
 end;
 
 function TDateTimePartRule.DoGetNextNumber(const number: string): string;

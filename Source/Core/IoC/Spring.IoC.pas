@@ -62,11 +62,11 @@ type
     fDependencyResolver: IDependencyResolver;
     fInjectionFactory: IInjectionFactory;
     fRegistrationManager: TRegistrationManager;
-    function GetComponentRegistry: IComponentRegistry;
   protected
     { Implements IContainerContext }
     function GetDependencyResolver: IDependencyResolver;
     function GetInjectionFactory: IInjectionFactory;
+    function GetComponentRegistry: IComponentRegistry;
     function CreateLifetimeManager(model: TComponentModel): ILifetimeManager;
     property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
     property DependencyResolver: IDependencyResolver read GetDependencyResolver;
@@ -151,9 +151,9 @@ var
   inspector: IBuilderInspector;
 begin
   inspectors := TArray<IBuilderInspector>.Create(
-    TLifetimeInspector.Create,
+    TInterfaceInspector.Create,
     TComponentActivatorInspector.Create,
-//    TImplementsAttributeInspector.Create,
+    TLifetimeInspector.Create,
     TInjectionTargetInspector.Create,
     TConstructorInspector.Create,
     TPropertyInspector.Create,
@@ -179,14 +179,14 @@ begin
     begin
       Result := TTransientLifetimeManager.Create(model);
     end;
-//    ltPerThread:
-//    begin
-//
-//    end;
-//    ltPooled:
-//    begin
-//
-//    end;
+    ltSingletonPerThread:
+    begin
+      Result := TSingletonPerThreadLifetimeManager.Create(model);
+    end;
+    ltPooled:
+    begin
+      Result := TPooledLifetimeManager.Create(model);
+    end;
     else
     begin
       raise ERegistrationException.CreateRes(@SUnexpectedLifetimeType);

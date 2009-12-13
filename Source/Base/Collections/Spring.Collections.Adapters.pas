@@ -39,23 +39,23 @@ type
   /// <summary>
   /// TEnumeratorAdapter<T>
   /// </summary>
-  TEnumeratorAdapter<T> = class(TInterfacedObject, IEnumeratorEx<T>, IInterface)
+  TEnumeratorAdapter<T> = class(TEnumeratorBase<T>, IEnumerator<T>, IEnumerator, IInterface)
   private
     fEnumerator: TEnumerator<T>;
+  protected
+    function DoGetCurrent: T; override;
   public
     constructor Create(collection: TEnumerable<T>);
     destructor Destroy; override;
-    function GetCurrent: T;
-    function MoveNext: Boolean;
-    procedure Reset;
-    property Current: T read GetCurrent;
+    function MoveNext: Boolean; override;
+    property Current: T read DoGetCurrent;
   end;
 
   /// <summary>
   /// TListAdapter<T>
   /// </summary>
-  TListAdapter<T> = class(TEnumerableBase<T>, IList<T>, ICollection<T>,
-    IEnumerableEx<T>, IEnumerable_<T>, IInterface)
+  TListAdapter<T> = class(TEnumerableEx<T>, IList<T>, ICollection<T>,
+    IEnumerableEx<T>, IEnumerable<T>, IEnumerable, IInterface)
   protected
     fList: TList<T>;
     fOwnership: TCollectionOwnership;
@@ -65,11 +65,11 @@ type
   protected
     function GetCount: Integer; override;
     function GetIsEmpty: Boolean; override;
+    function DoGetEnumerator: IEnumerator<T>; override;
   public
     constructor Create(list: TList<T>; ownership: TCollectionOwnership = coReference);
     destructor Destroy; override;
 
-    function GetEnumerator: IEnumeratorEx<T>; override;
     function Contains(const item: T): Boolean; override;
     function ToArray: TArray<T>; override;
     function ToList: IList<T>; override;
@@ -88,26 +88,29 @@ type
   /// <summary>
   /// TDictionaryAdapter<TKey, TValue>
   /// </summary>
-  TDictionaryAdapter<TKey, TValue> = class(TEnumerableBase<TPair<TKey, TValue>>,
+  TDictionaryAdapter<TKey, TValue> = class(TEnumerableEx<TPair<TKey, TValue>>,
     IDictionary<TKey, TValue>, ICollection<TPair<TKey, TValue>>,
-    IEnumerableEx<TPair<TKey, TValue>>, IEnumerable_<TPair<TKey, TValue>>, IInterface)
+    IEnumerableEx<TPair<TKey, TValue>>, IEnumerable<TPair<TKey, TValue>>, IEnumerable, IInterface)
   private
     type
       /// <summary>
       /// Provides a read-only ICollection<TKey> implementation
       /// </summary>
-      TKeyCollection = class(TEnumerableBase<TKey>, ICollection<TKey>,
-        IEnumerableEx<TKey>, IEnumerable_<TKey>, IInterface)
+      TKeyCollection = class(TEnumerableEx<TKey>, ICollection<TKey>,
+        IEnumerableEx<TKey>, IEnumerable<TKey>, IEnumerable, IInterface)
       private
+        fController: Pointer; // weak-reference
         fDictionary: TDictionary<TKey,TValue>;
       protected
         function GetCount: Integer; override;
         function GetIsEmpty: Boolean; override;
         function GetIsReadOnly: Boolean;
+        function DoGetEnumerator: IEnumerator<TKey>; override;
+        { IInterface }
+        function _AddRef: Integer; stdcall;
+        function _Release: Integer; stdcall;
       public
-        constructor Create(dictionary: TDictionary<TKey,TValue>);
-        { IEnumerable<TKey> }
-        function GetEnumerator: IEnumeratorEx<TKey>; override;
+        constructor Create(const controller: IInterface; dictionary: TDictionary<TKey,TValue>);
         { IEnumerableEx<TKey> }
         function Contains(const item: TKey): Boolean; override;
         function ToArray: TArray<TKey>; override;
@@ -121,18 +124,21 @@ type
       /// <summary>
       /// Provides a read-only ICollection<TValue> implementation
       /// </summary>
-      TValueCollection = class(TEnumerableBase<TValue>, ICollection<TValue>,
-        IEnumerableEx<TValue>, IEnumerable_<TValue>, IInterface)
+      TValueCollection = class(TEnumerableEx<TValue>, ICollection<TValue>,
+        IEnumerableEx<TValue>, IEnumerable<TValue>, IEnumerable, IInterface)
       private
+        fController: Pointer; // weak-reference
         fDictionary: TDictionary<TKey, TValue>;
         function GetIsReadOnly: Boolean;
       protected
         function GetCount: Integer; override;
         function GetIsEmpty: Boolean; override;
+        function DoGetEnumerator: IEnumerator<TValue>; override;
+        { IInterface }
+        function _AddRef: Integer; stdcall;
+        function _Release: Integer; stdcall;
       public
-        constructor Create(dictionary: TDictionary<TKey,TValue>);
-        { _IEnumerable<TValue> }
-        function GetEnumerator: IEnumeratorEx<TValue>; override;
+        constructor Create(const controller: IInterface; dictionary: TDictionary<TKey,TValue>);
         { IEnumerableEx<TValue> }
         function Contains(const item: TValue): Boolean; override;
         function ToArray: TArray<TValue>; override;
@@ -146,8 +152,10 @@ type
   private
     fDictionary: TDictionary<TKey,TValue>;
     fOwnership: TCollectionOwnership;
-    fKeys: ICollection<TKey>;
-    fValues: ICollection<TValue>;
+    fKeys: TKeyCollection;
+    fValues: TValueCollection;
+  protected
+    function DoGetEnumerator: IEnumerator<TPair<TKey,TValue>>; override;
   public
     constructor Create(dictionary: TDictionary<TKey,TValue>;
       ownership: TCollectionOwnership = coReference);
@@ -157,7 +165,6 @@ type
     function GetCount: Integer; override;
     function GetIsEmpty: Boolean; override;
     function Contains(const item: TPair<TKey,TValue>): Boolean; override;
-    function GetEnumerator: IEnumeratorEx<TPair<TKey,TValue>>; override;
     function ToArray: TArray<TPair<TKey,TValue>>; override;
     property Count: Integer read GetCount;
     property IsEmpty: Boolean read GetIsEmpty;
@@ -204,7 +211,7 @@ begin
   inherited Destroy;
 end;
 
-function TEnumeratorAdapter<T>.GetCurrent: T;
+function TEnumeratorAdapter<T>.DoGetCurrent: T;
 begin
   Result := fEnumerator.Current;
 end;
@@ -212,11 +219,6 @@ end;
 function TEnumeratorAdapter<T>.MoveNext: Boolean;
 begin
   Result := fEnumerator.MoveNext;
-end;
-
-procedure TEnumeratorAdapter<T>.Reset;
-begin
-  raise EInvalidOperation.CreateRes(@SCannotResetEnumerator);
 end;
 
 {$ENDREGION}
@@ -295,7 +297,7 @@ begin
   Result := Self;
 end;
 
-function TListAdapter<T>.GetEnumerator: IEnumeratorEx<T>;
+function TListAdapter<T>.DoGetEnumerator: IEnumerator<T>;
 begin
   Result := TEnumeratorAdapter<T>.Create(fList);
 end;
@@ -340,12 +342,16 @@ end;
 
 destructor TDictionaryAdapter<TKey, TValue>.Destroy;
 begin
+  fKeys.Free;
+  fValues.Free;
   if fOwnership = coOwned then
+  begin
     fDictionary.Free;
+  end;
   inherited Destroy;
 end;
 
-function TDictionaryAdapter<TKey, TValue>.GetEnumerator: IEnumeratorEx<TPair<TKey, TValue>>;
+function TDictionaryAdapter<TKey, TValue>.DoGetEnumerator: IEnumerator<TPair<TKey, TValue>>;
 begin
   Result := TEnumeratorAdapter<TPair<TKey, TValue>>.Create(fDictionary);
 end;
@@ -478,7 +484,7 @@ function TDictionaryAdapter<TKey, TValue>.GetKeys: ICollection<TKey>;
 begin
   if fKeys = nil then
   begin
-    fKeys := TKeyCollection.Create(fDictionary);
+    fKeys := TKeyCollection.Create(Self, fDictionary);
   end;
   Result := fKeys;
 end;
@@ -487,7 +493,7 @@ function TDictionaryAdapter<TKey, TValue>.GetValues: ICollection<TValue>;
 begin
   if fValues = nil then
   begin
-    fValues := TValueCollection.Create(fDictionary);
+    fValues := TValueCollection.Create(Self, fDictionary);
   end;
   Result := fValues;
 end;
@@ -500,7 +506,7 @@ end;
 procedure TDictionaryAdapter<TKey, TValue>.SetItem(const key: TKey;
   const value: TValue);
 begin
-  fDictionary[key] := value;
+  fDictionary.AddOrSetValue(key, value);
 end;
 
 {$ENDREGION}
@@ -509,9 +515,10 @@ end;
 {$REGION 'TDictionaryAdapter<TKey, TValue>.TKeyCollection'}
 
 constructor TDictionaryAdapter<TKey, TValue>.TKeyCollection.Create(
-  dictionary: TDictionary<TKey, TValue>);
+  const controller: IInterface; dictionary: TDictionary<TKey, TValue>);
 begin
   inherited Create;
+  fController := Pointer(controller);
   fDictionary := dictionary;
 end;
 
@@ -535,7 +542,7 @@ begin
   end;
 end;
 
-function TDictionaryAdapter<TKey, TValue>.TKeyCollection.GetEnumerator: IEnumeratorEx<TKey>;
+function TDictionaryAdapter<TKey, TValue>.TKeyCollection.DoGetEnumerator: IEnumerator<TKey>;
 begin
   Result := TEnumeratorAdapter<TKey>.Create(fDictionary.Keys);
 end;
@@ -577,15 +584,26 @@ begin
   raise ENotSupportedException.Create('Remove');
 end;
 
+function TDictionaryAdapter<TKey, TValue>.TKeyCollection._AddRef: Integer;
+begin
+  Result := IInterface(fController)._AddRef;
+end;
+
+function TDictionaryAdapter<TKey, TValue>.TKeyCollection._Release: Integer;
+begin
+  Result := IInterface(fController)._Release;
+end;
+
 {$ENDREGION}
 
 
 {$REGION 'TDictionaryAdapter<TKey, TValue>.TValueCollection'}
 
 constructor TDictionaryAdapter<TKey, TValue>.TValueCollection.Create(
-  dictionary: TDictionary<TKey, TValue>);
+  const controller: IInterface; dictionary: TDictionary<TKey, TValue>);
 begin
   inherited Create;
+  fController := Pointer(controller);
   fDictionary := dictionary;
 end;
 
@@ -609,14 +627,14 @@ begin
   end;
 end;
 
-function TDictionaryAdapter<TKey, TValue>.TValueCollection.GetEnumerator: IEnumeratorEx<TValue>;
+function TDictionaryAdapter<TKey, TValue>.TValueCollection.DoGetEnumerator: IEnumerator<TValue>;
 begin
   Result := TEnumeratorAdapter<TValue>.Create(fDictionary.Values);
 end;
 
 function TDictionaryAdapter<TKey, TValue>.TValueCollection.GetCount: Integer;
 begin
-  Result := fDictionary.Count;
+  Result := fDictionary.Values.Count;
 end;
 
 function TDictionaryAdapter<TKey, TValue>.TValueCollection.GetIsEmpty: Boolean;
@@ -649,6 +667,16 @@ function TDictionaryAdapter<TKey, TValue>.TValueCollection.Remove(
   const item: TValue): Boolean;
 begin
   raise ENotSupportedException.Create('Remove');
+end;
+
+function TDictionaryAdapter<TKey, TValue>.TValueCollection._AddRef: Integer;
+begin
+  Result := IInterface(fController)._AddRef;
+end;
+
+function TDictionaryAdapter<TKey, TValue>.TValueCollection._Release: Integer;
+begin
+  Result := IInterface(fController)._Release;
 end;
 
 {$ENDREGION}

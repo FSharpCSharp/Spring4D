@@ -47,13 +47,14 @@ uses
   Spring.Tests.IoC in 'Tests\Core\Spring.Tests.IoC.pas',
   Spring.Tests.IoC.LifetimeManager in 'Tests\Core\Spring.Tests.IoC.LifetimeManager.pas',
   Spring.Tests.IoC.Components in 'Tests\Core\Spring.Tests.IoC.Components.pas',
-  Spring.Tests.Utils in 'Tests\Base\Spring.Tests.Utils.pas';
+  Spring.Tests.Utils in 'Tests\Base\Spring.Tests.Utils.pas',
+  Spring.Tests.Pool in 'Tests\Core\Spring.Tests.Pool.pas';
 
 {$R *.RES}
 
 procedure RegisterTestCases;
 begin
-  RegisterTests('Spring.Tests.System', [
+  RegisterTests('Base.System', [
     TTestSplitString.Suite,
     TTestSplitNullTerminatedStrings.Suite,
     TTestTryParseDateTime.Suite,
@@ -65,33 +66,38 @@ begin
     TRepeatedTest.Create(TTestNullableInteger.Suite, 3)
   ]);
 
-  RegisterTests('Spring.Tests.DesignPatterns', [
+  RegisterTests('Base.DesignPatterns', [
     TTestSingleton.Suite
   ]);
 
-  RegisterTests('Spring.Tests.Utils', [
+  RegisterTests('Base.Utils', [
     TTestDecimalCalculator.Suite,
     TTestHexCalculator.Suite,
     TTestBaseNineCalculator.Suite
   ]);
 
-  RegisterTests('Spring.Tests.Helpers', [
+  RegisterTests('Base.Helpers', [
     TTestGuidHelper.Suite
   ]);
 
-//  RegisterTests('Spring.Tests.Cryptography', [
+//  RegisterTests('Base.Cryptography', [
 //    TTestMD5.Suite,
 //    TTestDES.Suite,
 //    TTestTripleDES.Suite
 //  ]);
 
-  RegisterTests('Spring.Tests.IoC', [
+  RegisterTests('Core.Pool', [
+    TTestObjectPool.Suite
+  ]);
+
+  RegisterTests('Core.IoC', [
     TTestSingletonLifetimeManager.Suite,
     TTestTransientLifetimeManager.Suite,
     TTestEmptyContainer.Suite,
     TTestSimpleContainer.Suite,
     TTestDifferentServiceImplementations.Suite,
     TTestImplementsDifferentServices.Suite,
+    TTestRegisterInterfaces.Suite,
     TTestActivatorDelegate.Suite,
     TTestTypedInjectionByCoding.Suite,
     TTestTypedInjectionsByAttribute.Suite,
@@ -102,7 +108,7 @@ begin
     TTestImplementsAttribute.Suite
   ]);
 
-  RegisterTests('Spring.Tests.Numbering', [
+  RegisterTests('Core.Numbering', [
     TTestNumberRuleBuilder.Suite
   ]);
 

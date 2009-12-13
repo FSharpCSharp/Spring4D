@@ -106,7 +106,9 @@ type
     {$ENDREGION}
 
     function AsSingleton: TRegistration;
+    function AsSingletonPerThread: TRegistration;
     function AsTransient: TRegistration;
+    function AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration;
   end;
 
   /// <summary>
@@ -144,7 +146,9 @@ type
     {$ENDREGION}
 
     function AsSingleton: TRegistration<T>;
+    function AsSingletonPerThread: TRegistration<T>;
     function AsTransient: TRegistration<T>;
+    function AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration<T>;
   end;
 
 //  PRegistration = ^TRegistration;
@@ -208,8 +212,10 @@ end;
 procedure TComponentRegistry.Validate(componentType, serviceType: PTypeInfo;
   var serviceName: string);
 var
+  componentTypeObject: TRttiType;
   serviceTypeObject: TRttiType;
 begin
+  componentTypeObject := fRttiContext.GetType(componentType);
   serviceTypeObject := fRttiContext.GetType(serviceType);
   CheckIsNonGuidInterface(serviceTypeObject);
   if not TRtti.IsAssignable(componentType, serviceType) then
@@ -219,7 +225,7 @@ begin
   end;
   if serviceName = '' then
   begin
-    serviceName := GetDefaultTypeName(serviceTypeObject);
+    serviceName := GetDefaultTypeName(componentTypeObject) + '.' + serviceTypeObject.Name;
   end;
   if HasService(serviceName) then
   begin
@@ -252,7 +258,7 @@ begin
   serviceName := name;
   Validate(componentType, serviceType, serviceName);
   model := GetComponent(componentType);
-  model.Services.Add(serviceName, serviceType);
+  model.Services[serviceName] := serviceType;
   if not fServiceTypeMappings.TryGetValue(serviceType, models) then
   begin
     models := TArray<TComponentModel>.Create(model);
@@ -366,7 +372,6 @@ begin
   begin
     RegisterService(model.ComponentTypeInfo, attribute.ServiceType, attribute.Name);
   end;
-  // TODO: GetInterfaces
 end;
 
 {$ENDREGION}
@@ -476,9 +481,26 @@ begin
   Result := Self;
 end;
 
+function TRegistration.AsSingletonPerThread: TRegistration;
+begin
+  GetComponentModel.LifetimeType := ltSingletonPerThread;
+  Result := Self;
+end;
+
 function TRegistration.AsTransient: TRegistration;
 begin
   GetComponentModel.LifetimeType := ltTransient;
+  Result := Self;
+end;
+
+function TRegistration.AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration;
+var
+  model: TComponentModel;
+begin
+  model := GetComponentModel;
+  model.LifetimeType := ltPooled;
+  model.MinPoolsize := minPoolSize;
+  model.MaxPoolsize := maxPoolSize;
   Result := Self;
 end;
 
@@ -593,9 +615,21 @@ begin
   Result := Self;
 end;
 
+function TRegistration<T>.AsSingletonPerThread: TRegistration<T>;
+begin
+  fRegistration.AsSingletonPerThread;
+  Result := Self;
+end;
+
 function TRegistration<T>.AsTransient: TRegistration<T>;
 begin
   fRegistration.AsTransient;
+  Result := Self;
+end;
+
+function TRegistration<T>.AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration<T>;
+begin
+  fRegistration.AsPooled(minPoolSize, maxPoolSize);
   Result := Self;
 end;
 
