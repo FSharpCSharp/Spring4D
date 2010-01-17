@@ -42,7 +42,7 @@ type
   INumberSource = interface;
 
   /// <summary>
-  /// Generates next available number.
+  /// Generates an available number.
   /// </summary>
   INumberGenerator = interface
     ['{52A04371-9251-4A44-818F-D3B177B432A3}']
@@ -106,9 +106,6 @@ type
   end;
 
 implementation
-
-uses
-  Spring.Core.ResourceStrings;
 
 {$REGION 'TNumberRuleBuilder'}
 

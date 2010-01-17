@@ -38,7 +38,8 @@ uses
   SysUtils,
   SyncObjs,
   TypInfo,
-  Generics.Collections;
+  Generics.Collections,
+  Spring.System;
 
 type
   {$REGION 'Singleton Pattern'}
@@ -127,25 +128,6 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'Memento or Snapshot Pattern (Experimental)'}
-
-  /// <summary>
-  /// IRestorable<T>
-  /// </summary>
-  IRestorable<T> = interface
-    function CreateSnapshot: T;
-    procedure Restore(const snapshot: T);
-  end;
-
-  /// <summary>
-  /// ISnapshot
-  /// </summary>
-  ISnapshot = interface
-  end;
-
-  {$ENDREGION}
-
-
   {$REGION 'Specification Pattern (Experimental)'}
 
   /// <summary>
@@ -181,7 +163,8 @@ type
   /// </summary>
   TSpecificationBase<T> = class abstract(TInterfacedObject, ISpecification<T>, TPredicate<T>, IInterface)
   protected
-    function Invoke(arg: T): Boolean; virtual;
+    { TPredicate<T> }
+    function Invoke(const arg: T): Boolean; virtual;
   public
     function IsSatisfiedBy(const obj: T): Boolean; virtual; abstract;
   end;
@@ -221,7 +204,6 @@ type
 implementation
 
 uses
-  Spring.System,
   Spring.ResourceStrings;
 
 
@@ -396,7 +378,7 @@ end;
 
 {$REGION 'TSpecificationBase<T>'}
 
-function TSpecificationBase<T>.Invoke(arg: T): Boolean;
+function TSpecificationBase<T>.Invoke(const arg: T): Boolean;
 begin
   Result := IsSatisfiedBy(arg);
 end;
@@ -436,7 +418,7 @@ begin
   else if internalSpecification <> nil then
   begin
     Result :=
-      function(arg: T): Boolean
+      function(const arg: T): Boolean
       begin
         Result := internalSpecification.IsSatisfiedBy(arg);
       end;

@@ -1,3 +1,41 @@
+2010-01-17
+[Spring.System]
+- Added IPropertyNotification and TNotifiableObject class which supports property notifications (Enable/Disable, BeginUpdate/EndUpdate, OnPropertyChanging/OnPropertyChanged)
+
+[Cryptography](not completed)
+- Introduced a cryptography library that supports:
+* Hash algorithms (MD5, SHA-1/256/384/512)
+* Checksum algorithms (CRC-16, CRC-32)
+* Symmetric algorithms (DES, Triple-DES. Supports CipherMode?, PaddingMode and IV)
+* Random number generator
+
+2009-12-21
+[Utils.IO]
+- Renamed Spring.Utils.Files to Spring.Utils.IO
+- The TDriveInfo struct were moved to Spring.Utils.IO
+- Introduced the TFileSystemEntry struct which represents a file system entry.
+- Added many flexible file system entry enumerators that can walk through the file system entries in a directory, a file list or a dropped file list.
+- Added TFileSearcher class which can search different type files in serveral locations.
+- Added the EnumerateDirectories, EnumerateFiles and EnumerateFileSystemEntries functions to walk through directories/files/file system entries in a specified path.
+
+[Utils]
+- Added TSize and TSizeUnit
+- Added GetSizeUnit and FormatSizeString function
+- Added ConvertFileTimeToDateTime, ConvertDateTimeToFileTime function
+
+[Extensions]
+- Moved Spring.Numbering.* into the Spring.Extensions project.
+
+[System]
+- [Breaking Change] Redefined the TPredicate<T> type.
+
+[Helpers]
+- Added Constructors, Methods, Properties and Fields properties to TRttiType.
+
+[Examples]
+- Added an example to desmonstrate how to use the TFileSearcher class.
+
+
 2009-12-12
 [Pool]
 - Introduced a generic Object Pooling API which is in Spring.Pool.
@@ -17,7 +55,7 @@
 [System]
 - Added a Lock overload which supports an interface which can be safely casted to an object.
 - The Lock methods and UpdateStrings are now not inlined since the show stopper (Bug QC#80304).
-- Some types and aliases (TStopwatch, TCharacter, TIntegerRec, TInt32Rec and TInt64Rec) are marked as deprecated and will be removed later.
+- Some types and aliases (TCharacter, TIntegerRec, TInt32Rec and TInt64Rec) are marked as deprecated and will be removed later.
 
 [Reflection]
 - Added the TActivator type to create an instance by reflection.

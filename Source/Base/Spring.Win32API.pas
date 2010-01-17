@@ -76,7 +76,7 @@ const
   {$EXTERNALSYM VER_SUITE_COMPUTE_SERVER}
 
 
-{$IFDEF SUPPORTS_REGION} {$REGION 'JwaIpTypes.pas'} {$ENDIF}
+{$IFDEF SUPPORTS_REGION} {$REGION 'IP Types'} {$ENDIF}
 
 const
   iphlpapilib = 'iphlpapi.dll';
@@ -161,7 +161,7 @@ function GetAdaptersInfo(pAdapterInfo: PIP_ADAPTER_INFO; var pOutBufLen: ULONG):
 {$IFDEF SUPPORTS_REGION} {$ENDREGION} {$ENDIF}
 
 
-{$IFDEF SUPPORTS_REGION} {$REGION 'JwaWinSvc.pas'} {$ENDIF}
+{$IFDEF SUPPORTS_REGION} {$REGION 'Service Control'} {$ENDIF}
 
 const
 
@@ -329,6 +329,7 @@ function EnumServicesStatusEx(hSCManager: SC_HANDLE; InfoLevel: SC_ENUM_TYPE;
 
 {$IFDEF SUPPORTS_REGION} {$ENDREGION} {$ENDIF}
 
+function ConvertSidToStringSid(sid: PSID; var stringSid: LPWSTR): BOOL; stdcall;
 
 implementation
 
@@ -344,5 +345,7 @@ function QueryServiceConfig2; external advapi32 name 'QueryServiceConfig2' + AWS
 function EnumServicesStatusExA; external advapi32 name 'EnumServicesStatusExA';
 function EnumServicesStatusExW; external advapi32 name 'EnumServicesStatusExW';
 function EnumServicesStatusEx; external advapi32 name 'EnumServicesStatusEx' + AWSuffix;
+
+function ConvertSidToStringSid; external advapi32 name 'ConvertSidToStringSidW';
 
 end.

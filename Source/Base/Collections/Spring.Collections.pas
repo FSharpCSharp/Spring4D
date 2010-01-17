@@ -139,6 +139,7 @@ type
   public
     class function CreateList<T>: IList<T>; overload;
     class function CreateList<T>(const comparer: IComparer<T>): IList<T>; overload;
+    class function CreateList<T>(list: TList<T>; ownership: TCollectionOwnership): IList<T>; overload;
     class function CreateList<T: class>(ownsObjects: Boolean): IList<T>; overload;
     class function CreateList<T: class>(ownsObjects: Boolean; const comparer: IComparer<T>): IList<T>; overload;
     class function CreateDictionary<TKey, TValue>: IDictionary<TKey, TValue>; overload;
@@ -148,6 +149,7 @@ type
     class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships): IDictionary<TKey, TValue>; overload;
     class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships; capacity: Integer): IDictionary<TKey, TValue>; overload;
     class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships; capacity: Integer; const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TValue>; overload;
+    class function CreateDictionary<TKey, TValue>(dictionary: TDictionary<TKey, TValue>; ownership: TCollectionOwnership): IDictionary<TKey, TValue>; overload;
   end;
 
   TContainers = TCollections deprecated 'Use TCollections instead.';
@@ -205,6 +207,31 @@ type
     property IsEmpty: Boolean read GetIsEmpty;
   end;
 
+  TContainedEnumerableEx<T> = class abstract(TEnumerableEx<T>, IInterface)
+  private
+    fController: Pointer;
+    function GetController: IInterface;  // Weak reference to controller
+  protected
+    { IInterface }
+    function _AddRef: Integer; stdcall;
+    function _Release: Integer; stdcall;
+  public
+    constructor Create(const controller: IInterface);
+    property Controller: IInterface read GetController;
+  end;
+
+  TNullEnumerable<T> = class(TEnumerableEx<T>)
+  protected
+    function DoGetEnumerator: IEnumerator<T>; override;
+  end;
+
+  TNullEnumerator<T> = class(TEnumeratorBase<T>)
+  protected
+    function DoGetCurrent: T; override;
+  public
+    function MoveNext: Boolean; override;
+  end;
+
 //  TReadOnlyCollection<T> = class(TInterfacedObject, ICollection<T>, IEnumerableEx<T>, IInterface)
 //  end;
 
@@ -254,6 +281,21 @@ var
 begin
   list := TObjectList<T>.Create(comparer, ownsObjects);
   Result := TListAdapter<T>.Create(list, coOwned);
+end;
+
+class function TCollections.CreateList<T>(list: TList<T>;
+  ownership: TCollectionOwnership): IList<T>;
+begin
+  TArgument.CheckNotNull(list, 'list');
+  Result := TListAdapter<T>.Create(list, ownership);
+end;
+
+class function TCollections.CreateDictionary<TKey, TValue>(
+  dictionary: TDictionary<TKey, TValue>;
+  ownership: TCollectionOwnership): IDictionary<TKey, TValue>;
+begin
+  TArgument.CheckNotNull(dictionary, 'dictionary');
+  Result := TDictionaryAdapter<TKey, TValue>.Create(dictionary, ownership);
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>: IDictionary<TKey, TValue>;
@@ -492,6 +534,57 @@ end;
 function TEnumerableEx<T>.GetIsEmpty: Boolean;
 begin
   Result := not DoGetEnumerator.MoveNext;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TContainedEnumerableEx<T>'}
+
+constructor TContainedEnumerableEx<T>.Create(const controller: IInterface);
+begin
+  inherited Create;
+  fController := Pointer(controller);
+end;
+
+function TContainedEnumerableEx<T>.GetController: IInterface;
+begin
+  Result := IInterface(fController);
+end;
+
+function TContainedEnumerableEx<T>._AddRef: Integer;
+begin
+  Result := Controller._AddRef;
+end;
+
+function TContainedEnumerableEx<T>._Release: Integer;
+begin
+  Result := Controller._Release;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TNullEnumerator<T>'}
+
+function TNullEnumerator<T>.DoGetCurrent: T;
+begin
+  raise EInvalidOperation.CreateRes(@SEnumEmpty);
+end;
+
+function TNullEnumerator<T>.MoveNext: Boolean;
+begin
+  Result := False;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TNullEnumerable<T>'}
+
+function TNullEnumerable<T>.DoGetEnumerator: IEnumerator<T>;
+begin
+  Result := TNullEnumerator<T>.Create;
 end;
 
 {$ENDREGION}

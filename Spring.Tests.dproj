@@ -22,7 +22,7 @@
 		<PropertyGroup Condition="'$(Base)'!=''">
 			<DCC_UNIT_PLATFORM>false</DCC_UNIT_PLATFORM>
 			<DCC_SYMBOL_PLATFORM>false</DCC_SYMBOL_PLATFORM>
-			<DCC_UnitSearchPath>$(BDS)\Source\DUnit\src;Source\Base;Source\Base\Collections;Source\Base\Utils;Source\Core;Source\Core\IoC;Source\Core\Numbering;Source\Core\Pool;Tests\Base;Tests\Core;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UnitSearchPath>$(BDS)\Source\DUnit\src;Source\Base;Source\Base\Collections;Source\Base\Utils;Source\Core;Source\Core\IoC;Source\Core\Pool;Source\Extensions;Source\Extensions\Numbering;Tests\Base;Tests\Core;Tests\Extensions;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DCC_Define>_CONSOLE_TESTRUNNER;$(DCC_Define)</DCC_Define>
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
 			<DCC_DependencyCheckOutputName>Spring.Tests.exe</DCC_DependencyCheckOutputName>
@@ -54,12 +54,13 @@
 			<DCCReference Include="Tests\Base\Spring.Tests.DesignPatterns.pas"/>
 			<DCCReference Include="Tests\Base\Spring.Tests.Helpers.pas"/>
 			<DCCReference Include="Tests\Base\Spring.Tests.System.pas"/>
-			<DCCReference Include="Tests\Core\Spring.Tests.Numbering.pas"/>
+			<DCCReference Include="Tests\Extensions\Spring.Tests.Numbering.pas"/>
 			<DCCReference Include="Tests\Core\Spring.Tests.IoC.pas"/>
 			<DCCReference Include="Tests\Core\Spring.Tests.IoC.LifetimeManager.pas"/>
 			<DCCReference Include="Tests\Core\Spring.Tests.IoC.Components.pas"/>
 			<DCCReference Include="Tests\Base\Spring.Tests.Utils.pas"/>
 			<DCCReference Include="Tests\Core\Spring.Tests.Pool.pas"/>
+			<DCCReference Include="Tests\Base\Spring.Tests.Cryptography.pas"/>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>
 			</BuildConfiguration>

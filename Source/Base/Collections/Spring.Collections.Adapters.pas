@@ -96,19 +96,15 @@ type
       /// <summary>
       /// Provides a read-only ICollection<TKey> implementation
       /// </summary>
-      TKeyCollection = class(TEnumerableEx<TKey>, ICollection<TKey>,
+      TKeyCollection = class(TContainedEnumerableEx<TKey>, ICollection<TKey>,
         IEnumerableEx<TKey>, IEnumerable<TKey>, IEnumerable, IInterface)
       private
-        fController: Pointer; // weak-reference
         fDictionary: TDictionary<TKey,TValue>;
       protected
         function GetCount: Integer; override;
         function GetIsEmpty: Boolean; override;
         function GetIsReadOnly: Boolean;
         function DoGetEnumerator: IEnumerator<TKey>; override;
-        { IInterface }
-        function _AddRef: Integer; stdcall;
-        function _Release: Integer; stdcall;
       public
         constructor Create(const controller: IInterface; dictionary: TDictionary<TKey,TValue>);
         { IEnumerableEx<TKey> }
@@ -124,19 +120,15 @@ type
       /// <summary>
       /// Provides a read-only ICollection<TValue> implementation
       /// </summary>
-      TValueCollection = class(TEnumerableEx<TValue>, ICollection<TValue>,
+      TValueCollection = class(TContainedEnumerableEx<TValue>, ICollection<TValue>,
         IEnumerableEx<TValue>, IEnumerable<TValue>, IEnumerable, IInterface)
       private
-        fController: Pointer; // weak-reference
         fDictionary: TDictionary<TKey, TValue>;
         function GetIsReadOnly: Boolean;
       protected
         function GetCount: Integer; override;
         function GetIsEmpty: Boolean; override;
         function DoGetEnumerator: IEnumerator<TValue>; override;
-        { IInterface }
-        function _AddRef: Integer; stdcall;
-        function _Release: Integer; stdcall;
       public
         constructor Create(const controller: IInterface; dictionary: TDictionary<TKey,TValue>);
         { IEnumerableEx<TValue> }
@@ -517,8 +509,7 @@ end;
 constructor TDictionaryAdapter<TKey, TValue>.TKeyCollection.Create(
   const controller: IInterface; dictionary: TDictionary<TKey, TValue>);
 begin
-  inherited Create;
-  fController := Pointer(controller);
+  inherited Create(controller);
   fDictionary := dictionary;
 end;
 
@@ -584,16 +575,6 @@ begin
   raise ENotSupportedException.Create('Remove');
 end;
 
-function TDictionaryAdapter<TKey, TValue>.TKeyCollection._AddRef: Integer;
-begin
-  Result := IInterface(fController)._AddRef;
-end;
-
-function TDictionaryAdapter<TKey, TValue>.TKeyCollection._Release: Integer;
-begin
-  Result := IInterface(fController)._Release;
-end;
-
 {$ENDREGION}
 
 
@@ -602,8 +583,7 @@ end;
 constructor TDictionaryAdapter<TKey, TValue>.TValueCollection.Create(
   const controller: IInterface; dictionary: TDictionary<TKey, TValue>);
 begin
-  inherited Create;
-  fController := Pointer(controller);
+  inherited Create(controller);
   fDictionary := dictionary;
 end;
 
@@ -667,16 +647,6 @@ function TDictionaryAdapter<TKey, TValue>.TValueCollection.Remove(
   const item: TValue): Boolean;
 begin
   raise ENotSupportedException.Create('Remove');
-end;
-
-function TDictionaryAdapter<TKey, TValue>.TValueCollection._AddRef: Integer;
-begin
-  Result := IInterface(fController)._AddRef;
-end;
-
-function TDictionaryAdapter<TKey, TValue>.TValueCollection._Release: Integer;
-begin
-  Result := IInterface(fController)._Release;
 end;
 
 {$ENDREGION}

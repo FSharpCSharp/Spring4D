@@ -322,7 +322,7 @@ var
 begin
   predicate := TMethodFilters.IsConstructor and
     TMethodFilters.HasParameterTypes(parameterTypes);
-  method := ComponentType.GetMethods.FirstOrDefault(predicate);
+  method := ComponentType.Methods.FirstOrDefault(predicate);
   if method = nil then
   begin
     raise ERegistrationException.CreateRes(@SUnsatisfiedConstructorParameters);
@@ -355,7 +355,7 @@ begin
   predicate := TMethodFilters.IsNamed(methodName) and
     TMethodFilters.IsInstanceMethod and
     TMethodFilters.HasParameterTypes(parameterTypes);
-  method := ComponentType.GetMethods.FirstOrDefault(predicate);
+  method := ComponentType.Methods.FirstOrDefault(predicate);
   if method = nil then
   begin
     raise ERegistrationException.CreateResFmt(@SUnsatisfiedMethodParameterTypes, [methodName]);

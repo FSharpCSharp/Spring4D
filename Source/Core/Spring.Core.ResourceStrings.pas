@@ -60,7 +60,6 @@ resourcestring
 
   SActivatorDelegateExpected = 'An activator delegate was expected.';
 
-
   // Spring.Logging
 
   SAllDescription      = 'ALL';
@@ -71,17 +70,6 @@ resourcestring
   SErrorDescription    = 'ERROR';
   SFatalDescription    = 'FATAL';
   SOffDescription      = 'OFF';
-
-  // Spring.Numbering
-
-  SIllegalNumber           = 'Illegal number: "%s".';
-  SIllegalNumberLength     = 'Illegal number length: "%s".';
-  SIllegalElement          = 'Illegal number element.';
-  SUnexpectedCode          = 'Illegal number element. "%S" was unexpected.';
-  SIllegalNumberEndsWith   = 'Illegal number: "%0:S". It can not end with "%1:S"';
-  SInvalidDateTime         = '"%S" is not a valid date and time';
-  SNumberOutOfRange        = '"%S"''s out of range.';
-  SNumberOverflow          = 'The number "%s" will be overflow.';
 
 implementation
 

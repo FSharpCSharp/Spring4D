@@ -40,83 +40,23 @@ uses
   ShlObj,
   ShellAPI,
   IOUtils,
+  ActiveX,
+  ComObj,
   Generics.Collections,
   Spring.System,
   Spring.Collections,
   Spring.Win32API,
-  Spring.Utils.Files,
+  Spring.Utils.IO,
   Spring.Utils.Network;
 
 type
-  TFileVersionInfo = Spring.Utils.Files.TFileVersionInfo;
+  TDriveType = Spring.Utils.IO.TDriveType;
+  TDriveInfo = Spring.Utils.IO.TDriveInfo;
+  TFileVersionInfo = Spring.Utils.IO.TFileVersionInfo;
 
   {$WARNINGS OFF}
     TNetwork = Spring.Utils.Network.TNetwork;
   {$WARNINGS ON}
-
-
-  {$REGION 'TDriveInfo'}
-
-  /// <summary>
-  /// Drive Type Enumeration
-  /// </summary>
-  TDriveType = (
-    dtUnknown,          // The type of drive is unknown.
-    dtNoRootDirectory,  // The drive does not have a root directory.
-    dtRemovable,        // The drive is a removable storage device, such as a floppy disk drive or a USB flash drive.
-    dtFixed,            // The drive is a fixed disk.
-    dtNetwork,          // The drive is a network drive.
-    dtCDRom,            // The drive is an optical disc device, such as a CD or DVD-ROM.
-    dtRam               // The drive is a RAM disk.
-  );
-
-  /// <summary>
-  /// Provides access to information on a drive.
-  /// </summary>
-  /// <remarks>
-  /// Use TDriveInfo.GetDrives method to retrieve all drives of the computer.
-  /// Caller must check IsReady property before using TDriveInfo.
-  /// </remarks>
-  TDriveInfo = record
-  private
-    fDriveName: string;
-    fRootDirectory: string;
-    fAvailableFreeSpace: Int64;
-    fTotalSize: Int64;
-    fTotalFreeSpace: Int64;
-    fVolumeName: array[0..MAX_PATH] of Char;
-    fFileSystemName: array[0..MAX_PATH] of Char;
-    fSerialNumber: DWORD;
-    fMaximumComponentLength: DWORD;
-    fFileSystemFlags: DWORD;
-    function GetAvailableFreeSpace: Int64;
-    function GetDriveFormat: string;
-    function GetDriveType: TDriveType;
-    function GetDriveTypeString: string;
-    function GetIsReady: Boolean;
-    function GetTotalFreeSpace: Int64;
-    function GetTotalSize: Int64;
-    function GetVolumeLabel: string;
-    procedure SetVolumeLabel(const Value: string);
-  private
-    procedure UpdateProperties;
-  public
-    constructor Create(const driveName: string);
-    class function GetDrives: TArray<TDriveInfo>; static;
-    procedure CheckIsReady;
-    property AvailableFreeSpace: Int64 read GetAvailableFreeSpace;
-    property DriveFormat: string read GetDriveFormat;
-    property DriveType: TDriveType read GetDriveType;
-    property DriveTypeString: string read GetDriveTypeString;
-    property IsReady: Boolean read GetIsReady;
-    property Name: string read fDriveName;
-    property RootDirectory: string read fRootDirectory;
-    property TotalFreeSpace: Int64 read GetTotalFreeSpace;
-    property TotalSize: Int64 read GetTotalSize;
-    property VolumeLabel: string read GetVolumeLabel write SetVolumeLabel;
-  end;
-
-  {$ENDREGION}
 
 
   {$REGION 'TOperatingSystem'}
@@ -353,7 +293,7 @@ type
     class procedure GetEnvironmentVariables(list: TStrings; target: TEnvironmentVariableTarget); overload; static;
     class procedure SetEnvironmentVariable(const variable, value: string); overload; static;
     class procedure SetEnvironmentVariable(const variable, value: string; target: TEnvironmentVariableTarget); overload; static;
-    class function  ExpandEnvironmentVariables(const variable: string): string; static;
+    class function ExpandEnvironmentVariables(const variable: string): string; static;
     class property ApplicationPath: string read fApplicationPath;
     class property ApplicationVersion: TVersion read fApplicationVersion;
     class property ApplicationVersionInfo: TFileVersionInfo read fApplicationVersionInfo;
@@ -393,7 +333,7 @@ type
     defaultButton: TMessageDialogButton): TModalResult;
 
   /// <summary>
-  /// Encapsulates common message dialogs.
+  /// Provides static methods to show common message dialogs.
   /// </summary>
   TMessageBox = class
   private
@@ -480,6 +420,11 @@ type
   function ApplicationVersionString: string;
 
   /// <summary>
+  /// Returns the last system error message.
+  /// </summary>
+  function GetLastErrorMessage: string;
+
+  /// <summary>
   /// Try setting focus to a control.
   /// </summary>
   /// <remarks>
@@ -506,6 +451,23 @@ type
   /// </summary>
   /// <param name="callback">Returning false will stop the enumeration.</param>
   procedure EnumerateDataSet(dataSet: TDataSet; callback: TFunc<Boolean>);
+
+  /// <summary>
+  /// GetDroppedFiles
+  /// </summary>
+  procedure GetDroppedFiles(const dataObject: IDataObject; list: TStrings); overload;
+
+  /// <summary>
+  /// GetDroppedFiles
+  /// </summary>
+  procedure GetDroppedFiles(dropHandle: THandle; list: TStrings); overload;
+
+  /// <summary>
+  /// Converts a windows TFiletime value to a delphi TDatetime value.
+  /// </summary>
+  function ConvertFileTimeToDateTime(const fileTime: TFileTime; useLocalTimeZone: Boolean): TDateTime; overload;
+
+  function ConvertDateTimeToFileTime(const datetime: TDateTime; useLocalTimeZone: Boolean): TFileTime; overload;
 
   {$ENDREGION}
 
@@ -602,20 +564,8 @@ type
 implementation
 
 uses
-  ComObj,
   Math,
   Spring.ResourceStrings;
-
-const
-  DriveTypeStrings: array[TDriveType] of string = (
-    SUnknownDriveDescription,
-    SNoRootDirectoryDescription,
-    SRemovableDescription,
-    SFixedDescription,
-    SNetworkDescription,
-    SCDRomDescription,
-    SRamDescription
-  );
 
 const
   OSVersionTypeStrings: array[TOSVersionType] of string = (
@@ -649,6 +599,11 @@ end;
 function ApplicationVersionString: string;
 begin
   Result := TEnvironment.ApplicationVersionString;
+end;
+
+function GetLastErrorMessage: string;
+begin
+  Result := SysErrorMessage(GetLastError);
 end;
 
 function TrySetFocus(control: TWinControl): Boolean;
@@ -727,153 +682,95 @@ begin
   end;
 end;
 
-{$ENDREGION}
-
-
-{$REGION 'TDriveInfo'}
-
-constructor TDriveInfo.Create(const driveName: string);
+procedure GetDroppedFiles(const dataObject: IDataObject; list: TStrings); overload;
 var
-  s: string;
+  handle: THandle;
+  medium: TStgMedium;
+const
+  f: tagFORMATETC = (
+    cfFormat: CF_HDROP;
+    ptd: nil;
+    dwAspect: DVASPECT_CONTENT;
+    lindex: -1;
+    tymed: LongInt($FFFFFFFF)
+  );
 begin
-  s := UpperCase(driveName);
-  if not (Length(s) in [1..3]) or not CharInSet(s[1], ['A'..'Z']) then
-  begin
-    raise EArgumentException.Create('driveName');
+  TArgument.CheckNotNull(dataObject, 'dataObject');
+  OleCheck(dataObject.GetData(f, medium));
+  handle := medium.hGlobal;
+  GetDroppedFiles(handle, list);
+end;
+
+procedure GetDroppedFiles(dropHandle: THandle; list: TStrings);
+var
+  count, size, i: Integer;
+  fileName: array[0..MAX_PATH] of Char;
+const
+  f: tagFORMATETC = (
+    cfFormat: CF_HDROP;
+    ptd: nil;
+    dwAspect: DVASPECT_CONTENT;
+    lindex: -1;
+    tymed: LongInt($FFFFFFFF)
+  );
+begin
+  TArgument.CheckNotNull(list, 'list');
+  count := DragQueryFile(dropHandle, $FFFFFFFF, nil, 0);
+  try
+    for i := 0 to count - 1 do
+    begin
+      size := DragQueryFile(dropHandle, i, nil, 0) + 1;
+      DragQueryFile(dropHandle, i, fileName, size);
+      list.Add(fileName);
+    end;
+  finally
+    DragFinish(dropHandle);
   end;
-  case Length(s) of
-    1:
+end;
+
+function ConvertFileTimeToDateTime(const fileTime: TFileTime; useLocalTimeZone: Boolean): TDateTime;
+var
+  localFileTime: TFileTime;
+  systemTime: TSystemTime;
+begin
+  if useLocalTimeZone then
+  begin
+    FileTimeToLocalFileTime(fileTime, localFileTime);
+  end
+  else
+  begin
+    localFileTime := fileTime;
+  end;
+  if FileTimeToSystemTime(localFileTime, systemTime) then
+  begin
+    Result := SystemTimeToDateTime(systemTime);
+  end
+  else
+  begin
+    Result := 0;
+  end;
+end;
+
+function ConvertDateTimeToFileTime(const datetime: TDateTime;
+  useLocalTimeZone: Boolean): TFileTime;
+var
+  systemTime: TSystemTime;
+  fileTime: TFileTime;
+begin
+  Result.dwLowDateTime := 0;
+  Result.dwHighDateTime := 0;
+  DateTimeToSystemTime(datetime, systemTime);
+  if SystemTimeToFileTime(systemTime, fileTime) then
+  begin
+    if useLocalTimeZone then
     begin
-      fRootDirectory := s + DriveDelim + PathDelim;
-    end;
-    2:
-    begin
-      if s[2] <> DriveDelim then
-      begin
-        raise EArgumentException.Create('driveName');
-      end;
-      fRootDirectory := s + PathDelim;
-    end;
-    3:
-    begin
-      if s[2] <> DriveDelim then
-        raise EArgumentException.Create('driveName');
-      if s[3] <> PathDelim then
-        raise EArgumentException.Create('driveName');
-      fRootDirectory := s;
-    end;
+      LocalFileTimeToFileTime(fileTime, Result);
+    end
     else
     begin
-      Assert(False);
+      Result := fileTime;
     end;
   end;
-  Assert(Length(fRootDirectory) = 3, 'Length of fRootDirectory should be 3.');
-  fDriveName := Copy(fRootDirectory, 1, 2);
-end;
-
-class function TDriveInfo.GetDrives: TArray<TDriveInfo>;
-var
-  drives: TStringDynArray;
-  i: Integer;
-begin
-  drives := Environment.GetLogicalDrives;
-  SetLength(Result, Length(drives));
-  for i := 0 to High(drives) do
-  begin
-    Result[i] := TDriveInfo.Create(drives[i]);
-  end;
-end;
-
-procedure TDriveInfo.CheckIsReady;
-begin
-  if not IsReady then
-  begin
-    raise EIOException.CreateResFmt(@SDriveNotReady, [fDriveName]);
-  end;
-end;
-
-procedure TDriveInfo.UpdateProperties;
-begin
-  CheckIsReady;
-  Win32Check(SysUtils.GetDiskFreeSpaceEx(
-    PChar(fRootDirectory),
-    fAvailableFreeSpace,
-    fTotalSize,
-    @fTotalFreeSpace
-  ));
-  Win32Check(Windows.GetVolumeInformation(
-    PChar(fRootDirectory),
-    fVolumeName,
-    Length(fVolumeName),
-    @fSerialNumber,
-    fMaximumComponentLength,
-    fFileSystemFlags,
-    fFileSystemName,
-    Length(fFileSystemName)
-  ));
-end;
-
-function TDriveInfo.GetAvailableFreeSpace: Int64;
-begin
-  UpdateProperties;
-  Result := fAvailableFreeSpace;
-end;
-
-function TDriveInfo.GetDriveFormat: string;
-begin
-  UpdateProperties;
-  Result := fFileSystemName;
-end;
-
-function TDriveInfo.GetDriveType: TDriveType;
-var
-  value: Cardinal;
-begin
-  value := Windows.GetDriveType(PChar(fRootDirectory));
-  case value of
-    DRIVE_NO_ROOT_DIR:  Result := dtNoRootDirectory;
-    DRIVE_REMOVABLE:    Result := dtRemovable;
-    DRIVE_FIXED:        Result := dtFixed;
-    DRIVE_REMOTE:       Result := dtNetwork;
-    DRIVE_CDROM:        Result := dtCDRom;
-    DRIVE_RAMDISK:      Result := dtRam;
-    else                Result := dtUnknown;  // DRIVE_UNKNOWN
-  end;
-end;
-
-function TDriveInfo.GetDriveTypeString: string;
-begin
-  Result := DriveTypeStrings[Self.DriveType];
-end;
-
-function TDriveInfo.GetIsReady: Boolean;
-begin
-  Result := Length(fRootDirectory) > 0;
-  Result := Result and (SysUtils.DiskSize(Ord(fRootDirectory[1]) - $40) > -1);
-end;
-
-function TDriveInfo.GetTotalFreeSpace: Int64;
-begin
-  UpdateProperties;
-  Result := fTotalFreeSpace;
-end;
-
-function TDriveInfo.GetTotalSize: Int64;
-begin
-  UpdateProperties;
-  Result := fTotalSize;
-end;
-
-function TDriveInfo.GetVolumeLabel: string;
-begin
-  UpdateProperties;
-  Result := fVolumeName;
-end;
-
-procedure TDriveInfo.SetVolumeLabel(const Value: string);
-begin
-  CheckIsReady;
-  Win32Check(Windows.SetVolumeLabel(PChar(fRootDirectory), PChar(value)));
 end;
 
 {$ENDREGION}
@@ -1389,10 +1286,10 @@ end;
 class function TEnvironment.GetUserDomainName: string;
 var
   hasToken: Boolean;
-  hToken : THandle;
+  hToken: THandle;
   ptiUser: PSIDAndAttributes;
-  cbti   : DWORD;
-  snu    : SID_NAME_USE;
+  cbti: DWORD;
+  snu: SID_NAME_USE;
   userSize, domainSize: Cardinal;
   userName: string;
 begin
@@ -1843,6 +1740,5 @@ begin
 end;
 
 {$ENDREGION}
-
 
 end.

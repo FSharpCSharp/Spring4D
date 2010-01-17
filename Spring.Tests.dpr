@@ -43,12 +43,13 @@ uses
   Spring.Tests.DesignPatterns in 'Tests\Base\Spring.Tests.DesignPatterns.pas',
   Spring.Tests.Helpers in 'Tests\Base\Spring.Tests.Helpers.pas',
   Spring.Tests.System in 'Tests\Base\Spring.Tests.System.pas',
-  Spring.Tests.Numbering in 'Tests\Core\Spring.Tests.Numbering.pas',
+  Spring.Tests.Numbering in 'Tests\Extensions\Spring.Tests.Numbering.pas',
   Spring.Tests.IoC in 'Tests\Core\Spring.Tests.IoC.pas',
   Spring.Tests.IoC.LifetimeManager in 'Tests\Core\Spring.Tests.IoC.LifetimeManager.pas',
   Spring.Tests.IoC.Components in 'Tests\Core\Spring.Tests.IoC.Components.pas',
   Spring.Tests.Utils in 'Tests\Base\Spring.Tests.Utils.pas',
-  Spring.Tests.Pool in 'Tests\Core\Spring.Tests.Pool.pas';
+  Spring.Tests.Pool in 'Tests\Core\Spring.Tests.Pool.pas',
+  Spring.Tests.Cryptography in 'Tests\Base\Spring.Tests.Cryptography.pas';
 
 {$R *.RES}
 
@@ -80,11 +81,23 @@ begin
     TTestGuidHelper.Suite
   ]);
 
-//  RegisterTests('Base.Cryptography', [
-//    TTestMD5.Suite,
-//    TTestDES.Suite,
-//    TTestTripleDES.Suite
-//  ]);
+  RegisterTests('Base.Cryptography', [
+    TTestCRC16.Suite,
+    TTestCRC32.Suite,
+    TTestMD5.Suite,
+    TTestSHA1.Suite,
+    TTestSHA256.Suite,
+    TTestSHA384.Suite,
+    TTestSHA512.Suite,
+    TTestPaddingModeIsNone.Suite,
+    TTestPaddingModeIsPKCS7.Suite,
+    TTestPaddingModeIsZeros.Suite,
+    TTestPaddingModeIsANSIX923.Suite,
+    TTestPaddingModeIsISO10126.Suite,
+    TTestDES.Suite,
+    TTestTripleDES.Suite
+//    TTestMACTripleDES.Suite
+  ]);
 
   RegisterTests('Core.Pool', [
     TTestObjectPool.Suite
@@ -108,7 +121,7 @@ begin
     TTestImplementsAttribute.Suite
   ]);
 
-  RegisterTests('Core.Numbering', [
+  RegisterTests('Extensions.Numbering', [
     TTestNumberRuleBuilder.Suite
   ]);
 

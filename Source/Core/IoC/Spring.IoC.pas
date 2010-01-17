@@ -80,6 +80,9 @@ type
     function RegisterComponent<TComponentType: class>: TRegistration<TComponentType>; overload;
     function RegisterComponent(componentType: PTypeInfo): TRegistration; overload;
 
+//    function RegisterService<TServiceType>: TRegistration<TServiceType>; overload;
+//    function RegisterService(serviceType: PTypeInfo): TRegistration; overload;
+
 //    function RegisterInstance<T>(instance: T): TContainer;
 //    function RegisterDecorations<TServiceType>(const decorationClasses: array of TClass): TContainer;
 

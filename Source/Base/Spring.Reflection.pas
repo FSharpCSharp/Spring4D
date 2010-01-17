@@ -22,8 +22,6 @@
 {                                                                           }
 {***************************************************************************}
 
-{ TODO: -oOwner -cGeneral : TActivator.CreateInstance }
-
 unit Spring.Reflection;
 
 {$I Spring.inc}
@@ -50,6 +48,15 @@ type
   public
     class function CreateInstance(instanceType: TRttiInstanceType;
       constructorMethod: TRttiMethod; const arguments: array of TValue): TObject; static;
+  end;
+
+  TInterfaceTypeRegistry = record
+  strict private
+    class var fContext: TRttiContext;
+    class var fTypes: IDictionary<TGuid, TRttiInterfaceType>;
+    class constructor Create;
+  public
+    class function TryGetType(const guid: TGUID; out aType: TRttiInterfaceType): Boolean; static;
   end;
 
   TGetRttiMembersFunc<T> = reference to function(targetType: TRttiType): TArray<T>;
@@ -190,8 +197,9 @@ type
 
 type
   /// <summary>
-  /// The TInternalRttiMemberHelper class was copied from Spring.Helpers, as
-  /// An URW1111 internal error will occured when this unit uses Spring.Helpers.
+  /// The _InternalRttiMemberHelper class was copied from Spring.Helpers, as
+  /// An URW1111 internal error will occured when the Spring.Helpers namespace
+  /// was used by this unit.
   /// </summary>
   _InternalRttiMemberHelper = class helper for TRttiMember
   private
@@ -204,8 +212,6 @@ type
     function GetIsMethod: Boolean;
     function GetIsField: Boolean;
   public
-//    procedure InvokeMember(instance: TValue; const arguments: array of TValue);
-//    procedure InvokeMember(instance: TObject; const arguments: array of TValue);
     function AsProperty: TRttiProperty;
     function AsMethod: TRttiMethod;
     function AsField: TRttiField;
@@ -223,6 +229,7 @@ type
 implementation
 
 uses
+//  Spring.Helpers,  // Internal Error
   Spring.ResourceStrings;
 
 
@@ -330,6 +337,37 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TInterfaceTypeRegistry'}
+
+class constructor TInterfaceTypeRegistry.Create;
+var
+  types: TArray<TRttiType>;
+  item: TRttiType;
+begin
+  fContext := TRttiContext.Create;
+  types := fContext.GetTypes;
+  fTypes := TCollections.CreateDictionary<TGuid, TRttiInterfaceType>;
+  for item in types do
+  begin
+    if (item is TRttiInterfaceType) and (ifHasGuid in TRttiInterfaceType(item).IntfFlags) then
+    begin
+      if not fTypes.ContainsKey(TRttiInterfaceType(item).GUID) then  // TEMP
+      begin
+        fTypes.Add(TRttiInterfaceType(item).GUID, TRttiInterfaceType(item));
+      end;
+    end;
+  end;
+end;
+
+class function TInterfaceTypeRegistry.TryGetType(const guid: TGUID;
+  out aType: TRttiInterfaceType): Boolean;
+begin
+  Result := fTypes.TryGetValue(guid, aType);
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TRttiMemberEnumerable<T>'}
 
 constructor TRttiMemberEnumerable<T>.Create(parentType: TRttiType;
@@ -366,7 +404,7 @@ begin
   else
   begin
     finalPredicate :=
-      function(value: T): Boolean
+      function(const value: T): Boolean
       begin
         Result := fPredicate(value) and predicate(value);
       end;
@@ -490,6 +528,8 @@ end;
 
 {$ENDREGION}
 
+
+{$REGION 'Filters'}
 
 { THasAttributeFilter }
 
@@ -655,6 +695,8 @@ function TInstanceMethodFilter<T>.Accept(const member: T): Boolean;
 begin
   Result := member.IsMethod and not member.AsMethod.IsClassMethod;
 end;
+
+{$ENDREGION}
 
 end.
 

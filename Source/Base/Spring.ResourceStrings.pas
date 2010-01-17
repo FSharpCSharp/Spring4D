@@ -61,6 +61,34 @@ resourcestring
   SInvalidDateTime     = '"%S" is not a valid date and time.';
   SIllegalFieldCount   = 'fieldCount is more than the number of components defined in the current Version object.';
 
+  SUnknownDescription  = 'Unknown';
+  SVersionDescription  = 'Version';
+//  SOSVersionStringFormat = '%S Version %s %s';
+
+  SSizeStringFormat    = '%s %s';   // e.g. '20.5 MB'
+
+//  SByteDescription     = 'byte';
+  SBytesDescription    = 'bytes';
+  SKBDescription       = 'KB';
+  SMBDescription       = 'MB';
+  SGBDescription       = 'GB';
+  STBDescription       = 'TB';
+
+  {$ENDREGION}
+
+
+  {$REGION 'Spring.Utils'}
+
+  SDriveNotReady              = 'Drive "%S" is not ready.';
+
+  SUnknownDriveDescription    = 'Unknown Drive';
+  SNoRootDirectoryDescription = 'No Root Directory';
+  SRemovableDescription       = 'Removable Drive';
+  SFixedDescription           = 'Fixed Drive';
+  SNetworkDescription         = 'Network Drive';
+  SCDRomDescription           = 'CD-Rom Drive';
+  SRamDescription             = 'Ram Drive';
+
   SUnknownOSDescription      = 'Unknown Operating System';
   SWin95Description          = 'Microsoft Windows 95';
   SWin98Description          = 'Microsoft Windows 98';
@@ -90,28 +118,11 @@ resourcestring
     'SpecialBuild:     %s' + #13#10 +
     'Language:         %s' + #13#10;
 
-  SUnknownDescription  = 'Unknown';
-  SVersionDescription  = 'Version';
-//  SOSVersionStringFormat = '%S Version %s %s';
 
-  SSizeStringFormat    = '%s %s';   // e.g. '20.5 MB'
+  SAtLeastTwoElements = 'There must be at least two elements.';
+  SIllegalArgumentQuantity = 'Invalid argument "quantity": %d.';
 
-  SByteDescription     = 'Byte';
-  SBytesDescription    = 'Bytes';
-  SKBDescription       = 'KB';
-  SMBDescription       = 'MB';
-  SGBDescription       = 'GB';
-  STBDescription       = 'TB';
-
-  SDriveNotReady              = 'Drive "%S" is not ready.';
-
-  SUnknownDriveDescription    = 'Unknown Drive';
-  SNoRootDirectoryDescription = 'No Root Directory';
-  SRemovableDescription       = 'Removable Drive';
-  SFixedDescription           = 'Fixed Drive';
-  SNetworkDescription         = 'Network Drive';
-  SCDRomDescription           = 'CD-Rom Drive';
-  SRamDescription             = 'Ram Drive';
+  SInvalidOperationCurrent = 'Invalid operation. The enumerable collection is empty.';
 
   {$ENDREGION}
 
@@ -119,11 +130,21 @@ resourcestring
   {$REGION 'Spring.Collections'}
 
   SCannotResetEnumerator = 'Cannot reset the enumerator.';
+  SEnumNotStarted = 'Enum not started.';
+  SEnumEnded = 'Enum ended.';
+  SEnumEmpty = 'Invalid Operation. The enumeration is empty.';
 
   {$ENDREGION}
 
-  SAtLeastTwoElements = 'There must be at least two elements.';
-  SIllegalArgumentQuantity = 'Invalid argument "quantity": %d.';
+
+  {$REGION 'Spring.Cryptography'}
+
+  SIllegalBlockSize = 'Illegal block size: %d.';
+  SIllegalKeySize = 'Illegal key size: %d.';
+  SIllegalIVSize = 'Illegal IV size: %d.';
+  SPaddingModeMissing = 'Padding mode is missing';
+
+  {$ENDREGION}
 
 implementation
 

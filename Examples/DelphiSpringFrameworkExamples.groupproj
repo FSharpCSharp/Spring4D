@@ -12,6 +12,9 @@
 			<Projects Include="Core\Numbering\Numbering.dproj">
 				<Dependencies/>
 			</Projects>
+			<Projects Include="Base\Utils\FileSearcher\FileSearcher.dproj">
+				<Dependencies/>
+			</Projects>
 		</ItemGroup>
 		<ProjectExtensions>
 			<Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -47,14 +50,23 @@
 		<Target Name="Numbering:Make">
 			<MSBuild Targets="Make" Projects="Core\Numbering\Numbering.dproj"/>
 		</Target>
+		<Target Name="FileSearcher">
+			<MSBuild Projects="Base\Utils\FileSearcher\FileSearcher.dproj"/>
+		</Target>
+		<Target Name="FileSearcher:Clean">
+			<MSBuild Targets="Clean" Projects="Base\Utils\FileSearcher\FileSearcher.dproj"/>
+		</Target>
+		<Target Name="FileSearcher:Make">
+			<MSBuild Targets="Make" Projects="Base\Utils\FileSearcher\FileSearcher.dproj"/>
+		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="Callback;EnvironmentDemo;Numbering"/>
+			<CallTarget Targets="Callback;EnvironmentDemo;Numbering;FileSearcher"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="Callback:Clean;EnvironmentDemo:Clean;Numbering:Clean"/>
+			<CallTarget Targets="Callback:Clean;EnvironmentDemo:Clean;Numbering:Clean;FileSearcher:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="Callback:Make;EnvironmentDemo:Make;Numbering:Make"/>
+			<CallTarget Targets="Callback:Make;EnvironmentDemo:Make;Numbering:Make;FileSearcher:Make"/>
 		</Target>
 		<Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 	</Project>

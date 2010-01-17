@@ -84,40 +84,38 @@ type
     function HasCustomAttribute<T: TCustomAttribute>: Boolean;
   end;
 
+  TRttiClassType = TRttiInstanceType;
+
   TRttiTypeHelper =  class helper for TRttiType
   private
     function GetAsInterface: TRttiInterfaceType;
     function GetIsClass: Boolean;
     function GetIsInterface: Boolean;
     function GetIsClassOrInterface: Boolean;
+    function GetAsClass: TRttiInstanceType;
   protected
     function InternalGetConstructors(enumerateBaseType: Boolean = True): IEnumerableEx<TRttiMethod>;
     function InternalGetMethods(enumerateBaseType: Boolean = True): IEnumerableEx<TRttiMethod>;
     function InternalGetProperties(enumerateBaseType: Boolean = True): IEnumerableEx<TRttiProperty>;
     function InternalGetFields(enumerateBaseType: Boolean = True): IEnumerableEx<TRttiField>;
+    function GetConstructors: IEnumerableEx<TRttiMethod>;
+    function GetMethods: IEnumerableEx<TRttiMethod>;
+    function GetProperties: IEnumerableEx<TRttiProperty>;
+    function GetFields: IEnumerableEx<TRttiField>;
   public
-//    function GetAllConstructors: IEnumerableEx<TRttiMethod>; overload;
-    function GetConstructors: IEnumerableEx<TRttiMethod>; overload;
-    function GetMethods: IEnumerableEx<TRttiMethod>; overload;
-    function GetProperties: IEnumerableEx<TRttiProperty>; overload;
-    function GetFields: IEnumerableEx<TRttiField>; overload;
-//    function GetMembers: IEnumerableEx<TRttiMember>;
-
+    // function GetMembers: IEnumerableEx<TRttiMember>;
     function GetInterfaces: IEnumerableEx<TRttiInterfaceType>;
+
+    property Constructors: IEnumerableEx<TRttiMethod> read GetConstructors;
+    property Methods: IEnumerableEx<TRttiMethod> read GetMethods;
+    property Properties: IEnumerableEx<TRttiProperty> read GetProperties;
+    property Fields: IEnumerableEx<TRttiField> read GetFields;
 
     property IsClass: Boolean read GetIsClass;
     property IsInterface: Boolean read GetIsInterface;
     property IsClassOrInterface: Boolean read GetIsClassOrInterface;
+    property AsClass: TRttiInstanceType read GetAsClass;
     property AsInterface: TRttiInterfaceType read GetAsInterface;
-  end;
-
-  TInterfaceTypesCache = record
-  strict private
-    class var fCContext: TRttiContext;
-    class var fCTypes: IDictionary<TGuid, TRttiInterfaceType>;
-    class constructor Create;
-  public
-    class function TryGetType(const guid: TGUID; out aType: TRttiInterfaceType): Boolean; static;
   end;
 
   TRttiMemberHelper = class helper for TRttiMember
@@ -130,12 +128,15 @@ type
     function GetIsProperty: Boolean;
     function GetIsMethod: Boolean;
     function GetIsField: Boolean;
+    function GetAsMethod: TRttiMethod;
+    function GetAsProperty: TRttiProperty;
+    function GetAsField: TRttiField;
   public
 //    procedure InvokeMember(instance: TValue; const arguments: array of TValue);
 //    procedure InvokeMember(instance: TObject; const arguments: array of TValue);
-    function AsProperty: TRttiProperty;
-    function AsMethod: TRttiMethod;
-    function AsField: TRttiField;
+    property AsMethod: TRttiMethod read GetAsMethod;
+    property AsProperty: TRttiProperty read GetAsProperty;
+    property AsField: TRttiField read GetAsField;
     property IsConstructor: Boolean read GetIsConstructor;
     property IsProperty: Boolean read GetIsProperty;
     property IsMethod: Boolean read GetIsMethod;
@@ -387,6 +388,11 @@ begin
   Result := InternalGetFields;
 end;
 
+function TRttiTypeHelper.GetAsClass: TRttiInstanceType;
+begin
+  Result := Self as TRttiInstanceType;
+end;
+
 function TRttiTypeHelper.GetAsInterface: TRttiInterfaceType;
 begin
   Result := Self as TRttiInterfaceType;
@@ -416,7 +422,7 @@ begin
         {$WARNINGS OFF}
           if not list.ContainsKey(entry.IID) and
             not entry.IID.IsEmpty and
-            TInterfaceTypesCache.TryGetType(entry.IID, aType) then
+            TInterfaceTypeRegistry.TryGetType(entry.IID, aType) then
           begin
             list[entry.IID] := aType;
           end;
@@ -453,19 +459,24 @@ end;
 
 { TRttiMemberHelper }
 
-function TRttiMemberHelper.AsProperty: TRttiProperty;
+function TRttiMemberHelper.GetIsPrivate: Boolean;
 begin
-  Result := Self as TRttiProperty;
+  Result := Visibility = mvPrivate;
 end;
 
-function TRttiMemberHelper.AsMethod: TRttiMethod;
+function TRttiMemberHelper.GetIsProtected: Boolean;
 begin
-  Result := Self as TRttiMethod;
+  Result := Visibility = mvProtected;
 end;
 
-function TRttiMemberHelper.AsField: TRttiField;
+function TRttiMemberHelper.GetIsPublic: Boolean;
 begin
-  Result := Self as TRttiField;
+  Result := Visibility = mvPublic;
+end;
+
+function TRttiMemberHelper.GetIsPublished: Boolean;
+begin
+  Result := Visibility = mvPublished;
 end;
 
 function TRttiMemberHelper.GetIsConstructor: Boolean;
@@ -488,51 +499,21 @@ begin
   Result := Self is TRttiField;
 end;
 
-function TRttiMemberHelper.GetIsPrivate: Boolean;
+function TRttiMemberHelper.GetAsMethod: TRttiMethod;
 begin
-  Result := Visibility = mvPrivate;
+  Result := Self as TRttiMethod;
 end;
 
-function TRttiMemberHelper.GetIsProtected: Boolean;
+function TRttiMemberHelper.GetAsProperty: TRttiProperty;
 begin
-  Result := Visibility = mvProtected;
+  Result := Self as TRttiProperty;
 end;
 
-function TRttiMemberHelper.GetIsPublic: Boolean;
+function TRttiMemberHelper.GetAsField: TRttiField;
 begin
-  Result := Visibility = mvPublic;
-end;
-
-function TRttiMemberHelper.GetIsPublished: Boolean;
-begin
-  Result := Visibility = mvPublished;
+  Result := Self as TRttiField;
 end;
 
 {$ENDREGION}
-
-{ TInterfaceTypesCache }
-
-class constructor TInterfaceTypesCache.Create;
-var
-  types: TArray<TRttiType>;
-  item: TRttiType;
-begin
-  fCContext := TRttiContext.Create;
-  types := fCContext.GetTypes;
-  fCTypes := TCollections.CreateDictionary<TGuid, TRttiInterfaceType>;
-  for item in types do
-  begin
-    if item.IsInterface and item.AsInterface.HasGuid then
-    begin
-      fCTypes.Add(item.AsInterface.GUID, item.AsInterface);
-    end;
-  end;
-end;
-
-class function TInterfaceTypesCache.TryGetType(const guid: TGUID;
-  out aType: TRttiInterfaceType): Boolean;
-begin
-  Result := fCTypes.TryGetValue(guid, aType);
-end;
 
 end.

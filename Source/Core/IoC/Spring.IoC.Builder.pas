@@ -105,7 +105,7 @@ type
   TInjectionTargetInspector = class(TInspectorBase)
   private
     class var
-      fCHasNoTargetCondition: TPredicate<IInjection>;
+      fHasNoTargetCondition: TPredicate<IInjection>;
     class constructor Create;
   protected
     procedure CheckConstructorInjections(const context: IContainerContext; model: TComponentModel);
@@ -265,7 +265,7 @@ begin
   if not model.ConstructorInjections.IsEmpty then Exit;  // TEMP
   predicate := TMethodFilters.IsConstructor and
     not TMethodFilters.HasParameterFlags([pfVar, pfOut]);
-  for method in model.ComponentType.GetMethods.Where(predicate) do
+  for method in model.ComponentType.Methods.Where(predicate) do
   begin
     injection := context.InjectionFactory.CreateConstructorInjection(model);
     injection.Initialize(method);
@@ -308,7 +308,7 @@ begin
   condition := TMethodFilters.IsInstanceMethod and
     TMethodFilters.HasAttribute(InjectionAttribute) and
     not TMethodFilters.HasParameterFlags([pfOut, pfVar]);
-  for method in model.ComponentType.GetMethods.Where(condition) do
+  for method in model.ComponentType.Methods.Where(condition) do
   begin
     injection := context.InjectionFactory.CreateMethodInjection(model, method.Name);
     injection.Initialize(method);
@@ -346,7 +346,7 @@ var
 begin
   condition := TPropertyFilters.IsInvokable and
     TPropertyFilters.HasAttribute(InjectionAttribute);
-  for propertyMember in model.ComponentType.GetProperties.Where(condition) do
+  for propertyMember in model.ComponentType.Properties.Where(condition) do
   begin
     injection := context.InjectionFactory.CreatePropertyInjection(model, propertyMember.Name);
     injection.Initialize(propertyMember);
@@ -373,7 +373,7 @@ var
   attribute: InjectionAttribute;
 begin
   condition := TFieldFilters.HasAttribute(InjectionAttribute);
-  for field in model.ComponentType.GetFields.Where(condition) do
+  for field in model.ComponentType.Fields.Where(condition) do
   begin
     injection := context.InjectionFactory.CreateFieldInjection(model, field.Name);
     injection.Initialize(field);
@@ -413,8 +413,8 @@ end;
 
 class constructor TInjectionTargetInspector.Create;
 begin
-  fCHasNoTargetCondition :=
-    function(value: IInjection): Boolean
+  fHasNoTargetCondition :=
+    function(const value: IInjection): Boolean
     begin
       Result := not value.HasTarget;
     end;
@@ -434,11 +434,11 @@ var
   injection: IInjection;
   method: TRttiMethod;
 begin
-  for injection in model.ConstructorInjections.Where(fCHasNoTargetCondition) do
+  for injection in model.ConstructorInjections.Where(fHasNoTargetCondition) do
   begin
     filter := TMethodFilters.IsConstructor and
       TInjectionFilters.IsInjectableMethod(context, model, injection);
-    method := model.ComponentType.GetMethods.FirstOrDefault(filter);
+    method := model.ComponentType.Methods.FirstOrDefault(filter);
     if method = nil then
     begin
       raise EBuilderException.CreateRes(@SUnresovableInjection);
@@ -454,12 +454,12 @@ var
   injection: IInjection;
   method: TRttiMethod;
 begin
-  for injection in model.MethodInjections.Where(fCHasNoTargetCondition) do
+  for injection in model.MethodInjections.Where(fHasNoTargetCondition) do
   begin
     filter := TMethodFilters.IsInstanceMethod and
       TMethodFilters.IsNamed(injection.TargetName) and
       TInjectionFilters.IsInjectableMethod(context, model, injection);
-    method := model.ComponentType.GetMethods.FirstOrDefault(filter);
+    method := model.ComponentType.Methods.FirstOrDefault(filter);
     if method = nil then
     begin
       raise EBuilderException.CreateRes(@SUnresovableInjection);

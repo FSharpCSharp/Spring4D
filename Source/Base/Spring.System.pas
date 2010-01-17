@@ -67,28 +67,18 @@ type
   /// <summary>
   /// Provides a set of methods and properties to accurately measure elapsed time.
   /// </summary>
-  TStopwatch = Diagnostics.TStopwatch deprecated;
+  TStopwatch = Diagnostics.TStopwatch;
 
   PTypeInfo  = TypInfo.PTypeInfo;
   TTypeKind  = TypInfo.TTypeKind;
   TTypeKinds = TypInfo.TTypeKinds;
 
+  /// <summary>
+  /// Redefines the TPredicate<T> type.
+  /// </summary>
+  TPredicate<T> = reference to function(const value: T): Boolean;
+
   TAttributeClass = class of TCustomAttribute;
-
-  TCharacter = Character.TCharacter deprecated;
-
-  TIntegerRec = packed record
-    B1: Byte;
-    B2: Byte;
-    B3: Byte;
-    B4: Byte;
-  end  deprecated;
-
-{$WARNINGS OFF}
-  TInt32Rec = TIntegerRec deprecated;
-{$WARNINGS ON}
-
-  TInt64Rec = SysUtils.Int64Rec deprecated;
 
   {$ENDREGION}
 
@@ -206,6 +196,7 @@ type
   /// Represents a series of bytes in memory.
   /// </summary>
   /// <remarks>
+  /// Immutable ? Fixed Size?
   /// </remarks>
   TBuffer = record
   strict private
@@ -216,6 +207,7 @@ type
     function GetByteItem(const index: Integer): Byte;
     procedure SetByteItem(const index: Integer; const value: Byte);
   public
+//    constructor Create(capacity: Integer); overload;
     constructor Create(const buffer: Pointer; count: Integer); overload;
     constructor Create(const buffer: Pointer; startIndex, count: Integer); overload;
     constructor Create(const buffer: array of Byte); overload;
@@ -235,19 +227,24 @@ type
 
 //    procedure CopyTo(var dest: array of Byte; index, count: Integer);
 
+    function Clone: TBuffer;
     function Copy(startIndex, count: Integer): TBytes;
 
-    function Left(count: Integer): TBytes;
-    function Mid(startIndex, count: Integer): TBytes;
-    function Right(count: Integer): TBytes;
+    function Left(count: Integer): TBuffer;
+    function Mid(startIndex, count: Integer): TBuffer;
+    function Right(count: Integer): TBuffer;
 
-    function EnsureSize(size: Integer): TBytes; overload;
-    function EnsureSize(size: Integer; value: Byte): TBytes; overload;
-    function EnsureSize(size: Integer; value: AnsiChar): TBytes; overload;
+    function First: Byte;
+    function Last: Byte;
+
+    function EnsureSize(size: Integer): TBuffer; overload;
+    function EnsureSize(size: Integer; value: Byte): TBuffer; overload;
+    function EnsureSize(size: Integer; value: AnsiChar): TBuffer; overload;
 
     function Equals(const buffer: TBuffer): Boolean; overload;
     function Equals(const buffer: array of Byte): Boolean; overload;
     function Equals(const buffer: Pointer; count: Integer): Boolean; overload;
+//    function Equals(const hexString: string): Boolean; overload;
 
     function ToBytes: TBytes;
     function ToString: string; experimental;
@@ -258,6 +255,7 @@ type
     function ToHexString: string; overload;
     function ToHexString(const prefix: string; const delimiter: string = ' '): string; overload;
 
+    property AsBytes: TBytes read fBytes;
     property IsEmpty: Boolean read GetIsEmpty;
     property Memory: PByte read GetMemory;
     property Size: Integer read GetSize;
@@ -360,7 +358,6 @@ type
     class function GetTypeName<T>: string; static;
     class function GetFullName(typeInfo: PTypeInfo): string; overload; static;
     class function GetFullName<T>: string; overload; static;
-//    class function GetType<T>(const obj: T): IType<T>;
   end;
 
   {$ENDREGION}
@@ -419,7 +416,136 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TLifetimeWatcher (Experimental)'}
+  {$REGION 'Delegate'}
+
+  IDelegate<T> = interface
+    function AddHandler(const handler: T): IDelegate<T>;
+    function RemoveHandler(const handler: T): IDelegate<T>;
+    function Invoke(const callback: TProc<T>): IDelegate<T>;
+  end;
+
+  TDelegate<T> = class(TInterfacedObject, IDelegate<T>)
+  private
+    fHandlers: TList<T>;
+  protected
+    function GetHandlers: TList<T>; virtual;
+    property Handlers: TList<T> read GetHandlers;
+  public
+    destructor Destroy; override;
+    function AddHandler(const handler: T): IDelegate<T>;
+    function RemoveHandler(const handler: T): IDelegate<T>;
+    function Invoke(const callback: TProc<T>): IDelegate<T>; virtual;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'Property Notifications'}
+
+  TPropertyNotificationEventArgs = record
+  private
+    fPropertyName: string;
+    fOldValue: TValue;
+    fNewValue: TValue;
+  public
+    constructor Create(const propertyName: string; const oldValue, newValue: TValue);
+    property PropertyName: string read fPropertyName;
+    property OldValue: TValue read fOldValue;
+    property NewValue: TValue read fNewValue;
+  end;
+
+  TPropertyNotificationEventHandler = reference to procedure(sender: TObject;
+    const e: TPropertyNotificationEventArgs);
+
+  /// <summary>
+  /// Notifies clients that a property value is changing or has changed.
+  /// </summary>
+  IPropertyNotification = interface
+    ['{D0CEB294-6B1F-42E4-AE29-09215C9DCB57}']
+  {$REGION 'Property Getters and Setters'}
+    function GetIsPropertyNotificationEnabled: Boolean;
+    function GetOnPropertyChanging: IDelegate<TPropertyNotificationEventHandler>;
+    function GetOnPropertyChanged: IDelegate<TPropertyNotificationEventHandler>;
+    procedure SetIsPropertyNotificationEnabled(const value: Boolean);
+  {$ENDREGION}
+    procedure BeginUpdate;
+    procedure EndUpdate;
+    property IsPropertyNotificationEnabled: Boolean read GetIsPropertyNotificationEnabled write SetIsPropertyNotificationEnabled;
+    property OnPropertyChanging: IDelegate<TPropertyNotificationEventHandler> read GetOnPropertyChanging;
+    property OnPropertyChanged: IDelegate<TPropertyNotificationEventHandler> read GetOnPropertyChanged;
+  end;
+
+  TPropertyNotification = class(TInterfacedObject, IPropertyNotification)
+  private
+    type
+      TNotificationItem = record
+        Handlers: TList<TPropertyNotificationEventHandler>;
+        Callback: TProc<TPropertyNotificationEventHandler>;
+      end;
+      
+      TDelegate = class(TDelegate<TPropertyNotificationEventHandler>)
+      private
+        fNotification: TPropertyNotification;
+      public
+        constructor Create(notification: TPropertyNotification);
+        function Invoke(const callback: TProc<TPropertyNotificationEventHandler>): IDelegate<TPropertyNotificationEventHandler>; override;
+      end;
+  private
+    fIsPropertyNotificationEnabled: Boolean;
+    fUpdateCount: Integer;
+    fQueue: TQueue<TNotificationItem>;
+    fOnPropertyChanging: IDelegate<TPropertyNotificationEventHandler>;
+    fOnPropertyChanged: IDelegate<TPropertyNotificationEventHandler>;
+    function GetIsPropertyNotificationEnabled: Boolean;
+    function GetOnPropertyChanging: IDelegate<TPropertyNotificationEventHandler>;
+    function GetOnPropertyChanged: IDelegate<TPropertyNotificationEventHandler>;
+    procedure SetIsPropertyNotificationEnabled(const value: Boolean);
+  protected
+    function GetQueue: TQueue<TNotificationItem>;
+    property Queue: TQueue<TNotificationItem> read GetQueue;
+  public
+    destructor Destroy; override;
+    procedure BeginUpdate;
+    procedure EndUpdate;
+    property IsPropertyNotificationEnabled: Boolean read GetIsPropertyNotificationEnabled write SetIsPropertyNotificationEnabled;
+    property OnPropertyChanging: IDelegate<TPropertyNotificationEventHandler> read GetOnPropertyChanging;
+    property OnPropertyChanged: IDelegate<TPropertyNotificationEventHandler> read GetOnPropertyChanged;
+  end;
+
+  TNotifiableObject = class abstract(TInterfacedPersistent, IPropertyNotification)
+  private
+    fPropertyNotification: IPropertyNotification;
+    function GetPropertyNotification: IPropertyNotification;
+    function GetIsPropertyNotificationEnabled: Boolean;
+    function GetOnPropertyChanging: IDelegate<TPropertyNotificationEventHandler>;
+    function GetOnPropertyChanged: IDelegate<TPropertyNotificationEventHandler>;
+    procedure SetIsPropertyNotificationEnabled(const value: Boolean);
+  protected
+    procedure SetProperty<T>(const propertyName: string; var currentValue: T; const newValue: T); overload;
+    procedure SetProperty(const propertyName: string; var currentValue: string; const newValue: string); overload;
+    procedure SetProperty(const propertyName: string; var currentValue: Integer; const newValue: Integer); overload;
+    procedure SetProperty(const propertyName: string; var currentValue: Int64; const newValue: Int64); overload;
+    procedure SetProperty(const propertyName: string; var currentValue: Boolean; const newValue: Boolean); overload;
+    procedure SetProperty(const propertyName: string; var currentValue: TDateTime; const newValue: TDateTime); overload;
+    procedure SetProperty(const propertyName: string; var currentValue: Currency; const newValue: Currency); overload;
+    procedure SetProperty(const propertyName: string; var currentValue: Double; const newValue: Double); overload;
+    procedure SetProperty(const propertyName: string; var currentValue: Extended; const newValue: Extended); overload;
+    procedure SetProperty(const propertyName: string; var currentValue: TGuid; const newValue: TGuid); overload;
+    procedure NotifyPropertyChanging(const e: TPropertyNotificationEventArgs); virtual;
+    procedure NotifyPropertyChanged(const e: TPropertyNotificationEventArgs); virtual;
+    property PropertyNotification: IPropertyNotification read GetPropertyNotification;
+  public
+    procedure BeginUpdate; virtual;
+    procedure EndUpdate; virtual;
+    property IsPropertyNotificationEnabled: Boolean read GetIsPropertyNotificationEnabled write SetIsPropertyNotificationEnabled;
+    property OnPropertyChanging: IDelegate<TPropertyNotificationEventHandler> read GetOnPropertyChanging;
+    property OnPropertyChanged: IDelegate<TPropertyNotificationEventHandler> read GetOnPropertyChanged;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TLifetimeWatcher'}
 
   /// <summary>
   /// Represents a lifetime watcher.
@@ -463,9 +589,6 @@ type
   /// Represents a version number in the format of "major.minor[.build[.revision]]",
   /// which is different from the delphi style format "major.minor[.release[.build]]".
   /// </summary>
-  /// <remarks>
-  /// Supports Operator Overloads.
-  /// </remarks>
   TVersion = record
   private
     const fCUndefined: Integer = -1;
@@ -540,6 +663,21 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TInterfacedThread'}
+
+  /// <summary>
+  /// TInterfacedThread
+  /// </summary>
+  TInterfacedThread = class abstract(TThread, IInterface)
+  protected
+    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
+    function _AddRef: Integer; stdcall;
+    function _Release: Integer; stdcall;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'Lifecycle Interfaces'}
 
   IInitializable = interface
@@ -591,9 +729,6 @@ type
     /// <summary>
     /// Instances are transient except that they are recyclable.
     /// </summary>
-    /// <remarks>
-    /// Not Implemented yet.
-    /// </remarks>
     ltPooled,
     /// <summary>
     /// Customized lifetime type.
@@ -656,7 +791,7 @@ type
 //  end;
 
   /// <summary>
-  /// Applies InjectionAttribute to injectable instance members of a
+  /// Applies the InjectionAttribute to injectable instance members of a
   /// class. e.g. constructors, methods, properties and even fields.
   /// Also works on parameters of a method.
   /// </summary>
@@ -706,9 +841,9 @@ type
   /// <summary>
   /// Creates a standard callback function which was adapted from a instance method.
   /// </summary>
-  /// <param name="objectAddress">address of an instance</param>
+  /// <param name="obj">an instance</param>
   /// <param name="methodAddress">address of an instance method</param>
-  function CreateCallback(objectAddress: TObject; methodAddress: Pointer): TCallbackFunc;
+  function CreateCallback(obj: TObject; methodAddress: Pointer): TCallbackFunc;
 
   /// <summary>
   /// Overloads. SplitString
@@ -726,7 +861,7 @@ type
     removeEmptyEntries: Boolean = False): TStringDynArray; overload;
 
   /// <summary>
-  /// Overloads. Returns a string array that contains the substrings in the buffer that are
+  /// Returns a string array that contains the substrings in the buffer that are
   /// delimited by null char (#0) and ends with an additional null char.
   /// </summary>
   /// <example>
@@ -776,7 +911,7 @@ type
   /// <returns>Returns true if the instance has the specified property and the
   /// property has property information. </returns>
   /// <exception cref="EArgumentNullException">if instance is nil.</exception>
-  function TryGetPropInfo(const instance: TObject; const propertyName: string;
+  function TryGetPropInfo(instance: TObject; const propertyName: string;
     out propInfo: PPropInfo): Boolean;
 
   /// <summary>
@@ -811,6 +946,7 @@ type
   /// <summary>
   /// Updates an instance of TStrings by calling its BeginUpdate and EndUpdate.
   /// </summary>
+  /// <exception cref="EArgumentNullException">Raised if strings was nil or proc was not assigned.</exception>
   procedure UpdateStrings(strings: TStrings; proc: TProc); // inline;
 
   {$ENDREGION}
@@ -822,7 +958,7 @@ const
   /// <summary>
   /// Represents bytes of one KB.
   /// </summary>
-  OneKB: Int64 = 1024;
+  OneKB: Int64 = 1024;            // 1KB = 1024 bytes
   /// <summary>
   /// Represents bytes of one MB.
   /// </summary>
@@ -864,11 +1000,11 @@ begin
   end;
 end;
 
-function CreateCallback(objectAddress: TObject; methodAddress: Pointer): TCallbackFunc;
+function CreateCallback(obj: TObject; methodAddress: Pointer): TCallbackFunc;
 begin
-  TArgument.CheckNotNull(objectAddress, 'objectAddress');
+  TArgument.CheckNotNull(obj, 'obj');
   TArgument.CheckNotNull(methodAddress, 'methodAddress');
-  Result := TCallback.Create(objectAddress, methodAddress);
+  Result := TCallback.Create(obj, methodAddress);
 end;
 
 function SplitString(const buffer: string; const separators: TSysCharSet;
@@ -947,16 +1083,16 @@ end;
 procedure Synchronize(threadProc: TThreadProcedure);
 begin
   TArgument.CheckNotNull(Assigned(threadProc), 'threadProc');
-  TThread.Synchronize(nil, threadProc);
+  TThread.Synchronize(TThread.CurrentThread, threadProc);
 end;
 
 procedure Queue(threadProc: TThreadProcedure);
 begin
   TArgument.CheckNotNull(Assigned(threadProc), 'threadProc');
-  TThread.Queue(nil, threadProc);
+  TThread.Queue(TThread.CurrentThread, threadProc);
 end;
 
-function TryGetPropInfo(const instance: TObject; const propertyName: string;
+function TryGetPropInfo(instance: TObject; const propertyName: string;
   out propInfo: PPropInfo): Boolean;
 begin
   TArgument.CheckNotNull(instance, 'instance');
@@ -1019,12 +1155,6 @@ begin
     raise EConvertError.CreateResFmt(@SInvalidDateTime, [s]);
   end;
 end;
-
-//procedure RaiseAbstractClassException(classType: TClass);
-//begin
-//  TArgument.CheckNotNull(classType, 'classType');
-//  raise EAbstractError.CreateResFmt(@SAbstractClassCreation, [classType.ClassName]);
-//end;
 
 function VarIsNullOrEmpty(const value: Variant; trimWhiteSpace: Boolean): Boolean;
 var
@@ -1477,50 +1607,68 @@ end;
 //  Move(fBytes[0], dest[index], Size);
 //end;
 
+function TBuffer.Clone: TBuffer;
+begin
+  Result := ToBytes;
+end;
+
 function TBuffer.Copy(startIndex, count: Integer): TBytes;
-begin
-  Result := Mid(startIndex, count);
-end;
-
-function TBuffer.Left(count: Integer): TBytes;
-begin
-  TArgument.CheckRange((count >= 0) and (count <= Size), 'count');
-  Result := Mid(0, count);
-end;
-
-function TBuffer.Mid(startIndex, count: Integer): TBytes;
 begin
   TArgument.CheckRange(fBytes, startIndex, count);
   SetLength(Result, count);
   Move(fBytes[startIndex], Result[0], count);
 end;
 
-function TBuffer.Right(count: Integer): TBytes;
+function TBuffer.First: Byte;
+begin
+  Result := Bytes[0];
+end;
+
+function TBuffer.Last: Byte;
+begin
+  Result := Bytes[Size-1];
+end;
+
+function TBuffer.Left(count: Integer): TBuffer;
+begin
+  TArgument.CheckRange((count >= 0) and (count <= Size), 'count');
+  Result := Mid(0, count);
+end;
+
+function TBuffer.Mid(startIndex, count: Integer): TBuffer;
+begin
+  Result := Self.Copy(startIndex, count);
+end;
+
+function TBuffer.Right(count: Integer): TBuffer;
 begin
   TArgument.CheckRange((count >= 0) and (count <= Size), 'count');
   Result := Mid(Size - count, count);
 end;
 
-function TBuffer.EnsureSize(size: Integer): TBytes;
+function TBuffer.EnsureSize(size: Integer): TBuffer;
 begin
   Result := Self.EnsureSize(size, 0);
 end;
 
-function TBuffer.EnsureSize(size: Integer; value: Byte): TBytes;
+function TBuffer.EnsureSize(size: Integer; value: Byte): TBuffer;
+var
+  data: TBytes;
 begin
   if Self.Size < size then
   begin
-    SetLength(Result, size);
-    Move(fBytes[0], Result[0], Self.Size);
-    FillChar(Result[Self.Size], size - Self.Size, value);
+    SetLength(data, size);
+    Move(fBytes[0], data[0], Self.Size);
+    FillChar(data[Self.Size], size - Self.Size, value);
   end
   else
   begin
-    Result := Self.ToBytes;
+    data := Self.ToBytes;
   end;
+  Result := data;
 end;
 
-function TBuffer.EnsureSize(size: Integer; value: AnsiChar): TBytes;
+function TBuffer.EnsureSize(size: Integer; value: AnsiChar): TBuffer;
 begin
   Result := Self.EnsureSize(size, Byte(value));
 end;
@@ -1545,13 +1693,13 @@ end;
 function TBuffer.ToString: string;
 begin
   SetLength(Result, Length(fBytes) div SizeOf(Char));
-  Move(fBytes[0], Result[1], Length(fBytes));
+  Move(fBytes[0], Result[1], Length(Result) * SizeOf(Char));
 end;
 
 function TBuffer.ToWideString: WideString;
 begin
   SetLength(Result, Length(fBytes) div SizeOf(Char));
-  Move(fBytes[0], Result[1], Length(fBytes));
+  Move(fBytes[0], Result[1], Length(Result) * SizeOf(Char));
 end;
 
 function TBuffer.ToAnsiString: RawByteString;
@@ -2024,6 +2172,319 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TDelegate<T>'}
+
+destructor TDelegate<T>.Destroy;
+begin
+  fHandlers.Free;
+  inherited Destroy;
+end;
+
+function TDelegate<T>.GetHandlers: TList<T>;
+begin
+  if fHandlers = nil then
+  begin
+    fHandlers := TList<T>.Create;
+  end;
+  Result := fHandlers;
+end;
+
+function TDelegate<T>.AddHandler(
+  const handler: T): IDelegate<T>;
+begin
+  Handlers.Add(handler);
+  Result := Self;
+end;
+
+function TDelegate<T>.RemoveHandler(
+  const handler: T): IDelegate<T>;
+begin
+  Handlers.Remove(handler);
+  Result := Self;
+end;
+
+function TDelegate<T>.Invoke(
+  const callback: TProc<T>): IDelegate<T>;
+var
+  delegate: T;
+begin
+  if fHandlers <> nil then
+  begin
+    for delegate in fHandlers do
+    begin
+      callback(delegate);
+    end;
+  end;
+  Result := Self;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TPropertyNotificationEventHandlerArg'}
+
+constructor TPropertyNotificationEventArgs.Create(const propertyName: string;
+  const oldValue, newValue: TValue);
+begin
+  fPropertyName := propertyName;
+  fOldValue := oldValue;
+  fNewValue := newValue;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TPropertyNotification'}
+
+destructor TPropertyNotification.Destroy;
+begin
+  fQueue.Free;
+  inherited Destroy;
+end;
+
+procedure TPropertyNotification.BeginUpdate;
+begin
+  Inc(fUpdateCount);
+end;
+
+procedure TPropertyNotification.EndUpdate;
+var
+  item: TNotificationItem;
+  handler: TPropertyNotificationEventHandler;
+begin
+  Dec(fUpdateCount);
+  if (fUpdateCount = 0) and (fQueue <> nil) then
+  begin
+    while fQueue.Count > 0 do
+    begin
+      item := fQueue.Dequeue();     
+      for handler in item.Handlers do
+      begin
+        item.Callback(handler);
+      end;
+    end;
+  end;
+end;
+
+function TPropertyNotification.GetIsPropertyNotificationEnabled: Boolean;
+begin
+  Result := fIsPropertyNotificationEnabled;
+end;
+
+function TPropertyNotification.GetQueue: TQueue<TNotificationItem>;
+begin
+  if fQueue = nil then
+  begin
+    fQueue := TQueue<TNotificationItem>.Create;
+  end;
+  Result := fQueue;
+end;
+
+function TPropertyNotification.GetOnPropertyChanging: IDelegate<TPropertyNotificationEventHandler>;
+begin
+  if fOnPropertyChanging = nil then
+  begin
+    fOnPropertyChanging := TDelegate.Create(Self);
+  end;
+  Result := fOnPropertyChanging;
+end;
+
+function TPropertyNotification.GetOnPropertyChanged: IDelegate<TPropertyNotificationEventHandler>;
+begin
+  if fOnPropertyChanged = nil then
+  begin
+    fOnPropertyChanged := TDelegate.Create(Self);
+  end;
+  Result := fOnPropertyChanged;
+end;
+
+procedure TPropertyNotification.SetIsPropertyNotificationEnabled(const value: Boolean);
+begin
+  fIsPropertyNotificationEnabled := value;
+end;
+
+{ TPropertyNotification.TDelegate }
+
+constructor TPropertyNotification.TDelegate.Create(
+  notification: TPropertyNotification);
+begin
+  inherited Create;
+  fNotification := notification;
+end;
+
+function TPropertyNotification.TDelegate.Invoke(
+  const callback: TProc<TPropertyNotificationEventHandler>): IDelegate<TPropertyNotificationEventHandler>;
+var
+  item: TNotificationItem;  
+begin
+  if fNotification.fUpdateCount = 0 then
+  begin
+    inherited Invoke(callback);
+  end
+  else
+  begin
+    item.Handlers := Handlers;
+    item.Callback := callback;
+    fNotification.Queue.Enqueue(item);
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TNotifiableObject'}
+
+procedure TNotifiableObject.SetProperty<T>(const propertyName: string;
+  var currentValue: T; const newValue: T);
+var
+  comparer: IEqualityComparer<T>;
+  e: TPropertyNotificationEventArgs;
+begin
+  comparer := TEqualityComparer<T>.Default;
+  if not comparer.Equals(currentValue, newValue) then
+  begin
+    if IsPropertyNotificationEnabled then
+    begin
+      e := TPropertyNotificationEventArgs.Create(
+        propertyName, 
+        TValue.From<T>(currentValue), 
+        TValue.From<T>(newValue)
+      );
+      NotifyPropertyChanging(e);
+      currentValue := newValue;
+      NotifyPropertyChanged(e);
+    end
+    else
+    begin
+      currentValue := newValue;
+    end;
+  end;
+end;
+
+procedure TNotifiableObject.SetProperty(const propertyName: string;
+  var currentValue: Int64; const newValue: Int64);
+begin
+  SetProperty<Int64>(propertyName, currentValue, newValue);
+end;
+
+procedure TNotifiableObject.SetProperty(const propertyName: string;
+  var currentValue: Boolean; const newValue: Boolean);
+begin
+  SetProperty<Boolean>(propertyName, currentValue, newValue);
+end;
+
+procedure TNotifiableObject.SetProperty(const propertyName: string;
+  var currentValue: string; const newValue: string);
+begin
+  SetProperty<string>(propertyName, currentValue, newValue);
+end;
+
+procedure TNotifiableObject.SetProperty(const propertyName: string;
+  var currentValue: Integer; const newValue: Integer);
+begin
+  SetProperty<Integer>(propertyName, currentValue, newValue);
+end;
+
+procedure TNotifiableObject.SetProperty(const propertyName: string;
+  var currentValue: TDateTime; const newValue: TDateTime);
+begin
+  SetProperty<TDateTime>(propertyName, currentValue, newValue);
+end;
+
+procedure TNotifiableObject.SetProperty(const propertyName: string;
+  var currentValue: Extended; const newValue: Extended);
+begin
+  SetProperty<Extended>(propertyName, currentValue, newValue);
+end;
+
+procedure TNotifiableObject.SetProperty(const propertyName: string;
+  var currentValue: TGuid; const newValue: TGuid);
+begin
+  SetProperty<TGuid>(propertyName, currentValue, newValue);
+end;
+
+procedure TNotifiableObject.SetProperty(const propertyName: string;
+  var currentValue: Currency; const newValue: Currency);
+begin
+  SetProperty<Currency>(propertyName, currentValue, newValue);
+end;
+
+procedure TNotifiableObject.SetProperty(const propertyName: string;
+  var currentValue: Double; const newValue: Double);
+begin
+  SetProperty<Double>(propertyName, currentValue, newValue);
+end;
+
+procedure TNotifiableObject.NotifyPropertyChanging(
+  const e: TPropertyNotificationEventArgs);
+var
+  localArgs: TPropertyNotificationEventArgs;
+begin
+  localArgs := e;
+  PropertyNotification.OnPropertyChanging.Invoke(
+    procedure (handler: TPropertyNotificationEventHandler)
+    begin
+      handler(Self, localArgs);
+    end
+  );
+end;
+
+procedure TNotifiableObject.NotifyPropertyChanged(
+  const e: TPropertyNotificationEventArgs);
+var
+  localArgs: TPropertyNotificationEventArgs;
+begin
+  localArgs := e;
+  PropertyNotification.OnPropertyChanged.Invoke(
+    procedure (handler: TPropertyNotificationEventHandler)
+    begin
+      handler(Self, localArgs);
+    end
+  );
+end;
+
+procedure TNotifiableObject.BeginUpdate;
+begin
+  PropertyNotification.BeginUpdate;
+end;
+
+procedure TNotifiableObject.EndUpdate;
+begin
+  PropertyNotification.EndUpdate;
+end;
+
+function TNotifiableObject.GetIsPropertyNotificationEnabled: Boolean;
+begin
+  Result := PropertyNotification.IsPropertyNotificationEnabled;
+end;
+
+function TNotifiableObject.GetPropertyNotification: IPropertyNotification;
+begin
+  if fPropertyNotification = nil then
+  begin
+    fPropertyNotification := TPropertyNotification.Create;
+  end;
+  Result := fPropertyNotification;
+end;
+
+function TNotifiableObject.GetOnPropertyChanging: IDelegate<TPropertyNotificationEventHandler>;
+begin
+  Result := PropertyNotification.OnPropertyChanging;
+end;
+
+function TNotifiableObject.GetOnPropertyChanged: IDelegate<TPropertyNotificationEventHandler>;
+begin
+  Result := PropertyNotification.OnPropertyChanged;
+end;
+
+procedure TNotifiableObject.SetIsPropertyNotificationEnabled(const value: Boolean);
+begin
+  PropertyNotification.IsPropertyNotificationEnabled := value;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TObjectHolder<T>'}
 
 constructor TObjectHolder<T>.Create(obj: T);
@@ -2374,6 +2835,29 @@ begin
 end;
 
 {$WARNINGS ON}
+
+{$ENDREGION}
+
+
+{$REGION 'TInterfacedThread'}
+
+function TInterfacedThread.QueryInterface(const IID: TGUID; out Obj): HResult;
+begin
+  if GetInterface(IID, Obj) then
+    Result := S_OK
+  else
+    Result := E_NOINTERFACE;
+end;
+
+function TInterfacedThread._AddRef: Integer;
+begin
+  Result := -1;
+end;
+
+function TInterfacedThread._Release: Integer;
+begin
+  Result := -1;
+end;
 
 {$ENDREGION}
 

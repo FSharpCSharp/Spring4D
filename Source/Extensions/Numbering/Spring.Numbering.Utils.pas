@@ -79,8 +79,7 @@ type
 implementation
 
 uses
-  Math,
-  Spring.Core.ResourceStrings;
+  Math;
 
 {$REGION 'TAdoDBNumberSource'}
 

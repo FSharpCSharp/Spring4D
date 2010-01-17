@@ -185,7 +185,7 @@ implementation
 uses
   DateUtils,
   StrUtils,
-  Spring.Core.ResourceStrings;
+  Spring.Extensions.ResourceStrings;
 
 {$REGION 'TNumberRuleBase'}
 
