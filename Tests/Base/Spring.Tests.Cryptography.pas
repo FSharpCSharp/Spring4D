@@ -252,8 +252,8 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   published
-    procedure TestEncrypt;
-    procedure TestDecrypt;
+    procedure TestECB;
+    procedure TestCBC;
   end;
 
 implementation
@@ -572,19 +572,9 @@ end;
 {$REGION 'TTestTripleDES'}
 
 procedure TTestTripleDES.SetUp;
-const
-  key: array[0..23] of Byte = ($01, $23, $45, $67, $89, $AB, $CD, $EF, $FE,
-    $DC, $BA, $98, $76, $54, $32, $10, $89, $AB, $CD, $EF, $01, $23, $45, $67);
-  inputBuffer: array[0..7] of Byte = ($01, $23, $45, $67, $89, $AB, $CD, $E7);
-  outputBuffer: array[0..7] of Byte = ($DE, $0B, $7C, $06, $AE, $5E, $0E, $D5);
 begin
   inherited;
   fTripleDES := TTripleDES.Create;
-  fTripleDES.CipherMode := cmECB;
-  fTripleDES.PaddingMode := pmNone;
-  fTripleDES.Key := TBuffer.Create(key);
-  fInputBuffer := TBuffer.Create(inputBuffer);
-  fOutputBuffer := TBuffer.Create(outputBuffer);
 end;
 
 procedure TTestTripleDES.TearDown;
@@ -593,16 +583,35 @@ begin
   inherited;
 end;
 
-procedure TTestTripleDES.TestEncrypt;
+procedure TTestTripleDES.TestECB;
+const
+  key: array[0..23] of Byte = ($01, $23, $45, $67, $89, $AB, $CD, $EF, $FE,
+    $DC, $BA, $98, $76, $54, $32, $10, $89, $AB, $CD, $EF, $01, $23, $45, $67);
+  inputBuffer: array[0..7] of Byte = ($01, $23, $45, $67, $89, $AB, $CD, $E7);
+  outputBuffer: array[0..7] of Byte = ($DE, $0B, $7C, $06, $AE, $5E, $0E, $D5);
 begin
+  fTripleDES.CipherMode := cmECB;
+  fTripleDES.PaddingMode := pmNone;
+  fTripleDES.Key := TBuffer.Create(key);
+  fInputBuffer := TBuffer.Create(inputBuffer);
+  fOutputBuffer := TBuffer.Create(outputBuffer);
   fActualBuffer := fTripleDES.Encrypt(fInputBuffer);
   CheckEquals(fOutputBuffer, fActualBuffer);
-end;
-
-procedure TTestTripleDES.TestDecrypt;
-begin
   fActualBuffer := fTripleDES.Decrypt(fOutputBuffer);
   CheckEquals(fInputBuffer, fActualBuffer);
+end;
+
+procedure TTestTripleDES.TestCBC;
+begin
+  fKey := TBuffer.FromHexString('01 23 45 67 89 ab cd ef 23 45 67 89 ab cd ef 01 01 23 45 67 89 ab cd ef');
+  fTripleDES.CipherMode := cmCBC;
+  fTripleDES.PaddingMode := pmPKCS7;
+  fTripleDES.Key := fKey;
+  fTripleDES.IV := TBuffer.BytesOf($0, fTripleDES.BlockSize);
+  fInputBuffer := TBuffer.Create([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+  fExpectedBuffer := TBuffer.FromHexString('23 61 AC E6 C5 17 10 51 D9 CB 92 8C 76 89 35 84');
+  fActualBuffer := fTripleDES.Encrypt(fInputBuffer);
+  CheckEquals(fExpectedBuffer, fActualBuffer, 'Encryption');
 end;
 
 {$ENDREGION}

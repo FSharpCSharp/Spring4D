@@ -1002,16 +1002,33 @@ begin
   TArgument.CheckRange(count >= 0, 'count');
   if count = 0 then
   begin
-    Exit(TBuffer.Empty);  //?
+    Exit(TBuffer.Empty);
   end;
   p := buffer;
   plainText.Size := BlockSize;
-  paddingSize := BlockSize - (count mod BlockSize);
   SetLength(cipherText, BlockSize);
   firstBlock := True;
-  while count >= BlockSize do
+  while count >= 0 do
   begin
-    plainText := TBuffer.Create(p, BlockSize);
+    if count >= BlockSize then
+    begin
+      Move(p^, plainText.Memory^, BlockSize);
+    end
+    else if PaddingMode <> pmNone then
+    begin
+      Move(p^, plainText.Memory^, count);
+      paddingSize := BlockSize - (count mod BlockSize);
+      startIndex := BlockSize - paddingSize;
+      AddPadding(plainText, startIndex, paddingSize);
+    end
+    else if count > 0 then
+    begin
+      raise ECryptographicException.CreateRes(@SPaddingModeMissing);
+    end
+    else
+    begin
+      Exit;
+    end;
     if CipherMode = cmCBC then
     begin
       if firstBlock then
@@ -1024,21 +1041,6 @@ begin
     Result := Result + cipherText;
     Dec(count, BlockSize);
     Inc(p, BlockSize);
-  end;
-  if (PaddingMode = pmNone) then
-  begin
-    if count > 0 then
-    begin
-      raise ECryptographicException.CreateRes(@SPaddingModeMissing);
-    end;
-  end
-  else
-  begin
-    Move(p^, plainText.Memory^, count);
-    startIndex := count mod BlockSize;
-    AddPadding(plainText, startIndex, paddingSize);
-    DoEncryptBlock(plainText.AsBytes, cipherText);
-    Result := Result + cipherText;
   end;
 end;
 
@@ -1378,7 +1380,7 @@ end;
 procedure TSymmetricAlgorithmBase.SetKey(const value: TBuffer);
 begin
   ValidateKey(value);
-  fKey := value;
+  fKey := value.Clone;
 end;
 
 {$ENDREGION}
