@@ -2,11 +2,11 @@
 [Spring.System]
 - Added IPropertyNotification and TNotifiableObject class which supports property notifications (Enable/Disable, BeginUpdate/EndUpdate, OnPropertyChanging/OnPropertyChanged)
 
-[Cryptography](not completed)
+[Cryptography]
 - Introduced a cryptography library that supports:
 * Hash algorithms (MD5, SHA-1/256/384/512)
 * Checksum algorithms (CRC-16, CRC-32)
-* Symmetric algorithms (DES, Triple-DES. Supports CipherMode?, PaddingMode and IV)
+* Symmetric algorithms (DES, Triple-DES. Supports CipherMode, PaddingMode and IV)
 * Random number generator
 
 2009-12-21

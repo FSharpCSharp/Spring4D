@@ -25,7 +25,6 @@ package Spring.Base;
 {$DESCRIPTION 'Delphi Spring Framework Base Class Library'}
 {$RUNONLY}
 {$IMPLICITBUILD ON}
-{$DEFINE DEBUG}
 
 requires
   rtl,

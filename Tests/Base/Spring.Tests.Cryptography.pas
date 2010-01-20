@@ -169,10 +169,10 @@ type
 
   TSymmetricAlgorithmTestCase = class abstract(TCryptoTestCase)
   protected
-    fActualBuffer: TBuffer;
-    fExpectedBuffer: TBuffer;
     fInputBuffer: TBuffer;
     fOutputBuffer: TBuffer;
+    fActualBuffer: TBuffer;
+    fExpectedBuffer: TBuffer;
     fKey: TBuffer;
   end;
 
@@ -182,6 +182,7 @@ type
   protected
     procedure SetUp; override;
     procedure TearDown; override;
+    procedure CheckResult(const inputBuffer, outputBuffer: TBuffer); virtual;
   published
     procedure TestEmptyInputBuffer;
   end;
@@ -241,6 +242,7 @@ type
 //    procedure TestDefaultProperties;
     procedure TestCase1;
     procedure TestCase2;
+    procedure TestCBC;
   end;
 
   TTestTripleDES = class(TSymmetricAlgorithmTestCase)
@@ -263,7 +265,7 @@ procedure TCryptoTestCase.CheckEquals(const expected, actual: TBuffer;
 begin
   if not expected.Equals(actual) then
   begin
-    Fail(Format('Expected: %S, Actual: %S', [expected.ToHexString('', ' '), actual.ToHexString('', ' ')]));
+    Fail(Format(msg + #13#10 + 'Expected: %S'#13#10'Actual:   %S', [expected.ToHexString('', ' '), actual.ToHexString('', ' ')]));
   end;
 end;
 
@@ -548,6 +550,22 @@ begin
   CheckEquals(fInputBuffer, fActualBuffer);
 end;
 
+procedure TTestDES.TestCBC;
+begin
+  fInputBuffer := TBuffer.Create(AnsiString('Now is the time for all '));
+  fOutputBuffer := TBuffer.FromHexString('e5c7cdde872bf27c 43e934008c389c0f 683788499a7c05f6');
+  fKey := TBuffer.FromHexString('0123456789abcdef');
+  fDES.IV := TBuffer.FromHexString('1234567890abcdef');
+  fDES.Key := fKey;
+  fDES.CipherMode := cmCBC;
+
+  fActualBuffer := fDES.Encrypt(fInputBuffer);
+  CheckEquals(fOutputBuffer, fActualBuffer, 'Encryption: ');
+
+  fActualBuffer := fDES.Decrypt(fOutputBuffer);
+  CheckEquals(fInputBuffer, fActualBuffer, 'Decryption: ');
+end;
+
 {$ENDREGION}
 
 
@@ -592,14 +610,14 @@ end;
 
 { TMockSymmetricAlgorithm }
 
-procedure TMockSymmetricAlgorithm.DoDecryptBlock(const inputBuffer: TBytes;
+procedure TMockSymmetricAlgorithm.DoEncryptBlock(const inputBuffer: TBytes;
   var outputBuffer: TBytes);
 begin
   Assert(Length(inputBuffer) = Length(outputBuffer));
   Move(inputBuffer[0], outputBuffer[0], Length(inputBuffer));
 end;
 
-procedure TMockSymmetricAlgorithm.DoEncryptBlock(const inputBuffer: TBytes;
+procedure TMockSymmetricAlgorithm.DoDecryptBlock(const inputBuffer: TBytes;
   var outputBuffer: TBytes);
 begin
   Assert(Length(inputBuffer) = Length(outputBuffer));
@@ -624,11 +642,19 @@ begin
   inherited;
 end;
 
+procedure TTestSymmetricAlgorithmBase.CheckResult(const inputBuffer,
+  outputBuffer: TBuffer);
+begin
+  fActualBuffer := fAlgorithm.Encrypt(inputBuffer);
+  CheckEquals(outputBuffer, fActualBuffer, 'Encryption: ');
+
+  fActualBuffer := fAlgorithm.Decrypt(outputBuffer);
+  CheckEquals(inputBuffer, fActualBuffer, 'Decryption: ');
+end;
+
 procedure TTestSymmetricAlgorithmBase.TestEmptyInputBuffer;
 begin
-  Assert(fInputBuffer.IsEmpty);
-  fExpectedBuffer := fAlgorithm.Encrypt(fInputBuffer);
-  CheckEquals(fInputBuffer, fExpectedBuffer);
+  CheckResult(TBuffer.Empty, TBuffer.Empty);
 end;
 
 { TTestPaddingModeIsNone }
@@ -643,15 +669,13 @@ end;
 procedure TTestPaddingModeIsNone.TestOneBlock;
 begin
   fInputBuffer := TBuffer.BytesOf(1, 8);
-  fOutputBuffer := fAlgorithm.Encrypt(fInputBuffer);
-  CheckEquals(fInputBuffer, fOutputBuffer);
+  CheckResult(fInputBuffer, fInputBuffer);
 end;
 
 procedure TTestPaddingModeIsNone.TestTwoBlocks;
 begin
   fInputBuffer := TBuffer.BytesOf(1, 16);
-  fOutputBuffer := fAlgorithm.Encrypt(fInputBuffer);
-  CheckEquals(fInputBuffer, fOutputBuffer);
+  CheckResult(fInputBuffer, fInputBuffer);
 end;
 
 procedure TTestPaddingModeIsNone.TestExceptions;
@@ -671,41 +695,35 @@ end;
 
 procedure TTestPaddingModeIsPKCS7.TestPaddingSizeIsFull;
 begin
-  fInputBuffer := TBuffer.BytesOf(1, 8);
-  fActualBuffer := fAlgorithm.Encrypt(fInputBuffer);
-  fExpectedBuffer := fInputBuffer + TBuffer.BytesOf($08, 8);
-  CheckEquals(fExpectedBuffer, fActualBuffer);
+  fInputBuffer := TBuffer.BytesOf($01, 8);
+  fOutputBuffer := fInputBuffer + TBuffer.BytesOf($08, 8);
+  CheckResult(fInputBuffer, fOutputBuffer);
 
-  fInputBuffer := TBuffer.BytesOf(2, 16);
-  fActualBuffer := fAlgorithm.Encrypt(fInputBuffer);
-  fExpectedBuffer := fInputBuffer + TBuffer.BytesOf($08, 8);
-  CheckEquals(fExpectedBuffer, fActualBuffer);
+  fInputBuffer := TBuffer.BytesOf($02, 16);
+  fOutputBuffer := fInputBuffer + TBuffer.BytesOf($08, 8);
+  CheckResult(fInputBuffer, fOutputBuffer);
 end;
 
 procedure TTestPaddingModeIsPKCS7.TestPaddingSizeIsOne;
 begin
-  fInputBuffer := TBuffer.BytesOf(1, 7);
-  fActualBuffer := fAlgorithm.Encrypt(fInputBuffer);
-  fExpectedBuffer := fInputBuffer + TBuffer.BytesOf($01, 1);
-  CheckEquals(fExpectedBuffer, fActualBuffer);
+  fInputBuffer := TBuffer.BytesOf($01, 7);
+  fOutputBuffer := fInputBuffer + TBuffer.BytesOf($01, 1);
+  CheckResult(fInputBuffer, fOutputBuffer);
 
-  fInputBuffer := TBuffer.BytesOf(2, 15);
-  fActualBuffer := fAlgorithm.Encrypt(fInputBuffer);
-  fExpectedBuffer := fInputBuffer + TBuffer.BytesOf($01, 1);
-  CheckEquals(fExpectedBuffer, fActualBuffer);
+  fInputBuffer := TBuffer.BytesOf($02, 15);
+  fOutputBuffer := fInputBuffer + TBuffer.BytesOf($01, 1);
+  CheckResult(fInputBuffer, fOutputBuffer);
 end;
 
 procedure TTestPaddingModeIsPKCS7.TestPaddingSizeIsSeven;
 begin
-  fInputBuffer := TBuffer.BytesOf(1, 1);
-  fActualBuffer := fAlgorithm.Encrypt(fInputBuffer);
-  fExpectedBuffer := fInputBuffer + TBuffer.BytesOf($07, 7);
-  CheckEquals(fExpectedBuffer, fActualBuffer);
+  fInputBuffer := TBuffer.BytesOf($01, 1);
+  fOutputBuffer := fInputBuffer + TBuffer.BytesOf($07, 7);
+  CheckResult(fInputBuffer, fOutputBuffer);
 
-  fInputBuffer := TBuffer.BytesOf(2, 9);
-  fActualBuffer := fAlgorithm.Encrypt(fInputBuffer);
-  fExpectedBuffer := fInputBuffer + TBuffer.BytesOf($07, 7);
-  CheckEquals(fExpectedBuffer, fActualBuffer);
+  fInputBuffer := TBuffer.BytesOf($02, 9);
+  fOutputBuffer := fInputBuffer + TBuffer.BytesOf($07, 7);
+  CheckResult(fInputBuffer, fOutputBuffer);
 end;
 
 { TTestPaddingModeIsZeros }
@@ -718,41 +736,35 @@ end;
 
 procedure TTestPaddingModeIsZeros.TestPaddingSizeIsFull;
 begin
-  fInputBuffer := TBuffer.BytesOf(1, 8);
-  fActualBuffer := fAlgorithm.Encrypt(fInputBuffer);
-  fExpectedBuffer := fInputBuffer + TBuffer.BytesOf($00, 8);
-  CheckEquals(fExpectedBuffer, fActualBuffer);
+  fInputBuffer := TBuffer.BytesOf($01, 8);
+  fOutputBuffer := fInputBuffer + TBuffer.BytesOf($00, 8);
+  CheckResult(fInputBuffer, fOutputBuffer);
 
-  fInputBuffer := TBuffer.BytesOf(2, 16);
-  fActualBuffer := fAlgorithm.Encrypt(fInputBuffer);
-  fExpectedBuffer := fInputBuffer + TBuffer.BytesOf($00, 8);
-  CheckEquals(fExpectedBuffer, fActualBuffer);
+  fInputBuffer := TBuffer.BytesOf($02, 16);
+  fOutputBuffer := fInputBuffer + TBuffer.BytesOf($00, 8);
+  CheckResult(fInputBuffer, fOutputBuffer);
 end;
 
 procedure TTestPaddingModeIsZeros.TestPaddingSizeIsOne;
 begin
-  fInputBuffer := TBuffer.BytesOf(1, 7);
-  fActualBuffer := fAlgorithm.Encrypt(fInputBuffer);
-  fExpectedBuffer := fInputBuffer + TBuffer.BytesOf($00, 1);
-  CheckEquals(fExpectedBuffer, fActualBuffer);
+  fInputBuffer := TBuffer.BytesOf($01, 7);
+  fOutputBuffer := fInputBuffer + TBuffer.BytesOf($00, 1);
+  CheckResult(fInputBuffer, fOutputBuffer);
 
-  fInputBuffer := TBuffer.BytesOf(2, 15);
-  fActualBuffer := fAlgorithm.Encrypt(fInputBuffer);
-  fExpectedBuffer := fInputBuffer + TBuffer.BytesOf($00, 1);
-  CheckEquals(fExpectedBuffer, fActualBuffer);
+  fInputBuffer := TBuffer.BytesOf($02, 15);
+  fOutputBuffer := fInputBuffer + TBuffer.BytesOf($00, 1);
+  CheckResult(fInputBuffer, fOutputBuffer);
 end;
 
 procedure TTestPaddingModeIsZeros.TestPaddingSizeIsSeven;
 begin
-  fInputBuffer := TBuffer.BytesOf(1, 1);
-  fActualBuffer := fAlgorithm.Encrypt(fInputBuffer);
-  fExpectedBuffer := fInputBuffer + TBuffer.BytesOf($00, 7);
-  CheckEquals(fExpectedBuffer, fActualBuffer);
+  fInputBuffer := TBuffer.BytesOf($01, 1);
+  fOutputBuffer := fInputBuffer + TBuffer.BytesOf($00, 7);
+  CheckResult(fInputBuffer, fOutputBuffer);
 
-  fInputBuffer := TBuffer.BytesOf(2, 9);
-  fActualBuffer := fAlgorithm.Encrypt(fInputBuffer);
-  fExpectedBuffer := fInputBuffer + TBuffer.BytesOf($00, 7);
-  CheckEquals(fExpectedBuffer, fActualBuffer);
+  fInputBuffer := TBuffer.BytesOf($02, 9);
+  fOutputBuffer := fInputBuffer + TBuffer.BytesOf($00, 7);
+  CheckResult(fInputBuffer, fOutputBuffer);
 end;
 
 { TTestPaddingModeIsANSIX923 }
@@ -765,41 +777,35 @@ end;
 
 procedure TTestPaddingModeIsANSIX923.TestPaddingSizeIsFull;
 begin
-  fInputBuffer := TBuffer.BytesOf(1, 8);
-  fActualBuffer := fAlgorithm.Encrypt(fInputBuffer);
-  fExpectedBuffer := fInputBuffer + TBuffer.BytesOf($00, 7) + TBuffer.FromHexString('08');
-  CheckEquals(fExpectedBuffer, fActualBuffer);
+  fInputBuffer := TBuffer.BytesOf($01, 8);
+  fOutputBuffer := fInputBuffer + TBuffer.BytesOf($00, 7) + $08;
+  CheckResult(fInputBuffer, fOutputBuffer);
 
-  fInputBuffer := TBuffer.BytesOf(2, 16);
-  fActualBuffer := fAlgorithm.Encrypt(fInputBuffer);
-  fExpectedBuffer := fInputBuffer + TBuffer.BytesOf($00, 7) + TBuffer.FromHexString('08');
-  CheckEquals(fExpectedBuffer, fActualBuffer);
+  fInputBuffer := TBuffer.BytesOf($02, 16);
+  fOutputBuffer := fInputBuffer + TBuffer.BytesOf($00, 7) + $08;
+  CheckResult(fInputBuffer, fOutputBuffer);
 end;
 
 procedure TTestPaddingModeIsANSIX923.TestPaddingSizeIsOne;
 begin
-  fInputBuffer := TBuffer.BytesOf(1, 7);
-  fActualBuffer := fAlgorithm.Encrypt(fInputBuffer);
-  fExpectedBuffer := fInputBuffer + TBuffer.BytesOf($01, 1);
-  CheckEquals(fExpectedBuffer, fActualBuffer);
+  fInputBuffer := TBuffer.BytesOf($01, 7);
+  fOutputBuffer := fInputBuffer + TBuffer.BytesOf($01, 1);
+  CheckResult(fInputBuffer, fOutputBuffer);
 
-  fInputBuffer := TBuffer.BytesOf(2, 15);
-  fActualBuffer := fAlgorithm.Encrypt(fInputBuffer);
-  fExpectedBuffer := fInputBuffer + TBuffer.BytesOf($01, 1);
-  CheckEquals(fExpectedBuffer, fActualBuffer);
+  fInputBuffer := TBuffer.BytesOf($02, 15);
+  fOutputBuffer := fInputBuffer + TBuffer.BytesOf($01, 1);
+  CheckResult(fInputBuffer, fOutputBuffer);
 end;
 
 procedure TTestPaddingModeIsANSIX923.TestPaddingSizeIsSeven;
 begin
-  fInputBuffer := TBuffer.BytesOf(1, 1);
-  fActualBuffer := fAlgorithm.Encrypt(fInputBuffer);
-  fExpectedBuffer := fInputBuffer + TBuffer.BytesOf($00, 6) + TBuffer.FromHexString('07');
-  CheckEquals(fExpectedBuffer, fActualBuffer);
+  fInputBuffer := TBuffer.BytesOf($01, 1);
+  fOutputBuffer := fInputBuffer + TBuffer.BytesOf($00, 6) + $07;
+  CheckResult(fInputBuffer, fOutputBuffer);
 
-  fInputBuffer := TBuffer.BytesOf(2, 9);
-  fActualBuffer := fAlgorithm.Encrypt(fInputBuffer);
-  fExpectedBuffer := fInputBuffer + TBuffer.BytesOf($00, 6) + TBuffer.FromHexString('07');
-  CheckEquals(fExpectedBuffer, fActualBuffer);
+  fInputBuffer := TBuffer.BytesOf($02, 9);
+  fOutputBuffer := fInputBuffer + TBuffer.BytesOf($00, 6) + $07;
+  CheckResult(fInputBuffer, fOutputBuffer);
 end;
 
 { TTestPaddingModeIsISO10126 }

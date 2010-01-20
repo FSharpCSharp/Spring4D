@@ -12,11 +12,11 @@
 			<Projects Include="Spring.Extensions.dproj">
 				<Dependencies>Spring.Base.dproj;Spring.Core.dproj</Dependencies>
 			</Projects>
-			<Projects Include="Console.dproj">
-				<Dependencies/>
-			</Projects>
 			<Projects Include="Spring.Tests.dproj">
 				<Dependencies>Spring.Base.dproj;Spring.Core.dproj;Spring.Extensions.dproj</Dependencies>
+			</Projects>
+			<Projects Include="Console.dproj">
+				<Dependencies/>
 			</Projects>
 		</ItemGroup>
 		<ProjectExtensions>
@@ -53,15 +53,6 @@
 		<Target DependsOnTargets="Spring.Base:Make;Spring.Core:Make" Name="Spring_Extensions:Make">
 			<MSBuild Targets="Make" Projects="Spring.Extensions.dproj"/>
 		</Target>
-		<Target Name="Console">
-			<MSBuild Projects="Console.dproj"/>
-		</Target>
-		<Target Name="Console:Clean">
-			<MSBuild Targets="Clean" Projects="Console.dproj"/>
-		</Target>
-		<Target Name="Console:Make">
-			<MSBuild Targets="Make" Projects="Console.dproj"/>
-		</Target>
 		<Target DependsOnTargets="Spring.Base;Spring.Core;Spring.Extensions" Name="Spring_Tests">
 			<MSBuild Projects="Spring.Tests.dproj"/>
 		</Target>
@@ -71,14 +62,23 @@
 		<Target DependsOnTargets="Spring.Base:Make;Spring.Core:Make;Spring.Extensions:Make" Name="Spring_Tests:Make">
 			<MSBuild Targets="Make" Projects="Spring.Tests.dproj"/>
 		</Target>
+		<Target Name="Console">
+			<MSBuild Projects="Console.dproj"/>
+		</Target>
+		<Target Name="Console:Clean">
+			<MSBuild Targets="Clean" Projects="Console.dproj"/>
+		</Target>
+		<Target Name="Console:Make">
+			<MSBuild Targets="Make" Projects="Console.dproj"/>
+		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="Spring_Base;Spring_Core;Spring_Extensions;Console;Spring_Tests"/>
+			<CallTarget Targets="Spring_Base;Spring_Core;Spring_Extensions;Spring_Tests;Console"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="Spring_Base:Clean;Spring_Core:Clean;Spring_Extensions:Clean;Console:Clean;Spring_Tests:Clean"/>
+			<CallTarget Targets="Spring_Base:Clean;Spring_Core:Clean;Spring_Extensions:Clean;Spring_Tests:Clean;Console:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="Spring_Base:Make;Spring_Core:Make;Spring_Extensions:Make;Console:Make;Spring_Tests:Make"/>
+			<CallTarget Targets="Spring_Base:Make;Spring_Core:Make;Spring_Extensions:Make;Spring_Tests:Make;Console:Make"/>
 		</Target>
 		<Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 	</Project>

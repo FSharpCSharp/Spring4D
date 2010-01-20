@@ -209,8 +209,8 @@ type
 
   TContainedEnumerableEx<T> = class abstract(TEnumerableEx<T>, IInterface)
   private
-    fController: Pointer;
-    function GetController: IInterface;  // Weak reference to controller
+    fController: Pointer;  // Weak reference to controller
+    function GetController: IInterface;
   protected
     { IInterface }
     function _AddRef: Integer; stdcall;

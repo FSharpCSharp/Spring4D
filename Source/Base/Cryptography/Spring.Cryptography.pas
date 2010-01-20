@@ -95,6 +95,7 @@ type
   /// <summary>
   /// TCipherMode
   /// </summary>
+  /// <seealso>http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation</seealso>
   TCipherMode = (
     /// <summary>
     /// Cipher-Block Chaining
@@ -211,7 +212,6 @@ type
     function Encrypt(const inputString: WideString): TBuffer; overload;
     function Encrypt(const inputString: RawByteString): TBuffer; overload;
     procedure Encrypt(inputStream, outputStream: TStream); overload;
-//    procedure EncryptFile(const sourceFileName, targetFileName: string); overload;
     function Decrypt(const buffer: TBuffer): TBuffer; overload;
     function Decrypt(const buffer: array of Byte): TBuffer; overload;
     function Decrypt(const buffer: array of Byte; startIndex, count: Integer): TBuffer; overload;
@@ -220,7 +220,6 @@ type
     function Decrypt(const inputString: WideString): TBuffer; overload;
     function Decrypt(const inputString: RawByteString): TBuffer; overload;
     procedure Decrypt(inputStream, outputStream: TStream); overload;
-//    procedure DecryptFile(const sourceFileName, targetFileName: string); overload;
     /// <summary>
     /// Gets or sets the ciphyer mode for operation of the symmetric algorithm.
     /// </summary>
@@ -502,8 +501,8 @@ type
 //    ['{E5EF09B3-8A6D-432A-87A6-DDB818C59789}']
 //  end;
 
-  TBlockTransformDelegate = reference to procedure(const inputBuffer: TBytes;
-    var outputBuffer: TBytes);
+//  TBlockTransformDelegate = reference to procedure(const inputBuffer: TBytes;
+//    var outputBuffer: TBytes);
 
   /// <summary>
   /// Abstract base class for symmetric algorithms.
@@ -536,11 +535,9 @@ type
   protected
     function GenerateIV: TBuffer; virtual;
     function GenerateKey: TBuffer; virtual;
-    procedure FillInPadding(var buffer: TBytes; startIndex: Integer; count: Integer);
-//    procedure ExtractPadding(var buffer: TBytes; startIndex: Integer; count: Integer);
+    procedure AddPadding(var buffer: TBuffer; startIndex: Integer; count: Integer);
+    procedure RemovePadding(var buffer: TBuffer);
     procedure ValidateKey(const key: TBuffer); virtual;
-//    procedure EncryptBlock(const inputBuffer: TBytes; var outputBuffer: TBytes); virtual;
-//    procedure DecryptBlock(const inputBuffer: TBytes; var outputBuffer: TBytes); virtual;
   protected
     procedure DoEncryptBlock(const inputBuffer: TBytes; var outputBuffer: TBytes); virtual; abstract;
     procedure DoDecryptBlock(const inputBuffer: TBytes; var outputBuffer: TBytes); virtual; abstract;
@@ -554,7 +551,6 @@ type
     function Encrypt(const inputString: WideString): TBuffer; overload;
     function Encrypt(const inputString: RawByteString): TBuffer; overload;
     procedure Encrypt(inputStream, outputStream: TStream); overload;
-//    procedure EncryptFile(const sourceFileName, targetFileName: string); overload;
     function Decrypt(const buffer: Pointer; count: Integer): TBuffer; overload;
     function Decrypt(const buffer: TBuffer): TBuffer; overload;
     function Decrypt(const buffer: array of Byte): TBuffer; overload;
@@ -563,7 +559,6 @@ type
     function Decrypt(const inputString: WideString): TBuffer; overload;
     function Decrypt(const inputString: RawByteString): TBuffer; overload;
     procedure Decrypt(inputStream, outputStream: TStream); overload;
-//    procedure DecryptFile(const sourceFileName, targetFileName: string); overload;
     property CipherMode: TCipherMode read GetCipherMode write SetCipherMode;
     property PaddingMode: TPaddingMode read GetPaddingMode write SetPaddingMode;
     property Key: TBuffer read GetKey write SetKey;
@@ -997,40 +992,53 @@ end;
 function TSymmetricAlgorithmBase.Encrypt(const buffer: Pointer;
   count: Integer): TBuffer;
 var
-  inputBuffer, outputBuffer: TBytes;
-  paddingSize: Integer;
   p: PByte;
+  plainText: TBuffer;
+  cipherText: TBytes;
+  paddingSize: Integer;
   startIndex: Integer;
+  firstBlock: Boolean;
 begin
   TArgument.CheckRange(count >= 0, 'count');
   if count = 0 then
   begin
-    Result := TBuffer.Create([]);
-    Exit;
+    Exit(TBuffer.Empty);  //?
   end;
   p := buffer;
-  SetLength(inputBuffer, BlockSize);
-  SetLength(outputBuffer, BlockSize);
+  plainText.Size := BlockSize;
   paddingSize := BlockSize - (count mod BlockSize);
+  SetLength(cipherText, BlockSize);
+  firstBlock := True;
   while count >= BlockSize do
   begin
-    Move(p^, inputBuffer[0], BlockSize);
-    DoEncryptBlock(inputBuffer, outputBuffer);
-    Result := Result + outputBuffer;
+    plainText := TBuffer.Create(p, BlockSize);
+    if CipherMode = cmCBC then
+    begin
+      if firstBlock then
+        plainText := plainText xor IV
+      else
+        plainText := plainText xor cipherText;
+      firstBlock := False;
+    end;
+    DoEncryptBlock(plainText, cipherText);
+    Result := Result + cipherText;
     Dec(count, BlockSize);
     Inc(p, BlockSize);
   end;
-  if (count > 0) and (PaddingMode = pmNone) then
+  if (PaddingMode = pmNone) then
   begin
-    raise ECryptographicException.CreateRes(@SPaddingModeMissing);
-  end;
-  if PaddingMode <> pmNone then
+    if count > 0 then
+    begin
+      raise ECryptographicException.CreateRes(@SPaddingModeMissing);
+    end;
+  end
+  else
   begin
-    Move(p^, inputBuffer[0], count);
+    Move(p^, plainText.Memory^, count);
     startIndex := count mod BlockSize;
-    FillInPadding(inputBuffer, startIndex, paddingSize);
-    DoEncryptBlock(inputBuffer, outputBuffer);
-    Result := Result + outputBuffer;
+    AddPadding(plainText, startIndex, paddingSize);
+    DoEncryptBlock(plainText.AsBytes, cipherText);
+    Result := Result + cipherText;
   end;
 end;
 
@@ -1052,28 +1060,30 @@ begin
 end;
 
 procedure TSymmetricAlgorithmBase.Encrypt(inputStream, outputStream: TStream);
-//var
-//  buffer: TBytes;
-//  bytes: Integer;
+var
+  inputBuffer: TBuffer;
+  outputBuffer: TBuffer;
+  bytes: Integer;
 begin
   TArgument.CheckNotNull(inputStream, 'inputStream');
   TArgument.CheckNotNull(outputStream, 'outputStream');
-
-//  SetLength(buffer, BlockSize);
-//  bytes := inputStream.Read(buffer[0], BlockSize);
-//  while bytes > 0 do
-//  begin
-//
-//  end;
-  raise ENotImplementedException.Create('Encrypt(inputStream, outputStream)');
+  inputBuffer.Size := BlockSize;
+  outputBuffer.Size := BlockSize;
+  bytes := inputStream.Read(inputBuffer.Memory^, inputBuffer.Size);
+  while bytes > 0 do
+  begin
+    outputBuffer := Encrypt(inputBuffer);
+    outputStream.WriteBuffer(outputBuffer.Memory^, outputBuffer.Size);
+    bytes := inputStream.Read(inputBuffer.Memory^, inputBuffer.Size);
+  end;
 end;
 
-procedure TSymmetricAlgorithmBase.FillInPadding(var buffer: TBytes; startIndex,
+procedure TSymmetricAlgorithmBase.AddPadding(var buffer: TBuffer; startIndex,
   count: Integer);
 var
   i: Integer;
 begin
-  TArgument.CheckRange(buffer, startIndex, count);
+  TArgument.CheckRange(buffer.Size, startIndex, count);
   case PaddingMode of
     pmNone: ;
     pmPKCS7:
@@ -1110,24 +1120,95 @@ begin
   end;
 end;
 
+procedure TSymmetricAlgorithmBase.RemovePadding(var buffer: TBuffer);
+var
+  paddingSize: Integer;
+  count: Integer;
+  i: Integer;
+begin
+  Assert(buffer.Size = BlockSize);
+  case PaddingMode of
+    pmNone: ;
+    pmPKCS7, pmANSIX923, pmISO10126:
+    begin
+      paddingSize := Integer(buffer.Last);
+      if paddingSize = BlockSize then
+      begin
+        // Validate
+        buffer := TBuffer.Empty;
+      end
+      else if paddingSize < BlockSize then
+      begin
+        count := BlockSize - paddingSize;
+        buffer := buffer.Left(count);
+      end
+      else
+      begin
+        raise ECryptographicException.CreateRes(@SInvalidCipherText);
+      end;
+    end;
+    pmZeros:
+    begin
+      for i := buffer.Size - 1 downto 0 do
+      begin
+        if buffer[i] = 0 then
+        begin
+          buffer.Size := buffer.Size - 1;
+        end;
+      end;
+    end;
+  end;
+end;
+
 function TSymmetricAlgorithmBase.Decrypt(const buffer: Pointer;
   count: Integer): TBuffer;
 var
-  inputBuffer, outputBuffer: TBytes;
+  inputBuffer, plainText: TBuffer;
+  outputBuffer: TBytes;
+  lastCipherText: TBuffer;
   p: PByte;
+  firstBlock: Boolean;
 begin
   TArgument.CheckRange(count >= 0, 'count');
 
+  firstBlock := True;
+  Result := TBuffer.Empty;
   p := buffer;
-  SetLength(inputBuffer, BlockSize);
+  inputBuffer.Size := BlockSize;
+  plainText.Size := BlockSize;
   SetLength(outputBuffer, BlockSize);
   while count >= BlockSize do
   begin
-    Move(p^, inputBuffer[0], BlockSize);
+    inputBuffer := TBuffer.Create(p, BlockSize);
     DoDecryptBlock(inputBuffer, outputBuffer);
-    Result := Result + outputBuffer;
+    if CipherMode = cmCBC then
+    begin
+      if firstBlock then
+      begin
+        plainText := outputBuffer xor IV;
+        firstBlock := False;
+      end
+      else
+      begin
+        plainText := outputBuffer xor lastCipherText;
+      end;
+      lastCipherText := inputBuffer.Clone;
+    end
+    else
+    begin
+      plainText := outputBuffer;
+    end;
+    if count = BlockSize then // FinalBlock
+    begin
+      RemovePadding(plainText);
+    end;
+    Result := Result + plainText;
     Dec(count, BlockSize);
     Inc(p, BlockSize);
+  end;
+  if count > 0 then
+  begin
+    raise ECryptographicException.CreateRes(@SInvalidCipherText);
   end;
 end;
 
@@ -1166,10 +1247,25 @@ begin
 end;
 
 procedure TSymmetricAlgorithmBase.Decrypt(inputStream, outputStream: TStream);
+var
+  buffer: TBytes;
+  count: Integer;
+  outputBuffer: TBuffer;
 begin
   TArgument.CheckNotNull(inputStream, 'inputStream');
   TArgument.CheckNotNull(outputStream, 'outputStream');
-  raise ENotImplementedException.Create('Decrypt(inputStream, outputStream)');
+  SetLength(buffer, BlockSize);
+  count := inputStream.Read(buffer[0], Length(buffer));
+  while count >= BlockSize do
+  begin
+    outputBuffer := Decrypt(buffer);
+    outputBuffer.SaveToStream(outputStream);
+    count := inputStream.Read(buffer[0], Length(buffer));
+  end;
+  if count > 0 then
+  begin
+    raise ECryptographicException.CreateRes(@SInvalidCipherText);
+  end;
 end;
 
 function TSymmetricAlgorithmBase.GetCipherMode: TCipherMode;

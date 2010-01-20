@@ -206,8 +206,11 @@ type
     function GetSize: Integer;
     function GetByteItem(const index: Integer): Byte;
     procedure SetByteItem(const index: Integer; const value: Byte);
+    procedure SetSize(const value: Integer);
+  private
+    class var fEmpty: TBuffer;
   public
-//    constructor Create(capacity: Integer); overload;
+    constructor Create(size: Integer); overload;
     constructor Create(const buffer: Pointer; count: Integer); overload;
     constructor Create(const buffer: Pointer; startIndex, count: Integer); overload;
     constructor Create(const buffer: array of Byte); overload;
@@ -244,7 +247,9 @@ type
     function Equals(const buffer: TBuffer): Boolean; overload;
     function Equals(const buffer: array of Byte): Boolean; overload;
     function Equals(const buffer: Pointer; count: Integer): Boolean; overload;
-//    function Equals(const hexString: string): Boolean; overload;
+    function Equals(const hexString: string): Boolean; overload;
+
+    procedure SaveToStream(stream: TStream);
 
     function ToBytes: TBytes;
     function ToString: string; experimental;
@@ -258,8 +263,10 @@ type
     property AsBytes: TBytes read fBytes;
     property IsEmpty: Boolean read GetIsEmpty;
     property Memory: PByte read GetMemory;
-    property Size: Integer read GetSize;
+    property Size: Integer read GetSize write SetSize;
     property Bytes[const index: Integer]: Byte read GetByteItem write SetByteItem; default;
+
+    class property Empty: TBuffer read fEmpty;
 
     { Operator Overloads }
     class operator Implicit(const value: TBytes): TBuffer;
@@ -267,8 +274,10 @@ type
     class operator Explicit(const value: TBytes): TBuffer;
     class operator Explicit(const value: TBuffer): TBytes;
     class operator Add(const left, right: TBuffer): TBuffer;
+    class operator Add(const left: TBuffer; const right: Byte): TBuffer;
     class operator Equal(const left, right: TBuffer): Boolean;
     class operator NotEqual(const left, right: TBuffer): Boolean;
+    class operator BitwiseXor(const left, right: TBuffer): TBuffer;
   end;
 
   {$ENDREGION}
@@ -704,7 +713,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TLifetimeType & Related Attributes (Experimental)'}
+  {$REGION 'TLifetimeType & Related Attributes'}
 
   /// <summary>
   /// Lifetime Type Enumeration
@@ -1463,6 +1472,12 @@ end;
 
 {$REGION 'TBuffer'}
 
+constructor TBuffer.Create(size: Integer);
+begin
+  TArgument.CheckRange(size >= 0, 'size');
+  SetLength(fBytes, size);
+end;
+
 constructor TBuffer.Create(const buffer: Pointer; count: Integer);
 begin
   TArgument.CheckRange(count >= 0, 'count');
@@ -1520,6 +1535,12 @@ begin
   TArgument.CheckRange(index >= 0, 'index');
 
   Result := PByte(@buffer)[index];
+end;
+
+procedure TBuffer.SaveToStream(stream: TStream);
+begin
+  TArgument.CheckNotNull(stream, 'stream');
+  stream.WriteBuffer(fBytes[0], Length(fBytes));
 end;
 
 class procedure TBuffer.SetByte(var buffer; const index: Integer;
@@ -1690,6 +1711,14 @@ begin
   Result := (count = Self.Size) and CompareMem(Self.Memory, buffer, count);
 end;
 
+function TBuffer.Equals(const hexString: string): Boolean;
+var
+  buffer: TBuffer;
+begin
+  buffer := TBuffer.FromHexString(hexString);
+  Result := Equals(buffer);
+end;
+
 function TBuffer.ToString: string;
 begin
   SetLength(Result, Length(fBytes) div SizeOf(Char));
@@ -1722,7 +1751,7 @@ end;
 
 function TBuffer.ToHexString: string;
 begin
-  Result := TBuffer.ConvertToHexString(Memory, Size)
+  Result := TBuffer.ConvertToHexString(Memory, Size);
 end;
 
 function TBuffer.ToHexString(const prefix: string; const delimiter: string): string;
@@ -1757,6 +1786,11 @@ begin
   fBytes[index] := value;
 end;
 
+procedure TBuffer.SetSize(const value: Integer);
+begin
+  SetLength(fBytes, value);
+end;
+
 class operator TBuffer.Implicit(const value: TBytes): TBuffer;
 begin
   Result.fBytes := value;
@@ -1784,6 +1818,13 @@ begin
   Move(right.fBytes[0], Result.fBytes[left.Size], right.Size);
 end;
 
+class operator TBuffer.Add(const left: TBuffer; const right: Byte): TBuffer;
+begin
+  Result.Size := left.Size + 1;
+  Move(left.Memory^, Result.Memory^, left.Size);
+  Result[Result.Size-1] := right;
+end;
+
 class operator TBuffer.Equal(const left, right: TBuffer): Boolean;
 begin
   Result := left.Equals(right);
@@ -1792,6 +1833,21 @@ end;
 class operator TBuffer.NotEqual(const left, right: TBuffer): Boolean;
 begin
   Result := not left.Equals(right);
+end;
+
+class operator TBuffer.BitwiseXor(const left, right: TBuffer): TBuffer;
+var
+  i: Integer;
+begin
+  if left.Size <> right.Size then
+  begin
+    raise EInvalidOperation.CreateRes(@SInvalidOperationBufferSizeShouldBeSame);
+  end;
+  Result.Size := left.Size;
+  for i := 0 to Result.Size - 1 do
+  begin
+    Result[i] := left[i] xor right[i];
+  end;
 end;
 
 {$ENDREGION}

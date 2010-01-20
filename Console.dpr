@@ -50,10 +50,6 @@ uses
   Spring.Utils,
   Spring.Utils.IO;
 
-const
-  RootPath = 'C:\';
-  Pattern = '*.dll';
-
 type
   TPerson = class(TNotifiableObject)
   private
@@ -66,41 +62,50 @@ type
     property Age: Integer read fAge write SetAge;
   end;
 
-  TTest = class
-  public
-    procedure SetProperty<T>(const propertyName: string; const value: T);
-  end;
+{ TPerson }
+
+procedure TPerson.SetName(const Value: string);
+begin
+  SetProperty('Name', fName, Value);
+end;
+
+procedure TPerson.SetAge(const Value: Integer);
+begin
+  SetProperty('Age', fAge, value);
+end;
 
 procedure Test;
 var
   paul: TPerson;
-//  t: TTest;
 begin
-//  t.SetProperty('a', 'abc');
   paul := TPerson.Create;
   paul.IsPropertyNotificationEnabled := True;
-  paul.OnPropertyChanging.AddHandler(
-    procedure (sender: TObject; const e: TPropertyNotificationEventArgs)
-    begin
-      Writeln('Changing#1:' + e.PropertyName);
-    end
-  ).AddHandler(
-    procedure (sender: TObject; const e: TPropertyNotificationEventArgs)
-    begin
-      Writeln('Changing#2:' + e.PropertyName);
-    end
-  );
-  paul.OnPropertyChanging.AddHandler(
-    procedure (sender: TObject; const e: TPropertyNotificationEventArgs)
-    begin
-      Writeln('Changed#1:' + e.PropertyName);
-    end
-  ).AddHandler(
-    procedure (sender: TObject; const e: TPropertyNotificationEventArgs)
-    begin
-      Writeln('Changed#2:' + e.PropertyName);
-    end
-  );
+  paul.OnPropertyChanging
+    .AddHandler(
+      procedure (sender: TObject; const e: TPropertyNotificationEventArgs)
+      begin
+        Writeln('Changing#1:' + e.PropertyName);
+      end
+    )
+    .AddHandler(
+      procedure (sender: TObject; const e: TPropertyNotificationEventArgs)
+      begin
+        Writeln('Changing#2:' + e.PropertyName);
+      end
+    );
+  paul.OnPropertyChanging
+    .AddHandler(
+      procedure (sender: TObject; const e: TPropertyNotificationEventArgs)
+      begin
+        Writeln('Changed#1:' + e.PropertyName);
+      end
+    )
+    .AddHandler(
+      procedure (sender: TObject; const e: TPropertyNotificationEventArgs)
+      begin
+        Writeln('Changed#2:' + e.PropertyName);
+      end
+    );
   paul.Name := 'Paul';
   paul.Age := 28;
   paul.BeginUpdate;
@@ -115,28 +120,12 @@ begin
   paul.Free;
 end;
 
-{ TPerson }
-
-procedure TPerson.SetName(const Value: string);
-begin
-  SetProperty('Name', fName, Value);
-end;
-
-procedure TPerson.SetAge(const Value: Integer);
-begin
-  SetProperty('Age', fAge, value);
-end;
-
-{ TTest }
-
-procedure TTest.SetProperty<T>(const propertyName: string; const value: T);
-begin
-  Writeln(propertyName);
-end;
+const
+  RootPath = 'C:\';
+  Pattern = '*.dll';
 
 begin
   Test;
-
   (*
   // warm up
   count := 0;
@@ -171,5 +160,6 @@ begin
   stopwatch.Stop;
   Writeln(Format('%.2d:%.3d', [stopwatch.Elapsed.Seconds, stopwatch.Elapsed.Milliseconds]));
   //*)
+  Writeln('Press ENTER to exit...');
   Readln;
 end.

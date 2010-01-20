@@ -37,6 +37,7 @@ resourcestring
   SArgumentNullException       = 'EArgumentNullException: %s';
   SInvalidEnumArgument         = 'Invalid enum argument: %s';
   SUnexpectedTypeKindArgument  = 'Unexpected type kind %s for the argument %s.';
+  SInvalidOperationBufferSizeShouldBeSame = 'Buffer size should be the same.';
 
   SCannotAccessRegistryKey     = 'Cannot access the registry key: %s.';
 
@@ -143,6 +144,7 @@ resourcestring
   SIllegalKeySize = 'Illegal key size: %d.';
   SIllegalIVSize = 'Illegal IV size: %d.';
   SPaddingModeMissing = 'Padding mode is missing';
+  SInvalidCipherText = 'Illegal cipher text.';
 
   {$ENDREGION}
 

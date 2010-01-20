@@ -64,7 +64,8 @@ begin
     TTestBuffer.Suite,
     TTestEmptyBuffer.Suite,
     TTestFiveByteBuffer.Suite,
-    TRepeatedTest.Create(TTestNullableInteger.Suite, 3)
+    TRepeatedTest.Create(TTestNullableInteger.Suite, 3),
+    TTestDelegate.Suite
   ]);
 
   RegisterTests('Base.DesignPatterns', [

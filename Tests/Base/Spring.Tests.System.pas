@@ -163,6 +163,23 @@ type
     procedure TestFromVariant;
   end;
 
+  TTestDelegate = class(TTestCase)
+  private
+    fDelegate: IDelegate<TProc>;
+    fCallback: TProc<TProc>;
+    fHandler1: TProc;
+    fHandler2: TProc;
+    fHandler1Times: Integer;
+    fHandler2Times: Integer;
+    procedure Handler1;
+    procedure Handler2;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestOneHandler;
+    procedure TestTwoHandlers;
+  end;
 
 implementation
 
@@ -879,6 +896,72 @@ begin
   CheckFalse(TryParseDateTime('2009080A', 'YYYYMMDD', value));
   CheckFalse(TryParseDateTime('200908011230', 'YYYYMMDDHHNNSS', value));
   CheckFalse(TryParseDateTime('20090801123007', 'YYYYMMDDHHNNSSZZZ', value));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestDelegate'}
+
+procedure TTestDelegate.SetUp;
+begin
+  inherited;
+  fDelegate := TDelegate<TProc>.Create;
+  fCallback :=
+    procedure (handler: TProc)
+    begin
+      handler();
+    end;
+  fHandler1 := Handler1;
+  fHandler2 := Handler2;
+  fHandler1Times := 0;
+  fHandler2Times := 0;
+end;
+
+procedure TTestDelegate.TearDown;
+begin
+  fDelegate := nil;
+  fHandler1 := nil;
+  fHandler2 := nil;
+  fCallback := nil;
+  inherited;
+end;
+
+procedure TTestDelegate.Handler1;
+begin
+  Inc(fHandler1Times);
+end;
+
+procedure TTestDelegate.Handler2;
+begin
+  Inc(fHandler2Times);
+end;
+
+procedure TTestDelegate.TestOneHandler;
+begin
+  fDelegate.AddHandler(fHandler1);
+  fDelegate.Invoke(fCallback);
+  CheckEquals(1, fHandler1Times);
+  CheckEquals(0, fHandler2Times);
+end;
+
+procedure TTestDelegate.TestTwoHandlers;
+begin
+  fDelegate.AddHandler(fHandler1);
+  fDelegate.AddHandler(fHandler2);
+  fDelegate.Invoke(fCallback);
+  CheckEquals(1, fHandler1Times);
+  CheckEquals(1, fHandler2Times);
+
+  fDelegate.RemoveHandler(fHandler2);
+  fDelegate.Invoke(fCallback);
+  CheckEquals(2, fHandler1Times);
+  CheckEquals(1, fHandler2Times);
+
+  fDelegate.RemoveHandler(fHandler1);
+  fDelegate.Invoke(fCallback);
+  CheckEquals(2, fHandler1Times);
+  CheckEquals(1, fHandler2Times);
 end;
 
 {$ENDREGION}
