@@ -87,7 +87,7 @@ begin
       begin
         Add(entry.Location);
         Add(entry.TypeString);
-        Add(entry.SizeString);
+        Add(entry.Size.ToString);
         Add(DateTimeToStr(entry.LastWriteTime));
       end;
       item.MakeVisible(True);

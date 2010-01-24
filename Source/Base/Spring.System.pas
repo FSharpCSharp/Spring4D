@@ -190,7 +190,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TBuffer (Experimental)'}
+  {$REGION 'TBuffer'}
 
   /// <summary>
   /// Represents a series of bytes in memory.

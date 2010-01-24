@@ -22,11 +22,6 @@
 {                                                                           }
 {***************************************************************************}
 
-{ TODO: Support more Cipher Modes: cmOFB, cmCFB, cmCTS  }
-{ TODO: Support AES }
-{ TODO: Support MACTripleDES }
-{ TODO: AsymmetricAlgorithm, RSA }
-
 /// <seealso>http://msdn.microsoft.com/en-us/library/92f9ye3s(VS.71).aspx</seealso>
 /// <seealso>http://msdn.microsoft.com/en-us/library/system.security.cryptography.aspx</seealso>
 /// <seealso>http://en.wikipedia.org/wiki/Cryptography</seealso>
@@ -500,9 +495,6 @@ type
 //  IAES = interface(ISymmetricAlgorithm)
 //    ['{E5EF09B3-8A6D-432A-87A6-DDB818C59789}']
 //  end;
-
-//  TBlockTransformDelegate = reference to procedure(const inputBuffer: TBytes;
-//    var outputBuffer: TBytes);
 
   /// <summary>
   /// Abstract base class for symmetric algorithms.

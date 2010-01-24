@@ -18,9 +18,10 @@ Embarcadero Delphi 2010 for Win32
 
 4. How to install?
 * Download the last zip package from the Downloads page, or check out the project from the svn server:
-http://delphi-spring-framework.googlecode.com/svn/trunk/
+http://delphi-spring-framework.googlecode.com/svn/trunk/ (Read-Only)
 * Make sure that the FastMM library, which is also included in the "Third Party" folder, has been installed
-* Open the "Delphi Spring Framework.groupproj"
+* Right click the "Delphi Spring Framework.groupproj"
+* Click "Clean All"
 * Build All packages
 * Add the source directories to the library path/browsing path
 
@@ -37,5 +38,7 @@ Feel free to drop me an email if you have any idea about the project.
 See the wiki page GettingStarted to learn how to get started with Delphi Spring Framework.
 
 8. Credits and Contributors
-Coban (alex@ritlabs.com)
+Coban (alex#ritlabs.com)
 Chris Liu (xmacmail#gmail.com)
+Unknown Author (MD5)
+Unknown Author (DES)
