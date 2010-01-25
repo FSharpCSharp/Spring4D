@@ -1,8 +1,8 @@
 ﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 		<PropertyGroup>
-			<ProjectGuid>{C3948457-7369-4CB5-BFBD-E29222E88C6C}</ProjectGuid>
-			<MainSource>Spring.Extensions.dpk</MainSource>
+			<ProjectGuid>{EA1EF567-486A-4E53-AB3F-45A8F95295A1}</ProjectGuid>
 			<ProjectVersion>12.0</ProjectVersion>
+			<MainSource>Install.dpr</MainSource>
 			<Config Condition="'$(Config)'==''">Debug</Config>
 			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
 		</PropertyGroup>
@@ -20,20 +20,15 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
-			<DCC_UnitSearchPath>Source\Base;Source\Base\Collections;Source\Base\Cryptography;Source\Base\Utils;Source\Core\;Source\Core\IoC;Source\Core\Pool;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UnitSearchPath>..\Source\Base;..\Source\Base\Collections;..\Source\Base\Utils;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_ExeOutput>..\</DCC_ExeOutput>
+			<DCC_DependencyCheckOutputName>..\Install.exe</DCC_DependencyCheckOutputName>
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
-			<DCC_DependencyCheckOutputName>F:\Users\Public\Documents\RAD Studio\7.0\Bpl\Spring.Extensions.bpl</DCC_DependencyCheckOutputName>
-			<RuntimeOnlyPackage>true</RuntimeOnlyPackage>
-			<DCC_Description>Delphi Spring Framework Extensions Library</DCC_Description>
-			<GenDll>true</GenDll>
-			<GenPackage>true</GenPackage>
-			<DesignOnlyPackage>false</DesignOnlyPackage>
 			<DCC_UsePackage>vcl;rtl;vclx;vclimg;vclactnband;dbrtl;vcldb;bdertl;vcldbx;vcltouch;xmlrtl;dsnap;dsnapcon;TeeUI;Tee;TeeDB;vclib;ibxpress;adortl;IndyCore;IndySystem;IndyProtocols;inet;intrawebdb_100_140;Intraweb_100_140;VclSmp;vclie;websnap;webdsnap;inetdb;inetdbbde;inetdbxpress;soaprtl;vclribbon;dbexpress;DbxCommonDriver;DataSnapIndy10ServerTransport;DataSnapProviderClient;DataSnapServer;DbxClientDriver;DBXInterBaseDriver;DBXMySQLDriver;dbxcds;DBXFirebirdDriver;DBXSybaseASEDriver;DBXSybaseASADriver;DBXOracleDriver;DBXMSSQLDriver;DBXInformixDriver;DBXDb2Driver</DCC_UsePackage>
 			<DCC_ImageBase>00400000</DCC_ImageBase>
 			<DCC_Platform>x86</DCC_Platform>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_1)'!=''">
-			<DCC_ExeOutput>Bin\Release</DCC_ExeOutput>
 			<DCC_DcuOutput>Lib\Release</DCC_DcuOutput>
 			<DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
 			<DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
@@ -41,25 +36,17 @@
 			<DCC_DebugInformation>false</DCC_DebugInformation>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2)'!=''">
-			<DCC_UnitSearchPath>Source\Base;Source\Base\Collections;Source\Base\Utils;Source\Core;Source\Core\IoC;Source\Extensions;Source\Extensions\Numbering;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
-			<DCC_ExeOutput>Bin\Debug</DCC_ExeOutput>
 			<DCC_DcuOutput>Lib\Debug</DCC_DcuOutput>
 			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
 			<DCC_DebugDCUs>true</DCC_DebugDCUs>
 		</PropertyGroup>
 		<ItemGroup>
-			<DelphiCompile Include="Spring.Extensions.dpk">
+			<DelphiCompile Include="Install.dpr">
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
-			<DCCReference Include="rtl.dcp"/>
-			<DCCReference Include="vcl.dcp"/>
-			<DCCReference Include="dbrtl.dcp"/>
-			<DCCReference Include="adortl.dcp"/>
-			<DCCReference Include="Spring.Base.dcp"/>
-			<DCCReference Include="Source\Extensions\Spring.Extensions.ResourceStrings.pas"/>
-			<DCCReference Include="Source\Extensions\Numbering\Spring.Numbering.pas"/>
-			<DCCReference Include="Source\Extensions\Numbering\Spring.Numbering.Rules.pas"/>
-			<DCCReference Include="Source\Extensions\Numbering\Spring.Numbering.Utils.pas"/>
+			<DCCReference Include="Source\MainForm.pas">
+				<Form>frmMain</Form>
+			</DCCReference>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>
 			</BuildConfiguration>
@@ -75,11 +62,11 @@
 		<Import Project="$(BDS)\Bin\CodeGear.Delphi.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')"/>
 		<ProjectExtensions>
 			<Borland.Personality>Delphi.Personality.12</Borland.Personality>
-			<Borland.ProjectType>Package</Borland.ProjectType>
+			<Borland.ProjectType/>
 			<BorlandProject>
 				<Delphi.Personality>
 					<Source>
-						<Source Name="MainSource">Spring.Extensions.dpk</Source>
+						<Source Name="MainSource">Install.dpr</Source>
 					</Source>
 					<Parameters>
 						<Parameters Name="UseLauncher">False</Parameters>
@@ -89,10 +76,10 @@
 					<VersionInfo>
 						<VersionInfo Name="IncludeVerInfo">True</VersionInfo>
 						<VersionInfo Name="AutoIncBuild">True</VersionInfo>
-						<VersionInfo Name="MajorVer">0</VersionInfo>
-						<VersionInfo Name="MinorVer">2</VersionInfo>
-						<VersionInfo Name="Release">0</VersionInfo>
-						<VersionInfo Name="Build">566</VersionInfo>
+						<VersionInfo Name="MajorVer">1</VersionInfo>
+						<VersionInfo Name="MinorVer">0</VersionInfo>
+						<VersionInfo Name="Release">1</VersionInfo>
+						<VersionInfo Name="Build">4</VersionInfo>
 						<VersionInfo Name="Debug">False</VersionInfo>
 						<VersionInfo Name="PreRelease">False</VersionInfo>
 						<VersionInfo Name="Special">False</VersionInfo>
@@ -103,8 +90,8 @@
 					</VersionInfo>
 					<VersionInfoKeys>
 						<VersionInfoKeys Name="CompanyName"/>
-						<VersionInfoKeys Name="FileDescription">Delphi Spring Framework Extensions Library</VersionInfoKeys>
-						<VersionInfoKeys Name="FileVersion">0.2.0.566</VersionInfoKeys>
+						<VersionInfoKeys Name="FileDescription">Install Delphi Spring Framework</VersionInfoKeys>
+						<VersionInfoKeys Name="FileVersion">1.0.1.4</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName"/>
 						<VersionInfoKeys Name="LegalCopyright"/>
 						<VersionInfoKeys Name="LegalTrademarks"/>
