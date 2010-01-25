@@ -19,11 +19,9 @@ Embarcadero Delphi 2010 for Win32
 4. How to install?
 * Download the last zip package from the Downloads page, or check out the project from the svn server:
 http://delphi-spring-framework.googlecode.com/svn/trunk/ (Read-Only)
-* Make sure that the FastMM library, which is also included in the "Third Party" folder, has been installed
-* Right click the "Delphi Spring Framework.groupproj"
-* Click "Clean All"
-* Build All packages
-* Add the source directories to the library path/browsing path
+* Run the Install.exe
+* Click the "Install" button
+* Restart the Delphi IDE
 
 5. How to report bugs or feature enhancements?
 It's recommended to use the online Issues page to report bugs or enhancement requests.

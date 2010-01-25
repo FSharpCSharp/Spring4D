@@ -404,6 +404,7 @@ object frmMain: TfrmMain
       Height = 17
       Caption = 'Debug'
       TabOrder = 0
+      OnClick = rbDebugClick
     end
     object rbRelease: TRadioButton
       Left = 20
@@ -414,6 +415,7 @@ object frmMain: TfrmMain
       Checked = True
       TabOrder = 1
       TabStop = True
+      OnClick = rbReleaseClick
     end
   end
   object mmoDetails: TMemo
