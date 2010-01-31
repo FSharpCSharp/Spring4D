@@ -3,20 +3,20 @@
 			<ProjectGuid>{54F590C9-22AC-49C1-BABD-952A3AD7092C}</ProjectGuid>
 		</PropertyGroup>
 		<ItemGroup>
-			<Projects Include="Spring.Base.dproj">
+			<Projects Include="Packages\Spring.Base.dproj">
 				<Dependencies/>
 			</Projects>
-			<Projects Include="Spring.Core.dproj">
-				<Dependencies>Spring.Base.dproj</Dependencies>
+			<Projects Include="Packages\Spring.Core.dproj">
+				<Dependencies>Packages\Spring.Base.dproj</Dependencies>
 			</Projects>
-			<Projects Include="Spring.Extensions.dproj">
-				<Dependencies>Spring.Base.dproj;Spring.Core.dproj</Dependencies>
+			<Projects Include="Packages\Spring.Extensions.dproj">
+				<Dependencies>Packages\Spring.Base.dproj;Packages\Spring.Core.dproj</Dependencies>
 			</Projects>
-			<Projects Include="Spring.Tests.dproj">
-				<Dependencies>Spring.Base.dproj;Spring.Core.dproj;Spring.Extensions.dproj</Dependencies>
+			<Projects Include="Tests\Spring.Tests.dproj">
+				<Dependencies>Packages\Spring.Base.dproj;Packages\Spring.Core.dproj;Packages\Spring.Extensions.dproj</Dependencies>
 			</Projects>
-			<Projects Include="Console.dproj">
-				<Dependencies/>
+			<Projects Include="Build\Build.dproj">
+				<Dependencies>Packages\Spring.Base.dproj;Packages\Spring.Core.dproj;Packages\Spring.Extensions.dproj</Dependencies>
 			</Projects>
 		</ItemGroup>
 		<ProjectExtensions>
@@ -27,58 +27,56 @@
 			</BorlandProject>
 		</ProjectExtensions>
 		<Target Name="Spring_Base">
-			<MSBuild Projects="Spring.Base.dproj"/>
+			<MSBuild Projects="Packages\Spring.Base.dproj"/>
 		</Target>
 		<Target Name="Spring_Base:Clean">
-			<MSBuild Targets="Clean" Projects="Spring.Base.dproj"/>
+			<MSBuild Targets="Clean" Projects="Packages\Spring.Base.dproj"/>
 		</Target>
 		<Target Name="Spring_Base:Make">
-			<MSBuild Targets="Make" Projects="Spring.Base.dproj"/>
+			<MSBuild Targets="Make" Projects="Packages\Spring.Base.dproj"/>
 		</Target>
 		<Target DependsOnTargets="Spring.Base" Name="Spring_Core">
-			<MSBuild Projects="Spring.Core.dproj"/>
+			<MSBuild Projects="Packages\Spring.Core.dproj"/>
 		</Target>
 		<Target DependsOnTargets="Spring.Base:Clean" Name="Spring_Core:Clean">
-			<MSBuild Targets="Clean" Projects="Spring.Core.dproj"/>
+			<MSBuild Targets="Clean" Projects="Packages\Spring.Core.dproj"/>
 		</Target>
 		<Target DependsOnTargets="Spring.Base:Make" Name="Spring_Core:Make">
-			<MSBuild Targets="Make" Projects="Spring.Core.dproj"/>
+			<MSBuild Targets="Make" Projects="Packages\Spring.Core.dproj"/>
 		</Target>
 		<Target DependsOnTargets="Spring.Base;Spring.Core" Name="Spring_Extensions">
-			<MSBuild Projects="Spring.Extensions.dproj"/>
+			<MSBuild Projects="Packages\Spring.Extensions.dproj"/>
 		</Target>
 		<Target DependsOnTargets="Spring.Base:Clean;Spring.Core:Clean" Name="Spring_Extensions:Clean">
-			<MSBuild Targets="Clean" Projects="Spring.Extensions.dproj"/>
+			<MSBuild Targets="Clean" Projects="Packages\Spring.Extensions.dproj"/>
 		</Target>
 		<Target DependsOnTargets="Spring.Base:Make;Spring.Core:Make" Name="Spring_Extensions:Make">
-			<MSBuild Targets="Make" Projects="Spring.Extensions.dproj"/>
+			<MSBuild Targets="Make" Projects="Packages\Spring.Extensions.dproj"/>
 		</Target>
 		<Target DependsOnTargets="Spring.Base;Spring.Core;Spring.Extensions" Name="Spring_Tests">
-			<MSBuild Projects="Spring.Tests.dproj"/>
+			<MSBuild Projects="Tests\Spring.Tests.dproj"/>
 		</Target>
 		<Target DependsOnTargets="Spring.Base:Clean;Spring.Core:Clean;Spring.Extensions:Clean" Name="Spring_Tests:Clean">
-			<MSBuild Targets="Clean" Projects="Spring.Tests.dproj"/>
+			<MSBuild Targets="Clean" Projects="Tests\Spring.Tests.dproj"/>
 		</Target>
 		<Target DependsOnTargets="Spring.Base:Make;Spring.Core:Make;Spring.Extensions:Make" Name="Spring_Tests:Make">
-			<MSBuild Targets="Make" Projects="Spring.Tests.dproj"/>
+			<MSBuild Targets="Make" Projects="Tests\Spring.Tests.dproj"/>
 		</Target>
-		<Target Name="Console">
-			<MSBuild Projects="Console.dproj"/>
+		<Target DependsOnTargets="Spring.Base;Spring.Core;Spring.Extensions" Name="Build">
+			<MSBuild Projects="Build\Build.dproj"/>
+			<CallTarget Targets="Spring_Base;Spring_Core;Spring_Extensions;Spring_Tests;Build"/>
 		</Target>
-		<Target Name="Console:Clean">
-			<MSBuild Targets="Clean" Projects="Console.dproj"/>
+		<Target DependsOnTargets="Spring.Base:Clean;Spring.Core:Clean;Spring.Extensions:Clean" Name="Build:Clean">
+			<MSBuild Targets="Clean" Projects="Build\Build.dproj"/>
 		</Target>
-		<Target Name="Console:Make">
-			<MSBuild Targets="Make" Projects="Console.dproj"/>
-		</Target>
-		<Target Name="Build">
-			<CallTarget Targets="Spring_Base;Spring_Core;Spring_Extensions;Spring_Tests;Console"/>
+		<Target DependsOnTargets="Spring.Base:Make;Spring.Core:Make;Spring.Extensions:Make" Name="Build:Make">
+			<MSBuild Targets="Make" Projects="Build\Build.dproj"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="Spring_Base:Clean;Spring_Core:Clean;Spring_Extensions:Clean;Spring_Tests:Clean;Console:Clean"/>
+			<CallTarget Targets="Spring_Base:Clean;Spring_Core:Clean;Spring_Extensions:Clean;Spring_Tests:Clean;Build:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="Spring_Base:Make;Spring_Core:Make;Spring_Extensions:Make;Spring_Tests:Make;Console:Make"/>
+			<CallTarget Targets="Spring_Base:Make;Spring_Core:Make;Spring_Extensions:Make;Spring_Tests:Make;Build:Make"/>
 		</Target>
 		<Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 	</Project>

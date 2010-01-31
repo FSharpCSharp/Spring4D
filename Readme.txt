@@ -16,11 +16,11 @@ Project Homepage: http://delphi-spring-framework.googlecode.com
 3. Requirements
 Embarcadero Delphi 2010 for Win32
 
-4. How to install?
+4. How to build the project?
 * Download the last zip package from the Downloads page, or check out the project from the svn server:
 http://delphi-spring-framework.googlecode.com/svn/trunk/ (Read-Only)
-* Run the Install.exe
-* Click the "Install" button
+* Run the Build.exe
+* Click the "Build" button
 * Restart the Delphi IDE
 
 5. How to report bugs or feature enhancements?
@@ -35,8 +35,10 @@ Feel free to drop me an email if you have any idea about the project.
 7. Getting Started
 See the wiki page GettingStarted to learn how to get started with Delphi Spring Framework.
 
-8. Credits and Contributors
+8. Acknowledgements
 Coban (alex#ritlabs.com)
-Chris Liu (xmacmail#gmail.com)
 Unknown Author (MD5)
 Unknown Author (DES)
+
+9. Contributors
+Chris Liu (xmacmail#gmail.com)

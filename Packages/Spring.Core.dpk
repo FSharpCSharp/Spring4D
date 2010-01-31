@@ -1,0 +1,49 @@
+package Spring.Core;
+
+{$R *.res}
+{$ALIGN 8}
+{$ASSERTIONS ON}
+{$BOOLEVAL OFF}
+{$DEBUGINFO ON}
+{$EXTENDEDSYNTAX ON}
+{$IMPORTEDDATA ON}
+{$IOCHECKS ON}
+{$LOCALSYMBOLS ON}
+{$LONGSTRINGS ON}
+{$OPENSTRINGS ON}
+{$OPTIMIZATION ON}
+{$OVERFLOWCHECKS OFF}
+{$RANGECHECKS OFF}
+{$REFERENCEINFO ON}
+{$SAFEDIVIDE OFF}
+{$STACKFRAMES OFF}
+{$TYPEDADDRESS OFF}
+{$VARSTRINGCHECKS ON}
+{$WRITEABLECONST OFF}
+{$MINENUMSIZE 1}
+{$IMAGEBASE $400000}
+{$DESCRIPTION 'Delphi Spring Framework Core Library'}
+{$RUNONLY}
+{$IMPLICITBUILD ON}
+
+requires
+  rtl,
+  vcl,
+  xmlrtl,
+  Spring.Base;
+
+contains
+  Spring.IoC.Builder in '..\Source\Core\IoC\Spring.IoC.Builder.pas',
+  Spring.IoC.ComponentActivator in '..\Source\Core\IoC\Spring.IoC.ComponentActivator.pas',
+  Spring.IoC.Core in '..\Source\Core\IoC\Spring.IoC.Core.pas',
+  Spring.IoC.Injection in '..\Source\Core\IoC\Spring.IoC.Injection.pas',
+  Spring.IoC.LifetimeManager in '..\Source\Core\IoC\Spring.IoC.LifetimeManager.pas',
+  Spring.IoC in '..\Source\Core\IoC\Spring.IoC.pas',
+  Spring.IoC.Registration in '..\Source\Core\IoC\Spring.IoC.Registration.pas',
+  Spring.IoC.Resolvers in '..\Source\Core\IoC\Spring.IoC.Resolvers.pas',
+  Spring.Core.ResourceStrings in '..\Source\Core\Spring.Core.ResourceStrings.pas',
+  Spring.Pool in '..\Source\Core\Pool\Spring.Pool.pas';
+
+end.
+
+

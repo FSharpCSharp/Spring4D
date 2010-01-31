@@ -531,15 +531,6 @@ type
     procedure SetIsPropertyNotificationEnabled(const value: Boolean);
   protected
     procedure SetProperty<T>(const propertyName: string; var currentValue: T; const newValue: T); overload;
-    procedure SetProperty(const propertyName: string; var currentValue: string; const newValue: string); overload;
-    procedure SetProperty(const propertyName: string; var currentValue: Integer; const newValue: Integer); overload;
-    procedure SetProperty(const propertyName: string; var currentValue: Int64; const newValue: Int64); overload;
-    procedure SetProperty(const propertyName: string; var currentValue: Boolean; const newValue: Boolean); overload;
-    procedure SetProperty(const propertyName: string; var currentValue: TDateTime; const newValue: TDateTime); overload;
-    procedure SetProperty(const propertyName: string; var currentValue: Currency; const newValue: Currency); overload;
-    procedure SetProperty(const propertyName: string; var currentValue: Double; const newValue: Double); overload;
-    procedure SetProperty(const propertyName: string; var currentValue: Extended; const newValue: Extended); overload;
-    procedure SetProperty(const propertyName: string; var currentValue: TGuid; const newValue: TGuid); overload;
     procedure NotifyPropertyChanging(const e: TPropertyNotificationEventArgs); virtual;
     procedure NotifyPropertyChanged(const e: TPropertyNotificationEventArgs); virtual;
     property PropertyNotification: IPropertyNotification read GetPropertyNotification;
@@ -2415,60 +2406,6 @@ begin
       currentValue := newValue;
     end;
   end;
-end;
-
-procedure TNotifiableObject.SetProperty(const propertyName: string;
-  var currentValue: Int64; const newValue: Int64);
-begin
-  SetProperty<Int64>(propertyName, currentValue, newValue);
-end;
-
-procedure TNotifiableObject.SetProperty(const propertyName: string;
-  var currentValue: Boolean; const newValue: Boolean);
-begin
-  SetProperty<Boolean>(propertyName, currentValue, newValue);
-end;
-
-procedure TNotifiableObject.SetProperty(const propertyName: string;
-  var currentValue: string; const newValue: string);
-begin
-  SetProperty<string>(propertyName, currentValue, newValue);
-end;
-
-procedure TNotifiableObject.SetProperty(const propertyName: string;
-  var currentValue: Integer; const newValue: Integer);
-begin
-  SetProperty<Integer>(propertyName, currentValue, newValue);
-end;
-
-procedure TNotifiableObject.SetProperty(const propertyName: string;
-  var currentValue: TDateTime; const newValue: TDateTime);
-begin
-  SetProperty<TDateTime>(propertyName, currentValue, newValue);
-end;
-
-procedure TNotifiableObject.SetProperty(const propertyName: string;
-  var currentValue: Extended; const newValue: Extended);
-begin
-  SetProperty<Extended>(propertyName, currentValue, newValue);
-end;
-
-procedure TNotifiableObject.SetProperty(const propertyName: string;
-  var currentValue: TGuid; const newValue: TGuid);
-begin
-  SetProperty<TGuid>(propertyName, currentValue, newValue);
-end;
-
-procedure TNotifiableObject.SetProperty(const propertyName: string;
-  var currentValue: Currency; const newValue: Currency);
-begin
-  SetProperty<Currency>(propertyName, currentValue, newValue);
-end;
-
-procedure TNotifiableObject.SetProperty(const propertyName: string;
-  var currentValue: Double; const newValue: Double);
-begin
-  SetProperty<Double>(propertyName, currentValue, newValue);
 end;
 
 procedure TNotifiableObject.NotifyPropertyChanging(
