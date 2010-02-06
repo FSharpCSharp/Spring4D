@@ -25,8 +25,10 @@
 program Build;
 
 uses
+  FastMM4,
   Forms,
-  MainForm in 'Source\MainForm.pas' {frmMain};
+  MainForm in 'Source\MainForm.pas' {frmMain},
+  BuildEngine in 'Source\BuildEngine.pas';
 
 {$R *.res}
 

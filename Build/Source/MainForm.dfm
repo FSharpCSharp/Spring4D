@@ -5,8 +5,8 @@ object frmMain: TfrmMain
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = 'Build Delphi Spring Framework'
-  ClientHeight = 320
-  ClientWidth = 494
+  ClientHeight = 351
+  ClientWidth = 496
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -335,71 +335,52 @@ object frmMain: TfrmMain
   Position = poOwnerFormCenter
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  DesignSize = (
+    496
+    351)
   PixelsPerInch = 96
   TextHeight = 13
   object lblDetails: TLabel
     Left = 8
-    Top = 97
+    Top = 108
     Width = 36
     Height = 13
     Caption = 'Details:'
   end
   object btnBuild: TButton
-    Left = 150
-    Top = 287
+    Left = 190
+    Top = 318
     Width = 90
     Height = 25
+    Anchors = [akLeft, akBottom]
     Caption = '&Build'
     TabOrder = 0
     OnClick = btnBuildClick
+    ExplicitTop = 378
   end
   object btnClose: TButton
-    Left = 246
-    Top = 287
+    Left = 286
+    Top = 318
     Width = 90
     Height = 25
+    Anchors = [akLeft, akBottom]
     Caption = '&Close'
     TabOrder = 1
     OnClick = btnCloseClick
-  end
-  object grpOptions: TGroupBox
-    Left = 150
-    Top = 8
-    Width = 336
-    Height = 83
-    Caption = 'Options'
-    TabOrder = 2
-    object chkBrowsingPath: TCheckBox
-      Left = 16
-      Top = 47
-      Width = 305
-      Height = 17
-      Caption = 'Add the source paths to the browsing path'
-      Checked = True
-      State = cbChecked
-      TabOrder = 0
-    end
-    object chkAddLibrary: TCheckBox
-      Left = 16
-      Top = 24
-      Width = 305
-      Height = 17
-      Caption = 'Add the dcus path to the library path'
-      Checked = True
-      State = cbChecked
-      TabOrder = 1
-    end
+    ExplicitTop = 378
   end
   object grpConfiguration: TGroupBox
-    Left = 8
-    Top = 8
-    Width = 136
-    Height = 83
+    Left = 349
+    Top = 12
+    Width = 137
+    Height = 90
+    Anchors = [akRight]
     Caption = 'Configuration'
-    TabOrder = 3
+    TabOrder = 2
+    ExplicitLeft = 368
     object rbDebug: TRadioButton
       Left = 20
-      Top = 24
+      Top = 29
       Width = 93
       Height = 17
       Caption = 'Debug'
@@ -408,7 +389,7 @@ object frmMain: TfrmMain
     end
     object rbRelease: TRadioButton
       Left = 20
-      Top = 47
+      Top = 52
       Width = 93
       Height = 17
       Caption = 'Release'
@@ -420,11 +401,40 @@ object frmMain: TfrmMain
   end
   object mmoDetails: TMemo
     Left = 8
-    Top = 116
-    Width = 478
-    Height = 165
+    Top = 127
+    Width = 479
+    Height = 185
+    Anchors = [akLeft, akTop, akRight, akBottom]
     ReadOnly = True
     ScrollBars = ssBoth
+    TabOrder = 3
+    ExplicitWidth = 497
+  end
+  object grpTargets: TGroupBox
+    Left = 8
+    Top = 12
+    Width = 329
+    Height = 90
+    Caption = 'Targets'
     TabOrder = 4
+    object lbTargets: TCheckListBox
+      Left = 16
+      Top = 21
+      Width = 305
+      Height = 60
+      OnClickCheck = lbTargetsClickCheck
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -12
+      Font.Name = 'Tahoma'
+      Font.Style = []
+      IntegralHeight = True
+      ItemHeight = 14
+      Items.Strings = (
+        'Embarcadero'#174' RAD Studio 2010'
+        'Embarcadero'#174' RAD Studio 2011')
+      ParentFont = False
+      TabOrder = 0
+    end
   end
 end

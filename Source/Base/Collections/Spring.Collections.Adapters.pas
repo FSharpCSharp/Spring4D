@@ -88,7 +88,7 @@ type
   /// <summary>
   /// TDictionaryAdapter<TKey, TValue>
   /// </summary>
-  TDictionaryAdapter<TKey, TValue> = class(TEnumerableEx<TPair<TKey, TValue>>,
+  TDictionaryAdapter<TKey, TValue> = class(TCollectionBase<TPair<TKey, TValue>>,
     IDictionary<TKey, TValue>, ICollection<TPair<TKey, TValue>>,
     IEnumerableEx<TPair<TKey, TValue>>, IEnumerable<TPair<TKey, TValue>>, IEnumerable, IInterface)
   private
@@ -162,20 +162,18 @@ type
     property IsEmpty: Boolean read GetIsEmpty;
 
     { Implements ICollection<TPair<TKey, TValue>> }
-    function GetIsReadOnly: Boolean;
-    procedure Add(const item: TPair<TKey,TValue>); overload;
-    procedure Clear;
-    function Remove(const item: TPair<TKey,TValue>): Boolean; overload;
+    procedure Add(const item: TPair<TKey,TValue>); overload; override;
+    procedure Clear; override;
+    function Remove(const item: TPair<TKey,TValue>): Boolean; overload; override;
     function Extract(const item: TPair<TKey,TValue>): TPair<TKey,TValue>;
-    property IsReadOnly: Boolean read GetIsReadOnly;
 
     { Implements IDictionary<TKey,TValue> }
     function GetItem(const key: TKey): TValue;
     function GetKeys: ICollection<TKey>;
     function GetValues: ICollection<TValue>;
     procedure SetItem(const key: TKey; const value: TValue);
-    procedure Add(const key: TKey; const value: TValue); overload;
-    procedure Remove(const key: TKey); overload;
+    procedure Add(const key: TKey; const value: TValue); reintroduce; overload;
+    procedure Remove(const key: TKey); reintroduce; overload;
     function ContainsKey(const key: TKey): Boolean;
     function ExtractPair(const key: TKey): TPair<TKey, TValue>;
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
@@ -437,11 +435,6 @@ end;
 function TDictionaryAdapter<TKey, TValue>.GetIsEmpty: Boolean;
 begin
   Result := Count = 0;
-end;
-
-function TDictionaryAdapter<TKey, TValue>.GetIsReadOnly: Boolean;
-begin
-  Result := False;
 end;
 
 procedure TDictionaryAdapter<TKey, TValue>.Add(const key: TKey;

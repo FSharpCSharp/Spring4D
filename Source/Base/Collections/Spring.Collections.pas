@@ -75,9 +75,9 @@ type
   {$REGION 'Property Getters & Setters'}
     function GetIsReadOnly: Boolean;
   {$ENDREGION}
-    procedure Add(const item: T); overload;
+    procedure Add(const item: T); // overload;
     procedure Clear;
-    function Remove(const item: T): Boolean; overload;
+    function Remove(const item: T): Boolean; // overload;
 //    function Extract(const item: T): T;
     property IsReadOnly: Boolean read GetIsReadOnly;
   end;
@@ -230,6 +230,16 @@ type
     function DoGetCurrent: T; override;
   public
     function MoveNext: Boolean; override;
+  end;
+
+  TCollectionBase<T> = class(TEnumerableEx<T>, ICollection<T>)
+  protected
+    function GetIsReadOnly: Boolean; virtual;
+  public
+    procedure Add(const item: T); virtual; abstract;
+    procedure Clear; virtual; abstract;
+    function Remove(const item: T): Boolean; virtual; abstract;
+    property IsReadOnly: Boolean read GetIsReadOnly;
   end;
 
 //  TReadOnlyCollection<T> = class(TInterfacedObject, ICollection<T>, IEnumerableEx<T>, IInterface)
@@ -588,5 +598,12 @@ begin
 end;
 
 {$ENDREGION}
+
+{ TCollectionBase<T> }
+
+function TCollectionBase<T>.GetIsReadOnly: Boolean;
+begin
+  Result := False;
+end;
 
 end.

@@ -40,57 +40,35 @@ uses
   ExtCtrls,
   Registry,
   ShellAPI,
+  CheckLst,
+  ComCtrls,
   Spring.System,
-  Spring.Utils;
+  Spring.Utils,
+  BuildEngine;
 
 type
-  TConfigurationType = (
-    ctDebug,
-    ctRelease
-  );
-
   TfrmMain = class(TForm)
     btnBuild: TButton;
     btnClose: TButton;
-    grpOptions: TGroupBox;
-    chkBrowsingPath: TCheckBox;
-    chkAddLibrary: TCheckBox;
     grpConfiguration: TGroupBox;
     rbDebug: TRadioButton;
     rbRelease: TRadioButton;
     mmoDetails: TMemo;
     lblDetails: TLabel;
-    procedure btnBuildClick(Sender: TObject);
+    grpTargets: TGroupBox;
+    lbTargets: TCheckListBox;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
+    procedure btnBuildClick(Sender: TObject);
     procedure btnCloseClick(Sender: TObject);
     procedure rbDebugClick(Sender: TObject);
     procedure rbReleaseClick(Sender: TObject);
-  private
-    const
-      fCBdsKey = 'Software\CodeGear\BDS\7.0';
-      fCBdsLibraryKey = 'Software\CodeGear\BDS\7.0\Library';
-      fCGlobalsKey = 'Software\CodeGear\BDS\7.0\Globals';
-      fCEnvironmentVariablesKey = 'Software\CodeGear\BDS\7.0\Environment Variables';
-      fCLibraryPathName = 'Search Path';
-      fCBrowsingPathName = 'Browsing Path';
-      fCRootDirName = 'RootDir';
+    procedure lbTargetsClickCheck(Sender: TObject);
   private
     { Private declarations }
-    fConfigurationType: TConfigurationType;
-    fRegistry: TRegistry;
-    fLibraryPaths: TStringList;
-    fBrowsingPaths: TStringList;
-    fBdsDir: string;
-    function GetConfigurationName: string;
-    procedure AddSourcePaths(const projectPath: string; strings: TStrings);
-    procedure RemoveProjectPaths(const projectPath: string; strings: TStrings);
+    fBuildEngine: TBuildEngine;
   public
     { Public declarations }
-    procedure LoadParameters;
-    procedure UpdateParameters;
-    procedure ExecuteTasks;
-    property ConfigurationName: string read GetConfigurationName;
   end;
 
 var
@@ -100,185 +78,69 @@ implementation
 
 {$R *.dfm}
 
-const
-  ConfigurationNames: array[TConfigurationType] of string = (
-    'Debug',
-    'Release'
-  );
-
-type
-  TStringsHelper = class helper for TStrings
-  public
-    procedure AddOrUpdate(const s: string);
-  end;
-
-{ TStringsHelper }
-
-procedure TStringsHelper.AddOrUpdate(const s: string);
-begin
-  if IndexOf(s) = -1 then
-  begin
-    Add(s);
-  end;
-end;
-
 procedure TfrmMain.FormCreate(Sender: TObject);
+var
+  target: TTarget;
+  index: Integer;
 begin
-  fRegistry := TRegistry.Create;
-  fLibraryPaths := TStringList.Create;
-  fLibraryPaths.Delimiter := ';';
-  fLibraryPaths.StrictDelimiter := True;
-  fBrowsingPaths := TStringList.Create;
-  fBrowsingPaths.Delimiter := ';';
-  fBrowsingPaths.StrictDelimiter := True;
-  fConfigurationType := ctRelease;
+  fBuildEngine := TBuildEngine.Create;
+  fBuildEngine.Configure(ApplicationPath + 'Build.Settings.ini');
+  fBuildEngine.ConfigurationType := ctRelease;
+
+  lbTargets.Clear;
+  for target in fBuildEngine.Targets do
+  begin
+    index := lbTargets.Items.AddObject(target.DisplayName, target);
+    lbTargets.ItemEnabled[index] := target.Exists;
+    lbTargets.Checked[index] := target.Exists and fBuildEngine.IsSelected(target);
+  end;
 end;
 
 procedure TfrmMain.FormDestroy(Sender: TObject);
 begin
-  fBrowsingPaths.Free;
-  fLibraryPaths.Free;
-  fRegistry.Free;
+  fBuildEngine.Free;
 end;
 
 procedure TfrmMain.rbDebugClick(Sender: TObject);
 begin
-  fConfigurationType := ctDebug;
+  fBuildEngine.ConfigurationType := ctDebug;
 end;
 
 procedure TfrmMain.rbReleaseClick(Sender: TObject);
 begin
-  fConfigurationType := ctRelease;
+  fBuildEngine.ConfigurationType := ctRelease;
+end;
+
+procedure TfrmMain.lbTargetsClickCheck(Sender: TObject);
+var
+  target: TTarget;
+  i: Integer;
+begin
+  fBuildEngine.SelectedTargets.Clear;
+  for i := 0 to lbTargets.Count - 1 do
+  begin
+    if lbTargets.Checked[i] then
+    begin
+      target := TTarget(lbTargets.Items.Objects[i]);
+      fBuildEngine.SelectedTargets.Add(target);
+    end;
+  end;
+  btnBuild.Enabled := not fBuildEngine.SelectedTargets.IsEmpty;
+end;
+
+procedure TfrmMain.btnBuildClick(Sender: TObject);
+var
+  target: TTarget;
+begin
+  for target in fBuildEngine.SelectedTargets do
+  begin
+    fBuildEngine.BuildTarget(target);
+  end;
 end;
 
 procedure TfrmMain.btnCloseClick(Sender: TObject);
 begin
   Close;
-end;
-
-procedure TfrmMain.btnBuildClick(Sender: TObject);
-begin
-  LoadParameters;
-  UpdateParameters;
-  ExecuteTasks;
-end;
-
-function TfrmMain.GetConfigurationName: string;
-begin
-  Result := ConfigurationNames[fConfigurationType];
-end;
-
-procedure TfrmMain.LoadParameters;
-begin
-  with fRegistry do
-  begin
-    RootKey := HKEY_CURRENT_USER;
-    if not OpenKey(fCBdsKey, False) then
-    begin
-      raise Exception.Create('Failed: RAD Studio 2010 was not installed.');
-    end;
-    fBdsDir := ReadString(fCRootDirName);
-    CloseKey;
-    if not OpenKey(fCBdsLibraryKey, False) then
-    begin
-      raise Exception.Create('Failed to read the registry.');
-    end;
-    fLibraryPaths.DelimitedText := ReadString(fCLibraryPathName);
-    fBrowsingPaths.DelimitedText := ReadString(fCBrowsingPathName);
-  end;
-end;
-
-procedure TfrmMain.UpdateParameters;
-var
-  libraryPath: string;
-  projectPath: string;
-begin
-  projectPath := ApplicationPath;
-  libraryPath := projectPath + 'Lib\D2010\' + ConfigurationName;
-  if not ForceDirectories(libraryPath) then
-  begin
-    raise Exception.CreateFmt('Failed to create the directory: "%s"', [libraryPath]);
-  end;
-  RemoveProjectPaths(projectPath, fLibraryPaths);
-  RemoveProjectPaths(projectPath, fBrowsingPaths);
-  if chkAddLibrary.Checked then
-  begin
-    fLibraryPaths.AddOrUpdate(libraryPath);
-  end
-  else
-  begin
-    AddSourcePaths(projectPath, fLibraryPaths);
-  end;
-  fRegistry.WriteString(fCLibraryPathName, fLibraryPaths.DelimitedText);
-  if chkBrowsingPath.Checked then
-  begin
-    AddSourcePaths(projectPath, fBrowsingPaths);
-    fRegistry.WriteString(fCBrowsingPathName, fBrowsingPaths.DelimitedText);
-  end;
-  fRegistry.CloseKey;
-  if not fRegistry.OpenKey(fCGlobalsKey, False) then
-  begin
-    raise Exception.Create('Failed to open the "Globals" key.');
-  end;
-  fRegistry.WriteString('ForceEnvOptionsUpdate', '1');
-  fRegistry.CloseKey;
-  if not fRegistry.OpenKey(fCEnvironmentVariablesKey, False) then
-  begin
-    raise Exception.Create('Failed to open the "EnvironmentVariables" key.');
-  end;
-  fRegistry.WriteString('SPRING', ExtractFileDir(Application.ExeName));
-  fRegistry.WriteString('SPRING_LIBRARY', ApplicationPath + 'Lib\D2010');
-  fRegistry.CloseKey;
-end;
-
-procedure TfrmMain.ExecuteTasks;
-var
-  path: string;
-begin
-  TEnvironment.SetEnvironmentVariable('BDS', fBdsDir);
-  TEnvironment.SetEnvironmentVariable('SPRING', ExtractFileDir(Application.ExeName));
-  TEnvironment.SetEnvironmentVariable('SPRING_LIBRARY', ApplicationPath + 'Lib\D2010');
-  path := TEnvironment.GetEnvironmentVariable('Path');
-  path := TEnvironment.ExpandEnvironmentVariables('%WINDIR%\Microsoft.NET\Framework\v2.0.50727;') + path;
-  TEnvironment.SetEnvironmentVariable('PATH', path);
-//  ShowMessage(TEnvironment.GetEnvironmentVariable('BDS'));
-//  ShowMessage(TEnvironment.GetEnvironmentVariable('PATH'));
-  ShellExecute(Handle, PChar('open'), PChar(ApplicationPath + 'Build.bat'), PChar(ConfigurationName), nil, SW_SHOWNORMAL);
-end;
-
-procedure TfrmMain.AddSourcePaths(const projectPath: string; strings: TStrings);
-begin
-  Assert(strings <> nil, 'strings should not be nil.');
-  with strings do
-  begin
-    // TODO: Move these paths to a configuration file.
-    AddOrUpdate('$(SPRING)\Source\Base');
-    AddOrUpdate('$(SPRING)\Source\Base\Cryptography');
-    AddOrUpdate('$(SPRING)\Source\Base\Collections');
-    AddOrUpdate('$(SPRING)\Source\Base\Utils');
-    AddOrUpdate('$(SPRING)\Source\Core');
-    AddOrUpdate('$(SPRING)\Source\Core\IoC');
-    AddOrUpdate('$(SPRING)\Source\Core\Pool');
-    AddOrUpdate('$(SPRING)\Source\Extensions');
-    AddOrUpdate('$(SPRING)\Source\Extensions\Numbering');
-  end;
-end;
-
-procedure TfrmMain.RemoveProjectPaths(const projectPath: string;
-  strings: TStrings);
-var
-  i: Integer;
-  path: string;
-begin
-  Assert(strings <> nil, 'strings should not be nil.');
-  for i := strings.Count - 1 downto 0 do
-  begin
-    path := strings[i];
-    if (Pos(projectPath, path) > 0) or (Pos('$(SPRING)', path) > 0) then
-    begin
-      strings.Delete(i);
-    end;
-  end;
 end;
 
 end.

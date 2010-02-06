@@ -5,6 +5,7 @@
 			<ProjectVersion>12.0</ProjectVersion>
 			<Config Condition="'$(Config)'==''">Debug</Config>
 			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
+			<Platform Condition="'$(Platform)'==''">Win32</Platform>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
 			<Base>true</Base>
@@ -22,7 +23,7 @@
 		<PropertyGroup Condition="'$(Base)'!=''">
 			<DCC_UnitSearchPath>..\Source\Base;..\Source\Base\Collections;..\Source\Base\Cryptography;..\Source\Base\Utils;..\Source\Core\;..\Source\Core\IoC;..\Source\Core\Pool;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
-			<DCC_DependencyCheckOutputName>F:\Users\Public\Documents\RAD Studio\7.0\Bpl\Spring.Extensions.bpl</DCC_DependencyCheckOutputName>
+			<DCC_DependencyCheckOutputName>C:\Users\Public\Documents\RAD Studio\7.0\Bpl\Spring.Extensions.bpl</DCC_DependencyCheckOutputName>
 			<RuntimeOnlyPackage>true</RuntimeOnlyPackage>
 			<DCC_Description>Delphi Spring Framework Extensions Library</DCC_Description>
 			<GenDll>true</GenDll>
@@ -92,7 +93,7 @@
 						<VersionInfo Name="MajorVer">0</VersionInfo>
 						<VersionInfo Name="MinorVer">2</VersionInfo>
 						<VersionInfo Name="Release">0</VersionInfo>
-						<VersionInfo Name="Build">571</VersionInfo>
+						<VersionInfo Name="Build">575</VersionInfo>
 						<VersionInfo Name="Debug">False</VersionInfo>
 						<VersionInfo Name="PreRelease">False</VersionInfo>
 						<VersionInfo Name="Special">False</VersionInfo>
@@ -104,7 +105,7 @@
 					<VersionInfoKeys>
 						<VersionInfoKeys Name="CompanyName"/>
 						<VersionInfoKeys Name="FileDescription">Delphi Spring Framework Extensions Library</VersionInfoKeys>
-						<VersionInfoKeys Name="FileVersion">0.2.0.571</VersionInfoKeys>
+						<VersionInfoKeys Name="FileVersion">0.2.0.575</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName"/>
 						<VersionInfoKeys Name="LegalCopyright"/>
 						<VersionInfoKeys Name="LegalTrademarks"/>
@@ -118,6 +119,9 @@
 						<Excluded_Packages Name="$(BDS)\bin\dclofficexp140.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
 					</Excluded_Packages>
 				</Delphi.Personality>
+				<Platforms>
+					<Platform value="Win32">True</Platform>
+				</Platforms>
 			</BorlandProject>
 			<ProjectFileVersion>12</ProjectFileVersion>
 		</ProjectExtensions>

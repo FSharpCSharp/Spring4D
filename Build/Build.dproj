@@ -36,6 +36,7 @@
 			<DCC_DebugInformation>false</DCC_DebugInformation>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2)'!=''">
+			<DCC_Optimize>false</DCC_Optimize>
 			<DCC_DcuOutput>Lib\Debug</DCC_DcuOutput>
 			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
 			<DCC_DebugDCUs>true</DCC_DebugDCUs>
@@ -47,6 +48,7 @@
 			<DCCReference Include="Source\MainForm.pas">
 				<Form>frmMain</Form>
 			</DCCReference>
+			<DCCReference Include="Source\BuildEngine.pas"/>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>
 			</BuildConfiguration>
@@ -79,7 +81,7 @@
 						<VersionInfo Name="MajorVer">1</VersionInfo>
 						<VersionInfo Name="MinorVer">0</VersionInfo>
 						<VersionInfo Name="Release">1</VersionInfo>
-						<VersionInfo Name="Build">9</VersionInfo>
+						<VersionInfo Name="Build">12</VersionInfo>
 						<VersionInfo Name="Debug">False</VersionInfo>
 						<VersionInfo Name="PreRelease">False</VersionInfo>
 						<VersionInfo Name="Special">False</VersionInfo>
@@ -91,7 +93,7 @@
 					<VersionInfoKeys>
 						<VersionInfoKeys Name="CompanyName"/>
 						<VersionInfoKeys Name="FileDescription">Build Delphi Spring Framework</VersionInfoKeys>
-						<VersionInfoKeys Name="FileVersion">1.0.1.9</VersionInfoKeys>
+						<VersionInfoKeys Name="FileVersion">1.0.1.12</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName"/>
 						<VersionInfoKeys Name="LegalCopyright"/>
 						<VersionInfoKeys Name="LegalTrademarks"/>
