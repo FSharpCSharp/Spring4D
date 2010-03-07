@@ -5,7 +5,7 @@ object frmMain: TfrmMain
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = 'Build Delphi Spring Framework'
-  ClientHeight = 351
+  ClientHeight = 373
   ClientWidth = 496
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -333,11 +333,12 @@ object frmMain: TfrmMain
     001007FFFFFFFE0000183FFFFFFFFFFF003FFFFFFFFF}
   OldCreateOrder = False
   Position = poOwnerFormCenter
+  ShowHint = True
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   DesignSize = (
     496
-    351)
+    373)
   PixelsPerInch = 96
   TextHeight = 13
   object lblDetails: TLabel
@@ -348,39 +349,38 @@ object frmMain: TfrmMain
     Caption = 'Details:'
   end
   object btnBuild: TButton
-    Left = 190
-    Top = 318
+    Left = 302
+    Top = 340
     Width = 90
     Height = 25
     Anchors = [akLeft, akBottom]
     Caption = '&Build'
     TabOrder = 0
     OnClick = btnBuildClick
-    ExplicitTop = 378
+    ExplicitTop = 318
   end
   object btnClose: TButton
-    Left = 286
-    Top = 318
+    Left = 398
+    Top = 340
     Width = 90
     Height = 25
     Anchors = [akLeft, akBottom]
     Caption = '&Close'
     TabOrder = 1
     OnClick = btnCloseClick
-    ExplicitTop = 378
+    ExplicitTop = 318
   end
   object grpConfiguration: TGroupBox
     Left = 349
-    Top = 12
+    Top = 16
     Width = 137
-    Height = 90
+    Height = 86
     Anchors = [akRight]
     Caption = 'Configuration'
     TabOrder = 2
-    ExplicitLeft = 368
     object rbDebug: TRadioButton
       Left = 20
-      Top = 29
+      Top = 28
       Width = 93
       Height = 17
       Caption = 'Debug'
@@ -389,7 +389,7 @@ object frmMain: TfrmMain
     end
     object rbRelease: TRadioButton
       Left = 20
-      Top = 52
+      Top = 51
       Width = 93
       Height = 17
       Caption = 'Release'
@@ -403,12 +403,12 @@ object frmMain: TfrmMain
     Left = 8
     Top = 127
     Width = 479
-    Height = 185
+    Height = 207
     Anchors = [akLeft, akTop, akRight, akBottom]
     ReadOnly = True
     ScrollBars = ssBoth
     TabOrder = 3
-    ExplicitWidth = 497
+    ExplicitHeight = 185
   end
   object grpTargets: TGroupBox
     Left = 8
@@ -418,8 +418,8 @@ object frmMain: TfrmMain
     Caption = 'Targets'
     TabOrder = 4
     object lbTargets: TCheckListBox
-      Left = 16
-      Top = 21
+      Left = 13
+      Top = 18
       Width = 305
       Height = 60
       OnClickCheck = lbTargetsClickCheck
@@ -436,5 +436,23 @@ object frmMain: TfrmMain
       ParentFont = False
       TabOrder = 0
     end
+  end
+  object lblHomepage: TLinkLabel
+    Left = 8
+    Top = 346
+    Width = 137
+    Height = 19
+    Hint = 'Visit the home page'
+    CustomHint = BalloonHint1
+    Caption = 
+      '<a href="http://delphi-spring-framework.googlecode.com/">Delphi ' +
+      'Spring Framework</a>'
+    TabOrder = 5
+    UseVisualStyle = True
+    OnLinkClick = lblHomepageLinkClick
+  end
+  object BalloonHint1: TBalloonHint
+    Left = 240
+    Top = 176
   end
 end

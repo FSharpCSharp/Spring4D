@@ -56,6 +56,7 @@ type
     procedure TestDateYYYYMM;
     procedure TestDateYYYYMMDD;
     procedure TestDateYYYYWW;
+    procedure TestDateYYWW; // Issue #10
     procedure TestCompositeNumber;
     procedure TestFirstAndLast;
     procedure TestSuffix;
@@ -185,7 +186,7 @@ begin
   CheckEquals('RK2009520001', fRule.GetNextNumber('RK2009510099'));
 
 
-  // 2008.12.29 - 2008.12.31 belongs the first week of the year 2009
+  // 2008.12.29 - 2008.12.31 belongs to the first week of the year 2009
   fMockDateTime := EncodeDate(2008, 12, 29);
   CheckEquals('RK2009010001', fRule.GetNextNumber('RK2008500002'));
   fMockDateTime := EncodeDate(2009, 1, 1);
@@ -199,7 +200,7 @@ begin
   fMockDateTime := EncodeDate(2009, 1, 5);
   CheckEquals('RK2009020001', fRule.GetNextNumber('RK2009010099'));
 
-  // 2010.1.1 - 2010.1.3 belongs the last week of the year 2009
+  // 2010.1.1 - 2010.1.3 belongs to the last week of the year 2009
   fMockDateTime := EncodeDate(2009, 12, 31);
   CheckEquals('RK2009530001', fRule.GetNextNumber('RK2009120001'));
   fMockDateTime := EncodeDate(2010, 1, 1);
@@ -210,6 +211,24 @@ begin
   CheckEquals('RK2009530002', fRule.GetNextNumber('RK2009530001'));
   fMockDateTime := EncodeDate(2010, 1, 4);
   CheckEquals('RK2010010001', fRule.GetNextNumber('RK2009530099'));
+end;
+
+procedure TTestNumberRuleBuilder.TestDateYYWW;
+begin
+  with fBuilder do
+  begin
+    AddCode('RK');
+    AddDateTime('YYWW', GetMockDateTime);
+    AddDigits('0001', '9999');
+  end;
+  fRule := fBuilder.ToRule;
+
+  fMockDateTime := EncodeDate(2009, 12, 7);   // 50th
+  CheckEquals('RK09500001', fRule.GetNextNumber('RK09010001'));
+  fMockDateTime := EncodeDate(2009, 12, 20);  // 51th
+  CheckEquals('RK09510002', fRule.GetNextNumber('RK09510001'));
+  fMockDateTime := EncodeDate(2009, 12, 21);  // 52th
+  CheckEquals('RK09520001', fRule.GetNextNumber('RK09510099'));
 end;
 
 procedure TTestNumberRuleBuilder.TestFirstAndLast;

@@ -531,6 +531,8 @@ type
     procedure RemovePadding(var buffer: TBuffer);
     procedure ValidateKey(const key: TBuffer); virtual;
   protected
+    function DoEncrypt(const buffer: Pointer; count: Integer): TBuffer; virtual;
+    function DoDecrypt(const buffer: Pointer; count: Integer): TBuffer; virtual;
     procedure DoEncryptBlock(const inputBuffer: TBytes; var outputBuffer: TBytes); virtual; abstract;
     procedure DoDecryptBlock(const inputBuffer: TBytes; var outputBuffer: TBytes); virtual; abstract;
   public
@@ -958,7 +960,7 @@ end;
 
 procedure TSymmetricAlgorithmBase.ValidateKey(const key: TBuffer);
 begin
-  if not LegalKeySizes.Contains(key.Size) then
+  if not fLegalKeySizes.Contains(key.Size) then
   begin
     raise ECryptographicException.CreateResFmt(@SIllegalKeySize, [key.Size]);
   end;
@@ -982,6 +984,48 @@ begin
 end;
 
 function TSymmetricAlgorithmBase.Encrypt(const buffer: Pointer;
+  count: Integer): TBuffer;
+begin
+  Result := DoEncrypt(buffer, count);
+end;
+
+function TSymmetricAlgorithmBase.Encrypt(const inputString: string): TBuffer;
+begin
+  Result := Encrypt(PByte(inputString), Length(inputString) * SizeOf(Char));
+end;
+
+function TSymmetricAlgorithmBase.Encrypt(
+  const inputString: WideString): TBuffer;
+begin
+  Result := Encrypt(PByte(inputString), Length(inputString) * SizeOf(Char));
+end;
+
+function TSymmetricAlgorithmBase.Encrypt(
+  const inputString: RawByteString): TBuffer;
+begin
+  Result := Encrypt(PByte(inputString), Length(inputString));
+end;
+
+procedure TSymmetricAlgorithmBase.Encrypt(inputStream, outputStream: TStream);
+var
+  inputBuffer: TBuffer;
+  outputBuffer: TBuffer;
+  bytes: Integer;
+begin
+  TArgument.CheckNotNull(inputStream, 'inputStream');
+  TArgument.CheckNotNull(outputStream, 'outputStream');
+  inputBuffer.Size := BlockSize;
+  outputBuffer.Size := BlockSize;
+  bytes := inputStream.Read(inputBuffer.Memory^, inputBuffer.Size);
+  while bytes > 0 do
+  begin
+    outputBuffer := Encrypt(inputBuffer);
+    outputStream.WriteBuffer(outputBuffer.Memory^, outputBuffer.Size);
+    bytes := inputStream.Read(inputBuffer.Memory^, inputBuffer.Size);
+  end;
+end;
+
+function TSymmetricAlgorithmBase.DoEncrypt(const buffer: Pointer;
   count: Integer): TBuffer;
 var
   p: PByte;
@@ -1036,39 +1080,55 @@ begin
   end;
 end;
 
-function TSymmetricAlgorithmBase.Encrypt(const inputString: string): TBuffer;
-begin
-  Result := Encrypt(PByte(inputString), Length(inputString) * SizeOf(Char));
-end;
-
-function TSymmetricAlgorithmBase.Encrypt(
-  const inputString: WideString): TBuffer;
-begin
-  Result := Encrypt(PByte(inputString), Length(inputString) * SizeOf(Char));
-end;
-
-function TSymmetricAlgorithmBase.Encrypt(
-  const inputString: RawByteString): TBuffer;
-begin
-  Result := Encrypt(PByte(inputString), Length(inputString));
-end;
-
-procedure TSymmetricAlgorithmBase.Encrypt(inputStream, outputStream: TStream);
+function TSymmetricAlgorithmBase.DoDecrypt(const buffer: Pointer;
+  count: Integer): TBuffer;
 var
-  inputBuffer: TBuffer;
-  outputBuffer: TBuffer;
-  bytes: Integer;
+  inputBuffer, plainText: TBuffer;
+  outputBuffer: TBytes;
+  lastCipherText: TBuffer;
+  p: PByte;
+  firstBlock: Boolean;
 begin
-  TArgument.CheckNotNull(inputStream, 'inputStream');
-  TArgument.CheckNotNull(outputStream, 'outputStream');
+  TArgument.CheckRange(count >= 0, 'count');
+
+  firstBlock := True;
+  Result := TBuffer.Empty;
+  p := buffer;
   inputBuffer.Size := BlockSize;
-  outputBuffer.Size := BlockSize;
-  bytes := inputStream.Read(inputBuffer.Memory^, inputBuffer.Size);
-  while bytes > 0 do
+  plainText.Size := BlockSize;
+  SetLength(outputBuffer, BlockSize);
+  while count >= BlockSize do
   begin
-    outputBuffer := Encrypt(inputBuffer);
-    outputStream.WriteBuffer(outputBuffer.Memory^, outputBuffer.Size);
-    bytes := inputStream.Read(inputBuffer.Memory^, inputBuffer.Size);
+    inputBuffer := TBuffer.Create(p, BlockSize);
+    DoDecryptBlock(inputBuffer, outputBuffer);
+    if CipherMode = cmCBC then
+    begin
+      if firstBlock then
+      begin
+        plainText := outputBuffer xor IV;
+        firstBlock := False;
+      end
+      else
+      begin
+        plainText := outputBuffer xor lastCipherText;
+      end;
+      lastCipherText := inputBuffer.Clone;
+    end
+    else
+    begin
+      plainText := outputBuffer;
+    end;
+    if count = BlockSize then // FinalBlock
+    begin
+      RemovePadding(plainText);
+    end;
+    Result := Result + plainText;
+    Dec(count, BlockSize);
+    Inc(p, BlockSize);
+  end;
+  if count > 0 then
+  begin
+    raise ECryptographicException.CreateRes(@SInvalidCipherText);
   end;
 end;
 
@@ -1156,54 +1216,8 @@ end;
 
 function TSymmetricAlgorithmBase.Decrypt(const buffer: Pointer;
   count: Integer): TBuffer;
-var
-  inputBuffer, plainText: TBuffer;
-  outputBuffer: TBytes;
-  lastCipherText: TBuffer;
-  p: PByte;
-  firstBlock: Boolean;
 begin
-  TArgument.CheckRange(count >= 0, 'count');
-
-  firstBlock := True;
-  Result := TBuffer.Empty;
-  p := buffer;
-  inputBuffer.Size := BlockSize;
-  plainText.Size := BlockSize;
-  SetLength(outputBuffer, BlockSize);
-  while count >= BlockSize do
-  begin
-    inputBuffer := TBuffer.Create(p, BlockSize);
-    DoDecryptBlock(inputBuffer, outputBuffer);
-    if CipherMode = cmCBC then
-    begin
-      if firstBlock then
-      begin
-        plainText := outputBuffer xor IV;
-        firstBlock := False;
-      end
-      else
-      begin
-        plainText := outputBuffer xor lastCipherText;
-      end;
-      lastCipherText := inputBuffer.Clone;
-    end
-    else
-    begin
-      plainText := outputBuffer;
-    end;
-    if count = BlockSize then // FinalBlock
-    begin
-      RemovePadding(plainText);
-    end;
-    Result := Result + plainText;
-    Dec(count, BlockSize);
-    Inc(p, BlockSize);
-  end;
-  if count > 0 then
-  begin
-    raise ECryptographicException.CreateRes(@SInvalidCipherText);
-  end;
+  Result := DoDecrypt(buffer, count);
 end;
 
 function TSymmetricAlgorithmBase.Decrypt(const buffer: TBuffer): TBuffer;
@@ -1372,7 +1386,7 @@ end;
 procedure TSymmetricAlgorithmBase.SetKey(const value: TBuffer);
 begin
   ValidateKey(value);
-  fKey := value.Clone;
+  fKey := TBuffer.Create(value.Memory, value.Size);
 end;
 
 {$ENDREGION}

@@ -142,6 +142,8 @@ type
     class function CreateList<T>(list: TList<T>; ownership: TCollectionOwnership): IList<T>; overload;
     class function CreateList<T: class>(ownsObjects: Boolean): IList<T>; overload;
     class function CreateList<T: class>(ownsObjects: Boolean; const comparer: IComparer<T>): IList<T>; overload;
+//    class function CreateObjectList<T: class>: IList<T>; overload;
+//    class function CreateObjectList<T: class>(const comparer: IComparer<T>): IList<T>; overload;
     class function CreateDictionary<TKey, TValue>: IDictionary<TKey, TValue>; overload;
     class function CreateDictionary<TKey, TValue>(capacity: Integer): IDictionary<TKey, TValue>; overload;
     class function CreateDictionary<TKey, TValue>(const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TValue>; overload;

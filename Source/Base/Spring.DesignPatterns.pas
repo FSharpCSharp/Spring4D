@@ -26,9 +26,6 @@ unit Spring.DesignPatterns;
 
 {$I Spring.inc}
 
-{ TODO: Design Command Pattern with Undo/Redo }
-{ TODO: Redesign Memento Pattern }
-
 interface
 
 uses

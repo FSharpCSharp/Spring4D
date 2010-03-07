@@ -62,11 +62,13 @@ type
   /// <summary>
   /// Represents a time interval.
   /// </summary>
+  /// <seealso>TimeSpan.TTimeSpan</seealso>
   TTimeSpan = TimeSpan.TTimeSpan;
 
   /// <summary>
   /// Provides a set of methods and properties to accurately measure elapsed time.
   /// </summary>
+  /// <seealso>Diagnostics.TStopwatch</seealso>
   TStopwatch = Diagnostics.TStopwatch;
 
   PTypeInfo  = TypInfo.PTypeInfo;
@@ -425,7 +427,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'Delegate'}
+  {$REGION 'IDelegate<T>'}
 
   IDelegate<T> = interface
     function AddHandler(const handler: T): IDelegate<T>;
@@ -449,7 +451,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'Property Notifications'}
+  {$REGION 'Property Notifications (Experimental)'}
 
   TPropertyNotificationEventArgs = record
   private

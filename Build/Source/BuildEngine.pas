@@ -34,7 +34,6 @@ uses
   Windows,
   Registry,
   IniFiles,
-  ShellAPI,
   Generics.Collections,
   Spring.System,
   Spring.Collections,
@@ -325,9 +324,12 @@ begin
   target.EnvironmentVariables.Values['SPRING_LIBRARY'] := projectPath + libraryDir;
   target.SaveParameters;
 
-  TEnvironment.SetEnvironmentVariable('BDS', target.RootPath);
   TEnvironment.SetEnvironmentVariable('SPRING', projectDir);
   TEnvironment.SetEnvironmentVariable('SPRING_LIBRARY', projectPath + libraryDir);
+
+  // $(BDS)\rsvars.bat
+  TEnvironment.SetEnvironmentVariable('BDS', target.RootPath);
+//  TEnvironment.SetEnvironmentVariable('BDSCOMMONDIR', '');
   path := TEnvironment.GetEnvironmentVariable('Path');
   path := TEnvironment.ExpandEnvironmentVariables('%WINDIR%\Microsoft.NET\Framework\v2.0.50727;') + path;
   TEnvironment.SetEnvironmentVariable('PATH', path);

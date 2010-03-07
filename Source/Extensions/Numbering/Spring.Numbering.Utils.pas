@@ -132,7 +132,7 @@ begin
         fDataSet.SQL.Text := Format(fSelectSql, [fKeyFieldValue]);
         fDataSet.Open;
         try
-          lastNumber := Trim(fDataSet.FieldByName(fValueFieldName).AsString);
+          lastNumber := Trim(VarToStrDef(fDataSet.FieldByName(fValueFieldName).Value, ''));
           proc(lastNumber);
           updateSql := Format(fUpdateSql, [lastNumber, fKeyFieldValue]);
           Execute(updateSql);

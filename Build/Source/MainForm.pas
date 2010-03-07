@@ -57,6 +57,8 @@ type
     lblDetails: TLabel;
     grpTargets: TGroupBox;
     lbTargets: TCheckListBox;
+    lblHomepage: TLinkLabel;
+    BalloonHint1: TBalloonHint;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure btnBuildClick(Sender: TObject);
@@ -64,6 +66,8 @@ type
     procedure rbDebugClick(Sender: TObject);
     procedure rbReleaseClick(Sender: TObject);
     procedure lbTargetsClickCheck(Sender: TObject);
+    procedure lblHomepageLinkClick(Sender: TObject; const Link: string;
+      LinkType: TSysLinkType);
   private
     { Private declarations }
     fBuildEngine: TBuildEngine;
@@ -109,6 +113,12 @@ end;
 procedure TfrmMain.rbReleaseClick(Sender: TObject);
 begin
   fBuildEngine.ConfigurationType := ctRelease;
+end;
+
+procedure TfrmMain.lblHomepageLinkClick(Sender: TObject; const Link: string;
+  LinkType: TSysLinkType);
+begin
+  ShellExecute(Handle, 'open', PChar(Link), nil, nil, SW_NORMAL);
 end;
 
 procedure TfrmMain.lbTargetsClickCheck(Sender: TObject);

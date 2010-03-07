@@ -531,17 +531,17 @@ begin
   if (Pos('WW', fFormat) = 0) or (YearOf(startDay) = YearOf(endDay)) then
   begin
     Result := StringReplace(Result, 'YYYY', FormatDateTime('YYYY', value), [rfIgnoreCase]);
-    Result := StringReplace(Result, 'YYYY', FormatDateTime('YY', value), [rfIgnoreCase]);
+    Result := StringReplace(Result, 'YY', FormatDateTime('YY', value), [rfIgnoreCase]);
   end
   else if week = 1 then
   begin
     Result := StringReplace(Result, 'YYYY', FormatDateTime('YYYY', endDay), [rfIgnoreCase]);
-    Result := StringReplace(Result, 'YYYY', FormatDateTime('YY', endDay), [rfIgnoreCase]);
+    Result := StringReplace(Result, 'YY', FormatDateTime('YY', endDay), [rfIgnoreCase]);
   end
   else
   begin
     Result := StringReplace(Result, 'YYYY', FormatDateTime('YYYY', startDay), [rfIgnoreCase]);
-    Result := StringReplace(Result, 'YYYY', FormatDateTime('YY', startDay), [rfIgnoreCase]);
+    Result := StringReplace(Result, 'YY', FormatDateTime('YY', startDay), [rfIgnoreCase]);
   end;
   Result := StringReplace(Result, 'MM', FormatDateTime('MM', value), [rfIgnoreCase]);
   Result := StringReplace(Result, 'DD', FormatDateTime('DD', value), [rfIgnoreCase]);
