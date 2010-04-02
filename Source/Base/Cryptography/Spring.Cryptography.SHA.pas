@@ -31,7 +31,8 @@ interface
 uses
   SysUtils,
   Windows,
-  Spring.System;
+  Spring.System,
+  Spring.Cryptography;
 
 type
   {Hash context}
@@ -57,6 +58,66 @@ type
     buf: array[0..127] of Byte;
   end;
 
+  /// <summary>
+  /// SHA1 Hash
+  /// </summary>
+  TSHA1 = class(THashAlgorithmBase, ISHA1)
+  private
+    const fCHashSize = 20 * 8;  // 160 bits
+  private
+    fContext: TSHA256Ctx;
+  protected
+    function GetHashSize: Integer; override;
+    procedure HashInit; override;
+    procedure HashUpdate(const buffer: Pointer; count: Integer); override;
+    function HashFinal: TBuffer; override;
+  end;
+
+  /// <summary>
+  /// SHA256 Hash
+  /// </summary>
+  TSHA256 = class(THashAlgorithmBase, ISHA256)
+  private
+    const fCHashSize = 32 * 8;  // 256 bits
+  private
+    fContext: TSHA256Ctx;
+  protected
+    function GetHashSize: Integer; override;
+    procedure HashInit; override;
+    procedure HashUpdate(const buffer: Pointer; count: Integer); override;
+    function HashFinal: TBuffer; override;
+  end;
+
+  /// <summary>
+  /// SHA384 Hash
+  /// </summary>
+  TSHA384 = class(THashAlgorithmBase, ISHA384)
+  private
+    const fCHashSize = 48 * 8;  // 384 bits
+  private
+    fContext: TSHA512Ctx;
+  protected
+    function GetHashSize: Integer; override;
+    procedure HashInit; override;
+    procedure HashUpdate(const buffer: Pointer; count: Integer); override;
+    function HashFinal: TBuffer; override;
+  end;
+
+  /// <summary>
+  /// SHA512 Hash
+  /// </summary>
+  TSHA512 = class(THashAlgorithmBase, ISHA512)
+  private
+    const fCHashSize = 64 * 8;  // 512 bits
+  private
+    fContext: TSHA512Ctx;
+  protected
+    function GetHashSize: Integer; override;
+    procedure HashInit; override;
+    procedure HashUpdate(const buffer: Pointer; count: Integer); override;
+    function HashFinal: TBuffer; override;
+  end;
+
 procedure SHA1Init(var md: TSHA256Ctx);
 
 function SHA256Final(var md: TSHA256Ctx; sz: Word): TBuffer;
@@ -77,6 +138,107 @@ implementation
 
 uses
   Spring.Cryptography.Utils;
+
+
+{$REGION 'TSHA1'}
+
+function TSHA1.GetHashSize: Integer;
+begin
+  Result := fCHashSize;
+end;
+
+procedure TSHA1.HashInit;
+begin
+  SHA1Init(fContext);
+end;
+
+procedure TSHA1.HashUpdate(const buffer: Pointer; count: Integer);
+begin
+  SHA256Update(fContext, buffer, count, 1);
+end;
+
+function TSHA1.HashFinal: TBuffer;
+begin
+  Result := SHA256Final(fContext, 1);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TSHA256'}
+
+function TSHA256.GetHashSize: Integer;
+begin
+  Result := fCHashSize;
+end;
+
+procedure TSHA256.HashInit;
+begin
+  SHA256Init(fContext);
+end;
+
+procedure TSHA256.HashUpdate(const buffer: Pointer; count: Integer);
+begin
+  SHA256Update(fContext, buffer, count, 256);
+end;
+
+function TSHA256.HashFinal: TBuffer;
+begin
+  Result := SHA256Final(fContext, 256);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TSHA384'}
+
+function TSHA384.GetHashSize: Integer;
+begin
+  Result := fCHashSize;
+end;
+
+procedure TSHA384.HashInit;
+begin
+  SHA384Init(fContext);
+end;
+
+procedure TSHA384.HashUpdate(const buffer: Pointer; count: Integer);
+begin
+  SHA512Update(fContext, buffer, count);
+end;
+
+function TSHA384.HashFinal: TBuffer;
+begin
+  Result := SHA512Final(fContext, 384);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TSHA512'}
+
+function TSHA512.GetHashSize: Integer;
+begin
+  Result := fCHashSize;
+end;
+
+procedure TSHA512.HashInit;
+begin
+  SHA512Init(fContext);
+end;
+
+procedure TSHA512.HashUpdate(const buffer: Pointer; count: Integer);
+begin
+  SHA512Update(fContext, buffer, count);
+end;
+
+function TSHA512.HashFinal: TBuffer;
+begin
+  Result := SHA512Final(fContext, 512);
+end;
+
+{$ENDREGION}
+
 
 {$REGION 'Internal data and functions'}
 

@@ -1,4 +1,3 @@
-teste commit
 =====================================================================================
 Delphi Spring Framework
 =====================================================================================
@@ -37,7 +36,7 @@ Feel free to drop me an email if you have any idea about the project.
 See the wiki page GettingStarted to learn how to get started with Delphi Spring Framework.
 
 8. Acknowledgements
-Coban (alex#ritlabs.com)
+Alexandr Demcenko (alex#ritlabs.com)
 Unknown Author (MD5)
 Unknown Author (DES)
 

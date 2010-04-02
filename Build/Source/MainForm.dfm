@@ -357,7 +357,6 @@ object frmMain: TfrmMain
     Caption = '&Build'
     TabOrder = 0
     OnClick = btnBuildClick
-    ExplicitTop = 318
   end
   object btnClose: TButton
     Left = 398
@@ -368,7 +367,6 @@ object frmMain: TfrmMain
     Caption = '&Close'
     TabOrder = 1
     OnClick = btnCloseClick
-    ExplicitTop = 318
   end
   object grpConfiguration: TGroupBox
     Left = 349
@@ -408,7 +406,6 @@ object frmMain: TfrmMain
     ReadOnly = True
     ScrollBars = ssBoth
     TabOrder = 3
-    ExplicitHeight = 185
   end
   object grpTargets: TGroupBox
     Left = 8

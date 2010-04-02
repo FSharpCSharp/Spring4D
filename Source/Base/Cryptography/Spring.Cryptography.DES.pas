@@ -28,6 +28,47 @@ unit Spring.Cryptography.DES;
 
 interface
 
+uses
+  Spring.System,
+  Spring.Cryptography,
+  Spring.ResourceStrings;
+
+type
+  /// <summary>
+  /// Data Encryption Standard (DES)
+  /// </summary>
+  TDES = class(TSymmetricAlgorithmBase, IDES)
+  private
+    const
+      fCDefaultBlockSize = 8 * 8;
+      fCDefaultKeySize = 8 * 8;
+  protected
+    procedure DoEncryptBlock(const inputBuffer: TBytes; var outputBuffer: TBytes); override;
+    procedure DoDecryptBlock(const inputBuffer: TBytes; var outputBuffer: TBytes); override;
+  public
+    constructor Create;
+  end;
+
+  /// <summary>
+  /// Triple Data Encryption Standard Algorithm
+  /// </summary>
+  TTripleDES = class(TSymmetricAlgorithmBase, ITripleDES)
+  private
+    const
+      fCDefaultBlockSize = 8 * 8;
+      fCDefaultKeySize = 24 * 8;
+  private
+    fKey1: TBytes;
+    fKey2: TBytes;
+    fKey3: TBytes;
+  protected
+    procedure SetKey(const value: TBuffer); override;
+    procedure DoEncryptBlock(const inputBuffer: TBytes; var outputBuffer: TBytes); override;
+    procedure DoDecryptBlock(const inputBuffer: TBytes; var outputBuffer: TBytes); override;
+  public
+    constructor Create;
+  end;
+
 procedure EncryptData(const keyData, inData: array of Byte; var outData: array of Byte);
 procedure DecryptData(const keyData, inData: array of Byte; var outData: array of Byte);
 
@@ -383,5 +424,78 @@ procedure DecryptData(const keyData, inData: array of Byte; var outData: array o
 begin
   desData(dmDecry, keyData, inData, outData);
 end;
+
+
+{$REGION 'TDES'}
+
+constructor TDES.Create;
+begin
+  inherited Create([8 * 8], [8 * 8]);
+  BlockSize := fCDefaultBlockSize;
+  KeySize := fCDefaultKeySize;
+end;
+
+procedure TDES.DoEncryptBlock(const inputBuffer: TBytes;
+  var outputBuffer: TBytes);
+begin
+  EncryptData(Key.AsBytes, inputBuffer, outputBuffer);
+end;
+
+procedure TDES.DoDecryptBlock(const inputBuffer: TBytes;
+  var outputBuffer: TBytes);
+begin
+  DecryptData(Key.AsBytes, inputBuffer, outputBuffer);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTripleDES'}
+
+constructor TTripleDES.Create;
+begin
+  inherited Create([8 * 8], [16 * 8, 24 * 8]);
+  BlockSize := fCDefaultBlockSize;
+  KeySize := fCDefaultKeySize;
+end;
+
+procedure TTripleDES.DoDecryptBlock(const inputBuffer: TBytes;
+  var outputBuffer: TBytes);
+var
+  temp1, temp2: TBytes;
+begin
+  SetLength(temp1, BlockSizeInBytes);
+  SetLength(temp2, BlockSizeInBytes);
+  DecryptData(fKey3, inputBuffer, temp1);
+  EncryptData(fKey2, temp1, temp2);
+  DecryptData(fKey1, temp2, outputBuffer);
+end;
+
+procedure TTripleDES.DoEncryptBlock(const inputBuffer: TBytes;
+  var outputBuffer: TBytes);
+var
+  temp1, temp2: TBytes;
+begin
+  SetLength(temp1, BlockSizeInBytes);
+  SetLength(temp2, BlockSizeInBytes);
+  EncryptData(fKey1, inputBuffer, temp1);
+  DecryptData(fKey2, temp1, temp2);
+  EncryptData(fKey3, temp2, outputBuffer);
+end;
+
+procedure TTripleDES.SetKey(const value: TBuffer);
+begin
+  inherited SetKey(value);
+  fKey1 := Key.Left(8);
+  fKey2 := Key.Mid(8, 8);
+  if Key.Size = 16 then
+    fKey3 := fKey1
+  else if Key.Size = 24 then
+    fKey3 := Key.Right(8)
+  else
+    raise ECryptographicException.CreateResFmt(@SIllegalKeySize, [value.Size]);
+end;
+
+{$ENDREGION}
 
 end.

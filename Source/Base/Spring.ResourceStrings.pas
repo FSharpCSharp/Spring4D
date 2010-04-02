@@ -151,6 +151,7 @@ resourcestring
   SIllegalIVSize = 'Illegal IV size: %d.';
   SPaddingModeMissing = 'Padding mode is missing';
   SInvalidCipherText = 'Illegal cipher text.';
+  SNotSupportedCipherMode = 'The cipher mode "%s" is not supported.';
 
   {$ENDREGION}
 

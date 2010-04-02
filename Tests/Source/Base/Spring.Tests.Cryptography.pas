@@ -274,7 +274,7 @@ end;
 procedure TTestCRC16.SetUp;
 begin
   inherited;
-  fCRC16 := TCRC16.Create;
+  fCRC16 := TCryptographicServiceProvider.CreateCRC16;
 end;
 
 procedure TTestCRC16.TearDown;
@@ -309,7 +309,7 @@ end;
 procedure TTestCRC32.SetUp;
 begin
   inherited;
-  fCRC32 := TCRC32.Create;
+  fCRC32 := TCryptographicServiceProvider.CreateCRC32;
 end;
 
 procedure TTestCRC32.TearDown;
@@ -345,7 +345,7 @@ end;
 procedure TTestMD5.SetUp;
 begin
   inherited;
-  fMD5 := TMD5.Create;
+  fMD5 := TCryptographicServiceProvider.CreateMD5;
 end;
 
 procedure TTestMD5.TearDown;
@@ -390,7 +390,7 @@ end;
 procedure TTestSHA1.SetUp;
 begin
   inherited;
-  fSHA1 := TSHA1.Create;
+  fSHA1 := TCryptographicServiceProvider.CreateSHA1;
 end;
 
 procedure TTestSHA1.TearDown;
@@ -418,7 +418,7 @@ end;
 procedure TTestSHA256.SetUp;
 begin
   inherited;
-  fSHA256 := TSHA256.Create;
+  fSHA256 := TCryptographicServiceProvider.CreateSHA256;
 end;
 
 procedure TTestSHA256.TearDown;
@@ -446,7 +446,7 @@ end;
 procedure TTestSHA384.SetUp;
 begin
   inherited;
-  fSHA384 := TSHA384.Create;
+  fSHA384 := TCryptographicServiceProvider.CreateSHA384;
 end;
 
 procedure TTestSHA384.TearDown;
@@ -474,7 +474,7 @@ end;
 procedure TTestSHA512.SetUp;
 begin
   inherited;
-  fSHA512 := TSHA512.Create;
+  fSHA512 := TCryptographicServiceProvider.CreateSHA512;
 end;
 
 procedure TTestSHA512.TearDown;
@@ -503,7 +503,7 @@ end;
 procedure TTestDES.SetUp;
 begin
   inherited;
-  fDES := TDES.Create;
+  fDES := TCryptographicServiceProvider.CreateDES;
   fDES.CipherMode := cmECB;
   fDES.PaddingMode := pmNone;
 end;
@@ -574,7 +574,7 @@ end;
 procedure TTestTripleDES.SetUp;
 begin
   inherited;
-  fTripleDES := TTripleDES.Create;
+  fTripleDES := TCryptographicServiceProvider.CreateTripleDES;
 end;
 
 procedure TTestTripleDES.TearDown;
@@ -607,7 +607,7 @@ begin
   fTripleDES.CipherMode := cmCBC;
   fTripleDES.PaddingMode := pmPKCS7;
   fTripleDES.Key := fKey;
-  fTripleDES.IV := TBuffer.BytesOf($0, fTripleDES.BlockSize);
+  fTripleDES.IV := TBuffer.BytesOf($0, fTripleDES.BlockSize div 8);
   fInputBuffer := TBuffer.Create([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
   fExpectedBuffer := TBuffer.FromHexString('23 61 AC E6 C5 17 10 51 D9 CB 92 8C 76 89 35 84');
   fActualBuffer := fTripleDES.Encrypt(fInputBuffer);
@@ -638,9 +638,9 @@ end;
 procedure TTestSymmetricAlgorithmBase.SetUp;
 begin
   inherited;
-  fAlgorithm := TMockSymmetricAlgorithm.Create([8], [8]);
-  fAlgorithm.BlockSize := 8;
-  fAlgorithm.KeySize := 8;
+  fAlgorithm := TMockSymmetricAlgorithm.Create([8 * 8], [8 * 8]);
+  fAlgorithm.BlockSize := 8 * 8;
+  fAlgorithm.KeySize := 8 * 8;
   fAlgorithm.CipherMode := cmECB;
   fAlgorithm.PaddingMode := pmNone;
 end;

@@ -31,6 +31,10 @@ interface
 {$OVERFLOWCHECKS OFF}
 {$RANGECHECKS OFF}
 
+uses
+  Spring.System,
+  Spring.Cryptography;
+
 type
   TMD5Count = array[0..1] of LongWord;
   TMD5State = array[0..3] of LongWord;
@@ -43,6 +47,22 @@ type
     State   : TMD5State;
     Count   : TMD5Count;
     Buffer  : TMD5Buffer;
+  end;
+
+  /// <summary>
+  /// MD5 Hash
+  /// </summary>
+  TMD5 = class(THashAlgorithmBase, IMD5)
+  private
+    const fCHashSize = 16 * 8; // 256 bits
+  private
+    fContext: TMD5Context;
+    fDigest: TMD5Digest;
+  protected
+    function GetHashSize: Integer; override;
+    procedure HashInit; override;
+    procedure HashUpdate(const buffer: Pointer; count: Integer); override;
+    function HashFinal: TBuffer; override;
   end;
 
 procedure MD5Init(var Context: TMD5Context);
@@ -62,6 +82,38 @@ var
     $00, $00, $00, $00, $00, $00, $00, $00,
     $00, $00, $00, $00, $00, $00, $00, $00
   );
+
+
+{$REGION 'TMD5'}
+
+function TMD5.GetHashSize: Integer;
+begin
+  Result := fCHashSize;
+end;
+
+procedure TMD5.HashUpdate(const buffer: Pointer; count: Integer);
+begin
+  MD5Update(fContext, buffer, count);
+end;
+
+function TMD5.HashFinal: TBuffer;
+begin
+  MD5Final(fContext, fDigest);
+  Result := TBuffer.Create(fDigest);
+end;
+
+procedure TMD5.HashInit;
+var
+  i: Byte;
+begin
+  for i := 0 to High(fDigest) do
+  begin
+    fDigest[i] := i + 1;
+  end;
+  MD5Init(fContext);
+end;
+
+{$ENDREGION}
 
 procedure CopyMemory(Destination: Pointer; Source: Pointer; Length: LongWord);
 begin

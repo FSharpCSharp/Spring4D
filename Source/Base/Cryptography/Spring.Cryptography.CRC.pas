@@ -32,7 +32,45 @@ uses
   Classes,
   Windows,
   SysUtils,
-  Spring.System;
+  Spring.System,
+  Spring.Cryptography;
+
+type
+  /// <summary>
+  /// CRC16 Hash (CheckSum)
+  /// </summary>
+  TCRC16 = class(THashAlgorithmBase, ICRC16)
+  private
+    const fCHashSize = 2 * 8;  // 16 bits
+  private
+    fCRCValue: Word;
+    function GetCrcValue: UInt16;
+  protected
+    function GetHashSize: Integer; override;
+    procedure HashInit; override;
+    procedure HashUpdate(const buffer: Pointer; count: Integer); override;
+    function HashFinal: TBuffer; override;
+  public
+    property CrcValue: UInt16 read GetCrcValue;
+  end;
+
+  /// <summary>
+  /// CRC32 Hash (CheckSum)
+  /// </summary>
+  TCRC32 = class(THashAlgorithmBase, ICRC32)
+  private
+    const fCHashSize = 4 * 8;  // 32 bits
+  private
+    fCRCValue: LongWord;
+    function GetCrcValue: UInt32;
+  protected
+    function GetHashSize: Integer; override;
+    procedure HashInit; override;
+    procedure HashUpdate(const buffer: Pointer; count: Integer); override;
+    function HashFinal: TBuffer; override;
+  public
+    property CrcValue: UInt32 read GetCrcValue;
+  end;
 
 procedure CRC32Init(var crc: LongWord);
 procedure CRC32Update(var crc: LongWord; const buf: Pointer; len: LongWord);
@@ -346,5 +384,65 @@ function CRC16Final(var crc: Word): TBuffer;
 begin
   Result := TBuffer.Create([Hi(crc), Lo(crc)]);
 end;
+
+
+{$REGION 'TCRC16'}
+
+function TCRC16.GetCrcValue: UInt16;
+begin
+  Result := fCRCValue;
+end;
+
+function TCRC16.GetHashSize: Integer;
+begin
+  Result := fCHashSize;
+end;
+
+procedure TCRC16.HashInit;
+begin
+  CRC16Init(fCRCValue);
+end;
+
+procedure TCRC16.HashUpdate(const buffer: Pointer; count: Integer);
+begin
+  CRC16Update(fCRCValue, buffer, count);
+end;
+
+function TCRC16.HashFinal: TBuffer;
+begin
+  Result := CRC16Final(fCRCValue);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TCRC32'}
+
+function TCRC32.GetCrcValue: UInt32;
+begin
+  Result := fCRCValue;
+end;
+
+function TCRC32.GetHashSize: Integer;
+begin
+  Result := fCHashSize;
+end;
+
+procedure TCRC32.HashInit;
+begin
+  CRC32Init(fCRCValue);
+end;
+
+procedure TCRC32.HashUpdate(const buffer: Pointer; count: Integer);
+begin
+  CRC32BUpdate(fCRCValue, buffer, count);
+end;
+
+function TCRC32.HashFinal: TBuffer;
+begin
+  Result := CRC32Final(fCRCValue);
+end;
+
+{$ENDREGION}
 
 end.

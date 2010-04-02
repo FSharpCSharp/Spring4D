@@ -22,6 +22,10 @@
 {                                                                           }
 {***************************************************************************}
 
+{TODO -oPaul -cGeneral : Support More CipherModes (cmOFB, cmCFB and cmCTS)}
+{TODO -oPaul -cGeneral : Add TMACTripleDES}
+{TODO -oPaul -cGeneral : Add TAES}
+
 /// <seealso>http://msdn.microsoft.com/en-us/library/92f9ye3s(VS.71).aspx</seealso>
 /// <seealso>http://msdn.microsoft.com/en-us/library/system.security.cryptography.aspx</seealso>
 /// <seealso>http://en.wikipedia.org/wiki/Cryptography</seealso>
@@ -35,61 +39,17 @@ uses
   Classes,
   Windows,
   SysUtils,
-  Spring.System,
-  Spring.Cryptography.CRC,
-  Spring.Cryptography.MD5,
-  Spring.Cryptography.SHA,
-  Spring.Cryptography.DES;
+  Spring.System;
 
 type
   {$REGION 'Core Types'}
 
   /// <summary>
-  /// Defines the basic operations of hash algorithms.
-  /// </summary>
-  IHashAlgorithm = interface
-    ['{D33C6DB1-7C51-4DDE-BB7D-ACE98BB61EBE}']
-  {$REGION 'Property Getters and Setters'}
-    function GetHashSize: Integer;
-  {$ENDREGION}
-    function ComputeHash(const buffer: array of Byte): TBuffer; overload;
-    function ComputeHash(const buffer: array of Byte; startIndex, count: Integer): TBuffer; overload;
-    function ComputeHash(const buffer: Pointer; count: Integer): TBuffer; overload;
-    function ComputeHash(const inputString: string): TBuffer; overload;
-    function ComputeHash(const inputString: WideString): TBuffer; overload;
-    function ComputeHash(const inputString: RawByteString): TBuffer; overload;
-    function ComputeHash(const inputStream: TStream): TBuffer; overload;
-    function ComputeHashOfFile(const fileName: string): TBuffer;  // callback?
-    /// <summary>
-    /// Gets the hash size, in bytes, of the algorithm.
-    /// </summary>
-    property HashSize: Integer read GetHashSize;
-  end;
-
-  /// <summary>
-  /// IKeyedHashAlgorithm
-  /// </summary>
-  /// <remarks>
-  /// From MSDN:
-  /// A keyed hash algorithm is a key-dependent, one-way hash function used as
-  /// a message authentication code. Only someone who knows the key can verify
-  /// the hash. Keyed hash algorithms provide authenticity without secrecy.
-  /// </remarks>
-  IKeyedHashAlgorithm = interface(IHashAlgorithm)
-    ['{0D6838E7-05C0-4874-86B0-732DF42105F5}']
-  {$REGION 'Property Getters and Setters'}
-    function GetKey: TBuffer;
-    procedure SetKey(const value: TBuffer);
-  {$ENDREGION}
-    /// <summary>
-    /// Gets or sets the key to use in the hash algorithm.
-    /// </summary>
-    property Key: TBuffer read GetKey write SetKey;
-  end;
-
-  /// <summary>
   /// TCipherMode
   /// </summary>
+  /// <remarks>
+  /// The cipher modes cmOFB, cmCFB and cmCTS have not been supported yet.
+  /// </remarks>
   /// <seealso>http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation</seealso>
   TCipherMode = (
     /// <summary>
@@ -99,7 +59,7 @@ type
     /// <summary>
     /// Electronic Codebook
     /// </summary>
-    cmECB (*,
+    cmECB,
     /// <summary>
     /// Output Feedback
     /// </summary>
@@ -112,7 +72,6 @@ type
     /// Cipher Text Stealing
     /// </summary>
     cmCTS
-    //*)
   );
 
   /// <summary>
@@ -163,7 +122,7 @@ type
   );
 
   /// <summary>
-  /// Represents a size list that can determine whether a size is valid.
+  /// Represents a size list that can determine whether a size is contained.
   /// </summary>
   TSizes = record
   private
@@ -174,7 +133,50 @@ type
     function Contains(const size: Integer): Boolean;
     property Values: TArray<Integer> read fValues;
   end;
+  
+  /// <summary>
+  /// Defines the basic operations of hash algorithms.
+  /// </summary>
+  IHashAlgorithm = interface
+    ['{D33C6DB1-7C51-4DDE-BB7D-ACE98BB61EBE}']
+  {$REGION 'Property Getters and Setters'}
+    function GetHashSize: Integer;
+  {$ENDREGION}
+    function ComputeHash(const buffer: array of Byte): TBuffer; overload;
+    function ComputeHash(const buffer: array of Byte; startIndex, count: Integer): TBuffer; overload;
+    function ComputeHash(const buffer: Pointer; count: Integer): TBuffer; overload;
+    function ComputeHash(const inputString: string): TBuffer; overload;
+    function ComputeHash(const inputString: WideString): TBuffer; overload;
+    function ComputeHash(const inputString: RawByteString): TBuffer; overload;
+    function ComputeHash(const inputStream: TStream): TBuffer; overload;
+    function ComputeHashOfFile(const fileName: string): TBuffer;  // callback?
+    /// <summary>
+    /// Gets the hash size, in bits, of the algorithm.
+    /// </summary>
+    property HashSize: Integer read GetHashSize;
+  end;
 
+  /// <summary>
+  /// IKeyedHashAlgorithm
+  /// </summary>
+  /// <remarks>
+  /// From MSDN:
+  /// A keyed hash algorithm is a key-dependent, one-way hash function used as
+  /// a message authentication code. Only someone who knows the key can verify
+  /// the hash. Keyed hash algorithms provide authenticity without secrecy.
+  /// </remarks>
+  IKeyedHashAlgorithm = interface(IHashAlgorithm)
+    ['{0D6838E7-05C0-4874-86B0-732DF42105F5}']
+  {$REGION 'Property Getters and Setters'}
+    function GetKey: TBuffer;
+    procedure SetKey(const value: TBuffer);
+  {$ENDREGION}
+    /// <summary>
+    /// Gets or sets the key to use in the hash algorithm.
+    /// </summary>
+    property Key: TBuffer read GetKey write SetKey;
+  end;
+  
   /// <summary>
   /// Performs a transformation on data to keep it from being read by third parties.
   /// This type of encryption uses a single shared, secret key to encrypt and decrypt data.
@@ -216,7 +218,7 @@ type
     function Decrypt(const inputString: RawByteString): TBuffer; overload;
     procedure Decrypt(inputStream, outputStream: TStream); overload;
     /// <summary>
-    /// Gets or sets the ciphyer mode for operation of the symmetric algorithm.
+    /// Gets or sets the cipher mode for operation of the symmetric algorithm.
     /// </summary>
     property CipherMode: TCipherMode read GetCipherMode write SetCipherMode;
     /// <summary>
@@ -232,19 +234,19 @@ type
     /// </summary>
     property IV: TBuffer read GetIV write SetIV;
     /// <summary>
-    /// Gets or sets the block size, in bytes, of the cryptographic operation.
+    /// Gets or sets the block size, in bits, of the cryptographic operation.
     /// </summary>
     property BlockSize: Integer read GetBlockSize write SetBlockSize;
     /// <summary>
-    /// Gets or sets the size, in bytes, of the secret key used by the symmetric algorithm.
+    /// Gets or sets the size, in bits, of the secret key used by the symmetric algorithm.
     /// </summary>
     property KeySize: Integer read GetKeySize write SetKeySize;
     /// <summary>
-    /// Gets the block sizes, in bytes, that are supported by the symmetric algorithm.
+    /// Gets the block sizes, in bits, that are supported by the symmetric algorithm.
     /// </summary>
     property LegalBlockSizes: TSizes read GetLegalBlockSizes;
     /// <summary>
-    /// Gets the key sizes, in bytes, that are supported by the symmetric algorithm.
+    /// Gets the key sizes, in bits, that are supported by the symmetric algorithm.
     /// </summary>
     property LegalKeySizes: TSizes read GetLegalKeySizes;
   end;
@@ -268,77 +270,11 @@ type
     procedure GetBytes(var data: TBytes);
     procedure GetNonZeroBytes(var data: TBytes);
   end;
-
-  /// <summary>
-  /// Defines the basic operations of cryptographic transformations.
-  /// </summary>
-  ICryptoTransform = interface
-    ['{0A0F5C2D-5E4A-4AD3-B09A-92E43A946D3F}']
-  {$REGION 'Property Getters and Setters'}
-    function GetCanTransformMultipleBlocks: Boolean;
-    function GetCanReuseTransform: Boolean;
-    function GetInputBlockSize: Integer;
-    function GetOutputBlockSize: Integer;
-  {$ENDREGION}
-//    procedure Initialize; ?
-//    BeginTransform, EndTransform ?
-    function TransformBlock(const inputBuffer: Pointer; inputCount: Integer; outBuffer: Pointer): Integer;
-    function TransformFinalBlock(const inputBuffer: Pointer; inputCount: Integer): TBytes;
-    property CanReuseTransform: Boolean read GetCanReuseTransform;
-    property CanTransformMultipleBlocks: Boolean read GetCanTransformMultipleBlocks;
-    property InputBlockSize: Integer read GetInputBlockSize;
-    property OutputBlockSize: Integer read GetOutputBlockSize;
-  end;
-
-  ECryptographicException = class(Exception);
-
-  {$ENDREGION}
-
-
-  {$REGION 'Hash Algorithms'}
-
-type
-  ICRC16 = interface(IHashAlgorithm)
-    ['{7FEC815E-52E3-4C48-AAC1-7DEE905A6C1F}']
-  end;
-
-  ICRC32 = interface(IHashAlgorithm)
-    ['{96581075-EC4C-4C3F-A031-88FCD4D9F3EA}']
-  end;
-
-  IMD5 = interface(IHashAlgorithm)
-    ['{84E96BE7-0959-490D-9CF0-A62FEF72BFE7}']
-  end;
-
-  ISHA1 = interface(IHashAlgorithm)
-    ['{FB202EDF-7846-4F3C-9088-D581CC8E1BC0}']
-  end;
-
-  ISHA256 = interface(IHashAlgorithm)
-    ['{1DD90B12-CB33-44F2-A996-E7A0B5F0C541}']
-  end;
-
-  ISHA384 = interface(IHashAlgorithm)
-    ['{B8CFF3B2-D319-4D21-89E5-5A1E0DB540B5}']
-  end;
-
-  ISHA512 = interface(IHashAlgorithm)
-    ['{986B1C68-C156-46B8-A36C-822E7E5BC35E}']
-  end;
-
-  (*
-  /// <summary>
-  /// Message Authentication Code
-  /// </summary>
-  IMACTripleDES = interface(IKeyedHashAlgorithm)
-    ['{AD01CC26-2B2F-4895-AA28-A67924DB7EB3}']
-  end;
-  //*)
-
+  
   /// <summary>
   /// Abstract base class for hash algorithms.
   /// </summary>
-  THashAlgorithmBase = class abstract(TInterfacedObject, IHashAlgorithm, ICryptoTransform, IInterface)
+  THashAlgorithmBase = class abstract(TInterfacedObject, IHashAlgorithm, IInterface)
   protected
     fHash: TBuffer;
 //    fState: Integer;
@@ -348,18 +284,6 @@ type
     function HashFinal: TBuffer; virtual; abstract;
     function GetHashSize: Integer; virtual; abstract;
     property Hash: TBuffer read fHash;
-  protected
-    { ICryptoTransform }
-    function GetCanTransformMultipleBlocks: Boolean; virtual;
-    function GetCanReuseTransform: Boolean; virtual;
-    function GetInputBlockSize: Integer; virtual;
-    function GetOutputBlockSize: Integer; virtual;
-    function TransformBlock(const inputBuffer: Pointer; inputCount: Integer; outBuffer: Pointer): Integer; virtual;
-    function TransformFinalBlock(const inputBuffer: Pointer; inputCount: Integer): TBytes; virtual;
-    property CanReuseTransform: Boolean read GetCanReuseTransform;
-    property CanTransformMultipleBlocks: Boolean read GetCanTransformMultipleBlocks;
-    property InputBlockSize: Integer read GetInputBlockSize;
-    property OutputBlockSize: Integer read GetOutputBlockSize;
   public
     function ComputeHash(const buffer: array of Byte): TBuffer; overload;
     function ComputeHash(const buffer: array of Byte; startIndex, count: Integer): TBuffer; overload;
@@ -371,130 +295,6 @@ type
     function ComputeHashOfFile(const fileName: string): TBuffer; virtual;
     property HashSize: Integer read GetHashSize;
   end;
-
-  /// <summary>
-  /// CRC16 Hash (CheckSum)
-  /// </summary>
-  TCRC16 = class(THashAlgorithmBase, ICRC16)
-  private
-    const fCHashSize = 2;  // 16 bits
-  private
-    fCRCValue: Word;
-  protected
-    function GetHashSize: Integer; override;
-    procedure HashInit; override;
-    procedure HashUpdate(const buffer: Pointer; count: Integer); override;
-    function HashFinal: TBuffer; override;
-  end;
-
-  /// <summary>
-  /// CRC32 Hash (CheckSum)
-  /// </summary>
-  TCRC32 = class(THashAlgorithmBase, ICRC32)
-  private
-    const fCHashSize = 4;  // 32 bits
-  private
-    fCRCValue: LongWord;
-  protected
-    function GetHashSize: Integer; override;
-    procedure HashInit; override;
-    procedure HashUpdate(const buffer: Pointer; count: Integer); override;
-    function HashFinal: TBuffer; override;
-  end;
-
-  /// <summary>
-  /// MD5 Hash
-  /// </summary>
-  TMD5 = class(THashAlgorithmBase, IMD5)
-  private
-    const fCHashSize = 16; // 256 bits
-  private
-    fContext: TMD5Context;
-    fDigest: TMD5Digest;
-  protected
-    function GetHashSize: Integer; override;
-    procedure HashInit; override;
-    procedure HashUpdate(const buffer: Pointer; count: Integer); override;
-    function HashFinal: TBuffer; override;
-  end;
-
-  /// <summary>
-  /// SHA1 Hash
-  /// </summary>
-  TSHA1 = class(THashAlgorithmBase, ISHA1)
-  private
-    const fCHashSize = 20;  // 160 bits
-  private
-    fContext: TSHA256Ctx;
-  protected
-    function GetHashSize: Integer; override;
-    procedure HashInit; override;
-    procedure HashUpdate(const buffer: Pointer; count: Integer); override;
-    function HashFinal: TBuffer; override;
-  end;
-
-  /// <summary>
-  /// SHA256 Hash
-  /// </summary>
-  TSHA256 = class(THashAlgorithmBase, ISHA256)
-  private
-    const fCHashSize = 32;  // 256 bits
-  private
-    fContext: TSHA256Ctx;
-  protected
-    function GetHashSize: Integer; override;
-    procedure HashInit; override;
-    procedure HashUpdate(const buffer: Pointer; count: Integer); override;
-    function HashFinal: TBuffer; override;
-  end;
-
-  /// <summary>
-  /// SHA384 Hash
-  /// </summary>
-  TSHA384 = class(THashAlgorithmBase, ISHA384)
-  private
-    const fCHashSize = 48;  // 384 bits
-  private
-    fContext: TSHA512Ctx;
-  protected
-    function GetHashSize: Integer; override;
-    procedure HashInit; override;
-    procedure HashUpdate(const buffer: Pointer; count: Integer); override;
-    function HashFinal: TBuffer; override;
-  end;
-
-  /// <summary>
-  /// SHA512 Hash
-  /// </summary>
-  TSHA512 = class(THashAlgorithmBase, ISHA512)
-  private
-    const fCHashSize = 64;  // 512 bits
-  private
-    fContext: TSHA512Ctx;
-  protected
-    function GetHashSize: Integer; override;
-    procedure HashInit; override;
-    procedure HashUpdate(const buffer: Pointer; count: Integer); override;
-    function HashFinal: TBuffer; override;
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'Symmetric Algorithms'}
-
-type
-  IDES = interface(ISymmetricAlgorithm)
-    ['{2123E0C7-A747-49D4-A7CD-A2A9BC1A0042}']
-  end;
-
-  ITripleDES = interface(ISymmetricAlgorithm)
-    ['{81D5101D-B3EA-437D-8A1A-80E74A9EDCDF}']
-  end;
-
-//  IAES = interface(ISymmetricAlgorithm)
-//    ['{E5EF09B3-8A6D-432A-87A6-DDB818C59789}']
-//  end;
 
   /// <summary>
   /// Abstract base class for symmetric algorithms.
@@ -509,6 +309,7 @@ type
     fKeySize: Integer;
     fKey: TBuffer;
     fIV: TBuffer;
+    function GetBlockSizeInBytes: Integer;
   protected
     function GetBlockSize: Integer; virtual;
     function GetKeySize: Integer; virtual;
@@ -525,16 +326,17 @@ type
     procedure SetKey(const value: TBuffer); virtual;
     procedure SetIV(const value: TBuffer); virtual;
   protected
-    function GenerateIV: TBuffer; virtual;
-    function GenerateKey: TBuffer; virtual;
     procedure AddPadding(var buffer: TBuffer; startIndex: Integer; count: Integer);
     procedure RemovePadding(var buffer: TBuffer);
     procedure ValidateKey(const key: TBuffer); virtual;
+    function GenerateIV: TBuffer; virtual;
+    function GenerateKey: TBuffer; virtual;
+    property BlockSizeInBytes: Integer read GetBlockSizeInBytes;
   protected
-    function DoEncrypt(const buffer: Pointer; count: Integer): TBuffer; virtual;
-    function DoDecrypt(const buffer: Pointer; count: Integer): TBuffer; virtual;
     procedure DoEncryptBlock(const inputBuffer: TBytes; var outputBuffer: TBytes); virtual; abstract;
     procedure DoDecryptBlock(const inputBuffer: TBytes; var outputBuffer: TBytes); virtual; abstract;
+    function DoEncrypt(const buffer: Pointer; count: Integer): TBuffer; virtual;
+    function DoDecrypt(const buffer: Pointer; count: Integer): TBuffer; virtual;
   public
     constructor Create(const legalBlockSizes, legalKeySizes: array of Integer);
     function Encrypt(const buffer: Pointer; count: Integer): TBuffer; overload;
@@ -562,56 +364,7 @@ type
     property LegalBlockSizes: TSizes read GetLegalBlockSizes;
     property LegalKeySizes: TSizes read GetLegalKeySizes;
   end;
-
-  /// <summary>
-  /// Data Encryption Standard (DES)
-  /// </summary>
-  TDES = class(TSymmetricAlgorithmBase, IDES)
-  private
-    const
-      fCDefaultBlockSize = 8;
-      fCDefaultKeySize = 8;
-  protected
-    procedure DoEncryptBlock(const inputBuffer: TBytes; var outputBuffer: TBytes); override;
-    procedure DoDecryptBlock(const inputBuffer: TBytes; var outputBuffer: TBytes); override;
-  public
-    constructor Create;
-  end;
-
-  /// <summary>
-  /// Triple Data Encryption Standard Algorithm
-  /// </summary>
-  TTripleDES = class(TSymmetricAlgorithmBase, ITripleDES)
-  private
-    const
-      fCDefaultBlockSize = 8;
-      fCDefaultKeySize = 24;
-  private
-    fKey1: TBytes;
-    fKey2: TBytes;
-    fKey3: TBytes;
-  protected
-    procedure SetKey(const value: TBuffer); override;
-    procedure DoEncryptBlock(const inputBuffer: TBytes; var outputBuffer: TBytes); override;
-    procedure DoDecryptBlock(const inputBuffer: TBytes; var outputBuffer: TBytes); override;
-  public
-    constructor Create;
-  end;
-
-  (*
-  /// <summary>
-  /// AES Algorithm
-  /// </summary>
-  TAES = class(TSymmetricAlgorithmBase, IAES)
-  end;
-  //*)
-
-  {$ENDREGION}
-
-
-  {$REGION 'Random Number Generator'}
-
-type
+  
   /// <summary>
   /// TRandomNumberGenerator
   /// </summary>
@@ -620,13 +373,105 @@ type
     procedure GetBytes(var data: TBytes);
     procedure GetNonZeroBytes(var data: TBytes);
   end;
+  
+  {$ENDREGION}
+
+
+  {$REGION 'Hash Algorithms'}
+  
+  ICRC16 = interface(IHashAlgorithm)
+    ['{7FEC815E-52E3-4C48-AAC1-7DEE905A6C1F}']
+    function GetCrcValue: UInt16;
+    property CrcValue: UInt16 read GetCrcValue;
+  end;
+
+  ICRC32 = interface(IHashAlgorithm)
+    ['{96581075-EC4C-4C3F-A031-88FCD4D9F3EA}']
+    function GetCrcValue: UInt32;
+    property CrcValue: UInt32 read GetCrcValue;
+  end;
+
+  IMD5 = interface(IHashAlgorithm)
+    ['{84E96BE7-0959-490D-9CF0-A62FEF72BFE7}']
+  end;
+
+  ISHA1 = interface(IHashAlgorithm)
+    ['{FB202EDF-7846-4F3C-9088-D581CC8E1BC0}']
+  end;
+
+  ISHA256 = interface(IHashAlgorithm)
+    ['{1DD90B12-CB33-44F2-A996-E7A0B5F0C541}']
+  end;
+
+  ISHA384 = interface(IHashAlgorithm)
+    ['{B8CFF3B2-D319-4D21-89E5-5A1E0DB540B5}']
+  end;
+
+  ISHA512 = interface(IHashAlgorithm)
+    ['{986B1C68-C156-46B8-A36C-822E7E5BC35E}']
+  end;
+
+  /// <summary>
+  /// Message Authentication Code
+  /// </summary>
+  IMACTripleDES = interface(IKeyedHashAlgorithm)
+    ['{AD01CC26-2B2F-4895-AA28-A67924DB7EB3}']
+  end;
+  
+  {$ENDREGION}
+
+
+  {$REGION 'Symmetric Algorithms'}
+
+  IDES = interface(ISymmetricAlgorithm)
+    ['{2123E0C7-A747-49D4-A7CD-A2A9BC1A0042}']
+  end;
+
+  ITripleDES = interface(ISymmetricAlgorithm)
+    ['{81D5101D-B3EA-437D-8A1A-80E74A9EDCDF}']
+  end;
+
+  IAES = interface(ISymmetricAlgorithm)
+    ['{E5EF09B3-8A6D-432A-87A6-DDB818C59789}']
+  end;
 
   {$ENDREGION}
+  
+  
+  /// <summary>
+  /// Uses the TCryptographicServiceProvider class to create various 
+  /// cryptographic algorithms.
+  /// </summary>
+  /// <remarks>
+  /// The CreateMACTripleDES and CreateAES methods have not been yet implemented.
+  /// </remarks>
+  TCryptographicServiceProvider = class
+  public
+    class function CreateCRC16: ICRC16; static;
+    class function CreateCRC32: ICRC32; static;
+    class function CreateMD5: IMD5; static;
+    class function CreateSHA1: ISHA1; static;
+    class function CreateSHA256: ISHA256; static;
+    class function CreateSHA384: ISHA384; static;
+    class function CreateSHA512: ISHA512; static;
+    class function CreateMACTripleDES: IMACTripleDES; static;
+    class function CreateDES: IDES; static;
+    class function CreateTripleDES: ITripleDES; static;
+    class function CreateAES: IAES; static;
+    class function CreateRandomNumberGenerator: IRandomNumberGenerator; static;
+  end;
+
+  ECryptographicException = class(Exception);
+
 
 implementation
 
 uses
   Math,
+  Spring.Cryptography.CRC,
+  Spring.Cryptography.MD5,
+  Spring.Cryptography.SHA,
+  Spring.Cryptography.DES,
   Spring.ResourceStrings;
 
 
@@ -726,223 +571,6 @@ begin
   end;
 end;
 
-function THashAlgorithmBase.TransformBlock(const inputBuffer: Pointer;
-  inputCount: Integer; outBuffer: Pointer): Integer;
-begin
-  HashUpdate(inputBuffer, inputCount);
-  CopyMemory(outBuffer, inputBuffer, inputCount);
-  Result := inputCount;
-end;
-
-function THashAlgorithmBase.TransformFinalBlock(const inputBuffer: Pointer;
-  inputCount: Integer): TBytes;
-begin
-  HashUpdate(inputBuffer, inputCount);
-  Result := HashFinal;
-end;
-
-function THashAlgorithmBase.GetCanReuseTransform: Boolean;
-begin
-  Result := True;
-end;
-
-function THashAlgorithmBase.GetCanTransformMultipleBlocks: Boolean;
-begin
-  Result := True;
-end;
-
-function THashAlgorithmBase.GetInputBlockSize: Integer;
-begin
-  Result := 1;
-end;
-
-function THashAlgorithmBase.GetOutputBlockSize: Integer;
-begin
-  Result := 1;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TCRC16'}
-
-function TCRC16.GetHashSize: Integer;
-begin
-  Result := fCHashSize;
-end;
-
-procedure TCRC16.HashInit;
-begin
-  CRC16Init(fCRCValue);
-end;
-
-procedure TCRC16.HashUpdate(const buffer: Pointer; count: Integer);
-begin
-  CRC16Update(fCRCValue, buffer, count);
-end;
-
-function TCRC16.HashFinal: TBuffer;
-begin
-  Result := CRC16Final(fCRCValue);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TCRC32'}
-
-function TCRC32.GetHashSize: Integer;
-begin
-  Result := fCHashSize;
-end;
-
-procedure TCRC32.HashInit;
-begin
-  CRC32Init(fCRCValue);
-end;
-
-procedure TCRC32.HashUpdate(const buffer: Pointer; count: Integer);
-begin
-  CRC32BUpdate(fCRCValue, buffer, count);
-end;
-
-function TCRC32.HashFinal: TBuffer;
-begin
-  Result := CRC32Final(fCRCValue);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TMD5'}
-
-function TMD5.GetHashSize: Integer;
-begin
-  Result := fCHashSize;
-end;
-
-procedure TMD5.HashUpdate(const buffer: Pointer; count: Integer);
-begin
-  MD5Update(fContext, buffer, count);
-end;
-
-function TMD5.HashFinal: TBuffer;
-begin
-  MD5Final(fContext, fDigest);
-  Result := TBuffer.Create(fDigest);
-end;
-
-procedure TMD5.HashInit;
-var
-  i: Byte;
-begin
-  for i := 0 to High(fDigest) do
-  begin
-    fDigest[i] := i + 1;
-  end;
-  MD5Init(fContext);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TSHA1'}
-
-function TSHA1.GetHashSize: Integer;
-begin
-  Result := fCHashSize;
-end;
-
-procedure TSHA1.HashInit;
-begin
-  SHA1Init(fContext);
-end;
-
-procedure TSHA1.HashUpdate(const buffer: Pointer; count: Integer);
-begin
-  SHA256Update(fContext, buffer, count, 1);
-end;
-
-function TSHA1.HashFinal: TBuffer;
-begin
-  Result := SHA256Final(fContext, 1);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TSHA256'}
-
-function TSHA256.GetHashSize: Integer;
-begin
-  Result := fCHashSize;
-end;
-
-procedure TSHA256.HashInit;
-begin
-  SHA256Init(fContext);
-end;
-
-procedure TSHA256.HashUpdate(const buffer: Pointer; count: Integer);
-begin
-  SHA256Update(fContext, buffer, count, 256);
-end;
-
-function TSHA256.HashFinal: TBuffer;
-begin
-  Result := SHA256Final(fContext, 256);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TSHA384'}
-
-function TSHA384.GetHashSize: Integer;
-begin
-  Result := fCHashSize;
-end;
-
-procedure TSHA384.HashInit;
-begin
-  SHA384Init(fContext);
-end;
-
-procedure TSHA384.HashUpdate(const buffer: Pointer; count: Integer);
-begin
-  SHA512Update(fContext, buffer, count);
-end;
-
-function TSHA384.HashFinal: TBuffer;
-begin
-  Result := SHA512Final(fContext, 384);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TSHA512'}
-
-function TSHA512.GetHashSize: Integer;
-begin
-  Result := fCHashSize;
-end;
-
-procedure TSHA512.HashInit;
-begin
-  SHA512Init(fContext);
-end;
-
-procedure TSHA512.HashUpdate(const buffer: Pointer; count: Integer);
-begin
-  SHA512Update(fContext, buffer, count);
-end;
-
-function TSHA512.HashFinal: TBuffer;
-begin
-  Result := SHA512Final(fContext, 512);
-end;
-
 {$ENDREGION}
 
 
@@ -960,7 +588,7 @@ end;
 
 procedure TSymmetricAlgorithmBase.ValidateKey(const key: TBuffer);
 begin
-  if not fLegalKeySizes.Contains(key.Size) then
+  if not fLegalKeySizes.Contains(key.Size * 8) then
   begin
     raise ECryptographicException.CreateResFmt(@SIllegalKeySize, [key.Size]);
   end;
@@ -1014,8 +642,8 @@ var
 begin
   TArgument.CheckNotNull(inputStream, 'inputStream');
   TArgument.CheckNotNull(outputStream, 'outputStream');
-  inputBuffer.Size := BlockSize;
-  outputBuffer.Size := BlockSize;
+  inputBuffer.Size := BlockSizeInBytes;
+  outputBuffer.Size := BlockSizeInBytes;
   bytes := inputStream.Read(inputBuffer.Memory^, inputBuffer.Size);
   while bytes > 0 do
   begin
@@ -1041,20 +669,20 @@ begin
     Exit(TBuffer.Empty);
   end;
   p := buffer;
-  plainText.Size := BlockSize;
-  SetLength(cipherText, BlockSize);
+  plainText.Size := BlockSizeInBytes;
+  SetLength(cipherText, BlockSizeInBytes);
   firstBlock := True;
   while count >= 0 do
   begin
-    if count >= BlockSize then
+    if count >= BlockSizeInBytes then
     begin
-      Move(p^, plainText.Memory^, BlockSize);
+      Move(p^, plainText.Memory^, BlockSizeInBytes);
     end
     else if PaddingMode <> pmNone then
     begin
       Move(p^, plainText.Memory^, count);
-      paddingSize := BlockSize - (count mod BlockSize);
-      startIndex := BlockSize - paddingSize;
+      paddingSize := BlockSizeInBytes - (count mod BlockSizeInBytes);
+      startIndex := BlockSizeInBytes - paddingSize;
       AddPadding(plainText, startIndex, paddingSize);
     end
     else if count > 0 then
@@ -1075,8 +703,8 @@ begin
     end;
     DoEncryptBlock(plainText, cipherText);
     Result := Result + cipherText;
-    Dec(count, BlockSize);
-    Inc(p, BlockSize);
+    Dec(count, BlockSizeInBytes);
+    Inc(p, BlockSizeInBytes);
   end;
 end;
 
@@ -1094,12 +722,12 @@ begin
   firstBlock := True;
   Result := TBuffer.Empty;
   p := buffer;
-  inputBuffer.Size := BlockSize;
-  plainText.Size := BlockSize;
-  SetLength(outputBuffer, BlockSize);
-  while count >= BlockSize do
+  inputBuffer.Size := BlockSizeInBytes;
+  plainText.Size := BlockSizeInBytes;
+  SetLength(outputBuffer, BlockSizeInBytes);
+  while count >= BlockSizeInBytes do
   begin
-    inputBuffer := TBuffer.Create(p, BlockSize);
+    inputBuffer := TBuffer.Create(p, BlockSizeInBytes);
     DoDecryptBlock(inputBuffer, outputBuffer);
     if CipherMode = cmCBC then
     begin
@@ -1118,13 +746,13 @@ begin
     begin
       plainText := outputBuffer;
     end;
-    if count = BlockSize then // FinalBlock
+    if count = BlockSizeInBytes then // FinalBlock
     begin
       RemovePadding(plainText);
     end;
     Result := Result + plainText;
-    Dec(count, BlockSize);
-    Inc(p, BlockSize);
+    Dec(count, BlockSizeInBytes);
+    Inc(p, BlockSizeInBytes);
   end;
   if count > 0 then
   begin
@@ -1180,20 +808,20 @@ var
   count: Integer;
   i: Integer;
 begin
-  Assert(buffer.Size = BlockSize);
+  Assert(buffer.Size = BlockSizeInBytes);
   case PaddingMode of
     pmNone: ;
     pmPKCS7, pmANSIX923, pmISO10126:
     begin
       paddingSize := Integer(buffer.Last);
-      if paddingSize = BlockSize then
+      if paddingSize = BlockSizeInBytes then
       begin
         // Validate
         buffer := TBuffer.Empty;
       end
-      else if paddingSize < BlockSize then
+      else if paddingSize < BlockSizeInBytes then
       begin
-        count := BlockSize - paddingSize;
+        count := BlockSizeInBytes - paddingSize;
         buffer := buffer.Left(count);
       end
       else
@@ -1262,9 +890,9 @@ var
 begin
   TArgument.CheckNotNull(inputStream, 'inputStream');
   TArgument.CheckNotNull(outputStream, 'outputStream');
-  SetLength(buffer, BlockSize);
+  SetLength(buffer, BlockSizeInBytes);
   count := inputStream.Read(buffer[0], Length(buffer));
-  while count >= BlockSize do
+  while count >= BlockSizeInBytes do
   begin
     outputBuffer := Decrypt(buffer);
     outputBuffer.SaveToStream(outputStream);
@@ -1310,7 +938,7 @@ var
   buffer: TBytes;
 begin
   generator := TRandomNumberGenerator.Create;
-  SetLength(buffer, BlockSize);
+  SetLength(buffer, BlockSizeInBytes);
   generator.GetBytes(buffer);
   Result := buffer;
 end;
@@ -1329,6 +957,11 @@ end;
 function TSymmetricAlgorithmBase.GetBlockSize: Integer;
 begin
   Result := fBlockSize;
+end;
+
+function TSymmetricAlgorithmBase.GetBlockSizeInBytes: Integer;
+begin
+  Result := BlockSize div 8;
 end;
 
 function TSymmetricAlgorithmBase.GetKeySize: Integer;
@@ -1366,6 +999,10 @@ end;
 
 procedure TSymmetricAlgorithmBase.SetCipherMode(const value: TCipherMode);
 begin
+  if not (value in [cmCBC, cmECB]) then
+  begin
+    raise ENotSupportedException.CreateResFmt(@SNotSupportedCipherMode, [TEnum.GetName<TCipherMode>(value)]);
+  end;
   fCipherMode := value;
 end;
 
@@ -1376,7 +1013,7 @@ end;
 
 procedure TSymmetricAlgorithmBase.SetIV(const value: TBuffer);
 begin
-  if value.Size <> BlockSize then
+  if value.Size <> BlockSizeInBytes then
   begin
     raise ECryptographicException.CreateResFmt(@SIllegalIVSize, [value.Size]);
   end;
@@ -1387,79 +1024,6 @@ procedure TSymmetricAlgorithmBase.SetKey(const value: TBuffer);
 begin
   ValidateKey(value);
   fKey := TBuffer.Create(value.Memory, value.Size);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TDES'}
-
-constructor TDES.Create;
-begin
-  inherited Create([8], [8]);
-  BlockSize := fCDefaultBlockSize;
-  KeySize := fCDefaultKeySize;
-end;
-
-procedure TDES.DoEncryptBlock(const inputBuffer: TBytes;
-  var outputBuffer: TBytes);
-begin
-  EncryptData(fKey.AsBytes, inputBuffer, outputBuffer);
-end;
-
-procedure TDES.DoDecryptBlock(const inputBuffer: TBytes;
-  var outputBuffer: TBytes);
-begin
-  DecryptData(fKey.AsBytes, inputBuffer, outputBuffer);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TTripleDES'}
-
-constructor TTripleDES.Create;
-begin
-  inherited Create([8], [16, 24]);
-  BlockSize := fCDefaultBlockSize;
-  KeySize := fCDefaultKeySize;
-end;
-
-procedure TTripleDES.DoDecryptBlock(const inputBuffer: TBytes;
-  var outputBuffer: TBytes);
-var
-  temp1, temp2: TBytes;
-begin
-  SetLength(temp1, BlockSize);
-  SetLength(temp2, BlockSize);
-  DecryptData(fKey3, inputBuffer, temp1);
-  EncryptData(fKey2, temp1, temp2);
-  DecryptData(fKey1, temp2, outputBuffer);
-end;
-
-procedure TTripleDES.DoEncryptBlock(const inputBuffer: TBytes;
-  var outputBuffer: TBytes);
-var
-  temp1, temp2: TBytes;
-begin
-  SetLength(temp1, BlockSize);
-  SetLength(temp2, BlockSize);
-  EncryptData(fKey1, inputBuffer, temp1);
-  DecryptData(fKey2, temp1, temp2);
-  EncryptData(fKey3, temp2, outputBuffer);
-end;
-
-procedure TTripleDES.SetKey(const value: TBuffer);
-begin
-  inherited SetKey(value);
-  fKey1 := Key.Left(8);
-  fKey2 := Key.Mid(8, 8);
-  if Key.Size = 16 then
-    fKey3 := fKey1
-  else if Key.Size = 24 then
-    fKey3 := Key.Right(8)
-  else
-    raise ECryptographicException.CreateResFmt(@SIllegalKeySize, [value.Size]);
 end;
 
 {$ENDREGION}
@@ -1487,6 +1051,71 @@ begin
   begin
     data[i] := RandomRange(1, $FF + 1);
   end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TCryptographicServiceProvider'}
+
+class function TCryptographicServiceProvider.CreateCRC16: ICRC16;
+begin
+  Result := TCRC16.Create;
+end;
+
+class function TCryptographicServiceProvider.CreateCRC32: ICRC32;
+begin
+  Result := TCRC32.Create;
+end;
+
+class function TCryptographicServiceProvider.CreateMD5: IMD5;
+begin
+  Result := TMD5.Create;
+end;
+
+class function TCryptographicServiceProvider.CreateSHA1: ISHA1;
+begin
+  Result := TSHA1.Create;
+end;
+
+class function TCryptographicServiceProvider.CreateSHA256: ISHA256;
+begin
+  Result := TSHA256.Create;
+end;
+
+class function TCryptographicServiceProvider.CreateSHA384: ISHA384;
+begin
+  Result := TSHA384.Create;
+end;
+
+class function TCryptographicServiceProvider.CreateSHA512: ISHA512;
+begin
+  Result := TSHA512.Create;
+end;
+
+class function TCryptographicServiceProvider.CreateMACTripleDES: IMACTripleDES;
+begin
+  raise ENotImplementedException.Create('CreateMACTripleDES');
+end;
+
+class function TCryptographicServiceProvider.CreateDES: IDES;
+begin
+  Result := TDES.Create;
+end;
+
+class function TCryptographicServiceProvider.CreateTripleDES: ITripleDES;
+begin
+  Result := TTripleDES.Create;
+end;
+
+class function TCryptographicServiceProvider.CreateAES: IAES;
+begin
+  raise ENotImplementedException.Create('CreateAES');
+end;
+
+class function TCryptographicServiceProvider.CreateRandomNumberGenerator: IRandomNumberGenerator;
+begin
+  Result := TRandomNumberGenerator.Create;
 end;
 
 {$ENDREGION}
