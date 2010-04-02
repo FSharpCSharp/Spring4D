@@ -24,7 +24,7 @@
 			<DCC_UnitSearchPath>..\Source\Base\;..\Source\Base\Collections;..\Source\Base\Cryptography;..\Source\Base\Utils;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<RuntimeOnlyPackage>true</RuntimeOnlyPackage>
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
-			<DCC_DependencyCheckOutputName>C:\Users\Public\Documents\RAD Studio\8.0\Bpl\Spring.Base.bpl</DCC_DependencyCheckOutputName>
+			<DCC_DependencyCheckOutputName>C:\Users\Public\Documents\RAD Studio\7.0\Bpl\Spring.Base.bpl</DCC_DependencyCheckOutputName>
 			<DCC_Description>Delphi Spring Framework Base Class Library</DCC_Description>
 			<GenDll>true</GenDll>
 			<GenPackage>true</GenPackage>
@@ -69,6 +69,7 @@
 			<DCCReference Include="..\Source\Base\Cryptography\Spring.Cryptography.MD5.pas"/>
 			<DCCReference Include="..\Source\Base\Cryptography\Spring.Cryptography.pas"/>
 			<DCCReference Include="..\Source\Base\Cryptography\Spring.Cryptography.Utils.pas"/>
+			<DCCReference Include="..\Source\Base\Spring.Notifications.pas"/>
 			<None Include="..\Source\Base\Spring.inc"/>
 			<BuildConfiguration Include="Debug">
 				<Key>Cfg_2</Key>

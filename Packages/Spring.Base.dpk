@@ -49,7 +49,8 @@ contains
   Spring.Cryptography.DES in '..\Source\Base\Cryptography\Spring.Cryptography.DES.pas',
   Spring.Cryptography.MD5 in '..\Source\Base\Cryptography\Spring.Cryptography.MD5.pas',
   Spring.Cryptography in '..\Source\Base\Cryptography\Spring.Cryptography.pas',
-  Spring.Cryptography.Utils in '..\Source\Base\Cryptography\Spring.Cryptography.Utils.pas';
+  Spring.Cryptography.Utils in '..\Source\Base\Cryptography\Spring.Cryptography.Utils.pas',
+  Spring.Notifications in '..\Source\Base\Spring.Notifications.pas';
 
 end.
 

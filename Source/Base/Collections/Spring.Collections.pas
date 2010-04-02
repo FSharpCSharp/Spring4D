@@ -31,6 +31,7 @@ interface
 uses
   Classes,
   SysUtils,
+  Rtti,
   Generics.Defaults,
   Generics.Collections,
   Spring.System;
@@ -68,6 +69,51 @@ type
     property IsEmpty: Boolean read GetIsEmpty;
   end;
 
+  IEnumerableAware = interface
+    ['{3F276486-B108-422C-B0EE-F2FC7CB4B52E}']
+    function GetEnumerable: IEnumerable;
+  end;
+
+  ICollection = interface(IEnumerableEx<TValue>)
+    ['{B87ABB57-1E75-4DAD-96CE-C077B565F11A}']
+  {$REGION 'Property Getters & Setters'}
+    function GetIsReadOnly: Boolean;
+  {$ENDREGION}
+    procedure Add(const item: TValue); overload;
+    procedure Clear;
+    function Remove(const item: TValue): Boolean; overload;
+    property IsReadOnly: Boolean read GetIsReadOnly;
+  end;
+
+  IList = interface(ICollection)
+    ['{629166B3-E538-430F-BE5A-D6FE42704965}']
+  {$REGION 'Property Getters & Setters'}
+    function GetItem(index: Integer): TValue;
+    procedure SetItem(index: Integer; const item: TValue);
+  {$ENDREGION}
+    procedure Insert(index: Integer; const item: TValue);
+    procedure RemoveAt(index: Integer);
+    function IndexOf(const item: TValue): Integer;
+    property Items[index: Integer]: TValue read GetItem write SetItem; default;
+  end;
+
+  IDictionary = interface(ICollection)
+    ['{BAA9A5D9-BBE1-4512-9AA3-9E1F81908857}']
+  {$REGION 'Property Getters & Setters'}
+    function GetItem(const key: TValue): TValue;
+    function GetKeys: ICollection;
+    function GetValues: ICollection;
+    procedure SetItem(const key: TValue; const value: TValue);
+  {$ENDREGION}
+    procedure Add(const key: TValue; const value: TValue); overload;
+    procedure Remove(const key: TValue); overload;
+    function ContainsKey(const key: TValue): Boolean;
+    function TryGetValue(const key: TValue; out value: TValue): Boolean;
+    property Items[const key: TValue]: TValue read GetItem write SetItem; default;
+    property Keys: ICollection read GetKeys;
+    property Values: ICollection read GetValues;
+  end;
+
   /// <summary>
   /// Defines methods to manipulate generic collections.
   /// </summary>
@@ -78,7 +124,6 @@ type
     procedure Add(const item: T); // overload;
     procedure Clear;
     function Remove(const item: T): Boolean; // overload;
-//    function Extract(const item: T): T;
     property IsReadOnly: Boolean read GetIsReadOnly;
   end;
 
@@ -107,10 +152,8 @@ type
     procedure SetItem(const key: TKey; const value: TValue);
   {$ENDREGION}
     procedure Add(const key: TKey; const value: TValue); overload;
-//    procedure AddOrSetValue(const key: TKey; const value: TValue);
     procedure Remove(const key: TKey); overload;
     function ContainsKey(const key: TKey): Boolean;
-//    function ExtractPair(const key: TKey): TPair<TKey, TValue>;
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
     property Keys: ICollection<TKey> read GetKeys;
@@ -173,10 +216,13 @@ type
   /// <summary>
   /// Provides an abstract implementation IEnumerable<T>.
   /// </summary>
-  TEnumerableBase<T> = class abstract(TInterfacedObject, IEnumerable<T>, IEnumerable, IInterface)
+//  {$RTTI }
+  TEnumerableBase<T> = class abstract(TInterfacedObject, IEnumerableAware, IEnumerable<T>, IEnumerable, IInterface)
   protected
     function DoGetEnumerator: IEnumerator<T>; virtual; abstract;
     function IEnumerable<T>.GetEnumerator = DoGetEnumerator;
+    { IEnumerableAware }
+    function GetEnumerable: IEnumerable;
   public
     function GetEnumerator: IEnumerator; virtual;
   end;
@@ -391,6 +437,11 @@ end;
 
 
 {$REGION 'TEnumerableBase<T>'}
+
+function TEnumerableBase<T>.GetEnumerable: IEnumerable;
+begin
+  Result := Self;
+end;
 
 function TEnumerableBase<T>.GetEnumerator: IEnumerator;
 begin

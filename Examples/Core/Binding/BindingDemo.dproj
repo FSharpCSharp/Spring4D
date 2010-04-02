@@ -1,10 +1,10 @@
 ﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 		<PropertyGroup>
-			<ProjectGuid>{D7EA9EEC-EED3-4FAA-9F0C-D1A779D8EEFB}</ProjectGuid>
-			<MainSource>Spring.Core.dpk</MainSource>
+			<ProjectGuid>{997D1090-8E9D-4184-BE16-BF70863298AF}</ProjectGuid>
+			<ProjectVersion>12.0</ProjectVersion>
+			<MainSource>BindingDemo.dpr</MainSource>
 			<Config Condition="'$(Config)'==''">Debug</Config>
 			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
-			<ProjectVersion>12.0</ProjectVersion>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
 			<Base>true</Base>
@@ -20,50 +20,37 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
-			<RuntimeOnlyPackage>true</RuntimeOnlyPackage>
-			<DCC_UnitSearchPath>..\Source\Base;..\Source\Base\Collections;..\Source\Base\Cryptography;..\Source\Base\Utils;..\Source\Core\;..\Source\Core\IoC;..\Source\Core\Pool;..\Source\Core\Binding;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
-			<DesignOnlyPackage>false</DesignOnlyPackage>
-			<DCC_DependencyCheckOutputName>C:\Users\Public\Documents\RAD Studio\7.0\Bpl\Spring.Core.bpl</DCC_DependencyCheckOutputName>
-			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;$(DCC_UnitAlias)</DCC_UnitAlias>
-			<GenPackage>true</GenPackage>
-			<GenDll>true</GenDll>
-			<DCC_Description>Delphi Spring Framework Core Library</DCC_Description>
+			<DCC_UnitSearchPath>..\..\..\Source\Core\Binding;..\..\..\Source\Base;..\..\..\Source\Base\Collections;..\..\..\Source\Core;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_Optimize>false</DCC_Optimize>
+			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
+			<DCC_DependencyCheckOutputName>BindingDemo.exe</DCC_DependencyCheckOutputName>
 			<DCC_ImageBase>00400000</DCC_ImageBase>
 			<DCC_Platform>x86</DCC_Platform>
-			<DCC_ExeOutput>Bin</DCC_ExeOutput>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_1)'!=''">
-			<DCC_DcuOutput>$(SPRING_LIBRARY)\Release</DCC_DcuOutput>
+			<DCC_DependencyCheckOutputName>Bin\Release\BindingDemo.exe</DCC_DependencyCheckOutputName>
+			<DCC_ExeOutput>Bin\Release</DCC_ExeOutput>
+			<DCC_DcuOutput>Lib\Release</DCC_DcuOutput>
 			<DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
 			<DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
 			<DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
 			<DCC_DebugInformation>false</DCC_DebugInformation>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2)'!=''">
-			<DCC_DcuOutput>$(SPRING_LIBRARY)\Debug</DCC_DcuOutput>
-			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
 			<DCC_DebugDCUs>true</DCC_DebugDCUs>
+			<DCC_ExeOutput>Bin\Debug</DCC_ExeOutput>
+			<DCC_DependencyCheckOutputName>Bin\Debug\BindingDemo.exe</DCC_DependencyCheckOutputName>
+			<DCC_DcuOutput>Lib\Debug</DCC_DcuOutput>
+			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
 		</PropertyGroup>
 		<ItemGroup>
-			<DelphiCompile Include="Spring.Core.dpk">
+			<DelphiCompile Include="BindingDemo.dpr">
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
-			<DCCReference Include="rtl.dcp"/>
-			<DCCReference Include="vcl.dcp"/>
-			<DCCReference Include="xmlrtl.dcp"/>
-			<DCCReference Include="Spring.Base.dcp"/>
-			<DCCReference Include="vcldb.dcp"/>
-			<DCCReference Include="..\Source\Core\IoC\Spring.IoC.Builder.pas"/>
-			<DCCReference Include="..\Source\Core\IoC\Spring.IoC.ComponentActivator.pas"/>
-			<DCCReference Include="..\Source\Core\IoC\Spring.IoC.Core.pas"/>
-			<DCCReference Include="..\Source\Core\IoC\Spring.IoC.Injection.pas"/>
-			<DCCReference Include="..\Source\Core\IoC\Spring.IoC.LifetimeManager.pas"/>
-			<DCCReference Include="..\Source\Core\IoC\Spring.IoC.pas"/>
-			<DCCReference Include="..\Source\Core\IoC\Spring.IoC.Registration.pas"/>
-			<DCCReference Include="..\Source\Core\IoC\Spring.IoC.Resolvers.pas"/>
-			<DCCReference Include="..\Source\Core\Spring.Core.ResourceStrings.pas"/>
-			<DCCReference Include="..\Source\Core\Pool\Spring.Pool.pas"/>
-			<DCCReference Include="..\Source\Core\Binding\Spring.Binding.pas"/>
+			<DCCReference Include="Source\Model.pas"/>
+			<DCCReference Include="Source\VclControlsBindingForm.pas">
+				<Form>frmMain</Form>
+			</DCCReference>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>
 			</BuildConfiguration>
@@ -79,11 +66,11 @@
 		<Import Project="$(BDS)\Bin\CodeGear.Delphi.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')"/>
 		<ProjectExtensions>
 			<Borland.Personality>Delphi.Personality.12</Borland.Personality>
-			<Borland.ProjectType>Package</Borland.ProjectType>
+			<Borland.ProjectType/>
 			<BorlandProject>
 				<Delphi.Personality>
 					<Source>
-						<Source Name="MainSource">Spring.Core.dpk</Source>
+						<Source Name="MainSource">BindingDemo.dpr</Source>
 					</Source>
 					<Parameters>
 						<Parameters Name="UseLauncher">False</Parameters>
@@ -91,24 +78,24 @@
 						<Parameters Name="LoadUnspecifiedSymbols">False</Parameters>
 					</Parameters>
 					<VersionInfo>
-						<VersionInfo Name="IncludeVerInfo">True</VersionInfo>
+						<VersionInfo Name="IncludeVerInfo">False</VersionInfo>
 						<VersionInfo Name="AutoIncBuild">False</VersionInfo>
-						<VersionInfo Name="MajorVer">0</VersionInfo>
-						<VersionInfo Name="MinorVer">2</VersionInfo>
+						<VersionInfo Name="MajorVer">1</VersionInfo>
+						<VersionInfo Name="MinorVer">0</VersionInfo>
 						<VersionInfo Name="Release">0</VersionInfo>
-						<VersionInfo Name="Build">566</VersionInfo>
+						<VersionInfo Name="Build">0</VersionInfo>
 						<VersionInfo Name="Debug">False</VersionInfo>
 						<VersionInfo Name="PreRelease">False</VersionInfo>
 						<VersionInfo Name="Special">False</VersionInfo>
 						<VersionInfo Name="Private">False</VersionInfo>
 						<VersionInfo Name="DLL">False</VersionInfo>
-						<VersionInfo Name="Locale">1033</VersionInfo>
-						<VersionInfo Name="CodePage">1252</VersionInfo>
+						<VersionInfo Name="Locale">1045</VersionInfo>
+						<VersionInfo Name="CodePage">1250</VersionInfo>
 					</VersionInfo>
 					<VersionInfoKeys>
 						<VersionInfoKeys Name="CompanyName"/>
-						<VersionInfoKeys Name="FileDescription">Delphi Spring Framework Core Library</VersionInfoKeys>
-						<VersionInfoKeys Name="FileVersion">0.2.0.566</VersionInfoKeys>
+						<VersionInfoKeys Name="FileDescription"/>
+						<VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName"/>
 						<VersionInfoKeys Name="LegalCopyright"/>
 						<VersionInfoKeys Name="LegalTrademarks"/>

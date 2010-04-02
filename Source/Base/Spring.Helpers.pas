@@ -31,6 +31,7 @@ interface
 uses
   Classes,
   SysUtils,
+  StrUtils,
   Types,
   TypInfo,
   Rtti,
@@ -93,6 +94,7 @@ type
     function GetIsInterface: Boolean;
     function GetIsClassOrInterface: Boolean;
     function GetAsClass: TRttiInstanceType;
+    function GetIsGenericType: Boolean;
   protected
     function InternalGetConstructors(enumerateBaseType: Boolean = True): IEnumerableEx<TRttiMethod>;
     function InternalGetMethods(enumerateBaseType: Boolean = True): IEnumerableEx<TRttiMethod>;
@@ -105,6 +107,7 @@ type
   public
     // function GetMembers: IEnumerableEx<TRttiMember>;
     function GetInterfaces: IEnumerableEx<TRttiInterfaceType>;
+    function GetGenericArguments: TArray<TRttiType>;
 
     property Constructors: IEnumerableEx<TRttiMethod> read GetConstructors;
     property Methods: IEnumerableEx<TRttiMethod> read GetMethods;
@@ -116,6 +119,7 @@ type
     property IsClassOrInterface: Boolean read GetIsClassOrInterface;
     property AsClass: TRttiInstanceType read GetAsClass;
     property AsInterface: TRttiInterfaceType read GetAsInterface;
+    property IsGenericType: Boolean read GetIsGenericType;
   end;
 
   TRttiMemberHelper = class helper for TRttiMember
@@ -134,6 +138,8 @@ type
   public
 //    procedure InvokeMember(instance: TValue; const arguments: array of TValue);
 //    procedure InvokeMember(instance: TObject; const arguments: array of TValue);
+    function GetValue(const instance: TValue): TValue; overload;
+    procedure SetValue(const instance: TValue; const value: TValue); overload;
     property AsMethod: TRttiMethod read GetAsMethod;
     property AsProperty: TRttiProperty read GetAsProperty;
     property AsField: TRttiField read GetAsField;
@@ -147,6 +153,18 @@ type
     property IsPublished: Boolean read GetIsPublished;
   end;
 
+  TRttiPropertyHelper = class helper for TRttiProperty
+  public
+    function GetValue(const instance: TValue): TValue; overload;
+    procedure SetValue(const instance: TValue; const value: TValue); overload;
+  end;
+
+  TRttiFieldHelper = class helper for TRttiField
+  public
+    function GetValue(const instance: TValue): TValue; overload;
+    procedure SetValue(const instance: TValue; const value: TValue); overload;
+  end;
+
   TRttiInterfaceTypeHelper = class helper for TRttiInterfaceType
   private
     function GetHasGuid: Boolean;
@@ -158,6 +176,8 @@ type
 
 implementation
 
+uses
+  Spring.ResourceStrings;
 
 {$REGION 'TGuidHelper'}
 
@@ -388,6 +408,28 @@ begin
   Result := InternalGetFields;
 end;
 
+function TRttiTypeHelper.GetGenericArguments: TArray<TRttiType>;
+var
+  p1, p2: Integer;
+  args: string;
+  elements: TStringDynArray;
+  i: Integer;
+begin
+  p1 := Pos('<', Name);
+  p2 := Pos('>', Name);
+  if (p1 = 0) or (p2 = 0) or (p1 > p2) then
+  begin
+    Exit(nil);
+  end;
+  args := MidStr(Name, p1+1, p2-p1-1);
+  elements := SplitString(args, [','], True);
+  SetLength(Result, Length(elements));
+  for i := 0 to High(elements) do
+  begin
+    Result[i] := TType.FindType(elements[i]);
+  end;
+end;
+
 function TRttiTypeHelper.GetAsClass: TRttiInstanceType;
 begin
   Result := Self as TRttiInstanceType;
@@ -419,14 +461,14 @@ begin
         for i := 0 to table.EntryCount - 1 do
         begin
           entry := table.Entries[i];
-        {$WARNINGS OFF}
           if not list.ContainsKey(entry.IID) and
+        {$WARNINGS OFF}
             not entry.IID.IsEmpty and
-            TInterfaceTypeRegistry.TryGetType(entry.IID, aType) then
+        {$WARNINGS ON}
+            TType.TryGetInterfaceType(entry.IID, aType) then
           begin
             list[entry.IID] := aType;
           end;
-        {$WARNINGS ON}
         end;
       end;
       classType := classType.ClassParent;
@@ -445,6 +487,11 @@ begin
   Result := Self.IsClass or Self.IsInterface;
 end;
 
+function TRttiTypeHelper.GetIsGenericType: Boolean;
+begin
+  Result := (Pos('<', Name) > 0) and (Pos('>', Name) > 0);
+end;
+
 function TRttiTypeHelper.GetIsInterface: Boolean;
 begin
   Result := Self is TRttiInterfaceType;
@@ -458,6 +505,38 @@ begin
 end;
 
 { TRttiMemberHelper }
+
+function TRttiMemberHelper.GetValue(const instance: TValue): TValue;
+begin
+  if IsProperty then
+  begin
+    Result := AsProperty.GetValue(instance);
+  end
+  else if IsField then
+  begin
+    Result := AsField.GetValue(instance);
+  end
+  else
+  begin
+    raise EInvalidOperation.CreateRes(@SInvalidOperation_GetValue);
+  end;
+end;
+
+procedure TRttiMemberHelper.SetValue(const instance, value: TValue);
+begin
+  if IsProperty then
+  begin
+    AsProperty.SetValue(instance, value);
+  end
+  else if IsField then
+  begin
+    AsField.SetValue(instance, value);
+  end
+  else
+  begin
+    raise EInvalidOperation.CreateRes(@SInvalidOperation_SetValue);
+  end;
+end;
 
 function TRttiMemberHelper.GetIsPrivate: Boolean;
 begin
@@ -512,6 +591,42 @@ end;
 function TRttiMemberHelper.GetAsField: TRttiField;
 begin
   Result := Self as TRttiField;
+end;
+
+{ TRttiPropertyHelper }
+
+function TRttiPropertyHelper.GetValue(const instance: TValue): TValue;
+begin
+  if instance.IsObject then
+    Result := GetValue(instance.AsObject)
+  else
+    Result := GetValue(instance.GetReferenceToRawData);
+end;
+
+procedure TRttiPropertyHelper.SetValue(const instance, value: TValue);
+begin
+  if instance.IsObject then
+    SetValue(instance.AsObject, value)
+  else
+    SetValue(instance.GetReferenceToRawData, value);
+end;
+
+{ TRttiFieldHelper }
+
+function TRttiFieldHelper.GetValue(const instance: TValue): TValue;
+begin
+  if instance.IsObject then
+    Result := AsField.GetValue(instance.AsObject)
+  else
+    Result := AsField.GetValue(instance.GetReferenceToRawData);
+end;
+
+procedure TRttiFieldHelper.SetValue(const instance, value: TValue);
+begin
+  if instance.IsObject then
+    SetValue(instance.AsObject, value)
+  else
+    SetValue(instance.GetReferenceToRawData, value);
 end;
 
 {$ENDREGION}

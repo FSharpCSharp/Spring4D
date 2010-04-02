@@ -138,6 +138,12 @@ resourcestring
   {$ENDREGION}
 
 
+  // Spring.Helpers
+
+  SInvalidOperation_GetValue = 'The GetValue method works only for properties/fields.';
+  SInvalidOperation_SetValue = 'The SetValue method works only for properties/fields.';
+
+
   {$REGION 'Spring.Cryptography'}
 
   SIllegalBlockSize = 'Illegal block size: %d.';
