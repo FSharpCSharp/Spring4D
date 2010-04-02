@@ -36,27 +36,10 @@ uses
   SysUtils,
   Contnrs,
   Spring.System,
-  Spring.Utils;
+  Spring.Utils,
+  Spring.Numbering;
 
 type
-  /// <summary>
-  /// Represents a number rule.
-  /// </summary>
-  INumberRule = interface
-    ['{28CE5D58-1B35-4072-8BAF-9F4061C1E78C}']
-  {$REGION 'Property Getters'}
-    function GetMinLength: Integer;
-    function GetMaxLength: Integer;
-  {$ENDREGION}
-    function IsValid(const number: string): Boolean;
-    function Validate(const number: string; out errorMessage: string): Boolean;
-    function GetNextNumber(const number: string): string;
-    function GetFirstNumber: string;
-    function GetLastNumber: string;
-    property MinLength: Integer read GetMinLength;
-    property MaxLength: Integer read GetMaxLength;
-  end;
-
   /// <summary>
   /// TNumberRuleBase
   /// </summary>
@@ -118,8 +101,6 @@ type
 //    function HasNextNumber(const number: string): Boolean;
 //    property ElementCount: Integer;
   end;
-
-  TGetDateTimeFunc = reference to function: TDateTime;
 
   TCodePartRule = class(TNumberRuleBase)
   private

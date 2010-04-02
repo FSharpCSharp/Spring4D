@@ -34,26 +34,25 @@ uses
   Windows,
   SysUtils,
   Spring.System,
-  Spring.Collections,
-  Spring.Numbering.Rules;
+  Spring.Collections;
 
 type
-  INumberRule = Spring.Numbering.Rules.INumberRule;
-  INumberSource = interface;
-
   /// <summary>
-  /// Generates an available number.
+  /// Represents a number rule.
   /// </summary>
-  INumberGenerator = interface
-    ['{52A04371-9251-4A44-818F-D3B177B432A3}']
-    /// <summary>
-    /// Initializes the generator with a number rule and a source.
-    /// </summary>
-    procedure Initialize(const rule: INumberRule; const source: INumberSource);
-    /// <summary>
-    /// Retrieves the next available number and updates the number source.
-    /// </summary>
-    function NextNumber: string;
+  INumberRule = interface
+    ['{28CE5D58-1B35-4072-8BAF-9F4061C1E78C}']
+  {$REGION 'Property Getters'}
+    function GetMinLength: Integer;
+    function GetMaxLength: Integer;
+  {$ENDREGION}
+    function IsValid(const number: string): Boolean;
+    function Validate(const number: string; out errorMessage: string): Boolean;
+    function GetNextNumber(const number: string): string;
+    function GetFirstNumber: string;
+    function GetLastNumber: string;
+    property MinLength: Integer read GetMinLength;
+    property MaxLength: Integer read GetMaxLength;
   end;
 
   /// <summary>
@@ -71,6 +70,23 @@ type
     /// </summary>
     procedure UpdateNumber(proc: TNumberProc);
   end;
+
+  /// <summary>
+  /// Generates an available number.
+  /// </summary>
+  INumberGenerator = interface
+    ['{52A04371-9251-4A44-818F-D3B177B432A3}']
+    /// <summary>
+    /// Initializes the generator with a number rule and a source.
+    /// </summary>
+    procedure Initialize(const rule: INumberRule; const source: INumberSource);
+    /// <summary>
+    /// Retrieves the next available number and updates the number source.
+    /// </summary>
+    function NextNumber: string;
+  end;
+
+  TGetDateTimeFunc = reference to function: TDateTime;
 
   /// <summary>
   /// Number Rule Builder
@@ -106,6 +122,9 @@ type
   end;
 
 implementation
+
+uses
+  Spring.Numbering.Rules;
 
 {$REGION 'TNumberRuleBuilder'}
 
