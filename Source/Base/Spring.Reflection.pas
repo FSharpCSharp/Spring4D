@@ -41,29 +41,6 @@ uses
   Spring.DesignPatterns;
 
 type
-  TType = class
-  strict private
-    class var fContext: TRttiContext;
-    class var fSection: TCriticalSection;
-    class var fInterfaceTypes: TDictionary<TGuid, TRttiInterfaceType>;
-    class constructor Create;
-  {$HINTS OFF}
-    class destructor Destroy;
-  {$HINTS ON}
-  public
-    class function GetType<T>: TRttiType; overload;
-    class function GetType(typeInfo: PTypeInfo): TRttiType; overload;
-    class function GetType(classType: TClass): TRttiType; overload;
-    class function GetType(propertyMember: TRttiProperty): TRttiType; overload;
-    class function GetType(fieldMember: TRttiField): TRttiType; overload;
-    class function GetType(const value: TValue): TRttiType; overload;
-//    class function GetTypes: IEnumerableEx<TRttiType>;
-    class function FindType(const qualifiedName: string): TRttiType;
-//    class function FindTypes(...): IEnumerableEx<TRttiType>;
-    class function TryGetInterfaceType(const guid: TGUID; out aType: TRttiInterfaceType): Boolean;
-    class property Context: TRttiContext read fContext;
-  end;
-
   IObjectActivator = interface
     ['{CE05FB89-3467-449E-81EA-A5AEECAB7BB8}']
     function CreateInstance: TObject;
@@ -73,11 +50,6 @@ type
   public
     class function CreateInstance(instanceType: TRttiInstanceType;
       constructorMethod: TRttiMethod; const arguments: array of TValue): TObject; static;
-  end;
-
-  TInterfaceTypeRegistry = record
-  public
-    class function TryGetType(const guid: TGUID; out aType: TRttiInterfaceType): Boolean; static; deprecated 'Use TType.TryGetInterfaceType instead.';
   end;
 
   TGetRttiMembersFunc<T> = reference to function(targetType: TRttiType): TArray<T>;
@@ -353,17 +325,6 @@ begin
       raise;
     end;
   end;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TInterfaceTypeRegistry'}
-
-class function TInterfaceTypeRegistry.TryGetType(const guid: TGUID;
-  out aType: TRttiInterfaceType): Boolean;
-begin
-  Result := TType.TryGetInterfaceType(guid, aType);
 end;
 
 {$ENDREGION}
@@ -699,92 +660,4 @@ end;
 
 {$ENDREGION}
 
-
-{$REGION 'TType'}
-
-class constructor TType.Create;
-begin
-  fContext := TRttiContext.Create;
-  fSection := TCriticalSection.Create;
-end;
-
-class destructor TType.Destroy;
-begin
-  fInterfaceTypes.Free;
-  fSection.Free;
-  fContext.Free;
-end;
-
-class function TType.GetType<T>: TRttiType;
-begin
-  Result := GetType(TypeInfo(T));
-end;
-
-class function TType.GetType(typeInfo: PTypeInfo): TRttiType;
-begin
-  Result := fContext.GetType(typeInfo);
-end;
-
-class function TType.GetType(classType: TClass): TRttiType;
-begin
-  Result := fContext.GetType(classType);
-end;
-
-class function TType.GetType(propertyMember: TRttiProperty): TRttiType;
-begin
-  TArgument.CheckNotNull(propertyMember, 'propertyMember');
-  Result := GetType(propertyMember.PropertyType.Handle);
-end;
-
-class function TType.GetType(fieldMember: TRttiField): TRttiType;
-begin
-  TArgument.CheckNotNull(fieldMember, 'propertyMember');
-  Result := GetType(fieldMember.FieldType.Handle);
-end;
-
-class function TType.GetType(const value: TValue): TRttiType;
-begin
-  Result := GetType(value.TypeInfo);
-end;
-
-class function TType.FindType(const qualifiedName: string): TRttiType;
-begin
-  Result := fContext.FindType(qualifiedName);
-end;
-
-class function TType.TryGetInterfaceType(const guid: TGUID;
-  out aType: TRttiInterfaceType): Boolean;
-var
-  item: TRttiType;
-begin
-  if fInterfaceTypes = nil then
-  begin
-    fSection.Enter;
-    try
-      MemoryBarrier;
-      if fInterfaceTypes = nil then
-      begin
-        fInterfaceTypes := TDictionary<TGuid, TRttiInterfaceType>.Create;
-        for item in fContext.GetTypes do
-        begin
-          if (item is TRttiInterfaceType) and (ifHasGuid in TRttiInterfaceType(item).IntfFlags) then
-          begin
-            if not fInterfaceTypes.ContainsKey(TRttiInterfaceType(item).GUID) then  // TEMP
-            begin
-              fInterfaceTypes.Add(TRttiInterfaceType(item).GUID, TRttiInterfaceType(item));
-            end;
-          end;
-        end;
-      end;
-    finally
-      fSection.Leave;
-    end;
-  end;
-  Result := fInterfaceTypes.TryGetValue(guid, aType);
-end;
-
-{$ENDREGION}
-
 end.
-
-

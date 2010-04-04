@@ -22,6 +22,10 @@
 {                                                                           }
 {***************************************************************************}
 
+{TODO -Paul -cGeneral : TListAdapter<T> Support IList}
+{TODO -Paul -cGeneral : TDictionary<TKey, TValue> Support IDictionary}
+{TODO -Paul -cGeneral : Add IOrderedDictionary}
+
 unit Spring.Collections.Adapters;
 
 {$I Spring.inc}
@@ -31,6 +35,7 @@ interface
 uses
   Classes,
   SysUtils,
+  Rtti,
   Generics.Defaults,
   Generics.Collections,
   Spring.Collections;
@@ -51,11 +56,15 @@ type
     property Current: T read DoGetCurrent;
   end;
 
+//  TListAdapter = class(TEnumerableEx<TValue>, IList, ICollection)
+//  public
+//    class function From<T>: TListAdapter;
+//  end;
+
   /// <summary>
   /// TListAdapter<T>
   /// </summary>
-  TListAdapter<T> = class(TEnumerableEx<T>, IList<T>, ICollection<T>,
-    IEnumerableEx<T>, IEnumerable<T>, IEnumerable, IInterface)
+  TListAdapter<T> = class(TEnumerableEx<T>, IList<T>, ICollection<T>)
   protected
     fList: TList<T>;
     fOwnership: TCollectionOwnership;
@@ -88,9 +97,7 @@ type
   /// <summary>
   /// TDictionaryAdapter<TKey, TValue>
   /// </summary>
-  TDictionaryAdapter<TKey, TValue> = class(TCollectionBase<TPair<TKey, TValue>>,
-    IDictionary<TKey, TValue>, ICollection<TPair<TKey, TValue>>,
-    IEnumerableEx<TPair<TKey, TValue>>, IEnumerable<TPair<TKey, TValue>>, IEnumerable, IInterface)
+  TDictionaryAdapter<TKey, TValue> = class(TCollectionBase<TPair<TKey, TValue>>, IDictionary<TKey, TValue>)
   private
     type
       /// <summary>

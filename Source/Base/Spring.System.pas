@@ -43,6 +43,7 @@ uses
   Character,
   Diagnostics,
   Rtti,
+  SyncObjs,
   Generics.Defaults,
   Generics.Collections;
 
@@ -251,6 +252,7 @@ type
     function Equals(const buffer: Pointer; count: Integer): Boolean; overload;
     function Equals(const hexString: string): Boolean; overload;
 
+//    procedure LoadFromStream(stream: TStream);
     procedure SaveToStream(stream: TStream);
 
     function ToBytes: TBytes;
@@ -336,39 +338,40 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TRtti'}
+  {$REGION 'TType'}
 
   /// <summary>
   /// Provides static methods to get RTTI information of parameterized type.
   /// </summary>
-  TRtti = record
-  private
-    class var
-      fContext: TRttiContext;
+  TType = class
+  strict private
+    class var fContext: TRttiContext;
+    class var fSection: TCriticalSection;
+    class var fInterfaceTypes: TDictionary<TGuid, TRttiInterfaceType>;
     class constructor Create;
   {$HINTS OFF}
     class destructor Destroy;
   {$HINTS ON}
   public
-    /// <summary>
-    /// Determines whether the type kind of the paramized type argument "T" is as expected.
-    /// </summary>
-    /// <exception cref="ERttiException">raised when typeKind was not as expected.</exception>
-    class procedure CheckTypeKind<T>(const typeKind: TypInfo.TTypeKind); overload; static;
-    class procedure CheckTypeKind<T>(const typeKinds: TypInfo.TTypeKinds); overload; static;
-    class function IsManagedType<T>: Boolean; static;
-    class function IsNullReference<T>(const value: T): Boolean; overload; static;
-    class function IsNullReference(const value; typeInfo: PTypeInfo): Boolean; overload; static;
+    class function GetType<T>: TRttiType; overload;
+    class function GetType(typeInfo: PTypeInfo): TRttiType; overload;
+    class function GetType(classType: TClass): TRttiType; overload;
+    class function GetType(propertyMember: TRttiProperty): TRttiType; overload;
+    class function GetType(fieldMember: TRttiField): TRttiType; overload;
+    class function GetType(const value: TValue): TRttiType; overload;
+//    class function GetTypes: IEnumerableEx<TRttiType>;
+    class function GetFullName(typeInfo: PTypeInfo): string; overload;
+    class function GetFullName<T>: string; overload;
+    class function FindType(const qualifiedName: string): TRttiType;
+//    class function FindTypes(...): IEnumerableEx<TRttiType>;
+    class function IsNullReference<T>(const value: T): Boolean; overload;
+    class function IsNullReference(const value; typeInfo: PTypeInfo): Boolean; overload;
     /// <summary>
     /// Returns true if the typeFrom is assignable to the typeTo.
     /// </summary>
-    class function IsAssignable(typeFrom, typeTo: PTypeInfo): Boolean; overload; static;
-    class function GetTypeInfo<T>: PTypeInfo; static;
-    class function GetTypeData<T>: PTypeData; static;
-    class function GetTypeKind<T>: TypInfo.TTypeKind; static;
-    class function GetTypeName<T>: string; static;
-    class function GetFullName(typeInfo: PTypeInfo): string; overload; static;
-    class function GetFullName<T>: string; overload; static;
+    class function IsAssignable(typeFrom, typeTo: PTypeInfo): Boolean; overload;
+    class function TryGetInterfaceType(const guid: TGUID; out aType: TRttiInterfaceType): Boolean;
+    class property Context: TRttiContext read fContext;
   end;
 
   {$ENDREGION}
@@ -376,7 +379,6 @@ type
 
   {$REGION 'TNullable<T>'}
 
-type
   /// <summary>
   /// Represents an "object" whose underlying type is a value type that can also
   /// be assigned nil like a reference type.
@@ -384,7 +386,7 @@ type
   /// <typeparam name="T">The underlying value type of the TNullable<T> generic type.</typeparam>
   TNullable<T> = record
   private
-    const fCHasValue = 'HasValue';  // DO NOT LOCALIZE
+    const fCHasValue = '@';  // DO NOT LOCALIZE
   strict private
     fValue: T;
     fHasValue: string;
@@ -463,8 +465,11 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'Delegate'}
+  {$REGION 'IDelegate<T>'}
 
+  /// <summary>
+  /// Represents a multicast delegate interface.
+  /// </summary>
   IDelegate<T> = interface
     function AddHandler(const handler: T): IDelegate<T>;
     function RemoveHandler(const handler: T): IDelegate<T>;
@@ -921,6 +926,7 @@ implementation
 
 uses
   ComObj,
+//  Spring.Reflection,
   Spring.ResourceStrings;
 
 
@@ -1270,7 +1276,7 @@ end;
 
 class procedure TArgument.CheckNotNull<T>(const value: T; const argumentName: string);
 begin
-  if TRtti.IsNullReference<T>(value) then
+  if TType.IsNullReference<T>(value) then
   begin
     TArgument.RaiseArgumentNullException(argumentName);
   end;
@@ -1294,7 +1300,7 @@ begin
   begin
     msg := Format(
       SInvalidEnumArgument,
-      [argumentName, TRtti.GetTypeName<T>, value]
+      [argumentName, GetTypeName(TypeInfo(T)), value]
     );
     raise EInvalidEnumArgumentException.Create(msg);
   end;
@@ -1480,7 +1486,6 @@ class procedure TBuffer.SetByte(var buffer; const index: Integer;
   const value: Byte);
 begin
   TArgument.CheckRange(index >= 0, 'index');
-
   PByte(@buffer)[index] := value;
 end;
 
@@ -1790,8 +1795,8 @@ end;
 
 class function TEnum.GetEnumTypeInfo<T>: PTypeInfo;
 begin
-  TRtti.CheckTypeKind<T>(tkEnumeration);
-  Result := TRtti.GetTypeInfo<T>;
+//  TRtti.CheckTypeKind<T>(tkEnumeration);  // TEMP
+  Result := TypeInfo(T);
 end;
 
 class function TEnum.GetEnumTypeData<T>: PTypeData;
@@ -1810,10 +1815,12 @@ end;
 
 class function TEnum.IsValid<T>(const value: Integer): Boolean;
 var
+  typeInfo: PTypeInfo;
   data: PTypeData;
 begin
-  TRtti.CheckTypeKind<T>(tkEnumeration);
-  data := TRtti.GetTypeData<T>;
+  typeInfo := System.TypeInfo(T);
+  TArgument.CheckTypeKind(typeInfo, [tkEnumeration], 'T');
+  data := GetTypeData(typeInfo);
   Assert(data <> nil, 'data must not be nil.');
   Result := (value >= data.MinValue) and (value <= data.MaxValue);
 end;
@@ -1920,33 +1927,92 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TRtti'}
+{$REGION 'TType'}
 
-class constructor TRtti.Create;
+class constructor TType.Create;
 begin
   fContext := TRttiContext.Create;
+  fSection := TCriticalSection.Create;
 end;
 
-class destructor TRtti.Destroy;
+class destructor TType.Destroy;
 begin
+  fInterfaceTypes.Free;
+  fSection.Free;
   fContext.Free;
 end;
 
-class procedure TRtti.CheckTypeKind<T>(const typeKind: TypInfo.TTypeKind);
+class function TType.GetType<T>: TRttiType;
 begin
-  TRtti.CheckTypeKind<T>([typeKind]);
+  Result := GetType(TypeInfo(T));
 end;
 
-class procedure TRtti.CheckTypeKind<T>(const typeKinds: TypInfo.TTypeKinds);
+class function TType.GetType(typeInfo: PTypeInfo): TRttiType;
+begin
+  Result := fContext.GetType(typeInfo);
+end;
+
+class function TType.GetType(classType: TClass): TRttiType;
+begin
+  Result := fContext.GetType(classType);
+end;
+
+class function TType.GetType(propertyMember: TRttiProperty): TRttiType;
+begin
+  TArgument.CheckNotNull(propertyMember, 'propertyMember');
+  Result := GetType(propertyMember.PropertyType.Handle);
+end;
+
+class function TType.GetType(fieldMember: TRttiField): TRttiType;
+begin
+  TArgument.CheckNotNull(fieldMember, 'propertyMember');
+  Result := GetType(fieldMember.FieldType.Handle);
+end;
+
+class function TType.GetType(const value: TValue): TRttiType;
+begin
+  Result := GetType(value.TypeInfo);
+end;
+
+class function TType.GetFullName(typeInfo: PTypeInfo): string;
+begin
+  TArgument.CheckNotNull(typeInfo, 'typeInfo');
+  Result := fContext.GetType(typeInfo).QualifiedName;
+end;
+
+class function TType.GetFullName<T>: string;
 var
   typeInfo: PTypeInfo;
 begin
-  typeInfo := TRtti.GetTypeInfo<T>;
-  if not (typeInfo.Kind in typeKinds) then
-    raise ERttiException.CreateResFmt(@SUnexpectedTypeKind, [TRtti.GetTypeName<T>]);
+  typeInfo := System.TypeInfo(T);
+  Result := TType.GetFullName(typeInfo);
 end;
 
-class function TRtti.IsAssignable(typeFrom, typeTo: PTypeInfo): Boolean;
+class function TType.FindType(const qualifiedName: string): TRttiType;
+begin
+  Result := fContext.FindType(qualifiedName);
+end;
+
+//  TTypeKind = (tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+//    tkString, tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString,
+//    tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray, tkUString,
+//    tkClassRef, tkPointer, tkProcedure);
+class function TType.IsNullReference(const value; typeInfo: PTypeInfo): Boolean;
+begin
+  Result := (typeInfo <> nil) and
+    (typeInfo.Kind in [tkPointer, tkClass, tkClassRef, tkInterface, tkProcedure, tkMethod]);
+  Result := Result and not Assigned(@value);
+end;
+
+class function TType.IsNullReference<T>(const value: T): Boolean;
+var
+  localTypeInfo: PTypeInfo;
+begin
+  localTypeInfo := TypeInfo(T);
+  Result := TType.IsNullReference(value, localTypeInfo);
+end;
+
+class function TType.IsAssignable(typeFrom, typeTo: PTypeInfo): Boolean;
 var
   dataFrom, dataTo: PTypeData;
 begin
@@ -1982,70 +2048,35 @@ begin
   end;
 end;
 
-class function TRtti.IsManagedType<T>: Boolean;
+class function TType.TryGetInterfaceType(const guid: TGUID;
+  out aType: TRttiInterfaceType): Boolean;
 var
-  typeInfo: PTypeInfo;
+  item: TRttiType;
 begin
-  typeInfo := TRtti.GetTypeInfo<T>;
-  Result := Rtti.IsManaged(typeInfo);
-end;
-
-class function TRtti.IsNullReference<T>(const value: T): Boolean;
-var
-  localTypeInfo: PTypeInfo;
-begin
-  localTypeInfo := TypeInfo(T);
-  Result := TRtti.IsNullReference(value, localTypeInfo);
-end;
-
-//  TTypeKind = (tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
-//    tkString, tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString,
-//    tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray, tkUString,
-//    tkClassRef, tkPointer, tkProcedure);
-class function TRtti.IsNullReference(const value; typeInfo: PTypeInfo): Boolean;
-begin
-  Result := (typeInfo <> nil) and
-    (typeInfo.Kind in [tkPointer, tkClass, tkClassRef, tkInterface, tkProcedure, tkMethod]);
-  Result := Result and not Assigned(@value);
-end;
-
-class function TRtti.GetTypeName<T>: string;
-begin
-  Result := TypInfo.GetTypeName(TRtti.GetTypeInfo<T>);
-end;
-
-class function TRtti.GetTypeKind<T>: TypInfo.TTypeKind;
-begin
-  Result := TRtti.GetTypeInfo<T>.Kind;
-end;
-
-class function TRtti.GetTypeInfo<T>: PTypeInfo;
-begin
-  Result := System.TypeInfo(T);
-  if Result = nil then
-    raise ERttiException.CreateRes(@SNoTypeInfo);
-end;
-
-class function TRtti.GetFullName(typeInfo: PTypeInfo): string;
-begin
-  TArgument.CheckNotNull(typeInfo, 'typeInfo');
-  Result := fContext.GetType(typeInfo).QualifiedName;
-end;
-
-class function TRtti.GetFullName<T>: string;
-var
-  typeInfo: PTypeInfo;
-begin
-  typeInfo := TRtti.GetTypeInfo<T>;
-  Result := TRtti.GetFullName(typeInfo);
-end;
-
-class function TRtti.GetTypeData<T>: PTypeData;
-var
-  info: PTypeInfo;
-begin
-  info := TRtti.GetTypeInfo<T>;
-  Result := TypInfo.GetTypeData(info);
+  if fInterfaceTypes = nil then
+  begin
+    fSection.Enter;
+    try
+      MemoryBarrier;
+      if fInterfaceTypes = nil then
+      begin
+        fInterfaceTypes := TDictionary<TGuid, TRttiInterfaceType>.Create;
+        for item in fContext.GetTypes do
+        begin
+          if (item is TRttiInterfaceType) and (ifHasGuid in TRttiInterfaceType(item).IntfFlags) then
+          begin
+            if not fInterfaceTypes.ContainsKey(TRttiInterfaceType(item).GUID) then  // TEMP
+            begin
+              fInterfaceTypes.Add(TRttiInterfaceType(item).GUID, TRttiInterfaceType(item));
+            end;
+          end;
+        end;
+      end;
+    finally
+      fSection.Leave;
+    end;
+  end;
+  Result := fInterfaceTypes.TryGetValue(guid, aType);
 end;
 
 {$ENDREGION}

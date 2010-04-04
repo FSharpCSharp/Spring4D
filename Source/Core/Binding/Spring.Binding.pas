@@ -143,7 +143,7 @@ type
   /// <summary>
   /// IBindableList
   /// </summary>
-  IBindableList = interface(IList<TValue>)
+  IBindableList = interface(IList)
     ['{5E4FF122-11B0-4406-8D06-C04376A7E088}']
 
   end;
@@ -400,7 +400,6 @@ resourcestring
 implementation
 
 uses
-  Spring.Reflection,
   Spring.Helpers;
 
 // Parse a string, for example: "A|B|C|D|E|F"?

@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Collections;
+unit Spring.Collections;  // experimental
 
 {$I Spring.inc}
 
@@ -216,7 +216,6 @@ type
   /// <summary>
   /// Provides an abstract implementation IEnumerable<T>.
   /// </summary>
-//  {$RTTI }
   TEnumerableBase<T> = class abstract(TInterfacedObject, IEnumerableAware, IEnumerable<T>, IEnumerable, IInterface)
   protected
     function DoGetEnumerator: IEnumerator<T>; virtual; abstract;

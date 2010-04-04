@@ -218,7 +218,7 @@ begin
   componentTypeObject := fRttiContext.GetType(componentType);
   serviceTypeObject := fRttiContext.GetType(serviceType);
   CheckIsNonGuidInterface(serviceTypeObject);
-  if not TRtti.IsAssignable(componentType, serviceType) then
+  if not TType.IsAssignable(componentType, serviceType) then
   begin
     raise ERegistrationException.CreateResFmt(@SIncompatibleTypes, [
       GetTypeName(componentType), GetTypeName(serviceType)]);
