@@ -59,7 +59,7 @@ begin
   RegisterTests('Base.System', [
     TTestSplitString.Suite,
     TTestSplitNullTerminatedStrings.Suite,
-    TTestTryParseDateTime.Suite,
+    TTestTryConvertStrToDateTime.Suite,
     TTestVersion.Suite,
     TTestEnum.Suite,
     TTestBuffer.Suite,

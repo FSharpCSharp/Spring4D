@@ -41,6 +41,7 @@ uses
   Generics.Collections,
   Spring.System,
   Spring.Collections,
+  Spring.Reflection,
   Spring.Notifications;
 
 type

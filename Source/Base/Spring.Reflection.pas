@@ -41,6 +41,42 @@ uses
   Spring.DesignPatterns;
 
 type
+  {$REGION 'TType'}
+
+  /// <summary>
+  /// Provides static methods to get RTTI information of parameterized type.
+  /// </summary>
+  TType = class
+  strict private
+    class var fContext: TRttiContext;
+    class var fSection: TCriticalSection;
+    class var fInterfaceTypes: TDictionary<TGuid, TRttiInterfaceType>;
+    class constructor Create;
+  {$HINTS OFF}
+    class destructor Destroy;
+  {$HINTS ON}
+  public
+    class function GetType<T>: TRttiType; overload;
+    class function GetType(typeInfo: PTypeInfo): TRttiType; overload;
+    class function GetType(classType: TClass): TRttiType; overload;
+    class function GetType(propertyMember: TRttiProperty): TRttiType; overload;
+    class function GetType(fieldMember: TRttiField): TRttiType; overload;
+    class function GetType(const value: TValue): TRttiType; overload;
+//    class function GetTypes: IEnumerableEx<TRttiType>;
+    class function GetFullName(typeInfo: PTypeInfo): string; overload;
+    class function GetFullName<T>: string; overload;
+    class function FindType(const qualifiedName: string): TRttiType;
+//    class function FindTypes(...): IEnumerableEx<TRttiType>;
+    /// <summary>
+    /// Returns true if the typeFrom is assignable to the typeTo.
+    /// </summary>
+    class function IsAssignable(typeFrom, typeTo: PTypeInfo): Boolean; overload;
+    class function TryGetInterfaceType(const guid: TGUID; out aType: TRttiInterfaceType): Boolean;
+    class property Context: TRttiContext read fContext;
+  end;
+
+  {$ENDREGION}
+
   IObjectActivator = interface
     ['{CE05FB89-3467-449E-81EA-A5AEECAB7BB8}']
     function CreateInstance: TObject;
@@ -224,6 +260,142 @@ implementation
 uses
 //  Spring.Helpers,  // Internal Error
   Spring.ResourceStrings;
+
+
+{$REGION 'TType'}
+
+class constructor TType.Create;
+begin
+  fContext := TRttiContext.Create;
+  fSection := TCriticalSection.Create;
+end;
+
+class destructor TType.Destroy;
+begin
+  fInterfaceTypes.Free;
+  fSection.Free;
+  fContext.Free;
+end;
+
+class function TType.GetType<T>: TRttiType;
+begin
+  Result := GetType(TypeInfo(T));
+end;
+
+class function TType.GetType(typeInfo: PTypeInfo): TRttiType;
+begin
+  Result := fContext.GetType(typeInfo);
+end;
+
+class function TType.GetType(classType: TClass): TRttiType;
+begin
+  Result := fContext.GetType(classType);
+end;
+
+class function TType.GetType(propertyMember: TRttiProperty): TRttiType;
+begin
+  TArgument.CheckNotNull(propertyMember, 'propertyMember');
+  Result := GetType(propertyMember.PropertyType.Handle);
+end;
+
+class function TType.GetType(fieldMember: TRttiField): TRttiType;
+begin
+  TArgument.CheckNotNull(fieldMember, 'propertyMember');
+  Result := GetType(fieldMember.FieldType.Handle);
+end;
+
+class function TType.GetType(const value: TValue): TRttiType;
+begin
+  Result := GetType(value.TypeInfo);
+end;
+
+class function TType.GetFullName(typeInfo: PTypeInfo): string;
+begin
+  TArgument.CheckNotNull(typeInfo, 'typeInfo');
+  Result := fContext.GetType(typeInfo).QualifiedName;
+end;
+
+class function TType.GetFullName<T>: string;
+var
+  typeInfo: PTypeInfo;
+begin
+  typeInfo := System.TypeInfo(T);
+  Result := TType.GetFullName(typeInfo);
+end;
+
+class function TType.FindType(const qualifiedName: string): TRttiType;
+begin
+  Result := fContext.FindType(qualifiedName);
+end;
+
+class function TType.IsAssignable(typeFrom, typeTo: PTypeInfo): Boolean;
+var
+  dataFrom, dataTo: PTypeData;
+begin
+  TArgument.CheckNotNull(typeFrom, 'typeFrom');
+  TArgument.CheckNotNull(typeTo, 'typeTo');
+  if typeFrom = typeTo then
+  begin
+    Exit(True);
+  end;
+  dataFrom := TypInfo.GetTypeData(typeFrom);
+  dataTo := TypInfo.GetTypeData(typeTo);
+  if (typeFrom.Kind = tkClass) and (typeTo.Kind = tkClass) then
+  begin
+    Result := dataFrom.ClassType.InheritsFrom(dataTo.ClassType);
+  end
+  else if (typeFrom.Kind = tkClass) and (typeTo.Kind = tkInterface) then
+  begin
+    Result := (ifHasGuid in dataTo.IntfFlags) and
+      Supports(dataFrom.ClassType, dataTo.Guid);
+  end
+  else if (typeFrom.Kind = tkInterface) and (typeTo.Kind = tkInterface) then
+  begin
+    Result := Assigned(dataFrom.IntfParent) and (dataFrom.IntfParent^ = typeTo);
+    while not Result and Assigned(dataFrom.IntfParent) do
+    begin
+      Result := dataFrom.IntfParent^ = typeTo;
+      dataFrom := TypInfo.GetTypeData(dataFrom.IntfParent^);
+    end;
+  end
+  else
+  begin
+    Result := False;
+  end;
+end;
+
+class function TType.TryGetInterfaceType(const guid: TGUID;
+  out aType: TRttiInterfaceType): Boolean;
+var
+  item: TRttiType;
+begin
+  if fInterfaceTypes = nil then
+  begin
+    fSection.Enter;
+    try
+      MemoryBarrier;
+      if fInterfaceTypes = nil then
+      begin
+        fInterfaceTypes := TDictionary<TGuid, TRttiInterfaceType>.Create;
+        for item in fContext.GetTypes do
+        begin
+          if (item is TRttiInterfaceType) and (ifHasGuid in TRttiInterfaceType(item).IntfFlags) then
+          begin
+            if not fInterfaceTypes.ContainsKey(TRttiInterfaceType(item).GUID) then  // TEMP
+            begin
+              fInterfaceTypes.Add(TRttiInterfaceType(item).GUID, TRttiInterfaceType(item));
+            end;
+          end;
+        end;
+      end;
+    finally
+      fSection.Leave;
+    end;
+  end;
+  Result := fInterfaceTypes.TryGetValue(guid, aType);
+end;
+
+{$ENDREGION}
 
 
 {$REGION 'Internal Class Helpers'}

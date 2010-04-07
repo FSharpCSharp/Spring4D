@@ -22,6 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
+{TODO -oPaul -cGeneral : TArrayBuilder<T>}
+{TODO -oPaul -cGeneral : Add more util functions on variants (TVariant)}
+
 /// <summary>
 /// Declares the fundamental types and rountines in the Delphi Spring Framework.
 /// </summary>
@@ -40,10 +43,8 @@ uses
   TypInfo,
   Variants,
   TimeSpan,
-  Character,
   Diagnostics,
   Rtti,
-  SyncObjs,
   Generics.Defaults,
   Generics.Collections;
 
@@ -77,44 +78,11 @@ type
   TTypeKinds = TypInfo.TTypeKinds;
 
   /// <summary>
-  /// Redefines the TPredicate<T> type.
+  /// Redefines the TPredicate<T> type with a const parameter.
   /// </summary>
   TPredicate<T> = reference to function(const value: T): Boolean;
 
   TAttributeClass = class of TCustomAttribute;
-
-  {$ENDREGION}
-
-
-  {$REGION 'Exceptions'}
-
-//  Exception = SysUtils.Exception;
-
-  ENotSupportedException    = SysUtils.ENotSupportedException;
-  ENotImplementedException  = class(Exception);
-
-  EInvalidOperation         = SysUtils.EInvalidOp;
-  EInvalidCastException     = SysUtils.EConvertError;
-
-  EInsufficientMemoryException = class(EOutOfMemory);
-
-  EFormatException          = class(Exception);
-  EIndexOutOfRangeException = class(Exception);
-
-  EArgumentException            = SysUtils.EArgumentException;
-  EArgumentOutOfRangeException  = SysUtils.EArgumentOutOfRangeException;
-  EArgumentNullException        = class(EArgumentException);
-  EInvalidEnumArgumentException = class(EArgumentException);
-
-  EIOException                  = SysUtils.EInOutError;
-  EFileNotFoundException        = SysUtils.EFileNotFoundException;
-  EDirectoryNotFoundException   = SysUtils.EDirectoryNotFoundException;
-  EDriveNotFoundException       = class(EIOException);
-
-//  EArithmeticException = EMathError;
-//  ETimeoutException = class(Exception);
-
-  ERttiException = class(Exception);
 
   {$ENDREGION}
 
@@ -125,6 +93,21 @@ type
   /// Provides a non-reference-counted IInterface implementation.
   /// </summary>
   TInterfaceBase = class abstract(TObject, IInterface)
+  protected
+    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
+    function _AddRef: Integer; stdcall;
+    function _Release: Integer; stdcall;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TInterfacedThread'}
+
+  /// <summary>
+  /// Provides an abstract class base of TThread that implements the IInterface.
+  /// </summary>
+  TInterfacedThread = class abstract(TThread, IInterface)
   protected
     function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
     function _AddRef: Integer; stdcall;
@@ -177,7 +160,11 @@ type
     class procedure CheckRange(condition: Boolean; const argumentName: string); overload; static; inline;
     class procedure CheckRange(const length, startIndex, count: Integer; const indexBase: Integer = 0); overload; static; inline;
 
-    class procedure CheckTypeKind(typeInfo: PTypeInfo; const expectedTypeKinds: TTypeKinds; const argumentName: string); static; inline;
+    class procedure CheckTypeKind(typeInfo: PTypeInfo; const expectedTypeKind: TTypeKind; const argumentName: string); overload; static;
+    class procedure CheckTypeKind(typeInfo: PTypeInfo; const expectedTypeKinds: TTypeKinds; const argumentName: string); overload; static;
+
+    class function IsNullReference<T>(const value: T): Boolean; overload; static;
+    class function IsNullReference(const value; typeInfo: PTypeInfo): Boolean; overload; static;
 
     class procedure RaiseArgumentException(const msg: string); overload; static; inline;
     class procedure RaiseArgumentNullException(const argumentName: string); overload; static; inline;
@@ -198,9 +185,6 @@ type
   /// <summary>
   /// Represents a series of bytes in memory.
   /// </summary>
-  /// <remarks>
-  /// Immutable ? Fixed Size?
-  /// </remarks>
   TBuffer = record
   strict private
     fBytes: TBytes;
@@ -235,6 +219,7 @@ type
 
     function Clone: TBuffer;
     function Copy(startIndex, count: Integer): TBytes;
+//    function Reverse: TBuffer;
 
     function Left(count: Integer): TBuffer;
     function Mid(startIndex, count: Integer): TBuffer;
@@ -275,36 +260,18 @@ type
     { Operator Overloads }
     class operator Implicit(const value: TBytes): TBuffer;
     class operator Implicit(const value: TBuffer): TBytes;
+    class operator Implicit(const value: TBuffer): PByte;
     class operator Explicit(const value: TBytes): TBuffer;
     class operator Explicit(const value: TBuffer): TBytes;
+    class operator Explicit(const value: TBuffer): PByte;
     class operator Add(const left, right: TBuffer): TBuffer;
     class operator Add(const left: TBuffer; const right: Byte): TBuffer;
     class operator Equal(const left, right: TBuffer): Boolean;
     class operator NotEqual(const left, right: TBuffer): Boolean;
+//    class operator BitwiseAnd(const left, right: TBuffer): TBuffer;
+//    class operator BitwiseOr(const left, right: TBuffer): TBuffer;
     class operator BitwiseXor(const left, right: TBuffer): TBuffer;
   end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TVolatile<T> (Experimental)'}
-
-  /// <summary>
-  /// Enforces an ordering constraint on memory operations.
-  /// </summary>
-  TVolatile<T> = record
-  private
-    fValue: T;
-    function GetValue: T;
-    procedure SetValue(const newValue: T);
-  public
-    property Value: T read GetValue write SetValue;
-    { Operator Overloads }
-    class operator Implicit(const value: T): TVolatile<T>;
-    class operator Implicit(const value: TVolatile<T>): T;
-    class operator Equal(const left, right: TVolatile<T>): Boolean;
-    class operator NotEqual(const left, right: TVolatile<T>): Boolean;
-  end experimental;
 
   {$ENDREGION}
 
@@ -338,41 +305,10 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TType'}
+  {$REGION 'TVariant'}
 
-  /// <summary>
-  /// Provides static methods to get RTTI information of parameterized type.
-  /// </summary>
-  TType = class
-  strict private
-    class var fContext: TRttiContext;
-    class var fSection: TCriticalSection;
-    class var fInterfaceTypes: TDictionary<TGuid, TRttiInterfaceType>;
-    class constructor Create;
-  {$HINTS OFF}
-    class destructor Destroy;
-  {$HINTS ON}
-  public
-    class function GetType<T>: TRttiType; overload;
-    class function GetType(typeInfo: PTypeInfo): TRttiType; overload;
-    class function GetType(classType: TClass): TRttiType; overload;
-    class function GetType(propertyMember: TRttiProperty): TRttiType; overload;
-    class function GetType(fieldMember: TRttiField): TRttiType; overload;
-    class function GetType(const value: TValue): TRttiType; overload;
-//    class function GetTypes: IEnumerableEx<TRttiType>;
-    class function GetFullName(typeInfo: PTypeInfo): string; overload;
-    class function GetFullName<T>: string; overload;
-    class function FindType(const qualifiedName: string): TRttiType;
-//    class function FindTypes(...): IEnumerableEx<TRttiType>;
-    class function IsNullReference<T>(const value: T): Boolean; overload;
-    class function IsNullReference(const value; typeInfo: PTypeInfo): Boolean; overload;
-    /// <summary>
-    /// Returns true if the typeFrom is assignable to the typeTo.
-    /// </summary>
-    class function IsAssignable(typeFrom, typeTo: PTypeInfo): Boolean; overload;
-    class function TryGetInterfaceType(const guid: TGUID; out aType: TRttiInterfaceType): Boolean;
-    class property Context: TRttiContext read fContext;
-  end;
+//  TVariant = record
+//  end;
 
   {$ENDREGION}
 
@@ -429,37 +365,46 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'Simple TNullable<T> Aliases'}
+  {$REGION 'Common TNullable<T> Aliases'}
 
   /// <summary>
-  /// Represents a dynamic nullable string.
+  /// Represents a nullable string.
   /// </summary>
   TNullableString = TNullable<string>;
 
   /// <summary>
-  /// Represents a dynamic nullable integer.
+  /// Represents a nullable integer.
   /// </summary>
   TNullableInteger = TNullable<Integer>;
 
   /// <summary>
-  /// Represents a dynamic nullable datetime.
+  /// Represents a nullable date time.
   /// </summary>
   TNullableDateTime = TNullable<TDateTime>;
 
   /// <summary>
-  /// Represents a dynamic nullable currency.
+  /// Represents a nullable currency.
   /// </summary>
   TNullableCurrency = TNullable<Currency>;
 
   /// <summary>
-  /// Represents a dynamic nullable double.
+  /// Represents a nullable double.
   /// </summary>
   TNullableDouble = TNullable<Double>;
 
+  /// <summary>
+  /// Represents a nullable boolean.
+  /// </summary>
   TNullableBoolean = TNullable<Boolean>;
 
+  /// <summary>
+  /// Represents a nullable Int64.
+  /// </summary>
   TNullableInt64 = TNullable<Int64>;
 
+  /// <summary>
+  /// Represents a nullable Guid.
+  /// </summary>
   TNullableGuid = TNullable<TGUID>;
 
   {$ENDREGION}
@@ -488,6 +433,28 @@ type
     function RemoveHandler(const handler: T): IDelegate<T>;
     function Invoke(const callback: TProc<T>): IDelegate<T>; virtual;
   end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TVolatile<T> (Experimental)'}
+
+  /// <summary>
+  /// Enforces an ordering constraint on memory operations.
+  /// </summary>
+  TVolatile<T> = record
+  private
+    fValue: T;
+    function GetValue: T;
+    procedure SetValue(const newValue: T);
+  public
+    property Value: T read GetValue write SetValue;
+    { Operator Overloads }
+    class operator Implicit(const value: T): TVolatile<T>;
+    class operator Implicit(const value: TVolatile<T>): T;
+    class operator Equal(const left, right: TVolatile<T>): Boolean;
+    class operator NotEqual(const left, right: TVolatile<T>): Boolean;
+  end experimental;
 
   {$ENDREGION}
 
@@ -606,21 +573,6 @@ type
     destructor Destroy; override;
     function Invoke: Pointer;
   end; // Consider hide the implementation.
-
-  {$ENDREGION}
-
-
-  {$REGION 'TInterfacedThread'}
-
-  /// <summary>
-  /// TInterfacedThread
-  /// </summary>
-  TInterfacedThread = class abstract(TThread, IInterface)
-  protected
-    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
-    function _AddRef: Integer; stdcall;
-    function _Release: Integer; stdcall;
-  end;
 
   {$ENDREGION}
 
@@ -771,6 +723,37 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'Exceptions'}
+
+  ENotSupportedException    = SysUtils.ENotSupportedException;
+  ENotImplementedException  = class(Exception);
+
+  EInvalidOperation         = SysUtils.EInvalidOp;
+  EInvalidCastException     = SysUtils.EConvertError;
+
+  EInsufficientMemoryException = class(EOutOfMemory);
+
+  EFormatException          = class(Exception);
+  EIndexOutOfRangeException = class(Exception);
+
+  EArgumentException            = SysUtils.EArgumentException;
+  EArgumentOutOfRangeException  = SysUtils.EArgumentOutOfRangeException;
+  EArgumentNullException        = class(EArgumentException);
+  EInvalidEnumArgumentException = class(EArgumentException);
+
+  EIOException                  = SysUtils.EInOutError;
+  EFileNotFoundException        = SysUtils.EFileNotFoundException;
+  EDirectoryNotFoundException   = SysUtils.EDirectoryNotFoundException;
+  EDriveNotFoundException       = class(EIOException);
+
+//  EArithmeticException = EMathError;
+//  ETimeoutException = class(Exception);
+
+  ERttiException = class(Exception);
+
+  {$ENDREGION}
+
+
   {$REGION 'Global Routines'}
 
   /// <summary>
@@ -869,19 +852,29 @@ type
   /// <param name="format">the format of datetime</param>
   /// <param name="value">output datetime value</param>
   /// <returns>Returns True if the input string can be parsed.</returns>
-  function TryParseDateTime(const s, format: string; out value: TDateTime): Boolean; // experimental;
+  function TryConvertStrToDateTime(const s, format: string; out value: TDateTime): Boolean;
 
   /// <summary>
   /// Parses a string to a datetime value based on the specified format.
   /// An EConvertError exception will be raised if failed to parse the string.
   /// </summary>
-  function ParseDateTime(const s, format: string): TDateTime; // experimental;
+  function ConvertStrToDateTime(const s, format: string): TDateTime;
+
+  function TryParseDateTime(const s, format: string; out value: TDateTime): Boolean;
+    deprecated 'Use TryConvertStrToDateTime instead.';
+
+  function ParseDateTime(const s, format: string): TDateTime;
+    deprecated 'Use ConvertStrToDateTime instead.';
 
   /// <summary>
   /// Determines if a variant is null or empty. The parameter "trimeWhiteSpace"
   /// is an option only for strings.
   /// </summary>
   function VarIsNullOrEmpty(const value: Variant; trimWhiteSpace: Boolean = False): Boolean;
+
+  // >>>NOTE<<<
+  // Due to the QC #80304, the following methods (with anonymous methods)
+  // must not be inlined.
 
   /// <summary>
   /// Obtains a mutual-exclusion lock for the given object, executes a procedure
@@ -926,7 +919,6 @@ implementation
 
 uses
   ComObj,
-//  Spring.Reflection,
   Spring.ResourceStrings;
 
 
@@ -1048,7 +1040,7 @@ begin
   Result := propInfo <> nil;
 end;
 
-function TryParseDateTime(const s, format: string; out value: TDateTime): Boolean;
+function TryConvertStrToDateTime(const s, format: string; out value: TDateTime): Boolean;
 var
   localString: string;
   stringFormat: string;
@@ -1096,12 +1088,22 @@ begin
   end;
 end;
 
-function ParseDateTime(const s, format: string): TDateTime;
+function ConvertStrToDateTime(const s, format: string): TDateTime;
 begin
-  if not TryParseDateTime(s, format, Result) then
+  if not TryConvertStrToDateTime(s, format, Result) then
   begin
     raise EConvertError.CreateResFmt(@SInvalidDateTime, [s]);
   end;
+end;
+
+function TryParseDateTime(const s, format: string; out value: TDateTime): Boolean;
+begin
+  Result := TryConvertStrToDateTime(s, format, value);
+end;
+
+function ParseDateTime(const s, format: string): TDateTime;
+begin
+  Result := ConvertStrToDateTime(s, format);
 end;
 
 function VarIsNullOrEmpty(const value: Variant; trimWhiteSpace: Boolean): Boolean;
@@ -1172,6 +1174,29 @@ begin
 end;
 
 function TInterfaceBase._Release: Integer;
+begin
+  Result := -1;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TInterfacedThread'}
+
+function TInterfacedThread.QueryInterface(const IID: TGUID; out Obj): HResult;
+begin
+  if GetInterface(IID, Obj) then
+    Result := S_OK
+  else
+    Result := E_NOINTERFACE;
+end;
+
+function TInterfacedThread._AddRef: Integer;
+begin
+  Result := -1;
+end;
+
+function TInterfacedThread._Release: Integer;
 begin
   Result := -1;
 end;
@@ -1276,7 +1301,7 @@ end;
 
 class procedure TArgument.CheckNotNull<T>(const value: T; const argumentName: string);
 begin
-  if TType.IsNullReference<T>(value) then
+  if IsNullReference<T>(value) then
   begin
     TArgument.RaiseArgumentNullException(argumentName);
   end;
@@ -1374,6 +1399,16 @@ begin
 end;
 
 class procedure TArgument.CheckTypeKind(typeInfo: PTypeInfo;
+  const expectedTypeKind: TTypeKind; const argumentName: string);
+begin
+  TArgument.CheckNotNull(typeInfo, argumentName);
+  if typeInfo.Kind <> expectedTypeKind then
+  begin
+    raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument, [typeInfo.Name, argumentName]);
+  end;
+end;
+
+class procedure TArgument.CheckTypeKind(typeInfo: PTypeInfo;
   const expectedTypeKinds: TTypeKinds; const argumentName: string);
 begin
   TArgument.CheckNotNull(typeInfo, argumentName);
@@ -1381,6 +1416,25 @@ begin
   begin
     raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument, [typeInfo.Name, argumentName]);
   end;
+end;
+
+//  TTypeKind = (tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+//    tkString, tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString,
+//    tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray, tkUString,
+//    tkClassRef, tkPointer, tkProcedure);
+class function TArgument.IsNullReference(const value; typeInfo: PTypeInfo): Boolean;
+begin
+  Result := (typeInfo <> nil) and
+    (typeInfo.Kind in [tkPointer, tkClass, tkClassRef, tkInterface, tkProcedure, tkMethod]);
+  Result := Result and not Assigned(@value);
+end;
+
+class function TArgument.IsNullReference<T>(const value: T): Boolean;
+var
+  localTypeInfo: PTypeInfo;
+begin
+  localTypeInfo := TypeInfo(T);
+  Result := TArgument.IsNullReference(value, localTypeInfo);
 end;
 
 class procedure TArgument.RaiseArgumentException(const msg: string);
@@ -1739,6 +1793,11 @@ begin
   Result := value.fBytes;
 end;
 
+class operator TBuffer.Explicit(const value: TBuffer): PByte;
+begin
+  Result := PByte(value.fBytes);
+end;
+
 class operator TBuffer.Explicit(const value: TBytes): TBuffer;
 begin
   Result.fBytes := value;
@@ -1747,6 +1806,11 @@ end;
 class operator TBuffer.Explicit(const value: TBuffer): TBytes;
 begin
   Result := value.fBytes;
+end;
+
+class operator TBuffer.Implicit(const value: TBuffer): PByte;
+begin
+  Result := PByte(value.fBytes);
 end;
 
 class operator TBuffer.Add(const left, right: TBuffer): TBuffer;
@@ -1795,8 +1859,8 @@ end;
 
 class function TEnum.GetEnumTypeInfo<T>: PTypeInfo;
 begin
-//  TRtti.CheckTypeKind<T>(tkEnumeration);  // TEMP
   Result := TypeInfo(T);
+  TArgument.CheckTypeKind(Result, tkEnumeration, 'T');
 end;
 
 class function TEnum.GetEnumTypeData<T>: PTypeData;
@@ -1835,12 +1899,12 @@ end;
 
 class function TEnum.GetName<T>(const value: Integer): string;
 var
-  info: PTypeInfo;
+  typeInfo: PTypeInfo;
 begin
   TArgument.CheckEnum<T>(value, 'value');
 
-  info := GetEnumTypeInfo<T>;
-  Result := GetEnumName(info, value);
+  typeInfo := GetEnumTypeInfo<T>;
+  Result := GetEnumName(typeInfo, value);
 end;
 
 class function TEnum.GetName<T>(const value: T): string;
@@ -1904,11 +1968,11 @@ end;
 
 class function TEnum.TryParse<T>(const value: string; out enum: T): Boolean;
 var
-  pInfo: PTypeInfo;
+  typeInfo: PTypeInfo;
   intValue: Integer;
 begin
-  pInfo := TEnum.GetEnumTypeInfo<T>;
-  intValue := GetEnumValue(pInfo, value);
+  typeInfo := TEnum.GetEnumTypeInfo<T>;
+  intValue := GetEnumValue(typeInfo, value);
   Result := TEnum.TryParse<T>(intValue, enum);
 end;
 
@@ -1922,161 +1986,6 @@ class function TEnum.Parse<T>(const value: string): T;
 begin
   if not TEnum.TryParse<T>(value, Result) then
     raise EFormatException.CreateResFmt(@SIncorrectFormat, [value]);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TType'}
-
-class constructor TType.Create;
-begin
-  fContext := TRttiContext.Create;
-  fSection := TCriticalSection.Create;
-end;
-
-class destructor TType.Destroy;
-begin
-  fInterfaceTypes.Free;
-  fSection.Free;
-  fContext.Free;
-end;
-
-class function TType.GetType<T>: TRttiType;
-begin
-  Result := GetType(TypeInfo(T));
-end;
-
-class function TType.GetType(typeInfo: PTypeInfo): TRttiType;
-begin
-  Result := fContext.GetType(typeInfo);
-end;
-
-class function TType.GetType(classType: TClass): TRttiType;
-begin
-  Result := fContext.GetType(classType);
-end;
-
-class function TType.GetType(propertyMember: TRttiProperty): TRttiType;
-begin
-  TArgument.CheckNotNull(propertyMember, 'propertyMember');
-  Result := GetType(propertyMember.PropertyType.Handle);
-end;
-
-class function TType.GetType(fieldMember: TRttiField): TRttiType;
-begin
-  TArgument.CheckNotNull(fieldMember, 'propertyMember');
-  Result := GetType(fieldMember.FieldType.Handle);
-end;
-
-class function TType.GetType(const value: TValue): TRttiType;
-begin
-  Result := GetType(value.TypeInfo);
-end;
-
-class function TType.GetFullName(typeInfo: PTypeInfo): string;
-begin
-  TArgument.CheckNotNull(typeInfo, 'typeInfo');
-  Result := fContext.GetType(typeInfo).QualifiedName;
-end;
-
-class function TType.GetFullName<T>: string;
-var
-  typeInfo: PTypeInfo;
-begin
-  typeInfo := System.TypeInfo(T);
-  Result := TType.GetFullName(typeInfo);
-end;
-
-class function TType.FindType(const qualifiedName: string): TRttiType;
-begin
-  Result := fContext.FindType(qualifiedName);
-end;
-
-//  TTypeKind = (tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
-//    tkString, tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString,
-//    tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray, tkUString,
-//    tkClassRef, tkPointer, tkProcedure);
-class function TType.IsNullReference(const value; typeInfo: PTypeInfo): Boolean;
-begin
-  Result := (typeInfo <> nil) and
-    (typeInfo.Kind in [tkPointer, tkClass, tkClassRef, tkInterface, tkProcedure, tkMethod]);
-  Result := Result and not Assigned(@value);
-end;
-
-class function TType.IsNullReference<T>(const value: T): Boolean;
-var
-  localTypeInfo: PTypeInfo;
-begin
-  localTypeInfo := TypeInfo(T);
-  Result := TType.IsNullReference(value, localTypeInfo);
-end;
-
-class function TType.IsAssignable(typeFrom, typeTo: PTypeInfo): Boolean;
-var
-  dataFrom, dataTo: PTypeData;
-begin
-  TArgument.CheckNotNull(typeFrom, 'typeFrom');
-  TArgument.CheckNotNull(typeTo, 'typeTo');
-  if typeFrom = typeTo then
-  begin
-    Exit(True);
-  end;
-  dataFrom := TypInfo.GetTypeData(typeFrom);
-  dataTo := TypInfo.GetTypeData(typeTo);
-  if (typeFrom.Kind = tkClass) and (typeTo.Kind = tkClass) then
-  begin
-    Result := dataFrom.ClassType.InheritsFrom(dataTo.ClassType);
-  end
-  else if (typeFrom.Kind = tkClass) and (typeTo.Kind = tkInterface) then
-  begin
-    Result := (ifHasGuid in dataTo.IntfFlags) and
-      Supports(dataFrom.ClassType, dataTo.Guid);
-  end
-  else if (typeFrom.Kind = tkInterface) and (typeTo.Kind = tkInterface) then
-  begin
-    Result := Assigned(dataFrom.IntfParent) and (dataFrom.IntfParent^ = typeTo);
-    while not Result and Assigned(dataFrom.IntfParent) do
-    begin
-      Result := dataFrom.IntfParent^ = typeTo;
-      dataFrom := TypInfo.GetTypeData(dataFrom.IntfParent^);
-    end;
-  end
-  else
-  begin
-    Result := False;
-  end;
-end;
-
-class function TType.TryGetInterfaceType(const guid: TGUID;
-  out aType: TRttiInterfaceType): Boolean;
-var
-  item: TRttiType;
-begin
-  if fInterfaceTypes = nil then
-  begin
-    fSection.Enter;
-    try
-      MemoryBarrier;
-      if fInterfaceTypes = nil then
-      begin
-        fInterfaceTypes := TDictionary<TGuid, TRttiInterfaceType>.Create;
-        for item in fContext.GetTypes do
-        begin
-          if (item is TRttiInterfaceType) and (ifHasGuid in TRttiInterfaceType(item).IntfFlags) then
-          begin
-            if not fInterfaceTypes.ContainsKey(TRttiInterfaceType(item).GUID) then  // TEMP
-            begin
-              fInterfaceTypes.Add(TRttiInterfaceType(item).GUID, TRttiInterfaceType(item));
-            end;
-          end;
-        end;
-      end;
-    finally
-      fSection.Leave;
-    end;
-  end;
-  Result := fInterfaceTypes.TryGetValue(guid, aType);
 end;
 
 {$ENDREGION}
@@ -2506,6 +2415,47 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TVolatile<T>'}
+
+{$WARNINGS OFF}
+
+function TVolatile<T>.GetValue: T;
+begin
+  MemoryBarrier;
+  Result := fValue;
+end;
+
+procedure TVolatile<T>.SetValue(const newValue: T);
+begin
+  MemoryBarrier;
+  fValue := newValue;
+end;
+
+class operator TVolatile<T>.Implicit(const value: T): TVolatile<T>;
+begin
+  Result.Value := value;
+end;
+
+class operator TVolatile<T>.Implicit(const value: TVolatile<T>): T;
+begin
+  Result := value.Value;
+end;
+
+class operator TVolatile<T>.Equal(const left, right: TVolatile<T>): Boolean;
+begin
+  Result := TEqualityComparer<T>.Default.Equals(left, right);
+end;
+
+class operator TVolatile<T>.NotEqual(const left, right: TVolatile<T>): Boolean;
+begin
+  Result := not TEqualityComparer<T>.Default.Equals(left, right);
+end;
+
+{$WARNINGS ON}
+
+{$ENDREGION}
+
+
 {$REGION 'TCallback'}
 
 type
@@ -2549,70 +2499,6 @@ end;
 function TCallback.Invoke: Pointer;
 begin
   Result := fInstance;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TVolatile<T>'}
-
-{$WARNINGS OFF}
-
-function TVolatile<T>.GetValue: T;
-begin
-  MemoryBarrier;
-  Result := fValue;
-end;
-
-procedure TVolatile<T>.SetValue(const newValue: T);
-begin
-  MemoryBarrier;
-  fValue := newValue;
-end;
-
-class operator TVolatile<T>.Implicit(const value: T): TVolatile<T>;
-begin
-  Result.Value := value;
-end;
-
-class operator TVolatile<T>.Implicit(const value: TVolatile<T>): T;
-begin
-  Result := value.Value;
-end;
-
-class operator TVolatile<T>.Equal(const left, right: TVolatile<T>): Boolean;
-begin
-  Result := TEqualityComparer<T>.Default.Equals(left, right);
-end;
-
-class operator TVolatile<T>.NotEqual(const left, right: TVolatile<T>): Boolean;
-begin
-  Result := not TEqualityComparer<T>.Default.Equals(left, right);
-end;
-
-{$WARNINGS ON}
-
-{$ENDREGION}
-
-
-{$REGION 'TInterfacedThread'}
-
-function TInterfacedThread.QueryInterface(const IID: TGUID; out Obj): HResult;
-begin
-  if GetInterface(IID, Obj) then
-    Result := S_OK
-  else
-    Result := E_NOINTERFACE;
-end;
-
-function TInterfacedThread._AddRef: Integer;
-begin
-  Result := -1;
-end;
-
-function TInterfacedThread._Release: Integer;
-begin
-  Result := -1;
 end;
 
 {$ENDREGION}

@@ -53,7 +53,7 @@ type
     procedure TestRemoveEmptyEntries;
   end;
 
-  TTestTryParseDateTime = class(TTestCase)
+  TTestTryConvertStrToDateTime = class(TTestCase)
   published
     procedure TestParseDate;
     procedure TestParseTime;
@@ -840,62 +840,62 @@ end;
 
 {$REGION 'TTestTryParseDateTime'}
 
-procedure TTestTryParseDateTime.TestParseDate;
+procedure TTestTryConvertStrToDateTime.TestParseDate;
 var
   actual, expected: TDateTime;
 begin
   expected := EncodeDate(2009, 10, 18);
 
-  CheckTrue(TryParseDateTime('20091018', 'YYYYMMDD', actual));
+  CheckTrue(TryConvertStrToDateTime('20091018', 'YYYYMMDD', actual));
   CheckTrue(SameDateTime(actual, expected));
 
-  CheckTrue(TryParseDateTime('091018', 'YYMMDD', actual));
+  CheckTrue(TryConvertStrToDateTime('091018', 'YYMMDD', actual));
   CheckTrue(SameDateTime(actual, expected));
 
-  CheckTrue(TryParseDateTime('10-18-2009', 'MM-DD-YYYY', actual));
+  CheckTrue(TryConvertStrToDateTime('10-18-2009', 'MM-DD-YYYY', actual));
   CheckTrue(SameDateTime(actual, expected));
 
-  CheckTrue(TryParseDateTime(' 2009-10-18 ', 'YYYY-MM-DD', actual));
+  CheckTrue(TryConvertStrToDateTime(' 2009-10-18 ', 'YYYY-MM-DD', actual));
   CheckTrue(SameDateTime(actual, expected));
 end;
 
-procedure TTestTryParseDateTime.TestParseTime;
+procedure TTestTryConvertStrToDateTime.TestParseTime;
 var
   actual, expected: TDateTime;
 begin
   expected := EncodeTime(12, 10, 18, 35);
-  CheckTrue(TryParseDateTime('12:10:18.035', 'hh:nn:ss.zzz', actual));
+  CheckTrue(TryConvertStrToDateTime('12:10:18.035', 'hh:nn:ss.zzz', actual));
   CheckTrue(SameDateTime(actual, expected));
 
   expected := EncodeTime(12, 10, 0, 0);
-  CheckTrue(TryParseDateTime('12:10 ', 'hh:nn', actual));
+  CheckTrue(TryConvertStrToDateTime('12:10 ', 'hh:nn', actual));
   CheckTrue(SameDateTime(actual, expected));
 end;
 
-procedure TTestTryParseDateTime.TestParseDateTime;
+procedure TTestTryConvertStrToDateTime.TestParseDateTime;
 var
   actual, expected: TDateTime;
 begin
   expected := EncodeDateTime(2009, 10, 18, 12, 30, 59, 200);
-  CheckTrue(TryParseDateTime('2009-10-18 12:30:59.200', 'YYYY-MM-DD HH:NN:SS.ZZZ', actual));
+  CheckTrue(TryConvertStrToDateTime('2009-10-18 12:30:59.200', 'YYYY-MM-DD HH:NN:SS.ZZZ', actual));
   CheckTrue(SameDateTime(actual, expected));
 
   expected := EncodeDateTime(2009, 10, 18, 12, 30, 59, 200);
-  CheckTrue(TryParseDateTime('20091018123059200', 'YYYYMMDDHHNNSSZZZ', actual));
+  CheckTrue(TryConvertStrToDateTime('20091018123059200', 'YYYYMMDDHHNNSSZZZ', actual));
   CheckTrue(SameDateTime(actual, expected));
 end;
 
-procedure TTestTryParseDateTime.TestFailedCases;
+procedure TTestTryConvertStrToDateTime.TestFailedCases;
 var
   value: TDateTime;
 begin
-  CheckFalse(TryParseDateTime('', 'YYYYMMDD', value));
-  CheckFalse(TryParseDateTime(' ', 'YYYYMMDD', value));
-  CheckFalse(TryParseDateTime('2009', 'YYYYMMDD', value));
-  CheckFalse(TryParseDateTime('2009080', 'YYYYMMDD', value));
-  CheckFalse(TryParseDateTime('2009080A', 'YYYYMMDD', value));
-  CheckFalse(TryParseDateTime('200908011230', 'YYYYMMDDHHNNSS', value));
-  CheckFalse(TryParseDateTime('20090801123007', 'YYYYMMDDHHNNSSZZZ', value));
+  CheckFalse(TryConvertStrToDateTime('', 'YYYYMMDD', value));
+  CheckFalse(TryConvertStrToDateTime(' ', 'YYYYMMDD', value));
+  CheckFalse(TryConvertStrToDateTime('2009', 'YYYYMMDD', value));
+  CheckFalse(TryConvertStrToDateTime('2009080', 'YYYYMMDD', value));
+  CheckFalse(TryConvertStrToDateTime('2009080A', 'YYYYMMDD', value));
+  CheckFalse(TryConvertStrToDateTime('200908011230', 'YYYYMMDDHHNNSS', value));
+  CheckFalse(TryConvertStrToDateTime('20090801123007', 'YYYYMMDDHHNNSSZZZ', value));
 end;
 
 {$ENDREGION}

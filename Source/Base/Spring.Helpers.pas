@@ -36,6 +36,7 @@ uses
   TypInfo,
   Rtti,
   ComObj,
+  DB,
   Generics.Collections,
   Spring.System,
   Spring.Collections,
@@ -73,7 +74,44 @@ type
   TArrayHelper = class helper for TArray
   public
     class function CreateArray<T>(const values: array of T): TArray<T>;
+  end;  // deprecated
+
+  TStreamHelper = class helper for TStream
+  public
+    procedure ReadBuffer<T: record>(var value: T); overload;
+    procedure WriteBuffer<T: record>(const value: T); overload;
   end;
+
+  TStringsHelper = class helper for TStrings
+  private
+    function GetIsEmpty: Boolean;
+  public
+    procedure AddOrUpdate(const name, value: string);
+    procedure ExecuteUpdate(proc: TProc);
+    function ContainsName(const name: string): Boolean;
+    function ContainsValue(const value: string): Boolean;
+    function ContainsObject(obj: TObject): Boolean;
+    function GetValueOrDefault<T>(const name: string; const default: T): T;
+    function ToArray: TStringDynArray;
+    property IsEmpty: Boolean read GetIsEmpty;
+  end;
+
+//  TDataSetHelper = class helper for TDataSet
+//  public
+//    procedure SaveChanges;
+//    function GetEnumerator: TDataSetEnumerator;
+//    property IsModified: Boolean;
+//  end;
+
+  TFieldHelper = class helper for TField
+  public
+    function GetValueOrDefault<T>(const default: T): T;
+//    property IsNullOrEmpty: Boolean;
+//    property IsModified: Boolean;
+  end;
+
+  // TPointHelper, TSizeHelper, TRectHelper
+
 
   {$REGION 'Class helpers for Enhanced Rtti (Reflection)'}
 
@@ -262,6 +300,128 @@ begin
   for i := 0 to High(values) do
   begin
     Result[i] := values[i];
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Classes'}
+
+{ TStreamHelper }
+
+procedure TStreamHelper.ReadBuffer<T>(var value: T);
+begin
+  ReadBuffer(value, SizeOf(T));
+end;
+
+procedure TStreamHelper.WriteBuffer<T>(const value: T);
+begin
+  WriteBuffer(value, SizeOf(T));
+end;
+
+{ TStringsHelper }
+
+procedure TStringsHelper.AddOrUpdate(const name, value: string);
+var
+  index: Integer;
+begin
+  index := IndexOfName(name);
+  if index <> -1 then
+  begin
+    Strings[index] := name + NameValueSeparator + value;
+  end
+  else
+  begin
+    Add(name + NameValueSeparator + value);
+  end;
+end;
+
+procedure TStringsHelper.ExecuteUpdate(proc: TProc);
+begin
+  UpdateStrings(Self, proc);
+end;
+
+function TStringsHelper.ContainsName(const name: string): Boolean;
+begin
+  Result := IndexOfName(name) <> -1;
+end;
+
+function TStringsHelper.ContainsValue(const value: string): Boolean;
+var
+  v: string;
+  i: Integer;
+begin
+  Result := False;
+  for i := 0 to Count - 1 do
+  begin
+    v := ValueFromIndex[i];
+    if SameText(v, value) then
+    begin
+      Exit(True);
+    end;
+  end;
+end;
+
+function TStringsHelper.ContainsObject(obj: TObject): Boolean;
+begin
+  Result := IndexOfObject(obj) <> -1;
+end;
+
+function TStringsHelper.GetValueOrDefault<T>(const name: string;
+  const default: T): T;
+var
+  index: Integer;
+  value: string;
+begin
+  index := IndexOfName(name);
+  if index <> -1 then
+  begin
+    value := ValueFromIndex[index];
+  end;
+  if value <> '' then
+  begin
+    Result := TValue.From<string>(value).AsType<T>;  // TODO: Fix this ASAP because TValue.AsType<T> sucks...
+  end
+  else
+  begin
+    Result := default;
+  end;
+end;
+
+function TStringsHelper.ToArray: TStringDynArray;
+var
+  i: Integer;
+begin
+  SetLength(Result, Count);
+  for i := 0 to Count - 1 do
+  begin
+    Result[i] := Strings[i];
+  end;
+end;
+
+function TStringsHelper.GetIsEmpty: Boolean;
+begin
+  Result := Count = 0;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TFieldHelper'}
+
+function TFieldHelper.GetValueOrDefault<T>(const default: T): T;
+var
+  v: TValue;
+begin
+  if not IsNull then
+  begin
+    v := TValue.FromVariant(Value);
+    Result := v.AsType<T>;
+  end
+  else
+  begin
+    Result := default;
   end;
 end;
 
