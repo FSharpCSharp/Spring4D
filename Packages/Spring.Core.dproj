@@ -64,6 +64,7 @@
 			<DCCReference Include="..\Source\Core\Spring.Core.ResourceStrings.pas"/>
 			<DCCReference Include="..\Source\Core\Pool\Spring.Pool.pas"/>
 			<DCCReference Include="..\Source\Core\Binding\Spring.Binding.pas"/>
+			<DCCReference Include="..\Source\Core\Binding\Spring.Binding.DB.pas"/>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>
 			</BuildConfiguration>

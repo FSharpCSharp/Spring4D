@@ -5,7 +5,7 @@ program BindingDemo;
 uses
   Forms,
   Model in 'Source\Model.pas',
-  VclControlsBindingForm in 'Source\VclControlsBindingForm.pas' {frmMain};
+  MainForm in 'Source\MainForm.pas' {frmMain};
 
 {$R *.res}
 

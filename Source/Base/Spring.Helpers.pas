@@ -87,7 +87,12 @@ type
     function GetIsEmpty: Boolean;
   public
     procedure AddOrUpdate(const name, value: string);
+//    procedure Remove(const s: string);
     procedure ExecuteUpdate(proc: TProc);
+//    procedure GetNames(strings: TStrings);
+//    procedure GetValues(strings: TStrings);
+//    function GetNames: TStringDynArray;
+//    function GetValues: TStringDynArray;
     function ContainsName(const name: string): Boolean;
     function ContainsValue(const value: string): Boolean;
     function ContainsObject(obj: TObject): Boolean;
@@ -96,12 +101,14 @@ type
     property IsEmpty: Boolean read GetIsEmpty;
   end;
 
-//  TDataSetHelper = class helper for TDataSet
-//  public
-//    procedure SaveChanges;
-//    function GetEnumerator: TDataSetEnumerator;
+  TDataSetHelper = class helper for TDataSet
+  public
+    function GetValueOrDefault<T>(const fieldName: string; const default: T): T;
+    procedure CopyRecordFrom(source: TDataSet);
+//    procedure EnumerateRows(proc: TProc);
+//    procedure Clear;
 //    property IsModified: Boolean;
-//  end;
+  end;
 
   TFieldHelper = class helper for TField
   public
@@ -408,7 +415,39 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TFieldHelper'}
+{$REGION 'DB'}
+
+{ TDataSetHelper }
+
+procedure TDataSetHelper.CopyRecordFrom(source: TDataSet);
+var
+  field: TField;
+  sourceField: TField;
+begin
+  TArgument.CheckNotNull(source, 'source');
+  for field in Fields do
+  begin
+    if not field.ReadOnly and (field.FieldKind = fkData) then
+    begin
+      sourceField := source.FindField(field.FieldName);
+      if sourceField <> nil then
+      begin
+        field.Value := sourceField.Value;
+      end;
+    end;
+  end;
+end;
+
+function TDataSetHelper.GetValueOrDefault<T>(const fieldName: string;
+  const default: T): T;
+var
+  field: TField;
+begin
+  field := FieldByName(fieldName);
+  Result := field.GetValueOrDefault<T>(default);
+end;
+
+{ TFieldHelper }
 
 function TFieldHelper.GetValueOrDefault<T>(const default: T): T;
 var

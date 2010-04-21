@@ -1,4 +1,4 @@
-unit VclControlsBindingForm;
+unit MainForm;
 
 interface
 
@@ -8,15 +8,23 @@ uses
   Spring.System,
   Spring.Binding,
   Spring.Collections,
-  Spring.Reflection, Rtti,
-  Model, ExtCtrls;
+  Spring.Reflection,
+  Spring.Binding.DB,
+  Rtti,
+  Model, ExtCtrls, Mask, DBCtrls, DB, Grids, DBGrids;
 
 type
   TfrmMain = class(TForm)
-    lstCustomers: TListBox;
+    lstCustomers: TDBListBox;
     grpInformation: TGroupBox;
-    edtName: TLabeledEdit;
-    edtCity: TLabeledEdit;
+    edtName: TDBEdit;
+    edtCity: TDBEdit;
+    lbl1: TLabel;
+    lbl2: TLabel;
+    dbnvgr1: TDBNavigator;
+    edtAge: TDBEdit;
+    lbl3: TLabel;
+    dbgrd1: TDBGrid;
     procedure FormCreate(Sender: TObject);
   private
     { Private declarations }
@@ -24,9 +32,11 @@ type
     fCustomers: IList<TCustomer>;
     function GetCustomers: IList<TCustomer>;
     procedure PopulateCustomers(const customers: IList<TCustomer>);
+    function GetSelected: TCustomer;
   public
     { Public declarations }
     property Customers: IList<TCustomer> read GetCustomers;
+    property Selected: TCustomer read GetSelected;
   end;
 
 var
@@ -39,17 +49,10 @@ implementation
 procedure TfrmMain.FormCreate(Sender: TObject);
 begin
   fContext := TBindingContext.Create(Self);
-  fContext.DataSource := Self;
-  fContext.AddBinding('lstCustomers.Items', 'Customers').Columns.Add('Name');
-
-//  with fContext.AddContext('Clients') do
-//  begin
-//    AddBinding('Name', 'edtName.Text');
-//    AddBinding('Address.City', 'edtName.Text');
-//  end;
-
-//  fContext.AddBinding('Customers.Name', 'edtName.Text');
-//  fContext.AddBinding('Customers.Address.City', 'edtName.Text');
+  fContext.DataSource := Self;  //?
+  fContext.AddBinding('edtName', 'Selected.Name');
+  fContext.AddBinding('edtAge', 'Selected.Age');
+  fContext.AddBinding('edtCity', 'Selected.Address.City');
   fContext.IsActive := True;
 end;
 
@@ -63,6 +66,11 @@ begin
   Result := fCustomers;
 end;
 
+function TfrmMain.GetSelected: TCustomer;
+begin
+  Result := Customers.First;
+end;
+
 procedure TfrmMain.PopulateCustomers(const customers: IList<TCustomer>);
 var
   paul: TCustomer;
@@ -70,6 +78,7 @@ var
 begin
   paul := TCustomer.Create;
   paul.Name := 'Paul';
+  paul.BirthDate := EncodeDate(1983, 10, 27);
   paul.Address.City := 'Shanghai';
 
   david := TCustomer.Create;

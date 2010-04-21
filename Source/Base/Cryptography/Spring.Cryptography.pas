@@ -310,6 +310,7 @@ type
     fKey: TBuffer;
     fIV: TBuffer;
     function GetBlockSizeInBytes: Integer;
+    function GetKeySizeInBytes: Integer;
   protected
     function GetBlockSize: Integer; virtual;
     function GetKeySize: Integer; virtual;
@@ -332,6 +333,7 @@ type
     function GenerateIV: TBuffer; virtual;
     function GenerateKey: TBuffer; virtual;
     property BlockSizeInBytes: Integer read GetBlockSizeInBytes;
+    property KeySizeInBytes: Integer read GetKeySizeInBytes;
   protected
     procedure DoEncryptBlock(const inputBuffer: TBytes; var outputBuffer: TBytes); virtual; abstract;
     procedure DoDecryptBlock(const inputBuffer: TBytes; var outputBuffer: TBytes); virtual; abstract;
@@ -587,8 +589,11 @@ begin
 end;
 
 procedure TSymmetricAlgorithmBase.ValidateKey(const key: TBuffer);
+var
+  sizes: TSizes;
 begin
-  if not fLegalKeySizes.Contains(key.Size * 8) then
+  sizes := fLegalKeySizes;
+  if not sizes.Contains(key.Size * 8) then
   begin
     raise ECryptographicException.CreateResFmt(@SIllegalKeySize, [key.Size]);
   end;
@@ -949,7 +954,7 @@ var
   buffer: TBytes;
 begin
   generator := TRandomNumberGenerator.Create;
-  SetLength(buffer, KeySize);
+  SetLength(buffer, KeySizeInBytes);
   generator.GetBytes(buffer);
   Result := buffer;
 end;
@@ -967,6 +972,11 @@ end;
 function TSymmetricAlgorithmBase.GetKeySize: Integer;
 begin
   Result := fKeySize;
+end;
+
+function TSymmetricAlgorithmBase.GetKeySizeInBytes: Integer;
+begin
+  Result := fKeySize div 8;
 end;
 
 function TSymmetricAlgorithmBase.GetLegalBlockSizes: TSizes;

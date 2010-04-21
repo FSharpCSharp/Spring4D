@@ -22,9 +22,6 @@
 {                                                                           }
 {***************************************************************************}
 
-{TODO -oPaul -cGeneral : Add TProcess class}
-{TODO -oPaul -cGeneral : Add TServiceController class}
-
 unit Spring.Utils;
 
 {$I Spring.inc}

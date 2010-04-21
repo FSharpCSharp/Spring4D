@@ -484,14 +484,17 @@ begin
 end;
 
 procedure TTripleDES.SetKey(const value: TBuffer);
+var
+  localKey: TBuffer;
 begin
   inherited SetKey(value);
-  fKey1 := Key.Left(8);
-  fKey2 := Key.Mid(8, 8);
-  if Key.Size = 16 then
+  localKey := Key;  // To avoid some certain bug on thread.
+  fKey1 := localKey.Left(8);
+  fKey2 := localKey.Mid(8, 8);
+  if localKey.Size = 16 then
     fKey3 := fKey1
-  else if Key.Size = 24 then
-    fKey3 := Key.Right(8)
+  else if localKey.Size = 24 then
+    fKey3 := localKey.Right(8)
   else
     raise ECryptographicException.CreateResFmt(@SIllegalKeySize, [value.Size]);
 end;

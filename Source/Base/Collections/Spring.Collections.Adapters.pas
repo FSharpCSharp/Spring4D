@@ -38,6 +38,7 @@ uses
   Rtti,
   Generics.Defaults,
   Generics.Collections,
+  Spring.System,
   Spring.Collections;
 
 type
@@ -64,13 +65,15 @@ type
   /// <summary>
   /// TListAdapter<T>
   /// </summary>
-  TListAdapter<T> = class(TEnumerableEx<T>, IList<T>, ICollection<T>)
+  TListAdapter<T> = class(TEnumerableEx<T>, IList<T>, ICollection<T>, IItemTypeSupport)
   protected
     fList: TList<T>;
     fOwnership: TCollectionOwnership;
     function GetIsReadOnly: Boolean; virtual;
     function GetItem(index: Integer): T;
     procedure SetItem(index: Integer; const Value: T);
+  protected
+    function GetItemType: PTypeInfo;
   protected
     function GetCount: Integer; override;
     function GetIsEmpty: Boolean; override;
@@ -317,6 +320,11 @@ end;
 function TListAdapter<T>.GetItem(index: Integer): T;
 begin
   Result := fList[index];
+end;
+
+function TListAdapter<T>.GetItemType: PTypeInfo;
+begin
+  Result := TypeInfo(T);
 end;
 
 procedure TListAdapter<T>.SetItem(index: Integer; const Value: T);

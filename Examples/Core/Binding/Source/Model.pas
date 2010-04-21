@@ -31,12 +31,17 @@ type
   TCustomer = class(TDomainObject)
   private
     fName: string;
+    fBirthDate: TNullableDateTime;
     fAddress: TAddress;
+    function GetAge: TNullableInteger;
     procedure SetName(const value: string);
+    procedure SetBirthDate(const Value: TNullableDateTime);
   public
     constructor Create;
     destructor Destroy; override;
     property Name: string read fName write SetName;
+    property Age: TNullableInteger read GetAge;
+    property BirthDate: TNullableDateTime read fBirthDate write SetBirthDate;
     property Address: TAddress read fAddress;
   end;
 
@@ -121,6 +126,9 @@ type
 
 implementation
 
+uses
+  DateUtils;
+
 { TCustomer }
 
 constructor TCustomer.Create;
@@ -135,9 +143,22 @@ begin
   inherited;
 end;
 
+function TCustomer.GetAge: TNullableInteger;
+begin
+  if BirthDate.HasValue then
+    Result := TNullableInteger.Create(YearOf(Today) - YearOf(BirthDate))
+  else
+    Result := nil;
+end;
+
 procedure TCustomer.SetName(const value: string);
 begin
   SetProperty<string>('Name', fName, value);
+end;
+
+procedure TCustomer.SetBirthDate(const Value: TNullableDateTime);
+begin
+  SetProperty<TNullableDateTime>('BirthDate', fBirthDate, value);
 end;
 
 { TAddress }

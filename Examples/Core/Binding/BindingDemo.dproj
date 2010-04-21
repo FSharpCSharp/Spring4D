@@ -20,7 +20,7 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
-			<DCC_UnitSearchPath>..\..\..\Source\Core\Binding;..\..\..\Source\Base;..\..\..\Source\Base\Collections;..\..\..\Source\Core;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UnitSearchPath>..\..\..\Source\Base;..\..\..\Source\Base\Collections;..\..\..\Source\Core;..\..\..\Source\Core\Binding;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DCC_Optimize>false</DCC_Optimize>
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
 			<DCC_DependencyCheckOutputName>BindingDemo.exe</DCC_DependencyCheckOutputName>
@@ -48,7 +48,7 @@
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
 			<DCCReference Include="Source\Model.pas"/>
-			<DCCReference Include="Source\VclControlsBindingForm.pas">
+			<DCCReference Include="Source\MainForm.pas">
 				<Form>frmMain</Form>
 			</DCCReference>
 			<BuildConfiguration Include="Base">

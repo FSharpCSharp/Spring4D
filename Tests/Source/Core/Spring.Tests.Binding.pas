@@ -28,9 +28,12 @@ interface
 
 uses
   Classes,
+  Messages,
   SysUtils,
   Forms,
   StdCtrls,
+  Controls,
+  DBCtrls,
   TestFramework,
   Spring.System,
   Spring.Reflection,
@@ -105,9 +108,9 @@ type
   protected
     fContext: IBindingContext;
     fForm: TComponent;
-    fNameEdit: TEdit;
-    fAgeEdit: TEdit;
-    fCityEdit: TEdit;
+    fNameEdit: TDBEdit;
+    fAgeEdit: TDBEdit;
+    fCityEdit: TDBEdit;
     procedure SetUp; override;
     procedure TearDown; override;
   end;
@@ -127,6 +130,9 @@ type
     procedure TestNamePropertyChanged;
     procedure TestAgePropertyChanged;
     procedure TestCityPropertyChanged;
+    procedure TestNameEditChanged;
+//    procedure TestAgeEditChanged;
+//    procedure TestCityEditChanged;
   end;
 
   TTestBindNullableProperty = class(TBindingTestCase)
@@ -149,7 +155,7 @@ type
   private
     fContext: IBindingContext;
     fForm: TForm;
-    fListBox: TListBox;
+    fListBox: TDBListBox;
     fPerson: TPerson;
   protected
     procedure CheckItems; virtual;
@@ -253,14 +259,15 @@ procedure TBindingTestCase.SetUp;
 begin
   inherited;
   fForm := TComponent.Create(nil);
-  fContext := TBindingContext.Create(fForm);
-  fNameEdit := TEdit.Create(fForm);
-  fAgeEdit := TEdit.Create(fForm);
-  fCityEdit := TEdit.Create(fForm);
+  fNameEdit := TDBEdit.Create(fForm);
+  fAgeEdit := TDBEdit.Create(fForm);
+  fCityEdit := TDBEdit.Create(fForm);
 
   fNameEdit.Name := 'NameEdit';
   fAgeEdit.Name := 'AgeEdit';
   fCityEdit.Name := 'CityEdit';
+
+  fContext := TBindingContext.Create(fForm);
 end;
 
 procedure TBindingTestCase.TearDown;
@@ -282,9 +289,9 @@ begin
   fPerson.Address.City := 'Shanghai';
 
   fContext.DataSource := fPerson;
-  fContext.AddBinding('NameEdit.Text', 'Name');
-  fContext.AddBinding('AgeEdit.Text', 'Age');
-  fContext.AddBinding('CityEdit.Text', 'Address.City');
+  fContext.AddBinding('NameEdit', 'Name');
+  fContext.AddBinding('AgeEdit', 'Age');
+  fContext.AddBinding('CityEdit', 'Address.City');
   fContext.IsActive := True;
 end;
 
@@ -338,6 +345,19 @@ begin
   CheckEquals(fPerson.Address.City, fCityEdit.Text);
 end;
 
+procedure TTestBindSimpleProperty.TestNameEditChanged;
+var
+  oldName: string;
+  newName: string;
+begin
+  oldName := fPerson.Name;
+  newName := 'New Paul';
+  fNameEdit.Text := newName;
+  CheckEquals(oldName, fPerson.Name);
+  fNameEdit.Perform(CM_Exit, 0, 0);
+  CheckEquals(newName, fPerson.Name);
+end;
+
 {$ENDREGION}
 
 
@@ -352,9 +372,9 @@ begin
   fPerson.Address.City := 'Shanghai';
 
   fContext.DataSource := fPerson;
-  fContext.AddBinding('NameEdit.Text', 'Name');
-  fContext.AddBinding('AgeEdit.Text', 'Age');
-  fContext.AddBinding('CityEdit.Text', 'Address.City');
+  fContext.AddBinding('NameEdit', 'Name');
+  fContext.AddBinding('AgeEdit', 'Age');
+  fContext.AddBinding('CityEdit', 'Address.City');
 
   fContext.IsActive := True;
 end;
@@ -425,10 +445,10 @@ begin
   inherited;
   fForm := TForm.Create(nil);
   fContext := TBindingContext.Create(fForm);
-  fListBox := TListBox.Create(fForm);
-  fPerson := TPerson.Create;
+  fListBox := TDBListBox.Create(fForm);
   fListBox.Name := 'AddressListBox';
   fListBox.Parent := fForm;
+  fPerson := TPerson.Create;
   fAddress := TAddress.Create;
   fAddress.City := 'Shanghai';
   fFriendlyAddress := TFriendlyAddress.Create;

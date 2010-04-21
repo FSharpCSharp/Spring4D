@@ -23,7 +23,7 @@
 {***************************************************************************}
 
 /// <summary>
-/// The Data Binding of the Delphi Spring Framework provides a flexible and
+/// The Data Binding of Delphi Spring Framework provides a flexible and
 /// consistent way to bind two bindable elements which could be a native or
 /// complex property as well as a list or array.
 /// </summary>
@@ -34,10 +34,11 @@ interface
 uses
   Classes,
   SysUtils,
+  TypInfo,
 //  Controls,
   DB,
 //  DBCtrls,
-  Rtti, TypInfo,
+  Rtti,
   Generics.Collections,
   Spring.System,
   Spring.Collections,
@@ -90,7 +91,18 @@ type
 
   {$REGION 'Spring.System'}
 
-  TNotifyEventHandler = reference to procedure (sender: TObject);
+  (*
+  /// <summary>
+  /// INullable
+  /// </summary>
+  INullable = interface
+    ['{D3BB1062-8B2C-4F65-A719-8EFDD8CC3364}']
+  {$REGION 'Property Getters and Setters'}
+    function GetIsNull: Boolean;
+  {$ENDREGION}
+    property IsNull: Boolean read GetIsNull;
+  end;
+  //*)
 
   /// <summary>
   /// IValueProvider
@@ -119,17 +131,6 @@ type
     /// Gets a value that indicates whether the value is read-only.
     /// </summary>
     property IsReadOnly: Boolean read GetIsReadOnly;
-  end;
-
-  /// <summary>
-  /// INullable
-  /// </summary>
-  INullable = interface
-    ['{D3BB1062-8B2C-4F65-A719-8EFDD8CC3364}']
-  {$REGION 'Property Getters and Setters'}
-    function GetIsNull: Boolean;
-  {$ENDREGION}
-    property IsNull: Boolean read GetIsNull;
   end;
 
 //  IValueConverter = interface
@@ -250,19 +251,25 @@ type
 
   // IEditable ?
 
-  (*
+  IBindableMember = interface(IBindable)
+    ['{2E73DE2C-CA67-4CDA-A11C-109E80F3322C}']
+//    property Member: TRttiMember;
+  end;
+
   /// <summary>
   /// Bindable Component (Visual Element).
   /// </summary>
   IBindableComponent = interface(IBindable)
     ['{514ED690-DB4A-4663-993F-794F0A3F26A3}']
   {$REGION 'Property Getters and Setters'}
-    function GetComponent: TObject;
+    function GetAsComponent: TComponent;
   {$ENDREGION}
-    procedure SetIsReadOnly(value: Boolean);
-    property Component: TObject read GetComponent;
+//    procedure SetIsReadOnly(value: Boolean);
+    property AsComponent: TComponent read GetAsComponent;
     // TODO: ? Event Handlers (OnEnter/OnExit/OnLostFocus/OnChanged)
   end;
+
+  (*
 
   /// <summary>
   /// Data-aware control.
@@ -281,7 +288,7 @@ type
   /// <summary>
   /// TBindableMember
   /// </summary>
-  TBindableMember = class(TInterfacedObject, IBindable, IValueProvider, IInitializable)
+  TBindableMember = class(TInterfacedObject, IBindableMember, IBindable, IValueProvider, IInitializable)
   private
     fInstance: TValue;
 //    fElements: TArray<string>;
@@ -310,6 +317,35 @@ type
     property ValueType: PTypeInfo read GetValueType;
     property IsReadOnly: Boolean read GetIsReadOnly;
     property TypeKind: TTypeKind read GetTypeKind;
+  end;
+
+  TBindableComponent = class(TInterfacedObject, IBindableComponent, IBindable,
+    IValueProvider, IInitializable)
+  private
+    fComponent: TComponent;
+    fDataSource: TDataSource;
+    fFieldName: string;
+    fField: TField;
+    fValueType: PTypeInfo;
+    function GetField: TField;
+  protected
+    function GetValue: TValue;
+    function GetValueType: PTypeInfo;
+    function GetIsReadOnly: Boolean;
+    function GetAsComponent: TComponent;
+    property Field: TField read GetField;
+  protected
+    fIsInitialized: Boolean;
+    procedure Initialize;
+  public
+    constructor Create(component: TComponent; dataSource: TDataSource; const fieldName: string;
+      valueType: PTypeInfo);
+    procedure SetValue(const value: TValue);
+//    procedure SetIsReadOnly(value: Boolean);
+    property Value: TValue read GetValue;
+    property ValueType: PTypeInfo read GetValueType;
+    property IsReadOnly: Boolean read GetIsReadOnly;
+    property AsComponent: TComponent read GetAsComponent;
   end;
 
   /// <summary>
@@ -357,8 +393,11 @@ type
   /// </summary>
   TBindingContext = class(TInterfacedObject, IBindingContext)
   private
+    fRttiContext: TRttiContext;
     fOwner: TComponent;
     fDataSource: TValue;
+    fObjectDataSource: TDataSource;
+    fObjectDataSet: TDataSet;
     fIsActive: Boolean;
     fBindings: IList<IBinding>;
     fMappings: IDictionary<string, IBinding>;
@@ -369,6 +408,7 @@ type
     procedure SetIsActive(const value: Boolean);
     procedure SetDataSource(const value: TValue);
   protected
+    procedure DoInitializeFields(sender: TDataSet);
     procedure DoPropertyChanged(sender: TObject; const e: TPropertyNotificationEventArgs);
     procedure InitializeBindings; virtual;
   public
@@ -395,18 +435,28 @@ type
   end;
   //*)
 
+  EBindingException = class(Exception);
+
+  TDataSetHack = class(TDataSet);
+
 resourcestring
   SInvalidBindingExpression = 'Invalid binding expression: "%s".';
-
-implementation
-
-uses
-  Spring.Helpers;
+  SCannotSetReadOnlyProperty = 'Invalid Operation: The property is read-only.';
 
 // Parse a string, for example: "A|B|C|D|E|F"?
 // Result := Parse('|', "A|B|C|D|E|F") => Result = A, expression = B|C|D|E|F
 // Result = B, expression = C|D|E|F
 // ...
+function ExtractNextElement(var expression: string; const delimiter: string): string;
+
+//function ExtractNextString(var expression: string; var s: string; const delimiters: TSysCharSet = ['.']): Boolean;
+
+implementation
+
+uses
+  Spring.Binding.DB,
+  Spring.Helpers;
+
 function ExtractNextElement(var expression: string; const delimiter: string): string;
 var
   p: Integer;
@@ -414,7 +464,8 @@ begin
   p := Pos(delimiter, expression);
   if p = 0 then
   begin
-    Exit(expression);
+    Result := expression;
+    SetLength(expression, 0);
   end
   else
   begin
@@ -516,7 +567,14 @@ end;
 
 procedure TBindableMember.SetValue(const value: TValue);
 begin
-  PropertyMember.SetValue(fInstance, value);
+  if not IsReadOnly then
+  begin
+    PropertyMember.SetValue(fInstance, value);
+  end
+  else
+  begin
+    raise EInvalidOperation.CreateRes(@SCannotSetReadOnlyProperty);
+  end;
 end;
 
 {$ENDREGION}
@@ -732,8 +790,13 @@ constructor TBindingContext.Create(owner: TComponent);
 begin
   inherited Create;
   fOwner := owner;
+  fRttiContext := TRttiContext.Create;
   fMappings := TCollections.CreateDictionary<string, IBinding>;
   fOnPropertyChanged := DoPropertyChanged;
+  fObjectDataSource := TDataSource.Create(nil);
+  fObjectDataSet := TBindableDataSet.Create(nil);
+  TBindableDataSet(fObjectDataSet).OnInitializeFields := DoInitializeFields;
+  fObjectDataSource.DataSet := fObjectDataSet;
 end;
 
 destructor TBindingContext.Destroy;
@@ -744,17 +807,108 @@ begin
 //    fCollectionNotifications.Clear;
     fMappings.Clear;
   end;
+  fObjectDataSet.Free;
+  fObjectDataSource.Free;
+  fRttiContext.Free;
   inherited Destroy;
+end;
+
+procedure TBindingContext.DoInitializeFields(sender: TDataSet);
+var
+  fieldName: string;
+  bindable: IBindable;
+  underlyingTypeInfo: PTypeInfo;
+  valueTypeInfo: PTypeInfo;
+  valueTypeData: PTypeData;
+  valueType: TRttiType;
+  isNullable: Boolean;
+  def: TFieldDef;
+begin
+  with sender do
+  begin
+    FieldDefs.Clear;
+    for fieldName in fMappings.Keys do
+    begin
+      bindable := fMappings[fieldName].Source;
+      TBindableDataSet(sender).FieldMappings.AddOrSetValue(fieldName, bindable);
+      isNullable := TryGetUnderlyingTypeInfo(bindable.ValueType, underlyingTypeInfo);
+      if isNullable then
+      begin
+        valueTypeInfo := underlyingTypeInfo;
+      end
+      else
+      begin
+        valueTypeInfo := bindable.ValueType;
+      end;
+
+      valueType := fRttiContext.GetType(valueTypeInfo);
+      // RTTI
+      def := FieldDefs.AddFieldDef;
+      def.Required := not isNullable;
+      def.Name := fieldName;
+      case valueTypeInfo.Kind of
+        tkInteger:
+          begin
+            def.DataType := ftInteger;
+          end;
+        tkEnumeration:
+          begin
+
+          end;
+        tkString, tkLString:
+          begin
+            def.DataType := ftString;
+            def.Size := 255;  // TEMP
+          end;
+        tkWString, tkUString:
+          begin
+            def.DataType := ftWideString;
+            def.Size := 255;
+          end;
+        tkInt64:
+          begin
+            def.DataType := ftLargeint;
+          end;
+        tkFloat:
+          begin
+            // TODO: TDateTime, etc.
+            valueTypeData := GetTypeData(valueTypeInfo);
+            case valueTypeData.FloatType of
+              TypInfo.ftSingle:
+                begin
+                  def.DataType := ftSingle;
+                end;
+              TypInfo.ftDouble:
+                begin
+                  def.DataType := ftFloat;
+                end;
+              TypInfo.ftExtended:
+                begin
+                  def.DataType := ftExtended;
+                end;
+              TypInfo.ftCurr:
+                begin
+                  def.DataType := ftCurrency;
+                end;
+            end;
+          end;
+//        tkChar, tkWChar, tkEnumeration
+      end;
+    end;
+  end;
 end;
 
 procedure TBindingContext.DoPropertyChanged(sender: TObject;
   const e: TPropertyNotificationEventArgs);
 var
   binding: IBinding;
+  field: TField;
 begin
   if fMappings.TryGetValue(e.PropertyName, binding) then
   begin
-    binding.UpdateTarget;
+//    binding.UpdateTarget;
+    field := fObjectDataSet.FieldByName(e.PropertyName);
+    TDataSetHack(fObjectDataSet).DataEvent(deFieldChange, Integer(field));
   end;
 end;
 
@@ -762,9 +916,12 @@ procedure TBindingContext.InitializeBindings;
 var
   binding: IBinding;
 begin
+  fObjectDataSet.Open;
   for binding in Bindings do
   begin
-    binding.Initialize;
+    (binding.Source as IInitializable).Initialize;
+    (binding.Target as IInitializable).Initialize;
+//    binding.Initialize;
   end;
 end;
 
@@ -781,9 +938,15 @@ function TBindingContext.AddBinding(const sourceExpression: string;
 var
   bindingSource: IBindable;
   bindingTarget: IBindable;
+//  component: TComponent;
 begin
-  bindingSource := TBindableMember.Create({Self} fDataSource, sourceExpression);
-  bindingTarget := TBindableMember.Create(target, targetExpression);
+  bindingSource := TBindableMember.Create({Self, } fDataSource, sourceExpression);
+  bindingTarget := TBindableComponent.Create(
+    target.AsType<TComponent>,
+    fObjectDataSource,
+    sourceExpression,
+    bindingSource.ValueType
+  );
   Result := TBinding.Create(Self, bindingSource, bindingTarget);
   Bindings.Add(Result);
   fMappings.Add(sourceExpression, Result);
@@ -798,7 +961,7 @@ var
 begin
   expression := targetExpression;
   targetName := ExtractNextElement(expression, '.');
-  target := fOwner.FindComponent(targetName);
+  target := FindComponent(targetName);
   Result := AddBinding(sourceExpression, target, expression);
 end;
 
@@ -843,6 +1006,78 @@ begin
     InitializeBindings;
     fIsActive := value;
   end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TBindableComponent'}
+
+constructor TBindableComponent.Create(component: TComponent;
+  dataSource: TDataSource; const fieldName: string; valueType: PTypeInfo);
+begin
+  inherited Create;
+  fComponent := component;
+  fDataSource := dataSource;
+  fFieldName := fieldName;
+  fValueType := valueType;
+end;
+
+function TBindableComponent.GetAsComponent: TComponent;
+begin
+  Result := fComponent;
+end;
+
+function TBindableComponent.GetField: TField;
+begin
+  if not fIsInitialized then
+    Initialize;
+  Result := fField;
+end;
+
+function TBindableComponent.GetIsReadOnly: Boolean;
+begin
+  Result := GetField.ReadOnly;
+end;
+
+function TBindableComponent.GetValue: TValue;
+begin
+  Result := TValue.FromVariant(GetField.Value);
+end;
+
+function TBindableComponent.GetValueType: PTypeInfo;
+begin
+  Result := fValueType;
+end;
+
+procedure TBindableComponent.Initialize;
+var
+  propertyMember: TRttiProperty;
+  fieldName: TValue;
+begin
+  with TType.GetType(fComponent) do
+  begin
+    // Use TDataLink?
+    propertyMember := GetProperty('DataSource');
+    if propertyMember <> nil then
+    begin
+      propertyMember.SetValue(fComponent, fDataSource);
+    end;
+
+    propertyMember := GetProperty('DataField');
+    if propertyMember <> nil then
+    begin
+      fieldName := TValue.From<WideString>(fFieldName);
+      propertyMember.SetValue(fComponent, fieldName);
+    end;
+  end;
+  fField := fDataSource.DataSet.FieldByName(fFieldName);
+  fIsInitialized := True;
+end;
+
+procedure TBindableComponent.SetValue(const value: TValue);
+begin
+  GetField.Value := value.AsVariant;
 end;
 
 {$ENDREGION}

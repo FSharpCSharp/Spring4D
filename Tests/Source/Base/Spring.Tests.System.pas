@@ -591,6 +591,7 @@ var
   dirtyValue: TNullable<Integer>;  { lives in stack }
 begin
   CheckFalse(dirtyValue.HasValue);
+  dirtyValue := 5;
 end;
 
 procedure TTestNullableInteger.TestFromVariant;
@@ -838,7 +839,7 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TTestTryParseDateTime'}
+{$REGION 'TTestTryConvertStrToDateTime'}
 
 procedure TTestTryConvertStrToDateTime.TestParseDate;
 var

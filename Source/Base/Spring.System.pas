@@ -22,9 +22,6 @@
 {                                                                           }
 {***************************************************************************}
 
-{TODO -oPaul -cGeneral : TArrayBuilder<T>}
-{TODO -oPaul -cGeneral : Add more util functions on variants (TVariant)}
-
 /// <summary>
 /// Declares the fundamental types and rountines in the Delphi Spring Framework.
 /// </summary>
@@ -189,11 +186,11 @@ type
   strict private
     fBytes: TBytes;
     function GetIsEmpty: Boolean;
-    function GetMemory: PByte;
-    function GetSize: Integer;
+    function GetMemory: PByte; inline;
+    function GetSize: Integer; inline;
     function GetByteItem(const index: Integer): Byte;
-    procedure SetByteItem(const index: Integer; const value: Byte);
     procedure SetSize(const value: Integer);
+    procedure SetByteItem(const index: Integer; const value: Byte);
   private
     class var fEmpty: TBuffer;
   public
@@ -202,6 +199,8 @@ type
     constructor Create(const buffer: Pointer; startIndex, count: Integer); overload;
     constructor Create(const buffer: array of Byte); overload;
     constructor Create(const buffer: array of Byte; startIndex, count: Integer); overload;
+//    constructor Create(const buffer: array of Char); overload;
+//    constructor Create(const buffer: array of Char; startIndex, count: Integer); overload;
     constructor Create(const s: string); overload;
     constructor Create(const s: WideString); overload;
     constructor Create(const s: RawByteString); overload;
@@ -219,7 +218,7 @@ type
 
     function Clone: TBuffer;
     function Copy(startIndex, count: Integer): TBytes;
-//    function Reverse: TBuffer;
+    function Reverse: TBuffer;
 
     function Left(count: Integer): TBuffer;
     function Mid(startIndex, count: Integer): TBuffer;
@@ -237,18 +236,19 @@ type
     function Equals(const buffer: Pointer; count: Integer): Boolean; overload;
     function Equals(const hexString: string): Boolean; overload;
 
-//    procedure LoadFromStream(stream: TStream);
+//    procedure LoadFromStream(stream: TStream; count: Integer);
     procedure SaveToStream(stream: TStream);
 
     function ToBytes: TBytes;
     function ToString: string; experimental;
-    function ToWideString: WideString; experimental;
-    function ToAnsiString: RawByteString; experimental;
-    function ToUtf8String: UTF8String; experimental;
+    function ToWideString: WideString; experimental;  // deprecated;
+    function ToAnsiString: RawByteString; experimental; // deprecated;
+    function ToUtf8String: UTF8String; experimental; // deprecated;
 
     function ToHexString: string; overload;
     function ToHexString(const prefix: string; const delimiter: string = ' '): string; overload;
 
+//    function AsType<T>: T;
     property AsBytes: TBytes read fBytes;
     property IsEmpty: Boolean read GetIsEmpty;
     property Memory: PByte read GetMemory;
@@ -266,6 +266,7 @@ type
     class operator Explicit(const value: TBuffer): PByte;
     class operator Add(const left, right: TBuffer): TBuffer;
     class operator Add(const left: TBuffer; const right: Byte): TBuffer;
+//    class operator Add(const left: Byte; const right: TBuffer): TBuffer;
     class operator Equal(const left, right: TBuffer): Boolean;
     class operator NotEqual(const left, right: TBuffer): Boolean;
 //    class operator BitwiseAnd(const left, right: TBuffer): TBuffer;
@@ -328,6 +329,11 @@ type
     fHasValue: string;
     function GetValue: T;
     function GetHasValue: Boolean;
+  private
+    /// <summary>
+    /// Clears the value and marks it as null.
+    /// </summary>
+    procedure Clear;
   public
     /// <summary>
     /// Initializes a new instance of the TNullable<T> structure to the specified value.
@@ -342,11 +348,11 @@ type
     /// </summary>
     function GetValueOrDefault: T; overload;
     /// <summary>
-    /// Retrieves the value of the current Nullable<T> object, or the specified default value.
+    /// Retrieves the value of the current TNullable<T> object, or the specified default value.
     /// </summary>
     function GetValueOrDefault(const default: T): T; overload;
     /// <summary>
-    /// Gets a value indicating whether the current Nullable<T> object has a value.
+    /// Gets a value indicating whether the current TNullable<T> object has a value.
     /// </summary>
     property HasValue: Boolean read GetHasValue;
     /// <summary>
@@ -437,7 +443,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TVolatile<T> (Experimental)'}
+  {$REGION 'TVolatile<T> (Deprecated)'}
 
   /// <summary>
   /// Enforces an ordering constraint on memory operations.
@@ -454,7 +460,24 @@ type
     class operator Implicit(const value: TVolatile<T>): T;
     class operator Equal(const left, right: TVolatile<T>): Boolean;
     class operator NotEqual(const left, right: TVolatile<T>): Boolean;
-  end experimental;
+  end deprecated;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TLazyUtils'}
+
+  TLazyUtils = record
+  public
+    /// <summary>
+    /// Uses the TLazyUtils.GetValue<T> method to implement the thread-safe
+    /// lazy-initialization pattern.
+    /// </summary>
+    /// <remarks>
+    /// This method uses InterlockedCompareExchangePointer to ensure thread-safety.
+    /// </remarks>
+    class function GetValue<T: class>(var field: T; const delegate: TFunc<T>): T; static;
+  end;
 
   {$ENDREGION}
 
@@ -598,6 +621,11 @@ type
   IDisposable = interface
     ['{6708F9BF-0237-462F-AFA2-DF8EF21939EB}']
     procedure Dispose;
+  end;
+
+  IItemTypeSupport = interface
+    ['{FE986DD7-41D5-4312-A2F9-94F7D9E642EE}']
+    function GetItemType: PTypeInfo;
   end;
 
   {$ENDREGION}
@@ -889,6 +917,26 @@ type
   /// <exception cref="EArgumentNullException">Raised if strings was nil or proc was not assigned.</exception>
   procedure UpdateStrings(strings: TStrings; proc: TProc); // inline;
 
+  /// <summary>
+  /// Try getting the underlying type name of a nullable type.
+  /// </summary>
+  /// <remarks>
+  /// For instance, the underlyingTypeName of the type "TNullable<System.Integer>"
+  /// is "System.Integer".
+  /// </remarks>
+  function TryGetUnderlyingTypeName(typeInfo: PTypeInfo; out underlyingTypeName: string): Boolean;
+
+  /// <summary>
+  /// Try getting the underlying type info of a nullable type.
+  /// </summary>
+  function TryGetUnderlyingTypeInfo(typeInfo: PTypeInfo; out underlyingTypeInfo: PTypeInfo): Boolean;
+
+  /// <summary>
+  /// Try getting the underlying value of a nullable type.
+  /// </summary>
+  /// <returns>Returns True if the value is a TNullable<T> and it has value. </returns>
+  function TryGetUnderlyingValue(const value: TValue; out underlyingValue: TValue): Boolean;
+
   {$ENDREGION}
 
 
@@ -919,6 +967,7 @@ implementation
 
 uses
   ComObj,
+  StrUtils,
   Spring.ResourceStrings;
 
 
@@ -1153,6 +1202,67 @@ begin
   finally
     strings.EndUpdate;
   end;
+end;
+
+function TryGetUnderlyingTypeName(typeInfo: PTypeInfo; out underlyingTypeName: string): Boolean;
+const
+  PrefixString = 'TNullable<';    // DO NOT LOCALIZE
+  PrefixStringLength = Length(PrefixString);
+var
+  typeName: string;
+begin
+  if (typeInfo = nil) or (typeInfo.Kind <> tkRecord) then
+  begin
+    Exit(False);
+  end;
+  typeName := TypInfo.GetTypeName(typeInfo);
+  if (Length(typeName) < PrefixStringLength) or
+    not SameText(LeftStr(typeName, PrefixStringLength), PrefixString) then
+  begin
+    Exit(False);
+  end;
+  Result := True;
+  underlyingTypeName := Copy(typeName, PrefixStringLength + 1,
+    Length(typeName) - PrefixStringLength - 1);
+end;
+
+function TryGetUnderlyingTypeInfo(typeInfo: PTypeInfo; out underlyingTypeInfo: PTypeInfo): Boolean;
+var
+  underlyingTypeName: string;
+  rttiType: TRttiType;
+  context: TRttiContext;
+begin
+  Result := TryGetUnderlyingTypeName(typeInfo, underlyingTypeName);
+  if Result then
+  begin
+    context := TRttiContext.Create;
+    rttiType := context.FindType(underlyingTypeName);
+    if rttiType <> nil then
+      underlyingTypeInfo := rttiType.Handle
+    else
+      underlyingTypeInfo := nil;
+    Result := underlyingTypeInfo <> nil;
+  end;
+end;
+
+function TryGetUnderlyingValue(const value: TValue; out underlyingValue: TValue): Boolean;
+var
+  underlyingTypeInfo: PTypeInfo;
+  hasValueString: string;
+  p: Pointer;
+begin
+  Result := TryGetUnderlyingTypeInfo(value.TypeInfo, underlyingTypeInfo);
+  if not Result then
+  begin
+    Exit;
+  end;
+  p := value.GetReferenceToRawData;
+  hasValueString := PString(PByte(p) + (value.DataSize - SizeOf(string)))^;
+  if hasValueString = '' then
+  begin
+    Exit(False);
+  end;
+  TValue.Make(p, underlyingTypeInfo, underlyingValue);
 end;
 
 {$ENDREGION}
@@ -1625,6 +1735,20 @@ begin
   Result := ToBytes;
 end;
 
+function TBuffer.Reverse: TBuffer;
+var
+  i: Integer;
+  p: PByte;
+begin
+  SetLength(Result.fBytes, Size);
+  p := @Result.fBytes[Size - 1];
+  for i := 0 to Size - 1 do
+  begin
+    p^ := fBytes[i];
+    Dec(p);
+  end;
+end;
+
 function TBuffer.Copy(startIndex, count: Integer): TBytes;
 begin
   TArgument.CheckRange(fBytes, startIndex, count);
@@ -1758,7 +1882,7 @@ end;
 
 function TBuffer.GetIsEmpty: Boolean;
 begin
-  Result := Self.Size = 0;
+  Result := Length(fBytes) = 0;
 end;
 
 function TBuffer.GetMemory: PByte;
@@ -2008,7 +2132,16 @@ begin
     v := TValue.FromVariant(value);
     fValue := v.AsType<T>;
     fHasValue := fCHasValue;
+  end
+  else
+  begin
+    Clear;
   end;
+end;
+
+procedure TNullable<T>.Clear;
+begin
+  fHasValue := '';
 end;
 
 function TNullable<T>.GetHasValue: Boolean;
@@ -2077,7 +2210,7 @@ begin
   end
   else
   begin
-    Result.fHasValue := '';
+    Result.Clear;
   end;
 end;
 
@@ -2085,7 +2218,7 @@ class operator TNullable<T>.Implicit(value: Pointer): TNullable<T>;
 begin
   if value = nil then
   begin
-    Result.fHasValue := '';
+    Result.Clear;
   end
   else
   begin
@@ -2452,6 +2585,25 @@ begin
 end;
 
 {$WARNINGS ON}
+
+{$ENDREGION}
+
+
+{$REGION 'TLazyUtils'}
+
+class function TLazyUtils.GetValue<T>(var field: T;
+  const delegate: TFunc<T>): T;
+var
+  localValue: T;
+begin
+  if PPointer(@field)^ = nil then
+  begin
+    localValue := delegate();
+    if InterlockedCompareExchangePointer(PPointer(@field)^, PPointer(@localValue)^, nil) <> nil then
+      localValue.Free;
+  end;
+  Result := field;
+end;
 
 {$ENDREGION}
 

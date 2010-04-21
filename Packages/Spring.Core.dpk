@@ -44,7 +44,8 @@ contains
   Spring.IoC.Resolvers in '..\Source\Core\IoC\Spring.IoC.Resolvers.pas',
   Spring.Core.ResourceStrings in '..\Source\Core\Spring.Core.ResourceStrings.pas',
   Spring.Pool in '..\Source\Core\Pool\Spring.Pool.pas',
-  Spring.Binding in '..\Source\Core\Binding\Spring.Binding.pas';
+  Spring.Binding in '..\Source\Core\Binding\Spring.Binding.pas',
+  Spring.Binding.DB in '..\Source\Core\Binding\Spring.Binding.DB.pas';
 
 end.
 
