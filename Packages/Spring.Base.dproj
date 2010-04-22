@@ -70,6 +70,7 @@
 			<DCCReference Include="..\Source\Base\Cryptography\Spring.Cryptography.pas"/>
 			<DCCReference Include="..\Source\Base\Cryptography\Spring.Cryptography.Utils.pas"/>
 			<DCCReference Include="..\Source\Base\Spring.Notifications.pas"/>
+			<DCCReference Include="..\Source\Base\Spring.ValueConverters.pas"/>
 			<None Include="..\Source\Base\Spring.inc"/>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>
