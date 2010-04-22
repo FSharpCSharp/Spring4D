@@ -131,8 +131,8 @@ type
     procedure TestAgePropertyChanged;
     procedure TestCityPropertyChanged;
     procedure TestNameEditChanged;
-//    procedure TestAgeEditChanged;
-//    procedure TestCityEditChanged;
+    procedure TestAgeEditChanged;
+    procedure TestCityEditChanged;
   end;
 
   TTestBindNullableProperty = class(TBindingTestCase)
@@ -148,6 +148,9 @@ type
     procedure TestNamePropertyChanged;
     procedure TestAgePropertyChanged;
     procedure TestCityPropertyChanged;
+    procedure TestNameEditChanged;
+    procedure TestAgeEditChanged;
+    procedure TestCityEditChanged;
   end;
 
   // Without data template
@@ -358,6 +361,32 @@ begin
   CheckEquals(newName, fPerson.Name);
 end;
 
+procedure TTestBindSimpleProperty.TestAgeEditChanged;
+var
+  oldValue: Integer;
+  newValue: Integer;
+begin
+  oldValue := fPerson.Age;
+  newValue := oldValue + 1;
+  fAgeEdit.Text := IntToStr(newValue);
+  CheckEquals(oldValue, fPerson.Age);
+  fAgeEdit.Perform(CM_Exit, 0, 0);
+  CheckEquals(newValue, fPerson.Age);
+end;
+
+procedure TTestBindSimpleProperty.TestCityEditChanged;
+var
+  oldCity: string;
+  newCity: string;
+begin
+  oldCity := fPerson.Address.City;
+  newCity := 'New ' + oldCity;
+  fCityEdit.Text := newCity;
+  CheckEquals(oldCity, fPerson.Address.City);
+  fCityEdit.Perform(CM_Exit, 0, 0);
+  CheckEquals(newCity, fPerson.Address.City);
+end;
+
 {$ENDREGION}
 
 
@@ -425,6 +454,45 @@ begin
   newCity := 'New ' + fPerson.Address.City;
   fPerson.Address.City := newCity;
   CheckEquals(fPerson.Address.City, fCityEdit.Text);
+end;
+
+procedure TTestBindNullableProperty.TestNameEditChanged;
+var
+  oldName: string;
+  newName: string;
+begin
+  oldName := fPerson.Name;
+  newName := 'New Paul';
+  fNameEdit.Text := newName;
+  CheckEquals(oldName, fPerson.Name);
+  fNameEdit.Perform(CM_Exit, 0, 0);
+  CheckEquals(newName, fPerson.Name);
+end;
+
+procedure TTestBindNullableProperty.TestAgeEditChanged;
+var
+  oldValue: Integer;
+  newValue: Integer;
+begin
+  oldValue := fPerson.Age;
+  newValue := oldValue + 1;
+  fAgeEdit.Text := IntToStr(newValue);
+  CheckEquals(oldValue, fPerson.Age);
+  fAgeEdit.Perform(CM_Exit, 0, 0);
+  CheckEquals(newValue, fPerson.Age);
+end;
+
+procedure TTestBindNullableProperty.TestCityEditChanged;
+var
+  oldCity: string;
+  newCity: string;
+begin
+  oldCity := fPerson.Address.City;
+  newCity := 'New ' + oldCity;
+  fCityEdit.Text := newCity;
+  CheckEquals(oldCity, fPerson.Address.City);
+  fCityEdit.Perform(CM_Exit, 0, 0);
+  CheckEquals(newCity, fPerson.Address.City);
 end;
 
 {$ENDREGION}

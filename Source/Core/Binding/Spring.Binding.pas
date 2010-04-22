@@ -35,7 +35,7 @@ uses
   Classes,
   SysUtils,
   TypInfo,
-//  Controls,
+  Controls,  // TEMP
   DB,
 //  DBCtrls,
   Rtti,
@@ -133,12 +133,6 @@ type
     property IsReadOnly: Boolean read GetIsReadOnly;
   end;
 
-//  IValueConverter = interface
-//    ['{20793D22-60E4-4BDA-9BDA-E511719D454E}']
-//    function ConvertFrom(const targetValue: TValue): TValue;
-//    function ConvertTo(const sourceValue: TValue): TValue;
-//  end;
-
   {$ENDREGION}
 
 
@@ -222,6 +216,10 @@ type
     function GetDataSource: TValue;
     function GetIsActive: Boolean;
     function GetBindings: IList<IBinding>;
+    function GetMode: TBindingMode;
+    function GetUpdateSourceTrigger: TUpdateSourceTrigger;
+    procedure SetMode(const value: TBindingMode);
+    procedure SetUpdateSourceTrigger(const value: TUpdateSourceTrigger);
     procedure SetDataSource(const value: TValue);
     procedure SetIsActive(const value: Boolean);
   {$ENDREGION}
@@ -229,8 +227,8 @@ type
     function FindComponent(const componentName: string): TComponent;
 //    property Owner: TComponent read GetOwner;
     property DataSource: TValue read GetDataSource write SetDataSource;
-//    property Mode: TBindingMode read GetMode write SetMode;
-//    property UpdateSourceTrigger: TUpdateSourceTrigger read GetUpdateSourceTrigger write SetUpdateSourceTrigger;
+    property Mode: TBindingMode read GetMode write SetMode;
+    property UpdateSourceTrigger: TUpdateSourceTrigger read GetUpdateSourceTrigger write SetUpdateSourceTrigger;
     property Bindings: IList<IBinding> read GetBindings;
     property IsActive: Boolean read GetIsActive write SetIsActive;
   end;
@@ -264,13 +262,12 @@ type
   {$REGION 'Property Getters and Setters'}
     function GetAsComponent: TComponent;
   {$ENDREGION}
-//    procedure SetIsReadOnly(value: Boolean);
+    procedure SetIsReadOnly(value: Boolean);
     property AsComponent: TComponent read GetAsComponent;
     // TODO: ? Event Handlers (OnEnter/OnExit/OnLostFocus/OnChanged)
   end;
 
   (*
-
   /// <summary>
   /// Data-aware control.
   /// </summary>
@@ -319,6 +316,9 @@ type
     property TypeKind: TTypeKind read GetTypeKind;
   end;
 
+  /// <summary>
+  /// TBindableComponent
+  /// </summary>
   TBindableComponent = class(TInterfacedObject, IBindableComponent, IBindable,
     IValueProvider, IInitializable)
   private
@@ -341,7 +341,7 @@ type
     constructor Create(component: TComponent; dataSource: TDataSource; const fieldName: string;
       valueType: PTypeInfo);
     procedure SetValue(const value: TValue);
-//    procedure SetIsReadOnly(value: Boolean);
+    procedure SetIsReadOnly(value: Boolean);
     property Value: TValue read GetValue;
     property ValueType: PTypeInfo read GetValueType;
     property IsReadOnly: Boolean read GetIsReadOnly;
@@ -387,9 +387,24 @@ type
     property Mode: TBindingMode read GetMode write SetMode;
     property UpdateSourceTrigger: TUpdateSourceTrigger read GetUpdateSourceTrigger write SetUpdateSourceTrigger;
   end;
-  
+
   /// <summary>
-  /// Binding Context.
+  /// TBindingDef
+  /// </summary>
+  TBindingDef = class(TCollectionItem)
+
+  end;
+
+  /// <summary>
+  /// TBindingDefs
+  /// </summary>
+  TBindingDefs = class(TCollection)
+  public
+    constructor Create;
+  end;
+
+  /// <summary>
+  /// Binding Context. (BindingSource) TDataSource
   /// </summary>
   TBindingContext = class(TInterfacedObject, IBindingContext)
   private
@@ -400,13 +415,19 @@ type
     fObjectDataSet: TDataSet;
     fIsActive: Boolean;
     fBindings: IList<IBinding>;
+    fMode: TBindingMode;
+    fUpdateSourceTrigger: TUpdateSourceTrigger;
     fMappings: IDictionary<string, IBinding>;
     fOnPropertyChanged: TPropertyNotificationEventHandler;
+    function GetMode: TBindingMode;
     function GetDataSource: TValue;
     function GetIsActive: Boolean;
     function GetBindings: IList<IBinding>;
     procedure SetIsActive(const value: Boolean);
     procedure SetDataSource(const value: TValue);
+    procedure SetMode(const Value: TBindingMode);
+    function GetUpdateSourceTrigger: TUpdateSourceTrigger;
+    procedure SetUpdateSourceTrigger(const Value: TUpdateSourceTrigger);
   protected
     procedure DoInitializeFields(sender: TDataSet);
     procedure DoPropertyChanged(sender: TObject; const e: TPropertyNotificationEventArgs);
@@ -418,10 +439,19 @@ type
       const targetExpression: string): IBinding; overload;
     function AddBinding(const targetExpression, sourceExpression: string): IBinding; overload;
     function FindComponent(const componentName: string): TComponent;
-    property DataSource: TValue read GetDataSource write SetDataSource;
     property Bindings: IList<IBinding> read GetBindings;
+  public
+    property DataSource: TValue read GetDataSource write SetDataSource;
+    property Mode: TBindingMode read GetMode write SetMode;
+    property UpdateSourceTrigger: TUpdateSourceTrigger read GetUpdateSourceTrigger write SetUpdateSourceTrigger;
+//    property BindingDefs: TBindingDefs read fBindingDefs write SetBindingDefs;
     property IsActive: Boolean read GetIsActive write SetIsActive;
   end;
+
+
+//  TBindingSource = class(TDataSource)
+//
+//  end;
 
   (*
   TVclControlPropertyNotification = class(TPropertyNotification, IPropertyNotification)
@@ -446,7 +476,6 @@ resourcestring
 // Parse a string, for example: "A|B|C|D|E|F"?
 // Result := Parse('|', "A|B|C|D|E|F") => Result = A, expression = B|C|D|E|F
 // Result = B, expression = C|D|E|F
-// ...
 function ExtractNextElement(var expression: string; const delimiter: string): string;
 
 //function ExtractNextString(var expression: string; var s: string; const delimiters: TSysCharSet = ['.']): Boolean;
@@ -580,6 +609,90 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TBindableComponent'}
+
+constructor TBindableComponent.Create(component: TComponent;
+  dataSource: TDataSource; const fieldName: string; valueType: PTypeInfo);
+begin
+  inherited Create;
+  fComponent := component;
+  fDataSource := dataSource;
+  fFieldName := fieldName;
+  fValueType := valueType;
+end;
+
+function TBindableComponent.GetAsComponent: TComponent;
+begin
+  Result := fComponent;
+end;
+
+function TBindableComponent.GetField: TField;
+begin
+  if not fIsInitialized then
+    Initialize;
+  Result := fField;
+end;
+
+function TBindableComponent.GetIsReadOnly: Boolean;
+begin
+  Result := GetField.ReadOnly;
+end;
+
+function TBindableComponent.GetValue: TValue;
+begin
+  Result := TValue.FromVariant(GetField.Value);
+end;
+
+function TBindableComponent.GetValueType: PTypeInfo;
+begin
+  Result := fValueType;
+end;
+
+procedure TBindableComponent.Initialize;
+var
+  propertyMember: TRttiProperty;
+  fieldName: TValue;
+begin
+  with TType.GetType(fComponent) do
+  begin
+    // Use TDataLink?
+    propertyMember := GetProperty('DataSource');
+    if propertyMember <> nil then
+    begin
+      propertyMember.SetValue(fComponent, fDataSource);
+    end;
+
+    propertyMember := GetProperty('DataField');
+    if propertyMember <> nil then
+    begin
+      fieldName := TValue.From<WideString>(fFieldName);
+      propertyMember.SetValue(fComponent, fieldName);
+    end;
+  end;
+  fField := fDataSource.DataSet.FieldByName(fFieldName);
+  fIsInitialized := True;
+end;
+
+procedure TBindableComponent.SetIsReadOnly(value: Boolean);
+var
+  link: TDataLink;
+begin
+  link := TDataLink((fComponent as TControl).Perform(CM_GETDATALINK, 0, 0));
+  if link <> nil then
+  begin
+    link.ReadOnly := value;
+  end;
+//  GetField.ReadOnly := value;
+end;
+
+procedure TBindableComponent.SetValue(const value: TValue);
+begin
+  GetField.Value := value.AsVariant;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TBinding'}
 
 constructor TBinding.Create(const context: IBindingContext; const source,
@@ -659,8 +772,10 @@ procedure TBinding.Initialize;
 var
   notification: INotifyCollectionChanged;
   pn: ISupportPropertyNotification;
+  component: IBindableComponent;
 begin
-  // BindingMode IsReadOnly, etc.
+  (Source as IInitializable).Initialize;
+  (Target as IInitializable).Initialize;
   if TryGetInterface(Source.Value, INotifyCollectionChanged, notification) then
   begin
     notification.OnCollectionChanged.AddHandler(fOnCollectionChanged);
@@ -669,7 +784,12 @@ begin
   begin
     pn.OnPropertyChanged.AddHandler(fOnPropertyChanged);
   end;
-  UpdateTarget;
+  component := IBindableComponent(Target);
+  if (component <> nil) and Source.IsReadOnly then
+  begin
+    component.SetIsReadOnly(True);
+  end;
+//  UpdateTarget;
 end;
 
 procedure TBinding.UpdateSource;
@@ -699,6 +819,9 @@ begin
   begin
     target.SetValue(IntToStr(source.Value.AsInteger)); // TEMP
   end
+//  else if (source.ValueType.Kind = tkEnumeration) and (target.ValueType.Kind = tkUString) then
+//  begin
+//  end
   else if (source.ValueType.Name = 'TNullable<System.string>') and
     (target.ValueType.Kind = tkUString) then
   begin
@@ -758,17 +881,18 @@ end;
 
 function TBinding.GetMode: TBindingMode;
 begin
-  Result := fMode;
-//  Result := IIf(fMode.HasValue, fMode, fContext.Mode);
-//  if fMode.HasValue then
-//    Result := fMode
-//  else
-//    Result := fContext.Mode;
+  if fMode.HasValue then
+    Result := fMode
+  else
+    Result := IBindingContext(fContext).Mode;
 end;
 
 function TBinding.GetUpdateSourceTrigger: TUpdateSourceTrigger;
 begin
-  Result := fUpdateSourceTrigger;
+  if fUpdateSourceTrigger.HasValue then
+    Result := fUpdateSourceTrigger
+  else
+    Result := IBindingContext(fContext).UpdateSourceTrigger;
 end;
 
 procedure TBinding.SetMode(const value: TBindingMode);
@@ -790,6 +914,8 @@ constructor TBindingContext.Create(owner: TComponent);
 begin
   inherited Create;
   fOwner := owner;
+  fDataSource := fOwner;
+  fMode := bmTwoWay;
   fRttiContext := TRttiContext.Create;
   fMappings := TCollections.CreateDictionary<string, IBinding>;
   fOnPropertyChanged := DoPropertyChanged;
@@ -853,14 +979,14 @@ begin
           end;
         tkEnumeration:
           begin
-
+            def.DataType := ftInteger;
           end;
-        tkString, tkLString:
+        tkString, tkLString, tkChar:
           begin
             def.DataType := ftString;
             def.Size := 255;  // TEMP
           end;
-        tkWString, tkUString:
+        tkWString, tkUString, tkWChar:
           begin
             def.DataType := ftWideString;
             def.Size := 255;
@@ -892,7 +1018,7 @@ begin
                 end;
             end;
           end;
-//        tkChar, tkWChar, tkEnumeration
+//        , tkWChar, tkEnumeration
       end;
     end;
   end;
@@ -919,9 +1045,9 @@ begin
   fObjectDataSet.Open;
   for binding in Bindings do
   begin
-    (binding.Source as IInitializable).Initialize;
-    (binding.Target as IInitializable).Initialize;
-//    binding.Initialize;
+//    (binding.Source as IInitializable).Initialize;
+//    (binding.Target as IInitializable).Initialize;
+    binding.Initialize;
   end;
 end;
 
@@ -984,6 +1110,16 @@ begin
   Result := fIsActive;
 end;
 
+function TBindingContext.GetMode: TBindingMode;
+begin
+  Result := fMode;
+end;
+
+function TBindingContext.GetUpdateSourceTrigger: TUpdateSourceTrigger;
+begin
+  Result := fUpdateSourceTrigger;
+end;
+
 procedure TBindingContext.SetDataSource(const value: TValue);
 var
   notification: IPropertyNotification;
@@ -1008,78 +1144,24 @@ begin
   end;
 end;
 
-{$ENDREGION}
-
-
-{$REGION 'TBindableComponent'}
-
-constructor TBindableComponent.Create(component: TComponent;
-  dataSource: TDataSource; const fieldName: string; valueType: PTypeInfo);
+procedure TBindingContext.SetMode(const Value: TBindingMode);
 begin
-  inherited Create;
-  fComponent := component;
-  fDataSource := dataSource;
-  fFieldName := fieldName;
-  fValueType := valueType;
+  fMode := value;
 end;
 
-function TBindableComponent.GetAsComponent: TComponent;
+procedure TBindingContext.SetUpdateSourceTrigger(
+  const Value: TUpdateSourceTrigger);
 begin
-  Result := fComponent;
-end;
-
-function TBindableComponent.GetField: TField;
-begin
-  if not fIsInitialized then
-    Initialize;
-  Result := fField;
-end;
-
-function TBindableComponent.GetIsReadOnly: Boolean;
-begin
-  Result := GetField.ReadOnly;
-end;
-
-function TBindableComponent.GetValue: TValue;
-begin
-  Result := TValue.FromVariant(GetField.Value);
-end;
-
-function TBindableComponent.GetValueType: PTypeInfo;
-begin
-  Result := fValueType;
-end;
-
-procedure TBindableComponent.Initialize;
-var
-  propertyMember: TRttiProperty;
-  fieldName: TValue;
-begin
-  with TType.GetType(fComponent) do
-  begin
-    // Use TDataLink?
-    propertyMember := GetProperty('DataSource');
-    if propertyMember <> nil then
-    begin
-      propertyMember.SetValue(fComponent, fDataSource);
-    end;
-
-    propertyMember := GetProperty('DataField');
-    if propertyMember <> nil then
-    begin
-      fieldName := TValue.From<WideString>(fFieldName);
-      propertyMember.SetValue(fComponent, fieldName);
-    end;
-  end;
-  fField := fDataSource.DataSet.FieldByName(fFieldName);
-  fIsInitialized := True;
-end;
-
-procedure TBindableComponent.SetValue(const value: TValue);
-begin
-  GetField.Value := value.AsVariant;
+  fUpdateSourceTrigger := value;
 end;
 
 {$ENDREGION}
+
+{ TBindingDefs }
+
+constructor TBindingDefs.Create;
+begin
+  inherited Create(TBindingDef);
+end;
 
 end.

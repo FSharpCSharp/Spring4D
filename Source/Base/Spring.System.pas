@@ -25,6 +25,7 @@
 /// <summary>
 /// Declares the fundamental types and rountines in the Delphi Spring Framework.
 /// </summary>
+/// Note: This unit should be platform independent.
 unit Spring.System;
 
 {$I Spring.inc}
@@ -33,7 +34,9 @@ interface
 
 uses
   Classes,
+{$IFDEF MSWINDOWS}
   Windows,
+{$ENDIF}
   SysUtils,
   DateUtils,
   Types,
@@ -966,7 +969,6 @@ const
 implementation
 
 uses
-  ComObj,
   StrUtils,
   Spring.ResourceStrings;
 

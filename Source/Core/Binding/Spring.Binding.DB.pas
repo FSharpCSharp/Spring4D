@@ -40,8 +40,6 @@ uses
   Spring.Binding;
 
 type
-  TInitializeFieldsEvent = reference to procedure(sender: TDataSet);
-
   /// <summary>
   /// TBindableDataSet
   /// </summary>
@@ -101,9 +99,6 @@ type
     property OnInitializeFields: TDataSetNotifyEvent read fOnInitializeFields write fOnInitializeFields;
   end;
 
-resourcestring
-  SBindingSourceMissing = 'Binding Source is missing.';
-
 implementation
 
 uses
@@ -150,6 +145,7 @@ var
   p: Pointer;
   underlyingType: PTypeInfo;
   valueBuffer: TBytes;
+  HasValueFlag: string;
 begin
   if buffer = nil then // TODO: TEMP (Special CASE: TNullable<T>)
   begin
@@ -161,11 +157,13 @@ begin
   begin
     us := StrPas(PChar(buffer));
     p := Pointer(us);
+    TValue.Make(@p, valueType, value);
   end
   else if valueType.Kind in [tkLString, tkString, tkChar] then
   begin
     ansi := StrPas(PAnsiChar(buffer));
     p := Pointer(ansi);
+    TValue.Make(@p, valueType, value);
   end
   else if TryGetUnderlyingTypeInfo(valueType, underlyingType) then
   begin
@@ -182,13 +180,16 @@ begin
     end;
     if buffer <> nil then
     begin
-      PString(PByte(valueBuffer) + Length(valueBuffer) - SizeOf(string))^ := '@';
+      HasValueFlag := '@';
+      PPointer(PByte(valueBuffer) + Length(valueBuffer) - SizeOf(string))^ := Pointer(HasValueFlag);
     end;
     p := PByte(valueBuffer);
-    TValue.Make(p, valueType, value);    // TODO: TValue.Make, p or @p?
-    Exit;
+    TValue.Make(p, valueType, value);
+  end
+  else
+  begin
+    TValue.Make(p, valueType, value);
   end;
-  TValue.Make(@p, valueType, value);
 end;
 
 { TBindableDataSet }

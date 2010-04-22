@@ -28,21 +28,33 @@ type
 
   TDomainObject = TNotifiableObject;
 
+//  [DisplayNames(['Female', 'Male'])]
+  TCustomerSex = (
+    csUnknown,
+    csFemale,
+    csMale
+  );
+
   TCustomer = class(TDomainObject)
   private
     fName: string;
     fBirthDate: TNullableDateTime;
     fAddress: TAddress;
+    fOrders: IList<TOrder>;
+    fSex: TNullable<TCustomerSex>;
     function GetAge: TNullableInteger;
     procedure SetName(const value: string);
     procedure SetBirthDate(const Value: TNullableDateTime);
+    procedure SetSex(Value: TNullable<TCustomerSex>);
   public
     constructor Create;
     destructor Destroy; override;
     property Name: string read fName write SetName;
     property Age: TNullableInteger read GetAge;
+    property Sex: TNullable<TCustomerSex> read fSex write SetSex;
     property BirthDate: TNullableDateTime read fBirthDate write SetBirthDate;
     property Address: TAddress read fAddress;
+    property Orders: IList<TOrder> read fOrders;
   end;
 
   TAddress = class(TDomainObject)
@@ -135,6 +147,7 @@ constructor TCustomer.Create;
 begin
   inherited Create;
   fAddress := TAddress.Create;
+  fOrders := TCollections.CreateList<TOrder>;
 end;
 
 destructor TCustomer.Destroy;
@@ -154,6 +167,11 @@ end;
 procedure TCustomer.SetName(const value: string);
 begin
   SetProperty<string>('Name', fName, value);
+end;
+
+procedure TCustomer.SetSex(Value: TNullable<TCustomerSex>);
+begin
+  SetProperty<TNullable<TCustomerSex>>('Sex', fSex, value);
 end;
 
 procedure TCustomer.SetBirthDate(const Value: TNullableDateTime);

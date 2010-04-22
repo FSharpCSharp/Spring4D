@@ -4,14 +4,13 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls,
+  Dialogs, StdCtrls, Rtti,
+  Model, ExtCtrls, Mask, DBCtrls, DB, Grids, DBGrids,
   Spring.System,
   Spring.Binding,
   Spring.Collections,
   Spring.Reflection,
-  Spring.Binding.DB,
-  Rtti,
-  Model, ExtCtrls, Mask, DBCtrls, DB, Grids, DBGrids;
+  Spring.Binding.DB;
 
 type
   TfrmMain = class(TForm)
@@ -25,18 +24,22 @@ type
     edtAge: TDBEdit;
     lbl3: TLabel;
     dbgrd1: TDBGrid;
+    mmRemarks: TDBMemo;
+    lbl4: TLabel;
+    cmbSex: TDBComboBox;
+    lbl5: TLabel;
     procedure FormCreate(Sender: TObject);
   private
     { Private declarations }
     fContext: IBindingContext;
     fCustomers: IList<TCustomer>;
     function GetCustomers: IList<TCustomer>;
-    procedure PopulateCustomers(const customers: IList<TCustomer>);
     function GetSelected: TCustomer;
+    procedure PopulateCustomers(const customers: IList<TCustomer>);
   public
     { Public declarations }
     property Customers: IList<TCustomer> read GetCustomers;
-    property Selected: TCustomer read GetSelected;
+    property SelectedCustomer: TCustomer read GetSelected;
   end;
 
 var
@@ -49,10 +52,13 @@ implementation
 procedure TfrmMain.FormCreate(Sender: TObject);
 begin
   fContext := TBindingContext.Create(Self);
-  fContext.DataSource := Self;  //?
-  fContext.AddBinding('edtName', 'Selected.Name');
-  fContext.AddBinding('edtAge', 'Selected.Age');
-  fContext.AddBinding('edtCity', 'Selected.Address.City');
+
+//  fContext.AddBinding('lstCustomers.Items', 'Customers', 'Name', 'ID');  // DisplayMemberPath, ValueMemberPath
+  fContext.AddBinding('edtName', 'SelectedCustomer.Name');
+  fContext.AddBinding('cmbSex', 'SelectedCustomer.Sex');
+  fContext.AddBinding('edtAge', 'SelectedCustomer.Age');
+  fContext.AddBinding('edtCity', 'SelectedCustomer.Address.City');
+
   fContext.IsActive := True;
 end;
 
@@ -79,6 +85,7 @@ begin
   paul := TCustomer.Create;
   paul.Name := 'Paul';
   paul.BirthDate := EncodeDate(1983, 10, 27);
+  paul.Sex := csMale;
   paul.Address.City := 'Shanghai';
 
   david := TCustomer.Create;

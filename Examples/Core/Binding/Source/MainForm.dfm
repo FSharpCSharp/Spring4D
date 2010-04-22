@@ -27,55 +27,84 @@ object frmMain: TfrmMain
     Left = 248
     Top = 8
     Width = 434
-    Height = 161
+    Height = 169
     Caption = 'Information'
     TabOrder = 1
     object lbl1: TLabel
       Left = 24
-      Top = 51
+      Top = 27
       Width = 31
       Height = 13
       Caption = 'Name:'
     end
     object lbl2: TLabel
       Left = 24
-      Top = 105
+      Top = 81
       Width = 23
       Height = 13
       Caption = 'City:'
     end
     object lbl3: TLabel
       Left = 24
-      Top = 78
+      Top = 54
       Width = 23
       Height = 13
       Caption = 'Age:'
     end
+    object lbl4: TLabel
+      Left = 24
+      Top = 108
+      Width = 45
+      Height = 13
+      Caption = 'Remarks:'
+    end
+    object lbl5: TLabel
+      Left = 283
+      Top = 27
+      Width = 22
+      Height = 13
+      Caption = 'Sex:'
+    end
     object edtName: TDBEdit
       Left = 80
-      Top = 48
-      Width = 121
+      Top = 24
+      Width = 178
       Height = 21
       TabOrder = 0
     end
     object edtCity: TDBEdit
       Left = 80
-      Top = 102
-      Width = 121
+      Top = 78
+      Width = 178
       Height = 21
       TabOrder = 1
     end
     object edtAge: TDBEdit
       Left = 80
-      Top = 75
-      Width = 121
+      Top = 51
+      Width = 178
       Height = 21
       TabOrder = 2
+    end
+    object mmRemarks: TDBMemo
+      Left = 80
+      Top = 105
+      Width = 178
+      Height = 47
+      TabOrder = 3
+    end
+    object cmbSex: TDBComboBox
+      Left = 320
+      Top = 24
+      Width = 97
+      Height = 21
+      Style = csDropDownList
+      TabOrder = 4
     end
   end
   object dbnvgr1: TDBNavigator
     Left = 248
-    Top = 185
+    Top = 209
     Width = 430
     Height = 25
     TabOrder = 2
@@ -91,5 +120,31 @@ object frmMain: TfrmMain
     TitleFont.Height = -11
     TitleFont.Name = 'Tahoma'
     TitleFont.Style = []
+    Columns = <
+      item
+        Expanded = False
+        FieldName = 'Name'
+        Visible = True
+      end
+      item
+        Expanded = False
+        Visible = True
+      end
+      item
+        Expanded = False
+        Visible = True
+      end
+      item
+        Expanded = False
+        Visible = True
+      end
+      item
+        Expanded = False
+        Visible = True
+      end
+      item
+        Expanded = False
+        Visible = True
+      end>
   end
 end
