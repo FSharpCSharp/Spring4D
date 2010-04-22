@@ -230,7 +230,7 @@ begin
       begin
         if pair.Value.Converter = nil then
         begin
-          value.Converter := value.ConverterClass.Create;
+          value.Converter := pair.Value.ConverterClass.Create;
           value.ConverterClass := pair.Value.ConverterClass;
           fRegistry.AddOrSetValue(pair.Key, value);
         end;
