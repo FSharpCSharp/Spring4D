@@ -32,7 +32,7 @@ uses
   Classes,
   SysUtils,
   TestFramework,
-  Spring.System,
+  Spring,
   Spring.Cryptography;
 
 type

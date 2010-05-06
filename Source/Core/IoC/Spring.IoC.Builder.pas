@@ -34,7 +34,7 @@ uses
   Rtti,
   TypInfo,
   Generics.Collections,
-  Spring.System,
+  Spring,
   Spring.DesignPatterns,
   Spring.IoC.Core;
 
@@ -136,10 +136,10 @@ implementation
 uses
   Spring.Collections,
   Spring.Reflection,
+  Spring.Helpers,
   Spring.IoC.Injection,
   Spring.IoC.ComponentActivator,
-  Spring.Helpers,
-  Spring.Core.ResourceStrings;
+  Spring.IoC.ResourceStrings;
 
 
 {$REGION 'TComponentBuilder'}

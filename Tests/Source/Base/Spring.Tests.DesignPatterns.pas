@@ -34,7 +34,7 @@ uses
   TestFramework,
   TestExtensions,
   Generics.Defaults,
-  Spring.System,
+  Spring,
   Spring.DesignPatterns;
 
 type

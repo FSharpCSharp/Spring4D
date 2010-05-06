@@ -33,7 +33,7 @@ uses
   SysUtils,
   Graphics,
   TestFramework,
-  Spring.System,
+  Spring,
   Spring.Helpers,
   Spring.DesignPatterns;
 

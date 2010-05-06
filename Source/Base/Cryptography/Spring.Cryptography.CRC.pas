@@ -32,7 +32,7 @@ uses
   Classes,
   Windows,
   SysUtils,
-  Spring.System,
+  Spring,
   Spring.Cryptography;
 
 type

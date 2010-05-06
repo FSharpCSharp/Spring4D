@@ -35,7 +35,7 @@ uses
   ADODB,
   ADOInt,
   Variants,
-  Spring.System,
+  Spring,
   Spring.Numbering;
 
 type

@@ -43,7 +43,7 @@ uses
   ActiveX,
   ComObj,
   Generics.Collections,
-  Spring.System,
+  Spring,
   Spring.Collections,
   Spring.Win32API,
   Spring.Utils.IO,

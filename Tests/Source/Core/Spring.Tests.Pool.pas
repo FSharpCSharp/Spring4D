@@ -30,7 +30,7 @@ uses
   Classes,
   SysUtils,
   TestFramework,
-  Spring.System,
+  Spring,
   Spring.Reflection,
   Spring.Pool;
 

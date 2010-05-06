@@ -57,10 +57,10 @@
 			<DCCReference Include="dbrtl.dcp"/>
 			<DCCReference Include="adortl.dcp"/>
 			<DCCReference Include="Spring.Base.dcp"/>
-			<DCCReference Include="..\Source\Extensions\Spring.Extensions.ResourceStrings.pas"/>
 			<DCCReference Include="..\Source\Extensions\Numbering\Spring.Numbering.pas"/>
 			<DCCReference Include="..\Source\Extensions\Numbering\Spring.Numbering.Rules.pas"/>
 			<DCCReference Include="..\Source\Extensions\Numbering\Spring.Numbering.Utils.pas"/>
+			<DCCReference Include="..\Source\Extensions\Numbering\Spring.Numbering.ResourceStrings.pas"/>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>
 			</BuildConfiguration>
@@ -93,7 +93,7 @@
 						<VersionInfo Name="MajorVer">0</VersionInfo>
 						<VersionInfo Name="MinorVer">2</VersionInfo>
 						<VersionInfo Name="Release">0</VersionInfo>
-						<VersionInfo Name="Build">594</VersionInfo>
+						<VersionInfo Name="Build">597</VersionInfo>
 						<VersionInfo Name="Debug">False</VersionInfo>
 						<VersionInfo Name="PreRelease">False</VersionInfo>
 						<VersionInfo Name="Special">False</VersionInfo>
@@ -105,7 +105,7 @@
 					<VersionInfoKeys>
 						<VersionInfoKeys Name="CompanyName"/>
 						<VersionInfoKeys Name="FileDescription">Delphi Spring Framework Extensions Library</VersionInfoKeys>
-						<VersionInfoKeys Name="FileVersion">0.2.0.594</VersionInfoKeys>
+						<VersionInfoKeys Name="FileVersion">0.2.0.597</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName"/>
 						<VersionInfoKeys Name="LegalCopyright"/>
 						<VersionInfoKeys Name="LegalTrademarks"/>

@@ -36,7 +36,7 @@ uses
   SyncObjs,
   Rtti,
   Generics.Collections,
-  Spring.System,
+  Spring,
   Spring.Collections,
   Spring.DesignPatterns;
 

@@ -29,7 +29,7 @@ unit Spring.Cryptography.DES;
 interface
 
 uses
-  Spring.System,
+  Spring,
   Spring.Cryptography,
   Spring.ResourceStrings;
 

@@ -35,7 +35,7 @@ uses
   Classes,
   SysUtils,
   Contnrs,
-  Spring.System,
+  Spring,
   Spring.Utils,
   Spring.Numbering;
 
@@ -166,7 +166,7 @@ implementation
 uses
   DateUtils,
   StrUtils,
-  Spring.Extensions.ResourceStrings;
+  Spring.Numbering.ResourceStrings;
 
 {$REGION 'TNumberRuleBase'}
 

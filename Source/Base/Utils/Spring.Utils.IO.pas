@@ -38,7 +38,7 @@ uses
   ShellAPI,
   Masks,
   Generics.Collections,
-  Spring.System,
+  Spring,
   Spring.Collections;
 
 type

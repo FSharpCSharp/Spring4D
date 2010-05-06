@@ -34,7 +34,7 @@ uses
   Rtti,
   TypInfo,
   Generics.Collections,
-  Spring.System,
+  Spring,
   Spring.Collections,
   Spring.IoC.Core;
 
@@ -112,7 +112,7 @@ implementation
 
 uses
   Spring.ResourceStrings,
-  Spring.Core.ResourceStrings,
+  Spring.IoC.ResourceStrings,
   Spring.Helpers;
 
 

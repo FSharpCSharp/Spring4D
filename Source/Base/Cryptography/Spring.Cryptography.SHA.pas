@@ -31,7 +31,7 @@ interface
 uses
   SysUtils,
   Windows,
-  Spring.System,
+  Spring,
   Spring.Cryptography;
 
 type

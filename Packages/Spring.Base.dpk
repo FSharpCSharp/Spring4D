@@ -34,7 +34,6 @@ requires
 contains
   Spring.DesignPatterns in '..\Source\Base\Spring.DesignPatterns.pas',
   Spring.ResourceStrings in '..\Source\Base\Spring.ResourceStrings.pas',
-  Spring.System in '..\Source\Base\Spring.System.pas',
   Spring.Win32API in '..\Source\Base\Spring.Win32API.pas',
   Spring.Reflection in '..\Source\Base\Spring.Reflection.pas',
   Spring.Helpers in '..\Source\Base\Spring.Helpers.pas',
@@ -44,14 +43,15 @@ contains
   Spring.Utils.IO in '..\Source\Base\Utils\Spring.Utils.IO.pas',
   Spring.Utils in '..\Source\Base\Utils\Spring.Utils.pas',
   Spring.Utils.Network in '..\Source\Base\Utils\Spring.Utils.Network.pas',
-  Spring.Cryptography.SHA in '..\Source\Base\Cryptography\Spring.Cryptography.SHA.pas',
+  Spring.Notifications in '..\Source\Base\Spring.Notifications.pas',
+  Spring.Pool in '..\Source\Base\Spring.Pool.pas',
   Spring.Cryptography.CRC in '..\Source\Base\Cryptography\Spring.Cryptography.CRC.pas',
   Spring.Cryptography.DES in '..\Source\Base\Cryptography\Spring.Cryptography.DES.pas',
   Spring.Cryptography.MD5 in '..\Source\Base\Cryptography\Spring.Cryptography.MD5.pas',
   Spring.Cryptography in '..\Source\Base\Cryptography\Spring.Cryptography.pas',
+  Spring.Cryptography.SHA in '..\Source\Base\Cryptography\Spring.Cryptography.SHA.pas',
   Spring.Cryptography.Utils in '..\Source\Base\Cryptography\Spring.Cryptography.Utils.pas',
-  Spring.Notifications in '..\Source\Base\Spring.Notifications.pas',
-  Spring.ValueConverters in '..\Source\Base\Spring.ValueConverters.pas';
+  Spring in '..\Source\Base\Spring.pas';
 
 end.
 

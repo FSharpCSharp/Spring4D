@@ -33,7 +33,7 @@ uses
   Classes,
   SysUtils,
   Rtti,
-  Spring.System,
+  Spring,
   Spring.Collections,
   Spring.Reflection,
   Spring.Helpers;

@@ -39,7 +39,7 @@ uses
   Classes,
   Windows,
   SysUtils,
-  Spring.System;
+  Spring;
 
 type
   {$REGION 'Core Types'}

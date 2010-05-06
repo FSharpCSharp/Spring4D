@@ -21,6 +21,7 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
+			<DesignOnlyPackage>false</DesignOnlyPackage>
 			<DCC_UnitSearchPath>..\Source\Base\;..\Source\Base\Collections;..\Source\Base\Cryptography;..\Source\Base\Utils;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<RuntimeOnlyPackage>true</RuntimeOnlyPackage>
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
@@ -53,7 +54,6 @@
 			<DCCReference Include="dbrtl.dcp"/>
 			<DCCReference Include="..\Source\Base\Spring.DesignPatterns.pas"/>
 			<DCCReference Include="..\Source\Base\Spring.ResourceStrings.pas"/>
-			<DCCReference Include="..\Source\Base\Spring.System.pas"/>
 			<DCCReference Include="..\Source\Base\Spring.Win32API.pas"/>
 			<DCCReference Include="..\Source\Base\Spring.Reflection.pas"/>
 			<DCCReference Include="..\Source\Base\Spring.Helpers.pas"/>
@@ -63,14 +63,15 @@
 			<DCCReference Include="..\Source\Base\Utils\Spring.Utils.IO.pas"/>
 			<DCCReference Include="..\Source\Base\Utils\Spring.Utils.pas"/>
 			<DCCReference Include="..\Source\Base\Utils\Spring.Utils.Network.pas"/>
-			<DCCReference Include="..\Source\Base\Cryptography\Spring.Cryptography.SHA.pas"/>
+			<DCCReference Include="..\Source\Base\Spring.Notifications.pas"/>
+			<DCCReference Include="..\Source\Base\Spring.Pool.pas"/>
 			<DCCReference Include="..\Source\Base\Cryptography\Spring.Cryptography.CRC.pas"/>
 			<DCCReference Include="..\Source\Base\Cryptography\Spring.Cryptography.DES.pas"/>
 			<DCCReference Include="..\Source\Base\Cryptography\Spring.Cryptography.MD5.pas"/>
 			<DCCReference Include="..\Source\Base\Cryptography\Spring.Cryptography.pas"/>
+			<DCCReference Include="..\Source\Base\Cryptography\Spring.Cryptography.SHA.pas"/>
 			<DCCReference Include="..\Source\Base\Cryptography\Spring.Cryptography.Utils.pas"/>
-			<DCCReference Include="..\Source\Base\Spring.Notifications.pas"/>
-			<DCCReference Include="..\Source\Base\Spring.ValueConverters.pas"/>
+			<DCCReference Include="..\Source\Base\Spring.pas"/>
 			<None Include="..\Source\Base\Spring.inc"/>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>

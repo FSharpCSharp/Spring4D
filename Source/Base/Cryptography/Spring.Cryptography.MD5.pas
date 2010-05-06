@@ -32,7 +32,7 @@ interface
 {$RANGECHECKS OFF}
 
 uses
-  Spring.System,
+  Spring,
   Spring.Cryptography;
 
 type

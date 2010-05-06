@@ -34,7 +34,7 @@ uses
   TypInfo,
   Rtti,
   Generics.Collections,
-  Spring.System,
+  Spring,
   Spring.Collections,
   Spring.IoC.Core,
   Spring.IoC.Registration;
@@ -119,7 +119,7 @@ uses
   Spring.IoC.LifetimeManager,
   Spring.IoC.Injection,
   Spring.IoC.Resolvers,
-  Spring.Core.ResourceStrings;
+  Spring.IoC.ResourceStrings;
 
 {$REGION 'TContainer'}
 

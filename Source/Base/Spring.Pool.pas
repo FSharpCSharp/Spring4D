@@ -35,7 +35,7 @@ uses
   TypInfo,
   Rtti,
   Generics.Collections,
-  Spring.System,
+  Spring,
   Spring.Collections,
   Spring.Reflection;
 

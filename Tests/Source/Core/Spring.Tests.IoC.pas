@@ -32,7 +32,7 @@ uses
   Classes,
   SysUtils,
   TestFramework,
-  Spring.System,
+  Spring,
   Spring.IoC,
   Spring.Tests.IoC.Components;
 

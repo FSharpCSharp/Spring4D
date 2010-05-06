@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Core.ResourceStrings;
+unit Spring.IoC.ResourceStrings;
 
 {$I Spring.inc}
 
@@ -59,16 +59,6 @@ resourcestring
   SUnexpectedLifetimeType = 'Unexpected lifetimeType.';
 
   SActivatorDelegateExpected = 'An activator delegate was expected.';
-
-  {$REGION 'Spring.Binding'}
-
-  SNoSuchComponent = 'No such component: "%s".';
-  STargetExpressionIsNotAControl = 'TargetExpression is not a TControl descendant';
-  SCannotCreateBindable = 'Connot create bindable.';
-  SNoRecords = 'There is no such record.';
-  SNoThereIsNoSuchMapping = 'There is no such Control mapping.';
-
-  {$ENDREGION}
 
   // Spring.Logging
 

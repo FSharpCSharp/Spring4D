@@ -22,11 +22,13 @@
 {                                                                           }
 {***************************************************************************}
 
+{TODO -oPaul -cGeneral : Move TCallback to Spring.Utils}
+
 /// <summary>
 /// Declares the fundamental types and rountines in the Delphi Spring Framework.
 /// </summary>
 /// Note: This unit should be platform independent.
-unit Spring.System;
+unit Spring;
 
 {$I Spring.inc}
 
@@ -292,6 +294,8 @@ type
     { Internal function without range check }
     class function ConvertToInteger<T{:enum}>(const value: T): Integer; static;
   public
+//  ExtractNames<T>(names: TStrings);
+//  ExtractValues<T>(values: TStrings);
     class function IsValid<T{:enum}>(const value: T): Boolean; overload; static;
     class function IsValid<T{:enum}>(const value: Integer): Boolean; overload; static;
     class function GetName<T{:enum}>(const value: T): string; overload; static;
@@ -300,6 +304,7 @@ type
     class function GetValue<T{:enum}>(const value: T): Integer; overload; static;
     class function GetValue<T{:enum}>(const value: string): Integer; overload; static;
     class function GetValues<T{:enum}>: TIntegerDynArray; static;
+    class function GetValueStrings<T{:enum}>: TStringDynArray; static;
     class function TryParse<T{:enum}>(const value: Integer; out enum: T): Boolean; overload; static;
     class function TryParse<T{:enum}>(const value: string; out enum: T): Boolean; overload; static;
     class function Parse<T{:enum}>(const value: Integer): T; overload; static;
@@ -320,10 +325,12 @@ type
   {$REGION 'TNullable<T>'}
 
   /// <summary>
-  /// Represents an "object" whose underlying type is a value type that can also
-  /// be assigned nil like a reference type.
+  /// Represents an "object" whose underlying type is a value type that can also be
+  /// assigned nil like a reference type.
   /// </summary>
-  /// <typeparam name="T">The underlying value type of the TNullable<T> generic type.</typeparam>
+  /// <typeparam name="T">
+  /// The underlying value type of the TNullable<T> generic type.
+  /// </typeparam>
   TNullable<T> = record
   private
     const fCHasValue = '@';  // DO NOT LOCALIZE
@@ -2082,6 +2089,19 @@ begin
   for i := 0 to High(Result) do
   begin
     Result[i] := i;
+  end;
+end;
+
+class function TEnum.GetValueStrings<T>: TStringDynArray;
+var
+  typeData: PTypeData;
+  i: Integer;
+begin
+  typeData := TEnum.GetEnumTypeData<T>;
+  SetLength(Result, typeData.MaxValue - typeData.MinValue + 1);
+  for i := 0 to High(Result) do
+  begin
+    Result[i] := IntToStr(i);
   end;
 end;
 

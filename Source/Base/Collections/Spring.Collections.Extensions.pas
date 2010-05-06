@@ -33,7 +33,7 @@ uses
   SysUtils,
   Generics.Defaults,
   Generics.Collections,
-  Spring.System,
+  Spring,
   Spring.Collections;
 
 type

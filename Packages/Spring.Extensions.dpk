@@ -34,9 +34,9 @@ requires
   Spring.Base;
 
 contains
-  Spring.Extensions.ResourceStrings in '..\Source\Extensions\Spring.Extensions.ResourceStrings.pas',
   Spring.Numbering in '..\Source\Extensions\Numbering\Spring.Numbering.pas',
   Spring.Numbering.Rules in '..\Source\Extensions\Numbering\Spring.Numbering.Rules.pas',
-  Spring.Numbering.Utils in '..\Source\Extensions\Numbering\Spring.Numbering.Utils.pas';
+  Spring.Numbering.Utils in '..\Source\Extensions\Numbering\Spring.Numbering.Utils.pas',
+  Spring.Numbering.ResourceStrings in '..\Source\Extensions\Numbering\Spring.Numbering.ResourceStrings.pas';
 
 end.

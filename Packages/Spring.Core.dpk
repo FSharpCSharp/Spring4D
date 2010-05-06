@@ -42,10 +42,7 @@ contains
   Spring.IoC in '..\Source\Core\IoC\Spring.IoC.pas',
   Spring.IoC.Registration in '..\Source\Core\IoC\Spring.IoC.Registration.pas',
   Spring.IoC.Resolvers in '..\Source\Core\IoC\Spring.IoC.Resolvers.pas',
-  Spring.Core.ResourceStrings in '..\Source\Core\Spring.Core.ResourceStrings.pas',
-  Spring.Pool in '..\Source\Core\Pool\Spring.Pool.pas',
-  Spring.Binding in '..\Source\Core\Binding\Spring.Binding.pas',
-  Spring.Binding.DB in '..\Source\Core\Binding\Spring.Binding.DB.pas';
+  Spring.IoC.ResourceStrings in '..\Source\Core\IoC\Spring.IoC.ResourceStrings.pas';
 
 end.
 

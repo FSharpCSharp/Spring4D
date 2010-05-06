@@ -39,7 +39,7 @@ uses
   TestFramework,
   TestExtensions,
   Generics.Defaults,
-  Spring.System;
+  Spring;
 
 type
   TTestSplitString = class(TTestCase)

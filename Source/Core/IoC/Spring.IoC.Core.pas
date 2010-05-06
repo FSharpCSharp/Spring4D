@@ -34,7 +34,7 @@ uses
   Rtti,
   TypInfo,
   Generics.Collections,
-  Spring.System,
+  Spring,
   Spring.Collections,
   Spring.DesignPatterns,
   Spring.Reflection;
@@ -300,9 +300,9 @@ type
 implementation
 
 uses
-  Spring.ResourceStrings,
   Spring.Helpers,
-  Spring.Core.ResourceStrings;
+  Spring.ResourceStrings,
+  Spring.IoC.ResourceStrings;
 
 {$REGION 'TComponentModel'}
 

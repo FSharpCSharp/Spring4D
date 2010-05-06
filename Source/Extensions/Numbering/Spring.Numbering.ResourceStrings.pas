@@ -22,27 +22,23 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Configuration experimental;
+unit Spring.Numbering.ResourceStrings;
 
 {$I Spring.inc}
 
 interface
 
-type
-  IConfiguration = interface;
-  IConfigurable  = interface;
+resourcestring
+  // Spring.Numbering
 
-  IConfigurable = interface
-    procedure Configure(const configuration: IConfiguration);
-  end;
-
-  IConfiguration = interface
-    
-  end;
-
-  IConfigurationStore = interface
-
-  end;
+  SIllegalNumber           = 'Illegal number: "%s".';
+  SIllegalNumberLength     = 'Illegal number length: "%s".';
+  SIllegalElement          = 'Illegal number element.';
+  SUnexpectedCode          = 'Illegal number element. "%S" was unexpected.';
+  SIllegalNumberEndsWith   = 'Illegal number: "%0:S". It can not end with "%1:S"';
+  SInvalidDateTime         = '"%S" is not a valid date and time';
+  SNumberOutOfRange        = '"%S"''s out of range.';
+  SNumberOverflow          = 'The number "%s" will be overflow.';
 
 implementation
 

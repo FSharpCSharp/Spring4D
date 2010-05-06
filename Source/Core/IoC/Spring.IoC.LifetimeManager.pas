@@ -33,7 +33,7 @@ uses
   Windows,
   SysUtils,
   Generics.Collections,
-  Spring.System,
+  Spring,
   Spring.IoC.Core,
   Spring.Pool;
 

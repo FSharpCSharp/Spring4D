@@ -34,7 +34,7 @@ uses
   Rtti,
   TypInfo,
   Generics.Collections,
-  Spring.System,
+  Spring,
   Spring.Collections,
   Spring.IoC.Core;
 
@@ -178,7 +178,7 @@ uses
   Spring.Reflection,
   Spring.Helpers,
   Spring.ResourceStrings,
-  Spring.Core.ResourceStrings;
+  Spring.IoC.ResourceStrings;
 
 {$REGION 'TComponentRegistry'}
 

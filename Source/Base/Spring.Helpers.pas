@@ -38,7 +38,7 @@ uses
   ComObj,
   DB,
   Generics.Collections,
-  Spring.System,
+  Spring,
   Spring.Collections,
   Spring.DesignPatterns,
   Spring.Reflection;
@@ -64,7 +64,7 @@ type
     class property Empty: TGuid read GetEmpty;
 //    class operator Equal(const left, right: TGuid) : Boolean;
 //    class operator NotEqual(const left, right: TGuid) : Boolean;
-  end experimental;
+  end;
 
   TMethodHelper = record helper for TMethod
   public
@@ -74,7 +74,7 @@ type
   TArrayHelper = class helper for TArray
   public
     class function CreateArray<T>(const values: array of T): TArray<T>;
-  end;  // deprecated
+  end; // deprecated;
 
   TStreamHelper = class helper for TStream
   public
@@ -86,13 +86,14 @@ type
   private
     function GetIsEmpty: Boolean;
   public
+    procedure AddStrings(const strings: array of string); overload;
     procedure AddOrUpdate(const name, value: string);
 //    procedure Remove(const s: string);
     procedure ExecuteUpdate(proc: TProc);
-//    procedure GetNames(strings: TStrings);
-//    procedure GetValues(strings: TStrings);
-//    function GetNames: TStringDynArray;
-//    function GetValues: TStringDynArray;
+    procedure ExtractNames(strings: TStrings);
+    procedure ExtractValues(strings: TStrings);
+    function GetNames: TStringDynArray;
+    function GetValues: TStringDynArray;
     function ContainsName(const name: string): Boolean;
     function ContainsValue(const value: string): Boolean;
     function ContainsObject(obj: TObject): Boolean;
@@ -105,7 +106,7 @@ type
   public
     function GetValueOrDefault<T>(const fieldName: string; const default: T): T;
     procedure CopyRecordFrom(source: TDataSet);
-//    procedure EnumerateRows(proc: TProc);
+//    procedure EnumerateRows(proc: TProc<TDataSet>);
 //    procedure Clear;
 //    property IsModified: Boolean;
   end;
@@ -182,7 +183,6 @@ type
     function GetAsField: TRttiField;
   public
 //    procedure InvokeMember(instance: TValue; const arguments: array of TValue);
-//    procedure InvokeMember(instance: TObject; const arguments: array of TValue);
     function GetValue(const instance: TValue): TValue; overload;
     procedure SetValue(const instance: TValue; const value: TValue); overload;
     property AsMethod: TRttiMethod read GetAsMethod;
@@ -329,6 +329,21 @@ end;
 
 { TStringsHelper }
 
+procedure TStringsHelper.AddStrings(const strings: array of string);
+var
+  s: string;
+begin
+  BeginUpdate;
+  try
+    for s in strings do
+    begin
+      Add(s);
+    end;
+  finally
+    EndUpdate;
+  end;
+end;
+
 procedure TStringsHelper.AddOrUpdate(const name, value: string);
 var
   index: Integer;
@@ -347,6 +362,38 @@ end;
 procedure TStringsHelper.ExecuteUpdate(proc: TProc);
 begin
   UpdateStrings(Self, proc);
+end;
+
+procedure TStringsHelper.ExtractNames(strings: TStrings);
+var
+  i: Integer;
+begin
+  TArgument.CheckNotNull(strings, 'strings');
+  strings.BeginUpdate;
+  try
+    for i := 0 to Count - 1 do
+    begin
+      strings.Add(Self.Names[i]);
+    end;
+  finally
+    strings.EndUpdate;
+  end;
+end;
+
+procedure TStringsHelper.ExtractValues(strings: TStrings);
+var
+  i: Integer;
+begin
+  TArgument.CheckNotNull(strings, 'strings');
+  strings.BeginUpdate;
+  try
+    for i := 0 to Count - 1 do
+    begin
+      strings.Add(Self.ValueFromIndex[i]);
+    end;
+  finally
+    strings.EndUpdate;
+  end;
 end;
 
 function TStringsHelper.ContainsName(const name: string): Boolean;
@@ -393,6 +440,28 @@ begin
   else
   begin
     Result := default;
+  end;
+end;
+
+function TStringsHelper.GetNames: TStringDynArray;
+var
+  i: Integer;
+begin
+  SetLength(Result, Count);
+  for i := 0 to Count - 1 do
+  begin
+    Result[i] := Names[i];
+  end;
+end;
+
+function TStringsHelper.GetValues: TStringDynArray;
+var
+  i: Integer;
+begin
+  SetLength(Result, Count);
+  for i := 0 to Count - 1 do
+  begin
+    Result[i] := ValueFromIndex[i];
   end;
 end;
 

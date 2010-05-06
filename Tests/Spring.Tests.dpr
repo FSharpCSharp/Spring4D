@@ -49,8 +49,7 @@ uses
   Spring.Tests.IoC.Components in 'Source\Core\Spring.Tests.IoC.Components.pas',
   Spring.Tests.IoC.LifetimeManager in 'Source\Core\Spring.Tests.IoC.LifetimeManager.pas',
   Spring.Tests.IoC in 'Source\Core\Spring.Tests.IoC.pas',
-  Spring.Tests.Pool in 'Source\Core\Spring.Tests.Pool.pas',
-  Spring.Tests.Binding in 'Source\Core\Spring.Tests.Binding.pas';
+  Spring.Tests.Pool in 'Source\Core\Spring.Tests.Pool.pas';
 
 {$R *.RES}
 
@@ -123,17 +122,9 @@ begin
     TTestImplementsAttribute.Suite
   ]);
 
-  RegisterTests('Core.Binding', [
-    TTestBindSimpleProperty.Suite,
-    TTestBindNullableProperty.Suite,
-    TTestBindIList.Suite,
-    TTestSimpleDataTemplate.Suite
-  ]);
-
   RegisterTests('Extensions.Numbering', [
     TTestNumberRuleBuilder.Suite
   ]);
-
 
 end;
 

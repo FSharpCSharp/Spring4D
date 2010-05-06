@@ -29,7 +29,7 @@ interface
 uses
   SysUtils,
   TestFramework,
-  Spring.System,
+  Spring,
   Spring.IoC.Core;
 
 type

@@ -34,7 +34,7 @@ uses
   Rtti,
   TypInfo,
   Generics.Collections,
-  Spring.System,
+  Spring,
   Spring.Collections,
   Spring.IoC.Core;
 
@@ -90,7 +90,7 @@ uses
   Spring.ResourceStrings,
   Spring.IoC.ComponentActivator,
   Spring.IoC.LifetimeManager,
-  Spring.Core.ResourceStrings;
+  Spring.IoC.ResourceStrings;
 
 {$REGION 'TDependencyResolver'}
 

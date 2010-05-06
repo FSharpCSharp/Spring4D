@@ -15,11 +15,8 @@
 			<Projects Include="Tests\Spring.Tests.dproj">
 				<Dependencies>Packages\Spring.Base.dproj;Packages\Spring.Core.dproj;Packages\Spring.Extensions.dproj</Dependencies>
 			</Projects>
-			<Projects Include="Examples\Core\Binding\BindingDemo.dproj">
-				<Dependencies>Packages\Spring.Base.dproj;Packages\Spring.Core.dproj</Dependencies>
-			</Projects>
 			<Projects Include="Tests\Spike.dproj">
-				<Dependencies/>
+				<Dependencies>Packages\Spring.Base.dproj;Packages\Spring.Core.dproj;Packages\Spring.Extensions.dproj</Dependencies>
 			</Projects>
 		</ItemGroup>
 		<ProjectExtensions>
@@ -65,32 +62,23 @@
 		<Target DependsOnTargets="Spring.Base:Make;Spring.Core:Make;Spring.Extensions:Make" Name="Spring_Tests:Make">
 			<MSBuild Targets="Make" Projects="Tests\Spring.Tests.dproj"/>
 		</Target>
-		<Target DependsOnTargets="Spring.Base;Spring.Core" Name="BindingDemo">
-			<MSBuild Projects="Examples\Core\Binding\BindingDemo.dproj"/>
-		</Target>
-		<Target DependsOnTargets="Spring.Base:Clean;Spring.Core:Clean" Name="BindingDemo:Clean">
-			<MSBuild Targets="Clean" Projects="Examples\Core\Binding\BindingDemo.dproj"/>
-		</Target>
-		<Target DependsOnTargets="Spring.Base:Make;Spring.Core:Make" Name="BindingDemo:Make">
-			<MSBuild Targets="Make" Projects="Examples\Core\Binding\BindingDemo.dproj"/>
-		</Target>
-		<Target Name="Spike">
+		<Target DependsOnTargets="Spring.Base;Spring.Core;Spring.Extensions" Name="Spike">
 			<MSBuild Projects="Tests\Spike.dproj"/>
 		</Target>
-		<Target Name="Spike:Clean">
+		<Target DependsOnTargets="Spring.Base:Clean;Spring.Core:Clean;Spring.Extensions:Clean" Name="Spike:Clean">
 			<MSBuild Targets="Clean" Projects="Tests\Spike.dproj"/>
 		</Target>
-		<Target Name="Spike:Make">
+		<Target DependsOnTargets="Spring.Base:Make;Spring.Core:Make;Spring.Extensions:Make" Name="Spike:Make">
 			<MSBuild Targets="Make" Projects="Tests\Spike.dproj"/>
 		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="Spring_Base;Spring_Core;Spring_Extensions;Spring_Tests;BindingDemo;Spike"/>
+			<CallTarget Targets="Spring_Base;Spring_Core;Spring_Extensions;Spring_Tests;Spike"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="Spring_Base:Clean;Spring_Core:Clean;Spring_Extensions:Clean;Spring_Tests:Clean;BindingDemo:Clean;Spike:Clean"/>
+			<CallTarget Targets="Spring_Base:Clean;Spring_Core:Clean;Spring_Extensions:Clean;Spring_Tests:Clean;Spike:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="Spring_Base:Make;Spring_Core:Make;Spring_Extensions:Make;Spring_Tests:Make;BindingDemo:Make;Spike:Make"/>
+			<CallTarget Targets="Spring_Base:Make;Spring_Core:Make;Spring_Extensions:Make;Spring_Tests:Make;Spike:Make"/>
 		</Target>
 		<Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 	</Project>

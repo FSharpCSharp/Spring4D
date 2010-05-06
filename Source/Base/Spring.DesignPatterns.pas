@@ -36,7 +36,7 @@ uses
   SyncObjs,
   TypInfo,
   Generics.Collections,
-  Spring.System;
+  Spring;
 
 type
   {$REGION 'Singleton Pattern'}

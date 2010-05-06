@@ -15,9 +15,6 @@
 			<Projects Include="Base\Utils\FileSearcher\FileSearcher.dproj">
 				<Dependencies/>
 			</Projects>
-			<Projects Include="Core\Binding\BindingDemo.dproj">
-				<Dependencies/>
-			</Projects>
 		</ItemGroup>
 		<ProjectExtensions>
 			<Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -62,23 +59,14 @@
 		<Target Name="FileSearcher:Make">
 			<MSBuild Targets="Make" Projects="Base\Utils\FileSearcher\FileSearcher.dproj"/>
 		</Target>
-		<Target Name="BindingDemo">
-			<MSBuild Projects="Core\Binding\BindingDemo.dproj"/>
-		</Target>
-		<Target Name="BindingDemo:Clean">
-			<MSBuild Targets="Clean" Projects="Core\Binding\BindingDemo.dproj"/>
-		</Target>
-		<Target Name="BindingDemo:Make">
-			<MSBuild Targets="Make" Projects="Core\Binding\BindingDemo.dproj"/>
-		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="Callback;EnvironmentDemo;Numbering;FileSearcher;BindingDemo"/>
+			<CallTarget Targets="Callback;EnvironmentDemo;Numbering;FileSearcher"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="Callback:Clean;EnvironmentDemo:Clean;Numbering:Clean;FileSearcher:Clean;BindingDemo:Clean"/>
+			<CallTarget Targets="Callback:Clean;EnvironmentDemo:Clean;Numbering:Clean;FileSearcher:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="Callback:Make;EnvironmentDemo:Make;Numbering:Make;FileSearcher:Make;BindingDemo:Make"/>
+			<CallTarget Targets="Callback:Make;EnvironmentDemo:Make;Numbering:Make;FileSearcher:Make"/>
 		</Target>
 		<Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 	</Project>

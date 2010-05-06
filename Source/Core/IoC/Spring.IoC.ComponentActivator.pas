@@ -32,7 +32,7 @@ uses
   Classes,
   SysUtils,
   Rtti,
-  Spring.System,
+  Spring,
   Spring.Collections,
   Spring.Reflection,
   Spring.IoC.Core;
@@ -76,7 +76,7 @@ implementation
 
 uses
   Spring.Helpers,
-  Spring.Core.ResourceStrings;
+  Spring.IoC.ResourceStrings;
 
 
 {$REGION 'TComponentActivatorBase'}
