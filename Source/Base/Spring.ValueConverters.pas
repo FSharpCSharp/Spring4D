@@ -182,7 +182,8 @@ implementation
 
 uses
   StrUtils,
-  SysUtils;
+  SysUtils,
+  Spring.System;
 
 {$REGION 'TValueConverter'}
 
@@ -334,8 +335,17 @@ end;
 
 function TNullableValueConverter.SourceToTarget(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+var
+  outValue: TValue;
 begin
-
+  if (value.TypeInfo.Name = 'TNullable<System.string>') and
+    (targetTypeInfo.Kind = tkString) then
+  begin
+    TValue.Make(value.GetReferenceToRawData, TypeInfo(TNullable<string>), outValue);
+    Result := (outValue.AsType<TNullable<string>>.Value);
+  end;
+  if value.TypeInfo.Name = 'TNullable<System.Integer>' then
+  if value.TypeInfo.Name = 'TNullable<System.Double>' then
 end;
 
 function TNullableValueConverter.TargetToSource(const value: TValue;
