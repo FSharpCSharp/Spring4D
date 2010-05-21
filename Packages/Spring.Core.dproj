@@ -27,7 +27,7 @@
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;$(DCC_UnitAlias)</DCC_UnitAlias>
 			<GenPackage>true</GenPackage>
 			<GenDll>true</GenDll>
-			<DCC_Description>Delphi Spring Framework Core Library</DCC_Description>
+			<DCC_Description>Spring Framework for Delphi Core Library</DCC_Description>
 			<DCC_ImageBase>00400000</DCC_ImageBase>
 			<DCC_Platform>x86</DCC_Platform>
 			<DCC_ExeOutput>Bin</DCC_ExeOutput>
@@ -105,10 +105,10 @@
 					</VersionInfo>
 					<VersionInfoKeys>
 						<VersionInfoKeys Name="CompanyName"/>
-						<VersionInfoKeys Name="FileDescription">Delphi Spring Framework Core Library</VersionInfoKeys>
+						<VersionInfoKeys Name="FileDescription">Spring Framework for Delphi Core Library</VersionInfoKeys>
 						<VersionInfoKeys Name="FileVersion">0.2.0.566</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName"/>
-						<VersionInfoKeys Name="LegalCopyright"/>
+						<VersionInfoKeys Name="LegalCopyright">Copyright (c) 2010 DevJet</VersionInfoKeys>
 						<VersionInfoKeys Name="LegalTrademarks"/>
 						<VersionInfoKeys Name="OriginalFilename"/>
 						<VersionInfoKeys Name="ProductName"/>

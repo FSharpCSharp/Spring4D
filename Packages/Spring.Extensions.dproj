@@ -25,7 +25,7 @@
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
 			<DCC_DependencyCheckOutputName>C:\Users\Public\Documents\RAD Studio\7.0\Bpl\Spring.Extensions.bpl</DCC_DependencyCheckOutputName>
 			<RuntimeOnlyPackage>true</RuntimeOnlyPackage>
-			<DCC_Description>Delphi Spring Framework Extensions Library</DCC_Description>
+			<DCC_Description>Spring Framework for Delphi Extensions Library</DCC_Description>
 			<GenDll>true</GenDll>
 			<GenPackage>true</GenPackage>
 			<DesignOnlyPackage>false</DesignOnlyPackage>
@@ -104,10 +104,10 @@
 					</VersionInfo>
 					<VersionInfoKeys>
 						<VersionInfoKeys Name="CompanyName"/>
-						<VersionInfoKeys Name="FileDescription">Delphi Spring Framework Extensions Library</VersionInfoKeys>
+						<VersionInfoKeys Name="FileDescription">Spring Framework for Delphi Extensions Library</VersionInfoKeys>
 						<VersionInfoKeys Name="FileVersion">0.2.0.597</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName"/>
-						<VersionInfoKeys Name="LegalCopyright"/>
+						<VersionInfoKeys Name="LegalCopyright">Copyright (c) 2010 DevJet</VersionInfoKeys>
 						<VersionInfoKeys Name="LegalTrademarks"/>
 						<VersionInfoKeys Name="OriginalFilename"/>
 						<VersionInfoKeys Name="ProductName"/>

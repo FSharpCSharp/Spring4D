@@ -26,7 +26,7 @@
 			<RuntimeOnlyPackage>true</RuntimeOnlyPackage>
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
 			<DCC_DependencyCheckOutputName>C:\Users\Public\Documents\RAD Studio\7.0\Bpl\Spring.Base.bpl</DCC_DependencyCheckOutputName>
-			<DCC_Description>Delphi Spring Framework Base Class Library</DCC_Description>
+			<DCC_Description>Spring Framework for Delphi Base Class Library</DCC_Description>
 			<GenDll>true</GenDll>
 			<GenPackage>true</GenPackage>
 			<DCC_ImageBase>00400000</DCC_ImageBase>
@@ -72,7 +72,6 @@
 			<DCCReference Include="..\Source\Base\Cryptography\Spring.Cryptography.SHA.pas"/>
 			<DCCReference Include="..\Source\Base\Cryptography\Spring.Cryptography.Utils.pas"/>
 			<DCCReference Include="..\Source\Base\Spring.pas"/>
-			<None Include="..\Source\Base\Spring.inc"/>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>
 			</BuildConfiguration>
@@ -116,20 +115,17 @@
 					</VersionInfo>
 					<VersionInfoKeys>
 						<VersionInfoKeys Name="CompanyName"/>
-						<VersionInfoKeys Name="FileDescription">Delphi Spring Framework Base Class Library</VersionInfoKeys>
+						<VersionInfoKeys Name="FileDescription">Spring Framework for Delphi Base Class Library</VersionInfoKeys>
 						<VersionInfoKeys Name="FileVersion">0.2.0.566</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName"/>
-						<VersionInfoKeys Name="LegalCopyright"/>
+						<VersionInfoKeys Name="LegalCopyright">Copyright (c) 2010 DevJet</VersionInfoKeys>
 						<VersionInfoKeys Name="LegalTrademarks"/>
 						<VersionInfoKeys Name="OriginalFilename"/>
 						<VersionInfoKeys Name="ProductName"/>
 						<VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys>
 						<VersionInfoKeys Name="Comments"/>
 					</VersionInfoKeys>
-					<Excluded_Packages>
-						<Excluded_Packages Name="$(BDS)\bin\dcloffice2k140.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
-						<Excluded_Packages Name="$(BDS)\bin\dclofficexp140.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
-					</Excluded_Packages>
+					<Excluded_Packages/>
 				</Delphi.Personality>
 				<Platforms>
 					<Platform value="Win32">True</Platform>

@@ -1,10 +1,10 @@
 {***************************************************************************}
 {                                                                           }
-{           Delphi Spring Framework                                         }
+{           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (C) 2009-2010 Delphi Spring Framework                 }
+{           Copyright (C) 2009-2010 DevJet                                  }
 {                                                                           }
-{           http://delphi-spring-framework.googlecode.com                   }
+{           http://www.DevJet.net                                           }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -100,7 +100,7 @@ implementation
 uses
   ShellAPI,
   TypInfo,
-  Spring.System,
+  Spring,
   Spring.Utils;
 
 {$R *.dfm}
@@ -291,7 +291,7 @@ end;
 
 procedure TfrmDemo.lblHomepageClick(Sender: TObject);
 begin
-  ShellExecute(Handle, nil, PChar('http://www.zuobaoquan.com'), nil, nil, 1);
+  ShellExecute(Handle, nil, PChar('http://www.devjet.net'), nil, nil, 1);
 end;
 
 procedure TfrmDemo.rgEnvironmentVariableTargetClick(Sender: TObject);

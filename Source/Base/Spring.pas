@@ -1,10 +1,10 @@
 {***************************************************************************}
 {                                                                           }
-{           Delphi Spring Framework                                         }
+{           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (C) 2009-2010 Delphi Spring Framework                 }
+{           Copyright (C) 2009-2010 DevJet                                  }
 {                                                                           }
-{           http://delphi-spring-framework.googlecode.com                   }
+{           http://www.DevJet.net                                           }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -294,8 +294,9 @@ type
     { Internal function without range check }
     class function ConvertToInteger<T{:enum}>(const value: T): Integer; static;
   public
-//  ExtractNames<T>(names: TStrings);
-//  ExtractValues<T>(values: TStrings);
+    // Todo: Add Non-Generic methods
+//  class procedure ExtractNames<T>(names: TStrings); static;
+//  class procedure ExtractValues<T>(values: TStrings); static;
     class function IsValid<T{:enum}>(const value: T): Boolean; overload; static;
     class function IsValid<T{:enum}>(const value: Integer): Boolean; overload; static;
     class function GetName<T{:enum}>(const value: T): string; overload; static;
@@ -2754,3 +2755,6 @@ end;
 {$ENDREGION}
 
 end.
+
+
+
