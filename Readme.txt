@@ -1,11 +1,11 @@
 =====================================================================================
-Delphi Spring Framework
+Spring Framework for Delphi
 =====================================================================================
 
 
 1. Introduction
 
-Delphi Spring Framework is an international open source project, whose mission is to provide a robust infrastructure framework that will help delphi developers build solid, flexible and extensible enterprise applications and class libraries based on the Delphi 2010 for Win32 platform.
+Spring Framework for Delphi is an international open source project, whose mission is to provide a robust infrastructure framework that will help delphi developers build solid, flexible and extensible enterprise applications and class libraries based on the Delphi 2010 for Win32 platform.
 
 2. Project Status and License
 

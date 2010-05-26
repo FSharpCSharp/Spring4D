@@ -25,7 +25,7 @@
 {TODO -oPaul -cGeneral : Move TCallback to Spring.Utils}
 
 /// <summary>
-/// Declares the fundamental types and rountines in the Delphi Spring Framework.
+/// Declares the fundamental types and rountines.
 /// </summary>
 /// Note: This unit should be platform independent.
 unit Spring;
@@ -427,7 +427,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'IDelegate<T>'}
+  {$REGION 'IDelegate<T> (Experimental)'}
 
   /// <summary>
   /// Represents a multicast delegate interface.

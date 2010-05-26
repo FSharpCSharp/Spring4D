@@ -1,10 +1,10 @@
 {***************************************************************************}
 {                                                                           }
-{           Delphi Spring Framework                                         }
+{           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (C) 2009-2010 Delphi Spring Framework                 }
+{           Copyright (C) 2009-2010 DevJet                                  }
 {                                                                           }
-{           http://delphi-spring-framework.googlecode.com                   }
+{           http://www.DevJet.net                                           }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }

@@ -114,7 +114,7 @@ type
   TFieldHelper = class helper for TField
   public
     function GetValueOrDefault<T>(const default: T): T;
-//    property IsNullOrEmpty: Boolean;
+//    property IsNullOrWhiteSpace: Boolean;
 //    property IsModified: Boolean;
   end;
 

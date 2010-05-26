@@ -4,7 +4,7 @@ object frmMain: TfrmMain
   ActiveControl = btnBuild
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
-  Caption = 'Build Delphi Spring Framework'
+  Caption = 'Build Spring Framework for Delphi'
   ClientHeight = 373
   ClientWidth = 496
   Color = clBtnFace
@@ -437,13 +437,13 @@ object frmMain: TfrmMain
   object lblHomepage: TLinkLabel
     Left = 8
     Top = 346
-    Width = 137
+    Width = 155
     Height = 19
     Hint = 'Visit the home page'
     CustomHint = BalloonHint1
     Caption = 
-      '<a href="http://delphi-spring-framework.googlecode.com/">Delphi ' +
-      'Spring Framework</a>'
+      '<a href="http://delphi-spring-framework.googlecode.com/">Spring ' +
+      'Framework for Delphi</a>'
     TabOrder = 5
     UseVisualStyle = True
     OnLinkClick = lblHomepageLinkClick
