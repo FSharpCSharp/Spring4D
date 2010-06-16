@@ -75,7 +75,8 @@ contains
   Spring.Cryptography in '..\Source\Base\Cryptography\Spring.Cryptography.pas',
   Spring.Cryptography.SHA in '..\Source\Base\Cryptography\Spring.Cryptography.SHA.pas',
   Spring.Cryptography.Utils in '..\Source\Base\Cryptography\Spring.Cryptography.Utils.pas',
-  Spring in '..\Source\Base\Spring.pas';
+  Spring in '..\Source\Base\Spring.pas',
+  Spring.ValueConverters in '..\Source\Base\Spring.ValueConverters.pas';
 
 end.
 

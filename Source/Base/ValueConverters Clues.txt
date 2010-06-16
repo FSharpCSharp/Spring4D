@@ -1,4 +1,4 @@
-1. Use GetTypeName insteading of string(value.TypeInfo.Name) since it is utf8 string
-2. Use DoXXX for protected methods.
+1. Use GetTypeName insteading of string(value.TypeInfo.Name) since it is utf8 string. - DONE
+2. Use DoXXX for protected methods. - DONE
 3. since TValue could be empty we need to handle this.
-4. TNullableValueConverter should ge generic. (check out the Spring.TryGetUnderlyingValue, etc)
+4. TNullableValueConverter should be generic. (check out the Spring.TryGetUnderlyingValue, etc.) - DONE

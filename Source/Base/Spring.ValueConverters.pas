@@ -1,10 +1,10 @@
 {***************************************************************************}
 {                                                                           }
-{           Delphi Spring Framework                                         }
+{           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (C) 2009-2010 Delphi Spring Framework                 }
+{           Copyright (C) 2009-2010 DevJet                                  }
 {                                                                           }
-{           http://delphi-spring-framework.googlecode.com                   }
+{           http://www.DevJet.net                                           }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -57,10 +57,10 @@ type
       const parameter: TValue): TValue;
     class function GetDefault: IValueConverter; static;
   protected
-    function SourceToTarget(const value: TValue;
+    function DoSourceToTarget(const value: TValue;
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; virtual; abstract;
-    function TargetToSource(const value: TValue;
+    function DoTargetToSource(const value: TValue;
       const sourceTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; virtual; abstract;
   public
@@ -88,10 +88,10 @@ type
   /// </remarks>
   TDefaultValueConverter = class(TValueConverter)
   protected
-    function SourceToTarget(const value: TValue;
+    function DoSourceToTarget(const value: TValue;
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
-    function TargetToSource(const value: TValue;
+    function DoTargetToSource(const value: TValue;
       const sourceTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
   end;
@@ -101,10 +101,10 @@ type
   /// </summary>
   TIntegerToStringConverter = class(TValueConverter)
   protected
-    function SourceToTarget(const value: TValue;
+    function DoSourceToTarget(const value: TValue;
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
-    function TargetToSource(const value: TValue;
+    function DoTargetToSource(const value: TValue;
       const sourceTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
   end;
@@ -114,10 +114,10 @@ type
   /// </summary>
   TBooleanToStringConverter = class(TValueConverter)
   protected
-    function SourceToTarget(const value: TValue;
+    function DoSourceToTarget(const value: TValue;
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
-    function TargetToSource(const value: TValue;
+    function DoTargetToSource(const value: TValue;
       const sourceTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
   end;
@@ -131,10 +131,10 @@ type
   /// </remarks>
   TNullableValueConverter = class(TValueConverter)
   protected
-    function SourceToTarget(const value: TValue;
+    function DoSourceToTarget(const value: TValue;
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
-    function TargetToSource(const value: TValue;
+    function DoTargetToSource(const value: TValue;
       const sourceTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
   end;
@@ -144,10 +144,10 @@ type
   /// </summary>
   TEnumValueConverter = class(TValueConverter)
   protected
-    function SourceToTarget(const value: TValue;
+    function DoSourceToTarget(const value: TValue;
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
-    function TargetToSource(const value: TValue;
+    function DoTargetToSource(const value: TValue;
       const sourceTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
   end;
@@ -183,12 +183,18 @@ implementation
 uses
   StrUtils,
   SysUtils,
-  Spring.System;
+  Spring;
 
 {$REGION 'TValueConverter'}
 
+constructor TValueConverter.Create;
+begin
+  inherited;
+end;
+
 class constructor TValueConverter.Create;
 begin
+  inherited;
   fDefaultConverter := TDefaultValueConverter.Create;
 end;
 
@@ -197,21 +203,16 @@ begin
   Exit(fDefaultConverter);
 end;
 
-constructor TValueConverter.Create;
-begin
-
-end;
-
 function TValueConverter.ConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
-  Exit(SourceToTarget(value, targetTypeInfo, parameter));
+  Exit(DoSourceToTarget(value, targetTypeInfo, parameter));
 end;
 
 function TValueConverter.ConvertFrom(const value: TValue;
   const sourceTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
-  Exit(TargetToSource(value, sourceTypeInfo, parameter));
+  Exit(DoTargetToSource(value, sourceTypeInfo, parameter));
 end;
 
 {$ENDREGION}
@@ -219,7 +220,7 @@ end;
 
 {$REGION 'TDefaultValueConverter'}
 
-function TDefaultValueConverter.SourceToTarget(const value: TValue;
+function TDefaultValueConverter.DoSourceToTarget(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 var
   converter: IValueConverter;
@@ -227,37 +228,44 @@ var
 begin
   ///  1. find/lock "global" registry
   converter := TValueConverterFactory.CreateConverter(value.TypeInfo, targetTypeInfo);
+  converterClass := nil;
   if converter <> nil then
     Exit(converter.ConvertTo(value, targetTypeInfo, parameter))
   else ///  2. use TValue.TryCast
   if not value.TryCast(targetTypeInfo, Result) then
   begin
-    ///  3. use RTTI exploring and select apropriate converter then register it
+    ///  3. use RTTI exploring and select apropriate converter then
+    ///     register it on global registry
     ///   * TNullable<T> and T
-    ///   * Enumeration and Integer/string
-    ///   * TColor and Integer/string
-    ///   * Integer and string
-    if StrUtils.ContainsStr(string(value.TypeInfo.Name), 'TNullable') and
-      (targetTypeInfo.Kind in [tkString, tkInteger, tkFloat]) then
+    if StrUtils.ContainsStr(GetTypeName(value.TypeInfo), 'TNullable') then
     begin
       converterClass := TNullableValueConverter;
     end
     else
+    ///   * Enumeration and Integer/string
     if (value.TypeInfo.Kind = tkEnumeration) and
       (targetTypeInfo.Kind in [tkString, tkInteger, tkFloat]) then
     begin
       converterClass := TEnumValueConverter;
+    end
+    else
+    ///   * Integer and string
+    if (value.TypeInfo.Kind = tkInteger) and
+      (targetTypeInfo.Kind = tkString) then
+    begin
+      converterClass := TIntegerToStringConverter;
     end;
-    if converterClass <> nil then
+    ///   * TColor and Integer/string
+    if Assigned(converterClass) then
     begin
       TValueConverterFactory.RegisterConverter(value.TypeInfo,
         targetTypeInfo, converterClass);
-      Self.SourceToTarget(value, targetTypeInfo, parameter);
+      Self.DoSourceToTarget(value, targetTypeInfo, parameter);
     end;
   end;
 end;
 
-function TDefaultValueConverter.TargetToSource(const value: TValue;
+function TDefaultValueConverter.DoTargetToSource(const value: TValue;
   const sourceTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
 
@@ -268,7 +276,7 @@ end;
 
 {$REGION 'TIntegerToStringConverter'}
 
-function TIntegerToStringConverter.SourceToTarget(const value: TValue;
+function TIntegerToStringConverter.DoSourceToTarget(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
   try
@@ -277,7 +285,7 @@ begin
   end;
 end;
 
-function TIntegerToStringConverter.TargetToSource(const value: TValue;
+function TIntegerToStringConverter.DoTargetToSource(const value: TValue;
   const sourceTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
   try
@@ -291,7 +299,7 @@ end;
 
 {$REGION 'TBooleanToStringConverter'}
 
-function TBooleanToStringConverter.SourceToTarget(const value: TValue;
+function TBooleanToStringConverter.DoSourceToTarget(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 var
   token: string;
@@ -310,7 +318,7 @@ begin
   end;
 end;
 
-function TBooleanToStringConverter.TargetToSource(const value: TValue;
+function TBooleanToStringConverter.DoTargetToSource(const value: TValue;
   const sourceTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 var
   token: string;
@@ -333,22 +341,25 @@ end;
 
 {$REGION 'TNullableValueConverter'}
 
-function TNullableValueConverter.SourceToTarget(const value: TValue;
+function TNullableValueConverter.DoSourceToTarget(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 var
   outValue: TValue;
 begin
-  if (value.TypeInfo.Name = 'TNullable<System.string>') and
+  if Spring.TryGetUnderlyingValue(value, outValue) then
+    Result := outValue;
+
+  {if (value.TypeInfo.Name = 'TNullable<System.string>') and
     (targetTypeInfo.Kind = tkString) then
   begin
     TValue.Make(value.GetReferenceToRawData, TypeInfo(TNullable<string>), outValue);
-    Result := (outValue.AsType<TNullable<string>>.Value);
+    Result := outValue.AsType<TNullable<string>>.Value;
   end;
-  if value.TypeInfo.Name = 'TNullable<System.Integer>' then
-  if value.TypeInfo.Name = 'TNullable<System.Double>' then
+  if value.TypeInfo.Name = 'TNullable<System.Integer>' then ;
+  if value.TypeInfo.Name = 'TNullable<System.Double>' then ;}
 end;
 
-function TNullableValueConverter.TargetToSource(const value: TValue;
+function TNullableValueConverter.DoTargetToSource(const value: TValue;
   const sourceTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
 
@@ -359,13 +370,13 @@ end;
 
 {$REGION 'TEnumValueConverter'}
 
-function TEnumValueConverter.SourceToTarget(const value: TValue;
+function TEnumValueConverter.DoSourceToTarget(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
 
 end;
 
-function TEnumValueConverter.TargetToSource(const value: TValue;
+function TEnumValueConverter.DoTargetToSource(const value: TValue;
   const sourceTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
 
