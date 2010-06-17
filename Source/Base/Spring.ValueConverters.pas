@@ -470,8 +470,16 @@ end;
 
 function TNullableValueConverter.DoTargetToSource(const value: TValue;
   const sourceTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+var
+  underlyingTypeInfo: PTypeInfo;
+  underlyingValue: TValue;
 begin
-  TValue.Make(value.GetReferenceToRawData, sourceTypeInfo, Result);
+  TryGetUnderlyingTypeInfo(sourceTypeInfo, underlyingTypeInfo);
+  if underlyingTypeInfo.Name <> value.TypeInfo.Name then
+    underlyingValue := TValueConverter.Default.ConvertTo(value, underlyingTypeInfo, parameter)
+  else underlyingValue := value;
+  TNullable<>
+  TValue.Make(underlyingValue.GetReferenceToRawData, sourceTypeInfo, Result);
 end;
 
 {$ENDREGION}

@@ -211,11 +211,12 @@ var
   outValue: TValue;
   outNullable: TNullable<Integer>;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<string>('0'),
+  outValue := fConverter.ConvertTo(TValue.From<string>('15'),
     TypeInfo(TNullable<Integer>), TValue.Empty);
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TNullable<Integer>>(outNullable));
-  CheckEquals(outNullable.Value, 0);
+  CheckTrue(outNullable.HasValue);
+  CheckEquals(outNullable.Value, 15);
 end;
 
 procedure TTestValueConverters.TestStringToNullableString;
@@ -227,6 +228,7 @@ begin
     TypeInfo(TNullable<string>), TValue.Empty);
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TNullable<string>>(outNullable));
+  CheckTrue(outNullable.HasValue);
   CheckEquals(outNullable.Value, '0');
 end;
 
