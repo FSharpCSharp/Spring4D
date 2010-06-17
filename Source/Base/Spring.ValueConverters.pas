@@ -478,8 +478,8 @@ begin
   if underlyingTypeInfo.Name <> value.TypeInfo.Name then
     underlyingValue := TValueConverter.Default.ConvertTo(value, underlyingTypeInfo, parameter)
   else underlyingValue := value;
-  TNullable<>
-  TValue.Make(underlyingValue.GetReferenceToRawData, sourceTypeInfo, Result);
+  // how to make a TNullable<T>
+  TValue.Make(nil, sourceTypeInfo, Result);
 end;
 
 {$ENDREGION}
