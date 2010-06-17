@@ -85,6 +85,7 @@ type
   ///   * Enumeration and Integer/string
   ///   * TColor and Integer/string
   ///   * Integer and string
+  ///   * Enumeration and Integer/string
   /// </remarks>
   TDefaultValueConverter = class(TValueConverter)
   protected
@@ -97,7 +98,7 @@ type
   end;
 
   /// <summary>
-  ///  Simply provides an conversion routine beetwen Integer and string
+  ///  Simply provides conversion routine beetwen Integer and string
   /// </summary>
   TIntegerToStringConverter = class(TValueConverter)
   protected
@@ -110,7 +111,7 @@ type
   end;
 
   /// <summary>
-  ///  Simply provides an conversion routine beetwen Boolean and string
+  ///  Simply provides conversion routine beetwen Boolean and string
   /// </summary>
   TBooleanToStringConverter = class(TValueConverter)
   protected
@@ -123,10 +124,10 @@ type
   end;
 
   /// <summary>
-  ///  Provides an conversion routine beetwen TNullable<T> and T
+  ///  Provides conversion routine beetwen TNullable<T> and T
   /// </summary>
   /// <remarks>
-  ///  Internally it may use another Converter delegating
+  ///  Internally it use another Converter to delegate
   ///  conversion routine
   /// </remarks>
   TNullableValueConverter = class(TValueConverter)
@@ -140,9 +141,22 @@ type
   end;
 
   /// <summary>
-  ///  Provides an conversion routine beetwen enum and Integer/string
+  ///  Provides conversion routine beetwen enumeration and Integer
   /// </summary>
-  TEnumValueConverter = class(TValueConverter)
+  TEnumToInteger = class(TValueConverter)
+  protected
+    function DoSourceToTarget(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
+    function DoTargetToSource(const value: TValue;
+      const sourceTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
+  end;
+
+  /// <summary>
+  ///  Provides conversion routine beetwen enumeration and string
+  /// </summary>
+  TEnumToString = class(TValueConverter)
   protected
     function DoSourceToTarget(const value: TValue;
       const targetTypeInfo: PTypeInfo;
@@ -249,14 +263,27 @@ begin
       Exit(DoTargetToSource(value, targetTypeInfo, parameter));
     end
     else
-    ///   * Enumeration to Integer/string
+    ///   * Enumeration to string
     if (value.TypeInfo.Kind = tkEnumeration) and
-      (targetTypeInfo.Kind in [tkString, tkUString, tkInteger, tkFloat]) then
+      (targetTypeInfo.Kind in [tkString, tkUString, tkWString]) then
     begin
-      converterClass := TEnumValueConverter;
+      converterClass := TEnumToString;
     end
     else
-    if (value.TypeInfo.Kind in [tkString, tkUString, tkInteger, tkFloat]) and
+    if (value.TypeInfo.Kind in [tkString, tkUString, tkWString]) and
+      (targetTypeInfo.Kind = tkEnumeration) then
+    begin
+      Exit(DoTargetToSource(value, targetTypeInfo, parameter));
+    end
+    else
+    ///   * Enumeration to integer
+    if (value.TypeInfo.Kind = tkEnumeration) and
+      (targetTypeInfo.Kind in [tkInteger, tkInt64]) then
+    begin
+      converterClass := TEnumToInteger;
+    end
+    else
+    if (value.TypeInfo.Kind in [tkInteger, tkInt64]) and
       (targetTypeInfo.Kind = tkEnumeration) then
     begin
       Exit(DoTargetToSource(value, targetTypeInfo, parameter));
@@ -313,15 +340,28 @@ begin
       Exit(DoSourceToTarget(value, sourceTypeInfo, parameter));
     end
     else
-    ///   * Integer/string to Enumeration
-    if (value.TypeInfo.Kind in [tkString, tkUString, tkInteger, tkFloat]) and
+    ///   * string to Enumeration
+    if (value.TypeInfo.Kind in [tkString, tkUString, tkWString]) and
       (sourceTypeInfo.Kind = tkEnumeration) then
     begin
-      converterClass := TEnumValueConverter;
+      converterClass := TEnumToString;
     end
     else
     if (value.TypeInfo.Kind = tkEnumeration) and
-      (sourceTypeInfo.Kind in [tkString, tkInteger, tkFloat]) then
+      (sourceTypeInfo.Kind in [tkString, tkUString, tkWString]) then
+    begin
+      Exit(DoSourceToTarget(value, sourceTypeInfo, parameter));
+    end
+    else
+    ///   * integer to Enumeration
+    if (value.TypeInfo.Kind in [tkInteger, tkInt64]) and
+      (sourceTypeInfo.Kind = tkEnumeration) then
+    begin
+      converterClass := TEnumToInteger;
+    end
+    else
+    if (value.TypeInfo.Kind = tkEnumeration) and
+      (sourceTypeInfo.Kind in [tkInteger, tkInt64]) then
     begin
       Exit(DoSourceToTarget(value, sourceTypeInfo, parameter));
     end
@@ -422,43 +462,61 @@ end;
 
 function TNullableValueConverter.DoSourceToTarget(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
-var
-  outValue: TValue;
 begin
-  if Spring.TryGetUnderlyingValue(value, outValue) then
-    Exit(outValue);
+  Spring.TryGetUnderlyingValue(value, Result);
+  if Result.TypeInfo.Name <> targetTypeInfo.Name then
+    Exit(TValueConverter.Default.ConvertTo(Result, targetTypeInfo, parameter));
 end;
 
 function TNullableValueConverter.DoTargetToSource(const value: TValue;
   const sourceTypeInfo: PTypeInfo; const parameter: TValue): TValue;
-var
-  outValue: TValue;
 begin
-  if sourceTypeInfo.Kind = tkInteger then
-    TValue.Make(value.GetReferenceToRawData, TypeInfo(TNullable<Integer>), outValue)
-  else
-  if sourceTypeInfo.Kind = tkFloat then
-    TValue.Make(value.GetReferenceToRawData, TypeInfo(TNullable<Double>), outValue)
-  else
-  if sourceTypeInfo.Kind in [tkString, tkUString] then
-    TValue.Make(value.GetReferenceToRawData, TypeInfo(TNullable<string>), outValue);
+  TValue.Make(value.GetReferenceToRawData, sourceTypeInfo, Result);
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TEnumValueConverter'}
+{$REGION 'TEnumToString'}
 
-function TEnumValueConverter.DoSourceToTarget(const value: TValue;
+function TEnumToString.DoSourceToTarget(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+var
+  enumValue: Integer;
+  enumName: string;
 begin
-
+  enumValue := PInteger(value.GetReferenceToRawData)^;
+  enumName := GetEnumName(value.TypeInfo, enumValue);
+  Exit(TValue.From<string>(enumName));
 end;
 
-function TEnumValueConverter.DoTargetToSource(const value: TValue;
+function TEnumToString.DoTargetToSource(const value: TValue;
+  const sourceTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+var
+  enumValue: Integer;
+begin
+  enumValue := GetEnumValue(sourceTypeInfo, value.AsString);
+  TValue.Make(enumValue, sourceTypeInfo, Result);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TEnumToInteger'}
+
+function TEnumToInteger.DoSourceToTarget(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+var
+  enumValue: Integer;
+begin
+  enumValue := PInteger(value.GetReferenceToRawData)^;
+  TValue.Make(enumValue, targetTypeInfo, Result);
+end;
+
+function TEnumToInteger.DoTargetToSource(const value: TValue;
   const sourceTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
-
+  TValue.Make(value.AsInteger, sourceTypeInfo, Result);
 end;
 
 {$ENDREGION}
