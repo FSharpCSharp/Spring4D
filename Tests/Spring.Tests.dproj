@@ -61,6 +61,7 @@
 			<DCCReference Include="Source\Core\Spring.Tests.IoC.LifetimeManager.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.IoC.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.Pool.pas"/>
+			<DCCReference Include="Source\Base\Spring.Tests.ValueConverters.pas"/>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>
 			</BuildConfiguration>

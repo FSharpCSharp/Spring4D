@@ -229,46 +229,123 @@ begin
   ///  1. find/lock "global" registry
   converter := TValueConverterFactory.CreateConverter(value.TypeInfo, targetTypeInfo);
   converterClass := nil;
-  if converter <> nil then
+  if Assigned(converter) then
     Exit(converter.ConvertTo(value, targetTypeInfo, parameter))
   else ///  2. use TValue.TryCast
   if not value.TryCast(targetTypeInfo, Result) then
   begin
     ///  3. use RTTI exploring and select apropriate converter then
     ///     register it on global registry
-    ///   * TNullable<T> and T
-    if StrUtils.ContainsStr(GetTypeName(value.TypeInfo), 'TNullable') then
+    ///   * TNullable<T> to T
+    if StrUtils.ContainsStr(GetTypeName(value.TypeInfo), 'TNullable') and
+      (targetTypeInfo.Kind in [tkInteger, tkFloat, tkString, tkUString]) then
     begin
       converterClass := TNullableValueConverter;
     end
     else
-    ///   * Enumeration and Integer/string
+    if (value.TypeInfo.Kind in [tkInteger, tkFloat, tkString, tkUString]) and
+      StrUtils.ContainsStr(GetTypeName(targetTypeInfo), 'TNullable') then
+    begin
+      Exit(DoTargetToSource(value, targetTypeInfo, parameter));
+    end
+    else
+    ///   * Enumeration to Integer/string
     if (value.TypeInfo.Kind = tkEnumeration) and
-      (targetTypeInfo.Kind in [tkString, tkInteger, tkFloat]) then
+      (targetTypeInfo.Kind in [tkString, tkUString, tkInteger, tkFloat]) then
     begin
       converterClass := TEnumValueConverter;
     end
     else
-    ///   * Integer and string
+    if (value.TypeInfo.Kind in [tkString, tkUString, tkInteger, tkFloat]) and
+      (targetTypeInfo.Kind = tkEnumeration) then
+    begin
+      Exit(DoTargetToSource(value, targetTypeInfo, parameter));
+    end
+    else
+    ///   * Integer to string
     if (value.TypeInfo.Kind = tkInteger) and
-      (targetTypeInfo.Kind = tkString) then
+      (targetTypeInfo.Kind in [tkString, tkUString, tkWString]) then
     begin
       converterClass := TIntegerToStringConverter;
+    end
+    else
+    if (value.TypeInfo.Kind in [tkString, tkUString, tkWString]) and
+      (targetTypeInfo.Kind = tkInteger ) then
+    begin
+      Exit(DoTargetToSource(value, targetTypeInfo, parameter));
     end;
-    ///   * TColor and Integer/string
+    ///   * ex. TColor to Integer/string, etc.
     if Assigned(converterClass) then
     begin
       TValueConverterFactory.RegisterConverter(value.TypeInfo,
         targetTypeInfo, converterClass);
-      Self.DoSourceToTarget(value, targetTypeInfo, parameter);
+      Exit(DoSourceToTarget(value, targetTypeInfo, parameter));
     end;
   end;
 end;
 
 function TDefaultValueConverter.DoTargetToSource(const value: TValue;
   const sourceTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+var
+  converter: IValueConverter;
+  converterClass: TValueConverterClass;
 begin
-
+  ///  1. find/lock "global" registry
+  converter := TValueConverterFactory.CreateConverter(value.TypeInfo, sourceTypeInfo);
+  converterClass := nil;
+  if Assigned(converter) then
+    Exit(converter.ConvertFrom(value, sourceTypeInfo, parameter))
+  else ///  2. use TValue.TryCast
+  if not value.TryCast(sourceTypeInfo, Result) then
+  begin
+    ///  3. use RTTI exploring and select apropriate converter then
+    ///     register it on global registry
+    ///   * TNullable<T> to T
+    if (value.TypeInfo.Kind in [tkInteger, tkFloat, tkString, tkUString]) and
+      StrUtils.ContainsStr(GetTypeName(sourceTypeInfo), 'TNullable') then
+    begin
+      converterClass := TNullableValueConverter;
+    end
+    else
+    if StrUtils.ContainsStr(GetTypeName(value.TypeInfo), 'TNullable') and
+      (sourceTypeInfo.Kind in [tkInteger, tkFloat, tkString, tkUString]) then
+    begin
+      Exit(DoSourceToTarget(value, sourceTypeInfo, parameter));
+    end
+    else
+    ///   * Integer/string to Enumeration
+    if (value.TypeInfo.Kind in [tkString, tkUString, tkInteger, tkFloat]) and
+      (sourceTypeInfo.Kind = tkEnumeration) then
+    begin
+      converterClass := TEnumValueConverter;
+    end
+    else
+    if (value.TypeInfo.Kind = tkEnumeration) and
+      (sourceTypeInfo.Kind in [tkString, tkInteger, tkFloat]) then
+    begin
+      Exit(DoSourceToTarget(value, sourceTypeInfo, parameter));
+    end
+    else
+    ///   * string to Integer
+    if (value.TypeInfo.Kind in [tkString, tkUString, tkWString]) and
+      (sourceTypeInfo.Kind = tkInteger ) then
+    begin
+      converterClass := TIntegerToStringConverter;
+    end
+    else
+    if (value.TypeInfo.Kind = tkInteger) and
+      (sourceTypeInfo.Kind in [tkString, tkUString, tkWString]) then
+    begin
+      Exit(DoSourceToTarget(value, sourceTypeInfo, parameter));
+    end;
+    ///   * ex. TColor to Integer/string, etc.
+    if Assigned(converterClass) then
+    begin
+      TValueConverterFactory.RegisterConverter(value.TypeInfo,
+        sourceTypeInfo, converterClass);
+      Exit(DoTargetToSource(value, sourceTypeInfo, parameter));
+    end;
+  end;
 end;
 
 {$ENDREGION}
@@ -280,8 +357,9 @@ function TIntegerToStringConverter.DoSourceToTarget(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
   try
-    Result.From<string>(IntToStr(Value.AsInteger));
+    Exit(TValue.From<string>(IntToStr(value.AsInteger)));
   except
+    Exit(TValue.Empty);
   end;
 end;
 
@@ -289,8 +367,9 @@ function TIntegerToStringConverter.DoTargetToSource(const value: TValue;
   const sourceTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
   try
-    Result.From<Integer>(StrToInt(Value.AsString));
+    Exit(TValue.From<Integer>(StrToInt(value.AsString)));
   except
+    Exit(TValue.Empty);
   end;
 end;
 
@@ -347,22 +426,22 @@ var
   outValue: TValue;
 begin
   if Spring.TryGetUnderlyingValue(value, outValue) then
-    Result := outValue;
-
-  {if (value.TypeInfo.Name = 'TNullable<System.string>') and
-    (targetTypeInfo.Kind = tkString) then
-  begin
-    TValue.Make(value.GetReferenceToRawData, TypeInfo(TNullable<string>), outValue);
-    Result := outValue.AsType<TNullable<string>>.Value;
-  end;
-  if value.TypeInfo.Name = 'TNullable<System.Integer>' then ;
-  if value.TypeInfo.Name = 'TNullable<System.Double>' then ;}
+    Exit(outValue);
 end;
 
 function TNullableValueConverter.DoTargetToSource(const value: TValue;
   const sourceTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+var
+  outValue: TValue;
 begin
-
+  if sourceTypeInfo.Kind = tkInteger then
+    TValue.Make(value.GetReferenceToRawData, TypeInfo(TNullable<Integer>), outValue)
+  else
+  if sourceTypeInfo.Kind = tkFloat then
+    TValue.Make(value.GetReferenceToRawData, TypeInfo(TNullable<Double>), outValue)
+  else
+  if sourceTypeInfo.Kind in [tkString, tkUString] then
+    TValue.Make(value.GetReferenceToRawData, TypeInfo(TNullable<string>), outValue);
 end;
 
 {$ENDREGION}
@@ -416,7 +495,7 @@ begin
           value.ConverterClass := pair.Value.ConverterClass;
           fRegistry.AddOrSetValue(pair.Key, value);
         end;
-        Exit(pair.Value.Converter);
+        Exit(value.Converter);
       end;
     end;
   finally
@@ -433,11 +512,8 @@ begin
   System.MonitorEnter(fRegistry);
   try
     value.ConverterClass := converterClass;
-    with key do
-    begin
-      SourceTypeInfo := sourceTypeInfo;
-      TargetTypeInfo := targetTypeInfo;
-    end;
+    key.SourceTypeInfo := sourceTypeInfo;
+    key.TargetTypeInfo := targetTypeInfo;
     fRegistry.AddOrSetValue(key, value);
   finally
     System.MonitorExit(fRegistry);

@@ -49,7 +49,8 @@ uses
   Spring.Tests.IoC.Components in 'Source\Core\Spring.Tests.IoC.Components.pas',
   Spring.Tests.IoC.LifetimeManager in 'Source\Core\Spring.Tests.IoC.LifetimeManager.pas',
   Spring.Tests.IoC in 'Source\Core\Spring.Tests.IoC.pas',
-  Spring.Tests.Pool in 'Source\Core\Spring.Tests.Pool.pas';
+  Spring.Tests.Pool in 'Source\Core\Spring.Tests.Pool.pas',
+  Spring.Tests.ValueConverters in 'Source\Base\Spring.Tests.ValueConverters.pas';
 
 {$R *.RES}
 
@@ -98,6 +99,10 @@ begin
     TTestDES.Suite,
     TTestTripleDES.Suite
 //    TTestMACTripleDES.Suite
+  ]);
+
+  RegisterTests('Base.ValueConverters', [
+    TTestValueConverters.Suite
   ]);
 
   RegisterTests('Core.Pool', [
