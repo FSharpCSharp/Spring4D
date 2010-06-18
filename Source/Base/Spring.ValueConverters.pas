@@ -473,14 +473,19 @@ function TNullableValueConverter.DoTargetToSource(const value: TValue;
   const sourceTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 var
   underlyingTypeInfo: PTypeInfo;
+  underlyingValue: TValue;
   valueBuffer: TBytes;
   hasValueFlag: string;
   p: Pointer;
   us: UnicodeString;
 begin
-  p := value.GetReferenceToRawData;
   if TryGetUnderlyingTypeInfo(sourceTypeInfo, underlyingTypeInfo) then
   begin
+    underlyingValue := value;
+    if underlyingTypeInfo.Name <> value.TypeInfo.Name then
+      underlyingValue := TValueConverter.Default.ConvertTo(value, underlyingTypeInfo, parameter);
+
+    p := underlyingValue.GetReferenceToRawData;
     SetLength(valueBuffer, GetTypeData(sourceTypeInfo).RecSize);
     ZeroMemory(PByte(valueBuffer), Length(valueBuffer));
     if not IsManaged(underlyingTypeInfo) then
@@ -489,7 +494,7 @@ begin
     end
     else if underlyingTypeInfo.Kind in [tkWString, tkUString] then
     begin
-      us := StrPas(PChar(p));
+      us := PString(p)^;
       PPointer(@valueBuffer[0])^ := Pointer(us);
     end;
     if value.GetReferenceToRawData <> nil then
