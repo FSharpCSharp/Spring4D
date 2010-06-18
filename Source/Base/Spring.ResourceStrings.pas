@@ -138,11 +138,19 @@ resourcestring
   {$ENDREGION}
 
 
-  // Spring.Helpers
+  {$REGION 'Spring.Helpers'}
 
   SInvalidOperation_GetValue = 'The GetValue method works only for properties/fields.';
   SInvalidOperation_SetValue = 'The SetValue method works only for properties/fields.';
 
+  {$ENDREGION}
+
+
+  {$REGION 'Spring.ValueConverters'}
+
+  SCouldNotConvertValue = 'Could not convert value: %s to %s';
+
+  {$ENDREGION}
 
   {$REGION 'Spring.Cryptography'}
 

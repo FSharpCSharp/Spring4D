@@ -76,10 +76,10 @@ var
   outInt: Integer;
 begin
   outValue := fConverter.ConvertTo(TValue.From<Boolean>(False),
-    TypeInfo(Integer), TValue.Empty);
+    TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Integer>(outInt));
-  CheckEquals(outValue.AsInteger, 0);
+  CheckEquals(outInt, 0);
 end;
 
 procedure TTestValueConverters.TestBooleanToString;
@@ -88,10 +88,10 @@ var
   outStr: string;
 begin
   outValue := fConverter.ConvertTo(TValue.From<Boolean>(False),
-    TypeInfo(string), TValue.Empty);
+    TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEquals(outValue.AsString, 'False');
+  CheckEqualsString(outStr, 'False');
 end;
 
 procedure TTestValueConverters.TestIntegerToBoolean;
@@ -100,10 +100,10 @@ var
   outBool: Boolean;
 begin
   outValue := fConverter.ConvertTo(TValue.From<Integer>(1),
-    TypeInfo(Boolean), TValue.Empty);
+    TypeInfo(Boolean));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Boolean>(outBool));
-  CheckEquals(outValue.AsBoolean, True);
+  CheckEquals(outBool, True);
 end;
 
 procedure TTestValueConverters.TestStringToBoolean;
@@ -111,11 +111,11 @@ var
   outValue: TValue;
   outBool: Boolean;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<string>('True'),
-    TypeInfo(Boolean), TValue.Empty);
+  outValue := fConverter.ConvertTo(TValue.From<string>('False'),
+    TypeInfo(Boolean));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Boolean>(outBool));
-  CheckEquals(outValue.AsBoolean, True);
+  CheckEquals(outBool, False);
 end;
 
 procedure TTestValueConverters.TestEnumToInteger;
@@ -124,10 +124,10 @@ var
   outInt: Integer;
 begin
   outValue := fConverter.ConvertTo(TValue.From<TEnumeration>(teSecond),
-    TypeInfo(Integer), TValue.Empty);
+    TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Integer>(outInt));
-  CheckEquals(outValue.AsInteger, 1);
+  CheckEquals(outInt, 1);
 end;
 
 procedure TTestValueConverters.TestEnumToString;
@@ -136,7 +136,7 @@ var
   outStr: string;
 begin
   outValue := fConverter.ConvertTo(TValue.From<TEnumeration>(teFirst),
-    TypeInfo(string), TValue.Empty);
+    TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
   CheckEquals(outStr, 'teFirst');
@@ -148,7 +148,7 @@ var
   outEnum: TEnumeration;
 begin
   outValue := fConverter.ConvertTo(TValue.From<Integer>(1),
-    TypeInfo(TEnumeration), TValue.Empty);
+    TypeInfo(TEnumeration));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TEnumeration>(outEnum));
   CheckTrue(outEnum = teSecond);
@@ -160,7 +160,7 @@ var
   outEnum: TEnumeration;
 begin
   outValue := fConverter.ConvertTo(TValue.From<string>('teLast'),
-    TypeInfo(TEnumeration), TValue.Empty);
+    TypeInfo(TEnumeration));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TEnumeration>(outEnum));
   CheckTrue(outEnum = teLast);
@@ -171,7 +171,7 @@ var
   outValue: TValue;
 begin
   outValue := fConverter.ConvertTo(TValue.From<Integer>(1),
-    TypeInfo(string), TValue.Empty);
+    TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckEquals(outValue.AsString, '1');
 end;
@@ -181,7 +181,7 @@ var
   outValue: TValue;
 begin
   outValue := fConverter.ConvertTo(TValue.From<string>('1'),
-    TypeInfo(Integer), TValue.Empty);
+    TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckEquals(outValue.AsInteger, 1);
 end;
@@ -191,7 +191,7 @@ var
   outValue: TValue;
 begin
   outValue := fConverter.ConvertTo(TValue.From<TNullable<Integer>>(TNullable<Integer>.Create(1)),
-    TypeInfo(Integer), TValue.Empty);
+    TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckEquals(outValue.AsInteger, 1);
 end;
@@ -201,7 +201,7 @@ var
   outValue: TValue;
 begin
   outValue := fConverter.ConvertTo(TValue.From<TNullable<Integer>>(TNullable<Integer>.Create(1)),
-    TypeInfo(string), TValue.Empty);
+    TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckEquals(outValue.AsString, '1');
 end;
@@ -212,7 +212,7 @@ var
   outNullable: TNullable<Integer>;
 begin
   outValue := fConverter.ConvertTo(TValue.From<string>('15'),
-    TypeInfo(TNullable<Integer>), TValue.Empty);
+    TypeInfo(TNullable<Integer>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TNullable<Integer>>(outNullable));
   CheckTrue(outNullable.HasValue);
@@ -225,7 +225,7 @@ var
   outNullable: TNullable<string>;
 begin
   outValue := fConverter.ConvertTo(TValue.From<string>('0'),
-    TypeInfo(TNullable<string>), TValue.Empty);
+    TypeInfo(TNullable<string>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TNullable<string>>(outNullable));
   CheckTrue(outNullable.HasValue);
