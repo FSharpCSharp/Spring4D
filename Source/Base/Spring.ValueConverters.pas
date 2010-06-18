@@ -195,6 +195,7 @@ type
 implementation
 
 uses
+  Windows,
   StrUtils,
   SysUtils,
   Spring;
@@ -472,14 +473,33 @@ function TNullableValueConverter.DoTargetToSource(const value: TValue;
   const sourceTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 var
   underlyingTypeInfo: PTypeInfo;
-  underlyingValue: TValue;
+  valueBuffer: TBytes;
+  hasValueFlag: string;
+  p: Pointer;
+  us: UnicodeString;
 begin
-  TryGetUnderlyingTypeInfo(sourceTypeInfo, underlyingTypeInfo);
-  if underlyingTypeInfo.Name <> value.TypeInfo.Name then
-    underlyingValue := TValueConverter.Default.ConvertTo(value, underlyingTypeInfo, parameter)
-  else underlyingValue := value;
-  // how to make a TNullable<T>
-  TValue.Make(nil, sourceTypeInfo, Result);
+  p := value.GetReferenceToRawData;
+  if TryGetUnderlyingTypeInfo(sourceTypeInfo, underlyingTypeInfo) then
+  begin
+    SetLength(valueBuffer, GetTypeData(sourceTypeInfo).RecSize);
+    ZeroMemory(PByte(valueBuffer), Length(valueBuffer));
+    if not IsManaged(underlyingTypeInfo) then
+    begin
+      Move(PByte(p)^, PByte(valueBuffer)^, Length(valueBuffer) - SizeOf(string));
+    end
+    else if underlyingTypeInfo.Kind in [tkWString, tkUString] then
+    begin
+      us := StrPas(PChar(p));
+      PPointer(@valueBuffer[0])^ := Pointer(us);
+    end;
+    if value.GetReferenceToRawData <> nil then
+    begin
+      hasValueFlag := '@';
+      PPointer(PByte(valueBuffer) + Length(valueBuffer) - SizeOf(string))^ := Pointer(hasValueFlag);
+    end;
+  end;
+  p := PByte(valueBuffer);
+  TValue.Make(p, sourceTypeInfo, Result);
 end;
 
 {$ENDREGION}

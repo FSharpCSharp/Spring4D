@@ -2,3 +2,11 @@
 2. Use DoXXX for protected methods. - DONE
 3. since TValue could be empty we need to handle this.
 4. TNullableValueConverter should be generic. (check out the Spring.TryGetUnderlyingValue, etc.) - DONE
+------------------------------------- NEXT STAGE ------------------------------------------------------
+1. does a converter really need convertTo and convertBack methods? (or is that better that just a ConvertTo method)
+2. what is the reponsiblities of a value converter factory
+
+3. and I found there are depnedencies between TNullableValueConverter (or some else) and the default converter instance.
+ this could be better
+ and there are so many if-else statements in the default converter.
+ I think this could be done better
