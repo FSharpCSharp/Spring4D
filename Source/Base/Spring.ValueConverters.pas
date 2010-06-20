@@ -57,8 +57,6 @@ type
       out targetValue: TValue): Boolean;
     class function GetDefault: IValueConverter; static;
   protected
-    function DoConvertTo(const value: TValue;
-      const targetTypeInfo: PTypeInfo): TValue; virtual; abstract;
     function DoTryConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
       out targetValue: TValue): Boolean; virtual; abstract;
@@ -236,16 +234,24 @@ type
         TargetTypeInfo: PTypeInfo;
       end;
 
+      TConvertedTypeKind = record
+        SourceTypeKinds: TTypeKinds;
+        TargetTypeKinds: TTypeKinds;
+      end;
+
       TConverterPackage = record
         ConverterClass: TConverterClass;
         Converter: IValueConverter;
       end;
-    class var fRegistry: TDictionary<TConvertedTypeInfo, TConverterPackage>;
+    class var fTypeInfoRegistry: TDictionary<TConvertedTypeInfo, TConverterPackage>;
+    class var fTypeKindRegistry: TDictionary<TConvertedTypeKind, TConverterPackage>;
   public
     class constructor Create;
     class destructor Destroy;
+    class procedure RegisterConverter(const sourceTypeKinds, targetTypeKinds: TTypeKinds;
+      converterClass: TConverterClass); overload;
     class procedure RegisterConverter(const sourceTypeInfo, targetTypeInfo: PTypeInfo;
-      converterClass: TConverterClass);
+      converterClass: TConverterClass); overload;
     class function CreateConverter(const sourceTypeInfo,
       targetTypeInfo: PTypeInfo): IValueConverter;
   end;
@@ -308,12 +314,16 @@ begin
   TValueConverterFactory.RegisterConverter(TypeInfo(Integer), TypeInfo(Boolean), TIntegerToBooleanConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.Integer>), TypeInfo(Integer), TNullableToTypeConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.Integer>), TypeInfo(string), TNullableToTypeConverter);
-  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.string>), TypeInfo(System.string), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.string>), TypeInfo(string), TNullableToTypeConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.string>), TypeInfo(Integer), TNullableToTypeConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(TNullable<System.Integer>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(Integer), TypeInfo(TNullable<System.Integer>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(Integer), TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter([tkEnumeration], [tkInteger], TEnumToIntegerConverter);
+  TValueConverterFactory.RegisterConverter([tkInteger], [tkEnumeration], TIntegerToEnumConverter);
+  TValueConverterFactory.RegisterConverter([tkEnumeration], [tkString, tkUString, tkLString], TEnumToStringConverter);
+  TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString], [tkEnumeration], TStringToEnumConverter);
 end;
 
 function TDefaultValueConverter.DoTryConvertTo(const value: TValue;
@@ -431,10 +441,13 @@ end;
 
 function TNullableToTypeConverter.DoTryConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; out targetValue: TValue): Boolean;
+var
+  underlyingValue: TValue;
 begin
-  Result := Spring.TryGetUnderlyingValue(value, targetValue);
-  if targetValue.TypeInfo.Name <> targetTypeInfo.Name then
-    Result := TValueConverter.Default.TryConvertTo(targetValue, targetTypeInfo, targetValue);
+  Result := Spring.TryGetUnderlyingValue(value, underlyingValue);
+  if underlyingValue.TypeInfo.Name <> targetTypeInfo.Name then
+    Result := TValueConverter.Default.TryConvertTo(underlyingValue, targetTypeInfo, targetValue)
+  else targetValue := underlyingValue;
 end;
 
 {$ENDREGION}
@@ -452,8 +465,8 @@ var
   p: Pointer;
   us: UnicodeString;
 begin
-  Result := False;
-  if TryGetUnderlyingTypeInfo(targetTypeInfo, underlyingTypeInfo) then
+  Result := TryGetUnderlyingTypeInfo(targetTypeInfo, underlyingTypeInfo);
+  if Result then
   begin
     underlyingValue := value;
     if underlyingTypeInfo.Name <> value.TypeInfo.Name then
@@ -547,39 +560,63 @@ end;
 
 class constructor TValueConverterFactory.Create;
 begin
-  fRegistry := TDictionary<TConvertedTypeInfo, TConverterPackage>.Create;
+  fTypeInfoRegistry := TDictionary<TConvertedTypeInfo, TConverterPackage>.Create;
+  fTypeKindRegistry := TDictionary<TConvertedTypeKind, TConverterPackage>.Create;
 end;
 
 class destructor TValueConverterFactory.Destroy;
 begin
-  fRegistry.Free;
+  fTypeInfoRegistry.Free;
+  fTypeKindRegistry.Free;
 end;
 
 class function TValueConverterFactory.CreateConverter(const sourceTypeInfo,
   targetTypeInfo: PTypeInfo): IValueConverter;
 var
-  pair: TPair<TConvertedTypeInfo, TConverterPackage>;
+  typeInfoPair: TPair<TConvertedTypeInfo, TConverterPackage>;
+  typeKindPair: TPair<TConvertedTypeKind, TConverterPackage>;
   value: TConverterPackage;
 begin
-  System.MonitorEnter(fRegistry);
+  System.MonitorEnter(fTypeInfoRegistry);
   try
-    for pair in fRegistry do
+    for typeInfoPair in fTypeInfoRegistry do
     begin
-      if (pair.Key.SourceTypeInfo = sourceTypeInfo) and
-        (pair.Key.TargetTypeInfo = targetTypeInfo) then
+      if (typeInfoPair.Key.SourceTypeInfo = sourceTypeInfo) and
+        (typeInfoPair.Key.TargetTypeInfo = targetTypeInfo) then
       begin
-        value := pair.Value;
-        if pair.Value.Converter = nil then
+        value := typeInfoPair.Value;
+        if not Assigned(typeInfoPair.Value.Converter) then
         begin
-          value.Converter := pair.Value.ConverterClass.Create;
-          value.ConverterClass := pair.Value.ConverterClass;
-          fRegistry.AddOrSetValue(pair.Key, value);
+          value.Converter := typeInfoPair.Value.ConverterClass.Create;
+          value.ConverterClass := typeInfoPair.Value.ConverterClass;
+          fTypeInfoRegistry.AddOrSetValue(typeInfoPair.Key, value);
         end;
         Exit(value.Converter);
       end;
     end;
   finally
-    System.MonitorExit(fRegistry);
+    System.MonitorExit(fTypeInfoRegistry);
+  end;
+  System.MonitorEnter(fTypeKindRegistry);
+  try
+    if not Assigned(value.Converter) then
+      for typeKindPair in fTypeKindRegistry do
+      begin
+        if (sourceTypeInfo.Kind in typeKindPair.Key.SourceTypeKinds) and
+          (targetTypeInfo.Kind in typeKindPair.Key.TargetTypeKinds) then
+        begin
+          value := typeKindPair.Value;
+          if not Assigned(typeKindPair.Value.Converter) then
+          begin
+            value.Converter := typeKindPair.Value.ConverterClass.Create;
+            value.ConverterClass := typeKindPair.Value.ConverterClass;
+            fTypeKindRegistry.AddOrSetValue(typeKindPair.Key, value);
+          end;
+          Exit(value.Converter);
+        end;
+      end;
+  finally
+    System.MonitorExit(fTypeKindRegistry);
   end;
 end;
 
@@ -589,14 +626,31 @@ var
   value: TConverterPackage;
   key: TConvertedTypeInfo;
 begin
-  System.MonitorEnter(fRegistry);
+  System.MonitorEnter(fTypeInfoRegistry);
   try
     value.ConverterClass := converterClass;
     key.SourceTypeInfo := sourceTypeInfo;
     key.TargetTypeInfo := targetTypeInfo;
-    fRegistry.AddOrSetValue(key, value);
+    fTypeInfoRegistry.AddOrSetValue(key, value);
   finally
-    System.MonitorExit(fRegistry);
+    System.MonitorExit(fTypeInfoRegistry);
+  end;
+end;
+
+class procedure TValueConverterFactory.RegisterConverter(const sourceTypeKinds,
+  targetTypeKinds: TTypeKinds; converterClass: TConverterClass);
+var
+  value: TConverterPackage;
+  key: TConvertedTypeKind;
+begin
+  System.MonitorEnter(fTypeKindRegistry);
+  try
+    value.ConverterClass := converterClass;
+    key.SourceTypeKinds := sourceTypeKinds;
+    key.TargetTypeKinds := targetTypeKinds;
+    fTypeKindRegistry.AddOrSetValue(key, value);
+  finally
+    System.MonitorExit(fTypeKindRegistry);
   end;
 end;
 
