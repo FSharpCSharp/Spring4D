@@ -223,17 +223,63 @@ type
   end;
 
   /// <summary>
+  /// Provides conversion routine beetwen float and string
+  /// </summary>
+  TFloatToStringConverter = class(TValueConverter)
+  protected
+    function DoTryConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      out targetValue: TValue): Boolean; override;
+  end;
+
+  /// <summary>
+  /// Provides conversion routine beetwen string and float
+  /// </summary>
+  TStringToFloatConverter = class(TValueConverter)
+  protected
+    function DoTryConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      out targetValue: TValue): Boolean; override;
+  end;
+
+  /// <summary>
+  /// Provides conversion routine beetwen TColor and string
+  /// </summary>
+  TColorToStringConverter = class(TValueConverter)
+  protected
+    function DoTryConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      out targetValue: TValue): Boolean; override;
+  end;
+
+  /// <summary>
+  /// Provides conversion routine beetwen string and TColor
+  /// </summary>
+  TStringToColorConverter = class(TValueConverter)
+  protected
+    function DoTryConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      out targetValue: TValue): Boolean; override;
+  end;
+
+  /// <summary>
   /// Factory class that brings to live converter which are registered within global
   ///  converter registry
   /// </summary>
   TValueConverterFactory = class
   strict private
     type
+      /// <summary>
+      /// TypeInfo registry structure
+      /// </summary>
       TConvertedTypeInfo = record
         SourceTypeInfo: PTypeInfo;
         TargetTypeInfo: PTypeInfo;
       end;
 
+      /// <summary>
+      /// TypeKind registry structure
+      /// </summary>
       TConvertedTypeKind = record
         SourceTypeKinds: TTypeKinds;
         TargetTypeKinds: TTypeKinds;
@@ -260,6 +306,7 @@ implementation
 
 uses
   Windows,
+  Graphics,
   StrUtils,
   SysUtils,
   Spring,
@@ -312,6 +359,8 @@ begin
   TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(Boolean), TStringToBooleanConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(Boolean), TypeInfo(Integer), TBooleanToIntegerConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(Integer), TypeInfo(Boolean), TIntegerToBooleanConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TColor), TypeInfo(string), TColorToStringConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(TColor), TStringToColorConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.Integer>), TypeInfo(Integer), TNullableToTypeConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.Integer>), TypeInfo(string), TNullableToTypeConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.string>), TypeInfo(string), TNullableToTypeConverter);
@@ -320,10 +369,18 @@ begin
   TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(TNullable<System.Integer>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(Integer), TypeInfo(TNullable<System.Integer>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(Integer), TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(Extended), TypeInfo(TNullable<System.Extended>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.Extended>), TypeInfo(Extended), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.Extended>), TypeInfo(string), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(TNullable<System.Extended>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(Extended), TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.string>), TypeInfo(Extended), TNullableToTypeConverter);
   TValueConverterFactory.RegisterConverter([tkEnumeration], [tkInteger], TEnumToIntegerConverter);
   TValueConverterFactory.RegisterConverter([tkInteger], [tkEnumeration], TIntegerToEnumConverter);
   TValueConverterFactory.RegisterConverter([tkEnumeration], [tkString, tkUString, tkLString], TEnumToStringConverter);
   TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString], [tkEnumeration], TStringToEnumConverter);
+  TValueConverterFactory.RegisterConverter([tkFloat], [tkString, tkUString, tkLString], TFloatToStringConverter);
+  TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString], [tkFloat], TStringToFloatConverter);
 end;
 
 function TDefaultValueConverter.DoTryConvertTo(const value: TValue;
@@ -651,6 +708,70 @@ begin
     fTypeKindRegistry.AddOrSetValue(key, value);
   finally
     System.MonitorExit(fTypeKindRegistry);
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TFloatToStringConverter'}
+
+function TFloatToStringConverter.DoTryConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; out targetValue: TValue): Boolean;
+begin
+  Result := True;
+  try
+    targetValue := TValue.From<string>(FloatToStr(value.AsExtended));
+  except
+    Result := False;
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TStringToFloatConverter'}
+
+function TStringToFloatConverter.DoTryConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; out targetValue: TValue): Boolean;
+begin
+  Result := True;
+  try
+    targetValue := TValue.From<Extended>(StrToFloat(value.AsString));
+  except
+    Result := False;
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TColorToStringConverter'}
+
+function TColorToStringConverter.DoTryConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; out targetValue: TValue): Boolean;
+begin
+  Result := True;
+  try
+    targetValue := TValue.From<string>(ColorToString(value.AsType<TColor>));
+  except
+    Result := False;
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TStringToColorConverter'}
+
+function TStringToColorConverter.DoTryConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; out targetValue: TValue): Boolean;
+begin
+  Result := True;
+  try
+    targetValue := TValue.From<TColor>(StringToColor(value.AsString));
+  except
+    Result := False;
   end;
 end;
 
