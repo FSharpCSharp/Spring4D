@@ -63,11 +63,14 @@ type
     procedure TestFloatToString;
     procedure TestStringToColor;
     procedure TestColorToString;
+    procedure TestStringToCurrency;
+    procedure TestCurrencyToString;
   end;
 
 implementation
 
 uses
+  SysUtils,
   Graphics,
   Spring;
 
@@ -115,6 +118,18 @@ begin
   CheckEqualsString(outStr, 'clRed');
 end;
 
+procedure TTestValueConverters.TestCurrencyToString;
+var
+  outValue: TValue;
+  outStr: string;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Currency>(1.11),
+    TypeInfo(string));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<string>(outStr));
+  CheckEqualsString(outStr, FloatToStr(1.11));
+end;
+
 procedure TTestValueConverters.TestIntegerToBoolean;
 var
   outValue: TValue;
@@ -149,6 +164,18 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TColor>(outColor));
   CheckEquals(outColor, clBlue);
+end;
+
+procedure TTestValueConverters.TestStringToCurrency;
+var
+  outValue: TValue;
+  outCurrency: Currency;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<string>(FloatToStr(1.11)),
+    TypeInfo(Currency));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Currency>(outCurrency));
+  CheckEquals(outCurrency, 1.11);
 end;
 
 procedure TTestValueConverters.TestEnumToInteger;
