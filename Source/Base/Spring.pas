@@ -80,7 +80,7 @@ type
   TTypeKinds = TypInfo.TTypeKinds;
 
   /// <summary>
-  /// Redefines the TPredicate<T> type with a const parameter.
+  /// Redefines the TPredicate&lt;T&gt; type with a const parameter.
   /// </summary>
   TPredicate<T> = reference to function(const value: T): Boolean;
 
@@ -796,6 +796,25 @@ type
   {$REGION 'Global Routines'}
 
   /// <summary>
+  /// Retrieves the size of a string (unicode string) in bytes.
+  /// </summary>
+  /// <remarks>
+  /// Don't use the SysUtils.ByteLength(string) function since it only supports
+  /// unicode strings and doesn't provide overloads for WideStrings and AnsiStrings.
+  /// </remarks>
+  function GetStringSize(const s: string): Integer; overload; inline;
+
+  /// <summary>
+  /// Retrieves the size of a wide string in bytes.
+  /// </summary>
+  function GetStringSize(const s: WideString): Integer; overload; inline;
+
+  /// <summary>
+  /// Retrieves the size of a long string (AnsiString) in bytes.
+  /// </summary>
+  function GetStringSize(const s: RawByteString): Integer; overload; inline;
+
+  /// <summary>
   /// Determines whether a specified file exists. An EFileNotFoundException
   /// exception will be raised when not found.
   /// </summary>
@@ -982,6 +1001,21 @@ uses
 
 
 {$REGION 'Global Routines'}
+
+function GetStringSize(const s: string): Integer;
+begin
+  Result := Length(s) * SizeOf(Char);
+end;
+
+function GetStringSize(const s: WideString): Integer;
+begin
+  Result := Length(s) * SizeOf(WideChar);
+end;
+
+function GetStringSize(const s: RawByteString): Integer;
+begin
+  Result := Length(s);
+end;
 
 procedure CheckFileExists(const fileName: string);
 begin
@@ -2755,6 +2789,3 @@ end;
 {$ENDREGION}
 
 end.
-
-
-

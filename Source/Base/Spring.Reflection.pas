@@ -468,35 +468,10 @@ type
 
 class function TActivator.CreateInstance(instanceType: TRttiInstanceType;
   constructorMethod: TRttiMethod; const arguments: array of TValue): TObject;
-var
-  classType: TClass;
 begin
   TArgument.CheckNotNull(instanceType, 'instanceType');
   TArgument.CheckNotNull(constructorMethod, 'constructorMethod');
-  classType := instanceType.MetaclassType;
-  Result := classType.NewInstance;
-  try
-    constructorMethod.Invoke(Result, arguments);
-  except
-    on Exception do
-    begin
-      if Result is TInterfacedObject then
-      begin
-        Dec(TInterfacedObjectHack(Result).FRefCount);
-      end;
-      Result.Free;
-      raise;
-    end;
-  end;
-  try
-    Result.AfterConstruction;
-  except
-    on Exception do
-    begin
-      Result.Free;
-      raise;
-    end;
-  end;
+  Result := constructorMethod.Invoke(instanceType.MetaclassType, arguments).AsObject;
 end;
 
 {$ENDREGION}
