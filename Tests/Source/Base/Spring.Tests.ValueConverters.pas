@@ -53,8 +53,8 @@ type
     procedure TestBooleanToString;
     procedure TestNullableIntegerToInteger;
     procedure TestNullableIntegerToString;
-    procedure TestNullableExtendedToString;
-    procedure TestNullableStringToExtended;
+    procedure TestNullableFloatToString;
+    procedure TestNullableStringToFloat;
     procedure TestStringToNullableString;
     procedure TestStringToNullableInteger;
     procedure TestStringToNullableExtended;
@@ -211,7 +211,7 @@ begin
     TypeInfo(TNullable<string>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TNullable<string>>(outNullable));
-  CheckEquals(outNullable.Value, '1,11');
+  CheckEquals(outNullable.Value, FloatToStr(1.11));
 end;
 
 procedure TTestValueConverters.TestFloatToString;
@@ -223,7 +223,7 @@ begin
     TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEquals(outStr, '1,11');
+  CheckEquals(outStr, FloatToStr(1.11));
 end;
 
 procedure TTestValueConverters.TestIntegerToEnum;
@@ -255,7 +255,7 @@ var
   outValue: TValue;
   outFloat: Extended;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<string>('1,11'),
+  outValue := fConverter.ConvertTo(TValue.From<string>(FloatToStr(1.11)),
     TypeInfo(Extended));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Extended>(outFloat));
@@ -286,7 +286,7 @@ begin
   CheckEquals(outValue.AsInteger, 1);
 end;
 
-procedure TTestValueConverters.TestNullableExtendedToString;
+procedure TTestValueConverters.TestNullableFloatToString;
 var
   outValue: TValue;
   outStr: string;
@@ -295,7 +295,7 @@ begin
     TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEquals(outStr, '1,11');
+  CheckEquals(outStr, FloatToStr(1.11));
 end;
 
 procedure TTestValueConverters.TestNullableIntegerToInteger;
@@ -322,9 +322,16 @@ begin
   CheckEquals(outStr, '1');
 end;
 
-procedure TTestValueConverters.TestNullableStringToExtended;
+procedure TTestValueConverters.TestNullableStringToFloat;
+var
+  outValue: TValue;
+  outFloat: Extended;
 begin
-
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<string>>(TNullable<string>.Create(FloatToStr(1.11))),
+    TypeInfo(Extended));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Extended>(outFloat));
+  CheckEquals(outFloat, 1.11);
 end;
 
 procedure TTestValueConverters.TestStringToNullableExtended;
@@ -332,7 +339,7 @@ var
   outValue: TValue;
   outNullable: TNullable<Extended>;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<string>('1,11'),
+  outValue := fConverter.ConvertTo(TValue.From<string>(FloatToStr(1.11)),
     TypeInfo(TNullable<Extended>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TNullable<Extended>>(outNullable));
