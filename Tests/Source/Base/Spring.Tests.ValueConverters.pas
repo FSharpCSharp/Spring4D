@@ -27,6 +27,7 @@ unit Spring.Tests.ValueConverters;
 interface
 
 uses
+  SysUtils,
   TestFramework,
   TestExtensions,
   Rtti,
@@ -55,23 +56,29 @@ type
     procedure TestNullableIntegerToString;
     procedure TestNullableFloatToString;
     procedure TestNullableStringToFloat;
+    procedure TestNullableDateTimeToString;
+    procedure TestNullableColorToString;
     procedure TestStringToNullableString;
     procedure TestStringToNullableInteger;
     procedure TestStringToNullableExtended;
     procedure TestExtendedToNullableString;
+    procedure TestStringToNullableDateTime;
+    procedure TestStringToNullableColor;
     procedure TestStringToFloat;
     procedure TestFloatToString;
     procedure TestStringToColor;
     procedure TestColorToString;
     procedure TestStringToCurrency;
     procedure TestCurrencyToString;
+    procedure TestStringToDateTime;
+    procedure TestDateTimeToString;
   end;
 
 implementation
 
 uses
-  SysUtils,
   Graphics,
+  DateUtils,
   Spring;
 
 {$REGION 'TTestValueConverters'}
@@ -130,6 +137,20 @@ begin
   CheckEqualsString(outStr, FloatToStr(1.11));
 end;
 
+procedure TTestValueConverters.TestDateTimeToString;
+var
+  outValue: TValue;
+  outStr: string;
+  stamp: TDateTime;
+begin
+  stamp := Now;
+  outValue := fConverter.ConvertTo(TValue.From<TDateTime>(stamp),
+    TypeInfo(string));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<string>(outStr));
+  CheckEqualsString(outStr, DateTimeToStr(stamp));
+end;
+
 procedure TTestValueConverters.TestIntegerToBoolean;
 var
   outValue: TValue;
@@ -176,6 +197,20 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Currency>(outCurrency));
   CheckEquals(outCurrency, 1.11);
+end;
+
+procedure TTestValueConverters.TestStringToDateTime;
+var
+  outValue: TValue;
+  outStamp: TDateTime;
+  stamp: TDateTime;
+begin
+  stamp := Now;
+  outValue := fConverter.ConvertTo(TValue.From<string>(DateTimeToStr(stamp)),
+    TypeInfo(TDateTime));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TDateTime>(outStamp));
+  CheckTrue(SameDateTime(outStamp, stamp));
 end;
 
 procedure TTestValueConverters.TestEnumToInteger;
@@ -286,6 +321,32 @@ begin
   CheckEquals(outValue.AsInteger, 1);
 end;
 
+procedure TTestValueConverters.TestNullableColorToString;
+var
+  outValue: TValue;
+  outStr: string;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<TColor>>(TNullable<TColor>.Create(clRed)),
+    TypeInfo(string));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<string>(outStr));
+  CheckEquals(outStr, 'clRed');
+end;
+
+procedure TTestValueConverters.TestNullableDateTimeToString;
+var
+  outValue: TValue;
+  outStr: string;
+  stamp: TDateTime;
+begin
+  stamp := Now;
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<TDateTime>>(TNullable<TDateTime>.Create(stamp)),
+    TypeInfo(string));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<string>(outStr));
+  CheckEquals(outStr, DateTimeToStr(stamp));
+end;
+
 procedure TTestValueConverters.TestNullableFloatToString;
 var
   outValue: TValue;
@@ -332,6 +393,32 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Extended>(outFloat));
   CheckEquals(outFloat, 1.11);
+end;
+
+procedure TTestValueConverters.TestStringToNullableColor;
+var
+  outValue: TValue;
+  outNullable: TNullable<TColor>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<string>(ColorToString(clRed)),
+    TypeInfo(TNullable<TColor>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<TColor>>(outNullable));
+  CheckEquals(ColorToString(outNullable.Value), 'clRed');
+end;
+
+procedure TTestValueConverters.TestStringToNullableDateTime;
+var
+  outValue: TValue;
+  outNullable: TNullable<TDateTime>;
+  stamp: TDateTime;
+begin
+  stamp := Now;
+  outValue := fConverter.ConvertTo(TValue.From<string>(DateTimeToStr(stamp)),
+    TypeInfo(TNullable<TDateTime>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<TDateTime>>(outNullable));
+  CheckTrue(SameDateTime(outNullable.Value, stamp));
 end;
 
 procedure TTestValueConverters.TestStringToNullableExtended;
