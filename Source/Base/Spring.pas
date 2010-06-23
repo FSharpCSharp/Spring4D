@@ -332,7 +332,7 @@ type
   /// <typeparam name="T">
   /// The underlying value type of the TNullable<T> generic type.
   /// </typeparam>
-  TNullable<T> = record
+  TNullable<T> = packed record
   private
     const fCHasValue = '@';  // DO NOT LOCALIZE
   strict private
