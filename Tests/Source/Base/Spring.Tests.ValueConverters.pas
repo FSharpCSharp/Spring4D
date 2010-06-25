@@ -49,6 +49,7 @@ type
     procedure TestStringToColor;
     procedure TestStringToCurrency;
     procedure TestStringToDateTime;
+    procedure TestStringToDateTimeF;
     procedure TestStringToWideString;
     procedure TestStringToNullableString;
     procedure TestStringToNullableInteger;
@@ -108,6 +109,7 @@ type
   published
     procedure TestFloatToInteger;
     procedure TestFloatToString;
+    procedure TestFloatToStringF;
     procedure TestFloatToNullableFloat;
     procedure TestFloatToNullableInteger;
     procedure TestFloatToNullableString;
@@ -133,6 +135,7 @@ type
     procedure SetUp; override;
   published
     procedure TestCurrencyToString;
+    procedure TestCurrencyToStringF;
     procedure TestCurrencyToNullableString;
   end;
 
@@ -143,6 +146,7 @@ type
     procedure SetUp; override;
   published
     procedure TestDateTimeToString;
+    procedure TestDateTimeToStringF;
     procedure TestDateTimeToNullableString;
   end;
 
@@ -284,6 +288,18 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TDateTime>(outStamp));
   CheckEqualsString(DateTimeToStr(outStamp), DateTimeToStr(stamp));
+end;
+
+procedure TTestFromString.TestStringToDateTimeF;
+var
+  outValue: TValue;
+  outStamp: TDateTime;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<string>('10.10.2010'),
+    TypeInfo(TDateTime), TValue.From<string>('dd.mm.yyyy'));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TDateTime>(outStamp));
+  CheckEqualsString(FormatDateTime('dd.mm.yyyy', outStamp), '10.10.2010');
 end;
 
 procedure TTestFromString.TestStringToWideString;
@@ -658,6 +674,18 @@ begin
   CheckEquals(outStr, FloatToStr(1.11));
 end;
 
+procedure TTestFromFloat.TestFloatToStringF;
+var
+  outValue: TValue;
+  outStr: string;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.11),
+    TypeInfo(string), TValue.From<string>('#.000'));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<string>(outStr));
+  CheckEquals(outStr, FormatFloat('#.000', 1.11));
+end;
+
 procedure TTestFromFloat.TestFloatToNullableFloat;
 var
   outValue: TValue;
@@ -788,6 +816,18 @@ begin
   CheckEqualsString(outStr, FloatToStr(1.11));
 end;
 
+procedure TTestFromCurrency.TestCurrencyToStringF;
+var
+  outValue: TValue;
+  outStr: string;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Currency>(1.112),
+    TypeInfo(string), TValue.From<string>('#.00 $'));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<string>(outStr));
+  CheckEqualsString(outStr, FormatCurr('#.00 $', 1.11));
+end;
+
 procedure TTestFromCurrency.TestCurrencyToNullableString;
 var
   outValue: TValue;
@@ -823,6 +863,20 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
   CheckEqualsString(outStr, DateTimeToStr(stamp));
+end;
+
+procedure TTestFromDateTime.TestDateTimeToStringF;
+var
+  outValue: TValue;
+  outStr: string;
+  stamp: TDateTime;
+begin
+  stamp := Now;
+  outValue := fConverter.ConvertTo(TValue.From<TDateTime>(stamp),
+    TypeInfo(string), TValue.From<string>('dd-mm-yyyy'));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<string>(outStr));
+  CheckEqualsString(outStr, FormatDateTime('dd-mm-yyyy', stamp));
 end;
 
 procedure TTestFromDateTime.TestDateTimeToNullableString;

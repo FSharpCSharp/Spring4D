@@ -40,13 +40,13 @@ type
   ['{048EF3F0-41B5-4019-9BD6-00B88CAA7275}']
 
     /// <param name="value">Rtti.TValue to convert</param>
-    /// <param name="targetTypeInfo">Target Rtii.PTypeInfo structure</param>
+    /// <param name="targetTypeInfo">Target Rtti.PTypeInfo structure</param>
     /// <returns>Returns <param name="value">converted</param> to type pointing by <param name="targetTypeInfo">parameter</param></returns>
     function ConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo): TValue; overload;
 
     /// <param name="value">Rtti.TValue to convert</param>
-    /// <param name="targetTypeInfo">Target Rtii.PTypeInfo structure</param>
+    /// <param name="targetTypeInfo">Target Rtti.PTypeInfo structure</param>
     /// <param name="parameter">Additional Rtti.TValue formatting parameter, use when possible</param>
     /// <returns>Returns <param name="value">converted</param> to type pointing by <param name="targetTypeInfo">parameter</param></returns>
     function ConvertTo(const value: TValue;
@@ -54,16 +54,16 @@ type
       const parameter: TValue): TValue; overload;
 
     /// <param name="value">Rtti.TValue to convert</param>
-    /// <param name="targetTypeInfo">Target Rtii.PTypeInfo structure</param>
-    /// <param name="targetValue">Target Rtii.TValue out parameter</param>
+    /// <param name="targetTypeInfo">Target Rtti.PTypeInfo structure</param>
+    /// <param name="targetValue">Target Rtti.TValue out parameter</param>
     /// <returns>Returns System.Boolean, True if converting with success</returns>
     function TryConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
       out targetValue: TValue): Boolean; overload;
 
     /// <param name="value">Rtti.TValue to convert</param>
-    /// <param name="targetTypeInfo">Target Rtii.PTypeInfo structure</param>
-    /// <param name="targetValue">Target Rtii.TValue out parameter</param>
+    /// <param name="targetTypeInfo">Target Rtti.PTypeInfo structure</param>
+    /// <param name="targetValue">Target Rtti.TValue out parameter</param>
     /// <param name="parameter">Additional Rtti.TValue formatting parameter, use when possible</param>
     /// <returns>Returns System.Boolean, True if converting with success</returns>
     function TryConvertTo(const value: TValue;
@@ -372,6 +372,9 @@ type
   /// <summary>
   /// Provides conversion routine beetwen TObject and IInterface
   /// </summary>
+  /// <remarks>
+  /// acc. to #82433 TValue.TryAsType<T> raised an AV because ConvClass2Intf is wrong
+  /// </remarks>
   TObjectToInterfaceConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -382,6 +385,9 @@ type
   /// <summary>
   /// Provides conversion routine beetwen UnicodeString and WideString
   /// </summary>
+  /// <remarks>
+  /// acc. to #82487 Rtti.ConvStr2Str is wrong (when cast a unicode string to WideString)
+  /// </remarks>
   TUStringToWStringConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
@@ -877,8 +883,16 @@ end;
 
 function TCurrencyToStringConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+var
+  format: string;
 begin
-  Result := TValue.From<string>(CurrToStr(value.AsType<Currency>));
+  if not parameter.IsEmpty and
+    parameter.TryAsType<string>(format) then
+  begin
+    Result := TValue.From<string>(FormatCurr(format, value.AsType<Currency>));
+  end
+  else
+    Result := TValue.From<string>(CurrToStr(value.AsType<Currency>));
 end;
 
 {$ENDREGION}
@@ -899,8 +913,16 @@ end;
 
 function TDateTimeToStringConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+var
+  format: string;
 begin
-  Result := TValue.From<string>(DateTimeToStr(value.AsExtended));
+  if not parameter.IsEmpty and
+    parameter.TryAsType<string>(format) then
+  begin
+    Result := TValue.From<string>(FormatDateTime(format, value.AsExtended));
+  end
+  else
+    Result := TValue.From<string>(DateTimeToStr(value.AsExtended));
 end;
 
 {$ENDREGION}
@@ -910,8 +932,16 @@ end;
 
 function TStringToDateTimeConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+var
+  format: string;
 begin
-  Result := TValue.From<TDateTime>(StrToDateTime(value.AsString));
+  if not parameter.IsEmpty and
+    parameter.TryAsType<string>(format) then
+  begin
+    Result := TValue.From<TDateTime>(ConvertStrToDateTime(value.AsString, format));
+  end
+  else
+    Result := TValue.From<TDateTime>(StrToDateTime(value.AsString));
 end;
 
 {$ENDREGION}
