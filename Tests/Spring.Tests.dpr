@@ -102,7 +102,15 @@ begin
   ]);
 
   RegisterTests('Base.ValueConverters', [
-    TTestValueConverters.Suite
+    TTestFromString.Suite,
+    TTestFromInteger.Suite,
+    TTestFromBoolean.Suite,
+    TTestFromEnum.Suite,
+    TTestFromFloat.Suite,
+    TTestFromColor.Suite,
+    TTestFromCurrency.Suite,
+    TTestFromDateTime.Suite,
+    TTestFromNullable.Suite
   ]);
 
   RegisterTests('Core.Pool', [

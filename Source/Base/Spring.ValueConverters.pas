@@ -71,10 +71,9 @@ type
       const parameter: TValue): Boolean; overload;
     class function GetDefault: IValueConverter; static;
   protected
-    function DoTryConvertTo(const value: TValue;
+    function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue;
-      const parameter: TValue): Boolean; virtual; abstract;
+      const parameter: TValue): TValue; virtual; abstract;
   public
     class constructor Create;
     constructor Create; virtual;
@@ -102,10 +101,9 @@ type
   /// </remarks>
   TDefaultValueConverter = class(TValueConverter)
   protected
-    function DoTryConvertTo(const value: TValue;
+    function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue;
-      const parameter: TValue): Boolean; override;
+      const parameter: TValue): TValue; override;
   public
     class constructor Create;
   end;
@@ -115,10 +113,9 @@ type
   /// </summary>
   TIntegerToStringConverter = class(TValueConverter)
   protected
-    function DoTryConvertTo(const value: TValue;
+    function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue;
-      const parameter: TValue): Boolean; override;
+      const parameter: TValue): TValue; override;
   end;
 
   /// <summary>
@@ -126,10 +123,9 @@ type
   /// </summary>
   TStringToIntegerConverter = class(TValueConverter)
   protected
-    function DoTryConvertTo(const value: TValue;
+    function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue;
-      const parameter: TValue): Boolean; override;
+      const parameter: TValue): TValue; override;
   end;
 
   /// <summary>
@@ -137,10 +133,9 @@ type
   /// </summary>
   TIntegerToBooleanConverter = class(TValueConverter)
   protected
-    function DoTryConvertTo(const value: TValue;
+    function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue;
-      const parameter: TValue): Boolean; override;
+      const parameter: TValue): TValue; override;
   end;
 
   /// <summary>
@@ -148,10 +143,9 @@ type
   /// </summary>
   TBooleanToIntegerConverter = class(TValueConverter)
   protected
-    function DoTryConvertTo(const value: TValue;
+    function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue;
-      const parameter: TValue): Boolean; override;
+      const parameter: TValue): TValue; override;
   end;
 
   /// <summary>
@@ -159,10 +153,9 @@ type
   /// </summary>
   TBooleanToStringConverter = class(TValueConverter)
   protected
-    function DoTryConvertTo(const value: TValue;
+    function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue;
-      const parameter: TValue): Boolean; override;
+      const parameter: TValue): TValue; override;
   end;
 
   /// <summary>
@@ -170,10 +163,9 @@ type
   /// </summary>
   TStringToBooleanConverter = class(TValueConverter)
   protected
-    function DoTryConvertTo(const value: TValue;
+    function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue;
-      const parameter: TValue): Boolean; override;
+      const parameter: TValue): TValue; override;
   end;
 
   /// <summary>
@@ -185,10 +177,9 @@ type
   /// </remarks>
   TNullableToTypeConverter = class(TValueConverter)
   protected
-    function DoTryConvertTo(const value: TValue;
+    function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue;
-      const parameter: TValue): Boolean; override;
+      const parameter: TValue): TValue; override;
   end;
 
   /// <summary>
@@ -200,10 +191,9 @@ type
   /// </remarks>
   TTypeToNullableConverter = class(TValueConverter)
   protected
-    function DoTryConvertTo(const value: TValue;
+    function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue;
-      const parameter: TValue): Boolean; override;
+      const parameter: TValue): TValue; override;
   end;
 
   /// <summary>
@@ -211,10 +201,9 @@ type
   /// </summary>
   TEnumToIntegerConverter = class(TValueConverter)
   protected
-    function DoTryConvertTo(const value: TValue;
+    function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue;
-      const parameter: TValue): Boolean; override;
+      const parameter: TValue): TValue; override;
   end;
 
   /// <summary>
@@ -222,10 +211,9 @@ type
   /// </summary>
   TIntegerToEnumConverter = class(TValueConverter)
   protected
-    function DoTryConvertTo(const value: TValue;
+    function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue;
-      const parameter: TValue): Boolean; override;
+      const parameter: TValue): TValue; override;
   end;
 
   /// <summary>
@@ -233,10 +221,9 @@ type
   /// </summary>
   TEnumToStringConverter = class(TValueConverter)
   protected
-    function DoTryConvertTo(const value: TValue;
+    function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue;
-      const parameter: TValue): Boolean; override;
+      const parameter: TValue): TValue; override;
   end;
 
   /// <summary>
@@ -244,10 +231,9 @@ type
   /// </summary>
   TStringToEnumConverter = class(TValueConverter)
   protected
-    function DoTryConvertTo(const value: TValue;
+    function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue;
-      const parameter: TValue): Boolean; override;
+      const parameter: TValue): TValue; override;
   end;
 
   /// <summary>
@@ -255,10 +241,19 @@ type
   /// </summary>
   TFloatToStringConverter = class(TValueConverter)
   protected
-    function DoTryConvertTo(const value: TValue;
+    function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue;
-      const parameter: TValue): Boolean; override;
+      const parameter: TValue): TValue; override;
+  end;
+
+  /// <summary>
+  /// Provides conversion routine beetwen float and Integer
+  /// </summary>
+  TFloatToIntegerConverter = class(TValueConverter)
+  protected
+    function DoConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
   end;
 
   /// <summary>
@@ -266,10 +261,9 @@ type
   /// </summary>
   TStringToFloatConverter = class(TValueConverter)
   protected
-    function DoTryConvertTo(const value: TValue;
+    function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue;
-      const parameter: TValue): Boolean; override;
+      const parameter: TValue): TValue; override;
   end;
 
   /// <summary>
@@ -277,10 +271,19 @@ type
   /// </summary>
   TColorToStringConverter = class(TValueConverter)
   protected
-    function DoTryConvertTo(const value: TValue;
+    function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue;
-      const parameter: TValue): Boolean; override;
+      const parameter: TValue): TValue; override;
+  end;
+
+  /// <summary>
+  /// Provides conversion routine beetwen TColor and integer
+  /// </summary>
+  TColorToIntegerConverter = class(TValueConverter)
+  protected
+    function DoConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
   end;
 
   /// <summary>
@@ -288,10 +291,9 @@ type
   /// </summary>
   TStringToColorConverter = class(TValueConverter)
   protected
-    function DoTryConvertTo(const value: TValue;
+    function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue;
-      const parameter: TValue): Boolean; override;
+      const parameter: TValue): TValue; override;
   end;
 
   /// <summary>
@@ -299,10 +301,9 @@ type
   /// </summary>
   TCurrencyToStringConverter = class(TValueConverter)
   protected
-    function DoTryConvertTo(const value: TValue;
+    function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue;
-      const parameter: TValue): Boolean; override;
+      const parameter: TValue): TValue; override;
   end;
 
   /// <summary>
@@ -310,10 +311,9 @@ type
   /// </summary>
   TStringToCurrencyConverter = class(TValueConverter)
   protected
-    function DoTryConvertTo(const value: TValue;
+    function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue;
-      const parameter: TValue): Boolean; override;
+      const parameter: TValue): TValue; override;
   end;
 
   /// <summary>
@@ -321,10 +321,9 @@ type
   /// </summary>
   TStringToDateTimeConverter = class(TValueConverter)
   protected
-    function DoTryConvertTo(const value: TValue;
+    function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue;
-      const parameter: TValue): Boolean; override;
+      const parameter: TValue): TValue; override;
   end;
 
   /// <summary>
@@ -332,10 +331,9 @@ type
   /// </summary>
   TDateTimeToStringConverter = class(TValueConverter)
   protected
-    function DoTryConvertTo(const value: TValue;
+    function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
-      out targetValue: TValue;
-      const parameter: TValue): Boolean; override;
+      const parameter: TValue): TValue; override;
   end;
 
   /// <summary>
@@ -361,19 +359,30 @@ type
         TargetTypeKinds: TTypeKinds;
       end;
 
+      /// <summary>
+      /// TypeKind/TypeInfo registry structure
+      /// </summary>
+      TConvertedTypeKindInfo = record
+        SourceTypeKinds: TTypeKinds;
+        TargetTypeInfo: PTypeInfo;
+      end;
+
       TConverterPackage = record
         ConverterClass: TConverterClass;
         Converter: IValueConverter;
       end;
     class var fTypeInfoRegistry: TDictionary<TConvertedTypeInfo, TConverterPackage>;
     class var fTypeKindRegistry: TDictionary<TConvertedTypeKind, TConverterPackage>;
+    class var fTypeKindInfoRegistry: TDictionary<TConvertedTypeKindInfo, TConverterPackage>;
   public
     class constructor Create;
     class destructor Destroy;
-    class procedure RegisterConverter(const sourceTypeKinds, targetTypeKinds: TTypeKinds;
-      converterClass: TConverterClass); overload;
     class procedure RegisterConverter(const sourceTypeInfo, targetTypeInfo: PTypeInfo;
       converterClass: TConverterClass); overload;
+    class procedure RegisterConverter(const sourceTypeKinds, targetTypeKinds: TTypeKinds;
+      converterClass: TConverterClass); overload;
+    class procedure RegisterConverter(const sourceTypeKinds: TTypeKinds;
+      targetTypeInfo: PTypeInfo; converterClass: TConverterClass); overload;
     class function CreateConverter(const sourceTypeInfo,
       targetTypeInfo: PTypeInfo): IValueConverter;
   end;
@@ -385,6 +394,7 @@ uses
   Graphics,
   StrUtils,
   SysUtils,
+  Math,
   Spring,
   Spring.ResourceStrings;
 
@@ -417,32 +427,33 @@ function TValueConverter.ConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo;
   const parameter: TValue): TValue;
 begin
-  if not TryConvertTo(value, targetTypeInfo, Result, parameter) then
-    raise Exception.Create(Format(SCouldNotConvertValue,
-        [value.TypeInfo.Name, targetTypeInfo.Name]));
+  try
+    Exit(DoConvertTo(value, targetTypeInfo, parameter));
+  except
+    /// <summary>
+    /// In order to save nested exception, you need to raise new exceptions
+    ///  via Exception.RaiseOuterException (Delphi’s style) or Exception.ThrowOuterException (C++ Builder’s style).
+    /// </summary>
+    Exception.RaiseOuterException(Exception.Create(Format(SCouldNotConvertValue,
+      [value.TypeInfo.Name, targetTypeInfo.Name])));
+  end;
 end;
 
 function TValueConverter.TryConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; out targetValue: TValue): Boolean;
 begin
-  Exit(DoTryConvertTo(value, targetTypeInfo, targetValue, TValue.Empty));
+  Exit(TryConvertTo(value, targetTypeInfo, targetValue, TValue.Empty));
 end;
 
 function TValueConverter.TryConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; out targetValue: TValue;
   const parameter: TValue): Boolean;
 begin
+  Result := True;
   try
-    Exit(DoTryConvertTo(value, targetTypeInfo, targetValue, parameter));
+    targetValue := DoConvertTo(value, targetTypeInfo, parameter);
   except
     Result := False;
-
-    /// <summary>
-    /// In order to save nested exception, you need to raise new exceptions
-    ///  via Exception.RaiseOuterException (Delphi’s style) or Exception.ThrowOuterException (C++ Builder’s style).
-    /// </summary>
-    Exception.RaiseOuterException(Exception.Create(Format(SCouldNotConvertValue,
-        [value.TypeInfo.Name, targetTypeInfo.Name])));
   end;
 end;
 
@@ -467,20 +478,28 @@ begin
   TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(TDateTime), TStringToDateTimeConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(TNullable<System.Integer>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(TNullable<System.Boolean>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(TNullable<System.Extended>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(TNullable<System.Currency>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(TNullable<Graphics.TColor>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(TNullable<System.TDateTime>), TTypeToNullableConverter);
 
   TValueConverterFactory.RegisterConverter(TypeInfo(TColor), TypeInfo(string), TColorToStringConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TColor), TypeInfo(Integer), TColorToIntegerConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TColor), TypeInfo(TNullable<Graphics.TColor>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TColor), TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TColor), TypeInfo(TNullable<System.Integer>), TTypeToNullableConverter);
 
   TValueConverterFactory.RegisterConverter(TypeInfo(Currency), TypeInfo(string), TCurrencyToStringConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(Currency), TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
 
   TValueConverterFactory.RegisterConverter(TypeInfo(TDateTime), TypeInfo(string), TDateTimeToStringConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TDateTime), TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
 
-  TValueConverterFactory.RegisterConverter(TypeInfo(Extended), TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(Extended), TypeInfo(Integer), TFloatToIntegerConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(Extended), TypeInfo(TNullable<System.Extended>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(Extended), TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(Extended), TypeInfo(TNullable<System.Integer>), TTypeToNullableConverter);
 
   TValueConverterFactory.RegisterConverter(TypeInfo(Boolean), TypeInfo(string), TBooleanToStringConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(Boolean), TypeInfo(Integer), TBooleanToIntegerConverter);
@@ -501,7 +520,10 @@ begin
   TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<Graphics.TColor>), TypeInfo(string), TNullableToTypeConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.TDateTime>), TypeInfo(string), TNullableToTypeConverter);
 
-  TValueConverterFactory.RegisterConverter([tkEnumeration], [tkInteger], TEnumToIntegerConverter);
+  TValueConverterFactory.RegisterConverter([tkEnumeration], TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter([tkEnumeration], TypeInfo(TNullable<System.Integer>), TTypeToNullableConverter);
+
+  TValueConverterFactory.RegisterConverter([tkEnumeration], [tkInteger], TEnumToIntegerConverter);;
   TValueConverterFactory.RegisterConverter([tkInteger], [tkEnumeration], TIntegerToEnumConverter);
   TValueConverterFactory.RegisterConverter([tkEnumeration], [tkString, tkUString, tkLString], TEnumToStringConverter);
   TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString], [tkEnumeration], TStringToEnumConverter);
@@ -509,17 +531,16 @@ begin
   TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString], [tkFloat], TStringToFloatConverter);
 end;
 
-function TDefaultValueConverter.DoTryConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo; out targetValue: TValue;
-  const parameter: TValue): Boolean;
+function TDefaultValueConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 var
   converter: IValueConverter;
 begin
   converter := TValueConverterFactory.CreateConverter(value.TypeInfo, targetTypeInfo);
   if Assigned(converter) then
-    Exit(converter.TryConvertTo(value, targetTypeInfo, targetValue, parameter))
+    Result := converter.ConvertTo(value, targetTypeInfo, parameter)
   else
-    Result := value.TryCast(targetTypeInfo, targetValue);
+    value.TryCast(targetTypeInfo, Result);
 end;
 
 {$ENDREGION}
@@ -527,12 +548,10 @@ end;
 
 {$REGION 'TIntegerToStringConverter'}
 
-function TIntegerToStringConverter.DoTryConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo; out targetValue: TValue;
-  const parameter: TValue): Boolean;
+function TIntegerToStringConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
-  Result := True;
-  targetValue := TValue.From<string>(IntToStr(value.AsInteger));
+  Result := TValue.From<string>(IntToStr(value.AsInteger));
 end;
 
 {$ENDREGION}
@@ -540,12 +559,10 @@ end;
 
 {$REGION 'TStringToIntegerConverter'}
 
-function TStringToIntegerConverter.DoTryConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo; out targetValue: TValue;
-  const parameter: TValue): Boolean;
+function TStringToIntegerConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
-  Result := True;
-  targetValue := TValue.From<Integer>(StrToInt(value.AsString));
+  Result := TValue.From<Integer>(StrToInt(value.AsString));
 end;
 
 {$ENDREGION}
@@ -553,12 +570,10 @@ end;
 
 {$REGION 'TBooleanToStringConverter'}
 
-function TBooleanToStringConverter.DoTryConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo; out targetValue: TValue;
-  const parameter: TValue): Boolean;
+function TBooleanToStringConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
-  Result := True;
-  targetValue := TValue.From<string>(BoolToStr(value.AsBoolean, True));
+  Result := TValue.From<string>(BoolToStr(value.AsBoolean, True));
 end;
 
 {$ENDREGION}
@@ -566,12 +581,10 @@ end;
 
 {$REGION 'TStringToBooleanConverter'}
 
-function TStringToBooleanConverter.DoTryConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo; out targetValue: TValue;
-  const parameter: TValue): Boolean;
+function TStringToBooleanConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
-  Result := True;
-  targetValue := TValue.From<Boolean>(StrToBool(value.AsString));
+  Result := TValue.From<Boolean>(StrToBool(value.AsString));
 end;
 
 {$ENDREGION}
@@ -579,12 +592,10 @@ end;
 
 {$REGION 'TBooleanToIntegerConverter'}
 
-function TBooleanToIntegerConverter.DoTryConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo; out targetValue: TValue;
-  const parameter: TValue): Boolean;
+function TBooleanToIntegerConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
-  Result := True;
-  targetValue := TValue.From<Integer>(Integer(value.AsBoolean));
+  Result := TValue.From<Integer>(Integer(value.AsBoolean));
 end;
 
 {$ENDREGION}
@@ -592,12 +603,10 @@ end;
 
 {$REGION 'TIntegerToBooleanConverter'}
 
-function TIntegerToBooleanConverter.DoTryConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo; out targetValue: TValue;
-  const parameter: TValue): Boolean;
+function TIntegerToBooleanConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
-  Result := True;
-  targetValue := TValue.From<Boolean>(Boolean(value.AsInteger));
+  Result := TValue.From<Boolean>(Boolean(value.AsInteger));
 end;
 
 {$ENDREGION}
@@ -605,17 +614,18 @@ end;
 
 {$REGION 'TNullableToTypeConverter'}
 
-function TNullableToTypeConverter.DoTryConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo; out targetValue: TValue;
-  const parameter: TValue): Boolean;
+function TNullableToTypeConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 var
   underlyingValue: TValue;
 begin
-  Result := Spring.TryGetUnderlyingValue(value, underlyingValue);
-  if Result and (underlyingValue.TypeInfo.Name <> targetTypeInfo.Name) then
-    Result := TValueConverter.Default.TryConvertTo(underlyingValue, targetTypeInfo,
-      targetValue, parameter)
-  else targetValue := underlyingValue;
+  if Spring.TryGetUnderlyingValue(value, underlyingValue) and
+      (underlyingValue.TypeInfo.Name <> targetTypeInfo.Name) then
+  begin
+    Result := TValueConverter.Default.ConvertTo(underlyingValue,
+      targetTypeInfo, parameter)
+  end
+  else Result := underlyingValue;
 end;
 
 {$ENDREGION}
@@ -623,9 +633,8 @@ end;
 
 {$REGION 'TTypeToNullableConverter'}
 
-function TTypeToNullableConverter.DoTryConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo; out targetValue: TValue;
-  const parameter: TValue): Boolean;
+function TTypeToNullableConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 var
   underlyingTypeInfo: PTypeInfo;
   underlyingValue: TValue;
@@ -634,8 +643,7 @@ var
   p: Pointer;
   us: UnicodeString;
 begin
-  Result := TryGetUnderlyingTypeInfo(targetTypeInfo, underlyingTypeInfo);
-  if Result then
+  if TryGetUnderlyingTypeInfo(targetTypeInfo, underlyingTypeInfo) then
   begin
     underlyingValue := value;
     if underlyingTypeInfo.Name <> value.TypeInfo.Name then
@@ -660,7 +668,7 @@ begin
       PPointer(PByte(valueBuffer) + Length(valueBuffer) - SizeOf(string))^ := Pointer(hasValueFlag);
     end;
     p := PByte(valueBuffer);
-    TValue.Make(p, targetTypeInfo, targetValue);
+    TValue.Make(p, targetTypeInfo, Result);
   end;
 end;
 
@@ -669,17 +677,15 @@ end;
 
 {$REGION 'TEnumToStringConverter'}
 
-function TEnumToStringConverter.DoTryConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo; out targetValue: TValue;
-  const parameter: TValue): Boolean;
+function TEnumToStringConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 var
   enumValue: Integer;
   enumName: string;
 begin
-  Result := True;
   enumValue := PInteger(value.GetReferenceToRawData)^;
   enumName := GetEnumName(value.TypeInfo, enumValue);
-  targetValue := TValue.From<string>(enumName);
+  Result := TValue.From<string>(enumName);
 end;
 
 {$ENDREGION}
@@ -687,15 +693,13 @@ end;
 
 {$REGION 'TStringToEnumConverter'}
 
-function TStringToEnumConverter.DoTryConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo; out targetValue: TValue;
-  const parameter: TValue): Boolean;
+function TStringToEnumConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 var
   enumValue: Integer;
 begin
-  Result := True;
   enumValue := GetEnumValue(targetTypeInfo, value.AsString);
-  TValue.Make(enumValue, targetTypeInfo, targetValue);
+  TValue.Make(enumValue, targetTypeInfo, Result);
 end;
 
 {$ENDREGION}
@@ -703,15 +707,13 @@ end;
 
 {$REGION 'TEnumToIntegerConverter'}
 
-function TEnumToIntegerConverter.DoTryConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo; out targetValue: TValue;
-  const parameter: TValue): Boolean;
+function TEnumToIntegerConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 var
   enumValue: Integer;
 begin
-  Result := True;
   enumValue := PInteger(value.GetReferenceToRawData)^;
-  TValue.Make(enumValue, targetTypeInfo, targetValue);
+  TValue.Make(enumValue, targetTypeInfo, Result);
 end;
 
 {$ENDREGION}
@@ -719,12 +721,10 @@ end;
 
 {$REGION 'TIntegerToEnumConverter'}
 
-function TIntegerToEnumConverter.DoTryConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo; out targetValue: TValue;
-  const parameter: TValue): Boolean;
+function TIntegerToEnumConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
-  Result := True;
-  TValue.Make(value.AsInteger, targetTypeInfo, targetValue);
+  TValue.Make(value.AsInteger, targetTypeInfo, Result);
 end;
 
 {$ENDREGION}
@@ -732,20 +732,29 @@ end;
 
 {$REGION 'TFloatToStringConverter'}
 
-function TFloatToStringConverter.DoTryConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo; out targetValue: TValue;
-  const parameter: TValue): Boolean;
+function TFloatToStringConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 var
   format: string;
 begin
-  Result := True;
   if not parameter.IsEmpty and
     parameter.TryAsType<string>(format) then
   begin
-    targetValue := TValue.From<string>(FormatFloat(format, value.AsExtended));
+    Result := TValue.From<string>(FormatFloat(format, value.AsExtended));
   end
   else
-    targetValue := TValue.From<string>(FloatToStr(value.AsExtended));
+    Result := TValue.From<string>(FloatToStr(value.AsExtended));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TFloatToIntegerConverter'}
+
+function TFloatToIntegerConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+begin
+  Result := TValue.From<Integer>(Floor(value.AsExtended));
 end;
 
 {$ENDREGION}
@@ -753,12 +762,10 @@ end;
 
 {$REGION 'TStringToFloatConverter'}
 
-function TStringToFloatConverter.DoTryConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo; out targetValue: TValue;
-  const parameter: TValue): Boolean;
+function TStringToFloatConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
-  Result := True;
-  targetValue := TValue.From<Extended>(StrToFloat(value.AsString));
+  Result := TValue.From<Extended>(StrToFloat(value.AsString));
 end;
 
 {$ENDREGION}
@@ -766,12 +773,21 @@ end;
 
 {$REGION 'TColorToStringConverter'}
 
-function TColorToStringConverter.DoTryConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo; out targetValue: TValue;
-  const parameter: TValue): Boolean;
+function TColorToStringConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
-  Result := True;
-  targetValue := TValue.From<string>(ColorToString(value.AsType<TColor>));
+  Result := TValue.From<string>(ColorToString(value.AsType<TColor>));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TColorToIntegerConverter'}
+
+function TColorToIntegerConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+begin
+  Result := TValue.From<Integer>(ColorToRGB(value.AsType<TColor>));
 end;
 
 {$ENDREGION}
@@ -779,12 +795,10 @@ end;
 
 {$REGION 'TStringToColorConverter'}
 
-function TStringToColorConverter.DoTryConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo; out targetValue: TValue;
-  const parameter: TValue): Boolean;
+function TStringToColorConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
-  Result := True;
-  targetValue := TValue.From<TColor>(StringToColor(value.AsString));
+  Result := TValue.From<TColor>(StringToColor(value.AsString));
 end;
 
 {$ENDREGION}
@@ -792,12 +806,10 @@ end;
 
 {$REGION 'TCurrencyToStringConverter'}
 
-function TCurrencyToStringConverter.DoTryConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo; out targetValue: TValue;
-  const parameter: TValue): Boolean;
+function TCurrencyToStringConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
-  Result := True;
-  targetValue := TValue.From<string>(CurrToStr(value.AsType<Currency>));
+  Result := TValue.From<string>(CurrToStr(value.AsType<Currency>));
 end;
 
 {$ENDREGION}
@@ -805,12 +817,10 @@ end;
 
 {$REGION 'TStringToCurrencyConverter'}
 
-function TStringToCurrencyConverter.DoTryConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo; out targetValue: TValue;
-  const parameter: TValue): Boolean;
+function TStringToCurrencyConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
-  Result := True;
-  targetValue := TValue.From<Currency>(StrToCurr(value.AsString));
+  Result := TValue.From<Currency>(StrToCurr(value.AsString));
 end;
 
 {$ENDREGION}
@@ -818,12 +828,10 @@ end;
 
 {$REGION 'TDateTimeToStringConverter'}
 
-function TDateTimeToStringConverter.DoTryConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo; out targetValue: TValue;
-  const parameter: TValue): Boolean;
+function TDateTimeToStringConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
-  Result := True;
-  targetValue := TValue.From<string>(DateTimeToStr(value.AsExtended));
+  Result := TValue.From<string>(DateTimeToStr(value.AsExtended));
 end;
 
 {$ENDREGION}
@@ -831,12 +839,10 @@ end;
 
 {$REGION 'TStringToDateTimeConverter'}
 
-function TStringToDateTimeConverter.DoTryConvertTo(const value: TValue;
-  const targetTypeInfo: PTypeInfo; out targetValue: TValue;
-  const parameter: TValue): Boolean;
+function TStringToDateTimeConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
-  Result := True;
-  targetValue := TValue.From<TDateTime>(StrToDateTime(value.AsString));
+  Result := TValue.From<TDateTime>(StrToDateTime(value.AsString));
 end;
 
 {$ENDREGION}
@@ -848,12 +854,14 @@ class constructor TValueConverterFactory.Create;
 begin
   fTypeInfoRegistry := TDictionary<TConvertedTypeInfo, TConverterPackage>.Create;
   fTypeKindRegistry := TDictionary<TConvertedTypeKind, TConverterPackage>.Create;
+  fTypeKindInfoRegistry := TDictionary<TConvertedTypeKindInfo, TConverterPackage>.Create;
 end;
 
 class destructor TValueConverterFactory.Destroy;
 begin
   fTypeInfoRegistry.Free;
   fTypeKindRegistry.Free;
+  fTypeKindInfoRegistry.Free;
 end;
 
 class function TValueConverterFactory.CreateConverter(const sourceTypeInfo,
@@ -861,6 +869,7 @@ class function TValueConverterFactory.CreateConverter(const sourceTypeInfo,
 var
   typeInfoPair: TPair<TConvertedTypeInfo, TConverterPackage>;
   typeKindPair: TPair<TConvertedTypeKind, TConverterPackage>;
+  typeKindInfoPair: TPair<TConvertedTypeKindInfo, TConverterPackage>;
   value: TConverterPackage;
 begin
   System.MonitorEnter(fTypeInfoRegistry);
@@ -904,6 +913,27 @@ begin
   finally
     System.MonitorExit(fTypeKindRegistry);
   end;
+  System.MonitorEnter(fTypeKindInfoRegistry);
+  try
+    if not Assigned(value.Converter) then
+      for typeKindInfoPair in fTypeKindInfoRegistry do
+      begin
+        if (sourceTypeInfo.Kind in typeKindInfoPair.Key.SourceTypeKinds) and
+          (targetTypeInfo = typeKindInfoPair.Key.TargetTypeInfo) then
+        begin
+          value := typeKindInfoPair.Value;
+          if not Assigned(typeKindInfoPair.Value.Converter) then
+          begin
+            value.Converter := typeKindInfoPair.Value.ConverterClass.Create;
+            value.ConverterClass := typeKindInfoPair.Value.ConverterClass;
+            fTypeKindInfoRegistry.AddOrSetValue(typeKindInfoPair.Key, value);
+          end;
+          Exit(value.Converter);
+        end;
+      end;
+  finally
+    System.MonitorExit(fTypeKindInfoRegistry);
+  end;
 end;
 
 class procedure TValueConverterFactory.RegisterConverter(const sourceTypeInfo,
@@ -937,6 +967,24 @@ begin
     fTypeKindRegistry.AddOrSetValue(key, value);
   finally
     System.MonitorExit(fTypeKindRegistry);
+  end;
+end;
+
+class procedure TValueConverterFactory.RegisterConverter(
+  const sourceTypeKinds: TTypeKinds; targetTypeInfo: PTypeInfo;
+  converterClass: TConverterClass);
+var
+  value: TConverterPackage;
+  key: TConvertedTypeKindInfo;
+begin
+  System.MonitorEnter(fTypeKindInfoRegistry);
+  try
+    value.ConverterClass := converterClass;
+    key.SourceTypeKinds := sourceTypeKinds;
+    key.TargetTypeInfo := targetTypeInfo;
+    fTypeKindInfoRegistry.AddOrSetValue(key, value);
+  finally
+    System.MonitorExit(fTypeKindInfoRegistry);
   end;
 end;
 

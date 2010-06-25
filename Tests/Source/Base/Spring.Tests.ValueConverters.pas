@@ -34,44 +34,127 @@ uses
   Spring.ValueConverters;
 
 type
-  TTestValueConverters = class(TTestCase)
+  TEnumeration = (teFirst, teSecond, teLast);
+
+  TTestFromString = class(TTestCase)
   private
     fConverter: IValueConverter;
-    type
-      TEnumeration = (teFirst, teSecond, teLast);
+  protected
+    procedure SetUp; override;
+  published
+    procedure TestStringToInteger;
+    procedure TestStringToFloat;
+    procedure TestStringToEnum;
+    procedure TestStringToBoolean;
+    procedure TestStringToColor;
+    procedure TestStringToCurrency;
+    procedure TestStringToDateTime;
+    procedure TestStringToNullableString;
+    procedure TestStringToNullableInteger;
+    procedure TestStringToNullableFloat;
+    procedure TestStringToNullableBoolean;
+    procedure TestStringToNullableColor;
+    procedure TestStringToNullableCurrency;
+    procedure TestStringToNullableDateTime;
+  end;
+
+  TTestFromInteger = class(TTestCase)
+  private
+    fConverter: IValueConverter;
   protected
     procedure SetUp; override;
   published
     procedure TestIntegerToString;
-    procedure TestStringToInteger;
-    procedure TestEnumToString;
-    procedure TestEnumToInteger;
     procedure TestIntegerToEnum;
-    procedure TestStringToEnum;
     procedure TestIntegerToBoolean;
+    procedure TestIntegerToNullableInteger;
+    procedure TestIntegerToNullableString;
+    procedure TestIntegerToNullableBoolean;
+  end;
+
+  TTestFromBoolean = class(TTestCase)
+  private
+    fConverter: IValueConverter;
+  protected
+    procedure SetUp; override;
+  published
     procedure TestBooleanToInteger;
-    procedure TestStringToBoolean;
     procedure TestBooleanToString;
+    procedure TestBooleanToNullableBoolean;
+    procedure TestBooleanToNullableInteger;
+    procedure TestBooleanToNullableString;
+  end;
+
+  TTestFromEnum = class(TTestCase)
+  private
+    fConverter: IValueConverter;
+  protected
+    procedure SetUp; override;
+  published
+    procedure TestEnumToInteger;
+    procedure TestEnumToString;
+    procedure TestEnumToNullableString;
+    procedure TestEnumToNullableInteger;
+  end;
+
+  TTestFromFloat = class(TTestCase)
+  private
+    fConverter: IValueConverter;
+  protected
+    procedure SetUp; override;
+  published
+    procedure TestFloatToInteger;
+    procedure TestFloatToString;
+    procedure TestFloatToNullableFloat;
+    procedure TestFloatToNullableInteger;
+    procedure TestFloatToNullableString;
+  end;
+
+  TTestFromColor = class(TTestCase)
+  private
+    fConverter: IValueConverter;
+  protected
+    procedure SetUp; override;
+  published
+    procedure TestColorToString;
+    procedure TestColorToInteger;
+    procedure TestColorToNullableColor;
+    procedure TestColorToNullableString;
+    procedure TestColorToNullableInteger;
+  end;
+
+  TTestFromCurrency = class(TTestCase)
+  private
+    fConverter: IValueConverter;
+  protected
+    procedure SetUp; override;
+  published
+    procedure TestCurrencyToString;
+    procedure TestCurrencyToNullableString;
+  end;
+
+  TTestFromDateTime = class(TTestCase)
+  private
+    fConverter: IValueConverter;
+  protected
+    procedure SetUp; override;
+  published
+    procedure TestDateTimeToString;
+    procedure TestDateTimeToNullableString;
+  end;
+
+  TTestFromNullable = class(TTestCase)
+  private
+    fConverter: IValueConverter;
+  protected
+    procedure SetUp; override;
+  published
     procedure TestNullableIntegerToInteger;
     procedure TestNullableIntegerToString;
     procedure TestNullableFloatToString;
     procedure TestNullableStringToFloat;
     procedure TestNullableDateTimeToString;
     procedure TestNullableColorToString;
-    procedure TestStringToNullableString;
-    procedure TestStringToNullableInteger;
-    procedure TestStringToNullableExtended;
-    procedure TestExtendedToNullableString;
-    procedure TestStringToNullableDateTime;
-    procedure TestStringToNullableColor;
-    procedure TestStringToFloat;
-    procedure TestFloatToString;
-    procedure TestStringToColor;
-    procedure TestColorToString;
-    procedure TestStringToCurrency;
-    procedure TestCurrencyToString;
-    procedure TestStringToDateTime;
-    procedure TestDateTimeToString;
   end;
 
 implementation
@@ -81,15 +164,284 @@ uses
   DateUtils,
   Spring;
 
-{$REGION 'TTestValueConverters'}
 
-procedure TTestValueConverters.SetUp;
+{$REGION 'TTestFromString'}
+
+procedure TTestFromString.SetUp;
 begin
   inherited;
   fConverter := TValueConverter.Default;
 end;
 
-procedure TTestValueConverters.TestBooleanToInteger;
+procedure TTestFromString.TestStringToInteger;
+var
+  outValue: TValue;
+  outInt: Integer;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<string>('1'),
+    TypeInfo(Integer));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Integer>(outInt));
+  CheckEquals(outValue.AsInteger, 1);
+end;
+
+procedure TTestFromString.TestStringToFloat;
+var
+  outValue: TValue;
+  outFloat: Extended;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<string>(FloatToStr(1.11)),
+    TypeInfo(Extended));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Extended>(outFloat));
+  CheckEquals(outFloat, 1.11);
+end;
+
+procedure TTestFromString.TestStringToEnum;
+var
+  outValue: TValue;
+  outEnum: TEnumeration;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<string>('teLast'),
+    TypeInfo(TEnumeration));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TEnumeration>(outEnum));
+  CheckTrue(outEnum = teLast);
+end;
+
+procedure TTestFromString.TestStringToBoolean;
+var
+  outValue: TValue;
+  outBool: Boolean;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<string>('True'),
+    TypeInfo(Boolean));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Boolean>(outBool));
+  CheckEquals(outBool, True);
+end;
+
+procedure TTestFromString.TestStringToColor;
+var
+  outValue: TValue;
+  outColor: TColor;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<string>('clBlue'),
+    TypeInfo(TColor));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TColor>(outColor));
+  CheckEquals(outColor, clBlue);
+end;
+
+procedure TTestFromString.TestStringToCurrency;
+var
+  outValue: TValue;
+  outCurrency: Currency;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<string>(FloatToStr(1.11)),
+    TypeInfo(Currency));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Currency>(outCurrency));
+  CheckEquals(outCurrency, 1.11);
+end;
+
+procedure TTestFromString.TestStringToDateTime;
+var
+  outValue: TValue;
+  outStamp: TDateTime;
+  stamp: TDateTime;
+begin
+  stamp := Now;
+  outValue := fConverter.ConvertTo(TValue.From<string>(DateTimeToStr(stamp)),
+    TypeInfo(TDateTime));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TDateTime>(outStamp));
+  CheckEqualsString(DateTimeToStr(outStamp), DateTimeToStr(stamp));
+end;
+
+procedure TTestFromString.TestStringToNullableString;
+var
+  outValue: TValue;
+  outNullable: TNullable<string>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<string>('0'),
+    TypeInfo(TNullable<string>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<string>>(outNullable));
+  CheckTrue(outNullable.HasValue);
+  CheckEquals(outNullable.Value, '0');
+end;
+
+procedure TTestFromString.TestStringToNullableInteger;
+var
+  outValue: TValue;
+  outNullable: TNullable<Integer>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<string>('15'),
+    TypeInfo(TNullable<Integer>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<Integer>>(outNullable));
+  CheckTrue(outNullable.HasValue);
+  CheckEquals(outNullable.Value, 15);
+end;
+
+procedure TTestFromString.TestStringToNullableFloat;
+var
+  outValue: TValue;
+  outNullable: TNullable<Extended>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<string>(FloatToStr(1.11)),
+    TypeInfo(TNullable<Extended>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<Extended>>(outNullable));
+  CheckEquals(outNullable.Value, 1.11);
+end;
+
+procedure TTestFromString.TestStringToNullableBoolean;
+var
+  outValue: TValue;
+  outNullable: TNullable<Boolean>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<string>('True'),
+    TypeInfo(TNullable<Boolean>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<Boolean>>(outNullable));
+  CheckEquals(outNullable.Value, True);
+end;
+
+procedure TTestFromString.TestStringToNullableColor;
+var
+  outValue: TValue;
+  outNullable: TNullable<TColor>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<string>(ColorToString(clRed)),
+    TypeInfo(TNullable<TColor>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<TColor>>(outNullable));
+  CheckEquals(ColorToString(outNullable.Value), 'clRed');
+end;
+
+procedure TTestFromString.TestStringToNullableCurrency;
+var
+  outValue: TValue;
+  outNullable: TNullable<Currency>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<string>(FloatToStr(1.11)),
+    TypeInfo(TNullable<Currency>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<Currency>>(outNullable));
+  CheckEquals(outNullable.Value, 1.11);
+end;
+
+procedure TTestFromString.TestStringToNullableDateTime;
+var
+  outValue: TValue;
+  outNullable: TNullable<TDateTime>;
+  stamp: TDateTime;
+begin
+  stamp := Now;
+  outValue := fConverter.ConvertTo(TValue.From<string>(DateTimeToStr(stamp)),
+    TypeInfo(TNullable<TDateTime>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<TDateTime>>(outNullable));
+  CheckEqualsString(DateTimeToStr(outNullable.Value), DateTimeToStr(stamp));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestFromInteger'}
+
+procedure TTestFromInteger.SetUp;
+begin
+  inherited;
+  fConverter := TValueConverter.Default;
+end;
+
+procedure TTestFromInteger.TestIntegerToBoolean;
+var
+  outValue: TValue;
+  outBool: Boolean;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Integer>(1),
+    TypeInfo(Boolean));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Boolean>(outBool));
+  CheckEquals(outBool, True);
+end;
+
+procedure TTestFromInteger.TestIntegerToEnum;
+var
+  outValue: TValue;
+  outEnum: TEnumeration;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Integer>(1),
+    TypeInfo(TEnumeration));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TEnumeration>(outEnum));
+  CheckTrue(outEnum = teSecond);
+end;
+
+procedure TTestFromInteger.TestIntegerToString;
+var
+  outValue: TValue;
+  outStr: string;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Integer>(1),
+    TypeInfo(string));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<string>(outStr));
+  CheckEquals(outValue.AsString, '1');
+end;
+
+procedure TTestFromInteger.TestIntegerToNullableInteger;
+var
+  outValue: TValue;
+  outNullable: TNullable<Integer>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Integer>(1),
+    TypeInfo(TNullable<Integer>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<Integer>>(outNullable));
+  CheckEquals(outNullable.Value, 1);
+end;
+
+procedure TTestFromInteger.TestIntegerToNullableString;
+var
+  outValue: TValue;
+  outNullable: TNullable<string>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Integer>(1),
+    TypeInfo(TNullable<string>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<string>>(outNullable));
+  CheckEqualsString(outNullable.Value, '1');
+end;
+
+procedure TTestFromInteger.TestIntegerToNullableBoolean;
+var
+  outValue: TValue;
+  outNullable: TNullable<Boolean>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Integer>(0),
+    TypeInfo(TNullable<Boolean>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<Boolean>>(outNullable));
+  CheckFalse(outNullable.Value);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestFromBoolean'}
+
+procedure TTestFromBoolean.SetUp;
+begin
+  inherited;
+  fConverter := TValueConverter.Default;
+end;
+
+procedure TTestFromBoolean.TestBooleanToInteger;
 var
   outValue: TValue;
   outInt: Integer;
@@ -101,7 +453,7 @@ begin
   CheckEquals(outInt, 0);
 end;
 
-procedure TTestValueConverters.TestBooleanToString;
+procedure TTestFromBoolean.TestBooleanToString;
 var
   outValue: TValue;
   outStr: string;
@@ -113,7 +465,184 @@ begin
   CheckEqualsString(outStr, 'False');
 end;
 
-procedure TTestValueConverters.TestColorToString;
+procedure TTestFromBoolean.TestBooleanToNullableBoolean;
+var
+  outValue: TValue;
+  outNullable: TNullable<Boolean>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Boolean>(False),
+    TypeInfo(TNullable<Boolean>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<Boolean>>(outNullable));
+  CheckFalse(outNullable.Value);
+end;
+
+procedure TTestFromBoolean.TestBooleanToNullableInteger;
+var
+  outValue: TValue;
+  outNullable: TNullable<Integer>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Boolean>(False),
+    TypeInfo(TNullable<Integer>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<Integer>>(outNullable));
+  CheckEquals(outNullable.Value, 0);
+end;
+
+procedure TTestFromBoolean.TestBooleanToNullableString;
+var
+  outValue: TValue;
+  outNullable: TNullable<string>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Boolean>(False),
+    TypeInfo(TNullable<string>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<string>>(outNullable));
+  CheckEqualsString(outNullable.Value, 'False');
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestFromEnum'}
+
+procedure TTestFromEnum.SetUp;
+begin
+  inherited;
+  fConverter := TValueConverter.Default;
+end;
+
+procedure TTestFromEnum.TestEnumToString;
+var
+  outValue: TValue;
+  outStr: string;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TEnumeration>(teFirst),
+    TypeInfo(string));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<string>(outStr));
+  CheckEquals(outStr, 'teFirst');
+end;
+
+procedure TTestFromEnum.TestEnumToInteger;
+var
+  outValue: TValue;
+  outInt: Integer;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TEnumeration>(teSecond),
+    TypeInfo(Integer));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Integer>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromEnum.TestEnumToNullableString;
+var
+  outValue: TValue;
+  outNullable: TNullable<string>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TEnumeration>(teFirst),
+    TypeInfo(TNullable<string>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<string>>(outNullable));
+  CheckEqualsString(outNullable.Value, 'teFirst');
+end;
+
+procedure TTestFromEnum.TestEnumToNullableInteger;
+var
+  outValue: TValue;
+  outNullable: TNullable<Integer>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TEnumeration>(teLast),
+    TypeInfo(TNullable<Integer>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<Integer>>(outNullable));
+  CheckEquals(outNullable.Value, 2);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestFromFloat'}
+
+procedure TTestFromFloat.SetUp;
+begin
+  inherited;
+  fConverter := TValueConverter.Default;
+end;
+
+procedure TTestFromFloat.TestFloatToInteger;
+var
+  outValue: TValue;
+  outInt: Integer;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.11),
+    TypeInfo(Integer));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Integer>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromFloat.TestFloatToString;
+var
+  outValue: TValue;
+  outStr: string;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.11),
+    TypeInfo(string));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<string>(outStr));
+  CheckEquals(outStr, FloatToStr(1.11));
+end;
+
+procedure TTestFromFloat.TestFloatToNullableFloat;
+var
+  outValue: TValue;
+  outNullable: TNullable<Extended>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.11),
+    TypeInfo(TNullable<Extended>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<Extended>>(outNullable));
+  CheckEquals(outNullable.Value, 1.11);
+end;
+
+procedure TTestFromFloat.TestFloatToNullableString;
+var
+  outValue: TValue;
+  outNullable: TNullable<string>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.11),
+    TypeInfo(TNullable<string>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<string>>(outNullable));
+  CheckEqualsString(outNullable.Value, FloatToStr(1.11));
+end;
+
+procedure TTestFromFloat.TestFloatToNullableInteger;
+var
+  outValue: TValue;
+  outNullable: TNullable<Integer>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.11),
+    TypeInfo(TNullable<Integer>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<Integer>>(outNullable));
+  CheckEquals(outNullable.Value, 1);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestFromColor'}
+
+procedure TTestFromColor.SetUp;
+begin
+  inherited;
+  fConverter := TValueConverter.Default;
+end;
+
+procedure TTestFromColor.TestColorToString;
 var
   outValue: TValue;
   outStr: string;
@@ -125,7 +654,66 @@ begin
   CheckEqualsString(outStr, 'clRed');
 end;
 
-procedure TTestValueConverters.TestCurrencyToString;
+procedure TTestFromColor.TestColorToInteger;
+var
+  outValue: TValue;
+  outInt: Integer;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TColor>(clRed),
+    TypeInfo(Integer));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Integer>(outInt));
+  CheckEquals(outInt, ColorToRGB(clRed));
+end;
+
+procedure TTestFromColor.TestColorToNullableColor;
+var
+  outValue: TValue;
+  outNullable: TNullable<TColor>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TColor>(clRed),
+    TypeInfo(TNullable<TColor>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<TColor>>(outNullable));
+  CheckEquals(outNullable.Value, clRed);
+end;
+
+procedure TTestFromColor.TestColorToNullableString;
+var
+  outValue: TValue;
+  outNullable: TNullable<string>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TColor>(clRed),
+    TypeInfo(TNullable<string>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<string>>(outNullable));
+  CheckEqualsString(outNullable.Value, 'clRed');
+end;
+
+procedure TTestFromColor.TestColorToNullableInteger;
+var
+  outValue: TValue;
+  outNullable: TNullable<Integer>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TColor>(clRed),
+    TypeInfo(TNullable<Integer>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<Integer>>(outNullable));
+  CheckEquals(outNullable.Value, ColorToRGB(clRed));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestFromCurrency'}
+
+procedure TTestFromCurrency.SetUp;
+begin
+  inherited;
+  fConverter := TValueConverter.Default;
+end;
+
+procedure TTestFromCurrency.TestCurrencyToString;
 var
   outValue: TValue;
   outStr: string;
@@ -137,7 +725,30 @@ begin
   CheckEqualsString(outStr, FloatToStr(1.11));
 end;
 
-procedure TTestValueConverters.TestDateTimeToString;
+procedure TTestFromCurrency.TestCurrencyToNullableString;
+var
+  outValue: TValue;
+  outNullable: TNullable<string>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Currency>(1.11),
+    TypeInfo(TNullable<string>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<string>>(outNullable));
+  CheckEqualsString(outNullable.Value, CurrToStr(1.11));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestFromDateTime'}
+
+procedure TTestFromDateTime.SetUp;
+begin
+  inherited;
+  fConverter := TValueConverter.Default;
+end;
+
+procedure TTestFromDateTime.TestDateTimeToString;
 var
   outValue: TValue;
   outStr: string;
@@ -151,189 +762,80 @@ begin
   CheckEqualsString(outStr, DateTimeToStr(stamp));
 end;
 
-procedure TTestValueConverters.TestIntegerToBoolean;
+procedure TTestFromDateTime.TestDateTimeToNullableString;
 var
   outValue: TValue;
-  outBool: Boolean;
-begin
-  outValue := fConverter.ConvertTo(TValue.From<Integer>(1),
-    TypeInfo(Boolean));
-  CheckFalse(outValue.IsEmpty);
-  CheckTrue(outValue.TryAsType<Boolean>(outBool));
-  CheckEquals(outBool, True);
-end;
-
-procedure TTestValueConverters.TestStringToBoolean;
-var
-  outValue: TValue;
-  outBool: Boolean;
-begin
-  outValue := fConverter.ConvertTo(TValue.From<string>('False'),
-    TypeInfo(Boolean));
-  CheckFalse(outValue.IsEmpty);
-  CheckTrue(outValue.TryAsType<Boolean>(outBool));
-  CheckEquals(outBool, False);
-end;
-
-procedure TTestValueConverters.TestStringToColor;
-var
-  outValue: TValue;
-  outColor: TColor;
-begin
-  outValue := fConverter.ConvertTo(TValue.From<string>('clBlue'),
-    TypeInfo(TColor));
-  CheckFalse(outValue.IsEmpty);
-  CheckTrue(outValue.TryAsType<TColor>(outColor));
-  CheckEquals(outColor, clBlue);
-end;
-
-procedure TTestValueConverters.TestStringToCurrency;
-var
-  outValue: TValue;
-  outCurrency: Currency;
-begin
-  outValue := fConverter.ConvertTo(TValue.From<string>(FloatToStr(1.11)),
-    TypeInfo(Currency));
-  CheckFalse(outValue.IsEmpty);
-  CheckTrue(outValue.TryAsType<Currency>(outCurrency));
-  CheckEquals(outCurrency, 1.11);
-end;
-
-procedure TTestValueConverters.TestStringToDateTime;
-var
-  outValue: TValue;
-  outStamp: TDateTime;
+  outNullable: TNullable<string>;
   stamp: TDateTime;
 begin
   stamp := Now;
-  outValue := fConverter.ConvertTo(TValue.From<string>(DateTimeToStr(stamp)),
-    TypeInfo(TDateTime));
+  outValue := fConverter.ConvertTo(TValue.From<TDateTime>(stamp),
+    TypeInfo(TNullable<string>));
   CheckFalse(outValue.IsEmpty);
-  CheckTrue(outValue.TryAsType<TDateTime>(outStamp));
-  CheckTrue(SameDateTime(outStamp, stamp));
+  CheckTrue(outValue.TryAsType<TNullable<string>>(outNullable));
+  CheckEqualsString(outNullable.Value, DateTimeToStr(stamp));
 end;
 
-procedure TTestValueConverters.TestEnumToInteger;
+{$ENDREGION}
+
+
+{$REGION 'TTestFromNullable'}
+
+procedure TTestFromNullable.SetUp;
+begin
+  inherited;
+  fConverter := TValueConverter.Default;
+end;
+
+procedure TTestFromNullable.TestNullableIntegerToInteger;
 var
   outValue: TValue;
   outInt: Integer;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<TEnumeration>(teSecond),
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<Integer>>(TNullable<Integer>.Create(1)),
     TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Integer>(outInt));
   CheckEquals(outInt, 1);
 end;
 
-procedure TTestValueConverters.TestEnumToString;
+procedure TTestFromNullable.TestNullableIntegerToString;
 var
   outValue: TValue;
   outStr: string;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<TEnumeration>(teFirst),
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<Integer>>(TNullable<Integer>.Create(1)),
     TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEquals(outStr, 'teFirst');
+  CheckEquals(outStr, '1');
 end;
 
-procedure TTestValueConverters.TestExtendedToNullableString;
-var
-  outValue: TValue;
-  outNullable: TNullable<string>;
-begin
-  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.11),
-    TypeInfo(TNullable<string>));
-  CheckFalse(outValue.IsEmpty);
-  CheckTrue(outValue.TryAsType<TNullable<string>>(outNullable));
-  CheckEquals(outNullable.Value, FloatToStr(1.11));
-end;
-
-procedure TTestValueConverters.TestFloatToString;
+procedure TTestFromNullable.TestNullableFloatToString;
 var
   outValue: TValue;
   outStr: string;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.11),
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<Extended>>(TNullable<Extended>.Create(1.11)),
     TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
   CheckEquals(outStr, FloatToStr(1.11));
 end;
 
-procedure TTestValueConverters.TestIntegerToEnum;
-var
-  outValue: TValue;
-  outEnum: TEnumeration;
-begin
-  outValue := fConverter.ConvertTo(TValue.From<Integer>(1),
-    TypeInfo(TEnumeration));
-  CheckFalse(outValue.IsEmpty);
-  CheckTrue(outValue.TryAsType<TEnumeration>(outEnum));
-  CheckTrue(outEnum = teSecond);
-end;
-
-procedure TTestValueConverters.TestStringToEnum;
-var
-  outValue: TValue;
-  outEnum: TEnumeration;
-begin
-  outValue := fConverter.ConvertTo(TValue.From<string>('teLast'),
-    TypeInfo(TEnumeration));
-  CheckFalse(outValue.IsEmpty);
-  CheckTrue(outValue.TryAsType<TEnumeration>(outEnum));
-  CheckTrue(outEnum = teLast);
-end;
-
-procedure TTestValueConverters.TestStringToFloat;
+procedure TTestFromNullable.TestNullableStringToFloat;
 var
   outValue: TValue;
   outFloat: Extended;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<string>(FloatToStr(1.11)),
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<string>>(TNullable<string>.Create(FloatToStr(1.11))),
     TypeInfo(Extended));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Extended>(outFloat));
   CheckEquals(outFloat, 1.11);
 end;
 
-procedure TTestValueConverters.TestIntegerToString;
-var
-  outValue: TValue;
-  outStr: string;
-begin
-  outValue := fConverter.ConvertTo(TValue.From<Integer>(1),
-    TypeInfo(string));
-  CheckFalse(outValue.IsEmpty);
-  CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEquals(outValue.AsString, '1');
-end;
-
-procedure TTestValueConverters.TestStringToInteger;
-var
-  outValue: TValue;
-  outInt: Integer;
-begin
-  outValue := fConverter.ConvertTo(TValue.From<string>('1'),
-    TypeInfo(Integer));
-  CheckFalse(outValue.IsEmpty);
-  CheckTrue(outValue.TryAsType<Integer>(outInt));
-  CheckEquals(outValue.AsInteger, 1);
-end;
-
-procedure TTestValueConverters.TestNullableColorToString;
-var
-  outValue: TValue;
-  outStr: string;
-begin
-  outValue := fConverter.ConvertTo(TValue.From<TNullable<TColor>>(TNullable<TColor>.Create(clRed)),
-    TypeInfo(string));
-  CheckFalse(outValue.IsEmpty);
-  CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEquals(outStr, 'clRed');
-end;
-
-procedure TTestValueConverters.TestNullableDateTimeToString;
+procedure TTestFromNullable.TestNullableDateTimeToString;
 var
   outValue: TValue;
   outStr: string;
@@ -347,116 +849,16 @@ begin
   CheckEquals(outStr, DateTimeToStr(stamp));
 end;
 
-procedure TTestValueConverters.TestNullableFloatToString;
+procedure TTestFromNullable.TestNullableColorToString;
 var
   outValue: TValue;
   outStr: string;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<TNullable<Extended>>(TNullable<Extended>.Create(1.11)),
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<TColor>>(TNullable<TColor>.Create(clRed)),
     TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEquals(outStr, FloatToStr(1.11));
-end;
-
-procedure TTestValueConverters.TestNullableIntegerToInteger;
-var
-  outValue: TValue;
-  outInt: Integer;
-begin
-  outValue := fConverter.ConvertTo(TValue.From<TNullable<Integer>>(TNullable<Integer>.Create(1)),
-    TypeInfo(Integer));
-  CheckFalse(outValue.IsEmpty);
-  CheckTrue(outValue.TryAsType<Integer>(outInt));
-  CheckEquals(outInt, 1);
-end;
-
-procedure TTestValueConverters.TestNullableIntegerToString;
-var
-  outValue: TValue;
-  outStr: string;
-begin
-  outValue := fConverter.ConvertTo(TValue.From<TNullable<Integer>>(TNullable<Integer>.Create(1)),
-    TypeInfo(string));
-  CheckFalse(outValue.IsEmpty);
-  CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEquals(outStr, '1');
-end;
-
-procedure TTestValueConverters.TestNullableStringToFloat;
-var
-  outValue: TValue;
-  outFloat: Extended;
-begin
-  outValue := fConverter.ConvertTo(TValue.From<TNullable<string>>(TNullable<string>.Create(FloatToStr(1.11))),
-    TypeInfo(Extended));
-  CheckFalse(outValue.IsEmpty);
-  CheckTrue(outValue.TryAsType<Extended>(outFloat));
-  CheckEquals(outFloat, 1.11);
-end;
-
-procedure TTestValueConverters.TestStringToNullableColor;
-var
-  outValue: TValue;
-  outNullable: TNullable<TColor>;
-begin
-  outValue := fConverter.ConvertTo(TValue.From<string>(ColorToString(clRed)),
-    TypeInfo(TNullable<TColor>));
-  CheckFalse(outValue.IsEmpty);
-  CheckTrue(outValue.TryAsType<TNullable<TColor>>(outNullable));
-  CheckEquals(ColorToString(outNullable.Value), 'clRed');
-end;
-
-procedure TTestValueConverters.TestStringToNullableDateTime;
-var
-  outValue: TValue;
-  outNullable: TNullable<TDateTime>;
-  stamp: TDateTime;
-begin
-  stamp := Now;
-  outValue := fConverter.ConvertTo(TValue.From<string>(DateTimeToStr(stamp)),
-    TypeInfo(TNullable<TDateTime>));
-  CheckFalse(outValue.IsEmpty);
-  CheckTrue(outValue.TryAsType<TNullable<TDateTime>>(outNullable));
-  CheckTrue(SameDateTime(outNullable.Value, stamp));
-end;
-
-procedure TTestValueConverters.TestStringToNullableExtended;
-var
-  outValue: TValue;
-  outNullable: TNullable<Extended>;
-begin
-  outValue := fConverter.ConvertTo(TValue.From<string>(FloatToStr(1.11)),
-    TypeInfo(TNullable<Extended>));
-  CheckFalse(outValue.IsEmpty);
-  CheckTrue(outValue.TryAsType<TNullable<Extended>>(outNullable));
-  CheckEquals(outNullable.Value, 1.11);
-end;
-
-procedure TTestValueConverters.TestStringToNullableInteger;
-var
-  outValue: TValue;
-  outNullable: TNullable<Integer>;
-begin
-  outValue := fConverter.ConvertTo(TValue.From<string>('15'),
-    TypeInfo(TNullable<Integer>));
-  CheckFalse(outValue.IsEmpty);
-  CheckTrue(outValue.TryAsType<TNullable<Integer>>(outNullable));
-  CheckTrue(outNullable.HasValue);
-  CheckEquals(outNullable.Value, 15);
-end;
-
-procedure TTestValueConverters.TestStringToNullableString;
-var
-  outValue: TValue;
-  outNullable: TNullable<string>;
-begin
-  outValue := fConverter.ConvertTo(TValue.From<string>('0'),
-    TypeInfo(TNullable<string>));
-  CheckFalse(outValue.IsEmpty);
-  CheckTrue(outValue.TryAsType<TNullable<string>>(outNullable));
-  CheckTrue(outNullable.HasValue);
-  CheckEquals(outNullable.Value, '0');
+  CheckEquals(outStr, 'clRed');
 end;
 
 {$ENDREGION}
