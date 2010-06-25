@@ -337,8 +337,18 @@ type
   end;
 
   /// <summary>
+  /// Provides conversion routine beetwen TObject and string
+  /// </summary>
+  TObjectToStringConverter = class(TValueConverter)
+  protected
+    function DoConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
+  end;
+
+  /// <summary>
   /// Factory class that brings to live converter which are registered within global
-  ///  converter registry
+  ///  converter registries scope
   /// </summary>
   TValueConverterFactory = class
   strict private
@@ -428,7 +438,7 @@ function TValueConverter.ConvertTo(const value: TValue;
   const parameter: TValue): TValue;
 begin
   try
-    Exit(DoConvertTo(value, targetTypeInfo, parameter));
+    Result := DoConvertTo(value, targetTypeInfo, parameter);
   except
     /// <summary>
     /// In order to save nested exception, you need to raise new exceptions
@@ -437,6 +447,9 @@ begin
     Exception.RaiseOuterException(Exception.Create(Format(SCouldNotConvertValue,
       [value.TypeInfo.Name, targetTypeInfo.Name])));
   end;
+  if Result.IsEmpty then
+    raise Exception.Create(Format(SCouldNotConvertValue,
+      [value.TypeInfo.Name, targetTypeInfo.Name]));
 end;
 
 function TValueConverter.TryConvertTo(const value: TValue;
@@ -470,6 +483,7 @@ begin
   TValueConverterFactory.RegisterConverter(TypeInfo(Integer), TypeInfo(TNullable<System.Integer>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(Integer), TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(Integer), TypeInfo(TNullable<System.Boolean>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(Integer), TypeInfo(TNullable<System.Extended>), TTypeToNullableConverter);
 
   TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(Integer), TStringToIntegerConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(Boolean), TStringToBooleanConverter);
@@ -520,15 +534,21 @@ begin
   TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<Graphics.TColor>), TypeInfo(string), TNullableToTypeConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.TDateTime>), TypeInfo(string), TNullableToTypeConverter);
 
+  TValueConverterFactory.RegisterConverter([tkEnumeration], [tkInteger], TEnumToIntegerConverter);;
+  TValueConverterFactory.RegisterConverter([tkEnumeration], [tkString, tkUString, tkLString], TEnumToStringConverter);
   TValueConverterFactory.RegisterConverter([tkEnumeration], TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter([tkEnumeration], TypeInfo(TNullable<System.Integer>), TTypeToNullableConverter);
 
-  TValueConverterFactory.RegisterConverter([tkEnumeration], [tkInteger], TEnumToIntegerConverter);;
+  TValueConverterFactory.RegisterConverter([tkClass], TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
+
   TValueConverterFactory.RegisterConverter([tkInteger], [tkEnumeration], TIntegerToEnumConverter);
-  TValueConverterFactory.RegisterConverter([tkEnumeration], [tkString, tkUString, tkLString], TEnumToStringConverter);
+
   TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString], [tkEnumeration], TStringToEnumConverter);
-  TValueConverterFactory.RegisterConverter([tkFloat], [tkString, tkUString, tkLString], TFloatToStringConverter);
   TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString], [tkFloat], TStringToFloatConverter);
+
+  TValueConverterFactory.RegisterConverter([tkFloat], [tkString, tkUString, tkLString], TFloatToStringConverter);
+
+  TValueConverterFactory.RegisterConverter([tkClass], [tkString, tkUString, tkLString], TObjectToStringConverter);
 end;
 
 function TDefaultValueConverter.DoConvertTo(const value: TValue;
@@ -843,6 +863,17 @@ function TStringToDateTimeConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
   Result := TValue.From<TDateTime>(StrToDateTime(value.AsString));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TObjectToStringConverter'}
+
+function TObjectToStringConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+begin
+  Result := TValue.From<string>(value.AsObject.ToString);
 end;
 
 {$ENDREGION}

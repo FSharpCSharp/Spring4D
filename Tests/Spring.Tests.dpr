@@ -110,6 +110,7 @@ begin
     TTestFromColor.Suite,
     TTestFromCurrency.Suite,
     TTestFromDateTime.Suite,
+    TTestFromObject.Suite,
     TTestFromNullable.Suite
   ]);
 

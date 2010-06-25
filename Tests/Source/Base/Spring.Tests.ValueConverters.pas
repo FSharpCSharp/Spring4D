@@ -67,9 +67,11 @@ type
     procedure TestIntegerToString;
     procedure TestIntegerToEnum;
     procedure TestIntegerToBoolean;
+    procedure TestIntegerToFloat;
     procedure TestIntegerToNullableInteger;
     procedure TestIntegerToNullableString;
     procedure TestIntegerToNullableBoolean;
+    procedure TestIntegerToNullableFloat;
   end;
 
   TTestFromBoolean = class(TTestCase)
@@ -141,6 +143,22 @@ type
   published
     procedure TestDateTimeToString;
     procedure TestDateTimeToNullableString;
+  end;
+
+  TTestFromObject = class(TTestCase)
+  private
+    fConverter: IValueConverter;
+
+    type
+      TTestObject = class(TObject)
+      public
+        function ToString: string; override;
+      end;
+  protected
+    procedure SetUp; override;
+  published
+    procedure TestObjectToString;
+    procedure TestObjectToNullableString;
   end;
 
   TTestFromNullable = class(TTestCase)
@@ -382,6 +400,18 @@ begin
   CheckTrue(outEnum = teSecond);
 end;
 
+procedure TTestFromInteger.TestIntegerToFloat;
+var
+  outValue: TValue;
+  outFloat: Extended;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Integer>(1),
+    TypeInfo(Extended));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Extended>(outFloat));
+  CheckEquals(outValue.AsExtended, 1.0);
+end;
+
 procedure TTestFromInteger.TestIntegerToString;
 var
   outValue: TValue;
@@ -428,6 +458,18 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TNullable<Boolean>>(outNullable));
   CheckFalse(outNullable.Value);
+end;
+
+procedure TTestFromInteger.TestIntegerToNullableFloat;
+var
+  outValue: TValue;
+  outNullable: TNullable<Extended>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Integer>(0),
+    TypeInfo(TNullable<Extended>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<Extended>>(outNullable));
+  CheckEquals(outNullable.Value, 0.0);
 end;
 
 {$ENDREGION}
@@ -774,6 +816,57 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TNullable<string>>(outNullable));
   CheckEqualsString(outNullable.Value, DateTimeToStr(stamp));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestFromObject'}
+
+  {$REGION 'TTestFromObject.TTestObject'}
+
+  function TTestFromObject.TTestObject.ToString: string;
+  begin
+    inherited;
+    Result := 'ObjectToString test object';
+  end;
+
+  {$ENDREGION}
+
+procedure TTestFromObject.SetUp;
+begin
+  inherited;
+  fConverter := TValueConverter.Default;
+end;
+
+procedure TTestFromObject.TestObjectToString;
+var
+  outValue: TValue;
+  obj: TObject;
+  outStr: string;
+begin
+  obj := TTestObject.Create;
+  outValue := fConverter.ConvertTo(TValue.From<TObject>(obj),
+    TypeInfo(string));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<string>(outStr));
+  CheckEqualsString(outStr, obj.ToString);
+  obj.Free;
+end;
+
+procedure TTestFromObject.TestObjectToNullableString;
+var
+  outValue: TValue;
+  obj: TObject;
+  outNullable: TNullable<string>;
+begin
+  obj := TTestObject.Create;
+  outValue := fConverter.ConvertTo(TValue.From<TObject>(obj),
+    TypeInfo(TNullable<string>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<string>>(outNullable));
+  CheckEqualsString(outNullable.Value, obj.ToString);
+  obj.Free;
 end;
 
 {$ENDREGION}
