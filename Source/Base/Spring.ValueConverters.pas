@@ -383,6 +383,16 @@ type
   end;
 
   /// <summary>
+  /// Provides conversion routine beetwen TObject and TClass
+  /// </summary>
+  TObjectToClassConverter = class(TValueConverter)
+  protected
+    function DoConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
+  end;
+
+  /// <summary>
   /// Provides conversion routine beetwen UnicodeString and WideString
   /// </summary>
   /// <remarks>
@@ -589,11 +599,19 @@ begin
 
   TValueConverterFactory.RegisterConverter([tkEnumeration], [tkInteger], TEnumToIntegerConverter);;
   TValueConverterFactory.RegisterConverter([tkEnumeration], [tkString, tkUString, tkLString, tkWString], TEnumToStringConverter);
-  TValueConverterFactory.RegisterConverter([tkEnumeration], TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter([tkEnumeration], TypeInfo(TNullable<System.Integer>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter([tkEnumeration], TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter([tkEnumeration], TypeInfo(TNullable<System.UnicodeString>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter([tkEnumeration], TypeInfo(TNullable<System.WideString>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter([tkEnumeration], TypeInfo(TNullable<System.AnsiString>), TTypeToNullableConverter);
 
+  TValueConverterFactory.RegisterConverter([tkClass], [tkString, tkUString, tkLString, tkWString], TObjectToStringConverter);
   TValueConverterFactory.RegisterConverter([tkClass], [tkInterface], TObjectToInterfaceConverter);
+  TValueConverterFactory.RegisterConverter([tkClass], [tkClassRef], TObjectToClassConverter);
   TValueConverterFactory.RegisterConverter([tkClass], TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter([tkClass], TypeInfo(TNullable<System.UnicodeString>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter([tkClass], TypeInfo(TNullable<System.WideString>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter([tkClass], TypeInfo(TNullable<System.AnsiString>), TTypeToNullableConverter);
 
   TValueConverterFactory.RegisterConverter([tkInteger], [tkEnumeration], TIntegerToEnumConverter);
 
@@ -602,8 +620,6 @@ begin
   TValueConverterFactory.RegisterConverter([tkUString], [tkWString], TUStringToWStringConverter);
 
   TValueConverterFactory.RegisterConverter([tkFloat], [tkString, tkUString, tkLString, tkWString], TFloatToStringConverter);
-
-  TValueConverterFactory.RegisterConverter([tkClass], [tkString, tkUString, tkLString, tkWString], TObjectToStringConverter);
 end;
 
 function TDefaultValueConverter.DoConvertTo(const value: TValue;
@@ -969,6 +985,17 @@ begin
   guid := GetTypeData(targetTypeInfo)^.Guid;
   if value.AsObject.GetInterface(guid, p) then
     TValue.MakeWithoutCopy(@p, targetTypeInfo, Result);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TObjectToClassConverter'}
+
+function TObjectToClassConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+begin
+  Result := TValue.From<TClass>(value.AsObject.ClassType);
 end;
 
 {$ENDREGION}

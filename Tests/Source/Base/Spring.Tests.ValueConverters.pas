@@ -51,6 +51,7 @@ type
     procedure TestStringToDateTime;
     procedure TestStringToDateTimeF;
     procedure TestStringToWideString;
+    procedure TestStringToAnsiString;
     procedure TestStringToNullableString;
     procedure TestStringToNullableInteger;
     procedure TestStringToNullableFloat;
@@ -171,6 +172,7 @@ type
   published
     procedure TestObjectToString;
     procedure TestObjectToInterface;
+    procedure TestObjectToClass;
     procedure TestObjectToNullableString;
   end;
 
@@ -302,16 +304,28 @@ begin
   CheckEqualsString(FormatDateTime('dd.mm.yyyy', outStamp), '10.10.2010');
 end;
 
+procedure TTestFromString.TestStringToAnsiString;
+var
+  outValue: TValue;
+  outAStr: AnsiString;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<string>('Test AnsiString'),
+    TypeInfo(AnsiString));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
+  CheckEqualsString(string(outAStr), 'Test AnsiString');
+end;
+
 procedure TTestFromString.TestStringToWideString;
 var
   outValue: TValue;
   outWStr: WideString;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<UnicodeString>('Test'),
+  outValue := fConverter.ConvertTo(TValue.From<UnicodeString>('Test WideString'),
     TypeInfo(WideString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<WideString>(outWStr));
-  CheckEquals(outWStr, 'Test');
+  CheckEquals(outWStr, 'Test WideString');
 end;
 
 procedure TTestFromString.TestStringToNullableString;
@@ -931,6 +945,21 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
   CheckEqualsString(outStr, obj.ToString);
+  obj.Free;
+end;
+
+procedure TTestFromObject.TestObjectToClass;
+var
+  outValue: TValue;
+  obj: TObject;
+  outClass: TClass;
+begin
+  obj := TTestObject.Create;
+  outValue := fConverter.ConvertTo(TValue.From<TObject>(obj),
+    TypeInfo(TClass));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TClass>(outClass));
+  CheckTrue(outClass = obj.ClassType);
   obj.Free;
 end;
 
