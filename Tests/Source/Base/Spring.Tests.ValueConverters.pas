@@ -49,6 +49,7 @@ type
     procedure TestStringToColor;
     procedure TestStringToCurrency;
     procedure TestStringToDateTime;
+    procedure TestStringToWideString;
     procedure TestStringToNullableString;
     procedure TestStringToNullableInteger;
     procedure TestStringToNullableFloat;
@@ -285,17 +286,29 @@ begin
   CheckEqualsString(DateTimeToStr(outStamp), DateTimeToStr(stamp));
 end;
 
+procedure TTestFromString.TestStringToWideString;
+var
+  outValue: TValue;
+  outWStr: WideString;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<UnicodeString>('Test'),
+    TypeInfo(WideString));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<WideString>(outWStr));
+  CheckEquals(outWStr, 'Test');
+end;
+
 procedure TTestFromString.TestStringToNullableString;
 var
   outValue: TValue;
   outNullable: TNullable<string>;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<string>('0'),
+  outValue := fConverter.ConvertTo(TValue.From<string>('Test'),
     TypeInfo(TNullable<string>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TNullable<string>>(outNullable));
   CheckTrue(outNullable.HasValue);
-  CheckEquals(outNullable.Value, '0');
+  CheckEquals(outNullable.Value, 'Test');
 end;
 
 procedure TTestFromString.TestStringToNullableInteger;
@@ -871,14 +884,15 @@ procedure TTestFromObject.TestObjectToInterface;
 var
   outValue: TValue;
   obj: TTestObject;
-  outIntf: ITestInterface;
+  outIntf, objIntf: ITestInterface;
 begin
   obj := TTestObject.Create;
   outValue := fConverter.ConvertTo(TValue.From<TObject>(obj),
     TypeInfo(ITestInterface));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<ITestInterface>(outIntf));
-  CheckSame(outIntf, obj); // TEST FAILED !!
+  obj.QueryInterface(ITestInterface, objIntf);
+  CheckSame(outIntf, objIntf);
 end;
 
 procedure TTestFromObject.TestObjectToNullableString;

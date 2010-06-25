@@ -380,6 +380,16 @@ type
   end;
 
   /// <summary>
+  /// Provides conversion routine beetwen UnicodeString and WideString
+  /// </summary>
+  TUStringToWStringConverter = class(TValueConverter)
+  protected
+    function DoConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
+  end;
+
+  /// <summary>
   /// Factory class that brings to live converter which are registered within global
   ///  converter registries scope
   /// </summary>
@@ -572,7 +582,7 @@ begin
   TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.TDateTime>), TypeInfo(string), TNullableToTypeConverter);
 
   TValueConverterFactory.RegisterConverter([tkEnumeration], [tkInteger], TEnumToIntegerConverter);;
-  TValueConverterFactory.RegisterConverter([tkEnumeration], [tkString, tkUString, tkLString], TEnumToStringConverter);
+  TValueConverterFactory.RegisterConverter([tkEnumeration], [tkString, tkUString, tkLString, tkWString], TEnumToStringConverter);
   TValueConverterFactory.RegisterConverter([tkEnumeration], TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter([tkEnumeration], TypeInfo(TNullable<System.Integer>), TTypeToNullableConverter);
 
@@ -581,12 +591,13 @@ begin
 
   TValueConverterFactory.RegisterConverter([tkInteger], [tkEnumeration], TIntegerToEnumConverter);
 
-  TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString], [tkEnumeration], TStringToEnumConverter);
-  TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString], [tkFloat], TStringToFloatConverter);
+  TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString, tkWString], [tkEnumeration], TStringToEnumConverter);
+  TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString, tkWString], [tkFloat], TStringToFloatConverter);
+  TValueConverterFactory.RegisterConverter([tkUString], [tkWString], TUStringToWStringConverter);
 
-  TValueConverterFactory.RegisterConverter([tkFloat], [tkString, tkUString, tkLString], TFloatToStringConverter);
+  TValueConverterFactory.RegisterConverter([tkFloat], [tkString, tkUString, tkLString, tkWString], TFloatToStringConverter);
 
-  TValueConverterFactory.RegisterConverter([tkClass], [tkString, tkUString, tkLString], TObjectToStringConverter);
+  TValueConverterFactory.RegisterConverter([tkClass], [tkString, tkUString, tkLString, tkWString], TObjectToStringConverter);
 end;
 
 function TDefaultValueConverter.DoConvertTo(const value: TValue;
@@ -928,6 +939,17 @@ begin
   guid := GetTypeData(targetTypeInfo)^.Guid;
   if value.AsObject.GetInterface(guid, p) then
     TValue.MakeWithoutCopy(@p, targetTypeInfo, Result);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TUStringToWStringConverter'}
+
+function TUStringToWStringConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+begin
+  Result := TValue.From<WideString>(value.AsString);
 end;
 
 {$ENDREGION}
