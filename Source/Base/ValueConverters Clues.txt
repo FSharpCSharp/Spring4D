@@ -10,3 +10,17 @@
  this could be better
  and there are so many if-else statements in the default converter.
  I think this could be done better
+------------------------------------- NEXT STAGE ------------------------------------------------------
+1. CreateResFmt - DONE
+2. including object - interface acc. to #82433 TValue.TryAsType<T> raised an AV because ConvClass2Intf is wrong
+3. unicodestring - widestring acc. to #82487 Rtti.ConvStr2Str is wrong (when cast a unicode string to widestring)
+4. if Result.IsEmpty then
+    raise Exception.Create(Format(SCouldNotConvertValue,
+      [value.TypeInfo.Name, targetTypeInfo.Name])); - DONE
+   what about value = nil and targetTypeInfo = nil ?
+5. function TValueConverter.ConvertTo(const value: TValue;
+   	const targetTypeInfo: PTypeInfo;
+  	const parameter: TValue): TValue; - DONE
+
+   what about value = nil and targetTypeInfo = nil ?
+

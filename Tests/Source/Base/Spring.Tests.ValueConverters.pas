@@ -150,7 +150,14 @@ type
     fConverter: IValueConverter;
 
     type
-      TTestObject = class(TObject)
+      ITestInterface = interface
+      ['{F98EAF66-33B6-4687-8052-4B76471D978B}']
+        procedure Test;
+      end;
+
+      TTestObject = class(TInterfacedObject, ITestInterface)
+      protected
+        procedure Test;
       public
         function ToString: string; override;
       end;
@@ -158,6 +165,7 @@ type
     procedure SetUp; override;
   published
     procedure TestObjectToString;
+    procedure TestObjectToInterface;
     procedure TestObjectToNullableString;
   end;
 
@@ -825,6 +833,11 @@ end;
 
   {$REGION 'TTestFromObject.TTestObject'}
 
+  procedure TTestFromObject.TTestObject.Test;
+  begin
+
+  end;
+
   function TTestFromObject.TTestObject.ToString: string;
   begin
     inherited;
@@ -852,6 +865,20 @@ begin
   CheckTrue(outValue.TryAsType<string>(outStr));
   CheckEqualsString(outStr, obj.ToString);
   obj.Free;
+end;
+
+procedure TTestFromObject.TestObjectToInterface;
+var
+  outValue: TValue;
+  obj: TTestObject;
+  outIntf: ITestInterface;
+begin
+  obj := TTestObject.Create;
+  outValue := fConverter.ConvertTo(TValue.From<TObject>(obj),
+    TypeInfo(ITestInterface));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<ITestInterface>(outIntf));
+  CheckSame(outIntf, obj); // TEST FAILED !!
 end;
 
 procedure TTestFromObject.TestObjectToNullableString;

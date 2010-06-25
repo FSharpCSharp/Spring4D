@@ -148,7 +148,9 @@ resourcestring
 
   {$REGION 'Spring.ValueConverters'}
 
-  SCouldNotConvertValue = 'Could not convert value: %s to %s';
+  SCouldNotConvertValue = 'Could not convert value: %s to %s.';
+  SEmptySourceTypeKind = 'Empty source TypeKind argument set.';
+  SEmptyTargetTypeKind = 'Empty target TypeKind argument set.';
 
   {$ENDREGION}
 

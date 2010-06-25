@@ -33,16 +33,39 @@ uses
 
 type
 
+  /// <summary>
+  /// Base value converter interface
+  /// </summary>
   IValueConverter = interface
   ['{048EF3F0-41B5-4019-9BD6-00B88CAA7275}']
+
+    /// <param name="value">Rtti.TValue to convert</param>
+    /// <param name="targetTypeInfo">Target Rtii.PTypeInfo structure</param>
+    /// <returns>Returns <param name="value">converted</param> to type pointing by <param name="targetTypeInfo">parameter</param></returns>
     function ConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo): TValue; overload;
+
+    /// <param name="value">Rtti.TValue to convert</param>
+    /// <param name="targetTypeInfo">Target Rtii.PTypeInfo structure</param>
+    /// <param name="parameter">Additional Rtti.TValue formatting parameter, use when possible</param>
+    /// <returns>Returns <param name="value">converted</param> to type pointing by <param name="targetTypeInfo">parameter</param></returns>
     function ConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; overload;
+
+    /// <param name="value">Rtti.TValue to convert</param>
+    /// <param name="targetTypeInfo">Target Rtii.PTypeInfo structure</param>
+    /// <param name="targetValue">Target Rtii.TValue out parameter</param>
+    /// <returns>Returns System.Boolean, True if converting with success</returns>
     function TryConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
       out targetValue: TValue): Boolean; overload;
+
+    /// <param name="value">Rtti.TValue to convert</param>
+    /// <param name="targetTypeInfo">Target Rtii.PTypeInfo structure</param>
+    /// <param name="targetValue">Target Rtii.TValue out parameter</param>
+    /// <param name="parameter">Additional Rtti.TValue formatting parameter, use when possible</param>
+    /// <returns>Returns System.Boolean, True if converting with success</returns>
     function TryConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
       out targetValue: TValue;
@@ -347,6 +370,16 @@ type
   end;
 
   /// <summary>
+  /// Provides conversion routine beetwen TObject and IInterface
+  /// </summary>
+  TObjectToInterfaceConverter = class(TValueConverter)
+  protected
+    function DoConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
+  end;
+
+  /// <summary>
   /// Factory class that brings to live converter which are registered within global
   ///  converter registries scope
   /// </summary>
@@ -406,6 +439,8 @@ uses
   SysUtils,
   Math,
   Spring,
+  Spring.Reflection,
+  Spring.Helpers,
   Spring.ResourceStrings;
 
 
@@ -437,6 +472,8 @@ function TValueConverter.ConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo;
   const parameter: TValue): TValue;
 begin
+  TArgument.CheckNotNull(value.TypeInfo, 'value.TypeInfo');
+  TArgument.CheckNotNull(targetTypeInfo, 'targetTypeInfo');
   try
     Result := DoConvertTo(value, targetTypeInfo, parameter);
   except
@@ -444,12 +481,12 @@ begin
     /// In order to save nested exception, you need to raise new exceptions
     ///  via Exception.RaiseOuterException (Delphi’s style) or Exception.ThrowOuterException (C++ Builder’s style).
     /// </summary>
-    Exception.RaiseOuterException(Exception.Create(Format(SCouldNotConvertValue,
-      [value.TypeInfo.Name, targetTypeInfo.Name])));
+    Exception.RaiseOuterException(Exception.CreateResFmt(@SCouldNotConvertValue,
+      [value.TypeInfo.Name, targetTypeInfo.Name]));
   end;
   if Result.IsEmpty then
-    raise Exception.Create(Format(SCouldNotConvertValue,
-      [value.TypeInfo.Name, targetTypeInfo.Name]));
+    raise Exception.CreateResFmt(@SCouldNotConvertValue,
+      [value.TypeInfo.Name, targetTypeInfo.Name]);
 end;
 
 function TValueConverter.TryConvertTo(const value: TValue;
@@ -539,6 +576,7 @@ begin
   TValueConverterFactory.RegisterConverter([tkEnumeration], TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter([tkEnumeration], TypeInfo(TNullable<System.Integer>), TTypeToNullableConverter);
 
+  TValueConverterFactory.RegisterConverter([tkClass], [tkInterface], TObjectToInterfaceConverter);
   TValueConverterFactory.RegisterConverter([tkClass], TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
 
   TValueConverterFactory.RegisterConverter([tkInteger], [tkEnumeration], TIntegerToEnumConverter);
@@ -879,6 +917,22 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TObjectToInterfaceConverter'}
+
+function TObjectToInterfaceConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+var
+  guid: TGUID;
+  p: Pointer;
+begin
+  guid := GetTypeData(targetTypeInfo)^.Guid;
+  if value.AsObject.GetInterface(guid, p) then
+    TValue.MakeWithoutCopy(@p, targetTypeInfo, Result);
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TValueConverterFactory'}
 
 class constructor TValueConverterFactory.Create;
@@ -973,6 +1027,9 @@ var
   value: TConverterPackage;
   key: TConvertedTypeInfo;
 begin
+  TArgument.CheckNotNull(sourceTypeInfo, 'sourceTypeInfo');
+  TArgument.CheckNotNull(targetTypeInfo, 'targetTypeInfo');
+
   System.MonitorEnter(fTypeInfoRegistry);
   try
     value.ConverterClass := converterClass;
@@ -990,6 +1047,9 @@ var
   value: TConverterPackage;
   key: TConvertedTypeKind;
 begin
+  TArgument.CheckFalse(SizeOf(sourceTypeKinds) = 0, SEmptySourceTypeKind);
+  TArgument.CheckFalse(SizeOf(targetTypeKinds) = 0, SEmptyTargetTypeKind);
+
   System.MonitorEnter(fTypeKindRegistry);
   try
     value.ConverterClass := converterClass;
@@ -1008,6 +1068,9 @@ var
   value: TConverterPackage;
   key: TConvertedTypeKindInfo;
 begin
+  TArgument.CheckFalse(SizeOf(sourceTypeKinds) = 0, SEmptySourceTypeKind);
+  TArgument.CheckNotNull(targetTypeInfo, 'targetTypeInfo');
+
   System.MonitorEnter(fTypeKindInfoRegistry);
   try
     value.ConverterClass := converterClass;
