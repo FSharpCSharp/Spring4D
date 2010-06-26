@@ -90,6 +90,7 @@ type
   public
     constructor Create(const driveName: string);
     class function GetDrives: TArray<TDriveInfo>; static;
+    {TODO -oPaul -cGeneral : Add the Refresh method}
     procedure CheckIsReady;
     property AvailableFreeSpace: Int64 read GetAvailableFreeSpace;
     property DriveFormat: string read GetDriveFormat;
@@ -314,6 +315,9 @@ type
     class operator LessThan(const left, right: TSize): Boolean;
     class operator LessThanOrEqual(const left, right: TSize): Boolean;
   end;
+
+//  TFileSize = TSize;
+//  TFileSizeUnit = TSizeUnit;
 
   {$ENDREGION}
 

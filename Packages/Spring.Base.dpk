@@ -49,6 +49,7 @@ package Spring.Base;
 {$DESCRIPTION 'Spring Framework for Delphi Base Class Library'}
 {$RUNONLY}
 {$IMPLICITBUILD ON}
+{$WARN UNIT_PLATFORM OFF}
 
 requires
   rtl,

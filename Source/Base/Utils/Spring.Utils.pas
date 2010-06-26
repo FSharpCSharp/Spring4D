@@ -283,6 +283,8 @@ type
     class procedure GetProcessEnvironmentVariables(list: TStrings); static;
   public
     class function  GetCommandLineArgs: TStringDynArray; overload; static;
+    // TODO: Consider using Extract*** insteading of Get*** for the methods with a
+    // TString parameter.
     class procedure GetCommandLineArgs(list: TStrings); overload; static;
     class function  GetLogicalDrives: TStringDynArray; overload; static;
     class procedure GetLogicalDrives(list: TStrings); overload; static;

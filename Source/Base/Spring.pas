@@ -381,6 +381,10 @@ type
 
   {$ENDREGION}
 
+  {
+    TODO: Consider Moving TLocation and GetPathLocation to Spring.Reflection
+      and mark it as experimental.
+  }
 
   {$REGION 'TLocation (Experimental)'}
 

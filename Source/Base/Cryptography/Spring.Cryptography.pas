@@ -151,7 +151,7 @@ type
     function ComputeHash(const inputStream: TStream): TBuffer; overload;
     function ComputeHashOfFile(const fileName: string): TBuffer;  // callback?
     /// <summary>
-    /// Gets the hash size, in bits, of the algorithm.
+    /// Gets the hash size, <b>in bits</b>, of the algorithm.
     /// </summary>
     property HashSize: Integer read GetHashSize;
   end;
@@ -457,12 +457,20 @@ type
     class function CreateSHA256: ISHA256; static;
     class function CreateSHA384: ISHA384; static;
     class function CreateSHA512: ISHA512; static;
+    /// <remarks>
+    /// Not Implemented yet.
+    /// </remarks>
     class function CreateMACTripleDES: IMACTripleDES; static;
     class function CreateDES: IDES; static;
     class function CreateTripleDES: ITripleDES; static;
+    /// <remarks>
+    /// Not Implemented yet.
+    /// </remarks>
     class function CreateAES: IAES; static;
     class function CreateRandomNumberGenerator: IRandomNumberGenerator; static;
   end;
+
+  TCryptoServiceProvider = TCryptographicServiceProvider;
 
   ECryptographicException = class(Exception);
 

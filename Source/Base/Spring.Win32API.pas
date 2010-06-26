@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Win32API;
+unit Spring.Win32API platform;
 
 {$I Spring.inc}
 
