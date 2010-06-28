@@ -142,6 +142,16 @@ type
   end;
 
   /// <summary>
+  /// Simply provides conversion routine beetwen Integer and WideString
+  /// </summary>
+  TIntegerToWStringConverter = class(TValueConverter)
+  protected
+    function DoConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
+  end;
+
+  /// <summary>
   /// Simply provides conversion routine beetwen string and Integer
   /// </summary>
   TStringToIntegerConverter = class(TValueConverter)
@@ -175,6 +185,16 @@ type
   /// Simply provides conversion routine beetwen Boolean and string
   /// </summary>
   TBooleanToStringConverter = class(TValueConverter)
+  protected
+    function DoConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
+  end;
+
+  /// <summary>
+  /// Simply provides conversion routine beetwen Boolean and WideString
+  /// </summary>
+  TBooleanToWStringConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
@@ -250,6 +270,16 @@ type
   end;
 
   /// <summary>
+  /// Provides conversion routine beetwen enumeration and WideString
+  /// </summary>
+  TEnumToWStringConverter = class(TValueConverter)
+  protected
+    function DoConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
+  end;
+
+  /// <summary>
   /// Provides conversion routine beetwen string and enumeration
   /// </summary>
   TStringToEnumConverter = class(TValueConverter)
@@ -263,6 +293,16 @@ type
   /// Provides conversion routine beetwen float and string
   /// </summary>
   TFloatToStringConverter = class(TValueConverter)
+  protected
+    function DoConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
+  end;
+
+  /// <summary>
+  /// Provides conversion routine beetwen float and WideString
+  /// </summary>
+  TFloatToWStringConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
@@ -300,6 +340,16 @@ type
   end;
 
   /// <summary>
+  /// Provides conversion routine beetwen TColor and WideString
+  /// </summary>
+  TColorToWStringConverter = class(TValueConverter)
+  protected
+    function DoConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
+  end;
+
+  /// <summary>
   /// Provides conversion routine beetwen TColor and integer
   /// </summary>
   TColorToIntegerConverter = class(TValueConverter)
@@ -323,6 +373,16 @@ type
   /// Provides conversion routine beetwen Currency and string
   /// </summary>
   TCurrencyToStringConverter = class(TValueConverter)
+  protected
+    function DoConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
+  end;
+
+  /// <summary>
+  /// Provides conversion routine beetwen Currency and WideString
+  /// </summary>
+  TCurrencyToWStringConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
@@ -360,9 +420,29 @@ type
   end;
 
   /// <summary>
+  /// Provides conversion routine beetwen TDateTime and WideString
+  /// </summary>
+  TDateTimeToWStringConverter = class(TValueConverter)
+  protected
+    function DoConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
+  end;
+
+  /// <summary>
   /// Provides conversion routine beetwen TObject and string
   /// </summary>
   TObjectToStringConverter = class(TValueConverter)
+  protected
+    function DoConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
+  end;
+
+  /// <summary>
+  /// Provides conversion routine beetwen TObject and WideString
+  /// </summary>
+  TObjectToWStringConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
@@ -398,7 +478,7 @@ type
   /// <remarks>
   /// acc. to #82487 Rtti.ConvStr2Str is wrong (when cast a unicode string to WideString)
   /// </remarks>
-  TUStringToWStringConverter = class(TValueConverter)
+  TStringToWStringConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo;
@@ -541,85 +621,133 @@ end;
 class constructor TDefaultValueConverter.Create;
 begin
   inherited;
-  TValueConverterFactory.RegisterConverter(TypeInfo(Integer), TypeInfo(string), TIntegerToStringConverter);
-  TValueConverterFactory.RegisterConverter(TypeInfo(Integer), TypeInfo(Boolean), TIntegerToBooleanConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(Integer), TypeInfo(TNullable<System.Integer>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(Integer), TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(Integer), TypeInfo(TNullable<System.AnsiString>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(Integer), TypeInfo(TNullable<System.WideString>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(Integer), TypeInfo(TNullable<System.Boolean>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(Integer), TypeInfo(TNullable<System.Extended>), TTypeToNullableConverter);
 
-  TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(Integer), TStringToIntegerConverter);
-  TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(Boolean), TStringToBooleanConverter);
-  TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(TColor), TStringToColorConverter);
-  TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(Currency), TStringToCurrencyConverter);
-  TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(TDateTime), TStringToDateTimeConverter);
-  TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
-  TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(TNullable<System.Integer>), TTypeToNullableConverter);
-  TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(TNullable<System.Boolean>), TTypeToNullableConverter);
-  TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(TNullable<System.Extended>), TTypeToNullableConverter);
-  TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(TNullable<System.Currency>), TTypeToNullableConverter);
-  TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(TNullable<Graphics.TColor>), TTypeToNullableConverter);
-  TValueConverterFactory.RegisterConverter(TypeInfo(string), TypeInfo(TNullable<System.TDateTime>), TTypeToNullableConverter);
-
   TValueConverterFactory.RegisterConverter(TypeInfo(TColor), TypeInfo(string), TColorToStringConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TColor), TypeInfo(AnsiString), TColorToStringConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TColor), TypeInfo(WideString), TColorToWStringConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TColor), TypeInfo(Integer), TColorToIntegerConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TColor), TypeInfo(TNullable<Graphics.TColor>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TColor), TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TColor), TypeInfo(TNullable<System.AnsiString>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TColor), TypeInfo(TNullable<System.WideString>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TColor), TypeInfo(TNullable<System.Integer>), TTypeToNullableConverter);
 
   TValueConverterFactory.RegisterConverter(TypeInfo(Currency), TypeInfo(string), TCurrencyToStringConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(Currency), TypeInfo(AnsiString), TCurrencyToStringConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(Currency), TypeInfo(WideString), TCurrencyToWStringConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(Currency), TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(Currency), TypeInfo(TNullable<System.AnsiString>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(Currency), TypeInfo(TNullable<System.WideString>), TTypeToNullableConverter);
 
   TValueConverterFactory.RegisterConverter(TypeInfo(TDateTime), TypeInfo(string), TDateTimeToStringConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TDateTime), TypeInfo(AnsiString), TDateTimeToStringConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TDateTime), TypeInfo(WideString), TDateTimeToWStringConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TDateTime), TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TDateTime), TypeInfo(TNullable<System.AnsiString>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TDateTime), TypeInfo(TNullable<System.WideString>), TTypeToNullableConverter);
 
-  TValueConverterFactory.RegisterConverter(TypeInfo(Extended), TypeInfo(Integer), TFloatToIntegerConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(Extended), TypeInfo(TNullable<System.Extended>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(Extended), TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(Extended), TypeInfo(TNullable<System.AnsiString>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(Extended), TypeInfo(TNullable<System.WideString>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(Extended), TypeInfo(TNullable<System.Integer>), TTypeToNullableConverter);
 
   TValueConverterFactory.RegisterConverter(TypeInfo(Boolean), TypeInfo(string), TBooleanToStringConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(Boolean), TypeInfo(AnsiString), TBooleanToStringConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(Boolean), TypeInfo(WideString), TBooleanToWStringConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(Boolean), TypeInfo(Integer), TBooleanToIntegerConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(Boolean), TypeInfo(TNullable<System.Boolean>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(Boolean), TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(Boolean), TypeInfo(TNullable<System.AnsiString>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(Boolean), TypeInfo(TNullable<System.WideString>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(Boolean), TypeInfo(TNullable<System.Integer>), TTypeToNullableConverter);
 
   TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.Integer>), TypeInfo(Integer), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.Integer>), TypeInfo(Extended), TNullableToTypeConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.Integer>), TypeInfo(string), TNullableToTypeConverter);
-  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.string>), TypeInfo(string), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.Integer>), TypeInfo(AnsiString), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.Integer>), TypeInfo(WideString), TNullableToTypeConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.string>), TypeInfo(Integer), TNullableToTypeConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.string>), TypeInfo(Extended), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.string>), TypeInfo(string), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.string>), TypeInfo(AnsiString), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.string>), TypeInfo(WideString), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.AnsiString>), TypeInfo(Integer), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.AnsiString>), TypeInfo(Extended), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.AnsiString>), TypeInfo(string), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.AnsiString>), TypeInfo(AnsiString), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.AnsiString>), TypeInfo(WideString), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.WideString>), TypeInfo(Integer), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.WideString>), TypeInfo(Extended), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.WideString>), TypeInfo(string), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.WideString>), TypeInfo(AnsiString), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.WideString>), TypeInfo(WideString), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.Extended>), TypeInfo(Integer), TNullableToTypeConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.Extended>), TypeInfo(Extended), TNullableToTypeConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.Extended>), TypeInfo(string), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.Extended>), TypeInfo(AnsiString), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.Extended>), TypeInfo(WideString), TNullableToTypeConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.Boolean>), TypeInfo(Boolean), TNullableToTypeConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.Boolean>), TypeInfo(Integer), TNullableToTypeConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.Boolean>), TypeInfo(string), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.Boolean>), TypeInfo(AnsiString), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.Boolean>), TypeInfo(WideString), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<Graphics.TColor>), TypeInfo(Integer), TNullableToTypeConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<Graphics.TColor>), TypeInfo(string), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<Graphics.TColor>), TypeInfo(AnsiString), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<Graphics.TColor>), TypeInfo(WideString), TNullableToTypeConverter);
   TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.TDateTime>), TypeInfo(string), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.TDateTime>), TypeInfo(AnsiString), TNullableToTypeConverter);
+  TValueConverterFactory.RegisterConverter(TypeInfo(TNullable<System.TDateTime>), TypeInfo(WideString), TNullableToTypeConverter);
 
   TValueConverterFactory.RegisterConverter([tkEnumeration], [tkInteger], TEnumToIntegerConverter);;
-  TValueConverterFactory.RegisterConverter([tkEnumeration], [tkString, tkUString, tkLString, tkWString], TEnumToStringConverter);
+  TValueConverterFactory.RegisterConverter([tkEnumeration], [tkString, tkUString, tkLString], TEnumToStringConverter);
+  TValueConverterFactory.RegisterConverter([tkEnumeration], TypeInfo(WideString), TEnumToWStringConverter);
   TValueConverterFactory.RegisterConverter([tkEnumeration], TypeInfo(TNullable<System.Integer>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter([tkEnumeration], TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
-  TValueConverterFactory.RegisterConverter([tkEnumeration], TypeInfo(TNullable<System.UnicodeString>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter([tkEnumeration], TypeInfo(TNullable<System.WideString>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter([tkEnumeration], TypeInfo(TNullable<System.AnsiString>), TTypeToNullableConverter);
 
-  TValueConverterFactory.RegisterConverter([tkClass], [tkString, tkUString, tkLString, tkWString], TObjectToStringConverter);
+  TValueConverterFactory.RegisterConverter([tkClass], [tkString, tkUString, tkLString], TObjectToStringConverter);
+  TValueConverterFactory.RegisterConverter([tkClass], [tkWString], TObjectToWStringConverter);
   TValueConverterFactory.RegisterConverter([tkClass], [tkInterface], TObjectToInterfaceConverter);
   TValueConverterFactory.RegisterConverter([tkClass], [tkClassRef], TObjectToClassConverter);
   TValueConverterFactory.RegisterConverter([tkClass], TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
-  TValueConverterFactory.RegisterConverter([tkClass], TypeInfo(TNullable<System.UnicodeString>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter([tkClass], TypeInfo(TNullable<System.WideString>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter([tkClass], TypeInfo(TNullable<System.AnsiString>), TTypeToNullableConverter);
 
   TValueConverterFactory.RegisterConverter([tkInteger], [tkEnumeration], TIntegerToEnumConverter);
+  TValueConverterFactory.RegisterConverter([tkInteger], [tkString, tkUString, tkLString], TIntegerToStringConverter);
+  TValueConverterFactory.RegisterConverter([tkInteger], TypeInfo(WideString), TIntegerToWStringConverter);
+  TValueConverterFactory.RegisterConverter([tkInteger], TypeInfo(Boolean), TIntegerToBooleanConverter);
 
+  TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Integer), TStringToIntegerConverter);
+  TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Boolean), TStringToBooleanConverter);
+  TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TColor), TStringToColorConverter);
+  TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Currency), TStringToCurrencyConverter);
+  TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TDateTime), TStringToDateTimeConverter);
+  TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TNullable<System.AnsiString>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TNullable<System.WideString>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TNullable<System.Integer>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TNullable<System.Boolean>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TNullable<System.Extended>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TNullable<System.Currency>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TNullable<Graphics.TColor>), TTypeToNullableConverter);
+  TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TNullable<System.TDateTime>), TTypeToNullableConverter);
   TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString, tkWString], [tkEnumeration], TStringToEnumConverter);
   TValueConverterFactory.RegisterConverter([tkString, tkUString, tkLString, tkWString], [tkFloat], TStringToFloatConverter);
-  TValueConverterFactory.RegisterConverter([tkUString], [tkWString], TUStringToWStringConverter);
+  TValueConverterFactory.RegisterConverter([tkString, tkUString], [tkWString], TStringToWStringConverter);
 
-  TValueConverterFactory.RegisterConverter([tkFloat], [tkString, tkUString, tkLString, tkWString], TFloatToStringConverter);
+  TValueConverterFactory.RegisterConverter([tkFloat], [tkInteger], TFloatToIntegerConverter);
+  TValueConverterFactory.RegisterConverter([tkFloat], [tkString, tkUString, tkLString], TFloatToStringConverter);
+  TValueConverterFactory.RegisterConverter([tkFloat], [tkWString], TFloatToWStringConverter);
 end;
 
 function TDefaultValueConverter.DoConvertTo(const value: TValue;
@@ -648,6 +776,17 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TIntegerToWStringConverter'}
+
+function TIntegerToWStringConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+begin
+  Result := TValue.From<WideString>(IntToStr(value.AsInteger));
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TStringToIntegerConverter'}
 
 function TStringToIntegerConverter.DoConvertTo(const value: TValue;
@@ -665,6 +804,17 @@ function TBooleanToStringConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
   Result := TValue.From<string>(BoolToStr(value.AsBoolean, True));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TBooleanToWStringConverter'}
+
+function TBooleanToWStringConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+begin
+  Result := TValue.From<WideString>(BoolToStr(value.AsBoolean, True));
 end;
 
 {$ENDREGION}
@@ -733,6 +883,7 @@ var
   hasValueFlag: string;
   p: Pointer;
   us: UnicodeString;
+  ws: WideString;
 begin
   if TryGetUnderlyingTypeInfo(targetTypeInfo, underlyingTypeInfo) then
   begin
@@ -748,11 +899,19 @@ begin
     begin
       Move(PByte(p)^, PByte(valueBuffer)^, Length(valueBuffer) - SizeOf(string));
     end
-    else if underlyingTypeInfo.Kind in [tkWString, tkUString] then
-    begin
-      us := PString(p)^;
-      PPointer(@valueBuffer[0])^ := Pointer(us);
-    end;
+    else
+      case underlyingTypeInfo.Kind of
+        tkUString, tkLString:
+        begin
+          us := PString(p)^;
+          PPointer(@valueBuffer[0])^ := Pointer(us);
+        end;
+        tkWString:
+        begin
+          ws := PWideString(p)^;
+          PPointer(@valueBuffer[0])^ := Pointer(ws);
+        end;
+      end;
     if value.GetReferenceToRawData <> nil then
     begin
       hasValueFlag := '@';
@@ -777,6 +936,22 @@ begin
   enumValue := PInteger(value.GetReferenceToRawData)^;
   enumName := GetEnumName(value.TypeInfo, enumValue);
   Result := TValue.From<string>(enumName);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TEnumToWStringConverter'}
+
+function TEnumToWStringConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+var
+  enumValue: Integer;
+  enumName: WideString;
+begin
+  enumValue := PInteger(value.GetReferenceToRawData)^;
+  enumName := GetEnumName(value.TypeInfo, enumValue);
+  Result := TValue.From<WideString>(enumName);
 end;
 
 {$ENDREGION}
@@ -840,6 +1015,25 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TFloatToWStringConverter'}
+
+function TFloatToWStringConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+var
+  format: string;
+begin
+  if not parameter.IsEmpty and
+    parameter.TryAsType<string>(format) then
+  begin
+    Result := TValue.From<WideString>(FormatFloat(format, value.AsExtended));
+  end
+  else
+    Result := TValue.From<WideString>(FloatToStr(value.AsExtended));
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TFloatToIntegerConverter'}
 
 function TFloatToIntegerConverter.DoConvertTo(const value: TValue;
@@ -868,6 +1062,17 @@ function TColorToStringConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
   Result := TValue.From<string>(ColorToString(value.AsType<TColor>));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TColorToWStringConverter'}
+
+function TColorToWStringConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+begin
+  Result := TValue.From<WideString>(ColorToString(value.AsType<TColor>));
 end;
 
 {$ENDREGION}
@@ -914,6 +1119,25 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TCurrencyToWStringConverter'}
+
+function TCurrencyToWStringConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+var
+  format: string;
+begin
+  if not parameter.IsEmpty and
+    parameter.TryAsType<string>(format) then
+  begin
+    Result := TValue.From<WideString>(FormatCurr(format, value.AsType<Currency>));
+  end
+  else
+    Result := TValue.From<WideString>(CurrToStr(value.AsType<Currency>));
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TStringToCurrencyConverter'}
 
 function TStringToCurrencyConverter.DoConvertTo(const value: TValue;
@@ -939,6 +1163,25 @@ begin
   end
   else
     Result := TValue.From<string>(DateTimeToStr(value.AsExtended));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TDateTimeToWStringConverter'}
+
+function TDateTimeToWStringConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+var
+  format: string;
+begin
+  if not parameter.IsEmpty and
+    parameter.TryAsType<string>(format) then
+  begin
+    Result := TValue.From<WideString>(FormatDateTime(format, value.AsExtended));
+  end
+  else
+    Result := TValue.From<WideString>(DateTimeToStr(value.AsExtended));
 end;
 
 {$ENDREGION}
@@ -974,6 +1217,17 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TObjectToWStringConverter'}
+
+function TObjectToWStringConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+begin
+  Result := TValue.From<WideString>(value.AsObject.ToString);
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TObjectToInterfaceConverter'}
 
 function TObjectToInterfaceConverter.DoConvertTo(const value: TValue;
@@ -1001,9 +1255,9 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TUStringToWStringConverter'}
+{$REGION 'TStringToWStringConverter'}
 
-function TUStringToWStringConverter.DoConvertTo(const value: TValue;
+function TStringToWStringConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
   Result := TValue.From<WideString>(value.AsString);
@@ -1056,27 +1310,6 @@ begin
   finally
     System.MonitorExit(fTypeInfoRegistry);
   end;
-  System.MonitorEnter(fTypeKindRegistry);
-  try
-    if not Assigned(value.Converter) then
-      for typeKindPair in fTypeKindRegistry do
-      begin
-        if (sourceTypeInfo.Kind in typeKindPair.Key.SourceTypeKinds) and
-          (targetTypeInfo.Kind in typeKindPair.Key.TargetTypeKinds) then
-        begin
-          value := typeKindPair.Value;
-          if not Assigned(typeKindPair.Value.Converter) then
-          begin
-            value.Converter := typeKindPair.Value.ConverterClass.Create;
-            value.ConverterClass := typeKindPair.Value.ConverterClass;
-            fTypeKindRegistry.AddOrSetValue(typeKindPair.Key, value);
-          end;
-          Exit(value.Converter);
-        end;
-      end;
-  finally
-    System.MonitorExit(fTypeKindRegistry);
-  end;
   System.MonitorEnter(fTypeKindInfoRegistry);
   try
     if not Assigned(value.Converter) then
@@ -1097,6 +1330,27 @@ begin
       end;
   finally
     System.MonitorExit(fTypeKindInfoRegistry);
+  end;
+  System.MonitorEnter(fTypeKindRegistry);
+  try
+    if not Assigned(value.Converter) then
+      for typeKindPair in fTypeKindRegistry do
+      begin
+        if (sourceTypeInfo.Kind in typeKindPair.Key.SourceTypeKinds) and
+          (targetTypeInfo.Kind in typeKindPair.Key.TargetTypeKinds) then
+        begin
+          value := typeKindPair.Value;
+          if not Assigned(typeKindPair.Value.Converter) then
+          begin
+            value.Converter := typeKindPair.Value.ConverterClass.Create;
+            value.ConverterClass := typeKindPair.Value.ConverterClass;
+            fTypeKindRegistry.AddOrSetValue(typeKindPair.Key, value);
+          end;
+          Exit(value.Converter);
+        end;
+      end;
+  finally
+    System.MonitorExit(fTypeKindRegistry);
   end;
 end;
 

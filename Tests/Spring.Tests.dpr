@@ -103,6 +103,7 @@ begin
 
   RegisterTests('Base.ValueConverters', [
     TTestFromString.Suite,
+    TTestFromWideString.Suite,
     TTestFromInteger.Suite,
     TTestFromBoolean.Suite,
     TTestFromEnum.Suite,
