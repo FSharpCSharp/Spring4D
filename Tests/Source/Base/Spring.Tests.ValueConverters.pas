@@ -43,6 +43,9 @@ type
     procedure SetUp; override;
   published
     procedure TestStringToInteger;
+    procedure TestStringToSmallInt;
+    procedure TestStringToShortInt;
+    procedure TestStringToLongInt;
     procedure TestStringToFloat;
     procedure TestStringToEnum;
     procedure TestStringToBoolean;
@@ -56,6 +59,9 @@ type
     procedure TestStringToNullableAnsiString;
     procedure TestStringToNullableWideString;
     procedure TestStringToNullableInteger;
+    procedure TestStringToNullableSmallInt;
+    procedure TestStringToNullableShortInt;
+    procedure TestStringToNullableLongInt;
     procedure TestStringToNullableFloat;
     procedure TestStringToNullableBoolean;
     procedure TestStringToNullableColor;
@@ -70,6 +76,9 @@ type
     procedure SetUp; override;
   published
     procedure TestWStringToInteger;
+    procedure TestWStringToSmallInt;
+    procedure TestWStringToShortInt;
+    procedure TestWStringToLongInt;
     procedure TestWStringToFloat;
     procedure TestWStringToEnum;
     procedure TestWStringToBoolean;
@@ -83,6 +92,9 @@ type
     procedure TestWStringToNullableAnsiString;
     procedure TestWStringToNullableWideString;
     procedure TestWStringToNullableInteger;
+    procedure TestWStringToNullableSmallInt;
+    procedure TestWStringToNullableShortInt;
+    procedure TestWStringToNullableLongInt;
     procedure TestWStringToNullableFloat;
     procedure TestWStringToNullableBoolean;
     procedure TestWStringToNullableColor;
@@ -97,18 +109,89 @@ type
     procedure SetUp; override;
   published
     procedure TestIntegerToString;
-    procedure TestSmallIntToString;
     procedure TestIntegerToWideString;
     procedure TestIntegerToAnsiString;
     procedure TestIntegerToEnum;
     procedure TestIntegerToBoolean;
     procedure TestIntegerToFloat;
     procedure TestIntegerToNullableInteger;
+    procedure TestIntegerToNullableSmallInt;
+    procedure TestIntegerToNullableShortInt;
+    procedure TestIntegerToNullableLongInt;
     procedure TestIntegerToNullableString;
     procedure TestIntegerToNullableAnsiString;
     procedure TestIntegerToNullableWideString;
     procedure TestIntegerToNullableBoolean;
     procedure TestIntegerToNullableFloat;
+  end;
+
+  TTestFromSmallInt = class(TTestCase)
+  private
+    fConverter: IValueConverter;
+  protected
+    procedure SetUp; override;
+  published
+    procedure TestSmallIntToString;
+    procedure TestSmallIntToWideString;
+    procedure TestSmallIntToAnsiString;
+    procedure TestSmallIntToEnum;
+    procedure TestSmallIntToBoolean;
+    procedure TestSmallIntToFloat;
+    procedure TestSmallIntToNullableInteger;
+    procedure TestSmallIntToNullableSmallInt;
+    procedure TestSmallIntToNullableShortInt;
+    procedure TestSmallIntToNullableLongInt;
+    procedure TestSmallIntToNullableString;
+    procedure TestSmallIntToNullableAnsiString;
+    procedure TestSmallIntToNullableWideString;
+    procedure TestSmallIntToNullableBoolean;
+    procedure TestSmallIntToNullableFloat;
+  end;
+
+  TTestFromShortInt = class(TTestCase)
+  private
+    fConverter: IValueConverter;
+  protected
+    procedure SetUp; override;
+  published
+    procedure TestShortIntToString;
+    procedure TestShortIntToWideString;
+    procedure TestShortIntToAnsiString;
+    procedure TestShortIntToEnum;
+    procedure TestShortIntToBoolean;
+    procedure TestShortIntToFloat;
+    procedure TestShortIntToNullableInteger;
+    procedure TestShortIntToNullableSmallInt;
+    procedure TestShortIntToNullableShortInt;
+    procedure TestShortIntToNullableLongInt;
+    procedure TestShortIntToNullableString;
+    procedure TestShortIntToNullableAnsiString;
+    procedure TestShortIntToNullableWideString;
+    procedure TestShortIntToNullableBoolean;
+    procedure TestShortIntToNullableFloat;
+  end;
+
+  TTestFromLongInt = class(TTestCase)
+  private
+    fConverter: IValueConverter;
+  protected
+    procedure SetUp; override;
+  published
+    procedure TestLongIntToString;
+    procedure TestLongIntToWideString;
+    procedure TestLongIntToAnsiString;
+    procedure TestLongIntToEnum;
+    procedure TestLongIntToBoolean;
+    procedure TestLongIntToFloat;
+    procedure TestLongIntToNullableInteger;
+    procedure TestLongIntToNullableSmallInt;
+    procedure TestLongIntToNullableShortInt;
+    procedure TestLongIntToNullableLongInt;
+    procedure TestLongIntToNullableString;
+    procedure TestLongIntToNullableAnsiString;
+    procedure TestLongIntToNullableWideString;
+    procedure TestLongIntToNullableBoolean;
+    procedure TestLongIntToNullableFloat;
   end;
 
   TTestFromBoolean = class(TTestCase)
@@ -118,11 +201,17 @@ type
     procedure SetUp; override;
   published
     procedure TestBooleanToInteger;
+    procedure TestBooleanToSmallInt;
+    procedure TestBooleanToShortInt;
+    procedure TestBooleanToLongInt;
     procedure TestBooleanToString;
     procedure TestBooleanToWideString;
     procedure TestBooleanToAnsiString;
     procedure TestBooleanToNullableBoolean;
     procedure TestBooleanToNullableInteger;
+    procedure TestBooleanToNullableSmallInt;
+    procedure TestBooleanToNullableShortInt;
+    procedure TestBooleanToNullableLongInt;
     procedure TestBooleanToNullableString;
     procedure TestBooleanToNullableAnsiString;
     procedure TestBooleanToNullableWideString;
@@ -135,13 +224,19 @@ type
     procedure SetUp; override;
   published
     procedure TestEnumToInteger;
+    procedure TestEnumToSmallInt;
+    procedure TestEnumToShortInt;
+    procedure TestEnumToLongInt;
     procedure TestEnumToString;
     procedure TestEnumToAnsiString;
     procedure TestEnumToWideString;
+    procedure TestEnumToNullableInteger;
+    procedure TestEnumToNullableSmallInt;
+    procedure TestEnumToNullableShortInt;
+    procedure TestEnumToNullableLongInt;
     procedure TestEnumToNullableString;
     procedure TestEnumToNullableAnsiString;
     procedure TestEnumToNullableWideString;
-    procedure TestEnumToNullableInteger;
   end;
 
   TTestFromFloat = class(TTestCase)
@@ -151,12 +246,18 @@ type
     procedure SetUp; override;
   published
     procedure TestFloatToInteger;
+    procedure TestFloatToSmallInt;
+    procedure TestFloatToShortInt;
+    procedure TestFloatToLongInt;
     procedure TestFloatToString;
     procedure TestFloatToAnsiString;
     procedure TestFloatToWideString;
     procedure TestFloatToStringF;
-    procedure TestFloatToNullableFloat;
     procedure TestFloatToNullableInteger;
+    procedure TestFloatToNullableSmallInt;
+    procedure TestFloatToNullableShortInt;
+    procedure TestFloatToNullableLongInt;
+    procedure TestFloatToNullableFloat;
     procedure TestFloatToNullableString;
     procedure TestFloatToNullableAnsiString;
     procedure TestFloatToNullableWideString;
@@ -168,15 +269,19 @@ type
   protected
     procedure SetUp; override;
   published
+    procedure TestColorToInteger;
+    procedure TestColorToSmallInt;
+    procedure TestColorToLongInt;
     procedure TestColorToString;
     procedure TestColorToAnsiString;
     procedure TestColorToWideString;
-    procedure TestColorToInteger;
     procedure TestColorToNullableColor;
+    procedure TestColorToNullableInteger;
+    procedure TestColorToNullableSmallInt;
+    procedure TestColorToNullableLongInt;
     procedure TestColorToNullableString;
     procedure TestColorToNullableAnsiString;
     procedure TestColorToNullableWideString;
-    procedure TestColorToNullableInteger;
   end;
 
   TTestFromCurrency = class(TTestCase)
@@ -245,17 +350,59 @@ type
     procedure SetUp; override;
   published
     procedure TestNullableIntegerToInteger;
+    procedure TestNullableIntegerToSmallInt;
+    procedure TestNullableIntegerToShortInt;
+    procedure TestNullableIntegerToLongInt;
     procedure TestNullableIntegerToFloat;
     procedure TestNullableIntegerToString;
     procedure TestNullableIntegerToWideString;
     procedure TestNullableIntegerToAnsiString;
-    procedure TestNullableFloatToString;
+    procedure TestNullableSmallIntToInteger;
+    procedure TestNullableSmallIntToSmallInt;
+    procedure TestNullableSmallIntToShortInt;
+    procedure TestNullableSmallIntToLongInt;
+    procedure TestNullableSmallIntToFloat;
+    procedure TestNullableSmallIntToString;
+    procedure TestNullableSmallIntToWideString;
+    procedure TestNullableSmallIntToAnsiString;
+    procedure TestNullableShortIntToInteger;
+    procedure TestNullableShortIntToSmallInt;
+    procedure TestNullableShortIntToShortInt;
+    procedure TestNullableShortIntToLongInt;
+    procedure TestNullableShortIntToFloat;
+    procedure TestNullableShortIntToString;
+    procedure TestNullableShortIntToWideString;
+    procedure TestNullableShortIntToAnsiString;
+    procedure TestNullableLongIntToInteger;
+    procedure TestNullableLongIntToSmallInt;
+    procedure TestNullableLongIntToLongInt;
+    procedure TestNullableLongIntToShortInt;
+    procedure TestNullableLongIntToFloat;
+    procedure TestNullableLongIntToString;
+    procedure TestNullableLongIntToWideString;
+    procedure TestNullableLongIntToAnsiString;
     procedure TestNullableFloatToInteger;
+    procedure TestNullableFloatToSmallInt;
+    procedure TestNullableFloatToShortInt;
+    procedure TestNullableFloatToLongInt;
+    procedure TestNullableFloatToString;
     procedure TestNullableFloatToAnsiString;
     procedure TestNullableFloatToWideString;
     procedure TestNullableStringToString;
     procedure TestNullableAnsiStringToString;
     procedure TestNullableWideStringToWideString;
+    procedure TestNullableStringToInteger;
+    procedure TestNullableStringToSmallInt;
+    procedure TestNullableStringToShortInt;
+    procedure TestNullableStringToLongInt;
+    procedure TestNullableAnsiStringToInteger;
+    procedure TestNullableAnsiStringToSmallInt;
+    procedure TestNullableAnsiStringToShortInt;
+    procedure TestNullableAnsiStringToLongInt;
+    procedure TestNullableWideStringToInteger;
+    procedure TestNullableWideStringToSmallInt;
+    procedure TestNullableWideStringToShortInt;
+    procedure TestNullableWideStringToLongInt;
     procedure TestNullableStringToFloat;
     procedure TestNullableAnsiStringToFloat;
     procedure TestNullableWideStringToFloat;
@@ -292,7 +439,43 @@ begin
     TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Integer>(outInt));
-  CheckEquals(outValue.AsInteger, 1);
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromString.TestStringToSmallInt;
+var
+  outValue: TValue;
+  outInt: SmallInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<string>('1'),
+    TypeInfo(SmallInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<SmallInt>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromString.TestStringToShortInt;
+var
+  outValue: TValue;
+  outInt: ShortInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<string>('1'),
+    TypeInfo(ShortInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<ShortInt>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromString.TestStringToLongInt;
+var
+  outValue: TValue;
+  outInt: LongInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<string>('1'),
+    TypeInfo(LongInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Integer>(outInt));
+  CheckEquals(outInt, 1);
 end;
 
 procedure TTestFromString.TestStringToFloat;
@@ -457,6 +640,45 @@ begin
   CheckEquals(outNullable.Value, 15);
 end;
 
+procedure TTestFromString.TestStringToNullableSmallInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<SmallInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<string>('15'),
+    TypeInfo(TNullable<SmallInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<SmallInt>>(outNullable));
+  CheckTrue(outNullable.HasValue);
+  CheckEquals(outNullable.Value, 15);
+end;
+
+procedure TTestFromString.TestStringToNullableShortInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<ShortInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<string>('15'),
+    TypeInfo(TNullable<ShortInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<ShortInt>>(outNullable));
+  CheckTrue(outNullable.HasValue);
+  CheckEquals(outNullable.Value, 15);
+end;
+
+procedure TTestFromString.TestStringToNullableLongInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<LongInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<string>('15'),
+    TypeInfo(TNullable<LongInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<LongInt>>(outNullable));
+  CheckTrue(outNullable.HasValue);
+  CheckEquals(outNullable.Value, 15);
+end;
+
 procedure TTestFromString.TestStringToNullableFloat;
 var
   outValue: TValue;
@@ -578,18 +800,6 @@ begin
   CheckEquals(outStr, '1');
 end;
 
-procedure TTestFromInteger.TestSmallIntToString;
-var
-  outValue: TValue;
-  outStr: string;
-begin
-  outValue := fConverter.ConvertTo(TValue.From<SmallInt>(1),
-    TypeInfo(string));
-  CheckFalse(outValue.IsEmpty);
-  CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEquals(outStr, '1');
-end;
-
 procedure TTestFromInteger.TestIntegerToAnsiString;
 var
   outValue: TValue;
@@ -623,6 +833,42 @@ begin
     TypeInfo(TNullable<Integer>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TNullable<Integer>>(outNullable));
+  CheckEquals(outNullable.Value, 1);
+end;
+
+procedure TTestFromInteger.TestIntegerToNullableSmallInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<SmallInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Integer>(1),
+    TypeInfo(TNullable<SmallInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<SmallInt>>(outNullable));
+  CheckEquals(outNullable.Value, 1);
+end;
+
+procedure TTestFromInteger.TestIntegerToNullableShortInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<ShortInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Integer>(1),
+    TypeInfo(TNullable<ShortInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<ShortInt>>(outNullable));
+  CheckEquals(outNullable.Value, 1);
+end;
+
+procedure TTestFromInteger.TestIntegerToNullableLongInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<LongInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Integer>(1),
+    TypeInfo(TNullable<LongInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<LongInt>>(outNullable));
   CheckEquals(outNullable.Value, 1);
 end;
 
@@ -689,6 +935,579 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TTestFromSmallInt'}
+
+procedure TTestFromSmallInt.SetUp;
+begin
+  inherited;
+  fConverter := TValueConverter.Default;
+end;
+
+procedure TTestFromSmallInt.TestSmallIntToBoolean;
+var
+  outValue: TValue;
+  outBool: Boolean;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<SmallInt>(1),
+    TypeInfo(Boolean));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Boolean>(outBool));
+  CheckEquals(outBool, True);
+end;
+
+procedure TTestFromSmallInt.TestSmallIntToEnum;
+var
+  outValue: TValue;
+  outEnum: TEnumeration;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<SmallInt>(1),
+    TypeInfo(TEnumeration));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TEnumeration>(outEnum));
+  CheckTrue(outEnum = teSecond);
+end;
+
+procedure TTestFromSmallInt.TestSmallIntToFloat;
+var
+  outValue: TValue;
+  outFloat: Extended;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<SmallInt>(1),
+    TypeInfo(Extended));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Extended>(outFloat));
+  CheckEquals(outValue.AsExtended, 1.0);
+end;
+
+procedure TTestFromSmallInt.TestSmallIntToString;
+var
+  outValue: TValue;
+  outStr: string;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<SmallInt>(1),
+    TypeInfo(string));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<string>(outStr));
+  CheckEquals(outStr, '1');
+end;
+
+procedure TTestFromSmallInt.TestSmallIntToAnsiString;
+var
+  outValue: TValue;
+  outAStr: AnsiString;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<SmallInt>(1),
+    TypeInfo(AnsiString));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
+  CheckEquals(outAStr, AnsiString('1'));
+end;
+
+procedure TTestFromSmallInt.TestSmallIntToWideString;
+var
+  outValue: TValue;
+  outWStr: WideString;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<SmallInt>(1),
+    TypeInfo(WideString));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<WideString>(outWStr));
+  CheckEquals(outWStr, '1');
+end;
+
+procedure TTestFromSmallInt.TestSmallIntToNullableInteger;
+var
+  outValue: TValue;
+  outNullable: TNullable<Integer>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<SmallInt>(1),
+    TypeInfo(TNullable<Integer>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<Integer>>(outNullable));
+  CheckEquals(outNullable.Value, 1);
+end;
+
+procedure TTestFromSmallInt.TestSmallIntToNullableSmallInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<SmallInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<SmallInt>(1),
+    TypeInfo(TNullable<SmallInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<SmallInt>>(outNullable));
+  CheckEquals(outNullable.Value, 1);
+end;
+
+procedure TTestFromSmallInt.TestSmallIntToNullableShortInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<ShortInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<SmallInt>(1),
+    TypeInfo(TNullable<ShortInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<ShortInt>>(outNullable));
+  CheckEquals(outNullable.Value, 1);
+end;
+
+procedure TTestFromSmallInt.TestSmallIntToNullableLongInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<LongInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<SmallInt>(1),
+    TypeInfo(TNullable<LongInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<LongInt>>(outNullable));
+  CheckEquals(outNullable.Value, 1);
+end;
+
+procedure TTestFromSmallInt.TestSmallIntToNullableString;
+var
+  outValue: TValue;
+  outNullable: TNullable<string>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<SmallInt>(1),
+    TypeInfo(TNullable<string>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<string>>(outNullable));
+  CheckEqualsString(outNullable.Value, '1');
+end;
+
+procedure TTestFromSmallInt.TestSmallIntToNullableAnsiString;
+var
+  outValue: TValue;
+  outNullable: TNullable<AnsiString>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<SmallInt>(1),
+    TypeInfo(TNullable<AnsiString>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<AnsiString>>(outNullable));
+  CheckEquals(outNullable.Value, AnsiString('1'));
+end;
+
+procedure TTestFromSmallInt.TestSmallIntToNullableWideString;
+var
+  outValue: TValue;
+  outNullable: TNullable<WideString>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<SmallInt>(1),
+    TypeInfo(TNullable<WideString>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<WideString>>(outNullable));
+  CheckEquals(outNullable.Value, '1');
+end;
+
+procedure TTestFromSmallInt.TestSmallIntToNullableBoolean;
+var
+  outValue: TValue;
+  outNullable: TNullable<Boolean>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<SmallInt>(0),
+    TypeInfo(TNullable<Boolean>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<Boolean>>(outNullable));
+  CheckFalse(outNullable.Value);
+end;
+
+procedure TTestFromSmallInt.TestSmallIntToNullableFloat;
+var
+  outValue: TValue;
+  outNullable: TNullable<Extended>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<SmallInt>(0),
+    TypeInfo(TNullable<Extended>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<Extended>>(outNullable));
+  CheckEquals(outNullable.Value, 0.0);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestFromShortInt'}
+
+procedure TTestFromShortInt.SetUp;
+begin
+  inherited;
+  fConverter := TValueConverter.Default;
+end;
+
+procedure TTestFromShortInt.TestShortIntToBoolean;
+var
+  outValue: TValue;
+  outBool: Boolean;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<ShortInt>(1),
+    TypeInfo(Boolean));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Boolean>(outBool));
+  CheckEquals(outBool, True);
+end;
+
+procedure TTestFromShortInt.TestShortIntToEnum;
+var
+  outValue: TValue;
+  outEnum: TEnumeration;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<ShortInt>(1),
+    TypeInfo(TEnumeration));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TEnumeration>(outEnum));
+  CheckTrue(outEnum = teSecond);
+end;
+
+procedure TTestFromShortInt.TestShortIntToFloat;
+var
+  outValue: TValue;
+  outFloat: Extended;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<ShortInt>(1),
+    TypeInfo(Extended));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Extended>(outFloat));
+  CheckEquals(outValue.AsExtended, 1.0);
+end;
+
+procedure TTestFromShortInt.TestShortIntToString;
+var
+  outValue: TValue;
+  outStr: string;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<ShortInt>(1),
+    TypeInfo(string));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<string>(outStr));
+  CheckEquals(outStr, '1');
+end;
+
+procedure TTestFromShortInt.TestShortIntToAnsiString;
+var
+  outValue: TValue;
+  outAStr: AnsiString;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<ShortInt>(1),
+    TypeInfo(AnsiString));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
+  CheckEquals(outAStr, AnsiString('1'));
+end;
+
+procedure TTestFromShortInt.TestShortIntToWideString;
+var
+  outValue: TValue;
+  outWStr: WideString;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<ShortInt>(1),
+    TypeInfo(WideString));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<WideString>(outWStr));
+  CheckEquals(outWStr, '1');
+end;
+
+procedure TTestFromShortInt.TestShortIntToNullableInteger;
+var
+  outValue: TValue;
+  outNullable: TNullable<Integer>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<ShortInt>(1),
+    TypeInfo(TNullable<Integer>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<Integer>>(outNullable));
+  CheckEquals(outNullable.Value, 1);
+end;
+
+procedure TTestFromShortInt.TestShortIntToNullableSmallInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<SmallInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<ShortInt>(1),
+    TypeInfo(TNullable<SmallInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<SmallInt>>(outNullable));
+  CheckEquals(outNullable.Value, 1);
+end;
+
+procedure TTestFromShortInt.TestShortIntToNullableShortInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<ShortInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<ShortInt>(1),
+    TypeInfo(TNullable<ShortInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<ShortInt>>(outNullable));
+  CheckEquals(outNullable.Value, 1);
+end;
+
+procedure TTestFromShortInt.TestShortIntToNullableLongInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<LongInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<ShortInt>(1),
+    TypeInfo(TNullable<LongInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<LongInt>>(outNullable));
+  CheckEquals(outNullable.Value, 1);
+end;
+
+procedure TTestFromShortInt.TestShortIntToNullableString;
+var
+  outValue: TValue;
+  outNullable: TNullable<string>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<ShortInt>(1),
+    TypeInfo(TNullable<string>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<string>>(outNullable));
+  CheckEqualsString(outNullable.Value, '1');
+end;
+
+procedure TTestFromShortInt.TestShortIntToNullableAnsiString;
+var
+  outValue: TValue;
+  outNullable: TNullable<AnsiString>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<ShortInt>(1),
+    TypeInfo(TNullable<AnsiString>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<AnsiString>>(outNullable));
+  CheckEquals(outNullable.Value, AnsiString('1'));
+end;
+
+procedure TTestFromShortInt.TestShortIntToNullableWideString;
+var
+  outValue: TValue;
+  outNullable: TNullable<WideString>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<ShortInt>(1),
+    TypeInfo(TNullable<WideString>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<WideString>>(outNullable));
+  CheckEquals(outNullable.Value, '1');
+end;
+
+procedure TTestFromShortInt.TestShortIntToNullableBoolean;
+var
+  outValue: TValue;
+  outNullable: TNullable<Boolean>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<ShortInt>(0),
+    TypeInfo(TNullable<Boolean>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<Boolean>>(outNullable));
+  CheckFalse(outNullable.Value);
+end;
+
+procedure TTestFromShortInt.TestShortIntToNullableFloat;
+var
+  outValue: TValue;
+  outNullable: TNullable<Extended>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<ShortInt>(0),
+    TypeInfo(TNullable<Extended>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<Extended>>(outNullable));
+  CheckEquals(outNullable.Value, 0.0);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestFromLongInt'}
+
+procedure TTestFromLongInt.SetUp;
+begin
+  inherited;
+  fConverter := TValueConverter.Default;
+end;
+
+procedure TTestFromLongInt.TestLongIntToBoolean;
+var
+  outValue: TValue;
+  outBool: Boolean;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<LongInt>(1),
+    TypeInfo(Boolean));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Boolean>(outBool));
+  CheckEquals(outBool, True);
+end;
+
+procedure TTestFromLongInt.TestLongIntToEnum;
+var
+  outValue: TValue;
+  outEnum: TEnumeration;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<LongInt>(1),
+    TypeInfo(TEnumeration));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TEnumeration>(outEnum));
+  CheckTrue(outEnum = teSecond);
+end;
+
+procedure TTestFromLongInt.TestLongIntToFloat;
+var
+  outValue: TValue;
+  outFloat: Extended;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<LongInt>(1),
+    TypeInfo(Extended));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Extended>(outFloat));
+  CheckEquals(outValue.AsExtended, 1.0);
+end;
+
+procedure TTestFromLongInt.TestLongIntToString;
+var
+  outValue: TValue;
+  outStr: string;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<LongInt>(1),
+    TypeInfo(string));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<string>(outStr));
+  CheckEquals(outStr, '1');
+end;
+
+procedure TTestFromLongInt.TestLongIntToAnsiString;
+var
+  outValue: TValue;
+  outAStr: AnsiString;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<LongInt>(1),
+    TypeInfo(AnsiString));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
+  CheckEquals(outAStr, AnsiString('1'));
+end;
+
+procedure TTestFromLongInt.TestLongIntToWideString;
+var
+  outValue: TValue;
+  outWStr: WideString;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<LongInt>(1),
+    TypeInfo(WideString));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<WideString>(outWStr));
+  CheckEquals(outWStr, '1');
+end;
+
+procedure TTestFromLongInt.TestLongIntToNullableInteger;
+var
+  outValue: TValue;
+  outNullable: TNullable<Integer>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<LongInt>(1),
+    TypeInfo(TNullable<Integer>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<Integer>>(outNullable));
+  CheckEquals(outNullable.Value, 1);
+end;
+
+procedure TTestFromLongInt.TestLongIntToNullableSmallInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<SmallInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<LongInt>(1),
+    TypeInfo(TNullable<SmallInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<SmallInt>>(outNullable));
+  CheckEquals(outNullable.Value, 1);
+end;
+
+procedure TTestFromLongInt.TestLongIntToNullableShortInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<ShortInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<LongInt>(1),
+    TypeInfo(TNullable<ShortInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<ShortInt>>(outNullable));
+  CheckEquals(outNullable.Value, 1);
+end;
+
+procedure TTestFromLongInt.TestLongIntToNullableLongInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<LongInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<LongInt>(1),
+    TypeInfo(TNullable<LongInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<LongInt>>(outNullable));
+  CheckEquals(outNullable.Value, 1);
+end;
+
+procedure TTestFromLongInt.TestLongIntToNullableString;
+var
+  outValue: TValue;
+  outNullable: TNullable<string>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<LongInt>(1),
+    TypeInfo(TNullable<string>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<string>>(outNullable));
+  CheckEqualsString(outNullable.Value, '1');
+end;
+
+procedure TTestFromLongInt.TestLongIntToNullableAnsiString;
+var
+  outValue: TValue;
+  outNullable: TNullable<AnsiString>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<LongInt>(1),
+    TypeInfo(TNullable<AnsiString>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<AnsiString>>(outNullable));
+  CheckEquals(outNullable.Value, AnsiString('1'));
+end;
+
+procedure TTestFromLongInt.TestLongIntToNullableWideString;
+var
+  outValue: TValue;
+  outNullable: TNullable<WideString>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<LongInt>(1),
+    TypeInfo(TNullable<WideString>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<WideString>>(outNullable));
+  CheckEquals(outNullable.Value, '1');
+end;
+
+procedure TTestFromLongInt.TestLongIntToNullableBoolean;
+var
+  outValue: TValue;
+  outNullable: TNullable<Boolean>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<LongInt>(0),
+    TypeInfo(TNullable<Boolean>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<Boolean>>(outNullable));
+  CheckFalse(outNullable.Value);
+end;
+
+procedure TTestFromLongInt.TestLongIntToNullableFloat;
+var
+  outValue: TValue;
+  outNullable: TNullable<Extended>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<LongInt>(0),
+    TypeInfo(TNullable<Extended>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<Extended>>(outNullable));
+  CheckEquals(outNullable.Value, 0.0);
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TTestFromBoolean'}
 
 procedure TTestFromBoolean.SetUp;
@@ -706,6 +1525,42 @@ begin
     TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Integer>(outInt));
+  CheckEquals(outInt, 0);
+end;
+
+procedure TTestFromBoolean.TestBooleanToSmallInt;
+var
+  outValue: TValue;
+  outInt: SmallInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Boolean>(False),
+    TypeInfo(SmallInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<SmallInt>(outInt));
+  CheckEquals(outInt, 0);
+end;
+
+procedure TTestFromBoolean.TestBooleanToShortInt;
+var
+  outValue: TValue;
+  outInt: ShortInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Boolean>(False),
+    TypeInfo(ShortInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<ShortInt>(outInt));
+  CheckEquals(outInt, 0);
+end;
+
+procedure TTestFromBoolean.TestBooleanToLongInt;
+var
+  outValue: TValue;
+  outInt: LongInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Boolean>(False),
+    TypeInfo(LongInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<LongInt>(outInt));
   CheckEquals(outInt, 0);
 end;
 
@@ -766,6 +1621,42 @@ begin
     TypeInfo(TNullable<Integer>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TNullable<Integer>>(outNullable));
+  CheckEquals(outNullable.Value, 0);
+end;
+
+procedure TTestFromBoolean.TestBooleanToNullableSmallInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<SmallInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Boolean>(False),
+    TypeInfo(TNullable<SmallInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<SmallInt>>(outNullable));
+  CheckEquals(outNullable.Value, 0);
+end;
+
+procedure TTestFromBoolean.TestBooleanToNullableShortInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<ShortInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Boolean>(False),
+    TypeInfo(TNullable<ShortInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<ShortInt>>(outNullable));
+  CheckEquals(outNullable.Value, 0);
+end;
+
+procedure TTestFromBoolean.TestBooleanToNullableLongInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<LongInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Boolean>(False),
+    TypeInfo(TNullable<LongInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<LongInt>>(outNullable));
   CheckEquals(outNullable.Value, 0);
 end;
 
@@ -864,6 +1755,42 @@ begin
   CheckEquals(outInt, 1);
 end;
 
+procedure TTestFromEnum.TestEnumToSmallInt;
+var
+  outValue: TValue;
+  outInt: SmallInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TEnumeration>(teSecond),
+    TypeInfo(SmallInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<SmallInt>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromEnum.TestEnumToShortInt;
+var
+  outValue: TValue;
+  outInt: ShortInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TEnumeration>(teSecond),
+    TypeInfo(ShortInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<ShortInt>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromEnum.TestEnumToLongInt;
+var
+  outValue: TValue;
+  outInt: LongInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TEnumeration>(teSecond),
+    TypeInfo(LongInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<LongInt>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
 procedure TTestFromEnum.TestEnumToNullableString;
 var
   outValue: TValue;
@@ -912,6 +1839,42 @@ begin
   CheckEquals(outNullable.Value, 2);
 end;
 
+procedure TTestFromEnum.TestEnumToNullableSmallInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<SmallInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TEnumeration>(teLast),
+    TypeInfo(TNullable<SmallInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<SmallInt>>(outNullable));
+  CheckEquals(outNullable.Value, 2);
+end;
+
+procedure TTestFromEnum.TestEnumToNullableShortInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<ShortInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TEnumeration>(teLast),
+    TypeInfo(TNullable<ShortInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<ShortInt>>(outNullable));
+  CheckEquals(outNullable.Value, 2);
+end;
+
+procedure TTestFromEnum.TestEnumToNullableLongInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<LongInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TEnumeration>(teLast),
+    TypeInfo(TNullable<LongInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<LongInt>>(outNullable));
+  CheckEquals(outNullable.Value, 2);
+end;
+
 {$ENDREGION}
 
 
@@ -932,6 +1895,42 @@ begin
     TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Integer>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromFloat.TestFloatToSmallInt;
+var
+  outValue: TValue;
+  outInt: SmallInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.11),
+    TypeInfo(SmallInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<SmallInt>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromFloat.TestFloatToShortInt;
+var
+  outValue: TValue;
+  outInt: ShortInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.11),
+    TypeInfo(ShortInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<ShortInt>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromFloat.TestFloatToLongInt;
+var
+  outValue: TValue;
+  outInt: LongInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.11),
+    TypeInfo(LongInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<LongInt>(outInt));
   CheckEquals(outInt, 1);
 end;
 
@@ -1043,6 +2042,42 @@ begin
   CheckEquals(outNullable.Value, 1);
 end;
 
+procedure TTestFromFloat.TestFloatToNullableSmallInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<SmallInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.11),
+    TypeInfo(TNullable<SmallInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<SmallInt>>(outNullable));
+  CheckEquals(outNullable.Value, 1);
+end;
+
+procedure TTestFromFloat.TestFloatToNullableShortInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<ShortInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.11),
+    TypeInfo(TNullable<ShortInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<ShortInt>>(outNullable));
+  CheckEquals(outNullable.Value, 1);
+end;
+
+procedure TTestFromFloat.TestFloatToNullableLongInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<LongInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Extended>(1.11),
+    TypeInfo(TNullable<LongInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<LongInt>>(outNullable));
+  CheckEquals(outNullable.Value, 1);
+end;
+
 {$ENDREGION}
 
 
@@ -1099,6 +2134,30 @@ begin
     TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Integer>(outInt));
+  CheckEquals(outInt, ColorToRGB(clRed));
+end;
+
+procedure TTestFromColor.TestColorToSmallInt;
+var
+  outValue: TValue;
+  outInt: SmallInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TColor>(clRed),
+    TypeInfo(SmallInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<SmallInt>(outInt));
+  CheckEquals(outInt, ColorToRGB(clRed));
+end;
+
+procedure TTestFromColor.TestColorToLongInt;
+var
+  outValue: TValue;
+  outInt: LongInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TColor>(clRed),
+    TypeInfo(LongInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<LongInt>(outInt));
   CheckEquals(outInt, ColorToRGB(clRed));
 end;
 
@@ -1159,6 +2218,30 @@ begin
     TypeInfo(TNullable<Integer>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TNullable<Integer>>(outNullable));
+  CheckEquals(outNullable.Value, ColorToRGB(clRed));
+end;
+
+procedure TTestFromColor.TestColorToNullableSmallInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<SmallInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TColor>(clRed),
+    TypeInfo(TNullable<SmallInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<SmallInt>>(outNullable));
+  CheckEquals(outNullable.Value, ColorToRGB(clRed));
+end;
+
+procedure TTestFromColor.TestColorToNullableLongInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<LongInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TColor>(clRed),
+    TypeInfo(TNullable<LongInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<LongInt>>(outNullable));
   CheckEquals(outNullable.Value, ColorToRGB(clRed));
 end;
 
@@ -1535,6 +2618,42 @@ begin
   CheckEquals(outInt, 1);
 end;
 
+procedure TTestFromNullable.TestNullableIntegerToSmallInt;
+var
+  outValue: TValue;
+  outInt: SmallInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<Integer>>(TNullable<Integer>.Create(1)),
+    TypeInfo(SmallInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<SmallInt>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromNullable.TestNullableIntegerToShortInt;
+var
+  outValue: TValue;
+  outInt: ShortInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<Integer>>(TNullable<Integer>.Create(1)),
+    TypeInfo(ShortInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<ShortInt>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromNullable.TestNullableIntegerToLongInt;
+var
+  outValue: TValue;
+  outInt: LongInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<Integer>>(TNullable<Integer>.Create(1)),
+    TypeInfo(LongInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<LongInt>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
 procedure TTestFromNullable.TestNullableIntegerToFloat;
 var
   outValue: TValue;
@@ -1607,6 +2726,42 @@ begin
   CheckEquals(outInt, 1);
 end;
 
+procedure TTestFromNullable.TestNullableFloatToSmallInt;
+var
+  outValue: TValue;
+  outInt: SmallInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<Extended>>(TNullable<Extended>.Create(1.11)),
+    TypeInfo(SmallInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<SmallInt>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromNullable.TestNullableFloatToShortInt;
+var
+  outValue: TValue;
+  outInt: ShortInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<Extended>>(TNullable<Extended>.Create(1.11)),
+    TypeInfo(ShortInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<ShortInt>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromNullable.TestNullableFloatToLongInt;
+var
+  outValue: TValue;
+  outInt: LongInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<Extended>>(TNullable<Extended>.Create(1.11)),
+    TypeInfo(LongInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<LongInt>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
 procedure TTestFromNullable.TestNullableFloatToAnsiString;
 var
   outValue: TValue;
@@ -1631,6 +2786,294 @@ begin
   CheckEquals(outWStr, FloatToStr(1.11));
 end;
 
+procedure TTestFromNullable.TestNullableSmallIntToAnsiString;
+var
+  outValue: TValue;
+  outAStr: AnsiString;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<SmallInt>>(TNullable<SmallInt>.Create(1)),
+    TypeInfo(AnsiString));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
+  CheckEquals(outAStr, AnsiString('1'));
+end;
+
+procedure TTestFromNullable.TestNullableSmallIntToFloat;
+var
+  outValue: TValue;
+  outFloat: Extended;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<SmallInt>>(TNullable<SmallInt>.Create(1)),
+    TypeInfo(Extended));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Extended>(outFloat));
+  CheckEquals(outFloat, 1.00, 1);
+end;
+
+procedure TTestFromNullable.TestNullableSmallIntToInteger;
+var
+  outValue: TValue;
+  outInt: Integer;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<SmallInt>>(TNullable<SmallInt>.Create(1)),
+    TypeInfo(Integer));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Integer>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromNullable.TestNullableSmallIntToLongInt;
+var
+  outValue: TValue;
+  outInt: LongInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<SmallInt>>(TNullable<SmallInt>.Create(1)),
+    TypeInfo(LongInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<LongInt>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromNullable.TestNullableSmallIntToShortInt;
+var
+  outValue: TValue;
+  outInt: ShortInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<SmallInt>>(TNullable<SmallInt>.Create(1)),
+    TypeInfo(ShortInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<ShortInt>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromNullable.TestNullableSmallIntToSmallInt;
+var
+  outValue: TValue;
+  outInt: SmallInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<SmallInt>>(TNullable<SmallInt>.Create(1)),
+    TypeInfo(SmallInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<SmallInt>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromNullable.TestNullableSmallIntToString;
+var
+  outValue: TValue;
+  outStr: string;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<SmallInt>>(TNullable<SmallInt>.Create(1)),
+    TypeInfo(string));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<string>(outStr));
+  CheckEquals(outStr, '1');
+end;
+
+procedure TTestFromNullable.TestNullableSmallIntToWideString;
+var
+  outValue: TValue;
+  outWStr: WideString;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<SmallInt>>(TNullable<SmallInt>.Create(1)),
+    TypeInfo(WideString));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<WideString>(outWStr));
+  CheckEquals(outWStr, '1');
+end;
+
+procedure TTestFromNullable.TestNullableShortIntToAnsiString;
+var
+  outValue: TValue;
+  outAStr: AnsiString;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<ShortInt>>(TNullable<ShortInt>.Create(1)),
+    TypeInfo(AnsiString));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
+  CheckEquals(outAStr, AnsiString('1'));
+end;
+
+procedure TTestFromNullable.TestNullableShortIntToFloat;
+var
+  outValue: TValue;
+  outFloat: Extended;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<ShortInt>>(TNullable<ShortInt>.Create(1)),
+    TypeInfo(Extended));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Extended>(outFloat));
+  CheckEquals(outFloat, 1.00, 1);
+end;
+
+procedure TTestFromNullable.TestNullableShortIntToInteger;
+var
+  outValue: TValue;
+  outInt: Integer;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<ShortInt>>(TNullable<ShortInt>.Create(1)),
+    TypeInfo(Integer));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Integer>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromNullable.TestNullableShortIntToLongInt;
+var
+  outValue: TValue;
+  outInt: LongInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<ShortInt>>(TNullable<ShortInt>.Create(1)),
+    TypeInfo(LongInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<LongInt>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromNullable.TestNullableShortIntToSmallInt;
+var
+  outValue: TValue;
+  outInt: ShortInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<ShortInt>>(TNullable<ShortInt>.Create(1)),
+    TypeInfo(ShortInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<ShortInt>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromNullable.TestNullableShortIntToShortInt;
+var
+  outValue: TValue;
+  outInt: ShortInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<ShortInt>>(TNullable<ShortInt>.Create(1)),
+    TypeInfo(ShortInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<ShortInt>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromNullable.TestNullableShortIntToString;
+var
+  outValue: TValue;
+  outStr: string;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<ShortInt>>(TNullable<ShortInt>.Create(1)),
+    TypeInfo(string));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<string>(outStr));
+  CheckEquals(outStr, '1');
+end;
+
+procedure TTestFromNullable.TestNullableShortIntToWideString;
+var
+  outValue: TValue;
+  outWStr: WideString;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<ShortInt>>(TNullable<ShortInt>.Create(1)),
+    TypeInfo(WideString));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<WideString>(outWStr));
+  CheckEquals(outWStr, '1');
+end;
+
+procedure TTestFromNullable.TestNullableLongIntToAnsiString;
+var
+  outValue: TValue;
+  outAStr: AnsiString;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<LongInt>>(TNullable<LongInt>.Create(1)),
+    TypeInfo(AnsiString));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
+  CheckEquals(outAStr, AnsiString('1'));
+end;
+
+procedure TTestFromNullable.TestNullableLongIntToFloat;
+var
+  outValue: TValue;
+  outFloat: Extended;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<LongInt>>(TNullable<LongInt>.Create(1)),
+    TypeInfo(Extended));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Extended>(outFloat));
+  CheckEquals(outFloat, 1.00, 1);
+end;
+
+procedure TTestFromNullable.TestNullableLongIntToInteger;
+var
+  outValue: TValue;
+  outInt: Integer;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<LongInt>>(TNullable<LongInt>.Create(1)),
+    TypeInfo(Integer));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Integer>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromNullable.TestNullableLongIntToLongInt;
+var
+  outValue: TValue;
+  outInt: LongInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<LongInt>>(TNullable<LongInt>.Create(1)),
+    TypeInfo(LongInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<LongInt>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromNullable.TestNullableLongIntToSmallInt;
+var
+  outValue: TValue;
+  outInt: LongInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<LongInt>>(TNullable<LongInt>.Create(1)),
+    TypeInfo(LongInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<LongInt>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromNullable.TestNullableLongIntToShortInt;
+var
+  outValue: TValue;
+  outInt: LongInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<LongInt>>(TNullable<LongInt>.Create(1)),
+    TypeInfo(LongInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<LongInt>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromNullable.TestNullableLongIntToString;
+var
+  outValue: TValue;
+  outStr: string;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<LongInt>>(TNullable<LongInt>.Create(1)),
+    TypeInfo(string));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<string>(outStr));
+  CheckEquals(outStr, '1');
+end;
+
+procedure TTestFromNullable.TestNullableLongIntToWideString;
+var
+  outValue: TValue;
+  outWStr: WideString;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<LongInt>>(TNullable<LongInt>.Create(1)),
+    TypeInfo(WideString));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<WideString>(outWStr));
+  CheckEquals(outWStr, '1');
+end;
+
 procedure TTestFromNullable.TestNullableStringToFloat;
 var
   outValue: TValue;
@@ -1643,6 +3086,54 @@ begin
   CheckEquals(outFloat, 1.11);
 end;
 
+procedure TTestFromNullable.TestNullableStringToInteger;
+var
+  outValue: TValue;
+  outInt: Integer;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<string>>(TNullable<string>.Create('2')),
+    TypeInfo(Integer));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Integer>(outInt));
+  CheckEquals(outInt, 2);
+end;
+
+procedure TTestFromNullable.TestNullableStringToLongInt;
+var
+  outValue: TValue;
+  outInt: LongInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<string>>(TNullable<string>.Create('2')),
+    TypeInfo(LongInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<LongInt>(outInt));
+  CheckEquals(outInt, 2);
+end;
+
+procedure TTestFromNullable.TestNullableStringToShortInt;
+var
+  outValue: TValue;
+  outInt: ShortInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<string>>(TNullable<string>.Create('2')),
+    TypeInfo(ShortInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<ShortInt>(outInt));
+  CheckEquals(outInt, 2);
+end;
+
+procedure TTestFromNullable.TestNullableStringToSmallInt;
+var
+  outValue: TValue;
+  outInt: SmallInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<string>>(TNullable<string>.Create('2')),
+    TypeInfo(SmallInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<SmallInt>(outInt));
+  CheckEquals(outInt, 2);
+end;
+
 procedure TTestFromNullable.TestNullableStringToString;
 var
   outValue: TValue;
@@ -1653,6 +3144,30 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
   CheckEquals(outStr, 'Test');
+end;
+
+procedure TTestFromNullable.TestNullableAnsiStringToShortInt;
+var
+  outValue: TValue;
+  outInt: ShortInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<AnsiString>>(TNullable<AnsiString>.Create('2')),
+    TypeInfo(ShortInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<ShortInt>(outInt));
+  CheckEquals(outInt, 2);
+end;
+
+procedure TTestFromNullable.TestNullableAnsiStringToSmallInt;
+var
+  outValue: TValue;
+  outInt: SmallInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<AnsiString>>(TNullable<AnsiString>.Create('2')),
+    TypeInfo(SmallInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<SmallInt>(outInt));
+  CheckEquals(outInt, 2);
 end;
 
 procedure TTestFromNullable.TestNullableAnsiStringToString;
@@ -1691,6 +3206,30 @@ begin
   CheckEquals(outFloat, 1.11);
 end;
 
+procedure TTestFromNullable.TestNullableAnsiStringToInteger;
+var
+  outValue: TValue;
+  outInt: Integer;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<AnsiString>>(TNullable<AnsiString>.Create('2')),
+    TypeInfo(Integer));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Integer>(outInt));
+  CheckEquals(outInt, 2);
+end;
+
+procedure TTestFromNullable.TestNullableAnsiStringToLongInt;
+var
+  outValue: TValue;
+  outInt: LongInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<AnsiString>>(TNullable<AnsiString>.Create('2')),
+    TypeInfo(LongInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<LongInt>(outInt));
+  CheckEquals(outInt, 2);
+end;
+
 procedure TTestFromNullable.TestNullableWideStringToFloat;
 var
   outValue: TValue;
@@ -1701,6 +3240,54 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Extended>(outFloat));
   CheckEquals(outFloat, 1.11);
+end;
+
+procedure TTestFromNullable.TestNullableWideStringToInteger;
+var
+  outValue: TValue;
+  outInt: Integer;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<WideString>>(TNullable<WideString>.Create('2')),
+    TypeInfo(Integer));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Integer>(outInt));
+  CheckEquals(outInt, 2);
+end;
+
+procedure TTestFromNullable.TestNullableWideStringToLongInt;
+var
+  outValue: TValue;
+  outInt: LongInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<WideString>>(TNullable<WideString>.Create('2')),
+    TypeInfo(LongInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<LongInt>(outInt));
+  CheckEquals(outInt, 2);
+end;
+
+procedure TTestFromNullable.TestNullableWideStringToShortInt;
+var
+  outValue: TValue;
+  outInt: ShortInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<WideString>>(TNullable<WideString>.Create('2')),
+    TypeInfo(ShortInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<ShortInt>(outInt));
+  CheckEquals(outInt, 2);
+end;
+
+procedure TTestFromNullable.TestNullableWideStringToSmallInt;
+var
+  outValue: TValue;
+  outInt: SmallInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<TNullable<WideString>>(TNullable<WideString>.Create('2')),
+    TypeInfo(SmallInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<SmallInt>(outInt));
+  CheckEquals(outInt, 2);
 end;
 
 procedure TTestFromNullable.TestNullableDateTimeToString;
@@ -1899,7 +3486,43 @@ begin
     TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Integer>(outInt));
-  CheckEquals(outValue.AsInteger, 1);
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromWideString.TestWStringToSmallInt;
+var
+  outValue: TValue;
+  outInt: SmallInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<WideString>('1'),
+    TypeInfo(SmallInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<SmallInt>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromWideString.TestWStringToShortInt;
+var
+  outValue: TValue;
+  outInt: ShortInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<WideString>('1'),
+    TypeInfo(ShortInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<ShortInt>(outInt));
+  CheckEquals(outInt, 1);
+end;
+
+procedure TTestFromWideString.TestWStringToLongInt;
+var
+  outValue: TValue;
+  outInt: LongInt;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<WideString>('1'),
+    TypeInfo(LongInt));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<LongInt>(outInt));
+  CheckEquals(outInt, 1);
 end;
 
 procedure TTestFromWideString.TestWStringToNullableAnsiString;
@@ -1986,6 +3609,45 @@ begin
     TypeInfo(TNullable<Integer>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TNullable<Integer>>(outNullable));
+  CheckTrue(outNullable.HasValue);
+  CheckEquals(outNullable.Value, 15);
+end;
+
+procedure TTestFromWideString.TestWStringToNullableSmallInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<SmallInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<WideString>('15'),
+    TypeInfo(TNullable<SmallInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<SmallInt>>(outNullable));
+  CheckTrue(outNullable.HasValue);
+  CheckEquals(outNullable.Value, 15);
+end;
+
+procedure TTestFromWideString.TestWStringToNullableShortInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<ShortInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<WideString>('15'),
+    TypeInfo(TNullable<ShortInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<ShortInt>>(outNullable));
+  CheckTrue(outNullable.HasValue);
+  CheckEquals(outNullable.Value, 15);
+end;
+
+procedure TTestFromWideString.TestWStringToNullableLongInt;
+var
+  outValue: TValue;
+  outNullable: TNullable<LongInt>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<WideString>('15'),
+    TypeInfo(TNullable<LongInt>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TNullable<LongInt>>(outNullable));
   CheckTrue(outNullable.HasValue);
   CheckEquals(outNullable.Value, 15);
 end;
