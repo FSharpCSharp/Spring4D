@@ -570,7 +570,7 @@ begin
   else if targetTypeInfo.Name = 'ShortInt' then
     Result := TValue.From<ShortInt>(StrToInt(value.AsString))
   else if targetTypeInfo.Name = 'LongInt' then
-    Result := TValue.From<ShortInt>(StrToInt(value.AsString));
+    Result := TValue.From<LongInt>(StrToInt(value.AsString));
 end;
 
 {$ENDREGION}
@@ -617,7 +617,7 @@ begin
   else if targetTypeInfo.Name = 'ShortInt' then
     Result := TValue.From<ShortInt>(Integer(value.AsBoolean))
   else if targetTypeInfo.Name = 'LongInt' then
-    Result := TValue.From<ShortInt>(Integer(value.AsBoolean));
+    Result := TValue.From<LongInt>(Integer(value.AsBoolean));
 end;
 
 {$ENDREGION}
@@ -808,8 +808,6 @@ function TFloatToIntegerConverter.DoConvertTo(const value: TValue;
 begin
   if targetTypeInfo.Name = 'Integer' then
     Result := TValue.From<Integer>(Floor(value.AsExtended))
-  else if targetTypeInfo.Name = 'Integer' then
-    Result := TValue.From<SmallInt>(Floor(value.AsExtended))
   else if targetTypeInfo.Name = 'SmallInt' then
     Result := TValue.From<SmallInt>(Floor(value.AsExtended))
   else if targetTypeInfo.Name = 'ShortInt' then
