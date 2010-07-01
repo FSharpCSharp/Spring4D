@@ -3179,7 +3179,7 @@ begin
     TypeInfo(AnsiString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
-  CheckEquals(outAStr, 'Test');
+  CheckEquals(outAStr, AnsiString('Test'));
 end;
 
 procedure TTestFromNullable.TestNullableWideStringToWideString;
@@ -3388,7 +3388,7 @@ begin
     TypeInfo(AnsiString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
-  CheckEquals(AnsiString(outAStr), 'Test WideString');
+  CheckEquals(outAStr, AnsiString('Test WideString'));
 end;
 
 procedure TTestFromWideString.TestWStringToBoolean;

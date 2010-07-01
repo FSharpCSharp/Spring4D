@@ -50,7 +50,8 @@ uses
   Spring.Tests.IoC.LifetimeManager in 'Source\Core\Spring.Tests.IoC.LifetimeManager.pas',
   Spring.Tests.IoC in 'Source\Core\Spring.Tests.IoC.pas',
   Spring.Tests.Pool in 'Source\Core\Spring.Tests.Pool.pas',
-  Spring.Tests.ValueConverters in 'Source\Base\Spring.Tests.ValueConverters.pas';
+  Spring.Tests.ValueConverters in 'Source\Base\Spring.Tests.ValueConverters.pas',
+  Spring.Tests.Reflection in 'Source\Base\Spring.Tests.Reflection.pas';
 
 {$R *.RES}
 
@@ -116,6 +117,10 @@ begin
     TTestFromDateTime.Suite,
     TTestFromObject.Suite,
     TTestFromNullable.Suite
+  ]);
+
+  RegisterTests('Base.Reflection', [
+    TTestLocation.Suite
   ]);
 
   RegisterTests('Core.Pool', [

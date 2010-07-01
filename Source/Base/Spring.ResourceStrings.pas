@@ -46,7 +46,7 @@ resourcestring
   SFileNotFoundException          = 'File not found: %s';
   SDirectoryNotFoundException     = 'Directory not found: %s';
   SNullableTypeHasNoValue         = 'Invalid operation, Nullable type has no value.';
-  SCannotAssignPointerToNullable  ='Cannot assigned non-null pointer to nullable type.';
+  SCannotAssignPointerToNullable  = 'Cannot assigned non-null pointer to nullable type.';
   STypeNotRegistered              = '%s was not registered.';
   SCannotModifyReadOnlyValue      = 'Cannot modify read-only value.';
   SServiceNotExists               = 'The service "%s" does not exist.';
@@ -61,6 +61,14 @@ resourcestring
   SIncorrectFormat     = 'Unable to convert %s.';
   SInvalidDateTime     = '"%S" is not a valid date and time.';
   SIllegalFieldCount   = 'fieldCount is more than the number of components defined in the current Version object.';
+
+  SInvalidLocPath = 'Invalid path - expected a name.';
+  SUnexpectedToken = 'Expected %s but got %s.';
+  SInvalidPathSyntax = 'Invalid path syntax: expected ".", "[" or "^"';
+  SInvalidPointerType = 'Non-pointer type %s cannot be dereferenced.';
+  SInvalidTypeForRef = 'Field reference applied to type %s, which is not a record or class.';
+  SInvalidArrayType = 'Index applied to non-array type %s.';
+  SCouldNotFindPath = 'Could not find path %s.';
 
   SUnknownDescription  = 'Unknown';
   SVersionDescription  = 'Version';

@@ -41,6 +41,7 @@ uses
   Spring.DesignPatterns;
 
 type
+
   {$REGION 'TType'}
 
   /// <summary>
@@ -77,10 +78,14 @@ type
 
   {$ENDREGION}
 
+
   IObjectActivator = interface
     ['{CE05FB89-3467-449E-81EA-A5AEECAB7BB8}']
     function CreateInstance: TObject;
   end;
+
+
+  {$REGION 'TActivator'}
 
   TActivator = record
   public
@@ -88,7 +93,13 @@ type
       constructorMethod: TRttiMethod; const arguments: array of TValue): TObject; static;
   end;
 
+  {$ENDREGION}
+
+
   TGetRttiMembersFunc<T> = reference to function(targetType: TRttiType): TArray<T>;
+
+
+  {$REGION 'TRttiMemberEnumerable<T: TRttiMember>'}
 
   /// <summary>
   /// TRttiMemberEnumerable<T>
@@ -125,6 +136,11 @@ type
     function Where(const predicate: TPredicate<T>): IEnumerableEx<T>; override;
   end;
 
+  {$ENDREGION}
+
+
+  {$REGION 'TFiltersBase<T: TRttiMember>'}
+
   /// <summary>
   /// Provides static methods to create specifications to filter TRttiMember objects.
   /// </summary>
@@ -141,10 +157,20 @@ type
     class function IsInvokable: TSpecification<T>;
   end;
 
+  {$ENDREGION}
+
+
+  {$REGION 'Filters'}
+
   TMemberFilters = class(TFiltersBase<TRttiMember>);
   TMethodFilters = class(TFiltersBase<TRttiMethod>);
   TPropertyFilters = class(TFiltersBase<TRttiProperty>);
   TFieldFilters = class(TFiltersBase<TRttiField>);
+
+  {$ENDREGION}
+
+
+  {$REGION 'TMemberSpecificationBase<T: TRttiMember>'}
 
   TMemberSpecificationBase<T: TRttiMember> = class abstract(TSpecificationBase<T>)
   protected
@@ -152,6 +178,11 @@ type
   public
     function IsSatisfiedBy(const member: T): Boolean; override;
   end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TNameFilter<T: TRttiMember>'}
 
   TNameFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
   private
@@ -162,10 +193,20 @@ type
     constructor Create(const name: string);
   end;
 
+  {$ENDREGION}
+
+
+  {$REGION 'TInvokableFilter<T: TRttiMember>'}
+
   TInvokableFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
   protected
     function Accept(const member: T): Boolean; override;
   end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'THasAttributeFilter<T: TRttiMember>'}
 
   THasAttributeFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
   private
@@ -176,6 +217,11 @@ type
     constructor Create(attributeClass: TAttributeClass);
   end;
 
+  {$ENDREGION}
+
+
+  {$REGION 'TTypeFilter<T: TRttiMember>'}
+
   TTypeFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
   private
     fTypeInfo: PTypeInfo;
@@ -184,6 +230,11 @@ type
   public
     constructor Create(const typeInfo: PTypeInfo);
   end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'THasParameterTypesFilter<T: TRttiMember>'}
 
   THasParameterTypesFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
   private
@@ -194,7 +245,13 @@ type
     constructor Create(const types: array of PTypeInfo);
   end;
 
+  {$ENDREGION}
+
+
   TRttiMemberClass = class of TRttiMember;
+
+
+  {$REGION 'TMemberTypeFilter<T: TRttiMember>'}
 
   TMemberTypeFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
   private
@@ -205,15 +262,30 @@ type
     constructor Create(memberClass: TRttiMemberClass);
   end;
 
+  {$ENDREGION}
+
+
+  {$REGION 'TConstructorFilter<T: TRttiMember>'}
+
   TConstructorFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
   protected
     function Accept(const member: T): Boolean; override;
   end;
 
+  {$ENDREGION}
+
+
+  {$REGION 'TInstanceMethodFilter<T: TRttiMember>'}
+
   TInstanceMethodFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
   protected
     function Accept(const member: T): Boolean; override;
   end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'THasParameterFlagsFilter<T: TRttiMember>'}
 
   THasParameterFlagsFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
   private
@@ -224,7 +296,53 @@ type
     constructor Create(const flags: TParamFlags);
   end;
 
+  {$ENDREGION}
+
+
+  {$REGION 'TLocation (Experimental)'}
+
+  /// <summary>
+  /// Support easy way to walk through any Object hierarchy, and also
+  ///  let manipulate record and array type values withou implicit
+  ///  copy of themselfs
+  /// </summary>
+  TLocation = record
+  private
+    fLocation: Pointer;
+    fType: TRttiType;
+    type
+      PPByte = ^PByte;
+  public
+    class function FromValue(const value: TValue): TLocation; static;
+    class function FromAddress(location: Pointer;
+      fromType: TRttiType): TLocation; static;
+
+    function GetValue: TValue;
+    procedure SetValue(const value: TValue);
+    function Follow(const path: string): TLocation;
+    function Dereference: TLocation;
+    function Index(value: Integer): TLocation;
+    function MemberRef(const name: string): TLocation;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'Global Routines'}
+
+  /// <summary>
+  /// Easy access to particulary TLocation within any Object hierarchy
+  /// </summary>
+  /// <returns>Returns TLocation which is equivalent to Object location due to path.</returns>
+  function GetPathLocation(const path: string; root: TLocation): TLocation;
+
+  {$ENDREGION}
+
+
 type
+
+  {$REGION 'Internal Class Helpers'}
+
   /// <summary>
   /// The _InternalRttiMemberHelper class was copied from Spring.Helpers, as
   /// An URW1111 internal error will occured when the Spring.Helpers namespace
@@ -254,12 +372,187 @@ type
     property IsPublished: Boolean read GetIsPublished;
   end;
 
+  {$ENDREGION}
+
 
 implementation
 
 uses
-//  Spring.Helpers,  // Internal Error
-  Spring.ResourceStrings;
+  //Spring.Helpers,  // Internal Error
+  Spring.ResourceStrings,
+  Character;
+
+
+{$REGION 'Global Routines'}
+
+function GetPathLocation(const path: string; root: TLocation): TLocation;
+
+  function SkipWhite(p: PChar): PChar;
+  begin
+    while IsWhiteSpace(p^) do
+      Inc(p);
+    Result := p;
+  end;
+
+  function ScanName(p: PChar; out str: string): PChar;
+  begin
+    Result := p;
+    while IsLetterOrDigit(Result^) do
+      Inc(Result);
+    SetString(str, p, Result - p);
+  end;
+
+  function ScanNumber(p: PChar; out n: Integer): PChar;
+  var
+    v: Integer;
+  begin
+    v := 0;
+    while (p >= '0') and (p <= '9') do
+    begin
+      v := v * 10 + Ord(p^) - Ord('0');
+      Inc(p);
+    end;
+    n := v;
+    Result := p;
+  end;
+
+const
+  tkEof = #0;
+  tkNumber = #1;
+  tkName = #2;
+  tkDot = '.';
+  tkLBracket = '[';
+  tkRBracket = ']';
+
+var
+  cp: PChar;
+  currentToken: Char;
+  tokenName: string;
+  tokenNumber: Integer;
+
+  function NextToken: Char;
+    function SetToken(p: PChar): PChar;
+    begin
+      currentToken := p^;
+      Result := p + 1;
+    end;
+  var
+    p: PChar;
+  begin
+    p := cp;
+    p := SkipWhite(p);
+    if p^ = #0 then
+    begin
+      cp := p;
+      currentToken := tkEof;
+      Exit(currentToken);
+    end;
+
+    case p^ of
+      '0'..'9':
+      begin
+        cp := ScanNumber(p, tokenNumber);
+        currentToken := tkNumber;
+      end;
+      '^', '[', ']', '.': cp := SetToken(p);
+    else
+      cp := ScanName(p, tokenName);
+      if tokenName = '' then
+        raise Exception.Create(SInvalidLocPath);
+      currentToken := tkName;
+    end;
+
+    Result := currentToken;
+  end;
+
+  function Describe(token: Char): string;
+  begin
+    case token of
+      tkEof: Result := 'end of string';
+      tkNumber: Result := 'number';
+      tkName: Result := 'name';
+    else
+      Result := '''' + token + '''';
+    end;
+  end;
+
+  procedure Expect(token: Char);
+  begin
+    if token <> currentToken then
+      raise Exception.CreateResFmt(@SUnexpectedToken,
+        [Describe(token), Describe(currentToken)]);
+  end;
+
+  { Semantic actions are methods on TLocation }
+var
+  location: TLocation;
+
+  { Driver and parser }
+
+begin
+  cp := PChar(path);
+  NextToken;
+
+  location := root;
+
+  // Syntax:
+  // path ::= ( '.' <name> | '[' <index> ']' | '^' )+ ;;
+
+  // Semantics:
+
+  // '<name>' are field names, '[]' is array indexing, '^' is pointer
+  // indirection.
+
+  // Parser continuously calculates the address of the value in question,
+  // starting from the root.
+
+  // When we see a name, we look that up as a field on the current type,
+  // then add its offset to our current location if the current location is
+  // a value type, or indirect (PPointer(x)^) the current location before
+  // adding the offset if the current location is a reference type. If not
+  // a record or class type, then it's an error.
+
+  // When we see an indexing, we expect the current location to be an array
+  // and we update the location to the address of the element inside the array.
+  // All dimensions are flattened (multiplied out) and zero-based.
+
+  // When we see indirection, we expect the current location to be a pointer,
+  // and dereference it.
+
+  while True do
+  begin
+    case currentToken of
+      tkEof: Break;
+      '.':
+      begin
+        NextToken;
+        Expect(tkName);
+        location := location.MemberRef(tokenName);
+        NextToken;
+      end;
+      '[':
+      begin
+        NextToken;
+        Expect(tkNumber);
+        location := location.Index(tokenNumber);
+        NextToken;
+        Expect(']');
+        NextToken;
+      end;
+      '^':
+      begin
+        location := location.Dereference;
+        NextToken;
+      end;
+    else
+      raise Exception.Create(SInvalidPathSyntax);
+    end;
+  end;
+
+  Result := location;
+end;
+
+{$ENDREGION}
 
 
 {$REGION 'TType'}
@@ -806,5 +1099,110 @@ begin
 end;
 
 {$ENDREGION}
+
+
+{$REGION 'TLocation'}
+
+class function TLocation.FromAddress(location: Pointer;
+  fromType: TRttiType): TLocation;
+begin
+  Result.fLocation := location;
+  Result.fType := fromType;
+end;
+
+class function TLocation.FromValue(const value: TValue): TLocation;
+begin
+  Result.fType := TType.Context.GetType(value.TypeInfo);
+  Result.fLocation := value.GetReferenceToRawData;
+end;
+
+function TLocation.Dereference: TLocation;
+begin
+  if not (fType is TRttiPointerType) then
+    raise Exception.CreateResFmt(@SInvalidPointerType, [fType.Name]);
+  Result.fLocation := PPointer(fLocation)^;
+  Result.fType := TRttiPointerType(fType).ReferredType;
+end;
+
+function TLocation.MemberRef(const name: string): TLocation;
+var
+  field: TRttiField;
+  prop: TRttiProperty;
+  propValue: TValue;
+begin
+  if fType is TRttiRecordType then
+  begin
+    field := FType.GetField(name);
+    Result.fLocation := PByte(fLocation) + field.Offset;
+    Result.fType := field.FieldType;
+  end
+  else
+  if fType is TRttiInstanceType then
+  begin
+    field := fType.GetField(name);
+    if not Assigned(field) then
+    begin
+      { TODO -oLeo -cSpring.Reflection : Add locate property field support to TLocation }
+      prop := fType.GetProperty(name);
+      if not Assigned(prop) then
+        raise Exception.CreateResFmt(@SCouldNotFindPath, [name])
+      else
+      begin
+        if GetValue.IsObject then
+          propValue:= prop.GetValue(GetValue.AsObject)
+        else
+          propValue:= prop.GetValue(GetValue.GetReferenceToRawData);
+
+        field := fType.GetField(prop.Name);
+        if not Assigned(field) then
+          raise Exception.CreateResFmt(@SCouldNotFindPath, [name]);
+      end;
+    end;
+    Result.fLocation := PPByte(fLocation)^ + field.Offset;
+    Result.fType := field.FieldType;
+  end
+  else
+    raise Exception.CreateResFmt(@SInvalidTypeForRef, [fType.Name]);
+end;
+
+function TLocation.Follow(const path: string): TLocation;
+begin
+  Result := GetPathLocation(path, Self);
+end;
+
+function TLocation.GetValue: TValue;
+begin
+  TValue.Make(fLocation, fType.Handle, Result);
+end;
+
+function TLocation.Index(value: Integer): TLocation;
+var
+  staticArray: TRttiArrayType;
+  dynamicArray: TRttiDynamicArrayType;
+begin
+  if fType is TRttiArrayType then
+  begin
+    { TODO -oLeo -cSpring.System : Extend array locating to work with multi-dimensional arrays and non-zero based arrays }
+    staticArray := TRttiArrayType(fType);
+    Result.fLocation := PByte(fLocation) + staticArray.ElementType.TypeSize * value;
+    Result.fType := staticArray.ElementType;
+  end
+  else if fType is TRttiDynamicArrayType then
+  begin
+    dynamicArray := TRttiDynamicArrayType(fType);
+    Result.fLocation := PPByte(FLocation)^ + dynamicArray.ElementType.TypeSize * value;
+    Result.fType := dynamicArray.ElementType;
+  end
+  else
+    raise Exception.CreateResFmt(@SInvalidArrayType, [fType.Name]);
+end;
+
+procedure TLocation.SetValue(const value: TValue);
+begin
+  value.Cast(fType.Handle).ExtractRawData(fLocation);
+end;
+
+{$ENDREGION}
+
 
 end.
