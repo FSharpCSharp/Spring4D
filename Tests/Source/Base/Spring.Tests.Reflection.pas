@@ -7,8 +7,7 @@ uses
   TestExtensions;
 
 type
-
-  TTestLocation = class(TTestCase)
+  TTestValueExpression = class(TTestCase)
   strict private
     type
       TPoint = record
@@ -35,13 +34,19 @@ type
         destructor Destroy; override;
         property Name: string read fName;
         property Number: Integer read fNumber;
+        property Coords: TPoints read fCoords;
         property Inner: TInnerObject read fInner;
       end;
 
   published
-    procedure TestNativeType;
-    procedure TestArray;
-    procedure TestObject;
+    procedure TestPropertyNativeType;
+    procedure TestPropertyDrillDownNativeType;
+    procedure TestPropertyArray;
+    procedure TestPropertyObject;
+    procedure TestFieldNativeType;
+    procedure TestFieldDrillDownNativeType;
+    procedure TestFieldArray;
+    procedure TestFieldObject;
   end;
 
 implementation
@@ -51,16 +56,15 @@ uses
   Spring.Reflection;
 
 
-{$REGION 'TTestLocation.TOuterObject'}
+{$REGION 'TTestValueExpression.TOuterObject'}
 
-constructor TTestLocation.TOuterObject.Create;
+constructor TTestValueExpression.TOuterObject.Create;
 var
   i: Integer;
 begin
   fInner := TInnerObject.Create;
   fName := 'Outer Object';
   fNumber := 15;
-  Randomize;
   for i := Low(fCoords) to High(fCoords) do
   begin
     fCoords[i].X := i * i;
@@ -68,7 +72,7 @@ begin
   end;
 end;
 
-destructor TTestLocation.TOuterObject.Destroy;
+destructor TTestValueExpression.TOuterObject.Destroy;
 begin
   fInner.Free;
 end;
@@ -76,9 +80,9 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TTestLocation.TInnerObject'}
+{$REGION 'TTestValueExpression.TInnerObject'}
 
-constructor TTestLocation.TInnerObject.Create;
+constructor TTestValueExpression.TInnerObject.Create;
 begin
   fName := 'Inner Object';
 end;
@@ -86,48 +90,110 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TTestLocation'}
+{$REGION 'TTestValueExpression'}
 
-procedure TTestLocation.TestNativeType;
+procedure TTestValueExpression.TestFieldArray;
 var
   obj: TOuterObject;
-  location: TLocation;
+  coord: TPoint;
+  expression: IValueExpression;
 begin
   obj := TOuterObject.Create;
-  location := TLocation.FromValue(obj);
-  CheckEquals(location.Follow('.fName').GetValue.ToString, 'Outer Object');
-  CheckEquals(location.Follow('.fNumber').GetValue.AsInteger, 15);
+  expression := TValueExpression.FromValue(obj);
+  CheckTrue(expression.Follow('.fCoords[2]').Value.TryAsType<TPoint>(coord));
+  CheckEquals(4, coord.X);
   obj.Free;
 end;
 
-procedure TTestLocation.TestArray;
+procedure TTestValueExpression.TestFieldNativeType;
 var
   obj: TOuterObject;
-  coords: TPoints;
-  location: TLocation;
+  expression: IValueExpression;
 begin
   obj := TOuterObject.Create;
-  location := TLocation.FromValue(obj);
-  CheckTrue(location.Follow('.fCoords').GetValue.TryAsType<TPoints>(coords));
-  CheckEquals(High(coords), 9);
+  expression := TValueExpression.FromValue(obj);
+  CheckEquals('Outer Object', expression.Follow('.fName').Value.ToString);
+  CheckEquals(15, expression.Follow('.fNumber').Value.AsInteger);
   obj.Free;
 end;
 
-procedure TTestLocation.TestObject;
+procedure TTestValueExpression.TestFieldDrillDownNativeType;
 var
   outerObj: TOuterObject;
   obj: TInnerObject;
-  root, location: TLocation;
+  root, expression: IValueExpression;
 begin
   outerObj := TOuterObject.Create;
-  root := TLocation.FromValue(outerObj);
-  try
-    location := root.Follow('.Inner');
-    CheckTrue(location.GetValue.TryAsType<TInnerObject>(obj));
-    CheckEquals(obj.Name, 'Inner Object');
-  finally
-    outerObj.Free;
-  end;
+  root := TValueExpression.FromValue(outerObj);
+  expression := root.Follow('.fInner.fName');
+  CheckEquals('Inner Object', expression.Value.AsString);
+  outerObj.Free;
+end;
+
+procedure TTestValueExpression.TestFieldObject;
+var
+  outerObj: TOuterObject;
+  obj: TInnerObject;
+  root, expression: IValueExpression;
+begin
+  outerObj := TOuterObject.Create;
+  root := TValueExpression.FromValue(outerObj);
+  expression := root.Follow('.fInner');
+  CheckTrue(expression.Value.TryAsType<TInnerObject>(obj));
+  CheckEquals('Inner Object', obj.Name);
+  outerObj.Free;
+end;
+
+procedure TTestValueExpression.TestPropertyNativeType;
+var
+  obj: TOuterObject;
+  expression: IValueExpression;
+begin
+  obj := TOuterObject.Create;
+  expression := TValueExpression.FromValue(obj);
+  CheckEquals('Outer Object', expression.Follow('.Name').Value.ToString);
+  CheckEquals(15, expression.Follow('.Number').Value.AsInteger);
+  obj.Free;
+end;
+
+procedure TTestValueExpression.TestPropertyDrillDownNativeType;
+var
+  outerObj: TOuterObject;
+  obj: TInnerObject;
+  root, expression: IValueExpression;
+begin
+  outerObj := TOuterObject.Create;
+  root := TValueExpression.FromValue(outerObj);
+  expression := root.Follow('.Inner.Name');
+  CheckEquals('Inner Object', expression.Value.AsString);
+  outerObj.Free;
+end;
+
+procedure TTestValueExpression.TestPropertyArray;
+var
+  obj: TOuterObject;
+  coord: TPoint;
+  expression: IValueExpression;
+begin
+  obj := TOuterObject.Create;
+  expression := TValueExpression.FromValue(obj);
+  CheckTrue(expression.Follow('.Coords[2]').Value.TryAsType<TPoint>(coord));
+  CheckEquals(4, coord.X);
+  obj.Free;
+end;
+
+procedure TTestValueExpression.TestPropertyObject;
+var
+  outerObj: TOuterObject;
+  obj: TInnerObject;
+  root, expression: IValueExpression;
+begin
+  outerObj := TOuterObject.Create;
+  root := TValueExpression.FromValue(outerObj);
+  expression := root.Follow('.Inner');
+  CheckTrue(expression.Value.TryAsType<TInnerObject>(obj));
+  CheckEquals('Inner Object', obj.Name);
+  outerObj.Free;
 end;
 
 {$ENDREGION}

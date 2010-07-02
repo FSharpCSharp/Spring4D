@@ -79,13 +79,12 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'Activator'}
+
   IObjectActivator = interface
     ['{CE05FB89-3467-449E-81EA-A5AEECAB7BB8}']
     function CreateInstance: TObject;
   end;
-
-
-  {$REGION 'TActivator'}
 
   TActivator = record
   public
@@ -299,30 +298,32 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TLocation (Experimental)'}
+  {$REGION 'Value Expression'}
 
   /// <summary>
-  /// Support easy way to walk through any Object hierarchy, and also
-  ///  let manipulate record and array type values withou implicit
-  ///  copy of themselfs
+  /// Expression part of Value
   /// </summary>
-  TLocation = record
+  IValueExpression = interface(IValueProvider)
+  ['{A0EB72F0-06AE-460D-8AA2-A0A95BAC4A86}']
+    function Follow(const path: string): IValueExpression;
+  end;
+
+  /// <summary>
+  /// Default implementation of Exrepssion part of Value
+  /// </summary>
+  TValueExpression = class(TValueProvider, IValueExpression)
   private
-    fLocation: Pointer;
-    fType: TRttiType;
+    fName: string;
     type
       PPByte = ^PByte;
+    function IndexRef(index: Integer): IValueExpression;
+    function MemberRef(const name: string): IValueExpression;
+    function Follow(const path: string): IValueExpression;
+  protected
+    function GetIsReadOnly: Boolean; override;
   public
-    class function FromValue(const value: TValue): TLocation; static;
-    class function FromAddress(location: Pointer;
-      fromType: TRttiType): TLocation; static;
-
-    function GetValue: TValue;
-    procedure SetValue(const value: TValue);
-    function Follow(const path: string): TLocation;
-    function Dereference: TLocation;
-    function Index(value: Integer): TLocation;
-    function MemberRef(const name: string): TLocation;
+    constructor Create;
+    class function FromValue(const value: TValue): IValueExpression; static;
   end;
 
   {$ENDREGION}
@@ -331,10 +332,11 @@ type
   {$REGION 'Global Routines'}
 
   /// <summary>
-  /// Easy access to particulary TLocation within any Object hierarchy
+  /// Easy access to particulary IValueExpression within any Object hierarchy
   /// </summary>
-  /// <returns>Returns TLocation which is equivalent to Object location due to path.</returns>
-  function GetPathLocation(const path: string; root: TLocation): TLocation;
+  /// <returns>Returns IValueExpression which is equivalent to Object location due to path.</returns>
+  function GetValueExpression(const path: string;
+    root: IValueExpression): IValueExpression;
 
   {$ENDREGION}
 
@@ -385,7 +387,8 @@ uses
 
 {$REGION 'Global Routines'}
 
-function GetPathLocation(const path: string; root: TLocation): TLocation;
+function GetValueExpression(const path: string;
+  root: IValueExpression): IValueExpression;
 
   function SkipWhite(p: PChar): PChar;
   begin
@@ -485,7 +488,7 @@ var
 
   { Semantic actions are methods on TLocation }
 var
-  location: TLocation;
+  expression: IValueExpression;
 
   { Driver and parser }
 
@@ -493,7 +496,7 @@ begin
   cp := PChar(path);
   NextToken;
 
-  location := root;
+  expression := root;
 
   // Syntax:
   // path ::= ( '.' <name> | '[' <index> ']' | '^' )+ ;;
@@ -527,21 +530,21 @@ begin
       begin
         NextToken;
         Expect(tkName);
-        location := location.MemberRef(tokenName);
+        expression := (expression as TValueExpression).MemberRef(tokenName);
         NextToken;
       end;
       '[':
       begin
         NextToken;
         Expect(tkNumber);
-        location := location.Index(tokenNumber);
+        expression := (expression as TValueExpression).IndexRef(tokenNumber);
         NextToken;
         Expect(']');
         NextToken;
       end;
       '^':
       begin
-        location := location.Dereference;
+        expression := (expression as TValueExpression).MemberRef(tokenName);
         NextToken;
       end;
     else
@@ -549,7 +552,7 @@ begin
     end;
   end;
 
-  Result := location;
+  Result := expression;
 end;
 
 {$ENDREGION}
@@ -1101,105 +1104,89 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TLocation'}
+{$REGION 'TValueExpression'}
 
-class function TLocation.FromAddress(location: Pointer;
-  fromType: TRttiType): TLocation;
+constructor TValueExpression.Create;
 begin
-  Result.fLocation := location;
-  Result.fType := fromType;
+  fName := EmptyStr;
 end;
 
-class function TLocation.FromValue(const value: TValue): TLocation;
+class function TValueExpression.FromValue(const value: TValue): IValueExpression;
 begin
-  Result.fType := TType.Context.GetType(value.TypeInfo);
-  Result.fLocation := value.GetReferenceToRawData;
+  Result := TValueExpression.Create;
+  Result.SetValue(value);
 end;
 
-function TLocation.Dereference: TLocation;
-begin
-  if not (fType is TRttiPointerType) then
-    raise Exception.CreateResFmt(@SInvalidPointerType, [fType.Name]);
-  Result.fLocation := PPointer(fLocation)^;
-  Result.fType := TRttiPointerType(fType).ReferredType;
-end;
-
-function TLocation.MemberRef(const name: string): TLocation;
+function TValueExpression.GetIsReadOnly: Boolean;
 var
-  field: TRttiField;
   prop: TRttiProperty;
-  propValue: TValue;
 begin
-  if fType is TRttiRecordType then
+  Result := False;
+  if fName <> EmptyStr then
   begin
-    field := FType.GetField(name);
-    Result.fLocation := PByte(fLocation) + field.Offset;
-    Result.fType := field.FieldType;
-  end
-  else
-  if fType is TRttiInstanceType then
-  begin
-    field := fType.GetField(name);
-    if not Assigned(field) then
-    begin
-      { TODO -oLeo -cSpring.Reflection : Add locate property field support to TLocation }
-      prop := fType.GetProperty(name);
-      if not Assigned(prop) then
-        raise Exception.CreateResFmt(@SCouldNotFindPath, [name])
-      else
-      begin
-        if GetValue.IsObject then
-          propValue:= prop.GetValue(GetValue.AsObject)
-        else
-          propValue:= prop.GetValue(GetValue.GetReferenceToRawData);
-
-        field := fType.GetField(prop.Name);
-        if not Assigned(field) then
-          raise Exception.CreateResFmt(@SCouldNotFindPath, [name]);
-      end;
-    end;
-    Result.fLocation := PPByte(fLocation)^ + field.Offset;
-    Result.fType := field.FieldType;
-  end
-  else
-    raise Exception.CreateResFmt(@SInvalidTypeForRef, [fType.Name]);
+    prop := TType.GetType(Value).GetProperty(fName);
+    if Assigned(prop) then
+      Result := not prop.IsWritable;
+  end;
 end;
 
-function TLocation.Follow(const path: string): TLocation;
-begin
-  Result := GetPathLocation(path, Self);
-end;
-
-function TLocation.GetValue: TValue;
-begin
-  TValue.Make(fLocation, fType.Handle, Result);
-end;
-
-function TLocation.Index(value: Integer): TLocation;
+function TValueExpression.IndexRef(index: Integer): IValueExpression;
 var
   staticArray: TRttiArrayType;
   dynamicArray: TRttiDynamicArrayType;
+  outValue: TValue;
 begin
-  if fType is TRttiArrayType then
+  if TType.GetType(Value) is TRttiArrayType then
   begin
-    { TODO -oLeo -cSpring.System : Extend array locating to work with multi-dimensional arrays and non-zero based arrays }
-    staticArray := TRttiArrayType(fType);
-    Result.fLocation := PByte(fLocation) + staticArray.ElementType.TypeSize * value;
-    Result.fType := staticArray.ElementType;
+    staticArray := TRttiArrayType(TType.GetType(Value));
+    TValue.Make(PByte(Value.GetReferenceToRawData) +
+      staticArray.ElementType.TypeSize * index, staticArray.ElementType.Handle, outValue);
+    Result := TValueExpression.FromValue(outValue);
   end
-  else if fType is TRttiDynamicArrayType then
+  else if TType.GetType(Value) is TRttiDynamicArrayType then
   begin
-    dynamicArray := TRttiDynamicArrayType(fType);
-    Result.fLocation := PPByte(FLocation)^ + dynamicArray.ElementType.TypeSize * value;
-    Result.fType := dynamicArray.ElementType;
+    dynamicArray := TRttiDynamicArrayType(TType.GetType(Value));
+    TValue.Make(PPByte(Value.GetReferenceToRawData)^ +
+      dynamicArray.ElementType.TypeSize * index, dynamicArray.ElementType.Handle, outValue);
+    Result := TValueExpression.FromValue(outValue);
   end
   else
-    raise Exception.CreateResFmt(@SInvalidArrayType, [fType.Name]);
+    raise Exception.CreateResFmt(@SInvalidArrayType, [Value.TypeInfo.Name]);
 end;
 
-procedure TLocation.SetValue(const value: TValue);
+function TValueExpression.MemberRef(const name: string): IValueExpression;
+var
+  field: TRttiField;
+  prop: TRttiProperty;
 begin
-  value.Cast(fType.Handle).ExtractRawData(fLocation);
+  field := TType.GetType(Value).GetField(name);
+  fName := name;
+  if Assigned(field) then
+  begin
+    if Value.IsObject then
+      Result := TValueExpression.FromValue(field.GetValue(Value.AsObject))
+    else
+      Result := TValueExpression.FromValue(field.GetValue(Value.GetReferenceToRawData));
+  end
+  else
+  begin
+    { DONE -oLeo -cSpring.Reflection : Add locate property field support to TValueExpression}
+    prop := TType.GetType(Value).GetProperty(name);
+    if Assigned(prop) then
+    begin
+      if Value.IsObject then
+        Result := TValueExpression.FromValue(prop.GetValue(Value.AsObject))
+      else
+        Result := TValueExpression.FromValue(prop.GetValue(Value.GetReferenceToRawData));
+    end
+    else
+      raise Exception.CreateResFmt(@SCouldNotFindPath, [name]);
+  end;
+end;
+
+function TValueExpression.Follow(const path: string): IValueExpression;
+begin
+  Result := GetValueExpression(path, Self);
 end;
 
 {$ENDREGION}

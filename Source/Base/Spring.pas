@@ -433,6 +433,56 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'IValueProvider'}
+
+  /// <summary>
+  /// Interface entry for generic TValue value holder
+  /// </summary>
+  IValueProvider = interface
+    ['{392A1E2F-CCA1-4CBB-9306-29AA402927D6}']
+  {$REGION 'Property Getters and Setters'}
+    function GetValue: TValue;
+    function GetValueType: PTypeInfo;
+    function GetIsReadOnly: Boolean;
+  {$ENDREGION}
+    /// <summary>
+    /// Sets the value of the provider.
+    /// </summary>
+    /// <exception cref="EInvalidOperation">
+    /// Raised if the value is read-only.
+    /// </exception>
+    procedure SetValue(const value: TValue);
+    /// <summary>
+    /// Gets the value of the provider.
+    /// </summary>
+    property Value: TValue read GetValue;
+    /// <summary>
+    /// Gets the type info of the value.
+    /// </summary>
+    property ValueType: PTypeInfo read GetValueType;
+    /// <summary>
+    /// Gets a value that indicates whether the value is read-only.
+    /// </summary>
+    property IsReadOnly: Boolean read GetIsReadOnly;
+  end;
+
+  /// <summary>
+  /// Base class for generic TValue value holder
+  /// </summary>
+  TValueProvider = class(TInterfacedObject, IValueProvider)
+  private
+    fValue: TValue;
+    function GetValueType: PTypeInfo;
+    function GetValue: TValue;
+    procedure SetValue(const value: TValue);
+  protected
+    function GetIsReadOnly: Boolean; virtual;
+    property Value: TValue read GetValue;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'IDelegate<T> (Experimental)'}
 
   /// <summary>
@@ -1003,6 +1053,7 @@ implementation
 
 uses
   StrUtils,
+  //Spring.Reflection, Compiling Error
   Spring.ResourceStrings;
 
 
@@ -2297,6 +2348,38 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TValueProvider'}
+
+function TValueProvider.GetIsReadOnly: Boolean;
+begin
+  Result := True;
+end;
+
+function TValueProvider.GetValue: TValue;
+begin
+  Result := fValue;
+end;
+
+procedure TValueProvider.SetValue(const value: TValue);
+begin
+  if not GetIsReadOnly then
+  begin
+    fValue := value;
+  end
+  else
+  begin
+    raise EInvalidOperation.CreateRes(@SCannotModifyReadOnlyValue);
+  end;
+end;
+
+function TValueProvider.GetValueType: PTypeInfo;
+begin
+  Result := fValue.TypeInfo;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TDelegate<T>'}
 
 destructor TDelegate<T>.Destroy;
@@ -2793,5 +2876,6 @@ begin
 end;
 
 {$ENDREGION}
+
 
 end.

@@ -120,7 +120,7 @@ begin
   ]);
 
   RegisterTests('Base.Reflection', [
-    TTestLocation.Suite
+    TTestValueExpression.Suite
   ]);
 
   RegisterTests('Core.Pool', [
