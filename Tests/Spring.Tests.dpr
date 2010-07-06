@@ -152,7 +152,7 @@ begin
 end;
 
 begin
-//  ReportMemoryLeaksOnShutdown := True;
+  ReportMemoryLeaksOnShutdown := True;
   Application.Initialize;
   RegisterTestCases;
   if IsConsole then

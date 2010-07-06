@@ -442,7 +442,6 @@ type
     ['{392A1E2F-CCA1-4CBB-9306-29AA402927D6}']
   {$REGION 'Property Getters and Setters'}
     function GetValue: TValue;
-    function GetValueType: PTypeInfo;
     function GetIsReadOnly: Boolean;
   {$ENDREGION}
     /// <summary>
@@ -457,27 +456,23 @@ type
     /// </summary>
     property Value: TValue read GetValue;
     /// <summary>
-    /// Gets the type info of the value.
-    /// </summary>
-    property ValueType: PTypeInfo read GetValueType;
-    /// <summary>
     /// Gets a value that indicates whether the value is read-only.
     /// </summary>
     property IsReadOnly: Boolean read GetIsReadOnly;
   end;
 
   /// <summary>
-  /// Base class for generic TValue value holder
+  /// Base abstract class for generic TValue value holder
   /// </summary>
-  TValueProvider = class(TInterfacedObject, IValueProvider)
+  TValueProvider = class abstract(TInterfacedObject, IValueProvider)
   private
-    fValue: TValue;
-    function GetValueType: PTypeInfo;
-    function GetValue: TValue;
-    procedure SetValue(const value: TValue);
+    procedure SetValue(const value: TValue); virtual;
   protected
+    function GetValue: TValue; virtual; abstract;
+    procedure DoSetValue(const value: TValue); virtual; abstract;
     function GetIsReadOnly: Boolean; virtual;
     property Value: TValue read GetValue;
+    property IsReadOnly: Boolean read GetIsReadOnly;
   end;
 
   {$ENDREGION}
@@ -2355,26 +2350,16 @@ begin
   Result := True;
 end;
 
-function TValueProvider.GetValue: TValue;
-begin
-  Result := fValue;
-end;
-
 procedure TValueProvider.SetValue(const value: TValue);
 begin
   if not GetIsReadOnly then
   begin
-    fValue := value;
+    DoSetValue(value);
   end
   else
   begin
     raise EInvalidOperation.CreateRes(@SCannotModifyReadOnlyValue);
   end;
-end;
-
-function TValueProvider.GetValueType: PTypeInfo;
-begin
-  Result := fValue.TypeInfo;
 end;
 
 {$ENDREGION}
