@@ -33,11 +33,13 @@ uses
 
 type
 
+  {$REGION 'IValueConverter'}
+
   /// <summary>
   /// Base value converter interface
   /// </summary>
   IValueConverter = interface
-  ['{048EF3F0-41B5-4019-9BD6-00B88CAA7275}']
+    ['{048EF3F0-41B5-4019-9BD6-00B88CAA7275}']
 
     /// <param name="value">Rtti.TValue to convert</param>
     /// <param name="targetTypeInfo">Target Rtti.PTypeInfo structure</param>
@@ -71,6 +73,11 @@ type
       out targetValue: TValue;
       const parameter: TValue): Boolean; overload;
   end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TValueConverter'}
 
   /// <summary>
   /// Base abstract class provides DefaultConverter
@@ -103,8 +110,14 @@ type
 
     class property Default: IValueConverter read GetDefault;
   end;
+
+  {$ENDREGION}
+
+
   TConverterClass = class of TValueConverter;
 
+
+  {$REGION 'TDefaultValueConverter'}
   /// <summary>
   /// Provides default converter shared instance,
   ///  TDefaultValueConverter is the master in the process of conversion
@@ -129,6 +142,11 @@ type
       const parameter: TValue): TValue; override;
   end;
 
+  {$ENDREGION}
+
+
+  {$REGION 'TIntegerToStringConverter'}
+
   /// <summary>
   /// Simply provides conversion routine beetwen Integer and string/UnicodeString
   /// </summary>
@@ -139,6 +157,10 @@ type
       const parameter: TValue): TValue; override;
   end;
 
+  {$ENDREGION}
+
+
+  {$REGION 'TStringToIntegerConverter'}
   /// <summary>
   /// Simply provides conversion routine beetwen string and Integer
   /// </summary>
@@ -148,6 +170,11 @@ type
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
   end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TIntegerToBooleanConverter'}
 
   /// <summary>
   /// Simply provides conversion routine beetwen Integer and Boolean
@@ -159,6 +186,11 @@ type
       const parameter: TValue): TValue; override;
   end;
 
+  {$ENDREGION}
+
+
+  {$REGION 'TBooleanToIntegerConverter'}
+
   /// <summary>
   /// Simply provides conversion routine beetwen Boolean and Integer
   /// </summary>
@@ -168,6 +200,11 @@ type
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
   end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TBooleanToStringConverter'}
 
   /// <summary>
   /// Simply provides conversion routine beetwen Boolean and string
@@ -179,6 +216,11 @@ type
       const parameter: TValue): TValue; override;
   end;
 
+  {$ENDREGION}
+
+
+  {$REGION 'TStringToBooleanConverter'}
+
   /// <summary>
   /// Simply provides conversion routine beetwen string and Boolean
   /// </summary>
@@ -188,6 +230,11 @@ type
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
   end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TNullableToTypeConverter'}
 
   /// <summary>
   /// Provides conversion routine beetwen TNullable<T> and T
@@ -203,6 +250,10 @@ type
       const parameter: TValue): TValue; override;
   end;
 
+  {$ENDREGION}
+
+
+  {$REGION 'TTypeToNullableConverter'}
   /// <summary>
   /// Provides conversion routine beetwen T and TNullable<T>
   /// </summary>
@@ -217,6 +268,11 @@ type
       const parameter: TValue): TValue; override;
   end;
 
+  {$ENDREGION}
+
+
+  {$REGION 'TEnumToIntegerConverter'}
+
   /// <summary>
   /// Provides conversion routine beetwen enumeration and Integer
   /// </summary>
@@ -226,6 +282,11 @@ type
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
   end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TIntegerToEnumConverter'}
 
   /// <summary>
   /// Provides conversion routine beetwen Integer and enumeration
@@ -237,6 +298,11 @@ type
       const parameter: TValue): TValue; override;
   end;
 
+  {$ENDREGION}
+
+
+  {$REGION 'TEnumToStringConverter'}
+
   /// <summary>
   /// Provides conversion routine beetwen enumeration and string
   /// </summary>
@@ -246,6 +312,11 @@ type
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
   end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TStringToEnumConverter'}
 
   /// <summary>
   /// Provides conversion routine beetwen string and enumeration
@@ -257,6 +328,11 @@ type
       const parameter: TValue): TValue; override;
   end;
 
+  {$ENDREGION}
+
+
+  {$REGION 'TFloatToStringConverter'}
+
   /// <summary>
   /// Provides conversion routine beetwen float and string
   /// </summary>
@@ -266,6 +342,11 @@ type
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
   end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TFloatToIntegerConverter'}
 
   /// <summary>
   /// Provides conversion routine beetwen float and Integer
@@ -277,6 +358,11 @@ type
       const parameter: TValue): TValue; override;
   end;
 
+  {$ENDREGION}
+
+
+  {$REGION 'TStringToFloatConverter'}
+
   /// <summary>
   /// Provides conversion routine beetwen string and float
   /// </summary>
@@ -286,6 +372,11 @@ type
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
   end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TColorToStringConverter'}
 
   /// <summary>
   /// Provides conversion routine beetwen TColor and string
@@ -297,6 +388,11 @@ type
       const parameter: TValue): TValue; override;
   end;
 
+  {$ENDREGION}
+
+
+  {$REGION 'TStringToColorConverter'}
+
   /// <summary>
   /// Provides conversion routine beetwen string and TColor
   /// </summary>
@@ -306,6 +402,11 @@ type
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
   end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TCurrencyToStringConverter'}
 
   /// <summary>
   /// Provides conversion routine beetwen Currency and string
@@ -317,6 +418,11 @@ type
       const parameter: TValue): TValue; override;
   end;
 
+  {$ENDREGION}
+
+
+  {$REGION 'TStringToCurrencyConverter'}
+
   /// <summary>
   /// Provides conversion routine beetwen string and Currency
   /// </summary>
@@ -326,6 +432,11 @@ type
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
   end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TStringToDateTimeConverter'}
 
   /// <summary>
   /// Provides conversion routine beetwen string and TDateTime
@@ -337,6 +448,11 @@ type
       const parameter: TValue): TValue; override;
   end;
 
+  {$ENDREGION}
+
+
+  {$REGION 'TDateTimeToStringConverter'}
+
   /// <summary>
   /// Provides conversion routine beetwen TDateTime and string
   /// </summary>
@@ -347,6 +463,11 @@ type
       const parameter: TValue): TValue; override;
   end;
 
+  {$ENDREGION}
+
+
+  {$REGION 'TObjectToStringConverter'}
+
   /// <summary>
   /// Provides conversion routine beetwen TObject and string
   /// </summary>
@@ -356,6 +477,11 @@ type
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
   end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TObjectToInterfaceConverter'}
 
   /// <summary>
   /// Provides conversion routine beetwen TObject and IInterface
@@ -370,6 +496,11 @@ type
       const parameter: TValue): TValue; override;
   end;
 
+  {$ENDREGION}
+
+
+  {$REGION 'TObjectToClassConverter'}
+
   /// <summary>
   /// Provides conversion routine beetwen TObject and TClass
   /// </summary>
@@ -379,6 +510,11 @@ type
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
   end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TStringToWStringConverter'}
 
   /// <summary>
   /// Provides conversion routine beetwen UnicodeString and WideString
@@ -393,6 +529,11 @@ type
       const parameter: TValue): TValue; override;
   end;
 
+  {$ENDREGION}
+
+
+  {$REGION 'TWStringToStringConverter'}
+
   /// <summary>
   /// Provides conversion routine beetwen UnicodeString and WideString
   /// </summary>
@@ -402,6 +543,11 @@ type
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
   end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TValueConverterFactory'}
 
   /// <summary>
   /// Factory class that brings to live converter which are registered within global
@@ -442,6 +588,8 @@ type
     class function GetConverter(const sourceTypeInfo,
       targetTypeInfo: PTypeInfo): IValueConverter;
   end;
+
+  {$ENDREGION}
 
 implementation
 
