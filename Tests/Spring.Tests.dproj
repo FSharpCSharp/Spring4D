@@ -63,6 +63,7 @@
 			<DCCReference Include="Source\Core\Spring.Tests.Pool.pas"/>
 			<DCCReference Include="Source\Base\Spring.Tests.ValueConverters.pas"/>
 			<DCCReference Include="Source\Base\Spring.Tests.Reflection.pas"/>
+			<None Include="Spring.Tests.todo"/>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>
 			</BuildConfiguration>

@@ -304,7 +304,7 @@ type
   /// Expression part of Value
   /// </summary>
   IValueExpression = interface(IValueProvider)
-  ['{A0EB72F0-06AE-460D-8AA2-A0A95BAC4A86}']
+    ['{A0EB72F0-06AE-460D-8AA2-A0A95BAC4A86}']
     function Follow(const path: string): IValueExpression;
   end;
 
@@ -313,21 +313,26 @@ type
   /// </summary>
   TValueExpression = class(TValueProvider, IValueExpression)
   private
-    fContext: TValue;
-    fExpression: string;
+    fInstance: TValue;
+    fExpression: IValueExpression;
+    fPath: string;
     type
       PPByte = ^PByte;
     function IndexRef(index: Integer): IValueExpression;
     function MemberRef(const name: string): IValueExpression;
     function Follow(const path: string): IValueExpression;
+    function GetInstanceValue: TValue;
   protected
     function GetValue: TValue; override;
     procedure DoSetValue(const value: TValue); override;
     function GetIsReadOnly: Boolean; override;
+    property InstanceValue: TValue read GetInstanceValue;
   public
-    constructor Create(const context: TValue;
-      const expression: string); overload;
-    class function FromValue(const context: TValue): IValueExpression;
+    constructor Create(const instance: TValue;
+      const path: string); overload;
+    constructor Create(const expression: IValueExpression;
+      const path: string); overload;
+    class function FromValue(const value: TValue): IValueExpression;
   end;
 
   {$ENDREGION}
@@ -1110,17 +1115,33 @@ end;
 
 {$REGION 'TValueExpression'}
 
-constructor TValueExpression.Create(const context: TValue;
-  const expression: string);
+constructor TValueExpression.Create(const instance: TValue;
+  const path: string);
 begin
-  fContext := context;
+  fInstance := instance;
+  fExpression := nil;
+  fPath := path;
+end;
+
+constructor TValueExpression.Create(const expression: IValueExpression;
+  const path: string);
+begin
   fExpression := expression;
+  fPath := path;
 end;
 
 class function TValueExpression.FromValue(
-  const context: TValue): IValueExpression;
+  const value: TValue): IValueExpression;
 begin
-  Result := TValueExpression.Create(context, '.');
+  Result := TValueExpression.Create(value, '.');
+end;
+
+function TValueExpression.GetInstanceValue: TValue;
+begin
+  if fExpression = nil then
+    Exit(fInstance)
+  else
+    Exit(fExpression.Value);
 end;
 
 function TValueExpression.GetIsReadOnly: Boolean;
@@ -1128,9 +1149,9 @@ var
   prop: TRttiProperty;
 begin
   Result := False;
-  if fExpression <> '.' then
+  if fPath <> '.' then
   begin
-    prop := TType.GetType(fContext).GetProperty(fExpression);
+    prop := TType.GetType(InstanceValue).GetProperty(fPath);
     if Assigned(prop) then
       Result := not prop.IsWritable;
   end;
@@ -1144,39 +1165,39 @@ var
   dynamicArray: TRttiDynamicArrayType;
 begin
   inherited;
-  if fExpression <> '.' then
+  if fPath <> '.' then
   begin
-    if TType.GetType(fContext) is TRttiArrayType then
+    if TType.GetType(InstanceValue) is TRttiArrayType then
     begin
-      staticArray := TRttiArrayType(TType.GetType(fContext));
-      value.Cast(staticArray.ElementType.Handle).ExtractRawData(PByte(fContext.GetReferenceToRawData) +
-        staticArray.ElementType.TypeSize * StrToInt(fExpression));
+      staticArray := TRttiArrayType(TType.GetType(InstanceValue));
+      value.Cast(staticArray.ElementType.Handle).ExtractRawData(PByte(InstanceValue.GetReferenceToRawData) +
+        staticArray.ElementType.TypeSize * StrToInt(fPath));
     end
-    else if TType.GetType(fContext) is TRttiDynamicArrayType then
+    else if TType.GetType(InstanceValue) is TRttiDynamicArrayType then
     begin
-      dynamicArray := TRttiDynamicArrayType(TType.GetType(fContext));
-      value.Cast(dynamicArray.ElementType.Handle).ExtractRawData(PPByte(fContext.GetReferenceToRawData)^ +
-        dynamicArray.ElementType.TypeSize * StrToInt(fExpression));
+      dynamicArray := TRttiDynamicArrayType(TType.GetType(InstanceValue));
+      value.Cast(dynamicArray.ElementType.Handle).ExtractRawData(PPByte(InstanceValue.GetReferenceToRawData)^ +
+        dynamicArray.ElementType.TypeSize * StrToInt(fPath));
     end
     else
     begin
-      field := TType.GetType(fContext).GetField(fExpression);
+      field := TType.GetType(InstanceValue).GetField(fPath);
       if Assigned(field) then
       begin
-        if fContext.IsObject then
-          field.SetValue(fContext.AsObject, value)
+        if InstanceValue.IsObject then
+          field.SetValue(InstanceValue.AsObject, value)
         else
-          field.SetValue(fContext.GetReferenceToRawData, value);
+          field.SetValue(InstanceValue.GetReferenceToRawData, value);
       end
       else
       begin
-        prop := TType.GetType(fContext).GetProperty(fExpression);
+        prop := TType.GetType(InstanceValue).GetProperty(fPath);
         if Assigned(prop) then
         begin
-          if fContext.IsObject then
-            prop.SetValue(fContext.AsObject, value)
+          if InstanceValue.IsObject then
+            prop.SetValue(InstanceValue.AsObject, value)
           else
-            prop.SetValue(fContext.GetReferenceToRawData, value);
+            prop.SetValue(InstanceValue.GetReferenceToRawData, value);
         end
         else
           raise Exception.CreateResFmt(@SCouldNotFindPath, [fExpression]);
@@ -1192,40 +1213,41 @@ var
   staticArray: TRttiArrayType;
   dynamicArray: TRttiDynamicArrayType;
 begin
-  if fExpression <> '.' then
+  if fPath <> '.' then
   begin
-    if TType.GetType(fContext) is TRttiArrayType then
+    if TType.GetType(InstanceValue) is TRttiArrayType then
     begin
-      staticArray := TRttiArrayType(TType.GetType(fContext));
-      TValue.Make(PByte(fContext.GetReferenceToRawData) +
-        staticArray.ElementType.TypeSize * StrToInt(fExpression), staticArray.ElementType.Handle, Result);
+      staticArray := TRttiArrayType(TType.GetType(InstanceValue));
+      TValue.Make(PByte(InstanceValue.GetReferenceToRawData) +
+        staticArray.ElementType.TypeSize * StrToInt(fPath), staticArray.ElementType.Handle, Result);
     end
-    else if TType.GetType(fContext) is TRttiDynamicArrayType then
+    else if TType.GetType(InstanceValue) is TRttiDynamicArrayType then
     begin
-      dynamicArray := TRttiDynamicArrayType(TType.GetType(fContext));
-      TValue.Make(PPByte(fContext.GetReferenceToRawData)^ +
-        dynamicArray.ElementType.TypeSize * StrToInt(fExpression), dynamicArray.ElementType.Handle, Result);
+      dynamicArray := TRttiDynamicArrayType(TType.GetType(InstanceValue));
+      TValue.Make(PPByte(InstanceValue.GetReferenceToRawData)^ +
+        dynamicArray.ElementType.TypeSize * StrToInt(fPath), dynamicArray.ElementType.Handle, Result);
     end
     else
+    { TODO 1 -oLeo -cSpring.Reflection :  Solve record/arrays fields/properties problem with GetValue making copy of the value on them }
     begin
-      field := TType.GetType(fContext).GetField(fExpression);
+      field := TType.GetType(InstanceValue).GetField(fPath);
       if Assigned(field) then
       begin
-        if fContext.IsObject then
-          Result := field.GetValue(fContext.AsObject)
+        if InstanceValue.IsObject then
+          Result := field.GetValue(InstanceValue.AsObject)
         else
-          Result := field.GetValue(fContext.GetReferenceToRawData);
+          Result := field.GetValue(InstanceValue.GetReferenceToRawData);
       end
       else
       begin
         { DONE -oLeo -cSpring.Reflection : Add locate property field support to TValueExpression}
-        prop := TType.GetType(fContext).GetProperty(fExpression);
+        prop := TType.GetType(InstanceValue).GetProperty(fPath);
         if Assigned(prop) then
         begin
-          if fContext.IsObject then
-            Result := prop.GetValue(fContext.AsObject)
+          if InstanceValue.IsObject then
+            Result := prop.GetValue(InstanceValue.AsObject)
           else
-            Result := prop.GetValue(fContext.GetReferenceToRawData);
+            Result := prop.GetValue(InstanceValue.GetReferenceToRawData);
         end
         else
           raise Exception.CreateResFmt(@SCouldNotFindPath, [fExpression]);
@@ -1233,17 +1255,17 @@ begin
     end
   end
   else
-    Result := fContext;
+    Result := InstanceValue;
 end;
 
 function TValueExpression.IndexRef(index: Integer): IValueExpression;
 begin
-  Result := TValueExpression.Create(Value, IntToStr(index))
+  Result := TValueExpression.Create(Self, IntToStr(index))
 end;
 
 function TValueExpression.MemberRef(const name: string): IValueExpression;
 begin
-  Result := TValueExpression.Create(Value, name);
+  Result := TValueExpression.Create(Self, name);
 end;
 
 function TValueExpression.Follow(const path: string): IValueExpression;
