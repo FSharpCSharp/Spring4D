@@ -42,3 +42,4 @@ Unknown Author (DES)
 
 9. Contributors
 Chris Liu (xmacmail#gmail.com)
+Leszek Gojniczek (Value Converters)

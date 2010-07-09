@@ -57,6 +57,7 @@ type
 
   TTestSimpleContainer = class(TContainerTestCase)
   published
+    procedure TestIssue13;
     procedure TestInterfaceService;
     procedure TestAbstractClassService;
     procedure TestServiceSameAsComponent;
@@ -274,6 +275,12 @@ begin
   finally
     fContainer.Release(service);
   end;
+end;
+
+procedure TTestSimpleContainer.TestIssue13;
+begin
+  fContainer.RegisterComponent<TNameService>.Implements<INameService>.AsSingleton;
+  fContainer.Build;
 end;
 
 procedure TTestSimpleContainer.TestAbstractClassService;

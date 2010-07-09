@@ -2,10 +2,13 @@
 		<PropertyGroup>
 			<ProjectGuid>{C31D3C1C-9F0C-4887-A373-1AB276446975}</ProjectGuid>
 			<MainSource>Spring.Base.dpk</MainSource>
-			<ProjectVersion>12.0</ProjectVersion>
+			<ProjectVersion>12.1</ProjectVersion>
 			<Config Condition="'$(Config)'==''">Debug</Config>
 			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
 			<Platform Condition="'$(Platform)'==''">Win32</Platform>
+			<Base>True</Base>
+			<AppType>Package</AppType>
+			<FrameworkType>VCL</FrameworkType>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
 			<Base>true</Base>
@@ -41,6 +44,7 @@
 			<DCC_DebugInformation>false</DCC_DebugInformation>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2)'!=''">
+			<DCC_Optimize>false</DCC_Optimize>
 			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
 			<DCC_DcuOutput>$(SPRING_LIBRARY)\Debug</DCC_DcuOutput>
 			<DCC_DebugDCUs>true</DCC_DebugDCUs>

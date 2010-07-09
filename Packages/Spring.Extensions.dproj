@@ -2,10 +2,13 @@
 		<PropertyGroup>
 			<ProjectGuid>{C3948457-7369-4CB5-BFBD-E29222E88C6C}</ProjectGuid>
 			<MainSource>Spring.Extensions.dpk</MainSource>
-			<ProjectVersion>12.0</ProjectVersion>
+			<ProjectVersion>12.1</ProjectVersion>
 			<Config Condition="'$(Config)'==''">Debug</Config>
 			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
 			<Platform Condition="'$(Platform)'==''">Win32</Platform>
+			<Base>True</Base>
+			<AppType>Package</AppType>
+			<FrameworkType>VCL</FrameworkType>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
 			<Base>true</Base>
@@ -42,6 +45,7 @@
 			<DCC_DebugInformation>false</DCC_DebugInformation>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2)'!=''">
+			<DCC_Optimize>false</DCC_Optimize>
 			<DCC_UnitSearchPath>Source\Core;Source\Extensions;Source\Extensions\Numbering;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DCC_ExeOutput>Bin\Debug</DCC_ExeOutput>
 			<DCC_DcuOutput>$(SPRING_LIBRARY)\Debug</DCC_DcuOutput>
@@ -93,7 +97,7 @@
 						<VersionInfo Name="MajorVer">0</VersionInfo>
 						<VersionInfo Name="MinorVer">2</VersionInfo>
 						<VersionInfo Name="Release">0</VersionInfo>
-						<VersionInfo Name="Build">619</VersionInfo>
+						<VersionInfo Name="Build">624</VersionInfo>
 						<VersionInfo Name="Debug">False</VersionInfo>
 						<VersionInfo Name="PreRelease">False</VersionInfo>
 						<VersionInfo Name="Special">False</VersionInfo>
@@ -105,7 +109,7 @@
 					<VersionInfoKeys>
 						<VersionInfoKeys Name="CompanyName"/>
 						<VersionInfoKeys Name="FileDescription">Spring Framework for Delphi Extensions Library</VersionInfoKeys>
-						<VersionInfoKeys Name="FileVersion">0.2.0.619</VersionInfoKeys>
+						<VersionInfoKeys Name="FileVersion">0.2.0.624</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName"/>
 						<VersionInfoKeys Name="LegalCopyright">Copyright (c) 2010 DevJet</VersionInfoKeys>
 						<VersionInfoKeys Name="LegalTrademarks"/>
@@ -115,8 +119,8 @@
 						<VersionInfoKeys Name="Comments"/>
 					</VersionInfoKeys>
 					<Excluded_Packages>
-						<Excluded_Packages Name="$(BDS)\bin\dcloffice2k140.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
-						<Excluded_Packages Name="$(BDS)\bin\dclofficexp140.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
+						<Excluded_Packages Name="%BDSBIN%\dcloffice2k140.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
+						<Excluded_Packages Name="%BDSBIN%\dclofficexp140.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
 					</Excluded_Packages>
 				</Delphi.Personality>
 				<Platforms>

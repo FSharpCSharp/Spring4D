@@ -162,7 +162,10 @@ end;
 
 destructor TSingletonLifetimeManager.Destroy;
 begin
-  DoBeforeDestruction(fInstance);
+  if Assigned(fInstance) then
+  begin
+    DoBeforeDestruction(fInstance);
+  end;
   inherited Destroy;
 end;
 
