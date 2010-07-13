@@ -168,7 +168,7 @@ var
 begin
   obj := TOuterObject.Create;
   expression := TValueExpression.FromValue(TValue.From<TOuterObject>(obj));
-  CheckTrue(expression.Follow('.fCoords[2]').Value.TryAsType<TPoint>(coord));
+  CheckTrue(expression.Follow('fCoords[2]').Value.TryAsType<TPoint>(coord));
   CheckEquals(4, coord.X);
   obj.Free;
 end;
@@ -180,8 +180,9 @@ var
 begin
   obj := TOuterObject.Create;
   expression := TValueExpression.FromValue(TValue.From<TOuterObject>(obj));
-  CheckEquals('Outer Object', expression.Follow('.fName').Value.ToString);
-  CheckEquals(15, expression.Follow('.fNumber').Value.AsInteger);
+  CheckEquals(expression.Follow('').Value.ToString, expression.Value.ToString);
+  CheckEquals('Outer Object', expression.Follow('fName').Value.ToString);
+  CheckEquals(15, expression.Follow('fNumber').Value.AsInteger);
   obj.Free;
 end;
 
@@ -192,12 +193,12 @@ var
 begin
   obj := TOuterObject.Create;
   expression := TValueExpression.FromValue(TValue.From<TOuterObject>(obj));
-  CheckEquals('Outer Object', expression.Follow('.fName').Value.ToString);
-  expression.Follow('.fName').SetValue('Test Outer Object');
-  CheckEquals('Test Outer Object', expression.Follow('.fName').Value.ToString);
-  CheckEquals(15, expression.Follow('.fNumber').Value.AsInteger);
-  expression.Follow('.fNumber').SetValue(18);
-  CheckEquals(18, expression.Follow('.fNumber').Value.AsInteger);
+  CheckEquals('Outer Object', expression.Follow('fName').Value.ToString);
+  expression.Follow('fName').SetValue('Test Outer Object');
+  CheckEquals('Test Outer Object', expression.Follow('fName').Value.ToString);
+  CheckEquals(15, expression.Follow('fNumber').Value.AsInteger);
+  expression.Follow('fNumber').SetValue(18);
+  CheckEquals(18, expression.Follow('fNumber').Value.AsInteger);
   obj.Free;
 end;
 
@@ -208,7 +209,7 @@ var
 begin
   obj := TOuterObject.Create;
   root := TValueExpression.FromValue(TValue.From<TOuterObject>(obj));
-  expression := root.Follow('.fInner.fName');
+  expression := root.Follow('fInner.fName');
   CheckEquals('Inner Object', expression.Value.AsString);
   obj.Free;
 end;
@@ -220,7 +221,7 @@ var
 begin
   obj := TOuterObject.Create;
   root := TValueExpression.FromValue(TValue.From<TOuterObject>(obj));
-  expression := root.Follow('.fInner.fName');
+  expression := root.Follow('fInner.fName');
   CheckEquals('Inner Object', expression.Value.AsString);
   expression.SetValue('Test Inner Object');
   CheckEquals('Test Inner Object', expression.Value.AsString);
@@ -235,7 +236,7 @@ var
 begin
   outerObj := TOuterObject.Create;
   root := TValueExpression.FromValue(TValue.From<TOuterObject>(outerObj));
-  expression := root.Follow('.fInner');
+  expression := root.Follow('fInner');
   CheckTrue(expression.Value.TryAsType<TInnerObject>(obj));
   CheckEquals('Inner Object', obj.Name);
   outerObj.Free;
@@ -248,8 +249,8 @@ var
 begin
   obj := TOuterObject.Create;
   expression := TValueExpression.FromValue(TValue.From<TOuterObject>(obj));
-  CheckEquals('Outer Object', expression.Follow('.Name').Value.ToString);
-  CheckEquals(15, expression.Follow('.Number').Value.AsInteger);
+  CheckEquals('Outer Object', expression.Follow('Name').Value.ToString);
+  CheckEquals(15, expression.Follow('Number').Value.AsInteger);
   obj.Free;
 end;
 
@@ -260,7 +261,7 @@ var
 begin
   obj := TOuterObject.Create;
   root := TValueExpression.FromValue(TValue.From<TOuterObject>(obj));
-  expression := root.Follow('.Inner.Name');
+  expression := root.Follow('Inner.Name');
   CheckEquals('Inner Object', expression.Value.AsString);
   obj.Free;
 end;
@@ -272,7 +273,7 @@ var
 begin
   obj := TOuterObject.Create;
   root := TValueExpression.FromValue(TValue.From<TOuterObject>(obj));
-  expression := root.Follow('.Inner.Name');
+  expression := root.Follow('Inner.Name');
   CheckEquals('Inner Object', expression.Value.AsString);
   expression.SetValue('Test Inner Object');
   CheckEquals('Test Inner Object', expression.Value.AsString);
@@ -287,7 +288,7 @@ var
 begin
   obj := TOuterObject.Create;
   expression := TValueExpression.FromValue(TValue.From<TOuterObject>(obj));
-  CheckTrue(expression.Follow('.Coords[2]').Value.TryAsType<TPoint>(coord));
+  CheckTrue(expression.Follow('Coords[2]').Value.TryAsType<TPoint>(coord));
   CheckEquals(4, coord.X);
   obj.Free;
 end;
@@ -300,7 +301,7 @@ var
 begin
   outerObj := TOuterObject.Create;
   root := TValueExpression.FromValue(TValue.From<TOuterObject>(outerObj));
-  expression := root.Follow('.Inner');
+  expression := root.Follow('Inner');
   CheckTrue(expression.Value.TryAsType<TInnerObject>(obj));
   CheckEquals('Inner Object', obj.Name);
   outerObj.Free;
@@ -313,7 +314,7 @@ var
 begin
   obj := TInnerObject.Create;
   expression := TValueExpression.FromValue(TValue.From<TInnerObject>(obj));
-  CheckEquals(15, expression.Follow('.Point.X').Value.AsInteger);
+  CheckEquals(15, expression.Follow('Point.X').Value.AsInteger);
   obj.Free;
 end;
 
@@ -351,15 +352,15 @@ begin
   obj := TOuterObject.Create;
   expression := TValueExpression.FromValue(TValue.From<TOuterObject>(obj));
 
-  CheckEquals('Outer Object', expression.Follow('.Name').Value.ToString);
+  CheckEquals('Outer Object', expression.Follow('Name').Value.ToString);
 
-  expression.Follow('.Name').SetValue('Set Native Type Test');
-  CheckEquals('Set Native Type Test', expression.Follow('.Name').Value.ToString);
+  expression.Follow('Name').SetValue('Set Native Type Test');
+  CheckEquals('Set Native Type Test', expression.Follow('Name').Value.ToString);
 
-  CheckEquals(15, expression.Follow('.Number').Value.AsInteger);
+  CheckEquals(15, expression.Follow('Number').Value.AsInteger);
 
-  expression.Follow('.Number').SetValue(18);
-  CheckEquals(18, expression.Follow('.Number').Value.AsInteger);
+  expression.Follow('Number').SetValue(18);
+  CheckEquals(18, expression.Follow('Number').Value.AsInteger);
   obj.Free;
 end;
 

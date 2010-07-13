@@ -535,7 +535,12 @@ begin
   begin
     case currentToken of
       tkEof: Break;
-      '.':
+      tkName:
+      begin
+        expression := (expression as TValueExpression).MemberRef(tokenName);
+        NextToken;
+      end;
+      tkDot:
       begin
         NextToken;
         Expect(tkName);
@@ -1133,7 +1138,7 @@ end;
 class function TValueExpression.FromValue(
   const value: TValue): IValueExpression;
 begin
-  Result := TValueExpression.Create(value, '.');
+  Result := TValueExpression.Create(value, '');
 end;
 
 function TValueExpression.GetInstanceValue: TValue;
@@ -1147,41 +1152,49 @@ end;
 function TValueExpression.GetIsReadOnly: Boolean;
 var
   prop: TRttiProperty;
+  rttiCtx: TRttiContext;
 begin
   Result := False;
-  if fPath <> '.' then
+  if fPath <> '' then
   begin
-    prop := TType.GetType(InstanceValue).GetProperty(fPath);
+    rttiCtx := TRttiContext.Create;
+    prop := rttiCtx.GetType(InstanceValue.TypeInfo).GetProperty(fPath);
+
     if Assigned(prop) then
       Result := not prop.IsWritable;
+    rttiCtx.Free;
   end;
 end;
 
 procedure TValueExpression.DoSetValue(const value: TValue);
 var
+  rttiCtx: TRttiContext;
+  member: TRttiType;
   field: TRttiField;
   prop: TRttiProperty;
   staticArray: TRttiArrayType;
   dynamicArray: TRttiDynamicArrayType;
 begin
   inherited;
-  if fPath <> '.' then
+  if fPath <> '' then
   begin
-    if TType.GetType(InstanceValue) is TRttiArrayType then
+    rttiCtx := TRttiContext.Create;
+    member := rttiCtx.GetType(InstanceValue.TypeInfo);
+    if member is TRttiArrayType then
     begin
-      staticArray := TRttiArrayType(TType.GetType(InstanceValue));
+      staticArray := member as TRttiArrayType;
       value.Cast(staticArray.ElementType.Handle).ExtractRawData(PByte(InstanceValue.GetReferenceToRawData) +
         staticArray.ElementType.TypeSize * StrToInt(fPath));
     end
-    else if TType.GetType(InstanceValue) is TRttiDynamicArrayType then
+    else if member is TRttiDynamicArrayType then
     begin
-      dynamicArray := TRttiDynamicArrayType(TType.GetType(InstanceValue));
+      dynamicArray := member as TRttiDynamicArrayType;
       value.Cast(dynamicArray.ElementType.Handle).ExtractRawData(PPByte(InstanceValue.GetReferenceToRawData)^ +
         dynamicArray.ElementType.TypeSize * StrToInt(fPath));
     end
     else
     begin
-      field := TType.GetType(InstanceValue).GetField(fPath);
+      field := member.GetField(fPath);
       if Assigned(field) then
       begin
         if InstanceValue.IsObject then
@@ -1191,7 +1204,7 @@ begin
       end
       else
       begin
-        prop := TType.GetType(InstanceValue).GetProperty(fPath);
+        prop := member.GetProperty(fPath);
         if Assigned(prop) then
         begin
           if InstanceValue.IsObject then
@@ -1203,34 +1216,39 @@ begin
           raise Exception.CreateResFmt(@SCouldNotFindPath, [fExpression]);
       end;
     end;
+    rttiCtx.Free;
   end;
 end;
 
 function TValueExpression.GetValue: TValue;
 var
+  rttiCtx: TRttiContext;
+  member: TRttiType;
   field: TRttiField;
   prop: TRttiProperty;
   staticArray: TRttiArrayType;
   dynamicArray: TRttiDynamicArrayType;
 begin
-  if fPath <> '.' then
+  if fPath <> '' then
   begin
-    if TType.GetType(InstanceValue) is TRttiArrayType then
+    rttiCtx := TRttiContext.Create;
+    member := rttiCtx.GetType(InstanceValue.TypeInfo);
+    if member is TRttiArrayType then
     begin
-      staticArray := TRttiArrayType(TType.GetType(InstanceValue));
+      staticArray := member as TRttiArrayType;
       TValue.Make(PByte(InstanceValue.GetReferenceToRawData) +
         staticArray.ElementType.TypeSize * StrToInt(fPath), staticArray.ElementType.Handle, Result);
     end
-    else if TType.GetType(InstanceValue) is TRttiDynamicArrayType then
+    else if member is TRttiDynamicArrayType then
     begin
-      dynamicArray := TRttiDynamicArrayType(TType.GetType(InstanceValue));
+      dynamicArray := member as TRttiDynamicArrayType;
       TValue.Make(PPByte(InstanceValue.GetReferenceToRawData)^ +
         dynamicArray.ElementType.TypeSize * StrToInt(fPath), dynamicArray.ElementType.Handle, Result);
     end
     else
     { TODO 1 -oLeo -cSpring.Reflection :  Solve record/arrays fields/properties problem with GetValue making copy of the value on them }
     begin
-      field := TType.GetType(InstanceValue).GetField(fPath);
+      field := member.GetField(fPath);
       if Assigned(field) then
       begin
         if InstanceValue.IsObject then
@@ -1241,7 +1259,7 @@ begin
       else
       begin
         { DONE -oLeo -cSpring.Reflection : Add locate property field support to TValueExpression}
-        prop := TType.GetType(InstanceValue).GetProperty(fPath);
+        prop := member.GetProperty(fPath);
         if Assigned(prop) then
         begin
           if InstanceValue.IsObject then
@@ -1252,7 +1270,8 @@ begin
         else
           raise Exception.CreateResFmt(@SCouldNotFindPath, [fExpression]);
       end;
-    end
+    end;
+    rttiCtx.Free;
   end
   else
     Result := InstanceValue;

@@ -66,8 +66,6 @@ resourcestring
   SUnexpectedToken = 'Expected %s but got %s.';
   SInvalidPathSyntax = 'Invalid path syntax: expected ".", "[" or "^"';
   SInvalidPointerType = 'Non-pointer type %s cannot be dereferenced.';
-  //SInvalidTypeForRef = 'Field reference applied to type %s, which is not a record or class.';
-  //SInvalidArrayType = 'Index applied to non-array type %s';
   SCouldNotFindPath = 'Could not find path: %s';
 
   SUnknownDescription  = 'Unknown';
