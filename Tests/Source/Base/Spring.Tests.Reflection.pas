@@ -167,7 +167,7 @@ var
   expression: IValueExpression;
 begin
   obj := TOuterObject.Create;
-  expression := TValueExpression.FromValue(TValue.From<TOuterObject>(obj));
+  expression := TValueExpression.Create(obj, '');
   CheckTrue(expression.Follow('fCoords[2]').Value.TryAsType<TPoint>(coord));
   CheckEquals(4, coord.X);
   obj.Free;
@@ -179,7 +179,7 @@ var
   expression: IValueExpression;
 begin
   obj := TOuterObject.Create;
-  expression := TValueExpression.FromValue(TValue.From<TOuterObject>(obj));
+  expression := TValueExpression.Create(obj, '');
   CheckEquals(expression.Follow('').Value.ToString, expression.Value.ToString);
   CheckEquals('Outer Object', expression.Follow('fName').Value.ToString);
   CheckEquals(15, expression.Follow('fNumber').Value.AsInteger);
@@ -192,7 +192,7 @@ var
   expression: IValueExpression;
 begin
   obj := TOuterObject.Create;
-  expression := TValueExpression.FromValue(TValue.From<TOuterObject>(obj));
+  expression := TValueExpression.Create(obj, '');
   CheckEquals('Outer Object', expression.Follow('fName').Value.ToString);
   expression.Follow('fName').SetValue('Test Outer Object');
   CheckEquals('Test Outer Object', expression.Follow('fName').Value.ToString);
@@ -208,7 +208,7 @@ var
   root, expression: IValueExpression;
 begin
   obj := TOuterObject.Create;
-  root := TValueExpression.FromValue(TValue.From<TOuterObject>(obj));
+  root := TValueExpression.Create(obj, '');
   expression := root.Follow('fInner.fName');
   CheckEquals('Inner Object', expression.Value.AsString);
   obj.Free;
@@ -220,7 +220,7 @@ var
   root, expression: IValueExpression;
 begin
   obj := TOuterObject.Create;
-  root := TValueExpression.FromValue(TValue.From<TOuterObject>(obj));
+  root := TValueExpression.Create(obj, '');
   expression := root.Follow('fInner.fName');
   CheckEquals('Inner Object', expression.Value.AsString);
   expression.SetValue('Test Inner Object');
@@ -235,7 +235,7 @@ var
   root, expression: IValueExpression;
 begin
   outerObj := TOuterObject.Create;
-  root := TValueExpression.FromValue(TValue.From<TOuterObject>(outerObj));
+  root := TValueExpression.Create(outerObj, '');
   expression := root.Follow('fInner');
   CheckTrue(expression.Value.TryAsType<TInnerObject>(obj));
   CheckEquals('Inner Object', obj.Name);
@@ -248,7 +248,7 @@ var
   expression: IValueExpression;
 begin
   obj := TOuterObject.Create;
-  expression := TValueExpression.FromValue(TValue.From<TOuterObject>(obj));
+  expression := TValueExpression.Create(obj, '');
   CheckEquals('Outer Object', expression.Follow('Name').Value.ToString);
   CheckEquals(15, expression.Follow('Number').Value.AsInteger);
   obj.Free;
@@ -260,7 +260,7 @@ var
   root, expression: IValueExpression;
 begin
   obj := TOuterObject.Create;
-  root := TValueExpression.FromValue(TValue.From<TOuterObject>(obj));
+  root := TValueExpression.Create(obj, '');
   expression := root.Follow('Inner.Name');
   CheckEquals('Inner Object', expression.Value.AsString);
   obj.Free;
@@ -272,7 +272,7 @@ var
   root, expression: IValueExpression;
 begin
   obj := TOuterObject.Create;
-  root := TValueExpression.FromValue(TValue.From<TOuterObject>(obj));
+  root := TValueExpression.Create(obj, '');
   expression := root.Follow('Inner.Name');
   CheckEquals('Inner Object', expression.Value.AsString);
   expression.SetValue('Test Inner Object');
@@ -287,7 +287,7 @@ var
   expression: IValueExpression;
 begin
   obj := TOuterObject.Create;
-  expression := TValueExpression.FromValue(TValue.From<TOuterObject>(obj));
+  expression := TValueExpression.Create(obj, '');
   CheckTrue(expression.Follow('Coords[2]').Value.TryAsType<TPoint>(coord));
   CheckEquals(4, coord.X);
   obj.Free;
@@ -300,7 +300,7 @@ var
   root, expression: IValueExpression;
 begin
   outerObj := TOuterObject.Create;
-  root := TValueExpression.FromValue(TValue.From<TOuterObject>(outerObj));
+  root := TValueExpression.Create(outerObj, '');
   expression := root.Follow('Inner');
   CheckTrue(expression.Value.TryAsType<TInnerObject>(obj));
   CheckEquals('Inner Object', obj.Name);
@@ -313,7 +313,7 @@ var
   expression: IValueExpression;
 begin
   obj := TInnerObject.Create;
-  expression := TValueExpression.FromValue(TValue.From<TInnerObject>(obj));
+  expression := TValueExpression.Create(obj, '');
   CheckEquals(15, expression.Follow('Point.X').Value.AsInteger);
   obj.Free;
 end;
@@ -350,7 +350,7 @@ var
   expression: IValueExpression;
 begin
   obj := TOuterObject.Create;
-  expression := TValueExpression.FromValue(TValue.From<TOuterObject>(obj));
+  expression := TValueExpression.Create(obj, '');
 
   CheckEquals('Outer Object', expression.Follow('Name').Value.ToString);
 

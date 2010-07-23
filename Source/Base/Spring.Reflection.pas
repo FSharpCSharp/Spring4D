@@ -306,33 +306,39 @@ type
   IValueExpression = interface(IValueProvider)
     ['{A0EB72F0-06AE-460D-8AA2-A0A95BAC4A86}']
     function Follow(const path: string): IValueExpression;
+    function GetInstanceValue: TValue;
+    function GetExpression: string;
+    property InstanceValue: TValue read GetInstanceValue;
+    property Expression: string read GetExpression;
   end;
 
   /// <summary>
   /// Default implementation of Exrepssion part of Value
   /// </summary>
   TValueExpression = class(TValueProvider, IValueExpression)
-  private
+  strict private
     fInstance: TValue;
-    fExpression: IValueExpression;
-    fPath: string;
+    fParent: IValueExpression;
+    fExpression: string;
     type
       PPByte = ^PByte;
-    function IndexRef(index: Integer): IValueExpression;
-    function MemberRef(const name: string): IValueExpression;
     function Follow(const path: string): IValueExpression;
     function GetInstanceValue: TValue;
+    function GetExpression: string;
+  private
+    function IndexRef(index: Integer): IValueExpression;
+    function MemberRef(const name: string): IValueExpression;
   protected
     function GetValue: TValue; override;
     procedure DoSetValue(const value: TValue); override;
     function GetIsReadOnly: Boolean; override;
-    property InstanceValue: TValue read GetInstanceValue;
   public
     constructor Create(const instance: TValue;
-      const path: string); overload;
-    constructor Create(const expression: IValueExpression;
-      const path: string); overload;
-    class function FromValue(const value: TValue): IValueExpression;
+      const expression: string); overload;
+    constructor Create(const parent: IValueExpression;
+      const member: string); overload;
+    property InstanceValue: TValue read GetInstanceValue;
+    property Expression: string read GetExpression;
   end;
 
   {$ENDREGION}
@@ -344,7 +350,7 @@ type
   /// Easy access to particulary IValueExpression within any Object hierarchy
   /// </summary>
   /// <returns>Returns IValueExpression which is equivalent to Object location due to path.</returns>
-  function GetValueExpression(const path: string;
+  function EvaluateExpression(const path: string;
     root: IValueExpression): IValueExpression;
 
   {$ENDREGION}
@@ -396,7 +402,7 @@ uses
 
 {$REGION 'Global Routines'}
 
-function GetValueExpression(const path: string;
+function EvaluateExpression(const path: string;
   root: IValueExpression): IValueExpression;
 
   function SkipWhite(p: PChar): PChar;
@@ -1121,32 +1127,38 @@ end;
 {$REGION 'TValueExpression'}
 
 constructor TValueExpression.Create(const instance: TValue;
-  const path: string);
+  const expression: string);
+var
+  exp: IValueExpression;
 begin
-  fInstance := instance;
-  fExpression := nil;
-  fPath := path;
+  fParent := nil;
+  if expression <> EmptyStr then
+  begin
+    exp := EvaluateExpression(expression,
+      TValueExpression.Create(instance, ''));
+    fExpression := exp.Expression;
+    fInstance := exp.InstanceValue;
+  end
+  else
+  begin
+    fExpression := expression;
+    fInstance := instance;
+  end;
 end;
 
-constructor TValueExpression.Create(const expression: IValueExpression;
-  const path: string);
+constructor TValueExpression.Create(const parent: IValueExpression;
+  const member: string);
 begin
-  fExpression := expression;
-  fPath := path;
-end;
-
-class function TValueExpression.FromValue(
-  const value: TValue): IValueExpression;
-begin
-  Result := TValueExpression.Create(value, '');
+  fParent := parent;
+  fExpression := member;
 end;
 
 function TValueExpression.GetInstanceValue: TValue;
 begin
-  if fExpression = nil then
+  if fParent = nil then
     Exit(fInstance)
   else
-    Exit(fExpression.Value);
+    Exit(fParent.Value);
 end;
 
 function TValueExpression.GetIsReadOnly: Boolean;
@@ -1155,10 +1167,10 @@ var
   rttiCtx: TRttiContext;
 begin
   Result := False;
-  if fPath <> '' then
+  if fExpression <> '' then
   begin
     rttiCtx := TRttiContext.Create;
-    prop := rttiCtx.GetType(InstanceValue.TypeInfo).GetProperty(fPath);
+    prop := rttiCtx.GetType(Value.TypeInfo).GetProperty(fExpression);
 
     if Assigned(prop) then
       Result := not prop.IsWritable;
@@ -1166,45 +1178,51 @@ begin
   end;
 end;
 
+function TValueExpression.GetExpression: string;
+begin
+  Result := fExpression;
+end;
+
 procedure TValueExpression.DoSetValue(const value: TValue);
 var
   rttiCtx: TRttiContext;
-  member: TRttiType;
+  instanceType: TRttiType;
   field: TRttiField;
   prop: TRttiProperty;
   staticArray: TRttiArrayType;
   dynamicArray: TRttiDynamicArrayType;
 begin
   inherited;
-  if fPath <> '' then
+  if fExpression <> '' then
   begin
     rttiCtx := TRttiContext.Create;
-    member := rttiCtx.GetType(InstanceValue.TypeInfo);
-    if member is TRttiArrayType then
+    instanceType := rttiCtx.GetType(InstanceValue.TypeInfo);
+    if instanceType is TRttiArrayType then
     begin
-      staticArray := member as TRttiArrayType;
+      staticArray := instanceType as TRttiArrayType;
       value.Cast(staticArray.ElementType.Handle).ExtractRawData(PByte(InstanceValue.GetReferenceToRawData) +
-        staticArray.ElementType.TypeSize * StrToInt(fPath));
+        staticArray.ElementType.TypeSize * StrToInt(fExpression));
     end
-    else if member is TRttiDynamicArrayType then
+    else if instanceType is TRttiDynamicArrayType then
     begin
-      dynamicArray := member as TRttiDynamicArrayType;
+      dynamicArray := instanceType as TRttiDynamicArrayType;
       value.Cast(dynamicArray.ElementType.Handle).ExtractRawData(PPByte(InstanceValue.GetReferenceToRawData)^ +
-        dynamicArray.ElementType.TypeSize * StrToInt(fPath));
+        dynamicArray.ElementType.TypeSize * StrToInt(fExpression));
     end
     else
     begin
-      field := member.GetField(fPath);
+      field := instanceType.GetField(fExpression);
       if Assigned(field) then
       begin
         if InstanceValue.IsObject then
           field.SetValue(InstanceValue.AsObject, value)
         else
-          field.SetValue(InstanceValue.GetReferenceToRawData, value);
+          value.Cast(field.FieldType.Handle).ExtractRawData(PByte(InstanceValue.GetReferenceToRawData) +
+            field.Offset);
       end
       else
       begin
-        prop := member.GetProperty(fPath);
+        prop := instanceType.GetProperty(fExpression);
         if Assigned(prop) then
         begin
           if InstanceValue.IsObject then
@@ -1223,43 +1241,46 @@ end;
 function TValueExpression.GetValue: TValue;
 var
   rttiCtx: TRttiContext;
-  member: TRttiType;
+  instanceType: TRttiType;
   field: TRttiField;
   prop: TRttiProperty;
   staticArray: TRttiArrayType;
   dynamicArray: TRttiDynamicArrayType;
 begin
-  if fPath <> '' then
+  if fExpression <> '' then
   begin
     rttiCtx := TRttiContext.Create;
-    member := rttiCtx.GetType(InstanceValue.TypeInfo);
-    if member is TRttiArrayType then
+    instanceType := rttiCtx.GetType(InstanceValue.TypeInfo);
+    if instanceType is TRttiArrayType then
     begin
-      staticArray := member as TRttiArrayType;
+      staticArray := instanceType as TRttiArrayType;
       TValue.Make(PByte(InstanceValue.GetReferenceToRawData) +
-        staticArray.ElementType.TypeSize * StrToInt(fPath), staticArray.ElementType.Handle, Result);
+        staticArray.ElementType.TypeSize * StrToInt(fExpression),
+        staticArray.ElementType.Handle, Result);
     end
-    else if member is TRttiDynamicArrayType then
+    else if instanceType is TRttiDynamicArrayType then
     begin
-      dynamicArray := member as TRttiDynamicArrayType;
+      dynamicArray := instanceType as TRttiDynamicArrayType;
       TValue.Make(PPByte(InstanceValue.GetReferenceToRawData)^ +
-        dynamicArray.ElementType.TypeSize * StrToInt(fPath), dynamicArray.ElementType.Handle, Result);
+        dynamicArray.ElementType.TypeSize * StrToInt(fExpression),
+        dynamicArray.ElementType.Handle, Result);
     end
     else
-    { TODO 1 -oLeo -cSpring.Reflection :  Solve record/arrays fields/properties problem with GetValue making copy of the value on them }
     begin
-      field := member.GetField(fPath);
+      field := instanceType.GetField(fExpression);
       if Assigned(field) then
       begin
+        { TODO 1 -oLeo -cSpring.Reflection : Solve record/arrays fields/properties problem with GetValue making copy of the value on them }
         if InstanceValue.IsObject then
           Result := field.GetValue(InstanceValue.AsObject)
         else
-          Result := field.GetValue(InstanceValue.GetReferenceToRawData);
+          TValue.Make(PByte(InstanceValue.GetReferenceToRawData) + field.Offset,
+            field.FieldType.Handle, Result);
       end
       else
       begin
         { DONE -oLeo -cSpring.Reflection : Add locate property field support to TValueExpression}
-        prop := member.GetProperty(fPath);
+        prop := instanceType.GetProperty(fExpression);
         if Assigned(prop) then
         begin
           if InstanceValue.IsObject then
@@ -1289,7 +1310,7 @@ end;
 
 function TValueExpression.Follow(const path: string): IValueExpression;
 begin
-  Result := GetValueExpression(path, Self);
+  Result := EvaluateExpression(path, Self);
 end;
 
 {$ENDREGION}
