@@ -591,6 +591,7 @@ type
 
   {$ENDREGION}
 
+
 implementation
 
 uses
@@ -598,12 +599,19 @@ uses
   Graphics,
   StrUtils,
   SysUtils,
+  Controls,
   Math,
   Spring,
   Spring.Reflection,
   Spring.Helpers,
   Spring.ResourceStrings;
 
+  function CompareTypeInfo(const left, right: PTypeInfo): Boolean;
+  begin
+    Result := (left = right);
+    if Assigned(left) and Assigned(right) then
+      Result := Result or ((left.Kind = right.Kind) and (left.Name = right.Name))
+  end;
 
 {$REGION 'TValueConverter'}
 
@@ -1359,6 +1367,8 @@ begin
   RegisterConverter(TypeInfo(TNullable<System.Integer>), TypeInfo(AnsiString), TNullableToTypeConverter);
   RegisterConverter(TypeInfo(TNullable<System.Integer>), TypeInfo(WideString), TNullableToTypeConverter);
 
+  RegisterConverter(TypeInfo(TNullable<System.Integer>), TypeInfo(TCaption), TNullableToTypeConverter);
+
   RegisterConverter(TypeInfo(TNullable<System.SmallInt>), TypeInfo(string), TNullableToTypeConverter);
   RegisterConverter(TypeInfo(TNullable<System.SmallInt>), TypeInfo(AnsiString), TNullableToTypeConverter);
   RegisterConverter(TypeInfo(TNullable<System.SmallInt>), TypeInfo(WideString), TNullableToTypeConverter);
@@ -1420,6 +1430,8 @@ begin
   RegisterConverter(TypeInfo(TNullable<Graphics.TColor>), TypeInfo(LongInt), TNullableToTypeConverter);
   RegisterConverter(TypeInfo(TNullable<Graphics.TColor>), [tkString, tkUString, tkLString, tkWString], TNullableToTypeConverter);
 
+  RegisterConverter(TypeInfo(TNullable<System.TDateTime>), TypeInfo(TCaption), TNullableToTypeConverter);
+  RegisterConverter(TypeInfo(TNullable<System.TDateTime>), TypeInfo(TDate), TNullableToTypeConverter);
   RegisterConverter(TypeInfo(TNullable<System.TDateTime>), [tkString, tkUString, tkLString, tkWString], TNullableToTypeConverter);
 
   RegisterConverter([tkEnumeration], TypeInfo(Integer), TEnumToIntegerConverter);
@@ -1488,14 +1500,17 @@ begin
   try
     for typeInfoPair in fTypeInfoRegistry do
     begin
-      if ((typeInfoPair.Key.SourceTypeInfo = sourceTypeInfo) and
-        (typeInfoPair.Key.TargetTypeInfo = targetTypeInfo)) or
-        ((typeInfoPair.Key.SourceTypeInfo = sourceTypeInfo) and
+      if CompareTypeInfo(typeInfoPair.Key.SourceTypeInfo, sourceTypeInfo) and
+        CompareTypeInfo(typeInfoPair.Key.TargetTypeInfo, targetTypeInfo) or
+
+        (CompareTypeInfo(typeInfoPair.Key.SourceTypeInfo, sourceTypeInfo) and
         (targetTypeInfo.Kind in typeInfoPair.Key.TargetTypeKinds)) or
+
         ((sourceTypeInfo.Kind in typeInfoPair.Key.SourceTypeKinds) and
         (targetTypeInfo.Kind in typeInfoPair.Key.TargetTypeKinds)) or
+
         ((sourceTypeInfo.Kind in typeInfoPair.Key.SourceTypeKinds) and
-        (typeInfoPair.Key.TargetTypeInfo = targetTypeInfo)) then
+        CompareTypeInfo(typeInfoPair.Key.TargetTypeInfo, targetTypeInfo)) then
       begin
         value := typeInfoPair.Value;
         if not Assigned(typeInfoPair.Value.Converter) then
@@ -1609,5 +1624,6 @@ begin
 end;
 
 {$ENDREGION}
+
 
 end.

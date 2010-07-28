@@ -278,7 +278,8 @@ type
 //
 //  end;
 
-function TryGetInterface(const instance: TValue; const guid: TGuid; out intf): Boolean;
+function TryGetInterface(const instance: TValue; const guid: TGuid; out intf): Boolean; overload;
+function TryGetInterface(const instance: TValue; const guid: TGuid): Boolean; overload;
 
 implementation
 
@@ -296,6 +297,25 @@ begin
   else if instance.TryAsType<IInterface>(localInterface) then
   begin
     Result := localInterface.QueryInterface(guid, intf) = S_OK;
+  end
+  else
+  begin
+    Exit(False);
+  end;
+end;
+
+function TryGetInterface(const instance: TValue; const guid: TGuid): Boolean;
+var
+  localInterface: IInterface;
+begin
+  if instance.IsEmpty then Exit(False);
+  if instance.IsObject then
+  begin
+    Result := Supports(instance.AsObject, guid);
+  end
+  else if instance.TryAsType<IInterface>(localInterface) then
+  begin
+    Result := Supports(localInterface, guid);
   end
   else
   begin
