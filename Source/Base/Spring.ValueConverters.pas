@@ -1316,6 +1316,7 @@ begin
   RegisterConverter(TypeInfo(TDateTime), TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
   RegisterConverter(TypeInfo(TDateTime), TypeInfo(TNullable<System.AnsiString>), TTypeToNullableConverter);
   RegisterConverter(TypeInfo(TDateTime), TypeInfo(TNullable<System.WideString>), TTypeToNullableConverter);
+  RegisterConverter(TypeInfo(TDate), TypeInfo(TNullable<System.TDateTime>), TTypeToNullableConverter);
 
   RegisterConverter(TypeInfo(Boolean), [tkString, tkUString, tkLString, tkWString], TBooleanToStringConverter);
   RegisterConverter(TypeInfo(Boolean), TypeInfo(Integer), TBooleanToIntegerConverter);
