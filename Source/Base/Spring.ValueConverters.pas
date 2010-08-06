@@ -499,6 +499,21 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TInterfaceToInterfaceConverter'}
+
+  /// <summary>
+  /// Provides conversion routine beetwen Interface and Interface
+  /// </summary>
+  TInterfaceToInterfaceConverter = class(TValueConverter)
+  protected
+    function DoConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'TObjectToClassConverter'}
 
   /// <summary>
@@ -1190,6 +1205,20 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TInterfaceToInterfaceConverter'}
+
+function TInterfaceToInterfaceConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+var
+  intf: IInterface;
+begin
+  TryGetInterface(value, TType.GetType(targetTypeInfo).AsInterface.GUID, intf);
+  TValue.Make(@intf, targetTypeInfo, Result);
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TValueConverterFactory'}
 
 class constructor TValueConverterFactory.Create;
@@ -1486,6 +1515,8 @@ begin
 
   RegisterConverter([tkString, tkUString, tkLString], [tkWString], TStringToWStringConverter);
   RegisterConverter([tkWString], [tkString, tkUString, tkLString], TWStringToStringConverter);
+
+  RegisterConverter([tkInterface], [tkInterface], TInterfaceToInterfaceConverter);
 end;
 
 class destructor TValueConverterFactory.Destroy;
