@@ -436,7 +436,7 @@ type
   {$REGION 'IValueProvider'}
 
   /// <summary>
-  /// Interface entry for generic TValue value holder
+  /// Interface entry for generic TValue value provider
   /// </summary>
   IValueProvider = interface
     ['{392A1E2F-CCA1-4CBB-9306-29AA402927D6}']
@@ -462,7 +462,7 @@ type
   end;
 
   /// <summary>
-  /// Base abstract class for generic TValue value holder
+  /// Base abstract class for generic TValue value provider
   /// </summary>
   TValueProvider = class abstract(TInterfacedObject, IValueProvider)
   private
@@ -487,6 +487,7 @@ type
     function AddHandler(const handler: T): IDelegate<T>;
     function RemoveHandler(const handler: T): IDelegate<T>;
     function Invoke(const callback: TProc<T>): IDelegate<T>;
+    procedure Clear;
   end;
 
   TDelegate<T> = class(TInterfacedObject, IDelegate<T>)
@@ -500,6 +501,7 @@ type
     function AddHandler(const handler: T): IDelegate<T>;
     function RemoveHandler(const handler: T): IDelegate<T>;
     function Invoke(const callback: TProc<T>): IDelegate<T>; virtual;
+    procedure Clear;
   end;
 
   {$ENDREGION}
@@ -2366,6 +2368,12 @@ end;
 
 
 {$REGION 'TDelegate<T>'}
+
+procedure TDelegate<T>.Clear;
+begin
+  if fHandlers <> nil then
+    fHandlers.Clear;
+end;
 
 destructor TDelegate<T>.Destroy;
 begin

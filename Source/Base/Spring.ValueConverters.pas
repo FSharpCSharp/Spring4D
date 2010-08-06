@@ -1316,6 +1316,7 @@ begin
   RegisterConverter(TypeInfo(TDateTime), TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
   RegisterConverter(TypeInfo(TDateTime), TypeInfo(TNullable<System.AnsiString>), TTypeToNullableConverter);
   RegisterConverter(TypeInfo(TDateTime), TypeInfo(TNullable<System.WideString>), TTypeToNullableConverter);
+  RegisterConverter(TypeInfo(TDateTime), TypeInfo(TNullable<System.TDateTime>), TTypeToNullableConverter);
   RegisterConverter(TypeInfo(TDate), TypeInfo(TNullable<System.TDateTime>), TTypeToNullableConverter);
 
   RegisterConverter(TypeInfo(Boolean), [tkString, tkUString, tkLString, tkWString], TBooleanToStringConverter);
@@ -1433,6 +1434,7 @@ begin
 
   RegisterConverter(TypeInfo(TNullable<System.TDateTime>), TypeInfo(TCaption), TNullableToTypeConverter);
   RegisterConverter(TypeInfo(TNullable<System.TDateTime>), TypeInfo(TDate), TNullableToTypeConverter);
+  RegisterConverter(TypeInfo(TNullable<System.TDateTime>), TypeInfo(TDateTime), TNullableToTypeConverter);
   RegisterConverter(TypeInfo(TNullable<System.TDateTime>), [tkString, tkUString, tkLString, tkWString], TNullableToTypeConverter);
 
   RegisterConverter([tkEnumeration], TypeInfo(Integer), TEnumToIntegerConverter);

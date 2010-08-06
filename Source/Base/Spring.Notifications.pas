@@ -177,6 +177,8 @@ type
     function GetOnPropertyChanging: TPropertyNotificationEvent;
     function GetOnPropertyChanged: TPropertyNotificationEvent;
     function GetPropertyNotification: ISupportPropertyNotification;
+    procedure DoPropertyChanged(sender: TObject; const e: TPropertyNotificationEventArgs);
+    procedure DoPropertyChanging(sender: TObject; const e: TPropertyNotificationEventArgs);
   protected
     procedure SetProperty<T>(const propertyName: string; var oldValue: T; const newValue: T);
     function TrySetProperty<T>(const propertyName: string; var oldValue: T; const newValue: T): Boolean; overload;
@@ -258,12 +260,17 @@ type
     function GetPropertyNotification: ISupportPropertyNotification;
     function GetOnCollectionChanged: TCollectionChangedEvent;
   protected
+    fOwnerPropertyNotification: Pointer;
+    fPropertyName: string;
+    function GetOwnerPropertyNotification: ISupportPropertyNotification;
+    property OwnerPropertyNotification: ISupportPropertyNotification read GetOwnerPropertyNotification;
     procedure DoOnPropertyChanging(sender: TObject; const e: TPropertyNotificationEventArgs); virtual;
     procedure DoOnPropertyChanged(sender: TObject; const e: TPropertyNotificationEventArgs); virtual;
     procedure DoListNotify(sender: TObject; const item: T; action: TCollectionNotification); virtual;
     property PropertyNotification: ISupportPropertyNotification read GetPropertyNotification implements ISupportPropertyNotification;
   public
     constructor Create(list: TList<T>; ownership: TCollectionOwnership = coReference); overload;
+    constructor Create(const owner: ISupportPropertyNotification; const propertyName: string); overload;
     constructor Create; overload;
     destructor Destroy; override;
     property OnCollectionChanged: TCollectionChangedEvent read GetOnCollectionChanged;
@@ -420,6 +427,8 @@ constructor TNotifiableObject.Create(const owner: ISupportPropertyNotification;
 begin
   inherited Create;
   fOwnerPropertyNotification := Pointer(owner);
+  OnPropertyChanged.AddHandler(DoPropertyChanged);
+  OnPropertyChanging.AddHandler(DoPropertyChanging);
   fPropertyName := propertyName;
 end;
 
@@ -446,25 +455,9 @@ begin
       localOldValue,
       localNewValue
     );
-    if (OwnerPropertyNotification = nil) or not OwnerPropertyNotification.IsEnabled then
-    begin
       PropertyNotification.NotifyPropertyChanging(e);
       oldValue := newValue;
       PropertyNotification.NotifyPropertyChanged(e);
-    end
-    else
-    begin
-      ownerArgs := TPropertyNotificationEventArgs.Create(
-        fPropertyName + '.' + propertyName,
-        localOldValue,
-        localNewValue
-      );
-      PropertyNotification.NotifyPropertyChanging(e);
-      OwnerPropertyNotification.NotifyPropertyChanging(ownerArgs);
-      oldValue := newValue;
-      PropertyNotification.NotifyPropertyChanged(e);
-      OwnerPropertyNotification.NotifyPropertyChanged(ownerArgs);
-    end;
   end
   else
   begin
@@ -504,6 +497,38 @@ begin
   inherited Destroy;
 end;
 
+procedure TNotifiableObject.DoPropertyChanged(sender: TObject;
+  const e: TPropertyNotificationEventArgs);
+var
+  ownerArgs: TPropertyNotificationEventArgs;
+begin
+  if (OwnerPropertyNotification <> nil) and OwnerPropertyNotification.IsEnabled then
+  begin
+    ownerArgs := TPropertyNotificationEventArgs.Create(
+      fPropertyName + '.' + e.PropertyName,
+      e.OldValue,
+      e.NewValue
+    );
+    OwnerPropertyNotification.NotifyPropertyChanged(ownerArgs);
+  end;
+end;
+
+procedure TNotifiableObject.DoPropertyChanging(sender: TObject;
+  const e: TPropertyNotificationEventArgs);
+var
+  ownerArgs: TPropertyNotificationEventArgs;
+begin
+  if (OwnerPropertyNotification <> nil) and OwnerPropertyNotification.IsEnabled then
+  begin
+    ownerArgs := TPropertyNotificationEventArgs.Create(
+      fPropertyName + '.' + e.PropertyName,
+      e.OldValue,
+      e.NewValue
+    );
+    OwnerPropertyNotification.NotifyPropertyChanging(ownerArgs);
+  end;
+end;
+
 function TNotifiableObject.GetOnPropertyChanged: TPropertyNotificationEvent;
 begin
   Result := PropertyNotification.OnPropertyChanged;
@@ -532,6 +557,14 @@ end;
 
 {$REGION 'TNotifiableCollection<T>'}
 
+constructor TNotifiableCollection<T>.Create;
+var
+  list: TList<T>;
+begin
+  list := TList<T>.Create;
+  Create(list, coOwned);
+end;
+
 constructor TNotifiableCollection<T>.Create(list: TList<T>;
   ownership: TCollectionOwnership);
 begin
@@ -542,12 +575,12 @@ begin
   fOnPropertyChanged := DoOnPropertyChanged;
 end;
 
-constructor TNotifiableCollection<T>.Create;
-var
-  list: TList<T>;
+constructor TNotifiableCollection<T>.Create(const owner: ISupportPropertyNotification;
+  const propertyName: string);
 begin
-  list := TList<T>.Create;
-  Create(list, coOwned);
+  fOwnerPropertyNotification := Pointer(owner);
+  fPropertyName := propertyName;
+  Create;
 end;
 
 destructor TNotifiableCollection<T>.Destroy;
@@ -612,6 +645,7 @@ procedure TNotifiableCollection<T>.DoOnPropertyChanged(sender: TObject;
   const e: TPropertyNotificationEventArgs);
 var
   args: TPropertyNotificationEventArgs;
+  ownerArgs: TPropertyNotificationEventArgs;
 begin
   args := e;
   PropertyNotification.OnPropertyChanged.Invoke(
@@ -620,12 +654,22 @@ begin
       handler(sender, args);
     end
   );
+  if (OwnerPropertyNotification <> nil) and OwnerPropertyNotification.IsEnabled then
+  begin
+    ownerArgs := TPropertyNotificationEventArgs.Create(
+      fPropertyName + '.' + e.PropertyName,
+      e.OldValue,
+      e.NewValue
+    );
+    OwnerPropertyNotification.NotifyPropertyChanged(ownerArgs);
+  end;
 end;
 
 procedure TNotifiableCollection<T>.DoOnPropertyChanging(sender: TObject;
   const e: TPropertyNotificationEventArgs);
 var
   args: TPropertyNotificationEventArgs;
+  ownerArgs: TPropertyNotificationEventArgs;
 begin
   args := e;
   PropertyNotification.OnPropertyChanging.Invoke(
@@ -634,6 +678,15 @@ begin
       handler(sender, args);
     end
   );
+  if (OwnerPropertyNotification <> nil) and OwnerPropertyNotification.IsEnabled then
+  begin
+    ownerArgs := TPropertyNotificationEventArgs.Create(
+      fPropertyName + '.' + e.PropertyName,
+      e.OldValue,
+      e.NewValue
+    );
+    OwnerPropertyNotification.NotifyPropertyChanging(ownerArgs);
+  end;
 end;
 
 function TNotifiableCollection<T>.GetOnCollectionChanged: TCollectionChangedEvent;
@@ -643,6 +696,11 @@ begin
     fOnCollectionChangedEvent := TCollectionChangedDelegate.Create;
   end;
   Result := fOnCollectionChangedEvent;
+end;
+
+function TNotifiableCollection<T>.GetOwnerPropertyNotification: ISupportPropertyNotification;
+begin
+  Result := ISupportPropertyNotification(fOwnerPropertyNotification);
 end;
 
 function TNotifiableCollection<T>.GetPropertyNotification: ISupportPropertyNotification;
