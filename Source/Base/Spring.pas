@@ -22,12 +22,13 @@
 {                                                                           }
 {***************************************************************************}
 
-{TODO -oPaul -cGeneral : Move TCallback to Spring.Utils}
+{TODO -oPaul -cGeneral : Move TCallback & global routines to Spring.Utils}
+{TODO -oPaul -cGeneral : Add TArray, TArray<T>}
+{TODO -oPaul -cGeneral : Add TArrayBuilder}
 
 /// <summary>
-/// Declares the fundamental types and rountines.
+/// Declares the fundamental types for the framework.
 /// </summary>
-/// Note: This unit should be platform independent.
 unit Spring;
 
 {$I Spring.inc}
@@ -36,9 +37,7 @@ interface
 
 uses
   Classes,
-{$IFDEF MSWINDOWS}
   Windows,
-{$ENDIF}
   SysUtils,
   DateUtils,
   Types,
@@ -51,23 +50,13 @@ uses
   Generics.Collections;
 
 type
-
-  {$REGION 'Simple Types & Aliases'}
-
-  /// <summary>
-  /// Represents a dynamic array of Byte.
-  /// </summary>
+  ///	<summary>Represents a dynamic array of Byte.</summary>
   TBytes = SysUtils.TBytes;
 
-  /// <summary>
-  /// Represents a dynamic array of string.
-  /// </summary>
+  ///	<summary>Represents a dynamic array of string.</summary>
   TStringDynArray = Types.TStringDynArray;
 
-  /// <summary>
-  /// Represents a time interval.
-  /// </summary>
-  /// <seealso>TimeSpan.TTimeSpan</seealso>
+  ///	<summary>Represents a time interval.</summary>
   TTimeSpan = TimeSpan.TTimeSpan;
 
   /// <summary>
@@ -80,17 +69,17 @@ type
   TTypeKind  = TypInfo.TTypeKind;
   TTypeKinds = TypInfo.TTypeKinds;
 
-  /// <summary>
-  /// Redefines the TPredicate&lt;T&gt; type with a const parameter.
-  /// </summary>
+  ///	<summary>Represents a logical predicate.</summary>
+  ///	<returns>Returns True if the value was accepted, otherwise, returns
+  ///	false.</returns>
+  ///	<remarks>
+  ///	  <alert class="warning">This type redefined the
+  ///	  SysUtils.TPredicate&lt;T&gt; type with a const parameter.</alert>
+  ///	</remarks>
   TPredicate<T> = reference to function(const value: T): Boolean;
 
+  ///	<summary>Represents the class type of <c>TCustomAttribute</c>.</summary>
   TAttributeClass = class of TCustomAttribute;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TInterfaceBase'}
 
   /// <summary>
   /// Provides a non-reference-counted IInterface implementation.
@@ -101,8 +90,6 @@ type
     function _AddRef: Integer; stdcall;
     function _Release: Integer; stdcall;
   end;
-
-  {$ENDREGION}
 
 
   {$REGION 'TInterfacedThread'}
@@ -120,74 +107,11 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TArgument'}
-
-  /// <summary>
-  /// Provides static methods to check arguments and raise argument exceptions.
-  /// </summary>
-  /// <remarks>
-  /// All arguments of public methods, including global routines, class and record methods,
-  /// should be checked.
-  /// </remarks>
-  TArgument = record
-  strict private
-    class procedure DoCheckIndex(const length, index, indexBase: Integer); overload; static; inline;
-  private
-    class procedure DoCheckArrayIndex(const length, index: Integer); static; inline;
-    class procedure DoCheckArrayRange(const length, startIndex, count: Integer); static; inline;
-    class procedure DoCheckStringIndex(const length, index: Integer); static; inline;
-    class procedure DoCheckStringRange(const length, startIndex, count: Integer); static; inline;
-  public
-    class procedure CheckTrue(condition: Boolean; const msg: string); static; inline;
-    class procedure CheckFalse(condition: Boolean; const msg: string); static; inline;
-
-    class procedure CheckNotNull(obj: TObject; const argumentName: string); overload; static; inline;
-    class procedure CheckNotNull(p: Pointer; const argumentName: string); overload; static; inline;
-    class procedure CheckNotNull(const intf: IInterface; const argumentName: string); overload; static; inline;
-    class procedure CheckNotNull(condition: Boolean; const argumentName: string); overload; static; inline;
-    class procedure CheckNotNull<T>(const value: T; const argumentName: string); overload; static; inline;
-
-    class procedure CheckEnum<T{:enum}>(const value: T; const argumentName: string); overload; static; inline;
-    class procedure CheckEnum<T{:enum}>(const value: Integer; const argumentName: string); overload; static; inline;
-
-    class procedure CheckRange(const buffer: array of Byte; const index: Integer); overload; static;
-    class procedure CheckRange(const buffer: array of Byte; const startIndex, count: Integer); overload; static;
-    class procedure CheckRange(const buffer: array of Char; const index: Integer); overload; static;
-    class procedure CheckRange(const buffer: array of Char; const startIndex, count: Integer); overload; static;
-    class procedure CheckRange(const s: string; const index: Integer); overload; static; inline;
-    class procedure CheckRange(const s: string; const startIndex, count: Integer); overload; static; inline;
-    class procedure CheckRange(const s: WideString; const index: Integer); overload; static; inline;
-    class procedure CheckRange(const s: WideString; const startIndex, count: Integer); overload; static; inline;
-    class procedure CheckRange(const s: RawByteString; const index: Integer); overload; static; inline;
-    class procedure CheckRange(const s: RawByteString; const startIndex, count: Integer); overload; static; inline;
-    class procedure CheckRange(condition: Boolean; const argumentName: string); overload; static; inline;
-    class procedure CheckRange(const length, startIndex, count: Integer; const indexBase: Integer = 0); overload; static; inline;
-
-    class procedure CheckTypeKind(typeInfo: PTypeInfo; const expectedTypeKind: TTypeKind; const argumentName: string); overload; static;
-    class procedure CheckTypeKind(typeInfo: PTypeInfo; const expectedTypeKinds: TTypeKinds; const argumentName: string); overload; static;
-
-    class function IsNullReference<T>(const value: T): Boolean; overload; static;
-    class function IsNullReference(const value; typeInfo: PTypeInfo): Boolean; overload; static;
-
-    class procedure RaiseArgumentException(const msg: string); overload; static; inline;
-    class procedure RaiseArgumentNullException(const argumentName: string); overload; static; inline;
-    class procedure RaiseArgumentOutOfRangeException(const argumentName: string); overload; static; inline;
-    class procedure RaiseInvalidEnumArgumentException(const argumentName: string); overload; static; inline;
-  end;
-
-  /// <summary>
-  /// Represents a type alias of the TArgument class.
-  /// </summary>
-  TArg = TArgument;
-
-  {$ENDREGION}
-
-
   {$REGION 'TBuffer'}
 
-  /// <summary>
-  /// Represents a series of bytes in memory.
-  /// </summary>
+  ///	<summary>Represents a series of bytes in memory. The <c>TBuffer</c>
+  ///	structure is actually a wrapper of a value of <c>TBytes</c> while
+  ///	provides some easy-going methods and properties.</summary>
   TBuffer = record
   strict private
     fBytes: TBytes;
@@ -224,7 +148,7 @@ type
 
     function Clone: TBuffer;
     function Copy(startIndex, count: Integer): TBytes;
-    function Reverse: TBuffer;
+    function Reverse: TBuffer; // experimental;
 
     function Left(count: Integer): TBuffer;
     function Mid(startIndex, count: Integer): TBuffer;
@@ -283,34 +207,205 @@ type
   {$ENDREGION}
 
 
+  (*
+  TMemory = class
+  public
+    class procedure Zero<T: record>(var value: T); overload; inline;
+    class procedure Zero(buffer: Pointer; count: Integer); overload; inline;
+    class procedure Zero(var buffer; count: Integer); overload; inline;
+//    class procedure Fill(var buffer; count: Integer; value: Byte); inline;
+    // HexToBin, BinToHex, etc.
+  end;
+  //*)
+
+
+  {$REGION 'TArgument'}
+
+  /// <summary>
+  /// Provides static methods to check arguments and raise argument exceptions.
+  /// </summary>
+  /// <remarks>
+  /// All arguments of public methods, including global routines, class and record methods,
+  /// should be checked.
+  /// </remarks>
+  TArgument = record
+  strict private
+    class procedure DoCheckIndex(const length, index, indexBase: Integer); overload; static; inline;
+  private
+    class procedure DoCheckArrayIndex(const length, index: Integer); static; inline;
+    class procedure DoCheckArrayRange(const length, startIndex, count: Integer); static; inline;
+    class procedure DoCheckStringIndex(const length, index: Integer); static; inline;
+    class procedure DoCheckStringRange(const length, startIndex, count: Integer); static; inline;
+  public
+    class procedure CheckTrue(condition: Boolean; const msg: string); static; inline;
+    class procedure CheckFalse(condition: Boolean; const msg: string); static; inline;
+
+    class procedure CheckNotNull(obj: TObject; const argumentName: string); overload; static; inline;
+    class procedure CheckNotNull(p: Pointer; const argumentName: string); overload; static; inline;
+    class procedure CheckNotNull(const intf: IInterface; const argumentName: string); overload; static; inline;
+    class procedure CheckNotNull(condition: Boolean; const argumentName: string); overload; static; inline;
+    class procedure CheckNotNull<T>(const value: T; const argumentName: string); overload; static; inline;
+
+    class procedure CheckEnum<T{:enum}>(const value: T; const argumentName: string); overload; static; inline;
+    class procedure CheckEnum<T{:enum}>(const value: Integer; const argumentName: string); overload; static; inline;
+
+    ///	<exception cref="EArgumentOutOfRangeException">Raised if the
+    ///	<paramref name="index" /> is out of range.</exception>
+    class procedure CheckRange(const buffer: array of Byte; const index: Integer); overload; static;
+    class procedure CheckRange(const buffer: array of Byte; const startIndex, count: Integer); overload; static;
+    class procedure CheckRange(const buffer: array of Char; const index: Integer); overload; static;
+    class procedure CheckRange(const buffer: array of Char; const startIndex, count: Integer); overload; static;
+    class procedure CheckRange(const s: string; const index: Integer); overload; static; inline;
+    class procedure CheckRange(const s: string; const startIndex, count: Integer); overload; static; inline;
+    class procedure CheckRange(const s: WideString; const index: Integer); overload; static; inline;
+    class procedure CheckRange(const s: WideString; const startIndex, count: Integer); overload; static; inline;
+    class procedure CheckRange(const s: RawByteString; const index: Integer); overload; static; inline;
+    class procedure CheckRange(const s: RawByteString; const startIndex, count: Integer); overload; static; inline;
+    class procedure CheckRange(condition: Boolean; const argumentName: string); overload; static; inline;
+    class procedure CheckRange(const length, startIndex, count: Integer; const indexBase: Integer = 0); overload; static; inline;
+
+    class procedure CheckTypeKind(typeInfo: PTypeInfo; const expectedTypeKind: TTypeKind; const argumentName: string); overload; static;
+    class procedure CheckTypeKind(typeInfo: PTypeInfo; const expectedTypeKinds: TTypeKinds; const argumentName: string); overload; static;
+
+    class function IsNullReference<T>(const value: T): Boolean; overload; static;
+    class function IsNullReference(const value; typeInfo: PTypeInfo): Boolean; overload; static;
+
+    ///	<summary>Raise an EArgumentException exception.</summary>
+    class procedure RaiseArgumentException(const msg: string); overload; static; inline;
+
+    ///	<summary>Raise an EArgumentNullException exception.</summary>
+    class procedure RaiseArgumentNullException(const argumentName: string); overload; static; inline;
+
+    ///	<summary>Raise an EArgumentOutOfRangeException exception.</summary>
+    class procedure RaiseArgumentOutOfRangeException(const argumentName: string); overload; static; inline;
+
+    ///	<summary>Raise an EInvalidEnumArgumentException exception.</summary>
+    class procedure RaiseInvalidEnumArgumentException(const argumentName: string); overload; static; inline;
+  end;
+
+  /// <summary>
+  /// Represents a type alias of the TArgument class.
+  /// </summary>
+  TArg = TArgument;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TNullable<T>'}
+
+  ///	<summary>Represents an "object" whose underlying type is a value type
+  ///	that can also be assigned nil like a reference type.</summary>
+  ///	<typeparam name="T">The underlying value type of the TNullable&lt;T&gt;
+  ///	generic type.</typeparam>
+  TNullable<T> = packed record
+  private
+    const fCHasValue = '@';  // DO NOT LOCALIZE
+  strict private
+    fValue: T;
+    fHasValue: string;
+    function GetValue: T;
+    function GetHasValue: Boolean;
+  private
+    ///	<summary>Internal method. Clears the value and marks it as
+    ///	null.</summary>
+    procedure Clear;
+  public
+    ///	<summary>Initializes a new instance of the TNullable&lt;T&gt; structure
+    ///	to the specified value.</summary>
+    constructor Create(const value: T); overload;
+
+    ///	<summary>Initializes a new instance of the TNullable&lt;T&gt; structure
+    ///	to the specified value.</summary>
+    constructor Create(const value: Variant); overload;
+
+    ///	<summary>Retrieves the value of the current TNullable&lt;T&gt; object,
+    ///	or the object's default value.</summary>
+    function GetValueOrDefault: T; overload;
+
+    ///	<summary>Retrieves the value of the current TNullable&lt;T&gt; object,
+    ///	or the specified default value.</summary>
+    ///	<param name="default">the default value</param>
+    function GetValueOrDefault(const default: T): T; overload;
+
+    ///	<summary>Gets a value indicating whether the current TNullable&lt;T&gt;
+    ///	structure has a value.</summary>
+    property HasValue: Boolean read GetHasValue;
+
+    ///	<summary>Gets the value of the current TNullable&lt;T&gt;
+    ///	value.</summary>
+    ///	<exception cref="EInvalidOperation">Raised if the value is
+    ///	null.</exception>
+    property Value: T read GetValue;
+
+    { Operator Overloads }
+    class operator Implicit(const value: TNullable<T>): T;
+    class operator Implicit(const value: T): TNullable<T>;
+    class operator Implicit(const value: TNullable<T>): Variant;
+    class operator Implicit(const value: Variant): TNullable<T>;
+    class operator Implicit(value: Pointer): TNullable<T>;
+    class operator Explicit(const value: TNullable<T>): T;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'Common TNullable<T> Aliases'}
+
+  ///	<summary>Represents a nullable string.</summary>
+  TNullableString = TNullable<string>;
+
+  ///	<summary>Represents a nullable integer.</summary>
+  TNullableInteger = TNullable<Integer>;
+
+  ///	<summary>Represents a nullable <c>TDateTime</c>.</summary>
+  TNullableDateTime = TNullable<TDateTime>;
+
+  ///	<summary>Represents a nullable <c>Currency</c>.</summary>
+  TNullableCurrency = TNullable<Currency>;
+
+  ///	<summary>Represents a nullable <c>Double</c>.</summary>
+  TNullableDouble = TNullable<Double>;
+
+  ///	<summary>Represents a nullable <c>Boolean</c>.</summary>
+  TNullableBoolean = TNullable<Boolean>;
+
+  ///	<summary>Represents a nullable <c>Int64</c>.</summary>
+  TNullableInt64 = TNullable<Int64>;
+
+  ///	<summary>Represents a nullable <c>TGuid</c>.</summary>
+  TNullableGuid = TNullable<TGUID>;
+
+  {$ENDREGION}
+
+
   {$REGION 'TEnum'}
 
   /// <summary>
-  /// Provides static methods to manipulate Enumeration type.
+  /// Provides static methods to manipulate an enumeration type.
   /// </summary>
   TEnum = record
   private
-    class function GetEnumTypeInfo<T{:enum}>: PTypeInfo; static;
-    class function GetEnumTypeData<T{:enum}>: PTypeData; static;
+    class function GetEnumTypeInfo<T>: PTypeInfo; static;
+    class function GetEnumTypeData<T>: PTypeData; static;
     { Internal function without range check }
-    class function ConvertToInteger<T{:enum}>(const value: T): Integer; static;
+    class function ConvertToInteger<T>(const value: T): Integer; static;
   public
     // Todo: Add Non-Generic methods
 //  class procedure ExtractNames<T>(names: TStrings); static;
 //  class procedure ExtractValues<T>(values: TStrings); static;
-    class function IsValid<T{:enum}>(const value: T): Boolean; overload; static;
-    class function IsValid<T{:enum}>(const value: Integer): Boolean; overload; static;
-    class function GetName<T{:enum}>(const value: T): string; overload; static;
-    class function GetName<T{:enum}>(const value: Integer): string; overload; static;
-    class function GetNames<T{:enum}>: TStringDynArray; static;
-    class function GetValue<T{:enum}>(const value: T): Integer; overload; static;
-    class function GetValue<T{:enum}>(const value: string): Integer; overload; static;
-    class function GetValues<T{:enum}>: TIntegerDynArray; static;
-    class function GetValueStrings<T{:enum}>: TStringDynArray; static;
-    class function TryParse<T{:enum}>(const value: Integer; out enum: T): Boolean; overload; static;
-    class function TryParse<T{:enum}>(const value: string; out enum: T): Boolean; overload; static;
-    class function Parse<T{:enum}>(const value: Integer): T; overload; static;
-    class function Parse<T{:enum}>(const value: string): T; overload; static;
+    class function IsValid<T>(const value: T): Boolean; overload; static;
+    class function IsValid<T>(const value: Integer): Boolean; overload; static;
+    class function GetName<T>(const value: T): string; overload; static;
+    class function GetName<T>(const value: Integer): string; overload; static;
+    class function GetNames<T>: TStringDynArray; static;
+    class function GetValue<T>(const value: T): Integer; overload; static;
+    class function GetValue<T>(const value: string): Integer; overload; static;
+    class function GetValues<T>: TIntegerDynArray; static;
+    class function GetValueStrings<T>: TStringDynArray; static;
+    class function TryParse<T>(const value: Integer; out enum: T): Boolean; overload; static;
+    class function TryParse<T>(const value: string; out enum: T): Boolean; overload; static;
+    class function Parse<T>(const value: Integer): T; overload; static;
+    class function Parse<T>(const value: string): T; overload; static;
   end;
 
   {$ENDREGION}
@@ -324,158 +419,53 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TNullable<T>'}
-
-  /// <summary>
-  /// Represents an "object" whose underlying type is a value type that can also be
-  /// assigned nil like a reference type.
-  /// </summary>
-  /// <typeparam name="T">
-  /// The underlying value type of the TNullable<T> generic type.
-  /// </typeparam>
-  TNullable<T> = packed record
-  private
-    const fCHasValue = '@';  // DO NOT LOCALIZE
-  strict private
-    fValue: T;
-    fHasValue: string;
-    function GetValue: T;
-    function GetHasValue: Boolean;
-  private
-    /// <summary>
-    /// Clears the value and marks it as null.
-    /// </summary>
-    procedure Clear;
-  public
-    /// <summary>
-    /// Initializes a new instance of the TNullable<T> structure to the specified value.
-    /// </summary>
-    constructor Create(const value: T); overload;
-    /// <summary>
-    /// Initializes a new instance of the TNullable<T> structure to the specified value.
-    /// </summary>
-    constructor Create(const value: Variant); overload;
-    /// <summary>
-    /// Retrieves the value of the current TNullable<T> object, or the object's default value.
-    /// </summary>
-    function GetValueOrDefault: T; overload;
-    /// <summary>
-    /// Retrieves the value of the current TNullable<T> object, or the specified default value.
-    /// </summary>
-    function GetValueOrDefault(const default: T): T; overload;
-    /// <summary>
-    /// Gets a value indicating whether the current TNullable<T> object has a value.
-    /// </summary>
-    property HasValue: Boolean read GetHasValue;
-    /// <summary>
-    /// Gets the value of the current Nullable<T> value.
-    /// </summary>
-    property Value: T read GetValue;
-    { Operator Overloads }
-    class operator Implicit(const value: TNullable<T>): T;
-    class operator Implicit(const value: T): TNullable<T>;
-    class operator Implicit(const value: TNullable<T>): Variant;
-    class operator Implicit(const value: Variant): TNullable<T>;
-    class operator Implicit(value: Pointer): TNullable<T>;
-    class operator Explicit(const value: TNullable<T>): T;
-  end;
-
+  {$REGION 'Documentation'}
+  ///	<summary>Defines the interface for an abstract value provider.</summary>
+  ///	<remarks>Use the <b>Value</b> property to retrieve the current value from
+  ///	the provider. Use the <b>SetValue</b> method to assign a new value to it
+  ///	if the value provider is not read only. Otherwise, an
+  ///	<c>EInvalidException</c> exception will be raised.</remarks>
   {$ENDREGION}
-
-  {
-    DONE: Consider Moving TLocation and GetPathLocation to Spring.Reflection
-      and mark it as experimental.
-  }
-
-
-  {$REGION 'Common TNullable<T> Aliases'}
-
-  /// <summary>
-  /// Represents a nullable string.
-  /// </summary>
-  TNullableString = TNullable<string>;
-
-  /// <summary>
-  /// Represents a nullable integer.
-  /// </summary>
-  TNullableInteger = TNullable<Integer>;
-
-  /// <summary>
-  /// Represents a nullable date time.
-  /// </summary>
-  TNullableDateTime = TNullable<TDateTime>;
-
-  /// <summary>
-  /// Represents a nullable currency.
-  /// </summary>
-  TNullableCurrency = TNullable<Currency>;
-
-  /// <summary>
-  /// Represents a nullable double.
-  /// </summary>
-  TNullableDouble = TNullable<Double>;
-
-  /// <summary>
-  /// Represents a nullable boolean.
-  /// </summary>
-  TNullableBoolean = TNullable<Boolean>;
-
-  /// <summary>
-  /// Represents a nullable Int64.
-  /// </summary>
-  TNullableInt64 = TNullable<Int64>;
-
-  /// <summary>
-  /// Represents a nullable Guid.
-  /// </summary>
-  TNullableGuid = TNullable<TGUID>;
-
-  {$ENDREGION}
-
-
-  {$REGION 'IValueProvider'}
-
-  /// <summary>
-  /// Interface entry for generic TValue value provider
-  /// </summary>
   IValueProvider = interface
     ['{392A1E2F-CCA1-4CBB-9306-29AA402927D6}']
-  {$REGION 'Property Getters and Setters'}
-    function GetValue: TValue;
-    function GetIsReadOnly: Boolean;
-  {$ENDREGION}
-    /// <summary>
-    /// Sets the value of the provider.
-    /// </summary>
-    /// <exception cref="EInvalidOperation">
-    /// Raised if the value is read-only.
-    /// </exception>
+    {$REGION 'Property Getters and Setters'}
+      function GetValue: TValue;
+      function GetIsReadOnly: Boolean;
+    {$ENDREGION}
+
+    ///	<summary>Sets the value of the provider.</summary>
+    ///	<param name="value">the new value.</param>
+    ///	<exception cref="EInvalidOperation">Raised if the value provider is
+    ///	read only.</exception>
     procedure SetValue(const value: TValue);
+
     /// <summary>
     /// Gets the value of the provider.
     /// </summary>
     property Value: TValue read GetValue;
-    /// <summary>
-    /// Gets a value that indicates whether the value is read-only.
-    /// </summary>
+
+    ///	<summary>Gets a value that indicates whether the value provider is read
+    ///	only.</summary>
+    ///	<value>Returns true if the value provider is read only, otherwise,
+    ///	returns false.</value>
     property IsReadOnly: Boolean read GetIsReadOnly;
   end;
 
-  /// <summary>
-  /// Base abstract class for generic TValue value provider
-  /// </summary>
-  TValueProvider = class abstract(TInterfacedObject, IValueProvider)
-  private
-    procedure SetValue(const value: TValue); virtual;
+  ///	<summary>Provides an abstract base class for generic value
+  ///	provider.</summary>
+  TValueProviderBase = class abstract(TInterfacedObject, IValueProvider)
   protected
     function GetValue: TValue; virtual; abstract;
-    procedure DoSetValue(const value: TValue); virtual; abstract;
     function GetIsReadOnly: Boolean; virtual;
+    procedure DoSetValue(const value: TValue); virtual; abstract;
+  public
+    procedure SetValue(const value: TValue); virtual;
     property Value: TValue read GetValue;
     property IsReadOnly: Boolean read GetIsReadOnly;
   end;
 
-  {$ENDREGION}
+  TValueProvider = TValueProviderBase
+    deprecated 'Use the TValueProviderBase class instead.';
 
 
   {$REGION 'IDelegate<T> (Experimental)'}
@@ -529,28 +519,68 @@ type
   {$ENDREGION}
 
 
+//  TLazy<T> = record
+//  private
+//    fDelegate: TFunc<T>;
+//  end;
+
+
   {$REGION 'TLazyUtils'}
 
+  /// <preliminary />
   TLazyUtils = record
   public
-    /// <summary>
-    /// Uses the TLazyUtils.GetValue<T> method to implement the thread-safe
-    /// lazy-initialization pattern.
-    /// </summary>
-    /// <remarks>
-    /// This method uses InterlockedCompareExchangePointer to ensure thread-safety.
-    /// </remarks>
+    {$REGION 'Documentation'}
+    ///	<summary>Uses the <c>TLazyUtils.GetValue&lt;T&gt;</c> method to
+    ///	implement the <b>Lazy-Initialization</b> pattern in
+    ///	thread-safe.</summary>
+    ///	<remarks>
+    ///	  <para>The following code copied from the <b>SysUtils.TEncoding</b>
+    ///	  class illustrates how to use the
+    ///	  <c>InterlockedCompareExchangePointer</c> function to ensure the
+    ///	  thread-safety.</para>
+    ///	  <code lang="Delphi">
+    ///	class function TEncoding.GetUTF8: TEncoding;
+    ///	var
+    ///	  LEncoding: TEncoding;
+    ///	begin
+    ///	  if FUTF8Encoding = nil then
+    ///	  begin
+    ///	    LEncoding := TUTF8Encoding.Create;
+    ///	    if InterlockedCompareExchangePointer(Pointer(FUTF8Encoding), LEncoding, nil) &lt;&gt; nil then
+    ///	      LEncoding.Free;
+    ///	  end;
+    ///	  Result := FUTF8Encoding;
+    ///	end;
+    ///	</code>
+    ///	  <para>By using the <c>TLazyUtils.GetValue&lt;T&gt;</c> method, the
+    ///	  code could be simpilifed:</para>
+    ///	  <code lang="Delphi">
+    ///	class function TEncoding.GetUTF8: TEncoding;
+    ///	begin
+    ///	  Result := TLazyUtils.GetValue&lt;TEncoding&gt;(fUtf8Encoding,
+    ///	    function: TEncoding
+    ///	    begin
+    ///	      Result := TUtf8Encoding.Create;
+    ///	    end
+    ///	  );
+    ///	end;
+    ///	</code>
+    ///	</remarks>
+    {$ENDREGION}
     class function GetValue<T: class>(var field: T; const delegate: TFunc<T>): T; static;
   end;
 
   {$ENDREGION}
 
 
-  {$REGION 'TLifetimeWatcher'}
-
-  /// <summary>
-  /// Represents a lifetime watcher.
-  /// </summary>
+  {$REGION 'Documentation'}
+  ///	<summary>Represents a lifetime watcher. The basic idea is using an
+  ///	instance of the <c>IInterface</c> in the host such as a record. The
+  ///	anonymous method, which is specified by the <paramref name="proc" />
+  ///	parameter in the constructor, will be executed when this interface is
+  ///	disposed. Normally, the proc is some kind of clean up code.</summary>
+  {$ENDREGION}
   TLifetimeWatcher = class(TInterfacedObject)
   private
     fProc: TProc;
@@ -559,15 +589,31 @@ type
     destructor Destroy; override;
   end;
 
+
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  <para>Provides a simple &amp; flexible implementation of <b>Smart
+  ///	  Pointer</b>. This implementation is very skillful and the basic idea
+  ///	  comes from a post in Kelly Barry's blog.</para>
+  ///	  <para>The point is to use an anonymous method <c>TFunc&lt;T&gt;,</c>
+  ///	  which is internally implemented as an interface in Delphi for Win32, to
+  ///	  manage the lifetime of an object instance.</para>
+  ///	</summary>
+  ///	<example>
+  ///	  <para>The following example demonstrates how to use the Smart
+  ///	  Pointer:</para>
+  ///	  <code lang="Delphi">
+  ///	procedure TestSmartPointer;
+  ///	var
+  ///	  person: TFunc&lt;TPerson&gt;;
+  ///	begin
+  ///	  person := TObjectHolder&lt;TPerson&gt;.Create(TPerson.Create);
+  ///	  person.DoSomething;
+  ///	end;
+  ///	</code>
+  ///	</example>
+  ///<preliminary />
   {$ENDREGION}
-
-
-  {$REGION 'TObjectHolder<T> (Experimental)'}
-
-  /// <summary>
-  /// Manages object's lifetime by an anonymous method (TFunc<T>),
-  /// which is implemented as a reference-counted interface in Delphi for Win32.
-  /// </summary>
   TObjectHolder<T: class> = class(TInterfacedObject, TFunc<T>)
   private
     fObject: T;
@@ -581,15 +627,47 @@ type
 
   TObjectHolder = TObjectHolder<TObject>;
 
+
+  {$REGION 'Documentation'}
+  ///	<summary>Represents a weak reference, which references a value of managed
+  ///	type such as an interface.</summary>
+  ///	<example>
+  ///	  The following sample demonstrates how to use the
+  ///	  <c>TWeakReference&lt;T&gt;</c> type:
+  ///	  <code lang="Delphi">
+  ///	ISampleInterface = interface
+  ///	  procedure DoSomething;
+  ///	end;
+  ///	TSomeClass = class
+  ///	private
+  ///	  fReference: TWeakReference&lt;ISampleInterface&gt;;
+  ///	  constructor Create(const sampleInterface: ISampleInterface);
+  ///	end;
+  ///	constructor TSomeClass.Create(const sampleInterface: ISampleInterface);
+  ///	begin
+  ///	  fReference := sampleInterface;
+  ///	end;
+  ///	// fReference.DoSomething;
+  ///	</code>
+  ///	</example>
   {$ENDREGION}
+  TWeakReference<T> = record
+  private
+    fValue: Pointer;
+    function GetValue: T;
+  public
+    constructor Create(const value: T);
+    property Value: T read GetValue;
+    class operator Implicit(const value: TWeakReference<T>): T;
+    class operator Implicit(const value: T): TWeakReference<T>;
+  end;
 
 
   {$REGION 'TVersion (Experimental)'}
 
-  /// <summary>
-  /// Represents a version number in the format of "major.minor[.build[.revision]]",
-  /// which is different from the delphi style format "major.minor[.release[.build]]".
-  /// </summary>
+  ///	<summary>Represents a version number in the format of
+  ///	"major.minor[.build[.revision]]", which is different from the delphi
+  ///	style format "major.minor[.release[.build]]".</summary>
   TVersion = record
   private
     const fCUndefined: Integer = -1;
@@ -631,27 +709,26 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TCallbackFunc'}
-
   /// <summary>
   /// Defines an anonymous function which returns a callback pointer.
   /// </summary>
   TCallbackFunc = TFunc<Pointer>;
 
-  /// <summary>
-  /// Adapts class instance (object) method as standard callback function.
-  /// </summary>
-  /// <remarks>
-  /// Both the object method and the callback function need to be declared as stdcall.
-  /// </remarks>
-  /// <example>This sample shows how to call <see cref="CreateCallback"/> method.
-  /// <code>
-  /// private
-  ///   fCallback: TCallbackFunc;
-  /// //...
-  /// fCallback := CreateCallback(Self, @TSomeClass.SomeMethod);
-  /// </code>
-  /// </example>
+  {$REGION 'Documentation'}
+  ///	<summary>Adapts class instance (object) method as standard callback
+  ///	function.</summary>
+  ///	<remarks>Both the object method and the callback function need to be
+  ///	declared as stdcall.</remarks>
+  ///	<example>
+  ///	  This sample shows how to call CreateCallback method.
+  ///	  <code>
+  ///	private
+  ///	  fCallback: TCallbackFunc;
+  ///	//...
+  ///	fCallback := CreateCallback(Self, @TSomeClass.SomeMethod);
+  ///	</code>
+  ///	</example>
+  {$ENDREGION}
   TCallback = class(TInterfacedObject, TCallbackFunc)
   private
     fInstance: Pointer;
@@ -661,22 +738,27 @@ type
     function Invoke: Pointer;
   end; // Consider hide the implementation.
 
-  {$ENDREGION}
-
 
   {$REGION 'Lifecycle Interfaces'}
 
+  ///	<summary>Lifecycle interface. If a component implements this interface,
+  ///	the IoC container will invoke the <c>Initialize</c> method when
+  ///	initiating an instance of the component.</summary>
   IInitializable = interface
     ['{A36BB399-E592-4DFB-A091-EDBA3BE0648B}']
     procedure Initialize;
   end;
 
+  ///	<summary>Lifecycle interface. Represents that the component can be
+  ///	started and stopped.</summary>
   IStartable = interface
     ['{8D0252A1-7993-44AA-B0D9-326019B58E78}']
     procedure Start;
     procedure Stop;
   end;
 
+  ///	<summary>Lifecycle interface. Only called for components that belongs to
+  ///	a pool when the component comes back to the pool.</summary>
   IRecyclable = interface
     ['{85114F41-70E5-4AF4-A375-E445D4619E4D}']
     procedure Recycle;
@@ -687,19 +769,16 @@ type
     procedure Dispose;
   end;
 
+  {$ENDREGION}
+
   IItemTypeSupport = interface
     ['{FE986DD7-41D5-4312-A2F9-94F7D9E642EE}']
     function GetItemType: PTypeInfo;
   end;
 
-  {$ENDREGION}
-
-
   {$REGION 'TLifetimeType & Related Attributes'}
 
-  /// <summary>
-  /// Lifetime Type Enumeration
-  /// </summary>
+  ///	<summary>Lifetime Type Enumeration.</summary>
   TLifetimeType = (
     /// <summary>
     /// Unknown lifetime type.
@@ -733,7 +812,7 @@ type
   /// <summary>
   /// Represents an abstract lifetime attribute class.
   /// </summary>
-  TLifetimeAttributeBase = class abstract(TCustomAttribute)
+  LifetimeAttributeBase = class abstract(TCustomAttribute)
   private
     fLifetimeType: TLifetimeType;
   public
@@ -741,10 +820,13 @@ type
     property LifetimeType: TLifetimeType read fLifetimeType;
   end;
 
+  TLifetimeAttributeBase = LifetimeAttributeBase
+    deprecated 'Use the LifetimeAttributeBase class instead.';
+
   /// <summary>
   /// Applies this attribute when a component shares the single instance.
   /// </summary>
-  SingletonAttribute = class(TLifetimeAttributeBase)
+  SingletonAttribute = class(LifetimeAttributeBase)
   public
     constructor Create;
   end;
@@ -752,7 +834,7 @@ type
   /// <summary>
   /// This attribute is the default option.
   /// </summary>
-  TransientAttribute = class(TLifetimeAttributeBase)
+  TransientAttribute = class(LifetimeAttributeBase)
   public
     constructor Create;
   end;
@@ -760,7 +842,7 @@ type
   /// <summary>
   /// Applies this attribute when a component shares the single instance per thread.
   /// </summary>
-  SingletonPerThreadAttribute = class(TLifetimeAttributeBase)
+  SingletonPerThreadAttribute = class(LifetimeAttributeBase)
   public
     constructor Create;
   end;
@@ -768,7 +850,7 @@ type
   /// <summary>
   /// Represents that the target component can be pooled.
   /// </summary>
-  PooledAttribute = class(TLifetimeAttributeBase)
+  PooledAttribute = class(LifetimeAttributeBase)
   private
     fMinPoolsize: Integer;
     fMaxPoolsize: Integer;
@@ -778,14 +860,12 @@ type
     property MaxPoolsize: Integer read fMaxPoolsize;
   end;
 
-//  TCustomLifetimeAttribute = class abstract(TLifetimeAttributeBase)
+//  TCustomLifetimeAttribute = class abstract(LifetimeAttributeBase)
 //  end;
 
-  /// <summary>
-  /// Applies the InjectionAttribute to injectable instance members of a
-  /// class. e.g. constructors, methods, properties and even fields.
-  /// Also works on parameters of a method.
-  /// </summary>
+  ///	<summary>Applies the <c>InjectionAttribute</c> to injectable instance
+  ///	members of a class. e.g. constructors, methods, properties and even
+  ///	fields. Also works on parameters of a method.</summary>
   InjectionAttribute = class(TCustomAttribute)
   private
     fValue: string;
@@ -797,10 +877,9 @@ type
     property HasValue: Boolean read GetHasValue;
   end;
 
-  /// <summary>
-  /// Applies this attribute to tell the container which service is implemented by the
-  /// component. In addition, a service name can be specified.
-  /// </summary>
+  ///	<summary>Applies this attribute to tell the IoC container which service
+  ///	is implemented by the target component. In addition, a service name can
+  ///	be specified.</summary>
   ImplementsAttribute = class(TCustomAttribute)
   private
     fServiceType: PTypeInfo;
@@ -848,35 +927,43 @@ type
 
   {$REGION 'Global Routines'}
 
-  /// <summary>
-  /// Retrieves the size of a string (unicode string) in bytes.
-  /// </summary>
-  /// <remarks>
-  /// Don't use the SysUtils.ByteLength(string) function since it only supports
-  /// unicode strings and doesn't provide overloads for WideStrings and AnsiStrings.
-  /// </remarks>
+  // TODO: Consider move these routines to Spring.Utils
+  // TODO: Use GetByteLength(...) instead of GetStringSize
+
+  {$REGION 'Documentation'}
+  ///	<summary>Retrieves the byte length of a unicode string.</summary>
+  ///	<param name="s">the unicode string.</param>
+  ///	<returns>The byte length of the unicode string.</returns>
+  ///	<remarks>Don't use the <c>SysUtils.ByteLength(string)</c> function since
+  ///	it only supports unicode strings and doesn't provide overloads for
+  ///	WideStrings and AnsiStrings.</remarks>
+  {$ENDREGION}
   function GetStringSize(const s: string): Integer; overload; inline;
 
-  /// <summary>
-  /// Retrieves the size of a wide string in bytes.
-  /// </summary>
+  ///	<summary>Retrieves the byte length of a WideString.</summary>
+  ///	<param name="s">A wide string.</param>
   function GetStringSize(const s: WideString): Integer; overload; inline;
 
-  /// <summary>
-  /// Retrieves the size of a long string (AnsiString) in bytes.
-  /// </summary>
+  ///	<summary>Retrieves the byte length of a <c>RawByteString</c> (AnsiString
+  ///	or UTF8String).</summary>
   function GetStringSize(const s: RawByteString): Integer; overload; inline;
 
-  /// <summary>
-  /// Determines whether a specified file exists. An EFileNotFoundException
-  /// exception will be raised when not found.
-  /// </summary>
+  {$REGION 'Documentation'}
+  ///	<summary>Determines whether a specified file exists. An
+  ///	<c>EFileNotFoundException</c> exception will be raised when not
+  ///	found.</summary>
+  ///	<exception cref="EFileNotFoundException">Raised if the target file does
+  ///	not exist.</exception>
+  {$ENDREGION}
   procedure CheckFileExists(const fileName: string);
 
-  /// <summary>
-  /// Determines whether a specified directory exists. An EDirectoryNotFoundException
-  /// exception will be raised when not found.
-  /// </summary>
+  {$REGION 'Documentation'}
+  ///	<summary>Determines whether a specified directory exists. An
+  ///	<c>EDirectoryNotFoundException</c> exception will be raised when not
+  ///	found.</summary>
+  ///	<exception cref="EDirectoryNotFoundException">Raised if the directory
+  ///	doesn't exist.</exception>
+  {$ENDREGION}
   procedure CheckDirectoryExists(const directory: string);
 
   /// <summary>
@@ -901,41 +988,44 @@ type
   function SplitString(const buffer: PChar; len: Integer; const separators: TSysCharSet;
     removeEmptyEntries: Boolean = False): TStringDynArray; overload;
 
+  {$REGION 'Documentation'}
+  ///	<summary>Returns a string array that contains the substrings in the
+  ///	buffer that are delimited by null char (#0) and ends with an additional
+  ///	null char.</summary>
+  ///	<example>
+  ///	  <code>
+  ///	procedure TestSplitNullTerminatedStrings;
+  ///	var
+  ///	  buffer: string;
+  ///	  strings: TStringDynArray;
+  ///	  s: string;
+  ///	begin
+  ///	  buffer := 'C:'#0'D:'#0'E:'#0#0;
+  ///	  strings := SplitString(PChar(buffer));
+  ///	  for s in strings do
+  ///	  begin
+  ///	    Writeln(s);
+  ///	  end;
+  ///	end;
+  ///	</code>
+  ///	</example>
+  {$ENDREGION}
+  function SplitString(const buffer: PChar): TStringDynArray; overload;
+
   /// <summary>
   /// Returns a string array that contains the substrings in the buffer that are
   /// delimited by null char (#0) and ends with an additional null char.
   /// </summary>
-  /// <example>
-  /// <code>
-  /// procedure TestSplitNullTerminatedStrings;
-  /// var
-  ///   buffer: string;
-  ///   strings: TStringDynArray;
-  ///   s: string;
-  /// begin
-  ///   buffer := 'C:'#0'D:'#0'E:'#0#0;
-  ///   strings := SplitString(PChar(buffer));
-  ///   for s in strings do
-  ///   begin
-  ///     Writeln(s);
-  ///   end;
-  /// end;
-  /// </code>
-  /// </example>
-  function SplitString(const buffer: PChar): TStringDynArray; overload;
-
-  /// <summary>
-  /// Deprecated. Use the SplitString(PChar) method instead.
-  /// </summary>
   function SplitNullTerminatedStrings(const buffer: PChar): TStringDynArray;
-    deprecated 'Use SpitString instead.';
+    deprecated 'Use the SpitString(PChar) function instead.';
 
-  /// <summary>
-  /// Executes a method call within the main thread.
-  /// </summary>
-  /// <param name="threadProc">An anonymous method that will be executed.</param>
-  /// <exception cref="EArgumentNullException">Raised if threadProc was not assigned.</exception>
-  /// <seealso cref="TThread.Synchronize"/>
+  {$REGION 'Documentation'}
+  ///	<summary>Executes a method call within the main thread.</summary>
+  ///	<param name="threadProc">An anonymous method that will be
+  ///	executed.</param>
+  ///	<exception cref="EArgumentNullException">Raised if <paramref name=
+  ///	"threadProc" /> was not assigned.</exception>
+  {$ENDREGION}
   procedure Synchronize(threadProc: TThreadProcedure);
 
   /// <summary>
@@ -955,14 +1045,14 @@ type
   function TryGetPropInfo(instance: TObject; const propertyName: string;
     out propInfo: PPropInfo): Boolean;
 
-  /// <summary>
-  /// Try parsing a string to a datetime value based on the specified format.
-  /// Returns True if the input string matches the format.
-  /// </summary>
-  /// <param name="s">the input string</param>
-  /// <param name="format">the format of datetime</param>
-  /// <param name="value">output datetime value</param>
-  /// <returns>Returns True if the input string can be parsed.</returns>
+  {$REGION 'Documentation'}
+  ///	<summary>Try parsing a string to a datetime value based on the specified
+  ///	format. Returns True if the input string matches the format.</summary>
+  ///	<param name="s">the input string</param>
+  ///	<param name="format">the format of datetime</param>
+  ///	<param name="value">output datetime value</param>
+  ///	<returns>Returns True if the input string can be parsed.</returns>
+  {$ENDREGION}
   function TryConvertStrToDateTime(const s, format: string; out value: TDateTime): Boolean;
 
   /// <summary>
@@ -977,10 +1067,8 @@ type
   function ParseDateTime(const s, format: string): TDateTime;
     deprecated 'Use ConvertStrToDateTime instead.';
 
-  /// <summary>
-  /// Determines if a variant is null or empty. The parameter "trimeWhiteSpace"
-  /// is an option only for strings.
-  /// </summary>
+  ///	<summary>Determines if a variant is null or empty. The parameter
+  ///"trimWhiteSpace" is an option only for strings.</summary>
   function VarIsNullOrEmpty(const value: Variant; trimWhiteSpace: Boolean = False): Boolean;
 
   // >>>NOTE<<<
@@ -994,19 +1082,22 @@ type
   procedure Lock(obj: TObject; const proc: TProc); overload; // inline;
   procedure Lock(const intf: IInterface; const proc: TProc); overload; // inline;
 
-  /// <summary>
-  /// Updates an instance of TStrings by calling its BeginUpdate and EndUpdate.
-  /// </summary>
-  /// <exception cref="EArgumentNullException">Raised if strings was nil or proc was not assigned.</exception>
+  ///	<summary>Updates an instance of <c>TStrings</c> by calling its
+  ///	BeginUpdate and EndUpdate.</summary>
+  ///	<exception cref="EArgumentNullException">Raised if <paramref name=
+  ///	"strings" /> was nil or proc was not assigned.</exception>
   procedure UpdateStrings(strings: TStrings; proc: TProc); // inline;
 
-  /// <summary>
-  /// Try getting the underlying type name of a nullable type.
-  /// </summary>
-  /// <remarks>
-  /// For instance, the underlyingTypeName of the type "TNullable<System.Integer>"
-  /// is "System.Integer".
-  /// </remarks>
+
+  // TODO: Consider using a interface such as INullableHandler to perform these actions
+
+  {$REGION 'Documentation'}
+  ///	<summary>Try getting the underlying type name of a nullable
+  ///	type.</summary>
+  ///	<remarks>For instance, the underlying type name of the type
+  ///	<c>TNullable&lt;System.Integer&gt;</c> is
+  ///	<c>System.Integer</c>.</remarks>
+  {$ENDREGION}
   function TryGetUnderlyingTypeName(typeInfo: PTypeInfo; out underlyingTypeName: string): Boolean;
 
   /// <summary>
@@ -1017,7 +1108,7 @@ type
   /// <summary>
   /// Try getting the underlying value of a nullable type.
   /// </summary>
-  /// <returns>Returns True if the value is a TNullable<T> and it has value. </returns>
+  /// <returns>Returns True if the value is a <c>TNullable&lt;T&gt;</c> and it has value. </returns>
   function TryGetUnderlyingValue(const value: TValue; out underlyingValue: TValue): Boolean;
 
   // Rtti bugs: QC #82433
@@ -1032,21 +1123,16 @@ type
   {$REGION 'Constants'}
 
 const
-  /// <summary>
-  /// Represents bytes of one KB.
-  /// </summary>
+  ///	<summary>Represents bytes of one KB.</summary>
   OneKB: Int64 = 1024;            // 1KB = 1024 bytes
-  /// <summary>
-  /// Represents bytes of one MB.
-  /// </summary>
+
+  ///	<summary>Represents bytes of one MB.</summary>
   OneMB: Int64 = 1048576;         // 1MB = 1024 KB
-  /// <summary>
-  /// Represents bytes of one GB.
-  /// </summary>
+
+  ///	<summary>Represents bytes of one GB.</summary>
   OneGB: Int64 = 1073741824;      // 1GB = 1024 MB
-  /// <summary>
-  /// Represents bytes of one TB.
-  /// </summary>
+
+  ///	<summary>Represents bytes of one TB.</summary>
   OneTB: Int64 = 1099511627776;   // 1TB = 1024 GB
 
   {$ENDREGION}
@@ -1056,7 +1142,6 @@ implementation
 
 uses
   StrUtils,
-  //Spring.Reflection, Compiling Error
   Spring.ResourceStrings;
 
 
@@ -2391,12 +2476,12 @@ end;
 
 {$REGION 'TValueProvider'}
 
-function TValueProvider.GetIsReadOnly: Boolean;
+function TValueProviderBase.GetIsReadOnly: Boolean;
 begin
   Result := True;
 end;
 
-procedure TValueProvider.SetValue(const value: TValue);
+procedure TValueProviderBase.SetValue(const value: TValue);
 begin
   if not GetIsReadOnly then
   begin
@@ -2521,6 +2606,31 @@ begin
   if Assigned(fProc) then
     fProc;
   inherited Destroy;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TWeakReference<T>'}
+
+constructor TWeakReference<T>.Create(const value: T);
+begin
+  fValue := PPointer(@value)^;
+end;
+
+function TWeakReference<T>.GetValue: T;
+begin
+  PPointer(@Result)^ := fValue;
+end;
+
+class operator TWeakReference<T>.Implicit(const value: TWeakReference<T>): T;
+begin
+  Result := value.Value;
+end;
+
+class operator TWeakReference<T>.Implicit(const value: T): TWeakReference<T>;
+begin
+  Result.fValue := PPointer(@value)^;
 end;
 
 {$ENDREGION}
@@ -2841,9 +2951,9 @@ end;
 
 {$REGION 'Attributes'}
 
-{ TLifetimeAttributeBase }
+{ LifetimeAttributeBase }
 
-constructor TLifetimeAttributeBase.Create(lifetimeType: TLifetimeType);
+constructor LifetimeAttributeBase.Create(lifetimeType: TLifetimeType);
 begin
   inherited Create;
   fLifetimeType := lifetimeType;
@@ -2913,6 +3023,5 @@ begin
 end;
 
 {$ENDREGION}
-
 
 end.

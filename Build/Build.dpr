@@ -25,7 +25,7 @@
 program Build;
 
 uses
-  FastMM4,
+//  FastMM4,
   Forms,
   MainForm in 'Source\MainForm.pas' {frmMain},
   BuildEngine in 'Source\BuildEngine.pas';

@@ -219,7 +219,7 @@ end;
 procedure TLifetimeInspector.DoProcessModel(const context: IContainerContext;
   model: TComponentModel);
 var
-  attribute: TLifetimeAttributeBase;
+  attribute: LifetimeAttributeBase;
 begin
   if model.LifetimeManager <> nil then
   begin
@@ -228,7 +228,7 @@ begin
   end;
   if model.LifetimeType = ltUnknown then
   begin
-    if model.ComponentType.TryGetCustomAttribute<TLifetimeAttributeBase>(attribute) then
+    if model.ComponentType.TryGetCustomAttribute<LifetimeAttributeBase>(attribute) then
     begin
       model.LifetimeType := attribute.LifetimeType;
       if attribute is PooledAttribute then

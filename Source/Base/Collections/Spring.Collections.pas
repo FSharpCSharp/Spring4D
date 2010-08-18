@@ -22,7 +22,13 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Collections;  // experimental
+{TODO -oPaul -cGeneral : Redefine IEnumerable & IEnumerable<T>}
+{TODO -oPaul -cGeneral : Implement ICollection, IList, IDictionary}
+{TODO -oPaul -cGeneral : Add ISet, ISet<T>, IOrderedDictionary}
+{TODO -oPaul -cGeneral : Add more LINQ features to IEnumerableEx<T>}
+
+/// <preliminary />
+unit Spring.Collections; // experimental;
 
 {$I Spring.inc}
 
@@ -44,9 +50,8 @@ type
   IDictionary<TKey, TValue> = interface;
   TCollections = class;
 
-  /// <summary>
-  /// Provides limited LINQ-like enumerable extension methods for IEnumerable<T>.
-  /// </summary>
+  ///	<summary>Provides limited LINQ-like enumerable extension methods for
+  ///	<c>IEnumerable&lt;T&gt;</c>.</summary>
   IEnumerableEx<T> = interface(IEnumerable<T>)
     {$REGION 'Property Getters & Setters'}
       function GetCount: Integer;
@@ -170,14 +175,15 @@ type
 
   TDictionaryOwnerships = Generics.Collections.TDictionaryOwnerships;
 
-  /// <summary>
-  /// Provides static methods to create generic interface collections.
-  /// </summary>
-  /// <remarks>
-  /// Use the TCollections class to create collection instance,
-  /// insteading of the implementations in Spring.Collections.Adapters,
-  /// such as TListAdapter<T>, TDictionaryAdapter<TKey, TValue>, etc.
-  /// </remarks>
+  {$REGION '...'}
+  ///	<summary>Provides static methods to create an instance of various generic
+  ///	interfaced collections such as <c>IList&lt;T&gt;</c>,
+  ///	<c>IDictionary&lt;TKey, TValue&gt;</c>.</summary>
+  ///	<remarks>Use the TCollections class to create collection instance,
+  ///	insteading of the implementations in Spring.Collections.Adapters, such as
+  ///	<c>TListAdapter&lt;T&gt;</c>, <c>TDictionaryAdapter&lt;TKey,
+  ///	TValue&gt;</c>, etc.</remarks>
+  {$ENDREGION}
   TCollections = class
   public
     class function CreateList<T>: IList<T>; overload;
@@ -200,7 +206,7 @@ type
   TContainers = TCollections deprecated 'Use TCollections instead.';
 
   /// <summary>
-  /// Provides an abstract implementation for IEnumerator<T>.
+  /// Provides an abstract implementation for <c>IEnumerator&lt;T&gt;</c>.
   /// </summary>
   TEnumeratorBase<T> = class abstract(TInterfacedObject, IEnumerator<T>, IEnumerator, IInterface)
   protected
@@ -214,7 +220,7 @@ type
   end;
 
   /// <summary>
-  /// Provides an abstract implementation IEnumerable<T>.
+  /// Provides an abstract implementation <c>IEnumerable&lt;T&gt;</c>.
   /// </summary>
   TEnumerableBase<T> = class abstract(TInterfacedObject, IEnumerableAware, IEnumerable<T>, IEnumerable, IInterface)
   protected
@@ -227,7 +233,7 @@ type
   end;
 
   /// <summary>
-  /// Provides a default implementation for IEnumerableEx<T> (Extension Methods).
+  /// Provides a default implementation for <c>IEnumerableEx&lt;T&gt;</c> (Extension Methods).
   /// </summary>
   TEnumerableEx<T> = class abstract(TEnumerableBase<T>, IEnumerableEx<T>,
     IEnumerable<T>, IEnumerable, IInterface)

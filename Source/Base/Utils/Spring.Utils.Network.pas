@@ -81,7 +81,7 @@ uses
   ComObj,
   WinSock,
   WinInet,
-  Spring.Win32API,
+  Spring.Utils.Win32API,
   Spring.Utils;
 
 

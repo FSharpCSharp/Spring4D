@@ -22,6 +22,17 @@
 {                                                                           }
 {***************************************************************************}
 
+{$REGION 'Documentation'}
+///	<summary>
+/// Provides many class helpers &amp; record helpers that will enhance the
+/// ability of the common classes in the VCL framework or make them easier
+/// to use.
+/// </summary>
+///	<remarks>
+/// If you want to use these helpers, just add the
+///	<b>Spring.Helpers</b> to you uses in the target unit.
+/// </remarks>
+{$ENDREGION}
 unit Spring.Helpers;
 
 {$I Spring.inc}
@@ -44,12 +55,13 @@ uses
   Spring.Reflection;
 
 type
-  /// <summary>
-  /// Record helper for TGuid
-  /// </summary>
-  /// <remarks>
-  /// Note: We have reported an enhancement request to QC. (See QC#78515)
-  /// </remarks>
+  {$REGION '...'}
+  ///	<summary>Record helper for the <c>System.TGuid</c> structure.</summary>
+  ///	<remarks>
+  ///	  <alert class="note">We have reported an enhancement request to QC. (See
+  ///	  QC#78515)</alert>
+  ///	</remarks>
+  {$ENDREGION}
   TGuidHelper = record helper for TGuid
   private
     class function GetEmpty: TGuid; static;
@@ -73,8 +85,8 @@ type
 
   TArrayHelper = class helper for TArray
   public
-    class function CreateArray<T>(const values: array of T): TArray<T>;
-  end; // deprecated;
+    class function CreateArray<T>(const values: array of T): TArray<T>; deprecated;
+  end;
 
   TStreamHelper = class helper for TStream
   public
@@ -92,8 +104,13 @@ type
     procedure ExecuteUpdate(proc: TProc);
     procedure ExtractNames(strings: TStrings);
     procedure ExtractValues(strings: TStrings);
+    ///	<summary>Returns a string array that contains all the <b>name</b>
+    ///	entries in the string list.</summary>
     function GetNames: TStringDynArray;
     function GetValues: TStringDynArray;
+    function TryFindName(const name: string; var index: Integer): Boolean;
+    function TryFindValue(const value: string; var index: Integer): Boolean;
+    function TryFindObject(obj: TObject; var index: Integer): Boolean;
     function ContainsName(const name: string): Boolean;
     function ContainsValue(const value: string): Boolean;
     function ContainsObject(obj: TObject): Boolean;
@@ -102,10 +119,17 @@ type
     property IsEmpty: Boolean read GetIsEmpty;
   end;
 
+  TCollectionHelper = class helper for TCollection
+  public
+    procedure ExecuteUpdate(proc: TProc);
+  end;
+
   TDataSetHelper = class helper for TDataSet
   public
     function GetValueOrDefault<T>(const fieldName: string; const default: T): T;
     procedure CopyRecordFrom(source: TDataSet);
+//    procedure CopyRecordTo(target: TDataSet);
+//    procedure Reopen;
 //    procedure EnumerateRows(proc: TProc<TDataSet>);
 //    procedure Clear;
 //    property IsModified: Boolean;
@@ -122,6 +146,8 @@ type
 
 
   {$REGION 'Class helpers for Enhanced Rtti (Reflection)'}
+
+  {TODO -oPaul -cGeneral : Add some non-generic implementation}
 
   TRttiObjectHelper = class helper for TRttiObject
   public
@@ -152,6 +178,14 @@ type
     function GetFields: IEnumerableEx<TRttiField>;
   public
     // function GetMembers: IEnumerableEx<TRttiMember>;
+    {$REGION '...'}
+    ///	<summary>
+    ///	  Returns an enumerable collection which contains all the interfaces
+    ///	  Rtti types that the type implements.
+    ///	  <alert class="note">This method only lists the interfaces those who
+    ///	  has a guid.</alert>
+    ///	</summary>
+    {$ENDREGION}
     function GetInterfaces: IEnumerableEx<TRttiInterfaceType>;
     function GetGenericArguments: TArray<TRttiType>;
 
@@ -396,6 +430,39 @@ begin
   end;
 end;
 
+function TStringsHelper.TryFindName(const name: string;
+  var index: Integer): Boolean;
+begin
+  index := IndexOfName(name);
+  Result := index > -1;
+end;
+
+function TStringsHelper.TryFindValue(const value: string;
+  var index: Integer): Boolean;
+var
+  v: string;
+  i: Integer;
+begin
+  index := -1;
+  Result := False;
+  for i := 0 to Count - 1 do
+  begin
+    v := ValueFromIndex[i];
+    if SameText(v, value) then
+    begin
+      index := i;
+      Exit(True);
+    end;
+  end;
+end;
+
+function TStringsHelper.TryFindObject(obj: TObject;
+  var index: Integer): Boolean;
+begin
+  index := IndexOfObject(obj);
+  Result := index > -1;
+end;
+
 function TStringsHelper.ContainsName(const name: string): Boolean;
 begin
   Result := IndexOfName(name) <> -1;
@@ -403,18 +470,9 @@ end;
 
 function TStringsHelper.ContainsValue(const value: string): Boolean;
 var
-  v: string;
-  i: Integer;
+  index: Integer;
 begin
-  Result := False;
-  for i := 0 to Count - 1 do
-  begin
-    v := ValueFromIndex[i];
-    if SameText(v, value) then
-    begin
-      Exit(True);
-    end;
-  end;
+  Result := TryFindValue(value, index);
 end;
 
 function TStringsHelper.ContainsObject(obj: TObject): Boolean;
@@ -479,6 +537,20 @@ end;
 function TStringsHelper.GetIsEmpty: Boolean;
 begin
   Result := Count = 0;
+end;
+
+{ TCollectionHelper }
+
+procedure TCollectionHelper.ExecuteUpdate(proc: TProc);
+begin
+  TArgument.CheckNotNull(Assigned(proc), 'proc');
+  BeginUpdate;
+  try
+    Clear;
+    proc();
+  finally
+    EndUpdate;
+  end;
 end;
 
 {$ENDREGION}

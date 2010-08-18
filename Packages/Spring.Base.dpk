@@ -22,6 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
+/// <summary>
+/// Contains the <b>Base Class Library</b> of Spring Framework for Delphi.
+/// </summary>
 package Spring.Base;
 
 {$R *.res}
@@ -49,7 +52,6 @@ package Spring.Base;
 {$DESCRIPTION 'Spring Framework for Delphi Base Class Library'}
 {$RUNONLY}
 {$IMPLICITBUILD ON}
-{$WARN UNIT_PLATFORM OFF}    // Turn off UNIT_PLATFORM warning
 
 requires
   rtl,
@@ -59,7 +61,6 @@ requires
 contains
   Spring.DesignPatterns in '..\Source\Base\Spring.DesignPatterns.pas',
   Spring.ResourceStrings in '..\Source\Base\Spring.ResourceStrings.pas',
-  Spring.Win32API in '..\Source\Base\Spring.Win32API.pas',
   Spring.Reflection in '..\Source\Base\Spring.Reflection.pas',
   Spring.Helpers in '..\Source\Base\Spring.Helpers.pas',
   Spring.Collections.Adapters in '..\Source\Base\Collections\Spring.Collections.Adapters.pas',
@@ -77,7 +78,8 @@ contains
   Spring.Cryptography.SHA in '..\Source\Base\Cryptography\Spring.Cryptography.SHA.pas',
   Spring.Cryptography.Utils in '..\Source\Base\Cryptography\Spring.Cryptography.Utils.pas',
   Spring in '..\Source\Base\Spring.pas',
-  Spring.ValueConverters in '..\Source\Base\Spring.ValueConverters.pas';
+  Spring.ValueConverters in '..\Source\Base\Spring.ValueConverters.pas',
+  Spring.Utils.Win32API in '..\Source\Base\Utils\Spring.Utils.Win32API.pas';
 
 end.
 

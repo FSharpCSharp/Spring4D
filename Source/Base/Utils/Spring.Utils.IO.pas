@@ -886,7 +886,7 @@ implementation
 uses
   Spring.ResourceStrings,
   Spring.Utils,
-  Spring.Win32API;
+  Spring.Utils.Win32API;
 
 const
   DriveTypeStrings: array[TDriveType] of string = (

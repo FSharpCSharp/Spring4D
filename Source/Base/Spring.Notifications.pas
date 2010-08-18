@@ -22,6 +22,8 @@
 {                                                                           }
 {***************************************************************************}
 
+{TODO -oPaul -cGeneral : Integrate the namespace into Spring and Spring.Collections}
+
 /// <summary>
 /// This namespace provides notifications when a property has been changed or is
 /// being changed, and/or a collection changed (added, removed, etc).

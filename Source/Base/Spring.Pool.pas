@@ -22,7 +22,8 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Pool;
+/// <preliminary />
+unit Spring.Pool;  // experimental;
 
 {$I Spring.inc}
 

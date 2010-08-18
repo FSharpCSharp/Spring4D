@@ -247,6 +247,7 @@ type
     procedure TestCase1;
     procedure TestCase2;
     procedure TestCBC;
+    procedure TestDecrypt;
   end;
 
   TTestTripleDES = class(TSymmetricAlgorithmTestCase)
@@ -568,6 +569,18 @@ begin
 
   fActualBuffer := fDES.Decrypt(fOutputBuffer);
   CheckEquals(fInputBuffer, fActualBuffer, 'Decryption: ');
+end;
+
+procedure TTestDES.TestDecrypt;
+begin
+  fInputBuffer := TBuffer.Create('Hello');
+  fDES.PaddingMode := pmPKCS7;
+  fDES.Key := TBuffer.FromHexString('0123456789abcdef');
+  fDES.IV := TBuffer.FromHexString('1234567890abcdef');
+  fOutputBuffer := fDES.Encrypt(fInputBuffer);
+  fActualBuffer := fDES.Decrypt(fOutputBuffer);
+
+  CheckEquals(fInputBuffer, fActualBuffer);
 end;
 
 {$ENDREGION}

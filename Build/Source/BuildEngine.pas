@@ -35,7 +35,7 @@ uses
   Registry,
   IniFiles,
   Generics.Collections,
-  Spring.System,
+  Spring,
   Spring.Collections,
   Spring.Utils;
 
@@ -334,6 +334,7 @@ begin
   path := TEnvironment.ExpandEnvironmentVariables('%WINDIR%\Microsoft.NET\Framework\v2.0.50727;') + path;
   TEnvironment.SetEnvironmentVariable('PATH', path);
 
+  (*
 //  steps := fProjects.Count * 2;
   for projectName in fProjects do
   begin
@@ -345,6 +346,7 @@ begin
     end;
 //    Inc(steps);
   end;
+  //*)
   for projectName in fProjects do
   begin
     commandLine := Format(SBuildCommandLine, [configurationName, projectName]);

@@ -28,7 +28,7 @@ interface
 
 resourcestring
 
-  {$REGION 'Spring.System'}
+  {$REGION 'Spring'}
 
   SNotSupportedException       = '%s is not supported.';
   SNotImplementedException     = '%s is not implemented.';

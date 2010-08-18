@@ -45,7 +45,7 @@ uses
   Generics.Collections,
   Spring,
   Spring.Collections,
-  Spring.Win32API,
+  Spring.Utils.Win32API,
   Spring.Utils.IO,
   Spring.Utils.Network;
 

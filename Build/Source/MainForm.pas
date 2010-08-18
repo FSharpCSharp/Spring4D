@@ -42,7 +42,7 @@ uses
   ShellAPI,
   CheckLst,
   ComCtrls,
-  Spring.System,
+  Spring,
   Spring.Utils,
   BuildEngine;
 

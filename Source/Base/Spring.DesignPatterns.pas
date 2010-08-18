@@ -22,6 +22,16 @@
 {                                                                           }
 {***************************************************************************}
 
+{$REGION 'Documentation'}
+///	<summary>
+///	  This namespace contains the following classical design patterns:
+///	  <list type="bullet">
+///	    <item><b>Singleton Pattern</b></item>
+///	    <item><b>Observer Pattern</b></item>
+///	    <item><b>Specification Pattern</b></item>
+///	  </list>
+///	</summary>
+{$ENDREGION}
 unit Spring.DesignPatterns;
 
 {$I Spring.inc}
@@ -39,17 +49,19 @@ uses
   Spring;
 
 type
+
   {$REGION 'Singleton Pattern'}
 
-  /// <summary>
-  /// Provides a portal to get the single instance of a concrete class which
-  /// must have a default constructor. It also keeps track of the lifetime
-  /// of the instances and will free them in reversed order.
+  {$REGION 'Comments'}
+  ///	<summary>
+  /// Provides a portal to get the single instance of a concrete class
+  /// which must have a default constructor. It also keeps track of the
+  /// lifetime of the instances and will free them in reversed order.
   /// </summary>
-  /// <remarks>
-  /// This class just demonstrates how to apply the classical Singleton Pattern.
-  /// It's recommended to use the Spring IoC container which is more flexible.
-  /// </remarks>
+  ///	<remarks>This class just demonstrates how to apply the classical
+  ///Singleton Pattern. It's recommended to use the Spring IoC container which
+  ///is more flexible.</remarks>
+  {$ENDREGION}
   TSingleton = record
   strict private
     class var
@@ -61,6 +73,8 @@ type
     class destructor Destroy;
     {$HINTS ON}
   public
+    ///	<typeparam name="T">The type of a class which must have a default
+    ///constructor.</typeparam>
     class function GetInstance<T: class, constructor>: T; static;
   end;
 
@@ -84,7 +98,7 @@ type
   );
 
   /// <summary>
-  /// TObservable<T>
+  /// TObservable&lt;T&gt;
   /// </summary>
   TObservable<T> = class(TInterfacedObject, IObservable<T>, IInterface)
   private
@@ -128,13 +142,10 @@ type
   {$REGION 'Specification Pattern (Experimental)'}
 
   /// <summary>
-  /// ISpecification<T>
+  /// Defines the core methods of a specification interface.
   /// </summary>
-  /// <remarks>
-  /// Consider: how to work with ORM?
-  /// </remarks>
   ISpecification<T> = interface
-    function IsSatisfiedBy(const obj: T): Boolean;
+    function IsSatisfiedBy(const obj: T): Boolean;   // CanAccept
   end;
 
   /// <summary>
@@ -144,7 +155,7 @@ type
   private
     fSpecification: ISpecification<T>;
   public
-    function IsSatisfiedBy(const obj: T): Boolean;
+    function IsSatisfiedBy(const obj: T): Boolean; // deprecated 'Use CanAccept instead.';
     class operator Implicit(const specification: ISpecification<T>): TSpecification<T>;
     class operator Implicit(const specification: TSpecification<T>): ISpecification<T>;
     class operator Implicit(const specification: TSpecification<T>): TPredicate<T>;
@@ -156,7 +167,7 @@ type
   end;
 
   /// <summary>
-  /// Provides the abstract base class for Specification
+  /// Provides the abstract base class for Specification.
   /// </summary>
   TSpecificationBase<T> = class abstract(TInterfacedObject, ISpecification<T>, TPredicate<T>, IInterface)
   protected
@@ -515,7 +526,3 @@ end;
 {$ENDREGION}
 
 end.
-
-
-
-

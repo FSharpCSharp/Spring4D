@@ -315,7 +315,7 @@ type
   /// <summary>
   /// Default implementation of Exrepssion part of Value
   /// </summary>
-  TValueExpression = class(TValueProvider, IValueExpression)
+  TValueExpression = class(TValueProviderBase, IValueExpression)
   strict private
     fInstance: TValue;
     fParent: IValueExpression;

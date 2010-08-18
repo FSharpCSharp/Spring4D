@@ -296,6 +296,9 @@ type
     property HashSize: Integer read GetHashSize;
   end;
 
+  {TODO -oPaul -cGeneral : Refactoring: EncryptBlock/EncryptFinalBlock/Decrypt***}
+  {TODO 5 -oPaul -cGeneral : BUG FIXES: TSymmetricAlgorithmBase.Encrypt/Decrypt(inputStream, outputStream)}
+
   /// <summary>
   /// Abstract base class for symmetric algorithms.
   /// </summary>
