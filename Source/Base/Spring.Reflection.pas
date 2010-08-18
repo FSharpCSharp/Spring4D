@@ -1224,7 +1224,8 @@ begin
       staticArray.ElementType.TypeSize * StrToInt(fExpression),
       staticArray.ElementType.Handle, Result);
   end
-  else if instanceType is TRttiDynamicArrayType then
+  else
+  if instanceType is TRttiDynamicArrayType then
   begin
     dynamicArray := instanceType as TRttiDynamicArrayType;
     TValue.Make(PPByte(instance.GetReferenceToRawData)^ +

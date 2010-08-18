@@ -232,12 +232,9 @@ type
   end;
 
   //(*
-  /// <summary>
-  /// Provides an observable collection which provides notifications when an
-  /// item was added, removed or properties of an item is changing or has changed.
-  /// </summary>
-  /// <remarks>
-  /// </remarks>
+  ///	<summary>Provides an observable collection which in turns&#160;provides
+  ///	notifications when an item was added, removed or properties of an item is
+  ///	changing or has changed.</summary>
   TNotifiableCollection<T> = class({TEnumerableEx<T>} TListAdapter<T>,
     INotifyCollectionChanged, ISupportPropertyNotification)
   private
@@ -269,9 +266,9 @@ type
     procedure DoListNotify(sender: TObject; const item: T; action: TCollectionNotification); virtual;
     property PropertyNotification: ISupportPropertyNotification read GetPropertyNotification implements ISupportPropertyNotification;
   public
-    constructor Create(list: TList<T>; ownership: TCollectionOwnership = coReference); overload;
-    constructor Create(const owner: ISupportPropertyNotification; const propertyName: string); overload;
     constructor Create; overload;
+    constructor Create(list: TList<T>; ownership: TCollectionOwnership = coReference); overload;
+    constructor Create(const owner: ISupportPropertyNotification; const propertyName: string = ''); overload;
     destructor Destroy; override;
     property OnCollectionChanged: TCollectionChangedEvent read GetOnCollectionChanged;
   end;
@@ -570,6 +567,7 @@ var
   notification: IPropertyNotification;
   notificationAction: TCollectionChangedAction;
   index: Integer;
+  ownerArgs: TPropertyNotificationEventArgs;
 begin
   notificationAction := ChangedActions[action];
   value := TValue.From<T>(item);
@@ -586,6 +584,15 @@ begin
       notification.OnPropertyChanging.RemoveHandler(fOnPropertyChanging);
       notification.OnPropertyChanged.RemoveHandler(fOnPropertyChanged);
     end;
+  end;
+  if (OwnerPropertyNotification <> nil) and OwnerPropertyNotification.IsEnabled then
+  begin
+    ownerArgs := TPropertyNotificationEventArgs.Create(
+      fPropertyName,
+      TValue.Empty,
+      TValue.Empty
+    );
+    OwnerPropertyNotification.NotifyPropertyChanged(ownerArgs);
   end;
 
   if not Assigned(fOnCollectionChangedEvent) then Exit;
