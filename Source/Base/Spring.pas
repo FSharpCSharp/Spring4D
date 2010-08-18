@@ -69,13 +69,16 @@ type
   TTypeKind  = TypInfo.TTypeKind;
   TTypeKinds = TypInfo.TTypeKinds;
 
+  {$REGION 'Documentation'}
   ///	<summary>Represents a logical predicate.</summary>
+  ///	<param name="value">the value needs to be determined.</param>
   ///	<returns>Returns True if the value was accepted, otherwise, returns
   ///	false.</returns>
   ///	<remarks>
   ///	  <alert class="warning">This type redefined the
   ///	  SysUtils.TPredicate&lt;T&gt; type with a const parameter.</alert>
   ///	</remarks>
+  {$ENDREGION}
   TPredicate<T> = reference to function(const value: T): Boolean;
 
   ///	<summary>Represents the class type of <c>TCustomAttribute</c>.</summary>
@@ -94,9 +97,8 @@ type
 
   {$REGION 'TInterfacedThread'}
 
-  /// <summary>
-  /// Provides an abstract class base of TThread that implements the IInterface.
-  /// </summary>
+  ///	<summary>Provides an abstract class base of TThread that implements the
+  ///	IInterface.</summary>
   TInterfacedThread = class abstract(TThread, IInterface)
   protected
     function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
@@ -746,6 +748,7 @@ type
   ///	initiating an instance of the component.</summary>
   IInitializable = interface
     ['{A36BB399-E592-4DFB-A091-EDBA3BE0648B}']
+    ///	<summary>Initializes the component.</summary>
     procedure Initialize;
   end;
 
@@ -764,6 +767,9 @@ type
     procedure Recycle;
   end;
 
+  ///	<summary>Lifecycle interface.&#160;If the component implements this
+  ///	interface, all resources will be deallocate by calling the <c>dispose</c>
+  ///	method.</summary>
   IDisposable = interface
     ['{6708F9BF-0237-462F-AFA2-DF8EF21939EB}']
     procedure Dispose;
@@ -771,6 +777,7 @@ type
 
   {$ENDREGION}
 
+  ///	<summary>Internal interface. Reserved for future use.</summary>
   IItemTypeSupport = interface
     ['{FE986DD7-41D5-4312-A2F9-94F7D9E642EE}']
     function GetItemType: PTypeInfo;
@@ -809,9 +816,7 @@ type
     ltCustom
   );
 
-  /// <summary>
-  /// Represents an abstract lifetime attribute class.
-  /// </summary>
+  ///	<summary>Represents an abstract lifetime attribute class base.</summary>
   LifetimeAttributeBase = class abstract(TCustomAttribute)
   private
     fLifetimeType: TLifetimeType;
@@ -820,6 +825,7 @@ type
     property LifetimeType: TLifetimeType read fLifetimeType;
   end;
 
+  ///	<summary>Represents an abstract lifetime attribute class base.</summary>
   TLifetimeAttributeBase = LifetimeAttributeBase
     deprecated 'Use the LifetimeAttributeBase class instead.';
 
@@ -831,9 +837,8 @@ type
     constructor Create;
   end;
 
-  /// <summary>
-  /// This attribute is the default option.
-  /// </summary>
+  ///	<summary>This attribute is the default option. Represents that a new
+  ///	instance of the component will be not created when requested.</summary>
   TransientAttribute = class(LifetimeAttributeBase)
   public
     constructor Create;
@@ -877,9 +882,15 @@ type
     property HasValue: Boolean read GetHasValue;
   end;
 
+  {$REGION 'Documentation'}
   ///	<summary>Applies this attribute to tell the IoC container which service
   ///	is implemented by the target component. In addition, a service name can
   ///	be specified.</summary>
+  ///	<remarks>
+  ///	  <alert class="note">This attribute can be specified more than
+  ///	  once.</alert>
+  ///	</remarks>
+  {$ENDREGION}
   ImplementsAttribute = class(TCustomAttribute)
   private
     fServiceType: PTypeInfo;
@@ -927,8 +938,6 @@ type
 
   {$REGION 'Global Routines'}
 
-  // TODO: Consider move these routines to Spring.Utils
-  // TODO: Use GetByteLength(...) instead of GetStringSize
 
   {$REGION 'Documentation'}
   ///	<summary>Retrieves the byte length of a unicode string.</summary>
@@ -938,20 +947,21 @@ type
   ///	it only supports unicode strings and doesn't provide overloads for
   ///	WideStrings and AnsiStrings.</remarks>
   {$ENDREGION}
-  function GetStringSize(const s: string): Integer; overload; inline;
+  function GetByteLength(const s: string): Integer; overload; inline;
 
   ///	<summary>Retrieves the byte length of a WideString.</summary>
   ///	<param name="s">A wide string.</param>
-  function GetStringSize(const s: WideString): Integer; overload; inline;
+  function GetByteLength(const s: WideString): Integer; overload; inline;
 
   ///	<summary>Retrieves the byte length of a <c>RawByteString</c> (AnsiString
   ///	or UTF8String).</summary>
-  function GetStringSize(const s: RawByteString): Integer; overload; inline;
+  function GetByteLength(const s: RawByteString): Integer; overload; inline;
 
   {$REGION 'Documentation'}
   ///	<summary>Determines whether a specified file exists. An
   ///	<c>EFileNotFoundException</c> exception will be raised when not
   ///	found.</summary>
+  ///	<param name="fileName">the full file name.</param>
   ///	<exception cref="EFileNotFoundException">Raised if the target file does
   ///	not exist.</exception>
   {$ENDREGION}
@@ -1055,10 +1065,13 @@ type
   {$ENDREGION}
   function TryConvertStrToDateTime(const s, format: string; out value: TDateTime): Boolean;
 
-  /// <summary>
-  /// Parses a string to a datetime value based on the specified format.
-  /// An EConvertError exception will be raised if failed to parse the string.
-  /// </summary>
+  {$REGION 'Documentation'}
+  ///	<summary>Parses a string to a datetime value based on the specified
+  ///	format. An EConvertError exception will be raised if failed to parse the
+  ///	string.</summary>
+  ///	<param name="format">the format of datetime.</param>
+  ///	<param name="s">the date time string.</param>
+  {$ENDREGION}
   function ConvertStrToDateTime(const s, format: string): TDateTime;
 
   function TryParseDateTime(const s, format: string; out value: TDateTime): Boolean;
@@ -1117,8 +1130,6 @@ type
 
   function TryGetInterface(const instance: TValue; const guid: TGuid): Boolean; overload;
 
-  {$ENDREGION}
-
 
   {$REGION 'Constants'}
 
@@ -1147,17 +1158,17 @@ uses
 
 {$REGION 'Global Routines'}
 
-function GetStringSize(const s: string): Integer;
+function GetByteLength(const s: string): Integer;
 begin
   Result := Length(s) * SizeOf(Char);
 end;
 
-function GetStringSize(const s: WideString): Integer;
+function GetByteLength(const s: WideString): Integer;
 begin
   Result := Length(s) * SizeOf(WideChar);
 end;
 
-function GetStringSize(const s: RawByteString): Integer;
+function GetByteLength(const s: RawByteString): Integer;
 begin
   Result := Length(s);
 end;
