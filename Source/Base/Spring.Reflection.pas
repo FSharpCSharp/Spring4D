@@ -1163,6 +1163,7 @@ var
   prop: TRttiProperty;
   staticArray: TRttiArrayType;
   dynamicArray: TRttiDynamicArrayType;
+  localInstance: TValue;
 begin
   rttiCtx := TRttiContext.Create;
   instanceType := rttiCtx.GetType(instance.TypeInfo);
@@ -1180,13 +1181,20 @@ begin
   end
   else
   begin
+    if instanceType is TRttiInterfaceType then
+    begin
+      localInstance := TObject(instance.AsInterface);
+      instanceType := rttiCtx.GetType(localInstance.TypeInfo);
+    end
+    else localInstance := instance;
+
     field := instanceType.GetField(fExpression);
     if Assigned(field) then
     begin
-      if instance.IsObject then
-        field.SetValue(instance.AsObject, value)
+      if localInstance.IsObject then
+        field.SetValue(localInstance.AsObject, value)
       else
-        value.Cast(field.FieldType.Handle).ExtractRawData(PByte(instance.GetReferenceToRawData) +
+        value.Cast(field.FieldType.Handle).ExtractRawData(PByte(localInstance.GetReferenceToRawData) +
           field.Offset);
     end
     else
@@ -1194,10 +1202,10 @@ begin
       prop := instanceType.GetProperty(fExpression);
       if Assigned(prop) then
       begin
-        if instance.IsObject then
-          prop.SetValue(instance.AsObject, value)
+        if localInstance.IsObject then
+          prop.SetValue(localInstance.AsObject, value)
         else
-          prop.SetValue(instance.GetReferenceToRawData, value);
+          prop.SetValue(localInstance.GetReferenceToRawData, value);
       end
       else
         raise Exception.CreateResFmt(@SCouldNotFindPath, [fExpression]);
@@ -1214,6 +1222,7 @@ var
   prop: TRttiProperty;
   staticArray: TRttiArrayType;
   dynamicArray: TRttiDynamicArrayType;
+  localInstance: TValue;
 begin
   rttiCtx := TRttiContext.Create;
   instanceType := rttiCtx.GetType(instance.TypeInfo);
@@ -1234,13 +1243,20 @@ begin
   end
   else
   begin
+    if instanceType is TRttiInterfaceType then
+    begin
+      localInstance := TObject(instance.AsInterface);
+      instanceType := rttiCtx.GetType(localInstance.TypeInfo);
+    end
+    else localInstance := instance;
+
     field := instanceType.GetField(fExpression);
     if Assigned(field) then
     begin
-      if instance.IsObject then
-        Result := field.GetValue(instance.AsObject)
+      if localInstance.IsObject then
+        Result := field.GetValue(localInstance.AsObject)
       else
-        TValue.Make(PByte(instance.GetReferenceToRawData) + field.Offset,
+        TValue.Make(PByte(localInstance.GetReferenceToRawData) + field.Offset,
           field.FieldType.Handle, Result);
     end
     else
@@ -1248,10 +1264,10 @@ begin
       prop := instanceType.GetProperty(fExpression);
       if Assigned(prop) then
       begin
-        if instance.IsObject then
-          Result := prop.GetValue(instance.AsObject)
+        if localInstance.IsObject then
+          Result := prop.GetValue(localInstance.AsObject)
         else
-          Result := prop.GetValue(instance.GetReferenceToRawData);
+          Result := prop.GetValue(localInstance.GetReferenceToRawData);
       end
       else
         raise Exception.CreateResFmt(@SCouldNotFindPath, [fExpression]);

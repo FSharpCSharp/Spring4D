@@ -7,15 +7,24 @@ uses
   TestExtensions;
 
 type
+  TPoint = record
+    X, Y: Integer;
+  end;
+  TPoints = array[0..9] of TPoint;
+
   TTestValueExpression = class(TTestCase)
   strict private
     type
-      TPoint = record
-        X, Y: Integer;
+      IInnerObject = interface
+        ['{A045E5C6-3499-43EA-8F83-681C61BE0874}']
+        procedure SetName(const value: string);
+        function GetName: string;
+        function GetPoint: TPoint;
+        property Name: string read GetName write SetName;
+        property Point: TPoint read GetPoint;
       end;
-      TPoints = array[0..9] of TPoint;
 
-      TInnerObject = class
+      TInnerObject = class(TInterfacedObject, IInnerObject)
       private
         fName: string;
         fPoint: TPoint;
@@ -32,21 +41,21 @@ type
       private
         fName: string;
         fNumber: Integer;
-        fInner: TInnerObject;
+        fInner: IInnerObject;
         fCoords: TPoints;
         procedure SetName(const value: string);
         function GetName: string;
         procedure SetNumber(const value: Integer);
         function GetNumber: Integer;
         function GetCoords: TPoints;
-        function GetInner: TInnerObject;
+        function GetInner: IInnerObject;
       public
         constructor Create;
         destructor Destroy; override;
         property Name: string read GetName write SetName;
         property Number: Integer read GetNumber write SetNumber;
         property Coords: TPoints read GetCoords;
-        property Inner: TInnerObject read GetInner;
+        property Inner: IInnerObject read GetInner;
       end;
 
   published
@@ -92,7 +101,7 @@ end;
 
 destructor TTestValueExpression.TOuterObject.Destroy;
 begin
-  fInner.Free;
+  //fInner.Free;
 end;
 
 function TTestValueExpression.TOuterObject.GetCoords: TPoints;
@@ -100,7 +109,7 @@ begin
   Result := fCoords;
 end;
 
-function TTestValueExpression.TOuterObject.GetInner: TInnerObject;
+function TTestValueExpression.TOuterObject.GetInner: IInnerObject;
 begin
   Result := fInner;
 end;
@@ -231,13 +240,13 @@ end;
 procedure TTestValueExpression.TestGetFieldObject;
 var
   outerObj: TOuterObject;
-  obj: TInnerObject;
+  obj: IInnerObject;
   root, expression: IValueExpression;
 begin
   outerObj := TOuterObject.Create;
   root := TValueExpression.Create(outerObj, '');
   expression := root.Follow('fInner');
-  CheckTrue(expression.Value.TryAsType<TInnerObject>(obj));
+  CheckTrue(expression.Value.TryAsType<IInnerObject>(obj));
   CheckEquals('Inner Object', obj.Name);
   outerObj.Free;
 end;
@@ -296,13 +305,13 @@ end;
 procedure TTestValueExpression.TestGetPropertyObject;
 var
   outerObj: TOuterObject;
-  obj: TInnerObject;
+  obj: IInnerObject;
   root, expression: IValueExpression;
 begin
   outerObj := TOuterObject.Create;
   root := TValueExpression.Create(outerObj, '');
   expression := root.Follow('Inner');
-  CheckTrue(expression.Value.TryAsType<TInnerObject>(obj));
+  CheckTrue(expression.Value.TryAsType<IInnerObject>(obj));
   CheckEquals('Inner Object', obj.Name);
   outerObj.Free;
 end;
