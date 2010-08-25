@@ -22,6 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
+{TODO -oOwner -cGeneral : Merge this namespace to Spring.Utils}
 unit Spring.Utils.Network;
 
 {$I Spring.inc}
@@ -42,18 +43,15 @@ type
     nsOffline
   );
 
-  TNetwork = class sealed
+  TNetwork = record
   private
     class function GetIsAvailable: Boolean; static;
     class function GetStatus: TNetworkStatus; static;
     class property Status: TNetworkStatus read GetStatus;
   public
-    class function GetMacAddress: string; overload;
-//    function GetMacAddress(const hostNameOrAddress: string): string; overload; static;
-    class function GetIPAddress: string; overload;
-//    function GetIPAddress(const hostName: string): string; overload; static;
-    class function GetPublicIPAddress: string;
-//    class procedure Ping(const hostNameOrAddress: string);
+    class function GetMacAddress: string; overload; static;
+    class function GetIPAddress: string; overload; static;
+    class function GetPublicIPAddress: string; static;
     class property IsAvailable: Boolean read GetIsAvailable;
   end experimental;
 

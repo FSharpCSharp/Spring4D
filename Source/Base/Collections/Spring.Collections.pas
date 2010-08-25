@@ -24,8 +24,9 @@
 
 {TODO -oPaul -cGeneral : Redefine IEnumerable & IEnumerable<T>}
 {TODO -oPaul -cGeneral : Implement ICollection, IList, IDictionary}
-{TODO -oPaul -cGeneral : Add ISet, ISet<T>, IOrderedDictionary}
 {TODO -oPaul -cGeneral : Add more LINQ features to IEnumerableEx<T>}
+{TODO -oPaul -cGeneral : Add ISet, ISet<T>, IOrderedDictionary}
+{TODO -oOwner -cGeneral : Documentation}
 
 /// <preliminary />
 unit Spring.Collections; // experimental;
@@ -175,7 +176,7 @@ type
 
   TDictionaryOwnerships = Generics.Collections.TDictionaryOwnerships;
 
-  {$REGION '...'}
+  {$REGION 'Documentation'}
   ///	<summary>Provides static methods to create an instance of various generic
   ///	interfaced collections such as <c>IList&lt;T&gt;</c>,
   ///	<c>IDictionary&lt;TKey, TValue&gt;</c>.</summary>
@@ -205,9 +206,8 @@ type
 
   TContainers = TCollections deprecated 'Use TCollections instead.';
 
-  /// <summary>
-  /// Provides an abstract implementation for <c>IEnumerator&lt;T&gt;</c>.
-  /// </summary>
+  ///	<summary>Provides an abstract implementation for
+  ///	<c>System.IEnumerator&lt;T&gt;</c>.</summary>
   TEnumeratorBase<T> = class abstract(TInterfacedObject, IEnumerator<T>, IEnumerator, IInterface)
   protected
     function DoGetCurrent: T; virtual; abstract;
@@ -262,7 +262,7 @@ type
 
   TContainedEnumerableEx<T> = class abstract(TEnumerableEx<T>, IInterface)
   private
-    fController: Pointer;  // Weak reference to controller
+    fController: Pointer;
     function GetController: IInterface;
   protected
     { IInterface }
@@ -285,7 +285,7 @@ type
     function MoveNext: Boolean; override;
   end;
 
-  TCollectionBase<T> = class(TEnumerableEx<T>, ICollection<T>)
+  TCollectionBase<T> = class abstract(TEnumerableEx<T>, ICollection<T>)
   protected
     function GetIsReadOnly: Boolean; virtual;
   public

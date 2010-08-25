@@ -22,7 +22,6 @@
 {                                                                           }
 {***************************************************************************}
 
-{TODO -oPaul -cGeneral : Move TCallback & global routines to Spring.Utils}
 {TODO -oPaul -cGeneral : Add TArray, TArray<T>}
 {TODO -oPaul -cGeneral : Add TArrayBuilder}
 
@@ -94,9 +93,6 @@ type
     function _Release: Integer; stdcall;
   end;
 
-
-  {$REGION 'TInterfacedThread'}
-
   ///	<summary>Provides an abstract class base of TThread that implements the
   ///	IInterface.</summary>
   TInterfacedThread = class abstract(TThread, IInterface)
@@ -105,8 +101,6 @@ type
     function _AddRef: Integer; stdcall;
     function _Release: Integer; stdcall;
   end;
-
-  {$ENDREGION}
 
 
   {$REGION 'TBuffer'}
@@ -209,6 +203,52 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TVersion (Experimental)'}
+
+  ///	<summary>Represents a version number in the format of
+  ///	"major.minor[.build[.revision]]", which is different from the delphi
+  ///	style format "major.minor[.release[.build]]".</summary>
+  TVersion = record
+  private
+    const fCUndefined: Integer = -1;
+  strict private
+    fMajor: Integer;
+    fMinor: Integer;
+    fBuild: Integer;      // -1 if undefined.
+    fReversion: Integer;  // -1 if undefined.
+    function GetMajorReversion: Int16;
+    function GetMinorReversion: Int16;
+  private
+    constructor InternalCreate(defined, major, minor, build, reversion: Integer);
+    function CompareComponent(a, b: Integer): Integer;
+    function IsDefined(const component: Integer): Boolean; inline;
+  public
+    constructor Create(major, minor: Integer); overload;
+    constructor Create(major, minor, build: Integer); overload;
+    constructor Create(major, minor, build, reversion: Integer); overload;
+    constructor Create(const versionString: string); overload;
+    function CompareTo(const version: TVersion): Integer;
+    function Equals(const version: TVersion): Boolean;
+    function ToString: string; overload;
+    function ToString(fieldCount: Integer): string; overload;
+    property Major: Integer read fMajor;
+    property MajorReversion: Int16 read GetMajorReversion;
+    property Minor: Integer read fMinor;
+    property MinorReversion: Int16 read GetMinorReversion;
+    property Build: Integer read fBuild;
+    property Reversion: Integer read fReversion;
+    { Operator Overloads }
+    class operator Equal(const left, right: TVersion): Boolean;
+    class operator NotEqual(const left, right: TVersion): Boolean;
+    class operator GreaterThan(const left, right: TVersion): Boolean;
+    class operator GreaterThanOrEqual(const left, right: TVersion): Boolean;
+    class operator LessThan(const left, right: TVersion): Boolean;
+    class operator LessThanOrEqual(const left, right: TVersion): Boolean;
+  end;
+
+  {$ENDREGION}
+
+
   (*
   TMemory = class
   public
@@ -297,7 +337,7 @@ type
 
   ///	<summary>Represents an "object" whose underlying type is a value type
   ///	that can also be assigned nil like a reference type.</summary>
-  ///	<typeparam name="T">The underlying value type of the TNullable&lt;T&gt;
+  ///	<typeparam name="T">The underlying value type of the <see cref="TNullable&lt;T&gt;" />
   ///	generic type.</typeparam>
   TNullable<T> = packed record
   private
@@ -335,7 +375,7 @@ type
 
     ///	<summary>Gets the value of the current TNullable&lt;T&gt;
     ///	value.</summary>
-    ///	<exception cref="EInvalidOperation">Raised if the value is
+    ///	<exception cref="Spring|EInvalidOperation">Raised if the value is
     ///	null.</exception>
     property Value: T read GetValue;
 
@@ -421,7 +461,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'Documentation'}
+  {$REGION 'Defines the interface for an abstract value provider. '}
   ///	<summary>Defines the interface for an abstract value provider.</summary>
   ///	<remarks>Use the <b>Value</b> property to retrieve the current value from
   ///	the provider. Use the <b>SetValue</b> method to assign a new value to it
@@ -430,7 +470,8 @@ type
   {$ENDREGION}
   IValueProvider = interface
     ['{392A1E2F-CCA1-4CBB-9306-29AA402927D6}']
-    {$REGION 'Property Getters and Setters'}
+
+    {$REGION ' Property Getters and Setters '}
       function GetValue: TValue;
       function GetIsReadOnly: Boolean;
     {$ENDREGION}
@@ -441,20 +482,32 @@ type
     ///	read only.</exception>
     procedure SetValue(const value: TValue);
 
-    /// <summary>
-    /// Gets the value of the provider.
-    /// </summary>
+    ///	<summary>Gets the value of the provider.</summary>
     property Value: TValue read GetValue;
 
+    {$REGION 'Documentation'}
     ///	<summary>Gets a value that indicates whether the value provider is read
     ///	only.</summary>
     ///	<value>Returns true if the value provider is read only, otherwise,
     ///	returns false.</value>
+    ///	<remarks>If the value provider is read only, invoking the
+    ///	<c>SetValue</c> method will raise an <c>EInvalidOperation</c>
+    ///	exception.</remarks>
+    {$ENDREGION}
     property IsReadOnly: Boolean read GetIsReadOnly;
   end;
 
+  {$REGION 'Documentation'}
   ///	<summary>Provides an abstract base class for generic value
   ///	provider.</summary>
+  ///	<remarks>
+  ///	  <alert class="implement">
+  ///	    <para>By default, the IsReadOnly property is true.</para>
+  ///	    <para>Implementers must override the DoSetValue method if the value
+  ///	    provider is not read only.</para>
+  ///	  </alert>
+  ///	</remarks>
+  {$ENDREGION}
   TValueProviderBase = class abstract(TInterfacedObject, IValueProvider)
   protected
     function GetValue: TValue; virtual; abstract;
@@ -516,7 +569,7 @@ type
     class operator Implicit(const value: TVolatile<T>): T;
     class operator Equal(const left, right: TVolatile<T>): Boolean;
     class operator NotEqual(const left, right: TVolatile<T>): Boolean;
-  end deprecated;
+  end deprecated 'Uses the TLazyUtils.GetValue method structure to ensure the thread safety.';
 
   {$ENDREGION}
 
@@ -526,16 +579,17 @@ type
 //    fDelegate: TFunc<T>;
 //  end;
 
-
-  {$REGION 'TLazyUtils'}
-
   /// <preliminary />
+  /// <threadsafety static="true" />
   TLazyUtils = record
   public
     {$REGION 'Documentation'}
     ///	<summary>Uses the <c>TLazyUtils.GetValue&lt;T&gt;</c> method to
     ///	implement the <b>Lazy-Initialization</b> pattern in
     ///	thread-safe.</summary>
+    ///	<param name="field">the field stores the instance.</param>
+    ///	<param name="delegate">the delegate that will create a new
+    ///	instance.</param>
     ///	<remarks>
     ///	  <para>The following code copied from the <b>SysUtils.TEncoding</b>
     ///	  class illustrates how to use the
@@ -572,8 +626,6 @@ type
     {$ENDREGION}
     class function GetValue<T: class>(var field: T; const delegate: TFunc<T>): T; static;
   end;
-
-  {$ENDREGION}
 
 
   {$REGION 'Documentation'}
@@ -637,108 +689,34 @@ type
   ///	  The following sample demonstrates how to use the
   ///	  <c>TWeakReference&lt;T&gt;</c> type:
   ///	  <code lang="Delphi">
-  ///	ISampleInterface = interface
+  ///	IHost = interface
   ///	  procedure DoSomething;
   ///	end;
   ///	TSomeClass = class
   ///	private
-  ///	  fReference: TWeakReference&lt;ISampleInterface&gt;;
-  ///	  constructor Create(const sampleInterface: ISampleInterface);
+  ///	  fHost: TWeakReference&lt;IHost&gt;;
+  ///	  constructor Create(const host: IHost);
   ///	end;
-  ///	constructor TSomeClass.Create(const sampleInterface: ISampleInterface);
+  ///	constructor TSomeClass.Create(const host: IHost);
   ///	begin
-  ///	  fReference := sampleInterface;
+  ///	  fHost := host;
   ///	end;
-  ///	// fReference.DoSomething;
+  ///	// fHost.DoSomething;
   ///	</code>
   ///	</example>
+  ///<preliminary />
   {$ENDREGION}
-  TWeakReference<T> = record
+  TWeakReference<T: IInterface> = record
   private
     fValue: Pointer;
     function GetValue: T;
   public
     constructor Create(const value: T);
+    ///	<summary>Gets the strong-typed value of the reference.</summary>
     property Value: T read GetValue;
-    class operator Implicit(const value: TWeakReference<T>): T;
+    class operator Implicit(const reference: TWeakReference<T>): T;
     class operator Implicit(const value: T): TWeakReference<T>;
   end;
-
-
-  {$REGION 'TVersion (Experimental)'}
-
-  ///	<summary>Represents a version number in the format of
-  ///	"major.minor[.build[.revision]]", which is different from the delphi
-  ///	style format "major.minor[.release[.build]]".</summary>
-  TVersion = record
-  private
-    const fCUndefined: Integer = -1;
-  strict private
-    fMajor: Integer;
-    fMinor: Integer;
-    fBuild: Integer;      // -1 if undefined.
-    fReversion: Integer;  // -1 if undefined.
-    function GetMajorReversion: Int16;
-    function GetMinorReversion: Int16;
-  private
-    constructor InternalCreate(defined, major, minor, build, reversion: Integer);
-    function CompareComponent(a, b: Integer): Integer;
-    function IsDefined(const component: Integer): Boolean; inline;
-  public
-    constructor Create(major, minor: Integer); overload;
-    constructor Create(major, minor, build: Integer); overload;
-    constructor Create(major, minor, build, reversion: Integer); overload;
-    constructor Create(const versionString: string); overload;
-    function CompareTo(const version: TVersion): Integer;
-    function Equals(const version: TVersion): Boolean;
-    function ToString: string; overload;
-    function ToString(fieldCount: Integer): string; overload;
-    property Major: Integer read fMajor;
-    property MajorReversion: Int16 read GetMajorReversion;
-    property Minor: Integer read fMinor;
-    property MinorReversion: Int16 read GetMinorReversion;
-    property Build: Integer read fBuild;
-    property Reversion: Integer read fReversion;
-    { Operator Overloads }
-    class operator Equal(const left, right: TVersion): Boolean;
-    class operator NotEqual(const left, right: TVersion): Boolean;
-    class operator GreaterThan(const left, right: TVersion): Boolean;
-    class operator GreaterThanOrEqual(const left, right: TVersion): Boolean;
-    class operator LessThan(const left, right: TVersion): Boolean;
-    class operator LessThanOrEqual(const left, right: TVersion): Boolean;
-  end;
-
-  {$ENDREGION}
-
-
-  /// <summary>
-  /// Defines an anonymous function which returns a callback pointer.
-  /// </summary>
-  TCallbackFunc = TFunc<Pointer>;
-
-  {$REGION 'Documentation'}
-  ///	<summary>Adapts class instance (object) method as standard callback
-  ///	function.</summary>
-  ///	<remarks>Both the object method and the callback function need to be
-  ///	declared as stdcall.</remarks>
-  ///	<example>
-  ///	  This sample shows how to call CreateCallback method.
-  ///	  <code>
-  ///	private
-  ///	  fCallback: TCallbackFunc;
-  ///	//...
-  ///	fCallback := CreateCallback(Self, @TSomeClass.SomeMethod);
-  ///	</code>
-  ///	</example>
-  {$ENDREGION}
-  TCallback = class(TInterfacedObject, TCallbackFunc)
-  private
-    fInstance: Pointer;
-  public
-    constructor Create(objectAddress: TObject; methodAddress: Pointer);
-    destructor Destroy; override;
-    function Invoke: Pointer;
-  end; // Consider hide the implementation.
 
 
   {$REGION 'Lifecycle Interfaces'}
@@ -829,16 +807,33 @@ type
   TLifetimeAttributeBase = LifetimeAttributeBase
     deprecated 'Use the LifetimeAttributeBase class instead.';
 
-  /// <summary>
-  /// Applies this attribute when a component shares the single instance.
-  /// </summary>
+  {$REGION 'Documentation'}
+  ///	<summary>Applies this attribute when a component shares the single
+  ///	instance.</summary>
+  ///	<remarks>When this attribute is applied to a component, the shared
+  ///	instance will be returned whenever get the implementation of a
+  ///	service.</remarks>
+  ///	<example>
+  ///	  <code lang="Delphi">
+  ///	[Singleton]
+  ///	TEmailSender = class(TInterfacedObject, IEmailSender)
+  ///	//...
+  ///	end;
+  ///	</code>
+  ///	</example>
+  {$ENDREGION}
   SingletonAttribute = class(LifetimeAttributeBase)
   public
     constructor Create;
   end;
 
-  ///	<summary>This attribute is the default option. Represents that a new
-  ///	instance of the component will be not created when requested.</summary>
+  {$REGION 'Documentation'}
+  ///	<summary>Represents that a new instance of the component will be created
+  ///	when requested.</summary>
+  ///	<remarks>
+  ///	  <alert class="note">This attribute is the default option.</alert>
+  ///	</remarks>
+  {$ENDREGION}
   TransientAttribute = class(LifetimeAttributeBase)
   public
     constructor Create;
@@ -882,16 +877,26 @@ type
     property HasValue: Boolean read GetHasValue;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>Applies this attribute to tell the IoC container which service
-  ///	is implemented by the target component. In addition, a service name can
-  ///	be specified.</summary>
-  ///	<remarks>
-  ///	  <alert class="note">This attribute can be specified more than
-  ///	  once.</alert>
-  ///	</remarks>
-  {$ENDREGION}
-  ImplementsAttribute = class(TCustomAttribute)
+ {$REGION 'Documentation'}
+ ///	<summary>Applies this attribute to tell the IoC container which service
+ ///	is implemented by the target component. In addition, a service name can
+ ///	be specified.</summary>
+ ///	<remarks>
+ ///	  <alert class="note">This attribute can be specified more than
+ ///	  once.</alert>
+ ///	</remarks>
+ ///	<example>
+ ///	  <code lang="Delphi">
+ ///	[Implements(TypeInfo(IEmailSender))]
+ ///	TRegularEmailSender = class(TInterfacedObject, IEmailSender)
+ ///	end;
+ ///	[Implements(TypeInfo(IEmailSender), 'mock-email-sender')]
+ ///	TMockEmailSender = class(TInterfacedObject, IEmailSender)
+ ///	end;
+ ///	</code>
+ ///	</example>
+ {$ENDREGION}
+ ImplementsAttribute = class(TCustomAttribute)
   private
     fServiceType: PTypeInfo;
     fName: string;
@@ -943,25 +948,28 @@ type
   ///	<summary>Retrieves the byte length of a unicode string.</summary>
   ///	<param name="s">the unicode string.</param>
   ///	<returns>The byte length of the unicode string.</returns>
-  ///	<remarks>Don't use the <c>SysUtils.ByteLength(string)</c> function since
-  ///	it only supports unicode strings and doesn't provide overloads for
-  ///	WideStrings and AnsiStrings.</remarks>
+  ///	<remarks>Although there is already a
+  ///	routine <c>SysUtils.ByteLength(string)</c> function, it only
+  ///	supports unicode strings and doesn't provide overloads for WideStrings
+  ///	and AnsiStrings.</remarks>
   {$ENDREGION}
   function GetByteLength(const s: string): Integer; overload; inline;
 
   ///	<summary>Retrieves the byte length of a WideString.</summary>
   ///	<param name="s">A wide string.</param>
+  ///	<returns>The byte length of the wide string.</returns>
   function GetByteLength(const s: WideString): Integer; overload; inline;
 
   ///	<summary>Retrieves the byte length of a <c>RawByteString</c> (AnsiString
   ///	or UTF8String).</summary>
+  ///	<returns>The byte length of the raw byte string.</returns>
   function GetByteLength(const s: RawByteString): Integer; overload; inline;
 
   {$REGION 'Documentation'}
   ///	<summary>Determines whether a specified file exists. An
   ///	<c>EFileNotFoundException</c> exception will be raised when not
   ///	found.</summary>
-  ///	<param name="fileName">the full file name.</param>
+  ///	<param name="fileName">the file name.</param>
   ///	<exception cref="EFileNotFoundException">Raised if the target file does
   ///	not exist.</exception>
   {$ENDREGION}
@@ -975,13 +983,6 @@ type
   ///	doesn't exist.</exception>
   {$ENDREGION}
   procedure CheckDirectoryExists(const directory: string);
-
-  /// <summary>
-  /// Creates a standard callback function which was adapted from a instance method.
-  /// </summary>
-  /// <param name="obj">an instance</param>
-  /// <param name="methodAddress">address of an instance method</param>
-  function CreateCallback(obj: TObject; methodAddress: Pointer): TCallbackFunc;
 
   /// <summary>
   /// Overloads. SplitString
@@ -1003,7 +1004,7 @@ type
   ///	buffer that are delimited by null char (#0) and ends with an additional
   ///	null char.</summary>
   ///	<example>
-  ///	  <code>
+  ///	  <code lang="Delphi">
   ///	procedure TestSplitNullTerminatedStrings;
   ///	var
   ///	  buffer: string;
@@ -1038,20 +1039,20 @@ type
   {$ENDREGION}
   procedure Synchronize(threadProc: TThreadProcedure);
 
-  /// <summary>
-  /// Asynchronously executes a method call within the main thread.
-  /// </summary>
-  /// <param name="threadProc">An anonymous method that will be executed.</param>
-  /// <exception cref="EArgumentNullException">Raised if threadProc was not assigned.</exception>
-  /// <seealso cref="TThread.Queue"/>
+  {$REGION 'Documentation'}
+  ///	<summary>Asynchronously executes a method call within the main
+  ///	thread.</summary>
+  ///	<param name="threadProc">An anonymous method that will be
+  ///	executed.</param>
+  ///	<exception cref="EArgumentNullException">Raised if threadProc was not
+  ///	assigned.</exception>
+  {$ENDREGION}
   procedure Queue(threadProc: TThreadProcedure);
 
-  /// <summary>
-  /// Try getting property information of an object.
-  /// </summary>
-  /// <returns>Returns true if the instance has the specified property and the
-  /// property has property information. </returns>
-  /// <exception cref="EArgumentNullException">if instance is nil.</exception>
+  ///	<summary>Try getting property information of an object.</summary>
+  ///	<returns>Returns true if the instance has the specified property and the
+  ///	property has property information.</returns>
+  ///	<exception cref="EArgumentNullException">if instance is nil.</exception>
   function TryGetPropInfo(instance: TObject; const propertyName: string;
     out propInfo: PPropInfo): Boolean;
 
@@ -1088,17 +1089,25 @@ type
   // Due to the QC #80304, the following methods (with anonymous methods)
   // must not be inlined.
 
-  /// <summary>
-  /// Obtains a mutual-exclusion lock for the given object, executes a procedure
-  /// and then releases the lock.
-  /// </summary>
+  {$REGION 'Documentation'}
+  ///	<summary>Obtains a mutual-exclusion lock for the given object, executes a
+  ///	procedure and then releases the lock.</summary>
+  ///	<param name="obj">the sync root.</param>
+  ///	<param name="proc">the procedure that will be invoked.</param>
+  ///	<exception cref="Spring|EArgumentNullException">Raised if <paramref name=
+  ///	"obj" /> is nil or <paramref name="proc" /> is unassigned.</exception>
+  {$ENDREGION}
   procedure Lock(obj: TObject; const proc: TProc); overload; // inline;
   procedure Lock(const intf: IInterface; const proc: TProc); overload; // inline;
 
+  {$REGION 'Documentation'}
   ///	<summary>Updates an instance of <c>TStrings</c> by calling its
   ///	BeginUpdate and EndUpdate.</summary>
+  ///	<param name="strings">an instance of TStrings.</param>
   ///	<exception cref="EArgumentNullException">Raised if <paramref name=
-  ///	"strings" /> was nil or proc was not assigned.</exception>
+  ///	"strings" /> is nil or <paramref name="proc" /> is not
+  ///	assigned.</exception>
+  {$ENDREGION}
   procedure UpdateStrings(strings: TStrings; proc: TProc); // inline;
 
 
@@ -1113,19 +1122,24 @@ type
   {$ENDREGION}
   function TryGetUnderlyingTypeName(typeInfo: PTypeInfo; out underlyingTypeName: string): Boolean;
 
-  /// <summary>
-  /// Try getting the underlying type info of a nullable type.
-  /// </summary>
+  ///	<summary>Try getting the underlying type info of a nullable
+  ///	type.</summary>
   function TryGetUnderlyingTypeInfo(typeInfo: PTypeInfo; out underlyingTypeInfo: PTypeInfo): Boolean;
 
-  /// <summary>
-  /// Try getting the underlying value of a nullable type.
-  /// </summary>
-  /// <returns>Returns True if the value is a <c>TNullable&lt;T&gt;</c> and it has value. </returns>
+  ///	<summary>Try getting the underlying value of a nullable type.</summary>
+  ///	<returns>Returns True if the value is a <c>TNullable&lt;T&gt;</c> and it
+  ///	has value.</returns>
   function TryGetUnderlyingValue(const value: TValue; out underlyingValue: TValue): Boolean;
 
-  // Rtti bugs: QC #82433
-  // if value.TryAsType<IPropertyNotification>(propertyNotification) then
+  {$REGION 'Documentation'}
+  ///	<summary>Uses this function to get an interface instance from a
+  ///	TValue.</summary>
+  ///	<remarks>
+  ///	  <alert class="warning">Rtti bugs: QC #82433 if
+  ///	  value.TryAsType&lt;IPropertyNotification&gt;(propertyNotification)
+  ///	  then</alert>
+  ///	</remarks>
+  {$ENDREGION}
   function TryGetInterface(const instance: TValue; const guid: TGuid; out intf): Boolean; overload;
 
   function TryGetInterface(const instance: TValue; const guid: TGuid): Boolean; overload;
@@ -1134,6 +1148,18 @@ type
   {$REGION 'Constants'}
 
 const
+  ///	<summary>Represents bytes of one KB.</summary>
+  COneKB: Int64 = 1024;            // 1KB = 1024 bytes
+
+  ///	<summary>Represents bytes of one MB.</summary>
+  COneMB: Int64 = 1048576;         // 1MB = 1024 KB
+
+  ///	<summary>Represents bytes of one GB.</summary>
+  COneGB: Int64 = 1073741824;      // 1GB = 1024 MB
+
+  ///	<summary>Represents bytes of one TB.</summary>
+  COneTB: Int64 = 1099511627776;   // 1TB = 1024 GB
+
   ///	<summary>Represents bytes of one KB.</summary>
   OneKB: Int64 = 1024;            // 1KB = 1024 bytes
 
@@ -1187,13 +1213,6 @@ begin
   begin
     raise EDirectoryNotFoundException.CreateResFmt(@SDirectoryNotFoundException, [directory]);
   end;
-end;
-
-function CreateCallback(obj: TObject; methodAddress: Pointer): TCallbackFunc;
-begin
-  TArgument.CheckNotNull(obj, 'obj');
-  TArgument.CheckNotNull(methodAddress, 'methodAddress');
-  Result := TCallback.Create(obj, methodAddress);
 end;
 
 function SplitString(const buffer: string; const separators: TSysCharSet;
@@ -2217,6 +2236,211 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TVersion'}
+
+constructor TVersion.Create(const versionString: string);
+var
+  components: TStringDynArray;
+  major: Integer;
+  minor: Integer;
+  build: Integer;
+  reversion: Integer;
+begin
+  components := SplitString(versionString, ['.']);
+  if not (Length(components) in [2..4]) then
+  begin
+    raise EArgumentException.Create('version');
+  end;
+  try
+    major := StrToInt(components[0]);
+    minor := StrToInt(components[1]);
+    if Length(components) >= 3 then
+    begin
+      build := StrToInt(components[2]);
+    end
+    else
+    begin
+      build := -1;
+    end;
+    if Length(components) = 4 then
+    begin
+      reversion := StrToInt(components[3]);
+    end
+    else
+    begin
+      reversion := -1;
+    end;
+  except on e: Exception do
+    raise EFormatException.Create(e.Message);
+  end;
+  InternalCreate(Length(components), major, minor, build, reversion);
+end;
+
+constructor TVersion.Create(major, minor: Integer);
+begin
+  InternalCreate(2, major, minor, -1, -1);
+end;
+
+constructor TVersion.Create(major, minor, build: Integer);
+begin
+  InternalCreate(3, major, minor, build, -1);
+end;
+
+constructor TVersion.Create(major, minor, build, reversion: Integer);
+begin
+  InternalCreate(4, major, minor, build, reversion);
+end;
+
+constructor TVersion.InternalCreate(defined, major, minor, build, reversion: Integer);
+begin
+  Assert(defined in [2, 3, 4], '"defined" should be in [2, 3, 4].');
+  TArgument.CheckRange(IsDefined(major), 'major');
+  TArgument.CheckRange(IsDefined(minor), 'minor');
+  fMajor := major;
+  fMinor := minor;
+  case defined of
+    2:
+    begin
+      fBuild := fCUndefined;
+      fReversion := fCUndefined;
+    end;
+    3:
+    begin
+      TArgument.CheckRange(IsDefined(build), 'build');
+      fBuild := build;
+      fReversion := fCUndefined;
+    end;
+    4:
+    begin
+      TArgument.CheckRange(IsDefined(build), 'build');
+      TArgument.CheckRange(IsDefined(reversion), 'reversion');
+      fBuild := build;
+      fReversion := reversion;
+    end;
+  end;
+end;
+
+function TVersion.IsDefined(const component: Integer): Boolean;
+begin
+  Result := component <> fCUndefined;
+end;
+
+function TVersion.Equals(const version: TVersion): Boolean;
+begin
+  Result := CompareTo(version) = 0;
+end;
+
+function TVersion.CompareComponent(a, b: Integer): Integer;
+begin
+  if IsDefined(a) and IsDefined(b) then
+  begin
+    Result := a - b;
+  end
+  else if IsDefined(a) and not IsDefined(b) then
+  begin
+    Result := 1;
+  end
+  else if not IsDefined(a) and IsDefined(b) then
+  begin
+    Result := -1;
+  end
+  else
+  begin
+    Result := 0;
+  end;
+end;
+
+function TVersion.CompareTo(const version: TVersion): Integer;
+begin
+  Result := Major - version.Major;
+  if Result = 0 then
+  begin
+    Result := Minor - version.Minor;
+    if Result = 0 then
+    begin
+      Result := CompareComponent(Build, version.Build);
+      if Result = 0 then
+      begin
+        Result := CompareComponent(Reversion, version.Reversion);
+      end;
+    end;
+  end;
+end;
+
+function TVersion.ToString: string;
+begin
+  if not IsDefined(fBuild) then
+    Result := ToString(2)
+  else if not IsDefined(fReversion) then
+    Result := ToString(3)
+  else
+    Result := ToString(4);
+end;
+
+function TVersion.ToString(fieldCount: Integer): string;
+begin
+  TArgument.CheckRange(fieldCount in [0..4], 'fieldCount');
+  case fieldCount of
+    0: Result := '';
+    1: Result := Format('%d', [major]);
+    2: Result := Format('%d.%d', [major, minor]);
+    3:
+    begin
+      TArgument.CheckTrue(IsDefined(build), SIllegalFieldCount);
+      Result := Format('%d.%d.%d', [major, minor, build]);
+    end;
+    4:
+    begin
+      TArgument.CheckTrue(IsDefined(build) and IsDefined(reversion), SIllegalFieldCount);
+      Result := Format('%d.%d.%d.%d', [major, minor, build, reversion]);
+    end;
+  end;
+end;
+
+function TVersion.GetMajorReversion: Int16;
+begin
+  Result := Reversion shr 16;
+end;
+
+function TVersion.GetMinorReversion: Int16;
+begin
+  Result := Reversion and $0000FFFF;
+end;
+
+class operator TVersion.Equal(const left, right: TVersion): Boolean;
+begin
+  Result := left.CompareTo(right) = 0;
+end;
+
+class operator TVersion.NotEqual(const left, right: TVersion): Boolean;
+begin
+  Result := left.CompareTo(right) <> 0;
+end;
+
+class operator TVersion.GreaterThan(const left, right: TVersion): Boolean;
+begin
+  Result := left.CompareTo(right) > 0;
+end;
+
+class operator TVersion.GreaterThanOrEqual(const left,
+  right: TVersion): Boolean;
+begin
+  Result := left.CompareTo(right) >= 0;
+end;
+
+class operator TVersion.LessThan(const left, right: TVersion): Boolean;
+begin
+  Result := left.CompareTo(right) < 0;
+end;
+
+class operator TVersion.LessThanOrEqual(const left, right: TVersion): Boolean;
+begin
+  Result := left.CompareTo(right) <= 0;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TEnum'}
 
 class function TEnum.GetEnumTypeInfo<T>: PTypeInfo;
@@ -2626,227 +2850,22 @@ end;
 
 constructor TWeakReference<T>.Create(const value: T);
 begin
-  fValue := PPointer(@value)^;
+  fValue := Pointer(IInterface(value));
 end;
 
 function TWeakReference<T>.GetValue: T;
 begin
-  PPointer(@Result)^ := fValue;
+  IInterface(Result) := IInterface(fValue);
 end;
 
-class operator TWeakReference<T>.Implicit(const value: TWeakReference<T>): T;
+class operator TWeakReference<T>.Implicit(const reference: TWeakReference<T>): T;
 begin
-  Result := value.Value;
+  Result := reference.Value;
 end;
 
 class operator TWeakReference<T>.Implicit(const value: T): TWeakReference<T>;
 begin
-  Result.fValue := PPointer(@value)^;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TVersion'}
-
-constructor TVersion.Create(const versionString: string);
-var
-  components: TStringDynArray;
-  major: Integer;
-  minor: Integer;
-  build: Integer;
-  reversion: Integer;
-begin
-  components := SplitString(versionString, ['.']);
-  if not (Length(components) in [2..4]) then
-  begin
-    raise EArgumentException.Create('version');
-  end;
-  try
-    major := StrToInt(components[0]);
-    minor := StrToInt(components[1]);
-    if Length(components) >= 3 then
-    begin
-      build := StrToInt(components[2]);
-    end
-    else
-    begin
-      build := -1;
-    end;
-    if Length(components) = 4 then
-    begin
-      reversion := StrToInt(components[3]);
-    end
-    else
-    begin
-      reversion := -1;
-    end;
-  except on e: Exception do
-    raise EFormatException.Create(e.Message);
-  end;
-  InternalCreate(Length(components), major, minor, build, reversion);
-end;
-
-constructor TVersion.Create(major, minor: Integer);
-begin
-  InternalCreate(2, major, minor, -1, -1);
-end;
-
-constructor TVersion.Create(major, minor, build: Integer);
-begin
-  InternalCreate(3, major, minor, build, -1);
-end;
-
-constructor TVersion.Create(major, minor, build, reversion: Integer);
-begin
-  InternalCreate(4, major, minor, build, reversion);
-end;
-
-constructor TVersion.InternalCreate(defined, major, minor, build, reversion: Integer);
-begin
-  Assert(defined in [2, 3, 4], '"defined" should be in [2, 3, 4].');
-  TArgument.CheckRange(IsDefined(major), 'major');
-  TArgument.CheckRange(IsDefined(minor), 'minor');
-  fMajor := major;
-  fMinor := minor;
-  case defined of
-    2:
-    begin
-      fBuild := fCUndefined;
-      fReversion := fCUndefined;
-    end;
-    3:
-    begin
-      TArgument.CheckRange(IsDefined(build), 'build');
-      fBuild := build;
-      fReversion := fCUndefined;
-    end;
-    4:
-    begin
-      TArgument.CheckRange(IsDefined(build), 'build');
-      TArgument.CheckRange(IsDefined(reversion), 'reversion');
-      fBuild := build;
-      fReversion := reversion;
-    end;
-  end;
-end;
-
-function TVersion.IsDefined(const component: Integer): Boolean;
-begin
-  Result := component <> fCUndefined;
-end;
-
-function TVersion.Equals(const version: TVersion): Boolean;
-begin
-  Result := CompareTo(version) = 0;
-end;
-
-function TVersion.CompareComponent(a, b: Integer): Integer;
-begin
-  if IsDefined(a) and IsDefined(b) then
-  begin
-    Result := a - b;
-  end
-  else if IsDefined(a) and not IsDefined(b) then
-  begin
-    Result := 1;
-  end
-  else if not IsDefined(a) and IsDefined(b) then
-  begin
-    Result := -1;
-  end
-  else
-  begin
-    Result := 0;
-  end;
-end;
-
-function TVersion.CompareTo(const version: TVersion): Integer;
-begin
-  Result := Major - version.Major;
-  if Result = 0 then
-  begin
-    Result := Minor - version.Minor;
-    if Result = 0 then
-    begin
-      Result := CompareComponent(Build, version.Build);
-      if Result = 0 then
-      begin
-        Result := CompareComponent(Reversion, version.Reversion);
-      end;
-    end;
-  end;
-end;
-
-function TVersion.ToString: string;
-begin
-  if not IsDefined(fBuild) then
-    Result := ToString(2)
-  else if not IsDefined(fReversion) then
-    Result := ToString(3)
-  else
-    Result := ToString(4);
-end;
-
-function TVersion.ToString(fieldCount: Integer): string;
-begin
-  TArgument.CheckRange(fieldCount in [0..4], 'fieldCount');
-  case fieldCount of
-    0: Result := '';
-    1: Result := Format('%d', [major]);
-    2: Result := Format('%d.%d', [major, minor]);
-    3:
-    begin
-      TArgument.CheckTrue(IsDefined(build), SIllegalFieldCount);
-      Result := Format('%d.%d.%d', [major, minor, build]);
-    end;
-    4:
-    begin
-      TArgument.CheckTrue(IsDefined(build) and IsDefined(reversion), SIllegalFieldCount);
-      Result := Format('%d.%d.%d.%d', [major, minor, build, reversion]);
-    end;
-  end;
-end;
-
-function TVersion.GetMajorReversion: Int16;
-begin
-  Result := Reversion shr 16;
-end;
-
-function TVersion.GetMinorReversion: Int16;
-begin
-  Result := Reversion and $0000FFFF;
-end;
-
-class operator TVersion.Equal(const left, right: TVersion): Boolean;
-begin
-  Result := left.CompareTo(right) = 0;
-end;
-
-class operator TVersion.NotEqual(const left, right: TVersion): Boolean;
-begin
-  Result := left.CompareTo(right) <> 0;
-end;
-
-class operator TVersion.GreaterThan(const left, right: TVersion): Boolean;
-begin
-  Result := left.CompareTo(right) > 0;
-end;
-
-class operator TVersion.GreaterThanOrEqual(const left,
-  right: TVersion): Boolean;
-begin
-  Result := left.CompareTo(right) >= 0;
-end;
-
-class operator TVersion.LessThan(const left, right: TVersion): Boolean;
-begin
-  Result := left.CompareTo(right) < 0;
-end;
-
-class operator TVersion.LessThanOrEqual(const left, right: TVersion): Boolean;
-begin
-  Result := left.CompareTo(right) <= 0;
+  Result := TWeakReference<T>.Create(value);
 end;
 
 {$ENDREGION}
@@ -2907,54 +2926,6 @@ begin
       localValue.Free;
   end;
   Result := field;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TCallback'}
-
-type
-  PInstruction = ^TInstruction;
-  TInstruction = array[1..16] of Byte;
-
-{----------------------------}
-{        Code DASM           }
-{----------------------------}
-{  push  [ESP]               }
-{  mov   [ESP+4], ObjectAddr }
-{  jmp   MethodAddr          }
-{----------------------------}
-
-/// <author>
-/// savetime
-/// </author>
-/// <seealso>http://savetime.delphibbs.com</seealso>
-constructor TCallback.Create(objectAddress: TObject; methodAddress: Pointer);
-const
-  Instruction: TInstruction = (
-    $FF,$34,$24,$C7,$44,$24,$04,$00,$00,$00,$00,$E9,$00,$00,$00,$00
-  );
-var
-  p: PInstruction;
-begin
-  inherited Create;
-  New(p);
-  Move(Instruction, p^, SizeOf(Instruction));
-  PInteger(@p[8])^ := Integer(objectAddress);
-  PInteger(@p[13])^ := Longint(methodAddress) - (Longint(p) + SizeOf(Instruction));
-  fInstance := p;
-end;
-
-destructor TCallback.Destroy;
-begin
-  Dispose(fInstance);
-  inherited Destroy;
-end;
-
-function TCallback.Invoke: Pointer;
-begin
-  Result := fInstance;
 end;
 
 {$ENDREGION}

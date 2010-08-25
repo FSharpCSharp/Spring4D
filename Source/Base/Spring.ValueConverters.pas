@@ -118,23 +118,29 @@ type
 
 
   {$REGION 'TDefaultValueConverter'}
-  /// <summary>
-  /// Provides default converter shared instance,
-  ///  TDefaultValueConverter is the master in the process of conversion
-  /// </summary>
-  /// <remarks>
-  /// There is three steps of doing so
-  ///  1. find/lock "global" registry
-  ///  2. use TValue.TryCast
-  ///  3. use RTTI exploring and select apropriate converter
-  ///  There are four different internall converter types
-  ///  that can be selected to convert
-  ///   * TNullable<T> and T
-  ///   * Enumeration and Integer/string
-  ///   * TColor and Integer/string
-  ///   * Integer and string
-  ///   * Enumeration and Integer/string
-  /// </remarks>
+
+  {$REGION 'Documentation'}
+  ///	<summary>Provides default converter shared instance,
+  ///	TDefaultValueConverter is the master in the process of
+  ///	conversion</summary>
+  ///	<remarks>
+  ///	  <para>There is three steps of doing so</para>
+  ///	  <list type="number">
+  ///	    <item>Find/lock "global" registry</item>
+  ///	    <item>Use TValue.TryCast</item>
+  ///	    <item>Use RTTI exploring and select apropriate converter.</item>
+  ///	  </list>
+  ///	  <para>There are four different internall converter types that can be
+  ///	  selected to convert:</para>
+  ///	  <list type="bullet">
+  ///	    <item>TNullable&lt;T&gt; and T</item>
+  ///	    <item>Enumeration and Integer/string</item>
+  ///	    <item>TColor and Integer/string</item>
+  ///	    <item>Integer and string</item>
+  ///	    <item>Enumeration and Integer/string</item>
+  ///	  </list>
+  ///	</remarks>
+  {$ENDREGION}
   TDefaultValueConverter = class(TValueConverter)
   protected
     function DoConvertTo(const value: TValue;

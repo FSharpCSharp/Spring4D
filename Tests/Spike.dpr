@@ -41,6 +41,7 @@ uses
 begin
   try
     { TODO -oUser -cConsole Main : Insert code here }
+    Writeln(TGuid.Empty.ToString);
   except
     on E: Exception do
       Writeln(E.ClassName, ': ', E.Message);

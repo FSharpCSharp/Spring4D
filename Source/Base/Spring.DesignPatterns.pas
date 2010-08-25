@@ -52,29 +52,41 @@ type
 
   {$REGION 'Singleton Pattern'}
 
-  {$REGION 'Comments'}
+  {$REGION 'Documentation'}
   ///	<summary>
-  /// Provides a portal to get the single instance of a concrete class
-  /// which must have a default constructor. It also keeps track of the
-  /// lifetime of the instances and will free them in reversed order.
-  /// </summary>
+  ///	  <para>Provides a simple implementation of the <b>Singleton Pattern</b>.
+  ///	  Use this portal to get the shared instance of a certain class which
+  ///	  must have a default constructor.</para>
+  ///	  <para>It also keeps track of the lifetime of the instances and will
+  ///	  free them in reversed order.</para>
+  ///	</summary>
   ///	<remarks>This class just demonstrates how to apply the classical
-  ///Singleton Pattern. It's recommended to use the Spring IoC container which
-  ///is more flexible.</remarks>
+  ///	Singleton Pattern. It's recommended to use the Spring IoC container which
+  ///	is more flexible.</remarks>
+  ///	<threadsafety>Public static members of this type are thread
+  ///	safe.</threadsafety>
   {$ENDREGION}
   TSingleton = record
   strict private
     class var
       fMappings: TDictionary<TClass, TObject>;
+
+      ///	<summary>Tracks all instances of the singleton objects and free them
+      ///	in reversed order.</summary>
       fInstances: TObjectList;
+
       fCriticalSection: TCriticalSection;
+
     class constructor Create;
-    {$HINTS OFF}
+  {$HINTS OFF}
     class destructor Destroy;
-    {$HINTS ON}
+  {$HINTS ON}
+
   public
+    ///	<summary>Uses the <c>TSingleton.GetInstance&lt;T&gt;</c> method to get
+    ///	the shared instance of a class.</summary>
     ///	<typeparam name="T">The type of a class which must have a default
-    ///constructor.</typeparam>
+    ///	constructor.</typeparam>
     class function GetInstance<T: class, constructor>: T; static;
   end;
 
@@ -97,9 +109,6 @@ type
     lnRemoved
   );
 
-  /// <summary>
-  /// TObservable&lt;T&gt;
-  /// </summary>
   TObservable<T> = class(TInterfacedObject, IObservable<T>, IInterface)
   private
     fListeners: TList<T>;
@@ -118,9 +127,6 @@ type
     procedure NotifyListeners(callback: TProc<T>); virtual;
   end;
 
-  /// <summary>
-  /// TSynchronizedObservable<T>
-  /// </summary>
   TSynchronizedObservable<T> = class(TObservable<T>, IObservable<T>, IInterface)
   protected
     fListenersLock: IReadWriteSync;
@@ -172,7 +178,7 @@ type
   TSpecificationBase<T> = class abstract(TInterfacedObject, ISpecification<T>, TPredicate<T>, IInterface)
   protected
     { TPredicate<T> }
-    function Invoke(const arg: T): Boolean; virtual;
+    function Invoke(const value: T): Boolean; virtual;
   public
     function IsSatisfiedBy(const obj: T): Boolean; virtual; abstract;
   end;
@@ -386,9 +392,9 @@ end;
 
 {$REGION 'TSpecificationBase<T>'}
 
-function TSpecificationBase<T>.Invoke(const arg: T): Boolean;
+function TSpecificationBase<T>.Invoke(const value: T): Boolean;
 begin
-  Result := IsSatisfiedBy(arg);
+  Result := IsSatisfiedBy(value);
 end;
 
 {$ENDREGION}

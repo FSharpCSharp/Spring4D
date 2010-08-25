@@ -22,6 +22,12 @@
 {                                                                           }
 {***************************************************************************}
 
+{TODO -oOwner -cGeneral : TServiceController}
+{TODO -oOwner -cGeneral : TProcess}
+{TODO -oOwner -cGeneral : TRecycleBin}
+{TODO -oOwner -cGeneral : TClipboardWatcher}
+{TODO -oOwner -cGeneral : TDeviceWatcher}
+
 unit Spring.Utils;
 
 {$I Spring.inc}
@@ -45,18 +51,159 @@ uses
   Generics.Collections,
   Spring,
   Spring.Collections,
-  Spring.Utils.Win32API,
-  Spring.Utils.IO,
-  Spring.Utils.Network;
+  Spring.Utils.Win32API;
 
 type
-  TDriveType = Spring.Utils.IO.TDriveType;
-  TDriveInfo = Spring.Utils.IO.TDriveInfo;
-  TFileVersionInfo = Spring.Utils.IO.TFileVersionInfo;
+  {$REGION 'TDriveInfo'}
 
-  {$WARNINGS OFF}
-    TNetwork = Spring.Utils.Network.TNetwork;
-  {$WARNINGS ON}
+  /// <summary>
+  /// Drive Type Enumeration
+  /// </summary>
+  TDriveType = (
+    dtUnknown,          // The type of drive is unknown.
+    dtNoRootDirectory,  // The drive does not have a root directory.
+    dtRemovable,        // The drive is a removable storage device, such as a floppy disk drive or a USB flash drive.
+    dtFixed,            // The drive is a fixed disk.
+    dtNetwork,          // The drive is a network drive.
+    dtCDRom,            // The drive is an optical disc device, such as a CD or DVD-ROM.
+    dtRam               // The drive is a RAM disk.
+  );
+
+  /// <summary>
+  /// Provides access to information on a drive.
+  /// </summary>
+  /// <remarks>
+  /// Use TDriveInfo.GetDrives method to retrieve all drives of the computer.
+  /// Caller must check IsReady property before using TDriveInfo.
+  /// </remarks>
+  TDriveInfo = record
+  private
+    fDriveName: string;
+    fRootDirectory: string;
+    fAvailableFreeSpace: Int64;
+    fTotalSize: Int64;
+    fTotalFreeSpace: Int64;
+    fVolumeName: array[0..MAX_PATH] of Char;
+    fFileSystemName: array[0..MAX_PATH] of Char;
+    fSerialNumber: DWORD;
+    fMaximumComponentLength: DWORD;
+    fFileSystemFlags: DWORD;
+    function GetAvailableFreeSpace: Int64;
+    function GetDriveFormat: string;
+    function GetDriveType: TDriveType;
+    function GetDriveTypeString: string;
+    function GetIsReady: Boolean;
+    function GetTotalFreeSpace: Int64;
+    function GetTotalSize: Int64;
+    function GetVolumeLabel: string;
+    procedure SetVolumeLabel(const Value: string);
+  private
+    procedure UpdateProperties;
+  public
+    constructor Create(const driveName: string);
+    class function GetDrives: TArray<TDriveInfo>; static;
+    {TODO -oPaul -cGeneral : Add the Refresh method}
+    procedure CheckIsReady;
+    property AvailableFreeSpace: Int64 read GetAvailableFreeSpace;
+    property DriveFormat: string read GetDriveFormat;
+    property DriveType: TDriveType read GetDriveType;
+    property DriveTypeString: string read GetDriveTypeString;
+    property IsReady: Boolean read GetIsReady;
+    property Name: string read fDriveName;
+    property RootDirectory: string read fRootDirectory;
+    property TotalFreeSpace: Int64 read GetTotalFreeSpace;
+    property TotalSize: Int64 read GetTotalSize;
+    property VolumeLabel: string read GetVolumeLabel write SetVolumeLabel;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TFileVersionInfo'}
+
+  /// <summary>
+  /// Provides version information for a physical file on disk.
+  /// </summary>
+  TFileVersionInfo = record
+  private
+    type
+      TLangAndCodePage = record
+        Language: Word;
+        CodePage: Word;
+      end;
+
+      TLangAndCodePageArray  = array[0..9] of TLangAndCodePage;
+      PTLangAndCodePageArray = ^TLangAndCodePageArray;
+
+      TFileVersionResource = record
+      private
+        fBlock: Pointer;
+        fLanguage: Word;
+        fCodePage: Word;
+      public
+        constructor Create(block: Pointer; language, codePage: Word);
+        function ReadString(const stringName: string): string;
+        property Language: Word read fLanguage;
+        property CodePage: Word read fCodePage;
+      end;
+  strict private
+    fExists: Boolean;
+    fFileFlags: DWORD;
+    fComments: string;
+    fCompanyName: string;
+    fFileName: string;
+    fFileVersion: string;
+    fFileVersionNumber: TVersion;
+    fFileDescription: string;
+    fProductName: string;
+    fProductVersion: string;
+    fProductVersionNumber: TVersion;
+    fInternalName: string;
+    fLanguage: string;
+    fLegalCopyright: string;
+    fLegalTrademarks: string;
+    fOriginalFilename: string;
+    fPrivateBuild: string;
+    fSpecialBuild: string;
+    function GetIsDebug: Boolean;
+    function GetIsPatched: Boolean;
+    function GetIsPreRelease: Boolean;
+    function GetIsPrivateBuild: Boolean;
+    function GetIsSpecialBuild: Boolean;
+  private
+    constructor Create(const fileName: string);
+    procedure LoadVersionResource(const resource: TFileVersionResource);
+  public
+    /// <summary>
+    /// Returns a TFileVersionInfo object.
+    /// </summary>
+    class function GetVersionInfo(const fileName: string): TFileVersionInfo; static;
+    function ToString: string;
+    property Exists: Boolean read fExists;
+    property Comments: string read fComments;
+    property CompanyName: string read fCompanyName;
+    property FileName: string read fFileName;
+    property FileDescription: string read fFileDescription;
+    property FileVersion: string read fFileVersion;
+    property FileVersionNumber: TVersion read fFileVersionNumber;
+    property InternalName: string read fInternalName;
+    property Language: string read fLanguage;
+    property LegalCopyright: string read fLegalCopyright;
+    property LegalTrademarks: string read fLegalTrademarks;
+    property OriginalFilename: string read fOriginalFilename;
+    property ProductName: string read fProductName;
+    property ProductVersion: string read fProductVersion;
+    property ProductVersionNumber: TVersion read fProductVersionNumber;
+    property PrivateBuild: string read fPrivateBuild;
+    property SpecialBuild: string read fSpecialBuild;
+    property IsDebug: Boolean read GetIsDebug;
+    property IsPatched: Boolean read GetIsPatched;
+    property IsPreRelease: Boolean read GetIsPreRelease;
+    property IsSpecialBuild: Boolean read GetIsSpecialBuild;
+    property IsPrivateBuild: Boolean read GetIsPrivateBuild;
+  end;
+
+  {$ENDREGION}
 
 
   {$REGION 'TOperatingSystem'}
@@ -376,6 +523,36 @@ type
   {$ENDREGION}
 
 
+  /// <summary>
+  /// Defines an anonymous function which returns a callback pointer.
+  /// </summary>
+  TCallbackFunc = TFunc<Pointer>;
+
+  {$REGION '> Adapts class instance (object) method as standard callback function.'}
+  ///	<summary>Adapts class instance (object) method as standard callback
+  ///	function.</summary>
+  ///	<remarks>Both the object method and the callback function need to be
+  ///	declared as stdcall.</remarks>
+  ///	<example>
+  ///	  This sample shows how to call CreateCallback method.
+  ///	  <code>
+  ///	private
+  ///	  fCallback: TCallbackFunc;
+  ///	//...
+  ///	fCallback := CreateCallback(Self, @TSomeClass.SomeMethod);
+  ///	</code>
+  ///	</example>
+  {$ENDREGION}
+  TCallback = class(TInterfacedObject, TCallbackFunc)
+  private
+    fInstance: Pointer;
+  public
+    constructor Create(objectAddress: TObject; methodAddress: Pointer);
+    destructor Destroy; override;
+    function Invoke: Pointer;
+  end; // Consider hide the implementation.
+
+
   {$REGION 'TBaseNCalculator (Experimental)'}
 
   /// <summary>
@@ -425,6 +602,12 @@ type
   /// Returns the last system error message.
   /// </summary>
   function GetLastErrorMessage: string;
+
+  ///	<summary>Creates a standard callback function which was adapted from a
+  ///	instance method.</summary>
+  ///	<param name="obj">an instance</param>
+  ///	<param name="methodAddress">address of an instance method</param>
+  function CreateCallback(obj: TObject; methodAddress: Pointer): TCallbackFunc;
 
   /// <summary>
   /// Try setting focus to a control.
@@ -585,6 +768,17 @@ const
     SWin7Description
   );
 
+const
+  DriveTypeStrings: array[TDriveType] of string = (
+    SUnknownDriveDescription,
+    SNoRootDirectoryDescription,
+    SRemovableDescription,
+    SFixedDescription,
+    SNetworkDescription,
+    SCDRomDescription,
+    SRamDescription
+  );
+
 
 {$REGION 'Routines'}
 
@@ -617,6 +811,13 @@ begin
   begin
     control.SetFocus;
   end;
+end;
+
+function CreateCallback(obj: TObject; methodAddress: Pointer): TCallbackFunc;
+begin
+  TArgument.CheckNotNull(obj, 'obj');
+  TArgument.CheckNotNull(methodAddress, 'methodAddress');
+  Result := TCallback.Create(obj, methodAddress);
 end;
 
 function TryFocusControl(control: TWinControl): Boolean;
@@ -773,6 +974,329 @@ begin
       Result := fileTime;
     end;
   end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TDriveInfo'}
+
+constructor TDriveInfo.Create(const driveName: string);
+var
+  s: string;
+begin
+  s := UpperCase(driveName);
+  if not (Length(s) in [1..3]) or not CharInSet(s[1], ['A'..'Z']) then
+  begin
+    raise EArgumentException.Create('driveName');
+  end;
+  case Length(s) of
+    1:
+    begin
+      fRootDirectory := s + DriveDelim + PathDelim;
+    end;
+    2:
+    begin
+      if s[2] <> DriveDelim then
+      begin
+        raise EArgumentException.Create('driveName');
+      end;
+      fRootDirectory := s + PathDelim;
+    end;
+    3:
+    begin
+      if s[2] <> DriveDelim then
+        raise EArgumentException.Create('driveName');
+      if s[3] <> PathDelim then
+        raise EArgumentException.Create('driveName');
+      fRootDirectory := s;
+    end;
+    else
+    begin
+      Assert(False);
+    end;
+  end;
+  Assert(Length(fRootDirectory) = 3, 'Length of fRootDirectory should be 3.');
+  fDriveName := Copy(fRootDirectory, 1, 2);
+end;
+
+class function TDriveInfo.GetDrives: TArray<TDriveInfo>;
+var
+  drives: TStringDynArray;
+  i: Integer;
+begin
+  drives := Environment.GetLogicalDrives;
+  SetLength(Result, Length(drives));
+  for i := 0 to High(drives) do
+  begin
+    Result[i] := TDriveInfo.Create(drives[i]);
+  end;
+end;
+
+procedure TDriveInfo.CheckIsReady;
+begin
+  if not IsReady then
+  begin
+    raise EIOException.CreateResFmt(@SDriveNotReady, [fDriveName]);
+  end;
+end;
+
+procedure TDriveInfo.UpdateProperties;
+begin
+  CheckIsReady;
+  Win32Check(SysUtils.GetDiskFreeSpaceEx(
+    PChar(fRootDirectory),
+    fAvailableFreeSpace,
+    fTotalSize,
+    @fTotalFreeSpace
+  ));
+  Win32Check(Windows.GetVolumeInformation(
+    PChar(fRootDirectory),
+    fVolumeName,
+    Length(fVolumeName),
+    @fSerialNumber,
+    fMaximumComponentLength,
+    fFileSystemFlags,
+    fFileSystemName,
+    Length(fFileSystemName)
+  ));
+end;
+
+function TDriveInfo.GetAvailableFreeSpace: Int64;
+begin
+  UpdateProperties;
+  Result := fAvailableFreeSpace;
+end;
+
+function TDriveInfo.GetDriveFormat: string;
+begin
+  UpdateProperties;
+  Result := fFileSystemName;
+end;
+
+function TDriveInfo.GetDriveType: TDriveType;
+var
+  value: Cardinal;
+begin
+  value := Windows.GetDriveType(PChar(fRootDirectory));
+  case value of
+    DRIVE_NO_ROOT_DIR:  Result := dtNoRootDirectory;
+    DRIVE_REMOVABLE:    Result := dtRemovable;
+    DRIVE_FIXED:        Result := dtFixed;
+    DRIVE_REMOTE:       Result := dtNetwork;
+    DRIVE_CDROM:        Result := dtCDRom;
+    DRIVE_RAMDISK:      Result := dtRam;
+    else                Result := dtUnknown;  // DRIVE_UNKNOWN
+  end;
+end;
+
+function TDriveInfo.GetDriveTypeString: string;
+begin
+  Result := DriveTypeStrings[Self.DriveType];
+end;
+
+function TDriveInfo.GetIsReady: Boolean;
+begin
+  Result := Length(fRootDirectory) > 0;
+  Result := Result and (SysUtils.DiskSize(Ord(fRootDirectory[1]) - $40) > -1);
+end;
+
+function TDriveInfo.GetTotalFreeSpace: Int64;
+begin
+  UpdateProperties;
+  Result := fTotalFreeSpace;
+end;
+
+function TDriveInfo.GetTotalSize: Int64;
+begin
+  UpdateProperties;
+  Result := fTotalSize;
+end;
+
+function TDriveInfo.GetVolumeLabel: string;
+begin
+  UpdateProperties;
+  Result := fVolumeName;
+end;
+
+procedure TDriveInfo.SetVolumeLabel(const Value: string);
+begin
+  CheckIsReady;
+  Win32Check(Windows.SetVolumeLabel(PChar(fRootDirectory), PChar(value)));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TFileVersionInfo'}
+
+constructor TFileVersionInfo.Create(const fileName: string);
+var
+  block: Pointer;
+  fixedFileInfo: PVSFixedFileInfo;
+  translations: PTLangAndCodePageArray;
+  size: DWORD;
+  valueSize: DWORD;
+  translationSize: Cardinal;
+  translationCount: Integer;
+  dummy: DWORD;
+begin
+  Finalize(Self);
+  ZeroMemory(@Self, SizeOf(Self));
+  fFileName := fileName;
+  CheckFileExists(fFileName);
+  // GetFileVersionInfo modifies the filename parameter data while parsing.
+  // Copy the string const into a local variable to create a writeable copy.
+  UniqueString(fFileName);
+  size := GetFileVersionInfoSize(PChar(fFileName), dummy);
+  fExists := size <> 0;
+  if fExists then
+  begin
+    block := AllocMem(size);
+    try
+      Win32Check(Windows.GetFileVersionInfo(
+        PChar(fFileName),
+        0,
+        size,
+        block
+      ));
+      Win32Check(VerQueryValue(
+        block,
+        '\',
+        Pointer(fixedFileInfo),
+        valueSize
+      ));
+      Win32Check(VerQueryValue(
+        block,
+        '\VarFileInfo\Translation',
+        Pointer(translations),
+        translationSize
+      ));
+      fFileVersionNumber := TVersion.Create(
+        HiWord(fixedFileInfo.dwFileVersionMS),
+        LoWord(fixedFileInfo.dwFileVersionMS),
+        HiWord(fixedFileInfo.dwFileVersionLS),
+        LoWord(fixedFileInfo.dwFileVersionLS)
+      );
+      fProductVersionNumber := TVersion.Create(
+        HiWord(fixedFileInfo.dwProductVersionMS),
+        LoWord(fixedFileInfo.dwProductVersionMS),
+        HiWord(fixedFileInfo.dwProductVersionLS),
+        LoWord(fixedFileInfo.dwProductVersionLS)
+      );
+      fFileFlags := fixedFileInfo.dwFileFlags;
+      translationCount := translationSize div SizeOf(TLangAndCodePage);
+      if translationCount > 0 then
+      begin
+        LoadVersionResource(
+          TFileVersionResource.Create(
+            block,
+            translations[0].Language,
+            translations[0].CodePage
+          )
+        );
+      end;
+    finally
+      FreeMem(block);
+    end;
+  end;
+end;
+
+class function TFileVersionInfo.GetVersionInfo(
+  const fileName: string): TFileVersionInfo;
+var
+  localFileName: string;
+begin
+  localFileName := Environment.ExpandEnvironmentVariables(fileName);
+  Result := TFileVersionInfo.Create(localFileName);
+end;
+
+procedure TFileVersionInfo.LoadVersionResource(const resource: TFileVersionResource);
+begin
+  fCompanyName := resource.ReadString('CompanyName');
+  fFileDescription := resource.ReadString('FileDescription');
+  fFileVersion := resource.ReadString('FileVersion');
+  fInternalName := resource.ReadString('InternalName');
+  fLegalCopyright := resource.ReadString('LegalCopyright');
+  fLegalTrademarks := resource.ReadString('LegalTrademarks');
+  fOriginalFilename := resource.ReadString('OriginalFilename');
+  fProductName := resource.ReadString('ProductName');
+  fProductVersion := resource.ReadString('ProductVersion');
+  fComments := resource.ReadString('Comments');
+  fLanguage := Languages.NameFromLocaleID[resource.Language];
+end;
+
+function TFileVersionInfo.ToString: string;
+begin
+  Result := Format(SFileVersionInfoFormat, [
+    FileName,
+    InternalName,
+    OriginalFilename,
+    FileVersion,
+    FileDescription,
+    ProductName,
+    ProductVersion,
+    BoolToStr(IsDebug, True),
+    BoolToStr(IsPatched, True),
+    BoolToStr(IsPreRelease, True),
+    BoolToStr(IsPrivateBuild, True),
+    BoolToStr(IsSpecialBuild, True),
+    Language
+  ]);
+end;
+
+function TFileVersionInfo.GetIsDebug: Boolean;
+begin
+  Result := (fFileFlags and VS_FF_DEBUG) <> 0;
+end;
+
+function TFileVersionInfo.GetIsPatched: Boolean;
+begin
+  Result := (fFileFlags and VS_FF_PATCHED) <> 0;
+end;
+
+function TFileVersionInfo.GetIsPreRelease: Boolean;
+begin
+  Result := (fFileFlags and VS_FF_PRERELEASE) <> 0;
+end;
+
+function TFileVersionInfo.GetIsPrivateBuild: Boolean;
+begin
+  Result := (fFileFlags and VS_FF_PRIVATEBUILD) <> 0;
+end;
+
+function TFileVersionInfo.GetIsSpecialBuild: Boolean;
+begin
+  Result := (fFileFlags and VS_FF_SPECIALBUILD) <> 0;
+end;
+
+{ TFileVersionInfo.TFileVersionData }
+
+constructor TFileVersionInfo.TFileVersionResource.Create(block: Pointer;
+  language, codePage: Word);
+begin
+  fBlock := block;
+  fLanguage := language;
+  fCodePage := codePage;
+end;
+
+function TFileVersionInfo.TFileVersionResource.ReadString(
+  const stringName: string): string;
+var
+  subBlock: string;
+  data: PChar;
+  len: Cardinal;
+const
+  SubBlockFormat = '\StringFileInfo\%4.4x%4.4x\%s';   // do not localize
+begin
+  subBlock := Format(
+    SubBlockFormat,
+    [fLanguage, fCodePage, stringName]
+  );
+  data := nil;
+  len := 0;
+  VerQueryValue(fBlock, PChar(subBlock), Pointer(data), len);
+  Result := data;
 end;
 
 {$ENDREGION}
@@ -1739,6 +2263,54 @@ begin
     p := IndexOf(s[i]);
     Result := Result + p * Trunc(IntPower(base, Length(s) - i));
   end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TCallback'}
+
+type
+  PInstruction = ^TInstruction;
+  TInstruction = array[1..16] of Byte;
+
+{----------------------------}
+{        Code DASM           }
+{----------------------------}
+{  push  [ESP]               }
+{  mov   [ESP+4], ObjectAddr }
+{  jmp   MethodAddr          }
+{----------------------------}
+
+/// <author>
+/// savetime
+/// </author>
+/// <seealso>http://savetime.delphibbs.com</seealso>
+constructor TCallback.Create(objectAddress: TObject; methodAddress: Pointer);
+const
+  Instruction: TInstruction = (
+    $FF,$34,$24,$C7,$44,$24,$04,$00,$00,$00,$00,$E9,$00,$00,$00,$00
+  );
+var
+  p: PInstruction;
+begin
+  inherited Create;
+  New(p);
+  Move(Instruction, p^, SizeOf(Instruction));
+  PInteger(@p[8])^ := Integer(objectAddress);
+  PInteger(@p[13])^ := Longint(methodAddress) - (Longint(p) + SizeOf(Instruction));
+  fInstance := p;
+end;
+
+destructor TCallback.Destroy;
+begin
+  Dispose(fInstance);
+  inherited Destroy;
+end;
+
+function TCallback.Invoke: Pointer;
+begin
+  Result := fInstance;
 end;
 
 {$ENDREGION}

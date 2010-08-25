@@ -303,6 +303,7 @@ type
   /// <summary>
   /// Expression part of Value
   /// </summary>
+  /// <preliminary />
   IValueExpression = interface(IValueProvider)
     ['{A0EB72F0-06AE-460D-8AA2-A0A95BAC4A86}']
     function Follow(const path: string): IValueExpression;
@@ -315,6 +316,7 @@ type
   /// <summary>
   /// Default implementation of Exrepssion part of Value
   /// </summary>
+  /// <preliminary />
   TValueExpression = class(TValueProviderBase, IValueExpression)
   strict private
     fInstance: TValue;

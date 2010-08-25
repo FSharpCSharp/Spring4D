@@ -45,15 +45,6 @@ type
   /// <summary>
   /// Represents an Inversion of Control (IoC) container.
   /// </summary>
-  /// <remarks>
-  /// Neither normal interfaces nor generic interfaces have a guid identifier,
-  /// so we can not determine whether an object supports a non-guid interface,
-  /// furthermore, we can not safely cast an object to a non-guid interface
-  /// variable. For these reasons, it's a pity that the two kinds of
-  /// interfaces are not yet supported by the Spring IoC container.
-  /// If you have a good idea, please drop me an email:
-  /// baoquan.zuo[at]gmail.com (Paul). Thanks!
-  /// </remarks>
   TContainer = class(TInterfaceBase, IContainerContext, IInterface)
   private
     fRegistry: IComponentRegistry;

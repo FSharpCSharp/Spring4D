@@ -26,6 +26,7 @@
 {TODO -oPaul -cGeneral : Add TAES}
 {TODO -oPaul -cGeneral : Add TMACTripleDES}
 
+/// <preliminary />
 /// <seealso>http://msdn.microsoft.com/en-us/library/92f9ye3s(VS.71).aspx</seealso>
 /// <seealso>http://msdn.microsoft.com/en-us/library/system.security.cryptography.aspx</seealso>
 /// <seealso>http://en.wikipedia.org/wiki/Cryptography</seealso>

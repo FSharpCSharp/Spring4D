@@ -22,7 +22,8 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Utils.Win32API platform;
+///	<summary>Declares some Win32 API for the framework.</summary>
+unit Spring.Utils.Win32API; // platform;
 
 {$I Spring.inc}
 

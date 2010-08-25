@@ -37,9 +37,6 @@ uses
   Spring.Collections;
 
 type
-  /// <summary>
-  /// TEnumeratorDecorator<T>
-  /// </summary>
   TEnumeratorDecorator<T> = class abstract(TEnumeratorBase<T>)
   private
     fEnumerator: IEnumerator<T>;
@@ -52,9 +49,6 @@ type
     procedure Reset; override;
   end;
 
-  /// <summary>
-  /// TEnumerableDecorator<T>
-  /// </summary>
   TEnumerableDecorator<T> = class abstract(TEnumerableEx<T>)
   private
     fCollection: IEnumerable<T>;

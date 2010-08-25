@@ -26,6 +26,8 @@
 {TODO -Paul -cGeneral : TDictionary<TKey, TValue> Support IDictionary}
 {TODO -Paul -cGeneral : Add IOrderedDictionary}
 
+///	<summary><b>Internal namespace.</b> This namespace contains all adapters of
+///	the generic collection interfaces.</summary>
 unit Spring.Collections.Adapters;
 
 {$I Spring.inc}
@@ -42,9 +44,8 @@ uses
   Spring.Collections;
 
 type
-  /// <summary>
-  /// TEnumeratorAdapter<T>
-  /// </summary>
+  ///	<summary>The adapter implementation for
+  ///	<c>IEnumerator&lt;T&gt;</c>.</summary>
   TEnumeratorAdapter<T> = class(TEnumeratorBase<T>, IEnumerator<T>, IEnumerator, IInterface)
   private
     fEnumerator: TEnumerator<T>;
@@ -62,9 +63,6 @@ type
 //    class function From<T>: TListAdapter;
 //  end;
 
-  /// <summary>
-  /// TListAdapter<T>
-  /// </summary>
   TListAdapter<T> = class(TEnumerableEx<T>, IList<T>, ICollection<T>, IItemTypeSupport)
   protected
     fList: TList<T>;
@@ -97,15 +95,11 @@ type
     property IsReadOnly: Boolean read GetIsReadOnly;
   end;
 
-  /// <summary>
-  /// TDictionaryAdapter<TKey, TValue>
-  /// </summary>
   TDictionaryAdapter<TKey, TValue> = class(TCollectionBase<TPair<TKey, TValue>>, IDictionary<TKey, TValue>)
   private
     type
-      /// <summary>
-      /// Provides a read-only ICollection<TKey> implementation
-      /// </summary>
+      ///	<summary>Provides a read-only ICollection&lt;TKey&gt;
+      ///	implementation</summary>
       TKeyCollection = class(TContainedEnumerableEx<TKey>, ICollection<TKey>,
         IEnumerableEx<TKey>, IEnumerable<TKey>, IEnumerable, IInterface)
       private
@@ -127,10 +121,9 @@ type
         function Extract(const item: TKey): TKey;
       end;
 
-      /// <summary>
-      /// Provides a read-only ICollection<TValue> implementation
-      /// </summary>
-      TValueCollection = class(TContainedEnumerableEx<TValue>, ICollection<TValue>,
+      ///	<summary>Provides a read-only ICollection&lt;TValue&gt;
+      ///	implementation</summary>
+     TValueCollection = class(TContainedEnumerableEx<TValue>, ICollection<TValue>,
         IEnumerableEx<TValue>, IEnumerable<TValue>, IEnumerable, IInterface)
       private
         fDictionary: TDictionary<TKey, TValue>;

@@ -47,7 +47,7 @@ type
     fContainerContext: IContainerContext;
     fRttiContext: TRttiContext;
     fModels: IDictionary<PTypeInfo, TComponentModel>;
-    fServiceTypeMappings: TDictionary<PTypeInfo, TArray<TComponentModel>>;
+    fServiceTypeMappings: TDictionary<PTypeInfo, IList<TComponentModel>>;
     fServiceNameMappings: TDictionary<string, TComponentModel>;
   protected
     procedure OnComponentModelAdded(model: TComponentModel);
@@ -189,7 +189,7 @@ begin
   fContainerContext := context;
   fRttiContext := TRttiContext.Create;
   fModels := TCollections.CreateDictionary<PTypeInfo, TComponentModel>([doOwnsValues]);
-  fServiceTypeMappings := TDictionary<PTypeInfo, TArray<TComponentModel>>.Create;
+  fServiceTypeMappings := TDictionary<PTypeInfo, IList<TComponentModel>>.Create;
   fServiceNameMappings := TDictionary<string, TComponentModel>.Create;
 end;
 
@@ -250,7 +250,7 @@ procedure TComponentRegistry.RegisterService(componentType,
   serviceType: PTypeInfo; const name: string);
 var
   model: TComponentModel;
-  models: TArray<TComponentModel>;
+  models: IList<TComponentModel>;
   serviceName: string;
 begin
   TArgument.CheckNotNull(componentType, 'componentType');
@@ -261,14 +261,10 @@ begin
   model.Services[serviceName] := serviceType;
   if not fServiceTypeMappings.TryGetValue(serviceType, models) then
   begin
-    models := TArray<TComponentModel>.Create(model);
-  end
-  else
-  begin
-    SetLength(models, Length(models) + 1);
-    models[High(models)] := model;
+    models := TCollections.CreateList<TComponentModel>;
+    fServiceTypeMappings.AddOrSetValue(serviceType, models);
   end;
-  fServiceTypeMappings.AddOrSetValue(serviceType, models);
+  models.Add(model);
   fServiceNameMappings.Add(serviceName, model);
 end;
 
@@ -306,20 +302,17 @@ end;
 function TComponentRegistry.FindAll(
   serviceType: PTypeInfo): IEnumerableEx<TComponentModel>;
 var
-  list: IList<TComponentModel>;
-  models: TArray<TComponentModel>;
-  model: TComponentModel;
+  models: IList<TComponentModel>;
 begin
   TArgument.CheckNotNull(serviceType, 'serviceType');
-  list := TCollections.CreateList<TComponentModel>;
   if fServiceTypeMappings.TryGetValue(serviceType, models) then
   begin
-    for model in models do
-    begin
-      list.Add(model);
-    end;
+    Result := models;
+  end
+  else
+  begin
+    Result := TCollections.CreateList<TComponentModel>;;
   end;
-  Result := list;
 end;
 
 function TComponentRegistry.GetDefaultTypeName(serviceType: TRttiType): string;

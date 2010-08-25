@@ -184,7 +184,7 @@ type
 implementation
 
 uses
-  Spring.Utils.IO;
+  Spring.Utils;
 
 
 {$REGION 'TTestSplitString'}
