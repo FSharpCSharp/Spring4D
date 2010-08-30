@@ -23,16 +23,21 @@
 {***************************************************************************}
 
 {$REGION 'Documentation'}
-///	<summary>Provides many easy to use class helpers &amp; record helpers
-///	that extend the ability of the common&#160;classes in the VCL
-///	framework.</summary>
+///	<summary>Provides many easy to use class helpers &amp; record helpers that
+///	extend some common classes in the VCL framework.</summary>
 ///	<remarks>
 ///	  <para>Classes helpers and record helpers have been introduced since
 ///	  Delphi 2007. The initial purpose is to allow developers to extend a class
 ///	  without change the original structure.</para>
+///	  <alert class="note">A class helper type may not declare instance data,
+///	  but class fields are allowed.</alert>
+///	  <alert class="warning">Class helpers&#160;and record helpers are not
+///	  intended to be a design tool in Delphi. It is some kind of "patching"
+///	  technology.</alert>
 ///	  <para>If you want to use these helpers, just uses the
 ///	  <b>Spring.Helpers</b> namespace in the target unit.</para>
 ///	</remarks>
+///	<example>See examples in the <see cref="TGuidHelper" />.</example>
 {$ENDREGION}
 unit Spring.Helpers;
 
@@ -57,16 +62,15 @@ uses
 
 type
   {$REGION 'Documentation'}
-  ///	<summary>Record helper for the <c>System.TGuid</c> structure.</summary>
+  ///	<summary>Represents a record helper for the <c>System.TGuid</c> structure
+  ///	to make it easy to use.</summary>
   ///	<remarks>
-  ///	  <alert class="tip">You can use the&#160;equal operator ("=") or
-  ///	  not&#160;equal operator ("&lt;&gt;")&#160;in Delphi XE.</alert>
-  ///	  <alert class="note">We have reported an enhancement request to QC. (See
-  ///	  QC#78515)</alert>
+  ///	  <alert class="tip">You can use the equal ("=") or not
+  ///	  equal&#160;("&lt;&gt;") operator loading in latest Delphi XE.</alert>
   ///	</remarks>
   ///	<example>
-  ///	  The following&#160;code demonstrates how to create a new&#160;guid and
-  ///	  use it in OO-style:
+  ///	  The following code demonstrates how to create a new guid and use it in
+  ///	  OO-style:
   ///	  <code lang="Delphi">
   ///	procedure TestGuidHelper;
   ///	var
@@ -114,12 +118,14 @@ type
     ///	zero).</summary>
     property IsEmpty: Boolean read GetIsEmpty;
 
-    ///	<summary>Gets the shared&#160;empty guid.</summary>
+    ///	<summary>Gets the shared empty guid.</summary>
     ///	<value>The value of the empty guid is
     ///	<c>{00000000-0000-0000-0000-000000000000}</c></value>
     class property Empty: TGuid read GetEmpty;
   end;
 
+  ///	<summary>Provides a static method to create a TMethod structure with an
+  ///	objectaddress and a methodaddress.</summary>
   TMethodHelper = record helper for TMethod
   public
     class function Create(const objectAddress, methodAddress: Pointer): TMethod; static;
@@ -187,20 +193,31 @@ type
 
 //    procedure Remove(const s: string);
 
+    {$REGION 'Documentation'}
     ///	<summary>Executes a procedure during batch updating of the
     ///	list.</summary>
+    ///	<exception cref="Spring|EArgumentNullException">Raised if the
+    ///	<paramref name="strings" /> is nil or the <paramref name="proc" /> is
+    ///	not assigned.</exception>
+    {$ENDREGION}
     procedure ExecuteUpdate(proc: TProc);
 
+    {$REGION 'Documentation'}
     ///	<summary>Extract all name entries and add them to the <paramref name=
     ///	"strings" /> list.</summary>
-    ///	<exception cref="EArgumentNullException">Raised if the <paramref name=
+    ///	<exception cref="Spring|EArgumentNullException">Raised if the <paramref name=
     ///	"strings" /> is nil.</exception>
+    ///	<seealso cref="ExtractValues(TStrings)">ExtractValues</seealso>
+    {$ENDREGION}
     procedure ExtractNames(strings: TStrings);
 
+    {$REGION 'Documentation'}
     ///	<summary>Extract all value entries and add them to the <paramref name=
     ///	"strings" /> list.</summary>
-    ///	<exception cref="EArgumentNullException">Raised if the <paramref name=
+    ///	<exception cref="Spring|EArgumentNullException">Raised if the <paramref name=
     ///	"strings" /> is nil.</exception>
+    ///	<seealso cref="ExtractNames(TStrings)"></seealso>
+    {$ENDREGION}
     procedure ExtractValues(strings: TStrings);
 
     ///	<summary>Returns a string array that contains all the <b>name</b>
@@ -223,7 +240,7 @@ type
     ///	<summary>Try finding a name entry in the list.</summary>
     function TryFindName(const name: string; var index: Integer): Boolean;
 
-    ///	<summary>Try finding a name entry in the list.</summary>
+    ///	<summary>Try finding a value entry in the list.</summary>
     function TryFindValue(const value: string; var index: Integer): Boolean;
 
     ///	<summary>Try finding an object in the list.</summary>
@@ -252,6 +269,8 @@ type
 
   TCollectionHelper = class helper for TCollection
   public
+    ///	<param name="proc">the anonymous method that will be executed within
+    ///	the batch update.</param>
     procedure ExecuteUpdate(proc: TProc);
   end;
 
@@ -285,21 +304,30 @@ type
 
   // TPointHelper, TSizeHelper, TRectHelper
 
-
-  {$REGION 'Class helpers for Enhanced Rtti (Reflection)'}
-
   {TODO -oPaul -cGeneral : Add some non-generic implementation}
 
   TRttiObjectHelper = class helper for TRttiObject
   public
+    ///	<summary>Gets an array which contains all custom attribute types which
+    ///	the type applies.</summary>
     function GetCustomAttributes<T: TCustomAttribute>: TArray<T>;
+
+    ///	<summary>Enumerates all applied custom attributes and returns the first
+    ///	one which is/inherits the specified type.</summary>
     function GetCustomAttribute<T: TCustomAttribute>: T;
+
+    ///	<summary>Try getting a custom attribute class which is applied by the
+    ///	type.</summary>
     function TryGetCustomAttribute<T: TCustomAttribute>(out attribute: T): Boolean;
+
+    ///	<summary>Determines whether the type applies the specified custom
+    ///	attribute class.</summary>
     function HasCustomAttribute<T: TCustomAttribute>: Boolean;
   end;
 
   TRttiClassType = TRttiInstanceType;
 
+  /// <preliminary />
   TRttiTypeHelper =  class helper for TRttiType
   private
     function GetAsInterface: TRttiInterfaceType;
@@ -322,10 +350,10 @@ type
     {$REGION 'Documentation'}
     ///	<summary>
     ///	  Returns an enumerable collection which contains all the interface
-    ///	  Rtti types that the type implements.
-    ///	  <alert class="note">This method only lists the interfaces which has a
-    ///	  guid.</alert>
+    ///	  Rtti types that the target type implements.
+    ///	  <alert class="note">Only Guid interfaces will be enumerated.</alert>
     ///	</summary>
+    ///	<seealso cref="Spring.Collections|IEnumerableEx&lt;T&gt;"></seealso>
     {$ENDREGION}
     function GetInterfaces: IEnumerableEx<TRttiInterfaceType>;
 
@@ -333,27 +361,47 @@ type
     ///	<summary>Gets an array of types which contains all generic
     ///	arguments.</summary>
     ///	<remarks>This method extracts generic arguments from the name of the
-    ///	generic type. e.g. The type is <b><c>TDictionary&lt;Integer,
-    ///	string&gt;,</c></b> this method&#160;will return the types which
-    ///	contains two items: <c>System.Integer</c> and
+    ///	generic type. e.g. Invoking the method on the type
+    ///	<b><c>TDictionary&lt;Integer, string&gt;,</c></b> it will return an
+    ///	array&#160;which contains two types: <c>System.Integer</c> and
     ///	<c>System.String</c>.</remarks>
     {$ENDREGION}
     function GetGenericArguments: TArray<TRttiType>;
 
-    ///	<summary>Gets an enumerable collection which contains all constructors
-    ///	of the type, including inherited.</summary>
+    {$REGION 'Documentation'}
+    ///	<summary>Gets an enumerable collection which contains all constructor
+    ///	methods of the type, including inherited.</summary>
+    ///	<seealso cref="Methods"></seealso>
+    ///	<seealso cref="Propoerties"></seealso>
+    ///	<seealso cref="Fields"></seealso>
+    {$ENDREGION}
     property Constructors: IEnumerableEx<TRttiMethod> read GetConstructors;
 
+    {$REGION 'Documentation'}
     ///	<summary>Gets a enumerable collection which contains all methods that
     ///	the type contains, including inherited.</summary>
+    ///	<seealso cref="Constructors"></seealso>
+    ///	<seealso cref="Propoerties"></seealso>
+    ///	<seealso cref="Fields"></seealso>
+    {$ENDREGION}
     property Methods: IEnumerableEx<TRttiMethod> read GetMethods;
 
+    {$REGION 'Documentation'}
     ///	<summary>Gets a enumerable collection which contains all properties
     ///	that the type contains, including inherited.</summary>
+    ///	<seealso cref="Constructors"></seealso>
+    ///	<seealso cref="Methods"></seealso>
+    ///	<seealso cref="Fields"></seealso>
+    {$ENDREGION}
     property Properties: IEnumerableEx<TRttiProperty> read GetProperties;
 
+    {$REGION 'Documentation'}
     ///	<summary>Gets a enumerable collection which contains all fields that
     ///	the type contains, including inherited.</summary>
+    ///	<seealso cref="Constructors"></seealso>
+    ///	<seealso cref="Methods"></seealso>
+    ///	<seealso cref="Propoerties"></seealso>
+    {$ENDREGION}
     property Fields: IEnumerableEx<TRttiField> read GetFields;
 
     property AsClass: TRttiInstanceType read GetAsClass;
@@ -417,8 +465,6 @@ type
     ///	guid.</summary>
     property HasGuid: Boolean read GetHasGuid;
   end;
-
-  {$ENDREGION}
 
 implementation
 
@@ -524,22 +570,6 @@ end;
 procedure TStreamHelper.WriteBuffer<T>(const value: T);
 begin
   WriteBuffer(value, SizeOf(T));
-end;
-
-procedure TestStreamHelper;
-var
-  stream: TStream;
-  value: Integer;
-begin
-  stream := TMemoryStream.Create;
-  try
-    value := 2;
-    stream.WriteBuffer(value);
-    stream.Position := 0;
-    stream.ReadBuffer<Integer>(value);
-  finally
-    stream.Free;
-  end;
 end;
 
 { TStringsHelper }

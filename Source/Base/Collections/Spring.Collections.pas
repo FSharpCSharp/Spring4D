@@ -206,8 +206,8 @@ type
 
   TContainers = TCollections deprecated 'Use TCollections instead.';
 
-  ///	<summary>Provides an abstract implementation for
-  ///	<c>System.IEnumerator&lt;T&gt;</c>.</summary>
+  ///	<summary>Provides an abstract implementation for the
+  ///	<see cref="System|IEnumerator&lt;T&gt;" /> interface.</summary>
   TEnumeratorBase<T> = class abstract(TInterfacedObject, IEnumerator<T>, IEnumerator, IInterface)
   protected
     function DoGetCurrent: T; virtual; abstract;
@@ -243,7 +243,9 @@ type
     function TryGetFirst(out value: T): Boolean; virtual;
     function TryGetLast(out value: T): Boolean; virtual;
   public
+    ///	<seealso cref="First(TPredicate&lt;T&gt;)"></seealso>
     function First: T; overload; virtual;
+    ///	<seealso cref="First"></seealso>
     function First(const predicate: TPredicate<T>): T; overload; virtual;
     function FirstOrDefault: T; overload; virtual;
     function FirstOrDefault(const predicate: TPredicate<T>): T; overload; virtual;

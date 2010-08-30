@@ -27,9 +27,9 @@
 {TODO -oPaul -cGeneral : Add TMACTripleDES}
 
 /// <preliminary />
-/// <seealso>http://msdn.microsoft.com/en-us/library/92f9ye3s(VS.71).aspx</seealso>
-/// <seealso>http://msdn.microsoft.com/en-us/library/system.security.cryptography.aspx</seealso>
-/// <seealso>http://en.wikipedia.org/wiki/Cryptography</seealso>
+/// <seealso href="http://msdn.microsoft.com/en-us/library/92f9ye3s(VS.71).aspx"></seealso>
+/// <seealso href="http://msdn.microsoft.com/en-us/library/system.security.cryptography.aspx"></seealso>
+/// <seealso href="http://en.wikipedia.org/wiki/Cryptography"></seealso>
 unit Spring.Cryptography;
 
 {$I Spring.inc}
@@ -51,7 +51,7 @@ type
   /// <remarks>
   /// The cipher modes cmOFB, cmCFB and cmCTS have not been supported yet.
   /// </remarks>
-  /// <seealso>http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation</seealso>
+  /// <seealso href="http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation">Block Cipher Mode of Operation</seealso>
   TCipherMode = (
     /// <summary>
     /// Cipher-Block Chaining
@@ -444,17 +444,16 @@ type
   {$ENDREGION}
   
   
-  /// <summary>
-  /// Uses the TCryptographicServiceProvider class to create various 
-  /// cryptographic algorithms.
-  /// </summary>
-  /// <remarks>
-  /// The CreateMACTripleDES and CreateAES methods have not been yet implemented.
-  /// </remarks>
+  ///	<summary>Uses the TCryptographicServiceProvider class to create various
+  ///	cryptographic algorithms.</summary>
+  ///	<remarks>The CreateMACTripleDES and CreateAES methods have not been yet
+  ///	implemented.</remarks>
   TCryptographicServiceProvider = class
   public
 //    class function Create(const algorithmName: string): IInterface; static;
+    ///	<seealso cref="CreateCRC32"></seealso>
     class function CreateCRC16: ICRC16; static;
+    ///	<seealso cref="CreateCRC16"></seealso>
     class function CreateCRC32: ICRC32; static;
     class function CreateMD5: IMD5; static;
     class function CreateSHA1: ISHA1; static;

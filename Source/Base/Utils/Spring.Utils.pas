@@ -54,8 +54,6 @@ uses
   Spring.Utils.Win32API;
 
 type
-  {$REGION 'TDriveInfo'}
-
   /// <summary>
   /// Drive Type Enumeration
   /// </summary>
@@ -69,13 +67,22 @@ type
     dtRam               // The drive is a RAM disk.
   );
 
-  /// <summary>
-  /// Provides access to information on a drive.
-  /// </summary>
-  /// <remarks>
-  /// Use TDriveInfo.GetDrives method to retrieve all drives of the computer.
-  /// Caller must check IsReady property before using TDriveInfo.
-  /// </remarks>
+  {TODO -oPaul -cGeneral : Add the Refresh method}
+
+  {$REGION 'Documentation'}
+  ///	<summary>Provides access to information on a drive.</summary>
+  ///	<remarks>
+  ///	  Use the static <see cref=
+  ///	  "Spring.Utils|TDriveInfo.GetDrives">TDriveInfo.GetDrives</see> method to retrieve
+  ///	  all drives of the computer.
+  ///	  <alert class="caller">Caller must use the <see cref=
+  ///	  "IsReady">IsReady</see> property to check whether the drive is ready
+  ///	  before accessing other members. Otherwise, an <see cref=
+  ///	  "Spring|EIOException" /> exception will be raised if it
+  ///	  is not ready.</alert>
+  ///	</remarks>
+  /// <seealso href="http://msdn.microsoft.com/en-us/library/system.io.driveinfo.aspx">System.IO.DriveInfo (.Net Framework)</seealso>
+  {$ENDREGION}
   TDriveInfo = record
   private
     fDriveName: string;
@@ -101,29 +108,73 @@ type
     procedure UpdateProperties;
   public
     constructor Create(const driveName: string);
+
+    ///	<summary>Retrieves the drive names of all logical drives on a
+    ///	computer.</summary>
     class function GetDrives: TArray<TDriveInfo>; static;
-    {TODO -oPaul -cGeneral : Add the Refresh method}
+
     procedure CheckIsReady;
+
+    ///	<summary>Indicates the amount of available free space on a
+    ///	drive.</summary>
     property AvailableFreeSpace: Int64 read GetAvailableFreeSpace;
+
+    ///	<summary>Gets the name of the file system, such as NTFS or
+    ///	FAT32.</summary>
     property DriveFormat: string read GetDriveFormat;
+
+    ///	<summary>Gets the drive type.</summary>
     property DriveType: TDriveType read GetDriveType;
+
+    ///	<summary>Gets the drive type.</summary>
     property DriveTypeString: string read GetDriveTypeString;
+
+    ///	<summary>Gets a value indicating whether a drive is ready.</summary>
     property IsReady: Boolean read GetIsReady;
+
+    ///	<summary>Gets the name of a drive.</summary>
     property Name: string read fDriveName;
+
+    ///	<summary>Gets the root directory of a drive.</summary>
     property RootDirectory: string read fRootDirectory;
+
+    ///	<summary>Gets the total amount of free space available on a
+    ///	drive.</summary>
     property TotalFreeSpace: Int64 read GetTotalFreeSpace;
+
+    ///	<summary>Gets the total size of storage space on a drive.</summary>
     property TotalSize: Int64 read GetTotalSize;
+
+    ///	<summary>Gets or sets the volume label of a drive.</summary>
     property VolumeLabel: string read GetVolumeLabel write SetVolumeLabel;
   end;
-
-  {$ENDREGION}
 
 
   {$REGION 'TFileVersionInfo'}
 
-  /// <summary>
-  /// Provides version information for a physical file on disk.
-  /// </summary>
+  {$REGION 'Documentation'}
+  ///	<summary>Provides version information for a physical file on
+  ///	disk.</summary>
+  ///	<remarks>
+  ///	  Use the <see cref="GetVersionInfo(string)">GetVersionInfo</see>
+  ///	  method of this class to get a FileVersionInfo containing
+  ///	  information about a file, then look at the properties for information
+  ///	  about the file. Call <see cref="ToString"></see> to get
+  ///	  a partial list of properties and their values for this file.
+  ///	  <para>The TFileVersionInfo properties are based on version
+  ///	  resource information built into the file. Version resources are often
+  ///	  built into binary files such as .exe or .dll files; text files do not
+  ///	  have version resource information.</para>
+  ///	  <para>Version resources are typically specified in a Win32 resource
+  ///	  file, or in assembly attributes. For example the <see cref=
+  ///	  "IsDebug"></see> property reflects theVS_FF_DEBUG flag value
+  ///	  in the file's VS_FIXEDFILEINFO block, which is built from
+  ///	  the VERSIONINFO resource in a Win32 resource file. For more
+  ///	  information about specifying version resources in a Win32 resource
+  ///	  file, see "About Resource Files" and "VERSIONINFO Resource" in the
+  ///	  Platform SDK.</para>
+  ///	</remarks>
+  {$ENDREGION}
   TFileVersionInfo = record
   private
     type
@@ -174,9 +225,9 @@ type
     constructor Create(const fileName: string);
     procedure LoadVersionResource(const resource: TFileVersionResource);
   public
-    /// <summary>
-    /// Returns a TFileVersionInfo object.
-    /// </summary>
+    ///	<summary>Gets the file version info of the specified file.</summary>
+    ///	<exception cref="Spring|EFileNotFoundException">Raised if the file
+    ///	doesn't exist.</exception>
     class function GetVersionInfo(const fileName: string): TFileVersionInfo; static;
     function ToString: string;
     property Exists: Boolean read fExists;
@@ -285,9 +336,27 @@ type
 
   {$REGION 'Special Folder Enumeration'}
 
-  /// <summary>
-  /// Special Folder Enumeration
-  /// </summary>
+  {$REGION 'Documentation'}
+  ///	<summary>Specifies enumerated constants used to retrieve directory paths
+  ///	to system special folders.</summary>
+  ///	<remarks>
+  ///	  <para>The system special folders are folders such as <b>Program
+  ///	  Files</b>, <b>Programs</b>, <b>System</b>,
+  ///	  or <b>Startup</b>, which contain common information. Special
+  ///	  folders are set by default by the system, or explicitly by the user,
+  ///	  when installing a version of Windows.</para>
+  ///	  <para>The <see cref=
+  ///	  "TEnvironment.GetFolderPath(TSpecialFolder)">GetFolderPath</see> method
+  ///	  returns the locations associated with this enumeration. The locations
+  ///	  of these folders can have different values on different operating
+  ///	  systems, the user can change some of the locations, and the locations
+  ///	  are localized.</para>
+  ///	  <para>For more information about special folders, see
+  ///	  the <see href=
+  ///	  "http://go.microsoft.com/fwlink/?LinkId=116664">CSIDL</see> values
+  ///	  topic.</para>
+  ///	</remarks>
+  {$ENDREGION}
   TSpecialFolder = (
     sfDesktop,                // <desktop>
     sfInternet,               // Internet Explorer (icon on desktop)
@@ -386,15 +455,30 @@ type
   /// Identifies the processor and bits-per-word of the platform targeted by an executable.
   /// </summary>
   TProcessorArchitecture = (
-    paUnknown,    // Unknown processor
-    paX86,        // Intel x86 and compatible microprocessors.
-    paIA64,       // 64-bit Intel and compatible microprocessors.
-    paAmd64       // 64-bit AMD microprocessors.
+    /// <summary>
+    /// Unknown processor
+    /// </summary>
+    paUnknown,
+    /// <summary>
+    /// Intel x86 and compatible microprocessors.
+    /// </summary>
+    paX86,
+    /// <summary>
+    /// 64-bit Intel and compatible microprocessors.
+    /// </summary>
+    paIA64,
+    /// <summary>
+    /// 64-bit AMD microprocessors.
+    /// </summary>
+    paAmd64
   );
 
-  /// <summary>
-  /// Provides information about, and means to manipulate, the current environment.
-  /// </summary>
+  {$REGION 'Documentation'}
+  ///	<summary>Provides information about, and means to manipulate, the current
+  ///	environment.</summary>
+  ///	<remarks>Use the TEnvironment structure to retrieve information such
+  ///	as command-line arguments, environment variable settings. </remarks>
+  {$ENDREGION}
   TEnvironment = record
   private
     class var
@@ -429,38 +513,115 @@ type
     class function GetCurrentVersionKey: string; static;
     class procedure GetProcessEnvironmentVariables(list: TStrings); static;
   public
+    ///	<summary>Returns a string array containing the command-line arguments
+    ///	for the current process.</summary>
     class function  GetCommandLineArgs: TStringDynArray; overload; static;
+
     // TODO: Consider using Extract*** insteading of Get*** for the methods with a
     // TString parameter.
+
+    ///	<summary>Returns a string array containing the command-line arguments
+    ///	for the current process.</summary>
     class procedure GetCommandLineArgs(list: TStrings); overload; static;
+
+    ///	<summary>Returns an array of string containing the names of the logical
+    ///	drives on the current computer.</summary>
     class function  GetLogicalDrives: TStringDynArray; overload; static;
+
     class procedure GetLogicalDrives(list: TStrings); overload; static;
+
+    ///	<summary>Gets the path to the system special folder that is identified
+    ///	by the specified enumeration.</summary>
     class function  GetFolderPath(const folder: TSpecialFolder): string; static;
+
+    ///	<summary>Retrieves the value of an environment variable from the
+    ///	current process.</summary>
     class function  GetEnvironmentVariable(const variable: string): string; overload; static;
+
+    ///	<summary>Retrieves the value of an environment variable from the
+    ///	current process or from the Windows operating system registry key for
+    ///	the current user or local machine.</summary>
     class function  GetEnvironmentVariable(const variable: string; target: TEnvironmentVariableTarget): string; overload; static;
+
+    ///	<summary>Retrieves all environment variable names and their values from
+    ///	the current process.</summary>
     class procedure GetEnvironmentVariables(list: TStrings); overload; static;
+
+    ///	<summary>Retrieves the value of an environment variable from the
+    ///	current process or from the Windows operating system registry key for
+    ///	the current user or local machine.</summary>
     class procedure GetEnvironmentVariables(list: TStrings; target: TEnvironmentVariableTarget); overload; static;
+
+    ///	<summary>Creates, modifies, or deletes an environment variable stored
+    ///	in the current process.</summary>
     class procedure SetEnvironmentVariable(const variable, value: string); overload; static;
+
+    ///	<summary>Creates, modifies, or deletes an environment variable stored
+    ///	in the current process or in the Windows operating system registry key
+    ///	reserved for the current user or local machine.</summary>
     class procedure SetEnvironmentVariable(const variable, value: string; target: TEnvironmentVariableTarget); overload; static;
+
+    ///	<summary>Replaces the name of each environment variable embedded in the
+    ///	specified string with the string equivalent of the value of the
+    ///	variable, then returns the resulting string.</summary>
     class function ExpandEnvironmentVariables(const variable: string): string; static;
+
     class property ApplicationPath: string read fApplicationPath;
+
     class property ApplicationVersion: TVersion read fApplicationVersion;
+
     class property ApplicationVersionInfo: TFileVersionInfo read fApplicationVersionInfo;
+
     class property ApplicationVersionString: string read fApplicationVersionString;
+
+    ///	<summary>Gets the command line for this process.</summary>
     class property CommandLine: string read GetCommandLine;
+
+    ///	<summary>Gets or sets the fully qualified path of the current working
+    ///	directory.</summary>
     class property CurrentDirectory: string read GetCurrentDirectory write SetCurrentDirectory;
+
     class property IsAdmin: Boolean read GetIsAdmin; { experimental }
+
+    ///	<summary>Gets the NetBIOS name of this local computer.</summary>
     class property MachineName: string read GetMachineName;
+
+    ///	<summary>Gets the newline string defined for this
+    ///	environment.</summary>
     class property NewLine: string read GetNewLine;
+
+    ///	<summary>Gets an <see cref="TOperatingSystem" /> object that
+    ///	contains the current platform identifier and version number.</summary>
     class property OperatingSystem: TOperatingSystem read fOperatingSystem;
+
+    ///	<summary>Gets the number of processors on the current
+    ///	machine.</summary>
     class property ProcessorCount: Integer read GetProcessorCount;
+
     class property ProcessorArchitecture: TProcessorArchitecture read GetProcessorArchitecture;
+
     class property RegisteredOrganization: string read GetRegisteredOrganization;
+
     class property RegisteredOwner: string read GetRegisteredOwner;
+
+    ///	<summary>Gets the fully qualified path of the system
+    ///	directory.</summary>
     class property SystemDirectory: string read GetSystemDirectory;
+
+    ///	<summary>Gets the number of milliseconds elapsed since the system
+    ///	started.</summary>
     class property TickCount: Cardinal read GetTickCount;
+
+    ///	<summary>Gets the network domain name associated with the current
+    ///	user.</summary>
     class property UserDomainName: string read GetUserDomainName;
+
+    ///	<summary>Gets the user name of the person who is currently logged on to
+    ///	the Windows operating system.</summary>
     class property UserName: string read GetUserName;
+
+    ///	<summary>Gets a value indicating whether the current process is running
+    ///	in user interactive mode.</summary>
     class property UserInteractive: Boolean read GetUserInteractive;
   end;
 
@@ -612,8 +773,6 @@ type
   /// <summary>
   /// Try setting focus to a control.
   /// </summary>
-  /// <remarks>
-  /// </remarks>
   function TrySetFocus(control: TWinControl): Boolean;
 
   function TryFocusControl(control: TWinControl): Boolean;

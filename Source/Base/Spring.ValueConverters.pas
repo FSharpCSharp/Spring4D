@@ -43,7 +43,7 @@ type
 
     /// <param name="value">Rtti.TValue to convert</param>
     /// <param name="targetTypeInfo">Target Rtti.PTypeInfo structure</param>
-    /// <returns>Returns <param name="value">converted</param> to type pointing by <param name="targetTypeInfo">parameter</param></returns>
+    /// <returns>Returns <paramref name="value">converted</paramref> to type pointing by <param name="targetTypeInfo">parameter</param></returns>
     function ConvertTo(const value: TValue;
       const targetTypeInfo: PTypeInfo): TValue; overload;
 

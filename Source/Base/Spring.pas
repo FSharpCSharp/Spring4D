@@ -56,12 +56,13 @@ type
   TStringDynArray = Types.TStringDynArray;
 
   ///	<summary>Represents a time interval.</summary>
+  /// <seealso cref="TimeSpan|TTimeSpan" />
   TTimeSpan = TimeSpan.TTimeSpan;
 
   /// <summary>
   /// Provides a set of methods and properties to accurately measure elapsed time.
   /// </summary>
-  /// <seealso>Diagnostics.TStopwatch</seealso>
+  /// <seealso cref="Diagnostics|TStopwatch" />
   TStopwatch = Diagnostics.TStopwatch;
 
   PTypeInfo  = TypInfo.PTypeInfo;
@@ -75,7 +76,7 @@ type
   ///	false.</returns>
   ///	<remarks>
   ///	  <alert class="warning">This type redefined the
-  ///	  SysUtils.TPredicate&lt;T&gt; type with a const parameter.</alert>
+  ///	  <see cref="SysUtils|TPredicate&lt;T&gt;" /> type with a const parameter.</alert>
   ///	</remarks>
   {$ENDREGION}
   TPredicate<T> = reference to function(const value: T): Boolean;
@@ -103,11 +104,14 @@ type
   end;
 
 
-  {$REGION 'TBuffer'}
-
+  {$REGION 'Documentation'}
   ///	<summary>Represents a series of bytes in memory. The <c>TBuffer</c>
   ///	structure is actually a wrapper of a value of <c>TBytes</c> while
   ///	provides some easy-going methods and properties.</summary>
+  ///	<remarks>
+  ///	  <alert class="warning">This type needs to be reviewed.</alert>
+  ///	</remarks>
+  {$ENDREGION}
   TBuffer = record
   strict private
     fBytes: TBytes;
@@ -132,6 +136,7 @@ type
     constructor Create(const s: RawByteString); overload;
 
     class function FromHexString(const s: string): TBuffer; static;
+    ///	<seealso cref="FromHexString(string)"></seealso>
     class function ConvertToHexString(const buffer: Pointer; count: Integer): string; overload; static;
     class function ConvertToHexString(const buffer: Pointer; count: Integer;
       const prefix: string; const delimiter: string = ' '): string; overload; static;
@@ -200,10 +205,6 @@ type
     class operator BitwiseXor(const left, right: TBuffer): TBuffer;
   end;
 
-  {$ENDREGION}
-
-
-  {$REGION 'TVersion (Experimental)'}
 
   ///	<summary>Represents a version number in the format of
   ///	"major.minor[.build[.revision]]", which is different from the delphi
@@ -246,8 +247,6 @@ type
     class operator LessThanOrEqual(const left, right: TVersion): Boolean;
   end;
 
-  {$ENDREGION}
-
 
   (*
   TMemory = class
@@ -260,8 +259,6 @@ type
   end;
   //*)
 
-
-  {$REGION 'TArgument'}
 
   /// <summary>
   /// Provides static methods to check arguments and raise argument exceptions.
@@ -330,8 +327,6 @@ type
   /// </summary>
   TArg = TArgument;
 
-  {$ENDREGION}
-
 
   {$REGION 'TNullable<T>'}
 
@@ -394,27 +389,35 @@ type
   {$REGION 'Common TNullable<T> Aliases'}
 
   ///	<summary>Represents a nullable string.</summary>
+  ///	<seealso cref="TNullable&lt;T&gt;"></seealso>
   TNullableString = TNullable<string>;
 
   ///	<summary>Represents a nullable integer.</summary>
+  ///	<seealso cref="TNullable&lt;T&gt;"></seealso>
   TNullableInteger = TNullable<Integer>;
 
   ///	<summary>Represents a nullable <c>TDateTime</c>.</summary>
+  ///	<seealso cref="TNullable&lt;T&gt;"></seealso>
   TNullableDateTime = TNullable<TDateTime>;
 
   ///	<summary>Represents a nullable <c>Currency</c>.</summary>
+  ///	<seealso cref="TNullable&lt;T&gt;"></seealso>
   TNullableCurrency = TNullable<Currency>;
 
   ///	<summary>Represents a nullable <c>Double</c>.</summary>
+  ///	<seealso cref="TNullable&lt;T&gt;"></seealso>
   TNullableDouble = TNullable<Double>;
 
   ///	<summary>Represents a nullable <c>Boolean</c>.</summary>
+  ///	<seealso cref="TNullable&lt;T&gt;"></seealso>
   TNullableBoolean = TNullable<Boolean>;
 
   ///	<summary>Represents a nullable <c>Int64</c>.</summary>
+  ///	<seealso cref="TNullable&lt;T&gt;"></seealso>
   TNullableInt64 = TNullable<Int64>;
 
   ///	<summary>Represents a nullable <c>TGuid</c>.</summary>
+  ///	<seealso cref="TNullable&lt;T&gt;"></seealso>
   TNullableGuid = TNullable<TGUID>;
 
   {$ENDREGION}
@@ -463,8 +466,8 @@ type
 
   {$REGION 'Defines the interface for an abstract value provider. '}
   ///	<summary>Defines the interface for an abstract value provider.</summary>
-  ///	<remarks>Use the <b>Value</b> property to retrieve the current value from
-  ///	the provider. Use the <b>SetValue</b> method to assign a new value to it
+  ///	<remarks>Use the <see cref="Value" /> property to retrieve the current value from
+  ///	the provider. Use the <see cref="SetValue(TValue)" /> method to assign a new value to it
   ///	if the value provider is not read only. Otherwise, an
   ///	<c>EInvalidException</c> exception will be raised.</remarks>
   {$ENDREGION}
@@ -491,7 +494,7 @@ type
     ///	<value>Returns true if the value provider is read only, otherwise,
     ///	returns false.</value>
     ///	<remarks>If the value provider is read only, invoking the
-    ///	<c>SetValue</c> method will raise an <c>EInvalidOperation</c>
+    ///	<see cref="SetValue(TValue)">SetValue</see> method will raise an <c>EInvalidOperation</c>
     ///	exception.</remarks>
     {$ENDREGION}
     property IsReadOnly: Boolean read GetIsReadOnly;
@@ -502,7 +505,7 @@ type
   ///	provider.</summary>
   ///	<remarks>
   ///	  <alert class="implement">
-  ///	    <para>By default, the IsReadOnly property is true.</para>
+  ///	    <para>By default, the <see cref="IsReadOnly" /> property is true.</para>
   ///	    <para>Implementers must override the DoSetValue method if the value
   ///	    provider is not read only.</para>
   ///	  </alert>
@@ -522,12 +525,10 @@ type
   TValueProvider = TValueProviderBase
     deprecated 'Use the TValueProviderBase class instead.';
 
-
-  {$REGION 'IDelegate<T> (Experimental)'}
-
-  /// <summary>
-  /// Represents a multicast delegate interface.
-  /// </summary>
+  ///	<summary>Represents a multicast delegate interface.</summary>
+  ///	<remarks>
+  ///	  <alert class="warning">This type needs to be reviewed.</alert>
+  ///	</remarks>
   IDelegate<T> = interface
     function AddHandler(const handler: T): IDelegate<T>;
     function RemoveHandler(const handler: T): IDelegate<T>;
@@ -549,11 +550,6 @@ type
     procedure Clear;
   end;
 
-  {$ENDREGION}
-
-
-  {$REGION 'TVolatile<T> (Deprecated)'}
-
   /// <summary>
   /// Enforces an ordering constraint on memory operations.
   /// </summary>
@@ -570,8 +566,6 @@ type
     class operator Equal(const left, right: TVolatile<T>): Boolean;
     class operator NotEqual(const left, right: TVolatile<T>): Boolean;
   end deprecated 'Uses the TLazyUtils.GetValue method structure to ensure the thread safety.';
-
-  {$ENDREGION}
 
 
 //  TLazy<T> = record
@@ -623,6 +617,7 @@ type
     ///	end;
     ///	</code>
     ///	</remarks>
+    /// <seealso cref="Windows|InterlockedCompareExchangePointer" />
     {$ENDREGION}
     class function GetValue<T: class>(var field: T; const delegate: TFunc<T>): T; static;
   end;
@@ -721,9 +716,14 @@ type
 
   {$REGION 'Lifecycle Interfaces'}
 
+  {$REGION 'Documentation'}
   ///	<summary>Lifecycle interface. If a component implements this interface,
   ///	the IoC container will invoke the <c>Initialize</c> method when
   ///	initiating an instance of the component.</summary>
+  ///	<seealso cref="IStartable"></seealso>
+  ///	<seealso cref="IRecyclable"></seealso>
+  ///	<seealso cref="IDisposable"></seealso>
+  {$ENDREGION}
   IInitializable = interface
     ['{A36BB399-E592-4DFB-A091-EDBA3BE0648B}']
     ///	<summary>Initializes the component.</summary>
@@ -732,6 +732,9 @@ type
 
   ///	<summary>Lifecycle interface. Represents that the component can be
   ///	started and stopped.</summary>
+  ///	<seealso cref="IInitializable"></seealso>
+  ///	<seealso cref="IRecyclable"></seealso>
+  ///	<seealso cref="IDisposable"></seealso>
   IStartable = interface
     ['{8D0252A1-7993-44AA-B0D9-326019B58E78}']
     procedure Start;
@@ -740,6 +743,9 @@ type
 
   ///	<summary>Lifecycle interface. Only called for components that belongs to
   ///	a pool when the component comes back to the pool.</summary>
+  ///	<seealso cref="IInitializable"></seealso>
+  ///	<seealso cref="IStartable"></seealso>
+  ///	<seealso cref="IDisposable"></seealso>
   IRecyclable = interface
     ['{85114F41-70E5-4AF4-A375-E445D4619E4D}']
     procedure Recycle;
@@ -748,6 +754,9 @@ type
   ///	<summary>Lifecycle interface.&#160;If the component implements this
   ///	interface, all resources will be deallocate by calling the <c>dispose</c>
   ///	method.</summary>
+  ///	<seealso cref="IInitializable"></seealso>
+  ///	<seealso cref="IStartable"></seealso>
+  ///	<seealso cref="IRecyclable"></seealso>
   IDisposable = interface
     ['{6708F9BF-0237-462F-AFA2-DF8EF21939EB}']
     procedure Dispose;
@@ -764,6 +773,10 @@ type
   {$REGION 'TLifetimeType & Related Attributes'}
 
   ///	<summary>Lifetime Type Enumeration.</summary>
+  ///	<seealso cref="SingletonAttribute"></seealso>
+  ///	<seealso cref="TransientAttribute"></seealso>
+  ///	<seealso cref="SingletonPerThreadAttribute"></seealso>
+  ///	<seealso cref="PooledAttribute"></seealso>
   TLifetimeType = (
     /// <summary>
     /// Unknown lifetime type.
@@ -821,6 +834,10 @@ type
   ///	end;
   ///	</code>
   ///	</example>
+  ///	<seealso cref="TransientAttribute"></seealso>
+  ///	<seealso cref="SingletonPerThreadAttribute"></seealso>
+  ///	<seealso cref="PooledAttribute"></seealso>
+  ///	<seealso cref="TLifetimeType"></seealso>
   {$ENDREGION}
   SingletonAttribute = class(LifetimeAttributeBase)
   public
@@ -833,6 +850,10 @@ type
   ///	<remarks>
   ///	  <alert class="note">This attribute is the default option.</alert>
   ///	</remarks>
+  ///	<seealso cref="SingletonAttribute"></seealso>
+  ///	<seealso cref="SingletonPerThreadAttribute"></seealso>
+  ///	<seealso cref="PooledAttribute"></seealso>
+  ///	<seealso cref="TLifetimeType"></seealso>
   {$ENDREGION}
   TransientAttribute = class(LifetimeAttributeBase)
   public
@@ -842,6 +863,10 @@ type
   /// <summary>
   /// Applies this attribute when a component shares the single instance per thread.
   /// </summary>
+  ///	<seealso cref="SingletonAttribute"></seealso>
+  ///	<seealso cref="TransientAttribute"></seealso>
+  ///	<seealso cref="PooledAttribute"></seealso>
+  ///	<seealso cref="TLifetimeType"></seealso>
   SingletonPerThreadAttribute = class(LifetimeAttributeBase)
   public
     constructor Create;
@@ -850,6 +875,10 @@ type
   /// <summary>
   /// Represents that the target component can be pooled.
   /// </summary>
+  ///	<seealso cref="SingletonAttribute"></seealso>
+  ///	<seealso cref="TransientAttribute"></seealso>
+  ///	<seealso cref="SingletonPerThreadAttribute"></seealso>
+  ///	<seealso cref="TLifetimeType"></seealso>
   PooledAttribute = class(LifetimeAttributeBase)
   private
     fMinPoolsize: Integer;
@@ -866,6 +895,7 @@ type
   ///	<summary>Applies the <c>InjectionAttribute</c> to injectable instance
   ///	members of a class. e.g. constructors, methods, properties and even
   ///	fields. Also works on parameters of a method.</summary>
+  ///	<seealso cref="ImplementsAttribute"></seealso>
   InjectionAttribute = class(TCustomAttribute)
   private
     fValue: string;
@@ -878,9 +908,9 @@ type
   end;
 
  {$REGION 'Documentation'}
- ///	<summary>Applies this attribute to tell the IoC container which service
- ///	is implemented by the target component. In addition, a service name can
- ///	be specified.</summary>
+ ///	<summary>Applies this attribute to tell the IoC container which service is
+ ///	implemented by the target component. In addition, a service name can be
+ ///	specified.</summary>
  ///	<remarks>
  ///	  <alert class="note">This attribute can be specified more than
  ///	  once.</alert>
@@ -895,6 +925,7 @@ type
  ///	end;
  ///	</code>
  ///	</example>
+ ///	<seealso cref="InjectionAttribute"></seealso>
  {$ENDREGION}
  ImplementsAttribute = class(TCustomAttribute)
   private
@@ -948,39 +979,51 @@ type
   ///	<summary>Retrieves the byte length of a unicode string.</summary>
   ///	<param name="s">the unicode string.</param>
   ///	<returns>The byte length of the unicode string.</returns>
-  ///	<remarks>Although there is already a
-  ///	routine <c>SysUtils.ByteLength(string)</c> function, it only
-  ///	supports unicode strings and doesn't provide overloads for WideStrings
-  ///	and AnsiStrings.</remarks>
+  ///	<remarks>Although there is already a routine
+  ///	<c>SysUtils.ByteLength(string)</c> function, it only supports unicode
+  ///	strings and doesn't provide overloads for WideStrings and
+  ///	AnsiStrings.</remarks>
+  ///	<seealso cref="GetByteLength(WideString)"></seealso>
+  ///	<seealso cref="GetByteLength(RawByteString)"></seealso>
   {$ENDREGION}
   function GetByteLength(const s: string): Integer; overload; inline;
 
+  {$REGION 'Documentation'}
   ///	<summary>Retrieves the byte length of a WideString.</summary>
   ///	<param name="s">A wide string.</param>
   ///	<returns>The byte length of the wide string.</returns>
+  ///	<seealso cref="GetByteLength(string)"></seealso>
+  ///	<seealso cref="GetByteLength(RawByteString)"></seealso>
+  {$ENDREGION}
   function GetByteLength(const s: WideString): Integer; overload; inline;
 
+  {$REGION 'Documentation'}
   ///	<summary>Retrieves the byte length of a <c>RawByteString</c> (AnsiString
   ///	or UTF8String).</summary>
   ///	<returns>The byte length of the raw byte string.</returns>
+  ///	<seealso cref="GetByteLength(string)"></seealso>
+  ///	<seealso cref="GetByteLength(WideString)"></seealso>
+  {$ENDREGION}
   function GetByteLength(const s: RawByteString): Integer; overload; inline;
 
   {$REGION 'Documentation'}
   ///	<summary>Determines whether a specified file exists. An
-  ///	<c>EFileNotFoundException</c> exception will be raised when not
+  ///	<see cref="EFileNotFoundException" /> exception will be raised when not
   ///	found.</summary>
   ///	<param name="fileName">the file name.</param>
   ///	<exception cref="EFileNotFoundException">Raised if the target file does
   ///	not exist.</exception>
+  ///	<seealso cref="CheckDirectoryExists(string)"></seealso>
   {$ENDREGION}
   procedure CheckFileExists(const fileName: string);
 
   {$REGION 'Documentation'}
   ///	<summary>Determines whether a specified directory exists. An
-  ///	<c>EDirectoryNotFoundException</c> exception will be raised when not
+  ///	<see cref="EDirectoryNotFoundException" /> exception will be raised when not
   ///	found.</summary>
   ///	<exception cref="EDirectoryNotFoundException">Raised if the directory
   ///	doesn't exist.</exception>
+  ///	<seealso cref="CheckFileExists(string)"></seealso>
   {$ENDREGION}
   procedure CheckDirectoryExists(const directory: string);
 
@@ -1101,7 +1144,7 @@ type
   procedure Lock(const intf: IInterface; const proc: TProc); overload; // inline;
 
   {$REGION 'Documentation'}
-  ///	<summary>Updates an instance of <c>TStrings</c> by calling its
+  ///	<summary>Updates an instance of <see cref="Classes|TStrings" /> by calling its
   ///	BeginUpdate and EndUpdate.</summary>
   ///	<param name="strings">an instance of TStrings.</param>
   ///	<exception cref="EArgumentNullException">Raised if <paramref name=
@@ -1161,16 +1204,16 @@ const
   COneTB: Int64 = 1099511627776;   // 1TB = 1024 GB
 
   ///	<summary>Represents bytes of one KB.</summary>
-  OneKB: Int64 = 1024;            // 1KB = 1024 bytes
+  OneKB: Int64 = 1024 deprecated 'Use COneKB instead.';
 
   ///	<summary>Represents bytes of one MB.</summary>
-  OneMB: Int64 = 1048576;         // 1MB = 1024 KB
+  OneMB: Int64 = 1048576 deprecated 'Use COneMB instead.';
 
   ///	<summary>Represents bytes of one GB.</summary>
-  OneGB: Int64 = 1073741824;      // 1GB = 1024 MB
+  OneGB: Int64 = 1073741824 deprecated 'Use COneGB instead.';
 
   ///	<summary>Represents bytes of one TB.</summary>
-  OneTB: Int64 = 1099511627776;   // 1TB = 1024 GB
+  OneTB: Int64 = 1099511627776 deprecated 'Use COneTB instead.';
 
   {$ENDREGION}
 
