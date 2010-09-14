@@ -34,6 +34,7 @@ uses
   SysUtils,
   Rtti,
   Spring,
+  Spring.Utils,
   Spring.Collections,
   Spring.Reflection,
   Spring.Helpers;
@@ -41,6 +42,7 @@ uses
 begin
   try
     { TODO -oUser -cConsole Main : Insert code here }
+    TEnum.GetName(TDriveType.dtFixed);
     Writeln(TGuid.Empty.ToString);
   except
     on E: Exception do

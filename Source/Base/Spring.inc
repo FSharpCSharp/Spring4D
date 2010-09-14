@@ -25,7 +25,7 @@
 {$IFNDEF SPRING_INC}
 {$DEFINE SPRING_INC}
 
-{.$I jedi.inc}                // Import JEDI Development environment directives
+{$I jedi.inc}                // Import JEDI Development environment directives
 
 {$IF RTLVersion < 21.0}
   {$MESSAGE ERROR 'Delphi Spring Framework should be compiled in Delphi 2010 or later.'}

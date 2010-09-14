@@ -98,17 +98,25 @@ type
     ///	<summary>Creates a guid structure from the specified guid
     ///	string.</summary>
     ///	<param name="guidString">the guid string.</param>
-    class function Create(const guidString: string): TGuid; static;
+    class function Create(const guidString: string): TGuid; overload; static;
+    class function Create(const bytes: TBytes): TGuid; overload; static;
+    class function Create(a: Integer; b: SmallInt; c: SmallInt; const d: TBytes): TGuid; overload; static;
+    class function Create(a: Integer; b: SmallInt; c: SmallInt; d, e, f, g, h, i, j, k: Byte): TGuid; overload; static;
+    class function Create(a: Cardinal; b: Word; c: Word; d, e, f, g, h, i, j, k: Byte): TGuid; overload; static;
 
     ///	<summary>Generates a new <c>TGuid</c> instance.</summary>
     class function NewGuid: TGuid; static;
 
-    ///	<summary>Determines whether the guid equals to another TGuid
-    ///	structure.</summary>
-    function Equals(const guid: TGuid): Boolean;
+    function ToBytes: TBytes;
+
+    function ToByteArray: TBytes;
 
     ///	<summary>Returns a string representation of the guid.</summary>
     function ToString: string;
+
+    ///	<summary>Determines whether the guid equals to another TGuid
+    ///	structure.</summary>
+    function Equals(const guid: TGuid): Boolean;
 
     ///	<summary>Returns the quoted string representation of the
     ///	guid.</summary>
@@ -478,9 +486,60 @@ begin
   Result := StringToGUID(guidString);
 end;
 
+class function TGuidHelper.Create(const bytes: TBytes): TGuid;
+begin
+  if Length(bytes) <> 16 then
+    raise EArgumentException.CreateResFmt(@SInvalidGuidArray, [16]);
+  Move(bytes[0], Result, SizeOf(Result));
+end;
+
+class function TGuidHelper.Create(a: Integer; b, c: SmallInt;
+  const d: TBytes): TGuid;
+begin
+  if Length(d) <> 16 then
+    raise EArgumentException.CreateResFmt(@SInvalidGuidArray, [8]);
+  Result.D1 := LongWord(a);
+  Result.D2 := Word(b);
+  Result.D3 := Word(c);
+  Move(d[0], Result.D4, SizeOf(Result.D4));
+end;
+
+class function TGuidHelper.Create(a: Cardinal; b, c: Word; d, e, f, g, h, i, j,
+  k: Byte): TGuid;
+begin
+  Result.D1 := LongWord(a);
+  Result.D2 := Word(b);
+  Result.D3 := Word(c);
+  Result.D4[0] := d;
+  Result.D4[1] := e;
+  Result.D4[2] := f;
+  Result.D4[3] := g;
+  Result.D4[4] := h;
+  Result.D4[5] := i;
+  Result.D4[6] := j;
+  Result.D4[7] := k;
+end;
+
+class function TGuidHelper.Create(a: Integer; b, c: SmallInt; d, e, f, g, h, i,
+  j, k: Byte): TGuid;
+begin
+  Result.D1 := LongWord(a);
+  Result.D2 := Word(b);
+  Result.D3 := Word(c);
+  Result.D4[0] := d;
+  Result.D4[1] := e;
+  Result.D4[2] := f;
+  Result.D4[3] := g;
+  Result.D4[4] := h;
+  Result.D4[5] := i;
+  Result.D4[6] := j;
+  Result.D4[7] := k;
+end;
+
 class function TGuidHelper.NewGuid: TGuid;
 begin
-  ComObj.OleCheck(SysUtils.CreateGUID(Result));
+  if CreateGUID(Result) <> S_OK then
+    RaiseLastOSError;
 end;
 
 function TGuidHelper.Equals(const guid: TGuid): Boolean;
@@ -500,21 +559,26 @@ begin
   Result := SysUtils.GUIDToString(Self);
 end;
 
+function TGuidHelper.ToByteArray: TBytes;
+begin
+  SetLength(Result, 16);
+  Move(D1, Result[0], SizeOf(Self));
+end;
+
+function TGuidHelper.ToBytes: TBytes;
+begin
+  SetLength(Result, 16);
+  Move(D1, Result[0], SizeOf(Self));
+end;
+
 function TGuidHelper.ToQuotedString: string;
 begin
   Result := QuotedStr(Self.ToString);
 end;
 
 class function TGuidHelper.GetEmpty: TGuid;
-const
-  EmptyGuid: TGUID = (
-    D1: 0;
-    D2: 0;
-    D3: 0;
-    D4: (0, 0, 0, 0, 0, 0, 0, 0);
-  );
 begin
-  Result := EmptyGuid;
+  FillChar(Result, Sizeof(Result), 0);
 end;
 
 //class operator TGuidHelper.Equal(const left, right: TGuid) : Boolean;
