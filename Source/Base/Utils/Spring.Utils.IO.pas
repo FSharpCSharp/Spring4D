@@ -973,21 +973,21 @@ end;
 class constructor TSizeUnit.Create;
 begin
   fBytes := TSizeUnit.Create(SBytesDescription, 1);
-  fKB := TSizeUnit.Create(SKBDescription, OneKB);
-  fMB := TSizeUnit.Create(SMBDescription, OneMB);
-  fGB := TSizeUnit.Create(SGBDescription, OneGB);
-  fTB := TSizeUnit.Create(STBDescription, OneTB);
+  fKB := TSizeUnit.Create(SKBDescription, COneKB);
+  fMB := TSizeUnit.Create(SMBDescription, COneMB);
+  fGB := TSizeUnit.Create(SGBDescription, COneGB);
+  fTB := TSizeUnit.Create(STBDescription, COneTB);
 end;
 
 class function TSizeUnit.From(const size: Int64): TSizeUnit;
 begin
-  if size >= OneTB then
+  if size >= COneTB then
     Result := TSizeUnit.TB
-  else if size >= OneGB then
+  else if size >= COneGB then
     Result := TSizeUnit.GB
-  else if size >= OneMB then
+  else if size >= COneMB then
     Result := TSizeUnit.MB
-  else if size >= OneKB then
+  else if size >= COneKB then
     Result := TSizeUnit.KB
   else
     Result := TSizeUnit.Bytes;

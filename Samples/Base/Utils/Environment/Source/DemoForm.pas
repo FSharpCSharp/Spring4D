@@ -101,36 +101,11 @@ uses
   ShellAPI,
   TypInfo,
   Spring,
-  Spring.Utils;
+  Spring.Helpers,
+  Spring.Utils,
+  Spring.Utils.Network;
 
 {$R *.dfm}
-
-type
-  TStringsHelper = class helper for TStrings
-    procedure AddOrUpdate(const name, value: string);
-  end;
-
-/// <summary>
-/// Make sure the name exists even if its correlative value is empty.
-/// </summary>
-procedure TStringsHelper.AddOrUpdate(const name, value: string);
-var
-  index: Integer;
-  s: string;
-begin
-  index := IndexOfName(name);
-  s := name + NameValueSeparator + value;
-  if index > -1 then
-  begin
-    Strings[index] := s;
-  end
-  else
-  begin
-    Add(s);
-  end;
-end;
-
-//---------------------------------------------------------------------------
 
 procedure TfrmDemo.FormCreate(Sender: TObject);
 begin

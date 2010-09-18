@@ -79,8 +79,8 @@ type
   /// Specifies the type of padding to apply when the message data block is
   /// shorter than the full number of bytes needed for a cryptographic operation.
   /// </summary>
-  /// <seealso>http://msdn.microsoft.com/en-us/library/system.security.cryptography.paddingmode.aspx</seealso>
-  /// <seealso>http://en.wikipedia.org/wiki/Padding_(cryptography)</seealso>
+  /// <seealso href="http://msdn.microsoft.com/en-us/library/system.security.cryptography.paddingmode.aspx"></seealso>
+  /// <seealso href="http://en.wikipedia.org/wiki/Padding_(cryptography)"></seealso>
   TPaddingMode = (
     /// <summary>
     /// No padding is done.
@@ -123,7 +123,7 @@ type
   );
 
   /// <summary>
-  /// Represents a size list that can determine whether a size is contained.
+  /// Represents a list of size.
   /// </summary>
   TSizes = record
   private
@@ -149,7 +149,7 @@ type
     function ComputeHash(const inputString: string): TBuffer; overload;
     function ComputeHash(const inputString: WideString): TBuffer; overload;
     function ComputeHash(const inputString: RawByteString): TBuffer; overload;
-    function ComputeHash(const inputStream: TStream): TBuffer; overload;
+    function ComputeHash(const inputStream: TStream): TBuffer; overload;  // experimental
     function ComputeHashOfFile(const fileName: string): TBuffer;  // callback?
     /// <summary>
     /// Gets the hash size, <b>in bits</b>, of the algorithm.
@@ -182,8 +182,8 @@ type
   /// Performs a transformation on data to keep it from being read by third parties.
   /// This type of encryption uses a single shared, secret key to encrypt and decrypt data.
   /// </summary>
-  /// <seealso>http://en.wikipedia.org/wiki/Cipher</seealso>
-  /// <seealso>http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation</seealso>
+  /// <seealso href="http://en.wikipedia.org/wiki/Cipher"></seealso>
+  /// <seealso href="http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation"></seealso>
   ISymmetricAlgorithm = interface
     ['{98E0E218-2BD4-4AFA-87B2-E8C4812B2105}']
   {$REGION 'Property Getters and Setters'}
@@ -444,13 +444,11 @@ type
   {$ENDREGION}
   
   
-  ///	<summary>Uses the TCryptographicServiceProvider class to create various
-  ///	cryptographic algorithms.</summary>
+  ///	<summary>Provides static methods to create various cryptographic algorithms.</summary>
   ///	<remarks>The CreateMACTripleDES and CreateAES methods have not been yet
   ///	implemented.</remarks>
   TCryptographicServiceProvider = class
   public
-//    class function Create(const algorithmName: string): IInterface; static;
     ///	<seealso cref="CreateCRC32"></seealso>
     class function CreateCRC16: ICRC16; static;
     ///	<seealso cref="CreateCRC16"></seealso>

@@ -248,18 +248,6 @@ type
   end;
 
 
-  (*
-  TMemory = class
-  public
-    class procedure Zero<T: record>(var value: T); overload; inline;
-    class procedure Zero(buffer: Pointer; count: Integer); overload; inline;
-    class procedure Zero(var buffer; count: Integer); overload; inline;
-//    class procedure Fill(var buffer; count: Integer; value: Byte); inline;
-    // HexToBin, BinToHex, etc.
-  end;
-  //*)
-
-
   /// <summary>
   /// Provides static methods to check arguments and raise argument exceptions.
   /// </summary>
@@ -456,14 +444,6 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TVariant'}
-
-//  TVariant = record
-//  end;
-
-  {$ENDREGION}
-
-
   {$REGION 'Defines the interface for an abstract value provider. '}
   ///	<summary>Defines the interface for an abstract value provider.</summary>
   ///	<remarks>Use the <see cref="Value" /> property to retrieve the current value from
@@ -499,6 +479,7 @@ type
     {$ENDREGION}
     property IsReadOnly: Boolean read GetIsReadOnly;
   end;
+
 
   {$REGION 'Documentation'}
   ///	<summary>Provides an abstract base class for generic value

@@ -31,7 +31,8 @@ uses
   SysUtils,
   Windows,
   Rtti,
-  Spring;
+  Spring,
+  Spring.Utils;
 
 type
   TWindowsEnumerator = class
