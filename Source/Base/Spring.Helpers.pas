@@ -29,11 +29,11 @@
 ///	  <para>Classes helpers and record helpers have been introduced since
 ///	  Delphi 2007. The initial purpose is to allow developers to extend a class
 ///	  without change the original structure.</para>
-///	  <alert class="note">A class helper type may not declare instance data,
-///	  but class fields are allowed.</alert>
-///	  <alert class="warning">Class helpers&#160;and record helpers are not
+///	  <note type="note">A class helper type may not declare instance data,
+///	  but class fields are allowed.</note>
+///	  <note type="warning">Class helpers and record helpers are not
 ///	  intended to be a design tool in Delphi. It is some kind of "patching"
-///	  technology.</alert>
+///	  technology.</note>
 ///	  <para>If you want to use these helpers, just uses the
 ///	  <b>Spring.Helpers</b> namespace in the target unit.</para>
 ///	</remarks>
@@ -65,8 +65,8 @@ type
   ///	<summary>Represents a record helper for the <c>System.TGuid</c> structure
   ///	to make it easy to use.</summary>
   ///	<remarks>
-  ///	  <alert class="tip">You can use the equal ("=") or not
-  ///	  equal&#160;("&lt;&gt;") operator loading in latest Delphi XE.</alert>
+  ///	  <note type="tip">You can use the equal ("=") or not
+  ///	  equal ("&lt;&gt;") operator loading in latest Delphi XE.</note>
   ///	</remarks>
   ///	<example>
   ///	  The following code demonstrates how to create a new guid and use it in
@@ -150,8 +150,8 @@ type
     ///	<summary>Reads a value of a value type, which could be an Integer,
     ///	record, etc., from the stream.</summary>
     ///	<remarks>
-    ///	  <alert class="tip">The generic argument could be omitted if the
-    ///	  compiler can automatically inreference the type.</alert>
+    ///	  <note type="tip">The generic argument could be omitted if the
+    ///	  compiler can automatically inreference the type.</note>
     ///	</remarks>
     ///	<example>
     ///	  <para>The following example demonstrates how to use the generic
@@ -192,9 +192,9 @@ type
     {$REGION 'Documentation'}
     ///	<summary>Adds or updates a name-value pair.</summary>
     ///	<remarks>
-    ///	  <alert class="warning">There is a <c>Values[name: string]</c>
+    ///	  <note type="warning">There is a <c>Values[name: string]</c>
     ///	  property in the TStrings class, but the entry will be removed if the
-    ///	  value is empty.</alert>
+    ///	  value is empty.</note>
     ///	</remarks>
     {$ENDREGION}
     procedure AddOrUpdate(const name, value: string);
@@ -359,7 +359,7 @@ type
     ///	<summary>
     ///	  Returns an enumerable collection which contains all the interface
     ///	  Rtti types that the target type implements.
-    ///	  <alert class="note">Only Guid interfaces will be enumerated.</alert>
+    ///	  <note type="note">Only Guid interfaces will be enumerated.</note>
     ///	</summary>
     ///	<seealso cref="Spring.Collections|IEnumerableEx&lt;T&gt;"></seealso>
     {$ENDREGION}
@@ -1247,3 +1247,5 @@ end;
 {$ENDREGION}
 
 end.
+
+

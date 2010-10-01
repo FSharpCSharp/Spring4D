@@ -75,11 +75,11 @@ type
   ///	  Use the static <see cref=
   ///	  "Spring.Utils|TDriveInfo.GetDrives">TDriveInfo.GetDrives</see> method to retrieve
   ///	  all drives of the computer.
-  ///	  <alert class="caller">Caller must use the <see cref=
+  ///	  <note type="caller">Caller must use the <see cref=
   ///	  "IsReady">IsReady</see> property to check whether the drive is ready
   ///	  before accessing other members. Otherwise, an <see cref=
   ///	  "Spring|EIOException" /> exception will be raised if it
-  ///	  is not ready.</alert>
+  ///	  is not ready.</note>
   ///	</remarks>
   /// <seealso href="http://msdn.microsoft.com/en-us/library/system.io.driveinfo.aspx">System.IO.DriveInfo (.Net Framework)</seealso>
   {$ENDREGION}
@@ -2475,3 +2475,5 @@ end;
 {$ENDREGION}
 
 end.
+
+

@@ -58,19 +58,41 @@ type
       function GetCount: Integer;
       function GetIsEmpty: Boolean;
     {$ENDREGION}
+    ///	<summary>Returns the first element of a sequence.</summary>
     function First: T; overload;
+    ///	<summary>Returns the first element in a sequence that satisfies a specified
+    ///	condition.</summary>
     function First(const predicate: TPredicate<T>): T; overload;
+    ///	<summary>Returns the first element of a sequence, or a default value if the
+    ///	sequence contains no elements.</summary>
     function FirstOrDefault: T; overload;
+    ///	<summary>Returns the first element of the sequence that satisfies a condition or
+    ///	a default value if no such element is found.</summary>
     function FirstOrDefault(const predicate: TPredicate<T>): T; overload;
+    ///	<summary>Returns the last element of a sequence.</summary>
     function Last: T; overload;
+    ///	<summary>Returns the last element of a sequence that satisfies a specified
+    ///	condition.</summary>
     function Last(const predicate: TPredicate<T>): T; overload;
+    ///	<summary>Returns the last element of a sequence, or a default value if the
+    ///	sequence contains no elements.</summary>
     function LastOrDefault: T; overload;
+    ///	<summary>Returns the last element of a sequence that satisfies a condition or a
+    ///	default value if no such element is found.</summary>
     function LastOrDefault(const predicate: TPredicate<T>): T; overload;
+    ///	<summary>Filters a sequence of values based on a predicate.</summary>
     function Where(const predicate: TPredicate<T>): IEnumerableEx<T>;
+    ///	<summary>Determines whether a sequence contains a specified element by using the
+    ///	default equality comparer.</summary>
     function Contains(const item: T): Boolean; overload;
+    ///	<summary>Determines whether a sequence contains a specified element by using a
+    ///	specified <c>IEqualityComparer&lt;T&gt;.</c></summary>
     function Contains(const item: T; const comparer: IEqualityComparer<T>): Boolean; overload;
+    ///	<summary>Creates an array.</summary>
     function ToArray: TArray<T>;
+    ///	<summary>Creates a list.</summary>
     function ToList: IList<T>;
+    ///	<summary>Returns the number of elements in a sequence.</summary>
     property Count: Integer read GetCount;
     property IsEmpty: Boolean read GetIsEmpty;
   end;

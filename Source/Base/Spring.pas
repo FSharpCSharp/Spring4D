@@ -75,8 +75,8 @@ type
   ///	<returns>Returns True if the value was accepted, otherwise, returns
   ///	false.</returns>
   ///	<remarks>
-  ///	  <alert class="warning">This type redefined the
-  ///	  <see cref="SysUtils|TPredicate&lt;T&gt;" /> type with a const parameter.</alert>
+  ///	  <note type="warning">This type redefined the
+  ///	  <see cref="SysUtils|TPredicate&lt;T&gt;" /> type with a const parameter.</note>
   ///	</remarks>
   {$ENDREGION}
   TPredicate<T> = reference to function(const value: T): Boolean;
@@ -109,7 +109,7 @@ type
   ///	structure is actually a wrapper of a value of <c>TBytes</c> while
   ///	provides some easy-going methods and properties.</summary>
   ///	<remarks>
-  ///	  <alert class="warning">This type needs to be reviewed.</alert>
+  ///	  <note type="warning">This type needs to be reviewed.</note>
   ///	</remarks>
   {$ENDREGION}
   TBuffer = record
@@ -485,11 +485,11 @@ type
   ///	<summary>Provides an abstract base class for generic value
   ///	provider.</summary>
   ///	<remarks>
-  ///	  <alert class="implement">
+  ///	  <note type="implement">
   ///	    <para>By default, the <see cref="IsReadOnly" /> property is true.</para>
   ///	    <para>Implementers must override the DoSetValue method if the value
   ///	    provider is not read only.</para>
-  ///	  </alert>
+  ///	  </note>
   ///	</remarks>
   {$ENDREGION}
   TValueProviderBase = class abstract(TInterfacedObject, IValueProvider)
@@ -508,7 +508,7 @@ type
 
   ///	<summary>Represents a multicast delegate interface.</summary>
   ///	<remarks>
-  ///	  <alert class="warning">This type needs to be reviewed.</alert>
+  ///	  <note type="warning">This type needs to be reviewed.</note>
   ///	</remarks>
   IDelegate<T> = interface
     function AddHandler(const handler: T): IDelegate<T>;
@@ -829,7 +829,7 @@ type
   ///	<summary>Represents that a new instance of the component will be created
   ///	when requested.</summary>
   ///	<remarks>
-  ///	  <alert class="note">This attribute is the default option.</alert>
+  ///	  <note type="note">This attribute is the default option.</note>
   ///	</remarks>
   ///	<seealso cref="SingletonAttribute"></seealso>
   ///	<seealso cref="SingletonPerThreadAttribute"></seealso>
@@ -893,8 +893,8 @@ type
  ///	implemented by the target component. In addition, a service name can be
  ///	specified.</summary>
  ///	<remarks>
- ///	  <alert class="note">This attribute can be specified more than
- ///	  once.</alert>
+ ///	  <note type="note">This attribute can be specified more than
+ ///	  once.</note>
  ///	</remarks>
  ///	<example>
  ///	  <code lang="Delphi">
@@ -1159,9 +1159,9 @@ type
   ///	<summary>Uses this function to get an interface instance from a
   ///	TValue.</summary>
   ///	<remarks>
-  ///	  <alert class="warning">Rtti bugs: QC #82433 if
+  ///	  <note type="warning">Rtti bugs: QC #82433 if
   ///	  value.TryAsType&lt;IPropertyNotification&gt;(propertyNotification)
-  ///	  then</alert>
+  ///	  then</note>
   ///	</remarks>
   {$ENDREGION}
   function TryGetInterface(const instance: TValue; const guid: TGuid; out intf): Boolean; overload;
@@ -3031,3 +3031,5 @@ end;
 {$ENDREGION}
 
 end.
+
+

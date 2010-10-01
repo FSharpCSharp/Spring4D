@@ -48,9 +48,9 @@ type
   ///	<summary>Provides static methods to get RTTI information of a
   ///	type.</summary>
   ///	<remarks>
-  ///	  <alert class="caller">When using this class, a shared instance of the
+  ///	  <note type="caller">When using this class, a shared instance of the
   ///	  TRttiContext class will be kept, which will make all instances of RTTI
-  ///	  types live during the lifetime.</alert>
+  ///	  types live during the lifetime.</note>
   ///	</remarks>
   {$ENDREGION}
   TType = class
@@ -1364,3 +1364,5 @@ end;
 
 
 end.
+
+
