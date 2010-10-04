@@ -593,7 +593,7 @@ begin
     ownerArgs := TPropertyNotificationEventArgs.Create(
       fPropertyName,
       TValue.Empty,
-      TValue.Empty
+      value
     );
     OwnerPropertyNotification.NotifyPropertyChanged(ownerArgs);
   end;

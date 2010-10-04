@@ -345,6 +345,7 @@ type
     procedure DoSetValue(const value: TValue); override;
     function GetIsReadOnly: Boolean; override;
   public
+    constructor Create(const instance: TValue); overload;
     constructor Create(const instance: TValue;
       const expression: string); overload;
     constructor Create(const parent: IValueExpression;
@@ -1138,6 +1139,11 @@ end;
 
 
 {$REGION 'TValueExpression'}
+
+constructor TValueExpression.Create(const instance: TValue);
+begin
+  Create(instance, '');
+end;
 
 constructor TValueExpression.Create(const instance: TValue;
   const expression: string);
