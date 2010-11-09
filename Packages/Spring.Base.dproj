@@ -66,7 +66,6 @@
 			<DCCReference Include="..\Source\Base\Utils\Spring.Utils.IO.pas"/>
 			<DCCReference Include="..\Source\Base\Utils\Spring.Utils.pas"/>
 			<DCCReference Include="..\Source\Base\Utils\Spring.Utils.Network.pas"/>
-			<DCCReference Include="..\Source\Base\Spring.Notifications.pas"/>
 			<DCCReference Include="..\Source\Base\Spring.Pool.pas"/>
 			<DCCReference Include="..\Source\Base\Cryptography\Spring.Cryptography.CRC.pas"/>
 			<DCCReference Include="..\Source\Base\Cryptography\Spring.Cryptography.DES.pas"/>

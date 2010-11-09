@@ -22,34 +22,26 @@
 {                                                                           }
 {***************************************************************************}
 
-/// <summary>
-/// This program is only for experimental use. Please add it to Ignored list.
-/// </summary>
-program Spike;
+unit Spring.Logging.ResourceStrings;
 
-{$APPTYPE CONSOLE}
+{$I Spring.inc}
 
-uses
-  Classes,
-  SysUtils,
-  Rtti,
-  Spring,
-  Spring.Utils,
-  Spring.Collections,
-  Spring.Reflection,
-  Spring.Helpers;
+interface
 
-var
-  p: TRttiNamedObject;
-begin
-  try
-    { TODO -oUser -cConsole Main : Insert code here }
-    for p in TType.GetType<TList>.Properties do
-    begin
-      Writeln(p.Name);
-    end;
-  except
-    on E: Exception do
-      Writeln(E.ClassName, ': ', E.Message);
-  end;
+resourcestring
+  // Spring.Logging
+
+  SNoTypeInformation = 'No type information.';
+
+  SAllDescription      = 'ALL';
+  STraceDescription    = 'TRACE';
+  SDebugDescription    = 'DEBUG';
+  SInfoDescription     = 'INFO';
+  SWarnDescription     = 'WARN';
+  SErrorDescription    = 'ERROR';
+  SFatalDescription    = 'FATAL';
+  SOffDescription      = 'OFF';
+
+implementation
+
 end.

@@ -371,6 +371,7 @@ type
   {$ENDREGION}
 
 
+  // Spring.TPredicate<TFileSystemEntry>
   TFileSystemEntryPredicate = reference to function (const entry:TFileSystemEntry): Boolean;
 
   /// <summary>

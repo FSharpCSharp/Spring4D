@@ -69,7 +69,6 @@ contains
   Spring.Utils.IO in '..\Source\Base\Utils\Spring.Utils.IO.pas',
   Spring.Utils in '..\Source\Base\Utils\Spring.Utils.pas',
   Spring.Utils.Network in '..\Source\Base\Utils\Spring.Utils.Network.pas',
-  Spring.Notifications in '..\Source\Base\Spring.Notifications.pas',
   Spring.Pool in '..\Source\Base\Spring.Pool.pas',
   Spring.Cryptography.CRC in '..\Source\Base\Cryptography\Spring.Cryptography.CRC.pas',
   Spring.Cryptography.DES in '..\Source\Base\Cryptography\Spring.Cryptography.DES.pas',

@@ -66,7 +66,14 @@ contains
   Spring.IoC in '..\Source\Core\IoC\Spring.IoC.pas',
   Spring.IoC.Registration in '..\Source\Core\IoC\Spring.IoC.Registration.pas',
   Spring.IoC.Resolvers in '..\Source\Core\IoC\Spring.IoC.Resolvers.pas',
-  Spring.IoC.ResourceStrings in '..\Source\Core\IoC\Spring.IoC.ResourceStrings.pas';
+  Spring.IoC.ResourceStrings in '..\Source\Core\IoC\Spring.IoC.ResourceStrings.pas',
+  Spring.Logging.Utils in '..\Source\Core\Logging\Spring.Logging.Utils.pas',
+  Spring.Logging.Appenders in '..\Source\Core\Logging\Spring.Logging.Appenders.pas',
+  Spring.Logging.Core in '..\Source\Core\Logging\Spring.Logging.Core.pas',
+  Spring.Logging.Layouts in '..\Source\Core\Logging\Spring.Logging.Layouts.pas',
+  Spring.Logging in '..\Source\Core\Logging\Spring.Logging.pas',
+  Spring.Logging.Repositories in '..\Source\Core\Logging\Spring.Logging.Repositories.pas',
+  Spring.Logging.ResourceStrings in '..\Source\Core\Logging\Spring.Logging.ResourceStrings.pas';
 
 end.
 

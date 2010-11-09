@@ -22,14 +22,14 @@
 {                                                                           }
 {***************************************************************************}
 
-{TODO -oPaul -cGeneral : Redefine IEnumerable & IEnumerable<T>}
+{TODO -oPaul -cGeneral : Consider Redefining IEnumerable & IEnumerable<T>}
 {TODO -oPaul -cGeneral : Implement ICollection, IList, IDictionary}
 {TODO -oPaul -cGeneral : Add more LINQ features to IEnumerableEx<T>}
 {TODO -oPaul -cGeneral : Add ISet, ISet<T>, IOrderedDictionary}
 {TODO -oOwner -cGeneral : Documentation}
 
 /// <preliminary />
-unit Spring.Collections; // experimental;
+unit Spring.Collections;
 
 {$I Spring.inc}
 
@@ -45,55 +45,70 @@ uses
 
 type
   { Forward Declarations }
-  IEnumerableEx<T> = interface;
-  ICollection<T> = interface;
   IList<T> = interface;
-  IDictionary<TKey, TValue> = interface;
-  TCollections = class;
 
   ///	<summary>Provides limited LINQ-like enumerable extension methods for
-  ///	<c>IEnumerable&lt;T&gt;</c>.</summary>
+  ///	<c>IEnumerable{T}</c>.</summary>
   IEnumerableEx<T> = interface(IEnumerable<T>)
     {$REGION 'Property Getters & Setters'}
       function GetCount: Integer;
       function GetIsEmpty: Boolean;
     {$ENDREGION}
+
     ///	<summary>Returns the first element of a sequence.</summary>
     function First: T; overload;
-    ///	<summary>Returns the first element in a sequence that satisfies a specified
-    ///	condition.</summary>
+
+    ///	<summary>Returns the first element in a sequence that satisfies a
+    ///	specified condition.</summary>
     function First(const predicate: TPredicate<T>): T; overload;
-    ///	<summary>Returns the first element of a sequence, or a default value if the
-    ///	sequence contains no elements.</summary>
+
+    ///	<summary>Returns the first element of a sequence, or a default value if
+    ///	the sequence contains no elements.</summary>
     function FirstOrDefault: T; overload;
-    ///	<summary>Returns the first element of the sequence that satisfies a condition or
-    ///	a default value if no such element is found.</summary>
+
+    ///	<summary>Returns the first element of the sequence that satisfies a
+    ///	condition or a default value if no such element is found.</summary>
     function FirstOrDefault(const predicate: TPredicate<T>): T; overload;
+
     ///	<summary>Returns the last element of a sequence.</summary>
     function Last: T; overload;
-    ///	<summary>Returns the last element of a sequence that satisfies a specified
-    ///	condition.</summary>
+
+    ///	<summary>Returns the last element of a sequence that satisfies a
+    ///	specified condition.</summary>
     function Last(const predicate: TPredicate<T>): T; overload;
-    ///	<summary>Returns the last element of a sequence, or a default value if the
-    ///	sequence contains no elements.</summary>
+
+    ///	<summary>Returns the last element of a sequence, or a default value if
+    ///	the sequence contains no elements.</summary>
     function LastOrDefault: T; overload;
-    ///	<summary>Returns the last element of a sequence that satisfies a condition or a
-    ///	default value if no such element is found.</summary>
+
+    ///	<summary>Returns the last element of a sequence that satisfies a
+    ///	condition or a default value if no such element is found.</summary>
     function LastOrDefault(const predicate: TPredicate<T>): T; overload;
+
     ///	<summary>Filters a sequence of values based on a predicate.</summary>
     function Where(const predicate: TPredicate<T>): IEnumerableEx<T>;
-    ///	<summary>Determines whether a sequence contains a specified element by using the
-    ///	default equality comparer.</summary>
+
+    ///	<summary>Determines whether a sequence contains a specified element by
+    ///	using the default equality comparer.</summary>
     function Contains(const item: T): Boolean; overload;
-    ///	<summary>Determines whether a sequence contains a specified element by using a
-    ///	specified <c>IEqualityComparer&lt;T&gt;.</c></summary>
+
+    ///	<summary>Determines whether a sequence contains a specified element by
+    ///	using a specified <c>IEqualityComparer{T}.</c></summary>
     function Contains(const item: T; const comparer: IEqualityComparer<T>): Boolean; overload;
-    ///	<summary>Creates an array.</summary>
+
+    ///	<summary>Creates a new array which is filled with the elements in the
+    ///	sequence.</summary>
     function ToArray: TArray<T>;
-    ///	<summary>Creates a list.</summary>
+
+    ///	<summary>Creates a new list which is filled with the elements in the
+    ///	sequence.</summary>
     function ToList: IList<T>;
-    ///	<summary>Returns the number of elements in a sequence.</summary>
+
+    ///	<summary>Gets the number of elements in a sequence.</summary>
     property Count: Integer read GetCount;
+
+    ///	<summary>Gets a value which indicates whether this sequence is empty or
+    ///	not.</summary>
     property IsEmpty: Boolean read GetIsEmpty;
   end;
 
@@ -149,9 +164,9 @@ type
   {$REGION 'Property Getters & Setters'}
     function GetIsReadOnly: Boolean;
   {$ENDREGION}
-    procedure Add(const item: T); // overload;
+    procedure Add(const item: T);
     procedure Clear;
-    function Remove(const item: T): Boolean; // overload;
+    function Remove(const item: T): Boolean;
     property IsReadOnly: Boolean read GetIsReadOnly;
   end;
 
@@ -199,13 +214,12 @@ type
   TDictionaryOwnerships = Generics.Collections.TDictionaryOwnerships;
 
   {$REGION 'Documentation'}
-  ///	<summary>Provides static methods to create an instance of various generic
-  ///	interfaced collections such as <c>IList&lt;T&gt;</c>,
-  ///	<c>IDictionary&lt;TKey, TValue&gt;</c>.</summary>
+  ///	<summary>Provides static methods to create an instance of various
+  ///	interfaced generic collections such as <c>IList{T}</c>,
+  ///	<c>IDictionary{TKey, TValue}</c>.</summary>
   ///	<remarks>Use the TCollections class to create collection instance,
   ///	insteading of the implementations in Spring.Collections.Adapters, such as
-  ///	<c>TListAdapter&lt;T&gt;</c>, <c>TDictionaryAdapter&lt;TKey,
-  ///	TValue&gt;</c>, etc.</remarks>
+  ///	<c>TListAdapter{T}</c>, <c>TDictionaryAdapter{TKey, TValue}</c>, etc.</remarks>
   {$ENDREGION}
   TCollections = class
   public
@@ -229,7 +243,7 @@ type
   TContainers = TCollections deprecated 'Use TCollections instead.';
 
   ///	<summary>Provides an abstract implementation for the
-  ///	<see cref="System|IEnumerator&lt;T&gt;" /> interface.</summary>
+  ///	<see cref="System|IEnumerator{T}" /> interface.</summary>
   TEnumeratorBase<T> = class abstract(TInterfacedObject, IEnumerator<T>, IEnumerator, IInterface)
   protected
     function DoGetCurrent: T; virtual; abstract;
@@ -242,7 +256,7 @@ type
   end;
 
   /// <summary>
-  /// Provides an abstract implementation <c>IEnumerable&lt;T&gt;</c>.
+  /// Provides an abstract implementation for <c>IEnumerable{T}</c>.
   /// </summary>
   TEnumerableBase<T> = class abstract(TInterfacedObject, IEnumerableAware, IEnumerable<T>, IEnumerable, IInterface)
   protected
@@ -255,7 +269,7 @@ type
   end;
 
   /// <summary>
-  /// Provides a default implementation for <c>IEnumerableEx&lt;T&gt;</c> (Extension Methods).
+  /// Provides a default implementation for <c>IEnumerableEx{T}</c> (Extension Methods).
   /// </summary>
   TEnumerableEx<T> = class abstract(TEnumerableBase<T>, IEnumerableEx<T>,
     IEnumerable<T>, IEnumerable, IInterface)
@@ -265,9 +279,7 @@ type
     function TryGetFirst(out value: T): Boolean; virtual;
     function TryGetLast(out value: T): Boolean; virtual;
   public
-    ///	<seealso cref="First(TPredicate&lt;T&gt;)"></seealso>
     function First: T; overload; virtual;
-    ///	<seealso cref="First"></seealso>
     function First(const predicate: TPredicate<T>): T; overload; virtual;
     function FirstOrDefault: T; overload; virtual;
     function FirstOrDefault(const predicate: TPredicate<T>): T; overload; virtual;

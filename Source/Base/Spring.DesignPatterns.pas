@@ -64,8 +64,7 @@ type
   ///	<remarks>This class just demonstrates how to apply the classical
   ///	Singleton Pattern. It's recommended to use the Spring IoC container which
   ///	is more flexible.</remarks>
-  ///	<threadsafety>Public static members of this type are thread
-  ///	safe.</threadsafety>
+  ///	<threadsafety static="true" />
   {$ENDREGION}
   TSingleton = record
   strict private
@@ -84,8 +83,7 @@ type
   {$HINTS ON}
 
   public
-    ///	<summary>Uses the <c>TSingleton.GetInstance&lt;T&gt;</c> method to get
-    ///	the shared instance of a class.</summary>
+    ///	<summary>Gets	the shared instance of a class.</summary>
     ///	<typeparam name="T">The type of a class which must have a default
     ///	constructor.</typeparam>
     class function GetInstance<T: class, constructor>: T; static;
@@ -148,11 +146,16 @@ type
 
   {$REGION 'Specification Pattern (Experimental)'}
 
+//  ISpecification = interface
+//    ['{9029A971-3A6C-4241-A246-C0F613ABE51C}']
+//    function IsSatisfiedBy(const obj: TValue): Boolean;
+//  end;
+
   /// <summary>
   /// Defines the core methods of a specification interface.
   /// </summary>
   ISpecification<T> = interface
-    function IsSatisfiedBy(const obj: T): Boolean;   // CanAccept
+    function IsSatisfiedBy(const obj: T): Boolean;
   end;
 
   /// <summary>
@@ -162,7 +165,7 @@ type
   private
     fSpecification: ISpecification<T>;
   public
-    function IsSatisfiedBy(const obj: T): Boolean; // deprecated 'Use CanAccept instead.';
+    function IsSatisfiedBy(const obj: T): Boolean;
     class operator Implicit(const specification: ISpecification<T>): TSpecification<T>;
     class operator Implicit(const specification: TSpecification<T>): ISpecification<T>;
     class operator Implicit(const specification: TSpecification<T>): TPredicate<T>;

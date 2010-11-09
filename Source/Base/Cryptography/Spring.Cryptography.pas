@@ -443,31 +443,45 @@ type
 
   {$ENDREGION}
   
-  
+
+  (*
+  ICryptographicServiceProvider = interface
+    ['{CA9D2D5A-8562-4F9E-8CDC-397C4E0B14D6}']
+
+    function CreateCRC16: ICRC16;
+
+    function CreateCRC32: ICRC32;
+
+    function CreateMD5: IMD5;
+
+    function CreateSHA1: ISHA1;
+
+    function CreateSHA256: ISHA256;
+
+    function CreateSHA384: ISHA384;
+
+    function CreateSHA512: ISHA512;
+
+    function CreateDES: IDES;
+
+    function CreateTripleDES: ITripleDES;
+
+    function CreateRandomNumberGenerator: IRandomNumberGenerator;
+  end;
+  //*)
+
   ///	<summary>Provides static methods to create various cryptographic algorithms.</summary>
-  ///	<remarks>The CreateMACTripleDES and CreateAES methods have not been yet
-  ///	implemented.</remarks>
   TCryptographicServiceProvider = class
   public
-    ///	<seealso cref="CreateCRC32"></seealso>
     class function CreateCRC16: ICRC16; static;
-    ///	<seealso cref="CreateCRC16"></seealso>
     class function CreateCRC32: ICRC32; static;
     class function CreateMD5: IMD5; static;
     class function CreateSHA1: ISHA1; static;
     class function CreateSHA256: ISHA256; static;
     class function CreateSHA384: ISHA384; static;
     class function CreateSHA512: ISHA512; static;
-    /// <remarks>
-    /// Not Implemented yet.
-    /// </remarks>
-    class function CreateMACTripleDES: IMACTripleDES; static;
     class function CreateDES: IDES; static;
     class function CreateTripleDES: ITripleDES; static;
-    /// <remarks>
-    /// Not Implemented yet.
-    /// </remarks>
-    class function CreateAES: IAES; static;
     class function CreateRandomNumberGenerator: IRandomNumberGenerator; static;
   end;
 
@@ -475,6 +489,30 @@ type
 
   ECryptographicException = class(Exception);
 
+
+{$REGION 'Routines'}
+
+function CreateCRC16: ICRC16;
+
+function CreateCRC32: ICRC32;
+
+function CreateMD5: IMD5;
+
+function CreateSHA1: ISHA1;
+
+function CreateSHA256: ISHA256;
+
+function CreateSHA384: ISHA384;
+
+function CreateSHA512: ISHA512;
+
+function CreateDES: IDES;
+
+function CreateTripleDES: ITripleDES;
+
+function CreateRandomNumberGenerator: IRandomNumberGenerator;
+
+{$ENDREGION}
 
 implementation
 
@@ -485,6 +523,62 @@ uses
   Spring.Cryptography.SHA,
   Spring.Cryptography.DES,
   Spring.ResourceStrings;
+
+
+{$REGION 'Routines'}
+
+function CreateCRC16: ICRC16;
+begin
+  Result := TCryptographicServiceProvider.CreateCRC16;
+end;
+
+function CreateCRC32: ICRC32;
+begin
+  Result := TCryptographicServiceProvider.CreateCRC32;
+end;
+
+function CreateMD5: IMD5;
+begin
+  Result := TCryptographicServiceProvider.CreateMD5;
+end;
+
+function CreateSHA1: ISHA1;
+begin
+  Result := TCryptographicServiceProvider.CreateSHA1;
+end;
+
+function CreateSHA256: ISHA256;
+begin
+  Result := TCryptographicServiceProvider.CreateSHA256;
+end;
+
+function CreateSHA384: ISHA384;
+begin
+  Result := TCryptographicServiceProvider.CreateSHA384;
+end;
+
+function CreateSHA512: ISHA512;
+begin
+  Result := TCryptographicServiceProvider.CreateSHA512;
+end;
+
+function CreateDES: IDES;
+begin
+  Result := TCryptographicServiceProvider.CreateDES;
+end;
+
+function CreateTripleDES: ITripleDES;
+begin
+  Result := TCryptographicServiceProvider.CreateTripleDES;
+end;
+
+function CreateRandomNumberGenerator: IRandomNumberGenerator;
+begin
+  Result := TCryptographicServiceProvider.CreateRandomNumberGenerator;
+end;
+
+{$ENDREGION}
+
 
 
 {$REGION 'TSizes'}
@@ -1113,11 +1207,6 @@ begin
   Result := TSHA512.Create;
 end;
 
-class function TCryptographicServiceProvider.CreateMACTripleDES: IMACTripleDES;
-begin
-  raise ENotImplementedException.Create('CreateMACTripleDES');
-end;
-
 class function TCryptographicServiceProvider.CreateDES: IDES;
 begin
   Result := TDES.Create;
@@ -1126,11 +1215,6 @@ end;
 class function TCryptographicServiceProvider.CreateTripleDES: ITripleDES;
 begin
   Result := TTripleDES.Create;
-end;
-
-class function TCryptographicServiceProvider.CreateAES: IAES;
-begin
-  raise ENotImplementedException.Create('CreateAES');
 end;
 
 class function TCryptographicServiceProvider.CreateRandomNumberGenerator: IRandomNumberGenerator;

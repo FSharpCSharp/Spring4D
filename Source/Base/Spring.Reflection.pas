@@ -45,8 +45,7 @@ type
   {$REGION 'TType'}
 
   {$REGION 'Documentation'}
-  ///	<summary>Provides static methods to get RTTI information of a
-  ///	type.</summary>
+  ///	<summary>Provides static methods to get RTTI information of a type.</summary>
   ///	<remarks>
   ///	  <note type="caller">When using this class, a shared instance of the
   ///	  TRttiContext class will be kept, which will make all instances of RTTI
@@ -66,14 +65,11 @@ type
     class function GetType<T>: TRttiType; overload;
     class function GetType(typeInfo: PTypeInfo): TRttiType; overload;
     class function GetType(classType: TClass): TRttiType; overload;
-    class function GetType(propertyMember: TRttiProperty): TRttiType; overload;
-    class function GetType(fieldMember: TRttiField): TRttiType; overload;
     class function GetType(const value: TValue): TRttiType; overload;
 //    class function GetTypes: IEnumerableEx<TRttiType>;
     class function GetFullName(typeInfo: PTypeInfo): string; overload;
     class function GetFullName<T>: string; overload;
     class function FindType(const qualifiedName: string): TRttiType;
-//    class function FindTypes(...): IEnumerableEx<TRttiType>;
     /// <summary>
     /// Returns true if the typeFrom is assignable to the typeTo.
     /// </summary>
@@ -106,9 +102,6 @@ type
 
   {$REGION 'TRttiMemberEnumerable<T: TRttiMember>'}
 
-  /// <summary>
-  /// TRttiMemberEnumerable<T>
-  /// </summary>
   TRttiMemberEnumerable<T: TRttiMember> = class(TEnumerableEx<T>,
     IEnumerableEx<T>, IEnumerable<T>, IEnumerable, IInterface)
   private
@@ -620,18 +613,6 @@ end;
 class function TType.GetType(classType: TClass): TRttiType;
 begin
   Result := fContext.GetType(classType);
-end;
-
-class function TType.GetType(propertyMember: TRttiProperty): TRttiType;
-begin
-  TArgument.CheckNotNull(propertyMember, 'propertyMember');
-  Result := GetType(propertyMember.PropertyType.Handle);
-end;
-
-class function TType.GetType(fieldMember: TRttiField): TRttiType;
-begin
-  TArgument.CheckNotNull(fieldMember, 'propertyMember');
-  Result := GetType(fieldMember.FieldType.Handle);
 end;
 
 class function TType.GetType(const value: TValue): TRttiType;

@@ -25,9 +25,7 @@
 {TODO -oPaul -cGeneral : Add TArray, TArray<T>}
 {TODO -oPaul -cGeneral : Add TArrayBuilder}
 
-/// <summary>
-/// Declares the fundamental types for the framework.
-/// </summary>
+///	<summary>Declares the fundamental types for the framework.</summary>
 unit Spring;
 
 {$I Spring.inc}
@@ -105,10 +103,10 @@ type
 
 
   {$REGION 'Documentation'}
-  ///	<summary>Represents a series of bytes in memory. The <c>TBuffer</c>
-  ///	structure is actually a wrapper of a value of <c>TBytes</c> while
-  ///	provides some easy-going methods and properties.</summary>
+  ///	<summary>Represents a series of bytes in memory.</summary>
   ///	<remarks>
+  ///	  The <c>TBuffer</c> structure is actually a wrapper of a value of
+  ///	  <c>TBytes</c> while provides some easy-going methods and properties.
   ///	  <note type="warning">This type needs to be reviewed.</note>
   ///	</remarks>
   {$ENDREGION}
@@ -196,8 +194,8 @@ type
     class operator Explicit(const value: TBuffer): TBytes;
     class operator Explicit(const value: TBuffer): PByte;
     class operator Add(const left, right: TBuffer): TBuffer;
-    class operator Add(const left: TBuffer; const right: Byte): TBuffer;
-//    class operator Add(const left: Byte; const right: TBuffer): TBuffer;
+    class operator Add(const left: TBuffer; const right: Byte): TBuffer; overload;
+    class operator Add(const left: Byte; const right: TBuffer): TBuffer; overload;
     class operator Equal(const left, right: TBuffer): Boolean;
     class operator NotEqual(const left, right: TBuffer): Boolean;
 //    class operator BitwiseAnd(const left, right: TBuffer): TBuffer;
@@ -320,8 +318,11 @@ type
 
   ///	<summary>Represents an "object" whose underlying type is a value type
   ///	that can also be assigned nil like a reference type.</summary>
-  ///	<typeparam name="T">The underlying value type of the <see cref="TNullable&lt;T&gt;" />
+  ///	<typeparam name="T">The underlying value type of the <see cref="TNullable{T}" />
   ///	generic type.</typeparam>
+  /// <remarks>
+  /// The <typeparamref name="T" /> must be a value type such as a value of string, Integer.
+  /// </remarks>
   TNullable<T> = packed record
   private
     const fCHasValue = '@';  // DO NOT LOCALIZE
@@ -331,33 +332,31 @@ type
     function GetValue: T;
     function GetHasValue: Boolean;
   private
-    ///	<summary>Internal method. Clears the value and marks it as
-    ///	null.</summary>
+    ///	<summary>Internal use. Clears the value and marks it as null.</summary>
     procedure Clear;
   public
-    ///	<summary>Initializes a new instance of the TNullable&lt;T&gt; structure
+    ///	<summary>Initializes a new instance of the <c>TNullable{T}</c> structure
     ///	to the specified value.</summary>
     constructor Create(const value: T); overload;
 
-    ///	<summary>Initializes a new instance of the TNullable&lt;T&gt; structure
+    ///	<summary>Initializes a new instance of the <c>TNullable{T}</c> structure
     ///	to the specified value.</summary>
     constructor Create(const value: Variant); overload;
 
-    ///	<summary>Retrieves the value of the current TNullable&lt;T&gt; object,
+    ///	<summary>Retrieves the value of the current <c>TNullable{T}</c> object,
     ///	or the object's default value.</summary>
     function GetValueOrDefault: T; overload;
 
-    ///	<summary>Retrieves the value of the current TNullable&lt;T&gt; object,
+    ///	<summary>Retrieves the value of the current <c>TNullable{T}</c> object,
     ///	or the specified default value.</summary>
     ///	<param name="default">the default value</param>
     function GetValueOrDefault(const default: T): T; overload;
 
-    ///	<summary>Gets a value indicating whether the current TNullable&lt;T&gt;
+    ///	<summary>Gets a value indicating whether the current <c>TNullable{T}</c>
     ///	structure has a value.</summary>
     property HasValue: Boolean read GetHasValue;
 
-    ///	<summary>Gets the value of the current TNullable&lt;T&gt;
-    ///	value.</summary>
+    ///	<summary>Gets the value of the current <c>TNullable{T}</c> value.</summary>
     ///	<exception cref="Spring|EInvalidOperation">Raised if the value is
     ///	null.</exception>
     property Value: T read GetValue;
@@ -377,35 +376,35 @@ type
   {$REGION 'Common TNullable<T> Aliases'}
 
   ///	<summary>Represents a nullable string.</summary>
-  ///	<seealso cref="TNullable&lt;T&gt;"></seealso>
+  ///	<seealso cref="TNullable{T}"></seealso>
   TNullableString = TNullable<string>;
 
   ///	<summary>Represents a nullable integer.</summary>
-  ///	<seealso cref="TNullable&lt;T&gt;"></seealso>
+  ///	<seealso cref="TNullable{T}"></seealso>
   TNullableInteger = TNullable<Integer>;
 
   ///	<summary>Represents a nullable <c>TDateTime</c>.</summary>
-  ///	<seealso cref="TNullable&lt;T&gt;"></seealso>
+  ///	<seealso cref="TNullable{T}"></seealso>
   TNullableDateTime = TNullable<TDateTime>;
 
   ///	<summary>Represents a nullable <c>Currency</c>.</summary>
-  ///	<seealso cref="TNullable&lt;T&gt;"></seealso>
+  ///	<seealso cref="TNullable{T}"></seealso>
   TNullableCurrency = TNullable<Currency>;
 
   ///	<summary>Represents a nullable <c>Double</c>.</summary>
-  ///	<seealso cref="TNullable&lt;T&gt;"></seealso>
+  ///	<seealso cref="TNullable{T}"></seealso>
   TNullableDouble = TNullable<Double>;
 
   ///	<summary>Represents a nullable <c>Boolean</c>.</summary>
-  ///	<seealso cref="TNullable&lt;T&gt;"></seealso>
+  ///	<seealso cref="TNullable{T}"></seealso>
   TNullableBoolean = TNullable<Boolean>;
 
   ///	<summary>Represents a nullable <c>Int64</c>.</summary>
-  ///	<seealso cref="TNullable&lt;T&gt;"></seealso>
+  ///	<seealso cref="TNullable{T}"></seealso>
   TNullableInt64 = TNullable<Int64>;
 
   ///	<summary>Represents a nullable <c>TGuid</c>.</summary>
-  ///	<seealso cref="TNullable&lt;T&gt;"></seealso>
+  ///	<seealso cref="TNullable{T}"></seealso>
   TNullableGuid = TNullable<TGUID>;
 
   {$ENDREGION}
@@ -447,7 +446,7 @@ type
   {$REGION 'Defines the interface for an abstract value provider. '}
   ///	<summary>Defines the interface for an abstract value provider.</summary>
   ///	<remarks>Use the <see cref="Value" /> property to retrieve the current value from
-  ///	the provider. Use the <see cref="SetValue(TValue)" /> method to assign a new value to it
+  ///	the provider. Use the <see cref="SetValue(TValue)">SetValue</see> method to assign a new value to it
   ///	if the value provider is not read only. Otherwise, an
   ///	<c>EInvalidException</c> exception will be raised.</remarks>
   {$ENDREGION}
@@ -482,8 +481,7 @@ type
 
 
   {$REGION 'Documentation'}
-  ///	<summary>Provides an abstract base class for generic value
-  ///	provider.</summary>
+  ///	<summary>Provides an abstract base class for generic value provider.</summary>
   ///	<remarks>
   ///	  <note type="implement">
   ///	    <para>By default, the <see cref="IsReadOnly" /> property is true.</para>
@@ -546,13 +544,7 @@ type
     class operator Implicit(const value: TVolatile<T>): T;
     class operator Equal(const left, right: TVolatile<T>): Boolean;
     class operator NotEqual(const left, right: TVolatile<T>): Boolean;
-  end deprecated 'Uses the TLazyUtils.GetValue method structure to ensure the thread safety.';
-
-
-//  TLazy<T> = record
-//  private
-//    fDelegate: TFunc<T>;
-//  end;
+  end deprecated;// 'Uses the TLazyUtils.GetValue method structure to ensure the thread safety.';
 
   /// <preliminary />
   /// <threadsafety static="true" />
@@ -694,6 +686,24 @@ type
     class operator Implicit(const value: T): TWeakReference<T>;
   end;
 
+  ///	<summary>Internal interface. Reserved for future use.</summary>
+  ISupportItemType = interface
+    ['{FE986DD7-41D5-4312-A2F9-94F7D9E642EE}']
+    function GetItemType: PTypeInfo;
+  end;
+
+  IItemTypeSupport = ISupportItemType;
+
+  /// <summary>
+  /// Provides a workaround to get or set the value of an indexed property.
+  /// </summary>
+  /// <preliminary />
+  ISupportIndexedProperties = interface
+    ['{7BF8ED3B-60AB-425E-B678-776FD2EA3437}']
+    function GetPropertyValue(const propertyName: string; const index: TValue): TValue;
+    procedure SetPropertyValue(const propertyName: string; const index, value: TValue);
+  end;
+
 
   {$REGION 'Lifecycle Interfaces'}
 
@@ -745,11 +755,6 @@ type
 
   {$ENDREGION}
 
-  ///	<summary>Internal interface. Reserved for future use.</summary>
-  IItemTypeSupport = interface
-    ['{FE986DD7-41D5-4312-A2F9-94F7D9E642EE}']
-    function GetItemType: PTypeInfo;
-  end;
 
   {$REGION 'TLifetimeType & Related Attributes'}
 
@@ -1166,7 +1171,10 @@ type
   {$ENDREGION}
   function TryGetInterface(const instance: TValue; const guid: TGuid; out intf): Boolean; overload;
 
+  ///	<seealso cref="Spring|TNullable{T}"></seealso>
   function TryGetInterface(const instance: TValue; const guid: TGuid): Boolean; overload;
+
+  {$ENDREGION}
 
 
   {$REGION 'Constants'}
@@ -2230,6 +2238,13 @@ begin
   Result.Size := left.Size + 1;
   Move(left.Memory^, Result.Memory^, left.Size);
   Result[Result.Size-1] := right;
+end;
+
+class operator TBuffer.Add(const left: Byte; const right: TBuffer): TBuffer;
+begin
+  Result.Size := right.Size + 1;
+  Move(right.Memory^, Result.Memory[1], right.Size);
+  Result[0] := left;
 end;
 
 class operator TBuffer.Equal(const left, right: TBuffer): Boolean;

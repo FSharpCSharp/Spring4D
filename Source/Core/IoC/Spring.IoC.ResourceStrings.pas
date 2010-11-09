@@ -29,9 +29,6 @@ unit Spring.IoC.ResourceStrings;
 interface
 
 resourcestring
-
-  // Spring.IoC.*
-
   SNonGuidInterfaceServicesAreNotSupported = 'Non-Guid Interface Services are not supported.';
   SIncompatibleTypes = 'The component type "%s" is incompatible with the service type "%s".';
   SDuplicatedName = 'Duplicated name found: "%s".';
@@ -59,17 +56,6 @@ resourcestring
   SUnexpectedLifetimeType = 'Unexpected lifetimeType.';
 
   SActivatorDelegateExpected = 'An activator delegate was expected.';
-
-  // Spring.Logging
-
-  SAllDescription      = 'ALL';
-  STraceDescription    = 'TRACE';
-  SDebugDescription    = 'DEBUG';
-  SInfoDescription     = 'INFO';
-  SWarnDescription     = 'WARN';
-  SErrorDescription    = 'ERROR';
-  SFatalDescription    = 'FATAL';
-  SOffDescription      = 'OFF';
 
 implementation
 

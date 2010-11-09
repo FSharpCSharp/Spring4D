@@ -22,34 +22,65 @@
 {                                                                           }
 {***************************************************************************}
 
-/// <summary>
-/// This program is only for experimental use. Please add it to Ignored list.
-/// </summary>
-program Spike;
+unit Spring.Logging.Layouts;
 
-{$APPTYPE CONSOLE}
+interface
 
 uses
   Classes,
   SysUtils,
-  Rtti,
   Spring,
-  Spring.Utils,
-  Spring.Collections,
-  Spring.Reflection,
-  Spring.Helpers;
+  Spring.Logging.Core;
 
-var
-  p: TRttiNamedObject;
-begin
-  try
-    { TODO -oUser -cConsole Main : Insert code here }
-    for p in TType.GetType<TList>.Properties do
-    begin
-      Writeln(p.Name);
-    end;
-  except
-    on E: Exception do
-      Writeln(E.ClassName, ': ', E.Message);
+type
+  TLayoutBase = class abstract(TInterfacedObject, IOptionHandler, ILayout)
+  protected
+    function GetContentType: string; virtual;
+    function GetHeader: string; virtual;
+    function GetFooter: string; virtual;
+    function GetIgnoresException: Boolean; virtual;
+  public
+    { IOptionHandler }
+    procedure ActivateOptions; virtual; abstract;
+    { ILayout }
+    function Format(const event: TLoggingEvent): string; virtual; abstract;
+    property ContentType: string read GetContentType;
+    property Header: string read GetHeader;
+    property Footer: string read GetFooter;
+    property IgnoresException: Boolean read GetIgnoresException;
   end;
+
+  // conversionPattern
+  TPatternLayout = class(TLayoutBase)
+  public
+//    procedure Format(writer: TTextWriter; const event: TLoggingEvent); override;
+  end;
+
+implementation
+
+
+{$REGION 'TLayoutBase'}
+
+function TLayoutBase.GetContentType: string;
+begin
+  Result := 'text/plain';
+end;
+
+function TLayoutBase.GetFooter: string;
+begin
+  Result := '';
+end;
+
+function TLayoutBase.GetHeader: string;
+begin
+  Result := '';
+end;
+
+function TLayoutBase.GetIgnoresException: Boolean;
+begin
+  Result := True;
+end;
+
+{$ENDREGION}
+
 end.

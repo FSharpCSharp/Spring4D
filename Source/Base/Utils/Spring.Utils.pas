@@ -28,6 +28,8 @@
 {TODO -oOwner -cGeneral : TClipboardWatcher}
 {TODO -oOwner -cGeneral : TDeviceWatcher}
 
+///	<summary>Provides many well-encapsulated utility classes and
+///	routines.</summary>
 unit Spring.Utils;
 
 {$I Spring.inc}
@@ -67,26 +69,27 @@ type
     dtRam               // The drive is a RAM disk.
   );
 
-  {TODO -oPaul -cGeneral : Add the Refresh method}
-
   {$REGION 'Documentation'}
   ///	<summary>Provides access to information on a drive.</summary>
   ///	<remarks>
-  ///	  Use the static <see cref=
-  ///	  "Spring.Utils|TDriveInfo.GetDrives">TDriveInfo.GetDrives</see> method to retrieve
-  ///	  all drives of the computer.
+  ///	  Use the static <see cref="Spring.Utils|TDriveInfo.GetDrives"></see>
+  ///	  method to retrieve all drives of the computer.
   ///	  <note type="caller">Caller must use the <see cref=
-  ///	  "IsReady">IsReady</see> property to check whether the drive is ready
-  ///	  before accessing other members. Otherwise, an <see cref=
-  ///	  "Spring|EIOException" /> exception will be raised if it
-  ///	  is not ready.</note>
+  ///	  "Spring.Utils|TDriveInfo.IsReady">IsReady</see> property to check
+  ///	  whether the drive is ready before accessing other members. Otherwise,
+  ///	  an <see cref="Spring|EIOException"></see> exception will be raised if
+  ///	  it is not ready.</note>
   ///	</remarks>
-  /// <seealso href="http://msdn.microsoft.com/en-us/library/system.io.driveinfo.aspx">System.IO.DriveInfo (.Net Framework)</seealso>
+  ///	<threadsafety static="true" instance="false"></threadsafety>
+  ///	<seealso href=
+  ///	"http://msdn.microsoft.com/en-us/library/system.io.driveinfo.aspx">
+  ///	System.IO.DriveInfo (.Net Framework)</seealso>
   {$ENDREGION}
   TDriveInfo = record
-  private
+  strict private
     fDriveName: string;
     fRootDirectory: string;
+    fIsInitialized: Boolean;
     fAvailableFreeSpace: Int64;
     fTotalSize: Int64;
     fTotalFreeSpace: Int64;
@@ -105,7 +108,7 @@ type
     function GetVolumeLabel: string;
     procedure SetVolumeLabel(const Value: string);
   private
-    procedure UpdateProperties;
+    procedure EnsureInitialized;
   public
     constructor Create(const driveName: string);
 
@@ -113,10 +116,17 @@ type
     ///	computer.</summary>
     class function GetDrives: TArray<TDriveInfo>; static;
 
+    {$REGION 'Documentation'}
+    ///	<summary>Checks whether a drive is ready.</summary>
+    ///	<exception cref="EIOException">Raised if a drive is not
+    ///	ready.</exception>
+    {$ENDREGION}
     procedure CheckIsReady;
 
-    ///	<summary>Indicates the amount of available free space on a
-    ///	drive.</summary>
+    ///	<summary>Refreshes the information of a drive.</summary>
+    procedure Refresh;
+
+    ///	<summary>Indicates the amount of available free space on a drive.</summary>
     property AvailableFreeSpace: Int64 read GetAvailableFreeSpace;
 
     ///	<summary>Gets the name of the file system, such as NTFS or
@@ -1177,6 +1187,7 @@ begin
   end;
   Assert(Length(fRootDirectory) = 3, 'Length of fRootDirectory should be 3.');
   fDriveName := Copy(fRootDirectory, 1, 2);
+  fIsInitialized := False;
 end;
 
 class function TDriveInfo.GetDrives: TArray<TDriveInfo>;
@@ -1200,36 +1211,25 @@ begin
   end;
 end;
 
-procedure TDriveInfo.UpdateProperties;
+procedure TDriveInfo.EnsureInitialized;
 begin
-  CheckIsReady;
-  Win32Check(SysUtils.GetDiskFreeSpaceEx(
-    PChar(fRootDirectory),
-    fAvailableFreeSpace,
-    fTotalSize,
-    @fTotalFreeSpace
-  ));
-  Win32Check(Windows.GetVolumeInformation(
-    PChar(fRootDirectory),
-    fVolumeName,
-    Length(fVolumeName),
-    @fSerialNumber,
-    fMaximumComponentLength,
-    fFileSystemFlags,
-    fFileSystemName,
-    Length(fFileSystemName)
-  ));
+  if not fIsInitialized then
+  begin
+    fIsInitialized := True;
+    CheckIsReady;
+    Refresh;
+  end;
 end;
 
 function TDriveInfo.GetAvailableFreeSpace: Int64;
 begin
-  UpdateProperties;
+  EnsureInitialized;
   Result := fAvailableFreeSpace;
 end;
 
 function TDriveInfo.GetDriveFormat: string;
 begin
-  UpdateProperties;
+  EnsureInitialized;
   Result := fFileSystemName;
 end;
 
@@ -1262,20 +1262,43 @@ end;
 
 function TDriveInfo.GetTotalFreeSpace: Int64;
 begin
-  UpdateProperties;
+  EnsureInitialized;
   Result := fTotalFreeSpace;
 end;
 
 function TDriveInfo.GetTotalSize: Int64;
 begin
-  UpdateProperties;
+  EnsureInitialized;
   Result := fTotalSize;
 end;
 
 function TDriveInfo.GetVolumeLabel: string;
 begin
-  UpdateProperties;
+  EnsureInitialized;
   Result := fVolumeName;
+end;
+
+procedure TDriveInfo.Refresh;
+begin
+  if IsReady then
+  begin
+    Win32Check(SysUtils.GetDiskFreeSpaceEx(
+      PChar(fRootDirectory),
+      fAvailableFreeSpace,
+      fTotalSize,
+      @fTotalFreeSpace
+    ));
+    Win32Check(Windows.GetVolumeInformation(
+      PChar(fRootDirectory),
+      fVolumeName,
+      Length(fVolumeName),
+      @fSerialNumber,
+      fMaximumComponentLength,
+      fFileSystemFlags,
+      fFileSystemName,
+      Length(fFileSystemName)
+    ));
+  end;
 end;
 
 procedure TDriveInfo.SetVolumeLabel(const Value: string);

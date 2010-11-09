@@ -44,8 +44,7 @@ uses
   Spring.Collections;
 
 type
-  ///	<summary>The adapter implementation for
-  ///	<c>IEnumerator&lt;T&gt;</c>.</summary>
+  ///	<summary>The adapter implementation for <c>IEnumerator{T}</c>.</summary>
   TEnumeratorAdapter<T> = class(TEnumeratorBase<T>, IEnumerator<T>, IEnumerator, IInterface)
   private
     fEnumerator: TEnumerator<T>;
@@ -63,7 +62,8 @@ type
 //    class function From<T>: TListAdapter;
 //  end;
 
-  TListAdapter<T> = class(TEnumerableEx<T>, IList<T>, ICollection<T>, IItemTypeSupport)
+  TListAdapter<T> = class(TEnumerableEx<T>, IList<T>, ICollection<T>,
+    ISupportItemType, ISupportIndexedProperties)
   protected
     fList: TList<T>;
     fOwnership: TCollectionOwnership;
@@ -71,7 +71,11 @@ type
     function GetItem(index: Integer): T;
     procedure SetItem(index: Integer; const Value: T);
   protected
+    { Implements ISupportItemType }
     function GetItemType: PTypeInfo;
+    { Implements ISupportIndexedProperties }
+    function GetPropertyValue(const propertyName: string; const index: Rtti.TValue): Rtti.TValue;
+    procedure SetPropertyValue(const propertyName: string; const index, value: Rtti.TValue);
   protected
     function GetCount: Integer; override;
     function GetIsEmpty: Boolean; override;
@@ -98,8 +102,7 @@ type
   TDictionaryAdapter<TKey, TValue> = class(TCollectionBase<TPair<TKey, TValue>>, IDictionary<TKey, TValue>)
   private
     type
-      ///	<summary>Provides a read-only ICollection&lt;TKey&gt;
-      ///	implementation</summary>
+      ///	<summary>Provides a read-only ICollection{TKey}	implementation</summary>
       TKeyCollection = class(TContainedEnumerableEx<TKey>, ICollection<TKey>,
         IEnumerableEx<TKey>, IEnumerable<TKey>, IEnumerable, IInterface)
       private
@@ -121,8 +124,7 @@ type
         function Extract(const item: TKey): TKey;
       end;
 
-      ///	<summary>Provides a read-only ICollection&lt;TValue&gt;
-      ///	implementation</summary>
+      ///	<summary>Provides a read-only ICollection{TValue} implementation</summary>
      TValueCollection = class(TContainedEnumerableEx<TValue>, ICollection<TValue>,
         IEnumerableEx<TValue>, IEnumerable<TValue>, IEnumerable, IInterface)
       private
@@ -323,6 +325,26 @@ end;
 procedure TListAdapter<T>.SetItem(index: Integer; const Value: T);
 begin
   fList[index] := value;
+end;
+
+function TListAdapter<T>.GetPropertyValue(const propertyName: string;
+  const index: Rtti.TValue): Rtti.TValue;
+var
+  indexValue: Integer;
+begin
+  TArgument.CheckTrue(SameText(propertyName, 'Items'), propertyName);
+  TArgument.CheckTrue(index.TryAsType<Integer>(indexValue), 'index');
+  Result := Rtti.TValue.From<T>(Self.Items[indexValue]);
+end;
+
+procedure TListAdapter<T>.SetPropertyValue(const propertyName: string;
+  const index, value: Rtti.TValue);
+var
+  indexValue: Integer;
+begin
+  TArgument.CheckTrue(SameText(propertyName, 'Items'), propertyName);
+  TArgument.CheckTrue(index.TryAsType<Integer>(indexValue), 'index');
+  Self.Items[indexValue] := value.AsType<T>;
 end;
 
 {$ENDREGION}

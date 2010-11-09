@@ -128,11 +128,6 @@ type
   /// </summary>
   IComponentActivator = IObjectActivator;
 
-//  IComponentActivator = interface
-//    ['{752F2CDE-222C-4D8B-B344-BB7BCA9EAB9E}']
-//    function CreateInstance: TObject;
-//  end;
-
   /// <summary>
   /// Represents an injection of a member.
   /// e.g. constructor, method, property and even field injection.
