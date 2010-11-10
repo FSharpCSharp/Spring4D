@@ -36,18 +36,39 @@ uses
   Spring,
   Spring.Utils,
   Spring.Collections,
-  Spring.Reflection,
-  Spring.Helpers;
+  Spring.Logging,
+  Spring.Logging.Core,
+  Spring.Logging.Appenders;
+
+type
+  TStringAppender = class(TAppenderBase)
+  protected
+    procedure DoAppend(const event: TLoggingEvent); override;
+  end;
 
 var
-  p: TRttiNamedObject;
+  logger: ILogger;
+  Logs: string;
+
+{ TStringAppender }
+
+procedure TStringAppender.DoAppend(const event: TLoggingEvent);
+begin
+  Logs := Logs + event.Message + #13#10;
+end;
+
 begin
   try
     { TODO -oUser -cConsole Main : Insert code here }
-    for p in TType.GetType<TList>.Properties do
-    begin
-      Writeln(p.Name);
-    end;
+    logger := LoggingManager.GetLogger('Spring');
+    (logger as IAppenderAttachable).AddAppender(TStringAppender.Create('s'));
+    logger.Debug('Debug');
+    logger.Info('Info...');
+    logger.Warn('WARN');
+    logger.Error('ERROR');
+    logger := LoggingManager.GetLogger('Spring.Base');
+    logger.Debug('XX');
+    logger.Info('YY');
   except
     on E: Exception do
       Writeln(E.ClassName, ': ', E.Message);

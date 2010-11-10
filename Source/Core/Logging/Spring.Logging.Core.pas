@@ -106,7 +106,7 @@ type
   {$ENDREGION}
   TLoggingEvent = record
     LoggerName: string;
-    LoggerLevel: TLevel;
+    LoggerLevel: TLevel;  // string
     TimeStamp: TDateTime;
     ThreadID: TThreadID;
     Message: string;
@@ -125,23 +125,6 @@ type
     function GetIsWarnEnabled: Boolean;
     function GetIsErrorEnabled: Boolean;
     function GetIsFatalEnabled: Boolean;
-//    function GetIsTraceEnabled: Boolean;
-//    procedure Trace(const msg: string); overload;
-//    procedure Trace(const msg: string; e: Exception); overload;
-//    procedure TraceFormat(const format: string; const args: array of const);
-//    procedure Trace<TValue>(const instance: TValue); overload;
-//    procedure Trace<TValue>(const instance: TValue; e: Exception); overload;
-//    procedure Debug<TValue>(const instance: TValue); overload;
-//    procedure Debug<TValue>(const instance: TValue; e: Exception); overload;
-//    procedure Info<TValue>(const instance: TValue); overload;
-//    procedure Info<TValue>(const instance: TValue; e: Exception); overload;
-//    procedure Warn<TValue>(const instance: TValue); overload;
-//    procedure Warn<TValue>(const instance: TValue; e: Exception); overload;
-//    procedure Error<TValue>(const instance: TValue); overload;
-//    procedure Error<TValue>(const instance: TValue; e: Exception); overload;
-//    procedure Fatal<TValue>(const instance: TValue); overload;
-//    procedure Fatal<TValue>(const instance: TValue; e: Exception); overload;
-//    property IsTraceEnabled: Boolean read GetIsTraceEnabled;
   {$ENDREGION}
     procedure Debug(const msg: string); overload;
     procedure Debug(const msg: string; e: Exception); overload;
@@ -164,6 +147,19 @@ type
     property IsWarnEnabled: Boolean read GetIsWarnEnabled;
     property IsErrorEnabled: Boolean read GetIsErrorEnabled;
     property IsFatalEnabled: Boolean read GetIsFatalEnabled;
+  end;
+
+  IHierarchyLogger = interface(ILogger)
+    ['{4A229971-00AB-47E8-9BD4-4F01C6E47017}']
+    {$REGION 'Property Getters & Setters'}
+      function GetParent: IHierarchyLogger;
+      function GetLevel: TLevel;
+      procedure SetParent(const value: IHierarchyLogger);
+    {$ENDREGION}
+    property Parent: IHierarchyLogger read GetParent;
+    property Level: TLevel read GetLevel;
+    // Additivity
+    // function GetEffectiveLevel: TLevel;
   end;
 
   /// <summary>
@@ -196,13 +192,12 @@ type
       function GetAppenders: ICollection<IAppender>;
     {$ENDREGION}
     procedure AddAppender(const appender: IAppender);
-    procedure RemoveAllAppenders;
+    procedure ClearAppenders;
     function GetAppender(const name: string): IAppender;
     function RemoveAppender(const name: string): IAppender; overload;
     function RemoveAppender(const appender: IAppender): IAppender; overload;
     property Appenders: ICollection<IAppender> read GetAppenders;
   end;
-
 
   {$REGION 'Documentation'}
   ///	<summary>An ILayout object is used to format a LoggingEvent as text. The
@@ -226,36 +221,22 @@ type
     property Footer: string read GetFooter;
     property IgnoresException: Boolean read GetIgnoresException;
   end;
-  
-  // NEED REVISE
-  ILoggerRepositoryListener = interface
-    procedure OnConfigurationChanged;
-    procedure OnConfigurationReset;
-    procedure OnShutdown;
-  end;
 
-  // NEED REVISE
+  // NEED REVIEW
   ILoggerRepository = interface
     ['{C44BAA97-C52A-49DE-9E4D-B1721A4F5405}']
     {$REGION 'Property Getters & Setters'}
       function GetName: string;
-      function GetConfigured: Boolean;
-      function GetProperties: TStrings;
       function GetThreshold: TLevel;
       procedure SetName(const value: string);
-      procedure SetConfigured(const value: Boolean);
       procedure SetThreshold(const value: TLevel);
     {$ENDREGION}
-    procedure Log(const event: TLoggingEvent);
-    procedure ResetConfiguration;
-    procedure Shutdown;
     function FindLogger(const name: string): ILogger;
+    function FindAppender(const name: string): IAppender;
     function GetAppenders: ICollection<IAppender>;
     function GetCurrentLoggers: ICollection<ILogger>;
     function GetLogger(const name: string): ILogger;
     property Name: string read GetName write SetName;
-    property Configured: Boolean read GetConfigured write SetConfigured;
-    property Properties: TStrings read GetProperties;
     property Threshold: TLevel read GetThreshold write SetThreshold;
   end;
 
@@ -301,51 +282,51 @@ type
     property IsFatalEnabled: Boolean read GetIsFatalEnabled;
   end;
 
-  // NEED REVISE
-  TLogger = class(TLoggerBase, IAppenderAttachable)
+  /// <summary>
+  /// Represents a logger which supports hierarchy and appenders.
+  /// </summary>
+  TLogger = class(TLoggerBase, IHierarchyLogger, IAppenderAttachable)
   private
     type
       TLoggerWalkProc = reference to function(logger: TLogger): Boolean;
   strict private
+    fRepository: ILoggerRepository;
+    fParent: IHierarchyLogger;
     fAdditivity: Boolean;
     fLevel: TLevel;
-    fParent: TLogger;
     fAppenderAttachable: IAppenderAttachable;
   protected
     function GetAdditivity: Boolean; virtual;
     function GetEffectiveLevel: TLevel; virtual;
     function GetLevel: TLevel; virtual;
-    function GetParent: TLogger; virtual;
+    function GetParent: IHierarchyLogger; virtual;
     procedure SetAdditivity(const value: Boolean); virtual;
-    procedure SetParent(const value: TLogger); virtual;
+    procedure SetParent(const value: IHierarchyLogger); virtual;
     procedure SetLevel(const value: TLevel); virtual;
   protected
-    fRepository: ILoggerRepository;
     fAppenderAttachableLock: IReadWriteSync;
     function GetAppenderAttachable: IAppenderAttachable;
     function GetAppenders: ICollection<IAppender>;
     procedure CallAppenders(const event: TLoggingEvent); virtual;
-    procedure WalkThroughLoggers(logger: TLogger; callback: TLoggerWalkProc);
   protected
     function IsEnabledFor(const level: TLevel): Boolean; override;
     procedure DoLog(const event: TLoggingEvent); override;
   public
-    constructor Create(const name: string);
+    constructor Create(const repository: ILoggerRepository; const name: string);
     procedure CloseNestedAppenders;
     { IAppenderAttachable }
     procedure AddAppender(const appender: IAppender);
-    procedure RemoveAllAppenders;
+    procedure ClearAppenders;
     function GetAppender(const name: string): IAppender;
     function RemoveAppender(const name: string): IAppender; overload;
     function RemoveAppender(const appender: IAppender): IAppender; overload;
     property Appenders: ICollection<IAppender> read GetAppenders;
     { Properties }
-    property Name: string read fName;
-    property Additivity: Boolean read GetAdditivity write SetAdditivity;
-    property EffectiveLevel: TLevel read GetEffectiveLevel;
     property Level: TLevel read GetLevel write SetLevel;
-    property Parent: TLogger read GetParent write SetParent;
-    property Repository: ILoggerRepository read fRepository write fRepository;
+    property EffectiveLevel: TLevel read GetEffectiveLevel;
+    property Additivity: Boolean read GetAdditivity write SetAdditivity;
+    property Parent: IHierarchyLogger read GetParent;
+    property Repository: ILoggerRepository read fRepository;
   end;
 
   TAppenderAttachable = class(TInterfacedObject, IAppenderAttachable)
@@ -354,9 +335,8 @@ type
     function GetAppenders: ICollection<IAppender>;
   public
     constructor Create;
-    destructor Destroy; override;
     procedure AddAppender(const appender: IAppender);
-    procedure RemoveAllAppenders;
+    procedure ClearAppenders;
     function GetAppender(const name: string): IAppender;
     function RemoveAppender(const name: string): IAppender; overload;
     function RemoveAppender(const appender: IAppender): IAppender; overload;
@@ -373,6 +353,25 @@ type
     procedure ActivateOptions;
   end;
 
+  (*
+//      function GetConfigured: Boolean;
+//      function GetProperties: TStrings;
+//      procedure SetConfigured(const value: Boolean);
+//    procedure Log(const event: TLoggingEvent);
+//    procedure ResetConfiguration;
+//    procedure Shutdown;
+//    property Configured: Boolean read GetConfigured write SetConfigured;
+//    property Properties: TStrings read GetProperties;
+
+  // NEED REVISE
+  ILoggerRepositoryListener = interface
+    procedure OnConfigurationChanged;
+    procedure OnConfigurationReset;
+    procedure OnShutdown;
+  end;
+  *)
+
+  (*
   TErrorCode = (
 		/// <summary>
 		/// A general error
@@ -451,7 +450,9 @@ type
     function Decide(const event: TLoggingEvent): TFilterDecision;
     property Next: IFilter read GetNext write SetNext;
   end;
-  
+
+  //*)
+
   {$ENDREGION}
   
   ELoggingException = class(Exception);
@@ -737,25 +738,18 @@ end;
 
 {$REGION 'TLogger'}
 
-constructor TLogger.Create(const name: string);
+constructor TLogger.Create(const repository: ILoggerRepository;
+  const name: string);
 begin
   inherited Create(name);
+  fRepository := repository;
   fAdditivity := True;
-  fAppenderAttachableLock := TMultiReadExclusiveWriteSynchronizer.Create;
+  fAppenderAttachableLock := TSimpleRWSync.Create;
 end;
 
 procedure TLogger.DoLog(const event: TLoggingEvent);
 begin
   CallAppenders(event);
-end;
-
-procedure TLogger.WalkThroughLoggers(logger: TLogger; callback: TLoggerWalkProc);
-begin
-  while logger <> nil do
-  begin
-    callback(logger);
-    logger := logger.Parent;
-  end;
 end;
 
 procedure TLogger.CallAppenders(const event: TLoggingEvent);
@@ -771,7 +765,7 @@ begin
     try
       if logger.fAppenderAttachable <> nil then
       begin
-        collection := GetAppenderAttachable.Appenders;
+        collection := logger.GetAppenderAttachable.Appenders;
         for appender in collection do
         begin
           appender.Append(event);
@@ -781,7 +775,7 @@ begin
       logger.fAppenderAttachableLock.EndWrite;
     end;
     if not logger.Additivity then Break;
-    logger := logger.Parent;
+    logger := TLogger(logger.Parent);
   end;
 end;
 
@@ -828,11 +822,11 @@ begin
   end;
 end;
 
-procedure TLogger.RemoveAllAppenders;
+procedure TLogger.ClearAppenders;
 begin
   fAppenderAttachableLock.BeginWrite;
   try
-    GetAppenderAttachable.RemoveAllAppenders;
+    GetAppenderAttachable.ClearAppenders;
   finally
     fAppenderAttachableLock.EndWrite;
   end;
@@ -889,7 +883,7 @@ begin
   Result := fLevel;
 end;
 
-function TLogger.GetParent: TLogger;
+function TLogger.GetParent: IHierarchyLogger;
 begin
   Result := fParent;
 end;
@@ -897,21 +891,23 @@ end;
 // TODO: Optimization (Returns false if this level is disabled globally)
 function TLogger.IsEnabledFor(const level: TLevel): Boolean;
 begin
-  Result := EffectiveLevel.IsGreaterThanOrEqualTo(level);
+  Result := (level <> nil) and level.IsGreaterThanOrEqualTo(EffectiveLevel);
 end;
 
 function TLogger.GetEffectiveLevel: TLevel;
 var
-  logger: TLogger;
+  logger: IHierarchyLogger;
 begin
   Result := fLevel;
-  logger := Self;
-  while Result = nil do
+  if Result = nil then
   begin
-    logger := logger.Parent;
-    Result := logger.Level;
+    logger := Parent;
+    while (Result = nil) and (logger <> nil) do
+    begin
+      Result := logger.Level;
+      logger := logger.Parent;
+    end;
   end;
-  Assert(Result <> nil, 'EffectiveLevel should never be null.');
 end;
 
 procedure TLogger.SetAdditivity(const value: Boolean);
@@ -924,7 +920,7 @@ begin
   fLevel := value;
 end;
 
-procedure TLogger.SetParent(const value: TLogger);
+procedure TLogger.SetParent(const value: IHierarchyLogger);
 begin
   fParent := value;
 end;
@@ -938,12 +934,6 @@ constructor TAppenderAttachable.Create;
 begin
   inherited Create;
   fList := TCollections.CreateList<IAppender>;
-end;
-
-destructor TAppenderAttachable.Destroy;
-begin
-
-  inherited;
 end;
 
 procedure TAppenderAttachable.AddAppender(const appender: IAppender);
@@ -972,7 +962,7 @@ begin
   Result := fList;
 end;
 
-procedure TAppenderAttachable.RemoveAllAppenders;
+procedure TAppenderAttachable.ClearAppenders;
 begin
   fList.Clear;
 end;

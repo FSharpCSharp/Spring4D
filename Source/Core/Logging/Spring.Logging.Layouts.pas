@@ -53,7 +53,6 @@ type
   // conversionPattern
   TPatternLayout = class(TLayoutBase)
   public
-//    procedure Format(writer: TTextWriter; const event: TLoggingEvent); override;
   end;
 
 implementation

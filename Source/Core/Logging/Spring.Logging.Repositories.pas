@@ -29,8 +29,8 @@ interface
 uses
   Classes,
   SysUtils,
-  StrUtils,
   XmlIntf,
+  SyncObjs,
   Generics.Collections,
   Spring,
   Spring.Collections,
@@ -42,15 +42,17 @@ uses
 
 type
   /// <summary>
-  /// Internal root logger.
+  /// Internal implementation for the unique root logger.
   /// </summary>
   TRootLogger = class sealed(TLogger)
   protected
     function GetEffectiveLevel: TLevel; override;
     procedure SetLevel(const value: TLevel); override;
   public
-    constructor Create;
+    constructor Create(const repository: ILoggerRepository);
   end;
+
+  // NEED REVIEW
 
   /// <summary>
   /// TLoggerRepositoryBase
@@ -58,15 +60,11 @@ type
   TLoggerRepositoryBase = class abstract(TInterfacedObject, ILoggerRepository)
   private
     fName: string;
-    fConfigured: Boolean;
+//    fConfigured: Boolean;
     fThreshold: TLevel;
-    fProperties: TStrings;
     function GetName: string;
-    function GetConfigured: Boolean;
-    function GetProperties: TStrings;
     function GetThreshold: TLevel;
     procedure SetName(const value: string);
-    procedure SetConfigured(const value: Boolean);
     procedure SetThreshold(const value: TLevel);
   protected
     procedure CallOnConfigurationChanged;
@@ -75,16 +73,13 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    procedure Log(const event: TLoggingEvent); virtual; abstract;
-    procedure ResetConfiguration; virtual;
-    procedure Shutdown; virtual;
-    function FindLogger(const name: string): ILogger; virtual; abstract;
+//    procedure Shutdown; virtual;
+    function FindLogger(const name: string): ILogger; virtual;
+    function FindAppender(const name: string): IAppender; virtual;
     function GetAppenders: ICollection<IAppender>; virtual; abstract;
     function GetCurrentLoggers: ICollection<ILogger>; virtual; abstract;
     function GetLogger(const name: string): ILogger; virtual; abstract;
     property Name: string read GetName write SetName;
-    property Configured: Boolean read GetConfigured write SetConfigured;
-    property Properties: TStrings read GetProperties;
     property Threshold: TLevel read GetThreshold write SetThreshold;
   end;
 
@@ -93,45 +88,57 @@ type
   /// </summary>
   TLoggerRepository = class(TLoggerRepositoryBase)
   private
-    type
-      /// <summary>
-      /// Provision nodes are used where no logger instance has been specified
-      /// </summary>
-      TProvisionNode = class(TList<TLogger>)
-      end;
-  private
-    fRoot: TLogger;
+    fLoggers: IDictionary<string, ILogger>;
+    fAppenders: IList<IAppender>;
+    fRoot: IHierarchyLogger;
+    fLock: TCriticalSection;
     fEmittedNoAppenderWarning: Boolean;
-    fLoggers: TDictionary<string, TObject>;
-    procedure UpdateParents(logger: TLogger);
-    procedure UpdateChildren(provisionNode: TProvisionNode; logger: TLogger);
+    procedure UpdateParent(const logger: IHierarchyLogger);
   protected
-    function CreateProvisionNode(const logger: TLogger): TProvisionNode;
-    function CreateLogger(const name: string): TLogger;
+    function AddLogger(const name: string): IHierarchyLogger;
   protected
+    procedure Lock;
+    procedure Unlock;
     procedure ConfigurationChanged;
   public
     constructor Create;
     destructor Destroy; override;
-    procedure ResetConfiguration; override;
-    procedure Shutdown; override;
     function IsDisabled(const level: TLevel): Boolean;
+    function FindLogger(const name: string): ILogger; override;
+    function FindAppender(const name: string): IAppender; override;
     function GetAppenders: ICollection<IAppender>; override;
     function GetCurrentLoggers: ICollection<ILogger>; override;
     function GetLogger(const name: string): ILogger; override;
     property EmittedNoAppenderWarning: Boolean read fEmittedNoAppenderWarning write fEmittedNoAppenderWarning;
-    property Root: TLogger read fRoot;
+    property Root: IHierarchyLogger read fRoot;
   end;
 
 implementation
 
+uses
+  StrUtils;
+
+function LastIndexOf(const value: Char; const s: string): Integer; inline;
+var
+  i: Integer;
+begin
+  Result := 0;
+  for i := Length(s) downto 1 do
+  begin
+    if s[i] = value then
+    begin
+      Result := i;
+      Break;
+    end;
+  end;
+end;
 
 {$REGION 'TRootLogger'}
 
-constructor TRootLogger.Create;
+constructor TRootLogger.Create(const repository: ILoggerRepository);
 begin
-  inherited Create('');
-  SetLevel(TLevel.All);
+  inherited Create(repository, '');
+  SetLevel(TLevel.Debug);
 end;
 
 function TRootLogger.GetEffectiveLevel: TLevel;
@@ -159,217 +166,160 @@ end;
 constructor TLoggerRepository.Create;
 begin
   inherited Create;
-  fLoggers := TObjectDictionary<string, TObject>.Create([doOwnsValues]);
-  fRoot := TRootLogger.Create;
-  fRoot.Repository := Self;
+  fLoggers := TCollections.CreateDictionary<string, ILogger>;
+  fRoot := TRootLogger.Create(Self);
   fThreshold := TLevel.All;
+  fLock := TCriticalSection.Create;
 end;
 
 destructor TLoggerRepository.Destroy;
 begin
-  fRoot.Free;
-  fLoggers.Free;
+  fLock.Free;
   inherited Destroy;
 end;
 
-function TLoggerRepository.CreateLogger(const name: string): TLogger;
+function TLoggerRepository.FindAppender(const name: string): IAppender;
+var
+  appender: IAppender;
 begin
-  Result := TLogger.Create(name);
-  Result.Repository := Self;
-  fLoggers.AddOrSetValue(name, Result);
+  Result := nil;
+  for appender in GetAppenders do
+  begin
+    if SameText(appender.Name, name) then
+    begin
+      Result := appender;
+      Exit;
+    end;
+  end;
 end;
 
-function TLoggerRepository.CreateProvisionNode(const logger: TLogger): TProvisionNode;
+function TLoggerRepository.FindLogger(const name: string): ILogger;
 begin
-  Result := TProvisionNode.Create;
-  Result.Add(logger);
+  Lock;
+  try
+    fLoggers.TryGetValue(name, Result);
+  finally
+    Unlock;
+  end;
+end;
+
+function TLoggerRepository.AddLogger(const name: string): IHierarchyLogger;
+begin
+  Result := TLogger.Create(Self, name);
+  fLoggers[name] := Result;
 end;
 
 function TLoggerRepository.GetAppenders: ICollection<IAppender>;
 begin
-  Result := TCollections.CreateList<IAppender>;
+  Result := fAppenders;
 end;
 
 function TLoggerRepository.GetCurrentLoggers: ICollection<ILogger>;
-var
-  node: TObject;
 begin
-  Result := TCollections.CreateList<ILogger>;
-  for node in fLoggers.Values do
-  begin
-    if node is TLogger then
-    begin
-      Result.Add(TLogger(node));
-    end;
-  end;
+  Result := fLoggers.Values;
 end;
 
 function TLoggerRepository.GetLogger(const name: string): ILogger;
 var
-  logger: TLogger;
-  node: TObject;
-  provisionNode: TProvisionNode;
+  logger: ILogger;
 begin
-  logger := nil;
-  MonitorEnter(fLoggers);
+  Lock;
   try
-    fLoggers.TryGetValue(name, node);
-    if node = nil then
+    if not fLoggers.TryGetValue(name, logger) then
     begin
-      logger := CreateLogger(name);
-      UpdateParents(logger);
-    end
-    else if node is TLogger then
-    begin
-      logger := TLogger(node);
-    end
-    else if node is TProvisionNode then
-    begin
-      provisionNode := TProvisionNode(node);
-      try
-        logger := CreateLogger(name);
-        UpdateChildren(provisionNode, logger);
-        UpdateParents(logger);
-      finally
-        provisionNode.Free;
-      end;
-    end
-    else
-    begin
-      TInternalLogger.ErrorFmt('Hierarchy: Unexpected object type %s', [node.ClassName]);
+      logger := AddLogger(name);
+      UpdateParent(logger as IHierarchyLogger);
     end;
   finally
-    MonitorExit(fLoggers);
+    Unlock;
   end;
   Result := logger;
 end;
 
-procedure TLoggerRepository.UpdateParents(logger: TLogger);
+// Loop through parents of the specified logger.
+// if name = 'a.b.c.d', then loop through 'a.b.c', 'a.b' and 'a'
+procedure TLoggerRepository.UpdateParent(const logger: IHierarchyLogger);
 var
   name: string;
-  parentFound: Boolean;
+  parent: IHierarchyLogger;
   index: Integer;
-  node: TObject;
-
-  function LastIndexOf(const value: Char; const s: string): Integer; inline;
-  var
-    i: Integer;
-  begin
-    Result := 0;
-    for i := Length(s) downto 1 do
-    begin
-      if s[i] = value then
-      begin
-        Result := i;
-        Break;
-      end;
-    end;
-  end;
 begin
   name := logger.Name;
-  parentFound := False;
-  // if name = "w.x.y.z", loop through "w.x.y", "w.x" and "w", but not "w.x.y.z"
   index := LastIndexOf('.', name);
-  while index > 0 do
+  if index > 0 then
   begin
     Delete(name, index, Length(name) - index + 1);
-    fLoggers.TryGetValue(name, node);
-    if node = nil then
-    begin
-      node := CreateProvisionNode(logger);
-      fLoggers[name] := node;
-    end
-    else if node is TLogger then
-    begin
-      logger.Parent := TLogger(node);
-      parentFound := True;
-      Break;
-    end
-    else if node is TProvisionNode then
-    begin
-      TProvisionNode(node).Add(logger);
-    end
-    else
-    begin
-      TInternalLogger.ErrorFmt('Hierarchy: Unexpected object type %s', [node.ClassName]);
-    end;
-    index := LastIndexOf('.', name);
-  end;
-  if not parentFound then
+    parent := GetLogger(name) as IHierarchyLogger;
+  end
+  else
   begin
-    logger.Parent := Self.Root;
+    parent := Root;
   end;
-end;
-
-procedure TLoggerRepository.UpdateChildren(provisionNode: TProvisionNode;
-  logger: TLogger);
-var
-  childLogger: TLogger;
-begin
-  for childLogger in provisionNode do
-  begin
-    // Unless this child already points to a correct (lower) parent,
-    // make logger.Parent point to childLogger.Parent and childLogger.Parent to logger.
-    if not StartsText(logger.Name, childLogger.Parent.Name) then
-    begin
-      logger.Parent := childLogger.Parent;
-      childLogger.Parent := logger;
-    end;
-  end;
+  logger.SetParent(parent);
 end;
 
 function TLoggerRepository.IsDisabled(const level: TLevel): Boolean;
 begin
   TArgument.CheckNotNull(level <> nil, 'level');
-  Result := not Configured or (Threshold.Value > level.Value);
+  Result := Threshold.IsGreaterThan(level);
 end;
 
-procedure TLoggerRepository.ResetConfiguration;
+procedure TLoggerRepository.Lock;
 begin
-  TInternalLogger.Debug('THierarchy: ResetConfiguration called on Hierarchy [' + Name + ']');
-  Root.CloseNestedAppenders;
-  Lock(fLoggers,
-    procedure
-    var
-      collection: ICollection<ILogger>;
-      logger: ILogger;
-    begin
-      Shutdown;
-      collection := Self.GetCurrentLoggers;
-      for logger in collection do
-      begin
-        TLogger(logger).Level := nil;
-        TLogger(logger).Additivity := True;
-      end;
-    end
-  );
-  inherited ResetConfiguration;
+  fLock.Enter;
 end;
 
-procedure TLoggerRepository.Shutdown;
+procedure TLoggerRepository.Unlock;
 begin
-  TInternalLogger.Debug('THierarchy: Shutdown called on Hierarchy [' + Name + ']');
-  Root.CloseNestedAppenders;
-  Lock(fLoggers,
-    procedure
-    var
-      collection: ICollection<ILogger>;
-      logger: ILogger;
-    begin
-      collection := Self.GetCurrentLoggers;
-      for logger in collection do
-      begin
-        TLogger(logger).CloseNestedAppenders;
-      end;
-      Root.RemoveAllAppenders;
-      for logger in collection do
-      begin
-        TLogger(logger).RemoveAllAppenders;
-      end;
-    end
-  );
-  inherited Shutdown;
+  fLock.Leave;
 end;
+
+//procedure TLoggerRepository.ResetConfiguration;
+//begin
+//  TInternalLogger.Debug('THierarchy: ResetConfiguration called on Hierarchy [' + Name + ']');
+//  Root.CloseNestedAppenders;
+//  Lock(fLoggers,
+//    procedure
+//    var
+//      collection: ICollection<ILogger>;
+//      logger: ILogger;
+//    begin
+//      Shutdown;
+//      collection := Self.GetCurrentLoggers;
+//      for logger in collection do
+//      begin
+//        TLogger(logger).Level := nil;
+//        TLogger(logger).Additivity := True;
+//      end;
+//    end
+//  );
+//  inherited ResetConfiguration;
+//end;
+
+//procedure TLoggerRepository.Shutdown;
+//begin
+//  TInternalLogger.Debug('THierarchy: Shutdown called on Hierarchy [' + Name + ']');
+//  Root.CloseNestedAppenders;
+//  Lock(fLoggers,
+//    procedure
+//    var
+//      collection: ICollection<ILogger>;
+//      logger: ILogger;
+//    begin
+//      collection := Self.GetCurrentLoggers;
+//      for logger in collection do
+//      begin
+//        TLogger(logger).CloseNestedAppenders;
+//      end;
+//      Root.RemoveAllAppenders;
+//      for logger in collection do
+//      begin
+//        TLogger(logger).RemoveAllAppenders;
+//      end;
+//    end
+//  );
+//  inherited Shutdown;
+//end;
 
 procedure TLoggerRepository.ConfigurationChanged;
 begin
@@ -384,14 +334,22 @@ end;
 constructor TLoggerRepositoryBase.Create;
 begin
   inherited Create;
-  fProperties := TStringList.Create;
   fThreshold := TLevel.All;
 end;
 
 destructor TLoggerRepositoryBase.Destroy;
 begin
-  fProperties.Free;
   inherited Destroy;
+end;
+
+function TLoggerRepositoryBase.FindAppender(const name: string): IAppender;
+begin
+  Result := nil;
+end;
+
+function TLoggerRepositoryBase.FindLogger(const name: string): ILogger;
+begin
+  Result := nil;
 end;
 
 procedure TLoggerRepositoryBase.CallOnConfigurationChanged;
@@ -424,40 +382,14 @@ begin
 //  );
 end;
 
-procedure TLoggerRepositoryBase.ResetConfiguration;
-begin
-  Configured := False;
-  CallOnConfigurationReset;
-end;
-
-procedure TLoggerRepositoryBase.Shutdown;
-begin
-  CallOnShutdown;
-end;
-
-function TLoggerRepositoryBase.GetConfigured: Boolean;
-begin
-  Result := fConfigured;
-end;
-
 function TLoggerRepositoryBase.GetName: string;
 begin
   Result := fName;
 end;
 
-function TLoggerRepositoryBase.GetProperties: TStrings;
-begin
-  Result := fProperties;
-end;
-
 function TLoggerRepositoryBase.GetThreshold: TLevel;
 begin
   Result := fThreshold;
-end;
-
-procedure TLoggerRepositoryBase.SetConfigured(const value: Boolean);
-begin
-  fConfigured := value;
 end;
 
 procedure TLoggerRepositoryBase.SetName(const value: string);

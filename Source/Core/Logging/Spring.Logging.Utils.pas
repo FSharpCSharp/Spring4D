@@ -35,25 +35,6 @@ uses
   Spring.Logging.Core;
 
 type
-  TOnlyOnceErrorHandler = class(TInterfacedObject, IErrorHandler)
-  strict private
-    fPrefix: string;
-    fIsFirstTime: Boolean;
-    function GetIsEnabled: Boolean;
-    property IsEnabled: Boolean read GetIsEnabled;
-  public
-    constructor Create; overload;
-    constructor Create(const prefix: string); overload;
-    procedure Error(const msg: string); overload;
-    procedure Error(const msg: string; e: Exception); overload;
-    procedure Error(const msg: string; e: Exception; errorCode: TErrorCode); overload;
-  end;
-
-  TReusableStringWriter = class(TStringWriter)
-  public
-    procedure Reset(maxCapacity, defaultSize: Integer);
-  end;
-
   TInternalLogger = class sealed(TObject)
   strict private
     class var
@@ -70,43 +51,6 @@ type
   end;
 
 implementation
-
-
-{$REGION 'TOnlyOnceErrorHandler'}
-
-constructor TOnlyOnceErrorHandler.Create;
-begin
-  Create('');
-end;
-
-constructor TOnlyOnceErrorHandler.Create(const prefix: string);
-begin
-  inherited Create;
-  fPrefix := prefix;
-end;
-
-procedure TOnlyOnceErrorHandler.Error(const msg: string);
-begin
-
-end;
-
-procedure TOnlyOnceErrorHandler.Error(const msg: string; e: Exception);
-begin
-
-end;
-
-procedure TOnlyOnceErrorHandler.Error(const msg: string; e: Exception;
-  errorCode: TErrorCode);
-begin
-
-end;
-
-function TOnlyOnceErrorHandler.GetIsEnabled: Boolean;
-begin
-
-end;
-
-{$ENDREGION}
 
 
 {$IFDEF SUPPORTS_REGION} {$REGION 'TInternalLogger'} {$ENDIF}
@@ -142,31 +86,5 @@ begin
 end;
 
 {$IFDEF SUPPORTS_REGION} {$ENDREGION} {$ENDIF}
-
-
-{$REGION 'TReusableStringWriter'}
-
-type
-  {$HINTS OFF}
-    TStringWriterHack = class(TTextWriter)
-    private
-      fBuilder: TStringBuilder;
-      fOwnsBuilder: Boolean;
-    end;
-  {$HINTS ON}
-
-procedure TReusableStringWriter.Reset(maxCapacity, defaultSize: Integer);
-var
-  stringBuilder: TStringBuilder;
-begin
-  stringBuilder := TStringWriterHack(Self).fBuilder;
-  stringBuilder.Length := 0;
-  if stringBuilder.Capacity > maxCapacity then
-  begin
-    stringBuilder.Capacity := defaultSize;
-  end;
-end;
-
-{$ENDREGION}
 
 end.

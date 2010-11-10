@@ -159,7 +159,7 @@ end;
 
 class function TLoggingManager.FindLogger(const name: string): ILogger;
 begin
-  Result := nil;
+  Result := GetLoggerRepository.FindLogger(name);
 end;
 
 class function TLoggingManager.GetLoggerRepository: ILoggerRepository;

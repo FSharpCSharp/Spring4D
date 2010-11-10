@@ -45,7 +45,7 @@ type
     procedure Lock;
     procedure Unlock;
   protected
-    procedure DoAppend(const event: TLoggingEvent); virtual; abstract;
+    procedure DoAppend(const event: TLoggingEvent); virtual;
     procedure DoClose; virtual;
     function AcceptEvent(const event: TLoggingEvent): Boolean; virtual;
     function CanAppend: Boolean;
@@ -53,7 +53,7 @@ type
     constructor Create(const name: string);
     destructor Destroy; override;
     { IBulkAppender }
-    procedure Append(const events: ICollection<TLoggingEvent>); overload;
+    procedure Append(const events: ICollection<TLoggingEvent>); overload; virtual;
     { IAppender }
     procedure Close;
     procedure Append(const event: TLoggingEvent); overload;
@@ -124,10 +124,6 @@ procedure TAppenderBase.Append(const event: TLoggingEvent);
 begin
   Lock;
   try
-//    if fClosed then
-//    begin
-//      ErrorHandler.Error('Attempted to append to closed appender named [' + fName + '].');
-//    end;
     if fRecursiveGuard then Exit;
     fRecursiveGuard := True;
     try
@@ -135,7 +131,7 @@ begin
         if AcceptEvent(event) and CanAppend then
           DoAppend(event);
       except on e: Exception do
-//        ErrorHandler.Error('Failed in Append', e);
+        // TODO: Handle internal exception
       end;
     finally
       fRecursiveGuard := False;
@@ -153,6 +149,11 @@ begin
   begin
     Append(event);
   end;
+end;
+
+procedure TAppenderBase.DoAppend(const event: TLoggingEvent);
+begin
+
 end;
 
 procedure TAppenderBase.DoClose;
