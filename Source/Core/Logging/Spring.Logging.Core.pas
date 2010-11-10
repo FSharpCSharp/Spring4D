@@ -36,7 +36,7 @@ uses
   Generics.Collections,
   Spring,
   Spring.Collections,
-  Spring.DesignPatterns;
+  Spring.Configuration;
 
 type
 
@@ -175,9 +175,7 @@ type
     property Name: string read GetName;
   end;
 
-  /// <summary>
-  /// IBulkAppender
-  /// </summary>
+  ///	<summary>IBulkAppender</summary>
   IBulkAppender = interface(IAppender)
     ['{E5EADA47-4ED2-4097-8BCC-25B94716F1E3}']
     procedure Append(const events: ICollection<TLoggingEvent>);
@@ -222,8 +220,7 @@ type
     property IgnoresException: Boolean read GetIgnoresException;
   end;
 
-  // NEED REVIEW
-  ILoggerRepository = interface
+  ILoggerRepository = interface(IConfigurable)
     ['{C44BAA97-C52A-49DE-9E4D-B1721A4F5405}']
     {$REGION 'Property Getters & Setters'}
       function GetName: string;
@@ -231,7 +228,10 @@ type
       procedure SetName(const value: string);
       procedure SetThreshold(const value: TLevel);
     {$ENDREGION}
+    function CreateAppender(const typeName: string): IAppender;
+    function CreateLayout(const typeName: string): ILayout;
     function FindLogger(const name: string): ILogger;
+    function FindLevel(const name: string): TLevel;
     function FindAppender(const name: string): IAppender;
     function GetAppenders: ICollection<IAppender>;
     function GetCurrentLoggers: ICollection<ILogger>;
@@ -285,7 +285,7 @@ type
   /// <summary>
   /// Represents a logger which supports hierarchy and appenders.
   /// </summary>
-  TLogger = class(TLoggerBase, IHierarchyLogger, IAppenderAttachable)
+  TLogger = class(TLoggerBase, IHierarchyLogger, IAppenderAttachable, IConfigurable)
   private
     type
       TLoggerWalkProc = reference to function(logger: TLogger): Boolean;
@@ -311,6 +311,9 @@ type
   protected
     function IsEnabledFor(const level: TLevel): Boolean; override;
     procedure DoLog(const event: TLoggingEvent); override;
+  protected
+    { IConfigurable }
+    procedure Configure(const configuration: IConfigurationNode); virtual;
   public
     constructor Create(const repository: ILoggerRepository; const name: string);
     procedure CloseNestedAppenders;
@@ -343,8 +346,8 @@ type
     property Appenders: ICollection<IAppender> read GetAppenders;
   end;
 
-  {$REGION 'Unfiled'}
-  
+  {TODO: IInitializable}
+
   /// <summary>
   /// Activate the options that were previously set with calls to properties.
   /// </summary>
@@ -353,7 +356,10 @@ type
     procedure ActivateOptions;
   end;
 
+  {$REGION 'Unfiled'}
+
   (*
+
 //      function GetConfigured: Boolean;
 //      function GetProperties: TStrings;
 //      procedure SetConfigured(const value: Boolean);
@@ -456,6 +462,7 @@ type
   {$ENDREGION}
   
   ELoggingException = class(Exception);
+
 
 implementation
 
@@ -799,6 +806,43 @@ begin
     end;
   finally
     fAppenderAttachableLock.EndWrite;
+  end;
+end;
+
+// TODO: Considering IInitializable
+procedure TLogger.Configure(const configuration: IConfigurationNode);
+var
+  loggerName: string;
+  additivity: string;
+  loggerLevel: string;
+  nodes: IConfigurationNodes;
+  node: IConfigurationNode;
+  appenderName: string;
+  appender: IAppender;
+begin
+  TArgument.CheckNotNull(configuration, 'configuration');
+  if configuration.TryGetAttribute('name', loggerName) then
+  begin
+    Self.fName := loggerName;
+  end;
+  if configuration.TryGetAttribute('additivity', additivity) then
+  begin
+    Self.additivity := StrToBoolDef(additivity, True);
+  end;
+  node := configuration.FindNode('level');
+  if (node <> nil) and node.TryGetAttribute('value', loggerLevel) then
+  begin
+    Self.Level := fRepository.FindLevel(loggerLevel);
+  end;
+  nodes := configuration.FindNodes('appender-ref');
+  if not nodes.IsEmpty then
+  begin
+    for node in nodes do
+    begin
+      appenderName := node.Attributes['ref'];
+      appender := fRepository.FindAppender(appenderName);
+      AddAppender(appender);
+    end;
   end;
 end;
 

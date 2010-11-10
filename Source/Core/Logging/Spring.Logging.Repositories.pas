@@ -34,8 +34,7 @@ uses
   Generics.Collections,
   Spring,
   Spring.Collections,
-  Spring.DesignPatterns,
-  Spring.ResourceStrings,
+  Spring.Configuration,
   Spring.Logging,
   Spring.Logging.Core,
   Spring.Logging.Utils;
@@ -52,65 +51,50 @@ type
     constructor Create(const repository: ILoggerRepository);
   end;
 
-  // NEED REVIEW
-
   /// <summary>
-  /// TLoggerRepositoryBase
+  /// Hierarchical organization of loggers.
   /// </summary>
-  TLoggerRepositoryBase = class abstract(TInterfacedObject, ILoggerRepository)
+  TLoggerRepository = class(TInterfacedObject, ILoggerRepository, IConfigurable)
   private
+    fLoggers: IDictionary<string, ILogger>;
+    fAppenders: IList<IAppender>;
+    fLevels: IDictionary<string, TLevel>;
+    fRoot: IHierarchyLogger;
     fName: string;
-//    fConfigured: Boolean;
     fThreshold: TLevel;
+    fLock: TCriticalSection;
+    fEmittedNoAppenderWarning: Boolean;
+  private
     function GetName: string;
     function GetThreshold: TLevel;
     procedure SetName(const value: string);
     procedure SetThreshold(const value: TLevel);
   protected
-    procedure CallOnConfigurationChanged;
-    procedure CallOnConfigurationReset;
-    procedure CallOnShutdown;
-  public
-    constructor Create;
-    destructor Destroy; override;
-//    procedure Shutdown; virtual;
-    function FindLogger(const name: string): ILogger; virtual;
-    function FindAppender(const name: string): IAppender; virtual;
-    function GetAppenders: ICollection<IAppender>; virtual; abstract;
-    function GetCurrentLoggers: ICollection<ILogger>; virtual; abstract;
-    function GetLogger(const name: string): ILogger; virtual; abstract;
-    property Name: string read GetName write SetName;
-    property Threshold: TLevel read GetThreshold write SetThreshold;
-  end;
-
-  /// <summary>
-  /// Hierarchical organization of loggers.
-  /// </summary>
-  TLoggerRepository = class(TLoggerRepositoryBase)
-  private
-    fLoggers: IDictionary<string, ILogger>;
-    fAppenders: IList<IAppender>;
-    fRoot: IHierarchyLogger;
-    fLock: TCriticalSection;
-    fEmittedNoAppenderWarning: Boolean;
-    procedure UpdateParent(const logger: IHierarchyLogger);
-  protected
     function AddLogger(const name: string): IHierarchyLogger;
-  protected
     procedure Lock;
     procedure Unlock;
+    procedure InitializeLevels;
     procedure ConfigurationChanged;
+    procedure UpdateParent(const logger: IHierarchyLogger);
+  protected
+    { IConfigurable }
+    procedure Configure(const configuration: IConfigurationNode); virtual;
   public
     constructor Create;
     destructor Destroy; override;
+    function CreateAppender(const typeName: string): IAppender;
+    function CreateLayout(const typeName: string): ILayout;
     function IsDisabled(const level: TLevel): Boolean;
-    function FindLogger(const name: string): ILogger; override;
-    function FindAppender(const name: string): IAppender; override;
-    function GetAppenders: ICollection<IAppender>; override;
-    function GetCurrentLoggers: ICollection<ILogger>; override;
-    function GetLogger(const name: string): ILogger; override;
+    function FindLogger(const name: string): ILogger;
+    function FindLevel(const name: string): TLevel;
+    function FindAppender(const name: string): IAppender;
+    function GetAppenders: ICollection<IAppender>;
+    function GetCurrentLoggers: ICollection<ILogger>;
+    function GetLogger(const name: string): ILogger;
     property EmittedNoAppenderWarning: Boolean read fEmittedNoAppenderWarning write fEmittedNoAppenderWarning;
     property Root: IHierarchyLogger read fRoot;
+    property Name: string read GetName write SetName;
+    property Threshold: TLevel read GetThreshold write SetThreshold;
   end;
 
 implementation
@@ -166,10 +150,13 @@ end;
 constructor TLoggerRepository.Create;
 begin
   inherited Create;
+  fLevels := TCollections.CreateDictionary<string, TLevel>;
+  fThreshold := TLevel.All;
   fLoggers := TCollections.CreateDictionary<string, ILogger>;
   fRoot := TRootLogger.Create(Self);
   fThreshold := TLevel.All;
   fLock := TCriticalSection.Create;
+  InitializeLevels;
 end;
 
 destructor TLoggerRepository.Destroy;
@@ -178,19 +165,55 @@ begin
   inherited Destroy;
 end;
 
+procedure TLoggerRepository.InitializeLevels;
+  procedure AddLevel(level: TLevel);
+  begin
+    fLevels.Add(level.Name, level);
+  end;
+begin
+  AddLevel(TLevel.All);
+  AddLevel(TLevel.Debug);
+  AddLevel(TLevel.Info);
+  AddLevel(TLevel.Warn);
+  AddLevel(TLevel.Error);
+  AddLevel(TLevel.Fatal);
+  AddLevel(TLevel.Off);
+end;
+
+function TLoggerRepository.CreateAppender(const typeName: string): IAppender;
+begin
+  {TODO -oOwner -cGeneral : CreateAppender}
+  raise ENotImplementedException.Create('CreateAppender');
+end;
+
+function TLoggerRepository.CreateLayout(const typeName: string): ILayout;
+begin
+  raise ENotImplementedException.Create('CreateLayout');
+end;
+
 function TLoggerRepository.FindAppender(const name: string): IAppender;
 var
   appender: IAppender;
 begin
   Result := nil;
-  for appender in GetAppenders do
-  begin
-    if SameText(appender.Name, name) then
+  Lock;
+  try
+    for appender in GetAppenders do
     begin
-      Result := appender;
-      Exit;
+      if SameText(appender.Name, name) then
+      begin
+        Result := appender;
+        Exit;
+      end;
     end;
+  finally
+    Unlock;
   end;
+end;
+
+function TLoggerRepository.FindLevel(const name: string): TLevel;
+begin
+  fLevels.TryGetValue(name, Result);
 end;
 
 function TLoggerRepository.FindLogger(const name: string): ILogger;
@@ -323,81 +346,59 @@ end;
 
 procedure TLoggerRepository.ConfigurationChanged;
 begin
-  CallOnConfigurationChanged;
+
 end;
 
-{$ENDREGION}
-
-
-{$REGION 'TLoggerRepositoryBase'}
-
-constructor TLoggerRepositoryBase.Create;
+procedure TLoggerRepository.Configure(
+  const configuration: IConfigurationNode);
+var
+  nodes: IConfigurationNodes;
+  node: IConfigurationNode;
+  name: string;
+  logger: ILogger;
+  appenderType: string;
+  appender: IAppender;
 begin
-  inherited Create;
-  fThreshold := TLevel.All;
+  TArgument.CheckNotNull(configuration, 'configuration');
+  nodes := configuration.FindNodes('appender');
+  for node in nodes do
+  begin
+    appenderType := node.Attributes['type'];
+    appender := CreateAppender(appenderType);
+    TryConfigure(appender, node);
+  end;
+
+  node := configuration.FindNode('root');
+  if node <> nil then
+  begin
+    TryConfigure(Root, node);
+  end;
+
+  nodes := configuration.FindNodes('logger');
+  for node in nodes do
+  begin
+    name := node.Attributes['name'];
+    logger := GetLogger(name);
+    TryConfigure(logger, node);
+  end;
 end;
 
-destructor TLoggerRepositoryBase.Destroy;
-begin
-  inherited Destroy;
-end;
-
-function TLoggerRepositoryBase.FindAppender(const name: string): IAppender;
-begin
-  Result := nil;
-end;
-
-function TLoggerRepositoryBase.FindLogger(const name: string): ILogger;
-begin
-  Result := nil;
-end;
-
-procedure TLoggerRepositoryBase.CallOnConfigurationChanged;
-begin
-//  NotifyListeners(
-//    procedure(listener: ILoggerRepositoryListener)
-//    begin
-//      listener.OnConfigurationChanged;
-//    end
-//  );
-end;
-
-procedure TLoggerRepositoryBase.CallOnConfigurationReset;
-begin
-//  NotifyListeners(
-//    procedure(listener: ILoggerRepositoryListener)
-//    begin
-//      listener.OnConfigurationReset;
-//    end
-//  );
-end;
-
-procedure TLoggerRepositoryBase.CallOnShutdown;
-begin
-//  NotifyListeners(
-//    procedure(listener: ILoggerRepositoryListener)
-//    begin
-//      listener.OnShutdown;
-//    end
-//  );
-end;
-
-function TLoggerRepositoryBase.GetName: string;
+function TLoggerRepository.GetName: string;
 begin
   Result := fName;
 end;
 
-function TLoggerRepositoryBase.GetThreshold: TLevel;
+function TLoggerRepository.GetThreshold: TLevel;
 begin
   Result := fThreshold;
 end;
 
-procedure TLoggerRepositoryBase.SetName(const value: string);
+procedure TLoggerRepository.SetName(const value: string);
 begin
   fName := value;
 end;
 
-procedure TLoggerRepositoryBase.SetThreshold(const value: TLevel);
+procedure TLoggerRepository.SetThreshold(const value: TLevel);
 begin
   if value <> nil then
   begin

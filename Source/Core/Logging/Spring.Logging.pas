@@ -33,6 +33,7 @@ uses
   SysUtils,
   TypInfo,
   XMLIntf,
+  msxml,
   Spring,
   Spring.Collections,
   Spring.Logging.Core;
@@ -86,7 +87,7 @@ implementation
 
 uses
   Rtti,
-  XMlDoc,
+//  XMlDoc,
   Spring.Logging.Appenders,
   Spring.Logging.Layouts,
   Spring.Logging.Repositories,
