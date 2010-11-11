@@ -246,7 +246,6 @@ begin
         end;
         mttLetter:
         begin
-          Inc(cursor);
           Result := tpFormat;
         end;//Result := LookForKeywordOrText;
         mttNumber:

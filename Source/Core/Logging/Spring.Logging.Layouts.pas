@@ -226,7 +226,7 @@ begin
         ptMessage:
           builder.AppendFormat(part, [event.Message]);
         ptDate:
-          builder.AppendFormat(part, FormatDateTime(DateFormatPattern, event.TimeStamp));
+          builder.AppendFormat(part, [FormatDateTime(DateFormatPattern, event.TimeStamp)]);
         ptLevel:
           builder.AppendFormat(part, [event.LoggerLevel.Name]);
         ptThread:

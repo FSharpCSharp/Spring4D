@@ -66,9 +66,9 @@ begin
     { TODO -oUser -cConsole Main : Insert code here }
     logger := LoggingManager.GetLogger('Spring');
     appender := TConsoleAppender.Create('s');
-    appender := TOutputDebugStringAppender.Create('s');
+    //appender := TOutputDebugStringAppender.Create('s');
 
-    appender.Layout := TPatternLayout.Create('%message  %5date %newline %appversion');
+    appender.Layout := TPatternLayout.Create('%-20message  %-20date  %logger %appversion %newline');
     (logger as IAppenderAttachable).AddAppender(appender as IAppender);
     logger.Debug('Debug');
     logger.Info('Info...');
