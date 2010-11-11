@@ -71,6 +71,7 @@ type
 implementation
 
 uses
+  ActiveX,
   IOUtils,
   Variants;
 
@@ -182,5 +183,11 @@ begin
 end;
 
 {$ENDREGION}
+
+initialization
+  CoInitialize(nil);
+
+finalization
+  CoUninitialize;
 
 end.

@@ -29,22 +29,23 @@ interface
 uses
   Classes,
   SysUtils,
-  Generics.Collections,
   Spring,
+  Spring.Configuration,
   Spring.Utils,
   Spring.Logging.Core,
   Spring.Logging.Utils;
 
 type
-  TLayoutBase = class abstract(TInterfacedObject, IOptionHandler, ILayout)
+  TLayoutBase = class abstract(TInterfacedObject, ILayout, IConfigurable)
   protected
     function GetContentType: string; virtual;
     function GetHeader: string; virtual;
     function GetFooter: string; virtual;
     function GetIgnoresException: Boolean; virtual;
+  protected
+    { IConfigurable }
+    procedure Configure(const configuration: IConfigurationNode); virtual;
   public
-    { IOptionHandler }
-    procedure ActivateOptions; virtual; abstract;
     { ILayout }
     function Format(const event: TLoggingEvent): string; virtual; abstract;
     property ContentType: string read GetContentType;
@@ -91,10 +92,12 @@ type
     procedure AddPatternPart(const patternPart: string; patternType: TPatternType);
     procedure AddKeyPattern(const keyword, patternConvertor: string; const patternType: TPatternType);
     procedure ClearPatternParts;
+  protected
+    procedure Configure(const configuration: IConfigurationNode); override;
   public
-    function Format(const event: TLoggingEvent): string; override;
-    constructor Create(const pattern: string = DefaultLayoutPattern);
+    constructor Create;
     destructor Destroy; override;
+    function Format(const event: TLoggingEvent): string; override;
     property Pattern: string read fPattern write SetPattern;
     property DateFormatPattern: string read fDateFormatPattern write fDateFormatPattern;
   end;
@@ -103,6 +106,10 @@ implementation
 
 
 {$REGION 'TLayoutBase'}
+
+procedure TLayoutBase.Configure(const configuration: IConfigurationNode);
+begin
+end;
 
 function TLayoutBase.GetContentType: string;
 begin
@@ -126,9 +133,24 @@ end;
 
 {$ENDREGION}
 
-{ TPatternLayout }
 
+{$REGION 'TPatternLayout'}
 
+constructor TPatternLayout.Create;
+begin
+  inherited Create;
+  fPatternParts:= TStringList.Create;
+  fParser := TPatternParser.Create('');
+  InitializeKeyWords;
+  AddPatternPart('%s', ptMessage);
+end;
+
+destructor TPatternLayout.Destroy;
+begin
+  FreeAndNil(fPatternParts);
+  FreeAndNil(fParser);
+  inherited;
+end;
 
 procedure TPatternLayout.AddKeyPattern(const keyword, patternConvertor: string;
   const patternType: TPatternType);
@@ -150,22 +172,15 @@ begin
   fPatternParts.Clear;
 end;
 
-constructor TPatternLayout.Create(const pattern: string);
+procedure TPatternLayout.Configure(const configuration: IConfigurationNode);
+var
+  node: IConfigurationNode;
 begin
-  inherited Create;
-  fPatternParts:= TStringList.Create;
-  fParser := TPatternParser.Create('');
-  InitializeKeyWords;
-  AddPatternPart('%s', ptMessage);
-  SetPattern(pattern);
-end;
-
-destructor TPatternLayout.Destroy;
-begin
-  FreeAndNil(fPatternParts);
-  FreeAndNil(fParser);
-
-  inherited;
+  node := configuration.FindNode('conversionPattern');
+  if node <> nil then
+    SetPattern(node.Attributes['value'])
+  else
+    SetPattern(DefaultLayoutPattern);
 end;
 
 procedure TPatternLayout.ParsePattern;
@@ -230,7 +245,12 @@ begin
         ptLevel:
           builder.AppendFormat(part, [event.LoggerLevel.Name]);
         ptThread:
-          builder.AppendFormat(part, [event.ThreadID]);
+          begin
+            if MainThreadID = event.ThreadID then
+              builder.AppendFormat(part, ['main'])
+            else
+              builder.AppendFormat(part, [IntToStr(event.ThreadID)]);
+          end;
         ptLogger:
           builder.AppendFormat(part, [event.LoggerName]);
         ptNewLine:
@@ -271,8 +291,10 @@ begin
   if CompareText(fPattern, Value) <> 0 then
   begin
     fPattern := Value;
-    ParsePattern();
+    ParsePattern;
   end;
 end;
+
+{$ENDREGION}
 
 end.

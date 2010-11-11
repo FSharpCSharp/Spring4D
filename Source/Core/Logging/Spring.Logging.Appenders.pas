@@ -29,22 +29,25 @@ interface
 uses
   Classes,
   SysUtils,
+  Windows,
   Spring,
-  windows,
   Spring.Collections,
   Spring.Configuration,
   Spring.Logging.Core;
 
 type
-  TAppenderBase = class abstract(TInterfacedObject, IBulkAppender, IAppender, IConfigurable)
+  TAppenderBase = class abstract(TInterfacedObject, IBulkAppender, IAppender,
+    IConfigurable, ILoggerRepositoryInit)
   private
     fName: string;
-    fThreshold: TLevel;
+//    fThreshold: TLevel;
     fClosed: Boolean;
     fRecursiveGuard: Boolean;
     fLayout: ILayout;
+    fRepository: ILoggerRepository;
     function GetName: string;
-    procedure SetLayout(const Value: ILayout);
+    procedure SetName(const value: string);
+    procedure SetLayout(const value: ILayout);
   protected
     procedure Lock;
     procedure Unlock;
@@ -55,18 +58,21 @@ type
     function Format(const event: TLoggingEvent): string; virtual;
     function AcceptEvent(const event: TLoggingEvent): Boolean; virtual;
     function CanAppend: Boolean;
+    function RequireLayout: Boolean;
   protected
+    { ILoggerRepositoryInit }
+    procedure InitializeRepository(const repository: ILoggerRepository);
     { IConfigurable }
-    procedure Configure(const configuration: IConfigurationNode);
+    procedure Configure(const configuration: IConfigurationNode); virtual;
   public
-    constructor Create(const name: string);
+    constructor Create;
     destructor Destroy; override;
     { IBulkAppender }
-    procedure Append(const events: ICollection<TLoggingEvent>); overload; virtual;
+    procedure Append(const events: IEnumerable<TLoggingEvent>); overload; virtual;
     { IAppender }
     procedure Close;
     procedure Append(const event: TLoggingEvent); overload;
-    property Name: string read GetName;
+    property Name: string read GetName write SetName;
     property Layout: ILayout read fLayout write SetLayout;
   end;
 
@@ -112,12 +118,6 @@ begin
   MonitorEnter(Self);
 end;
 
-procedure TAppenderBase.SetLayout(const Value: ILayout);
-begin
-  if fLayout <> Value then
-    fLayout := Value;
-end;
-
 procedure TAppenderBase.Unlock;
 begin
   MonitorExit(Self);
@@ -138,8 +138,23 @@ begin
 end;
 
 procedure TAppenderBase.Configure(const configuration: IConfigurationNode);
+var
+  node: IConfigurationNode;
+  layoutType: string;
 begin
   fName := configuration.Attributes['name'];
+  if RequireLayout then
+  begin
+    node := configuration.FindNode('layout');
+    if node = nil then
+    begin
+      // TODO: Handle internal exception.
+      Exit;
+    end;
+    layoutType := node.Attributes['type'];
+    fLayout := fRepository.CreateLayout(layoutType);
+    TryConfigure(fLayout, node);
+  end;
 end;
 
 function TAppenderBase.AcceptEvent(const event: TLoggingEvent): Boolean;
@@ -168,7 +183,7 @@ begin
   end;
 end;
 
-procedure TAppenderBase.Append(const events: ICollection<TLoggingEvent>);
+procedure TAppenderBase.Append(const events: IEnumerable<TLoggingEvent>);
 var
   event: TLoggingEvent;
 begin
@@ -180,7 +195,6 @@ end;
 
 procedure TAppenderBase.DoAppend(const event: TLoggingEvent);
 begin
-
 end;
 
 procedure TAppenderBase.DoClose;
@@ -200,13 +214,35 @@ end;
 
 procedure TAppenderBase.CheckLayout;
 begin
-  if Layout = nil then
+  if RequireLayout and (Layout = nil) then
     raise ELoggingException.CreateFMT('Appender[%s] needs a layout', [Self.ClassName]);
+end;
+
+function TAppenderBase.RequireLayout: Boolean;
+begin
+  Result := True;
 end;
 
 function TAppenderBase.GetName: string;
 begin
   Result := fName;
+end;
+
+procedure TAppenderBase.InitializeRepository(
+  const repository: ILoggerRepository);
+begin
+  fRepository := repository;
+end;
+
+procedure TAppenderBase.SetName(const value: string);
+begin
+  fName := name;
+end;
+
+procedure TAppenderBase.SetLayout(const value: ILayout);
+begin
+  if fLayout <> value then
+    fLayout := value;
 end;
 
 {$ENDREGION}

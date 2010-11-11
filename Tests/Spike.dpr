@@ -28,48 +28,26 @@
 program Spike;
 
 {$APPTYPE CONSOLE}
+{$STRONGLINKTYPES ON}
 
 uses
   Classes,
   SysUtils,
   Rtti,
   Spring,
-  Spring.Utils,
   Spring.Collections,
-  Spring.Logging,
   Spring.Logging.Core,
-  Spring.Logging.Appenders,
-  Spring.Logging.Layouts;
-
-type
-  TStringAppender = class(TAppenderBase)
-  protected
-    procedure DoAppend(const event: TLoggingEvent); override;
-  end;
+  Spring.Logging,
+  StrUtils
+  ;
 
 var
   logger: ILogger;
-  Logs: string;
 
-{ TStringAppender }
-
-procedure TStringAppender.DoAppend(const event: TLoggingEvent);
-begin
-  Logs := Logs + event.Message + #13#10;
-end;
-
-var
-  S: string;
-  appender: TAppenderBase;
 begin
   try
-    { TODO -oUser -cConsole Main : Insert code here }
+    LoggingManager.Configure('logging.xml');
     logger := LoggingManager.GetLogger('Spring');
-    appender := TConsoleAppender.Create('s');
-    //appender := TOutputDebugStringAppender.Create('s');
-
-    appender.Layout := TPatternLayout.Create('%-20message  %-20date  %logger %appversion %newline');
-    (logger as IAppenderAttachable).AddAppender(appender as IAppender);
     logger.Debug('Debug');
     logger.Info('Info...');
     logger.Warn('WARN');
@@ -77,7 +55,6 @@ begin
     logger := LoggingManager.GetLogger('Spring.Base');
     logger.Debug('XX');
     logger.Info('YY');
-    Readln(s);
   except
     on E: Exception do
       Writeln(E.ClassName, ': ', E.Message);

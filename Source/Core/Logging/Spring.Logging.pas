@@ -85,8 +85,6 @@ uses
   Rtti,
   Spring.Configuration,
   Spring.Configuration.Xml,
-  Spring.Logging.Appenders,
-  Spring.Logging.Layouts,
   Spring.Logging.Repositories,
   Spring.Logging.ResourceStrings;
 

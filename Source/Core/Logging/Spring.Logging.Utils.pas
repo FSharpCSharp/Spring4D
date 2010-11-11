@@ -31,8 +31,6 @@ uses
   SysUtils,
   Generics.Collections,
   Spring,
-  Spring.Collections,
-  Spring.Logging,
   Spring.Logging.Core;
 
 type

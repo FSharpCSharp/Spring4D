@@ -32,8 +32,6 @@ uses
   Classes,
   Windows,
   SysUtils,
-  StrUtils,
-  Generics.Collections,
   Spring,
   Spring.Collections,
   Spring.Configuration;
@@ -83,8 +81,8 @@ type
     constructor Create(const levelValue: Integer; const levelName: string);
     function Equals(obj: TObject): Boolean; override;
     function ToString: string; override;
-    function IsGreaterThan(level: TLevel): Boolean; inline;
-    function IsGreaterThanOrEqualTo(level: TLevel): Boolean; inline;
+    function IsGreaterThan(level: TLevel): Boolean; // inline;
+    function IsGreaterThanOrEqualTo(level: TLevel): Boolean; // inline;
 //    property DisplayName: string read fDisplayName;
     property Name: string read fName;
     property Value: Integer read fValue;
@@ -171,16 +169,17 @@ type
     ['{76735B1E-5AF3-4DC3-A19C-A35FFC13DB55}']
     {$REGION 'Property Getters & Setters'}
       function GetName: string;
+      procedure SetName(const value: string);
     {$ENDREGION}
     procedure Close;
     procedure Append(const event: TLoggingEvent);
-    property Name: string read GetName;
+    property Name: string read GetName write SetName;
   end;
 
   ///	<summary>IBulkAppender</summary>
   IBulkAppender = interface(IAppender)
     ['{E5EADA47-4ED2-4097-8BCC-25B94716F1E3}']
-    procedure Append(const events: ICollection<TLoggingEvent>);
+    procedure Append(const events: IEnumerable<TLoggingEvent>);
   end;
 
   /// <summary>
@@ -189,14 +188,13 @@ type
   IAppenderAttachable = interface
     ['{25687F5E-642E-48D6-9DD9-C76C7443CE71}']
     {$REGION 'Property Getters & Setters'}
-      function GetAppenders: ICollection<IAppender>;
+      function GetAppenders: IEnumerableEx<IAppender>;
     {$ENDREGION}
     procedure AddAppender(const appender: IAppender);
+    procedure RemoveAppender(const appender: IAppender);
     procedure ClearAppenders;
-    function GetAppender(const name: string): IAppender;
-    function RemoveAppender(const name: string): IAppender; overload;
-    function RemoveAppender(const appender: IAppender): IAppender; overload;
-    property Appenders: ICollection<IAppender> read GetAppenders;
+    function FindAppender(const name: string): IAppender;
+    property Appenders: IEnumerableEx<IAppender> read GetAppenders;
   end;
 
   {$REGION 'Documentation'}
@@ -242,6 +240,11 @@ type
     property Threshold: TLevel read GetThreshold write SetThreshold;
   end;
 
+  ILoggerRepositoryInit = interface
+    ['{1F851710-0FD3-49A8-B918-5C5BBA160131}']
+    procedure InitializeRepository(const repository: ILoggerRepository);
+  end;
+
   /// <summary>
   /// Represents an abstract class of a logger.
   /// </summary>
@@ -249,11 +252,11 @@ type
   private
     fName: string;
     function GetName: string;
-    function GetIsDebugEnabled: Boolean; inline;
-    function GetIsInfoEnabled: Boolean; inline;
-    function GetIsWarnEnabled: Boolean; inline;
-    function GetIsErrorEnabled: Boolean; inline;
-    function GetIsFatalEnabled: Boolean; inline;
+    function GetIsDebugEnabled: Boolean; // inline;
+    function GetIsInfoEnabled: Boolean; // inline;
+    function GetIsWarnEnabled: Boolean; // inline;
+    function GetIsErrorEnabled: Boolean; // inline;
+    function GetIsFatalEnabled: Boolean; // inline;
   protected
     fLevel: TLevel;
     function GetLevel: TLevel; virtual;
@@ -306,7 +309,7 @@ type
   protected
     fAppenderAttachableLock: IReadWriteSync;
     function GetAppenderAttachable: IAppenderAttachable;
-    function GetAppenders: ICollection<IAppender>;
+    function GetAppenders: IEnumerableEx<IAppender>;
     procedure CallAppenders(const event: TLoggingEvent); virtual;
   protected
     function IsEnabledFor(const level: TLevel): Boolean; override;
@@ -319,11 +322,10 @@ type
     procedure CloseNestedAppenders;
     { IAppenderAttachable }
     procedure AddAppender(const appender: IAppender);
+    procedure RemoveAppender(const appender: IAppender);
     procedure ClearAppenders;
-    function GetAppender(const name: string): IAppender;
-    function RemoveAppender(const name: string): IAppender; overload;
-    function RemoveAppender(const appender: IAppender): IAppender; overload;
-    property Appenders: ICollection<IAppender> read GetAppenders;
+    function FindAppender(const name: string): IAppender;
+    property Appenders: IEnumerableEx<IAppender> read GetAppenders;
     { Properties }
     function GetEffectiveLevel: TLevel; virtual;
     property Additivity: Boolean read GetAdditivity write SetAdditivity;
@@ -334,131 +336,15 @@ type
   TAppenderAttachable = class(TInterfacedObject, IAppenderAttachable)
   private
     fList: ICollection<IAppender>;
-    function GetAppenders: ICollection<IAppender>;
+    function GetAppenders: IEnumerableEx<IAppender>;
   public
     constructor Create;
     procedure AddAppender(const appender: IAppender);
+    procedure RemoveAppender(const appender: IAppender);
     procedure ClearAppenders;
-    function GetAppender(const name: string): IAppender;
-    function RemoveAppender(const name: string): IAppender; overload;
-    function RemoveAppender(const appender: IAppender): IAppender; overload;
-    property Appenders: ICollection<IAppender> read GetAppenders;
+    function FindAppender(const name: string): IAppender;
+    property Appenders: IEnumerableEx<IAppender> read GetAppenders;
   end;
-
-  {TODO: IInitializable}
-
-  /// <summary>
-  /// Activate the options that were previously set with calls to properties.
-  /// </summary>
-  IOptionHandler = interface
-    ['{7E08147F-64F8-4FAC-926C-77A2357DE5E7}']
-    procedure ActivateOptions;
-  end;
-
-  {$REGION 'Unfiled'}
-
-  (*
-
-//      function GetConfigured: Boolean;
-//      function GetProperties: TStrings;
-//      procedure SetConfigured(const value: Boolean);
-//    procedure Log(const event: TLoggingEvent);
-//    procedure ResetConfiguration;
-//    procedure Shutdown;
-//    property Configured: Boolean read GetConfigured write SetConfigured;
-//    property Properties: TStrings read GetProperties;
-
-  // NEED REVISE
-  ILoggerRepositoryListener = interface
-    procedure OnConfigurationChanged;
-    procedure OnConfigurationReset;
-    procedure OnShutdown;
-  end;
-  *)
-
-  (*
-  TErrorCode = (
-		/// <summary>
-		/// A general error
-		/// </summary>
-		GenericFailure,
-
-		/// <summary>
-		/// Error while writing output
-		/// </summary>
-		WriteFailure,
-
-		/// <summary>
-		/// Failed to flush file
-		/// </summary>
-		FlushFailure,
-
-		/// <summary>
-		/// Failed to close file
-		/// </summary>
-		CloseFailure,
-
-		/// <summary>
-		/// Unable to open output file
-		/// </summary>
-		FileOpenFailure,
-
-		/// <summary>
-		/// No layout specified
-		/// </summary>
-		MissingLayout,
-
-		/// <summary>
-		/// Failed to parse address
-		/// </summary>
-		AddressParseFailure
-  );
-
-  /// <summary>
-  /// IErrorHandler
-  /// </summary>
-  IErrorHandler = interface
-    ['{AD75257B-8091-4A1B-A17D-618CD22B366B}']
-    procedure Error(const msg: string); overload;
-    procedure Error(const msg: string; e: Exception); overload;
-    procedure Error(const msg: string; e: Exception; errorCode: TErrorCode); overload;
-  end;
-
-  /// <summary>
-  /// TFilterDecision
-  /// </summary>
-  TFilterDecision = (
-		/// <summary>
-		/// The log event must be dropped immediately without
-		/// consulting with the remaining filters, if any, in the chain.
-		/// </summary>
-    Deny,       // -1
-		/// <summary>
-		/// This filter is neutral with respect to the log event.
-		/// The remaining filters, if any, should be consulted for a final decision.
-		/// </summary>
-    Natural,
-		/// <summary>
-		/// The log event must be logged immediately without
-		/// consulting with the remaining filters, if any, in the chain.
-		/// </summary>
-    Accept
-  );
-
-  /// <summary>
-  /// Implement this interface to provide customized logging event filtering
-  /// </summary>
-  IFilter = interface(IOptionHandler)
-    ['{243EA758-2948-476F-A089-C832798A4948}']
-    function GetNext: IFilter;
-    procedure SetNext(const value: IFilter);
-    function Decide(const event: TLoggingEvent): TFilterDecision;
-    property Next: IFilter read GetNext write SetNext;
-  end;
-
-  //*)
-
-  {$ENDREGION}
   
   ELoggingException = class(Exception);
 
@@ -466,10 +352,6 @@ type
 implementation
 
 uses
-  Spring.ResourceStrings,
-  Spring.Logging.Utils,
-  Spring.Logging.Appenders,
-  Spring.Logging.Repositories,
   Spring.Logging.ResourceStrings;
 
 
@@ -771,7 +653,7 @@ end;
 procedure TLogger.CallAppenders(const event: TLoggingEvent);
 var
   logger: TLogger;
-  collection: ICollection<IAppender>;
+  collection: IEnumerableEx<IAppender>;
   appender: IAppender;
 begin
   logger := Self;
@@ -797,7 +679,7 @@ end;
 
 procedure TLogger.CloseNestedAppenders;
 var
-  appenders: ICollection<IAppender>;
+  appenders: IEnumerableEx<IAppender>;
   appender: IAppender;
 begin
   fAppenderAttachableLock.BeginWrite;
@@ -821,7 +703,6 @@ end;
 // TODO: Considering IInitializable
 procedure TLogger.Configure(const configuration: IConfigurationNode);
 var
-  loggerName: string;
   additivity: string;
   loggerLevel: string;
   nodes: IConfigurationNodes;
@@ -876,6 +757,17 @@ begin
   end;
 end;
 
+procedure TLogger.RemoveAppender(const appender: IAppender);
+begin
+  TArgument.CheckNotNull(appender, 'appender');
+  fAppenderAttachableLock.BeginWrite;
+  try
+    GetAppenderAttachable.RemoveAppender(appender);
+  finally
+    fAppenderAttachableLock.EndWrite;
+  end;
+end;
+
 procedure TLogger.ClearAppenders;
 begin
   fAppenderAttachableLock.BeginWrite;
@@ -886,44 +778,23 @@ begin
   end;
 end;
 
-function TLogger.GetAppenders: ICollection<IAppender>;
+function TLogger.FindAppender(const name: string): IAppender;
+begin
+  fAppenderAttachableLock.BeginRead;
+  try
+    Result := GetAppenderAttachable.FindAppender(name);
+  finally
+    fAppenderAttachableLock.EndRead;
+  end;
+end;
+
+function TLogger.GetAppenders: IEnumerableEx<IAppender>;
 begin
   fAppenderAttachableLock.BeginRead;
   try
     Result := GetAppenderAttachable.GetAppenders;
   finally
     fAppenderAttachableLock.EndRead;
-  end;
-end;
-
-function TLogger.GetAppender(const name: string): IAppender;
-begin
-  fAppenderAttachableLock.BeginRead;
-  try
-    Result := GetAppenderAttachable.GetAppender(name);
-  finally
-    fAppenderAttachableLock.EndRead;
-  end;
-end;
-
-function TLogger.RemoveAppender(const name: string): IAppender;
-begin
-  fAppenderAttachableLock.BeginWrite;
-  try
-    Result := GetAppenderAttachable.RemoveAppender(name);
-  finally
-    fAppenderAttachableLock.EndWrite;
-  end;
-end;
-
-function TLogger.RemoveAppender(const appender: IAppender): IAppender;
-begin
-  TArgument.CheckNotNull(appender, 'appender');
-  fAppenderAttachableLock.BeginWrite;
-  try
-    Result := GetAppenderAttachable.RemoveAppender(appender);
-  finally
-    fAppenderAttachableLock.EndWrite;
   end;
 end;
 
@@ -986,7 +857,18 @@ begin
   fList.Add(appender);
 end;
 
-function TAppenderAttachable.GetAppender(const name: string): IAppender;
+procedure TAppenderAttachable.RemoveAppender(const appender: IAppender);
+begin
+  TArgument.CheckNotNull(appender, 'appender');
+  fList.Remove(appender);
+end;
+
+procedure TAppenderAttachable.ClearAppenders;
+begin
+  fList.Clear;
+end;
+
+function TAppenderAttachable.FindAppender(const name: string): IAppender;
 var
   appender: IAppender;
 begin
@@ -1001,28 +883,9 @@ begin
   end;
 end;
 
-function TAppenderAttachable.GetAppenders: ICollection<IAppender>;
+function TAppenderAttachable.GetAppenders: IEnumerableEx<IAppender>;
 begin
   Result := fList;
-end;
-
-procedure TAppenderAttachable.ClearAppenders;
-begin
-  fList.Clear;
-end;
-
-function TAppenderAttachable.RemoveAppender(const name: string): IAppender;
-begin
-  Result := GetAppender(name);
-  Result := RemoveAppender(Result);
-end;
-
-function TAppenderAttachable.RemoveAppender(
-  const appender: IAppender): IAppender;
-begin
-  TArgument.CheckNotNull(appender, 'appender');
-  Result := appender;
-  fList.Remove(Result);
 end;
 
 {$ENDREGION}

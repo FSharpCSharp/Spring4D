@@ -31,7 +31,6 @@ uses
   SysUtils,
   XmlIntf,
   SyncObjs,
-  Generics.Collections,
   Spring,
   Spring.Collections,
   Spring.Configuration,
@@ -107,6 +106,8 @@ uses
   StrUtils,
   Rtti,
   Spring.Reflection,
+  Spring.Logging.Appenders,
+  Spring.Logging.Layouts,
   Spring.Helpers;
 
 function LastIndexOf(const value: Char; const s: string): Integer; inline;
@@ -405,6 +406,7 @@ begin
       Continue;
     end;
     GetAppenders.Add(appender);
+    (appender as ILoggerRepositoryInit).InitializeRepository(Self);
     TryConfigure(appender, node);
   end;
 
@@ -454,3 +456,4 @@ end;
 {$ENDREGION}
 
 end.
+
