@@ -30,6 +30,7 @@ uses
   Classes,
   SysUtils,
   Spring,
+  windows,
   Spring.Collections,
   Spring.Logging.Core;
 
@@ -40,13 +41,17 @@ type
     fThreshold: TLevel;
     fClosed: Boolean;
     fRecursiveGuard: Boolean;
+    fLayout: ILayout;
     function GetName: string;
+    procedure SetLayout(const Value: ILayout);
   protected
     procedure Lock;
     procedure Unlock;
   protected
     procedure DoAppend(const event: TLoggingEvent); virtual;
     procedure DoClose; virtual;
+    procedure CheckLayout;
+    function Format(const event: TLoggingEvent): string; virtual;
     function AcceptEvent(const event: TLoggingEvent): Boolean; virtual;
     function CanAppend: Boolean;
   public
@@ -58,11 +63,18 @@ type
     procedure Close;
     procedure Append(const event: TLoggingEvent); overload;
     property Name: string read GetName;
+    property Layout: ILayout read fLayout write SetLayout;
   end;
 
-//  TConsoleAppender = class(TAppenderBase)
-//
-//  end;
+  TConsoleAppender = class(TAppenderBase)
+  protected
+    procedure DoAppend(const event: TLoggingEvent); override;
+  end;
+
+  TOutputDebugStringAppender = class(TAppenderBase)
+  protected
+    procedure DoAppend(const event: TLoggingEvent); override;
+  end;
 
 //  TFileAppender = class(TTextWriterAppender)
 //
@@ -94,6 +106,12 @@ end;
 procedure TAppenderBase.Lock;
 begin
   MonitorEnter(Self);
+end;
+
+procedure TAppenderBase.SetLayout(const Value: ILayout);
+begin
+  if fLayout <> Value then
+    fLayout := Value;
 end;
 
 procedure TAppenderBase.Unlock;
@@ -160,9 +178,21 @@ procedure TAppenderBase.DoClose;
 begin
 end;
 
+function TAppenderBase.Format(const event: TLoggingEvent): string;
+begin
+  CheckLayout;
+  result:= Layout.Format(event);
+end;
+
 function TAppenderBase.CanAppend: Boolean;
 begin
   Result := True;
+end;
+
+procedure TAppenderBase.CheckLayout;
+begin
+  if Layout = nil then
+    raise ELoggingException.CreateFMT('Appender[%s] needs a layout', [Self.ClassName]);
 end;
 
 function TAppenderBase.GetName: string;
@@ -171,5 +201,22 @@ begin
 end;
 
 {$ENDREGION}
+
+{ TConsoleAppender }
+
+procedure TConsoleAppender.DoAppend(const event: TLoggingEvent);
+begin
+  Write(Format(Event));
+end;
+
+{ TOutputDebugStringAppend }
+
+procedure TOutputDebugStringAppender.DoAppend(const event: TLoggingEvent);
+var
+  outString: string;
+begin
+  outString := Format(event);
+  Windows.OutputDebugString(PWidechar(outString));
+end;
 
 end.

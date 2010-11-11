@@ -38,7 +38,8 @@ uses
   Spring.Collections,
   Spring.Logging,
   Spring.Logging.Core,
-  Spring.Logging.Appenders;
+  Spring.Logging.Appenders,
+  Spring.Logging.Layouts;
 
 type
   TStringAppender = class(TAppenderBase)
@@ -57,11 +58,18 @@ begin
   Logs := Logs + event.Message + #13#10;
 end;
 
+var
+  S: string;
+  appender: TAppenderBase;
 begin
   try
     { TODO -oUser -cConsole Main : Insert code here }
     logger := LoggingManager.GetLogger('Spring');
-    (logger as IAppenderAttachable).AddAppender(TStringAppender.Create('s'));
+    appender := TConsoleAppender.Create('s');
+    appender := TOutputDebugStringAppender.Create('s');
+
+    appender.Layout := TPatternLayout.Create('%message  %5date %newline %appversion');
+    (logger as IAppenderAttachable).AddAppender(appender as IAppender);
     logger.Debug('Debug');
     logger.Info('Info...');
     logger.Warn('WARN');
@@ -69,6 +77,7 @@ begin
     logger := LoggingManager.GetLogger('Spring.Base');
     logger.Debug('XX');
     logger.Info('YY');
+    Readln(s);
   except
     on E: Exception do
       Writeln(E.ClassName, ': ', E.Message);
