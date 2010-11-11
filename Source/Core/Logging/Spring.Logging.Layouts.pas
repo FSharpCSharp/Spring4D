@@ -32,7 +32,8 @@ uses
   Generics.Collections,
   Spring,
   Spring.Utils,
-  Spring.Logging.Core;
+  Spring.Logging.Core,
+  Spring.Logging.Utils;
 
 type
   TLayoutBase = class abstract(TInterfacedObject, IOptionHandler, ILayout)
@@ -71,35 +72,24 @@ type
   ///   %filename         File name of calling unit < unsupported >
   ///   %Line             Linenumber of calling method < unsupported >
   ///   %ndc              NDC  eg : 'messageA|B|C|D|E|F' < unsupported >
+  ///
   /// </remarks>
-  TPatternType = (ptCustomer, ptText, ptDate,
-    ptThread, ptLevel, ptLogger, ptMessage,
-    ptNewLine, ptUser, ptComputer, ptPercent, ptApplicationVersion);
-
-
-  TPatternConvertor = record
-    ConvertorString: String;
-    PatternType: TPatternType;
-  end;
-
-  TPatternConvertors = TDictionary<string, TPatternConvertor>;
 
   TPatternLayout = class(TLayoutBase)
   private
     Const DefaultLayoutPattern = '';
   private
+    fParser: TPatternParser;
     fPattern: string;
     fPatternParts : TStrings;
-    fPatternConvertors: TPatternConvertors;
     fDateFormatPattern: string;
-    function GetConvertor(const keyword: string; var convertor: TPatternConvertor): Boolean;
-    procedure AddConvertor(const keyword: string; const convertorString: string; const patternType: TPatternType);
     procedure SetPattern(const Value: string);
     procedure ParsePattern;
-    procedure InitializeKeyWords(const keyWords: TPatternConvertors);
+    procedure InitializeKeyWords;
   protected
     procedure DoParsePattern; virtual;
     procedure AddPatternPart(const patternPart: string; patternType: TPatternType);
+    procedure AddKeyPattern(const keyword, patternConvertor: string; const patternType: TPatternType);
     procedure ClearPatternParts;
   public
     function Format(const event: TLoggingEvent): string; override;
@@ -139,14 +129,14 @@ end;
 { TPatternLayout }
 
 
-procedure TPatternLayout.AddConvertor(const keyword, convertorString: string;
+
+procedure TPatternLayout.AddKeyPattern(const keyword, patternConvertor: string;
   const patternType: TPatternType);
-var
-  patternConvertor: TPatternConvertor;
 begin
-  patternConvertor.ConvertorString := convertorString;
-  patternConvertor.PatternType:= patternType;
-  fPatternConvertors.Add(keyword, patternConvertor);
+  fParser.AddKeyPatternTokens(
+      keyword,
+      patternConvertor,
+      patternType);
 end;
 
 procedure TPatternLayout.AddPatternPart(const patternPart: string;
@@ -164,8 +154,8 @@ constructor TPatternLayout.Create(const pattern: string);
 begin
   inherited Create;
   fPatternParts:= TStringList.Create;
-  fPatternConvertors := TPatternConvertors.Create;
-  InitializeKeyWords(fPatternConvertors);
+  fParser := TPatternParser.Create('');
+  InitializeKeyWords;
   AddPatternPart('%s', ptMessage);
   SetPattern(pattern);
 end;
@@ -173,7 +163,8 @@ end;
 destructor TPatternLayout.Destroy;
 begin
   FreeAndNil(fPatternParts);
-  FreeAndNil(fPatternConvertors);
+  FreeAndNil(fParser);
+
   inherited;
 end;
 
@@ -194,69 +185,29 @@ end;
 
 procedure TPatternLayout.DoParsePattern;
 var
-  parser: TParser;
-  stream: TStringStream;
-  patternPart: string;
-  tokenString: String;
-  patternConvertor: TPatternConvertor;
+  tokenPattern: TPatternToken;
+  formatString: string;
 begin
-  stream:= TStringStream.Create;
-  try
-    stream.WriteString(Pattern);
-    stream.Position := 0;
-    parser := TParser.Create(stream);
-    try
-      Repeat
-        patternConvertor.ConvertorString := '';
-        patternConvertor.PatternType := ptText;
-        case parser.Token of
-          ' ': patternPart := ' ' ;
-          '%':
-          begin
-            patternPart := '%';
-            if parser.NextToken <> toEof then
-            begin
-              case parser.token of
-                '%': patternPart := '%';
-                Classes.toInteger, classes.toFloat:
-                Begin
-                  patternPart := patternPart + parser.TokenString;
-                  if parser.NextToken <> toEof then
-                  begin
-                    tokenString:= parser.TokenString;
-                    if GetConvertor(tokenString, patternConvertor) then
-                      patternPart := patternPart + patternConvertor.ConvertorString
-                    else
-                      patternPart := patternPart + tokenString;
-                  end
-                End;
-                toSymbol:
-                begin
-                  tokenString:= parser.TokenString;
-                  if GetConvertor(tokenString, patternConvertor) then
-                    patternPart := patternPart + patternConvertor.ConvertorString
-                  else
-                    patternPart := patternPart + tokenString;
-                end;
-              else
-                tokenString := parser.TokenString;
-                patternPart := patternPart + tokenString;;
-              end;
-            end;
-          end;
-          else
-            patternPart := parser.TokenString;
-          end;
-          AddPatternPart(patternPart, patternConvertor.PatternType);
-      until parser.NextToken = toEof;
-    finally
-      parser.Free;
+  fParser.InitializePatternString(fPattern);
+  repeat
+    case fParser.Token of
+      tpFormat:
+      begin
+        formatString := fParser.TokenString;
+        if fParser.NextToken = tpKeyWord then
+        begin
+          tokenPattern := fParser.TokenPattern;
+          AddPatternPart(formatString + tokenPattern.Convertor, tokenPattern.PatternType);
+        end
+        else
+          AddPatternPart(formatString + fParser.TokenString, ptText);
+      end;
+      tpPercent: AddPatternPart('%', ptPercent);
+    else
+      AddPatternPart(fParser.TokenString, ptText);
     end;
-  finally
-    stream.free;
-  end;
+  until fParser.NextToken = tpEof ;
 end;
-
 
 function TPatternLayout.Format(const event: TLoggingEvent): string;
 var
@@ -264,8 +215,6 @@ var
   part: String;
   builder: TStringBuilder;
 begin
-  Result := event.Message;
-  Exit;
   builder := TStringBuilder.Create;
   try
     for index := 0 to fPatternParts.Count -1 do
@@ -277,7 +226,7 @@ begin
         ptMessage:
           builder.AppendFormat(part, [event.Message]);
         ptDate:
-          builder.Append(FormatDateTime(DateFormatPattern, event.TimeStamp));
+          builder.AppendFormat(part, FormatDateTime(DateFormatPattern, event.TimeStamp));
         ptLevel:
           builder.AppendFormat(part, [event.LoggerLevel.Name]);
         ptThread:
@@ -303,24 +252,18 @@ begin
   end;
 end;
 
-function TPatternLayout.GetConvertor(const keyword: string;
-  var convertor: TPatternConvertor): Boolean;
+procedure TPatternLayout.InitializeKeyWords;
 begin
-  result := fPatternConvertors.TryGetValue(keyword, convertor);
-end;
-
-procedure TPatternLayout.InitializeKeyWords(const keyWords: TPatternConvertors);
-begin
-  AddConvertor('%%',          's', ptPercent);
-  AddConvertor('date',        's', ptDate);
-  AddConvertor('thread',      's', ptThread);
-  AddConvertor('level',       's', ptLevel);
-  AddConvertor('logger',      's', ptLogger);
-  AddConvertor('message',     's', ptMessage);
-  AddConvertor('newline',     's', ptNewLine);
-  AddConvertor('user',        's', ptUser);
-  AddConvertor('computer',    's', ptComputer);
-  AddConvertor('appversion',  's', ptApplicationVersion);
+  AddKeyPattern('%%',          's', ptPercent);
+  AddKeyPattern('date',        's', ptDate);
+  AddKeyPattern('thread',      's', ptThread);
+  AddKeyPattern('level',       's', ptLevel);
+  AddKeyPattern('logger',      's', ptLogger);
+  AddKeyPattern('message',     's', ptMessage);
+  AddKeyPattern('newline',     's', ptNewLine);
+  AddKeyPattern('user',        's', ptUser);
+  AddKeyPattern('computer',    's', ptComputer);
+  AddKeyPattern('appversion',  's', ptApplicationVersion);
 end;
 
 procedure TPatternLayout.SetPattern(const Value: string);
