@@ -56,7 +56,8 @@ package Spring.Base;
 requires
   rtl,
   vcl,
-  dbrtl;
+  dbrtl,
+  xmlrtl;
 
 contains
   Spring.DesignPatterns in '..\Source\Base\Spring.DesignPatterns.pas',
@@ -79,7 +80,9 @@ contains
   Spring in '..\Source\Base\Spring.pas',
   Spring.ValueConverters in '..\Source\Base\Spring.ValueConverters.pas',
   Spring.Utils.Win32API in '..\Source\Base\Utils\Spring.Utils.Win32API.pas',
-  Spring.Configuration in '..\Source\Base\Configuration\Spring.Configuration.pas';
+  Spring.Configuration in '..\Source\Base\Configuration\Spring.Configuration.pas',
+  Spring.Configuration.Xml in '..\Source\Base\Configuration\Spring.Configuration.Xml.pas';
 
 end.
+
 

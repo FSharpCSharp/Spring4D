@@ -32,10 +32,11 @@ uses
   Spring,
   windows,
   Spring.Collections,
+  Spring.Configuration,
   Spring.Logging.Core;
 
 type
-  TAppenderBase = class abstract(TInterfacedObject, IBulkAppender, IAppender)
+  TAppenderBase = class abstract(TInterfacedObject, IBulkAppender, IAppender, IConfigurable)
   private
     fName: string;
     fThreshold: TLevel;
@@ -54,6 +55,9 @@ type
     function Format(const event: TLoggingEvent): string; virtual;
     function AcceptEvent(const event: TLoggingEvent): Boolean; virtual;
     function CanAppend: Boolean;
+  protected
+    { IConfigurable }
+    procedure Configure(const configuration: IConfigurationNode);
   public
     constructor Create(const name: string);
     destructor Destroy; override;
@@ -131,6 +135,11 @@ begin
   finally
     Unlock;
   end;
+end;
+
+procedure TAppenderBase.Configure(const configuration: IConfigurationNode);
+begin
+  fName := configuration.Attributes['name'];
 end;
 
 function TAppenderBase.AcceptEvent(const event: TLoggingEvent): Boolean;

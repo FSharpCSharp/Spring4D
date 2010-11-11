@@ -97,35 +97,21 @@ type
     class property Off: TLevel read fOff;
   end;
 
-
-  {$REGION 'Documentation'}
-  ///	<summary>The internal representation of logging events.</summary>
-  ///	<remarks>When an affirmative decision is made to log then a LoggingEvent
-  ///	instance is created. This instance is passed around to the different
-  ///	logging components.</remarks>
-  {$ENDREGION}
-  TLoggingEvent = record
-    LoggerName: string;
-    LoggerLevel: TLevel;  // string
-    TimeStamp: TDateTime;
-    ThreadID: TThreadID;
-    Message: string;
-    ExceptionString: string;
-  end;
-
   /// <summary>
   /// The ILogger interface is used by application to log messages.
   /// </summary>
   ILogger = interface
     ['{803DC36C-03FE-4C5C-B8BE-9CB79076DCB2}']
-  {$REGION 'Property Getters & Setters'}
-    function GetName: string;
-    function GetIsDebugEnabled: Boolean;
-    function GetIsInfoEnabled: Boolean;
-    function GetIsWarnEnabled: Boolean;
-    function GetIsErrorEnabled: Boolean;
-    function GetIsFatalEnabled: Boolean;
-  {$ENDREGION}
+    {$REGION 'Property Getters & Setters'}
+      function GetName: string;
+      function GetLevel: TLevel;
+      function GetIsDebugEnabled: Boolean;
+      function GetIsInfoEnabled: Boolean;
+      function GetIsWarnEnabled: Boolean;
+      function GetIsErrorEnabled: Boolean;
+      function GetIsFatalEnabled: Boolean;
+      procedure SetLevel(const value: TLevel);
+    {$ENDREGION}
     procedure Debug(const msg: string); overload;
     procedure Debug(const msg: string; e: Exception); overload;
     procedure DebugFormat(const format: string; const args: array of const);
@@ -142,6 +128,7 @@ type
     procedure Fatal(const msg: string; e: Exception); overload;
     procedure FatalFormat(const format: string; const args: array of const);
     property Name: string read GetName;
+    property Level: TLevel read GetLevel write SetLevel;
     property IsDebugEnabled: Boolean read GetIsDebugEnabled;
     property IsInfoEnabled: Boolean read GetIsInfoEnabled;
     property IsWarnEnabled: Boolean read GetIsWarnEnabled;
@@ -153,13 +140,28 @@ type
     ['{4A229971-00AB-47E8-9BD4-4F01C6E47017}']
     {$REGION 'Property Getters & Setters'}
       function GetParent: IHierarchyLogger;
-      function GetLevel: TLevel;
+      function GetAdditivity: Boolean;
       procedure SetParent(const value: IHierarchyLogger);
+      procedure SetAdditivity(const value: Boolean);
     {$ENDREGION}
+    function GetEffectiveLevel: TLevel;
     property Parent: IHierarchyLogger read GetParent;
-    property Level: TLevel read GetLevel;
-    // Additivity
-    // function GetEffectiveLevel: TLevel;
+    property Additivity: Boolean read GetAdditivity write SetAdditivity;
+  end;
+
+  {$REGION 'Documentation'}
+  ///	<summary>The internal representation of logging events.</summary>
+  ///	<remarks>When an affirmative decision is made to log then a LoggingEvent
+  ///	instance is created. This instance is passed around to the different
+  ///	logging components.</remarks>
+  {$ENDREGION}
+  TLoggingEvent = record
+    LoggerName: string;
+    LoggerLevel: TLevel;
+    TimeStamp: TDateTime;
+    ThreadID: TThreadID;
+    Message: string;
+    ExceptionString: string;
   end;
 
   /// <summary>
@@ -253,6 +255,10 @@ type
     function GetIsErrorEnabled: Boolean; inline;
     function GetIsFatalEnabled: Boolean; inline;
   protected
+    fLevel: TLevel;
+    function GetLevel: TLevel; virtual;
+    procedure SetLevel(const value: TLevel); virtual;
+  protected
     procedure Log(const level: TLevel; const msg: string; e: Exception); overload; virtual;
     procedure DoLog(const event: TLoggingEvent); overload; virtual;
     procedure HandleException(e: Exception); virtual;
@@ -275,6 +281,7 @@ type
     procedure Fatal(const msg: string; e: Exception); overload;
     procedure FatalFormat(const format: string; const args: array of const);
     property Name: string read GetName;
+    property Level: TLevel read GetLevel write SetLevel;
     property IsDebugEnabled: Boolean read GetIsDebugEnabled;
     property IsInfoEnabled: Boolean read GetIsInfoEnabled;
     property IsWarnEnabled: Boolean read GetIsWarnEnabled;
@@ -286,23 +293,16 @@ type
   /// Represents a logger which supports hierarchy and appenders.
   /// </summary>
   TLogger = class(TLoggerBase, IHierarchyLogger, IAppenderAttachable, IConfigurable)
-  private
-    type
-      TLoggerWalkProc = reference to function(logger: TLogger): Boolean;
   strict private
     fRepository: ILoggerRepository;
     fParent: IHierarchyLogger;
     fAdditivity: Boolean;
-    fLevel: TLevel;
     fAppenderAttachable: IAppenderAttachable;
   protected
     function GetAdditivity: Boolean; virtual;
-    function GetEffectiveLevel: TLevel; virtual;
-    function GetLevel: TLevel; virtual;
     function GetParent: IHierarchyLogger; virtual;
     procedure SetAdditivity(const value: Boolean); virtual;
     procedure SetParent(const value: IHierarchyLogger); virtual;
-    procedure SetLevel(const value: TLevel); virtual;
   protected
     fAppenderAttachableLock: IReadWriteSync;
     function GetAppenderAttachable: IAppenderAttachable;
@@ -325,8 +325,7 @@ type
     function RemoveAppender(const appender: IAppender): IAppender; overload;
     property Appenders: ICollection<IAppender> read GetAppenders;
     { Properties }
-    property Level: TLevel read GetLevel write SetLevel;
-    property EffectiveLevel: TLevel read GetEffectiveLevel;
+    function GetEffectiveLevel: TLevel; virtual;
     property Additivity: Boolean read GetAdditivity write SetAdditivity;
     property Parent: IHierarchyLogger read GetParent;
     property Repository: ILoggerRepository read fRepository;
@@ -715,6 +714,11 @@ begin
   Result := fName;
 end;
 
+function TLoggerBase.GetLevel: TLevel;
+begin
+  Result := fLevel;
+end;
+
 function TLoggerBase.GetIsDebugEnabled: Boolean;
 begin
   Result := IsEnabledFor(TLevel.Debug);
@@ -738,6 +742,11 @@ end;
 function TLoggerBase.GetIsFatalEnabled: Boolean;
 begin
   Result := IsEnabledFor(TLevel.Fatal);
+end;
+
+procedure TLoggerBase.SetLevel(const value: TLevel);
+begin
+  fLevel := value;
 end;
 
 {$ENDREGION}
@@ -821,18 +830,14 @@ var
   appender: IAppender;
 begin
   TArgument.CheckNotNull(configuration, 'configuration');
-  if configuration.TryGetAttribute('name', loggerName) then
-  begin
-    Self.fName := loggerName;
-  end;
-  if configuration.TryGetAttribute('additivity', additivity) then
-  begin
-    Self.additivity := StrToBoolDef(additivity, True);
-  end;
   node := configuration.FindNode('level');
   if (node <> nil) and node.TryGetAttribute('value', loggerLevel) then
   begin
     Self.Level := fRepository.FindLevel(loggerLevel);
+  end;
+  if configuration.TryGetAttribute('additivity', additivity) then
+  begin
+    Self.Additivity := StrToBoolDef(additivity, True);
   end;
   nodes := configuration.FindNodes('appender-ref');
   if not nodes.IsEmpty then
@@ -841,6 +846,11 @@ begin
     begin
       appenderName := node.Attributes['ref'];
       appender := fRepository.FindAppender(appenderName);
+      if appender = nil then
+      begin
+        // TODO: Log error message.
+        Continue;
+      end;
       AddAppender(appender);
     end;
   end;
@@ -922,11 +932,6 @@ begin
   Result := fAdditivity;
 end;
 
-function TLogger.GetLevel: TLevel;
-begin
-  Result := fLevel;
-end;
-
 function TLogger.GetParent: IHierarchyLogger;
 begin
   Result := fParent;
@@ -935,7 +940,7 @@ end;
 // TODO: Optimization (Returns false if this level is disabled globally)
 function TLogger.IsEnabledFor(const level: TLevel): Boolean;
 begin
-  Result := (level <> nil) and level.IsGreaterThanOrEqualTo(EffectiveLevel);
+  Result := (level <> nil) and level.IsGreaterThanOrEqualTo(GetEffectiveLevel);
 end;
 
 function TLogger.GetEffectiveLevel: TLevel;
@@ -954,19 +959,14 @@ begin
   end;
 end;
 
-procedure TLogger.SetAdditivity(const value: Boolean);
-begin
-  fAdditivity := value;
-end;
-
-procedure TLogger.SetLevel(const value: TLevel);
-begin
-  fLevel := value;
-end;
-
 procedure TLogger.SetParent(const value: IHierarchyLogger);
 begin
   fParent := value;
+end;
+
+procedure TLogger.SetAdditivity(const value: Boolean);
+begin
+  fAdditivity := value;
 end;
 
 {$ENDREGION}

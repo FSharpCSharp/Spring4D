@@ -264,6 +264,8 @@ var
   part: String;
   builder: TStringBuilder;
 begin
+  Result := event.Message;
+  Exit;
   builder := TStringBuilder.Create;
   try
     for index := 0 to fPatternParts.Count -1 do

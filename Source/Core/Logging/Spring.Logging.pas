@@ -32,8 +32,6 @@ uses
   Classes,
   SysUtils,
   TypInfo,
-  XMLIntf,
-  msxml,
   Spring,
   Spring.Collections,
   Spring.Logging.Core;
@@ -56,9 +54,7 @@ type
     class destructor Destroy;
     class function GetLoggerRepository: ILoggerRepository;
   public
-    procedure Configure(const fileName: string); overload;
-    procedure Configure(const node: IXmlNode); overload;
-//    class function Initialize(const repository: ILoggerRepository);
+    class procedure Configure(const fileName: string); overload;
     class function FindLogger(const name: string): ILogger;
     class procedure ResetConfiguration;
     class procedure Shutdown;
@@ -87,7 +83,8 @@ implementation
 
 uses
   Rtti,
-//  XMlDoc,
+  Spring.Configuration,
+  Spring.Configuration.Xml,
   Spring.Logging.Appenders,
   Spring.Logging.Layouts,
   Spring.Logging.Repositories,
@@ -117,18 +114,12 @@ begin
   FreeAndNil(fInstance);
 end;
 
-procedure TLoggingManager.Configure(const fileName: string);
-//var
-//  xml: IXMLDocument;
-//  xmlNode: IXMLNode;
+class procedure TLoggingManager.Configure(const fileName: string);
+var
+  configuration: IConfigurationNode;
 begin
-//  xml := LoadXMLDocument(fileName);
-//  xmlNode := xml.DocumentElement;
-end;
-
-procedure TLoggingManager.Configure(const node: IXmlNode);
-begin
-
+  configuration := TXmlConfiguration.Create(fileName);
+  GetLoggerRepository.Configure(configuration);
 end;
 
 class function TLoggingManager.GetLogger(const name: string): ILogger;

@@ -90,8 +90,10 @@ type
 
   TActivator = record
   public
+    class function CreateInstance(instanceType: TRttiInstanceType): TObject; overload; static;
+    class function CreateInstance(const typeName: string): TObject; overload; static;
     class function CreateInstance(instanceType: TRttiInstanceType;
-      constructorMethod: TRttiMethod; const arguments: array of TValue): TObject; static;
+      constructorMethod: TRttiMethod; const arguments: array of TValue): TObject; overload; static;
   end;
 
   {$ENDREGION}
@@ -774,15 +776,48 @@ end;
 
 {$REGION 'TActivator'}
 
-type
-  TInterfacedObjectHack = class(TInterfacedObject);
-
 class function TActivator.CreateInstance(instanceType: TRttiInstanceType;
   constructorMethod: TRttiMethod; const arguments: array of TValue): TObject;
 begin
   TArgument.CheckNotNull(instanceType, 'instanceType');
   TArgument.CheckNotNull(constructorMethod, 'constructorMethod');
   Result := constructorMethod.Invoke(instanceType.MetaclassType, arguments).AsObject;
+end;
+
+class function TActivator.CreateInstance(const typeName: string): TObject;
+var
+  context: TRttiContext;
+  typeObj: TRttiType;
+begin
+  Result := nil;
+  context := TRttiContext.Create;
+  try
+    typeObj := context.FindType(typeName);
+    if not (typeObj is TRttiInstanceType) then
+    begin
+      Exit;
+    end;
+    Result := TActivator.CreateInstance(TRttiInstanceType(typeObj));
+  finally
+    context.Free;
+  end;
+end;
+
+class function TActivator.CreateInstance(
+  instanceType: TRttiInstanceType): TObject;
+var
+  method: TRttiMethod;
+begin
+  TArgument.CheckNotNull(instanceType, 'instanceType');
+  Result := nil;
+  for method in instanceType.GetMethods do
+  begin
+    if method.IsConstructor and (Length(method.GetParameters) = 0) then
+    begin
+      Result := method.Invoke(instanceType.MetaclassType, []).AsObject;
+      Break;
+    end;
+  end;
 end;
 
 {$ENDREGION}

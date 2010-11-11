@@ -45,10 +45,10 @@ type
   /// </summary>
   TRootLogger = class sealed(TLogger)
   protected
-    function GetEffectiveLevel: TLevel; override;
     procedure SetLevel(const value: TLevel); override;
   public
     constructor Create(const repository: ILoggerRepository);
+    function GetEffectiveLevel: TLevel; override;
   end;
 
   /// <summary>
@@ -97,10 +97,17 @@ type
     property Threshold: TLevel read GetThreshold write SetThreshold;
   end;
 
+const
+  CDefaultAppenderNamespace = 'Spring.Logging.Appenders';
+  CDefaultLayoutNamespace = 'Spring.Logging.Layouts';
+
 implementation
 
 uses
-  StrUtils;
+  StrUtils,
+  Rtti,
+  Spring.Reflection,
+  Spring.Helpers;
 
 function LastIndexOf(const value: Char; const s: string): Integer; inline;
 var
@@ -151,11 +158,11 @@ constructor TLoggerRepository.Create;
 begin
   inherited Create;
   fLevels := TCollections.CreateDictionary<string, TLevel>;
-  fThreshold := TLevel.All;
+  fAppenders := TCollections.CreateList<IAppender>;
   fLoggers := TCollections.CreateDictionary<string, ILogger>;
   fRoot := TRootLogger.Create(Self);
-  fThreshold := TLevel.All;
   fLock := TCriticalSection.Create;
+  fThreshold := TLevel.All;
   InitializeLevels;
 end;
 
@@ -180,15 +187,42 @@ begin
   AddLevel(TLevel.Off);
 end;
 
-function TLoggerRepository.CreateAppender(const typeName: string): IAppender;
+function GetFullName(const typeName, defaultNamespace: string): string;
 begin
-  {TODO -oOwner -cGeneral : CreateAppender}
-  raise ENotImplementedException.Create('CreateAppender');
+  if not ContainsStr(typeName, '.') then
+  begin
+    Result := CDefaultAppenderNamespace + '.' + typeName;
+  end
+  else
+  begin
+    Result := typeName;
+  end;
+end;
+
+function TLoggerRepository.CreateAppender(const typeName: string): IAppender;
+var
+  fullName: string;
+  instance: TObject;
+begin
+  fullName := GetFullName(typeName, CDefaultAppenderNamespace);
+  instance := TActivator.CreateInstance(fullName);
+  if not Supports(instance, IAppender, Result) then
+  begin
+    instance.Free;
+  end;
 end;
 
 function TLoggerRepository.CreateLayout(const typeName: string): ILayout;
+var
+  fullName: string;
+  instance: TObject;
 begin
-  raise ENotImplementedException.Create('CreateLayout');
+  fullName := GetFullName(typeName, CDefaultLayoutNamespace);
+  instance := TActivator.CreateInstance(fullName);
+  if not Supports(instance, ILayout, Result) then
+  begin
+    instance.Free;
+  end;
 end;
 
 function TLoggerRepository.FindAppender(const name: string): IAppender;
@@ -365,6 +399,12 @@ begin
   begin
     appenderType := node.Attributes['type'];
     appender := CreateAppender(appenderType);
+    if appender = nil then
+    begin
+      // TODO: Internal error
+      Continue;
+    end;
+    GetAppenders.Add(appender);
     TryConfigure(appender, node);
   end;
 
