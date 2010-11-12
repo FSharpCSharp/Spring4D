@@ -42,7 +42,6 @@ type
     fName: string;
     fThreshold: TLevel;
     fClosed: Boolean;
-    fRecursiveGuard: Boolean;
     fLayout: ILayout;
     fRepository: ILoggerRepository;
     function GetName: string;
@@ -55,16 +54,16 @@ type
   protected
     procedure DoAppend(const event: TLoggingEvent); virtual;
     procedure DoClose; virtual;
-    procedure CheckLayout;
-    function Format(const event: TLoggingEvent): string; virtual;
+    procedure DoConfigure(const configuration: IConfigurationNode); virtual;
     function AcceptEvent(const event: TLoggingEvent): Boolean; virtual;
-    function CanAppend: Boolean;
+    function CanAppend: Boolean; virtual;
     function RequireLayout: Boolean; virtual;
+    function Format(const event: TLoggingEvent): string; virtual;
   protected
     { ILoggerRepositoryInit }
     procedure InitializeRepository(const repository: ILoggerRepository);
     { IConfigurable }
-    procedure Configure(const configuration: IConfigurationNode); virtual;
+    procedure Configure(const configuration: IConfigurationNode);
   public
     constructor Create;
     destructor Destroy; override;
@@ -141,6 +140,56 @@ begin
 end;
 
 procedure TAppenderBase.Configure(const configuration: IConfigurationNode);
+begin
+  TArgument.CheckNotNull(configuration, 'configuration');
+  Lock;
+  try
+    DoConfigure(configuration);
+  finally
+    Unlock;
+  end;
+end;
+
+function TAppenderBase.AcceptEvent(const event: TLoggingEvent): Boolean;
+begin
+  Result := (event.LoggerLevel <> nil) and
+    event.LoggerLevel.IsGreaterThanOrEqualTo(Threshold);
+end;
+
+procedure TAppenderBase.Append(const event: TLoggingEvent);
+begin
+  Lock;
+  try
+    try
+      if CanAppend and AcceptEvent(event) then
+        DoAppend(event);
+    except on e: Exception do
+      // TODO: Internal log
+    end;
+  finally
+    Unlock;
+  end;
+end;
+
+procedure TAppenderBase.Append(const events: IEnumerable<TLoggingEvent>);
+var
+  event: TLoggingEvent;
+begin
+  for event in events do
+  begin
+    Append(event);
+  end;
+end;
+
+procedure TAppenderBase.DoAppend(const event: TLoggingEvent);
+begin
+end;
+
+procedure TAppenderBase.DoClose;
+begin
+end;
+
+procedure TAppenderBase.DoConfigure(const configuration: IConfigurationNode);
 var
   node: IConfigurationNode;
   layoutType: string;
@@ -167,66 +216,15 @@ begin
   end;
 end;
 
-function TAppenderBase.AcceptEvent(const event: TLoggingEvent): Boolean;
-begin
-  Result := (event.LoggerLevel <> nil) and
-    event.LoggerLevel.IsGreaterThanOrEqualTo(Threshold);
-end;
-
-procedure TAppenderBase.Append(const event: TLoggingEvent);
-begin
-  Lock;
-  try
-    if fRecursiveGuard then Exit;
-    fRecursiveGuard := True;
-    try
-      try
-        if AcceptEvent(event) and CanAppend then
-          DoAppend(event);
-      except on e: Exception do
-        // TODO: Handle internal exception
-      end;
-    finally
-      fRecursiveGuard := False;
-    end;
-  finally
-    Unlock;
-  end;
-end;
-
-procedure TAppenderBase.Append(const events: IEnumerable<TLoggingEvent>);
-var
-  event: TLoggingEvent;
-begin
-  for event in events do
-  begin
-    Append(event);
-  end;
-end;
-
-procedure TAppenderBase.DoAppend(const event: TLoggingEvent);
-begin
-end;
-
-procedure TAppenderBase.DoClose;
-begin
-end;
-
 function TAppenderBase.Format(const event: TLoggingEvent): string;
 begin
-  CheckLayout;
-  result:= Layout.Format(event);
+  Assert(Layout <> nil, 'Layout should not be nil.');
+  Result:= Layout.Format(event);
 end;
 
 function TAppenderBase.CanAppend: Boolean;
 begin
-  Result := not RequireLayout or (fLayout <> nil);
-end;
-
-procedure TAppenderBase.CheckLayout;
-begin
-  if RequireLayout and (Layout = nil) then
-    raise ELoggingException.CreateFMT('Appender[%s] needs a layout', [Self.ClassName]);
+  Result := not RequireLayout or (Layout <> nil);
 end;
 
 function TAppenderBase.RequireLayout: Boolean;

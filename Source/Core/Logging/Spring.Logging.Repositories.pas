@@ -74,11 +74,11 @@ type
     procedure Lock;
     procedure Unlock;
     procedure InitializeLevels;
-    procedure ConfigurationChanged;
     procedure UpdateParent(const logger: IHierarchyLogger);
   protected
+    procedure DoConfigure(const configuration: IConfigurationNode); virtual;
     { IConfigurable }
-    procedure Configure(const configuration: IConfigurationNode); virtual;
+    procedure Configure(const configuration: IConfigurationNode);
   public
     constructor Create;
     destructor Destroy; override;
@@ -188,6 +188,51 @@ begin
   AddLevel(TLevel.Off);
 end;
 
+procedure TLoggerRepository.DoConfigure(
+  const configuration: IConfigurationNode);
+var
+  nodes: IConfigurationNodes;
+  node: IConfigurationNode;
+  name: string;
+  thresholdValue: string;
+  logger: ILogger;
+  appenderType: string;
+  appender: IAppender;
+begin
+  if configuration.TryGetAttribute('threshold', thresholdValue) then
+  begin
+    Threshold := FindLevel(thresholdValue);
+  end;
+  nodes := configuration.FindNodes('appender');
+  for node in nodes do
+  begin
+    appenderType := node.Attributes['type'];
+    appender := CreateAppender(appenderType);
+    if appender = nil then
+    begin
+      // TODO: Internal log
+      Continue;
+    end;
+    GetAppenders.Add(appender);
+    (appender as ILoggerRepositoryInit).InitializeRepository(Self);
+    TryConfigure(appender, node);
+  end;
+
+  node := configuration.FindNode('root');
+  if node <> nil then
+  begin
+    TryConfigure(Root, node);
+  end;
+
+  nodes := configuration.FindNodes('logger');
+  for node in nodes do
+  begin
+    name := node.Attributes['name'];
+    logger := GetLogger(name);
+    TryConfigure(logger, node);
+  end;
+end;
+
 function GetFullName(const typeName, defaultNamespace: string): string;
 begin
   if not ContainsStr(typeName, '.') then
@@ -248,7 +293,12 @@ end;
 
 function TLoggerRepository.FindLevel(const name: string): TLevel;
 begin
-  fLevels.TryGetValue(UpperCase(name), Result);
+  Lock;
+  try
+    fLevels.TryGetValue(UpperCase(name), Result);
+  finally
+    Unlock;
+  end;
 end;
 
 function TLoggerRepository.FindLogger(const name: string): ILogger;
@@ -274,7 +324,12 @@ end;
 
 function TLoggerRepository.GetCurrentLoggers: ICollection<ILogger>;
 begin
-  Result := fLoggers.Values;
+  Lock;
+  try
+    Result := fLoggers.Values;
+  finally
+    Unlock;
+  end;
 end;
 
 function TLoggerRepository.GetLogger(const name: string): ILogger;
@@ -319,7 +374,12 @@ end;
 function TLoggerRepository.IsDisabled(const level: TLevel): Boolean;
 begin
   TArgument.CheckNotNull(level <> nil, 'level');
-  Result := not Threshold.IsGreaterThanOrEqualTo(level);
+  Lock;
+  try
+    Result := not Threshold.IsGreaterThanOrEqualTo(level);
+  finally
+    Unlock;
+  end;
 end;
 
 procedure TLoggerRepository.Lock;
@@ -379,54 +439,15 @@ end;
 //  inherited Shutdown;
 //end;
 
-procedure TLoggerRepository.ConfigurationChanged;
-begin
-
-end;
-
 procedure TLoggerRepository.Configure(
   const configuration: IConfigurationNode);
-var
-  nodes: IConfigurationNodes;
-  node: IConfigurationNode;
-  name: string;
-  thresholdValue: string;
-  logger: ILogger;
-  appenderType: string;
-  appender: IAppender;
 begin
   TArgument.CheckNotNull(configuration, 'configuration');
-  if configuration.TryGetAttribute('threshold', thresholdValue) then
-  begin
-    Threshold := FindLevel(thresholdValue);
-  end;
-  nodes := configuration.FindNodes('appender');
-  for node in nodes do
-  begin
-    appenderType := node.Attributes['type'];
-    appender := CreateAppender(appenderType);
-    if appender = nil then
-    begin
-      // TODO: Internal log
-      Continue;
-    end;
-    GetAppenders.Add(appender);
-    (appender as ILoggerRepositoryInit).InitializeRepository(Self);
-    TryConfigure(appender, node);
-  end;
-
-  node := configuration.FindNode('root');
-  if node <> nil then
-  begin
-    TryConfigure(Root, node);
-  end;
-
-  nodes := configuration.FindNodes('logger');
-  for node in nodes do
-  begin
-    name := node.Attributes['name'];
-    logger := GetLogger(name);
-    TryConfigure(logger, node);
+  Lock;
+  try
+    DoConfigure(configuration);
+  finally
+    Unlock;
   end;
 end;
 
@@ -452,14 +473,19 @@ end;
 
 procedure TLoggerRepository.SetThreshold(const value: TLevel);
 begin
-  if value <> nil then
-  begin
-    fThreshold := value;
-  end
-  else
-  begin
-    TInternalLogger.ErrorFmt('%s: Threshold cannot be set to null. Setting to ALL', [ClassName]);
-    fThreshold := TLevel.All;
+  Lock;
+  try
+    if value <> nil then
+    begin
+      fThreshold := value;
+    end
+    else
+    begin
+      TInternalLogger.ErrorFmt('%s: Threshold cannot be set to null. Setting to ALL', [ClassName]);
+      fThreshold := TLevel.All;
+    end;
+  finally
+    Unlock;
   end;
 end;
 

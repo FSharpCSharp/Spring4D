@@ -32,6 +32,7 @@ uses
   Classes,
   Windows,
   SysUtils,
+  SyncObjs,
   Spring,
   Spring.Collections,
   Spring.Configuration;
@@ -264,12 +265,16 @@ type
     function GetLevel: TLevel; virtual;
     procedure SetLevel(const value: TLevel); virtual;
   protected
+    fLock: TCriticalSection;
+    procedure Lock;
+    procedure Unlock;
     procedure Log(const level: TLevel; const msg: string; e: Exception); overload; virtual;
     procedure DoLog(const event: TLoggingEvent); overload; virtual;
     procedure HandleException(e: Exception); virtual;
     function IsEnabledFor(const level: TLevel): Boolean; virtual;
   public
     constructor Create(const name: string);
+    destructor Destroy; override;
     procedure Debug(const msg: string); overload;
     procedure Debug(const msg: string; e: Exception); overload;
     procedure DebugFormat(const format: string; const args: array of const);
@@ -316,9 +321,10 @@ type
   protected
     function IsEnabledFor(const level: TLevel): Boolean; override;
     procedure DoLog(const event: TLoggingEvent); override;
+    procedure DoConfigure(const configuration: IConfigurationNode); virtual;
   protected
     { IConfigurable }
-    procedure Configure(const configuration: IConfigurationNode); virtual;
+    procedure Configure(const configuration: IConfigurationNode);
   public
     constructor Create(const repository: ILoggerRepository; const name: string);
     procedure CloseNestedAppenders;
@@ -421,6 +427,23 @@ constructor TLoggerBase.Create(const name: string);
 begin
   inherited Create;
   fName := name;
+  fLock := TCriticalSection.Create;
+end;
+
+destructor TLoggerBase.Destroy;
+begin
+  fLock.Free;
+  inherited Destroy;
+end;
+
+procedure TLoggerBase.Lock;
+begin
+  fLock.Enter;
+end;
+
+procedure TLoggerBase.Unlock;
+begin
+  fLock.Leave;
 end;
 
 // TODO: Add try-except block
@@ -443,10 +466,15 @@ begin
   begin
     event.ExceptionString := e.ClassName + ': ' + e.Message;
   end;
+  Lock;
   try
-    DoLog(event);
-  except on e: Exception do
-    HandleException(e);
+    try
+      DoLog(event);
+    except on e: Exception do
+      HandleException(e);
+    end;
+  finally
+    Unlock;
   end;
 end;
 
@@ -630,7 +658,12 @@ end;
 
 procedure TLoggerBase.SetLevel(const value: TLevel);
 begin
-  fLevel := value;
+  Lock;
+  try
+    fLevel := value;
+  finally
+    Unlock;
+  end;
 end;
 
 {$ENDREGION}
@@ -645,6 +678,41 @@ begin
   fRepository := repository;
   fAdditivity := True;
   fAppenderAttachableLock := TSimpleRWSync.Create;
+end;
+
+procedure TLogger.DoConfigure(const configuration: IConfigurationNode);
+var
+  additivity: string;
+  loggerLevel: string;
+  nodes: IConfigurationNodes;
+  node: IConfigurationNode;
+  appenderName: string;
+  appender: IAppender;
+begin
+  node := configuration.FindNode('level');
+  if (node <> nil) and node.TryGetAttribute('value', loggerLevel) then
+  begin
+    Self.Level := fRepository.FindLevel(loggerLevel);
+  end;
+  if configuration.TryGetAttribute('additivity', additivity) then
+  begin
+    Self.Additivity := StrToBoolDef(additivity, True);
+  end;
+  nodes := configuration.FindNodes('appender-ref');
+  if not nodes.IsEmpty then
+  begin
+    for node in nodes do
+    begin
+      appenderName := node.Attributes['ref'];
+      appender := fRepository.FindAppender(appenderName);
+      if appender = nil then
+      begin
+        // TODO: Log error message.
+        Continue;
+      end;
+      AddAppender(appender);
+    end;
+  end;
 end;
 
 procedure TLogger.DoLog(const event: TLoggingEvent);
@@ -702,40 +770,14 @@ begin
   end;
 end;
 
-// TODO: Considering IInitializable
 procedure TLogger.Configure(const configuration: IConfigurationNode);
-var
-  additivity: string;
-  loggerLevel: string;
-  nodes: IConfigurationNodes;
-  node: IConfigurationNode;
-  appenderName: string;
-  appender: IAppender;
 begin
   TArgument.CheckNotNull(configuration, 'configuration');
-  node := configuration.FindNode('level');
-  if (node <> nil) and node.TryGetAttribute('value', loggerLevel) then
-  begin
-    Self.Level := fRepository.FindLevel(loggerLevel);
-  end;
-  if configuration.TryGetAttribute('additivity', additivity) then
-  begin
-    Self.Additivity := StrToBoolDef(additivity, True);
-  end;
-  nodes := configuration.FindNodes('appender-ref');
-  if not nodes.IsEmpty then
-  begin
-    for node in nodes do
-    begin
-      appenderName := node.Attributes['ref'];
-      appender := fRepository.FindAppender(appenderName);
-      if appender = nil then
-      begin
-        // TODO: Log error message.
-        Continue;
-      end;
-      AddAppender(appender);
-    end;
+  Lock;
+  try
+    DoConfigure(configuration);
+  finally
+    Unlock;
   end;
 end;
 
