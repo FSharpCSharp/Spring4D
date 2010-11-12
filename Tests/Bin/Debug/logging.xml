@@ -4,24 +4,35 @@
 		<threshold value="WARN" /> 
 	-->
         <layout type="Spring.Logging.Layouts.TPatternLayout">
-            <conversionPattern value="%Date [%Thread] %-5Level %Logger - %Message%Newline" />
+            <conversionPattern value="%Date%tab[%Thread]%tab%-5Level%tab%tab%Logger - %Message%Newline" />
+        </layout>
+    </appender>
+
+	<appender name="colorconsole" type="Spring.Logging.Appenders.TColorConsoleAppender">
+	<!--
+		<threshold value="WARN" /> 
+	-->
+        <layout type="Spring.Logging.Layouts.TPatternLayout">
+            <conversionPattern value="%Date%tab[%Thread]%tab%-5Level%tab%tab%Logger - %Message%Newline" />
         </layout>
     </appender>
 
 
-	<appender name="fileappender" type="Spring.Logging.Appenders.TFileAppender">
+	<appender name="file" type="Spring.Logging.Appenders.TFileAppender">
        
 	  <filename value="Log\test.log" />
 	  <encoding value="utf-8" />
 		<layout type="Spring.Logging.Layouts.TPatternLayout">
-            <conversionPattern value="%Date [%Thread] %-5Level %Logger - %Message%Newline" />
+            <conversionPattern value="%Date%tab[%Thread]%tab%-5Level%tab%tab%Logger - %Message%Newline" />
         </layout>
-
     </appender>
     
     <root>
         <level value="DEBUG" />
-        <appender-ref ref="fileappender" />
+        
+		<appender-ref ref="console" />
+		<appender-ref ref="colorconsole" />
+		<appender-ref ref="file" />
     </root>
     
     <logger name="Spring.Base">
