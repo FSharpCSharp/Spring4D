@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.IoC.Core;
+unit Spring.DI.Core;
 
 {$I Spring.inc}
 
@@ -297,7 +297,29 @@ implementation
 uses
   Spring.Helpers,
   Spring.ResourceStrings,
-  Spring.IoC.ResourceStrings;
+  Spring.DI.ResourceStrings;
+
+{$REGION 'TArrayHelper'}
+
+type
+  TArrayHelper = class helper for TArray
+  public
+    class function CreateArray<T>(const values: array of T): TArray<T>; // deprecated;
+  end;
+
+class function TArrayHelper.CreateArray<T>(const values: array of T): TArray<T>;
+var
+  i: Integer;
+begin
+  SetLength(Result, Length(values));
+  for i := 0 to High(values) do
+  begin
+    Result[i] := values[i];
+  end;
+end;
+
+{$ENDREGION}
+
 
 {$REGION 'TComponentModel'}
 

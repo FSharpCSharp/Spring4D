@@ -22,89 +22,99 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Tests.Helpers;
+/// <preliminary />
+unit Spring.Helpers.Vcl;
 
 {$I Spring.inc}
 
 interface
 
 uses
-  Classes,
-  SysUtils,
-  Graphics,
-  TestFramework,
-  Spring,
-  Spring.Helpers;
+  DB,
+  Rtti,
+  Spring
+  ;
 
 type
-  TTestGuidHelper = class(TTestCase)
-  published
-    procedure TestNewGUID;
-    procedure TestEmpty;
-    procedure TestEquals;
-    procedure TestToString;
-    procedure TestToQuotedString;
+  (*
+  TApplicationHelper = class helper for TApplication
+  public
+    function GetFileName(const releativePath: string): string;
+    property Path: string read GetPath;
+  end;
+  *)
+
+  /// <preliminary />
+  TDataSetHelper = class helper for TDataSet
+  public
+    function GetValueOrDefault<T>(const fieldName: string; const default: T): T;
+    procedure CopyRecordFrom(source: TDataSet);
+//    procedure CopyRecordTo(target: TDataSet);
+//    procedure Reopen;
+//    procedure EnumerateRows(proc: TProc<TDataSet>);
+//    procedure Clear;
+//    property IsModified: Boolean;
   end;
 
+  /// <preliminary />
+  TFieldHelper = class helper for TField
+  public
+    function GetValueOrDefault<T>(const default: T): T;
+//    property IsNullOrWhiteSpace: Boolean;
+//    property IsModified: Boolean;
+  end;
 
 implementation
 
 
-{$REGION 'TTestGuidHelper'}
+{$REGION 'DB'}
 
-{$WARNINGS OFF}
+{ TDataSetHelper }
 
-procedure TTestGuidHelper.TestNewGUID;
+procedure TDataSetHelper.CopyRecordFrom(source: TDataSet);
 var
-  guid: TGUID;
+  field: TField;
+  sourceField: TField;
 begin
-  guid := TGUID.NewGUID;
-  CheckEquals(38, Length(guid.ToString));
+  TArgument.CheckNotNull(source, 'source');
+  for field in Fields do
+  begin
+    if not field.ReadOnly and (field.FieldKind = fkData) then
+    begin
+      sourceField := source.FindField(field.FieldName);
+      if sourceField <> nil then
+      begin
+        field.Value := sourceField.Value;
+      end;
+    end;
+  end;
 end;
 
-procedure TTestGuidHelper.TestEmpty;
+function TDataSetHelper.GetValueOrDefault<T>(const fieldName: string;
+  const default: T): T;
 var
-  empty: TGUID;
-const
-  EmptyGuidString = '{00000000-0000-0000-0000-000000000000}';
+  field: TField;
 begin
-  empty := TGUID.Empty;
-  CheckEquals(EmptyGuidString, empty.ToString);
-  CheckTrue(empty.IsEmpty);
+  field := FieldByName(fieldName);
+  Result := field.GetValueOrDefault<T>(default);
 end;
 
-procedure TTestGuidHelper.TestEquals;
-var
-  guid: TGUID;
-const
-  GuidString = '{93585BA2-B43B-4C55-AAAB-6DE6EB4C0E57}';
-begin
-  guid := TGUID.Create(GuidString);
-  Check(guid.Equals(guid));
-  CheckFalse(guid.Equals(TGUID.Empty));
-end;
+{ TFieldHelper }
 
-procedure TTestGuidHelper.TestToString;
+function TFieldHelper.GetValueOrDefault<T>(const default: T): T;
 var
-  guid: TGUID;
-const
-  GuidString = '{93585BA2-B43B-4C55-AAAB-6DE6EB4C0E57}';
+  v: TValue;
 begin
-  guid := TGuid.Create(GuidString);
-  CheckEquals(GuidString, guid.ToString);
+  if not IsNull then
+  begin
+    v := TValue.FromVariant(Value);
+    Result := v.AsType<T>;
+  end
+  else
+  begin
+    Result := default;
+  end;
 end;
-
-procedure TTestGuidHelper.TestToQuotedString;
-var
-  guid: TGUID;
-const
-  GuidString = '{93585BA2-B43B-4C55-AAAB-6DE6EB4C0E57}';
-begin
-  guid := TGuid.Create(GuidString);
-  CheckEquals(QuotedStr(GuidString), guid.ToQuotedString);
-end;
-
-{$WARNINGS ON}
 
 {$ENDREGION}
 

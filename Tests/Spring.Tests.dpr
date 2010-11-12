@@ -40,18 +40,16 @@ uses
   TestExtensions,
   GUITestRunner,
   TextTestRunner,
-  Spring.Tests.Numbering in 'Source\Extensions\Spring.Tests.Numbering.pas',
-  Spring.Tests.Cryptography in 'Source\Base\Spring.Tests.Cryptography.pas',
   Spring.Tests.DesignPatterns in 'Source\Base\Spring.Tests.DesignPatterns.pas',
   Spring.Tests.Helpers in 'Source\Base\Spring.Tests.Helpers.pas',
   Spring.Tests.System in 'Source\Base\Spring.Tests.System.pas',
   Spring.Tests.Utils in 'Source\Base\Spring.Tests.Utils.pas',
-  Spring.Tests.IoC.Components in 'Source\Core\Spring.Tests.IoC.Components.pas',
-  Spring.Tests.IoC.LifetimeManager in 'Source\Core\Spring.Tests.IoC.LifetimeManager.pas',
-  Spring.Tests.IoC in 'Source\Core\Spring.Tests.IoC.pas',
+  Spring.Tests.DI.Components in 'Source\Core\Spring.Tests.DI.Components.pas',
+  Spring.Tests.DI.LifetimeManager in 'Source\Core\Spring.Tests.DI.LifetimeManager.pas',
+  Spring.Tests.DI in 'Source\Core\Spring.Tests.DI.pas',
   Spring.Tests.Pool in 'Source\Core\Spring.Tests.Pool.pas',
   Spring.Tests.ValueConverters in 'Source\Base\Spring.Tests.ValueConverters.pas',
-  Spring.Tests.Reflection in 'Source\Base\Spring.Tests.Reflection.pas';
+  Spring.Tests.Cryptography in 'Source\Core\Spring.Tests.Cryptography.pas';
 
 {$R *.RES}
 
@@ -84,24 +82,6 @@ begin
     TTestGuidHelper.Suite
   ]);
 
-  RegisterTests('Base.Cryptography', [
-    TTestCRC16.Suite,
-    TTestCRC32.Suite,
-    TTestMD5.Suite,
-    TTestSHA1.Suite,
-    TTestSHA256.Suite,
-    TTestSHA384.Suite,
-    TTestSHA512.Suite,
-    TTestPaddingModeIsNone.Suite,
-    TTestPaddingModeIsPKCS7.Suite,
-    TTestPaddingModeIsZeros.Suite,
-    TTestPaddingModeIsANSIX923.Suite,
-    TTestPaddingModeIsISO10126.Suite,
-    TTestDES.Suite,
-    TTestTripleDES.Suite
-//    TTestMACTripleDES.Suite
-  ]);
-
   RegisterTests('Base.ValueConverters', [
     TTestFromString.Suite,
     TTestFromWideString.Suite,
@@ -119,15 +99,29 @@ begin
     TTestFromNullable.Suite
   ]);
 
-  RegisterTests('Base.Reflection', [
-    TTestValueExpression.Suite
-  ]);
-
   RegisterTests('Core.Pool', [
     TTestObjectPool.Suite
   ]);
 
-  RegisterTests('Core.IoC', [
+  RegisterTests('Core.Cryptography', [
+    TTestCRC16.Suite,
+    TTestCRC32.Suite,
+    TTestMD5.Suite,
+    TTestSHA1.Suite,
+    TTestSHA256.Suite,
+    TTestSHA384.Suite,
+    TTestSHA512.Suite,
+    TTestPaddingModeIsNone.Suite,
+    TTestPaddingModeIsPKCS7.Suite,
+    TTestPaddingModeIsZeros.Suite,
+    TTestPaddingModeIsANSIX923.Suite,
+    TTestPaddingModeIsISO10126.Suite,
+    TTestDES.Suite,
+    TTestTripleDES.Suite
+//    TTestMACTripleDES.Suite
+  ]);
+
+  RegisterTests('Core.DI', [
     TTestSingletonLifetimeManager.Suite,
     TTestTransientLifetimeManager.Suite,
     TTestEmptyContainer.Suite,
@@ -143,10 +137,6 @@ begin
     TTestDirectCircularDependency.Suite,
     TTestCrossedCircularDependency.Suite,
     TTestImplementsAttribute.Suite
-  ]);
-
-  RegisterTests('Extensions.Numbering', [
-    TTestNumberRuleBuilder.Suite
   ]);
 
 end;

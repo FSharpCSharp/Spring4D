@@ -43,81 +43,6 @@ uses
   Spring.Utils;
 
 type
-  {$REGION 'File Mapping (NOT READY)'}
-
-  TFileMapping        = class;
-  TFileMappingView    = class;
-//  TFileMappingStream  = class;
-
-  TFileMappingAccess = (
-    ReadWrite,	      // Read and write access to the file.
-    Read,             // Read-only access to the file.
-    Write,            // Write-only access to file.
-    CopyOnWrite,      // Read and write access to the file, with the restriction that any write operations will not be seen by other processes.
-    ReadExecute,      // Read access to the file that can store and run executable code.
-    ReadWriteExecute	// Read and write access to the file that can can store and run executable code.
-  );
-
-  /// <summary>
-  /// Represents a memory-mapped file.
-  /// </summary>
-  TFileMapping = class
-  private
-    fHandle: THandle;
-    fViews: TList<TFileMappingView>;
-  protected
-    procedure Notify(view: TFileMappingView; action: TCollectionNotification); virtual;
-  public
-    constructor Create(fileHandle: THandle; access: TFileMappingAccess; const maximumSize: Int64);
-    destructor Destroy; override;
-    function GetFileView(const offset: Int64; size: Cardinal): TFileMappingView;
-    property Handle: THandle read fHandle;
-  end;
-
-  /// <summary>
-  /// Represents a file view of a file mapping object.
-  /// </summary>
-  /// <remarks>
-  /// The offset must be a multiple of fAllocationGranularity.
-  /// </remarks>
-  TFileMappingView = class
-  private
-    fFileMapping: TFileMapping;
-    fMemory: Pointer;   // Base Address
-  private
-    class var
-      fAllocationGranularity: Cardinal;  // Memory Allocation Granularity of the System
-    class constructor Create;
-  public
-    constructor Create(fileMapping: TFileMapping; const offset: Int64; size: Cardinal);
-    destructor Destroy; override;
-    procedure Flush;
-    property Memory: Pointer read fMemory;
-  end;
-
-  (*
-  // NOT READY
-  TFileMappingStream = class(TCustomMemoryStream)
-  private
-    fFileMapping: TFileMapping;
-    fFileName: string;
-    fFileHandle: THandle;
-  protected
-    function CreateFileHandle(const fileName: string; mode: TFileMode;
-      access: TFileAccess; share: TFileShare): THandle;
-  public
-    constructor Create(const fileName: string; mode: TFileMode); overload;
-    constructor Create(const fileName: string; mode: TFileMode; access: TFileAccess); overload;
-    constructor Create(const fileName: string; mode: TFileMode; access: TFileAccess; share: TFileShare); overload;
-    constructor Create(const fileName: string; mode: TFileMode; access: TFileAccess; share: TFileShare; fileMappingAccess: TFileMappingAccess); overload;
-    destructor Destroy; override;
-    property FileName: string read fFileName;
-  end;
-  //*)
-
-  {$ENDREGION}
-
-
   {$REGION 'TSizeUnit, TSize'}
 
   TSizeUnit = record
@@ -517,10 +442,6 @@ type
     destructor Destroy; override;
   end;
 
-//  IDropFiles = interface
-//    ['{9D41BF06-5517-4E4D-B10C-CB0B27869BE0}']
-//  end;
-
   {$REGION 'TFileSearcher'}
 
   TFileSearcher = class;
@@ -731,11 +652,21 @@ type
   function EnumerateFileSystemEntries(const path, searchPattern: string): IFileEnumerable; overload;
   function EnumerateFileSystemEntries(const path, searchPattern: string; includeSubfolders: Boolean): IFileEnumerable; overload;
 
+  /// <summary>
+  /// GetDroppedFiles
+  /// </summary>
+  procedure GetDroppedFiles(const dataObject: IDataObject; list: TStrings); overload;
+
+  /// <summary>
+  /// GetDroppedFiles
+  /// </summary>
+  procedure GetDroppedFiles(dropHandle: THandle; list: TStrings); overload;
+
 implementation
 
 uses
   Spring.ResourceStrings,
-  Spring.Utils.Win32API;
+  Spring.Utils.WinAPI;
 
 {$REGION 'Routines'}
 
@@ -788,177 +719,51 @@ begin
   Result := TFileEnumerable.Create(path, searchPattern, faAnyFile, includeSubfolders);
 end;
 
-{$ENDREGION}
-
-
-{$REGION 'TFileMapping'}
-
-constructor TFileMapping.Create(fileHandle: THandle; access: TFileMappingAccess;
-  const maximumSize: Int64);
-//var
-//  fSecurityAttributes: TSecurityAttributes;
-begin
-  inherited Create;
-  fHandle := CreateFileMapping(
-    fileHandle,
-    nil,
-    PAGE_READWRITE,
-    Int64Rec(maximumSize).Hi,
-    Int64Rec(maximumSize).Lo,
-    nil
-  );
-  Win32Check(fHandle <> 0);
-end;
-
-destructor TFileMapping.Destroy;
-begin
-  if fHandle <> 0 then
-  begin
-    CloseHandle(fHandle);
-  end;
-  fViews.Free;
-  inherited Destroy;
-end;
-
-procedure TFileMapping.Notify(view: TFileMappingView; action: TCollectionNotification);
-begin
-  if fViews = nil then
-  begin
-    fViews := TObjectList<TFileMappingView>.Create(True);
-  end;
-  case action of
-    cnAdded:
-    begin
-      fViews.Add(view);
-    end;
-    cnRemoved, cnExtracted:
-    begin
-      fViews.Remove(view);
-    end;
-  end;
-end;
-
-function TFileMapping.GetFileView(const offset: Int64; size: Cardinal): TFileMappingView;
-begin
-  Result := TFileMappingView.Create(Self, offset, size);   // Its lifecycle is automatically managed by fViews.
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TFileMappingView'}
-
-class constructor TFileMappingView.Create;
+procedure GetDroppedFiles(const dataObject: IDataObject; list: TStrings); overload;
 var
-  systemInfo: TSystemInfo;
-begin
-  GetSystemInfo(systemInfo);
-  fAllocationGranularity := systemInfo.dwAllocationGranularity;
-end;
-
-constructor TFileMappingView.Create(fileMapping: TFileMapping;
-  const offset: Int64; size: Cardinal);
-var
-  desiredAccess: DWORD;
-begin
-  TArgument.CheckNotNull(fileMapping, 'fileMapping');
-
-  inherited Create;
-  fFileMapping := fileMapping;
-  desiredAccess := FILE_MAP_ALL_ACCESS;    // TEMP
-  fMemory := MapViewOfFile(
-    fileMapping.Handle,
-    desiredAccess,
-    Int64Rec(offset).Hi,
-    Int64Rec(offset).Lo,
-    size
-  );
-  Win32Check(fMemory <> nil);
-
-  fFileMapping.Notify(Self, cnAdded);
-end;
-
-destructor TFileMappingView.Destroy;
-begin
-  if fMemory <> nil then
-  begin
-    UnmapViewOfFile(fMemory);
-  end;
-  fFileMapping.Notify(Self, cnRemoved);
-  inherited Destroy;
-end;
-
-procedure TFileMappingView.Flush;
-begin
-  Win32Check(FlushViewOfFile(fMemory, 0));
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TFileMappingStream'}
-
-(*
-
-constructor TFileMappingStream.Create(const fileName: string; mode: TFileMode);
-begin
-  Create(fileName, mode, TFileAccess.faReadWrite, TFileShare.fsNone, TFileMappingAccess.ReadWrite);
-end;
-
-constructor TFileMappingStream.Create(const fileName: string; mode: TFileMode;
-  access: TFileAccess);
-begin
-  Create(fileName, mode, access, TFileShare.fsNone, TFileMappingAccess.ReadWrite);
-end;
-
-constructor TFileMappingStream.Create(const fileName: string; mode: TFileMode;
-  access: TFileAccess; share: TFileShare);
-begin
-  Create(fileName, mode, access, share, TFileMappingAccess.ReadWrite);
-end;
-
-constructor TFileMappingStream.Create(const fileName: string; mode: TFileMode;
-  access: TFileAccess; share: TFileShare;
-  fileMappingAccess: TFileMappingAccess);
-begin
-  inherited Create;
-  fFileName := fileName;
-  fFileHandle := CreateFileHandle(fileName, mode, access, share);
-//  fFileMapping := TFileMapping.Create(fFileMapping, fileMappingAccess, 0);
-end;
-
-destructor TFileMappingStream.Destroy;
-begin
-  fFileMapping.Free;
-  CloseHandle(fFileHandle);
-  inherited Destroy;
-end;
-
-function TFileMappingStream.CreateFileHandle(const fileName: string;
-  mode: TFileMode; access: TFileAccess; share: TFileShare): THandle;
-var
-  fileMode: Word;
-  fileRights: Word;
+  handle: THandle;
+  medium: TStgMedium;
 const
-  FileAccessMappings: array[TFileAccess] of Word = (
-    fmOpenRead,         // faRead
-    fmOpenWrite,        // faWrite
-    fmOpenReadWrite     // faReadWrite
-  );
-
-  FileShareMappings: array[TFileShare] of Word = (
-    fmShareExclusive,   // fsNone
-    fmShareDenyWrite,   // fsRead
-    fmShareDenyRead,    // fsWrite
-    fmShareDenyNone     // fsReadWrite
+  f: tagFORMATETC = (
+    cfFormat: CF_HDROP;
+    ptd: nil;
+    dwAspect: DVASPECT_CONTENT;
+    lindex: -1;
+    tymed: LongInt($FFFFFFFF)
   );
 begin
-  fileMode := FileAccessMappings[access];
-  fileRights := FileShareMappings[share];
-//  if mode = TFileMode.fmCreateNew then
-  Result := THandle(SysUtils.FileCreate(fileName, fileMode, fileRights));
+  TArgument.CheckNotNull(dataObject, 'dataObject');
+  OleCheck(dataObject.GetData(f, medium));
+  handle := medium.hGlobal;
+  GetDroppedFiles(handle, list);
 end;
-//*)
+
+procedure GetDroppedFiles(dropHandle: THandle; list: TStrings);
+var
+  count, size, i: Integer;
+  fileName: array[0..MAX_PATH] of Char;
+const
+  f: tagFORMATETC = (
+    cfFormat: CF_HDROP;
+    ptd: nil;
+    dwAspect: DVASPECT_CONTENT;
+    lindex: -1;
+    tymed: LongInt($FFFFFFFF)
+  );
+begin
+  TArgument.CheckNotNull(list, 'list');
+  count := DragQueryFile(dropHandle, $FFFFFFFF, nil, 0);
+  try
+    for i := 0 to count - 1 do
+    begin
+      size := DragQueryFile(dropHandle, i, nil, 0) + 1;
+      DragQueryFile(dropHandle, i, fileName, size);
+      list.Add(fileName);
+    end;
+  finally
+    DragFinish(dropHandle);
+  end;
+end;
 
 {$ENDREGION}
 

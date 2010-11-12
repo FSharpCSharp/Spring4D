@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.IoC.LifetimeManager;
+unit Spring.DI.LifetimeManager;
 
 {$I Spring.inc}
 
@@ -34,7 +34,7 @@ uses
   SysUtils,
   Generics.Collections,
   Spring,
-  Spring.IoC.Core,
+  Spring.DI.Core,
   Spring.Pool;
 
 type

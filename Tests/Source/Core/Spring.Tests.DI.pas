@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Tests.IoC;
+unit Spring.Tests.DI;
 
 {$I Spring.inc}
 
@@ -33,8 +33,8 @@ uses
   SysUtils,
   TestFramework,
   Spring,
-  Spring.IoC,
-  Spring.Tests.IoC.Components;
+  Spring.DI,
+  Spring.Tests.DI.Components;
 
 type
   TContainerTestCase = class abstract(TTestCase)

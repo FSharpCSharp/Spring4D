@@ -52,9 +52,6 @@ uses
   Types,
   TypInfo,
   Rtti,
-  ComObj,
-  DB,
-  Generics.Collections,
   Spring,
   Spring.Collections,
   Spring.DesignPatterns,
@@ -133,15 +130,10 @@ type
   end;
 
   ///	<summary>Provides a static method to create a TMethod structure with an
-  ///	objectaddress and a methodaddress.</summary>
+  ///	instance and a methodaddress.</summary>
   TMethodHelper = record helper for TMethod
   public
-    class function Create(const objectAddress, methodAddress: Pointer): TMethod; static;
-  end;
-
-  TArrayHelper = class helper for TArray
-  public
-    class function CreateArray<T>(const values: array of T): TArray<T>; // deprecated;
+    class function Create(const instance, methodAddress: Pointer): TMethod; static;
   end;
 
   TStreamHelper = class helper for TStream
@@ -282,34 +274,6 @@ type
     procedure ExecuteUpdate(proc: TProc);
   end;
 
-  (*
-  TApplicationHelper = class helper for TApplication
-  public
-    function GetFileName(const releativePath: string): string;
-    property Path: string read GetPath;
-  end;
-  *)
-
-  /// <preliminary />
-  TDataSetHelper = class helper for TDataSet
-  public
-    function GetValueOrDefault<T>(const fieldName: string; const default: T): T;
-    procedure CopyRecordFrom(source: TDataSet);
-//    procedure CopyRecordTo(target: TDataSet);
-//    procedure Reopen;
-//    procedure EnumerateRows(proc: TProc<TDataSet>);
-//    procedure Clear;
-//    property IsModified: Boolean;
-  end;
-
-  /// <preliminary />
-  TFieldHelper = class helper for TField
-  public
-    function GetValueOrDefault<T>(const default: T): T;
-//    property IsNullOrWhiteSpace: Boolean;
-//    property IsModified: Boolean;
-  end;
-
   // TPointHelper, TSizeHelper, TRectHelper
 
   {TODO -oPaul -cGeneral : Add some non-generic implementation}
@@ -355,6 +319,7 @@ type
     function GetFields: IEnumerableEx<TRttiField>;
   public
     // function GetMembers: IEnumerableEx<TRttiMember>;
+
     {$REGION 'Documentation'}
     ///	<summary>
     ///	  Returns an enumerable collection which contains all the interface
@@ -596,33 +561,17 @@ end;
 
 {$REGION 'TMethodHelper'}
 
-class function TMethodHelper.Create(const objectAddress,
+class function TMethodHelper.Create(const instance,
   methodAddress: Pointer): TMethod;
 begin
   Result.Code := methodAddress;
-  Result.Data := objectAddress;
+  Result.Data := instance;
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TArrayHelper'}
-
-class function TArrayHelper.CreateArray<T>(const values: array of T): TArray<T>;
-var
-  i: Integer;
-begin
-  SetLength(Result, Length(values));
-  for i := 0 to High(values) do
-  begin
-    Result[i] := values[i];
-  end;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'Classes'}
+{$REGION 'Classes Helpers'}
 
 { TStreamHelper }
 
@@ -831,59 +780,7 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'DB'}
-
-{ TDataSetHelper }
-
-procedure TDataSetHelper.CopyRecordFrom(source: TDataSet);
-var
-  field: TField;
-  sourceField: TField;
-begin
-  TArgument.CheckNotNull(source, 'source');
-  for field in Fields do
-  begin
-    if not field.ReadOnly and (field.FieldKind = fkData) then
-    begin
-      sourceField := source.FindField(field.FieldName);
-      if sourceField <> nil then
-      begin
-        field.Value := sourceField.Value;
-      end;
-    end;
-  end;
-end;
-
-function TDataSetHelper.GetValueOrDefault<T>(const fieldName: string;
-  const default: T): T;
-var
-  field: TField;
-begin
-  field := FieldByName(fieldName);
-  Result := field.GetValueOrDefault<T>(default);
-end;
-
-{ TFieldHelper }
-
-function TFieldHelper.GetValueOrDefault<T>(const default: T): T;
-var
-  v: TValue;
-begin
-  if not IsNull then
-  begin
-    v := TValue.FromVariant(Value);
-    Result := v.AsType<T>;
-  end
-  else
-  begin
-    Result := default;
-  end;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'Rtti Class Helpers'}
+{$REGION 'RTTI Class Helpers'}
 
 { TRttiObjectHelper }
 
@@ -1247,5 +1144,3 @@ end;
 {$ENDREGION}
 
 end.
-
-

@@ -76,6 +76,7 @@ type
   ///	  <note type="warning">This type redefined the
   ///	  <see cref="SysUtils|TPredicate&lt;T&gt;" /> type with a const parameter.</note>
   ///	</remarks>
+  /// <seealso cref="Spring.DesignPatterns|ISpecification{T}" />
   {$ENDREGION}
   TPredicate<T> = reference to function(const value: T): Boolean;
 
@@ -177,7 +178,6 @@ type
     function ToHexString: string; overload;
     function ToHexString(const prefix: string; const delimiter: string = ' '): string; overload;
 
-//    function AsType<T>: T;
     property AsBytes: TBytes read fBytes;
     property IsEmpty: Boolean read GetIsEmpty;
     property Memory: PByte read GetMemory;

@@ -28,8 +28,8 @@
 {TODO -oOwner -cGeneral : TClipboardWatcher}
 {TODO -oOwner -cGeneral : TDeviceWatcher}
 
-///	<summary>Provides many well-encapsulated utility classes and
-///	routines.</summary>
+///	<summary>Provides many well-encapsulated utility classes and routines on
+///	the environment and system.</summary>
 unit Spring.Utils;
 
 {$I Spring.inc}
@@ -41,19 +41,14 @@ uses
   Windows,
   Messages,
   SysUtils,
-  Controls,
-  Dialogs,
-  DB,
   Registry,
   ShlObj,
   ShellAPI,
-  IOUtils,
   ActiveX,
   ComObj,
-  Generics.Collections,
   Spring,
   Spring.Collections,
-  Spring.Utils.Win32API;
+  Spring.Utils.WinAPI;
 
 type
   /// <summary>
@@ -643,63 +638,14 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TMessageBox'}
-
-  TMessageDialogButton  = Dialogs.TMsgDlgBtn;
-  TMessageDialogButtons = Dialogs.TMsgDlgButtons;
-
-  TMessageDialogShowProc = reference to function(const text, caption: string;
-    dialogType: TMsgDlgType; buttons: TMessageDialogButtons;
-    defaultButton: TMessageDialogButton): TModalResult;
-
-  /// <summary>
-  /// Provides static methods to show common message dialogs.
-  /// </summary>
-  TMessageBox = class
-  private
-    class constructor Create;
-    class var fMessageDialogProc: TMessageDialogShowProc;
-    class function GetDefaultButton(const buttons: TMessageDialogButtons): TMessageDialogButton; inline;
-    class function ShowMessageDialog(const text, caption: string;
-      dialogType: TMsgDlgType; buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult;
-  public
-    { Information Message Box }
-    class function Info(const text: string; const buttons: TMessageDialogButtons = [mbOK]): TModalResult; overload;
-    class function Info(const text: string; const buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult; overload;
-    class function Info(const text, caption: string; const buttons: TMessageDialogButtons = [mbOK]): TModalResult; overload;
-    class function Info(const text, caption: string; const buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult; overload;
-    { Warning Message Box }
-    class function Warn(const text: string; const buttons: TMessageDialogButtons = [mbOK]): TModalResult; overload;
-    class function Warn(const text: string; const buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult; overload;
-    class function Warn(const text, caption: string; const buttons: TMessageDialogButtons = [mbOK]): TModalResult; overload;
-    class function Warn(const text, caption: string; const buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult; overload;
-    { Error Message Box }
-    class function Error(const text: string; const buttons: TMessageDialogButtons = [mbOK]): TModalResult; overload;
-    class function Error(const text: string; const buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult; overload;
-    class function Error(const text, caption: string; const buttons: TMessageDialogButtons = [mbOK]): TModalResult; overload;
-    class function Error(const text, caption: string; const buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult; overload;
-    { Confirm Message Box }
-    class function Confirm(const text: string; const buttons: TMessageDialogButtons = [mbYes, mbNo]): TModalResult; overload;
-    class function Confirm(const text: string; const buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult; overload;
-    class function Confirm(const text, caption: string; const buttons: TMessageDialogButtons = [mbOK]): TModalResult; overload;
-    class function Confirm(const text, caption: string; const buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult; overload;
-  public
-    class property MessageDialogProc: TMessageDialogShowProc read fMessageDialogProc write fMessageDialogProc;
-  end;
-
-  TMsgBox = TMessageBox;
-
-  TDialog = TMessageBox deprecated 'Use TMessageBox/TMsgBox instead.';
-
-  {$ENDREGION}
-
+  {$REGION 'Callback'}
 
   /// <summary>
   /// Defines an anonymous function which returns a callback pointer.
   /// </summary>
   TCallbackFunc = TFunc<Pointer>;
 
-  {$REGION '> Adapts class instance (object) method as standard callback function.'}
+  {$REGION 'Adapts class instance (object) method as standard callback function.'}
   ///	<summary>Adapts class instance (object) method as standard callback
   ///	function.</summary>
   ///	<remarks>Both the object method and the callback function need to be
@@ -722,6 +668,8 @@ type
     destructor Destroy; override;
     function Invoke: Pointer;
   end; // Consider hide the implementation.
+
+  {$ENDREGION}
 
 
   {$REGION 'TBaseNCalculator (Experimental)'}
@@ -781,42 +729,6 @@ type
   function CreateCallback(obj: TObject; methodAddress: Pointer): TCallbackFunc;
 
   /// <summary>
-  /// Try setting focus to a control.
-  /// </summary>
-  function TrySetFocus(control: TWinControl): Boolean;
-
-  function TryFocusControl(control: TWinControl): Boolean;
-    deprecated 'Use TrySetFocus instead.';
-
-  /// <summary>
-  /// Enumerates all child components, recursively.
-  /// </summary>
-  /// <param name="callback">Returning false will stop the enumeration.</param>
-  procedure EnumerateComponents(owner: TComponent; callback: TFunc<TComponent, Boolean>);
-
-  /// <summary>
-  /// Walkthrough all child controls in tab-order, recursively.
-  /// </summary>
-  /// <param name="callback">Returning false will stop the enumeration.</param>
-  procedure EnumerateControls(parentControl: TWinControl; callback: TFunc<TWinControl, Boolean>);
-
-  /// <summary>
-  /// Walkthrough all dataset records from the first one.
-  /// </summary>
-  /// <param name="callback">Returning false will stop the enumeration.</param>
-  procedure EnumerateDataSet(dataSet: TDataSet; callback: TFunc<Boolean>);
-
-  /// <summary>
-  /// GetDroppedFiles
-  /// </summary>
-  procedure GetDroppedFiles(const dataObject: IDataObject; list: TStrings); overload;
-
-  /// <summary>
-  /// GetDroppedFiles
-  /// </summary>
-  procedure GetDroppedFiles(dropHandle: THandle; list: TStrings); overload;
-
-  /// <summary>
   /// Converts a windows TFiletime value to a delphi TDatetime value.
   /// </summary>
   function ConvertFileTimeToDateTime(const fileTime: TFileTime; useLocalTimeZone: Boolean): TDateTime; overload;
@@ -827,30 +739,6 @@ type
 
 
   {$REGION 'Constants'}
-
-  const
-    { Copied from Dialogs.pas }
-    mbYesNo = [mbYes, mbNo];
-    mbYesNoCancel = [mbYes, mbNo, mbCancel];
-    mbYesAllNoAllCancel = [mbYes, mbYesToAll, mbNo, mbNoToAll, mbCancel];
-    mbOKCancel = [mbOK, mbCancel];
-    mbAbortRetryIgnore = [mbAbort, mbRetry, mbIgnore];
-    mbAbortIgnore = [mbAbort, mbIgnore];
-
-  const
-    { Copied from Controls.pas }
-    mrNone     = 0;
-    mrOk       = IDOK;
-    mrCancel   = IDCANCEL;
-    mrAbort    = IDABORT;
-    mrRetry    = IDRETRY;
-    mrIgnore   = IDIGNORE;
-    mrYes      = IDYES;
-    mrNo       = IDNO;
-    mrAll      = mrNo + 1;
-    mrNoToAll  = mrAll + 1;
-    mrYesToAll = mrNoToAll + 1;
-    mrClose    = mrYesToAll + 1;
 
   const
     SpecialFolderCSIDLs: array[TSpecialFolder] of Integer = (
@@ -971,133 +859,11 @@ begin
   Result := SysErrorMessage(GetLastError);
 end;
 
-function TrySetFocus(control: TWinControl): Boolean;
-begin
-  TArgument.CheckNotNull(control, 'control');
-
-  Result := control.Showing and control.CanFocus;
-  if Result then
-  begin
-    control.SetFocus;
-  end;
-end;
-
 function CreateCallback(obj: TObject; methodAddress: Pointer): TCallbackFunc;
 begin
   TArgument.CheckNotNull(obj, 'obj');
   TArgument.CheckNotNull(methodAddress, 'methodAddress');
   Result := TCallback.Create(obj, methodAddress);
-end;
-
-function TryFocusControl(control: TWinControl): Boolean;
-begin
-  Result := TrySetFocus(control);
-end;
-
-procedure EnumerateComponents(owner: TComponent; callback: TFunc<TComponent, Boolean>);
-var
-  component: TComponent;
-begin
-  TArgument.CheckNotNull(owner, 'owner');
-  TArgument.CheckNotNull(Assigned(callback), 'callback');
-
-  for component in owner do
-  begin
-    if not callback(component) then
-    begin
-      Exit;
-    end;
-    if component.ComponentCount > 0 then
-    begin
-      EnumerateComponents(component, callback);
-    end;
-  end;
-end;
-
-procedure EnumerateControls(parentControl: TWinControl; callback: TFunc<TWinControl, Boolean>);
-var
-  list: TList;
-  i: Integer;
-begin
-  TArgument.CheckNotNull(parentControl, 'parentControl');
-  TArgument.CheckNotNull(Assigned(callback), 'callback');
-
-  list := TList.Create;
-  try
-    parentControl.GetTabOrderList(list);
-    for i := 0 to list.Count - 1 do
-    begin
-      if not callback(TWinControl(list[i])) then
-      begin
-        Exit;
-      end;
-    end;
-  finally
-    list.Free;
-  end;
-end;
-
-procedure EnumerateDataSet(dataSet: TDataSet; callback: TFunc<Boolean>);
-begin
-  TArgument.CheckNotNull(dataSet, 'dataSet');
-  TArgument.CheckNotNull(Assigned(callback), 'callback');
-
-  dataSet.DisableControls;
-  try
-    dataSet.First;
-    while not dataSet.Eof and callback do
-    begin
-      dataSet.Next;
-    end;
-  finally
-    dataSet.EnableControls;
-  end;
-end;
-
-procedure GetDroppedFiles(const dataObject: IDataObject; list: TStrings); overload;
-var
-  handle: THandle;
-  medium: TStgMedium;
-const
-  f: tagFORMATETC = (
-    cfFormat: CF_HDROP;
-    ptd: nil;
-    dwAspect: DVASPECT_CONTENT;
-    lindex: -1;
-    tymed: LongInt($FFFFFFFF)
-  );
-begin
-  TArgument.CheckNotNull(dataObject, 'dataObject');
-  OleCheck(dataObject.GetData(f, medium));
-  handle := medium.hGlobal;
-  GetDroppedFiles(handle, list);
-end;
-
-procedure GetDroppedFiles(dropHandle: THandle; list: TStrings);
-var
-  count, size, i: Integer;
-  fileName: array[0..MAX_PATH] of Char;
-const
-  f: tagFORMATETC = (
-    cfFormat: CF_HDROP;
-    ptd: nil;
-    dwAspect: DVASPECT_CONTENT;
-    lindex: -1;
-    tymed: LongInt($FFFFFFFF)
-  );
-begin
-  TArgument.CheckNotNull(list, 'list');
-  count := DragQueryFile(dropHandle, $FFFFFFFF, nil, 0);
-  try
-    for i := 0 to count - 1 do
-    begin
-      size := DragQueryFile(dropHandle, i, nil, 0) + 1;
-      DragQueryFile(dropHandle, i, fileName, size);
-      list.Add(fileName);
-    end;
-  finally
-    DragFinish(dropHandle);
-  end;
 end;
 
 function ConvertFileTimeToDateTime(const fileTime: TFileTime; useLocalTimeZone: Boolean): TDateTime;
@@ -2103,132 +1869,6 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TMessageBox'}
-
-class constructor TMessageBox.Create;
-begin
-  fMessageDialogProc := ShowMessageDialog;
-end;
-
-class function TMessageBox.GetDefaultButton(
-  const buttons: TMessageDialogButtons): TMessageDialogButton;
-begin
-  if mbOk in Buttons then
-    Result := mbOk
-  else if mbYes in Buttons then
-    Result := mbYes
-  else
-    Result := mbRetry;
-end;
-
-class function TMessageBox.ShowMessageDialog(const text, caption: string;
-  dialogType: TMsgDlgType; buttons: TMessageDialogButtons;
-  defaultButton: TMessageDialogButton): TModalResult;
-begin
-  if caption = '' then
-  begin
-    Result := MessageDlg(text, dialogType, buttons, -1, defaultButton);
-  end
-  else
-  begin
-    Result := Dialogs.TaskMessageDlg(caption, text, dialogType, buttons, -1, defaultButton);
-  end;
-end;
-
-class function TMessageBox.Confirm(const text, caption: string;
-  const buttons: TMessageDialogButtons): TModalResult;
-begin
-  Result := Confirm(text, caption, buttons, GetDefaultButton(buttons));
-end;
-
-class function TMessageBox.Confirm(const text, caption: string; const buttons: TMessageDialogButtons;
-  defaultButton: TMessageDialogButton): TModalResult;
-begin
-  Result := ShowMessageDialog(text, caption, mtConfirmation, buttons, defaultButton);
-end;
-
-class function TMessageBox.Confirm(const text: string; const buttons: TMessageDialogButtons): TModalResult;
-begin
-  Result := Confirm(text, '', buttons, GetDefaultButton(buttons));
-end;
-
-class function TMessageBox.Confirm(const text: string; const buttons: TMessageDialogButtons;
-  defaultButton: TMessageDialogButton): TModalResult;
-begin
-  Result := Confirm(text, '', buttons, defaultButton);
-end;
-
-class function TMessageBox.Info(const text: string;
-  const buttons: TMessageDialogButtons): TModalResult;
-begin
-  Result := Info(text, '', buttons, GetDefaultButton(buttons));
-end;
-
-class function TMessageBox.Info(const text: string;
-  const buttons: TMessageDialogButtons;
-  defaultButton: TMessageDialogButton): TModalResult;
-begin
-  Result := Info(text, '', buttons, defaultButton);
-end;
-
-class function TMessageBox.Info(const text, caption: string;
-  const buttons: TMessageDialogButtons; defaultButton: TMessageDialogButton): TModalResult;
-begin
-  Result := ShowMessageDialog(text, caption, mtInformation, buttons, defaultButton);
-end;
-
-class function TMessageBox.Info(const text, caption: string; const buttons: TMessageDialogButtons): TModalResult;
-begin
-  Result := Info(text, caption, buttons, GetDefaultButton(buttons));
-end;
-
-class function TMessageBox.Warn(const text: string; const buttons: TMessageDialogButtons;
-  defaultButton: TMessageDialogButton): TModalResult;
-begin
-  Result := Warn(text, '', buttons, defaultButton);
-end;
-
-class function TMessageBox.Warn(const text: string; const buttons: TMessageDialogButtons): TModalResult;
-begin
-  Result := Warn(text, '', buttons, GetDefaultButton(buttons));
-end;
-
-class function TMessageBox.Warn(const text, caption: string; const buttons: TMessageDialogButtons;
-  defaultButton: TMessageDialogButton): TModalResult;
-begin
-  Result := ShowMessageDialog(text, caption, mtWarning, buttons, defaultButton);
-end;
-
-class function TMessageBox.Warn(const text, caption: string; const buttons: TMessageDialogButtons): TModalResult;
-begin
-  Result := Warn(text, caption, buttons, GetDefaultButton(buttons));
-end;
-
-class function TMessageBox.Error(const text, caption: string; const buttons: TMessageDialogButtons): TModalResult;
-begin
-  Result := Error(text, caption, buttons, GetDefaultButton(buttons));
-end;
-
-class function TMessageBox.Error(const text, caption: string; const buttons: TMessageDialogButtons;
-  defaultButton: TMessageDialogButton): TModalResult;
-begin
-  Result := ShowMessageDialog(text, caption, mtError, buttons, defaultButton);
-end;
-
-class function TMessageBox.Error(const text: string; const buttons: TMessageDialogButtons): TModalResult;
-begin
-  Result := Error(text, '', buttons, GetDefaultButton(buttons));
-end;
-
-class function TMessageBox.Error(const text: string; const buttons: TMessageDialogButtons;
-  defaultButton: TMessageDialogButton): TModalResult;
-begin
-  Result := Error(text, '', buttons, defaultButton);
-end;
-
-{$ENDREGION}
-
-
 {$REGION 'TBaseNCalculator'}
 
 constructor TBaseNCalculator.Create(const elements: string);
@@ -2498,5 +2138,3 @@ end;
 {$ENDREGION}
 
 end.
-
-

@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Tests.IoC.LifetimeManager;
+unit Spring.Tests.DI.LifetimeManager;
 
 interface
 
@@ -31,8 +31,8 @@ uses
   Rtti,
   SysUtils,
   Spring,
-  Spring.IoC.Core,
-  Spring.IoC.LifetimeManager;
+  Spring.DI.Core,
+  Spring.DI.LifetimeManager;
 
 type
   TMockContext = class(TInterfacedObject, IContainerContext)

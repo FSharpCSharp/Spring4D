@@ -29,7 +29,6 @@ interface
 uses
   Classes,
   SysUtils,
-  XmlIntf,
   SyncObjs,
   Spring,
   Spring.Collections,
@@ -105,7 +104,6 @@ implementation
 
 uses
   StrUtils,
-  Rtti,
   Spring.Reflection,
   Spring.Logging.Appenders,
   Spring.Logging.Layouts;

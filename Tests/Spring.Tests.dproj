@@ -26,7 +26,7 @@
 		<PropertyGroup Condition="'$(Base)'!=''">
 			<DCC_UNIT_PLATFORM>false</DCC_UNIT_PLATFORM>
 			<DCC_SYMBOL_PLATFORM>false</DCC_SYMBOL_PLATFORM>
-			<DCC_UnitSearchPath>$(BDS)\Source\DUnit\src;..\Source\Base;..\Source\Base\Collections;..\Source\Base\Configuration;..\Source\Base\Cryptography;..\Source\Base\Utils;..\Source\Core\IoC;..\Source\Core\Logging;..\Source\Extensions;..\Source\Extensions\Numbering;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UnitSearchPath>$(BDS)\Source\DUnit\src;..\Source\Base;..\Source\Base\Collections;..\Source\Base\Utils;..\Source\Core\Configuration;..\Source\Core\Cryptography;..\Source\Core\Logging;..\Source\Core\DI;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DCC_Define>_CONSOLE_TESTRUNNER;$(DCC_Define)</DCC_Define>
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
 			<DCC_DependencyCheckOutputName>Spring.Tests.exe</DCC_DependencyCheckOutputName>
@@ -55,18 +55,16 @@
 			<DelphiCompile Include="Spring.Tests.dpr">
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
-			<DCCReference Include="Source\Extensions\Spring.Tests.Numbering.pas"/>
-			<DCCReference Include="Source\Base\Spring.Tests.Cryptography.pas"/>
 			<DCCReference Include="Source\Base\Spring.Tests.DesignPatterns.pas"/>
 			<DCCReference Include="Source\Base\Spring.Tests.Helpers.pas"/>
 			<DCCReference Include="Source\Base\Spring.Tests.System.pas"/>
 			<DCCReference Include="Source\Base\Spring.Tests.Utils.pas"/>
-			<DCCReference Include="Source\Core\Spring.Tests.IoC.Components.pas"/>
-			<DCCReference Include="Source\Core\Spring.Tests.IoC.LifetimeManager.pas"/>
-			<DCCReference Include="Source\Core\Spring.Tests.IoC.pas"/>
+			<DCCReference Include="Source\Core\Spring.Tests.DI.Components.pas"/>
+			<DCCReference Include="Source\Core\Spring.Tests.DI.LifetimeManager.pas"/>
+			<DCCReference Include="Source\Core\Spring.Tests.DI.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.Pool.pas"/>
 			<DCCReference Include="Source\Base\Spring.Tests.ValueConverters.pas"/>
-			<DCCReference Include="Source\Base\Spring.Tests.Reflection.pas"/>
+			<DCCReference Include="Source\Core\Spring.Tests.Cryptography.pas"/>
 			<None Include="Spring.Tests.todo"/>
 			<BuildConfiguration Include="Debug">
 				<Key>Cfg_2</Key>

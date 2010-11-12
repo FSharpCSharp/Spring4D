@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.IoC.Registration;
+unit Spring.DI.Registration;
 
 {$I Spring.inc}
 
@@ -36,7 +36,7 @@ uses
   Generics.Collections,
   Spring,
   Spring.Collections,
-  Spring.IoC.Core;
+  Spring.DI.Core;
 
 type
   /// <summary>
@@ -178,7 +178,7 @@ uses
   Spring.Reflection,
   Spring.Helpers,
   Spring.ResourceStrings,
-  Spring.IoC.ResourceStrings;
+  Spring.DI.ResourceStrings;
 
 {$REGION 'TComponentRegistry'}
 

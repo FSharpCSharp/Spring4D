@@ -79,7 +79,7 @@ uses
   ComObj,
   WinSock,
   WinInet,
-  Spring.Utils.Win32API,
+  Spring.Utils.WinAPI,
   Spring.Utils;
 
 

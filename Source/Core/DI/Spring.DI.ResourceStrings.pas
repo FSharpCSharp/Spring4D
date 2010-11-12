@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.IoC.ResourceStrings;
+unit Spring.DI.ResourceStrings;
 
 {$I Spring.inc}
 

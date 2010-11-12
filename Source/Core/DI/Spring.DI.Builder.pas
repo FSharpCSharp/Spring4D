@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.IoC.Builder;
+unit Spring.DI.Builder;
 
 {$I Spring.inc}
 
@@ -36,7 +36,7 @@ uses
   Generics.Collections,
   Spring,
   Spring.DesignPatterns,
-  Spring.IoC.Core;
+  Spring.DI.Core;
 
 type
   TComponentBuilder = class(TInterfacedObject, IComponentBuilder)
@@ -137,9 +137,9 @@ uses
   Spring.Collections,
   Spring.Reflection,
   Spring.Helpers,
-  Spring.IoC.Injection,
-  Spring.IoC.ComponentActivator,
-  Spring.IoC.ResourceStrings;
+  Spring.DI.Injection,
+  Spring.DI.ComponentActivator,
+  Spring.DI.ResourceStrings;
 
 
 {$REGION 'TComponentBuilder'}

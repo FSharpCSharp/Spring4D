@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.IoC;
+unit Spring.DI;
 
 {$I Spring.inc}
 
@@ -36,14 +36,14 @@ uses
   Generics.Collections,
   Spring,
   Spring.Collections,
-  Spring.IoC.Core,
-  Spring.IoC.Registration;
+  Spring.DI.Core,
+  Spring.DI.Registration;
 
 type
   TValue = Rtti.TValue;
 
   /// <summary>
-  /// Represents an Inversion of Control (IoC) container.
+  /// Represents an Dependency Injection Container.
   /// </summary>
   TContainer = class(TInterfaceBase, IContainerContext, IInterface)
   private
@@ -95,22 +95,22 @@ type
     procedure Release(instance: IInterface); overload;
   end;
 
-  EContainerException = Spring.IoC.Core.EContainerException;
-  ERegistrationException = Spring.IoC.Core.ERegistrationException;
-  EResolveException = Spring.IoC.Core.EResolveException;
-  EUnsatisfiedDependencyException = Spring.IoC.Core.EUnsatisfiedDependencyException;
-  ECircularDependencyException = Spring.IoC.Core.ECircularDependencyException;
-  EActivatorException = Spring.IoC.Core.EActivatorException;
+  EContainerException = Spring.DI.Core.EContainerException;
+  ERegistrationException = Spring.DI.Core.ERegistrationException;
+  EResolveException = Spring.DI.Core.EResolveException;
+  EUnsatisfiedDependencyException = Spring.DI.Core.EUnsatisfiedDependencyException;
+  ECircularDependencyException = Spring.DI.Core.ECircularDependencyException;
+  EActivatorException = Spring.DI.Core.EActivatorException;
 
 implementation
 
 uses
   Spring.ResourceStrings,
-  Spring.IoC.Builder,
-  Spring.IoC.LifetimeManager,
-  Spring.IoC.Injection,
-  Spring.IoC.Resolvers,
-  Spring.IoC.ResourceStrings;
+  Spring.DI.Builder,
+  Spring.DI.LifetimeManager,
+  Spring.DI.Injection,
+  Spring.DI.Resolvers,
+  Spring.DI.ResourceStrings;
 
 {$REGION 'TContainer'}
 

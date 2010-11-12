@@ -127,16 +127,6 @@ type
     procedure TestImplicitConversion;
   end;
 
-  TTestRtti = class(TTestCase)
-  published
-
-  end;
-
-  TTestArgument = class(TTestCase)
-  published
-
-  end;
-
   TTestEnum = class(TTestCase)
   published
     procedure TestGetNameByEnum;

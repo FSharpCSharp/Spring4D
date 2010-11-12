@@ -42,12 +42,12 @@ type
   ELoggingException = Spring.Logging.Core.ELoggingException;
 
   /// <summary>
-  /// TLoggingManager
+  /// TLoggerManager
   /// </summary>
-  TLoggingManager = class sealed(TObject)
+  TLoggerManager = class sealed(TObject)
   strict private
     class var
-      fInstance: TLoggingManager;
+      fInstance: TLoggerManager;
       fLoggerRepository: ILoggerRepository;
   private
     class constructor Create;
@@ -55,12 +55,12 @@ type
     class function GetLoggerRepository: ILoggerRepository;
   public
     class procedure Configure(const fileName: string); overload;
-    class function FindLogger(const name: string): ILogger;
     class procedure ResetConfiguration;
     class procedure Shutdown;
+    class function FindLogger(const name: string): ILogger;
     class function GetLogger(const name: string): ILogger; overload;
     class function GetLogger(typeInfo: PTypeInfo): ILogger; overload;
-    class property Instance: TLoggingManager read fInstance;
+    class property Instance: TLoggerManager read fInstance;
   end;
 
   (*
@@ -77,10 +77,9 @@ type
   end;
   //*)
 
-function LoggingManager: TLoggingManager;
+function LoggerManager: TLoggerManager;
 
 function DefaultLogger: ILogger;
-
 
 implementation
 
@@ -93,34 +92,34 @@ uses
 
 {$REGION 'Routines'}
 
-function LoggingManager: TLoggingManager;
+function LoggerManager: TLoggerManager;
 begin
-  Result := TLoggingManager.Instance;
+  Result := TLoggerManager.Instance;
 end;
 
 function DefaultLogger: ILogger;
 begin
-  Result := TLoggingManager.GetLoggerRepository.Root;
+  Result := TLoggerManager.GetLoggerRepository.Root;
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TLoggingManager'}
+{$REGION 'TLoggerManager'}
 
-class constructor TLoggingManager.Create;
+class constructor TLoggerManager.Create;
 begin
-  fInstance := TLoggingManager.Create;
+  fInstance := TLoggerManager.Create;
   fLoggerRepository := TLoggerRepository.Create;
 end;
 
-class destructor TLoggingManager.Destroy;
+class destructor TLoggerManager.Destroy;
 begin
   fLoggerRepository := nil;
   FreeAndNil(fInstance);
 end;
 
-class procedure TLoggingManager.Configure(const fileName: string);
+class procedure TLoggerManager.Configure(const fileName: string);
 var
   configuration: IConfigurationNode;
 begin
@@ -128,12 +127,12 @@ begin
   GetLoggerRepository.Configure(configuration);
 end;
 
-class function TLoggingManager.GetLogger(const name: string): ILogger;
+class function TLoggerManager.GetLogger(const name: string): ILogger;
 begin
   Result := GetLoggerRepository.GetLogger(name);
 end;
 
-class function TLoggingManager.GetLogger(typeInfo: PTypeInfo): ILogger;
+class function TLoggerManager.GetLogger(typeInfo: PTypeInfo): ILogger;
 var
   context: TRttiContext;
   typeObj: TRttiType;
@@ -155,22 +154,22 @@ begin
   end;
 end;
 
-class function TLoggingManager.FindLogger(const name: string): ILogger;
+class function TLoggerManager.FindLogger(const name: string): ILogger;
 begin
   Result := GetLoggerRepository.FindLogger(name);
 end;
 
-class function TLoggingManager.GetLoggerRepository: ILoggerRepository;
+class function TLoggerManager.GetLoggerRepository: ILoggerRepository;
 begin
   Result := fLoggerRepository;
 end;
 
-class procedure TLoggingManager.ResetConfiguration;
+class procedure TLoggerManager.ResetConfiguration;
 begin
 
 end;
 
-class procedure TLoggingManager.Shutdown;
+class procedure TLoggerManager.Shutdown;
 begin
 
 end;
