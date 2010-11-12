@@ -78,7 +78,7 @@ type
 
   TPatternLayout = class(TLayoutBase)
   private
-    Const DefaultLayoutPattern = '';
+    Const DefaultLayoutPattern = '%Date [%Thread] %-5Level %Logger - %Message%Newline';
   private
     fParser: TPatternParser;
     fPattern: string;
@@ -140,7 +140,7 @@ constructor TPatternLayout.Create;
 begin
   inherited Create;
   fPatternParts:= TStringList.Create;
-  fParser := TPatternParser.Create('');
+  fParser := TPatternParser.Create(DefaultLayoutPattern);
   InitializeKeyWords;
   AddPatternPart('%s', ptMessage);
 end;
@@ -184,9 +184,6 @@ begin
 end;
 
 procedure TPatternLayout.ParsePattern;
-var
-  patternPart : string;
-  startPos: Integer;
 begin
   ClearPatternParts;
   if fPattern = '' then
@@ -247,7 +244,7 @@ begin
         ptThread:
           begin
             if MainThreadID = event.ThreadID then
-              builder.AppendFormat(part, ['main'])
+              builder.AppendFormat(part, ['Main'])
             else
               builder.AppendFormat(part, [IntToStr(event.ThreadID)]);
           end;

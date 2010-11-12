@@ -30,6 +30,7 @@ uses
   Classes,
   SysUtils,
   Windows,
+  Ioutils,
   Spring,
   Spring.Collections,
   Spring.Configuration,
@@ -52,6 +53,11 @@ type
     procedure Lock;
     procedure Unlock;
   protected
+    { ILoggerRepositoryInit }
+    procedure InitializeRepository(const repository: ILoggerRepository);
+    { IConfigurable }
+    procedure Configure(const configuration: IConfigurationNode);
+  protected
     procedure DoAppend(const event: TLoggingEvent); virtual;
     procedure DoClose; virtual;
     procedure DoConfigure(const configuration: IConfigurationNode); virtual;
@@ -59,11 +65,6 @@ type
     function CanAppend: Boolean; virtual;
     function RequireLayout: Boolean; virtual;
     function Format(const event: TLoggingEvent): string; virtual;
-  protected
-    { ILoggerRepositoryInit }
-    procedure InitializeRepository(const repository: ILoggerRepository);
-    { IConfigurable }
-    procedure Configure(const configuration: IConfigurationNode);
   public
     constructor Create;
     destructor Destroy; override;
@@ -87,9 +88,37 @@ type
     procedure DoAppend(const event: TLoggingEvent); override;
   end;
 
-//  TFileAppender = class(TTextWriterAppender)
-//
-//  end;
+  TFileAppender = class(TAppenderBase)
+  private
+    fFilename: string;
+    fEncoding: TEncoding;
+    fInstance: TStream;
+    fEncodings: TStrings;
+    procedure SetLogfile(const Value: string);
+    procedure DestroyFileStream;
+    procedure InitializeEncodings;
+    procedure RegistEncoding(const name: string; const encoding: TEncoding);
+    function GetEncoding(const name: string): TEncoding;
+    function GetInstance: TStream;
+    function CreateFileStream: TStream;
+  protected
+    procedure DoConfigure(const configuration: IConfigurationNode); override;
+    procedure DoClose; override;
+    procedure DoAppend(const event: TLoggingEvent); override;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    property Filename: string read fFilename write SetLogfile;
+  end;
+
+
+  TColorConsoleAppender = class(TAppenderBase)
+  protected
+    procedure DoAppend(const event: TLoggingEvent); override;
+  end;
+
+
+
 
 implementation
 
@@ -202,6 +231,7 @@ begin
     level := fRepository.FindLevel(node.Attributes['value']);
     SetThreshold(level);
   end;
+
   if RequireLayout then
   begin
     node := configuration.FindNode('layout');
@@ -286,4 +316,161 @@ begin
   Windows.OutputDebugString(PWidechar(outString));
 end;
 
+{ TFileAppender }
+
+constructor TFileAppender.Create;
+begin
+  inherited Create;
+  fEncodings := TStringList.Create;
+  InitializeEncodings;
+end;
+
+function TFileAppender.CreateFileStream: TStream;
+var
+  filePath: string;
+  fileOpenMode: Word;
+  preamble: TBytes;
+begin
+  fileOpenMode := fmOpenReadWrite or fmShareDenyWrite;
+  if not FileExists(fFileName) then
+  begin
+    filePath := ExtractFileDir(fFileName);
+    if not ForceDirectories(filePath) then
+      raise Exception.CreateFmt('Logfile path [%s] is invalid or unaccessable', [filePath]);
+    fileOpenMode := fmCreate or fmShareDenyWrite;
+  end;
+
+  // open file
+  Result := TFileStream.Create(fFileName, fileOpenMode);
+  Result.Seek(0, soFromEnd);
+
+  // initialize new logfile encoding BOM
+  if Result.Size = 0 then
+  begin
+    preamble := fEncoding.GetPreamble;
+    Result.Write(preamble[0], Length(preamble));
+  end;
+end;
+
+destructor TFileAppender.Destroy;
+begin
+  fEncodings.Free;
+  inherited;
+end;
+
+procedure TFileAppender.DestroyFileStream;
+begin
+  FreeAndNil(fInstance);
+end;
+
+procedure TFileAppender.DoAppend(const event: TLoggingEvent);
+var
+  instance: TStream;
+  msg: string;
+  buffer: TBytes;
+begin
+  msg := Format(event);
+  if msg <> '' then
+  begin
+    // Instance in here needn't to be protected,as the lock protection has been used
+    // in append procedure which in ancestor class
+    Assert(fEncoding <> nil, 'Encoding is nil');
+    buffer := fEncoding.GetBytes(msg);
+    instance := GetInstance;
+    instance.Write(buffer[0], Length(buffer));
+  end;
+end;
+
+procedure TFileAppender.DoClose;
+begin
+  DestroyFileStream;
+end;
+
+procedure TFileAppender.DoConfigure(const configuration: IConfigurationNode);
+var
+  encodingName : string;
+  node : IConfigurationNode;
+begin
+  inherited;
+  node := configuration.FindNode('encoding');
+  if node <> nil then
+    encodingName := node.Attributes['value']
+  else
+    encodingName := '';
+
+  node := configuration.FindNode('filename');
+  if node <> nil then
+    filename := node.Attributes['value']
+  else
+    filename := '';
+
+  fEncoding := GetEncoding(encodingname);
+end;
+
+function TFileAppender.GetEncoding(const name: string): TEncoding;
+var
+  index: integer;
+begin
+  Result := TEncoding.Default;
+  index := fEncodings.IndexOf(name);
+  if index >=0 then
+    result := TEncoding(fEncodings.Objects[index]);
+end;
+
+function TFileAppender.GetInstance: TStream;
+begin
+  if fInstance = nil then
+  begin
+    fInstance := CreateFileStream;
+  end;
+  Result := fInstance;
+end;
+
+procedure TFileAppender.InitializeEncodings;
+begin
+  RegistEncoding('utf-7',TEncoding.UTF7);
+  RegistEncoding('utf7',TEncoding.UTF7);
+  RegistEncoding('utf-8', TEncoding.UTF8);
+  RegistEncoding('utf', TEncoding.UTF8);
+  RegistEncoding('default', TEncoding.Default);
+  RegistEncoding('unicode', TEncoding.Unicode);
+  RegistEncoding('utf16', TEncoding.Unicode);
+  RegistEncoding('utf-16', TEncoding.Unicode);
+end;
+
+procedure TFileAppender.RegistEncoding(const name: string; const encoding: TEncoding);
+begin
+  fEncodings.AddObject(name, TObject(encoding));
+end;
+
+procedure TFileAppender.SetLogfile(const Value: string);
+begin
+  if Value <> fFilename then
+  begin
+    Lock;
+    try
+      if fFilename <> Value then
+      begin
+        fFilename := value;
+        if fFilename <> '' then
+          fFilename:= TPath.GetFullPath(fFilename);
+
+        DestroyFileStream;
+      end;
+    finally
+      Unlock;
+    end;
+  end;
+end;
+
+{ TColorConsoleAppender }
+
+procedure TColorConsoleAppender.DoAppend(const event: TLoggingEvent);
+begin
+  inherited;
+
+end;
+
 end.
+
+

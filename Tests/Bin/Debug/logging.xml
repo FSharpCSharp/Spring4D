@@ -4,13 +4,24 @@
 		<threshold value="WARN" /> 
 	-->
         <layout type="Spring.Logging.Layouts.TPatternLayout">
-            <conversionPattern value="%date [%thread] %-5level %logger - %message%newline" />
+            <conversionPattern value="%Date [%Thread] %-5Level %Logger - %Message%Newline" />
         </layout>
+    </appender>
+
+
+	<appender name="fileappender" type="Spring.Logging.Appenders.TFileAppender">
+       
+	  <filename value="Log\test.log" />
+	  <encoding value="utf-8" />
+		<layout type="Spring.Logging.Layouts.TPatternLayout">
+            <conversionPattern value="%Date [%Thread] %-5Level %Logger - %Message%Newline" />
+        </layout>
+
     </appender>
     
     <root>
         <level value="DEBUG" />
-        <appender-ref ref="console" />
+        <appender-ref ref="fileappender" />
     </root>
     
     <logger name="Spring.Base">

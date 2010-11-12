@@ -28,7 +28,7 @@
 program Spike;
 
 {$APPTYPE CONSOLE}
-{.$STRONGLINKTYPES ON}
+{$STRONGLINKTYPES ON}
 
 uses
   Classes,
@@ -38,21 +38,15 @@ uses
   Spring.Collections,
   Spring.Logging.Core,
   Spring.Logging,
-  Spring.Logging.Appenders,
-  Spring.Logging.Layouts,
   StrUtils
   ;
 
 var
   logger: ILogger;
   s: string;
-  p: IAppender;
-  m: ILayout;
 
 begin
   try
-    p := TConsoleAppender.Create;
-    m := TPatternLayout.Create;
     LoggerManager.Configure('logging.xml');
     DefaultLogger.Info('Hello');
     logger := LoggerManager.GetLogger('Spring');
@@ -60,12 +54,13 @@ begin
     logger.Info('Info...');
     logger.Warn('WARN');
     logger.Error('ERROR');
+    logger.Debug('Õ€ Œ“ «∫∫◊÷');
     logger := LoggerManager.GetLogger('Spring.Base');
     logger.Debug('XX');
     logger.Info('YY');
+    Readln(s);
   except
     on E: Exception do
       Writeln(E.ClassName, ': ', E.Message);
   end;
-  Readln(s);
 end.

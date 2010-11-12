@@ -28,6 +28,7 @@ interface
 
 uses
   Classes,
+  Character,
   SysUtils,
   Generics.Collections,
   Spring,
@@ -143,7 +144,7 @@ begin
   pattern.PatternPart := keyword;
   pattern.Convertor := convertor;
   pattern.PatternType := patternType;
-  fKeyPatterns.Add(keyword, pattern);
+  fKeyPatterns.Add(LowerCase(keyword), pattern);
 end;
 
 constructor TPatternParser.Create(const pattern: string);
@@ -161,7 +162,7 @@ end;
 
 function TPatternParser.GetPatternToken(const keyWord: string): TPatternToken;
 begin
-  if not fKeyPatterns.TryGetValue(keyWord , Result) then
+  if not fKeyPatterns.TryGetValue(LowerCase(keyWord) , Result) then
   begin
     Result.PatternPart := keyWord;
     Result.Convertor := keyWord;
@@ -202,7 +203,7 @@ var
     patternPart := '';
     Result := tpText;
     repeat
-      patternPart := patternPart + fPattern[cursor];
+      patternPart := patternPart + TCharacter.ToLower(fPattern[cursor]);
       Inc(cursor);
       if fKeyPatterns.ContainsKey(patternPart) then begin
         Result := tpKeyWord;
@@ -211,8 +212,8 @@ var
     until not (Mapping(fPattern[cursor])  in [mttLetter, mttNumber]);
   end;
 begin
-  if fPattern = '' then
-    Exit(tpEof);
+  if fPattern = '' then Exit(tpEof);
+
   fTokenPostion := fCurPosition;
   cursor := fTokenPostion;
   tokenType:= Mapping(fPattern[cursor]) ;
