@@ -66,6 +66,7 @@ type
   private
     function GetName: string;
     function GetThreshold: TLevel;
+    function GetRoot: IHierarchyLogger;
     procedure SetName(const value: string);
     procedure SetThreshold(const value: TLevel);
   protected
@@ -91,9 +92,9 @@ type
     function GetCurrentLoggers: ICollection<ILogger>;
     function GetLogger(const name: string): ILogger;
     property EmittedNoAppenderWarning: Boolean read fEmittedNoAppenderWarning write fEmittedNoAppenderWarning;
-    property Root: IHierarchyLogger read fRoot;
     property Name: string read GetName write SetName;
     property Threshold: TLevel read GetThreshold write SetThreshold;
+    property Root: IHierarchyLogger read GetRoot;
   end;
 
 const
@@ -107,10 +108,9 @@ uses
   Rtti,
   Spring.Reflection,
   Spring.Logging.Appenders,
-  Spring.Logging.Layouts,
-  Spring.Helpers;
+  Spring.Logging.Layouts;
 
-function LastIndexOf(const value: Char; const s: string): Integer; inline;
+function LastIndexOf(const value: Char; const s: string): Integer;
 var
   i: Integer;
 begin
@@ -248,7 +248,7 @@ end;
 
 function TLoggerRepository.FindLevel(const name: string): TLevel;
 begin
-  fLevels.TryGetValue(name, Result);
+  fLevels.TryGetValue(UpperCase(name), Result);
 end;
 
 function TLoggerRepository.FindLogger(const name: string): ILogger;
@@ -319,7 +319,7 @@ end;
 function TLoggerRepository.IsDisabled(const level: TLevel): Boolean;
 begin
   TArgument.CheckNotNull(level <> nil, 'level');
-  Result := Threshold.IsGreaterThan(level);
+  Result := not Threshold.IsGreaterThanOrEqualTo(level);
 end;
 
 procedure TLoggerRepository.Lock;
@@ -390,11 +390,16 @@ var
   nodes: IConfigurationNodes;
   node: IConfigurationNode;
   name: string;
+  thresholdValue: string;
   logger: ILogger;
   appenderType: string;
   appender: IAppender;
 begin
   TArgument.CheckNotNull(configuration, 'configuration');
+  if configuration.TryGetAttribute('threshold', thresholdValue) then
+  begin
+    Threshold := FindLevel(thresholdValue);
+  end;
   nodes := configuration.FindNodes('appender');
   for node in nodes do
   begin
@@ -402,7 +407,7 @@ begin
     appender := CreateAppender(appenderType);
     if appender = nil then
     begin
-      // TODO: Internal error
+      // TODO: Internal log
       Continue;
     end;
     GetAppenders.Add(appender);
@@ -428,6 +433,11 @@ end;
 function TLoggerRepository.GetName: string;
 begin
   Result := fName;
+end;
+
+function TLoggerRepository.GetRoot: IHierarchyLogger;
+begin
+  Result := fRoot;
 end;
 
 function TLoggerRepository.GetThreshold: TLevel;

@@ -43,10 +43,12 @@ uses
 
 var
   logger: ILogger;
+  s: string;
 
 begin
   try
     LoggingManager.Configure('logging.xml');
+    DefaultLogger.Info('Hello');
     logger := LoggingManager.GetLogger('Spring');
     logger.Debug('Debug');
     logger.Info('Info...');
@@ -55,6 +57,7 @@ begin
     logger := LoggingManager.GetLogger('Spring.Base');
     logger.Debug('XX');
     logger.Info('YY');
+    Readln(s);
   except
     on E: Exception do
       Writeln(E.ClassName, ': ', E.Message);

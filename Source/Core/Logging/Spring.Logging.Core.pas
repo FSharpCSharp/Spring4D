@@ -225,6 +225,7 @@ type
     {$REGION 'Property Getters & Setters'}
       function GetName: string;
       function GetThreshold: TLevel;
+      function GetRoot: IHierarchyLogger;
       procedure SetName(const value: string);
       procedure SetThreshold(const value: TLevel);
     {$ENDREGION}
@@ -238,6 +239,7 @@ type
     function GetLogger(const name: string): ILogger;
     property Name: string read GetName write SetName;
     property Threshold: TLevel read GetThreshold write SetThreshold;
+    property Root: IHierarchyLogger read GetRoot;
   end;
 
   ILoggerRepositoryInit = interface
@@ -808,10 +810,11 @@ begin
   Result := fParent;
 end;
 
-// TODO: Optimization (Returns false if this level is disabled globally)
 function TLogger.IsEnabledFor(const level: TLevel): Boolean;
 begin
-  Result := (level <> nil) and level.IsGreaterThanOrEqualTo(GetEffectiveLevel);
+  Result := (level <> nil) and
+    level.IsGreaterThanOrEqualTo(Repository.Threshold) and
+    level.IsGreaterThanOrEqualTo(GetEffectiveLevel);
 end;
 
 function TLogger.GetEffectiveLevel: TLevel;

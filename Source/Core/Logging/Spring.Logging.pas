@@ -79,6 +79,9 @@ type
 
 function LoggingManager: TLoggingManager;
 
+function DefaultLogger: ILogger;
+
+
 implementation
 
 uses
@@ -93,6 +96,11 @@ uses
 function LoggingManager: TLoggingManager;
 begin
   Result := TLoggingManager.Instance;
+end;
+
+function DefaultLogger: ILogger;
+begin
+  Result := TLoggingManager.GetLoggerRepository.Root;
 end;
 
 {$ENDREGION}

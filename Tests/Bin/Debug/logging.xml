@@ -1,5 +1,8 @@
 <logging>
     <appender name="console" type="Spring.Logging.Appenders.TConsoleAppender">
+	<!--
+		<threshold value="WARN" /> 
+	-->
         <layout type="Spring.Logging.Layouts.TPatternLayout">
             <conversionPattern value="%date [%thread] %-5level %logger - %message%newline" />
         </layout>

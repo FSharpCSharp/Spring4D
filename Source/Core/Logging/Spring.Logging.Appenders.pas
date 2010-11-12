@@ -40,7 +40,7 @@ type
     IConfigurable, ILoggerRepositoryInit)
   private
     fName: string;
-//    fThreshold: TLevel;
+    fThreshold: TLevel;
     fClosed: Boolean;
     fRecursiveGuard: Boolean;
     fLayout: ILayout;
@@ -48,6 +48,7 @@ type
     function GetName: string;
     procedure SetName(const value: string);
     procedure SetLayout(const value: ILayout);
+    procedure SetThreshold(const Value: TLevel);
   protected
     procedure Lock;
     procedure Unlock;
@@ -58,7 +59,7 @@ type
     function Format(const event: TLoggingEvent): string; virtual;
     function AcceptEvent(const event: TLoggingEvent): Boolean; virtual;
     function CanAppend: Boolean;
-    function RequireLayout: Boolean;
+    function RequireLayout: Boolean; virtual;
   protected
     { ILoggerRepositoryInit }
     procedure InitializeRepository(const repository: ILoggerRepository);
@@ -74,6 +75,7 @@ type
     procedure Append(const event: TLoggingEvent); overload;
     property Name: string read GetName write SetName;
     property Layout: ILayout read fLayout write SetLayout;
+    property Threshold: TLevel read fThreshold write SetThreshold;
   end;
 
   TConsoleAppender = class(TAppenderBase)
@@ -100,6 +102,7 @@ uses Spring.Logging.Utils;
 constructor TAppenderBase.Create;
 begin
   inherited Create;
+  fThreshold := TLevel.All;
 //  fErrorHandler := TOnlyOnceErrorHandler.Create(ClassName);
 end;
 
@@ -141,8 +144,15 @@ procedure TAppenderBase.Configure(const configuration: IConfigurationNode);
 var
   node: IConfigurationNode;
   layoutType: string;
+  level: TLevel;
 begin
   fName := configuration.Attributes['name'];
+  node := configuration.FindNode('threshold');
+  if node <> nil then
+  begin
+    level := fRepository.FindLevel(node.Attributes['value']);
+    SetThreshold(level);
+  end;
   if RequireLayout then
   begin
     node := configuration.FindNode('layout');
@@ -159,7 +169,8 @@ end;
 
 function TAppenderBase.AcceptEvent(const event: TLoggingEvent): Boolean;
 begin
-  Result := True;
+  Result := (event.LoggerLevel <> nil) and
+    event.LoggerLevel.IsGreaterThanOrEqualTo(Threshold);
 end;
 
 procedure TAppenderBase.Append(const event: TLoggingEvent);
@@ -209,7 +220,7 @@ end;
 
 function TAppenderBase.CanAppend: Boolean;
 begin
-  Result := True;
+  Result := not RequireLayout or (fLayout <> nil);
 end;
 
 procedure TAppenderBase.CheckLayout;
@@ -237,6 +248,19 @@ end;
 procedure TAppenderBase.SetName(const value: string);
 begin
   fName := name;
+end;
+
+procedure TAppenderBase.SetThreshold(const Value: TLevel);
+begin
+  if value <> nil then
+  begin
+    fThreshold := Value;
+  end
+  else
+  begin
+    fThreshold := TLevel.All;
+    // TODO: Internal log
+  end;
 end;
 
 procedure TAppenderBase.SetLayout(const value: ILayout);
