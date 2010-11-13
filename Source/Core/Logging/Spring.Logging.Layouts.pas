@@ -258,7 +258,10 @@ begin
           builder.AppendFormat(part, [Environment.MachineName]);
         ptApplicationVersion:
           builder.AppendFormat(part, [Environment.ApplicationVersionString]);
-        ptPercent: builder.Append('%');
+        ptPercent:
+          builder.Append('%');
+        ptTab:
+          builder.Append(#9);
       else
         builder.Append(part);
       end;
@@ -281,6 +284,7 @@ begin
   AddKeyPattern('user',        's', ptUser);
   AddKeyPattern('computer',    's', ptComputer);
   AddKeyPattern('appversion',  's', ptApplicationVersion);
+  AddKeyPattern('tab',         '' , ptTab);
 end;
 
 procedure TPatternLayout.SetPattern(const Value: string);

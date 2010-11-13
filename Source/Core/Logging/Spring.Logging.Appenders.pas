@@ -466,9 +466,13 @@ end;
 { TColorConsoleAppender }
 
 procedure TColorConsoleAppender.DoAppend(const event: TLoggingEvent);
+var
+  handle: THandle;
 begin
-  inherited;
-
+  handle := Windows.GetStdHandle(STD_OUTPUT_HANDLE);
+  //inherited;
+  windows.SetConsoleTextAttribute(handle, 100);
+  Write(format(event));
 end;
 
 end.

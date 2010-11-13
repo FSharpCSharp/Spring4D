@@ -60,7 +60,7 @@ Const
 
 type
 
-  TPatternType = (ptCustomer, ptText, ptDate,
+  TPatternType = (ptCustomer, ptText, ptDate, ptTab,
     ptThread, ptLevel, ptLogger, ptMessage,
     ptNewLine, ptUser, ptComputer, ptPercent, ptApplicationVersion);
 
