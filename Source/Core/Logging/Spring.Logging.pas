@@ -77,8 +77,15 @@ type
   end;
   //*)
 
+///	<summary>Returns the shared instance of the TLoggerManager.</summary>
 function LoggerManager: TLoggerManager;
 
+{$REGION 'Documentation'}
+///	<summary>Returns the default logger instance.</summary>
+///	<returns>The root logger.</returns>
+///	<seealso cref="LoggerManager"></seealso>
+///	<seealso cref="ILogger"></seealso>
+{$ENDREGION}
 function DefaultLogger: ILogger;
 
 implementation

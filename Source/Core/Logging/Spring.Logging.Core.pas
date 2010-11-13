@@ -113,19 +113,24 @@ type
     {$ENDREGION}
     procedure Debug(const msg: string); overload;
     procedure Debug(const msg: string; e: Exception); overload;
-    procedure DebugFormat(const format: string; const args: array of const);
+    procedure DebugFormat(const format: string; const args: array of const); overload;
+    procedure DebugFormat(const format: string; const args: array of const; e: Exception); overload;
     procedure Info(const msg: string); overload;
     procedure Info(const msg: string; e: Exception); overload;
-    procedure InfoFormat(const format: string; const args: array of const);
+    procedure InfoFormat(const format: string; const args: array of const); overload;
+    procedure InfoFormat(const format: string; const args: array of const; e: Exception); overload;
     procedure Warn(const msg: string); overload;
     procedure Warn(const msg: string; e: Exception); overload;
-    procedure WarnFormat(const format: string; const args: array of const);
+    procedure WarnFormat(const format: string; const args: array of const); overload;
+    procedure WarnFormat(const format: string; const args: array of const; e: Exception); overload;
     procedure Error(const msg: string); overload;
     procedure Error(const msg: string; e: Exception); overload;
-    procedure ErrorFormat(const format: string; const args: array of const);
+    procedure ErrorFormat(const format: string; const args: array of const); overload;
+    procedure ErrorFormat(const format: string; const args: array of const; e: Exception); overload;
     procedure Fatal(const msg: string); overload;
     procedure Fatal(const msg: string; e: Exception); overload;
-    procedure FatalFormat(const format: string; const args: array of const);
+    procedure FatalFormat(const format: string; const args: array of const); overload;
+    procedure FatalFormat(const format: string; const args: array of const; e: Exception); overload;
     property Name: string read GetName;
     property Level: TLevel read GetLevel write SetLevel;
     property IsDebugEnabled: Boolean read GetIsDebugEnabled;
@@ -277,19 +282,24 @@ type
     destructor Destroy; override;
     procedure Debug(const msg: string); overload;
     procedure Debug(const msg: string; e: Exception); overload;
-    procedure DebugFormat(const format: string; const args: array of const);
+    procedure DebugFormat(const format: string; const args: array of const); overload;
+    procedure DebugFormat(const format: string; const args: array of const; e: Exception); overload;
     procedure Info(const msg: string); overload;
     procedure Info(const msg: string; e: Exception); overload;
-    procedure InfoFormat(const format: string; const args: array of const);
+    procedure InfoFormat(const format: string; const args: array of const); overload;
+    procedure InfoFormat(const format: string; const args: array of const; e: Exception); overload;
     procedure Warn(const msg: string); overload;
     procedure Warn(const msg: string; e: Exception); overload;
-    procedure WarnFormat(const format: string; const args: array of const);
+    procedure WarnFormat(const format: string; const args: array of const); overload;
+    procedure WarnFormat(const format: string; const args: array of const; e: Exception); overload;
     procedure Error(const msg: string); overload;
     procedure Error(const msg: string; e: Exception); overload;
-    procedure ErrorFormat(const format: string; const args: array of const);
+    procedure ErrorFormat(const format: string; const args: array of const); overload;
+    procedure ErrorFormat(const format: string; const args: array of const; e: Exception); overload;
     procedure Fatal(const msg: string); overload;
     procedure Fatal(const msg: string; e: Exception); overload;
-    procedure FatalFormat(const format: string; const args: array of const);
+    procedure FatalFormat(const format: string; const args: array of const); overload;
+    procedure FatalFormat(const format: string; const args: array of const; e: Exception); overload;
     property Name: string read GetName;
     property Level: TLevel read GetLevel write SetLevel;
     property IsDebugEnabled: Boolean read GetIsDebugEnabled;
@@ -360,6 +370,7 @@ type
 implementation
 
 uses
+  Spring.Logging.Utils,
   Spring.Logging.ResourceStrings;
 
 
@@ -446,10 +457,10 @@ begin
   fLock.Leave;
 end;
 
-// TODO: Add try-except block
 function TLoggerBase.IsEnabledFor(const level: TLevel): Boolean;
 begin
-  Result := False;
+  Result := (level <> nil) and
+    level.IsGreaterThanOrEqualTo(fLevel);
 end;
 
 procedure TLoggerBase.Log(const level: TLevel; const msg: string;
@@ -484,6 +495,7 @@ end;
 
 procedure TLoggerBase.HandleException(e: Exception);
 begin
+  InternalLogger.Debug('Failed to log event.', e);
 end;
 
 procedure TLoggerBase.Debug(const msg: string);
@@ -510,6 +522,18 @@ begin
   begin
     msg := SysUtils.Format(format, args);
     Log(TLevel.Debug, msg, nil);
+  end;
+end;
+
+procedure TLoggerBase.DebugFormat(const format: string;
+  const args: array of const; e: Exception);
+var
+  msg: string;
+begin
+  if IsDebugEnabled then
+  begin
+    msg := SysUtils.Format(format, args);
+    Log(TLevel.Debug, msg, e);
   end;
 end;
 
@@ -540,6 +564,18 @@ begin
   end;
 end;
 
+procedure TLoggerBase.InfoFormat(const format: string;
+  const args: array of const; e: Exception);
+var
+  msg: string;
+begin
+  if IsInfoEnabled then
+  begin
+    msg := SysUtils.Format(format, args);
+    Log(TLevel.Info, msg, e);
+  end;
+end;
+
 procedure TLoggerBase.Warn(const msg: string);
 begin
   if IsWarnEnabled then
@@ -564,6 +600,18 @@ begin
   begin
     msg := SysUtils.Format(format, args);
     Log(TLevel.Warn, msg, nil);
+  end;
+end;
+
+procedure TLoggerBase.WarnFormat(const format: string;
+  const args: array of const; e: Exception);
+var
+  msg: string;
+begin
+  if IsWarnEnabled then
+  begin
+    msg := SysUtils.Format(format, args);
+    Log(TLevel.Warn, msg, e);
   end;
 end;
 
@@ -594,6 +642,18 @@ begin
   end;
 end;
 
+procedure TLoggerBase.ErrorFormat(const format: string;
+  const args: array of const; e: Exception);
+var
+  msg: string;
+begin
+  if IsErrorEnabled then
+  begin
+    msg := SysUtils.Format(format, args);
+    Log(TLevel.Error, msg, e);
+  end;
+end;
+
 procedure TLoggerBase.Fatal(const msg: string);
 begin
   if IsFatalEnabled then
@@ -618,6 +678,18 @@ begin
   begin
     msg := SysUtils.Format(format, args);
     Log(TLevel.Fatal, msg, nil);
+  end;
+end;
+
+procedure TLoggerBase.FatalFormat(const format: string;
+  const args: array of const; e: Exception);
+var
+  msg: string;
+begin
+  if IsFatalEnabled then
+  begin
+    msg := SysUtils.Format(format, args);
+    Log(TLevel.Fatal, msg, e);
   end;
 end;
 
@@ -703,11 +775,12 @@ begin
   begin
     for node in nodes do
     begin
-      appenderName := node.Attributes['ref'];
+      if not TryGetAttributeValue(node, 'ref', appenderName) then
+        Continue;
       appender := fRepository.FindAppender(appenderName);
       if appender = nil then
       begin
-        // TODO: Log error message.
+        InternalLogger.ErrorFormat('Failed to find the appender "%S"', [appenderName]);
         Continue;
       end;
       AddAppender(appender);
@@ -775,7 +848,9 @@ begin
   TArgument.CheckNotNull(configuration, 'configuration');
   Lock;
   try
+    InternalLogger.DebugFormat('Configurating the logger "%S".', [Name]);
     DoConfigure(configuration);
+    InternalLogger.DebugFormat('Configurating the logger "%S" finished.', [Name]);
   finally
     Unlock;
   end;

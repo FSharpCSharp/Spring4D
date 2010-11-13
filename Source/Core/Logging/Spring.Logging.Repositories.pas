@@ -127,7 +127,7 @@ end;
 
 constructor TRootLogger.Create(const repository: ILoggerRepository);
 begin
-  inherited Create(repository, '');
+  inherited Create(repository, 'Root');
   SetLevel(TLevel.Debug);
 end;
 
@@ -140,7 +140,7 @@ procedure TRootLogger.SetLevel(const value: TLevel);
 begin
   if value = nil then
   begin
-    TInternalLogger.Debug('RootLogger: You have tried to set a null level to root.');
+    InternalLogger.Debug('RootLogger: You have tried to set a null level to root.');
   end
   else
   begin
@@ -193,27 +193,45 @@ var
   node: IConfigurationNode;
   name: string;
   thresholdValue: string;
+  debugValue: string;
   logger: ILogger;
   appenderType: string;
   appender: IAppender;
 begin
   if configuration.TryGetAttribute('threshold', thresholdValue) then
   begin
+    InternalLogger.DebugFormat('Try setting the Threshold attribute to %S', [thresholdValue]);
     Threshold := FindLevel(thresholdValue);
   end;
+
+  if configuration.TryGetAttribute('debug', debugValue) then
+  begin
+    InternalLogger.DebugFormat('Try setting the Debug attribute to %S', [debugValue]);
+    TInternalLogger(InternalLogger).QuietMode := not StrToBoolDef(debugValue, False);
+  end;
+
   nodes := configuration.FindNodes('appender');
   for node in nodes do
   begin
-    appenderType := node.Attributes['type'];
+    if not TryGetAttributeValue(node, 'type', appenderType)then
+    begin
+      Continue;
+    end;
+
     appender := CreateAppender(appenderType);
     if appender = nil then
     begin
-      // TODO: Internal log
+      InternalLogger.ErrorFormat('Failed to create an appender of type: %s.', [appenderType]);
       Continue;
     end;
+
     GetAppenders.Add(appender);
     (appender as ILoggerRepositoryInit).InitializeRepository(Self);
-    TryConfigure(appender, node);
+    try
+      TryConfigure(appender, node);
+    except on e: Exception do
+      InternalLogger.Error('Failed to configure the appender "%S"', e);
+    end;
   end;
 
   node := configuration.FindNode('root');
@@ -225,7 +243,9 @@ begin
   nodes := configuration.FindNodes('logger');
   for node in nodes do
   begin
-    name := node.Attributes['name'];
+    if not TryGetAttributeValue(node, 'name', name) then
+      Continue;
+
     logger := GetLogger(name);
     TryConfigure(logger, node);
   end;
@@ -443,7 +463,13 @@ begin
   TArgument.CheckNotNull(configuration, 'configuration');
   Lock;
   try
-    DoConfigure(configuration);
+    try
+      InternalLogger.Debug('Starting the configuration of the repository...');
+      DoConfigure(configuration);
+      InternalLogger.Debug('Finished the configuration of the repository...');
+    except on e: Exception do
+      InternalLogger.Error('Failed to configure the repository.', e);
+    end;
   finally
     Unlock;
   end;
@@ -479,7 +505,7 @@ begin
     end
     else
     begin
-      TInternalLogger.ErrorFmt('%s: Threshold cannot be set to null. Setting to ALL', [ClassName]);
+      InternalLogger.ErrorFormat('%s: Threshold cannot be set to null. Setting to ALL.', [ClassName]);
       fThreshold := TLevel.All;
     end;
   finally

@@ -28,30 +28,32 @@ interface
 
 uses
   Classes,
-  Character,
+  Windows,
   SysUtils,
+  Character,
   Generics.Collections,
   Spring,
+  Spring.Configuration,
   Spring.Logging.Core;
 
 type
-  TInternalLogger = class sealed(TObject)
+  TInternalLogger = class sealed(TLoggerBase)
   strict private
     class var
-      fDebugEnabled: Boolean;
-      fQuietMode: Boolean;
+      fInstance: ILogger;
     class constructor Create;
+  private
+    fQuietMode: Boolean;
+  protected
+    function IsEnabledFor(const level: TLevel): Boolean; override;
+    procedure DoLog(const event: TLoggingEvent); overload; override;
   public
-    class procedure Debug(const msg: string);
-    class procedure Warn(const msg: string);
-    class procedure Error(const msg: string);
-    class procedure ErrorFmt(const format: string; const args: array of const);
-    class property InternalDebugging: Boolean read fDebugEnabled write fDebugEnabled;
-    class property QuietMode: Boolean read fQuietMode write fQuietMode;
+    property QuietMode: Boolean read fQuietMode write fQuietMode;
+    class property Instance: ILogger read fInstance;
   end;
 
 
-Const
+const
   tpEof = #0;
   tpPercent = #1;
   tpText = #3;
@@ -95,46 +97,65 @@ type
 
   end;
 
+/// <summary>
+/// Returns the internal logger.
+/// </summary>
+function InternalLogger: ILogger;
+
+function TryGetAttributeValue(const node: IConfigurationNode;
+  const name: string; out value: string): Boolean;
 
 implementation
 
+function InternalLogger: ILogger;
+begin
+  Result := TInternalLogger.Instance;
+end;
 
-{$IFDEF SUPPORTS_REGION} {$REGION 'TInternalLogger'} {$ENDIF}
+function TryGetAttributeValue(const node: IConfigurationNode;
+  const name: string; out value: string): Boolean;
+begin
+  Result := node.TryGetAttribute(name, value) and (value <> '');
+  if not Result then
+  begin
+    InternalLogger.ErrorFormat('The attribute "%s" was expected but there is none.', [name]);
+  end;
+end;
+
+
+{$REGION 'TInternalLogger'}
 
 class constructor TInternalLogger.Create;
 begin
-  fDebugEnabled := True;
-  { TODO: Read Option from Configuration }
+  fInstance := TInternalLogger.Create('InternalLogger');
+  TInternalLogger(fInstance).QuietMode := True;
 end;
 
-class procedure TInternalLogger.Debug(const msg: string);
-begin
-
-end;
-
-class procedure TInternalLogger.Error(const msg: string);
-begin
-
-end;
-
-class procedure TInternalLogger.ErrorFmt(const format: string;
-  const args: array of const);
+procedure TInternalLogger.DoLog(const event: TLoggingEvent);
+const
+  CLogFormat = '%S [%4d] %-5S %S %S';
 var
-  msg: string;
+  s: string;
 begin
-  msg := SysUtils.Format(format, args);
-  //...
+  s := Format(CLogFormat, [
+    FormatDateTime('yyyy-mm-dd hh:nn:ss.zzz', event.TimeStamp),
+    event.ThreadID,
+    event.LoggerLevel.Name,
+    event.Message,
+    event.ExceptionString
+  ]);
+  Windows.OutputDebugString(PChar(s));
 end;
 
-class procedure TInternalLogger.Warn(const msg: string);
+function TInternalLogger.IsEnabledFor(const level: TLevel): Boolean;
 begin
-
+  Result := not QuietMode;
 end;
 
-{$IFDEF SUPPORTS_REGION} {$ENDREGION} {$ENDIF}
+{$ENDREGION}
 
 
-{ TPatternParser }
+{$REGION 'TPatternParser'}
 
 procedure TPatternParser.AddKeyPatternTokens(const keyword, convertor: string;
   patternType: TPatternType);
@@ -282,6 +303,8 @@ function TPatternParser.TokenString: string;
 begin
   Result := Copy(fPattern, fTokenPostion, fCurPosition - fTokenPostion);
 end;
+
+{$ENDREGION}
 
 
 end.

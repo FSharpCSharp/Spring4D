@@ -76,15 +76,17 @@ type
   ///
   /// </remarks>
 
+  { NEED REVIEW }
   TPatternLayout = class(TLayoutBase)
   private
-    Const DefaultLayoutPattern = '%Date [%Thread] %-5Level %Logger - %Message%Newline';
+    const
+      fCDefaultLayoutPattern = '%Date [%Thread] %-5Level %Logger - %Message%Newline';
   private
     fParser: TPatternParser;
     fPattern: string;
     fPatternParts : TStrings;
     fDateFormatPattern: string;
-    procedure SetPattern(const Value: string);
+    procedure SetPattern(const value: string);
     procedure ParsePattern;
     procedure InitializeKeyWords;
   protected
@@ -140,7 +142,7 @@ constructor TPatternLayout.Create;
 begin
   inherited Create;
   fPatternParts:= TStringList.Create;
-  fParser := TPatternParser.Create(DefaultLayoutPattern);
+  fParser := TPatternParser.Create(fCDefaultLayoutPattern);
   InitializeKeyWords;
   AddPatternPart('%s', ptMessage);
 end;
@@ -175,12 +177,14 @@ end;
 procedure TPatternLayout.Configure(const configuration: IConfigurationNode);
 var
   node: IConfigurationNode;
+  patternValue: string;
 begin
   node := configuration.FindNode('conversionPattern');
-  if node <> nil then
-    SetPattern(node.Attributes['value'])
-  else
-    SetPattern(DefaultLayoutPattern);
+  if (node = nil) or not TryGetAttributeValue(node, 'value', patternValue) then
+  begin
+    patternValue := fCDefaultLayoutPattern;
+  end;
+  SetPattern(patternValue);
 end;
 
 procedure TPatternLayout.ParsePattern;
@@ -190,7 +194,8 @@ begin
   begin
     AddPatternPart('%s', ptMessage);
   end
-  else begin
+  else
+  begin
     DoParsePattern;
   end;
 end;
@@ -287,11 +292,11 @@ begin
   AddKeyPattern('tab',         '' , ptTab);
 end;
 
-procedure TPatternLayout.SetPattern(const Value: string);
+procedure TPatternLayout.SetPattern(const value: string);
 begin
-  if CompareText(fPattern, Value) <> 0 then
+  if CompareText(fPattern, value) <> 0 then
   begin
-    fPattern := Value;
+    fPattern := value;
     ParsePattern;
   end;
 end;

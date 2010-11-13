@@ -48,7 +48,7 @@ type
     function GetName: string;
     procedure SetName(const value: string);
     procedure SetLayout(const value: ILayout);
-    procedure SetThreshold(const Value: TLevel);
+    procedure SetThreshold(const value: TLevel);
   protected
     procedure Lock;
     procedure Unlock;
@@ -88,18 +88,19 @@ type
     procedure DoAppend(const event: TLoggingEvent); override;
   end;
 
+  { NEED REVIEW }
   TFileAppender = class(TAppenderBase)
   private
     fFilename: string;
     fEncoding: TEncoding;
-    fInstance: TStream;
+    fStream: TStream;
     fEncodings: TStrings;
-    procedure SetLogfile(const Value: string);
+    procedure SetLogfile(const value: string);
     procedure DestroyFileStream;
     procedure InitializeEncodings;
     procedure RegistEncoding(const name: string; const encoding: TEncoding);
     function GetEncoding(const name: string): TEncoding;
-    function GetInstance: TStream;
+    function GetStream: TStream;
     function CreateFileStream: TStream;
   protected
     procedure DoConfigure(const configuration: IConfigurationNode); override;
@@ -138,7 +139,7 @@ destructor TAppenderBase.Destroy;
 begin
   if not fClosed then
   begin
-    TInternalLogger.Debug('TAppenderBase: Destroying appender named ['+fName+'].');
+    InternalLogger.Debug('TAppenderBase: Destroying appender named ['+fName+'].');
     Close;
   end;
   inherited Destroy;
@@ -193,7 +194,7 @@ begin
       if CanAppend and AcceptEvent(event) then
         DoAppend(event);
     except on e: Exception do
-      // TODO: Internal log
+      InternalLogger.Error('Failed to append the event.', e);
     end;
   finally
     Unlock;
@@ -224,7 +225,8 @@ var
   layoutType: string;
   level: TLevel;
 begin
-  fName := configuration.Attributes['name'];
+  TryGetAttributeValue(configuration, 'name', fName);
+
   node := configuration.FindNode('threshold');
   if node <> nil then
   begin
@@ -237,10 +239,15 @@ begin
     node := configuration.FindNode('layout');
     if node = nil then
     begin
-      // TODO: Handle internal exception.
+      InternalLogger.Error('The Layout child element was expected but there is none.');
       Exit;
     end;
-    layoutType := node.Attributes['type'];
+
+    if not TryGetAttributeValue(node, 'type', layoutType) then
+    begin
+      Exit;
+    end;
+
     fLayout := fRepository.CreateLayout(layoutType);
     TryConfigure(fLayout, node);
   end;
@@ -278,7 +285,7 @@ begin
   fName := name;
 end;
 
-procedure TAppenderBase.SetThreshold(const Value: TLevel);
+procedure TAppenderBase.SetThreshold(const value: TLevel);
 begin
   if value <> nil then
   begin
@@ -287,7 +294,7 @@ begin
   else
   begin
     fThreshold := TLevel.All;
-    // TODO: Internal log
+    InternalLogger.Error('Threashold should not be set as null. Setting to TLevel.All.');
   end;
 end;
 
@@ -322,7 +329,14 @@ constructor TFileAppender.Create;
 begin
   inherited Create;
   fEncodings := TStringList.Create;
+  fEncoding := TEncoding.Default;
   InitializeEncodings;
+end;
+
+destructor TFileAppender.Destroy;
+begin
+  fEncodings.Free;
+  inherited;
 end;
 
 function TFileAppender.CreateFileStream: TStream;
@@ -332,6 +346,7 @@ var
   preamble: TBytes;
 begin
   fileOpenMode := fmOpenReadWrite or fmShareDenyWrite;
+
   if not FileExists(fFileName) then
   begin
     filePath := ExtractFileDir(fFileName);
@@ -352,15 +367,9 @@ begin
   end;
 end;
 
-destructor TFileAppender.Destroy;
-begin
-  fEncodings.Free;
-  inherited;
-end;
-
 procedure TFileAppender.DestroyFileStream;
 begin
-  FreeAndNil(fInstance);
+  FreeAndNil(fStream);
 end;
 
 procedure TFileAppender.DoAppend(const event: TLoggingEvent);
@@ -376,7 +385,7 @@ begin
     // in append procedure which in ancestor class
     Assert(fEncoding <> nil, 'Encoding is nil');
     buffer := fEncoding.GetBytes(msg);
-    instance := GetInstance;
+    instance := GetStream;
     instance.Write(buffer[0], Length(buffer));
   end;
 end;
@@ -400,9 +409,9 @@ begin
 
   node := configuration.FindNode('filename');
   if node <> nil then
-    filename := node.Attributes['value']
+    Filename := node.Attributes['value']
   else
-    filename := '';
+    Filename := '';
 
   fEncoding := GetEncoding(encodingname);
 end;
@@ -417,13 +426,13 @@ begin
     result := TEncoding(fEncodings.Objects[index]);
 end;
 
-function TFileAppender.GetInstance: TStream;
+function TFileAppender.GetStream: TStream;
 begin
-  if fInstance = nil then
+  if fStream = nil then
   begin
-    fInstance := CreateFileStream;
+    fStream := CreateFileStream;
   end;
-  Result := fInstance;
+  Result := fStream;
 end;
 
 procedure TFileAppender.InitializeEncodings;
@@ -431,7 +440,7 @@ begin
   RegistEncoding('utf-7',TEncoding.UTF7);
   RegistEncoding('utf7',TEncoding.UTF7);
   RegistEncoding('utf-8', TEncoding.UTF8);
-  RegistEncoding('utf', TEncoding.UTF8);
+  RegistEncoding('utf8', TEncoding.UTF8);
   RegistEncoding('default', TEncoding.Default);
   RegistEncoding('unicode', TEncoding.Unicode);
   RegistEncoding('utf16', TEncoding.Unicode);
@@ -443,13 +452,13 @@ begin
   fEncodings.AddObject(name, TObject(encoding));
 end;
 
-procedure TFileAppender.SetLogfile(const Value: string);
+procedure TFileAppender.SetLogfile(const value: string);
 begin
-  if Value <> fFilename then
+  if value <> fFilename then
   begin
     Lock;
     try
-      if fFilename <> Value then
+      if fFilename <> value then
       begin
         fFilename := value;
         if fFilename <> '' then

@@ -1,4 +1,4 @@
-<logging>
+<logging debug="true">
     <appender name="console" type="Spring.Logging.Appenders.TConsoleAppender">
 	<!--
 		<threshold value="WARN" /> 
