@@ -44,20 +44,25 @@ uses
 var
   logger: ILogger;
   s: string;
+  i : Integer;
 
 begin
   try
+
     LoggerManager.Configure('logging.xml');
     DefaultLogger.Info('Hello');
     logger := LoggerManager.GetLogger('Spring');
-    logger.Debug('Debug');
-    logger.Info('Info...');
-    logger.Warn('WARN');
-    logger.Error('ERROR');
-    logger.Debug('哇 我是汉字');
-    logger := LoggerManager.GetLogger('Spring.Base');
-    logger.Debug('XX');
-    logger.Info('YY');
+//    for i := 0 to 100 do
+//    begin
+      logger.Debug('Debug');
+      logger.Info('Info...');
+      logger.Warn('WARN');
+      logger.Error('ERROR');
+      logger.Fatal('哇 我是汉字');
+      logger := LoggerManager.GetLogger('Spring.Base');
+      logger.Debug('XX');
+      logger.Info('YY');
+//    end;
     Readln(s);
   except
     on E: Exception do

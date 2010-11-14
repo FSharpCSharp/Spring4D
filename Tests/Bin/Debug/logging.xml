@@ -8,7 +8,7 @@
         </layout>
     </appender>
 
-	<appender name="colorconsole" type="Spring.Logging.Appenders.TColorConsoleAppender">
+	<appender name="colorconsole" type="Spring.Logging.Appenders.TColoredConsoleAppender">
 	<!--
 		<threshold value="WARN" /> 
 	-->
@@ -28,14 +28,14 @@
     </appender>
     
     <root>
-        <level value="DEBUG" />
+        <level value="Debug" />
         
-		<appender-ref ref="console" />
+		
 		<appender-ref ref="colorconsole" />
 		<appender-ref ref="file" />
     </root>
     
     <logger name="Spring.Base">
-        <level value="Info" />
+        <level value="Debug" />
     </logger>
 </logging>

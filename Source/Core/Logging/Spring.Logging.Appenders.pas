@@ -30,6 +30,7 @@ uses
   Classes,
   SysUtils,
   Windows,
+  Messages,
   Ioutils,
   Spring,
   Spring.Collections,
@@ -95,13 +96,13 @@ type
     fEncoding: TEncoding;
     fStream: TStream;
     fEncodings: TStrings;
+    function GetEncoding(const name: string): TEncoding;
+    function GetStream: TStream;
+    function CreateFileStream: TStream;
     procedure SetLogfile(const value: string);
     procedure DestroyFileStream;
     procedure InitializeEncodings;
     procedure RegistEncoding(const name: string; const encoding: TEncoding);
-    function GetEncoding(const name: string): TEncoding;
-    function GetStream: TStream;
-    function CreateFileStream: TStream;
   protected
     procedure DoConfigure(const configuration: IConfigurationNode); override;
     procedure DoClose; override;
@@ -113,9 +114,45 @@ type
   end;
 
 
-  TColorConsoleAppender = class(TAppenderBase)
+  TColoredConsoleAppender = class(TAppenderBase)
+  private type
+    TConsoleColor = (
+        ccWhite, ccBlack, ccNavy, ccMaroon, ccGreen, ccPurple, ccTeal, ccOlive,
+        ccHighlight, ccGray, ccBlue, ccRed, ccLime, ccFuchsia, ccAqua, ccYellow);
+  private const
+    TConsoleColorValues : array [TConsoleColor] of Word =
+    (
+      FOREGROUND_BLUE or FOREGROUND_GREEN or FOREGROUND_RED,
+      0 or FOREGROUND_INTENSITY,
+      FOREGROUND_BLUE,
+      FOREGROUND_RED,
+      FOREGROUND_GREEN,
+      FOREGROUND_BLUE or FOREGROUND_RED,
+      FOREGROUND_BLUE or FOREGROUND_GREEN,
+      FOREGROUND_RED or FOREGROUND_GREEN,
+      // high light
+      FOREGROUND_BLUE or FOREGROUND_GREEN or FOREGROUND_RED or FOREGROUND_INTENSITY,
+      0 or FOREGROUND_INTENSITY,
+      FOREGROUND_BLUE or FOREGROUND_INTENSITY,
+      FOREGROUND_RED or FOREGROUND_INTENSITY,
+      FOREGROUND_GREEN or FOREGROUND_INTENSITY,
+      FOREGROUND_BLUE or FOREGROUND_RED or FOREGROUND_INTENSITY,
+      FOREGROUND_BLUE or FOREGROUND_GREEN or FOREGROUND_INTENSITY,
+      FOREGROUND_RED or FOREGROUND_GREEN or FOREGROUND_INTENSITY
+    );
+
+  private
+    fConsoleHandle: THandle;
+    fColorAttribute: Word;
+    fColorMapping: TStrings;
+    function GetMappingColor(const level: TLevel): Word;
+    procedure RegisterColor(const levelname: string; const color: TConsoleColor);
+    procedure InitializeColorMapping;
   protected
     procedure DoAppend(const event: TLoggingEvent); override;
+  public
+    constructor Create();
+    destructor Destroy; override;
   end;
 
 
@@ -323,8 +360,9 @@ begin
   Windows.OutputDebugString(PWidechar(outString));
 end;
 
-{ TFileAppender }
 
+{ TFileAppender }
+{$REGION 'TFileAppender'}
 constructor TFileAppender.Create;
 begin
   inherited Create;
@@ -336,6 +374,7 @@ end;
 destructor TFileAppender.Destroy;
 begin
   fEncodings.Free;
+  DestroyFileStream;
   inherited;
 end;
 
@@ -471,17 +510,88 @@ begin
     end;
   end;
 end;
+{$ENDREGION}
 
 { TColorConsoleAppender }
 
-procedure TColorConsoleAppender.DoAppend(const event: TLoggingEvent);
-var
-  handle: THandle;
+constructor TColoredConsoleAppender.Create;
 begin
-  handle := Windows.GetStdHandle(STD_OUTPUT_HANDLE);
-  //inherited;
-  windows.SetConsoleTextAttribute(handle, 100);
-  Write(format(event));
+  inherited Create;
+  fColorMapping := TStringList.Create;
+  InitializeColorMapping;
+end;
+
+destructor TColoredConsoleAppender.Destroy;
+begin
+  fColorMapping.Free;
+  inherited;
+end;
+
+procedure TColoredConsoleAppender.DoAppend(const event: TLoggingEvent);
+var
+  hConsole: THandle;
+  bakBufferInfo: _CONSOLE_SCREEN_BUFFER_INFO;
+  curBufferInfo: _CONSOLE_SCREEN_BUFFER_INFO;
+  loggingMessage: string;
+  outputedCharacterCount: Cardinal;
+begin
+  hConsole := Windows.GetStdHandle(STD_OUTPUT_HANDLE);
+  if hConsole = INVALID_HANDLE_VALUE then
+    raise Exception.Create('Console is unaccessable');
+
+  // Backup the original console screen buffer info
+  Windows.GetConsoleScreenBufferInfo(hConsole, bakBufferInfo);
+
+  // Set console text attribute
+  Windows.SetConsoleTextAttribute(hConsole, GetMappingColor(event.LoggerLevel));
+
+  // Output the logging message
+  loggingMessage := Format(Event);
+  Windows.WriteConsole(hConsole, PChar(loggingMessage), Length(loggingMessage), outputedCharacterCount, nil);
+
+  // Restore the original console text attribute
+  Windows.SetConsoleTextAttribute(hConsole, bakBufferInfo.wAttributes);
+
+  // to do : Make the detail description for the following code snips
+  Windows.GetConsoleScreenBufferInfo(hConsole, curBufferInfo);
+  if (curBufferInfo.dwCursorPosition.y >= (curBufferInfo.dwSize.Y - 1)) then
+  begin
+    Windows.FillConsoleOutputAttribute(
+        hConsole,
+        bakBufferInfo.wAttributes,
+        curBufferInfo.dwSize.X - curBufferInfo.dwCursorPosition.X,
+        curBufferInfo.dwCursorPosition,
+        outputedCharacterCount);
+  end;
+end;
+
+
+function TColoredConsoleAppender.GetMappingColor(const level: TLevel): Word;
+var
+  index: Integer;
+begin
+  index:= fColorMapping.IndexOf(level.Name);
+  if index >= 0 then
+    Result := Word(fColorMapping.Objects[index])
+  else
+    Result := TConsoleColorValues[ccWhite];
+end;
+
+procedure TColoredConsoleAppender.InitializeColorMapping;
+begin
+  fColorMapping.Clear;
+  RegisterColor(TLevel.Error.Name, ccRed);
+  RegisterColor(TLevel.Info.Name, ccLime);
+  RegisterColor(TLevel.Warn.Name, ccYellow);
+  RegisterColor(TLevel.Debug.Name, ccHighlight);
+  RegisterColor(TLevel.Fatal.Name, ccFuchsia);
+
+end;
+
+procedure TColoredConsoleAppender.RegisterColor(const levelname: string;
+  const color: TConsoleColor);
+begin
+  fColorMapping.AddObject(levelname, TObject(TConsoleColorValues[color]));
 end;
 
 end.
