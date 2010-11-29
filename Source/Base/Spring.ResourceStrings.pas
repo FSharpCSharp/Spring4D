@@ -62,6 +62,8 @@ resourcestring
   SInvalidDateTime     = '"%S" is not a valid date and time.';
   SIllegalFieldCount   = 'fieldCount is more than the number of components defined in the current Version object.';
 
+  SBadObjectInheritance = 'Argument %s of type %s does not inherit from type %s.';
+
   SInvalidLocPath = 'Invalid path - expected a name.';
   SUnexpectedToken = 'Expected %s but got %s.';
   SInvalidPathSyntax = 'Invalid path syntax: expected ".", "[" or "^"';
@@ -82,7 +84,6 @@ resourcestring
   STBDescription       = 'TB';
 
   {$ENDREGION}
-
 
   {$REGION 'Spring.Utils'}
 
@@ -133,7 +134,6 @@ resourcestring
 
   {$ENDREGION}
 
-
   {$REGION 'Spring.Collections'}
 
   SCannotResetEnumerator = 'Cannot reset the enumerator.';
@@ -143,7 +143,6 @@ resourcestring
 
   {$ENDREGION}
 
-
   {$REGION 'Spring.Helpers'}
 
   SInvalidOperation_GetValue = 'The GetValue method works only for properties/fields.';
@@ -152,7 +151,6 @@ resourcestring
 
   {$ENDREGION}
 
-
   {$REGION 'Spring.ValueConverters'}
 
   SCouldNotConvertValue = 'Could not convert value: %s to %s.';
@@ -160,7 +158,6 @@ resourcestring
   SEmptyTargetTypeKind = 'Empty target TypeKind argument set.';
 
   {$ENDREGION}
-
 
   {$REGION 'Spring.Cryptography'}
 

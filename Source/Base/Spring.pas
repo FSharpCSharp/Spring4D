@@ -265,6 +265,9 @@ type
     class procedure CheckTrue(condition: Boolean; const msg: string); static; inline;
     class procedure CheckFalse(condition: Boolean; const msg: string); static; inline;
 
+    class procedure CheckInheritsFrom(obj: TObject; const clazz: TClass; const argumentName: string); overload; static; inline;
+    class procedure CheckInheritsFrom(const checkclazz, clazz: TClass; const argumentName: string); overload; static; inline;
+
     class procedure CheckNotNull(obj: TObject; const argumentName: string); overload; static; inline;
     class procedure CheckNotNull(p: Pointer; const argumentName: string); overload; static; inline;
     class procedure CheckNotNull(const intf: IInterface; const argumentName: string); overload; static; inline;
@@ -1673,6 +1676,23 @@ begin
   begin
     raise EArgumentException.Create(msg);
   end;
+end;
+
+class procedure TArgument.CheckInheritsFrom(const checkclazz, clazz: TClass;
+  const argumentName: string);
+begin
+  ASSERT(Assigned(checkclazz));
+  ASSERT(Assigned(clazz));
+
+  if (not checkclazz.InheritsFrom(clazz)) then
+    raise EArgumentException.CreateResFmt(@SBadObjectInheritance, [argumentName, checkclazz.ClassName, clazz.ClassName]);
+end;
+
+class procedure TArgument.CheckInheritsFrom(obj: TObject; const clazz: TClass;
+  const argumentName: string);
+begin
+  if Assigned(obj) then
+    CheckInheritsFrom(obj.ClassType, clazz, argumentName);
 end;
 
 class procedure TArgument.CheckNotNull(condition: Boolean;

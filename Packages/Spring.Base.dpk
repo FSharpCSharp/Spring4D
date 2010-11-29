@@ -76,7 +76,8 @@ contains
   Spring.Utils.WinAPI in '..\Source\Base\Utils\Spring.Utils.WinAPI.pas',
   Spring.Utils.Vcl in '..\Source\Base\Utils\Spring.Utils.Vcl.pas',
   Spring.Helpers.Vcl in '..\Source\Base\Spring.Helpers.Vcl.pas',
-  Spring.Cloning in '..\Source\Base\Spring.Cloning.pas';
+  Spring.Cloning in '..\Source\Base\Spring.Cloning.pas',
+  Spring.Primitives in '..\Source\Base\Spring.Primitives.pas';
 
 end.
 
