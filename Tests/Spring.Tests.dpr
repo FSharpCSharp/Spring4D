@@ -49,7 +49,9 @@ uses
   Spring.Tests.DI in 'Source\Core\Spring.Tests.DI.pas',
   Spring.Tests.Pool in 'Source\Core\Spring.Tests.Pool.pas',
   Spring.Tests.ValueConverters in 'Source\Base\Spring.Tests.ValueConverters.pas',
-  Spring.Tests.Cryptography in 'Source\Core\Spring.Tests.Cryptography.pas';
+  Spring.Tests.Cryptography in 'Source\Core\Spring.Tests.Cryptography.pas',
+  Spring.Tests.Numerics in 'Source\Core\Spring.Tests.Numerics.pas',
+  Spring.Tests.Cloning in 'Source\Base\Spring.Tests.Cloning.pas';
 
 {$R *.RES}
 
@@ -80,6 +82,11 @@ begin
 
   RegisterTests('Base.Helpers', [
     TTestGuidHelper.Suite
+  ]);
+
+   RegisterTests('Base.Cloning', [
+    TTestCloning.Suite,
+    TTestCloneableObject.Suite
   ]);
 
   RegisterTests('Base.ValueConverters', [
@@ -137,6 +144,13 @@ begin
     TTestDirectCircularDependency.Suite,
     TTestCrossedCircularDependency.Suite,
     TTestImplementsAttribute.Suite
+  ]);
+
+  RegisterTests('Core.Numerics', [
+    TTestHalf.Suite,
+    TTestBigCardinal.Suite,
+    TTestBigInteger.Suite,
+    TTestBigDecimal.Suite
   ]);
 
 end;

@@ -75,7 +75,8 @@ contains
   Spring.ValueConverters in '..\Source\Base\Spring.ValueConverters.pas',
   Spring.Utils.WinAPI in '..\Source\Base\Utils\Spring.Utils.WinAPI.pas',
   Spring.Utils.Vcl in '..\Source\Base\Utils\Spring.Utils.Vcl.pas',
-  Spring.Helpers.Vcl in '..\Source\Base\Spring.Helpers.Vcl.pas';
+  Spring.Helpers.Vcl in '..\Source\Base\Spring.Helpers.Vcl.pas',
+  Spring.Cloning in '..\Source\Base\Spring.Cloning.pas';
 
 end.
 

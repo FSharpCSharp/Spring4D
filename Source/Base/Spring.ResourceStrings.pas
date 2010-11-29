@@ -173,6 +173,12 @@ resourcestring
 
   {$ENDREGION}
 
+  {$REGION 'Spring.Numerics'}
+
+  SInvalidArgumentFormat = 'Invalid format for argument "%s".';
+
+  {$ENDREGION}
+
 implementation
 
 end.

@@ -298,6 +298,9 @@ type
     ///	<summary>Raise an EArgumentException exception.</summary>
     class procedure RaiseArgumentException(const msg: string); overload; static; inline;
 
+    ///	<summary>Raise an EArgumentException exception.</summary>
+    class procedure RaiseArgumentFormatException(const argumentName: string); overload; static; inline;
+
     ///	<summary>Raise an EArgumentNullException exception.</summary>
     class procedure RaiseArgumentNullException(const argumentName: string); overload; static; inline;
 
@@ -1851,6 +1854,11 @@ class procedure TArgument.RaiseArgumentOutOfRangeException(
   const argumentName: string);
 begin
   raise EArgumentOutOfRangeException.CreateResFmt(@SArgumentOutOfRangeException, [argumentName]);
+end;
+
+class procedure TArgument.RaiseArgumentFormatException(const argumentName: string);
+begin
+  raise EConvertError.CreateResFmt(@SInvalidArgumentFormat, [argumentName]);
 end;
 
 class procedure TArgument.RaiseInvalidEnumArgumentException(
