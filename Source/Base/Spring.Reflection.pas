@@ -78,6 +78,74 @@ type
     class property Context: TRttiContext read fContext;
   end;
 
+  IRttiPackage = interface
+    ['{7365872F-36E1-424F-96F4-522357F0A9A4}']
+    {$REGION 'Property Getters & Setters'}
+      function GetHandle: HINST;
+      function GetTypes: IEnumerableEx<TRttiType>;
+    {$ENDREGION}
+
+    property Handle: HINST read GetHandle;
+    function FindType(const qualifiedName: string): TRttiType;
+    property Types: IEnumerableEx<TRttiType> read GetTypes;
+  end;
+
+  IReflection = interface
+    ['{E3B66C0B-4827-44C4-BDD9-27F1A856FDDD}']
+    {$REGION 'Property Getters & Setters'}
+      function GetTypes: IEnumerableEx<TRttiType>;
+//      function GetPackages: IEnumerableEx<TRttiPackage>;
+    {$ENDREGION}
+
+    function GetType(const typeInfo: PTypeInfo): TRttiType; overload;
+    function GetType(const classType: TClass): TRttiType; overload;
+    function GetType(const instance: TObject): TRttiType; overload;
+//    function GetType(const instance: IInterface): TRttiType; overload;
+    function GetType(const instance: TValue): TRttiType; overload;
+
+    function GetFullName(const typeInfo: PTypeInfo): string; overload;
+    function FindType(const qualifiedName: string): TRttiType;
+    property Types: IEnumerableEx<TRttiType> read GetTypes;
+//    property Packages: IEnumerableEx<TRttiPackage> read GetPackages;
+  end;
+
+  TReflection = class(TInterfacedObject, IReflection)
+  private
+    fContext: TRttiContext;
+    fTypes: IEnumerableEx<TRttiType>;
+    function GetTypes: IEnumerableEx<TRttiType>;
+//    function GetPackages: IEnumerableEx<TRttiPackage>;
+  public
+    constructor Create;
+
+    function GetType(const typeInfo: PTypeInfo): TRttiType; overload;
+    function GetType(const classType: TClass): TRttiType; overload;
+    function GetType(const instance: TObject): TRttiType; overload;
+    function GetType(const instance: TValue): TRttiType; overload;
+
+    function GetFullName(const typeInfo: PTypeInfo): string; overload;
+    function FindType(const qualifiedName: string): TRttiType;
+    property Types: IEnumerableEx<TRttiType> read GetTypes;
+//    property Packages: IEnumerableEx<TRttiPackage> read GetPackages;
+  end;
+
+  TRttiTypeEnumerable = class(TEnumerableEx<TRttiType>)
+  protected
+    function DoGetEnumerator: IEnumerator<TRttiType>; override;
+  end;
+
+  TRttiTypeEnumerator = class(TEnumeratorBase<TRttiType>)
+  private
+    fContext: TRttiContext;
+    fTypes: TArray<TRttiType>;
+    fIndex: Integer;
+  protected
+    function DoGetCurrent: TRttiType; override;
+  public
+    constructor Create;
+    function MoveNext: Boolean; override;
+  end;
+
   {$ENDREGION}
 
 
@@ -909,5 +977,92 @@ begin
 end;
 
 {$ENDREGION}
+
+
+{$REGION 'TReflection'}
+
+constructor TReflection.Create;
+begin
+  fContext := TRttiContext.Create;
+  fTypes := TRttiTypeEnumerable.Create;
+end;
+
+function TReflection.FindType(const qualifiedName: string): TRttiType;
+begin
+  Result := fContext.FindType(qualifiedName);
+end;
+
+function TReflection.GetFullName(const typeInfo: PTypeInfo): string;
+var
+  t: TRttiType;
+begin
+  t := fContext.GetType(typeInfo);
+  if t = nil then
+    Exit('');
+  if t.IsPublicType then
+    Result := t.QualifiedName
+  else
+    Result := t.Name;
+end;
+
+function TReflection.GetType(const typeInfo: PTypeInfo): TRttiType;
+begin
+  TArgument.CheckNotNull(typeInfo, 'typeInfo');
+  Result := fContext.GetType(typeInfo);
+end;
+
+function TReflection.GetType(const classType: TClass): TRttiType;
+begin
+  TArgument.CheckNotNull(classType, 'classType');
+  Result := fContext.GetType(classType.ClassInfo);
+end;
+
+function TReflection.GetType(const instance: TObject): TRttiType;
+begin
+  TArgument.CheckNotNull(instance, 'instance');
+  Result := fContext.GetType(instance.ClassInfo);
+end;
+
+function TReflection.GetType(const instance: TValue): TRttiType;
+begin
+  Result := fContext.GetType(instance.TypeInfo);
+end;
+
+function TReflection.GetTypes: IEnumerableEx<TRttiType>;
+begin
+  Result := fTypes;
+end;
+
+{$ENDREGION}
+
+
+{ TRttiTypeEnumerable }
+
+function TRttiTypeEnumerable.DoGetEnumerator: IEnumerator<TRttiType>;
+begin
+  Result := TRttiTypeEnumerator.Create;
+end;
+
+
+{ TRttiTypeEnumerator<T> }
+
+constructor TRttiTypeEnumerator.Create;
+begin
+  fContext := TRttiContext.Create;
+  fTypes := fContext.GetTypes;
+  fIndex := -1;
+end;
+
+function TRttiTypeEnumerator.DoGetCurrent: TRttiType;
+begin
+  Result := fTypes[fIndex];
+end;
+
+function TRttiTypeEnumerator.MoveNext: Boolean;
+begin
+  Result := fIndex < Length(fTypes) - 1;
+  if Result then
+    Inc(fIndex);
+end;
 
 end.

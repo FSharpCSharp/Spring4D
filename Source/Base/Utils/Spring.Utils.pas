@@ -22,14 +22,8 @@
 {                                                                           }
 {***************************************************************************}
 
-{TODO -oOwner -cGeneral : TServiceController}
-{TODO -oOwner -cGeneral : TProcess}
-{TODO -oOwner -cGeneral : TRecycleBin}
-{TODO -oOwner -cGeneral : TClipboardWatcher}
-{TODO -oOwner -cGeneral : TDeviceWatcher}
-
-///	<summary>Provides many well-encapsulated utility classes and routines on
-///	the environment and system.</summary>
+///	<summary>This namespace provides many well-encapsulated utility classes and
+///	routines about the environment and system.</summary>
 unit Spring.Utils;
 
 {$I Spring.inc}
@@ -55,13 +49,41 @@ type
   /// Drive Type Enumeration
   /// </summary>
   TDriveType = (
-    dtUnknown,          // The type of drive is unknown.
-    dtNoRootDirectory,  // The drive does not have a root directory.
-    dtRemovable,        // The drive is a removable storage device, such as a floppy disk drive or a USB flash drive.
-    dtFixed,            // The drive is a fixed disk.
-    dtNetwork,          // The drive is a network drive.
-    dtCDRom,            // The drive is an optical disc device, such as a CD or DVD-ROM.
-    dtRam               // The drive is a RAM disk.
+
+    /// <summary>
+    /// The type of drive is unknown.
+    /// </summary>
+    dtUnknown,
+
+    /// <summary>
+    /// The drive does not have a root directory.
+    /// </summary>
+    dtNoRootDirectory,
+
+    /// <summary>
+    /// The drive is a removable storage device, such as a floppy disk drive or a USB flash drive.
+    /// </summary>
+    dtRemovable,
+
+    /// <summary>
+    /// The drive is a fixed disk.
+    /// </summary>
+    dtFixed,
+
+    /// <summary>
+    /// The drive is a network drive.
+    /// </summary>
+    dtNetwork,
+
+    /// <summary>
+    /// The drive is an optical disc device, such as a CD or DVD-ROM.
+    /// </summary>
+    dtCDRom,
+
+    /// <summary>
+    /// The drive is a RAM disk.
+    /// </summary>
+    dtRam
   );
 
   {$REGION 'Documentation'}
@@ -101,7 +123,7 @@ type
     function GetTotalFreeSpace: Int64;
     function GetTotalSize: Int64;
     function GetVolumeLabel: string;
-    procedure SetVolumeLabel(const Value: string);
+    procedure SetVolumeLabel(const value: string);
   private
     procedure EnsureInitialized;
   public
@@ -121,7 +143,7 @@ type
     ///	<summary>Refreshes the information of a drive.</summary>
     procedure Refresh;
 
-    ///	<summary>Indicates the amount of available free space on a drive.</summary>
+    ///	<summary>Gets the amount of available free space on a drive.</summary>
     property AvailableFreeSpace: Int64 read GetAvailableFreeSpace;
 
     ///	<summary>Gets the name of the file system, such as NTFS or
@@ -433,48 +455,38 @@ type
 
   {$REGION 'TEnvironment'}
 
-  /// <summary>
-  /// Specifies the location where an environment variable is stored or
-  /// retrieved in a set or get operation.
-  /// </summary>
+  ///	<summary>Specifies the location where an environment variable is stored
+  ///	or retrieved in a set or get operation.</summary>
   TEnvironmentVariableTarget = (
-    /// <summary>
-    /// The environment variable is stored or retrieved from the environment
-    /// block associated with the current process.
-    /// </summary>
+    ///	<summary>The environment variable is stored or retrieved from the
+    ///	environment block associated with the current process.</summary>
     evtProcess,
-    /// <summary>
-    /// The environment variable is stored or retrieved from the
-    /// HKEY_CURRENT_USER\Environment key in the Windows operating system registry.
-    /// </summary>
+
+    ///	<summary>The environment variable is stored or retrieved from the
+    ///	HKEY_CURRENT_USER\Environment key in the Windows operating system
+    ///	registry.</summary>
     evtUser,
-    /// <summary>
-    /// The environment variable is stored or retrieved from the
-    /// HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment key
-    /// in the Windows operating system registry.
-    /// </summary>
+
+    ///	<summary>The environment variable is stored or retrieved from the
+    ///	HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session
+    ///	Manager\Environment key in the Windows operating system
+    ///	registry.</summary>
     evtMachine
   );
 
-  /// <summary>
-  /// Identifies the processor and bits-per-word of the platform targeted by an executable.
-  /// </summary>
+  ///	<summary>Identifies the processor and bits-per-word of the platform
+  ///	targeted by an executable.</summary>
   TProcessorArchitecture = (
-    /// <summary>
-    /// Unknown processor
-    /// </summary>
+    ///	<summary>Unknown processor</summary>
     paUnknown,
-    /// <summary>
-    /// Intel x86 and compatible microprocessors.
-    /// </summary>
+
+    ///	<summary>Intel x86 and compatible microprocessors.</summary>
     paX86,
-    /// <summary>
-    /// 64-bit Intel and compatible microprocessors.
-    /// </summary>
+
+    ///	<summary>64-bit Intel and compatible microprocessors.</summary>
     paIA64,
-    /// <summary>
-    /// 64-bit AMD microprocessors.
-    /// </summary>
+
+    ///	<summary>64-bit AMD microprocessors.</summary>
     paAmd64
   );
 
@@ -1067,7 +1079,7 @@ begin
   end;
 end;
 
-procedure TDriveInfo.SetVolumeLabel(const Value: string);
+procedure TDriveInfo.SetVolumeLabel(const value: string);
 begin
   CheckIsReady;
   Win32Check(Windows.SetVolumeLabel(PChar(fRootDirectory), PChar(value)));

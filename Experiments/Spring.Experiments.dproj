@@ -1,65 +1,69 @@
 ﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 		<PropertyGroup>
-			<ProjectGuid>{F0721FD4-FFCB-47C0-BB06-66515BFEE81C}</ProjectGuid>
+			<ProjectGuid>{B8F88B36-C109-4DC4-94E0-5D766170A621}</ProjectGuid>
+			<MainSource>Spring.Experiments.dpk</MainSource>
 			<ProjectVersion>12.3</ProjectVersion>
-			<MainSource>Spike.dpr</MainSource>
-			<Config Condition="'$(Config)'==''">Debug</Config>
-			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
 			<Base>True</Base>
-			<Platform Condition="'$(Platform)'==''">Win32</Platform>
-			<AppType>Console</AppType>
-			<FrameworkType>None</FrameworkType>
+			<Config Condition="'$(Config)'==''">Debug</Config>
 			<Platform>Win32</Platform>
+			<AppType>Package</AppType>
+			<FrameworkType>None</FrameworkType>
+			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
 			<Base>true</Base>
 		</PropertyGroup>
-		<PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_1)'!=''">
+		<PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_1)'!=''">
 			<Cfg_1>true</Cfg_1>
 			<CfgParent>Base</CfgParent>
 			<Base>true</Base>
 		</PropertyGroup>
-		<PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_2)'!=''">
+		<PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_2)'!=''">
 			<Cfg_2>true</Cfg_2>
 			<CfgParent>Base</CfgParent>
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
-			<DCC_UnitSearchPath>..\Source\Base;..\Source\Base\Collections;..\Source\Base\Utils;..\Source\Core\Configuration;..\Source\Core\Cryptography;..\Source\Core\Logging;..\Source\Core\DI;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
-			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
-			<DCC_DependencyCheckOutputName>Spike.exe</DCC_DependencyCheckOutputName>
+			<DCC_DcuOutput>Lib</DCC_DcuOutput>
+			<DCC_UnitSearchPath>..\Source\Base;..\Source\Base\Collections;..\Source\Base\Utils;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<RuntimeOnlyPackage>true</RuntimeOnlyPackage>
+			<GenPackage>true</GenPackage>
 			<DCC_ImageBase>00400000</DCC_ImageBase>
-			<DCC_Platform>x86</DCC_Platform>
+			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
+			<DCC_CBuilderOutput>All</DCC_CBuilderOutput>
+			<DCC_E>false</DCC_E>
+			<DCC_S>false</DCC_S>
+			<GenDll>true</GenDll>
+			<DCC_N>false</DCC_N>
+			<DCC_F>false</DCC_F>
+			<DCC_K>false</DCC_K>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_1)'!=''">
-			<DCC_DependencyCheckOutputName>Bin\Release\Spike.exe</DCC_DependencyCheckOutputName>
-			<DCC_ExeOutput>Bin\Release</DCC_ExeOutput>
+			<DCC_DcuOutput>Lib\Debug</DCC_DcuOutput>
+			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
+			<DCC_Optimize>false</DCC_Optimize>
+			<DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_2)'!=''">
+			<DCC_DcuOutput>Lib\Release</DCC_DcuOutput>
 			<DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
 			<DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
-			<DCC_DcuOutput>Lib\Release</DCC_DcuOutput>
 			<DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
 			<DCC_DebugInformation>false</DCC_DebugInformation>
 		</PropertyGroup>
-		<PropertyGroup Condition="'$(Cfg_2)'!=''">
-			<DCC_DependencyCheckOutputName>Bin\Debug\Spike.exe</DCC_DependencyCheckOutputName>
-			<DCC_Optimize>false</DCC_Optimize>
-			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
-			<DCC_ExeOutput>Bin\Debug</DCC_ExeOutput>
-			<DCC_DcuOutput>Lib\Debug</DCC_DcuOutput>
-			<DCC_DebugDCUs>true</DCC_DebugDCUs>
-		</PropertyGroup>
 		<ItemGroup>
-			<DelphiCompile Include="Spike.dpr">
+			<DelphiCompile Include="Spring.Experiments.dpk">
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
-			<BuildConfiguration Include="Debug">
+			<DCCReference Include="rtl.dcp"/>
+			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>
 			</BuildConfiguration>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>
 			</BuildConfiguration>
-			<BuildConfiguration Include="Release">
+			<BuildConfiguration Include="Debug">
 				<Key>Cfg_1</Key>
 				<CfgParent>Base</CfgParent>
 			</BuildConfiguration>
@@ -68,15 +72,14 @@
 		<Import Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')" Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj"/>
 		<ProjectExtensions>
 			<Borland.Personality>Delphi.Personality.12</Borland.Personality>
-			<Borland.ProjectType/>
+			<Borland.ProjectType>Package</Borland.ProjectType>
 			<BorlandProject>
 				<Delphi.Personality>
 					<Source>
-						<Source Name="MainSource">Spike.dpr</Source>
+						<Source Name="MainSource">Spring.Experiments.dpk</Source>
 					</Source>
-					<Parameters/>
 					<VersionInfo>
-						<VersionInfo Name="IncludeVerInfo">False</VersionInfo>
+						<VersionInfo Name="IncludeVerInfo">True</VersionInfo>
 						<VersionInfo Name="AutoIncBuild">False</VersionInfo>
 						<VersionInfo Name="MajorVer">1</VersionInfo>
 						<VersionInfo Name="MinorVer">0</VersionInfo>
@@ -102,6 +105,12 @@
 						<VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys>
 						<VersionInfoKeys Name="Comments"/>
 					</VersionInfoKeys>
+					<Excluded_Packages>
+						<Excluded_Packages Name="$(BDSBIN)\dclwebsnap150.bpl">Embarcadero WebSnap Components</Excluded_Packages>
+						<Excluded_Packages Name="$(BDSBIN)\dclsoap150.bpl">Embarcadero SOAP Components</Excluded_Packages>
+						<Excluded_Packages Name="$(BDSBIN)\dcloffice2k150.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
+						<Excluded_Packages Name="$(BDSBIN)\dclofficexp150.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
+					</Excluded_Packages>
 				</Delphi.Personality>
 				<Platforms>
 					<Platform value="Win32">True</Platform>

@@ -33,7 +33,6 @@ uses
   Spring,
   Spring.Collections,
   Spring.Configuration,
-  Spring.Logging,
   Spring.Logging.Core,
   Spring.Logging.Utils;
 

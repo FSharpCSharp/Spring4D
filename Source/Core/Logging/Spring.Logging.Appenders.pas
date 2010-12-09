@@ -142,8 +142,8 @@ type
     );
 
   private
-    fConsoleHandle: THandle;
-    fColorAttribute: Word;
+//    fConsoleHandle: THandle;
+//    fColorAttribute: Word;
     fColorMapping: TStrings;
     function GetMappingColor(const level: TLevel): Word;
     procedure RegisterColor(const levelname: string; const color: TConsoleColor);

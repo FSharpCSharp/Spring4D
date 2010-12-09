@@ -9,11 +9,14 @@
 			<Projects Include="Packages\Spring.Core.dproj">
 				<Dependencies>Packages\Spring.Base.dproj</Dependencies>
 			</Projects>
+			<Projects Include="Experiments\Spring.Experiments.dproj">
+				<Dependencies/>
+			</Projects>
 			<Projects Include="Tests\Spring.Tests.dproj">
 				<Dependencies>Packages\Spring.Base.dproj;Packages\Spring.Core.dproj</Dependencies>
 			</Projects>
 			<Projects Include="Tests\Spike.dproj">
-				<Dependencies/>
+				<Dependencies>Packages\Spring.Base.dproj;Packages\Spring.Core.dproj</Dependencies>
 			</Projects>
 		</ItemGroup>
 		<ProjectExtensions>
@@ -41,6 +44,15 @@
 		<Target Name="Spring_Core:Make" DependsOnTargets="Spring.Base:Make">
 			<MSBuild Projects="Packages\Spring.Core.dproj" Targets="Make"/>
 		</Target>
+		<Target Name="Spring_Experiments">
+			<MSBuild Projects="Experiments\Spring.Experiments.dproj"/>
+		</Target>
+		<Target Name="Spring_Experiments:Clean">
+			<MSBuild Projects="Experiments\Spring.Experiments.dproj" Targets="Clean"/>
+		</Target>
+		<Target Name="Spring_Experiments:Make">
+			<MSBuild Projects="Experiments\Spring.Experiments.dproj" Targets="Make"/>
+		</Target>
 		<Target Name="Spring_Tests" DependsOnTargets="Spring.Base;Spring.Core">
 			<MSBuild Projects="Tests\Spring.Tests.dproj"/>
 		</Target>
@@ -50,23 +62,23 @@
 		<Target Name="Spring_Tests:Make" DependsOnTargets="Spring.Base:Make;Spring.Core:Make">
 			<MSBuild Projects="Tests\Spring.Tests.dproj" Targets="Make"/>
 		</Target>
-		<Target Name="Spike">
+		<Target Name="Spike" DependsOnTargets="Spring.Base;Spring.Core">
 			<MSBuild Projects="Tests\Spike.dproj"/>
 		</Target>
-		<Target Name="Spike:Clean">
+		<Target Name="Spike:Clean" DependsOnTargets="Spring.Base:Clean;Spring.Core:Clean">
 			<MSBuild Projects="Tests\Spike.dproj" Targets="Clean"/>
 		</Target>
-		<Target Name="Spike:Make">
+		<Target Name="Spike:Make" DependsOnTargets="Spring.Base:Make;Spring.Core:Make">
 			<MSBuild Projects="Tests\Spike.dproj" Targets="Make"/>
 		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="Spring_Base;Spring_Core;Spring_Tests;Spike"/>
+			<CallTarget Targets="Spring_Base;Spring_Core;Spring_Experiments;Spring_Tests;Spike"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="Spring_Base:Clean;Spring_Core:Clean;Spring_Tests:Clean;Spike:Clean"/>
+			<CallTarget Targets="Spring_Base:Clean;Spring_Core:Clean;Spring_Experiments:Clean;Spring_Tests:Clean;Spike:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="Spring_Base:Make;Spring_Core:Make;Spring_Tests:Make;Spike:Make"/>
+			<CallTarget Targets="Spring_Base:Make;Spring_Core:Make;Spring_Experiments:Make;Spring_Tests:Make;Spike:Make"/>
 		</Target>
 		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')" Project="$(BDS)\Bin\CodeGear.Group.Targets"/>
 	</Project>

@@ -81,11 +81,7 @@ contains
   Spring.Cryptography.MD5 in '..\Source\Core\Cryptography\Spring.Cryptography.MD5.pas',
   Spring.Cryptography in '..\Source\Core\Cryptography\Spring.Cryptography.pas',
   Spring.Cryptography.SHA in '..\Source\Core\Cryptography\Spring.Cryptography.SHA.pas',
-  Spring.Cryptography.Utils in '..\Source\Core\Cryptography\Spring.Cryptography.Utils.pas',
-  Spring.Numerics.BigCardinal in '..\Source\Core\Numerics\Spring.Numerics.BigCardinal.pas',
-  Spring.Numerics.BigDecimal in '..\Source\Core\Numerics\Spring.Numerics.BigDecimal.pas',
-  Spring.Numerics.BigInteger in '..\Source\Core\Numerics\Spring.Numerics.BigInteger.pas',
-  Spring.Numerics.Half in '..\Source\Core\Numerics\Spring.Numerics.Half.pas';
+  Spring.Cryptography.Utils in '..\Source\Core\Cryptography\Spring.Cryptography.Utils.pas';
 
 end.
 

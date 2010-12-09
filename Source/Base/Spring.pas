@@ -67,6 +67,10 @@ type
   TTypeKind  = TypInfo.TTypeKind;
   TTypeKinds = TypInfo.TTypeKinds;
 
+  {$IFNDEF DELPHIXE_UP}
+    TThreadID = THandle;
+  {$ENDIF}
+
   {$REGION 'Documentation'}
   ///	<summary>Represents a logical predicate.</summary>
   ///	<param name="value">the value needs to be determined.</param>
@@ -74,7 +78,7 @@ type
   ///	false.</returns>
   ///	<remarks>
   ///	  <note type="warning">This type redefined the
-  ///	  <see cref="SysUtils|TPredicate&lt;T&gt;" /> type with a const parameter.</note>
+  ///	  <see cref="SysUtils|TPredicate`1">SysUtils.TPredicate&lt;T&gt;</see> type with a const parameter.</note>
   ///	</remarks>
   /// <seealso cref="Spring.DesignPatterns|ISpecification{T}" />
   {$ENDREGION}
@@ -100,6 +104,26 @@ type
     function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
     function _AddRef: Integer; stdcall;
     function _Release: Integer; stdcall;
+  end;
+
+  /// <summary>
+  /// Provides static methods to manipulate an array.
+  /// </summary>
+  TArray = class(Generics.Collections.TArray)
+  public
+  (*
+    class function Add<T>(var target: array of T; const value: T): Integer;
+    class procedure Reverse<T>(var target: array of T);
+    class procedure Delete<T>(var target: array of T; const index: Integer);
+    class procedure Copy<T>(const source: array of T; var dest: array of T; len: Integer); overload;
+    class function Contains<T>(const target: array of T; const value: T): Boolean;
+    class function Exists<T>(const match: TPredicate<T>): Boolean;
+    class function IndexOf<T>(const target: array of T; const value: T): Integer;
+    class function LastIndexOf<T>(const target: array of T; const value: T): Integer;
+    class function FindFirst<T>(const target: array of T; const predicate: TPredicate<T>): T;
+    class function FindLast<T>(const target: array of T; const predicate: TPredicate<T>): T;
+    class function FindAll<T>(const target: array of T; const predicate: TPredicate<T>): TArray<T>;
+  //*)
   end;
 
 
@@ -277,7 +301,7 @@ type
     class procedure CheckEnum<T{:enum}>(const value: T; const argumentName: string); overload; static; inline;
     class procedure CheckEnum<T{:enum}>(const value: Integer; const argumentName: string); overload; static; inline;
 
-    ///	<exception cref="EArgumentOutOfRangeException">Raised if the
+    ///	<exception cref="Spring|EArgumentOutOfRangeException">Raised if the
     ///	<paramref name="index" /> is out of range.</exception>
     class procedure CheckRange(const buffer: array of Byte; const index: Integer); overload; static;
     class procedure CheckRange(const buffer: array of Byte; const startIndex, count: Integer); overload; static;
@@ -322,13 +346,14 @@ type
 
   {$REGION 'TNullable<T>'}
 
+  {$REGION 'Documentation'}
   ///	<summary>Represents an "object" whose underlying type is a value type
   ///	that can also be assigned nil like a reference type.</summary>
-  ///	<typeparam name="T">The underlying value type of the <see cref="TNullable{T}" />
-  ///	generic type.</typeparam>
-  /// <remarks>
-  /// The <typeparamref name="T" /> must be a value type such as a value of string, Integer.
-  /// </remarks>
+  ///	<typeparam name="T">The underlying value type of the <see cref=
+  ///	"TNullable`1" /> generic type.</typeparam>
+  ///	<remarks>The <typeparamref name="T" /> must be a value type such as a
+  ///	value of string, Integer.</remarks>
+  {$ENDREGION}
   TNullable<T> = packed record
   private
     const fCHasValue = '@';  // DO NOT LOCALIZE
@@ -448,68 +473,6 @@ type
 
   {$ENDREGION}
 
-
-  {$REGION 'Defines the interface for an abstract value provider. '}
-  ///	<summary>Defines the interface for an abstract value provider.</summary>
-  ///	<remarks>Use the <see cref="Value" /> property to retrieve the current value from
-  ///	the provider. Use the <see cref="SetValue(TValue)">SetValue</see> method to assign a new value to it
-  ///	if the value provider is not read only. Otherwise, an
-  ///	<c>EInvalidException</c> exception will be raised.</remarks>
-  {$ENDREGION}
-  IValueProvider = interface
-    ['{392A1E2F-CCA1-4CBB-9306-29AA402927D6}']
-
-    {$REGION ' Property Getters and Setters '}
-      function GetValue: TValue;
-      function GetIsReadOnly: Boolean;
-    {$ENDREGION}
-
-    ///	<summary>Sets the value of the provider.</summary>
-    ///	<param name="value">the new value.</param>
-    ///	<exception cref="EInvalidOperation">Raised if the value provider is
-    ///	read only.</exception>
-    procedure SetValue(const value: TValue);
-
-    ///	<summary>Gets the value of the provider.</summary>
-    property Value: TValue read GetValue;
-
-    {$REGION 'Documentation'}
-    ///	<summary>Gets a value that indicates whether the value provider is read
-    ///	only.</summary>
-    ///	<value>Returns true if the value provider is read only, otherwise,
-    ///	returns false.</value>
-    ///	<remarks>If the value provider is read only, invoking the
-    ///	<see cref="SetValue(TValue)">SetValue</see> method will raise an <c>EInvalidOperation</c>
-    ///	exception.</remarks>
-    {$ENDREGION}
-    property IsReadOnly: Boolean read GetIsReadOnly;
-  end;
-
-
-  {$REGION 'Documentation'}
-  ///	<summary>Provides an abstract base class for generic value provider.</summary>
-  ///	<remarks>
-  ///	  <note type="implement">
-  ///	    <para>By default, the <see cref="IsReadOnly" /> property is true.</para>
-  ///	    <para>Implementers must override the DoSetValue method if the value
-  ///	    provider is not read only.</para>
-  ///	  </note>
-  ///	</remarks>
-  {$ENDREGION}
-  TValueProviderBase = class abstract(TInterfacedObject, IValueProvider)
-  protected
-    function GetValue: TValue; virtual; abstract;
-    function GetIsReadOnly: Boolean; virtual;
-    procedure DoSetValue(const value: TValue); virtual; abstract;
-  public
-    procedure SetValue(const value: TValue); virtual;
-    property Value: TValue read GetValue;
-    property IsReadOnly: Boolean read GetIsReadOnly;
-  end;
-
-  TValueProvider = TValueProviderBase
-    deprecated 'Use the TValueProviderBase class instead.';
-
   ///	<summary>Represents a multicast delegate interface.</summary>
   ///	<remarks>
   ///	  <note type="warning">This type needs to be reviewed.</note>
@@ -534,23 +497,6 @@ type
     function Invoke(const callback: TProc<T>): IDelegate<T>; virtual;
     procedure Clear;
   end;
-
-  /// <summary>
-  /// Enforces an ordering constraint on memory operations.
-  /// </summary>
-  TVolatile<T> = record
-  private
-    fValue: T;
-    function GetValue: T;
-    procedure SetValue(const newValue: T);
-  public
-    property Value: T read GetValue write SetValue;
-    { Operator Overloads }
-    class operator Implicit(const value: T): TVolatile<T>;
-    class operator Implicit(const value: TVolatile<T>): T;
-    class operator Equal(const left, right: TVolatile<T>): Boolean;
-    class operator NotEqual(const left, right: TVolatile<T>): Boolean;
-  end deprecated;// 'Uses the TLazyUtils.GetValue method structure to ensure the thread safety.';
 
   /// <preliminary />
   /// <threadsafety static="true" />
@@ -655,43 +601,6 @@ type
 
   TObjectHolder = TObjectHolder<TObject>;
 
-
-  {$REGION 'Documentation'}
-  ///	<summary>Represents a weak reference, which references a value of managed
-  ///	type such as an interface.</summary>
-  ///	<example>
-  ///	  The following sample demonstrates how to use the
-  ///	  <c>TWeakReference&lt;T&gt;</c> type:
-  ///	  <code lang="Delphi">
-  ///	IHost = interface
-  ///	  procedure DoSomething;
-  ///	end;
-  ///	TSomeClass = class
-  ///	private
-  ///	  fHost: TWeakReference&lt;IHost&gt;;
-  ///	  constructor Create(const host: IHost);
-  ///	end;
-  ///	constructor TSomeClass.Create(const host: IHost);
-  ///	begin
-  ///	  fHost := host;
-  ///	end;
-  ///	// fHost.DoSomething;
-  ///	</code>
-  ///	</example>
-  ///<preliminary />
-  {$ENDREGION}
-  TWeakReference<T: IInterface> = record
-  private
-    fValue: Pointer;
-    function GetValue: T;
-  public
-    constructor Create(const value: T);
-    ///	<summary>Gets the strong-typed value of the reference.</summary>
-    property Value: T read GetValue;
-    class operator Implicit(const reference: TWeakReference<T>): T;
-    class operator Implicit(const value: T): TWeakReference<T>;
-  end;
-
   ///	<summary>Internal interface. Reserved for future use.</summary>
   ISupportItemType = interface
     ['{FE986DD7-41D5-4312-A2F9-94F7D9E642EE}']
@@ -748,7 +657,7 @@ type
     procedure Recycle;
   end;
 
-  ///	<summary>Lifecycle interface.&#160;If the component implements this
+  ///	<summary>Lifecycle interface. If the component implements this
   ///	interface, all resources will be deallocate by calling the <c>dispose</c>
   ///	method.</summary>
   ///	<seealso cref="IInitializable"></seealso>
@@ -2776,28 +2685,6 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TValueProvider'}
-
-function TValueProviderBase.GetIsReadOnly: Boolean;
-begin
-  Result := True;
-end;
-
-procedure TValueProviderBase.SetValue(const value: TValue);
-begin
-  if not GetIsReadOnly then
-  begin
-    DoSetValue(value);
-  end
-  else
-  begin
-    raise EInvalidOperation.CreateRes(@SCannotModifyReadOnlyValue);
-  end;
-end;
-
-{$ENDREGION}
-
-
 {$REGION 'TDelegate<T>'}
 
 procedure TDelegate<T>.Clear;
@@ -2913,72 +2800,6 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TWeakReference<T>'}
-
-constructor TWeakReference<T>.Create(const value: T);
-begin
-  fValue := Pointer(IInterface(value));
-end;
-
-function TWeakReference<T>.GetValue: T;
-begin
-  IInterface(Result) := IInterface(fValue);
-end;
-
-class operator TWeakReference<T>.Implicit(const reference: TWeakReference<T>): T;
-begin
-  Result := reference.Value;
-end;
-
-class operator TWeakReference<T>.Implicit(const value: T): TWeakReference<T>;
-begin
-  Result := TWeakReference<T>.Create(value);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TVolatile<T>'}
-
-{$WARNINGS OFF}
-
-function TVolatile<T>.GetValue: T;
-begin
-  MemoryBarrier;
-  Result := fValue;
-end;
-
-procedure TVolatile<T>.SetValue(const newValue: T);
-begin
-  MemoryBarrier;
-  fValue := newValue;
-end;
-
-class operator TVolatile<T>.Implicit(const value: T): TVolatile<T>;
-begin
-  Result.Value := value;
-end;
-
-class operator TVolatile<T>.Implicit(const value: TVolatile<T>): T;
-begin
-  Result := value.Value;
-end;
-
-class operator TVolatile<T>.Equal(const left, right: TVolatile<T>): Boolean;
-begin
-  Result := TEqualityComparer<T>.Default.Equals(left, right);
-end;
-
-class operator TVolatile<T>.NotEqual(const left, right: TVolatile<T>): Boolean;
-begin
-  Result := not TEqualityComparer<T>.Default.Equals(left, right);
-end;
-
-{$WARNINGS ON}
-
-{$ENDREGION}
-
-
 {$REGION 'TLazyUtils'}
 
 class function TLazyUtils.GetValue<T>(var field: T;
@@ -3074,5 +2895,3 @@ end;
 {$ENDREGION}
 
 end.
-
-

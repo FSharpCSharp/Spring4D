@@ -26,7 +26,7 @@
 		<PropertyGroup Condition="'$(Base)'!=''">
 			<DCC_UNIT_PLATFORM>false</DCC_UNIT_PLATFORM>
 			<DCC_SYMBOL_PLATFORM>false</DCC_SYMBOL_PLATFORM>
-			<DCC_UnitSearchPath>$(BDS)\Source\DUnit\src;..\Source\Base;..\Source\Base\Collections;..\Source\Base\Utils;..\Source\Core\Configuration;..\Source\Core\Cryptography;..\Source\Core\Logging;..\Source\Core\DI;D:\Projects\spring4d\Source\Core\Numerics;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UnitSearchPath>$(BDS)\Source\DUnit\src;..\Source\Base;..\Source\Base\Collections;..\Source\Base\Utils;..\Source\Core\Configuration;..\Source\Core\Cryptography;..\Source\Core\Logging;..\Source\Core\DI;..\Experiments\Source;..\Experiments\Source\Numberics;E:\Documents\Projects\DevJET\Spring\Experiments\Source\Numerics;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DCC_Define>_CONSOLE_TESTRUNNER;$(DCC_Define)</DCC_Define>
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
 			<DCC_DependencyCheckOutputName>Spring.Tests.exe</DCC_DependencyCheckOutputName>
@@ -81,6 +81,7 @@
 			</BuildConfiguration>
 		</ItemGroup>
 		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')" Project="$(BDS)\Bin\CodeGear.Delphi.Targets"/>
+		<Import Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')" Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj"/>
 		<ProjectExtensions>
 			<Borland.Personality>Delphi.Personality.12</Borland.Personality>
 			<Borland.ProjectType/>
@@ -141,5 +142,4 @@
 			</BorlandProject>
 			<ProjectFileVersion>12</ProjectFileVersion>
 		</ProjectExtensions>
-		<Import Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')" Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj"/>
 	</Project>

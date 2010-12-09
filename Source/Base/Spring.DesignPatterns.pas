@@ -69,6 +69,15 @@ type
   TSingleton = record
   strict private
     class var
+///	<summary>
+///	  This namespace contains the following classical design patterns:
+///	  <list type="bullet">
+///	    <item><b><see cref="TSingleton">Singleton Pattern</see></b></item>
+///	    <item><b>Observer Pattern</b></item>
+///	    <item><b><see cref="ISpecification&lt;T&gt;">Specification
+///	    Pattern</see></b></item>
+///	  </list>
+///	</summary>
       fMappings: TDictionary<TClass, TObject>;
 
       ///	<summary>Tracks all instances of the singleton objects and free them

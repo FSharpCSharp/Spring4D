@@ -25,7 +25,7 @@
 {TODO -oPaul -cGeneral : Consider Redefining IEnumerable & IEnumerable<T>}
 {TODO -oPaul -cGeneral : Implement ICollection, IList, IDictionary}
 {TODO -oPaul -cGeneral : Add more LINQ features to IEnumerableEx<T>}
-{TODO -oPaul -cGeneral : Add ISet, ISet<T>, IOrderedDictionary}
+{TODO -oPaul -cGeneral : Add IStack, IQueue, ISet, ISet<T>, IOrderedDictionary}
 {TODO -oOwner -cGeneral : Documentation}
 
 /// <preliminary />
@@ -238,6 +238,9 @@ type
     class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships; capacity: Integer): IDictionary<TKey, TValue>; overload;
     class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships; capacity: Integer; const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TValue>; overload;
     class function CreateDictionary<TKey, TValue>(dictionary: TDictionary<TKey, TValue>; ownership: TCollectionOwnership): IDictionary<TKey, TValue>; overload;
+//    class function Empty<T>: IEnumerableEx<T>;
+//    class function Range(const start, count: Integer): IEnumerableEx<Integer>;
+//    class function &Repeat<T>(const element: T; count: Integer): IEnumerableEx<T>;
   end;
 
   TContainers = TCollections deprecated 'Use TCollections instead.';
