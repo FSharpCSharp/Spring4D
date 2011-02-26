@@ -2,9 +2,9 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (C) 2009-2010 DevJet                                  }
+{           Copyright (C) 2009-2011 DevJET                                  }
 {                                                                           }
-{           http://www.DevJet.net                                           }
+{           http://www.DevJET.net                                           }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -91,8 +91,8 @@ type
 
     function FindOne(componentType: PTypeInfo): TComponentModel; overload;
     function FindOne(const name: string): TComponentModel; overload;
-    function FindAll: IEnumerableEx<TComponentModel>; overload;
-    function FindAll(serviceType: PTypeInfo): IEnumerableEx<TComponentModel>; overload;
+    function FindAll: IEnumerable<TComponentModel>; overload;
+    function FindAll(serviceType: PTypeInfo): IEnumerable<TComponentModel>; overload;
   end;
 
   IComponentBuilder = interface
@@ -554,3 +554,5 @@ end;
 
 
 end.
+
+

@@ -2,9 +2,9 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (C) 2009-2010 DevJet                                  }
+{           Copyright (C) 2009-2011 DevJET                                  }
 {                                                                           }
-{           http://www.DevJet.net                                           }
+{           http://www.DevJET.net                                           }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -33,8 +33,9 @@ uses
   SysUtils,
   Rtti,
   TypInfo,
-  Generics.Collections,
+//  Generics.Collections,
   Spring,
+  Spring.Collections,
   Spring.DesignPatterns,
   Spring.DI.Core;
 
@@ -134,7 +135,6 @@ type
 implementation
 
 uses
-  Spring.Collections,
   Spring.Reflection,
   Spring.Helpers,
   Spring.DI.Injection,
@@ -519,7 +519,7 @@ end;
 procedure TInterfaceInspector.DoProcessModel(const context: IContainerContext;
   model: TComponentModel);
 var
-  services: IEnumerableEx<TRttiInterfaceType>;
+  services: IEnumerable<TRttiInterfaceType>;
   service: TRttiInterfaceType;
 begin
   if not model.Services.IsEmpty then Exit;

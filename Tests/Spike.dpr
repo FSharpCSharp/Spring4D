@@ -36,34 +36,38 @@ uses
   Rtti,
   Spring,
   Spring.Collections,
-  Spring.Logging.Core,
-  Spring.Logging,
+//  Spring.Logging.Core,
+//  Spring.Logging,
   StrUtils
   ;
 
 var
-  logger: ILogger;
-  s: string;
-  i : Integer;
+  list: TList<TObject>;
+//  logger: ILogger;
+//  s: string;
+//  i : Integer;
 
 begin
   try
-
-    LoggerManager.Configure('logging.xml');
-    DefaultLogger.Info('Hello');
-    logger := LoggerManager.GetLogger('Spring');
-//    for i := 0 to 100 do
-//    begin
-      logger.Debug('Debug');
-      logger.Info('Info...');
-      logger.Warn('WARN');
-      logger.Error('ERROR');
-      logger.Fatal('哇 我是汉字');
-      logger := LoggerManager.GetLogger('Spring.Base');
-      logger.Debug('XX');
-      logger.Info('YY');
-//    end;
-    Readln(s);
+    list := TList<TObject>.Create;
+//    list.Enqueue(2);
+//    list.Enqueue(30);
+//    Writeln(list.Dequeue, ',', list.Dequeue);
+//    LoggerManager.Configure('logging.xml');
+//    DefaultLogger.Info('Hello');
+//    logger := LoggerManager.GetLogger('Spring');
+////    for i := 0 to 100 do
+////    begin
+//      logger.Debug('Debug');
+//      logger.Info('Info...');
+//      logger.Warn('WARN');
+//      logger.Error('ERROR');
+//      logger.Fatal('哇 我是汉字');
+//      logger := LoggerManager.GetLogger('Spring.Base');
+//      logger.Debug('XX');
+//      logger.Info('YY');
+////    end;
+//    Readln(s);
   except
     on E: Exception do
       Writeln(E.ClassName, ': ', E.Message);

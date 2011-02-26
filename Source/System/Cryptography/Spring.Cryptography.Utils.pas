@@ -22,26 +22,57 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Logging.ResourceStrings;
+unit Spring.Cryptography.Utils;
 
 {$I Spring.inc}
 
 interface
 
-resourcestring
-  // Spring.Logging
+uses
+  Classes,
+  Windows,
+  SysUtils;
 
-  SNoTypeInformation = 'No type information.';
-
-  SAllDescription      = 'ALL';
-  STraceDescription    = 'TRACE';
-  SDebugDescription    = 'DEBUG';
-  SInfoDescription     = 'INFO';
-  SWarnDescription     = 'WARN';
-  SErrorDescription    = 'ERROR';
-  SFatalDescription    = 'FATAL';
-  SOffDescription      = 'OFF';
+function Endian(x: LongWord): LongWord;
+function Endian64(x: Int64): Int64;
+function Rol(x: LongWord; y: Byte): LongWord;
+function Ror(x: LongWord; y: Byte): LongWord;
+function Ror64(x: Int64; y: Byte): Int64;
 
 implementation
+
+function Endian(x: LongWord): LongWord;
+asm
+  bswap eax
+end;
+
+function Endian64(x: Int64): Int64;
+begin
+  Result := (x and $00000000000000FF) shl 56;
+  Result := Result + (x and $000000000000FF00) shl 40;
+  Result := Result + (x and $0000000000FF0000) shl 24;
+  Result := Result + (x and $00000000FF000000) shl 8;
+  Result := Result + (x and $000000FF00000000) shr 8;
+  Result := Result + (x and $0000FF0000000000) shr 24;
+  Result := Result + (x and $00FF000000000000) shr 40;
+  Result := Result + (x and $FF00000000000000) shr 56;
+end;
+
+function Rol(x: LongWord; y: Byte): LongWord;
+asm
+  mov   cl,dl
+  Rol   eax,cl
+end;
+
+function Ror(x: LongWord; y: Byte): LongWord;
+asm
+  mov   cl,dl
+  Ror   eax,cl
+end;
+
+function Ror64(x: Int64; y: Byte): Int64;
+begin
+  Result := (x shr y) or (x shl (64 - y));
+end;
 
 end.

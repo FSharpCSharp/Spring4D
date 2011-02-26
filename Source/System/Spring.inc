@@ -2,9 +2,9 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (C) 2009-2011 DevJET                                  }
+{           Copyright (C) 2009-2011 spring4d Team                           }
 {                                                                           }
-{           http://www.DevJET.net                                           }
+{           http://www.spring4d.org                                         }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -22,26 +22,30 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Logging.ResourceStrings;
+{$IFNDEF SPRING_INC}
+{$DEFINE SPRING_INC}
 
-{$I Spring.inc}
+{$I jedi.inc}                // Import JEDI Development environment directives
 
-interface
+{$IFNDEF DELPHI7_UP}
+  {$MESSAGE ERROR 'This framework requires Delphi 7 or higher.'}}
+{$ENDIF}
 
-resourcestring
-  // Spring.Logging
+{.$SCOPEDENUMS ON}           // Enable Scoped Enumerations
 
-  SNoTypeInformation = 'No type information.';
+{$WARN UNIT_PLATFORM OFF}    // Turn off UNIT_PLATFORM warning
+{$WARN SYMBOL_PLATFORM OFF}  // Turn off SYMBOL_PLATFORM warning
 
-  SAllDescription      = 'ALL';
-  STraceDescription    = 'TRACE';
-  SDebugDescription    = 'DEBUG';
-  SInfoDescription     = 'INFO';
-  SWarnDescription     = 'WARN';
-  SErrorDescription    = 'ERROR';
-  SFatalDescription    = 'FATAL';
-  SOffDescription      = 'OFF';
+{$IFNDEF DELPHI2007_UP}
+  {$DEFINE DisableEnhancedRecords}
+{$ENDIF}
 
-implementation
+{$IFNDEF DELPHI2009_UP}
+  {$DEFINE DisableGenerics}
+{$ENDIF}
 
-end.
+{$IFNDEF DELPHI2010_UP}
+  {$DEFINE DisableReflection}
+{$ENDIF}
+
+{$ENDIF ~SPRING_INC}

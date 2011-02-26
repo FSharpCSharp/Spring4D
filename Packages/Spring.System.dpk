@@ -22,7 +22,10 @@
 {                                                                           }
 {***************************************************************************}
 
-package Spring.Core;
+/// <summary>
+/// Contains the <b>Base Class Library</b> of Spring Framework for Delphi.
+/// </summary>
+package Spring.System;
 
 {$R *.res}
 {$ALIGN 8}
@@ -46,38 +49,42 @@ package Spring.Core;
 {$WRITEABLECONST OFF}
 {$MINENUMSIZE 1}
 {$IMAGEBASE $400000}
-{$DESCRIPTION 'Spring Framework for Delphi Core Library'}
+{$DESCRIPTION 'Spring Framework for Delphi Base Class Library'}
 {$RUNONLY}
 {$IMPLICITBUILD ON}
 
 requires
   rtl,
   vcl,
-  xmlrtl,
-  Spring.System,
-  vcldb;
+  dbrtl,
+  xmlrtl;
 
 contains
-  Spring.Logging.Utils in '..\Source\Core\Logging\Spring.Logging.Utils.pas',
-  Spring.Logging.Appenders in '..\Source\Core\Logging\Spring.Logging.Appenders.pas',
-  Spring.Logging.Core in '..\Source\Core\Logging\Spring.Logging.Core.pas',
-  Spring.Logging.Layouts in '..\Source\Core\Logging\Spring.Logging.Layouts.pas',
-  Spring.Logging in '..\Source\Core\Logging\Spring.Logging.pas',
-  Spring.Logging.Repositories in '..\Source\Core\Logging\Spring.Logging.Repositories.pas',
-  Spring.Logging.ResourceStrings in '..\Source\Core\Logging\Spring.Logging.ResourceStrings.pas',
-  Spring.Configuration in '..\Source\Core\Configuration\Spring.Configuration.pas',
-  Spring.Configuration.Xml in '..\Source\Core\Configuration\Spring.Configuration.Xml.pas',
-  Spring.DI.Builder in '..\Source\Core\DI\Spring.DI.Builder.pas',
-  Spring.DI.ComponentActivator in '..\Source\Core\DI\Spring.DI.ComponentActivator.pas',
-  Spring.DI.Core in '..\Source\Core\DI\Spring.DI.Core.pas',
-  Spring.DI.Injection in '..\Source\Core\DI\Spring.DI.Injection.pas',
-  Spring.DI.LifetimeManager in '..\Source\Core\DI\Spring.DI.LifetimeManager.pas',
-  Spring.DI in '..\Source\Core\DI\Spring.DI.pas',
-  Spring.DI.Registration in '..\Source\Core\DI\Spring.DI.Registration.pas',
-  Spring.DI.Resolvers in '..\Source\Core\DI\Spring.DI.Resolvers.pas',
-  Spring.DI.ResourceStrings in '..\Source\Core\DI\Spring.DI.ResourceStrings.pas';
+  Spring in '..\Source\System\Spring.pas',
+  Spring.DesignPatterns in '..\Source\System\Spring.DesignPatterns.pas',
+  Spring.ResourceStrings in '..\Source\System\Spring.ResourceStrings.pas',
+  Spring.Reflection in '..\Source\System\Spring.Reflection.pas',
+  Spring.Helpers in '..\Source\System\Spring.Helpers.pas',
+  Spring.Reflection.ValueConverters in '..\Source\System\Spring.Reflection.ValueConverters.pas',
+  Spring.Pool in '..\Source\System\Spring.Pool.pas',
+  Spring.Utils.IO in '..\Source\System\Utils\Spring.Utils.IO.pas',
+  Spring.Utils in '..\Source\System\Utils\Spring.Utils.pas',
+  Spring.Utils.Vcl in '..\Source\System\Utils\Spring.Utils.Vcl.pas',
+  Spring.Utils.WinApi in '..\Source\System\Utils\Spring.Utils.WinApi.pas',
+  Spring.Collections.Extensions in '..\Source\System\Collections\Spring.Collections.Extensions.pas',
+  Spring.Collections in '..\Source\System\Collections\Spring.Collections.pas',
+  Spring.Cryptography.CRC in '..\Source\System\Cryptography\Spring.Cryptography.CRC.pas',
+  Spring.Cryptography.DES in '..\Source\System\Cryptography\Spring.Cryptography.DES.pas',
+  Spring.Cryptography.MD5 in '..\Source\System\Cryptography\Spring.Cryptography.MD5.pas',
+  Spring.Cryptography in '..\Source\System\Cryptography\Spring.Cryptography.pas',
+  Spring.Cryptography.SHA in '..\Source\System\Cryptography\Spring.Cryptography.SHA.pas',
+  Spring.Cryptography.Utils in '..\Source\System\Cryptography\Spring.Cryptography.Utils.pas';
 
 end.
+
+
+
+
 
 
 

@@ -31,7 +31,7 @@ uses
   TestFramework,
   TestExtensions,
   Rtti,
-  Spring.ValueConverters;
+  Spring.Reflection.ValueConverters;
 
 type
   TEnumeration = (teFirst, teSecond, teLast);

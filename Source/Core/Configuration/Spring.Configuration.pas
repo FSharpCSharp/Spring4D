@@ -2,9 +2,9 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (C) 2009-2010 DevJet                                  }
+{           Copyright (C) 2009-2011 DevJET                                  }
 {                                                                           }
-{           http://www.DevJet.net                                           }
+{           http://www.DevJET.net                                           }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -22,6 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
+/// NOT READY
 unit Spring.Configuration;
 
 {$I Spring.inc}
@@ -63,7 +64,7 @@ type
 
   IConfigurationNode = interface;
 
-  IConfigurationNodes = IEnumerableEx<IConfigurationNode>;
+  IConfigurationNodes = IEnumerable<IConfigurationNode>;
 
   IConfigurationNode = interface
     ['{E37F5A2C-D792-4FA8-9DB7-A00FE0D7E76D}']
@@ -122,3 +123,4 @@ begin
 end;
 
 end.
+

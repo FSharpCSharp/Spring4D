@@ -2,9 +2,9 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (C) 2009-2010 DevJet                                  }
+{           Copyright (C) 2009-2011 DevJET                                  }
 {                                                                           }
-{           http://www.DevJet.net                                           }
+{           http://www.DevJET.net                                           }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -65,3 +65,4 @@ end;
 {$ENDREGION}
 
 end.
+

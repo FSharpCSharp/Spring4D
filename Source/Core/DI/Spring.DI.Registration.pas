@@ -2,9 +2,9 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (C) 2009-2010 DevJet                                  }
+{           Copyright (C) 2009-2011 DevJET                                  }
 {                                                                           }
-{           http://www.DevJet.net                                           }
+{           http://www.DevJET.net                                           }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -67,8 +67,8 @@ type
     function HasService(serviceType: PTypeInfo; const name: string): Boolean; overload;
     function FindOne(componentType: PTypeInfo): TComponentModel; overload;
     function FindOne(const name: string): TComponentModel; overload;
-    function FindAll: IEnumerableEx<TComponentModel>; overload;
-    function FindAll(serviceType: PTypeInfo): IEnumerableEx<TComponentModel>; overload;
+    function FindAll: IEnumerable<TComponentModel>; overload;
+    function FindAll(serviceType: PTypeInfo): IEnumerable<TComponentModel>; overload;
   end;
 
   /// <summary>
@@ -294,13 +294,13 @@ begin
   fModels.TryGetValue(componentType, Result);
 end;
 
-function TComponentRegistry.FindAll: IEnumerableEx<TComponentModel>;
+function TComponentRegistry.FindAll: IEnumerable<TComponentModel>;
 begin
   Result := fModels.Values;
 end;
 
 function TComponentRegistry.FindAll(
-  serviceType: PTypeInfo): IEnumerableEx<TComponentModel>;
+  serviceType: PTypeInfo): IEnumerable<TComponentModel>;
 var
   models: IList<TComponentModel>;
 begin

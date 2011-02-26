@@ -2,9 +2,9 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (C) 2009-2010 DevJet                                  }
+{           Copyright (C) 2009-2011 DevJET                                  }
 {                                                                           }
-{           http://www.DevJet.net                                           }
+{           http://www.DevJET.net                                           }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -194,13 +194,13 @@ type
   IAppenderAttachable = interface
     ['{25687F5E-642E-48D6-9DD9-C76C7443CE71}']
     {$REGION 'Property Getters & Setters'}
-      function GetAppenders: IEnumerableEx<IAppender>;
+      function GetAppenders: IEnumerable<IAppender>;
     {$ENDREGION}
     procedure AddAppender(const appender: IAppender);
     procedure RemoveAppender(const appender: IAppender);
     procedure ClearAppenders;
     function FindAppender(const name: string): IAppender;
-    property Appenders: IEnumerableEx<IAppender> read GetAppenders;
+    property Appenders: IEnumerable<IAppender> read GetAppenders;
   end;
 
   {$REGION 'Documentation'}
@@ -326,7 +326,7 @@ type
   protected
     fAppenderAttachableLock: IReadWriteSync;
     function GetAppenderAttachable: IAppenderAttachable;
-    function GetAppenders: IEnumerableEx<IAppender>;
+    function GetAppenders: IEnumerable<IAppender>;
     procedure CallAppenders(const event: TLoggingEvent); virtual;
   protected
     function IsEnabledFor(const level: TLevel): Boolean; override;
@@ -343,7 +343,7 @@ type
     procedure RemoveAppender(const appender: IAppender);
     procedure ClearAppenders;
     function FindAppender(const name: string): IAppender;
-    property Appenders: IEnumerableEx<IAppender> read GetAppenders;
+    property Appenders: IEnumerable<IAppender> read GetAppenders;
     { Properties }
     function GetEffectiveLevel: TLevel; virtual;
     property Additivity: Boolean read GetAdditivity write SetAdditivity;
@@ -354,16 +354,16 @@ type
   TAppenderAttachable = class(TInterfacedObject, IAppenderAttachable)
   private
     fList: ICollection<IAppender>;
-    function GetAppenders: IEnumerableEx<IAppender>;
+    function GetAppenders: IEnumerable<IAppender>;
   public
     constructor Create;
     procedure AddAppender(const appender: IAppender);
     procedure RemoveAppender(const appender: IAppender);
     procedure ClearAppenders;
     function FindAppender(const name: string): IAppender;
-    property Appenders: IEnumerableEx<IAppender> read GetAppenders;
+    property Appenders: IEnumerable<IAppender> read GetAppenders;
   end;
-  
+
   ELoggingException = class(Exception);
 
 
@@ -796,7 +796,7 @@ end;
 procedure TLogger.CallAppenders(const event: TLoggingEvent);
 var
   logger: TLogger;
-  collection: IEnumerableEx<IAppender>;
+  collection: IEnumerable<IAppender>;
   appender: IAppender;
 begin
   logger := Self;
@@ -822,7 +822,7 @@ end;
 
 procedure TLogger.CloseNestedAppenders;
 var
-  appenders: IEnumerableEx<IAppender>;
+  appenders: IEnumerable<IAppender>;
   appender: IAppender;
 begin
   fAppenderAttachableLock.BeginWrite;
@@ -907,7 +907,7 @@ begin
   end;
 end;
 
-function TLogger.GetAppenders: IEnumerableEx<IAppender>;
+function TLogger.GetAppenders: IEnumerable<IAppender>;
 begin
   fAppenderAttachableLock.BeginRead;
   try
@@ -1003,7 +1003,7 @@ begin
   end;
 end;
 
-function TAppenderAttachable.GetAppenders: IEnumerableEx<IAppender>;
+function TAppenderAttachable.GetAppenders: IEnumerable<IAppender>;
 begin
   Result := fList;
 end;
@@ -1011,3 +1011,4 @@ end;
 {$ENDREGION}
 
 end.
+

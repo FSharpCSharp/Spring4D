@@ -2,9 +2,9 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (C) 2009-2010 DevJet                                  }
+{           Copyright (C) 2009-2011 DevJET                                  }
 {                                                                           }
-{           http://www.DevJet.net                                           }
+{           http://www.DevJET.net                                           }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -33,7 +33,6 @@ uses
   SysUtils,
   TypInfo,
   Spring,
-  Spring.Collections,
   Spring.Logging.Core;
 
 type
@@ -184,3 +183,4 @@ end;
 {$ENDREGION}
 
 end.
+

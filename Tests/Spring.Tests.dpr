@@ -31,7 +31,6 @@ program Spring.Tests;
 {$ENDIF}
 
 uses
-  FastMM4,
   Classes,
   SysUtils,
   Forms,
@@ -49,9 +48,7 @@ uses
   Spring.Tests.DI in 'Source\Core\Spring.Tests.DI.pas',
   Spring.Tests.Pool in 'Source\Core\Spring.Tests.Pool.pas',
   Spring.Tests.ValueConverters in 'Source\Base\Spring.Tests.ValueConverters.pas',
-  Spring.Tests.Cryptography in 'Source\Core\Spring.Tests.Cryptography.pas',
-  Spring.Tests.Numerics in 'Source\Core\Spring.Tests.Numerics.pas',
-  Spring.Tests.Cloning in 'Source\Base\Spring.Tests.Cloning.pas';
+  Spring.Tests.Cryptography in 'Source\Base\Spring.Tests.Cryptography.pas';
 
 {$R *.RES}
 
@@ -84,10 +81,10 @@ begin
     TTestGuidHelper.Suite
   ]);
 
-   RegisterTests('Base.Cloning', [
-    TTestCloning.Suite,
-    TTestCloneableObject.Suite
-  ]);
+//  RegisterTests('Base.Cloning', [
+//    TTestCloning.Suite,
+//    TTestCloneableObject.Suite
+//  ]);
 
   RegisterTests('Base.ValueConverters', [
     TTestFromString.Suite,
@@ -146,12 +143,12 @@ begin
     TTestImplementsAttribute.Suite
   ]);
 
-  RegisterTests('Core.Numerics', [
-    TTestHalf.Suite,
-    TTestBigCardinal.Suite,
-    TTestBigInteger.Suite,
-    TTestBigDecimal.Suite
-  ]);
+//  RegisterTests('Core.Numerics', [
+//    TTestHalf.Suite,
+//    TTestBigCardinal.Suite,
+//    TTestBigInteger.Suite,
+//    TTestBigDecimal.Suite
+//  ]);
 
 end;
 

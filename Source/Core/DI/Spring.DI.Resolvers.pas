@@ -2,9 +2,9 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (C) 2009-2010 DevJet                                  }
+{           Copyright (C) 2009-2011 DevJET                                  }
 {                                                                           }
-{           http://www.DevJet.net                                           }
+{           http://www.DevJET.net                                           }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -112,7 +112,7 @@ end;
 function TDependencyResolver.GetEligibleModel(dependency: TRttiType;
   const argument: TValue): TComponentModel;
 var
-  models: IEnumerableEx<TComponentModel>;
+  models: IEnumerable<TComponentModel>;
   name: string;
 begin
   if argument.IsEmpty then
@@ -409,7 +409,7 @@ end;
 function TServiceResolver.Resolve(serviceType: PTypeInfo): TValue;
 var
   serviceName: string;
-  models: IEnumerableEx<TComponentModel>;
+  models: IEnumerable<TComponentModel>;
   model: TComponentModel;
 begin
   serviceName := GetTypeName(serviceType);

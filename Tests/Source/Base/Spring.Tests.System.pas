@@ -39,7 +39,8 @@ uses
   TestFramework,
   TestExtensions,
   Generics.Defaults,
-  Spring;
+  Spring,
+  Spring.Utils;
 
 type
   TTestSplitString = class(TTestCase)
@@ -127,6 +128,16 @@ type
     procedure TestImplicitConversion;
   end;
 
+  TTestRtti = class(TTestCase)
+  published
+
+  end;
+
+  TTestArgument = class(TTestCase)
+  published
+
+  end;
+
   TTestEnum = class(TTestCase)
   published
     procedure TestGetNameByEnum;
@@ -172,9 +183,6 @@ type
   end;
 
 implementation
-
-uses
-  Spring.Utils;
 
 
 {$REGION 'TTestSplitString'}
