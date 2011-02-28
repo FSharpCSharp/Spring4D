@@ -39,16 +39,16 @@ uses
   TestExtensions,
   GUITestRunner,
   TextTestRunner,
-  Spring.Tests.DesignPatterns in 'Source\Base\Spring.Tests.DesignPatterns.pas',
-  Spring.Tests.Helpers in 'Source\Base\Spring.Tests.Helpers.pas',
-  Spring.Tests.System in 'Source\Base\Spring.Tests.System.pas',
-  Spring.Tests.Utils in 'Source\Base\Spring.Tests.Utils.pas',
   Spring.Tests.DI.Components in 'Source\Core\Spring.Tests.DI.Components.pas',
   Spring.Tests.DI.LifetimeManager in 'Source\Core\Spring.Tests.DI.LifetimeManager.pas',
   Spring.Tests.DI in 'Source\Core\Spring.Tests.DI.pas',
   Spring.Tests.Pool in 'Source\Core\Spring.Tests.Pool.pas',
-  Spring.Tests.ValueConverters in 'Source\Base\Spring.Tests.ValueConverters.pas',
-  Spring.Tests.Cryptography in 'Source\Base\Spring.Tests.Cryptography.pas';
+  Spring.Tests.Cryptography in 'Source\System\Spring.Tests.Cryptography.pas',
+  Spring.Tests.DesignPatterns in 'Source\System\Spring.Tests.DesignPatterns.pas',
+  Spring.Tests.Helpers in 'Source\System\Spring.Tests.Helpers.pas',
+  Spring.Tests.System in 'Source\System\Spring.Tests.System.pas',
+  Spring.Tests.Utils in 'Source\System\Spring.Tests.Utils.pas',
+  Spring.Tests.ValueConverters in 'Source\System\Spring.Tests.ValueConverters.pas';
 
 {$R *.RES}
 

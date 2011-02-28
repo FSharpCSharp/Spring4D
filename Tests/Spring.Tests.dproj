@@ -55,16 +55,16 @@
 			<DelphiCompile Include="Spring.Tests.dpr">
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
-			<DCCReference Include="Source\Base\Spring.Tests.DesignPatterns.pas"/>
-			<DCCReference Include="Source\Base\Spring.Tests.Helpers.pas"/>
-			<DCCReference Include="Source\Base\Spring.Tests.System.pas"/>
-			<DCCReference Include="Source\Base\Spring.Tests.Utils.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.DI.Components.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.DI.LifetimeManager.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.DI.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.Pool.pas"/>
-			<DCCReference Include="Source\Base\Spring.Tests.ValueConverters.pas"/>
-			<DCCReference Include="Source\Base\Spring.Tests.Cryptography.pas"/>
+			<DCCReference Include="Source\System\Spring.Tests.Cryptography.pas"/>
+			<DCCReference Include="Source\System\Spring.Tests.DesignPatterns.pas"/>
+			<DCCReference Include="Source\System\Spring.Tests.Helpers.pas"/>
+			<DCCReference Include="Source\System\Spring.Tests.System.pas"/>
+			<DCCReference Include="Source\System\Spring.Tests.Utils.pas"/>
+			<DCCReference Include="Source\System\Spring.Tests.ValueConverters.pas"/>
 			<None Include="Spring.Tests.todo"/>
 			<BuildConfiguration Include="Debug">
 				<Key>Cfg_2</Key>
