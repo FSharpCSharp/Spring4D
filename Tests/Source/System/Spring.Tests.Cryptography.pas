@@ -44,10 +44,6 @@ type
   THashAlgorithmTestCase = class(TCryptoTestCase)
   protected
     const
-      /// <remarks>
-      /// NOTE: This string is only used for test purpose.
-      /// Please use "Spring Framework for Delphi" as the name of the project instead.
-      /// </remarks>
       fCData: UnicodeString = 'Delphi Spring Framework';  // fCDefaultDataString
   protected
 //    fAlgorithm: IHashAlgorithm;

@@ -788,7 +788,11 @@ type
 
   EArgumentException            = SysUtils.EArgumentException;
   EArgumentOutOfRangeException  = SysUtils.EArgumentOutOfRangeException;
+{$IFDEF DELPHIXE_UP}
   EArgumentNullException        = SysUtils.EArgumentNilException;
+{$ELSE}
+  EArgumentNullException        = class(EArgumentException);
+{$ENDIF}
   EInvalidEnumArgumentException = class(EArgumentException);
 
   EIOException                  = SysUtils.EInOutError;

@@ -321,13 +321,13 @@ type
     fAttributes: Cardinal;
     fIncludeSubfolders: Boolean;
   protected
-    function GetEnumerator: IEnumerator<TFileSystemEntry>; override;
     property Path: string read fPath;
     property SearchPattern: string read fSearchPattern;
     property IncludeSubfolders: Boolean read fIncludeSubfolders;
   public
     constructor Create(const path, searchPattern: string; attributes: Cardinal;
       includeSubfolders: Boolean);
+    function GetEnumerator: IEnumerator<TFileSystemEntry>; override;
   end;
 
   TFileEnumeratorBase = class abstract(TEnumeratorBase<TFileSystemEntry>, ISupportFileEnumeratorInspector)
@@ -407,9 +407,9 @@ type
   TFileListEnumerable = class(TEnumerableBase<TFileSystemEntry>, IFileEnumerable)
   protected
     fFiles: TStrings;
-    function GetEnumerator: IEnumerator<TFileSystemEntry>; override;
   public
     constructor Create(files: TStrings);
+    function GetEnumerator: IEnumerator<TFileSystemEntry>; override;
   end;
 
   TFileListEnumerator = class(TFileEnumeratorBase)
@@ -435,11 +435,11 @@ type
   TDroppedFilesEnumerable = class(TEnumerableBase<TFileSystemEntry>, IFileEnumerable)
   protected
     fFiles: TStrings;
-    function GetEnumerator: IEnumerator<TFileSystemEntry>; override;
   public
     constructor Create(dropHandle: THandle); overload;
     constructor Create(const dataObject: IDataObject); overload;
     destructor Destroy; override;
+    function GetEnumerator: IEnumerator<TFileSystemEntry>; override;
   end;
 
   {$REGION 'TFileSearcher'}
