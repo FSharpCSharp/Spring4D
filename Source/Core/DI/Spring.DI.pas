@@ -33,7 +33,7 @@ uses
   SysUtils,
   TypInfo,
   Rtti,
-  Generics.Collections,
+//  Generics.Collections,
   Spring,
   Spring.Collections,
   Spring.DI.Core,

@@ -33,7 +33,6 @@ uses
   SysUtils,
   Rtti,
   TypInfo,
-  Generics.Collections,
   Spring,
   Spring.Collections,
   Spring.DesignPatterns,
@@ -296,6 +295,7 @@ implementation
 
 uses
   Spring.Helpers,
+  Generics.Collections,
   Spring.ResourceStrings,
   Spring.DI.ResourceStrings;
 

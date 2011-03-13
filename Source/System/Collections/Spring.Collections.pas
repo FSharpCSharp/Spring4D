@@ -79,12 +79,12 @@ type
 
     Min, Max
 
-//    Union, Intersect, Exclude
-//    Distinct
+    Union, Intersect, Exclude
+    Distinct
 
-//    OfType
-//    Select
-//    OrderBy, OrderByDescending
+    OfType
+    Select
+    OrderBy, OrderByDescending
   *)
 
   ///	<summary>
@@ -114,6 +114,10 @@ type
     /// </summary>
     function FirstOrDefault: T; overload;
 
+    ///	<summary>
+    /// Returns the first element of a sequence, or the specified defaultValue if
+    ///	the sequence contains no elements.
+    /// </summary>
     function FirstOrDefault(const defaultValue: T): T; overload;
 
     ///	<summary>Returns the first element of the sequence that satisfies a
@@ -151,6 +155,8 @@ type
     ///	<summary>Determines whether a sequence contains a specified element by
     ///	using the default equality comparer.</summary>
 //    function ContainsRange(const collection: IEnumerable<T>): Boolean; overload;
+
+    procedure ForEach(const action: TAction<T>);
 
     ///	<summary>Creates a new array which is filled with the elements in the
     ///	collection.</summary>
@@ -219,8 +225,9 @@ type
 
 //    procedure Sort; overload;
 //    procedure Sort(const comparer: IComparer<T>); overload;
-//    procedure Sort(const comparer: TFunc<T, T, Integer>); overload;
+//    procedure Sort(const comparer: TComparison<T>); overload;
 //    function Range(fromIndex, toIndex: Integer): IList<T>;
+//    function AsReadOnly: IList<T>;
 
     function IndexOf(const item: T): Integer;
     function LastIndexOf(const item: T): Integer;
@@ -244,6 +251,8 @@ type
     function ContainsValue(const value: TValue): Boolean;
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
+
+//    function AsReadOnly: IDictionary<TKey, TValue>;
 
     /// <summary>
     /// Gets a read-only collection which contains all keys in the dictionary.
@@ -274,32 +283,28 @@ type
     function TryPeek(out item: T): Boolean;
   end;
 
-  IDynamicCollection = interface
-    ['{CA1A9672-5241-47B7-A54E-8E69CCA9946D}']
-    {$REGION 'Property Getters & Setters'}
-      function GetCapacity: Integer;
-      procedure SetCapacity(const value: Integer);
-    {$ENDREGION}
-    procedure Shrink;
-//    procedure Grow;
-    property Capacity: Integer read GetCapacity write SetCapacity;
-  end;
-
   ///	<summary>Internal interface. Reserved for future use.</summary>
   ICollectionItemType = interface
     ['{FE986DD7-41D5-4312-A2F9-94F7D9E642EE}']
     function GetItemType: PTypeInfo;
   end;
 
-  /// <summary>
-  /// TCollectionOwnership
-  /// </summary>
-  TCollectionOwnership = (
-    coReference,
-    coOwned
+  ICollectionOwnership = interface
+    ['{6D028EAF-3D14-4362-898C-BFAD1110547F}']
+    {$REGION 'Property Getters & Setters'}
+      function GetOwnsObjects: Boolean;
+      procedure SetOwnsObjects(const value: Boolean);
+    {$ENDREGION}
+    property OwnsObjects: Boolean read GetOwnsObjects write SetOwnsObjects;
+  end;
+
+  TOwnershipType = (
+    otReference,
+    otOwned
   );
 
   TDictionaryOwnerships = Generics.Collections.TDictionaryOwnerships;
+
 
   {$REGION 'Documentation'}
   ///	<summary>Provides an abstract implementation for the <see cref=
@@ -327,7 +332,6 @@ type
     function TryGetFirst(out value: T): Boolean; virtual;
     function TryGetLast(out value: T): Boolean; virtual;
   public
-    constructor Create;
     function GetEnumerator: IEnumerator<T>; virtual; abstract;
     function First: T; overload; virtual;
     function First(const predicate: TPredicate<T>): T; overload; virtual;
@@ -342,6 +346,7 @@ type
     function Where(const predicate: TPredicate<T>): IEnumerable<T>; virtual;
     function Contains(const item: T): Boolean; overload; virtual;
     function Contains(const item: T; const comparer: IEqualityComparer<T>): Boolean; overload; virtual;
+    procedure ForEach(const action: TAction<T>);
     function ToArray: TArray<T>; virtual;
     function ToList: IList<T>; virtual;
     property Count: Integer read GetCount;
@@ -379,48 +384,46 @@ type
     property Controller: IInterface read GetController;
   end;
 
-  ///	<summary>The adapter implementation for <c>IEnumerator{T}</c>.</summary>
-  TEnumeratorAdapter<T> = class(TEnumeratorBase<T>)
-  public
-    type
-      TGenericEnumerable = Generics.Collections.TEnumerable<T>;
-      TGenericEnumerator = Generics.Collections.TEnumerator<T>;
-  private
-    fEnumerator: TGenericEnumerator;
-  protected
-    function GetCurrent: T; override;
-  public
-    constructor Create(collection: TGenericEnumerable);
-    destructor Destroy; override;
-    function MoveNext: Boolean; override;
-    property Current: T read GetCurrent;
-  end;
-
   TList<T> = class(TCollectionBase<T>, IList<T>, ISupportIndexedProperties)
-  public
+  protected
     type
-      TGenericEnumerable = Generics.Collections.TEnumerable<T>;
-      TGenericEnumerator = Generics.Collections.TEnumerator<T>;
-      TGenericList = Generics.Collections.TList<T>;
-  protected
-    fList: TGenericList;
-    fOwnership: TCollectionOwnership;
+      TEnumerator = class(TEnumeratorBase<T>)
+      private
+        fList: TList<T>;
+        fIndex: Integer;
+      protected
+        function GetCurrent: T; override;
+      public
+        constructor Create(const list: TList<T>);
+        function MoveNext: Boolean; override;
+      end;
+  private
+    fItems: array of T;
+    fCount: Integer;
+    fComparer: IComparer<T>;
     function GetItem(index: Integer): T;
-    procedure SetItem(index: Integer; const Value: T);
+    function GetCapacity: Integer;
+    procedure SetItem(index: Integer; const value: T);
+    procedure SetCapacity(value: Integer);
   protected
+    function EnsureCapacity(value: Integer): Integer;
     { Implements ISupportIndexedProperties }
     function GetPropertyValue(const propertyName: string; const index: Rtti.TValue): Rtti.TValue;
     procedure SetPropertyValue(const propertyName: string; const index, value: Rtti.TValue);
   protected
+    procedure DoDelete(index: Integer; notification: TCollectionNotification);
+    procedure Notify(const item: T; action: TCollectionNotification); virtual;
     function GetCount: Integer; override;
     function GetIsEmpty: Boolean; override;
     function TryGetFirst(out value: T): Boolean; override;
     function TryGetLast(out value: T): Boolean; override;
+    property Capacity: Integer read GetCapacity write SetCapacity;
   public
     constructor Create; overload;
+    constructor Create(capacity: Integer); overload;
+    constructor Create(const comparer: IComparer<T>); overload;
     constructor Create(const collection: IEnumerable<T>); overload;
     constructor Create(const collection: TEnumerable<T>); overload;
-    constructor Create(list: TGenericList; ownership: TCollectionOwnership); overload;
     destructor Destroy; override;
 
     function Contains(const item: T): Boolean; override;
@@ -450,6 +453,8 @@ type
   protected
     type
       TGenericDictionary = Generics.Collections.TDictionary<TKey, TValue>;
+      TGenericObjectDictionary = Generics.Collections.TObjectDictionary<TKey, TValue>;
+      TGenericPair = Generics.Collections.TPair<TKey,TValue>;
 
       ///	<summary>Provides a read-only ICollection{TKey}	implementation</summary>
       TKeyCollection = class(TContainedCollectionBase<TKey>, ICollection<TKey>)
@@ -495,12 +500,12 @@ type
       end;
   private
     fDictionary: TGenericDictionary;
-    fOwnership: TCollectionOwnership;
+    fOwnership: TOwnershipType;
     fKeys: TKeyCollection;
     fValues: TValueCollection;
   public
     constructor Create(dictionary: TGenericDictionary;
-      ownership: TCollectionOwnership = coReference); overload;
+      ownership: TOwnershipType = otReference); overload;
     constructor Create; overload;
     destructor Destroy; override;
 
@@ -536,24 +541,26 @@ type
     property Values: ICollection<TValue> read GetValues;
   end;
 
-  // TODO: Reimplement the GetEnumerator
   TStack<T> = class(TEnumerableBase<T>, IStack<T>)
   private
     type
-      TGenericStack = Generics.Collections.TStack<T>;
 
-//      TEnumerator = class(TEnumeratorBase<T>)
-//      private
-//        fStack: TGenericStack;
-//        fIndex: Integer;
-//      protected
-//        function GetCurrent: T; override;
-//      public
-//        function MoveNext: Boolean; override;
-//      end;
+      TGenericStack = Generics.Collections.TStack<T>;
+//      TGenericObjectStack = Generics.Collections.TObjectStack<T>;
+
+      TStackEnumerator = class(TEnumeratorBase<T>)
+      private
+        fStack: TGenericStack;
+        fIndex: Integer;
+      protected
+        function GetCurrent: T; override;
+      public
+        constructor Create(stack: TGenericStack);
+        function MoveNext: Boolean; override;
+      end;
   private
     fStack: TGenericStack;
-    fOwnership: TCollectionOwnership;
+    fOwnership: TOwnershipType;
   protected
     function GetCount: Integer; override;
     function GetIsEmpty: Boolean; override;
@@ -563,7 +570,7 @@ type
     constructor Create; overload;
     constructor Create(const collection: IEnumerable<T>); overload;
     constructor Create(const collection: TEnumerable<T>); overload;
-    constructor Create(stack: TGenericStack; ownership: TCollectionOwnership); overload;
+    constructor Create(stack: TGenericStack; ownership: TOwnershipType); overload;
     destructor Destroy; override;
     function GetEnumerator: IEnumerator<T>; override;
     procedure Push(const item: T);
@@ -582,12 +589,15 @@ type
       TGenericQueue = Generics.Collections.TQueue<T>;
   private
     fQueue: TGenericQueue;
-    fOwnership: TCollectionOwnership;
+    fOwnership: TOwnershipType;
+  protected
+    function GetCount: Integer; override;
+    function GetIsEmpty: Boolean; override;
   public
     constructor Create; overload;
     constructor Create(const collection: IEnumerable<T>); overload;
     constructor Create(const collection: TEnumerable<T>); overload;
-    constructor Create(queue: TGenericQueue; ownership: TCollectionOwnership); overload;
+    constructor Create(queue: TGenericQueue; ownership: TOwnershipType); overload;
     destructor Destroy; override;
     function GetEnumerator: IEnumerator<T>; override;
     procedure Enqueue(const item: T);
@@ -600,19 +610,51 @@ type
     procedure TrimExcess;
   end;
 
+  TObjectList<T:class> = class(TList<T>, ICollectionOwnership)
+  private
+    fOwnsObjects: Boolean;
+    function GetOwnsObjects: Boolean;
+    procedure SetOwnsObjects(const value: Boolean);
+  public
+    constructor Create(ownsObjects: Boolean = True); overload;
+    constructor Create(const comparer: IComparer<T>; ownsObjects: Boolean = True); overload;
+    constructor Create(collection: TEnumerable<T>; ownsObjects: Boolean = True); overload;
+    property OwnsObjects: Boolean read GetOwnsObjects write SetOwnsObjects;
+  end;
+
+  ///	<summary>The adapter implementation for <c>IEnumerator{T}</c>.</summary>
+  TEnumeratorAdapter<T> = class(TEnumeratorBase<T>)
+  public
+    type
+      TGenericEnumerable = Generics.Collections.TEnumerable<T>;
+      TGenericEnumerator = Generics.Collections.TEnumerator<T>;
+  private
+    fEnumerator: TGenericEnumerator;
+  protected
+    function GetCurrent: T; override;
+  public
+    constructor Create(collection: TGenericEnumerable);
+    destructor Destroy; override;
+    function MoveNext: Boolean; override;
+    property Current: T read GetCurrent;
+  end;
+
+  TStackAccess<T> = class(TEnumerable<T>)
+  public
+    FCount: Integer;
+    FItems: array of T;
+  end;
+
+
   {$REGION 'Documentation'}
   ///	<summary>Provides static methods to create an instance of various
   ///	interfaced generic collections such as <c>IList{T}</c>,
   ///	<c>IDictionary{TKey, TValue}</c>.</summary>
-  ///	<remarks>Use the TCollections class to create collection instance,
-  ///	insteading of the implementations in Spring.Collections.Adapters, such as
-  ///	<c>TList{T}</c>, <c>TDictionary{TKey, TValue}</c>, etc.</remarks>
   {$ENDREGION}
   TCollections = class
   public
     class function CreateList<T>: IList<T>; overload;
     class function CreateList<T>(const comparer: IComparer<T>): IList<T>; overload;
-    class function CreateList<T>(list: Generics.Collections.TList<T>; ownership: TCollectionOwnership): IList<T>; overload;
     class function CreateList<T: class>(ownsObjects: Boolean): IList<T>; overload;
     class function CreateList<T: class>(ownsObjects: Boolean; const comparer: IComparer<T>): IList<T>; overload;
 
@@ -623,7 +665,7 @@ type
     class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships): IDictionary<TKey, TValue>; overload;
     class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships; capacity: Integer): IDictionary<TKey, TValue>; overload;
     class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships; capacity: Integer; const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TValue>; overload;
-    class function CreateDictionary<TKey, TValue>(dictionary: Generics.Collections.TDictionary<TKey, TValue>; ownership: TCollectionOwnership): IDictionary<TKey, TValue>; overload;
+    class function CreateDictionary<TKey, TValue>(dictionary: Generics.Collections.TDictionary<TKey, TValue>; ownership: TOwnershipType): IDictionary<TKey, TValue>; overload;
 
     class function CreateStack<T>: IStack<T>; overload;
     class function CreateStack<T: class>(ownsObjects: Boolean): IStack<T>; overload;
@@ -632,9 +674,46 @@ type
     class function CreateQueue<T: class>(ownsObjects: Boolean): IQueue<T>; overload;
   end;
 
+const
+  doOwnsKeys = Generics.Collections.doOwnsKeys;
+  doOwnsValues = Generics.Collections.doOwnsValues;
+
 
   {$REGION 'Some Code'}
+
   (*
+  ICollectionDynamic = interface
+    ['{CA1A9672-5241-47B7-A54E-8E69CCA9946D}']
+    {$REGION 'Property Getters & Setters'}
+      function GetCapacity: Integer;
+      procedure SetCapacity(const value: Integer);
+    {$ENDREGION}
+    function EnsureCapacity(capacity: Integer): Integer;
+    procedure Shrink;
+//    procedure Grow;
+    property Capacity: Integer read GetCapacity write SetCapacity;
+  end;
+
+  IDictionaryOwnership = interface
+    ['{5D149F58-E8EA-480A-8EB6-985A8342BDBD}']
+    function GetOwnsKeys: Boolean;
+    function GetOwnsValues: Boolean;
+    procedure SetOwnsKeys(const value: Boolean);
+    procedure SetOwnsValues(const value: Boolean);
+//    function ExtractPair(const key: T): T;
+    property Ownerships: TDictionaryOwnerships;
+    property OwnsKeys: Boolean read GetOwnsKeys write SetOwnsKeys;
+    property OwnsValues: Boolean read GetOwnsValues write SetOwnsValues;
+  end;
+
+  TObjectStack<T:class> = class(TStack<T>)
+  end;
+
+  TObjectQueue<T:class> = class(TQueue<T>)
+  end;
+
+  TObjectDictionary<TKey, TValue> = class(TDictionary<TKey, TValue>)
+  end;
 
   ISet<T> = interface(ICollection<T>)
     function Add(const item: T): Boolean;
@@ -743,11 +822,6 @@ begin
   end;
 end;
 
-constructor TEnumerableBase<T>.Create;
-begin
-
-end;
-
 function TEnumerableBase<T>.TryGetFirst(out value: T): Boolean;
 var
   enumerator: IEnumerator<T>;
@@ -807,6 +881,17 @@ end;
 function TEnumerableBase<T>.FirstOrDefault(const predicate: TPredicate<T>): T;
 begin
   Result := Where(predicate).FirstOrDefault; // TEMP
+end;
+
+procedure TEnumerableBase<T>.ForEach(const action: TAction<T>);
+var
+  item: T;
+begin
+  TArgument.CheckNotNull(Assigned(action), 'action');
+  for item in Self do
+  begin
+    action(item);
+  end;
 end;
 
 function TEnumerableBase<T>.Last: T;
@@ -1017,12 +1102,22 @@ end;
 
 {$REGION 'TList<T>'}
 
-constructor TList<T>.Create(list: TGenericList;
-  ownership: TCollectionOwnership);
+constructor TList<T>.Create;
 begin
-  inherited Create;
-  fList := list;
-  fOwnership := ownership;
+  Create(TComparer<T>.Default);
+end;
+
+constructor TList<T>.Create(capacity: Integer);
+begin
+  Create;
+  Self.Capacity := capacity;
+end;
+
+constructor TList<T>.Create(const comparer: IComparer<T>);
+begin
+  fComparer := comparer;
+  if fComparer = nil then
+    fComparer := TComparer<T>.Default;
 end;
 
 constructor TList<T>.Create(const collection: IEnumerable<T>);
@@ -1037,59 +1132,49 @@ begin
   AddRange(collection);
 end;
 
-constructor TList<T>.Create;
-var
-  list: TGenericList;
-begin
-  list := TGenericList.Create;
-  Create(list, coOwned);
-end;
-
 destructor TList<T>.Destroy;
 begin
-  if fOwnership = coOwned then
-    fList.Free;
+  Clear;
   inherited Destroy;
 end;
 
-procedure TList<T>.Delete(index: Integer);
+function TList<T>.EnsureCapacity(value: Integer): Integer;
+var
+  newCapacity: Integer;
 begin
-  fList.Delete(index);
-end;
-
-procedure TList<T>.DeleteRange(startIndex, count: Integer);
-begin
-  fList.DeleteRange(startIndex, count);
+  newCapacity := Length(FItems);
+  if newCapacity = 0 then
+    newCapacity := value
+  else
+    repeat
+      newCapacity := newCapacity * 2;
+      if newCapacity < 0 then
+        OutOfMemoryError;
+    until newCapacity >= value;
+  Capacity := newCapacity;
+  Result := newCapacity;
 end;
 
 procedure TList<T>.Add(const item: T);
 begin
-  fList.Add(item);
-end;
-
-procedure TList<T>.Clear;
-begin
-  fList.Clear;
-end;
-
-function TList<T>.Contains(const item: T): Boolean;
-begin
-  Result := fList.Contains(item);
-end;
-
-function TList<T>.IndexOf(const item: T): Integer;
-begin
-  Result := fList.IndexOf(item);
-end;
-
-function TList<T>.LastIndexOf(const item: T): Integer;
-begin
-  Result := fList.LastIndexOf(item);
+  EnsureCapacity(Count + 1);
+  fItems[fCount] := item;
+  Inc(fCount);
+  Notify(item, cnAdded);
 end;
 
 procedure TList<T>.Insert(index: Integer; const item: T);
 begin
-  fList.Insert(index, item);
+  TArgument.CheckRange<T>(fItems, index);
+  EnsureCapacity(Count + 1);
+  if index <> Count then
+  begin
+    System.Move(fItems[index], fItems[index + 1], (Count - index) * SizeOf(T));
+    FillChar(fItems[index], SizeOf(fItems[index]), 0);
+  end;
+  fItems[index] := item;
+  Inc(fCount);
+  Notify(item, cnAdded);
 end;
 
 procedure TList<T>.InsertRange(index: Integer;
@@ -1097,9 +1182,11 @@ procedure TList<T>.InsertRange(index: Integer;
 var
   item: T;
 begin
+  TArgument.CheckRange<T>(fItems, index);
+  EnsureCapacity(Count + Length(collection));
   for item in collection do
   begin
-    fList.Insert(index, item);
+    Insert(index, item);
     Inc(index);
   end;
 end;
@@ -1109,9 +1196,10 @@ procedure TList<T>.InsertRange(index: Integer;
 var
   item: T;
 begin
+  TArgument.CheckRange<T>(fItems, index);
   for item in collection do
   begin
-    fList.Insert(index, item);
+    Insert(index, item);
     Inc(index);
   end;
 end;
@@ -1121,26 +1209,147 @@ procedure TList<T>.InsertRange(index: Integer;
 var
   item: T;
 begin
+  TArgument.CheckRange<T>(fItems, index);
   for item in collection do
   begin
-    fList.Insert(index, item);
+    Insert(index, item);
     Inc(index);
   end;
 end;
 
 function TList<T>.Remove(const item: T): Boolean;
+var
+  index: Integer;
 begin
-  Result := fList.Remove(item) <> -1;
+  index := IndexOf(item);
+  Result := index > -1;
+  if Result then
+  begin
+    DoDelete(index, cnRemoved);
+  end;
 end;
 
 procedure TList<T>.RemoveAt(index: Integer);
 begin
-  fList.Delete(index);
+  Delete(index);
 end;
 
 function TList<T>.Extract(const item: T): T;
+var
+  index: Integer;
 begin
-  Result := fList.Extract(item);
+  index := IndexOf(item);
+  if index < 0 then
+    Result := Default(T)
+  else
+  begin
+    Result := fItems[index];
+    DoDelete(index, cnExtracted);
+  end;
+end;
+
+procedure TList<T>.DoDelete(index: Integer;
+  notification: TCollectionNotification);
+var
+  oldItem: T;
+begin
+  TArgument.CheckRange<T>(fItems, index);
+  oldItem := fItems[index];
+  fItems[index] := Default(T);
+  Dec(fCount);
+  if index <> Count then
+  begin
+    System.Move(fItems[index + 1], fItems[index], (Count - index) * SizeOf(T));
+    FillChar(fItems[Count], SizeOf(T), 0);
+  end;
+  Notify(oldItem, notification);
+end;
+
+procedure TList<T>.Delete(index: Integer);
+begin
+  TArgument.CheckRange<T>(fItems, index);
+  DoDelete(index, cnRemoved);
+end;
+
+procedure TList<T>.DeleteRange(startIndex, count: Integer);
+var
+  oldItems: array of T;
+  tailCount,
+  i: Integer;
+begin
+  if (startIndex < 0) or
+    (count < 0) or
+    (startIndex + count > Self.Count) or
+    (startIndex + count < 0) then
+    raise EArgumentOutOfRangeException.CreateRes(@SArgumentOutOfRangeException);
+  if count = 0 then
+    Exit;
+
+  SetLength(oldItems, count);
+  System.Move(fItems[startIndex], oldItems[0], count * SizeOf(T));
+
+  tailCount := Self.Count - (startIndex + count);
+  if tailCount > 0 then
+  begin
+    System.Move(fItems[startIndex + count], fItems[startIndex], tailCount * SizeOf(T));
+    FillChar(fItems[Self.Count - count], count * SizeOf(T), 0);
+  end
+  else
+  begin
+    FillChar(fItems[startIndex], count * SizeOf(T), 0);
+  end;
+  Dec(fCount, count);
+
+  for i := 0 to Length(oldItems) - 1 do
+  begin
+    Notify(oldItems[i], cnRemoved);
+  end;
+end;
+
+procedure TList<T>.Clear;
+begin
+  if Count > 0 then
+  begin
+    DeleteRange(0, Count);
+  end;
+  Capacity := 0;
+end;
+
+function TList<T>.Contains(const item: T): Boolean;
+var
+  index: Integer;
+begin
+  index := IndexOf(item);
+  Result := index > -1;
+end;
+
+function TList<T>.IndexOf(const item: T): Integer;
+var
+  i: Integer;
+begin
+  for i := 0 to fCount - 1 do
+  begin
+    if fComparer.Compare(fItems[i], item) = 0 then
+      Exit(i);
+  end;
+  Result := -1;
+end;
+
+function TList<T>.LastIndexOf(const item: T): Integer;
+var
+  i: Integer;
+begin
+  for i := fCount - 1 downto 0 do
+  begin
+    if fComparer.Compare(fItems[i], item) = 0 then
+      Exit(i);
+  end;
+  Result := -1;
+end;
+
+procedure TList<T>.Notify(const item: T; action: TCollectionNotification);
+begin
+
 end;
 
 function TList<T>.ToArray: TArray<T>;
@@ -1150,7 +1359,7 @@ begin
   SetLength(Result, Count);
   for i := 0 to Length(Result) - 1 do
   begin
-    Result[i] := Items[i];
+    Result[i] := fItems[i];
   end;
 end;
 
@@ -1161,12 +1370,17 @@ end;
 
 function TList<T>.GetEnumerator: IEnumerator<T>;
 begin
-  Result := TEnumeratorAdapter<T>.Create(fList);
+  Result := TEnumerator.Create(Self);
+end;
+
+function TList<T>.GetCapacity: Integer;
+begin
+  Result := Length(fItems);
 end;
 
 function TList<T>.GetCount: Integer;
 begin
-  Result := fList.Count;
+  Result := fCount;
 end;
 
 function TList<T>.GetIsEmpty: Boolean;
@@ -1176,26 +1390,44 @@ end;
 
 function TList<T>.TryGetFirst(out value: T): Boolean;
 begin
-  Result := fList.Count > 0;
+  Result := Count > 0;
   if Result then
-    value := fList.First;
+    value := fItems[0];
 end;
 
 function TList<T>.TryGetLast(out value: T): Boolean;
 begin
-  Result := fList.Count > 0;
+  Result := Count > 0;
   if Result then
-    value := fList.Last;
+    value := fItems[Count - 1];
 end;
 
 function TList<T>.GetItem(index: Integer): T;
 begin
-  Result := fList[index];
+  TArgument.CheckRange<T>(fItems, index);
+  Result := fItems[index];
 end;
 
-procedure TList<T>.SetItem(index: Integer; const Value: T);
+procedure TList<T>.SetCapacity(value: Integer);
 begin
-  fList[index] := value;
+  if value < Count then
+  begin
+    DeleteRange(Count - value + 1, Count - value);
+  end;
+  SetLength(fItems, value);
+end;
+
+procedure TList<T>.SetItem(index: Integer; const value: T);
+var
+  oldItem: T;
+begin
+  TArgument.CheckRange<T>(fItems, index);
+    
+  oldItem := fItems[index];
+  fItems[index] := value;
+  
+  Notify(oldItem, cnRemoved);
+  Notify(value, cnAdded);
 end;
 
 function TList<T>.GetPropertyValue(const propertyName: string;
@@ -1221,10 +1453,34 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TList<T>.TEnumerator'}
+
+constructor TList<T>.TEnumerator.Create(const list: TList<T>);
+begin
+  inherited Create;
+  fList := list;
+  fIndex := -1;
+end;
+
+function TList<T>.TEnumerator.MoveNext: Boolean;
+begin
+  Result := fIndex < fList.Count - 1;
+  if Result then
+    Inc(fIndex);
+end;
+
+function TList<T>.TEnumerator.GetCurrent: T;
+begin
+  Result := fList[fIndex];
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TDictionary<TKey, TValue>'}
 
 constructor TDictionary<TKey, TValue>.Create(
-  dictionary: TGenericDictionary; ownership: TCollectionOwnership);
+  dictionary: TGenericDictionary; ownership: TOwnershipType);
 begin
   inherited Create;
   fDictionary := dictionary;
@@ -1236,14 +1492,14 @@ var
   dictionary: TGenericDictionary;
 begin
   dictionary := TGenericDictionary.Create;
-  Create(dictionary, coOwned);
+  Create(dictionary, otOwned);
 end;
 
 destructor TDictionary<TKey, TValue>.Destroy;
 begin
   fKeys.Free;
   fValues.Free;
-  if fOwnership = coOwned then
+  if fOwnership = otOwned then
   begin
     fDictionary.Free;
   end;
@@ -1569,7 +1825,7 @@ end;
 {$REGION 'TStack<T>'}
 
 constructor TStack<T>.Create(stack: TGenericStack;
-  ownership: TCollectionOwnership);
+  ownership: TOwnershipType);
 begin
   inherited Create;
   fStack := stack;
@@ -1603,24 +1859,24 @@ var
   stack: TGenericStack;
 begin
   stack := TGenericStack.Create;
-  Create(stack, coOwned);
+  Create(stack, otOwned);
 end;
 
 destructor TStack<T>.Destroy;
 begin
-  if fOwnership = coOwned then
+  if fOwnership = otOwned then
     fStack.Free;
   inherited Destroy;
+end;
+
+function TStack<T>.GetEnumerator: IEnumerator<T>;
+begin
+  Result := TStackEnumerator.Create(fStack);
 end;
 
 function TStack<T>.GetCount: Integer;
 begin
   Result := fStack.Count;
-end;
-
-function TStack<T>.GetEnumerator: IEnumerator<T>;
-begin
-  Result := TEnumeratorAdapter<T>.Create(fStack);
 end;
 
 function TStack<T>.GetIsEmpty: Boolean;
@@ -1695,10 +1951,34 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TStack<T>.TEnumerator'}
+
+constructor TStack<T>.TStackEnumerator.Create(stack: TGenericStack);
+begin
+  inherited Create;
+  fStack := stack;
+  fIndex := fStack.Count;
+end;
+
+function TStack<T>.TStackEnumerator.GetCurrent: T;
+begin
+  Result := TStackAccess<T>(fStack).FItems[fIndex];
+end;
+
+function TStack<T>.TStackEnumerator.MoveNext: Boolean;
+begin
+  Result := fIndex > 0;
+  if Result then
+    Dec(fIndex);
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TQueue<T>'}
 
 constructor TQueue<T>.Create(queue: TGenericQueue;
-  ownership: TCollectionOwnership);
+  ownership: TOwnershipType);
 begin
   fQueue := queue;
   fOwnership := ownership;
@@ -1731,12 +2011,12 @@ var
   queue: TGenericQueue;
 begin
   queue := TGenericQueue.Create;
-  Create(queue, coOwned);
+  Create(queue, otOwned);
 end;
 
 destructor TQueue<T>.Destroy;
 begin
-  if fOwnership = coOwned then
+  if fOwnership = otOwned then
     fQueue.Free;
   inherited Destroy;
 end;
@@ -1810,25 +2090,63 @@ begin
     item := Default(T);
 end;
 
+function TQueue<T>.GetCount: Integer;
+begin
+  Result := fQueue.Count;
+end;
+
+function TQueue<T>.GetIsEmpty: Boolean;
+begin
+  Result := fQueue.Count = 0;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TObjectList<T>'}
+
+constructor TObjectList<T>.Create(ownsObjects: Boolean);
+begin
+  Create(TComparer<T>.Default, ownsObjects);
+end;
+
+constructor TObjectList<T>.Create(const comparer: IComparer<T>;
+  ownsObjects: Boolean);
+begin
+  inherited Create(comparer);
+  fOwnsObjects := ownsObjects;
+end;
+
+constructor TObjectList<T>.Create(collection: TEnumerable<T>;
+  ownsObjects: Boolean);
+begin
+  Create(TComparer<T>.Default, ownsObjects);
+  AddRange(collection);
+end;
+
+function TObjectList<T>.GetOwnsObjects: Boolean;
+begin
+  Result := fOwnsObjects;
+end;
+
+procedure TObjectList<T>.SetOwnsObjects(const value: Boolean);
+begin
+  fOwnsObjects := value;
+end;
+
 {$ENDREGION}
 
 
 {$REGION 'TCollections'}
 
 class function TCollections.CreateList<T>: IList<T>;
-var
-  list: Generics.Collections.TList<T>;
 begin
-  list := Generics.Collections.TList<T>.Create;
-  Result := TList<T>.Create(list, coOwned);
+  Result := TList<T>.Create;
 end;
 
 class function TCollections.CreateList<T>(const comparer: IComparer<T>): IList<T>;
-var
-  list: Generics.Collections.TList<T>;
 begin
-  list := Generics.Collections.TList<T>.Create(comparer);
-  Result := TList<T>.Create(list, coOwned);
+  Result := TList<T>.Create(comparer);
 end;
 
 class function TCollections.CreateList<T>(ownsObjects: Boolean): IList<T>;
@@ -1838,23 +2156,13 @@ end;
 
 class function TCollections.CreateList<T>(ownsObjects: Boolean;
   const comparer: IComparer<T>): IList<T>;
-var
-  list: Generics.Collections.TObjectList<T>;
 begin
-  list := TObjectList<T>.Create(comparer, ownsObjects);
-  Result := TList<T>.Create(list, coOwned);
-end;
-
-class function TCollections.CreateList<T>(list: Generics.Collections.TList<T>;
-  ownership: TCollectionOwnership): IList<T>;
-begin
-  TArgument.CheckNotNull(list, 'list');
-  Result := TList<T>.Create(list, ownership);
+  Result := TObjectList<T>.Create(comparer, ownsObjects);
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>(
   dictionary: Generics.Collections.TDictionary<TKey, TValue>;
-  ownership: TCollectionOwnership): IDictionary<TKey, TValue>;
+  ownership: TOwnershipType): IDictionary<TKey, TValue>;
 begin
   TArgument.CheckNotNull(dictionary, 'dictionary');
   Result := TDictionary<TKey, TValue>.Create(dictionary, ownership);
@@ -1883,7 +2191,7 @@ var
 begin
   TArgument.CheckRange(capacity >= 0, 'capacity');
   dictionary := Generics.Collections.TDictionary<TKey,TValue>.Create(capacity, comparer);
-  Result := TDictionary<TKey, TValue>.Create(dictionary, coOwned);
+  Result := TDictionary<TKey, TValue>.Create(dictionary, otOwned);
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>(
@@ -1906,7 +2214,7 @@ var
   dictionary: Generics.Collections.TObjectDictionary<TKey,TValue>;
 begin
   dictionary := TObjectDictionary<TKey, TValue>.Create(ownerships, capacity, comparer);
-  Result := TDictionary<TKey, TValue>.Create(dictionary, coOwned);
+  Result := TDictionary<TKey, TValue>.Create(dictionary, otOwned);
 end;
 
 class function TCollections.CreateStack<T>: IStack<T>;
@@ -1914,7 +2222,7 @@ var
   stack: Generics.Collections.TStack<T>;
 begin
   stack := Generics.Collections.TStack<T>.Create;
-  Result := TStack<T>.Create(stack, coOwned);
+  Result := TStack<T>.Create(stack, otOwned);
 end;
 
 class function TCollections.CreateStack<T>(ownsObjects: Boolean): IStack<T>;
@@ -1922,7 +2230,7 @@ var
   stack: Generics.Collections.TObjectStack<T>;
 begin
   stack := TObjectStack<T>.Create(ownsObjects);
-  Result := TStack<T>.Create(stack, coOwned);
+  Result := TStack<T>.Create(stack, otOwned);
 end;
 
 class function TCollections.CreateQueue<T>: IQueue<T>;
@@ -1930,7 +2238,7 @@ var
   queue: Generics.Collections.TQueue<T>;
 begin
   queue := Generics.Collections.TQueue<T>.Create;
-  Result := TQueue<T>.Create(queue, coOwned);
+  Result := TQueue<T>.Create(queue, otOwned);
 end;
 
 class function TCollections.CreateQueue<T>(ownsObjects: Boolean): IQueue<T>;
@@ -1938,14 +2246,9 @@ var
   queue: Generics.Collections.TObjectQueue<T>;
 begin
   queue := Generics.Collections.TObjectQueue<T>.Create(ownsObjects);
-  Result := TQueue<T>.Create(queue, coOwned);
+  Result := TQueue<T>.Create(queue, otOwned);
 end;
 
 {$ENDREGION}
 
 end.
-
-
-
-
-

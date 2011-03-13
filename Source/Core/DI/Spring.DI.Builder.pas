@@ -33,7 +33,6 @@ uses
   SysUtils,
   Rtti,
   TypInfo,
-//  Generics.Collections,
   Spring,
   Spring.Collections,
   Spring.DesignPatterns,

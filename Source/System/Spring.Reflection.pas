@@ -35,7 +35,6 @@ uses
   TypInfo,
   SyncObjs,
   Rtti,
-  Generics.Collections,
   Spring,
   Spring.Collections,
   Spring.DesignPatterns;
@@ -56,7 +55,7 @@ type
   strict private
     class var fContext: TRttiContext;
     class var fSection: TCriticalSection;
-    class var fInterfaceTypes: TDictionary<TGuid, TRttiInterfaceType>;
+    class var fInterfaceTypes: IDictionary<TGuid, TRttiInterfaceType>;
     class constructor Create;
   {$HINTS OFF}
     class destructor Destroy;
@@ -420,7 +419,6 @@ end;
 
 class destructor TType.Destroy;
 begin
-  fInterfaceTypes.Free;
   fSection.Free;
   fContext.Free;
 end;

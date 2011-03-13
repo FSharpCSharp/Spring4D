@@ -31,8 +31,8 @@ uses
   Windows,
   SysUtils,
   Character,
-  Generics.Collections,
   Spring,
+  Spring.Collections,
   Spring.Configuration,
   Spring.Logging.Core;
 

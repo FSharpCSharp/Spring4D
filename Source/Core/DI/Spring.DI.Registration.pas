@@ -33,7 +33,6 @@ uses
   SysUtils,
   Rtti,
   TypInfo,
-  Generics.Collections,
   Spring,
   Spring.Collections,
   Spring.DI.Core;
@@ -47,8 +46,8 @@ type
     fContainerContext: IContainerContext;
     fRttiContext: TRttiContext;
     fModels: IDictionary<PTypeInfo, TComponentModel>;
-    fServiceTypeMappings: TDictionary<PTypeInfo, IList<TComponentModel>>;
-    fServiceNameMappings: TDictionary<string, TComponentModel>;
+    fServiceTypeMappings: IDictionary<PTypeInfo, IList<TComponentModel>>;
+    fServiceNameMappings: IDictionary<string, TComponentModel>;
   protected
     procedure OnComponentModelAdded(model: TComponentModel);
     procedure CheckIsNonGuidInterface(serviceType: TRttiType);
@@ -195,8 +194,6 @@ end;
 
 destructor TComponentRegistry.Destroy;
 begin
-  fServiceNameMappings.Free;
-  fServiceTypeMappings.Free;
   fRttiContext.Free;
   inherited Destroy;
 end;

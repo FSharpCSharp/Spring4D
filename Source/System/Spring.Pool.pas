@@ -71,7 +71,7 @@ type
     fMaxPoolsize: TNullable<Integer>;
     fAvailableList: IQueue<TObject>;
     fActiveList: IList<TObject>;
-    fInstances: TList<TFunc<TObject>>;
+    fInstances: IList<TFunc<TObject>>;
   protected
     procedure InitializePool; virtual;
     function AddNewInstance: TObject;
@@ -106,15 +106,15 @@ begin
     fMaxPoolsize := maxPoolSize;
   end;
   fInstances := TList<TFunc<TObject>>.Create;
-  fAvailableList := TCollections.CreateQueue<TObject>;
-  fActiveList := TCollections.CreateList<TObject>;
+  fAvailableList := TQueue<TObject>.Create;
+  fActiveList := TList<TObject>.Create;
   InitializePool;
 end;
 
 destructor TSimpleObjectPool.Destroy;
 begin
 //  fAvailableList.Free;
-  fInstances.Free;
+//  fInstances.Free;
   inherited Destroy;
 end;
 
@@ -124,11 +124,11 @@ var
 begin
   Result := fActivator.CreateInstance;
   holder := TObjectHolder.Create(Result);
-  MonitorEnter(fInstances);
+  MonitorEnter(TObject(fInstances));
   try
     fInstances.Add(holder);
   finally
-    MonitorExit(fInstances);
+    MonitorExit(TObject(fInstances));
   end;
 end;
 

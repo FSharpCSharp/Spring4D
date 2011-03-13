@@ -77,7 +77,9 @@ type
       fFatal: TLevel;
       fOff:   TLevel;
     class constructor Create;
+    {$HINTS OFF}
     class destructor Destroy;
+    {$HINTS ON}
   public
     constructor Create(const levelValue: Integer; const levelName: string);
     function Equals(obj: TObject): Boolean; override;

@@ -129,6 +129,8 @@ type
     class procedure CheckRange(const buffer: array of Byte; const startIndex, count: Integer); overload; static;
     class procedure CheckRange(const buffer: array of Char; const index: Integer); overload; static;
     class procedure CheckRange(const buffer: array of Char; const startIndex, count: Integer); overload; static;
+    class procedure CheckRange<T>(const buffer: array of T; const index: Integer); overload; static;
+    class procedure CheckRange<T>(const buffer: array of T; const startIndex, count: Integer); overload; static;
     class procedure CheckRange(const s: string; const index: Integer); overload; static; inline;
     class procedure CheckRange(const s: string; const startIndex, count: Integer); overload; static; inline;
     class procedure CheckRange(const s: WideString; const index: Integer); overload; static; inline;
@@ -202,7 +204,14 @@ type
   /// Provides static methods to manipulate a variant type.
   /// </summary>
   TVariant = class
+//    class function IsNullOrEmpty(const value: Variant): Boolean;
+  end;
 
+  TMemory = class
+  // Comparer, Conversion, Fill
+//    class function BinToHex(const buffer: Pointer; count: Integer): string; overload; static;
+//    class function BinToHex(const buffer: Pointer; count: Integer;
+//      const prefix: string; const delimiter: string = ' '): string; overload; static;
   end;
 
 
@@ -316,6 +325,8 @@ type
   /// <seealso cref="Spring.DesignPatterns|ISpecification{T}" />
   TPredicate<T> = reference to function(const value: T): Boolean;
 
+  TAction<T> = reference to procedure(obj: T);
+
   /// <summary>
   /// Provides static methods to manipulate an array.
   /// </summary>
@@ -333,6 +344,7 @@ type
     class function FindFirst<T>(const target: array of T; const predicate: TPredicate<T>): T;
     class function FindLast<T>(const target: array of T; const predicate: TPredicate<T>): T;
     class function FindAll<T>(const target: array of T; const predicate: TPredicate<T>): TArray<T>;
+    ForEach
   //*)
   end;
 
@@ -456,6 +468,7 @@ type
   /// <threadsafety static="true" />
   TLazyUtils = record
   public
+    {$REGION 'Documentation'}
     ///	<summary>Uses the <c>TLazyUtils.GetValue&lt;T&gt;</c> method to
     ///	implement the <b>Lazy-Initialization</b> pattern in
     ///	thread-safe.</summary>
@@ -495,11 +508,13 @@ type
     ///	end;
     ///	</code>
     ///	</remarks>
-    /// <seealso cref="Windows|InterlockedCompareExchangePointer" />
+    ///	<seealso cref="Windows|InterlockedCompareExchangePointer"></seealso>
+    {$ENDREGION}
     class function GetValue<T: class>(var field: T; const delegate: TFunc<T>): T; static;
   end;
 
 
+  {$REGION 'Documentation'}
   ///	<summary>
   ///	  <para>Provides a simple &amp; flexible implementation of <b>Smart
   ///	  Pointer</b>. This implementation is very skillful and the basic idea
@@ -509,8 +524,7 @@ type
   ///	  manage the lifetime of an object instance.</para>
   ///	</summary>
   ///	<example>
-  ///	  <para>The following example demonstrates how to use the Smart
-  ///	  Pointer:</para>
+  ///	  The following example demonstrates how to use the Smart Pointer:
   ///	  <code lang="Delphi">
   ///	procedure TestSmartPointer;
   ///	var
@@ -521,7 +535,7 @@ type
   ///	end;
   ///	</code>
   ///	</example>
-  ///<preliminary />
+  {$ENDREGION}
   TObjectHolder<T: class> = class(TInterfacedObject, TFunc<T>)
   private
     fObject: T;
@@ -536,11 +550,13 @@ type
   TObjectHolder = TObjectHolder<TObject>;
 
 
+  {$REGION 'Documentation'}
   ///	<summary>Represents a lifetime watcher. The basic idea is using an
   ///	instance of the <c>IInterface</c> in the host such as a record. The
   ///	anonymous method, which is specified by the <paramref name="proc" />
   ///	parameter in the constructor, will be executed when this interface is
   ///	disposed. Normally, the proc is some kind of clean up code.</summary>
+  {$ENDREGION}
   TLifetimeWatcher = class(TInterfacedObject)
   private
     fProc: TProc;
@@ -559,38 +575,31 @@ type
     procedure SetPropertyValue(const propertyName: string; const index, value: TValue);
   end;
 
+  {$REGION 'Documentation'}
   ///	<summary>Lifetime Type Enumeration.</summary>
   ///	<seealso cref="SingletonAttribute"></seealso>
   ///	<seealso cref="TransientAttribute"></seealso>
   ///	<seealso cref="SingletonPerThreadAttribute"></seealso>
   ///	<seealso cref="PooledAttribute"></seealso>
+  {$ENDREGION}
   TLifetimeType = (
-    /// <summary>
-    /// Unknown lifetime type.
-    /// </summary>
+    ///	<summary>Unknown lifetime type.</summary>
     ltUnknown,
-    /// <summary>
-    /// Single instance.
-    /// </summary>
+
+    ///	<summary>Single instance.</summary>
     ltSingleton,
-    /// <summary>
-    /// Different instances.
-    /// </summary>
+
+    ///	<summary>Different instances.</summary>
     ltTransient,
-    /// <summary>
-    /// Every thread has a single instance.
-    /// </summary>
+
+    ///	<summary>Every thread has a single instance.</summary>
     ltSingletonPerThread,
-    /// <summary>
-    /// Instances are transient except that they are recyclable.
-    /// </summary>
+
+    ///	<summary>Instances are transient except that they are
+    ///	recyclable.</summary>
     ltPooled,
-    /// <summary>
-    /// Customized lifetime type.
-    /// </summary>
-    /// <remarks>
-    /// Not Implemented yet.
-    /// </remarks>
+
+    ///	<summary>Customized lifetime type.</summary>
     ltCustom
   );
 
@@ -725,45 +734,53 @@ type
 
   {$REGION 'Lifecycle Interfaces'}
 
+  {$REGION 'Documentation'}
   ///	<summary>Lifecycle interface. If a component implements this interface,
   ///	the IoC container will invoke the <c>Initialize</c> method when
   ///	initiating an instance of the component.</summary>
   ///	<seealso cref="IStartable"></seealso>
   ///	<seealso cref="IRecyclable"></seealso>
   ///	<seealso cref="IDisposable"></seealso>
+  {$ENDREGION}
   IInitializable = interface
     ['{A36BB399-E592-4DFB-A091-EDBA3BE0648B}']
     ///	<summary>Initializes the component.</summary>
     procedure Initialize;
   end;
 
+  {$REGION 'Documentation'}
   ///	<summary>Lifecycle interface. Represents that the component can be
   ///	started and stopped.</summary>
-  ///	<seealso cref="IInitializable" />
-  ///	<seealso cref="IRecyclable" />
-  ///	<seealso cref="IDisposable" />
+  ///	<seealso cref="IInitializable"></seealso>
+  ///	<seealso cref="IRecyclable"></seealso>
+  ///	<seealso cref="IDisposable"></seealso>
+  {$ENDREGION}
   IStartable = interface
     ['{8D0252A1-7993-44AA-B0D9-326019B58E78}']
     procedure Start;
     procedure Stop;
   end;
 
+  {$REGION 'Documentation'}
   ///	<summary>Lifecycle interface. Only called for components that belongs to
   ///	a pool when the component comes back to the pool.</summary>
   ///	<seealso cref="IInitializable"></seealso>
   ///	<seealso cref="IStartable"></seealso>
   ///	<seealso cref="IDisposable"></seealso>
+  {$ENDREGION}
   IRecyclable = interface
     ['{85114F41-70E5-4AF4-A375-E445D4619E4D}']
     procedure Recycle;
   end;
 
-  ///	<summary>Lifecycle interface. If the component implements this
-  ///	interface, all resources will be deallocate by calling the <c>Dispose</c>
+  {$REGION 'Documentation'}
+  ///	<summary>Lifecycle interface. If the component implements this interface,
+  ///	all resources will be deallocate by calling the <c>Dispose</c>
   ///	method.</summary>
   ///	<seealso cref="IInitializable"></seealso>
   ///	<seealso cref="IStartable"></seealso>
   ///	<seealso cref="IRecyclable"></seealso>
+  {$ENDREGION}
   IDisposable = interface
     ['{6708F9BF-0237-462F-AFA2-DF8EF21939EB}']
     procedure Dispose;
@@ -808,6 +825,7 @@ type
   {$REGION 'Global Routines'}
 
 
+  {$REGION 'Documentation'}
   ///	<summary>Retrieves the byte length of a unicode string.</summary>
   ///	<param name="s">the unicode string.</param>
   ///	<returns>The byte length of the unicode string.</returns>
@@ -817,25 +835,31 @@ type
   ///	AnsiStrings.</remarks>
   ///	<seealso cref="GetByteLength(WideString)"></seealso>
   ///	<seealso cref="GetByteLength(RawByteString)"></seealso>
+  {$ENDREGION}
   function GetByteLength(const s: string): Integer; overload;
     {$IFDEF SUPPORTS_INLINE} inline; {$ENDIF}
 
+  {$REGION 'Documentation'}
   ///	<summary>Retrieves the byte length of a WideString.</summary>
   ///	<param name="s">A wide string.</param>
   ///	<returns>The byte length of the wide string.</returns>
   ///	<seealso cref="GetByteLength(string)"></seealso>
   ///	<seealso cref="GetByteLength(RawByteString)"></seealso>
+  {$ENDREGION}
   function GetByteLength(const s: WideString): Integer; overload;
     {$IFDEF SUPPORTS_INLINE} inline; {$ENDIF}
 
+  {$REGION 'Documentation'}
   ///	<summary>Retrieves the byte length of a <c>RawByteString</c> (AnsiString
   ///	or UTF8String).</summary>
   ///	<returns>The byte length of the raw byte string.</returns>
   ///	<seealso cref="GetByteLength(string)"></seealso>
   ///	<seealso cref="GetByteLength(WideString)"></seealso>
+  {$ENDREGION}
   function GetByteLength(const s: RawByteString): Integer; overload; inline;
     {$IFDEF SUPPORTS_INLINE} inline; {$ENDIF}
 
+  {$REGION 'Documentation'}
   ///	<summary>Determines whether a specified file exists. An <see cref=
   ///	"EFileNotFoundException" /> exception will be raised when not
   ///	found.</summary>
@@ -843,24 +867,26 @@ type
   ///	<exception cref="EFileNotFoundException">Raised if the target file does
   ///	not exist.</exception>
   ///	<seealso cref="CheckDirectoryExists(string)"></seealso>
+  {$ENDREGION}
   procedure CheckFileExists(const fileName: string);
 
-  ///	<summary>Determines whether a specified directory exists. An
-  ///	<see cref="EDirectoryNotFoundException" /> exception will be raised when not
+  {$REGION 'Documentation'}
+  ///	<summary>Determines whether a specified directory exists. An <see cref=
+  ///	"EDirectoryNotFoundException" /> exception will be raised when not
   ///	found.</summary>
   ///	<exception cref="EDirectoryNotFoundException">Raised if the directory
   ///	doesn't exist.</exception>
   ///	<seealso cref="CheckFileExists(string)"></seealso>
+  {$ENDREGION}
   procedure CheckDirectoryExists(const directory: string);
 
-  /// <summary>
-  /// Overloads. SplitString
-  /// </summary>
-  /// <remarks>
-  /// Each element of separator defines a separate delimiter character. If two
-  /// delimiters are adjacent, or a delimiter is found at the beginning or end
-  /// of the buffer, the corresponding array element contains Empty.
-  /// </remarks>
+  {$REGION 'Documentation'}
+  ///	<summary>Overloads. SplitString</summary>
+  ///	<remarks>Each element of separator defines a separate delimiter
+  ///	character. If two delimiters are adjacent, or a delimiter is found at the
+  ///	beginning or end of the buffer, the corresponding array element contains
+  ///	Empty.</remarks>
+  {$ENDREGION}
   function SplitString(const buffer: string; const separators: TSysCharSet;
     removeEmptyEntries: Boolean = False): TStringDynArray; overload;
   function SplitString(const buffer: TCharArray; const separators: TSysCharSet;
@@ -868,6 +894,7 @@ type
   function SplitString(const buffer: PChar; len: Integer; const separators: TSysCharSet;
     removeEmptyEntries: Boolean = False): TStringDynArray; overload;
 
+  {$REGION 'Documentation'}
   ///	<summary>Returns a string array that contains the substrings in the
   ///	buffer that are delimited by null char (#0) and ends with an additional
   ///	null char.</summary>
@@ -888,6 +915,7 @@ type
   ///	end;
   ///	</code>
   ///	</example>
+  {$ENDREGION}
   function SplitString(const buffer: PChar): TStringDynArray; overload;
 
   /// <summary>
@@ -1158,6 +1186,21 @@ begin
   begin
     TArgument.CheckRange(startIndex + count <= indexBase + length, CountArgName);
   end;
+end;
+
+class procedure TArgument.CheckRange<T>(const buffer: array of T;
+  const index: Integer);
+begin
+  if (index < 0) or (index >= Length(buffer)) then
+  begin
+    RaiseArgumentOutOfRangeException('index');
+  end;
+end;
+
+class procedure TArgument.CheckRange<T>(const buffer: array of T;
+  const startIndex, count: Integer);
+begin
+  DoCheckArrayRange(Length(buffer), startIndex, count);
 end;
 
 class procedure TArgument.CheckTrue(condition: Boolean;

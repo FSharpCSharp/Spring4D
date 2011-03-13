@@ -36,22 +36,25 @@ uses
   Rtti,
   Spring,
   Spring.Collections,
-//  Spring.Logging.Core,
-//  Spring.Logging,
   StrUtils
   ;
 
 var
-  list: TList<TObject>;
+  list: IStack<Integer>;
 //  logger: ILogger;
 //  s: string;
-//  i : Integer;
+  i : Integer;
 
 begin
   try
-    list := TList<TObject>.Create;
-//    list.Enqueue(2);
-//    list.Enqueue(30);
+    list := TStack<Integer>.Create;
+    list.Push(2);
+    list.Push(3);
+    list.Push(4);
+    for i in list do
+    begin
+      Writeln(i);
+    end;
 //    Writeln(list.Dequeue, ',', list.Dequeue);
 //    LoggerManager.Configure('logging.xml');
 //    DefaultLogger.Info('Hello');

@@ -353,7 +353,7 @@ begin
     ExecuteCommandLine(commandLine, exitCode);
     if exitCode <> 0 then
     begin
-      raise Exception.CreateFmt('Failed to execute the clean task for "%s".', [projectName]);
+      raise Exception.CreateFmt('Failed to execute the build task for "%s".', [projectName]);
     end;
 //    Inc(steps);
   end;
@@ -362,12 +362,14 @@ end;
 procedure TBuildEngine.Configure(const fileName: string);
 var
   ini: TIniFile;
+  appPath: string;
   properties: TStrings;
   targetCount: Integer;
   target: TTarget;
   i: Integer;
 begin
   CheckFileExists(fileName);
+  appPath := ExtractFilePath(ParamStr(0));
   ini := TIniFile.Create(fileName);
   properties := TStringList.Create;
   try
@@ -391,7 +393,7 @@ begin
     ini.ReadSectionValues('Projects', fProjects);
     for i := 0 to fProjects.Count - 1 do
     begin
-      fProjects[i] := fProjects.ValueFromIndex[i];
+      fProjects[i] :=  appPath + fProjects.ValueFromIndex[i];
     end;
   finally
     properties.Free;

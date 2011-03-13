@@ -73,7 +73,7 @@ type
 
   TSingletonPerThreadLifetimeManager = class(TLifetimeManagerBase)
   private
-    fInstances: TDictionary<THandle, TFunc<TObject>>;  // <ThreadID, TFunc<TObject>>
+    fInstances: TDictionary<TThreadID, TFunc<TObject>>;
   protected
     procedure HandleValueNotify(sender: TObject; const item: TFunc<TObject>; action: TCollectionNotification);
     function CreateHolder(instance: TObject): TFunc<TObject>; virtual;

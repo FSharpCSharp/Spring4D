@@ -50,7 +50,9 @@ type
       fLoggerRepository: ILoggerRepository;
   private
     class constructor Create;
+    {$HINTS OFF}
     class destructor Destroy;
+    {$HINTS ON}
     class function GetLoggerRepository: ILoggerRepository;
   public
     class procedure Configure(const fileName: string); overload;
