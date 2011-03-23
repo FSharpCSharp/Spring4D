@@ -291,6 +291,7 @@ type
 
   ICollectionOwnership = interface
     ['{6D028EAF-3D14-4362-898C-BFAD1110547F}']
+
     {$REGION 'Property Getters & Setters'}
       function GetOwnsObjects: Boolean;
       procedure SetOwnsObjects(const value: Boolean);
@@ -324,8 +325,10 @@ type
   /// </summary>
   TEnumerableBase<T> = class abstract(TInterfacedObject, IEnumerable<T>, ICollectionItemType)
   protected
-    { Implements ICollectionItemType }
+
+  {$REGION 'Implements ICollectionItemType'}
     function GetItemType: PTypeInfo;
+  {$ENDREGION}
   protected
     function GetCount: Integer; virtual;
     function GetIsEmpty: Boolean; virtual;
@@ -376,9 +379,11 @@ type
     fController: Pointer;
     function GetController: IInterface;
   protected
-    { IInterface }
+
+  {$REGION 'Implements IInterface'}
     function _AddRef: Integer; stdcall;
     function _Release: Integer; stdcall;
+  {$ENDREGION}
   public
     constructor Create(const controller: IInterface);
     property Controller: IInterface read GetController;
@@ -407,9 +412,11 @@ type
     procedure SetCapacity(value: Integer);
   protected
     function EnsureCapacity(value: Integer): Integer;
-    { Implements ISupportIndexedProperties }
+
+  {$REGION 'Implements ISupportIndexedProperties'}
     function GetPropertyValue(const propertyName: string; const index: Rtti.TValue): Rtti.TValue;
     procedure SetPropertyValue(const propertyName: string; const index, value: Rtti.TValue);
+  {$ENDREGION}
   protected
     procedure DoDelete(index: Integer; notification: TCollectionNotification);
     procedure Notify(const item: T; action: TCollectionNotification); virtual;
@@ -466,15 +473,18 @@ type
         function GetIsReadOnly: Boolean; override;
       public
         constructor Create(const controller: IInterface; dictionary: TGenericDictionary);
-        { IEnumerable<TKey> }
+      {$REGION 'IEnumerable<TKey>'}
         function GetEnumerator: IEnumerator<TKey>; override;
         function Contains(const item: TKey): Boolean; override;
         function ToArray: TArray<TKey>; override;
-        { ICollection<TKey> }
+      {$ENDREGION}
+
+      {$REGION 'ICollection<TKey>'}
         procedure Add(const item: TKey); overload; override;
         procedure Clear; override;
         function Remove(const item: TKey): Boolean; overload; override;
         function Extract(const item: TKey): TKey;
+      {$ENDREGION}
       end;
 
       ///	<summary>Provides a read-only ICollection{TValue} implementation</summary>
@@ -487,16 +497,19 @@ type
         function GetIsReadOnly: Boolean; override;
       public
         constructor Create(const controller: IInterface; dictionary: TGenericDictionary);
-        { IEnumerable<TValue> }
+      {$REGION 'IEnumerable<TValue>'}
         function GetEnumerator: IEnumerator<TValue>; override;
         function Contains(const item: TValue): Boolean; override;
         function ToArray: TArray<TValue>; override;
-        { ICollection<TValue> }
+      {$ENDREGION}
+
+      {$REGION 'ICollection<TValue>'}
         procedure Add(const item: TValue); overload; override;
         procedure Clear; override;
         function Remove(const item: TValue): Boolean; overload; override;
         function Extract(const item: TValue): TValue;
         property IsReadOnly: Boolean read GetIsReadOnly;
+      {$ENDREGION}
       end;
   private
     fDictionary: TGenericDictionary;
@@ -509,7 +522,7 @@ type
     constructor Create; overload;
     destructor Destroy; override;
 
-    { Implements IEnumerable<TPair<TKey, TValue>> }
+  {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
     function GetEnumerator: IEnumerator<TPair<TKey,TValue>>; override;
     function GetCount: Integer; override;
     function GetIsEmpty: Boolean; override;
@@ -517,14 +530,16 @@ type
     function ToArray: TArray<TPair<TKey,TValue>>; override;
     property Count: Integer read GetCount;
     property IsEmpty: Boolean read GetIsEmpty;
+  {$ENDREGION}
 
-    { Implements ICollection<TPair<TKey, TValue>> }
+  {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
     procedure Add(const item: TPair<TKey,TValue>); overload; override;
     procedure Clear; override;
     function Remove(const item: TPair<TKey,TValue>): Boolean; overload; override;
     function Extract(const item: TPair<TKey,TValue>): TPair<TKey,TValue>;
+  {$ENDREGION}
 
-    { Implements IDictionary<TKey,TValue> }
+  {$REGION 'Implements IDictionary<TKey,TValue>'}
     function GetItem(const key: TKey): TValue;
     function GetKeys: ICollection<TKey>;
     function GetValues: ICollection<TValue>;
@@ -539,6 +554,7 @@ type
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
     property Keys: ICollection<TKey> read GetKeys;
     property Values: ICollection<TValue> read GetValues;
+  {$ENDREGION}
   end;
 
   TStack<T> = class(TEnumerableBase<T>, IStack<T>)
@@ -610,11 +626,13 @@ type
     procedure TrimExcess;
   end;
 
-  TObjectList<T:class> = class(TList<T>, ICollectionOwnership)
+  TObjectList<T: class> = class(TList<T>, ICollectionOwnership)
   private
     fOwnsObjects: Boolean;
     function GetOwnsObjects: Boolean;
     procedure SetOwnsObjects(const value: Boolean);
+  protected
+    procedure Notify(const item: T; action: TCollectionNotification); override;
   public
     constructor Create(ownsObjects: Boolean = True); overload;
     constructor Create(const comparer: IComparer<T>; ownsObjects: Boolean = True); overload;
@@ -2132,6 +2150,13 @@ end;
 procedure TObjectList<T>.SetOwnsObjects(const value: Boolean);
 begin
   fOwnsObjects := value;
+end;
+
+procedure TObjectList<T>.Notify(const item: T; action: TCollectionNotification);
+begin
+  inherited;
+  if OwnsObjects and (action = cnRemoved) then
+    item.Free;
 end;
 
 {$ENDREGION}
