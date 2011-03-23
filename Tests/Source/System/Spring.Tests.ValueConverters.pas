@@ -343,6 +343,26 @@ type
     procedure TestObjectToNullableWideString;
   end;
 
+  TTestFromInterface = class(TTestCase)
+  private
+    fConverter: IValueConverter;
+
+    type
+      ITestInterface = interface
+      ['{F98EAF66-33B6-4687-8052-4B76471D978B}']
+        function ToString: string;
+      end;
+
+      TTestObject = class(TInterfacedObject, ITestInterface)
+      public
+        function ToString: string; override;
+      end;
+  protected
+    procedure SetUp; override;
+  published
+    procedure TestInterfaceToObject;
+  end;
+
   TTestFromNullable = class(TTestCase)
   private
     fConverter: IValueConverter;
@@ -2464,7 +2484,7 @@ end;
   function TTestFromObject.TTestObject.ToString: string;
   begin
     inherited;
-    Result := 'ObjectToString test object';
+    Result := 'ObjectToString test case.';
   end;
 
   {$ENDREGION}
@@ -3688,6 +3708,42 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
   CheckEquals(outStr, 'Test WideString');
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestFromInterface'}
+
+  {$REGION 'TTestFromObject.TTestObject'}
+
+  function TTestFromInterface.TTestObject.ToString: string;
+  begin
+    inherited;
+    Result := 'InterfaceToObject test case.';
+  end;
+
+  {$ENDREGION}
+
+procedure TTestFromInterface.SetUp;
+begin
+  inherited;
+  fConverter := TValueConverter.Default;
+end;
+
+procedure TTestFromInterface.TestInterfaceToObject;
+var
+  outValue: TValue;
+  intf: ITestInterface;
+  obj: TTestObject;
+begin
+  intf := TTestObject.Create;
+  outValue := fConverter.ConvertTo(TValue.From<ITestInterface>(intf),
+    TypeInfo(TTestObject));
+
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<TTestObject>(obj));
+  CheckEqualsString(intf.ToString, obj.ToString);
 end;
 
 {$ENDREGION}

@@ -100,7 +100,8 @@ begin
     TTestFromCurrency.Suite,
     TTestFromDateTime.Suite,
     TTestFromObject.Suite,
-    TTestFromNullable.Suite
+    TTestFromNullable.Suite,
+    TTestFromInterface.Suite
   ]);
 
   RegisterTests('Core.Pool', [

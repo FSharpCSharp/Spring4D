@@ -507,6 +507,21 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TInterfaceToObjectConverter'}
+
+  /// <summary>
+  /// Provides conversion routine beetwen TObject and IInterface
+  /// </summary>
+  TInterfaceToObjectConverter = class(TValueConverter)
+  protected
+    function DoConvertTo(const value: TValue;
+      const targetTypeInfo: PTypeInfo;
+      const parameter: TValue): TValue; override;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'TInterfaceToInterfaceConverter'}
 
   /// <summary>
@@ -1174,6 +1189,17 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TInterfaceToObjectConverter'}
+
+function TInterfaceToObjectConverter.DoConvertTo(const value: TValue;
+  const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+begin
+  Result := TValue.From<TObject>(TObject(value.AsInterface));
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TObjectToClassConverter'}
 
 function TObjectToClassConverter.DoConvertTo(const value: TValue;
@@ -1526,6 +1552,7 @@ begin
   RegisterConverter([tkWString], [tkString, tkUString, tkLString], TWStringToStringConverter);
 
   RegisterConverter([tkInterface], [tkInterface], TInterfaceToInterfaceConverter);
+  RegisterConverter([tkInterface], [tkClass], TInterfaceToObjectConverter);
 end;
 
 class destructor TValueConverterFactory.Destroy;
