@@ -917,6 +917,103 @@ type
   /// </summary>
   function IsAltPressed: Boolean;
 
+  {$REGION 'Documentation'}
+  ///	<summary>Determines whether a specified file exists. An <see cref=
+  ///	"EFileNotFoundException" /> exception will be raised when not
+  ///	found.</summary>
+  ///	<param name="fileName">the file name.</param>
+  ///	<exception cref="EFileNotFoundException">Raised if the target file does
+  ///	not exist.</exception>
+  ///	<seealso cref="CheckDirectoryExists(string)"></seealso>
+  {$ENDREGION}
+  procedure CheckFileExists(const fileName: string);
+
+  {$REGION 'Documentation'}
+  ///	<summary>Determines whether a specified directory exists. An <see cref=
+  ///	"EDirectoryNotFoundException" /> exception will be raised when not
+  ///	found.</summary>
+  ///	<exception cref="EDirectoryNotFoundException">Raised if the directory
+  ///	doesn't exist.</exception>
+  ///	<seealso cref="CheckFileExists(string)"></seealso>
+  {$ENDREGION}
+  procedure CheckDirectoryExists(const directory: string);
+
+  {$REGION 'Documentation'}
+  ///	<summary>Retrieves the byte length of a unicode string.</summary>
+  ///	<param name="s">the unicode string.</param>
+  ///	<returns>The byte length of the unicode string.</returns>
+  ///	<remarks>Although there is already a routine
+  ///	<c>SysUtils.ByteLength(string)</c> function, it only supports unicode
+  ///	strings and doesn't provide overloads for WideStrings and
+  ///	AnsiStrings.</remarks>
+  ///	<seealso cref="GetByteLength(WideString)"></seealso>
+  ///	<seealso cref="GetByteLength(RawByteString)"></seealso>
+  {$ENDREGION}
+  function GetByteLength(const s: string): Integer; overload; inline;
+
+  {$REGION 'Documentation'}
+  ///	<summary>Retrieves the byte length of a WideString.</summary>
+  ///	<param name="s">A wide string.</param>
+  ///	<returns>The byte length of the wide string.</returns>
+  ///	<seealso cref="GetByteLength(string)"></seealso>
+  ///	<seealso cref="GetByteLength(RawByteString)"></seealso>
+  {$ENDREGION}
+  function GetByteLength(const s: WideString): Integer; overload; inline;
+
+  {$REGION 'Documentation'}
+  ///	<summary>Retrieves the byte length of a <c>RawByteString</c> (AnsiString
+  ///	or UTF8String).</summary>
+  ///	<returns>The byte length of the raw byte string.</returns>
+  ///	<seealso cref="GetByteLength(string)"></seealso>
+  ///	<seealso cref="GetByteLength(WideString)"></seealso>
+  {$ENDREGION}
+  function GetByteLength(const s: RawByteString): Integer; overload; inline;
+
+  {$REGION 'Documentation'}
+  ///	<summary>Overloads. SplitString</summary>
+  ///	<remarks>Each element of separator defines a separate delimiter
+  ///	character. If two delimiters are adjacent, or a delimiter is found at the
+  ///	beginning or end of the buffer, the corresponding array element contains
+  ///	Empty.</remarks>
+  {$ENDREGION}
+  function SplitString(const buffer: string; const separators: TSysCharSet;
+    removeEmptyEntries: Boolean = False): TStringDynArray; overload;
+  function SplitString(const buffer: TCharArray; const separators: TSysCharSet;
+    removeEmptyEntries: Boolean = False): TStringDynArray; overload;
+  function SplitString(const buffer: PChar; len: Integer; const separators: TSysCharSet;
+    removeEmptyEntries: Boolean = False): TStringDynArray; overload;
+
+  {$REGION 'Documentation'}
+  ///	<summary>Returns a string array that contains the substrings in the
+  ///	buffer that are delimited by null char (#0) and ends with an additional
+  ///	null char.</summary>
+  ///	<example>
+  ///	  <code lang="Delphi">
+  ///	procedure TestSplitNullTerminatedStrings;
+  ///	var
+  ///	  buffer: string;
+  ///	  strings: TStringDynArray;
+  ///	  s: string;
+  ///	begin
+  ///	  buffer := 'C:'#0'D:'#0'E:'#0#0;
+  ///	  strings := SplitString(PChar(buffer));
+  ///	  for s in strings do
+  ///	  begin
+  ///	    Writeln(s);
+  ///	  end;
+  ///	end;
+  ///	</code>
+  ///	</example>
+  {$ENDREGION}
+  function SplitString(const buffer: PChar): TStringDynArray; overload;
+
+  /// <summary>
+  /// Returns a string array that contains the substrings in the buffer that are
+  /// delimited by null char (#0) and ends with an additional null char.
+  /// </summary>
+  function SplitNullTerminatedStrings(const buffer: PChar): TStringDynArray;
+    deprecated 'Use the SpitString(PChar) function instead.';
+
 
   {$ENDREGION}
 
@@ -1331,6 +1428,110 @@ end;
 function IsAltPressed: Boolean;
 begin
   Result := GetKeyState(VK_MENU) < 0;
+end;
+
+procedure CheckFileExists(const fileName: string);
+begin
+  if not FileExists(fileName) then
+  begin
+    raise EFileNotFoundException.CreateResFmt(@SFileNotFoundException, [fileName]);
+  end;
+end;
+
+procedure CheckDirectoryExists(const directory: string);
+begin
+  if not DirectoryExists(directory) then
+  begin
+    raise EDirectoryNotFoundException.CreateResFmt(@SDirectoryNotFoundException, [directory]);
+  end;
+end;
+
+function GetByteLength(const s: string): Integer;
+begin
+  Result := Length(s) * SizeOf(Char);
+end;
+
+function GetByteLength(const s: WideString): Integer;
+begin
+  Result := Length(s) * SizeOf(WideChar);
+end;
+
+function GetByteLength(const s: RawByteString): Integer;
+begin
+  Result := Length(s);
+end;
+
+function SplitString(const buffer: string; const separators: TSysCharSet;
+  removeEmptyEntries: Boolean): TStringDynArray;
+begin
+  Result := SplitString(PChar(buffer), Length(buffer), separators, removeEmptyEntries);
+end;
+
+function SplitString(const buffer: TCharArray; const separators: TSysCharSet;
+  removeEmptyEntries: Boolean): TStringDynArray;
+begin
+  Result := SplitString(PChar(buffer), Length(buffer), separators, removeEmptyEntries)
+end;
+
+function SplitString(const buffer: PChar; len: Integer; const separators: TSysCharSet;
+  removeEmptyEntries: Boolean): TStringDynArray;
+var
+  head: PChar;
+  tail: PChar;
+  p: PChar;
+
+  procedure AppendEntry(buffer: PChar; len: Integer; var strings: TStringDynArray);
+  var
+    entry: string;
+  begin
+    SetString(entry, buffer, len);
+    if not removeEmptyEntries or (entry <> '') then
+    begin
+      SetLength(strings, Length(strings) + 1);
+      strings[Length(strings) - 1] := entry;
+    end;
+  end;
+begin
+  TArgument.CheckRange(len >= 0, 'len');
+
+  if (buffer = nil) or (len = 0) then Exit;
+  head := buffer;
+  tail := head + len - 1;
+  p := head;
+  while p <= tail do
+  begin
+    if CharInSet(p^, separators) then
+    begin
+      AppendEntry(head, p - head, Result);
+      head := StrNextChar(p);
+    end;
+    if p = tail then
+    begin
+      AppendEntry(head, p - head + 1, Result);
+    end;
+    p := StrNextChar(p);
+  end;
+end;
+
+function SplitString(const buffer: PChar): TStringDynArray;
+var
+  p: PChar;
+  entry: string;
+begin
+  if (buffer = nil) or (buffer^ = #0) then Exit;
+  p := buffer;
+  while p^ <> #0 do
+  begin
+    entry := p;
+    SetLength(Result, Length(Result) + 1);
+    Result[Length(Result)-1] := entry;
+    Inc(p, Length(entry) + 1);  // Jump to the next entry
+  end;
+end;
+
+function SplitNullTerminatedStrings(const buffer: PChar): TStringDynArray;
+begin
+  Result := SplitString(buffer);
 end;
 
 {$ENDREGION}

@@ -442,7 +442,7 @@ type
 implementation
 
 uses
-//  Spring.Utils,
+  Spring.Utils,
   Spring.ResourceStrings;
 
 {$REGION 'TGuidHelper'}

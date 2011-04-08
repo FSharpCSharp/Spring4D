@@ -8,33 +8,33 @@
   resources were bound to the produced executable.
 */
 
-#define Spring_DI_ResourceStrings_SNoSuchProperty 65168
-#define Spring_DI_ResourceStrings_SNoSuchField 65169
-#define Spring_DI_ResourceStrings_SInjectionTargetNeeded 65170
-#define Spring_DI_ResourceStrings_SUnsatisfiedTarget 65171
-#define Spring_DI_ResourceStrings_SComponentNotFound 65172
-#define Spring_DI_ResourceStrings_SUnexpectedLifetimeType 65173
-#define Spring_DI_ResourceStrings_SActivatorDelegateExpected 65174
-#define ComConst_SOleError 65175
-#define ComConst_SNoMethod 65176
-#define ComConst_SVarNotObject 65177
-#define ComConst_STooManyParams 65178
+#define Spring_DI_ResourceStrings_SLifetimeManagerMissing 65168
+#define Spring_DI_ResourceStrings_SUnresovableInjection 65169
+#define Spring_DI_ResourceStrings_SUnsatisfiedConstructor 65170
+#define Spring_DI_ResourceStrings_SNoSuchMethod 65171
+#define Spring_DI_ResourceStrings_SNoSuchProperty 65172
+#define Spring_DI_ResourceStrings_SNoSuchField 65173
+#define Spring_DI_ResourceStrings_SInjectionTargetNeeded 65174
+#define Spring_DI_ResourceStrings_SUnsatisfiedTarget 65175
+#define Spring_DI_ResourceStrings_SComponentNotFound 65176
+#define Spring_DI_ResourceStrings_SUnexpectedLifetimeType 65177
+#define Spring_DI_ResourceStrings_SActivatorDelegateExpected 65178
 #define Spring_ResourceStrings_SNotSupportedCipherMode 65184
-#define Spring_DI_ResourceStrings_SNonGuidInterfaceServicesAreNotSupported 65185
-#define Spring_DI_ResourceStrings_SIncompatibleTypes 65186
-#define Spring_DI_ResourceStrings_SDuplicatedName 65187
-#define Spring_DI_ResourceStrings_SCircularDependencyDetected 65188
-#define Spring_DI_ResourceStrings_SCannotResolveDependency 65189
-#define Spring_DI_ResourceStrings_SNoComponentRegistered 65190
-#define Spring_DI_ResourceStrings_SInvalidServiceName 65191
-#define Spring_DI_ResourceStrings_SUnsatisfiedConstructorParameters 65192
-#define Spring_DI_ResourceStrings_SUnsatisfiedMethodParameterTypes 65193
-#define Spring_DI_ResourceStrings_SUnsatisfiedDependency 65194
-#define Spring_DI_ResourceStrings_SUnsatisfiedResolutionArgumentCount 65195
-#define Spring_DI_ResourceStrings_SLifetimeManagerMissing 65196
-#define Spring_DI_ResourceStrings_SUnresovableInjection 65197
-#define Spring_DI_ResourceStrings_SUnsatisfiedConstructor 65198
-#define Spring_DI_ResourceStrings_SNoSuchMethod 65199
+#define ComConst_SOleError 65185
+#define ComConst_SNoMethod 65186
+#define ComConst_SVarNotObject 65187
+#define ComConst_STooManyParams 65188
+#define Spring_DI_ResourceStrings_SNonGuidInterfaceServicesAreNotSupported 65189
+#define Spring_DI_ResourceStrings_SIncompatibleTypes 65190
+#define Spring_DI_ResourceStrings_SDuplicatedName 65191
+#define Spring_DI_ResourceStrings_SCircularDependencyDetected 65192
+#define Spring_DI_ResourceStrings_SCannotResolveDependency 65193
+#define Spring_DI_ResourceStrings_SNoComponentRegistered 65194
+#define Spring_DI_ResourceStrings_SInvalidServiceName 65195
+#define Spring_DI_ResourceStrings_SUnsatisfiedConstructorParameters 65196
+#define Spring_DI_ResourceStrings_SUnsatisfiedMethodParameterTypes 65197
+#define Spring_DI_ResourceStrings_SUnsatisfiedDependency 65198
+#define Spring_DI_ResourceStrings_SUnsatisfiedResolutionArgumentCount 65199
 #define Spring_ResourceStrings_SWinXPDescription 65200
 #define Spring_ResourceStrings_SWinServer2003Description 65201
 #define Spring_ResourceStrings_SWinVistaDescription 65202
@@ -373,6 +373,10 @@
 #define SysConst_SInvalidOp 65535
 STRINGTABLE
 BEGIN
+	Spring_DI_ResourceStrings_SLifetimeManagerMissing,	"LifetimeTypeManager was expected."
+	Spring_DI_ResourceStrings_SUnresovableInjection,	"Unresovable injection."
+	Spring_DI_ResourceStrings_SUnsatisfiedConstructor,	"Unsatisfied constructor."
+	Spring_DI_ResourceStrings_SNoSuchMethod,	"No such method: \"%s\"."
 	Spring_DI_ResourceStrings_SNoSuchProperty,	"No such property: \"%s\"."
 	Spring_DI_ResourceStrings_SNoSuchField,	"No such field: \"%s\"."
 	Spring_DI_ResourceStrings_SInjectionTargetNeeded,	"Injection target needed."
@@ -380,11 +384,11 @@ BEGIN
 	Spring_DI_ResourceStrings_SComponentNotFound,	"Cannot found the component registered."
 	Spring_DI_ResourceStrings_SUnexpectedLifetimeType,	"Unexpected lifetimeType."
 	Spring_DI_ResourceStrings_SActivatorDelegateExpected,	"An activator delegate was expected."
+	Spring_ResourceStrings_SNotSupportedCipherMode,	"The cipher mode \"%s\" is not supported."
 	ComConst_SOleError,	"OLE error %.8x"
 	ComConst_SNoMethod,	"Method '%s' not supported by automation object"
 	ComConst_SVarNotObject,	"Variant does not reference an automation object"
 	ComConst_STooManyParams,	"Dispatch methods do not support more than 64 parameters"
-	Spring_ResourceStrings_SNotSupportedCipherMode,	"The cipher mode \"%s\" is not supported."
 	Spring_DI_ResourceStrings_SNonGuidInterfaceServicesAreNotSupported,	"Non-Guid Interface Services are not supported."
 	Spring_DI_ResourceStrings_SIncompatibleTypes,	"The component type \"%s\" is incompatible with the service type \"%s\"."
 	Spring_DI_ResourceStrings_SDuplicatedName,	"Duplicated name found: \"%s\"."
@@ -396,10 +400,6 @@ BEGIN
 	Spring_DI_ResourceStrings_SUnsatisfiedMethodParameterTypes,	"Unsatisfied parameter types for the method: %s."
 	Spring_DI_ResourceStrings_SUnsatisfiedDependency,	"Unsatisfied dependency for the service type \"%0:s\"."
 	Spring_DI_ResourceStrings_SUnsatisfiedResolutionArgumentCount,	"Unsatisfied resolution argument count."
-	Spring_DI_ResourceStrings_SLifetimeManagerMissing,	"LifetimeTypeManager was expected."
-	Spring_DI_ResourceStrings_SUnresovableInjection,	"Unresovable injection."
-	Spring_DI_ResourceStrings_SUnsatisfiedConstructor,	"Unsatisfied constructor."
-	Spring_DI_ResourceStrings_SNoSuchMethod,	"No such method: \"%s\"."
 	Spring_ResourceStrings_SWinXPDescription,	"Microsoft Windows XP"
 	Spring_ResourceStrings_SWinServer2003Description,	"Microsoft Windows Server 2003"
 	Spring_ResourceStrings_SWinVistaDescription,	"Microsoft Windows Vista"
@@ -738,9 +738,9 @@ BEGIN
 	SysConst_SInvalidOp,	"Invalid floating point operation"
 END
 
-/* c:\program files\embarcadero\rad studio\7.0\lib\Debug\character.res */
-/* c:\program files\embarcadero\rad studio\7.0\lib\Controls.res */
-/* c:\program files\embarcadero\rad studio\7.0\lib\Buttons.res */
-/* c:\program files\embarcadero\rad studio\7.0\Source\DUnit\src\GUITestRunner.DFM */
-/* D:\Sources\Delphi\Spring Framework for Delphi\Tests\Spring.Tests.RES */
-/* D:\Sources\Delphi\Spring Framework for Delphi\Tests\Spring.drf */
+/* d:\program files\embarcadero\rad studio\7.0\lib\Debug\character.res */
+/* d:\program files\embarcadero\rad studio\7.0\lib\Controls.res */
+/* d:\program files\embarcadero\rad studio\7.0\lib\Buttons.res */
+/* d:\program files\embarcadero\rad studio\7.0\Source\DUnit\src\GUITestRunner.DFM */
+/* E:\My Documents\Projects\Spring\Tests\Spring.Tests.RES */
+/* E:\My Documents\Projects\Spring\Tests\Spring.drf */

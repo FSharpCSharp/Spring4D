@@ -659,10 +659,9 @@ type
 
   TStackAccess<T> = class(TEnumerable<T>)
   public
-    FCount: Integer;
-    FItems: array of T;
+    fCount: Integer;
+    fItems: array of T;
   end;
-
 
   {$REGION 'Documentation'}
   ///	<summary>Provides static methods to create an instance of various

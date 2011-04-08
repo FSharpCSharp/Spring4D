@@ -47,6 +47,7 @@ type
   ///	<summary>Represents a dynamic array of Byte.</summary>
   TBytes = SysUtils.TBytes;
 
+  ///	<summary>Represents a type information.</summary>
   PTypeInfo = TypInfo.PTypeInfo;
 
   ///	<summary>Represents a dynamic array of string.</summary>
@@ -69,8 +70,34 @@ type
   TThreadID = LongWord;
 {$ENDIF}
 
+  ///	<summary>Represents a logical predicate.</summary>
+  ///	<param name="value">the value needs to be determined.</param>
+  ///	<returns>Returns True if the value was accepted, otherwise, returns
+  ///	false.</returns>
+  ///	<remarks>
+  ///	  <note type="tip">This type redefined the
+  ///	  <see cref="SysUtils|TPredicate`1">SysUtils.TPredicate&lt;T&gt;</see> type with a const parameter.</note>
+  ///	</remarks>
+  /// <seealso cref="Spring.DesignPatterns|ISpecification{T}" />
+  TPredicate<T> = reference to function(const value: T): Boolean;
+
   /// <summary>
-  /// Provides a non-reference-counted IInterface implementation.
+  /// Represents a method that has a single parameter and does not return a value.
+  /// </summary>
+  TAction<T> = reference to procedure(const obj: T);
+
+  /// <summary>
+  /// Represents a procedure that has a single parameter and does not return a value.
+  /// </summary>
+  TActionProc<T> = procedure(const obj: T);
+
+  /// <summary>
+  /// Represents a instance method that has a single parameter and does not return a value.
+  /// </summary>
+  TActionMethod<T> = procedure(const obj: T) of object;
+
+  /// <summary>
+  /// Provides a non-reference-counted <see cref="System|IInterface" /> implementation.
   /// </summary>
   TInterfaceBase = class(TObject, IInterface)
   protected
@@ -90,13 +117,12 @@ type
     function _Release: Integer; stdcall;
   end;
 
-  /// <summary>
-  /// Provides static methods to check arguments and raise argument exceptions.
-  /// </summary>
-  /// <remarks>
-  /// All arguments of public methods, including global routines, class and record methods,
-  /// should be checked.
-  /// </remarks>
+  {$REGION 'Documentation'}
+  ///	<summary>Provides static methods to check arguments and raise argument
+  ///	exceptions.</summary>
+  ///	<remarks>It's recommended that all arguments of public methods, including
+  ///	global routines, class and record methods, should be checked.</remarks>
+  {$ENDREGION}
   TArgument = class
   strict private
     class procedure DoCheckIndex(const length, index, indexBase: Integer); overload; static; inline;
@@ -174,7 +200,6 @@ type
   /// Provides static methods to manipulate an enumeration type.
   /// </summary>
   TEnum = class
-{$IFNDEF DisableGenerics}
   private
     class function GetEnumTypeInfo<T>: PTypeInfo; static;
     class function GetEnumTypeData<T>: PTypeData; static;
@@ -197,7 +222,6 @@ type
     class function TryParse<T>(const value: string; out enum: T): Boolean; overload; static;
     class function Parse<T>(const value: Integer): T; overload; static;
     class function Parse<T>(const value: string): T; overload; static;
-{$ENDIF}
   end;
 
   /// <summary>
@@ -212,6 +236,28 @@ type
 //    class function BinToHex(const buffer: Pointer; count: Integer): string; overload; static;
 //    class function BinToHex(const buffer: Pointer; count: Integer;
 //      const prefix: string; const delimiter: string = ' '): string; overload; static;
+  end;
+
+
+  /// <summary>
+  /// Provides static methods to manipulate an array.
+  /// </summary>
+  TArray = class(Generics.Collections.TArray)
+  public
+  (*
+    class function Add<T>(var target: array of T; const value: T): Integer;
+    class procedure Reverse<T>(var target: array of T);
+    class procedure Delete<T>(var target: array of T; const index: Integer);
+    class procedure Copy<T>(const source: array of T; var dest: array of T; len: Integer); overload;
+    class function Contains<T>(const target: array of T; const value: T): Boolean;
+    class function Exists<T>(const match: TPredicate<T>): Boolean;
+    class function IndexOf<T>(const target: array of T; const value: T): Integer;
+    class function LastIndexOf<T>(const target: array of T; const value: T): Integer;
+    class function FindFirst<T>(const target: array of T; const predicate: TPredicate<T>): T;
+    class function FindLast<T>(const target: array of T; const predicate: TPredicate<T>): T;
+    class function FindAll<T>(const target: array of T; const predicate: TPredicate<T>): TArray<T>;
+    ForEach
+  //*)
   end;
 
 
@@ -314,41 +360,6 @@ type
   end;
 
 
-  ///	<summary>Represents a logical predicate.</summary>
-  ///	<param name="value">the value needs to be determined.</param>
-  ///	<returns>Returns True if the value was accepted, otherwise, returns
-  ///	false.</returns>
-  ///	<remarks>
-  ///	  <note type="tip">This type redefined the
-  ///	  <see cref="SysUtils|TPredicate`1">SysUtils.TPredicate&lt;T&gt;</see> type with a const parameter.</note>
-  ///	</remarks>
-  /// <seealso cref="Spring.DesignPatterns|ISpecification{T}" />
-  TPredicate<T> = reference to function(const value: T): Boolean;
-
-  TAction<T> = reference to procedure(obj: T);
-
-  /// <summary>
-  /// Provides static methods to manipulate an array.
-  /// </summary>
-  TArray = class(Generics.Collections.TArray)
-  public
-  (*
-    class function Add<T>(var target: array of T; const value: T): Integer;
-    class procedure Reverse<T>(var target: array of T);
-    class procedure Delete<T>(var target: array of T; const index: Integer);
-    class procedure Copy<T>(const source: array of T; var dest: array of T; len: Integer); overload;
-    class function Contains<T>(const target: array of T; const value: T): Boolean;
-    class function Exists<T>(const match: TPredicate<T>): Boolean;
-    class function IndexOf<T>(const target: array of T; const value: T): Integer;
-    class function LastIndexOf<T>(const target: array of T; const value: T): Integer;
-    class function FindFirst<T>(const target: array of T; const predicate: TPredicate<T>): T;
-    class function FindLast<T>(const target: array of T; const predicate: TPredicate<T>): T;
-    class function FindAll<T>(const target: array of T; const predicate: TPredicate<T>): TArray<T>;
-    ForEach
-  //*)
-  end;
-
-
   ///	<summary>Represents an "object" whose underlying type is a value type
   ///	that can also be assigned nil like a reference type.</summary>
   ///	<typeparam name="T">The underlying value type of the <see cref=
@@ -366,6 +377,11 @@ type
   private
     ///	<summary>Internal use. Clears the value and marks it as null.</summary>
     procedure Clear;
+
+    /// <summary>
+    /// Determines whether a variant value is null or empty.
+    /// </summary>
+    class function VarIsNullOrEmpty(const value: Variant; trimWhiteSpace: Boolean = False): Boolean; static;
   public
     ///	<summary>Initializes a new instance of the <c>TNullable{T}</c> structure
     ///	to the specified value.</summary>
@@ -413,6 +429,14 @@ type
   ///	<seealso cref="TNullable{T}"></seealso>
   TNullableInteger = TNullable<Integer>;
 
+  ///	<summary>Represents a nullable <c>Int64</c>.</summary>
+  ///	<seealso cref="TNullable{T}"></seealso>
+  TNullableInt64 = TNullable<Int64>;
+
+  ///	<summary>Represents a nullable native integer.</summary>
+  ///	<seealso cref="TNullable{T}"></seealso>
+  TNullableNativeInt = TNullable<NativeInt>;
+
   ///	<summary>Represents a nullable <c>TDateTime</c>.</summary>
   ///	<seealso cref="TNullable{T}"></seealso>
   TNullableDateTime = TNullable<TDateTime>;
@@ -428,10 +452,6 @@ type
   ///	<summary>Represents a nullable <c>Boolean</c>.</summary>
   ///	<seealso cref="TNullable{T}"></seealso>
   TNullableBoolean = TNullable<Boolean>;
-
-  ///	<summary>Represents a nullable <c>Int64</c>.</summary>
-  ///	<seealso cref="TNullable{T}"></seealso>
-  TNullableInt64 = TNullable<Int64>;
 
   ///	<summary>Represents a nullable <c>TGuid</c>.</summary>
   ///	<seealso cref="TNullable{T}"></seealso>
@@ -551,11 +571,12 @@ type
 
 
   {$REGION 'Documentation'}
-  ///	<summary>Represents a lifetime watcher. The basic idea is using an
-  ///	instance of the <c>IInterface</c> in the host such as a record. The
-  ///	anonymous method, which is specified by the <paramref name="proc" />
-  ///	parameter in the constructor, will be executed when this interface is
-  ///	disposed. Normally, the proc is some kind of clean up code.</summary>
+  ///	<summary>Represents a lifetime watcher.</summary>
+  ///	<remarks>The basic idea is using an instance of the <c>IInterface</c> in
+  ///	the host such as a record. The anonymous method, which is specified by
+  ///	the <paramref name="proc" /> parameter in the constructor, will be
+  ///	executed when this interface is disposed. Normally, the proc is some kind
+  ///	of clean up code.</remarks>
   {$ENDREGION}
   TLifetimeWatcher = class(TInterfacedObject)
   private
@@ -822,116 +843,6 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'Global Routines'}
-
-
-  {$REGION 'Documentation'}
-  ///	<summary>Retrieves the byte length of a unicode string.</summary>
-  ///	<param name="s">the unicode string.</param>
-  ///	<returns>The byte length of the unicode string.</returns>
-  ///	<remarks>Although there is already a routine
-  ///	<c>SysUtils.ByteLength(string)</c> function, it only supports unicode
-  ///	strings and doesn't provide overloads for WideStrings and
-  ///	AnsiStrings.</remarks>
-  ///	<seealso cref="GetByteLength(WideString)"></seealso>
-  ///	<seealso cref="GetByteLength(RawByteString)"></seealso>
-  {$ENDREGION}
-  function GetByteLength(const s: string): Integer; overload;
-    {$IFDEF SUPPORTS_INLINE} inline; {$ENDIF}
-
-  {$REGION 'Documentation'}
-  ///	<summary>Retrieves the byte length of a WideString.</summary>
-  ///	<param name="s">A wide string.</param>
-  ///	<returns>The byte length of the wide string.</returns>
-  ///	<seealso cref="GetByteLength(string)"></seealso>
-  ///	<seealso cref="GetByteLength(RawByteString)"></seealso>
-  {$ENDREGION}
-  function GetByteLength(const s: WideString): Integer; overload;
-    {$IFDEF SUPPORTS_INLINE} inline; {$ENDIF}
-
-  {$REGION 'Documentation'}
-  ///	<summary>Retrieves the byte length of a <c>RawByteString</c> (AnsiString
-  ///	or UTF8String).</summary>
-  ///	<returns>The byte length of the raw byte string.</returns>
-  ///	<seealso cref="GetByteLength(string)"></seealso>
-  ///	<seealso cref="GetByteLength(WideString)"></seealso>
-  {$ENDREGION}
-  function GetByteLength(const s: RawByteString): Integer; overload; inline;
-    {$IFDEF SUPPORTS_INLINE} inline; {$ENDIF}
-
-  {$REGION 'Documentation'}
-  ///	<summary>Determines whether a specified file exists. An <see cref=
-  ///	"EFileNotFoundException" /> exception will be raised when not
-  ///	found.</summary>
-  ///	<param name="fileName">the file name.</param>
-  ///	<exception cref="EFileNotFoundException">Raised if the target file does
-  ///	not exist.</exception>
-  ///	<seealso cref="CheckDirectoryExists(string)"></seealso>
-  {$ENDREGION}
-  procedure CheckFileExists(const fileName: string);
-
-  {$REGION 'Documentation'}
-  ///	<summary>Determines whether a specified directory exists. An <see cref=
-  ///	"EDirectoryNotFoundException" /> exception will be raised when not
-  ///	found.</summary>
-  ///	<exception cref="EDirectoryNotFoundException">Raised if the directory
-  ///	doesn't exist.</exception>
-  ///	<seealso cref="CheckFileExists(string)"></seealso>
-  {$ENDREGION}
-  procedure CheckDirectoryExists(const directory: string);
-
-  {$REGION 'Documentation'}
-  ///	<summary>Overloads. SplitString</summary>
-  ///	<remarks>Each element of separator defines a separate delimiter
-  ///	character. If two delimiters are adjacent, or a delimiter is found at the
-  ///	beginning or end of the buffer, the corresponding array element contains
-  ///	Empty.</remarks>
-  {$ENDREGION}
-  function SplitString(const buffer: string; const separators: TSysCharSet;
-    removeEmptyEntries: Boolean = False): TStringDynArray; overload;
-  function SplitString(const buffer: TCharArray; const separators: TSysCharSet;
-    removeEmptyEntries: Boolean = False): TStringDynArray; overload;
-  function SplitString(const buffer: PChar; len: Integer; const separators: TSysCharSet;
-    removeEmptyEntries: Boolean = False): TStringDynArray; overload;
-
-  {$REGION 'Documentation'}
-  ///	<summary>Returns a string array that contains the substrings in the
-  ///	buffer that are delimited by null char (#0) and ends with an additional
-  ///	null char.</summary>
-  ///	<example>
-  ///	  <code lang="Delphi">
-  ///	procedure TestSplitNullTerminatedStrings;
-  ///	var
-  ///	  buffer: string;
-  ///	  strings: TStringDynArray;
-  ///	  s: string;
-  ///	begin
-  ///	  buffer := 'C:'#0'D:'#0'E:'#0#0;
-  ///	  strings := SplitString(PChar(buffer));
-  ///	  for s in strings do
-  ///	  begin
-  ///	    Writeln(s);
-  ///	  end;
-  ///	end;
-  ///	</code>
-  ///	</example>
-  {$ENDREGION}
-  function SplitString(const buffer: PChar): TStringDynArray; overload;
-
-  /// <summary>
-  /// Returns a string array that contains the substrings in the buffer that are
-  /// delimited by null char (#0) and ends with an additional null char.
-  /// </summary>
-  function SplitNullTerminatedStrings(const buffer: PChar): TStringDynArray;
-    deprecated 'Use the SpitString(PChar) function instead.';
-
-  ///	<summary>Determines if a variant is null or empty. The parameter
-  ///"trimWhiteSpace" is an option only for strings.</summary>
-  function VarIsNullOrEmpty(const value: Variant; trimWhiteSpace: Boolean = False): Boolean;
-
-  {$ENDREGION}
-
-
   {$REGION 'Constants'}
 
 const
@@ -961,134 +872,11 @@ const
 
   {$ENDREGION}
 
-
 implementation
 
 uses
   StrUtils,
   Spring.ResourceStrings;
-
-
-{$REGION 'Global Routines'}
-
-function GetByteLength(const s: string): Integer;
-begin
-  Result := Length(s) * SizeOf(Char);
-end;
-
-function GetByteLength(const s: WideString): Integer;
-begin
-  Result := Length(s) * SizeOf(WideChar);
-end;
-
-function GetByteLength(const s: RawByteString): Integer;
-begin
-  Result := Length(s);
-end;
-
-procedure CheckFileExists(const fileName: string);
-begin
-  if not FileExists(fileName) then
-  begin
-    raise EFileNotFoundException.CreateResFmt(@SFileNotFoundException, [fileName]);
-  end;
-end;
-
-procedure CheckDirectoryExists(const directory: string);
-begin
-  if not DirectoryExists(directory) then
-  begin
-    raise EDirectoryNotFoundException.CreateResFmt(@SDirectoryNotFoundException, [directory]);
-  end;
-end;
-
-function SplitString(const buffer: string; const separators: TSysCharSet;
-  removeEmptyEntries: Boolean): TStringDynArray;
-begin
-  Result := SplitString(PChar(buffer), Length(buffer), separators, removeEmptyEntries);
-end;
-
-function SplitString(const buffer: TCharArray; const separators: TSysCharSet;
-  removeEmptyEntries: Boolean): TStringDynArray;
-begin
-  Result := SplitString(PChar(buffer), Length(buffer), separators, removeEmptyEntries)
-end;
-
-function SplitString(const buffer: PChar; len: Integer; const separators: TSysCharSet;
-  removeEmptyEntries: Boolean): TStringDynArray;
-var
-  head: PChar;
-  tail: PChar;
-  p: PChar;
-
-  procedure AppendEntry(buffer: PChar; len: Integer; var strings: TStringDynArray);
-  var
-    entry: string;
-  begin
-    SetString(entry, buffer, len);
-    if not removeEmptyEntries or (entry <> '') then
-    begin
-      SetLength(strings, Length(strings) + 1);
-      strings[Length(strings) - 1] := entry;
-    end;
-  end;
-begin
-  TArgument.CheckRange(len >= 0, 'len');
-
-  if (buffer = nil) or (len = 0) then Exit;
-  head := buffer;
-  tail := head + len - 1;
-  p := head;
-  while p <= tail do
-  begin
-    if CharInSet(p^, separators) then
-    begin
-      AppendEntry(head, p - head, Result);
-      head := StrNextChar(p);
-    end;
-    if p = tail then
-    begin
-      AppendEntry(head, p - head + 1, Result);
-    end;
-    p := StrNextChar(p);
-  end;
-end;
-
-function SplitString(const buffer: PChar): TStringDynArray;
-var
-  p: PChar;
-  entry: string;
-begin
-  if (buffer = nil) or (buffer^ = #0) then Exit;
-  p := buffer;
-  while p^ <> #0 do
-  begin
-    entry := p;
-    SetLength(Result, Length(Result) + 1);
-    Result[Length(Result)-1] := entry;
-    Inc(p, Length(entry) + 1);  // Jump to the next entry
-  end;
-end;
-
-function SplitNullTerminatedStrings(const buffer: PChar): TStringDynArray;
-begin
-  Result := SplitString(buffer);
-end;
-
-function VarIsNullOrEmpty(const value: Variant; trimWhiteSpace: Boolean): Boolean;
-var
-  s: string;
-begin
-  Result := VarIsNull(value) or VarIsEmpty(value);
-  if not Result and trimWhiteSpace and VarIsStr(value) then
-  begin
-    s := VarToStrDef(value, '');
-    s := Trim(s);
-    Result := (s = '');
-  end;
-end;
-
-{$ENDREGION}
 
 
 {$REGION 'TInterfaceBase'}
@@ -2032,6 +1820,20 @@ end;
 procedure TNullable<T>.Clear;
 begin
   fHasValue := '';
+end;
+
+class function TNullable<T>.VarIsNullOrEmpty(const value: Variant;
+  trimWhiteSpace: Boolean): Boolean;
+var
+  s: string;
+begin
+  Result := VarIsNull(value) or VarIsEmpty(value);
+  if not Result and trimWhiteSpace and VarIsStr(value) then
+  begin
+    s := VarToStrDef(value, '');
+    s := Trim(s);
+    Result := (s = '');
+  end;
 end;
 
 function TNullable<T>.GetHasValue: Boolean;
