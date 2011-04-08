@@ -135,6 +135,8 @@ type
     ///	the sequence contains no elements.</summary>
     function LastOrDefault: T; overload;
 
+    ///	<summary>Returns the last element of a sequence, or the specified
+    ///	default value if the sequence contains no elements.</summary>
     function LastOrDefault(const defaultValue: T): T; overload;
 
     ///	<summary>Returns the last element of a sequence that satisfies a
@@ -156,7 +158,20 @@ type
     ///	using the default equality comparer.</summary>
 //    function ContainsRange(const collection: IEnumerable<T>): Boolean; overload;
 
-    procedure ForEach(const action: TAction<T>);
+    /// <summary>
+    /// Performs the specified action on each element of a sequence.
+    /// </summary>
+    procedure ForEach(const action: TAction<T>); overload;
+
+    /// <summary>
+    /// Performs the specified action on each element of a sequence.
+    /// </summary>
+    procedure ForEach(const action: TActionProc<T>); overload;
+
+    /// <summary>
+    /// Performs the specified action on each element of a sequence.
+    /// </summary>
+    procedure ForEach(const action: TActionMethod<T>); overload;
 
     ///	<summary>Creates a new array which is filled with the elements in the
     ///	collection.</summary>
@@ -349,7 +364,9 @@ type
     function Where(const predicate: TPredicate<T>): IEnumerable<T>; virtual;
     function Contains(const item: T): Boolean; overload; virtual;
     function Contains(const item: T; const comparer: IEqualityComparer<T>): Boolean; overload; virtual;
-    procedure ForEach(const action: TAction<T>);
+    procedure ForEach(const action: TAction<T>); overload;
+    procedure ForEach(const action: TActionProc<T>); overload;
+    procedure ForEach(const action: TActionMethod<T>); overload;
     function ToArray: TArray<T>; virtual;
     function ToList: IList<T>; virtual;
     property Count: Integer read GetCount;
@@ -657,6 +674,10 @@ type
     property Current: T read GetCurrent;
   end;
 
+  /// <summary>
+  /// Internal type.
+  /// </summary>
+  /// <exclude/>
   TStackAccess<T> = class(TEnumerable<T>)
   public
     fCount: Integer;
@@ -901,6 +922,28 @@ begin
 end;
 
 procedure TEnumerableBase<T>.ForEach(const action: TAction<T>);
+var
+  item: T;
+begin
+  TArgument.CheckNotNull(Assigned(action), 'action');
+  for item in Self do
+  begin
+    action(item);
+  end;
+end;
+
+procedure TEnumerableBase<T>.ForEach(const action: TActionProc<T>);
+var
+  item: T;
+begin
+  TArgument.CheckNotNull(Assigned(action), 'action');
+  for item in Self do
+  begin
+    action(item);
+  end;
+end;
+
+procedure TEnumerableBase<T>.ForEach(const action: TActionMethod<T>);
 var
   item: T;
 begin
