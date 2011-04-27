@@ -184,6 +184,7 @@ uses
 constructor TComponentRegistry.Create(const context: IContainerContext);
 begin
   TArgument.CheckNotNull(context, 'context');
+
   inherited Create;
   fContainerContext := context;
   fRttiContext := TRttiContext.Create;
@@ -252,6 +253,7 @@ var
 begin
   TArgument.CheckNotNull(componentType, 'componentType');
   TArgument.CheckNotNull(serviceType, 'serviceType');
+
   serviceName := name;
   Validate(componentType, serviceType, serviceName);
   model := GetComponent(componentType);
@@ -271,6 +273,7 @@ var
   componentType: TRttiInstanceType;
 begin
   TArgument.CheckNotNull(componentTypeInfo, 'componentTypeInfo');
+
   if not fModels.TryGetValue(componentTypeInfo, Result) then
   begin
     componentType := fRttiContext.GetType(componentTypeInfo).AsInstance;
@@ -288,6 +291,7 @@ end;
 function TComponentRegistry.FindOne(componentType: PTypeInfo): TComponentModel;
 begin
   TArgument.CheckNotNull(componentType, 'componentType');
+
   fModels.TryGetValue(componentType, Result);
 end;
 
@@ -302,6 +306,7 @@ var
   models: IList<TComponentModel>;
 begin
   TArgument.CheckNotNull(serviceType, 'serviceType');
+
   if fServiceTypeMappings.TryGetValue(serviceType, models) then
   begin
     Result := models;
@@ -315,6 +320,7 @@ end;
 function TComponentRegistry.GetDefaultTypeName(serviceType: TRttiType): string;
 begin
   Assert(serviceType <> nil, 'serviceType should not be nil');
+
   if serviceType.IsPublicType then
   begin
     Result := serviceType.QualifiedName;
@@ -328,12 +334,14 @@ end;
 function TComponentRegistry.HasComponent(componentType: PTypeInfo): Boolean;
 begin
   TArgument.CheckNotNull(componentType, 'componentType');
+
   Result := fModels.ContainsKey(componentType);
 end;
 
 function TComponentRegistry.HasService(serviceType: PTypeInfo): Boolean;
 begin
   TArgument.CheckNotNull(serviceType, 'serviceType');
+
   Result := fServiceTypeMappings.ContainsKey(serviceType);
 end;
 
@@ -348,6 +356,7 @@ var
   model: TComponentModel;
 begin
   TArgument.CheckNotNull(serviceType, 'serviceType');
+
   Result := fServiceNameMappings.TryGetValue(name, model) and
     model.HasService(serviceType);
 end;

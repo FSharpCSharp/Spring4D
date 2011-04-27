@@ -49,7 +49,6 @@ resourcestring
   SNullableTypeHasNoValue         = 'Invalid operation, Nullable type has no value.';
   SCannotAssignPointerToNullable  = 'Cannot assigned non-null pointer to nullable type.';
   STypeNotRegistered              = '%s was not registered.';
-  SCannotModifyReadOnlyValue      = 'Cannot modify read-only value.';
   SServiceNotExists               = 'The service "%s" does not exist.';
   STimeoutException               = 'Timeout';
   SInsufficientMemoryException    = 'Insufficient memory.';
@@ -65,12 +64,6 @@ resourcestring
 
   SBadObjectInheritance = 'Argument %s of type %s does not inherit from type %s.';
 
-  SInvalidLocPath = 'Invalid path - expected a name.';
-  SUnexpectedToken = 'Expected %s but got %s.';
-  SInvalidPathSyntax = 'Invalid path syntax: expected ".", "[" or "^"';
-  SInvalidPointerType = 'Non-pointer type %s cannot be dereferenced.';
-  SCouldNotFindPath = 'Could not find path: %s';
-
   SUnknownDescription  = 'Unknown';
   SVersionDescription  = 'Version';
 //  SOSVersionStringFormat = '%S Version %s %s';
@@ -85,6 +78,62 @@ resourcestring
   STBDescription       = 'TB';
 
   {$ENDREGION}
+
+
+  {$REGION 'Spring.Collections'}
+
+  SCannotResetEnumerator = 'Cannot reset the enumerator.';
+  SEnumNotStarted = 'Enum not started.';
+  SEnumEnded = 'Enum ended.';
+  SEnumEmpty = 'Invalid Operation. The enumeration is empty.';
+
+  {$ENDREGION}
+
+
+  {$REGION 'Spring.Helpers'}
+
+  SInvalidOperation_GetValue = 'The GetValue method works only for properties/fields.';
+  SInvalidOperation_SetValue = 'The SetValue method works only for properties/fields.';
+  SInvalidGuidArray = 'Byte array for GUID must be exactly %s bytes long';
+
+  {$ENDREGION}
+
+
+  {$REGION 'Spring.Reflection'}
+
+  // Value Converters
+  SCouldNotConvertValue = 'Could not convert value: %s to %s.';
+  SEmptySourceTypeKind = 'Empty source TypeKind argument set.';
+  SEmptyTargetTypeKind = 'Empty target TypeKind argument set.';
+
+  // Value Expressions
+  SCannotModifyReadOnlyValue      = 'Cannot modify read-only value.';
+  SInvalidExpressionPath          = 'Invalid expression path %s.';
+  SUnexpectedToken                = 'Unexpected expression part %s.';
+  SInvalidExpressionSyntax        = 'Invalid expression syntax %s.';
+  SCouldNotFindPath               = 'Coould not find expression path %s.';
+
+  {$ENDREGION}
+
+
+  {$REGION 'Spring.Cryptography'}
+
+  SIllegalBlockSize = 'Illegal block size: %d.';
+  SIllegalKeySize = 'Illegal key size: %d.';
+  SIllegalIVSize = 'Illegal IV size: %d.';
+  SPaddingModeMissing = 'Padding mode is missing';
+  SInvalidCipherText = 'Illegal cipher text.';
+  SNotSupportedCipherMode = 'The cipher mode "%s" is not supported.';
+
+  {$ENDREGION}
+
+
+  {$REGION 'Spring.Numerics'}
+
+  SInvalidArgumentFormat = 'Invalid format for argument "%s".';
+
+  {$ENDREGION}
+
 
   {$REGION 'Spring.Utils'}
 
@@ -132,48 +181,6 @@ resourcestring
   SIllegalArgumentQuantity = 'Invalid argument "quantity": %d.';
 
   SInvalidOperationCurrent = 'Invalid operation. The enumerable collection is empty.';
-
-  {$ENDREGION}
-
-  {$REGION 'Spring.Collections'}
-
-  SCannotResetEnumerator = 'Cannot reset the enumerator.';
-  SEnumNotStarted = 'Enum not started.';
-  SEnumEnded = 'Enum ended.';
-  SEnumEmpty = 'Invalid Operation. The enumeration is empty.';
-
-  {$ENDREGION}
-
-  {$REGION 'Spring.Helpers'}
-
-  SInvalidOperation_GetValue = 'The GetValue method works only for properties/fields.';
-  SInvalidOperation_SetValue = 'The SetValue method works only for properties/fields.';
-  SInvalidGuidArray = 'Byte array for GUID must be exactly %s bytes long';
-
-  {$ENDREGION}
-
-  {$REGION 'Spring.ValueConverters'}
-
-  SCouldNotConvertValue = 'Could not convert value: %s to %s.';
-  SEmptySourceTypeKind = 'Empty source TypeKind argument set.';
-  SEmptyTargetTypeKind = 'Empty target TypeKind argument set.';
-
-  {$ENDREGION}
-
-  {$REGION 'Spring.Cryptography'}
-
-  SIllegalBlockSize = 'Illegal block size: %d.';
-  SIllegalKeySize = 'Illegal key size: %d.';
-  SIllegalIVSize = 'Illegal IV size: %d.';
-  SPaddingModeMissing = 'Padding mode is missing';
-  SInvalidCipherText = 'Illegal cipher text.';
-  SNotSupportedCipherMode = 'The cipher mode "%s" is not supported.';
-
-  {$ENDREGION}
-
-  {$REGION 'Spring.Numerics'}
-
-  SInvalidArgumentFormat = 'Invalid format for argument "%s".';
 
   {$ENDREGION}
 

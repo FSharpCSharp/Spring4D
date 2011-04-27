@@ -52,10 +52,37 @@ type
   IStack<T> = interface;
   IQueue<T> = interface;
 
+  /// <summary>
+  /// Represents an iterator over a generic enumerable collection.
+  /// </summary>
   IEnumerator<T> = interface(IInterface)
+    /// <summary>
+    /// The getter of the <see cref="Current" /> property.
+    /// </summary>
+    /// <exception cref="Spring|EInvalidOperation">
+    /// The enumerator has not been started or ended.
+    /// </exception>
     function GetCurrent: T;
+
+    /// <summary>
+    /// Advances the enumerator to the next element of the collection.
+    /// </summary>
+    /// <exception cref="Spring|EInvalidOperation">
+    /// The collection was modified after the enumerator was created.
+    /// </exception>
     function MoveNext: Boolean;
+
+    /// <exception cref="Spring|EInvalidOperation">
+    /// The collection was modified after the enumerator was created.
+    /// </exception>
+    /// <exception cref="Spring|ENotSupportedException">
+    /// The Reset method is not supported.
+    /// </exception>
     procedure Reset;
+
+    /// <summary>
+    /// Gets the current element in the collection.
+    /// </summary>
     property Current: T read GetCurrent;
   end;
 
@@ -68,7 +95,6 @@ type
 
     Concat
 
-    Any, All
     EqualsTo
 
     Skip, SkipWhile
@@ -91,7 +117,10 @@ type
   /// Provides limited LINQ-like enumerable extension methods for
   ///	<c>IEnumerable{T}</c>.
   /// </summary>
-  IEnumerable<T> = interface(IInterface)
+  /// <seealso href="http://msdn.microsoft.com/en-us/magazine/cc700332.aspx">
+  /// The LINQ Enumerable Class
+  /// </seealso>
+  IEnumerable<T> = interface
     /// <summary>
     /// Returns an enumerator that iterates through a collection.
     /// </summary>
@@ -143,20 +172,59 @@ type
     ///	condition or a default value if no such element is found.</summary>
     function LastOrDefault(const predicate: TPredicate<T>): T; overload;
 
+    {$REGION 'Single, SingleDefault'}
+
+    (*
+
+    ///	<summary>Returns the only element of a sequence, and throws an
+    ///	exception if there is not exactly one element in the
+    ///	sequence.</summary>
+    function Single: T; overload;
+
+    ///	<summary>Returns the only element of a sequence, and throws an
+    ///	exception if there is not exactly one element in the
+    ///	sequence.</summary>
+    function Single(const predicate: TPredicate<T>): T; overload;
+
+    ///	<summary>Returns the only element of a sequence, or a default value if
+    ///	the sequence is empty; this method throws an exception if there is more
+    ///	than one element in the sequence.</summary>
+    function SingleOrDefault: T; overload;
+
+    ///	<summary>Returns the only element of a sequence that satisfies a
+    ///	specified condition or a default value if no such element exists; this
+    ///	method throws an exception if more than one element satisfies the
+    ///	condition.</summary>
+    function SingleOrDefault(const predicate: TPredicate<T>): T; overload;
+
+    //*)
+
+    {$ENDREGION}
+
+    ///	<summary>
+    /// Determines whether all elements of a sequence satisfy a condition.
+    ///	</summary>
+    function All(const predicate: TPredicate<T>): Boolean;
+
+    ///	<summary>
+    /// Determines whether any element of a sequence satisfies a condition.
+    ///	</summary>
+    function Any(const predicate: TPredicate<T>): Boolean;
+
     ///	<summary>Filters a sequence of values based on a predicate.</summary>
     function Where(const predicate: TPredicate<T>): IEnumerable<T>;
 
-    ///	<summary>Determines whether a sequence contains a specified element by
-    ///	using the default equality comparer.</summary>
+    ///	<summary>
+    /// Determines whether a sequence contains a specified element by
+    ///	using the default equality comparer.
+    /// </summary>
     function Contains(const item: T): Boolean; overload;
 
-    ///	<summary>Determines whether a sequence contains a specified element by
-    ///	using a specified <c>IEqualityComparer{T}.</c></summary>
+    ///	<summary>
+    /// Determines whether a sequence contains a specified element by
+    ///	using a specified <c>IEqualityComparer{T}.</c>
+    /// </summary>
     function Contains(const item: T; const comparer: IEqualityComparer<T>): Boolean; overload;
-
-    ///	<summary>Determines whether a sequence contains a specified element by
-    ///	using the default equality comparer.</summary>
-//    function ContainsRange(const collection: IEnumerable<T>): Boolean; overload;
 
     /// <summary>
     /// Performs the specified action on each element of a sequence.
@@ -173,8 +241,47 @@ type
     /// </summary>
     procedure ForEach(const action: TActionMethod<T>); overload;
 
-    ///	<summary>Creates a new array which is filled with the elements in the
-    ///	collection.</summary>
+    {$REGION 'Skip, SkipWhile, Take, TakeWhile'}
+
+    (*
+
+    /// <summary>
+    /// Bypasses a specified number of elements in a sequence and then returns the remaining elements.
+    /// </summary>
+    function Skip(count: Integer): IEnumerable<T>;
+
+    /// <summary>
+    /// Bypasses elements in a sequence as long as a specified condition is true and then returns the remaining elements.
+    /// </summary>
+    function SkipWhile(const predicate: TPredicate<T>): IEnumerable<T>; overload;
+
+    /// <summary>
+    /// Bypasses elements in a sequence as long as a specified condition is true and then returns the remaining elements. The element's index is used in the logic of the predicate function.
+    /// </summary>
+    function SkipWhile(const predicate: TFunc<T,Integer,Boolean>): IEnumerable<T>; overload;
+
+    /// <summary>
+    /// Returns a specified number of contiguous elements from the start of a sequence.
+    /// </summary>
+    function Take(count: Integer): IEnumerable<T>;
+
+    /// <summary>
+    /// Returns elements from a sequence as long as a specified condition is true.
+    /// </summary>
+    function TakeWhile(const predicate: TPredicate<T>): IEnumerable<T>; overload;
+
+    /// <summary>
+    /// Returns elements from a sequence as long as a specified condition is true. The element's index is used in the logic of the predicate function.
+    /// </summary>
+    function TakeWhile(const predicate: TFunc<T,Integer,Boolean>): IEnumerable<T>; overload;
+
+    //*)
+
+    {$ENDREGION}
+
+    ///	<summary>
+    /// Creates a new array which is filled with the elements in the collection.
+    ///	</summary>
     function ToArray: TArray<T>;
 
     ///	<summary>
@@ -182,10 +289,19 @@ type
     /// </summary>
     function ToList: IList<T>;
 
+    /// <summary>
+    /// The getter of the <see cref="Count" /> property.
+    /// </summary>
     function GetCount: Integer;
+
+    /// <summary>
+    /// The getter of the <see cref="IsEmpty" /> property.
+    /// </summary>
     function GetIsEmpty: Boolean;
 
-    ///	<summary>Gets the number of elements in the collection.</summary>
+    ///	<summary>
+    /// Gets the number of elements in the collection.
+    /// </summary>
     property Count: Integer read GetCount;
 
     ///	<summary>
@@ -314,6 +430,9 @@ type
     property OwnsObjects: Boolean read GetOwnsObjects write SetOwnsObjects;
   end;
 
+  /// <summary>
+  /// Defines the lifetime style of an instance.
+  /// </summary>
   TOwnershipType = (
     otReference,
     otOwned
@@ -364,6 +483,8 @@ type
     function Where(const predicate: TPredicate<T>): IEnumerable<T>; virtual;
     function Contains(const item: T): Boolean; overload; virtual;
     function Contains(const item: T; const comparer: IEqualityComparer<T>): Boolean; overload; virtual;
+    function All(const predicate: TPredicate<T>): Boolean;
+    function Any(const predicate: TPredicate<T>): Boolean;
     procedure ForEach(const action: TAction<T>); overload;
     procedure ForEach(const action: TActionProc<T>); overload;
     procedure ForEach(const action: TActionMethod<T>); overload;
@@ -574,6 +695,16 @@ type
   {$ENDREGION}
   end;
 
+  /// <summary>
+  /// Internal type.
+  /// </summary>
+  /// <exclude />
+  TStackAccess<T> = class(TEnumerable<T>)
+  public
+    fCount: Integer;
+    fItems: array of T;
+  end;
+
   TStack<T> = class(TEnumerableBase<T>, IStack<T>)
   private
     type
@@ -674,16 +805,6 @@ type
     property Current: T read GetCurrent;
   end;
 
-  /// <summary>
-  /// Internal type.
-  /// </summary>
-  /// <exclude/>
-  TStackAccess<T> = class(TEnumerable<T>)
-  public
-    fCount: Integer;
-    fItems: array of T;
-  end;
-
   {$REGION 'Documentation'}
   ///	<summary>Provides static methods to create an instance of various
   ///	interfaced generic collections such as <c>IList{T}</c>,
@@ -710,6 +831,10 @@ type
 
     class function CreateQueue<T>: IQueue<T>; overload;
     class function CreateQueue<T: class>(ownsObjects: Boolean): IQueue<T>; overload;
+
+//    class function Empty<T>: IEnumerable<T>;
+//    class function &Repeat<T>(count: Integer): IEnumerable<T>;
+//    class function Range(start, count: Integer): IEnumerable<Integer>;
   end;
 
 const
@@ -841,6 +966,32 @@ begin
   TArgument.CheckNotNull<T>(item, 'item');
   comparer := TEqualityComparer<T>.Default;
   Result := Contains(item, comparer);
+end;
+
+function TEnumerableBase<T>.All(const predicate: TPredicate<T>): Boolean;
+var
+  item: T;
+begin
+  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
+  Result := True;
+  for item in Self do
+  begin
+    if not predicate(item) then
+      Exit(False);
+  end;
+end;
+
+function TEnumerableBase<T>.Any(const predicate: TPredicate<T>): Boolean;
+var
+  item: T;
+begin
+  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
+  Result := False;
+  for item in Self do
+  begin
+    if predicate(item) then
+      Exit(True);
+  end;
 end;
 
 function TEnumerableBase<T>.Contains(const item: T;

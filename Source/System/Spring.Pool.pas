@@ -182,6 +182,7 @@ end;
 procedure TSimpleObjectPool.ReleaseInstance(instance: TObject);
 begin
   TArgument.CheckNotNull(instance, 'instance');
+
   Lock(fActiveList,
     procedure
     begin

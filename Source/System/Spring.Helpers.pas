@@ -636,6 +636,7 @@ var
   i: Integer;
 begin
   TArgument.CheckNotNull(strings, 'strings');
+
   strings.BeginUpdate;
   try
     for i := 0 to Count - 1 do
@@ -652,6 +653,7 @@ var
   i: Integer;
 begin
   TArgument.CheckNotNull(strings, 'strings');
+
   strings.BeginUpdate;
   try
     for i := 0 to Count - 1 do
@@ -777,6 +779,7 @@ end;
 procedure TCollectionHelper.ExecuteUpdate(proc: TProc);
 begin
   TArgument.CheckNotNull(Assigned(proc), 'proc');
+
   BeginUpdate;
   try
     Clear;

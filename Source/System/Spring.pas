@@ -120,8 +120,8 @@ type
   {$REGION 'Documentation'}
   ///	<summary>Provides static methods to check arguments and raise argument
   ///	exceptions.</summary>
-  ///	<remarks>It's recommended that all arguments of public methods, including
-  ///	global routines, class and record methods, should be checked.</remarks>
+  ///	<remarks>It's recommended that all arguments of public methods of
+  ///	global routines, class and record methods should be checked.</remarks>
   {$ENDREGION}
   TArgument = class
   strict private
@@ -142,12 +142,10 @@ type
     class procedure CheckNotNull(p: Pointer; const argumentName: string); overload; static; inline;
     class procedure CheckNotNull(const intf: IInterface; const argumentName: string); overload; static; inline;
     class procedure CheckNotNull(condition: Boolean; const argumentName: string); overload; static; inline;
-  {$IFNDEF DisableGenerics}
     class procedure CheckNotNull<T>(const value: T; const argumentName: string); overload; static; inline;
 
     class procedure CheckEnum<T{:enum}>(const value: T; const argumentName: string); overload; static; inline;
     class procedure CheckEnum<T{:enum}>(const value: Integer; const argumentName: string); overload; static; inline;
-  {$ENDIF}
 
     ///	<exception cref="Spring|EArgumentOutOfRangeException">Raised if the
     ///	<paramref name="index" /> is out of range.</exception>
@@ -174,24 +172,24 @@ type
   {$ENDIF}
     class function IsNullReference(const value; typeInfo: PTypeInfo): Boolean; overload; static;
 
-    ///	<summary>Raise an EArgumentException exception.</summary>
+    ///	<summary>Raises an EArgumentException exception.</summary>
     class procedure RaiseArgumentException(const msg: string); overload; static; inline;
 
-    ///	<summary>Raise an EArgumentException exception.</summary>
+    ///	<summary>Raises an EArgumentException exception.</summary>
     class procedure RaiseArgumentFormatException(const argumentName: string); overload; static; inline;
 
-    ///	<summary>Raise an EArgumentNullException exception.</summary>
+    ///	<summary>Raises an EArgumentNullException exception.</summary>
     class procedure RaiseArgumentNullException(const argumentName: string); overload; static; inline;
 
-    ///	<summary>Raise an EArgumentOutOfRangeException exception.</summary>
+    ///	<summary>Raises an EArgumentOutOfRangeException exception.</summary>
     class procedure RaiseArgumentOutOfRangeException(const argumentName: string); overload; static; inline;
 
-    ///	<summary>Raise an EInvalidEnumArgumentException exception.</summary>
+    ///	<summary>Raises an EInvalidEnumArgumentException exception.</summary>
     class procedure RaiseInvalidEnumArgumentException(const argumentName: string); overload; static; inline;
   end;
 
   /// <summary>
-  /// Represents a type alias of the TArgument class.
+  /// Represents a type alias of the <see cref="TArgument" /> class.
   /// </summary>
   TArg = TArgument;
 
@@ -224,47 +222,11 @@ type
     class function Parse<T>(const value: string): T; overload; static;
   end;
 
-  /// <summary>
-  /// Provides static methods to manipulate a variant type.
-  /// </summary>
-  TVariant = class
-//    class function IsNullOrEmpty(const value: Variant): Boolean;
-  end;
-
-  TMemory = class
-  // Comparer, Conversion, Fill
-//    class function BinToHex(const buffer: Pointer; count: Integer): string; overload; static;
-//    class function BinToHex(const buffer: Pointer; count: Integer;
-//      const prefix: string; const delimiter: string = ' '): string; overload; static;
-  end;
-
-
-  /// <summary>
-  /// Provides static methods to manipulate an array.
-  /// </summary>
-  TArray = class(Generics.Collections.TArray)
-  public
-  (*
-    class function Add<T>(var target: array of T; const value: T): Integer;
-    class procedure Reverse<T>(var target: array of T);
-    class procedure Delete<T>(var target: array of T; const index: Integer);
-    class procedure Copy<T>(const source: array of T; var dest: array of T; len: Integer); overload;
-    class function Contains<T>(const target: array of T; const value: T): Boolean;
-    class function Exists<T>(const match: TPredicate<T>): Boolean;
-    class function IndexOf<T>(const target: array of T; const value: T): Integer;
-    class function LastIndexOf<T>(const target: array of T; const value: T): Integer;
-    class function FindFirst<T>(const target: array of T; const predicate: TPredicate<T>): T;
-    class function FindLast<T>(const target: array of T; const predicate: TPredicate<T>): T;
-    class function FindAll<T>(const target: array of T; const predicate: TPredicate<T>): TArray<T>;
-    ForEach
-  //*)
-  end;
-
 
   ///	<summary>Represents a series of bytes in memory.</summary>
   ///	<remarks>
   ///	  The <c>TBuffer</c> structure is actually a wrapper of a value of
-  ///	  <c>TBytes</c> while provides some easy-going methods and properties.
+  ///	  <c>TBytes</c> while provideing some easy-going methods and properties.
   ///	  <note type="warning">This type needs to be reviewed.</note>
   ///	</remarks>
   TBuffer = record
@@ -1258,6 +1220,7 @@ var
 begin
   typeInfo := System.TypeInfo(T);
   TArgument.CheckTypeKind(typeInfo, [tkEnumeration], 'T');
+
   data := GetTypeData(typeInfo);
   Assert(data <> nil, 'data must not be nil.');
   Result := (value >= data.MinValue) and (value <= data.MaxValue);
@@ -1385,6 +1348,7 @@ end;
 constructor TBuffer.Create(size: Integer);
 begin
   TArgument.CheckRange(size >= 0, 'size');
+
   SetLength(fBytes, size);
 end;
 
@@ -1450,6 +1414,7 @@ end;
 procedure TBuffer.SaveToStream(stream: TStream);
 begin
   TArgument.CheckNotNull(stream, 'stream');
+
   stream.WriteBuffer(fBytes[0], Length(fBytes));
 end;
 
@@ -1457,6 +1422,7 @@ class procedure TBuffer.SetByte(var buffer; const index: Integer;
   const value: Byte);
 begin
   TArgument.CheckRange(index >= 0, 'index');
+
   PByte(@buffer)[index] := value;
 end;
 
@@ -1559,6 +1525,7 @@ end;
 function TBuffer.Copy(startIndex, count: Integer): TBytes;
 begin
   TArgument.CheckRange(fBytes, startIndex, count);
+
   SetLength(Result, count);
   Move(fBytes[startIndex], Result[0], count);
 end;
@@ -1576,6 +1543,7 @@ end;
 function TBuffer.Left(count: Integer): TBuffer;
 begin
   TArgument.CheckRange((count >= 0) and (count <= Size), 'count');
+
   Result := Mid(0, count);
 end;
 
@@ -1587,6 +1555,7 @@ end;
 function TBuffer.Right(count: Integer): TBuffer;
 begin
   TArgument.CheckRange((count >= 0) and (count <= Size), 'count');
+
   Result := Mid(Size - count, count);
 end;
 
@@ -1631,6 +1600,7 @@ end;
 function TBuffer.Equals(const buffer: Pointer; count: Integer): Boolean;
 begin
   TArgument.CheckRange(count >= 0, 'count');
+
   Result := (count = Self.Size) and CompareMem(Self.Memory, buffer, count);
 end;
 
@@ -1700,12 +1670,14 @@ end;
 function TBuffer.GetByteItem(const index: Integer): Byte;
 begin
   TArgument.CheckRange((index >= 0) and (index < Size), 'index');
+
   Result := fBytes[index];
 end;
 
 procedure TBuffer.SetByteItem(const index: Integer; const value: Byte);
 begin
   TArgument.CheckRange((index >= 0) and (index < Size), 'index');
+
   fBytes[index] := value;
 end;
 
@@ -1988,6 +1960,7 @@ var
   lifetimeWatcher: IInterface;
 begin
   TArgument.CheckNotNull(PPointer(@obj)^, 'obj');
+
   if obj.InheritsFrom(TInterfacedObject) then
   begin
     obj.GetInterface(IInterface, lifetimeWatcher);

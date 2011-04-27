@@ -734,6 +734,7 @@ const
   );
 begin
   TArgument.CheckNotNull(dataObject, 'dataObject');
+
   OleCheck(dataObject.GetData(f, medium));
   handle := medium.hGlobal;
   GetDroppedFiles(handle, list);
@@ -753,6 +754,7 @@ const
   );
 begin
   TArgument.CheckNotNull(list, 'list');
+
   count := DragQueryFile(dropHandle, $FFFFFFFF, nil, 0);
   try
     for i := 0 to count - 1 do

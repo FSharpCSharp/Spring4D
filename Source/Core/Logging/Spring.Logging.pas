@@ -146,6 +146,7 @@ var
   typeObj: TRttiType;
 begin
   TArgument.CheckNotNull(typeInfo, 'typeInfo');
+
   context := TRttiContext.Create;
   try
     typeObj := context.GetType(typeInfo);
