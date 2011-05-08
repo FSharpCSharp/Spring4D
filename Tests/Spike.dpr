@@ -36,40 +36,11 @@ uses
   Rtti,
   Spring,
   Spring.Collections,
-  StrUtils
+  Spring.Utils
   ;
-
-var
-  list: IStack<Integer>;
-//  logger: ILogger;
-//  s: string;
-  i : Integer;
 
 begin
   try
-    list := TStack<Integer>.Create;
-    list.Push(2);
-    list.Push(3);
-    list.Push(4);
-    for i in list do
-    begin
-      Writeln(i);
-    end;
-//    Writeln(list.Dequeue, ',', list.Dequeue);
-//    LoggerManager.Configure('logging.xml');
-//    DefaultLogger.Info('Hello');
-//    logger := LoggerManager.GetLogger('Spring');
-////    for i := 0 to 100 do
-////    begin
-//      logger.Debug('Debug');
-//      logger.Info('Info...');
-//      logger.Warn('WARN');
-//      logger.Error('ERROR');
-//      logger.Fatal('Õ€ Œ“ «∫∫◊÷');
-//      logger := LoggerManager.GetLogger('Spring.Base');
-//      logger.Debug('XX');
-//      logger.Info('YY');
-////    end;
 //    Readln(s);
   except
     on E: Exception do

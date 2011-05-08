@@ -414,10 +414,19 @@ type
     function TryPeek(out item: T): Boolean;
   end;
 
+  ICountable = interface
+    ['{CA225A9C-B6FD-4D6E-B3BD-22119CCE6C87}']
+    function GetCount: Integer;
+    function GetIsEmpty: Boolean;
+
+    property Count: Integer read GetCount;
+    property IsEmpty: Boolean read GetIsEmpty;
+  end;
+
   ///	<summary>Internal interface. Reserved for future use.</summary>
-  ICollectionItemType = interface
+  IElementType = interface
     ['{FE986DD7-41D5-4312-A2F9-94F7D9E642EE}']
-    function GetItemType: PTypeInfo;
+    function GetElementType: PTypeInfo;
   end;
 
   ICollectionOwnership = interface
@@ -457,11 +466,11 @@ type
   /// <summary>
   /// Provides a default implementation for <c>IEnumerable(T)</c> (Extension Methods).
   /// </summary>
-  TEnumerableBase<T> = class abstract(TInterfacedObject, IEnumerable<T>, ICollectionItemType)
+  TEnumerableBase<T> = class abstract(TInterfacedObject, IEnumerable<T>, IElementType)
   protected
 
-  {$REGION 'Implements ICollectionItemType'}
-    function GetItemType: PTypeInfo;
+  {$REGION 'Implements IElementType'}
+    function GetElementType: PTypeInfo;
   {$ENDREGION}
   protected
     function GetCount: Integer; virtual;
@@ -494,19 +503,22 @@ type
     property IsEmpty: Boolean read GetIsEmpty;
   end;
 
+  /// <summary>
+  /// Provides a default implementation for <c>ICollection(T)</c> (Extension Methods).
+  /// </summary>
   TCollectionBase<T> = class abstract(TEnumerableBase<T>, ICollection<T>)
   protected
     function GetIsReadOnly: Boolean; virtual;
   public
     procedure Add(const item: T); virtual; abstract;
-    procedure AddRange(const collection: array of T); overload;
-    procedure AddRange(const collection: IEnumerable<T>); overload;
-    procedure AddRange(const collection: TEnumerable<T>); overload;
+    procedure AddRange(const collection: array of T); overload; virtual;
+    procedure AddRange(const collection: IEnumerable<T>); overload; virtual;
+    procedure AddRange(const collection: TEnumerable<T>); overload; virtual;
 
     function  Remove(const item: T): Boolean; virtual; abstract;
-    procedure RemoveRange(const collection: array of T); overload;
-    procedure RemoveRange(const collection: IEnumerable<T>); overload;
-    procedure RemoveRange(const collection: TEnumerable<T>); overload;
+    procedure RemoveRange(const collection: array of T); overload; virtual;
+    procedure RemoveRange(const collection: IEnumerable<T>); overload; virtual;
+    procedure RemoveRange(const collection: TEnumerable<T>); overload; virtual;
 
     procedure Clear; virtual; abstract;
     property IsReadOnly: Boolean read GetIsReadOnly;
@@ -526,6 +538,9 @@ type
     constructor Create(const controller: IInterface);
     property Controller: IInterface read GetController;
   end;
+
+  // TListBase<T> = class(TCollectionBase<T>, IList<T>)
+  // end;
 
   TList<T> = class(TCollectionBase<T>, IList<T>, ISupportIndexedProperties)
   protected
@@ -728,6 +743,7 @@ type
   protected
     function GetCount: Integer; override;
     function GetIsEmpty: Boolean; override;
+
 //    function TryGetFirst(out value: T): Boolean; override;
 //    function TryGetLast(out value: T): Boolean; override;
   public
@@ -737,13 +753,19 @@ type
     constructor Create(stack: TGenericStack; ownership: TOwnershipType); overload;
     destructor Destroy; override;
     function GetEnumerator: IEnumerator<T>; override;
+
+    {$REGION 'Implements ICollection<T>'}
+      procedure Add(const item: T); // override;
+      function  Remove(const item: T): Boolean; // override;
+      procedure Clear;
+    {$ENDREGION}
+
     procedure Push(const item: T);
     function Pop: T;
     function Peek: T;
     function PeekOrDefault: T; overload;
     function PeekOrDefault(const predicate: TPredicate<T>): T; overload;
     function TryPeek(out item: T): Boolean;
-    procedure Clear;
     procedure TrimExcess;
   end;
 
@@ -833,7 +855,7 @@ type
     class function CreateQueue<T: class>(ownsObjects: Boolean): IQueue<T>; overload;
 
 //    class function Empty<T>: IEnumerable<T>;
-//    class function &Repeat<T>(count: Integer): IEnumerable<T>;
+//    class function &Repeat<T>(const value: T; count: Integer): IEnumerable<T>;
 //    class function Range(start, count: Integer): IEnumerable<Integer>;
   end;
 
@@ -853,7 +875,6 @@ const
     {$ENDREGION}
     function EnsureCapacity(capacity: Integer): Integer;
     procedure Shrink;
-//    procedure Grow;
     property Capacity: Integer read GetCapacity write SetCapacity;
   end;
 
@@ -1180,7 +1201,7 @@ begin
   Result := not GetEnumerator.MoveNext;
 end;
 
-function TEnumerableBase<T>.GetItemType: PTypeInfo;
+function TEnumerableBase<T>.GetElementType: PTypeInfo;
 begin
   Result := TypeInfo(T);
 end;
@@ -2103,6 +2124,23 @@ end;
 function TStack<T>.Pop: T;
 begin
   Result := fStack.Pop;
+end;
+
+procedure TStack<T>.Add(const item: T);
+begin
+  fStack.Push(item);
+end;
+
+function TStack<T>.Remove(const item: T): Boolean;
+//var
+//  stack: TStackAccess<T>;
+//  comparer: IComparer<T>;
+//  element: T;
+begin
+  // TODO: TStack<T>.Remove
+//  stack := TStackAccess<T>(fStack);
+//  comparer := TComparer<T>.Default;
+  Result := False;
 end;
 
 procedure TStack<T>.Clear;

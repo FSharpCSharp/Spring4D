@@ -44,10 +44,27 @@ uses
   ActiveX,
   ComObj,
   Rtti,
+  Generics.Collections,
   Spring,
   Spring.Utils.WinAPI;
 
 type
+  TArray = class(Generics.Collections.TArray)
+  public
+//    class function Add<T>(var target: array of T; const value: T): Integer;
+//    class procedure Delete<T>(var target: array of T; const index: Integer);
+//    class procedure Reverse<T>(var target: array of T);
+//    class procedure Copy<T>(const source: array of T; var dest: array of T; len: Integer); overload;
+//    class function Contains<T>(const target: array of T; const value: T): Boolean;
+//    class function Exists<T>(const match: TPredicate<T>): Boolean;
+//    class function IndexOf<T>(const target: array of T; const value: T): Integer;
+//    class function LastIndexOf<T>(const target: array of T; const value: T): Integer;
+//    class function FindFirst<T>(const target: array of T; const predicate: TPredicate<T>): T;
+//    class function FindLast<T>(const target: array of T; const predicate: TPredicate<T>): T;
+//    class function FindAll<T>(const target: array of T; const predicate: TPredicate<T>): TArray<T>;
+//    ForEach
+  end;
+
   /// <summary>
   /// Drive Type Enumeration
   /// </summary>
@@ -2965,7 +2982,5 @@ end;
 
 {$ENDREGION}
 
+
 end.
-
-
-
