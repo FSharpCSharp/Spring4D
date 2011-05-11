@@ -328,6 +328,10 @@ type
     procedure RemoveRange(const collection: IEnumerable<T>); overload;
     procedure RemoveRange(const collection: TEnumerable<T>); overload;
 
+// function Extract(const item: T): T; overload;
+// Ownerships: TCollectionOwnerships (coOwnsElements, coOwnsKeys, coOwnsValues)
+// OnNotify
+
     procedure Clear;
     property IsReadOnly: Boolean read GetIsReadOnly;
   end;
@@ -352,11 +356,12 @@ type
 //    procedure Exchange(index1, index2: Integer);
 //    procedure Move(currentIndex, newIndex: Integer);
 
-//    procedure Reverse;
+    procedure Reverse;
 
-//    procedure Sort; overload;
-//    procedure Sort(const comparer: IComparer<T>); overload;
-//    procedure Sort(const comparer: TComparison<T>); overload;
+    procedure Sort; overload;
+    procedure Sort(const comparer: IComparer<T>); overload;
+    procedure Sort(const comparer: TComparison<T>); overload;
+
 //    function Range(fromIndex, toIndex: Integer): IList<T>;
 //    function AsReadOnly: IList<T>;
 
@@ -605,6 +610,10 @@ type
     function IndexOf(const item: T): Integer;
     function LastIndexOf(const item: T): Integer;
     function Remove(const item: T): Boolean; override;
+    procedure Sort; overload;
+    procedure Sort(const comparer: IComparer<T>); overload;
+    procedure Sort(const comparison: TComparison<T>); overload;
+    procedure Reverse;
     property Items[index: Integer]: T read GetItem write SetItem; default;
     property IsReadOnly: Boolean read GetIsReadOnly;
   end;
@@ -1374,7 +1383,10 @@ function TList<T>.EnsureCapacity(value: Integer): Integer;
 var
   newCapacity: Integer;
 begin
-  newCapacity := Length(FItems);
+  newCapacity := Length(fItems);
+  if newCapacity >= value then
+    Exit(value);
+
   if newCapacity = 0 then
     newCapacity := value
   else
@@ -1464,6 +1476,23 @@ end;
 procedure TList<T>.RemoveAt(index: Integer);
 begin
   Delete(index);
+end;
+
+procedure TList<T>.Reverse;
+var
+  tmp: T;
+  b, e: Integer;
+begin
+  b := 0;
+  e := Count - 1;
+  while b < e do
+  begin
+    tmp := fItems[b];
+    fItems[b] := fItems[e];
+    fItems[e] := tmp;
+    Inc(b);
+    Dec(e);
+  end;
 end;
 
 function TList<T>.Extract(const item: T): T;
@@ -1680,6 +1709,24 @@ begin
   TArgument.CheckTrue(SameText(propertyName, 'Items'), propertyName);
   TArgument.CheckTrue(index.TryAsType<Integer>(indexValue), 'index');
   Self.Items[indexValue] := value.AsType<T>;
+end;
+
+procedure TList<T>.Sort;
+begin
+  TArray.Sort<T>(fItems, fComparer, 0, Count);
+end;
+
+procedure TList<T>.Sort(const comparer: IComparer<T>);
+begin
+  TArray.Sort<T>(fItems, comparer, 0, Count);
+end;
+
+procedure TList<T>.Sort(const comparison: TComparison<T>);
+var
+  comparer: IComparer<T>;
+begin
+  comparer := TComparer<T>.Construct(comparison);
+  TArray.Sort<T>(fItems, comparer, 0, Count);
 end;
 
 {$ENDREGION}
