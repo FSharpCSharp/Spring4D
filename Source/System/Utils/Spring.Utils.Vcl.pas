@@ -34,6 +34,7 @@ uses
   SysUtils,
   Controls,
   Dialogs,
+  Forms,
   DB,
   Spring;
 
@@ -121,6 +122,11 @@ type
     deprecated 'Use TrySetFocus instead.';
 
   /// <summary>
+  /// Set screen cursor as follow.
+  /// </summary>
+  procedure SetMouseCursor(const cursor: TCursor);
+
+  /// <summary>
   /// Enumerates all child components, recursively.
   /// </summary>
   /// <param name="callback">Returning false will stop the enumeration.</param>
@@ -154,6 +160,13 @@ end;
 function TryFocusControl(control: TWinControl): Boolean;
 begin
   Result := TrySetFocus(control);
+end;
+
+procedure SetMouseCursor(const cursor: TCursor);
+begin
+  TArgument.CheckNotNull(cursor, 'cursor');
+
+  Screen.Cursor := cursor;
 end;
 
 procedure EnumerateComponents(owner: TComponent; callback: TFunc<TComponent, Boolean>);
