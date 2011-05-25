@@ -87,29 +87,19 @@ type
   end;
 
   (*
-
-  ISet<T>
-  THashSet<T>
-  TSortedSet<T>
-  TSortedDictionary<TKey, TValue>
-
     Concat
 
     EqualsTo
 
     Skip, SkipWhile
     Take, TakeWhile
-
-    Single, SingleOrDefault
-    ElementAt, ElementAtOrDefault
-
-    Min, Max
-
+    
     Union, Intersect, Exclude
     Distinct
 
     OfType
     Select
+    
     OrderBy, OrderByDescending
   *)
 
@@ -172,9 +162,15 @@ type
     ///	condition or a default value if no such element is found.</summary>
     function LastOrDefault(const predicate: TPredicate<T>): T; overload;
 
-    {$REGION 'Single, SingleDefault'}
+    /// <summary>
+    /// Returns the minimum value in a sequence.
+    /// </summary>
+    function Min: T;
 
-    (*
+    /// <summary>
+    /// Returns the maximum value in a sequence.
+    /// </summary>
+    function Max: T;
 
     ///	<summary>Returns the only element of a sequence, and throws an
     ///	exception if there is not exactly one element in the
@@ -197,9 +193,16 @@ type
     ///	condition.</summary>
     function SingleOrDefault(const predicate: TPredicate<T>): T; overload;
 
-    //*)
+    /// <summary>
+    /// Returns the element at a specified index in a sequence.
+    /// </summary>
+    function ElementAt(index: Integer): T;
 
-    {$ENDREGION}
+    /// <summary>
+    /// Returns the element at a specified index in a sequence or a default value 
+    /// if the index is out of range.
+    /// </summary>
+    function ElementAtOrDefault(index: Integer): T;
 
     ///	<summary>
     /// Determines whether all elements of a sequence satisfy a condition.
@@ -478,6 +481,7 @@ type
     function GetElementType: PTypeInfo;
   {$ENDREGION}
   protected
+    function GetComparer: IComparer<T>; virtual;
     function GetCount: Integer; virtual;
     function GetIsEmpty: Boolean; virtual;
     function TryGetFirst(out value: T): Boolean; virtual;
@@ -494,6 +498,14 @@ type
     function LastOrDefault: T; overload; virtual;
     function LastOrDefault(const defaultValue: T): T; overload;
     function LastOrDefault(const predicate: TPredicate<T>): T; overload; virtual;
+    function Single: T; overload;
+    function Single(const predicate: TPredicate<T>): T; overload;
+    function SingleOrDefault: T; overload;
+    function SingleOrDefault(const predicate: TPredicate<T>): T; overload;
+    function ElementAt(index: Integer): T;
+    function ElementAtOrDefault(index: Integer): T;
+    function Min: T;
+    function Max: T;
     function Where(const predicate: TPredicate<T>): IEnumerable<T>; virtual;
     function Contains(const item: T): Boolean; overload; virtual;
     function Contains(const item: T; const comparer: IEqualityComparer<T>): Boolean; overload; virtual;
@@ -544,9 +556,6 @@ type
     property Controller: IInterface read GetController;
   end;
 
-  // TListBase<T> = class(TCollectionBase<T>, IList<T>)
-  // end;
-
   TList<T> = class(TCollectionBase<T>, IList<T>, ISupportIndexedProperties)
   protected
     type
@@ -576,6 +585,7 @@ type
     procedure SetPropertyValue(const propertyName: string; const index, value: Rtti.TValue);
   {$ENDREGION}
   protected
+    function GetComparer: IComparer<T>; override;
     procedure DoDelete(index: Integer; notification: TCollectionNotification);
     procedure Notify(const item: T; action: TCollectionNotification); virtual;
     function GetCount: Integer; override;
@@ -836,6 +846,8 @@ type
     property Current: T read GetCurrent;
   end;
 
+  //  Sum, Average
+
   {$REGION 'Documentation'}
   ///	<summary>Provides static methods to create an instance of various
   ///	interfaced generic collections such as <c>IList{T}</c>,
@@ -1041,6 +1053,46 @@ begin
   end;
 end;
 
+function TEnumerableBase<T>.ElementAt(index: Integer): T;
+var
+  enumerator: IEnumerator<T>;
+  localIndex: Integer;
+begin
+  TArgument.CheckRange(index >= 0, 'index');
+  
+  enumerator := GetEnumerator;
+  localIndex := 0;
+  while enumerator.MoveNext do
+  begin
+    if localIndex = index then
+    begin
+      Exit(enumerator.Current);
+    end;
+    Inc(localIndex);
+  end;
+  TArgument.RaiseArgumentOutOfRangeException('index');
+end;
+
+function TEnumerableBase<T>.ElementAtOrDefault(index: Integer): T;
+var
+  enumerator: IEnumerator<T>;
+  localIndex: Integer;
+begin
+  TArgument.CheckRange(index >= 0, 'index');
+
+  enumerator := GetEnumerator;
+  localIndex := 0;
+  while enumerator.MoveNext do
+  begin
+    if localIndex = index then
+    begin
+      Exit(enumerator.Current);
+    end;
+    Inc(localIndex);
+  end;
+  Result := Default(T);
+end;
+
 function TEnumerableBase<T>.TryGetFirst(out value: T): Boolean;
 var
   enumerator: IEnumerator<T>;
@@ -1129,6 +1181,7 @@ var
   item: T;
 begin
   TArgument.CheckNotNull(Assigned(action), 'action');
+
   for item in Self do
   begin
     action(item);
@@ -1169,10 +1222,175 @@ begin
   Result := Where(predicate).LastOrDefault;
 end;
 
+function TEnumerableBase<T>.Max: T;
+var
+  comparer: IComparer<T>;
+  hasElement: Boolean;
+  item: T;
+begin
+  comparer := GetComparer;
+  hasElement := False;
+  for item in Self do
+  begin
+    if hasElement then
+    begin
+      if comparer.Compare(item, Result) > 0 then
+      begin
+        Result := item;
+      end;
+    end
+    else 
+    begin
+      hasElement := True;
+      Result := item;
+    end;
+  end;
+  if not hasElement then
+  begin
+    raise EInvalidOperation.CreateRes(@SSequenceIsEmpty);
+  end;
+end;
+
+function TEnumerableBase<T>.Min: T;
+var
+  comparer: IComparer<T>;
+  hasElement: Boolean;
+  item: T;
+begin
+  comparer := GetComparer;
+  hasElement := False;
+  for item in Self do
+  begin
+    if hasElement then
+    begin
+      if comparer.Compare(item, Result) < 0 then
+      begin
+        Result := item;
+      end;
+    end
+    else 
+    begin
+      hasElement := True;
+      Result := item;
+    end;
+  end;
+  if not hasElement then
+  begin
+    raise EInvalidOperation.CreateRes(@SSequenceIsEmpty);
+  end;
+end;
+
+function TEnumerableBase<T>.Single: T;
+var
+  enumerator: IEnumerator<T>;
+  item: T;
+begin
+  enumerator := GetEnumerator;
+  if not enumerator.MoveNext then
+  begin
+    raise EInvalidOperation.CreateRes(@SSequenceIsEmpty);
+  end;
+  Result := enumerator.Current;
+  if enumerator.MoveNext then
+  begin
+    raise EInvalidOperation.CreateRes(@SSequenceContainsMoreThanOneElement);
+  end;
+end;
+
+function TEnumerableBase<T>.Single(const predicate: TPredicate<T>): T;
+var
+  enumerator: IEnumerator<T>;
+  item: T;
+  isSatisfied: Boolean;
+begin
+  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
+  
+  enumerator := GetEnumerator;
+  
+  if not enumerator.MoveNext then
+  begin
+    raise EInvalidOperation.CreateRes(@SSequenceIsEmpty);
+  end;
+  
+  Result := enumerator.Current;
+  isSatisfied := predicate(Result);
+  
+  while enumerator.MoveNext do
+  begin
+    Result := enumerator.Current;
+    if predicate(Result) then
+    begin
+      if isSatisfied then
+      begin
+        raise EInvalidOperation.CreateRes(@SMoreThanOneElementSatisfied);
+      end;
+      isSatisfied := True;
+    end;
+  end;  
+  if not isSatisfied then
+  begin
+    raise EInvalidOperation.CreateRes(@SNoElementSatisfiesCondition);
+  end;
+end;
+
+function TEnumerableBase<T>.SingleOrDefault: T;
+var
+  enumerator: IEnumerator<T>;
+  item: T;
+begin
+  enumerator := GetEnumerator;
+  if not enumerator.MoveNext then
+  begin
+    Exit(Default(T));
+  end;
+  Result := enumerator.Current;
+  if enumerator.MoveNext then
+  begin
+    raise EInvalidOperation.CreateRes(@SSequenceContainsMoreThanOneElement);
+  end;
+end;
+
+function TEnumerableBase<T>.SingleOrDefault(const predicate: TPredicate<T>): T;
+var
+  enumerator: IEnumerator<T>;
+  item: T;
+  isSatisfied: Boolean;
+begin
+  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
+  
+  enumerator := GetEnumerator;
+  if not enumerator.MoveNext then
+  begin
+    Exit(Default(T));
+  end;
+  
+  Result := enumerator.Current;
+  isSatisfied := predicate(Result);
+  
+  while enumerator.MoveNext do
+  begin
+    Result := enumerator.Current;
+    if predicate(Result) then
+    begin
+      if isSatisfied then
+      begin
+        raise EInvalidOperation.CreateRes(@SMoreThanOneElementSatisfied);
+      end;
+      isSatisfied := True;
+    end;
+  end;  
+
+  if not isSatisfied then
+  begin
+    Result := Default(T);
+  end;
+end;
+
 function TEnumerableBase<T>.Where(
   const predicate: TPredicate<T>): IEnumerable<T>;
 begin
   TArgument.CheckNotNull(Assigned(predicate), 'predicate');
+  
   Result := TEnumerableWithPredicate<T>.Create(Self, predicate);
 end;
 
@@ -1191,6 +1409,11 @@ begin
   begin
     Result.Add(enumerator.Current);
   end;
+end;
+
+function TEnumerableBase<T>.GetComparer: IComparer<T>;
+begin
+  Result := TComparer<T>.Default;
 end;
 
 function TEnumerableBase<T>.GetCount: Integer;
@@ -1637,6 +1860,11 @@ end;
 function TList<T>.GetCapacity: Integer;
 begin
   Result := Length(fItems);
+end;
+
+function TList<T>.GetComparer: IComparer<T>;
+begin
+  Result := fComparer;
 end;
 
 function TList<T>.GetCount: Integer;
