@@ -90,9 +90,6 @@ type
     Concat
 
     EqualsTo
-
-    Skip, SkipWhile
-    Take, TakeWhile
     
     Union, Intersect, Exclude
     Distinct
@@ -100,7 +97,8 @@ type
     OfType
     Select
     
-    OrderBy, OrderByDescending
+    GroupBy
+    OrderBy, OrderByDescending, ThenBy
   *)
 
   ///	<summary>
@@ -244,10 +242,6 @@ type
     /// </summary>
     procedure ForEach(const action: TActionMethod<T>); overload;
 
-    {$REGION 'Skip, SkipWhile, Take, TakeWhile'}
-
-    (*
-
     /// <summary>
     /// Bypasses a specified number of elements in a sequence and then returns the remaining elements.
     /// </summary>
@@ -261,7 +255,7 @@ type
     /// <summary>
     /// Bypasses elements in a sequence as long as a specified condition is true and then returns the remaining elements. The element's index is used in the logic of the predicate function.
     /// </summary>
-    function SkipWhile(const predicate: TFunc<T,Integer,Boolean>): IEnumerable<T>; overload;
+    function SkipWhile(const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>; overload;
 
     /// <summary>
     /// Returns a specified number of contiguous elements from the start of a sequence.
@@ -274,14 +268,11 @@ type
     function TakeWhile(const predicate: TPredicate<T>): IEnumerable<T>; overload;
 
     /// <summary>
-    /// Returns elements from a sequence as long as a specified condition is true. The element's index is used in the logic of the predicate function.
+    /// Returns elements from a sequence as long as a specified condition is true. 
+    /// The element's index is used in the logic of the predicate function.
     /// </summary>
-    function TakeWhile(const predicate: TFunc<T,Integer,Boolean>): IEnumerable<T>; overload;
-
-    //*)
-
-    {$ENDREGION}
-
+    function TakeWhile(const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>; overload;
+    
     ///	<summary>
     /// Creates a new array which is filled with the elements in the collection.
     ///	</summary>
@@ -506,11 +497,17 @@ type
     function ElementAtOrDefault(index: Integer): T;
     function Min: T;
     function Max: T;
-    function Where(const predicate: TPredicate<T>): IEnumerable<T>; virtual;
     function Contains(const item: T): Boolean; overload; virtual;
     function Contains(const item: T; const comparer: IEqualityComparer<T>): Boolean; overload; virtual;
     function All(const predicate: TPredicate<T>): Boolean;
     function Any(const predicate: TPredicate<T>): Boolean;
+    function Where(const predicate: TPredicate<T>): IEnumerable<T>; virtual;
+    function Skip(count: Integer): IEnumerable<T>;
+    function SkipWhile(const predicate: TPredicate<T>): IEnumerable<T>; overload;
+    function SkipWhile(const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>; overload;
+    function Take(count: Integer): IEnumerable<T>;
+    function TakeWhile(const predicate: TPredicate<T>): IEnumerable<T>; overload;
+    function TakeWhile(const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>; overload;
     procedure ForEach(const action: TAction<T>); overload;
     procedure ForEach(const action: TActionProc<T>); overload;
     procedure ForEach(const action: TActionMethod<T>); overload;
@@ -875,7 +872,7 @@ type
     class function CreateQueue<T>: IQueue<T>; overload;
     class function CreateQueue<T: class>(ownsObjects: Boolean): IQueue<T>; overload;
 
-//    class function Empty<T>: IEnumerable<T>;
+    class function Empty<T>: IEnumerable<T>;
 //    class function &Repeat<T>(const value: T; count: Integer): IEnumerable<T>;
 //    class function Range(start, count: Integer): IEnumerable<Integer>;
   end;
@@ -1391,7 +1388,49 @@ function TEnumerableBase<T>.Where(
 begin
   TArgument.CheckNotNull(Assigned(predicate), 'predicate');
   
-  Result := TEnumerableWithPredicate<T>.Create(Self, predicate);
+  Result := TWhereEnumerable<T>.Create(Self, predicate);
+end;
+
+function TEnumerableBase<T>.Skip(count: Integer): IEnumerable<T>;
+begin
+  Result := TSkipEnumerable<T>.Create(Self, count);
+end;
+
+function TEnumerableBase<T>.SkipWhile(
+  const predicate: TPredicate<T>): IEnumerable<T>;
+begin
+  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
+
+  Result := TSkipWhileEnumerable<T>.Create(Self, predicate);
+end;
+
+function TEnumerableBase<T>.SkipWhile(
+  const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>;
+begin
+  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
+
+  Result := TSkipWhileIndexEnumerable<T>.Create(Self, predicate);
+end;
+
+function TEnumerableBase<T>.Take(count: Integer): IEnumerable<T>;
+begin
+  Result := TTakeEnumerable<T>.Create(Self, count);
+end;
+
+function TEnumerableBase<T>.TakeWhile(
+  const predicate: TPredicate<T>): IEnumerable<T>;
+begin
+  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
+
+  Result := TTakeWhileEnumerable<T>.Create(Self, predicate);
+end;
+
+function TEnumerableBase<T>.TakeWhile(
+  const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>;
+begin
+  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
+
+  Result := TTakeWhileIndexEnumerable<T>.Create(Self, predicate);
 end;
 
 function TEnumerableBase<T>.ToArray: TArray<T>;
@@ -2762,6 +2801,11 @@ var
 begin
   stack := TObjectStack<T>.Create(ownsObjects);
   Result := TStack<T>.Create(stack, otOwned);
+end;
+
+class function TCollections.Empty<T>: IEnumerable<T>;
+begin
+  Result := TNullEnumerable<T>.Create;
 end;
 
 class function TCollections.CreateQueue<T>: IQueue<T>;
