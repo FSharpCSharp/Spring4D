@@ -87,7 +87,6 @@ type
   end;
 
   (*
-    Concat
 
     Distinct
 
@@ -262,6 +261,11 @@ type
     /// The element's index is used in the logic of the predicate function.
     /// </summary>
     function TakeWhile(const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>; overload;
+
+    /// <summary>
+    /// Concatenates two sequences.
+    /// </summary>
+    function Concat(const collection: IEnumerable<T>): IEnumerable<T>;
 
     /// <summary>
     /// Performs the specified action on each element of a sequence.
@@ -454,7 +458,7 @@ type
   end;
 
   /// <summary>
-  /// Defines the lifetime style of an instance.
+  /// Defines the ownership style of an instance.
   /// </summary>
   TOwnershipType = (
     otReference,
@@ -525,6 +529,7 @@ type
     function Take(count: Integer): IEnumerable<T>;
     function TakeWhile(const predicate: TPredicate<T>): IEnumerable<T>; overload;
     function TakeWhile(const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>; overload;
+    function Concat(const collection: IEnumerable<T>): IEnumerable<T>;
     procedure ForEach(const action: TAction<T>); overload;
     procedure ForEach(const action: TActionProc<T>); overload;
     procedure ForEach(const action: TActionMethod<T>); overload;
@@ -1031,6 +1036,7 @@ var
   item: T;
 begin
   TArgument.CheckNotNull(Assigned(predicate), 'predicate');
+
   Result := True;
   for item in Self do
   begin
@@ -1044,12 +1050,21 @@ var
   item: T;
 begin
   TArgument.CheckNotNull(Assigned(predicate), 'predicate');
+
   Result := False;
   for item in Self do
   begin
     if predicate(item) then
       Exit(True);
   end;
+end;
+
+function TEnumerableBase<T>.Concat(
+  const collection: IEnumerable<T>): IEnumerable<T>;
+begin
+  TArgument.CheckNotNull(collection, 'collection');
+
+  Result := TConcatEnumerable<T>.Create(Self, collection);
 end;
 
 function TEnumerableBase<T>.Contains(const item: T;

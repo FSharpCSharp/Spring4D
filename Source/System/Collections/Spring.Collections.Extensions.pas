@@ -211,6 +211,28 @@ type
     function GetEnumerator: IEnumerator<T>; override;
   end;
 
+  TConcatEnumerable<T> = class(TEnumerableBase<T>)
+  private
+    type
+      TEnumerator = class(TEnumeratorBase<T>)
+      private
+        fFirst: IEnumerator<T>;
+        fSecond: IEnumerator<T>;
+        fCurrentEnumerator: IEnumerator<T>;
+      protected
+        function GetCurrent: T; override;
+      public
+        constructor Create(const first, second: IEnumerable<T>);
+        function MoveNext: Boolean; override;
+      end;
+  private
+    fFirst: IEnumerable<T>;
+    fSecond: IEnumerable<T>;
+  public
+    constructor Create(const first, second: IEnumerable<T>);
+    function GetEnumerator: IEnumerator<T>; override;
+  end;
+
 implementation
 
 uses
@@ -591,6 +613,47 @@ begin
     Inc(fIndex);
     fStopped := not fEnumerator.MoveNext or not fPredicate(fEnumerator.Current, fIndex);
     Result := not fStopped;
+  end;
+end;
+
+{ TConcatEnumerable<T> }
+
+constructor TConcatEnumerable<T>.Create(const first, second: IEnumerable<T>);
+begin
+  inherited Create;
+  fFirst := first;
+  fSecond := second;
+end;
+
+function TConcatEnumerable<T>.GetEnumerator: IEnumerator<T>;
+begin
+  Result := TEnumerator.Create(fFirst, fSecond);
+end;
+
+{ TConcatEnumerable<T>.TEnumerator }
+
+constructor TConcatEnumerable<T>.TEnumerator.Create(const first,
+  second: IEnumerable<T>);
+begin
+  inherited Create;
+  fFirst := first.GetEnumerator;
+  fSecond := second.GetEnumerator;
+  fCurrentEnumerator := fFirst;
+end;
+
+function TConcatEnumerable<T>.TEnumerator.GetCurrent: T;
+begin
+  Result := fCurrentEnumerator.Current;
+end;
+
+function TConcatEnumerable<T>.TEnumerator.MoveNext: Boolean;
+begin
+  Result := fCurrentEnumerator.MoveNext;
+
+  if not Result and (fCurrentEnumerator = fFirst) then
+  begin
+    fCurrentEnumerator := fSecond;
+    Result := fCurrentEnumerator.MoveNext;
   end;
 end;
 
