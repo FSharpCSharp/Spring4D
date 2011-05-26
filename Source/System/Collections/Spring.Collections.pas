@@ -89,14 +89,19 @@ type
   (*
     Concat
 
-    EqualsTo
-    
-    Union, Intersect, Exclude
     Distinct
 
-    OfType
+    Union, Intersect, Exclude
+
+    Range, Reversed
+
     Select
-    
+    OfType
+
+    ToDictionary
+
+    Aggregate
+
     GroupBy
     OrderBy, OrderByDescending, ThenBy
   *)
@@ -113,6 +118,18 @@ type
     /// Returns an enumerator that iterates through a collection.
     /// </summary>
     function GetEnumerator: IEnumerator<T>;
+
+    /// <summary>
+    /// Determines whether two sequences are equal by comparing the elements
+    /// by using the default equality comparer for their type.
+    /// </summary>
+    function EqualsTo(const collection: IEnumerable<T>): Boolean; overload;
+
+    /// <summary>
+    /// Determines whether two sequences are equal by comparing their elements
+    /// by using a specified IEqualityComparer<T>.
+    /// </summary>
+    function EqualsTo(const collection: IEnumerable<T>; const comparer: IEqualityComparer<T>): Boolean; overload;
 
     ///	<summary>
     /// Returns the first element of a sequence.
@@ -479,6 +496,8 @@ type
     function TryGetLast(out value: T): Boolean; virtual;
   public
     function GetEnumerator: IEnumerator<T>; virtual; abstract;
+    function EqualsTo(const collection: IEnumerable<T>): Boolean; overload;
+    function EqualsTo(const collection: IEnumerable<T>; const comparer: IEqualityComparer<T>): Boolean; overload;
     function First: T; overload; virtual;
     function First(const predicate: TPredicate<T>): T; overload; virtual;
     function FirstOrDefault: T; overload; virtual;
@@ -1088,6 +1107,37 @@ begin
     Inc(localIndex);
   end;
   Result := Default(T);
+end;
+
+function TEnumerableBase<T>.EqualsTo(const collection: IEnumerable<T>): Boolean;
+begin
+  Result := EqualsTo(collection, TEqualityComparer<T>.Default);
+end;
+
+function TEnumerableBase<T>.EqualsTo(const collection: IEnumerable<T>;
+  const comparer: IEqualityComparer<T>): Boolean;
+var
+  e1, e2: IEnumerator<T>;
+  hasNext: Boolean;
+begin
+  TArgument.CheckNotNull(collection, 'collection');
+  TArgument.CheckNotNull(Assigned(comparer), 'comparer');
+
+  e1 := GetEnumerator;
+  e2 := collection.GetEnumerator;
+
+  while True do
+  begin
+    hasNext := e1.MoveNext;
+    if hasNext <> e2.MoveNext then
+      Exit(False)
+    else if not hasNext then
+      Exit(True);
+    if hasNext and not comparer.Equals(e1.Current, e2.Current) then
+    begin
+      Exit(False);
+    end;
+  end;
 end;
 
 function TEnumerableBase<T>.TryGetFirst(out value: T): Boolean;
