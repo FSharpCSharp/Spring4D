@@ -772,6 +772,20 @@ type
 
   {$ENDREGION}
 
+  /// <summary>
+  /// Provides static methods to create various string predicates.
+  /// </summary>
+  TStringMatchers = class
+  public
+    class function ContainsText(const s: string): TPredicate<string>;
+    class function StartsText(const s: string): TPredicate<string>;
+    class function EndsText(const s: string): TPredicate<string>;
+    class function SameText(const s: string): TPredicate<string>;
+    class function InStrings(const strings: TStrings): TPredicate<string>;
+    class function InArray(const collection: array of string): TPredicate<string>;
+    class function InCollection(const collection: IEnumerable<string>): TPredicate<string>; overload;
+  end;
+
 
   {$REGION 'Routines'}
 
@@ -2931,6 +2945,92 @@ begin
     Result := Result + p * Trunc(IntPower(base, Length(s) - i));
   end;
 end;
+
+{$ENDREGION}
+
+
+{$REGION 'TStringMatchers'}
+
+class function TStringMatchers.ContainsText(const s: string): TPredicate<string>;
+begin
+  Result :=
+    function (const value: string): Boolean
+    begin
+      Result := StrUtils.ContainsText(value, s);
+    end;
+end;
+
+class function TStringMatchers.StartsText(const s: string): TPredicate<string>;
+begin
+  Result :=
+    function (const value: string): Boolean
+    begin
+      Result := StrUtils.StartsText(s, value);
+    end;
+end;
+
+class function TStringMatchers.EndsText(const s: string): TPredicate<string>;
+begin
+  Result :=
+    function (const value: string): Boolean
+    begin
+      Result := StrUtils.EndsText(s, value);
+    end;
+end;
+
+class function TStringMatchers.SameText(const s: string): TPredicate<string>;
+begin
+  Result :=
+    function (const value: string): Boolean
+    begin
+      Result := SysUtils.SameText(s, value);
+    end;
+end;
+
+class function TStringMatchers.InArray(
+  const collection: array of string): TPredicate<string>;
+var
+  localArray: TArray<string>;
+  i: Integer;
+begin
+  SetLength(localArray, Length(collection));
+  for i := 0 to High(collection) do
+    localArray[i] := collection[i];
+
+  Result :=
+    function (const value: string): Boolean
+    var
+      s: string;
+    begin
+      for s in localArray do
+      begin
+        if SysUtils.SameText(s, value) then
+          Exit(True);
+      end;
+      Result := False;
+    end;
+end;
+
+class function TStrTStringMatcherstrings(
+  const strings: TStrings): TPredicate<string>;
+begin
+  Result :=
+    function (const value: string): Boolean
+    begin
+      Result := strings.IndexOf(value) > -1;
+    end;
+end;
+
+class function TStrTStringMatchersollection(
+  const collection: IEnumerable<string>): TPredicate<string>;
+begin
+  Result :=
+    function (const value: string): Boolean
+    begin
+      Result := collection.Contains(value);
+    end;
+end;
+
 
 {$ENDREGION}
 
