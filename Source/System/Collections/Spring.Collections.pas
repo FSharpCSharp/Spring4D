@@ -360,7 +360,6 @@ type
     procedure InsertRange(index: Integer; const collection: IEnumerable<T>); overload;
     procedure InsertRange(index: Integer; const collection: TEnumerable<T>); overload;
 
-    procedure RemoveAt(index: Integer); deprecated 'Use Delete(index) instead.';
     procedure Delete(index: Integer);
     procedure DeleteRange(startIndex, count: Integer);
 
@@ -373,7 +372,6 @@ type
     procedure Sort(const comparer: IComparer<T>); overload;
     procedure Sort(const comparer: TComparison<T>); overload;
 
-//    function Range(fromIndex, toIndex: Integer): IList<T>;
 //    function AsReadOnly: IList<T>;
 
     function IndexOf(const item: T): Integer;
@@ -1935,7 +1933,7 @@ procedure TList<T>.Move(currentIndex, newIndex: Integer);
 var
   temp: T;
 begin
-  TArgument.CheckRange((newIndex >= 0) and (newIndex >= fCount));
+  TArgument.CheckRange((newIndex >= 0) and (newIndex < fCount), '');
 
   temp := fItems[currentIndex];
   fItems[currentIndex] := Default(T);
