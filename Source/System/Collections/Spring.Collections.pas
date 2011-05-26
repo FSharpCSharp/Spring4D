@@ -89,10 +89,9 @@ type
   (*
 
     Distinct
-
     Union, Intersect, Exclude
 
-    Range, Reversed
+    Range,
 
     Select
     OfType
@@ -266,6 +265,11 @@ type
     /// Concatenates two sequences.
     /// </summary>
     function Concat(const collection: IEnumerable<T>): IEnumerable<T>;
+
+    /// <summary>
+    /// Inverts the order of the elements in a sequence.
+    /// </summary>
+    function Reversed: IEnumerable<T>;
 
     /// <summary>
     /// Performs the specified action on each element of a sequence.
@@ -530,6 +534,7 @@ type
     function TakeWhile(const predicate: TPredicate<T>): IEnumerable<T>; overload;
     function TakeWhile(const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>; overload;
     function Concat(const collection: IEnumerable<T>): IEnumerable<T>;
+    function Reversed: IEnumerable<T>;
     procedure ForEach(const action: TAction<T>); overload;
     procedure ForEach(const action: TActionProc<T>); overload;
     procedure ForEach(const action: TActionMethod<T>); overload;
@@ -1340,6 +1345,16 @@ begin
   begin
     raise EInvalidOperation.CreateRes(@SSequenceIsEmpty);
   end;
+end;
+
+function TEnumerableBase<T>.Reversed: IEnumerable<T>;
+var
+  list: IList<T>;
+begin
+  list := TList<T>.Create;
+  list.AddRange(Self);
+  list.Reverse;
+  Result := list;
 end;
 
 function TEnumerableBase<T>.Single: T;
