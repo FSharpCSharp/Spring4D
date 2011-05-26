@@ -93,10 +93,10 @@ type
 
     Range
 
-    Select, SelectMany
-    OfType
+    Select<T>, SelectMany<T>
+    OfType<T>
 
-    ToDictionary
+    ToDictionary<TKey, TValue>
 
     Aggregate
 
@@ -510,8 +510,6 @@ type
     function GetIsEmpty: Boolean; virtual;
   public
     function GetEnumerator: IEnumerator<T>; virtual; abstract;
-    function EqualsTo(const collection: IEnumerable<T>): Boolean; overload;
-    function EqualsTo(const collection: IEnumerable<T>; const comparer: IEqualityComparer<T>): Boolean; overload;
     function TryGetFirst(out value: T): Boolean; virtual;
     function TryGetLast(out value: T): Boolean; virtual;
     function First: T; overload; virtual;
@@ -544,10 +542,12 @@ type
     function TakeWhile(const predicate: TPredicate<T>): IEnumerable<T>; overload;
     function TakeWhile(const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>; overload;
     function Concat(const collection: IEnumerable<T>): IEnumerable<T>;
-    function Reversed: IEnumerable<T>;
+    function Reversed: IEnumerable<T>; virtual;
     procedure ForEach(const action: TAction<T>); overload;
     procedure ForEach(const action: TActionProc<T>); overload;
     procedure ForEach(const action: TActionMethod<T>); overload;
+    function EqualsTo(const collection: IEnumerable<T>): Boolean; overload;
+    function EqualsTo(const collection: IEnumerable<T>; const comparer: IEqualityComparer<T>): Boolean; overload;
     function ToArray: TArray<T>; virtual;
     function ToList: IList<T>; virtual;
     property Count: Integer read GetCount;
@@ -603,6 +603,27 @@ type
         constructor Create(const list: TList<T>);
         function MoveNext: Boolean; override;
       end;
+
+      TReversedEnumerable = class(TEnumerableBase<T>)
+      private
+        fList: TList<T>;
+        fReference: IInterface;
+      public
+        constructor Create(const list: TList<T>);
+        function GetEnumerator: IEnumerator<T>; override;
+      end;
+
+      TReversedEnumerator = class(TEnumeratorBase<T>)
+      private
+        fList: TList<T>;
+        fCount: Integer;
+        fIndex: Integer;
+      protected
+        function GetCurrent: T; override;
+      public
+        constructor Create(const list: TList<T>);
+        function MoveNext: Boolean; override;
+      end;
   private
     fItems: array of T;
     fCount: Integer;
@@ -619,9 +640,9 @@ type
     procedure SetPropertyValue(const propertyName: string; const index, value: Rtti.TValue);
   {$ENDREGION}
   protected
-    function GetComparer: IComparer<T>; override;
     procedure DoDelete(index: Integer; notification: TCollectionNotification);
     procedure Notify(const item: T; action: TCollectionNotification); virtual;
+    function GetComparer: IComparer<T>; override;
     function GetCount: Integer; override;
     function GetIsEmpty: Boolean; override;
     property Capacity: Integer read GetCapacity write SetCapacity;
@@ -638,6 +659,7 @@ type
     function Contains(const item: T): Boolean; override;
     function ToArray: TArray<T>; override;
     function ToList: IList<T>; override;
+    function Reversed: IEnumerable<T>; override;
 
     function GetEnumerator: IEnumerator<T>; override;
 
@@ -882,8 +904,6 @@ type
     property Current: T read GetCurrent;
   end;
 
-  //  Sum, Average
-
   {$REGION 'Documentation'}
   ///	<summary>Provides static methods to create an instance of various
   ///	interfaced generic collections such as <c>IList{T}</c>,
@@ -1042,6 +1062,7 @@ var
   comparer: IEqualityComparer<T>;
 begin
   TArgument.CheckNotNull<T>(item, 'item');
+
   comparer := TEqualityComparer<T>.Default;
   Result := Contains(item, comparer);
 end;
@@ -1088,6 +1109,7 @@ var
   enumerator: IEnumerator<T>;
 begin
   TArgument.CheckNotNull<T>(item, 'item');
+
   enumerator := GetEnumerator;
   Result := False;
   while enumerator.MoveNext do
@@ -1847,6 +1869,11 @@ begin
   end;
 end;
 
+function TList<T>.Reversed: IEnumerable<T>;
+begin
+  Result := TReversedEnumerable.Create(Self);
+end;
+
 procedure TList<T>.Exchange(index1, index2: Integer);
 var
   temp: T;
@@ -1890,6 +1917,7 @@ end;
 procedure TList<T>.Delete(index: Integer);
 begin
   TArgument.CheckRange<T>(fItems, index);
+
   DoDelete(index, cnRemoved);
 end;
 
@@ -2134,6 +2162,44 @@ end;
 function TList<T>.TEnumerator.GetCurrent: T;
 begin
   Result := fList[fIndex];
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TList<T>.TReversedEnumerator'}
+
+constructor TList<T>.TReversedEnumerator.Create(const list: TList<T>);
+begin
+  inherited Create;
+  fList := list;
+  fCount := fList.Count;
+  fIndex := fCount;
+end;
+
+function TList<T>.TReversedEnumerator.GetCurrent: T;
+begin
+  Result := fList[fIndex];
+end;
+
+function TList<T>.TReversedEnumerator.MoveNext: Boolean;
+begin
+  Result := (fIndex > 0) and (fIndex <= fCount);
+  Dec(fIndex);
+end;
+
+{ TList<T>.TReversedEnumerable }
+
+constructor TList<T>.TReversedEnumerable.Create(const list: TList<T>);
+begin
+  inherited Create;
+  fList := list;
+  fReference := list;
+end;
+
+function TList<T>.TReversedEnumerable.GetEnumerator: IEnumerator<T>;
+begin
+  Result := TReversedEnumerator.Create(fList);
 end;
 
 {$ENDREGION}
