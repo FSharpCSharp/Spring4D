@@ -228,9 +228,14 @@ type
   private
     fFirst: IEnumerable<T>;
     fSecond: IEnumerable<T>;
+  protected
+    function GetCount: Integer; override;
+    function GetIsEmpty: Boolean; override;
   public
     constructor Create(const first, second: IEnumerable<T>);
     function GetEnumerator: IEnumerator<T>; override;
+    function TryGetFirst(out value: T): Boolean; override;
+    function TryGetLast(out value: T): Boolean; override;
   end;
 
 implementation
@@ -628,6 +633,26 @@ end;
 function TConcatEnumerable<T>.GetEnumerator: IEnumerator<T>;
 begin
   Result := TEnumerator.Create(fFirst, fSecond);
+end;
+
+function TConcatEnumerable<T>.GetCount: Integer;
+begin
+  Result := fFirst.Count + fSecond.Count;
+end;
+
+function TConcatEnumerable<T>.GetIsEmpty: Boolean;
+begin
+  Result := fFirst.IsEmpty and fSecond.IsEmpty;
+end;
+
+function TConcatEnumerable<T>.TryGetFirst(out value: T): Boolean;
+begin
+  Result := fFirst.TryGetFirst(value) or fSecond.TryGetFirst(value);
+end;
+
+function TConcatEnumerable<T>.TryGetLast(out value: T): Boolean;
+begin
+  Result := fSecond.TryGetLast(value) or fFirst.TryGetLast(value);
 end;
 
 { TConcatEnumerable<T>.TEnumerator }

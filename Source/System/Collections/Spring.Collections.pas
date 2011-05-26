@@ -91,9 +91,9 @@ type
     Distinct
     Union, Intersect, Exclude
 
-    Range,
+    Range
 
-    Select
+    Select, SelectMany
     OfType
 
     ToDictionary
@@ -116,6 +116,16 @@ type
     /// Returns an enumerator that iterates through a collection.
     /// </summary>
     function GetEnumerator: IEnumerator<T>;
+
+    /// <summary>
+    /// Try getting the first element.
+    /// </summary>
+    function TryGetFirst(out value: T): Boolean;
+
+    /// <summary>
+    /// Try getting the last element.
+    /// </summary>
+    function TryGetLast(out value: T): Boolean;
 
     ///	<summary>
     /// Returns the first element of a sequence.
@@ -498,12 +508,12 @@ type
     function GetComparer: IComparer<T>; virtual;
     function GetCount: Integer; virtual;
     function GetIsEmpty: Boolean; virtual;
-    function TryGetFirst(out value: T): Boolean; virtual;
-    function TryGetLast(out value: T): Boolean; virtual;
   public
     function GetEnumerator: IEnumerator<T>; virtual; abstract;
     function EqualsTo(const collection: IEnumerable<T>): Boolean; overload;
     function EqualsTo(const collection: IEnumerable<T>; const comparer: IEqualityComparer<T>): Boolean; overload;
+    function TryGetFirst(out value: T): Boolean; virtual;
+    function TryGetLast(out value: T): Boolean; virtual;
     function First: T; overload; virtual;
     function First(const predicate: TPredicate<T>): T; overload; virtual;
     function FirstOrDefault: T; overload; virtual;
@@ -614,8 +624,6 @@ type
     procedure Notify(const item: T; action: TCollectionNotification); virtual;
     function GetCount: Integer; override;
     function GetIsEmpty: Boolean; override;
-    function TryGetFirst(out value: T): Boolean; override;
-    function TryGetLast(out value: T): Boolean; override;
     property Capacity: Integer read GetCapacity write SetCapacity;
   public
     constructor Create; overload;
@@ -625,6 +633,8 @@ type
     constructor Create(const collection: TEnumerable<T>); overload;
     destructor Destroy; override;
 
+    function TryGetFirst(out value: T): Boolean; override;
+    function TryGetLast(out value: T): Boolean; override;
     function Contains(const item: T): Boolean; override;
     function ToArray: TArray<T>; override;
     function ToList: IList<T>; override;
