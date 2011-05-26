@@ -119,18 +119,6 @@ type
     /// </summary>
     function GetEnumerator: IEnumerator<T>;
 
-    /// <summary>
-    /// Determines whether two sequences are equal by comparing the elements
-    /// by using the default equality comparer for their type.
-    /// </summary>
-    function EqualsTo(const collection: IEnumerable<T>): Boolean; overload;
-
-    /// <summary>
-    /// Determines whether two sequences are equal by comparing their elements
-    /// by using a specified IEqualityComparer<T>.
-    /// </summary>
-    function EqualsTo(const collection: IEnumerable<T>; const comparer: IEqualityComparer<T>): Boolean; overload;
-
     ///	<summary>
     /// Returns the first element of a sequence.
     /// </summary>
@@ -177,16 +165,6 @@ type
     ///	condition or a default value if no such element is found.</summary>
     function LastOrDefault(const predicate: TPredicate<T>): T; overload;
 
-    /// <summary>
-    /// Returns the minimum value in a sequence.
-    /// </summary>
-    function Min: T;
-
-    /// <summary>
-    /// Returns the maximum value in a sequence.
-    /// </summary>
-    function Max: T;
-
     ///	<summary>Returns the only element of a sequence, and throws an
     ///	exception if there is not exactly one element in the
     ///	sequence.</summary>
@@ -214,7 +192,7 @@ type
     function ElementAt(index: Integer): T;
 
     /// <summary>
-    /// Returns the element at a specified index in a sequence or a default value 
+    /// Returns the element at a specified index in a sequence or a default value
     /// if the index is out of range.
     /// </summary>
     function ElementAtOrDefault(index: Integer): T;
@@ -229,9 +207,6 @@ type
     ///	</summary>
     function Any(const predicate: TPredicate<T>): Boolean;
 
-    ///	<summary>Filters a sequence of values based on a predicate.</summary>
-    function Where(const predicate: TPredicate<T>): IEnumerable<T>;
-
     ///	<summary>
     /// Determines whether a sequence contains a specified element by
     ///	using the default equality comparer.
@@ -245,19 +220,17 @@ type
     function Contains(const item: T; const comparer: IEqualityComparer<T>): Boolean; overload;
 
     /// <summary>
-    /// Performs the specified action on each element of a sequence.
+    /// Returns the minimum value in a sequence.
     /// </summary>
-    procedure ForEach(const action: TAction<T>); overload;
+    function Min: T;
 
     /// <summary>
-    /// Performs the specified action on each element of a sequence.
+    /// Returns the maximum value in a sequence.
     /// </summary>
-    procedure ForEach(const action: TActionProc<T>); overload;
+    function Max: T;
 
-    /// <summary>
-    /// Performs the specified action on each element of a sequence.
-    /// </summary>
-    procedure ForEach(const action: TActionMethod<T>); overload;
+    ///	<summary>Filters a sequence of values based on a predicate.</summary>
+    function Where(const predicate: TPredicate<T>): IEnumerable<T>;
 
     /// <summary>
     /// Bypasses a specified number of elements in a sequence and then returns the remaining elements.
@@ -285,11 +258,38 @@ type
     function TakeWhile(const predicate: TPredicate<T>): IEnumerable<T>; overload;
 
     /// <summary>
-    /// Returns elements from a sequence as long as a specified condition is true. 
+    /// Returns elements from a sequence as long as a specified condition is true.
     /// The element's index is used in the logic of the predicate function.
     /// </summary>
     function TakeWhile(const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>; overload;
-    
+
+    /// <summary>
+    /// Performs the specified action on each element of a sequence.
+    /// </summary>
+    procedure ForEach(const action: TAction<T>); overload;
+
+    /// <summary>
+    /// Performs the specified action on each element of a sequence.
+    /// </summary>
+    procedure ForEach(const action: TActionProc<T>); overload;
+
+    /// <summary>
+    /// Performs the specified action on each element of a sequence.
+    /// </summary>
+    procedure ForEach(const action: TActionMethod<T>); overload;
+
+    /// <summary>
+    /// Determines whether two sequences are equal by comparing the elements
+    /// by using the default equality comparer for their type.
+    /// </summary>
+    function EqualsTo(const collection: IEnumerable<T>): Boolean; overload;
+
+    /// <summary>
+    /// Determines whether two sequences are equal by comparing their elements
+    /// by using a specified IEqualityComparer<T>.
+    /// </summary>
+    function EqualsTo(const collection: IEnumerable<T>; const comparer: IEqualityComparer<T>): Boolean; overload;
+
     ///	<summary>
     /// Creates a new array which is filled with the elements in the collection.
     ///	</summary>
@@ -364,8 +364,8 @@ type
     procedure Delete(index: Integer);
     procedure DeleteRange(startIndex, count: Integer);
 
-//    procedure Exchange(index1, index2: Integer);
-//    procedure Move(currentIndex, newIndex: Integer);
+    procedure Exchange(index1, index2: Integer);
+    procedure Move(currentIndex, newIndex: Integer);
 
     procedure Reverse;
 
@@ -636,6 +636,8 @@ type
     function IndexOf(const item: T): Integer;
     function LastIndexOf(const item: T): Integer;
     function Remove(const item: T): Boolean; override;
+    procedure Exchange(index1, index2: Integer);
+    procedure Move(currentIndex, newIndex: Integer);
     procedure Sort; overload;
     procedure Sort(const comparer: IComparer<T>); overload;
     procedure Sort(const comparison: TComparison<T>); overload;
@@ -1807,6 +1809,15 @@ begin
   end;
 end;
 
+procedure TList<T>.Exchange(index1, index2: Integer);
+var
+  temp: T;
+begin
+  temp := Items[index1];
+  Items[index1] := Items[index2];
+  Items[index2] := temp;
+end;
+
 function TList<T>.Extract(const item: T): T;
 var
   index: Integer;
@@ -1918,6 +1929,23 @@ begin
       Exit(i);
   end;
   Result := -1;
+end;
+
+procedure TList<T>.Move(currentIndex, newIndex: Integer);
+var
+  temp: T;
+begin
+  TArgument.CheckRange((newIndex >= 0) and (newIndex >= fCount));
+
+  temp := fItems[currentIndex];
+  fItems[currentIndex] := Default(T);
+  if currentIndex < newIndex then
+    System.Move(fItems[currentIndex + 1], fItems[currentIndex], (newIndex - currentIndex) * SizeOf(T))
+  else
+    System.Move(fItems[newIndex], fItems[newIndex + 1], (currentIndex - newIndex) * SizeOf(T));
+
+  FillChar(fItems[newIndex], SizeOf(T), 0);
+  fItems[newIndex] := temp;
 end;
 
 procedure TList<T>.Notify(const item: T; action: TCollectionNotification);
