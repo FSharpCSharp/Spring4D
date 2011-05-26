@@ -46,6 +46,7 @@ uses
   Rtti,
   Generics.Collections,
   Spring,
+  Spring.Collections,
   Spring.Utils.WinAPI;
 
 type
@@ -3011,7 +3012,7 @@ begin
     end;
 end;
 
-class function TStrTStringMatcherstrings(
+class function TStringMatchers.InStrings(
   const strings: TStrings): TPredicate<string>;
 begin
   Result :=
@@ -3021,7 +3022,7 @@ begin
     end;
 end;
 
-class function TStrTStringMatchersollection(
+class function TStringMatchers.InCollection(
   const collection: IEnumerable<string>): TPredicate<string>;
 begin
   Result :=
