@@ -69,12 +69,6 @@
 			<DCCReference Include="..\Source\System\Utils\Spring.Utils.WinApi.pas"/>
 			<DCCReference Include="..\Source\System\Collections\Spring.Collections.Extensions.pas"/>
 			<DCCReference Include="..\Source\System\Collections\Spring.Collections.pas"/>
-			<DCCReference Include="..\Source\System\Cryptography\Spring.Cryptography.CRC.pas"/>
-			<DCCReference Include="..\Source\System\Cryptography\Spring.Cryptography.DES.pas"/>
-			<DCCReference Include="..\Source\System\Cryptography\Spring.Cryptography.MD5.pas"/>
-			<DCCReference Include="..\Source\System\Cryptography\Spring.Cryptography.pas"/>
-			<DCCReference Include="..\Source\System\Cryptography\Spring.Cryptography.SHA.pas"/>
-			<DCCReference Include="..\Source\System\Cryptography\Spring.Cryptography.Utils.pas"/>
 			<DCCReference Include="..\Source\System\Reflection\Spring.Reflection.ValueExpression.pas"/>
 			<DCCReference Include="..\Source\System\Reflection\Spring.Reflection.pas"/>
 			<DCCReference Include="..\Source\System\Reflection\Spring.Reflection.ValueConverters.pas"/>
@@ -141,6 +135,7 @@
 				<Platforms>
 					<Platform value="Win32">True</Platform>
 				</Platforms>
+				<ModelSupport>False</ModelSupport>
 			</BorlandProject>
 			<ProjectFileVersion>12</ProjectFileVersion>
 		</ProjectExtensions>
@@ -149,7 +144,7 @@
 <!-- EurekaLog First Line
 [Exception Log]
 EurekaLog Version=6101
-Activate=1
+Activate=0
 Activate Handle=1
 Save Log File=1
 Foreground Tab=0
@@ -628,5 +623,5 @@ Count mtException_AntiFreeze=1
 mtException_AntiFreeze0="The application seems to be frozen."
 Count mtInvalidEmailMsg=1
 mtInvalidEmailMsg0="Invalid email."
-TextsCollection=English
+TextsCollection=
 EurekaLog Last Line -->

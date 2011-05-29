@@ -56,6 +56,7 @@ resourcestring
   SUnexpectedArgumentLength = 'Unexpected parameter length.';
 
   SNoTypeInfo          = 'No type information found.';
+  STypeParameterShouldBeMethod = 'The type parameter T should be instance method.';
   SUnexpectedTypeKind  = 'Unexpected type kind: %s.';
   SNotEnumeratedType   = 'Type "%s" is not enumerated type.';
   SIncorrectFormat     = 'Unable to convert %s.';
@@ -86,6 +87,11 @@ resourcestring
   SEnumNotStarted = 'Enum not started.';
   SEnumEnded = 'Enum ended.';
   SEnumEmpty = 'Invalid Operation. The enumeration is empty.';
+
+  SSequenceIsEmpty = 'This sequence is empty.';
+  SNoElementSatisfiesCondition = 'No element satisfies the condition in predicate.';
+  SMoreThanOneElementSatisfied = 'More than one element satisfies the condition in predicate.';
+  SSequenceContainsMoreThanOneElement = 'This sequence contains more than one element.';
 
   {$ENDREGION}
 

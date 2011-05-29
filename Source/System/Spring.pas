@@ -421,6 +421,7 @@ type
 
   {$ENDREGION}
 
+
   ///	<summary>Represents a multicast delegate interface.</summary>
   ///	<remarks>
   ///	  <note type="warning">This type needs to be reviewed.</note>
@@ -444,6 +445,90 @@ type
     function RemoveHandler(const handler: T): IDelegate<T>;
     function Invoke(const callback: TProc<T>): IDelegate<T>; virtual;
     procedure Clear;
+  end;
+
+
+  ///	<summary>Represents a multicast event.</summary>
+  IMulticastEvent<T> = interface
+    {$REGION 'Property Getters'}
+      function GetInvoke: T;
+      function GetCount: Integer;
+      function GetIsEmpty: Boolean;
+      function GetIsNotEmpty: Boolean;
+    {$ENDREGION}
+
+    procedure Add(const handler: T);
+    procedure Remove(const handler: T);
+    procedure Clear;
+
+    property Invoke: T read GetInvoke;
+    property Count: Integer read GetCount;
+    property IsEmpty: Boolean read GetIsEmpty;
+    property IsNotEmpty: Boolean read GetIsNotEmpty;
+  end;
+
+  TMulticastEventBase = class abstract(TInterfacedObject)
+  private
+    const
+      paEAX = Word(0);
+      paEDX = Word(1);
+      paECX = Word(2);
+      paStack = Word(3);
+
+    type
+      PParameterInfos = ^TParameterInfos;
+      TParameterInfos = array[0..255] of ^PTypeInfo;
+
+      PParameters = ^TParameters;
+      TParameters = packed record
+      public
+        Registers: array[paEDX..paECX] of Cardinal;
+        Stack: array[0..1023] of Byte;
+      end;
+
+      PMethod = ^TMethod;
+
+      PMethodInfo = ^TMethodInfo;
+      TMethodInfo = record
+        TypeData: PTypeData;
+        ParamInfos: PParameterInfos;
+        StackSize: Integer;
+        CallConversion: TCallConv;
+        PStack: PParameters;
+        constructor Create(const typeData: PTypeData);
+      end;
+  private
+    fMethodInfo: TMethodInfo;
+    fMethods: TArray<TMethod>;
+    fCount: Integer;
+  protected
+    procedure InvokeEventHandlerStub;
+    procedure InternalInvokeHandlers;
+    procedure InternalAdd(const method: TMethod);
+    procedure InternalRemove(const method: TMethod);
+    function  IndexOf(const method: TMethod): Integer;
+  protected
+    function GetCount: Integer;
+    function GetIsEmpty: Boolean;
+    function GetIsNotEmpty: Boolean;
+  public
+    procedure Clear;
+    property Count: Integer read GetCount;
+    property IsEmpty: Boolean read GetIsEmpty;
+    property IsNotEmpty: Boolean read GetIsNotEmpty;
+  end;
+
+  TMulticastEvent<T> = class(TMulticastEventBase, IMulticastEvent<T>)
+  private
+    fInvoke: T;
+    function GetInvoke: T;
+  public
+    constructor Create;
+
+    procedure Add(const handler: T);
+    procedure Remove(const handler: T);
+
+    property Invoke: T read GetInvoke;
   end;
 
   /// <preliminary />
@@ -1898,61 +1983,6 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TDelegate<T>'}
-
-procedure TDelegate<T>.Clear;
-begin
-  if fHandlers <> nil then
-    fHandlers.Clear;
-end;
-
-destructor TDelegate<T>.Destroy;
-begin
-  fHandlers.Free;
-  inherited Destroy;
-end;
-
-function TDelegate<T>.GetHandlers: TList<T>;
-begin
-  if fHandlers = nil then
-  begin
-    fHandlers := TList<T>.Create;
-  end;
-  Result := fHandlers;
-end;
-
-function TDelegate<T>.AddHandler(
-  const handler: T): IDelegate<T>;
-begin
-  Handlers.Add(handler);
-  Result := Self;
-end;
-
-function TDelegate<T>.RemoveHandler(
-  const handler: T): IDelegate<T>;
-begin
-  Handlers.Remove(handler);
-  Result := Self;
-end;
-
-function TDelegate<T>.Invoke(
-  const callback: TProc<T>): IDelegate<T>;
-var
-  delegate: T;
-begin
-  if fHandlers <> nil then
-  begin
-    for delegate in fHandlers do
-    begin
-      callback(delegate);
-    end;
-  end;
-  Result := Self;
-end;
-
-{$ENDREGION}
-
-
 {$REGION 'TObjectHolder<T>'}
 
 constructor TObjectHolder<T>.Create(obj: T);
@@ -2108,5 +2138,369 @@ end;
 
 {$ENDREGION}
 
-end.
 
+{$REGION 'TDelegate<T>'}
+
+procedure TDelegate<T>.Clear;
+begin
+  if fHandlers <> nil then
+    fHandlers.Clear;
+end;
+
+destructor TDelegate<T>.Destroy;
+begin
+  fHandlers.Free;
+  inherited Destroy;
+end;
+
+function TDelegate<T>.GetHandlers: TList<T>;
+begin
+  if fHandlers = nil then
+  begin
+    fHandlers := TList<T>.Create;
+  end;
+  Result := fHandlers;
+end;
+
+function TDelegate<T>.AddHandler(
+  const handler: T): IDelegate<T>;
+begin
+  Handlers.Add(handler);
+  Result := Self;
+end;
+
+function TDelegate<T>.RemoveHandler(
+  const handler: T): IDelegate<T>;
+begin
+  Handlers.Remove(handler);
+  Result := Self;
+end;
+
+function TDelegate<T>.Invoke(
+  const callback: TProc<T>): IDelegate<T>;
+var
+  delegate: T;
+begin
+  if fHandlers <> nil then
+  begin
+    for delegate in fHandlers do
+    begin
+      callback(delegate);
+    end;
+  end;
+  Result := Self;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TMethodInfo'}
+
+function AdditionalInfoOf(TypeData: PTypeData): Pointer;
+var
+  P: PByte;
+  I: Integer;
+begin
+  P := @TypeData^.ParamList;
+  // Skip parameter names and types
+  for I := 1 to TypeData^.ParamCount do
+  begin
+    Inc(P, 1 + P[1] + 1);
+    Inc(P, P[0] + 1 );
+  end;
+  if TypeData^.MethodKind = mkFunction then
+    // Skip return type name and info
+    Inc(P, P[0] + 1 + 4);
+  Result := P;
+end;
+
+function GetTypeSize(TypeInfo: PTypeInfo): Integer;
+var
+  TypeData: PTypeData;
+begin
+  case TypeInfo^.Kind of
+    tkChar:
+      Result := 1;
+    tkWChar:
+      Result := 2;
+    tkInteger, tkEnumeration:
+      begin
+        TypeData := GetTypeData(TypeInfo);
+        if TypeData^.MinValue >= 0 then
+          if Cardinal(TypeData^.MaxValue) > $FFFF then
+            Result := 4
+          else if TypeData^.MaxValue > $FF then
+            Result := 2
+          else
+            Result := 1
+        else
+          if (TypeData^.MaxValue > $7FFF) or (TypeData^.MinValue < -$7FFF - 1) then
+            Result := 4
+          else if (TypeData^.MaxValue > $7F) or (TypeData^.MinValue < -$7F - 1) then
+            Result := 2
+          else
+            Result := 1;
+      end;
+    tkFloat:
+      begin
+        TypeData := GetTypeData(TypeInfo);
+        case TypeData^.FloatType of
+          ftSingle: Result := 4;
+          ftComp, ftCurr, ftDouble: Result := 8;
+        else
+          Result := -1;
+        end;
+      end;
+    tkString, tkLString, tkUString, tkWString, tkInterface, tkClass:
+      Result := 4;
+    tkMethod, tkInt64:
+      Result := 8;
+    tkVariant:
+      Result := 16;
+
+  else
+    Assert(False);
+    Result := -1;
+  end;
+end;
+
+constructor TMulticastEventBase.TMethodInfo.Create(const typeData: PTypeData);
+var
+  P: PByte;
+  CurReg: Integer;
+  I: Integer;
+  Size: Integer;
+begin
+  Self.TypeData := TypeData;
+  P := AdditionalInfoOf(TypeData);
+  CallConversion := TCallConv(PByte(p)^);
+  ParamInfos := PParameterInfos(Cardinal(P) + 1);
+
+  if CallConversion = ccReg then
+  begin
+    CurReg := paEDX;
+    StackSize := 0;
+  end
+  else begin
+    CurReg := paStack;
+    StackSize := SizeOf(Pointer); // Self in stack
+  end;
+
+  P := @TypeData^.ParamList;
+
+  for I := 0 to TypeData^.ParamCount - 1 do
+  begin
+    if TParamFlags(P[0]) * [pfVar, pfConst, pfAddress, pfReference, pfOut] <> [] then
+      Size := 4
+    else
+      Size := GetTypeSize(ParamInfos^[I]^);
+    if (Size <= 4) and (CurReg <= paECX) then
+      Inc(CurReg)
+    else
+      Inc(StackSize, Size);
+    Inc(P, 1 + P[1] + 1);
+    Inc(P, P[0] + 1);
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TMulticastEventBase'}
+
+procedure TMulticastEventBase.InternalInvokeHandlers;
+var
+  methods: TArray<TMethod>;
+  method: TMethod;
+  stackSize: Integer;
+  i: Integer;
+  callConversion: TCallConv;
+  pStack: PParameters;
+begin
+  methods := fMethods;
+  pStack := fMethodInfo.PStack;
+  stackSize := fMethodInfo.stackSize;
+  callConversion := fMethodInfo.CallConversion;
+  for i := 0 to fCount - 1 do
+  begin
+    method.Data := methods[i].Data;
+    method.Code := methods[i].Code;
+    // Check to see if there is anything on the stack.
+    if StackSize > 0 then
+    asm
+      // if there are items on the stack, allocate the space there and
+      // move that data over.
+      MOV ECX,StackSize
+      SUB ESP,ECX
+      MOV EDX,ESP
+      MOV EAX, pStack
+      LEA EAX,[EAX].TParameters.Stack[8]
+      CALL System.Move
+    end;
+    asm
+      // Now we need to load up the registers. EDX and ECX may have some data
+      // so load them on up.
+      MOV EAX,pStack
+      MOV EDX,[EAX].TParameters.Registers.DWORD[0]
+      MOV ECX,[EAX].TParameters.Registers.DWORD[4]
+      // EAX is always "Self" and it changes on a per method pointer instance, so
+      // grab it out of the method data.
+      MOV EAX, method.Data
+      CMP callConversion, ccReg
+      JZ @BeginCall
+      Mov [ESP], EAX // eax -> Self, put it into internal stack
+    @BeginCall:
+      // Now we call the method. This depends on the fact that the called method
+      // will clean up the stack if we did any manipulations above.
+      CALL method.Code
+    end;
+  end;
+end;
+
+procedure TMulticastEventBase.InvokeEventHandlerStub;
+const
+  PtrSize = SizeOf(Pointer);
+asm
+        // is register conversion call ?
+        CMP     BYTE PTR Self.fMethodInfo.CallConversion, ccReg
+        JZ      @Begin
+        Mov     EAX, [esp + 4]
+@Begin:
+        PUSH    EAX
+        PUSH    ECX
+        PUSH    EDX
+        MOV     Self.fMethodInfo.TMethodInfo.PStack,ESP
+        CALL    InternalInvokeHandlers
+        // Pop EDX and ECX off the stack while preserving all registers.
+        MOV     [ESP+4],EAX
+        POP     EAX
+        POP     EAX
+        POP     ECX		// Self
+        Mov     EAX, ECX
+        MOV     ECX,[ECX].fMethodInfo.StackSize
+        TEST    ECX,ECX
+        JZ      @@SimpleRet
+        // Jump to the actual return instruction since it is most likely not just a RET
+        //JMP     ECX    // Data Exec. Prevention: Jumping into a GetMem allocated memory block
+
+        // stack address alignment
+        // In cdecl call conversion, the caller will clear the stack
+        CMP     DWORD PTR [EAX].fMethodInfo.CallConversion, ccCdecl
+        JZ      @@SimpleRet
+        ADD     ECX, PtrSize - 1
+        AND     ECX, NOT (PtrSize - 1)
+        AND     ECX, $FFFF
+
+        // clean up the stack
+        PUSH    EAX                         // we need this register, so save it
+        MOV     EAX,[ESP + 4]               // Load the return address
+        MOV     [ESP + ECX + 4], EAX        // Just blast it over the first param on the stack
+        POP     EAX
+        ADD     ESP,ECX                     // This will move the stack back to where the moved
+                                            // return address is now located. The next RET
+                                            // instruction will do the final stack cleanup
+@@SimpleRet:
+end;
+
+procedure TMulticastEventBase.InternalAdd(const method: TMethod);
+begin
+  if Length(fMethods) = fCount then
+  begin
+    if fCount = 0 then
+      SetLength(fMethods, 1)
+    else
+      SetLength(fMethods, fCount * 2);
+  end;
+  fMethods[fCount].Code := PMethod(@method)^.Code;
+  fMethods[fCount].Data := PMethod(@method)^.Data;
+  Inc(fCount);
+end;
+
+procedure TMulticastEventBase.InternalRemove(const method: TMethod);
+var
+  index: Integer;
+begin
+  index := IndexOf(method);
+  if index > -1 then
+  begin
+    Move(fMethods[index+1], fMethods[index], (fCount - index - 1) * SizeOf(TMethod));
+    Dec(fCount);
+    fMethods[fCount].Data := nil;
+    fMethods[fCount].Code := nil;
+  end;
+end;
+
+procedure TMulticastEventBase.Clear;
+begin
+  SetLength(fMethods, 0);
+  fCount := 0;
+end;
+
+function TMulticastEventBase.IndexOf(const method: TMethod): Integer;
+var
+  i: Integer;
+begin
+  for i := 0 to fCount - 1 do
+  begin
+    if (fMethods[i].Code = method.Code) and (fMethods[i].Data = method.Data) then
+    begin
+      Exit(i);
+    end;
+  end;
+  Result := -1;
+end;
+
+function TMulticastEventBase.GetCount: Integer;
+begin
+  Result := fCount;
+end;
+
+function TMulticastEventBase.GetIsEmpty: Boolean;
+begin
+  Result := Count = 0;
+end;
+
+function TMulticastEventBase.GetIsNotEmpty: Boolean;
+begin
+  Result := Count > 0;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TMulticastEvent<T>'}
+
+constructor TMulticastEvent<T>.Create;
+var
+  p: PTypeInfo;
+begin
+  p := TypeInfo(T);
+  if p = nil then
+    raise EInvalidOperation.CreateRes(@SNoTypeInfo);
+  if p.Kind <> tkMethod then
+    raise EInvalidOperation.CreateRes(@STypeParameterShouldBeMethod);
+
+  inherited Create;
+  fMethodInfo := TMethodInfo.Create(GetTypeData(p));
+  PMethod(@fInvoke)^.Data := Self;
+  PMethod(@fInvoke)^.Code := @TMulticastEventBase.InvokeEventHandlerStub;
+end;
+
+procedure TMulticastEvent<T>.Add(const handler: T);
+begin
+  InternalAdd(PMethod(@handler)^);
+end;
+
+procedure TMulticastEvent<T>.Remove(const handler: T);
+begin
+  InternalRemove(PMethod(@handler)^);
+end;
+
+function TMulticastEvent<T>.GetInvoke: T;
+begin
+  Result := fInvoke;
+end;
+
+{$ENDREGION}
+
+end.

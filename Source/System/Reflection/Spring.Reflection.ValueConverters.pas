@@ -31,7 +31,12 @@ interface
 uses
   TypInfo,
   Rtti,
-  Generics.Collections;
+  Generics.Collections,
+  Spring,
+  Spring.Utils,
+  Spring.Reflection,
+  Spring.Helpers
+  ;
 
 type
 
@@ -639,10 +644,6 @@ uses
   SysUtils,
   Controls,
   Math,
-  Spring,
-  Spring.Utils,
-  Spring.Reflection,
-  Spring.Helpers,
   Spring.ResourceStrings;
 
   function CompareTypeInfo(const left, right: PTypeInfo): Boolean;

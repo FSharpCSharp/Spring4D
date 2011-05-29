@@ -33,14 +33,77 @@ program Spike;
 uses
   Classes,
   SysUtils,
+  TypInfo,
   Rtti,
+  StrUtils,
   Spring,
   Spring.Collections,
-  Spring.Utils
-  ;
+  Spring.Utils,
+  MulticastEvent in 'C:\Users\Paul\Desktop\MulticastEvent.pas';
+
+type
+  TTest<T> = class
+  private
+    fT: T;
+  public
+    property Invoke: T read fT;
+  end;
+
+//var
+//  strings: IList<string>;
+//  list, list2: IList<Integer>;
+//  r: IEnumerable<Integer>;
+//  p: TFunc<Integer, Integer, Boolean>;
+//  element: Integer;
+//  s: string;
+
+var
+  e1: TTest<TNotifyEvent>;
+  e2: TTest<TProc<TObject, Integer>>;
+
+{ TTest<T> }
 
 begin
   try
+    e1.Invoke(nil);
+    e2.Invoke(sender, 2);
+
+    ReportMemoryLeaksOnShutdown := True;
+//    TLinq.From(TStrings)
+//    TLinq.From(TArray[])
+//    TLinq.From(TObjectList)
+//    TLinq.From(TCollection)
+//    TLinq.From<T>(IEnumerable<T>)
+//    TLinq.From<T>(TEnumerable<T>)
+//    TLinq.From<T>(TArray<T>)
+//    TLinq.From<string>(strings).Skip(3).Select<string>(selector);
+
+//    strings := TList<string>.Create;
+//    strings.AddRange(['a', 'aba', 'ced']);
+//
+//    for s in strings.Where(TStringMatchers.InArray(['a', 'aba'])) do
+//    begin
+//      Writeln(s);
+//    end;
+
+    (*
+
+    list := TList<Integer>.Create;
+    list2 := TList<Integer>.Create;
+    list.AddRange([3, 5, 12, 14]);
+    list2.AddRange([9,50]);
+
+//    p := function (value, index: Integer): Boolean
+//      begin
+//        Result := value <= 5;
+//      end;
+
+    r := list.Reversed;
+    for element in r do
+    begin
+      Writeln(element);
+    end;
+    //*)
 //    Readln(s);
   except
     on E: Exception do

@@ -103,7 +103,11 @@ type
     function GetType(const instance: TValue): TRttiType; overload;
 
     function GetFullName(const typeInfo: PTypeInfo): string; overload;
+
     function FindType(const qualifiedName: string): TRttiType;
+
+//    function FindAllWhere(): IEnumerable<TRttiType>;
+
     property Types: IEnumerable<TRttiType> read GetTypes;
 //    property Packages: IEnumerable<TRttiPackage> read GetPackages;
   end;

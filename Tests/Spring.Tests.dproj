@@ -61,7 +61,6 @@
 			<DCCReference Include="Source\Core\Spring.Tests.DI.LifetimeManager.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.DI.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.Pool.pas"/>
-			<DCCReference Include="Source\System\Spring.Tests.Cryptography.pas"/>
 			<DCCReference Include="Source\System\Spring.Tests.DesignPatterns.pas"/>
 			<DCCReference Include="Source\System\Spring.Tests.Helpers.pas"/>
 			<DCCReference Include="Source\System\Spring.Tests.System.pas"/>

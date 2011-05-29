@@ -43,7 +43,6 @@ uses
   Spring.Tests.DI.LifetimeManager in 'Source\Core\Spring.Tests.DI.LifetimeManager.pas',
   Spring.Tests.DI in 'Source\Core\Spring.Tests.DI.pas',
   Spring.Tests.Pool in 'Source\Core\Spring.Tests.Pool.pas',
-  Spring.Tests.Cryptography in 'Source\System\Spring.Tests.Cryptography.pas',
   Spring.Tests.DesignPatterns in 'Source\System\Spring.Tests.DesignPatterns.pas',
   Spring.Tests.Helpers in 'Source\System\Spring.Tests.Helpers.pas',
   Spring.Tests.System in 'Source\System\Spring.Tests.System.pas',
@@ -108,23 +107,23 @@ begin
     TTestObjectPool.Suite
   ]);
 
-  RegisterTests('Core.Cryptography', [
-    TTestCRC16.Suite,
-    TTestCRC32.Suite,
-    TTestMD5.Suite,
-    TTestSHA1.Suite,
-    TTestSHA256.Suite,
-    TTestSHA384.Suite,
-    TTestSHA512.Suite,
-    TTestPaddingModeIsNone.Suite,
-    TTestPaddingModeIsPKCS7.Suite,
-    TTestPaddingModeIsZeros.Suite,
-    TTestPaddingModeIsANSIX923.Suite,
-    TTestPaddingModeIsISO10126.Suite,
-    TTestDES.Suite,
-    TTestTripleDES.Suite
-//    TTestMACTripleDES.Suite
-  ]);
+//  RegisterTests('Core.Cryptography', [
+//    TTestCRC16.Suite,
+//    TTestCRC32.Suite,
+//    TTestMD5.Suite,
+//    TTestSHA1.Suite,
+//    TTestSHA256.Suite,
+//    TTestSHA384.Suite,
+//    TTestSHA512.Suite,
+//    TTestPaddingModeIsNone.Suite,
+//    TTestPaddingModeIsPKCS7.Suite,
+//    TTestPaddingModeIsZeros.Suite,
+//    TTestPaddingModeIsANSIX923.Suite,
+//    TTestPaddingModeIsISO10126.Suite,
+//    TTestDES.Suite,
+//    TTestTripleDES.Suite
+////    TTestMACTripleDES.Suite
+//  ]);
 
   RegisterTests('Core.DI', [
     TTestSingletonLifetimeManager.Suite,

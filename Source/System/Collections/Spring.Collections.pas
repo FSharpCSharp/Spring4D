@@ -88,17 +88,14 @@ type
 
   (*
 
-    Distinct
-    Union, Intersect, Exclude
-
-    Range
+    Distinct, Union, Intersect, Exclude
 
     Select<T>, SelectMany<T>
     OfType<T>
 
     ToDictionary<TKey, TValue>
 
-    Aggregate
+    Aggregate<>
 
     GroupBy
     OrderBy, OrderByDescending, ThenBy
@@ -359,7 +356,7 @@ type
 
 // function Extract(const item: T): T; overload;
 // Ownerships: TCollectionOwnerships (coOwnsElements, coOwnsKeys, coOwnsValues)
-// OnNotify
+// property OnChanged: IDelegate<T>;
 
     procedure Clear;
     property IsReadOnly: Boolean read GetIsReadOnly;
@@ -390,8 +387,6 @@ type
     procedure Sort(const comparer: IComparer<T>); overload;
     procedure Sort(const comparer: TComparison<T>); overload;
 
-//    function AsReadOnly: IList<T>;
-
     function IndexOf(const item: T): Integer;
     function LastIndexOf(const item: T): Integer;
     property Items[index: Integer]: T read GetItem write SetItem; default;
@@ -414,8 +409,6 @@ type
     function ContainsValue(const value: TValue): Boolean;
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
-
-//    function AsReadOnly: IDictionary<TKey, TValue>;
 
     /// <summary>
     /// Gets a read-only collection which contains all keys in the dictionary.

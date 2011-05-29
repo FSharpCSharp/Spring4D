@@ -291,6 +291,7 @@ var
   model: TComponentModel;
 begin
   TArgument.CheckNotNull(instance, 'instance');
+
   model := fRegistry.FindOne(instance.ClassInfo);
   if model = nil then
   begin

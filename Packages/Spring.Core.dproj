@@ -48,7 +48,6 @@
 		<PropertyGroup Condition="'$(Cfg_2)'!=''">
 			<DCC_MapFile>3</DCC_MapFile>
 			<DCC_DcuOutput>$(SPRING_LIBRARY)\Debug</DCC_DcuOutput>
-			<DCC_Define>EUREKALOG;EUREKALOG_VER6;$(DCC_Define)</DCC_Define>
 			<DCC_DebugDCUs>true</DCC_DebugDCUs>
 		</PropertyGroup>
 		<ItemGroup>
@@ -60,15 +59,6 @@
 			<DCCReference Include="xmlrtl.dcp"/>
 			<DCCReference Include="Spring.System.dcp"/>
 			<DCCReference Include="vcldb.dcp"/>
-			<DCCReference Include="..\Source\Core\Logging\Spring.Logging.Utils.pas"/>
-			<DCCReference Include="..\Source\Core\Logging\Spring.Logging.Appenders.pas"/>
-			<DCCReference Include="..\Source\Core\Logging\Spring.Logging.Core.pas"/>
-			<DCCReference Include="..\Source\Core\Logging\Spring.Logging.Layouts.pas"/>
-			<DCCReference Include="..\Source\Core\Logging\Spring.Logging.pas"/>
-			<DCCReference Include="..\Source\Core\Logging\Spring.Logging.Repositories.pas"/>
-			<DCCReference Include="..\Source\Core\Logging\Spring.Logging.ResourceStrings.pas"/>
-			<DCCReference Include="..\Source\Core\Configuration\Spring.Configuration.pas"/>
-			<DCCReference Include="..\Source\Core\Configuration\Spring.Configuration.Xml.pas"/>
 			<DCCReference Include="..\Source\Core\DI\Spring.DI.Builder.pas"/>
 			<DCCReference Include="..\Source\Core\DI\Spring.DI.ComponentActivator.pas"/>
 			<DCCReference Include="..\Source\Core\DI\Spring.DI.Core.pas"/>
@@ -145,7 +135,7 @@
 <!-- EurekaLog First Line
 [Exception Log]
 EurekaLog Version=6101
-Activate=1
+Activate=0
 Activate Handle=1
 Save Log File=1
 Foreground Tab=0
@@ -624,5 +614,5 @@ Count mtException_AntiFreeze=1
 mtException_AntiFreeze0="The application seems to be frozen."
 Count mtInvalidEmailMsg=1
 mtInvalidEmailMsg0="Invalid email."
-TextsCollection=English
+TextsCollection=
 EurekaLog Last Line -->

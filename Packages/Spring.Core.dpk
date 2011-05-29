@@ -61,15 +61,6 @@ requires
   vcldb;
 
 contains
-  Spring.Logging.Utils in '..\Source\Core\Logging\Spring.Logging.Utils.pas',
-  Spring.Logging.Appenders in '..\Source\Core\Logging\Spring.Logging.Appenders.pas',
-  Spring.Logging.Core in '..\Source\Core\Logging\Spring.Logging.Core.pas',
-  Spring.Logging.Layouts in '..\Source\Core\Logging\Spring.Logging.Layouts.pas',
-  Spring.Logging in '..\Source\Core\Logging\Spring.Logging.pas',
-  Spring.Logging.Repositories in '..\Source\Core\Logging\Spring.Logging.Repositories.pas',
-  Spring.Logging.ResourceStrings in '..\Source\Core\Logging\Spring.Logging.ResourceStrings.pas',
-  Spring.Configuration in '..\Source\Core\Configuration\Spring.Configuration.pas',
-  Spring.Configuration.Xml in '..\Source\Core\Configuration\Spring.Configuration.Xml.pas',
   Spring.DI.Builder in '..\Source\Core\DI\Spring.DI.Builder.pas',
   Spring.DI.ComponentActivator in '..\Source\Core\DI\Spring.DI.ComponentActivator.pas',
   Spring.DI.Core in '..\Source\Core\DI\Spring.DI.Core.pas',
