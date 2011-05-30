@@ -531,6 +531,27 @@ type
     property Invoke: T read GetInvoke;
   end;
 
+  TEvent<T> = record
+  private
+    fInstance: IMulticastEvent<T>;
+    function GetInvoke: T;
+    function GetCount: Integer;
+    function GetIsEmpty: Boolean;
+    function GetIsNotEmpty: Boolean;
+  public
+    procedure Add(const handler: T);
+    procedure Remove(const handler: T);
+    procedure Clear;
+
+    function GetInstance: TEvent<T>; inline;
+
+    property Invoke: T read GetInvoke;
+    property Count: Integer read GetCount;
+    property IsEmpty: Boolean read GetIsEmpty;
+    property IsNotEmpty: Boolean read GetIsNotEmpty;
+  end;
+
+
   /// <preliminary />
   /// <threadsafety static="true" />
   TLazyUtils = record
@@ -886,36 +907,6 @@ type
   EDriveNotFoundException       = class(EIOException);
 
   ERttiException = class(Exception);
-
-  {$ENDREGION}
-
-
-  {$REGION 'Constants'}
-
-const
-  ///	<summary>Represents bytes of one KB.</summary>
-  COneKB: Int64 = 1024;            // 1KB = 1024 bytes
-
-  ///	<summary>Represents bytes of one MB.</summary>
-  COneMB: Int64 = 1048576;         // 1MB = 1024 KB
-
-  ///	<summary>Represents bytes of one GB.</summary>
-  COneGB: Int64 = 1073741824;      // 1GB = 1024 MB
-
-  ///	<summary>Represents bytes of one TB.</summary>
-  COneTB: Int64 = 1099511627776;   // 1TB = 1024 GB
-
-  ///	<summary>Represents bytes of one KB.</summary>
-  OneKB: Int64 = 1024 deprecated 'Use COneKB instead.';
-
-  ///	<summary>Represents bytes of one MB.</summary>
-  OneMB: Int64 = 1048576 deprecated 'Use COneMB instead.';
-
-  ///	<summary>Represents bytes of one GB.</summary>
-  OneGB: Int64 = 1073741824 deprecated 'Use COneGB instead.';
-
-  ///	<summary>Represents bytes of one TB.</summary>
-  OneTB: Int64 = 1099511627776 deprecated 'Use COneTB instead.';
 
   {$ENDREGION}
 
@@ -2499,6 +2490,59 @@ end;
 function TMulticastEvent<T>.GetInvoke: T;
 begin
   Result := fInvoke;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TEvent<T>'}
+
+procedure TEvent<T>.Add(const handler: T);
+begin
+  GetInstance.Add(handler);
+end;
+
+procedure TEvent<T>.Remove(const handler: T);
+begin
+  GetInstance.Remove(handler);
+end;
+
+procedure TEvent<T>.Clear;
+begin
+  if fInstance <> nil then
+    fInstance.Clear;
+end;
+
+function TEvent<T>.GetCount: Integer;
+begin
+  if fInstance <> nil then
+    Exit(fInstance.Count)
+  else
+    Exit(0);
+end;
+
+function TEvent<T>.GetInstance: TEvent<T>;
+begin
+  if fInstance = nil then
+  begin
+    fInstance := TMulticastEvent<T>.Create;
+  end;
+  Result.fInstance := fInstance;
+end;
+
+function TEvent<T>.GetInvoke: T;
+begin
+  Result := GetInstance.Invoke;
+end;
+
+function TEvent<T>.GetIsEmpty: Boolean;
+begin
+  Result := (fInstance = nil) or fInstance.IsEmpty;
+end;
+
+function TEvent<T>.GetIsNotEmpty: Boolean;
+begin
+  Result := (fInstance <> nil) and fInstance.IsNotEmpty;
 end;
 
 {$ENDREGION}
