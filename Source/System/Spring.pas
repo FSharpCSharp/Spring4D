@@ -543,12 +543,15 @@ type
     procedure Remove(const handler: T);
     procedure Clear;
 
-    function GetInstance: TEvent<T>; inline;
+    function GetInstance: IMulticastEvent<T>; inline;
 
     property Invoke: T read GetInvoke;
     property Count: Integer read GetCount;
     property IsEmpty: Boolean read GetIsEmpty;
     property IsNotEmpty: Boolean read GetIsNotEmpty;
+
+    class operator Implicit(const event: IMulticastEvent<T>): TEvent<T>;
+    class operator Implicit(const event: TEvent<T>): IMulticastEvent<T>;
   end;
 
 
@@ -2521,13 +2524,13 @@ begin
     Exit(0);
 end;
 
-function TEvent<T>.GetInstance: TEvent<T>;
+function TEvent<T>.GetInstance: IMulticastEvent<T>;
 begin
   if fInstance = nil then
   begin
     fInstance := TMulticastEvent<T>.Create;
   end;
-  Result.fInstance := fInstance;
+  Result := fInstance;
 end;
 
 function TEvent<T>.GetInvoke: T;
@@ -2543,6 +2546,16 @@ end;
 function TEvent<T>.GetIsNotEmpty: Boolean;
 begin
   Result := (fInstance <> nil) and fInstance.IsNotEmpty;
+end;
+
+class operator TEvent<T>.Implicit(const event: IMulticastEvent<T>): TEvent<T>;
+begin
+  Result.fInstance := event;
+end;
+
+class operator TEvent<T>.Implicit(const event: TEvent<T>): IMulticastEvent<T>;
+begin
+  Result := event.GetInstance;
 end;
 
 {$ENDREGION}
