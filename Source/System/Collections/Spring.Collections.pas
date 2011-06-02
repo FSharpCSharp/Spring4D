@@ -287,10 +287,12 @@ type
     /// </summary>
     procedure ForEach(const action: TActionProc<T>); overload;
 
+  {$IFDEF DELPHIXE_UP}
     /// <summary>
     /// Performs the specified action on each element of a sequence.
     /// </summary>
     procedure ForEach(const action: TActionMethod<T>); overload;
+  {$ENDIF}
 
     /// <summary>
     /// Determines whether two sequences are equal by comparing the elements
@@ -1178,7 +1180,7 @@ var
   e1, e2: IEnumerator<T>;
   hasNext: Boolean;
 begin
-  TArgument.CheckNotNull(collection, 'collection');
+  TArgument.CheckNotNull(Assigned(collection), 'collection');
   TArgument.CheckNotNull(Assigned(comparer), 'comparer');
 
   e1 := GetEnumerator;
