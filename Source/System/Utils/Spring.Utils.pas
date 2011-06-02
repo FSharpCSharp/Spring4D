@@ -1047,6 +1047,7 @@ const
   ///	<summary>Represents bytes of one KB.</summary>
   COneKB: Int64 = 1024;            // 1KB = 1024 bytes
 
+
   ///	<summary>Represents bytes of one MB.</summary>
   COneMB: Int64 = 1048576;         // 1MB = 1024 KB
 
