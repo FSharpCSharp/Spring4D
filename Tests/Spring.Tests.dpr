@@ -47,18 +47,20 @@ uses
   Spring.Tests.Helpers in 'Source\System\Spring.Tests.Helpers.pas',
   Spring.Tests.System in 'Source\System\Spring.Tests.System.pas',
   Spring.Tests.Utils in 'Source\System\Spring.Tests.Utils.pas',
-  Spring.Tests.ValueConverters in 'Source\System\Spring.Tests.ValueConverters.pas';
+  Spring.Tests.ValueConverters in 'Source\System\Spring.Tests.ValueConverters.pas',
+  Spring.Tests.Reflection in 'Source\System\Spring.Tests.Reflection.pas';
 
 {$R *.RES}
 
 procedure RegisterTestCases;
 begin
-  RegisterTests('Base.System', [
+  RegisterTests('Spring.System', [
     TTestSplitString.Suite,
     TTestSplitNullTerminatedStrings.Suite,
     TTestTryConvertStrToDateTime.Suite,
     TTestVersion.Suite,
     TTestEnum.Suite,
+    TTestArgument.Suite,
 //    TTestBuffer.Suite,
 //    TTestEmptyBuffer.Suite,
 //    TTestFiveByteBuffer.Suite,
@@ -66,17 +68,17 @@ begin
 //    TTestDelegate.Suite
   ]);
 
-  RegisterTests('Base.DesignPatterns', [
+  RegisterTests('Spring.System.DesignPatterns', [
     TTestSingleton.Suite
   ]);
 
-  RegisterTests('Base.Utils', [
+  RegisterTests('Spring.System.Utils', [
     TTestDecimalCalculator.Suite,
     TTestHexCalculator.Suite,
     TTestBaseNineCalculator.Suite
   ]);
 
-  RegisterTests('Base.Helpers', [
+  RegisterTests('Spring.System.Helpers', [
     TTestGuidHelper.Suite
   ]);
 
@@ -85,7 +87,7 @@ begin
 //    TTestCloneableObject.Suite
 //  ]);
 
-  RegisterTests('Base.ValueConverters', [
+  RegisterTests('Spring.System.Reflection.ValueConverters', [
     TTestFromString.Suite,
     TTestFromWideString.Suite,
     TTestFromInteger.Suite,
@@ -103,7 +105,11 @@ begin
     TTestFromInterface.Suite
   ]);
 
-  RegisterTests('Core.Pool', [
+  RegisterTests('Spring.System.Reflection.ValueExpression', [
+    TTestValueExpression.Suite
+  ]);
+
+  RegisterTests('Spring.Core.Pool', [
     TTestObjectPool.Suite
   ]);
 
@@ -125,7 +131,7 @@ begin
 ////    TTestMACTripleDES.Suite
 //  ]);
 
-  RegisterTests('Core.DI', [
+  RegisterTests('Spring.Core.DI', [
     TTestSingletonLifetimeManager.Suite,
     TTestTransientLifetimeManager.Suite,
     TTestEmptyContainer.Suite,
@@ -149,7 +155,6 @@ begin
 //    TTestBigInteger.Suite,
 //    TTestBigDecimal.Suite
 //  ]);
-
 end;
 
 begin
