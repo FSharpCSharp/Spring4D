@@ -22,12 +22,11 @@
 {                                                                           }
 {***************************************************************************}
 
-{$REGION 'Documentation'}
-///	<summary>This namespace provides notifications when a property has been
-///	changed or is being changed, and/or a collection changed (added, removed,
-///	etc).</summary>
-/// <preliminary />
-{$ENDREGION}
+///	<preliminary />
+///	<summary>
+///	  This namespace provides notifications when a property has been changed or
+///	  is being changed, and/or a collection changed (added, removed, etc).
+///	</summary>
 unit Spring.Notifications;
 
 interface

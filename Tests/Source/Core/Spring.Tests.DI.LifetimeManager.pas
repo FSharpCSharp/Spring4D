@@ -30,6 +30,7 @@ uses
   TestFramework,
   Rtti,
   SysUtils,
+  TypInfo,
   Spring,
   Spring.DI.Core,
   Spring.DI.LifetimeManager;

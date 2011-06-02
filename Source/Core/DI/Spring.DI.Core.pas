@@ -279,6 +279,42 @@ type
     property FieldInjections: IList<IInjection> read GetFieldInjections;
   end;
 
+
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  <para>Provides a simple &amp; flexible implementation of <b>Smart
+  ///	  Pointer</b>. This implementation is very skillful and the basic idea
+  ///	  comes from a post in Kelly Barry's blog.</para>
+  ///	  <para>The point is to use an anonymous method <c>TFunc&lt;T&gt;,</c>
+  ///	  which is internally implemented as an interface in Delphi for Win32, to
+  ///	  manage the lifetime of an object instance.</para>
+  ///	</summary>
+  ///	<example>
+  ///	  The following example demonstrates how to use the Smart Pointer:
+  ///	  <code lang="Delphi">
+  ///	procedure TestSmartPointer;
+  ///	var
+  ///	  person: TFunc&lt;TPerson&gt;;
+  ///	begin
+  ///	  person := TObjectHolder&lt;TPerson&gt;.Create(TPerson.Create);
+  ///	  person.DoSomething;
+  ///	end;
+  ///	</code>
+  ///	</example>
+  {$ENDREGION}
+  TObjectHolder<T: class> = class(TInterfacedObject, TFunc<T>)
+  private
+    fObject: T;
+    fLifetimeWatcher: IInterface;
+  public
+    constructor Create(obj: T); overload;
+    constructor Create(obj: T; const lifetimeWatcher: IInterface); overload;
+    destructor Destroy; override;
+    function Invoke: T;
+  end;
+
+  TObjectHolder = TObjectHolder<TObject>;
+
   EContainerException = class(SysUtils.Exception);
 
   ERegistrationException = class(EContainerException);
@@ -552,6 +588,48 @@ end;
 
 {$ENDREGION}
 
+
+{$REGION 'TObjectHolder<T>'}
+
+constructor TObjectHolder<T>.Create(obj: T);
+var
+  lifetimeWatcher: IInterface;
+begin
+  TArgument.CheckNotNull(PPointer(@obj)^, 'obj');
+
+  if obj.InheritsFrom(TInterfacedObject) then
+  begin
+    obj.GetInterface(IInterface, lifetimeWatcher);
+  end
+  else
+  begin
+    lifetimeWatcher := nil;
+  end;
+  Create(obj, lifetimeWatcher);
+end;
+
+constructor TObjectHolder<T>.Create(obj: T; const lifetimeWatcher: IInterface);
+begin
+  inherited Create;
+  fObject := obj;
+  fLifetimeWatcher := lifetimeWatcher;
+end;
+
+destructor TObjectHolder<T>.Destroy;
+begin
+  if fLifetimeWatcher = nil then
+  begin
+    fObject.Free;
+  end;
+  inherited Destroy;
+end;
+
+function TObjectHolder<T>.Invoke: T;
+begin
+  Result := fObject;
+end;
+
+{$ENDREGION}
 
 end.
 

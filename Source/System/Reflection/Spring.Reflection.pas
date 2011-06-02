@@ -99,7 +99,7 @@ type
     function GetType(const typeInfo: PTypeInfo): TRttiType; overload;
     function GetType(const classType: TClass): TRttiType; overload;
     function GetType(const instance: TObject): TRttiType; overload;
-//    function GetType(const instance: IInterface): TRttiType; overload;
+//    function GetType(const interfaceGuid: TGuid): TRttiType; overload;
     function GetType(const instance: TValue): TRttiType; overload;
 
     function GetFullName(const typeInfo: PTypeInfo): string; overload;

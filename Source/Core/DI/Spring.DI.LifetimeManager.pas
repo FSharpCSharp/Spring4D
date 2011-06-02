@@ -36,7 +36,7 @@ uses
   Spring,
   Spring.Utils,
   Spring.DI.Core,
-  Spring.Pool;
+  Spring.DI.Pool;
 
 type
   TLifetimeManagerBase = class abstract(TInterfacedObject, ILifetimeManager, IInterface)

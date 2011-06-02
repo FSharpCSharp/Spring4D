@@ -22,8 +22,12 @@
 {                                                                           }
 {***************************************************************************}
 
-///	<summary>This namespace provides many well-encapsulated utility classes and
-///	routines about the environment and system.</summary>
+{$REGION 'Documentation'}
+///	<summary>
+///	  This namespace provides many well-encapsulated utility classes and
+///	  routines about the environment and system.
+///	</summary>
+{$ENDREGION}
 unit Spring.Utils;
 
 {$I Spring.inc}
@@ -50,78 +54,61 @@ uses
   Spring.Utils.WinAPI;
 
 type
-  TArray = class(Generics.Collections.TArray)
-  public
-//    class function Add<T>(var target: array of T; const value: T): Integer;
-//    class procedure Delete<T>(var target: array of T; const index: Integer);
-//    class procedure Reverse<T>(var target: array of T);
-//    class procedure Copy<T>(const source: array of T; var dest: array of T; len: Integer); overload;
-//    class function Contains<T>(const target: array of T; const value: T): Boolean;
-//    class function Exists<T>(const match: TPredicate<T>): Boolean;
-//    class function IndexOf<T>(const target: array of T; const value: T): Integer;
-//    class function LastIndexOf<T>(const target: array of T; const value: T): Integer;
-//    class function FindFirst<T>(const target: array of T; const predicate: TPredicate<T>): T;
-//    class function FindLast<T>(const target: array of T; const predicate: TPredicate<T>): T;
-//    class function FindAll<T>(const target: array of T; const predicate: TPredicate<T>): TArray<T>;
-//    ForEach
-  end;
-
-  /// <summary>
-  /// Drive Type Enumeration
-  /// </summary>
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Drive Type Enumeration
+  ///	</summary>
+  {$ENDREGION}
   TDriveType = (
-
-    /// <summary>
-    /// The type of drive is unknown.
-    /// </summary>
+    ///	<summary>
+    ///	  The type of drive is unknown.
+    ///	</summary>
     dtUnknown,
-
-    /// <summary>
-    /// The drive does not have a root directory.
-    /// </summary>
+    ///	<summary>
+    ///	  The drive does not have a root directory.
+    ///	</summary>
     dtNoRootDirectory,
-
-    /// <summary>
-    /// The drive is a removable storage device, such as a floppy disk drive or a USB flash drive.
-    /// </summary>
+    ///	<summary>
+    ///	  The drive is a removable storage device, such as a floppy disk drive or a
+    ///	  USB flash drive.
+    ///	</summary>
     dtRemovable,
-
-    /// <summary>
-    /// The drive is a fixed disk.
-    /// </summary>
+    ///	<summary>
+    ///	  The drive is a fixed disk.
+    ///	</summary>
     dtFixed,
-
-    /// <summary>
-    /// The drive is a network drive.
-    /// </summary>
+    ///	<summary>
+    ///	  The drive is a network drive.
+    ///	</summary>
     dtNetwork,
-
-    /// <summary>
-    /// The drive is an optical disc device, such as a CD or DVD-ROM.
-    /// </summary>
+    ///	<summary>
+    ///	  The drive is an optical disc device, such as a CD or DVD-ROM.
+    ///	</summary>
     dtCDRom,
-
-    /// <summary>
-    /// The drive is a RAM disk.
-    /// </summary>
+    ///	<summary>
+    ///	  The drive is a RAM disk.
+    ///	</summary>
     dtRam
   );
 
   {$REGION 'Documentation'}
-  ///	<summary>Provides access to information on a drive.</summary>
+  ///	<summary>
+  ///	  Provides access to information on a drive.
+  ///	</summary>
   ///	<remarks>
-  ///	  Use the static <see cref="Spring.Utils|TDriveInfo.GetDrives"></see>
-  ///	  method to retrieve all drives of the computer.
-  ///	  <note type="caller">Caller must use the <see cref=
-  ///	  "Spring.Utils|TDriveInfo.IsReady">IsReady</see> property to check
-  ///	  whether the drive is ready before accessing other members. Otherwise,
-  ///	  an <see cref="Spring|EIOException"></see> exception will be raised if
-  ///	  it is not ready.</note>
+  ///	  Use the static <see cref="Spring.Utils|TDriveInfo.GetDrives" /> method
+  ///	  to retrieve all drives of the computer.
+  ///	  <note type="caller">
+  ///	    Caller must use the <see cref="Spring.Utils|TDriveInfo.IsReady">IsRead
+  ///	    y</see> property to check whether the drive is ready before accessing
+  ///	    other members. Otherwise, an <see cref="Spring|EIOException" />
+  ///	    exception will be raised if it is not ready.
+  ///	  </note>
   ///	</remarks>
-  ///	<threadsafety static="true" instance="false"></threadsafety>
-  ///	<seealso href=
-  ///	"http://msdn.microsoft.com/en-us/library/system.io.driveinfo.aspx">
-  ///	System.IO.DriveInfo (.Net Framework)</seealso>
+  ///	<threadsafety static="true" instance="false" />
+  ///	<seealso href="http://msdn.microsoft.com/en-us/library/system.io.driveinfo.aspx">
+  ///	  System.IO.DriveInfo (.Net Framework)
+  ///	</seealso>
   {$ENDREGION}
   TDriveInfo = record
   strict private
@@ -197,9 +184,13 @@ type
     property VolumeLabel: string read GetVolumeLabel write SetVolumeLabel;
   end;
 
-  ///	<summary>Represents a version number in the format of
-  ///	"major.minor[.build[.revision]]", which is different from the delphi
-  ///	style format "major.minor[.release[.build]]".</summary>
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents a version number in the format of
+  ///	  "major.minor[.build[.revision]]", which is different from the delphi
+  ///	  style format "major.minor[.release[.build]]".
+  ///	</summary>
+  {$ENDREGION}
   TVersion = record
   private
     const fCUndefined: Integer = -1;
@@ -1051,6 +1042,31 @@ type
 
 
   {$REGION 'Constants'}
+
+const
+  ///	<summary>Represents bytes of one KB.</summary>
+  COneKB: Int64 = 1024;            // 1KB = 1024 bytes
+
+  ///	<summary>Represents bytes of one MB.</summary>
+  COneMB: Int64 = 1048576;         // 1MB = 1024 KB
+
+  ///	<summary>Represents bytes of one GB.</summary>
+  COneGB: Int64 = 1073741824;      // 1GB = 1024 MB
+
+  ///	<summary>Represents bytes of one TB.</summary>
+  COneTB: Int64 = 1099511627776;   // 1TB = 1024 GB
+
+  ///	<summary>Represents bytes of one KB.</summary>
+  OneKB: Int64 = 1024 deprecated 'Use COneKB instead.';
+
+  ///	<summary>Represents bytes of one MB.</summary>
+  OneMB: Int64 = 1048576 deprecated 'Use COneMB instead.';
+
+  ///	<summary>Represents bytes of one GB.</summary>
+  OneGB: Int64 = 1073741824 deprecated 'Use COneGB instead.';
+
+  ///	<summary>Represents bytes of one TB.</summary>
+  OneTB: Int64 = 1099511627776 deprecated 'Use COneTB instead.';
 
   const
     SpecialFolderCSIDLs: array[TSpecialFolder] of Integer = (

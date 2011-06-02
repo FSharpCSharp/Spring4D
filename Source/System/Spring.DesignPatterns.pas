@@ -57,32 +57,26 @@ type
 
   {$REGION 'Documentation'}
   ///	<summary>
-  ///	  <para>Provides a simple implementation of the <b>Singleton Pattern</b>.
-  ///	  Use this portal to get the shared instance of a certain class which
-  ///	  must have a default constructor.</para>
-  ///	  <para>It also keeps track of the lifetime of the instances and will
-  ///	  free them in reversed order.</para>
+  ///	  <para>
+  ///	    Provides a simple implementation of the <b>Singleton Pattern</b>. Use
+  ///	    this portal to get the shared instance of a certain class which must
+  ///	    have a default constructor.
+  ///	  </para>
+  ///	  <para>
+  ///	    It also keeps track of the lifetime of the instances and will free
+  ///	    them in reversed order.
+  ///	  </para>
   ///	</summary>
-  ///	<remarks>This class just demonstrates how to apply the classical
-  ///	Singleton Pattern. It's recommended to use the Spring IoC container which
-  ///	is more flexible.</remarks>
+  ///	<remarks>
+  ///	  This class just demonstrates how to apply the classical Singleton
+  ///	  Pattern. It's recommended to use the Spring IoC container which is more
+  ///	  flexible.
+  ///	</remarks>
   ///	<threadsafety static="true" />
   {$ENDREGION}
   TSingleton = record
   strict private
     class var
-      {$REGION 'Documentation'}
-      ///	<summary>
-      ///	  This namespace contains the following classical design patterns:
-      ///	  <list type="bullet">
-      ///	    <item><b><see cref="TSingleton">Singleton
-      ///	    Pattern</see></b></item>
-      ///	    <item><b>Observer Pattern</b></item>
-      ///	    <item><b><see cref="ISpecification&lt;T&gt;">Specification
-      ///	    Pattern</see></b></item>
-      ///	  </list>
-      ///	</summary>
-      {$ENDREGION}
       fMappings: TDictionary<TClass, TObject>;
 
       ///	<summary>Tracks all instances of the singleton objects and free them

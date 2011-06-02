@@ -32,7 +32,7 @@ uses
   TestFramework,
   Spring,
   Spring.Reflection,
-  Spring.Pool;
+  Spring.DI.Pool;
 
 type
   TMockIDObject = class

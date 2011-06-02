@@ -37,7 +37,6 @@ uses
   Classes,
   SysUtils,
   TypInfo,
-  Rtti,
   Generics.Defaults,
   Generics.Collections,
   Spring;
@@ -356,7 +355,6 @@ type
 
 // function Extract(const item: T): T; overload;
 // Ownerships: TCollectionOwnerships (coOwnsElements, coOwnsKeys, coOwnsValues)
-// property OnChanged: IDelegate<T>;
 
     procedure Clear;
     property IsReadOnly: Boolean read GetIsReadOnly;
@@ -368,6 +366,7 @@ type
   IList<T> = interface(ICollection<T>)
   {$REGION 'Property Getters & Setters'}
     function GetItem(index: Integer): T;
+//    function GetOnNotify: TEvent<TCollectionNotifyEvent<T>>;
     procedure SetItem(index: Integer; const item: T);
   {$ENDREGION}
     procedure Insert(index: Integer; const item: T);
@@ -390,6 +389,7 @@ type
     function IndexOf(const item: T): Integer;
     function LastIndexOf(const item: T): Integer;
     property Items[index: Integer]: T read GetItem write SetItem; default;
+//    property OnNotify: TEvent<TCollectionNotifyEvent<T>> read GetOnNotify;
   end;
 
   /// <summary>
@@ -400,6 +400,8 @@ type
     function GetItem(const key: TKey): TValue;
     function GetKeys: ICollection<TKey>;
     function GetValues: ICollection<TValue>;
+//    function GetOnKeyNotify: IMulticastEvent<TCollectionNotifyEventHandler<TKey>>;
+//    function GetOnValueNotify: IMulticastEvent<TCollectionNotifyEventHandler<TValue>>;
     procedure SetItem(const key: TKey; const value: TValue);
   {$ENDREGION}
     procedure Add(const key: TKey; const value: TValue); overload;
@@ -419,6 +421,9 @@ type
     /// Gets a read-only collection which contains all values in the dictionary.
     /// </summary>
     property Values: ICollection<TValue> read GetValues;
+
+//    property OnKeyNotify: IMulticastEvent<TCollectionNotifyEventHandler<TKey>> read GetOnKeyNotify;
+//    property OnValueNotify: IMulticastEvent<TCollectionNotifyEventHandler<TValue>> read GetOnValueNotify;
   end;
 
   IStack<T> = interface(IEnumerable<T>)
@@ -583,7 +588,7 @@ type
     property Controller: IInterface read GetController;
   end;
 
-  TList<T> = class(TCollectionBase<T>, IList<T>, ISupportIndexedProperties)
+  TList<T> = class(TCollectionBase<T>, IList<T>)
   protected
     type
       TEnumerator = class(TEnumeratorBase<T>)
@@ -621,17 +626,15 @@ type
     fItems: array of T;
     fCount: Integer;
     fComparer: IComparer<T>;
+//    fOnNotify: TEvent<TCollectionNotifyEvent<T>>;
+//    fOnChanged: IMulticastEvent<TCollectionNotifyEventHandler<T>>;
     function GetItem(index: Integer): T;
     function GetCapacity: Integer;
+//    function GetOnNotify: TEvent<TCollectionNotifyEvent<T>>;
     procedure SetItem(index: Integer; const value: T);
     procedure SetCapacity(value: Integer);
   protected
     function EnsureCapacity(value: Integer): Integer;
-
-  {$REGION 'Implements ISupportIndexedProperties'}
-    function GetPropertyValue(const propertyName: string; const index: Rtti.TValue): Rtti.TValue;
-    procedure SetPropertyValue(const propertyName: string; const index, value: Rtti.TValue);
-  {$ENDREGION}
   protected
     procedure DoDelete(index: Integer; notification: TCollectionNotification);
     procedure Notify(const item: T; action: TCollectionNotification); virtual;
@@ -677,6 +680,8 @@ type
     procedure Reverse;
     property Items[index: Integer]: T read GetItem write SetItem; default;
     property IsReadOnly: Boolean read GetIsReadOnly;
+  public
+//    property OnNotify: TEvent<TCollectionNotifyEvent<T>> read GetOnNotify;
   end;
 
   TDictionary<TKey, TValue> = class(TCollectionBase<TPair<TKey, TValue>>, IDictionary<TKey, TValue>)
@@ -739,6 +744,12 @@ type
     fOwnership: TOwnershipType;
     fKeys: TKeyCollection;
     fValues: TValueCollection;
+//    fOnKeyNotify: IMulticastEvent<TCollectionNotifyEventHandler<TKey>>;
+//    fOnValueNotify: IMulticastEvent<TCollectionNotifyEventHandler<TValue>>;
+//    function GetOnKeyNotify: IMulticastEvent<TCollectionNotifyEventHandler<TKey>>;
+//    function GetOnValueNotify: IMulticastEvent<TCollectionNotifyEventHandler<TValue>>;
+    procedure DoKeyNotify(Sender: TObject; const Item: TKey; Action: TCollectionNotification);
+    procedure DoValueNotify(Sender: TObject; const Item: TValue; Action: TCollectionNotification);
   public
     constructor Create(dictionary: TGenericDictionary;
       ownership: TOwnershipType = otReference); overload;
@@ -777,6 +788,8 @@ type
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
     property Keys: ICollection<TKey> read GetKeys;
     property Values: ICollection<TValue> read GetValues;
+//    property OnKeyNotify: IMulticastEvent<TCollectionNotifyEventHandler<TKey>> read GetOnKeyNotify;
+//    property OnValueNotify: IMulticastEvent<TCollectionNotifyEventHandler<TValue>> read GetOnValueNotify;
   {$ENDREGION}
   end;
 
@@ -1091,7 +1104,7 @@ end;
 function TEnumerableBase<T>.Concat(
   const collection: IEnumerable<T>): IEnumerable<T>;
 begin
-  TArgument.CheckNotNull(collection, 'collection');
+  TArgument.CheckNotNull(Assigned(collection), 'collection');
 
   Result := TConcatEnumerable<T>.Create(Self, collection);
 end;
@@ -2009,7 +2022,10 @@ end;
 
 procedure TList<T>.Notify(const item: T; action: TCollectionNotification);
 begin
-
+//  if (fOnChanged <> nil) and fOnChanged.IsNotEmpty then
+//  begin
+//    fOnChanged.Invoke(Self, item, action);
+//  end;
 end;
 
 function TList<T>.ToArray: TArray<T>;
@@ -2073,6 +2089,11 @@ begin
   Result := fItems[index];
 end;
 
+//function TList<T>.GetOnNotify: TEvent<TCollectionNotifyEvent<T>>;
+//begin
+//  Result := fOnNotify.GetInstance;
+//end;
+
 procedure TList<T>.SetCapacity(value: Integer);
 begin
   if value < Count then
@@ -2095,25 +2116,25 @@ begin
   Notify(value, cnAdded);
 end;
 
-function TList<T>.GetPropertyValue(const propertyName: string;
-  const index: Rtti.TValue): Rtti.TValue;
-var
-  indexValue: Integer;
-begin
-  TArgument.CheckTrue(SameText(propertyName, 'Items'), propertyName);
-  TArgument.CheckTrue(index.TryAsType<Integer>(indexValue), 'index');
-  Result := Rtti.TValue.From<T>(Self.Items[indexValue]);
-end;
-
-procedure TList<T>.SetPropertyValue(const propertyName: string;
-  const index, value: Rtti.TValue);
-var
-  indexValue: Integer;
-begin
-  TArgument.CheckTrue(SameText(propertyName, 'Items'), propertyName);
-  TArgument.CheckTrue(index.TryAsType<Integer>(indexValue), 'index');
-  Self.Items[indexValue] := value.AsType<T>;
-end;
+//function TList<T>.GetPropertyValue(const propertyName: string;
+//  const index: Rtti.TValue): Rtti.TValue;
+//var
+//  indexValue: Integer;
+//begin
+//  TArgument.CheckTrue(SameText(propertyName, 'Items'), propertyName);
+//  TArgument.CheckTrue(index.TryAsType<Integer>(indexValue), 'index');
+//  Result := Rtti.TValue.From<T>(Self.Items[indexValue]);
+//end;
+//
+//procedure TList<T>.SetPropertyValue(const propertyName: string;
+//  const index, value: Rtti.TValue);
+//var
+//  indexValue: Integer;
+//begin
+//  TArgument.CheckTrue(SameText(propertyName, 'Items'), propertyName);
+//  TArgument.CheckTrue(index.TryAsType<Integer>(indexValue), 'index');
+//  Self.Items[indexValue] := value.AsType<T>;
+//end;
 
 procedure TList<T>.Sort;
 begin
@@ -2206,6 +2227,8 @@ begin
   inherited Create;
   fDictionary := dictionary;
   fOwnership := ownership;
+  fDictionary.OnKeyNotify := DoKeyNotify;
+  fDictionary.OnValueNotify := DoValueNotify;
 end;
 
 constructor TDictionary<TKey, TValue>.Create;
@@ -2225,6 +2248,24 @@ begin
     fDictionary.Free;
   end;
   inherited Destroy;
+end;
+
+procedure TDictionary<TKey, TValue>.DoKeyNotify(Sender: TObject;
+  const Item: TKey; Action: TCollectionNotification);
+begin
+//  if fOnKeyNotify <> nil then
+//  begin
+//    fOnKeyNotify.Invoke(sender, item, action);
+//  end;
+end;
+
+procedure TDictionary<TKey, TValue>.DoValueNotify(Sender: TObject;
+  const Item: TValue; Action: TCollectionNotification);
+begin
+//  if fOnValueNotify <> nil then
+//  begin
+//    fOnValueNotify.Invoke(sender, item, action);
+//  end;
 end;
 
 function TDictionary<TKey, TValue>.GetEnumerator: IEnumerator<TPair<TKey, TValue>>;
@@ -2371,6 +2412,24 @@ begin
   end;
   Result := fKeys;
 end;
+
+//function TDictionary<TKey, TValue>.GetOnKeyNotify: IMulticastEvent<TCollectionNotifyEventHandler<TKey>>;
+//begin
+//  if fOnKeyNotify = nil then
+//  begin
+//    fOnKeyNotify := TMulticastEvent<TCollectionNotifyEventHandler<TKey>>.Create;
+//  end;
+//  Result := fOnKeyNotify;
+//end;
+//
+//function TDictionary<TKey, TValue>.GetOnValueNotify: IMulticastEvent<TCollectionNotifyEventHandler<TValue>>;
+//begin
+//  if fOnValueNotify = nil then
+//  begin
+//    fOnValueNotify := TMulticastEvent<TCollectionNotifyEventHandler<TValue>>.Create;
+//  end;
+//  Result := fOnValueNotify;
+//end;
 
 function TDictionary<TKey, TValue>.GetValues: ICollection<TValue>;
 begin

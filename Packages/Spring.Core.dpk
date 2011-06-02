@@ -69,7 +69,8 @@ contains
   Spring.DI in '..\Source\Core\DI\Spring.DI.pas',
   Spring.DI.Registration in '..\Source\Core\DI\Spring.DI.Registration.pas',
   Spring.DI.Resolvers in '..\Source\Core\DI\Spring.DI.Resolvers.pas',
-  Spring.DI.ResourceStrings in '..\Source\Core\DI\Spring.DI.ResourceStrings.pas';
+  Spring.DI.ResourceStrings in '..\Source\Core\DI\Spring.DI.ResourceStrings.pas',
+  Spring.DI.Pool in '..\Source\Core\DI\Spring.DI.Pool.pas';
 
 end.
 

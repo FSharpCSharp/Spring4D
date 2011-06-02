@@ -34,41 +34,39 @@ uses
   Classes,
   SysUtils,
   TypInfo,
-  Rtti,
+  Rtti,   Windows,
   StrUtils,
   Spring,
   Spring.Collections,
-  Spring.Utils,
-  MulticastEvent in 'C:\Users\Paul\Desktop\MulticastEvent.pas';
+  Spring.Utils;
+
 
 type
-  TTest<T> = class
-  private
-    fT: T;
-  public
-    property Invoke: T read fT;
+  TRec = record
+    f: Int64;
+    s: string;
+//    e: Double;
   end;
 
-//var
-//  strings: IList<string>;
-//  list, list2: IList<Integer>;
-//  r: IEnumerable<Integer>;
-//  p: TFunc<Integer, Integer, Boolean>;
-//  element: Integer;
-//  s: string;
+  TTest = class
+  private
+    fRec: TRec;
+  public
+//    property V: Integer read fRec.Value;
+  end;
 
-var
-  e1: TTest<TNotifyEvent>;
-  e2: TTest<TProc<TObject, Integer>>;
-
-{ TTest<T> }
+  procedure Test;
+  var
+    r: TRec;
+    v: TGuid;
+  begin
+    ZeroMemory(@r, SizeOf(r));
+  end;
 
 begin
   try
-    e1.Invoke(nil);
-    e2.Invoke(sender, 2);
-
     ReportMemoryLeaksOnShutdown := True;
+    Test();
 //    TLinq.From(TStrings)
 //    TLinq.From(TArray[])
 //    TLinq.From(TObjectList)

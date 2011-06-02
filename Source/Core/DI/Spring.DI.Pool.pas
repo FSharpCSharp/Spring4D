@@ -23,7 +23,7 @@
 {***************************************************************************}
 
 /// <preliminary />
-unit Spring.Pool;  // experimental;
+unit Spring.DI.Pool;  // experimental;
 
 {$I Spring.inc}
 
@@ -71,7 +71,7 @@ type
     fMaxPoolsize: TNullable<Integer>;
     fAvailableList: IQueue<TObject>;
     fActiveList: IList<TObject>;
-    fInstances: IList<TFunc<TObject>>;
+    fInstances: IList<TObject>;
   protected
     procedure InitializePool; virtual;
     function AddNewInstance: TObject;
@@ -105,7 +105,7 @@ begin
   begin
     fMaxPoolsize := maxPoolSize;
   end;
-  fInstances := TList<TFunc<TObject>>.Create;
+  fInstances := TObjectList<TObject>.Create;
   fAvailableList := TQueue<TObject>.Create;
   fActiveList := TList<TObject>.Create;
   InitializePool;
@@ -119,14 +119,11 @@ begin
 end;
 
 function TSimpleObjectPool.AddNewInstance: TObject;
-var
-  holder: TFunc<TObject>;
 begin
   Result := fActivator.CreateInstance;
-  holder := TObjectHolder.Create(Result);
   MonitorEnter(TObject(fInstances));
   try
-    fInstances.Add(holder);
+    fInstances.Add(Result);
   finally
     MonitorExit(TObject(fInstances));
   end;

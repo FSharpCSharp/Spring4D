@@ -59,11 +59,11 @@ begin
     TTestTryConvertStrToDateTime.Suite,
     TTestVersion.Suite,
     TTestEnum.Suite,
-    TTestBuffer.Suite,
-    TTestEmptyBuffer.Suite,
-    TTestFiveByteBuffer.Suite,
-    TRepeatedTest.Create(TTestNullableInteger.Suite, 3),
-    TTestDelegate.Suite
+//    TTestBuffer.Suite,
+//    TTestEmptyBuffer.Suite,
+//    TTestFiveByteBuffer.Suite,
+    TRepeatedTest.Create(TTestNullableInteger.Suite, 3)
+//    TTestDelegate.Suite
   ]);
 
   RegisterTests('Base.DesignPatterns', [

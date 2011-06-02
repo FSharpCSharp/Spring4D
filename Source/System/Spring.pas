@@ -47,9 +47,6 @@ type
   ///	<summary>Represents a dynamic array of Byte.</summary>
   TBytes = SysUtils.TBytes;
 
-  ///	<summary>Represents a type information.</summary>
-  PTypeInfo = TypInfo.PTypeInfo;
-
   ///	<summary>Represents a dynamic array of string.</summary>
   TStringDynArray = Types.TStringDynArray;
 
@@ -118,10 +115,14 @@ type
   end;
 
   {$REGION 'Documentation'}
-  ///	<summary>Provides static methods to check arguments and raise argument
-  ///	exceptions.</summary>
-  ///	<remarks>It's recommended that all arguments of public methods of
-  ///	global routines, class and record methods should be checked.</remarks>
+  ///	<summary>
+  ///	  Provides static methods to check arguments and raise argument
+  ///	  exceptions.
+  ///	</summary>
+  ///	<remarks>
+  ///	  It's recommended that all arguments of public methods of global
+  ///	  routines, class and record methods should be checked.
+  ///	</remarks>
   {$ENDREGION}
   TArgument = class
   strict private
@@ -135,20 +136,21 @@ type
     class procedure CheckTrue(condition: Boolean; const msg: string); static; inline;
     class procedure CheckFalse(condition: Boolean; const msg: string); static; inline;
 
-    class procedure CheckInheritsFrom(obj: TObject; const clazz: TClass; const argumentName: string); overload; static; inline;
-    class procedure CheckInheritsFrom(const checkclazz, clazz: TClass; const argumentName: string); overload; static; inline;
+    class procedure CheckInheritsFrom(obj: TObject; const clazz: TClass; const parameterName: string); overload; static; inline;
+    class procedure CheckInheritsFrom(const checkclazz, clazz: TClass; const parameterName: string); overload; static; inline;
 
     class procedure CheckNotNull(obj: TObject; const argumentName: string); overload; static; inline;
     class procedure CheckNotNull(p: Pointer; const argumentName: string); overload; static; inline;
     class procedure CheckNotNull(const intf: IInterface; const argumentName: string); overload; static; inline;
-    class procedure CheckNotNull(condition: Boolean; const argumentName: string); overload; static; inline;
+    class procedure CheckNotNull(condition: Boolean; const parameterName: string); overload; static; inline;
     class procedure CheckNotNull<T>(const value: T; const argumentName: string); overload; static; inline;
 
     class procedure CheckEnum<T{:enum}>(const value: T; const argumentName: string); overload; static; inline;
     class procedure CheckEnum<T{:enum}>(const value: Integer; const argumentName: string); overload; static; inline;
 
-    ///	<exception cref="Spring|EArgumentOutOfRangeException">Raised if the
-    ///	<paramref name="index" /> is out of range.</exception>
+    ///	<exception cref="Spring|EArgumentOutOfRangeException">
+    ///	  Raised if the <paramref name="index" /> is out of range.
+    ///	</exception>
     class procedure CheckRange(const buffer: array of Byte; const index: Integer); overload; static;
     class procedure CheckRange(const buffer: array of Byte; const startIndex, count: Integer); overload; static;
     class procedure CheckRange(const buffer: array of Char; const index: Integer); overload; static;
@@ -167,10 +169,7 @@ type
     class procedure CheckTypeKind(typeInfo: PTypeInfo; const expectedTypeKind: TTypeKind; const argumentName: string); overload; static;
     class procedure CheckTypeKind(typeInfo: PTypeInfo; const expectedTypeKinds: TTypeKinds; const argumentName: string); overload; static;
 
-  {$IFNDEF DisableGenerics}
-    class function IsNullReference<T>(const value: T): Boolean; overload; static;
-  {$ENDIF}
-    class function IsNullReference(const value; typeInfo: PTypeInfo): Boolean; overload; static;
+    class function IsNullReference(const value; typeInfo: PTypeInfo): Boolean; static;
 
     ///	<summary>Raises an EArgumentException exception.</summary>
     class procedure RaiseArgumentException(const msg: string); overload; static; inline;
@@ -189,12 +188,6 @@ type
   end;
 
   /// <summary>
-  /// Represents a type alias of the <see cref="TArgument" /> class.
-  /// </summary>
-  TArg = TArgument;
-
-
-  /// <summary>
   /// Provides static methods to manipulate an enumeration type.
   /// </summary>
   TEnum = class
@@ -204,9 +197,6 @@ type
     { Internal function without range check }
     class function ConvertToInteger<T>(const value: T): Integer; static;
   public
-    // Todo: Add Non-Generic methods
-//  class procedure ExtractNames<T>(names: TStrings); static;
-//  class procedure ExtractValues<T>(values: TStrings); static;
     class function IsValid<T>(const value: T): Boolean; overload; static;
     class function IsValid<T>(const value: Integer): Boolean; overload; static;
     class function GetName<T>(const value: T): string; overload; static;
@@ -223,121 +213,32 @@ type
   end;
 
 
-  ///	<summary>Represents a series of bytes in memory.</summary>
+  {$REGION 'TNullable<T> & Aliases'}
+
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents an "object" whose underlying type is a value type that can
+  ///	  also be assigned nil like a reference type.
+  ///	</summary>
+  ///	<typeparam name="T">
+  ///	  The underlying value type of the <see cref="TNullable`1" /> generic
+  ///	  type.
+  ///	</typeparam>
   ///	<remarks>
-  ///	  The <c>TBuffer</c> structure is actually a wrapper of a value of
-  ///	  <c>TBytes</c> while provideing some easy-going methods and properties.
-  ///	  <note type="warning">This type needs to be reviewed.</note>
+  ///	  The <typeparamref name="T" /> must be a value type such as a value of
+  ///	  string, Integer.
   ///	</remarks>
-  TBuffer = record
-  strict private
-    fBytes: TBytes;
-    function GetIsEmpty: Boolean;
-    function GetMemory: PByte; inline;
-    function GetSize: Integer; inline;
-    function GetByteItem(const index: Integer): Byte;
-    procedure SetSize(const value: Integer);
-    procedure SetByteItem(const index: Integer; const value: Byte);
-  private
-    class var fEmpty: TBuffer;
-  public
-    constructor Create(size: Integer); overload;
-    constructor Create(const buffer: Pointer; count: Integer); overload;
-    constructor Create(const buffer: Pointer; startIndex, count: Integer); overload;
-    constructor Create(const buffer: array of Byte); overload;
-    constructor Create(const buffer: array of Byte; startIndex, count: Integer); overload;
-//    constructor Create(const buffer: array of Char); overload;
-//    constructor Create(const buffer: array of Char; startIndex, count: Integer); overload;
-    constructor Create(const s: string); overload;
-    constructor Create(const s: WideString); overload;
-    constructor Create(const s: RawByteString); overload;
-
-    class function FromHexString(const s: string): TBuffer; static;
-    ///	<seealso cref="FromHexString(string)"></seealso>
-    class function ConvertToHexString(const buffer: Pointer; count: Integer): string; overload; static;
-    class function ConvertToHexString(const buffer: Pointer; count: Integer;
-      const prefix: string; const delimiter: string = ' '): string; overload; static;
-
-    class function BytesOf(const value: Byte; count: Integer): TBytes; static;
-    class function GetByte(const buffer; const index: Integer): Byte; static;
-    class procedure SetByte(var buffer; const index: Integer; const value: Byte); static;
-
-//    procedure CopyTo(var dest: array of Byte; index, count: Integer);
-
-    function Clone: TBuffer;
-    function Copy(startIndex, count: Integer): TBytes;
-    function Reverse: TBuffer; // experimental;
-
-    function Left(count: Integer): TBuffer;
-    function Mid(startIndex, count: Integer): TBuffer;
-    function Right(count: Integer): TBuffer;
-
-    function First: Byte;
-    function Last: Byte;
-
-    function EnsureSize(size: Integer): TBuffer; overload;
-    function EnsureSize(size: Integer; value: Byte): TBuffer; overload;
-    function EnsureSize(size: Integer; value: AnsiChar): TBuffer; overload;
-
-    function Equals(const buffer: TBuffer): Boolean; overload;
-    function Equals(const buffer: array of Byte): Boolean; overload;
-    function Equals(const buffer: Pointer; count: Integer): Boolean; overload;
-    function Equals(const hexString: string): Boolean; overload;
-
-//    procedure LoadFromStream(stream: TStream; count: Integer);
-    procedure SaveToStream(stream: TStream);
-
-    function ToBytes: TBytes;
-    function ToString: string; experimental;
-    function ToWideString: WideString; experimental;  // deprecated;
-    function ToAnsiString: RawByteString; experimental; // deprecated;
-    function ToUtf8String: UTF8String; experimental; // deprecated;
-
-    function ToHexString: string; overload;
-    function ToHexString(const prefix: string; const delimiter: string = ' '): string; overload;
-
-    property AsBytes: TBytes read fBytes;
-    property IsEmpty: Boolean read GetIsEmpty;
-    property Memory: PByte read GetMemory;
-    property Size: Integer read GetSize write SetSize;
-    property Bytes[const index: Integer]: Byte read GetByteItem write SetByteItem; default;
-
-    class property Empty: TBuffer read fEmpty;
-
-    { Operator Overloads }
-    class operator Implicit(const value: TBytes): TBuffer;
-    class operator Implicit(const value: TBuffer): TBytes;
-    class operator Implicit(const value: TBuffer): PByte;
-    class operator Explicit(const value: TBytes): TBuffer;
-    class operator Explicit(const value: TBuffer): TBytes;
-    class operator Explicit(const value: TBuffer): PByte;
-    class operator Add(const left, right: TBuffer): TBuffer;
-    class operator Add(const left: TBuffer; const right: Byte): TBuffer; overload;
-    class operator Add(const left: Byte; const right: TBuffer): TBuffer; overload;
-    class operator Equal(const left, right: TBuffer): Boolean;
-    class operator NotEqual(const left, right: TBuffer): Boolean;
-//    class operator BitwiseAnd(const left, right: TBuffer): TBuffer;
-//    class operator BitwiseOr(const left, right: TBuffer): TBuffer;
-    class operator BitwiseXor(const left, right: TBuffer): TBuffer;
-  end;
-
-
-  ///	<summary>Represents an "object" whose underlying type is a value type
-  ///	that can also be assigned nil like a reference type.</summary>
-  ///	<typeparam name="T">The underlying value type of the <see cref=
-  ///	"TNullable`1" /> generic type.</typeparam>
-  ///	<remarks>The <typeparamref name="T" /> must be a value type such as a
-  ///	value of string, Integer.</remarks>
+  {$ENDREGION}
   TNullable<T> = packed record
   private
-    const fCHasValue = '@';  // DO NOT LOCALIZE
+    const CHasValueFlag = '@';  // DO NOT LOCALIZE
   strict private
     fValue: T;
     fHasValue: string;
     function GetValue: T;
     function GetHasValue: Boolean;
   private
-    ///	<summary>Internal use. Clears the value and marks it as null.</summary>
+    ///	<summary>Internal use. Marks the current instance as null.</summary>
     procedure Clear;
 
     /// <summary>
@@ -381,72 +282,37 @@ type
   end;
 
 
-  {$REGION 'Common TNullable<T> Aliases'}
-
   ///	<summary>Represents a nullable string.</summary>
-  ///	<seealso cref="TNullable{T}"></seealso>
   TNullableString = TNullable<string>;
 
   ///	<summary>Represents a nullable integer.</summary>
-  ///	<seealso cref="TNullable{T}"></seealso>
   TNullableInteger = TNullable<Integer>;
 
   ///	<summary>Represents a nullable <c>Int64</c>.</summary>
-  ///	<seealso cref="TNullable{T}"></seealso>
   TNullableInt64 = TNullable<Int64>;
 
   ///	<summary>Represents a nullable native integer.</summary>
-  ///	<seealso cref="TNullable{T}"></seealso>
   TNullableNativeInt = TNullable<NativeInt>;
 
   ///	<summary>Represents a nullable <c>TDateTime</c>.</summary>
-  ///	<seealso cref="TNullable{T}"></seealso>
   TNullableDateTime = TNullable<TDateTime>;
 
   ///	<summary>Represents a nullable <c>Currency</c>.</summary>
-  ///	<seealso cref="TNullable{T}"></seealso>
   TNullableCurrency = TNullable<Currency>;
 
   ///	<summary>Represents a nullable <c>Double</c>.</summary>
-  ///	<seealso cref="TNullable{T}"></seealso>
   TNullableDouble = TNullable<Double>;
 
   ///	<summary>Represents a nullable <c>Boolean</c>.</summary>
-  ///	<seealso cref="TNullable{T}"></seealso>
   TNullableBoolean = TNullable<Boolean>;
 
   ///	<summary>Represents a nullable <c>TGuid</c>.</summary>
-  ///	<seealso cref="TNullable{T}"></seealso>
   TNullableGuid = TNullable<TGUID>;
 
   {$ENDREGION}
 
 
-  ///	<summary>Represents a multicast delegate interface.</summary>
-  ///	<remarks>
-  ///	  <note type="warning">This type needs to be reviewed.</note>
-  ///	</remarks>
-  IDelegate<T> = interface
-    function AddHandler(const handler: T): IDelegate<T>;
-    function RemoveHandler(const handler: T): IDelegate<T>;
-    function Invoke(const callback: TProc<T>): IDelegate<T>;
-    procedure Clear;
-  end;
-
-  TDelegate<T> = class(TInterfacedObject, IDelegate<T>)
-  private
-    fHandlers: TList<T>;
-  protected
-    function GetHandlers: TList<T>; virtual;
-    property Handlers: TList<T> read GetHandlers;
-  public
-    destructor Destroy; override;
-    function AddHandler(const handler: T): IDelegate<T>;
-    function RemoveHandler(const handler: T): IDelegate<T>;
-    function Invoke(const callback: TProc<T>): IDelegate<T>; virtual;
-    procedure Clear;
-  end;
-
+  {$REGION 'MulticastEvent'}
 
   ///	<summary>Represents a multicast event.</summary>
   IMulticastEvent<T> = interface
@@ -554,149 +420,46 @@ type
     class operator Implicit(const event: TEvent<T>): IMulticastEvent<T>;
   end;
 
+  {$ENDREGION}
 
-  /// <preliminary />
-  /// <threadsafety static="true" />
-  TLazyUtils = record
-  public
-    {$REGION 'Documentation'}
-    ///	<summary>Uses the <c>TLazyUtils.GetValue&lt;T&gt;</c> method to
-    ///	implement the <b>Lazy-Initialization</b> pattern in
-    ///	thread-safe.</summary>
-    ///	<param name="field">the field stores the instance.</param>
-    ///	<param name="delegate">the delegate that will create a new
-    ///	instance.</param>
-    ///	<remarks>
-    ///	  <para>The following code copied from the <b>SysUtils.TEncoding</b>
-    ///	  class illustrates how to use the
-    ///	  <c>InterlockedCompareExchangePointer</c> function to ensure the
-    ///	  thread-safety.</para>
-    ///	  <code lang="Delphi">
-    ///	class function TEncoding.GetUTF8: TEncoding;
-    ///	var
-    ///	  LEncoding: TEncoding;
-    ///	begin
-    ///	  if FUTF8Encoding = nil then
-    ///	  begin
-    ///	    LEncoding := TUTF8Encoding.Create;
-    ///	    if InterlockedCompareExchangePointer(Pointer(FUTF8Encoding), LEncoding, nil) &lt;&gt; nil then
-    ///	      LEncoding.Free;
-    ///	  end;
-    ///	  Result := FUTF8Encoding;
-    ///	end;
-    ///	</code>
-    ///	  <para>By using the <c>TLazyUtils.GetValue&lt;T&gt;</c> method, the
-    ///	  code could be simpilifed:</para>
-    ///	  <code lang="Delphi">
-    ///	class function TEncoding.GetUTF8: TEncoding;
-    ///	begin
-    ///	  Result := TLazyUtils.GetValue&lt;TEncoding&gt;(fUtf8Encoding,
-    ///	    function: TEncoding
-    ///	    begin
-    ///	      Result := TUtf8Encoding.Create;
-    ///	    end
-    ///	  );
-    ///	end;
-    ///	</code>
-    ///	</remarks>
-    ///	<seealso cref="Windows|InterlockedCompareExchangePointer"></seealso>
-    {$ENDREGION}
-    class function GetValue<T: class>(var field: T; const delegate: TFunc<T>): T; static;
-  end;
 
+  {$REGION 'Lifetime Type & Attributes'}
 
   {$REGION 'Documentation'}
   ///	<summary>
-  ///	  <para>Provides a simple &amp; flexible implementation of <b>Smart
-  ///	  Pointer</b>. This implementation is very skillful and the basic idea
-  ///	  comes from a post in Kelly Barry's blog.</para>
-  ///	  <para>The point is to use an anonymous method <c>TFunc&lt;T&gt;,</c>
-  ///	  which is internally implemented as an interface in Delphi for Win32, to
-  ///	  manage the lifetime of an object instance.</para>
+  ///	  Lifetime Type Enumeration.
   ///	</summary>
-  ///	<example>
-  ///	  The following example demonstrates how to use the Smart Pointer:
-  ///	  <code lang="Delphi">
-  ///	procedure TestSmartPointer;
-  ///	var
-  ///	  person: TFunc&lt;TPerson&gt;;
-  ///	begin
-  ///	  person := TObjectHolder&lt;TPerson&gt;.Create(TPerson.Create);
-  ///	  person.DoSomething;
-  ///	end;
-  ///	</code>
-  ///	</example>
-  {$ENDREGION}
-  TObjectHolder<T: class> = class(TInterfacedObject, TFunc<T>)
-  private
-    fObject: T;
-    fLifetimeWatcher: IInterface;
-  public
-    constructor Create(obj: T); overload;
-    constructor Create(obj: T; const lifetimeWatcher: IInterface); overload;
-    destructor Destroy; override;
-    function Invoke: T;
-  end;
-
-  TObjectHolder = TObjectHolder<TObject>;
-
-
-  {$REGION 'Documentation'}
-  ///	<summary>Represents a lifetime watcher.</summary>
-  ///	<remarks>The basic idea is using an instance of the <c>IInterface</c> in
-  ///	the host such as a record. The anonymous method, which is specified by
-  ///	the <paramref name="proc" /> parameter in the constructor, will be
-  ///	executed when this interface is disposed. Normally, the proc is some kind
-  ///	of clean up code.</remarks>
-  {$ENDREGION}
-  TLifetimeWatcher = class(TInterfacedObject)
-  private
-    fProc: TProc;
-  public
-    constructor Create(const proc: TProc);
-    destructor Destroy; override;
-  end;
-
-  /// <summary>
-  /// Provides a workaround to get or set the value of an indexed property.
-  /// </summary>
-  /// <preliminary />
-  ISupportIndexedProperties = interface
-    ['{7BF8ED3B-60AB-425E-B678-776FD2EA3437}']
-    function GetPropertyValue(const propertyName: string; const index: TValue): TValue;
-    procedure SetPropertyValue(const propertyName: string; const index, value: TValue);
-  end;
-
-  {$REGION 'Documentation'}
-  ///	<summary>Lifetime Type Enumeration.</summary>
-  ///	<seealso cref="SingletonAttribute"></seealso>
-  ///	<seealso cref="TransientAttribute"></seealso>
-  ///	<seealso cref="SingletonPerThreadAttribute"></seealso>
-  ///	<seealso cref="PooledAttribute"></seealso>
+  ///	<seealso cref="SingletonAttribute" />
+  ///	<seealso cref="TransientAttribute" />
+  ///	<seealso cref="SingletonPerThreadAttribute" />
+  ///	<seealso cref="PooledAttribute" />
   {$ENDREGION}
   TLifetimeType = (
-    ///	<summary>Unknown lifetime type.</summary>
+    ///	<summary>
+    ///	  Unknown lifetime type.
+    ///	</summary>
     ltUnknown,
-
-    ///	<summary>Single instance.</summary>
+    ///	<summary>
+    ///	  Single instance.
+    ///	</summary>
     ltSingleton,
-
-    ///	<summary>Different instances.</summary>
+    ///	<summary>
+    ///	  Different instances.
+    ///	</summary>
     ltTransient,
-
-    ///	<summary>Every thread has a single instance.</summary>
+    ///	<summary>
+    ///	  Every thread has a single instance.
+    ///	</summary>
     ltSingletonPerThread,
-
-    ///	<summary>Instances are transient except that they are
-    ///	recyclable.</summary>
+    ///	<summary>
+    ///	  Instances are transient except that they are recyclable.
+    ///	</summary>
     ltPooled,
-
-    ///	<summary>Customized lifetime type.</summary>
+    ///	<summary>
+    ///	  Customized lifetime type.
+    ///	</summary>
     ltCustom
   );
-
-
-  {$REGION 'Lifetime Type Attributes'}
 
   ///	<summary>Represents an abstract lifetime attribute class base.</summary>
   LifetimeAttributeBase = class abstract(TCustomAttribute)
@@ -707,65 +470,68 @@ type
     property LifetimeType: TLifetimeType read fLifetimeType;
   end;
 
-  ///	<summary>Represents an abstract lifetime attribute class base.</summary>
-  TLifetimeAttributeBase = LifetimeAttributeBase
-    deprecated 'Use the LifetimeAttributeBase class instead.';
-
-  ///	<summary>Applies this attribute when a component shares the single
-  ///	instance.</summary>
-  ///	<remarks>When this attribute is applied to a component, the shared
-  ///	instance will be returned whenever get the implementation of a
-  ///	service.</remarks>
+  ///	<summary>
+  ///	  Applies this attribute when a component shares the single instance.
+  ///	</summary>
+  ///	<remarks>
+  ///	  When this attribute is applied to a component, the shared instance will
+  ///	  be returned whenever get the implementation of a service.
+  ///	</remarks>
   ///	<example>
   ///	  <code lang="Delphi">
   ///	[Singleton]
   ///	TEmailSender = class(TInterfacedObject, IEmailSender)
   ///	//...
   ///	end;
-  ///	</code>
+  ///	  </code>
   ///	</example>
-  ///	<seealso cref="TransientAttribute"></seealso>
-  ///	<seealso cref="SingletonPerThreadAttribute"></seealso>
-  ///	<seealso cref="PooledAttribute"></seealso>
-  ///	<seealso cref="TLifetimeType"></seealso>
+  ///	<seealso cref="TransientAttribute" />
+  ///	<seealso cref="SingletonPerThreadAttribute" />
+  ///	<seealso cref="PooledAttribute" />
+  ///	<seealso cref="TLifetimeType" />
   SingletonAttribute = class(LifetimeAttributeBase)
   public
     constructor Create;
   end;
 
-  ///	<summary>Represents that a new instance of the component will be created
-  ///	when requested.</summary>
+  ///	<summary>
+  ///	  Represents that a new instance of the component will be created when
+  ///	  requested.
+  ///	</summary>
   ///	<remarks>
-  ///	  <note type="note">This attribute is the default option.</note>
+  ///	  <note type="note">
+  ///	    This attribute is the default option.
+  ///	  </note>
   ///	</remarks>
-  ///	<seealso cref="SingletonAttribute"></seealso>
-  ///	<seealso cref="SingletonPerThreadAttribute"></seealso>
-  ///	<seealso cref="PooledAttribute"></seealso>
-  ///	<seealso cref="TLifetimeType"></seealso>
+  ///	<seealso cref="SingletonAttribute" />
+  ///	<seealso cref="SingletonPerThreadAttribute" />
+  ///	<seealso cref="PooledAttribute" />
+  ///	<seealso cref="TLifetimeType" />
   TransientAttribute = class(LifetimeAttributeBase)
   public
     constructor Create;
   end;
 
-  /// <summary>
-  /// Applies this attribute when a component shares the single instance per thread.
-  /// </summary>
-  ///	<seealso cref="SingletonAttribute"></seealso>
-  ///	<seealso cref="TransientAttribute"></seealso>
-  ///	<seealso cref="PooledAttribute"></seealso>
-  ///	<seealso cref="TLifetimeType"></seealso>
+  ///	<summary>
+  ///	  Applies this attribute when a component shares the single instance per
+  ///	  thread.
+  ///	</summary>
+  ///	<seealso cref="SingletonAttribute" />
+  ///	<seealso cref="TransientAttribute" />
+  ///	<seealso cref="PooledAttribute" />
+  ///	<seealso cref="TLifetimeType" />
   SingletonPerThreadAttribute = class(LifetimeAttributeBase)
   public
     constructor Create;
   end;
 
-  /// <summary>
-  /// Represents that the target component can be pooled.
-  /// </summary>
-  ///	<seealso cref="SingletonAttribute"></seealso>
-  ///	<seealso cref="TransientAttribute"></seealso>
-  ///	<seealso cref="SingletonPerThreadAttribute"></seealso>
-  ///	<seealso cref="TLifetimeType"></seealso>
+  ///	<summary>
+  ///	  Represents that the target component can be pooled.
+  ///	</summary>
+  ///	<seealso cref="SingletonAttribute" />
+  ///	<seealso cref="TransientAttribute" />
+  ///	<seealso cref="SingletonPerThreadAttribute" />
+  ///	<seealso cref="TLifetimeType" />
   PooledAttribute = class(LifetimeAttributeBase)
   private
     fMinPoolsize: Integer;
@@ -776,10 +542,12 @@ type
     property MaxPoolsize: Integer read fMaxPoolsize;
   end;
 
-  ///	<summary>Applies the <c>InjectionAttribute</c> to injectable instance
-  ///	members of a class. e.g. constructors, methods, properties and even
-  ///	fields. Also works on parameters of a method.</summary>
-  ///	<seealso cref="ImplementsAttribute"></seealso>
+  ///	<summary>
+  ///	  Applies the <c>InjectionAttribute</c> to injectable instance members of
+  ///	  a class. e.g. constructors, methods, properties and even fields. Also
+  ///	  works on parameters of a method.
+  ///	</summary>
+  ///	<seealso cref="ImplementsAttribute" />
   InjectionAttribute = class(TCustomAttribute)
   private
     fValue: string;
@@ -791,12 +559,15 @@ type
     property HasValue: Boolean read GetHasValue;
   end;
 
-  ///	<summary>Applies this attribute to tell the IoC container which service is
-  ///	implemented by the target component. In addition, a service name can be
-  ///	specified.</summary>
+  ///	<summary>
+  ///	  Applies this attribute to tell the IoC container which service is
+  ///	  implemented by the target component. In addition, a service name can be
+  ///	  specified.
+  ///	</summary>
   ///	<remarks>
-  ///	  <note type="note">This attribute can be specified more than
-  ///	  once.</note>
+  ///	  <note type="note">
+  ///	    This attribute can be specified more than once.
+  ///	  </note>
   ///	</remarks>
   ///	<example>
   ///	  <code lang="Delphi">
@@ -806,9 +577,9 @@ type
   ///	[Implements(TypeInfo(IEmailSender), 'mock-email-sender')]
   ///	TMockEmailSender = class(TInterfacedObject, IEmailSender)
   ///	end;
-  ///	</code>
+  ///	  </code>
   ///	</example>
-  ///	<seealso cref="InjectionAttribute"></seealso>
+  ///	<seealso cref="InjectionAttribute" />
   ImplementsAttribute = class(TCustomAttribute)
   private
     fServiceType: PTypeInfo;
@@ -890,7 +661,7 @@ type
   EInvalidOperation         = SysUtils.EInvalidOp;
   EInvalidCastException     = SysUtils.EConvertError;
 
-  EInsufficientMemoryException = class(EOutOfMemory);
+  EInsufficientMemoryException = EOutOfMemory;
 
   EFormatException          = class(Exception);
   EIndexOutOfRangeException = class(Exception);
@@ -1051,28 +822,28 @@ begin
 end;
 
 class procedure TArgument.CheckInheritsFrom(const checkclazz, clazz: TClass;
-  const argumentName: string);
+  const parameterName: string);
 begin
   ASSERT(Assigned(checkclazz));
   ASSERT(Assigned(clazz));
 
   if (not checkclazz.InheritsFrom(clazz)) then
-    raise EArgumentException.CreateResFmt(@SBadObjectInheritance, [argumentName, checkclazz.ClassName, clazz.ClassName]);
+    raise EArgumentException.CreateResFmt(@SBadObjectInheritance, [parameterName, checkclazz.ClassName, clazz.ClassName]);
 end;
 
 class procedure TArgument.CheckInheritsFrom(obj: TObject; const clazz: TClass;
-  const argumentName: string);
+  const parameterName: string);
 begin
   if Assigned(obj) then
-    CheckInheritsFrom(obj.ClassType, clazz, argumentName);
+    CheckInheritsFrom(obj.ClassType, clazz, parameterName);
 end;
 
 class procedure TArgument.CheckNotNull(condition: Boolean;
-  const argumentName: string);
+  const parameterName: string);
 begin
   if not condition then
   begin
-    TArgument.RaiseArgumentNullException(argumentName);
+    TArgument.RaiseArgumentNullException(parameterName);
   end;
 end;
 
@@ -1093,10 +864,9 @@ begin
   TArgument.CheckNotNull(obj <> nil, argumentName);
 end;
 
-{$IFNDEF DisableGenerics}
 class procedure TArgument.CheckNotNull<T>(const value: T; const argumentName: string);
 begin
-  if IsNullReference<T>(value) then
+  if IsNullReference(value, TypeInfo(T)) then
   begin
     TArgument.RaiseArgumentNullException(argumentName);
   end;
@@ -1125,7 +895,6 @@ begin
     raise EInvalidEnumArgumentException.Create(msg);
   end;
 end;
-{$ENDIF}
 
 class procedure TArgument.CheckRange(condition: Boolean;
   const argumentName: string);
@@ -1225,17 +994,13 @@ begin
   Result := Result and not Assigned(@value);
 end;
 
-{$IFNDEF DisableGenerics}
-
-class function TArgument.IsNullReference<T>(const value: T): Boolean;
-var
-  localTypeInfo: PTypeInfo;
-begin
-  localTypeInfo := TypeInfo(T);
-  Result := TArgument.IsNullReference(value, localTypeInfo);
-end;
-
-{$ENDIF}
+//class function TArgument.IsNullReference<T>(const value: T): Boolean;
+//var
+//  localTypeInfo: PTypeInfo;
+//begin
+//  localTypeInfo := TypeInfo(T);
+//  Result := TArgument.IsNullReference(value, localTypeInfo);
+//end;
 
 class procedure TArgument.RaiseArgumentException(const msg: string);
 begin
@@ -1269,8 +1034,6 @@ end;
 
 
 {$REGION 'TEnum'}
-
-{$IFNDEF DisableGenerics}
 
 class function TEnum.GetEnumTypeInfo<T>: PTypeInfo;
 begin
@@ -1417,430 +1180,6 @@ begin
     raise EFormatException.CreateResFmt(@SIncorrectFormat, [value]);
 end;
 
-{$ENDIF}
-
-{$ENDREGION}
-
-
-{$REGION 'TBuffer'}
-
-constructor TBuffer.Create(size: Integer);
-begin
-  TArgument.CheckRange(size >= 0, 'size');
-
-  SetLength(fBytes, size);
-end;
-
-constructor TBuffer.Create(const buffer: Pointer; count: Integer);
-begin
-  TArgument.CheckRange(count >= 0, 'count');
-
-  SetLength(fBytes, count);
-  Move(buffer^, fBytes[0], count);
-end;
-
-constructor TBuffer.Create(const buffer: Pointer; startIndex, count: Integer);
-begin
-  TArgument.CheckRange(startIndex >= 0, 'startIndex');
-  TArgument.CheckRange(count >= 0, 'count');
-
-  SetLength(fBytes, count);
-  Move(PByte(buffer)[startIndex], fBytes[0], count);
-end;
-
-constructor TBuffer.Create(const buffer: array of Byte);
-begin
-  Create(@buffer[0], Length(buffer));
-end;
-
-constructor TBuffer.Create(const buffer: array of Byte; startIndex, count: Integer);
-begin
-  TArgument.CheckRange(buffer, startIndex, count);
-
-  Create(@buffer[startIndex], count);
-end;
-
-constructor TBuffer.Create(const s: string);
-begin
-  Create(PByte(s), Length(s) * SizeOf(Char));
-end;
-
-constructor TBuffer.Create(const s: WideString);
-begin
-  Create(PByte(s), Length(s) * SizeOf(Char));
-end;
-
-constructor TBuffer.Create(const s: RawByteString);
-begin
-  Create(PByte(s), Length(s));
-end;
-
-class function TBuffer.BytesOf(const value: Byte; count: Integer): TBytes;
-begin
-  TArgument.CheckRange(count >= 0, 'count');
-
-  SetLength(Result, count);
-  FillChar(Result[0], count, value);
-end;
-
-class function TBuffer.GetByte(const buffer; const index: Integer): Byte;
-begin
-  TArgument.CheckRange(index >= 0, 'index');
-
-  Result := PByte(@buffer)[index];
-end;
-
-procedure TBuffer.SaveToStream(stream: TStream);
-begin
-  TArgument.CheckNotNull(stream, 'stream');
-
-  stream.WriteBuffer(fBytes[0], Length(fBytes));
-end;
-
-class procedure TBuffer.SetByte(var buffer; const index: Integer;
-  const value: Byte);
-begin
-  TArgument.CheckRange(index >= 0, 'index');
-
-  PByte(@buffer)[index] := value;
-end;
-
-class function TBuffer.FromHexString(const s: string): TBuffer;
-var
-  buffer: string;
-  text: string;
-  bytes: TBytes;
-  index: Integer;
-  i: Integer;
-const
-  HexCharSet: TSysCharSet = ['0'..'9', 'a'..'f', 'A'..'F'];
-begin
-  buffer := StringReplace(s, '0x', '', [rfIgnoreCase, rfReplaceAll]);
-  SetLength(text, Length(buffer));
-  index := 0;
-  for i := 1 to Length(buffer) do
-  begin
-    if CharInSet(buffer[i], HexCharSet) then
-    begin
-      Inc(index);
-      text[index] := buffer[i];
-    end;
-  end;
-  SetLength(bytes, index div 2);
-  Classes.HexToBin(PChar(text), PByte(bytes), Length(bytes));
-  Result := TBuffer.Create(bytes);
-end;
-
-class function TBuffer.ConvertToHexString(const buffer: Pointer;
-  count: Integer): string;
-begin
-  SetLength(Result, count * 2);
-  Classes.BinToHex(buffer, PChar(Result), count);
-end;
-
-class function TBuffer.ConvertToHexString(const buffer: Pointer; count: Integer;
-  const prefix, delimiter: string): string;
-const
-  Convert: array[0..15] of Char = '0123456789ABCDEF';
-var
-  p: PByte;
-  stringBuilder: TStringBuilder;
-  captacity: Integer;
-  text: array[0..1] of Char;
-  i: Integer;
-begin
-  if count = 0 then Exit('');
-  p := buffer;
-  captacity := (Length(prefix) + 2 + Length(delimiter)) * count;
-  stringBuilder := TStringBuilder.Create(captacity);
-  try
-    stringBuilder.Append(prefix);
-    text[0] := Convert[p[0] shr 4];
-    text[1] := Convert[p[0] and $0F];
-    stringBuilder.Append(text);
-    for i := 1 to count - 1 do
-    begin
-      stringBuilder.Append(delimiter);
-      stringBuilder.Append(prefix);
-      text[0] := Convert[p[i] shr 4];
-      text[1] := Convert[p[i] and $0F];
-      stringBuilder.Append(text);
-    end;
-    Result := stringBuilder.ToString;
-  finally
-    stringBuilder.Free;
-  end;
-end;
-
-//procedure TBuffer.CopyTo(var dest: array of Byte; index: Integer);
-//begin
-//  TArgument.CheckRange(index >= 0, 'index');
-//  if Length(dest) - index < Size then
-//  begin
-//    raise EInsufficientMemoryException.CreateRes(@SInsufficientMemoryException);
-//  end;
-//  Move(fBytes[0], dest[index], Size);
-//end;
-
-function TBuffer.Clone: TBuffer;
-begin
-  Result := ToBytes;
-end;
-
-function TBuffer.Reverse: TBuffer;
-var
-  i: Integer;
-  p: PByte;
-begin
-  SetLength(Result.fBytes, Size);
-  p := @Result.fBytes[Size - 1];
-  for i := 0 to Size - 1 do
-  begin
-    p^ := fBytes[i];
-    Dec(p);
-  end;
-end;
-
-function TBuffer.Copy(startIndex, count: Integer): TBytes;
-begin
-  TArgument.CheckRange(fBytes, startIndex, count);
-
-  SetLength(Result, count);
-  Move(fBytes[startIndex], Result[0], count);
-end;
-
-function TBuffer.First: Byte;
-begin
-  Result := Bytes[0];
-end;
-
-function TBuffer.Last: Byte;
-begin
-  Result := Bytes[Size-1];
-end;
-
-function TBuffer.Left(count: Integer): TBuffer;
-begin
-  TArgument.CheckRange((count >= 0) and (count <= Size), 'count');
-
-  Result := Mid(0, count);
-end;
-
-function TBuffer.Mid(startIndex, count: Integer): TBuffer;
-begin
-  Result := Self.Copy(startIndex, count);
-end;
-
-function TBuffer.Right(count: Integer): TBuffer;
-begin
-  TArgument.CheckRange((count >= 0) and (count <= Size), 'count');
-
-  Result := Mid(Size - count, count);
-end;
-
-function TBuffer.EnsureSize(size: Integer): TBuffer;
-begin
-  Result := Self.EnsureSize(size, 0);
-end;
-
-function TBuffer.EnsureSize(size: Integer; value: Byte): TBuffer;
-var
-  data: TBytes;
-begin
-  if Self.Size < size then
-  begin
-    SetLength(data, size);
-    Move(fBytes[0], data[0], Self.Size);
-    FillChar(data[Self.Size], size - Self.Size, value);
-  end
-  else
-  begin
-    data := Self.ToBytes;
-  end;
-  Result := data;
-end;
-
-function TBuffer.EnsureSize(size: Integer; value: AnsiChar): TBuffer;
-begin
-  Result := Self.EnsureSize(size, Byte(value));
-end;
-
-function TBuffer.Equals(const buffer: TBuffer): Boolean;
-begin
-  Result := Equals(buffer.fBytes);
-end;
-
-function TBuffer.Equals(const buffer: array of Byte): Boolean;
-begin
-  Result := (Size = Length(buffer)) and
-    CompareMem(Memory, @buffer[0], Size);
-end;
-
-function TBuffer.Equals(const buffer: Pointer; count: Integer): Boolean;
-begin
-  TArgument.CheckRange(count >= 0, 'count');
-
-  Result := (count = Self.Size) and CompareMem(Self.Memory, buffer, count);
-end;
-
-function TBuffer.Equals(const hexString: string): Boolean;
-var
-  buffer: TBuffer;
-begin
-  buffer := TBuffer.FromHexString(hexString);
-  Result := Equals(buffer);
-end;
-
-function TBuffer.ToString: string;
-begin
-  SetLength(Result, Length(fBytes) div SizeOf(Char));
-  Move(fBytes[0], Result[1], Length(Result) * SizeOf(Char));
-end;
-
-function TBuffer.ToWideString: WideString;
-begin
-  SetLength(Result, Length(fBytes) div SizeOf(Char));
-  Move(fBytes[0], Result[1], Length(Result) * SizeOf(Char));
-end;
-
-function TBuffer.ToAnsiString: RawByteString;
-begin
-  SetLength(Result, Length(fBytes));
-  Move(fBytes[0], Result[1], Length(fBytes));
-end;
-
-function TBuffer.ToUtf8String: UTF8String;
-begin
-  SetLength(Result, Length(fBytes));
-  Move(fBytes[0], Result[1], Length(fBytes));
-end;
-
-function TBuffer.ToBytes: TBytes;
-begin
-  SetLength(Result, Length(fBytes));
-  Move(fBytes[0], Result[0], Length(fBytes));
-end;
-
-function TBuffer.ToHexString: string;
-begin
-  Result := TBuffer.ConvertToHexString(Memory, Size);
-end;
-
-function TBuffer.ToHexString(const prefix: string; const delimiter: string): string;
-begin
-  Result := TBuffer.ConvertToHexString(Memory, Size, prefix, delimiter);
-end;
-
-function TBuffer.GetSize: Integer;
-begin
-  Result := Length(fBytes);
-end;
-
-function TBuffer.GetIsEmpty: Boolean;
-begin
-  Result := Length(fBytes) = 0;
-end;
-
-function TBuffer.GetMemory: PByte;
-begin
-  Result := PByte(fBytes);
-end;
-
-function TBuffer.GetByteItem(const index: Integer): Byte;
-begin
-  TArgument.CheckRange((index >= 0) and (index < Size), 'index');
-
-  Result := fBytes[index];
-end;
-
-procedure TBuffer.SetByteItem(const index: Integer; const value: Byte);
-begin
-  TArgument.CheckRange((index >= 0) and (index < Size), 'index');
-
-  fBytes[index] := value;
-end;
-
-procedure TBuffer.SetSize(const value: Integer);
-begin
-  SetLength(fBytes, value);
-end;
-
-class operator TBuffer.Implicit(const value: TBytes): TBuffer;
-begin
-  Result.fBytes := value;
-end;
-
-class operator TBuffer.Implicit(const value: TBuffer): TBytes;
-begin
-  Result := value.fBytes;
-end;
-
-class operator TBuffer.Explicit(const value: TBuffer): PByte;
-begin
-  Result := PByte(value.fBytes);
-end;
-
-class operator TBuffer.Explicit(const value: TBytes): TBuffer;
-begin
-  Result.fBytes := value;
-end;
-
-class operator TBuffer.Explicit(const value: TBuffer): TBytes;
-begin
-  Result := value.fBytes;
-end;
-
-class operator TBuffer.Implicit(const value: TBuffer): PByte;
-begin
-  Result := PByte(value.fBytes);
-end;
-
-class operator TBuffer.Add(const left, right: TBuffer): TBuffer;
-begin
-  SetLength(Result.fBytes, left.Size + right.Size);
-  Move(left.fBytes[0], Result.fBytes[0], left.Size);
-  Move(right.fBytes[0], Result.fBytes[left.Size], right.Size);
-end;
-
-class operator TBuffer.Add(const left: TBuffer; const right: Byte): TBuffer;
-begin
-  Result.Size := left.Size + 1;
-  Move(left.Memory^, Result.Memory^, left.Size);
-  Result[Result.Size-1] := right;
-end;
-
-class operator TBuffer.Add(const left: Byte; const right: TBuffer): TBuffer;
-begin
-  Result.Size := right.Size + 1;
-  Move(right.Memory^, Result.Memory[1], right.Size);
-  Result[0] := left;
-end;
-
-class operator TBuffer.Equal(const left, right: TBuffer): Boolean;
-begin
-  Result := left.Equals(right);
-end;
-
-class operator TBuffer.NotEqual(const left, right: TBuffer): Boolean;
-begin
-  Result := not left.Equals(right);
-end;
-
-class operator TBuffer.BitwiseXor(const left, right: TBuffer): TBuffer;
-var
-  i: Integer;
-begin
-  if left.Size <> right.Size then
-  begin
-    raise EInvalidOperation.CreateRes(@SInvalidOperationBufferSizeShouldBeSame);
-  end;
-  Result.Size := left.Size;
-  for i := 0 to Result.Size - 1 do
-  begin
-    Result[i] := left[i] xor right[i];
-  end;
-end;
-
 {$ENDREGION}
 
 
@@ -1849,7 +1188,7 @@ end;
 constructor TNullable<T>.Create(const value: T);
 begin
   fValue := value;
-  fHasValue := fCHasValue;
+  fHasValue := CHasValueFlag;
 end;
 
 constructor TNullable<T>.Create(const value: Variant);
@@ -1860,7 +1199,7 @@ begin
   begin
     v := TValue.FromVariant(value);
     fValue := v.AsType<T>;
-    fHasValue := fCHasValue;
+    fHasValue := CHasValueFlag;
   end
   else
   begin
@@ -1977,86 +1316,6 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TObjectHolder<T>'}
-
-constructor TObjectHolder<T>.Create(obj: T);
-var
-  lifetimeWatcher: IInterface;
-begin
-  TArgument.CheckNotNull(PPointer(@obj)^, 'obj');
-
-  if obj.InheritsFrom(TInterfacedObject) then
-  begin
-    obj.GetInterface(IInterface, lifetimeWatcher);
-  end
-  else
-  begin
-    lifetimeWatcher := nil;
-  end;
-  Create(obj, lifetimeWatcher);
-end;
-
-constructor TObjectHolder<T>.Create(obj: T; const lifetimeWatcher: IInterface);
-begin
-  inherited Create;
-  fObject := obj;
-  fLifetimeWatcher := lifetimeWatcher;
-end;
-
-destructor TObjectHolder<T>.Destroy;
-begin
-  if fLifetimeWatcher = nil then
-  begin
-    fObject.Free;
-  end;
-  inherited Destroy;
-end;
-
-function TObjectHolder<T>.Invoke: T;
-begin
-  Result := fObject;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TLazyUtils'}
-
-class function TLazyUtils.GetValue<T>(var field: T;
-  const delegate: TFunc<T>): T;
-var
-  localValue: T;
-begin
-  if PPointer(@field)^ = nil then
-  begin
-    localValue := delegate();
-    if InterlockedCompareExchangePointer(PPointer(@field)^, PPointer(@localValue)^, nil) <> nil then
-      localValue.Free;
-  end;
-  Result := field;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TLifetimeWatcher'}
-
-constructor TLifetimeWatcher.Create(const proc: TProc);
-begin
-  inherited Create;
-  fProc := proc;
-end;
-
-destructor TLifetimeWatcher.Destroy;
-begin
-  if Assigned(fProc) then
-    fProc;
-  inherited Destroy;
-end;
-
-{$ENDREGION}
-
-
 {$REGION 'Attributes'}
 
 { LifetimeAttributeBase }
@@ -2128,61 +1387,6 @@ begin
   inherited Create(ltPooled);
   fMinPoolsize := minPoolSize;
   fMaxPoolsize := maxPoolsize;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TDelegate<T>'}
-
-procedure TDelegate<T>.Clear;
-begin
-  if fHandlers <> nil then
-    fHandlers.Clear;
-end;
-
-destructor TDelegate<T>.Destroy;
-begin
-  fHandlers.Free;
-  inherited Destroy;
-end;
-
-function TDelegate<T>.GetHandlers: TList<T>;
-begin
-  if fHandlers = nil then
-  begin
-    fHandlers := TList<T>.Create;
-  end;
-  Result := fHandlers;
-end;
-
-function TDelegate<T>.AddHandler(
-  const handler: T): IDelegate<T>;
-begin
-  Handlers.Add(handler);
-  Result := Self;
-end;
-
-function TDelegate<T>.RemoveHandler(
-  const handler: T): IDelegate<T>;
-begin
-  Handlers.Remove(handler);
-  Result := Self;
-end;
-
-function TDelegate<T>.Invoke(
-  const callback: TProc<T>): IDelegate<T>;
-var
-  delegate: T;
-begin
-  if fHandlers <> nil then
-  begin
-    for delegate in fHandlers do
-    begin
-      callback(delegate);
-    end;
-  end;
-  Result := Self;
 end;
 
 {$ENDREGION}
