@@ -54,7 +54,6 @@ uses
   Rtti,
   Spring,
   Spring.Collections,
-//  Spring.DesignPatterns,
   Spring.Reflection;
 
 type
