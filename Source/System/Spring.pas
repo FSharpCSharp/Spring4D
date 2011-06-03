@@ -314,7 +314,33 @@ type
 
   {$REGION 'MulticastEvent'}
 
-  ///	<summary>Represents a multicast event.</summary>
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents a multicast event.
+  ///	</summary>
+  ///	<typeparam name="T">
+  ///	  The event handler type.
+  ///	</typeparam>
+  ///	<remarks>
+  ///	  As a multicast event, you can add or remove an event handler. The event
+  ///	  handler must be an instance method. The calling conversion?should be
+  ///	  default or stdcall.
+  ///	</remarks>
+  ///	<example>
+  ///	  The following example demonstrates how to use it:
+  ///	  <code lang="Delphi">
+  ///	type
+  ///	  TClipboardEventHandler = procedure (sender: TObject) of object;
+  ///	  TClipboardEvent = TEvent&lt;TClipboardEventHandler&gt;;
+  ///	  TClipboardWatcher = class
+  ///	  private
+  ///	    fOnChanged: TClipboardChangedEvent;
+  ///	  public
+  ///	    property OnChanged: TClipboardChangedEvent read fOnChanged;
+  ///	  end;
+  ///	  </code>
+  ///	</example>
+  {$ENDREGION}
   IMulticastEvent<T> = interface
     {$REGION 'Property Getters'}
       function GetInvoke: T;
@@ -323,10 +349,32 @@ type
       function GetIsNotEmpty: Boolean;
     {$ENDREGION}
 
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Adds an event handler to the list.
+    ///	</summary>
+    {$ENDREGION}
     procedure Add(const handler: T);
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Remove an event handler if it exists.
+    ///	</summary>
+    {$ENDREGION}
     procedure Remove(const handler: T);
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Clears all event handlers.
+    ///	</summary>
+    {$ENDREGION}
     procedure Clear;
 
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Invokes the event.
+    ///	</summary>
+    {$ENDREGION}
     property Invoke: T read GetInvoke;
     property Count: Integer read GetCount;
     property IsEmpty: Boolean read GetIsEmpty;
@@ -405,6 +453,8 @@ type
     function GetIsEmpty: Boolean;
     function GetIsNotEmpty: Boolean;
   public
+    class function Create: IMulticastEvent<T>; static;
+
     procedure Add(const handler: T);
     procedure Remove(const handler: T);
     procedure Clear;
@@ -418,6 +468,7 @@ type
 
     class operator Implicit(const event: IMulticastEvent<T>): TEvent<T>;
     class operator Implicit(const event: TEvent<T>): IMulticastEvent<T>;
+    class operator Implicit(const eventHandler: T): TEvent<T>;
   end;
 
   {$ENDREGION}
@@ -439,22 +490,27 @@ type
     ///	  Unknown lifetime type.
     ///	</summary>
     ltUnknown,
+
     ///	<summary>
     ///	  Single instance.
     ///	</summary>
     ltSingleton,
+
     ///	<summary>
     ///	  Different instances.
     ///	</summary>
     ltTransient,
+
     ///	<summary>
     ///	  Every thread has a single instance.
     ///	</summary>
     ltSingletonPerThread,
+
     ///	<summary>
     ///	  Instances are transient except that they are recyclable.
     ///	</summary>
     ltPooled,
+
     ///	<summary>
     ///	  Customized lifetime type.
     ///	</summary>
@@ -637,12 +693,13 @@ type
   end;
 
   {$REGION 'Documentation'}
-  ///	<summary>Lifecycle interface. If the component implements this interface,
-  ///	all resources will be deallocate by calling the <c>Dispose</c>
-  ///	method.</summary>
-  ///	<seealso cref="IInitializable"></seealso>
-  ///	<seealso cref="IStartable"></seealso>
-  ///	<seealso cref="IRecyclable"></seealso>
+  ///	<summary>
+  ///	  Lifecycle interface. If the component implements this interface, all
+  ///	  resources will be deallocate by calling the <c>Dispose</c> method.
+  ///	</summary>
+  ///	<seealso cref="IInitializable" />
+  ///	<seealso cref="IStartable" />
+  ///	<seealso cref="IRecyclable" />
   {$ENDREGION}
   IDisposable = interface
     ['{6708F9BF-0237-462F-AFA2-DF8EF21939EB}']
@@ -1704,6 +1761,11 @@ end;
 
 {$REGION 'TEvent<T>'}
 
+class function TEvent<T>.Create: IMulticastEvent<T>;
+begin
+  Result := TMulticastEvent<T>.Create;
+end;
+
 procedure TEvent<T>.Add(const handler: T);
 begin
   GetInstance.Add(handler);
@@ -1750,6 +1812,12 @@ end;
 function TEvent<T>.GetIsNotEmpty: Boolean;
 begin
   Result := (fInstance <> nil) and fInstance.IsNotEmpty;
+end;
+
+class operator TEvent<T>.Implicit(const eventHandler: T): TEvent<T>;
+begin
+  Result.Clear;
+  Result.Add(eventHandler);
 end;
 
 class operator TEvent<T>.Implicit(const event: IMulticastEvent<T>): TEvent<T>;
