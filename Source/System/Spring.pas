@@ -316,13 +316,13 @@ type
 
   {$REGION 'Documentation'}
   ///	<summary>
-  ///	  Represents a multicast event.
+  ///	  Represents a multicast delegate.
   ///	</summary>
   ///	<typeparam name="T">
   ///	  The event handler type.
   ///	</typeparam>
   ///	<remarks>
-  ///	  As a multicast event, you can add or remove an event handler. The event
+  ///	  As a multicast delegate, you can add or remove an event handler. The event
   ///	  handler must be an instance method. The calling conversion?should be
   ///	  default or stdcall.
   ///	</remarks>
@@ -341,7 +341,7 @@ type
   ///	  </code>
   ///	</example>
   {$ENDREGION}
-  IMulticastEvent<T> = interface
+  IDelegate<T> = interface
     {$REGION 'Property Getters'}
       function GetInvoke: T;
       function GetCount: Integer;
@@ -381,7 +381,10 @@ type
     property IsNotEmpty: Boolean read GetIsNotEmpty;
   end;
 
-  TMulticastEventBase = class abstract(TInterfacedObject)
+
+  PMethod = ^TMethod;
+
+  TMethodInvocations = class
   private
     const
       paEAX = Word(0);
@@ -400,8 +403,6 @@ type
         Stack: array[0..1023] of Byte;
       end;
 
-      PMethod = ^TMethod;
-
       PMethodInfo = ^TMethodInfo;
       TMethodInfo = record
         TypeData: PTypeData;
@@ -412,62 +413,73 @@ type
         constructor Create(const typeData: PTypeData);
       end;
   private
+    fMethodType: PTypeInfo;
     fMethodInfo: TMethodInfo;
     fMethods: TArray<TMethod>;
     fCount: Integer;
-  protected
-    procedure InvokeEventHandlerStub;
-    procedure InternalInvokeHandlers;
-    procedure InternalAdd(const method: TMethod);
-    procedure InternalRemove(const method: TMethod);
-    function  IndexOf(const method: TMethod): Integer;
-  protected
     function GetCount: Integer;
     function GetIsEmpty: Boolean;
-    function GetIsNotEmpty: Boolean;
+  protected
+    procedure InternalInvokeHandlers;
+    procedure InvokeEventHandlerStub;
   public
+    constructor Create(methodTypeInfo: PTypeInfo);
+    procedure Add(const method: TMethod);
+    procedure Remove(const method: TMethod);
+    function  IndexOf(const method: TMethod): Integer;
     procedure Clear;
     property Count: Integer read GetCount;
     property IsEmpty: Boolean read GetIsEmpty;
-    property IsNotEmpty: Boolean read GetIsNotEmpty;
   end;
 
-  TMulticastEvent<T> = class(TMulticastEventBase, IMulticastEvent<T>)
+  TDelegate<T> = class(TInterfacedObject, IDelegate<T>)
   private
+    fInvocations: TMethodInvocations;
     fInvoke: T;
     function GetInvoke: T;
+    function GetCount: Integer;
+    function GetIsEmpty: Boolean;
+    function GetIsNotEmpty: Boolean;
+  protected
+    procedure InvocationsNeeded; inline;
+    property Invocations: TMethodInvocations read fInvocations;
   public
     constructor Create;
+    destructor Destroy; override;
 
     procedure Add(const handler: T);
     procedure Remove(const handler: T);
+    procedure Clear;
 
     property Invoke: T read GetInvoke;
+    property Count: Integer read GetCount;
+    property IsEmpty: Boolean read GetIsEmpty;
+    property IsNotEmpty: Boolean read GetIsNotEmpty;
   end;
 
   TEvent<T> = record
   private
-    fInstance: IMulticastEvent<T>;
+    fInstance: IDelegate<T>;
     function GetInvoke: T;
     function GetCount: Integer;
     function GetIsEmpty: Boolean;
     function GetIsNotEmpty: Boolean;
   public
-    class function Create: IMulticastEvent<T>; static;
+    class function Create: IDelegate<T>; static;
 
     procedure Add(const handler: T);
     procedure Remove(const handler: T);
     procedure Clear;
 
-    function GetInstance: IMulticastEvent<T>; inline;
+    function GetInstance: IDelegate<T>; inline;
 
     property Invoke: T read GetInvoke;
     property Count: Integer read GetCount;
     property IsEmpty: Boolean read GetIsEmpty;
     property IsNotEmpty: Boolean read GetIsNotEmpty;
 
-    class operator Implicit(const event: IMulticastEvent<T>): TEvent<T>;
-    class operator Implicit(const event: TEvent<T>): IMulticastEvent<T>;
+    class operator Implicit(const event: IDelegate<T>): TEvent<T>;
+    class operator Implicit(const event: TEvent<T>): IDelegate<T>;
     class operator Implicit(const eventHandler: T): TEvent<T>;
   end;
 
@@ -1519,7 +1531,7 @@ begin
   end;
 end;
 
-constructor TMulticastEventBase.TMethodInfo.Create(const typeData: PTypeData);
+constructor TMethodInvocations.TMethodInfo.Create(const typeData: PTypeData);
 var
   P: PByte;
   CurReg: Integer;
@@ -1561,9 +1573,74 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TMulticastEventBase'}
+{$REGION 'TMethodInvocations'}
 
-procedure TMulticastEventBase.InternalInvokeHandlers;
+constructor TMethodInvocations.Create(methodTypeInfo: PTypeInfo);
+begin
+  inherited Create;
+  fMethodType := methodTypeInfo;
+  fMethodInfo := TMethodInfo.Create(GetTypeData(fMethodType));
+end;
+
+procedure TMethodInvocations.Add(const method: TMethod);
+begin
+  if Length(fMethods) = fCount then
+  begin
+    if fCount = 0 then
+      SetLength(fMethods, 1)
+    else
+      SetLength(fMethods, fCount * 2);
+  end;
+  fMethods[fCount].Code := PMethod(@method)^.Code;
+  fMethods[fCount].Data := PMethod(@method)^.Data;
+  Inc(fCount);
+end;
+
+procedure TMethodInvocations.Remove(const method: TMethod);
+var
+  index: Integer;
+begin
+  index := IndexOf(method);
+  if index > -1 then
+  begin
+    Move(fMethods[index+1], fMethods[index], (fCount - index - 1) * SizeOf(TMethod));
+    Dec(fCount);
+    fMethods[fCount].Data := nil;
+    fMethods[fCount].Code := nil;
+  end;
+end;
+
+procedure TMethodInvocations.Clear;
+begin
+  SetLength(fMethods, 0);
+  fCount := 0;
+end;
+
+function TMethodInvocations.IndexOf(const method: TMethod): Integer;
+var
+  i: Integer;
+begin
+  for i := 0 to fCount - 1 do
+  begin
+    if (fMethods[i].Code = method.Code) and (fMethods[i].Data = method.Data) then
+    begin
+      Exit(i);
+    end;
+  end;
+  Result := -1;
+end;
+
+function TMethodInvocations.GetCount: Integer;
+begin
+  Result := fCount;
+end;
+
+function TMethodInvocations.GetIsEmpty: Boolean;
+begin
+  Result := Count = 0;
+end;
+
+procedure TMethodInvocations.InternalInvokeHandlers;
 var
   methods: TArray<TMethod>;
   method: TMethod;
@@ -1612,7 +1689,7 @@ begin
   end;
 end;
 
-procedure TMulticastEventBase.InvokeEventHandlerStub;
+procedure TMethodInvocations.InvokeEventHandlerStub;
 const
   PtrSize = SizeOf(Pointer);
 asm
@@ -1657,75 +1734,12 @@ asm
 @@SimpleRet:
 end;
 
-procedure TMulticastEventBase.InternalAdd(const method: TMethod);
-begin
-  if Length(fMethods) = fCount then
-  begin
-    if fCount = 0 then
-      SetLength(fMethods, 1)
-    else
-      SetLength(fMethods, fCount * 2);
-  end;
-  fMethods[fCount].Code := PMethod(@method)^.Code;
-  fMethods[fCount].Data := PMethod(@method)^.Data;
-  Inc(fCount);
-end;
-
-procedure TMulticastEventBase.InternalRemove(const method: TMethod);
-var
-  index: Integer;
-begin
-  index := IndexOf(method);
-  if index > -1 then
-  begin
-    Move(fMethods[index+1], fMethods[index], (fCount - index - 1) * SizeOf(TMethod));
-    Dec(fCount);
-    fMethods[fCount].Data := nil;
-    fMethods[fCount].Code := nil;
-  end;
-end;
-
-procedure TMulticastEventBase.Clear;
-begin
-  SetLength(fMethods, 0);
-  fCount := 0;
-end;
-
-function TMulticastEventBase.IndexOf(const method: TMethod): Integer;
-var
-  i: Integer;
-begin
-  for i := 0 to fCount - 1 do
-  begin
-    if (fMethods[i].Code = method.Code) and (fMethods[i].Data = method.Data) then
-    begin
-      Exit(i);
-    end;
-  end;
-  Result := -1;
-end;
-
-function TMulticastEventBase.GetCount: Integer;
-begin
-  Result := fCount;
-end;
-
-function TMulticastEventBase.GetIsEmpty: Boolean;
-begin
-  Result := Count = 0;
-end;
-
-function TMulticastEventBase.GetIsNotEmpty: Boolean;
-begin
-  Result := Count > 0;
-end;
-
 {$ENDREGION}
 
 
-{$REGION 'TMulticastEvent<T>'}
+{$REGION 'TDelegate<T>'}
 
-constructor TMulticastEvent<T>.Create;
+constructor TDelegate<T>.Create;
 var
   p: PTypeInfo;
 begin
@@ -1736,24 +1750,64 @@ begin
     raise EInvalidOperation.CreateRes(@STypeParameterShouldBeMethod);
 
   inherited Create;
-  fMethodInfo := TMethodInfo.Create(GetTypeData(p));
-  PMethod(@fInvoke)^.Data := Self;
-  PMethod(@fInvoke)^.Code := @TMulticastEventBase.InvokeEventHandlerStub;
 end;
 
-procedure TMulticastEvent<T>.Add(const handler: T);
+destructor TDelegate<T>.Destroy;
 begin
-  InternalAdd(PMethod(@handler)^);
+  fInvocations.Free;
+  inherited Destroy;
 end;
 
-procedure TMulticastEvent<T>.Remove(const handler: T);
+procedure TDelegate<T>.Add(const handler: T);
 begin
-  InternalRemove(PMethod(@handler)^);
+  InvocationsNeeded;
+  fInvocations.Add(PMethod(@handler)^);
 end;
 
-function TMulticastEvent<T>.GetInvoke: T;
+procedure TDelegate<T>.Remove(const handler: T);
 begin
+  InvocationsNeeded;
+  fInvocations.Remove(PMethod(@handler)^);
+end;
+
+procedure TDelegate<T>.Clear;
+begin
+  if fInvocations <> nil then
+    fInvocations.Clear;
+end;
+
+function TDelegate<T>.GetCount: Integer;
+begin
+  if fInvocations <> nil then
+    Result := fInvocations.Count
+  else
+    Result := 0;
+end;
+
+function TDelegate<T>.GetInvoke: T;
+begin
+  InvocationsNeeded;
   Result := fInvoke;
+end;
+
+function TDelegate<T>.GetIsEmpty: Boolean;
+begin
+  Result := (fInvocations = nil) or (fInvocations.Count = 0);
+end;
+
+function TDelegate<T>.GetIsNotEmpty: Boolean;
+begin
+  Result := not IsEmpty;
+end;
+
+procedure TDelegate<T>.InvocationsNeeded;
+begin
+  if fInvocations = nil then
+  begin
+    fInvocations := TMethodInvocations.Create(TypeInfo(T));
+    PMethod(@fInvoke)^.Data := fInvocations;
+    PMethod(@fInvoke)^.Code := @TMethodInvocations.InvokeEventHandlerStub;
+  end;
 end;
 
 {$ENDREGION}
@@ -1761,9 +1815,9 @@ end;
 
 {$REGION 'TEvent<T>'}
 
-class function TEvent<T>.Create: IMulticastEvent<T>;
+class function TEvent<T>.Create: IDelegate<T>;
 begin
-  Result := TMulticastEvent<T>.Create;
+  Result := TDelegate<T>.Create;
 end;
 
 procedure TEvent<T>.Add(const handler: T);
@@ -1790,11 +1844,11 @@ begin
     Exit(0);
 end;
 
-function TEvent<T>.GetInstance: IMulticastEvent<T>;
+function TEvent<T>.GetInstance: IDelegate<T>;
 begin
   if fInstance = nil then
   begin
-    fInstance := TMulticastEvent<T>.Create;
+    fInstance := TDelegate<T>.Create;
   end;
   Result := fInstance;
 end;
@@ -1820,12 +1874,12 @@ begin
   Result.Add(eventHandler);
 end;
 
-class operator TEvent<T>.Implicit(const event: IMulticastEvent<T>): TEvent<T>;
+class operator TEvent<T>.Implicit(const event: IDelegate<T>): TEvent<T>;
 begin
   Result.fInstance := event;
 end;
 
-class operator TEvent<T>.Implicit(const event: TEvent<T>): IMulticastEvent<T>;
+class operator TEvent<T>.Implicit(const event: TEvent<T>): IDelegate<T>;
 begin
   Result := event.GetInstance;
 end;
