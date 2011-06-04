@@ -409,7 +409,7 @@ type
         ParamInfos: PParameterInfos;
         StackSize: Integer;
         CallConversion: TCallConv;
-        PStack: PParameters;
+        Params: PParameters;
         constructor Create(typeInfo: PTypeInfo);
       end;
   private
@@ -1660,7 +1660,7 @@ var
   i: Integer;
 begin
   methods := fMethods;
-  pStack := fMethodInfo.PStack;
+  pStack := fMethodInfo.Params;
   stackSize := fMethodInfo.stackSize;
   callConversion := fMethodInfo.CallConversion;
   for i := 0 to fCount - 1 do
@@ -1711,7 +1711,7 @@ asm
         PUSH    EAX
         PUSH    ECX
         PUSH    EDX
-        MOV     Self.fMethodInfo.TMethodInfo.PStack,ESP
+        MOV     Self.fMethodInfo.TMethodInfo.Params,ESP
         CALL    InternalInvokeHandlers
         // Pop EDX and ECX off the stack while preserving all registers.
         MOV     [ESP+4],EAX

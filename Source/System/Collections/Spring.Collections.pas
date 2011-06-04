@@ -51,13 +51,9 @@ type
   IStack<T> = interface;
   IQueue<T> = interface;
 
+  ICollectionNotifyDelegate<T> = interface;
+
   TCollectionNotification = Generics.Collections.TCollectionNotification;
-
-  ICollectionNotifyDelegate<T> = interface(IDelegate<TCollectionNotifyEvent<T>>)
-  end;
-
-  TCollectionNotifyDelegate<T> = class(TDelegate<TCollectionNotifyEvent<T>>, ICollectionNotifyDelegate<T>)
-  end;
 
   /// <summary>
   /// Represents an iterator over a generic enumerable collection.
@@ -120,6 +116,8 @@ type
     /// Returns an enumerator that iterates through a collection.
     /// </summary>
     function GetEnumerator: IEnumerator<T>;
+
+//    function AsObject: TObject;
 
     /// <summary>
     /// Try getting the first element.
@@ -437,25 +435,43 @@ type
   end;
 
   IStack<T> = interface(IEnumerable<T>)
+  {$REGION 'Property Getters'}
+    function GetOnNotify: ICollectionNotifyDelegate<T>;
+  {$ENDREGION}
     procedure Clear;
     procedure Push(const item: T);
     function Pop: T;
     function Peek: T;
     function PeekOrDefault: T;
     function TryPeek(out item: T): Boolean;
+    property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
   end;
 
   IQueue<T> = interface(IEnumerable<T>)
+  {$REGION 'Property Getters'}
+    function GetOnNotify: ICollectionNotifyDelegate<T>;
+  {$ENDREGION}
     procedure Clear;
     procedure Enqueue(const item: T);
     function Dequeue: T;
     function Peek: T;
     function PeekOrDefault: T;
     function TryPeek(out item: T): Boolean;
+    property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
+  end;
+
+  IEnumerable = interface(IEnumerable<TObject>)
+    ['{B9A61DF4-ACA8-4DE7-AFCC-E971FE1D5EDE}']
   end;
 
   IList = interface(IList<TObject>)
     ['{ACFBB8FB-E9EC-44C0-90A8-48F02C3524CF}']
+  end;
+
+  ICollectionNotifyDelegate<T> = interface(IDelegate<TCollectionNotifyEvent<T>>)
+  end;
+
+  TCollectionNotifyDelegate<T> = class(TDelegate<TCollectionNotifyEvent<T>>, ICollectionNotifyDelegate<T>)
   end;
 
   ICountable = interface
@@ -505,6 +521,28 @@ type
     function MoveNext: Boolean; virtual;
     procedure Reset; virtual;
     property Current: T read GetCurrent;
+  end;
+
+  TArrayEnumerator<T> = class(TEnumeratorBase<T>)
+  private
+    fArray: TArray<T>;
+    fIndex: Integer;
+  protected
+    function GetCurrent: T; override;
+  public
+    constructor Create(const value: TArray<T>);
+    function MoveNext: Boolean; override;
+  end;
+
+  TArrayReversedEnumerator<T> = class(TEnumeratorBase<T>)
+  private
+    fArray: TArray<T>;
+    fIndex: Integer;
+  protected
+    function GetCurrent: T; override;
+  public
+    constructor Create(const value: TArray<T>);
+    function MoveNext: Boolean; override;
   end;
 
   /// <summary>
@@ -836,6 +874,8 @@ type
   private
     fStack: TGenericStack;
     fOwnership: TOwnershipType;
+    fOnNotify: ICollectionNotifyDelegate<T>;
+    function GetOnNotify: ICollectionNotifyDelegate<T>;
   protected
     function GetCount: Integer; override;
     function GetIsEmpty: Boolean; override;
@@ -863,6 +903,7 @@ type
     function PeekOrDefault(const predicate: TPredicate<T>): T; overload;
     function TryPeek(out item: T): Boolean;
     procedure TrimExcess;
+    property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
   end;
 
   TQueue<T> = class(TEnumerableBase<T>, IQueue<T>)
@@ -872,6 +913,8 @@ type
   private
     fQueue: TGenericQueue;
     fOwnership: TOwnershipType;
+    fOnNotify: ICollectionNotifyDelegate<T>;
+    function GetOnNotify: ICollectionNotifyDelegate<T>;
   protected
     function GetCount: Integer; override;
     function GetIsEmpty: Boolean; override;
@@ -890,6 +933,7 @@ type
     function TryPeek(out item: T): Boolean;
     procedure Clear;
     procedure TrimExcess;
+    property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
   end;
 
   TObjectList<T: class> = class(TList<T>, ICollectionOwnership)
@@ -2686,6 +2730,15 @@ begin
   Result := fStack.Count = 0;
 end;
 
+function TStack<T>.GetOnNotify: ICollectionNotifyDelegate<T>;
+begin
+  if fOnNotify = nil then
+  begin
+    fOnNotify := TCollectionNotifyDelegate<T>.Create;
+  end;
+  Result := fOnNotify;
+end;
+
 procedure TStack<T>.Push(const item: T);
 begin
   fStack.Push(item);
@@ -2919,6 +2972,15 @@ begin
   Result := fQueue.Count = 0;
 end;
 
+function TQueue<T>.GetOnNotify: ICollectionNotifyDelegate<T>;
+begin
+  if fOnNotify = nil then
+  begin
+    fOnNotify := TCollectionNotifyDelegate<T>.Create;
+  end;
+  Result := fOnNotify;
+end;
+
 {$ENDREGION}
 
 
@@ -3078,6 +3140,54 @@ var
 begin
   queue := Generics.Collections.TObjectQueue<T>.Create(ownsObjects);
   Result := TQueue<T>.Create(queue, otOwned);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TArrayEnumerator<T>'}
+
+constructor TArrayEnumerator<T>.Create(const value: TArray<T>);
+begin
+  inherited Create;
+  fArray := value;
+  fIndex := -1;
+end;
+
+function TArrayEnumerator<T>.GetCurrent: T;
+begin
+  Result := fArray[fIndex];
+end;
+
+function TArrayEnumerator<T>.MoveNext: Boolean;
+begin
+  Result := fIndex < Length(fArray) - 1;
+  if Result then
+    Inc(fIndex);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TArrayReversedEnumerator<T>'}
+
+constructor TArrayReversedEnumerator<T>.Create(const value: TArray<T>);
+begin
+  inherited Create;
+  fArray := value;
+  fIndex := Length(fArray);
+end;
+
+function TArrayReversedEnumerator<T>.GetCurrent: T;
+begin
+  Result := fArray[fIndex];
+end;
+
+function TArrayReversedEnumerator<T>.MoveNext: Boolean;
+begin
+  Result := fIndex > 0;
+  if Result then
+    Dec(fIndex);
 end;
 
 {$ENDREGION}
