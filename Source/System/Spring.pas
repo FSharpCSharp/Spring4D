@@ -79,7 +79,7 @@ type
   TPredicate<T> = reference to function(const value: T): Boolean;
 
   /// <summary>
-  /// Represents a method that has a single parameter and does not return a value.
+  /// Represents a anonymous method that has a single parameter and does not return a value.
   /// </summary>
   TAction<T> = reference to procedure(const obj: T);
 
@@ -410,7 +410,7 @@ type
         StackSize: Integer;
         CallConversion: TCallConv;
         PStack: PParameters;
-        constructor Create(const typeData: PTypeData);
+        constructor Create(typeInfo: PTypeInfo);
       end;
   private
     fMethodType: PTypeInfo;
@@ -1481,88 +1481,98 @@ begin
   Result := P;
 end;
 
-function GetTypeSize(TypeInfo: PTypeInfo): Integer;
+//  TTypeKind = (tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
+//    tkString, tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString,
+//    tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray, tkUString,
+//    tkClassRef, tkPointer, tkProcedure);
+
+function GetTypeSize(typeInfo: PTypeInfo): Integer;
 var
-  TypeData: PTypeData;
+  typeData: PTypeData;
+const
+  COrdinalSizes: array[TOrdType] of Integer = (1, 1, 2, 2, 4, 4);
+  CFloatSizes: array[TFloatType] of Integer = (4, 8, SizeOf(Extended), 8, 8);
+  CSetSizes: array[TOrdType] of Integer = (1, 1, 2, 2, 4, 4);
 begin
-  case TypeInfo^.Kind of
+  case typeInfo^.Kind of
     tkChar:
       Result := 1;
     tkWChar:
       Result := 2;
     tkInteger, tkEnumeration:
       begin
-        TypeData := GetTypeData(TypeInfo);
-        if TypeData^.MinValue >= 0 then
-          if Cardinal(TypeData^.MaxValue) > $FFFF then
-            Result := 4
-          else if TypeData^.MaxValue > $FF then
-            Result := 2
-          else
-            Result := 1
-        else
-          if (TypeData^.MaxValue > $7FFF) or (TypeData^.MinValue < -$7FFF - 1) then
-            Result := 4
-          else if (TypeData^.MaxValue > $7F) or (TypeData^.MinValue < -$7F - 1) then
-            Result := 2
-          else
-            Result := 1;
+        typeData := GetTypeData(typeInfo);
+        Result := COrdinalSizes[typeData.OrdType];
       end;
     tkFloat:
       begin
-        TypeData := GetTypeData(TypeInfo);
-        case TypeData^.FloatType of
-          ftSingle: Result := 4;
-          ftComp, ftCurr, ftDouble: Result := 8;
-        else
-          Result := -1;
-        end;
+        typeData := GetTypeData(typeInfo);
+        Result := CFloatSizes[typeData^.FloatType];
       end;
-    tkString, tkLString, tkUString, tkWString, tkInterface, tkClass:
-      Result := 4;
+    tkString, tkLString, tkUString, tkWString, tkInterface, tkClass, tkClassRef, tkDynArray:
+      Result := SizeOf(Pointer);
     tkMethod, tkInt64:
       Result := 8;
     tkVariant:
       Result := 16;
-
-  else
-    Assert(False);
-    Result := -1;
+    tkSet:
+      begin
+        // big sets have no typeInfo for now
+        typeData := GetTypeData(typeInfo);
+        Result := CSetSizes[typeData^.OrdType];
+      end;
+    tkRecord:
+      begin
+        typeData := GetTypeData(typeInfo);
+        Result := typeData.RecSize;
+      end;
+    tkArray:
+      begin
+        typeData := GetTypeData(typeInfo);
+        Result := typeData.ArrayData.Size;
+      end;
+    else
+      begin
+        Assert(False, 'Unsupported type');
+        Result := -1;
+      end;
   end;
 end;
 
-constructor TMethodInvocations.TMethodInfo.Create(const typeData: PTypeData);
+constructor TMethodInvocations.TMethodInfo.Create(typeInfo: PTypeInfo);
 var
+  typeData: PTypeData;
   P: PByte;
-  CurReg: Integer;
+  curReg: Integer;
   I: Integer;
   Size: Integer;
 begin
-  Self.TypeData := TypeData;
-  P := AdditionalInfoOf(TypeData);
+  typeData := GetTypeData(typeInfo);
+  Self.TypeData := typeData;
+  P := AdditionalInfoOf(typeData);
   CallConversion := TCallConv(PByte(p)^);
   ParamInfos := PParameterInfos(Cardinal(P) + 1);
 
   if CallConversion = ccReg then
   begin
-    CurReg := paEDX;
+    curReg := paEDX;
     StackSize := 0;
   end
   else begin
-    CurReg := paStack;
+    curReg := paStack;
     StackSize := SizeOf(Pointer); // Self in stack
   end;
 
-  P := @TypeData^.ParamList;
+  P := @typeData^.ParamList;
 
-  for I := 0 to TypeData^.ParamCount - 1 do
+  for I := 0 to typeData^.ParamCount - 1 do
   begin
     if TParamFlags(P[0]) * [pfVar, pfConst, pfAddress, pfReference, pfOut] <> [] then
       Size := 4
     else
       Size := GetTypeSize(ParamInfos^[I]^);
-    if (Size <= 4) and (CurReg <= paECX) then
-      Inc(CurReg)
+    if (Size <= 4) and (curReg <= paECX) then
+      Inc(curReg)
     else
       Inc(StackSize, Size);
     Inc(P, 1 + P[1] + 1);
@@ -1579,7 +1589,7 @@ constructor TMethodInvocations.Create(methodTypeInfo: PTypeInfo);
 begin
   inherited Create;
   fMethodType := methodTypeInfo;
-  fMethodInfo := TMethodInfo.Create(GetTypeData(fMethodType));
+  fMethodInfo := TMethodInfo.Create(fMethodType);
 end;
 
 procedure TMethodInvocations.Add(const method: TMethod);
@@ -1645,9 +1655,9 @@ var
   methods: TArray<TMethod>;
   method: TMethod;
   stackSize: Integer;
-  i: Integer;
   callConversion: TCallConv;
   pStack: PParameters;
+  i: Integer;
 begin
   methods := fMethods;
   pStack := fMethodInfo.PStack;
