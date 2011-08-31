@@ -22,6 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
+{TODO -oOwner -cGeneral : Unregister a component}
+{TODO -oOwner -cGeneral : Thread Safety}
+
 unit Spring.DI;
 
 {$I Spring.inc}
@@ -33,7 +36,6 @@ uses
   SysUtils,
   TypInfo,
   Rtti,
-//  Generics.Collections,
   Spring,
   Spring.Collections,
   Spring.DI.Core,
@@ -70,12 +72,6 @@ type
 
     function RegisterComponent<TComponentType: class>: TRegistration<TComponentType>; overload;
     function RegisterComponent(componentType: PTypeInfo): TRegistration; overload;
-
-//    function RegisterService<TServiceType>: TRegistration<TServiceType>; overload;
-//    function RegisterService(serviceType: PTypeInfo): TRegistration; overload;
-
-//    function RegisterInstance<T>(instance: T): TContainer;
-//    function RegisterDecorations<TServiceType>(const decorationClasses: array of TClass): TContainer;
 
     procedure Build;
 

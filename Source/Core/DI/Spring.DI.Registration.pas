@@ -83,7 +83,7 @@ type
     function Implements(serviceType: PTypeInfo): TRegistration; overload;
     function Implements(serviceType: PTypeInfo; const name: string): TRegistration; overload;
 
-    function DelegateTo(delegate: TActivatorDelegate): TRegistration; overload;
+    function DelegateTo(const delegate: TActivatorDelegate): TRegistration; overload;
 
     {$REGION 'Typed Injections'}
 
@@ -123,7 +123,7 @@ type
     function Implements<TServiceType>: TRegistration<T>; overload;
     function Implements<TServiceType>(const name: string): TRegistration<T>; overload;
 
-    function DelegateTo(delegate: TActivatorDelegate<T>): TRegistration<T>; overload;
+    function DelegateTo(const delegate: TActivatorDelegate<T>): TRegistration<T>; overload;
 
     {$REGION 'Typed Injections'}
 
@@ -150,11 +150,8 @@ type
     function AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration<T>;
   end;
 
-//  PRegistration = ^TRegistration;
-//  PRegistration<T: class> = ^TRegistration<T>;
-
   /// <summary>
-  /// Provides generic and non-generic fluent-style registration methods.
+  /// Provides both generic and non-generic fluent-style registration methods.
   /// </summary>
   /// <remarks>
   /// Why both TRegistration and TRegistration<T> are defined as record and
@@ -407,7 +404,7 @@ begin
   Result := Self;
 end;
 
-function TRegistration.DelegateTo(delegate: TActivatorDelegate): TRegistration;
+function TRegistration.DelegateTo(const delegate: TActivatorDelegate): TRegistration;
 begin
   GetComponentModel.ActivatorDelegate := delegate;
   Result := Self;
@@ -539,7 +536,7 @@ begin
 end;
 
 function TRegistration<T>.DelegateTo(
-  delegate: TActivatorDelegate<T>): TRegistration<T>;
+  const delegate: TActivatorDelegate<T>): TRegistration<T>;
 begin
   fRegistration.DelegateTo(TActivatorDelegate(delegate));
   Result := Self;

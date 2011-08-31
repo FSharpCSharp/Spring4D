@@ -135,6 +135,109 @@ type
     property Values: TArray<Integer> read fValues;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents a series of bytes in memory.
+  ///	</summary>
+  ///	<remarks>
+  ///	  The <c>TBuffer</c> structure is actually a wrapper of a value of <c>TByt
+  ///	  es</c> while provideing some easy-going methods and properties.
+  ///	  <note type="warning">
+  ///	    This type needs to be reviewed.
+  ///	  </note>
+  ///	</remarks>
+  {$ENDREGION}
+  TBuffer = record
+  strict private
+    fBytes: TBytes;
+    function GetIsEmpty: Boolean;
+    function GetMemory: PByte; inline;
+    function GetSize: Integer; inline;
+    function GetByteItem(const index: Integer): Byte;
+    procedure SetSize(const value: Integer);
+    procedure SetByteItem(const index: Integer; const value: Byte);
+  private
+    class var fEmpty: TBuffer;
+  public
+    constructor Create(size: Integer); overload;
+    constructor Create(const buffer: Pointer; count: Integer); overload;
+    constructor Create(const buffer: Pointer; startIndex, count: Integer); overload;
+    constructor Create(const buffer: array of Byte); overload;
+    constructor Create(const buffer: array of Byte; startIndex, count: Integer); overload;
+//    constructor Create(const buffer: array of Char); overload;
+//    constructor Create(const buffer: array of Char; startIndex, count: Integer); overload;
+    constructor Create(const s: string); overload;
+    constructor Create(const s: WideString); overload;
+    constructor Create(const s: RawByteString); overload;
+
+    class function FromHexString(const s: string): TBuffer; static;
+    ///	<seealso cref="FromHexString(string)"></seealso>
+    class function ConvertToHexString(const buffer: Pointer; count: Integer): string; overload; static;
+    class function ConvertToHexString(const buffer: Pointer; count: Integer;
+      const prefix: string; const delimiter: string = ' '): string; overload; static;
+
+    class function BytesOf(const value: Byte; count: Integer): TBytes; static;
+    class function GetByte(const buffer; const index: Integer): Byte; static;
+    class procedure SetByte(var buffer; const index: Integer; const value: Byte); static;
+
+//    procedure CopyTo(var dest: array of Byte; index, count: Integer);
+
+    function Clone: TBuffer;
+    function Copy(startIndex, count: Integer): TBytes;
+    function Reverse: TBuffer; // experimental;
+
+    function Left(count: Integer): TBuffer;
+    function Mid(startIndex, count: Integer): TBuffer;
+    function Right(count: Integer): TBuffer;
+
+    function First: Byte;
+    function Last: Byte;
+
+    function EnsureSize(size: Integer): TBuffer; overload;
+    function EnsureSize(size: Integer; value: Byte): TBuffer; overload;
+    function EnsureSize(size: Integer; value: AnsiChar): TBuffer; overload;
+
+    function Equals(const buffer: TBuffer): Boolean; overload;
+    function Equals(const buffer: array of Byte): Boolean; overload;
+    function Equals(const buffer: Pointer; count: Integer): Boolean; overload;
+    function Equals(const hexString: string): Boolean; overload;
+
+    procedure SaveToStream(stream: TStream);
+
+    function ToBytes: TBytes;
+    function ToString: string; experimental;
+    function ToWideString: WideString; experimental;  // deprecated;
+    function ToAnsiString: RawByteString; experimental; // deprecated;
+    function ToUtf8String: UTF8String; experimental; // deprecated;
+
+    function ToHexString: string; overload;
+    function ToHexString(const prefix: string; const delimiter: string = ' '): string; overload;
+
+    property AsBytes: TBytes read fBytes;
+    property IsEmpty: Boolean read GetIsEmpty;
+    property Memory: PByte read GetMemory;
+    property Size: Integer read GetSize write SetSize;
+    property Bytes[const index: Integer]: Byte read GetByteItem write SetByteItem; default;
+
+    class property Empty: TBuffer read fEmpty;
+
+    { Operator Overloads }
+    class operator Implicit(const value: TBytes): TBuffer;
+    class operator Implicit(const value: TBuffer): TBytes;
+    class operator Implicit(const value: TBuffer): PByte;
+    class operator Explicit(const value: TBytes): TBuffer;
+    class operator Explicit(const value: TBuffer): TBytes;
+    class operator Explicit(const value: TBuffer): PByte;
+    class operator Add(const left, right: TBuffer): TBuffer;
+    class operator Add(const left: TBuffer; const right: Byte): TBuffer; overload;
+    class operator Add(const left: Byte; const right: TBuffer): TBuffer; overload;
+    class operator Equal(const left, right: TBuffer): Boolean;
+    class operator NotEqual(const left, right: TBuffer): Boolean;
+//    class operator BitwiseAnd(const left, right: TBuffer): TBuffer;
+//    class operator BitwiseOr(const left, right: TBuffer): TBuffer;
+    class operator BitwiseXor(const left, right: TBuffer): TBuffer;
+  end;
+
   /// <summary>
   /// Defines the basic operations of hash algorithms.
   /// </summary>
@@ -583,7 +686,6 @@ end;
 {$IFDEF SUPPORTS_REGION}{$ENDREGION}{$ENDIF}
 
 
-
 {$IFDEF SUPPORTS_REGION}{$REGION 'TSizes'}{$ENDIF}
 
 constructor TSizes.Create(size: Integer);
@@ -610,6 +712,428 @@ begin
 end;
 
 {$IFDEF SUPPORTS_REGION}{$ENDREGION}{$ENDIF}
+
+
+{$REGION 'TBuffer'}
+
+constructor TBuffer.Create(size: Integer);
+begin
+  TArgument.CheckRange(size >= 0, 'size');
+
+  SetLength(fBytes, size);
+end;
+
+constructor TBuffer.Create(const buffer: Pointer; count: Integer);
+begin
+  TArgument.CheckRange(count >= 0, 'count');
+
+  SetLength(fBytes, count);
+  Move(buffer^, fBytes[0], count);
+end;
+
+constructor TBuffer.Create(const buffer: Pointer; startIndex, count: Integer);
+begin
+  TArgument.CheckRange(startIndex >= 0, 'startIndex');
+  TArgument.CheckRange(count >= 0, 'count');
+
+  SetLength(fBytes, count);
+  Move(PByte(buffer)[startIndex], fBytes[0], count);
+end;
+
+constructor TBuffer.Create(const buffer: array of Byte);
+begin
+  Create(@buffer[0], Length(buffer));
+end;
+
+constructor TBuffer.Create(const buffer: array of Byte; startIndex, count: Integer);
+begin
+  TArgument.CheckRange(buffer, startIndex, count);
+
+  Create(@buffer[startIndex], count);
+end;
+
+constructor TBuffer.Create(const s: string);
+begin
+  Create(PByte(s), Length(s) * SizeOf(Char));
+end;
+
+constructor TBuffer.Create(const s: WideString);
+begin
+  Create(PByte(s), Length(s) * SizeOf(Char));
+end;
+
+constructor TBuffer.Create(const s: RawByteString);
+begin
+  Create(PByte(s), Length(s));
+end;
+
+class function TBuffer.BytesOf(const value: Byte; count: Integer): TBytes;
+begin
+  TArgument.CheckRange(count >= 0, 'count');
+
+  SetLength(Result, count);
+  FillChar(Result[0], count, value);
+end;
+
+class function TBuffer.GetByte(const buffer; const index: Integer): Byte;
+begin
+  TArgument.CheckRange(index >= 0, 'index');
+
+  Result := PByte(@buffer)[index];
+end;
+
+procedure TBuffer.SaveToStream(stream: TStream);
+begin
+  TArgument.CheckNotNull(stream, 'stream');
+
+  stream.WriteBuffer(fBytes[0], Length(fBytes));
+end;
+
+class procedure TBuffer.SetByte(var buffer; const index: Integer;
+  const value: Byte);
+begin
+  TArgument.CheckRange(index >= 0, 'index');
+
+  PByte(@buffer)[index] := value;
+end;
+
+class function TBuffer.FromHexString(const s: string): TBuffer;
+var
+  buffer: string;
+  text: string;
+  bytes: TBytes;
+  index: Integer;
+  i: Integer;
+const
+  HexCharSet: TSysCharSet = ['0'..'9', 'a'..'f', 'A'..'F'];
+begin
+  buffer := StringReplace(s, '0x', '', [rfIgnoreCase, rfReplaceAll]);
+  SetLength(text, Length(buffer));
+  index := 0;
+  for i := 1 to Length(buffer) do
+  begin
+    if CharInSet(buffer[i], HexCharSet) then
+    begin
+      Inc(index);
+      text[index] := buffer[i];
+    end;
+  end;
+  SetLength(bytes, index div 2);
+  Classes.HexToBin(PChar(text), PByte(bytes), Length(bytes));
+  Result := TBuffer.Create(bytes);
+end;
+
+class function TBuffer.ConvertToHexString(const buffer: Pointer;
+  count: Integer): string;
+begin
+  SetLength(Result, count * 2);
+  Classes.BinToHex(buffer, PChar(Result), count);
+end;
+
+class function TBuffer.ConvertToHexString(const buffer: Pointer; count: Integer;
+  const prefix, delimiter: string): string;
+const
+  Convert: array[0..15] of Char = '0123456789ABCDEF';
+var
+  p: PByte;
+  stringBuilder: TStringBuilder;
+  captacity: Integer;
+  text: array[0..1] of Char;
+  i: Integer;
+begin
+  if count = 0 then Exit('');
+  p := buffer;
+  captacity := (Length(prefix) + 2 + Length(delimiter)) * count;
+  stringBuilder := TStringBuilder.Create(captacity);
+  try
+    stringBuilder.Append(prefix);
+    text[0] := Convert[p[0] shr 4];
+    text[1] := Convert[p[0] and $0F];
+    stringBuilder.Append(text);
+    for i := 1 to count - 1 do
+    begin
+      stringBuilder.Append(delimiter);
+      stringBuilder.Append(prefix);
+      text[0] := Convert[p[i] shr 4];
+      text[1] := Convert[p[i] and $0F];
+      stringBuilder.Append(text);
+    end;
+    Result := stringBuilder.ToString;
+  finally
+    stringBuilder.Free;
+  end;
+end;
+
+//procedure TBuffer.CopyTo(var dest: array of Byte; index: Integer);
+//begin
+//  TArgument.CheckRange(index >= 0, 'index');
+//  if Length(dest) - index < Size then
+//  begin
+//    raise EInsufficientMemoryException.CreateRes(@SInsufficientMemoryException);
+//  end;
+//  Move(fBytes[0], dest[index], Size);
+//end;
+
+function TBuffer.Clone: TBuffer;
+begin
+  Result := ToBytes;
+end;
+
+function TBuffer.Reverse: TBuffer;
+var
+  i: Integer;
+  p: PByte;
+begin
+  SetLength(Result.fBytes, Size);
+  p := @Result.fBytes[Size - 1];
+  for i := 0 to Size - 1 do
+  begin
+    p^ := fBytes[i];
+    Dec(p);
+  end;
+end;
+
+function TBuffer.Copy(startIndex, count: Integer): TBytes;
+begin
+  TArgument.CheckRange(fBytes, startIndex, count);
+
+  SetLength(Result, count);
+  Move(fBytes[startIndex], Result[0], count);
+end;
+
+function TBuffer.First: Byte;
+begin
+  Result := Bytes[0];
+end;
+
+function TBuffer.Last: Byte;
+begin
+  Result := Bytes[Size-1];
+end;
+
+function TBuffer.Left(count: Integer): TBuffer;
+begin
+  TArgument.CheckRange((count >= 0) and (count <= Size), 'count');
+
+  Result := Mid(0, count);
+end;
+
+function TBuffer.Mid(startIndex, count: Integer): TBuffer;
+begin
+  Result := Self.Copy(startIndex, count);
+end;
+
+function TBuffer.Right(count: Integer): TBuffer;
+begin
+  TArgument.CheckRange((count >= 0) and (count <= Size), 'count');
+
+  Result := Mid(Size - count, count);
+end;
+
+function TBuffer.EnsureSize(size: Integer): TBuffer;
+begin
+  Result := Self.EnsureSize(size, 0);
+end;
+
+function TBuffer.EnsureSize(size: Integer; value: Byte): TBuffer;
+var
+  data: TBytes;
+begin
+  if Self.Size < size then
+  begin
+    SetLength(data, size);
+    Move(fBytes[0], data[0], Self.Size);
+    FillChar(data[Self.Size], size - Self.Size, value);
+  end
+  else
+  begin
+    data := Self.ToBytes;
+  end;
+  Result := data;
+end;
+
+function TBuffer.EnsureSize(size: Integer; value: AnsiChar): TBuffer;
+begin
+  Result := Self.EnsureSize(size, Byte(value));
+end;
+
+function TBuffer.Equals(const buffer: TBuffer): Boolean;
+begin
+  Result := Equals(buffer.fBytes);
+end;
+
+function TBuffer.Equals(const buffer: array of Byte): Boolean;
+begin
+  Result := (Size = Length(buffer)) and
+    CompareMem(Memory, @buffer[0], Size);
+end;
+
+function TBuffer.Equals(const buffer: Pointer; count: Integer): Boolean;
+begin
+  TArgument.CheckRange(count >= 0, 'count');
+
+  Result := (count = Self.Size) and CompareMem(Self.Memory, buffer, count);
+end;
+
+function TBuffer.Equals(const hexString: string): Boolean;
+var
+  buffer: TBuffer;
+begin
+  buffer := TBuffer.FromHexString(hexString);
+  Result := Equals(buffer);
+end;
+
+function TBuffer.ToString: string;
+begin
+  SetLength(Result, Length(fBytes) div SizeOf(Char));
+  Move(fBytes[0], Result[1], Length(Result) * SizeOf(Char));
+end;
+
+function TBuffer.ToWideString: WideString;
+begin
+  SetLength(Result, Length(fBytes) div SizeOf(Char));
+  Move(fBytes[0], Result[1], Length(Result) * SizeOf(Char));
+end;
+
+function TBuffer.ToAnsiString: RawByteString;
+begin
+  SetLength(Result, Length(fBytes));
+  Move(fBytes[0], Result[1], Length(fBytes));
+end;
+
+function TBuffer.ToUtf8String: UTF8String;
+begin
+  SetLength(Result, Length(fBytes));
+  Move(fBytes[0], Result[1], Length(fBytes));
+end;
+
+function TBuffer.ToBytes: TBytes;
+begin
+  SetLength(Result, Length(fBytes));
+  Move(fBytes[0], Result[0], Length(fBytes));
+end;
+
+function TBuffer.ToHexString: string;
+begin
+  Result := TBuffer.ConvertToHexString(Memory, Size);
+end;
+
+function TBuffer.ToHexString(const prefix: string; const delimiter: string): string;
+begin
+  Result := TBuffer.ConvertToHexString(Memory, Size, prefix, delimiter);
+end;
+
+function TBuffer.GetSize: Integer;
+begin
+  Result := Length(fBytes);
+end;
+
+function TBuffer.GetIsEmpty: Boolean;
+begin
+  Result := Length(fBytes) = 0;
+end;
+
+function TBuffer.GetMemory: PByte;
+begin
+  Result := PByte(fBytes);
+end;
+
+function TBuffer.GetByteItem(const index: Integer): Byte;
+begin
+  TArgument.CheckRange((index >= 0) and (index < Size), 'index');
+
+  Result := fBytes[index];
+end;
+
+procedure TBuffer.SetByteItem(const index: Integer; const value: Byte);
+begin
+  TArgument.CheckRange((index >= 0) and (index < Size), 'index');
+
+  fBytes[index] := value;
+end;
+
+procedure TBuffer.SetSize(const value: Integer);
+begin
+  SetLength(fBytes, value);
+end;
+
+class operator TBuffer.Implicit(const value: TBytes): TBuffer;
+begin
+  Result.fBytes := value;
+end;
+
+class operator TBuffer.Implicit(const value: TBuffer): TBytes;
+begin
+  Result := value.fBytes;
+end;
+
+class operator TBuffer.Explicit(const value: TBuffer): PByte;
+begin
+  Result := PByte(value.fBytes);
+end;
+
+class operator TBuffer.Explicit(const value: TBytes): TBuffer;
+begin
+  Result.fBytes := value;
+end;
+
+class operator TBuffer.Explicit(const value: TBuffer): TBytes;
+begin
+  Result := value.fBytes;
+end;
+
+class operator TBuffer.Implicit(const value: TBuffer): PByte;
+begin
+  Result := PByte(value.fBytes);
+end;
+
+class operator TBuffer.Add(const left, right: TBuffer): TBuffer;
+begin
+  SetLength(Result.fBytes, left.Size + right.Size);
+  Move(left.fBytes[0], Result.fBytes[0], left.Size);
+  Move(right.fBytes[0], Result.fBytes[left.Size], right.Size);
+end;
+
+class operator TBuffer.Add(const left: TBuffer; const right: Byte): TBuffer;
+begin
+  Result.Size := left.Size + 1;
+  Move(left.Memory^, Result.Memory^, left.Size);
+  Result[Result.Size-1] := right;
+end;
+
+class operator TBuffer.Add(const left: Byte; const right: TBuffer): TBuffer;
+begin
+  Result.Size := right.Size + 1;
+  Move(right.Memory^, Result.Memory[1], right.Size);
+  Result[0] := left;
+end;
+
+class operator TBuffer.Equal(const left, right: TBuffer): Boolean;
+begin
+  Result := left.Equals(right);
+end;
+
+class operator TBuffer.NotEqual(const left, right: TBuffer): Boolean;
+begin
+  Result := not left.Equals(right);
+end;
+
+class operator TBuffer.BitwiseXor(const left, right: TBuffer): TBuffer;
+var
+  i: Integer;
+begin
+  if left.Size <> right.Size then
+  begin
+    raise EInvalidOperation.CreateRes(@SInvalidOperationBufferSizeShouldBeSame);
+  end;
+  Result.Size := left.Size;
+  for i := 0 to Result.Size - 1 do
+  begin
+    Result[i] := left[i] xor right[i];
+  end;
+end;
+
+{$ENDREGION}
 
 
 {$IFDEF SUPPORTS_REGION}{$REGION 'THashAlgorithmBase'}{$ENDIF}
@@ -1228,4 +1752,3 @@ end;
 {$IFDEF SUPPORTS_REGION}{$ENDREGION}{$ENDIF}
 
 end.
-

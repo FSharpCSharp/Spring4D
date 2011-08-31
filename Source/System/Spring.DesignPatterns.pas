@@ -79,8 +79,10 @@ type
     class var
       fMappings: TDictionary<TClass, TObject>;
 
-      ///	<summary>Tracks all instances of the singleton objects and free them
-      ///	in reversed order.</summary>
+      ///	<summary>
+      ///	  Tracks all instances of the singleton objects and free them in
+      ///	  reversed order.
+      ///	</summary>
       fInstances: TObjectList;
 
       fCriticalSection: TCriticalSection;
@@ -92,11 +94,12 @@ type
 
   public
 
-    {$REGION 'Documentation'}
-    ///	<summary>Gets the shared instance of a class.</summary>
-    ///	<typeparam name="T">The type of a class which must have a default
-    ///	constructor.</typeparam>
-    {$ENDREGION}
+    ///	<summary>
+    ///	  Gets the shared instance of a class.
+    ///	</summary>
+    ///	<typeparam name="T">
+    ///	  The type of a class which must have a default constructor.
+    ///	</typeparam>
     class function GetInstance<T: class, constructor>: T; static;
   end;
 

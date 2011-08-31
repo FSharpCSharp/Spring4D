@@ -64,7 +64,6 @@ type
   {$ENDREGION}
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(const name: string): Boolean; overload;
-//    function GetServiceType(const name: string): PTypeInfo;
     function CreateLifetimeManager(model: TComponentModel): ILifetimeManager;
     property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
@@ -86,7 +85,6 @@ type
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(const name: string): Boolean; overload;
     function HasService(serviceType: PTypeInfo; const name: string): Boolean; overload;
-//    function GetServiceType(const name: string): PTypeInfo;
 
     function FindOne(componentType: PTypeInfo): TComponentModel; overload;
     function FindOne(const name: string): TComponentModel; overload;
@@ -133,15 +131,14 @@ type
   /// </summary>
   IInjection = interface
     ['{864AAA38-4F93-4BB9-AD8A-B796FCD2EFE0}']
-    {$REGION 'Property Getters & Setters'}
-
+  {$REGION 'Property Getters & Setters'}
     function GetDependencyCount: Integer;
     function GetTarget: TRttiMember;
     function GetTargetName: string;
     function GetHasTarget: Boolean;
     function GetModel: TComponentModel;
+  {$ENDREGION}
 
-    {$ENDREGION}
     procedure Initialize(target: TRttiMember);
     procedure Inject(instance: TObject; const arguments: array of TValue);
     function GetDependencies: TArray<TRttiType>;
@@ -162,17 +159,6 @@ type
     function CreatePropertyInjection(model: TComponentModel; const propertyName: string): IInjection;
     function CreateFieldInjection(model: TComponentModel; const fieldName: string): IInjection;
   end;
-
-//  IConstructorSelector = interface
-//    ['{1CB36E23-84B6-462C-A21D-0EE8BEDBDE1D}']
-//    function SelectEligibleConstructor(const context: IContainerContext; componentType: TRttiInstanceType);
-//  end;
-
-//  ITypeConverter = interface
-//    ['{0FC28D39-C191-4BA4-B56E-410932018A1E}']
-//    function CanConvert(const value: TValue; targetType: TRttiType): Boolean;
-//    function TryConvert(const value: TValue; targetType: TRttiType; out targetValue: TValue): Boolean;
-//  end;
 
   IDependencyResolver = interface
     ['{15ADEA1D-7C3F-48D5-8E85-84B4332AFF5F}']
@@ -315,7 +301,7 @@ type
 
   TObjectHolder = TObjectHolder<TObject>;
 
-  EContainerException = class(SysUtils.Exception);
+  EContainerException = class(Exception);
 
   ERegistrationException = class(EContainerException);
   EBuilderException = class(EContainerException);
@@ -632,5 +618,3 @@ end;
 {$ENDREGION}
 
 end.
-
-

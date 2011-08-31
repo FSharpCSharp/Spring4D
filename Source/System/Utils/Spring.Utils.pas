@@ -54,37 +54,41 @@ uses
   Spring.Utils.WinAPI;
 
 type
-  {$REGION 'Documentation'}
   ///	<summary>
   ///	  Drive Type Enumeration
   ///	</summary>
-  {$ENDREGION}
   TDriveType = (
     ///	<summary>
     ///	  The type of drive is unknown.
     ///	</summary>
     dtUnknown,
+
     ///	<summary>
     ///	  The drive does not have a root directory.
     ///	</summary>
     dtNoRootDirectory,
+
     ///	<summary>
     ///	  The drive is a removable storage device, such as a floppy disk drive or a
     ///	  USB flash drive.
     ///	</summary>
     dtRemovable,
+
     ///	<summary>
     ///	  The drive is a fixed disk.
     ///	</summary>
     dtFixed,
+
     ///	<summary>
     ///	  The drive is a network drive.
     ///	</summary>
     dtNetwork,
+
     ///	<summary>
     ///	  The drive is an optical disc device, such as a CD or DVD-ROM.
     ///	</summary>
     dtCDRom,
+
     ///	<summary>
     ///	  The drive is a RAM disk.
     ///	</summary>
@@ -99,15 +103,16 @@ type
   ///	  Use the static <see cref="Spring.Utils|TDriveInfo.GetDrives" /> method
   ///	  to retrieve all drives of the computer.
   ///	  <note type="caller">
-  ///	    Caller must use the <see cref="Spring.Utils|TDriveInfo.IsReady">IsRead
-  ///	    y</see> property to check whether the drive is ready before accessing
-  ///	    other members. Otherwise, an <see cref="Spring|EIOException" />
-  ///	    exception will be raised if it is not ready.
+  ///	    Caller must use the
+  ///	    <see cref="Spring.Utils|TDriveInfo.IsReady">IsReady</see> property to
+  ///	    check whether the drive is ready before accessing other members.
+  ///	    Otherwise, an <see cref="Spring|EIOException" /> exception will be
+  ///	    raised if it is not ready.
   ///	  </note>
   ///	</remarks>
   ///	<threadsafety static="true" instance="false" />
   ///	<seealso href="http://msdn.microsoft.com/en-us/library/system.io.driveinfo.aspx">
-  ///	  System.IO.DriveInfo (.Net Framework)
+  ///	   System.IO.DriveInfo (.Net Framework)
   ///	</seealso>
   {$ENDREGION}
   TDriveInfo = record
@@ -137,15 +142,17 @@ type
   public
     constructor Create(const driveName: string);
 
-    ///	<summary>Retrieves the drive names of all logical drives on a
-    ///	computer.</summary>
+    ///	<summary>
+    ///	  Retrieves the drive names of all logical drives on a computer.
+    ///	</summary>
     class function GetDrives: TArray<TDriveInfo>; static;
 
-    {$REGION 'Documentation'}
-    ///	<summary>Checks whether a drive is ready.</summary>
-    ///	<exception cref="EIOException">Raised if a drive is not
-    ///	ready.</exception>
-    {$ENDREGION}
+    ///	<summary>
+    ///	  Checks whether a drive is ready.
+    ///	</summary>
+    ///	<exception cref="EIOException">
+    ///	  Raised if a drive is not ready.
+    ///	</exception>
     procedure CheckIsReady;
 
     ///	<summary>Refreshes the information of a drive.</summary>
@@ -173,14 +180,17 @@ type
     ///	<summary>Gets the root directory of a drive.</summary>
     property RootDirectory: string read fRootDirectory;
 
-    ///	<summary>Gets the total amount of free space available on a
-    ///	drive.</summary>
+    ///	<summary>
+    ///	  Gets the total amount of free space available on a drive.
+    ///	</summary>
     property TotalFreeSpace: Int64 read GetTotalFreeSpace;
 
     ///	<summary>Gets the total size of storage space on a drive.</summary>
     property TotalSize: Int64 read GetTotalSize;
 
-    ///	<summary>Gets or sets the volume label of a drive.</summary>
+    ///	<summary>
+    ///	  Gets or sets the volume label of a drive.
+    ///	</summary>
     property VolumeLabel: string read GetVolumeLabel write SetVolumeLabel;
   end;
 
@@ -380,9 +390,9 @@ type
     etWebEdition
   );
 
-  /// <summary>
-  /// Represents information about the operating system.
-  /// </summary>
+  ///	<summary>
+  ///	  Represents information about the operating system.
+  ///	</summary>
   TOperatingSystem = class sealed
   strict private
     fPlatformType: TOSPlatformType;
@@ -508,47 +518,66 @@ type
 
   {$REGION 'TEnvironment'}
 
-  ///	<summary>Specifies the location where an environment variable is stored
-  ///	or retrieved in a set or get operation.</summary>
+  ///	<summary>
+  ///	  Specifies the location where an environment variable is stored or
+  ///	  retrieved in a set or get operation.
+  ///	</summary>
   TEnvironmentVariableTarget = (
-    ///	<summary>The environment variable is stored or retrieved from the
-    ///	environment block associated with the current process.</summary>
+    ///	<summary>
+    ///	  The environment variable is stored or retrieved from the environment
+    ///	  block associated with the current process.
+    ///	</summary>
     evtProcess,
 
-    ///	<summary>The environment variable is stored or retrieved from the
-    ///	HKEY_CURRENT_USER\Environment key in the Windows operating system
-    ///	registry.</summary>
+    ///	<summary>
+    ///	  The environment variable is stored or retrieved from the
+    ///	  HKEY_CURRENT_USER\Environment key in the Windows operating system
+    ///	  registry.
+    ///	</summary>
     evtUser,
 
-    ///	<summary>The environment variable is stored or retrieved from the
-    ///	HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session
-    ///	Manager\Environment key in the Windows operating system
-    ///	registry.</summary>
+    ///	<summary>
+    ///	  The environment variable is stored or retrieved from the
+    ///	  HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session
+    ///	  Manager\Environment key in the Windows operating system registry.
+    ///	</summary>
     evtMachine
   );
 
-  ///	<summary>Identifies the processor and bits-per-word of the platform
-  ///	targeted by an executable.</summary>
+  ///	<summary>
+  ///	  Identifies the processor and bits-per-word of the platform targeted by
+  ///	  an executable.
+  ///	</summary>
   TProcessorArchitecture = (
-    ///	<summary>Unknown processor</summary>
+    ///	<summary>
+    ///	  Unknown processor
+    ///	</summary>
     paUnknown,
 
-    ///	<summary>Intel x86 and compatible microprocessors.</summary>
+    ///	<summary>
+    ///	  Intel x86 and compatible microprocessors.
+    ///	</summary>
     paX86,
 
-    ///	<summary>64-bit Intel and compatible microprocessors.</summary>
+    ///	<summary>
+    ///	  64-bit Intel and compatible microprocessors.
+    ///	</summary>
     paIA64,
 
-    ///	<summary>64-bit AMD microprocessors.</summary>
+    ///	<summary>
+    ///	  64-bit AMD microprocessors.
+    ///	</summary>
     paAmd64
   );
 
-  {$REGION 'Documentation'}
-  ///	<summary>Provides information about, and means to manipulate, the current
-  ///	environment.</summary>
-  ///	<remarks>Use the TEnvironment structure to retrieve information such
-  ///	as command-line arguments, environment variable settings. </remarks>
-  {$ENDREGION}
+  ///	<summary>
+  ///	  Provides information about, and means to manipulate, the current
+  ///	  environment.
+  ///	</summary>
+  ///	<remarks>
+  ///	  Use the TEnvironment structure to retrieve information such as
+  ///	  command-line arguments, environment variable settings.
+  ///	</remarks>
   TEnvironment = record
   private
     class var
@@ -583,38 +612,50 @@ type
     class function GetCurrentVersionKey: string; static;
     class procedure GetProcessEnvironmentVariables(list: TStrings); static;
   public
-    ///	<summary>Returns a string array containing the command-line arguments
-    ///	for the current process.</summary>
+    ///	<summary>
+    ///	  Returns a string array containing the command-line arguments for the
+    ///	  current process.
+    ///	</summary>
     class function  GetCommandLineArgs: TStringDynArray; overload; static;
 
     // TODO: Consider using Extract*** insteading of Get*** for the methods with a
     // TString parameter.
 
-    ///	<summary>Returns a string array containing the command-line arguments
-    ///	for the current process.</summary>
+    ///	<summary>
+    ///	  Returns a string array containing the command-line arguments for the
+    ///	  current process.
+    ///	</summary>
     class procedure GetCommandLineArgs(list: TStrings); overload; static;
 
-    ///	<summary>Returns an array of string containing the names of the logical
-    ///	drives on the current computer.</summary>
+    ///	<summary>
+    ///	  Returns an array of string containing the names of the logical drives
+    ///	  on the current computer.
+    ///	</summary>
     class function  GetLogicalDrives: TStringDynArray; overload; static;
 
     class procedure GetLogicalDrives(list: TStrings); overload; static;
 
-    ///	<summary>Gets the path to the system special folder that is identified
-    ///	by the specified enumeration.</summary>
+    ///	<summary>
+    ///	  Gets the path to the system special folder that is identified by the
+    ///	  specified enumeration.
+    ///	</summary>
     class function  GetFolderPath(const folder: TSpecialFolder): string; static;
 
     ///	<summary>Retrieves the value of an environment variable from the
     ///	current process.</summary>
     class function  GetEnvironmentVariable(const variable: string): string; overload; static;
 
-    ///	<summary>Retrieves the value of an environment variable from the
-    ///	current process or from the Windows operating system registry key for
-    ///	the current user or local machine.</summary>
+    ///	<summary>
+    ///	  Retrieves the value of an environment variable from the current
+    ///	  process or from the Windows operating system registry key for the
+    ///	  current user or local machine.
+    ///	</summary>
     class function  GetEnvironmentVariable(const variable: string; target: TEnvironmentVariableTarget): string; overload; static;
 
-    ///	<summary>Retrieves all environment variable names and their values from
-    ///	the current process.</summary>
+    ///	<summary>
+    ///	  Retrieves all environment variable names and their values from the
+    ///	  current process.
+    ///	</summary>
     class procedure GetEnvironmentVariables(list: TStrings); overload; static;
 
     ///	<summary>Retrieves the value of an environment variable from the
@@ -631,9 +672,11 @@ type
     ///	reserved for the current user or local machine.</summary>
     class procedure SetEnvironmentVariable(const variable, value: string; target: TEnvironmentVariableTarget); overload; static;
 
-    ///	<summary>Replaces the name of each environment variable embedded in the
-    ///	specified string with the string equivalent of the value of the
-    ///	variable, then returns the resulting string.</summary>
+    ///	<summary>
+    ///	  Replaces the name of each environment variable embedded in the
+    ///	  specified string with the string equivalent of the value of the
+    ///	  variable, then returns the resulting string.
+    ///	</summary>
     class function ExpandEnvironmentVariables(const variable: string): string; static;
 
     class property ApplicationPath: string read fApplicationPath;
@@ -647,25 +690,33 @@ type
     ///	<summary>Gets the command line for this process.</summary>
     class property CommandLine: string read GetCommandLine;
 
-    ///	<summary>Gets or sets the fully qualified path of the current working
-    ///	directory.</summary>
+    ///	<summary>
+    ///	  Gets or sets the fully qualified path of the current working
+    ///	  directory.
+    ///	</summary>
     class property CurrentDirectory: string read GetCurrentDirectory write SetCurrentDirectory;
 
     class property IsAdmin: Boolean read GetIsAdmin; { experimental }
 
-    ///	<summary>Gets the NetBIOS name of this local computer.</summary>
+    ///	<summary>
+    ///	  Gets the NetBIOS name of this local computer.
+    ///	</summary>
     class property MachineName: string read GetMachineName;
 
-    ///	<summary>Gets the newline string defined for this
-    ///	environment.</summary>
+    ///	<summary>
+    ///	  Gets the newline string defined for this environment.
+    ///	</summary>
     class property NewLine: string read GetNewLine;
 
-    ///	<summary>Gets an <see cref="TOperatingSystem" /> object that
-    ///	contains the current platform identifier and version number.</summary>
+    ///	<summary>
+    ///	  Gets a <see cref="TOperatingSystem"/> object that contains the
+    ///	  current platform identifier and version number.
+    ///	</summary>
     class property OperatingSystem: TOperatingSystem read fOperatingSystem;
 
-    ///	<summary>Gets the number of processors on the current
-    ///	machine.</summary>
+    ///	<summary>
+    ///	  Gets the number of processors on the current machine.
+    ///	</summary>
     class property ProcessorCount: Integer read GetProcessorCount;
 
     class property ProcessorArchitecture: TProcessorArchitecture read GetProcessorArchitecture;
@@ -674,24 +725,31 @@ type
 
     class property RegisteredOwner: string read GetRegisteredOwner;
 
-    ///	<summary>Gets the fully qualified path of the system
-    ///	directory.</summary>
+    ///	<summary>
+    ///	  Gets the fully qualified path of the system directory.
+    ///	</summary>
     class property SystemDirectory: string read GetSystemDirectory;
 
-    ///	<summary>Gets the number of milliseconds elapsed since the system
-    ///	started.</summary>
+    ///	<summary>
+    ///	  Gets the number of milliseconds elapsed since the system started.
+    ///	</summary>
     class property TickCount: Cardinal read GetTickCount;
 
-    ///	<summary>Gets the network domain name associated with the current
-    ///	user.</summary>
+    ///	<summary>
+    ///	  Gets the network domain name associated with the current user.
+    ///	</summary>
     class property UserDomainName: string read GetUserDomainName;
 
-    ///	<summary>Gets the user name of the person who is currently logged on to
-    ///	the Windows operating system.</summary>
+    ///	<summary>
+    ///	  Gets the user name of the person who is currently logged on to the
+    ///	  Windows operating system.
+    ///	</summary>
     class property UserName: string read GetUserName;
 
-    ///	<summary>Gets a value indicating whether the current process is running
-    ///	in user interactive mode.</summary>
+    ///	<summary>
+    ///	  Gets a value indicating whether the current process is running in
+    ///	  user interactive mode.
+    ///	</summary>
     class property UserInteractive: Boolean read GetUserInteractive;
   end;
 
@@ -850,13 +908,18 @@ type
   {$ENDREGION}
   function TryConvertStrToDateTime(const s, format: string; out value: TDateTime): Boolean;
 
-  {$REGION 'Documentation'}
-  ///	<summary>Parses a string to a datetime value based on the specified
-  ///	format. An EConvertError exception will be raised if failed to parse the
-  ///	string.</summary>
-  ///	<param name="format">the format of datetime.</param>
-  ///	<param name="s">the date time string.</param>
-  {$ENDREGION}
+  {$IFDEF NODEF}{$REGION 'Documentation'}{$ENDIF}
+  ///	<summary>
+  ///	  Parses a string to a datetime value based on the specified format. An
+  ///	  EConvertError exception will be raised if failed to parse the string.
+  ///	</summary>
+  ///	<param name="s">
+  ///	  the date time string.
+  ///	</param>
+  ///	<param name="format">
+  ///	  the format of datetime.
+  ///	</param>
+  {$IFDEF NODEF}{$ENDREGION}{$ENDIF}
   function ConvertStrToDateTime(const s, format: string): TDateTime;
 
   function TryParseDateTime(const s, format: string; out value: TDateTime): Boolean;
@@ -893,22 +956,33 @@ type
 
   // TODO: Consider using a interface such as INullableHandler to perform these actions
 
-  {$REGION 'Documentation'}
-  ///	<summary>Try getting the underlying type name of a nullable
-  ///	type.</summary>
-  ///	<remarks>For instance, the underlying type name of the type
-  ///	<c>TNullable&lt;System.Integer&gt;</c> is
-  ///	<c>System.Integer</c>.</remarks>
-  {$ENDREGION}
+  ///	<summary>
+  ///	  Try getting the underlying type name of a nullable type.
+  ///	</summary>
+  ///	<remarks>
+  ///	  For instance, the underlying type name of the type
+  ///	  <c>TNullable&lt;System.Integer&gt;</c> is <c>System.Integer</c>.
+  ///	</remarks>
   function TryGetUnderlyingTypeName(typeInfo: PTypeInfo; out underlyingTypeName: string): Boolean;
 
-  ///	<summary>Try getting the underlying type info of a nullable
-  ///	type.</summary>
+  ///	<summary>
+  ///	  Try getting the underlying type info of a nullable type.
+  ///	</summary>
   function TryGetUnderlyingTypeInfo(typeInfo: PTypeInfo; out underlyingTypeInfo: PTypeInfo): Boolean;
 
-  ///	<summary>Try getting the underlying value of a nullable type.</summary>
-  ///	<returns>Returns True if the value is a <c>TNullable&lt;T&gt;</c> and it
-  ///	has value.</returns>
+  ///	<summary>
+  ///	  Try getting the underlying value of a nullable type.
+  ///	</summary>
+  ///	<param name="value">
+  ///	  the value
+  ///	</param>
+  ///	<param name="underlyingValue">
+  ///	  the underlying value.
+  ///	</param>
+  ///	<returns>
+  ///	  Returns True if the value is a <c>TNullable&lt;T&gt;</c> and it has
+  ///	  value.
+  ///	</returns>
   function TryGetUnderlyingValue(const value: TValue; out underlyingValue: TValue): Boolean;
 
   {$REGION 'Documentation'}
@@ -940,15 +1014,21 @@ type
   /// </summary>
   function IsAltPressed: Boolean;
 
-  {$REGION 'Documentation'}
-  ///	<summary>Determines whether a specified file exists. An <see cref=
-  ///	"EFileNotFoundException" /> exception will be raised when not
-  ///	found.</summary>
-  ///	<param name="fileName">the file name.</param>
-  ///	<exception cref="EFileNotFoundException">Raised if the target file does
-  ///	not exist.</exception>
-  ///	<seealso cref="CheckDirectoryExists(string)"></seealso>
+  {$REGION 'XML Documentation'}
   {$ENDREGION}
+
+  ///	<summary>
+  ///	  Determines whether a specified file exists. An
+  ///	  <see cref="EFileNotFoundException" /> exception will be raised when not
+  ///	  found.
+  ///	</summary>
+  ///	<param name="fileName">
+  ///	  the file name.
+  ///	</param>
+  ///	<exception cref="EFileNotFoundException">
+  ///	  Raised if the target file does not exist.
+  ///	</exception>
+  ///	<seealso cref="CheckDirectoryExists(string)" />
   procedure CheckFileExists(const fileName: string);
 
   {$REGION 'Documentation'}
@@ -3099,6 +3179,5 @@ begin
 end;
 
 {$ENDREGION}
-
 
 end.

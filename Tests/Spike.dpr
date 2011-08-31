@@ -40,29 +40,6 @@ uses
   Spring.Collections,
   Spring.Utils;
 
-
-type
-  TRec = record
-    f: Int64;
-    s: string;
-//    e: Double;
-  end;
-
-  TTest = class
-  private
-    fRec: TRec;
-  public
-//    property V: Integer read fRec.Value;
-  end;
-
-  procedure Test;
-  var
-    r: TRec;
-    v: TGuid;
-  begin
-    ZeroMemory(@r, SizeOf(r));
-  end;
-
 begin
   try
     ReportMemoryLeaksOnShutdown := True;

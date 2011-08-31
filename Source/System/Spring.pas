@@ -22,7 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-///	<summary>Declares the fundamental types for the framework.</summary>
+///	<summary>
+///	  Declares the fundamental interfaces for the <see href="http://spring4d.org">Spring4D</see> Framework.
+///	</summary>
 unit Spring;
 
 {$I Spring.inc}
@@ -44,58 +46,83 @@ uses
   Variants;
 
 type
-  ///	<summary>Represents a dynamic array of Byte.</summary>
+  ///	<summary>
+  ///	  Represents a dynamic array of Byte.
+  ///	</summary>
   TBytes = SysUtils.TBytes;
 
-  ///	<summary>Represents a dynamic array of string.</summary>
+  ///	<summary>
+  ///	  Represents a dynamic array of string.
+  ///	</summary>
   TStringDynArray = Types.TStringDynArray;
 
-  ///	<summary>Represents a time interval.</summary>
-  /// <seealso cref="TimeSpan|TTimeSpan" />
+  ///	<summary>
+  ///	  Represents a time interval.
+  ///	</summary>
   TTimeSpan = TimeSpan.TTimeSpan;
 
-  /// <summary>
-  /// Provides a set of methods and properties to accurately measure elapsed time.
-  /// </summary>
-  /// <seealso cref="Diagnostics|TStopwatch" />
+  ///	<summary>
+  ///	  Provides a set of methods and properties to accurately measure elapsed
+  ///	  time.
+  ///	</summary>
   TStopwatch = Diagnostics.TStopwatch;
 
-  ///	<summary>Represents the class type of <c>TCustomAttribute</c>.</summary>
+  ///	<summary>
+  ///	  Represents the class type of <see cref="System|TCustomAttribute" />.
+  ///	</summary>
   TAttributeClass = class of TCustomAttribute;
 
 {$IFNDEF DELPHIXE_UP}
   TThreadID = LongWord;
 {$ENDIF}
 
-  ///	<summary>Represents a logical predicate.</summary>
-  ///	<param name="value">the value needs to be determined.</param>
-  ///	<returns>Returns True if the value was accepted, otherwise, returns
-  ///	false.</returns>
+  ///	<summary>
+  ///	  Represents a logical predicate.
+  ///	</summary>
+  ///	<param name="value">
+  ///	  the value needs to be determined.
+  ///	</param>
+  ///	<returns>
+  ///	  Returns True if the value was accepted, otherwise, returns false.
+  ///	</returns>
   ///	<remarks>
-  ///	  <note type="tip">This type redefined the
-  ///	  <see cref="SysUtils|TPredicate`1">SysUtils.TPredicate&lt;T&gt;</see> type with a const parameter.</note>
+  ///	  <note type="tip">
+  ///	    This type redefined the
+  ///	    <see cref="SysUtils|TPredicate`1">SysUtils.TPredicate&lt;T&gt;</see>
+  ///	    type with a const parameter.
+  ///	  </note>
   ///	</remarks>
-  /// <seealso cref="Spring.DesignPatterns|ISpecification{T}" />
+  ///	<seealso cref="Spring.DesignPatterns|ISpecification{T}" />
   TPredicate<T> = reference to function(const value: T): Boolean;
 
-  /// <summary>
-  /// Represents a anonymous method that has a single parameter and does not return a value.
-  /// </summary>
+  ///	<summary>
+  ///	  Represents an anonymous method that has a single parameter and does not
+  ///	  return a value.
+  ///	</summary>
+  /// <seealso cref="TActionProc{T}" />
+  /// <seealso cref="TActionMethod{T}" />
   TAction<T> = reference to procedure(const obj: T);
 
-  /// <summary>
-  /// Represents a procedure that has a single parameter and does not return a value.
-  /// </summary>
+  ///	<summary>
+  ///	  Represents a procedure that has a single parameter and does not return
+  ///	  a value.
+  ///	</summary>
+  /// <seealso cref="TAction{T}" />
+  /// <seealso cref="TActionMethod{T}" />
   TActionProc<T> = procedure(const obj: T);
 
-  /// <summary>
-  /// Represents a instance method that has a single parameter and does not return a value.
-  /// </summary>
+  ///	<summary>
+  ///	  Represents a instance method that has a single parameter and does not
+  ///	  return a value.
+  ///	</summary>
+  /// <seealso cref="TAction{T}" />
+  /// <seealso cref="TActionProc{T}" />
   TActionMethod<T> = procedure(const obj: T) of object;
 
-  /// <summary>
-  /// Provides a non-reference-counted <see cref="System|IInterface" /> implementation.
-  /// </summary>
+  ///	<summary>
+  ///	  Provides a non-reference-counted <see cref="System|IInterface" />
+  ///	  implementation.
+  ///	</summary>
   TInterfaceBase = class(TObject, IInterface)
   protected
     function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
@@ -104,9 +131,9 @@ type
   end;
 
   ///	<summary>
-  /// Provides an abstract class base of TThread that implements the
-  ///	IInterface.
-  /// </summary>
+  ///	  Provides an abstract class base of TThread that implements the
+  ///	  IInterface.
+  ///	</summary>
   TInterfacedThread = class(TThread, IInterface)
   protected
     function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
@@ -114,16 +141,13 @@ type
     function _Release: Integer; stdcall;
   end;
 
-  {$REGION 'Documentation'}
   ///	<summary>
   ///	  Provides static methods to check arguments and raise argument
   ///	  exceptions.
   ///	</summary>
   ///	<remarks>
-  ///	  It's recommended that all arguments of public methods of global
-  ///	  routines, class and record methods should be checked.
+  ///	  It's recommended that all arguments of public types and members should be checked.
   ///	</remarks>
-  {$ENDREGION}
   TArgument = class
   strict private
     class procedure DoCheckIndex(const length, index, indexBase: Integer); overload; static; inline;
@@ -171,25 +195,38 @@ type
 
     class function IsNullReference(const value; typeInfo: PTypeInfo): Boolean; static;
 
-    ///	<summary>Raises an EArgumentException exception.</summary>
+    ///	<summary>
+    ///	  Raises an <see cref="EArgumentException" /> exception.
+    ///	</summary>
+    ///	<param name="msg">
+    ///	  The general error message.
+    ///	</param>
     class procedure RaiseArgumentException(const msg: string); overload; static; inline;
 
-    ///	<summary>Raises an EArgumentException exception.</summary>
+    ///	<summary>
+    ///	  Raises an EArgumentException exception.
+    ///	</summary>
     class procedure RaiseArgumentFormatException(const argumentName: string); overload; static; inline;
 
-    ///	<summary>Raises an EArgumentNullException exception.</summary>
+    ///	<summary>
+    ///	  Raises an <see cref="EArgumentNullException" /> exception.
+    ///	</summary>
     class procedure RaiseArgumentNullException(const argumentName: string); overload; static; inline;
 
-    ///	<summary>Raises an EArgumentOutOfRangeException exception.</summary>
+    ///	<summary>
+    ///	  Raises an <see cref="EArgumentOutOfRangeException" /> exception.
+    ///	</summary>
     class procedure RaiseArgumentOutOfRangeException(const argumentName: string); overload; static; inline;
 
-    ///	<summary>Raises an EInvalidEnumArgumentException exception.</summary>
+    ///	<summary>
+    ///	  Raises an <see cref="EInvalidEnumArgumentException" /> exception.
+    ///	</summary>
     class procedure RaiseInvalidEnumArgumentException(const argumentName: string); overload; static; inline;
   end;
 
-  /// <summary>
-  /// Provides static methods to manipulate an enumeration type.
-  /// </summary>
+  ///	<summary>
+  ///	  Provides static methods to manipulate an enumeration type.
+  ///	</summary>
   TEnum = class
   private
     class function GetEnumTypeInfo<T>: PTypeInfo; static;
@@ -215,7 +252,6 @@ type
 
   {$REGION 'TNullable<T> & Aliases'}
 
-  {$REGION 'Documentation'}
   ///	<summary>
   ///	  Represents an "object" whose underlying type is a value type that can
   ///	  also be assigned nil like a reference type.
@@ -228,7 +264,6 @@ type
   ///	  The <typeparamref name="T" /> must be a value type such as a value of
   ///	  string, Integer.
   ///	</remarks>
-  {$ENDREGION}
   TNullable<T> = packed record
   private
     const CHasValueFlag = '@';  // DO NOT LOCALIZE
@@ -238,38 +273,66 @@ type
     function GetValue: T;
     function GetHasValue: Boolean;
   private
-    ///	<summary>Internal use. Marks the current instance as null.</summary>
+    ///	<summary>
+    ///	  Internal use. Marks the current instance as null.
+    ///	</summary>
     procedure Clear;
 
-    /// <summary>
-    /// Determines whether a variant value is null or empty.
-    /// </summary>
+    ///	<summary>
+    ///	  Determines whether a variant value is null or empty.
+    ///	</summary>
     class function VarIsNullOrEmpty(const value: Variant; trimWhiteSpace: Boolean = False): Boolean; static;
   public
-    ///	<summary>Initializes a new instance of the <c>TNullable{T}</c> structure
-    ///	to the specified value.</summary>
+    ///	<summary>
+    ///	  Initializes a new instance of the <c>TNullable{T}</c> structure to
+    ///	  the specified value.
+    ///	</summary>
     constructor Create(const value: T); overload;
 
-    ///	<summary>Initializes a new instance of the <c>TNullable{T}</c> structure
-    ///	to the specified value.</summary>
+    ///	<summary>
+    ///	  Initializes a new instance of the <c>TNullable{T}</c> structure to
+    ///	  the specified value.
+    ///	</summary>
     constructor Create(const value: Variant); overload;
 
-    ///	<summary>Retrieves the value of the current <c>TNullable{T}</c> object,
-    ///	or the object's default value.</summary>
+    ///	<summary>
+    ///	  Retrieves the value of the current <c>TNullable{T}</c> object, or the
+    ///	  object's default value.
+    ///	</summary>
     function GetValueOrDefault: T; overload;
 
-    ///	<summary>Retrieves the value of the current <c>TNullable{T}</c> object,
-    ///	or the specified default value.</summary>
-    ///	<param name="default">the default value</param>
-    function GetValueOrDefault(const default: T): T; overload;
+    ///	<summary>
+    ///	  Retrieves the value of the current <c>TNullable{T}</c> object, or the
+    ///	  specified default value.
+    ///	</summary>
+    ///	<param name="defaultValue">
+    ///	  A value to return if the <see cref="HasValue" /> property is
+    ///	  <c>false</c>.
+    ///	</param>
+    ///	<returns>
+    ///	  The value of the <see cref="Value" /> property if the
+    ///	  <see cref="HasValue" /> property is true; otherwise, the
+    ///	  <paramref name="defaultValue" /> parameter.
+    ///	</returns>
+    ///	<remarks>
+    ///	  The <see cref="GetValueOrDefault" /> method returns a value even if
+    ///	  the <see cref="HasValue" /> property is false (unlike the
+    ///	  <see cref="Value" /> property, which throws an exception).
+    ///	</remarks>
+    function GetValueOrDefault(const defaultValue: T): T; overload;
 
-    ///	<summary>Gets a value indicating whether the current <c>TNullable{T}</c>
-    ///	structure has a value.</summary>
+    ///	<summary>
+    ///	  Gets a value indicating whether the current <c>TNullable{T}</c>
+    ///	  structure has a value.
+    ///	</summary>
     property HasValue: Boolean read GetHasValue;
 
-    ///	<summary>Gets the value of the current <c>TNullable{T}</c> value.</summary>
-    ///	<exception cref="Spring|EInvalidOperation">Raised if the value is
-    ///	null.</exception>
+    ///	<summary>
+    ///	  Gets the value of the current <c>TNullable&lt;T&gt;</c> value.
+    ///	</summary>
+    ///	<exception cref="Spring|EInvalidOperation">
+    ///	  Raised if the value is null.
+    ///	</exception>
     property Value: T read GetValue;
 
     { Operator Overloads }
@@ -282,66 +345,67 @@ type
   end;
 
 
-  ///	<summary>Represents a nullable string.</summary>
+  ///	<summary>
+  ///	  Represents a nullable string.
+  ///	</summary>
   TNullableString = TNullable<string>;
 
-  ///	<summary>Represents a nullable integer.</summary>
+  ///	<summary>
+  ///	  Represents a nullable integer.
+  ///	</summary>
   TNullableInteger = TNullable<Integer>;
 
-  ///	<summary>Represents a nullable <c>Int64</c>.</summary>
+  ///	<summary>
+  ///	  Represents a nullable <c>Int64</c>.
+  ///	</summary>
   TNullableInt64 = TNullable<Int64>;
 
   ///	<summary>Represents a nullable native integer.</summary>
   TNullableNativeInt = TNullable<NativeInt>;
 
-  ///	<summary>Represents a nullable <c>TDateTime</c>.</summary>
+  ///	<summary>
+  ///	  Represents a nullable <c>TDateTime</c>.
+  ///	</summary>
   TNullableDateTime = TNullable<TDateTime>;
 
-  ///	<summary>Represents a nullable <c>Currency</c>.</summary>
+  ///	<summary>
+  ///	  Represents a nullable <c>Currency</c>.
+  ///	</summary>
   TNullableCurrency = TNullable<Currency>;
 
-  ///	<summary>Represents a nullable <c>Double</c>.</summary>
+  ///	<summary>
+  ///	  Represents a nullable <c>Double</c>.
+  ///	</summary>
   TNullableDouble = TNullable<Double>;
 
-  ///	<summary>Represents a nullable <c>Boolean</c>.</summary>
+  ///	<summary>
+  ///	  Represents a nullable <c>Boolean</c>.
+  ///	</summary>
   TNullableBoolean = TNullable<Boolean>;
 
-  ///	<summary>Represents a nullable <c>TGuid</c>.</summary>
+  ///	<summary>
+  ///	  Represents a nullable <c>TGuid</c>.
+  ///	</summary>
   TNullableGuid = TNullable<TGUID>;
 
   {$ENDREGION}
 
 
+  IFreeNotification = interface
+    ['{1FE19281-6FB2-434D-987F-3B0F9970F3C4}']
+    procedure FreeNotification(sender: TObject);
+  end;
+
+
   {$REGION 'MulticastEvent'}
 
-  {$REGION 'Documentation'}
   ///	<summary>
-  ///	  Represents a multicast delegate.
+  ///	  Represents a multicast event.
   ///	</summary>
   ///	<typeparam name="T">
-  ///	  The event handler type.
+  ///	  The event handler type must be an instance method such as TNotifyEvent.
   ///	</typeparam>
-  ///	<remarks>
-  ///	  As a multicast delegate, you can add or remove an event handler. The event
-  ///	  handler must be an instance method. The calling conversion?should be
-  ///	  default or stdcall.
-  ///	</remarks>
-  ///	<example>
-  ///	  The following example demonstrates how to use it:
-  ///	  <code lang="Delphi">
-  ///	type
-  ///	  TClipboardEventHandler = procedure (sender: TObject) of object;
-  ///	  TClipboardEvent = TEvent&lt;TClipboardEventHandler&gt;;
-  ///	  TClipboardWatcher = class
-  ///	  private
-  ///	    fOnChanged: TClipboardChangedEvent;
-  ///	  public
-  ///	    property OnChanged: TClipboardChangedEvent read fOnChanged;
-  ///	  end;
-  ///	  </code>
-  ///	</example>
-  {$ENDREGION}
-  IDelegate<T> = interface
+  IMulticastEvent<T> = interface
     {$REGION 'Property Getters'}
       function GetInvoke: T;
       function GetCount: Integer;
@@ -349,41 +413,43 @@ type
       function GetIsNotEmpty: Boolean;
     {$ENDREGION}
 
-    {$REGION 'Documentation'}
     ///	<summary>
     ///	  Adds an event handler to the list.
     ///	</summary>
-    {$ENDREGION}
     procedure Add(const handler: T);
 
-    {$REGION 'Documentation'}
     ///	<summary>
-    ///	  Remove an event handler if it exists.
+    ///	  Removes an event handler if it was added to the event.
     ///	</summary>
-    {$ENDREGION}
     procedure Remove(const handler: T);
 
-    {$REGION 'Documentation'}
     ///	<summary>
     ///	  Clears all event handlers.
     ///	</summary>
-    {$ENDREGION}
     procedure Clear;
 
-    {$REGION 'Documentation'}
     ///	<summary>
-    ///	  Invokes the event.
+    ///	  Invokes all event handlers.
     ///	</summary>
-    {$ENDREGION}
     property Invoke: T read GetInvoke;
+
+    ///	<summary>
+    ///	  Gets the number of all event handlers.
+    ///	</summary>
     property Count: Integer read GetCount;
+
+    ///	<summary>
+    ///	  Gets a value indicates whether there is not any event handler.
+    ///	</summary>
     property IsEmpty: Boolean read GetIsEmpty;
     property IsNotEmpty: Boolean read GetIsNotEmpty;
   end;
 
-
   PMethod = ^TMethod;
 
+  ///	<summary>
+  ///	  Internal Use.
+  ///	</summary>
   TMethodInvocations = class
   private
     const
@@ -432,7 +498,7 @@ type
     property IsEmpty: Boolean read GetIsEmpty;
   end;
 
-  TDelegate<T> = class(TInterfacedObject, IDelegate<T>)
+  TMulticastEvent<T> = class(TInterfacedObject, IMulticastEvent<T>)
   private
     fInvocations: TMethodInvocations;
     fInvoke: T;
@@ -459,36 +525,45 @@ type
 
   TEvent<T> = record
   private
-    fInstance: IDelegate<T>;
+    fInstance: IMulticastEvent<T>;
     function GetInvoke: T;
     function GetCount: Integer;
     function GetIsEmpty: Boolean;
     function GetIsNotEmpty: Boolean;
   public
-    class function Create: IDelegate<T>; static;
+    class function Create: IMulticastEvent<T>; static;
 
     procedure Add(const handler: T);
     procedure Remove(const handler: T);
     procedure Clear;
 
-    function GetInstance: IDelegate<T>; inline;
+    function GetInstance: IMulticastEvent<T>; inline;
 
     property Invoke: T read GetInvoke;
     property Count: Integer read GetCount;
     property IsEmpty: Boolean read GetIsEmpty;
     property IsNotEmpty: Boolean read GetIsNotEmpty;
 
-    class operator Implicit(const event: IDelegate<T>): TEvent<T>;
-    class operator Implicit(const event: TEvent<T>): IDelegate<T>;
+    class operator Implicit(const event: IMulticastEvent<T>): TEvent<T>;
+    class operator Implicit(const event: TEvent<T>): IMulticastEvent<T>;
     class operator Implicit(const eventHandler: T): TEvent<T>;
   end;
+
+  IMulticastNotifyEvent = IMulticastEvent<TNotifyEvent>;
+
+  TMulticastNotifyEvent = TMulticastEvent<TNotifyEvent>;
+
+  IDelegate<T> = interface(IMulticastEvent<T>)
+  end deprecated 'Use IMulticastEvent<T> instead.';
+
+  TDelegate<T> = class(TMulticastEvent<T>, IDelegate<T>)
+  end deprecated 'Use TMulticastEvent<T> instead.';
 
   {$ENDREGION}
 
 
   {$REGION 'Lifetime Type & Attributes'}
 
-  {$REGION 'Documentation'}
   ///	<summary>
   ///	  Lifetime Type Enumeration.
   ///	</summary>
@@ -496,7 +571,6 @@ type
   ///	<seealso cref="TransientAttribute" />
   ///	<seealso cref="SingletonPerThreadAttribute" />
   ///	<seealso cref="PooledAttribute" />
-  {$ENDREGION}
   TLifetimeType = (
     ///	<summary>
     ///	  Unknown lifetime type.
@@ -529,7 +603,9 @@ type
     ltCustom
   );
 
-  ///	<summary>Represents an abstract lifetime attribute class base.</summary>
+  ///	<summary>
+  ///	  Represents an abstract lifetime attribute class base.
+  ///	</summary>
   LifetimeAttributeBase = class abstract(TCustomAttribute)
   private
     fLifetimeType: TLifetimeType;
@@ -665,46 +741,48 @@ type
 
   {$REGION 'Lifecycle Interfaces'}
 
-  {$REGION 'Documentation'}
-  ///	<summary>Lifecycle interface. If a component implements this interface,
-  ///	the IoC container will invoke the <c>Initialize</c> method when
-  ///	initiating an instance of the component.</summary>
-  ///	<seealso cref="IStartable"></seealso>
-  ///	<seealso cref="IRecyclable"></seealso>
-  ///	<seealso cref="IDisposable"></seealso>
-  {$ENDREGION}
+  ///	<summary>
+  ///	  Lifecycle interface. If a component implements this interface, the IoC
+  ///	  container will invoke the <c>Initialize</c> method when initiating an
+  ///	  instance of the component.
+  ///	</summary>
+  ///	<seealso cref="IStartable" />
+  ///	<seealso cref="IRecyclable" />
+  ///	<seealso cref="IDisposable" />
   IInitializable = interface
     ['{A36BB399-E592-4DFB-A091-EDBA3BE0648B}']
-    ///	<summary>Initializes the component.</summary>
+
+    ///	<summary>
+    ///	  Initializes the component.
+    ///	</summary>
     procedure Initialize;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>Lifecycle interface. Represents that the component can be
-  ///	started and stopped.</summary>
-  ///	<seealso cref="IInitializable"></seealso>
-  ///	<seealso cref="IRecyclable"></seealso>
-  ///	<seealso cref="IDisposable"></seealso>
-  {$ENDREGION}
+  ///	<summary>
+  ///	  Lifecycle interface. Represents that the component can be started and
+  ///	  stopped.
+  ///	</summary>
+  ///	<seealso cref="IInitializable" />
+  ///	<seealso cref="IRecyclable" />
+  ///	<seealso cref="IDisposable" />
   IStartable = interface
     ['{8D0252A1-7993-44AA-B0D9-326019B58E78}']
     procedure Start;
     procedure Stop;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>Lifecycle interface. Only called for components that belongs to
-  ///	a pool when the component comes back to the pool.</summary>
-  ///	<seealso cref="IInitializable"></seealso>
-  ///	<seealso cref="IStartable"></seealso>
-  ///	<seealso cref="IDisposable"></seealso>
-  {$ENDREGION}
+  ///	<summary>
+  ///	  Lifecycle interface. Only called for components that belongs to a pool
+  ///	  when the component comes back to the pool.
+  ///	</summary>
+  ///	<seealso cref="IInitializable" />
+  ///	<seealso cref="IStartable" />
+  ///	<seealso cref="IDisposable" />
   IRecyclable = interface
     ['{85114F41-70E5-4AF4-A375-E445D4619E4D}']
     procedure Recycle;
   end;
 
-  {$REGION 'Documentation'}
   ///	<summary>
   ///	  Lifecycle interface. If the component implements this interface, all
   ///	  resources will be deallocate by calling the <c>Dispose</c> method.
@@ -712,7 +790,6 @@ type
   ///	<seealso cref="IInitializable" />
   ///	<seealso cref="IStartable" />
   ///	<seealso cref="IRecyclable" />
-  {$ENDREGION}
   IDisposable = interface
     ['{6708F9BF-0237-462F-AFA2-DF8EF21939EB}']
     procedure Dispose;
@@ -1317,12 +1394,12 @@ begin
     Result := Default(T);
 end;
 
-function TNullable<T>.GetValueOrDefault(const default: T): T;
+function TNullable<T>.GetValueOrDefault(const defaultValue: T): T;
 begin
   if HasValue then
     Result := value
   else
-    Result := default;
+    Result := defaultValue;
 end;
 
 class operator TNullable<T>.Implicit(const value: T): TNullable<T>;
@@ -1747,9 +1824,9 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TDelegate<T>'}
+{$REGION 'TMulticastEvent<T>'}
 
-constructor TDelegate<T>.Create;
+constructor TMulticastEvent<T>.Create;
 var
   p: PTypeInfo;
 begin
@@ -1762,31 +1839,31 @@ begin
   inherited Create;
 end;
 
-destructor TDelegate<T>.Destroy;
+destructor TMulticastEvent<T>.Destroy;
 begin
   fInvocations.Free;
   inherited Destroy;
 end;
 
-procedure TDelegate<T>.Add(const handler: T);
+procedure TMulticastEvent<T>.Add(const handler: T);
 begin
   InvocationsNeeded;
   fInvocations.Add(PMethod(@handler)^);
 end;
 
-procedure TDelegate<T>.Remove(const handler: T);
+procedure TMulticastEvent<T>.Remove(const handler: T);
 begin
   InvocationsNeeded;
   fInvocations.Remove(PMethod(@handler)^);
 end;
 
-procedure TDelegate<T>.Clear;
+procedure TMulticastEvent<T>.Clear;
 begin
   if fInvocations <> nil then
     fInvocations.Clear;
 end;
 
-function TDelegate<T>.GetCount: Integer;
+function TMulticastEvent<T>.GetCount: Integer;
 begin
   if fInvocations <> nil then
     Result := fInvocations.Count
@@ -1794,23 +1871,23 @@ begin
     Result := 0;
 end;
 
-function TDelegate<T>.GetInvoke: T;
+function TMulticastEvent<T>.GetInvoke: T;
 begin
   InvocationsNeeded;
   Result := fInvoke;
 end;
 
-function TDelegate<T>.GetIsEmpty: Boolean;
+function TMulticastEvent<T>.GetIsEmpty: Boolean;
 begin
   Result := (fInvocations = nil) or (fInvocations.Count = 0);
 end;
 
-function TDelegate<T>.GetIsNotEmpty: Boolean;
+function TMulticastEvent<T>.GetIsNotEmpty: Boolean;
 begin
   Result := not IsEmpty;
 end;
 
-procedure TDelegate<T>.InvocationsNeeded;
+procedure TMulticastEvent<T>.InvocationsNeeded;
 begin
   if fInvocations = nil then
   begin
@@ -1825,9 +1902,9 @@ end;
 
 {$REGION 'TEvent<T>'}
 
-class function TEvent<T>.Create: IDelegate<T>;
+class function TEvent<T>.Create: IMulticastEvent<T>;
 begin
-  Result := TDelegate<T>.Create;
+  Result := TMulticastEvent<T>.Create;
 end;
 
 procedure TEvent<T>.Add(const handler: T);
@@ -1854,11 +1931,11 @@ begin
     Exit(0);
 end;
 
-function TEvent<T>.GetInstance: IDelegate<T>;
+function TEvent<T>.GetInstance: IMulticastEvent<T>;
 begin
   if fInstance = nil then
   begin
-    fInstance := TDelegate<T>.Create;
+    fInstance := TMulticastEvent<T>.Create;
   end;
   Result := fInstance;
 end;
@@ -1884,12 +1961,12 @@ begin
   Result.Add(eventHandler);
 end;
 
-class operator TEvent<T>.Implicit(const event: IDelegate<T>): TEvent<T>;
+class operator TEvent<T>.Implicit(const event: IMulticastEvent<T>): TEvent<T>;
 begin
   Result.fInstance := event;
 end;
 
-class operator TEvent<T>.Implicit(const event: TEvent<T>): IDelegate<T>;
+class operator TEvent<T>.Implicit(const event: TEvent<T>): IMulticastEvent<T>;
 begin
   Result := event.GetInstance;
 end;

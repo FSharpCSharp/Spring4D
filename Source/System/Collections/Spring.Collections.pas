@@ -468,10 +468,10 @@ type
     ['{ACFBB8FB-E9EC-44C0-90A8-48F02C3524CF}']
   end;
 
-  ICollectionNotifyDelegate<T> = interface(IDelegate<TCollectionNotifyEvent<T>>)
+  ICollectionNotifyDelegate<T> = interface(IMulticastEvent<TCollectionNotifyEvent<T>>)
   end;
 
-  TCollectionNotifyDelegate<T> = class(TDelegate<TCollectionNotifyEvent<T>>, ICollectionNotifyDelegate<T>)
+  TCollectionNotifyDelegate<T> = class(TMulticastEvent<TCollectionNotifyEvent<T>>, ICollectionNotifyDelegate<T>)
   end;
 
   ICountable = interface
