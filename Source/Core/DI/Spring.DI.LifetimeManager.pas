@@ -218,7 +218,7 @@ end;
 constructor TSingletonPerThreadLifetimeManager.Create(model: TComponentModel);
 begin
   inherited Create(model);
-  fInstances := TDictionary<THandle, TFunc<TObject>>.Create;
+  fInstances := TDictionary<TThreadID, TFunc<TObject>>.Create;
   fInstances.OnValueNotify := HandleValueNotify;
 end;
 

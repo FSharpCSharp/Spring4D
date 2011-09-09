@@ -553,11 +553,13 @@ type
 
   TMulticastNotifyEvent = TMulticastEvent<TNotifyEvent>;
 
+{$WARNINGS OFF}
   IDelegate<T> = interface(IMulticastEvent<T>)
   end deprecated 'Use IMulticastEvent<T> instead.';
 
   TDelegate<T> = class(TMulticastEvent<T>, IDelegate<T>)
   end deprecated 'Use TMulticastEvent<T> instead.';
+{$WARNINGS ON}
 
   {$ENDREGION}
 

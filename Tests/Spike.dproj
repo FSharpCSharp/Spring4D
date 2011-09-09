@@ -1,7 +1,7 @@
 ﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 		<PropertyGroup>
 			<ProjectGuid>{F0721FD4-FFCB-47C0-BB06-66515BFEE81C}</ProjectGuid>
-			<ProjectVersion>13.3</ProjectVersion>
+			<ProjectVersion>13.4</ProjectVersion>
 			<MainSource>Spike.dpr</MainSource>
 			<Config Condition="'$(Config)'==''">Release</Config>
 			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
@@ -9,6 +9,7 @@
 			<AppType>Console</AppType>
 			<FrameworkType>None</FrameworkType>
 			<Platform Condition="'$(Platform)'==''">Win32</Platform>
+			<TargetedPlatforms>1</TargetedPlatforms>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
 			<Base>true</Base>
@@ -29,6 +30,7 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
+			<DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;Winapi;$(DCC_Namespace)</DCC_Namespace>
 			<VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
 			<VerInfo_Locale>2052</VerInfo_Locale>
 			<DCC_UnitSearchPath>..\Source\System;..\Source\System\Collections;..\Source\System\Utils;..\Source\System\Cryptography;..\Source\Core\Configuration;..\Source\Core\Logging;..\Source\Core\DI;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
@@ -60,7 +62,7 @@
 			<DCC_DebugDCUs>true</DCC_DebugDCUs>
 		</PropertyGroup>
 		<ItemGroup>
-			<DelphiCompile Include="Spike.dpr">
+			<DelphiCompile Include="$(MainSource)">
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
 			<BuildConfiguration Include="Debug">

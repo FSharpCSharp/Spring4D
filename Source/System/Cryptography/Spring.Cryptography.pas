@@ -305,22 +305,25 @@ type
     procedure SetKey(const value: TBuffer);
     procedure SetIV(const value: TBuffer);
   {$IFDEF SUPPORTS_REGION}{$ENDREGION}{$ENDIF}
-    function Encrypt(const buffer: TBuffer): TBuffer; overload;
-    function Encrypt(const buffer: array of Byte): TBuffer; overload;
-    function Encrypt(const buffer: array of Byte; startIndex, count: Integer): TBuffer; overload;
-    function Encrypt(const buffer: Pointer; count: Integer): TBuffer; overload;
-    function Encrypt(const inputString: string): TBuffer; overload;
-    function Encrypt(const inputString: WideString): TBuffer; overload;
-    function Encrypt(const inputString: RawByteString): TBuffer; overload;
+
+    function  Encrypt(const buffer: TBuffer): TBuffer; overload;
+    function  Encrypt(const buffer: array of Byte): TBuffer; overload;
+    function  Encrypt(const buffer: array of Byte; startIndex, count: Integer): TBuffer; overload;
+    function  Encrypt(const buffer: Pointer; count: Integer): TBuffer; overload;
+    function  Encrypt(const inputString: string): TBuffer; overload;
+    function  Encrypt(const inputString: WideString): TBuffer; overload;
+    function  Encrypt(const inputString: RawByteString): TBuffer; overload;
     procedure Encrypt(inputStream, outputStream: TStream); overload;
-    function Decrypt(const buffer: TBuffer): TBuffer; overload;
-    function Decrypt(const buffer: array of Byte): TBuffer; overload;
-    function Decrypt(const buffer: array of Byte; startIndex, count: Integer): TBuffer; overload;
-    function Decrypt(const buffer: Pointer; count: Integer): TBuffer; overload;
-    function Decrypt(const inputString: string): TBuffer; overload;
-    function Decrypt(const inputString: WideString): TBuffer; overload;
-    function Decrypt(const inputString: RawByteString): TBuffer; overload;
+
+    function  Decrypt(const buffer: TBuffer): TBuffer; overload;
+    function  Decrypt(const buffer: array of Byte): TBuffer; overload;
+    function  Decrypt(const buffer: array of Byte; startIndex, count: Integer): TBuffer; overload;
+    function  Decrypt(const buffer: Pointer; count: Integer): TBuffer; overload;
+    function  Decrypt(const inputString: string): TBuffer; overload;
+    function  Decrypt(const inputString: WideString): TBuffer; overload;
+    function  Decrypt(const inputString: RawByteString): TBuffer; overload;
     procedure Decrypt(inputStream, outputStream: TStream); overload;
+
     /// <summary>
     /// Gets or sets the cipher mode for operation of the symmetric algorithm.
     /// </summary>
