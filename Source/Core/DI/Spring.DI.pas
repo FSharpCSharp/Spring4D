@@ -47,7 +47,7 @@ type
   /// <summary>
   /// Represents a Dependency Injection Container.
   /// </summary>
-  TContainer = class(TInterfaceBase, IContainerContext, IInterface)
+  TContainer = class(TInterfaceBase, IContainerContext, IServiceLocator, IInterface)
   private
     fRegistry: IComponentRegistry;
     fBuilder: IComponentBuilder;
@@ -87,8 +87,8 @@ type
     function HasService(const name: string): Boolean; overload;
 
     { Experimental Release Methods }
-    procedure Release(instance: TObject); overload;
-    procedure Release(instance: IInterface); overload;
+    procedure Release(var instance: TObject); overload;
+    procedure Release(var instance: IInterface); overload;
   end;
 
   EContainerException = Spring.DI.Core.EContainerException;
@@ -97,6 +97,9 @@ type
   EUnsatisfiedDependencyException = Spring.DI.Core.EUnsatisfiedDependencyException;
   ECircularDependencyException = Spring.DI.Core.ECircularDependencyException;
   EActivatorException = Spring.DI.Core.EActivatorException;
+
+var
+  GlobalContainer: TContainer;
 
 implementation
 
@@ -120,6 +123,7 @@ begin
   fInjectionFactory := TInjectionFactory.Create;
   fRegistrationManager := TRegistrationManager.Create(fRegistry);
   InitializeInspectors;
+  ServiceLocator.Initialize(Self);
 end;
 
 destructor TContainer.Destroy;
@@ -127,6 +131,7 @@ begin
   fRegistrationManager.Free;
   fBuilder.ClearInspectors;
   fRegistry.UnregisterAll;
+  ServiceLocator.Initialize(nil);
   inherited Destroy;
 end;
 
@@ -282,7 +287,7 @@ begin
   Result := fServiceResolver.ResolveAll(serviceType);
 end;
 
-procedure TContainer.Release(instance: TObject);
+procedure TContainer.Release(var instance: TObject);
 var
   model: TComponentModel;
 begin
@@ -296,7 +301,7 @@ begin
   model.LifetimeManager.ReleaseInstance(instance);
 end;
 
-procedure TContainer.Release(instance: IInterface);
+procedure TContainer.Release(var instance: IInterface);
 begin
   TArgument.CheckNotNull(instance, 'instance');
   { TODO: -oOwner -cGeneral : Release instance of IInterface }
@@ -304,5 +309,10 @@ end;
 
 {$ENDREGION}
 
+initialization
+  GlobalContainer := TContainer.Create;
+
+finalization
+  FreeAndNil(GlobalContainer);
 
 end.

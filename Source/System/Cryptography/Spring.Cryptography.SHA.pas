@@ -316,6 +316,7 @@ asm
 end;
 
 function Maj256(x, y, z: LongWord): LongWord; assembler;
+{$IFNDEF CPUX64}
 asm
   push  ecx
   and   ecx,eax
@@ -325,6 +326,11 @@ asm
   and   edx,ecx
   xor   eax,edx
 end;
+{$ELSE}
+begin
+  Result := (x and y) xor (x and z) xor (y and z);
+end;
+{$ENDIF}
 
 function E0256(x: LongWord): LongWord;
 begin

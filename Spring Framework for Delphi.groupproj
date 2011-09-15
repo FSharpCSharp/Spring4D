@@ -10,7 +10,7 @@
 				<Dependencies>Packages\Spring.System.dproj</Dependencies>
 			</Projects>
 			<Projects Include="Tests\Spring.Tests.dproj">
-				<Dependencies>Packages\Spring.System.dproj;Packages\Spring.Core.dproj</Dependencies>
+				<Dependencies/>
 			</Projects>
 			<Projects Include="Tests\Spike.dproj">
 				<Dependencies>Packages\Spring.System.dproj;Packages\Spring.Core.dproj</Dependencies>
@@ -41,13 +41,13 @@
 		<Target Name="Spring_Core:Make" DependsOnTargets="Spring.System:Make">
 			<MSBuild Projects="Packages\Spring.Core.dproj" Targets="Make"/>
 		</Target>
-		<Target Name="Spring_Tests" DependsOnTargets="Spring.System;Spring.Core">
+		<Target Name="Spring_Tests">
 			<MSBuild Projects="Tests\Spring.Tests.dproj"/>
 		</Target>
-		<Target Name="Spring_Tests:Clean" DependsOnTargets="Spring.System:Clean;Spring.Core:Clean">
+		<Target Name="Spring_Tests:Clean">
 			<MSBuild Projects="Tests\Spring.Tests.dproj" Targets="Clean"/>
 		</Target>
-		<Target Name="Spring_Tests:Make" DependsOnTargets="Spring.System:Make;Spring.Core:Make">
+		<Target Name="Spring_Tests:Make">
 			<MSBuild Projects="Tests\Spring.Tests.dproj" Targets="Make"/>
 		</Target>
 		<Target Name="Spike" DependsOnTargets="Spring.System;Spring.Core">

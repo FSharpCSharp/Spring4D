@@ -213,7 +213,9 @@ const
     $bcb4666d, $b8757bda, $b5365d03, $b1f740b4
   );
 
-{$DEFINE USE_ASM}
+{$IFNDEF CPUX64}
+  {$DEFINE USE_ASM}
+{$ENDIF}
 
 {$IFDEF USE_ASM}
 procedure CRC32Init(var crc: LongWord); assembler;

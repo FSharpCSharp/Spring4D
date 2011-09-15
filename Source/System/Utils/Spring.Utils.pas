@@ -42,6 +42,7 @@ uses
   DateUtils,
   StrUtils,
   TypInfo,
+  Types,
   Registry,
   ShlObj,
   ShellAPI,
@@ -54,6 +55,31 @@ uses
   Spring.Utils.WinAPI;
 
 type
+  ///	<summary>
+  ///	  Provides static methods to manipulate an enumeration type.
+  ///	</summary>
+  TEnum = class
+  private
+    class function GetEnumTypeInfo<T>: PTypeInfo; static;
+    class function GetEnumTypeData<T>: PTypeData; static;
+    { Internal function without range check }
+    class function ConvertToInteger<T>(const value: T): Integer; static;
+  public
+    class function IsValid<T>(const value: T): Boolean; overload; static;
+    class function IsValid<T>(const value: Integer): Boolean; overload; static;
+    class function GetName<T>(const value: T): string; overload; static;
+    class function GetName<T>(const value: Integer): string; overload; static;
+    class function GetNames<T>: TStringDynArray; static;
+    class function GetValue<T>(const value: T): Integer; overload; static;
+    class function GetValue<T>(const value: string): Integer; overload; static;
+    class function GetValues<T>: TIntegerDynArray; static;
+    class function GetValueStrings<T>: TStringDynArray; static;
+    class function TryParse<T>(const value: Integer; out enum: T): Boolean; overload; static;
+    class function TryParse<T>(const value: string; out enum: T): Boolean; overload; static;
+    class function Parse<T>(const value: Integer): T; overload; static;
+    class function Parse<T>(const value: string): T; overload; static;
+  end;
+
   ///	<summary>
   ///	  Drive Type Enumeration
   ///	</summary>
@@ -1661,6 +1687,156 @@ end;
 function SplitNullTerminatedStrings(const buffer: PChar): TStringDynArray;
 begin
   Result := SplitString(buffer);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TEnum'}
+
+class function TEnum.GetEnumTypeInfo<T>: PTypeInfo;
+begin
+  Result := TypeInfo(T);
+  TArgument.CheckTypeKind(Result, tkEnumeration, 'T');
+end;
+
+class function TEnum.GetEnumTypeData<T>: PTypeData;
+var
+  typeInfo: PTypeInfo;
+begin
+  typeInfo := TEnum.GetEnumTypeInfo<T>;
+  Result := GetTypeData(typeInfo);
+end;
+
+class function TEnum.ConvertToInteger<T>(const value: T): Integer;
+begin
+  Result := 0;  // *MUST* initialize Result
+  Move(value, Result, SizeOf(T));
+end;
+
+class function TEnum.IsValid<T>(const value: Integer): Boolean;
+var
+  typeInfo: PTypeInfo;
+  data: PTypeData;
+begin
+  typeInfo := System.TypeInfo(T);
+  TArgument.CheckTypeKind(typeInfo, [tkEnumeration], 'T');
+
+  data := GetTypeData(typeInfo);
+  Assert(data <> nil, 'data must not be nil.');
+  Result := (value >= data.MinValue) and (value <= data.MaxValue);
+end;
+
+class function TEnum.IsValid<T>(const value: T): Boolean;
+var
+  intValue: Integer;
+begin
+  intValue := TEnum.ConvertToInteger<T>(value);
+  Result := TEnum.IsValid<T>(intValue);
+end;
+
+class function TEnum.GetName<T>(const value: Integer): string;
+var
+  typeInfo: PTypeInfo;
+begin
+  TArgument.CheckEnum<T>(value, 'value');
+
+  typeInfo := GetEnumTypeInfo<T>;
+  Result := GetEnumName(typeInfo, value);
+end;
+
+class function TEnum.GetName<T>(const value: T): string;
+var
+  intValue: Integer;
+begin
+  intValue := TEnum.ConvertToInteger<T>(value);
+  Result := TEnum.GetName<T>(intValue);
+end;
+
+class function TEnum.GetNames<T>: TStringDynArray;
+var
+  typeData: PTypeData;
+  p: PShortString;
+  i: Integer;
+begin
+  typeData := TEnum.GetEnumTypeData<T>;
+  SetLength(Result, typeData.MaxValue - typeData.MinValue + 1);
+  p := @typedata.NameList;
+  for i := 0 to High(Result) do
+  begin
+    Result[i] := UTF8ToString(p^);
+    Inc(PByte(p), Length(p^)+1);
+  end;
+end;
+
+class function TEnum.GetValue<T>(const value: T): Integer;
+begin
+  TArgument.CheckEnum<T>(value, 'value');
+
+  Result := TEnum.ConvertToInteger<T>(value);
+end;
+
+class function TEnum.GetValue<T>(const value: string): Integer;
+var
+  temp: T;
+begin
+  temp := TEnum.Parse<T>(value);
+  Result := TEnum.ConvertToInteger<T>(temp);
+end;
+
+class function TEnum.GetValues<T>: TIntegerDynArray;
+var
+  typeData: PTypeData;
+  i: Integer;
+begin
+  typeData := TEnum.GetEnumTypeData<T>;
+  SetLength(Result, typeData.MaxValue - typeData.MinValue + 1);
+  for i := 0 to High(Result) do
+  begin
+    Result[i] := i;
+  end;
+end;
+
+class function TEnum.GetValueStrings<T>: TStringDynArray;
+var
+  typeData: PTypeData;
+  i: Integer;
+begin
+  typeData := TEnum.GetEnumTypeData<T>;
+  SetLength(Result, typeData.MaxValue - typeData.MinValue + 1);
+  for i := 0 to High(Result) do
+  begin
+    Result[i] := IntToStr(i);
+  end;
+end;
+
+class function TEnum.TryParse<T>(const value: Integer; out enum: T): Boolean;
+begin
+  Result := TEnum.IsValid<T>(value);
+  if Result then
+    Move(value, enum, SizeOf(T));
+end;
+
+class function TEnum.TryParse<T>(const value: string; out enum: T): Boolean;
+var
+  typeInfo: PTypeInfo;
+  intValue: Integer;
+begin
+  typeInfo := TEnum.GetEnumTypeInfo<T>;
+  intValue := GetEnumValue(typeInfo, value);
+  Result := TEnum.TryParse<T>(intValue, enum);
+end;
+
+class function TEnum.Parse<T>(const value: Integer): T;
+begin
+  if not TEnum.TryParse<T>(value, Result) then
+    raise EFormatException.CreateResFmt(@SIncorrectFormat, [IntToStr(value)]);
+end;
+
+class function TEnum.Parse<T>(const value: string): T;
+begin
+  if not TEnum.TryParse<T>(value, Result) then
+    raise EFormatException.CreateResFmt(@SIncorrectFormat, [value]);
 end;
 
 {$ENDREGION}

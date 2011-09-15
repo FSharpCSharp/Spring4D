@@ -638,7 +638,6 @@ type
 implementation
 
 uses
-  Windows,
   Graphics,
   StrUtils,
   SysUtils,
@@ -871,7 +870,7 @@ begin
 
     p := underlyingValue.GetReferenceToRawData;
     SetLength(valueBuffer, GetTypeData(targetTypeInfo).RecSize);
-    ZeroMemory(PByte(valueBuffer), Length(valueBuffer));
+    FillChar(PByte(valueBuffer)^, Length(valueBuffer), 0);
     if not IsManaged(underlyingTypeInfo) then
     begin
       Move(PByte(p)^, PByte(valueBuffer)^, Length(valueBuffer) - SizeOf(string));

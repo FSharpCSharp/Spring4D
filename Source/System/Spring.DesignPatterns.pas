@@ -44,7 +44,6 @@ interface
 uses
   Classes,
   Contnrs,
-  Windows,
   SysUtils,
   SyncObjs,
   TypInfo,

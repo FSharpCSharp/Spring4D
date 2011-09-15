@@ -45,33 +45,28 @@ uses
 type
   {$IFDEF SUPPORTS_REGION}{$REGION 'Core Types'}{$ENDIF}
 
-  /// <summary>
-  /// TCipherMode
-  /// </summary>
-  /// <remarks>
-  /// The cipher modes cmOFB, cmCFB and cmCTS have not been supported yet.
-  /// </remarks>
-  /// <seealso href="http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation">Block Cipher Mode of Operation</seealso>
+  {$REGION 'Documentation'}
+  ///	<summary>TCipherMode</summary>
+  ///	<remarks>The cipher modes cmOFB, cmCFB and cmCTS have not been supported
+  ///	yet.</remarks>
+  ///	<seealso href=
+  ///	"http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation">Block
+  ///	Cipher Mode of Operation</seealso>
+  {$ENDREGION}
   TCipherMode = (
-    /// <summary>
-    /// Cipher-Block Chaining
-    /// </summary>
+    ///	<summary>Cipher-Block Chaining</summary>
     cmCBC,
-    /// <summary>
-    /// Electronic Codebook
-    /// </summary>
+
+    ///	<summary>Electronic Codebook</summary>
     cmECB,
-    /// <summary>
-    /// Output Feedback
-    /// </summary>
+
+    ///	<summary>Output Feedback (<b>Not yet implemented</b>)</summary>
     cmOFB,
-    /// <summary>
-    /// Cipher Feedback
-    /// </summary>
+
+    ///	<summary>Cipher Feedback (<b>Not yet implemented</b>)</summary>
     cmCFB,
-    /// <summary>
-    /// Cipher Text Stealing
-    /// </summary>
+
+    ///	<summary>Cipher Text Stealing (<b>Not yet implemented</b>)</summary>
     cmCTS
   );
 
@@ -358,17 +353,6 @@ type
     property LegalKeySizes: TSizes read GetLegalKeySizes;
   end;
 
-  (*
-  /// <summary>
-  /// Performs a transformation on data to keep it from being read by third parties.
-  /// This type of encryption uses a public/private key pair to encrypt and decrypt data.
-  /// </summary>
-  IAsymmetricAlgorithm = interface
-    ['{2BD66C06-1054-43A5-B9B6-2A8B9193BAE3}']
-    //...
-  end;
-  //*)
-
   /// <summary>
   /// Generates cryptographically strong random values.
   /// </summary>
@@ -550,6 +534,17 @@ type
   {$IFDEF SUPPORTS_REGION}{$ENDREGION}{$ENDIF}
 
 
+
+  (*
+  /// <summary>
+  /// Performs a transformation on data to keep it from being read by third parties.
+  /// This type of encryption uses a public/private key pair to encrypt and decrypt data.
+  /// </summary>
+  IAsymmetricAlgorithm = interface
+    ['{2BD66C06-1054-43A5-B9B6-2A8B9193BAE3}']
+    //...
+  end;
+  //*)
   (*
   ICryptographicServiceProvider = interface
     ['{CA9D2D5A-8562-4F9E-8CDC-397C4E0B14D6}']
@@ -627,6 +622,7 @@ implementation
 
 uses
   Math,
+  Spring.Utils,
   Spring.Cryptography.CRC,
   Spring.Cryptography.MD5,
   Spring.Cryptography.SHA,

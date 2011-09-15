@@ -162,11 +162,6 @@ type
 
   IDependencyResolver = interface
     ['{15ADEA1D-7C3F-48D5-8E85-84B4332AFF5F}']
-//    function CanResolveDependency(dependency: TRttiType): Boolean; overload;
-//    function CanResolveDependency(dependency: TRttiType; const argument: TValue): Boolean; overload;
-//    function ResolveDependency(dependency: TRttiType): TValue; overload;
-//    function ResolveDependency(dependency: TRttiType; const argument: TValue): TValue; overload;
-
     function CanResolveDependencies(dependencies: TArray<TRttiType>): Boolean; overload;
     function CanResolveDependencies(dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean; overload;
     function ResolveDependencies(dependencies: TArray<TRttiType>): TArray<TValue>; overload;
@@ -181,7 +176,7 @@ type
   /// <summary>
   /// Resolves services.
   /// </summary>
-  IServiceResolver = interface // (IDependencyResolver)
+  IServiceResolver = interface
     ['{14669EBA-4E57-4DF4-919D-377D8E90144C}']
     function CanResolve(serviceType: PTypeInfo): Boolean; overload;
     function CanResolve(const name: string): Boolean; overload;

@@ -76,12 +76,6 @@ type
     procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); override;
   end;
 
-//  TImplementsAttributeInspector = class(TInspectorBase)
-//  protected
-//    procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); override;
-//  end;
-
-  // InjectionAttributeInspector
   TConstructorInspector = class(TInspectorBase)
   protected
     procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); override;

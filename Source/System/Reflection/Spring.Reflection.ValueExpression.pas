@@ -23,8 +23,12 @@
 {***************************************************************************}
 
 {$REGION 'Documentation'}
+///	<preliminary></preliminary>
 ///	<summary>Implementation of Exrepssion part of Value.</summary>
-/// <preliminary />
+///	<remarks>
+///	  <note type="warning">This namespace is experimental and subject to change
+///	  in future.</note>
+///	</remarks>
 {$ENDREGION}
 unit Spring.Reflection.ValueExpression;
 

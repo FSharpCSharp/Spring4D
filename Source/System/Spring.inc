@@ -27,8 +27,16 @@
 
 {$I jedi.inc}                // Import JEDI Development environment directives
 
-{$IFNDEF DELPHI7_UP}
-  {$MESSAGE ERROR 'This framework requires Delphi 7 or higher.'}}
+{$IFNDEF DELPHIXE_UP}
+  {$MESSAGE ERROR 'This framework requires Delphi XE or higher.'}}
+{$ENDIF}
+
+{$IFDEF CPUX64}
+  {$MESSAGE WARN 'This framework is not ready for Win64'}
+{$ENDIF}
+
+{$IFNDEF MSWINDOWS}
+  {$MESSAGE ERROR 'This framework is only available for Windows at present.'}
 {$ENDIF}
 
 {.$SCOPEDENUMS ON}           // Enable Scoped Enumerations

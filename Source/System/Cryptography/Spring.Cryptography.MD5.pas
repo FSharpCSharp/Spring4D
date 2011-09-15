@@ -158,8 +158,8 @@ asm
   XOR EAX, EDX
 end;
 
-
 procedure rot(var x: LongWord; n: BYTE);
+{$IFNDEF CPUX64}
 asm
   //x := (x shl n) or (x shr (32 - n));
   PUSH EBX
@@ -174,6 +174,11 @@ asm
   MOV [EAX], EBX
   POP EBX
 end;
+{$ELSE}
+begin
+  x := (x shl n) or (x shr (32 - n));
+end;
+{$ENDIF}
 
 procedure FF(var a: LongWord; b, c, d, x: LongWord; s: BYTE; ac: LongWord);
 begin

@@ -33,7 +33,6 @@ interface
 
 uses
   Classes,
-  Windows,
   SysUtils,
   DateUtils,
   Types,
@@ -224,31 +223,6 @@ type
     class procedure RaiseInvalidEnumArgumentException(const argumentName: string); overload; static; inline;
   end;
 
-  ///	<summary>
-  ///	  Provides static methods to manipulate an enumeration type.
-  ///	</summary>
-  TEnum = class
-  private
-    class function GetEnumTypeInfo<T>: PTypeInfo; static;
-    class function GetEnumTypeData<T>: PTypeData; static;
-    { Internal function without range check }
-    class function ConvertToInteger<T>(const value: T): Integer; static;
-  public
-    class function IsValid<T>(const value: T): Boolean; overload; static;
-    class function IsValid<T>(const value: Integer): Boolean; overload; static;
-    class function GetName<T>(const value: T): string; overload; static;
-    class function GetName<T>(const value: Integer): string; overload; static;
-    class function GetNames<T>: TStringDynArray; static;
-    class function GetValue<T>(const value: T): Integer; overload; static;
-    class function GetValue<T>(const value: string): Integer; overload; static;
-    class function GetValues<T>: TIntegerDynArray; static;
-    class function GetValueStrings<T>: TStringDynArray; static;
-    class function TryParse<T>(const value: Integer; out enum: T): Boolean; overload; static;
-    class function TryParse<T>(const value: string; out enum: T): Boolean; overload; static;
-    class function Parse<T>(const value: Integer): T; overload; static;
-    class function Parse<T>(const value: string): T; overload; static;
-  end;
-
 
   {$REGION 'TNullable<T> & Aliases'}
 
@@ -391,12 +365,6 @@ type
   {$ENDREGION}
 
 
-  IFreeNotification = interface
-    ['{1FE19281-6FB2-434D-987F-3B0F9970F3C4}']
-    procedure FreeNotification(sender: TObject);
-  end;
-
-
   {$REGION 'MulticastEvent'}
 
   ///	<summary>
@@ -409,8 +377,10 @@ type
     {$REGION 'Property Getters'}
       function GetInvoke: T;
       function GetCount: Integer;
+      function GetEnabled: Boolean;
       function GetIsEmpty: Boolean;
       function GetIsNotEmpty: Boolean;
+      procedure SetEnabled(const value: Boolean);
     {$ENDREGION}
 
     ///	<summary>
@@ -438,10 +408,16 @@ type
     ///	</summary>
     property Count: Integer read GetCount;
 
+    /// <summary>
+    ///   Gets the value indicates whether the multicast event is enabled, or sets the value to enable or disable the event.
+    /// </summary>
+    property Enabled: Boolean read GetEnabled write SetEnabled;
+
     ///	<summary>
     ///	  Gets a value indicates whether there is not any event handler.
     ///	</summary>
     property IsEmpty: Boolean read GetIsEmpty;
+
     property IsNotEmpty: Boolean read GetIsNotEmpty;
   end;
 
@@ -498,14 +474,18 @@ type
     property IsEmpty: Boolean read GetIsEmpty;
   end;
 
+  // TODO: Implement Enabled property & Fix some bugs
   TMulticastEvent<T> = class(TInterfacedObject, IMulticastEvent<T>)
   private
     fInvocations: TMethodInvocations;
     fInvoke: T;
+    fEnabled: Boolean;
     function GetInvoke: T;
     function GetCount: Integer;
+    function GetEnabled: Boolean;
     function GetIsEmpty: Boolean;
     function GetIsNotEmpty: Boolean;
+    procedure SetEnabled(const value: Boolean);
   protected
     procedure InvocationsNeeded; inline;
     property Invocations: TMethodInvocations read fInvocations;
@@ -519,6 +499,7 @@ type
 
     property Invoke: T read GetInvoke;
     property Count: Integer read GetCount;
+    property Enabled: Boolean read GetEnabled write SetEnabled;
     property IsEmpty: Boolean read GetIsEmpty;
     property IsNotEmpty: Boolean read GetIsNotEmpty;
   end;
@@ -555,11 +536,67 @@ type
 
 {$WARNINGS OFF}
   IDelegate<T> = interface(IMulticastEvent<T>)
-  end deprecated 'Use IMulticastEvent<T> instead.';
+  end deprecated;
 
   TDelegate<T> = class(TMulticastEvent<T>, IDelegate<T>)
-  end deprecated 'Use TMulticastEvent<T> instead.';
+  end deprecated;
 {$WARNINGS ON}
+
+  {$ENDREGION}
+
+
+  {$REGION 'Experimental Interfaces'}
+
+  IFreeNotification = interface
+    ['{1FE19281-6FB2-434D-987F-3B0F9970F3C4}']
+    procedure FreeNotification(sender: TObject);
+  end;
+
+  TPropertyChangedEventHandler = procedure(sender: TObject; const propertyName: string) of object;
+
+  IMulticastPropertyChangedEvent = interface(IMulticastEvent<TPropertyChangedEventHandler>)
+    ['{5E2E421A-72FC-46AC-B7A9-9083CF47019A}']
+  end;
+
+  INotifyPropertyChanged = interface
+    ['{D034ABBF-CF98-4C2F-8D66-2F1941109D7B}']
+    function GetOnPropertyChanged: IMulticastPropertyChangedEvent;
+    property OnPropertyChanged: IMulticastPropertyChangedEvent read GetOnPropertyChanged;
+  end;
+
+  ITerminatable = interface
+    ['{C8FF5DEF-2A15-4A6D-B128-F050E01438F8}']
+    function GetIsTerminated: Boolean;
+
+    procedure Terminate;
+    property IsTerminated: Boolean read GetIsTerminated;
+  end;
+
+  TMulticastPropertyChangedEvent = class(TMulticastEvent<TPropertyChangedEventHandler>, IMulticastPropertyChangedEvent)
+  end;
+
+  // TODO: Consider Parent Notification
+  TNotifiableObject = class
+  protected
+    fOnPropertyChanged: IMulticastPropertyChangedEvent;
+    function GetOnPropertyChanged: IMulticastPropertyChangedEvent;
+    function GetOwner: IMulticastPropertyChangedEvent; dynamic;
+    procedure NotifyPropertyChanged(const propertyName: string); virtual;
+  protected
+    function SetProperty(const propertyName: string; var oldValue: Integer; const newValue: Integer): Boolean; overload;
+    function SetProperty(const propertyName: string; var oldValue: Int64; const newValue: Int64): Boolean; overload;
+    function SetProperty(const propertyName: string; var oldValue: NativeInt; const newValue: NativeInt): Boolean; overload;
+    function SetProperty(const propertyName: string; var oldValue: Boolean; const newValue: Boolean): Boolean; overload;
+    function SetProperty(const propertyName: string; var oldValue: string; const newValue: string): Boolean; overload;
+    function SetProperty(const propertyName: string; var oldValue: WideString; const newValue: WideString): Boolean; overload;
+    function SetProperty(const propertyName: string; var oldValue: TDateTime; const newValue: TDateTime): Boolean; overload;
+    function SetProperty(const propertyName: string; var oldValue: Double; const newValue: Double): Boolean; overload;
+    function SetProperty(const propertyName: string; var oldValue: Currency; const newValue: Currency): Boolean; overload;
+    function SetProperty(const propertyName: string; var oldValue: TGuid; const newValue: TGuid): Boolean; overload;
+    function SetProperty<T>(const propertyName: string; var oldValue: T; const newValue: T; comparer: IEqualityComparer<T>): Boolean; overload;
+  public
+    property OnPropertyChanged: IMulticastPropertyChangedEvent read GetOnPropertyChanged;
+  end;
 
   {$ENDREGION}
 
@@ -800,11 +837,73 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'Service Locator'}
+
+  /// <summary>
+  /// Defines an abstract interface to locate services.
+  /// </summary>
+  IServiceLocator = interface
+    ['{E8C39055-6634-4428-B343-2FB0E75527BC}']
+    function Resolve(serviceType: PTypeInfo): TValue; overload;
+    function Resolve(const name: string): TValue; overload;
+
+    function ResolveAll(serviceType: PTypeInfo): TArray<TValue>; overload;
+
+    function HasService(serviceType: PTypeInfo): Boolean; overload;
+    function HasService(const name: string): Boolean; overload;
+
+    procedure Release(var instance: TObject); overload;
+    procedure Release(var instance: IInterface); overload;
+  end;
+
+  /// <summary>
+  /// Provides a portal to resolve and query an instance of a service. Use the global
+  /// <see cref="Spring|ServiceLocator" /> method to get the shared instance.
+  /// </summary>
+  /// <remarks>
+  /// You should use ServiceLocator to query a service insteading of directly using Spring.DI namespace in your library.
+  /// The namespace is supposed to be used to register components in your bootstrap code.
+  /// </remarks>
+  TServiceLocator = class
+  strict private
+    class var
+      fInstance: TServiceLocator;
+    class constructor Create;
+    class destructor Destroy;
+  strict private
+    fServiceLocator: IServiceLocator;
+    function GetServiceLocator: IServiceLocator;
+  public
+    procedure Initialize(const serviceLocator: IServiceLocator);
+    class property Instance: TServiceLocator read fInstance;
+  public
+    function Resolve<T>: T; overload;
+    function Resolve<T>(const name: string): T; overload;
+    function Resolve(serviceType: PTypeInfo): TValue; overload;
+    function Resolve(const name: string): TValue; overload;
+
+    function ResolveAll<TServiceType>: TArray<TServiceType>; overload;
+    function ResolveAll(serviceType: PTypeInfo): TArray<TValue>; overload;
+
+    function HasService(serviceType: PTypeInfo): Boolean; overload;
+    function HasService(const name: string): Boolean; overload;
+
+    procedure Release(var instance: TObject); overload;
+    procedure Release(var instance: IInterface); overload;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'Exceptions'}
 
   ENotSupportedException    = SysUtils.ENotSupportedException;
 
+{$IFDEF DELPHIXE_UP}
   ENotImplementedException  = class(Exception);
+{$ELSE}
+  ENotImplementedException  = SysUtils.ENotImplemented;
+{$ENDIF}
 
   EInvalidOperation         = SysUtils.EInvalidOp;
   EInvalidCastException     = SysUtils.EConvertError;
@@ -817,10 +916,11 @@ type
   EArgumentException            = SysUtils.EArgumentException;
   EArgumentOutOfRangeException  = SysUtils.EArgumentOutOfRangeException;
 {$IFDEF DELPHIXE_UP}
-  EArgumentNullException        = SysUtils.EArgumentNilException;
+  EArgumentNilException        = SysUtils.EArgumentNilException;
 {$ELSE}
-  EArgumentNullException        = class(EArgumentException);
+  EArgumentNilException        = class(EArgumentException);
 {$ENDIF}
+  EArgumentNullException        = EArgumentNilException;
   EInvalidEnumArgumentException = class(EArgumentException);
 
   EIOException                  = SysUtils.EInOutError;
@@ -832,12 +932,28 @@ type
 
   {$ENDREGION}
 
+procedure RaisePlatformNotImplementedException;
+
+/// <summary>
+/// Gets the shared instance of <see cref="TServiceLocator" /> class.
+/// </summary>
+function ServiceLocator: TServiceLocator;
+
 implementation
 
 uses
   StrUtils,
   Spring.ResourceStrings;
 
+procedure RaisePlatformNotImplementedException;
+begin
+  raise ENotImplementedException.Create('Platform Not implemented.');
+end;
+
+function ServiceLocator: TServiceLocator;
+begin
+  Result := TServiceLocator.Instance;
+end;
 
 {$REGION 'TInterfaceBase'}
 
@@ -1025,20 +1141,29 @@ class procedure TArgument.CheckEnum<T>(const value: T;
 var
   intValue: Integer;
 begin
-  intValue := TEnum.ConvertToInteger<T>(value);    // No Range Check
+  intValue := 0;
+  Move(value, intValue, SizeOf(T));
   TArgument.CheckEnum<T>(intValue, argumentName);
 end;
 
 class procedure TArgument.CheckEnum<T>(const value: Integer;
   const argumentName: string);
 var
+  typeInfo: PTypeInfo;
+  data: PTypeData;
   msg: string;
 begin
-  if not TEnum.IsValid<T>(value) then
+  typeInfo := System.TypeInfo(T);
+  TArgument.CheckTypeKind(typeInfo, [tkEnumeration], 'T');
+
+  data := GetTypeData(typeInfo);
+  Assert(data <> nil, 'data must not be nil.');
+
+  if (value < data.MinValue) or (value > data.MaxValue) then
   begin
     msg := Format(
       SInvalidEnumArgument,
-      [argumentName, GetTypeName(TypeInfo(T)), value]
+      [argumentName, GetTypeName(typeInfo), value]
     );
     raise EInvalidEnumArgumentException.Create(msg);
   end;
@@ -1176,156 +1301,6 @@ class procedure TArgument.RaiseInvalidEnumArgumentException(
   const argumentName: string);
 begin
   raise EInvalidEnumArgumentException.CreateResFmt(@SInvalidEnumArgument, [argumentName]);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TEnum'}
-
-class function TEnum.GetEnumTypeInfo<T>: PTypeInfo;
-begin
-  Result := TypeInfo(T);
-  TArgument.CheckTypeKind(Result, tkEnumeration, 'T');
-end;
-
-class function TEnum.GetEnumTypeData<T>: PTypeData;
-var
-  typeInfo: PTypeInfo;
-begin
-  typeInfo := TEnum.GetEnumTypeInfo<T>;
-  Result := GetTypeData(typeInfo);
-end;
-
-class function TEnum.ConvertToInteger<T>(const value: T): Integer;
-begin
-  Result := 0;  // *MUST* initialize Result
-  Move(value, Result, SizeOf(T));
-end;
-
-class function TEnum.IsValid<T>(const value: Integer): Boolean;
-var
-  typeInfo: PTypeInfo;
-  data: PTypeData;
-begin
-  typeInfo := System.TypeInfo(T);
-  TArgument.CheckTypeKind(typeInfo, [tkEnumeration], 'T');
-
-  data := GetTypeData(typeInfo);
-  Assert(data <> nil, 'data must not be nil.');
-  Result := (value >= data.MinValue) and (value <= data.MaxValue);
-end;
-
-class function TEnum.IsValid<T>(const value: T): Boolean;
-var
-  intValue: Integer;
-begin
-  intValue := TEnum.ConvertToInteger<T>(value);
-  Result := TEnum.IsValid<T>(intValue);
-end;
-
-class function TEnum.GetName<T>(const value: Integer): string;
-var
-  typeInfo: PTypeInfo;
-begin
-  TArgument.CheckEnum<T>(value, 'value');
-
-  typeInfo := GetEnumTypeInfo<T>;
-  Result := GetEnumName(typeInfo, value);
-end;
-
-class function TEnum.GetName<T>(const value: T): string;
-var
-  intValue: Integer;
-begin
-  intValue := TEnum.ConvertToInteger<T>(value);
-  Result := TEnum.GetName<T>(intValue);
-end;
-
-class function TEnum.GetNames<T>: TStringDynArray;
-var
-  typeData: PTypeData;
-  p: PShortString;
-  i: Integer;
-begin
-  typeData := TEnum.GetEnumTypeData<T>;
-  SetLength(Result, typeData.MaxValue - typeData.MinValue + 1);
-  p := @typedata.NameList;
-  for i := 0 to High(Result) do
-  begin
-    Result[i] := UTF8ToString(p^);
-    Inc(Integer(p), Length(p^)+1);
-  end;
-end;
-
-class function TEnum.GetValue<T>(const value: T): Integer;
-begin
-  TArgument.CheckEnum<T>(value, 'value');
-
-  Result := TEnum.ConvertToInteger<T>(value);
-end;
-
-class function TEnum.GetValue<T>(const value: string): Integer;
-var
-  temp: T;
-begin
-  temp := TEnum.Parse<T>(value);
-  Result := TEnum.ConvertToInteger<T>(temp);
-end;
-
-class function TEnum.GetValues<T>: TIntegerDynArray;
-var
-  typeData: PTypeData;
-  i: Integer;
-begin
-  typeData := TEnum.GetEnumTypeData<T>;
-  SetLength(Result, typeData.MaxValue - typeData.MinValue + 1);
-  for i := 0 to High(Result) do
-  begin
-    Result[i] := i;
-  end;
-end;
-
-class function TEnum.GetValueStrings<T>: TStringDynArray;
-var
-  typeData: PTypeData;
-  i: Integer;
-begin
-  typeData := TEnum.GetEnumTypeData<T>;
-  SetLength(Result, typeData.MaxValue - typeData.MinValue + 1);
-  for i := 0 to High(Result) do
-  begin
-    Result[i] := IntToStr(i);
-  end;
-end;
-
-class function TEnum.TryParse<T>(const value: Integer; out enum: T): Boolean;
-begin
-  Result := TEnum.IsValid<T>(value);
-  if Result then
-    Move(value, enum, SizeOf(T));
-end;
-
-class function TEnum.TryParse<T>(const value: string; out enum: T): Boolean;
-var
-  typeInfo: PTypeInfo;
-  intValue: Integer;
-begin
-  typeInfo := TEnum.GetEnumTypeInfo<T>;
-  intValue := GetEnumValue(typeInfo, value);
-  Result := TEnum.TryParse<T>(intValue, enum);
-end;
-
-class function TEnum.Parse<T>(const value: Integer): T;
-begin
-  if not TEnum.TryParse<T>(value, Result) then
-    raise EFormatException.CreateResFmt(@SIncorrectFormat, [IntToStr(value)]);
-end;
-
-class function TEnum.Parse<T>(const value: string): T;
-begin
-  if not TEnum.TryParse<T>(value, Result) then
-    raise EFormatException.CreateResFmt(@SIncorrectFormat, [value]);
 end;
 
 {$ENDREGION}
@@ -1730,6 +1705,7 @@ begin
 end;
 
 procedure TMethodInvocations.InternalInvokeHandlers;
+{$IFNDEF CPUX64}
 var
   methods: TArray<TMethod>;
   method: TMethod;
@@ -1777,8 +1753,14 @@ begin
     end;
   end;
 end;
+{$ELSE}
+begin
+  RaisePlatformNotImplementedException;
+end;
+{$ENDIF}
 
 procedure TMethodInvocations.InvokeEventHandlerStub;
+{$IFNDEF CPUX64}
 const
   PtrSize = SizeOf(Pointer);
 asm
@@ -1822,6 +1804,11 @@ asm
                                             // instruction will do the final stack cleanup
 @@SimpleRet:
 end;
+{$ELSE}
+begin
+  RaisePlatformNotImplementedException;
+end;
+{$ENDIF}
 
 {$ENDREGION}
 
@@ -1873,6 +1860,11 @@ begin
     Result := 0;
 end;
 
+function TMulticastEvent<T>.GetEnabled: Boolean;
+begin
+  Result := fEnabled;
+end;
+
 function TMulticastEvent<T>.GetInvoke: T;
 begin
   InvocationsNeeded;
@@ -1887,6 +1879,11 @@ end;
 function TMulticastEvent<T>.GetIsNotEmpty: Boolean;
 begin
   Result := not IsEmpty;
+end;
+
+procedure TMulticastEvent<T>.SetEnabled(const value: Boolean);
+begin
+  fEnabled := value;
 end;
 
 procedure TMulticastEvent<T>.InvocationsNeeded;
@@ -1971,6 +1968,251 @@ end;
 class operator TEvent<T>.Implicit(const event: TEvent<T>): IMulticastEvent<T>;
 begin
   Result := event.GetInstance;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TNotifiableObject'}
+
+function TNotifiableObject.GetOnPropertyChanged: IMulticastPropertyChangedEvent;
+begin
+  if fOnPropertyChanged = nil then
+  begin
+    fOnPropertyChanged := TMulticastPropertyChangedEvent.Create;
+  end;
+  Result := fOnPropertyChanged;
+end;
+
+function TNotifiableObject.GetOwner: IMulticastPropertyChangedEvent;
+begin
+  Result := nil;
+end;
+
+procedure TNotifiableObject.NotifyPropertyChanged(const propertyName: string);
+var
+  e: IMulticastPropertyChangedEvent;
+begin
+  if (fOnPropertyChanged <> nil) and fOnPropertyChanged.Enabled then
+    fOnPropertyChanged.Invoke(Self, propertyName);
+
+  if Supports(GetOwner, IMulticastPropertyChangedEvent, e) and e.Enabled then
+    e.Invoke(Self, propertyName);
+end;
+
+function TNotifiableObject.SetProperty(const propertyName: string; var oldValue: Integer;
+  const newValue: Integer): Boolean;
+begin
+  Result := oldValue <> newValue;
+  if Result then
+  begin
+    oldValue := newValue;
+    NotifyPropertyChanged(propertyName);
+  end;
+end;
+
+function TNotifiableObject.SetProperty(const propertyName: string; var oldValue: Int64; const newValue: Int64): Boolean;
+begin
+  Result := oldValue <> newValue;
+  if Result then
+  begin
+    oldValue := newValue;
+    NotifyPropertyChanged(propertyName);
+  end;
+end;
+
+function TNotifiableObject.SetProperty(const propertyName: string; var oldValue: Boolean;
+  const newValue: Boolean): Boolean;
+begin
+  Result := oldValue <> newValue;
+  if Result then
+  begin
+    oldValue := newValue;
+    NotifyPropertyChanged(propertyName);
+  end;
+end;
+
+function TNotifiableObject.SetProperty(const propertyName: string; var oldValue: string;
+  const newValue: string): Boolean;
+begin
+  Result := oldValue <> newValue;
+  if Result then
+  begin
+    oldValue := newValue;
+    NotifyPropertyChanged(propertyName);
+  end;
+end;
+
+function TNotifiableObject.SetProperty(const propertyName: string; var oldValue: TDateTime;
+  const newValue: TDateTime): Boolean;
+begin
+  Result := oldValue <> newValue;
+  if Result then
+  begin
+    oldValue := newValue;
+    NotifyPropertyChanged(propertyName);
+  end;
+end;
+
+function TNotifiableObject.SetProperty(const propertyName: string; var oldValue: WideString;
+  const newValue: WideString): Boolean;
+begin
+  Result := oldValue <> newValue;
+  if Result then
+  begin
+    oldValue := newValue;
+    NotifyPropertyChanged(propertyName);
+  end;
+end;
+
+function TNotifiableObject.SetProperty(const propertyName: string; var oldValue: NativeInt;
+  const newValue: NativeInt): Boolean;
+begin
+  Result := oldValue <> newValue;
+  if Result then
+  begin
+    oldValue := newValue;
+    NotifyPropertyChanged(propertyName);
+  end;
+end;
+
+function TNotifiableObject.SetProperty(const propertyName: string; var oldValue: TGuid; const newValue: TGuid): Boolean;
+begin
+  Result := oldValue <> newValue;
+  if Result then
+  begin
+    oldValue := newValue;
+    NotifyPropertyChanged(propertyName);
+  end;
+end;
+
+function TNotifiableObject.SetProperty(const propertyName: string; var oldValue: Currency;
+  const newValue: Currency): Boolean;
+begin
+  Result := oldValue <> newValue;
+  if Result then
+  begin
+    oldValue := newValue;
+    NotifyPropertyChanged(propertyName);
+  end;
+end;
+
+function TNotifiableObject.SetProperty(const propertyName: string; var oldValue: Double;
+  const newValue: Double): Boolean;
+begin
+  Result := oldValue <> newValue;
+  if Result then
+  begin
+    oldValue := newValue;
+    NotifyPropertyChanged(propertyName);
+  end;
+end;
+
+function TNotifiableObject.SetProperty<T>(const propertyName: string; var oldValue: T; const newValue: T;
+  comparer: IEqualityComparer<T>): Boolean;
+begin
+  if comparer = nil then
+  begin
+    comparer := TEqualityComparer<T>.Default;
+  end;
+  Result := not comparer.Equals(oldValue, newValue);
+  if Result then
+  begin
+    oldValue := newValue;
+    NotifyPropertyChanged(propertyName);
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TServiceLocator'}
+
+class constructor TServiceLocator.Create;
+begin
+  fInstance := TServiceLocator.Create;
+end;
+
+class destructor TServiceLocator.Destroy;
+begin
+  FreeAndNil(fInstance);
+end;
+
+procedure TServiceLocator.Initialize(const serviceLocator: IServiceLocator);
+begin
+  fServiceLocator := serviceLocator;
+end;
+
+function TServiceLocator.GetServiceLocator: IServiceLocator;
+begin
+  if fServiceLocator = nil then
+    raise EInvalidOperation.Create(SServiceLocatorNotInitialized);
+
+  Result := fServiceLocator;
+end;
+
+function TServiceLocator.HasService(const name: string): Boolean;
+begin
+  Result := GetServiceLocator.HasService(name);
+end;
+
+function TServiceLocator.HasService(serviceType: PTypeInfo): Boolean;
+begin
+  Result := GetServiceLocator.HasService(serviceType);
+end;
+
+function TServiceLocator.Resolve(serviceType: PTypeInfo): TValue;
+begin
+  Result := GetServiceLocator.Resolve(serviceType);
+end;
+
+function TServiceLocator.Resolve<T>: T;
+var
+  value: TValue;
+begin
+  value := Resolve(TypeInfo(T));
+  Result := value.AsType<T>;
+end;
+
+function TServiceLocator.Resolve(const name: string): TValue;
+begin
+  Result := GetServiceLocator.Resolve(name);
+end;
+
+function TServiceLocator.Resolve<T>(const name: string): T;
+var
+  value: TValue;
+begin
+  value := Resolve(name);
+  Result := value.AsType<T>;
+end;
+
+function TServiceLocator.ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
+begin
+  Result := GetServiceLocator.ResolveAll(serviceType);
+end;
+
+function TServiceLocator.ResolveAll<TServiceType>: TArray<TServiceType>;
+var
+  services: TArray<TValue>;
+  i: Integer;
+begin
+  services := ResolveAll(TypeInfo(TServiceType));
+  SetLength(Result, Length(services));
+  for i := 0 to High(Result) do
+  begin
+    Result[i] := services[i].AsType<TServiceType>;
+  end;
+end;
+
+procedure TServiceLocator.Release(var instance: TObject);
+begin
+  GetServiceLocator.Release(instance);
+end;
+
+procedure TServiceLocator.Release(var instance: IInterface);
+begin
+  GetServiceLocator.Release(instance);
 end;
 
 {$ENDREGION}

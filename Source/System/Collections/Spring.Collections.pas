@@ -474,6 +474,7 @@ type
   TCollectionNotifyDelegate<T> = class(TMulticastEvent<TCollectionNotifyEvent<T>>, ICollectionNotifyDelegate<T>)
   end;
 
+  ///	<summary>Internal interface. Reserved for future use.</summary>
   ICountable = interface
     ['{CA225A9C-B6FD-4D6E-B3BD-22119CCE6C87}']
     function GetCount: Integer;
@@ -845,7 +846,7 @@ type
   end;
 
   /// <summary>
-  /// Internal type.
+  /// Internal use.
   /// </summary>
   /// <exclude />
   TStackAccess<T> = class(TEnumerable<T>)
