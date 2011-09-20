@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Tests.DI.Components;
+unit Spring.Tests.Container.Components;
 
 interface
 
@@ -30,7 +30,8 @@ uses
   SysUtils,
   TestFramework,
   Spring,
-  Spring.DI.Core;
+  Spring.Services,
+  Spring.Container.Core;
 
 type
   {$REGION 'INameService, TNameService and TAnotherNameService'}

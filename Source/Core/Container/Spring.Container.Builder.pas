@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.DI.Builder;
+unit Spring.Container.Builder;
 
 {$I Spring.inc}
 
@@ -36,7 +36,8 @@ uses
   Spring,
   Spring.Collections,
   Spring.DesignPatterns,
-  Spring.DI.Core;
+  Spring.Services,
+  Spring.Container.Core;
 
 type
   TComponentBuilder = class(TInterfacedObject, IComponentBuilder)
@@ -130,9 +131,9 @@ implementation
 uses
   Spring.Reflection,
   Spring.Helpers,
-  Spring.DI.Injection,
-  Spring.DI.ComponentActivator,
-  Spring.DI.ResourceStrings;
+  Spring.Container.Injection,
+  Spring.Container.ComponentActivator,
+  Spring.Container.ResourceStrings;
 
 
 {$REGION 'TComponentBuilder'}

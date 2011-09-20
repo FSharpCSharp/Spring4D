@@ -32,7 +32,8 @@ uses
   SysUtils,
   Windows,
   Spring,
-  Spring.Cryptography;
+  Spring.Cryptography,
+  Spring.Cryptography.Core;
 
 type
   {Hash context}

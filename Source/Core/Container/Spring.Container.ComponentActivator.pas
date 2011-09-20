@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.DI.ComponentActivator;
+unit Spring.Container.ComponentActivator;
 
 {$I Spring.inc}
 
@@ -35,7 +35,8 @@ uses
   Spring,
   Spring.Collections,
   Spring.Reflection,
-  Spring.DI.Core;
+  Spring.Container.Core,
+  Spring.Services;
 
 type
   /// <summary>
@@ -76,7 +77,7 @@ implementation
 
 uses
   Spring.Helpers,
-  Spring.DI.ResourceStrings;
+  Spring.Container.ResourceStrings;
 
 
 {$REGION 'TComponentActivatorBase'}

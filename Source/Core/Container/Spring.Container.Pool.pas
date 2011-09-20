@@ -23,7 +23,7 @@
 {***************************************************************************}
 
 /// <preliminary />
-unit Spring.DI.Pool;  // experimental;
+unit Spring.Container.Pool;  // experimental;
 
 {$I Spring.inc}
 

@@ -34,52 +34,37 @@ uses
   Classes,
   SysUtils,
   TypInfo,
-  Rtti,   Windows,
+  Rtti,
+  Windows,
   StrUtils,
   Spring,
   Spring.Collections,
-  Spring.Utils;
+  Spring.Utils,
+  Spring.Services.Logging,
+  Spring.Logging,
+  Spring.Logging.Appenders,
+  Spring.Logging.Layouts;
+
+var
+  t: IAppender;
+  e: TLoggingEvent;
 
 begin
   try
     ReportMemoryLeaksOnShutdown := True;
-    Test();
-//    TLinq.From(TStrings)
-//    TLinq.From(TArray[])
-//    TLinq.From(TObjectList)
-//    TLinq.From(TCollection)
-//    TLinq.From<T>(IEnumerable<T>)
-//    TLinq.From<T>(TEnumerable<T>)
-//    TLinq.From<T>(TArray<T>)
-//    TLinq.From<string>(strings).Skip(3).Select<string>(selector);
 
-//    strings := TList<string>.Create;
-//    strings.AddRange(['a', 'aba', 'ced']);
-//
-//    for s in strings.Where(TStringMatchers.InArray(['a', 'aba'])) do
-//    begin
-//      Writeln(s);
-//    end;
+    GlobalContainer.RegisterComponent<TFileAppender>.Implements<IAppender>('file').AsSingleton;
+    GlobalContainer.RegisterComponent<TConsoleAppender>.Implements<IAppender>('console').AsSingleton;
+    GlobalContainer.RegisterComponent<TColoredConsoleAppender>.Implements<IAppender>('coloredconsole').AsSingleton;
+    GlobalContainer.RegisterComponent<TPatternLayout>.Implements<ILayout>('patternlayout');
+    GlobalContainer.Build;
 
-    (*
-
-    list := TList<Integer>.Create;
-    list2 := TList<Integer>.Create;
-    list.AddRange([3, 5, 12, 14]);
-    list2.AddRange([9,50]);
-
-//    p := function (value, index: Integer): Boolean
-//      begin
-//        Result := value <= 5;
-//      end;
-
-    r := list.Reversed;
-    for element in r do
-    begin
-      Writeln(element);
-    end;
-    //*)
-//    Readln(s);
+    t := ServiceLocator.Resolve<IAppender>('coloredconsole');
+    e.Message := 'test';
+    t.Append(e);
+    t := nil;
+    ServiceLocator.Initialize(nil);
+    //    Readln(s);
   except
     on E: Exception do
       Writeln(E.ClassName, ': ', E.Message);

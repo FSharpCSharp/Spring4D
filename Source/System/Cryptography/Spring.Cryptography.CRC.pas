@@ -33,7 +33,8 @@ uses
   Windows,
   SysUtils,
   Spring,
-  Spring.Cryptography;
+  Spring.Cryptography,
+  Spring.Cryptography.Core;
 
 type
   /// <summary>

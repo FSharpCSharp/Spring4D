@@ -79,7 +79,7 @@ type
 
 //  IRttiPackage = interface
 //    ['{7365872F-36E1-424F-96F4-522357F0A9A4}']
-//    {$REGION 'Property Getters & Setters
+//    {$REGION 'Property Accessors
 //      function GetHandle: HINST;
 //      function GetTypes: IEnumerable<TRttiType>;
 //    {$ENDREGION}
@@ -91,7 +91,7 @@ type
 
   IReflection = interface
     ['{E3B66C0B-4827-44C4-BDD9-27F1A856FDDD}']
-    {$REGION 'Property Getters & Setters'}
+    {$REGION 'Property Accessors'}
       function GetTypes: IEnumerable<TRttiType>;
 //      function GetPackages: IEnumerable<TRttiPackage>;
     {$ENDREGION}

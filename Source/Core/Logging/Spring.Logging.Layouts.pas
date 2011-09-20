@@ -30,23 +30,19 @@ uses
   Classes,
   SysUtils,
   Spring,
-  Spring.Configuration,
   Spring.Utils,
+  Spring.Services.Logging,
   Spring.Logging.Core,
   Spring.Logging.Utils;
 
 type
-  TLayoutBase = class abstract(TInterfacedObject, ILayout, IConfigurable)
+  TLayoutBase = class abstract(TInterfacedObject, ILayout)
   protected
     function GetContentType: string; virtual;
     function GetHeader: string; virtual;
     function GetFooter: string; virtual;
     function GetIgnoresException: Boolean; virtual;
-  protected
-    { IConfigurable }
-    procedure Configure(const configuration: IConfigurationNode); virtual;
   public
-    { ILayout }
     function Format(const event: TLoggingEvent): string; virtual; abstract;
     property ContentType: string read GetContentType;
     property Header: string read GetHeader;
@@ -54,7 +50,9 @@ type
     property IgnoresException: Boolean read GetIgnoresException;
   end;
 
-  // conversionPattern
+  { NEED REVIEW }
+  // conversionPattern (Bad XMLDoc)
+
   /// <summary>
   ///   %date             DateTime <using the specified format in configuration>
   ///   %thread           ThreadId Or ThreadName(if name exists)
@@ -67,16 +65,12 @@ type
   ///   %%                %
   ///   %exception        Exception
   /// </summary>
-
   /// <remarks>
   ///   %method           Calling method name < unsupported >
   ///   %filename         File name of calling unit < unsupported >
   ///   %Line             Linenumber of calling method < unsupported >
   ///   %ndc              NDC  eg : 'messageA|B|C|D|E|F' < unsupported >
-  ///
   /// </remarks>
-
-  { NEED REVIEW }
   TPatternLayout = class(TLayoutBase)
   private
     const
@@ -94,8 +88,6 @@ type
     procedure AddPatternPart(const patternPart: string; patternType: TPatternType);
     procedure AddKeyPattern(const keyword, patternConvertor: string; const patternType: TPatternType);
     procedure ClearPatternParts;
-  protected
-    procedure Configure(const configuration: IConfigurationNode); override;
   public
     constructor Create;
     destructor Destroy; override;
@@ -108,10 +100,6 @@ implementation
 
 
 {$REGION 'TLayoutBase'}
-
-procedure TLayoutBase.Configure(const configuration: IConfigurationNode);
-begin
-end;
 
 function TLayoutBase.GetContentType: string;
 begin
@@ -143,6 +131,7 @@ begin
   inherited Create;
   fPatternParts:= TStringList.Create;
   fParser := TPatternParser.Create(fCDefaultLayoutPattern);
+  fDateFormatPattern := 'yyyy-mm-dd hh:nn:ss.zzz';
   InitializeKeyWords;
   AddPatternPart('%s', ptMessage);
 end;
@@ -158,9 +147,10 @@ procedure TPatternLayout.AddKeyPattern(const keyword, patternConvertor: string;
   const patternType: TPatternType);
 begin
   fParser.AddKeyPatternTokens(
-      keyword,
-      patternConvertor,
-      patternType);
+    keyword,
+    patternConvertor,
+    patternType
+  );
 end;
 
 procedure TPatternLayout.AddPatternPart(const patternPart: string;
@@ -172,19 +162,6 @@ end;
 procedure TPatternLayout.ClearPatternParts;
 begin
   fPatternParts.Clear;
-end;
-
-procedure TPatternLayout.Configure(const configuration: IConfigurationNode);
-var
-  node: IConfigurationNode;
-  patternValue: string;
-begin
-  node := configuration.FindNode('conversionPattern');
-  if (node = nil) or not TryGetAttributeValue(node, 'value', patternValue) then
-  begin
-    patternValue := fCDefaultLayoutPattern;
-  end;
-  SetPattern(patternValue);
 end;
 
 procedure TPatternLayout.ParsePattern;
@@ -249,7 +226,7 @@ begin
         ptThread:
           begin
             if MainThreadID = event.ThreadID then
-              builder.AppendFormat(part, ['Main'])
+              builder.AppendFormat(part, ['main'])
             else
               builder.AppendFormat(part, [IntToStr(event.ThreadID)]);
           end;

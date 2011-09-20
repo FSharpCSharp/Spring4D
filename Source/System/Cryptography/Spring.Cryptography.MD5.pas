@@ -33,7 +33,8 @@ interface
 
 uses
   Spring,
-  Spring.Cryptography;
+  Spring.Cryptography,
+  Spring.Cryptography.Core;
 
 type
   TMD5Count = array[0..1] of LongWord;

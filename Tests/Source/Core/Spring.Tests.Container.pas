@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Tests.DI;
+unit Spring.Tests.Container;
 
 {$I Spring.inc}
 
@@ -33,8 +33,8 @@ uses
   SysUtils,
   TestFramework,
   Spring,
-  Spring.DI,
-  Spring.Tests.DI.Components;
+  Spring.Container,
+  Spring.Tests.Container.Components;
 
 type
   TContainerTestCase = class abstract(TTestCase)

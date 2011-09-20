@@ -55,7 +55,7 @@ resourcestring
 
   SUnexpectedArgumentLength = 'Unexpected parameter length.';
 
-  SServiceLocatorNotInitialized = 'Spring.ServiceLocator has not been initialized.';
+  SServiceLocatorNotInitialized = 'The global ServiceLocator has not been initialized.';
 
   SNoTypeInfo          = 'No type information found.';
   STypeParameterShouldBeMethod = 'The type parameter T should be instance method.';

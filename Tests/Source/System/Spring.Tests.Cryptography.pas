@@ -33,7 +33,8 @@ uses
   SysUtils,
   TestFramework,
   Spring,
-  Spring.Cryptography;
+  Spring.Cryptography,
+  Spring.Cryptography.Core;
 
 type
   TCryptoTestCase = class(TTestCase)
@@ -275,7 +276,7 @@ end;
 procedure TTestCRC16.SetUp;
 begin
   inherited;
-  fCRC16 := TCryptographicServiceProvider.CreateCRC16;
+  fCRC16 := CreateCRC16;
 end;
 
 procedure TTestCRC16.TearDown;
@@ -310,7 +311,7 @@ end;
 procedure TTestCRC32.SetUp;
 begin
   inherited;
-  fCRC32 := TCryptographicServiceProvider.CreateCRC32;
+  fCRC32 := CreateCRC32;
 end;
 
 procedure TTestCRC32.TearDown;
@@ -346,7 +347,7 @@ end;
 procedure TTestMD5.SetUp;
 begin
   inherited;
-  fMD5 := TCryptographicServiceProvider.CreateMD5;
+  fMD5 := CreateMD5;
 end;
 
 procedure TTestMD5.TearDown;
@@ -391,7 +392,7 @@ end;
 procedure TTestSHA1.SetUp;
 begin
   inherited;
-  fSHA1 := TCryptographicServiceProvider.CreateSHA1;
+  fSHA1 := CreateSHA1;
 end;
 
 procedure TTestSHA1.TearDown;
@@ -419,7 +420,7 @@ end;
 procedure TTestSHA256.SetUp;
 begin
   inherited;
-  fSHA256 := TCryptographicServiceProvider.CreateSHA256;
+  fSHA256 := CreateSHA256;
 end;
 
 procedure TTestSHA256.TearDown;
@@ -447,7 +448,7 @@ end;
 procedure TTestSHA384.SetUp;
 begin
   inherited;
-  fSHA384 := TCryptographicServiceProvider.CreateSHA384;
+  fSHA384 := CreateSHA384;
 end;
 
 procedure TTestSHA384.TearDown;
@@ -475,7 +476,7 @@ end;
 procedure TTestSHA512.SetUp;
 begin
   inherited;
-  fSHA512 := TCryptographicServiceProvider.CreateSHA512;
+  fSHA512 := CreateSHA512;
 end;
 
 procedure TTestSHA512.TearDown;
@@ -504,7 +505,7 @@ end;
 procedure TTestDES.SetUp;
 begin
   inherited;
-  fDES := TCryptographicServiceProvider.CreateDES;
+  fDES := CreateDES;
   fDES.CipherMode := cmECB;
   fDES.PaddingMode := pmNone;
 end;
@@ -587,7 +588,7 @@ end;
 procedure TTestTripleDES.SetUp;
 begin
   inherited;
-  fTripleDES := TCryptographicServiceProvider.CreateTripleDES;
+  fTripleDES := CreateTripleDES;
 end;
 
 procedure TTestTripleDES.TearDown;

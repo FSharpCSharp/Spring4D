@@ -31,6 +31,7 @@ interface
 uses
   Spring,
   Spring.Cryptography,
+  Spring.Cryptography.Core,
   Spring.ResourceStrings;
 
 type

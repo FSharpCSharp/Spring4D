@@ -22,7 +22,8 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.DI.Registration;
+{TODO -oOwner -cGeneral : Add DelegateTo(TClass)}
+unit Spring.Container.Registration;
 
 {$I Spring.inc}
 
@@ -35,7 +36,8 @@ uses
   TypInfo,
   Spring,
   Spring.Collections,
-  Spring.DI.Core;
+  Spring.Services,
+  Spring.Container.Core;
 
 type
   /// <summary>
@@ -174,7 +176,7 @@ uses
   Spring.Reflection,
   Spring.Helpers,
   Spring.ResourceStrings,
-  Spring.DI.ResourceStrings;
+  Spring.Container.ResourceStrings;
 
 {$REGION 'TComponentRegistry'}
 

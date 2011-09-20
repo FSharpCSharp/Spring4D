@@ -27,12 +27,12 @@
 
 {$I jedi.inc}                // Import JEDI Development environment directives
 
-{$IFNDEF DELPHIXE_UP}
-  {$MESSAGE ERROR 'This framework requires Delphi XE or higher.'}}
+{$IFNDEF DELPHI2010_UP}
+  {$MESSAGE ERROR 'This framework requires Delphi 2010 or higher.'}}
 {$ENDIF}
 
 {$IFDEF CPUX64}
-  {$MESSAGE WARN 'This framework is not ready for Win64'}
+  {$MESSAGE WARN 'This framework is not ready for Win64.'}
 {$ENDIF}
 
 {$IFNDEF MSWINDOWS}

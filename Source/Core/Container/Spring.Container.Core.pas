@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.DI.Core;
+unit Spring.Container.Core;
 
 {$I Spring.inc}
 
@@ -36,7 +36,8 @@ uses
   Spring,
   Spring.Collections,
   Spring.DesignPatterns,
-  Spring.Reflection;
+  Spring.Reflection,
+  Spring.Services;
 
 type
   { Forward Declarations }
@@ -57,7 +58,7 @@ type
   /// </summary>
   IContainerContext = interface
     ['{9E90EADB-A720-4394-A5E0-5DF0550C1E92}']
-  {$REGION 'Property Getters & Setters'}
+  {$REGION 'Property Accessors'}
     function GetComponentRegistry: IComponentRegistry;
     function GetDependencyResolver: IDependencyResolver;
     function GetInjectionFactory: IInjectionFactory;
@@ -131,7 +132,7 @@ type
   /// </summary>
   IInjection = interface
     ['{864AAA38-4F93-4BB9-AD8A-B796FCD2EFE0}']
-  {$REGION 'Property Getters & Setters'}
+  {$REGION 'Property Accessors'}
     function GetDependencyCount: Integer;
     function GetTarget: TRttiMember;
     function GetTargetName: string;
@@ -260,6 +261,8 @@ type
     property FieldInjections: IList<IInjection> read GetFieldInjections;
   end;
 
+  {$REGION 'Deprecated'}
+
 
   {$REGION 'Documentation'}
   ///	<summary>
@@ -296,6 +299,8 @@ type
 
   TObjectHolder = TObjectHolder<TObject>;
 
+  {$ENDREGION}
+
   EContainerException = class(Exception);
 
   ERegistrationException = class(EContainerException);
@@ -314,7 +319,7 @@ uses
   Spring.Helpers,
   Generics.Collections,
   Spring.ResourceStrings,
-  Spring.DI.ResourceStrings;
+  Spring.Container.ResourceStrings;
 
 {$REGION 'TArrayHelper'}
 

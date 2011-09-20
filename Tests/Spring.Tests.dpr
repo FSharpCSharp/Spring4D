@@ -39,16 +39,17 @@ uses
   TestExtensions,
   GUITestRunner,
   TextTestRunner,
-  Spring.Tests.DI.Components in 'Source\Core\Spring.Tests.DI.Components.pas',
-  Spring.Tests.DI.LifetimeManager in 'Source\Core\Spring.Tests.DI.LifetimeManager.pas',
-  Spring.Tests.DI in 'Source\Core\Spring.Tests.DI.pas',
+  Spring.Tests.Container.Components in 'Source\Core\Spring.Tests.Container.Components.pas',
+  Spring.Tests.Container.LifetimeManager in 'Source\Core\Spring.Tests.Container.LifetimeManager.pas',
+  Spring.Tests.Container in 'Source\Core\Spring.Tests.Container.pas',
   Spring.Tests.Pool in 'Source\Core\Spring.Tests.Pool.pas',
   Spring.Tests.DesignPatterns in 'Source\System\Spring.Tests.DesignPatterns.pas',
   Spring.Tests.Helpers in 'Source\System\Spring.Tests.Helpers.pas',
   Spring.Tests.System in 'Source\System\Spring.Tests.System.pas',
   Spring.Tests.Utils in 'Source\System\Spring.Tests.Utils.pas',
   Spring.Tests.ValueConverters in 'Source\System\Spring.Tests.ValueConverters.pas',
-  Spring.Tests.Reflection in 'Source\System\Spring.Tests.Reflection.pas';
+  Spring.Tests.Reflection in 'Source\System\Spring.Tests.Reflection.pas',
+  Spring.Tests.Cryptography in 'Source\System\Spring.Tests.Cryptography.pas';
 
 {$R *.RES}
 
@@ -66,6 +67,23 @@ begin
 //    TTestFiveByteBuffer.Suite,
     TRepeatedTest.Create(TTestNullableInteger.Suite, 3)
 //    TTestDelegate.Suite
+  ]);
+
+  RegisterTests('Spring.System.Cryptography', [
+    TTestCRC16.Suite,
+    TTestCRC32.Suite,
+    TTestMD5.Suite,
+    TTestSHA1.Suite,
+    TTestSHA256.Suite,
+    TTestSHA384.Suite,
+    TTestSHA512.Suite,
+    TTestPaddingModeIsNone.Suite,
+    TTestPaddingModeIsPKCS7.Suite,
+    TTestPaddingModeIsZeros.Suite,
+    TTestPaddingModeIsANSIX923.Suite,
+    TTestPaddingModeIsISO10126.Suite,
+    TTestDES.Suite,
+    TTestTripleDES.Suite
   ]);
 
   RegisterTests('Spring.System.DesignPatterns', [
@@ -113,25 +131,7 @@ begin
     TTestObjectPool.Suite
   ]);
 
-//  RegisterTests('Core.Cryptography', [
-//    TTestCRC16.Suite,
-//    TTestCRC32.Suite,
-//    TTestMD5.Suite,
-//    TTestSHA1.Suite,
-//    TTestSHA256.Suite,
-//    TTestSHA384.Suite,
-//    TTestSHA512.Suite,
-//    TTestPaddingModeIsNone.Suite,
-//    TTestPaddingModeIsPKCS7.Suite,
-//    TTestPaddingModeIsZeros.Suite,
-//    TTestPaddingModeIsANSIX923.Suite,
-//    TTestPaddingModeIsISO10126.Suite,
-//    TTestDES.Suite,
-//    TTestTripleDES.Suite
-////    TTestMACTripleDES.Suite
-//  ]);
-
-  RegisterTests('Spring.Core.DI', [
+  RegisterTests('Spring.Core.Container', [
     TTestSingletonLifetimeManager.Suite,
     TTestTransientLifetimeManager.Suite,
     TTestEmptyContainer.Suite,
@@ -159,7 +159,9 @@ end;
 
 begin
   ReportMemoryLeaksOnShutdown := True;
+
   Application.Initialize;
+
   RegisterTestCases;
   if IsConsole then
     TextTestRunner.RunRegisteredTests

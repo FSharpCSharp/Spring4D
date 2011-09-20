@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.DI.LifetimeManager;
+unit Spring.Container.LifetimeManager;
 
 {$I Spring.inc}
 
@@ -34,9 +34,10 @@ uses
   SysUtils,
   Generics.Collections,
   Spring,
+  Spring.Services,
   Spring.Utils,
-  Spring.DI.Core,
-  Spring.DI.Pool;
+  Spring.Container.Core,
+  Spring.Container.Pool;
 
 type
   TLifetimeManagerBase = class abstract(TInterfacedObject, ILifetimeManager, IInterface)

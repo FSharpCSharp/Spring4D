@@ -33,8 +33,9 @@ uses
   Character,
   Spring,
   Spring.Collections,
-  Spring.Configuration,
-  Spring.Logging.Core;
+  Spring.Services.Logging,
+  Spring.Logging.Core,
+  Spring.Logging.Loggers;
 
 type
   TInternalLogger = class sealed(TLoggerBase)
@@ -45,13 +46,12 @@ type
   private
     fQuietMode: Boolean;
   protected
-    function IsEnabledFor(const level: TLevel): Boolean; override;
-    procedure DoLog(const event: TLoggingEvent); overload; override;
+    function ShouldLog(const level: TLevel): Boolean; override;
+    procedure InternalLog(const event: TLoggingEvent); overload; override;
   public
     property QuietMode: Boolean read fQuietMode write fQuietMode;
     class property Instance: ILogger read fInstance;
   end;
-
 
 const
   tpEof = #0;
@@ -61,7 +61,6 @@ const
   tpKeyWord= #5;
 
 type
-
   TPatternType = (ptCustomer, ptText, ptDate, ptTab,
     ptThread, ptLevel, ptLogger, ptMessage,
     ptNewLine, ptUser, ptComputer, ptPercent, ptApplicationVersion);
@@ -94,7 +93,14 @@ type
     procedure InitializePatternString(const patternString: string);
     procedure AddKeyPatternTokens(const keyword: string; const convertor: string; patternType: TPatternType);
     property Token: Char read fToken;
+  end;
 
+  TEncodingRegistry = class
+  private
+    fEncodings: IDictionary<string, TEncoding>;
+  public
+    constructor Create;
+    function GetEncodingOrDefault(const name: string): TEncoding;
   end;
 
 /// <summary>
@@ -102,8 +108,7 @@ type
 /// </summary>
 function InternalLogger: ILogger;
 
-function TryGetAttributeValue(const node: IConfigurationNode;
-  const name: string; out value: string): Boolean;
+function LastIndexOf(const value: Char; const s: string): Integer;
 
 implementation
 
@@ -112,13 +117,18 @@ begin
   Result := TInternalLogger.Instance;
 end;
 
-function TryGetAttributeValue(const node: IConfigurationNode;
-  const name: string; out value: string): Boolean;
+function LastIndexOf(const value: Char; const s: string): Integer;
+var
+  i: Integer;
 begin
-  Result := node.TryGetAttribute(name, value) and (value <> '');
-  if not Result then
+  Result := 0;
+  for i := Length(s) downto 1 do
   begin
-    InternalLogger.ErrorFormat('The attribute "%s" was expected but there is none.', [name]);
+    if s[i] = value then
+    begin
+      Result := i;
+      Break;
+    end;
   end;
 end;
 
@@ -131,7 +141,7 @@ begin
   TInternalLogger(fInstance).QuietMode := True;
 end;
 
-procedure TInternalLogger.DoLog(const event: TLoggingEvent);
+procedure TInternalLogger.InternalLog(const event: TLoggingEvent);
 const
   CLogFormat = '%S [%4d] %-5S %S %S';
 var
@@ -142,12 +152,12 @@ begin
     event.ThreadID,
     event.LoggerLevel.Name,
     event.Message,
-    event.ExceptionString
+    event.ErrorMessage
   ]);
   Windows.OutputDebugString(PChar(s));
 end;
 
-function TInternalLogger.IsEnabledFor(const level: TLevel): Boolean;
+function TInternalLogger.ShouldLog(const level: TLevel): Boolean;
 begin
   Result := not QuietMode;
 end;
@@ -306,5 +316,33 @@ end;
 
 {$ENDREGION}
 
+
+{$REGION 'TEncodingRegistry'}
+
+constructor TEncodingRegistry.Create;
+begin
+  inherited Create;
+  fEncodings := TDictionary<string, TEncoding>.Create;
+  with fEncodings do
+  begin
+    AddOrSetValue('default', TEncoding.Default);
+    AddOrSetValue('utf-7',TEncoding.UTF7);
+    AddOrSetValue('utf7',TEncoding.UTF7);
+    AddOrSetValue('utf-8', TEncoding.UTF8);
+    AddOrSetValue('utf8', TEncoding.UTF8);
+    AddOrSetValue('unicode', TEncoding.Unicode);
+    AddOrSetValue('utf16', TEncoding.Unicode);
+    AddOrSetValue('utf-16', TEncoding.Unicode);
+    AddOrSetValue('utf16-le', TEncoding.Unicode);
+  end;
+end;
+
+function TEncodingRegistry.GetEncodingOrDefault(const name: string): TEncoding;
+begin
+  if not fEncodings.TryGetValue(name, Result) then
+    Exit(TEncoding.Default);
+end;
+
+{$ENDREGION}
 
 end.

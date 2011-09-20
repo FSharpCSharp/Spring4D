@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.DI.Resolvers;
+unit Spring.Container.Resolvers;
 
 {$I Spring.inc}
 
@@ -35,7 +35,7 @@ uses
   TypInfo,
   Spring,
   Spring.Collections,
-  Spring.DI.Core;
+  Spring.Container.Core;
 
 type
   TDependencyResolver = class(TInterfacedObject, IDependencyResolver, IInterface)
@@ -87,9 +87,9 @@ implementation
 uses
   Spring.Helpers,
   Spring.ResourceStrings,
-  Spring.DI.ComponentActivator,
-  Spring.DI.LifetimeManager,
-  Spring.DI.ResourceStrings;
+  Spring.Container.ComponentActivator,
+  Spring.Container.LifetimeManager,
+  Spring.Container.ResourceStrings;
 
 {$REGION 'TDependencyResolver'}
 

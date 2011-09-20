@@ -37,6 +37,7 @@ uses
   Classes,
   SysUtils,
   TypInfo,
+//  Rtti,
   Generics.Defaults,
   Generics.Collections,
   Spring;
@@ -52,6 +53,8 @@ type
   IQueue<T> = interface;
 
   ICollectionNotifyDelegate<T> = interface;
+
+//  TValue = Rtti.TValue;
 
   TCollectionNotification = Generics.Collections.TCollectionNotification;
 
@@ -111,13 +114,16 @@ type
   /// <seealso href="http://msdn.microsoft.com/en-us/magazine/cc700332.aspx">
   /// The LINQ Enumerable Class
   /// </seealso>
-  IEnumerable<T> = interface
+  IEnumerable<T> = interface(IInvokable)
     /// <summary>
     /// Returns an enumerator that iterates through a collection.
     /// </summary>
     function GetEnumerator: IEnumerator<T>;
 
-//    function AsObject: TObject;
+    /// <summary>
+    /// Returns the reference to the instance.
+    /// </summary>
+    function AsObject: TObject;
 
     /// <summary>
     /// Try getting the first element.
@@ -347,7 +353,7 @@ type
   /// Defines methods to manipulate generic collections.
   /// </summary>
   ICollection<T> = interface(IEnumerable<T>)
-  {$REGION 'Property Getters & Setters'}
+  {$REGION 'Property Accessors'}
     function GetIsReadOnly: Boolean;
   {$ENDREGION}
 //    function Add(const item: T): Boolean;
@@ -372,7 +378,7 @@ type
   /// Represents a collection of objects that can be individually accessed by index.
   /// </summary>
   IList<T> = interface(ICollection<T>)
-  {$REGION 'Property Getters & Setters'}
+  {$REGION 'Property Accessors'}
     function GetItem(index: Integer): T;
     function GetOnNotify: ICollectionNotifyDelegate<T>;
     procedure SetItem(index: Integer; const item: T);
@@ -383,7 +389,7 @@ type
     procedure InsertRange(index: Integer; const collection: TEnumerable<T>); overload;
 
     procedure Delete(index: Integer);
-    procedure DeleteRange(startIndex, count: Integer);
+    procedure DeleteRange(index, count: Integer);
 
     procedure Exchange(index1, index2: Integer);
     procedure Move(currentIndex, newIndex: Integer);
@@ -396,6 +402,7 @@ type
 
     function IndexOf(const item: T): Integer;
     function LastIndexOf(const item: T): Integer;
+
     property Items[index: Integer]: T read GetItem write SetItem; default;
     property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
   end;
@@ -404,7 +411,7 @@ type
   /// Represents a generic collection of key/value pairs.
   /// </summary>
   IDictionary<TKey, TValue> = interface(ICollection<TPair<TKey, TValue>>)
-  {$REGION 'Property Getters & Setters'}
+  {$REGION 'Property Accessors'}
     function GetItem(const key: TKey): TValue;
     function GetKeys: ICollection<TKey>;
     function GetValues: ICollection<TValue>;
@@ -460,14 +467,6 @@ type
     property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
   end;
 
-  IEnumerable = interface(IEnumerable<TObject>)
-    ['{B9A61DF4-ACA8-4DE7-AFCC-E971FE1D5EDE}']
-  end;
-
-  IList = interface(IList<TObject>)
-    ['{ACFBB8FB-E9EC-44C0-90A8-48F02C3524CF}']
-  end;
-
   ICollectionNotifyDelegate<T> = interface(IMulticastEvent<TCollectionNotifyEvent<T>>)
   end;
 
@@ -493,7 +492,7 @@ type
   ICollectionOwnership = interface
     ['{6D028EAF-3D14-4362-898C-BFAD1110547F}']
 
-    {$REGION 'Property Getters & Setters'}
+    {$REGION 'Property Accessors'}
       function GetOwnsObjects: Boolean;
       procedure SetOwnsObjects(const value: Boolean);
     {$ENDREGION}
@@ -509,7 +508,6 @@ type
   );
 
   TDictionaryOwnerships = Generics.Collections.TDictionaryOwnerships;
-
 
   {$REGION 'Documentation'}
   ///	<summary>Provides an abstract implementation for the <see cref=
@@ -561,6 +559,7 @@ type
     function GetIsEmpty: Boolean; virtual;
   public
     function GetEnumerator: IEnumerator<T>; virtual; abstract;
+    function AsObject: TObject;
     function TryGetFirst(out value: T): Boolean; virtual;
     function TryGetLast(out value: T): Boolean; virtual;
     function First: T; overload; virtual;
@@ -605,9 +604,6 @@ type
     property IsEmpty: Boolean read GetIsEmpty;
   end;
 
-  /// <summary>
-  /// Provides a default implementation for <c>ICollection(T)</c> (Extension Methods).
-  /// </summary>
   TCollectionBase<T> = class abstract(TEnumerableBase<T>, ICollection<T>)
   protected
     function GetIsReadOnly: Boolean; virtual;
@@ -623,6 +619,10 @@ type
     procedure RemoveRange(const collection: TEnumerable<T>); overload; virtual;
 
     procedure Clear; virtual; abstract;
+
+    /// <summary>
+    /// Returns false, by default.
+    /// </summary>
     property IsReadOnly: Boolean read GetIsReadOnly;
   end;
 
@@ -641,62 +641,57 @@ type
     property Controller: IInterface read GetController;
   end;
 
-  TList<T> = class(TCollectionBase<T>, IList<T>)
+  TListBase<T> = class abstract(TCollectionBase<T>, IList<T>)
   protected
     type
       TEnumerator = class(TEnumeratorBase<T>)
       private
-        fList: TList<T>;
+        fList: TListBase<T>;
         fIndex: Integer;
       protected
         function GetCurrent: T; override;
       public
-        constructor Create(const list: TList<T>);
+        constructor Create(const list: TListBase<T>);
         function MoveNext: Boolean; override;
       end;
 
       TReversedEnumerable = class(TEnumerableBase<T>)
       private
-        fList: TList<T>;
+        fList: TListBase<T>;
         fReference: IInterface;
       public
-        constructor Create(const list: TList<T>);
+        constructor Create(const list: TListBase<T>);
         function GetEnumerator: IEnumerator<T>; override;
       end;
 
       TReversedEnumerator = class(TEnumeratorBase<T>)
       private
-        fList: TList<T>;
+        fList: TListBase<T>;
         fCount: Integer;
         fIndex: Integer;
       protected
         function GetCurrent: T; override;
       public
-        constructor Create(const list: TList<T>);
+        constructor Create(const list: TListBase<T>);
         function MoveNext: Boolean; override;
       end;
   private
-    fItems: array of T;
-    fCount: Integer;
     fComparer: IComparer<T>;
     fOnNotify: ICollectionNotifyDelegate<T>;
-    function GetItem(index: Integer): T;
-    function GetCapacity: Integer;
     function GetOnNotify: ICollectionNotifyDelegate<T>;
-    procedure SetItem(index: Integer; const value: T);
-    procedure SetCapacity(value: Integer);
   protected
-    function EnsureCapacity(value: Integer): Integer;
-  protected
-    procedure DoDelete(index: Integer; notification: TCollectionNotification);
-    procedure Notify(const item: T; action: TCollectionNotification); virtual;
     function GetComparer: IComparer<T>; override;
-    function GetCount: Integer; override;
     function GetIsEmpty: Boolean; override;
-    property Capacity: Integer read GetCapacity write SetCapacity;
+  protected
+    procedure Notify(const item: T; action: TCollectionNotification); virtual;
+    procedure DoSort(const comparer: IComparer<T>); virtual;
+    procedure DoInsert(index: Integer; const item: T); virtual; abstract;
+    procedure DoDelete(index: Integer; notification: TCollectionNotification); virtual; abstract;
+    procedure DoDeleteRange(index, count: Integer; notification: TCollectionNotification); virtual; abstract;
+    function  GetItem(index: Integer): T; virtual; abstract;
+    procedure SetItem(index: Integer; const value: T); virtual; abstract;
   public
     constructor Create; overload;
-    constructor Create(capacity: Integer); overload;
     constructor Create(const comparer: IComparer<T>); overload;
     constructor Create(const collection: IEnumerable<T>); overload;
     constructor Create(const collection: TEnumerable<T>); overload;
@@ -712,20 +707,20 @@ type
     function GetEnumerator: IEnumerator<T>; override;
 
     procedure Add(const item: T); override;
+    function  Remove(const item: T): Boolean; override;
     procedure Clear; override;
-    procedure Insert(index: Integer; const item: T);
-    procedure InsertRange(index: Integer; const collection: array of T); overload;
-    procedure InsertRange(index: Integer; const collection: IEnumerable<T>); overload;
-    procedure InsertRange(index: Integer; const collection: TEnumerable<T>); overload;
+
+    procedure Insert(index: Integer; const item: T); virtual;
+    procedure InsertRange(index: Integer; const collection: array of T); overload; virtual;
+    procedure InsertRange(index: Integer; const collection: IEnumerable<T>); overload; virtual;
+    procedure InsertRange(index: Integer; const collection: TEnumerable<T>); overload; virtual;
     procedure Delete(index: Integer);
     procedure DeleteRange(startIndex, count: Integer);
-    procedure RemoveAt(index: Integer);
     function Extract(const item: T): T;
     function IndexOf(const item: T): Integer;
     function LastIndexOf(const item: T): Integer;
-    function Remove(const item: T): Boolean; override;
     procedure Exchange(index1, index2: Integer);
-    procedure Move(currentIndex, newIndex: Integer);
+    procedure Move(currentIndex, newIndex: Integer); virtual; abstract;
     procedure Sort; overload;
     procedure Sort(const comparer: IComparer<T>); overload;
     procedure Sort(const comparison: TComparison<T>); overload;
@@ -734,6 +729,31 @@ type
     property IsReadOnly: Boolean read GetIsReadOnly;
   public
     property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
+  end;
+
+  /// <summary>
+  /// Provides an array-based implementation of IList<T>.
+  /// </summary>
+  TList<T> = class(TListBase<T>)
+  private
+    fItems: array of T;
+    fCount: Integer;
+  protected
+    function GetCount: Integer; override;
+    function GetItem(index: Integer): T; override;
+    procedure SetItem(index: Integer; const value: T); override;
+    procedure DoInsert(index: Integer; const item: T); override;
+    procedure DoDelete(index: Integer; notification: TCollectionNotification); override;
+    procedure DoDeleteRange(startIndex, count: Integer; notification: TCollectionNotification); override;
+    procedure DoSort(const comparer: IComparer<T>); override;
+  protected
+    function  EnsureCapacity(value: Integer): Integer;
+    function  GetCapacity: Integer;
+    procedure SetCapacity(value: Integer);
+    property Capacity: Integer read GetCapacity write SetCapacity;
+  public
+    procedure Move(currentIndex, newIndex: Integer); override;
+    procedure Clear; override;
   end;
 
   TDictionary<TKey, TValue> = class(TCollectionBase<TPair<TKey, TValue>>, IDictionary<TKey, TValue>)
@@ -845,20 +865,9 @@ type
   {$ENDREGION}
   end;
 
-  /// <summary>
-  /// Internal use.
-  /// </summary>
-  /// <exclude />
-  TStackAccess<T> = class(TEnumerable<T>)
-  public
-    fCount: Integer;
-    fItems: array of T;
-  end;
-
   TStack<T> = class(TEnumerableBase<T>, IStack<T>)
   private
     type
-
       TGenericStack = Generics.Collections.TStack<T>;
 //      TGenericObjectStack = Generics.Collections.TObjectStack<T>;
 
@@ -883,12 +892,14 @@ type
 
 //    function TryGetFirst(out value: T): Boolean; override;
 //    function TryGetLast(out value: T): Boolean; override;
+    class function GetStackItem(stack: TGenericStack; index: Integer): T;
   public
     constructor Create; overload;
     constructor Create(const collection: IEnumerable<T>); overload;
     constructor Create(const collection: TEnumerable<T>); overload;
     constructor Create(stack: TGenericStack; ownership: TOwnershipType); overload;
     destructor Destroy; override;
+
     function GetEnumerator: IEnumerator<T>; override;
 
     {$REGION 'Implements ICollection<T>'}
@@ -948,6 +959,7 @@ type
     constructor Create(ownsObjects: Boolean = True); overload;
     constructor Create(const comparer: IComparer<T>; ownsObjects: Boolean = True); overload;
     constructor Create(collection: TEnumerable<T>; ownsObjects: Boolean = True); overload;
+
     property OwnsObjects: Boolean read GetOwnsObjects write SetOwnsObjects;
   end;
 
@@ -996,107 +1008,11 @@ type
     class function CreateQueue<T: class>(ownsObjects: Boolean): IQueue<T>; overload;
 
     class function Empty<T>: IEnumerable<T>;
-//    class function &Repeat<T>(const value: T; count: Integer): IEnumerable<T>;
-//    class function Range(start, count: Integer): IEnumerable<Integer>;
   end;
 
 const
   doOwnsKeys = Generics.Collections.doOwnsKeys;
   doOwnsValues = Generics.Collections.doOwnsValues;
-
-
-  {$REGION 'Some Code'}
-
-  (*
-  ICollectionDynamic = interface
-    ['{CA1A9672-5241-47B7-A54E-8E69CCA9946D}']
-    {$REGION 'Property Getters & Setters'}
-      function GetCapacity: Integer;
-      procedure SetCapacity(const value: Integer);
-    {$ENDREGION}
-    function EnsureCapacity(capacity: Integer): Integer;
-    procedure Shrink;
-    property Capacity: Integer read GetCapacity write SetCapacity;
-  end;
-
-  IDictionaryOwnership = interface
-    ['{5D149F58-E8EA-480A-8EB6-985A8342BDBD}']
-    function GetOwnsKeys: Boolean;
-    function GetOwnsValues: Boolean;
-    procedure SetOwnsKeys(const value: Boolean);
-    procedure SetOwnsValues(const value: Boolean);
-//    function ExtractPair(const key: T): T;
-    property Ownerships: TDictionaryOwnerships;
-    property OwnsKeys: Boolean read GetOwnsKeys write SetOwnsKeys;
-    property OwnsValues: Boolean read GetOwnsValues write SetOwnsValues;
-  end;
-
-  TObjectStack<T:class> = class(TStack<T>)
-  end;
-
-  TObjectQueue<T:class> = class(TQueue<T>)
-  end;
-
-  TObjectDictionary<TKey, TValue> = class(TDictionary<TKey, TValue>)
-  end;
-
-  ISet<T> = interface(ICollection<T>)
-    function Add(const item: T): Boolean;
-    procedure ExceptWith(const collection: IEnumerable<T>);
-    procedure IntersectWith(const collection: IEnumerable<T>);
-    procedure UnionWith(const collection: IEnumerable<T>);
-    function EqualsTo(const collection: IEnumerable<T>): Boolean;
-    function Overlaps(const collection: IEnumerable<T>): Boolean;
-    function IsSubsetOf(const collection: IEnumerable<T>): Boolean;
-    function IsSupersetOf(const collection: IEnumerable<T>): Boolean;
-  end;
-
-  IEnumerable = interface(IEnumerable<TValue>)
-    ['{30F3400E-1D9A-4C57-A7A5-27665CFEE316}']
-  end;
-
-  ICollection = interface(IEnumerable)
-    ['{B87ABB57-1E75-4DAD-96CE-C077B565F11A}']
-  {$REGION 'Property Getters & Setters'}
-    function GetIsReadOnly: Boolean;
-  {$ENDREGION}
-    procedure Add(const item: TValue); overload;
-    procedure Clear;
-    function Remove(const item: TValue): Boolean; overload;
-    property IsReadOnly: Boolean read GetIsReadOnly;
-  end;
-
-  IList = interface(ICollection)
-    ['{629166B3-E538-430F-BE5A-D6FE42704965}']
-  {$REGION 'Property Getters & Setters'}
-    function GetItem(index: Integer): TValue;
-    procedure SetItem(index: Integer; const item: TValue);
-  {$ENDREGION}
-    procedure Insert(index: Integer; const item: TValue);
-    procedure RemoveAt(index: Integer);
-    function IndexOf(const item: TValue): Integer;
-    property Items[index: Integer]: TValue read GetItem write SetItem; default;
-  end;
-
-  IDictionary = interface(ICollection)
-    ['{BAA9A5D9-BBE1-4512-9AA3-9E1F81908857}']
-  {$REGION 'Property Getters & Setters'}
-    function GetItem(const key: TValue): TValue;
-    function GetKeys: ICollection;
-    function GetValues: ICollection;
-    procedure SetItem(const key: TValue; const value: TValue);
-  {$ENDREGION}
-    procedure Add(const key: TValue; const value: TValue); overload;
-    procedure Remove(const key: TValue); overload;
-    function ContainsKey(const key: TValue): Boolean;
-    function TryGetValue(const key: TValue; out value: TValue): Boolean;
-    property Items[const key: TValue]: TValue read GetItem write SetItem; default;
-    property Keys: ICollection read GetKeys;
-    property Values: ICollection read GetValues;
-  end;
-  //*)
-
-  {$ENDREGION}
 
 implementation
 
@@ -1157,6 +1073,11 @@ begin
     if predicate(item) then
       Exit(True);
   end;
+end;
+
+function TEnumerableBase<T>.AsObject: TObject;
+begin
+  Result := Self;
 end;
 
 function TEnumerableBase<T>.Concat(
@@ -1779,127 +1700,40 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TList<T>'}
+{$REGION 'TListBase<T>'}
 
-constructor TList<T>.Create;
+constructor TListBase<T>.Create;
 begin
   Create(TComparer<T>.Default);
 end;
 
-constructor TList<T>.Create(capacity: Integer);
+constructor TListBase<T>.Create(const comparer: IComparer<T>);
 begin
-  Create;
-  Self.Capacity := capacity;
-end;
-
-constructor TList<T>.Create(const comparer: IComparer<T>);
-begin
+  inherited Create;
   fComparer := comparer;
   if fComparer = nil then
     fComparer := TComparer<T>.Default;
 end;
 
-constructor TList<T>.Create(const collection: IEnumerable<T>);
+constructor TListBase<T>.Create(const collection: IEnumerable<T>);
 begin
   Create;
   AddRange(collection);
 end;
 
-constructor TList<T>.Create(const collection: TEnumerable<T>);
+constructor TListBase<T>.Create(const collection: TEnumerable<T>);
 begin
   Create;
   AddRange(collection);
 end;
 
-destructor TList<T>.Destroy;
+destructor TListBase<T>.Destroy;
 begin
   Clear;
   inherited Destroy;
 end;
 
-function TList<T>.EnsureCapacity(value: Integer): Integer;
-var
-  newCapacity: Integer;
-begin
-  newCapacity := Length(fItems);
-  if newCapacity >= value then
-    Exit(value);
-
-  if newCapacity = 0 then
-    newCapacity := value
-  else
-    repeat
-      newCapacity := newCapacity * 2;
-      if newCapacity < 0 then
-        OutOfMemoryError;
-    until newCapacity >= value;
-  Capacity := newCapacity;
-  Result := newCapacity;
-end;
-
-procedure TList<T>.Add(const item: T);
-begin
-  EnsureCapacity(Count + 1);
-  fItems[fCount] := item;
-  Inc(fCount);
-  Notify(item, cnAdded);
-end;
-
-procedure TList<T>.Insert(index: Integer; const item: T);
-begin
-  TArgument.CheckRange<T>(fItems, index);
-  EnsureCapacity(Count + 1);
-  if index <> Count then
-  begin
-    System.Move(fItems[index], fItems[index + 1], (Count - index) * SizeOf(T));
-    FillChar(fItems[index], SizeOf(fItems[index]), 0);
-  end;
-  fItems[index] := item;
-  Inc(fCount);
-  Notify(item, cnAdded);
-end;
-
-procedure TList<T>.InsertRange(index: Integer;
-  const collection: array of T);
-var
-  item: T;
-begin
-  TArgument.CheckRange<T>(fItems, index);
-  EnsureCapacity(Count + Length(collection));
-  for item in collection do
-  begin
-    Insert(index, item);
-    Inc(index);
-  end;
-end;
-
-procedure TList<T>.InsertRange(index: Integer;
-  const collection: IEnumerable<T>);
-var
-  item: T;
-begin
-  TArgument.CheckRange<T>(fItems, index);
-  for item in collection do
-  begin
-    Insert(index, item);
-    Inc(index);
-  end;
-end;
-
-procedure TList<T>.InsertRange(index: Integer;
-  const collection: TEnumerable<T>);
-var
-  item: T;
-begin
-  TArgument.CheckRange<T>(fItems, index);
-  for item in collection do
-  begin
-    Insert(index, item);
-    Inc(index);
-  end;
-end;
-
-function TList<T>.Remove(const item: T): Boolean;
+function TListBase<T>.Remove(const item: T): Boolean;
 var
   index: Integer;
 begin
@@ -1911,12 +1745,11 @@ begin
   end;
 end;
 
-procedure TList<T>.RemoveAt(index: Integer);
+procedure TListBase<T>.DoSort(const comparer: IComparer<T>);
 begin
-  Delete(index);
 end;
 
-procedure TList<T>.Reverse;
+procedure TListBase<T>.Reverse;
 var
   tmp: T;
   b, e: Integer;
@@ -1925,20 +1758,20 @@ begin
   e := Count - 1;
   while b < e do
   begin
-    tmp := fItems[b];
-    fItems[b] := fItems[e];
-    fItems[e] := tmp;
+    tmp := Items[b];
+    Items[b] := Items[e];
+    Items[e] := tmp;
     Inc(b);
     Dec(e);
   end;
 end;
 
-function TList<T>.Reversed: IEnumerable<T>;
+function TListBase<T>.Reversed: IEnumerable<T>;
 begin
   Result := TReversedEnumerable.Create(Self);
 end;
 
-procedure TList<T>.Exchange(index1, index2: Integer);
+procedure TListBase<T>.Exchange(index1, index2: Integer);
 var
   temp: T;
 begin
@@ -1947,7 +1780,7 @@ begin
   Items[index2] := temp;
 end;
 
-function TList<T>.Extract(const item: T): T;
+function TListBase<T>.Extract(const item: T): T;
 var
   index: Integer;
 begin
@@ -1956,9 +1789,308 @@ begin
     Result := Default(T)
   else
   begin
-    Result := fItems[index];
+    Result := Items[index];
     DoDelete(index, cnExtracted);
   end;
+end;
+
+procedure TListBase<T>.Delete(index: Integer);
+begin
+  TArgument.CheckRange((index >= 0) and (index < Count), 'index');
+
+  DoDelete(index, cnRemoved);
+end;
+
+procedure TListBase<T>.DeleteRange(startIndex, count: Integer);
+begin
+  if (startIndex < 0) or
+    (count < 0) or
+    (startIndex + count > Self.Count) or
+    (startIndex + count < 0) then
+    raise EArgumentOutOfRangeException.CreateRes(@SArgumentOutOfRangeException);
+
+  if count = 0 then
+    Exit;
+
+  DoDeleteRange(startIndex, count, cnRemoved);
+end;
+
+procedure TListBase<T>.Add(const item: T);
+begin
+  Insert(Count, item);
+end;
+
+procedure TListBase<T>.Clear;
+begin
+  if Count > 0 then
+  begin
+    DeleteRange(0, Count);
+  end;
+end;
+
+function TListBase<T>.Contains(const item: T): Boolean;
+var
+  index: Integer;
+begin
+  index := IndexOf(item);
+  Result := index > -1;
+end;
+
+function TListBase<T>.IndexOf(const item: T): Integer;
+var
+  i: Integer;
+begin
+  for i := 0 to Count - 1 do
+  begin
+    if fComparer.Compare(Items[i], item) = 0 then
+      Exit(i);
+  end;
+  Result := -1;
+end;
+
+procedure TListBase<T>.InsertRange(index: Integer; const collection: array of T);
+var
+  item: T;
+begin
+  TArgument.CheckRange((index >= 0) and (index <= Count), 'index');
+
+  for item in collection do
+  begin
+    Insert(index, item);
+    Inc(index);
+  end;
+end;
+
+procedure TListBase<T>.InsertRange(index: Integer;
+  const collection: IEnumerable<T>);
+var
+  item: T;
+begin
+  TArgument.CheckRange((index >= 0) and (index <= Count), 'index');
+
+  for item in collection do
+  begin
+    Insert(index, item);
+    Inc(index);
+  end;
+end;
+
+procedure TListBase<T>.InsertRange(index: Integer;
+  const collection: TEnumerable<T>);
+var
+  item: T;
+begin
+  TArgument.CheckRange((index >= 0) and (index <= Count), 'index');
+
+  for item in collection do
+  begin
+    Insert(index, item);
+    Inc(index);
+  end;
+end;
+
+procedure TListBase<T>.Insert(index: Integer; const item: T);
+begin
+  TArgument.CheckRange((index >= 0) and (index <= Count), 'index');
+
+  DoInsert(index, item);
+end;
+
+function TListBase<T>.LastIndexOf(const item: T): Integer;
+var
+  i: Integer;
+begin
+  for i := Count - 1 downto 0 do
+  begin
+    if fComparer.Compare(Items[i], item) = 0 then
+      Exit(i);
+  end;
+  Result := -1;
+end;
+
+procedure TListBase<T>.Notify(const item: T; action: TCollectionNotification);
+begin
+  if (fOnNotify <> nil) and fOnNotify.IsNotEmpty and fOnNotify.Enabled then
+  begin
+    fOnNotify.Invoke(Self, item, action);
+  end;
+end;
+
+function TListBase<T>.ToArray: TArray<T>;
+var
+  i: Integer;
+begin
+  SetLength(Result, Count);
+  for i := 0 to Length(Result) - 1 do
+  begin
+    Result[i] := Items[i];
+  end;
+end;
+
+function TListBase<T>.ToList: IList<T>;
+begin
+  Result := Self;
+end;
+
+function TListBase<T>.GetEnumerator: IEnumerator<T>;
+begin
+  Result := TEnumerator.Create(Self);
+end;
+
+function TListBase<T>.GetComparer: IComparer<T>;
+begin
+  Result := fComparer;
+end;
+
+function TListBase<T>.GetIsEmpty: Boolean;
+begin
+  Result := Count = 0;
+end;
+
+function TListBase<T>.TryGetFirst(out value: T): Boolean;
+begin
+  Result := Count > 0;
+  if Result then
+    value := Items[0];
+end;
+
+function TListBase<T>.TryGetLast(out value: T): Boolean;
+begin
+  Result := Count > 0;
+  if Result then
+    value := Items[Count - 1];
+end;
+
+function TListBase<T>.GetOnNotify: ICollectionNotifyDelegate<T>;
+begin
+  if fOnNotify = nil then
+  begin
+    fOnNotify := TCollectionNotifyDelegate<T>.Create;
+  end;
+  Result := fOnNotify;
+end;
+
+procedure TListBase<T>.Sort;
+begin
+  DoSort(fComparer);
+end;
+
+procedure TListBase<T>.Sort(const comparer: IComparer<T>);
+begin
+  DoSort(comparer);
+end;
+
+procedure TListBase<T>.Sort(const comparison: TComparison<T>);
+var
+  comparer: IComparer<T>;
+begin
+  comparer := TComparer<T>.Construct(comparison);
+  DoSort(comparer);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TListBase<T>.TEnumerator'}
+
+constructor TListBase<T>.TEnumerator.Create(const list: TListBase<T>);
+begin
+  inherited Create;
+  fList := list;
+  fIndex := -1;
+end;
+
+function TListBase<T>.TEnumerator.MoveNext: Boolean;
+begin
+  Result := fIndex < fList.Count - 1;
+  if Result then
+    Inc(fIndex);
+end;
+
+function TListBase<T>.TEnumerator.GetCurrent: T;
+begin
+  Result := fList[fIndex];
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TListBase<T>.TReversedEnumerator'}
+
+constructor TListBase<T>.TReversedEnumerator.Create(const list: TListBase<T>);
+begin
+  inherited Create;
+  fList := list;
+  fCount := fList.Count;
+  fIndex := fCount;
+end;
+
+function TListBase<T>.TReversedEnumerator.GetCurrent: T;
+begin
+  Result := fList[fIndex];
+end;
+
+function TListBase<T>.TReversedEnumerator.MoveNext: Boolean;
+begin
+  Result := (fIndex > 0) and (fIndex <= fCount);
+  Dec(fIndex);
+end;
+
+{ TListBase<T>.TReversedEnumerable }
+
+constructor TListBase<T>.TReversedEnumerable.Create(const list: TListBase<T>);
+begin
+  inherited Create;
+  fList := list;
+  fReference := list;
+end;
+
+function TListBase<T>.TReversedEnumerable.GetEnumerator: IEnumerator<T>;
+begin
+  Result := TReversedEnumerator.Create(fList);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TList<T>'}
+
+function TList<T>.GetCount: Integer;
+begin
+  Result := fCount;
+end;
+
+function TList<T>.GetItem(index: Integer): T;
+begin
+  TArgument.CheckRange<T>(fItems, index);
+
+  Result := fItems[index];
+end;
+
+procedure TList<T>.SetItem(index: Integer; const value: T);
+var
+  oldItem: T;
+begin
+  TArgument.CheckRange<T>(fItems, index);
+    
+  oldItem := fItems[index];
+  fItems[index] := value;
+
+  Notify(oldItem, cnRemoved);
+  Notify(value, cnAdded);
+end;
+
+procedure TList<T>.DoInsert(index: Integer; const item: T);
+begin
+  EnsureCapacity(Count + 1);
+  if index <> Count then
+  begin
+    System.Move(fItems[index], fItems[index + 1], (Count - index) * SizeOf(T));
+    FillChar(fItems[index], SizeOf(fItems[index]), 0);
+  end;
+  fItems[index] := item;
+  Inc(fCount);
+  Notify(item, cnAdded);
 end;
 
 procedure TList<T>.DoDelete(index: Integer;
@@ -1966,7 +2098,8 @@ procedure TList<T>.DoDelete(index: Integer;
 var
   oldItem: T;
 begin
-  TArgument.CheckRange<T>(fItems, index);
+  Assert((index >= 0) and (index <= Count));
+
   oldItem := fItems[index];
   fItems[index] := Default(T);
   Dec(fCount);
@@ -1978,27 +2111,12 @@ begin
   Notify(oldItem, notification);
 end;
 
-procedure TList<T>.Delete(index: Integer);
-begin
-  TArgument.CheckRange<T>(fItems, index);
-
-  DoDelete(index, cnRemoved);
-end;
-
-procedure TList<T>.DeleteRange(startIndex, count: Integer);
+procedure TList<T>.DoDeleteRange(startIndex, count: Integer; notification: TCollectionNotification);
 var
   oldItems: array of T;
   tailCount,
   i: Integer;
 begin
-  if (startIndex < 0) or
-    (count < 0) or
-    (startIndex + count > Self.Count) or
-    (startIndex + count < 0) then
-    raise EArgumentOutOfRangeException.CreateRes(@SArgumentOutOfRangeException);
-  if count = 0 then
-    Exit;
-
   SetLength(oldItems, count);
   System.Move(fItems[startIndex], oldItems[0], count * SizeOf(T));
 
@@ -2020,53 +2138,15 @@ begin
   end;
 end;
 
-procedure TList<T>.Clear;
+procedure TList<T>.DoSort(const comparer: IComparer<T>);
 begin
-  if Count > 0 then
-  begin
-    DeleteRange(0, Count);
-  end;
-  Capacity := 0;
-end;
-
-function TList<T>.Contains(const item: T): Boolean;
-var
-  index: Integer;
-begin
-  index := IndexOf(item);
-  Result := index > -1;
-end;
-
-function TList<T>.IndexOf(const item: T): Integer;
-var
-  i: Integer;
-begin
-  for i := 0 to fCount - 1 do
-  begin
-    if fComparer.Compare(fItems[i], item) = 0 then
-      Exit(i);
-  end;
-  Result := -1;
-end;
-
-function TList<T>.LastIndexOf(const item: T): Integer;
-var
-  i: Integer;
-begin
-  for i := fCount - 1 downto 0 do
-  begin
-    if fComparer.Compare(fItems[i], item) = 0 then
-      Exit(i);
-  end;
-  Result := -1;
+  TArray.Sort<T>(fItems, comparer, 0, Count);
 end;
 
 procedure TList<T>.Move(currentIndex, newIndex: Integer);
 var
   temp: T;
 begin
-  TArgument.CheckRange((newIndex >= 0) and (newIndex < fCount), '');
-
   temp := fItems[currentIndex];
   fItems[currentIndex] := Default(T);
   if currentIndex < newIndex then
@@ -2078,88 +2158,36 @@ begin
   fItems[newIndex] := temp;
 end;
 
-procedure TList<T>.Notify(const item: T; action: TCollectionNotification);
+procedure TList<T>.Clear;
 begin
-  if (fOnNotify <> nil) and fOnNotify.IsNotEmpty then
-  begin
-    fOnNotify.Invoke(Self, item, action);
-  end;
+  inherited;
+  Capacity := 0;
 end;
 
-function TList<T>.ToArray: TArray<T>;
+function TList<T>.EnsureCapacity(value: Integer): Integer;
 var
-  i: Integer;
+  newCapacity: Integer;
 begin
-  SetLength(Result, Count);
-  for i := 0 to Length(Result) - 1 do
-  begin
-    Result[i] := fItems[i];
-  end;
-end;
+  newCapacity := Length(fItems);
+  if newCapacity >= value then
+    Exit(newCapacity);
 
-function TList<T>.ToList: IList<T>;
-begin
-  Result := Self;
-end;
-
-function TList<T>.GetEnumerator: IEnumerator<T>;
-begin
-  Result := TEnumerator.Create(Self);
+  if newCapacity = 0 then
+    newCapacity := value
+  else
+    repeat
+      newCapacity := newCapacity * 2;
+      if newCapacity < 0 then
+        OutOfMemoryError;
+    until newCapacity >= value;
+  Capacity := newCapacity;
+  Result := newCapacity;
 end;
 
 function TList<T>.GetCapacity: Integer;
 begin
   Result := Length(fItems);
 end;
-
-function TList<T>.GetComparer: IComparer<T>;
-begin
-  Result := fComparer;
-end;
-
-function TList<T>.GetCount: Integer;
-begin
-  Result := fCount;
-end;
-
-function TList<T>.GetIsEmpty: Boolean;
-begin
-  Result := Count = 0;
-end;
-
-function TList<T>.TryGetFirst(out value: T): Boolean;
-begin
-  Result := Count > 0;
-  if Result then
-    value := fItems[0];
-end;
-
-function TList<T>.TryGetLast(out value: T): Boolean;
-begin
-  Result := Count > 0;
-  if Result then
-    value := fItems[Count - 1];
-end;
-
-function TList<T>.GetItem(index: Integer): T;
-begin
-  TArgument.CheckRange<T>(fItems, index);
-  Result := fItems[index];
-end;
-
-function TList<T>.GetOnNotify: ICollectionNotifyDelegate<T>;
-begin
-  if fOnNotify = nil then
-  begin
-    fOnNotify := TCollectionNotifyDelegate<T>.Create;
-  end;
-  Result := fOnNotify;
-end;
-
-//function TList<T>.GetOnNotify: TEvent<TCollectionNotifyEvent<T>>;
-//begin
-//  Result := fOnNotify.GetInstance;
-//end;
 
 procedure TList<T>.SetCapacity(value: Integer);
 begin
@@ -2168,119 +2196,6 @@ begin
     DeleteRange(Count - value + 1, Count - value);
   end;
   SetLength(fItems, value);
-end;
-
-procedure TList<T>.SetItem(index: Integer; const value: T);
-var
-  oldItem: T;
-begin
-  TArgument.CheckRange<T>(fItems, index);
-    
-  oldItem := fItems[index];
-  fItems[index] := value;
-  
-  Notify(oldItem, cnRemoved);
-  Notify(value, cnAdded);
-end;
-
-//function TList<T>.GetPropertyValue(const propertyName: string;
-//  const index: Rtti.TValue): Rtti.TValue;
-//var
-//  indexValue: Integer;
-//begin
-//  TArgument.CheckTrue(SameText(propertyName, 'Items'), propertyName);
-//  TArgument.CheckTrue(index.TryAsType<Integer>(indexValue), 'index');
-//  Result := Rtti.TValue.From<T>(Self.Items[indexValue]);
-//end;
-//
-//procedure TList<T>.SetPropertyValue(const propertyName: string;
-//  const index, value: Rtti.TValue);
-//var
-//  indexValue: Integer;
-//begin
-//  TArgument.CheckTrue(SameText(propertyName, 'Items'), propertyName);
-//  TArgument.CheckTrue(index.TryAsType<Integer>(indexValue), 'index');
-//  Self.Items[indexValue] := value.AsType<T>;
-//end;
-
-procedure TList<T>.Sort;
-begin
-  TArray.Sort<T>(fItems, fComparer, 0, Count);
-end;
-
-procedure TList<T>.Sort(const comparer: IComparer<T>);
-begin
-  TArray.Sort<T>(fItems, comparer, 0, Count);
-end;
-
-procedure TList<T>.Sort(const comparison: TComparison<T>);
-var
-  comparer: IComparer<T>;
-begin
-  comparer := TComparer<T>.Construct(comparison);
-  TArray.Sort<T>(fItems, comparer, 0, Count);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TList<T>.TEnumerator'}
-
-constructor TList<T>.TEnumerator.Create(const list: TList<T>);
-begin
-  inherited Create;
-  fList := list;
-  fIndex := -1;
-end;
-
-function TList<T>.TEnumerator.MoveNext: Boolean;
-begin
-  Result := fIndex < fList.Count - 1;
-  if Result then
-    Inc(fIndex);
-end;
-
-function TList<T>.TEnumerator.GetCurrent: T;
-begin
-  Result := fList[fIndex];
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TList<T>.TReversedEnumerator'}
-
-constructor TList<T>.TReversedEnumerator.Create(const list: TList<T>);
-begin
-  inherited Create;
-  fList := list;
-  fCount := fList.Count;
-  fIndex := fCount;
-end;
-
-function TList<T>.TReversedEnumerator.GetCurrent: T;
-begin
-  Result := fList[fIndex];
-end;
-
-function TList<T>.TReversedEnumerator.MoveNext: Boolean;
-begin
-  Result := (fIndex > 0) and (fIndex <= fCount);
-  Dec(fIndex);
-end;
-
-{ TList<T>.TReversedEnumerable }
-
-constructor TList<T>.TReversedEnumerable.Create(const list: TList<T>);
-begin
-  inherited Create;
-  fList := list;
-  fReference := list;
-end;
-
-function TList<T>.TReversedEnumerable.GetEnumerator: IEnumerator<T>;
-begin
-  Result := TReversedEnumerator.Create(fList);
 end;
 
 {$ENDREGION}
@@ -2740,6 +2655,19 @@ begin
   Result := fOnNotify;
 end;
 
+{
+  TStack<T> = class(TEnumerable<T>)
+  private
+    FCount: Integer;
+    FItems: array of T;
+    //...
+  end;
+}
+class function TStack<T>.GetStackItem(stack: TGenericStack; index: Integer): T;
+begin
+  Result := TArray<T>(PInteger(NativeInt(stack) + hfFieldSize + SizeOf(Integer))^)[index];
+end;
+
 procedure TStack<T>.Push(const item: T);
 begin
   fStack.Push(item);
@@ -2835,7 +2763,7 @@ end;
 
 function TStack<T>.TStackEnumerator.GetCurrent: T;
 begin
-  Result := TStackAccess<T>(fStack).FItems[fIndex];
+  Result := TStack<T>.GetStackItem(fStack, fIndex);
 end;
 
 function TStack<T>.TStackEnumerator.MoveNext: Boolean;

@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.DI.Injection;
+unit Spring.Container.Injection;
 
 {$I Spring.inc}
 
@@ -35,7 +35,7 @@ uses
   TypInfo,
   Spring,
   Spring.Collections,
-  Spring.DI.Core;
+  Spring.Container.Core;
 
 type
   TInjectionBase = class abstract(TInterfacedObject, IInjection, IInterface)
@@ -111,7 +111,7 @@ implementation
 
 uses
   Spring.ResourceStrings,
-  Spring.DI.ResourceStrings,
+  Spring.Container.ResourceStrings,
   Spring.Helpers;
 
 

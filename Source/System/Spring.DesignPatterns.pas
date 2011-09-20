@@ -233,7 +233,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'Factory Pattern'}
+  {$REGION 'Factory Pattern (Experimental, Seems BAD)'}
 
   EFactoryMethodKeyAlreadyRegisteredException = class(Exception);
   EFactoryMethodKeyNotRegisteredException = class(Exception);
@@ -593,8 +593,7 @@ end;
 
 function TFactory<TKey, TBaseType>.GetCount: Integer;
 begin
-  if Assigned(FFactoryMethods) then
-    Result := FFactoryMethods.Count;
+  Result := FFactoryMethods.Count;
 end;
 
 function TFactory<TKey, TBaseType>.GetInstance(Key: TKey): TBaseType;

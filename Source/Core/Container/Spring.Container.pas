@@ -22,10 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-{TODO -oOwner -cGeneral : Unregister a component}
 {TODO -oOwner -cGeneral : Thread Safety}
 
-unit Spring.DI;
+unit Spring.Container;
 
 {$I Spring.inc}
 
@@ -38,8 +37,9 @@ uses
   Rtti,
   Spring,
   Spring.Collections,
-  Spring.DI.Core,
-  Spring.DI.Registration;
+  Spring.Services,
+  Spring.Container.Core,
+  Spring.Container.Registration;
 
 type
   TValue = Rtti.TValue;
@@ -47,7 +47,7 @@ type
   /// <summary>
   /// Represents a Dependency Injection Container.
   /// </summary>
-  TContainer = class(TInterfaceBase, IContainerContext, IServiceLocator, IInterface)
+  TContainer = class(TInterfaceBase, IContainerContext, IInterface)
   private
     fRegistry: IComponentRegistry;
     fBuilder: IComponentBuilder;
@@ -87,29 +87,57 @@ type
     function HasService(const name: string): Boolean; overload;
 
     { Experimental Release Methods }
-    procedure Release(var instance: TObject); overload;
-    procedure Release(var instance: IInterface); overload;
+    procedure Release(instance: TObject); overload;
+    procedure Release(instance: IInterface); overload;
   end;
 
-  EContainerException = Spring.DI.Core.EContainerException;
-  ERegistrationException = Spring.DI.Core.ERegistrationException;
-  EResolveException = Spring.DI.Core.EResolveException;
-  EUnsatisfiedDependencyException = Spring.DI.Core.EUnsatisfiedDependencyException;
-  ECircularDependencyException = Spring.DI.Core.ECircularDependencyException;
-  EActivatorException = Spring.DI.Core.EActivatorException;
+  TServiceLocatorAdapter = class(TInterfacedObject, IServiceLocator)
+  private
+    fContainer: TContainer;
+  public
+    constructor Create(container: TContainer);
 
-var
-  GlobalContainer: TContainer;
+    function GetService(serviceType: PTypeInfo): TValue; overload;
+    function GetService(serviceType: PTypeInfo; const name: string): TValue; overload;
+
+    function GetAllServices(serviceType: PTypeInfo): TArray<TValue>; overload;
+
+    function HasService(serviceType: PTypeInfo): Boolean; overload;
+    function HasService(serviceType: PTypeInfo; const name: string): Boolean; overload;
+  end;
+
+{$REGION 'Exceptions'}
+
+  EContainerException = Spring.Container.Core.EContainerException;
+  ERegistrationException = Spring.Container.Core.ERegistrationException;
+  EResolveException = Spring.Container.Core.EResolveException;
+  EUnsatisfiedDependencyException = Spring.Container.Core.EUnsatisfiedDependencyException;
+  ECircularDependencyException = Spring.Container.Core.ECircularDependencyException;
+  EActivatorException = Spring.Container.Core.EActivatorException;
+
+{$ENDREGION}
+
+function GlobalContainer: TContainer;
 
 implementation
 
 uses
   Spring.ResourceStrings,
-  Spring.DI.Builder,
-  Spring.DI.LifetimeManager,
-  Spring.DI.Injection,
-  Spring.DI.Resolvers,
-  Spring.DI.ResourceStrings;
+  Spring.Container.Builder,
+  Spring.Container.LifetimeManager,
+  Spring.Container.Injection,
+  Spring.Container.Resolvers,
+  Spring.Container.ResourceStrings;
+
+var
+  _GlobalContainer: TContainer;
+  _GlobalServiceLocator: IServiceLocator;
+
+function GlobalContainer: TContainer;
+begin
+  Result := _GlobalContainer;
+end;
+
 
 {$REGION 'TContainer'}
 
@@ -123,7 +151,6 @@ begin
   fInjectionFactory := TInjectionFactory.Create;
   fRegistrationManager := TRegistrationManager.Create(fRegistry);
   InitializeInspectors;
-  ServiceLocator.Initialize(Self);
 end;
 
 destructor TContainer.Destroy;
@@ -131,7 +158,6 @@ begin
   fRegistrationManager.Free;
   fBuilder.ClearInspectors;
   fRegistry.UnregisterAll;
-  ServiceLocator.Initialize(nil);
   inherited Destroy;
 end;
 
@@ -167,25 +193,25 @@ begin
   TArgument.CheckNotNull(model, 'model');
   case model.LifetimeType of
     ltSingleton:
-    begin
-      Result := TSingletonLifetimeManager.Create(model);
-    end;
+      begin
+        Result := TSingletonLifetimeManager.Create(model);
+      end;
     ltTransient:
-    begin
-      Result := TTransientLifetimeManager.Create(model);
-    end;
+      begin
+        Result := TTransientLifetimeManager.Create(model);
+      end;
     ltSingletonPerThread:
-    begin
-      Result := TSingletonPerThreadLifetimeManager.Create(model);
-    end;
+      begin
+        Result := TSingletonPerThreadLifetimeManager.Create(model);
+      end;
     ltPooled:
-    begin
-      Result := TPooledLifetimeManager.Create(model);
-    end;
+      begin
+        Result := TPooledLifetimeManager.Create(model);
+      end;
     else
-    begin
-      raise ERegistrationException.CreateRes(@SUnexpectedLifetimeType);
-    end;
+      begin
+        raise ERegistrationException.CreateRes(@SUnexpectedLifetimeType);
+      end;
   end;
 end;
 
@@ -287,7 +313,7 @@ begin
   Result := fServiceResolver.ResolveAll(serviceType);
 end;
 
-procedure TContainer.Release(var instance: TObject);
+procedure TContainer.Release(instance: TObject);
 var
   model: TComponentModel;
 begin
@@ -301,7 +327,7 @@ begin
   model.LifetimeManager.ReleaseInstance(instance);
 end;
 
-procedure TContainer.Release(var instance: IInterface);
+procedure TContainer.Release(instance: IInterface);
 begin
   TArgument.CheckNotNull(instance, 'instance');
   { TODO: -oOwner -cGeneral : Release instance of IInterface }
@@ -309,10 +335,54 @@ end;
 
 {$ENDREGION}
 
+
+{$REGION 'TServiceLocatorAdapter'}
+
+constructor TServiceLocatorAdapter.Create(container: TContainer);
+begin
+  inherited Create;
+  fContainer := container;
+end;
+
+function TServiceLocatorAdapter.GetService(serviceType: PTypeInfo): TValue;
+begin
+  Result := fContainer.Resolve(serviceType);
+end;
+
+function TServiceLocatorAdapter.GetService(serviceType: PTypeInfo; const name: string): TValue;
+begin
+  Result := fContainer.Resolve({serviceType, }name);
+end;
+
+function TServiceLocatorAdapter.GetAllServices(serviceType: PTypeInfo): TArray<TValue>;
+begin
+  Result := fContainer.ResolveAll(serviceType);
+end;
+
+function TServiceLocatorAdapter.HasService(serviceType: PTypeInfo): Boolean;
+begin
+  Result := fContainer.HasService(serviceType);
+end;
+
+function TServiceLocatorAdapter.HasService(serviceType: PTypeInfo; const name: string): Boolean;
+begin
+  Result := fContainer.HasService({serviceType, }name);
+end;
+
+{$ENDREGION}
+
 initialization
-  GlobalContainer := TContainer.Create;
+  _GlobalContainer := TContainer.Create;
+  _GlobalServiceLocator := TServiceLocatorAdapter.Create(_GlobalContainer);
+  ServiceLocator.Initialize(
+    function: IServiceLocator
+    begin
+      Result := _GlobalServiceLocator;
+    end
+  );
 
 finalization
-  FreeAndNil(GlobalContainer);
+  ServiceLocator.Initialize(nil);
+  FreeAndNil(_GlobalContainer);
 
 end.

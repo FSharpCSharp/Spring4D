@@ -22,25 +22,40 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Logging.ResourceStrings;
+unit Spring.Container.ResourceStrings;
 
 {$I Spring.inc}
 
 interface
 
 resourcestring
-  // Spring.Logging
+  SNonGuidInterfaceServicesAreNotSupported = 'Non-Guid Interface Services are not supported.';
+  SIncompatibleTypes = 'The component type "%s" is incompatible with the service type "%s".';
+  SDuplicatedName = 'Duplicated name found: "%s".';
+  SCircularDependencyDetected = 'A circle was detected when trying to resolve the dependency: %s.';
+  SCannotResolveDependency = 'Cannot resolve the dependency: %s.';
+  SUnexpectedDependencyParameterType = 'Unexpected dependency parameter type.';
+  SNoComponentRegistered = 'No component was registered for the service type: %s.';
+  SInvalidServiceName = 'Invalid service name: "%s".';
+  SUnsatisfiedConstructorParameters = 'Unsatisfied parameters for constructor.';
+  SUnsatisfiedMethodParameterTypes = 'Unsatisfied parameter types for the method: %s.';
+  SUnsatisfiedDependency = 'Unsatisfied dependency for the service type "%0:s".';
+  SUnsatisfiedResolutionArgumentCount = 'Unsatisfied resolution argument count.';
+  SLifetimeManagerMissing = 'LifetimeTypeManager was expected.';
+  SUnresovableInjection = 'Unresovable injection.';
+  SMemberHasNoTarget = 'The member injection "%s" has no target.';
+  SUnsatisfiedConstructor = 'Unsatisfied constructor.';
+  SMethodMustBeConstructor = 'The constructorMethod should be a constructor method.';
+  SNoSuchMember = 'No such member: "%s".';
+  SNoSuchMethod = 'No such method: "%s".';
+  SNoSuchProperty = 'No such property: "%s".';
+  SNoSuchField = 'No such field: "%s".';
+  SInjectionTargetNeeded = 'Injection target needed.';
+  SUnsatisfiedTarget = 'Unsatisfied target: "%s".';
+  SComponentNotFound = 'Cannot found the component registered.';
+  SUnexpectedLifetimeType = 'Unexpected lifetimeType.';
 
-  SNoTypeInformation = 'No type information.';
-
-  SAllDescription      = 'ALL';
-  STraceDescription    = 'TRACE';
-  SDebugDescription    = 'DEBUG';
-  SInfoDescription     = 'INFO';
-  SWarnDescription     = 'WARN';
-  SErrorDescription    = 'ERROR';
-  SFatalDescription    = 'FATAL';
-  SOffDescription      = 'OFF';
+  SActivatorDelegateExpected = 'An activator delegate was expected.';
 
 implementation
 

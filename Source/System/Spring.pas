@@ -320,9 +320,19 @@ type
 
 
   ///	<summary>
-  ///	  Represents a nullable string.
+  ///	  Represents a nullable unicode string.
   ///	</summary>
   TNullableString = TNullable<string>;
+
+  ///	<summary>
+  ///	  Represents a nullable ansi string.
+  ///	</summary>
+  TNullableAnsiString = TNullable<AnsiString>;
+
+  ///	<summary>
+  ///	  Represents a nullable wide string.
+  ///	</summary>
+  TNullableWideString = TNullable<WideString>;
 
   ///	<summary>
   ///	  Represents a nullable integer.
@@ -545,364 +555,14 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'Experimental Interfaces'}
-
-  IFreeNotification = interface
-    ['{1FE19281-6FB2-434D-987F-3B0F9970F3C4}']
-    procedure FreeNotification(sender: TObject);
-  end;
-
-  TPropertyChangedEventHandler = procedure(sender: TObject; const propertyName: string) of object;
-
-  IMulticastPropertyChangedEvent = interface(IMulticastEvent<TPropertyChangedEventHandler>)
-    ['{5E2E421A-72FC-46AC-B7A9-9083CF47019A}']
-  end;
-
-  INotifyPropertyChanged = interface
-    ['{D034ABBF-CF98-4C2F-8D66-2F1941109D7B}']
-    function GetOnPropertyChanged: IMulticastPropertyChangedEvent;
-    property OnPropertyChanged: IMulticastPropertyChangedEvent read GetOnPropertyChanged;
-  end;
-
-  ITerminatable = interface
-    ['{C8FF5DEF-2A15-4A6D-B128-F050E01438F8}']
-    function GetIsTerminated: Boolean;
-
-    procedure Terminate;
-    property IsTerminated: Boolean read GetIsTerminated;
-  end;
-
-  TMulticastPropertyChangedEvent = class(TMulticastEvent<TPropertyChangedEventHandler>, IMulticastPropertyChangedEvent)
-  end;
-
-  // TODO: Consider Parent Notification
-  TNotifiableObject = class
-  protected
-    fOnPropertyChanged: IMulticastPropertyChangedEvent;
-    function GetOnPropertyChanged: IMulticastPropertyChangedEvent;
-    function GetOwner: IMulticastPropertyChangedEvent; dynamic;
-    procedure NotifyPropertyChanged(const propertyName: string); virtual;
-  protected
-    function SetProperty(const propertyName: string; var oldValue: Integer; const newValue: Integer): Boolean; overload;
-    function SetProperty(const propertyName: string; var oldValue: Int64; const newValue: Int64): Boolean; overload;
-    function SetProperty(const propertyName: string; var oldValue: NativeInt; const newValue: NativeInt): Boolean; overload;
-    function SetProperty(const propertyName: string; var oldValue: Boolean; const newValue: Boolean): Boolean; overload;
-    function SetProperty(const propertyName: string; var oldValue: string; const newValue: string): Boolean; overload;
-    function SetProperty(const propertyName: string; var oldValue: WideString; const newValue: WideString): Boolean; overload;
-    function SetProperty(const propertyName: string; var oldValue: TDateTime; const newValue: TDateTime): Boolean; overload;
-    function SetProperty(const propertyName: string; var oldValue: Double; const newValue: Double): Boolean; overload;
-    function SetProperty(const propertyName: string; var oldValue: Currency; const newValue: Currency): Boolean; overload;
-    function SetProperty(const propertyName: string; var oldValue: TGuid; const newValue: TGuid): Boolean; overload;
-    function SetProperty<T>(const propertyName: string; var oldValue: T; const newValue: T; comparer: IEqualityComparer<T>): Boolean; overload;
-  public
-    property OnPropertyChanged: IMulticastPropertyChangedEvent read GetOnPropertyChanged;
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'Lifetime Type & Attributes'}
-
-  ///	<summary>
-  ///	  Lifetime Type Enumeration.
-  ///	</summary>
-  ///	<seealso cref="SingletonAttribute" />
-  ///	<seealso cref="TransientAttribute" />
-  ///	<seealso cref="SingletonPerThreadAttribute" />
-  ///	<seealso cref="PooledAttribute" />
-  TLifetimeType = (
-    ///	<summary>
-    ///	  Unknown lifetime type.
-    ///	</summary>
-    ltUnknown,
-
-    ///	<summary>
-    ///	  Single instance.
-    ///	</summary>
-    ltSingleton,
-
-    ///	<summary>
-    ///	  Different instances.
-    ///	</summary>
-    ltTransient,
-
-    ///	<summary>
-    ///	  Every thread has a single instance.
-    ///	</summary>
-    ltSingletonPerThread,
-
-    ///	<summary>
-    ///	  Instances are transient except that they are recyclable.
-    ///	</summary>
-    ltPooled,
-
-    ///	<summary>
-    ///	  Customized lifetime type.
-    ///	</summary>
-    ltCustom
-  );
-
-  ///	<summary>
-  ///	  Represents an abstract lifetime attribute class base.
-  ///	</summary>
-  LifetimeAttributeBase = class abstract(TCustomAttribute)
-  private
-    fLifetimeType: TLifetimeType;
-  public
-    constructor Create(lifetimeType: TLifetimeType);
-    property LifetimeType: TLifetimeType read fLifetimeType;
-  end;
-
-  ///	<summary>
-  ///	  Applies this attribute when a component shares the single instance.
-  ///	</summary>
-  ///	<remarks>
-  ///	  When this attribute is applied to a component, the shared instance will
-  ///	  be returned whenever get the implementation of a service.
-  ///	</remarks>
-  ///	<example>
-  ///	  <code lang="Delphi">
-  ///	[Singleton]
-  ///	TEmailSender = class(TInterfacedObject, IEmailSender)
-  ///	//...
-  ///	end;
-  ///	  </code>
-  ///	</example>
-  ///	<seealso cref="TransientAttribute" />
-  ///	<seealso cref="SingletonPerThreadAttribute" />
-  ///	<seealso cref="PooledAttribute" />
-  ///	<seealso cref="TLifetimeType" />
-  SingletonAttribute = class(LifetimeAttributeBase)
-  public
-    constructor Create;
-  end;
-
-  ///	<summary>
-  ///	  Represents that a new instance of the component will be created when
-  ///	  requested.
-  ///	</summary>
-  ///	<remarks>
-  ///	  <note type="note">
-  ///	    This attribute is the default option.
-  ///	  </note>
-  ///	</remarks>
-  ///	<seealso cref="SingletonAttribute" />
-  ///	<seealso cref="SingletonPerThreadAttribute" />
-  ///	<seealso cref="PooledAttribute" />
-  ///	<seealso cref="TLifetimeType" />
-  TransientAttribute = class(LifetimeAttributeBase)
-  public
-    constructor Create;
-  end;
-
-  ///	<summary>
-  ///	  Applies this attribute when a component shares the single instance per
-  ///	  thread.
-  ///	</summary>
-  ///	<seealso cref="SingletonAttribute" />
-  ///	<seealso cref="TransientAttribute" />
-  ///	<seealso cref="PooledAttribute" />
-  ///	<seealso cref="TLifetimeType" />
-  SingletonPerThreadAttribute = class(LifetimeAttributeBase)
-  public
-    constructor Create;
-  end;
-
-  ///	<summary>
-  ///	  Represents that the target component can be pooled.
-  ///	</summary>
-  ///	<seealso cref="SingletonAttribute" />
-  ///	<seealso cref="TransientAttribute" />
-  ///	<seealso cref="SingletonPerThreadAttribute" />
-  ///	<seealso cref="TLifetimeType" />
-  PooledAttribute = class(LifetimeAttributeBase)
-  private
-    fMinPoolsize: Integer;
-    fMaxPoolsize: Integer;
-  public
-    constructor Create(minPoolSize, maxPoolSize: Integer);
-    property MinPoolsize: Integer read fMinPoolsize;
-    property MaxPoolsize: Integer read fMaxPoolsize;
-  end;
-
-  ///	<summary>
-  ///	  Applies the <c>InjectionAttribute</c> to injectable instance members of
-  ///	  a class. e.g. constructors, methods, properties and even fields. Also
-  ///	  works on parameters of a method.
-  ///	</summary>
-  ///	<seealso cref="ImplementsAttribute" />
-  InjectionAttribute = class(TCustomAttribute)
-  private
-    fValue: string;
-    function GetHasValue: Boolean;
-  public
-    constructor Create; overload;
-    constructor Create(const value: string); overload;
-    property Value: string read fValue;
-    property HasValue: Boolean read GetHasValue;
-  end;
-
-  ///	<summary>
-  ///	  Applies this attribute to tell the IoC container which service is
-  ///	  implemented by the target component. In addition, a service name can be
-  ///	  specified.
-  ///	</summary>
-  ///	<remarks>
-  ///	  <note type="note">
-  ///	    This attribute can be specified more than once.
-  ///	  </note>
-  ///	</remarks>
-  ///	<example>
-  ///	  <code lang="Delphi">
-  ///	[Implements(TypeInfo(IEmailSender))]
-  ///	TRegularEmailSender = class(TInterfacedObject, IEmailSender)
-  ///	end;
-  ///	[Implements(TypeInfo(IEmailSender), 'mock-email-sender')]
-  ///	TMockEmailSender = class(TInterfacedObject, IEmailSender)
-  ///	end;
-  ///	  </code>
-  ///	</example>
-  ///	<seealso cref="InjectionAttribute" />
-  ImplementsAttribute = class(TCustomAttribute)
-  private
-    fServiceType: PTypeInfo;
-    fName: string;
-  public
-    constructor Create(serviceType: PTypeInfo); overload;
-    constructor Create(serviceType: PTypeInfo; const name: string); overload;
-    property ServiceType: PTypeInfo read fServiceType;
-    property Name: string read fName;
-  end;
-
-
-  {$ENDREGION}
-
-
-  {$REGION 'Lifecycle Interfaces'}
-
-  ///	<summary>
-  ///	  Lifecycle interface. If a component implements this interface, the IoC
-  ///	  container will invoke the <c>Initialize</c> method when initiating an
-  ///	  instance of the component.
-  ///	</summary>
-  ///	<seealso cref="IStartable" />
-  ///	<seealso cref="IRecyclable" />
-  ///	<seealso cref="IDisposable" />
-  IInitializable = interface
-    ['{A36BB399-E592-4DFB-A091-EDBA3BE0648B}']
-
-    ///	<summary>
-    ///	  Initializes the component.
-    ///	</summary>
-    procedure Initialize;
-  end;
-
-  ///	<summary>
-  ///	  Lifecycle interface. Represents that the component can be started and
-  ///	  stopped.
-  ///	</summary>
-  ///	<seealso cref="IInitializable" />
-  ///	<seealso cref="IRecyclable" />
-  ///	<seealso cref="IDisposable" />
-  IStartable = interface
-    ['{8D0252A1-7993-44AA-B0D9-326019B58E78}']
-    procedure Start;
-    procedure Stop;
-  end;
-
-  ///	<summary>
-  ///	  Lifecycle interface. Only called for components that belongs to a pool
-  ///	  when the component comes back to the pool.
-  ///	</summary>
-  ///	<seealso cref="IInitializable" />
-  ///	<seealso cref="IStartable" />
-  ///	<seealso cref="IDisposable" />
-  IRecyclable = interface
-    ['{85114F41-70E5-4AF4-A375-E445D4619E4D}']
-    procedure Recycle;
-  end;
-
-  ///	<summary>
-  ///	  Lifecycle interface. If the component implements this interface, all
-  ///	  resources will be deallocate by calling the <c>Dispose</c> method.
-  ///	</summary>
-  ///	<seealso cref="IInitializable" />
-  ///	<seealso cref="IStartable" />
-  ///	<seealso cref="IRecyclable" />
-  IDisposable = interface
-    ['{6708F9BF-0237-462F-AFA2-DF8EF21939EB}']
-    procedure Dispose;
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'Service Locator'}
-
-  /// <summary>
-  /// Defines an abstract interface to locate services.
-  /// </summary>
-  IServiceLocator = interface
-    ['{E8C39055-6634-4428-B343-2FB0E75527BC}']
-    function Resolve(serviceType: PTypeInfo): TValue; overload;
-    function Resolve(const name: string): TValue; overload;
-
-    function ResolveAll(serviceType: PTypeInfo): TArray<TValue>; overload;
-
-    function HasService(serviceType: PTypeInfo): Boolean; overload;
-    function HasService(const name: string): Boolean; overload;
-
-    procedure Release(var instance: TObject); overload;
-    procedure Release(var instance: IInterface); overload;
-  end;
-
-  /// <summary>
-  /// Provides a portal to resolve and query an instance of a service. Use the global
-  /// <see cref="Spring|ServiceLocator" /> method to get the shared instance.
-  /// </summary>
-  /// <remarks>
-  /// You should use ServiceLocator to query a service insteading of directly using Spring.DI namespace in your library.
-  /// The namespace is supposed to be used to register components in your bootstrap code.
-  /// </remarks>
-  TServiceLocator = class
-  strict private
-    class var
-      fInstance: TServiceLocator;
-    class constructor Create;
-    class destructor Destroy;
-  strict private
-    fServiceLocator: IServiceLocator;
-    function GetServiceLocator: IServiceLocator;
-  public
-    procedure Initialize(const serviceLocator: IServiceLocator);
-    class property Instance: TServiceLocator read fInstance;
-  public
-    function Resolve<T>: T; overload;
-    function Resolve<T>(const name: string): T; overload;
-    function Resolve(serviceType: PTypeInfo): TValue; overload;
-    function Resolve(const name: string): TValue; overload;
-
-    function ResolveAll<TServiceType>: TArray<TServiceType>; overload;
-    function ResolveAll(serviceType: PTypeInfo): TArray<TValue>; overload;
-
-    function HasService(serviceType: PTypeInfo): Boolean; overload;
-    function HasService(const name: string): Boolean; overload;
-
-    procedure Release(var instance: TObject); overload;
-    procedure Release(var instance: IInterface); overload;
-  end;
-
-  {$ENDREGION}
-
-
   {$REGION 'Exceptions'}
 
   ENotSupportedException    = SysUtils.ENotSupportedException;
 
 {$IFDEF DELPHIXE_UP}
-  ENotImplementedException  = class(Exception);
-{$ELSE}
   ENotImplementedException  = SysUtils.ENotImplemented;
+{$ELSE}
+  ENotImplementedException  = class(Exception);
 {$ENDIF}
 
   EInvalidOperation         = SysUtils.EInvalidOp;
@@ -932,12 +592,17 @@ type
 
   {$ENDREGION}
 
-procedure RaisePlatformNotImplementedException;
+procedure PlatformNotImplemented;
 
 /// <summary>
-/// Gets the shared instance of <see cref="TServiceLocator" /> class.
+/// Raises an <see cref="Spring|EArgumentNullException" /> if the <paramref name="value" /> is nil.
 /// </summary>
-function ServiceLocator: TServiceLocator;
+procedure CheckArgumentNotNull(const value: IInterface; const argumentName: string); overload;
+
+/// <summary>
+/// Raises an <see cref="Spring|EArgumentNullException" /> if the <paramref name="value" /> is nil.
+/// </summary>
+procedure CheckArgumentNotNull(value: Pointer; const argumentName: string); overload;
 
 implementation
 
@@ -945,15 +610,28 @@ uses
   StrUtils,
   Spring.ResourceStrings;
 
-procedure RaisePlatformNotImplementedException;
+{$REGION 'Routines'}
+
+procedure PlatformNotImplemented;
 begin
-  raise ENotImplementedException.Create('Platform Not implemented.');
+  raise ENotImplementedException.Create('Not implemented in present platform.');
 end;
 
-function ServiceLocator: TServiceLocator;
+procedure CheckArgumentNotNull(const value: IInterface; const argumentName: string);
 begin
-  Result := TServiceLocator.Instance;
+  CheckArgumentNotNull(Pointer(value), argumentName);
 end;
+
+procedure CheckArgumentNotNull(value: Pointer; const argumentName: string);
+begin
+  if value = nil then
+  begin
+    TArgument.RaiseArgumentNullException(argumentName);
+  end;
+end;
+
+{$ENDREGION}
+
 
 {$REGION 'TInterfaceBase'}
 
@@ -1439,82 +1117,6 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'Attributes'}
-
-{ LifetimeAttributeBase }
-
-constructor LifetimeAttributeBase.Create(lifetimeType: TLifetimeType);
-begin
-  inherited Create;
-  fLifetimeType := lifetimeType;
-end;
-
-{ SingletonAttribute }
-
-constructor SingletonAttribute.Create;
-begin
-  inherited Create(TLifetimeType.ltSingleton);
-end;
-
-{ TransientAttribute }
-
-constructor TransientAttribute.Create;
-begin
-  inherited Create(TLifetimeType.ltTransient);
-end;
-
-{ SingletonPerThreadAttribute }
-
-constructor SingletonPerThreadAttribute.Create;
-begin
-  inherited Create(TLifetimeType.ltSingletonPerThread);
-end;
-
-{ InjectionAttribute }
-
-constructor InjectionAttribute.Create;
-begin
-  Create('');
-end;
-
-constructor InjectionAttribute.Create(const value: string);
-begin
-  inherited Create;
-  fValue := value;
-end;
-
-function InjectionAttribute.GetHasValue: Boolean;
-begin
-  Result := fValue <> '';
-end;
-
-{ ImplementsAttribute }
-
-constructor ImplementsAttribute.Create(serviceType: PTypeInfo);
-begin
-  Create(serviceType, '');
-end;
-
-constructor ImplementsAttribute.Create(serviceType: PTypeInfo;
-  const name: string);
-begin
-  inherited Create;
-  fServiceType := serviceType;
-  fName := name;
-end;
-
-{ PooledAttribute }
-
-constructor PooledAttribute.Create(minPoolSize, maxPoolSize: Integer);
-begin
-  inherited Create(ltPooled);
-  fMinPoolsize := minPoolSize;
-  fMaxPoolsize := maxPoolsize;
-end;
-
-{$ENDREGION}
-
-
 {$REGION 'TMethodInfo'}
 
 function AdditionalInfoOf(TypeData: PTypeData): Pointer;
@@ -1968,251 +1570,6 @@ end;
 class operator TEvent<T>.Implicit(const event: TEvent<T>): IMulticastEvent<T>;
 begin
   Result := event.GetInstance;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TNotifiableObject'}
-
-function TNotifiableObject.GetOnPropertyChanged: IMulticastPropertyChangedEvent;
-begin
-  if fOnPropertyChanged = nil then
-  begin
-    fOnPropertyChanged := TMulticastPropertyChangedEvent.Create;
-  end;
-  Result := fOnPropertyChanged;
-end;
-
-function TNotifiableObject.GetOwner: IMulticastPropertyChangedEvent;
-begin
-  Result := nil;
-end;
-
-procedure TNotifiableObject.NotifyPropertyChanged(const propertyName: string);
-var
-  e: IMulticastPropertyChangedEvent;
-begin
-  if (fOnPropertyChanged <> nil) and fOnPropertyChanged.Enabled then
-    fOnPropertyChanged.Invoke(Self, propertyName);
-
-  if Supports(GetOwner, IMulticastPropertyChangedEvent, e) and e.Enabled then
-    e.Invoke(Self, propertyName);
-end;
-
-function TNotifiableObject.SetProperty(const propertyName: string; var oldValue: Integer;
-  const newValue: Integer): Boolean;
-begin
-  Result := oldValue <> newValue;
-  if Result then
-  begin
-    oldValue := newValue;
-    NotifyPropertyChanged(propertyName);
-  end;
-end;
-
-function TNotifiableObject.SetProperty(const propertyName: string; var oldValue: Int64; const newValue: Int64): Boolean;
-begin
-  Result := oldValue <> newValue;
-  if Result then
-  begin
-    oldValue := newValue;
-    NotifyPropertyChanged(propertyName);
-  end;
-end;
-
-function TNotifiableObject.SetProperty(const propertyName: string; var oldValue: Boolean;
-  const newValue: Boolean): Boolean;
-begin
-  Result := oldValue <> newValue;
-  if Result then
-  begin
-    oldValue := newValue;
-    NotifyPropertyChanged(propertyName);
-  end;
-end;
-
-function TNotifiableObject.SetProperty(const propertyName: string; var oldValue: string;
-  const newValue: string): Boolean;
-begin
-  Result := oldValue <> newValue;
-  if Result then
-  begin
-    oldValue := newValue;
-    NotifyPropertyChanged(propertyName);
-  end;
-end;
-
-function TNotifiableObject.SetProperty(const propertyName: string; var oldValue: TDateTime;
-  const newValue: TDateTime): Boolean;
-begin
-  Result := oldValue <> newValue;
-  if Result then
-  begin
-    oldValue := newValue;
-    NotifyPropertyChanged(propertyName);
-  end;
-end;
-
-function TNotifiableObject.SetProperty(const propertyName: string; var oldValue: WideString;
-  const newValue: WideString): Boolean;
-begin
-  Result := oldValue <> newValue;
-  if Result then
-  begin
-    oldValue := newValue;
-    NotifyPropertyChanged(propertyName);
-  end;
-end;
-
-function TNotifiableObject.SetProperty(const propertyName: string; var oldValue: NativeInt;
-  const newValue: NativeInt): Boolean;
-begin
-  Result := oldValue <> newValue;
-  if Result then
-  begin
-    oldValue := newValue;
-    NotifyPropertyChanged(propertyName);
-  end;
-end;
-
-function TNotifiableObject.SetProperty(const propertyName: string; var oldValue: TGuid; const newValue: TGuid): Boolean;
-begin
-  Result := oldValue <> newValue;
-  if Result then
-  begin
-    oldValue := newValue;
-    NotifyPropertyChanged(propertyName);
-  end;
-end;
-
-function TNotifiableObject.SetProperty(const propertyName: string; var oldValue: Currency;
-  const newValue: Currency): Boolean;
-begin
-  Result := oldValue <> newValue;
-  if Result then
-  begin
-    oldValue := newValue;
-    NotifyPropertyChanged(propertyName);
-  end;
-end;
-
-function TNotifiableObject.SetProperty(const propertyName: string; var oldValue: Double;
-  const newValue: Double): Boolean;
-begin
-  Result := oldValue <> newValue;
-  if Result then
-  begin
-    oldValue := newValue;
-    NotifyPropertyChanged(propertyName);
-  end;
-end;
-
-function TNotifiableObject.SetProperty<T>(const propertyName: string; var oldValue: T; const newValue: T;
-  comparer: IEqualityComparer<T>): Boolean;
-begin
-  if comparer = nil then
-  begin
-    comparer := TEqualityComparer<T>.Default;
-  end;
-  Result := not comparer.Equals(oldValue, newValue);
-  if Result then
-  begin
-    oldValue := newValue;
-    NotifyPropertyChanged(propertyName);
-  end;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TServiceLocator'}
-
-class constructor TServiceLocator.Create;
-begin
-  fInstance := TServiceLocator.Create;
-end;
-
-class destructor TServiceLocator.Destroy;
-begin
-  FreeAndNil(fInstance);
-end;
-
-procedure TServiceLocator.Initialize(const serviceLocator: IServiceLocator);
-begin
-  fServiceLocator := serviceLocator;
-end;
-
-function TServiceLocator.GetServiceLocator: IServiceLocator;
-begin
-  if fServiceLocator = nil then
-    raise EInvalidOperation.Create(SServiceLocatorNotInitialized);
-
-  Result := fServiceLocator;
-end;
-
-function TServiceLocator.HasService(const name: string): Boolean;
-begin
-  Result := GetServiceLocator.HasService(name);
-end;
-
-function TServiceLocator.HasService(serviceType: PTypeInfo): Boolean;
-begin
-  Result := GetServiceLocator.HasService(serviceType);
-end;
-
-function TServiceLocator.Resolve(serviceType: PTypeInfo): TValue;
-begin
-  Result := GetServiceLocator.Resolve(serviceType);
-end;
-
-function TServiceLocator.Resolve<T>: T;
-var
-  value: TValue;
-begin
-  value := Resolve(TypeInfo(T));
-  Result := value.AsType<T>;
-end;
-
-function TServiceLocator.Resolve(const name: string): TValue;
-begin
-  Result := GetServiceLocator.Resolve(name);
-end;
-
-function TServiceLocator.Resolve<T>(const name: string): T;
-var
-  value: TValue;
-begin
-  value := Resolve(name);
-  Result := value.AsType<T>;
-end;
-
-function TServiceLocator.ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
-begin
-  Result := GetServiceLocator.ResolveAll(serviceType);
-end;
-
-function TServiceLocator.ResolveAll<TServiceType>: TArray<TServiceType>;
-var
-  services: TArray<TValue>;
-  i: Integer;
-begin
-  services := ResolveAll(TypeInfo(TServiceType));
-  SetLength(Result, Length(services));
-  for i := 0 to High(Result) do
-  begin
-    Result[i] := services[i].AsType<TServiceType>;
-  end;
-end;
-
-procedure TServiceLocator.Release(var instance: TObject);
-begin
-  GetServiceLocator.Release(instance);
-end;
-
-procedure TServiceLocator.Release(var instance: IInterface);
-begin
-  GetServiceLocator.Release(instance);
 end;
 
 {$ENDREGION}

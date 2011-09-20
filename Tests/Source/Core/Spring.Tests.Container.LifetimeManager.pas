@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Tests.DI.LifetimeManager;
+unit Spring.Tests.Container.LifetimeManager;
 
 interface
 
@@ -32,8 +32,8 @@ uses
   SysUtils,
   TypInfo,
   Spring,
-  Spring.DI.Core,
-  Spring.DI.LifetimeManager;
+  Spring.Container.Core,
+  Spring.Container.LifetimeManager;
 
 type
   TMockContext = class(TInterfacedObject, IContainerContext)
