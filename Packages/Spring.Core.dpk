@@ -78,7 +78,8 @@ contains
   Spring.Services.Logging in '..\Source\Core\Services\Spring.Services.Logging.pas',
   Spring.Services in '..\Source\Core\Services\Spring.Services.pas',
   Spring.Configuration in '..\Source\Core\Configuration\Spring.Configuration.pas',
-  Spring.Configuration.Node in '..\Source\Core\Configuration\Spring.Configuration.Node.pas';
+  Spring.Configuration.Node in '..\Source\Core\Configuration\Spring.Configuration.Node.pas',
+  Spring.Configuration.Sources in '..\Source\Core\Configuration\Spring.Configuration.Sources.pas';
 
 end.
 

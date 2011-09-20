@@ -23,52 +23,104 @@
 {***************************************************************************}
 
 /// NOT READY
-unit Spring.Configuration experimental;
-
-{$I Spring.inc}
+unit Spring.Configuration.Sources experimental;
 
 interface
 
 uses
-  Classes,
-  SysUtils,
-  Rtti,
-  Spring,
-  Spring.Collections;
+  XMLIntf,
+  IniFiles,
+  Spring.Configuration;
 
 type
-  IConfigurationNode = interface;
-
-  IConfigurationNodes = IEnumerable<IConfigurationNode>;
-
-  IConfigurationNode = interface
-    ['{E37F5A2C-D792-4FA8-9DB7-A00FE0D7E76D}']
-    {$REGION 'Property Getters & Setters'}
-      function GetName: string;
-      function GetAttributes: IDictionary<string, string>;
-      function GetChildrens: IList<IConfigurationNode>;
-    {$ENDREGION}
-    function TryGetAttribute(const name: string; out value: string): Boolean;
-    function FindNode(const nodeName: string): IConfigurationNode;
-    function FindNodes(const nodeName: string): IConfigurationNodes;
-    property Name: string read GetName;
-    property Attributes: IDictionary<string, string> read GetAttributes;
-    property Childrens: IList<IConfigurationNode> read GetChildrens;
-  end;
-
-  IConfiguration = interface(IConfigurationNode)
-    ['{4E459943-9170-417C-B01A-F472B555C4F4}']
-  end;
-
-  IConfigurationSource = interface
-    ['{32FC1D2D-9DBF-4A96-A787-1FCEFAC203AD}']
+  TXmlConfigurationSource = class(TInterfacedObject, IConfigurationSource)
+  private
+    fXml: IXMLDocument;
+  public
+    constructor Create(const fileName: string);
     function TryGetConfiguration(out configuration: IConfiguration): Boolean;
     function TrySetConfiguration(const configuration: IConfiguration): Boolean;
     function Merge(const configuration: IConfiguration): IConfiguration;
   end;
 
-  EConfigurationException = class(Exception);
+  TIniConfigurationSource = class(TInterfacedObject, IConfigurationSource)
+  private
+    fIni: TIniFile;
+  public
+    constructor Create(const fileName: string);
+    function TryGetConfiguration(out configuration: IConfiguration): Boolean;
+    function TrySetConfiguration(const configuration: IConfiguration): Boolean;
+    function Merge(const configuration: IConfiguration): IConfiguration;
+  end;
 
 implementation
+
+uses
+  ActiveX,
+  IOUtils,
+  XMLDoc;
+
+{$REGION 'TXmlConfigurationSource'}
+
+constructor TXmlConfigurationSource.Create(const fileName: string);
+begin
+  inherited Create;
+  fXml := LoadXMLDocument(TPath.GetFullPath(fileName));
+end;
+
+function TXmlConfigurationSource.Merge(
+  const configuration: IConfiguration): IConfiguration;
+begin
+
+end;
+
+function TXmlConfigurationSource.TryGetConfiguration(
+  out configuration: IConfiguration): Boolean;
+begin
+
+end;
+
+function TXmlConfigurationSource.TrySetConfiguration(
+  const configuration: IConfiguration): Boolean;
+begin
+
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TIniConfigurationSource'}
+
+constructor TIniConfigurationSource.Create(const fileName: string);
+begin
+  inherited Create;
+  fIni := TIniFile.Create(TPath.GetFullPath(fileName));
+end;
+
+function TIniConfigurationSource.Merge(
+  const configuration: IConfiguration): IConfiguration;
+begin
+
+end;
+
+function TIniConfigurationSource.TryGetConfiguration(
+  out configuration: IConfiguration): Boolean;
+begin
+
+end;
+
+function TIniConfigurationSource.TrySetConfiguration(
+  const configuration: IConfiguration): Boolean;
+begin
+
+end;
+
+{$ENDREGION}
+
+initialization
+  CoInitialize(nil);
+
+finalization
+  CoUninitialize;
 
 end.

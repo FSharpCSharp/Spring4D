@@ -4,7 +4,7 @@
 {                                                                           }
 {           Copyright (C) 2009-2011 DevJET                                  }
 {                                                                           }
-{           http://www.DevJET.net                                           }
+{           http://www.spring4d.org                                           }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -39,18 +39,18 @@ type
   TConfigurationNode = class(TInterfacedObject, IConfigurationNode)
   private
     fName: string;
-    fChildren: IList<IConfigurationNode>;
+    fChildrens: IList<IConfigurationNode>;
     fAttributes: IDictionary<string, string>;
     function GetName: string;
     function GetAttributes: IDictionary<string, string>;
-    function GetChildren: IList<IConfigurationNode>;
+    function GetChildrens: IList<IConfigurationNode>;
   public
     function TryGetAttribute(const name: string; out value: string): Boolean;
     function FindNode(const nodeName: string): IConfigurationNode;
     function FindNodes(const nodeName: string): IConfigurationNodes;
     property Name: string read GetName;
     property Attributes: IDictionary<string, string> read GetAttributes;
-    property Children: IList<IConfigurationNode> read GetChildren;
+    property Childrens: IList<IConfigurationNode> read GetChildrens;
   end;
 
 implementation
@@ -70,11 +70,11 @@ end;
 
 function TConfigurationNode.FindNode(const nodeName: string): IConfigurationNode;
 begin
-  if Children.IsEmpty then
+  if Childrens.IsEmpty then
   begin
     Exit(nil);
   end;
-  Result := Children.FirstOrDefault(
+  Result := Childrens.FirstOrDefault(
     function(const node: IConfigurationNode): Boolean
     begin
       Result := SameText(node.Name, nodeName);
@@ -84,7 +84,7 @@ end;
 
 function TConfigurationNode.FindNodes(const nodeName: string): IConfigurationNodes;
 begin
-  Result := Children.Where(
+  Result := Childrens.Where(
     function(const node: IConfigurationNode): Boolean
     begin
       Result := SameText(node.Name, nodeName);
@@ -93,8 +93,6 @@ begin
 end;
 
 function TConfigurationNode.GetAttributes: IDictionary<string, string>;
-var
-  i: Integer;
 begin
   if fAttributes = nil then
   begin
@@ -103,13 +101,13 @@ begin
   Result := fAttributes;
 end;
 
-function TConfigurationNode.GetChildren: IList<IConfigurationNode>;
+function TConfigurationNode.GetChildrens: IList<IConfigurationNode>;
 begin
-  if fChildren = nil then
+  if fChildrens = nil then
   begin
-    fChildren := TCollections.CreateList<IConfigurationNode>;
+    fChildrens := TCollections.CreateList<IConfigurationNode>;
   end;
-  Result := fChildren;
+  Result := fChildrens;
 end;
 
 function TConfigurationNode.GetName: string;

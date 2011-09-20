@@ -86,6 +86,7 @@
 			<DCCReference Include="..\Source\Core\Services\Spring.Services.pas"/>
 			<DCCReference Include="..\Source\Core\Configuration\Spring.Configuration.pas"/>
 			<DCCReference Include="..\Source\Core\Configuration\Spring.Configuration.Node.pas"/>
+			<DCCReference Include="..\Source\Core\Configuration\Spring.Configuration.Sources.pas"/>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>
 			</BuildConfiguration>
@@ -138,7 +139,7 @@
 						<VersionInfoKeys Name="ProductName"/>
 						<VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys>
 						<VersionInfoKeys Name="Comments"/>
-						<VersionInfoKeys Name="Last Compile">2011-09-20 19:07</VersionInfoKeys>
+						<VersionInfoKeys Name="Last Compile">2011-09-20 21:30</VersionInfoKeys>
 					</VersionInfoKeys>
 					<Excluded_Packages>
 						<Excluded_Packages Name="$(BDS)\bin\dcloffice2k140.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
