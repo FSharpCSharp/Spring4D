@@ -76,7 +76,9 @@ contains
   Spring.Container.Resolvers in '..\Source\Core\Container\Spring.Container.Resolvers.pas',
   Spring.Container.ResourceStrings in '..\Source\Core\Container\Spring.Container.ResourceStrings.pas',
   Spring.Services.Logging in '..\Source\Core\Services\Spring.Services.Logging.pas',
-  Spring.Services in '..\Source\Core\Services\Spring.Services.pas';
+  Spring.Services in '..\Source\Core\Services\Spring.Services.pas',
+  Spring.Configuration in '..\Source\Core\Configuration\Spring.Configuration.pas',
+  Spring.Configuration.Node in '..\Source\Core\Configuration\Spring.Configuration.Node.pas';
 
 end.
 
