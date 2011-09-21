@@ -43,11 +43,16 @@ uses
   StrUtils,
   TypInfo,
   Types,
-  Registry,
   ShlObj,
   ShellAPI,
   ActiveX,
+  {$IFDEF HAS_UNITSCOPE}
+  System.Win.ComObj,
+  System.Win.Registry,
+  {$ELSE}
   ComObj,
+  Registry
+  {$ENDIF}
   Rtti,
   Generics.Collections,
   Spring,
@@ -2869,7 +2874,11 @@ end;
 
 class function TEnvironment.GetRegisteredOrganization: string;
 begin
-  Result := ComObj.GetRegStringValue(
+  {$IFDEF HAS_UNITSCOPE}
+  Result := System.Win.ComObj.GetRegStringValue(
+  {$ELSE}
+  Result :=ComObj.GetRegStringValue(
+  {$ENDIF}
     GetCurrentVersionKey,
     'RegisteredOrganization',  // DO NOT LOCALIZE
     HKEY_LOCAL_MACHINE
@@ -2878,7 +2887,11 @@ end;
 
 class function TEnvironment.GetRegisteredOwner: string;
 begin
-  Result := ComObj.GetRegStringValue(
+  {$IFDEF HAS_UNITSCOPE}
+  Result := System.Win.ComObj.GetRegStringValue(
+  {$ELSE}
+  Result :=ComObj.GetRegStringValue(
+  {$ENDIF}
     GetCurrentVersionKey,
     'RegisteredOwner',  // DO NOT LOCALIZE
     HKEY_LOCAL_MACHINE
