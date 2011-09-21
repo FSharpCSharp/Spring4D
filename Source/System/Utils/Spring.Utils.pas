@@ -46,13 +46,13 @@ uses
   ShlObj,
   ShellAPI,
   ActiveX,
-  {$IFDEF HAS_UNITSCOPE}
+{$IFDEF HAS_UNITSCOPE}
   System.Win.ComObj,
   System.Win.Registry,
-  {$ELSE}
+{$ELSE}
   ComObj,
-  Registry
-  {$ENDIF}
+  Registry,
+{$ENDIF}
   Rtti,
   Generics.Collections,
   Spring,
