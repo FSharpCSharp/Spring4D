@@ -38,7 +38,7 @@ uses
   Spring.Configuration;
 
 type
-  TConfigurationBase = class abstract(TInterfacedObject, IConfiguration)
+  TConfigurationBase = class abstract(TAggregatedObject, IConfiguration)
   strict private
     fChildrens: IList<IConfiguration>;
     fAttributes: IDictionary<string, TValue>;
@@ -65,7 +65,8 @@ type
     procedure DoSetChildrens(const value: IList<IConfiguration>); override;
     procedure DoSetAttributes(const value: IDictionary<string, TValue>); override;
   public
-    constructor Create(const node: IXmlNode);
+    constructor Create(const node: IXmlNode;
+      const controller: IInterface);
   end;
 
   EConfigurationException = class(Exception);
@@ -121,9 +122,10 @@ end;
 
 {$REGION 'TXmlConfiguration'}
 
-constructor TXmlConfiguration.Create(const node: IXmlNode);
+constructor TXmlConfiguration.Create(const node: IXmlNode;
+  const controller: IInterface);
 begin
-  inherited Create;
+  inherited Create(controller);
   fNode := node;
 end;
 
@@ -156,7 +158,7 @@ end;
 function TXmlConfiguration.GetConfigurationNode(
   const xmlNode: IXmlNode): IConfiguration;
 begin
-  Result := TXmlConfiguration.Create(xmlNode);
+  Result := TXmlConfiguration.Create(xmlNode, Controller);
 end;
 
 function TXmlConfiguration.GetName: string;
