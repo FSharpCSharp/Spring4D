@@ -34,6 +34,7 @@ uses
   TestFramework,
   Spring,
   Spring.Container,
+  Spring.Services,
   Spring.Tests.Container.Components;
 
 type
