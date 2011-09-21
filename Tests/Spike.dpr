@@ -39,31 +39,11 @@ uses
   StrUtils,
   Spring,
   Spring.Collections,
-  Spring.Utils,
-  Spring.Services.Logging,
-  Spring.Logging,
-  Spring.Logging.Appenders,
-  Spring.Logging.Layouts;
-
-var
-  t: IAppender;
-  e: TLoggingEvent;
+  Spring.Utils;
 
 begin
   try
     ReportMemoryLeaksOnShutdown := True;
-
-    GlobalContainer.RegisterComponent<TFileAppender>.Implements<IAppender>('file').AsSingleton;
-    GlobalContainer.RegisterComponent<TConsoleAppender>.Implements<IAppender>('console').AsSingleton;
-    GlobalContainer.RegisterComponent<TColoredConsoleAppender>.Implements<IAppender>('coloredconsole').AsSingleton;
-    GlobalContainer.RegisterComponent<TPatternLayout>.Implements<ILayout>('patternlayout');
-    GlobalContainer.Build;
-
-    t := ServiceLocator.Resolve<IAppender>('coloredconsole');
-    e.Message := 'test';
-    t.Append(e);
-    t := nil;
-    ServiceLocator.Initialize(nil);
     //    Readln(s);
   except
     on E: Exception do
