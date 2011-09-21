@@ -4,7 +4,7 @@
 {                                                                           }
 {           Copyright (C) 2009-2011 DevJET                                  }
 {                                                                           }
-{           http://www.spring4d.org                                         }
+{           http://www.spring4d.org                                           }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -23,38 +23,76 @@
 {***************************************************************************}
 
 /// NOT READY
-unit Spring.Configuration experimental;
-
-{$I Spring.inc}
+unit Spring.Configuration.Adapters experimental;
 
 interface
 
 uses
-  Classes,
-  SysUtils,
-  Rtti,
-  Spring,
-  Spring.Collections;
+  XMLIntf,
+  IniFiles,
+  Spring.Configuration;
 
 type
-  IConfiguration = interface;
+  TXmlConfigurationAdapter = class(TInterfacedObject, IConfiguration)
+  private
+    fXml: IXmlDocument;
+    fRoot: IConfiguration;
+    function GetRoot: IConfiguration;
+  public
+    constructor Create(const fileName: string);
+    property Root: IConfiguration read GetRoot implements IConfiguration;
+  end;
 
-  IConfigurations = IEnumerable<IConfiguration>;
-
-  IConfiguration = interface
-    ['{E37F5A2C-D792-4FA8-9DB7-A00FE0D7E76D}']
-    {$REGION 'Property Getters & Setters'}
-      function GetName: string;
-      function GetAttributes: IDictionary<string, TValue>;
-      function GetChildrens: IList<IConfiguration>;
-    {$ENDREGION}
-    function TryGetAttribute(const name: string; out value: TValue): Boolean;
-    function GetConfiguratioinSection(const nodeName: string): IConfiguration;
-    property Name: string read GetName;
-    property Attributes: IDictionary<string, TValue> read GetAttributes;
-    property Childrens: IList<IConfiguration> read GetChildrens;
+  TIniConfigurationAdapter = class(TInterfacedObject, IConfiguration)
+  private
+    fIni: TIniFile;
+    fRoot: IConfiguration;
+    function GetRoot: IConfiguration;
+  public
+    constructor Create(const fileName: string);
+    property Root: IConfiguration read GetRoot implements IConfiguration;
   end;
 
 implementation
+
+uses
+  IOUtils,
+  XMLDoc,
+  Spring.Configuration.Node;
+
+{$REGION 'TXmlConfigurationAdapter'}
+
+constructor TXmlConfigurationAdapter.Create(const fileName: string);
+begin
+  inherited Create;
+  fXml := LoadXMLDocument(TPath.GetFullPath(fileName));
+end;
+
+function TXmlConfigurationAdapter.GetRoot: IConfiguration;
+begin
+  if fRoot = nil then
+  begin
+    fRoot := TXmlConfiguration.Create(fXml.DocumentElement);
+  end;
+  Result := fRoot;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TIniConfigurationAdapter'}
+
+constructor TIniConfigurationAdapter.Create(const fileName: string);
+begin
+  inherited Create;
+  fIni := TIniFile.Create(TPath.GetFullPath(fileName));
+end;
+
+function TIniConfigurationAdapter.GetRoot: IConfiguration;
+begin
+
+end;
+
+{$ENDREGION}
 
 end.

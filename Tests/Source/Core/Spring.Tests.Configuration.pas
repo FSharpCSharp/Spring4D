@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (C) 2009-2011 DevJET                                  }
+{           Copyright (C) 2009-2010 DevJet                                  }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,39 +22,50 @@
 {                                                                           }
 {***************************************************************************}
 
-/// NOT READY
-unit Spring.Configuration experimental;
-
-{$I Spring.inc}
+unit Spring.Tests.Configuration;
 
 interface
 
 uses
-  Classes,
-  SysUtils,
-  Rtti,
-  Spring,
-  Spring.Collections;
+  TestFramework,
+  Spring.Configuration;
 
 type
-  IConfiguration = interface;
-
-  IConfigurations = IEnumerable<IConfiguration>;
-
-  IConfiguration = interface
-    ['{E37F5A2C-D792-4FA8-9DB7-A00FE0D7E76D}']
-    {$REGION 'Property Getters & Setters'}
-      function GetName: string;
-      function GetAttributes: IDictionary<string, TValue>;
-      function GetChildrens: IList<IConfiguration>;
-    {$ENDREGION}
-    function TryGetAttribute(const name: string; out value: TValue): Boolean;
-    function GetConfiguratioinSection(const nodeName: string): IConfiguration;
-    property Name: string read GetName;
-    property Attributes: IDictionary<string, TValue> read GetAttributes;
-    property Childrens: IList<IConfiguration> read GetChildrens;
+  TTestConfiguration = class(TTestCase)
+  private
+    fConfiguration: IConfiguration;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestAttribute;
   end;
 
 implementation
+
+uses
+  Rtti,
+  Spring.Configuration.Adapters;
+
+{ TTestConfiguration }
+
+procedure TTestConfiguration.SetUp;
+begin
+  inherited;
+  fConfiguration := TXmlConfigurationAdapter.Create('Spring.Tests.config');
+end;
+
+procedure TTestConfiguration.TearDown;
+begin
+  inherited TearDown;
+end;
+
+procedure TTestConfiguration.TestAttribute;
+var
+  value: TValue;
+begin
+  fConfiguration.TryGetAttribute('version', value);
+  CheckEquals('1.1.34.568', value.ToString);
+end;
 
 end.

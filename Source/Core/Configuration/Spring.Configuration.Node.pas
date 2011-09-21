@@ -31,91 +31,146 @@ interface
 uses
   Classes,
   SysUtils,
+  Rtti,
+  XMLIntf,
   Spring,
   Spring.Collections,
   Spring.Configuration;
 
 type
-  TConfigurationNode = class(TInterfacedObject, IConfigurationNode)
-  private
-    fName: string;
-    fChildrens: IList<IConfigurationNode>;
-    fAttributes: IDictionary<string, string>;
-    function GetName: string;
-    function GetAttributes: IDictionary<string, string>;
-    function GetChildrens: IList<IConfigurationNode>;
+  TConfigurationBase = class abstract(TInterfacedObject, IConfiguration)
+  strict private
+    fChildrens: IList<IConfiguration>;
+    fAttributes: IDictionary<string, TValue>;
+    function GetChildrens: IList<IConfiguration>;
+    function GetAttributes: IDictionary<string, TValue>;
+  protected
+    function GetName: string; virtual; abstract;
+    procedure DoSetChildrens(const value: IList<IConfiguration>); virtual; abstract;
+    procedure DoSetAttributes(const value: IDictionary<string, TValue>); virtual; abstract;
   public
-    function TryGetAttribute(const name: string; out value: string): Boolean;
-    function FindNode(const nodeName: string): IConfigurationNode;
-    function FindNodes(const nodeName: string): IConfigurationNodes;
+    function TryGetAttribute(const name: string; out value: TValue): Boolean;
+    function GetConfiguratioinSection(const nodeName: string): IConfiguration;
     property Name: string read GetName;
-    property Attributes: IDictionary<string, string> read GetAttributes;
-    property Childrens: IList<IConfigurationNode> read GetChildrens;
+    property Attributes: IDictionary<string, TValue> read GetAttributes;
+    property Childrens: IList<IConfiguration> read GetChildrens;
   end;
+
+  TXmlConfiguration = class(TConfigurationBase)
+  strict private
+    fNode: IXmlNode;
+    function GetConfigurationNode(const xmlNode: IXmlNode): IConfiguration;
+  protected
+    function GetName: string; override;
+    procedure DoSetChildrens(const value: IList<IConfiguration>); override;
+    procedure DoSetAttributes(const value: IDictionary<string, TValue>); override;
+  public
+    constructor Create(const node: IXmlNode);
+  end;
+
+  EConfigurationException = class(Exception);
 
 implementation
 
 uses
-  IOUtils,
+  ActiveX,
   Variants,
   Generics.Collections;
 
-{$REGION 'TConfigurationNode'}
+{$REGION 'TConfigurationBase'}
 
-function TConfigurationNode.TryGetAttribute(const name: string;
-  out value: string): Boolean;
+function TConfigurationBase.TryGetAttribute(const name: string;
+  out value: TValue): Boolean;
 begin
   Result := Attributes.TryGetValue(name, value);
 end;
 
-function TConfigurationNode.FindNode(const nodeName: string): IConfigurationNode;
+function TConfigurationBase.GetConfiguratioinSection(
+  const nodeName: string): IConfiguration;
 begin
-  if Childrens.IsEmpty then
-  begin
-    Exit(nil);
-  end;
   Result := Childrens.FirstOrDefault(
-    function(const node: IConfigurationNode): Boolean
+    function(const node: IConfiguration): Boolean
     begin
       Result := SameText(node.Name, nodeName);
     end
   );
 end;
 
-function TConfigurationNode.FindNodes(const nodeName: string): IConfigurationNodes;
-begin
-  Result := Childrens.Where(
-    function(const node: IConfigurationNode): Boolean
-    begin
-      Result := SameText(node.Name, nodeName);
-    end
-  );
-end;
-
-function TConfigurationNode.GetAttributes: IDictionary<string, string>;
+function TConfigurationBase.GetAttributes: IDictionary<string, TValue>;
 begin
   if fAttributes = nil then
   begin
-    fAttributes := TCollections.CreateDictionary<string, string>;
+    fAttributes := TCollections.CreateDictionary<string, TValue>;
+    DoSetAttributes(fAttributes);
   end;
   Result := fAttributes;
 end;
 
-function TConfigurationNode.GetChildrens: IList<IConfigurationNode>;
+function TConfigurationBase.GetChildrens: IList<IConfiguration>;
 begin
   if fChildrens = nil then
   begin
-    fChildrens := TCollections.CreateList<IConfigurationNode>;
+    fChildrens := TCollections.CreateList<IConfiguration>;
+    DoSetChildrens(fChildrens);
   end;
   Result := fChildrens;
 end;
 
-function TConfigurationNode.GetName: string;
+{$ENDREGION}
+
+
+{$REGION 'TXmlConfiguration'}
+
+constructor TXmlConfiguration.Create(const node: IXmlNode);
 begin
-  Result := fName;
+  inherited Create;
+  fNode := node;
+end;
+
+procedure TXmlConfiguration.DoSetAttributes(
+  const value: IDictionary<string, TValue>);
+var
+  i: Integer;
+begin
+  with fNode.AttributeNodes do
+  for i := 0 to Count - 1 do
+  begin
+    value.Add(Nodes[i].NodeName, Nodes[i].Text);
+  end;
+end;
+
+procedure TXmlConfiguration.DoSetChildrens(
+  const value: IList<IConfiguration>);
+var
+  node: IConfiguration;
+  i: Integer;
+begin
+  with fNode.ChildNodes do
+    for i := 0 to Count - 1 do
+    begin
+      node := GetConfigurationNode(Nodes[i]);
+      value.Add(node);
+    end;
+end;
+
+function TXmlConfiguration.GetConfigurationNode(
+  const xmlNode: IXmlNode): IConfiguration;
+begin
+  Result := TXmlConfiguration.Create(xmlNode);
+end;
+
+function TXmlConfiguration.GetName: string;
+begin
+  Result := fNode.NodeName;
 end;
 
 {$ENDREGION}
+
+initialization
+  CoInitialize(nil);
+
+finalization
+  CoUninitialize;
 
 end.
 

@@ -8,67 +8,96 @@
   resources were bound to the produced executable.
 */
 
-#define Spring_DI_ResourceStrings_SUnsatisfiedConstructor 65168
-#define Spring_DI_ResourceStrings_SNoSuchMethod 65169
-#define Spring_DI_ResourceStrings_SNoSuchProperty 65170
-#define Spring_DI_ResourceStrings_SNoSuchField 65171
-#define Spring_DI_ResourceStrings_SInjectionTargetNeeded 65172
-#define Spring_DI_ResourceStrings_SUnsatisfiedTarget 65173
-#define Spring_DI_ResourceStrings_SComponentNotFound 65174
-#define Spring_DI_ResourceStrings_SUnexpectedLifetimeType 65175
-#define Spring_DI_ResourceStrings_SActivatorDelegateExpected 65176
-#define ComConst_SOleError 65177
-#define ComConst_SNoMethod 65178
-#define ComConst_SVarNotObject 65179
-#define ComConst_STooManyParams 65180
-#define Spring_ResourceStrings_SWin7Description 65184
-#define Spring_ResourceStrings_SAtLeastTwoElements 65185
-#define Spring_ResourceStrings_SIllegalArgumentQuantity 65186
-#define Spring_DI_ResourceStrings_SNonGuidInterfaceServicesAreNotSupported 65187
-#define Spring_DI_ResourceStrings_SIncompatibleTypes 65188
-#define Spring_DI_ResourceStrings_SDuplicatedName 65189
-#define Spring_DI_ResourceStrings_SCircularDependencyDetected 65190
-#define Spring_DI_ResourceStrings_SCannotResolveDependency 65191
-#define Spring_DI_ResourceStrings_SNoComponentRegistered 65192
-#define Spring_DI_ResourceStrings_SInvalidServiceName 65193
-#define Spring_DI_ResourceStrings_SUnsatisfiedConstructorParameters 65194
-#define Spring_DI_ResourceStrings_SUnsatisfiedMethodParameterTypes 65195
-#define Spring_DI_ResourceStrings_SUnsatisfiedDependency 65196
-#define Spring_DI_ResourceStrings_SUnsatisfiedResolutionArgumentCount 65197
-#define Spring_DI_ResourceStrings_SLifetimeManagerMissing 65198
-#define Spring_DI_ResourceStrings_SUnresovableInjection 65199
-#define Spring_ResourceStrings_SRemovableDescription 65200
-#define Spring_ResourceStrings_SFixedDescription 65201
-#define Spring_ResourceStrings_SNetworkDescription 65202
-#define Spring_ResourceStrings_SCDRomDescription 65203
-#define Spring_ResourceStrings_SRamDescription 65204
-#define Spring_ResourceStrings_SUnknownOSDescription 65205
-#define Spring_ResourceStrings_SWin95Description 65206
-#define Spring_ResourceStrings_SWin98Description 65207
-#define Spring_ResourceStrings_SWinMEDescription 65208
-#define Spring_ResourceStrings_SWinNT351Description 65209
-#define Spring_ResourceStrings_SWinNT40Description 65210
-#define Spring_ResourceStrings_SWinServer2000Description 65211
-#define Spring_ResourceStrings_SWinXPDescription 65212
-#define Spring_ResourceStrings_SWinServer2003Description 65213
-#define Spring_ResourceStrings_SWinVistaDescription 65214
-#define Spring_ResourceStrings_SWinServer2008Description 65215
-#define Spring_ResourceStrings_SIllegalFieldCount 65216
-#define Spring_ResourceStrings_SCannotResetEnumerator 65217
-#define Spring_ResourceStrings_SSequenceIsEmpty 65218
-#define Spring_ResourceStrings_SNoElementSatisfiesCondition 65219
-#define Spring_ResourceStrings_SMoreThanOneElementSatisfied 65220
-#define Spring_ResourceStrings_SSequenceContainsMoreThanOneElement 65221
-#define Spring_ResourceStrings_SCouldNotConvertValue 65222
-#define Spring_ResourceStrings_SEmptySourceTypeKind 65223
-#define Spring_ResourceStrings_SEmptyTargetTypeKind 65224
-#define Spring_ResourceStrings_SCannotModifyReadOnlyValue 65225
-#define Spring_ResourceStrings_SInvalidExpressionPath 65226
-#define Spring_ResourceStrings_SUnexpectedToken 65227
-#define Spring_ResourceStrings_SInvalidExpressionSyntax 65228
-#define Spring_ResourceStrings_SCouldNotFindPath 65229
-#define Spring_ResourceStrings_SUnknownDriveDescription 65230
-#define Spring_ResourceStrings_SNoRootDirectoryDescription 65231
+#define XMLConst_SNoAttributes 65136
+#define XMLConst_SInvalidNodeType 65137
+#define XMLConst_SMismatchedRegItems 65138
+#define XMLConst_SNotSingleTextNode 65139
+#define XMLConst_SNoDOMParseOptions 65140
+#define XMLConst_SMissingItemTag 65141
+#define XMLConst_SNodeReadOnly 65142
+#define XMLConst_SNoRefresh 65143
+#define XMLConst_SMissingFileName 65144
+#define XMLConst_SLine 65145
+#define Spring_Container_ResourceStrings_SComponentNotFound 65152
+#define Spring_Container_ResourceStrings_SUnexpectedLifetimeType 65153
+#define Spring_Container_ResourceStrings_SActivatorDelegateExpected 65154
+#define ComConst_SOleError 65155
+#define ComConst_SNoMethod 65156
+#define ComConst_SVarNotObject 65157
+#define ComConst_STooManyParams 65158
+#define XMLConst_SDuplicateRegistration 65159
+#define XMLConst_SNoMatchingDOMVendor 65160
+#define XMLConst_SNoDOMNodeEx 65161
+#define XMLConst_SDOMNotSupported 65162
+#define XMLConst_SNodeExpected 65163
+#define XMLConst_SMSDOMNotInstalled 65164
+#define XMLConst_SNotActive 65165
+#define XMLConst_SNodeNotFound 65166
+#define XMLConst_SMissingNode 65167
+#define Spring_Container_ResourceStrings_SCircularDependencyDetected 65168
+#define Spring_Container_ResourceStrings_SCannotResolveDependency 65169
+#define Spring_Container_ResourceStrings_SNoComponentRegistered 65170
+#define Spring_Container_ResourceStrings_SInvalidServiceName 65171
+#define Spring_Container_ResourceStrings_SUnsatisfiedConstructorParameters 65172
+#define Spring_Container_ResourceStrings_SUnsatisfiedMethodParameterTypes 65173
+#define Spring_Container_ResourceStrings_SUnsatisfiedDependency 65174
+#define Spring_Container_ResourceStrings_SUnsatisfiedResolutionArgumentCount 65175
+#define Spring_Container_ResourceStrings_SLifetimeManagerMissing 65176
+#define Spring_Container_ResourceStrings_SUnresovableInjection 65177
+#define Spring_Container_ResourceStrings_SUnsatisfiedConstructor 65178
+#define Spring_Container_ResourceStrings_SNoSuchMethod 65179
+#define Spring_Container_ResourceStrings_SNoSuchProperty 65180
+#define Spring_Container_ResourceStrings_SNoSuchField 65181
+#define Spring_Container_ResourceStrings_SInjectionTargetNeeded 65182
+#define Spring_Container_ResourceStrings_SUnsatisfiedTarget 65183
+#define Spring_ResourceStrings_SWin95Description 65184
+#define Spring_ResourceStrings_SWin98Description 65185
+#define Spring_ResourceStrings_SWinMEDescription 65186
+#define Spring_ResourceStrings_SWinNT351Description 65187
+#define Spring_ResourceStrings_SWinNT40Description 65188
+#define Spring_ResourceStrings_SWinServer2000Description 65189
+#define Spring_ResourceStrings_SWinXPDescription 65190
+#define Spring_ResourceStrings_SWinServer2003Description 65191
+#define Spring_ResourceStrings_SWinVistaDescription 65192
+#define Spring_ResourceStrings_SWinServer2008Description 65193
+#define Spring_ResourceStrings_SWin7Description 65194
+#define Spring_ResourceStrings_SAtLeastTwoElements 65195
+#define Spring_ResourceStrings_SIllegalArgumentQuantity 65196
+#define Spring_Container_ResourceStrings_SNonGuidInterfaceServicesAreNotSupported 65197
+#define Spring_Container_ResourceStrings_SIncompatibleTypes 65198
+#define Spring_Container_ResourceStrings_SDuplicatedName 65199
+#define Spring_ResourceStrings_SInvalidExpressionSyntax 65200
+#define Spring_ResourceStrings_SCouldNotFindPath 65201
+#define Spring_ResourceStrings_SIllegalBlockSize 65202
+#define Spring_ResourceStrings_SIllegalKeySize 65203
+#define Spring_ResourceStrings_SIllegalIVSize 65204
+#define Spring_ResourceStrings_SPaddingModeMissing 65205
+#define Spring_ResourceStrings_SInvalidCipherText 65206
+#define Spring_ResourceStrings_SNotSupportedCipherMode 65207
+#define Spring_ResourceStrings_SUnknownDriveDescription 65208
+#define Spring_ResourceStrings_SNoRootDirectoryDescription 65209
+#define Spring_ResourceStrings_SRemovableDescription 65210
+#define Spring_ResourceStrings_SFixedDescription 65211
+#define Spring_ResourceStrings_SNetworkDescription 65212
+#define Spring_ResourceStrings_SCDRomDescription 65213
+#define Spring_ResourceStrings_SRamDescription 65214
+#define Spring_ResourceStrings_SUnknownOSDescription 65215
+#define Spring_ResourceStrings_SNoTypeInfo 65216
+#define Spring_ResourceStrings_STypeParameterShouldBeMethod 65217
+#define Spring_ResourceStrings_SIncorrectFormat 65218
+#define Spring_ResourceStrings_SInvalidDateTime 65219
+#define Spring_ResourceStrings_SIllegalFieldCount 65220
+#define Spring_ResourceStrings_SCannotResetEnumerator 65221
+#define Spring_ResourceStrings_SSequenceIsEmpty 65222
+#define Spring_ResourceStrings_SNoElementSatisfiesCondition 65223
+#define Spring_ResourceStrings_SMoreThanOneElementSatisfied 65224
+#define Spring_ResourceStrings_SSequenceContainsMoreThanOneElement 65225
+#define Spring_ResourceStrings_SCouldNotConvertValue 65226
+#define Spring_ResourceStrings_SEmptySourceTypeKind 65227
+#define Spring_ResourceStrings_SEmptyTargetTypeKind 65228
+#define Spring_ResourceStrings_SCannotModifyReadOnlyValue 65229
+#define Spring_ResourceStrings_SInvalidExpressionPath 65230
+#define Spring_ResourceStrings_SUnexpectedToken 65231
 #define ComStrs_sInsertError 65232
 #define ComStrs_sInvalidOwner 65233
 #define ComStrs_sRichEditInsertError 65234
@@ -79,12 +108,12 @@
 #define Spring_ResourceStrings_SArgumentNullException 65239
 #define Spring_ResourceStrings_SInvalidEnumArgument 65240
 #define Spring_ResourceStrings_SUnexpectedTypeKindArgument 65241
-#define Spring_ResourceStrings_SFileNotFoundException 65242
-#define Spring_ResourceStrings_SNullableTypeHasNoValue 65243
-#define Spring_ResourceStrings_SCannotAssignPointerToNullable 65244
-#define Spring_ResourceStrings_SUnexpectedArgumentLength 65245
-#define Spring_ResourceStrings_SIncorrectFormat 65246
-#define Spring_ResourceStrings_SInvalidDateTime 65247
+#define Spring_ResourceStrings_SInvalidOperationBufferSizeShouldBeSame 65242
+#define Spring_ResourceStrings_SFileNotFoundException 65243
+#define Spring_ResourceStrings_SNullableTypeHasNoValue 65244
+#define Spring_ResourceStrings_SCannotAssignPointerToNullable 65245
+#define Spring_ResourceStrings_SUnexpectedArgumentLength 65246
+#define Spring_ResourceStrings_SServiceLocatorNotInitialized 65247
 #define Consts_SCannotOpenClipboard 65248
 #define Consts_SInvalidMemoSize 65249
 #define Consts_SInvalidPrinterOp 65250
@@ -375,41 +404,48 @@
 #define SysConst_SInvalidOp 65535
 STRINGTABLE
 BEGIN
-	Spring_DI_ResourceStrings_SUnsatisfiedConstructor,	"Unsatisfied constructor."
-	Spring_DI_ResourceStrings_SNoSuchMethod,	"No such method: \"%s\"."
-	Spring_DI_ResourceStrings_SNoSuchProperty,	"No such property: \"%s\"."
-	Spring_DI_ResourceStrings_SNoSuchField,	"No such field: \"%s\"."
-	Spring_DI_ResourceStrings_SInjectionTargetNeeded,	"Injection target needed."
-	Spring_DI_ResourceStrings_SUnsatisfiedTarget,	"Unsatisfied target: \"%s\"."
-	Spring_DI_ResourceStrings_SComponentNotFound,	"Cannot found the component registered."
-	Spring_DI_ResourceStrings_SUnexpectedLifetimeType,	"Unexpected lifetimeType."
-	Spring_DI_ResourceStrings_SActivatorDelegateExpected,	"An activator delegate was expected."
+	XMLConst_SNoAttributes,	"Attributes are not supported on this node type"
+	XMLConst_SInvalidNodeType,	"Invalid node type"
+	XMLConst_SMismatchedRegItems,	"Mismatched paramaters to RegisterChildNodes"
+	XMLConst_SNotSingleTextNode,	"Element \"%s\" does not contain a single text node"
+	XMLConst_SNoDOMParseOptions,	"DOM Implementation does not support IDOMParseOptions"
+	XMLConst_SMissingItemTag,	"ItemTag property is not initialized"
+	XMLConst_SNodeReadOnly,	"Node is readonly"
+	XMLConst_SNoRefresh,	"Refresh is only supported if the FileName or XML properties are set"
+	XMLConst_SMissingFileName,	"FileName cannot be blank"
+	XMLConst_SLine,	"Line"
+	Spring_Container_ResourceStrings_SComponentNotFound,	"Cannot found the component registered."
+	Spring_Container_ResourceStrings_SUnexpectedLifetimeType,	"Unexpected lifetimeType."
+	Spring_Container_ResourceStrings_SActivatorDelegateExpected,	"An activator delegate was expected."
 	ComConst_SOleError,	"OLE error %.8x"
 	ComConst_SNoMethod,	"Method '%s' not supported by automation object"
 	ComConst_SVarNotObject,	"Variant does not reference an automation object"
 	ComConst_STooManyParams,	"Dispatch methods do not support more than 64 parameters"
-	Spring_ResourceStrings_SWin7Description,	"Microsoft Windows 7"
-	Spring_ResourceStrings_SAtLeastTwoElements,	"There must be at least two elements."
-	Spring_ResourceStrings_SIllegalArgumentQuantity,	"Invalid argument \"quantity\": %d."
-	Spring_DI_ResourceStrings_SNonGuidInterfaceServicesAreNotSupported,	"Non-Guid Interface Services are not supported."
-	Spring_DI_ResourceStrings_SIncompatibleTypes,	"The component type \"%s\" is incompatible with the service type \"%s\"."
-	Spring_DI_ResourceStrings_SDuplicatedName,	"Duplicated name found: \"%s\"."
-	Spring_DI_ResourceStrings_SCircularDependencyDetected,	"A circle was detected when trying to resolve the dependency: %s."
-	Spring_DI_ResourceStrings_SCannotResolveDependency,	"Cannot resolve the dependency: %s."
-	Spring_DI_ResourceStrings_SNoComponentRegistered,	"No component was registered for the service type: %s."
-	Spring_DI_ResourceStrings_SInvalidServiceName,	"Invalid service name: \"%s\"."
-	Spring_DI_ResourceStrings_SUnsatisfiedConstructorParameters,	"Unsatisfied parameters for constructor."
-	Spring_DI_ResourceStrings_SUnsatisfiedMethodParameterTypes,	"Unsatisfied parameter types for the method: %s."
-	Spring_DI_ResourceStrings_SUnsatisfiedDependency,	"Unsatisfied dependency for the service type \"%0:s\"."
-	Spring_DI_ResourceStrings_SUnsatisfiedResolutionArgumentCount,	"Unsatisfied resolution argument count."
-	Spring_DI_ResourceStrings_SLifetimeManagerMissing,	"LifetimeTypeManager was expected."
-	Spring_DI_ResourceStrings_SUnresovableInjection,	"Unresovable injection."
-	Spring_ResourceStrings_SRemovableDescription,	"Removable Drive"
-	Spring_ResourceStrings_SFixedDescription,	"Fixed Drive"
-	Spring_ResourceStrings_SNetworkDescription,	"Network Drive"
-	Spring_ResourceStrings_SCDRomDescription,	"CD-Rom Drive"
-	Spring_ResourceStrings_SRamDescription,	"Ram Drive"
-	Spring_ResourceStrings_SUnknownOSDescription,	"Unknown Operating System"
+	XMLConst_SDuplicateRegistration,	"\"%s\" DOMImplementation already registered"
+	XMLConst_SNoMatchingDOMVendor,	"No matching DOM Vendor: \"%s\""
+	XMLConst_SNoDOMNodeEx,	"Selected DOM Vendor does not support this property or method"
+	XMLConst_SDOMNotSupported,	"Property or Method \"%s\" is not supported by DOM Vendor \"%s\""
+	XMLConst_SNodeExpected,	"Node cannot be null"
+	XMLConst_SMSDOMNotInstalled,	"Microsoft MSXML is not installed"
+	XMLConst_SNotActive,	"No active document"
+	XMLConst_SNodeNotFound,	"Node \"%s\" not found"
+	XMLConst_SMissingNode,	"IDOMNode required"
+	Spring_Container_ResourceStrings_SCircularDependencyDetected,	"A circle was detected when trying to resolve the dependency: %s."
+	Spring_Container_ResourceStrings_SCannotResolveDependency,	"Cannot resolve the dependency: %s."
+	Spring_Container_ResourceStrings_SNoComponentRegistered,	"No component was registered for the service type: %s."
+	Spring_Container_ResourceStrings_SInvalidServiceName,	"Invalid service name: \"%s\"."
+	Spring_Container_ResourceStrings_SUnsatisfiedConstructorParameters,	"Unsatisfied parameters for constructor."
+	Spring_Container_ResourceStrings_SUnsatisfiedMethodParameterTypes,	"Unsatisfied parameter types for the method: %s."
+	Spring_Container_ResourceStrings_SUnsatisfiedDependency,	"Unsatisfied dependency for the service type \"%0:s\"."
+	Spring_Container_ResourceStrings_SUnsatisfiedResolutionArgumentCount,	"Unsatisfied resolution argument count."
+	Spring_Container_ResourceStrings_SLifetimeManagerMissing,	"LifetimeTypeManager was expected."
+	Spring_Container_ResourceStrings_SUnresovableInjection,	"Unresovable injection."
+	Spring_Container_ResourceStrings_SUnsatisfiedConstructor,	"Unsatisfied constructor."
+	Spring_Container_ResourceStrings_SNoSuchMethod,	"No such method: \"%s\"."
+	Spring_Container_ResourceStrings_SNoSuchProperty,	"No such property: \"%s\"."
+	Spring_Container_ResourceStrings_SNoSuchField,	"No such field: \"%s\"."
+	Spring_Container_ResourceStrings_SInjectionTargetNeeded,	"Injection target needed."
+	Spring_Container_ResourceStrings_SUnsatisfiedTarget,	"Unsatisfied target: \"%s\"."
 	Spring_ResourceStrings_SWin95Description,	"Microsoft Windows 95"
 	Spring_ResourceStrings_SWin98Description,	"Microsoft Windows 98"
 	Spring_ResourceStrings_SWinMEDescription,	"Microsoft Windows ME"
@@ -420,6 +456,32 @@ BEGIN
 	Spring_ResourceStrings_SWinServer2003Description,	"Microsoft Windows Server 2003"
 	Spring_ResourceStrings_SWinVistaDescription,	"Microsoft Windows Vista"
 	Spring_ResourceStrings_SWinServer2008Description,	"Microsoft Windows Server 2008"
+	Spring_ResourceStrings_SWin7Description,	"Microsoft Windows 7"
+	Spring_ResourceStrings_SAtLeastTwoElements,	"There must be at least two elements."
+	Spring_ResourceStrings_SIllegalArgumentQuantity,	"Invalid argument \"quantity\": %d."
+	Spring_Container_ResourceStrings_SNonGuidInterfaceServicesAreNotSupported,	"Non-Guid Interface Services are not supported."
+	Spring_Container_ResourceStrings_SIncompatibleTypes,	"The component type \"%s\" is incompatible with the service type \"%s\"."
+	Spring_Container_ResourceStrings_SDuplicatedName,	"Duplicated name found: \"%s\"."
+	Spring_ResourceStrings_SInvalidExpressionSyntax,	"Invalid expression syntax %s."
+	Spring_ResourceStrings_SCouldNotFindPath,	"Coould not find expression path %s."
+	Spring_ResourceStrings_SIllegalBlockSize,	"Illegal block size: %d."
+	Spring_ResourceStrings_SIllegalKeySize,	"Illegal key size: %d."
+	Spring_ResourceStrings_SIllegalIVSize,	"Illegal IV size: %d."
+	Spring_ResourceStrings_SPaddingModeMissing,	"Padding mode is missing"
+	Spring_ResourceStrings_SInvalidCipherText,	"Illegal cipher text."
+	Spring_ResourceStrings_SNotSupportedCipherMode,	"The cipher mode \"%s\" is not supported."
+	Spring_ResourceStrings_SUnknownDriveDescription,	"Unknown Drive"
+	Spring_ResourceStrings_SNoRootDirectoryDescription,	"No Root Directory"
+	Spring_ResourceStrings_SRemovableDescription,	"Removable Drive"
+	Spring_ResourceStrings_SFixedDescription,	"Fixed Drive"
+	Spring_ResourceStrings_SNetworkDescription,	"Network Drive"
+	Spring_ResourceStrings_SCDRomDescription,	"CD-Rom Drive"
+	Spring_ResourceStrings_SRamDescription,	"Ram Drive"
+	Spring_ResourceStrings_SUnknownOSDescription,	"Unknown Operating System"
+	Spring_ResourceStrings_SNoTypeInfo,	"No type information found."
+	Spring_ResourceStrings_STypeParameterShouldBeMethod,	"The type parameter T should be instance method."
+	Spring_ResourceStrings_SIncorrectFormat,	"Unable to convert %s."
+	Spring_ResourceStrings_SInvalidDateTime,	"\"%S\" is not a valid date and time."
 	Spring_ResourceStrings_SIllegalFieldCount,	"fieldCount is more than the number of components defined in the current Version object."
 	Spring_ResourceStrings_SCannotResetEnumerator,	"Cannot reset the enumerator."
 	Spring_ResourceStrings_SSequenceIsEmpty,	"This sequence is empty."
@@ -432,10 +494,6 @@ BEGIN
 	Spring_ResourceStrings_SCannotModifyReadOnlyValue,	"Cannot modify read-only value."
 	Spring_ResourceStrings_SInvalidExpressionPath,	"Invalid expression path %s."
 	Spring_ResourceStrings_SUnexpectedToken,	"Unexpected expression part %s."
-	Spring_ResourceStrings_SInvalidExpressionSyntax,	"Invalid expression syntax %s."
-	Spring_ResourceStrings_SCouldNotFindPath,	"Coould not find expression path %s."
-	Spring_ResourceStrings_SUnknownDriveDescription,	"Unknown Drive"
-	Spring_ResourceStrings_SNoRootDirectoryDescription,	"No Root Directory"
 	ComStrs_sInsertError,	"Unable to insert an item"
 	ComStrs_sInvalidOwner,	"Invalid owner"
 	ComStrs_sRichEditInsertError,	"RichEdit line insertion error"
@@ -446,12 +504,12 @@ BEGIN
 	Spring_ResourceStrings_SArgumentNullException,	"EArgumentNullException: %s"
 	Spring_ResourceStrings_SInvalidEnumArgument,	"Invalid enum argument: %s"
 	Spring_ResourceStrings_SUnexpectedTypeKindArgument,	"Unexpected type kind %s for the argument %s."
+	Spring_ResourceStrings_SInvalidOperationBufferSizeShouldBeSame,	"Buffer size should be the same."
 	Spring_ResourceStrings_SFileNotFoundException,	"File not found: %s"
 	Spring_ResourceStrings_SNullableTypeHasNoValue,	"Invalid operation, Nullable type has no value."
 	Spring_ResourceStrings_SCannotAssignPointerToNullable,	"Cannot assigned non-null pointer to nullable type."
 	Spring_ResourceStrings_SUnexpectedArgumentLength,	"Unexpected parameter length."
-	Spring_ResourceStrings_SIncorrectFormat,	"Unable to convert %s."
-	Spring_ResourceStrings_SInvalidDateTime,	"\"%S\" is not a valid date and time."
+	Spring_ResourceStrings_SServiceLocatorNotInitialized,	"The global ServiceLocator has not been initialized."
 	Consts_SCannotOpenClipboard,	"Cannot open clipboard: %s"
 	Consts_SInvalidMemoSize,	"Text exceeds memo capacity"
 	Consts_SInvalidPrinterOp,	"Operation not supported on selected printer"
@@ -742,9 +800,9 @@ BEGIN
 	SysConst_SInvalidOp,	"Invalid floating point operation"
 END
 
-/* c:\program files\embarcadero\rad studio\7.0\lib\Debug\character.res */
-/* c:\program files\embarcadero\rad studio\7.0\lib\Controls.res */
-/* c:\program files\embarcadero\rad studio\7.0\lib\Buttons.res */
-/* c:\program files\embarcadero\rad studio\7.0\Source\DUnit\src\GUITestRunner.DFM */
-/* D:\Sources\Delphi\Spring Framework for Delphi\Tests\Spring.Tests.RES */
-/* D:\Sources\Delphi\Spring Framework for Delphi\Tests\Spring.drf */
+/* c:\program files\embarcadero\rad studio\7.0\lib\Debug\Character.res */
+/* c:\program files\embarcadero\rad studio\7.0\lib\controls.res */
+/* c:\program files\embarcadero\rad studio\7.0\lib\buttons.res */
+/* c:\program files\embarcadero\rad studio\7.0\Source\DUnit\src\GUITestRunner.dfm */
+/* C:\Program Files\Embarcadero\Components\Delphi Spring Framework\Tests\Spring.Tests.res */
+/* C:\Program Files\Embarcadero\Components\Delphi Spring Framework\Tests\Spring.drf */

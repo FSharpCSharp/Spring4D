@@ -49,7 +49,8 @@ uses
   Spring.Tests.Utils in 'Source\System\Spring.Tests.Utils.pas',
   Spring.Tests.ValueConverters in 'Source\System\Spring.Tests.ValueConverters.pas',
   Spring.Tests.Reflection in 'Source\System\Spring.Tests.Reflection.pas',
-  Spring.Tests.Cryptography in 'Source\System\Spring.Tests.Cryptography.pas';
+  Spring.Tests.Cryptography in 'Source\System\Spring.Tests.Cryptography.pas',
+  Spring.Tests.Configuration in 'Source\Core\Spring.Tests.Configuration.pas';
 
 {$R *.RES}
 
@@ -147,6 +148,10 @@ begin
     TTestDirectCircularDependency.Suite,
     TTestCrossedCircularDependency.Suite,
     TTestImplementsAttribute.Suite
+  ]);
+
+  RegisterTests('Spring.Core.Configuration', [
+    TTestConfiguration.Suite
   ]);
 
 //  RegisterTests('Core.Numerics', [
