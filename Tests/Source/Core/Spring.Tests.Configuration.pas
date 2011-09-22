@@ -33,39 +33,62 @@ uses
 type
   TTestConfiguration = class(TTestCase)
   private
+    fSource: IConfigurationSource;
     fConfiguration: IConfiguration;
   protected
     procedure SetUp; override;
     procedure TearDown; override;
   published
-    procedure TestAttribute;
+    procedure TestConfigurationAttribute;
+    procedure TestSection;
+    procedure TestSectionAttribute;
   end;
 
 implementation
 
 uses
   Rtti,
-  Spring.Configuration.Adapters;
+  Spring.Configuration.Sources;
 
 { TTestConfiguration }
 
 procedure TTestConfiguration.SetUp;
 begin
   inherited;
-  fConfiguration := TXmlConfigurationAdapter.Create('Spring.Tests.config');
+  fSource := TXmlConfigurationSource.Create('Spring.Tests.config');
 end;
 
 procedure TTestConfiguration.TearDown;
 begin
+  fSource := nil;
+  fConfiguration := nil;
   inherited TearDown;
 end;
 
-procedure TTestConfiguration.TestAttribute;
+procedure TTestConfiguration.TestConfigurationAttribute;
 var
   value: TValue;
 begin
-  fConfiguration.TryGetAttribute('version', value);
-  CheckEquals('1.1.34.568', value.ToString);
+  fConfiguration := fSource.GetConfiguration('logging');
+  value := fConfiguration.TryGetAttribute('level', value);
+  CheckEquals('info', value.ToString);
+end;
+
+procedure TTestConfiguration.TestSection;
+var
+  value: TValue;
+begin
+  fConfiguration := fSource.GetConfiguration('logging');
+  CheckEquals('verbosity', fConfiguration.GetConfiguratioinSection('verbosity').Name);
+end;
+
+procedure TTestConfiguration.TestSectionAttribute;
+var
+  value: TValue;
+begin
+  fConfiguration := fSource.GetConfiguration('logging');
+  fConfiguration.GetConfiguratioinSection('verbosity').TryGetAttribute('value', value);
+  CheckEquals('12', value.ToString);
 end;
 
 end.

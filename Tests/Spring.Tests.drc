@@ -8,16 +8,6 @@
   resources were bound to the produced executable.
 */
 
-#define XMLConst_SNoAttributes 65136
-#define XMLConst_SInvalidNodeType 65137
-#define XMLConst_SMismatchedRegItems 65138
-#define XMLConst_SNotSingleTextNode 65139
-#define XMLConst_SNoDOMParseOptions 65140
-#define XMLConst_SMissingItemTag 65141
-#define XMLConst_SNodeReadOnly 65142
-#define XMLConst_SNoRefresh 65143
-#define XMLConst_SMissingFileName 65144
-#define XMLConst_SLine 65145
 #define Spring_Container_ResourceStrings_SComponentNotFound 65152
 #define Spring_Container_ResourceStrings_SUnexpectedLifetimeType 65153
 #define Spring_Container_ResourceStrings_SActivatorDelegateExpected 65154
@@ -26,14 +16,9 @@
 #define ComConst_SVarNotObject 65157
 #define ComConst_STooManyParams 65158
 #define XMLConst_SDuplicateRegistration 65159
-#define XMLConst_SNoMatchingDOMVendor 65160
-#define XMLConst_SNoDOMNodeEx 65161
-#define XMLConst_SDOMNotSupported 65162
-#define XMLConst_SNodeExpected 65163
-#define XMLConst_SMSDOMNotInstalled 65164
-#define XMLConst_SNotActive 65165
-#define XMLConst_SNodeNotFound 65166
-#define XMLConst_SMissingNode 65167
+#define XMLConst_SDOMNotSupported 65160
+#define XMLConst_SNodeExpected 65161
+#define XMLConst_SMSDOMNotInstalled 65162
 #define Spring_Container_ResourceStrings_SCircularDependencyDetected 65168
 #define Spring_Container_ResourceStrings_SCannotResolveDependency 65169
 #define Spring_Container_ResourceStrings_SNoComponentRegistered 65170
@@ -404,16 +389,6 @@
 #define SysConst_SInvalidOp 65535
 STRINGTABLE
 BEGIN
-	XMLConst_SNoAttributes,	"Attributes are not supported on this node type"
-	XMLConst_SInvalidNodeType,	"Invalid node type"
-	XMLConst_SMismatchedRegItems,	"Mismatched paramaters to RegisterChildNodes"
-	XMLConst_SNotSingleTextNode,	"Element \"%s\" does not contain a single text node"
-	XMLConst_SNoDOMParseOptions,	"DOM Implementation does not support IDOMParseOptions"
-	XMLConst_SMissingItemTag,	"ItemTag property is not initialized"
-	XMLConst_SNodeReadOnly,	"Node is readonly"
-	XMLConst_SNoRefresh,	"Refresh is only supported if the FileName or XML properties are set"
-	XMLConst_SMissingFileName,	"FileName cannot be blank"
-	XMLConst_SLine,	"Line"
 	Spring_Container_ResourceStrings_SComponentNotFound,	"Cannot found the component registered."
 	Spring_Container_ResourceStrings_SUnexpectedLifetimeType,	"Unexpected lifetimeType."
 	Spring_Container_ResourceStrings_SActivatorDelegateExpected,	"An activator delegate was expected."
@@ -422,14 +397,9 @@ BEGIN
 	ComConst_SVarNotObject,	"Variant does not reference an automation object"
 	ComConst_STooManyParams,	"Dispatch methods do not support more than 64 parameters"
 	XMLConst_SDuplicateRegistration,	"\"%s\" DOMImplementation already registered"
-	XMLConst_SNoMatchingDOMVendor,	"No matching DOM Vendor: \"%s\""
-	XMLConst_SNoDOMNodeEx,	"Selected DOM Vendor does not support this property or method"
 	XMLConst_SDOMNotSupported,	"Property or Method \"%s\" is not supported by DOM Vendor \"%s\""
 	XMLConst_SNodeExpected,	"Node cannot be null"
 	XMLConst_SMSDOMNotInstalled,	"Microsoft MSXML is not installed"
-	XMLConst_SNotActive,	"No active document"
-	XMLConst_SNodeNotFound,	"Node \"%s\" not found"
-	XMLConst_SMissingNode,	"IDOMNode required"
 	Spring_Container_ResourceStrings_SCircularDependencyDetected,	"A circle was detected when trying to resolve the dependency: %s."
 	Spring_Container_ResourceStrings_SCannotResolveDependency,	"Cannot resolve the dependency: %s."
 	Spring_Container_ResourceStrings_SNoComponentRegistered,	"No component was registered for the service type: %s."

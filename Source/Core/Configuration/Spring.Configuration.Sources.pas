@@ -23,7 +23,7 @@
 {***************************************************************************}
 
 /// NOT READY
-unit Spring.Configuration.Adapters experimental;
+unit Spring.Configuration.Sources experimental;
 
 interface
 
@@ -33,24 +33,24 @@ uses
   Spring.Configuration;
 
 type
-  TXmlConfigurationAdapter = class(TInterfacedObject, IConfiguration)
+  TXmlConfigurationSource = class(TInterfacedObject, IConfigurationSource)
   private
     fXml: IXmlDocument;
-    fRoot: IConfiguration;
-    function GetRoot: IConfiguration;
   public
     constructor Create(const fileName: string);
-    property Root: IConfiguration read GetRoot implements IConfiguration;
+    function GetConfiguration(const sectionName: string): IConfiguration;
+    function TryGetConfiguration(const sectionName: string;
+      out configuration: IConfiguration): Boolean;
   end;
 
-  TIniConfigurationAdapter = class(TInterfacedObject, IConfiguration)
+  TIniConfigurationSource = class(TInterfacedObject, IConfigurationSource)
   private
     fIni: TIniFile;
-    fRoot: IConfiguration;
-    function GetRoot: IConfiguration;
   public
     constructor Create(const fileName: string);
-    property Root: IConfiguration read GetRoot implements IConfiguration;
+    function GetConfiguration(const sectionName: string): IConfiguration;
+    function TryGetConfiguration(const sectionName: string;
+      out configuration: IConfiguration): Boolean;
   end;
 
 implementation
@@ -60,35 +60,44 @@ uses
   XMLDoc,
   Spring.Configuration.Node;
 
-{$REGION 'TXmlConfigurationAdapter'}
+{$REGION 'TXmlConfigurationSource'}
 
-constructor TXmlConfigurationAdapter.Create(const fileName: string);
+constructor TXmlConfigurationSource.Create(const fileName: string);
 begin
   inherited Create;
-  fXml := LoadXMLDocument(TPath.GetFullPath(fileName));
 end;
 
-function TXmlConfigurationAdapter.GetRoot: IConfiguration;
+function TXmlConfigurationSource.GetConfiguration(
+  const sectionName: string): IConfiguration;
 begin
-  if fRoot = nil then
-  begin
-    fRoot := TXmlConfiguration.Create(fXml.DocumentElement);
-  end;
-  Result := fRoot;
+
+end;
+
+function TXmlConfigurationSource.TryGetConfiguration(const sectionName: string;
+  out configuration: IConfiguration): Boolean;
+begin
+
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TIniConfigurationAdapter'}
+{$REGION 'TIniConfigurationSource'}
 
-constructor TIniConfigurationAdapter.Create(const fileName: string);
+constructor TIniConfigurationSource.Create(const fileName: string);
 begin
   inherited Create;
   fIni := TIniFile.Create(TPath.GetFullPath(fileName));
 end;
 
-function TIniConfigurationAdapter.GetRoot: IConfiguration;
+function TIniConfigurationSource.GetConfiguration(
+  const sectionName: string): IConfiguration;
+begin
+
+end;
+
+function TIniConfigurationSource.TryGetConfiguration(const sectionName: string;
+  out configuration: IConfiguration): Boolean;
 begin
 
 end;

@@ -38,7 +38,7 @@ uses
 
 type
   IConfiguration = interface;
-
+  IConfigurationSource = interface;
   IConfigurations = IEnumerable<IConfiguration>;
 
   IConfiguration = interface
@@ -53,6 +53,19 @@ type
     property Name: string read GetName;
     property Attributes: IDictionary<string, TValue> read GetAttributes;
     property Childrens: IList<IConfiguration> read GetChildrens;
+  end;
+
+  IConfigurationSource = interface
+    ['{1443C8DF-D07D-4DAC-9509-FB79F375C557}']
+    function GetConfiguration(const sectionName: string): IConfiguration;
+    function TryGetConfiguration(const sectionName: string;
+      out configuration: IConfiguration): Boolean;
+  end;
+
+  IConfigurable = interface
+    ['{FCB399EF-F27C-44E1-BB9C-1723BB1D4830}']
+    procedure Configure(const configuration: IConfiguration);
+    function TryConfigure(const configuration: IConfiguration): Boolean;
   end;
 
 implementation

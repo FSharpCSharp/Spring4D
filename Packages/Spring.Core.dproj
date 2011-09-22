@@ -86,7 +86,7 @@
 			<DCCReference Include="..\Source\Core\Services\Spring.Services.pas"/>
 			<DCCReference Include="..\Source\Core\Configuration\Spring.Configuration.pas"/>
 			<DCCReference Include="..\Source\Core\Configuration\Spring.Configuration.Node.pas"/>
-			<DCCReference Include="..\Source\Core\Configuration\Spring.Configuration.Adapters.pas"/>
+			<DCCReference Include="..\Source\Core\Configuration\Spring.Configuration.Sources.pas"/>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>
 			</BuildConfiguration>

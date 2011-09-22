@@ -32,13 +32,12 @@ uses
   Classes,
   SysUtils,
   Rtti,
-  XMLIntf,
   Spring,
   Spring.Collections,
   Spring.Configuration;
 
 type
-  TConfigurationBase = class abstract(TAggregatedObject, IConfiguration)
+  TConfigurationBase = class abstract(TInterfacedObject, IConfiguration)
   strict private
     fChildrens: IList<IConfiguration>;
     fAttributes: IDictionary<string, TValue>;
@@ -56,26 +55,11 @@ type
     property Childrens: IList<IConfiguration> read GetChildrens;
   end;
 
-  TXmlConfiguration = class(TConfigurationBase)
-  strict private
-    fNode: IXmlNode;
-    function GetConfigurationNode(const xmlNode: IXmlNode): IConfiguration;
-  protected
-    function GetName: string; override;
-    procedure DoSetChildrens(const value: IList<IConfiguration>); override;
-    procedure DoSetAttributes(const value: IDictionary<string, TValue>); override;
-  public
-    constructor Create(const node: IXmlNode;
-      const controller: IInterface);
-  end;
-
   EConfigurationException = class(Exception);
 
 implementation
 
 uses
-  ActiveX,
-  Variants,
   Generics.Collections;
 
 {$REGION 'TConfigurationBase'}
@@ -118,61 +102,6 @@ begin
 end;
 
 {$ENDREGION}
-
-
-{$REGION 'TXmlConfiguration'}
-
-constructor TXmlConfiguration.Create(const node: IXmlNode;
-  const controller: IInterface);
-begin
-  inherited Create(controller);
-  fNode := node;
-end;
-
-procedure TXmlConfiguration.DoSetAttributes(
-  const value: IDictionary<string, TValue>);
-var
-  i: Integer;
-begin
-  with fNode.AttributeNodes do
-  for i := 0 to Count - 1 do
-  begin
-    value.Add(Nodes[i].NodeName, Nodes[i].Text);
-  end;
-end;
-
-procedure TXmlConfiguration.DoSetChildrens(
-  const value: IList<IConfiguration>);
-var
-  node: IConfiguration;
-  i: Integer;
-begin
-  with fNode.ChildNodes do
-    for i := 0 to Count - 1 do
-    begin
-      node := GetConfigurationNode(Nodes[i]);
-      value.Add(node);
-    end;
-end;
-
-function TXmlConfiguration.GetConfigurationNode(
-  const xmlNode: IXmlNode): IConfiguration;
-begin
-  Result := TXmlConfiguration.Create(xmlNode, Controller);
-end;
-
-function TXmlConfiguration.GetName: string;
-begin
-  Result := fNode.NodeName;
-end;
-
-{$ENDREGION}
-
-initialization
-  CoInitialize(nil);
-
-finalization
-  CoUninitialize;
 
 end.
 
