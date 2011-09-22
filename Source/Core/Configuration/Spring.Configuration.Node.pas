@@ -39,20 +39,20 @@ uses
 type
   TConfigurationBase = class abstract(TInterfacedObject, IConfiguration)
   strict private
-    fChildrens: IList<IConfiguration>;
+    fChildren: IList<IConfiguration>;
     fAttributes: IDictionary<string, TValue>;
-    function GetChildrens: IList<IConfiguration>;
+    function GetChildren: IList<IConfiguration>;
     function GetAttributes: IDictionary<string, TValue>;
   protected
     function GetName: string; virtual; abstract;
-    procedure DoSetChildrens(const value: IList<IConfiguration>); virtual; abstract;
+    procedure DoSetChildren(const value: IList<IConfiguration>); virtual; abstract;
     procedure DoSetAttributes(const value: IDictionary<string, TValue>); virtual; abstract;
   public
     function TryGetAttribute(const name: string; out value: TValue): Boolean;
     function GetConfiguratioinSection(const nodeName: string): IConfiguration;
     property Name: string read GetName;
     property Attributes: IDictionary<string, TValue> read GetAttributes;
-    property Childrens: IList<IConfiguration> read GetChildrens;
+    property Children: IList<IConfiguration> read GetChildren;
   end;
 
   EConfigurationException = class(Exception);
@@ -73,7 +73,7 @@ end;
 function TConfigurationBase.GetConfiguratioinSection(
   const nodeName: string): IConfiguration;
 begin
-  Result := Childrens.FirstOrDefault(
+  Result := Children.FirstOrDefault(
     function(const node: IConfiguration): Boolean
     begin
       Result := SameText(node.Name, nodeName);
@@ -91,14 +91,14 @@ begin
   Result := fAttributes;
 end;
 
-function TConfigurationBase.GetChildrens: IList<IConfiguration>;
+function TConfigurationBase.GetChildren: IList<IConfiguration>;
 begin
-  if fChildrens = nil then
+  if fChildren = nil then
   begin
-    fChildrens := TCollections.CreateList<IConfiguration>;
-    DoSetChildrens(fChildrens);
+    fChildren := TCollections.CreateList<IConfiguration>;
+    DoSetChildren(fChildren);
   end;
-  Result := fChildrens;
+  Result := fChildren;
 end;
 
 {$ENDREGION}
