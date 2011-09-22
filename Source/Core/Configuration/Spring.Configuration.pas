@@ -46,13 +46,13 @@ type
     {$REGION 'Property Getters & Setters'}
       function GetName: string;
       function GetAttributes: IDictionary<string, TValue>;
-      function GetChildrens: IList<IConfiguration>;
+      function GetChildren: IList<IConfiguration>;
     {$ENDREGION}
     function TryGetAttribute(const name: string; out value: TValue): Boolean;
     function GetConfiguratioinSection(const nodeName: string): IConfiguration;
     property Name: string read GetName;
     property Attributes: IDictionary<string, TValue> read GetAttributes;
-    property Childrens: IList<IConfiguration> read GetChildrens;
+    property Children: IList<IConfiguration> read GetChildren;
   end;
 
   IConfigurationSource = interface
