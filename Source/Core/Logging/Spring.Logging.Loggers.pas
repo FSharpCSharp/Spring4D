@@ -534,7 +534,7 @@ end;
 
 constructor TRootLogger.Create(const repository: ILoggerManager);
 begin
-  inherited Create(repository, 'Root');
+  inherited Create(repository, 'root');
   SetLevel(TLevel.Debug);
 end;
 

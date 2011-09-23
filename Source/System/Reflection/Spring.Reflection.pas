@@ -163,6 +163,7 @@ type
   public
     class function CreateInstance(instanceType: TRttiInstanceType): TObject; overload; static;
     class function CreateInstance(const typeName: string): TObject; overload; static;
+    class function CreateInstance(const typeInfo: PTypeInfo): TObject; overload; static;
     class function CreateInstance(instanceType: TRttiInstanceType;
       constructorMethod: TRttiMethod; const arguments: array of TValue): TObject; overload; static;
   end;
@@ -628,12 +629,34 @@ begin
   end;
 end;
 
+class function TActivator.CreateInstance(const typeInfo: PTypeInfo): TObject;
+var
+  context: TRttiContext;
+  typeObj: TRttiType;
+begin
+  TArgument.CheckNotNull(typeInfo, 'typeInfo');
+
+  Result := nil;
+  context := TRttiContext.Create;
+  try
+    typeObj := context.GetType(typeInfo);
+    if not (typeObj is TRttiInstanceType) then
+    begin
+      Exit;
+    end;
+    Result := TActivator.CreateInstance(TRttiInstanceType(typeObj));
+  finally
+    context.Free;
+  end;
+end;
+
 class function TActivator.CreateInstance(
   instanceType: TRttiInstanceType): TObject;
 var
   method: TRttiMethod;
 begin
   TArgument.CheckNotNull(instanceType, 'instanceType');
+
   Result := nil;
   for method in instanceType.GetMethods do
   begin

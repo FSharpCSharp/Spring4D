@@ -39,7 +39,6 @@ uses
 type
   IConfiguration = interface;
   IConfigurationSource = interface;
-  IConfigurations = IEnumerable<IConfiguration>;
 
   IConfiguration = interface
     ['{E37F5A2C-D792-4FA8-9DB7-A00FE0D7E76D}']
@@ -68,8 +67,10 @@ type
   IConfigurable = interface
     ['{FCB399EF-F27C-44E1-BB9C-1723BB1D4830}']
     procedure Configure(const configuration: IConfiguration);
-    function TryConfigure(const configuration: IConfiguration): Boolean;
+//    function TryConfigure(const configuration: IConfiguration): Boolean;
   end;
+
+  IConfigurations = IEnumerable<IConfiguration>;
 
 implementation
 

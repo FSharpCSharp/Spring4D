@@ -250,7 +250,7 @@ end;
 
 procedure TAppenderBase.SetName(const value: string);
 begin
-  fName := name;
+  fName := value;
 end;
 
 procedure TAppenderBase.SetThreshold(const value: TLevel);
@@ -461,5 +461,12 @@ begin
 end;
 
 {$ENDREGION}
+
+initialization
+  // Hack Skills (TEMP)
+  TConsoleAppender.ClassName;
+  TColoredConsoleAppender.ClassName;
+  TOutputDebugStringAppender.ClassName;
+  TFileAppender.ClassName;
 
 end.

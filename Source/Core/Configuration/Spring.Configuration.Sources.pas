@@ -28,6 +28,7 @@ unit Spring.Configuration.Sources experimental;
 interface
 
 uses
+  ActiveX,
   XMLIntf,
   IniFiles,
   Spring.Configuration;
@@ -151,5 +152,11 @@ begin
 end;
 
 {$ENDREGION}
+
+initialization
+  OleInitialize(nil);
+
+finalization
+  OleUninitialize;
 
 end.

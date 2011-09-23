@@ -50,7 +50,8 @@ uses
   Spring.Tests.ValueConverters in 'Source\System\Spring.Tests.ValueConverters.pas',
   Spring.Tests.Reflection in 'Source\System\Spring.Tests.Reflection.pas',
   Spring.Tests.Cryptography in 'Source\System\Spring.Tests.Cryptography.pas',
-  Spring.Tests.Configuration in 'Source\Core\Spring.Tests.Configuration.pas';
+  Spring.Tests.Configuration in 'Source\Core\Spring.Tests.Configuration.pas',
+  Spring.Tests.Logging in 'Source\Core\Spring.Tests.Logging.pas';
 
 {$R *.RES}
 
@@ -152,6 +153,10 @@ begin
 
   RegisterTests('Spring.Core.Configuration', [
     TTestConfiguration.Suite
+  ]);
+
+  RegisterTests('Spring.Core.Logging', [
+     TTestLoggingConfig.Suite
   ]);
 
 //  RegisterTests('Core.Numerics', [

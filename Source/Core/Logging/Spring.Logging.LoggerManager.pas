@@ -35,13 +35,14 @@ uses
   Spring,
   Spring.Collections,
   Spring.Services.Logging,
-  Spring.Logging.Core;
+  Spring.Logging.Core,
+  Spring.Configuration;
 
 type
   /// <summary>
   /// Hierarchical organization of loggers.
   /// </summary>
-  TLoggerManager = class(TInterfacedObject, ILoggerManager, ILoggerFactory)
+  TLoggerManager = class(TInterfacedObject, ILoggerManager, ILoggerFactory, IConfigurable)
   private
     fLoggers: IDictionary<string, ILogger>;
     fAppenders: IList<IAppender>;
@@ -68,6 +69,7 @@ type
   public
     constructor Create;
     destructor Destroy; override;
+    procedure Configure(const configuration: IConfiguration);
     procedure SendLoggingEvent(const sender: ILogger; const event: TLoggingEvent);
     procedure AddAppender(const appender: IAppender);
     procedure RemoveAppender(const appender: IAppender);
@@ -98,6 +100,7 @@ implementation
 
 uses
   StrUtils,
+  IOUtils,
   Spring.Reflection,
   Spring.Logging.Utils,
   Spring.Logging.ResourceStrings,
@@ -119,6 +122,115 @@ begin
   fLock := TCriticalSection.Create;
   fThreshold := TLevel.All;
   InitializeLevels;
+end;
+
+// Initial work
+// Process Appenders (Layouts)
+// Process Root Logger
+// Process Customized Loggers
+procedure TLoggerManager.Configure(const configuration: IConfiguration);
+var
+  c: IConfiguration;
+  logger: IHierarchicalLogger;
+  loggerName: string;
+
+  procedure DoAddLayout(const appender: IAppender; const config: IConfiguration);
+  var
+    typeName: string;
+    layout: ILayout;
+    conversionPattern: string;
+    c: IConfiguration;
+  begin
+    typeName := config.Attributes['type'].AsString;
+    layout := CreateLayout(typeName);
+    if layout is TPatternLayout then
+    begin
+      if config.TryGetSection('conversionPattern', c) then
+      begin
+        TPatternLayout(layout).Pattern := c.Attributes['value'].AsString;
+      end;
+    end;
+
+    if appender is TAppenderBase then
+    begin
+      TAppenderBase(appender).Layout := layout;
+    end;
+  end;
+
+  procedure DoAddAppender(const config: IConfiguration);
+  var
+    name: string;
+    typeName: string;
+    fileName: string;
+    appender: IAppender;
+    layoutConfig: IConfiguration;
+  begin
+    name := config.Attributes['name'].AsString;
+    typeName := config.Attributes['type'].AsString;
+    appender := CreateAppender(typeName);
+    appender.Name := name;
+    if appender is TConsoleAppender then
+    else if appender is TColoredConsoleAppender then
+    else if appender is TFileAppender then
+    begin
+      fileName := config.GetSection('file').Attributes['value'].AsString;
+      fileName := TPath.GetFullPath(fileName);
+      TFileAppender(appender).FileName := fileName;
+    end;
+
+    AddAppender(appender);
+    if config.TryGetSection('layout', layoutConfig) then
+    begin
+      DoAddLayout(appender, layoutConfig);
+    end;
+  end;
+
+  procedure ConfigureLogger(const logger: IHierarchicalLogger; const config: IConfiguration);
+  var
+    levelConfig: IConfiguration;
+    levelValue: string;
+    level: TLevel;
+    c: IConfiguration;
+    appenderName: string;
+    appender: IAppender;
+  begin
+    if config.TryGetSection('level', levelConfig) then
+    begin
+      levelValue := levelConfig.Attributes['value'].AsString;
+      level := FindLevel(levelValue);
+      logger.Level := level;
+    end;
+    for c in config.Children do
+    begin
+      if c.Name = 'appender-ref' then
+      begin
+        appenderName := c.Attributes['ref'].AsString;
+        appender := FindAppender(appenderName);
+        AddAppenderRef(logger, appender);
+      end;
+    end;
+  end;
+
+begin
+  TArgument.CheckNotNull(configuration, 'configuration');
+
+  for c in configuration.Children do
+  begin
+    if c.Name = 'appender' then
+    begin
+      DoAddAppender(c);
+    end
+    else if c.Name = 'root' then
+    begin
+      ConfigureLogger(Root, c);
+    end
+    else if c.Name = 'logger' then
+    begin
+      loggerName := c.Attributes['name'].AsString;
+      logger := TLogger.Create(Self, loggerName);
+      ConfigureLogger(logger, c);
+    end;
+  end;
 end;
 
 destructor TLoggerManager.Destroy;

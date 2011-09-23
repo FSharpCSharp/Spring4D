@@ -1,0 +1,24 @@
+﻿===========================================
+Spring Enterprise Library for Delphi
+Credits
+===========================================
+
+Comitters
+* Baoquan Zuo (Paul)
+* Leszek Gojniczek (Leo Raster)
+* Nick Hodges
+
+Contributors
+* Ryan Huang
+* Chris Liu
+
+Acknowledgements:
+* Nick Hodges
+* Alexandr Demcenko (Many classes in the Spring.Cryptography is based on his native cryptographical code implementation)
+
+Donations
+* Help & Manual
+http://www.helpandmanual.com
+
+* Blueberry Software
+http://www.bbsoftware.co.uk
