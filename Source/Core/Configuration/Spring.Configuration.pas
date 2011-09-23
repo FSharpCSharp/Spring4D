@@ -34,7 +34,8 @@ uses
   SysUtils,
   Rtti,
   Spring,
-  Spring.Collections;
+  Spring.Collections,
+  Spring.Configuration.PropertyValue;
 
 type
   IConfiguration = interface;
@@ -45,13 +46,14 @@ type
     ['{E37F5A2C-D792-4FA8-9DB7-A00FE0D7E76D}']
     {$REGION 'Property Getters & Setters'}
       function GetName: string;
-      function GetAttributes: IDictionary<string, TValue>;
+      function GetProperties(Key: string): TPropertyValue;
+      procedure SetProperties(Key: string; const Value: TPropertyValue);
       function GetChildren: IList<IConfiguration>;
     {$ENDREGION}
-    function TryGetAttribute(const name: string; out value: TValue): Boolean;
+    function TryGetAttribute(const name: string; out value: TPropertyValue): Boolean;
     function GetConfiguratioinSection(const nodeName: string): IConfiguration;
     property Name: string read GetName;
-    property Attributes: IDictionary<string, TValue> read GetAttributes;
+    property Properties[Key: string]: TPropertyValue read GetProperties write SetProperties;
     property Children: IList<IConfiguration> read GetChildren;
   end;
 
