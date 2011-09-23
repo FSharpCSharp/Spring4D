@@ -25,6 +25,7 @@
 package Spring.Core;
 
 {$R *.res}
+{$IFDEF IMPLICITBUILDING This IFDEF should not be used by users}
 {$ALIGN 8}
 {$ASSERTIONS ON}
 {$BOOLEVAL OFF}
@@ -46,6 +47,7 @@ package Spring.Core;
 {$WRITEABLECONST OFF}
 {$MINENUMSIZE 1}
 {$IMAGEBASE $400000}
+{$ENDIF IMPLICITBUILDING}
 {$DESCRIPTION 'Spring Framework for Delphi Core Library'}
 {$RUNONLY}
 {$IMPLICITBUILD ON}
@@ -79,7 +81,8 @@ contains
   Spring.Services in '..\Source\Core\Services\Spring.Services.pas',
   Spring.Configuration in '..\Source\Core\Configuration\Spring.Configuration.pas',
   Spring.Configuration.Node in '..\Source\Core\Configuration\Spring.Configuration.Node.pas',
-  Spring.Configuration.Sources in '..\Source\Core\Configuration\Spring.Configuration.Sources.pas';
+  Spring.Configuration.Sources in '..\Source\Core\Configuration\Spring.Configuration.Sources.pas',
+  Spring.Configuration.PropertyValue in '..\Source\Core\Configuration\Spring.Configuration.PropertyValue.pas';
 
 end.
 
