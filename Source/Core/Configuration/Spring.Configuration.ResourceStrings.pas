@@ -2,9 +2,9 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (C) 2009-2010 DevJet                                  }
+{           Copyright (C) 2009-2011 DevJET                                  }
 {                                                                           }
-{           http://www.spring4d.org                                         }
+{           http://www.DevJET.net                                           }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -22,71 +22,17 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Tests.Configuration;
+unit Spring.Configuration.ResourceStrings;
+
+{$I Spring.inc}
 
 interface
 
-uses
-  TestFramework,
-  Spring.Configuration;
-
-type
-  TTestConfiguration = class(TTestCase)
-  private
-    fSource: IConfigurationSource;
-    fConfiguration: IConfiguration;
-  protected
-    procedure SetUp; override;
-    procedure TearDown; override;
-  published
-    procedure TestConfigurationAttribute;
-    procedure TestSection;
-    procedure TestSectionAttribute;
-  end;
+resourcestring
+  SConfigurationNotFound = 'Configuration %s not found.';
+  SConfigurationChildrenNotFound = 'Configuration section %s has no children.';
+  SConfigurationAttributeNotFound = 'Configuration section has no &s attribute.';
 
 implementation
-
-uses
-  Rtti,
-  Spring.Configuration.Sources;
-
-{ TTestConfiguration }
-
-procedure TTestConfiguration.SetUp;
-begin
-  inherited;
-  fSource := TXmlConfigurationSource.Create('logging.xml');
-end;
-
-procedure TTestConfiguration.TearDown;
-begin
-  fSource := nil;
-  fConfiguration := nil;
-  inherited TearDown;
-end;
-
-procedure TTestConfiguration.TestConfigurationAttribute;
-var
-  value: TValue;
-begin
-  fConfiguration := fSource.GetConfiguration;
-  value := fConfiguration.TryGetAttribute('debug', value);
-  CheckTrue(value.AsBoolean);
-end;
-
-procedure TTestConfiguration.TestSection;
-begin
-  fConfiguration := fSource.GetConfiguration;
-  CheckEquals('appender', fConfiguration.GetSection('appender').Name);
-end;
-
-procedure TTestConfiguration.TestSectionAttribute;
-var
-  value: TValue;
-begin
-  fConfiguration := fSource.GetConfiguration;
-  fConfiguration.GetSection('appender').TryGetAttribute('name', value);
-  CheckEquals('console', value.ToString);
-end;
 
 end.

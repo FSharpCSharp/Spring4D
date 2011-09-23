@@ -34,8 +34,7 @@ uses
   SysUtils,
   Rtti,
   Spring,
-  Spring.Collections,
-  Spring.Configuration.PropertyValue;
+  Spring.Collections;
 
 type
   IConfiguration = interface;
@@ -46,22 +45,24 @@ type
     ['{E37F5A2C-D792-4FA8-9DB7-A00FE0D7E76D}']
     {$REGION 'Property Getters & Setters'}
       function GetName: string;
-      function GetProperties(Key: string): TPropertyValue;
-      procedure SetProperties(Key: string; const Value: TPropertyValue);
+      procedure SetName(const value: string);
+      function GetAttributes: IDictionary<string, TValue>;
       function GetChildren: IList<IConfiguration>;
     {$ENDREGION}
-    function TryGetAttribute(const name: string; out value: TPropertyValue): Boolean;
-    function GetConfiguratioinSection(const nodeName: string): IConfiguration;
-    property Name: string read GetName;
-    property Properties[Key: string]: TPropertyValue read GetProperties write SetProperties;
+    function TryGetAttribute(const name: string; out value: TValue): Boolean;
+    function GetAttribute(const name: string): TValue;
+    function TryGetSection(const name: string;
+      out section: IConfiguration): Boolean;
+    function GetSection(const name: string): IConfiguration;
+    property Name: string read GetName write SetName;
+    property Attributes: IDictionary<string, TValue> read GetAttributes;
     property Children: IList<IConfiguration> read GetChildren;
   end;
 
   IConfigurationSource = interface
     ['{1443C8DF-D07D-4DAC-9509-FB79F375C557}']
-    function GetConfiguration(const sectionName: string): IConfiguration;
-    function TryGetConfiguration(const sectionName: string;
-      out configuration: IConfiguration): Boolean;
+    function GetConfiguration: IConfiguration;
+    function TryGetConfiguration(out configuration: IConfiguration): Boolean;
   end;
 
   IConfigurable = interface

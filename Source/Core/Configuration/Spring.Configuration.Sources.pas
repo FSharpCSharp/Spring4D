@@ -36,11 +36,11 @@ type
   TXmlConfigurationSource = class(TInterfacedObject, IConfigurationSource)
   private
     fXml: IXmlDocument;
+    function Root: IXmlNode;
   public
     constructor Create(const fileName: string);
-    function GetConfiguration(const sectionName: string): IConfiguration;
-    function TryGetConfiguration(const sectionName: string;
-      out configuration: IConfiguration): Boolean;
+    function GetConfiguration: IConfiguration;
+    function TryGetConfiguration(out configuration: IConfiguration): Boolean;
   end;
 
   TIniConfigurationSource = class(TInterfacedObject, IConfigurationSource)
@@ -48,9 +48,8 @@ type
     fIni: TIniFile;
   public
     constructor Create(const fileName: string);
-    function GetConfiguration(const sectionName: string): IConfiguration;
-    function TryGetConfiguration(const sectionName: string;
-      out configuration: IConfiguration): Boolean;
+    function GetConfiguration: IConfiguration;
+    function TryGetConfiguration(out configuration: IConfiguration): Boolean;
   end;
 
 implementation
@@ -58,25 +57,75 @@ implementation
 uses
   IOUtils,
   XMLDoc,
-  Spring.Configuration.Node;
+  Rtti,
+  Spring,
+  Spring.Collections,
+  Spring.Configuration.Node,
+  Spring.Configuration.ResourceStrings;
 
 {$REGION 'TXmlConfigurationSource'}
 
 constructor TXmlConfigurationSource.Create(const fileName: string);
 begin
   inherited Create;
+  fXml := LoadXMLDocument(TPath.GetFullPath(fileName));
 end;
 
-function TXmlConfigurationSource.GetConfiguration(
-  const sectionName: string): IConfiguration;
+function TXmlConfigurationSource.Root: IXmlNode;
 begin
-
+  Result := fXml.DocumentElement;
 end;
 
-function TXmlConfigurationSource.TryGetConfiguration(const sectionName: string;
-  out configuration: IConfiguration): Boolean;
-begin
+function TXmlConfigurationSource.TryGetConfiguration(out configuration: IConfiguration): Boolean;
+  {$REGION 'TryGetNode recursion function'}
+    function TryGetNode(const section: IXmlNode;
+      out configuration: IConfiguration): Boolean;
+    var
+      i: Integer;
+      node: IXmlNode;
+      key: string;
+      value: TValue;
+      children: IConfiguration;
+    begin
+      Result := Assigned(section);
+      if not Result then
+        Exit;
 
+      with section do
+      begin
+        configuration := TConfiguration.Create;
+        configuration.Name := NodeName;
+
+        for i := 0 to AttributeNodes.Count - 1 do
+        begin
+          key := AttributeNodes[i].NodeName;
+          value := TValue.From<string>(AttributeNodes[i].Text);
+          configuration.Attributes.Add(key, value);
+        end;
+      end;
+
+      node := section.ChildNodes.First;
+      while node <> nil do
+      begin
+        TryGetNode(node, children);
+        configuration.Children.Add(children);
+        node := node.NextSibling;
+      end;
+    end;
+  {$ENDREGION}
+begin
+  try
+    fXml.Active := True;
+    Result := TryGetNode(Root, configuration);
+  finally
+    fXml.Active := False;
+  end;
+end;
+
+function TXmlConfigurationSource.GetConfiguration: IConfiguration;
+begin
+  if not TryGetConfiguration(Result) then
+    raise EConfigurationException.CreateResFmt(@SConfigurationNotFound, ['']);
 end;
 
 {$ENDREGION}
@@ -90,16 +139,15 @@ begin
   fIni := TIniFile.Create(TPath.GetFullPath(fileName));
 end;
 
-function TIniConfigurationSource.GetConfiguration(
-  const sectionName: string): IConfiguration;
+function TIniConfigurationSource.GetConfiguration: IConfiguration;
 begin
-
+  if TryGetConfiguration(Result) then
+    raise ENotImplementedException.CreateResFmt(@SConfigurationNotFound, ['']);
 end;
 
-function TIniConfigurationSource.TryGetConfiguration(const sectionName: string;
-  out configuration: IConfiguration): Boolean;
+function TIniConfigurationSource.TryGetConfiguration(out configuration: IConfiguration): Boolean;
 begin
-
+  Result := False;
 end;
 
 {$ENDREGION}

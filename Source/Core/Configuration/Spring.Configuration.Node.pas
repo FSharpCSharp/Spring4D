@@ -34,28 +34,27 @@ uses
   Rtti,
   Spring,
   Spring.Collections,
-  Spring.Configuration,
-  Spring.Configuration.PropertyValue;
+  Spring.Configuration;
 
 type
-  TConfiguration = class abstract(TInterfacedObject, IConfiguration)
+  TConfiguration = class(TInterfacedObject, IConfiguration)
   strict private
+    fName: string;
     fChildren: IList<IConfiguration>;
-    fProperties: IDictionary<string, TPropertyValue>;
+    fAttributes: IDictionary<string, TValue>;
+    function GetName: string;
     function GetChildren: IList<IConfiguration>;
-    function GetProperties(Key: string): TPropertyValue;
-    function GetPropertiesCollection: IDictionary<string, TPropertyValue>;
-    procedure SetProperties(Key: string; const Value: TPropertyValue);
+    function GetAttributes: IDictionary<string, TValue>;
   protected
-    function GetName: string; virtual; abstract;
-    procedure DoSetChildren(const value: IList<IConfiguration>); virtual; abstract;
-    procedure DoSetAttributes(const value: IDictionary<string, TPropertyValue>); virtual; abstract;
-    property PropertiesCollection: IDictionary<string, TPropertyValue> read GetPropertiesCollection;
+    procedure SetName(const value: string); virtual;
   public
-    function TryGetAttribute(const name: string; out value: TPropertyValue): Boolean;
-    function GetConfiguratioinSection(const nodeName: string): IConfiguration;
+    function TryGetAttribute(const name: string; out value: TValue): Boolean;
+    function GetAttribute(const name: string): TValue;
+    function TryGetSection(const name: string;
+      out section: IConfiguration): Boolean;
+    function GetSection(const name: string): IConfiguration;
     property Name: string read GetName;
-    property Properties[Key: string]: TPropertyValue read GetProperties write SetProperties;
+    property Attributes: IDictionary<string, TValue> read GetAttributes;
     property Children: IList<IConfiguration> read GetChildren;
   end;
 
@@ -64,47 +63,62 @@ type
 implementation
 
 uses
-  Generics.Collections;
+  Spring.Configuration.ResourceStrings;
 
-{$REGION 'TConfigurationBase'}
+{$REGION 'TConfiguration'}
 
 function TConfiguration.TryGetAttribute(const name: string;
-  out value: TPropertyValue): Boolean;
+  out value: TValue): Boolean;
 begin
-  Result := PropertiesCollection.TryGetValue(name, value);
+  Result := Attributes.TryGetValue(name, value);
 end;
 
-function TConfiguration.GetConfiguratioinSection(
-  const nodeName: string): IConfiguration;
+function TConfiguration.GetAttribute(const name: string): TValue;
 begin
-  Result := Children.FirstOrDefault(
-    function(const node: IConfiguration): Boolean
+  if not TryGetAttribute(name, Result) then
+    raise EConfigurationException.CreateResFmt(@SConfigurationAttributeNotFound, [name]);
+end;
+
+function TConfiguration.TryGetSection(const name: string;
+  out section: IConfiguration): Boolean;
+var
+  sections: IEnumerable<IConfiguration>;
+begin
+  sections := Children.Where(
+    function(const configuration: IConfiguration): Boolean
     begin
-      Result := SameText(node.Name, nodeName);
+      Result := SameText(configuration.Name, name);
     end
   );
+  Result := not sections.IsEmpty;
+  if Result then
+    section := sections.First;
 end;
 
-function TConfiguration.GetProperties(Key: string): TPropertyValue;
+function TConfiguration.GetSection(const name: string): IConfiguration;
 begin
-   Result := PropertiesCollection.Items[Key];
+  if not TryGetSection(name, Result) then
+    raise EConfigurationException.CreateResFmt(@SConfigurationChildrenNotFound, [name]);
 end;
 
-function TConfiguration.GetPropertiesCollection: IDictionary<string, TPropertyValue>;
+procedure TConfiguration.SetName(const value: string);
 begin
-  if fProperties = nil then
+  if value <> fName then
+    fName := value;
+end;
+
+function TConfiguration.GetName: string;
+begin
+  Result := fName;
+end;
+
+function TConfiguration.GetAttributes: IDictionary<string, TValue>;
+begin
+  if fAttributes = nil then
   begin
-    fProperties := TCollections.CreateDictionary<string, TPropertyValue>;
-    DoSetAttributes(fProperties);
+    fAttributes := TCollections.CreateDictionary<string, TValue>;
   end;
-
-  Result := fProperties;
-end;
-
-procedure TConfiguration.SetProperties(Key: string;
-  const Value: TPropertyValue);
-begin
-  PropertiesCollection.Items[Key] := Value;
+  Result := fAttributes;
 end;
 
 function TConfiguration.GetChildren: IList<IConfiguration>;
@@ -112,7 +126,6 @@ begin
   if fChildren = nil then
   begin
     fChildren := TCollections.CreateList<IConfiguration>;
-    DoSetChildren(fChildren);
   end;
   Result := fChildren;
 end;
