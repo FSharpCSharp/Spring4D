@@ -475,19 +475,19 @@ end;
 
 function TRegistration.AsSingleton: TRegistration;
 begin
-  GetComponentModel.LifetimeType := ltSingleton;
+  GetComponentModel.LifetimeType := TLifetimeType.Singleton;
   Result := Self;
 end;
 
 function TRegistration.AsSingletonPerThread: TRegistration;
 begin
-  GetComponentModel.LifetimeType := ltSingletonPerThread;
+  GetComponentModel.LifetimeType := TLifetimeType.SingletonPerThread;
   Result := Self;
 end;
 
 function TRegistration.AsTransient: TRegistration;
 begin
-  GetComponentModel.LifetimeType := ltTransient;
+  GetComponentModel.LifetimeType := TLifetimeType.Transient;
   Result := Self;
 end;
 
@@ -496,7 +496,7 @@ var
   model: TComponentModel;
 begin
   model := GetComponentModel;
-  model.LifetimeType := ltPooled;
+  model.LifetimeType := TLifetimeType.Pooled;
   model.MinPoolsize := minPoolSize;
   model.MaxPoolsize := maxPoolSize;
   Result := Self;

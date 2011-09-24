@@ -192,19 +192,19 @@ function TContainer.CreateLifetimeManager(
 begin
   TArgument.CheckNotNull(model, 'model');
   case model.LifetimeType of
-    ltSingleton:
+    TLifetimeType.Singleton:
       begin
         Result := TSingletonLifetimeManager.Create(model);
       end;
-    ltTransient:
+    TLifetimeType.Transient:
       begin
         Result := TTransientLifetimeManager.Create(model);
       end;
-    ltSingletonPerThread:
+    TLifetimeType.SingletonPerThread:
       begin
         Result := TSingletonPerThreadLifetimeManager.Create(model);
       end;
-    ltPooled:
+    TLifetimeType.Pooled:
       begin
         Result := TPooledLifetimeManager.Create(model);
       end;

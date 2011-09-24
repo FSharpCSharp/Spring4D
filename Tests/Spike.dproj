@@ -3,7 +3,7 @@
 			<ProjectGuid>{F0721FD4-FFCB-47C0-BB06-66515BFEE81C}</ProjectGuid>
 			<ProjectVersion>13.4</ProjectVersion>
 			<MainSource>Spike.dpr</MainSource>
-			<Config Condition="'$(Config)'==''">Release</Config>
+			<Config Condition="'$(Config)'==''">Debug</Config>
 			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
 			<Base>True</Base>
 			<AppType>Console</AppType>
@@ -29,7 +29,7 @@
 			<DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;Winapi;$(DCC_Namespace)</DCC_Namespace>
 			<VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
 			<VerInfo_Locale>2052</VerInfo_Locale>
-			<DCC_UnitSearchPath>..\Source\System;..\Source\System\Collections;..\Source\System\Utils;..\Source\System\Cryptography;..\Source\Core\Configuration;..\Source\Core\Logging;..\Source\Core\DI;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UnitSearchPath>..\Source\System;..\Source\System\Collections;..\Source\System\Cryptography;..\Source\System\Utils;..\Source\Core\Container;..\Source\Core\Configuration;..\Source\Core\Logging;..\Source\Core\Services;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DCC_DependencyCheckOutputName>Spike.exe</DCC_DependencyCheckOutputName>
 			<DCC_ImageBase>00400000</DCC_ImageBase>
 			<DCC_Platform>x86</DCC_Platform>

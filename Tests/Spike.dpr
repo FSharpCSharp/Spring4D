@@ -44,6 +44,7 @@ uses
 begin
   try
     ReportMemoryLeaksOnShutdown := True;
+
     //    Readln(s);
   except
     on E: Exception do

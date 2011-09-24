@@ -37,6 +37,8 @@ uses
   SysUtils,
   Spring;
 
+{$SCOPEDENUMS ON}
+
 type
   {$REGION 'Lifetime Type & Attributes'}
 
@@ -51,32 +53,32 @@ type
     ///	<summary>
     ///	  Unknown lifetime type.
     ///	</summary>
-    ltUnknown,
+    Unknown,
 
     ///	<summary>
     ///	  Single instance.
     ///	</summary>
-    ltSingleton,
+    Singleton,
 
     ///	<summary>
     ///	  Different instances.
     ///	</summary>
-    ltTransient,
+    Transient,
 
     ///	<summary>
     ///	  Every thread has a single instance.
     ///	</summary>
-    ltSingletonPerThread,
+    SingletonPerThread,
 
     ///	<summary>
     ///	  Instances are transient except that they are recyclable.
     ///	</summary>
-    ltPooled,
+    Pooled,
 
     ///	<summary>
     ///	  Customized lifetime type.
     ///	</summary>
-    ltCustom
+    Custom
   );
 
   ///	<summary>
@@ -321,6 +323,14 @@ type
     function HasService(serviceType: PTypeInfo; const name: string): Boolean; overload;
   end;
 
+const
+  ltUnknown = TLifetimeType.Unknown deprecated;
+  ltSingleton = TLifetimeType.Singleton deprecated;
+  ltTransient = TLifetimeType.Transient deprecated;
+  ltSingletonPerThread = TLifetimeType.SingletonPerThread deprecated;
+  ltPooled = TLifetimeType.Pooled deprecated;
+  ltCustom = TLifetimeType.Custom deprecated;
+
 /// <summary>
 /// Gets the shared instance of <see cref="TServiceLocator" /> class.
 /// </summary>
@@ -354,21 +364,30 @@ end;
 
 constructor SingletonAttribute.Create;
 begin
-  inherited Create(TLifetimeType.ltSingleton);
+  inherited Create(TLifetimeType.Singleton);
 end;
 
 { TransientAttribute }
 
 constructor TransientAttribute.Create;
 begin
-  inherited Create(TLifetimeType.ltTransient);
+  inherited Create(TLifetimeType.Transient);
 end;
 
 { SingletonPerThreadAttribute }
 
 constructor SingletonPerThreadAttribute.Create;
 begin
-  inherited Create(TLifetimeType.ltSingletonPerThread);
+  inherited Create(TLifetimeType.SingletonPerThread);
+end;
+
+{ PooledAttribute }
+
+constructor PooledAttribute.Create(minPoolSize, maxPoolSize: Integer);
+begin
+  inherited Create(TLifetimeType.Pooled);
+  fMinPoolsize := minPoolSize;
+  fMaxPoolsize := maxPoolsize;
 end;
 
 { InjectionAttribute }
@@ -402,15 +421,6 @@ begin
   inherited Create;
   fServiceType := serviceType;
   fName := name;
-end;
-
-{ PooledAttribute }
-
-constructor PooledAttribute.Create(minPoolSize, maxPoolSize: Integer);
-begin
-  inherited Create(ltPooled);
-  fMinPoolsize := minPoolSize;
-  fMaxPoolsize := maxPoolsize;
 end;
 
 {$ENDREGION}

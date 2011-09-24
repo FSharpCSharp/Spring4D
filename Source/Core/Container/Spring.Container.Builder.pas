@@ -217,10 +217,10 @@ var
 begin
   if model.LifetimeManager <> nil then
   begin
-    model.LifetimeType := ltCustom;
+    model.LifetimeType := TLifetimeType.Custom;
     Exit;
   end;
-  if model.LifetimeType = ltUnknown then
+  if model.LifetimeType = TLifetimeType.Unknown then
   begin
     if model.ComponentType.TryGetCustomAttribute<LifetimeAttributeBase>(attribute) then
     begin
@@ -233,7 +233,7 @@ begin
     end
     else
     begin
-      model.LifetimeType := ltTransient;
+      model.LifetimeType := TLifetimeType.Transient;
     end;
   end;
   model.LifetimeManager := context.CreateLifetimeManager(model);
