@@ -323,6 +323,8 @@ type
     function HasService(serviceType: PTypeInfo; const name: string): Boolean; overload;
   end;
 
+{$REGION 'Deprecated LifetimeType constants'}
+
 const
   ltUnknown = TLifetimeType.Unknown deprecated;
   ltSingleton = TLifetimeType.Singleton deprecated;
@@ -330,6 +332,8 @@ const
   ltSingletonPerThread = TLifetimeType.SingletonPerThread deprecated;
   ltPooled = TLifetimeType.Pooled deprecated;
   ltCustom = TLifetimeType.Custom deprecated;
+
+{$ENDREGION}
 
 /// <summary>
 /// Gets the shared instance of <see cref="TServiceLocator" /> class.

@@ -277,11 +277,11 @@ type
   ///	<summary>Provides version information for a physical file on
   ///	disk.</summary>
   ///	<remarks>
-  ///	  Use the <see cref="GetVersionInfo(string)">GetVersionInfo</see>
+  ///	  <para>Use the <see cref="GetVersionInfo(string)">GetVersionInfo</see>
   ///	  method of this class to get a FileVersionInfo containing
   ///	  information about a file, then look at the properties for information
   ///	  about the file. Call <see cref="ToString"></see> to get
-  ///	  a partial list of properties and their values for this file.
+  ///	  a partial list of properties and their values for this file.</para>
   ///	  <para>The TFileVersionInfo properties are based on version
   ///	  resource information built into the file. Version resources are often
   ///	  built into binary files such as .exe or .dll files; text files do not
@@ -826,32 +826,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TBaseNCalculator (Experimental)'}
-
-  /// <summary>
-  /// Represents a Base-N Calculator.
-  /// </summary>
-  TBaseNCalculator = record
-  private
-    fElements: string;
-    function IndexOf(const digit: Char): Integer;
-  public
-    constructor Create(const elements: string); overload;
-    constructor Create(const elements: array of Char); overload;
-    function Add(const left, right: string): string;
-    function Subtract(const left, right: string): string;
-    function GetNextValue(const value: string): string;
-    function GetQuantity(const left, right: string): Int64;
-    function GetEndNumber(const startNumber: string; quantity: Int64): string;
-    function Compare(const left, right: string): Integer;
-    function ConvertFromDecimal(const value: Int64): string;
-    function ConvertToDecimal(const s: string): Int64;
-    function IsValid(const s: string): Boolean;
-    function FormatNumber(const s: string; len: Integer): string;
-    property Elements: string read fElements;
-  end;
-
-  {$ENDREGION}
+  {$REGION 'TStringMatchers'}
 
   /// <summary>
   /// Provides static methods to create various string predicates.
@@ -866,6 +841,8 @@ type
     class function InArray(const collection: array of string): TPredicate<string>;
     class function InCollection(const collection: IEnumerable<string>): TPredicate<string>; overload;
   end;
+
+  {$ENDREGION}
 
 
   {$REGION 'Routines'}
@@ -3010,227 +2987,6 @@ end;
 class procedure TEnvironment.SetCurrentDirectory(const value: string);
 begin
   Win32Check(Windows.SetCurrentDirectory(PChar(value)));
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TBaseNCalculator'}
-
-constructor TBaseNCalculator.Create(const elements: string);
-begin
-  if Length(elements) < 2 then
-  begin
-    raise EArgumentException.CreateRes(@SAtLeastTwoElements);
-  end;
-  fElements := elements;
-end;
-
-constructor TBaseNCalculator.Create(const elements: array of Char);
-begin
-  Create(elements);
-end;
-
-function TBaseNCalculator.Add(const left, right: string): string;
-var
-  n: Integer;
-  x: string;
-  y: string;
-  p1: Integer;
-  p2: Integer;
-  p: Integer;
-  i: Integer;
-  carried: Boolean;
-begin
-  n := Max(Length(left), Length(right));
-  x := FormatNumber(left, n);
-  y := FormatNumber(right, n);
-  carried := False;
-  Result := '';
-  for i := Length(x) downto 1 do
-  begin
-    p1 := IndexOf(x[i]);
-    p2 := IndexOf(y[i]);
-    if carried then
-    begin
-      Inc(p1);
-    end;
-    p := (p1 + p2) mod Length(fElements);
-    carried := p1 + p2 >= Length(fElements);
-    Result := fElements[p + 1] + Result;
-  end;
-  if carried then
-  begin
-    Result := fElements[2] + Result;
-  end;
-end;
-
-function TBaseNCalculator.Subtract(const left, right: string): string;
-var
-  x: string;
-  y: string;
-  n: Integer;
-  i: Integer;
-  p1, p2, p: Integer;
-  borrowed: Boolean;
-begin
-  n := Max(Length(left), Length(right));
-  x := FormatNumber(left, n);
-  y := FormatNumber(right, n);
-  borrowed := False;
-  for i := n downto 1 do
-  begin
-    p1 := IndexOf(x[i]);
-    p2 := IndexOf(y[i]);
-    if borrowed then
-    begin
-      Dec(p1);
-    end;
-    p := p1 - p2;
-    borrowed := p < 0;
-    if not borrowed then
-    begin
-      Result := fElements[p + 1] + Result;
-    end
-    else
-    begin
-      Result := fElements[Length(fElements) + p + 1] + Result;
-    end;
-  end;
-end;
-
-function TBaseNCalculator.GetQuantity(const left, right: string): Int64;
-var
-  n: Integer;
-  s: string;
-begin
-  n := Compare(left, right);
-  if n = 0 then
-  begin
-    Result := 1;
-  end
-  else if n > 0 then
-  begin
-    s := Subtract(left, right);
-    Result := ConvertToDecimal(s) + 1;
-  end
-  else
-  begin
-    s := Subtract(right, left);
-    Result := ConvertToDecimal(s) + 1;
-  end;
-end;
-
-function TBaseNCalculator.FormatNumber(const s: string; len: Integer): string;
-begin
-  if Length(s) < len then
-  begin
-    Result := StringOfChar(fElements[1], len - Length(s)) + s;
-  end
-  else
-  begin
-    Result := s;
-  end;
-end;
-
-function TBaseNCalculator.GetNextValue(const value: string): string;
-begin
-  Assert(Length(fElements) >= 2);
-  Result := Add(value, fElements[2]);
-end;
-
-function TBaseNCalculator.IndexOf(const digit: Char): Integer;
-begin
-  Result := Pos(digit, fElements);
-  Dec(Result);
-end;
-
-function TBaseNCalculator.Compare(const left, right: string): Integer;
-var
-  n: Integer;
-  x: string;
-  y: string;
-  i: Integer;
-  p1, p2: Integer;
-begin
-  n := Max(Length(left), Length(right));
-  x := FormatNumber(left, n);
-  y := FormatNumber(right, n);
-  Result := 0;
-  for i := 1 to n do
-  begin
-    p1 := IndexOf(x[i]);
-    p2 := IndexOf(y[i]);
-    Result := p1 - p2;
-    if Result <> 0 then
-    begin
-      Break;
-    end;
-  end;
-end;
-
-function TBaseNCalculator.GetEndNumber(const startNumber: string;
-  quantity: Int64): string;
-var
-  s: string;
-begin
-  if quantity > 1 then
-  begin
-    s := ConvertFromDecimal(quantity - 1);
-    Result := Add(startNumber, s);
-  end
-  else if quantity = 1 then
-  begin
-    Result := startNumber;
-  end
-  else
-  begin
-    raise EArgumentException.CreateResFmt(@SIllegalArgumentQuantity, [quantity]);
-  end;
-end;
-
-function TBaseNCalculator.IsValid(const s: string): Boolean;
-var
-  i: Integer;
-begin
-  Result := True;
-  for i := 1 to Length(s) do
-  begin
-    if IndexOf(s[i]) = -1 then
-    begin
-      Result := False;
-      Break;
-    end;
-  end;
-end;
-
-function TBaseNCalculator.ConvertFromDecimal(const value: Int64): string;
-var
-  m, n: Integer;
-begin
-  Result := '';
-  m := value;
-  while m > 0 do
-  begin
-    n := m mod Length(fElements);
-    m := m div Length(fElements);
-    Result := fElements[n + 1] + Result;
-  end;
-end;
-
-function TBaseNCalculator.ConvertToDecimal(const s: string): Int64;
-var
-  i: Integer;
-  p: Integer;
-  base: Integer;
-begin
-  base := Length(fElements);
-  Result := 0;
-  for i := 1 to Length(s)  do
-  begin
-    p := IndexOf(s[i]);
-    Result := Result + p * Trunc(IntPower(base, Length(s) - i));
-  end;
 end;
 
 {$ENDREGION}

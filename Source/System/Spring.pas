@@ -375,7 +375,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'MulticastEvent'}
+  {$REGION 'MulticastEvent (NOT READY)'}
 
   ///	<summary>
   ///	  Represents a multicast event.
