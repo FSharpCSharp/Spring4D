@@ -58,17 +58,10 @@ uses
 procedure RegisterTestCases;
 begin
   RegisterTests('Spring.System', [
-    TTestSplitString.Suite,
-    TTestSplitNullTerminatedStrings.Suite,
-    TTestTryConvertStrToDateTime.Suite,
-    TTestVersion.Suite,
-    TTestEnum.Suite,
-    TTestArgument.Suite,
 //    TTestBuffer.Suite,
 //    TTestEmptyBuffer.Suite,
 //    TTestFiveByteBuffer.Suite,
     TRepeatedTest.Create(TTestNullableInteger.Suite, 3)
-//    TTestDelegate.Suite
   ]);
 
   RegisterTests('Spring.System.Cryptography', [
@@ -93,19 +86,16 @@ begin
   ]);
 
   RegisterTests('Spring.System.Utils', [
-    TTestDecimalCalculator.Suite,
-    TTestHexCalculator.Suite,
-    TTestBaseNineCalculator.Suite
+    TTestSplitString.Suite,
+    TTestSplitNullTerminatedStrings.Suite,
+    TTestTryConvertStrToDateTime.Suite,
+    TTestVersion.Suite,
+    TTestEnum.Suite
   ]);
 
   RegisterTests('Spring.System.Helpers', [
     TTestGuidHelper.Suite
   ]);
-
-//  RegisterTests('Base.Cloning', [
-//    TTestCloning.Suite,
-//    TTestCloneableObject.Suite
-//  ]);
 
   RegisterTests('Spring.System.Reflection.ValueConverters', [
     TTestFromString.Suite,
@@ -158,13 +148,6 @@ begin
   RegisterTests('Spring.Core.Logging', [
      TTestLoggingConfig.Suite
   ]);
-
-//  RegisterTests('Core.Numerics', [
-//    TTestHalf.Suite,
-//    TTestBigCardinal.Suite,
-//    TTestBigInteger.Suite,
-//    TTestBigDecimal.Suite
-//  ]);
 end;
 
 begin

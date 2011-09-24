@@ -30,7 +30,7 @@
 ///	  in future.</note>
 ///	</remarks>
 {$ENDREGION}
-unit Spring.Reflection.ValueExpression;
+unit Spring.Reflection.ValueExpression deprecated 'This namespace will be removed before released V1.0';
 
 interface
 

@@ -29,182 +29,495 @@ unit Spring.Tests.Utils;
 interface
 
 uses
+  TypInfo,
+  Types,
+  SysUtils,
   TestFramework,
+  Spring,
   Spring.Utils;
 
 type
-  TTestDecimalCalculator = class(TTestCase)
+  TTestSplitString = class(TTestCase)
   private
-    fCalculator: TBaseNCalculator;
-  protected
-    procedure SetUp; override;
+    fStrings: TStringDynArray;
   published
-    procedure TestAdd;
-    procedure TestSubtract;
-    procedure TestConvertToDecimal;
-    procedure TestConvertFromDecimal;
-    procedure TestGetQuantity;
-    procedure TestFormatNumber;
+    procedure TestEmptyString;
+    procedure TestOneEntry;
+    procedure TestEmptyEntry;
+    procedure TestMoreEntries;
+    procedure TestRemoveEmptyEntries;
   end;
 
-  TTestHexCalculator = class(TTestCase)
-  private
-    fCalculator: TBaseNCalculator;
-  protected
-    procedure SetUp; override;
+  TTestTryConvertStrToDateTime = class(TTestCase)
   published
-    procedure TestAdd;
-    procedure TestSubtract;
-    procedure TestConvertToDecimal;
-    procedure TestConvertFromDecimal;
+    procedure TestParseDate;
+    procedure TestParseTime;
+    procedure TestParseDateTime;
+    procedure TestFailedCases;
   end;
 
-  /// Base-9: '0'-'9' excepts '4'.
-  TTestBaseNineCalculator = class(TTestCase)
+  TTestSplitNullTerminatedStrings = class(TTestCase)
   private
-    fCalculator: TBaseNCalculator;
-  protected
-    procedure SetUp; override;
+    fStrings: TStringDynArray;
+    fBuffer: TCharArray;
   published
-    procedure TestConvertToDecimal;
-    procedure TestConvertFromDecimal;
-    procedure TestGetQuantity;
-    procedure TestGetEndNumber;
+    procedure TestNil;
+    procedure TestEmpty;
+    procedure TestOneEntry;
+    procedure TestThreeEntries;
+    procedure TestVariousStrings;
+  end;
+
+  TTestVersion = class(TTestCase)
+  published
+    procedure TestCompareTo;
+    procedure TestFromString;
+    procedure TestToString;
+    procedure TestToStringException;
+    procedure TestArgumentException;
+    procedure TestArgumentOutOfRangeException;
+    procedure TestFormatException;
+  end;
+
+  TTestEnum = class(TTestCase)
+  published
+    procedure TestGetNameByEnum;
+    procedure TestGetNameByInteger;
+    procedure TestGetValueByEnum;
+    procedure TestGetValueByName;
+    procedure TestIsValid;
+    procedure TestTryParse;
+    procedure TestParse;
+    procedure TestParseIntegerException;
+    procedure TestParseStringException;
   end;
 
 implementation
 
+uses
+  DateUtils;
 
-{$REGION 'TTestDecimalCalculator'}
 
-procedure TTestDecimalCalculator.SetUp;
+{$REGION 'TTestSplitString'}
+
+procedure TTestSplitString.TestEmptyString;
 begin
-  inherited;
-  fCalculator := TBaseNCalculator.Create('0123456789');
+  fStrings := SplitString('', []);
+  CheckEquals(0, Length(fStrings));
 end;
 
-procedure TTestDecimalCalculator.TestAdd;
+procedure TTestSplitString.TestOneEntry;
 begin
-  CheckEquals('0', fCalculator.Add('0', '0'));
-  CheckEquals('2', fCalculator.Add('1', '1'));
-  CheckEquals('10', fCalculator.Add('9', '1'));
-  CheckEquals('11', fCalculator.Add('9', '2'));
-  CheckEquals('30', fCalculator.Add('19', '11'));
-  CheckEquals(
-    '123456789022222221011111111100',
-    fCalculator.Add('123456789012345678901234567890', '9876542109876543210')
-  );
+  fStrings := SplitString('word', [' ']);
+  CheckEquals(1, Length(fStrings));
+  CheckEquals('word', fStrings[0]);
+
+  fStrings := SplitString('2', [' ']);
+  CheckEquals(1, Length(fStrings));
+  CheckEquals('2', fStrings[0]);
 end;
 
-procedure TTestDecimalCalculator.TestSubtract;
+procedure TTestSplitString.TestMoreEntries;
 begin
-  CheckEquals('0', fCalculator.Subtract('0', '0'));
-  CheckEquals('1', fCalculator.Subtract('9', '8'));
-  CheckEquals('00', fCalculator.Subtract('10', '10'));
-  CheckEquals('07', fCalculator.Subtract('10', '3'));
-  CheckEquals('01', fCalculator.Subtract('10', '09'));
-  CheckEquals('08', fCalculator.Subtract('17', '09'));
-  CheckEquals(
-    '123456789012345678901234567890',
-    fCalculator.Subtract('123456789022222221011111111100', '9876542109876543210')
-  );
+  fStrings := SplitString('one word', [' ']);
+  CheckEquals(2, Length(fStrings));
+  CheckEquals('one', fStrings[0]);
+  CheckEquals('word', fStrings[1]);
+
+  fStrings := SplitString('one two three four', [' ']);
+  CheckEquals(4, Length(fStrings));
+  CheckEquals('one', fStrings[0]);
+  CheckEquals('two', fStrings[1]);
+  CheckEquals('three', fStrings[2]);
+  CheckEquals('four', fStrings[3]);
+
+  fStrings := SplitString('2.0', ['.']);
+  CheckEquals(2, Length(fStrings));
+  CheckEquals('2', fStrings[0]);
+  CheckEquals('0', fStrings[1]);
 end;
 
-procedure TTestDecimalCalculator.TestConvertFromDecimal;
+procedure TTestSplitString.TestEmptyEntry;
 begin
-  CheckEquals('12345', fCalculator.ConvertFromDecimal(12345));
+  fStrings := SplitString('one  word', [' ']);
+  CheckEquals(3, Length(fStrings));
+  CheckEquals('one', fStrings[0]);
+  CheckEquals('', fStrings[1]);
+  CheckEquals('word', fStrings[2]);
+
+  fStrings := SplitString('1..2', ['.']);
+  CheckEquals(3, Length(fStrings));
+  CheckEquals('1', fStrings[0]);
+  CheckEquals('', fStrings[1]);
+  CheckEquals('2', fStrings[2]);
+
+  fStrings := SplitString('12..3..456', ['.']);
+  CheckEquals(5, Length(fStrings));
+  CheckEquals('12', fStrings[0]);
+  CheckEquals('', fStrings[1]);
+  CheckEquals('3', fStrings[2]);
+  CheckEquals('', fStrings[3]);
+  CheckEquals('456', fStrings[4]);
+
+  fStrings := SplitString('.', ['.']);
+  CheckEquals(2, Length(fStrings));
+  CheckEquals('', fStrings[0]);
+  CheckEquals('', fStrings[1]);
+
+  fStrings := SplitString('.1.', ['.']);
+  CheckEquals(3, Length(fStrings));
+  CheckEquals('', fStrings[0]);
+  CheckEquals('1', fStrings[1]);
+  CheckEquals('', fStrings[2]);
 end;
 
-procedure TTestDecimalCalculator.TestConvertToDecimal;
+procedure TTestSplitString.TestRemoveEmptyEntries;
 begin
-  CheckEquals(123456, fCalculator.ConvertToDecimal('123456'));
-end;
+  fStrings := SplitString('1..2', ['.'], True);
+  CheckEquals(2, Length(fStrings));
+  CheckEquals('1', fStrings[0]);
+  CheckEquals('2', fStrings[1]);
 
-procedure TTestDecimalCalculator.TestGetQuantity;
-begin
-  CheckEquals(1, fCalculator.GetQuantity('12345', '12345'));
-  CheckEquals(54321 - 12345 + 1, fCalculator.GetQuantity('54321', '12345'));
-  CheckEquals(1 - 0 + 1, fCalculator.GetQuantity('1', '0'));
-end;
-
-procedure TTestDecimalCalculator.TestFormatNumber;
-begin
-  CheckEquals('000001', fCalculator.FormatNumber('1', 6));
-  CheckEquals('123456', fCalculator.FormatNumber('123456', 6));
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TTestHexCalculator'}
-
-procedure TTestHexCalculator.SetUp;
-begin
-  inherited;
-  fCalculator := TBaseNCalculator.Create('0123456789ABCDEF');
-end;
-
-procedure TTestHexCalculator.TestAdd;
-begin
-  CheckEquals('11', fCalculator.Add('09', '08'));
-  CheckEquals('3E', fCalculator.Add('1F', '1F'));
-end;
-
-procedure TTestHexCalculator.TestSubtract;
-begin
-  CheckEquals('0F', fCalculator.Subtract('10', '01'));
-  CheckEquals('05', fCalculator.Subtract('1F', '1A'));
-end;
-
-procedure TTestHexCalculator.TestConvertFromDecimal;
-begin
-  CheckEquals('FFFF', fCalculator.ConvertFromDecimal(65535));
-end;
-
-procedure TTestHexCalculator.TestConvertToDecimal;
-begin
-  CheckEquals(65535, fCalculator.ConvertToDecimal('FFFF'));
+  fStrings := SplitString('.', ['.'], True);
+  CheckEquals(0, Length(fStrings));
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TTestBaseNineCalculator'}
+{$REGION 'TTestSplitNullTerminatedStrings'}
 
-procedure TTestBaseNineCalculator.SetUp;
+procedure TTestSplitNullTerminatedStrings.TestEmpty;
 begin
-  inherited;
-  fCalculator := TBaseNCalculator.Create('012356789');
+  fBuffer := TCharArray.Create(#0);
+  fStrings := SplitString(PChar(fBuffer));
+  CheckEquals(0, Length(fStrings));
 end;
 
-procedure TTestBaseNineCalculator.TestGetQuantity;
+procedure TTestSplitNullTerminatedStrings.TestNil;
 begin
-  CheckEquals(350, fCalculator.GetQuantity('802009000001', '802009000529'));
-  CheckEquals(350, fCalculator.GetQuantity('802009000530', '802009000968'));
-  CheckEquals(400, fCalculator.GetQuantity('802009000969', '802009001562'));
+  fStrings := SplitString(nil);
+  CheckEquals(0, Length(fStrings));
 end;
 
-procedure TTestBaseNineCalculator.TestConvertFromDecimal;
+procedure TTestSplitNullTerminatedStrings.TestOneEntry;
 begin
-  CheckEquals('5', fCalculator.ConvertFromDecimal(4));
+  fBuffer := TCharArray.Create('C', ':', #0, #0);
+  fStrings := SplitString(PChar(fBuffer));
+  CheckEquals(1, Length(fStrings));
+  CheckEquals('C:', fStrings[0]);
 end;
 
-procedure TTestBaseNineCalculator.TestConvertToDecimal;
+procedure TTestSplitNullTerminatedStrings.TestThreeEntries;
 begin
-  CheckEquals(4, fCalculator.ConvertToDecimal('5'));
+  fBuffer := TCharArray.Create('C', ':', #0, 'D', ':', #0, 'E', ':', #0, #0);
+  fStrings := SplitString(PChar(fBuffer));
+  CheckEquals(3, Length(fStrings));
+  CheckEquals('C:', fStrings[0]);
+  CheckEquals('D:', fStrings[1]);
+  CheckEquals('E:', fStrings[2]);
 end;
 
-procedure TTestBaseNineCalculator.TestGetEndNumber;
+procedure TTestSplitNullTerminatedStrings.TestVariousStrings;
 begin
-  CheckEquals('802009000000', fCalculator.GetEndNumber('802009000000', 1));
-  CheckEquals('802009000001', fCalculator.GetEndNumber('802009000000', 2));
-  CheckEquals('802009000005', fCalculator.GetEndNumber('802009000000', 5));
-  CheckEquals('802009000001', fCalculator.GetEndNumber('802009000001', 1));
-  CheckEquals('802009000002', fCalculator.GetEndNumber('802009000001', 2));
-  CheckEquals('802009000005', fCalculator.GetEndNumber('802009000001', 4));
-  CheckEquals('802009000529', fCalculator.GetEndNumber('802009000001', 350));
-  CheckEquals('802009000968', fCalculator.GetEndNumber('802009000530', 350));
-  CheckEquals('802009001562', fCalculator.GetEndNumber('802009000969', 400));
+  fBuffer := TCharArray.Create('A', 'B', 'C', #0, 'D', 'E', #0, 'F', #0, #0);
+  fStrings := SplitString(PChar(fBuffer));
+  CheckEquals(3, Length(fStrings));
+  CheckEquals('ABC', fStrings[0]);
+  CheckEquals('DE', fStrings[1]);
+  CheckEquals('F', fStrings[2]);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestEnum'}
+
+procedure TTestEnum.TestGetNameByEnum;
+var
+  expectedName: string;
+  actualName: string;
+  item: TDriveType;
+  pInfo: PTypeInfo;
+begin
+  pInfo := TypeInfo(TDriveType);
+  for item := Low(TDriveType) to High(TDriveType) do
+  begin
+    expectedName := GetEnumName(pInfo, Integer(item));
+    actualName := TEnum.GetName<TDriveType>(item);
+    CheckEquals(expectedName, actualName);
+  end;
+end;
+
+procedure TTestEnum.TestGetNameByInteger;
+var
+  expectedName: string;
+  actualName: string;
+  item: TDriveType;
+  pInfo: PTypeInfo;
+begin
+  pInfo := TypeInfo(TDriveType);
+  for item := Low(TDriveType) to High(TDriveType) do
+  begin
+    expectedName := GetEnumName(pInfo, Integer(item));
+    actualName := TEnum.GetName<TDriveType>(Integer(item));
+    CheckEquals(expectedName, actualName);
+  end;
+end;
+
+procedure TTestEnum.TestGetValueByEnum;
+var
+  expectedValue: Integer;
+  actualValue: Integer;
+  item: TDriveType;
+begin
+  for item := Low(TDriveType) to High(TDriveType) do
+  begin
+    expectedValue := Integer(item);
+    actualValue := TEnum.GetValue<TDriveType>(item);
+    CheckEquals(expectedValue, actualValue);
+  end;
+end;
+
+procedure TTestEnum.TestGetValueByName;
+var
+  expectedValue: Integer;
+  actualValue: Integer;
+  item: TDriveType;
+  name: string;
+begin
+  for item := Low(TDriveType) to High(TDriveType) do
+  begin
+    expectedValue := Integer(item);
+    name := GetEnumName(TypeInfo(TDriveType), expectedValue);
+    actualValue := TEnum.GetValue<TDriveType>(name);
+    CheckEquals(expectedValue, actualValue);
+  end;
+end;
+
+procedure TTestEnum.TestIsValid;
+var
+  item: TDriveType;
+begin
+  for item := Low(TDriveType) to High(TDriveType) do
+  begin
+    Check(TEnum.IsValid<TDriveType>(item));
+    Check(TEnum.IsValid<TDriveType>(Integer(item)));
+  end;
+  CheckFalse(TEnum.IsValid<TDriveType>(Integer(Low(TDriveType)) - 1));
+  CheckFalse(TEnum.IsValid<TDriveType>(Integer(High(TDriveType)) + 1));
+end;
+
+procedure TTestEnum.TestParse;
+var
+  item: TDriveType;
+  actual: TDriveType;
+begin
+  for item := Low(TDriveType) to High(TDriveType) do
+  begin
+    actual := TEnum.Parse<TDriveType>(Integer(item));
+    CheckEquals(Integer(item), Integer(actual));
+    actual := TEnum.Parse<TDriveType>(GetEnumName(TypeInfo(TDriveType), Integer(item)));
+    CheckEquals(Integer(item), Integer(actual));
+  end;
+end;
+
+procedure TTestEnum.TestTryParse;
+var
+  driveType: TDriveType;
+begin
+  Check(TEnum.TryParse<TDriveType>(Integer(dtNetwork), driveType));
+  CheckEquals(Integer(dtNetwork), Integer(driveType));
+  Check(TEnum.TryParse<TDriveType>('dtNetwork', driveType));
+  CheckEquals(Integer(dtNetwork), Integer(driveType));
+
+  CheckFalse(TEnum.TryParse<TDriveType>(Integer(Low(TDriveType)) - 1, driveType));
+  CheckFalse(TEnum.TryParse<TDriveType>('dummy', driveType));
+end;
+
+procedure TTestEnum.TestParseIntegerException;
+begin
+  ExpectedException := EFormatException;
+  TEnum.Parse<TDriveType>(Integer(Low(TDriveType))-1);
+end;
+
+procedure TTestEnum.TestParseStringException;
+begin
+  ExpectedException := EFormatException;
+  TEnum.Parse<TDriveType>('dummy');
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestVersion'}
+
+//  Version 1.1 is older than version 1.1.0.
+//  Version 1.1 is older than version 1.1.1.
+//  Version 1.1 is older than version 1.1.2.3.
+//  Version 1.1.2 is older than version 1.1.2.4.
+//  Version 1.2.5 is newer than version 1.2.3.4.
+
+procedure TTestVersion.TestCompareTo;
+var
+  v1, v2: TVersion;
+begin
+  v1 := TVersion.Create('1.1');
+  v2 := TVersion.Create('1.1.0');
+  CheckTrue(v1.CompareTo(v2) < 0);    // v1 is older than v2
+  CheckTrue(v2.CompareTo(v1) > 0);    // v2 is newer than v1
+
+  v1 := TVersion.Create('1.1');
+  v2 := TVersion.Create('1.1.2.3');
+  CheckTrue(v1.CompareTo(v2) < 0);
+  CheckTrue(v2.CompareTo(v1) > 0);
+
+  v1 := TVersion.Create('1.1.2');
+  v2 := TVersion.Create('1.1.2.4');
+  CheckTrue(v1.CompareTo(v2) < 0);
+  CheckTrue(v2.CompareTo(v1) > 0);
+
+  v1 := TVersion.Create('1.1.5');
+  v2 := TVersion.Create('1.1.3.4');
+  CheckTrue(v1.CompareTo(v2) > 0);
+  CheckTrue(v2.CompareTo(v1) < 0);
+
+  v1 := TVersion.Create('1.1.5');
+  v2 := TVersion.Create('1.1.5');
+  CheckTrue(v1.CompareTo(v2) = 0);
+  CheckTrue(v2.CompareTo(v1) = 0);
+end;
+
+procedure TTestVersion.TestFromString;
+var
+  ver: TVersion;
+begin
+  ver := TVersion.Create('1.0');
+  CheckEquals(1, ver.Major);
+  CheckEquals(0, ver.Minor);
+  CheckEquals(-1, ver.Build);
+  CheckEquals(-1, ver.Reversion);
+
+  ver := TVersion.Create('1.1.0');
+  CheckEquals(1, ver.Major);
+  CheckEquals(1, ver.Minor);
+  CheckEquals(0, ver.Build);
+  CheckEquals(-1, ver.Reversion);
+
+  ver := TVersion.Create('1.1.1.0');
+  CheckEquals(1, ver.Major);
+  CheckEquals(1, ver.Minor);
+  CheckEquals(1, ver.Build);
+  CheckEquals(0, ver.Reversion);
+end;
+
+procedure TTestVersion.TestToString;
+var
+  ver: TVersion;
+begin
+  ver := TVersion.Create(1, 0);
+  CheckEquals('1.0', ver.ToString);
+
+  ver := TVersion.Create(1, 0, 6);
+  CheckEquals('1.0.6', ver.ToString);
+  CheckEquals('1.0', ver.ToString(2));
+  CheckEquals('1.0.6', ver.ToString(3));
+
+  ver := TVersion.Create(10, 8, 2608, 8);
+  CheckEquals('10.8.2608.8', ver.ToString);
+  CheckEquals('10.8', ver.ToString(2));
+  CheckEquals('10.8.2608', ver.ToString(3));
+  CheckEquals('10.8.2608.8', ver.ToString(4));
+end;
+
+procedure TTestVersion.TestToStringException;
+var
+  ver: TVersion;
+begin
+  ExpectedException := EArgumentException;
+  ver := TVersion.Create('1.0');
+  ver.ToString(3);
+end;
+
+procedure TTestVersion.TestArgumentException;
+begin
+  ExpectedException := EArgumentException;
+  TVersion.Create('1');
+end;
+
+procedure TTestVersion.TestFormatException;
+begin
+  ExpectedException := EFormatException;
+  TVersion.Create('1.c.d');
+end;
+
+procedure TTestVersion.TestArgumentOutOfRangeException;
+begin
+  ExpectedException := EArgumentOutOfRangeException;
+  TVersion.Create('1.-1.0');
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestTryConvertStrToDateTime'}
+
+procedure TTestTryConvertStrToDateTime.TestParseDate;
+var
+  actual, expected: TDateTime;
+begin
+  expected := EncodeDate(2009, 10, 18);
+
+  CheckTrue(TryConvertStrToDateTime('20091018', 'YYYYMMDD', actual));
+  CheckTrue(SameDateTime(actual, expected));
+
+  CheckTrue(TryConvertStrToDateTime('091018', 'YYMMDD', actual));
+  CheckTrue(SameDateTime(actual, expected));
+
+  CheckTrue(TryConvertStrToDateTime('10-18-2009', 'MM-DD-YYYY', actual));
+  CheckTrue(SameDateTime(actual, expected));
+
+  CheckTrue(TryConvertStrToDateTime(' 2009-10-18 ', 'YYYY-MM-DD', actual));
+  CheckTrue(SameDateTime(actual, expected));
+end;
+
+procedure TTestTryConvertStrToDateTime.TestParseTime;
+var
+  actual, expected: TDateTime;
+begin
+  expected := EncodeTime(12, 10, 18, 35);
+  CheckTrue(TryConvertStrToDateTime('12:10:18.035', 'hh:nn:ss.zzz', actual));
+  CheckTrue(SameDateTime(actual, expected));
+
+  expected := EncodeTime(12, 10, 0, 0);
+  CheckTrue(TryConvertStrToDateTime('12:10 ', 'hh:nn', actual));
+  CheckTrue(SameDateTime(actual, expected));
+end;
+
+procedure TTestTryConvertStrToDateTime.TestParseDateTime;
+var
+  actual, expected: TDateTime;
+begin
+  expected := EncodeDateTime(2009, 10, 18, 12, 30, 59, 200);
+  CheckTrue(TryConvertStrToDateTime('2009-10-18 12:30:59.200', 'YYYY-MM-DD HH:NN:SS.ZZZ', actual));
+  CheckTrue(SameDateTime(actual, expected));
+
+  expected := EncodeDateTime(2009, 10, 18, 12, 30, 59, 200);
+  CheckTrue(TryConvertStrToDateTime('20091018123059200', 'YYYYMMDDHHNNSSZZZ', actual));
+  CheckTrue(SameDateTime(actual, expected));
+end;
+
+procedure TTestTryConvertStrToDateTime.TestFailedCases;
+var
+  value: TDateTime;
+begin
+  CheckFalse(TryConvertStrToDateTime('', 'YYYYMMDD', value));
+  CheckFalse(TryConvertStrToDateTime(' ', 'YYYYMMDD', value));
+  CheckFalse(TryConvertStrToDateTime('2009', 'YYYYMMDD', value));
+  CheckFalse(TryConvertStrToDateTime('2009080', 'YYYYMMDD', value));
+  CheckFalse(TryConvertStrToDateTime('2009080A', 'YYYYMMDD', value));
+  CheckFalse(TryConvertStrToDateTime('200908011230', 'YYYYMMDDHHNNSS', value));
+  CheckFalse(TryConvertStrToDateTime('20090801123007', 'YYYYMMDDHHNNSSZZZ', value));
 end;
 
 {$ENDREGION}
