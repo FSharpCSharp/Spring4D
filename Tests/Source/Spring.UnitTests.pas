@@ -4,7 +4,7 @@
 {                                                                           }
 {           Copyright (C) 2009-2010 DevJet                                  }
 {                                                                           }
-{           http://www.spring4d.org                                         }
+{           http://www.DevJet.net                                           }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -22,72 +22,64 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Tests.Configuration;
+unit Spring.UnitTests;
 
 interface
 
 uses
-  TestFramework,
-  Spring.Configuration,
-  Spring.UnitTests;
+  Rtti,
+  TestFramework;
+
+{$I Spring.inc}
 
 type
-  TTestConfiguration = class(TTestCase)
-  private
-    fSource: IConfigurationSource;
-    fConfiguration: IConfiguration;
-  protected
-    procedure SetUp; override;
-    procedure TearDown; override;
-  published
-    procedure TestConfigurationAttribute;
-    procedure TestSection;
-    procedure TestSectionAttribute;
+  /// <summary>
+  /// Represents a test fixture. By default, All classes inherited from <see cref="TestFramework|TTestCase" />
+  /// will be regarded as a test case. Uses <see cref="IgnoreAttribute" /> to ignore the test case.
+  /// </summary>
+  TestFixtureAttribute = class(TCustomAttribute)
   end;
+
+  IgnoreAttribute = class(TCustomAttribute);
+
+procedure RegisterAllTestCasesByRTTI;
 
 implementation
 
-uses
-  Rtti,
-  Spring.Configuration.Sources;
+type
+  TTestCaseClass = class of TTestCase;
 
-{ TTestConfiguration }
-
-procedure TTestConfiguration.SetUp;
-begin
-  inherited;
-  fSource := TXmlConfigurationSource.Create('logging.xml');
-end;
-
-procedure TTestConfiguration.TearDown;
-begin
-  fSource := nil;
-  fConfiguration := nil;
-  inherited TearDown;
-end;
-
-procedure TTestConfiguration.TestConfigurationAttribute;
+procedure RegisterAllTestCasesByRTTI;
 var
-  value: TValue;
+  context: TRttiContext;
+  t: TRttiType;
+  attr: TCustomAttribute;
+  ignore: Boolean;
 begin
-  fConfiguration := fSource.GetConfiguration;
-  value := fConfiguration.TryGetAttribute('debug', value);
-  CheckTrue(value.AsBoolean);
-end;
+  context := TRttiContext.Create;
+  for t in context.GetTypes do
+  begin
+    if not (t is TRttiInstanceType) or
+      (TRttiInstanceType(t).MetaclassType = TTestCase) or
+      not TRttiInstanceType(t).MetaclassType.InheritsFrom(TTestCase) then
+      Continue;
 
-procedure TTestConfiguration.TestSection;
-begin
-  fConfiguration := fSource.GetConfiguration;
-  CheckEquals('appender', fConfiguration.GetSection('appender').Name);
-end;
+    ignore := False;
+    for attr in t.GetAttributes do
+    begin
+      if attr is IgnoreAttribute then
+      begin
+        ignore := True;
+        Break;
+      end;
+    end;
 
-procedure TTestConfiguration.TestSectionAttribute;
-var
-  value: TValue;
-begin
-  fConfiguration := fSource.GetConfiguration;
-  fConfiguration.GetSection('appender').TryGetAttribute('name', value);
-  CheckEquals('console', value.ToString);
+    if ignore then
+      Continue;
+
+    RegisterTest(TRttiInstanceType(t).MetaclassType.UnitName, TTestCaseClass(TRttiInstanceType(t).MetaclassType).Suite);
+  end;
+  context.Free;
 end;
 
 end.

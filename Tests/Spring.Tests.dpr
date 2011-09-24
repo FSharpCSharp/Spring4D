@@ -22,7 +22,25 @@
 {                                                                           }
 {***************************************************************************}
 
+/// <summary>
+/// Represents the Unit Tests of Spring Enterprise Library for Delphi.
+/// </summary>
+/// <remarks>
+/// The compiler directive {$STRONGLINKTYPES ON} has been introduced since Delphi 2010. By enable this option,
+/// We use the Extended RTTI to register all test cases instead of register them manually.
+/// </remarks>
 program Spring.Tests;
+
+
+(*
+  Copied from the RAD Studio Documentation:
+  {$STRONGLINKTYPES ON} links in with strong fixups (rather than weak fixups) all types
+  in the EXE or DLL's root type table. The root type table is the index that lets the RTTI unit map qualified names to types.
+  The smart linker eliminates symbols (including the RTTI associated with types) that only have weak fixups referencing them.
+  If one or more strong fixups references the symbol, then it is included in the final binary,
+  and the weak references do not get set to @PointerToNil.
+*)
+{$STRONGLINKTYPES ON}
 
 {.$DEFINE CONSOLE_TESTRUNNER}
 
@@ -35,6 +53,7 @@ uses
   SysUtils,
   Forms,
   Windows,
+  Rtti,
   TestFramework,
   TestExtensions,
   GUITestRunner,
@@ -51,9 +70,13 @@ uses
   Spring.Tests.Reflection in 'Source\System\Spring.Tests.Reflection.pas',
   Spring.Tests.Cryptography in 'Source\System\Spring.Tests.Cryptography.pas',
   Spring.Tests.Configuration in 'Source\Core\Spring.Tests.Configuration.pas',
-  Spring.Tests.Logging in 'Source\Core\Spring.Tests.Logging.pas';
+  Spring.Tests.Logging in 'Source\Core\Spring.Tests.Logging.pas',
+  Spring.UnitTests in 'Source\Spring.UnitTests.pas';
 
 {$R *.RES}
+
+
+{$REGION 'Deprecated (The classical way)'}
 
 procedure RegisterTestCases;
 begin
@@ -150,12 +173,15 @@ begin
   ]);
 end;
 
+{$ENDREGION}
+
 begin
   ReportMemoryLeaksOnShutdown := True;
 
   Application.Initialize;
 
-  RegisterTestCases;
+  RegisterAllTestCasesByRTTI;
+
   if IsConsole then
     TextTestRunner.RunRegisteredTests
   else
