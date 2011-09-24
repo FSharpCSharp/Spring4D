@@ -1,0 +1,38 @@
+unit uDoOrderProcessing;
+
+interface
+
+procedure DoOrderProcessing;
+
+implementation
+
+uses
+        uOrder
+      , Spring
+      , Spring.DI
+      , uOrderInterfaces
+   //   , uOrderValidator
+   //   , uOrderEntry
+      , uOrderProcessor
+      ;
+
+procedure DoOrderProcessing;
+var
+  Order: TOrder;
+  OrderProcessor: IOrderProcessor;
+begin
+  GlobalContainer.Build;
+  Order := TOrder.Create;
+  try
+    OrderProcessor := TOrderProcessor.Create(ServiceLocator.Resolve<IOrderValidator>,
+                                             ServiceLocator.Resolve<IOrderEntry>);
+    if OrderProcessor.ProcessOrder(Order) then
+    begin
+      WriteLn('Order successfully processed....');
+    end;
+  finally
+    Order.Free;
+  end;
+end;
+
+end.
