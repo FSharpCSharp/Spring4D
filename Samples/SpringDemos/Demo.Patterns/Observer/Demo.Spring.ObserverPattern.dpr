@@ -1,4 +1,4 @@
-program ObserverPatternDemoProject;
+program Demo.Spring.ObserverPattern;
 
 uses
   Vcl.Forms,

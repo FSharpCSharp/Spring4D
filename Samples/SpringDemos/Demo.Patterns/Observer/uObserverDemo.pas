@@ -4,7 +4,7 @@ interface
 
 uses
       Spring.DesignPatterns
-    , VCL.StdCtrls
+    , StdCtrls
     ;
 
 type
