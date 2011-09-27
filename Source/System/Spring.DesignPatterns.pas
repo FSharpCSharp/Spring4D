@@ -47,8 +47,8 @@ uses
   SysUtils,
   SyncObjs,
   TypInfo,
-  Generics.Collections,
-  Spring;
+  Spring,
+  Spring.Collections;
 
 type
 
@@ -76,7 +76,7 @@ type
   TSingleton = record
   strict private
     class var
-      fMappings: TDictionary<TClass, TObject>;
+      fMappings: IDictionary<TClass, TObject>;
 
       ///	<summary>
       ///	  Tracks all instances of the singleton objects and free them in
@@ -233,7 +233,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'Factory Pattern (Experimental, Seems BAD)'}
+  {$REGION 'Factory Pattern (Experimental)'}
 
   EFactoryMethodKeyAlreadyRegisteredException = class(Exception);
   EFactoryMethodKeyNotRegisteredException = class(Exception);
@@ -259,6 +259,45 @@ type
 
   {$ENDREGION}
 
+
+  {$REGION 'Registry (Experimental)'}
+
+  ITypeRegistry<TClassType, TValue> = interface
+    {$REGION 'Property Accessors'}
+    {$ENDREGION}
+
+    procedure Register(classType: TClassType; const value: TValue);
+    procedure Unregister(classType: TClassType);
+    procedure UnregisterAll;
+
+    function GetValue(classType: TClassType): TValue;
+    function TryGetValue(classType: TClassType; out value: TValue): Boolean;
+  end;
+
+  IClassTypeRegistry<TValue> = interface(ITypeRegistry<TClass,TValue>)
+  end;
+
+  TClassTypeRegistry<TValue> = class(TInterfacedObject, IClassTypeRegistry<TValue>)
+  protected
+    fLookup: TDictionary<TClass, TValue>;
+    function GetValues: IEnumerable<TValue>;
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    procedure Register(classType: TClass; const value: TValue);
+    procedure Unregister(classType: TClass);
+    procedure UnregisterAll;
+
+    function GetValue(classType: TClass): TValue;
+    function TryGetValue(classType: TClass; out value: TValue): Boolean;
+
+    property Values: IEnumerable<TValue> read GetValues;
+  end;
+
+
+  {$ENDREGION}
+
 implementation
 
 uses
@@ -269,7 +308,7 @@ uses
 
 class constructor TSingleton.Create;
 begin
-  fMappings := TDictionary<TClass, TObject>.Create(4);
+  fMappings :=  TCollections.CreateDictionary<TClass, TObject>(4);
   fInstances := TObjectList.Create(True);
   fCriticalSection := TCriticalSection.Create;
 end;
@@ -278,7 +317,6 @@ class destructor TSingleton.Destroy;
 begin
   fCriticalSection.Free;
   fInstances.Free;
-  fMappings.Free;
 end;
 
 class function TSingleton.GetInstance<T>: T;
@@ -288,7 +326,7 @@ begin
     if not fMappings.TryGetValue(T, TObject(Result)) then
     begin
       Result := T.Create;
-      fMappings.Add(T, Result);
+      fMappings.AddOrSetValue(T, TObject(Result));
       fInstances.Add(Result);
     end;
   finally
@@ -629,6 +667,63 @@ begin
   FFactoryMethods.Remove(Key);
 end;
 
+
+{$ENDREGION}
+
+
+{$REGION 'TClassTypeRegistry<TValue>'}
+
+constructor TClassTypeRegistry<TValue>.Create;
+begin
+  inherited Create;
+  fLookup := TDictionary<TClass, TValue>.Create;
+end;
+
+destructor TClassTypeRegistry<TValue>.Destroy;
+begin
+  fLookup.Free;
+  inherited Destroy;
+end;
+
+procedure TClassTypeRegistry<TValue>.Register(classType: TClass; const value: TValue);
+begin
+  fLookup.AddOrSetValue(classType, value);
+end;
+
+procedure TClassTypeRegistry<TValue>.Unregister(classType: TClass);
+begin
+  fLookup.Remove(classType);
+end;
+
+procedure TClassTypeRegistry<TValue>.UnregisterAll;
+begin
+  fLookup.Clear;
+end;
+
+function TClassTypeRegistry<TValue>.GetValue(classType: TClass): TValue;
+begin
+  if not TryGetValue(classType, Result) then
+  begin
+    raise Exception.Create('Failed to get value');
+  end;
+end;
+
+function TClassTypeRegistry<TValue>.GetValues: IEnumerable<TValue>;
+begin
+  Result := fLookup.Values;
+end;
+
+function TClassTypeRegistry<TValue>.TryGetValue(classType: TClass; out value: TValue): Boolean;
+begin
+  TArgument.CheckNotNull(classType, 'classType');
+
+  Result := fLookup.TryGetValue(classType, value);
+  while not Result and (classType.ClassParent <> nil) do
+  begin
+    classType := classType.ClassParent;
+    Result := fLookup.TryGetValue(classType, value);
+  end;
+end;
 
 {$ENDREGION}
 

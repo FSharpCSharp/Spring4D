@@ -66,6 +66,8 @@ type
   ///	</summary>
   TStopwatch = Diagnostics.TStopwatch;
 
+  PTypeInfo = TypInfo.PTypeInfo;
+
   ///	<summary>
   ///	  Represents the class type of <see cref="System|TCustomAttribute" />.
   ///	</summary>
