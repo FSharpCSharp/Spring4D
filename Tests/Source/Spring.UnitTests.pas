@@ -46,6 +46,9 @@ procedure RegisterAllTestCasesByRTTI;
 
 implementation
 
+uses
+  Spring.Helpers;
+
 type
   TTestCaseClass = class of TTestCase;
 
@@ -54,7 +57,6 @@ var
   context: TRttiContext;
   t: TRttiType;
   attr: TCustomAttribute;
-  ignore: Boolean;
 begin
   context := TRttiContext.Create;
   for t in context.GetTypes do
@@ -64,17 +66,7 @@ begin
       not TRttiInstanceType(t).MetaclassType.InheritsFrom(TTestCase) then
       Continue;
 
-    ignore := False;
-    for attr in t.GetAttributes do
-    begin
-      if attr is IgnoreAttribute then
-      begin
-        ignore := True;
-        Break;
-      end;
-    end;
-
-    if ignore then
+    if t.AsInstance.HasCustomAttribute<IgnoreAttribute> then
       Continue;
 
     RegisterTest(TRttiInstanceType(t).MetaclassType.UnitName, TTestCaseClass(TRttiInstanceType(t).MetaclassType).Suite);

@@ -263,8 +263,10 @@ type
   {$REGION 'Registry (Experimental)'}
 
   ITypeRegistry<TClassType, TValue> = interface
-    {$REGION 'Property Accessors'}
-    {$ENDREGION}
+  {$REGION 'Property Accessors'}
+    function GetTypes: IEnumerable<TClassType>;
+    function GetValues: IEnumerable<TValue>;
+  {$ENDREGION}
 
     procedure Register(classType: TClassType; const value: TValue);
     procedure Unregister(classType: TClassType);
@@ -272,6 +274,9 @@ type
 
     function GetValue(classType: TClassType): TValue;
     function TryGetValue(classType: TClassType; out value: TValue): Boolean;
+
+    property Types: IEnumerable<TClassType> read GetTypes;
+    property Values: IEnumerable<TValue> read GetValues;
   end;
 
   IClassTypeRegistry<TValue> = interface(ITypeRegistry<TClass,TValue>)
@@ -279,11 +284,11 @@ type
 
   TClassTypeRegistry<TValue> = class(TInterfacedObject, IClassTypeRegistry<TValue>)
   protected
-    fLookup: TDictionary<TClass, TValue>;
+    fLookup: IDictionary<TClass, TValue>;
+    function GetTypes: IEnumerable<TClass>;
     function GetValues: IEnumerable<TValue>;
   public
     constructor Create;
-    destructor Destroy; override;
 
     procedure Register(classType: TClass; const value: TValue);
     procedure Unregister(classType: TClass);
@@ -292,6 +297,7 @@ type
     function GetValue(classType: TClass): TValue;
     function TryGetValue(classType: TClass; out value: TValue): Boolean;
 
+    property Types: IEnumerable<TClass> read GetTypes;
     property Values: IEnumerable<TValue> read GetValues;
   end;
 
@@ -679,12 +685,6 @@ begin
   fLookup := TDictionary<TClass, TValue>.Create;
 end;
 
-destructor TClassTypeRegistry<TValue>.Destroy;
-begin
-  fLookup.Free;
-  inherited Destroy;
-end;
-
 procedure TClassTypeRegistry<TValue>.Register(classType: TClass; const value: TValue);
 begin
   fLookup.AddOrSetValue(classType, value);
@@ -698,6 +698,11 @@ end;
 procedure TClassTypeRegistry<TValue>.UnregisterAll;
 begin
   fLookup.Clear;
+end;
+
+function TClassTypeRegistry<TValue>.GetTypes: IEnumerable<TClass>;
+begin
+  Result := fLookup.Keys;
 end;
 
 function TClassTypeRegistry<TValue>.GetValue(classType: TClass): TValue;

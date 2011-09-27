@@ -41,6 +41,7 @@ uses
   SysUtils,
   DateUtils,
   StrUtils,
+  Variants,
   TypInfo,
   Types,
   ShlObj,
@@ -83,6 +84,14 @@ type
     class function TryParse<T>(const value: string; out enum: T): Boolean; overload; static;
     class function Parse<T>(const value: Integer): T; overload; static;
     class function Parse<T>(const value: string): T; overload; static;
+  end;
+
+  ///	<summary>
+  ///	  Provides static methods to manipulate an Variant type.
+  ///	</summary>
+  TVariant = class
+  public
+    class function IsNull(const value: Variant): Boolean; static;
   end;
 
   ///	<summary>
@@ -3124,5 +3133,12 @@ begin
 end;
 
 {$ENDREGION}
+
+{ TVariant }
+
+class function TVariant.IsNull(const value: Variant): Boolean;
+begin
+  Result := VarIsNull(value);
+end;
 
 end.

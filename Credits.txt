@@ -14,7 +14,7 @@ Contributors
 
 Acknowledgements:
 * Nick Hodges
-* Alexandr Demcenko (Many classes in the Spring.Cryptography is based on his native cryptographical code implementation)
+* Alexandr Demcenko (Many classes in the Spring.Cryptography are based on his native cryptographical code implementation)
 
 Donations
 * Help & Manual

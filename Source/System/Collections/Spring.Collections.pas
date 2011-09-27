@@ -37,7 +37,7 @@ uses
   Classes,
   SysUtils,
   TypInfo,
-//  Rtti,
+  Rtti,
   Generics.Defaults,
   Generics.Collections,
   Spring;
@@ -53,8 +53,6 @@ type
   IQueue<T> = interface;
 
   ICollectionNotifyDelegate<T> = interface;
-
-//  TValue = Rtti.TValue;
 
   TCollectionNotification = Generics.Collections.TCollectionNotification;
 
@@ -356,7 +354,7 @@ type
   {$REGION 'Property Accessors'}
     function GetIsReadOnly: Boolean;
   {$ENDREGION}
-//    function Add(const item: T): Boolean;
+
     procedure Add(const item: T); overload;
     procedure AddRange(const collection: array of T); overload;
     procedure AddRange(const collection: IEnumerable<T>); overload;
@@ -991,6 +989,8 @@ type
     class function CreateList<T>(const comparer: IComparer<T>): IList<T>; overload;
     class function CreateList<T: class>(ownsObjects: Boolean): IList<T>; overload;
     class function CreateList<T: class>(ownsObjects: Boolean; const comparer: IComparer<T>): IList<T>; overload;
+    class function CreateObjectList<T: class>(ownsObjects: Boolean = True): IList<T>; overload;
+    class function CreateObjectList<T: class>(ownsObjects: Boolean; const comparer: IComparer<T>): IList<T>; overload;
 
     class function CreateDictionary<TKey, TValue>: IDictionary<TKey, TValue>; overload;
     class function CreateDictionary<TKey, TValue>(capacity: Integer): IDictionary<TKey, TValue>; overload;
@@ -1243,6 +1243,7 @@ var
   item: T;
 begin
   TArgument.CheckNotNull(Assigned(action), 'action');
+
   for item in Self do
   begin
     action(item);
@@ -1254,6 +1255,7 @@ var
   item: T;
 begin
   TArgument.CheckNotNull(Assigned(action), 'action');
+
   for item in Self do
   begin
     action(item);
@@ -2973,6 +2975,16 @@ end;
 
 class function TCollections.CreateList<T>(ownsObjects: Boolean;
   const comparer: IComparer<T>): IList<T>;
+begin
+  Result := TObjectList<T>.Create(comparer, ownsObjects);
+end;
+
+class function TCollections.CreateObjectList<T>(ownsObjects: Boolean): IList<T>;
+begin
+  Result := TObjectList<T>.Create(TComparer<T>.Default, ownsObjects);
+end;
+
+class function TCollections.CreateObjectList<T>(ownsObjects: Boolean; const comparer: IComparer<T>): IList<T>;
 begin
   Result := TObjectList<T>.Create(comparer, ownsObjects);
 end;
