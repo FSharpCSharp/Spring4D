@@ -34,27 +34,29 @@ uses
   Rtti,
   Spring,
   Spring.Collections,
-  Spring.Configuration;
+  Spring.Configuration,
+  Spring.Configuration.ConfigurationProperty;
 
 type
+  ///	<summary>Base implementation of IConfiguration interface.</summary>
   TConfiguration = class(TInterfacedObject, IConfiguration)
   strict private
     fName: string;
     fChildren: IList<IConfiguration>;
-    fAttributes: IDictionary<string, TValue>;
+    fAttributes: IDictionary<string, TConfigurationProperty>;
     function GetName: string;
     function GetChildren: IList<IConfiguration>;
-    function GetAttributes: IDictionary<string, TValue>;
+    function GetAttributes: IDictionary<string, TConfigurationProperty>;
   protected
     procedure SetName(const value: string); virtual;
   public
-    function TryGetAttribute(const name: string; out value: TValue): Boolean;
-    function GetAttribute(const name: string): TValue;
+    function TryGetAttribute(const name: string; out value: TConfigurationProperty): Boolean;
+    function GetAttribute(const name: string): TConfigurationProperty;
     function TryGetSection(const name: string;
       out section: IConfiguration): Boolean;
     function GetSection(const name: string): IConfiguration;
     property Name: string read GetName;
-    property Attributes: IDictionary<string, TValue> read GetAttributes;
+    property Attributes: IDictionary<string, TConfigurationProperty> read GetAttributes;
     property Children: IList<IConfiguration> read GetChildren;
   end;
 
@@ -68,12 +70,12 @@ uses
 {$REGION 'TConfiguration'}
 
 function TConfiguration.TryGetAttribute(const name: string;
-  out value: TValue): Boolean;
+  out value: TConfigurationProperty): Boolean;
 begin
   Result := Attributes.TryGetValue(name, value);
 end;
 
-function TConfiguration.GetAttribute(const name: string): TValue;
+function TConfiguration.GetAttribute(const name: string): TConfigurationProperty;
 begin
   if not TryGetAttribute(name, Result) then
     raise EConfigurationException.CreateResFmt(@SConfigurationAttributeNotFound, [name]);
@@ -112,11 +114,11 @@ begin
   Result := fName;
 end;
 
-function TConfiguration.GetAttributes: IDictionary<string, TValue>;
+function TConfiguration.GetAttributes: IDictionary<string, TConfigurationProperty>;
 begin
   if fAttributes = nil then
   begin
-    fAttributes := TCollections.CreateDictionary<string, TValue>;
+    fAttributes := TCollections.CreateDictionary<string, TConfigurationProperty>;
   end;
   Result := fAttributes;
 end;

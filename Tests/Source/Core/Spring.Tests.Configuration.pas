@@ -40,7 +40,6 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   published
-    procedure TestConfigurationAttribute;
     procedure TestSection;
     procedure TestSectionAttribute;
   end;
@@ -49,14 +48,15 @@ implementation
 
 uses
   Rtti,
-  Spring.Configuration.Sources;
+  Spring.Configuration.Sources,
+  Spring.Configuration.ConfigurationProperty;
 
 { TTestConfiguration }
 
 procedure TTestConfiguration.SetUp;
 begin
   inherited;
-  fSource := TXmlConfigurationSource.Create('logging.xml');
+  fSource := TXmlConfigurationSource.Create('Spring.Tests.xml');
 end;
 
 procedure TTestConfiguration.TearDown;
@@ -66,28 +66,23 @@ begin
   inherited TearDown;
 end;
 
-procedure TTestConfiguration.TestConfigurationAttribute;
-var
-  value: TValue;
-begin
-  fConfiguration := fSource.GetConfiguration;
-  value := fConfiguration.TryGetAttribute('debug', value);
-  CheckTrue(value.AsBoolean);
-end;
-
 procedure TTestConfiguration.TestSection;
 begin
   fConfiguration := fSource.GetConfiguration;
-  CheckEquals('appender', fConfiguration.GetSection('appender').Name);
+  CheckEquals('logging', fConfiguration.GetSection('logging').Name);
 end;
 
 procedure TTestConfiguration.TestSectionAttribute;
 var
-  value: TValue;
+  value: TConfigurationProperty;
 begin
   fConfiguration := fSource.GetConfiguration;
-  fConfiguration.GetSection('appender').TryGetAttribute('name', value);
-  CheckEquals('console', value.ToString);
+  CheckTrue(fConfiguration.GetSection('logging').TryGetAttribute('debug', value));
+  CheckEquals('true', value);
+
+  fConfiguration.GetSection('logging').Attributes['debug'] := 'false';
+  value := fConfiguration.GetSection('logging').Attributes['debug'];
+  CheckEquals('false', value);
 end;
 
 end.

@@ -62,7 +62,8 @@ uses
   Spring,
   Spring.Collections,
   Spring.Configuration.Node,
-  Spring.Configuration.ResourceStrings;
+  Spring.Configuration.ResourceStrings,
+  Spring.Configuration.ConfigurationProperty;
 
 {$REGION 'TXmlConfigurationSource'}
 
@@ -85,7 +86,7 @@ function TXmlConfigurationSource.TryGetConfiguration(out configuration: IConfigu
       i: Integer;
       node: IXmlNode;
       key: string;
-      value: TValue;
+      value: TConfigurationProperty;
       children: IConfiguration;
     begin
       Result := Assigned(section);
@@ -100,7 +101,7 @@ function TXmlConfigurationSource.TryGetConfiguration(out configuration: IConfigu
         for i := 0 to AttributeNodes.Count - 1 do
         begin
           key := AttributeNodes[i].NodeName;
-          value := TValue.From<string>(AttributeNodes[i].Text);
+          value := TConfigurationProperty.From<string>(AttributeNodes[i].Text);
           configuration.Attributes.Add(key, value);
         end;
       end;

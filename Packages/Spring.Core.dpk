@@ -80,7 +80,8 @@ contains
   Spring.Configuration in '..\Source\Core\Configuration\Spring.Configuration.pas',
   Spring.Configuration.Node in '..\Source\Core\Configuration\Spring.Configuration.Node.pas',
   Spring.Configuration.Sources in '..\Source\Core\Configuration\Spring.Configuration.Sources.pas',
-  Spring.Configuration.ResourceStrings in '..\Source\Core\Configuration\Spring.Configuration.ResourceStrings.pas';
+  Spring.Configuration.ResourceStrings in '..\Source\Core\Configuration\Spring.Configuration.ResourceStrings.pas',
+  Spring.Configuration.ConfigurationProperty in '..\Source\Core\Configuration\Spring.Configuration.ConfigurationProperty.pas';
 
 end.
 
