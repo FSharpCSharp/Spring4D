@@ -230,19 +230,19 @@ end;
 procedure TTestEmptyContainer.TestRegisterNonGuidInterfaceService;
 begin
   ExpectedException := ERegistrationException;
-  fContainer.RegisterComponent<TNonGuid>.Implements<INonGuid>;
+  fContainer.RegisterType<TNonGuid>.Implements<INonGuid>;
 end;
 
 procedure TTestEmptyContainer.TestRegisterGenericInterfaceService;
 begin
   ExpectedException := ERegistrationException;
-  fContainer.RegisterComponent<TNonGuid<TObject>>.Implements<INonGuid<TObject>>;
+  fContainer.RegisterType<TNonGuid<TObject>>.Implements<INonGuid<TObject>>;
 end;
 
 procedure TTestEmptyContainer.TestRegisterUnassignableService;
 begin
   ExpectedException := ERegistrationException;
-  fContainer.RegisterComponent<TContainer>.Implements<IDispatch>;
+  fContainer.RegisterType<TContainer>.Implements<IDispatch>;
 end;
 
 procedure TTestEmptyContainer.TestResolveAll;
@@ -270,7 +270,7 @@ procedure TTestSimpleContainer.TestInterfaceService;
 var
   service: INameService;
 begin
-  fContainer.RegisterComponent<TNameService>.Implements<INameService>;
+  fContainer.RegisterType<TNameService>.Implements<INameService>;
   fContainer.Build;
   service := fContainer.Resolve<INameService>;
   try
@@ -284,7 +284,7 @@ end;
 
 procedure TTestSimpleContainer.TestIssue13;
 begin
-  fContainer.RegisterComponent<TNameService>.Implements<INameService>.AsSingleton;
+  fContainer.RegisterType<TNameService>.Implements<INameService>.AsSingleton;
   fContainer.Build;
 end;
 
@@ -292,7 +292,7 @@ procedure TTestSimpleContainer.TestAbstractClassService;
 var
   service: TAgeServiceBase;
 begin
-  fContainer.RegisterComponent<TAgeServiceImpl>.Implements<TAgeServiceBase>;
+  fContainer.RegisterType<TAgeServiceImpl>.Implements<TAgeServiceBase>;
   fContainer.Build;
   service := fContainer.Resolve<TAgeServiceBase>;
   try
@@ -307,7 +307,7 @@ procedure TTestSimpleContainer.TestServiceSameAsComponent;
 var
   service: TNameService;
 begin
-  fContainer.RegisterComponent<TNameService>; //.Implements<TNameService>;
+  fContainer.RegisterType<TNameService>; //.Implements<TNameService>;
   fContainer.Build;
   service := fContainer.Resolve<TNameService>;
   try
@@ -322,9 +322,9 @@ procedure TTestSimpleContainer.TestBootstrap;
 var
   component: TBootstrapComponent;
 begin
-  fContainer.RegisterComponent<TNameService>.Implements<INameService>.AsSingleton;
-  fContainer.RegisterComponent<TAgeServiceImpl>.Implements<TAgeServiceBase>.AsSingleton;
-  fContainer.RegisterComponent<TBootstrapComponent>;
+  fContainer.RegisterType<TNameService>.Implements<INameService>.AsSingleton;
+  fContainer.RegisterType<TAgeServiceImpl>.Implements<TAgeServiceBase>.AsSingleton;
+  fContainer.RegisterType<TBootstrapComponent>;
   fContainer.Build;
   component := fContainer.Resolve<TBootstrapComponent>;
   try
@@ -342,7 +342,7 @@ procedure TTestSimpleContainer.TestSingleton;
 var
   obj1, obj2: TAgeServiceBase;
 begin
-  fContainer.RegisterComponent<TAgeServiceImpl>
+  fContainer.RegisterType<TAgeServiceImpl>
     .Implements<TAgeServiceBase>
     .AsSingleton;
   fContainer.Build;
@@ -362,7 +362,7 @@ procedure TTestSimpleContainer.TestTransient;
 var
   obj1, obj2: TAgeServiceBase;
 begin
-  fContainer.RegisterComponent<TAgeServiceImpl>
+  fContainer.RegisterType<TAgeServiceImpl>
     .Implements<TAgeServiceBase>;
   fContainer.Build;
   obj1 := fContainer.Resolve<TAgeServiceBase>;
@@ -408,7 +408,7 @@ procedure TTestSimpleContainer.TestPerThread;
 var
   thread1, thread2: TTestSingletonThread;
 begin
-  fContainer.RegisterComponent<TNameService>
+  fContainer.RegisterType<TNameService>
     .Implements<INameService>
     .AsSingletonPerThread;
   fContainer.Build;
@@ -432,7 +432,7 @@ procedure TTestSimpleContainer.TestInitializable;
 var
   service: IAnotherService;
 begin
-  fContainer.RegisterComponent<TInitializableComponent>;
+  fContainer.RegisterType<TInitializableComponent>;
   fContainer.Build;
   service := fContainer.Resolve<IAnotherService>;
   CheckTrue(service is TInitializableComponent, 'Unknown component.');
@@ -447,10 +447,10 @@ end;
 procedure TTestDifferentServiceImplementations.SetUp;
 begin
   inherited SetUp;
-  fContainer.RegisterComponent<TNameService>
+  fContainer.RegisterType<TNameService>
     .Implements<INameService>('default')
     .AsSingleton;
-  fContainer.RegisterComponent<TAnotherNameService>
+  fContainer.RegisterType<TAnotherNameService>
     .Implements<INameService>('another');
   fContainer.Build;
   fNameService := fContainer.Resolve<INameService>('default');
@@ -520,10 +520,10 @@ begin
   inherited SetUp;
   fExpectedInteger := 26;
   fExpectedString := 'String';
-  fContainer.RegisterComponent<TNameService>
+  fContainer.RegisterType<TNameService>
     .Implements<INameService>
     .AsSingleton;
-  fContainer.RegisterComponent<TPrimitiveComponent>
+  fContainer.RegisterType<TPrimitiveComponent>
     .Implements<IPrimitive>
     .DelegateTo(
       function: TPrimitiveComponent
@@ -608,10 +608,10 @@ end;
 
 procedure TTestTypedInjectionByCoding.DoRegisterComponents;
 begin
-  fContainer.RegisterComponent<TNameService>
+  fContainer.RegisterType<TNameService>
     .Implements<INameService>
     .AsSingleton;
-  fContainer.RegisterComponent<TInjectionExplorer>
+  fContainer.RegisterType<TInjectionExplorer>
     .Implements<IInjectionExplorer>
     .InjectConstructor([TypeInfo(INameService)])
     .InjectProperty('PropertyInjection')
@@ -626,10 +626,10 @@ end;
 
 procedure TTestTypedInjectionsByAttribute.DoRegisterComponents;
 begin
-  fContainer.RegisterComponent<TNameService>
+  fContainer.RegisterType<TNameService>
     .Implements<INameService>
     .AsSingleton;
-  fContainer.RegisterComponent<TInjectionExplorerComponent>
+  fContainer.RegisterType<TInjectionExplorerComponent>
     .Implements<IInjectionExplorer>;
 end;
 
@@ -641,7 +641,7 @@ end;
 procedure TTestDirectCircularDependency.SetUp;
 begin
   inherited SetUp;
-  fContainer.RegisterComponent<TCircularDependencyChicken>.Implements<IChicken>;
+  fContainer.RegisterType<TCircularDependencyChicken>.Implements<IChicken>;
   fContainer.Build;
 end;
 
@@ -661,8 +661,8 @@ end;
 procedure TTestCrossedCircularDependency.SetUp;
 begin
   inherited SetUp;
-  fContainer.RegisterComponent<TCircularDependencyChicken>.Implements<IChicken>;
-  fContainer.RegisterComponent<TEgg>.Implements<IEgg>;
+  fContainer.RegisterType<TCircularDependencyChicken>.Implements<IChicken>;
+  fContainer.RegisterType<TEgg>.Implements<IEgg>;
   fContainer.Build;
 end;
 
@@ -689,10 +689,10 @@ end;
 
 procedure TNamedInjectionsTestCase.DoRegisterComponents;
 begin
-  fContainer.RegisterComponent<TNameService>
+  fContainer.RegisterType<TNameService>
     .Implements<INameService>('default')
     .AsSingleton;
-  fContainer.RegisterComponent<TAnotherNameService>
+  fContainer.RegisterType<TAnotherNameService>
     .Implements<INameService>('another')
     .AsSingleton;
 end;
@@ -737,7 +737,7 @@ end;
 procedure TTestNamedInjectionsByCoding.DoRegisterComponents;
 begin
   inherited DoRegisterComponents;
-  fContainer.RegisterComponent<TInjectionExplorer>
+  fContainer.RegisterType<TInjectionExplorer>
     .Implements<IInjectionExplorer>
     .InjectConstructor(['default'])
     .InjectProperty('PropertyInjection', 'another')
@@ -754,7 +754,7 @@ end;
 procedure TTestNamedInjectionsByAttribute.DoRegisterComponents;
 begin
   inherited DoRegisterComponents;
-  fContainer.RegisterComponent<TInjectionComponent>
+  fContainer.RegisterType<TInjectionComponent>
     .Implements<IInjectionExplorer>;
 end;
 
@@ -766,9 +766,9 @@ end;
 procedure TTestImplementsDifferentServices.SetUp;
 begin
   inherited SetUp;
-  fContainer.RegisterComponent<TNameService>
+  fContainer.RegisterType<TNameService>
     .Implements<INameService>('another');
-  fContainer.RegisterComponent<TNameAgeComponent>
+  fContainer.RegisterType<TNameAgeComponent>
     .Implements<INameService>('default')
     .Implements<IAgeService>
     .AsSingleton;
@@ -825,8 +825,8 @@ var
   s1: IS1;
   s2: IS2;
 begin
-  fContainer.RegisterComponent<TS1>.Implements<IS1>('a');
-  fContainer.RegisterComponent<TS2>;
+  fContainer.RegisterType<TS1>.Implements<IS1>('a');
+  fContainer.RegisterType<TS2>;
   fContainer.Build;
   s1 := fContainer.Resolve<IS1>('a');
   CheckTrue(s1 is TS1, 'a');
@@ -846,7 +846,7 @@ procedure TTestRegisterInterfaces.TestOneService;
 var
   service: INameService;
 begin
-  fContainer.RegisterComponent<TNameService>;
+  fContainer.RegisterType<TNameService>;
   fContainer.Build;
   service := fContainer.Resolve<INameService>;
   CheckTrue(service is TNameService);
@@ -857,7 +857,7 @@ var
   s1: INameService;
   s2: IAgeService;
 begin
-  fContainer.RegisterComponent<TNameAgeComponent>;
+  fContainer.RegisterType<TNameAgeComponent>;
   fContainer.Build;
   s1 := fContainer.Resolve<INameService>;
   s2 := fContainer.Resolve<IAgeService>;
@@ -872,7 +872,7 @@ var
   s3: IAnotherService;
 begin
   Assert(TypeInfo(IAnotherService) <> nil);
-  fContainer.RegisterComponent<TComplex>;
+  fContainer.RegisterType<TComplex>;
   fContainer.Build;
   s1 := fContainer.Resolve<INameService>;
   s2 := fContainer.Resolve<IAgeService>;
@@ -883,3 +883,4 @@ begin
 end;
 
 end.
+

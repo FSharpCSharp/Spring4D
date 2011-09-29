@@ -70,8 +70,11 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    function RegisterComponent<TComponentType: class>: TRegistration<TComponentType>; overload;
-    function RegisterComponent(componentType: PTypeInfo): TRegistration; overload;
+    function RegisterType<TComponentType: class>: TRegistration<TComponentType>; overload;
+    function RegisterType(componentType: PTypeInfo): TRegistration; overload;
+
+    function RegisterComponent<TComponentType: class>: TRegistration<TComponentType>; overload; deprecated 'Use RegisterType';
+    function RegisterComponent(componentType: PTypeInfo): TRegistration; overload; deprecated 'Use RegisterType';
 
     procedure Build;
 
@@ -230,12 +233,22 @@ begin
   Result := fInjectionFactory;
 end;
 
+function TContainer.RegisterComponent(componentType: PTypeInfo): TRegistration;
+begin
+  Result := fRegistrationManager.RegisterComponent(componentType);
+end;
+
 function TContainer.RegisterComponent<TComponentType>: TRegistration<TComponentType>;
 begin
   Result := fRegistrationManager.RegisterComponent<TComponentType>;
 end;
 
-function TContainer.RegisterComponent(componentType: PTypeInfo): TRegistration;
+function TContainer.RegisterType<TComponentType>: TRegistration<TComponentType>;
+begin
+  Result := fRegistrationManager.RegisterComponent<TComponentType>;
+end;
+
+function TContainer.RegisterType(componentType: PTypeInfo): TRegistration;
 begin
   Result := fRegistrationManager.RegisterComponent(componentType);
 end;
@@ -273,7 +286,7 @@ begin
   // TODO: How to support bootstrap
   if not fRegistry.HasService(typeInfo) and (typeInfo.Kind = tkClass) then
   begin
-    RegisterComponent(typeInfo).Implements(typeInfo);
+    RegisterType(typeInfo).Implements(typeInfo);
     model := fRegistry.FindOne(typeInfo);
     fBuilder.Build(model);
     Result := fServiceResolver.Resolve(model.GetServiceName(typeInfo));

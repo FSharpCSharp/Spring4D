@@ -30,7 +30,7 @@ implementation
 { TLoggingConfigTest }
 
 (*
-  GlobalContainer.RegisterComponent<TLoggerManager>.Implements<ILoggerManager>.Implements<ILoggerFactory>.AsSingleton;
+  GlobalContainer.RegisterType<TLoggerManager>.Implements<ILoggerManager>.Implements<ILoggerFactory>.AsSingleton;
   GlobalContainer.Build;
   manager := GlobalContainer.Resolve<ILoggerManager>;
 *)
