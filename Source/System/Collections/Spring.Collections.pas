@@ -365,7 +365,7 @@ type
     procedure RemoveRange(const collection: IEnumerable<T>); overload;
     procedure RemoveRange(const collection: TEnumerable<T>); overload;
 
-// function Extract(const item: T): T; overload;
+//    function Extract(const item: T): T; overload;
 // Ownerships: TCollectionOwnerships (coOwnsElements, coOwnsKeys, coOwnsValues)
 
     procedure Clear;
@@ -602,6 +602,12 @@ type
     property IsEmpty: Boolean read GetIsEmpty;
   end;
 
+  /// <summary>
+  /// Provides an abstract class base for IColleciton<T>.
+  /// </summary>
+  /// <remarks>
+  ///   Notes: The Add/Remove/Clear methods are abstract. IsReadOnly returns False by default.
+  /// </remarks>
   TCollectionBase<T> = class abstract(TEnumerableBase<T>, ICollection<T>)
   protected
     function GetIsReadOnly: Boolean; virtual;

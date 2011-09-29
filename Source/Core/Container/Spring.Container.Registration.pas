@@ -127,7 +127,7 @@ type
 
     function DelegateTo(const delegate: TActivatorDelegate<T>): TRegistration<T>; overload;
 
-    {$REGION 'Typed Injections'}
+  {$REGION 'Typed Injections'}
 
     function InjectConstructor(const parameterTypes: array of PTypeInfo): TRegistration<T>; overload;
     function InjectProperty(const propertyName: string): TRegistration<T>; overload;
@@ -135,16 +135,16 @@ type
     function InjectMethod(const methodName: string; const parameterTypes: array of PTypeInfo): TRegistration<T>; overload;
     function InjectField(const fieldName: string): TRegistration<T>; overload;
 
-    {$ENDREGION}
+  {$ENDREGION}
 
-    {$REGION 'Named/Valued Injections'}
+  {$REGION 'Named/Valued Injections'}
 
     function InjectConstructor(const arguments: array of TValue): TRegistration<T>; overload;
     function InjectProperty(const propertyName: string; const value: TValue): TRegistration<T>; overload;
     function InjectMethod(const methodName: string; const arguments: array of TValue): TRegistration<T>; overload;
     function InjectField(const fieldName: string; const value: TValue): TRegistration<T>; overload;
 
-    {$ENDREGION}
+  {$ENDREGION}
 
     function AsSingleton: TRegistration<T>;
     function AsSingletonPerThread: TRegistration<T>;
