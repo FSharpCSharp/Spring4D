@@ -180,6 +180,7 @@ begin
 
   Application.Initialize;
 
+//  RegisterTestCases;
   RegisterAllTestCasesByRTTI;
 
   if IsConsole then

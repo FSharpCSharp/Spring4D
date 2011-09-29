@@ -125,7 +125,6 @@ function GlobalContainer: TContainer;
 implementation
 
 uses
-  Spring.ResourceStrings,
   Spring.Container.Builder,
   Spring.Container.LifetimeManager,
   Spring.Container.Injection,
@@ -384,7 +383,8 @@ end;
 
 {$ENDREGION}
 
-initialization
+procedure InitializeGlobalContainer;
+begin
   _GlobalContainer := TContainer.Create;
   _GlobalServiceLocator := TServiceLocatorAdapter.Create(_GlobalContainer);
   ServiceLocator.Initialize(
@@ -393,9 +393,13 @@ initialization
       Result := _GlobalServiceLocator;
     end
   );
+end;
+
+initialization
+  InitializeGlobalContainer;
 
 finalization
-  ServiceLocator.Initialize(nil);
+  _GlobalServiceLocator := nil;
   FreeAndNil(_GlobalContainer);
 
 end.
