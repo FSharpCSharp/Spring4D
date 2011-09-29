@@ -645,7 +645,7 @@ var
   FactoryMethod : TFactoryMethod<TBaseType>;
 begin
   if not IsRegistered(Key) then
-    raise TFactoryMethodKeyNotRegisteredException.Create('Factory not registred');
+    raise TFactoryMethodKeyNotRegisteredException.Create('Factory not registered');
   FactoryMethod := FFactoryMethods.Items[Key];
   if Assigned(FactoryMethod) then
     Result := FactoryMethod;
@@ -660,7 +660,7 @@ procedure TFactory<TKey, TBaseType>.RegisterFactoryMethod(Key: TKey;
   FactoryMethod: TFactoryMethod<TBaseType>);
 begin
   if IsRegistered(Key) then
-    raise TFactoryMethodKeyAlreadyRegisteredException.Create('Factory already registred');
+    raise TFactoryMethodKeyAlreadyRegisteredException.Create('Factory already registered');
 
   FFactoryMethods.Add(Key, FactoryMethod);
 end;
@@ -668,7 +668,7 @@ end;
 procedure TFactory<TKey, TBaseType>.UnRegisterFactoryMethod(Key: TKey);
 begin
   if not IsRegistered(Key) then
-    raise TFactoryMethodKeyNotRegisteredException.Create('Factory not registred');
+    raise TFactoryMethodKeyNotRegisteredException.Create('Factory not registered');
 
   FFactoryMethods.Remove(Key);
 end;
