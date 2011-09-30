@@ -279,7 +279,7 @@ type
     property Values: IEnumerable<TValue> read GetValues;
   end;
 
-  IClassTypeRegistry<TValue> = interface(ITypeRegistry<TClass,TValue>)
+  IClassTypeRegistry<TValue> = interface(ITypeRegistry<TClass, TValue>)
   end;
 
   TClassTypeRegistry<TValue> = class(TInterfacedObject, IClassTypeRegistry<TValue>)

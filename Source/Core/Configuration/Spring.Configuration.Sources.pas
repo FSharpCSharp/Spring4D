@@ -102,7 +102,7 @@ function TXmlConfigurationSource.TryGetConfiguration(out configuration: IConfigu
         begin
           key := AttributeNodes[i].NodeName;
           value := TConfigurationProperty.From<string>(AttributeNodes[i].Text);
-          configuration.Attributes.Add(key, value);
+          configuration.Properties.Add(key, value);
         end;
       end;
 

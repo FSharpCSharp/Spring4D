@@ -47,16 +47,20 @@ type
   {$REGION 'Property Accessors'}
     function GetName: string;
     procedure SetName(const operand: string);
-    function GetAttributes: IDictionary<string, TConfigurationProperty>;
+    //function GetParent: IConfiguration;
+    function GetProperties: IDictionary<string, TConfigurationProperty>;
+    //function GetProperties: IList<TConfigurationProperty>;
     function GetChildren: IList<IConfiguration>;
   {$ENDREGION}
-    function TryGetAttribute(const name: string; out operand: TConfigurationProperty): Boolean;
-    function GetAttribute(const name: string): TConfigurationProperty;
-    function TryGetSection(const name: string;
+    function TryGetProperty(const name: string; out value: TConfigurationProperty): Boolean;
+    function GetProperty(const name: string): TConfigurationProperty;
+    function TryGetChild(const name: string;
       out section: IConfiguration): Boolean;
-    function GetSection(const name: string): IConfiguration;
+    function GetChild(const name: string): IConfiguration;
     property Name: string read GetName write SetName;
-    property Attributes: IDictionary<string, TConfigurationProperty> read GetAttributes;
+    //property Parent: IConfiguration read GetParent;
+    property Properties: IDictionary<string, TConfigurationProperty> read GetProperties;
+    //property Properties: IList<TConfigurationProperty> read GetProperties;
     property Children: IList<IConfiguration> read GetChildren;
   end;
 

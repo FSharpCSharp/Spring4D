@@ -41,6 +41,7 @@ type
   TConfigurationProperty = record
   private
     fValue: TValue;
+    fName: string;
     //fDefault: TValue;
     //fConverter: IValueConverter;
   {$REGION 'Property Accessors'}
@@ -67,21 +68,30 @@ type
       class operator Implicit(const operand: TConfigurationProperty): TClass;
       class operator Implicit(const operand: TConfigurationProperty): Boolean;
     {$ENDREGION}
+    function IsInherited: Boolean;
     property Value: TValue read GetValue write SetValue;
   end;
 
 implementation
 
-{$REGION 'TConfigurationAttribute'}
+{$REGION 'TConfigurationProperty'}
 
 function TConfigurationProperty.GetValue: TValue;
 begin
-  Result := fValue;
+  if IsInherited then
+    // Result := fOwner.GetProperty(fName).Value;
+  else
+    Result := fValue;
 end;
 
 procedure TConfigurationProperty.SetValue(const value: TValue);
 begin
   fValue := value;
+end;
+
+function TConfigurationProperty.IsInherited: Boolean;
+begin
+  Result := fValue.IsEmpty;
 end;
 
 class function TConfigurationProperty.From<T>(const operand: T): TConfigurationProperty;

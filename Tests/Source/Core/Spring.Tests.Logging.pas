@@ -27,6 +27,9 @@ type
 
 implementation
 
+uses
+  Rtti;
+
 { TLoggingConfigTest }
 
 (*
@@ -39,8 +42,9 @@ procedure TTestLoggingConfig.SetUp;
 begin
   inherited;
   fLoggerManager := TLoggerManager.Create;
+
   fConfigurationSource := TXmlConfigurationSource.Create('Spring.Tests.xml');
-  fConfiguration := fConfigurationSource.GetConfiguration.GetSection('logging');
+  fConfiguration := fConfigurationSource.GetConfiguration.GetChild('logging');
   (fLoggerManager as IConfigurable).Configure(fConfiguration);
   fLogger := fLoggerManager.GetLogger(Self.ClassInfo);
 end;

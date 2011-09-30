@@ -1128,9 +1128,9 @@ BEGIN
 	SysConst_SInvalidOp,	"Invalid floating point operation"
 END
 
-/* c:\program files\embarcadero\rad studio\7.0\Lib\Debug\Character.res */
+/* c:\program files\embarcadero\rad studio\7.0\lib\Debug\Character.res */
 /* c:\program files\embarcadero\rad studio\7.0\lib\controls.res */
 /* c:\program files\embarcadero\rad studio\7.0\lib\buttons.res */
 /* c:\program files\embarcadero\rad studio\7.0\Source\DUnit\src\GUITestRunner.dfm */
-/* D:\Sources\Delphi\Spring Framework for Delphi\Tests\Spring.Tests.res */
-/* D:\Sources\Delphi\Spring Framework for Delphi\Tests\Spring.drf */
+/* C:\Program Files\Embarcadero\Components\Delphi Spring Framework\Tests\Spring.Tests.res */
+/* C:\Program Files\Embarcadero\Components\Delphi Spring Framework\Tests\Spring.drf */

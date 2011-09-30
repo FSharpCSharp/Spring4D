@@ -42,21 +42,29 @@ type
   TConfiguration = class(TInterfacedObject, IConfiguration)
   strict private
     fName: string;
+    //fParent: IConfiguration;
     fChildren: IList<IConfiguration>;
-    fAttributes: IDictionary<string, TConfigurationProperty>;
+    fProperties: IDictionary<string, TConfigurationProperty>;
+  {$REGION 'Property Accessors'}
     function GetName: string;
+    //function GetParent: IConfiguration;
     function GetChildren: IList<IConfiguration>;
-    function GetAttributes: IDictionary<string, TConfigurationProperty>;
+    function GetProperties: IDictionary<string, TConfigurationProperty>;
+    //function GetProperties: IList<TConfigurationProperty>;
+  {$ENDREGION}
   protected
     procedure SetName(const value: string); virtual;
   public
-    function TryGetAttribute(const name: string; out value: TConfigurationProperty): Boolean;
-    function GetAttribute(const name: string): TConfigurationProperty;
-    function TryGetSection(const name: string;
+    //constructor Create(const parent: IConfiguration);
+    function TryGetProperty(const name: string; out value: TConfigurationProperty): Boolean;
+    function GetProperty(const name: string): TConfigurationProperty;
+    function TryGetChild(const name: string;
       out section: IConfiguration): Boolean;
-    function GetSection(const name: string): IConfiguration;
+    function GetChild(const name: string): IConfiguration;
     property Name: string read GetName;
-    property Attributes: IDictionary<string, TConfigurationProperty> read GetAttributes;
+    //property Parent: IConfiguration read GetParent;
+    property Properties: IDictionary<string, TConfigurationProperty> read GetProperties;
+    //property Properties: IList<TConfigurationProperty> read GetProperties;
     property Children: IList<IConfiguration> read GetChildren;
   end;
 
@@ -69,19 +77,25 @@ uses
 
 {$REGION 'TConfiguration'}
 
-function TConfiguration.TryGetAttribute(const name: string;
+{constructor TConfiguration.Create(const parent: IConfiguration);
+begin
+  inherited Create;
+  fParent := parent;
+end;}
+
+function TConfiguration.TryGetProperty(const name: string;
   out value: TConfigurationProperty): Boolean;
 begin
-  Result := Attributes.TryGetValue(name, value);
+  Result := Properties.TryGetValue(name, value);
 end;
 
-function TConfiguration.GetAttribute(const name: string): TConfigurationProperty;
+function TConfiguration.GetProperty(const name: string): TConfigurationProperty;
 begin
-  if not TryGetAttribute(name, Result) then
+  if not TryGetProperty(name, Result) then
     raise EConfigurationException.CreateResFmt(@SConfigurationAttributeNotFound, [name]);
 end;
 
-function TConfiguration.TryGetSection(const name: string;
+function TConfiguration.TryGetChild(const name: string;
   out section: IConfiguration): Boolean;
 var
   sections: IEnumerable<IConfiguration>;
@@ -97,9 +111,9 @@ begin
     section := sections.First;
 end;
 
-function TConfiguration.GetSection(const name: string): IConfiguration;
+function TConfiguration.GetChild(const name: string): IConfiguration;
 begin
-  if not TryGetSection(name, Result) then
+  if not TryGetChild(name, Result) then
     raise EConfigurationException.CreateResFmt(@SConfigurationChildrenNotFound, [name]);
 end;
 
@@ -114,13 +128,18 @@ begin
   Result := fName;
 end;
 
-function TConfiguration.GetAttributes: IDictionary<string, TConfigurationProperty>;
+{function TConfiguration.GetParent: IConfiguration;
 begin
-  if fAttributes = nil then
+  Result := fParent;
+end;}
+
+function TConfiguration.GetProperties: IDictionary<string, TConfigurationProperty>;
+begin
+  if fProperties = nil then
   begin
-    fAttributes := TCollections.CreateDictionary<string, TConfigurationProperty>;
+    fProperties := TCollections.CreateDictionary<string, TConfigurationProperty>;
   end;
-  Result := fAttributes;
+  Result := fProperties;
 end;
 
 function TConfiguration.GetChildren: IList<IConfiguration>;

@@ -40,6 +40,7 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   published
+    procedure TestConfigurationProperty;
     procedure TestSection;
     procedure TestSectionAttribute;
   end;
@@ -66,10 +67,17 @@ begin
   inherited TearDown;
 end;
 
+procedure TTestConfiguration.TestConfigurationProperty;
+var
+  value: TConfigurationProperty;
+begin
+  CheckTrue(value.Value.IsEmpty);
+end;
+
 procedure TTestConfiguration.TestSection;
 begin
   fConfiguration := fSource.GetConfiguration;
-  CheckEquals('logging', fConfiguration.GetSection('logging').Name);
+  CheckEquals('logging', fConfiguration.GetChild('logging').Name);
 end;
 
 procedure TTestConfiguration.TestSectionAttribute;
@@ -77,11 +85,11 @@ var
   value: TConfigurationProperty;
 begin
   fConfiguration := fSource.GetConfiguration;
-  CheckTrue(fConfiguration.GetSection('logging').TryGetAttribute('debug', value));
+  CheckTrue(fConfiguration.GetChild('logging').TryGetProperty('debug', value));
   CheckEquals('true', value);
 
-  fConfiguration.GetSection('logging').Attributes['debug'] := 'false';
-  value := fConfiguration.GetSection('logging').Attributes['debug'];
+  fConfiguration.GetChild('logging').Properties['debug'] := 'false';
+  value := fConfiguration.GetChild('logging').Properties['debug'];
   CheckEquals('false', value);
 end;
 

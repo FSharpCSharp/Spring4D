@@ -138,16 +138,15 @@ var
   var
     typeName: string;
     layout: ILayout;
-    conversionPattern: string;
     c: IConfiguration;
   begin
-    typeName := config.Attributes['type'];
+    typeName := config.Properties['type'];
     layout := CreateLayout(typeName);
     if layout is TPatternLayout then
     begin
-      if config.TryGetSection('conversionPattern', c) then
+      if config.TryGetChild('conversionPattern', c) then
       begin
-        TPatternLayout(layout).Pattern := c.Attributes['value'];
+        TPatternLayout(layout).Pattern := c.Properties['value'];
       end;
     end;
 
@@ -165,21 +164,21 @@ var
     appender: IAppender;
     layoutConfig: IConfiguration;
   begin
-    name := config.Attributes['name'];
-    typeName := config.Attributes['type'];
+    name := config.Properties['name'];
+    typeName := config.Properties['type'];
     appender := CreateAppender(typeName);
     appender.Name := name;
     if appender is TConsoleAppender then
     else if appender is TColoredConsoleAppender then
     else if appender is TFileAppender then
     begin
-      fileName := config.GetSection('file').Attributes['value'];
+      fileName := config.GetChild('file').Properties['value'];
       fileName := TPath.GetFullPath(fileName);
       TFileAppender(appender).FileName := fileName;
     end;
 
     AddAppender(appender);
-    if config.TryGetSection('layout', layoutConfig) then
+    if config.TryGetChild('layout', layoutConfig) then
     begin
       DoAddLayout(appender, layoutConfig);
     end;
@@ -194,9 +193,9 @@ var
     appenderName: string;
     appender: IAppender;
   begin
-    if config.TryGetSection('level', levelConfig) then
+    if config.TryGetChild('level', levelConfig) then
     begin
-      levelValue := levelConfig.Attributes['value'];
+      levelValue := levelConfig.Properties['value'];
       level := FindLevel(levelValue);
       logger.Level := level;
     end;
@@ -204,7 +203,7 @@ var
     begin
       if c.Name = 'appender-ref' then
       begin
-        appenderName := c.Attributes['ref'];
+        appenderName := c.Properties['ref'];
         appender := FindAppender(appenderName);
         AddAppenderRef(logger, appender);
       end;
@@ -226,7 +225,7 @@ begin
     end
     else if c.Name = 'logger' then
     begin
-      loggerName := c.Attributes['name'];
+      loggerName := c.Properties['name'];
       logger := TLogger.Create(Self, loggerName);
       ConfigureLogger(logger, c);
     end;
