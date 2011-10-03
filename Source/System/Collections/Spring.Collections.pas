@@ -51,6 +51,7 @@ type
   IDictionary<TKey, TValue> = interface;
   IStack<T> = interface;
   IQueue<T> = interface;
+  ISet<T>   = interface;
 
   ICollectionNotifyDelegate<T> = interface;
 
@@ -281,7 +282,7 @@ type
     /// Concatenates two sequences.
     /// </summary>
     function Concat(const collection: IEnumerable<T>): IEnumerable<T>;
-
+    
     /// <summary>
     /// Inverts the order of the elements in a sequence.
     /// </summary>
@@ -325,6 +326,11 @@ type
     /// Creates a new list which is filled with the elements in the collection.
     /// </summary>
     function ToList: IList<T>;
+
+    ///	<summary>
+    /// Creates a new list which is filled with the elements in the collection.
+    /// </summary>
+    function ToSet: ISet<T>;
 
     /// <summary>
     /// The getter of the <see cref="Count" /> property.
@@ -615,6 +621,7 @@ type
     function EqualsTo(const collection: IEnumerable<T>; const comparer: IEqualityComparer<T>): Boolean; overload;
     function ToArray: TArray<T>; virtual;
     function ToList: IList<T>; virtual;
+    function ToSet: ISet<T>; virtual;
     property Count: Integer read GetCount;
     property IsEmpty: Boolean read GetIsEmpty;
     property IsNotEmpty: Boolean read GetIsNotEmpty;
@@ -1587,6 +1594,17 @@ begin
   while enumerator.MoveNext do
   begin
     Result.Add(enumerator.Current);
+  end;
+end;
+
+function TEnumerableBase<T>.ToSet: ISet<T>;
+var
+  item: T;
+begin
+  Result := TCollections.CreateSet<T>;
+  for item in Self do
+  begin
+    Result.Add(item);
   end;
 end;
 
