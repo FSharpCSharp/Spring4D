@@ -336,6 +336,11 @@ type
     /// </summary>
     function GetIsEmpty: Boolean;
 
+    /// <summary>
+    /// The getter of the <see cref="IsNotEmpty" /> property.
+    /// </summary>
+    function GetIsNotEmpty: Boolean;
+
     ///	<summary>
     /// Gets the number of elements in the collection.
     /// </summary>
@@ -345,6 +350,11 @@ type
     /// Gets a value which indicates whether this collection is empty or not.
     /// </summary>
     property IsEmpty: Boolean read GetIsEmpty;
+
+    ///	<summary>
+    /// Gets a value which indicates whether this collection is not empty.
+    /// </summary>
+    property IsNotEmpty: Boolean read GetIsNotEmpty;
   end;
 
   /// <summary>
@@ -547,14 +557,13 @@ type
   /// </summary>
   TEnumerableBase<T> = class abstract(TInterfacedObject, IEnumerable<T>, IElementType)
   protected
-
   {$REGION 'Implements IElementType'}
     function GetElementType: PTypeInfo;
   {$ENDREGION}
-  protected
     function GetComparer: IComparer<T>; virtual;
     function GetCount: Integer; virtual;
     function GetIsEmpty: Boolean; virtual;
+    function GetIsNotEmpty: Boolean;
   public
     function GetEnumerator: IEnumerator<T>; virtual; abstract;
     function AsObject: TObject;
@@ -600,10 +609,11 @@ type
     function ToList: IList<T>; virtual;
     property Count: Integer read GetCount;
     property IsEmpty: Boolean read GetIsEmpty;
+    property IsNotEmpty: Boolean read GetIsNotEmpty;
   end;
 
   /// <summary>
-  /// Provides an abstract class base for IColleciton<T>.
+  /// Provides an abstract class base for <c>IColleciton{T}</c>.
   /// </summary>
   /// <remarks>
   ///   Notes: The Add/Remove/Clear methods are abstract. IsReadOnly returns False by default.
@@ -624,9 +634,7 @@ type
 
     procedure Clear; virtual; abstract;
 
-    /// <summary>
-    /// Returns false, by default.
-    /// </summary>
+    /// <value>Returns false, by default.</value>
     property IsReadOnly: Boolean read GetIsReadOnly;
   end;
 
@@ -1575,6 +1583,11 @@ end;
 function TEnumerableBase<T>.GetIsEmpty: Boolean;
 begin
   Result := not GetEnumerator.MoveNext;
+end;
+
+function TEnumerableBase<T>.GetIsNotEmpty: Boolean;
+begin
+  Result := not IsEmpty;
 end;
 
 function TEnumerableBase<T>.GetElementType: PTypeInfo;
