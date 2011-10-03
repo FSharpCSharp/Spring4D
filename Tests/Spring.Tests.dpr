@@ -71,7 +71,8 @@ uses
   Spring.Tests.Cryptography in 'Source\System\Spring.Tests.Cryptography.pas',
   Spring.Tests.Configuration in 'Source\Core\Spring.Tests.Configuration.pas',
   Spring.Tests.Logging in 'Source\Core\Spring.Tests.Logging.pas',
-  Spring.UnitTests in 'Source\Spring.UnitTests.pas';
+  Spring.UnitTests in 'Source\Spring.UnitTests.pas',
+  Spring.Tests.Collections in 'Source\System\Spring.Tests.Collections.pas';
 
 {$R *.RES}
 

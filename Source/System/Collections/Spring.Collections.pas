@@ -475,6 +475,14 @@ type
     property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
   end;
 
+  ISet<T> = interface(ICollection<T>)
+    procedure ExceptWith(const collection: IEnumerable<T>);
+    procedure IntersectWith(const collection: IEnumerable<T>);
+    procedure UnionWith(const collection: IEnumerable<T>);
+    function SetEquals(const collection: IEnumerable<T>): Boolean;
+    function Overlaps(const collection: IEnumerable<T>): Boolean;
+  end;
+
   ICollectionNotifyDelegate<T> = interface(IMulticastEvent<TCollectionNotifyEvent<T>>)
   end;
 
@@ -693,7 +701,6 @@ type
     function GetOnNotify: ICollectionNotifyDelegate<T>;
   protected
     function GetComparer: IComparer<T>; override;
-    function GetIsEmpty: Boolean; override;
   protected
     procedure Notify(const item: T; action: TCollectionNotification); virtual;
     procedure DoSort(const comparer: IComparer<T>); virtual;
@@ -781,7 +788,6 @@ type
         fDictionary: TGenericDictionary;
       protected
         function GetCount: Integer; override;
-        function GetIsEmpty: Boolean; override;
         function GetIsReadOnly: Boolean; override;
       public
         constructor Create(const controller: IInterface; dictionary: TGenericDictionary);
@@ -805,7 +811,6 @@ type
         fDictionary: TGenericDictionary;
       protected
         function GetCount: Integer; override;
-        function GetIsEmpty: Boolean; override;
         function GetIsReadOnly: Boolean; override;
       public
         constructor Create(const controller: IInterface; dictionary: TGenericDictionary);
@@ -843,7 +848,6 @@ type
   {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
     function GetEnumerator: IEnumerator<TPair<TKey,TValue>>; override;
     function GetCount: Integer; override;
-    function GetIsEmpty: Boolean; override;
     function Contains(const item: TPair<TKey,TValue>): Boolean; override;
     function ToArray: TArray<TPair<TKey,TValue>>; override;
     property Count: Integer read GetCount;
@@ -900,7 +904,6 @@ type
     function GetOnNotify: ICollectionNotifyDelegate<T>;
   protected
     function GetCount: Integer; override;
-    function GetIsEmpty: Boolean; override;
 
 //    function TryGetFirst(out value: T): Boolean; override;
 //    function TryGetLast(out value: T): Boolean; override;
@@ -941,7 +944,6 @@ type
     function GetOnNotify: ICollectionNotifyDelegate<T>;
   protected
     function GetCount: Integer; override;
-    function GetIsEmpty: Boolean; override;
   public
     constructor Create; overload;
     constructor Create(const collection: IEnumerable<T>); overload;
@@ -974,6 +976,29 @@ type
 
     property OwnsObjects: Boolean read GetOwnsObjects write SetOwnsObjects;
   end;
+
+  THashSet<T> = class(TCollectionBase<T>, ISet<T>)
+  private
+    fDictionary: IDictionary<T,Integer>; // TEMP Impl
+  protected
+    function GetCount: Integer; override;
+  public
+    constructor Create;
+
+    function GetEnumerator: IEnumerator<T>; override;
+    
+    procedure Add(const item: T); override;
+    function  Remove(const item: T): Boolean; override;
+    procedure Clear; override;
+
+    function Contains(const item: T; const comparer: IEqualityComparer<T>): Boolean; override;
+    procedure ExceptWith(const collection: IEnumerable<T>);
+    procedure IntersectWith(const collection: IEnumerable<T>);
+    procedure UnionWith(const collection: IEnumerable<T>);
+    function SetEquals(const collection: IEnumerable<T>): Boolean;
+    function Overlaps(const collection: IEnumerable<T>): Boolean;
+  end;
+
 
   ///	<summary>The adapter implementation for <c>IEnumerator{T}</c>.</summary>
   TEnumeratorAdapter<T> = class(TEnumeratorBase<T>)
@@ -1020,6 +1045,8 @@ type
 
     class function CreateQueue<T>: IQueue<T>; overload;
     class function CreateQueue<T: class>(ownsObjects: Boolean): IQueue<T>; overload;
+
+    class function CreateSet<T>: ISet<T>; overload;
 
     class function Empty<T>: IEnumerable<T>;
   end;
@@ -1582,7 +1609,7 @@ end;
 
 function TEnumerableBase<T>.GetIsEmpty: Boolean;
 begin
-  Result := not GetEnumerator.MoveNext;
+  Result := Count = 0;
 end;
 
 function TEnumerableBase<T>.GetIsNotEmpty: Boolean;
@@ -1961,11 +1988,6 @@ end;
 function TListBase<T>.GetComparer: IComparer<T>;
 begin
   Result := fComparer;
-end;
-
-function TListBase<T>.GetIsEmpty: Boolean;
-begin
-  Result := Count = 0;
 end;
 
 function TListBase<T>.TryGetFirst(out value: T): Boolean;
@@ -2362,11 +2384,6 @@ begin
   Result := fDictionary.Count;
 end;
 
-function TDictionary<TKey, TValue>.GetIsEmpty: Boolean;
-begin
-  Result := Count = 0;
-end;
-
 procedure TDictionary<TKey, TValue>.Add(const key: TKey;
   const value: TValue);
 begin
@@ -2496,11 +2513,6 @@ begin
   Result := fDictionary.Count;
 end;
 
-function TDictionary<TKey, TValue>.TKeyCollection.GetIsEmpty: Boolean;
-begin
-  Result := Count = 0;
-end;
-
 function TDictionary<TKey, TValue>.TKeyCollection.GetIsReadOnly: Boolean;
 begin
   Result := True;
@@ -2568,11 +2580,6 @@ end;
 function TDictionary<TKey, TValue>.TValueCollection.GetCount: Integer;
 begin
   Result := fDictionary.Values.Count;
-end;
-
-function TDictionary<TKey, TValue>.TValueCollection.GetIsEmpty: Boolean;
-begin
-  Result := Count = 0;
 end;
 
 function TDictionary<TKey, TValue>.TValueCollection.GetIsReadOnly: Boolean;
@@ -2660,11 +2667,6 @@ end;
 function TStack<T>.GetCount: Integer;
 begin
   Result := fStack.Count;
-end;
-
-function TStack<T>.GetIsEmpty: Boolean;
-begin
-  Result := fStack.Count = 0;
 end;
 
 function TStack<T>.GetOnNotify: ICollectionNotifyDelegate<T>;
@@ -2917,11 +2919,6 @@ begin
   Result := fQueue.Count;
 end;
 
-function TQueue<T>.GetIsEmpty: Boolean;
-begin
-  Result := fQueue.Count = 0;
-end;
-
 function TQueue<T>.GetOnNotify: ICollectionNotifyDelegate<T>;
 begin
   if fOnNotify = nil then
@@ -3081,11 +3078,6 @@ begin
   Result := TStack<T>.Create(stack, otOwned);
 end;
 
-class function TCollections.Empty<T>: IEnumerable<T>;
-begin
-  Result := TNullEnumerable<T>.Create;
-end;
-
 class function TCollections.CreateQueue<T>: IQueue<T>;
 var
   queue: Generics.Collections.TQueue<T>;
@@ -3100,6 +3092,16 @@ var
 begin
   queue := Generics.Collections.TObjectQueue<T>.Create(ownsObjects);
   Result := TQueue<T>.Create(queue, otOwned);
+end;
+
+class function TCollections.CreateSet<T>: ISet<T>;
+begin
+  Result := THashSet<T>.Create;
+end;
+
+class function TCollections.Empty<T>: IEnumerable<T>;
+begin
+  Result := TNullEnumerable<T>.Create;
 end;
 
 {$ENDREGION}
@@ -3148,6 +3150,141 @@ begin
   Result := fIndex > 0;
   if Result then
     Dec(fIndex);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'THashSet<T>'}
+
+constructor THashSet<T>.Create;
+begin
+  inherited Create;
+  fDictionary := TDictionary<T, Integer>.Create;
+end;
+
+procedure THashSet<T>.Add(const item: T);
+begin
+  fDictionary.AddOrSetValue(item, 0);
+end;
+
+//function THashSet<T>.Add(const item: T): Boolean;
+//begin
+//  Result := not fDictionary.ContainsKey(item);
+//  if Result then
+//  begin
+//    fDictionary.Add(item, 0);
+//  end;
+//end;
+
+function THashSet<T>.Remove(const item: T): Boolean;
+begin
+  Result := fDictionary.ContainsKey(item);
+  if Result then
+    fDictionary.Remove(item);
+end;
+
+procedure THashSet<T>.Clear;
+begin
+  fDictionary.Clear;
+end;
+
+function THashSet<T>.Contains(const item: T; const comparer: IEqualityComparer<T>): Boolean;
+begin
+  Result := fDictionary.ContainsKey(item);
+end;
+
+procedure THashSet<T>.ExceptWith(const collection: IEnumerable<T>);
+var
+  item: T;
+begin
+  TArgument.CheckNotNull(collection, 'collection');
+
+  for item in collection do
+  begin
+    fDictionary.Remove(item);
+  end;
+end;
+
+procedure THashSet<T>.IntersectWith(const collection: IEnumerable<T>);
+var
+  item: T;
+  list: IList<T>;
+begin
+  TArgument.CheckNotNull(collection, 'collection');
+
+  list := TCollections.CreateList<T>;
+  for item in Self do
+  begin
+    if not collection.Contains(item) then
+      list.Add(item);
+  end;
+  
+  for item in list do
+  begin
+    Remove(item);
+  end;
+end;
+
+procedure THashSet<T>.UnionWith(const collection: IEnumerable<T>);
+var
+  item: T;
+begin
+  TArgument.CheckNotNull(collection, 'collection');
+
+  for item in collection do
+  begin
+    Add(item);
+  end;
+end;
+
+function THashSet<T>.Overlaps(const collection: IEnumerable<T>): Boolean;
+var
+  item: T;
+begin
+  TArgument.CheckNotNull(collection, 'collection');
+
+  for item in collection do
+  begin
+    if Contains(item) then
+      Exit(True)
+  end;
+  Result := False;
+end;
+
+function THashSet<T>.SetEquals(const collection: IEnumerable<T>): Boolean;
+var
+  item: T;
+  localSet: ISet<T>;
+begin
+  TArgument.CheckNotNull(collection, 'collection');
+
+  localSet := THashSet<T>.Create;
+  
+  for item in collection do
+  begin
+    localSet.Add(item);
+    if not Contains(item) then
+      Exit(False);
+  end;
+
+  for item in Self do
+  begin
+    if not localSet.Contains(item) then
+      Exit(False);
+  end;
+
+  Result := True;
+end;
+
+function THashSet<T>.GetEnumerator: IEnumerator<T>;
+begin
+  Result := fDictionary.Keys.GetEnumerator;
+end;
+
+function THashSet<T>.GetCount: Integer;
+begin
+  Result := fDictionary.Count;
 end;
 
 {$ENDREGION}

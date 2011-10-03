@@ -23,7 +23,7 @@
 {***************************************************************************}
 
 ///	<summary>
-///	  Declares the fundamental interfaces for the <see href="http://spring4d.org">Spring4D</see> Framework.
+///	  Declares the fundamental interfaces for the <see href="http://spring4d.com">Spring4D</see> Framework.
 ///	</summary>
 unit Spring;
 
@@ -430,6 +430,9 @@ type
     ///	</summary>
     property IsEmpty: Boolean read GetIsEmpty;
 
+    ///	<summary>
+    ///	  Gets a value indicates whether there is any event handler.
+    ///	</summary>
     property IsNotEmpty: Boolean read GetIsNotEmpty;
   end;
 
