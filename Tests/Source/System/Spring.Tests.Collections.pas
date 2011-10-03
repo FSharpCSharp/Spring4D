@@ -45,8 +45,8 @@ implementation
 procedure TTestEmptyHashSet.SetUp;
 begin
   inherited;
-  fSet := THashSet<Integer>.Create;
-  fEmpty := THashSet<Integer>.Create;
+  fSet := TCollections.CreateSet<Integer>;
+  fEmpty := TCollections.CreateSet<Integer>;
 end;
 
 procedure TTestEmptyHashSet.TearDown;
@@ -110,8 +110,8 @@ end;
 procedure TTestNormalHashSet.SetUp;
 begin
   inherited;
-  fSet1 := THashSet<Integer>.Create;
-  fSet2 := THashSet<Integer>.Create;
+  fSet1 := TCollections.CreateSet<Integer>;
+  fSet2 := TCollections.CreateSet<Integer>;
   fSet1.AddRange([1, 2, 3]);
   fSet2.AddRange([3, 1, 4, 5]);
 end;

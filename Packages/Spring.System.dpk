@@ -82,6 +82,7 @@ contains
   Spring.Utils.WinApi in '..\Source\System\Utils\Spring.Utils.WinApi.pas',
   Spring.Utils in '..\Source\System\Utils\Spring.Utils.pas',
   Spring.ResourceStrings in '..\Source\System\Spring.ResourceStrings.pas',
-  Spring.Helpers in '..\Source\System\Spring.Helpers.pas';
+  Spring.Helpers in '..\Source\System\Spring.Helpers.pas',
+  Spring.Collections.Sets in '..\Source\System\Collections\Spring.Collections.Sets.pas';
 
 end.
