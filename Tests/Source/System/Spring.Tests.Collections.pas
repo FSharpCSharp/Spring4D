@@ -59,7 +59,6 @@ procedure TTestEmptyHashSet.TestEmpty;
 begin
   CheckEquals(0, fSet.Count);
   CheckTrue(fSet.IsEmpty);
-  CheckFalse(fSet.IsNotEmpty);
 end;
 
 procedure TTestEmptyHashSet.TestExceptWith;

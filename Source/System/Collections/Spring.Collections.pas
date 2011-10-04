@@ -342,11 +342,6 @@ type
     /// </summary>
     function GetIsEmpty: Boolean;
 
-    /// <summary>
-    /// The getter of the <see cref="IsNotEmpty" /> property.
-    /// </summary>
-    function GetIsNotEmpty: Boolean;
-
     ///	<summary>
     /// Gets the number of elements in the collection.
     /// </summary>
@@ -356,11 +351,6 @@ type
     /// Gets a value which indicates whether this collection is empty or not.
     /// </summary>
     property IsEmpty: Boolean read GetIsEmpty;
-
-    ///	<summary>
-    /// Gets a value which indicates whether this collection is not empty.
-    /// </summary>
-    property IsNotEmpty: Boolean read GetIsNotEmpty;
   end;
 
   /// <summary>
@@ -577,7 +567,6 @@ type
     function GetComparer: IComparer<T>; virtual;
     function GetCount: Integer; virtual;
     function GetIsEmpty: Boolean; virtual;
-    function GetIsNotEmpty: Boolean;
   public
     function GetEnumerator: IEnumerator<T>; virtual; abstract;
     function AsObject: TObject;
@@ -624,7 +613,6 @@ type
     function ToSet: ISet<T>; virtual;
     property Count: Integer read GetCount;
     property IsEmpty: Boolean read GetIsEmpty;
-    property IsNotEmpty: Boolean read GetIsNotEmpty;
   end;
 
   /// <summary>
@@ -1032,6 +1020,9 @@ type
 
     class function CreateSet<T>: ISet<T>; overload;
 
+    /// <summary>
+    /// Creates a readonly empty collection.
+    /// </summary>
     class function Empty<T>: IEnumerable<T>;
   end;
 
@@ -1606,11 +1597,6 @@ end;
 function TEnumerableBase<T>.GetIsEmpty: Boolean;
 begin
   Result := Count = 0;
-end;
-
-function TEnumerableBase<T>.GetIsNotEmpty: Boolean;
-begin
-  Result := not IsEmpty;
 end;
 
 function TEnumerableBase<T>.GetElementType: PTypeInfo;

@@ -34,7 +34,8 @@ uses
   SysUtils,
   TestFramework,
   Spring,
-  Spring.Utils;
+  Spring.Utils,
+  Spring.Utils.IO;
 
 type
   TTestSplitString = class(TTestCase)

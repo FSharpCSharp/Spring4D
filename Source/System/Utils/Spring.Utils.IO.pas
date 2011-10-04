@@ -47,6 +47,147 @@ uses
   Spring.Utils;
 
 type
+  ///	<summary>
+  ///	  Drive Type Enumeration
+  ///	</summary>
+  TDriveType = (
+    ///	<summary>
+    ///	  The type of drive is unknown.
+    ///	</summary>
+    dtUnknown,
+
+    ///	<summary>
+    ///	  The drive does not have a root directory.
+    ///	</summary>
+    dtNoRootDirectory,
+
+    ///	<summary>
+    ///	  The drive is a removable storage device, such as a floppy disk drive or a
+    ///	  USB flash drive.
+    ///	</summary>
+    dtRemovable,
+
+    ///	<summary>
+    ///	  The drive is a fixed disk.
+    ///	</summary>
+    dtFixed,
+
+    ///	<summary>
+    ///	  The drive is a network drive.
+    ///	</summary>
+    dtNetwork,
+
+    ///	<summary>
+    ///	  The drive is an optical disc device, such as a CD or DVD-ROM.
+    ///	</summary>
+    dtCDRom,
+
+    ///	<summary>
+    ///	  The drive is a RAM disk.
+    ///	</summary>
+    dtRam
+  );
+
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Provides access to information on a drive.
+  ///	</summary>
+  ///	<remarks>
+  ///	  Use the static <see cref="Spring.Utils|TDriveInfo.GetDrives" /> method
+  ///	  to retrieve all drives of the computer.
+  ///	  <note type="caller">
+  ///	    Caller must use the
+  ///	    <see cref="Spring.Utils|TDriveInfo.IsReady">IsReady</see> property to
+  ///	    check whether the drive is ready before accessing other members.
+  ///	    Otherwise, an <see cref="Spring|EIOException" /> exception will be
+  ///	    raised if it is not ready.
+  ///	  </note>
+  ///	</remarks>
+  ///	<threadsafety static="true" instance="false" />
+  ///	<seealso href="http://msdn.microsoft.com/en-us/library/system.io.driveinfo.aspx">
+  ///	   System.IO.DriveInfo (.Net Framework)
+  ///	</seealso>
+  {$ENDREGION}
+  TDriveInfo = record
+  strict private
+    fDriveName: string;
+    fRootDirectory: string;
+    fIsInitialized: Boolean;
+    fAvailableFreeSpace: Int64;
+    fTotalSize: Int64;
+    fTotalFreeSpace: Int64;
+    fVolumeName: array[0..MAX_PATH] of Char;
+    fFileSystemName: array[0..MAX_PATH] of Char;
+    fSerialNumber: DWORD;
+    fMaximumComponentLength: DWORD;
+    fFileSystemFlags: DWORD;
+    function GetAvailableFreeSpace: Int64;
+    function GetDriveFormat: string;
+    function GetDriveType: TDriveType;
+    function GetDriveTypeString: string;
+    function GetIsReady: Boolean;
+    function GetTotalFreeSpace: Int64;
+    function GetTotalSize: Int64;
+    function GetVolumeLabel: string;
+    procedure SetVolumeLabel(const value: string);
+  private
+    procedure EnsureInitialized;
+  public
+    constructor Create(const driveName: string);
+
+    ///	<summary>
+    ///	  Retrieves the drive names of all logical drives on a computer.
+    ///	</summary>
+    class function GetDrives: TArray<TDriveInfo>; static;
+
+    ///	<summary>
+    ///	  Checks whether a drive is ready.
+    ///	</summary>
+    ///	<exception cref="EIOException">
+    ///	  Raised if a drive is not ready.
+    ///	</exception>
+    procedure CheckIsReady;
+
+    ///	<summary>Refreshes the information of a drive.</summary>
+    procedure Refresh;
+
+    ///	<summary>Gets the amount of available free space on a drive.</summary>
+    property AvailableFreeSpace: Int64 read GetAvailableFreeSpace;
+
+    ///	<summary>Gets the name of the file system, such as NTFS or
+    ///	FAT32.</summary>
+    property DriveFormat: string read GetDriveFormat;
+
+    ///	<summary>Gets the drive type.</summary>
+    property DriveType: TDriveType read GetDriveType;
+
+    ///	<summary>Gets the drive type.</summary>
+    property DriveTypeString: string read GetDriveTypeString;
+
+    ///	<summary>Gets a value indicating whether a drive is ready.</summary>
+    property IsReady: Boolean read GetIsReady;
+
+    ///	<summary>Gets the name of a drive.</summary>
+    property Name: string read fDriveName;
+
+    ///	<summary>Gets the root directory of a drive.</summary>
+    property RootDirectory: string read fRootDirectory;
+
+    ///	<summary>
+    ///	  Gets the total amount of free space available on a drive.
+    ///	</summary>
+    property TotalFreeSpace: Int64 read GetTotalFreeSpace;
+
+    ///	<summary>Gets the total size of storage space on a drive.</summary>
+    property TotalSize: Int64 read GetTotalSize;
+
+    ///	<summary>
+    ///	  Gets or sets the volume label of a drive.
+    ///	</summary>
+    property VolumeLabel: string read GetVolumeLabel write SetVolumeLabel;
+  end;
+
+
   {$REGION 'TSizeUnit, TSize'}
 
   TSizeUnit = record
@@ -673,6 +814,17 @@ uses
   Spring.Utils.WinAPI,
   Spring.Collections.Extensions;
 
+const
+  DriveTypeStrings: array[TDriveType] of string = (
+    SUnknownDriveDescription,
+    SNoRootDirectoryDescription,
+    SRemovableDescription,
+    SFixedDescription,
+    SNetworkDescription,
+    SCDRomDescription,
+    SRamDescription
+  );
+
 {$REGION 'Routines'}
 
 function EnumerateDirectories(const path: string): IFileEnumerable;
@@ -770,6 +922,168 @@ begin
   finally
     DragFinish(dropHandle);
   end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TDriveInfo'}
+
+constructor TDriveInfo.Create(const driveName: string);
+var
+  s: string;
+begin
+  s := UpperCase(driveName);
+  if not (Length(s) in [1..3]) or not CharInSet(s[1], ['A'..'Z']) then
+  begin
+    raise EArgumentException.Create('driveName');
+  end;
+  case Length(s) of
+    1:
+    begin
+      fRootDirectory := s + DriveDelim + PathDelim;
+    end;
+    2:
+    begin
+      if s[2] <> DriveDelim then
+      begin
+        raise EArgumentException.Create('driveName');
+      end;
+      fRootDirectory := s + PathDelim;
+    end;
+    3:
+    begin
+      if s[2] <> DriveDelim then
+        raise EArgumentException.Create('driveName');
+      if s[3] <> PathDelim then
+        raise EArgumentException.Create('driveName');
+      fRootDirectory := s;
+    end;
+    else
+    begin
+      Assert(False);
+    end;
+  end;
+  Assert(Length(fRootDirectory) = 3, 'Length of fRootDirectory should be 3.');
+  fDriveName := Copy(fRootDirectory, 1, 2);
+  fIsInitialized := False;
+end;
+
+class function TDriveInfo.GetDrives: TArray<TDriveInfo>;
+var
+  drives: TStringDynArray;
+  i: Integer;
+begin
+  drives := Environment.GetLogicalDrives;
+  SetLength(Result, Length(drives));
+  for i := 0 to High(drives) do
+  begin
+    Result[i] := TDriveInfo.Create(drives[i]);
+  end;
+end;
+
+procedure TDriveInfo.CheckIsReady;
+begin
+  if not IsReady then
+  begin
+    raise EIOException.CreateResFmt(@SDriveNotReady, [fDriveName]);
+  end;
+end;
+
+procedure TDriveInfo.EnsureInitialized;
+begin
+  if not fIsInitialized then
+  begin
+    fIsInitialized := True;
+    CheckIsReady;
+    Refresh;
+  end;
+end;
+
+function TDriveInfo.GetAvailableFreeSpace: Int64;
+begin
+  EnsureInitialized;
+  Result := fAvailableFreeSpace;
+end;
+
+function TDriveInfo.GetDriveFormat: string;
+begin
+  EnsureInitialized;
+  Result := fFileSystemName;
+end;
+
+function TDriveInfo.GetDriveType: TDriveType;
+var
+  value: Cardinal;
+begin
+  value := Windows.GetDriveType(PChar(fRootDirectory));
+  case value of
+    DRIVE_NO_ROOT_DIR:  Result := dtNoRootDirectory;
+    DRIVE_REMOVABLE:    Result := dtRemovable;
+    DRIVE_FIXED:        Result := dtFixed;
+    DRIVE_REMOTE:       Result := dtNetwork;
+    DRIVE_CDROM:        Result := dtCDRom;
+    DRIVE_RAMDISK:      Result := dtRam;
+    else                Result := dtUnknown;  // DRIVE_UNKNOWN
+  end;
+end;
+
+function TDriveInfo.GetDriveTypeString: string;
+begin
+  Result := DriveTypeStrings[Self.DriveType];
+end;
+
+function TDriveInfo.GetIsReady: Boolean;
+begin
+  Result := Length(fRootDirectory) > 0;
+  Result := Result and (SysUtils.DiskSize(Ord(fRootDirectory[1]) - $40) > -1);
+end;
+
+function TDriveInfo.GetTotalFreeSpace: Int64;
+begin
+  EnsureInitialized;
+  Result := fTotalFreeSpace;
+end;
+
+function TDriveInfo.GetTotalSize: Int64;
+begin
+  EnsureInitialized;
+  Result := fTotalSize;
+end;
+
+function TDriveInfo.GetVolumeLabel: string;
+begin
+  EnsureInitialized;
+  Result := fVolumeName;
+end;
+
+procedure TDriveInfo.Refresh;
+begin
+  if IsReady then
+  begin
+    Win32Check(SysUtils.GetDiskFreeSpaceEx(
+      PChar(fRootDirectory),
+      fAvailableFreeSpace,
+      fTotalSize,
+      @fTotalFreeSpace
+    ));
+    Win32Check(Windows.GetVolumeInformation(
+      PChar(fRootDirectory),
+      fVolumeName,
+      Length(fVolumeName),
+      @fSerialNumber,
+      fMaximumComponentLength,
+      fFileSystemFlags,
+      fFileSystemName,
+      Length(fFileSystemName)
+    ));
+  end;
+end;
+
+procedure TDriveInfo.SetVolumeLabel(const value: string);
+begin
+  CheckIsReady;
+  Win32Check(Windows.SetVolumeLabel(PChar(fRootDirectory), PChar(value)));
 end;
 
 {$ENDREGION}

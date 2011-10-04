@@ -237,8 +237,7 @@ type
   ///	  type.
   ///	</typeparam>
   ///	<remarks>
-  ///	  The <typeparamref name="T" /> must be a value type such as a value of
-  ///	  string, Integer.
+  ///	  The <typeparamref name="T" /> must be a value type such as string, Integer.
   ///	</remarks>
   TNullable<T> = packed record
   private
