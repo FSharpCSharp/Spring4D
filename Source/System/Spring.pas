@@ -1361,7 +1361,7 @@ begin
 end;
 {$ELSE}
 begin
-  RaisePlatformNotImplementedException;
+  PlatformNotImplemented;
 end;
 {$ENDIF}
 
@@ -1412,7 +1412,7 @@ asm
 end;
 {$ELSE}
 begin
-  RaisePlatformNotImplementedException;
+  PlatformNotImplemented;
 end;
 {$ENDIF}
 

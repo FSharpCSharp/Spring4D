@@ -33,11 +33,11 @@ uses
   Windows,
   SysUtils,
   IOUtils,
-  {$IFDEF HAS_UNITSCOPE}
+{$IFDEF HAS_UNITSCOPE}
   System.Win.ComObj,
-  {$ELSE}
+{$ELSE}
   ComObj,
-  {$ENDIF}
+{$ENDIF}
   ActiveX,
   ShellAPI,
   Masks,

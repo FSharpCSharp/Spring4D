@@ -3,7 +3,7 @@ Spring Enterprise Library for Delphi
 Credits
 ===========================================
 
-Comitters
+Committers
 * Baoquan Zuo (Paul)
 * Leszek Gojniczek (Leo Raster)
 * Nick Hodges

@@ -32,28 +32,14 @@
 {$ENDIF}
 
 {$IFDEF CPUX64}
-  {$MESSAGE WARN 'This framework is not ready for Win64.'}
+  {$MESSAGE WARN 'This framework has not been ready for Win64.'}
 {$ENDIF}
 
 {$IFNDEF MSWINDOWS}
   {$MESSAGE ERROR 'This framework is only available for Windows at present.'}
 {$ENDIF}
 
-{.$SCOPEDENUMS ON}           // Enable Scoped Enumerations
-
 {$WARN UNIT_PLATFORM OFF}    // Turn off UNIT_PLATFORM warning
 {$WARN SYMBOL_PLATFORM OFF}  // Turn off SYMBOL_PLATFORM warning
-
-{$IFNDEF DELPHI2007_UP}
-  {$DEFINE DisableEnhancedRecords}
-{$ENDIF}
-
-{$IFNDEF DELPHI2009_UP}
-  {$DEFINE DisableGenerics}
-{$ENDIF}
-
-{$IFNDEF DELPHI2010_UP}
-  {$DEFINE DisableReflection}
-{$ENDIF}
 
 {$ENDIF ~SPRING_INC}

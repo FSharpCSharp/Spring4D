@@ -2821,11 +2821,14 @@ end;
 
 {$ENDREGION}
 
-{ TVariant }
+
+{$REGION 'TVariant'}
 
 class function TVariant.IsNull(const value: Variant): Boolean;
 begin
   Result := VarIsNull(value);
 end;
+
+{$ENDREGION}
 
 end.
