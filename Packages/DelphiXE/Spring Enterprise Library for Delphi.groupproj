@@ -9,6 +9,9 @@
 			<Projects Include="Spring.Core.dproj">
 				<Dependencies/>
 			</Projects>
+			<Projects Include="..\..\Tests\Spring.Tests.dproj">
+				<Dependencies/>
+			</Projects>
 		</ItemGroup>
 		<ProjectExtensions>
 			<Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -35,14 +38,23 @@
 		<Target Name="Spring_Core:Make">
 			<MSBuild Projects="Spring.Core.dproj" Targets="Make"/>
 		</Target>
+		<Target Name="Spring_Tests">
+			<MSBuild Projects="..\..\Tests\Spring.Tests.dproj"/>
+		</Target>
+		<Target Name="Spring_Tests:Clean">
+			<MSBuild Projects="..\..\Tests\Spring.Tests.dproj" Targets="Clean"/>
+		</Target>
+		<Target Name="Spring_Tests:Make">
+			<MSBuild Projects="..\..\Tests\Spring.Tests.dproj" Targets="Make"/>
+		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="Spring_System;Spring_Core"/>
+			<CallTarget Targets="Spring_System;Spring_Core;Spring_Tests"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="Spring_System:Clean;Spring_Core:Clean"/>
+			<CallTarget Targets="Spring_System:Clean;Spring_Core:Clean;Spring_Tests:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="Spring_System:Make;Spring_Core:Make"/>
+			<CallTarget Targets="Spring_System:Make;Spring_Core:Make;Spring_Tests:Make"/>
 		</Target>
 		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')" Project="$(BDS)\Bin\CodeGear.Group.Targets"/>
 	</Project>

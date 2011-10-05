@@ -4,7 +4,7 @@
 			<MainSource>Spring.Core.dpk</MainSource>
 			<ProjectVersion>12.3</ProjectVersion>
 			<Base>True</Base>
-			<Config Condition="'$(Config)'==''">Debug</Config>
+			<Config Condition="'$(Config)'==''">Release</Config>
 			<Platform>Win32</Platform>
 			<AppType>Package</AppType>
 			<FrameworkType>None</FrameworkType>
@@ -24,6 +24,7 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
+			<DCC_UnitSearchPath>..\..\Source\System;..\..\Source\System\Collections;..\..\Source\System\Cryptography;..\..\Source\System\Reflection;..\..\Source\System\Utils;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<RuntimeOnlyPackage>true</RuntimeOnlyPackage>
 			<GenPackage>true</GenPackage>
 			<GenDll>true</GenDll>
@@ -40,7 +41,7 @@
 		<PropertyGroup Condition="'$(Cfg_2)'!=''">
 			<DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
 			<DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
-			<DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
+			<DCC_SymbolReferenceInfo>1</DCC_SymbolReferenceInfo>
 			<DCC_DebugInformation>false</DCC_DebugInformation>
 		</PropertyGroup>
 		<ItemGroup>
@@ -50,30 +51,30 @@
 			<DCCReference Include="rtl.dcp"/>
 			<DCCReference Include="Spring.System.dcp"/>
 			<DCCReference Include="xmlrtl.dcp"/>
-			<DCCReference Include="..\..\Source\Core\Configuration\Spring.Configuration.Node.pas"/>
-			<DCCReference Include="..\..\Source\Core\Configuration\Spring.Configuration.Sources.pas"/>
-			<DCCReference Include="..\..\Source\Core\Configuration\Spring.Configuration.pas"/>
-			<DCCReference Include="..\..\Source\Core\Configuration\Spring.Configuration.ConfigurationProperty.pas"/>
-			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.LoggerManager.pas"/>
-			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.pas"/>
 			<DCCReference Include="..\..\Source\Core\Services\Spring.Services.pas"/>
-			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Resolvers.pas"/>
-			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Registration.pas"/>
-			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Builder.pas"/>
-			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Appenders.pas"/>
-			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Loggers.pas"/>
+			<DCCReference Include="..\..\Source\Core\Configuration\Spring.Configuration.ConfigurationProperty.pas"/>
+			<DCCReference Include="..\..\Source\Core\Configuration\Spring.Configuration.Node.pas"/>
+			<DCCReference Include="..\..\Source\Core\Configuration\Spring.Configuration.pas"/>
 			<DCCReference Include="..\..\Source\Core\Configuration\Spring.Configuration.ResourceStrings.pas"/>
-			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.LifetimeManager.pas"/>
+			<DCCReference Include="..\..\Source\Core\Configuration\Spring.Configuration.Sources.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Builder.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.ComponentActivator.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Core.pas"/>
-			<DCCReference Include="..\..\Source\Core\Services\Spring.Services.Logging.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Injection.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.LifetimeManager.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Pool.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Registration.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Resolvers.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.ResourceStrings.pas"/>
+			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Appenders.pas"/>
 			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Core.pas"/>
 			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Layouts.pas"/>
-			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Utils.pas"/>
-			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.ResourceStrings.pas"/>
-			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Pool.pas"/>
-			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Injection.pas"/>
+			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.LoggerManager.pas"/>
+			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Loggers.pas"/>
 			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.ResourceStrings.pas"/>
+			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Utils.pas"/>
+			<DCCReference Include="..\..\Source\Core\Services\Spring.Services.Logging.pas"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>
@@ -124,7 +125,6 @@
 						<VersionInfoKeys Name="Comments"/>
 					</VersionInfoKeys>
 					<Excluded_Packages>
-						<Excluded_Packages Name="C:\Users\Public\Documents\RAD Studio\8.0\Bpl\DReflector.bpl">(untitled)</Excluded_Packages>
 						<Excluded_Packages Name="$(BDSBIN)\dcloffice2k150.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
 						<Excluded_Packages Name="$(BDSBIN)\dclofficexp150.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
 					</Excluded_Packages>
