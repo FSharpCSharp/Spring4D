@@ -55,7 +55,7 @@ object EnumerationDemoForm: TEnumerationDemoForm
     Top = 101
     Width = 218
     Height = 25
-    Caption = 'Run SkipWhileEnumerable to skip evens'
+    Caption = 'Run SkipWhile less than five'
     TabOrder = 4
     OnClick = Button4Click
   end

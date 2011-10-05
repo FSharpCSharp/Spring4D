@@ -5,7 +5,7 @@ program Demo.Spring.Enum;
 {$R *.res}
 
 uses
-  System.SysUtils,
+  {$IF CompilerVersion >= 230}System.{$IFEND}SysUtils,
   uEnumDemo in 'uEnumDemo.pas';
 
 begin

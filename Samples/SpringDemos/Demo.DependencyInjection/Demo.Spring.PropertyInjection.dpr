@@ -5,7 +5,7 @@ program Demo.Spring.PropertyInjection;
 {$R *.res}
 
 uses
-  System.SysUtils,
+  {$IF CompilerVersion >= 230}System.{$IFEND}SysUtils,
   Spring.Container,
   Spring.Services,
   uPropertyInjection in 'uPropertyInjection.pas';
