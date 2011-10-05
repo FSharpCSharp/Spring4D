@@ -3,8 +3,8 @@ unit frmEnumerableDemo;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls
+  Windows, Messages, SysUtils, Variants, Classes, Graphics,
+  Controls, Forms, Dialogs, StdCtrls
   , Spring
   , Spring.Collections
   , System.Generics.Collections
@@ -34,9 +34,9 @@ type
     procedure Button7Click(Sender: TObject);
   private
     { Private declarations }
-    List: IList<TPair<integer, string>>;
+    List: IList<TIntegerStringPair>;
+    function CreateAnotherList: IList<TIntegerStringPair>;
     procedure Clear;
-    function CreateAnotherList: IList<TPair<integer, string>>;
   public
     { Public declarations }
   end;
@@ -47,8 +47,6 @@ var
 implementation
 
 {$R *.dfm}
-
-
 
 procedure TEnumerationDemoForm.Button1Click(Sender: TObject);
 var
@@ -66,14 +64,15 @@ procedure TEnumerationDemoForm.Button2Click(Sender: TObject);
 var
   Predicate: Spring.TPredicate<TIntegerStringPair>;
   Pair: TIntegerStringPair;
-  Enumerable: TWhereEnumerable<TIntegerStringPair>;
+  Enumerable: IEnumerable<TIntegerStringPair>;
 begin
   Clear;
   Predicate := function(const Pair: TIntegerStringPair): Boolean
                begin
                  Result :=  Pair.Key mod 2 = 0;
                end;
-  Enumerable := TWhereEnumerable<TIntegerStringPair>.Create(List, Predicate);
+  // Same as TWhereEnumerable<TIntegerStringPair>.Create(List, Predicate);
+  Enumerable := List.Where(Predicate);
 
   for Pair in Enumerable do
   begin
@@ -85,11 +84,12 @@ end;
 procedure TEnumerationDemoForm.Button3Click(Sender: TObject);
 var
   Pair: TIntegerStringPair;
-  Enumerable: TSkipEnumerable<TIntegerStringPair>;
+  Enumerable: IEnumerable<TIntegerStringPair>;
 begin
   Clear;
   // Skip the first seven
-  Enumerable := TSkipEnumerable<TIntegerStringPair>.Create(List, 7);
+  // The below is basically the same as TSkipEnumerable<TIntegerStringPair>.Create(List, 7);
+  Enumerable := List.Skip(7);
 
   for Pair in Enumerable do
   begin
@@ -102,7 +102,7 @@ procedure TEnumerationDemoForm.Button4Click(Sender: TObject);
 var
   Pair: TIntegerStringPair;
   Predicate: Spring.TPredicate<TIntegerStringPair>;
-  Enumerable: TSkipWhileEnumerable<TIntegerStringPair>;
+  Enumerable: IEnumerable<TIntegerStringPair>;
 begin
   Clear;
   Predicate := function(const Pair: TIntegerStringPair): Boolean
@@ -110,7 +110,8 @@ begin
                  Result :=  Pair.Key > 5;
                end;
 
-  Enumerable := TSkipWhileEnumerable<TIntegerStringPair>.Create(List, Predicate);
+  // Same as TSkipWhileEnumerable<TIntegerStringPair>.Create(List, Predicate);
+  Enumerable := List.SkipWhile(Predicate);
   for Pair in Enumerable do
   begin
     Memo1.Lines.Add(Pair.Value);
@@ -121,11 +122,12 @@ end;
 procedure TEnumerationDemoForm.Button5Click(Sender: TObject);
 var
   Pair: TIntegerStringPair;
-  Enumerable: TTakeEnumerable<TIntegerStringPair>;
+  Enumerable: IEnumerable<TIntegerStringPair>;
 begin
   Clear;
   // Only "take" the first seven
-  Enumerable := TTakeEnumerable<TIntegerStringPair>.Create(List, 7);
+  // Same as TTakeEnumerable<TIntegerStringPair>.Create(List, 7);
+  Enumerable := List.Take(7);
 
   for Pair in Enumerable do
   begin
@@ -138,7 +140,7 @@ procedure TEnumerationDemoForm.Button6Click(Sender: TObject);
 var
   Pair: TIntegerStringPair;
   Predicate: Spring.TPredicate<TIntegerStringPair>;
-  Enumerable: TTakeWhileEnumerable<TIntegerStringPair>;
+  Enumerable: IEnumerable<TIntegerStringPair>;
 begin
   Clear;
   Predicate := function(const Pair: TIntegerStringPair): Boolean
@@ -146,7 +148,8 @@ begin
                  Result :=  Pair.Key < 5;
                end;
 
-  Enumerable := TTakeWhileEnumerable<TIntegerStringPair>.Create(List, Predicate);
+  // Same as TTakeWhileEnumerable<TIntegerStringPair>.Create(List, Predicate);
+  Enumerable := List.TakeWhile(Predicate);
   for Pair in Enumerable do
   begin
     Memo1.Lines.Add(Pair.Value);
@@ -157,13 +160,14 @@ end;
 procedure TEnumerationDemoForm.Button7Click(Sender: TObject);
 var
   Pair: TIntegerStringPair;
-  Enumerable: TConcatEnumerable<TIntegerStringPair>;
+  Enumerable: IEnumerable<TIntegerStringPair>;
   TempList: IList<TIntegerStringPair>;
 begin
   Clear;
   TempList := CreateAnotherList;
 
-  Enumerable := TConcatEnumerable<TIntegerStringPair>.Create(List, TempList);
+  // Same as TConcatEnumerable<TIntegerStringPair>.Create(List, TempList);
+  Enumerable := List.Concat(TempList);
 
   for Pair in Enumerable do
   begin
