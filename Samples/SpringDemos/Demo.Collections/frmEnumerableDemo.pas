@@ -7,7 +7,7 @@ uses
   Controls, Forms, Dialogs, StdCtrls
   , Spring
   , Spring.Collections
-  , System.Generics.Collections
+  , {$IF CompilerVersion >= 230}System.{$IFEND}Generics.Collections
   , Spring.Collections.Extensions
   ;
 
@@ -58,7 +58,6 @@ begin
     Memo1.Lines.Add(Pair.Value);
   end;
 end;
-
 
 procedure TEnumerationDemoForm.Button2Click(Sender: TObject);
 var
@@ -149,6 +148,8 @@ begin
                end;
 
   // Same as TTakeWhileEnumerable<TIntegerStringPair>.Create(List, Predicate);
+  // "Takes" the items from the enumeration as long as the Pair.Key is less than
+  // five.  Once it isn't less than five, it stops and nothing else is returned.
   Enumerable := List.TakeWhile(Predicate);
   for Pair in Enumerable do
   begin

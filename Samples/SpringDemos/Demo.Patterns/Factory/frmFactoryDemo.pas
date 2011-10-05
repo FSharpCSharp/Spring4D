@@ -3,8 +3,8 @@ unit frmFactoryDemo;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Spring.DesignPatterns, Vcl.StdCtrls;
+  Windows, Messages, SysUtils, Variants, Classes, Graphics,
+  Controls, Forms, Dialogs, Spring.DesignPatterns, StdCtrls;
 
 type
   TForm29 = class(TForm)
