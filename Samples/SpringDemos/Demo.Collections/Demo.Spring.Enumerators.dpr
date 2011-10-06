@@ -1,7 +1,7 @@
 program Demo.Spring.Enumerators;
 
 uses
-  Vcl.Forms,
+  Forms,
   frmEnumerableDemo in 'frmEnumerableDemo.pas' {EnumerationDemoForm};
 
 {$R *.res}

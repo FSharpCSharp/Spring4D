@@ -1,7 +1,7 @@
 program Demo.Spring.ObserverPattern;
 
 uses
-  Vcl.Forms,
+  Forms,
   frmObserverPattern in 'frmObserverPattern.pas' {Form28},
   uObserverDemo in 'uObserverDemo.pas';
 

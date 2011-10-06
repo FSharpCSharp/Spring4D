@@ -1,7 +1,7 @@
 program Demo.Spring.FactoryPattern;
 
 uses
-  Vcl.Forms,
+  Forms,
   frmFactoryDemo in 'frmFactoryDemo.pas' {Form29},
   uFactoryDemo in 'uFactoryDemo.pas';
 
