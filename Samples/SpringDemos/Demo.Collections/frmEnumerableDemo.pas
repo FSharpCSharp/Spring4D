@@ -24,6 +24,14 @@ type
     Button5: TButton;
     Button6: TButton;
     Button7: TButton;
+    Button8: TButton;
+    Button9: TButton;
+    Button10: TButton;
+    Button11: TButton;
+    Button12: TButton;
+    Button13: TButton;
+    Button14: TButton;
+    Button15: TButton;
     procedure FormCreate(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
@@ -32,6 +40,14 @@ type
     procedure Button5Click(Sender: TObject);
     procedure Button6Click(Sender: TObject);
     procedure Button7Click(Sender: TObject);
+    procedure Button8Click(Sender: TObject);
+    procedure Button9Click(Sender: TObject);
+    procedure Button10Click(Sender: TObject);
+    procedure Button11Click(Sender: TObject);
+    procedure Button12Click(Sender: TObject);
+    procedure Button13Click(Sender: TObject);
+    procedure Button14Click(Sender: TObject);
+    procedure Button15Click(Sender: TObject);
   private
     { Private declarations }
     List: IList<TIntegerStringPair>;
@@ -47,6 +63,7 @@ var
 implementation
 
 {$R *.dfm}
+
 
 procedure TEnumerationDemoForm.Button1Click(Sender: TObject);
 var
@@ -175,6 +192,91 @@ begin
     Memo1.Lines.Add(Pair.Value);
   end;
 
+end;
+
+procedure TEnumerationDemoForm.Button8Click(Sender: TObject);
+var
+  Pair: TIntegerStringPair;
+begin
+  Clear;
+  Pair := List.First;
+  Memo1.Lines.Add(Pair.Value);
+end;
+
+procedure TEnumerationDemoForm.Button9Click(Sender: TObject);
+var
+  Pair: TIntegerStringPair;
+begin
+  Clear;
+  Pair := List.Last;
+  Memo1.Lines.Add(Pair.Value);
+end;
+
+procedure TEnumerationDemoForm.Button10Click(Sender: TObject);
+var
+  Pair: TIntegerStringPair;
+begin
+  Clear;
+  Pair := List.ElementAt(4); // zero-based
+  Memo1.Lines.Add(Pair.Value);
+end;
+
+procedure TEnumerationDemoForm.Button11Click(Sender: TObject);
+var
+  Pair: TIntegerStringPair;
+begin
+  Clear;
+  Pair := List.Min;
+  Memo1.Lines.Add(Pair.Value);
+end;
+
+procedure TEnumerationDemoForm.Button12Click(Sender: TObject);
+var
+  Pair: TIntegerStringPair;
+begin
+  Clear;
+  Pair := List.Max;
+  Memo1.Lines.Add(Pair.Value);
+end;
+
+procedure TEnumerationDemoForm.Button13Click(Sender: TObject);
+var
+  Pair: TIntegerStringPair;
+begin
+  Clear;
+  for Pair in List.Reversed do
+  begin
+    Memo1.Lines.Add(Pair.Value);
+  end;
+end;
+
+procedure TEnumerationDemoForm.Button14Click(Sender: TObject);
+var
+  Pair: TIntegerStringPair;
+  Action: TAction<TIntegerStringPair>;
+  Enumerable: IEnumerable<TIntegerStringPair>;
+begin
+  Clear;
+  Action := procedure(const Pair: TIntegerStringPair)
+            begin
+              Memo1.Lines.Add(Format('The numeric form of %s is %d', [Pair.Value, Pair.Key]))
+            end;
+
+  List.ForEach(Action);
+
+end;
+
+
+procedure TEnumerationDemoForm.Button15Click(Sender: TObject);
+var
+  Pair: TIntegerStringPair;
+begin
+  Clear;
+  // Note that the order is changed
+  for Pair in List.ToSet.ToList do
+  begin
+    Memo1.Lines.Add(Pair.Value);
+  end;
 end;
 
 procedure TEnumerationDemoForm.Clear;

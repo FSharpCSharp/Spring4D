@@ -2,8 +2,8 @@ object EnumerationDemoForm: TEnumerationDemoForm
   Left = 0
   Top = 0
   Caption = 'Enumeration Demo Form'
-  ClientHeight = 453
-  ClientWidth = 583
+  ClientHeight = 512
+  ClientWidth = 579
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -12,13 +12,17 @@ object EnumerationDemoForm: TEnumerationDemoForm
   Font.Style = []
   OldCreateOrder = False
   OnCreate = FormCreate
+  DesignSize = (
+    579
+    512)
   PixelsPerInch = 96
   TextHeight = 13
   object Memo1: TMemo
-    Left = 232
+    Left = 243
     Top = 8
-    Width = 343
-    Height = 437
+    Width = 328
+    Height = 496
+    Anchors = [akLeft, akTop, akRight, akBottom]
     Lines.Strings = (
       'Memo1')
     TabOrder = 0
@@ -85,5 +89,77 @@ object EnumerationDemoForm: TEnumerationDemoForm
     Caption = 'Concat two lists'
     TabOrder = 7
     OnClick = Button7Click
+  end
+  object Button8: TButton
+    Left = 8
+    Top = 225
+    Width = 218
+    Height = 25
+    Caption = 'Get first item'
+    TabOrder = 8
+    OnClick = Button8Click
+  end
+  object Button9: TButton
+    Left = 8
+    Top = 256
+    Width = 218
+    Height = 25
+    Caption = 'Get last item'
+    TabOrder = 9
+    OnClick = Button9Click
+  end
+  object Button10: TButton
+    Left = 8
+    Top = 287
+    Width = 218
+    Height = 25
+    Caption = 'Get the fifth item'
+    TabOrder = 10
+    OnClick = Button10Click
+  end
+  object Button11: TButton
+    Left = 8
+    Top = 318
+    Width = 218
+    Height = 25
+    Caption = 'Get the minimum valued item'
+    TabOrder = 11
+    OnClick = Button11Click
+  end
+  object Button12: TButton
+    Left = 8
+    Top = 349
+    Width = 218
+    Height = 25
+    Caption = 'Get the maximum valued item'
+    TabOrder = 12
+    OnClick = Button12Click
+  end
+  object Button13: TButton
+    Left = 8
+    Top = 380
+    Width = 218
+    Height = 25
+    Caption = 'Get items in reverse order'
+    TabOrder = 13
+    OnClick = Button13Click
+  end
+  object Button14: TButton
+    Left = 8
+    Top = 411
+    Width = 218
+    Height = 25
+    Caption = 'Create string with ForEach'
+    TabOrder = 14
+    OnClick = Button14Click
+  end
+  object Button15: TButton
+    Left = 8
+    Top = 442
+    Width = 218
+    Height = 25
+    Caption = 'Move to set back to list'
+    TabOrder = 15
+    OnClick = Button15Click
   end
 end
