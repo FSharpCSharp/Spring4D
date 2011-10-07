@@ -5,7 +5,7 @@ program Demo.Spring.Collections.Stack;
 {$R *.res}
 
 uses
-  {$IF CompilerVersion >= 230}System.{$IFEND}SysUtils,
+  {$IF CompilerVersion >= 23.0}System.SysUtils{$ELSE}SysUtils{$IFEND},
   uIsPalindrome in 'uIsPalindrome.pas';
 
 var

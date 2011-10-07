@@ -7,15 +7,17 @@ function IsPalindrome(const aString: string): Boolean;
 implementation
 
 uses
-       Spring.Collections
-     , {$IF CompilerVersion >= 230}System.{$IFEND}SysUtils
-     ;
+        Spring.Collections
+      , {$IF CompilerVersion >= 23.0}System.SysUtils{$ELSE}SysUtils{$IFEND}
+      ;
+
 
 function CleanString(const aString: string): string;
 var
   C: char;
 begin
   // Remove all non-alpha chars and make all lower case
+  // Spaces don't matter, so let's count only letters
   Result := '';
   for C in LowerCase(aString) do
   begin

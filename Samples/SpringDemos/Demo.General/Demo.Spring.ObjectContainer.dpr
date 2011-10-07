@@ -5,7 +5,7 @@ program Demo.Spring.ObjectContainer;
 {$R *.res}
 
 uses
-  {$IF CompilerVersion >= 230}System.{$IFEND}SysUtils,
+  {$IF CompilerVersion >= 23.0}System.SysUtils{$ELSE}SysUtils{$IFEND},
   Spring.Services,
   uYeller in 'uYeller.pas';
 

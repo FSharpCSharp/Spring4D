@@ -3,12 +3,9 @@ unit frmEnumerableDemo;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics,
-  Controls, Forms, Dialogs, StdCtrls
-  , Spring
+  Windows, Messages, Variants, Classes, Graphics, Controls, Forms, Dialogs, StdCtrls
+  , Generics.Collections
   , Spring.Collections
-  , {$IF CompilerVersion >= 230}System.{$IFEND}Generics.Collections
-  , Spring.Collections.Extensions
   ;
 
 type
@@ -63,6 +60,13 @@ var
 implementation
 
 {$R *.dfm}
+
+uses
+       Spring
+     , SysUtils
+     , Spring.Collections.Extensions
+     ;
+
 
 
 procedure TEnumerationDemoForm.Button1Click(Sender: TObject);

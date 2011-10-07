@@ -5,7 +5,7 @@ program Demo.Spring.FieldInjection;
 {$R *.res}
 
 uses
-  {$IF CompilerVersion >= 230}System.{$IFEND}SysUtils,
+  {$IF CompilerVersion >= 23.0}System.SysUtils{$ELSE}SysUtils{$IFEND},
   Spring.Container,
   Spring.Services,
   uFieldInjectionDemo in 'uFieldInjectionDemo.pas';
