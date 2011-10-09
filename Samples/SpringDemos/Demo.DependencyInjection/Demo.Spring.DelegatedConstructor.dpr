@@ -5,7 +5,7 @@ program Demo.Spring.DelegatedConstructor;
 {$R *.res}
 
 uses
-  System.SysUtils,
+  SysUtils,
   Spring.Services,
   Spring.Container,
   uDelegatedConstructor in 'uDelegatedConstructor.pas',
