@@ -55,6 +55,26 @@ type
     procedure TestFromVariant;
   end;
 
+  TTestEmptyMulticastEvent = class(TTestCase)
+  private
+    fEvent: IMulticastNotifyEvent;
+    fASender: TObject;
+    fAInvoked: Boolean;
+    fBSender: TObject;
+    fBInvoked: Boolean;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+    procedure HandlerA(sender: TObject);
+    procedure HandlerB(sender: TObject);
+  published
+    procedure TestEmpty;
+    procedure TestInvoke;
+    procedure TestOneHandler;
+    procedure TestTwoHandlers;
+  end;
+
+
 implementation
 
 
@@ -124,5 +144,82 @@ end;
 
 {$ENDREGION}
 
+
+{ TTestMulticastNotifyEvent }
+
+procedure TTestEmptyMulticastEvent.SetUp;
+begin
+  inherited;
+  fEvent := TMulticastNotifyEvent.Create;
+end;
+
+procedure TTestEmptyMulticastEvent.TearDown;
+begin
+  inherited;
+  fEvent := nil;
+  fASender := nil;
+  fAInvoked := False;
+  fBSender := nil;
+  fBInvoked := True;
+end;
+
+procedure TTestEmptyMulticastEvent.HandlerA(sender: TObject);
+begin
+  fASender := sender;
+  fAInvoked := True;
+end;
+
+procedure TTestEmptyMulticastEvent.HandlerB(sender: TObject);
+begin
+  fBSender := sender;
+  fBInvoked := True;
+end;
+
+procedure TTestEmptyMulticastEvent.TestEmpty;
+begin
+  CheckEquals(0, fEvent.Count);
+  CheckTrue(fEvent.IsEmpty);
+end;
+
+procedure TTestEmptyMulticastEvent.TestInvoke;
+begin
+  fEvent.Invoke(Self);
+  CheckFalse(fAInvoked);
+  CheckFalse(fBInvoked);
+end;
+
+procedure TTestEmptyMulticastEvent.TestOneHandler;
+begin
+  fEvent.Add(HandlerA);
+  CheckEquals(1, fEvent.Count);
+  CheckFalse(fEvent.IsEmpty);
+
+  fEvent.Invoke(Self);
+  CheckTrue(fAInvoked);
+  CheckSame(Self, fASender);
+  CheckFalse(fBInvoked);
+  CheckSame(nil, fBSender);
+
+  fEvent.Remove(HandlerA);
+  CheckEquals(0, fEvent.Count);
+end;
+
+procedure TTestEmptyMulticastEvent.TestTwoHandlers;
+begin
+  fEvent.Add(HandlerA);
+  fEvent.Add(HandlerB);
+  fEvent.Invoke(nil);
+
+  CheckTrue(fAInvoked);
+  CheckSame(nil, fASender);
+  CheckTrue(fBInvoked);
+  CheckSame(nil, fBSender);
+
+  fEvent.Remove(HandlerA);
+  CheckEquals(1, fEvent.Count);
+
+  fEvent.Remove(HandlerB);
+  CheckEquals(0, fEvent.Count);
+end;
 
 end.
