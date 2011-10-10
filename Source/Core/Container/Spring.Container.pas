@@ -45,7 +45,7 @@ type
   TValue = Rtti.TValue;
 
   /// <summary>
-  /// Represents a Dependency Injection Container.
+  /// Represents a Dependency Inject Container.
   /// </summary>
   TContainer = class(TInterfaceBase, IContainerContext, IInterface)
   private

@@ -61,10 +61,10 @@ type
     function ResolveDependencies(dependencies: TArray<TRttiType>): TArray<TValue>; overload;
     function ResolveDependencies(dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): TArray<TValue>; overload;
 
-    function CanResolveDependencies(const injection: IInjection): Boolean; overload;
-    function CanResolveDependencies(const injection: IInjection; const arguments: TArray<TValue>): Boolean; overload;
-    function ResolveDependencies(const injection: IInjection): TArray<TValue>; overload;
-    function ResolveDependencies(const injection: IInjection; const arguments: TArray<TValue>): TArray<TValue>; overload;
+    function CanResolveDependencies(const Inject: IInjection): Boolean; overload;
+    function CanResolveDependencies(const Inject: IInjection; const arguments: TArray<TValue>): Boolean; overload;
+    function ResolveDependencies(const Inject: IInjection): TArray<TValue>; overload;
+    function ResolveDependencies(const Inject: IInjection; const arguments: TArray<TValue>): TArray<TValue>; overload;
   end;
 
   TServiceResolver = class(TInterfacedObject, IServiceResolver, IInterface)
@@ -316,42 +316,42 @@ begin
 end;
 
 function TDependencyResolver.CanResolveDependencies(
-  const injection: IInjection): Boolean;
+  const Inject: IInjection): Boolean;
 var
   arguments: TArray<TValue>;
 begin
-  TArgument.CheckNotNull(injection, 'injection');
-  arguments := injection.Model.GetInjectionArguments(injection);
-  Result := CanResolveDependencies(injection, arguments);
+  TArgument.CheckNotNull(Inject, 'Inject');
+  arguments := Inject.Model.GetInjectionArguments(Inject);
+  Result := CanResolveDependencies(Inject, arguments);
 end;
 
-function TDependencyResolver.CanResolveDependencies(const injection: IInjection;
+function TDependencyResolver.CanResolveDependencies(const Inject: IInjection;
   const arguments: TArray<TValue>): Boolean;
 var
   dependencyTypes: TArray<TRttiType>;
 begin
-  TArgument.CheckNotNull(injection, 'injection');
-  dependencyTypes := injection.GetDependencies;
+  TArgument.CheckNotNull(Inject, 'Inject');
+  dependencyTypes := Inject.GetDependencies;
   Result := CanResolveDependencies(dependencyTypes, arguments);
 end;
 
 function TDependencyResolver.ResolveDependencies(
-  const injection: IInjection): TArray<TValue>;
+  const Inject: IInjection): TArray<TValue>;
 var
   dependencyArguments: TArray<TValue>;
 begin
-  TArgument.CheckNotNull(injection, 'injection');
-  dependencyArguments := injection.Model.GetInjectionArguments(injection);
-  Result := ResolveDependencies(injection, dependencyArguments);
+  TArgument.CheckNotNull(Inject, 'Inject');
+  dependencyArguments := Inject.Model.GetInjectionArguments(Inject);
+  Result := ResolveDependencies(Inject, dependencyArguments);
 end;
 
-function TDependencyResolver.ResolveDependencies(const injection: IInjection;
+function TDependencyResolver.ResolveDependencies(const Inject: IInjection;
   const arguments: TArray<TValue>): TArray<TValue>;
 var
   dependencyTypes: TArray<TRttiType>;
 begin
-  TArgument.CheckNotNull(injection, 'injection');
-  dependencyTypes := injection.GetDependencies;
+  TArgument.CheckNotNull(Inject, 'Inject');
+  dependencyTypes := Inject.GetDependencies;
   Result := ResolveDependencies(dependencyTypes, arguments);
 end;
 

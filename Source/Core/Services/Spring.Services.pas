@@ -37,9 +37,9 @@ uses
   SysUtils,
   Spring;
 
-{$SCOPEDENUMS ON}
-
 type
+  {$SCOPEDENUMS ON}
+
   {$REGION 'Lifetime Type & Attributes'}
 
   ///	<summary>
@@ -165,12 +165,12 @@ type
   end;
 
   ///	<summary>
-  ///	  Applies the <c>InjectionAttribute</c> to injectable instance members of
+  ///	  Applies the <c>InjectAttribute</c> to injectable instance members of
   ///	  a class. e.g. constructors, methods, properties and even fields. Also
   ///	  works on parameters of a method.
   ///	</summary>
   ///	<seealso cref="ImplementsAttribute" />
-  InjectionAttribute = class(TCustomAttribute)
+  InjectAttribute = class(TCustomAttribute)
   private
     fValue: string;
     function GetHasValue: Boolean;
@@ -201,7 +201,7 @@ type
   ///	end;
   ///	  </code>
   ///	</example>
-  ///	<seealso cref="InjectionAttribute" />
+  ///	<seealso cref="InjectAttribute" />
   ImplementsAttribute = class(TCustomAttribute)
   private
     fServiceType: PTypeInfo;
@@ -213,6 +213,7 @@ type
     property Name: string read fName;
   end;
 
+  InjectionAttribute = InjectAttribute deprecated 'Use InjectAttribute instead.';
 
   {$ENDREGION}
 
@@ -220,7 +221,7 @@ type
   {$REGION 'Lifecycle Interfaces'}
 
   ///	<summary>
-  ///	  Lifecycle interface. If a component implements this interface, the dependency injection
+  ///	  Lifecycle interface. If a component implements this interface, the dependency Inject
   ///	  container will invoke the <c>Initialize</c> method when initiating an
   ///	  instance of the component.
   ///	</summary>
@@ -394,20 +395,20 @@ begin
   fMaxPoolsize := maxPoolsize;
 end;
 
-{ InjectionAttribute }
+{ InjectAttribute }
 
-constructor InjectionAttribute.Create;
+constructor InjectAttribute.Create;
 begin
   Create('');
 end;
 
-constructor InjectionAttribute.Create(const value: string);
+constructor InjectAttribute.Create(const value: string);
 begin
   inherited Create;
   fValue := value;
 end;
 
-function InjectionAttribute.GetHasValue: Boolean;
+function InjectAttribute.GetHasValue: Boolean;
 begin
   Result := fValue <> '';
 end;
@@ -512,3 +513,5 @@ end;
 {$ENDREGION}
 
 end.
+
+

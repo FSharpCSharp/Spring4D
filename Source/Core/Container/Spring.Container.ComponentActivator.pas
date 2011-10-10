@@ -124,13 +124,13 @@ end;
 procedure TReflectionComponentActivator.ExecuteInjections(instance: TObject;
   const injections: IList<IInjection>);
 var
-  injection: IInjection;
+  Inject: IInjection;
   arguments: TArray<TValue>;
 begin
-  for injection in injections do
+  for Inject in injections do
   begin
-    arguments := fResolver.ResolveDependencies(injection);
-    injection.Inject(instance, arguments);
+    arguments := fResolver.ResolveDependencies(Inject);
+    Inject.Inject(instance, arguments);
   end;
 end;
 
@@ -146,7 +146,7 @@ begin
 
   for candidate in model.ConstructorInjections do
   begin
-    if candidate.Target.HasCustomAttribute<InjectionAttribute> then
+    if candidate.Target.HasCustomAttribute<InjectAttribute> then
     begin
       winner := candidate;
       Break;

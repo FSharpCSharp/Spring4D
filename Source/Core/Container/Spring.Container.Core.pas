@@ -127,8 +127,8 @@ type
   IComponentActivator = IObjectActivator;
 
   /// <summary>
-  /// Represents an injection of a member.
-  /// e.g. constructor, method, property and even field injection.
+  /// Represents an Inject of a member.
+  /// e.g. constructor, method, property and even field Inject.
   /// </summary>
   IInjection = interface
     ['{864AAA38-4F93-4BB9-AD8A-B796FCD2EFE0}']
@@ -151,7 +151,7 @@ type
   end;
 
   /// <summary>
-  /// Injection Factory
+  /// Inject Factory
   /// </summary>
   IInjectionFactory = interface
     ['{EA75E648-C3EB-4CE7-912A-AB82B12BBD87}']
@@ -168,10 +168,10 @@ type
     function ResolveDependencies(dependencies: TArray<TRttiType>): TArray<TValue>; overload;
     function ResolveDependencies(dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): TArray<TValue>; overload;
 
-    function CanResolveDependencies(const injection: IInjection): Boolean; overload;
-    function CanResolveDependencies(const injection: IInjection; const arguments: TArray<TValue>): Boolean; overload;
-    function ResolveDependencies(const injection: IInjection): TArray<TValue>; overload;
-    function ResolveDependencies(const injection: IInjection; const arguments: TArray<TValue>): TArray<TValue>; overload;
+    function CanResolveDependencies(const Inject: IInjection): Boolean; overload;
+    function CanResolveDependencies(const Inject: IInjection; const arguments: TArray<TValue>): Boolean; overload;
+    function ResolveDependencies(const Inject: IInjection): TArray<TValue>; overload;
+    function ResolveDependencies(const Inject: IInjection; const arguments: TArray<TValue>): TArray<TValue>; overload;
   end;
 
   /// <summary>
@@ -241,8 +241,8 @@ type
     function HasService(serviceType: PTypeInfo): Boolean;
     function GetServiceName(serviceType: PTypeInfo): string;
     function GetServiceType(const name: string): PTypeInfo;
-    function GetInjectionArguments(const injection: IInjection): TArray<TValue>;
-    procedure UpdateInjectionArguments(const injection: IInjection; const arguments: array of TValue);
+    function GetInjectionArguments(const Inject: IInjection): TArray<TValue>;
+    procedure UpdateInjectionArguments(const Inject: IInjection; const arguments: array of TValue);
 
     property ComponentType: TRttiInstanceType read fComponentType;
     property ComponentTypeInfo: PTypeInfo read GetComponentTypeInfo;
@@ -432,55 +432,55 @@ begin
   FieldInjections.Add(Result);
 end;
 
-procedure TComponentModel.UpdateInjectionArguments(const injection: IInjection;
+procedure TComponentModel.UpdateInjectionArguments(const Inject: IInjection;
   const arguments: array of TValue);
 begin
-  TArgument.CheckNotNull(injection, 'injection');
-  Injections.Add(injection, TArray.CreateArray<TValue>(arguments));
+  TArgument.CheckNotNull(Inject, 'Inject');
+  Injections.Add(Inject, TArray.CreateArray<TValue>(arguments));
 end;
 
 procedure TComponentModel.InjectConstructor(const arguments: array of TValue);
 var
-  injection: IInjection;
+  Inject: IInjection;
 begin
-  injection := InjectionFactory.CreateConstructorInjection(Self);
-  ConstructorInjections.Add(injection);
-  UpdateInjectionArguments(injection, arguments);
+  Inject := InjectionFactory.CreateConstructorInjection(Self);
+  ConstructorInjections.Add(Inject);
+  UpdateInjectionArguments(Inject, arguments);
 end;
 
 procedure TComponentModel.InjectMethod(const methodName: string;
   const arguments: array of TValue);
 var
-  injection: IInjection;
+  Inject: IInjection;
 begin
-  injection := InjectionFactory.CreateMethodInjection(Self, methodName);
-  MethodInjections.Add(injection);
-  UpdateInjectionArguments(injection, arguments);
+  Inject := InjectionFactory.CreateMethodInjection(Self, methodName);
+  MethodInjections.Add(Inject);
+  UpdateInjectionArguments(Inject, arguments);
 end;
 
 procedure TComponentModel.InjectProperty(const propertyName: string;
   const value: TValue);
 var
-  injection: IInjection;
+  Inject: IInjection;
 begin
-  injection := InjectProperty(propertyName);
-  UpdateInjectionArguments(injection, value);
+  Inject := InjectProperty(propertyName);
+  UpdateInjectionArguments(Inject, value);
 end;
 
 procedure TComponentModel.InjectField(const fieldName: string;
   const value: TValue);
 var
-  injection: IInjection;
+  Inject: IInjection;
 begin
-  injection := InjectField(fieldName);
-  UpdateInjectionArguments(injection, value);
+  Inject := InjectField(fieldName);
+  UpdateInjectionArguments(Inject, value);
 end;
 
 function TComponentModel.GetInjectionArguments(
-  const injection: IInjection): TArray<TValue>;
+  const Inject: IInjection): TArray<TValue>;
 begin
-  TArgument.CheckNotNull(injection, 'injection');
-  Injections.TryGetValue(injection, Result);
+  TArgument.CheckNotNull(Inject, 'Inject');
+  Injections.TryGetValue(Inject, Result);
 end;
 
 function TComponentModel.GetComponentTypeInfo: PTypeInfo;

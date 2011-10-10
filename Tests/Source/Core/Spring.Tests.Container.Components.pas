@@ -215,7 +215,7 @@ type
     fConstructorInjection: INameService;
     fPropertyInjection: INameService;
     fMethodInjection: INameService;
-    [Injection]
+    [Inject]
     fFieldInjection: INameService;
   protected
     { Implements IInjectionService }
@@ -224,12 +224,12 @@ type
     function GetMethodInjection: INameService;
     function GetFieldInjection: INameService;
   public
-    [Injection]
+    [Inject]
     constructor Create(const service: INameService); overload;
     constructor Create(const nameService: INameService; const anotherService: INameService); overload;
-    [Injection]
+    [Inject]
     procedure SetMethodInjection(const value: INameService);
-    [Injection]
+    [Inject]
     property PropertyInjection: INameService read fPropertyInjection write fPropertyInjection;
   end;
 
@@ -238,7 +238,7 @@ type
     fConstructorInjection: INameService;
     fPropertyInjection: INameService;
     fMethodInjection: INameService;
-    [Injection('default')]
+    [Inject('default')]
     fFieldInjection: INameService;
   protected
     { Implements IInjectionService }
@@ -247,12 +247,12 @@ type
     function GetMethodInjection: INameService;
     function GetFieldInjection: INameService;
   public
-    [Injection]
-    constructor Create([Injection('default')] const service: INameService); overload;
+    [Inject]
+    constructor Create([Inject('default')] const service: INameService); overload;
     constructor Create(const nameService: INameService; const anotherService: INameService); overload;
-    [Injection]
-    procedure SetMethodInjection([Injection('another')]const value: INameService);
-    [Injection('another')]
+    [Inject]
+    procedure SetMethodInjection([Inject('another')]const value: INameService);
+    [Inject('another')]
     property PropertyInjection: INameService read fPropertyInjection write fPropertyInjection;
   end;
 
@@ -560,3 +560,4 @@ begin
 end;
 
 end.
+
