@@ -23,7 +23,7 @@ package Spring.System;
 {$MINENUMSIZE 1}
 {$IMAGEBASE $400000}
 {$RUNONLY}
-{$IMPLICITBUILD ON}
+{$IMPLICITBUILD OFF}
 
 requires
   rtl,
@@ -47,6 +47,8 @@ contains
   Spring.Cryptography.Utils in '..\..\Source\System\Cryptography\Spring.Cryptography.Utils.pas',
   Spring.Utils.IO in '..\..\Source\System\Utils\Spring.Utils.IO.pas',
   Spring.Utils in '..\..\Source\System\Utils\Spring.Utils.pas',
-  Spring.Utils.WinApi in '..\..\Source\System\Utils\Spring.Utils.WinApi.pas';
+  Spring.Utils.WinApi in '..\..\Source\System\Utils\Spring.Utils.WinApi.pas',
+  Spring.Reflection.ValueConverters in '..\..\Source\System\Reflection\Spring.Reflection.ValueConverters.pas',
+  Spring.Reflection.ValueExpression in '..\..\Source\System\Reflection\Spring.Reflection.ValueExpression.pas';
 
 end.

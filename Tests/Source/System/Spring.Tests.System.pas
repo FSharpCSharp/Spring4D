@@ -145,7 +145,7 @@ end;
 {$ENDREGION}
 
 
-{ TTestMulticastNotifyEvent }
+{$REGION 'TTestEmptyMulticastEvent'}
 
 procedure TTestEmptyMulticastEvent.SetUp;
 begin
@@ -221,5 +221,7 @@ begin
   fEvent.Remove(HandlerB);
   CheckEquals(0, fEvent.Count);
 end;
+
+{$ENDREGION}
 
 end.

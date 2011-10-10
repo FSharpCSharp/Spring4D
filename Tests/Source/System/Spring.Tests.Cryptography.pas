@@ -511,8 +511,8 @@ procedure TTestDES.SetUp;
 begin
   inherited;
   fDES := CreateDES;
-  fDES.CipherMode := cmECB;
-  fDES.PaddingMode := pmNone;
+  fDES.CipherMode := TCipherMode.ECB;
+  fDES.PaddingMode := TPaddingMode.None;
 end;
 
 procedure TTestDES.TearDown;
@@ -564,7 +564,7 @@ begin
   fKey := TBuffer.FromHexString('0123456789abcdef');
   fDES.IV := TBuffer.FromHexString('1234567890abcdef');
   fDES.Key := fKey;
-  fDES.CipherMode := cmCBC;
+  fDES.CipherMode := TCipherMode.CBC;
 
   fActualBuffer := fDES.Encrypt(fInputBuffer);
   CheckEquals(fOutputBuffer, fActualBuffer, 'Encryption: ');
@@ -576,7 +576,7 @@ end;
 procedure TTestDES.TestDecrypt;
 begin
   fInputBuffer := TBuffer.Create('Hello');
-  fDES.PaddingMode := pmPKCS7;
+  fDES.PaddingMode := TPaddingMode.PKCS7;
   fDES.Key := TBuffer.FromHexString('0123456789abcdef');
   fDES.IV := TBuffer.FromHexString('1234567890abcdef');
   fOutputBuffer := fDES.Encrypt(fInputBuffer);
@@ -609,8 +609,8 @@ const
   inputBuffer: array[0..7] of Byte = ($01, $23, $45, $67, $89, $AB, $CD, $E7);
   outputBuffer: array[0..7] of Byte = ($DE, $0B, $7C, $06, $AE, $5E, $0E, $D5);
 begin
-  fTripleDES.CipherMode := cmECB;
-  fTripleDES.PaddingMode := pmNone;
+  fTripleDES.CipherMode := TCipherMode.ECB;
+  fTripleDES.PaddingMode := TPaddingMode.None;
   fTripleDES.Key := TBuffer.Create(key);
   fInputBuffer := TBuffer.Create(inputBuffer);
   fOutputBuffer := TBuffer.Create(outputBuffer);
@@ -623,8 +623,8 @@ end;
 procedure TTestTripleDES.TestCBC;
 begin
   fKey := TBuffer.FromHexString('01 23 45 67 89 ab cd ef 23 45 67 89 ab cd ef 01 01 23 45 67 89 ab cd ef');
-  fTripleDES.CipherMode := cmCBC;
-  fTripleDES.PaddingMode := pmPKCS7;
+  fTripleDES.CipherMode := TCipherMode.CBC;
+  fTripleDES.PaddingMode := TPaddingMode.PKCS7;
   fTripleDES.Key := fKey;
   fTripleDES.IV := TBuffer.BytesOf($0, fTripleDES.BlockSize div 8);
   fInputBuffer := TBuffer.Create([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
@@ -660,8 +660,8 @@ begin
   fAlgorithm := TMockSymmetricAlgorithm.Create([8 * 8], [8 * 8]);
   fAlgorithm.BlockSize := 8 * 8;
   fAlgorithm.KeySize := 8 * 8;
-  fAlgorithm.CipherMode := cmECB;
-  fAlgorithm.PaddingMode := pmNone;
+  fAlgorithm.CipherMode := TCipherMode.ECB;
+  fAlgorithm.PaddingMode := TPaddingMode.None;
 end;
 
 procedure TTestSymmetricAlgorithmBase.TearDown;
@@ -690,8 +690,8 @@ end;
 procedure TTestPaddingModeIsNone.SetUp;
 begin
   inherited;
-  fAlgorithm.CipherMode := cmECB;
-  fAlgorithm.PaddingMode := pmNone;
+  fAlgorithm.CipherMode := TCipherMode.ECB;
+  fAlgorithm.PaddingMode := TPaddingMode.None;
 end;
 
 procedure TTestPaddingModeIsNone.TestOneBlock;
@@ -718,7 +718,7 @@ end;
 procedure TTestPaddingModeIsPKCS7.SetUp;
 begin
   inherited;
-  fAlgorithm.PaddingMode := pmPKCS7;
+  fAlgorithm.PaddingMode := TPaddingMode.PKCS7;
 end;
 
 procedure TTestPaddingModeIsPKCS7.TestPaddingSizeIsFull;
@@ -759,7 +759,7 @@ end;
 procedure TTestPaddingModeIsZeros.SetUp;
 begin
   inherited;
-  fAlgorithm.PaddingMode := pmZeros;
+  fAlgorithm.PaddingMode := TPaddingMode.Zeros;
 end;
 
 procedure TTestPaddingModeIsZeros.TestPaddingSizeIsFull;
@@ -800,7 +800,7 @@ end;
 procedure TTestPaddingModeIsANSIX923.SetUp;
 begin
   inherited;
-  fAlgorithm.PaddingMode := pmANSIX923;
+  fAlgorithm.PaddingMode := TPaddingMode.ANSIX923;
 end;
 
 procedure TTestPaddingModeIsANSIX923.TestPaddingSizeIsFull;
@@ -841,7 +841,7 @@ end;
 procedure TTestPaddingModeIsISO10126.SetUp;
 begin
   inherited;
-  fAlgorithm.PaddingMode := pmANSIX923;
+  fAlgorithm.PaddingMode := TPaddingMode.ANSIX923;
 end;
 
 procedure TTestPaddingModeIsISO10126.TestPaddingSizeIsFull;

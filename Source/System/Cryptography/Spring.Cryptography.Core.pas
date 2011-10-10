@@ -231,8 +231,8 @@ begin
   inherited Create;
   fLegalBlockSizes := TSizes.Create(legalBlockSizes);
   fLegalKeySizes := TSizes.Create(legalKeySizes);
-  fCipherMode := cmCBC;
-  fPaddingMode := pmPKCS7;
+  fCipherMode := TCipherMode.CBC;
+  fPaddingMode := TPaddingMode.PKCS7;
 end;
 
 procedure TSymmetricAlgorithmBase.ValidateKey(const key: TBuffer);
@@ -330,7 +330,7 @@ begin
     begin
       Move(p^, plainText.Memory^, BlockSizeInBytes);
     end
-    else if PaddingMode <> pmNone then
+    else if PaddingMode <> TPaddingMode.None then
     begin
       Move(p^, plainText.Memory^, count);
       paddingSize := BlockSizeInBytes - (count mod BlockSizeInBytes);
@@ -345,7 +345,7 @@ begin
     begin
       Exit;
     end;
-    if CipherMode = cmCBC then
+    if CipherMode = TCipherMode.CBC then
     begin
       if firstBlock then
         plainText := plainText xor IV
@@ -381,7 +381,7 @@ begin
   begin
     inputBuffer := TBuffer.Create(p, BlockSizeInBytes);
     DoDecryptBlock(inputBuffer, outputBuffer);
-    if CipherMode = cmCBC then
+    if CipherMode = TCipherMode.CBC then
     begin
       if firstBlock then
       begin
@@ -419,38 +419,38 @@ var
 begin
   TArgument.CheckRange(buffer.Size, startIndex, count);
   case PaddingMode of
-    pmNone: ;
-    pmPKCS7:
-    begin
-      for i := 0 to count - 1 do
+    TPaddingMode.None: ;
+    TPaddingMode.PKCS7:
       begin
-        buffer[startIndex + i] := Byte(count);
+        for i := 0 to count - 1 do
+        begin
+          buffer[startIndex + i] := Byte(count);
+        end;
       end;
-    end;
-    pmZeros:
-    begin
-      for i := 0 to count - 1 do
+    TPaddingMode.Zeros:
       begin
-        buffer[startIndex + i] := 0;
+        for i := 0 to count - 1 do
+        begin
+          buffer[startIndex + i] := 0;
+        end;
       end;
-    end;
-    pmANSIX923:
-    begin
-      for i := 0 to count - 2 do
+    TPaddingMode.ANSIX923:
       begin
-        buffer[startIndex + i] := 0;
+        for i := 0 to count - 2 do
+        begin
+          buffer[startIndex + i] := 0;
+        end;
+        buffer[startIndex + count - 1] := Byte(count);
       end;
-      buffer[startIndex + count - 1] := Byte(count);
-    end;
-    pmISO10126:
-    begin
-      Randomize;
-      for i := 0 to count - 2 do
+    TPaddingMode.ISO10126:
       begin
-        buffer[startIndex + i] := Math.RandomRange(0, 256);
+        Randomize;
+        for i := 0 to count - 2 do
+        begin
+          buffer[startIndex + i] := Math.RandomRange(0, 256);
+        end;
+        buffer[startIndex + count - 1] := Byte(count);
       end;
-      buffer[startIndex + count - 1] := Byte(count);
-    end;
   end;
 end;
 
@@ -462,35 +462,35 @@ var
 begin
   Assert(buffer.Size = BlockSizeInBytes);
   case PaddingMode of
-    pmNone: ;
-    pmPKCS7, pmANSIX923, pmISO10126:
-    begin
-      paddingSize := Integer(buffer.Last);
-      if paddingSize = BlockSizeInBytes then
+    TPaddingMode.None: ;
+    TPaddingMode.PKCS7, TPaddingMode.ANSIX923, TPaddingMode.ISO10126:
       begin
-        // Validate
-        buffer := TBuffer.Empty;
-      end
-      else if paddingSize < BlockSizeInBytes then
-      begin
-        count := BlockSizeInBytes - paddingSize;
-        buffer := buffer.Left(count);
-      end
-      else
-      begin
-        raise ECryptographicException.CreateRes(@SInvalidCipherText);
-      end;
-    end;
-    pmZeros:
-    begin
-      for i := buffer.Size - 1 downto 0 do
-      begin
-        if buffer[i] = 0 then
+        paddingSize := Integer(buffer.Last);
+        if paddingSize = BlockSizeInBytes then
         begin
-          buffer.Size := buffer.Size - 1;
+          // Validate
+          buffer := TBuffer.Empty;
+        end
+        else if paddingSize < BlockSizeInBytes then
+        begin
+          count := BlockSizeInBytes - paddingSize;
+          buffer := buffer.Left(count);
+        end
+        else
+        begin
+          raise ECryptographicException.CreateRes(@SInvalidCipherText);
         end;
       end;
-    end;
+    TPaddingMode.Zeros:
+      begin
+        for i := buffer.Size - 1 downto 0 do
+        begin
+          if buffer[i] = 0 then
+          begin
+            buffer.Size := buffer.Size - 1;
+          end;
+        end;
+      end;
   end;
 end;
 
@@ -656,7 +656,7 @@ end;
 
 procedure TSymmetricAlgorithmBase.SetCipherMode(const value: TCipherMode);
 begin
-  if not (value in [cmCBC, cmECB]) then
+  if not (value in [TCipherMode.CBC, TCipherMode.ECB]) then
   begin
     raise ENotSupportedException.CreateResFmt(@SNotSupportedCipherMode, [TEnum.GetName<TCipherMode>(value)]);
   end;

@@ -39,6 +39,8 @@ uses
   Spring;
 
 type
+  {$SCOPEDENUMS ON}
+
   {$REGION 'Core Types'}
 
   {$REGION 'Documentation'}
@@ -51,32 +53,32 @@ type
   {$ENDREGION}
   TCipherMode = (
     ///	<summary>Cipher-Block Chaining</summary>
-    cmCBC,
+    CBC,
 
     ///	<summary>Electronic Codebook</summary>
-    cmECB{,
+    ECB{,
 
     ///	<summary>Output Feedback (<b>Not yet implemented</b>)</summary>
-    cmOFB,
+    OFB,
 
     ///	<summary>Cipher Feedback (<b>Not yet implemented</b>)</summary>
-    cmCFB,
+    CFB,
 
     ///	<summary>Cipher Text Stealing (<b>Not yet implemented</b>)</summary>
-    cmCTS}
+    CTS}
   );
 
   /// <summary>
   /// Specifies the type of padding to apply when the message data block is
   /// shorter than the full number of bytes needed for a cryptographic operation.
   /// </summary>
-  /// <seealso href="http://msdn.microsoft.com/en-us/library/system.security.cryptography.paddingmode.aspx"></seealso>
-  /// <seealso href="http://en.wikipedia.org/wiki/Padding_(cryptography)"></seealso>
+  /// <seealso href="http://msdn.microsoft.com/en-us/library/system.security.cryptography.paddingmode.aspx" />
+  /// <seealso href="http://en.wikipedia.org/wiki/Padding_(cryptography)" />
   TPaddingMode = (
     /// <summary>
     /// No padding is done.
     /// </summary>
-    pmNone,
+    None,
 
     /// <summary>
     /// The PKCS #7 padding string consists of a sequence of bytes, each of
@@ -86,7 +88,7 @@ type
     /// Data: FF FF FF FF FF FF FF FF FF
     /// PKCS7 padding: FF FF FF FF FF FF FF FF FF 07 07 07 07 07 07 07
     /// </remarks>
-    pmPKCS7,
+    PKCS7,
 
     /// <summary>
     /// The padding string consists of bytes set to zero.
@@ -95,7 +97,7 @@ type
     /// Data: FF FF FF FF FF FF FF FF FF
     /// Zeros padding: FF FF FF FF FF FF FF FF FF 00 00 00 00 00 00 00
     /// </remarks>
-    pmZeros,
+    Zeros,
 
     /// <summary>
     /// The ANSIX923 padding string consists of a sequence of bytes filled with
@@ -105,7 +107,7 @@ type
     /// Data: FF FF FF FF FF FF FF FF FF
     /// X923 padding: FF FF FF FF FF FF FF FF FF 00 00 00 00 00 00 07
     /// </remarks>
-    pmANSIX923,
+    ANSIX923,
 
     /// <summary>
     /// The ISO10126 padding string consists of random data before the length.
@@ -114,7 +116,7 @@ type
     /// Data: FF FF FF FF FF FF FF FF FF
     /// ISO10126 padding: FF FF FF FF FF FF FF FF FF 7D 2A 75 EF F8 EF 07
     /// </remarks>
-    pmISO10126
+    ISO10126
   );
 
   /// <summary>
@@ -441,6 +443,15 @@ function CreateTripleDES: ITripleDES;
 function CreateRandomNumberGenerator: IRandomNumberGenerator;
 
 {$ENDREGION}
+
+const
+  cmCBC = TCipherMode.CBC deprecated;
+  cmECB = TCipherMode.ECB deprecated;
+  pmNone = TPaddingMode.None deprecated;
+  pmPKCS7 = TPaddingMode.PKCS7 deprecated;
+  pmZeros = TPaddingMode.Zeros deprecated;
+  pmANSIX923 = TPaddingMode.ANSIX923 deprecated;
+  pmISO10126 = TPaddingMode.ISO10126 deprecated;
 
 implementation
 

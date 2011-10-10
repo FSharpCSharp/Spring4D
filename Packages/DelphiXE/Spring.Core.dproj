@@ -24,6 +24,7 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
+			<DCC_OutputNeverBuildDcps>true</DCC_OutputNeverBuildDcps>
 			<DCC_UnitSearchPath>..\..\Source\System;..\..\Source\System\Collections;..\..\Source\System\Cryptography;..\..\Source\System\Reflection;..\..\Source\System\Utils;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<RuntimeOnlyPackage>true</RuntimeOnlyPackage>
 			<GenPackage>true</GenPackage>

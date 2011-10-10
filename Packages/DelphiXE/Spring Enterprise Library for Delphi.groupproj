@@ -7,7 +7,7 @@
 				<Dependencies/>
 			</Projects>
 			<Projects Include="Spring.Core.dproj">
-				<Dependencies/>
+				<Dependencies>Spring.System.dproj</Dependencies>
 			</Projects>
 			<Projects Include="..\..\Tests\Spring.Tests.dproj">
 				<Dependencies/>
@@ -29,13 +29,13 @@
 		<Target Name="Spring_System:Make">
 			<MSBuild Projects="Spring.System.dproj" Targets="Make"/>
 		</Target>
-		<Target Name="Spring_Core">
+		<Target Name="Spring_Core" DependsOnTargets="Spring.System">
 			<MSBuild Projects="Spring.Core.dproj"/>
 		</Target>
-		<Target Name="Spring_Core:Clean">
+		<Target Name="Spring_Core:Clean" DependsOnTargets="Spring.System:Clean">
 			<MSBuild Projects="Spring.Core.dproj" Targets="Clean"/>
 		</Target>
-		<Target Name="Spring_Core:Make">
+		<Target Name="Spring_Core:Make" DependsOnTargets="Spring.System:Make">
 			<MSBuild Projects="Spring.Core.dproj" Targets="Make"/>
 		</Target>
 		<Target Name="Spring_Tests">

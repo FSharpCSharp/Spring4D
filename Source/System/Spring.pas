@@ -385,7 +385,7 @@ type
   ///	  The event handler type must be an instance method such as TNotifyEvent.
   ///	</typeparam>
   IMulticastEvent<T> = interface
-    {$REGION 'Property Getters'}
+    {$REGION 'Property Accessors'}
       function GetInvoke: T;
       function GetCount: Integer;
       function GetEnabled: Boolean;
