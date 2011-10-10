@@ -67,8 +67,6 @@ uses
      , Spring.Collections.Extensions
      ;
 
-
-
 procedure TEnumerationDemoForm.Button1Click(Sender: TObject);
 var
   Pair: TIntegerStringPair;
