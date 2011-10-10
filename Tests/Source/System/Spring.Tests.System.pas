@@ -160,7 +160,7 @@ begin
   fASender := nil;
   fAInvoked := False;
   fBSender := nil;
-  fBInvoked := True;
+  fBInvoked := False;
 end;
 
 procedure TTestEmptyMulticastEvent.HandlerA(sender: TObject);
