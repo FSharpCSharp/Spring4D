@@ -36,7 +36,8 @@ uses
   Classes,
   Windows,
   SysUtils,
-  Spring;
+  Spring,
+  Spring.Collections;
 
 type
   {$SCOPEDENUMS ON}
@@ -119,18 +120,7 @@ type
     ISO10126
   );
 
-  /// <summary>
-  /// Represents a list of size.
-  /// </summary>
-  TSizes = record
-  private
-    fValues: TArray<Integer>;
-  public
-    constructor Create(size: Integer); overload;
-    constructor Create(const sizes: array of Integer); overload;
-    function Contains(const size: Integer): Boolean;
-    property Values: TArray<Integer> read fValues;
-  end;
+  ISizeCollection = IEnumerable<Integer>;
 
   {$REGION 'Documentation'}
   ///	<summary>
@@ -284,8 +274,8 @@ type
   {$REGION 'Property Getters and Setters'}
     function GetBlockSize: Integer;
     function GetKeySize: Integer;
-    function GetLegalBlockSizes: TSizes;
-    function GetLegalKeySizes: TSizes;
+    function GetLegalBlockSizes: ISizeCollection;
+    function GetLegalKeySizes: ISizeCollection;
     function GetCipherMode: TCipherMode;
     function GetPaddingMode: TPaddingMode;
     function GetKey: TBuffer;
@@ -349,12 +339,12 @@ type
     /// <summary>
     /// Gets the block sizes, in bits, that are supported by the symmetric algorithm.
     /// </summary>
-    property LegalBlockSizes: TSizes read GetLegalBlockSizes;
+    property LegalBlockSizes: ISizeCollection read GetLegalBlockSizes;
 
     /// <summary>
     /// Gets the key sizes, in bits, that are supported by the symmetric algorithm.
     /// </summary>
-    property LegalKeySizes: TSizes read GetLegalKeySizes;
+    property LegalKeySizes: ISizeCollection read GetLegalKeySizes;
   end;
 
   /// <summary>
@@ -442,6 +432,10 @@ function CreateTripleDES: ITripleDES;
 
 function CreateRandomNumberGenerator: IRandomNumberGenerator;
 
+function CreateSizeCollection(value: Integer): ISizeCollection; overload;
+
+function CreateSizeCollection(const values: array of Integer): ISizeCollection; overload;
+
 {$ENDREGION}
 
 const
@@ -515,32 +509,18 @@ begin
   Result := TRandomNumberGenerator.Create;
 end;
 
-{$ENDREGION}
-
-
-{$REGION 'TSizes'}
-
-constructor TSizes.Create(size: Integer);
+function CreateSizeCollection(value: Integer): ISizeCollection;
 begin
-  Create([size]);
+  Result := CreateSizeCollection([value]);
 end;
 
-constructor TSizes.Create(const sizes: array of Integer);
-begin
-  SetLength(fValues, Length(sizes));
-  Move(sizes[0], fValues[0], Length(sizes) * SizeOf(Integer));
-end;
-
-function TSizes.Contains(const size: Integer): Boolean;
+function CreateSizeCollection(const values: array of Integer): ISizeCollection;
 var
-  value: Integer;
+  list: IList<Integer>;
 begin
-  Result := False;
-  for value in fValues do
-  begin
-    if value = size then
-      Exit(True);
-  end;
+  list := TCollections.CreateList<Integer>;
+  list.AddRange(values);
+  Result := list;
 end;
 
 {$ENDREGION}

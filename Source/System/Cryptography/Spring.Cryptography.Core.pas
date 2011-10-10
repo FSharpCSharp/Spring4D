@@ -70,8 +70,6 @@ type
   private
     fCipherMode: TCipherMode;
     fPaddingMode: TPaddingMode;
-    fLegalBlockSizes: TSizes;
-    fLegalKeySizes: TSizes;
     fBlockSize: Integer;
     fKeySize: Integer;
     fKey: TBuffer;
@@ -79,10 +77,14 @@ type
     function GetBlockSizeInBytes: Integer;
     function GetKeySizeInBytes: Integer;
   protected
+//    class var
+      fLegalBlockSizes: ISizeCollection;
+      fLegalKeySizes: ISizeCollection;
+  protected
     function GetBlockSize: Integer; virtual;
     function GetKeySize: Integer; virtual;
-    function GetLegalBlockSizes: TSizes; virtual;
-    function GetLegalKeySizes: TSizes; virtual;
+    function GetLegalBlockSizes: ISizeCollection; virtual;
+    function GetLegalKeySizes: ISizeCollection; virtual;
     function GetCipherMode: TCipherMode; virtual;
     function GetPaddingMode: TPaddingMode; virtual;
     function GetKey: TBuffer; virtual;
@@ -130,8 +132,8 @@ type
     property IV: TBuffer read GetIV write SetIV;
     property BlockSize: Integer read GetBlockSize write SetBlockSize;
     property KeySize: Integer read GetKeySize write SetKeySize;
-    property LegalBlockSizes: TSizes read GetLegalBlockSizes;
-    property LegalKeySizes: TSizes read GetLegalKeySizes;
+    property LegalBlockSizes: ISizeCollection read GetLegalBlockSizes;
+    property LegalKeySizes: ISizeCollection read GetLegalKeySizes;
   end;
 
   /// <summary>
@@ -229,18 +231,15 @@ constructor TSymmetricAlgorithmBase.Create(
   const legalBlockSizes, legalKeySizes: array of Integer);
 begin
   inherited Create;
-  fLegalBlockSizes := TSizes.Create(legalBlockSizes);
-  fLegalKeySizes := TSizes.Create(legalKeySizes);
+  fLegalBlockSizes := CreateSizeCollection(legalBlockSizes);
+  fLegalKeySizes := CreateSizeCollection(legalKeySizes);
   fCipherMode := TCipherMode.CBC;
   fPaddingMode := TPaddingMode.PKCS7;
 end;
 
 procedure TSymmetricAlgorithmBase.ValidateKey(const key: TBuffer);
-var
-  sizes: TSizes;
 begin
-  sizes := fLegalKeySizes;
-  if not sizes.Contains(key.Size * 8) then
+  if not fLegalKeySizes.Contains(key.Size * 8) then
   begin
     raise ECryptographicException.CreateResFmt(@SIllegalKeySize, [key.Size]);
   end;
@@ -626,12 +625,12 @@ begin
   Result := fKeySize div 8;
 end;
 
-function TSymmetricAlgorithmBase.GetLegalBlockSizes: TSizes;
+function TSymmetricAlgorithmBase.GetLegalBlockSizes: ISizeCollection;
 begin
   Result := fLegalBlockSizes;
 end;
 
-function TSymmetricAlgorithmBase.GetLegalKeySizes: TSizes;
+function TSymmetricAlgorithmBase.GetLegalKeySizes: ISizeCollection;
 begin
   Result := fLegalKeySizes;
 end;
