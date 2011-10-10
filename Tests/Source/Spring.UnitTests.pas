@@ -56,7 +56,6 @@ procedure RegisterAllTestCasesByRTTI;
 var
   context: TRttiContext;
   t: TRttiType;
-  attr: TCustomAttribute;
 begin
   context := TRttiContext.Create;
   for t in context.GetTypes do

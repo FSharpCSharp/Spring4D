@@ -124,13 +124,13 @@ end;
 procedure TReflectionComponentActivator.ExecuteInjections(instance: TObject;
   const injections: IList<IInjection>);
 var
-  Inject: IInjection;
+  injection: IInjection;
   arguments: TArray<TValue>;
 begin
-  for Inject in injections do
+  for injection in injections do
   begin
-    arguments := fResolver.ResolveDependencies(Inject);
-    Inject.Inject(instance, arguments);
+    arguments := fResolver.ResolveDependencies(injection);
+    injection.Inject(instance, arguments);
   end;
 end;
 

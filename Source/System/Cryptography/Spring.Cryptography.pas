@@ -207,11 +207,14 @@ type
     class operator Explicit(const value: TBytes): TBuffer;
     class operator Explicit(const value: TBuffer): TBytes;
     class operator Explicit(const value: TBuffer): PByte;
+
     class operator Add(const left, right: TBuffer): TBuffer;
     class operator Add(const left: TBuffer; const right: Byte): TBuffer; overload;
     class operator Add(const left: Byte; const right: TBuffer): TBuffer; overload;
+
     class operator Equal(const left, right: TBuffer): Boolean;
     class operator NotEqual(const left, right: TBuffer): Boolean;
+
     class operator BitwiseAnd(const left, right: TBuffer): TBuffer;
     class operator BitwiseOr(const left, right: TBuffer): TBuffer;
     class operator BitwiseXor(const left, right: TBuffer): TBuffer;
@@ -295,7 +298,7 @@ type
     function  Encrypt(const inputString: string): TBuffer; overload;
     function  Encrypt(const inputString: WideString): TBuffer; overload;
     function  Encrypt(const inputString: RawByteString): TBuffer; overload;
-    procedure Encrypt(inputStream, outputStream: TStream); overload;
+    procedure Encrypt(inputStream, outputStream: TStream); overload;  // experimental
 
     function  Decrypt(const buffer: TBuffer): TBuffer; overload;
     function  Decrypt(const buffer: array of Byte): TBuffer; overload;
@@ -304,7 +307,7 @@ type
     function  Decrypt(const inputString: string): TBuffer; overload;
     function  Decrypt(const inputString: WideString): TBuffer; overload;
     function  Decrypt(const inputString: RawByteString): TBuffer; overload;
-    procedure Decrypt(inputStream, outputStream: TStream); overload;
+    procedure Decrypt(inputStream, outputStream: TStream); overload; // experimental
 
     /// <summary>
     /// Gets or sets the cipher mode for operation of the symmetric algorithm.

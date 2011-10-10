@@ -50,7 +50,6 @@ type
     const
       fCData: UnicodeString = 'Delphi Spring Framework';  // fCDefaultDataString
   protected
-//    fAlgorithm: IHashAlgorithm;
     fActual: TBuffer;
     fExpected: TBuffer;
   end;

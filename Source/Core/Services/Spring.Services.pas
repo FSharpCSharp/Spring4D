@@ -37,9 +37,9 @@ uses
   SysUtils,
   Spring;
 
-type
-  {$SCOPEDENUMS ON}
+{$SCOPEDENUMS ON}
 
+type
   {$REGION 'Lifetime Type & Attributes'}
 
   ///	<summary>
@@ -181,6 +181,8 @@ type
     property HasValue: Boolean read GetHasValue;
   end;
 
+  InjectionAttribute = InjectAttribute deprecated;
+
   ///	<summary>
   ///	  Applies this attribute to tell the IoC container which service is
   ///	  implemented by the target component. In addition, a service name can be
@@ -213,7 +215,6 @@ type
     property Name: string read fName;
   end;
 
-  InjectionAttribute = InjectAttribute deprecated 'Use InjectAttribute instead.';
 
   {$ENDREGION}
 
@@ -221,7 +222,7 @@ type
   {$REGION 'Lifecycle Interfaces'}
 
   ///	<summary>
-  ///	  Lifecycle interface. If a component implements this interface, the dependency Inject
+  ///	  Lifecycle interface. If a component implements this interface, the dependency injection
   ///	  container will invoke the <c>Initialize</c> method when initiating an
   ///	  instance of the component.
   ///	</summary>
@@ -513,5 +514,4 @@ end;
 {$ENDREGION}
 
 end.
-
 
