@@ -150,6 +150,8 @@ type
     property Model: TComponentModel read GetModel;
   end;
 
+  IInjectionList = IList<IInjection>;
+
   /// <summary>
   /// Inject Factory
   /// </summary>
@@ -200,19 +202,19 @@ type
     fMinPoolsize: Integer;
     fMaxPoolsize: Integer;
     fServices: IDictionary<string, PTypeInfo>;
-    fConstructorInjections: IList<IInjection>;
-    fMethodInjections: IList<IInjection>;
-    fPropertyInjections: IList<IInjection>;
-    fFieldInjections: IList<IInjection>;
+    fConstructorInjections: IInjectionList;
+    fMethodInjections: IInjectionList;
+    fPropertyInjections: IInjectionList;
+    fFieldInjections: IInjectionList;
     fInjectionArguments: IDictionary<IInjection, TArray<TValue>>;
     function GetComponentTypeInfo: PTypeInfo;
     function GetInjectionFactory: IInjectionFactory;
   protected
     function GetServices: IDictionary<string, PTypeInfo>;
-    function GetConstructorInjections: IList<IInjection>;
-    function GetMethodInjections: IList<IInjection>;
-    function GetPropertyInjections: IList<IInjection>;
-    function GetFieldInjections: IList<IInjection>;
+    function GetConstructorInjections: IInjectionList;
+    function GetMethodInjections: IInjectionList;
+    function GetPropertyInjections: IInjectionList;
+    function GetFieldInjections: IInjectionList;
     function GetInjections: IDictionary<IInjection, TArray<TValue>>;
     property Injections: IDictionary<IInjection, TArray<TValue>> read GetInjections;
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
@@ -255,10 +257,10 @@ type
     property ComponentActivator: IComponentActivator read fComponentActivator write fComponentActivator;
     property ActivatorDelegate: TActivatorDelegate read fActivatorDelegate write fActivatorDelegate;
 
-    property ConstructorInjections: IList<IInjection> read GetConstructorInjections;
-    property MethodInjections: IList<IInjection> read GetMethodInjections;
-    property PropertyInjections: IList<IInjection> read GetPropertyInjections;
-    property FieldInjections: IList<IInjection> read GetFieldInjections;
+    property ConstructorInjections: IInjectionList read GetConstructorInjections;
+    property MethodInjections: IInjectionList read GetMethodInjections;
+    property PropertyInjections: IInjectionList read GetPropertyInjections;
+    property FieldInjections: IInjectionList read GetFieldInjections;
   end;
 
   {$REGION 'Deprecated'}
@@ -313,11 +315,13 @@ type
 
   EActivatorException = class(EContainerException);
 
+function CreateInjectionList: IInjectionList;
+
 implementation
 
 uses
-  Spring.Helpers,
   Generics.Collections,
+  Spring.Helpers,
   Spring.ResourceStrings,
   Spring.Container.ResourceStrings;
 
@@ -342,6 +346,10 @@ end;
 
 {$ENDREGION}
 
+function CreateInjectionList: IInjectionList;
+begin
+  Result := TCollections.CreateList<IInjection>;
+end;
 
 {$REGION 'TComponentModel'}
 
@@ -493,29 +501,29 @@ begin
   Result := fContext.InjectionFactory;
 end;
 
-function TComponentModel.GetConstructorInjections: IList<IInjection>;
+function TComponentModel.GetConstructorInjections: IInjectionList;
 begin
   if fConstructorInjections = nil then
   begin
-    fConstructorInjections := TCollections.CreateList<IInjection>;
+    fConstructorInjections := CreateInjectionList;
   end;
   Result := fConstructorInjections;
 end;
 
-function TComponentModel.GetMethodInjections: IList<IInjection>;
+function TComponentModel.GetMethodInjections: IInjectionList;
 begin
   if fMethodInjections = nil then
   begin
-    fMethodInjections := TCollections.CreateList<IInjection>;
+    fMethodInjections := CreateInjectionList;
   end;
   Result := fMethodInjections;
 end;
 
-function TComponentModel.GetPropertyInjections: IList<IInjection>;
+function TComponentModel.GetPropertyInjections: IInjectionList;
 begin
   if fPropertyInjections = nil then
   begin
-    fPropertyInjections := TCollections.CreateList<IInjection>;
+    fPropertyInjections := CreateInjectionList;
   end;
   Result := fPropertyInjections;
 end;
@@ -554,11 +562,11 @@ begin
   Result := fServices;
 end;
 
-function TComponentModel.GetFieldInjections: IList<IInjection>;
+function TComponentModel.GetFieldInjections: IInjectionList;
 begin
   if fFieldInjections = nil then
   begin
-    fFieldInjections := TCollections.CreateList<IInjection>;
+    fFieldInjections := CreateInjectionList;
   end;
   Result := fFieldInjections;
 end;

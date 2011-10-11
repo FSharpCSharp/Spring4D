@@ -41,7 +41,6 @@ type
   THashAlgorithmBase = class abstract(TInterfacedObject, IHashAlgorithm, IInterface)
   protected
     fHash: TBuffer;
-//    fState: Integer;
   protected
     procedure HashInit; virtual; abstract;
     procedure HashUpdate(const buffer: Pointer; count: Integer); virtual; abstract;
