@@ -30,9 +30,6 @@ requires
   vcl;
 
 contains
-  Spring.Collections.Extensions in '..\..\Source\System\Collections\Spring.Collections.Extensions.pas',
-  Spring.Collections in '..\..\Source\System\Collections\Spring.Collections.pas',
-  Spring.Collections.Sets in '..\..\Source\System\Collections\Spring.Collections.Sets.pas',
   Spring.Reflection in '..\..\Source\System\Reflection\Spring.Reflection.pas',
   Spring.DesignPatterns in '..\..\Source\System\Spring.DesignPatterns.pas',
   Spring.Helpers in '..\..\Source\System\Spring.Helpers.pas',
@@ -49,6 +46,14 @@ contains
   Spring.Utils in '..\..\Source\System\Utils\Spring.Utils.pas',
   Spring.Utils.WinApi in '..\..\Source\System\Utils\Spring.Utils.WinApi.pas',
   Spring.Reflection.ValueConverters in '..\..\Source\System\Reflection\Spring.Reflection.ValueConverters.pas',
-  Spring.Reflection.ValueExpression in '..\..\Source\System\Reflection\Spring.Reflection.ValueExpression.pas';
+  Spring.Reflection.ValueExpression in '..\..\Source\System\Reflection\Spring.Reflection.ValueExpression.pas',
+  Spring.Collections.Base in '..\..\Source\System\Collections\Spring.Collections.Base.pas',
+  Spring.Collections.Dictionaries in '..\..\Source\System\Collections\Spring.Collections.Dictionaries.pas',
+  Spring.Collections.Extensions in '..\..\Source\System\Collections\Spring.Collections.Extensions.pas',
+  Spring.Collections.Lists in '..\..\Source\System\Collections\Spring.Collections.Lists.pas',
+  Spring.Collections in '..\..\Source\System\Collections\Spring.Collections.pas',
+  Spring.Collections.Queues in '..\..\Source\System\Collections\Spring.Collections.Queues.pas',
+  Spring.Collections.Sets in '..\..\Source\System\Collections\Spring.Collections.Sets.pas',
+  Spring.Collections.Stacks in '..\..\Source\System\Collections\Spring.Collections.Stacks.pas';
 
 end.

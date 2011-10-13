@@ -130,9 +130,6 @@
 			<DCCReference Include="..\..\Source\System\Spring.Helpers.pas"/>
 			<DCCReference Include="..\..\Source\System\Spring.pas"/>
 			<DCCReference Include="..\..\Source\System\Spring.ResourceStrings.pas"/>
-			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.Extensions.pas"/>
-			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.pas"/>
-			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.Sets.pas"/>
 			<DCCReference Include="..\..\Source\System\Cryptography\Spring.Cryptography.Core.pas"/>
 			<DCCReference Include="..\..\Source\System\Cryptography\Spring.Cryptography.CRC.pas"/>
 			<DCCReference Include="..\..\Source\System\Cryptography\Spring.Cryptography.DES.pas"/>
@@ -145,6 +142,14 @@
 			<DCCReference Include="..\..\Source\System\Utils\Spring.Utils.IO.pas"/>
 			<DCCReference Include="..\..\Source\System\Utils\Spring.Utils.pas"/>
 			<DCCReference Include="..\..\Source\System\Utils\Spring.Utils.WinApi.pas"/>
+			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.Base.pas"/>
+			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.Dictionaries.pas"/>
+			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.Extensions.pas"/>
+			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.Lists.pas"/>
+			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.pas"/>
+			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.Queues.pas"/>
+			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.Sets.pas"/>
+			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.Stacks.pas"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>
