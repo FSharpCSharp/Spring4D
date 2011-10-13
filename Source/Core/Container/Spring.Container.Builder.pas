@@ -35,6 +35,7 @@ uses
   TypInfo,
   Spring,
   Spring.Collections,
+  //Spring.Collections.Lists,
   Spring.DesignPatterns,
   Spring.Services,
   Spring.Container.Core;
@@ -44,7 +45,7 @@ type
   private
     fContext: IContainerContext;
     fRegistry: IComponentRegistry;
-    fInspectors: TList<IBuilderInspector>;
+    fInspectors: IList<IBuilderInspector>;
   public
     constructor Create(context: IContainerContext; registry: IComponentRegistry);
     destructor Destroy; override;
@@ -146,12 +147,12 @@ begin
   inherited Create;
   fContext := context;
   fRegistry := registry;
-  fInspectors := TList<IBuilderInspector>.Create;
+  fInspectors := TCollections.CreateList<IBuilderInspector>;
 end;
 
 destructor TComponentBuilder.Destroy;
 begin
-  fInspectors.Free;
+  //fInspectors.Free;
   inherited Destroy;
 end;
 

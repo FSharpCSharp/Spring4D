@@ -4,7 +4,7 @@
 {                                                                           }
 {           Copyright (C) 2009-2011 DevJET                                  }
 {                                                                           }
-{           http://www.DevJET.net                                           }
+{           http://www.spring4d.org                                         }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -30,10 +30,51 @@ interface
 
 uses
   SysUtils,
+  Generics.Collections,
   Spring,
-  Spring.Collections;
+  Spring.Collections,
+  Spring.Collections.Base;
 
 type
+  TArrayEnumerator<T> = class(TEnumeratorBase<T>)
+  private
+    fArray: TArray<T>;
+    fIndex: Integer;
+  protected
+    function GetCurrent: T; override;
+  public
+    constructor Create(const value: TArray<T>);
+    function MoveNext: Boolean; override;
+  end;
+
+  TArrayReversedEnumerator<T> = class(TEnumeratorBase<T>)
+  private
+    fArray: TArray<T>;
+    fIndex: Integer;
+  protected
+    function GetCurrent: T; override;
+  public
+    constructor Create(const value: TArray<T>);
+    function MoveNext: Boolean; override;
+  end;
+
+  ///	<summary>The adapter implementation for <c>IEnumerator{T}</c>.</summary>
+  TEnumeratorAdapter<T> = class(TEnumeratorBase<T>)
+  public
+    type
+      TGenericEnumerable = Generics.Collections.TEnumerable<T>;
+      TGenericEnumerator = Generics.Collections.TEnumerator<T>;
+  private
+    fEnumerator: TGenericEnumerator;
+  protected
+    function GetCurrent: T; override;
+  public
+    constructor Create(collection: TGenericEnumerable);
+    destructor Destroy; override;
+    function MoveNext: Boolean; override;
+    property Current: T read GetCurrent;
+  end;
+
   TNullEnumerator<T> = class(TEnumeratorBase<T>)
   protected
     function GetCurrent: T; override;
@@ -243,6 +284,82 @@ implementation
 uses
   Spring.ResourceStrings;
 
+
+{$REGION 'TEnumeratorAdapter<T>'}
+
+constructor TEnumeratorAdapter<T>.Create(collection: TGenericEnumerable);
+begin
+  inherited Create;
+  fEnumerator := collection.GetEnumerator;
+end;
+
+destructor TEnumeratorAdapter<T>.Destroy;
+begin
+  fEnumerator.Free;
+  inherited Destroy;
+end;
+
+function TEnumeratorAdapter<T>.GetCurrent: T;
+begin
+  Result := fEnumerator.Current;
+end;
+
+function TEnumeratorAdapter<T>.MoveNext: Boolean;
+begin
+  Result := fEnumerator.MoveNext;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TArrayEnumerator<T>'}
+
+constructor TArrayEnumerator<T>.Create(const value: TArray<T>);
+begin
+  inherited Create;
+  fArray := value;
+  fIndex := -1;
+end;
+
+function TArrayEnumerator<T>.GetCurrent: T;
+begin
+  Result := fArray[fIndex];
+end;
+
+function TArrayEnumerator<T>.MoveNext: Boolean;
+begin
+  Result := fIndex < Length(fArray) - 1;
+  if Result then
+    Inc(fIndex);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TArrayReversedEnumerator<T>'}
+
+constructor TArrayReversedEnumerator<T>.Create(const value: TArray<T>);
+begin
+  inherited Create;
+  fArray := value;
+  fIndex := Length(fArray);
+end;
+
+function TArrayReversedEnumerator<T>.GetCurrent: T;
+begin
+  Result := fArray[fIndex];
+end;
+
+function TArrayReversedEnumerator<T>.MoveNext: Boolean;
+begin
+  Result := fIndex > 0;
+  if Result then
+    Dec(fIndex);
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TNullEnumerator<T>'}
 
 function TNullEnumerator<T>.GetCurrent: T;
@@ -347,7 +464,8 @@ end;
 
 {$ENDREGION}
 
-{ TSkipEnumerable<T> }
+
+{$REGION 'TSkipEnumerable<T>'}
 
 constructor TSkipEnumerable<T>.Create(const collection: IEnumerable<T>;
   count: Integer);
@@ -361,7 +479,10 @@ begin
   Result := TEnumerator.Create(Collection.GetEnumerator, fCount);
 end;
 
-{ TSkipEnumerable<T>.TEnumerator }
+{$ENDREGION}
+
+
+{$REGION 'TSkipEnumerable<T>.TEnumerator'}
 
 constructor TSkipEnumerable<T>.TEnumerator.Create(
   const enumerator: IEnumerator<T>; count: Integer);
@@ -398,7 +519,10 @@ begin
   end;
 end;
 
-{ TSkipWhileEnumerable<T> }
+{$ENDREGION}
+
+
+{$REGION 'TSkipWhileEnumerable<T>'}
 
 constructor TSkipWhileEnumerable<T>.Create(const collection: IEnumerable<T>;
   const predicate: TPredicate<T>);
@@ -412,7 +536,10 @@ begin
   Result := TEnumerator.Create(Collection.GetEnumerator, fPredicate);
 end;
 
-{ TSkipWhileEnumerable<T>.TEnumerator }
+{$ENDREGION}
+
+
+{$REGION 'TSkipWhileEnumerable<T>.TEnumerator'}
 
 constructor TSkipWhileEnumerable<T>.TEnumerator.Create(
   const enumerator: IEnumerator<T>; const predicate: TPredicate<T>);
@@ -445,7 +572,10 @@ begin
   end;
 end;
 
-{ TSkipWhile2Enumerable<T> }
+{$ENDREGION}
+
+
+{$REGION 'TSkipWhile2Enumerable<T>'}
 
 constructor TSkipWhileIndexEnumerable<T>.Create(const collection: IEnumerable<T>;
   const predicate: TFunc<T, Integer, Boolean>);
@@ -459,7 +589,10 @@ begin
   Result := TEnumerator.Create(Collection.GetEnumerator, fPredicate);
 end;
 
-{ TSkipWhile2Enumerable<T>.TEnumerator }
+{$ENDREGION}
+
+
+{$REGION 'TSkipWhile2Enumerable<T>.TEnumerator'}
 
 constructor TSkipWhileIndexEnumerable<T>.TEnumerator.Create(
   const enumerator: IEnumerator<T>;
@@ -497,7 +630,10 @@ begin
   end;
 end;
 
-{ TTakeEnumerable<T> }
+{$ENDREGION}
+
+
+{$REGION 'TTakeEnumerable<T>'}
 
 constructor TTakeEnumerable<T>.Create(const collection: IEnumerable<T>;
   count: Integer);
@@ -511,7 +647,10 @@ begin
   Result := TEnumerator.Create(Collection.GetEnumerator, fCount);
 end;
 
-{ TTakeEnumerable<T>.TEnumerator }
+{$ENDREGION}
+
+
+{$REGION 'TTakeEnumerable<T>.TEnumerator'}
 
 constructor TTakeEnumerable<T>.TEnumerator.Create(
   const enumerator: IEnumerator<T>; count: Integer);
@@ -535,7 +674,10 @@ begin
   end;
 end;
 
-{ TTakeWhileEnumerable<T> }
+{$ENDREGION}
+
+
+{$REGION 'TTakeWhileEnumerable<T>'}
 
 constructor TTakeWhileEnumerable<T>.Create(const collection: IEnumerable<T>;
   const predicate: TPredicate<T>);
@@ -549,7 +691,10 @@ begin
   Result := TEnumerator.Create(Collection.GetEnumerator, fPredicate);
 end;
 
-{ TTakeWhileEnumerable<T>.TEnumerator }
+{$ENDREGION}
+
+
+{$REGION 'TTakeWhileEnumerable<T>.TEnumerator'}
 
 constructor TTakeWhileEnumerable<T>.TEnumerator.Create(
   const enumerator: IEnumerator<T>; const predicate: TPredicate<T>);
@@ -576,7 +721,10 @@ begin
   end;
 end;
 
-{ TTakeWhileIndexEnumerable<T> }
+{$ENDREGION}
+
+
+{$REGION 'TTakeWhileIndexEnumerable<T>'}
 
 constructor TTakeWhileIndexEnumerable<T>.Create(
   const collection: IEnumerable<T>;
@@ -591,7 +739,10 @@ begin
   Result := TEnumerator.Create(Collection.GetEnumerator, fPredicate);
 end;
 
-{ TTakeWhileIndexEnumerable<T>.TEnumerator }
+{$ENDREGION}
+
+
+{$REGION 'TTakeWhileIndexEnumerable<T>.TEnumerator'}
 
 constructor TTakeWhileIndexEnumerable<T>.TEnumerator.Create(
   const enumerator: IEnumerator<T>;
@@ -621,7 +772,10 @@ begin
   end;
 end;
 
-{ TConcatEnumerable<T> }
+{$ENDREGION}
+
+
+{$REGION 'TConcatEnumerable<T>'}
 
 constructor TConcatEnumerable<T>.Create(const first, second: IEnumerable<T>);
 begin
@@ -655,7 +809,10 @@ begin
   Result := fSecond.TryGetLast(value) or fFirst.TryGetLast(value);
 end;
 
-{ TConcatEnumerable<T>.TEnumerator }
+{$ENDREGION}
+
+
+{$REGION 'TConcatEnumerable<T>.TEnumerator'}
 
 constructor TConcatEnumerable<T>.TEnumerator.Create(const first,
   second: IEnumerable<T>);
@@ -681,5 +838,7 @@ begin
     Result := fCurrentEnumerator.MoveNext;
   end;
 end;
+
+{$ENDREGION}
 
 end.

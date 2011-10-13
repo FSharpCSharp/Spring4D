@@ -188,8 +188,8 @@ begin
   fContainerContext := context;
   fRttiContext := TRttiContext.Create;
   fModels := TCollections.CreateDictionary<PTypeInfo, TComponentModel>([doOwnsValues]);
-  fServiceTypeMappings := TDictionary<PTypeInfo, IList<TComponentModel>>.Create;
-  fServiceNameMappings := TDictionary<string, TComponentModel>.Create;
+  fServiceTypeMappings := TCollections.CreateDictionary<PTypeInfo, IList<TComponentModel>>;
+  fServiceNameMappings := TCollections.CreateDictionary<string, TComponentModel>;
 end;
 
 destructor TComponentRegistry.Destroy;

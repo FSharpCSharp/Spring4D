@@ -114,10 +114,10 @@ uses
 constructor TLoggerManager.Create;
 begin
   inherited Create;
-  fLevels := TDictionary<string, TLevel>.Create;
-  fAppenders := TList<IAppender>.Create;
-  fLoggers := TDictionary<string, ILogger>.Create;
-  fAppenderRefs := TDictionary<string, IList<IAppender>>.Create;
+  fLevels := TCollections.CreateDictionary<string, TLevel>;
+  fAppenders := TCollections.CreateList<IAppender>;
+  fLoggers := TCollections.CreateDictionary<string, ILogger>;
+  fAppenderRefs := TCollections.CreateDictionary<string, IList<IAppender>>;
   fRoot := TRootLogger.Create(Self);
   fLock := TCriticalSection.Create;
   fThreshold := TLevel.All;
@@ -365,7 +365,7 @@ begin
   try
     if not fAppenderRefs.TryGetValue(logger.Name, appenders) then
     begin
-      appenders := TList<IAppender>.Create;
+      appenders := TCollections.CreateList<IAppender>;
       fAppenderRefs[logger.Name] := appenders;
     end;
     appenders.Add(appender);

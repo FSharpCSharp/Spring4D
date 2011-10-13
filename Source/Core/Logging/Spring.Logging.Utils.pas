@@ -71,7 +71,7 @@ type
     PatternType: TPatternType;
   end;
 
-  TPatternTokens = TDictionary<string, TPatternToken>;
+  TPatternTokens = IDictionary<string, TPatternToken>;
 
   TPatternParser = class
   private type
@@ -181,13 +181,13 @@ end;
 constructor TPatternParser.Create(const pattern: string);
 begin
   inherited Create;
-  fKeyPatterns:= TPatternTokens.Create;
+  fKeyPatterns := TCollections.CreateDictionary<string, TPatternToken>;
   InitializePatternString(pattern);
 end;
 
 destructor TPatternParser.Destroy;
 begin
-  fKeyPatterns.Free;
+  //fKeyPatterns.Free;
   inherited;
 end;
 
@@ -322,7 +322,7 @@ end;
 constructor TEncodingRegistry.Create;
 begin
   inherited Create;
-  fEncodings := TDictionary<string, TEncoding>.Create;
+  fEncodings := TCollections.CreateDictionary<string, TEncoding>;
   with fEncodings do
   begin
     AddOrSetValue('default', TEncoding.Default);

@@ -123,15 +123,15 @@ type
 
   TObservable<T> = class(TInterfacedObject, IObservable<T>, IInterface)
   private
-    fListeners: TList<T>;
+    fListeners: IList<T>;
   protected
     procedure Validate(const listener: T); virtual;
     procedure DoListenerAdded(const listener: T); virtual;
     procedure DoListenerRemoved(const listener: T); virtual;
     procedure Notify(const listener: T; action: TListenerNotification); virtual;
     function Contains(const listener: T): Boolean; virtual;
-    function GetListeners: TList<T>; virtual;
-    property Listeners: TList<T> read GetListeners;
+    function GetListeners: IList<T>; virtual;
+    property Listeners: IList<T> read GetListeners;
   public
     destructor Destroy; override;
     procedure AddListener(const listener: T); virtual;
@@ -241,20 +241,20 @@ type
   TFactoryMethodKeyAlreadyRegisteredException = EFactoryMethodKeyAlreadyRegisteredException;
   TFactoryMethodKeyNotRegisteredException = EFactoryMethodKeyNotRegisteredException;
 
-  TFactoryMethod<TBaseType> = reference to function : TBaseType;
+  TFactoryMethod<TBaseType> = reference to function: TBaseType;
 
   TFactory<TKey, TBaseType> = class
   private
-    FFactoryMethods : TDictionary<TKey, TFactoryMethod<TBaseType>>;
+    fFactoryMethods: IDictionary<TKey, TFactoryMethod<TBaseType>>;
     function GetCount: Integer;
   public
     constructor Create;
     destructor Destroy; override;
-    property Count : Integer read GetCount;
-    procedure RegisterFactoryMethod(Key : TKey; FactoryMethod : TFactoryMethod<TBaseType>);
-    procedure UnregisterFactoryMethod(Key : TKey);
-    function IsRegistered (Key : TKey) : boolean;
-    function GetInstance(Key : TKey) : TBaseType;
+    property Count: Integer read GetCount;
+    procedure RegisterFactoryMethod(key: TKey; factoryMethod: TFactoryMethod<TBaseType>);
+    procedure UnregisterFactoryMethod(key: TKey);
+    function IsRegistered(key: TKey): boolean;
+    function GetInstance(key: TKey): TBaseType;
   end;
 
   {$ENDREGION}
@@ -347,7 +347,6 @@ end;
 
 destructor TObservable<T>.Destroy;
 begin
-  fListeners.Free;
   inherited Destroy;
 end;
 
@@ -415,11 +414,11 @@ begin
   end;
 end;
 
-function TObservable<T>.GetListeners: TList<T>;
+function TObservable<T>.GetListeners: IList<T>;
 begin
   if fListeners = nil then
   begin
-    fListeners := TList<T>.Create;
+    fListeners := TCollections.CreateList<T>;
   end;
   Result := fListeners;
 end;
@@ -433,7 +432,7 @@ constructor TSynchronizedObservable<T>.Create;
 begin
   inherited Create;
   fListenersLock := TMREWSync.Create;
-  fListeners := TList<T>.Create;
+  fListeners := TCollections.CreateList<T>;
 end;
 
 procedure TSynchronizedObservable<T>.AddListener(const listener: T);
@@ -626,51 +625,50 @@ end;
 constructor TFactory<TKey, TBaseType>.Create;
 begin
   inherited Create;
-  FFactoryMethods := TDictionary<TKey, TFactoryMethod<TBaseType>>.Create;
+  fFactoryMethods := TCollections.CreateDictionary<TKey, TFactoryMethod<TBaseType>>;
 end;
 
 destructor TFactory<TKey, TBaseType>.Destroy;
 begin
-  FFactoryMethods.Free;
   inherited;
 end;
 
 function TFactory<TKey, TBaseType>.GetCount: Integer;
 begin
-  Result := FFactoryMethods.Count;
+  Result := fFactoryMethods.Count;
 end;
 
-function TFactory<TKey, TBaseType>.GetInstance(Key: TKey): TBaseType;
+function TFactory<TKey, TBaseType>.GetInstance(key: TKey): TBaseType;
 var
-  FactoryMethod : TFactoryMethod<TBaseType>;
+  factoryMethod : TFactoryMethod<TBaseType>;
 begin
-  if not IsRegistered(Key) then
+  if not IsRegistered(key) then
     raise TFactoryMethodKeyNotRegisteredException.Create('Factory not registered');
-  FactoryMethod := FFactoryMethods.Items[Key];
-  if Assigned(FactoryMethod) then
-    Result := FactoryMethod;
+  factoryMethod := fFactoryMethods.Items[key];
+  if Assigned(factoryMethod) then
+    Result := factoryMethod;
 end;
 
-function TFactory<TKey, TBaseType>.IsRegistered(Key: TKey): boolean;
+function TFactory<TKey, TBaseType>.IsRegistered(key: TKey): boolean;
 begin
-  Result := FFactoryMethods.ContainsKey(Key);
+  Result := fFactoryMethods.ContainsKey(key);
 end;
 
-procedure TFactory<TKey, TBaseType>.RegisterFactoryMethod(Key: TKey;
-  FactoryMethod: TFactoryMethod<TBaseType>);
+procedure TFactory<TKey, TBaseType>.RegisterFactoryMethod(key: TKey;
+  factoryMethod: TFactoryMethod<TBaseType>);
 begin
-  if IsRegistered(Key) then
+  if IsRegistered(key) then
     raise TFactoryMethodKeyAlreadyRegisteredException.Create('Factory already registered');
 
-  FFactoryMethods.Add(Key, FactoryMethod);
+  fFactoryMethods.Add(key, factoryMethod);
 end;
 
-procedure TFactory<TKey, TBaseType>.UnRegisterFactoryMethod(Key: TKey);
+procedure TFactory<TKey, TBaseType>.UnRegisterFactoryMethod(key: TKey);
 begin
-  if not IsRegistered(Key) then
+  if not IsRegistered(key) then
     raise TFactoryMethodKeyNotRegisteredException.Create('Factory not registered');
 
-  FFactoryMethods.Remove(Key);
+  fFactoryMethods.Remove(key);
 end;
 
 
@@ -682,7 +680,7 @@ end;
 constructor TClassTypeRegistry<TValue>.Create;
 begin
   inherited Create;
-  fLookup := TDictionary<TClass, TValue>.Create;
+  fLookup := TCollections.CreateDictionary<TClass, TValue>;
 end;
 
 procedure TClassTypeRegistry<TValue>.Register(classType: TClass; const value: TValue);

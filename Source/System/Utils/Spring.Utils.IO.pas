@@ -44,6 +44,7 @@ uses
   Generics.Collections,
   Spring,
   Spring.Collections,
+  Spring.Collections.Base,
   Spring.Utils;
 
 type

@@ -1,3 +1,27 @@
+{***************************************************************************}
+{                                                                           }
+{           Spring Framework for Delphi                                     }
+{                                                                           }
+{           Copyright (C) 2009-2011 DevJET                                  }
+{                                                                           }
+{           http://www.spring4d.org                                         }
+{                                                                           }
+{***************************************************************************}
+{                                                                           }
+{  Licensed under the Apache License, Version 2.0 (the "License");          }
+{  you may not use this file except in compliance with the License.         }
+{  You may obtain a copy of the License at                                  }
+{                                                                           }
+{      http://www.apache.org/licenses/LICENSE-2.0                           }
+{                                                                           }
+{  Unless required by applicable law or agreed to in writing, software      }
+{  distributed under the License is distributed on an "AS IS" BASIS,        }
+{  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. }
+{  See the License for the specific language governing permissions and      }
+{  limitations under the License.                                           }
+{                                                                           }
+{***************************************************************************}
+
 unit Spring.Collections.Sets;
 
 interface
@@ -7,8 +31,8 @@ interface
 uses
   Generics.Defaults,
   Generics.Collections,
-  Spring,
-  Spring.Collections;
+  Spring.Collections,
+  Spring.Collections.Base;
 
 type
   THashSet<T> = class(TCollectionBase<T>, ISet<T>)
@@ -35,6 +59,11 @@ type
   end;
 
 implementation
+
+uses
+  Spring,
+  Spring.Collections.Lists,
+  Spring.Collections.Extensions;
 
 
 {$REGION 'THashSet<T>'}
@@ -86,7 +115,11 @@ procedure THashSet<T>.ExceptWith(const collection: IEnumerable<T>);
 var
   item: T;
 begin
+{$IFDEF DELPHIXE_UP}
   TArgument.CheckNotNull(collection, 'collection');
+{$ELSE}
+  Assert(Assigned(collection), 'collection');
+{$ENDIF}
 
   for item in collection do
   begin
@@ -99,9 +132,13 @@ var
   item: T;
   list: IList<T>;
 begin
+{$IFDEF DELPHIXE_UP}
   TArgument.CheckNotNull(collection, 'collection');
+{$ELSE}
+  Assert(Assigned(collection), 'collection');
+{$ENDIF}
 
-  list := TCollections.CreateList<T>;
+  list := TList<T>.Create;
   for item in Self do
   begin
     if not collection.Contains(item) then
@@ -118,7 +155,11 @@ procedure THashSet<T>.UnionWith(const collection: IEnumerable<T>);
 var
   item: T;
 begin
+{$IFDEF DELPHIXE_UP}
   TArgument.CheckNotNull(collection, 'collection');
+{$ELSE}
+  Assert(Assigned(collection), 'collection');
+{$ENDIF}
 
   for item in collection do
   begin
@@ -130,7 +171,11 @@ function THashSet<T>.Overlaps(const collection: IEnumerable<T>): Boolean;
 var
   item: T;
 begin
+{$IFDEF DELPHIXE_UP}
   TArgument.CheckNotNull(collection, 'collection');
+{$ELSE}
+  Assert(Assigned(collection), 'collection');
+{$ENDIF}
 
   for item in collection do
   begin
@@ -145,7 +190,11 @@ var
   item: T;
   localSet: ISet<T>;
 begin
+{$IFDEF DELPHIXE_UP}
   TArgument.CheckNotNull(collection, 'collection');
+{$ELSE}
+  Assert(Assigned(collection), 'collection');
+{$ENDIF}
 
   localSet := THashSet<T>.Create;
 

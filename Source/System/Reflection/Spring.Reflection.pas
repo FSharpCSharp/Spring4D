@@ -37,6 +37,7 @@ uses
   Rtti,
   Spring,
   Spring.Collections,
+  Spring.Collections.Base,
   Spring.DesignPatterns;
 
 type
@@ -515,7 +516,7 @@ begin
       MemoryBarrier;
       if fInterfaceTypes = nil then
       begin
-        fInterfaceTypes := TDictionary<TGuid, TRttiInterfaceType>.Create;
+        fInterfaceTypes := TCollections.CreateDictionary<TGuid, TRttiInterfaceType>;
         for item in fContext.GetTypes do
         begin
           if (item is TRttiInterfaceType) and (ifHasGuid in TRttiInterfaceType(item).IntfFlags) then

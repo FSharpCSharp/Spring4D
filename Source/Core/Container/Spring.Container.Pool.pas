@@ -105,9 +105,9 @@ begin
   begin
     fMaxPoolsize := maxPoolSize;
   end;
-  fInstances := TObjectList<TObject>.Create;
-  fAvailableList := TQueue<TObject>.Create;
-  fActiveList := TList<TObject>.Create;
+  fInstances := TCollections.CreateObjectList<TObject>;
+  fAvailableList := TCollections.CreateQueue<TObject>;
+  fActiveList := TCollections.CreateList<TObject>;
   InitializePool;
 end;
 

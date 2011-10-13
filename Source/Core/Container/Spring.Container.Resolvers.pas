@@ -35,6 +35,7 @@ uses
   TypInfo,
   Spring,
   Spring.Collections,
+  //Spring.Collections.Lists,
   Spring.Container.Core;
 
 type
@@ -42,7 +43,7 @@ type
   private
     fContext: IContainerContext;
     fRegistry: IComponentRegistry;
-    fDependencyTypes: TList<TRttiType>;
+    fDependencyTypes: IList<TRttiType>;
   protected
     procedure CheckCircularDependency(dependency: TRttiType);
     procedure ConstructValue(dependency: TRttiType; instance: TObject; out value: TValue);
@@ -99,12 +100,11 @@ begin
   inherited Create;
   fContext := context;
   fRegistry := registry;
-  fDependencyTypes := TList<TRttiType>.Create;
+  fDependencyTypes := TCollections.CreateList<TRttiType>;
 end;
 
 destructor TDependencyResolver.Destroy;
 begin
-  fDependencyTypes.Free;
   inherited Destroy;
 end;
 

@@ -8,132 +8,139 @@
   resources were bound to the produced executable.
 */
 
-#define XMLConst_SNotBuiltInType 64976
-#define XMLConst_SInvalidTargetNS 64977
-#define XMLConst_SUndefinedTargetNS 64978
-#define Spring_Configuration_ResourceStrings_SConfigurationNotFound 64979
-#define Spring_Configuration_ResourceStrings_SConfigurationChildrenNotFound 64980
-#define Spring_Configuration_ResourceStrings_SConfigurationAttributeNotFound 64981
-#define Spring_Logging_ResourceStrings_SNoTypeInformation 64982
-#define Spring_Logging_ResourceStrings_SAllDescription 64983
-#define Spring_Logging_ResourceStrings_SDebugDescription 64984
-#define Spring_Logging_ResourceStrings_SInfoDescription 64985
-#define Spring_Logging_ResourceStrings_SWarnDescription 64986
-#define Spring_Logging_ResourceStrings_SErrorDescription 64987
-#define Spring_Logging_ResourceStrings_SFatalDescription 64988
-#define Spring_Logging_ResourceStrings_SOffDescription 64989
-#define XMLConst_SNodeReadOnly 64992
-#define XMLConst_SNoRefresh 64993
-#define XMLConst_SMissingFileName 64994
-#define XMLConst_SLine 64995
-#define XMLConst_SInvalidSchema 64996
-#define XMLConst_SNoLocalTypeName 64997
-#define XMLConst_SUnknownDataType 64998
-#define XMLConst_SInvalidGroupDecl 64999
-#define XMLConst_SMissingName 65000
-#define XMLConst_SInvalidDerivation 65001
-#define XMLConst_SNoNameOnRef 65002
-#define XMLConst_SNoGlobalRef 65003
-#define XMLConst_SNoRefPropSet 65004
-#define XMLConst_SSetGroupRefProp 65005
-#define XMLConst_SNoContentModel 65006
-#define XMLConst_SNoFacetsAllowed 65007
-#define ComConst_SDAXError 65008
-#define XMLConst_SDuplicateRegistration 65009
-#define XMLConst_SNoMatchingDOMVendor 65010
-#define XMLConst_SNoDOMNodeEx 65011
-#define XMLConst_SDOMNotSupported 65012
-#define XMLConst_SNodeExpected 65013
-#define XMLConst_SMSDOMNotInstalled 65014
-#define XMLConst_SNotActive 65015
-#define XMLConst_SNodeNotFound 65016
-#define XMLConst_SMissingNode 65017
-#define XMLConst_SNoAttributes 65018
-#define XMLConst_SInvalidNodeType 65019
-#define XMLConst_SMismatchedRegItems 65020
-#define XMLConst_SNotSingleTextNode 65021
-#define XMLConst_SNoDOMParseOptions 65022
-#define XMLConst_SMissingItemTag 65023
-#define Spring_Container_ResourceStrings_SNoSuchField 65024
-#define Spring_Container_ResourceStrings_SInjectionTargetNeeded 65025
-#define Spring_Container_ResourceStrings_SUnsatisfiedTarget 65026
-#define Spring_Container_ResourceStrings_SComponentNotFound 65027
-#define Spring_Container_ResourceStrings_SUnexpectedLifetimeType 65028
-#define Spring_Container_ResourceStrings_SActivatorDelegateExpected 65029
-#define ComConst_SCreateRegKeyError 65030
-#define ComConst_SOleError 65031
-#define ComConst_SObjectFactoryMissing 65032
-#define ComConst_STypeInfoMissing 65033
-#define ComConst_SBadTypeInfo 65034
-#define ComConst_SDispIntfMissing 65035
-#define ComConst_SNoMethod 65036
-#define ComConst_SVarNotObject 65037
-#define ComConst_STooManyParams 65038
-#define ComConst_SDCOMNotInstalled 65039
-#define Spring_Container_ResourceStrings_SNonGuidInterfaceServicesAreNotSupported 65040
-#define Spring_Container_ResourceStrings_SIncompatibleTypes 65041
-#define Spring_Container_ResourceStrings_SDuplicatedName 65042
-#define Spring_Container_ResourceStrings_SCircularDependencyDetected 65043
-#define Spring_Container_ResourceStrings_SCannotResolveDependency 65044
-#define Spring_Container_ResourceStrings_SNoComponentRegistered 65045
-#define Spring_Container_ResourceStrings_SInvalidServiceName 65046
-#define Spring_Container_ResourceStrings_SUnsatisfiedConstructorParameters 65047
-#define Spring_Container_ResourceStrings_SUnsatisfiedMethodParameterTypes 65048
-#define Spring_Container_ResourceStrings_SUnsatisfiedDependency 65049
-#define Spring_Container_ResourceStrings_SUnsatisfiedResolutionArgumentCount 65050
-#define Spring_Container_ResourceStrings_SLifetimeManagerMissing 65051
-#define Spring_Container_ResourceStrings_SUnresovableInjection 65052
-#define Spring_Container_ResourceStrings_SUnsatisfiedConstructor 65053
-#define Spring_Container_ResourceStrings_SNoSuchMethod 65054
-#define Spring_Container_ResourceStrings_SNoSuchProperty 65055
-#define Spring_ResourceStrings_SFixedDescription 65056
-#define Spring_ResourceStrings_SNetworkDescription 65057
-#define Spring_ResourceStrings_SCDRomDescription 65058
-#define Spring_ResourceStrings_SRamDescription 65059
-#define Spring_ResourceStrings_SUnknownOSDescription 65060
-#define Spring_ResourceStrings_SWin95Description 65061
-#define Spring_ResourceStrings_SWin98Description 65062
-#define Spring_ResourceStrings_SWinMEDescription 65063
-#define Spring_ResourceStrings_SWinNT351Description 65064
-#define Spring_ResourceStrings_SWinNT40Description 65065
-#define Spring_ResourceStrings_SWinServer2000Description 65066
-#define Spring_ResourceStrings_SWinXPDescription 65067
-#define Spring_ResourceStrings_SWinServer2003Description 65068
-#define Spring_ResourceStrings_SWinVistaDescription 65069
-#define Spring_ResourceStrings_SWinServer2008Description 65070
-#define Spring_ResourceStrings_SWin7Description 65071
-#define Spring_ResourceStrings_SEmptyTargetTypeKind 65072
-#define Spring_ResourceStrings_SCannotModifyReadOnlyValue 65073
-#define Spring_ResourceStrings_SInvalidExpressionPath 65074
-#define Spring_ResourceStrings_SUnexpectedToken 65075
-#define Spring_ResourceStrings_SInvalidExpressionSyntax 65076
-#define Spring_ResourceStrings_SCouldNotFindPath 65077
-#define Spring_ResourceStrings_SIllegalBlockSize 65078
-#define Spring_ResourceStrings_SIllegalKeySize 65079
-#define Spring_ResourceStrings_SIllegalIVSize 65080
-#define Spring_ResourceStrings_SPaddingModeMissing 65081
-#define Spring_ResourceStrings_SInvalidCipherText 65082
-#define Spring_ResourceStrings_SNotSupportedCipherMode 65083
-#define Spring_ResourceStrings_SInvalidArgumentFormat 65084
-#define Spring_ResourceStrings_SUnknownDriveDescription 65085
-#define Spring_ResourceStrings_SNoRootDirectoryDescription 65086
-#define Spring_ResourceStrings_SRemovableDescription 65087
+#define Spring_Logging_ResourceStrings_SInfoDescription 64960
+#define Spring_Logging_ResourceStrings_SWarnDescription 64961
+#define Spring_Logging_ResourceStrings_SErrorDescription 64962
+#define Spring_Logging_ResourceStrings_SFatalDescription 64963
+#define Spring_Logging_ResourceStrings_SOffDescription 64964
+#define XMLConst_SInvalidDerivation 64976
+#define XMLConst_SNoNameOnRef 64977
+#define XMLConst_SNoGlobalRef 64978
+#define XMLConst_SNoRefPropSet 64979
+#define XMLConst_SSetGroupRefProp 64980
+#define XMLConst_SNoContentModel 64981
+#define XMLConst_SNoFacetsAllowed 64982
+#define XMLConst_SNotBuiltInType 64983
+#define XMLConst_SInvalidTargetNS 64984
+#define XMLConst_SUndefinedTargetNS 64985
+#define Spring_Configuration_ResourceStrings_SConfigurationNotFound 64986
+#define Spring_Configuration_ResourceStrings_SConfigurationChildrenNotFound 64987
+#define Spring_Configuration_ResourceStrings_SConfigurationAttributeNotFound 64988
+#define Spring_Logging_ResourceStrings_SNoTypeInformation 64989
+#define Spring_Logging_ResourceStrings_SAllDescription 64990
+#define Spring_Logging_ResourceStrings_SDebugDescription 64991
+#define XMLConst_SMissingNode 64992
+#define XMLConst_SNoAttributes 64993
+#define XMLConst_SInvalidNodeType 64994
+#define XMLConst_SMismatchedRegItems 64995
+#define XMLConst_SNotSingleTextNode 64996
+#define XMLConst_SNoDOMParseOptions 64997
+#define XMLConst_SMissingItemTag 64998
+#define XMLConst_SNodeReadOnly 64999
+#define XMLConst_SNoRefresh 65000
+#define XMLConst_SMissingFileName 65001
+#define XMLConst_SLine 65002
+#define XMLConst_SInvalidSchema 65003
+#define XMLConst_SNoLocalTypeName 65004
+#define XMLConst_SUnknownDataType 65005
+#define XMLConst_SInvalidGroupDecl 65006
+#define XMLConst_SMissingName 65007
+#define ComConst_STypeInfoMissing 65008
+#define ComConst_SBadTypeInfo 65009
+#define ComConst_SDispIntfMissing 65010
+#define ComConst_SNoMethod 65011
+#define ComConst_SVarNotObject 65012
+#define ComConst_STooManyParams 65013
+#define ComConst_SDCOMNotInstalled 65014
+#define ComConst_SDAXError 65015
+#define XMLConst_SDuplicateRegistration 65016
+#define XMLConst_SNoMatchingDOMVendor 65017
+#define XMLConst_SNoDOMNodeEx 65018
+#define XMLConst_SDOMNotSupported 65019
+#define XMLConst_SNodeExpected 65020
+#define XMLConst_SMSDOMNotInstalled 65021
+#define XMLConst_SNotActive 65022
+#define XMLConst_SNodeNotFound 65023
+#define Spring_Container_ResourceStrings_SUnsatisfiedDependency 65024
+#define Spring_Container_ResourceStrings_SUnsatisfiedResolutionArgumentCount 65025
+#define Spring_Container_ResourceStrings_SLifetimeManagerMissing 65026
+#define Spring_Container_ResourceStrings_SUnresovableInjection 65027
+#define Spring_Container_ResourceStrings_SUnsatisfiedConstructor 65028
+#define Spring_Container_ResourceStrings_SNoSuchMethod 65029
+#define Spring_Container_ResourceStrings_SNoSuchProperty 65030
+#define Spring_Container_ResourceStrings_SNoSuchField 65031
+#define Spring_Container_ResourceStrings_SInjectionTargetNeeded 65032
+#define Spring_Container_ResourceStrings_SUnsatisfiedTarget 65033
+#define Spring_Container_ResourceStrings_SComponentNotFound 65034
+#define Spring_Container_ResourceStrings_SUnexpectedLifetimeType 65035
+#define Spring_Container_ResourceStrings_SActivatorDelegateExpected 65036
+#define ComConst_SCreateRegKeyError 65037
+#define ComConst_SOleError 65038
+#define ComConst_SObjectFactoryMissing 65039
+#define Spring_ResourceStrings_SWinNT40Description 65040
+#define Spring_ResourceStrings_SWinServer2000Description 65041
+#define Spring_ResourceStrings_SWinXPDescription 65042
+#define Spring_ResourceStrings_SWinServer2003Description 65043
+#define Spring_ResourceStrings_SWinVistaDescription 65044
+#define Spring_ResourceStrings_SWinServer2008Description 65045
+#define Spring_ResourceStrings_SWin7Description 65046
+#define Spring_Container_ResourceStrings_SNonGuidInterfaceServicesAreNotSupported 65047
+#define Spring_Container_ResourceStrings_SIncompatibleTypes 65048
+#define Spring_Container_ResourceStrings_SDuplicatedName 65049
+#define Spring_Container_ResourceStrings_SCircularDependencyDetected 65050
+#define Spring_Container_ResourceStrings_SCannotResolveDependency 65051
+#define Spring_Container_ResourceStrings_SNoComponentRegistered 65052
+#define Spring_Container_ResourceStrings_SInvalidServiceName 65053
+#define Spring_Container_ResourceStrings_SUnsatisfiedConstructorParameters 65054
+#define Spring_Container_ResourceStrings_SUnsatisfiedMethodParameterTypes 65055
+#define Spring_ResourceStrings_SPaddingModeMissing 65056
+#define Spring_ResourceStrings_SInvalidCipherText 65057
+#define Spring_ResourceStrings_SNotSupportedCipherMode 65058
+#define Spring_ResourceStrings_SInvalidArgumentFormat 65059
+#define Spring_ResourceStrings_SUnknownDriveDescription 65060
+#define Spring_ResourceStrings_SNoRootDirectoryDescription 65061
+#define Spring_ResourceStrings_SRemovableDescription 65062
+#define Spring_ResourceStrings_SFixedDescription 65063
+#define Spring_ResourceStrings_SNetworkDescription 65064
+#define Spring_ResourceStrings_SCDRomDescription 65065
+#define Spring_ResourceStrings_SRamDescription 65066
+#define Spring_ResourceStrings_SUnknownOSDescription 65067
+#define Spring_ResourceStrings_SWin95Description 65068
+#define Spring_ResourceStrings_SWin98Description 65069
+#define Spring_ResourceStrings_SWinMEDescription 65070
+#define Spring_ResourceStrings_SWinNT351Description 65071
+#define Spring_ResourceStrings_SMoreThanOneElementSatisfied 65072
+#define Spring_ResourceStrings_SSequenceContainsMoreThanOneElement 65073
+#define Spring_ResourceStrings_SInvalidOperation_GetValue 65074
+#define Spring_ResourceStrings_SInvalidOperation_SetValue 65075
+#define Spring_ResourceStrings_SInvalidGuidArray 65076
+#define Spring_ResourceStrings_SCouldNotConvertValue 65077
+#define Spring_ResourceStrings_SEmptySourceTypeKind 65078
+#define Spring_ResourceStrings_SEmptyTargetTypeKind 65079
+#define Spring_ResourceStrings_SCannotModifyReadOnlyValue 65080
+#define Spring_ResourceStrings_SInvalidExpressionPath 65081
+#define Spring_ResourceStrings_SUnexpectedToken 65082
+#define Spring_ResourceStrings_SInvalidExpressionSyntax 65083
+#define Spring_ResourceStrings_SCouldNotFindPath 65084
+#define Spring_ResourceStrings_SIllegalBlockSize 65085
+#define Spring_ResourceStrings_SIllegalKeySize 65086
+#define Spring_ResourceStrings_SIllegalIVSize 65087
 #define Spring_ResourceStrings_SNoTypeInfo 65088
 #define Spring_ResourceStrings_STypeParameterShouldBeMethod 65089
 #define Spring_ResourceStrings_SIncorrectFormat 65090
 #define Spring_ResourceStrings_SInvalidDateTime 65091
 #define Spring_ResourceStrings_SIllegalFieldCount 65092
 #define Spring_ResourceStrings_SBadObjectInheritance 65093
-#define Spring_ResourceStrings_SCannotResetEnumerator 65094
-#define Spring_ResourceStrings_SSequenceIsEmpty 65095
-#define Spring_ResourceStrings_SNoElementSatisfiesCondition 65096
-#define Spring_ResourceStrings_SMoreThanOneElementSatisfied 65097
-#define Spring_ResourceStrings_SSequenceContainsMoreThanOneElement 65098
-#define Spring_ResourceStrings_SInvalidOperation_GetValue 65099
-#define Spring_ResourceStrings_SInvalidOperation_SetValue 65100
-#define Spring_ResourceStrings_SInvalidGuidArray 65101
-#define Spring_ResourceStrings_SCouldNotConvertValue 65102
-#define Spring_ResourceStrings_SEmptySourceTypeKind 65103
+#define Spring_ResourceStrings_SBytesDescription 65094
+#define Spring_ResourceStrings_SKBDescription 65095
+#define Spring_ResourceStrings_SMBDescription 65096
+#define Spring_ResourceStrings_SGBDescription 65097
+#define Spring_ResourceStrings_STBDescription 65098
+#define Spring_ResourceStrings_SCannotResetEnumerator 65099
+#define Spring_ResourceStrings_SEnumNotStarted 65100
+#define Spring_ResourceStrings_SEnumEnded 65101
+#define Spring_ResourceStrings_SSequenceIsEmpty 65102
+#define Spring_ResourceStrings_SNoElementSatisfiesCondition 65103
 #define ComStrs_sDateTimeMin 65104
 #define ComStrs_sNeedAllowNone 65105
 #define ComStrs_sFailSetCalDateTime 65106
@@ -568,6 +575,18 @@
 #define SysConst_SInvalidOp 65535
 STRINGTABLE
 BEGIN
+	Spring_Logging_ResourceStrings_SInfoDescription,	"INFO"
+	Spring_Logging_ResourceStrings_SWarnDescription,	"WARN"
+	Spring_Logging_ResourceStrings_SErrorDescription,	"ERROR"
+	Spring_Logging_ResourceStrings_SFatalDescription,	"FATAL"
+	Spring_Logging_ResourceStrings_SOffDescription,	"OFF"
+	XMLConst_SInvalidDerivation,	"Invalid complex type derivation: %s"
+	XMLConst_SNoNameOnRef,	"Name not allowed on a ref item"
+	XMLConst_SNoGlobalRef,	"Global schema items may not contain a ref"
+	XMLConst_SNoRefPropSet,	"%s cannot be set on a ref item"
+	XMLConst_SSetGroupRefProp,	"Set the GroupRef property for the cmGroupRef content model"
+	XMLConst_SNoContentModel,	"ContentModel not set"
+	XMLConst_SNoFacetsAllowed,	"Facets and Enumeration not allowed on this kind of datatype \"%s\""
 	XMLConst_SNotBuiltInType,	"Invalid built-in type name \"%s\""
 	XMLConst_SInvalidTargetNS,	"Included schema file \"%s\" has an invalid targetNamespace.\r\n\r\nExpected: %s\r\nFound: %s"
 	XMLConst_SUndefinedTargetNS,	"No targetNamespace attribute"
@@ -577,11 +596,13 @@ BEGIN
 	Spring_Logging_ResourceStrings_SNoTypeInformation,	"No type information."
 	Spring_Logging_ResourceStrings_SAllDescription,	"ALL"
 	Spring_Logging_ResourceStrings_SDebugDescription,	"DEBUG"
-	Spring_Logging_ResourceStrings_SInfoDescription,	"INFO"
-	Spring_Logging_ResourceStrings_SWarnDescription,	"WARN"
-	Spring_Logging_ResourceStrings_SErrorDescription,	"ERROR"
-	Spring_Logging_ResourceStrings_SFatalDescription,	"FATAL"
-	Spring_Logging_ResourceStrings_SOffDescription,	"OFF"
+	XMLConst_SMissingNode,	"IDOMNode required"
+	XMLConst_SNoAttributes,	"Attributes are not supported on this node type"
+	XMLConst_SInvalidNodeType,	"Invalid node type"
+	XMLConst_SMismatchedRegItems,	"Mismatched paramaters to RegisterChildNodes"
+	XMLConst_SNotSingleTextNode,	"Element \"%s\" does not contain a single text node"
+	XMLConst_SNoDOMParseOptions,	"DOM Implementation does not support IDOMParseOptions"
+	XMLConst_SMissingItemTag,	"ItemTag property is not initialized"
 	XMLConst_SNodeReadOnly,	"Node is readonly"
 	XMLConst_SNoRefresh,	"Refresh is only supported if the FileName or XML properties are set"
 	XMLConst_SMissingFileName,	"FileName cannot be blank"
@@ -591,13 +612,13 @@ BEGIN
 	XMLConst_SUnknownDataType,	"Unknown datatype \"%s\""
 	XMLConst_SInvalidGroupDecl,	"Invalid group declaration in \"%s\""
 	XMLConst_SMissingName,	"Missing Type name"
-	XMLConst_SInvalidDerivation,	"Invalid complex type derivation: %s"
-	XMLConst_SNoNameOnRef,	"Name not allowed on a ref item"
-	XMLConst_SNoGlobalRef,	"Global schema items may not contain a ref"
-	XMLConst_SNoRefPropSet,	"%s cannot be set on a ref item"
-	XMLConst_SSetGroupRefProp,	"Set the GroupRef property for the cmGroupRef content model"
-	XMLConst_SNoContentModel,	"ContentModel not set"
-	XMLConst_SNoFacetsAllowed,	"Facets and Enumeration not allowed on this kind of datatype \"%s\""
+	ComConst_STypeInfoMissing,	"Type information missing for class %s"
+	ComConst_SBadTypeInfo,	"Incorrect type information for class %s"
+	ComConst_SDispIntfMissing,	"Dispatch interface missing from class %s"
+	ComConst_SNoMethod,	"Method '%s' not supported by automation object"
+	ComConst_SVarNotObject,	"Variant does not reference an automation object"
+	ComConst_STooManyParams,	"Dispatch methods do not support more than 64 parameters"
+	ComConst_SDCOMNotInstalled,	"DCOM not installed"
 	ComConst_SDAXError,	"DAX Error"
 	XMLConst_SDuplicateRegistration,	"\"%s\" DOMImplementation already registered"
 	XMLConst_SNoMatchingDOMVendor,	"No matching DOM Vendor: \"%s\""
@@ -607,15 +628,15 @@ BEGIN
 	XMLConst_SMSDOMNotInstalled,	"Microsoft MSXML is not installed"
 	XMLConst_SNotActive,	"No active document"
 	XMLConst_SNodeNotFound,	"Node \"%s\" not found"
-	XMLConst_SMissingNode,	"IDOMNode required"
-	XMLConst_SNoAttributes,	"Attributes are not supported on this node type"
-	XMLConst_SInvalidNodeType,	"Invalid node type"
-	XMLConst_SMismatchedRegItems,	"Mismatched paramaters to RegisterChildNodes"
-	XMLConst_SNotSingleTextNode,	"Element \"%s\" does not contain a single text node"
-	XMLConst_SNoDOMParseOptions,	"DOM Implementation does not support IDOMParseOptions"
-	XMLConst_SMissingItemTag,	"ItemTag property is not initialized"
+	Spring_Container_ResourceStrings_SUnsatisfiedDependency,	"Unsatisfied dependency for the service type \"%0:s\"."
+	Spring_Container_ResourceStrings_SUnsatisfiedResolutionArgumentCount,	"Unsatisfied resolution argument count."
+	Spring_Container_ResourceStrings_SLifetimeManagerMissing,	"LifetimeTypeManager was expected."
+	Spring_Container_ResourceStrings_SUnresovableInjection,	"Unresovable Inject."
+	Spring_Container_ResourceStrings_SUnsatisfiedConstructor,	"Unsatisfied constructor."
+	Spring_Container_ResourceStrings_SNoSuchMethod,	"No such method: \"%s\"."
+	Spring_Container_ResourceStrings_SNoSuchProperty,	"No such property: \"%s\"."
 	Spring_Container_ResourceStrings_SNoSuchField,	"No such field: \"%s\"."
-	Spring_Container_ResourceStrings_SInjectionTargetNeeded,	"Injection target needed."
+	Spring_Container_ResourceStrings_SInjectionTargetNeeded,	"Inject target needed."
 	Spring_Container_ResourceStrings_SUnsatisfiedTarget,	"Unsatisfied target: \"%s\"."
 	Spring_Container_ResourceStrings_SComponentNotFound,	"Cannot found the component registered."
 	Spring_Container_ResourceStrings_SUnexpectedLifetimeType,	"Unexpected lifetimeType."
@@ -623,13 +644,13 @@ BEGIN
 	ComConst_SCreateRegKeyError,	"Error creating system registry entry"
 	ComConst_SOleError,	"OLE error %.8x"
 	ComConst_SObjectFactoryMissing,	"Object factory for class %s missing"
-	ComConst_STypeInfoMissing,	"Type information missing for class %s"
-	ComConst_SBadTypeInfo,	"Incorrect type information for class %s"
-	ComConst_SDispIntfMissing,	"Dispatch interface missing from class %s"
-	ComConst_SNoMethod,	"Method '%s' not supported by automation object"
-	ComConst_SVarNotObject,	"Variant does not reference an automation object"
-	ComConst_STooManyParams,	"Dispatch methods do not support more than 64 parameters"
-	ComConst_SDCOMNotInstalled,	"DCOM not installed"
+	Spring_ResourceStrings_SWinNT40Description,	"Microsoft Windows NT 4"
+	Spring_ResourceStrings_SWinServer2000Description,	"Microsoft Windows Server 2000"
+	Spring_ResourceStrings_SWinXPDescription,	"Microsoft Windows XP"
+	Spring_ResourceStrings_SWinServer2003Description,	"Microsoft Windows Server 2003"
+	Spring_ResourceStrings_SWinVistaDescription,	"Microsoft Windows Vista"
+	Spring_ResourceStrings_SWinServer2008Description,	"Microsoft Windows Server 2008"
+	Spring_ResourceStrings_SWin7Description,	"Microsoft Windows 7"
 	Spring_Container_ResourceStrings_SNonGuidInterfaceServicesAreNotSupported,	"Non-Guid Interface Services are not supported."
 	Spring_Container_ResourceStrings_SIncompatibleTypes,	"The component type \"%s\" is incompatible with the service type \"%s\"."
 	Spring_Container_ResourceStrings_SDuplicatedName,	"Duplicated name found: \"%s\"."
@@ -639,13 +660,13 @@ BEGIN
 	Spring_Container_ResourceStrings_SInvalidServiceName,	"Invalid service name: \"%s\"."
 	Spring_Container_ResourceStrings_SUnsatisfiedConstructorParameters,	"Unsatisfied parameters for constructor."
 	Spring_Container_ResourceStrings_SUnsatisfiedMethodParameterTypes,	"Unsatisfied parameter types for the method: %s."
-	Spring_Container_ResourceStrings_SUnsatisfiedDependency,	"Unsatisfied dependency for the service type \"%0:s\"."
-	Spring_Container_ResourceStrings_SUnsatisfiedResolutionArgumentCount,	"Unsatisfied resolution argument count."
-	Spring_Container_ResourceStrings_SLifetimeManagerMissing,	"LifetimeTypeManager was expected."
-	Spring_Container_ResourceStrings_SUnresovableInjection,	"Unresovable injection."
-	Spring_Container_ResourceStrings_SUnsatisfiedConstructor,	"Unsatisfied constructor."
-	Spring_Container_ResourceStrings_SNoSuchMethod,	"No such method: \"%s\"."
-	Spring_Container_ResourceStrings_SNoSuchProperty,	"No such property: \"%s\"."
+	Spring_ResourceStrings_SPaddingModeMissing,	"Padding mode is missing"
+	Spring_ResourceStrings_SInvalidCipherText,	"Illegal cipher text."
+	Spring_ResourceStrings_SNotSupportedCipherMode,	"The cipher mode \"%s\" is not supported."
+	Spring_ResourceStrings_SInvalidArgumentFormat,	"Invalid format for argument \"%s\"."
+	Spring_ResourceStrings_SUnknownDriveDescription,	"Unknown Drive"
+	Spring_ResourceStrings_SNoRootDirectoryDescription,	"No Root Directory"
+	Spring_ResourceStrings_SRemovableDescription,	"Removable Drive"
 	Spring_ResourceStrings_SFixedDescription,	"Fixed Drive"
 	Spring_ResourceStrings_SNetworkDescription,	"Network Drive"
 	Spring_ResourceStrings_SCDRomDescription,	"CD-Rom Drive"
@@ -655,13 +676,13 @@ BEGIN
 	Spring_ResourceStrings_SWin98Description,	"Microsoft Windows 98"
 	Spring_ResourceStrings_SWinMEDescription,	"Microsoft Windows ME"
 	Spring_ResourceStrings_SWinNT351Description,	"Microsoft Windows NT 3.51"
-	Spring_ResourceStrings_SWinNT40Description,	"Microsoft Windows NT 4"
-	Spring_ResourceStrings_SWinServer2000Description,	"Microsoft Windows Server 2000"
-	Spring_ResourceStrings_SWinXPDescription,	"Microsoft Windows XP"
-	Spring_ResourceStrings_SWinServer2003Description,	"Microsoft Windows Server 2003"
-	Spring_ResourceStrings_SWinVistaDescription,	"Microsoft Windows Vista"
-	Spring_ResourceStrings_SWinServer2008Description,	"Microsoft Windows Server 2008"
-	Spring_ResourceStrings_SWin7Description,	"Microsoft Windows 7"
+	Spring_ResourceStrings_SMoreThanOneElementSatisfied,	"More than one element satisfies the condition in predicate."
+	Spring_ResourceStrings_SSequenceContainsMoreThanOneElement,	"This sequence contains more than one element."
+	Spring_ResourceStrings_SInvalidOperation_GetValue,	"The GetValue method works only for properties/fields."
+	Spring_ResourceStrings_SInvalidOperation_SetValue,	"The SetValue method works only for properties/fields."
+	Spring_ResourceStrings_SInvalidGuidArray,	"Byte array for GUID must be exactly %s bytes long"
+	Spring_ResourceStrings_SCouldNotConvertValue,	"Could not convert value: %s to %s."
+	Spring_ResourceStrings_SEmptySourceTypeKind,	"Empty source TypeKind argument set."
 	Spring_ResourceStrings_SEmptyTargetTypeKind,	"Empty target TypeKind argument set."
 	Spring_ResourceStrings_SCannotModifyReadOnlyValue,	"Cannot modify read-only value."
 	Spring_ResourceStrings_SInvalidExpressionPath,	"Invalid expression path %s."
@@ -671,29 +692,22 @@ BEGIN
 	Spring_ResourceStrings_SIllegalBlockSize,	"Illegal block size: %d."
 	Spring_ResourceStrings_SIllegalKeySize,	"Illegal key size: %d."
 	Spring_ResourceStrings_SIllegalIVSize,	"Illegal IV size: %d."
-	Spring_ResourceStrings_SPaddingModeMissing,	"Padding mode is missing"
-	Spring_ResourceStrings_SInvalidCipherText,	"Illegal cipher text."
-	Spring_ResourceStrings_SNotSupportedCipherMode,	"The cipher mode \"%s\" is not supported."
-	Spring_ResourceStrings_SInvalidArgumentFormat,	"Invalid format for argument \"%s\"."
-	Spring_ResourceStrings_SUnknownDriveDescription,	"Unknown Drive"
-	Spring_ResourceStrings_SNoRootDirectoryDescription,	"No Root Directory"
-	Spring_ResourceStrings_SRemovableDescription,	"Removable Drive"
 	Spring_ResourceStrings_SNoTypeInfo,	"No type information found."
 	Spring_ResourceStrings_STypeParameterShouldBeMethod,	"The type parameter T should be instance method."
 	Spring_ResourceStrings_SIncorrectFormat,	"Unable to convert %s."
 	Spring_ResourceStrings_SInvalidDateTime,	"\"%S\" is not a valid date and time."
 	Spring_ResourceStrings_SIllegalFieldCount,	"fieldCount is more than the number of components defined in the current Version object."
 	Spring_ResourceStrings_SBadObjectInheritance,	"Argument %s of type %s does not inherit from type %s."
+	Spring_ResourceStrings_SBytesDescription,	"bytes"
+	Spring_ResourceStrings_SKBDescription,	"KB"
+	Spring_ResourceStrings_SMBDescription,	"MB"
+	Spring_ResourceStrings_SGBDescription,	"GB"
+	Spring_ResourceStrings_STBDescription,	"TB"
 	Spring_ResourceStrings_SCannotResetEnumerator,	"Cannot reset the enumerator."
+	Spring_ResourceStrings_SEnumNotStarted,	"Enum not started."
+	Spring_ResourceStrings_SEnumEnded,	"Enum ended."
 	Spring_ResourceStrings_SSequenceIsEmpty,	"This sequence is empty."
 	Spring_ResourceStrings_SNoElementSatisfiesCondition,	"No element satisfies the condition in predicate."
-	Spring_ResourceStrings_SMoreThanOneElementSatisfied,	"More than one element satisfies the condition in predicate."
-	Spring_ResourceStrings_SSequenceContainsMoreThanOneElement,	"This sequence contains more than one element."
-	Spring_ResourceStrings_SInvalidOperation_GetValue,	"The GetValue method works only for properties/fields."
-	Spring_ResourceStrings_SInvalidOperation_SetValue,	"The SetValue method works only for properties/fields."
-	Spring_ResourceStrings_SInvalidGuidArray,	"Byte array for GUID must be exactly %s bytes long"
-	Spring_ResourceStrings_SCouldNotConvertValue,	"Could not convert value: %s to %s."
-	Spring_ResourceStrings_SEmptySourceTypeKind,	"Empty source TypeKind argument set."
 	ComStrs_sDateTimeMin,	"Date is less than minimum of %s"
 	ComStrs_sNeedAllowNone,	"You must be in ShowCheckbox mode to set to this date"
 	ComStrs_sFailSetCalDateTime,	"Failed to set calendar date or time"
