@@ -8,539 +8,384 @@
   resources were bound to the produced executable.
 */
 
-#define Spring_Logging_ResourceStrings_SInfoDescription 64960
-#define Spring_Logging_ResourceStrings_SWarnDescription 64961
-#define Spring_Logging_ResourceStrings_SErrorDescription 64962
-#define Spring_Logging_ResourceStrings_SFatalDescription 64963
-#define Spring_Logging_ResourceStrings_SOffDescription 64964
-#define XMLConst_SInvalidDerivation 64976
-#define XMLConst_SNoNameOnRef 64977
-#define XMLConst_SNoGlobalRef 64978
-#define XMLConst_SNoRefPropSet 64979
-#define XMLConst_SSetGroupRefProp 64980
-#define XMLConst_SNoContentModel 64981
-#define XMLConst_SNoFacetsAllowed 64982
-#define XMLConst_SNotBuiltInType 64983
-#define XMLConst_SInvalidTargetNS 64984
-#define XMLConst_SUndefinedTargetNS 64985
-#define Spring_Configuration_ResourceStrings_SConfigurationNotFound 64986
-#define Spring_Configuration_ResourceStrings_SConfigurationChildrenNotFound 64987
-#define Spring_Configuration_ResourceStrings_SConfigurationAttributeNotFound 64988
-#define Spring_Logging_ResourceStrings_SNoTypeInformation 64989
-#define Spring_Logging_ResourceStrings_SAllDescription 64990
-#define Spring_Logging_ResourceStrings_SDebugDescription 64991
-#define XMLConst_SMissingNode 64992
-#define XMLConst_SNoAttributes 64993
-#define XMLConst_SInvalidNodeType 64994
-#define XMLConst_SMismatchedRegItems 64995
-#define XMLConst_SNotSingleTextNode 64996
-#define XMLConst_SNoDOMParseOptions 64997
-#define XMLConst_SMissingItemTag 64998
-#define XMLConst_SNodeReadOnly 64999
-#define XMLConst_SNoRefresh 65000
-#define XMLConst_SMissingFileName 65001
-#define XMLConst_SLine 65002
-#define XMLConst_SInvalidSchema 65003
-#define XMLConst_SNoLocalTypeName 65004
-#define XMLConst_SUnknownDataType 65005
-#define XMLConst_SInvalidGroupDecl 65006
-#define XMLConst_SMissingName 65007
-#define ComConst_STypeInfoMissing 65008
-#define ComConst_SBadTypeInfo 65009
-#define ComConst_SDispIntfMissing 65010
-#define ComConst_SNoMethod 65011
-#define ComConst_SVarNotObject 65012
-#define ComConst_STooManyParams 65013
-#define ComConst_SDCOMNotInstalled 65014
-#define ComConst_SDAXError 65015
-#define XMLConst_SDuplicateRegistration 65016
-#define XMLConst_SNoMatchingDOMVendor 65017
-#define XMLConst_SNoDOMNodeEx 65018
-#define XMLConst_SDOMNotSupported 65019
-#define XMLConst_SNodeExpected 65020
-#define XMLConst_SMSDOMNotInstalled 65021
-#define XMLConst_SNotActive 65022
-#define XMLConst_SNodeNotFound 65023
-#define Spring_Container_ResourceStrings_SUnsatisfiedDependency 65024
-#define Spring_Container_ResourceStrings_SUnsatisfiedResolutionArgumentCount 65025
-#define Spring_Container_ResourceStrings_SLifetimeManagerMissing 65026
-#define Spring_Container_ResourceStrings_SUnresovableInjection 65027
-#define Spring_Container_ResourceStrings_SUnsatisfiedConstructor 65028
-#define Spring_Container_ResourceStrings_SNoSuchMethod 65029
-#define Spring_Container_ResourceStrings_SNoSuchProperty 65030
-#define Spring_Container_ResourceStrings_SNoSuchField 65031
-#define Spring_Container_ResourceStrings_SInjectionTargetNeeded 65032
-#define Spring_Container_ResourceStrings_SUnsatisfiedTarget 65033
-#define Spring_Container_ResourceStrings_SComponentNotFound 65034
-#define Spring_Container_ResourceStrings_SUnexpectedLifetimeType 65035
-#define Spring_Container_ResourceStrings_SActivatorDelegateExpected 65036
-#define ComConst_SCreateRegKeyError 65037
-#define ComConst_SOleError 65038
-#define ComConst_SObjectFactoryMissing 65039
-#define Spring_ResourceStrings_SWinNT40Description 65040
-#define Spring_ResourceStrings_SWinServer2000Description 65041
-#define Spring_ResourceStrings_SWinXPDescription 65042
-#define Spring_ResourceStrings_SWinServer2003Description 65043
-#define Spring_ResourceStrings_SWinVistaDescription 65044
-#define Spring_ResourceStrings_SWinServer2008Description 65045
-#define Spring_ResourceStrings_SWin7Description 65046
-#define Spring_Container_ResourceStrings_SNonGuidInterfaceServicesAreNotSupported 65047
-#define Spring_Container_ResourceStrings_SIncompatibleTypes 65048
-#define Spring_Container_ResourceStrings_SDuplicatedName 65049
-#define Spring_Container_ResourceStrings_SCircularDependencyDetected 65050
-#define Spring_Container_ResourceStrings_SCannotResolveDependency 65051
-#define Spring_Container_ResourceStrings_SNoComponentRegistered 65052
-#define Spring_Container_ResourceStrings_SInvalidServiceName 65053
-#define Spring_Container_ResourceStrings_SUnsatisfiedConstructorParameters 65054
-#define Spring_Container_ResourceStrings_SUnsatisfiedMethodParameterTypes 65055
-#define Spring_ResourceStrings_SPaddingModeMissing 65056
-#define Spring_ResourceStrings_SInvalidCipherText 65057
-#define Spring_ResourceStrings_SNotSupportedCipherMode 65058
-#define Spring_ResourceStrings_SInvalidArgumentFormat 65059
-#define Spring_ResourceStrings_SUnknownDriveDescription 65060
-#define Spring_ResourceStrings_SNoRootDirectoryDescription 65061
-#define Spring_ResourceStrings_SRemovableDescription 65062
-#define Spring_ResourceStrings_SFixedDescription 65063
-#define Spring_ResourceStrings_SNetworkDescription 65064
-#define Spring_ResourceStrings_SCDRomDescription 65065
-#define Spring_ResourceStrings_SRamDescription 65066
-#define Spring_ResourceStrings_SUnknownOSDescription 65067
-#define Spring_ResourceStrings_SWin95Description 65068
-#define Spring_ResourceStrings_SWin98Description 65069
-#define Spring_ResourceStrings_SWinMEDescription 65070
-#define Spring_ResourceStrings_SWinNT351Description 65071
-#define Spring_ResourceStrings_SMoreThanOneElementSatisfied 65072
-#define Spring_ResourceStrings_SSequenceContainsMoreThanOneElement 65073
-#define Spring_ResourceStrings_SInvalidOperation_GetValue 65074
-#define Spring_ResourceStrings_SInvalidOperation_SetValue 65075
-#define Spring_ResourceStrings_SInvalidGuidArray 65076
-#define Spring_ResourceStrings_SCouldNotConvertValue 65077
-#define Spring_ResourceStrings_SEmptySourceTypeKind 65078
-#define Spring_ResourceStrings_SEmptyTargetTypeKind 65079
-#define Spring_ResourceStrings_SCannotModifyReadOnlyValue 65080
-#define Spring_ResourceStrings_SInvalidExpressionPath 65081
-#define Spring_ResourceStrings_SUnexpectedToken 65082
-#define Spring_ResourceStrings_SInvalidExpressionSyntax 65083
-#define Spring_ResourceStrings_SCouldNotFindPath 65084
-#define Spring_ResourceStrings_SIllegalBlockSize 65085
-#define Spring_ResourceStrings_SIllegalKeySize 65086
-#define Spring_ResourceStrings_SIllegalIVSize 65087
-#define Spring_ResourceStrings_SNoTypeInfo 65088
-#define Spring_ResourceStrings_STypeParameterShouldBeMethod 65089
-#define Spring_ResourceStrings_SIncorrectFormat 65090
-#define Spring_ResourceStrings_SInvalidDateTime 65091
-#define Spring_ResourceStrings_SIllegalFieldCount 65092
-#define Spring_ResourceStrings_SBadObjectInheritance 65093
-#define Spring_ResourceStrings_SBytesDescription 65094
-#define Spring_ResourceStrings_SKBDescription 65095
-#define Spring_ResourceStrings_SMBDescription 65096
-#define Spring_ResourceStrings_SGBDescription 65097
-#define Spring_ResourceStrings_STBDescription 65098
-#define Spring_ResourceStrings_SCannotResetEnumerator 65099
-#define Spring_ResourceStrings_SEnumNotStarted 65100
-#define Spring_ResourceStrings_SEnumEnded 65101
-#define Spring_ResourceStrings_SSequenceIsEmpty 65102
-#define Spring_ResourceStrings_SNoElementSatisfiesCondition 65103
-#define ComStrs_sDateTimeMin 65104
-#define ComStrs_sNeedAllowNone 65105
-#define ComStrs_sFailSetCalDateTime 65106
-#define ComStrs_sFailSetCalMaxSelRange 65107
-#define ComStrs_sFailSetCalMinMaxRange 65108
-#define ComStrs_sFailsetCalSelRange 65109
-#define Spring_ResourceStrings_SArgumentOutOfRangeException 65110
-#define Spring_ResourceStrings_SArgumentNullException 65111
-#define Spring_ResourceStrings_SInvalidEnumArgument 65112
-#define Spring_ResourceStrings_SUnexpectedTypeKindArgument 65113
-#define Spring_ResourceStrings_SInvalidOperationBufferSizeShouldBeSame 65114
-#define Spring_ResourceStrings_SFileNotFoundException 65115
-#define Spring_ResourceStrings_SNullableTypeHasNoValue 65116
-#define Spring_ResourceStrings_SCannotAssignPointerToNullable 65117
-#define Spring_ResourceStrings_SUnexpectedArgumentLength 65118
-#define Spring_ResourceStrings_SServiceLocatorNotInitialized 65119
-#define ComStrs_sTabFailGetObject 65120
-#define ComStrs_sTabFailSet 65121
-#define ComStrs_sTabFailSetObject 65122
-#define ComStrs_sTabMustBeMultiLine 65123
-#define ComStrs_sInvalidLevel 65124
-#define ComStrs_sInvalidLevelEx 65125
-#define ComStrs_sInvalidIndex 65126
-#define ComStrs_sInsertError 65127
-#define ComStrs_sInvalidOwner 65128
-#define ComStrs_sRichEditInsertError 65129
-#define ComStrs_sRichEditLoadFail 65130
-#define ComStrs_sRichEditSaveFail 65131
-#define ComStrs_sUDAssociated 65132
-#define ComStrs_sPageIndexError 65133
-#define ComStrs_sInvalidComCtl32 65134
-#define ComStrs_sDateTimeMax 65135
-#define Consts_SNameInfoBk 65136
-#define Consts_SNameInfoText 65137
-#define Consts_SNameMenu 65138
-#define Consts_SNameMenuBar 65139
-#define Consts_SNameMenuHighlight 65140
-#define Consts_SNameMenuText 65141
-#define Consts_SNameNone 65142
-#define Consts_SNameScrollBar 65143
-#define Consts_SName3DDkShadow 65144
-#define Consts_SName3DLight 65145
-#define Consts_SNameWindow 65146
-#define Consts_SNameWindowFrame 65147
-#define Consts_SNameWindowText 65148
-#define ComStrs_sTabFailClear 65149
-#define ComStrs_sTabFailDelete 65150
-#define ComStrs_sTabFailRetrieve 65151
-#define Consts_SNameBackground 65152
-#define Consts_SNameBtnFace 65153
-#define Consts_SNameBtnHighlight 65154
-#define Consts_SNameBtnShadow 65155
-#define Consts_SNameBtnText 65156
-#define Consts_SNameCaptionText 65157
-#define Consts_SNameDefault 65158
-#define Consts_SNameGradientActiveCaption 65159
-#define Consts_SNameGradientInactiveCaption 65160
-#define Consts_SNameGrayText 65161
-#define Consts_SNameHighlight 65162
-#define Consts_SNameHighlightText 65163
-#define Consts_SNameHotLight 65164
-#define Consts_SNameInactiveBorder 65165
-#define Consts_SNameInactiveCaption 65166
-#define Consts_SNameInactiveCaptionText 65167
-#define Consts_SNameGray 65168
-#define Consts_SNameSilver 65169
-#define Consts_SNameRed 65170
-#define Consts_SNameLime 65171
-#define Consts_SNameYellow 65172
-#define Consts_SNameBlue 65173
-#define Consts_SNameFuchsia 65174
-#define Consts_SNameAqua 65175
-#define Consts_SNameWhite 65176
-#define Consts_SNameMoneyGreen 65177
-#define Consts_SNameSkyBlue 65178
-#define Consts_SNameCream 65179
-#define Consts_SNameMedGray 65180
-#define Consts_SNameActiveBorder 65181
-#define Consts_SNameActiveCaption 65182
-#define Consts_SNameAppWorkSpace 65183
-#define Consts_STrayIconRemoveError 65184
-#define Consts_SPageControlNotSet 65185
-#define Consts_SWindowsVistaRequired 65186
-#define Consts_SXPThemesRequired 65187
-#define Consts_STaskDlgButtonCaption 65188
-#define Consts_STaskDlgRadioButtonCaption 65189
-#define Consts_SInvalidTaskDlgButtonCaption 65190
-#define Consts_SInvalidCategoryPanelParent 65191
-#define Consts_SInvalidCategoryPanelGroupChild 65192
-#define Consts_SNameBlack 65193
-#define Consts_SNameMaroon 65194
-#define Consts_SNameGreen 65195
-#define Consts_SNameOlive 65196
-#define Consts_SNameNavy 65197
-#define Consts_SNamePurple 65198
-#define Consts_SNameTeal 65199
-#define Consts_SNoGetItemEventHandler 65200
-#define Consts_sCannotAddFixedSize 65201
-#define Consts_sInvalidSpan 65202
-#define Consts_sInvalidRowIndex 65203
-#define Consts_sInvalidColumnIndex 65204
-#define Consts_sInvalidControlItem 65205
-#define Consts_sCannotDeleteColumn 65206
-#define Consts_sCannotDeleteRow 65207
-#define Consts_sCellMember 65208
-#define Consts_sCellSizeType 65209
-#define Consts_sCellValue 65210
-#define Consts_sCellAutoSize 65211
-#define Consts_sCellPercentSize 65212
-#define Consts_sCellAbsoluteSize 65213
-#define Consts_sCellColumn 65214
-#define Consts_sCellRow 65215
-#define Consts_SInvalidMemoSize 65216
-#define Consts_SInvalidPrinterOp 65217
-#define Consts_SNoDefaultPrinter 65218
-#define Consts_SDuplicateMenus 65219
-#define Consts_SCannotOpenAVI 65220
-#define Consts_SDockedCtlNeedsName 65221
-#define Consts_SDockTreeRemoveError 65222
-#define Consts_SDockZoneNotFound 65223
-#define Consts_SDockZoneHasNoCtl 65224
-#define Consts_SDockZoneVersionConflict 65225
-#define Consts_STextNotFound 65226
-#define Consts_SColorBoxCustomCaption 65227
-#define Consts_SMultiSelectRequired 65228
-#define Consts_SSeparator 65229
-#define Consts_SErrorSettingCount 65230
-#define Consts_SListBoxMustBeVirtual 65231
-#define Consts_SmkcLeft 65232
-#define Consts_SmkcUp 65233
-#define Consts_SmkcRight 65234
-#define Consts_SmkcDown 65235
-#define Consts_SmkcIns 65236
-#define Consts_SmkcDel 65237
-#define Consts_SmkcShift 65238
-#define Consts_SmkcCtrl 65239
-#define Consts_SmkcAlt 65240
-#define Consts_SOutOfRange 65241
-#define Consts_sAllFilter 65242
-#define Consts_SInsertLineError 65243
-#define Consts_SInvalidClipFmt 65244
-#define Consts_SIconToClipboard 65245
-#define Consts_SCannotOpenClipboard 65246
-#define Consts_SDefault 65247
-#define Consts_SMsgDlgAbort 65248
-#define Consts_SMsgDlgRetry 65249
-#define Consts_SMsgDlgIgnore 65250
-#define Consts_SMsgDlgAll 65251
-#define Consts_SMsgDlgNoToAll 65252
-#define Consts_SMsgDlgYesToAll 65253
-#define Consts_SMsgDlgClose 65254
-#define Consts_SmkcBkSp 65255
-#define Consts_SmkcTab 65256
-#define Consts_SmkcEsc 65257
-#define Consts_SmkcEnter 65258
-#define Consts_SmkcSpace 65259
-#define Consts_SmkcPgUp 65260
-#define Consts_SmkcPgDn 65261
-#define Consts_SmkcEnd 65262
-#define Consts_SmkcHome 65263
-#define Consts_SAllButton 65264
-#define Consts_SCannotDragForm 65265
-#define Consts_SVMetafiles 65266
-#define Consts_SVEnhMetafiles 65267
-#define Consts_SVIcons 65268
-#define Consts_SVBitmaps 65269
-#define Consts_SVTIFFImages 65270
-#define Consts_SMsgDlgWarning 65271
-#define Consts_SMsgDlgError 65272
-#define Consts_SMsgDlgInformation 65273
-#define Consts_SMsgDlgConfirm 65274
-#define Consts_SMsgDlgYes 65275
-#define Consts_SMsgDlgNo 65276
-#define Consts_SMsgDlgOK 65277
-#define Consts_SMsgDlgCancel 65278
-#define Consts_SMsgDlgHelp 65279
-#define Consts_SPrinterIndexError 65280
-#define Consts_SInvalidPrinter 65281
-#define Consts_SDeviceOnPort 65282
-#define Consts_SGroupIndexTooLow 65283
-#define Consts_SNoMDIForm 65284
-#define Consts_SImageCanvasNeedsBitmap 65285
-#define Consts_SControlParentSetToSelf 65286
-#define Consts_SOKButton 65287
-#define Consts_SCancelButton 65288
-#define Consts_SYesButton 65289
-#define Consts_SNoButton 65290
-#define Consts_SHelpButton 65291
-#define Consts_SCloseButton 65292
-#define Consts_SIgnoreButton 65293
-#define Consts_SRetryButton 65294
-#define Consts_SAbortButton 65295
-#define Consts_SWindowDCError 65296
-#define Consts_SWindowClass 65297
-#define Consts_SCannotFocus 65298
-#define Consts_SParentRequired 65299
-#define Consts_SParentGivenNotAParent 65300
-#define Consts_SMDIChildNotVisible 65301
-#define Consts_SVisibleChanged 65302
-#define Consts_SCannotShowModal 65303
-#define Consts_SScrollBarRange 65304
-#define Consts_SPropertyOutOfRange 65305
-#define Consts_SMenuIndexError 65306
-#define Consts_SMenuReinserted 65307
-#define Consts_SMenuNotFound 65308
-#define Consts_SNoTimers 65309
-#define Consts_SNotPrinting 65310
-#define Consts_SPrinting 65311
-#define Consts_SInvalidIcon 65312
-#define Consts_SInvalidMetafile 65313
-#define Consts_SInvalidPixelFormat 65314
-#define Consts_SInvalidImage 65315
-#define Consts_SChangeIconSize 65316
-#define Consts_SChangeWicSize 65317
-#define Consts_SUnknownExtension 65318
-#define Consts_SUnknownClipboardFormat 65319
-#define Consts_SOutOfResources 65320
-#define Consts_SNoCanvasHandle 65321
-#define Consts_SInvalidImageSize 65322
-#define Consts_SInvalidImageList 65323
-#define Consts_SReplaceImage 65324
-#define Consts_SImageIndexError 65325
-#define Consts_SImageReadFail 65326
-#define Consts_SImageWriteFail 65327
-#define RTLConsts_SNoIndex 65328
-#define RTLConsts_SNoSearch 65329
-#define RTLConsts_SNoTableOfContents 65330
-#define RTLConsts_SNoTopics 65331
-#define RTLConsts_SNothingFound 65332
-#define RTLConsts_SArgumentOutOfRange 65333
-#define RTLConsts_SUnbalancedOperation 65334
-#define RTLConsts_SGenericItemNotFound 65335
-#define RTLConsts_SGenericDuplicateItem 65336
-#define RTLConsts_SInsufficientRtti 65337
-#define RTLConsts_SParameterCountMismatch 65338
-#define RTLConsts_SNonPublicType 65339
-#define RTLConsts_SByRefArgMismatch 65340
-#define Consts_SInvalidTabPosition 65341
-#define Consts_SInvalidTabStyle 65342
-#define Consts_SInvalidBitmap 65343
-#define RTLConsts_sArgumentOutOfRange_InvalidHighSurrogate 65344
-#define RTLConsts_sArgumentOutOfRange_InvalidLowSurrogate 65345
-#define RTLConsts_sArgumentOutOfRange_StringIndex 65346
-#define RTLConsts_sArgumentOutOfRange_InvalidUTF32 65347
-#define RTLConsts_sArgument_InvalidHighSurrogate 65348
-#define RTLConsts_sArgument_InvalidLowSurrogate 65349
-#define RTLConsts_sNoConstruct 65350
-#define RTLConsts_sCannotCallAcquireOnConditionVar 65351
-#define RTLConsts_sInvalidTimeoutValue 65352
-#define RTLConsts_SInvalidDate 65353
-#define RTLConsts_SInvalidDateTime 65354
-#define RTLConsts_SInvalidInteger 65355
-#define RTLConsts_SInvalidTime 65356
-#define RTLConsts_STimeEncodeError 65357
-#define RTLConsts_SNoContext 65358
-#define RTLConsts_SNoContextFound 65359
-#define RTLConsts_SWriteError 65360
-#define RTLConsts_SThreadCreateError 65361
-#define RTLConsts_SThreadError 65362
-#define RTLConsts_SThreadExternalTerminate 65363
-#define RTLConsts_SThreadExternalWait 65364
-#define RTLConsts_SThreadStartError 65365
-#define RTLConsts_SParamIsNil 65366
-#define RTLConsts_SParamIsNegative 65367
-#define RTLConsts_SInputBufferExceed 65368
-#define RTLConsts_SInvalidCharsInPath 65369
-#define RTLConsts_SPathTooLong 65370
-#define RTLConsts_SPathNotFound 65371
-#define RTLConsts_SPathFormatNotSupported 65372
-#define RTLConsts_SFileNotFound 65373
-#define RTLConsts_SMissingDateTimeField 65374
-#define RTLConsts_hNoFilterViewer 65375
-#define RTLConsts_SNumberExpected 65376
-#define RTLConsts_SAnsiUTF8Expected 65377
-#define RTLConsts_SParseError 65378
-#define RTLConsts_SPropertyException 65379
-#define RTLConsts_SReadError 65380
-#define RTLConsts_SReadOnlyProperty 65381
-#define RTLConsts_SRegCreateFailed 65382
-#define RTLConsts_SRegGetDataFailed 65383
-#define RTLConsts_SRegSetDataFailed 65384
-#define RTLConsts_SResNotFound 65385
-#define RTLConsts_SSeekNotImplemented 65386
-#define RTLConsts_SSortedListError 65387
-#define RTLConsts_SStringExpected 65388
-#define RTLConsts_SSymbolExpected 65389
-#define RTLConsts_SUnknownGroup 65390
-#define RTLConsts_SUnknownProperty 65391
-#define RTLConsts_SInvalidImage 65392
-#define RTLConsts_SInvalidMask 65393
-#define RTLConsts_SInvalidName 65394
-#define RTLConsts_SInvalidProperty 65395
-#define RTLConsts_SInvalidPropertyElement 65396
-#define RTLConsts_SInvalidPropertyPath 65397
-#define RTLConsts_SInvalidPropertyType 65398
-#define RTLConsts_SInvalidPropertyValue 65399
-#define RTLConsts_SInvalidRegType 65400
-#define RTLConsts_SInvalidString 65401
-#define RTLConsts_SLineTooLong 65402
-#define RTLConsts_SListCapacityError 65403
-#define RTLConsts_SListCountError 65404
-#define RTLConsts_SListIndexError 65405
-#define RTLConsts_SMemoryStreamError 65406
-#define RTLConsts_SNoComSupport 65407
-#define RTLConsts_SBitsIndexError 65408
-#define RTLConsts_SBucketListLocked 65409
-#define RTLConsts_SCantWriteResourceStreamError 65410
-#define RTLConsts_SCharExpected 65411
-#define RTLConsts_SCheckSynchronizeError 65412
-#define RTLConsts_SClassNotFound 65413
-#define RTLConsts_SDuplicateClass 65414
-#define RTLConsts_SDuplicateItem 65415
-#define RTLConsts_SDuplicateName 65416
-#define RTLConsts_SDuplicateString 65417
-#define RTLConsts_SFCreateErrorEx 65418
-#define RTLConsts_SFOpenErrorEx 65419
-#define RTLConsts_SIdentifierExpected 65420
-#define RTLConsts_SIniFileWriteError 65421
-#define RTLConsts_SInvalidBinary 65422
-#define RTLConsts_SInvalidFileName 65423
-#define SysConst_SLongDayNameMon 65424
-#define SysConst_SLongDayNameTue 65425
-#define SysConst_SLongDayNameWed 65426
-#define SysConst_SLongDayNameThu 65427
-#define SysConst_SLongDayNameFri 65428
-#define SysConst_SLongDayNameSat 65429
-#define SysConst_SCannotCreateDir 65430
-#define SysConst_SInvalidSourceArray 65431
-#define SysConst_SInvalidDestinationArray 65432
-#define SysConst_SCharIndexOutOfBounds 65433
-#define SysConst_SByteIndexOutOfBounds 65434
-#define SysConst_SInvalidCharCount 65435
-#define SysConst_SInvalidDestinationIndex 65436
-#define SysConst_SInvalidCodePage 65437
-#define RTLConsts_SAncestorNotFound 65438
-#define RTLConsts_SAssignError 65439
-#define SysConst_SLongMonthNameMay 65440
-#define SysConst_SLongMonthNameJun 65441
-#define SysConst_SLongMonthNameJul 65442
-#define SysConst_SLongMonthNameAug 65443
-#define SysConst_SLongMonthNameSep 65444
-#define SysConst_SLongMonthNameOct 65445
-#define SysConst_SLongMonthNameNov 65446
-#define SysConst_SLongMonthNameDec 65447
-#define SysConst_SShortDayNameSun 65448
-#define SysConst_SShortDayNameMon 65449
-#define SysConst_SShortDayNameTue 65450
-#define SysConst_SShortDayNameWed 65451
-#define SysConst_SShortDayNameThu 65452
-#define SysConst_SShortDayNameFri 65453
-#define SysConst_SShortDayNameSat 65454
-#define SysConst_SLongDayNameSun 65455
-#define SysConst_SShortMonthNameJan 65456
-#define SysConst_SShortMonthNameFeb 65457
-#define SysConst_SShortMonthNameMar 65458
-#define SysConst_SShortMonthNameApr 65459
-#define SysConst_SShortMonthNameMay 65460
-#define SysConst_SShortMonthNameJun 65461
-#define SysConst_SShortMonthNameJul 65462
-#define SysConst_SShortMonthNameAug 65463
-#define SysConst_SShortMonthNameSep 65464
-#define SysConst_SShortMonthNameOct 65465
-#define SysConst_SShortMonthNameNov 65466
-#define SysConst_SShortMonthNameDec 65467
-#define SysConst_SLongMonthNameJan 65468
-#define SysConst_SLongMonthNameFeb 65469
-#define SysConst_SLongMonthNameMar 65470
-#define SysConst_SLongMonthNameApr 65471
-#define SysConst_SVarOverflow 65472
-#define SysConst_SVarInvalid 65473
-#define SysConst_SVarBadType 65474
-#define SysConst_SVarNotImplemented 65475
-#define SysConst_SVarUnexpected 65476
-#define SysConst_SExternalException 65477
-#define SysConst_SAssertionFailed 65478
-#define SysConst_SIntfCastError 65479
-#define SysConst_SSafecallException 65480
-#define SysConst_SMonitorLockException 65481
-#define SysConst_SNoMonitorSupportException 65482
-#define SysConst_SAssertError 65483
-#define SysConst_SAbstractError 65484
-#define SysConst_SModuleAccessViolation 65485
-#define SysConst_SOSError 65486
-#define SysConst_SUnkOSError 65487
+#define Spring_Configuration_ResourceStrings_SConfigurationChildrenNotFound 65120
+#define Spring_Configuration_ResourceStrings_SConfigurationAttributeNotFound 65121
+#define Spring_Logging_ResourceStrings_SNoTypeInformation 65122
+#define Spring_Logging_ResourceStrings_SAllDescription 65123
+#define Spring_Logging_ResourceStrings_SDebugDescription 65124
+#define Spring_Logging_ResourceStrings_SInfoDescription 65125
+#define Spring_Logging_ResourceStrings_SWarnDescription 65126
+#define Spring_Logging_ResourceStrings_SErrorDescription 65127
+#define Spring_Logging_ResourceStrings_SFatalDescription 65128
+#define Spring_Logging_ResourceStrings_SOffDescription 65129
+#define XMLConst_SNodeExpected 65136
+#define XMLConst_SMSDOMNotInstalled 65137
+#define XMLConst_SNotActive 65138
+#define XMLConst_SNodeNotFound 65139
+#define XMLConst_SMissingNode 65140
+#define XMLConst_SNoAttributes 65141
+#define XMLConst_SInvalidNodeType 65142
+#define XMLConst_SMismatchedRegItems 65143
+#define XMLConst_SNotSingleTextNode 65144
+#define XMLConst_SNoDOMParseOptions 65145
+#define XMLConst_SMissingItemTag 65146
+#define XMLConst_SNodeReadOnly 65147
+#define XMLConst_SNoRefresh 65148
+#define XMLConst_SMissingFileName 65149
+#define XMLConst_SLine 65150
+#define Spring_Configuration_ResourceStrings_SConfigurationNotFound 65151
+#define Spring_Container_ResourceStrings_SNoSuchMethod 65152
+#define Spring_Container_ResourceStrings_SNoSuchProperty 65153
+#define Spring_Container_ResourceStrings_SNoSuchField 65154
+#define Spring_Container_ResourceStrings_SInjectionTargetNeeded 65155
+#define Spring_Container_ResourceStrings_SUnsatisfiedTarget 65156
+#define Spring_Container_ResourceStrings_SComponentNotFound 65157
+#define Spring_Container_ResourceStrings_SUnexpectedLifetimeType 65158
+#define Spring_Container_ResourceStrings_SActivatorDelegateExpected 65159
+#define ComConst_SOleError 65160
+#define ComConst_SNoMethod 65161
+#define ComConst_SVarNotObject 65162
+#define ComConst_STooManyParams 65163
+#define XMLConst_SDuplicateRegistration 65164
+#define XMLConst_SNoMatchingDOMVendor 65165
+#define XMLConst_SNoDOMNodeEx 65166
+#define XMLConst_SDOMNotSupported 65167
+#define Spring_ResourceStrings_SWinServer2008Description 65168
+#define Spring_ResourceStrings_SWin7Description 65169
+#define Spring_Container_ResourceStrings_SNonGuidInterfaceServicesAreNotSupported 65170
+#define Spring_Container_ResourceStrings_SIncompatibleTypes 65171
+#define Spring_Container_ResourceStrings_SDuplicatedName 65172
+#define Spring_Container_ResourceStrings_SCircularDependencyDetected 65173
+#define Spring_Container_ResourceStrings_SCannotResolveDependency 65174
+#define Spring_Container_ResourceStrings_SNoComponentRegistered 65175
+#define Spring_Container_ResourceStrings_SInvalidServiceName 65176
+#define Spring_Container_ResourceStrings_SUnsatisfiedConstructorParameters 65177
+#define Spring_Container_ResourceStrings_SUnsatisfiedMethodParameterTypes 65178
+#define Spring_Container_ResourceStrings_SUnsatisfiedDependency 65179
+#define Spring_Container_ResourceStrings_SUnsatisfiedResolutionArgumentCount 65180
+#define Spring_Container_ResourceStrings_SLifetimeManagerMissing 65181
+#define Spring_Container_ResourceStrings_SUnresovableInjection 65182
+#define Spring_Container_ResourceStrings_SUnsatisfiedConstructor 65183
+#define Spring_ResourceStrings_SNoRootDirectoryDescription 65184
+#define Spring_ResourceStrings_SRemovableDescription 65185
+#define Spring_ResourceStrings_SFixedDescription 65186
+#define Spring_ResourceStrings_SNetworkDescription 65187
+#define Spring_ResourceStrings_SCDRomDescription 65188
+#define Spring_ResourceStrings_SRamDescription 65189
+#define Spring_ResourceStrings_SUnknownOSDescription 65190
+#define Spring_ResourceStrings_SWin95Description 65191
+#define Spring_ResourceStrings_SWin98Description 65192
+#define Spring_ResourceStrings_SWinMEDescription 65193
+#define Spring_ResourceStrings_SWinNT351Description 65194
+#define Spring_ResourceStrings_SWinNT40Description 65195
+#define Spring_ResourceStrings_SWinServer2000Description 65196
+#define Spring_ResourceStrings_SWinXPDescription 65197
+#define Spring_ResourceStrings_SWinServer2003Description 65198
+#define Spring_ResourceStrings_SWinVistaDescription 65199
+#define Spring_ResourceStrings_SSequenceContainsMoreThanOneElement 65200
+#define Spring_ResourceStrings_SCouldNotConvertValue 65201
+#define Spring_ResourceStrings_SEmptySourceTypeKind 65202
+#define Spring_ResourceStrings_SEmptyTargetTypeKind 65203
+#define Spring_ResourceStrings_SCannotModifyReadOnlyValue 65204
+#define Spring_ResourceStrings_SInvalidExpressionPath 65205
+#define Spring_ResourceStrings_SUnexpectedToken 65206
+#define Spring_ResourceStrings_SInvalidExpressionSyntax 65207
+#define Spring_ResourceStrings_SCouldNotFindPath 65208
+#define Spring_ResourceStrings_SIllegalBlockSize 65209
+#define Spring_ResourceStrings_SIllegalKeySize 65210
+#define Spring_ResourceStrings_SIllegalIVSize 65211
+#define Spring_ResourceStrings_SPaddingModeMissing 65212
+#define Spring_ResourceStrings_SInvalidCipherText 65213
+#define Spring_ResourceStrings_SNotSupportedCipherMode 65214
+#define Spring_ResourceStrings_SUnknownDriveDescription 65215
+#define Spring_ResourceStrings_SUnexpectedArgumentLength 65216
+#define Spring_ResourceStrings_SServiceLocatorNotInitialized 65217
+#define Spring_ResourceStrings_SNoTypeInfo 65218
+#define Spring_ResourceStrings_STypeParameterShouldBeMethod 65219
+#define Spring_ResourceStrings_SIncorrectFormat 65220
+#define Spring_ResourceStrings_SInvalidDateTime 65221
+#define Spring_ResourceStrings_SIllegalFieldCount 65222
+#define Spring_ResourceStrings_SBytesDescription 65223
+#define Spring_ResourceStrings_SKBDescription 65224
+#define Spring_ResourceStrings_SMBDescription 65225
+#define Spring_ResourceStrings_SGBDescription 65226
+#define Spring_ResourceStrings_STBDescription 65227
+#define Spring_ResourceStrings_SCannotResetEnumerator 65228
+#define Spring_ResourceStrings_SSequenceIsEmpty 65229
+#define Spring_ResourceStrings_SNoElementSatisfiesCondition 65230
+#define Spring_ResourceStrings_SMoreThanOneElementSatisfied 65231
+#define ComStrs_sInvalidLevelEx 65232
+#define ComStrs_sInvalidIndex 65233
+#define ComStrs_sInsertError 65234
+#define ComStrs_sInvalidOwner 65235
+#define ComStrs_sRichEditInsertError 65236
+#define ComStrs_sRichEditLoadFail 65237
+#define ComStrs_sRichEditSaveFail 65238
+#define ComStrs_sInvalidComCtl32 65239
+#define Spring_ResourceStrings_SArgumentOutOfRangeException 65240
+#define Spring_ResourceStrings_SArgumentNullException 65241
+#define Spring_ResourceStrings_SInvalidEnumArgument 65242
+#define Spring_ResourceStrings_SUnexpectedTypeKindArgument 65243
+#define Spring_ResourceStrings_SInvalidOperationBufferSizeShouldBeSame 65244
+#define Spring_ResourceStrings_SFileNotFoundException 65245
+#define Spring_ResourceStrings_SNullableTypeHasNoValue 65246
+#define Spring_ResourceStrings_SCannotAssignPointerToNullable 65247
+#define Consts_SInvalidClipFmt 65248
+#define Consts_SIconToClipboard 65249
+#define Consts_SCannotOpenClipboard 65250
+#define Consts_SInvalidMemoSize 65251
+#define Consts_SInvalidPrinterOp 65252
+#define Consts_SNoDefaultPrinter 65253
+#define Consts_SDuplicateMenus 65254
+#define Consts_SDockedCtlNeedsName 65255
+#define Consts_SDockTreeRemoveError 65256
+#define Consts_SDockZoneNotFound 65257
+#define Consts_SDockZoneHasNoCtl 65258
+#define Consts_SDockZoneVersionConflict 65259
+#define Consts_SMultiSelectRequired 65260
+#define Consts_SSeparator 65261
+#define Consts_SNoGetItemEventHandler 65262
+#define ComStrs_sInvalidLevel 65263
+#define Consts_SmkcSpace 65264
+#define Consts_SmkcPgUp 65265
+#define Consts_SmkcPgDn 65266
+#define Consts_SmkcEnd 65267
+#define Consts_SmkcHome 65268
+#define Consts_SmkcLeft 65269
+#define Consts_SmkcUp 65270
+#define Consts_SmkcRight 65271
+#define Consts_SmkcDown 65272
+#define Consts_SmkcIns 65273
+#define Consts_SmkcDel 65274
+#define Consts_SmkcShift 65275
+#define Consts_SmkcCtrl 65276
+#define Consts_SmkcAlt 65277
+#define Consts_SOutOfRange 65278
+#define Consts_sAllFilter 65279
+#define Consts_SMsgDlgYes 65280
+#define Consts_SMsgDlgNo 65281
+#define Consts_SMsgDlgOK 65282
+#define Consts_SMsgDlgCancel 65283
+#define Consts_SMsgDlgHelp 65284
+#define Consts_SMsgDlgAbort 65285
+#define Consts_SMsgDlgRetry 65286
+#define Consts_SMsgDlgIgnore 65287
+#define Consts_SMsgDlgAll 65288
+#define Consts_SMsgDlgNoToAll 65289
+#define Consts_SMsgDlgYesToAll 65290
+#define Consts_SMsgDlgClose 65291
+#define Consts_SmkcBkSp 65292
+#define Consts_SmkcTab 65293
+#define Consts_SmkcEsc 65294
+#define Consts_SmkcEnter 65295
+#define Consts_SHelpButton 65296
+#define Consts_SCloseButton 65297
+#define Consts_SIgnoreButton 65298
+#define Consts_SRetryButton 65299
+#define Consts_SAbortButton 65300
+#define Consts_SAllButton 65301
+#define Consts_SCannotDragForm 65302
+#define Consts_SVMetafiles 65303
+#define Consts_SVEnhMetafiles 65304
+#define Consts_SVIcons 65305
+#define Consts_SVBitmaps 65306
+#define Consts_SVTIFFImages 65307
+#define Consts_SMsgDlgWarning 65308
+#define Consts_SMsgDlgError 65309
+#define Consts_SMsgDlgInformation 65310
+#define Consts_SMsgDlgConfirm 65311
+#define Consts_SMenuIndexError 65312
+#define Consts_SMenuReinserted 65313
+#define Consts_SMenuNotFound 65314
+#define Consts_SNoTimers 65315
+#define Consts_SNotPrinting 65316
+#define Consts_SPrinting 65317
+#define Consts_SPrinterIndexError 65318
+#define Consts_SInvalidPrinter 65319
+#define Consts_SDeviceOnPort 65320
+#define Consts_SGroupIndexTooLow 65321
+#define Consts_SNoMDIForm 65322
+#define Consts_SControlParentSetToSelf 65323
+#define Consts_SOKButton 65324
+#define Consts_SCancelButton 65325
+#define Consts_SYesButton 65326
+#define Consts_SNoButton 65327
+#define Consts_SNoCanvasHandle 65328
+#define Consts_SInvalidImageSize 65329
+#define Consts_SInvalidImageList 65330
+#define Consts_SReplaceImage 65331
+#define Consts_SImageIndexError 65332
+#define Consts_SImageReadFail 65333
+#define Consts_SImageWriteFail 65334
+#define Consts_SWindowDCError 65335
+#define Consts_SWindowClass 65336
+#define Consts_SCannotFocus 65337
+#define Consts_SParentRequired 65338
+#define Consts_SParentGivenNotAParent 65339
+#define Consts_SMDIChildNotVisible 65340
+#define Consts_SVisibleChanged 65341
+#define Consts_SCannotShowModal 65342
+#define Consts_SPropertyOutOfRange 65343
+#define RTLConsts_SGenericItemNotFound 65344
+#define RTLConsts_SGenericDuplicateItem 65345
+#define RTLConsts_SInsufficientRtti 65346
+#define RTLConsts_SParameterCountMismatch 65347
+#define RTLConsts_SNonPublicType 65348
+#define RTLConsts_SByRefArgMismatch 65349
+#define Consts_SInvalidBitmap 65350
+#define Consts_SInvalidIcon 65351
+#define Consts_SInvalidMetafile 65352
+#define Consts_SInvalidPixelFormat 65353
+#define Consts_SInvalidImage 65354
+#define Consts_SChangeIconSize 65355
+#define Consts_SChangeWicSize 65356
+#define Consts_SUnknownExtension 65357
+#define Consts_SUnknownClipboardFormat 65358
+#define Consts_SOutOfResources 65359
+#define RTLConsts_hNoFilterViewer 65360
+#define RTLConsts_sInvalidTimeoutValue 65361
+#define RTLConsts_SInvalidDate 65362
+#define RTLConsts_SInvalidDateTime 65363
+#define RTLConsts_SInvalidInteger 65364
+#define RTLConsts_SInvalidTime 65365
+#define RTLConsts_STimeEncodeError 65366
+#define RTLConsts_SNoContext 65367
+#define RTLConsts_SNoContextFound 65368
+#define RTLConsts_SNoIndex 65369
+#define RTLConsts_SNoSearch 65370
+#define RTLConsts_SNoTableOfContents 65371
+#define RTLConsts_SNoTopics 65372
+#define RTLConsts_SNothingFound 65373
+#define RTLConsts_SArgumentOutOfRange 65374
+#define RTLConsts_SUnbalancedOperation 65375
+#define RTLConsts_SUnknownGroup 65376
+#define RTLConsts_SUnknownProperty 65377
+#define RTLConsts_SWriteError 65378
+#define RTLConsts_SThreadCreateError 65379
+#define RTLConsts_SThreadError 65380
+#define RTLConsts_SThreadExternalTerminate 65381
+#define RTLConsts_SThreadExternalWait 65382
+#define RTLConsts_SThreadStartError 65383
+#define RTLConsts_SParamIsNegative 65384
+#define RTLConsts_SInputBufferExceed 65385
+#define RTLConsts_SInvalidCharsInPath 65386
+#define RTLConsts_SPathTooLong 65387
+#define RTLConsts_SPathNotFound 65388
+#define RTLConsts_SPathFormatNotSupported 65389
+#define RTLConsts_SFileNotFound 65390
+#define RTLConsts_SMissingDateTimeField 65391
+#define RTLConsts_SInvalidPropertyValue 65392
+#define RTLConsts_SInvalidRegType 65393
+#define RTLConsts_SListCapacityError 65394
+#define RTLConsts_SListCountError 65395
+#define RTLConsts_SListIndexError 65396
+#define RTLConsts_SMemoryStreamError 65397
+#define RTLConsts_SNoComSupport 65398
+#define RTLConsts_SPropertyException 65399
+#define RTLConsts_SReadError 65400
+#define RTLConsts_SReadOnlyProperty 65401
+#define RTLConsts_SRegCreateFailed 65402
+#define RTLConsts_SRegGetDataFailed 65403
+#define RTLConsts_SRegSetDataFailed 65404
+#define RTLConsts_SResNotFound 65405
+#define RTLConsts_SSeekNotImplemented 65406
+#define RTLConsts_SSortedListError 65407
+#define RTLConsts_SCantWriteResourceStreamError 65408
+#define RTLConsts_SCheckSynchronizeError 65409
+#define RTLConsts_SClassNotFound 65410
+#define RTLConsts_SDuplicateClass 65411
+#define RTLConsts_SDuplicateItem 65412
+#define RTLConsts_SDuplicateName 65413
+#define RTLConsts_SDuplicateString 65414
+#define RTLConsts_SFCreateErrorEx 65415
+#define RTLConsts_SFOpenErrorEx 65416
+#define RTLConsts_SIniFileWriteError 65417
+#define RTLConsts_SInvalidFileName 65418
+#define RTLConsts_SInvalidImage 65419
+#define RTLConsts_SInvalidMask 65420
+#define RTLConsts_SInvalidName 65421
+#define RTLConsts_SInvalidProperty 65422
+#define RTLConsts_SInvalidPropertyPath 65423
+#define SysConst_SLongDayNameTue 65424
+#define SysConst_SLongDayNameWed 65425
+#define SysConst_SLongDayNameThu 65426
+#define SysConst_SLongDayNameFri 65427
+#define SysConst_SLongDayNameSat 65428
+#define SysConst_SCannotCreateDir 65429
+#define SysConst_SInvalidSourceArray 65430
+#define SysConst_SInvalidDestinationArray 65431
+#define SysConst_SCharIndexOutOfBounds 65432
+#define SysConst_SByteIndexOutOfBounds 65433
+#define SysConst_SInvalidCharCount 65434
+#define SysConst_SInvalidDestinationIndex 65435
+#define SysConst_SInvalidCodePage 65436
+#define RTLConsts_SAncestorNotFound 65437
+#define RTLConsts_SAssignError 65438
+#define RTLConsts_SBitsIndexError 65439
+#define SysConst_SLongMonthNameJun 65440
+#define SysConst_SLongMonthNameJul 65441
+#define SysConst_SLongMonthNameAug 65442
+#define SysConst_SLongMonthNameSep 65443
+#define SysConst_SLongMonthNameOct 65444
+#define SysConst_SLongMonthNameNov 65445
+#define SysConst_SLongMonthNameDec 65446
+#define SysConst_SShortDayNameSun 65447
+#define SysConst_SShortDayNameMon 65448
+#define SysConst_SShortDayNameTue 65449
+#define SysConst_SShortDayNameWed 65450
+#define SysConst_SShortDayNameThu 65451
+#define SysConst_SShortDayNameFri 65452
+#define SysConst_SShortDayNameSat 65453
+#define SysConst_SLongDayNameSun 65454
+#define SysConst_SLongDayNameMon 65455
+#define SysConst_SShortMonthNameFeb 65456
+#define SysConst_SShortMonthNameMar 65457
+#define SysConst_SShortMonthNameApr 65458
+#define SysConst_SShortMonthNameMay 65459
+#define SysConst_SShortMonthNameJun 65460
+#define SysConst_SShortMonthNameJul 65461
+#define SysConst_SShortMonthNameAug 65462
+#define SysConst_SShortMonthNameSep 65463
+#define SysConst_SShortMonthNameOct 65464
+#define SysConst_SShortMonthNameNov 65465
+#define SysConst_SShortMonthNameDec 65466
+#define SysConst_SLongMonthNameJan 65467
+#define SysConst_SLongMonthNameFeb 65468
+#define SysConst_SLongMonthNameMar 65469
+#define SysConst_SLongMonthNameApr 65470
+#define SysConst_SLongMonthNameMay 65471
+#define SysConst_SVarInvalid 65472
+#define SysConst_SVarBadType 65473
+#define SysConst_SVarNotImplemented 65474
+#define SysConst_SVarUnexpected 65475
+#define SysConst_SExternalException 65476
+#define SysConst_SAssertionFailed 65477
+#define SysConst_SIntfCastError 65478
+#define SysConst_SSafecallException 65479
+#define SysConst_SMonitorLockException 65480
+#define SysConst_SNoMonitorSupportException 65481
+#define SysConst_SAssertError 65482
+#define SysConst_SAbstractError 65483
+#define SysConst_SModuleAccessViolation 65484
+#define SysConst_SOSError 65485
+#define SysConst_SUnkOSError 65486
+#define SysConst_SShortMonthNameJan 65487
 #define SysConst_SWriteAccess 65488
 #define SysConst_SFormatTooLong 65489
 #define SysConst_SVarArrayCreate 65490
 #define SysConst_SVarArrayBounds 65491
 #define SysConst_SVarArrayLocked 65492
-#define SysConst_SVarArrayWithHResult 65493
-#define SysConst_SInvalidVarCast 65494
-#define SysConst_SInvalidVarOp 65495
-#define SysConst_SInvalidVarNullOp 65496
-#define SysConst_SInvalidVarOpWithHResultWithPrefix 65497
-#define SysConst_SVarTypeOutOfRangeWithPrefix 65498
-#define SysConst_SVarTypeAlreadyUsedWithPrefix 65499
-#define SysConst_SVarTypeNotUsableWithPrefix 65500
-#define SysConst_SVarTypeTooManyCustom 65501
-#define SysConst_SVarTypeCouldNotConvert 65502
-#define SysConst_SVarTypeConvertOverflow 65503
+#define SysConst_SInvalidVarCast 65493
+#define SysConst_SInvalidVarOp 65494
+#define SysConst_SInvalidVarNullOp 65495
+#define SysConst_SInvalidVarOpWithHResultWithPrefix 65496
+#define SysConst_SVarTypeOutOfRangeWithPrefix 65497
+#define SysConst_SVarTypeAlreadyUsedWithPrefix 65498
+#define SysConst_SVarTypeNotUsableWithPrefix 65499
+#define SysConst_SVarTypeTooManyCustom 65500
+#define SysConst_SVarTypeCouldNotConvert 65501
+#define SysConst_SVarTypeConvertOverflow 65502
+#define SysConst_SVarOverflow 65503
 #define SysConst_SZeroDivide 65504
 #define SysConst_SOverflow 65505
 #define SysConst_SUnderflow 65506
@@ -575,27 +420,20 @@
 #define SysConst_SInvalidOp 65535
 STRINGTABLE
 BEGIN
-	Spring_Logging_ResourceStrings_SInfoDescription,	"INFO"
-	Spring_Logging_ResourceStrings_SWarnDescription,	"WARN"
-	Spring_Logging_ResourceStrings_SErrorDescription,	"ERROR"
-	Spring_Logging_ResourceStrings_SFatalDescription,	"FATAL"
-	Spring_Logging_ResourceStrings_SOffDescription,	"OFF"
-	XMLConst_SInvalidDerivation,	"Invalid complex type derivation: %s"
-	XMLConst_SNoNameOnRef,	"Name not allowed on a ref item"
-	XMLConst_SNoGlobalRef,	"Global schema items may not contain a ref"
-	XMLConst_SNoRefPropSet,	"%s cannot be set on a ref item"
-	XMLConst_SSetGroupRefProp,	"Set the GroupRef property for the cmGroupRef content model"
-	XMLConst_SNoContentModel,	"ContentModel not set"
-	XMLConst_SNoFacetsAllowed,	"Facets and Enumeration not allowed on this kind of datatype \"%s\""
-	XMLConst_SNotBuiltInType,	"Invalid built-in type name \"%s\""
-	XMLConst_SInvalidTargetNS,	"Included schema file \"%s\" has an invalid targetNamespace.\r\n\r\nExpected: %s\r\nFound: %s"
-	XMLConst_SUndefinedTargetNS,	"No targetNamespace attribute"
-	Spring_Configuration_ResourceStrings_SConfigurationNotFound,	"Configuration %s not found."
 	Spring_Configuration_ResourceStrings_SConfigurationChildrenNotFound,	"Configuration section %s has no children."
 	Spring_Configuration_ResourceStrings_SConfigurationAttributeNotFound,	"Configuration section has no &s attribute."
 	Spring_Logging_ResourceStrings_SNoTypeInformation,	"No type information."
 	Spring_Logging_ResourceStrings_SAllDescription,	"ALL"
 	Spring_Logging_ResourceStrings_SDebugDescription,	"DEBUG"
+	Spring_Logging_ResourceStrings_SInfoDescription,	"INFO"
+	Spring_Logging_ResourceStrings_SWarnDescription,	"WARN"
+	Spring_Logging_ResourceStrings_SErrorDescription,	"ERROR"
+	Spring_Logging_ResourceStrings_SFatalDescription,	"FATAL"
+	Spring_Logging_ResourceStrings_SOffDescription,	"OFF"
+	XMLConst_SNodeExpected,	"Node cannot be null"
+	XMLConst_SMSDOMNotInstalled,	"Microsoft MSXML is not installed"
+	XMLConst_SNotActive,	"No active document"
+	XMLConst_SNodeNotFound,	"Node \"%s\" not found"
 	XMLConst_SMissingNode,	"IDOMNode required"
 	XMLConst_SNoAttributes,	"Attributes are not supported on this node type"
 	XMLConst_SInvalidNodeType,	"Invalid node type"
@@ -607,32 +445,7 @@ BEGIN
 	XMLConst_SNoRefresh,	"Refresh is only supported if the FileName or XML properties are set"
 	XMLConst_SMissingFileName,	"FileName cannot be blank"
 	XMLConst_SLine,	"Line"
-	XMLConst_SInvalidSchema,	"Invalid or unsupported XML Schema document"
-	XMLConst_SNoLocalTypeName,	"Local type declarations cannot have a name.  Element: %s"
-	XMLConst_SUnknownDataType,	"Unknown datatype \"%s\""
-	XMLConst_SInvalidGroupDecl,	"Invalid group declaration in \"%s\""
-	XMLConst_SMissingName,	"Missing Type name"
-	ComConst_STypeInfoMissing,	"Type information missing for class %s"
-	ComConst_SBadTypeInfo,	"Incorrect type information for class %s"
-	ComConst_SDispIntfMissing,	"Dispatch interface missing from class %s"
-	ComConst_SNoMethod,	"Method '%s' not supported by automation object"
-	ComConst_SVarNotObject,	"Variant does not reference an automation object"
-	ComConst_STooManyParams,	"Dispatch methods do not support more than 64 parameters"
-	ComConst_SDCOMNotInstalled,	"DCOM not installed"
-	ComConst_SDAXError,	"DAX Error"
-	XMLConst_SDuplicateRegistration,	"\"%s\" DOMImplementation already registered"
-	XMLConst_SNoMatchingDOMVendor,	"No matching DOM Vendor: \"%s\""
-	XMLConst_SNoDOMNodeEx,	"Selected DOM Vendor does not support this property or method"
-	XMLConst_SDOMNotSupported,	"Property or Method \"%s\" is not supported by DOM Vendor \"%s\""
-	XMLConst_SNodeExpected,	"Node cannot be null"
-	XMLConst_SMSDOMNotInstalled,	"Microsoft MSXML is not installed"
-	XMLConst_SNotActive,	"No active document"
-	XMLConst_SNodeNotFound,	"Node \"%s\" not found"
-	Spring_Container_ResourceStrings_SUnsatisfiedDependency,	"Unsatisfied dependency for the service type \"%0:s\"."
-	Spring_Container_ResourceStrings_SUnsatisfiedResolutionArgumentCount,	"Unsatisfied resolution argument count."
-	Spring_Container_ResourceStrings_SLifetimeManagerMissing,	"LifetimeTypeManager was expected."
-	Spring_Container_ResourceStrings_SUnresovableInjection,	"Unresovable Inject."
-	Spring_Container_ResourceStrings_SUnsatisfiedConstructor,	"Unsatisfied constructor."
+	Spring_Configuration_ResourceStrings_SConfigurationNotFound,	"Configuration %s not found."
 	Spring_Container_ResourceStrings_SNoSuchMethod,	"No such method: \"%s\"."
 	Spring_Container_ResourceStrings_SNoSuchProperty,	"No such property: \"%s\"."
 	Spring_Container_ResourceStrings_SNoSuchField,	"No such field: \"%s\"."
@@ -641,14 +454,14 @@ BEGIN
 	Spring_Container_ResourceStrings_SComponentNotFound,	"Cannot found the component registered."
 	Spring_Container_ResourceStrings_SUnexpectedLifetimeType,	"Unexpected lifetimeType."
 	Spring_Container_ResourceStrings_SActivatorDelegateExpected,	"An activator delegate was expected."
-	ComConst_SCreateRegKeyError,	"Error creating system registry entry"
 	ComConst_SOleError,	"OLE error %.8x"
-	ComConst_SObjectFactoryMissing,	"Object factory for class %s missing"
-	Spring_ResourceStrings_SWinNT40Description,	"Microsoft Windows NT 4"
-	Spring_ResourceStrings_SWinServer2000Description,	"Microsoft Windows Server 2000"
-	Spring_ResourceStrings_SWinXPDescription,	"Microsoft Windows XP"
-	Spring_ResourceStrings_SWinServer2003Description,	"Microsoft Windows Server 2003"
-	Spring_ResourceStrings_SWinVistaDescription,	"Microsoft Windows Vista"
+	ComConst_SNoMethod,	"Method '%s' not supported by automation object"
+	ComConst_SVarNotObject,	"Variant does not reference an automation object"
+	ComConst_STooManyParams,	"Dispatch methods do not support more than 64 parameters"
+	XMLConst_SDuplicateRegistration,	"\"%s\" DOMImplementation already registered"
+	XMLConst_SNoMatchingDOMVendor,	"No matching DOM Vendor: \"%s\""
+	XMLConst_SNoDOMNodeEx,	"Selected DOM Vendor does not support this property or method"
+	XMLConst_SDOMNotSupported,	"Property or Method \"%s\" is not supported by DOM Vendor \"%s\""
 	Spring_ResourceStrings_SWinServer2008Description,	"Microsoft Windows Server 2008"
 	Spring_ResourceStrings_SWin7Description,	"Microsoft Windows 7"
 	Spring_Container_ResourceStrings_SNonGuidInterfaceServicesAreNotSupported,	"Non-Guid Interface Services are not supported."
@@ -660,11 +473,11 @@ BEGIN
 	Spring_Container_ResourceStrings_SInvalidServiceName,	"Invalid service name: \"%s\"."
 	Spring_Container_ResourceStrings_SUnsatisfiedConstructorParameters,	"Unsatisfied parameters for constructor."
 	Spring_Container_ResourceStrings_SUnsatisfiedMethodParameterTypes,	"Unsatisfied parameter types for the method: %s."
-	Spring_ResourceStrings_SPaddingModeMissing,	"Padding mode is missing"
-	Spring_ResourceStrings_SInvalidCipherText,	"Illegal cipher text."
-	Spring_ResourceStrings_SNotSupportedCipherMode,	"The cipher mode \"%s\" is not supported."
-	Spring_ResourceStrings_SInvalidArgumentFormat,	"Invalid format for argument \"%s\"."
-	Spring_ResourceStrings_SUnknownDriveDescription,	"Unknown Drive"
+	Spring_Container_ResourceStrings_SUnsatisfiedDependency,	"Unsatisfied dependency for the service type \"%0:s\"."
+	Spring_Container_ResourceStrings_SUnsatisfiedResolutionArgumentCount,	"Unsatisfied resolution argument count."
+	Spring_Container_ResourceStrings_SLifetimeManagerMissing,	"LifetimeTypeManager was expected."
+	Spring_Container_ResourceStrings_SUnresovableInjection,	"Unresovable Inject."
+	Spring_Container_ResourceStrings_SUnsatisfiedConstructor,	"Unsatisfied constructor."
 	Spring_ResourceStrings_SNoRootDirectoryDescription,	"No Root Directory"
 	Spring_ResourceStrings_SRemovableDescription,	"Removable Drive"
 	Spring_ResourceStrings_SFixedDescription,	"Fixed Drive"
@@ -676,11 +489,12 @@ BEGIN
 	Spring_ResourceStrings_SWin98Description,	"Microsoft Windows 98"
 	Spring_ResourceStrings_SWinMEDescription,	"Microsoft Windows ME"
 	Spring_ResourceStrings_SWinNT351Description,	"Microsoft Windows NT 3.51"
-	Spring_ResourceStrings_SMoreThanOneElementSatisfied,	"More than one element satisfies the condition in predicate."
+	Spring_ResourceStrings_SWinNT40Description,	"Microsoft Windows NT 4"
+	Spring_ResourceStrings_SWinServer2000Description,	"Microsoft Windows Server 2000"
+	Spring_ResourceStrings_SWinXPDescription,	"Microsoft Windows XP"
+	Spring_ResourceStrings_SWinServer2003Description,	"Microsoft Windows Server 2003"
+	Spring_ResourceStrings_SWinVistaDescription,	"Microsoft Windows Vista"
 	Spring_ResourceStrings_SSequenceContainsMoreThanOneElement,	"This sequence contains more than one element."
-	Spring_ResourceStrings_SInvalidOperation_GetValue,	"The GetValue method works only for properties/fields."
-	Spring_ResourceStrings_SInvalidOperation_SetValue,	"The SetValue method works only for properties/fields."
-	Spring_ResourceStrings_SInvalidGuidArray,	"Byte array for GUID must be exactly %s bytes long"
 	Spring_ResourceStrings_SCouldNotConvertValue,	"Could not convert value: %s to %s."
 	Spring_ResourceStrings_SEmptySourceTypeKind,	"Empty source TypeKind argument set."
 	Spring_ResourceStrings_SEmptyTargetTypeKind,	"Empty target TypeKind argument set."
@@ -692,28 +506,34 @@ BEGIN
 	Spring_ResourceStrings_SIllegalBlockSize,	"Illegal block size: %d."
 	Spring_ResourceStrings_SIllegalKeySize,	"Illegal key size: %d."
 	Spring_ResourceStrings_SIllegalIVSize,	"Illegal IV size: %d."
+	Spring_ResourceStrings_SPaddingModeMissing,	"Padding mode is missing"
+	Spring_ResourceStrings_SInvalidCipherText,	"Illegal cipher text."
+	Spring_ResourceStrings_SNotSupportedCipherMode,	"The cipher mode \"%s\" is not supported."
+	Spring_ResourceStrings_SUnknownDriveDescription,	"Unknown Drive"
+	Spring_ResourceStrings_SUnexpectedArgumentLength,	"Unexpected parameter length."
+	Spring_ResourceStrings_SServiceLocatorNotInitialized,	"The global ServiceLocator has not been initialized."
 	Spring_ResourceStrings_SNoTypeInfo,	"No type information found."
 	Spring_ResourceStrings_STypeParameterShouldBeMethod,	"The type parameter T should be instance method."
 	Spring_ResourceStrings_SIncorrectFormat,	"Unable to convert %s."
 	Spring_ResourceStrings_SInvalidDateTime,	"\"%S\" is not a valid date and time."
 	Spring_ResourceStrings_SIllegalFieldCount,	"fieldCount is more than the number of components defined in the current Version object."
-	Spring_ResourceStrings_SBadObjectInheritance,	"Argument %s of type %s does not inherit from type %s."
 	Spring_ResourceStrings_SBytesDescription,	"bytes"
 	Spring_ResourceStrings_SKBDescription,	"KB"
 	Spring_ResourceStrings_SMBDescription,	"MB"
 	Spring_ResourceStrings_SGBDescription,	"GB"
 	Spring_ResourceStrings_STBDescription,	"TB"
 	Spring_ResourceStrings_SCannotResetEnumerator,	"Cannot reset the enumerator."
-	Spring_ResourceStrings_SEnumNotStarted,	"Enum not started."
-	Spring_ResourceStrings_SEnumEnded,	"Enum ended."
 	Spring_ResourceStrings_SSequenceIsEmpty,	"This sequence is empty."
 	Spring_ResourceStrings_SNoElementSatisfiesCondition,	"No element satisfies the condition in predicate."
-	ComStrs_sDateTimeMin,	"Date is less than minimum of %s"
-	ComStrs_sNeedAllowNone,	"You must be in ShowCheckbox mode to set to this date"
-	ComStrs_sFailSetCalDateTime,	"Failed to set calendar date or time"
-	ComStrs_sFailSetCalMaxSelRange,	"Failed to set maximum selection range"
-	ComStrs_sFailSetCalMinMaxRange,	"Failed to set calendar min/max range"
-	ComStrs_sFailsetCalSelRange,	"Failed to set calendar selected range"
+	Spring_ResourceStrings_SMoreThanOneElementSatisfied,	"More than one element satisfies the condition in predicate."
+	ComStrs_sInvalidLevelEx,	"Invalid level (%d) for item \"%s\""
+	ComStrs_sInvalidIndex,	"Invalid index"
+	ComStrs_sInsertError,	"Unable to insert an item"
+	ComStrs_sInvalidOwner,	"Invalid owner"
+	ComStrs_sRichEditInsertError,	"RichEdit line insertion error"
+	ComStrs_sRichEditLoadFail,	"Failed to Load Stream"
+	ComStrs_sRichEditSaveFail,	"Failed to Save Stream"
+	ComStrs_sInvalidComCtl32,	"This control requires version 4.70 or greater of COMCTL32.DLL"
 	Spring_ResourceStrings_SArgumentOutOfRangeException,	"EArgumentOutOfRangeException: %s"
 	Spring_ResourceStrings_SArgumentNullException,	"EArgumentNullException: %s"
 	Spring_ResourceStrings_SInvalidEnumArgument,	"Invalid enum argument: %s"
@@ -722,120 +542,27 @@ BEGIN
 	Spring_ResourceStrings_SFileNotFoundException,	"File not found: %s"
 	Spring_ResourceStrings_SNullableTypeHasNoValue,	"Invalid operation, Nullable type has no value."
 	Spring_ResourceStrings_SCannotAssignPointerToNullable,	"Cannot assigned non-null pointer to nullable type."
-	Spring_ResourceStrings_SUnexpectedArgumentLength,	"Unexpected parameter length."
-	Spring_ResourceStrings_SServiceLocatorNotInitialized,	"The global ServiceLocator has not been initialized."
-	ComStrs_sTabFailGetObject,	"Failed to get object at index %d"
-	ComStrs_sTabFailSet,	"Failed to set tab \"%s\" at index %d"
-	ComStrs_sTabFailSetObject,	"Failed to set object at index %d"
-	ComStrs_sTabMustBeMultiLine,	"MultiLine must be True when TabPosition is tpLeft or tpRight"
-	ComStrs_sInvalidLevel,	"Invalid item level assignment"
-	ComStrs_sInvalidLevelEx,	"Invalid level (%d) for item \"%s\""
-	ComStrs_sInvalidIndex,	"Invalid index"
-	ComStrs_sInsertError,	"Unable to insert an item"
-	ComStrs_sInvalidOwner,	"Invalid owner"
-	ComStrs_sRichEditInsertError,	"RichEdit line insertion error"
-	ComStrs_sRichEditLoadFail,	"Failed to Load Stream"
-	ComStrs_sRichEditSaveFail,	"Failed to Save Stream"
-	ComStrs_sUDAssociated,	"%s is already associated with %s"
-	ComStrs_sPageIndexError,	"%d is an invalid PageIndex value.  PageIndex must be between 0 and %d"
-	ComStrs_sInvalidComCtl32,	"This control requires version 4.70 or greater of COMCTL32.DLL"
-	ComStrs_sDateTimeMax,	"Date exceeds maximum of %s"
-	Consts_SNameInfoBk,	"Info Background"
-	Consts_SNameInfoText,	"Info Text"
-	Consts_SNameMenu,	"Menu Background"
-	Consts_SNameMenuBar,	"Menu Bar"
-	Consts_SNameMenuHighlight,	"Menu Highlight"
-	Consts_SNameMenuText,	"Menu Text"
-	Consts_SNameNone,	"None"
-	Consts_SNameScrollBar,	"Scroll Bar"
-	Consts_SName3DDkShadow,	"3D Dark Shadow"
-	Consts_SName3DLight,	"3D Light"
-	Consts_SNameWindow,	"Window Background"
-	Consts_SNameWindowFrame,	"Window Frame"
-	Consts_SNameWindowText,	"Window Text"
-	ComStrs_sTabFailClear,	"Failed to clear tab control"
-	ComStrs_sTabFailDelete,	"Failed to delete tab at index %d"
-	ComStrs_sTabFailRetrieve,	"Failed to retrieve tab at index %d"
-	Consts_SNameBackground,	"Background"
-	Consts_SNameBtnFace,	"Button Face"
-	Consts_SNameBtnHighlight,	"Button Highlight"
-	Consts_SNameBtnShadow,	"Button Shadow"
-	Consts_SNameBtnText,	"Button Text"
-	Consts_SNameCaptionText,	"Caption Text"
-	Consts_SNameDefault,	"Default"
-	Consts_SNameGradientActiveCaption,	"Gradient Active Caption"
-	Consts_SNameGradientInactiveCaption,	"Gradient Inactive Caption"
-	Consts_SNameGrayText,	"Gray Text"
-	Consts_SNameHighlight,	"Highlight Background"
-	Consts_SNameHighlightText,	"Highlight Text"
-	Consts_SNameHotLight,	"Hot Light"
-	Consts_SNameInactiveBorder,	"Inactive Border"
-	Consts_SNameInactiveCaption,	"Inactive Caption"
-	Consts_SNameInactiveCaptionText,	"Inactive Caption Text"
-	Consts_SNameGray,	"Gray"
-	Consts_SNameSilver,	"Silver"
-	Consts_SNameRed,	"Red"
-	Consts_SNameLime,	"Lime"
-	Consts_SNameYellow,	"Yellow"
-	Consts_SNameBlue,	"Blue"
-	Consts_SNameFuchsia,	"Fuchsia"
-	Consts_SNameAqua,	"Aqua"
-	Consts_SNameWhite,	"White"
-	Consts_SNameMoneyGreen,	"Money Green"
-	Consts_SNameSkyBlue,	"Sky Blue"
-	Consts_SNameCream,	"Cream"
-	Consts_SNameMedGray,	"Medium Gray"
-	Consts_SNameActiveBorder,	"Active Border"
-	Consts_SNameActiveCaption,	"Active Caption"
-	Consts_SNameAppWorkSpace,	"Application Workspace"
-	Consts_STrayIconRemoveError,	"Cannot remove shell notification icon"
-	Consts_SPageControlNotSet,	"PageControl must first be assigned"
-	Consts_SWindowsVistaRequired,	"%s requires Windows Vista or later"
-	Consts_SXPThemesRequired,	"%s requires themes to be enabled"
-	Consts_STaskDlgButtonCaption,	"Button%d"
-	Consts_STaskDlgRadioButtonCaption,	"RadioButton%d"
-	Consts_SInvalidTaskDlgButtonCaption,	"Caption cannot be empty"
-	Consts_SInvalidCategoryPanelParent,	"CategoryPanel must have a CategoryPanelGroup as its parent"
-	Consts_SInvalidCategoryPanelGroupChild,	"Only CategoryPanels can be inserted into a CategoryPanelGroup"
-	Consts_SNameBlack,	"Black"
-	Consts_SNameMaroon,	"Maroon"
-	Consts_SNameGreen,	"Green"
-	Consts_SNameOlive,	"Olive"
-	Consts_SNameNavy,	"Navy"
-	Consts_SNamePurple,	"Purple"
-	Consts_SNameTeal,	"Teal"
-	Consts_SNoGetItemEventHandler,	"No OnGetItem event handler assigned"
-	Consts_sCannotAddFixedSize,	"Cannot add columns or rows while expand style is fixed size"
-	Consts_sInvalidSpan,	"'%d' is not a valid span"
-	Consts_sInvalidRowIndex,	"Row index, %d, out of bounds"
-	Consts_sInvalidColumnIndex,	"Column index, %d, out of bounds"
-	Consts_sInvalidControlItem,	"ControlItem.Control cannot be set to owning GridPanel"
-	Consts_sCannotDeleteColumn,	"Cannot delete a column that contains controls"
-	Consts_sCannotDeleteRow,	"Cannot delete a row that contains controls"
-	Consts_sCellMember,	"Member"
-	Consts_sCellSizeType,	"Size Type"
-	Consts_sCellValue,	"Value"
-	Consts_sCellAutoSize,	"Auto"
-	Consts_sCellPercentSize,	"Percent"
-	Consts_sCellAbsoluteSize,	"Absolute"
-	Consts_sCellColumn,	"Column%d"
-	Consts_sCellRow,	"Row%d"
+	Consts_SInvalidClipFmt,	"Invalid clipboard format"
+	Consts_SIconToClipboard,	"Clipboard does not support Icons"
+	Consts_SCannotOpenClipboard,	"Cannot open clipboard: %s"
 	Consts_SInvalidMemoSize,	"Text exceeds memo capacity"
 	Consts_SInvalidPrinterOp,	"Operation not supported on selected printer"
 	Consts_SNoDefaultPrinter,	"There is no default printer currently selected"
 	Consts_SDuplicateMenus,	"Menu '%s' is already being used by another form"
-	Consts_SCannotOpenAVI,	"Cannot open AVI"
 	Consts_SDockedCtlNeedsName,	"Docked control must have a name"
 	Consts_SDockTreeRemoveError,	"Error removing control from dock tree"
 	Consts_SDockZoneNotFound,	" - Dock zone not found"
 	Consts_SDockZoneHasNoCtl,	" - Dock zone has no control"
 	Consts_SDockZoneVersionConflict,	"Error loading dock zone from the stream. Expecting version %d, but found %d."
-	Consts_STextNotFound,	"Text not found: \"%s\""
-	Consts_SColorBoxCustomCaption,	"Custom..."
 	Consts_SMultiSelectRequired,	"Multiselect mode must be on for this feature"
 	Consts_SSeparator,	"Separator"
-	Consts_SErrorSettingCount,	"Error setting %s.Count"
-	Consts_SListBoxMustBeVirtual,	"Listbox (%s) style must be virtual in order to set Count"
+	Consts_SNoGetItemEventHandler,	"No OnGetItem event handler assigned"
+	ComStrs_sInvalidLevel,	"Invalid item level assignment"
+	Consts_SmkcSpace,	"Space"
+	Consts_SmkcPgUp,	"PgUp"
+	Consts_SmkcPgDn,	"PgDn"
+	Consts_SmkcEnd,	"End"
+	Consts_SmkcHome,	"Home"
 	Consts_SmkcLeft,	"Left"
 	Consts_SmkcUp,	"Up"
 	Consts_SmkcRight,	"Right"
@@ -847,11 +574,11 @@ BEGIN
 	Consts_SmkcAlt,	"Alt+"
 	Consts_SOutOfRange,	"Value must be between %d and %d"
 	Consts_sAllFilter,	"All"
-	Consts_SInsertLineError,	"Unable to insert a line"
-	Consts_SInvalidClipFmt,	"Invalid clipboard format"
-	Consts_SIconToClipboard,	"Clipboard does not support Icons"
-	Consts_SCannotOpenClipboard,	"Cannot open clipboard: %s"
-	Consts_SDefault,	"Default"
+	Consts_SMsgDlgYes,	"&Yes"
+	Consts_SMsgDlgNo,	"&No"
+	Consts_SMsgDlgOK,	"OK"
+	Consts_SMsgDlgCancel,	"Cancel"
+	Consts_SMsgDlgHelp,	"&Help"
 	Consts_SMsgDlgAbort,	"&Abort"
 	Consts_SMsgDlgRetry,	"&Retry"
 	Consts_SMsgDlgIgnore,	"&Ignore"
@@ -863,11 +590,11 @@ BEGIN
 	Consts_SmkcTab,	"Tab"
 	Consts_SmkcEsc,	"Esc"
 	Consts_SmkcEnter,	"Enter"
-	Consts_SmkcSpace,	"Space"
-	Consts_SmkcPgUp,	"PgUp"
-	Consts_SmkcPgDn,	"PgDn"
-	Consts_SmkcEnd,	"End"
-	Consts_SmkcHome,	"Home"
+	Consts_SHelpButton,	"&Help"
+	Consts_SCloseButton,	"&Close"
+	Consts_SIgnoreButton,	"&Ignore"
+	Consts_SRetryButton,	"&Retry"
+	Consts_SAbortButton,	"Abort"
 	Consts_SAllButton,	"&All"
 	Consts_SCannotDragForm,	"Cannot drag a form"
 	Consts_SVMetafiles,	"Metafiles"
@@ -879,27 +606,29 @@ BEGIN
 	Consts_SMsgDlgError,	"Error"
 	Consts_SMsgDlgInformation,	"Information"
 	Consts_SMsgDlgConfirm,	"Confirm"
-	Consts_SMsgDlgYes,	"&Yes"
-	Consts_SMsgDlgNo,	"&No"
-	Consts_SMsgDlgOK,	"OK"
-	Consts_SMsgDlgCancel,	"Cancel"
-	Consts_SMsgDlgHelp,	"&Help"
+	Consts_SMenuIndexError,	"Menu index out of range"
+	Consts_SMenuReinserted,	"Menu inserted twice"
+	Consts_SMenuNotFound,	"Sub-menu is not in menu"
+	Consts_SNoTimers,	"Not enough timers available"
+	Consts_SNotPrinting,	"Printer is not currently printing"
+	Consts_SPrinting,	"Printing in progress"
 	Consts_SPrinterIndexError,	"Printer index out of range"
 	Consts_SInvalidPrinter,	"Printer selected is not valid"
 	Consts_SDeviceOnPort,	"%s on %s"
 	Consts_SGroupIndexTooLow,	"GroupIndex cannot be less than a previous menu item's GroupIndex"
 	Consts_SNoMDIForm,	"Cannot create form. No MDI forms are currently active"
-	Consts_SImageCanvasNeedsBitmap,	"Can only modify an image if it contains a bitmap"
 	Consts_SControlParentSetToSelf,	"A control cannot have itself as its parent"
 	Consts_SOKButton,	"OK"
 	Consts_SCancelButton,	"Cancel"
 	Consts_SYesButton,	"&Yes"
 	Consts_SNoButton,	"&No"
-	Consts_SHelpButton,	"&Help"
-	Consts_SCloseButton,	"&Close"
-	Consts_SIgnoreButton,	"&Ignore"
-	Consts_SRetryButton,	"&Retry"
-	Consts_SAbortButton,	"Abort"
+	Consts_SNoCanvasHandle,	"Canvas does not allow drawing"
+	Consts_SInvalidImageSize,	"Invalid image size"
+	Consts_SInvalidImageList,	"Invalid ImageList"
+	Consts_SReplaceImage,	"Unable to Replace Image"
+	Consts_SImageIndexError,	"Invalid ImageList Index"
+	Consts_SImageReadFail,	"Failed to read ImageList data from stream"
+	Consts_SImageWriteFail,	"Failed to write ImageList data to stream"
 	Consts_SWindowDCError,	"Error creating window device context"
 	Consts_SWindowClass,	"Error creating window class"
 	Consts_SCannotFocus,	"Cannot focus a disabled or invisible window"
@@ -908,14 +637,14 @@ BEGIN
 	Consts_SMDIChildNotVisible,	"Cannot hide an MDI Child Form"
 	Consts_SVisibleChanged,	"Cannot change Visible in OnShow or OnHide"
 	Consts_SCannotShowModal,	"Cannot make a visible window modal"
-	Consts_SScrollBarRange,	"Scrollbar property out of range"
 	Consts_SPropertyOutOfRange,	"%s property out of range"
-	Consts_SMenuIndexError,	"Menu index out of range"
-	Consts_SMenuReinserted,	"Menu inserted twice"
-	Consts_SMenuNotFound,	"Sub-menu is not in menu"
-	Consts_SNoTimers,	"Not enough timers available"
-	Consts_SNotPrinting,	"Printer is not currently printing"
-	Consts_SPrinting,	"Printing in progress"
+	RTLConsts_SGenericItemNotFound,	"Item not found"
+	RTLConsts_SGenericDuplicateItem,	"Duplicates not allowed"
+	RTLConsts_SInsufficientRtti,	"Insufficient RTTI available to support this operation"
+	RTLConsts_SParameterCountMismatch,	"Parameter count mismatch"
+	RTLConsts_SNonPublicType,	"Type '%s' is not declared in the interface section of a unit"
+	RTLConsts_SByRefArgMismatch,	"VAR and OUT arguments must match parameter type exactly"
+	Consts_SInvalidBitmap,	"Bitmap image is not valid"
 	Consts_SInvalidIcon,	"Icon image is not valid"
 	Consts_SInvalidMetafile,	"Metafile is not valid"
 	Consts_SInvalidPixelFormat,	"Invalid pixel format"
@@ -925,37 +654,7 @@ BEGIN
 	Consts_SUnknownExtension,	"Unknown picture file extension (.%s)"
 	Consts_SUnknownClipboardFormat,	"Unsupported clipboard format"
 	Consts_SOutOfResources,	"Out of system resources"
-	Consts_SNoCanvasHandle,	"Canvas does not allow drawing"
-	Consts_SInvalidImageSize,	"Invalid image size"
-	Consts_SInvalidImageList,	"Invalid ImageList"
-	Consts_SReplaceImage,	"Unable to Replace Image"
-	Consts_SImageIndexError,	"Invalid ImageList Index"
-	Consts_SImageReadFail,	"Failed to read ImageList data from stream"
-	Consts_SImageWriteFail,	"Failed to write ImageList data to stream"
-	RTLConsts_SNoIndex,	"Unable to open Index"
-	RTLConsts_SNoSearch,	"Unable to open Search"
-	RTLConsts_SNoTableOfContents,	"Unable to find a Table of Contents"
-	RTLConsts_SNoTopics,	"No topic-based help system installed"
-	RTLConsts_SNothingFound,	"No help found for %s"
-	RTLConsts_SArgumentOutOfRange,	"Argument out of range"
-	RTLConsts_SUnbalancedOperation,	"Unbalanced stack or queue operation"
-	RTLConsts_SGenericItemNotFound,	"Item not found"
-	RTLConsts_SGenericDuplicateItem,	"Duplicates not allowed"
-	RTLConsts_SInsufficientRtti,	"Insufficient RTTI available to support this operation"
-	RTLConsts_SParameterCountMismatch,	"Parameter count mismatch"
-	RTLConsts_SNonPublicType,	"Type '%s' is not declared in the interface section of a unit"
-	RTLConsts_SByRefArgMismatch,	"VAR and OUT arguments must match parameter type exactly"
-	Consts_SInvalidTabPosition,	"Tab position incompatible with current tab style"
-	Consts_SInvalidTabStyle,	"Tab style incompatible with current tab position"
-	Consts_SInvalidBitmap,	"Bitmap image is not valid"
-	RTLConsts_sArgumentOutOfRange_InvalidHighSurrogate,	"A valid high surrogate character is >= $D800 and <= $DBFF"
-	RTLConsts_sArgumentOutOfRange_InvalidLowSurrogate,	"A valid low surrogate character is >= $DC00 and <= $DFFF"
-	RTLConsts_sArgumentOutOfRange_StringIndex,	"String index out of range (%d).  Must be >= 1 and <= %d"
-	RTLConsts_sArgumentOutOfRange_InvalidUTF32,	"Invalid UTF32 character value.  Must be >= 0 and <= $10FFF, excluding surrogate pair ranges"
-	RTLConsts_sArgument_InvalidHighSurrogate,	"High surrogate char without a following low surrogate char at index: %d. Check that the string is encoded properly"
-	RTLConsts_sArgument_InvalidLowSurrogate,	"Low surrogate char without a preceding high surrogate char at index: %d. Check that the string is encoded properly"
-	RTLConsts_sNoConstruct,	"Class %s is not intended to be constructed"
-	RTLConsts_sCannotCallAcquireOnConditionVar,	"Cannot call Acquire on TConditionVariable.  Must call WaitFor with an external TMutex"
+	RTLConsts_hNoFilterViewer,	"No help viewer that supports filters"
 	RTLConsts_sInvalidTimeoutValue,	"Invalid Timeout value: %s"
 	RTLConsts_SInvalidDate,	"''%s'' is not a valid date"
 	RTLConsts_SInvalidDateTime,	"''%s'' is not a valid date and time"
@@ -964,13 +663,21 @@ BEGIN
 	RTLConsts_STimeEncodeError,	"Invalid argument to time encode"
 	RTLConsts_SNoContext,	"No context-sensitive help installed"
 	RTLConsts_SNoContextFound,	"No help found for context"
+	RTLConsts_SNoIndex,	"Unable to open Index"
+	RTLConsts_SNoSearch,	"Unable to open Search"
+	RTLConsts_SNoTableOfContents,	"Unable to find a Table of Contents"
+	RTLConsts_SNoTopics,	"No topic-based help system installed"
+	RTLConsts_SNothingFound,	"No help found for %s"
+	RTLConsts_SArgumentOutOfRange,	"Argument out of range"
+	RTLConsts_SUnbalancedOperation,	"Unbalanced stack or queue operation"
+	RTLConsts_SUnknownGroup,	"%s not in a class registration group"
+	RTLConsts_SUnknownProperty,	"Property %s does not exist"
 	RTLConsts_SWriteError,	"Stream write error"
 	RTLConsts_SThreadCreateError,	"Thread creation error: %s"
 	RTLConsts_SThreadError,	"Thread Error: %s (%d)"
 	RTLConsts_SThreadExternalTerminate,	"Cannot terminate an externally created thread"
 	RTLConsts_SThreadExternalWait,	"Cannot wait for an externally created thread"
 	RTLConsts_SThreadStartError,	"Cannot call Start on a running or suspended thread"
-	RTLConsts_SParamIsNil,	"Parameter %s cannot be nil"
 	RTLConsts_SParamIsNegative,	"Parameter %s cannot be a negative value"
 	RTLConsts_SInputBufferExceed,	"Input buffer exceeded for %s = %d, %s = %d"
 	RTLConsts_SInvalidCharsInPath,	"Invalid characters in path"
@@ -979,10 +686,13 @@ BEGIN
 	RTLConsts_SPathFormatNotSupported,	"The path format is not supported"
 	RTLConsts_SFileNotFound,	"The specified file was not found"
 	RTLConsts_SMissingDateTimeField,	"?"
-	RTLConsts_hNoFilterViewer,	"No help viewer that supports filters"
-	RTLConsts_SNumberExpected,	"Number expected"
-	RTLConsts_SAnsiUTF8Expected,	"ANSI or UTF8 encoding expected"
-	RTLConsts_SParseError,	"%s on line %d"
+	RTLConsts_SInvalidPropertyValue,	"Invalid property value"
+	RTLConsts_SInvalidRegType,	"Invalid data type for '%s'"
+	RTLConsts_SListCapacityError,	"List capacity out of bounds (%d)"
+	RTLConsts_SListCountError,	"List count out of bounds (%d)"
+	RTLConsts_SListIndexError,	"List index out of bounds (%d)"
+	RTLConsts_SMemoryStreamError,	"Out of memory while expanding memory stream"
+	RTLConsts_SNoComSupport,	"%s has not been registered as a COM class"
 	RTLConsts_SPropertyException,	"Error reading %s%s%s: %s"
 	RTLConsts_SReadError,	"Stream read error"
 	RTLConsts_SReadOnlyProperty,	"Property is read-only"
@@ -992,30 +702,7 @@ BEGIN
 	RTLConsts_SResNotFound,	"Resource %s not found"
 	RTLConsts_SSeekNotImplemented,	"%s.Seek not implemented"
 	RTLConsts_SSortedListError,	"Operation not allowed on sorted list"
-	RTLConsts_SStringExpected,	"String expected"
-	RTLConsts_SSymbolExpected,	"%s expected"
-	RTLConsts_SUnknownGroup,	"%s not in a class registration group"
-	RTLConsts_SUnknownProperty,	"Property %s does not exist"
-	RTLConsts_SInvalidImage,	"Invalid stream format"
-	RTLConsts_SInvalidMask,	"'%s' is an invalid mask at (%d)"
-	RTLConsts_SInvalidName,	"''%s'' is not a valid component name"
-	RTLConsts_SInvalidProperty,	"Invalid property value"
-	RTLConsts_SInvalidPropertyElement,	"Invalid property element: %s"
-	RTLConsts_SInvalidPropertyPath,	"Invalid property path"
-	RTLConsts_SInvalidPropertyType,	"Invalid property type: %s"
-	RTLConsts_SInvalidPropertyValue,	"Invalid property value"
-	RTLConsts_SInvalidRegType,	"Invalid data type for '%s'"
-	RTLConsts_SInvalidString,	"Invalid string constant"
-	RTLConsts_SLineTooLong,	"Line too long"
-	RTLConsts_SListCapacityError,	"List capacity out of bounds (%d)"
-	RTLConsts_SListCountError,	"List count out of bounds (%d)"
-	RTLConsts_SListIndexError,	"List index out of bounds (%d)"
-	RTLConsts_SMemoryStreamError,	"Out of memory while expanding memory stream"
-	RTLConsts_SNoComSupport,	"%s has not been registered as a COM class"
-	RTLConsts_SBitsIndexError,	"Bits index out of range"
-	RTLConsts_SBucketListLocked,	"List is locked during an active ForEach"
 	RTLConsts_SCantWriteResourceStreamError,	"Can't write to a read-only resource stream"
-	RTLConsts_SCharExpected,	"''%s'' expected"
 	RTLConsts_SCheckSynchronizeError,	"CheckSynchronize called from thread $%x, which is NOT the main thread"
 	RTLConsts_SClassNotFound,	"Class %s not found"
 	RTLConsts_SDuplicateClass,	"A class named %s already exists"
@@ -1024,11 +711,13 @@ BEGIN
 	RTLConsts_SDuplicateString,	"String list does not allow duplicates"
 	RTLConsts_SFCreateErrorEx,	"Cannot create file \"%s\". %s"
 	RTLConsts_SFOpenErrorEx,	"Cannot open file \"%s\". %s"
-	RTLConsts_SIdentifierExpected,	"Identifier expected"
 	RTLConsts_SIniFileWriteError,	"Unable to write to %s"
-	RTLConsts_SInvalidBinary,	"Invalid binary value"
 	RTLConsts_SInvalidFileName,	"Invalid file name - %s"
-	SysConst_SLongDayNameMon,	"Monday"
+	RTLConsts_SInvalidImage,	"Invalid stream format"
+	RTLConsts_SInvalidMask,	"'%s' is an invalid mask at (%d)"
+	RTLConsts_SInvalidName,	"''%s'' is not a valid component name"
+	RTLConsts_SInvalidProperty,	"Invalid property value"
+	RTLConsts_SInvalidPropertyPath,	"Invalid property path"
 	SysConst_SLongDayNameTue,	"Tuesday"
 	SysConst_SLongDayNameWed,	"Wednesday"
 	SysConst_SLongDayNameThu,	"Thursday"
@@ -1044,7 +733,7 @@ BEGIN
 	SysConst_SInvalidCodePage,	"Invalid code page"
 	RTLConsts_SAncestorNotFound,	"Ancestor for '%s' not found"
 	RTLConsts_SAssignError,	"Cannot assign a %s to a %s"
-	SysConst_SLongMonthNameMay,	"May"
+	RTLConsts_SBitsIndexError,	"Bits index out of range"
 	SysConst_SLongMonthNameJun,	"June"
 	SysConst_SLongMonthNameJul,	"July"
 	SysConst_SLongMonthNameAug,	"August"
@@ -1060,7 +749,7 @@ BEGIN
 	SysConst_SShortDayNameFri,	"Fri"
 	SysConst_SShortDayNameSat,	"Sat"
 	SysConst_SLongDayNameSun,	"Sunday"
-	SysConst_SShortMonthNameJan,	"Jan"
+	SysConst_SLongDayNameMon,	"Monday"
 	SysConst_SShortMonthNameFeb,	"Feb"
 	SysConst_SShortMonthNameMar,	"Mar"
 	SysConst_SShortMonthNameApr,	"Apr"
@@ -1076,7 +765,7 @@ BEGIN
 	SysConst_SLongMonthNameFeb,	"February"
 	SysConst_SLongMonthNameMar,	"March"
 	SysConst_SLongMonthNameApr,	"April"
-	SysConst_SVarOverflow,	"Variant overflow"
+	SysConst_SLongMonthNameMay,	"May"
 	SysConst_SVarInvalid,	"Invalid argument"
 	SysConst_SVarBadType,	"Invalid variant type"
 	SysConst_SVarNotImplemented,	"Operation not supported"
@@ -1092,12 +781,12 @@ BEGIN
 	SysConst_SModuleAccessViolation,	"Access violation at address %p in module '%s'. %s of address %p"
 	SysConst_SOSError,	"System Error.  Code: %d.\r\n%s"
 	SysConst_SUnkOSError,	"A call to an OS function failed"
+	SysConst_SShortMonthNameJan,	"Jan"
 	SysConst_SWriteAccess,	"Write"
 	SysConst_SFormatTooLong,	"Format string too long"
 	SysConst_SVarArrayCreate,	"Error creating variant or safe array"
 	SysConst_SVarArrayBounds,	"Variant or safe array index out of bounds"
 	SysConst_SVarArrayLocked,	"Variant or safe array is locked"
-	SysConst_SVarArrayWithHResult,	"Unexpected variant or safe array error: %s%.8x"
 	SysConst_SInvalidVarCast,	"Invalid variant type conversion"
 	SysConst_SInvalidVarOp,	"Invalid variant operation"
 	SysConst_SInvalidVarNullOp,	"Invalid NULL variant operation"
@@ -1108,6 +797,7 @@ BEGIN
 	SysConst_SVarTypeTooManyCustom,	"Too many custom variant types have been registered"
 	SysConst_SVarTypeCouldNotConvert,	"Could not convert variant of type (%s) into type (%s)"
 	SysConst_SVarTypeConvertOverflow,	"Overflow while converting variant of type (%s) into type (%s)"
+	SysConst_SVarOverflow,	"Variant overflow"
 	SysConst_SZeroDivide,	"Floating point division by zero"
 	SysConst_SOverflow,	"Floating point overflow"
 	SysConst_SUnderflow,	"Floating point underflow"

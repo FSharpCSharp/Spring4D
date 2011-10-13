@@ -40,7 +40,7 @@ program Spring.Tests;
   If one or more strong fixups references the symbol, then it is included in the final binary,
   and the weak references do not get set to @PointerToNil.
 *)
-{$STRONGLINKTYPES ON}
+{$STRONGLINKTYPES OFF}
 
 {.$DEFINE CONSOLE_TESTRUNNER}
 
@@ -85,7 +85,8 @@ begin
 //    TTestBuffer.Suite,
 //    TTestEmptyBuffer.Suite,
 //    TTestFiveByteBuffer.Suite,
-    TRepeatedTest.Create(TTestNullableInteger.Suite, 3)
+    TRepeatedTest.Create(TTestNullableInteger.Suite, 3),
+    TTestEmptyMulticastEvent.Suite
   ]);
 
   RegisterTests('Spring.System.Cryptography', [
@@ -111,8 +112,8 @@ begin
 
   RegisterTests('Spring.System.Utils', [
     TTestSplitString.Suite,
-    TTestSplitNullTerminatedStrings.Suite,
     TTestTryConvertStrToDateTime.Suite,
+    TTestSplitNullTerminatedStrings.Suite,
     TTestVersion.Suite,
     TTestEnum.Suite
   ]);
@@ -148,13 +149,10 @@ begin
   ]);
 
   RegisterTests('Spring.Core.Container', [
-    TTestSingletonLifetimeManager.Suite,
-    TTestTransientLifetimeManager.Suite,
     TTestEmptyContainer.Suite,
     TTestSimpleContainer.Suite,
     TTestDifferentServiceImplementations.Suite,
     TTestImplementsDifferentServices.Suite,
-    TTestRegisterInterfaces.Suite,
     TTestActivatorDelegate.Suite,
     TTestTypedInjectionByCoding.Suite,
     TTestTypedInjectionsByAttribute.Suite,
@@ -162,7 +160,10 @@ begin
     TTestNamedInjectionsByAttribute.Suite,
     TTestDirectCircularDependency.Suite,
     TTestCrossedCircularDependency.Suite,
-    TTestImplementsAttribute.Suite
+    TTestImplementsAttribute.Suite,
+    TTestRegisterInterfaces.Suite,
+    TTestSingletonLifetimeManager.Suite,
+    TTestTransientLifetimeManager.Suite
   ]);
 
   RegisterTests('Spring.Core.Configuration', [
@@ -181,8 +182,8 @@ begin
 
   Application.Initialize;
 
-//  RegisterTestCases;
-  RegisterAllTestCasesByRTTI;
+  RegisterTestCases;
+//  RegisterAllTestCasesByRTTI;
 
   if IsConsole then
     TextTestRunner.RunRegisteredTests
