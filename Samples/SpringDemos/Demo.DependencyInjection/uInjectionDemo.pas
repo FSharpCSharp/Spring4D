@@ -60,7 +60,7 @@ type
     FAnotherString: string;
     FSetterInjectionString: string;
     FSpecialType: TSpecialType;
-    [Injection]
+    [Inject]
     FFieldInjectionString: string;
     function GetSomeString: string;
     procedure SetSomeString(aValue: string);
@@ -84,7 +84,7 @@ type
     property SomeInteger: integer read GetSomeInteger write SetSomeInteger;
     property AnotherString: string read GetAnotherString Write SetAnotherString;
     property SetterInjectionString: string read GetSetterInjectionString write SetSetterInjectionString;
-    [Injection]
+    [Inject]
     property SpecialType: TSpecialType read GetSpecialType write SetSpecialType;
     property FieldInjectionString: string read GetFieldInjectionString write SetFieldInjectionString;
 

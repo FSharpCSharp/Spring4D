@@ -15,7 +15,7 @@ uses
 type
   TCalculator = class(TInterfacedObject, ICalculator)
   private
-    [Injection(NormalAdditionServiceName)]
+    [Inject(NormalAdditionServiceName)]
     FMathService: IMathService;
   public
     function Addition(a, b: integer): integer;

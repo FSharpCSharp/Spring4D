@@ -15,12 +15,10 @@ begin
   try
     GlobalContainer.Build;
 
-
     Pet := ServiceLocator.GetService<IPetNoiseMaker>;
     Pet.MakePetNoises;
     Pet.MakePetNoises('Cat');
     Pet.MakePetNoises('Cow');
-
 
     Readln;
   except

@@ -50,6 +50,7 @@ type
     List: IList<TIntegerStringPair>;
     function CreateAnotherList: IList<TIntegerStringPair>;
     procedure Clear;
+    procedure AddToMemo(const aString: string);
   public
     { Public declarations }
   end;
@@ -74,7 +75,7 @@ begin
   Clear;
   for Pair in List do
   begin
-    Memo1.Lines.Add(Pair.Value);
+    AddToMemo(Pair.Value);
   end;
 end;
 
@@ -94,7 +95,7 @@ begin
 
   for Pair in Enumerable do
   begin
-    Memo1.Lines.Add(Pair.Value);
+    AddToMemo(Pair.Value);
   end;
 
 end;
@@ -111,7 +112,7 @@ begin
 
   for Pair in Enumerable do
   begin
-    Memo1.Lines.Add(Pair.Value);
+    AddToMemo(Pair.Value);
   end;
 
 end;
@@ -132,7 +133,7 @@ begin
   Enumerable := List.SkipWhile(Predicate);
   for Pair in Enumerable do
   begin
-    Memo1.Lines.Add(Pair.Value);
+    AddToMemo(Pair.Value);
   end;
 
 end;
@@ -149,7 +150,7 @@ begin
 
   for Pair in Enumerable do
   begin
-    Memo1.Lines.Add(Pair.Value);
+    AddToMemo(Pair.Value);
   end;
 
 end;
@@ -172,7 +173,7 @@ begin
   Enumerable := List.TakeWhile(Predicate);
   for Pair in Enumerable do
   begin
-    Memo1.Lines.Add(Pair.Value);
+    AddToMemo(Pair.Value);
   end;
 
 end;
@@ -191,7 +192,7 @@ begin
 
   for Pair in Enumerable do
   begin
-    Memo1.Lines.Add(Pair.Value);
+    AddToMemo(Pair.Value);
   end;
 
 end;
@@ -202,7 +203,7 @@ var
 begin
   Clear;
   Pair := List.First;
-  Memo1.Lines.Add(Pair.Value);
+  AddToMemo(Pair.Value);
 end;
 
 procedure TEnumerationDemoForm.Button9Click(Sender: TObject);
@@ -211,7 +212,12 @@ var
 begin
   Clear;
   Pair := List.Last;
-  Memo1.Lines.Add(Pair.Value);
+  AddToMemo(Pair.Value);
+end;
+
+procedure TEnumerationDemoForm.AddToMemo(const aString: string);
+begin
+  Memo1.Lines.Add(aString);
 end;
 
 procedure TEnumerationDemoForm.Button10Click(Sender: TObject);
@@ -220,7 +226,7 @@ var
 begin
   Clear;
   Pair := List.ElementAt(4); // zero-based
-  Memo1.Lines.Add(Pair.Value);
+  AddToMemo(Pair.Value);
 end;
 
 procedure TEnumerationDemoForm.Button11Click(Sender: TObject);
@@ -229,7 +235,7 @@ var
 begin
   Clear;
   Pair := List.Min;
-  Memo1.Lines.Add(Pair.Value);
+  AddToMemo(Pair.Value);
 end;
 
 procedure TEnumerationDemoForm.Button12Click(Sender: TObject);
@@ -238,7 +244,7 @@ var
 begin
   Clear;
   Pair := List.Max;
-  Memo1.Lines.Add(Pair.Value);
+  AddToMemo(Pair.Value);
 end;
 
 procedure TEnumerationDemoForm.Button13Click(Sender: TObject);
@@ -248,20 +254,18 @@ begin
   Clear;
   for Pair in List.Reversed do
   begin
-    Memo1.Lines.Add(Pair.Value);
+    AddToMemo(Pair.Value);
   end;
 end;
 
 procedure TEnumerationDemoForm.Button14Click(Sender: TObject);
 var
-  Pair: TIntegerStringPair;
   Action: TAction<TIntegerStringPair>;
-  Enumerable: IEnumerable<TIntegerStringPair>;
 begin
   Clear;
   Action := procedure(const Pair: TIntegerStringPair)
             begin
-              Memo1.Lines.Add(Format('The numeric form of %s is %d', [Pair.Value, Pair.Key]))
+              AddToMemo(Format('The numeric form of %s is %d', [Pair.Value, Pair.Key]))
             end;
 
   List.ForEach(Action);
@@ -277,7 +281,7 @@ begin
   // Note that the order is changed
   for Pair in List.ToSet.ToList do
   begin
-    Memo1.Lines.Add(Pair.Value);
+    AddToMemo(Pair.Value);
   end;
 end;
 
@@ -288,7 +292,7 @@ end;
 
 function TEnumerationDemoForm.CreateAnotherList: IList<TPair<integer, string>>;
 begin
-  Result := Spring.Collections.TList<TIntegerStringPair>.Create;
+  Result := TCollections.CreateList<TIntegerStringPair>;
   Result.Add(TIntegerStringPair.Create(11, 'eleven'));
   Result.Add(TIntegerStringPair.Create(12, 'twelve'));
   Result.Add(TIntegerStringPair.Create(13, 'thirteen'));
@@ -299,7 +303,7 @@ end;
 procedure TEnumerationDemoForm.FormCreate(Sender: TObject);
 begin
   Clear;
-  List := Spring.Collections.TList<TIntegerStringPair>.Create;
+  List := TCollections.CreateList<TIntegerStringPair>;
   List.Add(TIntegerStringPair.Create(1, 'one'));
   List.Add(TIntegerStringPair.Create(2, 'two'));
   List.Add(TIntegerStringPair.Create(3, 'three'));

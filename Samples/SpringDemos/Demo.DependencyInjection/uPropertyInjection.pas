@@ -32,7 +32,7 @@ type
     function GetSteeringWheel: ISteeringWheel;
     procedure SetSteeringWheel(aValue: ISteeringWheel);
   public
-    [Injection]
+    [Inject]
     property SteeringWheel: ISteeringWheel read GetSteeringWheel write SetSteeringWheel;
   end;
 
