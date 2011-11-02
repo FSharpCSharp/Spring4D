@@ -1430,8 +1430,8 @@ begin
     raise EInvalidOperation.CreateRes(@SNoTypeInfo);
   if p.Kind <> tkMethod then
     raise EInvalidOperation.CreateRes(@STypeParameterShouldBeMethod);
-
   inherited Create;
+  fEnabled := True;
 end;
 
 destructor TMulticastEvent<T>.Destroy;

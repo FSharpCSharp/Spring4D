@@ -313,7 +313,7 @@ type
 
     /// <summary>
     /// Determines whether two sequences are equal by comparing their elements
-    /// by using a specified IEqualityComparer<T>.
+    /// by using a specified IEqualityComparer{T}.
     /// </summary>
     function EqualsTo(const collection: IEnumerable<T>; const comparer: IEqualityComparer<T>): Boolean; overload;
 
@@ -559,6 +559,10 @@ type
   end;
 
 const
+  cnAdded = Generics.Collections.cnAdded;
+  cnRemoved = Generics.Collections.cnRemoved;
+  cnExtracted = Generics.Collections.cnExtracted;
+
   doOwnsKeys = Generics.Collections.doOwnsKeys;
   doOwnsValues = Generics.Collections.doOwnsValues;
 
