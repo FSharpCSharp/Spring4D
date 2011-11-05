@@ -1314,12 +1314,14 @@ var
   stackSize: Integer;
   callConversion: TCallConv;
   pStack: PParameters;
+  i: Integer;
 begin
   pStack := fMethodInfo.Params;
   stackSize := fMethodInfo.stackSize;
   callConversion := fMethodInfo.CallConversion;
-  for method in fMethods do
+  for i := 0 to fMethods.Count - 1 do
   begin
+    method := fMethods[i];
     // Check to see if there is anything on the stack.
     if StackSize > 0 then
     asm
