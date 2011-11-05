@@ -402,7 +402,12 @@ type
     ///	<summary>
     ///	  Removes an event handler if it was added to the event.
     ///	</summary>
-    procedure Remove(const handler: T);
+    procedure Remove(const handler: T); overload;
+
+    ///	<summary>
+    ///	  Removes all event handlers which were registered by an instance.
+    ///	</summary>
+    procedure Remove(instance: Pointer); overload;
 
     ///	<summary>
     ///	  Clears all event handlers.
@@ -471,8 +476,7 @@ type
   private
     fMethodType: PTypeInfo;
     fMethodInfo: TMethodInfo;
-    fMethods: TArray<TMethod>;
-    fCount: Integer;
+    fMethods: TList<TMethod>;
     function GetCount: Integer;
     function GetIsEmpty: Boolean;
   protected
@@ -480,8 +484,10 @@ type
     procedure InvokeEventHandlerStub;
   public
     constructor Create(methodTypeInfo: PTypeInfo);
+    destructor Destroy; override;
     procedure Add(const method: TMethod);
     procedure Remove(const method: TMethod);
+    procedure RemoveAll(instance: Pointer);
     function  IndexOf(const method: TMethod): Integer;
     procedure Clear;
     property Count: Integer read GetCount;
@@ -508,7 +514,8 @@ type
     destructor Destroy; override;
 
     procedure Add(const handler: T);
-    procedure Remove(const handler: T);
+    procedure Remove(const handler: T); overload;
+    procedure Remove(instance: Pointer); overload;
     procedure Clear;
 
     property Invoke: T read GetInvoke;
@@ -1250,59 +1257,49 @@ begin
   inherited Create;
   fMethodType := methodTypeInfo;
   fMethodInfo := TMethodInfo.Create(fMethodType);
+  fMethods := TList<TMethod>.Create;
+end;
+
+destructor TMethodInvocations.Destroy;
+begin
+  fMethods.Free;
+  inherited;
 end;
 
 procedure TMethodInvocations.Add(const method: TMethod);
 begin
-  if Length(fMethods) = fCount then
-  begin
-    if fCount = 0 then
-      SetLength(fMethods, 1)
-    else
-      SetLength(fMethods, fCount * 2);
-  end;
-  fMethods[fCount].Code := PMethod(@method)^.Code;
-  fMethods[fCount].Data := PMethod(@method)^.Data;
-  Inc(fCount);
+  fMethods.Add(method);
 end;
 
 procedure TMethodInvocations.Remove(const method: TMethod);
-var
-  index: Integer;
 begin
-  index := IndexOf(method);
-  if index > -1 then
+  fMethods.Remove(method);
+end;
+
+procedure TMethodInvocations.RemoveAll(instance: Pointer);
+var
+  i: Integer;
+begin
+  for i := Count - 1 downto 0 do
   begin
-    Move(fMethods[index+1], fMethods[index], (fCount - index - 1) * SizeOf(TMethod));
-    Dec(fCount);
-    fMethods[fCount].Data := nil;
-    fMethods[fCount].Code := nil;
+    if fMethods[i].Data = instance then
+      fMethods.Delete(i);
   end;
 end;
 
 procedure TMethodInvocations.Clear;
 begin
-  SetLength(fMethods, 0);
-  fCount := 0;
+  fMethods.Clear;
 end;
 
 function TMethodInvocations.IndexOf(const method: TMethod): Integer;
-var
-  i: Integer;
 begin
-  for i := 0 to fCount - 1 do
-  begin
-    if (fMethods[i].Code = method.Code) and (fMethods[i].Data = method.Data) then
-    begin
-      Exit(i);
-    end;
-  end;
-  Result := -1;
+  Result := fMethods.IndexOf(method);
 end;
 
 function TMethodInvocations.GetCount: Integer;
 begin
-  Result := fCount;
+  Result := fMethods.Count;
 end;
 
 function TMethodInvocations.GetIsEmpty: Boolean;
@@ -1313,21 +1310,16 @@ end;
 procedure TMethodInvocations.InternalInvokeHandlers;
 {$IFNDEF CPUX64}
 var
-  methods: TArray<TMethod>;
   method: TMethod;
   stackSize: Integer;
   callConversion: TCallConv;
   pStack: PParameters;
-  i: Integer;
 begin
-  methods := fMethods;
   pStack := fMethodInfo.Params;
   stackSize := fMethodInfo.stackSize;
   callConversion := fMethodInfo.CallConversion;
-  for i := 0 to fCount - 1 do
+  for method in fMethods do
   begin
-    method.Data := methods[i].Data;
-    method.Code := methods[i].Code;
     // Check to see if there is anything on the stack.
     if StackSize > 0 then
     asm
@@ -1450,6 +1442,12 @@ procedure TMulticastEvent<T>.Remove(const handler: T);
 begin
   InvocationsNeeded;
   fInvocations.Remove(PMethod(@handler)^);
+end;
+
+procedure TMulticastEvent<T>.Remove(instance: Pointer);
+begin
+  InvocationsNeeded;
+  fInvocations.RemoveAll(instance);
 end;
 
 procedure TMulticastEvent<T>.Clear;
