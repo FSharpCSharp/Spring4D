@@ -13,7 +13,7 @@ var
 
 begin
   try
-    GlobalContainer.Build;
+ //   GlobalContainer.Build;
 
     Pet := ServiceLocator.GetService<IPetNoiseMaker>;
     Pet.MakePetNoises;

@@ -30,7 +30,7 @@ type
 
   TFieldInjectionDemo = class(TInterfacedObject, IFieldInjectionDemo)
   private
-    [Injection]
+    [Inject]
     FSomeClass: ISomeClass;
   public
     procedure UseSomeClass;

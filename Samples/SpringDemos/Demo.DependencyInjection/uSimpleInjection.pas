@@ -25,12 +25,11 @@ uses
     , Spring.Container
     ;
 
-
 type
 
     TPetNoiseProvider = class(TInterfacedObject, IPetNoiseMaker)
     private
-      [Injection('Dog')]
+      [Inject('Dog')]
       FPet: IMakeNoise;
     public
       procedure MakePetNoises; overload;
@@ -69,7 +68,6 @@ procedure TCow.MakeNoise;
 begin
   WriteLn('Moo!');
 end;
-
 
 { TPetNoiseProvider }
 

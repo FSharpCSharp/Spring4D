@@ -4,7 +4,6 @@ interface
 
 uses
        Types
-     , Spring
      ;
 
 type
@@ -42,7 +41,7 @@ type
 
   TSimpleClassConsumer = class(TInterfacedObject, ISimpleContainerInterface)
   private
-    [Injection]
+    [Inject]
     FSimpleClass: ISimpleInterface;
     function GetSimpleClass: ISimpleInterface;
     procedure SetSimpleClass(const Value: ISimpleInterface);

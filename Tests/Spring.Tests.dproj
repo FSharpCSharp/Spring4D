@@ -40,7 +40,7 @@
 			<DCC_UnitSearchPath>$(BDS)\Source\DUnit\src;..\Source\System;..\Source\System\Collections;..\Source\System\Cryptography;..\Source\System\Reflection;..\Source\System\Utils;..\Source\Core\Container;..\Source\Core\Configuration;..\Source\Core\Logging;..\Source\Core\Services;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DCC_Define>_CONSOLE_TESTRUNNER;$(DCC_Define)</DCC_Define>
 			<DCC_DependencyCheckOutputName>Spring.Tests.exe</DCC_DependencyCheckOutputName>
-			<DCC_UsePackage>vcl;rtl</DCC_UsePackage>
+			<DCC_UsePackage>vcl;rtl;$(DCC_UsePackage)</DCC_UsePackage>
 			<DCC_ImageBase>00400000</DCC_ImageBase>
 			<DCC_Platform>x86</DCC_Platform>
 		</PropertyGroup>
@@ -63,7 +63,7 @@
 			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
 		</PropertyGroup>
 		<ItemGroup>
-			<DelphiCompile Include="Spring.Tests.dpr">
+			<DelphiCompile Include="$(MainSource)">
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
 			<DCCReference Include="Source\Core\Spring.Tests.Container.Components.pas"/>

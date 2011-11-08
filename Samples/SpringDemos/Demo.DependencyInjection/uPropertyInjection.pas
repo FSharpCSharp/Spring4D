@@ -17,7 +17,6 @@ type
     property SteeringWheel: ISteeringWheel read GetSteeringWheel write SetSteeringWheel;
   end;
 
-
 implementation
 
 uses
@@ -44,7 +43,6 @@ type
     function GetDirection: integer;
     property Direction: Integer read GetDirection write SetDirection;
   end;
-
 
 { TVehicle }
 
