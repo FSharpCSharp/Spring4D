@@ -125,32 +125,31 @@
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
 			<DCCReference Include="rtl.dcp"/>
-			<DCCReference Include="Spring.System.dcp"/>
 			<DCCReference Include="xmlrtl.dcp"/>
-			<DCCReference Include="..\..\Source\Core\Configuration\Spring.Configuration.Node.pas"/>
-			<DCCReference Include="..\..\Source\Core\Configuration\Spring.Configuration.Sources.pas"/>
-			<DCCReference Include="..\..\Source\Core\Configuration\Spring.Configuration.pas"/>
-			<DCCReference Include="..\..\Source\Core\Configuration\Spring.Configuration.ConfigurationProperty.pas"/>
-			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.LoggerManager.pas"/>
-			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.pas"/>
 			<DCCReference Include="..\..\Source\Core\Services\Spring.Services.pas"/>
-			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Resolvers.pas"/>
-			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Registration.pas"/>
-			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Builder.pas"/>
-			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Appenders.pas"/>
-			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Loggers.pas"/>
+			<DCCReference Include="..\..\Source\Core\Configuration\Spring.Configuration.ConfigurationProperty.pas"/>
+			<DCCReference Include="..\..\Source\Core\Configuration\Spring.Configuration.Node.pas"/>
+			<DCCReference Include="..\..\Source\Core\Configuration\Spring.Configuration.pas"/>
 			<DCCReference Include="..\..\Source\Core\Configuration\Spring.Configuration.ResourceStrings.pas"/>
-			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.LifetimeManager.pas"/>
+			<DCCReference Include="..\..\Source\Core\Configuration\Spring.Configuration.Sources.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Builder.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.ComponentActivator.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Core.pas"/>
-			<DCCReference Include="..\..\Source\Core\Services\Spring.Services.Logging.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Injection.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.LifetimeManager.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Pool.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Registration.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Resolvers.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.ResourceStrings.pas"/>
+			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Appenders.pas"/>
 			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Core.pas"/>
 			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Layouts.pas"/>
-			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Utils.pas"/>
-			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.ResourceStrings.pas"/>
-			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Pool.pas"/>
-			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Injection.pas"/>
+			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.LoggerManager.pas"/>
+			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Loggers.pas"/>
 			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.ResourceStrings.pas"/>
+			<DCCReference Include="..\..\Source\Core\Logging\Spring.Logging.Utils.pas"/>
+			<DCCReference Include="..\..\Source\Core\Services\Spring.Services.Logging.pas"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>

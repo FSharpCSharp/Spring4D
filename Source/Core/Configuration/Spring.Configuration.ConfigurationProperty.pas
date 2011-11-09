@@ -22,6 +22,39 @@
 {                                                                           }
 {***************************************************************************}
 
+(*
+
+notes of dev, Virion:
+- i think we should consider autocreation of values in collection. only then it
+  can totally mimic hashtable implemented in many dynamic languages such as PHP,
+  JavaScript, Perl and others.
+
+- collection of properties should contain reference to parent node's collection
+  of properties. i think it is best choice to implement value inheritancy on
+  collection level.
+
+- property record must contain references to two collections - source of value
+  (it can be one of parents collections, used to reading value) and target of
+  value (it always is current node's collection, used to writing value).
+
+- let's consider situation when developer using configuration declares his own
+  TConfigurationProperty instance and initializes in following manner:
+
+  my_record_instance := configuration_node.Properties[key];
+
+  my_record_instance will contain references to collections, source and target.
+  changes made on that instance will be reflected on configuration tree. is it
+  bug or feature? :-) i propose to treat this like a feature (maybe it could be
+  useful to have reference to single configuration property, connected with
+  whole tree?) then we can introduce record's new method - Detach - which will
+  nil collections references and really detach that instance from tree.
+
+- i was thinking about DefaultValue and Validation features. it is clear for me,
+  that default value set will disable value inheritancy. Validation could be
+  done by predicate assigned to property, simply.
+
+*)
+
 unit Spring.Configuration.ConfigurationProperty experimental;
 
 {$I Spring.inc}
@@ -29,9 +62,16 @@ unit Spring.Configuration.ConfigurationProperty experimental;
 interface
 
 uses
-  Rtti;
+  Rtti,
+
+  Spring.Collections,
+  Spring.Collections.Dictionaries;
 
 type
+  TConfigurationPropertiesCollection = class;
+
+  TConfigurationPropertyValidator = reference to procedure(value: TValue);
+
   {$REGION 'Documentation'}
   ///	<summary>Is a TValue wrapper with some easy implicit
   ///	conversions.</summary>
@@ -41,12 +81,20 @@ type
   TConfigurationProperty = record
   private
     fValue: TValue;
-    fName: string;
-    //fDefault: TValue;
+    fSourceCollection: TConfigurationPropertiesCollection;
+    fTargetCollection: TConfigurationPropertiesCollection;
+    fKey: string;
+    fValidator: TConfigurationPropertyValidator;
+    fDefaultValue: TValue;
     //fConverter: IValueConverter;
   {$REGION 'Property Accessors'}
     function GetValue: TValue;
     procedure SetValue(const value: TValue);
+    class function GetEmpty: TConfigurationProperty; static;
+    function GetValidator: TConfigurationPropertyValidator;
+    procedure SetValidator(const Value: TConfigurationPropertyValidator);
+    function GetDefaultValue: TValue;
+    procedure SetDefaultValue(const value: TValue);
   {$ENDREGION}
   public
     {$REGION 'Easy input'}
@@ -59,6 +107,7 @@ type
       class operator Implicit(operand: Boolean): TConfigurationProperty;
     {$ENDREGION}
     class function From<T>(const operand: T): TConfigurationProperty; static;
+    class property Empty: TConfigurationProperty read GetEmpty;
     {$REGION 'Easy output'}
       class operator Implicit(const operand: TConfigurationProperty): string;
       class operator Implicit(const operand: TConfigurationProperty): Integer;
@@ -68,30 +117,95 @@ type
       class operator Implicit(const operand: TConfigurationProperty): TClass;
       class operator Implicit(const operand: TConfigurationProperty): Boolean;
     {$ENDREGION}
+
     function IsInherited: Boolean;
     property Value: TValue read GetValue write SetValue;
+    procedure Clear;
+    property Validator: TConfigurationPropertyValidator read GetValidator write SetValidator;
+    property DefaultValue: TValue read GetDefaultValue write SetDefaultValue;
+  end;
+
+  TConfigurationPropertiesCollection = class(TDictionary<string, TConfigurationProperty>, IDictionary<string, TConfigurationProperty>)
+  public
+    function GetItem(const key: string): TConfigurationProperty; override;
   end;
 
 implementation
 
 {$REGION 'TConfigurationProperty'}
 
+function TConfigurationProperty.GetDefaultValue: TValue;
+begin
+  if Assigned(fSourceCollection) then
+    Result := fSourceCollection[fKey].fDefaultValue
+  else
+    Result := fDefaultValue;
+end;
+
+class function TConfigurationProperty.GetEmpty: TConfigurationProperty;
+begin
+  Result.fValue := TValue.Empty;
+end;
+
+function TConfigurationProperty.GetValidator: TConfigurationPropertyValidator;
+begin
+
+end;
+
 function TConfigurationProperty.GetValue: TValue;
 begin
-  if IsInherited then
-    // Result := fOwner.GetProperty(fName).Value;
+  if Assigned(fSourceCollection) then
+    Result := fSourceCollection[fKey].fValue
   else
     Result := fValue;
 end;
 
-procedure TConfigurationProperty.SetValue(const value: TValue);
+procedure TConfigurationProperty.SetDefaultValue(const value: TValue);
+var
+  prop: TConfigurationProperty;
 begin
-  fValue := value;
+  if Assigned(fValidator) then
+    fValidator(value);
+
+  if Assigned(fTargetCollection) then
+  begin
+    prop.fDefaultValue := value;
+    fTargetCollection[fKey] := prop;
+  end
+  else
+    fDefaultValue := value;
+end;
+
+procedure TConfigurationProperty.SetValidator(
+  const Value: TConfigurationPropertyValidator);
+begin
+  fValidator := Value;
+end;
+
+procedure TConfigurationProperty.SetValue(const value: TValue);
+var
+  prop: TConfigurationProperty;
+begin
+  if Assigned(fValidator) then
+    fValidator(value);
+
+  if Assigned(fTargetCollection) then
+  begin
+    prop.fValue := value;
+    fTargetCollection[fKey] := prop;
+  end
+  else
+    fValue := value;
 end;
 
 function TConfigurationProperty.IsInherited: Boolean;
 begin
-  Result := fValue.IsEmpty;
+  Result := Assigned(fSourceCollection) and Assigned(fTargetCollection) and (fSourceCollection <> fTargetCollection);
+end;
+
+procedure TConfigurationProperty.Clear;
+begin
+  Value := TValue.Empty;
 end;
 
 class function TConfigurationProperty.From<T>(const operand: T): TConfigurationProperty;
@@ -184,5 +298,16 @@ begin
 end;
 
 {$ENDREGION}
+
+{ TConfigurationPropertiesCollection }
+
+function TConfigurationPropertiesCollection.GetItem(
+  const key: string): TConfigurationProperty;
+begin
+  Result := inherited GetItem(key);
+  Result.fSourceCollection := Self; // value inheritancy must be implemented here
+  Result.fTargetCollection := Self;
+  Result.fKey := key;
+end;
 
 end.

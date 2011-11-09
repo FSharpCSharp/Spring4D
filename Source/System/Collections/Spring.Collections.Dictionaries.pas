@@ -120,7 +120,7 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements IDictionary<TKey,TValue>'}
-    function GetItem(const key: TKey): TValue;
+    function GetItem(const key: TKey): TValue; virtual;
     function GetKeys: ICollection<TKey>;
     function GetValues: ICollection<TValue>;
     procedure SetItem(const key: TKey; const value: TValue);
