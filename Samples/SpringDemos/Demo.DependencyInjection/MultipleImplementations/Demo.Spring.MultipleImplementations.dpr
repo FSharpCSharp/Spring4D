@@ -1,7 +1,7 @@
 program Demo.Spring.MultipleImplementations;
 
 uses
-  Vcl.Forms,
+  Forms,
   frmMultipleImplementations in 'frmMultipleImplementations.pas' {MultipleImplementationsForm},
   uCreditCardInterface in 'uCreditCardInterface.pas',
   uCreditCards in 'uCreditCards.pas',

@@ -85,7 +85,6 @@ begin
   );;
 end;
 
-
 { TCreditCard }
 
 constructor TCreditCard.Create(aName: string; aStrings: TStrings);
