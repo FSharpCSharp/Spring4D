@@ -206,7 +206,7 @@ begin
   end
   else
   begin
-    Result := not argument.IsEmpty and argument.IsType(dependency.Handle);
+    Result := argument.IsType(dependency.Handle);
   end;
 end;
 
