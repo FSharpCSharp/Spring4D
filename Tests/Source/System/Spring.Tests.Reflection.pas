@@ -82,15 +82,16 @@ type
         property Inner: IInnerObject read GetInner;
       end;
 
+    // Ignored Tests
+//    procedure TestSetPropertyRecordType;
+//    procedure TestSetPropertyArray;
   published
     procedure TestGetPropertyRecordType;
-    procedure TestSetPropertyRecordType;
     procedure TestGetPropertyNativeType;
     procedure TestSetPropertyNativeType;
     procedure TestGetPropertyDrillDownNativeType;
     procedure TestSetPropertyDrillDownNativeType;
     procedure TestGetPropertyArray;
-    procedure TestSetPropertyArray;
     procedure TestGetPropertyObject;
     procedure TestGetFieldNativeType;
     procedure TestSetFieldNativeType;
@@ -351,6 +352,7 @@ begin
   obj.Free;
 end;
 
+(*
 procedure TTestValueExpression.TestSetPropertyRecordType;
 var
   obj: IInnerObject;
@@ -378,6 +380,7 @@ begin
     obj.Free;
   end;
 end;
+//*)
 
 procedure TTestValueExpression.TestSetPropertyNativeType;
 var

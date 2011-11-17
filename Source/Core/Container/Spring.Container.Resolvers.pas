@@ -122,7 +122,7 @@ begin
       raise EUnsatisfiedDependencyException.CreateResFmt(@SUnsatisfiedDependency,
         [dependency.Name]);
     end;
-    Result := models.First;
+    Result := models.FirstOrDefault;
   end
   else
   begin
@@ -206,7 +206,7 @@ begin
   end
   else
   begin
-    Result := argument.IsType(dependency.Handle);
+    Result := not argument.IsEmpty and argument.IsType(dependency.Handle);
   end;
 end;
 
@@ -228,6 +228,7 @@ begin
   end;
   CheckCircularDependency(dependency);
   model := GetEligibleModel(dependency, argument);
+  if model = nil then Exit(argument);
   fDependencyTypes.Add(dependency);
   try
     instance := model.LifetimeManager.GetInstance;

@@ -106,30 +106,30 @@ begin
   fModel := model;
 end;
 
-type
-  /// <summary>
-  /// Provides access to the protected fRefCount field of TInterfacedObject.
-  /// </summary>
-  TInterfacedObjectHack = class(TInterfacedObject);
-
-/// <remarks>
-/// The IInterface._AddRef method will be automatically called by the compiler
-/// when TObject.GetInterface method was invoked. So we should decrease the protected
-/// fRefCount of an TInterfacedObject instance.
-/// </remarks>
 function TLifetimeManagerBase.TryGetInterfaceWithoutCopy(instance: TObject;
   const IID: TGUID; out intf): Boolean;
 var
   localIntf: Pointer; // weak-reference
+
+  function GetInterface(Self: TObject; const IID: TGUID; out Obj): Boolean;
+  var
+    interfaceEntry: PInterfaceEntry;
+  begin
+    interfaceEntry := Self.GetInterfaceEntry(IID);
+    if Assigned(interfaceEntry) and (interfaceEntry.IOffset <> 0) then
+    begin
+      Pointer(Obj) := Pointer(NativeInt(Self) + InterfaceEntry.IOffset);
+      Result := Pointer(Obj) <> nil;
+    end
+    else
+      Result := Self.GetInterface(IID, Obj);
+  end;
+
 begin
   Assert(instance <> nil, 'instance should not be nil.');
-  Result := instance.GetInterface(IInitializable, intf);
-  Result := Result or (instance.GetInterface(IInterface, localIntf) and
+  Result := GetInterface(instance, IInitializable, intf);
+  Result := Result or (GetInterface(instance, IInterface, localIntf) and
     (IInterface(localIntf).QueryInterface(IID, intf) = S_OK));
-  if instance is TInterfacedObject then
-  begin
-    Dec(TInterfacedObjectHack(instance).FRefCount);
-  end;
 end;
 
 procedure TLifetimeManagerBase.DoAfterConstruction(instance: TObject);
