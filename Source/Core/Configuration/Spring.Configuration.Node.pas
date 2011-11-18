@@ -34,38 +34,53 @@ uses
   Rtti,
   Spring,
   Spring.Collections,
+  Spring.Collections.Lists,
   Spring.Configuration,
   Spring.Configuration.ConfigurationProperty;
 
 type
+  IConfigurationsList = interface;
+
   ///	<summary>Base implementation of IConfiguration interface.</summary>
   TConfiguration = class(TInterfacedObject, IConfiguration)
   strict private
     fName: string;
-    //fParent: IConfiguration;
-    fChildren: IList<IConfiguration>;
+    fParent: IConfiguration;
+    fChildren: IConfigurationsList;
     fProperties: IDictionary<string, TConfigurationProperty>;
   {$REGION 'Property Accessors'}
     function GetName: string;
-    //function GetParent: IConfiguration;
-    function GetChildren: IList<IConfiguration>;
+    function GetParent: IConfiguration;
+    function GetChildrenList: IConfigurationsList;
+    function GetChildren: IConfigurations;
     function GetProperties: IDictionary<string, TConfigurationProperty>;
     //function GetProperties: IList<TConfigurationProperty>;
   {$ENDREGION}
   protected
     procedure SetName(const value: string); virtual;
   public
-    //constructor Create(const parent: IConfiguration);
+    constructor Create(const parent: IConfiguration);
     function TryGetProperty(const name: string; out value: TConfigurationProperty): Boolean;
     function GetProperty(const name: string): TConfigurationProperty;
     function TryGetChild(const name: string;
       out section: IConfiguration): Boolean;
     function GetChild(const name: string): IConfiguration;
     property Name: string read GetName;
-    //property Parent: IConfiguration read GetParent;
+    property Parent: IConfiguration read GetParent;
     property Properties: IDictionary<string, TConfigurationProperty> read GetProperties;
     //property Properties: IList<TConfigurationProperty> read GetProperties;
-    property Children: IList<IConfiguration> read GetChildren;
+    function AddChild: IConfiguration;
+    property Children: IConfigurations read GetChildren;
+  end;
+
+  IConfigurationsList = interface(IConfigurations)
+  ['{F2D9B523-18DA-49CA-A5B3-26A539E9022C}']
+    procedure Add(const item: IConfiguration); overload;
+  end;
+
+  TConfigurations = class(TList<IConfiguration>, IList<IConfiguration>, IConfigurations, IConfigurationsList)
+  public
+    procedure Remove(const predicate: TPredicate<IConfiguration>); overload;
   end;
 
   EConfigurationException = class(Exception);
@@ -77,11 +92,17 @@ uses
 
 {$REGION 'TConfiguration'}
 
-{constructor TConfiguration.Create(const parent: IConfiguration);
+function TConfiguration.AddChild: IConfiguration;
+begin
+  Result := TConfiguration.Create(Self);
+  GetChildrenList.Add(Result);
+end;
+
+constructor TConfiguration.Create(const parent: IConfiguration);
 begin
   inherited Create;
   fParent := parent;
-end;}
+end;
 
 function TConfiguration.TryGetProperty(const name: string;
   out value: TConfigurationProperty): Boolean;
@@ -128,30 +149,56 @@ begin
   Result := fName;
 end;
 
-{function TConfiguration.GetParent: IConfiguration;
+function TConfiguration.GetParent: IConfiguration;
 begin
   Result := fParent;
-end;}
+end;
 
 function TConfiguration.GetProperties: IDictionary<string, TConfigurationProperty>;
+var
+  col: IConfigurationPropertiesCollection;
 begin
   if fProperties = nil then
   begin
-    fProperties := TCollections.CreateDictionary<string, TConfigurationProperty>;
+    col := TConfigurationPropertiesCollection.Create;
+    if Assigned(Parent) then
+      col.ParentNodeCollection := Parent.Properties;
+    fProperties := col;
   end;
   Result := fProperties;
 end;
 
-function TConfiguration.GetChildren: IList<IConfiguration>;
+function TConfiguration.GetChildren: IConfigurations;
+begin
+  Result := GetChildrenList;
+end;
+
+function TConfiguration.GetChildrenList: IConfigurationsList;
 begin
   if fChildren = nil then
   begin
-    fChildren := TCollections.CreateList<IConfiguration>;
+    fChildren := TConfigurations.Create;
   end;
   Result := fChildren;
 end;
 
 {$ENDREGION}
+
+{ TConfigurations }
+
+procedure TConfigurations.Remove(const predicate: TPredicate<IConfiguration>);
+var
+  item: IConfiguration;
+  collection: IList<IConfiguration>;
+begin
+  collection := TCollections.CreateList<IConfiguration>;
+  for item in Self do
+    collection.Add(item);
+
+  for item in collection do
+    if predicate(item) then
+      Self.Remove(item);
+end;
 
 end.
 

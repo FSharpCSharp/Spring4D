@@ -62,12 +62,13 @@ unit Spring.Configuration.ConfigurationProperty experimental;
 interface
 
 uses
-  Rtti,
+  Rtti, SysUtils,
 
   Spring.Collections,
   Spring.Collections.Dictionaries;
 
 type
+
   TConfigurationPropertiesCollection = class;
 
   TConfigurationPropertyValidator = reference to procedure(value: TValue);
@@ -79,22 +80,30 @@ type
   ///	it in the configuration property.</remarks>
   {$ENDREGION}
   TConfigurationProperty = record
+  strict private
+    const CInitializedFlag = '@';  // DO NOT LOCALIZE
+  strict private
+    fInitialized: string;
   private
     fValue: TValue;
-    fSourceCollection: TConfigurationPropertiesCollection;
-    fTargetCollection: TConfigurationPropertiesCollection;
+    fSourceCollection: IDictionary<string, TConfigurationProperty>;
+    fTargetCollection: IDictionary<string, TConfigurationProperty>;
     fKey: string;
     fValidator: TConfigurationPropertyValidator;
     fDefaultValue: TValue;
+
+    procedure Initialize(sourceCollection, targetCollection: IDictionary<string, TConfigurationProperty>; key: string); overload;
+    procedure Initialize(value: TConfigurationProperty); overload;
+    function IsInitialized: boolean;
     //fConverter: IValueConverter;
   {$REGION 'Property Accessors'}
     function GetValue: TValue;
-    procedure SetValue(const value: TValue);
+    procedure SetValue(const newValue: TValue);
     class function GetEmpty: TConfigurationProperty; static;
     function GetValidator: TConfigurationPropertyValidator;
     procedure SetValidator(const Value: TConfigurationPropertyValidator);
     function GetDefaultValue: TValue;
-    procedure SetDefaultValue(const value: TValue);
+    procedure SetDefaultValue(const defaultValue: TValue);
   {$ENDREGION}
   public
     {$REGION 'Easy input'}
@@ -125,9 +134,26 @@ type
     property DefaultValue: TValue read GetDefaultValue write SetDefaultValue;
   end;
 
-  TConfigurationPropertiesCollection = class(TDictionary<string, TConfigurationProperty>, IDictionary<string, TConfigurationProperty>)
+  IConfigurationPropertiesCollection = interface(IDictionary<string, TConfigurationProperty>)
+  ['{7AD8E4E8-3CDD-4EB3-8340-449C7DE0472E}']
+    procedure SetParentNodeCollection(const value: IDictionary<string, TConfigurationProperty>);
+    function GetParentNodeCollection: IDictionary<string, TConfigurationProperty>;
+    property ParentNodeCollection: IDictionary<string, TConfigurationProperty> read GetParentNodeCollection write SetParentNodeCollection;
+  end;
+
+  TConfigurationPropertiesCollection = class(TDictionary<string, TConfigurationProperty>,
+                                             IDictionary<string, TConfigurationProperty>,
+                                             IConfigurationPropertiesCollection)
+  private
+    fParentNodeCollection: IDictionary<string, TConfigurationProperty>;
+    procedure SetParentNodeCollection(const value: IDictionary<string, TConfigurationProperty>);
+    function GetParentNodeCollection: IDictionary<string, TConfigurationProperty>;
   public
+    destructor Destroy; override;
     function GetItem(const key: string): TConfigurationProperty; override;
+    procedure SetItem(const key: string; const value: TConfigurationProperty); override;
+
+    property ParentNodeCollection: IDictionary<string, TConfigurationProperty> read GetParentNodeCollection write SetParentNodeCollection;
   end;
 
 implementation
@@ -136,8 +162,8 @@ implementation
 
 function TConfigurationProperty.GetDefaultValue: TValue;
 begin
-  if Assigned(fSourceCollection) then
-    Result := fSourceCollection[fKey].fDefaultValue
+  if IsInitialized then
+    Result := fTargetCollection[fKey].fDefaultValue
   else
     Result := fDefaultValue;
 end;
@@ -154,22 +180,35 @@ end;
 
 function TConfigurationProperty.GetValue: TValue;
 begin
-  if Assigned(fSourceCollection) then
-    Result := fSourceCollection[fKey].fValue
+  if IsInitialized then
+    if IsInherited then
+      if fTargetCollection.ContainsKey(fKey) and
+         not fTargetCollection[fKey].DefaultValue.IsEmpty then
+        Result := fTargetCollection[fKey].DefaultValue
+      else
+        Result := fSourceCollection[fKey].fValue
+    else
+      if fTargetCollection.ContainsKey(fKey) and
+         fTargetCollection[fKey].fValue.IsEmpty and
+         not fTargetCollection[fKey].DefaultValue.IsEmpty then
+        Result := fTargetCollection[fKey].DefaultValue
+      else
+        Result := fTargetCollection[fKey].fValue
   else
     Result := fValue;
 end;
 
-procedure TConfigurationProperty.SetDefaultValue(const value: TValue);
+procedure TConfigurationProperty.SetDefaultValue(const defaultValue: TValue);
 var
   prop: TConfigurationProperty;
 begin
-  if Assigned(fValidator) then
+  if IsInitialized and Assigned(fValidator) then
     fValidator(value);
 
-  if Assigned(fTargetCollection) then
+  if IsInitialized then
   begin
-    prop.fDefaultValue := value;
+    prop.Initialize(Self);
+    prop.fDefaultValue := defaultValue;
     fTargetCollection[fKey] := prop;
   end
   else
@@ -178,34 +217,58 @@ end;
 
 procedure TConfigurationProperty.SetValidator(
   const Value: TConfigurationPropertyValidator);
-begin
-  fValidator := Value;
-end;
-
-procedure TConfigurationProperty.SetValue(const value: TValue);
 var
   prop: TConfigurationProperty;
 begin
-  if Assigned(fValidator) then
-    fValidator(value);
-
-  if Assigned(fTargetCollection) then
+  if IsInitialized then
   begin
-    prop.fValue := value;
+    prop.Initialize(Self);
+    prop.fValidator := value;
     fTargetCollection[fKey] := prop;
   end
   else
-    fValue := value;
+    fValidator := value;
+end;
+
+procedure TConfigurationProperty.SetValue(const newValue: TValue);
+var
+  prop: TConfigurationProperty;
+begin
+  if IsInitialized and Assigned(fValidator) then
+    fValidator(newValue);
+
+  if IsInitialized then
+  begin
+    fValue := newValue;
+    prop.Initialize(Self);
+    fTargetCollection[fKey] := prop;
+  end
+  else
+    fValue := newValue;
 end;
 
 function TConfigurationProperty.IsInherited: Boolean;
 begin
-  Result := Assigned(fSourceCollection) and Assigned(fTargetCollection) and (fSourceCollection <> fTargetCollection);
+  Result := IsInitialized and (fSourceCollection <> fTargetCollection);
+end;
+
+function TConfigurationProperty.IsInitialized: boolean;
+begin
+  Result := Length(Self.fInitialized) > 0;
 end;
 
 procedure TConfigurationProperty.Clear;
 begin
   Value := TValue.Empty;
+end;
+
+procedure TConfigurationProperty.Initialize(sourceCollection,
+  targetCollection: IDictionary<string, TConfigurationProperty>; key: string);
+begin
+  Self.fSourceCollection := sourceCollection;
+  Self.fTargetCollection := targetCollection;
+  Self.fKey := key;
+  Self.fInitialized := CInitializedFlag;
 end;
 
 class function TConfigurationProperty.From<T>(const operand: T): TConfigurationProperty;
@@ -273,6 +336,12 @@ begin
   Result := operand.Value.AsBoolean;
 end;
 
+procedure TConfigurationProperty.Initialize(value: TConfigurationProperty);
+begin
+  Self := Value;
+  Self.fInitialized := CInitializedFlag;
+end;
+
 class operator TConfigurationProperty.Implicit(
   const operand: TConfigurationProperty): Int64;
 begin
@@ -301,13 +370,61 @@ end;
 
 { TConfigurationPropertiesCollection }
 
+destructor TConfigurationPropertiesCollection.Destroy;
+begin
+  fParentNodeCollection := nil;
+  inherited;
+end;
+
 function TConfigurationPropertiesCollection.GetItem(
   const key: string): TConfigurationProperty;
 begin
-  Result := inherited GetItem(key);
-  Result.fSourceCollection := Self; // value inheritancy must be implemented here
-  Result.fTargetCollection := Self;
-  Result.fKey := key;
+  if TryGetValue(key, Result) then
+    Result.Initialize(Self, Self, key)
+  else
+    SetItem(key, Result);
+
+  if Result.fValue.IsEmpty then
+  begin
+    if Assigned(ParentNodeCollection) then
+    begin
+      Result := ParentNodeCollection[key];
+
+      if Result.fValue.IsEmpty then
+      begin
+        Result := inherited GetItem(key);
+        Result.Initialize(Self, Self, key);
+      end
+      else
+        Result.Initialize(Result.fTargetCollection, Self, key);
+    end;
+  end;
+end;
+
+function TConfigurationPropertiesCollection.GetParentNodeCollection: IDictionary<string, TConfigurationProperty>;
+begin
+  Result := fParentNodeCollection;
+end;
+
+procedure TConfigurationPropertiesCollection.SetItem(const key: string;
+  const value: TConfigurationProperty);
+var
+  prop: TConfigurationProperty;
+begin
+  if value.IsInitialized then
+    inherited SetItem(key, value)
+  else
+  begin
+    if not TryGetValue(key, prop) then
+      prop.Initialize(Self, Self, key);
+    prop.Value := value.Value;
+  end;
+end;
+
+procedure TConfigurationPropertiesCollection.SetParentNodeCollection(
+  const value: IDictionary<string, TConfigurationProperty>);
+begin
+  fParentNodeCollection := value;
 end;
 
 end.

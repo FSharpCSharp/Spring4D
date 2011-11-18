@@ -41,16 +41,17 @@ type
 
   IConfiguration = interface;
   IConfigurationSource = interface;
+  IConfigurations = interface;
 
   IConfiguration = interface
     ['{E37F5A2C-D792-4FA8-9DB7-A00FE0D7E76D}']
   {$REGION 'Property Accessors'}
     function GetName: string;
     procedure SetName(const operand: string);
-    //function GetParent: IConfiguration;
+    function GetParent: IConfiguration;
     function GetProperties: IDictionary<string, TConfigurationProperty>;
     //function GetProperties: IList<TConfigurationProperty>;
-    function GetChildren: IList<IConfiguration>;
+    function GetChildren: IConfigurations;
   {$ENDREGION}
     function TryGetProperty(const name: string; out value: TConfigurationProperty): Boolean;
     function GetProperty(const name: string): TConfigurationProperty;
@@ -58,10 +59,11 @@ type
       out section: IConfiguration): Boolean;
     function GetChild(const name: string): IConfiguration;
     property Name: string read GetName write SetName;
-    //property Parent: IConfiguration read GetParent;
+    property Parent: IConfiguration read GetParent;
     property Properties: IDictionary<string, TConfigurationProperty> read GetProperties;
     //property Properties: IList<TConfigurationProperty> read GetProperties;
-    property Children: IList<IConfiguration> read GetChildren;
+    function AddChild: IConfiguration;
+    property Children: IConfigurations read GetChildren;
   end;
 
   IConfigurationSource = interface
@@ -75,7 +77,11 @@ type
     procedure Configure(const configuration: IConfiguration);
   end;
 
-  IConfigurations = IEnumerable<IConfiguration>;
+  IConfigurations = interface(IEnumerable<IConfiguration>)
+  ['{CEA7FD09-3547-4104-B14C-861B34B16A0B}']
+    procedure Remove(const predicate: TPredicate<IConfiguration>); overload;
+    function Remove(const item: IConfiguration): boolean; overload;
+  end;
 
 implementation
 

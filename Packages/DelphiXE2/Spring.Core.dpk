@@ -30,7 +30,8 @@ package Spring.Core;
 
 requires
   rtl,
-  xmlrtl;
+  xmlrtl,
+  Spring.System;
 
 contains
   Spring.Services in '..\..\Source\Core\Services\Spring.Services.pas',

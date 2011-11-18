@@ -27,6 +27,7 @@ unit Spring.Tests.Configuration;
 interface
 
 uses
+  SysUtils,
   TestFramework,
   Spring.Configuration,
   Spring.UnitTests;
@@ -49,6 +50,7 @@ implementation
 
 uses
   Rtti,
+  Spring.Configuration.Node,
   Spring.Configuration.Sources,
   Spring.Configuration.ConfigurationProperty;
 
@@ -69,9 +71,61 @@ end;
 
 procedure TTestConfiguration.TestConfigurationProperty;
 var
-  value: TConfigurationProperty;
+  flag: boolean;
+  c: IConfiguration;
 begin
-  CheckTrue(value.Value.IsEmpty);
+  fConfiguration := fSource.GetConfiguration;
+
+  //string
+  fConfiguration.Properties['key'] := 'as';
+  CheckEquals('as', fConfiguration.Properties['key'], 'String assignment error');
+
+  //integer
+  fConfiguration.Properties['key'] := 5;
+  CheckEquals(5, fConfiguration.Properties['key'], 'Integer assignment error');
+
+  //extended
+  fConfiguration.Properties['key'] := 3.14;
+  CheckEquals(3.14, fConfiguration.Properties['key'], 'Extended assignment error');
+
+  //boolean
+  fConfiguration.Properties['key'] := false;
+  CheckEquals(false, fConfiguration.Properties['key'], 'Boolean assignment error');
+
+  fConfiguration.Properties['key'].Validator := procedure(value: TValue)
+                                                begin
+                                                  if value.IsType<string> then
+                                                    raise Exception.Create('Value validated: unexpected string found');
+                                                end;
+
+  flag := false;
+  try
+    fConfiguration.Properties['key'] := 'as';
+  except
+    flag := true;
+  end;
+  Check(flag, 'Validator error');
+  fConfiguration.Properties['key'].Validator := nil;
+
+  fConfiguration.Properties['key'].Clear;
+  Check(fConfiguration.Properties['key'].Value.IsEmpty, 'Clearing error');
+
+  fConfiguration.Properties['key'].DefaultValue := 'as';
+  CheckEquals('as', fConfiguration.Properties['key'], 'Default value error');
+  fConfiguration.Properties['key'].DefaultValue := TValue.Empty;
+
+  fConfiguration.Properties['key'] := TConfigurationProperty.Empty;
+  Check(fConfiguration.Properties['key'].Value.IsEmpty, 'Emptying error');
+
+  fConfiguration.Properties['key'] := 'as';
+  c := fConfiguration.AddChild;
+  CheckEquals('as', c.Properties['key'], 'Inheritancy error');
+  c.Properties['key'] := 'sa';
+  CheckEquals('sa', c.Properties['key'], 'Inheritancy error');
+  c.Properties['key'].Clear;
+  CheckEquals('as', c.Properties['key'], 'Inheritancy error');
+  CheckEquals('as', c.AddChild.Properties['key'], 'Inheritancy error');
+  c.Children.Remove(c);
 end;
 
 procedure TTestConfiguration.TestSection;

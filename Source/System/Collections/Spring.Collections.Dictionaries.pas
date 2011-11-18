@@ -123,7 +123,7 @@ type
     function GetItem(const key: TKey): TValue; virtual;
     function GetKeys: ICollection<TKey>;
     function GetValues: ICollection<TValue>;
-    procedure SetItem(const key: TKey; const value: TValue);
+    procedure SetItem(const key: TKey; const value: TValue); virtual;
     procedure Add(const key: TKey; const value: TValue); reintroduce; overload;
     procedure AddOrSetValue(const key: TKey; const value: TValue);
     procedure Remove(const key: TKey); reintroduce; overload;

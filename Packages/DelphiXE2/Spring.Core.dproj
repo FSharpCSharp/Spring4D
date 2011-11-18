@@ -126,6 +126,7 @@
 			</DelphiCompile>
 			<DCCReference Include="rtl.dcp"/>
 			<DCCReference Include="xmlrtl.dcp"/>
+			<DCCReference Include="Spring.System.dcp"/>
 			<DCCReference Include="..\..\Source\Core\Services\Spring.Services.pas"/>
 			<DCCReference Include="..\..\Source\Core\Configuration\Spring.Configuration.ConfigurationProperty.pas"/>
 			<DCCReference Include="..\..\Source\Core\Configuration\Spring.Configuration.Node.pas"/>

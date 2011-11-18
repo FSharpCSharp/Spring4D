@@ -4,7 +4,7 @@
 {                                                                           }
 {           Copyright (C) 2009-2011 DevJET                                  }
 {                                                                           }
-{           http://www.spring4d.org                                           }
+{           http://www.spring4d.org                                         }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -81,7 +81,8 @@ end;
 function TXmlConfigurationSource.TryGetConfiguration(out configuration: IConfiguration): Boolean;
   {$REGION 'TryGetNode recursion function'}
     function TryGetNode(const section: IXmlNode;
-      out configuration: IConfiguration): Boolean;
+                        out configuration: IConfiguration;
+                        const parentConfiguration: IConfiguration = nil): Boolean;
     var
       i: Integer;
       node: IXmlNode;
@@ -95,7 +96,10 @@ function TXmlConfigurationSource.TryGetConfiguration(out configuration: IConfigu
 
       with section do
       begin
-        configuration := TConfiguration.Create;
+        if Assigned(parentConfiguration) then
+          configuration := parentConfiguration.AddChild
+        else
+          configuration := TConfiguration.Create(nil);
         configuration.Name := NodeName;
 
         for i := 0 to AttributeNodes.Count - 1 do
@@ -109,8 +113,8 @@ function TXmlConfigurationSource.TryGetConfiguration(out configuration: IConfigu
       node := section.ChildNodes.First;
       while node <> nil do
       begin
-        TryGetNode(node, children);
-        configuration.Children.Add(children);
+        TryGetNode(node, children, configuration);
+        //configuration.Children.Add(children);
         node := node.NextSibling;
       end;
     end;
