@@ -68,7 +68,6 @@ type
     property Name: string read GetName;
     property Parent: IConfiguration read GetParent;
     property Properties: IDictionary<string, TConfigurationProperty> read GetProperties;
-    //property Properties: IList<TConfigurationProperty> read GetProperties;
     function AddChild: IConfiguration;
     property Children: IConfigurations read GetChildren;
   end;
@@ -80,7 +79,10 @@ type
 
   TConfigurations = class(TList<IConfiguration>, IList<IConfiguration>, IConfigurations, IConfigurationsList)
   public
-    procedure Remove(const predicate: TPredicate<IConfiguration>); overload;
+    // reintroduce is used here to remove compilation warning. there is
+    // no real reintroduce of method, just Delphi can't properly recognize
+    // that is not the same method as TBaseList<T>.Remove(item: T)
+    procedure Remove(const predicate: TPredicate<IConfiguration>); reintroduce; overload;
   end;
 
   EConfigurationException = class(Exception);

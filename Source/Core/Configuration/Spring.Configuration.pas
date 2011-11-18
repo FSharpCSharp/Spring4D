@@ -33,6 +33,7 @@ uses
   Classes,
   SysUtils,
   Rtti,
+  Generics.Collections,
   Spring,
   Spring.Collections,
   Spring.Configuration.ConfigurationProperty;
@@ -61,7 +62,6 @@ type
     property Name: string read GetName write SetName;
     property Parent: IConfiguration read GetParent;
     property Properties: IDictionary<string, TConfigurationProperty> read GetProperties;
-    //property Properties: IList<TConfigurationProperty> read GetProperties;
     function AddChild: IConfiguration;
     property Children: IConfigurations read GetChildren;
   end;
@@ -81,6 +81,10 @@ type
   ['{CEA7FD09-3547-4104-B14C-861B34B16A0B}']
     procedure Remove(const predicate: TPredicate<IConfiguration>); overload;
     function Remove(const item: IConfiguration): boolean; overload;
+    procedure RemoveRange(const collection: array of IConfiguration); overload;
+    procedure RemoveRange(const collection: IEnumerable<IConfiguration>); overload;
+    procedure RemoveRange(const collection: TEnumerable<IConfiguration>); overload;
+    procedure Clear;
   end;
 
 implementation

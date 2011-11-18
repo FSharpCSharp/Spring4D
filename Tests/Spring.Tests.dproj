@@ -70,7 +70,7 @@
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
 			<DCC_UsePackage>Spring.System;Spring.Core;$(DCC_UsePackage)</DCC_UsePackage>
-			<Icon_MainIcon>Spring.Tests_Icon1.ico</Icon_MainIcon>
+			<Icon_MainIcon>Spring.Tests_Icon.ico</Icon_MainIcon>
 		</PropertyGroup>
 		<ItemGroup>
 			<DelphiCompile Include="$(MainSource)">

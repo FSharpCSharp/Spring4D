@@ -72,7 +72,7 @@ end;
 procedure TTestConfiguration.TestConfigurationProperty;
 var
   flag: boolean;
-  c: IConfiguration;
+  item1, item2: IConfiguration;
 begin
   fConfiguration := fSource.GetConfiguration;
 
@@ -118,14 +118,19 @@ begin
   Check(fConfiguration.Properties['key'].Value.IsEmpty, 'Emptying error');
 
   fConfiguration.Properties['key'] := 'as';
-  c := fConfiguration.AddChild;
-  CheckEquals('as', c.Properties['key'], 'Inheritancy error');
-  c.Properties['key'] := 'sa';
-  CheckEquals('sa', c.Properties['key'], 'Inheritancy error');
-  c.Properties['key'].Clear;
-  CheckEquals('as', c.Properties['key'], 'Inheritancy error');
-  CheckEquals('as', c.AddChild.Properties['key'], 'Inheritancy error');
-  c.Children.Remove(c);
+  item1 := fConfiguration.AddChild;
+  CheckEquals('as', item1.Properties['key'], 'Inheritancy error (lack of value)');
+  item1.Properties['key'] := 'sa';
+  CheckEquals('sa', item1.Properties['key'], 'Inheritancy error (not inherited value)');
+  item1.Properties['key'].Clear;
+  CheckEquals('as', item1.Properties['key'], 'Inheritancy error (value exist, but is empty)');
+  item2 := item1.AddChild;
+  CheckEquals('as', item2.Properties['key'], 'Inheritancy error (two levels)');
+
+  item1.Children.Remove(item2);
+  Check(item1.Children.IsEmpty, 'Removing error (single item)');
+  fConfiguration.Children.Remove(function(const value: IConfiguration): boolean begin Result := true; end);
+  Check(fConfiguration.Children.IsEmpty, 'Removing error (predicate)');
 end;
 
 procedure TTestConfiguration.TestSection;
