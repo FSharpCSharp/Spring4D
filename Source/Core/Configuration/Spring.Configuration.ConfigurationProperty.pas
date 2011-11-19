@@ -179,19 +179,33 @@ begin
 end;
 
 function TConfigurationProperty.GetValue: TValue;
+var
+  fTargetValue: TValue;
+  fTargetDefaultValue: TValue;
 begin
   if IsInitialized then
     if IsInherited then
-      if fTargetCollection.ContainsKey(fKey) and
-         not fTargetCollection[fKey].DefaultValue.IsEmpty then
-        Result := fTargetCollection[fKey].DefaultValue
+      if fTargetCollection.ContainsKey(fKey) then
+      begin
+        fTargetDefaultValue := fTargetCollection[fKey].DefaultValue;
+        if not fTargetDefaultValue.IsEmpty then
+          Result := fTargetDefaultValue
+        else
+          Result := fSourceCollection[fKey].fValue;
+      end
       else
         Result := fSourceCollection[fKey].fValue
     else
-      if fTargetCollection.ContainsKey(fKey) and
-         fTargetCollection[fKey].fValue.IsEmpty and
-         not fTargetCollection[fKey].DefaultValue.IsEmpty then
-        Result := fTargetCollection[fKey].DefaultValue
+      if fTargetCollection.ContainsKey(fKey) then
+      begin
+        fTargetValue := fTargetCollection[fKey].fValue;
+        fTargetDefaultValue := fTargetCollection[fKey].DefaultValue;
+
+        if fTargetValue.IsEmpty and not fTargetDefaultValue.IsEmpty then
+          Result := fTargetDefaultValue
+        else
+          Result := fTargetValue;
+      end
       else
         Result := fTargetCollection[fKey].fValue
   else
@@ -415,8 +429,10 @@ begin
     inherited SetItem(key, value)
   else
   begin
-    if not TryGetValue(key, prop) then
-      prop.Initialize(Self, Self, key);
+//    if not TryGetValue(key, prop) then
+    TryGetValue(key, prop);
+    prop.Initialize(Self, Self, key);
+
     prop.Value := value.Value;
   end;
 end;
