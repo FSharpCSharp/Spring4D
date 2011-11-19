@@ -14,7 +14,7 @@ uses
 type
   TOrderProcessor = class(TInterfacedObject, IOrderProcessor)
   private
-    [Injection]
+    [Inject]
     FOrderValidator: IOrderValidator;
     FOrderEntry: IOrderEntry;
   public

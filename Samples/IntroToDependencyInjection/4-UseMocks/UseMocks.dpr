@@ -5,7 +5,7 @@ program UseMocks;
 {$R *.res}
 
 uses
-  System.SysUtils,
+  SysUtils,
   uDoOrderProcessing in 'uDoOrderProcessing.pas',
   uOrderEntry in 'uOrderEntry.pas',
   uOrderProcessor in 'uOrderProcessor.pas',

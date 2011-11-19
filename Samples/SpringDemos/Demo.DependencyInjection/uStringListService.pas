@@ -28,13 +28,17 @@ type
     function GetCommaText: string;
     procedure SetCommaText(const aValue: string);
     function GetCount: integer;
+{$IF COMPILERVERSION > 21}
     function GetDefaultEncoding: TEncoding;
     procedure SetDefaultEncoding(const aValue: TEncoding);
+{$IFEND}
     function GetDelimiter: Char;
     procedure SetDelimiter(const aValue: Char);
     function GetDelimitedText: string;
     procedure SetDelimitedText(const aValue: string);
+{$IF COMPILERVERSION > 21}
     function GetEncoding: TEncoding;
+{$IFEND}
     function GetLineBreak: string;
     procedure SetLineBreak(const aValue: string);
     function GetName(Index: integer): string;
@@ -56,14 +60,18 @@ type
     procedure SetTextStr(const aValue: string);
     function GetStringsAdapter: IStringsAdapter;
     procedure SetStringsAdapter(const aValue: IStringsAdapter);
+{$IF COMPILERVERSION > 21}
     function GetWriteBOM: Boolean;
     procedure SetWriteBOM(const aValue: Boolean);
+{$IFEND}
 
     // actual stuff
     procedure Append(const S: string);
     procedure AddStrings(Strings: TStrings); overload;
+{$IF COMPILERVERSION > 21}
     procedure AddStrings(const Strings: TArray<string>); overload;
     procedure AddStrings(const Strings: TArray<string>; const Objects: TArray<TObject>); overload;
+{$IFEND}
     procedure BeginUpdate;
     procedure EndUpdate;
     function Equals(Strings: TStrings): Boolean;
@@ -81,8 +89,10 @@ type
     procedure SaveToStream(Stream: TStream); overload;
     procedure SaveToStream(Stream: TStream; Encoding: TEncoding); overload;
     procedure SetText(Text: PChar);
+{$IF COMPILERVERSION > 21}
     function ToStringArray: TArray<string>;
     function ToObjectArray: TArray<TObject>;
+{$IFEND}
 
     function Add(const S: string): integer;
     function AddObject(const S: string; aObject: TObject): integer;
@@ -105,10 +115,14 @@ type
     property Capacity: integer read GetCapacity write SetCapacity;
     property CommaText: string read GetCommaText write SetCommaText;
     property Count: integer read GetCount;
+{$IF COMPILERVERSION > 21}
     property DefaultEncoding: TEncoding read GetDefaultEncoding write SetDefaultEncoding;
+{$IFEND}
     property Delimiter: Char read GetDelimiter write SetDelimiter;
     property DelimitedText: string read GetDelimitedText write SetDelimitedText;
+{$IF COMPILERVERSION > 21}
     property Encoding: TEncoding read GetEncoding;
+{$IFEND}
     property LineBreak: string read GetLineBreak write SetLineBreak;
     property Names[Index: integer]: string read GetName;
     property Objects[Index: integer]: TObject read GetObject write PutObject;
@@ -120,7 +134,9 @@ type
     property Strings[Index: integer]: string read Get write Put; default;
     property Text: string read GetTextStr write SetTextStr;
     property StringsAdapter: IStringsAdapter read GetStringsAdapter write SetStringsAdapter;
+{$IF COMPILERVERSION > 21}
     property WriteBOM: Boolean read GetWriteBOM write SetWriteBOM;
+{$IFEND}
 
   end;
 
@@ -153,13 +169,17 @@ type
     function GetCommaText: string;
     procedure SetCommaText(const aValue: string);
     function GetCount: integer;
+{$IF COMPILERVERSION > 21}
     function GetDefaultEncoding: TEncoding;
     procedure SetDefaultEncoding(const aValue: TEncoding);
+{$IFEND}
     function GetDelimiter: Char;
     procedure SetDelimiter(const aValue: Char);
     function GetDelimitedText: string;
     procedure SetDelimitedText(const aValue: string);
+{$IF COMPILERVERSION > 21}
     function GetEncoding: TEncoding;
+{$IFEND}
     function GetLineBreak: string;
     procedure SetLineBreak(const aValue: string);
     function GetName(Index: integer): string;
@@ -181,8 +201,10 @@ type
     procedure SetTextStr(const aValue: string);
     function GetStringsAdapter: IStringsAdapter;
     procedure SetStringsAdapter(const aValue: IStringsAdapter);
+{$IF COMPILERVERSION > 21}
     function GetWriteBOM: Boolean;
     procedure SetWriteBOM(const aValue: Boolean);
+{$IFEND}
 
   public
     constructor Create;
@@ -201,8 +223,10 @@ type
     procedure CustomSort(Compare: TStringListSortCompare);
     procedure Append(const S: string);
     procedure AddStrings(Strings: TStrings); overload;
+{$IF COMPILERVERSION > 21}
     procedure AddStrings(const Strings: TArray<string>); overload;
     procedure AddStrings(const Strings: TArray<string>; const Objects: TArray<TObject>); overload;
+{$IFEND}
     procedure BeginUpdate;
     procedure EndUpdate;
     function Equals(Strings: TStrings): Boolean; reintroduce;
@@ -220,8 +244,10 @@ type
     procedure SaveToStream(Stream: TStream); overload;
     procedure SaveToStream(Stream: TStream; Encoding: TEncoding); overload;
     procedure SetText(Text: PChar);
+{$IF COMPILERVERSION > 21}
     function ToStringArray: TArray<string>;
     function ToObjectArray: TArray<TObject>;
+{$IFEND}
   end;
 
   { TStringListImpl }
@@ -236,6 +262,7 @@ begin
   Result := FStringList.AddObject(S, aObject);
 end;
 
+{$IF COMPILERVERSION > 21}
 procedure TStringListImpl.AddStrings(const Strings: TArray<string>);
 begin
   FStringList.AddStrings(Strings);
@@ -245,6 +272,7 @@ procedure TStringListImpl.AddStrings(const Strings: TArray<string>; const Object
 begin
   FStringList.AddStrings(Strings, Objects);
 end;
+{$IFEND}
 
 procedure TStringListImpl.AddStrings(Strings: TStrings);
 begin
@@ -338,10 +366,12 @@ begin
   Result := FStringList.Count;
 end;
 
+{$IF COMPILERVERSION > 21}
 function TStringListImpl.GetDefaultEncoding: TEncoding;
 begin
   Result := FStringList.DefaultEncoding;
 end;
+{$IFEND}
 
 function TStringListImpl.GetDelimitedText: string;
 begin
@@ -358,10 +388,12 @@ begin
   Result := FStringList.Duplicates;
 end;
 
+{$IF COMPILERVERSION > 21}
 function TStringListImpl.GetEncoding: TEncoding;
 begin
   Result := FStringList.Encoding;
 end;
+{$IFEND}
 
 function TStringListImpl.GetEnumerator: TStringsEnumerator;
 begin
@@ -443,10 +475,12 @@ begin
   Result := FStringList.ValueFromIndex[Index];
 end;
 
+{$IF COMPILERVERSION > 21}
 function TStringListImpl.GetWriteBOM: Boolean;
 begin
   Result := FStringList.WriteBOM;
 end;
+{$IFEND}
 
 function TStringListImpl.IndexOf(const S: string): integer;
 begin
@@ -543,10 +577,12 @@ begin
   FStringList.CommaText := aValue;
 end;
 
+{$IF COMPILERVERSION > 21}
 procedure TStringListImpl.SetDefaultEncoding(const aValue: TEncoding);
 begin
   FStringList.DefaultEncoding := aValue;
 end;
+{$IFEND}
 
 procedure TStringListImpl.SetDelimitedText(const aValue: string);
 begin
@@ -628,16 +664,19 @@ begin
   FStringList.ValueFromIndex[Index] := aValue;
 end;
 
+{$IF COMPILERVERSION > 21}
 procedure TStringListImpl.SetWriteBOM(const aValue: Boolean);
 begin
   FStringList.WriteBOM := aValue;
 end;
+{$IFEND}
 
 procedure TStringListImpl.Sort;
 begin
   FStringList.Sort;
 end;
 
+{$IF COMPILERVERSION > 21}
 function TStringListImpl.ToObjectArray: TArray<TObject>;
 begin
   Result := FStringList.ToObjectArray;
@@ -647,6 +686,7 @@ function TStringListImpl.ToStringArray: TArray<string>;
 begin
   Result := FStringList.ToStringArray;
 end;
+{$IFEND}
 
 procedure RegisterStringListService(aName: string);
 begin

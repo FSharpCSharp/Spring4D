@@ -8,7 +8,7 @@ implementation
 
 uses
       Spring.Utils
-    , System.Types
+    , Types
     ;
 
 type

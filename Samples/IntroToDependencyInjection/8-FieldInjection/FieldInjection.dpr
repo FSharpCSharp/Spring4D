@@ -5,7 +5,7 @@ program FieldInjection;
 {$R *.res}
 
 uses
-  System.SysUtils,
+  SysUtils,
   uDoOrderProcessing in 'uDoOrderProcessing.pas',
   uOrderEntry in 'uOrderEntry.pas',
   uOrderInterfaces in 'uOrderInterfaces.pas',
