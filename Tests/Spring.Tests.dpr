@@ -166,13 +166,18 @@ begin
     TTestTransientLifetimeManager.Suite
   ]);
 
-  RegisterTests('Spring.Core.Configuration', [
-    TTestConfiguration.Suite
-  ]);
-
-  RegisterTests('Spring.Core.Logging', [
-     TTestLoggingConfig.Suite
-  ]);
+// Stefan Glienke - 2011/11/20:
+// removed configuration and logging tests because they break other tests in Delphi 2010
+// due to some bug in Rtti.TRttiPackage.MakeTypeLookupTable
+// see https://forums.embarcadero.com/thread.jspa?threadID=54471
+//
+//  RegisterTests('Spring.Core.Configuration', [
+//    TTestConfiguration.Suite
+//  ]);
+//
+//  RegisterTests('Spring.Core.Logging', [
+//     TTestLoggingConfig.Suite
+//  ]);
 end;
 
 {$ENDREGION}
