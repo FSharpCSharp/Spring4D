@@ -35,8 +35,7 @@ uses
   Spring,
   Spring.Utils,
   Spring.Reflection,
-  Spring.Helpers
-  ;
+  Spring.Helpers;
 
 type
 
@@ -388,7 +387,6 @@ type
 
   {$ENDREGION}
 
-{$IFNDEF DelphiXE2_UP}
 
   {$REGION 'TColorToStringConverter'}
 
@@ -419,7 +417,6 @@ type
 
   {$ENDREGION}
 
-{$ENDIF}
 
   {$REGION 'TCurrencyToStringConverter'}
 
@@ -642,6 +639,9 @@ implementation
 uses
 {$IFNDEF DelphiXE2_UP}
   Graphics,
+{$ELSE}
+  System.UIConsts,
+  System.UITypes,
 {$ENDIF}
   StrUtils,
   SysUtils,
@@ -1032,7 +1032,6 @@ end;
 
 {$ENDREGION}
 
-{$IFNDEF DelphiXE2_UP}
 
 {$REGION 'TColorToStringConverter'}
 
@@ -1061,8 +1060,6 @@ begin
 end;
 
 {$ENDREGION}
-
-{$ENDIF}
 
 
 {$REGION 'TCurrencyToStringConverter'}
@@ -1367,9 +1364,8 @@ begin
   RegisterConverter(TypeInfo(Single), TypeInfo(TNullable<System.WideString>), TTypeToNullableConverter);
   RegisterConverter(TypeInfo(Single), [tkString, tkUString, tkLString, tkWString], TFloatToStringConverter);
 
-{$IFNDEF DelphiXE2_UP}
   RegisterConverter(TypeInfo(TColor), [tkString, tkUString, tkLString, tkWString], TColorToStringConverter);
-  RegisterConverter(TypeInfo(TColor), TypeInfo(TNullable<Graphics.TColor>), TTypeToNullableConverter);
+  RegisterConverter(TypeInfo(TColor), TypeInfo(TNullable<TColor>), TTypeToNullableConverter);
   RegisterConverter(TypeInfo(TColor), TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
   RegisterConverter(TypeInfo(TColor), TypeInfo(TNullable<System.AnsiString>), TTypeToNullableConverter);
   RegisterConverter(TypeInfo(TColor), TypeInfo(TNullable<System.WideString>), TTypeToNullableConverter);
@@ -1377,7 +1373,6 @@ begin
   RegisterConverter(TypeInfo(TColor), TypeInfo(TNullable<System.SmallInt>), TTypeToNullableConverter);
   RegisterConverter(TypeInfo(TColor), TypeInfo(TNullable<System.ShortInt>), TTypeToNullableConverter);
   RegisterConverter(TypeInfo(TColor), TypeInfo(TNullable<System.LongInt>), TTypeToNullableConverter);
-{$ENDIF}
 
   RegisterConverter(TypeInfo(Currency), [tkString, tkUString, tkLString, tkWString], TCurrencyToStringConverter);
   RegisterConverter(TypeInfo(Currency), TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
@@ -1496,13 +1491,11 @@ begin
   RegisterConverter(TypeInfo(TNullable<System.Boolean>), TypeInfo(LongInt), TNullableToTypeConverter);
   RegisterConverter(TypeInfo(TNullable<System.Boolean>), [tkString, tkUString, tkLString, tkWString], TNullableToTypeConverter);
 
-{$IFNDEF DelphiXE2_UP}
-  RegisterConverter(TypeInfo(TNullable<Graphics.TColor>), TypeInfo(Integer), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(TNullable<Graphics.TColor>), TypeInfo(SmallInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(TNullable<Graphics.TColor>), TypeInfo(ShortInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(TNullable<Graphics.TColor>), TypeInfo(LongInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(TNullable<Graphics.TColor>), [tkString, tkUString, tkLString, tkWString], TNullableToTypeConverter);
-{$ENDIF}
+  RegisterConverter(TypeInfo(TNullable<TColor>), TypeInfo(Integer), TNullableToTypeConverter);
+  RegisterConverter(TypeInfo(TNullable<TColor>), TypeInfo(SmallInt), TNullableToTypeConverter);
+  RegisterConverter(TypeInfo(TNullable<TColor>), TypeInfo(ShortInt), TNullableToTypeConverter);
+  RegisterConverter(TypeInfo(TNullable<TColor>), TypeInfo(LongInt), TNullableToTypeConverter);
+  RegisterConverter(TypeInfo(TNullable<TColor>), [tkString, tkUString, tkLString, tkWString], TNullableToTypeConverter);
 
   RegisterConverter(TypeInfo(TNullable<System.TDateTime>), TypeInfo(TDate), TNullableToTypeConverter);
   RegisterConverter(TypeInfo(TNullable<System.TDateTime>), TypeInfo(TDateTime), TNullableToTypeConverter);
@@ -1533,9 +1526,7 @@ begin
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(ShortInt), TStringToIntegerConverter);
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(LongInt), TStringToIntegerConverter);
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Boolean), TStringToBooleanConverter);
-{$IFNDEF DelphiXE2_UP}
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TColor), TStringToColorConverter);
-{$ENDIF}
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Currency), TStringToCurrencyConverter);
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TDateTime), TStringToDateTimeConverter);
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TNullable<System.string>), TTypeToNullableConverter);
@@ -1550,9 +1541,7 @@ begin
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TNullable<System.Double>), TTypeToNullableConverter);
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TNullable<System.Single>), TTypeToNullableConverter);
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TNullable<System.Currency>), TTypeToNullableConverter);
-{$IFNDEF DelphiXE2_UP}
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TNullable<Graphics.TColor>), TTypeToNullableConverter);
-{$ENDIF}
+  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TNullable<TColor>), TTypeToNullableConverter);
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TNullable<System.TDateTime>), TTypeToNullableConverter);
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Extended), TStringToFloatConverter);
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Double), TStringToFloatConverter);
