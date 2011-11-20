@@ -77,7 +77,11 @@ type
   /// </summary>
   TRegistration = record
   private
+{$IFNDEF DELPHIXE_UP}
+    fRegistry: TComponentRegistry;
+{$ELSE}
     fRegistry: IComponentRegistry;
+{$ENDIF}
     fComponentType: PTypeInfo;
     function GetComponentModel: TComponentModel;
     constructor Create(const registry: IComponentRegistry; componentType: PTypeInfo);
@@ -382,7 +386,11 @@ constructor TRegistration.Create(const registry: IComponentRegistry;
 begin
   TArgument.CheckNotNull(registry, 'registry');
   TArgument.CheckNotNull(componentType, 'componentType');
+{$IFNDEF DELPHIXE_UP}
+  fRegistry := registry as TComponentRegistry;
+{$ELSE}
   fRegistry := registry;
+{$ENDIF}
   fComponentType := componentType;
 end;
 
