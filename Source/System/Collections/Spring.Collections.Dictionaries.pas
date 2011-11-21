@@ -124,13 +124,13 @@ type
     function GetKeys: ICollection<TKey>;
     function GetValues: ICollection<TValue>;
     procedure SetItem(const key: TKey; const value: TValue); virtual;
-    procedure Add(const key: TKey; const value: TValue); reintroduce; overload;
-    procedure AddOrSetValue(const key: TKey; const value: TValue);
+    procedure Add(const key: TKey; const value: TValue); reintroduce; overload; virtual;
+    procedure AddOrSetValue(const key: TKey; const value: TValue); virtual;
     procedure Remove(const key: TKey); reintroduce; overload;
     function ContainsKey(const key: TKey): Boolean;
     function ContainsValue(const value: TValue): Boolean;
     function ExtractPair(const key: TKey): TPair<TKey, TValue>;
-    function TryGetValue(const key: TKey; out value: TValue): Boolean;
+    function TryGetValue(const key: TKey; out value: TValue): Boolean; virtual;
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
     property Keys: ICollection<TKey> read GetKeys;
     property Values: ICollection<TValue> read GetValues;

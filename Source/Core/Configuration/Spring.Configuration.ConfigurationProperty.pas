@@ -22,39 +22,6 @@
 {                                                                           }
 {***************************************************************************}
 
-(*
-
-notes of dev, Virion:
-- i think we should consider autocreation of values in collection. only then it
-  can totally mimic hashtable implemented in many dynamic languages such as PHP,
-  JavaScript, Perl and others.
-
-- collection of properties should contain reference to parent node's collection
-  of properties. i think it is best choice to implement value inheritancy on
-  collection level.
-
-- property record must contain references to two collections - source of value
-  (it can be one of parents collections, used to reading value) and target of
-  value (it always is current node's collection, used to writing value).
-
-- let's consider situation when developer using configuration declares his own
-  TConfigurationProperty instance and initializes in following manner:
-
-  my_record_instance := configuration_node.Properties[key];
-
-  my_record_instance will contain references to collections, source and target.
-  changes made on that instance will be reflected on configuration tree. is it
-  bug or feature? :-) i propose to treat this like a feature (maybe it could be
-  useful to have reference to single configuration property, connected with
-  whole tree?) then we can introduce record's new method - Detach - which will
-  nil collections references and really detach that instance from tree.
-
-- i was thinking about DefaultValue and Validation features. it is clear for me,
-  that default value set will disable value inheritancy. Validation could be
-  done by predicate assigned to property, simply.
-
-*)
-
 unit Spring.Configuration.ConfigurationProperty experimental;
 
 {$I Spring.inc}
@@ -152,6 +119,8 @@ type
     destructor Destroy; override;
     function GetItem(const key: string): TConfigurationProperty; override;
     procedure SetItem(const key: string; const value: TConfigurationProperty); override;
+    procedure Add(const key: string; const value: TConfigurationProperty); override;
+    procedure AddOrSetValue(const key: string; const value: TConfigurationProperty); override;
 
     property ParentNodeCollection: IDictionary<string, TConfigurationProperty> read GetParentNodeCollection write SetParentNodeCollection;
   end;
@@ -384,6 +353,24 @@ end;
 
 { TConfigurationPropertiesCollection }
 
+procedure TConfigurationPropertiesCollection.Add(const key: string;
+  const value: TConfigurationProperty);
+begin
+  if not value.IsInitialized then
+    value.Initialize(Self, Self, key);
+
+  inherited Add(key, value);
+end;
+
+procedure TConfigurationPropertiesCollection.AddOrSetValue(const key: string;
+  const value: TConfigurationProperty);
+begin
+  if not value.IsInitialized then
+    value.Initialize(Self, Self, key);
+
+  inherited AddOrSetValue(key, value);
+end;
+
 destructor TConfigurationPropertiesCollection.Destroy;
 begin
   fParentNodeCollection := nil;
@@ -429,9 +416,8 @@ begin
     inherited SetItem(key, value)
   else
   begin
-//    if not TryGetValue(key, prop) then
-    TryGetValue(key, prop);
-    prop.Initialize(Self, Self, key);
+    if not TryGetValue(key, prop) then
+      prop.Initialize(Self, Self, key);
 
     prop.Value := value.Value;
   end;
