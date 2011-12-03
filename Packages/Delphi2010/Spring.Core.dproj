@@ -20,6 +20,7 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
+			<DCC_OutputNeverBuildDcps>true</DCC_OutputNeverBuildDcps>
 			<DCC_UnitSearchPath>..\..\Source\System;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DesignOnlyPackage>false</DesignOnlyPackage>
 			<DCC_DependencyCheckOutputName>C:\Users\Public\Documents\RAD Studio\7.0\Bpl\Spring.Core.bpl</DCC_DependencyCheckOutputName>

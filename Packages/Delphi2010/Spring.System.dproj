@@ -20,6 +20,7 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
+			<DCC_OutputNeverBuildDcps>true</DCC_OutputNeverBuildDcps>
 			<DCC_DependencyCheckOutputName>C:\Users\Public\Documents\RAD Studio\7.0\Bpl\Spring.System.bpl</DCC_DependencyCheckOutputName>
 			<DCC_ImageBase>00400000</DCC_ImageBase>
 			<DesignOnlyPackage>false</DesignOnlyPackage>

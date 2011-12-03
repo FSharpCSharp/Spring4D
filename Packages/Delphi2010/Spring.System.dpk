@@ -23,7 +23,7 @@ package Spring.System;
 {$MINENUMSIZE 1}
 {$IMAGEBASE $400000}
 {$RUNONLY}
-{$IMPLICITBUILD ON}
+{$IMPLICITBUILD OFF}
 
 requires
   rtl,
