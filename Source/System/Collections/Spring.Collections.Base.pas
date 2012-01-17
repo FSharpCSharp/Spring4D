@@ -233,7 +233,6 @@ type
     procedure Sort(const comparison: TComparison<T>); overload;
     procedure Reverse;
     property Items[index: Integer]: T read GetItem write SetItem; default;
-    property IsReadOnly: Boolean read GetIsReadOnly;
   public
     property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
   end;
