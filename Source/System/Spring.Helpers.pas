@@ -307,7 +307,6 @@ type
     function GetIsClassOrInterface: Boolean;
     function GetAsClass: TRttiInstanceType;
     function GetIsGenericType: Boolean;
-  protected
     function InternalGetConstructors(enumerateBaseType: Boolean = True): IEnumerable<TRttiMethod>;
     function InternalGetMethods(enumerateBaseType: Boolean = True): IEnumerable<TRttiMethod>;
     function InternalGetProperties(enumerateBaseType: Boolean = True): IEnumerable<TRttiProperty>;
