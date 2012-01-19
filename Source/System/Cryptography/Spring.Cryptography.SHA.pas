@@ -30,7 +30,6 @@ interface
 
 uses
   SysUtils,
-  Windows,
   Spring,
   Spring.Cryptography,
   Spring.Cryptography.Core;

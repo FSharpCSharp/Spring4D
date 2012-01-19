@@ -34,7 +34,6 @@ interface
 
 uses
   Classes,
-  Windows,
   SysUtils,
   Spring,
   Spring.Collections;

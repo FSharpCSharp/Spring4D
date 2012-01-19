@@ -30,7 +30,6 @@ interface
 
 uses
   Classes,
-  Windows,
   SysUtils;
 
 function Endian(x: LongWord): LongWord;

@@ -75,11 +75,6 @@ procedure DecryptData(const keyData, inData: array of Byte; var outData: array o
 
 implementation
 
-uses
-  Math,
-  Windows,
-  SysUtils;
-
 type
   TKeyByte = array [0..5] of Byte;
   TDesMode = (dmEncry, dmDecry);
