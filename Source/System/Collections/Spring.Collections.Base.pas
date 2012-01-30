@@ -208,7 +208,6 @@ type
     function TryGetLast(out value: T): Boolean; override;
     function Contains(const item: T): Boolean; override;
     function ToArray: TArray<T>; override;
-    function ToList: IList<T>; override;
     function Reversed: IEnumerable<T>; override;
 
     function GetEnumerator: IEnumerator<T>; override;
@@ -763,26 +762,15 @@ begin
 end;
 
 function TEnumerableBase<T>.ToList: IList<T>;
-var
-  enumerator: IEnumerator<T>;
 begin
   Result := TList<T>.Create;
-  enumerator := GetEnumerator;
-  while enumerator.MoveNext do
-  begin
-    Result.Add(enumerator.Current);
-  end;
+  Result.AddRange(Self);
 end;
 
 function TEnumerableBase<T>.ToSet: ISet<T>;
-var
-  item: T;
 begin
   Result := THashSet<T>.Create;
-  for item in Self do
-  begin
-    Result.Add(item);
-  end;
+  Result.AddRange(Self);
 end;
 
 function TEnumerableBase<T>.GetComparer: IComparer<T>;
@@ -1136,11 +1124,6 @@ begin
   begin
     Result[i] := Items[i];
   end;
-end;
-
-function TListBase<T>.ToList: IList<T>;
-begin
-  Result := Self;
 end;
 
 function TListBase<T>.GetEnumerator: IEnumerator<T>;
