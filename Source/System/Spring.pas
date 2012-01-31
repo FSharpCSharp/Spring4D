@@ -23,7 +23,7 @@
 {***************************************************************************}
 
 ///	<summary>
-///	  Declares the fundamental interfaces for the <see href="http://spring4d.com">Spring4D</see> Framework.
+///	  Declares the fundamental interfaces for the <see href="http://spring4d.org">Spring4D</see> Framework.
 ///	</summary>
 unit Spring;
 
@@ -414,6 +414,8 @@ type
     ///	</summary>
     procedure Clear;
 
+//    procedure ForEach(const action: TAction<T>);
+
     ///	<summary>
     ///	  Invokes all event handlers.
     ///	</summary>
@@ -564,6 +566,31 @@ type
 {$WARNINGS ON}
 
   {$ENDREGION}
+
+
+  /// <summary>
+  ///   Represents a proxy used to implement lazy-initialization.
+  /// </summary>
+  /// <preliminary />
+  TLazy<T> = record
+  private
+    fDelegate: TFunc<T>;
+    fValue: T;
+    fInitializationFlag: string;
+
+    function GetValue: T;
+    function GetIsInitialized: Boolean;
+    procedure SetValue(const value: T);
+  public
+    // TODO: isThreadSafe: Boolean
+    constructor Create(const delegate: TFunc<T>);
+
+    class operator Implicit(const value: TLazy<T>): T;
+    class operator Implicit(const value: T): TLazy<T>;
+
+    property Value: T read GetValue write SetValue;
+    property IsInitialized: Boolean read GetIsInitialized;
+  end; // experimental
 
 
   {$REGION 'Exceptions'}
@@ -1176,9 +1203,12 @@ begin
         typeData := GetTypeData(typeInfo);
         Result := CFloatSizes[typeData^.FloatType];
       end;
+    // TODO: Validate tkString
     tkString, tkLString, tkUString, tkWString, tkInterface, tkClass, tkClassRef, tkDynArray:
       Result := SizeOf(Pointer);
-    tkMethod, tkInt64:
+    tkMethod:
+      Result := SizeOf(TMethod);
+    tkInt64:
       Result := 8;
     tkVariant:
       Result := 16;
@@ -1241,7 +1271,11 @@ begin
     if (Size <= 4) and (curReg <= paECX) then
       Inc(curReg)
     else
+    begin
+      if Size < 4 then
+        Size := 4;
       Inc(StackSize, Size);
+    end;
     Inc(P, 1 + P[1] + 1);
     Inc(P, P[0] + 1);
   end;
@@ -1574,6 +1608,49 @@ end;
 class operator TEvent<T>.Implicit(const event: TEvent<T>): IMulticastEvent<T>;
 begin
   Result := event.GetInstance;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TLazy<T>'}
+
+constructor TLazy<T>.Create(const delegate: TFunc<T>);
+begin
+  fDelegate := delegate;
+end;
+
+function TLazy<T>.GetValue: T;
+begin
+  if not IsInitialized then
+  begin
+    if not Assigned(fDelegate) then
+      raise EInvalidOperation.CreateRes(@SNoDelegateAssigned);
+    SetValue(fDelegate());
+  end;
+
+  Result := fValue;
+end;
+
+function TLazy<T>.GetIsInitialized: Boolean;
+begin
+  Result := fInitializationFlag <> '';
+end;
+
+procedure TLazy<T>.SetValue(const value: T);
+begin
+  fValue := value;
+  fInitializationFlag := '@';
+end;
+
+class operator TLazy<T>.Implicit(const value: TLazy<T>): T;
+begin
+  Result := value.Value;
+end;
+
+class operator TLazy<T>.Implicit(const value: T): TLazy<T>;
+begin
+  Result.SetValue(value);
 end;
 
 {$ENDREGION}

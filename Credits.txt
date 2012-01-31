@@ -11,6 +11,7 @@ Committers
 Contributors
 * Ryan Huang
 * Chris Liu
+* wr960204
 
 Acknowledgements:
 * Nick Hodges
@@ -22,3 +23,6 @@ http://www.helpandmanual.com
 
 * Blueberry Software
 http://www.bbsoftware.co.uk
+
+* SmartInspect
+http://www.gurock.com/

@@ -33,6 +33,7 @@ resourcestring
   SNotSupportedException       = '%s is not supported.';
   SNotImplementedException     = '%s is not implemented.';
   SNotSupportedOperation       = 'Not supported operation.';
+  SNoDelegateAssigned          = 'No delegate has been assigned.';
 
   SArgumentOutOfRangeException = 'EArgumentOutOfRangeException: %s';
   SArgumentNullException       = 'EArgumentNullException: %s';

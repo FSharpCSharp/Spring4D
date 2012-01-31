@@ -92,9 +92,9 @@ type
     property IsFatalEnabled: Boolean read GetIsFatalEnabled;
   end;
 
-  /// <summary>
-  /// Provides the default implementation of ILogger which supports hierarchy.
-  /// </summary>
+  ///	<summary>
+  ///	  Provides the default implementation of ILogger which supports hierarchy.
+  ///	</summary>
   TLogger = class(TLoggerBase, IHierarchicalLogger)
   strict private
     fRepository: Pointer;
@@ -316,7 +316,7 @@ procedure TLoggerBase.Warn(const msg: string; e: Exception);
 begin
   if IsWarnEnabled then
   begin
-    Log(TLevel.Warn, msg, nil);
+    Log(TLevel.Warn, msg, e);
   end;
 end;
 
@@ -355,7 +355,7 @@ procedure TLoggerBase.Error(const msg: string; e: Exception);
 begin
   if IsErrorEnabled then
   begin
-    Log(TLevel.Error, msg, nil);
+    Log(TLevel.Error, msg, e);
   end;
 end;
 
@@ -394,7 +394,7 @@ procedure TLoggerBase.Fatal(const msg: string; e: Exception);
 begin
   if IsFatalEnabled then
   begin
-    Log(TLevel.Fatal, msg, nil);
+    Log(TLevel.Fatal, msg, e);
   end;
 end;
 
