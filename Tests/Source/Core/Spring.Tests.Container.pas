@@ -906,7 +906,7 @@ end;
 procedure TTestInjectionByValue.TestInjectField;
 begin
   fContainer.RegisterType<TPrimitiveComponent>.Implements<IPrimitive>
-    .InjectField('fNameService', TNameService.Create);
+    .InjectField('fNameService', TValue.From<INameService>(TNameService.Create));
   fContainer.Build;
   CheckTrue(fContainer.Resolve<IPrimitive>.NameService <> nil)
 end;
