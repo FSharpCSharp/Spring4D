@@ -420,8 +420,16 @@ begin
   end;
   if models.Count > 1 then
   begin
-    raise EUnsatisfiedDependencyException.CreateResFmt(@SUnsatisfiedDependency,
-      [serviceName]);
+    models := models.Where(
+      function(const model: TComponentModel): Boolean
+      begin
+        Result := model.DefaultServices.Contains(serviceType);
+      end);
+    if models.Count <> 1 then
+    begin
+      raise EUnsatisfiedDependencyException.CreateResFmt(@SUnsatisfiedDependency,
+        [serviceName]);
+    end;
   end;
   model := models.First;
   Result := DoResolve(model, serviceType);

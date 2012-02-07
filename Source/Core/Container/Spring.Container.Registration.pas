@@ -114,6 +114,8 @@ type
     function AsSingletonPerThread: TRegistration;
     function AsTransient: TRegistration;
     function AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration;
+
+    function AsDefault(serviceType: PTypeInfo): TRegistration;
   end;
 
   /// <summary>
@@ -154,6 +156,9 @@ type
     function AsSingletonPerThread: TRegistration<T>;
     function AsTransient: TRegistration<T>;
     function AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration<T>;
+
+    function AsDefault(serviceType: PTypeInfo): TRegistration<T>; overload;
+    function AsDefault<TServiceType>: TRegistration<T>; overload;
   end;
 
   /// <summary>
@@ -510,6 +515,18 @@ begin
   Result := Self;
 end;
 
+function TRegistration.AsDefault(serviceType: PTypeInfo): TRegistration;
+var
+  model: TComponentModel;
+begin
+  for model in fRegistry.FindAll(serviceType) do
+  begin
+    model.DefaultServices.Remove(serviceType);
+  end;
+  GetComponentModel.DefaultServices.Add(serviceType);
+  Result := Self;
+end;
+
 {$ENDREGION}
 
 
@@ -637,6 +654,17 @@ function TRegistration<T>.AsPooled(minPoolSize, maxPoolSize: Integer): TRegistra
 begin
   fRegistration.AsPooled(minPoolSize, maxPoolSize);
   Result := Self;
+end;
+
+function TRegistration<T>.AsDefault(serviceType: PTypeInfo): TRegistration<T>;
+begin
+  fRegistration.AsDefault(serviceType);
+  Result := Self;
+end;
+
+function TRegistration<T>.AsDefault<TServiceType>: TRegistration<T>;
+begin
+  Result := AsDefault(TypeInfo(TServiceType));
 end;
 
 {$ENDREGION}

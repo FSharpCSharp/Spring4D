@@ -202,6 +202,7 @@ type
     fMinPoolsize: Integer;
     fMaxPoolsize: Integer;
     fServices: IDictionary<string, PTypeInfo>;
+    fDefaultServices: IList<PTypeInfo>;
     fConstructorInjections: IInjectionList;
     fMethodInjections: IInjectionList;
     fPropertyInjections: IInjectionList;
@@ -211,6 +212,7 @@ type
     function GetInjectionFactory: IInjectionFactory;
   protected
     function GetServices: IDictionary<string, PTypeInfo>;
+    function GetDefaultServices: IList<PTypeInfo>;
     function GetConstructorInjections: IInjectionList;
     function GetMethodInjections: IInjectionList;
     function GetPropertyInjections: IInjectionList;
@@ -249,6 +251,7 @@ type
     property ComponentType: TRttiInstanceType read fComponentType;
     property ComponentTypeInfo: PTypeInfo read GetComponentTypeInfo;
     property Services: IDictionary<string, PTypeInfo> read GetServices;
+    property DefaultServices: IList<PTypeInfo> read GetDefaultServices;
     property MinPoolsize: Integer read fMinPoolsize write fMinPoolsize;
     property MaxPoolsize: Integer read fMaxPoolsize write fMaxPoolsize;
 
@@ -508,6 +511,15 @@ begin
     fConstructorInjections := CreateInjectionList;
   end;
   Result := fConstructorInjections;
+end;
+
+function TComponentModel.GetDefaultServices: IList<PTypeInfo>;
+begin
+  if fDefaultServices = nil then
+  begin
+    fDefaultServices := TCollections.CreateList<PTypeInfo>;
+  end;
+  Result := fDefaultServices;
 end;
 
 function TComponentModel.GetMethodInjections: IInjectionList;

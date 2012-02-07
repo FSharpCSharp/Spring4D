@@ -193,6 +193,11 @@ type
     procedure TestInheritedService;
   end;
 
+  TTestDefaultResolve = class(TContainerTestCase)
+  published
+    procedure TestResolve;
+  end;
+
 implementation
 
 
@@ -882,5 +887,13 @@ begin
   CheckTrue(s3 is TComplex, 's3');
 end;
 
-end.
+{ TTestDefaultResolve }
 
+procedure TTestDefaultResolve.TestResolve;
+begin
+  fContainer.RegisterType<TNameService>.Implements<INameService>('default').AsDefault<INameService>;
+  fContainer.RegisterType<TAnotherNameService>.Implements<INameService>('another');
+  fContainer.Build;
+end;
+
+end.
