@@ -30,7 +30,6 @@ interface
 
 uses
   Classes,
-  Windows,
   SysUtils,
   Generics.Collections,
   Spring,
@@ -96,6 +95,12 @@ type
 
 implementation
 
+uses
+{$IFDEF DELPHIXE_UP}
+  SyncObjs;
+{$ELSE}
+  Windows;
+{$ENDIF}
 
 {$REGION 'TLifetimeManagerBase'}
 
@@ -180,7 +185,11 @@ begin
   begin
     newInstance := ComponentActivator.CreateInstance;
     localInstance := TObjectHolder<TObject>.Create(newInstance);
+{$IFDEF DELPHIXE_UP}
+    if TInterlocked.CompareExchange(PPointer(@fInstance)^, PPointer(@localInstance)^, nil) = nil then
+{$ELSE}
     if InterlockedCompareExchangePointer(PPointer(@fInstance)^, PPointer(@localInstance)^, nil) = nil then
+{$ENDIF}
     begin
       IInterface(PPointer(@fInstance)^)._AddRef;
       DoAfterConstruction(fInstance);
@@ -249,7 +258,7 @@ var
   instance: TObject;
   holder: TFunc<TObject>;
 begin
-  threadID := GetCurrentThreadId;
+  threadID := TThread.CurrentThread.ThreadID;
   Lock(fInstances,
     procedure
     begin
