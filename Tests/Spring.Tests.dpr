@@ -161,7 +161,8 @@ begin
     TTestRegisterInterfaces.Suite,
     TTestSingletonLifetimeManager.Suite,
     TTestTransientLifetimeManager.Suite,
-    TTestDefaultResolve.Suite
+    TTestDefaultResolve.Suite,
+    TTestInjectionByValue.Suite
   ]);
 
 // Stefan Glienke - 2011/11/20:

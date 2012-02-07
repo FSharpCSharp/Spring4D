@@ -198,6 +198,11 @@ type
     procedure TestResolve;
   end;
 
+  TTestInjectionByValue = class(TContainerTestCase)
+  published
+    procedure TestInjectField;
+  end;
+
 implementation
 
 
@@ -894,6 +899,16 @@ begin
   fContainer.RegisterType<TNameService>.Implements<INameService>('default').AsDefault<INameService>;
   fContainer.RegisterType<TAnotherNameService>.Implements<INameService>('another');
   fContainer.Build;
+end;
+
+{ TTestInjectionByValue }
+
+procedure TTestInjectionByValue.TestInjectField;
+begin
+  fContainer.RegisterType<TPrimitiveComponent>.Implements<IPrimitive>
+    .InjectField('fNameService', TNameService.Create);
+  fContainer.Build;
+  CheckTrue(fContainer.Resolve<IPrimitive>.NameService <> nil)
 end;
 
 end.

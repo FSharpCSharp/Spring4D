@@ -222,7 +222,8 @@ var
   instance: TObject;
 begin
   TArgument.CheckNotNull(dependency, 'dependency');
-  if not dependency.IsClassOrInterface then
+  if not dependency.IsClassOrInterface
+    or (argument.Kind in [tkClass, tkInterface]) then
   begin
     Exit(argument);
   end;
