@@ -437,7 +437,7 @@ type
     /// <summary>
     ///   Gets the value indicates whether the multicast event is enabled, or sets the value to enable or disable the event.
     /// </summary>
-    property Enabled: Boolean read GetEnabled write SetEnabled;
+    property Enabled: Boolean read GetEnabled write SetEnabled;  // experimental
 
     ///	<summary>
     ///	  Gets a value indicates whether there is not any event handler.
@@ -447,7 +447,7 @@ type
     ///	<summary>
     ///	  Gets a value indicates whether there is any event handler.
     ///	</summary>
-    property IsNotEmpty: Boolean read GetIsNotEmpty;
+    property IsNotEmpty: Boolean read GetIsNotEmpty; // deprecated
   end;
 
   PMethod = ^TMethod;
@@ -641,6 +641,23 @@ type
     constructor Create(const value: T); overload;
     property Value: T read GetGenericValue;
     property IsValueCreated: Boolean read GetIsValueCreated;
+  end;
+
+  Lazy<T> = record
+  private
+    fProxy: ILazy<T>;
+    function GetValue: T;
+    function GetIsValueCreated: Boolean;
+  public
+    constructor Create(const valueFactory: TFunc<T>); overload;
+    constructor Create(const value: T); overload;
+
+    property Proxy: ILazy<T> read fProxy;
+    property Value: T read GetValue;
+    property IsValueCreated: Boolean read GetIsValueCreated;
+
+    class operator Implicit(const proxy: Lazy<T>): T;
+    class operator Implicit(const value: T): Lazy<T>;
   end;
 
   {$ENDREGION}
@@ -1720,6 +1737,41 @@ end;
 function TLazy<T>.GetIsValueCreated: Boolean;
 begin
   Result := fIsValueCreated;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Lazy<T>'}
+
+constructor Lazy<T>.Create(const valueFactory: TFunc<T>);
+begin
+  fProxy := TLazy<T>.Create(valueFactory);
+end;
+
+constructor Lazy<T>.Create(const value: T);
+begin
+  fProxy := TLazy<T>.Create(value);
+end;
+
+function Lazy<T>.GetIsValueCreated: Boolean;
+begin
+  Result := fProxy.IsValueCreated;
+end;
+
+function Lazy<T>.GetValue: T;
+begin
+  Result := fProxy.Value;
+end;
+
+class operator Lazy<T>.Implicit(const proxy: Lazy<T>): T;
+begin
+  Result := proxy.Value;
+end;
+
+class operator Lazy<T>.Implicit(const value: T): Lazy<T>;
+begin
+  Result := Lazy<T>.Create(value);
 end;
 
 {$ENDREGION}
