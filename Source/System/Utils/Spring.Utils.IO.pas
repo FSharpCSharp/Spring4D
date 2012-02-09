@@ -94,11 +94,11 @@ type
   ///	  Provides access to information on a drive.
   ///	</summary>
   ///	<remarks>
-  ///	  Use the static <see cref="Spring.Utils|TDriveInfo.GetDrives" /> method
+  ///	  Use the static <see cref="Spring.Utils.IO|TDriveInfo.GetDrives" /> method
   ///	  to retrieve all drives of the computer.
   ///	  <note type="caller">
   ///	    Caller must use the
-  ///	    <see cref="Spring.Utils|TDriveInfo.IsReady">IsReady</see> property to
+  ///	    <see cref="Spring.Utils.IO|TDriveInfo.IsReady">IsReady</see> property to
   ///	    check whether the drive is ready before accessing other members.
   ///	    Otherwise, an <see cref="Spring|EIOException" /> exception will be
   ///	    raised if it is not ready.

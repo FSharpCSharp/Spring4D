@@ -716,19 +716,19 @@ type
 
   {$REGION 'Routines'}
 
-  /// <summary>
-  /// Returns the path of the application.
-  /// </summary>
+  ///	<summary>
+  ///	  Returns the path of the application.
+  ///	</summary>
   function ApplicationPath: string;
 
-  /// <summary>
-  /// Returns the version number of the application.
-  /// </summary>
+  ///	<summary>
+  ///	  Returns the version number of the application.
+  ///	</summary>
   function ApplicationVersion: TVersion;
 
-  /// <summary>
-  /// Returns the version information of the application.
-  /// </summary>
+  ///	<summary>
+  ///	  Returns the version information of the application.
+  ///	</summary>
   function ApplicationVersionString: string;
 
   /// <summary>
@@ -736,15 +736,21 @@ type
   /// </summary>
   function GetLastErrorMessage: string;
 
-  ///	<summary>Creates a standard callback function which was adapted from a
-  ///	instance method.</summary>
-  ///	<param name="obj">an instance</param>
-  ///	<param name="methodAddress">address of an instance method</param>
+  ///	<summary>
+  ///	  Creates a standard callback function which was adapted from a instance
+  ///	  method.
+  ///	</summary>
+  ///	<param name="obj">
+  ///	  an instance
+  ///	</param>
+  ///	<param name="methodAddress">
+  ///	  address of an instance method
+  ///	</param>
   function CreateCallback(obj: TObject; methodAddress: Pointer): TCallbackFunc;
 
-  /// <summary>
-  /// Converts a windows TFiletime value to a delphi TDatetime value.
-  /// </summary>
+  ///	<summary>
+  ///	  Converts a windows TFiletime value to a delphi TDatetime value.
+  ///	</summary>
   function ConvertFileTimeToDateTime(const fileTime: TFileTime; useLocalTimeZone: Boolean): TDateTime; overload;
 
   function ConvertDateTimeToFileTime(const datetime: TDateTime; useLocalTimeZone: Boolean): TFileTime; overload;
@@ -768,21 +774,35 @@ type
   {$ENDREGION}
   procedure Queue(threadProc: TThreadProcedure);
 
-  ///	<summary>Try getting property information of an object.</summary>
-  ///	<returns>Returns true if the instance has the specified property and the
-  ///	property has property information.</returns>
-  ///	<exception cref="EArgumentNullException">if instance is nil.</exception>
+  ///	<summary>
+  ///	  Try getting property information of an object.
+  ///	</summary>
+  ///	<returns>
+  ///	  Returns true if the instance has the specified property and the
+  ///	  property has property information.
+  ///	</returns>
+  ///	<exception cref="EArgumentNullException">
+  ///	  if instance is nil.
+  ///	</exception>
   function TryGetPropInfo(instance: TObject; const propertyName: string;
     out propInfo: PPropInfo): Boolean;
 
-  {$REGION 'Documentation'}
-  ///	<summary>Try parsing a string to a datetime value based on the specified
-  ///	format. Returns True if the input string matches the format.</summary>
-  ///	<param name="s">the input string</param>
-  ///	<param name="format">the format of datetime</param>
-  ///	<param name="value">output datetime value</param>
-  ///	<returns>Returns True if the input string can be parsed.</returns>
-  {$ENDREGION}
+  ///	<summary>
+  ///	  Try parsing a string to a datetime value based on the specified format.
+  ///	  Returns True if the input string matches the format.
+  ///	</summary>
+  ///	<param name="s">
+  ///	  the input string
+  ///	</param>
+  ///	<param name="format">
+  ///	  the format of datetime
+  ///	</param>
+  ///	<param name="value">
+  ///	  output datetime value
+  ///	</param>
+  ///	<returns>
+  ///	  Returns True if the input string can be parsed.
+  ///	</returns>
   function TryConvertStrToDateTime(const s, format: string; out value: TDateTime): Boolean;
 
   {$IFDEF NODEF}{$REGION 'Documentation'}{$ENDIF}
@@ -908,14 +928,15 @@ type
   ///	<seealso cref="CheckDirectoryExists(string)" />
   procedure CheckFileExists(const fileName: string);
 
-  {$REGION 'Documentation'}
-  ///	<summary>Determines whether a specified directory exists. An <see cref=
-  ///	"EDirectoryNotFoundException" /> exception will be raised when not
-  ///	found.</summary>
-  ///	<exception cref="EDirectoryNotFoundException">Raised if the directory
-  ///	doesn't exist.</exception>
-  ///	<seealso cref="CheckFileExists(string)"></seealso>
-  {$ENDREGION}
+  ///	<summary>
+  ///	  Determines whether a specified directory exists. An
+  ///	  <see cref="EDirectoryNotFoundException" /> exception will be raised
+  ///	  when not found.
+  ///	</summary>
+  ///	<exception cref="EDirectoryNotFoundException">
+  ///	  Raised if the directory doesn't exist.
+  ///	</exception>
+  ///	<seealso cref="CheckFileExists(string)" />
   procedure CheckDirectoryExists(const directory: string);
 
   {$REGION 'Documentation'}

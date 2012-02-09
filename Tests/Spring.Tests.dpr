@@ -83,6 +83,7 @@ begin
 //    TTestEmptyBuffer.Suite,
 //    TTestFiveByteBuffer.Suite,
     TRepeatedTest.Create(TTestNullableInteger.Suite, 3),
+    TTestLazy.Suite,
     TTestEmptyMulticastEvent.Suite
   ]);
 

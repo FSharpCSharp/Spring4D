@@ -55,6 +55,14 @@ type
     procedure TestFromVariant;
   end;
 
+  TTestLazy = class(TTestCase)
+  private
+    fAge: ILazy<Integer>;
+  published
+    procedure TestByValueFactory;
+    procedure TestByValue;
+  end;
+
   TTestEmptyMulticastEvent = class(TTestCase)
   private
     fEvent: IMulticastNotifyEvent;
@@ -223,5 +231,33 @@ begin
 end;
 
 {$ENDREGION}
+
+
+{ TTestLazy }
+
+procedure TTestLazy.TestByValueFactory;
+var
+  factory: TFunc<Integer>;
+begin
+  factory :=
+    function: Integer
+    begin
+      Result := 30;
+    end;
+  fAge := TLazy<Integer>.Create(factory);
+
+  CheckFalse(fAge.IsValueCreated);
+  CheckEquals(30, fAge.Value);
+  CheckTrue(fAge.IsValueCreated);
+end;
+
+procedure TTestLazy.TestByValue;
+begin
+  fAge := TLazy<Integer>.Create(30);
+
+  CheckTrue(fAge.IsValueCreated);
+  CheckEquals(30, fAge.Value);
+  CheckTrue(fAge.IsValueCreated);
+end;
 
 end.

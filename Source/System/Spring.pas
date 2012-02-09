@@ -84,7 +84,7 @@ type
   ///	  the value needs to be determined.
   ///	</param>
   ///	<returns>
-  ///	  Returns True if the value was accepted, otherwise, returns false.
+  ///	  Returns <c>True</c> if the value was accepted, otherwise, returns <c>False</c>.
   ///	</returns>
   ///	<remarks>
   ///	  <note type="tip">
@@ -124,7 +124,7 @@ type
   ///	  Provides a non-reference-counted <see cref="System|IInterface" />
   ///	  implementation.
   ///	</summary>
-  TInterfaceBase = class(TObject, IInterface)
+  TInterfaceBase = class abstract(TObject, IInterface)
   protected
     function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
     function _AddRef: Integer; stdcall;
@@ -140,7 +140,7 @@ type
     function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
     function _AddRef: Integer; stdcall;
     function _Release: Integer; stdcall;
-  end;
+  end deprecated;
 
   ///	<summary>
   ///	  Provides static methods to check arguments and raise argument
@@ -229,16 +229,13 @@ type
   {$REGION 'TNullable<T> & Aliases'}
 
   ///	<summary>
-  ///	  Represents an "object" whose underlying type is a value type that can
-  ///	  also be assigned nil like a reference type.
+  ///	  A nullable type can represent the normal range of values for its underlying value type,
+  ///   plus an additional <c>Null</c> value.
   ///	</summary>
   ///	<typeparam name="T">
-  ///	  The underlying value type of the <see cref="TNullable`1" /> generic
+  ///	  The underlying value type of the <see cref="TNullable&lt;T&gt;" /> generic
   ///	  type.
   ///	</typeparam>
-  ///	<remarks>
-  ///	  The <typeparamref name="T" /> must be a value type such as string, Integer.
-  ///	</remarks>
   TNullable<T> = packed record
   private
     const CHasValueFlag = '@';  // DO NOT LOCALIZE
@@ -251,12 +248,15 @@ type
     ///	<summary>
     ///	  Internal use. Marks the current instance as null.
     ///	</summary>
+    /// <remarks>
+    ///   The TNullable{T} type is immutable so that this method must be private.
+    /// </remarks>
     procedure Clear;
 
     ///	<summary>
     ///	  Determines whether a variant value is null or empty.
     ///	</summary>
-    class function VarIsNullOrEmpty(const value: Variant; trimWhiteSpace: Boolean = False): Boolean; static;
+    class function VarIsNullOrEmpty(const value: Variant): Boolean; static;
   public
     ///	<summary>
     ///	  Initializes a new instance of the <c>TNullable{T}</c> structure to
@@ -382,7 +382,7 @@ type
   ///	  Represents a multicast event.
   ///	</summary>
   ///	<typeparam name="T">
-  ///	  The event handler type must be an instance method such as TNotifyEvent.
+  ///	  The event handler type must be an instance procedural type such as TNotifyEvent.
   ///	</typeparam>
   IMulticastEvent<T> = interface
     {$REGION 'Property Accessors'}
@@ -569,28 +569,55 @@ type
 
 
   /// <summary>
-  ///   Represents a proxy used to implement lazy-initialization.
+  ///   Provides support for lazy initialization.
   /// </summary>
   /// <preliminary />
-  TLazy<T> = record
-  private
-    fDelegate: TFunc<T>;
-    fValue: T;
-    fInitializationFlag: string;
-
+  ILazy<T> = interface
     function GetValue: T;
-    function GetIsInitialized: Boolean;
-    procedure SetValue(const value: T);
+    function GetIsValueCreated: Boolean;
+
+    /// <summary>
+    ///   Gets the lazily initialized value of the current <c>ILazy&lt;T&gt;</c> instance.
+    /// </summary>
+    property Value: T read GetValue;
+
+    /// <summary>
+    ///   Gets a value that indicates whether a value has been created for this <c>ILazy&lt;T&gt;</c> instance.
+    /// </summary>
+    property IsValueCreated: Boolean read GetIsValueCreated;
+  end;
+
+  TLazy<T> = class(TInterfacedObject, ILazy<T>, TFunc<T>)
+  protected
+    fValueFactory: TFunc<T>;
+    fValue: T;
+    fIsValueCreated: Boolean;
+  protected
+    procedure EnsureInitialized; inline;
+    function GetValue: T;
+    function GetIsValueCreated: Boolean;
+    function TFunc<T>.Invoke = GetValue;
   public
-    // TODO: isThreadSafe: Boolean
-    constructor Create(const delegate: TFunc<T>);
-
-    class operator Implicit(const value: TLazy<T>): T;
-    class operator Implicit(const value: T): TLazy<T>;
-
-    property Value: T read GetValue write SetValue;
-    property IsInitialized: Boolean read GetIsInitialized;
-  end; // experimental
+    /// <summary>
+    ///   Initializes a new instance of <see cref="TLazy{T}" /> with a delegate.
+    /// </summary>
+    /// <param name="valueFactory">
+    ///   The delegate that is invoked to produce the lazily initialized value when it is needed.
+    /// </param>
+    /// <exception cref="EArgumentNullException">
+    ///   Raised if the <paramref name="valueFactory"/> is null.
+    /// </exception>
+    constructor Create(const valueFactory: TFunc<T>); overload;
+    /// <summary>
+    ///   Initializes a new instance of <see cref="TLazy{T}" /> with a specified value.
+    /// </summary>
+    /// <param name="value">
+    ///   The initialized value.
+    /// </param>
+    constructor Create(const value: T); overload;
+    property Value: T read GetValue;
+    property IsValueCreated: Boolean read GetIsValueCreated;
+  end;
 
 
   {$REGION 'Exceptions'}
@@ -603,8 +630,13 @@ type
   ENotImplementedException  = class(Exception);
 {$ENDIF}
 
-  EInvalidOperation         = SysUtils.EInvalidOp;
-  EInvalidCastException     = SysUtils.EConvertError;
+{$IFDEF DELPHIXE_UP}
+  EInvalidOperation         = SysUtils.EInvalidOpException;
+{$ELSE}
+  EInvalidOperation         = class(Exception);
+{$ENDIF}
+
+  EInvalidCastException     = SysUtils.EInvalidCast;
 
   EInsufficientMemoryException = EOutOfMemory;
 
@@ -1049,20 +1081,12 @@ end;
 procedure TNullable<T>.Clear;
 begin
   fHasValue := '';
+  fValue := Default(T);
 end;
 
-class function TNullable<T>.VarIsNullOrEmpty(const value: Variant;
-  trimWhiteSpace: Boolean): Boolean;
-var
-  s: string;
+class function TNullable<T>.VarIsNullOrEmpty(const value: Variant): Boolean;
 begin
   Result := VarIsNull(value) or VarIsEmpty(value);
-  if not Result and trimWhiteSpace and VarIsStr(value) then
-  begin
-    s := VarToStrDef(value, '');
-    s := Trim(s);
-    Result := (s = '');
-  end;
 end;
 
 function TNullable<T>.GetHasValue: Boolean;
@@ -1615,42 +1639,40 @@ end;
 
 {$REGION 'TLazy<T>'}
 
-constructor TLazy<T>.Create(const delegate: TFunc<T>);
+constructor TLazy<T>.Create(const valueFactory: TFunc<T>);
 begin
-  fDelegate := delegate;
+  CheckArgumentNotNull(PPointer(@valueFactory)^, 'valueFactory');
+
+  inherited Create;
+  fValueFactory := valueFactory;
+  fIsValueCreated := False;
+end;
+
+constructor TLazy<T>.Create(const value: T);
+begin
+  inherited Create;
+  fValue := value;
+  fIsValueCreated := True;
+end;
+
+procedure TLazy<T>.EnsureInitialized;
+begin
+  if IsValueCreated then
+    Exit;
+
+  fValue := fValueFactory();
+  fIsValueCreated := True;
 end;
 
 function TLazy<T>.GetValue: T;
 begin
-  if not IsInitialized then
-  begin
-    if not Assigned(fDelegate) then
-      raise EInvalidOperation.CreateRes(@SNoDelegateAssigned);
-    SetValue(fDelegate());
-  end;
-
+  EnsureInitialized;
   Result := fValue;
 end;
 
-function TLazy<T>.GetIsInitialized: Boolean;
+function TLazy<T>.GetIsValueCreated: Boolean;
 begin
-  Result := fInitializationFlag <> '';
-end;
-
-procedure TLazy<T>.SetValue(const value: T);
-begin
-  fValue := value;
-  fInitializationFlag := '@';
-end;
-
-class operator TLazy<T>.Implicit(const value: TLazy<T>): T;
-begin
-  Result := value.Value;
-end;
-
-class operator TLazy<T>.Implicit(const value: T): TLazy<T>;
-begin
-  Result.SetValue(value);
+  Result := fIsValueCreated;
 end;
 
 {$ENDREGION}
