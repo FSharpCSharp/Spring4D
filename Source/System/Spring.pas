@@ -2,9 +2,9 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (C) 2009-2011 DevJET                                  }
+{           Copyright (C) 2009-2012 Spring4D Team                           }
 {                                                                           }
-{           http://www.DevJET.net                                           }
+{           http://www.spring4d.org                                         }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -226,7 +226,7 @@ type
   end;
 
 
-  {$REGION 'TNullable<T> & Aliases'}
+  {$REGION 'Nullable Types'}
 
   ///	<summary>
   ///	  A nullable type can represent the normal range of values for its underlying value type,
@@ -376,7 +376,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'MulticastEvent (NOT READY)'}
+  {$REGION 'Multicast Event'}
 
   ///	<summary>
   ///	  Represents a multicast event.
@@ -407,14 +407,22 @@ type
     ///	<summary>
     ///	  Removes all event handlers which were registered by an instance.
     ///	</summary>
-    procedure Remove(instance: Pointer); overload;
+    procedure Remove(instance: Pointer); overload; deprecated 'Use RemoveAll instead';
+
+    ///	<summary>
+    ///	  Removes all event handlers which were registered by an instance.
+    ///	</summary>
+    procedure RemoveAll(instance: Pointer);
 
     ///	<summary>
     ///	  Clears all event handlers.
     ///	</summary>
     procedure Clear;
 
-//    procedure ForEach(const action: TAction<T>);
+    /// <summary>
+    ///   Iterates all event handlers and perform the specified action on each one.
+    /// </summary>
+    procedure ForEach(const action: TAction<T>);
 
     ///	<summary>
     ///	  Invokes all event handlers.
@@ -492,6 +500,7 @@ type
     procedure RemoveAll(instance: Pointer);
     function  IndexOf(const method: TMethod): Integer;
     procedure Clear;
+    procedure ForEach(const action: TAction<TMethod>);
     property Count: Integer read GetCount;
     property IsEmpty: Boolean read GetIsEmpty;
   end;
@@ -517,8 +526,10 @@ type
 
     procedure Add(const handler: T);
     procedure Remove(const handler: T); overload;
-    procedure Remove(instance: Pointer); overload;
+    procedure Remove(instance: Pointer); overload; deprecated;
+    procedure RemoveAll(instance: Pointer);
     procedure Clear;
+    procedure ForEach(const action: TAction<T>);
 
     property Invoke: T read GetInvoke;
     property Count: Integer read GetCount;
@@ -568,35 +579,48 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'Lazy Initialization'}
+
   /// <summary>
   ///   Provides support for lazy initialization.
   /// </summary>
   /// <preliminary />
-  ILazy<T> = interface
-    function GetValue: T;
+  ILazy = interface
+    ['{40223BA9-0C66-49E7-AA33-BDAEF9F506D6}']
+    function GetValue: TValue;
     function GetIsValueCreated: Boolean;
 
     /// <summary>
-    ///   Gets the lazily initialized value of the current <c>ILazy&lt;T&gt;</c> instance.
+    ///   Gets the lazily initialized value of the current <c>ILazy</c> instance.
     /// </summary>
-    property Value: T read GetValue;
+    property Value: TValue read GetValue;
 
     /// <summary>
-    ///   Gets a value that indicates whether a value has been created for this <c>ILazy&lt;T&gt;</c> instance.
+    ///   Gets a value that indicates whether a value has been created for this <c>ILazy</c> instance.
     /// </summary>
     property IsValueCreated: Boolean read GetIsValueCreated;
   end;
 
-  TLazy<T> = class(TInterfacedObject, ILazy<T>, TFunc<T>)
+  /// <summary>
+  ///   Provides support for lazy initialization by generic.
+  /// </summary>
+  ILazy<T> = interface(ILazy)
+    function GetValue: T;
+    property Value: T read GetValue;
+  end;
+
+  TLazy<T> = class(TInterfacedObject, ILazy<T>, ILazy, TFunc<T>)
   protected
     fValueFactory: TFunc<T>;
     fValue: T;
     fIsValueCreated: Boolean;
   protected
     procedure EnsureInitialized; inline;
-    function GetValue: T;
+    function GetGenericValue: T;
+    function GetValue: TValue;
     function GetIsValueCreated: Boolean;
-    function TFunc<T>.Invoke = GetValue;
+    function ILazy<T>.GetValue = GetGenericValue;
+    function TFunc<T>.Invoke = GetGenericValue;
   public
     /// <summary>
     ///   Initializes a new instance of <see cref="TLazy{T}" /> with a delegate.
@@ -615,9 +639,11 @@ type
     ///   The initialized value.
     /// </param>
     constructor Create(const value: T); overload;
-    property Value: T read GetValue;
+    property Value: T read GetGenericValue;
     property IsValueCreated: Boolean read GetIsValueCreated;
   end;
+
+  {$ENDREGION}
 
 
   {$REGION 'Exceptions'}
@@ -652,11 +678,6 @@ type
 {$ENDIF}
   EArgumentNullException        = EArgumentNilException;
   EInvalidEnumArgumentException = class(EArgumentException);
-
-  EIOException                  = SysUtils.EInOutError;
-  EFileNotFoundException        = SysUtils.EFileNotFoundException;
-  EDirectoryNotFoundException   = SysUtils.EDirectoryNotFoundException;
-  EDriveNotFoundException       = class(EIOException);
 
   ERttiException = class(Exception);
 
@@ -1324,6 +1345,16 @@ begin
   inherited;
 end;
 
+procedure TMethodInvocations.ForEach(const action: TAction<TMethod>);
+var
+  method: TMethod;
+begin
+  for method in fMethods do
+  begin
+    action(method);
+  end;
+end;
+
 procedure TMethodInvocations.Add(const method: TMethod);
 begin
   fMethods.Add(method);
@@ -1492,6 +1523,12 @@ begin
   inherited Destroy;
 end;
 
+procedure TMulticastEvent<T>.ForEach(const action: TAction<T>);
+begin
+  InvocationsNeeded;
+  fInvocations.ForEach(TAction<TMethod>(action));
+end;
+
 procedure TMulticastEvent<T>.Add(const handler: T);
 begin
   InvocationsNeeded;
@@ -1505,6 +1542,11 @@ begin
 end;
 
 procedure TMulticastEvent<T>.Remove(instance: Pointer);
+begin
+  RemoveAll(instance);
+end;
+
+procedure TMulticastEvent<T>.RemoveAll(instance: Pointer);
 begin
   InvocationsNeeded;
   fInvocations.RemoveAll(instance);
@@ -1664,10 +1706,15 @@ begin
   fIsValueCreated := True;
 end;
 
-function TLazy<T>.GetValue: T;
+function TLazy<T>.GetGenericValue: T;
 begin
   EnsureInitialized;
   Result := fValue;
+end;
+
+function TLazy<T>.GetValue: TValue;
+begin
+  Result := TValue.From<T>(GetGenericValue);
 end;
 
 function TLazy<T>.GetIsValueCreated: Boolean;

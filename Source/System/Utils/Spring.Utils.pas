@@ -714,6 +714,12 @@ type
   {$ENDREGION}
 
 
+  EIOException                  = SysUtils.EInOutError;
+  EFileNotFoundException        = SysUtils.EFileNotFoundException;
+  EDirectoryNotFoundException   = SysUtils.EDirectoryNotFoundException;
+  EDriveNotFoundException       = class(EIOException);
+
+
   {$REGION 'Routines'}
 
   ///	<summary>

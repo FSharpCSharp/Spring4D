@@ -57,7 +57,10 @@ type
 
   TTestLazy = class(TTestCase)
   private
-    fAge: ILazy<Integer>;
+    fBalance: ILazy<Integer>;
+  protected
+    const
+      CExpectedBalance = 100;
   published
     procedure TestByValueFactory;
     procedure TestByValue;
@@ -233,7 +236,7 @@ end;
 {$ENDREGION}
 
 
-{ TTestLazy }
+{$REGION 'TTestLazy'}
 
 procedure TTestLazy.TestByValueFactory;
 var
@@ -242,22 +245,30 @@ begin
   factory :=
     function: Integer
     begin
-      Result := 30;
+      Result := CExpectedBalance;
     end;
-  fAge := TLazy<Integer>.Create(factory);
+  fBalance := TLazy<Integer>.Create(factory);
 
-  CheckFalse(fAge.IsValueCreated);
-  CheckEquals(30, fAge.Value);
-  CheckTrue(fAge.IsValueCreated);
+  CheckFalse(fBalance.IsValueCreated);
+
+  CheckEquals(CExpectedBalance, fBalance.Value);
+  CheckEquals(CExpectedBalance, (fBalance as ILazy).Value.AsInteger);
+
+  CheckTrue(fBalance.IsValueCreated);
 end;
 
 procedure TTestLazy.TestByValue;
 begin
-  fAge := TLazy<Integer>.Create(30);
+  fBalance := TLazy<Integer>.Create(CExpectedBalance);
 
-  CheckTrue(fAge.IsValueCreated);
-  CheckEquals(30, fAge.Value);
-  CheckTrue(fAge.IsValueCreated);
+  CheckTrue(fBalance.IsValueCreated);
+
+  CheckEquals(CExpectedBalance, fBalance.Value);
+  CheckEquals(CExpectedBalance, (fBalance as ILazy).Value.AsInteger);
+
+  CheckTrue(fBalance.IsValueCreated);
 end;
+
+{$ENDREGION}
 
 end.
