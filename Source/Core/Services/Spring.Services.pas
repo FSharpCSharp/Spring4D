@@ -452,7 +452,7 @@ end;
 function TServiceLocator.GetServiceLocator: IServiceLocator;
 begin
   if not Assigned(fServiceLocatorProvider) or (fServiceLocatorProvider() = nil) then
-    raise EInvalidOperation.Create(SServiceLocatorNotInitialized);
+    raise EInvalidOperationException.Create(SServiceLocatorNotInitialized);
 
   Result := fServiceLocatorProvider();
 end;

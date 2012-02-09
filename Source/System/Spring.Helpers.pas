@@ -1040,7 +1040,7 @@ begin
   end
   else
   begin
-    raise EInvalidOperation.CreateRes(@SInvalidOperation_GetValue);
+    raise EInvalidOperationException.CreateRes(@SInvalidOperation_GetValue);
   end;
 end;
 
@@ -1056,7 +1056,7 @@ begin
   end
   else
   begin
-    raise EInvalidOperation.CreateRes(@SInvalidOperation_SetValue);
+    raise EInvalidOperationException.CreateRes(@SInvalidOperation_SetValue);
   end;
 end;
 

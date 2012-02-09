@@ -432,7 +432,7 @@ function TEnumerableBase<T>.First: T;
 begin
   if not TryGetFirst(Result) then
   begin
-    raise EInvalidOperation.Create('First');  // TEMP
+    raise EInvalidOperationException.Create('First');  // TEMP
   end;
 end;
 
@@ -502,7 +502,7 @@ function TEnumerableBase<T>.Last: T;
 begin
   if not TryGetLast(Result) then
   begin
-    raise EInvalidOperation.Create('Last');  // TEMP
+    raise EInvalidOperationException.Create('Last');  // TEMP
   end;
 end;
 
@@ -557,7 +557,7 @@ begin
   end;
   if not hasElement then
   begin
-    raise EInvalidOperation.CreateRes(@SSequenceIsEmpty);
+    raise EInvalidOperationException.CreateRes(@SSequenceIsEmpty);
   end;
 end;
 
@@ -586,7 +586,7 @@ begin
   end;
   if not hasElement then
   begin
-    raise EInvalidOperation.CreateRes(@SSequenceIsEmpty);
+    raise EInvalidOperationException.CreateRes(@SSequenceIsEmpty);
   end;
 end;
 
@@ -608,12 +608,12 @@ begin
   enumerator := GetEnumerator;
   if not enumerator.MoveNext then
   begin
-    raise EInvalidOperation.CreateRes(@SSequenceIsEmpty);
+    raise EInvalidOperationException.CreateRes(@SSequenceIsEmpty);
   end;
   Result := enumerator.Current;
   if enumerator.MoveNext then
   begin
-    raise EInvalidOperation.CreateRes(@SSequenceContainsMoreThanOneElement);
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement);
   end;
 end;
 
@@ -629,7 +629,7 @@ begin
 
   if not enumerator.MoveNext then
   begin
-    raise EInvalidOperation.CreateRes(@SSequenceIsEmpty);
+    raise EInvalidOperationException.CreateRes(@SSequenceIsEmpty);
   end;
 
   Result := enumerator.Current;
@@ -642,14 +642,14 @@ begin
     begin
       if isSatisfied then
       begin
-        raise EInvalidOperation.CreateRes(@SMoreThanOneElementSatisfied);
+        raise EInvalidOperationException.CreateRes(@SMoreThanOneElementSatisfied);
       end;
       isSatisfied := True;
     end;
   end;
   if not isSatisfied then
   begin
-    raise EInvalidOperation.CreateRes(@SNoElementSatisfiesCondition);
+    raise EInvalidOperationException.CreateRes(@SNoElementSatisfiesCondition);
   end;
 end;
 
@@ -666,7 +666,7 @@ begin
   Result := enumerator.Current;
   if enumerator.MoveNext then
   begin
-    raise EInvalidOperation.CreateRes(@SSequenceContainsMoreThanOneElement);
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement);
   end;
 end;
 
@@ -694,7 +694,7 @@ begin
     begin
       if isSatisfied then
       begin
-        raise EInvalidOperation.CreateRes(@SMoreThanOneElementSatisfied);
+        raise EInvalidOperationException.CreateRes(@SMoreThanOneElementSatisfied);
       end;
       isSatisfied := True;
     end;

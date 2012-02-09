@@ -920,7 +920,7 @@ var
 begin
   if left.Size <> right.Size then
   begin
-    raise EInvalidOperation.CreateRes(@SInvalidOperationBufferSizeShouldBeSame);
+    raise EInvalidOperationException.CreateRes(@SInvalidOperationBufferSizeShouldBeSame);
   end;
   Result.Size := left.Size;
   for i := 0 to Result.Size - 1 do
@@ -935,7 +935,7 @@ var
 begin
   if left.Size <> right.Size then
   begin
-    raise EInvalidOperation.CreateRes(@SInvalidOperationBufferSizeShouldBeSame);
+    raise EInvalidOperationException.CreateRes(@SInvalidOperationBufferSizeShouldBeSame);
   end;
   Result.Size := left.Size;
   for i := 0 to Result.Size - 1 do
@@ -950,7 +950,7 @@ var
 begin
   if left.Size <> right.Size then
   begin
-    raise EInvalidOperation.CreateRes(@SInvalidOperationBufferSizeShouldBeSame);
+    raise EInvalidOperationException.CreateRes(@SInvalidOperationBufferSizeShouldBeSame);
   end;
   Result.Size := left.Size;
   for i := 0 to Result.Size - 1 do

@@ -64,7 +64,7 @@ type
     /// <summary>
     /// The getter of the <see cref="Current" /> property.
     /// </summary>
-    /// <exception cref="Spring|EInvalidOperation">
+    /// <exception cref="Spring|EInvalidOperationException">
     /// The enumerator has not been started or ended.
     /// </exception>
     function GetCurrent: T;
@@ -72,12 +72,12 @@ type
     /// <summary>
     /// Advances the enumerator to the next element of the collection.
     /// </summary>
-    /// <exception cref="Spring|EInvalidOperation">
+    /// <exception cref="Spring|EInvalidOperationException">
     /// The collection was modified after the enumerator was created.
     /// </exception>
     function MoveNext: Boolean;
 
-    /// <exception cref="Spring|EInvalidOperation">
+    /// <exception cref="Spring|EInvalidOperationException">
     /// The collection was modified after the enumerator was created.
     /// </exception>
     /// <exception cref="Spring|ENotSupportedException">

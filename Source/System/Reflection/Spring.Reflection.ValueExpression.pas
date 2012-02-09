@@ -57,7 +57,7 @@ type
 
     ///	<summary>Sets the value of the provider.</summary>
     ///	<param name="value">the new value.</param>
-    ///	<exception cref="EInvalidOperation">Raised if the value provider is
+    ///	<exception cref="EInvalidOperationException">Raised if the value provider is
     ///	read only.</exception>
     procedure SetValue(const value: TValue);
 
@@ -70,7 +70,7 @@ type
     ///	<value>Returns true if the value provider is read only, otherwise,
     ///	returns false.</value>
     ///	<remarks>If the value provider is read only, invoking the
-    ///	<see cref="SetValue(TValue)">SetValue</see> method will raise an <c>EInvalidOperation</c>
+    ///	<see cref="SetValue(TValue)">SetValue</see> method will raise an <c>EInvalidOperationException</c>
     ///	exception.</remarks>
     {$ENDREGION}
     property IsReadOnly: Boolean read GetIsReadOnly;
@@ -364,7 +364,7 @@ begin
   end
   else
   begin
-    raise EInvalidOperation.CreateRes(@SCannotModifyReadOnlyValue);
+    raise EInvalidOperationException.CreateRes(@SCannotModifyReadOnlyValue);
   end;
 end;
 

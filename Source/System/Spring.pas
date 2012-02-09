@@ -305,7 +305,7 @@ type
     ///	<summary>
     ///	  Gets the value of the current <c>TNullable&lt;T&gt;</c> value.
     ///	</summary>
-    ///	<exception cref="Spring|EInvalidOperation">
+    ///	<exception cref="Spring|EInvalidOperationException">
     ///	  Raised if the value is null.
     ///	</exception>
     property Value: T read GetValue;
@@ -631,9 +631,9 @@ type
 {$ENDIF}
 
 {$IFDEF DELPHIXE_UP}
-  EInvalidOperation         = SysUtils.EInvalidOpException;
+  EInvalidOperationException  = SysUtils.EInvalidOpException;
 {$ELSE}
-  EInvalidOperation         = class(Exception);
+  EInvalidOperationException  = class(Exception);
 {$ENDIF}
 
   EInvalidCastException     = SysUtils.EInvalidCast;
@@ -1098,7 +1098,7 @@ function TNullable<T>.GetValue: T;
 begin
   if not HasValue then
   begin
-    raise EInvalidOperation.CreateRes(@SNullableTypeHasNoValue);
+    raise EInvalidOperationException.CreateRes(@SNullableTypeHasNoValue);
   end;
   Result := fValue;
 end;
@@ -1167,7 +1167,7 @@ begin
   end
   else
   begin
-    raise EInvalidOperation.CreateRes(@SCannotAssignPointerToNullable);
+    raise EInvalidOperationException.CreateRes(@SCannotAssignPointerToNullable);
   end;
 end;
 
@@ -1479,9 +1479,9 @@ var
 begin
   p := TypeInfo(T);
   if p = nil then
-    raise EInvalidOperation.CreateRes(@SNoTypeInfo);
+    raise EInvalidOperationException.CreateRes(@SNoTypeInfo);
   if p.Kind <> tkMethod then
-    raise EInvalidOperation.CreateRes(@STypeParameterShouldBeMethod);
+    raise EInvalidOperationException.CreateRes(@STypeParameterShouldBeMethod);
   inherited Create;
   fEnabled := True;
 end;

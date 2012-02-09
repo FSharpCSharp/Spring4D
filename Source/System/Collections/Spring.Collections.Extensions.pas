@@ -364,7 +364,7 @@ end;
 
 function TNullEnumerator<T>.GetCurrent: T;
 begin
-  raise EInvalidOperation.CreateRes(@SEnumEmpty);
+  raise EInvalidOperationException.CreateRes(@SEnumEmpty);
 end;
 
 function TNullEnumerator<T>.MoveNext: Boolean;
@@ -495,7 +495,7 @@ end;
 function TSkipEnumerable<T>.TEnumerator.GetCurrent: T;
 begin
   if not fSkipped then
-    raise EInvalidOperation.Create('GetCurrent');
+    raise EInvalidOperationException.Create('GetCurrent');
   Result := fEnumerator.Current;
 end;
 
@@ -552,7 +552,7 @@ end;
 function TSkipWhileEnumerable<T>.TEnumerator.GetCurrent: T;
 begin
   if not fSkipped then
-    raise EInvalidOperation.Create('GetCurrent');
+    raise EInvalidOperationException.Create('GetCurrent');
   Result := fEnumerator.Current;
 end;
 
@@ -606,7 +606,7 @@ end;
 function TSkipWhileIndexEnumerable<T>.TEnumerator.GetCurrent: T;
 begin
   if not fSkipped then
-    raise EInvalidOperation.Create('GetCurrent');
+    raise EInvalidOperationException.Create('GetCurrent');
   Result := fEnumerator.Current;
 end;
 
@@ -707,7 +707,7 @@ end;
 function TTakeWhileEnumerable<T>.TEnumerator.GetCurrent: T;
 begin
   if fStopped then
-    raise EInvalidOperation.Create('GetCurrent');
+    raise EInvalidOperationException.Create('GetCurrent');
   Result := fEnumerator.Current;
 end;
 
@@ -757,7 +757,7 @@ end;
 function TTakeWhileIndexEnumerable<T>.TEnumerator.GetCurrent: T;
 begin
   if fStopped then
-    raise EInvalidOperation.Create('GetCurrent');
+    raise EInvalidOperationException.Create('GetCurrent');
   Result := fEnumerator.Current;
 end;
 

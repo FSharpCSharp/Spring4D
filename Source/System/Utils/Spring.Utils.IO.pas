@@ -1879,9 +1879,9 @@ var
   fileName: string;
 begin
   if fIndex < 0 then
-    raise EInvalidOperation.Create(SEnumNotStarted);
+    raise EInvalidOperationException.Create(SEnumNotStarted);
   if fIndex > fFiles.Count - 1 then
-    raise EInvalidOperation.Create(SEnumEnded);
+    raise EInvalidOperationException.Create(SEnumEnded);
   fileName := fFiles[fIndex];
   GetFileSystemEntry(fileName, fEntry);
   Result := fEntry;

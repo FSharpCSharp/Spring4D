@@ -119,7 +119,7 @@ end;
 
 procedure TTestNullableInteger.TestException;
 begin
-  ExpectedException := EInvalidOperation;
+  ExpectedException := EInvalidOperationException;
   fInteger.Value;
 end;
 
