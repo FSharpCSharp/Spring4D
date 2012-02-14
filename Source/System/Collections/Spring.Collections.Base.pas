@@ -189,13 +189,12 @@ type
     function GetOnNotify: ICollectionNotifyDelegate<T>;
   protected
     function GetComparer: IComparer<T>; override;
-  protected
     procedure Notify(const item: T; action: TCollectionNotification); virtual;
     procedure DoSort(const comparer: IComparer<T>); virtual;
     procedure DoInsert(index: Integer; const item: T); virtual; abstract;
     procedure DoDelete(index: Integer; notification: TCollectionNotification); virtual; abstract;
     procedure DoDeleteRange(index, count: Integer; notification: TCollectionNotification); virtual; abstract;
-    function  GetItem(index: Integer): T; virtual; abstract;
+    function GetItem(index: Integer): T; virtual; abstract;
     procedure SetItem(index: Integer; const value: T); virtual; abstract;
   public
     constructor Create; overload;
@@ -225,14 +224,13 @@ type
     function Extract(const item: T): T;
     function IndexOf(const item: T): Integer;
     function LastIndexOf(const item: T): Integer;
-    procedure Exchange(index1, index2: Integer);
+    procedure Exchange(index1, index2: Integer); virtual; abstract;
     procedure Move(currentIndex, newIndex: Integer); virtual; abstract;
     procedure Sort; overload;
     procedure Sort(const comparer: IComparer<T>); overload;
     procedure Sort(const comparison: TComparison<T>); overload;
-    procedure Reverse;
+    procedure Reverse; virtual; abstract;
     property Items[index: Integer]: T read GetItem write SetItem; default;
-  public
     property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
   end;
 
@@ -948,35 +946,9 @@ procedure TListBase<T>.DoSort(const comparer: IComparer<T>);
 begin
 end;
 
-procedure TListBase<T>.Reverse;
-var
-  tmp: T;
-  b, e: Integer;
-begin
-  b := 0;
-  e := Count - 1;
-  while b < e do
-  begin
-    tmp := Items[b];
-    Items[b] := Items[e];
-    Items[e] := tmp;
-    Inc(b);
-    Dec(e);
-  end;
-end;
-
 function TListBase<T>.Reversed: IEnumerable<T>;
 begin
   Result := TReversedEnumerable.Create(Self);
-end;
-
-procedure TListBase<T>.Exchange(index1, index2: Integer);
-var
-  temp: T;
-begin
-  temp := Items[index1];
-  Items[index1] := Items[index2];
-  Items[index2] := temp;
 end;
 
 function TListBase<T>.Extract(const item: T): T;

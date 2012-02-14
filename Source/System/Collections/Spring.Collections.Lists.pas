@@ -42,21 +42,22 @@ type
     fItems: array of T;
     fCount: Integer;
   protected
+    function GetCapacity: Integer;
     function GetCount: Integer; override;
     function GetItem(index: Integer): T; override;
+    procedure SetCapacity(value: Integer);
     procedure SetItem(index: Integer; const value: T); override;
     procedure DoInsert(index: Integer; const item: T); override;
     procedure DoDelete(index: Integer; notification: TCollectionNotification); override;
     procedure DoDeleteRange(startIndex, count: Integer; notification: TCollectionNotification); override;
     procedure DoSort(const comparer: IComparer<T>); override;
-  protected
-    function  EnsureCapacity(value: Integer): Integer;
-    function  GetCapacity: Integer;
-    procedure SetCapacity(value: Integer);
+    function EnsureCapacity(value: Integer): Integer;
     property Capacity: Integer read GetCapacity write SetCapacity;
   public
-    procedure Move(currentIndex, newIndex: Integer); override;
     procedure Clear; override;
+    procedure Exchange(index1, index2: Integer); override;
+    procedure Move(currentIndex, newIndex: Integer); override;
+    procedure Reverse; override;
   end;
 
   TObjectList<T: class> = class(TList<T>, ICollectionOwnership)
@@ -90,7 +91,7 @@ end;
 
 function TList<T>.GetItem(index: Integer): T;
 begin
-  TArgument.CheckRange<T>(fItems, index);
+  TArgument.CheckRange((index >= 0) and (index < Count), 'index');
 
   Result := fItems[index];
 end;
@@ -99,7 +100,7 @@ procedure TList<T>.SetItem(index: Integer; const value: T);
 var
   oldItem: T;
 begin
-  TArgument.CheckRange<T>(fItems, index);
+  TArgument.CheckRange((index >= 0) and (index < Count), 'index');
 
   oldItem := fItems[index];
   fItems[index] := value;
@@ -212,9 +213,36 @@ begin
   Result := newCapacity;
 end;
 
+procedure TList<T>.Exchange(index1, index2: Integer);
+var
+  temp: T;
+begin
+  TArgument.CheckRange((index1 >= 0) and (index1 < Count), 'index1');
+  TArgument.CheckRange((index2 >= 0) and (index2 < Count), 'index2');
+
+  temp := fItems[index1];
+  fItems[index1] := fItems[index2];
+  fItems[index2] := temp;
+end;
+
 function TList<T>.GetCapacity: Integer;
 begin
   Result := Length(fItems);
+end;
+
+procedure TList<T>.Reverse;
+var
+  tmp: T;
+  b, e: Integer;
+begin
+  b := 0;
+  e := Count - 1;
+  while b < e do
+  begin
+    Exchange(b, e);
+    Inc(b);
+    Dec(e);
+  end;
 end;
 
 procedure TList<T>.SetCapacity(value: Integer);
