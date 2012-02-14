@@ -576,7 +576,6 @@ type
     function GetCount: Integer;
     function GetEnabled: Boolean;
     function GetIsEmpty: Boolean;
-    function GetIsNotEmpty: Boolean;
     procedure SetEnabled(const value: Boolean);
   protected
     procedure InvocationsNeeded; inline;
@@ -595,7 +594,6 @@ type
     property Count: Integer read GetCount;
     property Enabled: Boolean read GetEnabled write SetEnabled;
     property IsEmpty: Boolean read GetIsEmpty;
-    property IsNotEmpty: Boolean read GetIsNotEmpty;
   end;
 
   Event<T> = record
@@ -604,7 +602,6 @@ type
     function GetInvoke: T;
     function GetCount: Integer;
     function GetIsEmpty: Boolean;
-    function GetIsNotEmpty: Boolean;
   public
     class function Create: Event<T>; static;
 
@@ -618,7 +615,6 @@ type
     property Invoke: T read GetInvoke;
     property Count: Integer read GetCount;
     property IsEmpty: Boolean read GetIsEmpty;
-    property IsNotEmpty: Boolean read GetIsNotEmpty; // deprecated
 
     class operator Implicit(const e: IEvent<T>): Event<T>;
     class operator Implicit(const e: Event<T>): IEvent<T>;
@@ -1785,7 +1781,7 @@ var
   p: PTypeInfo;
 begin
   p := TypeInfo(T);
-  if p = nil then
+  if not Assigned(p) then
     raise EInvalidOperationException.CreateRes(@SNoTypeInfo);
   if p.Kind <> tkMethod then
     raise EInvalidOperationException.CreateRes(@STypeParameterShouldBeMethod);
@@ -1825,13 +1821,13 @@ end;
 
 procedure TEvent<T>.Clear;
 begin
-  if fInvocations <> nil then
+  if Assigned(fInvocations) then
     fInvocations.Clear;
 end;
 
 function TEvent<T>.GetCount: Integer;
 begin
-  if fInvocations <> nil then
+  if Assigned(fInvocations) then
     Result := fInvocations.Count
   else
     Result := 0;
@@ -1850,12 +1846,7 @@ end;
 
 function TEvent<T>.GetIsEmpty: Boolean;
 begin
-  Result := (fInvocations = nil) or (fInvocations.Count = 0);
-end;
-
-function TEvent<T>.GetIsNotEmpty: Boolean;
-begin
-  Result := not IsEmpty;
+  Result := Count = 0;
 end;
 
 procedure TEvent<T>.SetEnabled(const value: Boolean);
@@ -1885,7 +1876,7 @@ end;
 
 function Event<T>.EnsureInitialized: Event<T>;
 begin
-  if fInstance = nil then
+  if not Assigned(fInstance) then
   begin
     fInstance := TEvent<T>.Create;
   end;
@@ -1904,7 +1895,7 @@ end;
 
 procedure Event<T>.Clear;
 begin
-  if fInstance <> nil then
+  if not Assigned(fInstance) then
     fInstance.Clear;
 end;
 
@@ -1928,12 +1919,7 @@ end;
 
 function Event<T>.GetIsEmpty: Boolean;
 begin
-  Result := (fInstance = nil) or fInstance.IsEmpty;
-end;
-
-function Event<T>.GetIsNotEmpty: Boolean;
-begin
-  Result := (fInstance <> nil) and not fInstance.IsEmpty;
+  Result := not Assigned(fInstance) or fInstance.IsEmpty;
 end;
 
 class operator Event<T>.Implicit(const eventHandler: T): Event<T>;
