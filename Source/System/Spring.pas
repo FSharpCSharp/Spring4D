@@ -1895,7 +1895,7 @@ end;
 
 procedure Event<T>.Clear;
 begin
-  if not Assigned(fInstance) then
+  if Assigned(fInstance) then
     fInstance.Clear;
 end;
 
