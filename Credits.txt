@@ -1,5 +1,5 @@
 ﻿===========================================
-Spring Enterprise Library for Delphi
+Spring Framework for Delphi
 Credits
 ===========================================
 

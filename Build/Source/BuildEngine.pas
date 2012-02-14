@@ -321,11 +321,11 @@ begin
   target.LibraryPaths.Add(path);
   target.BrowsingPaths.AddStrings(fSourcePaths);
   target.EnvironmentVariables.Values['SPRING'] := projectDir;
-  target.EnvironmentVariables.Values['SPRING_LIBRARY'] := projectPath + libraryDir;
+  // target.EnvironmentVariables.Values['SPRING_LIBRARY'] := projectPath + libraryDir;
   target.SaveParameters;
 
   TEnvironment.SetEnvironmentVariable('SPRING', projectDir);
-  TEnvironment.SetEnvironmentVariable('SPRING_LIBRARY', projectPath + libraryDir);
+  //TEnvironment.SetEnvironmentVariable('SPRING_LIBRARY', projectPath + libraryDir);
 
   // $(BDS)\rsvars.bat
   TEnvironment.SetEnvironmentVariable('BDS', target.RootPath);

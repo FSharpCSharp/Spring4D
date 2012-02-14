@@ -70,7 +70,8 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
-			<DCC_UnitSearchPath>..\..\Source\System;..\..\Source\System\Collections;..\..\Source\System\Cryptography;..\..\Source\System\Reflection;..\..\Source\System\Utils;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_OutputNeverBuildDcps>true</DCC_OutputNeverBuildDcps>
+			<DCC_UnitSearchPath>..\..\Source\System;..\..\Source\System\Collections;..\..\Source\System\Reflection;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
 			<DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;Winapi;$(DCC_Namespace)</DCC_Namespace>
 			<VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
@@ -130,18 +131,8 @@
 			<DCCReference Include="..\..\Source\System\Spring.Helpers.pas"/>
 			<DCCReference Include="..\..\Source\System\Spring.pas"/>
 			<DCCReference Include="..\..\Source\System\Spring.ResourceStrings.pas"/>
-			<DCCReference Include="..\..\Source\System\Cryptography\Spring.Cryptography.Core.pas"/>
-			<DCCReference Include="..\..\Source\System\Cryptography\Spring.Cryptography.CRC.pas"/>
-			<DCCReference Include="..\..\Source\System\Cryptography\Spring.Cryptography.DES.pas"/>
-			<DCCReference Include="..\..\Source\System\Cryptography\Spring.Cryptography.MD5.pas"/>
-			<DCCReference Include="..\..\Source\System\Cryptography\Spring.Cryptography.pas"/>
-			<DCCReference Include="..\..\Source\System\Cryptography\Spring.Cryptography.SHA.pas"/>
-			<DCCReference Include="..\..\Source\System\Cryptography\Spring.Cryptography.Utils.pas"/>
 			<DCCReference Include="..\..\Source\System\Reflection\Spring.Reflection.pas"/>
 			<DCCReference Include="..\..\Source\System\Reflection\Spring.Reflection.ValueConverters.pas"/>
-			<DCCReference Include="..\..\Source\System\Utils\Spring.Utils.IO.pas"/>
-			<DCCReference Include="..\..\Source\System\Utils\Spring.Utils.pas"/>
-			<DCCReference Include="..\..\Source\System\Utils\Spring.Utils.WinApi.pas"/>
 			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.Base.pas"/>
 			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.Dictionaries.pas"/>
 			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.Extensions.pas"/>

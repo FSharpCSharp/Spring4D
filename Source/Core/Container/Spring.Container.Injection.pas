@@ -2,9 +2,9 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (C) 2009-2010 DevJet                                  }
+{           Copyright (c) 2009-2012 Spring4D Team                           }
 {                                                                           }
-{           http://www.DevJet.net                                           }
+{           http://www.spring4d.org                                         }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }

@@ -2,9 +2,9 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (C) 2009-2011 DevJET                                  }
+{           Copyright (c) 2009-2012 Spring4D Team                           }
 {                                                                           }
-{           http://www.DevJET.net                                           }
+{           http://www.spring4d.org                                         }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -34,7 +34,6 @@ uses
   Generics.Collections,
   Spring,
   Spring.Services,
-  Spring.Utils,
   Spring.Container.Core,
   Spring.Container.Pool;
 
@@ -259,18 +258,18 @@ var
   holder: TFunc<TObject>;
 begin
   threadID := TThread.CurrentThread.ThreadID;
-  Lock(fInstances,
-    procedure
+  MonitorEnter(fInstances);
+  try
+    if not fInstances.TryGetValue(threadID, holder) then
     begin
-      if not fInstances.TryGetValue(threadID, holder) then
-      begin
-        instance := ComponentActivator.CreateInstance;
-        holder := CreateHolder(instance);
-        fInstances.AddOrSetValue(threadID, holder);
-        DoAfterConstruction(holder);
-      end;
-    end
-  );
+      instance := ComponentActivator.CreateInstance;
+      holder := CreateHolder(instance);
+      fInstances.AddOrSetValue(threadID, holder);
+      DoAfterConstruction(holder);
+    end;
+  finally
+    MonitorExit(fInstances);
+  end;
   Result := holder;
 end;
 

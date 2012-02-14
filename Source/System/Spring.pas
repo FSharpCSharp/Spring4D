@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (C) 2009-2012 Spring4D Team                           }
+{           Copyright (c) 2009-2012 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -132,17 +132,6 @@ type
   end;
 
   ///	<summary>
-  ///	  Provides an abstract class base of TThread that implements the
-  ///	  IInterface.
-  ///	</summary>
-  TInterfacedThread = class(TThread, IInterface)
-  protected
-    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
-    function _AddRef: Integer; stdcall;
-    function _Release: Integer; stdcall;
-  end deprecated;
-
-  ///	<summary>
   ///	  Provides static methods to check arguments and raise argument
   ///	  exceptions.
   ///	</summary>
@@ -233,10 +222,10 @@ type
   ///   plus an additional <c>Null</c> value.
   ///	</summary>
   ///	<typeparam name="T">
-  ///	  The underlying value type of the <see cref="TNullable&lt;T&gt;" /> generic
+  ///	  The underlying value type of the <see cref="Nullable&lt;T&gt;" /> generic
   ///	  type.
   ///	</typeparam>
-  TNullable<T> = packed record
+  Nullable<T> = packed record
   private
     const CHasValueFlag = '@';  // DO NOT LOCALIZE
   strict private
@@ -249,7 +238,7 @@ type
     ///	  Internal use. Marks the current instance as null.
     ///	</summary>
     /// <remarks>
-    ///   The TNullable{T} type is immutable so that this method must be private.
+    ///   The Nullable{T} type is immutable so that this method must be private.
     /// </remarks>
     procedure Clear;
 
@@ -259,25 +248,25 @@ type
     class function VarIsNullOrEmpty(const value: Variant): Boolean; static;
   public
     ///	<summary>
-    ///	  Initializes a new instance of the <c>TNullable{T}</c> structure to
+    ///	  Initializes a new instance of the <c>Nullable{T}</c> structure to
     ///	  the specified value.
     ///	</summary>
     constructor Create(const value: T); overload;
 
     ///	<summary>
-    ///	  Initializes a new instance of the <c>TNullable{T}</c> structure to
+    ///	  Initializes a new instance of the <c>Nullable{T}</c> structure to
     ///	  the specified value.
     ///	</summary>
     constructor Create(const value: Variant); overload;
 
     ///	<summary>
-    ///	  Retrieves the value of the current <c>TNullable{T}</c> object, or the
+    ///	  Retrieves the value of the current <c>Nullable{T}</c> object, or the
     ///	  object's default value.
     ///	</summary>
     function GetValueOrDefault: T; overload;
 
     ///	<summary>
-    ///	  Retrieves the value of the current <c>TNullable{T}</c> object, or the
+    ///	  Retrieves the value of the current <c>Nullable{T}</c> object, or the
     ///	  specified default value.
     ///	</summary>
     ///	<param name="defaultValue">
@@ -297,13 +286,13 @@ type
     function GetValueOrDefault(const defaultValue: T): T; overload;
 
     ///	<summary>
-    ///	  Gets a value indicating whether the current <c>TNullable{T}</c>
+    ///	  Gets a value indicating whether the current <c>Nullable{T}</c>
     ///	  structure has a value.
     ///	</summary>
     property HasValue: Boolean read GetHasValue;
 
     ///	<summary>
-    ///	  Gets the value of the current <c>TNullable&lt;T&gt;</c> value.
+    ///	  Gets the value of the current <c>Nullable&lt;T&gt;</c> value.
     ///	</summary>
     ///	<exception cref="Spring|EInvalidOperationException">
     ///	  Raised if the value is null.
@@ -311,270 +300,67 @@ type
     property Value: T read GetValue;
 
     { Operator Overloads }
-    class operator Implicit(const value: TNullable<T>): T;
-    class operator Implicit(const value: T): TNullable<T>;
-    class operator Implicit(const value: TNullable<T>): Variant;
-    class operator Implicit(const value: Variant): TNullable<T>;
-    class operator Implicit(value: Pointer): TNullable<T>;
-    class operator Explicit(const value: TNullable<T>): T;
+    class operator Implicit(const value: Nullable<T>): T;
+    class operator Implicit(const value: T): Nullable<T>;
+    class operator Implicit(const value: Nullable<T>): Variant;
+    class operator Implicit(const value: Variant): Nullable<T>;
+    class operator Implicit(value: Pointer): Nullable<T>;
+    class operator Explicit(const value: Nullable<T>): T;
   end;
 
 
   ///	<summary>
   ///	  Represents a nullable unicode string.
   ///	</summary>
-  TNullableString = TNullable<string>;
+  TNullableString = Nullable<string>;
 
   ///	<summary>
   ///	  Represents a nullable ansi string.
   ///	</summary>
-  TNullableAnsiString = TNullable<AnsiString>;
+  TNullableAnsiString = Nullable<AnsiString>;
 
   ///	<summary>
   ///	  Represents a nullable wide string.
   ///	</summary>
-  TNullableWideString = TNullable<WideString>;
+  TNullableWideString = Nullable<WideString>;
 
   ///	<summary>
   ///	  Represents a nullable integer.
   ///	</summary>
-  TNullableInteger = TNullable<Integer>;
+  TNullableInteger = Nullable<Integer>;
 
   ///	<summary>
   ///	  Represents a nullable <c>Int64</c>.
   ///	</summary>
-  TNullableInt64 = TNullable<Int64>;
+  TNullableInt64 = Nullable<Int64>;
 
   ///	<summary>Represents a nullable native integer.</summary>
-  TNullableNativeInt = TNullable<NativeInt>;
+  TNullableNativeInt = Nullable<NativeInt>;
 
   ///	<summary>
   ///	  Represents a nullable <c>TDateTime</c>.
   ///	</summary>
-  TNullableDateTime = TNullable<TDateTime>;
+  TNullableDateTime = Nullable<TDateTime>;
 
   ///	<summary>
   ///	  Represents a nullable <c>Currency</c>.
   ///	</summary>
-  TNullableCurrency = TNullable<Currency>;
+  TNullableCurrency = Nullable<Currency>;
 
   ///	<summary>
   ///	  Represents a nullable <c>Double</c>.
   ///	</summary>
-  TNullableDouble = TNullable<Double>;
+  TNullableDouble = Nullable<Double>;
 
   ///	<summary>
   ///	  Represents a nullable <c>Boolean</c>.
   ///	</summary>
-  TNullableBoolean = TNullable<Boolean>;
+  TNullableBoolean = Nullable<Boolean>;
 
   ///	<summary>
   ///	  Represents a nullable <c>TGuid</c>.
   ///	</summary>
-  TNullableGuid = TNullable<TGUID>;
-
-  {$ENDREGION}
-
-
-  {$REGION 'Multicast Event'}
-
-  ///	<summary>
-  ///	  Represents a multicast event.
-  ///	</summary>
-  ///	<typeparam name="T">
-  ///	  The event handler type must be an instance procedural type such as TNotifyEvent.
-  ///	</typeparam>
-  IMulticastEvent<T> = interface
-    {$REGION 'Property Accessors'}
-      function GetInvoke: T;
-      function GetCount: Integer;
-      function GetEnabled: Boolean;
-      function GetIsEmpty: Boolean;
-      function GetIsNotEmpty: Boolean;
-      procedure SetEnabled(const value: Boolean);
-    {$ENDREGION}
-
-    ///	<summary>
-    ///	  Adds an event handler to the list.
-    ///	</summary>
-    procedure Add(const handler: T);
-
-    ///	<summary>
-    ///	  Removes an event handler if it was added to the event.
-    ///	</summary>
-    procedure Remove(const handler: T); overload;
-
-    ///	<summary>
-    ///	  Removes all event handlers which were registered by an instance.
-    ///	</summary>
-    procedure Remove(instance: Pointer); overload; deprecated 'Use RemoveAll instead';
-
-    ///	<summary>
-    ///	  Removes all event handlers which were registered by an instance.
-    ///	</summary>
-    procedure RemoveAll(instance: Pointer);
-
-    ///	<summary>
-    ///	  Clears all event handlers.
-    ///	</summary>
-    procedure Clear;
-
-    /// <summary>
-    ///   Iterates all event handlers and perform the specified action on each one.
-    /// </summary>
-    procedure ForEach(const action: TAction<T>);
-
-    ///	<summary>
-    ///	  Invokes all event handlers.
-    ///	</summary>
-    property Invoke: T read GetInvoke;
-
-    ///	<summary>
-    ///	  Gets the number of all event handlers.
-    ///	</summary>
-    property Count: Integer read GetCount;
-
-    /// <summary>
-    ///   Gets the value indicates whether the multicast event is enabled, or sets the value to enable or disable the event.
-    /// </summary>
-    property Enabled: Boolean read GetEnabled write SetEnabled;  // experimental
-
-    ///	<summary>
-    ///	  Gets a value indicates whether there is not any event handler.
-    ///	</summary>
-    property IsEmpty: Boolean read GetIsEmpty;
-
-    ///	<summary>
-    ///	  Gets a value indicates whether there is any event handler.
-    ///	</summary>
-    property IsNotEmpty: Boolean read GetIsNotEmpty; // deprecated
-  end;
-
-  PMethod = ^TMethod;
-
-  ///	<summary>
-  ///	  Internal Use.
-  ///	</summary>
-  TMethodInvocations = class
-  private
-    const
-      paEAX = Word(0);
-      paEDX = Word(1);
-      paECX = Word(2);
-      paStack = Word(3);
-
-    type
-      PParameterInfos = ^TParameterInfos;
-      TParameterInfos = array[0..255] of ^PTypeInfo;
-
-      PParameters = ^TParameters;
-      TParameters = packed record
-      public
-        Registers: array[paEDX..paECX] of Cardinal;
-        Stack: array[0..1023] of Byte;
-      end;
-
-      PMethodInfo = ^TMethodInfo;
-      TMethodInfo = record
-        TypeData: PTypeData;
-        ParamInfos: PParameterInfos;
-        StackSize: Integer;
-        CallConversion: TCallConv;
-        Params: PParameters;
-        constructor Create(typeInfo: PTypeInfo);
-      end;
-  private
-    fMethodType: PTypeInfo;
-    fMethodInfo: TMethodInfo;
-    fMethods: TList<TMethod>;
-    function GetCount: Integer;
-    function GetIsEmpty: Boolean;
-  protected
-    procedure InternalInvokeHandlers;
-    procedure InvokeEventHandlerStub;
-  public
-    constructor Create(methodTypeInfo: PTypeInfo);
-    destructor Destroy; override;
-    procedure Add(const method: TMethod);
-    procedure Remove(const method: TMethod);
-    procedure RemoveAll(instance: Pointer);
-    function  IndexOf(const method: TMethod): Integer;
-    procedure Clear;
-    procedure ForEach(const action: TAction<TMethod>);
-    property Count: Integer read GetCount;
-    property IsEmpty: Boolean read GetIsEmpty;
-  end;
-
-  // TODO: Implement Enabled property & Fix some bugs
-  TMulticastEvent<T> = class(TInterfacedObject, IMulticastEvent<T>)
-  private
-    fInvocations: TMethodInvocations;
-    fInvoke: T;
-    fEnabled: Boolean;
-    function GetInvoke: T;
-    function GetCount: Integer;
-    function GetEnabled: Boolean;
-    function GetIsEmpty: Boolean;
-    function GetIsNotEmpty: Boolean;
-    procedure SetEnabled(const value: Boolean);
-  protected
-    procedure InvocationsNeeded; inline;
-    property Invocations: TMethodInvocations read fInvocations;
-  public
-    constructor Create;
-    destructor Destroy; override;
-
-    procedure Add(const handler: T);
-    procedure Remove(const handler: T); overload;
-    procedure Remove(instance: Pointer); overload; deprecated;
-    procedure RemoveAll(instance: Pointer);
-    procedure Clear;
-    procedure ForEach(const action: TAction<T>);
-
-    property Invoke: T read GetInvoke;
-    property Count: Integer read GetCount;
-    property Enabled: Boolean read GetEnabled write SetEnabled;
-    property IsEmpty: Boolean read GetIsEmpty;
-    property IsNotEmpty: Boolean read GetIsNotEmpty;
-  end;
-
-  TEvent<T> = record
-  private
-    fInstance: IMulticastEvent<T>;
-    function GetInvoke: T;
-    function GetCount: Integer;
-    function GetIsEmpty: Boolean;
-    function GetIsNotEmpty: Boolean;
-  public
-    class function Create: IMulticastEvent<T>; static;
-
-    procedure Add(const handler: T);
-    procedure Remove(const handler: T);
-    procedure Clear;
-
-    function GetInstance: IMulticastEvent<T>; inline;
-
-    property Invoke: T read GetInvoke;
-    property Count: Integer read GetCount;
-    property IsEmpty: Boolean read GetIsEmpty;
-    property IsNotEmpty: Boolean read GetIsNotEmpty;
-
-    class operator Implicit(const event: IMulticastEvent<T>): TEvent<T>;
-    class operator Implicit(const event: TEvent<T>): IMulticastEvent<T>;
-    class operator Implicit(const eventHandler: T): TEvent<T>;
-  end;
-
-  IMulticastNotifyEvent = IMulticastEvent<TNotifyEvent>;
-
-  TMulticastNotifyEvent = TMulticastEvent<TNotifyEvent>;
-
-{$WARNINGS OFF}
-  IDelegate<T> = interface(IMulticastEvent<T>)
-  end deprecated;
-
-  TDelegate<T> = class(TMulticastEvent<T>, IDelegate<T>)
-  end deprecated;
-{$WARNINGS ON}
+  TNullableGuid = Nullable<TGUID>;
 
   {$ENDREGION}
 
@@ -663,6 +449,189 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'Multicast Event'}
+
+  ///	<summary>
+  ///	  Represents a multicast event.
+  ///	</summary>
+  ///	<typeparam name="T">
+  ///	  The event handler type must be an instance procedural type such as TNotifyEvent.
+  ///	</typeparam>
+  IEvent<T> = interface
+    {$REGION 'Property Accessors'}
+      function GetInvoke: T;
+      function GetCount: Integer;
+      function GetEnabled: Boolean;
+      function GetIsEmpty: Boolean;
+      procedure SetEnabled(const value: Boolean);
+    {$ENDREGION}
+
+    ///	<summary>
+    ///	  Adds an event handler to the list.
+    ///	</summary>
+    procedure Add(const handler: T);
+
+    ///	<summary>
+    ///	  Removes an event handler if it was added to the event.
+    ///	</summary>
+    procedure Remove(const handler: T); overload;
+
+    ///	<summary>
+    ///	  Removes all event handlers which were registered by an instance.
+    ///	</summary>
+    procedure RemoveAll(instance: Pointer);
+
+    ///	<summary>
+    ///	  Clears all event handlers.
+    ///	</summary>
+    procedure Clear;
+
+    /// <summary>
+    ///   Iterates all event handlers and perform the specified action on each one.
+    /// </summary>
+    procedure ForEach(const action: TAction<T>);
+
+    ///	<summary>
+    ///	  Invokes all event handlers.
+    ///	</summary>
+    property Invoke: T read GetInvoke;
+
+    ///	<summary>
+    ///	  Gets the number of all event handlers.
+    ///	</summary>
+    property Count: Integer read GetCount;
+
+    /// <summary>
+    ///   Gets the value indicates whether the multicast event is enabled, or sets the value to enable or disable the event.
+    /// </summary>
+    property Enabled: Boolean read GetEnabled write SetEnabled;  // experimental
+
+    ///	<summary>
+    ///	  Gets a value indicates whether there is not any event handler.
+    ///	</summary>
+    property IsEmpty: Boolean read GetIsEmpty;
+  end;
+
+  PMethod = ^TMethod;
+
+  ///	<summary>
+  ///	  Internal Use.
+  ///	</summary>
+  TMethodInvocations = class
+  private
+    const
+      paEAX = Word(0);
+      paEDX = Word(1);
+      paECX = Word(2);
+      paStack = Word(3);
+
+    type
+      PParameterInfos = ^TParameterInfos;
+      TParameterInfos = array[0..255] of ^PTypeInfo;
+
+      PParameters = ^TParameters;
+      TParameters = packed record
+      public
+        Registers: array[paEDX..paECX] of Cardinal;
+        Stack: array[0..1023] of Byte;
+      end;
+
+      PMethodInfo = ^TMethodInfo;
+      TMethodInfo = record
+        TypeData: PTypeData;
+        ParamInfos: PParameterInfos;
+        StackSize: Integer;
+        CallConversion: TCallConv;
+        Params: PParameters;
+        constructor Create(typeInfo: PTypeInfo);
+      end;
+  private
+    fMethodType: PTypeInfo;
+    fMethodInfo: TMethodInfo;
+    fMethods: TList<TMethod>;
+    function GetCount: Integer;
+    function GetIsEmpty: Boolean;
+  protected
+    procedure InternalInvokeHandlers;
+    procedure InvokeEventHandlerStub;
+  public
+    constructor Create(methodTypeInfo: PTypeInfo);
+    destructor Destroy; override;
+    procedure Add(const method: TMethod);
+    procedure Remove(const method: TMethod);
+    procedure RemoveAll(instance: Pointer);
+    function  IndexOf(const method: TMethod): Integer;
+    procedure Clear;
+    procedure ForEach(const action: TAction<TMethod>);
+    property Count: Integer read GetCount;
+    property IsEmpty: Boolean read GetIsEmpty;
+  end;
+
+  TEvent<T> = class(TInterfacedObject, IEvent<T>)
+  private
+    fInvocations: TMethodInvocations;
+    fInvoke: T;
+    fEnabled: Boolean;
+    function GetInvoke: T;
+    function GetCount: Integer;
+    function GetEnabled: Boolean;
+    function GetIsEmpty: Boolean;
+    function GetIsNotEmpty: Boolean;
+    procedure SetEnabled(const value: Boolean);
+  protected
+    procedure InvocationsNeeded; inline;
+    property Invocations: TMethodInvocations read fInvocations;
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    procedure Add(const handler: T);
+    procedure Remove(const handler: T);
+    procedure RemoveAll(instance: Pointer);
+    procedure Clear;
+    procedure ForEach(const action: TAction<T>);
+
+    property Invoke: T read GetInvoke;
+    property Count: Integer read GetCount;
+    property Enabled: Boolean read GetEnabled write SetEnabled;
+    property IsEmpty: Boolean read GetIsEmpty;
+    property IsNotEmpty: Boolean read GetIsNotEmpty;
+  end;
+
+  Event<T> = record
+  private
+    fInstance: IEvent<T>;
+    function GetInvoke: T;
+    function GetCount: Integer;
+    function GetIsEmpty: Boolean;
+    function GetIsNotEmpty: Boolean;
+  public
+    class function Create: Event<T>; static;
+
+    procedure Add(const handler: T);
+    procedure Remove(const handler: T);
+    procedure Clear;
+
+    function EnsureInitialized: Event<T>; inline;
+    function GetInstance: IEvent<T>; inline; deprecated 'Use EnsureInitialized instead.';
+
+    property Invoke: T read GetInvoke;
+    property Count: Integer read GetCount;
+    property IsEmpty: Boolean read GetIsEmpty;
+    property IsNotEmpty: Boolean read GetIsNotEmpty; // deprecated
+
+    class operator Implicit(const e: IEvent<T>): Event<T>;
+    class operator Implicit(const e: Event<T>): IEvent<T>;
+    class operator Implicit(const eventHandler: T): Event<T>;
+  end;
+
+  IMulticastNotifyEvent = IEvent<TNotifyEvent>;
+
+  TMulticastNotifyEvent = TEvent<TNotifyEvent>;
+
+  {$ENDREGION}
+
+
   {$REGION 'Exceptions'}
 
   ENotSupportedException    = SysUtils.ENotSupportedException;
@@ -712,6 +681,83 @@ procedure CheckArgumentNotNull(const value: IInterface; const argumentName: stri
 /// </summary>
 procedure CheckArgumentNotNull(value: Pointer; const argumentName: string); overload;
 
+
+///	<summary>
+///	  Try getting the underlying type name of a nullable type.
+///	</summary>
+///	<remarks>
+///	  For instance, the underlying type name of the type
+///	  <c>Nullable&lt;System.Integer&gt;</c> is <c>System.Integer</c>.
+///	</remarks>
+function TryGetUnderlyingTypeName(typeInfo: PTypeInfo; out underlyingTypeName: string): Boolean;
+
+///	<summary>
+///	  Try getting the underlying type info of a nullable type.
+///	</summary>
+function TryGetUnderlyingTypeInfo(typeInfo: PTypeInfo; out underlyingTypeInfo: PTypeInfo): Boolean;
+
+///	<summary>
+///	  Try getting the underlying value of a nullable type.
+///	</summary>
+///	<param name="value">
+///	  the value
+///	</param>
+///	<param name="underlyingValue">
+///	  the underlying value.
+///	</param>
+///	<returns>
+///	  Returns True if the value is a <c>Nullable&lt;T&gt;</c> and it has
+///	  value.
+///	</returns>
+function TryGetUnderlyingValue(const value: TValue; out underlyingValue: TValue): Boolean;
+
+{$REGION 'Documentation'}
+///	<summary>Uses this function to get an interface instance from a
+///	TValue.</summary>
+///	<remarks>
+///	  <note type="warning">Rtti bugs: QC #82433 if
+///	  value.TryAsType&lt;IPropertyNotification&gt;(propertyNotification)
+///	  then</note>
+///	</remarks>
+{$ENDREGION}
+function TryGetInterface(const instance: TValue; const guid: TGuid; out intf): Boolean; overload;
+
+///	<seealso cref="Spring|Nullable{T}"></seealso>
+function TryGetInterface(const instance: TValue; const guid: TGuid): Boolean; overload;
+
+///	<summary>
+///	  Try parsing a string to a datetime value based on the specified format.
+///	  Returns True if the input string matches the format.
+///	</summary>
+///	<param name="s">
+///	  the input string
+///	</param>
+///	<param name="format">
+///	  the format of datetime
+///	</param>
+///	<param name="value">
+///	  output datetime value
+///	</param>
+///	<returns>
+///	  Returns True if the input string can be parsed.
+///	</returns>
+function TryConvertStrToDateTime(const s, format: string; out value: TDateTime): Boolean;
+
+{$REGION 'Documentation'}
+///	<summary>
+///	  Parses a string to a datetime value based on the specified format. An
+///	  EConvertError exception will be raised if failed to parse the string.
+///	</summary>
+///	<param name="s">
+///	  the date time string.
+///	</param>
+///	<param name="format">
+///	  the format of datetime.
+///	</param>
+{$ENDREGION}
+function ConvertStrToDateTime(const s, format: string): TDateTime;
+
+
 implementation
 
 uses
@@ -738,6 +784,161 @@ begin
   end;
 end;
 
+function TryGetUnderlyingTypeName(typeInfo: PTypeInfo; out underlyingTypeName: string): Boolean;
+const
+  PrefixString = 'Nullable<';    // DO NOT LOCALIZE
+  PrefixStringLength = Length(PrefixString);
+var
+  typeName: string;
+begin
+  if (typeInfo = nil) or (typeInfo.Kind <> tkRecord) then
+  begin
+    Exit(False);
+  end;
+  typeName := TypInfo.GetTypeName(typeInfo);
+  if (Length(typeName) < PrefixStringLength) or
+    not SameText(LeftStr(typeName, PrefixStringLength), PrefixString) then
+  begin
+    Exit(False);
+  end;
+  Result := True;
+  underlyingTypeName := Copy(typeName, PrefixStringLength + 1,
+    Length(typeName) - PrefixStringLength - 1);
+end;
+
+function TryGetUnderlyingTypeInfo(typeInfo: PTypeInfo; out underlyingTypeInfo: PTypeInfo): Boolean;
+var
+  underlyingTypeName: string;
+  rttiType: TRttiType;
+  context: TRttiContext;
+begin
+  Result := TryGetUnderlyingTypeName(typeInfo, underlyingTypeName);
+  if Result then
+  begin
+    context := TRttiContext.Create;
+    rttiType := context.FindType(underlyingTypeName);
+    if rttiType <> nil then
+      underlyingTypeInfo := rttiType.Handle
+    else
+      underlyingTypeInfo := nil;
+    Result := underlyingTypeInfo <> nil;
+  end;
+end;
+
+function TryGetUnderlyingValue(const value: TValue; out underlyingValue: TValue): Boolean;
+var
+  underlyingTypeInfo: PTypeInfo;
+  hasValueString: string;
+  p: Pointer;
+begin
+  Result := TryGetUnderlyingTypeInfo(value.TypeInfo, underlyingTypeInfo);
+  if not Result then
+  begin
+    Exit;
+  end;
+  p := value.GetReferenceToRawData;
+  hasValueString := PString(PByte(p) + (value.DataSize - SizeOf(string)))^;
+  if hasValueString = '' then
+  begin
+    Exit(False);
+  end;
+  TValue.Make(p, underlyingTypeInfo, underlyingValue);
+end;
+
+function TryGetInterface(const instance: TValue; const guid: TGuid; out intf): Boolean;
+var
+  localInterface: IInterface;
+begin
+  if instance.IsEmpty then Exit(False);
+  if instance.IsObject then
+  begin
+    Result := instance.AsObject.GetInterface(guid, intf);
+  end
+  else if instance.TryAsType<IInterface>(localInterface) then
+  begin
+    Result := localInterface.QueryInterface(guid, intf) = S_OK;
+  end
+  else
+  begin
+    Exit(False);
+  end;
+end;
+
+function TryGetInterface(const instance: TValue; const guid: TGuid): Boolean;
+var
+  localInterface: IInterface;
+begin
+  if instance.IsEmpty then Exit(False);
+  if instance.IsObject then
+  begin
+    Result := Supports(instance.AsObject, guid);
+  end
+  else if instance.TryAsType<IInterface>(localInterface) then
+  begin
+    Result := Supports(localInterface, guid);
+  end
+  else
+  begin
+    Exit(False);
+  end;
+end;
+
+function TryConvertStrToDateTime(const s, format: string; out value: TDateTime): Boolean;
+var
+  localString: string;
+  stringFormat: string;
+  year, month, day: Word;
+  hour, minute, second, milliSecond: Word;
+
+  function ExtractElementDef(const element: string; const defaultValue: Integer = 0): Integer;
+  var
+    position: Integer;
+  begin
+    position := Pos(element, stringFormat);
+    if position > 0 then
+    begin
+      Result := StrToInt(Copy(localString, position, Length(element)));
+    end
+    else
+    begin
+      Result := defaultValue;
+    end;
+  end;
+begin
+  localString := Trim(s);
+  stringFormat := UpperCase(format);
+  Result := Length(localString) = Length(stringFormat);
+  if Result then
+  try
+    year := ExtractElementDef('YYYY', 0);
+    if year = 0 then
+    begin
+      year := ExtractElementDef('YY', 1899);
+      if year < 1899 then
+      begin
+        Inc(year, (DateUtils.YearOf(Today) div 100) * 100);
+      end;
+    end;
+    month := ExtractElementDef('MM', 12);
+    day := ExtractElementDef('DD', 30);
+    hour := ExtractElementDef('HH');
+    minute := ExtractElementDef('NN');
+    second := ExtractElementDef('SS');
+    milliSecond := ExtractElementDef('ZZZ');
+    value := EncodeDateTime(year, month, day, hour, minute, second, milliSecond);
+  except
+    Result := False;
+  end;
+end;
+
+function ConvertStrToDateTime(const s, format: string): TDateTime;
+begin
+  if not TryConvertStrToDateTime(s, format, Result) then
+  begin
+    raise EConvertError.CreateResFmt(@SInvalidDateTime, [s]);
+  end;
+end;
+
 {$ENDREGION}
 
 
@@ -757,29 +958,6 @@ begin
 end;
 
 function TInterfaceBase._Release: Integer;
-begin
-  Result := -1;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TInterfacedThread'}
-
-function TInterfacedThread.QueryInterface(const IID: TGUID; out Obj): HResult;
-begin
-  if GetInterface(IID, Obj) then
-    Result := S_OK
-  else
-    Result := E_NOINTERFACE;
-end;
-
-function TInterfacedThread._AddRef: Integer;
-begin
-  Result := -1;
-end;
-
-function TInterfacedThread._Release: Integer;
 begin
   Result := -1;
 end;
@@ -1092,15 +1270,15 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TNullable<T>'}
+{$REGION 'Nullable<T>'}
 
-constructor TNullable<T>.Create(const value: T);
+constructor Nullable<T>.Create(const value: T);
 begin
   fValue := value;
   fHasValue := CHasValueFlag;
 end;
 
-constructor TNullable<T>.Create(const value: Variant);
+constructor Nullable<T>.Create(const value: Variant);
 var
   v: TValue;
 begin
@@ -1116,23 +1294,23 @@ begin
   end;
 end;
 
-procedure TNullable<T>.Clear;
+procedure Nullable<T>.Clear;
 begin
   fHasValue := '';
   fValue := Default(T);
 end;
 
-class function TNullable<T>.VarIsNullOrEmpty(const value: Variant): Boolean;
+class function Nullable<T>.VarIsNullOrEmpty(const value: Variant): Boolean;
 begin
   Result := VarIsNull(value) or VarIsEmpty(value);
 end;
 
-function TNullable<T>.GetHasValue: Boolean;
+function Nullable<T>.GetHasValue: Boolean;
 begin
   Result := Length(fHasValue) > 0;
 end;
 
-function TNullable<T>.GetValue: T;
+function Nullable<T>.GetValue: T;
 begin
   if not HasValue then
   begin
@@ -1141,7 +1319,7 @@ begin
   Result := fValue;
 end;
 
-function TNullable<T>.GetValueOrDefault: T;
+function Nullable<T>.GetValueOrDefault: T;
 begin
   if HasValue then
     Result := value
@@ -1149,7 +1327,7 @@ begin
     Result := Default(T);
 end;
 
-function TNullable<T>.GetValueOrDefault(const defaultValue: T): T;
+function Nullable<T>.GetValueOrDefault(const defaultValue: T): T;
 begin
   if HasValue then
     Result := value
@@ -1157,17 +1335,17 @@ begin
     Result := defaultValue;
 end;
 
-class operator TNullable<T>.Implicit(const value: T): TNullable<T>;
+class operator Nullable<T>.Implicit(const value: T): Nullable<T>;
 begin
-  Result := TNullable<T>.Create(value);
+  Result := Nullable<T>.Create(value);
 end;
 
-class operator TNullable<T>.Implicit(const value: TNullable<T>): T;
+class operator Nullable<T>.Implicit(const value: Nullable<T>): T;
 begin
   Result := value.Value;
 end;
 
-class operator TNullable<T>.Implicit(const value: TNullable<T>): Variant;
+class operator Nullable<T>.Implicit(const value: Nullable<T>): Variant;
 var
   v: TValue;
 begin
@@ -1182,14 +1360,14 @@ begin
   end;
 end;
 
-class operator TNullable<T>.Implicit(const value: Variant): TNullable<T>;
+class operator Nullable<T>.Implicit(const value: Variant): Nullable<T>;
 var
   v: TValue;
 begin
   if not VarIsNullOrEmpty(value) then
   begin
     v := TValue.FromVariant(value);
-    Result := TNullable<T>.Create(v.AsType<T>);
+    Result := Nullable<T>.Create(v.AsType<T>);
   end
   else
   begin
@@ -1197,7 +1375,7 @@ begin
   end;
 end;
 
-class operator TNullable<T>.Implicit(value: Pointer): TNullable<T>;
+class operator Nullable<T>.Implicit(value: Pointer): Nullable<T>;
 begin
   if value = nil then
   begin
@@ -1209,9 +1387,90 @@ begin
   end;
 end;
 
-class operator TNullable<T>.Explicit(const value: TNullable<T>): T;
+class operator Nullable<T>.Explicit(const value: Nullable<T>): T;
 begin
   Result := value.Value;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TLazy<T>'}
+
+constructor TLazy<T>.Create(const valueFactory: TFunc<T>);
+begin
+  CheckArgumentNotNull(PPointer(@valueFactory)^, 'valueFactory');
+
+  inherited Create;
+  fValueFactory := valueFactory;
+  fIsValueCreated := False;
+end;
+
+constructor TLazy<T>.Create(const value: T);
+begin
+  inherited Create;
+  fValue := value;
+  fIsValueCreated := True;
+end;
+
+procedure TLazy<T>.EnsureInitialized;
+begin
+  if IsValueCreated then
+    Exit;
+
+  fValue := fValueFactory();
+  fIsValueCreated := True;
+end;
+
+function TLazy<T>.GetGenericValue: T;
+begin
+  EnsureInitialized;
+  Result := fValue;
+end;
+
+function TLazy<T>.GetValue: TValue;
+begin
+  Result := TValue.From<T>(GetGenericValue);
+end;
+
+function TLazy<T>.GetIsValueCreated: Boolean;
+begin
+  Result := fIsValueCreated;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'Lazy<T>'}
+
+constructor Lazy<T>.Create(const valueFactory: TFunc<T>);
+begin
+  fProxy := TLazy<T>.Create(valueFactory);
+end;
+
+constructor Lazy<T>.Create(const value: T);
+begin
+  fProxy := TLazy<T>.Create(value);
+end;
+
+function Lazy<T>.GetIsValueCreated: Boolean;
+begin
+  Result := fProxy.IsValueCreated;
+end;
+
+function Lazy<T>.GetValue: T;
+begin
+  Result := fProxy.Value;
+end;
+
+class operator Lazy<T>.Implicit(const proxy: Lazy<T>): T;
+begin
+  Result := proxy.Value;
+end;
+
+class operator Lazy<T>.Implicit(const value: T): Lazy<T>;
+begin
+  Result := Lazy<T>.Create(value);
 end;
 
 {$ENDREGION}
@@ -1519,9 +1778,9 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TMulticastEvent<T>'}
+{$REGION 'TEvent<T>'}
 
-constructor TMulticastEvent<T>.Create;
+constructor TEvent<T>.Create;
 var
   p: PTypeInfo;
 begin
@@ -1534,48 +1793,43 @@ begin
   fEnabled := True;
 end;
 
-destructor TMulticastEvent<T>.Destroy;
+destructor TEvent<T>.Destroy;
 begin
   fInvocations.Free;
   inherited Destroy;
 end;
 
-procedure TMulticastEvent<T>.ForEach(const action: TAction<T>);
+procedure TEvent<T>.ForEach(const action: TAction<T>);
 begin
   InvocationsNeeded;
   fInvocations.ForEach(TAction<TMethod>(action));
 end;
 
-procedure TMulticastEvent<T>.Add(const handler: T);
+procedure TEvent<T>.Add(const handler: T);
 begin
   InvocationsNeeded;
   fInvocations.Add(PMethod(@handler)^);
 end;
 
-procedure TMulticastEvent<T>.Remove(const handler: T);
+procedure TEvent<T>.Remove(const handler: T);
 begin
   InvocationsNeeded;
   fInvocations.Remove(PMethod(@handler)^);
 end;
 
-procedure TMulticastEvent<T>.Remove(instance: Pointer);
-begin
-  RemoveAll(instance);
-end;
-
-procedure TMulticastEvent<T>.RemoveAll(instance: Pointer);
+procedure TEvent<T>.RemoveAll(instance: Pointer);
 begin
   InvocationsNeeded;
   fInvocations.RemoveAll(instance);
 end;
 
-procedure TMulticastEvent<T>.Clear;
+procedure TEvent<T>.Clear;
 begin
   if fInvocations <> nil then
     fInvocations.Clear;
 end;
 
-function TMulticastEvent<T>.GetCount: Integer;
+function TEvent<T>.GetCount: Integer;
 begin
   if fInvocations <> nil then
     Result := fInvocations.Count
@@ -1583,33 +1837,33 @@ begin
     Result := 0;
 end;
 
-function TMulticastEvent<T>.GetEnabled: Boolean;
+function TEvent<T>.GetEnabled: Boolean;
 begin
   Result := fEnabled;
 end;
 
-function TMulticastEvent<T>.GetInvoke: T;
+function TEvent<T>.GetInvoke: T;
 begin
   InvocationsNeeded;
   Result := fInvoke;
 end;
 
-function TMulticastEvent<T>.GetIsEmpty: Boolean;
+function TEvent<T>.GetIsEmpty: Boolean;
 begin
   Result := (fInvocations = nil) or (fInvocations.Count = 0);
 end;
 
-function TMulticastEvent<T>.GetIsNotEmpty: Boolean;
+function TEvent<T>.GetIsNotEmpty: Boolean;
 begin
   Result := not IsEmpty;
 end;
 
-procedure TMulticastEvent<T>.SetEnabled(const value: Boolean);
+procedure TEvent<T>.SetEnabled(const value: Boolean);
 begin
   fEnabled := value;
 end;
 
-procedure TMulticastEvent<T>.InvocationsNeeded;
+procedure TEvent<T>.InvocationsNeeded;
 begin
   if fInvocations = nil then
   begin
@@ -1622,156 +1876,80 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TEvent<T>'}
+{$REGION 'Event<T>'}
 
-class function TEvent<T>.Create: IMulticastEvent<T>;
+class function Event<T>.Create: Event<T>;
 begin
-  Result := TMulticastEvent<T>.Create;
+  Result := TEvent<T>.Create;
 end;
 
-procedure TEvent<T>.Add(const handler: T);
+function Event<T>.EnsureInitialized: Event<T>;
 begin
-  GetInstance.Add(handler);
+  if fInstance = nil then
+  begin
+    fInstance := TEvent<T>.Create;
+  end;
+  Result := fInstance;
 end;
 
-procedure TEvent<T>.Remove(const handler: T);
+procedure Event<T>.Add(const handler: T);
 begin
-  GetInstance.Remove(handler);
+  EnsureInitialized.Add(handler);
 end;
 
-procedure TEvent<T>.Clear;
+procedure Event<T>.Remove(const handler: T);
+begin
+  EnsureInitialized.Remove(handler);
+end;
+
+procedure Event<T>.Clear;
 begin
   if fInstance <> nil then
     fInstance.Clear;
 end;
 
-function TEvent<T>.GetCount: Integer;
+function Event<T>.GetCount: Integer;
 begin
-  if fInstance <> nil then
+  if Assigned(fInstance) then
     Exit(fInstance.Count)
   else
     Exit(0);
 end;
 
-function TEvent<T>.GetInstance: IMulticastEvent<T>;
+function Event<T>.GetInstance: IEvent<T>;
 begin
-  if fInstance = nil then
-  begin
-    fInstance := TMulticastEvent<T>.Create;
-  end;
-  Result := fInstance;
+  Result := EnsureInitialized;
 end;
 
-function TEvent<T>.GetInvoke: T;
+function Event<T>.GetInvoke: T;
 begin
-  Result := GetInstance.Invoke;
+  Result := EnsureInitialized.Invoke;
 end;
 
-function TEvent<T>.GetIsEmpty: Boolean;
+function Event<T>.GetIsEmpty: Boolean;
 begin
   Result := (fInstance = nil) or fInstance.IsEmpty;
 end;
 
-function TEvent<T>.GetIsNotEmpty: Boolean;
+function Event<T>.GetIsNotEmpty: Boolean;
 begin
-  Result := (fInstance <> nil) and fInstance.IsNotEmpty;
+  Result := (fInstance <> nil) and not fInstance.IsEmpty;
 end;
 
-class operator TEvent<T>.Implicit(const eventHandler: T): TEvent<T>;
+class operator Event<T>.Implicit(const eventHandler: T): Event<T>;
 begin
   Result.Clear;
   Result.Add(eventHandler);
 end;
 
-class operator TEvent<T>.Implicit(const event: IMulticastEvent<T>): TEvent<T>;
+class operator Event<T>.Implicit(const e: IEvent<T>): Event<T>;
 begin
-  Result.fInstance := event;
+  Result.fInstance := e;
 end;
 
-class operator TEvent<T>.Implicit(const event: TEvent<T>): IMulticastEvent<T>;
+class operator Event<T>.Implicit(const e: Event<T>): IEvent<T>;
 begin
-  Result := event.GetInstance;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TLazy<T>'}
-
-constructor TLazy<T>.Create(const valueFactory: TFunc<T>);
-begin
-  CheckArgumentNotNull(PPointer(@valueFactory)^, 'valueFactory');
-
-  inherited Create;
-  fValueFactory := valueFactory;
-  fIsValueCreated := False;
-end;
-
-constructor TLazy<T>.Create(const value: T);
-begin
-  inherited Create;
-  fValue := value;
-  fIsValueCreated := True;
-end;
-
-procedure TLazy<T>.EnsureInitialized;
-begin
-  if IsValueCreated then
-    Exit;
-
-  fValue := fValueFactory();
-  fIsValueCreated := True;
-end;
-
-function TLazy<T>.GetGenericValue: T;
-begin
-  EnsureInitialized;
-  Result := fValue;
-end;
-
-function TLazy<T>.GetValue: TValue;
-begin
-  Result := TValue.From<T>(GetGenericValue);
-end;
-
-function TLazy<T>.GetIsValueCreated: Boolean;
-begin
-  Result := fIsValueCreated;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'Lazy<T>'}
-
-constructor Lazy<T>.Create(const valueFactory: TFunc<T>);
-begin
-  fProxy := TLazy<T>.Create(valueFactory);
-end;
-
-constructor Lazy<T>.Create(const value: T);
-begin
-  fProxy := TLazy<T>.Create(value);
-end;
-
-function Lazy<T>.GetIsValueCreated: Boolean;
-begin
-  Result := fProxy.IsValueCreated;
-end;
-
-function Lazy<T>.GetValue: T;
-begin
-  Result := fProxy.Value;
-end;
-
-class operator Lazy<T>.Implicit(const proxy: Lazy<T>): T;
-begin
-  Result := proxy.Value;
-end;
-
-class operator Lazy<T>.Implicit(const value: T): Lazy<T>;
-begin
-  Result := Lazy<T>.Create(value);
+  Result := e.EnsureInitialized;
 end;
 
 {$ENDREGION}

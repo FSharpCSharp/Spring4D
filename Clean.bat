@@ -1,5 +1,5 @@
 @echo off
-echo Cleaning
+echo Cleaning...
 del /f /q /s *.bak
 del /f /q /s *.dcu
 del /f /q /s *.ddp

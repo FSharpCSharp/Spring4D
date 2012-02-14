@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (C) 2009-2011 DevJET                                  }
+{           Copyright (c) 2009-2012 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -1109,7 +1109,7 @@ end;
 
 procedure TListBase<T>.Notify(const item: T; action: TCollectionNotification);
 begin
-  if (fOnNotify <> nil) and fOnNotify.IsNotEmpty and fOnNotify.Enabled then
+  if (fOnNotify <> nil) and not fOnNotify.IsEmpty and fOnNotify.Enabled then
   begin
     fOnNotify.Invoke(Self, item, action);
   end;

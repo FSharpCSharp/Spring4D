@@ -2,9 +2,9 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (C) 2009-2011 DevJET                                  }
+{           Copyright (c) 2009-2012 Spring4D Team                           }
 {                                                                           }
-{           http://www.DevJET.net                                           }
+{           http://www.spring4d.org                                         }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -35,7 +35,7 @@
 ///	</summary>
 /// <preliminary />
 {$ENDREGION}
-unit Spring.DesignPatterns;
+unit Spring.DesignPatterns;  // experimental
 
 {$I Spring.inc}
 

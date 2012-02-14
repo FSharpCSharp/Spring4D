@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (C) 2009-2011 DevJET                                  }
+{           Copyright (c) 2009-2012 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -21,6 +21,8 @@
 {  limitations under the License.                                           }
 {                                                                           }
 {***************************************************************************}
+
+/// The Spring.Collections namespaces will be changed before the first V1.0 release.
 
 /// <summary>
 /// The Spring.Collections namespaces introduce the Collections Framework in
@@ -479,10 +481,10 @@ type
     function Overlaps(const collection: IEnumerable<T>): Boolean;
   end;
 
-  ICollectionNotifyDelegate<T> = interface(IMulticastEvent<TCollectionNotifyEvent<T>>)
+  ICollectionNotifyDelegate<T> = interface(IEvent<TCollectionNotifyEvent<T>>)
   end;
 
-  TCollectionNotifyDelegate<T> = class(TMulticastEvent<TCollectionNotifyEvent<T>>, ICollectionNotifyDelegate<T>)
+  TCollectionNotifyDelegate<T> = class(TEvent<TCollectionNotifyEvent<T>>, ICollectionNotifyDelegate<T>)
   end;
 
   ///	<summary>Internal interface. Reserved for future use.</summary>

@@ -2,9 +2,9 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (C) 2009-2011 DevJET                                  }
+{           Copyright (c) 2009-2012 Spring4D Team                           }
 {                                                                           }
-{           http://www.DevJET.net                                           }
+{           http://www.spring4d.org                                         }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -48,7 +48,6 @@ interface
 uses
   Classes,
   SysUtils,
-  StrUtils,
   Types,
   TypInfo,
   Rtti,
@@ -440,7 +439,7 @@ type
 implementation
 
 uses
-  Spring.Utils,
+  StrUtils,
   Spring.ResourceStrings;
 
 {$REGION 'TGuidHelper'}
@@ -930,7 +929,30 @@ begin
   Result := InternalGetFields;
 end;
 
-function TRttiTypeHelper.GetGenericArguments: TArray<TRttiType>;
+{$IFNDEF DelphiXE_UP}
+function SplitString(const s: string; delimiter: Char): TStringDynArray;
+var
+  list: TStrings;
+  i: Integer;
+begin
+  list := TStringList.Create;
+  try
+    list.StrictDelimiter := True;
+    list.Delimiter := delimiter;
+    list.DelimitedText := s;
+    SetLength(Result, list.Count);
+    for i := 0 to list.Count - 1 do
+      Result[i] := list[i];
+  finally
+    list.Free;
+  end;
+end;
+{$ENDIF}
+
+// Nullable<TDateTime>
+// TDictionary<string, TObject>
+// TDictionary<string, IDictionary<string, TObject>>
+function TRttiTypeHelper.GetGenericArguments: TArray<TRttiType>; // TEMP
 var
   p1, p2: Integer;
   args: string;
@@ -944,7 +966,7 @@ begin
     Exit(nil);
   end;
   args := MidStr(Name, p1+1, p2-p1-1);
-  elements := SplitString(args, [','], True);
+  elements := SplitString(args, ',');
   SetLength(Result, Length(elements));
   for i := 0 to High(elements) do
   begin

@@ -2,9 +2,9 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (C) 2009-2011 DevJET                                  }
+{           Copyright (c) 2009-2012 Spring4D Team                           }
 {                                                                           }
-{           http://www.DevJET.net                                           }
+{           http://www.spring4d.org                                         }
 {                                                                           }
 {***************************************************************************}
 {                                                                           }
@@ -67,8 +67,8 @@ type
   TSimpleObjectPool = class(TInterfacedObject, IObjectPool)
   private
     fActivator: IObjectActivator;
-    fMinPoolsize: TNullable<Integer>;
-    fMaxPoolsize: TNullable<Integer>;
+    fMinPoolsize: Nullable<Integer>;
+    fMaxPoolsize: Nullable<Integer>;
     fAvailableList: IQueue<TObject>;
     fActiveList: IList<TObject>;
     fInstances: IList<TObject>;
@@ -76,8 +76,8 @@ type
     procedure InitializePool; virtual;
     function AddNewInstance: TObject;
     function GetAvailableObject: TObject;
-    property MinPoolsize: TNullable<Integer> read fMinPoolsize;
-    property MaxPoolsize: TNullable<Integer> read fMaxPoolsize;
+    property MinPoolsize: Nullable<Integer> read fMinPoolsize;
+    property MaxPoolsize: Nullable<Integer> read fMaxPoolsize;
   public
     constructor Create(const activator: IObjectActivator; minPoolSize, maxPoolSize: Integer);
     destructor Destroy; override;
@@ -86,9 +86,6 @@ type
   end;
 
 implementation
-
-uses
-  Spring.Utils;
 
 { TSimpleObjectPool }
 
@@ -154,25 +151,27 @@ function TSimpleObjectPool.GetInstance: TObject;
 var
   instance: TObject;
 begin
-  Lock(fAvailableList,
-    procedure
+  MonitorEnter(TObject(fAvailableList));
+  try
+    if fAvailableList.Count > 0 then
     begin
-      if fAvailableList.Count > 0 then
-      begin
-        instance := GetAvailableObject;
-      end
-      else
-      begin
-        instance := AddNewInstance;
-      end;
+      instance := GetAvailableObject;
     end
-  );
-  Lock(fActiveList,
-    procedure
+    else
     begin
-      fActiveList.Add(instance);
-    end
-  );
+      instance := AddNewInstance;
+    end;
+  finally
+    MonitorExit(TObject(fAvailableList));
+  end;
+
+  MonitorEnter(TObject(fActiveList));
+  try
+    fActiveList.Add(instance);
+  finally
+    MonitorExit(TObject(fActiveList));
+  end;
+
   Result := instance;
 end;
 
@@ -180,21 +179,23 @@ procedure TSimpleObjectPool.ReleaseInstance(instance: TObject);
 begin
   TArgument.CheckNotNull(instance, 'instance');
 
-  Lock(fActiveList,
-    procedure
+
+  MonitorEnter(TObject(fActiveList));
+  try
+    fActiveList.Remove(instance);
+  finally
+    MonitorExit(TObject(fActiveList));
+  end;
+
+  MonitorEnter(TObject(fAvailableList));
+  try
+    if not fMaxPoolsize.HasValue or (fAvailableList.Count < fMaxPoolsize.Value) then
     begin
-      fActiveList.Remove(instance);
-    end
-  );
-  Lock(fAvailableList,
-    procedure
-    begin
-      if not fMaxPoolsize.HasValue or (fAvailableList.Count < fMaxPoolsize.Value) then
-      begin
-        fAvailableList.Enqueue(instance);
-      end;
-    end
-  );
+      fAvailableList.Enqueue(instance);
+    end;
+  finally
+    MonitorExit(TObject(fAvailableList));
+  end;
 end;
 
 end.
