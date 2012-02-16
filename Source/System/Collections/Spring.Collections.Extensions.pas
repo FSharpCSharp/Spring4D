@@ -566,7 +566,7 @@ begin
   begin
     while not fSkipped and fEnumerator.MoveNext do
     begin
-      fSkipped := fPredicate(fEnumerator.Current);
+      fSkipped := not fPredicate(fEnumerator.Current);
     end;
     Result := fSkipped;
   end;
@@ -623,7 +623,7 @@ begin
     index := 0;
     while not fSkipped and fEnumerator.MoveNext do
     begin
-      fSkipped := fPredicate(fEnumerator.Current, index);
+      fSkipped := not fPredicate(fEnumerator.Current, index);
       Inc(index);
     end;
     Result := fSkipped;
