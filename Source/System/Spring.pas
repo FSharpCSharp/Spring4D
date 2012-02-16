@@ -607,6 +607,7 @@ type
 
     procedure Add(const handler: T);
     procedure Remove(const handler: T);
+    procedure RemoveAll(instance: Pointer);
     procedure Clear;
 
     function EnsureInitialized: Event<T>; inline;
@@ -1880,17 +1881,25 @@ begin
   begin
     fInstance := TEvent<T>.Create;
   end;
-  Result := fInstance;
+  Result.fInstance := fInstance;
 end;
 
 procedure Event<T>.Add(const handler: T);
 begin
-  EnsureInitialized.Add(handler);
+  EnsureInitialized;
+  fInstance.Add(handler);
 end;
 
 procedure Event<T>.Remove(const handler: T);
 begin
-  EnsureInitialized.Remove(handler);
+  EnsureInitialized;
+  fInstance.Remove(handler);
+end;
+
+procedure Event<T>.RemoveAll(instance: Pointer);
+begin
+  if Assigned(fInstance) then
+    fInstance.RemoveAll(instance);
 end;
 
 procedure Event<T>.Clear;
@@ -1909,12 +1918,14 @@ end;
 
 function Event<T>.GetInstance: IEvent<T>;
 begin
-  Result := EnsureInitialized;
+  EnsureInitialized;
+  Result := fInstance;
 end;
 
 function Event<T>.GetInvoke: T;
 begin
-  Result := EnsureInitialized.Invoke;
+  EnsureInitialized;
+  Result := fInstance.Invoke;
 end;
 
 function Event<T>.GetIsEmpty: Boolean;
