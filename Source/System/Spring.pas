@@ -1346,12 +1346,10 @@ end;
 
 function Nullable<T>.Equals(const other: Nullable<T>): Boolean;
 begin
-  if not HasValue then
-    Result := not other.HasValue
-  else if other.HasValue then
+  if HasValue and other.HasValue then
     Result := TEqualityComparer<T>.Default.Equals(Value, other.Value)
   else
-    Result := False;
+    Result := HasValue = other.HasValue;
 end;
 
 class operator Nullable<T>.Implicit(const value: T): Nullable<T>;
