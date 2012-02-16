@@ -285,6 +285,16 @@ type
     ///	</remarks>
     function GetValueOrDefault(const defaultValue: T): T; overload;
 
+    /// <summary>
+    ///   Determines whether two nullable value are equal.
+    /// </summary>
+    /// <remarks>
+    ///   <p> If both two nullable values are null, return true; </p>
+    ///   <p> If either one is null, return false; </p>
+    ///   <p> else compares their values as usual. </p>
+    /// </remarks>
+    function Equals(const other: Nullable<T>): Boolean;
+
     ///	<summary>
     ///	  Gets a value indicating whether the current <c>Nullable{T}</c>
     ///	  structure has a value.
@@ -306,6 +316,8 @@ type
     class operator Implicit(const value: Variant): Nullable<T>;
     class operator Implicit(value: Pointer): Nullable<T>;
     class operator Explicit(const value: Nullable<T>): T;
+    class operator Equal(const a, b: Nullable<T>) : Boolean;
+    class operator NotEqual(const a, b: Nullable<T>) : Boolean;
   end;
 
 
@@ -1332,6 +1344,16 @@ begin
     Result := defaultValue;
 end;
 
+function Nullable<T>.Equals(const other: Nullable<T>): Boolean;
+begin
+  if not HasValue then
+    Result := not other.HasValue
+  else if other.HasValue then
+    Result := TEqualityComparer<T>.Default.Equals(Value, other.Value)
+  else
+    Result := False;
+end;
+
 class operator Nullable<T>.Implicit(const value: T): Nullable<T>;
 begin
   Result := Nullable<T>.Create(value);
@@ -1387,6 +1409,16 @@ end;
 class operator Nullable<T>.Explicit(const value: Nullable<T>): T;
 begin
   Result := value.Value;
+end;
+
+class operator Nullable<T>.Equal(const a, b: Nullable<T>): Boolean;
+begin
+  Result := a.Equals(b);
+end;
+
+class operator Nullable<T>.NotEqual(const a, b: Nullable<T>): Boolean;
+begin
+  Result := not a.Equals(b);
 end;
 
 {$ENDREGION}

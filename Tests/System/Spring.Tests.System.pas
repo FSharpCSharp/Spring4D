@@ -53,6 +53,7 @@ type
     procedure TestException;
     procedure TestLocalVariable;
     procedure TestFromVariant;
+    procedure TestEquals;
   end;
 
   TTestLazy = class(TTestCase)
@@ -151,6 +152,27 @@ begin
   fInteger := Nullable<Integer>.Create(value);
   CheckTrue(fInteger.HasValue);
   CheckEquals(ExpectedInteger, fInteger.Value);
+end;
+
+procedure TTestNullableInteger.TestEquals;
+var
+  a, b: Nullable<Integer>;
+begin
+  Assert(not a.HasValue);
+  Assert(not b.HasValue);
+
+  CheckTrue(a.Equals(b));
+  CheckTrue(b.Equals(a));
+
+  a := 2;
+  CheckFalse(a.Equals(b));
+  CheckFalse(b.Equals(a));
+
+  b := 2;
+  CheckTrue(a.Equals(b));
+
+  b := 3;
+  CheckFalse(a.Equals(b));
 end;
 
 {$ENDREGION}
