@@ -34,7 +34,7 @@ uses
 
 type
 
-  TQueue<T> = class(TEnumerableBase<T>, IQueue<T>)
+  TQueue<T> = class(TEnumerableBase<T>, IQueue<T>, IQueue)
   private
     type
       TGenericQueue = Generics.Collections.TQueue<T>;

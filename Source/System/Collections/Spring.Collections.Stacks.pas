@@ -34,11 +34,10 @@ uses
 
 type
 
-  TStack<T> = class(TEnumerableBase<T>, IStack<T>)
+  TStack<T> = class(TEnumerableBase<T>, IStack<T>, IStack)
   private
     type
       TGenericStack = Generics.Collections.TStack<T>;
-//      TGenericObjectStack = Generics.Collections.TObjectStack<T>;
 
       TStackEnumerator = class(TEnumeratorBase<T>)
       private
@@ -58,8 +57,6 @@ type
   protected
     function GetCount: Integer; override;
 
-//    function TryGetFirst(out value: T): Boolean; override;
-//    function TryGetLast(out value: T): Boolean; override;
     class function GetStackItem(stack: TGenericStack; index: Integer): T;
   public
     constructor Create; overload;
@@ -71,8 +68,8 @@ type
     function GetEnumerator: IEnumerator<T>; override;
 
     {$REGION 'Implements ICollection<T>'}
-      procedure Add(const item: T); // override;
-      function  Remove(const item: T): Boolean; // override;
+      procedure Add(const item: T);
+      function Remove(const item: T): Boolean;
       procedure Clear;
     {$ENDREGION}
 
@@ -155,14 +152,6 @@ begin
   Result := fOnNotify;
 end;
 
-{
-  TStack<T> = class(TEnumerable<T>)
-  private
-    FCount: Integer;
-    FItems: array of T;
-    //...
-  end;
-}
 class function TStack<T>.GetStackItem(stack: TGenericStack; index: Integer): T;
 begin
   Result := TArray<T>(PInteger(NativeInt(stack) + hfFieldSize + SizeOf(Integer))^)[index];

@@ -35,7 +35,7 @@ uses
   Spring.Collections.Base;
 
 type
-  THashSet<T> = class(TCollectionBase<T>, ISet<T>)
+  THashSet<T> = class(TCollectionBase<T>, ISet<T>, ISet)
   private
     fDictionary: Generics.Collections.TDictionary<T,Integer>; // TEMP Impl
   protected

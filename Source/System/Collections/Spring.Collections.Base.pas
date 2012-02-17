@@ -35,25 +35,48 @@ uses
   Spring.Collections;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>Provides an abstract implementation for the <see cref=
+  ///	"IEnumerator">IEnumerator</see> interface.</summary>
+  {$ENDREGION}
+  TEnumeratorBase = class abstract(TInterfacedObject, IEnumerator)
+  protected
+    function NonGenericGetCurrent: TValue; virtual; abstract;
+    function IEnumerator.GetCurrent = NonGenericGetCurrent;
+  public
+    function MoveNext: Boolean; virtual;
+    procedure Reset; virtual;
+    property Current: TValue read NonGenericGetCurrent;
+  end;
 
   {$REGION 'Documentation'}
   ///	<summary>Provides an abstract implementation for the <see cref=
   ///	"IEnumerator{T}">IEnumerator&lt;T&gt;</see> interface.</summary>
   {$ENDREGION}
-  TEnumeratorBase<T> = class abstract(TInterfacedObject, IEnumerator<T>, IInterface)
+  TEnumeratorBase<T> = class abstract(TEnumeratorBase, IEnumerator<T>)
   protected
+    function NonGenericGetCurrent: TValue; override; final;
     function GetCurrent: T; virtual; abstract;
   public
-    function MoveNext: Boolean; virtual;
-    procedure Reset; virtual;
     property Current: T read GetCurrent;
+  end;
+
+  {$REGION 'Documentation'}
+  ///	<summary>Provides an abstract implementation for the <see cref=
+  ///	"IEnumerable">IEnumerable</see> interface.</summary>
+  {$ENDREGION}
+  TEnumerableBase = class abstract(TInterfacedObject, IEnumerable)
+  protected
+    function NonGenericGetEnumerator: IEnumerator; virtual; abstract;
+    function IEnumerable.GetEnumerator = NonGenericGetEnumerator;
   end;
 
   /// <summary>
   /// Provides a default implementation for <c>IEnumerable(T)</c> (Extension Methods).
   /// </summary>
-  TEnumerableBase<T> = class abstract(TInterfacedObject, IEnumerable<T>, IElementType)
+  TEnumerableBase<T> = class abstract(TEnumerableBase, IEnumerable<T>, IElementType)
   protected
+    function NonGenericGetEnumerator: IEnumerator; override; final;
   {$REGION 'Implements IElementType'}
     function GetElementType: PTypeInfo;
   {$ENDREGION}
@@ -114,7 +137,7 @@ type
   /// <remarks>
   ///   Notes: The Add/Remove/Clear methods are abstract. IsReadOnly returns False by default.
   /// </remarks>
-  TCollectionBase<T> = class abstract(TEnumerableBase<T>, ICollection<T>)
+  TCollectionBase<T> = class abstract(TEnumerableBase<T>, ICollection<T>, ICollection)
   protected
     function GetIsReadOnly: Boolean; virtual;
   public
@@ -123,12 +146,14 @@ type
     procedure AddRange(const collection: IEnumerable<T>); overload; virtual;
     procedure AddRange(const collection: TEnumerable<T>); overload; virtual;
 
-    function  Remove(const item: T): Boolean; virtual; abstract;
+    function Remove(const item: T): Boolean; virtual; abstract;
     procedure RemoveRange(const collection: array of T); overload; virtual;
     procedure RemoveRange(const collection: IEnumerable<T>); overload; virtual;
     procedure RemoveRange(const collection: TEnumerable<T>); overload; virtual;
 
     procedure Clear; virtual; abstract;
+
+    function AsCollection: ICollection;
 
     /// <value>Returns false, by default.</value>
     property IsReadOnly: Boolean read GetIsReadOnly;
@@ -149,7 +174,7 @@ type
     property Controller: IInterface read GetController;
   end;
 
-  TListBase<T> = class abstract(TCollectionBase<T>, IList<T>)
+  TListBase<T> = class abstract(TCollectionBase<T>, IList<T>, IList)
   protected
     type
       TEnumerator = class(TEnumeratorBase<T>)
@@ -230,6 +255,9 @@ type
     procedure Sort(const comparer: IComparer<T>); overload;
     procedure Sort(const comparison: TComparison<T>); overload;
     procedure Reverse; virtual; abstract;
+
+    function AsList: IList;
+
     property Items[index: Integer]: T read GetItem write SetItem; default;
     property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
   end;
@@ -242,16 +270,26 @@ uses
   Spring.Collections.Lists,
   Spring.Collections.Extensions;
 
-{$REGION 'TEnumeratorBase<T>'}
+{$REGION 'TEnumeratorBase'}
 
-function TEnumeratorBase<T>.MoveNext: Boolean;
+function TEnumeratorBase.MoveNext: Boolean;
 begin
   Result := False;
 end;
 
-procedure TEnumeratorBase<T>.Reset;
+procedure TEnumeratorBase.Reset;
 begin
   raise ENotSupportedException.CreateRes(@SCannotResetEnumerator);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TEnumeratorBase<T>'}
+
+function TEnumeratorBase<T>.NonGenericGetCurrent: TValue;
+begin
+  Result := TValue.From<T>(GetCurrent);
 end;
 
 {$ENDREGION}
@@ -588,6 +626,11 @@ begin
   end;
 end;
 
+function TEnumerableBase<T>.NonGenericGetEnumerator: IEnumerator;
+begin
+  Result := GetEnumerator;
+end;
+
 function TEnumerableBase<T>.Reversed: IEnumerable<T>;
 var
   list: IList<T>;
@@ -833,6 +876,11 @@ begin
   end;
 end;
 
+function TCollectionBase<T>.AsCollection: ICollection;
+begin
+  Result := Self;
+end;
+
 procedure TCollectionBase<T>.RemoveRange(const collection: array of T);
 var
   item: T;
@@ -989,6 +1037,11 @@ end;
 procedure TListBase<T>.Add(const item: T);
 begin
   Insert(Count, item);
+end;
+
+function TListBase<T>.AsList: IList;
+begin
+  Result := Self;
 end;
 
 procedure TListBase<T>.Clear;

@@ -68,6 +68,8 @@ type
 
   PTypeInfo = TypInfo.PTypeInfo;
 
+  TValue = Rtti.TValue;
+
   ///	<summary>
   ///	  Represents the class type of <see cref="System|TCustomAttribute" />.
   ///	</summary>

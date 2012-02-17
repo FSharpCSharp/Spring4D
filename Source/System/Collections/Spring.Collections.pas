@@ -53,16 +53,24 @@ type
   IDictionary<TKey, TValue> = interface;
   IStack<T> = interface;
   IQueue<T> = interface;
-  ISet<T>   = interface;
+  ISet<T> = interface;
 
   ICollectionNotifyDelegate<T> = interface;
 
   TCollectionNotification = Generics.Collections.TCollectionNotification;
 
+  IEnumerator = interface(IInvokable)
+    ['{496B0ABF-CDEE-11D3-88E8-00902754C43A}']
+    function GetCurrent: TValue;
+    function MoveNext: Boolean;
+    procedure Reset;
+    property Current: TValue read GetCurrent;
+  end;
+
   /// <summary>
   /// Represents an iterator over a generic enumerable collection.
   /// </summary>
-  IEnumerator<T> = interface(IInterface)
+  IEnumerator<T> = interface(IEnumerator)
     /// <summary>
     /// The getter of the <see cref="Current" /> property.
     /// </summary>
@@ -94,7 +102,6 @@ type
   end;
 
   (*
-
     Distinct, Union, Intersect, Exclude
 
     Select<T>, SelectMany<T>
@@ -108,6 +115,11 @@ type
     OrderBy, OrderByDescending, ThenBy
   *)
 
+  IEnumerable = interface(IInvokable)
+    ['{496B0ABE-CDEE-11D3-88E8-00902754C43A}']
+    function GetEnumerator: IEnumerator;
+  end;
+
   ///	<summary>
   /// Provides limited LINQ-like enumerable extension methods for
   ///	<c>IEnumerable{T}</c>.
@@ -115,7 +127,7 @@ type
   /// <seealso href="http://msdn.microsoft.com/en-us/magazine/cc700332.aspx">
   /// The LINQ Enumerable Class
   /// </seealso>
-  IEnumerable<T> = interface(IInvokable)
+  IEnumerable<T> = interface(IEnumerable)
     /// <summary>
     /// Returns an enumerator that iterates through a collection.
     /// </summary>
@@ -355,6 +367,9 @@ type
     property IsEmpty: Boolean read GetIsEmpty;
   end;
 
+  ICollection = interface(IEnumerable)
+  end;
+
   /// <summary>
   /// Defines methods to manipulate generic collections.
   /// </summary>
@@ -363,7 +378,7 @@ type
     function GetIsReadOnly: Boolean;
   {$ENDREGION}
 
-    procedure Add(const item: T); overload;
+    procedure Add(const item: T);
     procedure AddRange(const collection: array of T); overload;
     procedure AddRange(const collection: IEnumerable<T>); overload;
     procedure AddRange(const collection: TEnumerable<T>); overload;
@@ -373,11 +388,14 @@ type
     procedure RemoveRange(const collection: IEnumerable<T>); overload;
     procedure RemoveRange(const collection: TEnumerable<T>); overload;
 
-//    function Extract(const item: T): T; overload;
-// Ownerships: TCollectionOwnerships (coOwnsElements, coOwnsKeys, coOwnsValues)
-
     procedure Clear;
+
+    function AsCollection: ICollection;
+
     property IsReadOnly: Boolean read GetIsReadOnly;
+  end;
+
+  IList = interface(ICollection)
   end;
 
   /// <summary>
@@ -408,6 +426,8 @@ type
 
     function IndexOf(const item: T): Integer;
     function LastIndexOf(const item: T): Integer;
+
+    function AsList: IList;
 
     property Items[index: Integer]: T read GetItem write SetItem; default;
     property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
@@ -447,6 +467,9 @@ type
     property OnValueNotify: ICollectionNotifyDelegate<TValue> read GetOnValueNotify;
   end;
 
+  IStack = interface(IEnumerable)
+  end;
+
   IStack<T> = interface(IEnumerable<T>)
   {$REGION 'Property Getters'}
     function GetOnNotify: ICollectionNotifyDelegate<T>;
@@ -460,6 +483,9 @@ type
     property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
   end;
 
+  IQueue = interface(IEnumerable)
+  end;
+
   IQueue<T> = interface(IEnumerable<T>)
   {$REGION 'Property Getters'}
     function GetOnNotify: ICollectionNotifyDelegate<T>;
@@ -471,6 +497,9 @@ type
     function PeekOrDefault: T;
     function TryPeek(out item: T): Boolean;
     property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
+  end;
+
+  ISet = interface(ICollection)
   end;
 
   ISet<T> = interface(ICollection<T>)
