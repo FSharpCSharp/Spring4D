@@ -869,7 +869,7 @@ end;
 
 function TNameFilter<T>.Accept(const member: T): Boolean;
 begin
-  Result := SameText(member.Name, fName);
+  Result := SameText(TRttiMember(member).Name, fName);
 end;
 
 { TTypeFilter<T> }
