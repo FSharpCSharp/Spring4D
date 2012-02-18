@@ -45,6 +45,7 @@ contains
   Spring.Collections in '..\..\Source\System\Collections\Spring.Collections.pas',
   Spring.Collections.Queues in '..\..\Source\System\Collections\Spring.Collections.Queues.pas',
   Spring.Collections.Sets in '..\..\Source\System\Collections\Spring.Collections.Sets.pas',
-  Spring.Collections.Stacks in '..\..\Source\System\Collections\Spring.Collections.Stacks.pas';
+  Spring.Collections.Stacks in '..\..\Source\System\Collections\Spring.Collections.Stacks.pas',
+  Spring.SystemUtils in '..\..\Source\System\Spring.SystemUtils.pas';
 
 end.

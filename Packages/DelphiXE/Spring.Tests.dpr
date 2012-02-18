@@ -22,66 +22,46 @@
 {                                                                           }
 {***************************************************************************}
 
-/// <summary>
-/// Represents the Unit Tests of Spring Enterprise Library for Delphi.
-/// </summary>
-/// <remarks>
-/// The compiler directive {$STRONGLINKTYPES ON} has been introduced since Delphi 2010. By enable this option,
-/// We use the Extended RTTI to register all test cases instead of register them manually.
-/// </remarks>
 program Spring.Tests;
 
-
-(*
-  Copied from the RAD Studio Documentation:
-  {$STRONGLINKTYPES ON} links in with strong fixups (rather than weak fixups) all types
-  in the EXE or DLL's root type table. The root type table is the index that lets the RTTI unit map qualified names to types.
-  The smart linker eliminates symbols (including the RTTI associated with types) that only have weak fixups referencing them.
-  If one or more strong fixups references the symbol, then it is included in the final binary,
-  and the weak references do not get set to @PointerToNil.
-*)
-{$STRONGLINKTYPES OFF}
-
-{.$DEFINE CONSOLE_TESTRUNNER}
-
 {$IFDEF CONSOLE_TESTRUNNER}
-{$APPTYPE CONSOLE}
+  {$APPTYPE CONSOLE}
 {$ENDIF}
 
 uses
   Classes,
-  SysUtils,
   Forms,
   Windows,
-  Rtti,
   TestFramework,
   TestExtensions,
   GUITestRunner,
   TextTestRunner,
-  Spring.Tests.Container.Components in '..\..\Tests\Core\Spring.Tests.Container.Components.pas',
-  Spring.Tests.Container.LifetimeManager in '..\..\Tests\Core\Spring.Tests.Container.LifetimeManager.pas',
-  Spring.Tests.Container in '..\..\Tests\Core\Spring.Tests.Container.pas',
-  Spring.Tests.Pool in '..\..\Tests\Core\Spring.Tests.Pool.pas',
-  Spring.Tests.Cryptography in '..\..\Tests\Extensions\Spring.Tests.Cryptography.pas',
-  Spring.Tests.Utils in '..\..\Tests\Extensions\Spring.Tests.Utils.pas',
   Spring.Tests.Collections in '..\..\Tests\System\Spring.Tests.Collections.pas',
   Spring.Tests.DesignPatterns in '..\..\Tests\System\Spring.Tests.DesignPatterns.pas',
   Spring.Tests.Helpers in '..\..\Tests\System\Spring.Tests.Helpers.pas',
   Spring.Tests.Reflection.ValueConverters in '..\..\Tests\System\Spring.Tests.Reflection.ValueConverters.pas',
   Spring.Tests.System in '..\..\Tests\System\Spring.Tests.System.pas',
-  Spring.UnitTests in '..\..\Tests\Spring.UnitTests.pas';
-
-{$REGION 'Deprecated (The classical way)'}
+  Spring.Tests.SysUtils in '..\..\Tests\System\Spring.Tests.SysUtils.pas',
+  Spring.Tests.Container.Components in '..\..\Tests\Core\Spring.Tests.Container.Components.pas',
+  Spring.Tests.Container.LifetimeManager in '..\..\Tests\Core\Spring.Tests.Container.LifetimeManager.pas',
+  Spring.Tests.Container in '..\..\Tests\Core\Spring.Tests.Container.pas',
+  Spring.Tests.Pool in '..\..\Tests\Core\Spring.Tests.Pool.pas',
+  Spring.Tests.Cryptography in '..\..\Tests\Extensions\Spring.Tests.Cryptography.pas',
+  Spring.Tests.Utils in '..\..\Tests\Extensions\Spring.Tests.Utils.pas';
 
 procedure RegisterTestCases;
 begin
   RegisterTests('Spring.System', [
-//    TTestBuffer.Suite,
-//    TTestEmptyBuffer.Suite,
-//    TTestFiveByteBuffer.Suite,
     TRepeatedTest.Create(TTestNullableInteger.Suite, 3),
     TTestLazy.Suite,
     TTestEmptyMulticastEvent.Suite
+  ]);
+
+  RegisterTests('Spring.System.SysUtils', [
+    TTestSplitString.Suite,
+    TTestTryConvertStrToDateTime.Suite,
+    TTestSplitNullTerminatedStrings.Suite,
+    TTestEnum.Suite
   ]);
 
   RegisterTests('Spring.System.DesignPatterns', [
@@ -114,10 +94,6 @@ begin
 //    TTestValueExpression.Suite
 //  ]);
 
-  RegisterTests('Spring.Core.Pool', [
-    TTestObjectPool.Suite
-  ]);
-
   RegisterTests('Spring.Core.Container', [
     TTestEmptyContainer.Suite,
     TTestSimpleContainer.Suite,
@@ -135,18 +111,18 @@ begin
     TTestSingletonLifetimeManager.Suite,
     TTestTransientLifetimeManager.Suite,
     TTestDefaultResolve.Suite,
-    TTestInjectionByValue.Suite
+    TTestInjectionByValue.Suite,
+    TTestObjectPool.Suite
   ]);
 
   RegisterTests('Spring.Extensions.Utils', [
-    TTestSplitString.Suite,
-    TTestTryConvertStrToDateTime.Suite,
-    TTestSplitNullTerminatedStrings.Suite,
-    TTestVersion.Suite,
-    TTestEnum.Suite
+    TTestVersion.Suite
   ]);
 
   RegisterTests('Spring.Extensions.Cryptography', [
+//    TTestBuffer.Suite,
+//    TTestEmptyBuffer.Suite,
+//    TTestFiveByteBuffer.Suite,
     TTestCRC16.Suite,
     TTestCRC32.Suite,
     TTestMD5.Suite,
@@ -185,7 +161,6 @@ begin
   Application.Initialize;
 
   RegisterTestCases;
-//  RegisterAllTestCasesByRTTI;
 
   if IsConsole then
     TextTestRunner.RunRegisteredTests

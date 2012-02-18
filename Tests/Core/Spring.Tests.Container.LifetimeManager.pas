@@ -33,8 +33,7 @@ uses
   TypInfo,
   Spring,
   Spring.Container.Core,
-  Spring.Container.LifetimeManager,
-  Spring.UnitTests;
+  Spring.Container.LifetimeManager;
 
 type
   TMockContext = class(TInterfacedObject, IContainerContext)
@@ -66,7 +65,7 @@ type
   TMockInterfacedObject = class(TInterfacedObject)
   end;
 
-  [Ignore]
+//  [Ignore]
   TLifetimeManagerTestCase = class abstract(TTestCase)
   protected
     fContainerContext: IContainerContext;

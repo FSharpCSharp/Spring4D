@@ -58,6 +58,7 @@
 			<DCCReference Include="..\..\Tests\System\Spring.Tests.Reflection.ValueConverters.pas"/>
 			<DCCReference Include="..\..\Tests\System\Spring.Tests.System.pas"/>
 			<DCCReference Include="..\..\Tests\Spring.UnitTests.pas"/>
+			<DCCReference Include="..\..\Tests\System\Spring.Tests.SysUtils.pas"/>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>
 			</BuildConfiguration>

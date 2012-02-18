@@ -31,7 +31,6 @@ requires
 
 contains
   Spring.Reflection in '..\..\Source\System\Reflection\Spring.Reflection.pas',
-  Spring in '..\..\Source\System\Spring.pas',
   Spring.ResourceStrings in '..\..\Source\System\Spring.ResourceStrings.pas',
   Spring.Reflection.ValueConverters in '..\..\Source\System\Reflection\Spring.Reflection.ValueConverters.pas',
   Spring.Collections.Base in '..\..\Source\System\Collections\Spring.Collections.Base.pas',
@@ -43,6 +42,8 @@ contains
   Spring.Collections.Sets in '..\..\Source\System\Collections\Spring.Collections.Sets.pas',
   Spring.Collections.Stacks in '..\..\Source\System\Collections\Spring.Collections.Stacks.pas',
   Spring.DesignPatterns in '..\..\Source\System\Spring.DesignPatterns.pas',
-  Spring.Helpers in '..\..\Source\System\Spring.Helpers.pas';
+  Spring.Helpers in '..\..\Source\System\Spring.Helpers.pas',
+  Spring.SystemUtils in '..\..\Source\System\Spring.SystemUtils.pas',
+  Spring in '..\..\Source\System\Spring.pas';
 
 end.

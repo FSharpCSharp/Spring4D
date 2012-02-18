@@ -6,7 +6,7 @@
 			<Base>True</Base>
 			<Config Condition="'$(Config)'==''">Debug</Config>
 			<AppType>Package</AppType>
-			<FrameworkType>None</FrameworkType>
+			<FrameworkType>FMX</FrameworkType>
 			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
 			<Platform Condition="'$(Platform)'==''">Win32</Platform>
 			<TargetedPlatforms>3</TargetedPlatforms>
@@ -141,6 +141,7 @@
 			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.Queues.pas"/>
 			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.Sets.pas"/>
 			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.Stacks.pas"/>
+			<DCCReference Include="..\..\Source\System\Spring.SystemUtils.pas"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>

@@ -34,9 +34,8 @@ interface
 uses
   Classes,
   SysUtils,
-  DateUtils,
-  Types,
   TypInfo,
+  Types,
   Generics.Defaults,
   Generics.Collections,
   Diagnostics,
@@ -693,82 +692,6 @@ procedure CheckArgumentNotNull(const value: IInterface; const argumentName: stri
 procedure CheckArgumentNotNull(value: Pointer; const argumentName: string); overload;
 
 
-///	<summary>
-///	  Try getting the underlying type name of a nullable type.
-///	</summary>
-///	<remarks>
-///	  For instance, the underlying type name of the type
-///	  <c>Nullable&lt;System.Integer&gt;</c> is <c>System.Integer</c>.
-///	</remarks>
-function TryGetUnderlyingTypeName(typeInfo: PTypeInfo; out underlyingTypeName: string): Boolean;
-
-///	<summary>
-///	  Try getting the underlying type info of a nullable type.
-///	</summary>
-function TryGetUnderlyingTypeInfo(typeInfo: PTypeInfo; out underlyingTypeInfo: PTypeInfo): Boolean;
-
-///	<summary>
-///	  Try getting the underlying value of a nullable type.
-///	</summary>
-///	<param name="value">
-///	  the value
-///	</param>
-///	<param name="underlyingValue">
-///	  the underlying value.
-///	</param>
-///	<returns>
-///	  Returns True if the value is a <c>Nullable&lt;T&gt;</c> and it has
-///	  value.
-///	</returns>
-function TryGetUnderlyingValue(const value: TValue; out underlyingValue: TValue): Boolean;
-
-{$REGION 'Documentation'}
-///	<summary>Uses this function to get an interface instance from a
-///	TValue.</summary>
-///	<remarks>
-///	  <note type="warning">Rtti bugs: QC #82433 if
-///	  value.TryAsType&lt;IPropertyNotification&gt;(propertyNotification)
-///	  then</note>
-///	</remarks>
-{$ENDREGION}
-function TryGetInterface(const instance: TValue; const guid: TGuid; out intf): Boolean; overload;
-
-///	<seealso cref="Spring|Nullable{T}"></seealso>
-function TryGetInterface(const instance: TValue; const guid: TGuid): Boolean; overload;
-
-///	<summary>
-///	  Try parsing a string to a datetime value based on the specified format.
-///	  Returns True if the input string matches the format.
-///	</summary>
-///	<param name="s">
-///	  the input string
-///	</param>
-///	<param name="format">
-///	  the format of datetime
-///	</param>
-///	<param name="value">
-///	  output datetime value
-///	</param>
-///	<returns>
-///	  Returns True if the input string can be parsed.
-///	</returns>
-function TryConvertStrToDateTime(const s, format: string; out value: TDateTime): Boolean;
-
-{$REGION 'Documentation'}
-///	<summary>
-///	  Parses a string to a datetime value based on the specified format. An
-///	  EConvertError exception will be raised if failed to parse the string.
-///	</summary>
-///	<param name="s">
-///	  the date time string.
-///	</param>
-///	<param name="format">
-///	  the format of datetime.
-///	</param>
-{$ENDREGION}
-function ConvertStrToDateTime(const s, format: string): TDateTime;
-
-
 implementation
 
 uses
@@ -792,161 +715,6 @@ begin
   if value = nil then
   begin
     TArgument.RaiseArgumentNullException(argumentName);
-  end;
-end;
-
-function TryGetUnderlyingTypeName(typeInfo: PTypeInfo; out underlyingTypeName: string): Boolean;
-const
-  PrefixString = 'Nullable<';    // DO NOT LOCALIZE
-  PrefixStringLength = Length(PrefixString);
-var
-  typeName: string;
-begin
-  if (typeInfo = nil) or (typeInfo.Kind <> tkRecord) then
-  begin
-    Exit(False);
-  end;
-  typeName := TypInfo.GetTypeName(typeInfo);
-  if (Length(typeName) < PrefixStringLength) or
-    not SameText(LeftStr(typeName, PrefixStringLength), PrefixString) then
-  begin
-    Exit(False);
-  end;
-  Result := True;
-  underlyingTypeName := Copy(typeName, PrefixStringLength + 1,
-    Length(typeName) - PrefixStringLength - 1);
-end;
-
-function TryGetUnderlyingTypeInfo(typeInfo: PTypeInfo; out underlyingTypeInfo: PTypeInfo): Boolean;
-var
-  underlyingTypeName: string;
-  rttiType: TRttiType;
-  context: TRttiContext;
-begin
-  Result := TryGetUnderlyingTypeName(typeInfo, underlyingTypeName);
-  if Result then
-  begin
-    context := TRttiContext.Create;
-    rttiType := context.FindType(underlyingTypeName);
-    if rttiType <> nil then
-      underlyingTypeInfo := rttiType.Handle
-    else
-      underlyingTypeInfo := nil;
-    Result := underlyingTypeInfo <> nil;
-  end;
-end;
-
-function TryGetUnderlyingValue(const value: TValue; out underlyingValue: TValue): Boolean;
-var
-  underlyingTypeInfo: PTypeInfo;
-  hasValueString: string;
-  p: Pointer;
-begin
-  Result := TryGetUnderlyingTypeInfo(value.TypeInfo, underlyingTypeInfo);
-  if not Result then
-  begin
-    Exit;
-  end;
-  p := value.GetReferenceToRawData;
-  hasValueString := PString(PByte(p) + (value.DataSize - SizeOf(string)))^;
-  if hasValueString = '' then
-  begin
-    Exit(False);
-  end;
-  TValue.Make(p, underlyingTypeInfo, underlyingValue);
-end;
-
-function TryGetInterface(const instance: TValue; const guid: TGuid; out intf): Boolean;
-var
-  localInterface: IInterface;
-begin
-  if instance.IsEmpty then Exit(False);
-  if instance.IsObject then
-  begin
-    Result := instance.AsObject.GetInterface(guid, intf);
-  end
-  else if instance.TryAsType<IInterface>(localInterface) then
-  begin
-    Result := localInterface.QueryInterface(guid, intf) = S_OK;
-  end
-  else
-  begin
-    Exit(False);
-  end;
-end;
-
-function TryGetInterface(const instance: TValue; const guid: TGuid): Boolean;
-var
-  localInterface: IInterface;
-begin
-  if instance.IsEmpty then Exit(False);
-  if instance.IsObject then
-  begin
-    Result := Supports(instance.AsObject, guid);
-  end
-  else if instance.TryAsType<IInterface>(localInterface) then
-  begin
-    Result := Supports(localInterface, guid);
-  end
-  else
-  begin
-    Exit(False);
-  end;
-end;
-
-function TryConvertStrToDateTime(const s, format: string; out value: TDateTime): Boolean;
-var
-  localString: string;
-  stringFormat: string;
-  year, month, day: Word;
-  hour, minute, second, milliSecond: Word;
-
-  function ExtractElementDef(const element: string; const defaultValue: Integer = 0): Integer;
-  var
-    position: Integer;
-  begin
-    position := Pos(element, stringFormat);
-    if position > 0 then
-    begin
-      Result := StrToInt(Copy(localString, position, Length(element)));
-    end
-    else
-    begin
-      Result := defaultValue;
-    end;
-  end;
-begin
-  localString := Trim(s);
-  stringFormat := UpperCase(format);
-  Result := Length(localString) = Length(stringFormat);
-  if Result then
-  try
-    year := ExtractElementDef('YYYY', 0);
-    if year = 0 then
-    begin
-      year := ExtractElementDef('YY', 1899);
-      if year < 1899 then
-      begin
-        Inc(year, (DateUtils.YearOf(Today) div 100) * 100);
-      end;
-    end;
-    month := ExtractElementDef('MM', 12);
-    day := ExtractElementDef('DD', 30);
-    hour := ExtractElementDef('HH');
-    minute := ExtractElementDef('NN');
-    second := ExtractElementDef('SS');
-    milliSecond := ExtractElementDef('ZZZ');
-    value := EncodeDateTime(year, month, day, hour, minute, second, milliSecond);
-  except
-    Result := False;
-  end;
-end;
-
-function ConvertStrToDateTime(const s, format: string): TDateTime;
-begin
-  if not TryConvertStrToDateTime(s, format, Result) then
-  begin
-    raise EConvertError.CreateResFmt(@SInvalidDateTime, [s]);
   end;
 end;
 
@@ -1333,7 +1101,7 @@ end;
 function Nullable<T>.GetValueOrDefault: T;
 begin
   if HasValue then
-    Result := value
+    Result := Value
   else
     Result := Default(T);
 end;
@@ -1341,7 +1109,7 @@ end;
 function Nullable<T>.GetValueOrDefault(const defaultValue: T): T;
 begin
   if HasValue then
-    Result := value
+    Result := Value
   else
     Result := defaultValue;
 end;

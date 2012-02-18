@@ -676,6 +676,7 @@ uses
   StrUtils,
   SysUtils,
   Math,
+  Spring.SystemUtils,
   Spring.ResourceStrings;
 
   function CompareTypeInfo(const left, right: PTypeInfo): Boolean;

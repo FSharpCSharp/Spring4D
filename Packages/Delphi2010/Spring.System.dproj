@@ -62,6 +62,7 @@
 			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.Stacks.pas"/>
 			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.Queues.pas"/>
 			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.Sets.pas"/>
+			<DCCReference Include="..\..\Source\System\Spring.SystemUtils.pas"/>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>
 			</BuildConfiguration>

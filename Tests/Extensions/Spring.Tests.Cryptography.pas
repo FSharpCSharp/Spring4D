@@ -34,17 +34,16 @@ uses
   TestFramework,
   Spring,
   Spring.Cryptography,
-  Spring.Cryptography.Base,
-  Spring.UnitTests;
+  Spring.Cryptography.Base;
 
 type
-  [Ignore]
+//  [Ignore]
   TCryptoTestCase = class abstract(TTestCase)
   protected
     procedure CheckEquals(const expected, actual: TBuffer; const msg: string = ''); overload;
   end;
 
-  [Ignore]
+//  [Ignore]
   THashAlgorithmTestCase = class abstract(TCryptoTestCase)
   protected
     const
@@ -170,7 +169,7 @@ type
     procedure DoDecryptBlock(const inputBuffer: TBytes; var outputBuffer: TBytes); override;
   end;
 
-  [Ignore]
+//  [Ignore]
   TSymmetricAlgorithmTestCase = class abstract(TCryptoTestCase)
   protected
     fInputBuffer: TBuffer;
@@ -180,7 +179,7 @@ type
     fKey: TBuffer;
   end;
 
-  [Ignore]
+//  [Ignore]
   TTestSymmetricAlgorithmBase = class(TSymmetricAlgorithmTestCase)
   private
     fAlgorithm: ISymmetricAlgorithm;

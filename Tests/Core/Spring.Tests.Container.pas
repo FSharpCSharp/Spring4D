@@ -35,11 +35,10 @@ uses
   Spring,
   Spring.Container,
   Spring.Services,
-  Spring.UnitTests,
   Spring.Tests.Container.Components;
 
 type
-  [Ignore]
+//  [Ignore]
   TContainerTestCase = class abstract(TTestCase)
   protected
     fContainer: TContainer;
@@ -116,7 +115,7 @@ type
     procedure TestStringArgument;
   end;
 
-  [Ignore]
+//  [Ignore]
   TTypedInjectionTestCase = class abstract(TContainerTestCase)
   private
     fNameService: INameService;
@@ -142,7 +141,7 @@ type
     procedure DoRegisterComponents; override;
   end;
 
-  [Ignore]
+//  [Ignore]
   TNamedInjectionsTestCase = class(TContainerTestCase)
   private
     fExplorer: IInjectionExplorer;

@@ -39,7 +39,8 @@ uses
   TestFramework,
   TestExtensions,
   Generics.Defaults,
-  Spring;
+  Spring,
+  Spring.SystemUtils;
 
 type
   TTestNullableInteger = class(TTestCase)

@@ -43,6 +43,7 @@ contains
   Spring.Collections.Dictionaries in '..\..\Source\System\Collections\Spring.Collections.Dictionaries.pas',
   Spring.Collections.Stacks in '..\..\Source\System\Collections\Spring.Collections.Stacks.pas',
   Spring.Collections.Queues in '..\..\Source\System\Collections\Spring.Collections.Queues.pas',
-  Spring.Collections.Sets in '..\..\Source\System\Collections\Spring.Collections.Sets.pas';
+  Spring.Collections.Sets in '..\..\Source\System\Collections\Spring.Collections.Sets.pas',
+  Spring.SystemUtils in '..\..\Source\System\Spring.SystemUtils.pas';
 
 end.

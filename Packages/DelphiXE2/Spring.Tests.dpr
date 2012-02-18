@@ -69,7 +69,8 @@ uses
   Spring.Tests.Helpers in '..\..\Tests\System\Spring.Tests.Helpers.pas',
   Spring.Tests.Reflection.ValueConverters in '..\..\Tests\System\Spring.Tests.Reflection.ValueConverters.pas',
   Spring.Tests.System in '..\..\Tests\System\Spring.Tests.System.pas',
-  Spring.UnitTests in '..\..\Tests\Spring.UnitTests.pas';
+  Spring.UnitTests in '..\..\Tests\Spring.UnitTests.pas',
+  Spring.Tests.SysUtils in '..\..\Tests\System\Spring.Tests.SysUtils.pas';
 
 {$REGION 'Deprecated (The classical way)'}
 
