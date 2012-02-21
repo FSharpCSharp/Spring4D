@@ -323,6 +323,9 @@ type
 
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(serviceType: PTypeInfo; const name: string): Boolean; overload;
+
+    function TryGetService<T>(out service: T): Boolean; overload;
+    function TryGetService<T>(const name: string; out service: T): Boolean; overload;
   end;
 
 {$REGION 'Deprecated LifetimeType constants'}
@@ -509,6 +512,24 @@ end;
 function TServiceLocator.HasService(serviceType: PTypeInfo; const name: string): Boolean;
 begin
   Result := GetServiceLocator.HasService(serviceType, name);
+end;
+
+function TServiceLocator.TryGetService<T>(out service: T): Boolean;
+begin
+  Result := GetServiceLocator.HasService(TypeInfo(T));
+  if Result then
+    service := GetService<T>
+  else
+    service := Default(T);
+end;
+
+function TServiceLocator.TryGetService<T>(const name: string; out service: T): Boolean;
+begin
+  Result := GetServiceLocator.HasService(TypeInfo(T), name);
+  if Result then
+    service := GetService<T>(name)
+  else
+    service := Default(T);
 end;
 
 {$ENDREGION}
