@@ -464,20 +464,39 @@ type
 
   {$REGION 'Multicast Event'}
 
+  IEvent = interface
+  {$REGION 'Property Accessors'}
+    function GetInvoke: TMethod;
+    function GetCount: Integer;
+    function GetEnabled: Boolean;
+    function GetIsEmpty: Boolean;
+    procedure SetEnabled(const value: Boolean);
+  {$ENDREGION}
+    procedure Add(const handler: TMethod);
+    procedure Remove(const handler: TMethod);
+    procedure RemoveAll(instance: Pointer);
+    procedure Clear;
+    procedure ForEach(const action: TAction<TMethod>);
+    property Count: Integer read GetCount;
+    property Enabled: Boolean read GetEnabled write SetEnabled;
+    property IsEmpty: Boolean read GetIsEmpty;
+    property Invoke: TMethod read GetInvoke;
+  end;
+
   ///	<summary>
   ///	  Represents a multicast event.
   ///	</summary>
   ///	<typeparam name="T">
   ///	  The event handler type must be an instance procedural type such as TNotifyEvent.
   ///	</typeparam>
-  IEvent<T> = interface
-    {$REGION 'Property Accessors'}
-      function GetInvoke: T;
-      function GetCount: Integer;
-      function GetEnabled: Boolean;
-      function GetIsEmpty: Boolean;
-      procedure SetEnabled(const value: Boolean);
-    {$ENDREGION}
+  IEvent<T> = interface(IEvent)
+  {$REGION 'Property Accessors'}
+    function GetInvoke: T;
+    function GetCount: Integer;
+    function GetEnabled: Boolean;
+    function GetIsEmpty: Boolean;
+    procedure SetEnabled(const value: Boolean);
+  {$ENDREGION}
 
     ///	<summary>
     ///	  Adds an event handler to the list.
@@ -487,7 +506,7 @@ type
     ///	<summary>
     ///	  Removes an event handler if it was added to the event.
     ///	</summary>
-    procedure Remove(const handler: T); overload;
+    procedure Remove(const handler: T);
 
     ///	<summary>
     ///	  Removes all event handlers which were registered by an instance.
@@ -580,33 +599,49 @@ type
     property IsEmpty: Boolean read GetIsEmpty;
   end;
 
-  TEvent<T> = class(TInterfacedObject, IEvent<T>)
+  TEvent = class(TInterfacedObject, IEvent)
   private
+    
     fInvocations: TMethodInvocations;
-    fInvoke: T;
+    fInvoke: TMethod;
     fEnabled: Boolean;
-    function GetInvoke: T;
+    fTypeInfo: PTypeInfo;
+    function GetInvoke: TMethod;
     function GetCount: Integer;
     function GetEnabled: Boolean;
+    
     function GetIsEmpty: Boolean;
     procedure SetEnabled(const value: Boolean);
   protected
     procedure InvocationsNeeded; inline;
     property Invocations: TMethodInvocations read fInvocations;
   public
-    constructor Create;
+    constructor Create(typeInfo: PTypeInfo);
     destructor Destroy; override;
 
-    procedure Add(const handler: T);
-    procedure Remove(const handler: T);
+    procedure Add(const handler: TMethod);
+    procedure Remove(const handler: TMethod); overload;
     procedure RemoveAll(instance: Pointer);
     procedure Clear;
-    procedure ForEach(const action: TAction<T>);
+    procedure ForEach(const action: TAction<TMethod>);
 
-    property Invoke: T read GetInvoke;
+    property Invoke: TMethod read GetInvoke;
     property Count: Integer read GetCount;
     property Enabled: Boolean read GetEnabled write SetEnabled;
     property IsEmpty: Boolean read GetIsEmpty;
+  end;
+
+  TEvent<T> = class(TEvent, IEvent<T>)
+  private
+    function GetInvoke: T;
+  public
+    constructor Create;
+
+    procedure Add(const handler: T); overload;
+    procedure Remove(const handler: T); overload;
+    procedure ForEach(const action: TAction<T>);
+
+    property Invoke: T read GetInvoke;
   end;
 
   Event<T> = record
@@ -1575,58 +1610,44 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TEvent<T>'}
+{$REGION 'TEvent'}
 
-constructor TEvent<T>.Create;
-var
-  p: PTypeInfo;
+constructor TEvent.Create(typeInfo: PTypeInfo);
 begin
-  p := TypeInfo(T);
-  if not Assigned(p) then
+  if not Assigned(typeInfo) then
     raise EInvalidOperationException.CreateRes(@SNoTypeInfo);
-  if p.Kind <> tkMethod then
+  if typeInfo.Kind <> tkMethod then
     raise EInvalidOperationException.CreateRes(@STypeParameterShouldBeMethod);
   inherited Create;
   fEnabled := True;
+  fTypeInfo := typeInfo;
 end;
 
-destructor TEvent<T>.Destroy;
+destructor TEvent.Destroy;
 begin
   fInvocations.Free;
   inherited Destroy;
 end;
 
-procedure TEvent<T>.ForEach(const action: TAction<T>);
+procedure TEvent.Add(const handler: TMethod);
 begin
   InvocationsNeeded;
-  fInvocations.ForEach(TAction<TMethod>(action));
+  fInvocations.Add(handler);
 end;
 
-procedure TEvent<T>.Add(const handler: T);
-begin
-  InvocationsNeeded;
-  fInvocations.Add(PMethod(@handler)^);
-end;
-
-procedure TEvent<T>.Remove(const handler: T);
-begin
-  InvocationsNeeded;
-  fInvocations.Remove(PMethod(@handler)^);
-end;
-
-procedure TEvent<T>.RemoveAll(instance: Pointer);
-begin
-  InvocationsNeeded;
-  fInvocations.RemoveAll(instance);
-end;
-
-procedure TEvent<T>.Clear;
+procedure TEvent.Clear;
 begin
   if Assigned(fInvocations) then
     fInvocations.Clear;
 end;
 
-function TEvent<T>.GetCount: Integer;
+procedure TEvent.ForEach(const action: TAction<TMethod>);
+begin
+  InvocationsNeeded;
+  fInvocations.ForEach(action);
+end;
+
+function TEvent.GetCount: Integer;
 begin
   if Assigned(fInvocations) then
     Result := fInvocations.Count
@@ -1634,35 +1655,77 @@ begin
     Result := 0;
 end;
 
-function TEvent<T>.GetEnabled: Boolean;
+function TEvent.GetEnabled: Boolean;
 begin
   Result := fEnabled;
 end;
 
-function TEvent<T>.GetInvoke: T;
+function TEvent.GetInvoke: TMethod;
 begin
   InvocationsNeeded;
   Result := fInvoke;
 end;
 
-function TEvent<T>.GetIsEmpty: Boolean;
+function TEvent.GetIsEmpty: Boolean;
 begin
   Result := Count = 0;
 end;
 
-procedure TEvent<T>.SetEnabled(const value: Boolean);
+procedure TEvent.InvocationsNeeded;
+begin
+  if fInvocations = nil then
+  begin
+    fInvocations := TMethodInvocations.Create(fTypeInfo);
+    PMethod(@fInvoke)^.Data := fInvocations;
+    PMethod(@fInvoke)^.Code := @TMethodInvocations.InvokeEventHandlerStub;
+  end;
+end;
+
+procedure TEvent.Remove(const handler: TMethod);
+begin
+  InvocationsNeeded;
+  fInvocations.Remove(PMethod(@handler)^);
+end;
+
+procedure TEvent.RemoveAll(instance: Pointer);
+begin
+  InvocationsNeeded;
+  fInvocations.RemoveAll(instance);
+end;
+
+procedure TEvent.SetEnabled(const value: Boolean);
 begin
   fEnabled := value;
 end;
 
-procedure TEvent<T>.InvocationsNeeded;
+{$ENDREGION}
+
+
+{$REGION 'TEvent<T>'}
+
+constructor TEvent<T>.Create;
 begin
-  if fInvocations = nil then
-  begin
-    fInvocations := TMethodInvocations.Create(TypeInfo(T));
-    PMethod(@fInvoke)^.Data := fInvocations;
-    PMethod(@fInvoke)^.Code := @TMethodInvocations.InvokeEventHandlerStub;
-  end;
+  inherited Create(TypeInfo(T));
+end;
+
+procedure TEvent<T>.ForEach(const action: TAction<T>);
+begin
+  inherited ForEach(TAction<TMethod>(action));
+end;
+
+procedure TEvent<T>.Add(const handler: T);
+begin
+  inherited Add(PMethod(@handler)^);
+end;
+
+procedure TEvent<T>.Remove(const handler: T);
+begin
+  inherited Remove(PMethod(@handler)^);
+end;
+
+function TEvent<T>.GetInvoke: T;
+begin
+  PMethod(@Result)^ := inherited Invoke;
 end;
 
 {$ENDREGION}
