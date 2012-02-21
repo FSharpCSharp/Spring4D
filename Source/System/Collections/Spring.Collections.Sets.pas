@@ -40,6 +40,17 @@ type
     fDictionary: Generics.Collections.TDictionary<T,Integer>; // TEMP Impl
   protected
     function GetCount: Integer; override;
+
+    procedure NonGenericExceptWith(const collection: IEnumerable);
+    procedure ISet.ExceptWith = NonGenericExceptWith;
+    procedure NonGenericIntersectWith(const collection: IEnumerable);
+    procedure ISet.IntersectWith = NonGenericIntersectWith;
+    procedure NonGenericUnionWith(const collection: IEnumerable);
+    procedure ISet.UnionWith = NonGenericUnionWith;
+    function NonGenericSetEquals(const collection: IEnumerable): Boolean;
+    function ISet.SetEquals = NonGenericSetEquals;
+    function NonGenericOverlaps(const collection: IEnumerable): Boolean;
+    function ISet.Overlaps = NonGenericOverlaps;
   public
     constructor Create;
     destructor Destroy; override;
@@ -56,6 +67,7 @@ type
     procedure UnionWith(const collection: IEnumerable<T>);
     function SetEquals(const collection: IEnumerable<T>): Boolean;
     function Overlaps(const collection: IEnumerable<T>): Boolean;
+    function AsSet: ISet;
   end;
 
 implementation
@@ -85,20 +97,16 @@ begin
   fDictionary.AddOrSetValue(item, 0);
 end;
 
-//function THashSet<T>.Add(const item: T): Boolean;
-//begin
-//  Result := not fDictionary.ContainsKey(item);
-//  if Result then
-//  begin
-//    fDictionary.Add(item, 0);
-//  end;
-//end;
-
 function THashSet<T>.Remove(const item: T): Boolean;
 begin
   Result := fDictionary.ContainsKey(item);
   if Result then
     fDictionary.Remove(item);
+end;
+
+function THashSet<T>.AsSet: ISet;
+begin
+  Result := Self;
 end;
 
 procedure THashSet<T>.Clear;
@@ -115,11 +123,7 @@ procedure THashSet<T>.ExceptWith(const collection: IEnumerable<T>);
 var
   item: T;
 begin
-{$IFDEF DELPHIXE_UP}
-  TArgument.CheckNotNull(collection, 'collection');
-{$ELSE}
-  Assert(Assigned(collection), 'collection');
-{$ENDIF}
+  TArgument.CheckNotNull(collection <> nil, 'collection');
 
   for item in collection do
   begin
@@ -132,11 +136,7 @@ var
   item: T;
   list: IList<T>;
 begin
-{$IFDEF DELPHIXE_UP}
-  TArgument.CheckNotNull(collection, 'collection');
-{$ELSE}
-  Assert(Assigned(collection), 'collection');
-{$ENDIF}
+  TArgument.CheckNotNull(collection <> nil, 'collection');
 
   list := TList<T>.Create;
   for item in Self do
@@ -151,15 +151,37 @@ begin
   end;
 end;
 
+procedure THashSet<T>.NonGenericExceptWith(const collection: IEnumerable);
+begin
+  ExceptWith(collection as THashSet<T>);
+end;
+
+procedure THashSet<T>.NonGenericIntersectWith(const collection: IEnumerable);
+begin
+  IntersectWith(collection as THashSet<T>);
+end;
+
+function THashSet<T>.NonGenericOverlaps(const collection: IEnumerable): Boolean;
+begin
+  Result := Overlaps(collection as THashSet<T>);
+end;
+
+function THashSet<T>.NonGenericSetEquals(
+  const collection: IEnumerable): Boolean;
+begin
+  Result := SetEquals(collection as THashSet<T>);
+end;
+
+procedure THashSet<T>.NonGenericUnionWith(const collection: IEnumerable);
+begin
+  UnionWith(collection as THashSet<T>);
+end;
+
 procedure THashSet<T>.UnionWith(const collection: IEnumerable<T>);
 var
   item: T;
 begin
-{$IFDEF DELPHIXE_UP}
-  TArgument.CheckNotNull(collection, 'collection');
-{$ELSE}
-  Assert(Assigned(collection), 'collection');
-{$ENDIF}
+  TArgument.CheckNotNull(collection <> nil, 'collection');
 
   for item in collection do
   begin
@@ -171,11 +193,7 @@ function THashSet<T>.Overlaps(const collection: IEnumerable<T>): Boolean;
 var
   item: T;
 begin
-{$IFDEF DELPHIXE_UP}
-  TArgument.CheckNotNull(collection, 'collection');
-{$ELSE}
-  Assert(Assigned(collection), 'collection');
-{$ENDIF}
+  TArgument.CheckNotNull(collection <> nil, 'collection');
 
   for item in collection do
   begin
@@ -190,11 +208,7 @@ var
   item: T;
   localSet: ISet<T>;
 begin
-{$IFDEF DELPHIXE_UP}
-  TArgument.CheckNotNull(collection, 'collection');
-{$ELSE}
-  Assert(Assigned(collection), 'collection');
-{$ENDIF}
+  TArgument.CheckNotNull(collection <> nil, 'collection');
 
   localSet := THashSet<T>.Create;
 

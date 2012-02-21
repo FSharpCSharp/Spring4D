@@ -69,6 +69,56 @@ type
   protected
     function NonGenericGetEnumerator: IEnumerator; virtual; abstract;
     function IEnumerable.GetEnumerator = NonGenericGetEnumerator;
+
+    function NonGenericTryGetFirst(out value: TValue): Boolean; virtual; abstract;
+    function IEnumerable.TryGetFirst = NonGenericTryGetFirst;
+    function NonGenericTryGetLast(out value: TValue): Boolean; virtual; abstract;
+    function IEnumerable.TryGetLast = NonGenericTryGetLast;
+    function NonGenericFirst: TValue; virtual; abstract;
+    function IEnumerable.First = NonGenericFirst;
+    function NonGenericFirstOrDefault: TValue; virtual; abstract;
+    function IEnumerable.FirstOrDefault = NonGenericFirstOrDefault;
+    function NonGenericLast: TValue; virtual; abstract;
+    function IEnumerable.Last = NonGenericLast;
+    function NonGenericLastOrDefault: TValue; virtual; abstract;
+    function IEnumerable.LastOrDefault = NonGenericLastOrDefault;
+    function NonGenericSingle: TValue; virtual; abstract;
+    function IEnumerable.Single = NonGenericSingle;
+    function NonGenericSingleOrDefault: TValue; virtual; abstract;
+    function IEnumerable.SingleOrDefault = NonGenericSingleOrDefault;
+    function NonGenericElementAt(index: Integer): TValue; virtual; abstract;
+    function IEnumerable.ElementAt = NonGenericElementAt;
+    function NonGenericElementAtOrDefault(index: Integer): TValue; virtual; abstract;
+    function IEnumerable.ElementAtOrDefault = NonGenericElementAtOrDefault;
+    function NonGenericContains(const item: TValue): Boolean; virtual; abstract;
+    function IEnumerable.Contains = NonGenericContains;
+    function NonGenericMin: TValue; virtual; abstract;
+    function IEnumerable.Min = NonGenericMin;
+    function NonGenericMax: TValue; virtual; abstract;
+    function IEnumerable.Max = NonGenericMax;
+    function NonGenericSkip(count: Integer): IEnumerable; virtual; abstract;
+    function IEnumerable.Skip = NonGenericSkip;
+    function NonGenericTake(count: Integer): IEnumerable; virtual; abstract;
+    function IEnumerable.Take = NonGenericTake;
+    function NonGenericConcat(const collection: IEnumerable): IEnumerable; virtual; abstract;
+    function IEnumerable.Concat = NonGenericConcat;
+    function NonGenericReversed: IEnumerable; virtual; abstract;
+    function IEnumerable.Reversed = NonGenericReversed;
+    function NonGenericEqualsTo(const collection: IEnumerable): Boolean; virtual; abstract;
+    function IEnumerable.EqualsTo = NonGenericEqualsTo;
+    function NonGenericToList: IList; virtual; abstract;
+    function IEnumerable.ToList = NonGenericToList;
+    function NonGenericToSet: ISet; virtual; abstract;
+    function IEnumerable.ToSet = NonGenericToSet;
+
+    function GetCount: Integer; virtual;
+    function GetElementType: PTypeInfo; virtual; abstract;
+    function GetIsEmpty: Boolean; virtual;
+  public
+    function AsObject: TObject;
+
+    property Count: Integer read GetCount;
+    property IsEmpty: Boolean read GetIsEmpty;
   end;
 
   /// <summary>
@@ -77,15 +127,34 @@ type
   TEnumerableBase<T> = class abstract(TEnumerableBase, IEnumerable<T>, IElementType)
   protected
     function NonGenericGetEnumerator: IEnumerator; override; final;
+    function NonGenericTryGetFirst(out value: TValue): Boolean; override; final;
+    function NonGenericTryGetLast(out value: TValue): Boolean; override; final;
+    function NonGenericFirst: TValue; override; final;
+    function NonGenericFirstOrDefault: TValue; override; final;
+    function NonGenericLast: TValue; override; final;
+    function NonGenericLastOrDefault: TValue; override; final;
+    function NonGenericSingle: TValue; override; final;
+    function NonGenericSingleOrDefault: TValue; override; final;
+    function NonGenericElementAt(index: Integer): TValue; override; final;
+    function NonGenericElementAtOrDefault(index: Integer): TValue; override; final;
+    function NonGenericContains(const item: TValue): Boolean; override; final;
+    function NonGenericMin: TValue; override; final;
+    function NonGenericMax: TValue; override; final;
+    function NonGenericSkip(count: Integer): IEnumerable; override; final;
+    function NonGenericTake(count: Integer): IEnumerable; override; final;
+    function NonGenericConcat(const collection: IEnumerable): IEnumerable; override; final;
+    function NonGenericReversed: IEnumerable; override; final;
+    function NonGenericEqualsTo(const collection: IEnumerable): Boolean; override; final;
+    function NonGenericToList: IList; override; final;
+    function NonGenericToSet: ISet; override; final;
+
   {$REGION 'Implements IElementType'}
-    function GetElementType: PTypeInfo;
+    function GetElementType: PTypeInfo; override;
   {$ENDREGION}
-    function GetComparer: IComparer<T>; virtual;
-    function GetCount: Integer; virtual;
-    function GetIsEmpty: Boolean; virtual;
+
+    function GetComparer: IComparer<T>; virtual;    
   public
     function GetEnumerator: IEnumerator<T>; virtual; abstract;
-    function AsObject: TObject;
     function TryGetFirst(out value: T): Boolean; virtual;
     function TryGetLast(out value: T): Boolean; virtual;
     function First: T; overload; virtual;
@@ -127,8 +196,6 @@ type
     function ToArray: TArray<T>; virtual;
     function ToList: IList<T>; virtual;
     function ToSet: ISet<T>; virtual;
-    property Count: Integer read GetCount;
-    property IsEmpty: Boolean read GetIsEmpty;
   end;
 
   /// <summary>
@@ -140,6 +207,16 @@ type
   TCollectionBase<T> = class abstract(TEnumerableBase<T>, ICollection<T>, ICollection)
   protected
     function GetIsReadOnly: Boolean; virtual;
+
+    procedure NonGenericAdd(const item: TValue);
+    procedure ICollection.Add = NonGenericAdd;
+    procedure NonGenericAddRange(const collection: IEnumerable);
+    procedure ICollection.AddRange = NonGenericAddRange;
+
+    function NonGenericRemove(const item: TValue): Boolean;
+    function ICollection.Remove = NonGenericRemove;
+    procedure NonGenericRemoveRange(const collection: IEnumerable);
+    procedure ICollection.RemoveRange = NonGenericRemoveRange;
   public
     procedure Add(const item: T); virtual; abstract;
     procedure AddRange(const collection: array of T); overload; virtual;
@@ -212,6 +289,8 @@ type
     fComparer: IComparer<T>;
     fOnNotify: ICollectionNotifyDelegate<T>;
     function GetOnNotify: ICollectionNotifyDelegate<T>;
+    function NonGenericGetOnNotify: IEvent;
+    function IList.GetOnNotify = NonGenericGetOnNotify;
   protected
     function GetComparer: IComparer<T>; override;
     procedure Notify(const item: T; action: TCollectionNotification); virtual;
@@ -221,6 +300,19 @@ type
     procedure DoDeleteRange(index, count: Integer; notification: TCollectionNotification); virtual; abstract;
     function GetItem(index: Integer): T; virtual; abstract;
     procedure SetItem(index: Integer; const value: T); virtual; abstract;
+
+    function NonGenericGetItem(index: Integer): TValue;
+    function IList.GetItem = NonGenericGetItem;
+    procedure NonGenericSetItem(index: Integer; const value: TValue);
+    procedure IList.SetItem = NonGenericSetItem;
+    procedure NonGenericInsert(index: Integer; const item: TValue);
+    procedure IList.Insert = NonGenericInsert;
+    procedure NonGenericInsertRange(index: Integer; const collection: IEnumerable);
+    procedure IList.InsertRange = NonGenericInsertRange;
+    function NonGenericIndexOf(const item: TValue): Integer;
+    function IList.IndexOf = NonGenericIndexOf;
+    function NonGenericLastIndexOf(const item: TValue): Integer;
+    function IList.LastIndexOf = NonGenericLastIndexOf;
   public
     constructor Create; overload;
     constructor Create(const comparer: IComparer<T>); overload;
@@ -265,10 +357,10 @@ type
 implementation
 
 uses
-  Spring.ResourceStrings,
   Spring.Collections.Sets,
   Spring.Collections.Lists,
-  Spring.Collections.Extensions;
+  Spring.Collections.Extensions,
+  Spring.ResourceStrings;
 
 {$REGION 'TEnumeratorBase'}
 
@@ -290,6 +382,33 @@ end;
 function TEnumeratorBase<T>.NonGenericGetCurrent: TValue;
 begin
   Result := TValue.From<T>(GetCurrent);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TEnumerableBase'}
+
+function TEnumerableBase.AsObject: TObject;
+begin
+  Result := Self;
+end;
+
+function TEnumerableBase.GetCount: Integer;
+var
+  enumerator: IEnumerator;
+begin
+  Result := 0;
+  enumerator := NonGenericGetEnumerator;
+  while enumerator.MoveNext do
+  begin
+    Inc(Result);
+  end;
+end;
+
+function TEnumerableBase.GetIsEmpty: Boolean;
+begin
+  Result := Count = 0;
 end;
 
 {$ENDREGION}
@@ -333,11 +452,6 @@ begin
     if predicate(item) then
       Exit(True);
   end;
-end;
-
-function TEnumerableBase<T>.AsObject: TObject;
-begin
-  Result := Self;
 end;
 
 function TEnumerableBase<T>.Concat(
@@ -626,9 +740,124 @@ begin
   end;
 end;
 
+function TEnumerableBase<T>.NonGenericConcat(
+  const collection: IEnumerable): IEnumerable;
+begin
+  Result := Concat(collection as TEnumerableBase<T>);
+end;
+
+function TEnumerableBase<T>.NonGenericContains(const item: TValue): Boolean;
+begin
+  Result := Contains(item.AsType<T>);
+end;
+
+function TEnumerableBase<T>.NonGenericElementAt(index: Integer): TValue;
+begin
+  Result := TValue.From<T>(ElementAt(index));
+end;
+
+function TEnumerableBase<T>.NonGenericElementAtOrDefault(
+  index: Integer): TValue;
+begin
+  Result := TValue.From<T>(ElementAtOrDefault(index));
+end;
+
+function TEnumerableBase<T>.NonGenericEqualsTo(
+  const collection: IEnumerable): Boolean;
+begin
+  Result := EqualsTo(collection as TEnumerableBase<T>);
+end;
+
+function TEnumerableBase<T>.NonGenericFirst: TValue;
+begin
+  Result := TValue.From<T>(First);
+end;
+
+function TEnumerableBase<T>.NonGenericFirstOrDefault: TValue;
+begin
+  Result := TValue.From<T>(FirstOrDefault);
+end;
+
 function TEnumerableBase<T>.NonGenericGetEnumerator: IEnumerator;
 begin
   Result := GetEnumerator;
+end;
+
+function TEnumerableBase<T>.NonGenericLast: TValue;
+begin
+  Result := TValue.From<T>(Last);
+end;
+
+function TEnumerableBase<T>.NonGenericLastOrDefault: TValue;
+begin
+  Result := TValue.From<T>(LastOrDefault);
+end;
+
+function TEnumerableBase<T>.NonGenericMax: TValue;
+begin
+  Result := TValue.From<T>(Max);
+end;
+
+function TEnumerableBase<T>.NonGenericMin: TValue;
+begin
+  Result := TValue.From<T>(Min);
+end;
+
+function TEnumerableBase<T>.NonGenericReversed: IEnumerable;
+begin
+  Result := Reversed;
+end;
+
+function TEnumerableBase<T>.NonGenericSingle: TValue;
+begin
+  Result := TValue.From<T>(Single);
+end;
+
+function TEnumerableBase<T>.NonGenericSingleOrDefault: TValue;
+begin
+  Result := TValue.From<T>(SingleOrDefault);
+end;
+
+function TEnumerableBase<T>.NonGenericSkip(count: Integer): IEnumerable;
+begin
+  Result := Skip(count);
+end;
+
+function TEnumerableBase<T>.NonGenericTake(count: Integer): IEnumerable;
+begin
+  Result := Take(count);
+end;
+
+function TEnumerableBase<T>.NonGenericToList: IList;
+begin
+  Supports(ToList, IList, Result);
+
+  TArgument.CheckNotNull(Result, 'Result');
+end;
+
+function TEnumerableBase<T>.NonGenericToSet: ISet;
+begin
+  Supports(ToSet, ISet, Result);
+
+  TArgument.CheckNotNull(Result, 'Result');
+end;
+
+function TEnumerableBase<T>.NonGenericTryGetFirst(out value: TValue): Boolean;
+var
+  item: T;
+begin  
+  Result := TryGetFirst(item);
+  if Result then
+    value := TValue.From<T>(item);
+end;
+
+function TEnumerableBase<T>.NonGenericTryGetLast(out value: TValue): Boolean;
+var
+  item: T;
+begin  
+  Result := TryGetLast(item);
+  if Result then
+    value := TValue.From<T>(item);
 end;
 
 function TEnumerableBase<T>.Reversed: IEnumerable<T>;
@@ -819,23 +1048,6 @@ begin
   Result := TComparer<T>.Default;
 end;
 
-function TEnumerableBase<T>.GetCount: Integer;
-var
-  enumerator: IEnumerator<T>;
-begin
-  Result := 0;
-  enumerator := GetEnumerator;
-  while enumerator.MoveNext do
-  begin
-    Inc(Result);
-  end;
-end;
-
-function TEnumerableBase<T>.GetIsEmpty: Boolean;
-begin
-  Result := Count = 0;
-end;
-
 function TEnumerableBase<T>.GetElementType: PTypeInfo;
 begin
   Result := TypeInfo(T);
@@ -914,6 +1126,37 @@ end;
 function TCollectionBase<T>.GetIsReadOnly: Boolean;
 begin
   Result := False;
+end;
+
+procedure TCollectionBase<T>.NonGenericAdd(const item: TValue);
+begin
+  Add(item.AsType<T>);
+end;
+
+procedure TCollectionBase<T>.NonGenericAddRange(const collection: IEnumerable);
+var
+  item: TValue;
+begin
+  for item in collection do
+  begin
+    Add(item.AsType<T>);
+  end;
+end;
+
+function TCollectionBase<T>.NonGenericRemove(const item: TValue): Boolean;
+begin
+  Result := Remove(item.AsType<T>);
+end;
+
+procedure TCollectionBase<T>.NonGenericRemoveRange(
+  const collection: IEnumerable);
+var
+  item: TValue;
+begin
+  for item in collection do
+  begin
+    Remove(item.AsType<T>);
+  end;
 end;
 
 {$ENDREGION}
@@ -1130,6 +1373,50 @@ begin
       Exit(i);
   end;
   Result := -1;
+end;
+
+function TListBase<T>.NonGenericGetItem(index: Integer): TValue;
+begin
+  Result := TValue.From<T>(GetItem(index));
+end;
+
+function TListBase<T>.NonGenericGetOnNotify: IEvent;
+begin
+  Result := GetOnNotify;
+end;
+
+function TListBase<T>.NonGenericIndexOf(const item: TValue): Integer;
+begin
+  Result := IndexOf(item.AsType<T>);
+end;
+
+procedure TListBase<T>.NonGenericInsert(index: Integer; const item: TValue);
+begin
+  Insert(index, item.AsType<T>);
+end;
+
+procedure TListBase<T>.NonGenericInsertRange(index: Integer;
+  const collection: IEnumerable);
+var
+  item: TValue;
+begin
+  TArgument.CheckRange((index >= 0) and (index <= Count), 'index');
+
+  for item in collection do
+  begin
+    Insert(index, item.AsType<T>);
+    Inc(index);
+  end;
+end;
+
+function TListBase<T>.NonGenericLastIndexOf(const item: TValue): Integer;
+begin
+  Result := LastIndexOf(item.AsType<T>);
+end;
+
+procedure TListBase<T>.NonGenericSetItem(index: Integer; const value: TValue);
+begin
+  SetItem(index, value.AsType<T>);
 end;
 
 procedure TListBase<T>.Notify(const item: T; action: TCollectionNotification);

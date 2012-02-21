@@ -46,13 +46,21 @@ uses
 
 type
   { Forward Declarations }
+  IEnumerator = interface;
   IEnumerator<T> = interface;
+  IEnumerable = interface;
   IEnumerable<T> = interface;
+  ICollection = interface;
   ICollection<T> = interface;
+  IList = interface;
   IList<T> = interface;
+  IDictionary = interface;
   IDictionary<TKey, TValue> = interface;
+  IStack = interface;
   IStack<T> = interface;
+  IQueue = interface;
   IQueue<T> = interface;
+  ISet = interface;
   ISet<T> = interface;
 
   ICollectionNotifyDelegate<T> = interface;
@@ -118,6 +126,34 @@ type
   IEnumerable = interface(IInvokable)
     ['{496B0ABE-CDEE-11D3-88E8-00902754C43A}']
     function GetEnumerator: IEnumerator;
+    function AsObject: TObject;
+    function TryGetFirst(out value: TValue): Boolean;
+    function TryGetLast(out value: TValue): Boolean;
+    function First: TValue;
+    function FirstOrDefault: TValue;
+    function Last: TValue;
+    function LastOrDefault: TValue;
+    function Single: TValue;
+    function SingleOrDefault: TValue;
+    function ElementAt(index: Integer): TValue;
+    function ElementAtOrDefault(index: Integer): TValue;
+    function Contains(const item: TValue): Boolean; overload;
+    function Min: TValue;
+    function Max: TValue;
+    function Skip(count: Integer): IEnumerable;
+    function Take(count: Integer): IEnumerable;
+    function Concat(const collection: IEnumerable): IEnumerable;
+    function Reversed: IEnumerable;
+    function EqualsTo(const collection: IEnumerable): Boolean; overload;
+    function ToList: IList;
+    function ToSet: ISet;
+    function GetCount: Integer;
+    function GetIsEmpty: Boolean;
+    property Count: Integer read GetCount;
+    property IsEmpty: Boolean read GetIsEmpty;
+
+    function GetElementType: PTypeInfo;
+    property ElementType: PTypeInfo read GetElementType;
   end;
 
   ///	<summary>
@@ -368,6 +404,20 @@ type
   end;
 
   ICollection = interface(IEnumerable)
+    ['{496B0ABD-CDEE-11D3-88E8-00902754C43A}']
+  {$REGION 'Property Accessors'}
+    function GetIsReadOnly: Boolean;
+  {$ENDREGION}
+
+    procedure Add(const item: TValue);
+    procedure AddRange(const collection: IEnumerable);
+
+    function Remove(const item: TValue): Boolean;
+    procedure RemoveRange(const collection: IEnumerable); overload;
+
+    procedure Clear;
+
+    property IsReadOnly: Boolean read GetIsReadOnly;
   end;
 
   /// <summary>
@@ -396,6 +446,30 @@ type
   end;
 
   IList = interface(ICollection)
+    ['{496B0ABC-CDEE-11D3-88E8-00902754C43A}']
+  {$REGION 'Property Accessors'}
+    function GetItem(index: Integer): TValue;
+    function GetOnNotify: IEvent;
+    procedure SetItem(index: Integer; const item: TValue);
+  {$ENDREGION}
+    procedure Insert(index: Integer; const item: TValue);
+    procedure InsertRange(index: Integer; const collection: IEnumerable);
+
+    procedure Delete(index: Integer);
+    procedure DeleteRange(index, count: Integer);
+
+    procedure Exchange(index1, index2: Integer);
+    procedure Move(currentIndex, newIndex: Integer);
+
+    procedure Reverse;
+
+    procedure Sort;
+
+    function IndexOf(const item: TValue): Integer;
+    function LastIndexOf(const item: TValue): Integer;
+
+    property Items[index: Integer]: TValue read GetItem write SetItem; default;
+    property OnNotify: IEvent read GetOnNotify;
   end;
 
   /// <summary>
@@ -433,6 +507,20 @@ type
     property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
   end;
 
+  IDictionary = interface(ICollection)
+    procedure Add(const key, value: TValue);
+    procedure AddOrSetValue(const key, value: TValue);
+    procedure Remove(const key: TValue); overload;
+    function ContainsKey(const key: TValue): Boolean;
+    function ContainsValue(const value: TValue): Boolean;
+    function TryGetValue(const key: TValue; out value: TValue): Boolean;
+
+    function GetKeyType: PTypeInfo;
+    function GetValueType: PTypeInfo;
+    property KeyType: PTypeInfo read GetKeyType;
+    property ValueType: PTypeInfo read GetValueType;
+  end;
+
   /// <summary>
   /// Represents a generic collection of key/value pairs.
   /// </summary>
@@ -451,6 +539,9 @@ type
     function ContainsKey(const key: TKey): Boolean;
     function ContainsValue(const value: TValue): Boolean;
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
+
+    function AsDictionary: IDictionary;
+
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
 
     /// <summary>
@@ -468,6 +559,16 @@ type
   end;
 
   IStack = interface(IEnumerable)
+  {$REGION 'Property Getters'}
+    function GetOnNotify: IEvent;
+  {$ENDREGION}
+    procedure Clear;
+    procedure Push(const item: TValue);
+    function Pop: TValue;
+    function Peek: TValue;
+    function PeekOrDefault: TValue;
+    function TryPeek(out item: TValue): Boolean;
+    property OnNotify: IEvent read GetOnNotify;
   end;
 
   IStack<T> = interface(IEnumerable<T>)
@@ -480,10 +581,21 @@ type
     function Peek: T;
     function PeekOrDefault: T;
     function TryPeek(out item: T): Boolean;
+    function AsStack: IStack;
     property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
   end;
 
   IQueue = interface(IEnumerable)
+  {$REGION 'Property Getters'}
+    function GetOnNotify: IEvent;
+  {$ENDREGION}
+    procedure Clear;
+    procedure Enqueue(const item: TValue);
+    function Dequeue: TValue;
+    function Peek: TValue;
+    function PeekOrDefault: TValue;
+    function TryPeek(out item: TValue): Boolean;
+    property OnNotify: IEvent read GetOnNotify;
   end;
 
   IQueue<T> = interface(IEnumerable<T>)
@@ -496,10 +608,17 @@ type
     function Peek: T;
     function PeekOrDefault: T;
     function TryPeek(out item: T): Boolean;
+    function AsQueue: IQueue;
     property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
   end;
 
   ISet = interface(ICollection)
+    ['{496B0ABB-CDEE-11D3-88E8-00902754C43A}']
+    procedure ExceptWith(const collection: IEnumerable);
+    procedure IntersectWith(const collection: IEnumerable);
+    procedure UnionWith(const collection: IEnumerable);
+    function SetEquals(const collection: IEnumerable): Boolean;
+    function Overlaps(const collection: IEnumerable): Boolean;
   end;
 
   ISet<T> = interface(ICollection<T>)
@@ -508,6 +627,7 @@ type
     procedure UnionWith(const collection: IEnumerable<T>);
     function SetEquals(const collection: IEnumerable<T>): Boolean;
     function Overlaps(const collection: IEnumerable<T>): Boolean;
+    function AsSet: ISet;
   end;
 
   ICollectionNotifyDelegate<T> = interface(IEvent<TCollectionNotifyEvent<T>>)
@@ -515,6 +635,9 @@ type
 
   TCollectionNotifyDelegate<T> = class(TEvent<TCollectionNotifyEvent<T>>, ICollectionNotifyDelegate<T>)
   end;
+
+  TCollectionNotifyEvent<T> = procedure(Sender: TObject; const Item: T;
+    Action: TCollectionNotification) of object;
 
   ///	<summary>Internal interface. Reserved for future use.</summary>
   ICountable = interface

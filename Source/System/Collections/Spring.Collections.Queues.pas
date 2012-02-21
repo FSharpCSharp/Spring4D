@@ -43,8 +43,21 @@ type
     fOwnership: TOwnershipType;
     fOnNotify: ICollectionNotifyDelegate<T>;
     function GetOnNotify: ICollectionNotifyDelegate<T>;
+    function NonGenericGetOnNotify: IEvent;
+    function IQueue.GetOnNotify = NonGenericGetOnNotify;
   protected
     function GetCount: Integer; override;
+
+    procedure NonGenericEnqueue(const item: TValue);
+    procedure IQueue.Enqueue = NonGenericEnqueue;
+    function NonGenericDequeue: TValue;
+    function IQueue.Dequeue = NonGenericDequeue;
+    function NonGenericPeek: TValue;
+    function IQueue.Peek = NonGenericPeek;
+    function NonGenericPeekOrDefault: TValue;
+    function IQueue.PeekOrDefault = NonGenericPeekOrDefault;
+    function NonGenericTryPeek(out item: TValue): Boolean;
+    function IQueue.TryPeek = NonGenericTryPeek;
   public
     constructor Create; overload;
     constructor Create(const collection: IEnumerable<T>); overload;
@@ -60,6 +73,7 @@ type
     function TryPeek(out item: T): Boolean;
     procedure Clear;
     procedure TrimExcess;
+    function AsQueue: IQueue;
     property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
   end;
 
@@ -130,6 +144,11 @@ begin
   Result := fQueue.Dequeue;
 end;
 
+function TQueue<T>.AsQueue: IQueue;
+begin
+  Result := Self;
+end;
+
 procedure TQueue<T>.Clear;
 begin
   fQueue.Clear;
@@ -196,6 +215,40 @@ begin
     fOnNotify := TCollectionNotifyDelegate<T>.Create;
   end;
   Result := fOnNotify;
+end;
+
+function TQueue<T>.NonGenericDequeue: TValue;
+begin
+  Result := TValue.From<T>(Dequeue);
+end;
+
+procedure TQueue<T>.NonGenericEnqueue(const item: TValue);
+begin
+  Enqueue(item.AsType<T>);
+end;
+
+function TQueue<T>.NonGenericGetOnNotify: IEvent;
+begin
+  Result := GetOnNotify;
+end;
+
+function TQueue<T>.NonGenericPeek: TValue;
+begin
+  Result := TValue.From<T>(Peek);
+end;
+
+function TQueue<T>.NonGenericPeekOrDefault: TValue;
+begin
+  Result := TValue.From<T>(PeekOrDefault);
+end;
+
+function TQueue<T>.NonGenericTryPeek(out item: TValue): Boolean;
+var
+  value: T;
+begin
+  Result := TryPeek(value);
+  if Result then
+    item := TValue.From<T>(value);
 end;
 
 {$ENDREGION}

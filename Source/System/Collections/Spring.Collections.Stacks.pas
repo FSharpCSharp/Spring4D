@@ -54,8 +54,21 @@ type
     fOwnership: TOwnershipType;
     fOnNotify: ICollectionNotifyDelegate<T>;
     function GetOnNotify: ICollectionNotifyDelegate<T>;
+    function NonGenericGetOnNotify: IEvent;
+    function IStack.GetOnNotify = NonGenericGetOnNotify;
   protected
     function GetCount: Integer; override;
+
+    procedure NonGenericPush(const item: TValue);
+    procedure IStack.Push = NonGenericPush;
+    function NonGenericPop: TValue;
+    function IStack.Pop = NonGenericPop;
+    function NonGenericPeek: TValue;
+    function IStack.Peek = NonGenericPeek;
+    function NonGenericPeekOrDefault: TValue;
+    function IStack.PeekOrDefault = NonGenericPeekOrDefault;
+    function NonGenericTryPeek(out item: TValue): Boolean;
+    function IStack.TryPeek = NonGenericTryPeek;
 
     class function GetStackItem(stack: TGenericStack; index: Integer): T;
   public
@@ -80,6 +93,7 @@ type
     function PeekOrDefault(const predicate: TPredicate<T>): T; overload;
     function TryPeek(out item: T): Boolean;
     procedure TrimExcess;
+    function AsStack: IStack;
     property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
   end;
 
@@ -157,6 +171,40 @@ begin
   Result := TArray<T>(PInteger(NativeInt(stack) + hfFieldSize + SizeOf(Integer))^)[index];
 end;
 
+function TStack<T>.NonGenericGetOnNotify: IEvent;
+begin
+  Result := GetOnNotify;
+end;
+
+function TStack<T>.NonGenericPeek: TValue;
+begin
+  Result := TValue.From<T>(Peek);
+end;
+
+function TStack<T>.NonGenericPeekOrDefault: TValue;
+begin
+  Result := TValue.From<T>(PeekOrDefault);
+end;
+
+function TStack<T>.NonGenericPop: TValue;
+begin
+  Result := TValue.From<T>(Pop);
+end;
+
+procedure TStack<T>.NonGenericPush(const item: TValue);
+begin
+  Push(item.AsType<T>);
+end;
+
+function TStack<T>.NonGenericTryPeek(out item: TValue): Boolean;
+var
+  value: T;
+begin
+  Result := TryPeek(value);
+  if Result then
+    item := TValue.From<T>(value);
+end;
+
 procedure TStack<T>.Push(const item: T);
 begin
   fStack.Push(item);
@@ -182,6 +230,11 @@ begin
 //  stack := TStackAccess<T>(fStack);
 //  comparer := TComparer<T>.Default;
   Result := False;
+end;
+
+function TStack<T>.AsStack: IStack;
+begin
+  Result := Self;
 end;
 
 procedure TStack<T>.Clear;
