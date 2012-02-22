@@ -101,6 +101,10 @@ type
     procedure TestWStringToNullableWideString;
     procedure TestWStringToNullableInteger;
     procedure TestWStringToNullableCardinal;
+    procedure TestWStringToNullableInt64;
+    procedure TestWStringToNullableUInt64;
+    procedure TestWStringToNullableWord;
+    procedure TestWStringToNullableByte;
     procedure TestWStringToNullableSmallInt;
     procedure TestWStringToNullableShortInt;
     procedure TestWStringToNullableFloat;
@@ -124,6 +128,10 @@ type
     procedure TestIntegerToFloat;
     procedure TestIntegerToNullableInteger;
     procedure TestIntegerToNullableCardinal;
+    procedure TestIntegerToNullableInt64;
+    procedure TestIntegerToNullableUInt64;
+    procedure TestIntegerToNullableWord;
+    procedure TestIntegerToNullableByte;
     procedure TestIntegerToNullableSmallInt;
     procedure TestIntegerToNullableShortInt;
     procedure TestIntegerToNullableString;
@@ -147,6 +155,10 @@ type
     procedure TestCardinalToFloat;
     procedure TestCardinalToNullableInteger;
     procedure TestCardinalToNullableCardinal;
+    procedure TestCardinalToNullableInt64;
+    procedure TestCardinalToNullableUInt64;
+    procedure TestCardinalToNullableWord;
+    procedure TestCardinalToNullableByte;
     procedure TestCardinalToNullableSmallInt;
     procedure TestCardinalToNullableShortInt;
     procedure TestCardinalToNullableString;
@@ -493,11 +505,11 @@ begin
   CheckTrue(outValue.TryAsType<UInt64>(outInt));
   CheckEquals(outInt, 1);
 
-//  outValue := fConverter.ConvertTo(TValue.From<string>('18446744073709551615'),
-//    TypeInfo(UInt64));
-//  CheckFalse(outValue.IsEmpty);
-//  CheckTrue(outValue.TryAsType<UInt64>(outInt));
-//  CheckTrue(outInt = 18446744073709551615);
+  {outValue := fConverter.ConvertTo(TValue.From<string>('18446744073709551615'),
+    TypeInfo(UInt64));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<UInt64>(outInt));
+  CheckTrue(outInt = 18446744073709551615);}
 end;
 
 procedure TTestFromString.TestStringToInteger;
@@ -1024,6 +1036,30 @@ begin
   CheckEquals(outWStr, '1');
 end;
 
+procedure TTestFromInteger.TestIntegerToNullableInt64;
+var
+  outValue: TValue;
+  outNullable: Nullable<Int64>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Integer>(1),
+    TypeInfo(Nullable<Int64>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<Int64>>(outNullable));
+  CheckEquals(outNullable.Value, 1);
+
+  outValue := fConverter.ConvertTo(TValue.From<Integer>(2147483647),
+    TypeInfo(Nullable<Int64>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<Int64>>(outNullable));
+  CheckEquals(outNullable.Value, 2147483647);
+
+  outValue := fConverter.ConvertTo(TValue.From<Integer>(-2147483647),
+    TypeInfo(Nullable<Int64>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<Int64>>(outNullable));
+  CheckEquals(outNullable.Value, -2147483647);
+end;
+
 procedure TTestFromInteger.TestIntegerToNullableInteger;
 var
   outValue: TValue;
@@ -1084,6 +1120,24 @@ begin
   CheckEqualsString(outNullable.Value, '1');
 end;
 
+procedure TTestFromInteger.TestIntegerToNullableUInt64;
+var
+  outValue: TValue;
+  outNullable: Nullable<UInt64>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Integer>(1),
+    TypeInfo(Nullable<UInt64>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<UInt64>>(outNullable));
+  CheckEquals(outNullable.Value, 1);
+
+  outValue := fConverter.ConvertTo(TValue.From<Integer>(2147483647),
+    TypeInfo(Nullable<UInt64>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<UInt64>>(outNullable));
+  CheckEquals(outNullable.Value, 2147483647);
+end;
+
 procedure TTestFromInteger.TestIntegerToNullableAnsiString;
 var
   outValue: TValue;
@@ -1108,6 +1162,24 @@ begin
   CheckEquals(outNullable.Value, '1');
 end;
 
+procedure TTestFromInteger.TestIntegerToNullableWord;
+var
+  outValue: TValue;
+  outInt: Nullable<Word>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Integer>(1),
+    TypeInfo(Nullable<Word>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<Word>>(outInt));
+  CheckEquals(outInt.Value, 1);
+
+  outValue := fConverter.ConvertTo(TValue.From<Integer>(65535),
+    TypeInfo(Nullable<Word>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<Word>>(outInt));
+  CheckEquals(outInt.Value, 65535);
+end;
+
 procedure TTestFromInteger.TestIntegerToNullableBoolean;
 var
   outValue: TValue;
@@ -1118,6 +1190,24 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Boolean>>(outNullable));
   CheckFalse(outNullable.Value);
+end;
+
+procedure TTestFromInteger.TestIntegerToNullableByte;
+var
+  outValue: TValue;
+  outInt: Nullable<Byte>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Integer>(1),
+    TypeInfo(Nullable<Byte>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<Byte>>(outInt));
+  CheckEquals(outInt.Value, 1);
+
+  outValue := fConverter.ConvertTo(TValue.From<Integer>(255),
+    TypeInfo(Nullable<Byte>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<Byte>>(outInt));
+  CheckEquals(outInt.Value, 255);
 end;
 
 procedure TTestFromInteger.TestIntegerToNullableFloat;
@@ -1215,6 +1305,24 @@ begin
   CheckEquals(outWStr, '1');
 end;
 
+procedure TTestFromCardinal.TestCardinalToNullableInt64;
+var
+  outValue: TValue;
+  outNullable: Nullable<Int64>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Cardinal>(1),
+    TypeInfo(Nullable<Int64>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<Int64>>(outNullable));
+  CheckEquals(outNullable.Value, 1);
+
+  outValue := fConverter.ConvertTo(TValue.From<Cardinal>(2147483647),
+    TypeInfo(Nullable<Int64>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<Int64>>(outNullable));
+  CheckEquals(outNullable.Value, 2147483647);
+end;
+
 procedure TTestFromCardinal.TestCardinalToNullableInteger;
 var
   outValue: TValue;
@@ -1275,6 +1383,24 @@ begin
   CheckEqualsString(outNullable.Value, '1');
 end;
 
+procedure TTestFromCardinal.TestCardinalToNullableUInt64;
+var
+  outValue: TValue;
+  outNullable: Nullable<UInt64>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Cardinal>(1),
+    TypeInfo(Nullable<UInt64>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<UInt64>>(outNullable));
+  CheckEquals(outNullable.Value, 1);
+
+  outValue := fConverter.ConvertTo(TValue.From<Cardinal>(2147483647),
+    TypeInfo(Nullable<UInt64>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<UInt64>>(outNullable));
+  CheckEquals(outNullable.Value, 2147483647);
+end;
+
 procedure TTestFromCardinal.TestCardinalToNullableAnsiString;
 var
   outValue: TValue;
@@ -1299,6 +1425,24 @@ begin
   CheckEquals(outNullable.Value, '1');
 end;
 
+procedure TTestFromCardinal.TestCardinalToNullableWord;
+var
+  outValue: TValue;
+  outInt: Nullable<Word>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Cardinal>(1),
+    TypeInfo(Nullable<Word>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<Word>>(outInt));
+  CheckEquals(outInt.Value, 1);
+
+  outValue := fConverter.ConvertTo(TValue.From<Cardinal>(65535),
+    TypeInfo(Nullable<Word>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<Word>>(outInt));
+  CheckEquals(outInt.Value, 65535);
+end;
+
 procedure TTestFromCardinal.TestCardinalToNullableBoolean;
 var
   outValue: TValue;
@@ -1309,6 +1453,24 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Boolean>>(outNullable));
   CheckFalse(outNullable.Value);
+end;
+
+procedure TTestFromCardinal.TestCardinalToNullableByte;
+var
+  outValue: TValue;
+  outInt: Nullable<Byte>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<Cardinal>(1),
+    TypeInfo(Nullable<Byte>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<Byte>>(outInt));
+  CheckEquals(outInt.Value, 1);
+
+  outValue := fConverter.ConvertTo(TValue.From<Cardinal>(255),
+    TypeInfo(Nullable<Byte>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<Byte>>(outInt));
+  CheckEquals(outInt.Value, 255);
 end;
 
 procedure TTestFromCardinal.TestCardinalToNullableFloat;
@@ -3750,6 +3912,24 @@ begin
   CheckEquals(outNullable.Value, True);
 end;
 
+procedure TTestFromWideString.TestWStringToNullableByte;
+var
+  outValue: TValue;
+  outInt: Nullable<Byte>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<WideString>('1'),
+    TypeInfo(Nullable<Byte>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<Byte>>(outInt));
+  CheckEquals(outInt.Value, 1);
+
+  outValue := fConverter.ConvertTo(TValue.From<WideString>('255'),
+    TypeInfo(Nullable<Byte>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<Byte>>(outInt));
+  CheckEquals(outInt.Value, 255);
+end;
+
 procedure TTestFromWideString.TestWStringToNullableColor;
 var
   outValue: TValue;
@@ -3798,6 +3978,30 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Extended>>(outNullable));
   CheckEquals(outNullable.Value, 1.11);
+end;
+
+procedure TTestFromWideString.TestWStringToNullableInt64;
+var
+  outValue: TValue;
+  outNullable: Nullable<Int64>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<WideString>('1'),
+    TypeInfo(Nullable<Int64>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<Int64>>(outNullable));
+  CheckEquals(outNullable.Value, 1);
+
+  outValue := fConverter.ConvertTo(TValue.From<WideString>('2147483647'),
+    TypeInfo(Nullable<Int64>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<Int64>>(outNullable));
+  CheckEquals(outNullable.Value, 2147483647);
+
+  outValue := fConverter.ConvertTo(TValue.From<WideString>('-2147483647'),
+    TypeInfo(Nullable<Int64>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<Int64>>(outNullable));
+  CheckEquals(outNullable.Value, -2147483647);
 end;
 
 procedure TTestFromWideString.TestWStringToNullableInteger;
@@ -3865,6 +4069,24 @@ begin
   CheckEquals(outNullable.Value, 'Test');
 end;
 
+procedure TTestFromWideString.TestWStringToNullableUInt64;
+var
+  outValue: TValue;
+  outNullable: Nullable<UInt64>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<WideString>('1'),
+    TypeInfo(Nullable<UInt64>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<UInt64>>(outNullable));
+  CheckEquals(outNullable.Value, 1);
+
+  outValue := fConverter.ConvertTo(TValue.From<WideString>('2147483647'),
+    TypeInfo(Nullable<UInt64>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<UInt64>>(outNullable));
+  CheckEquals(outNullable.Value, 2147483647);
+end;
+
 procedure TTestFromWideString.TestWStringToNullableWideString;
 var
   outValue: TValue;
@@ -3876,6 +4098,24 @@ begin
   CheckTrue(outValue.TryAsType<Nullable<WideString>>(outNullable));
   CheckTrue(outNullable.HasValue);
   CheckEquals(outNullable.Value, 'Test');
+end;
+
+procedure TTestFromWideString.TestWStringToNullableWord;
+var
+  outValue: TValue;
+  outInt: Nullable<Word>;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<WideString>('1'),
+    TypeInfo(Nullable<Word>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<Word>>(outInt));
+  CheckEquals(outInt.Value, 1);
+
+  outValue := fConverter.ConvertTo(TValue.From<WideString>('65535'),
+    TypeInfo(Nullable<Word>));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<Nullable<Word>>(outInt));
+  CheckEquals(outInt.Value, 65535);
 end;
 
 procedure TTestFromWideString.TestWStringToString;

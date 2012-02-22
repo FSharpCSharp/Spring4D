@@ -22,7 +22,6 @@
 {                                                                           }
 {***************************************************************************}
 
-// This namespace is experimental and may be changed in nearly future.
 unit Spring.Reflection.ValueConverters;
 
 {$I Spring.inc}
@@ -139,7 +138,7 @@ type
   ///	  <para>There are four different internall converter types that can be
   ///	  selected to convert:</para>
   ///	  <list type="bullet">
-  ///	    <item>Nullable&lt;T&gt; and T</item>
+  ///	    <item>TNullable&lt;T&gt; and T</item>
   ///	    <item>Enumeration and Integer/string</item>
   ///	    <item>TColor and Integer/string</item>
   ///	    <item>Integer and string</item>
@@ -160,7 +159,7 @@ type
   {$REGION 'TIntegerToStringConverter'}
 
   /// <summary>
-  /// Simply provides conversion routine between Integer and string/UnicodeString
+  /// Simply provides conversion routine beetwen Integer and string/UnicodeString
   /// </summary>
   TIntegerToStringConverter = class(TValueConverter)
   protected
@@ -174,7 +173,7 @@ type
 
   {$REGION 'TStringToIntegerConverter'}
   /// <summary>
-  /// Simply provides conversion routine between string and Integer
+  /// Simply provides conversion routine beetwen string and Integer
   /// </summary>
   TStringToIntegerConverter = class(TValueConverter)
   protected
@@ -189,7 +188,7 @@ type
   {$REGION 'TIntegerToBooleanConverter'}
 
   /// <summary>
-  /// Simply provides conversion routine between Integer and Boolean
+  /// Simply provides conversion routine beetwen Integer and Boolean
   /// </summary>
   TIntegerToBooleanConverter = class(TValueConverter)
   protected
@@ -204,7 +203,7 @@ type
   {$REGION 'TBooleanToIntegerConverter'}
 
   /// <summary>
-  /// Simply provides conversion routine between Boolean and Integer
+  /// Simply provides conversion routine beetwen Boolean and Integer
   /// </summary>
   TBooleanToIntegerConverter = class(TValueConverter)
   protected
@@ -219,7 +218,7 @@ type
   {$REGION 'TBooleanToStringConverter'}
 
   /// <summary>
-  /// Simply provides conversion routine between Boolean and string
+  /// Simply provides conversion routine beetwen Boolean and string
   /// </summary>
   TBooleanToStringConverter = class(TValueConverter)
   protected
@@ -234,7 +233,7 @@ type
   {$REGION 'TStringToBooleanConverter'}
 
   /// <summary>
-  /// Simply provides conversion routine between string and Boolean
+  /// Simply provides conversion routine beetwen string and Boolean
   /// </summary>
   TStringToBooleanConverter = class(TValueConverter)
   protected
@@ -249,7 +248,7 @@ type
   {$REGION 'TNullableToTypeConverter'}
 
   /// <summary>
-  /// Provides conversion routine between Nullable{T} and T
+  /// Provides conversion routine beetwen TNullable<T> and T
   /// </summary>
   /// <remarks>
   /// Internally it use another Converter to delegate
@@ -267,7 +266,7 @@ type
 
   {$REGION 'TTypeToNullableConverter'}
   /// <summary>
-  /// Provides conversion routine between T and TNullable<T>
+  /// Provides conversion routine beetwen T and TNullable<T>
   /// </summary>
   /// <remarks>
   /// Internally it use another Converter to delegate
@@ -286,7 +285,7 @@ type
   {$REGION 'TEnumToIntegerConverter'}
 
   /// <summary>
-  /// Provides conversion routine between enumeration and Integer
+  /// Provides conversion routine beetwen enumeration and Integer
   /// </summary>
   TEnumToIntegerConverter = class(TValueConverter)
   protected
@@ -301,7 +300,7 @@ type
   {$REGION 'TIntegerToEnumConverter'}
 
   /// <summary>
-  /// Provides conversion routine between Integer and enumeration
+  /// Provides conversion routine beetwen Integer and enumeration
   /// </summary>
   TIntegerToEnumConverter = class(TValueConverter)
   protected
@@ -316,7 +315,7 @@ type
   {$REGION 'TEnumToStringConverter'}
 
   /// <summary>
-  /// Provides conversion routine between enumeration and string
+  /// Provides conversion routine beetwen enumeration and string
   /// </summary>
   TEnumToStringConverter = class(TValueConverter)
   protected
@@ -331,7 +330,7 @@ type
   {$REGION 'TStringToEnumConverter'}
 
   /// <summary>
-  /// Provides conversion routine between string and enumeration
+  /// Provides conversion routine beetwen string and enumeration
   /// </summary>
   TStringToEnumConverter = class(TValueConverter)
   protected
@@ -346,7 +345,7 @@ type
   {$REGION 'TSetToStringConverter'}
 
   /// <summary>
-  /// Provides conversion routine between set and string
+  /// Provides conversion routine beetwen set and string
   /// </summary>
   TSetToStringConverter = class(TValueConverter)
   protected
@@ -361,7 +360,7 @@ type
   {$REGION 'TStringToSetConverter'}
 
   /// <summary>
-  /// Provides conversion routine between string and enumeration
+  /// Provides conversion routine beetwen string and enumeration
   /// </summary>
   TStringToSetConverter = class(TValueConverter)
   protected
@@ -376,7 +375,7 @@ type
   {$REGION 'TFloatToStringConverter'}
 
   /// <summary>
-  /// Provides conversion routine between float and string
+  /// Provides conversion routine beetwen float and string
   /// </summary>
   TFloatToStringConverter = class(TValueConverter)
   protected
@@ -391,7 +390,7 @@ type
   {$REGION 'TFloatToIntegerConverter'}
 
   /// <summary>
-  /// Provides conversion routine between float and Integer
+  /// Provides conversion routine beetwen float and Integer
   /// </summary>
   TFloatToIntegerConverter = class(TValueConverter)
   protected
@@ -406,7 +405,7 @@ type
   {$REGION 'TStringToFloatConverter'}
 
   /// <summary>
-  /// Provides conversion routine between string and float
+  /// Provides conversion routine beetwen string and float
   /// </summary>
   TStringToFloatConverter = class(TValueConverter)
   protected
@@ -421,7 +420,7 @@ type
   {$REGION 'TColorToStringConverter'}
 
   /// <summary>
-  /// Provides conversion routine between TColor and string
+  /// Provides conversion routine beetwen TColor and string
   /// </summary>
   TColorToStringConverter = class(TValueConverter)
   protected
@@ -436,7 +435,7 @@ type
   {$REGION 'TStringToColorConverter'}
 
   /// <summary>
-  /// Provides conversion routine between string and TColor
+  /// Provides conversion routine beetwen string and TColor
   /// </summary>
   TStringToColorConverter = class(TValueConverter)
   protected
@@ -451,7 +450,7 @@ type
   {$REGION 'TCurrencyToStringConverter'}
 
   /// <summary>
-  /// Provides conversion routine between Currency and string
+  /// Provides conversion routine beetwen Currency and string
   /// </summary>
   TCurrencyToStringConverter = class(TValueConverter)
   protected
@@ -466,7 +465,7 @@ type
   {$REGION 'TStringToCurrencyConverter'}
 
   /// <summary>
-  /// Provides conversion routine between string and Currency
+  /// Provides conversion routine beetwen string and Currency
   /// </summary>
   TStringToCurrencyConverter = class(TValueConverter)
   protected
@@ -481,7 +480,7 @@ type
   {$REGION 'TStringToDateTimeConverter'}
 
   /// <summary>
-  /// Provides conversion routine between string and TDateTime
+  /// Provides conversion routine beetwen string and TDateTime
   /// </summary>
   TStringToDateTimeConverter = class(TValueConverter)
   protected
@@ -496,7 +495,7 @@ type
   {$REGION 'TDateTimeToStringConverter'}
 
   /// <summary>
-  /// Provides conversion routine between TDateTime and string
+  /// Provides conversion routine beetwen TDateTime and string
   /// </summary>
   TDateTimeToStringConverter = class(TValueConverter)
   protected
@@ -511,7 +510,7 @@ type
   {$REGION 'TObjectToStringConverter'}
 
   /// <summary>
-  /// Provides conversion routine between TObject and string
+  /// Provides conversion routine beetwen TObject and string
   /// </summary>
   TObjectToStringConverter = class(TValueConverter)
   protected
@@ -526,7 +525,7 @@ type
   {$REGION 'TObjectToInterfaceConverter'}
 
   /// <summary>
-  /// Provides conversion routine between TObject and IInterface
+  /// Provides conversion routine beetwen TObject and IInterface
   /// </summary>
   /// <remarks>
   /// acc. to #82433 TValue.TryAsType<T> raised an AV because ConvClass2Intf is wrong
@@ -544,7 +543,7 @@ type
   {$REGION 'TInterfaceToObjectConverter'}
 
   /// <summary>
-  /// Provides conversion routine between TObject and IInterface
+  /// Provides conversion routine beetwen TObject and IInterface
   /// </summary>
   TInterfaceToObjectConverter = class(TValueConverter)
   protected
@@ -559,7 +558,7 @@ type
   {$REGION 'TInterfaceToInterfaceConverter'}
 
   /// <summary>
-  /// Provides conversion routine between Interface and Interface
+  /// Provides conversion routine beetwen Interface and Interface
   /// </summary>
   TInterfaceToInterfaceConverter = class(TValueConverter)
   protected
@@ -574,7 +573,7 @@ type
   {$REGION 'TObjectToClassConverter'}
 
   /// <summary>
-  /// Provides conversion routine between TObject and TClass
+  /// Provides conversion routine beetwen TObject and TClass
   /// </summary>
   TObjectToClassConverter = class(TValueConverter)
   protected
@@ -589,7 +588,7 @@ type
   {$REGION 'TStringToWStringConverter'}
 
   /// <summary>
-  /// Provides conversion routine between UnicodeString and WideString
+  /// Provides conversion routine beetwen UnicodeString and WideString
   /// </summary>
   /// <remarks>
   /// acc. to #82487 Rtti.ConvStr2Str is wrong (when cast a unicode string to WideString)
@@ -607,7 +606,7 @@ type
   {$REGION 'TWStringToStringConverter'}
 
   /// <summary>
-  /// Provides conversion routine between UnicodeString and WideString
+  /// Provides conversion routine beetwen UnicodeString and WideString
   /// </summary>
   TWStringToStringConverter = class(TValueConverter)
   protected
@@ -629,7 +628,7 @@ type
   strict private
     type
       /// <summary>
-      /// TypeInfo registry structure
+      /// TypeInfo, TypeKinds registry structure
       /// </summary>
       TConvertedTypeInfo = record
         SourceTypeInfo: PTypeInfo;
@@ -638,11 +637,27 @@ type
         TargetTypeKinds: TTypeKinds;
       end;
 
-      TConverterPackage = record
-        ConverterClass: TConverterClass;
-        Converter: IValueConverter;
+      IConverterPackage = interface
+        ['{8388B821-13EC-4CA9-95A1-88D0E89FC46B}']
+        function GetInstance: IValueConverter;
+
+        property Instance: IValueConverter read GetInstance;
       end;
-    class var fTypeInfoRegistry: TDictionary<TConvertedTypeInfo, TConverterPackage>;
+
+      TConverterPackage = class(TInterfacedObject, IConverterPackage)
+      strict private
+        fConverterClass: TConverterClass;
+        fConverter: IValueConverter;
+
+        function GetInstance: IValueConverter;
+      public
+        constructor Create(classType: TConverterClass);
+        property Instance: IValueConverter read GetInstance;
+      end;
+    class var fTypeInfoToTypeInfoRegistry: TDictionary<TConvertedTypeInfo, IConverterPackage>;
+    class var fTypeInfoToTypeKindsRegistry: TDictionary<TConvertedTypeInfo, IConverterPackage>;
+    class var fTypeKindsToTypeInfoRegistry: TDictionary<TConvertedTypeInfo, IConverterPackage>;
+    class var fTypeKindsToTypeKindsRegistry: TDictionary<TConvertedTypeInfo, IConverterPackage>;
   public
     class constructor Create;
     class destructor Destroy;
@@ -807,7 +822,7 @@ begin
   else if targetTypeInfo = TypeInfo(ShortInt) then
     Result := TValue.From<ShortInt>(StrToInt(value.AsString))
   else if targetTypeInfo = TypeInfo(Byte) then
-    Result := TValue.From<Byte>(StrToInt(value.AsString))
+    Result := TValue.From<Byte>(StrToInt(value.AsString));
 end;
 
 {$ENDREGION}
@@ -862,7 +877,7 @@ begin
   else if targetTypeInfo = TypeInfo(ShortInt) then
     Result := TValue.From<ShortInt>(Integer(value.AsBoolean))
   else if targetTypeInfo = TypeInfo(Byte) then
-    Result := TValue.From<Byte>(Integer(value.AsBoolean))
+    Result := TValue.From<Byte>(Integer(value.AsBoolean));
 end;
 
 {$ENDREGION}
@@ -1100,7 +1115,7 @@ begin
   else if targetTypeInfo = TypeInfo(ShortInt) then
     Result := TValue.From<ShortInt>(Floor(value.AsExtended))
   else if targetTypeInfo = TypeInfo(Byte) then
-    Result := TValue.From<Byte>(Floor(value.AsExtended))
+    Result := TValue.From<Byte>(Floor(value.AsExtended));
 end;
 
 {$ENDREGION}
@@ -1111,11 +1126,11 @@ end;
 function TStringToFloatConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
-  if targetTypeInfo = TypeInfo(Extended) then
+  if targetTypeInfo.Name = 'Extended' then
     Result := TValue.From<Extended>(StrToFloat(value.AsString))
-  else if targetTypeInfo = TypeInfo(Double) then
+  else if targetTypeInfo.Name = 'Double' then
     Result := TValue.From<Double>(StrToFloat(value.AsString))
-  else if targetTypeInfo = TypeInfo(Single) then
+  else if targetTypeInfo.Name = 'Single' then
     Result := TValue.From<Single>(StrToFloat(value.AsString));
 end;
 
@@ -1346,542 +1361,173 @@ end;
 {$ENDREGION}
 
 
+{ TValueConverterFactory.TConverterPackage }
+
+constructor TValueConverterFactory.TConverterPackage.Create(
+  classType: TConverterClass);
+begin
+  fConverterClass := classType;
+end;
+
+function TValueConverterFactory.TConverterPackage.GetInstance: IValueConverter;
+begin
+  if not Assigned(fConverter) then
+    fConverter := fConverterClass.Create;
+
+  Result := fConverter;
+end;
+
+
 {$REGION 'TValueConverterFactory'}
 
 class constructor TValueConverterFactory.Create;
 begin
-  fTypeInfoRegistry := TDictionary<TConvertedTypeInfo, TConverterPackage>.Create;
-  RegisterConverter(TypeInfo(Integer), TypeInfo(Boolean), TIntegerToBooleanConverter);
-  RegisterConverter(TypeInfo(Integer), TypeInfo(Nullable<System.Integer>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Integer), TypeInfo(Nullable<System.Cardinal>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Integer), TypeInfo(Nullable<System.Int64>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Integer), TypeInfo(Nullable<System.UInt64>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Integer), TypeInfo(Nullable<System.SmallInt>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Integer), TypeInfo(Nullable<System.Word>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Integer), TypeInfo(Nullable<System.ShortInt>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Integer), TypeInfo(Nullable<System.Byte>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Integer), TypeInfo(Nullable<System.string>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Integer), TypeInfo(Nullable<System.AnsiString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Integer), TypeInfo(Nullable<System.WideString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Integer), TypeInfo(Nullable<System.Boolean>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Integer), TypeInfo(Nullable<System.Extended>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Integer), TypeInfo(Nullable<System.Double>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Integer), TypeInfo(Nullable<System.Single>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Integer), [tkString, tkUString, tkLString, tkWString], TIntegerToStringConverter);
-  RegisterConverter(TypeInfo(Integer), [tkEnumeration], TIntegerToEnumConverter);
+  fTypeInfoToTypeInfoRegistry := TDictionary<TConvertedTypeInfo, IConverterPackage>.Create;
+  fTypeInfoToTypeKindsRegistry := TDictionary<TConvertedTypeInfo, IConverterPackage>.Create;
+  fTypeKindsToTypeInfoRegistry := TDictionary<TConvertedTypeInfo, IConverterPackage>.Create;
+  fTypeKindsToTypeKindsRegistry := TDictionary<TConvertedTypeInfo, IConverterPackage>.Create;
 
-  RegisterConverter(TypeInfo(Cardinal), TypeInfo(Boolean), TIntegerToBooleanConverter);
-  RegisterConverter(TypeInfo(Cardinal), TypeInfo(Nullable<System.Integer>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Cardinal), TypeInfo(Nullable<System.Cardinal>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Cardinal), TypeInfo(Nullable<System.Int64>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Cardinal), TypeInfo(Nullable<System.UInt64>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Cardinal), TypeInfo(Nullable<System.SmallInt>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Cardinal), TypeInfo(Nullable<System.Word>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Cardinal), TypeInfo(Nullable<System.ShortInt>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Cardinal), TypeInfo(Nullable<System.Byte>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Cardinal), TypeInfo(Nullable<System.string>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Cardinal), TypeInfo(Nullable<System.AnsiString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Cardinal), TypeInfo(Nullable<System.WideString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Cardinal), TypeInfo(Nullable<System.Boolean>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Cardinal), TypeInfo(Nullable<System.Extended>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Cardinal), TypeInfo(Nullable<System.Double>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Cardinal), TypeInfo(Nullable<System.Single>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Cardinal), [tkString, tkUString, tkLString, tkWString], TIntegerToStringConverter);
-  RegisterConverter(TypeInfo(Cardinal), [tkEnumeration], TIntegerToEnumConverter);
+  RegisterConverter([tkInteger, tkInt64, tkFloat, tkEnumeration, tkString, tkUString, tkLString, tkWString],
+    TypeInfo(Nullable<System.Integer>), TTypeToNullableConverter);
+  RegisterConverter([tkInteger, tkInt64, tkFloat, tkEnumeration, tkString, tkUString, tkLString, tkWString],
+    TypeInfo(Nullable<System.SmallInt>), TTypeToNullableConverter);
+  RegisterConverter([tkInteger, tkInt64, tkFloat, tkEnumeration, tkString, tkUString, tkLString, tkWString],
+    TypeInfo(Nullable<System.ShortInt>), TTypeToNullableConverter);
+  RegisterConverter([tkInteger, tkInt64, tkFloat, tkEnumeration, tkString, tkUString, tkLString, tkWString],
+    TypeInfo(Nullable<System.LongInt>), TTypeToNullableConverter);
+  RegisterConverter([tkInteger, tkInt64, tkFloat, tkEnumeration, tkString, tkUString, tkLString, tkWString],
+    TypeInfo(Nullable<System.Cardinal>), TTypeToNullableConverter);
+  RegisterConverter([tkInteger, tkInt64, tkFloat, tkEnumeration, tkString, tkUString, tkLString, tkWString],
+    TypeInfo(Nullable<System.Int64>), TTypeToNullableConverter);
+  RegisterConverter([tkInteger, tkInt64, tkFloat, tkEnumeration, tkString, tkUString, tkLString, tkWString],
+    TypeInfo(Nullable<System.UInt64>), TTypeToNullableConverter);
+  RegisterConverter([tkInteger, tkInt64, tkFloat, tkEnumeration, tkString, tkUString, tkLString, tkWString],
+    TypeInfo(Nullable<System.Word>), TTypeToNullableConverter);
+  RegisterConverter([tkInteger, tkInt64, tkFloat, tkEnumeration, tkString, tkUString, tkLString, tkWString],
+    TypeInfo(Nullable<System.Byte>), TTypeToNullableConverter);
+  RegisterConverter([tkInteger, tkInt64, tkFloat, tkEnumeration, tkClass, tkString, tkUString, tkLString, tkWString],
+    TypeInfo(Nullable<System.string>), TTypeToNullableConverter);
+  RegisterConverter([tkInteger, tkInt64, tkFloat, tkEnumeration, tkClass, tkString, tkUString, tkLString, tkWString],
+    TypeInfo(Nullable<System.AnsiString>), TTypeToNullableConverter);
+  RegisterConverter([tkInteger, tkInt64, tkFloat, tkEnumeration, tkClass, tkString, tkUString, tkLString, tkWString],
+    TypeInfo(Nullable<System.WideString>), TTypeToNullableConverter);
+  RegisterConverter([tkInteger, tkInt64, tkString, tkUString, tkLString, tkWString],
+    TypeInfo(Nullable<System.Boolean>), TTypeToNullableConverter);
+  RegisterConverter([tkInteger, tkInt64, tkFloat, tkString, tkUString, tkLString, tkWString],
+    TypeInfo(Nullable<System.Extended>), TTypeToNullableConverter);
+  RegisterConverter([tkInteger, tkInt64, tkFloat, tkString, tkUString, tkLString, tkWString],
+    TypeInfo(Nullable<System.Double>), TTypeToNullableConverter);
+  RegisterConverter([tkInteger, tkInt64, tkFloat, tkString, tkUString, tkLString, tkWString],
+    TypeInfo(Nullable<System.Single>), TTypeToNullableConverter);
+  RegisterConverter([tkInteger, tkInt64], TypeInfo(Boolean), TIntegerToBooleanConverter);
+  RegisterConverter([tkInteger, tkInt64], [tkEnumeration], TIntegerToEnumConverter);
+  RegisterConverter([tkInteger, tkInt64], [tkString, tkUString, tkLString, tkWString], TIntegerToStringConverter);
 
-  RegisterConverter(TypeInfo(Int64), TypeInfo(Boolean), TIntegerToBooleanConverter);
-  RegisterConverter(TypeInfo(Int64), TypeInfo(Nullable<System.Integer>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Int64), TypeInfo(Nullable<System.Cardinal>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Int64), TypeInfo(Nullable<System.Int64>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Int64), TypeInfo(Nullable<System.UInt64>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Int64), TypeInfo(Nullable<System.SmallInt>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Int64), TypeInfo(Nullable<System.Word>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Int64), TypeInfo(Nullable<System.ShortInt>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Int64), TypeInfo(Nullable<System.Byte>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Int64), TypeInfo(Nullable<System.string>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Int64), TypeInfo(Nullable<System.AnsiString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Int64), TypeInfo(Nullable<System.WideString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Int64), TypeInfo(Nullable<System.Boolean>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Int64), TypeInfo(Nullable<System.Extended>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Int64), TypeInfo(Nullable<System.Double>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Int64), TypeInfo(Nullable<System.Single>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Int64), [tkString, tkUString, tkLString, tkWString], TIntegerToStringConverter);
-  RegisterConverter(TypeInfo(Int64), [tkEnumeration], TIntegerToEnumConverter);
+  RegisterConverter([tkFloat], [tkString, tkUString, tkLString, tkWString], TFloatToStringConverter);
+  RegisterConverter([tkFloat], [tkInteger, tkInt64], TFloatToIntegerConverter);
 
-  RegisterConverter(TypeInfo(UInt64), TypeInfo(Boolean), TIntegerToBooleanConverter);
-  RegisterConverter(TypeInfo(UInt64), TypeInfo(Nullable<System.Integer>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(UInt64), TypeInfo(Nullable<System.Cardinal>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(UInt64), TypeInfo(Nullable<System.Int64>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(UInt64), TypeInfo(Nullable<System.UInt64>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(UInt64), TypeInfo(Nullable<System.SmallInt>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(UInt64), TypeInfo(Nullable<System.Word>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(UInt64), TypeInfo(Nullable<System.ShortInt>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(UInt64), TypeInfo(Nullable<System.Byte>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(UInt64), TypeInfo(Nullable<System.string>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(UInt64), TypeInfo(Nullable<System.AnsiString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(UInt64), TypeInfo(Nullable<System.WideString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(UInt64), TypeInfo(Nullable<System.Boolean>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(UInt64), TypeInfo(Nullable<System.Extended>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(UInt64), TypeInfo(Nullable<System.Double>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(UInt64), TypeInfo(Nullable<System.Single>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(UInt64), [tkString, tkUString, tkLString, tkWString], TIntegerToStringConverter);
-  RegisterConverter(TypeInfo(UInt64), [tkEnumeration], TIntegerToEnumConverter);
-
-  RegisterConverter(TypeInfo(SmallInt), TypeInfo(Boolean), TIntegerToBooleanConverter);
-  RegisterConverter(TypeInfo(SmallInt), TypeInfo(Nullable<System.Integer>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(SmallInt), TypeInfo(Nullable<System.Cardinal>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(SmallInt), TypeInfo(Nullable<System.Int64>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(SmallInt), TypeInfo(Nullable<System.UInt64>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(SmallInt), TypeInfo(Nullable<System.SmallInt>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(SmallInt), TypeInfo(Nullable<System.Word>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(SmallInt), TypeInfo(Nullable<System.ShortInt>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(SmallInt), TypeInfo(Nullable<System.Byte>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(SmallInt), TypeInfo(Nullable<System.string>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(SmallInt), TypeInfo(Nullable<System.AnsiString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(SmallInt), TypeInfo(Nullable<System.WideString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(SmallInt), TypeInfo(Nullable<System.Boolean>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(SmallInt), TypeInfo(Nullable<System.Extended>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(SmallInt), TypeInfo(Nullable<System.Double>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(SmallInt), TypeInfo(Nullable<System.Single>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(SmallInt), [tkString, tkUString, tkLString, tkWString], TIntegerToStringConverter);
-  RegisterConverter(TypeInfo(SmallInt), [tkEnumeration], TIntegerToEnumConverter);
-
-  RegisterConverter(TypeInfo(Word), TypeInfo(Boolean), TIntegerToBooleanConverter);
-  RegisterConverter(TypeInfo(Word), TypeInfo(Nullable<System.Integer>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Word), TypeInfo(Nullable<System.Cardinal>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Word), TypeInfo(Nullable<System.Int64>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Word), TypeInfo(Nullable<System.UInt64>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Word), TypeInfo(Nullable<System.SmallInt>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Word), TypeInfo(Nullable<System.Word>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Word), TypeInfo(Nullable<System.ShortInt>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Word), TypeInfo(Nullable<System.Byte>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Word), TypeInfo(Nullable<System.string>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Word), TypeInfo(Nullable<System.AnsiString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Word), TypeInfo(Nullable<System.WideString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Word), TypeInfo(Nullable<System.Boolean>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Word), TypeInfo(Nullable<System.Extended>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Word), TypeInfo(Nullable<System.Double>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Word), TypeInfo(Nullable<System.Single>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Word), [tkString, tkUString, tkLString, tkWString], TIntegerToStringConverter);
-  RegisterConverter(TypeInfo(Word), [tkEnumeration], TIntegerToEnumConverter);
-
-  RegisterConverter(TypeInfo(ShortInt), TypeInfo(Boolean), TIntegerToBooleanConverter);
-  RegisterConverter(TypeInfo(ShortInt), TypeInfo(Nullable<System.Integer>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(ShortInt), TypeInfo(Nullable<System.Cardinal>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(ShortInt), TypeInfo(Nullable<System.Int64>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(ShortInt), TypeInfo(Nullable<System.UInt64>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(ShortInt), TypeInfo(Nullable<System.SmallInt>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(ShortInt), TypeInfo(Nullable<System.Word>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(ShortInt), TypeInfo(Nullable<System.ShortInt>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(ShortInt), TypeInfo(Nullable<System.Byte>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(ShortInt), TypeInfo(Nullable<System.string>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(ShortInt), TypeInfo(Nullable<System.AnsiString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(ShortInt), TypeInfo(Nullable<System.WideString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(ShortInt), TypeInfo(Nullable<System.Boolean>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(ShortInt), TypeInfo(Nullable<System.Extended>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(ShortInt), TypeInfo(Nullable<System.Double>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(ShortInt), TypeInfo(Nullable<System.Single>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(ShortInt), [tkString, tkUString, tkLString, tkWString], TIntegerToStringConverter);
-  RegisterConverter(TypeInfo(ShortInt), [tkEnumeration], TIntegerToEnumConverter);
-
-  RegisterConverter(TypeInfo(Byte), TypeInfo(Boolean), TIntegerToBooleanConverter);
-  RegisterConverter(TypeInfo(Byte), TypeInfo(Nullable<System.Integer>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Byte), TypeInfo(Nullable<System.Cardinal>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Byte), TypeInfo(Nullable<System.Int64>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Byte), TypeInfo(Nullable<System.UInt64>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Byte), TypeInfo(Nullable<System.SmallInt>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Byte), TypeInfo(Nullable<System.Word>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Byte), TypeInfo(Nullable<System.ShortInt>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Byte), TypeInfo(Nullable<System.Byte>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Byte), TypeInfo(Nullable<System.string>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Byte), TypeInfo(Nullable<System.AnsiString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Byte), TypeInfo(Nullable<System.WideString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Byte), TypeInfo(Nullable<System.Boolean>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Byte), TypeInfo(Nullable<System.Extended>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Byte), TypeInfo(Nullable<System.Double>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Byte), TypeInfo(Nullable<System.Single>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Byte), [tkString, tkUString, tkLString, tkWString], TIntegerToStringConverter);
-  RegisterConverter(TypeInfo(Byte), [tkEnumeration], TIntegerToEnumConverter);
-
-  RegisterConverter(TypeInfo(Extended), TypeInfo(Integer), TFloatToIntegerConverter);
-  RegisterConverter(TypeInfo(Extended), TypeInfo(Cardinal), TFloatToIntegerConverter);
-  RegisterConverter(TypeInfo(Extended), TypeInfo(Int64), TFloatToIntegerConverter);
-  RegisterConverter(TypeInfo(Extended), TypeInfo(UInt64), TFloatToIntegerConverter);
-  RegisterConverter(TypeInfo(Extended), TypeInfo(SmallInt), TFloatToIntegerConverter);
-  RegisterConverter(TypeInfo(Extended), TypeInfo(Word), TFloatToIntegerConverter);
-  RegisterConverter(TypeInfo(Extended), TypeInfo(ShortInt), TFloatToIntegerConverter);
-  RegisterConverter(TypeInfo(Extended), TypeInfo(Byte), TFloatToIntegerConverter);
-  RegisterConverter(TypeInfo(Extended), TypeInfo(Nullable<System.Integer>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Extended), TypeInfo(Nullable<System.Cardinal>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Extended), TypeInfo(Nullable<System.Int64>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Extended), TypeInfo(Nullable<System.UInt64>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Extended), TypeInfo(Nullable<System.SmallInt>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Extended), TypeInfo(Nullable<System.Word>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Extended), TypeInfo(Nullable<System.ShortInt>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Extended), TypeInfo(Nullable<System.Byte>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Extended), TypeInfo(Nullable<System.string>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Extended), TypeInfo(Nullable<System.AnsiString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Extended), TypeInfo(Nullable<System.WideString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Extended), TypeInfo(Nullable<System.Extended>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Extended), TypeInfo(Nullable<System.Double>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Extended), TypeInfo(Nullable<System.Single>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Extended), [tkString, tkUString, tkLString, tkWString], TFloatToStringConverter);
-
-  RegisterConverter(TypeInfo(Double), TypeInfo(Integer), TFloatToIntegerConverter);
-  RegisterConverter(TypeInfo(Double), TypeInfo(Cardinal), TFloatToIntegerConverter);
-  RegisterConverter(TypeInfo(Double), TypeInfo(Int64), TFloatToIntegerConverter);
-  RegisterConverter(TypeInfo(Double), TypeInfo(UInt64), TFloatToIntegerConverter);
-  RegisterConverter(TypeInfo(Double), TypeInfo(SmallInt), TFloatToIntegerConverter);
-  RegisterConverter(TypeInfo(Double), TypeInfo(Word), TFloatToIntegerConverter);
-  RegisterConverter(TypeInfo(Double), TypeInfo(ShortInt), TFloatToIntegerConverter);
-  RegisterConverter(TypeInfo(Double), TypeInfo(Byte), TFloatToIntegerConverter);
-  RegisterConverter(TypeInfo(Double), TypeInfo(Nullable<System.Integer>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Double), TypeInfo(Nullable<System.Cardinal>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Double), TypeInfo(Nullable<System.Int64>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Double), TypeInfo(Nullable<System.UInt64>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Double), TypeInfo(Nullable<System.SmallInt>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Double), TypeInfo(Nullable<System.Word>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Double), TypeInfo(Nullable<System.ShortInt>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Double), TypeInfo(Nullable<System.Byte>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Double), TypeInfo(Nullable<System.string>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Double), TypeInfo(Nullable<System.AnsiString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Double), TypeInfo(Nullable<System.WideString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Double), TypeInfo(Nullable<System.Extended>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Double), TypeInfo(Nullable<System.Double>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Double), TypeInfo(Nullable<System.Single>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Double), [tkString, tkUString, tkLString, tkWString], TFloatToStringConverter);
-
-  RegisterConverter(TypeInfo(Single), TypeInfo(Integer), TFloatToIntegerConverter);
-  RegisterConverter(TypeInfo(Single), TypeInfo(Cardinal), TFloatToIntegerConverter);
-  RegisterConverter(TypeInfo(Single), TypeInfo(Int64), TFloatToIntegerConverter);
-  RegisterConverter(TypeInfo(Single), TypeInfo(UInt64), TFloatToIntegerConverter);
-  RegisterConverter(TypeInfo(Single), TypeInfo(SmallInt), TFloatToIntegerConverter);
-  RegisterConverter(TypeInfo(Single), TypeInfo(Word), TFloatToIntegerConverter);
-  RegisterConverter(TypeInfo(Single), TypeInfo(ShortInt), TFloatToIntegerConverter);
-  RegisterConverter(TypeInfo(Single), TypeInfo(Byte), TFloatToIntegerConverter);
-  RegisterConverter(TypeInfo(Single), TypeInfo(Nullable<System.Integer>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Single), TypeInfo(Nullable<System.Cardinal>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Single), TypeInfo(Nullable<System.Int64>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Single), TypeInfo(Nullable<System.UInt64>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Single), TypeInfo(Nullable<System.SmallInt>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Single), TypeInfo(Nullable<System.Word>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Single), TypeInfo(Nullable<System.ShortInt>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Single), TypeInfo(Nullable<System.Byte>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Single), TypeInfo(Nullable<System.string>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Single), TypeInfo(Nullable<System.AnsiString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Single), TypeInfo(Nullable<System.WideString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Single), TypeInfo(Nullable<System.Extended>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Single), TypeInfo(Nullable<System.Double>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Single), TypeInfo(Nullable<System.Single>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Single), [tkString, tkUString, tkLString, tkWString], TFloatToStringConverter);
-
-  RegisterConverter(TypeInfo(TColor), [tkString, tkUString, tkLString, tkWString], TColorToStringConverter);
   RegisterConverter(TypeInfo(TColor), TypeInfo(Nullable<TColor>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(TColor), TypeInfo(Nullable<System.string>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(TColor), TypeInfo(Nullable<System.AnsiString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(TColor), TypeInfo(Nullable<System.WideString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(TColor), TypeInfo(Nullable<System.Integer>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(TColor), TypeInfo(Nullable<System.Cardinal>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(TColor), TypeInfo(Nullable<System.Int64>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(TColor), TypeInfo(Nullable<System.UInt64>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(TColor), TypeInfo(Nullable<System.SmallInt>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(TColor), TypeInfo(Nullable<System.Word>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(TColor), TypeInfo(Nullable<System.ShortInt>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(TColor), TypeInfo(Nullable<System.Byte>), TTypeToNullableConverter);
+  RegisterConverter(TypeInfo(TColor), [tkString, tkUString, tkLString, tkWString], TColorToStringConverter);
 
   RegisterConverter(TypeInfo(Currency), [tkString, tkUString, tkLString, tkWString], TCurrencyToStringConverter);
-  RegisterConverter(TypeInfo(Currency), TypeInfo(Nullable<System.string>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Currency), TypeInfo(Nullable<System.AnsiString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Currency), TypeInfo(Nullable<System.WideString>), TTypeToNullableConverter);
 
   RegisterConverter(TypeInfo(TDateTime), [tkString, tkUString, tkLString, tkWString], TDateTimeToStringConverter);
-  RegisterConverter(TypeInfo(TDateTime), TypeInfo(Nullable<System.string>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(TDateTime), TypeInfo(Nullable<System.AnsiString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(TDateTime), TypeInfo(Nullable<System.WideString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(TDateTime), TypeInfo(Nullable<System.TDateTime>), TTypeToNullableConverter);
 
-  RegisterConverter(TypeInfo(Boolean), [tkString, tkUString, tkLString, tkWString], TBooleanToStringConverter);
-  RegisterConverter(TypeInfo(Boolean), TypeInfo(Integer), TBooleanToIntegerConverter);
-  RegisterConverter(TypeInfo(Boolean), TypeInfo(Cardinal), TBooleanToIntegerConverter);
-  RegisterConverter(TypeInfo(Boolean), TypeInfo(Int64), TBooleanToIntegerConverter);
-  RegisterConverter(TypeInfo(Boolean), TypeInfo(UInt64), TBooleanToIntegerConverter);
-  RegisterConverter(TypeInfo(Boolean), TypeInfo(SmallInt), TBooleanToIntegerConverter);
-  RegisterConverter(TypeInfo(Boolean), TypeInfo(Word), TBooleanToIntegerConverter);
-  RegisterConverter(TypeInfo(Boolean), TypeInfo(ShortInt), TBooleanToIntegerConverter);
-  RegisterConverter(TypeInfo(Boolean), TypeInfo(Byte), TBooleanToIntegerConverter);
   RegisterConverter(TypeInfo(Boolean), TypeInfo(Nullable<System.Boolean>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Boolean), TypeInfo(Nullable<System.string>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Boolean), TypeInfo(Nullable<System.AnsiString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Boolean), TypeInfo(Nullable<System.WideString>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Boolean), TypeInfo(Nullable<System.Integer>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Boolean), TypeInfo(Nullable<System.Cardinal>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Boolean), TypeInfo(Nullable<System.Int64>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Boolean), TypeInfo(Nullable<System.UInt64>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Boolean), TypeInfo(Nullable<System.SmallInt>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Boolean), TypeInfo(Nullable<System.Word>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Boolean), TypeInfo(Nullable<System.ShortInt>), TTypeToNullableConverter);
-  RegisterConverter(TypeInfo(Boolean), TypeInfo(Nullable<System.Byte>), TTypeToNullableConverter);
+  RegisterConverter(TypeInfo(Boolean), [tkString, tkUString, tkLString, tkWString], TBooleanToStringConverter);
+  RegisterConverter(TypeInfo(Boolean), [tkInteger], TBooleanToIntegerConverter);
 
-  RegisterConverter(TypeInfo(Nullable<System.Integer>), TypeInfo(Integer), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Integer>), TypeInfo(Cardinal), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Integer>), TypeInfo(Int64), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Integer>), TypeInfo(UInt64), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Integer>), TypeInfo(SmallInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Integer>), TypeInfo(Word), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Integer>), TypeInfo(ShortInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Integer>), TypeInfo(Byte), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Integer>), TypeInfo(string), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Integer>), TypeInfo(AnsiString), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Integer>), TypeInfo(WideString), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Integer>), TypeInfo(Extended), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Integer>), TypeInfo(Double), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Integer>), TypeInfo(Single), TNullableToTypeConverter);
+  RegisterConverter(TypeInfo(Nullable<System.Integer>),
+    [tkInteger, tkInt64, tkFloat, tkString, tkUString, tkLString, tkWString],
+    TNullableToTypeConverter);
 
-  RegisterConverter(TypeInfo(Nullable<System.Cardinal>), TypeInfo(Integer), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Cardinal>), TypeInfo(Cardinal), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Cardinal>), TypeInfo(Int64), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Cardinal>), TypeInfo(UInt64), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Cardinal>), TypeInfo(SmallInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Cardinal>), TypeInfo(Word), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Cardinal>), TypeInfo(ShortInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Cardinal>), TypeInfo(Byte), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Cardinal>), TypeInfo(string), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Cardinal>), TypeInfo(AnsiString), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Cardinal>), TypeInfo(WideString), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Cardinal>), TypeInfo(Extended), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Cardinal>), TypeInfo(Double), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Cardinal>), TypeInfo(Single), TNullableToTypeConverter);
+  RegisterConverter(TypeInfo(Nullable<System.SmallInt>), [
+    tkInteger, tkInt64, tkFloat, tkString, tkUString, tkLString, tkWString],
+    TNullableToTypeConverter);
 
-  RegisterConverter(TypeInfo(Nullable<System.Int64>), TypeInfo(Integer), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Int64>), TypeInfo(Cardinal), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Int64>), TypeInfo(Int64), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Int64>), TypeInfo(UInt64), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Int64>), TypeInfo(SmallInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Int64>), TypeInfo(Word), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Int64>), TypeInfo(ShortInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Int64>), TypeInfo(Byte), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Int64>), TypeInfo(string), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Int64>), TypeInfo(AnsiString), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Int64>), TypeInfo(WideString), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Int64>), TypeInfo(Extended), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Int64>), TypeInfo(Double), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Int64>), TypeInfo(Single), TNullableToTypeConverter);
+  RegisterConverter(TypeInfo(Nullable<System.ShortInt>),
+    [tkInteger, tkInt64, tkFloat, tkString, tkUString, tkLString, tkWString],
+    TNullableToTypeConverter);
 
-  RegisterConverter(TypeInfo(Nullable<System.UInt64>), TypeInfo(Integer), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.UInt64>), TypeInfo(Cardinal), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.UInt64>), TypeInfo(Int64), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.UInt64>), TypeInfo(UInt64), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.UInt64>), TypeInfo(SmallInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.UInt64>), TypeInfo(Word), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.UInt64>), TypeInfo(ShortInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.UInt64>), TypeInfo(Byte), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.UInt64>), TypeInfo(string), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.UInt64>), TypeInfo(AnsiString), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.UInt64>), TypeInfo(WideString), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.UInt64>), TypeInfo(Extended), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.UInt64>), TypeInfo(Double), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.UInt64>), TypeInfo(Single), TNullableToTypeConverter);
+  RegisterConverter(TypeInfo(Nullable<System.LongInt>),
+    [tkInteger, tkInt64, tkFloat, tkString, tkUString, tkLString, tkWString],
+    TNullableToTypeConverter);
 
-  RegisterConverter(TypeInfo(Nullable<System.SmallInt>), TypeInfo(Integer), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.SmallInt>), TypeInfo(Cardinal), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.SmallInt>), TypeInfo(Int64), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.SmallInt>), TypeInfo(UInt64), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.SmallInt>), TypeInfo(SmallInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.SmallInt>), TypeInfo(Word), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.SmallInt>), TypeInfo(ShortInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.SmallInt>), TypeInfo(Byte), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.SmallInt>), TypeInfo(string), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.SmallInt>), TypeInfo(AnsiString), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.SmallInt>), TypeInfo(WideString), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.SmallInt>), TypeInfo(Extended), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.SmallInt>), TypeInfo(Double), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.SmallInt>), TypeInfo(Single), TNullableToTypeConverter);
+  RegisterConverter(TypeInfo(Nullable<System.Cardinal>),
+    [tkInteger, tkInt64, tkFloat, tkString, tkUString, tkLString, tkWString],
+    TNullableToTypeConverter);
 
-  RegisterConverter(TypeInfo(Nullable<System.Word>), TypeInfo(Integer), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Word>), TypeInfo(Cardinal), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Word>), TypeInfo(Cardinal), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Word>), TypeInfo(Cardinal), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Word>), TypeInfo(SmallInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Word>), TypeInfo(Word), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Word>), TypeInfo(ShortInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Word>), TypeInfo(Byte), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Word>), TypeInfo(string), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Word>), TypeInfo(AnsiString), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Word>), TypeInfo(WideString), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Word>), TypeInfo(Extended), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Word>), TypeInfo(Double), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Word>), TypeInfo(Single), TNullableToTypeConverter);
+  RegisterConverter(TypeInfo(Nullable<System.Int64>),
+    [tkInteger, tkInt64, tkFloat, tkString, tkUString, tkLString, tkWString],
+    TNullableToTypeConverter);
 
-  RegisterConverter(TypeInfo(Nullable<System.ShortInt>), TypeInfo(Integer), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.ShortInt>), TypeInfo(Cardinal), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.ShortInt>), TypeInfo(Cardinal), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.ShortInt>), TypeInfo(Cardinal), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.ShortInt>), TypeInfo(SmallInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.ShortInt>), TypeInfo(Word), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.ShortInt>), TypeInfo(ShortInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.ShortInt>), TypeInfo(Byte), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.ShortInt>), TypeInfo(string), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.ShortInt>), TypeInfo(AnsiString), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.ShortInt>), TypeInfo(WideString), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.ShortInt>), TypeInfo(Extended), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.ShortInt>), TypeInfo(Double), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.ShortInt>), TypeInfo(Single), TNullableToTypeConverter);
+  RegisterConverter(TypeInfo(Nullable<System.UInt64>),
+    [tkInteger, tkInt64, tkFloat, tkString, tkUString, tkLString, tkWString],
+    TNullableToTypeConverter);
 
-  RegisterConverter(TypeInfo(Nullable<System.Byte>), TypeInfo(Integer), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Byte>), TypeInfo(Cardinal), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Byte>), TypeInfo(Int64), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Byte>), TypeInfo(UInt64), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Byte>), TypeInfo(SmallInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Byte>), TypeInfo(Word), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Byte>), TypeInfo(ShortInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Byte>), TypeInfo(Byte), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Byte>), TypeInfo(string), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Byte>), TypeInfo(AnsiString), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Byte>), TypeInfo(WideString), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Byte>), TypeInfo(Extended), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Byte>), TypeInfo(Double), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Byte>), TypeInfo(Single), TNullableToTypeConverter);
+  RegisterConverter(TypeInfo(Nullable<System.Word>),
+    [tkInteger, tkInt64, tkFloat, tkString, tkUString, tkLString, tkWString],
+    TNullableToTypeConverter);
 
-  RegisterConverter(TypeInfo(Nullable<System.string>), TypeInfo(Integer), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.string>), TypeInfo(Cardinal), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.string>), TypeInfo(Int64), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.string>), TypeInfo(UInt64), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.string>), TypeInfo(SmallInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.string>), TypeInfo(Word), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.string>), TypeInfo(ShortInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.string>), TypeInfo(Byte), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.string>), TypeInfo(Extended), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.string>), TypeInfo(Double), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.string>), TypeInfo(Single), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.string>), [tkString, tkUString, tkLString, tkWString], TNullableToTypeConverter);
+  RegisterConverter(TypeInfo(Nullable<System.Byte>),
+    [tkInteger, tkInt64, tkFloat, tkString, tkUString, tkLString, tkWString],
+    TNullableToTypeConverter);
 
-  RegisterConverter(TypeInfo(Nullable<System.AnsiString>), TypeInfo(Integer), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.AnsiString>), TypeInfo(Cardinal), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.AnsiString>), TypeInfo(Int64), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.AnsiString>), TypeInfo(UInt64), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.AnsiString>), TypeInfo(SmallInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.AnsiString>), TypeInfo(Word), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.AnsiString>), TypeInfo(ShortInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.AnsiString>), TypeInfo(Byte), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.AnsiString>), TypeInfo(Extended), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.AnsiString>), TypeInfo(Double), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.AnsiString>), TypeInfo(Single), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.AnsiString>), [tkString, tkUString, tkLString, tkWString], TNullableToTypeConverter);
+  RegisterConverter(TypeInfo(Nullable<System.string>),
+    [tkInteger, tkInt64, tkFloat, tkString, tkUString, tkLString, tkWString],
+    TNullableToTypeConverter);
 
-  RegisterConverter(TypeInfo(Nullable<System.WideString>), TypeInfo(Integer), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.WideString>), TypeInfo(Cardinal), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.WideString>), TypeInfo(Int64), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.WideString>), TypeInfo(UInt64), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.WideString>), TypeInfo(SmallInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.WideString>), TypeInfo(Word), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.WideString>), TypeInfo(ShortInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.WideString>), TypeInfo(Byte), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.WideString>), TypeInfo(Extended), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.WideString>), TypeInfo(Double), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.WideString>), TypeInfo(Single), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.WideString>), [tkString, tkUString, tkLString, tkWString], TNullableToTypeConverter);
+  RegisterConverter(TypeInfo(Nullable<System.AnsiString>),
+    [tkInteger, tkInt64, tkFloat, tkString, tkUString, tkLString, tkWString],
+    TNullableToTypeConverter);
 
-  RegisterConverter(TypeInfo(Nullable<System.Extended>), TypeInfo(Integer), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Extended>), TypeInfo(Cardinal), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Extended>), TypeInfo(Int64), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Extended>), TypeInfo(UInt64), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Extended>), TypeInfo(SmallInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Extended>), TypeInfo(Word), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Extended>), TypeInfo(ShortInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Extended>), TypeInfo(Byte), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Extended>), TypeInfo(Extended), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Extended>), TypeInfo(Double), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Extended>), TypeInfo(Single), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Extended>), [tkString, tkUString, tkLString, tkWString], TNullableToTypeConverter);
+  RegisterConverter(TypeInfo(Nullable<System.WideString>),
+    [tkInteger, tkInt64, tkFloat, tkString, tkUString, tkLString, tkWString],
+    TNullableToTypeConverter);
+
+  RegisterConverter(TypeInfo(Nullable<System.Single>),
+    [tkInteger, tkInt64, tkFloat, tkString, tkUString, tkLString, tkWString],
+    TNullableToTypeConverter);
+
+  RegisterConverter(TypeInfo(Nullable<System.Double>),
+    [tkInteger, tkInt64, tkFloat, tkString, tkUString, tkLString, tkWString],
+    TNullableToTypeConverter);
+
+  RegisterConverter(TypeInfo(Nullable<System.Extended>),
+    [tkInteger, tkInt64, tkFloat, tkString, tkUString, tkLString, tkWString],
+    TNullableToTypeConverter);
 
   RegisterConverter(TypeInfo(Nullable<System.Boolean>), TypeInfo(Boolean), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Boolean>), TypeInfo(Integer), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Boolean>), TypeInfo(Cardinal), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Boolean>), TypeInfo(Int64), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Boolean>), TypeInfo(UInt64), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Boolean>), TypeInfo(SmallInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Boolean>), TypeInfo(Word), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Boolean>), TypeInfo(ShortInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<System.Boolean>), TypeInfo(Byte), TNullableToTypeConverter);
+  RegisterConverter(TypeInfo(Nullable<System.Boolean>), [tkInteger, tkInt64], TNullableToTypeConverter);
   RegisterConverter(TypeInfo(Nullable<System.Boolean>), [tkString, tkUString, tkLString, tkWString], TNullableToTypeConverter);
 
-  RegisterConverter(TypeInfo(Nullable<TColor>), TypeInfo(Integer), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<TColor>), TypeInfo(Cardinal), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<TColor>), TypeInfo(Int64), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<TColor>), TypeInfo(UInt64), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<TColor>), TypeInfo(SmallInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<TColor>), TypeInfo(Word), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<TColor>), TypeInfo(ShortInt), TNullableToTypeConverter);
-  RegisterConverter(TypeInfo(Nullable<TColor>), TypeInfo(Byte), TNullableToTypeConverter);
+  RegisterConverter(TypeInfo(Nullable<TColor>), [tkInteger, tkInt64], TNullableToTypeConverter);
   RegisterConverter(TypeInfo(Nullable<TColor>), [tkString, tkUString, tkLString, tkWString], TNullableToTypeConverter);
 
   RegisterConverter(TypeInfo(Nullable<System.TDateTime>), TypeInfo(TDate), TNullableToTypeConverter);
   RegisterConverter(TypeInfo(Nullable<System.TDateTime>), TypeInfo(TDateTime), TNullableToTypeConverter);
   RegisterConverter(TypeInfo(Nullable<System.TDateTime>), [tkString, tkUString, tkLString, tkWString], TNullableToTypeConverter);
 
-  RegisterConverter([tkEnumeration], TypeInfo(Integer), TEnumToIntegerConverter);
-  RegisterConverter([tkEnumeration], TypeInfo(Cardinal), TEnumToIntegerConverter);
-  RegisterConverter([tkEnumeration], TypeInfo(Int64), TEnumToIntegerConverter);
-  RegisterConverter([tkEnumeration], TypeInfo(UInt64), TEnumToIntegerConverter);
-  RegisterConverter([tkEnumeration], TypeInfo(SmallInt), TEnumToIntegerConverter);
-  RegisterConverter([tkEnumeration], TypeInfo(Word), TEnumToIntegerConverter);
-  RegisterConverter([tkEnumeration], TypeInfo(ShortInt), TEnumToIntegerConverter);
-  RegisterConverter([tkEnumeration], TypeInfo(Byte), TEnumToIntegerConverter);
-  RegisterConverter([tkEnumeration], TypeInfo(Nullable<System.Integer>), TTypeToNullableConverter);
-  RegisterConverter([tkEnumeration], TypeInfo(Nullable<System.Cardinal>), TTypeToNullableConverter);
-  RegisterConverter([tkEnumeration], TypeInfo(Nullable<System.Int64>), TTypeToNullableConverter);
-  RegisterConverter([tkEnumeration], TypeInfo(Nullable<System.UInt64>), TTypeToNullableConverter);
-  RegisterConverter([tkEnumeration], TypeInfo(Nullable<System.SmallInt>), TTypeToNullableConverter);
-  RegisterConverter([tkEnumeration], TypeInfo(Nullable<System.Word>), TTypeToNullableConverter);
-  RegisterConverter([tkEnumeration], TypeInfo(Nullable<System.ShortInt>), TTypeToNullableConverter);
-  RegisterConverter([tkEnumeration], TypeInfo(Nullable<System.Byte>), TTypeToNullableConverter);
-  RegisterConverter([tkEnumeration], TypeInfo(Nullable<System.string>), TTypeToNullableConverter);
-  RegisterConverter([tkEnumeration], TypeInfo(Nullable<System.WideString>), TTypeToNullableConverter);
-  RegisterConverter([tkEnumeration], TypeInfo(Nullable<System.AnsiString>), TTypeToNullableConverter);
   RegisterConverter([tkEnumeration], [tkString, tkUString, tkLString, tkWString], TEnumToStringConverter);
+  RegisterConverter([tkEnumeration], [tkInteger, tkInt64], TEnumToIntegerConverter);
 
   RegisterConverter([tkSet], [tkString, tkUString, tkLString, tkWString], TSetToStringConverter);
 
-  RegisterConverter([tkClass], TypeInfo(Nullable<System.string>), TTypeToNullableConverter);
-  RegisterConverter([tkClass], TypeInfo(Nullable<System.WideString>), TTypeToNullableConverter);
-  RegisterConverter([tkClass], TypeInfo(Nullable<System.AnsiString>), TTypeToNullableConverter);
   RegisterConverter([tkClass], [tkString, tkUString, tkLString, tkWString], TObjectToStringConverter);
   RegisterConverter([tkClass], [tkInterface], TObjectToInterfaceConverter);
   RegisterConverter([tkClass], [tkClassRef], TObjectToClassConverter);
 
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Integer), TStringToIntegerConverter);
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Cardinal), TStringToIntegerConverter);
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Int64), TStringToIntegerConverter);
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(UInt64), TStringToIntegerConverter);
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(SmallInt), TStringToIntegerConverter);
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Word), TStringToIntegerConverter);
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(ShortInt), TStringToIntegerConverter);
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Byte), TStringToIntegerConverter);
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Boolean), TStringToBooleanConverter);
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TColor), TStringToColorConverter);
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Currency), TStringToCurrencyConverter);
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TDateTime), TStringToDateTimeConverter);
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<System.string>), TTypeToNullableConverter);
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<System.AnsiString>), TTypeToNullableConverter);
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<System.WideString>), TTypeToNullableConverter);
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<System.Integer>), TTypeToNullableConverter);
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<System.Cardinal>), TTypeToNullableConverter);
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<System.Int64>), TTypeToNullableConverter);
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<System.UInt64>), TTypeToNullableConverter);
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<System.SmallInt>), TTypeToNullableConverter);
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<System.Word>), TTypeToNullableConverter);
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<System.ShortInt>), TTypeToNullableConverter);
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<System.Byte>), TTypeToNullableConverter);
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<System.Boolean>), TTypeToNullableConverter);
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<System.Extended>), TTypeToNullableConverter);
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<System.Double>), TTypeToNullableConverter);
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<System.Single>), TTypeToNullableConverter);
+
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<System.Currency>), TTypeToNullableConverter);
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<TColor>), TTypeToNullableConverter);
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<System.TDateTime>), TTypeToNullableConverter);
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Extended), TStringToFloatConverter);
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Double), TStringToFloatConverter);
-  RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Single), TStringToFloatConverter);
+
+  RegisterConverter([tkString, tkUString, tkLString, tkWString], [tkInteger, tkInt64], TStringToIntegerConverter);
+  RegisterConverter([tkString, tkUString, tkLString, tkWString], [tkFloat], TStringToFloatConverter);
   RegisterConverter([tkString, tkUString, tkLString, tkWString], [tkEnumeration], TStringToEnumConverter);
   RegisterConverter([tkString, tkUString, tkLString, tkWString], [tkSet], TStringToSetConverter);
 
@@ -1894,43 +1540,75 @@ end;
 
 class destructor TValueConverterFactory.Destroy;
 begin
-  fTypeInfoRegistry.Free;
+  fTypeInfoToTypeInfoRegistry.Free;
+  fTypeInfoToTypeKindsRegistry.Free;
+  fTypeKindsToTypeInfoRegistry.Free;
+  fTypeKindsToTypeKindsRegistry.Free;
 end;
 
 class function TValueConverterFactory.GetConverter(const sourceTypeInfo,
   targetTypeInfo: PTypeInfo): IValueConverter;
 var
-  typeInfoPair: TPair<TConvertedTypeInfo, TConverterPackage>;
-  value: TConverterPackage;
+  typeInfoPair: TPair<TConvertedTypeInfo, IConverterPackage>;
 begin
-  System.MonitorEnter(fTypeInfoRegistry);
+  System.MonitorEnter(fTypeInfoToTypeInfoRegistry);
   try
-    for typeInfoPair in fTypeInfoRegistry do
+    for typeInfoPair in fTypeInfoToTypeInfoRegistry do
     begin
       if CompareTypeInfo(typeInfoPair.Key.SourceTypeInfo, sourceTypeInfo) and
-        CompareTypeInfo(typeInfoPair.Key.TargetTypeInfo, targetTypeInfo) or
-
-        (CompareTypeInfo(typeInfoPair.Key.SourceTypeInfo, sourceTypeInfo) and
-        (targetTypeInfo.Kind in typeInfoPair.Key.TargetTypeKinds)) or
-
-        ((sourceTypeInfo.Kind in typeInfoPair.Key.SourceTypeKinds) and
-        (targetTypeInfo.Kind in typeInfoPair.Key.TargetTypeKinds)) or
-
-        ((sourceTypeInfo.Kind in typeInfoPair.Key.SourceTypeKinds) and
-        CompareTypeInfo(typeInfoPair.Key.TargetTypeInfo, targetTypeInfo)) then
+        CompareTypeInfo(typeInfoPair.Key.TargetTypeInfo, targetTypeInfo) then
       begin
-        value := typeInfoPair.Value;
-        if not Assigned(typeInfoPair.Value.Converter) then
-        begin
-          value.Converter := typeInfoPair.Value.ConverterClass.Create;
-          value.ConverterClass := typeInfoPair.Value.ConverterClass;
-          fTypeInfoRegistry.AddOrSetValue(typeInfoPair.Key, value);
-        end;
-        Exit(value.Converter);
+        fTypeInfoToTypeInfoRegistry.AddOrSetValue(typeInfoPair.Key, typeInfoPair.Value);
+        Exit(typeInfoPair.Value.Instance);
       end;
     end;
   finally
-    System.MonitorExit(fTypeInfoRegistry);
+    System.MonitorExit(fTypeInfoToTypeInfoRegistry);
+  end;
+
+  System.MonitorEnter(fTypeInfoToTypeKindsRegistry);
+  try
+    for typeInfoPair in fTypeInfoToTypeKindsRegistry do
+    begin
+      if CompareTypeInfo(typeInfoPair.Key.SourceTypeInfo, sourceTypeInfo) and
+        (targetTypeInfo.Kind in typeInfoPair.Key.TargetTypeKinds) then
+      begin
+        fTypeInfoToTypeKindsRegistry.AddOrSetValue(typeInfoPair.Key, typeInfoPair.Value);
+        Exit(typeInfoPair.Value.Instance);
+      end;
+    end;
+  finally
+    System.MonitorExit(fTypeInfoToTypeKindsRegistry);
+  end;
+
+  System.MonitorEnter(fTypeKindsToTypeInfoRegistry);
+  try
+    for typeInfoPair in fTypeKindsToTypeInfoRegistry do
+    begin
+      if (sourceTypeInfo.Kind in typeInfoPair.Key.SourceTypeKinds) and
+        CompareTypeInfo(typeInfoPair.Key.TargetTypeInfo, targetTypeInfo) then
+      begin
+        fTypeKindsToTypeInfoRegistry.AddOrSetValue(typeInfoPair.Key, typeInfoPair.Value);
+        Exit(typeInfoPair.Value.Instance);
+      end;
+    end;
+  finally
+    System.MonitorExit(fTypeKindsToTypeInfoRegistry);
+  end;
+
+  System.MonitorEnter(fTypeKindsToTypeKindsRegistry);
+  try
+    for typeInfoPair in fTypeKindsToTypeKindsRegistry do
+    begin
+      if (sourceTypeInfo.Kind in typeInfoPair.Key.SourceTypeKinds) and
+        (targetTypeInfo.Kind in typeInfoPair.Key.TargetTypeKinds) then
+      begin
+        fTypeKindsToTypeKindsRegistry.AddOrSetValue(typeInfoPair.Key, typeInfoPair.Value);
+        Exit(typeInfoPair.Value.Instance);
+      end;
+    end;
+  finally
+    System.MonitorExit(fTypeKindsToTypeKindsRegistry);
   end;
 end;
 
@@ -1943,67 +1621,19 @@ end;
 class procedure TValueConverterFactory.RegisterConverter(const sourceTypeInfo,
   targetTypeInfo: PTypeInfo; converterClass: TConverterClass);
 var
-  value: TConverterPackage;
   key: TConvertedTypeInfo;
 begin
   TArgument.CheckNotNull(sourceTypeInfo, 'sourceTypeInfo');
   TArgument.CheckNotNull(targetTypeInfo, 'targetTypeInfo');
 
-  System.MonitorEnter(fTypeInfoRegistry);
+  System.MonitorEnter(fTypeInfoToTypeInfoRegistry);
   try
-    value.ConverterClass := converterClass;
     key.SourceTypeInfo := sourceTypeInfo;
     key.TargetTypeInfo := targetTypeInfo;
-    key.SourceTypeKinds := [];
-    key.TargetTypeKinds := [];
-    fTypeInfoRegistry.AddOrSetValue(key, value);
+    fTypeInfoToTypeInfoRegistry.AddOrSetValue(key,
+      TConverterPackage.Create(converterClass));
   finally
-    System.MonitorExit(fTypeInfoRegistry);
-  end;
-end;
-
-class procedure TValueConverterFactory.RegisterConverter(const sourceTypeKinds,
-  targetTypeKinds: TTypeKinds; converterClass: TConverterClass);
-var
-  value: TConverterPackage;
-  key: TConvertedTypeInfo;
-begin
-  TArgument.CheckFalse(SizeOf(sourceTypeKinds) = 0, SEmptySourceTypeKind);
-  TArgument.CheckFalse(SizeOf(targetTypeKinds) = 0, SEmptyTargetTypeKind);
-
-  System.MonitorEnter(fTypeInfoRegistry);
-  try
-    value.ConverterClass := converterClass;
-    key.SourceTypeInfo := nil;
-    key.SourceTypeKinds := sourceTypeKinds;
-    key.TargetTypeKinds := targetTypeKinds;
-    key.TargetTypeInfo := nil;
-    fTypeInfoRegistry.AddOrSetValue(key, value);
-  finally
-    System.MonitorExit(fTypeInfoRegistry);
-  end;
-end;
-
-class procedure TValueConverterFactory.RegisterConverter(
-  const sourceTypeKinds: TTypeKinds; targetTypeInfo: PTypeInfo;
-  converterClass: TConverterClass);
-var
-  value: TConverterPackage;
-  key: TConvertedTypeInfo;
-begin
-  TArgument.CheckFalse(SizeOf(sourceTypeKinds) = 0, SEmptySourceTypeKind);
-  TArgument.CheckNotNull(targetTypeInfo, 'targetTypeInfo');
-
-  System.MonitorEnter(fTypeInfoRegistry);
-  try
-    value.ConverterClass := converterClass;
-    key.SourceTypeKinds := sourceTypeKinds;
-    key.SourceTypeInfo := nil;
-    key.TargetTypeInfo := targetTypeInfo;
-    key.TargetTypeKinds := [];
-    fTypeInfoRegistry.AddOrSetValue(key, value);
-  finally
-    System.MonitorExit(fTypeInfoRegistry);
+    System.MonitorExit(fTypeInfoToTypeInfoRegistry);
   end;
 end;
 
@@ -2011,26 +1641,61 @@ class procedure TValueConverterFactory.RegisterConverter(
   const sourceTypeInfo: PTypeInfo; targetTypeKinds: TTypeKinds;
   converterClass: TConverterClass);
 var
-  value: TConverterPackage;
   key: TConvertedTypeInfo;
 begin
   TArgument.CheckFalse(SizeOf(targetTypeKinds) = 0, SEmptySourceTypeKind);
   TArgument.CheckNotNull(sourceTypeInfo, 'targetTypeInfo');
 
-  System.MonitorEnter(fTypeInfoRegistry);
+  System.MonitorEnter(fTypeInfoToTypeKindsRegistry);
   try
-    value.ConverterClass := converterClass;
-    key.SourceTypeKinds := [];
     key.SourceTypeInfo := sourceTypeInfo;
-    key.TargetTypeInfo := nil;
     key.TargetTypeKinds := targetTypeKinds;
-    fTypeInfoRegistry.AddOrSetValue(key, value);
+    fTypeInfoToTypeKindsRegistry.AddOrSetValue(key,
+      TConverterPackage.Create(converterClass));
   finally
-    System.MonitorExit(fTypeInfoRegistry);
+    System.MonitorExit(fTypeInfoToTypeKindsRegistry);
+  end;
+end;
+
+class procedure TValueConverterFactory.RegisterConverter(
+  const sourceTypeKinds: TTypeKinds; targetTypeInfo: PTypeInfo;
+  converterClass: TConverterClass);
+var
+  key: TConvertedTypeInfo;
+begin
+  TArgument.CheckFalse(SizeOf(sourceTypeKinds) = 0, SEmptySourceTypeKind);
+  TArgument.CheckNotNull(targetTypeInfo, 'targetTypeInfo');
+
+  System.MonitorEnter(fTypeKindsToTypeInfoRegistry);
+  try
+    key.SourceTypeKinds := sourceTypeKinds;
+    key.TargetTypeInfo := targetTypeInfo;
+    fTypeKindsToTypeInfoRegistry.AddOrSetValue(key,
+      TConverterPackage.Create(converterClass));
+  finally
+    System.MonitorExit(fTypeKindsToTypeInfoRegistry);
+  end;
+end;
+
+class procedure TValueConverterFactory.RegisterConverter(const sourceTypeKinds,
+  targetTypeKinds: TTypeKinds; converterClass: TConverterClass);
+var
+  key: TConvertedTypeInfo;
+begin
+  TArgument.CheckFalse(SizeOf(sourceTypeKinds) = 0, SEmptySourceTypeKind);
+  TArgument.CheckFalse(SizeOf(targetTypeKinds) = 0, SEmptyTargetTypeKind);
+
+  System.MonitorEnter(fTypeKindsToTypeKindsRegistry);
+  try
+    key.SourceTypeKinds := sourceTypeKinds;
+    key.TargetTypeKinds := targetTypeKinds;
+    fTypeKindsToTypeKindsRegistry.AddOrSetValue(key,
+      TConverterPackage.Create(converterClass));
+  finally
+    System.MonitorExit(fTypeKindsToTypeKindsRegistry);
   end;
 end;
 
 {$ENDREGION}
-
 
 end.
