@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (C) 2009-2010 DevJet                                  }
+{           Copyright (c) 2009-2012 Spring4D Team                           }
 {                                                                           }
 {           http://www.DevJet.net                                           }
 {                                                                           }
@@ -108,7 +108,8 @@ begin
     TTestFromDateTime.Suite,
     TTestFromObject.Suite,
     TTestFromNullable.Suite,
-    TTestFromInterface.Suite
+    TTestFromInterface.Suite,
+    TTestCustomTypes.Suite
   ]);
 
 //  RegisterTests('Spring.System.Reflection.ValueExpression', [

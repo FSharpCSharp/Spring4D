@@ -454,6 +454,19 @@ type
     procedure TestNullableColorToWideString;
   end;
 
+  TTestCustomTypes = class(TTestCase)
+  private
+    fConverter: IValueConverter;
+  protected
+    procedure SetUp; override;
+  published
+    procedure TestCustomFloatToString;
+    procedure TestStringToCustomFloat;
+  end;
+
+type
+  CustomFloat = type Extended;
+
 implementation
 
 uses
@@ -4164,6 +4177,41 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TTestObject>(obj));
   CheckEqualsString(intf.ToString, obj.ToString);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestCustomTypes'}
+
+procedure TTestCustomTypes.SetUp;
+begin
+  inherited;
+  fConverter := TValueConverter.Default;
+end;
+
+procedure TTestCustomTypes.TestCustomFloatToString;
+var
+  outValue: TValue;
+  outStr: string;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<CustomFloat>(1.11),
+    TypeInfo(string));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<string>(outStr));
+  CheckEquals(outStr, FloatToStr(1.11));
+end;
+
+procedure TTestCustomTypes.TestStringToCustomFloat;
+var
+  outValue: TValue;
+  outFloat: CustomFloat;
+begin
+  outValue := fConverter.ConvertTo(TValue.From<string>(FloatToStr(1.11)),
+    TypeInfo(CustomFloat));
+  CheckFalse(outValue.IsEmpty);
+  CheckTrue(outValue.TryAsType<CustomFloat>(outFloat));
+  CheckEquals(outFloat, 1.11);
 end;
 
 {$ENDREGION}

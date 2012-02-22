@@ -25,7 +25,7 @@
 program Spring.Tests;
 
 {$IFDEF CONSOLE_TESTRUNNER}
-  {$APPTYPE CONSOLE}
+{$APPTYPE CONSOLE}
 {$ENDIF}
 
 uses
@@ -87,7 +87,8 @@ begin
     TTestFromDateTime.Suite,
     TTestFromObject.Suite,
     TTestFromNullable.Suite,
-    TTestFromInterface.Suite
+    TTestFromInterface.Suite,
+    TTestCustomTypes.Suite
   ]);
 
 //  RegisterTests('Spring.System.Reflection.ValueExpression', [
@@ -152,8 +153,6 @@ begin
 //     TTestLoggingConfig.Suite
 //  ]);
 end;
-
-{$ENDREGION}
 
 begin
   ReportMemoryLeaksOnShutdown := True;

@@ -716,13 +716,13 @@ end;
 
 class function TValueConverter.GetDefault: IValueConverter;
 begin
-  Exit(fDefaultConverter);
+  Result := fDefaultConverter;
 end;
 
 function TValueConverter.ConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo): TValue;
 begin
-  Exit(ConvertTo(value, targetTypeInfo, TValue.Empty));
+  Result := ConvertTo(value, targetTypeInfo, TValue.Empty);
 end;
 
 function TValueConverter.ConvertTo(const value: TValue;
@@ -749,7 +749,7 @@ end;
 function TValueConverter.TryConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; out targetValue: TValue): Boolean;
 begin
-  Exit(TryConvertTo(value, targetTypeInfo, targetValue, TValue.Empty));
+  Result := TryConvertTo(value, targetTypeInfo, targetValue, TValue.Empty);
 end;
 
 function TValueConverter.TryConvertTo(const value: TValue;
@@ -1125,13 +1125,21 @@ end;
 
 function TStringToFloatConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
+var
+  targetTypeData: PTypeData;
 begin
-  if targetTypeInfo.Name = 'Extended' then
-    Result := TValue.From<Extended>(StrToFloat(value.AsString))
-  else if targetTypeInfo.Name = 'Double' then
-    Result := TValue.From<Double>(StrToFloat(value.AsString))
-  else if targetTypeInfo.Name = 'Single' then
-    Result := TValue.From<Single>(StrToFloat(value.AsString));
+  if targetTypeInfo.Kind = tkFloat then
+  begin
+    targetTypeData := GetTypeData(targetTypeInfo);
+    case targetTypeData.FloatType of
+      ftExtended:
+        Result := TValue.From<Extended>(StrToFloat(value.AsString));
+      ftDouble:
+        Result := TValue.From<Double>(StrToFloat(value.AsString));
+      ftSingle:
+        Result := TValue.From<Single>(StrToFloat(value.AsString));
+    end;
+  end;
 end;
 
 {$ENDREGION}
