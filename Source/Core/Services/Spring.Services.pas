@@ -302,17 +302,16 @@ type
   /// </remarks>
   TServiceLocator = class sealed
   strict private
-    class var
-      fInstance: TServiceLocator;
+    class var fInstance: TServiceLocator;
+    var fServiceLocatorProvider: TServiceLocatorDelegate;
+    function GetServiceLocator: IServiceLocator;
+  strict protected
     class constructor Create;
     class destructor Destroy;
-  strict private
-    fServiceLocatorProvider: TServiceLocatorDelegate;
-    function GetServiceLocator: IServiceLocator;
   public
     procedure Initialize(const provider: TServiceLocatorDelegate);
     class property Instance: TServiceLocator read fInstance;
-  public
+
     function GetService<T>: T; overload;
     function GetService<T>(const name: string): T; overload;
     function GetService(serviceType: PTypeInfo): TValue; overload;
