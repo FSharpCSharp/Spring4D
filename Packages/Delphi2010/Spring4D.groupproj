@@ -12,7 +12,7 @@
 			<Projects Include="Spring.Extensions.dproj">
 				<Dependencies/>
 			</Projects>
-			<Projects Include="Spring.Tests.dproj">
+			<Projects Include="..\..\Tests\Spring.Tests.dproj">
 				<Dependencies/>
 			</Projects>
 		</ItemGroup>
@@ -51,13 +51,13 @@
 			<MSBuild Targets="Make" Projects="Spring.Extensions.dproj"/>
 		</Target>
 		<Target Name="Spring_Tests">
-			<MSBuild Projects="Spring.Tests.dproj"/>
+			<MSBuild Projects="..\..\Tests\Spring.Tests.dproj"/>
 		</Target>
 		<Target Name="Spring_Tests:Clean">
-			<MSBuild Targets="Clean" Projects="Spring.Tests.dproj"/>
+			<MSBuild Targets="Clean" Projects="..\..\Tests\Spring.Tests.dproj"/>
 		</Target>
 		<Target Name="Spring_Tests:Make">
-			<MSBuild Targets="Make" Projects="Spring.Tests.dproj"/>
+			<MSBuild Targets="Make" Projects="..\..\Tests\Spring.Tests.dproj"/>
 		</Target>
 		<Target Name="Build">
 			<CallTarget Targets="Spring_System;Spring_Core;Spring_Extensions;Spring_Tests"/>

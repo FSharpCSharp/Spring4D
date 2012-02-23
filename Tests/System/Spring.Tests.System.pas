@@ -282,7 +282,7 @@ end;
 
 procedure TTestLazy.TestByValue;
 begin
-  fBalance := TLazy<Integer>.Create(CExpectedBalance);
+  fBalance := TLazy<Integer>.CreateFrom(CExpectedBalance);
 
   CheckTrue(fBalance.IsValueCreated);
 
