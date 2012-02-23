@@ -185,6 +185,8 @@ begin
 
   FillChar(fItems[newIndex], SizeOf(T), 0);
   fItems[newIndex] := temp;
+
+  Changed(temp, caMoved);
 end;
 
 procedure TList<T>.Clear;
@@ -223,6 +225,9 @@ begin
   temp := fItems[index1];
   fItems[index1] := fItems[index2];
   fItems[index2] := temp;
+
+  Changed(fItems[index2], caMoved);
+  Changed(fItems[index1], caMoved);
 end;
 
 function TList<T>.GetCapacity: Integer;

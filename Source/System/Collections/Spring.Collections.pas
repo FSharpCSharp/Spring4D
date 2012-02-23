@@ -66,6 +66,14 @@ type
   ICollectionNotifyDelegate<T> = interface;
 
   TCollectionNotification = Generics.Collections.TCollectionNotification;
+  TCollectionChangedAction = (caAdded, caRemoved, caReplaced, caMoved, caReseted);
+  TCollectionChangedEvent<T> = procedure(Sender: TObject; const Item: T;
+    Action: TCollectionChangedAction) of object;
+  ICollectionChangedDelegate<T> = interface(IEvent<TCollectionChangedEvent<T>>)
+  end;
+  TCollectionChangedDelegate<T> = class(TEvent<TCollectionChangedEvent<T>>,
+    ICollectionChangedDelegate<T>)
+  end;
 
   IEnumerator = interface(IInvokable)
     ['{496B0ABF-CDEE-11D3-88E8-00902754C43A}']
@@ -449,6 +457,7 @@ type
     ['{496B0ABC-CDEE-11D3-88E8-00902754C43A}']
   {$REGION 'Property Accessors'}
     function GetItem(index: Integer): TValue;
+    function GetOnChanged: IEvent;
     function GetOnNotify: IEvent;
     procedure SetItem(index: Integer; const item: TValue);
   {$ENDREGION}
@@ -469,6 +478,7 @@ type
     function LastIndexOf(const item: TValue): Integer;
 
     property Items[index: Integer]: TValue read GetItem write SetItem; default;
+    property OnChanged: IEvent read GetOnChanged;
     property OnNotify: IEvent read GetOnNotify;
   end;
 
@@ -478,6 +488,7 @@ type
   IList<T> = interface(ICollection<T>)
   {$REGION 'Property Accessors'}
     function GetItem(index: Integer): T;
+    function GetOnChanged: ICollectionChangedDelegate<T>;
     function GetOnNotify: ICollectionNotifyDelegate<T>;
     procedure SetItem(index: Integer; const item: T);
   {$ENDREGION}
@@ -504,6 +515,7 @@ type
     function AsList: IList;
 
     property Items[index: Integer]: T read GetItem write SetItem; default;
+    property OnChanged: ICollectionChangedDelegate<T> read GetOnChanged;
     property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
   end;
 

@@ -287,12 +287,17 @@ type
       end;
   private
     fComparer: IComparer<T>;
+    fOnChanged: ICollectionChangedDelegate<T>;
     fOnNotify: ICollectionNotifyDelegate<T>;
+    function GetOnChanged: ICollectionChangedDelegate<T>;
     function GetOnNotify: ICollectionNotifyDelegate<T>;
+    function NonGenericGetOnChanged: IEvent;
     function NonGenericGetOnNotify: IEvent;
+    function IList.GetOnChanged = NonGenericGetOnChanged;
     function IList.GetOnNotify = NonGenericGetOnNotify;
   protected
     function GetComparer: IComparer<T>; override;
+    procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
     procedure Notify(const item: T; action: TCollectionNotification); virtual;
     procedure DoSort(const comparer: IComparer<T>); virtual;
     procedure DoInsert(index: Integer; const item: T); virtual; abstract;
@@ -351,6 +356,7 @@ type
     function AsList: IList;
 
     property Items[index: Integer]: T read GetItem write SetItem; default;
+    property OnChanged: ICollectionChangedDelegate<T> read GetOnChanged;
     property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
   end;
 
@@ -1287,6 +1293,14 @@ begin
   Result := Self;
 end;
 
+procedure TListBase<T>.Changed(const item: T; action: TCollectionChangedAction);
+begin
+  if (fOnChanged <> nil) and not fOnChanged.IsEmpty and fOnChanged.Enabled then
+  begin
+    fOnChanged.Invoke(Self, item, action);
+  end;
+end;
+
 procedure TListBase<T>.Clear;
 begin
   if Count > 0 then
@@ -1380,6 +1394,11 @@ begin
   Result := TValue.From<T>(GetItem(index));
 end;
 
+function TListBase<T>.NonGenericGetOnChanged: IEvent;
+begin
+  Result := GetOnChanged;
+end;
+
 function TListBase<T>.NonGenericGetOnNotify: IEvent;
 begin
   Result := GetOnNotify;
@@ -1421,6 +1440,11 @@ end;
 
 procedure TListBase<T>.Notify(const item: T; action: TCollectionNotification);
 begin
+  case action of
+    cnAdded: Changed(item, caAdded);
+    cnRemoved: Changed(item, caRemoved);
+  end;
+
   if (fOnNotify <> nil) and not fOnNotify.IsEmpty and fOnNotify.Enabled then
   begin
     fOnNotify.Invoke(Self, item, action);
@@ -1460,6 +1484,15 @@ begin
   Result := Count > 0;
   if Result then
     value := Items[Count - 1];
+end;
+
+function TListBase<T>.GetOnChanged: ICollectionChangedDelegate<T>;
+begin
+  if fOnNotify = nil then
+  begin
+    fOnChanged := TCollectionChangedDelegate<T>.Create;
+  end;
+  Result := fOnChanged;
 end;
 
 function TListBase<T>.GetOnNotify: ICollectionNotifyDelegate<T>;
