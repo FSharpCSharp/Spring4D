@@ -36,6 +36,7 @@ uses
   SysUtils,
   TypInfo,
   Types,
+  SyncObjs,
   Generics.Defaults,
   Generics.Collections,
   Diagnostics,
@@ -430,33 +431,41 @@ type
     /// <exception cref="EArgumentNullException">
     ///   Raised if the <paramref name="valueFactory"/> is null.
     /// </exception>
-    constructor Create(const valueFactory: TFunc<T>); overload;
+    constructor Create(const valueFactory: TFunc<T>);
     /// <summary>
     ///   Initializes a new instance of <see cref="TLazy{T}" /> with a specified value.
     /// </summary>
     /// <param name="value">
     ///   The initialized value.
     /// </param>
-    constructor Create(const value: T); overload;
+    constructor CreateFrom(const value: T);
     property Value: T read GetGenericValue;
     property IsValueCreated: Boolean read GetIsValueCreated;
   end;
 
   Lazy<T> = record
   private
-    fProxy: ILazy<T>;
+    fLazy: ILazy<T>;
     function GetValue: T;
     function GetIsValueCreated: Boolean;
   public
-    constructor Create(const valueFactory: TFunc<T>); overload;
-    constructor Create(const value: T); overload;
+    constructor Create(const valueFactory: TFunc<T>);
+    constructor CreateFrom(const value: T);
 
-    property Proxy: ILazy<T> read fProxy;
+    property AsLazy: ILazy<T> read fLazy;
     property Value: T read GetValue;
     property IsValueCreated: Boolean read GetIsValueCreated;
 
-    class operator Implicit(const proxy: Lazy<T>): T;
+    class operator Implicit(const lazy: Lazy<T>): T;
     class operator Implicit(const value: T): Lazy<T>;
+  end;
+
+  TLazyInitializer = record
+  public
+    class function InterlockedCompareExchange(var target: Pointer; value, comparand: Pointer): Pointer; static;
+
+    class function EnsureInitialized<T>(var target: T; const factoryMethod: TFunc<T>): T; overload; static;
+    class function EnsureInitialized<T: class, constructor>(var target: T): T; overload; static;
   end;
 
   {$ENDREGION}
@@ -1238,7 +1247,7 @@ begin
   fIsValueCreated := False;
 end;
 
-constructor TLazy<T>.Create(const value: T);
+constructor TLazy<T>.CreateFrom(const value: T);
 begin
   inherited Create;
   fValue := value;
@@ -1277,32 +1286,85 @@ end;
 
 constructor Lazy<T>.Create(const valueFactory: TFunc<T>);
 begin
-  fProxy := TLazy<T>.Create(valueFactory);
+  fLazy := TLazy<T>.Create(valueFactory);
 end;
 
-constructor Lazy<T>.Create(const value: T);
+constructor Lazy<T>.CreateFrom(const value: T);
 begin
-  fProxy := TLazy<T>.Create(value);
+  fLazy := TLazy<T>.CreateFrom(value);
 end;
 
 function Lazy<T>.GetIsValueCreated: Boolean;
 begin
-  Result := fProxy.IsValueCreated;
+  Result := fLazy.IsValueCreated;
 end;
 
 function Lazy<T>.GetValue: T;
 begin
-  Result := fProxy.Value;
+  Result := fLazy.Value;
 end;
 
-class operator Lazy<T>.Implicit(const proxy: Lazy<T>): T;
+class operator Lazy<T>.Implicit(const lazy: Lazy<T>): T;
 begin
-  Result := proxy.Value;
+  Result := lazy.Value;
 end;
 
 class operator Lazy<T>.Implicit(const value: T): Lazy<T>;
 begin
-  Result := Lazy<T>.Create(value);
+  Result.fLazy := TLazy<T>.CreateFrom(value);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TLazyInitializer'}
+
+class function TLazyInitializer.InterlockedCompareExchange(var target: Pointer; value, comparand: Pointer): Pointer;
+{$IFNDEF DELPHIXE_UP}
+asm
+  XCHG EAX, EDX
+  XCHG EAX, ECX
+  LOCK CMPXCHG [EDX], ECX
+end;
+{$ELSE}
+begin
+  Result := TInterlocked.CompareExchange(target, value, comparand);
+end;
+{$ENDIF}
+
+class function TLazyInitializer.EnsureInitialized<T>(var target: T; const factoryMethod: TFunc<T>): T;
+var
+  localValue: T;
+begin
+  if PPointer(@target)^ = nil then
+  begin
+    localValue := factoryMethod();
+    if TLazyInitializer.InterlockedCompareExchange(PPointer(@target)^, PPointer(@localValue)^, nil) <> nil then
+    begin
+      if PTypeInfo(TypeInfo(T)).Kind = tkClass then
+      begin
+        PObject(@localValue)^.Free;
+      end;
+    end
+    else if PTypeInfo(TypeInfo(T)).Kind = tkInterface then
+    begin
+      PPointer(@localValue)^ := nil;
+    end;
+  end;
+  Result := target;
+end;
+
+class function TLazyInitializer.EnsureInitialized<T>(var target: T): T;
+var
+  localValue: T;
+begin
+  if PPointer(@target)^ = nil then
+  begin
+    localValue := T.Create;
+    if TLazyInitializer.InterlockedCompareExchange(PPointer(@target)^, PPointer(@localValue)^, nil) <> nil then
+      localValue.Free;
+  end;
+  Result := target;
 end;
 
 {$ENDREGION}

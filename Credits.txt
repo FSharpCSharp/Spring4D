@@ -1,17 +1,20 @@
 ﻿===========================================
-Spring Framework for Delphi
+Spring Framework for Delphi 
+
 Credits
 ===========================================
 
 Committers
-* Baoquan Zuo (Paul)
+* Baoquan Zuo (Baoquan)
 * Leszek Gojniczek (Leo Raster)
-* Nick Hodges
+* Mikołaj Milewski (Virion)
+* Glienke, Stefan (Stefan)
 
 Contributors
 * Ryan Huang
 * Chris Liu
 * wr960204
+* Nick Hodges
 
 Acknowledgements:
 * Nick Hodges
