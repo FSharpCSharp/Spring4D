@@ -34,8 +34,8 @@ procedure RunNullableDemo;
 begin
   try
     WriteLn(NullableBoolean.Value);
-  except on E: EInvalidOperation do
-    WriteLn('Value has not been set, EInvalidOperation properly thrown');
+  except on E: EInvalidOperationException do
+    WriteLn('Value has not been set, EInvalidOperationException properly thrown');
   end;
 
   ShowThreeStates(NullableBoolean);
