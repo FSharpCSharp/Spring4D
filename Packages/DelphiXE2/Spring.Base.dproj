@@ -1,7 +1,7 @@
 ﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 		<PropertyGroup>
 			<ProjectGuid>{1C63C62E-96A6-4606-8876-C7448FA850C2}</ProjectGuid>
-			<MainSource>Spring.System.dpk</MainSource>
+			<MainSource>Spring.Base.dpk</MainSource>
 			<ProjectVersion>13.4</ProjectVersion>
 			<Base>True</Base>
 			<Config Condition="'$(Config)'==''">Debug</Config>
@@ -71,7 +71,7 @@
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
 			<DCC_OutputNeverBuildDcps>true</DCC_OutputNeverBuildDcps>
-			<DCC_UnitSearchPath>..\..\Source\System;..\..\Source\System\Collections;..\..\Source\System\Reflection;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UnitSearchPath>..\..\Source\Base;..\..\Source\Base\Collections;..\..\Source\Base\Reflection;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
 			<DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;Winapi;$(DCC_Namespace)</DCC_Namespace>
 			<VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
@@ -127,21 +127,21 @@
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
 			<DCCReference Include="rtl.dcp"/>
-			<DCCReference Include="..\..\Source\System\Spring.DesignPatterns.pas"/>
-			<DCCReference Include="..\..\Source\System\Spring.Helpers.pas"/>
-			<DCCReference Include="..\..\Source\System\Spring.pas"/>
-			<DCCReference Include="..\..\Source\System\Spring.ResourceStrings.pas"/>
-			<DCCReference Include="..\..\Source\System\Reflection\Spring.Reflection.pas"/>
-			<DCCReference Include="..\..\Source\System\Reflection\Spring.Reflection.ValueConverters.pas"/>
-			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.Base.pas"/>
-			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.Dictionaries.pas"/>
-			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.Extensions.pas"/>
-			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.Lists.pas"/>
-			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.pas"/>
-			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.Queues.pas"/>
-			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.Sets.pas"/>
-			<DCCReference Include="..\..\Source\System\Collections\Spring.Collections.Stacks.pas"/>
-			<DCCReference Include="..\..\Source\System\Spring.SystemUtils.pas"/>
+			<DCCReference Include="..\..\Source\Base\Spring.DesignPatterns.pas"/>
+			<DCCReference Include="..\..\Source\Base\Spring.Helpers.pas"/>
+			<DCCReference Include="..\..\Source\Base\Spring.pas"/>
+			<DCCReference Include="..\..\Source\Base\Spring.ResourceStrings.pas"/>
+			<DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.pas"/>
+			<DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.ValueConverters.pas"/>
+			<DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Base.pas"/>
+			<DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Dictionaries.pas"/>
+			<DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Extensions.pas"/>
+			<DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Lists.pas"/>
+			<DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.pas"/>
+			<DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Queues.pas"/>
+			<DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Sets.pas"/>
+			<DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Stacks.pas"/>
+			<DCCReference Include="..\..\Source\Base\Spring.SystemUtils.pas"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>
@@ -189,7 +189,7 @@
 						<VersionInfoKeys Name="Comments"/>
 					</VersionInfoKeys>
 					<Source>
-						<Source Name="MainSource">Spring.System.dpk</Source>
+						<Source Name="MainSource">Spring.Base.dpk</Source>
 					</Source>
 				</Delphi.Personality>
 				<Platforms>

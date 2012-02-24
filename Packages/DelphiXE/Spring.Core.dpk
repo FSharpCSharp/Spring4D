@@ -28,7 +28,7 @@ package Spring.Core;
 requires
   rtl,
   xmlrtl,
-  Spring.System;
+  Spring.Base;
 
 contains
   Spring.Services in '..\..\Source\Core\Services\Spring.Services.pas',

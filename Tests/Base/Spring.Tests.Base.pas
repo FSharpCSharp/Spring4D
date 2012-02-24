@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Tests.System;
+unit Spring.Tests.Base;
 
 {$I Spring.inc}
 

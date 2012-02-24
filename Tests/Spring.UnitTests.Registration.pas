@@ -37,7 +37,7 @@ uses
   Spring.Tests.DesignPatterns,
   Spring.Tests.Helpers,
   Spring.Tests.Reflection.ValueConverters,
-  Spring.Tests.System,
+  Spring.Tests.Base,
   Spring.Tests.SysUtils,
   Spring.Tests.Container.Components,
   Spring.Tests.Container.LifetimeManager,

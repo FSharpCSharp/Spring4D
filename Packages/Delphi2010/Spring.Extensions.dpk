@@ -27,7 +27,7 @@ package Spring.Extensions;
 
 requires
   rtl,
-  Spring.System;
+  Spring.Base;
 
 contains
   Spring.Cryptography.Base in '..\..\Source\Extensions\Cryptography\Spring.Cryptography.Base.pas',

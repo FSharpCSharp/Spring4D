@@ -27,7 +27,7 @@ package Spring.Core;
 
 requires
   rtl,
-  Spring.System,
+  Spring.Base,
   xmlrtl;
 
 contains
