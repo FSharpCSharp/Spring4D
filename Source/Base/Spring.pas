@@ -1296,11 +1296,13 @@ end;
 
 function Lazy<T>.GetIsValueCreated: Boolean;
 begin
-  Result := fLazy.IsValueCreated;
+  Result := Assigned(fLazy) and fLazy.IsValueCreated;
 end;
 
 function Lazy<T>.GetValue: T;
 begin
+  if not Assigned(fLazy) then
+    raise EInvalidOperationException.CreateRes(@SNoDelegateAssigned);
   Result := fLazy.Value;
 end;
 
