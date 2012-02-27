@@ -308,6 +308,11 @@ type
   strict protected
     class constructor Create;
     class destructor Destroy;
+{$IFDEF DELPHI2010}
+    type // in Delphi 2010 using TArray<TValue> causes an internal error URW1111 (see QC #77575)
+      TValueArray = array of TValue;
+    function InternalGetAllServices(serviceType: PTypeInfo): TValueArray;
+{$ENDIF}
   public
     procedure Initialize(const provider: TServiceLocatorDelegate);
     class property Instance: TServiceLocator read fInstance;
@@ -451,6 +456,16 @@ begin
   fServiceLocatorProvider := provider;
 end;
 
+{$IFDEF DELPHI2010}
+function TServiceLocator.InternalGetAllServices(
+  serviceType: PTypeInfo): TValueArray;
+var
+  services: TArray<TValue> absolute Result;
+begin
+  services := GetServiceLocator.GetAllServices(serviceType);
+end;
+{$ENDIF}
+
 function TServiceLocator.GetServiceLocator: IServiceLocator;
 begin
   if not Assigned(fServiceLocatorProvider) or (fServiceLocatorProvider() = nil) then
@@ -492,10 +507,10 @@ end;
 
 function TServiceLocator.GetAllServices<TServiceType>: TArray<TServiceType>;
 var
-  services: TArray<TValue>;
+  services: {$IFDEF DELPHI2010}TValueArray{$ELSE}TArray<TValue>{$ENDIF};
   i: Integer;
 begin
-  services := GetAllServices(TypeInfo(TServiceType));
+  services := {$IFDEF DELPHI2010}InternalGetAllServices{$ELSE}GetAllServices{$ENDIF}(TypeInfo(TServiceType));
   SetLength(Result, Length(services));
   for i := 0 to High(Result) do
   begin
@@ -534,4 +549,3 @@ end;
 {$ENDREGION}
 
 end.
-
