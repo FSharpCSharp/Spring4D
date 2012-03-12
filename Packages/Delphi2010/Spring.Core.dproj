@@ -1,7 +1,7 @@
 ﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 		<PropertyGroup>
-			<ProjectGuid>{77EDFF3C-FC2C-44F5-84B5-AB542C9D363F}</ProjectGuid>
-			<MainSource>Spring.Base.dpk</MainSource>
+			<ProjectGuid>{67C06D12-ED0B-4A54-B4F8-30A342B60C34}</ProjectGuid>
+			<MainSource>Spring.Core.dpk</MainSource>
 			<Config Condition="'$(Config)'==''">Debug</Config>
 			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
 			<ProjectVersion>12.0</ProjectVersion>
@@ -20,19 +20,17 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
-			<DCC_DcuOutput>..\Library\Delphi2010\$(Config)</DCC_DcuOutput>
-			<OutputName>Spring.Base.bpl</OutputName>
+			<DCC_DcuOutput>..\..\Library\Delphi2010\$(Config)</DCC_DcuOutput>
 			<DCC_OutputNeverBuildDcps>true</DCC_OutputNeverBuildDcps>
-			<DCC_DependencyCheckOutputName>C:\Users\Public\Documents\RAD Studio\7.0\Bpl\Spring.Base.bpl</DCC_DependencyCheckOutputName>
-			<DCC_ImageBase>00400000</DCC_ImageBase>
+			<DCC_UnitSearchPath>..\..\Source\Base;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DesignOnlyPackage>false</DesignOnlyPackage>
-			<RuntimeOnlyPackage>true</RuntimeOnlyPackage>
+			<DCC_DependencyCheckOutputName>C:\Users\Public\Documents\RAD Studio\7.0\Bpl\Spring.Core.bpl</DCC_DependencyCheckOutputName>
+			<DCC_ImageBase>00400000</DCC_ImageBase>
+			<GenPackage>true</GenPackage>
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;$(DCC_UnitAlias)</DCC_UnitAlias>
 			<DCC_Platform>x86</DCC_Platform>
-			<DCC_UnitSearchPath>..\Source\Base;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<RuntimeOnlyPackage>true</RuntimeOnlyPackage>
 			<GenDll>true</GenDll>
-			<GenPackage>true</GenPackage>
-			<OutputName>Spring.Base.bpl</OutputName>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_1)'!=''">
 			<DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
@@ -44,26 +42,24 @@
 			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
 		</PropertyGroup>
 		<ItemGroup>
-			<DelphiCompile Include="Spring.Base.dpk">
+			<DelphiCompile Include="Spring.Core.dpk">
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
 			<DCCReference Include="rtl.dcp"/>
-			<DCCReference Include="vcl.dcp"/>
-			<DCCReference Include="..\Source\Base\Spring.pas"/>
-			<DCCReference Include="..\Source\Base\Spring.SystemUtils.pas"/>
-			<DCCReference Include="..\Source\Base\Spring.DesignPatterns.pas"/>
-			<DCCReference Include="..\Source\Base\Spring.Helpers.pas"/>
-			<DCCReference Include="..\Source\Base\Reflection\Spring.Reflection.pas"/>
-			<DCCReference Include="..\Source\Base\Spring.ResourceStrings.pas"/>
-			<DCCReference Include="..\Source\Base\Reflection\Spring.Reflection.ValueConverters.pas"/>
-			<DCCReference Include="..\Source\Base\Collections\Spring.Collections.Base.pas"/>
-			<DCCReference Include="..\Source\Base\Collections\Spring.Collections.Dictionaries.pas"/>
-			<DCCReference Include="..\Source\Base\Collections\Spring.Collections.Extensions.pas"/>
-			<DCCReference Include="..\Source\Base\Collections\Spring.Collections.Lists.pas"/>
-			<DCCReference Include="..\Source\Base\Collections\Spring.Collections.pas"/>
-			<DCCReference Include="..\Source\Base\Collections\Spring.Collections.Queues.pas"/>
-			<DCCReference Include="..\Source\Base\Collections\Spring.Collections.Sets.pas"/>
-			<DCCReference Include="..\Source\Base\Collections\Spring.Collections.Stacks.pas"/>
+			<DCCReference Include="Spring.Base.dcp"/>
+			<DCCReference Include="xmlrtl.dcp"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.pas"/>
+			<DCCReference Include="..\..\Source\Core\Services\Spring.Services.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Resolvers.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Registration.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Builder.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.LifetimeManager.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.ComponentActivator.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Core.pas"/>
+			<DCCReference Include="..\..\Source\Core\Services\Spring.Services.Logging.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.ResourceStrings.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Pool.pas"/>
+			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Injection.pas"/>
 			<BuildConfiguration Include="Base">
 				<Key>Base</Key>
 			</BuildConfiguration>
@@ -83,7 +79,7 @@
 			<BorlandProject>
 				<Delphi.Personality>
 					<Source>
-						<Source Name="MainSource">Spring.Base.dpk</Source>
+						<Source Name="MainSource">Spring.Core.dpk</Source>
 					</Source>
 					<Parameters>
 						<Parameters Name="UseLauncher">False</Parameters>

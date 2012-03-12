@@ -12,6 +12,6 @@ Spring Framework for Delphi (Spring4D) is an open-source code library for Embarc
 
 To Build the framework, Run Build.exe
 
-To Browse the framework, open the corresponding project group in the project folder
+To Browse the framework, open the corresponding project group in the Packages folder
 
 To Get the latest information, please visit http://www.spring4d.org
