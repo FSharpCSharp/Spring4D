@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-/// <preliminary />
+///	<preliminary />
 unit Spring.Container.Pool;  // experimental;
 
 {$I Spring.inc}

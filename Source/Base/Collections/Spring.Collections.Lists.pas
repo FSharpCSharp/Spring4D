@@ -34,9 +34,9 @@ uses
 
 type
 
-  /// <summary>
-  /// Provides an array-based implementation of IList{T}.
-  /// </summary>
+  ///	<summary>
+  ///	  Provides an array-based implementation of IList{T}.
+  ///	</summary>
   TList<T> = class(TListBase<T>)
   private
     fItems: array of T;

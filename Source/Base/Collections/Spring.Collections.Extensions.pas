@@ -58,7 +58,9 @@ type
     function MoveNext: Boolean; override;
   end;
 
-  ///	<summary>The adapter implementation for <c>IEnumerator{T}</c>.</summary>
+  ///	<summary>
+  ///	  The adapter implementation for <c>IEnumerator{T}</c>.
+  ///	</summary>
   TEnumeratorAdapter<T> = class(TEnumeratorBase<T>)
   public
     type

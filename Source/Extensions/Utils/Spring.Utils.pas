@@ -22,12 +22,10 @@
 {                                                                           }
 {***************************************************************************}
 
-{$REGION 'Documentation'}
 ///	<summary>
 ///	  This namespace provides many well-encapsulated utility classes and
 ///	  routines about the environment and system.
 ///	</summary>
-{$ENDREGION}
 unit Spring.Utils;
 
 {$I Spring.inc}
@@ -64,13 +62,11 @@ uses
 type
   TEnum = Spring.SystemUtils.TEnum;
 
-  {$REGION 'Documentation'}
   ///	<summary>
   ///	  Represents a version number in the format of
   ///	  "major.minor[.build[.revision]]", which is different from the delphi
   ///	  style format "major.minor[.release[.build]]".
   ///	</summary>
-  {$ENDREGION}
   TVersion = record
   private
     const fCUndefined: Integer = -1;
@@ -112,29 +108,33 @@ type
 
   {$REGION 'TFileVersionInfo'}
 
-  {$REGION 'Documentation'}
-  ///	<summary>Provides version information for a physical file on
-  ///	disk.</summary>
+  ///	<summary>
+  ///	  Provides version information for a physical file on disk.
+  ///	</summary>
   ///	<remarks>
-  ///	  <para>Use the <see cref="GetVersionInfo(string)">GetVersionInfo</see>
-  ///	  method of this class to get a FileVersionInfo containing
-  ///	  information about a file, then look at the properties for information
-  ///	  about the file. Call <see cref="ToString"></see> to get
-  ///	  a partial list of properties and their values for this file.</para>
-  ///	  <para>The TFileVersionInfo properties are based on version
-  ///	  resource information built into the file. Version resources are often
-  ///	  built into binary files such as .exe or .dll files; text files do not
-  ///	  have version resource information.</para>
-  ///	  <para>Version resources are typically specified in a Win32 resource
-  ///	  file, or in assembly attributes. For example the <see cref=
-  ///	  "IsDebug"></see> property reflects theVS_FF_DEBUG flag value
-  ///	  in the file's VS_FIXEDFILEINFO block, which is built from
-  ///	  the VERSIONINFO resource in a Win32 resource file. For more
-  ///	  information about specifying version resources in a Win32 resource
-  ///	  file, see "About Resource Files" and "VERSIONINFO Resource" in the
-  ///	  Platform SDK.</para>
+  ///	  <para>
+  ///	    Use the <see cref="GetVersionInfo(string)">GetVersionInfo</see>method
+  ///	    of this class to get a FileVersionInfo containing information about a
+  ///	    file, then look at the properties for information about the file.
+  ///	    Call <see cref="ToString" /> to get a partial list of properties and
+  ///	    their values for this file.
+  ///	  </para>
+  ///	  <para>
+  ///	    The TFileVersionInfo properties are based on version resource
+  ///	    information built into the file. Version resources are often built
+  ///	    into binary files such as .exe or .dll files; text files do not have
+  ///	    version resource information.
+  ///	  </para>
+  ///	  <para>
+  ///	    Version resources are typically specified in a Win32 resource file,
+  ///	    or in assembly attributes. For example the <see cref="IsDebug" />prope
+  ///	    rty reflects theVS_FF_DEBUG flag value in the file's VS_FIXEDFILEINFO
+  ///	    block, which is built from the VERSIONINFO resource in a Win32
+  ///	    resource file. For more information about specifying version
+  ///	    resources in a Win32 resource file, see "About Resource Files" and
+  ///	    "VERSIONINFO Resource" in the Platform SDK.
+  ///	  </para>
   ///	</remarks>
-  {$ENDREGION}
   TFileVersionInfo = record
   private
     type
@@ -185,9 +185,12 @@ type
     constructor Create(const fileName: string);
     procedure LoadVersionResource(const resource: TFileVersionResource);
   public
-    ///	<summary>Gets the file version info of the specified file.</summary>
-    ///	<exception cref="Spring|EFileNotFoundException">Raised if the file
-    ///	doesn't exist.</exception>
+    ///	<summary>
+    ///	  Gets the file version info of the specified file.
+    ///	</summary>
+    ///	<exception cref="Spring|EFileNotFoundException">
+    ///	  Raised if the file doesn't exist.
+    ///	</exception>
     class function GetVersionInfo(const fileName: string): TFileVersionInfo; static;
     function ToString: string;
     property Exists: Boolean read fExists;
@@ -296,27 +299,33 @@ type
 
   {$REGION 'Special Folder Enumeration'}
 
-  {$REGION 'Documentation'}
-  ///	<summary>Specifies enumerated constants used to retrieve directory paths
-  ///	to system special folders.</summary>
+  ///	<summary>
+  ///	  Specifies enumerated constants used to retrieve directory paths to
+  ///	  system special folders.
+  ///	</summary>
   ///	<remarks>
-  ///	  <para>The system special folders are folders such as <b>Program
-  ///	  Files</b>, <b>Programs</b>, <b>System</b>,
-  ///	  or <b>Startup</b>, which contain common information. Special
-  ///	  folders are set by default by the system, or explicitly by the user,
-  ///	  when installing a version of Windows.</para>
-  ///	  <para>The <see cref=
-  ///	  "TEnvironment.GetFolderPath(TSpecialFolder)">GetFolderPath</see> method
-  ///	  returns the locations associated with this enumeration. The locations
-  ///	  of these folders can have different values on different operating
-  ///	  systems, the user can change some of the locations, and the locations
-  ///	  are localized.</para>
-  ///	  <para>For more information about special folders, see
-  ///	  the <see href=
-  ///	  "http://go.microsoft.com/fwlink/?LinkId=116664">CSIDL</see> values
-  ///	  topic.</para>
+  ///	  <para>
+  ///	    The system special folders are folders such as
+  ///	    <b>Program
+  ///	          Files</b>, <b>Programs</b>, <b>System</b>, or <b>Startup</b>,
+  ///	    which contain common information. Special folders are set by default
+  ///	    by the system, or explicitly by the user, when installing a version
+  ///	    of Windows.
+  ///	  </para>
+  ///	  <para>
+  ///	    The
+  ///	    <see cref="TEnvironment.GetFolderPath(TSpecialFolder)">GetFolderPath</see>
+  ///	    method returns the locations associated with this enumeration. The
+  ///	    locations of these folders can have different values on different
+  ///	    operating systems, the user can change some of the locations, and the
+  ///	    locations are localized.
+  ///	  </para>
+  ///	  <para>
+  ///	    For more information about special folders, see the
+  ///	    <see href="http://go.microsoft.com/fwlink/?LinkId=116664">CSIDL</see>v
+  ///	    alues topic.
+  ///	  </para>
   ///	</remarks>
-  {$ENDREGION}
   TSpecialFolder = (
     sfDesktop,                // <desktop>
     sfInternet,               // Internet Explorer (icon on desktop)
@@ -511,8 +520,10 @@ type
     ///	</summary>
     class function  GetFolderPath(const folder: TSpecialFolder): string; static;
 
-    ///	<summary>Retrieves the value of an environment variable from the
-    ///	current process.</summary>
+    ///	<summary>
+    ///	  Retrieves the value of an environment variable from the current
+    ///	  process.
+    ///	</summary>
     class function  GetEnvironmentVariable(const variable: string): string; overload; static;
 
     ///	<summary>
@@ -528,18 +539,24 @@ type
     ///	</summary>
     class procedure GetEnvironmentVariables(list: TStrings); overload; static;
 
-    ///	<summary>Retrieves the value of an environment variable from the
-    ///	current process or from the Windows operating system registry key for
-    ///	the current user or local machine.</summary>
+    ///	<summary>
+    ///	  Retrieves the value of an environment variable from the current
+    ///	  process or from the Windows operating system registry key for the
+    ///	  current user or local machine.
+    ///	</summary>
     class procedure GetEnvironmentVariables(list: TStrings; target: TEnvironmentVariableTarget); overload; static;
 
-    ///	<summary>Creates, modifies, or deletes an environment variable stored
-    ///	in the current process.</summary>
+    ///	<summary>
+    ///	  Creates, modifies, or deletes an environment variable stored in the
+    ///	  current process.
+    ///	</summary>
     class procedure SetEnvironmentVariable(const variable, value: string); overload; static;
 
-    ///	<summary>Creates, modifies, or deletes an environment variable stored
-    ///	in the current process or in the Windows operating system registry key
-    ///	reserved for the current user or local machine.</summary>
+    ///	<summary>
+    ///	  Creates, modifies, or deletes an environment variable stored in the
+    ///	  current process or in the Windows operating system registry key
+    ///	  reserved for the current user or local machine.
+    ///	</summary>
     class procedure SetEnvironmentVariable(const variable, value: string; target: TEnvironmentVariableTarget); overload; static;
 
     ///	<summary>
@@ -557,7 +574,9 @@ type
 
     class property ApplicationVersionString: string read fApplicationVersionString;
 
-    ///	<summary>Gets the command line for this process.</summary>
+    ///	<summary>
+    ///	  Gets the command line for this process.
+    ///	</summary>
     class property CommandLine: string read GetCommandLine;
 
     ///	<summary>
@@ -579,7 +598,7 @@ type
     class property NewLine: string read GetNewLine;
 
     ///	<summary>
-    ///	  Gets a <see cref="TOperatingSystem"/> object that contains the
+    ///	  Gets a <see cref="TOperatingSystem" /> object that contains the
     ///	  current platform identifier and version number.
     ///	</summary>
     class property OperatingSystem: TOperatingSystem read fOperatingSystem;
@@ -623,16 +642,16 @@ type
     class property UserInteractive: Boolean read GetUserInteractive;
   end;
 
-  /// <summary>
-  /// Represents a type alias of TEnvironment class.
-  /// </summary>
+  ///	<summary>
+  ///	  Represents a type alias of TEnvironment class.
+  ///	</summary>
   Environment = TEnvironment;
 
   {$ENDREGION}
 
-  /// <summary>
-  /// Provides static methods to create various string predicates.
-  /// </summary>
+  ///	<summary>
+  ///	  Provides static methods to create various string predicates.
+  ///	</summary>
   TStringMatchers = class
   public
     class function ContainsText(const s: string): TPredicate<string>;
@@ -647,26 +666,26 @@ type
 
   {$REGION 'Callback'}
 
-  /// <summary>
-  /// Defines an anonymous function which returns a callback pointer.
-  /// </summary>
+  ///	<summary>
+  ///	  Defines an anonymous function which returns a callback pointer.
+  ///	</summary>
   TCallbackFunc = TFunc<Pointer>;
 
-  {$REGION 'Adapts class instance (object) method as standard callback function.'}
-  ///	<summary>Adapts class instance (object) method as standard callback
-  ///	function.</summary>
-  ///	<remarks>Both the object method and the callback function need to be
-  ///	declared as stdcall.</remarks>
+  ///	<summary>
+  ///	  Adapts class instance (object) method as standard callback function.
+  ///	</summary>
+  ///	<remarks>
+  ///	  Both the object method and the callback function need to be declared as
+  ///	  stdcall.
+  ///	</remarks>
   ///	<example>
   ///	  This sample shows how to call CreateCallback method.
   ///	  <code>
   ///	private
   ///	  fCallback: TCallbackFunc;
   ///	//...
-  ///	fCallback := CreateCallback(Self, @TSomeClass.SomeMethod);
-  ///	</code>
+  ///	fCallback := CreateCallback(Self, @TSomeClass.SomeMethod);</code>
   ///	</example>
-  {$ENDREGION}
   TCallback = class(TInterfacedObject, TCallbackFunc)
   private
     fInstance: Pointer;
@@ -713,9 +732,9 @@ type
   ///	</summary>
   function ApplicationVersionString: string;
 
-  /// <summary>
-  /// Returns the last system error message.
-  /// </summary>
+  ///	<summary>
+  ///	  Returns the last system error message.
+  ///	</summary>
   function GetLastErrorMessage: string;
 
   ///	<summary>
@@ -737,23 +756,26 @@ type
 
   function ConvertDateTimeToFileTime(const datetime: TDateTime; useLocalTimeZone: Boolean): TFileTime; overload;
 
-  {$REGION 'Documentation'}
-  ///	<summary>Executes a method call within the main thread.</summary>
-  ///	<param name="threadProc">An anonymous method that will be
-  ///	executed.</param>
-  ///	<exception cref="EArgumentNullException">Raised if <paramref name=
-  ///	"threadProc" /> was not assigned.</exception>
-  {$ENDREGION}
+  ///	<summary>
+  ///	  Executes a method call within the main thread.
+  ///	</summary>
+  ///	<param name="threadProc">
+  ///	  An anonymous method that will be executed.
+  ///	</param>
+  ///	<exception cref="EArgumentNullException">
+  ///	  Raised if <paramref name="threadProc" /> was not assigned.
+  ///	</exception>
   procedure Synchronize(threadProc: TThreadProcedure);
 
-  {$REGION 'Documentation'}
-  ///	<summary>Asynchronously executes a method call within the main
-  ///	thread.</summary>
-  ///	<param name="threadProc">An anonymous method that will be
-  ///	executed.</param>
-  ///	<exception cref="EArgumentNullException">Raised if threadProc was not
-  ///	assigned.</exception>
-  {$ENDREGION}
+  ///	<summary>
+  ///	  Asynchronously executes a method call within the main thread.
+  ///	</summary>
+  ///	<param name="threadProc">
+  ///	  An anonymous method that will be executed.
+  ///	</param>
+  ///	<exception cref="EArgumentNullException">
+  ///	  Raised if threadProc was not assigned.
+  ///	</exception>
   procedure Queue(threadProc: TThreadProcedure);
 
   ///	<summary>
@@ -773,40 +795,49 @@ type
   // Due to the QC #80304, the following methods (with anonymous methods)
   // must not be inlined.
 
-  {$REGION 'Documentation'}
-  ///	<summary>Obtains a mutual-exclusion lock for the given object, executes a
-  ///	procedure and then releases the lock.</summary>
-  ///	<param name="obj">the sync root.</param>
-  ///	<param name="proc">the procedure that will be invoked.</param>
-  ///	<exception cref="Spring|EArgumentNullException">Raised if <paramref name=
-  ///	"obj" /> is nil or <paramref name="proc" /> is unassigned.</exception>
-  {$ENDREGION}
+  ///	<summary>
+  ///	  Obtains a mutual-exclusion lock for the given object, executes a
+  ///	  procedure and then releases the lock.
+  ///	</summary>
+  ///	<param name="obj">
+  ///	  the sync root.
+  ///	</param>
+  ///	<param name="proc">
+  ///	  the procedure that will be invoked.
+  ///	</param>
+  ///	<exception cref="Spring|EArgumentNullException">
+  ///	  Raised if <paramref name="obj" /> is nil or <paramref name="proc" /> is
+  ///	  unassigned.
+  ///	</exception>
   procedure Lock(obj: TObject; const proc: TProc); overload; // inline;
   procedure Lock(const intf: IInterface; const proc: TProc); overload; // inline;
 
-  {$REGION 'Documentation'}
-  ///	<summary>Updates an instance of <see cref="Classes|TStrings" /> by calling its
-  ///	BeginUpdate and EndUpdate.</summary>
-  ///	<param name="strings">an instance of TStrings.</param>
-  ///	<exception cref="EArgumentNullException">Raised if <paramref name=
-  ///	"strings" /> is nil or <paramref name="proc" /> is not
-  ///	assigned.</exception>
-  {$ENDREGION}
+  ///	<summary>
+  ///	  Updates an instance of <see cref="Classes|TStrings" /> by calling its
+  ///	  BeginUpdate and EndUpdate.
+  ///	</summary>
+  ///	<param name="strings">
+  ///	  an instance of TStrings.
+  ///	</param>
+  ///	<exception cref="EArgumentNullException">
+  ///	  Raised if <paramref name="strings" /> is nil or <paramref name="proc" />
+  ///	  is not assigned.
+  ///	</exception>
   procedure UpdateStrings(strings: TStrings; proc: TProc); // inline;
 
-  /// <summary>
-  /// Returns True if the Control key is pressed, otherwise false.
-  /// </summary>
+  ///	<summary>
+  ///	  Returns True if the Control key is pressed, otherwise false.
+  ///	</summary>
   function IsCtrlPressed: Boolean;
 
-  /// <summary>
-  /// Returns True if the Shift key is pressed, otherwise false.
-  /// </summary>
+  ///	<summary>
+  ///	  Returns True if the Shift key is pressed, otherwise false.
+  ///	</summary>
   function IsShiftPressed: Boolean;
 
-  /// <summary>
-  /// Returns True if the Alt key is pressed, otherwise false.
-  /// </summary>
+  ///	<summary>
+  ///	  Returns True if the Alt key is pressed, otherwise false.
+  ///	</summary>
   function IsAltPressed: Boolean;
 
   {$REGION 'XML Documentation'}
@@ -844,29 +875,45 @@ type
   {$REGION 'Constants'}
 
 const
-  ///	<summary>Represents bytes of one KB.</summary>
+  ///	<summary>
+  ///	  Represents bytes of one KB.
+  ///	</summary>
   COneKB: Int64 = 1024;            // 1KB = 1024 bytes
 
 
-  ///	<summary>Represents bytes of one MB.</summary>
+  ///	<summary>
+  ///	  Represents bytes of one MB.
+  ///	</summary>
   COneMB: Int64 = 1048576;         // 1MB = 1024 KB
 
-  ///	<summary>Represents bytes of one GB.</summary>
+  ///	<summary>
+  ///	  Represents bytes of one GB.
+  ///	</summary>
   COneGB: Int64 = 1073741824;      // 1GB = 1024 MB
 
-  ///	<summary>Represents bytes of one TB.</summary>
+  ///	<summary>
+  ///	  Represents bytes of one TB.
+  ///	</summary>
   COneTB: Int64 = 1099511627776;   // 1TB = 1024 GB
 
-  ///	<summary>Represents bytes of one KB.</summary>
+  ///	<summary>
+  ///	  Represents bytes of one KB.
+  ///	</summary>
   OneKB: Int64 = 1024 deprecated 'Use COneKB instead.';
 
-  ///	<summary>Represents bytes of one MB.</summary>
+  ///	<summary>
+  ///	  Represents bytes of one MB.
+  ///	</summary>
   OneMB: Int64 = 1048576 deprecated 'Use COneMB instead.';
 
-  ///	<summary>Represents bytes of one GB.</summary>
+  ///	<summary>
+  ///	  Represents bytes of one GB.
+  ///	</summary>
   OneGB: Int64 = 1073741824 deprecated 'Use COneGB instead.';
 
-  ///	<summary>Represents bytes of one TB.</summary>
+  ///	<summary>
+  ///	  Represents bytes of one TB.
+  ///	</summary>
   OneTB: Int64 = 1099511627776 deprecated 'Use COneTB instead.';
 
   const

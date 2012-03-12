@@ -22,10 +22,10 @@
 {                                                                           }
 {***************************************************************************}
 
-/// <preliminary />
-/// <seealso href="http://msdn.microsoft.com/en-us/library/92f9ye3s(VS.71).aspx"></seealso>
-/// <seealso href="http://msdn.microsoft.com/en-us/library/system.security.cryptography.aspx"></seealso>
-/// <seealso href="http://en.wikipedia.org/wiki/Cryptography"></seealso>
+///	<preliminary />
+///	<seealso href="http://msdn.microsoft.com/en-us/library/92f9ye3s(VS.71).aspx" />
+///	<seealso href="http://msdn.microsoft.com/en-us/library/system.security.cryptography.aspx" />
+///	<seealso href="http://en.wikipedia.org/wiki/Cryptography" />
 unit Spring.Cryptography;
 
 {$I Spring.inc}
@@ -43,14 +43,15 @@ type
 
   {$REGION 'Core Types'}
 
-  {$REGION 'Documentation'}
-  ///	<summary>TCipherMode</summary>
-  ///	<remarks>The cipher modes cmOFB, cmCFB and cmCTS have not been supported
-  ///	yet.</remarks>
-  ///	<seealso href=
-  ///	"http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation">Block
-  ///	Cipher Mode of Operation</seealso>
-  {$ENDREGION}
+  ///	<summary>
+  ///	  TCipherMode
+  ///	</summary>
+  ///	<remarks>
+  ///	  The cipher modes cmOFB, cmCFB and cmCTS have not been supported yet.
+  ///	</remarks>
+  ///	<seealso href="http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation">
+  ///	  Block Cipher Mode of Operation
+  ///	</seealso>
   TCipherMode = (
     ///	<summary>Cipher-Block Chaining</summary>
     CBC,
@@ -68,12 +69,13 @@ type
     CTS}
   );
 
-  /// <summary>
-  /// Specifies the type of padding to apply when the message data block is
-  /// shorter than the full number of bytes needed for a cryptographic operation.
-  /// </summary>
-  /// <seealso href="http://msdn.microsoft.com/en-us/library/system.security.cryptography.paddingmode.aspx" />
-  /// <seealso href="http://en.wikipedia.org/wiki/Padding_(cryptography)" />
+  ///	<summary>
+  ///	  Specifies the type of padding to apply when the message data block is
+  ///	  shorter than the full number of bytes needed for a cryptographic
+  ///	  operation.
+  ///	</summary>
+  ///	<seealso href="http://msdn.microsoft.com/en-us/library/system.security.cryptography.paddingmode.aspx" />
+  ///	<seealso href="http://en.wikipedia.org/wiki/Padding_(cryptography)" />
   TPaddingMode = (
     /// <summary>
     /// No padding is done.
@@ -121,15 +123,13 @@ type
 
   ISizeCollection = IEnumerable<Integer>;
 
-  {$REGION 'Documentation'}
   ///	<summary>
   ///	  Represents a series of bytes in memory.
   ///	</summary>
   ///	<remarks>
-  ///	  The <c>TBuffer</c> structure is actually a wrapper of a value of <c>TBytes</c>
-  ///	  and provides some easy-going methods and properties.
+  ///	  The <c>TBuffer</c> structure is actually a wrapper of a value of
+  ///	  <c>TBytes</c>and provides some easy-going methods and properties.
   ///	</remarks>
-  {$ENDREGION}
   TBuffer = record
   strict private
     fBytes: TBytes;
@@ -154,7 +154,8 @@ type
     constructor Create(const s: RawByteString); overload;
 
     class function FromHexString(const s: string): TBuffer; static;
-    ///	<seealso cref="FromHexString(string)"></seealso>
+
+    ///	<seealso cref="FromHexString(string)" />
     class function ConvertToHexString(const buffer: Pointer; count: Integer): string; overload; static;
     class function ConvertToHexString(const buffer: Pointer; count: Integer;
       const prefix: string; const delimiter: string = ' '): string; overload; static;
@@ -219,9 +220,9 @@ type
     class operator BitwiseXor(const left, right: TBuffer): TBuffer;
   end;
 
-  /// <summary>
-  /// Defines the basic operations of hash algorithms.
-  /// </summary>
+  ///	<summary>
+  ///	  Defines the basic operations of hash algorithms.
+  ///	</summary>
   IHashAlgorithm = interface
     ['{D33C6DB1-7C51-4DDE-BB7D-ACE98BB61EBE}']
   {$REGION 'Property Getters and Setters'}
@@ -237,21 +238,21 @@ type
     function ComputeHash(const inputStream: TStream): TBuffer; overload;  // experimental
     function ComputeHashOfFile(const fileName: string): TBuffer;  // callback?
 
-    /// <summary>
-    /// Gets the hash size, <b>in bits</b>, of the algorithm.
-    /// </summary>
+    ///	<summary>
+    ///	  Gets the hash size, <b>in bits</b>, of the algorithm.
+    ///	</summary>
     property HashSize: Integer read GetHashSize;
   end;
 
-  /// <summary>
-  /// IKeyedHashAlgorithm
-  /// </summary>
-  /// <remarks>
-  /// From MSDN:
-  /// A keyed hash algorithm is a key-dependent, one-way hash function used as
-  /// a message authentication code. Only someone who knows the key can verify
-  /// the hash. Keyed hash algorithms provide authenticity without secrecy.
-  /// </remarks>
+  ///	<summary>
+  ///	  IKeyedHashAlgorithm
+  ///	</summary>
+  ///	<remarks>
+  ///	  From MSDN: A keyed hash algorithm is a key-dependent, one-way hash
+  ///	  function used as a message authentication code. Only someone who knows
+  ///	  the key can verify the hash. Keyed hash algorithms provide authenticity
+  ///	  without secrecy.
+  ///	</remarks>
   IKeyedHashAlgorithm = interface(IHashAlgorithm)
     ['{0D6838E7-05C0-4874-86B0-732DF42105F5}']
   {$REGION 'Property Getters and Setters'}
@@ -259,18 +260,19 @@ type
     procedure SetKey(const value: TBuffer);
   {$ENDREGION}
 
-    /// <summary>
-    /// Gets or sets the key to use in the hash algorithm.
-    /// </summary>
+    ///	<summary>
+    ///	  Gets or sets the key to use in the hash algorithm.
+    ///	</summary>
     property Key: TBuffer read GetKey write SetKey;
   end;
 
-  /// <summary>
-  /// Performs a transformation on data to keep it from being read by third parties.
-  /// This type of encryption uses a single shared, secret key to encrypt and decrypt data.
-  /// </summary>
-  /// <seealso href="http://en.wikipedia.org/wiki/Cipher"></seealso>
-  /// <seealso href="http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation"></seealso>
+  ///	<summary>
+  ///	  Performs a transformation on data to keep it from being read by third
+  ///	  parties. This type of encryption uses a single shared, secret key to
+  ///	  encrypt and decrypt data.
+  ///	</summary>
+  ///	<seealso href="http://en.wikipedia.org/wiki/Cipher" />
+  ///	<seealso href="http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation" />
   ISymmetricAlgorithm = interface
     ['{98E0E218-2BD4-4AFA-87B2-E8C4812B2105}']
   {$REGION 'Property Getters and Setters'}
@@ -308,50 +310,54 @@ type
     function  Decrypt(const inputString: RawByteString): TBuffer; overload;
     procedure Decrypt(inputStream, outputStream: TStream); overload; // experimental
 
-    /// <summary>
-    /// Gets or sets the cipher mode for operation of the symmetric algorithm.
-    /// </summary>
+    ///	<summary>
+    ///	  Gets or sets the cipher mode for operation of the symmetric
+    ///	  algorithm.
+    ///	</summary>
     property CipherMode: TCipherMode read GetCipherMode write SetCipherMode;
 
-    /// <summary>
-    /// Gets or sets the padding mode used in the symmetric algorithm.
-    /// </summary>
+    ///	<summary>
+    ///	  Gets or sets the padding mode used in the symmetric algorithm.
+    ///	</summary>
     property PaddingMode: TPaddingMode read GetPaddingMode write SetPaddingMode;
 
-    /// <summary>
-    /// Gets or sets the secret key for the symmetric algorithm.
-    /// </summary>
+    ///	<summary>
+    ///	  Gets or sets the secret key for the symmetric algorithm.
+    ///	</summary>
     property Key: TBuffer read GetKey write SetKey;
 
-    /// <summary>
-    /// Gets or sets the value of initialization vector.
-    /// </summary>
+    ///	<summary>
+    ///	  Gets or sets the value of initialization vector.
+    ///	</summary>
     property IV: TBuffer read GetIV write SetIV;
 
-    /// <summary>
-    /// Gets or sets the block size, in bits, of the cryptographic operation.
-    /// </summary>
+    ///	<summary>
+    ///	  Gets or sets the block size, in bits, of the cryptographic operation.
+    ///	</summary>
     property BlockSize: Integer read GetBlockSize write SetBlockSize;
 
-    /// <summary>
-    /// Gets or sets the size, in bits, of the secret key used by the symmetric algorithm.
-    /// </summary>
+    ///	<summary>
+    ///	  Gets or sets the size, in bits, of the secret key used by the
+    ///	  symmetric algorithm.
+    ///	</summary>
     property KeySize: Integer read GetKeySize write SetKeySize;
 
-    /// <summary>
-    /// Gets the block sizes, in bits, that are supported by the symmetric algorithm.
-    /// </summary>
+    ///	<summary>
+    ///	  Gets the block sizes, in bits, that are supported by the symmetric
+    ///	  algorithm.
+    ///	</summary>
     property LegalBlockSizes: ISizeCollection read GetLegalBlockSizes;
 
-    /// <summary>
-    /// Gets the key sizes, in bits, that are supported by the symmetric algorithm.
-    /// </summary>
+    ///	<summary>
+    ///	  Gets the key sizes, in bits, that are supported by the symmetric
+    ///	  algorithm.
+    ///	</summary>
     property LegalKeySizes: ISizeCollection read GetLegalKeySizes;
   end;
 
-  /// <summary>
-  /// Generates cryptographically strong random values.
-  /// </summary>
+  ///	<summary>
+  ///	  Generates cryptographically strong random values.
+  ///	</summary>
   IRandomNumberGenerator = interface
     ['{64B180B9-E192-4542-A45D-4E7402ED7BA8}']
     procedure GetBytes(var data: TBytes);

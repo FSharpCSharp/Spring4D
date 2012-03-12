@@ -1,5 +1,5 @@
-///  This is a modified XMLTestRunner which outputs in NUnit format
-///  so that it can be used with FinalBuilder.
+///	 This is a modified XMLTestRunner which outputs in NUnit format so that it
+///	can be used with FinalBuilder.
 
 (*
  * The contents of this file are subject to the Mozilla Public

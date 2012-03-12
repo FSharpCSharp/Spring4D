@@ -53,9 +53,9 @@ type
   TActivatorDelegate = reference to function: TObject;
   TActivatorDelegate<T: class> = reference to function: T;
 
-  /// <summary>
-  /// IContainerContext
-  /// </summary>
+  ///	<summary>
+  ///	  IContainerContext
+  ///	</summary>
   IContainerContext = interface
     ['{9E90EADB-A720-4394-A5E0-5DF0550C1E92}']
   {$REGION 'Property Accessors'}
@@ -71,9 +71,9 @@ type
     property DependencyResolver: IDependencyResolver read GetDependencyResolver;
   end;
 
-  /// <summary>
-  /// Manages the registration of components. (IComponentBuilder)
-  /// </summary>
+  ///	<summary>
+  ///	  Manages the registration of components. (IComponentBuilder)
+  ///	</summary>
   IComponentRegistry = interface
     ['{CBCA1D0F-1244-4AB4-AB07-091053932166}']
 
@@ -104,32 +104,32 @@ type
     procedure BuildAll;
   end;
 
-  /// <summary>
-  /// IBuilderInspector (IBuilderPolicy)
-  /// </summary>
+  ///	<summary>
+  ///	  IBuilderInspector (IBuilderPolicy)
+  ///	</summary>
   IBuilderInspector = interface
     ['{3E2F36D1-2C0D-4D6A-91B3-49B09BD31318}']
     procedure ProcessModel(const context: IContainerContext; model: TComponentModel);
   end;
 
-  /// <summary>
-  /// ILifetimeManager
-  /// </summary>
+  ///	<summary>
+  ///	  ILifetimeManager
+  ///	</summary>
   ILifetimeManager = interface
     ['{7DF9A902-B07A-468B-B201-B4561A921CF5}']
     function GetInstance: TObject;
     procedure ReleaseInstance(instance: TObject);
   end;
 
-  /// <summary>
-  /// Component Activator
-  /// </summary>
+  ///	<summary>
+  ///	  Component Activator
+  ///	</summary>
   IComponentActivator = IObjectActivator;
 
-  /// <summary>
-  /// Represents an Inject of a member.
-  /// e.g. constructor, method, property and even field Inject.
-  /// </summary>
+  ///	<summary>
+  ///	  Represents an Inject of a member. e.g. constructor, method, property
+  ///	  and even field Inject.
+  ///	</summary>
   IInjection = interface
     ['{864AAA38-4F93-4BB9-AD8A-B796FCD2EFE0}']
   {$REGION 'Property Accessors'}
@@ -152,9 +152,9 @@ type
 
   IInjectionList = IList<IInjection>;
 
-  /// <summary>
-  /// Inject Factory
-  /// </summary>
+  ///	<summary>
+  ///	  Inject Factory
+  ///	</summary>
   IInjectionFactory = interface
     ['{EA75E648-C3EB-4CE7-912A-AB82B12BBD87}']
     function CreateConstructorInjection(model: TComponentModel): IInjection;
@@ -176,9 +176,9 @@ type
     function ResolveDependencies(const Inject: IInjection; const arguments: TArray<TValue>): TArray<TValue>; overload;
   end;
 
-  /// <summary>
-  /// Resolves services.
-  /// </summary>
+  ///	<summary>
+  ///	  Resolves services.
+  ///	</summary>
   IServiceResolver = interface
     ['{14669EBA-4E57-4DF4-919D-377D8E90144C}']
     function CanResolve(serviceType: PTypeInfo): Boolean; overload;
@@ -188,9 +188,9 @@ type
     function ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
   end;
 
-  /// <summary>
-  /// TComponentModel
-  /// </summary>
+  ///	<summary>
+  ///	  TComponentModel
+  ///	</summary>
   TComponentModel = class
   private
     fContext: IContainerContext;
@@ -269,14 +269,18 @@ type
   {$REGION 'Deprecated'}
 
 
-  {$REGION 'Documentation'}
   ///	<summary>
-  ///	  <para>Provides a simple &amp; flexible implementation of <b>Smart
-  ///	  Pointer</b>. This implementation is very skillful and the basic idea
-  ///	  comes from a post in Kelly Barry's blog.</para>
-  ///	  <para>The point is to use an anonymous method <c>TFunc&lt;T&gt;,</c>
-  ///	  which is internally implemented as an interface in Delphi for Win32, to
-  ///	  manage the lifetime of an object instance.</para>
+  ///	  <para>
+  ///	    Provides a simple &amp; flexible implementation of
+  ///	    <b>Smart
+  ///	          Pointer</b>. This implementation is very skillful and the basic
+  ///	    idea comes from a post in Kelly Barry's blog.
+  ///	  </para>
+  ///	  <para>
+  ///	    The point is to use an anonymous method <c>TFunc&lt;T&gt;,</c>which
+  ///	    is internally implemented as an interface in Delphi for Win32, to
+  ///	    manage the lifetime of an object instance.
+  ///	  </para>
   ///	</summary>
   ///	<example>
   ///	  The following example demonstrates how to use the Smart Pointer:
@@ -287,10 +291,8 @@ type
   ///	begin
   ///	  person := TObjectHolder&lt;TPerson&gt;.Create(TPerson.Create);
   ///	  person.DoSomething;
-  ///	end;
-  ///	</code>
+  ///	end;</code>
   ///	</example>
-  {$ENDREGION}
   TObjectHolder<T: class> = class(TInterfacedObject, TFunc<T>)
   private
     fObject: T;

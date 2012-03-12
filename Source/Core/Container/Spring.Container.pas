@@ -44,9 +44,9 @@ uses
 type
   TValue = Rtti.TValue;
 
-  /// <summary>
-  /// Represents a Dependency Inject Container.
-  /// </summary>
+  ///	<summary>
+  ///	  Represents a Dependency Inject Container.
+  ///	</summary>
   TContainer = class(TInterfaceBase, IContainerContext, IInterface)
   private
     fRegistry: IComponentRegistry;

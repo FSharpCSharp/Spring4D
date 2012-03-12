@@ -22,7 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-///	<summary>Declares some Windows API for the framework.</summary>
+///	<summary>
+///	  Declares some Windows API for the framework.
+///	</summary>
 unit Spring.Utils.WinAPI; // platform;
 
 {$I Spring.inc}

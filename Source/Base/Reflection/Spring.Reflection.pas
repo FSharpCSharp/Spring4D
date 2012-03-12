@@ -45,14 +45,16 @@ type
 
   {$REGION 'TType'}
 
-  {$REGION 'Documentation'}
-  ///	<summary>Provides static methods to get RTTI information of a type.</summary>
+  ///	<summary>
+  ///	  Provides static methods to get RTTI information of a type.
+  ///	</summary>
   ///	<remarks>
-  ///	  <note type="caller">When using this class, a shared instance of the
-  ///	  TRttiContext class will be kept, which will make all instances of RTTI
-  ///	  types live during the lifetime.</note>
+  ///	  <note type="caller">
+  ///	    When using this class, a shared instance of the TRttiContext class
+  ///	    will be kept, which will make all instances of RTTI types live during
+  ///	    the lifetime.
+  ///	  </note>
   ///	</remarks>
-  {$ENDREGION}
   TType = class
   strict private
     class var fContext: TRttiContext;
@@ -71,9 +73,10 @@ type
     class function GetFullName(typeInfo: PTypeInfo): string; overload;
     class function GetFullName<T>: string; overload;
     class function FindType(const qualifiedName: string): TRttiType;
-    /// <summary>
-    /// Returns true if the typeFrom is assignable to the typeTo.
-    /// </summary>
+
+    ///	<summary>
+    ///	  Returns true if the typeFrom is assignable to the typeTo.
+    ///	</summary>
     class function IsAssignable(typeFrom, typeTo: PTypeInfo): Boolean; overload;
     class function TryGetInterfaceType(const guid: TGUID; out aType: TRttiInterfaceType): Boolean;
     class property Context: TRttiContext read fContext;
@@ -213,9 +216,10 @@ type
 
   {$REGION 'TFiltersBase<T: TRttiMember>'}
 
-  /// <summary>
-  /// Provides static methods to create specifications to filter TRttiMember objects.
-  /// </summary>
+  ///	<summary>
+  ///	  Provides static methods to create specifications to filter TRttiMember
+  ///	  objects.
+  ///	</summary>
   TFiltersBase<T: TRttiMember> = class
   public
     class function HasAttribute(attributeClass: TAttributeClass): TSpecification<T>;
@@ -375,11 +379,11 @@ type
 
   {$REGION 'Internal Class Helpers'}
 
-  /// <summary>
-  /// The _InternalRttiMemberHelper class was copied from Spring.Helpers, as
-  /// An URW1111 internal error will occured when the Spring.Helpers namespace
-  /// was used by this unit.
-  /// </summary>
+  ///	<summary>
+  ///	  The _InternalRttiMemberHelper class was copied from Spring.Helpers, as
+  ///	  An URW1111 internal error will occured when the Spring.Helpers
+  ///	  namespace was used by this unit.
+  ///	</summary>
   _InternalRttiMemberHelper = class helper for TRttiMember
   private
     function GetIsPrivate: Boolean;

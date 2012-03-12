@@ -22,19 +22,26 @@
 {                                                                           }
 {***************************************************************************}
 
-{$REGION 'Documentation'}
 ///	<summary>
 ///	  This namespace contains the following classical design patterns:
 ///	  <list type="bullet">
-///	    <item><b>Factory Pattern</b></item>
-///	    <item><b><see cref="TSingleton">Singleton Pattern</see></b></item>
-///	    <item><b>Observer Pattern</b></item>
-///	    <item><b><see cref="ISpecification&lt;T&gt;">Specification
-///	    Pattern</see></b></item>
+///	    <item>
+///	      <b>Factory Pattern</b>
+///	    </item>
+///	    <item>
+///	      <b><see cref="TSingleton">Singleton Pattern</see></b>
+///	    </item>
+///	    <item>
+///	      <b>Observer Pattern</b>
+///	    </item>
+///	    <item>
+///
+///	      <b><see cref="ISpecification&lt;T&gt;">Specification
+///	                Pattern</see></b>
+///	    </item>
 ///	  </list>
 ///	</summary>
-/// <preliminary />
-{$ENDREGION}
+///	<preliminary />
 unit Spring.DesignPatterns;  // experimental
 
 {$I Spring.inc}
@@ -54,7 +61,6 @@ type
 
   {$REGION 'Singleton Pattern'}
 
-  {$REGION 'Documentation'}
   ///	<summary>
   ///	  <para>
   ///	    Provides a simple implementation of the <b>Singleton Pattern</b>. Use
@@ -72,7 +78,6 @@ type
   ///	  flexible.
   ///	</remarks>
   ///	<threadsafety static="true" />
-  {$ENDREGION}
   TSingleton = record
   strict private
     class var
@@ -107,9 +112,9 @@ type
 
   {$REGION 'Observer Pattern'}
 
-  /// <summary>
-  /// Represents an observable subject.
-  /// </summary>
+  ///	<summary>
+  ///	  Represents an observable subject.
+  ///	</summary>
   IObservable<T> = interface
     procedure AddListener(const listener: T);
     procedure RemoveListener(const listener: T);
@@ -164,16 +169,16 @@ type
 //    function IsSatisfiedBy(const obj: TValue): Boolean;
 //  end;
 
-  /// <summary>
-  /// Defines the core methods of a specification interface.
-  /// </summary>
+  ///	<summary>
+  ///	  Defines the core methods of a specification interface.
+  ///	</summary>
   ISpecification<T> = interface
     function IsSatisfiedBy(const obj: T): Boolean;
   end;
 
-  /// <summary>
-  /// Provides the easy-going specification holder with operator overloads.
-  /// </summary>
+  ///	<summary>
+  ///	  Provides the easy-going specification holder with operator overloads.
+  ///	</summary>
   TSpecification<T> = record
   private
     fSpecification: ISpecification<T>;
@@ -189,9 +194,9 @@ type
     class operator LogicalNot(const value:TSpecification<T>) : TSpecification<T>;
   end;
 
-  /// <summary>
-  /// Provides the abstract base class for Specification.
-  /// </summary>
+  ///	<summary>
+  ///	  Provides the abstract base class for Specification.
+  ///	</summary>
   TSpecificationBase<T> = class abstract(TInterfacedObject, ISpecification<T>, TPredicate<T>, IInterface)
   protected
     { TPredicate<T> }

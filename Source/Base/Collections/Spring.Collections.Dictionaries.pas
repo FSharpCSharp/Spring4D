@@ -42,7 +42,9 @@ type
       TGenericObjectDictionary = Generics.Collections.TObjectDictionary<TKey, TValue>;
       TGenericPair = Generics.Collections.TPair<TKey,TValue>;
 
-      ///	<summary>Provides a read-only ICollection{TKey}	implementation</summary>
+      ///	<summary>
+      ///	  Provides a read-only ICollection{TKey}	implementation
+      ///	</summary>
       TKeyCollection = class(TContainedCollectionBase<TKey>, ICollection<TKey>)
       private
         fDictionary: TGenericDictionary;
@@ -65,7 +67,9 @@ type
       {$ENDREGION}
       end;
 
-      ///	<summary>Provides a read-only ICollection{TValue} implementation</summary>
+      ///	<summary>
+      ///	  Provides a read-only ICollection{TValue} implementation
+      ///	</summary>
       TValueCollection = class(TContainedCollectionBase<TValue>, ICollection<TValue>)
       private
         fDictionary: TGenericDictionary;

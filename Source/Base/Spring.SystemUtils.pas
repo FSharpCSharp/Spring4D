@@ -74,45 +74,57 @@ type
   end;
 
 
-{$REGION 'Documentation'}
-///	<summary>Retrieves the byte length of a unicode string.</summary>
-///	<param name="s">the unicode string.</param>
-///	<returns>The byte length of the unicode string.</returns>
-///	<remarks>Although there is already a routine
-///	<c>SysUtils.ByteLength(string)</c> function, it only supports unicode
-///	strings and doesn't provide overloads for WideStrings and
-///	AnsiStrings.</remarks>
-///	<seealso cref="GetByteLength(WideString)"></seealso>
-///	<seealso cref="GetByteLength(RawByteString)"></seealso>
-{$ENDREGION}
+///	<summary>
+///	  Retrieves the byte length of a unicode string.
+///	</summary>
+///	<param name="s">
+///	  the unicode string.
+///	</param>
+///	<returns>
+///	  The byte length of the unicode string.
+///	</returns>
+///	<remarks>
+///	  Although there is already a routine <c>SysUtils.ByteLength(string)</c>
+///	  function, it only supports unicode strings and doesn't provide overloads
+///	  for WideStrings and AnsiStrings.
+///	</remarks>
+///	<seealso cref="GetByteLength(WideString)" />
+///	<seealso cref="GetByteLength(RawByteString)" />
 function GetByteLength(const s: string): Integer; overload; inline;
 
-{$REGION 'Documentation'}
-///	<summary>Retrieves the byte length of a WideString.</summary>
-///	<param name="s">A wide string.</param>
-///	<returns>The byte length of the wide string.</returns>
-///	<seealso cref="GetByteLength(string)"></seealso>
-///	<seealso cref="GetByteLength(RawByteString)"></seealso>
-{$ENDREGION}
+///	<summary>
+///	  Retrieves the byte length of a WideString.
+///	</summary>
+///	<param name="s">
+///	  A wide string.
+///	</param>
+///	<returns>
+///	  The byte length of the wide string.
+///	</returns>
+///	<seealso cref="GetByteLength(string)" />
+///	<seealso cref="GetByteLength(RawByteString)" />
 function GetByteLength(const s: WideString): Integer; overload; inline;
 
-{$REGION 'Documentation'}
-///	<summary>Retrieves the byte length of a <c>RawByteString</c> (AnsiString
-///	or UTF8String).</summary>
-///	<returns>The byte length of the raw byte string.</returns>
-///	<seealso cref="GetByteLength(string)"></seealso>
-///	<seealso cref="GetByteLength(WideString)"></seealso>
-{$ENDREGION}
+///	<summary>
+///	  Retrieves the byte length of a <c>RawByteString</c> (AnsiString or
+///	  UTF8String).
+///	</summary>
+///	<returns>
+///	  The byte length of the raw byte string.
+///	</returns>
+///	<seealso cref="GetByteLength(string)" />
+///	<seealso cref="GetByteLength(WideString)" />
 function GetByteLength(const s: RawByteString): Integer; overload; inline;
 
 
-{$REGION 'Documentation'}
-///	<summary>Overloads. SplitString</summary>
-///	<remarks>Each element of separator defines a separate delimiter
-///	character. If two delimiters are adjacent, or a delimiter is found at the
-///	beginning or end of the buffer, the corresponding array element contains
-///	Empty.</remarks>
-{$ENDREGION}
+///	<summary>
+///	  Overloads. SplitString
+///	</summary>
+///	<remarks>
+///	  Each element of separator defines a separate delimiter character. If two
+///	  delimiters are adjacent, or a delimiter is found at the beginning or end
+///	  of the buffer, the corresponding array element contains Empty.
+///	</remarks>
 function SplitString(const buffer: string; const separators: TSysCharSet;
   removeEmptyEntries: Boolean = False): TStringDynArray; overload;
 function SplitString(const buffer: TCharArray; const separators: TSysCharSet;
@@ -120,10 +132,10 @@ function SplitString(const buffer: TCharArray; const separators: TSysCharSet;
 function SplitString(const buffer: PChar; len: Integer; const separators: TSysCharSet;
   removeEmptyEntries: Boolean = False): TStringDynArray; overload;
 
-{$REGION 'Documentation'}
-///	<summary>Returns a string array that contains the substrings in the
-///	buffer that are delimited by null char (#0) and ends with an additional
-///	null char.</summary>
+///	<summary>
+///	  Returns a string array that contains the substrings in the buffer that
+///	  are delimited by null char (#0) and ends with an additional null char.
+///	</summary>
 ///	<example>
 ///	  <code lang="Delphi">
 ///	procedure TestSplitNullTerminatedStrings;
@@ -138,16 +150,14 @@ function SplitString(const buffer: PChar; len: Integer; const separators: TSysCh
 ///	  begin
 ///	    Writeln(s);
 ///	  end;
-///	end;
-///	</code>
+///	end;</code>
 ///	</example>
-{$ENDREGION}
 function SplitString(const buffer: PChar): TStringDynArray; overload;
 
-/// <summary>
-/// Returns a string array that contains the substrings in the buffer that are
-/// delimited by null char (#0) and ends with an additional null char.
-/// </summary>
+///	<summary>
+///	  Returns a string array that contains the substrings in the buffer that
+///	  are delimited by null char (#0) and ends with an additional null char.
+///	</summary>
 function SplitNullTerminatedStrings(const buffer: PChar): TStringDynArray;
   deprecated 'Use the SpitString(PChar) function instead.';
 
@@ -176,23 +186,22 @@ function TryGetUnderlyingTypeInfo(typeInfo: PTypeInfo; out underlyingTypeInfo: P
 ///	  the underlying value.
 ///	</param>
 ///	<returns>
-///	  Returns True if the value is a <c>Nullable&lt;T&gt;</c> and it has
-///	  value.
+///	  Returns True if the value is a <c>Nullable&lt;T&gt;</c> and it has value.
 ///	</returns>
 function TryGetUnderlyingValue(const value: TValue; out underlyingValue: TValue): Boolean;
 
-{$REGION 'Documentation'}
-///	<summary>Uses this function to get an interface instance from a
-///	TValue.</summary>
+///	<summary>
+///	  Uses this function to get an interface instance from a TValue.
+///	</summary>
 ///	<remarks>
-///	  <note type="warning">Rtti bugs: QC #82433 if
-///	  value.TryAsType&lt;IPropertyNotification&gt;(propertyNotification)
-///	  then</note>
+///	  <note type="warning">
+///	    Rtti bugs: QC #82433 if
+///	    value.TryAsType&lt;IPropertyNotification&gt;(propertyNotification) then
+///	  </note>
 ///	</remarks>
-{$ENDREGION}
 function TryGetInterface(const instance: TValue; const guid: TGuid; out intf): Boolean; overload;
 
-///	<seealso cref="Spring|Nullable{T}"></seealso>
+///	<seealso cref="Spring|Nullable{T}" />
 function TryGetInterface(const instance: TValue; const guid: TGuid): Boolean; overload;
 
 ///	<summary>
@@ -213,7 +222,6 @@ function TryGetInterface(const instance: TValue; const guid: TGuid): Boolean; ov
 ///	</returns>
 function TryConvertStrToDateTime(const s, format: string; out value: TDateTime): Boolean;
 
-{$REGION 'Documentation'}
 ///	<summary>
 ///	  Parses a string to a datetime value based on the specified format. An
 ///	  EConvertError exception will be raised if failed to parse the string.
@@ -224,7 +232,6 @@ function TryConvertStrToDateTime(const s, format: string; out value: TDateTime):
 ///	<param name="format">
 ///	  the format of datetime.
 ///	</param>
-{$ENDREGION}
 function ConvertStrToDateTime(const s, format: string): TDateTime;
 
 implementation

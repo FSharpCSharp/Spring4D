@@ -36,10 +36,10 @@ uses
   Spring.Collections;
 
 type
-  {$REGION 'Documentation'}
-  ///	<summary>Provides an abstract implementation for the <see cref=
-  ///	"IEnumerator">IEnumerator</see> interface.</summary>
-  {$ENDREGION}
+  ///	<summary>
+  ///	  Provides an abstract implementation for the
+  ///	  <see cref="IEnumerator">IEnumerator</see> interface.
+  ///	</summary>
   TEnumeratorBase = class abstract(TInterfacedObject, IEnumerator)
   protected
     function NonGenericGetCurrent: TValue; virtual; abstract;
@@ -50,10 +50,10 @@ type
     property Current: TValue read NonGenericGetCurrent;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>Provides an abstract implementation for the <see cref=
-  ///	"IEnumerator{T}">IEnumerator&lt;T&gt;</see> interface.</summary>
-  {$ENDREGION}
+  ///	<summary>
+  ///	  Provides an abstract implementation for the
+  ///	  <see cref="IEnumerator{T}">IEnumerator&lt;T&gt;</see> interface.
+  ///	</summary>
   TEnumeratorBase<T> = class abstract(TEnumeratorBase, IEnumerator<T>)
   protected
     function NonGenericGetCurrent: TValue; override; final;
@@ -62,10 +62,10 @@ type
     property Current: T read GetCurrent;
   end;
 
-  {$REGION 'Documentation'}
-  ///	<summary>Provides an abstract implementation for the <see cref=
-  ///	"IEnumerable">IEnumerable</see> interface.</summary>
-  {$ENDREGION}
+  ///	<summary>
+  ///	  Provides an abstract implementation for the
+  ///	  <see cref="IEnumerable">IEnumerable</see> interface.
+  ///	</summary>
   TEnumerableBase = class abstract(TInterfacedObject, IEnumerable)
   protected
     function NonGenericGetEnumerator: IEnumerator; virtual; abstract;
@@ -122,9 +122,10 @@ type
     property IsEmpty: Boolean read GetIsEmpty;
   end;
 
-  /// <summary>
-  /// Provides a default implementation for <c>IEnumerable(T)</c> (Extension Methods).
-  /// </summary>
+  ///	<summary>
+  ///	  Provides a default implementation for <c>IEnumerable(T)</c> (Extension
+  ///	  Methods).
+  ///	</summary>
   TEnumerableBase<T> = class abstract(TEnumerableBase, IEnumerable<T>, IElementType)
   protected
     function NonGenericGetEnumerator: IEnumerator; override; final;
@@ -199,12 +200,13 @@ type
     function ToSet: ISet<T>; virtual;
   end;
 
-  /// <summary>
-  /// Provides an abstract class base for <c>IColleciton{T}</c>.
-  /// </summary>
-  /// <remarks>
-  ///   Notes: The Add/Remove/Clear methods are abstract. IsReadOnly returns False by default.
-  /// </remarks>
+  ///	<summary>
+  ///	  Provides an abstract class base for <c>IColleciton{T}</c>.
+  ///	</summary>
+  ///	<remarks>
+  ///	  Notes: The Add/Remove/Clear methods are abstract. IsReadOnly returns
+  ///	  False by default.
+  ///	</remarks>
   TCollectionBase<T> = class abstract(TEnumerableBase<T>, ICollection<T>, ICollection)
   protected
     function GetIsReadOnly: Boolean; virtual;
@@ -233,7 +235,9 @@ type
 
     function AsCollection: ICollection;
 
-    /// <value>Returns false, by default.</value>
+    ///	<value>
+    ///	  Returns false, by default.
+    ///	</value>
     property IsReadOnly: Boolean read GetIsReadOnly;
   end;
 

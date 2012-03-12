@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-/// <summary>
-/// Defines an independent logging service.
-/// </summary>
+///	<summary>
+///	  Defines an independent logging service.
+///	</summary>
 unit Spring.Services.Logging;
 
 {$I Spring.inc}

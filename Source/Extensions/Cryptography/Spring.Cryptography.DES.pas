@@ -36,9 +36,9 @@ uses
   Spring.ResourceStrings;
 
 type
-  /// <summary>
-  /// Data Encryption Standard (DES)
-  /// </summary>
+  ///	<summary>
+  ///	  Data Encryption Standard (DES)
+  ///	</summary>
   TDES = class(TSymmetricAlgorithmBase, IDES)
   private
     const
@@ -51,9 +51,9 @@ type
     constructor Create;
   end;
 
-  /// <summary>
-  /// Triple Data Encryption Standard Algorithm
-  /// </summary>
+  ///	<summary>
+  ///	  Triple Data Encryption Standard Algorithm
+  ///	</summary>
   TTripleDES = class(TSymmetricAlgorithmBase, ITripleDES)
   private
     const

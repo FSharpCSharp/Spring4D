@@ -58,9 +58,9 @@ type
     buf: array[0..127] of Byte;
   end;
 
-  /// <summary>
-  /// SHA1 Hash
-  /// </summary>
+  ///	<summary>
+  ///	  SHA1 Hash
+  ///	</summary>
   TSHA1 = class(THashAlgorithmBase, ISHA1)
   private
     const fCHashSize = 20 * 8;  // 160 bits
@@ -73,9 +73,9 @@ type
     function HashFinal: TBuffer; override;
   end;
 
-  /// <summary>
-  /// SHA256 Hash
-  /// </summary>
+  ///	<summary>
+  ///	  SHA256 Hash
+  ///	</summary>
   TSHA256 = class(THashAlgorithmBase, ISHA256)
   private
     const fCHashSize = 32 * 8;  // 256 bits
@@ -88,9 +88,9 @@ type
     function HashFinal: TBuffer; override;
   end;
 
-  /// <summary>
-  /// SHA384 Hash
-  /// </summary>
+  ///	<summary>
+  ///	  SHA384 Hash
+  ///	</summary>
   TSHA384 = class(THashAlgorithmBase, ISHA384)
   private
     const fCHashSize = 48 * 8;  // 384 bits
@@ -103,9 +103,9 @@ type
     function HashFinal: TBuffer; override;
   end;
 
-  /// <summary>
-  /// SHA512 Hash
-  /// </summary>
+  ///	<summary>
+  ///	  SHA512 Hash
+  ///	</summary>
   TSHA512 = class(THashAlgorithmBase, ISHA512)
   private
     const fCHashSize = 64 * 8;  // 512 bits

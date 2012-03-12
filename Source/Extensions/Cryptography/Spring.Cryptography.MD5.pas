@@ -50,9 +50,9 @@ type
     Buffer  : TMD5Buffer;
   end;
 
-  /// <summary>
-  /// MD5 Hash
-  /// </summary>
+  ///	<summary>
+  ///	  MD5 Hash
+  ///	</summary>
   TMD5 = class(THashAlgorithmBase, IMD5)
   private
     const fCHashSize = 16 * 8; // 256 bits

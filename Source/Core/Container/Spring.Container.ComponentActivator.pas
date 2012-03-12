@@ -39,9 +39,9 @@ uses
   Spring.Services;
 
 type
-  /// <summary>
-  /// Abstract ComponentActivator
-  /// </summary>
+  ///	<summary>
+  ///	  Abstract ComponentActivator
+  ///	</summary>
   TComponentActivatorBase = class abstract(TInterfacedObject, IComponentActivator, IInterface)
   private
     fModel: TComponentModel;
@@ -52,9 +52,9 @@ type
     function CreateInstance: TObject; virtual; abstract;
   end;
 
-  /// <summary>
-  /// Activates an instance by reflection.
-  /// </summary>
+  ///	<summary>
+  ///	  Activates an instance by reflection.
+  ///	</summary>
   TReflectionComponentActivator = class(TComponentActivatorBase)
   private
     fResolver: IDependencyResolver;
@@ -65,9 +65,9 @@ type
     function CreateInstance: TObject; override;
   end;
 
-  /// <summary>
-  /// Activates an instance by a TActivatorDelegate delegate.
-  /// </summary>
+  ///	<summary>
+  ///	  Activates an instance by a TActivatorDelegate delegate.
+  ///	</summary>
   TDelegateComponentActivator = class(TComponentActivatorBase)
   public
     function CreateInstance: TObject; override;

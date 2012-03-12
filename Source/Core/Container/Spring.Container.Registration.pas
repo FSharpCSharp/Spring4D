@@ -40,9 +40,9 @@ uses
   Spring.Container.Core;
 
 type
-  /// <summary>
-  /// TComponentRegistry
-  /// </summary>
+  ///	<summary>
+  ///	  TComponentRegistry
+  ///	</summary>
   TComponentRegistry = class(TInterfacedObject, IComponentRegistry, IInterface)
   private
     fContainerContext: IContainerContext;
@@ -72,9 +72,10 @@ type
     function FindAll(serviceType: PTypeInfo): IEnumerable<TComponentModel>; overload;
   end;
 
-  /// <summary>
-  /// Internal helper class for non-generic fluent style registration of a component.
-  /// </summary>
+  ///	<summary>
+  ///	  Internal helper class for non-generic fluent style registration of a
+  ///	  component.
+  ///	</summary>
   TRegistration = record
   private
 {$IFNDEF DELPHIXE_UP}
@@ -118,9 +119,10 @@ type
     function AsDefault(serviceType: PTypeInfo): TRegistration;
   end;
 
-  /// <summary>
-  /// Internal helper class for generic fluent style registration of a component.
-  /// </summary>
+  ///	<summary>
+  ///	  Internal helper class for generic fluent style registration of a
+  ///	  component.
+  ///	</summary>
   TRegistration<T: class> = record
   private
     fRegistration: TRegistration;
@@ -161,14 +163,15 @@ type
     function AsDefault<TServiceType>: TRegistration<T>; overload;
   end;
 
-  /// <summary>
-  /// Provides both generic and non-generic fluent-style registration methods.
-  /// </summary>
-  /// <remarks>
-  /// Why both TRegistration and TRegistration<T> are defined as record and
-  /// their constructors are private, is to provide generic and non-generic
-  /// fluent-style registration with only necessary methods.
-  /// </remarks>
+  ///	<summary>
+  ///	  Provides both generic and non-generic fluent-style registration
+  ///	  methods.
+  ///	</summary>
+  ///	<remarks>
+  ///	  Why both TRegistration and TRegistration(T) are defined as record and
+  ///	  their constructors are private, is to provide generic and non-generic
+  ///	  fluent-style registration with only necessary methods.
+  ///	</remarks>
   TRegistrationManager = class
   private
     fRegistry: IComponentRegistry;

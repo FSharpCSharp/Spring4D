@@ -36,9 +36,9 @@ uses
   Spring.Cryptography.Base;
 
 type
-  /// <summary>
-  /// CRC16 Hash (CheckSum)
-  /// </summary>
+  ///	<summary>
+  ///	  CRC16 Hash (CheckSum)
+  ///	</summary>
   TCRC16 = class(THashAlgorithmBase, ICRC16)
   private
     const fCHashSize = 2 * 8;  // 16 bits
@@ -54,9 +54,9 @@ type
     property CrcValue: UInt16 read GetCrcValue;
   end;
 
-  /// <summary>
-  /// CRC32 Hash (CheckSum)
-  /// </summary>
+  ///	<summary>
+  ///	  CRC32 Hash (CheckSum)
+  ///	</summary>
   TCRC32 = class(THashAlgorithmBase, ICRC32)
   private
     const fCHashSize = 4 * 8;  // 32 bits

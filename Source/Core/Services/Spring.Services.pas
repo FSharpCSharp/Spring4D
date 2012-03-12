@@ -22,9 +22,9 @@
 {                                                                           }
 {***************************************************************************}
 
-/// <summary>
-/// Defines the common interfaces for a service locator.
-/// </summary>
+///	<summary>
+///	  Defines the common interfaces for a service locator.
+///	</summary>
 unit Spring.Services;
 
 {$I Spring.inc}
@@ -165,8 +165,8 @@ type
   end;
 
   ///	<summary>
-  ///	  Applies the <c>InjectAttribute</c> to injectable instance members of
-  ///	  a class. e.g. constructors, methods, properties and even fields. Also
+  ///	  Applies the <c>InjectAttribute</c> to injectable instance members of a
+  ///	  class. e.g. constructors, methods, properties and even fields. Also
   ///	  works on parameters of a method.
   ///	</summary>
   ///	<seealso cref="ImplementsAttribute" />
@@ -222,9 +222,9 @@ type
   {$REGION 'Lifecycle Interfaces'}
 
   ///	<summary>
-  ///	  Lifecycle interface. If a component implements this interface, the dependency injection
-  ///	  container will invoke the <c>Initialize</c> method when initiating an
-  ///	  instance of the component.
+  ///	  Lifecycle interface. If a component implements this interface, the
+  ///	  dependency injection container will invoke the <c>Initialize</c> method
+  ///	  when initiating an instance of the component.
   ///	</summary>
   ///	<seealso cref="IStartable" />
   ///	<seealso cref="IRecyclable" />
@@ -239,7 +239,8 @@ type
   end;
 
   ///	<summary>
-  ///	  Lifecycle interface. Represents that the component can be started and stopped.
+  ///	  Lifecycle interface. Represents that the component can be started and
+  ///	  stopped.
   ///	</summary>
   ///	<seealso cref="IInitializable" />
   ///	<seealso cref="IRecyclable" />
@@ -276,9 +277,9 @@ type
 
   {$ENDREGION}
 
-  /// <summary>
-  /// Defines an abstract interface to locate services.
-  /// </summary>
+  ///	<summary>
+  ///	  Defines an abstract interface to locate services.
+  ///	</summary>
   IServiceLocator = interface
     ['{E8C39055-6634-4428-B343-2FB0E75527BC}']
     function GetService(serviceType: PTypeInfo): TValue; overload;
@@ -292,14 +293,16 @@ type
 
   TServiceLocatorDelegate = reference to function: IServiceLocator;
 
-  /// <summary>
-  /// Provides a portal to get and query an instance of a service. Use the global
-  /// <see cref="Spring.Services|ServiceLocator" /> method to get the shared instance.
-  /// </summary>
-  /// <remarks>
-  /// You should use ServiceLocator to query a service insteading of directly using Spring.DI namespace in your library.
-  /// The namespace is supposed to be used to register components in your bootstrap code.
-  /// </remarks>
+  ///	<summary>
+  ///	  Provides a portal to get and query an instance of a service. Use the
+  ///	  global <see cref="Spring.Services|ServiceLocator" /> method to get the
+  ///	  shared instance.
+  ///	</summary>
+  ///	<remarks>
+  ///	  You should use ServiceLocator to query a service insteading of directly
+  ///	  using Spring.DI namespace in your library. The namespace is supposed to
+  ///	  be used to register components in your bootstrap code.
+  ///	</remarks>
   TServiceLocator = class sealed
   strict private
     class var fInstance: TServiceLocator;
@@ -344,12 +347,13 @@ const
 
 {$ENDREGION}
 
-/// <summary>
-/// Gets the shared instance of <see cref="TServiceLocator" /> class.
-/// </summary>
-/// <remarks>
-/// Since Delphi doesn't support generic methods for interfaces, the result type is TServiceLocator insteading of IServiceLocator.
-/// </remarks>
+///	<summary>
+///	  Gets the shared instance of <see cref="TServiceLocator" /> class.
+///	</summary>
+///	<remarks>
+///	  Since Delphi doesn't support generic methods for interfaces, the result
+///	  type is TServiceLocator insteading of IServiceLocator.
+///	</remarks>
 function ServiceLocator: TServiceLocator;
 
 implementation
