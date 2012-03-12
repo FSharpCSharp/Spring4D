@@ -61,14 +61,15 @@ type
     function GetCount: Integer; override;
 
     procedure NonGenericPush(const item: TValue);
-    procedure IStack.Push = NonGenericPush;
     function NonGenericPop: TValue;
-    function IStack.Pop = NonGenericPop;
     function NonGenericPeek: TValue;
-    function IStack.Peek = NonGenericPeek;
     function NonGenericPeekOrDefault: TValue;
-    function IStack.PeekOrDefault = NonGenericPeekOrDefault;
     function NonGenericTryPeek(out item: TValue): Boolean;
+
+    procedure IStack.Push = NonGenericPush;
+    function IStack.Pop = NonGenericPop;
+    function IStack.Peek = NonGenericPeek;
+    function IStack.PeekOrDefault = NonGenericPeekOrDefault;
     function IStack.TryPeek = NonGenericTryPeek;
 
     class function GetStackItem(stack: TGenericStack; index: Integer): T;

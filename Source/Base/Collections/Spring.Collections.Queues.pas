@@ -49,14 +49,15 @@ type
     function GetCount: Integer; override;
 
     procedure NonGenericEnqueue(const item: TValue);
-    procedure IQueue.Enqueue = NonGenericEnqueue;
     function NonGenericDequeue: TValue;
-    function IQueue.Dequeue = NonGenericDequeue;
     function NonGenericPeek: TValue;
-    function IQueue.Peek = NonGenericPeek;
     function NonGenericPeekOrDefault: TValue;
-    function IQueue.PeekOrDefault = NonGenericPeekOrDefault;
     function NonGenericTryPeek(out item: TValue): Boolean;
+
+    procedure IQueue.Enqueue = NonGenericEnqueue;
+    function IQueue.Dequeue = NonGenericDequeue;
+    function IQueue.Peek = NonGenericPeek;
+    function IQueue.PeekOrDefault = NonGenericPeekOrDefault;
     function IQueue.TryPeek = NonGenericTryPeek;
   public
     constructor Create; overload;

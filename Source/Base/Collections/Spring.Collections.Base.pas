@@ -69,47 +69,48 @@ type
   TEnumerableBase = class abstract(TInterfacedObject, IEnumerable)
   protected
     function NonGenericGetEnumerator: IEnumerator; virtual; abstract;
-    function IEnumerable.GetEnumerator = NonGenericGetEnumerator;
 
     function NonGenericTryGetFirst(out value: TValue): Boolean; virtual; abstract;
-    function IEnumerable.TryGetFirst = NonGenericTryGetFirst;
     function NonGenericTryGetLast(out value: TValue): Boolean; virtual; abstract;
-    function IEnumerable.TryGetLast = NonGenericTryGetLast;
     function NonGenericFirst: TValue; virtual; abstract;
-    function IEnumerable.First = NonGenericFirst;
     function NonGenericFirstOrDefault: TValue; virtual; abstract;
-    function IEnumerable.FirstOrDefault = NonGenericFirstOrDefault;
     function NonGenericLast: TValue; virtual; abstract;
-    function IEnumerable.Last = NonGenericLast;
     function NonGenericLastOrDefault: TValue; virtual; abstract;
-    function IEnumerable.LastOrDefault = NonGenericLastOrDefault;
     function NonGenericSingle: TValue; virtual; abstract;
-    function IEnumerable.Single = NonGenericSingle;
     function NonGenericSingleOrDefault: TValue; virtual; abstract;
-    function IEnumerable.SingleOrDefault = NonGenericSingleOrDefault;
     function NonGenericElementAt(index: Integer): TValue; virtual; abstract;
-    function IEnumerable.ElementAt = NonGenericElementAt;
     function NonGenericElementAtOrDefault(index: Integer): TValue; virtual; abstract;
-    function IEnumerable.ElementAtOrDefault = NonGenericElementAtOrDefault;
     function NonGenericContains(const item: TValue): Boolean; virtual; abstract;
-    function IEnumerable.Contains = NonGenericContains;
     function NonGenericMin: TValue; virtual; abstract;
-    function IEnumerable.Min = NonGenericMin;
     function NonGenericMax: TValue; virtual; abstract;
-    function IEnumerable.Max = NonGenericMax;
     function NonGenericSkip(count: Integer): IEnumerable; virtual; abstract;
-    function IEnumerable.Skip = NonGenericSkip;
     function NonGenericTake(count: Integer): IEnumerable; virtual; abstract;
-    function IEnumerable.Take = NonGenericTake;
     function NonGenericConcat(const collection: IEnumerable): IEnumerable; virtual; abstract;
-    function IEnumerable.Concat = NonGenericConcat;
     function NonGenericReversed: IEnumerable; virtual; abstract;
-    function IEnumerable.Reversed = NonGenericReversed;
     function NonGenericEqualsTo(const collection: IEnumerable): Boolean; virtual; abstract;
-    function IEnumerable.EqualsTo = NonGenericEqualsTo;
     function NonGenericToList: IList; virtual; abstract;
-    function IEnumerable.ToList = NonGenericToList;
     function NonGenericToSet: ISet; virtual; abstract;
+
+    function IEnumerable.GetEnumerator = NonGenericGetEnumerator;
+    function IEnumerable.TryGetFirst = NonGenericTryGetFirst;
+    function IEnumerable.TryGetLast = NonGenericTryGetLast;
+    function IEnumerable.First = NonGenericFirst;
+    function IEnumerable.FirstOrDefault = NonGenericFirstOrDefault;
+    function IEnumerable.Last = NonGenericLast;
+    function IEnumerable.LastOrDefault = NonGenericLastOrDefault;
+    function IEnumerable.Single = NonGenericSingle;
+    function IEnumerable.SingleOrDefault = NonGenericSingleOrDefault;
+    function IEnumerable.ElementAt = NonGenericElementAt;
+    function IEnumerable.ElementAtOrDefault = NonGenericElementAtOrDefault;
+    function IEnumerable.Contains = NonGenericContains;
+    function IEnumerable.Min = NonGenericMin;
+    function IEnumerable.Max = NonGenericMax;
+    function IEnumerable.Skip = NonGenericSkip;
+    function IEnumerable.Take = NonGenericTake;
+    function IEnumerable.Concat = NonGenericConcat;
+    function IEnumerable.Reversed = NonGenericReversed;
+    function IEnumerable.EqualsTo = NonGenericEqualsTo;
+    function IEnumerable.ToList = NonGenericToList;
     function IEnumerable.ToSet = NonGenericToSet;
 
     function GetCount: Integer; virtual;
@@ -312,16 +313,17 @@ type
     procedure SetItem(index: Integer; const value: T); virtual; abstract;
 
     function NonGenericGetItem(index: Integer): TValue;
-    function IList.GetItem = NonGenericGetItem;
     procedure NonGenericSetItem(index: Integer; const value: TValue);
-    procedure IList.SetItem = NonGenericSetItem;
     procedure NonGenericInsert(index: Integer; const item: TValue);
-    procedure IList.Insert = NonGenericInsert;
     procedure NonGenericInsertRange(index: Integer; const collection: IEnumerable);
-    procedure IList.InsertRange = NonGenericInsertRange;
     function NonGenericIndexOf(const item: TValue): Integer;
-    function IList.IndexOf = NonGenericIndexOf;
     function NonGenericLastIndexOf(const item: TValue): Integer;
+
+    function IList.GetItem = NonGenericGetItem;
+    procedure IList.SetItem = NonGenericSetItem;
+    procedure IList.Insert = NonGenericInsert;
+    procedure IList.InsertRange = NonGenericInsertRange;
+    function IList.IndexOf = NonGenericIndexOf;
     function IList.LastIndexOf = NonGenericLastIndexOf;
   public
     constructor Create; overload;

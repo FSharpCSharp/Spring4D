@@ -42,14 +42,15 @@ type
     function GetCount: Integer; override;
 
     procedure NonGenericExceptWith(const collection: IEnumerable);
-    procedure ISet.ExceptWith = NonGenericExceptWith;
     procedure NonGenericIntersectWith(const collection: IEnumerable);
-    procedure ISet.IntersectWith = NonGenericIntersectWith;
     procedure NonGenericUnionWith(const collection: IEnumerable);
-    procedure ISet.UnionWith = NonGenericUnionWith;
     function NonGenericSetEquals(const collection: IEnumerable): Boolean;
-    function ISet.SetEquals = NonGenericSetEquals;
     function NonGenericOverlaps(const collection: IEnumerable): Boolean;
+
+    procedure ISet.ExceptWith = NonGenericExceptWith;
+    procedure ISet.IntersectWith = NonGenericIntersectWith;
+    procedure ISet.UnionWith = NonGenericUnionWith;
+    function ISet.SetEquals = NonGenericSetEquals;
     function ISet.Overlaps = NonGenericOverlaps;
   public
     constructor Create;

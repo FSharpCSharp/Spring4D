@@ -45,36 +45,41 @@ uses
 type
   { Forward Declarations }
   IEnumerator = interface;
-  IEnumerator<T> = interface;
   IEnumerable = interface;
-  IEnumerable<T> = interface;
   ICollection = interface;
-  ICollection<T> = interface;
   IList = interface;
-  IList<T> = interface;
   IDictionary = interface;
-  IDictionary<TKey, TValue> = interface;
   IStack = interface;
-  IStack<T> = interface;
   IQueue = interface;
-  IQueue<T> = interface;
   ISet = interface;
+
+  IEnumerator<T> = interface;
+  IEnumerable<T> = interface;
+  ICollection<T> = interface;
+  IList<T> = interface;
+  IDictionary<TKey, TValue> = interface;
+  IStack<T> = interface;
+  IQueue<T> = interface;
   ISet<T> = interface;
 
   ICollectionNotifyDelegate<T> = interface;
 
   TCollectionNotification = Generics.Collections.TCollectionNotification;
+
   TCollectionChangedAction = (caAdded, caRemoved, caReplaced, caMoved, caReseted);
+
   TCollectionChangedEvent<T> = procedure(Sender: TObject; const Item: T;
     Action: TCollectionChangedAction) of object;
+
   ICollectionChangedDelegate<T> = interface(IEvent<TCollectionChangedEvent<T>>)
   end;
+
   TCollectionChangedDelegate<T> = class(TEvent<TCollectionChangedEvent<T>>,
     ICollectionChangedDelegate<T>)
   end;
 
   IEnumerator = interface(IInvokable)
-    ['{496B0ABF-CDEE-11D3-88E8-00902754C43A}']
+    ['{A2AD52DC-FA9F-4121-9B54-5C427DA5E62C}']
     function GetCurrent: TValue;
     function MoveNext: Boolean;
     procedure Reset;
@@ -116,22 +121,8 @@ type
     property Current: T read GetCurrent;
   end;
 
-  (*
-    Distinct, Union, Intersect, Exclude
-
-    Select<T>, SelectMany<T>
-    OfType<T>
-
-    ToDictionary<TKey, TValue>
-
-    Aggregate<>
-
-    GroupBy
-    OrderBy, OrderByDescending, ThenBy
-  *)
-
   IEnumerable = interface(IInvokable)
-    ['{496B0ABE-CDEE-11D3-88E8-00902754C43A}']
+    ['{6BC97F33-C0A8-4770-8E1C-C2017527B7E7}']
     function GetEnumerator: IEnumerator;
     function AsObject: TObject;
     function TryGetFirst(out value: TValue): Boolean;
@@ -442,7 +433,7 @@ type
   end;
 
   ICollection = interface(IEnumerable)
-    ['{496B0ABD-CDEE-11D3-88E8-00902754C43A}']
+    ['{AC8A0302-C530-46A0-83FC-D88302ECCE3D}']
   {$REGION 'Property Accessors'}
     function GetIsReadOnly: Boolean;
   {$ENDREGION}
@@ -484,7 +475,7 @@ type
   end;
 
   IList = interface(ICollection)
-    ['{496B0ABC-CDEE-11D3-88E8-00902754C43A}']
+    ['{43FF6143-3B87-4298-B48C-2ABB9353BF68}']
   {$REGION 'Property Accessors'}
     function GetItem(index: Integer): TValue;
     function GetOnChanged: IEvent;
@@ -551,6 +542,7 @@ type
   end;
 
   IDictionary = interface(ICollection)
+    ['{9AC642EE-F236-421D-8546-DCA0D8D53791}']
     procedure Add(const key, value: TValue);
     procedure AddOrSetValue(const key, value: TValue);
     procedure Remove(const key: TValue); overload;
@@ -604,6 +596,7 @@ type
   end;
 
   IStack = interface(IEnumerable)
+    ['{82F7B40F-3B32-417F-8001-51458BCE553A}']
   {$REGION 'Property Getters'}
     function GetOnNotify: IEvent;
   {$ENDREGION}
@@ -631,6 +624,7 @@ type
   end;
 
   IQueue = interface(IEnumerable)
+    ['{B3377E32-ADA1-414F-8762-1EA0E4FEF794}']
   {$REGION 'Property Getters'}
     function GetOnNotify: IEvent;
   {$ENDREGION}
@@ -644,6 +638,7 @@ type
   end;
 
   IQueue<T> = interface(IEnumerable<T>)
+    ['{D305A076-3F19-497C-94E3-6BD1C7A30F3F}']
   {$REGION 'Property Getters'}
     function GetOnNotify: ICollectionNotifyDelegate<T>;
   {$ENDREGION}
@@ -658,7 +653,7 @@ type
   end;
 
   ISet = interface(ICollection)
-    ['{496B0ABB-CDEE-11D3-88E8-00902754C43A}']
+    ['{D83ED568-A7C8-4142-BA0F-5A273AF1AA07}']
     procedure ExceptWith(const collection: IEnumerable);
     procedure IntersectWith(const collection: IEnumerable);
     procedure UnionWith(const collection: IEnumerable);
