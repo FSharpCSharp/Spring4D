@@ -29,6 +29,7 @@ unit Spring.Cryptography.DES;
 interface
 
 uses
+  SysUtils,
   Spring,
   Spring.Cryptography,
   Spring.Cryptography.Base,

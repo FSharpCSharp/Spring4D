@@ -27,6 +27,7 @@ unit Spring.Collections.Dictionaries;
 interface
 
 uses
+  TypInfo,
   Generics.Collections,
   Spring,
   Spring.Collections,

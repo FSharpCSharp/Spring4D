@@ -32,8 +32,8 @@ unit Spring;
 interface
 
 uses
-  Classes,
   SysUtils,
+  Classes,
   TypInfo,
   Types,
   SyncObjs,
@@ -448,6 +448,7 @@ type
     fLazy: ILazy<T>;
     function GetValue: T;
     function GetIsValueCreated: Boolean;
+    function GetIsAssigned: Boolean;
   public
     constructor Create(const valueFactory: TFunc<T>);
     constructor CreateFrom(const value: T);
@@ -455,9 +456,11 @@ type
     property AsLazy: ILazy<T> read fLazy;
     property Value: T read GetValue;
     property IsValueCreated: Boolean read GetIsValueCreated;
+    property IsAssigned: Boolean read GetIsAssigned;
 
     class operator Implicit(const lazy: Lazy<T>): T;
     class operator Implicit(const value: T): Lazy<T>;
+    class operator Implicit(const value: Lazy<T>): ILazy<T>;
   end;
 
   TLazyInitializer = record
@@ -474,6 +477,7 @@ type
   {$REGION 'Multicast Event'}
 
   IEvent = interface
+    ['{CFC14C4D-F559-4A46-A5B1-3145E9B182D8}']
   {$REGION 'Property Accessors'}
     function GetInvoke: TMethod;
     function GetCount: Integer;
@@ -481,6 +485,7 @@ type
     function GetIsEmpty: Boolean;
     procedure SetEnabled(const value: Boolean);
   {$ENDREGION}
+
     procedure Add(const handler: TMethod);
     procedure Remove(const handler: TMethod);
     procedure RemoveAll(instance: Pointer);
@@ -1294,16 +1299,21 @@ begin
   fLazy := TLazy<T>.CreateFrom(value);
 end;
 
-function Lazy<T>.GetIsValueCreated: Boolean;
-begin
-  Result := Assigned(fLazy) and fLazy.IsValueCreated;
-end;
-
 function Lazy<T>.GetValue: T;
 begin
   if not Assigned(fLazy) then
     raise EInvalidOperationException.CreateRes(@SNoDelegateAssigned);
   Result := fLazy.Value;
+end;
+
+function Lazy<T>.GetIsValueCreated: Boolean;
+begin
+  Result := Assigned(fLazy) and fLazy.IsValueCreated;
+end;
+
+function Lazy<T>.GetIsAssigned: Boolean;
+begin
+  Result := Assigned(fLazy);
 end;
 
 class operator Lazy<T>.Implicit(const lazy: Lazy<T>): T;
@@ -1314,6 +1324,11 @@ end;
 class operator Lazy<T>.Implicit(const value: T): Lazy<T>;
 begin
   Result.fLazy := TLazy<T>.CreateFrom(value);
+end;
+
+class operator Lazy<T>.Implicit(const value: Lazy<T>): ILazy<T>;
+begin
+  Result := value.fLazy;
 end;
 
 {$ENDREGION}

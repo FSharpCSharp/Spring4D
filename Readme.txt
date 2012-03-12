@@ -1,9 +1,17 @@
 ==========================================
-Spring Framework for Delphi
-Copyright 2012 (c) Spring4D Team
-Spring4D.org
+
+Spring Framework for Delphi 
+
+Copyright (c) 2009-2012 Spring4D Team
+
+http://www.spring4d.org
+
 ==========================================
 
-The goal of the project is to deliver a reliable & flexible Enterprise library that will benefit Delphi developers in the world.
+Spring Framework for Delphi (Spring4D) is an open-source code library for Embarcadero Delphi 2010+ platforms. It consists of a number of different modules, including a Dependency Injection Framework and a Base Class Library (Common Types, Collections Framework, Reflection, Logging).
 
-To browse the library, please open the Packages folder.
+To Build the framework, Run Build.exe
+
+To Browse the framework, open the corresponding project group in the project folder
+
+To Get the latest information, please visit http://www.spring4d.org

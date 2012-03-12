@@ -31,6 +31,7 @@ uses
   TypInfo,
   Generics.Collections,
   Generics.Defaults,
+  Rtti,
   Spring,
   Spring.Collections;
 

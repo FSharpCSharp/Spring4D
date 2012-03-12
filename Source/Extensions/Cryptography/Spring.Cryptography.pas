@@ -781,7 +781,7 @@ end;
 function TBuffer.Equals(const buffer: array of Byte): Boolean;
 begin
   Result := (Size = Length(buffer)) and
-    CompareMem(Memory, @buffer[0], Size);
+    ((Size = 0) or CompareMem(Memory, @buffer[0], Size));
 end;
 
 function TBuffer.Equals(const buffer: Pointer; count: Integer): Boolean;

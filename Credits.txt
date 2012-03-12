@@ -1,6 +1,6 @@
 ﻿===========================================
 Spring Framework for Delphi 
-
+http://www.spring4d.org
 Credits
 ===========================================
 
@@ -28,4 +28,7 @@ http://www.helpandmanual.com
 http://www.bbsoftware.co.uk
 
 * SmartInspect
-http://www.gurock.com/
+http://www.gurock.com
+
+* FinalBuilder
+http://www.finalbuilder.com

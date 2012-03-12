@@ -27,17 +27,17 @@
 ///	</summary>
 unit Spring.SystemUtils;
 
-{$I Spring.inc}
+{$I 'Spring.inc'}
 
 interface
 
 uses
-  Classes,
   SysUtils,
+  Classes,
+  Spring,
   TypInfo,
   Types,
-  Rtti,
-  Spring;
+  Rtti;
 
 type
   ///	<summary>

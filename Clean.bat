@@ -11,3 +11,8 @@ del /f /q /s *.~dpr
 del /f /q /s *.local
 del /f /q /s *.identcache
 del /f /q /s *.tvsconfig
+
+del /f /q /s *.bpl
+del /f /q /s *.dcp
+del /f /q /s *.dsk
+del /f /q /s Tests\*.exe
