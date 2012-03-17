@@ -4,7 +4,12 @@ interface
 
 uses
   TestFramework,
+  SysUtils,
   Spring.Collections;
+
+type
+  TTestCode = reference to procedure;
+  TClassOfException = class of Exception;
 
 type
   TTestEmptyHashSet = class(TTestCase)
@@ -38,7 +43,14 @@ type
     procedure TestSetEquals;
   end;
 
-  TTestIntegerList = class(TTestCase)
+  TExceptionCheckerTestCase = class(TTestCase)
+  protected
+    procedure CheckException(aExceptionType: TClassOfException; aCode: TTestCode; const aMessage: String);
+    procedure CheckExceptionNotRaised(aExceptionType: TClassOfException; aCode: TTestCode; const aMessage: String);
+
+  end;
+
+  TTestIntegerList = class(TExceptionCheckerTestCase)
   private
     SUT: IList<integer>;
   protected
@@ -63,13 +75,52 @@ type
     procedure TestListRemove;
   end;
 
+  TTestEmptyStringIntegerDictionary = class(TExceptionCheckerTestCase)
+  private
+    SUT: IDictionary<string, integer>;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestDictionaryIsInitializedEmpty;
+    procedure TestDictionaryKeysAreEmpty;
+    procedure TestDictionaryValuesAreEmpty;
+    procedure TestDictionaryContainsReturnsFalse;
+  end;
+
+  TTestStringIntegerDictionary = class(TExceptionCheckerTestCase)
+  private
+    SUT: IDictionary<string, integer>;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestDictionaryCountWithAdd;
+    procedure TestDictionarySimpleValues;
+    procedure TestDictionaryKeys;
+    procedure TestDictionaryValues;
+    procedure TestDictionaryContainsValue;
+    procedure TestDictionaryContainsKey;
+  end;
+
+  TTestEmptyStackofStrings = class(TExceptionCheckerTestCase)
+  private
+    SUT: IStack<string>;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestStackInitializesEmpty;
+    procedure TestEmptyPopPeek;
+  end;
+
 
 
 implementation
 
 uses
-      SysUtils
-    ;
+        Classes
+      ;
 
 { TTestEmptyHashSet }
 
@@ -402,6 +453,188 @@ end;
 procedure TTestIntegerList.TestListRemove;
 begin
 
+end;
+//
+{ TTestStringIntegerDictionary }
+
+procedure TTestStringIntegerDictionary.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateDictionary<string, integer>;
+  SUT.Add('one', 1);
+  SUT.Add('two', 2);
+  SUT.Add('three', 3);
+end;
+
+procedure TTestStringIntegerDictionary.TearDown;
+begin
+  inherited;
+end;
+
+procedure TTestStringIntegerDictionary.TestDictionaryContainsKey;
+begin
+
+  CheckTrue(SUT.ContainsKey('one'), '"one" not found by ContainsKey');
+  CheckTrue(SUT.ContainsKey('two'), '"two" not found by ContainsKey');
+  CheckTrue(SUT.ContainsKey('three'), '"three" not found by ContainsKey');
+
+end;
+
+procedure TTestStringIntegerDictionary.TestDictionaryContainsValue;
+begin
+
+  CheckTrue(SUT.ContainsValue(1), '1 not found by ContainsValue');
+  CheckTrue(SUT.ContainsValue(2), '2 not found by ContainsValue');
+  CheckTrue(SUT.ContainsValue(3), '3 not found by ContainsValue');
+end;
+
+procedure TTestStringIntegerDictionary.TestDictionaryCountWithAdd;
+begin
+  CheckEquals(3, SUT.Count, 'TestDictionaryCountWithAdd: Count is not correct');
+
+end;
+
+procedure TTestStringIntegerDictionary.TestDictionaryKeys;
+var
+  Result: ICollection<string>;
+begin
+
+  Result := SUT.Keys;
+  CheckEquals(3, Result.Count, 'TestDictionaryKeys: Keys call returns wrong count');
+
+  CheckTrue(Result.Contains('one'), 'TestDictionaryKeys: Keys doesn''t contain "one"');
+  CheckTrue(Result.Contains('two'), 'TestDictionaryKeys: Keys doesn''t contain "two"');
+  CheckTrue(Result.Contains('three'), 'TestDictionaryKeys: Keys doesn''t contain "three"');
+
+end;
+
+procedure TTestStringIntegerDictionary.TestDictionarySimpleValues;
+begin
+  CheckEquals(3, SUT.Count, 'TestDictionarySimpleValues: Count is not correct');
+
+  CheckEquals(1, SUT['one']);
+  CheckEquals(2, SUT['two']);
+  CheckEquals(3, SUT['three']);
+end;
+
+procedure TTestStringIntegerDictionary.TestDictionaryValues;
+var
+  Result: ICollection<integer>;
+begin
+
+  Result := SUT.Values;
+  CheckEquals(3, Result.Count, 'TestDictionaryKeys: Values call returns wrong count');
+
+  CheckTrue(Result.Contains(1), 'TestDictionaryKeys: Values doesn''t contain "one"');
+  CheckTrue(Result.Contains(2), 'TestDictionaryKeys: Values doesn''t contain "two"');
+  CheckTrue(Result.Contains(3), 'TestDictionaryKeys: Values doesn''t contain "three"');
+
+end;
+
+{ TTestEmptyStringIntegerDictionary }
+
+procedure TTestEmptyStringIntegerDictionary.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateDictionary<string, integer>;
+end;
+
+procedure TTestEmptyStringIntegerDictionary.TearDown;
+begin
+  inherited;
+  SUT := nil;
+end;
+
+procedure TTestEmptyStringIntegerDictionary.TestDictionaryContainsReturnsFalse;
+begin
+   CheckFalse(SUT.ContainsKey('blah'));
+   CheckFalse(SUT.ContainsValue(42));
+end;
+
+procedure TTestEmptyStringIntegerDictionary.TestDictionaryIsInitializedEmpty;
+begin
+  CheckEquals(0, SUT.Count);
+end;
+
+procedure TTestEmptyStringIntegerDictionary.TestDictionaryKeysAreEmpty;
+var
+  Result: ICollection<string>;
+begin
+  Result := SUT.Keys;
+  CheckEquals(0, Result.Count);
+end;
+
+procedure TTestEmptyStringIntegerDictionary.TestDictionaryValuesAreEmpty;
+var
+  Result: ICollection<integer>;
+begin
+  Result := SUT.Values;
+  CheckEquals(0, Result.Count);
+end;
+
+{ TTestEmptyStackofStrings }
+
+procedure TTestEmptyStackofStrings.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateStack<string>;
+end;
+
+procedure TTestEmptyStackofStrings.TearDown;
+begin
+  inherited;
+  SUT := nil;
+end;
+
+procedure TTestEmptyStackofStrings.TestEmptyPopPeek;
+begin
+  CheckException(EListError, procedure() begin SUT.Pop end, 'EListError not raised');
+  CheckException(EListError, procedure() begin SUT.Peek end, 'EListError not raised');
+end;
+
+procedure TTestEmptyStackofStrings.TestStackInitializesEmpty;
+begin
+  CheckEquals(0, SUT.Count);
+end;
+
+{ TExceptionCheckerTestCase }
+
+procedure TExceptionCheckerTestCase.CheckException(aExceptionType: TClassOfException; aCode: TTestCode; const aMessage: String);
+var
+  WasException: Boolean;
+begin
+  WasException := False;
+  try
+    aCode;
+  except
+    on E: Exception do
+    begin
+      if E is aExceptionType then
+      begin
+        WasException := True;
+      end;
+    end;
+  end;
+  Check(WasException, aMessage);
+end;
+
+procedure TExceptionCheckerTestCase.CheckExceptionNotRaised(aExceptionType: TClassOfException; aCode: TTestCode; const aMessage: String);
+var
+  WasException: Boolean;
+begin
+  WasException := False;
+  try
+    aCode;
+  except
+    on E: Exception do
+    begin
+      if E is aExceptionType then
+      begin
+        WasException := True;
+      end;
+    end;
+  end;
+  Check(WasException, aMessage);
 end;
 
 end.

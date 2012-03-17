@@ -73,7 +73,10 @@ begin
     TTestEmptyMulticastEvent.Suite,
     TTestEmptyHashSet.Suite,
     TTestNormalHashSet.Suite,
-    TTestIntegerList.Suite
+    TTestIntegerList.Suite,
+    TTestStringIntegerDictionary.Suite,
+    TTestEmptyStringIntegerDictionary.Suite,
+    TTestEmptyStackofStrings.Suite
 
 
   ]);
