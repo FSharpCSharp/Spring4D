@@ -76,7 +76,8 @@ begin
     TTestIntegerList.Suite,
     TTestStringIntegerDictionary.Suite,
     TTestEmptyStringIntegerDictionary.Suite,
-    TTestEmptyStackofStrings.Suite
+    TTestEmptyStackofStrings.Suite,
+    TTestStackOfInteger.Suite
 
 
   ]);

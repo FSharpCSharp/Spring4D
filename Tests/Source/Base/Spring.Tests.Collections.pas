@@ -114,6 +114,21 @@ type
     procedure TestEmptyPopPeek;
   end;
 
+  TTestStackOfInteger = class(TExceptionCheckerTestCase)
+  private
+    const MaxStackItems = 1000;
+  private
+    SUT: IStack<integer>;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+    procedure FillStack;
+  published
+    procedure TestStackInitializesEmpty;
+    procedure TestStackPopPushBalances;
+    procedure TestStackClear;
+    procedure TestStackPeek;
+  end;
 
 
 implementation
@@ -635,6 +650,73 @@ begin
     end;
   end;
   Check(WasException, aMessage);
+end;
+
+{ TTestStackOfInteger }
+
+procedure TTestStackOfInteger.FillStack;
+var
+  i: Integer;
+begin
+  for i := 0 to MaxStackItems do
+  begin
+    SUT.Push(i);
+  end;
+end;
+
+procedure TTestStackOfInteger.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateStack<integer>;
+end;
+
+procedure TTestStackOfInteger.TearDown;
+begin
+  inherited;
+  SUT := nil;
+end;
+
+procedure TTestStackOfInteger.TestStackClear;
+begin
+  FillStack;
+  SUT.Clear;
+  CheckEquals(0, SUT.Count, 'Stack failed to empty after call to Clear');
+end;
+
+procedure TTestStackOfInteger.TestStackInitializesEmpty;
+begin
+  CheckEquals(0, SUT.Count);
+end;
+
+procedure TTestStackOfInteger.TestStackPeek;
+var
+  Expected: Integer;
+  Actual: integer;
+begin
+  FillStack;
+  Expected := MaxStackItems;
+  Actual := SUT.Peek;
+  CheckEquals(Expected, Actual, 'Stack.Peek failed');
+end;
+
+procedure TTestStackOfInteger.TestStackPopPushBalances;
+var
+  i: Integer;
+begin
+
+  for i := 0 to MaxStackItems do
+  begin
+    SUT.Push(i);
+  end;
+
+  for i := 0 to MaxStackItems do
+  begin
+    SUT.Pop;
+  end;
+
+  // Should be empty
+  CheckEquals(0, SUT.Count);
+
 end;
 
 end.
