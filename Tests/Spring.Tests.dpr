@@ -70,7 +70,12 @@ begin
   RegisterTests('Spring.Base', [
     TRepeatedTest.Create(TTestNullableInteger.Suite, 3),
     TTestLazy.Suite,
-    TTestEmptyMulticastEvent.Suite
+    TTestEmptyMulticastEvent.Suite,
+    TTestEmptyHashSet.Suite,
+    TTestNormalHashSet.Suite,
+    TTestIntegerList.Suite
+
+
   ]);
 
   RegisterTests('Spring.Base.SysUtils', [
