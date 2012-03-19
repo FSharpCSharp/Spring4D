@@ -1495,7 +1495,7 @@ end;
 
 function TListBase<T>.GetOnChanged: ICollectionChangedDelegate<T>;
 begin
-  if fOnNotify = nil then
+  if fOnChanged = nil then
   begin
     fOnChanged := TCollectionChangedDelegate<T>.Create;
   end;
