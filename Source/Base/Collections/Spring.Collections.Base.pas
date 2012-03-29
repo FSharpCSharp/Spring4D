@@ -328,6 +328,7 @@ type
   public
     constructor Create; overload;
     constructor Create(const comparer: IComparer<T>); overload;
+    constructor Create(const collection: array of T); overload;
     constructor Create(const collection: IEnumerable<T>); overload;
     constructor Create(const collection: TEnumerable<T>); overload;
     destructor Destroy; override;
@@ -1214,6 +1215,12 @@ begin
   fComparer := comparer;
   if fComparer = nil then
     fComparer := TComparer<T>.Default;
+end;
+
+constructor TListBase<T>.Create(const collection: array of T);
+begin
+  Create;
+  AddRange(collection);
 end;
 
 constructor TListBase<T>.Create(const collection: IEnumerable<T>);
