@@ -77,8 +77,10 @@ begin
     TTestStringIntegerDictionary.Suite,
     TTestEmptyStringIntegerDictionary.Suite,
     TTestEmptyStackofStrings.Suite,
-    TTestStackOfInteger.Suite
-
+    TTestStackOfInteger.Suite,
+    TTestEmptyQueueofInteger.Suite,
+    TTestQueueOfInteger.Suite,
+    TTestListOfIntegerAsIEnumerable.Suite
 
   ]);
 

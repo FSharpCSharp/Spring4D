@@ -10,6 +10,7 @@ uses
 type
   TTestCode = reference to procedure;
   TClassOfException = class of Exception;
+  ESpringTestsException = class(Exception);
 
 type
   TTestEmptyHashSet = class(TTestCase)
@@ -53,6 +54,7 @@ type
   TTestIntegerList = class(TExceptionCheckerTestCase)
   private
     SUT: IList<integer>;
+    procedure SimpleFillList;
   protected
     procedure SetUp; override;
     procedure TearDown; override;
@@ -130,11 +132,63 @@ type
     procedure TestStackPeek;
   end;
 
+  TTestEmptyQueueofInteger = class(TExceptionCheckerTestCase)
+  private
+    SUT: IQueue<integer>;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestEmptyQueueIsEmpty;
+    procedure TestClearOnEmptyQueue;
+    procedure TestPeekRaisesException;
+    procedure TestDequeueRaisesException;
+  end;
+
+  TTestQueueOfInteger = class(TExceptionCheckerTestCase)
+  private
+    const MaxItems = 1000;
+  private
+    SUT: IQueue<integer>;
+    procedure FillQueue;  // Will test Engueue method
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestQueueClear;
+    procedure TestQueueDequeue;
+    procedure TestQueuePeek;
+  end;
+
+  TTestListOfIntegerAsIEnumerable = class(TExceptionCheckerTestCase)
+  private
+    const MaxItems = 1000;
+  private
+    InternalList: IList<integer>;
+    SUT: IEnumerable<integer>;
+    procedure FillList;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestEnumerableIsEmpty;
+    procedure TestEnumerableHasCorrectCountAfterFill;
+    procedure TestEnumerableFirst;
+    procedure TestEnumerableLast;
+    procedure TestSingle;
+    procedure TestMin;
+    procedure TestMax;
+    procedure TestContains;
+    procedure TestCheckSingleRaisedExceptionWhenHasMultipleItems;
+    procedure TestElementAt;
+  end;
+
 
 implementation
 
 uses
         Classes
+      , Spring
       ;
 
 { TTestEmptyHashSet }
@@ -286,7 +340,6 @@ begin
 
   CheckEquals(0, SUT.Count, 'List not empty after call to Clear');
 
-
 end;
 
 procedure TTestIntegerList.TestListCountWithAdd;
@@ -437,9 +490,7 @@ end;
 
 procedure TTestIntegerList.TestListMove;
 begin
-  SUT.Add(1);
-  SUT.Add(2);
-  SUT.Add(3);
+  SimpleFillList;
   CheckEquals(3, SUT.Count);
 
   SUT.Move(0, 2);
@@ -452,9 +503,7 @@ end;
 
 procedure TTestIntegerList.TestListMultipleDelete;
 begin
-  SUT.Add(1);
-  SUT.Add(2);
-  SUT.Add(3);
+  SimpleFillList;
   CheckEquals(3, SUT.Count);
   SUT.Delete(0);
   CheckEquals(2, SUT.Count);
@@ -468,6 +517,15 @@ end;
 procedure TTestIntegerList.TestListRemove;
 begin
 
+end;
+
+procedure TTestIntegerList.SimpleFillList;
+begin
+  if SUT = nil then
+    raise ESpringTestsException.Create('SUT is nil');
+  SUT.Add(1);
+  SUT.Add(2);
+  SUT.Add(3);
 end;
 //
 { TTestStringIntegerDictionary }
@@ -484,6 +542,7 @@ end;
 procedure TTestStringIntegerDictionary.TearDown;
 begin
   inherited;
+  SUT := nil;
 end;
 
 procedure TTestStringIntegerDictionary.TestDictionaryContainsKey;
@@ -658,6 +717,7 @@ procedure TTestStackOfInteger.FillStack;
 var
   i: Integer;
 begin
+  Check(SUT <> nil);
   for i := 0 to MaxStackItems do
   begin
     SUT.Push(i);
@@ -704,10 +764,7 @@ var
   i: Integer;
 begin
 
-  for i := 0 to MaxStackItems do
-  begin
-    SUT.Push(i);
-  end;
+  FillStack;
 
   for i := 0 to MaxStackItems do
   begin
@@ -717,6 +774,198 @@ begin
   // Should be empty
   CheckEquals(0, SUT.Count);
 
+end;
+
+{ TTestEmptyQueueofTObject }
+
+procedure TTestEmptyQueueofInteger.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateQueue<integer>
+end;
+
+procedure TTestEmptyQueueofInteger.TearDown;
+begin
+  inherited;
+  SUT := nil;
+end;
+
+procedure TTestEmptyQueueofInteger.TestClearOnEmptyQueue;
+begin
+  CheckEquals(0, SUT.Count, 'Queue not empty before call to clear');
+  SUT.Clear;
+  CheckEquals(0, SUT.Count, 'Queue not empty after call to clear');
+end;
+
+procedure TTestEmptyQueueofInteger.TestEmptyQueueIsEmpty;
+begin
+  CheckEquals(0, SUT.Count);
+end;
+
+procedure TTestEmptyQueueofInteger.TestPeekRaisesException;
+begin
+  CheckException(EListError, procedure() begin SUT.Peek end, 'EListError was not raised on Peek call with empty Queue');
+end;
+
+procedure TTestEmptyQueueofInteger.TestDequeueRaisesException;
+begin
+  CheckException(EListError, procedure() begin SUT.Dequeue end, 'EListError was not raised on Peek call with empty Queue');
+end;
+
+{ TTestQueueOfInteger }
+
+procedure TTestQueueOfInteger.FillQueue;
+var
+  i: Integer;
+begin
+  Check(SUT <> nil);
+  for i := 0 to MaxItems - 1  do
+  begin
+    SUT.Enqueue(i);
+  end;
+  CheckEquals(MaxItems, SUT.Count, 'Call to FillQueue did not properly fill the queue');
+end;
+
+procedure TTestQueueOfInteger.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateQueue<integer>;
+end;
+
+procedure TTestQueueOfInteger.TearDown;
+begin
+  inherited;
+  SUT := nil;
+end;
+
+procedure TTestQueueOfInteger.TestQueueClear;
+begin
+  FillQueue;
+  SUT.Clear;
+  CheckEquals(0, SUT.Count, 'Clear call failed to empty the queue');
+end;
+
+procedure TTestQueueOfInteger.TestQueueDequeue;
+var
+  i: Integer;
+begin
+  FillQueue;
+  for i := 1 to MaxItems do
+  begin
+    SUT.Dequeue;
+  end;
+
+  CheckEquals(0, SUT.Count, 'Dequeue did not remove all the items');
+
+end;
+
+procedure TTestQueueOfInteger.TestQueuePeek;
+var
+  Expected: Integer;
+  Actual: Integer;
+begin
+  FillQueue;
+  Expected := 0;
+  Actual := SUT.Peek;
+  CheckEquals(Expected, Actual);
+end;
+
+{ TTestListOfIntegerAsIEnumerable }
+
+procedure TTestListOfIntegerAsIEnumerable.FillList;
+var
+  i: integer;
+begin
+  for i := 0 to MaxItems - 1 do
+  begin
+    InternalList.Add(i);
+  end;
+end;
+
+procedure TTestListOfIntegerAsIEnumerable.SetUp;
+begin
+  inherited;
+  InternalList := TCollections.CreateList<integer>;
+  SUT := InternalList;
+end;
+
+procedure TTestListOfIntegerAsIEnumerable.TearDown;
+begin
+  inherited;
+  SUT := nil;
+end;
+
+procedure TTestListOfIntegerAsIEnumerable.TestEnumerableIsEmpty;
+begin
+  CheckEquals(0, SUT.Count);
+  CheckTrue(SUT.IsEmpty);
+end;
+
+procedure TTestListOfIntegerAsIEnumerable.TestEnumerableLast;
+begin
+  FillList;
+  CheckEquals(MaxItems - 1, SUT.Last);
+end;
+
+procedure TTestListOfIntegerAsIEnumerable.TestMax;
+begin
+  FillList;
+  CheckEquals(MaxItems - 1, SUT.Max);
+end;
+
+procedure TTestListOfIntegerAsIEnumerable.TestMin;
+begin
+  FillList;
+  CheckEquals(0, SUT.Min);
+end;
+
+procedure TTestListOfIntegerAsIEnumerable.TestSingle;
+var
+  ExpectedResult, ActualResult: integer;
+begin
+  InternalList.Add(1);
+  ExpectedResult := 1;
+  ActualResult := SUT.Single;
+  CheckEquals(ExpectedResult, ActualResult);
+end;
+
+procedure TTestListOfIntegerAsIEnumerable.TestCheckSingleRaisedExceptionWhenHasMultipleItems;
+var
+  TempCode: TTestCode;
+begin
+  FillList;
+  TempCode := procedure begin SUT.Single end;
+  CheckException(EInvalidOperationException, TempCode, 'SUT has more thann one item, but failed to raise the EInvalidOperationException when the Single method was called.');
+end;
+
+procedure TTestListOfIntegerAsIEnumerable.TestContains;
+begin
+  FillList;
+  CheckTrue(SUT.Contains(50));
+  CheckFalse(SUT.Contains(MaxItems + 50));
+end;
+
+procedure TTestListOfIntegerAsIEnumerable.TestElementAt;
+var
+  i: integer;
+begin
+  FillList;
+  for i := 0 to MaxItems - 1 do
+  begin
+    CheckEquals(i, SUT.ElementAt(i));
+  end;
+end;
+
+procedure TTestListOfIntegerAsIEnumerable.TestEnumerableFirst;
+begin
+  FillList;
+  CheckEquals(0, SUT.First);
+end;
+
+procedure TTestListOfIntegerAsIEnumerable.TestEnumerableHasCorrectCountAfterFill;
+begin
+  FillList;
+  CheckEquals(MaxItems, SUT.Count);
 end;
 
 end.
