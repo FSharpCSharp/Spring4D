@@ -591,7 +591,9 @@ type
       PParameters = ^TParameters;
       TParameters = packed record
       public
+{$IFNDEF CPUX64}
         Registers: array[paEDX..paECX] of Cardinal;
+{$ENDIF}
         Stack: array[0..1023] of Byte;
       end;
 
@@ -600,8 +602,10 @@ type
         TypeData: PTypeData;
         ParamInfos: PParameterInfos;
         StackSize: Integer;
-        CallConversion: TCallConv;
-        Params: PParameters;
+        CallConvention: TCallConv;
+{$IFDEF CPUX64}
+        RegisterFlag: Word;
+{$ENDIF CPUX64}
         constructor Create(typeInfo: PTypeInfo);
       end;
   private
@@ -611,7 +615,7 @@ type
     function GetCount: Integer;
     function GetIsEmpty: Boolean;
   protected
-    procedure InternalInvokeHandlers;
+    procedure InternalInvokeHandlers(Params: PParameters);
     procedure InvokeEventHandlerStub;
   public
     constructor Create(methodTypeInfo: PTypeInfo);
@@ -694,6 +698,7 @@ type
 
     class operator Implicit(const e: IEvent<T>): Event<T>;
     class operator Implicit(const e: Event<T>): IEvent<T>;
+    class operator Implicit(const e: Event<T>): T;
     class operator Implicit(const eventHandler: T): Event<T>;
   end;
 
@@ -1489,20 +1494,24 @@ var
   P: PByte;
   curReg: Integer;
   I: Integer;
+{$IFNDEF CPUX64}
   Size: Integer;
+{$ENDIF}
 begin
   typeData := GetTypeData(typeInfo);
   Self.TypeData := typeData;
   P := AdditionalInfoOf(typeData);
-  CallConversion := TCallConv(PByte(p)^);
+  CallConvention := TCallConv(PByte(p)^);
   ParamInfos := PParameterInfos(Cardinal(P) + 1);
 
-  if CallConversion = ccReg then
+{$IFNDEF CPUX64}
+  if CallConvention = ccReg then
   begin
     curReg := paEDX;
     StackSize := 0;
-  end
-  else begin
+  end else
+{$ENDIF}
+  begin
     curReg := paStack;
     StackSize := SizeOf(Pointer); // Self in stack
   end;
@@ -1511,6 +1520,7 @@ begin
 
   for I := 0 to typeData^.ParamCount - 1 do
   begin
+{$IFNDEF CPUX64}
     if TParamFlags(P[0]) * [pfVar, pfConst, pfAddress, pfReference, pfOut] <> [] then
       Size := 4
     else
@@ -1523,9 +1533,23 @@ begin
         Size := 4;
       Inc(StackSize, Size);
     end;
+{$ELSE}
+    if I < 3 then
+    begin
+      if (TParamFlags(P[0]) * [pfVar, pfConst, pfAddress, pfReference, pfOut] = [])
+        and (ParamInfos^[I]^.Kind = tkFloat) then
+        RegisterFlag := RegisterFlag or (1 shl (I + 1));
+    end;
+    Inc(StackSize, 8);
+{$ENDIF}
     Inc(P, 1 + P[1] + 1);
     Inc(P, P[0] + 1);
   end;
+
+{$IFDEF CPUX64}
+  if StackSize < 32 then
+    StackSize := 32;
+{$ENDIF}
 end;
 
 {$ENDREGION}
@@ -1598,18 +1622,16 @@ begin
   Result := Count = 0;
 end;
 
-procedure TMethodInvocations.InternalInvokeHandlers;
+procedure TMethodInvocations.InternalInvokeHandlers(Params: PParameters);
 {$IFNDEF CPUX64}
 var
   method: TMethod;
   stackSize: Integer;
-  callConversion: TCallConv;
-  pStack: PParameters;
+  callConvention: TCallConv;
   i: Integer;
 begin
-  pStack := fMethodInfo.Params;
   stackSize := fMethodInfo.stackSize;
-  callConversion := fMethodInfo.CallConversion;
+  callConvention := fMethodInfo.CallConvention;
   for i := 0 to fMethods.Count - 1 do
   begin
     method := fMethods[i];
@@ -1621,20 +1643,20 @@ begin
       MOV ECX,StackSize
       SUB ESP,ECX
       MOV EDX,ESP
-      MOV EAX, pStack
+      MOV EAX,Params
       LEA EAX,[EAX].TParameters.Stack[8]
       CALL System.Move
     end;
     asm
       // Now we need to load up the registers. EDX and ECX may have some data
       // so load them on up.
-      MOV EAX,pStack
+      MOV EAX,Params
       MOV EDX,[EAX].TParameters.Registers.DWORD[0]
       MOV ECX,[EAX].TParameters.Registers.DWORD[4]
       // EAX is always "Self" and it changes on a per method pointer instance, so
       // grab it out of the method data.
       MOV EAX, method.Data
-      CMP callConversion, ccReg
+      CMP callConvention, ccReg
       JZ @BeginCall
       Mov [ESP], EAX // eax -> Self, put it into internal stack
     @BeginCall:
@@ -1645,8 +1667,40 @@ begin
   end;
 end;
 {$ELSE}
+var
+  method: TMethod;
+  args: TArray<TValue>;
+  p: PByte;
+  i: Integer;
 begin
-  PlatformNotImplemented;
+  if fMethods.Count > 0 then
+  begin
+    SetLength(args, fMethodInfo.TypeData.ParamCount + 1);
+    p := @fMethodInfo.TypeData.ParamList;
+
+    for i := 1 to fMethodInfo.TypeData.ParamCount do
+    begin
+      if TParamFlags(p[0]) * [pfVar, pfConst, pfOut] <> [] then
+      begin
+        args[i] := TValue.From<Pointer>(PPointer(@Params.Stack[i * 8])^);
+      end
+      else
+      begin
+        TValue.Make(Pointer(@Params.Stack[i * 8]), fMethodInfo.ParamInfos[i - 1]^, args[i]);
+      end;
+      Inc(p, 1 + p[1] + 1);
+      Inc(p, p[0] + 1);
+    end;
+
+    for i := 0 to fMethods.Count - 1 do
+    begin
+      method := fMethods[i];
+      args[0] := TValue.From<TObject>(method.Data);
+      // workaround for incorrect type guess in Rtti.pas
+      TValueData(args[0]).FTypeInfo := TypeInfo(TObject);
+      Rtti.Invoke(method.Code, args, fMethodInfo.CallConvention, nil);
+    end;
+  end;
 end;
 {$ENDIF}
 
@@ -1656,14 +1710,14 @@ const
   PtrSize = SizeOf(Pointer);
 asm
         // is register conversion call ?
-        CMP     BYTE PTR Self.fMethodInfo.CallConversion, ccReg
+        CMP     BYTE PTR Self.fMethodInfo.CallConvention, ccReg
         JZ      @Begin
         Mov     EAX, [esp + 4]
 @Begin:
         PUSH    EAX
         PUSH    ECX
         PUSH    EDX
-        MOV     Self.fMethodInfo.TMethodInfo.Params,ESP
+        MOV     EDX,ESP
         CALL    InternalInvokeHandlers
         // Pop EDX and ECX off the stack while preserving all registers.
         MOV     [ESP+4],EAX
@@ -1679,7 +1733,7 @@ asm
 
         // stack address alignment
         // In cdecl call conversion, the caller will clear the stack
-        CMP     DWORD PTR [EAX].fMethodInfo.CallConversion, ccCdecl
+        CMP     DWORD PTR [EAX].fMethodInfo.CallConvention, ccCdecl
         JZ      @@SimpleRet
         ADD     ECX, PtrSize - 1
         AND     ECX, NOT (PtrSize - 1)
@@ -1696,8 +1750,49 @@ asm
 @@SimpleRet:
 end;
 {$ELSE}
-begin
-  PlatformNotImplemented;
+asm
+        MOV     AX, WORD PTR [RCX].TMethodInvocations.TMethodInfo.RegisterFlag
+@@FIRST:
+        TEST    AX, $01
+        JZ      @@SAVE_RCX
+@@SAVE_XMM0:
+        MOVSD   QWORD PTR [RSP+$08], XMM0
+        JMP     @@SECOND
+@@SAVE_RCX:
+        MOV     QWORD PTR [RSP+$08], RCX
+
+@@SECOND:
+        TEST    AX, $02
+        JZ      @@SAVE_RDX
+@@SAVE_XMM1:
+        MOVSD   QWORD PTR [RSP+$10], XMM1
+        JMP     @@THIRD
+@@SAVE_RDX:
+        MOV     QWORD PTR [RSP+$10], RDX
+
+@@THIRD:
+        TEST    AX, $04
+        JZ      @@SAVE_R8
+@@SAVE_XMM2:
+        MOVSD   QWORD PTR [RSP+$18], XMM2
+        JMP     @@FORTH
+@@SAVE_R8:
+        MOV     QWORD PTR [RSP+$18], R8
+
+@@FORTH:
+        TEST    AX, $08
+        JZ      @@SAVE_R9
+@@SAVE_XMM3:
+        MOVSD   QWORD PTR [RSP+$20], XMM3
+        JMP     @@1
+@@SAVE_R9:
+        MOV     QWORD PTR [RSP+$20], R9
+
+@@1:    LEA     RDX, QWORD PTR [RSP+$08]
+        MOV     RAX, RCX
+        SUB     RSP, $28
+        CALL    InternalInvokeHandlers
+        ADD     RSP, $28
 end;
 {$ENDIF}
 
@@ -1904,6 +1999,11 @@ end;
 class operator Event<T>.Implicit(const e: Event<T>): IEvent<T>;
 begin
   Result := e.EnsureInitialized;
+end;
+
+class operator Event<T>.Implicit(const e: Event<T>): T;
+begin
+  Result := e.EnsureInitialized.GetInvoke;
 end;
 
 {$ENDREGION}

@@ -31,12 +31,8 @@
   {$MESSAGE ERROR 'This framework requires Delphi 2010 or higher.'}}
 {$ENDIF}
 
-{$IFDEF CPUX64}
-  {$MESSAGE WARN 'This framework has not been ready for Win64.'}
-{$ENDIF}
-
 {$IFNDEF MSWINDOWS}
-  {$MESSAGE ERROR 'This framework is only available for Windows at present.'}
+  {$MESSAGE ERROR 'This framework currently only supports Windows.'}
 {$ENDIF}
 
 {$WARN UNIT_PLATFORM OFF}    // Turn off UNIT_PLATFORM warning
