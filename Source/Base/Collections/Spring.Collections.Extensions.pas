@@ -281,6 +281,27 @@ type
     function TryGetLast(out value: T): Boolean; override;
   end;
 
+  TReversedEnumerable<T> = class(TEnumerableBase<T>)
+  private
+    type
+      TEnumerator = class(TEnumeratorBase<T>)
+      private
+        fList: IList<T>;
+        fCount: Integer;
+        fIndex: Integer;
+      protected
+        function GetCurrent: T; override;
+      public
+        constructor Create(const list: IList<T>);
+        function MoveNext: Boolean; override;
+      end;
+  private
+    fList: IList<T>;
+  public
+    constructor Create(const list: IList<T>);
+    function GetEnumerator: IEnumerator<T>; override;
+  end;
+
 implementation
 
 uses
@@ -839,6 +860,46 @@ begin
     fCurrentEnumerator := fSecond;
     Result := fCurrentEnumerator.MoveNext;
   end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TReversedEnumerable<T>'}
+
+constructor TReversedEnumerable<T>.Create(const list: IList<T>);
+begin
+  inherited Create;
+  fList := list;
+end;
+
+function TReversedEnumerable<T>.GetEnumerator: IEnumerator<T>;
+begin
+  Result := TEnumerator.Create(fList);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TReversedEnumerable<T>.TEnumerator'}
+
+constructor TReversedEnumerable<T>.TEnumerator.Create(const list: IList<T>);
+begin
+  inherited Create;
+  fList := list;
+  fCount := fList.Count;
+  fIndex := fCount;
+end;
+
+function TReversedEnumerable<T>.TEnumerator.GetCurrent: T;
+begin
+  Result := fList[fIndex];
+end;
+
+function TReversedEnumerable<T>.TEnumerator.MoveNext: Boolean;
+begin
+  Result := (fIndex > 0) and (fIndex <= fCount);
+  Dec(fIndex);
 end;
 
 {$ENDREGION}

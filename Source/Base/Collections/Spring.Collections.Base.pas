@@ -270,27 +270,6 @@ type
         constructor Create(const list: TListBase<T>);
         function MoveNext: Boolean; override;
       end;
-
-      TReversedEnumerable = class(TEnumerableBase<T>)
-      private
-        fList: TListBase<T>;
-        fReference: IInterface;
-      public
-        constructor Create(const list: TListBase<T>);
-        function GetEnumerator: IEnumerator<T>; override;
-      end;
-
-      TReversedEnumerator = class(TEnumeratorBase<T>)
-      private
-        fList: TListBase<T>;
-        fCount: Integer;
-        fIndex: Integer;
-      protected
-        function GetCurrent: T; override;
-      public
-        constructor Create(const list: TListBase<T>);
-        function MoveNext: Boolean; override;
-      end;
   private
     fComparer: IComparer<T>;
     fOnChanged: ICollectionChangedDelegate<T>;
@@ -878,10 +857,8 @@ function TEnumerableBase<T>.Reversed: IEnumerable<T>;
 var
   list: IList<T>;
 begin
-  list := TList<T>.Create;
-  list.AddRange(Self);
-  list.Reverse;
-  Result := list;
+  list := ToList;
+  Result := TReversedEnumerable<T>.Create(list);
 end;
 
 function TEnumerableBase<T>.Single: T;
@@ -1259,7 +1236,7 @@ end;
 
 function TListBase<T>.Reversed: IEnumerable<T>;
 begin
-  Result := TReversedEnumerable.Create(Self);
+  Result := TReversedEnumerable<T>.Create(Self);
 end;
 
 function TListBase<T>.Extract(const item: T): T;
@@ -1558,44 +1535,6 @@ end;
 function TListBase<T>.TEnumerator.GetCurrent: T;
 begin
   Result := fList[fIndex];
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TListBase<T>.TReversedEnumerator'}
-
-constructor TListBase<T>.TReversedEnumerator.Create(const list: TListBase<T>);
-begin
-  inherited Create;
-  fList := list;
-  fCount := fList.Count;
-  fIndex := fCount;
-end;
-
-function TListBase<T>.TReversedEnumerator.GetCurrent: T;
-begin
-  Result := fList[fIndex];
-end;
-
-function TListBase<T>.TReversedEnumerator.MoveNext: Boolean;
-begin
-  Result := (fIndex > 0) and (fIndex <= fCount);
-  Dec(fIndex);
-end;
-
-{ TListBase<T>.TReversedEnumerable }
-
-constructor TListBase<T>.TReversedEnumerable.Create(const list: TListBase<T>);
-begin
-  inherited Create;
-  fList := list;
-  fReference := list;
-end;
-
-function TListBase<T>.TReversedEnumerable.GetEnumerator: IEnumerator<T>;
-begin
-  Result := TReversedEnumerator.Create(fList);
 end;
 
 {$ENDREGION}
