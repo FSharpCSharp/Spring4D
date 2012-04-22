@@ -58,6 +58,7 @@ type
   protected
     procedure SetUp; override;
     procedure TearDown; override;
+    procedure TestListRemove;  // Empty
   published
     procedure TestListIsInitializedEmpty;
     procedure TestListCountWithAdd;
@@ -74,7 +75,6 @@ type
     procedure TestListMove;
     procedure TestListClear;
     procedure TestListLargeDelete;
-    procedure TestListRemove;
   end;
 
   TTestEmptyStringIntegerDictionary = class(TExceptionCheckerTestCase)
