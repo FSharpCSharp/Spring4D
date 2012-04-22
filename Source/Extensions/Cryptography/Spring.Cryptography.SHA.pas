@@ -308,12 +308,19 @@ begin
 end;
 
 function Ch256(x, y, z: LongWord): LongWord; assembler;
+{$IFNDEF CPUX64}
 asm
   and   edx,eax
   not   eax
   and   eax,ecx
   xor   eax,edx
 end;
+{$ELSE}
+begin
+  Result := (x and y) xor ((not x) and z);
+end;
+{$ENDIF}
+
 
 function Maj256(x, y, z: LongWord): LongWord; assembler;
 {$IFNDEF CPUX64}
@@ -364,6 +371,7 @@ begin
 end;
 
 function Kt1(t: Byte): LongWord; assembler;
+{$IFNDEF CPUX64}
 asm
   cmp   al,19
   jg    @@1
@@ -383,7 +391,32 @@ asm
   mov   eax,0ca62c1d6h
 @@end:
 end;
+{$ELSE}
+begin
+  if (t >= 0) and (t <= 19) then
+  begin
+    Result := $5A827999;
+  end
+  else if (t >= 20) and (t <= 39) then
+  begin
+    Result := $6ED9EBA1;
+  end
+  else if (t >= 40) and (t <= 59) then
+  begin
+    Result := $8F1BBCDC;
+  end
+  else if (t >= 60) and (t <= 79) then
+  begin
+    Result := $CA62C1D6;
+  end
+  else
+  begin
+    Result := 0;
+  end;
+end;
+{$ENDIF}
 
+{$POINTERMATH ON}
 procedure sha1_compress(var md: TSHA256Ctx);
 var
   S: array[0..4] of LongWord;
@@ -392,7 +425,7 @@ var
 begin
   Move(md.state, S, SizeOf(S));
   for i := 0 to 15 do
-    W[i] := Endian(PLongWord(LongWord(@md.buf) + i * 4)^);
+    W[i] := Endian(PLongWord(@md.buf)[i]);
   for i := 16 to 79 do
     W[i] := rol(W[i - 3] xor W[i - 8] xor W[i - 14] xor W[i - 16], 1);
     for i := 0 to 79 do
@@ -417,7 +450,7 @@ var
 begin
   Move(md.state, S, SizeOf(S));
   for i := 0 to 15 do
-    W[i] := Endian(PLongWord(LongWord(@md.buf) + i * 4)^);
+    W[i] := Endian(PLongWord(@md.buf)[i]);
   for i := 16 to 63 do
     W[i] := F1256(W[i - 2]) + W[i - 7] + F0256(W[i - 15]) + W[i - 16];
   for i := 0 to 63 do
@@ -550,7 +583,7 @@ begin
   begin
     md.buf[md.curlen] := PByte(buf)^;
     Inc(md.curlen);
-    buf := Ptr(LongWord(buf) + 1);
+    Inc(PByte(buf)); // buf := Ptr(LongWord(buf) + 1);
     if (md.curlen = 64) then
     begin
       if sz = 256 then
@@ -642,7 +675,8 @@ begin
   while (len > 0) do
   begin
     md.buf[md.curlen] := PByte(buf)^;
-    md.curlen := md.curlen + 1; buf := Ptr(LongWord(buf) + 1);
+    md.curlen := md.curlen + 1;
+    Inc(PByte(buf)); // buf := Ptr(LongWord(buf) + 1);
     if (md.curlen = 128) then
     begin
       sha512_compress(md);

@@ -41,9 +41,16 @@ function Ror64(x: Int64; y: Byte): Int64;
 implementation
 
 function Endian(x: LongWord): LongWord;
+{$IFNDEF CPUX64}
 asm
   bswap eax
 end;
+{$ELSE}
+begin
+  x := (x shr 16) + (x shl 16);
+  Result := ((x shl 8) and $FF00FF00) + ((x shr 8) and $00FF00FF);
+end;
+{$ENDIF}
 
 function Endian64(x: Int64): Int64;
 begin
@@ -58,16 +65,28 @@ begin
 end;
 
 function Rol(x: LongWord; y: Byte): LongWord;
+{$IFNDEF CPUX64}
 asm
   mov   cl,dl
   Rol   eax,cl
 end;
+{$ELSE}
+begin
+  Result := (x shl y) OR (x shr (32 - y));
+end;
+{$ENDIF}
 
 function Ror(x: LongWord; y: Byte): LongWord;
+{$IFNDEF CPUX64}
 asm
   mov   cl,dl
   Ror   eax,cl
 end;
+{$ELSE}
+begin
+  Result := (x shr y) OR (x shl (32 - y));
+end;
+{$ENDIF}
 
 function Ror64(x: Int64; y: Byte): Int64;
 begin
