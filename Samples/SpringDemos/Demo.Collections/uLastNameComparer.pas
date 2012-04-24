@@ -4,7 +4,7 @@ interface
 
 uses
       uCustomer
-    , System.Generics.Defaults
+    , {$IF CompilerVersion >= 23.0}System.Generics.Defaults{$ELSE}Generics.Defaults{$IFEND}
     ;
 
 type

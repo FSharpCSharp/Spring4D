@@ -16,7 +16,7 @@ uses
      , uLastNameComparer
      , Spring.Collections
      , Spring.Collections.Lists
-     , System.Generics.Defaults
+     , {$IF CompilerVersion >= 23.0}System.Generics.Defaults{$ELSE}Generics.Defaults{$IFEND}
      ;
 
 procedure UnsortedCustomers;

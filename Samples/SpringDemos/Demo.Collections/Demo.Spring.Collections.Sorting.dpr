@@ -5,13 +5,13 @@ program Demo.Spring.Collections.Sorting;
 {$R *.res}
 
 uses
-  System.SysUtils,
-  uCustomer in 'C:\Users\nhodges\Documents\RAD Studio\Projects\uCustomer.pas',
-  uCustomerListFiller in 'C:\Users\nhodges\Documents\RAD Studio\Projects\uCustomerListFiller.pas',
-  uSortCustomers in 'C:\Users\nhodges\Documents\RAD Studio\Projects\uSortCustomers.pas',
-  uCustomerToConsole in 'C:\Users\nhodges\Documents\RAD Studio\Projects\uCustomerToConsole.pas',
-  uSalaryComparer in 'C:\Users\nhodges\Documents\RAD Studio\Projects\uSalaryComparer.pas',
-  uLastNameComparer in 'C:\Users\nhodges\Documents\RAD Studio\Projects\uLastNameComparer.pas';
+  {$IF CompilerVersion >= 23.0}System.SysUtils{$ELSE}SysUtils{$IFEND},
+  uCustomer in 'uCustomer.pas',
+  uCustomerListFiller in 'uCustomerListFiller.pas',
+  uSortCustomers in 'uSortCustomers.pas',
+  uCustomerToConsole in 'uCustomerToConsole.pas',
+  uSalaryComparer in 'uSalaryComparer.pas',
+  uLastNameComparer in 'uLastNameComparer.pas';
 
 begin
   try
