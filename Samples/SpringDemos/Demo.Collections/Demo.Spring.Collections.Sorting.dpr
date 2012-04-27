@@ -2,16 +2,12 @@ program Demo.Spring.Collections.Sorting;
 
 {$APPTYPE CONSOLE}
 
-{$R *.res}
-
 uses
-  {$IF CompilerVersion >= 23.0}System.SysUtils{$ELSE}SysUtils{$IFEND},
+  SysUtils,
   uCustomer in 'uCustomer.pas',
   uCustomerListFiller in 'uCustomerListFiller.pas',
   uSortCustomers in 'uSortCustomers.pas',
-  uCustomerToConsole in 'uCustomerToConsole.pas',
-  uSalaryComparer in 'uSalaryComparer.pas',
-  uLastNameComparer in 'uLastNameComparer.pas';
+  uCustomerToConsole in 'uCustomerToConsole.pas';
 
 begin
   try

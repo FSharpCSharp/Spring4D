@@ -57,8 +57,6 @@
 			<DCCReference Include="uCustomerListFiller.pas"/>
 			<DCCReference Include="uSortCustomers.pas"/>
 			<DCCReference Include="uCustomerToConsole.pas"/>
-			<DCCReference Include="uSalaryComparer.pas"/>
-			<DCCReference Include="uLastNameComparer.pas"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>

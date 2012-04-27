@@ -12,12 +12,18 @@ uses
        uCustomer
      , uCustomerListFiller
      , uCustomerToConsole
-     , uSalaryComparer
-     , uLastNameComparer
      , Spring.Collections
-     , Spring.Collections.Lists
-     , {$IF CompilerVersion >= 23.0}System.Generics.Defaults{$ELSE}Generics.Defaults{$IFEND}
-     ;
+     , SysUtils;
+
+function CompareBySalary(const Left, Right: TCustomer): Integer;
+begin
+  Result := Left.Salary - Right.Salary;
+end;
+
+function CompareByName(const Left, Right: TCustomer): Integer;
+begin
+  Result := CompareText(Left.LastName, Right.LastName);
+end;
 
 procedure UnsortedCustomers;
 var
@@ -31,26 +37,21 @@ end;
 procedure SortCustomersBySalary;
 var
   Customers: IList<TCustomer>;
-  SalaryComparer: IComparer<TCustomer>;
 begin
-  SalaryComparer := TSalaryComparer.Create;
-  Customers := TCollections.CreateObjectList<TCustomer>(True, SalaryComparer);
+  Customers := TCollections.CreateObjectList<TCustomer>(True);
   FillListWithCustomers(Customers);
-  Customers.Sort;
+  Customers.Sort(CompareBySalary);
   WriteCustomersToConsole(Customers);
 end;
 
 procedure SortCustomerByLastName;
 var
   Customers: IList<TCustomer>;
-  LastNameComparer: IComparer<TCustomer>;
 begin
-  LastNameComparer := TLastNameComparer.Create;
-  Customers := TCollections.CreateObjectList<TCustomer>(True, LastNameComparer);
+  Customers := TCollections.CreateObjectList<TCustomer>(True);
   FillListWithCustomers(Customers);
-  Customers.Sort;
+  Customers.Sort(CompareByName);
   WriteCustomersToConsole(Customers);
 end;
-
 
 end.
