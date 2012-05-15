@@ -202,7 +202,15 @@ type
     procedure TestInjectField;
   end;
 
+  TTestResolverOverride = class(TContainerTestCase)
+  published
+    procedure TestResolve;
+  end;
+
 implementation
+
+uses
+  Spring.Container.Resolvers;
 
 
 {$REGION 'TContainerTestCase'}
@@ -908,6 +916,23 @@ begin
     .InjectField('fNameService', TValue.From<INameService>(TNameService.Create));
   fContainer.Build;
   CheckTrue(fContainer.Resolve<IPrimitive>.NameService <> nil)
+end;
+
+{ TTestResolverOverride }
+
+procedure TTestResolverOverride.TestResolve;
+begin
+  fContainer.RegisterType<TDynamicNameService>.Implements<INameService>('dynamic');
+  fContainer.Build;
+
+  CheckEquals('test', fContainer.Resolve<INameService>(
+    TOrderedParametersOverride.Create(['test'])).Name);
+
+  CheckEquals('test', fContainer.Resolve<INameService>('dynamic',
+    TOrderedParametersOverride.Create(['test'])).Name);
+
+  CheckEquals('test', fContainer.Resolve<INameService>(
+    TParameterOverride.Create('name', 'test')).Name);
 end;
 
 end.

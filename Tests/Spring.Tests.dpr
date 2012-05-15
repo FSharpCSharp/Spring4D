@@ -140,7 +140,8 @@ begin
     TTestTransientLifetimeManager.Suite,
     TTestDefaultResolve.Suite,
     TTestInjectionByValue.Suite,
-    TTestObjectPool.Suite
+    TTestObjectPool.Suite,
+    TTestResolverOverride.Suite
   ]);
 
   RegisterTests('Spring.Extensions.Utils', [

@@ -51,7 +51,8 @@ type
     property Model: TComponentModel read fModel;
   public
     constructor Create(model: TComponentModel);
-    function GetInstance: TObject; virtual; abstract;
+    function GetInstance: TObject; overload;
+    function GetInstance(resolver: IDependencyResolver): TObject; overload; virtual; abstract;
     procedure ReleaseInstance(instance: TObject); virtual; abstract;
   end;
 
@@ -60,13 +61,13 @@ type
     fInstance: TFunc<TObject>;
   public
     destructor Destroy; override;
-    function GetInstance: TObject; override;
+    function GetInstance(resolver: IDependencyResolver): TObject; override;
     procedure ReleaseInstance(instance: TObject); override;
   end;
 
   TTransientLifetimeManager = class(TLifetimeManagerBase)
   public
-    function GetInstance: TObject; override;
+    function GetInstance(resolver: IDependencyResolver): TObject; override;
     procedure ReleaseInstance(instance: TObject); override;
   end;
 
@@ -79,7 +80,7 @@ type
   public
     constructor Create(model: TComponentModel);
     destructor Destroy; override;
-    function GetInstance: TObject; override;
+    function GetInstance(resolver: IDependencyResolver): TObject; override;
     procedure ReleaseInstance(instance: TObject); override;
   end;
 
@@ -88,7 +89,7 @@ type
     fPool: IObjectPool;
   public
     constructor Create(model: TComponentModel);
-    function GetInstance: TObject; override;
+    function GetInstance(resolver: IDependencyResolver): TObject; override;
     procedure ReleaseInstance(instance: TObject); override;
   end;
 
@@ -161,6 +162,11 @@ begin
   Result := fModel.ComponentActivator;
 end;
 
+function TLifetimeManagerBase.GetInstance: TObject;
+begin
+  Result := GetInstance(nil);
+end;
+
 {$ENDREGION}
 
 
@@ -175,14 +181,14 @@ begin
   inherited Destroy;
 end;
 
-function TSingletonLifetimeManager.GetInstance: TObject;
+function TSingletonLifetimeManager.GetInstance(resolver: IDependencyResolver): TObject;
 var
   newInstance: TObject;
   localInstance: TFunc<TObject>;
 begin
   if not Assigned(fInstance) then
   begin
-    newInstance := ComponentActivator.CreateInstance;
+    newInstance := ComponentActivator.CreateInstance(resolver);
     localInstance := TObjectHolder<TObject>.Create(newInstance);
 {$IFDEF DELPHIXE_UP}
     if TInterlocked.CompareExchange(PPointer(@fInstance)^, PPointer(@localInstance)^, nil) = nil then
@@ -206,9 +212,9 @@ end;
 
 {$REGION 'TTransientLifetimeManager'}
 
-function TTransientLifetimeManager.GetInstance: TObject;
+function TTransientLifetimeManager.GetInstance(resolver: IDependencyResolver): TObject;
 begin
-  Result := ComponentActivator.CreateInstance;
+  Result := ComponentActivator.CreateInstance(resolver);
   DoAfterConstruction(Result);
 end;
 
@@ -251,7 +257,8 @@ begin
   end;
 end;
 
-function TSingletonPerThreadLifetimeManager.GetInstance: TObject;
+function TSingletonPerThreadLifetimeManager.GetInstance(
+  resolver: IDependencyResolver): TObject;
 var
   threadID: THandle;
   instance: TObject;
@@ -262,7 +269,7 @@ begin
   try
     if not fInstances.TryGetValue(threadID, holder) then
     begin
-      instance := ComponentActivator.CreateInstance;
+      instance := ComponentActivator.CreateInstance(resolver);
       holder := CreateHolder(instance);
       fInstances.AddOrSetValue(threadID, holder);
       DoAfterConstruction(holder);
@@ -288,7 +295,7 @@ begin
   fPool := TSimpleObjectPool.Create(model.ComponentActivator, model.MinPoolsize, model.MaxPoolsize);
 end;
 
-function TPooledLifetimeManager.GetInstance: TObject;
+function TPooledLifetimeManager.GetInstance(resolver: IDependencyResolver): TObject;
 begin
   Result := fPool.GetInstance;
   DoAfterConstruction(Result);

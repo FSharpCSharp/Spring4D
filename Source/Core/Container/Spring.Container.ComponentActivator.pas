@@ -49,7 +49,8 @@ type
     property Model: TComponentModel read fModel;
   public
     constructor Create(model: TComponentModel);
-    function CreateInstance: TObject; virtual; abstract;
+    function CreateInstance: TObject; overload;
+    function CreateInstance(resolver: IDependencyResolver): TObject; overload; virtual; abstract;
   end;
 
   ///	<summary>
@@ -62,7 +63,7 @@ type
     procedure ExecuteInjections(instance: TObject; const injections: IList<IInjection>);
   public
     constructor Create(model: TComponentModel; const resolver: IDependencyResolver);
-    function CreateInstance: TObject; override;
+    function CreateInstance(resolver: IDependencyResolver): TObject; override;
   end;
 
   ///	<summary>
@@ -70,7 +71,7 @@ type
   ///	</summary>
   TDelegateComponentActivator = class(TComponentActivatorBase)
   public
-    function CreateInstance: TObject; override;
+    function CreateInstance(resolver: IDependencyResolver): TObject; override;
   end;
 
 implementation
@@ -88,6 +89,11 @@ begin
   fModel := model;
 end;
 
+function TComponentActivatorBase.CreateInstance: TObject;
+begin
+  Result := CreateInstance(nil);
+end;
+
 {$ENDREGION}
 
 
@@ -100,7 +106,8 @@ begin
   fResolver := resolver;
 end;
 
-function TReflectionComponentActivator.CreateInstance: TObject;
+function TReflectionComponentActivator.CreateInstance(
+  resolver: IDependencyResolver): TObject;
 var
   constructorInjection: IInjection;
   constructorArguments: TArray<TValue>;
@@ -110,7 +117,10 @@ begin
   begin
     raise EActivatorException.CreateRes(@SUnsatisfiedConstructor);
   end;
-  constructorArguments := fResolver.ResolveDependencies(constructorInjection);
+  if Assigned(resolver) then
+    constructorArguments := resolver.ResolveDependencies(constructorInjection)
+  else
+    constructorArguments := fResolver.ResolveDependencies(constructorInjection);
   Result := TActivator.CreateInstance(
     fModel.ComponentType,
     constructorInjection.Target.AsMethod,
@@ -168,7 +178,8 @@ end;
 
 {$REGION 'TDelegateComponentActivator'}
 
-function TDelegateComponentActivator.CreateInstance: TObject;
+function TDelegateComponentActivator.CreateInstance(
+  resolver: IDependencyResolver): TObject;
 begin
   if not Assigned(fModel.ActivatorDelegate) then
   begin
@@ -178,5 +189,6 @@ begin
 end;
 
 {$ENDREGION}
+
 
 end.

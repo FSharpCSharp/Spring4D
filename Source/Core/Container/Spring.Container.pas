@@ -79,9 +79,13 @@ type
     procedure Build;
 
     function Resolve<T>: T; overload;
+    function Resolve<T>(resolverOverride: IResolverOverride): T; overload;
     function Resolve<T>(const name: string): T; overload;
+    function Resolve<T>(const name: string; resolverOverride: IResolverOverride): T; overload;
     function Resolve(typeInfo: PTypeInfo): TValue; overload;
+    function Resolve(typeInfo: PTypeInfo; resolverOverride: IResolverOverride): TValue; overload;
     function Resolve(const name: string): TValue; overload;
+    function Resolve(const name: string; resolverOverride: IResolverOverride): TValue; overload;
 
     function ResolveAll<TServiceType>: TArray<TServiceType>; overload;
     function ResolveAll(serviceType: PTypeInfo): TArray<TValue>; overload;
@@ -270,11 +274,28 @@ begin
   Result := value.AsType<T>;
 end;
 
+function TContainer.Resolve<T>(resolverOverride: IResolverOverride): T;
+var
+  value: TValue;
+begin
+  value := Resolve(TypeInfo(T), resolverOverride);
+  Result := value.AsType<T>;
+end;
+
 function TContainer.Resolve<T>(const name: string): T;
 var
   value: TValue;
 begin
   value := Resolve(name);
+  Result := value.AsType<T>;
+end;
+
+function TContainer.Resolve<T>(const name: string;
+  resolverOverride: IResolverOverride): T;
+var
+  value: TValue;
+begin
+  value := Resolve(name, resolverOverride);
   Result := value.AsType<T>;
 end;
 
@@ -296,9 +317,22 @@ begin
   end;
 end;
 
+function TContainer.Resolve(typeInfo: PTypeInfo;
+  resolverOverride: IResolverOverride): TValue;
+begin
+  Result := fServiceResolver.Resolve(typeInfo, resolverOverride);
+end;
+
 function TContainer.Resolve(const name: string): TValue;
 begin
   Result := fServiceResolver.Resolve(name);
+end;
+
+
+function TContainer.Resolve(const name: string;
+  resolverOverride: IResolverOverride): TValue;
+begin
+  Result := fServiceResolver.Resolve(name, resolverOverride);
 end;
 
 function TContainer.ResolveAll<TServiceType>: TArray<TServiceType>;

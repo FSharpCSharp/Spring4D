@@ -35,7 +35,6 @@ uses
   TypInfo,
   Spring,
   Spring.Collections,
-  //Spring.Collections.Lists,
   Spring.Container.Core;
 
 type
@@ -54,18 +53,18 @@ type
 
     function CanResolveDependency(dependency: TRttiType): Boolean; overload;
     function CanResolveDependency(dependency: TRttiType; const argument: TValue): Boolean; overload;
-    function ResolveDependency(dependency: TRttiType): TValue; overload;
-    function ResolveDependency(dependency: TRttiType; const argument: TValue): TValue; overload;
+    function ResolveDependency(dependency: TRttiType): TValue; overload; virtual;
+    function ResolveDependency(dependency: TRttiType; const argument: TValue): TValue; overload; virtual;
 
     function CanResolveDependencies(dependencies: TArray<TRttiType>): Boolean; overload;
     function CanResolveDependencies(dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean; overload;
-    function ResolveDependencies(dependencies: TArray<TRttiType>): TArray<TValue>; overload;
-    function ResolveDependencies(dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): TArray<TValue>; overload;
+    function ResolveDependencies(dependencies: TArray<TRttiType>): TArray<TValue>; overload; virtual;
+    function ResolveDependencies(dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): TArray<TValue>; overload; virtual;
 
     function CanResolveDependencies(const Inject: IInjection): Boolean; overload;
     function CanResolveDependencies(const Inject: IInjection; const arguments: TArray<TValue>): Boolean; overload;
-    function ResolveDependencies(const Inject: IInjection): TArray<TValue>; overload;
-    function ResolveDependencies(const Inject: IInjection; const arguments: TArray<TValue>): TArray<TValue>; overload;
+    function ResolveDependencies(const Inject: IInjection): TArray<TValue>; overload; virtual;
+    function ResolveDependencies(const Inject: IInjection; const arguments: TArray<TValue>): TArray<TValue>; overload; virtual;
   end;
 
   TServiceResolver = class(TInterfacedObject, IServiceResolver, IInterface)
@@ -73,14 +72,66 @@ type
     fContext: IContainerContext;
     fRegistry: IComponentRegistry;
   protected
-    function DoResolve(model: TComponentModel; serviceType: PTypeInfo): TValue;
+    function DoResolve(model: TComponentModel; serviceType: PTypeInfo;
+      resolver: IDependencyResolver): TValue;
   public
     constructor Create(context: IContainerContext; const registry: IComponentRegistry);
     function CanResolve(serviceType: PTypeInfo): Boolean; overload;
     function CanResolve(const name: string): Boolean; overload;
     function Resolve(serviceType: PTypeInfo): TValue; overload;
+    function Resolve(serviceType: PTypeInfo; resolverOverride: IResolverOverride): TValue; overload;
     function Resolve(const name: string): TValue; overload;
+    function Resolve(const name: string; resolverOverride: IResolverOverride): TValue; overload;
     function ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
+  end;
+
+  TResolverOverride = class(TInterfacedObject, IResolverOverride, IInterface)
+  public
+    function GetResolver(context: IContainerContext): IDependencyResolver; virtual; abstract;
+  end;
+
+  TParameterOverride = class(TResolverOverride)
+  private
+    fName: string;
+    fValue: TValue;
+
+    type
+      TResolver = class(TDependencyResolver)
+      private
+        fName: string;
+        fValue: TValue;
+        fInject: IInjection;
+      public
+        constructor Create(const context: IContainerContext; const registry: IComponentRegistry;
+          const name: string; const value: TValue);
+
+        function ResolveDependencies(const Inject: IInjection): TArray<TValue>; override;
+        function ResolveDependencies(dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): TArray<TValue>; override;
+      end;
+  public
+    constructor Create(const name: string; const value: TValue);
+
+    function GetResolver(context: IContainerContext): IDependencyResolver; override;
+  end;
+
+  TOrderedParametersOverride = class(TResolverOverride)
+  private
+    fArguments: TArray<TValue>;
+
+    type
+      TResolver = class(TDependencyResolver)
+      private
+        fArguments: TArray<TValue>;
+      public
+        constructor Create(const context: IContainerContext; const registry: IComponentRegistry;
+          arguments: TArray<TValue>);
+
+        function ResolveDependencies(const Inject: IInjection): TArray<TValue>; override;
+      end;
+  public
+    constructor Create(const arguments: array of TValue);
+
+    function GetResolver(context: IContainerContext): IDependencyResolver; override;
   end;
 
 implementation
@@ -381,7 +432,7 @@ begin
 end;
 
 function TServiceResolver.DoResolve(model: TComponentModel;
-  serviceType: PTypeInfo): TValue;
+  serviceType: PTypeInfo; resolver: IDependencyResolver): TValue;
 var
   instance: TObject;
   localInterface: Pointer;
@@ -392,7 +443,7 @@ begin
   begin
     raise EResolveException.CreateRes(@SLifetimeManagerMissing);
   end;
-  instance := model.LifetimeManager.GetInstance;
+  instance := model.LifetimeManager.GetInstance(resolver);
   Assert(instance <> nil, 'instance should not be nil.');
   case serviceType.Kind of
     tkClass:
@@ -408,10 +459,17 @@ begin
 end;
 
 function TServiceResolver.Resolve(serviceType: PTypeInfo): TValue;
+begin
+  Result := Resolve(serviceType, nil);
+end;
+
+function TServiceResolver.Resolve(serviceType: PTypeInfo;
+  resolverOverride: IResolverOverride): TValue;
 var
   serviceName: string;
   models: IEnumerable<TComponentModel>;
   model: TComponentModel;
+  resolver: IDependencyResolver;
 begin
   serviceName := GetTypeName(serviceType);
   models := fRegistry.FindAll(serviceType);
@@ -433,13 +491,24 @@ begin
     end;
   end;
   model := models.First;
-  Result := DoResolve(model, serviceType);
+  if Assigned(resolverOverride) then
+    resolver := resolverOverride.GetResolver(fContext)
+  else
+    resolver := nil;
+  Result := DoResolve(model, serviceType, resolver);
 end;
 
 function TServiceResolver.Resolve(const name: string): TValue;
+begin
+  Result := Resolve(name, nil);
+end;
+
+function TServiceResolver.Resolve(const name: string;
+  resolverOverride: IResolverOverride): TValue;
 var
   model: TComponentModel;
   serviceType: PTypeInfo;
+  resolver: IDependencyResolver;
 begin
   model := fRegistry.FindOne(name);
   if model = nil then
@@ -447,7 +516,11 @@ begin
     raise EResolveException.CreateResFmt(@SInvalidServiceName, [name]);
   end;
   serviceType := model.GetServiceType(name);
-  Result := DoResolve(model, serviceType);
+  if Assigned(resolverOverride) then
+    resolver := resolverOverride.GetResolver(fContext)
+  else
+    resolver := nil;
+  Result := DoResolve(model, serviceType, resolver);
 end;
 
 function TServiceResolver.ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
@@ -461,10 +534,125 @@ begin
   for i := 0 to models.Count - 1 do
   begin
     model := models[i];
-    Result[i] := DoResolve(model, serviceType);
+    Result[i] := DoResolve(model, serviceType, nil);
   end;
 end;
 
 {$ENDREGION}
+
+
+{$REGION 'TOrderedParametersOverride'}
+
+constructor TOrderedParametersOverride.Create(const arguments: array of TValue);
+var
+  i: Integer;
+begin
+  SetLength(fArguments, Length(arguments));
+  for i := Low(arguments) to High(arguments) do
+    fArguments[i] := arguments[i];
+end;
+
+function TOrderedParametersOverride.GetResolver(context: IContainerContext): IDependencyResolver;
+begin
+  Result := TResolver.Create(context, context.ComponentRegistry, fArguments);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TOrderedParametersOverride.TResolver'}
+
+constructor TOrderedParametersOverride.TResolver.Create(const context: IContainerContext;
+  const registry: IComponentRegistry; arguments: TArray<TValue>);
+begin
+  inherited Create(context, registry);
+  fArguments := arguments;
+end;
+
+function TOrderedParametersOverride.TResolver.ResolveDependencies(
+  const Inject: IInjection): TArray<TValue>;
+begin
+  Result := fArguments;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TParameterOverride'}
+
+constructor TParameterOverride.Create(const name: string; const value: TValue);
+begin
+  fName := name;
+  fValue := value;
+end;
+
+function TParameterOverride.GetResolver(
+  context: IContainerContext): IDependencyResolver;
+begin
+  Result := TResolver.Create(context, context.ComponentRegistry, fName, fValue);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TParameterOverride.TResolver'}
+
+constructor TParameterOverride.TResolver.Create(
+  const context: IContainerContext; const registry: IComponentRegistry;
+  const name: string; const value: TValue);
+begin
+  inherited Create(context, registry);
+  fName := name;
+  fValue := value;
+end;
+
+function TParameterOverride.TResolver.ResolveDependencies(
+  const Inject: IInjection): TArray<TValue>;
+begin
+  fInject := Inject;
+  Result := inherited;
+end;
+
+function TParameterOverride.TResolver.ResolveDependencies(
+  dependencies: TArray<TRttiType>;
+  const arguments: TArray<TValue>): TArray<TValue>;
+var
+  dependency: TRttiType;
+  hasArgument: Boolean;
+  i: Integer;
+  parameters: TArray<TRttiParameter>;
+begin
+  hasArgument := Length(arguments) > 0;
+  if hasArgument and (Length(arguments) <> Length(dependencies)) then
+  begin
+    raise EResolveException.CreateRes(@SUnsatisfiedResolutionArgumentCount);
+  end;
+  SetLength(Result, Length(dependencies));
+  if hasArgument then
+  begin
+    parameters := fInject.Target.AsMethod.GetParameters;
+    for i := 0 to High(dependencies) do
+    begin
+      if SameText(parameters[i].Name, fName) then
+        Result[i] := fValue
+      else
+      begin
+        dependency := dependencies[i];
+        Result[i] := ResolveDependency(dependency, arguments[i]);
+      end;
+    end;
+  end
+  else
+  begin
+    for i := 0 to High(dependencies) do
+    begin
+      dependency := dependencies[i];
+      Result[i] := ResolveDependency(dependency, TValue.Empty);
+    end;
+  end;
+end;
+
+{$ENDREGION}
+
 
 end.

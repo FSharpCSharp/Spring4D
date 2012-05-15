@@ -55,7 +55,8 @@ type
     fModel: TComponentModel;
   public
     constructor Create(model: TComponentModel);
-    function CreateInstance: TObject;
+    function CreateInstance: TObject; overload;
+    function CreateInstance(resolver: IDependencyResolver): TObject; overload;
     property Model: TComponentModel read fModel;
   end;
 
@@ -194,6 +195,12 @@ end;
 function TMockObjectActivator.CreateInstance: TObject;
 begin
   Result := TMockObject.Create;
+end;
+
+function TMockObjectActivator.CreateInstance(
+  resolver: IDependencyResolver): TObject;
+begin
+  Result := CreateInstance;
 end;
 
 { TMockContext }

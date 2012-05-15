@@ -117,14 +117,19 @@ type
   ///	</summary>
   ILifetimeManager = interface
     ['{7DF9A902-B07A-468B-B201-B4561A921CF5}']
-    function GetInstance: TObject;
+    function GetInstance: TObject; overload;
+    function GetInstance(resolver: IDependencyResolver): TObject; overload;
     procedure ReleaseInstance(instance: TObject);
   end;
 
   ///	<summary>
   ///	  Component Activator
   ///	</summary>
-  IComponentActivator = IObjectActivator;
+  IComponentActivator = interface(IObjectActivator)
+    ['{18E6DF78-C947-484F-A0A8-D9A5B0BEC887}']
+    function CreateInstance(resolver: IDependencyResolver): TObject; overload;
+  end;
+
 
   ///	<summary>
   ///	  Represents an Inject of a member. e.g. constructor, method, property
@@ -177,6 +182,14 @@ type
   end;
 
   ///	<summary>
+  ///	  Overrides the resolver.
+  ///	</summary>
+  IResolverOverride = interface
+    ['{2DA386A3-949C-451F-BF22-017668689591}']
+    function GetResolver(context: IContainerContext): IDependencyResolver;
+  end;
+
+  ///	<summary>
   ///	  Resolves services.
   ///	</summary>
   IServiceResolver = interface
@@ -184,7 +197,9 @@ type
     function CanResolve(serviceType: PTypeInfo): Boolean; overload;
     function CanResolve(const name: string): Boolean; overload;
     function Resolve(serviceType: PTypeInfo): TValue; overload;
+    function Resolve(serviceType: PTypeInfo; resolverOverride: IResolverOverride): TValue; overload;
     function Resolve(const name: string): TValue; overload;
+    function Resolve(const name: string; resolverOverride: IResolverOverride): TValue; overload;
     function ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
   end;
 

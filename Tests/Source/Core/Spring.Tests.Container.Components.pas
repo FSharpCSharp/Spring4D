@@ -64,6 +64,11 @@ type
     const NameString: string = 'Another Name';
   end;
 
+  TDynamicNameService = class(TNameService)
+  public
+    constructor Create(const name: string);
+  end;
+
   {$ENDREGION}
 
 
@@ -338,6 +343,14 @@ end;
 function TAnotherNameService.GetName: string;
 begin
   Result := fName;
+end;
+
+{ TDynamicNameService }
+
+constructor TDynamicNameService.Create(const name: string);
+begin
+  inherited Create;
+  fName := name;
 end;
 
 { TAgeServiceImpl }
