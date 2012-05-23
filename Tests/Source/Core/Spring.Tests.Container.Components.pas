@@ -66,7 +66,9 @@ type
 
   TDynamicNameService = class(TNameService)
   public
-    constructor Create(const name: string);
+    constructor Create(const name: string); overload;
+    constructor Create(obj: TObject); overload;
+    constructor Create(const name: string; obj: TObject); overload;
   end;
 
   {$ENDREGION}
@@ -351,6 +353,18 @@ constructor TDynamicNameService.Create(const name: string);
 begin
   inherited Create;
   fName := name;
+end;
+
+constructor TDynamicNameService.Create(obj: TObject);
+begin
+  inherited Create;
+  fName := obj.ToString;
+end;
+
+constructor TDynamicNameService.Create(const name: string; obj: TObject);
+begin
+  inherited Create;
+  fName := name + obj.ToString;
 end;
 
 { TAgeServiceImpl }

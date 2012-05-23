@@ -59,7 +59,7 @@ type
   TReflectionComponentActivator = class(TComponentActivatorBase)
   private
     fResolver: IDependencyResolver;
-    function GetEligibleConstructor(model: TComponentModel): IInjection; virtual;
+    function GetEligibleConstructor(model: TComponentModel; resolver: IDependencyResolver): IInjection; virtual;
     procedure ExecuteInjections(instance: TObject; const injections: IList<IInjection>);
   public
     constructor Create(model: TComponentModel; const resolver: IDependencyResolver);
@@ -112,7 +112,7 @@ var
   constructorInjection: IInjection;
   constructorArguments: TArray<TValue>;
 begin
-  constructorInjection := GetEligibleConstructor(fModel);
+  constructorInjection := GetEligibleConstructor(fModel, resolver);
   if constructorInjection = nil then
   begin
     raise EActivatorException.CreateRes(@SUnsatisfiedConstructor);
@@ -145,7 +145,7 @@ begin
 end;
 
 function TReflectionComponentActivator.GetEligibleConstructor(
-  model: TComponentModel): IInjection;
+  model: TComponentModel; resolver: IDependencyResolver): IInjection;
 var
   candidate: IInjection;
   winner: IInjection;
@@ -154,6 +154,9 @@ begin
   winner := nil;
   maxCount := -1;
 
+  if not Assigned(resolver) then
+    resolver := fResolver;
+
   for candidate in model.ConstructorInjections do
   begin
     if candidate.Target.HasCustomAttribute<InjectAttribute> then
@@ -161,7 +164,7 @@ begin
       winner := candidate;
       Break;
     end;
-    if fResolver.CanResolveDependencies(candidate) then
+    if resolver.CanResolveDependencies(candidate) then
     begin
       if candidate.DependencyCount > maxCount then
       begin

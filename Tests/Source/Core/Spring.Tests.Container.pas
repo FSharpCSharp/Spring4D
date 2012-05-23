@@ -203,8 +203,15 @@ type
   end;
 
   TTestResolverOverride = class(TContainerTestCase)
+  private
+    fDummy: TObject;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
   published
     procedure TestResolve;
+    procedure TestResolveWithClass;
+    procedure TestResolveWithMultipleParams;
   end;
 
 implementation
@@ -920,6 +927,18 @@ end;
 
 { TTestResolverOverride }
 
+procedure TTestResolverOverride.SetUp;
+begin
+  inherited;
+  fDummy := TObject.Create;
+end;
+
+procedure TTestResolverOverride.TearDown;
+begin
+  inherited;
+  fDummy.Free;
+end;
+
 procedure TTestResolverOverride.TestResolve;
 begin
   fContainer.RegisterType<TDynamicNameService>.Implements<INameService>('dynamic');
@@ -933,6 +952,30 @@ begin
 
   CheckEquals('test', fContainer.Resolve<INameService>(
     TParameterOverride.Create('name', 'test')).Name);
+end;
+
+procedure TTestResolverOverride.TestResolveWithClass;
+begin
+  fContainer.RegisterType<TDynamicNameService>.Implements<INameService>('dynamic');
+  fContainer.Build;
+
+  CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>(
+    TOrderedParametersOverride.Create([fDummy])).Name);
+
+  CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>(
+    TParameterOverride.Create('obj', fDummy)).Name);
+end;
+
+procedure TTestResolverOverride.TestResolveWithMultipleParams;
+begin
+  fContainer.RegisterType<TDynamicNameService>.Implements<INameService>('dynamic');
+  fContainer.Build;
+
+  CheckEquals('test' + fdummy.ClassName, fContainer.Resolve<INameService>(
+    TOrderedParametersOverride.Create(['test', fDummy])).Name);
+
+  CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>(
+    TParameterOverride.Create('obj', fDummy)).Name);
 end;
 
 end.

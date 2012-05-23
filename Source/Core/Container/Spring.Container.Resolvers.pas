@@ -51,18 +51,18 @@ type
     constructor Create(const context: IContainerContext; const registry: IComponentRegistry);
     destructor Destroy; override;
 
-    function CanResolveDependency(dependency: TRttiType): Boolean; overload;
-    function CanResolveDependency(dependency: TRttiType; const argument: TValue): Boolean; overload;
+    function CanResolveDependency(dependency: TRttiType): Boolean; overload; virtual;
+    function CanResolveDependency(dependency: TRttiType; const argument: TValue): Boolean; overload; virtual;
     function ResolveDependency(dependency: TRttiType): TValue; overload; virtual;
     function ResolveDependency(dependency: TRttiType; const argument: TValue): TValue; overload; virtual;
 
-    function CanResolveDependencies(dependencies: TArray<TRttiType>): Boolean; overload;
-    function CanResolveDependencies(dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean; overload;
+    function CanResolveDependencies(dependencies: TArray<TRttiType>): Boolean; overload; virtual;
+    function CanResolveDependencies(dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean; overload; virtual;
     function ResolveDependencies(dependencies: TArray<TRttiType>): TArray<TValue>; overload; virtual;
     function ResolveDependencies(dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): TArray<TValue>; overload; virtual;
 
-    function CanResolveDependencies(const Inject: IInjection): Boolean; overload;
-    function CanResolveDependencies(const Inject: IInjection; const arguments: TArray<TValue>): Boolean; overload;
+    function CanResolveDependencies(const Inject: IInjection): Boolean; overload; virtual;
+    function CanResolveDependencies(const Inject: IInjection; const arguments: TArray<TValue>): Boolean; overload; virtual;
     function ResolveDependencies(const Inject: IInjection): TArray<TValue>; overload; virtual;
     function ResolveDependencies(const Inject: IInjection; const arguments: TArray<TValue>): TArray<TValue>; overload; virtual;
   end;
@@ -105,8 +105,11 @@ type
         constructor Create(const context: IContainerContext; const registry: IComponentRegistry;
           const name: string; const value: TValue);
 
-        function ResolveDependencies(const Inject: IInjection): TArray<TValue>; override;
+        function CanResolveDependencies(dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean; override;
         function ResolveDependencies(dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): TArray<TValue>; override;
+
+        function CanResolveDependencies(const Inject: IInjection): Boolean; override;
+        function ResolveDependencies(const Inject: IInjection): TArray<TValue>; override;
       end;
   public
     constructor Create(const name: string; const value: TValue);
@@ -126,6 +129,9 @@ type
         constructor Create(const context: IContainerContext; const registry: IComponentRegistry;
           arguments: TArray<TValue>);
 
+        function CanResolveDependency(dependency: TRttiType; const argument: TValue): Boolean; override;
+
+        function CanResolveDependencies(const Inject: IInjection): Boolean; override;
         function ResolveDependencies(const Inject: IInjection): TArray<TValue>; override;
       end;
   public
@@ -569,9 +575,23 @@ begin
   fArguments := arguments;
 end;
 
+function TOrderedParametersOverride.TResolver.CanResolveDependency(
+  dependency: TRttiType; const argument: TValue): Boolean;
+begin
+  Result := argument.IsType(dependency.Handle);
+end;
+
+function TOrderedParametersOverride.TResolver.CanResolveDependencies(
+  const Inject: IInjection): Boolean;
+begin
+  TArgument.CheckNotNull(Inject, 'Inject');
+  Result := CanResolveDependencies(Inject, fArguments);
+end;
+
 function TOrderedParametersOverride.TResolver.ResolveDependencies(
   const Inject: IInjection): TArray<TValue>;
 begin
+  TArgument.CheckNotNull(Inject, 'Inject');
   Result := fArguments;
 end;
 
@@ -606,9 +626,48 @@ begin
   fValue := value;
 end;
 
-function TParameterOverride.TResolver.ResolveDependencies(
-  const Inject: IInjection): TArray<TValue>;
+function TParameterOverride.TResolver.CanResolveDependencies(
+  dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean;
+var
+  dependency: TRttiType;
+  i: Integer;
+  parameters: TArray<TRttiParameter>;
 begin
+  Result := True;
+  if Length(dependencies) = Length(arguments) then
+  begin
+    parameters := fInject.Target.AsMethod.GetParameters;
+    for i := 0 to High(dependencies) do
+    begin
+      dependency := dependencies[i];
+      if SameText(parameters[i].Name, fName) then
+        Continue;
+      if not CanResolveDependency(dependency, arguments[i]) then
+      begin
+        Exit(False);
+      end;
+    end;
+  end
+  else if Length(arguments) = 0 then
+  begin
+    for dependency in dependencies do
+    begin
+      if not CanResolveDependency(dependency, TValue.Empty) then
+      begin
+        Exit(False);
+      end;
+    end;
+  end
+  else
+  begin
+    Exit(False);
+  end;
+end;
+
+function TParameterOverride.TResolver.CanResolveDependencies(
+  const Inject: IInjection): Boolean;
+begin
+  TArgument.CheckNotNull(Inject, 'Inject');
   fInject := Inject;
   Result := inherited;
 end;
@@ -650,6 +709,14 @@ begin
       Result[i] := ResolveDependency(dependency, TValue.Empty);
     end;
   end;
+end;
+
+function TParameterOverride.TResolver.ResolveDependencies(
+  const Inject: IInjection): TArray<TValue>;
+begin
+  TArgument.CheckNotNull(Inject, 'Inject');
+  fInject := Inject;
+  Result := inherited;
 end;
 
 {$ENDREGION}
