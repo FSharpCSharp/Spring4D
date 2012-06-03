@@ -302,7 +302,8 @@ var
 begin
   condition := TMethodFilters.IsInstanceMethod and
     TMethodFilters.HasAttribute(InjectAttribute) and
-    not TMethodFilters.HasParameterFlags([pfOut, pfVar]);
+    not TMethodFilters.HasParameterFlags([pfOut, pfVar]) and
+    not TMethodFilters.IsConstructor;
   for method in model.ComponentType.Methods.Where(condition) do
   begin
     injection := context.InjectionFactory.CreateMethodInjection(model, method.Name);
