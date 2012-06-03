@@ -79,6 +79,6 @@ begin
 end;
 
 initialization
-  GlobalContainer.RegisterComponent<TSimpleClassConsumer>.Implements<ISimpleContainerInterface>;
-  GlobalContainer.RegisterComponent<TSimpleClass>.Implements<ISimpleInterface>.InjectConstructor([56, 150]);
+  GlobalContainer.RegisterType<TSimpleClassConsumer>.Implements<ISimpleContainerInterface>;
+  GlobalContainer.RegisterType<TSimpleClass>.Implements<ISimpleInterface>.InjectConstructor([56, 150]);
 end.

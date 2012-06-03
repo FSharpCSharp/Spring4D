@@ -46,7 +46,7 @@ begin
 end;
 
 initialization
-  GlobalContainer.RegisterComponent<TOrderProcessor>.Implements<IOrderProcessor>.DelegateTo(
+  GlobalContainer.RegisterType<TOrderProcessor>.Implements<IOrderProcessor>.DelegateTo(
     function: TOrderProcessor
     begin
       Result := TOrderProcessor.Create(ServiceLocator.GetService<IOrderValidator>, ServiceLocator.GetService<IOrderEntry>, 99);

@@ -28,5 +28,5 @@ begin
 end;
 
 initialization
-  GlobalContainer.RegisterComponent<TOrderValidator>.Implements<IOrderValidator>;
+  GlobalContainer.RegisterType<TOrderValidator>.Implements<IOrderValidator>;
 end.

@@ -24,7 +24,7 @@ begin
 end;
 
 initialization
-  GlobalContainer.RegisterComponent<TYeller>;
+  GlobalContainer.RegisterType<TYeller>;
 
 
 end.

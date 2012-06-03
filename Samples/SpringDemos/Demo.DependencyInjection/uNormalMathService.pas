@@ -31,7 +31,7 @@ end;
 
 procedure RegisterNormalMathService;
 begin
-  GlobalContainer.RegisterComponent<TNormalMathServiceImplemenation>.Implements<IMathService>(NormalAdditionServiceName);
+  GlobalContainer.RegisterType<TNormalMathServiceImplemenation>.Implements<IMathService>(NormalAdditionServiceName);
 end;
 
 initialization

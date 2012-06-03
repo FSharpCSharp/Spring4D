@@ -239,7 +239,7 @@ end;
 
 procedure RegisterIniFileService(aServiceName: string; aFilename: string; aIniFileType: TIniFileType = iftFileBased);
 begin
-  GlobalContainer.RegisterComponent<TIniFileImpl>.Implements<IIniFileService>(aServicename).AsSingleton.DelegateTo(
+  GlobalContainer.RegisterType<TIniFileImpl>.Implements<IIniFileService>(aServicename).AsSingleton.DelegateTo(
     function: TIniFileImpl
     begin
       Result := TIniFileImpl.Create(aFilename, aIniFileType);

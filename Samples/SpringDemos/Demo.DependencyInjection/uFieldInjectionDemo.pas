@@ -51,8 +51,8 @@ begin
 end;
 
 initialization
-  GlobalContainer.RegisterComponent<TFieldInjectionDemo>.Implements<IFieldInjectionDemo>;
-  GlobalContainer.RegisterComponent<TSomeClass>.Implements<ISomeClass>;
+  GlobalContainer.RegisterType<TFieldInjectionDemo>.Implements<IFieldInjectionDemo>;
+  GlobalContainer.RegisterType<TSomeClass>.Implements<ISomeClass>;
 
 
 end.

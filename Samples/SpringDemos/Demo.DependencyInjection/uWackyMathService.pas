@@ -31,7 +31,7 @@ end;
 
 procedure RegisterwWackyMathService;
 begin
-  GlobalContainer.RegisterComponent<TWackyAdditionServiceImplementation>.Implements<IMathService>(WackyAdditionServiceName);
+  GlobalContainer.RegisterType<TWackyAdditionServiceImplementation>.Implements<IMathService>(WackyAdditionServiceName);
 end;
 
 initialization

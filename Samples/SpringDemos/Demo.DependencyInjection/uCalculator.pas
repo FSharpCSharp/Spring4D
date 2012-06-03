@@ -34,7 +34,7 @@ end;
 
 procedure RegisterCalculatorService;
 begin
-  GlobalContainer.RegisterComponent<TCalculator>.Implements<ICalculator>(CalculatorName);
+  GlobalContainer.RegisterType<TCalculator>.Implements<ICalculator>(CalculatorName);
 end;
 
 initialization

@@ -83,10 +83,10 @@ begin
 end;
 
 initialization
-  GlobalContainer.RegisterComponent<TCat>.Implements<IMakeNoise>('Cat');
-  GlobalContainer.RegisterComponent<TDog>.Implements<IMakeNoise>('Dog');
-  GlobalContainer.RegisterComponent<TCow>.Implements<IMakeNoise>('Cow');
+  GlobalContainer.RegisterType<TCat>.Implements<IMakeNoise>('Cat');
+  GlobalContainer.RegisterType<TDog>.Implements<IMakeNoise>('Dog');
+  GlobalContainer.RegisterType<TCow>.Implements<IMakeNoise>('Cow');
 
-  GlobalContainer.RegisterComponent<TPetNoiseProvider>.Implements<IPetNoiseMaker>;
+  GlobalContainer.RegisterType<TPetNoiseProvider>.Implements<IPetNoiseMaker>;
 
 end.

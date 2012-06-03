@@ -40,6 +40,6 @@ begin
 end;
 
 initialization
-  GlobalContainer.RegisterComponent<TOrderProcessor>.Implements<IOrderProcessor>.InjectField('FOrderEntry');
+  GlobalContainer.RegisterType<TOrderProcessor>.Implements<IOrderProcessor>.InjectField('FOrderEntry');
 
 end.

@@ -690,7 +690,7 @@ end;
 
 procedure RegisterStringListService(aName: string);
 begin
-  GlobalContainer.RegisterComponent<TStringListImpl>.Implements<IStringListService>(aName);
+  GlobalContainer.RegisterType<TStringListImpl>.Implements<IStringListService>(aName);
   GlobalContainer.Build;
 end;
 

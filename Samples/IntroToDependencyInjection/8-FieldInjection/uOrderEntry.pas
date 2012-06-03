@@ -27,6 +27,6 @@ begin
 end;
 
 initialization
-  GlobalContainer.RegisterComponent<TOrderEntry>.Implements<IOrderEntry>;
+  GlobalContainer.RegisterType<TOrderEntry>.Implements<IOrderEntry>;
 
 end.

@@ -92,7 +92,7 @@ type
 
 procedure RegisterInjectionTestServices(aSpecialTypeString: string);
 begin
-  GlobalContainer.RegisterComponent<TPropertyInjectionDemo>
+  GlobalContainer.RegisterType<TPropertyInjectionDemo>
                  .Implements<IMyInterface>
                  .InjectField('FFieldInjectionString', 'Field Injection is working!')
                  .InjectMethod('SetSetterInjectionString', ['string from InjectMethod call'])
@@ -100,7 +100,7 @@ begin
                  .InjectConstructor(['Set from Spring DI', Random(100)])
 
     ;
-  GlobalContainer.RegisterComponent<TSpecialType>.Implements<TSpecialType>.DelegateTo(
+  GlobalContainer.RegisterType<TSpecialType>.Implements<TSpecialType>.DelegateTo(
   function: TSpecialType
   begin
     Result := TSpecialType.Create(aSpecialTypeString);

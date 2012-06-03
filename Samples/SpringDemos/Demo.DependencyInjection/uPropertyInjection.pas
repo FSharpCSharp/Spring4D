@@ -69,8 +69,8 @@ begin
 end;
 
 initialization
-  GlobalContainer.RegisterComponent<TSteeringWheel>.Implements<ISteeringWheel>;
-  GlobalContainer.RegisterComponent<TCar>.Implements<ICar>;
+  GlobalContainer.RegisterType<TSteeringWheel>.Implements<ISteeringWheel>;
+  GlobalContainer.RegisterType<TCar>.Implements<ICar>;
 
 
 end.
