@@ -68,6 +68,10 @@ type
     procedure TestTransient;
     procedure TestPerThread;
     procedure TestInitializable;
+
+    procedure TestIssue41_DifferentName;
+    procedure TestIssue41_DifferentService;
+    procedure TestIssue41_DifferentLifetimes;
   end;
 
   // Same Service, Different Implementations
@@ -461,6 +465,71 @@ begin
   service := fContainer.Resolve<IAnotherService>;
   CheckTrue(service is TInitializableComponent, 'Unknown component.');
   CheckTrue(TInitializableComponent(service).IsInitialized, 'IsInitialized should be true.');
+end;
+
+procedure TTestSimpleContainer.TestIssue41_DifferentLifetimes;
+var
+  service1, service2: INameService;
+begin
+  fContainer.RegisterType<TDynamicNameService>.Implements<INameService>;
+  fContainer.RegisterType<TDynamicNameService>.Implements<IAnotherNameService>.AsSingleton;
+  fContainer.Build;
+
+  service1 := fContainer.Resolve<INameService>;
+  service2 := fContainer.Resolve<IAnotherNameService>;
+
+  Check((service1 as TObject) <> (service2 as TObject), 'resolved services should be different');
+end;
+
+procedure TTestSimpleContainer.TestIssue41_DifferentName;
+var
+  service: INameService;
+begin
+  fContainer.RegisterType<TDynamicNameService>.Implements<INameService>('first').DelegateTo(
+    function: TDynamicNameService
+    begin
+      Result := TDynamicNameService.Create('first');
+    end
+    );
+  fContainer.RegisterType<TDynamicNameService>.Implements<INameService>('second').DelegateTo(
+    function: TDynamicNameService
+    begin
+      Result := TDynamicNameService.Create('second');
+    end
+    );
+  fContainer.Build;
+
+  service := fContainer.Resolve<INameService>('second');
+  CheckEquals('second', service.Name, 'resolving of service "second" failed');
+
+  service := fContainer.Resolve<INameService>('first');
+  CheckEquals('first', service.Name, 'resolving of service "first" failed');
+end;
+
+procedure TTestSimpleContainer.TestIssue41_DifferentService;
+var
+  service: INameService;
+  anotherService: IAnotherNameService;
+begin
+   fContainer.RegisterType<TDynamicNameService>.Implements<INameService>.DelegateTo(
+    function: TDynamicNameService
+    begin
+      Result := TDynamicNameService.Create('first');
+    end
+    );
+  fContainer.RegisterType<TDynamicNameService>.Implements<IAnotherNameService>.DelegateTo(
+    function: TDynamicNameService
+    begin
+      Result := TDynamicNameService.Create('second');
+    end
+    );
+  fContainer.Build;
+
+  anotherService := fContainer.Resolve<IAnotherNameService>;
+  CheckEquals('second', anotherService.Name, 'resolving of service "second" failed');
+
+  service := fContainer.Resolve<INameService>;
+  CheckEquals('first', service.Name, 'resolving of service "first" failed');
 end;
 
 {$ENDREGION}

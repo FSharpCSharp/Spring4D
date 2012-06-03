@@ -76,13 +76,11 @@ type
   ///	</summary>
   IComponentRegistry = interface
     ['{CBCA1D0F-1244-4AB4-AB07-091053932166}']
-
-    procedure RegisterService(componentType, serviceType: PTypeInfo); overload;
-    procedure RegisterService(componentType, serviceType: PTypeInfo; const name: string); overload;
+    function RegisterComponent(componentType: PTypeInfo): TComponentModel;
+    procedure RegisterService(model: TComponentModel; serviceType: PTypeInfo); overload;
+    procedure RegisterService(model: TComponentModel; serviceType: PTypeInfo; const name: string); overload;
     procedure UnregisterAll;
 
-    function GetComponent(componentType: PTypeInfo): TComponentModel;
-    function HasComponent(componentType: PTypeInfo): Boolean;
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(const name: string): Boolean; overload;
     function HasService(serviceType: PTypeInfo; const name: string): Boolean; overload;

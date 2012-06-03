@@ -523,7 +523,7 @@ begin
   begin
     if (service.BaseType <> nil) and not model.HasService(service.Handle) then
     begin
-      context.ComponentRegistry.RegisterService(model.ComponentTypeInfo, service.Handle);
+      context.ComponentRegistry.RegisterService(model, service.Handle);
     end;
   end;
 end;

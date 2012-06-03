@@ -306,8 +306,8 @@ begin
   // TODO: How to support bootstrap
   if not fRegistry.HasService(typeInfo) and (typeInfo.Kind = tkClass) then
   begin
-    RegisterType(typeInfo).Implements(typeInfo);
-    model := fRegistry.FindOne(typeInfo);
+    model := fRegistry.RegisterComponent(typeInfo);
+    fRegistry.RegisterService(model, typeInfo);
     fBuilder.Build(model);
     Result := fServiceResolver.Resolve(model.GetServiceName(typeInfo));
   end

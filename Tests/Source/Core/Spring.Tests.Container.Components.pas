@@ -42,6 +42,10 @@ type
     property Name: string read GetName;
   end;
 
+  IAnotherNameService = interface(INameService)
+    ['{C39760F7-C5E6-48BC-A890-FB0103E4AD39}']
+  end;
+
   TNameService = class(TInterfacedObject, INameService, IInterface)
   private
     fName: string;
@@ -64,7 +68,7 @@ type
     const NameString: string = 'Another Name';
   end;
 
-  TDynamicNameService = class(TNameService)
+  TDynamicNameService = class(TNameService, IAnotherNameService)
   public
     constructor Create(const name: string); overload;
     constructor Create(obj: TObject); overload;
