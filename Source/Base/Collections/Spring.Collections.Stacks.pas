@@ -39,17 +39,6 @@ type
   private
     type
       TGenericStack = Generics.Collections.TStack<T>;
-
-      TStackEnumerator = class(TEnumeratorBase<T>)
-      private
-        fStack: TGenericStack;
-        fIndex: Integer;
-      protected
-        function GetCurrent: T; override;
-      public
-        constructor Create(stack: TGenericStack);
-        function MoveNext: Boolean; override;
-      end;
   private
     fStack: TGenericStack;
     fOwnership: TOwnershipType;
@@ -81,12 +70,7 @@ type
     destructor Destroy; override;
 
     function GetEnumerator: IEnumerator<T>; override;
-
-    {$REGION 'Implements ICollection<T>'}
-      procedure Add(const item: T);
-      function Remove(const item: T): Boolean;
-      procedure Clear;
-    {$ENDREGION}
+    procedure Clear;
 
     procedure Push(const item: T);
     function Pop: T;
@@ -100,6 +84,9 @@ type
   end;
 
 implementation
+
+uses
+  Spring.Collections.Extensions;
 
 
 {$REGION 'TStack<T>'}
@@ -151,7 +138,7 @@ end;
 
 function TStack<T>.GetEnumerator: IEnumerator<T>;
 begin
-  Result := TStackEnumerator.Create(fStack);
+  Result := TEnumeratorAdapter<T>.Create(fStack);
 end;
 
 function TStack<T>.GetCount: Integer;
@@ -217,23 +204,6 @@ begin
   Result := fStack.Pop;
 end;
 
-procedure TStack<T>.Add(const item: T);
-begin
-  fStack.Push(item);
-end;
-
-function TStack<T>.Remove(const item: T): Boolean;
-//var
-//  stack: TStackAccess<T>;
-//  comparer: IComparer<T>;
-//  element: T;
-begin
-  // TODO: TStack<T>.Remove
-//  stack := TStackAccess<T>(fStack);
-//  comparer := TComparer<T>.Default;
-  Result := False;
-end;
-
 function TStack<T>.AsStack: IStack;
 begin
   Result := Self;
@@ -291,30 +261,6 @@ begin
     item := fStack.Peek
   else
     item := Default(T);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TStack<T>.TEnumerator'}
-
-constructor TStack<T>.TStackEnumerator.Create(stack: TGenericStack);
-begin
-  inherited Create;
-  fStack := stack;
-  fIndex := fStack.Count;
-end;
-
-function TStack<T>.TStackEnumerator.GetCurrent: T;
-begin
-  Result := TStack<T>.GetStackItem(fStack, fIndex);
-end;
-
-function TStack<T>.TStackEnumerator.MoveNext: Boolean;
-begin
-  Result := fIndex > 0;
-  if Result then
-    Dec(fIndex);
 end;
 
 {$ENDREGION}
