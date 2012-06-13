@@ -300,7 +300,7 @@ begin
     function(const model: TComponentModel): Boolean
     begin
       Result := model.ComponentTypeInfo = componentType;
-    end).First;
+    end).FirstOrDefault;
 end;
 
 function TComponentRegistry.FindAll: IEnumerable<TComponentModel>;
