@@ -138,6 +138,7 @@ begin
     TTestRegisterInterfaces.Suite,
     TTestSingletonLifetimeManager.Suite,
     TTestTransientLifetimeManager.Suite,
+    TTestRefCounting.Suite,
     TTestDefaultResolve.Suite,
     TTestInjectionByValue.Suite,
     TTestObjectPool.Suite,

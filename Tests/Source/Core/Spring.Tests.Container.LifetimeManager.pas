@@ -27,6 +27,7 @@ unit Spring.Tests.Container.LifetimeManager;
 interface
 
 uses
+  Classes,
   TestFramework,
   Rtti,
   SysUtils,
@@ -50,7 +51,7 @@ type
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
   end;
 
-  TMockObjectActivator = class(TInterfaceBase, IComponentActivator, IInterface)
+  TMockActivator = class(TInterfaceBase, IComponentActivator, IInterface)
   private
     fModel: TComponentModel;
   public
@@ -63,7 +64,12 @@ type
   TMockObject = class
   end;
 
-  TMockInterfacedObject = class(TInterfacedObject)
+  TMockComponent = class(TComponent, IInterface)
+  private
+    fRefCount: Integer;
+  protected
+    function _AddRef: Integer; stdcall;
+    function _Release: Integer; stdcall;
   end;
 
 //  [Ignore]
@@ -73,13 +79,26 @@ type
     fContext: TRttiContext;
     fLifetimeManager: ILifetimeManager;
     fModel: TComponentModel;
-    fActivator: TMockObjectActivator;
+    fActivator: TMockActivator;
     procedure SetUp; override;
     procedure TearDown; override;
   end;
 
   TTestSingletonLifetimeManager = class(TLifetimeManagerTestCase)
   protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestReferences;
+  end;
+
+  TTestRefCounting = class(TTestCase)
+  protected
+    fContainerContext: IContainerContext;
+    fContext: TRttiContext;
+    fLifetimeManager: ILifetimeManager;
+    fModel: TComponentModel;
+    fActivator: TMockActivator;
     procedure SetUp; override;
     procedure TearDown; override;
   published
@@ -100,6 +119,9 @@ type
 
 implementation
 
+uses
+  Spring.Services;
+
 { TLifetimeManagerTestCase }
 
 procedure TLifetimeManagerTestCase.SetUp;
@@ -108,7 +130,7 @@ begin
   fContainerContext := TMockContext.Create;
   fContext := TRttiContext.Create;
   fModel := TComponentModel.Create(fContainerContext, fContext.GetType(TMockObject).AsInstance);
-  fActivator := TMockObjectActivator.Create(fModel);
+  fActivator := TMockActivator.Create(fModel);
   fModel.ComponentActivator := fActivator;
 end;
 
@@ -121,7 +143,7 @@ begin
   inherited;
 end;
 
-{ TSingletonLifetimeTestCase }
+{ TTestSingletonLifetimeManager }
 
 procedure TTestSingletonLifetimeManager.SetUp;
 begin
@@ -185,19 +207,19 @@ end;
 
 { TMockComponentActivator }
 
-constructor TMockObjectActivator.Create(
+constructor TMockActivator.Create(
   model: TComponentModel);
 begin
   inherited Create;
   fModel := model;
 end;
 
-function TMockObjectActivator.CreateInstance: TObject;
+function TMockActivator.CreateInstance: TObject;
 begin
-  Result := TMockObject.Create;
+  Result := fModel.ComponentType.MetaclassType.Create;
 end;
 
-function TMockObjectActivator.CreateInstance(
+function TMockActivator.CreateInstance(
   resolver: IDependencyResolver): TObject;
 begin
   Result := CreateInstance;
@@ -234,6 +256,56 @@ end;
 function TMockContext.HasService(serviceType: PTypeInfo): Boolean;
 begin
   raise Exception.Create('HasService');
+end;
+
+{ TMockComponent }
+
+function TMockComponent._AddRef: Integer;
+begin
+  Inc(fRefCount);
+  Result := fRefCount;
+end;
+
+function TMockComponent._Release: Integer;
+begin
+  Dec(fRefCount);
+  Result := fRefCount;
+  if Result = 0 then
+    Destroy;
+end;
+
+{ TTestRefCounting }
+
+procedure TTestRefCounting.SetUp;
+begin
+  inherited;
+  fContainerContext := TMockContext.Create;
+  fContext := TRttiContext.Create;
+  fModel := TComponentModel.Create(fContainerContext, fContext.GetType(TMockComponent).AsInstance);
+  fModel.RefCounting := TRefCounting.True;
+  fActivator := TMockActivator.Create(fModel);
+  fModel.ComponentActivator := fActivator;
+end;
+
+procedure TTestRefCounting.TearDown;
+begin
+  fActivator.Free;
+  fModel.Free;
+  fContext.Free;
+  fContainerContext := nil;
+  inherited;
+end;
+
+procedure TTestRefCounting.TestReferences;
+var
+  obj: TObject;
+  intf: IInterface;
+begin
+  fLifetimeManager := TSingletonLifetimeManager.Create(fModel);
+  obj := fLifetimeManager.GetInstance;
+  CheckTrue(Supports(obj, IInterface, intf), 'interface not supported');
+  intf := nil;
+  fLifetimeManager := nil;
 end;
 
 end.

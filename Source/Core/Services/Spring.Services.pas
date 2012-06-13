@@ -82,6 +82,26 @@ type
   );
 
   ///	<summary>
+  ///	  Defines if type is using reference counting
+  ///	</summary>
+  TRefCounting = (
+    ///	<summary>
+    ///	  Container decides (Yes for TInterfacedObject descendants, No for others)
+    ///	</summary>
+    Unknown,
+
+    ///	<summary>
+    ///	  Type is using reference counting
+    ///	</summary>
+    True,
+
+    ///	<summary>
+    ///	  Type is not using reference counting
+    ///	</summary>
+    False
+  );
+
+  ///	<summary>
   ///	  Represents an abstract lifetime attribute class base.
   ///	</summary>
   LifetimeAttributeBase = class abstract(TCustomAttribute)

@@ -189,7 +189,7 @@ begin
   if not Assigned(fInstance) then
   begin
     newInstance := ComponentActivator.CreateInstance(resolver);
-    localInstance := TObjectHolder<TObject>.Create(newInstance);
+    localInstance := TObjectHolder<TObject>.Create(newInstance, Model.RefCounting);
 {$IFDEF DELPHIXE_UP}
     if TInterlocked.CompareExchange(PPointer(@fInstance)^, PPointer(@localInstance)^, nil) = nil then
 {$ELSE}
@@ -245,7 +245,7 @@ end;
 
 function TSingletonPerThreadLifetimeManager.CreateHolder(instance: TObject): TFunc<TObject>;
 begin
-  Result := TObjectHolder<TObject>.Create(instance);
+  Result := TObjectHolder<TObject>.Create(instance, Model.RefCounting);
 end;
 
 procedure TSingletonPerThreadLifetimeManager.HandleValueNotify(sender: TObject;

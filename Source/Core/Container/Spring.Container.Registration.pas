@@ -109,7 +109,8 @@ type
 
     {$ENDREGION}
 
-    function AsSingleton: TRegistration;
+    function AsSingleton: TRegistration; overload;
+    function AsSingleton(refCounting: TRefCounting): TRegistration; overload;
     function AsSingletonPerThread: TRegistration;
     function AsTransient: TRegistration;
     function AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration;
@@ -152,7 +153,8 @@ type
 
   {$ENDREGION}
 
-    function AsSingleton: TRegistration<T>;
+    function AsSingleton: TRegistration<T>; overload;
+    function AsSingleton(refCounting: TRefCounting): TRegistration<T>; overload;
     function AsSingletonPerThread: TRegistration<T>;
     function AsTransient: TRegistration<T>;
     function AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration<T>;
@@ -474,7 +476,13 @@ end;
 
 function TRegistration.AsSingleton: TRegistration;
 begin
+  Result := AsSingleton(TRefCounting.Unknown);
+end;
+
+function TRegistration.AsSingleton(refCounting: TRefCounting): TRegistration;
+begin
   fModel.LifetimeType := TLifetimeType.Singleton;
+  fModel.RefCounting := refCounting;
   Result := Self;
 end;
 
@@ -618,6 +626,12 @@ end;
 function TRegistration<T>.AsSingleton: TRegistration<T>;
 begin
   fRegistration.AsSingleton;
+  Result := Self;
+end;
+
+function TRegistration<T>.AsSingleton(refCounting: TRefCounting): TRegistration<T>;
+begin
+  fRegistration.AsSingleton(refCounting);
   Result := Self;
 end;
 

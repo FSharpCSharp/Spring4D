@@ -214,6 +214,7 @@ type
     fActivatorDelegate: TActivatorDelegate;
     fMinPoolsize: Integer;
     fMaxPoolsize: Integer;
+    fRefCounting: TRefCounting;
     fServices: IDictionary<string, PTypeInfo>;
     fDefaultServices: IList<PTypeInfo>;
     fConstructorInjections: IInjectionList;
@@ -267,6 +268,7 @@ type
     property DefaultServices: IList<PTypeInfo> read GetDefaultServices;
     property MinPoolsize: Integer read fMinPoolsize write fMinPoolsize;
     property MaxPoolsize: Integer read fMaxPoolsize write fMaxPoolsize;
+    property RefCounting: TRefCounting read fRefCounting write fRefCounting;
 
     property LifetimeType: TLifetimeType read fLifetimeType write fLifetimeType;
     property LifetimeManager: ILifetimeManager read fLifetimeManager write fLifetimeManager;
@@ -311,7 +313,7 @@ type
     fObject: T;
     fLifetimeWatcher: IInterface;
   public
-    constructor Create(obj: T); overload;
+    constructor Create(obj: T; refCounting: TRefCounting); overload;
     constructor Create(obj: T; const lifetimeWatcher: IInterface); overload;
     destructor Destroy; override;
     function Invoke: T;
@@ -612,13 +614,14 @@ end;
 
 {$REGION 'TObjectHolder<T>'}
 
-constructor TObjectHolder<T>.Create(obj: T);
+constructor TObjectHolder<T>.Create(obj: T; refCounting: TRefCounting);
 var
   lifetimeWatcher: IInterface;
 begin
   TArgument.CheckNotNull(PPointer(@obj)^, 'obj');
 
-  if obj.InheritsFrom(TInterfacedObject) then
+  if ((refCounting = TRefCounting.Unknown) and obj.InheritsFrom(TInterfacedObject))
+    or (refCounting = TRefCounting.True) then
   begin
     obj.GetInterface(IInterface, lifetimeWatcher);
   end
