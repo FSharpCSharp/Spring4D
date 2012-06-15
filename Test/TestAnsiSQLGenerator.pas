@@ -126,6 +126,15 @@ const
     '  ORDER BY A.AGE DESC,C.COUNTRYNAME ASC'+
     ';';
 
+  SQL_SELECT_TEST_JOIN_2_ORDER_GROUP_WHERE = 'SELECT A.NAME,A.AGE,A.HEIGHT,C.COUNTRYNAME'+ #13#10 +
+    ' FROM TEST.CUSTOMERS A' + #13#10 +
+    '  INNER JOIN TEST.PRODUCTS B ON B.ID=A.PRODID'+#13#10+
+    '  LEFT OUTER JOIN TEST.COUNTRIES C ON C.ID=A.COUNTRYID'+#13#10+
+    '  WHERE (A.NAME = :NAME1) AND (A.AGE > :AGE1)'+#13#10+
+    '  GROUP BY A.HEIGHT,A.NAME,A.AGE,C.COUNTRYNAME'+#13#10+
+    '  ORDER BY A.AGE DESC,C.COUNTRYNAME ASC'+
+    ';';
+
 procedure TestTAnsiSQLGenerator.TestGenerateSelect;
 var
   sSql: string;
@@ -191,6 +200,12 @@ begin
 
     sSql := FAnsiSQLGenerator.GenerateSelect(LCommand);
     CheckEqualsString(SQL_SELECT_TEST_JOIN_2_ORDER_GROUP, sSql);
+
+    {TODO -oLinas -cGeneral : Test where clause}
+    LCommand.WhereFields.Add(TSQLWhereField.Create('NAME', LTable));
+
+    sSql := FAnsiSQLGenerator.GenerateSelect(LCommand);
+    CheckEqualsString(SQL_SELECT_TEST_JOIN_2_ORDER_GROUP_WHERE, sSql);
 
   finally
     LTable.Free;
