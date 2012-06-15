@@ -1,0 +1,28 @@
+# SVN files
+.svn
+
+# history files
+__history
+
+
+# compiled unit
+*.dcu
+*.jdbg
+
+
+# temp files
+*.dproj.local
+*.identcache
+
+# binaries
+*.bpl
+*.exe
+Win32
+
+*.obj
+*.tds
+*.pdi
+*.res
+*.dsk
+*.~*
+*.gex
