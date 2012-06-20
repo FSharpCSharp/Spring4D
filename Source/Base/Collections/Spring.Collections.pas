@@ -697,6 +697,8 @@ type
   IElementType = interface
     ['{FE986DD7-41D5-4312-A2F9-94F7D9E642EE}']
     function GetElementType: PTypeInfo;
+
+    property ElementType: PTypeInfo read GetElementType;
   end;
 
   ICollectionOwnership = interface
