@@ -126,9 +126,9 @@ begin
     constructorInjection.Target.AsMethod,
     constructorArguments
   );
+  ExecuteInjections(Result, fModel.FieldInjections);
   ExecuteInjections(Result, fModel.PropertyInjections);
   ExecuteInjections(Result, fModel.MethodInjections);
-  ExecuteInjections(Result, fModel.FieldInjections);
 end;
 
 procedure TReflectionComponentActivator.ExecuteInjections(instance: TObject;
