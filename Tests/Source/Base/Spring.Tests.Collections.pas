@@ -4,7 +4,9 @@ interface
 
 uses
   TestFramework,
+  Classes,
   SysUtils,
+  Spring,
   Spring.Collections;
 
 type
@@ -130,6 +132,25 @@ type
     procedure TestStackPopPushBalances;
     procedure TestStackClear;
     procedure TestStackPeek;
+    procedure TestStackPeekOrDefault;
+  end;
+
+  TTestStackOfIntegerNotifyEvent = class(TExceptionCheckerTestCase)
+  private
+    SUT: IStack<Integer>;
+    fAInvoked, fBInvoked: Boolean;
+    fAItem, fBItem: Integer;
+    fAAction, fBAction: TCollectionNotification;
+    procedure HandlerA(Sender: TObject; const Item: Integer; Action: TCollectionNotification);
+    procedure HandlerB(Sender: TObject; const Item: Integer; Action: TCollectionNotification);
+  public
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestEmpty;
+    procedure TestOneHandler;
+    procedure TestTwoHandlers;
+    procedure TestNonGenericNotifyEvent;
   end;
 
   TTestEmptyQueueofInteger = class(TExceptionCheckerTestCase)
@@ -185,11 +206,6 @@ type
 
 
 implementation
-
-uses
-        Classes
-      , Spring
-      ;
 
 { TTestEmptyHashSet }
 
@@ -511,7 +527,6 @@ begin
   CheckEquals(1, SUT.Count);
   SUT.Delete(0);
   CheckEquals(0, SUT.Count);
-
 end;
 
 procedure TTestIntegerList.TestListRemove;
@@ -759,6 +774,22 @@ begin
   CheckEquals(Expected, Actual, 'Stack.Peek failed');
 end;
 
+procedure TTestStackOfInteger.TestStackPeekOrDefault;
+var
+  Expected: Integer;
+  Actual: integer;
+begin
+  FillStack;
+  Expected := MaxStackItems;
+  Actual := SUT.PeekOrDefault;
+  CheckEquals(Expected, Actual, 'Stack.Peek failed');
+
+  SUT.Clear;
+  Expected := Default(Integer);
+  Actual := SUT.PeekOrDefault;
+  CheckEquals(Expected, Actual, 'Stack.Peek failed');
+end;
+
 procedure TTestStackOfInteger.TestStackPopPushBalances;
 var
   i: Integer;
@@ -774,6 +805,122 @@ begin
   // Should be empty
   CheckEquals(0, SUT.Count);
 
+end;
+
+{ TTestStackOfIntegerNotifyEvent }
+
+procedure TTestStackOfIntegerNotifyEvent.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateStack<Integer>;
+end;
+
+procedure TTestStackOfIntegerNotifyEvent.TearDown;
+begin
+  inherited;
+  SUT := nil;
+  fAInvoked := False;
+  fBInvoked := False;
+end;
+
+procedure TTestStackOfIntegerNotifyEvent.HandlerA(Sender: TObject;
+  const Item: Integer; Action: TCollectionNotification);
+begin
+  fAItem := Item;
+  fAAction := Action;
+  fAInvoked := True;
+end;
+
+procedure TTestStackOfIntegerNotifyEvent.HandlerB(Sender: TObject;
+  const Item: Integer; Action: TCollectionNotification);
+begin
+  fBitem := Item;
+  fBAction := Action;
+  fBInvoked := True;
+end;
+
+procedure TTestStackOfIntegerNotifyEvent.TestEmpty;
+begin
+  CheckEquals(0, SUT.OnNotify.Count);
+  CheckTrue(SUT.OnNotify.IsEmpty);
+
+  SUT.Push(0);
+
+  CheckFalse(fAInvoked);
+  CheckFalse(fBInvoked);
+end;
+
+procedure TTestStackOfIntegerNotifyEvent.TestOneHandler;
+begin
+  SUT.OnNotify.Add(HandlerA);
+
+  SUT.Push(0);
+
+  CheckTrue(fAInvoked, 'handler A not invoked');
+  CheckTrue(fAAction = cnAdded, 'handler A: different collection notifications');
+  CheckEquals(0, fAItem, 'handler A: different item');
+
+  CheckFalse(fBInvoked, 'handler B not registered as callback');
+
+  SUT.Pop;
+
+  CheckTrue(fAAction = cnRemoved, 'different collection notifications');
+
+  SUT.OnNotify.Remove(HandlerA);
+  CheckEquals(0, SUT.OnNotify.Count);
+  CheckTrue(SUT.OnNotify.IsEmpty);
+end;
+
+procedure TTestStackOfIntegerNotifyEvent.TestTwoHandlers;
+begin
+  SUT.OnNotify.Add(HandlerA);
+  SUT.OnNotify.Add(HandlerB);
+
+  SUT.Push(0);
+
+  CheckTrue(fAInvoked, 'handler A not invoked');
+  CheckTrue(fAAction = cnAdded, 'handler A: different collection notifications');
+  CheckEquals(0, fAItem, 'handler A: different item');
+  CheckTrue(fBInvoked, 'handler B not invoked');
+  CheckTrue(fBAction = cnAdded, 'handler B: different collection notifications');
+  CheckEquals(0, fBItem, 'handler B: different item');
+
+  SUT.Pop;
+
+  CheckTrue(fAAction = cnRemoved, 'handler A: different collection notifications');
+  CheckEquals(0, fAItem, 'handler A: different item');
+  CheckTrue(fBAction = cnRemoved, 'handler B: different collection notifications');
+  CheckEquals(0, fBItem, 'handler B: different item');
+
+  SUT.OnNotify.Remove(HandlerA);
+  CheckEquals(1, SUT.OnNotify.Count);
+  CheckFalse(SUT.OnNotify.IsEmpty);
+  SUT.OnNotify.Remove(HandlerB);
+  CheckTrue(SUT.OnNotify.IsEmpty);
+end;
+
+procedure TTestStackOfIntegerNotifyEvent.TestNonGenericNotifyEvent;
+var
+  stack: IStack;
+  method: TMethod;
+begin
+  stack := SUT.AsStack;
+
+  CheckTrue(stack.IsEmpty);
+  CheckTrue(stack.OnNotify.Enabled);
+
+  method.Code := @TTestStackOfIntegerNotifyEvent.HandlerA;
+  method.Data := Pointer(Self);
+
+  stack.OnNotify.Add(method);
+
+  CheckEquals(1, stack.OnNotify.Count);
+
+  stack.Push(0);
+
+  CheckTrue(fAInvoked, 'handler A not invoked');
+  CheckTrue(fAAction = cnAdded, 'handler A: different collection notifications');
+  CheckEquals(0, fAItem, 'handler A: different item');
 end;
 
 { TTestEmptyQueueofTObject }

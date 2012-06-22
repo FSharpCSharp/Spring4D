@@ -55,6 +55,8 @@ type
     function NonGenericPeekOrDefault: TValue;
     function NonGenericTryPeek(out item: TValue): Boolean;
 
+    procedure Notify(const item: T; action: TCollectionNotification); virtual;
+
     procedure IStack.Push = NonGenericPush;
     function IStack.Pop = NonGenericPop;
     function IStack.Peek = NonGenericPeek;
@@ -75,8 +77,7 @@ type
     procedure Push(const item: T);
     function Pop: T;
     function Peek: T;
-    function PeekOrDefault: T; overload;
-    function PeekOrDefault(const predicate: TPredicate<T>): T; overload;
+    function PeekOrDefault: T; 
     function TryPeek(out item: T): Boolean;
     procedure TrimExcess;
     function AsStack: IStack;
@@ -106,7 +107,7 @@ begin
   Create;
   for item in collection do
   begin
-    push(item);
+    Push(item);
   end;
 end;
 
@@ -117,7 +118,7 @@ begin
   Create;
   for item in collection do
   begin
-    push(item);
+    Push(item);
   end;
 end;
 
@@ -132,7 +133,12 @@ end;
 destructor TStack<T>.Destroy;
 begin
   if fOwnership = otOwned then
+  begin
+    // call our Clear to trigger Notify
+    Clear;
     fStack.Free;
+  end;
+
   inherited Destroy;
 end;
 
@@ -194,14 +200,26 @@ begin
     item := TValue.From<T>(value);
 end;
 
+procedure TStack<T>.Notify(const item: T; action: TCollectionNotification);
+begin
+  if (fOnNotify <> nil) and not fOnNotify.IsEmpty and fOnNotify.Enabled then
+  begin
+    fOnNotify.Invoke(Self, item, action);
+  end;
+end;
+
 procedure TStack<T>.Push(const item: T);
 begin
   fStack.Push(item);
+
+  Notify(item, cnAdded);
 end;
 
 function TStack<T>.Pop: T;
 begin
   Result := fStack.Pop;
+
+  Notify(Result, cnRemoved);
 end;
 
 function TStack<T>.AsStack: IStack;
@@ -211,34 +229,15 @@ end;
 
 procedure TStack<T>.Clear;
 begin
-  fStack.Clear;
+  // do not call fStack.Clear because we want our Notify to be triggered.
+  while Count > 0 do
+    Pop;
+  TrimExcess;
 end;
 
 function TStack<T>.Peek: T;
 begin
   Result := fStack.Peek;
-end;
-
-function TStack<T>.PeekOrDefault(const predicate: TPredicate<T>): T;
-var
-  item: T;
-begin
-  Result := Default(T);
-  if (fStack.Count = 1) and predicate(fStack.Peek) then
-  begin
-    Result := fStack.Peek;
-  end
-  else if fStack.Count > 0 then
-  begin
-    for item in fStack do
-    begin
-      if predicate(item) then
-      begin
-        Result := item;
-        Break;
-      end;
-    end;
-  end;
 end;
 
 function TStack<T>.PeekOrDefault: T;

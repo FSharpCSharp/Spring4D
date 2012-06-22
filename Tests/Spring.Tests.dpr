@@ -78,6 +78,7 @@ begin
     TTestEmptyStringIntegerDictionary.Suite,
     TTestEmptyStackofStrings.Suite,
     TTestStackOfInteger.Suite,
+    TTestStackOfIntegerNotifyEvent.Suite,
     TTestEmptyQueueofInteger.Suite,
     TTestQueueOfInteger.Suite,
     TTestListOfIntegerAsIEnumerable.Suite
