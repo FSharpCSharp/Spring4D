@@ -202,7 +202,7 @@ type
   end;
 
   ///	<summary>
-  ///	  Provides an abstract class base for <c>IColleciton{T}</c>.
+  ///	  Provides an abstract class base for <c>ICollection{T}</c>.
   ///	</summary>
   ///	<remarks>
   ///	  Notes: The Add/Remove/Clear methods are abstract. IsReadOnly returns

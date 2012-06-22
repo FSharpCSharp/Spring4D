@@ -33,7 +33,6 @@ uses
   Spring.Collections.Base;
 
 type
-
   TQueue<T> = class(TEnumerableBase<T>, IQueue<T>, IQueue)
   private
     type
@@ -54,6 +53,8 @@ type
     function NonGenericPeekOrDefault: TValue;
     function NonGenericTryPeek(out item: TValue): Boolean;
 
+    procedure Notify(const item: T; action: TCollectionNotification); virtual;
+
     procedure IQueue.Enqueue = NonGenericEnqueue;
     function IQueue.Dequeue = NonGenericDequeue;
     function IQueue.Peek = NonGenericPeek;
@@ -69,8 +70,7 @@ type
     procedure Enqueue(const item: T);
     function Dequeue: T;
     function Peek: T;
-    function PeekOrDefault: T; overload;
-    function PeekOrDefault(const predicate: TPredicate<T>): T; overload;
+    function PeekOrDefault: T;
     function TryPeek(out item: T): Boolean;
     procedure Clear;
     procedure TrimExcess;
@@ -86,8 +86,7 @@ uses
 
 {$REGION 'TQueue<T>'}
 
-constructor TQueue<T>.Create(queue: TGenericQueue;
-  ownership: TOwnershipType);
+constructor TQueue<T>.Create(queue: TGenericQueue; ownership: TOwnershipType);
 begin
   fQueue := queue;
   fOwnership := ownership;
@@ -126,7 +125,10 @@ end;
 destructor TQueue<T>.Destroy;
 begin
   if fOwnership = otOwned then
+  begin
+    Clear;
     fQueue.Free;
+  end;
   inherited Destroy;
 end;
 
@@ -138,11 +140,15 @@ end;
 procedure TQueue<T>.Enqueue(const item: T);
 begin
   fQueue.Enqueue(item);
+
+  Notify(item, cnAdded);
 end;
 
 function TQueue<T>.Dequeue: T;
 begin
   Result := fQueue.Dequeue;
+
+  Notify(Result, cnRemoved);
 end;
 
 function TQueue<T>.AsQueue: IQueue;
@@ -152,7 +158,9 @@ end;
 
 procedure TQueue<T>.Clear;
 begin
-  fQueue.Clear;
+  while Count > 0 do
+    Dequeue;
+  TrimExcess;
 end;
 
 function TQueue<T>.Peek: T;
@@ -166,28 +174,6 @@ begin
     Result := fQueue.Peek
   else
     Result := Default(T);
-end;
-
-function TQueue<T>.PeekOrDefault(const predicate: TPredicate<T>): T;
-var
-  item: T;
-begin
-  Result := Default(T);
-  if (fQueue.Count = 1) and predicate(fQueue.Peek) then
-  begin
-    Result := fQueue.Peek;
-  end
-  else if fQueue.Count > 0 then
-  begin
-    for item in fQueue do
-    begin
-      if predicate(item) then
-      begin
-        Result := item;
-        Break;
-      end;
-    end;
-  end;
 end;
 
 procedure TQueue<T>.TrimExcess;
@@ -250,6 +236,14 @@ begin
   Result := TryPeek(value);
   if Result then
     item := TValue.From<T>(value);
+end;
+
+procedure TQueue<T>.Notify(const item: T; action: TCollectionNotification);
+begin
+  if (fOnNotify <> nil) and not fOnNotify.IsEmpty and fOnNotify.Enabled then
+  begin
+    fOnNotify.Invoke(Self, item, action);
+  end;
 end;
 
 {$ENDREGION}

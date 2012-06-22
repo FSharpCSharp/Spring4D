@@ -28,7 +28,6 @@ interface
 
 uses
   Generics.Collections,
-  Rtti,
   Spring,
   Spring.Collections,
   Spring.Collections.Base;

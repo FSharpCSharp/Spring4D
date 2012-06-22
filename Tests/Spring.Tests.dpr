@@ -81,6 +81,7 @@ begin
     TTestStackOfIntegerNotifyEvent.Suite,
     TTestEmptyQueueofInteger.Suite,
     TTestQueueOfInteger.Suite,
+    TTestQueueOfIntegerNotifyEvent.Suite,
     TTestListOfIntegerAsIEnumerable.Suite
 
   ]);

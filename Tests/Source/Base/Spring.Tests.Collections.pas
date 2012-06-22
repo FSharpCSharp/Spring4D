@@ -181,6 +181,24 @@ type
     procedure TestQueuePeek;
   end;
 
+  TTestQueueOfIntegerNotifyEvent = class(TExceptionCheckerTestCase)
+  private
+    SUT: IQueue<Integer>;
+    fAInvoked, fBInvoked: Boolean;
+    fAItem, fBItem: Integer;
+    fAAction, fBAction: TCollectionNotification;
+    procedure HandlerA(Sender: TObject; const Item: Integer; Action: TCollectionNotification);
+    procedure HandlerB(Sender: TObject; const Item: Integer; Action: TCollectionNotification);
+  public
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestEmpty;
+    procedure TestOneHandler;
+    procedure TestTwoHandlers;
+    procedure TestNonGenericNotifyEvent;
+  end;
+
   TTestListOfIntegerAsIEnumerable = class(TExceptionCheckerTestCase)
   private
     const MaxItems = 1000;
@@ -1003,7 +1021,6 @@ begin
   end;
 
   CheckEquals(0, SUT.Count, 'Dequeue did not remove all the items');
-
 end;
 
 procedure TTestQueueOfInteger.TestQueuePeek;
@@ -1015,6 +1032,122 @@ begin
   Expected := 0;
   Actual := SUT.Peek;
   CheckEquals(Expected, Actual);
+end;
+
+{ TTestQueueOfIntegerNotifyEvent }
+
+procedure TTestQueueOfIntegerNotifyEvent.SetUp;
+begin
+  inherited;
+  SUT := TCollections.CreateQueue<Integer>;
+end;
+
+procedure TTestQueueOfIntegerNotifyEvent.TearDown;
+begin
+  inherited;
+  SUT := nil;
+  fAInvoked := False;
+  fBInvoked := False;
+end;
+
+procedure TTestQueueOfIntegerNotifyEvent.HandlerA(Sender: TObject;
+  const Item: Integer; Action: TCollectionNotification);
+begin
+  fAItem := Item;
+  fAAction := Action;
+  fAInvoked := True;
+end;
+
+procedure TTestQueueOfIntegerNotifyEvent.HandlerB(Sender: TObject;
+  const Item: Integer; Action: TCollectionNotification);
+begin
+  fBitem := Item;
+  fBAction := Action;
+  fBInvoked := True;
+end;
+
+procedure TTestQueueOfIntegerNotifyEvent.TestEmpty;
+begin
+  CheckEquals(0, SUT.OnNotify.Count);
+  CheckTrue(SUT.OnNotify.IsEmpty);
+
+  SUT.Enqueue(0);
+
+  CheckFalse(fAInvoked);
+  CheckFalse(fBInvoked);
+end;
+
+procedure TTestQueueOfIntegerNotifyEvent.TestOneHandler;
+begin
+  SUT.OnNotify.Add(HandlerA);
+
+  SUT.Enqueue(0);
+
+  CheckTrue(fAInvoked, 'handler A not invoked');
+  CheckTrue(fAAction = cnAdded, 'handler A: different collection notifications');
+  CheckEquals(0, fAItem, 'handler A: different item');
+
+  CheckFalse(fBInvoked, 'handler B not registered as callback');
+
+  SUT.Dequeue;
+
+  CheckTrue(fAAction = cnRemoved, 'different collection notifications');
+
+  SUT.OnNotify.Remove(HandlerA);
+  CheckEquals(0, SUT.OnNotify.Count);
+  CheckTrue(SUT.OnNotify.IsEmpty);
+end;
+
+procedure TTestQueueOfIntegerNotifyEvent.TestTwoHandlers;
+begin
+  SUT.OnNotify.Add(HandlerA);
+  SUT.OnNotify.Add(HandlerB);
+
+  SUT.Enqueue(0);
+
+  CheckTrue(fAInvoked, 'handler A not invoked');
+  CheckTrue(fAAction = cnAdded, 'handler A: different collection notifications');
+  CheckEquals(0, fAItem, 'handler A: different item');
+  CheckTrue(fBInvoked, 'handler B not invoked');
+  CheckTrue(fBAction = cnAdded, 'handler B: different collection notifications');
+  CheckEquals(0, fBItem, 'handler B: different item');
+
+  SUT.Dequeue;
+
+  CheckTrue(fAAction = cnRemoved, 'handler A: different collection notifications');
+  CheckEquals(0, fAItem, 'handler A: different item');
+  CheckTrue(fBAction = cnRemoved, 'handler B: different collection notifications');
+  CheckEquals(0, fBItem, 'handler B: different item');
+
+  SUT.OnNotify.Remove(HandlerA);
+  CheckEquals(1, SUT.OnNotify.Count);
+  CheckFalse(SUT.OnNotify.IsEmpty);
+  SUT.OnNotify.Remove(HandlerB);
+  CheckTrue(SUT.OnNotify.IsEmpty);
+end;
+
+procedure TTestQueueOfIntegerNotifyEvent.TestNonGenericNotifyEvent;
+var
+  queue: IQueue;
+  method: TMethod;
+begin
+  queue := SUT.AsQueue;
+
+  CheckTrue(queue.IsEmpty);
+  CheckTrue(queue.OnNotify.Enabled);
+
+  method.Code := @TTestStackOfIntegerNotifyEvent.HandlerA;
+  method.Data := Pointer(Self);
+
+  queue.OnNotify.Add(method);
+
+  CheckEquals(1, queue.OnNotify.Count);
+
+  queue.Enqueue(0);
+
+  CheckTrue(fAInvoked, 'handler A not invoked');
+  CheckTrue(fAAction = cnAdded, 'handler A: different collection notifications');
+  CheckEquals(0, fAItem, 'handler A: different item');
 end;
 
 { TTestListOfIntegerAsIEnumerable }
