@@ -526,12 +526,12 @@ type
     ///	<summary>
     ///	  Adds an event handler to the list.
     ///	</summary>
-    procedure Add(const handler: T);
+    procedure Add(handler: T);
 
     ///	<summary>
     ///	  Removes an event handler if it was added to the event.
     ///	</summary>
-    procedure Remove(const handler: T);
+    procedure Remove(handler: T);
 
     ///	<summary>
     ///	  Removes all event handlers which were registered by an instance.
@@ -547,7 +547,7 @@ type
     ///	  Iterates all event handlers and perform the specified action on each
     ///	  one.
     ///	</summary>
-    procedure ForEach(const action: TAction<T>);
+    procedure ForEach(action: TAction<T>);
 
     ///	<summary>
     ///	  Invokes all event handlers.
@@ -668,9 +668,9 @@ type
   public
     constructor Create;
 
-    procedure Add(const handler: T); overload;
-    procedure Remove(const handler: T); overload;
-    procedure ForEach(const action: TAction<T>);
+    procedure Add(handler: T); overload;
+    procedure Remove(handler: T); overload;
+    procedure ForEach(action: TAction<T>);
 
     property Invoke: T read GetInvoke;
   end;
@@ -1897,17 +1897,17 @@ begin
   inherited Create(TypeInfo(T));
 end;
 
-procedure TEvent<T>.ForEach(const action: TAction<T>);
+procedure TEvent<T>.ForEach(action: TAction<T>);
 begin
   inherited ForEach(TAction<TMethod>(action));
 end;
 
-procedure TEvent<T>.Add(const handler: T);
+procedure TEvent<T>.Add(handler: T);
 begin
   inherited Add(PMethod(@handler)^);
 end;
 
-procedure TEvent<T>.Remove(const handler: T);
+procedure TEvent<T>.Remove(handler: T);
 begin
   inherited Remove(PMethod(@handler)^);
 end;
