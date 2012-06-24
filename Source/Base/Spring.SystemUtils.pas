@@ -34,10 +34,10 @@ interface
 uses
   SysUtils,
   Classes,
-  Spring,
   TypInfo,
   Types,
-  Rtti;
+  Rtti,
+  Spring;
 
 type
   ///	<summary>
@@ -72,7 +72,6 @@ type
   public
     class function IsNull(const value: Variant): Boolean; static;
   end;
-
 
 ///	<summary>
 ///	  Retrieves the byte length of a unicode string.

@@ -416,7 +416,6 @@ implementation
 uses
   //Spring.Helpers,  // Internal Error
   StrUtils,
-  Character,
   Spring.ResourceStrings;
 
 

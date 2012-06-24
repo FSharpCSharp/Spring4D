@@ -69,4 +69,30 @@
 			<CallTarget Targets="Spring_Base:Make;Spring_Core:Make;Spring_Extensions:Make;Spring_Tests_DelphiXE:Make"/>
 		</Target>
 		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')" Project="$(BDS)\Bin\CodeGear.Group.Targets"/>
+		<ItemGroup Condition="'$(BuildGroup)'=='Release'">
+			<BuildGroupProject Include="Spring.Core.dproj">
+				<ProjectGuid>{6CA4F7FD-E65B-4AD5-9B32-5D9739F62047}</ProjectGuid>
+				<Configurations>Release</Configurations>
+				<Platforms>Win32</Platforms>
+				<Enabled>True</Enabled>
+			</BuildGroupProject>
+			<BuildGroupProject Include="Spring.Base.dproj">
+				<ProjectGuid>{1C63C62E-96A6-4606-8876-C7448FA850C2}</ProjectGuid>
+				<Configurations>Release</Configurations>
+				<Platforms>Win32</Platforms>
+				<Enabled>True</Enabled>
+			</BuildGroupProject>
+			<BuildGroupProject Include="..\..\Tests\Spring.Tests.DelphiXE.dproj">
+				<ProjectGuid>{E251DCB9-1C49-4573-A299-509A6B9B5D68}</ProjectGuid>
+				<Configurations>Debug</Configurations>
+				<Platforms>Win32</Platforms>
+				<Enabled>False</Enabled>
+			</BuildGroupProject>
+			<BuildGroupProject Include="Spring.Extensions.dproj">
+				<ProjectGuid>{36393DF7-0772-4944-A0D3-B24C69A26D34}</ProjectGuid>
+				<Configurations>Release</Configurations>
+				<Platforms>Win32</Platforms>
+				<Enabled>True</Enabled>
+			</BuildGroupProject>
+		</ItemGroup>
 	</Project>
