@@ -39,20 +39,19 @@ type
     function Next(): Boolean; override;
     function GetFieldValue(AIndex: Integer): Variant; overload; override;
     function GetFieldValue(const AFieldname: string): Variant; overload; override;
+    function GetFieldCount(): Integer; override;
   end;
 
   ESQLiteStatementAdapterException = Exception;
 
-  TSQLiteStatementAdapter = class(TInterfacedObject, IDBStatement)
-  private
-    FSQLiteStmt: ISQLitePreparedStatement;
+  TSQLiteStatementAdapter = class(TDriverStatementAdapter<ISQLitePreparedStatement>)
   public
-    constructor Create(const AStatement: ISQLitePreparedStatement);
+    constructor Create(const AStatement: ISQLitePreparedStatement); override;
     destructor Destroy; override;
-    procedure SetSQLCommand(const ACommandText: string);
-    procedure SetParams(Params: TEnumerable<TDBParam>);
-    function Execute(): NativeUInt;
-    function ExecuteQuery(): IDBResultSet;
+    procedure SetSQLCommand(const ACommandText: string); override;
+    procedure SetParams(Params: TEnumerable<TDBParam>); overload; override;
+    function Execute(): NativeUInt; override;
+    function ExecuteQuery(): IDBResultSet; override;
   end;
 
   TSQLiteConnectionAdapter = class(TDriverConnectionAdapter<TSQLiteDatabase>, IDBConnection)
@@ -85,6 +84,11 @@ begin
   Result := Dataset.Fields[AIndex].Value;
 end;
 
+function TSQLiteResultSetAdapter.GetFieldCount: Integer;
+begin
+  Result := Dataset.FieldCount;
+end;
+
 function TSQLiteResultSetAdapter.GetFieldValue(const AFieldname: string): Variant;
 begin
   Result := Dataset.FieldByName[AFieldname].Value;
@@ -104,8 +108,7 @@ end;
 
 constructor TSQLiteStatementAdapter.Create(const AStatement: ISQLitePreparedStatement);
 begin
-  inherited Create;
-  FSQLiteStmt := AStatement;
+  inherited Create(AStatement);
 end;
 
 destructor TSQLiteStatementAdapter.Destroy;
@@ -117,7 +120,7 @@ function TSQLiteStatementAdapter.Execute: NativeUInt;
 var
   LAffected: Integer;
 begin
-  if FSQLiteStmt.ExecSQL(LAffected) then
+  if Statement.ExecSQL(LAffected) then
     Result := LAffected
   else
     Result := 0;
@@ -127,7 +130,7 @@ function TSQLiteStatementAdapter.ExecuteQuery: IDBResultSet;
 var
   LDataset: ISQLiteTable;
 begin
-  LDataset := FSQLiteStmt.ExecQueryIntf;
+  LDataset := Statement.ExecQueryIntf;
   Result := TSQLiteResultSetAdapter.Create(LDataset);
 end;
 
@@ -155,13 +158,13 @@ begin
     if not Assigned(LParam) then
       raise ESQLiteStatementAdapterException.CreateFmt('Cannot find parameter named %S', [P.Name]);}
 
-    FSQLiteStmt.SetParamVariant(P.Name, P.Value);
+    Statement.SetParamVariant(P.Name, P.Value);
   end;
 end;
 
 procedure TSQLiteStatementAdapter.SetSQLCommand(const ACommandText: string);
 begin
-  FSQLiteStmt.PrepareStatement(ACommandText);
+  Statement.PrepareStatement(ACommandText);
 end;
 
 { TSQLiteConnectionAdapter }

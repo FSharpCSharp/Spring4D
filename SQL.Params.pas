@@ -30,7 +30,7 @@ unit SQL.Params;
 interface
 
 uses
-  DB;
+  DB, Generics.Collections;
 
 type
   TDBParam = class
@@ -47,7 +47,89 @@ type
     property Value: Variant read FValue write FValue;
   end;
 
+  procedure ConvertParam(const AFrom: TVarRec; out ATo: TDBParam);
+  procedure ConvertParams(const AFrom: array of const; ATo: TObjectList<TDBParam>);
+
+
 implementation
+
+uses
+  SysUtils
+  ,Core.Exceptions;
+
+procedure ConvertParam(const AFrom: TVarRec; out ATo: TDBParam);
+begin
+  case AFrom.VType of
+    vtAnsiString:
+    begin
+      ATo.ParamType := ftString;
+      ATo.Value := string(AFrom.VAnsiString);
+    end;
+    vtWideString:
+    begin
+      ATo.ParamType := ftWideString;
+      ATo.Value := string(AFrom.VWideString);
+    end;
+    vtUnicodeString:
+    begin
+      ATo.ParamType := ftWideString;
+      ATo.Value := string(AFrom.VUnicodeString);
+    end;
+    vtString:
+    begin
+      ATo.ParamType := ftString;
+      ATo.Value := string(AFrom.VString);
+    end;
+    vtInt64:
+    begin
+      ATo.ParamType := ftLargeint;
+      ATo.Value := Int64(AFrom.VInt64^);
+    end;
+    vtInteger:
+    begin
+      ATo.ParamType := ftInteger;
+      ATo.Value := AFrom.VInteger;
+    end;
+    vtExtended:
+    begin
+      ATo.ParamType := ftExtended;
+      ATo.Value := Extended(AFrom.VExtended^);
+    end;
+    vtCurrency:
+    begin
+      ATo.ParamType := ftCurrency;
+      ATo.Value := Currency(AFrom.VCurrency^);
+    end;
+    vtBoolean:
+    begin
+      ATo.ParamType := ftBoolean;
+      ATo.Value := AFrom.VBoolean;
+    end;
+    vtVariant:
+    begin
+      ATo.ParamType := ftVariant;
+      ATo.Value := Variant(AFrom.VVariant^);
+    end
+    else
+    begin
+      raise EBaseORMException.Create('Unknown parameter type');
+    end;
+  end;
+end;
+
+procedure ConvertParams(const AFrom: array of const; ATo: TObjectList<TDBParam>);
+var
+  i: Integer;
+  LParam: TDBParam;
+begin
+  for i := Low(AFrom) to High(AFrom) do
+  begin
+    LParam := TDBParam.Create;
+    LParam.Name := Format(':%D', [i]);
+    ConvertParam(AFrom[i], LParam);
+    ATo.Add(LParam);
+  end;
+end;
 
 { TDBParam }
 

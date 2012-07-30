@@ -63,6 +63,9 @@
 			<DCCReference Include="..\SvCollections.Tries.pas"/>
 			<DCCReference Include="TestSvEvents.pas"/>
 			<DCCReference Include="..\SvDelegates.pas"/>
+			<DCCReference Include="..\SvTesting.DUnit.pas"/>
+			<DCCReference Include="TestSvRttiUtils.pas"/>
+			<DCCReference Include="TestSvTesting.pas"/>
 			<RcItem Include="Sunset.jpg">
 				<ResourceType>RCDATA</ResourceType>
 				<ResourceId>JpgImage_1</ResourceId>

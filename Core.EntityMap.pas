@@ -54,12 +54,13 @@ type
     function IsMapped(AObject: TObject): Boolean;
     function IsIDMapped(): Boolean;
     procedure Add(AObject: TObject);
-    function Get(AObject: TObject): TObject;
+    function Get(AClass: TClass): TObject;
     procedure Remove(AObject: TObject);
     procedure Replace(AObject: TObject);
     procedure Clear(AAll: Boolean);
     function GetList(): TList<TObject>;
     function HasIdValue(AObject: TObject): Boolean;
+
   end;
 
 implementation
@@ -99,7 +100,7 @@ begin
   inherited Destroy;
 end;
 
-function TEntityMap.Get(AObject: TObject): TObject;
+function TEntityMap.Get(AClass: TClass): TObject;
 begin
   raise EORMMethodNotImplemented.Create('Method not implemented');
 end;

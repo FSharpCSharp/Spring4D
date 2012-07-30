@@ -53,7 +53,8 @@ uses
   Core.ConnectionFactory in '..\Core.ConnectionFactory.pas',
   TestAnsiSQLGenerator in 'TestAnsiSQLGenerator.pas',
   SQL.Commands in '..\SQL.Commands.pas',
-  SQL.Types in '..\SQL.Types.pas';
+  SQL.Types in '..\SQL.Types.pas',
+  Core.EntitySerializer in '..\Core.EntitySerializer.pas';
 
 {$R *.RES}
 

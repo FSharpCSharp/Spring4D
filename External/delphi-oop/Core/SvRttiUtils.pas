@@ -42,6 +42,9 @@ type
     class procedure DestroyClass<T>(var AObject: T);
     class function IsInstanceProp<T>(const APropertyName: string; const AObject: T): Boolean;
 
+    class function GetAttributesOfType<T: class>(const ARttiObject: TRttiObject): TArray<T>;
+    class function GetAttributeOfType<T: class>(const ARttiObject: TRttiObject): T;
+
     class procedure SetValue<T>(const APropertyName: string; const AObject: T; const AValue: TValue);
     class procedure SetValueFromString(const AObject: TObject; const AValue: string; AField: TRttiField); overload;
     class procedure SetValueFromString(const AObject: TObject; const AValue: string; AProp: TRttiProperty); overload;
@@ -118,6 +121,43 @@ begin
       end;
     end;
   end;
+end;
+
+class function TSvRtti.GetAttributeOfType<T>(const ARttiObject: TRttiObject): T;
+var
+  LAttribute: TCustomAttribute;
+begin
+  for LAttribute in ARttiObject.GetAttributes do
+  begin
+    if LAttribute.InheritsFrom(T) then
+    begin
+      Exit(T(LAttribute));
+    end;
+  end;
+  Result := nil;
+end;
+
+class function TSvRtti.GetAttributesOfType<T>(const ARttiObject: TRttiObject): TArray<T>;
+var
+  LAllAttributes: TArray<TCustomAttribute>;
+  LAttribute: TCustomAttribute;
+  i: Integer;
+begin
+  LAllAttributes := ARttiObject.GetAttributes;
+  SetLength(Result, Length(LAllAttributes));
+  i := 0;
+
+  for LAttribute in LAllAttributes do
+  begin
+    if LAttribute.InheritsFrom(T) then
+    begin
+      Result[i] := T(LAttribute);
+
+      Inc(i);
+    end;
+  end;
+
+  SetLength(Result, i);
 end;
 
 class function TSvRtti.IsInstanceProp<T>(const APropertyName: string; const AObject: T): Boolean;

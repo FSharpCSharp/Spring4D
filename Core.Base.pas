@@ -30,7 +30,7 @@ unit Core.Base;
 interface
 
 uses
-  Core.Interfaces;
+  Core.Interfaces, SQL.Params, Generics.Collections;
 
 type
   TDriverResultSetAdapter<T> = class(TInterfacedObject, IDBResultset)
@@ -41,6 +41,7 @@ type
     function Next(): Boolean; virtual; abstract;
     function GetFieldValue(AIndex: Integer): Variant; overload; virtual; abstract;
     function GetFieldValue(const AFieldname: string): Variant; overload; virtual; abstract;
+    function GetFieldCount(): Integer; virtual; abstract;
   public
     constructor Create(const ADataset: T); virtual;
     destructor Destroy; override;
@@ -63,6 +64,21 @@ type
     destructor Destroy; override;
 
     property Connection: T read FConnection;
+  end;
+
+  TDriverStatementAdapter<T> = class(TInterfacedObject, IDBStatement)
+  private
+    FStmt: T;
+  public
+    constructor Create(const AStatement: T); virtual;
+    destructor Destroy; override;
+    procedure SetSQLCommand(const ACommandText: string); virtual; abstract;
+    procedure SetParams(Params: TEnumerable<TDBParam>); overload; virtual; abstract;
+    procedure SetParams(const AParams: array of const); overload;
+    function Execute(): NativeUInt; virtual; abstract;
+    function ExecuteQuery(): IDBResultSet; virtual; abstract;
+
+    property Statement: T read FStmt;
   end;
 
 implementation
@@ -91,6 +107,35 @@ end;
 destructor TDriverConnectionAdapter<T>.Destroy;
 begin
   inherited Destroy;
+end;
+
+{ TDriverStatementAdapter<T> }
+
+constructor TDriverStatementAdapter<T>.Create(const AStatement: T);
+begin
+  inherited Create;
+  FStmt := AStatement;
+end;
+
+destructor TDriverStatementAdapter<T>.Destroy;
+begin
+  inherited Destroy;
+end;
+
+procedure TDriverStatementAdapter<T>.SetParams(const AParams: array of const);
+var
+  LParams: TObjectList<TDBParam>;
+begin
+  if Length(AParams) > 0 then
+  begin
+    LParams := TObjectList<TDBParam>.Create;
+    try
+      ConvertParams(AParams, LParams);
+      SetParams(LParams);
+    finally
+      LParams.Free;
+    end;
+  end;
 end;
 
 end.

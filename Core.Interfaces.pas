@@ -46,7 +46,8 @@ type
   IDBStatement = interface
     ['{DA905CAA-0FC2-4570-9788-1DC206600171}']
     procedure SetSQLCommand(const ACommandText: string);
-    procedure SetParams(AParams: TEnumerable<TDBParam>);
+    procedure SetParams(AParams: TEnumerable<TDBParam>); overload;
+    procedure SetParams(const AParams: array of const); overload;
     function Execute(): NativeUInt;
     function ExecuteQuery(): IDBResultset;
   end;
@@ -65,6 +66,11 @@ type
     function CreateStatement(): IDBStatement;
     function BeginTransaction(): IDBTransaction;
     function GetDriverName(): string;
+  end;
+
+  IEntitySerializer = interface
+    ['{BF7320F9-2B57-4B8C-997D-2F157D626D0D}']
+
   end;
 
 implementation

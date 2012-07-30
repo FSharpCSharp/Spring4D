@@ -9,11 +9,13 @@ unit TestORMManager;
 
 }
 
+{$I sv.inc}
 interface
 
 uses
   TestFramework, Windows, Forms, Dialogs, Controls, Classes, SysUtils,
-  Variants, Graphics, Messages, StdCtrls, Core.EntityManager, Core.Interfaces;
+  Variants, Graphics, Messages, StdCtrls, Core.EntityManager, Core.Interfaces
+  ,uModels;
 
 type
 
@@ -24,6 +26,16 @@ type
   public
     procedure SetUp; override;
     procedure TearDown; override;
+  published
+    procedure First();
+    procedure Fetch();
+  end;
+
+  TInsertData = record
+    Age: Integer;
+    Name: string;
+    Height: Double;
+    Picture: TStream;
   end;
 
 implementation
@@ -32,22 +44,114 @@ uses
   Adapters.SQLite
   ,Core.ConnectionFactory
   ,SQLiteTable3
-  ,SvDesignPatterns;
+  ,SvDesignPatterns
+  {$IFDEF USE_SPRING} ,Spring.Collections {$ELSE} ,Generics.Collections {$ENDIF}
+
+  ;
 
 var
   TestDB: TSQLiteDatabase = nil;
 
 const
-  TBL_PEOPLE = 'PEOPLE';
+  TBL_PEOPLE = 'CUSTOMERS';
 
 procedure CreateTables();
 begin
-  TestDB.ExecSQL('CREATE TABLE IF NOT EXISTS '+ TBL_PEOPLE + ' ([ID] INTEGER PRIMARY KEY, [AGE] INTEGER NULL,'+
-    '[NAME] VARCHAR (255), [HEIGHT] FLOAT, [PICTURE] BLOB); ');
-  if not TestDB.TableExists('CUSTOMERS') then
+  TestDB.ExecSQL('CREATE TABLE IF NOT EXISTS '+ TBL_PEOPLE + ' ([CUSTID] INTEGER PRIMARY KEY, [CUSTAGE] INTEGER NULL,'+
+    '[CUSTNAME] VARCHAR (255), [CUSTHEIGHT] FLOAT, [LastEdited] DATETIME, [EMAIL] TEXT); ');
+  if not TestDB.TableExists(TBL_PEOPLE) then
     raise Exception.Create('Table CUSTOMERS does not exist');
 end;
 
+procedure InsertCustomer(AAge: Integer = 25; AName: string = 'Demo'; AHeight: Double = 15.25; APicture: TStream = nil);
+begin
+  TestDB.ExecSQL('INSERT INTO  ' + TBL_PEOPLE + ' ([CUSTAGE], [CUSTNAME], [CUSTHEIGHT]) VALUES (?,?,?);',
+    [AAge, AName, AHeight]);
+end;
+
+procedure ClearTable(const ATableName: string);
+begin
+  TestDB.ExecSQL('DELETE FROM ' + ATableName + ';');
+end;
+
+
+procedure TestTEntityManager.Fetch;
+var
+  LCollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<TCustomer> {$ELSE} TObjectList<TCustomer> {$ENDIF} ;
+  LItems: {$IFDEF USE_SPRING} Spring.Collections.IList<TCustomer> {$ELSE} TObjectList<TCustomer> {$ENDIF};
+  sSql: string;
+begin
+  sSql := 'SELECT * FROM ' + TBL_PEOPLE;
+  {$IFDEF USE_SPRING}
+  LItems := TCollections.CreateList<TCustomer>(True);
+  {$ELSE}
+  LItems := TObjectList<TCustomer>.Create(True);
+  {$ENDIF}
+
+  LCollection := LItems;
+
+  FManager.Fetch<TCustomer>(sSql, [], LCollection);
+  CheckEquals(0, LItems.Count);
+
+  LItems.Clear;
+  LCollection := LItems;
+
+  InsertCustomer();
+  FManager.Fetch<TCustomer>(sSql, [], LCollection);
+  CheckEquals(1, LItems.Count);
+  CheckEquals(25, LItems[0].Age);
+
+  LItems.Clear;
+  LCollection := LItems;
+
+  InsertCustomer(15);
+  FManager.Fetch<TCustomer>(sSql, [], LCollection);
+  CheckEquals(2, LItems.Count);
+  CheckEquals(15, LItems[1].Age);
+
+  {$IFNDEF USE_SPRING}
+  LItems.Free;
+  {$ENDIF}
+end;
+
+procedure TestTEntityManager.First;
+var
+  LCustomer: TCustomer;
+  sSql: string;
+begin
+  sSql := 'SELECT * FROM ' + TBL_PEOPLE;
+  LCustomer := FManager.FirstOrDefault<TCustomer>(sSql, []);
+
+  CheckTrue(System.Default(TCustomer) = LCustomer);
+
+  InsertCustomer();
+
+  LCustomer := FManager.First<TCustomer>(sSql, []);
+  try
+    CheckTrue(Assigned(LCustomer));
+    CheckEquals(25, LCustomer.Age);
+  finally
+    FreeAndNil(LCustomer);
+  end;
+  InsertCustomer(15);
+
+  LCustomer := FManager.First<TCustomer>(sSql, []);
+  try
+    CheckTrue(Assigned(LCustomer));
+    CheckEquals(25, LCustomer.Age);
+  finally
+    FreeAndNil(LCustomer);
+  end;
+
+  sSql := sSql + ' WHERE [CUSTAGE] = :0 AND CUSTNAME=:1';
+  LCustomer := FManager.First<TCustomer>(sSql, [15, 'Demo']);
+  try
+    CheckTrue(Assigned(LCustomer));
+    CheckEquals(15, LCustomer.Age);
+  finally
+    FreeAndNil(LCustomer);
+  end;
+end;
 
 procedure TestTEntityManager.SetUp;
 begin
@@ -58,6 +162,7 @@ end;
 
 procedure TestTEntityManager.TearDown;
 begin
+  ClearTable(TBL_PEOPLE);
   FManager.Free;
 end;
 
@@ -84,11 +189,14 @@ begin
 end;
 
 initialization
+
   // Register any test cases with the test runner
+  RegisterTest(TestTEntityManager.Suite);
+
   TestDB := TSQLiteDatabase.Create(':memory:');
   TestDB.OnAfterOpen := TSQLiteEvents.DoOnAfterOpen;
+  CreateTables();
 
-  RegisterTest(TestTEntityManager.Suite);
   ConnectionFactory.RegisterFactoryMethod(dtSQLite, TSQLiteEvents.GetConstructor() );
 
 finalization

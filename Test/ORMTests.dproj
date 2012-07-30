@@ -33,6 +33,7 @@
 			<DCC_ExeOutput>.\$(Config)\$(Platform)</DCC_ExeOutput>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_1)'!=''">
+			<DCC_UnitSearchPath>..\External\Spring\Source\Base;..\External\Spring\Source\Base\Collections;..\External\Spring\Source\Base\Reflection;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DCC_DebugDCUs>true</DCC_DebugDCUs>
 			<DCC_MapFile>3</DCC_MapFile>
 			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
@@ -84,6 +85,7 @@
 			<DCCReference Include="TestAnsiSQLGenerator.pas"/>
 			<DCCReference Include="..\SQL.Commands.pas"/>
 			<DCCReference Include="..\SQL.Types.pas"/>
+			<DCCReference Include="..\Core.EntitySerializer.pas"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>

@@ -52,6 +52,8 @@ type
 
   EUnknownJoinType = class(Exception);
 
+  EORMRecordNotFoundException = class(Exception);
+
 implementation
 
 { EBaseORMException }

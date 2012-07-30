@@ -36,7 +36,10 @@ uses
   TestSvContainers in 'TestSvContainers.pas',
   SvCollections.Tries in '..\SvCollections.Tries.pas',
   TestSvEvents in 'TestSvEvents.pas',
-  SvDelegates in '..\SvDelegates.pas';
+  SvDelegates in '..\SvDelegates.pas',
+  SvTesting.DUnit in '..\SvTesting.DUnit.pas',
+  TestSvRttiUtils in 'TestSvRttiUtils.pas',
+  TestSvTesting in 'TestSvTesting.pas';
 
 {$R *.RES}
 

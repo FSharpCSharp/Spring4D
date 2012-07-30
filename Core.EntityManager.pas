@@ -27,10 +27,15 @@
 *)
 unit Core.EntityManager;
 
+{$I sv.inc}
 interface
 
 uses
-  Core.AbstractManager, Core.EntityMap, Core.Interfaces, Generics.Collections, Rtti;
+  Core.AbstractManager, Core.EntityMap, Core.Interfaces, Generics.Collections, Rtti
+  {$IFDEF USE_SPRING}
+  ,Spring.Collections
+  {$ENDIF}
+  ,Mapping.Attributes;
 
 type
   TEntityManager = class(TAbstractManager)
@@ -39,6 +44,12 @@ type
     FOldStateEntities: TEntityMap;
   protected
     procedure CascadePersist(AEntity: TObject);
+
+    procedure SetEntityColumns(AEntity: TObject; AColumns: TList<Column>; AResultset: IDBResultset); virtual;
+
+    function GetResultset(const ASql: string; const AParams: array of const): IDBResultset;
+    function GetOne<T: class, constructor>(AResultset: IDBResultset): T;
+
   public
     constructor Create(AConnection: IDBConnection); override;
     destructor Destroy; override;
@@ -51,6 +62,19 @@ type
     procedure Flush();
     procedure Clear();
 
+    /// <summary>
+    /// Retrieves first and only model from the sql statement
+    /// </summary>
+    function First<T: class, constructor>(const ASql: string; const AParams: array of const): T;
+    function FirstOrDefault<T: class, constructor>(const ASql: string; const AParams: array of const): T;
+    /// <summary>
+    /// Retrieves multiple models from the sql statement into the ACollection
+    /// </summary>
+    procedure Fetch<T: class, constructor>(const ASql: string;
+      const AParams: array of const; var ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
+                                                  {$ELSE} TObjectList<T> {$ENDIF} );
+
+
   end;
 
 
@@ -60,7 +84,8 @@ uses
   SQL.Commands.Insert,
   Core.Exceptions,
   SQL.Commands.Factory,
-  Mapping.RttiExplorer;
+  Mapping.RttiExplorer
+  ,SQL.Params;
 
 { TEntityManager }
 
@@ -88,6 +113,24 @@ begin
   inherited Destroy;
 end;
 
+procedure TEntityManager.Fetch<T>(const ASql: string; const AParams: array of const;
+  var ACollection: {$IFDEF USE_SPRING} ICollection<T> {$ELSE} TObjectList<T> {$ENDIF});
+var
+  LResults: IDBResultset;
+  LCurrent: T;
+begin
+  LResults := GetResultset(ASql, AParams);
+
+  while not LResults.IsEmpty do
+  begin
+    LCurrent := GetOne<T>(LResults);
+
+    ACollection.Add(LCurrent);
+
+    LResults.Next;
+  end;
+end;
+
 function TEntityManager.Find<T>(const AId: TValue): T;
 begin
   raise EORMMethodNotImplemented.Create('Method not implemented');
@@ -98,9 +141,55 @@ begin
   raise EORMMethodNotImplemented.Create('Method not implemented');
 end;
 
+function TEntityManager.First<T>(const ASql: string; const AParams: array of const): T;
+var
+  LResults: IDBResultset;
+begin
+  LResults := GetResultset(ASql, AParams);
+  if LResults.IsEmpty then
+    raise EORMRecordNotFoundException.Create('Query returned 0 records');
+
+  Result := GetOne<T>(LResults);
+end;
+
+function TEntityManager.FirstOrDefault<T>(const ASql: string; const AParams: array of const): T;
+begin
+  try
+    Result := First<T>(ASql, AParams);
+  except
+    Result := System.Default(T);
+  end;
+end;
+
 procedure TEntityManager.Flush;
 begin
   raise EORMMethodNotImplemented.Create('Method not implemented');
+end;
+
+function TEntityManager.GetOne<T>(AResultset: IDBResultset): T;
+var
+  LColumns: TList<Column>;
+begin
+  Result := T.Create;
+
+  LColumns := TRttiExplorer.GetColumns(TObject(Result).ClassType);
+  try
+    SetEntityColumns(Result, LColumns, AResultset);
+  finally
+    LColumns.Free;
+  end;
+end;
+
+function TEntityManager.GetResultset(const ASql: string;
+  const AParams: array of const): IDBResultset;
+var
+  LStmt: IDBStatement;
+begin
+  LStmt := Connection.CreateStatement();
+  LStmt.SetSQLCommand(ASql);
+  LStmt.SetParams(AParams);
+
+  Result := LStmt.ExecuteQuery();
 end;
 
 function TEntityManager.Merge<T>(AEntity: T): T;
@@ -136,6 +225,19 @@ end;
 procedure TEntityManager.Remove(AEntity: TObject);
 begin
   raise EORMMethodNotImplemented.Create('Method not implemented');
+end;
+
+procedure TEntityManager.SetEntityColumns(AEntity: TObject; AColumns: TList<Column>; AResultset: IDBResultset);
+var
+  LCol: Column;
+  LVal: Variant;
+begin
+  for LCol in AColumns do
+  begin
+    LVal := AResultset.GetFieldValue(LCol.Name);
+
+    TRttiExplorer.SetMemberValue(AEntity, LCol, TValue.FromVariant(LVal));
+  end;
 end;
 
 end.
