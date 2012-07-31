@@ -30,7 +30,7 @@ unit SQL.Params;
 interface
 
 uses
-  DB, Generics.Collections;
+  DB, Generics.Collections, Rtti;
 
 type
   TDBParam = class
@@ -49,13 +49,15 @@ type
 
   procedure ConvertParam(const AFrom: TVarRec; out ATo: TDBParam);
   procedure ConvertParams(const AFrom: array of const; ATo: TObjectList<TDBParam>);
-
+  function FromTValueTypeToFieldType(const AValue: TValue): TFieldType;
 
 implementation
 
 uses
   SysUtils
-  ,Core.Exceptions;
+  ,Core.Exceptions
+  ,Variants
+  ;
 
 procedure ConvertParam(const AFrom: TVarRec; out ATo: TDBParam);
 begin
@@ -129,6 +131,14 @@ begin
     ConvertParam(AFrom[i], LParam);
     ATo.Add(LParam);
   end;
+end;
+
+function FromTValueTypeToFieldType(const AValue: TValue): TFieldType;
+var
+  LVariant: Variant;
+begin
+  LVariant := AValue.AsVariant;
+  Result := VarTypeToDataType(VarType(LVariant));
 end;
 
 { TDBParam }

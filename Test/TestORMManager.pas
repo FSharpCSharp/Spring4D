@@ -29,6 +29,9 @@ type
   published
     procedure First();
     procedure Fetch();
+    procedure Insert();
+    procedure Update();
+    procedure Delete();
   end;
 
   TInsertData = record
@@ -44,6 +47,7 @@ uses
   Adapters.SQLite
   ,Core.ConnectionFactory
   ,SQLiteTable3
+  ,SQL.Register
   ,SvDesignPatterns
   {$IFDEF USE_SPRING} ,Spring.Collections {$ELSE} ,Generics.Collections {$ENDIF}
 
@@ -74,6 +78,30 @@ begin
   TestDB.ExecSQL('DELETE FROM ' + ATableName + ';');
 end;
 
+
+procedure TestTEntityManager.Delete;
+var
+  LCustomer: TCustomer;
+  sSql: string;
+  LResults: ISQLiteTable;
+begin
+  sSql := 'select * from ' + TBL_PEOPLE;
+
+  InsertCustomer();
+
+  LCustomer := FManager.FirstOrDefault<TCustomer>(sSql, []);
+  try
+    CheckEquals(25, LCustomer.Age);
+
+    FManager.Delete(LCustomer);
+
+    LResults := TestDB.GetUniTableIntf('SELECT COUNT(*) FROM ' + TBL_PEOPLE);
+    CheckEquals(0, LResults.Fields[0].AsInteger);
+
+  finally
+    LCustomer.Free;
+  end;
+end;
 
 procedure TestTEntityManager.Fetch;
 var
@@ -153,8 +181,52 @@ begin
   end;
 end;
 
+procedure TestTEntityManager.Insert;
+var
+  LCustomer: TCustomer;
+  LTable: ISQLiteTable;
+  LID, LCount: Int64;
+begin
+  LCustomer := TCustomer.Create;
+  try
+    LCustomer.Name := 'Insert test';
+    LCustomer.Age := 10;
+    LCustomer.Height := 1.1;
+
+    FManager.Insert(LCustomer);
+
+    LTable := TestDB.GetUniTableIntf('select * from ' + TBL_PEOPLE);
+    CheckEqualsString(LCustomer.Name, LTable.FieldByName['CUSTNAME'].AsString);
+    CheckEquals(LCustomer.Age, LTable.FieldByName['CUSTAGE'].AsInteger);
+    LID := LTable.FieldByName['CUSTID'].AsInteger;
+    CheckEquals(LID, LCustomer.ID);
+  finally
+    LCustomer.Free;
+  end;
+
+  LCustomer := TCustomer.Create;
+  try
+    LCustomer.Name := 'Insert test 2';
+    LCustomer.Age := 15;
+    LCustomer.Height := 41.1;
+
+    FManager.Insert(LCustomer);
+    LTable := TestDB.GetUniTableIntf('select * from ' + TBL_PEOPLE + ' where [CUSTAGE] = 15;');
+    CheckEqualsString(LCustomer.Name, LTable.FieldByName['CUSTNAME'].AsString);
+    CheckEquals(LCustomer.Age, LTable.FieldByName['CUSTAGE'].AsInteger);
+    LID := LTable.FieldByName['CUSTID'].AsInteger;
+    CheckEquals(LID, LCustomer.ID);
+
+    LCount := TestDB.GetUniTableIntf('select count(*) from ' + TBL_PEOPLE).Fields[0].AsInteger;
+    CheckEquals(2, LCount);
+  finally
+    LCustomer.Free;
+  end;
+end;
+
 procedure TestTEntityManager.SetUp;
 begin
+  TSQLGeneratorRegister.SetCurrentGenerator('SQLite3');
   FConnection := ConnectionFactory.GetInstance(dtSQLite);
 
   FManager := TEntityManager.Create(FConnection);
@@ -164,6 +236,34 @@ procedure TestTEntityManager.TearDown;
 begin
   ClearTable(TBL_PEOPLE);
   FManager.Free;
+end;
+
+procedure TestTEntityManager.Update;
+var
+  LCustomer: TCustomer;
+  sSql: string;
+  LResults: ISQLiteTable;
+begin
+  sSql := 'select * from ' + TBL_PEOPLE;
+
+  InsertCustomer();
+
+  LCustomer := FManager.FirstOrDefault<TCustomer>(sSql, []);
+  try
+    CheckEquals(25, LCustomer.Age);
+
+    LCustomer.Age := 55;
+    LCustomer.Name := 'Update Test';
+
+    FManager.Update(LCustomer);
+
+    LResults := TestDB.GetUniTableIntf('SELECT * FROM ' + TBL_PEOPLE);
+    CheckEquals(LCustomer.Age, LResults.FieldByName['CUSTAGE'].AsInteger);
+    CheckEqualsString(LCustomer.Name, LResults.FieldByName['CUSTNAME'].AsString);
+
+  finally
+    LCustomer.Free;
+  end;
 end;
 
 type
@@ -185,6 +285,7 @@ begin
   Result := function: IDBConnection
   begin
     Result := TSQLiteConnectionAdapter.Create(TestDB);
+
   end;
 end;
 

@@ -30,11 +30,25 @@ unit SQL.Commands.Update;
 interface
 
 uses
-  SQL.AbstractCommandExecutor;
+  SQL.AbstractCommandExecutor, SQL.Types, SQL.Commands, SQL.Params, Generics.Collections
+  , Mapping.Attributes;
 
 type
   TUpdateExecutor = class(TAbstractCommandExecutor)
+  private
+    FTable: TSQLTable;
+    FCommand: TUpdateCommand;
+    FSQL: string;
+    FColumns: TList<Column>;
+    FPrimaryKeyColumnName: string;
+  protected
+    function BuildParams(AEntity: TObject): TObjectList<TDBParam>; virtual;
   public
+    constructor Create(); override;
+    destructor Destroy; override;
+
+    procedure Build(AClass: TClass); override;
+
     procedure Update(AEntity: TObject); overload;
     procedure Update(AEntity: TObject; AEntity2: TObject); overload;
   end;
@@ -42,13 +56,98 @@ type
 implementation
 
 uses
-  Core.Exceptions;
+  Core.Exceptions
+  ,Core.Interfaces
+  ,Mapping.RttiExplorer
+  ,SysUtils
+  ,Rtti
+  ;
 
 { TUpdateCommand }
 
 procedure TUpdateExecutor.Update(AEntity: TObject);
+var
+  LTran: IDBTransaction;
+  LStmt: IDBStatement;
+  LParams: TObjectList<TDBParam>;
 begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
+  Assert(Assigned(AEntity));
+
+  LTran := Connection.BeginTransaction;
+  LStmt := Connection.CreateStatement;
+  LStmt.SetSQLCommand(FSQL);
+  {TODO -oLinas -cGeneral : assign parameters}
+  LParams := BuildParams(AEntity);
+  try
+    LStmt.SetParams(LParams);
+
+    LStmt.Execute();
+
+    LTran.Commit;
+  finally
+    LTran := nil;
+    LStmt := nil;
+    LParams.Free;
+  end;
+end;
+
+procedure TUpdateExecutor.Build(AClass: TClass);
+var
+  LAtrTable: Table;
+begin
+  EntityClass := AClass;
+  LAtrTable := TRttiExplorer.GetTable(EntityClass);
+  if not Assigned(LAtrTable) then
+    raise ETableNotSpecified.Create('Table not specified');
+
+  FTable.SetFromAttribute(LAtrTable);
+
+  if Assigned(FColumns) then
+    FreeAndNil(FColumns);
+  FColumns := TRttiExplorer.GetColumns(EntityClass);
+  FPrimaryKeyColumnName := TRttiExplorer.GetPrimaryKeyColumnName(EntityClass);
+   //add fields to tsqltable
+  FCommand.PrimaryKeyColumnName := FPrimaryKeyColumnName;
+  FCommand.SetTable(FColumns);
+
+  FSQL := Generator.GenerateUpdate(FCommand);
+end;
+
+function TUpdateExecutor.BuildParams(AEntity: TObject): TObjectList<TDBParam>;
+var
+  LParam: TDBParam;
+  LColumn: Column;
+  LVal: TValue;
+begin
+  Result := TObjectList<TDBParam>.Create(True);
+
+  for LColumn in FColumns do
+  begin
+    LParam := TDBParam.Create;
+    LParam.Name := ':' + LColumn.Name;
+    LVal := TRttiExplorer.GetMemberValue(AEntity, LColumn.ClassMemberName);
+    LParam.Value := LVal.AsVariant;
+    LParam.ParamType := FromTValueTypeToFieldType(LVal);
+    Result.Add(LParam);
+  end;
+end;
+
+constructor TUpdateExecutor.Create;
+begin
+  inherited Create;
+  FTable := TSQLTable.Create;
+  FCommand := TUpdateCommand.Create(FTable);
+  FColumns := nil;
+  FPrimaryKeyColumnName := '';
+end;
+
+destructor TUpdateExecutor.Destroy;
+begin
+  FTable.Free;
+  FCommand.Free;
+  if Assigned(FColumns) then
+    FColumns.Free;
+  inherited Destroy;
 end;
 
 procedure TUpdateExecutor.Update(AEntity, AEntity2: TObject);

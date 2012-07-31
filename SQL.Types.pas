@@ -30,7 +30,7 @@ unit SQL.Types;
 interface
 
 uses
-  Generics.Collections;
+  Generics.Collections, Mapping.Attributes;
 
 const
   CRLF = #13#10;
@@ -48,6 +48,8 @@ type
     function SchemaExists(): Boolean;
 
     function GetFullTableName(): string;
+
+    procedure SetFromAttribute(AAttribute: Table);
 
     property Alias: string read GetAlias write FAlias;
     property Description: string read FDescription write FDescription;
@@ -180,6 +182,12 @@ end;
 function TSQLTable.SchemaExists: Boolean;
 begin
   Result := (FSchema <> '');
+end;
+
+procedure TSQLTable.SetFromAttribute(AAttribute: Table);
+begin
+  Name := AAttribute.TableName;
+  Schema := AAttribute.Schema;
 end;
 
 procedure TSQLTable.SetName(const Value: string);

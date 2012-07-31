@@ -30,7 +30,8 @@ unit Adapters.SQLite;
 interface
 
 uses
-  Generics.Collections, Core.Interfaces, SQLiteTable3, Core.Base, SQL.Params, SysUtils;
+  Generics.Collections, Core.Interfaces, SQLiteTable3, Core.Base, SQL.Params, SysUtils
+  , SQL.AnsiSQLGenerator;
 
 type
   TSQLiteResultSetAdapter = class(TDriverResultSetAdapter<ISQLiteTable>)
@@ -75,7 +76,17 @@ type
     procedure Rollback;
   end;
 
+  TSQLiteSQLGenerator = class(TAnsiSQLGenerator)
+  public
+    function GetDriverName(): string; override;
+    function GenerateGetLastInsertId(): string; override;
+  end;
+
 implementation
+
+uses
+  SQL.Register
+  ;
 
 { TSQLiteResultSetAdapter }
 
@@ -253,5 +264,20 @@ begin
 
   FSQLiteConnection.Rollback;
 end;
+
+{ TSQLiteSQLGenerator }
+
+function TSQLiteSQLGenerator.GenerateGetLastInsertId: string;
+begin
+  Result := 'SELECT last_insert_rowid();';
+end;
+
+function TSQLiteSQLGenerator.GetDriverName: string;
+begin
+  Result := 'SQLite3';
+end;
+
+initialization
+  TSQLGeneratorRegister.RegisterGenerator(TSQLiteSQLGenerator.Create());
 
 end.

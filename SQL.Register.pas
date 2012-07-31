@@ -36,26 +36,42 @@ type
   TSQLGeneratorRegister = class
   strict private
     class var FGenerators: TDictionary<string,ISQLGenerator>;
+    class var FCurrentGeneratorName: string;
   private
     class constructor Create;
     class destructor Destroy;
   public
     class procedure RegisterGenerator(const AGenerator: ISQLGenerator);
+    class procedure SetCurrentGenerator(const ADriverName: string);
     class function GetGenerator(const ADriverName: string): ISQLGenerator;
+    class function GetCurrentGenerator(): ISQLGenerator;
   end;
 
 implementation
 
+uses
+  SQL.AnsiSQLGenerator;
+
 { TSQLGeneratorRegister }
 
 class constructor TSQLGeneratorRegister.Create;
+var
+  LGenerator: ISQLGenerator;
 begin
   FGenerators := TDictionary<string,ISQLGenerator>.Create();
+  LGenerator := TAnsiSQLGenerator.Create;
+  RegisterGenerator(LGenerator);
+  FCurrentGeneratorName := LGenerator.GetDriverName();
 end;
 
 class destructor TSQLGeneratorRegister.Destroy;
 begin
   FGenerators.Free;
+end;
+
+class function TSQLGeneratorRegister.GetCurrentGenerator: ISQLGenerator;
+begin
+  Result := FGenerators[FCurrentGeneratorName];
 end;
 
 class function TSQLGeneratorRegister.GetGenerator(const ADriverName: string): ISQLGenerator;
@@ -66,6 +82,14 @@ end;
 class procedure TSQLGeneratorRegister.RegisterGenerator(const AGenerator: ISQLGenerator);
 begin
   FGenerators.Add(AGenerator.GetDriverName, AGenerator);
+end;
+
+class procedure TSQLGeneratorRegister.SetCurrentGenerator(const ADriverName: string);
+begin
+  if (ADriverName <> FCurrentGeneratorName) then
+  begin
+    FCurrentGeneratorName := ADriverName;
+  end;
 end;
 
 end.

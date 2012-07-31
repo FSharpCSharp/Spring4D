@@ -48,7 +48,7 @@ type
   private
     FMap: TObjectDictionary<TEntityMapKey,TObject>;
   public
-    constructor Create(); virtual;
+    constructor Create(AOwnsValues: Boolean); virtual;
     destructor Destroy; override;
 
     function IsMapped(AObject: TObject): Boolean;
@@ -79,19 +79,33 @@ end;
 { TModelMap }
 
 procedure TEntityMap.Add(AObject: TObject);
+var
+  LKey: TEntityMapKey;
 begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
+  Assert(Assigned(AObject), 'Model not assigned');
+  LKey := TEntityMapKey.Create;
+  LKey.FModelClass := AObject.ClassType;
+
+  FMap.Add(LKey, AObject);
 end;
 
 procedure TEntityMap.Clear(AAll: Boolean);
 begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
+  FMap.Clear;
 end;
 
-constructor TEntityMap.Create;
+constructor TEntityMap.Create(AOwnsValues: Boolean);
+var
+  LOwnerships: TDictionaryOwnerships;
 begin
   inherited Create;
-  FMap := TObjectDictionary<TEntityMapKey,TObject>.Create([doOwnsKeys, doOwnsValues]);
+
+  if AOwnsValues then
+    LOwnerships := [doOwnsKeys, doOwnsValues]
+  else
+    LOwnerships := [doOwnsKeys];
+
+  FMap := TObjectDictionary<TEntityMapKey,TObject>.Create(LOwnerships);
 end;
 
 destructor TEntityMap.Destroy;

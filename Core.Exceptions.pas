@@ -42,6 +42,8 @@ type
 
   ECannotPersististEntityWithId = class(EBaseORMException);
 
+  ETableNotSpecified = class(EBaseORMException);
+
   EORMMethodNotImplemented = class(Exception);
 
   EUnknownMember = class(Exception);

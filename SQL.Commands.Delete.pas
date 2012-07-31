@@ -30,24 +30,115 @@ unit SQL.Commands.Delete;
 interface
 
 uses
-  SQL.AbstractCommandExecutor;
+  SQL.AbstractCommandExecutor, SQL.Types, SQL.Commands, SQL.Params, Mapping.Attributes
+  ,Generics.Collections;
 
 type
   TDeleteExecutor = class(TAbstractCommandExecutor)
+  private
+    FTable: TSQLTable;
+    FCommand: TDeleteCommand;
+    FSQL: string;
+    FPrimaryKeyColumnName: string;
+  protected
+    function BuildParams(AEntity: TObject): TObjectList<TDBParam>; virtual;
   public
+    constructor Create(); override;
+    destructor Destroy; override;
+
+    procedure Build(AClass: TClass); override;
+
     procedure Delete(AEntity: TObject);
   end;
 
 implementation
 
 uses
-  Core.Exceptions;
+  Core.Exceptions
+  ,Core.Interfaces
+  ,Mapping.RttiExplorer
+  ,Rtti
+  ;
 
 { TDeleteCommand }
 
-procedure TDeleteExecutor.Delete(AEntity: TObject);
+procedure TDeleteExecutor.Build(AClass: TClass);
+var
+  LAtrTable: Table;
 begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
+  EntityClass := AClass;
+  LAtrTable := TRttiExplorer.GetTable(EntityClass);
+  if not Assigned(LAtrTable) then
+    raise ETableNotSpecified.Create('Table not specified');
+
+  FTable.SetFromAttribute(LAtrTable);
+
+  FPrimaryKeyColumnName := TRttiExplorer.GetPrimaryKeyColumnName(EntityClass);
+   //add fields to tsqltable
+  FCommand.PrimaryKeyColumnName := FPrimaryKeyColumnName;
+  FCommand.SetTable(nil);
+
+  FSQL := Generator.GenerateDelete(FCommand);
+end;
+
+function TDeleteExecutor.BuildParams(AEntity: TObject): TObjectList<TDBParam>;
+var
+  LParam: TDBParam;
+  LVal: TValue;
+begin
+  Assert(FPrimaryKeyColumnName <> '');
+
+  Result := TObjectList<TDBParam>.Create(True);
+
+  LParam := TDBParam.Create;
+  LParam.Name := ':' + FPrimaryKeyColumnName;
+  //TRttiExplorer.GetPrimaryKeyValue
+  LVal := TRttiExplorer.GetPrimaryKeyValue(AEntity);
+ // LVal := TRttiExplorer.GetMemberValue(AEntity, FPrimaryKeyColumnName);
+  LParam.Value := LVal.AsVariant;
+  LParam.ParamType := FromTValueTypeToFieldType(LVal);
+  Result.Add(LParam);
+end;
+
+constructor TDeleteExecutor.Create;
+begin
+  inherited Create;
+  FTable := TSQLTable.Create;
+  FCommand := TDeleteCommand.Create(FTable);
+  FPrimaryKeyColumnName := '';
+end;
+
+procedure TDeleteExecutor.Delete(AEntity: TObject);
+var
+  LTran: IDBTransaction;
+  LStmt: IDBStatement;
+  LParams: TObjectList<TDBParam>;
+begin
+  Assert(Assigned(AEntity));
+
+  LTran := Connection.BeginTransaction;
+  LStmt := Connection.CreateStatement;
+  LStmt.SetSQLCommand(FSQL);
+  {TODO -oLinas -cGeneral : assign parameters}
+  LParams := BuildParams(AEntity);
+  try
+    LStmt.SetParams(LParams);
+
+    LStmt.Execute();
+
+    LTran.Commit;
+  finally
+    LTran := nil;
+    LStmt := nil;
+    LParams.Free;
+  end;
+end;
+
+destructor TDeleteExecutor.Destroy;
+begin
+  FTable.Free;
+  FCommand.Free;
+  inherited Destroy;
 end;
 
 end.

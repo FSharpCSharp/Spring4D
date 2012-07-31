@@ -73,19 +73,30 @@ type
     procedure Fetch<T: class, constructor>(const ASql: string;
       const AParams: array of const; var ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
                                                   {$ELSE} TObjectList<T> {$ENDIF} );
+    /// <summary>
+    /// Inserts model to the database
+    /// </summary>
+    procedure Insert(AEntity: TObject);
+    /// <summary>
+    /// Updates model in a database
+    /// </summary>
+    procedure Update(AEntity: TObject);
 
-
+    procedure Delete(AEntity: TObject);
   end;
 
 
 implementation
 
 uses
-  SQL.Commands.Insert,
-  Core.Exceptions,
-  SQL.Commands.Factory,
-  Mapping.RttiExplorer
-  ,SQL.Params;
+  SQL.Commands.Insert
+  ,SQL.Commands.Update
+  ,SQL.Commands.Delete
+  ,Core.Exceptions
+  ,SQL.Commands.Factory
+  ,Mapping.RttiExplorer
+  ,SQL.Params
+  ;
 
 { TEntityManager }
 
@@ -102,8 +113,23 @@ end;
 constructor TEntityManager.Create(AConnection: IDBConnection);
 begin
   inherited Create(AConnection);
-  FEntities := TEntityMap.Create;
-  FOldStateEntities := TEntityMap.Create;
+  FEntities := TEntityMap.Create(False);
+  FOldStateEntities := TEntityMap.Create(True);
+end;
+
+procedure TEntityManager.Delete(AEntity: TObject);
+var
+  LDeleter: TDeleteExecutor;
+begin
+  LDeleter := CommandFactory.GetCommand<TDeleteExecutor>(AEntity.ClassType);
+
+  LDeleter.Connection := Connection;
+  LDeleter.EntityClass := AEntity.ClassType;
+  LDeleter.Delete(AEntity);
+
+  {TODO -oLinas -cGeneral : remove from entity maps}
+ // FEntities.Remove(AEntity);
+ // FOldStateEntities.Remove(AEntity);
 end;
 
 destructor TEntityManager.Destroy;
@@ -192,6 +218,21 @@ begin
   Result := LStmt.ExecuteQuery();
 end;
 
+procedure TEntityManager.Insert(AEntity: TObject);
+var
+  LInserter: TInsertExecutor;
+begin
+  LInserter := CommandFactory.GetCommand<TInsertExecutor>(AEntity.ClassType);
+  {TODO -oLinas -cGeneral : finish implementing missing methods}
+  LInserter.Connection := Connection;
+  LInserter.EntityClass := AEntity.ClassType;
+  LInserter.Insert(AEntity);
+
+  {TODO -oLinas -cGeneral : add to entity maps}
+ // FEntities.Add(AEntity);
+ // FOldStateEntities.Add(TRttiExplorer.Clone(AEntity));
+end;
+
 function TEntityManager.Merge<T>(AEntity: T): T;
 begin
   raise EORMMethodNotImplemented.Create('Method not implemented');
@@ -210,7 +251,7 @@ begin
   CascadePersist(AEntity);
 
   LInserter := CommandFactory.GetCommand<TInsertExecutor>(AEntity.ClassType);
-  {TODO -oLinas -cGeneral : finish implementing missing methods}
+
   try
     //if TRttiExplorer.HasSequence(Entity.ClassType{, True}) then
      // LInserter.LoadIdFromSequence(Entity);
@@ -238,6 +279,21 @@ begin
 
     TRttiExplorer.SetMemberValue(AEntity, LCol, TValue.FromVariant(LVal));
   end;
+end;
+
+procedure TEntityManager.Update(AEntity: TObject);
+var
+  LUpdater: TUpdateExecutor;
+begin
+  LUpdater := CommandFactory.GetCommand<TUpdateExecutor>(AEntity.ClassType);
+  {TODO -oLinas -cGeneral : finish implementing missing methods}
+  LUpdater.Connection := Connection;
+  LUpdater.EntityClass := AEntity.ClassType;
+  LUpdater.Update(AEntity);
+
+  {TODO -oLinas -cGeneral : update entity maps}
+ // FEntities.Add(AEntity);
+ // FOldStateEntities.Add(TRttiExplorer.Clone(AEntity));
 end;
 
 end.

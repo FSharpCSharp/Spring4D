@@ -35,6 +35,7 @@ uses
 type
   TSelectExecutor = class(TAbstractCommandExecutor)
   public
+    procedure Build(AClass: TClass); override;
     function Select(const AID: TValue): TObject;
     function SelectAll(): TObjectList<TObject>;
   end;
@@ -47,6 +48,11 @@ uses
   Core.Exceptions;
 
 { TSelectCommand }
+
+procedure TSelectExecutor.Build(AClass: TClass);
+begin
+  raise EORMMethodNotImplemented.Create('Method not implemented');
+end;
 
 function TSelectExecutor.Select(const AID: TValue): TObject;
 begin

@@ -252,22 +252,53 @@ begin
   end;
 end;
 
+const
+  SQL_UPDATE_TEST = 'UPDATE CUSTOMERS SET ' + #13#10
+  + 'NAME=:NAME,AGE=:AGE,HEIGHT=:HEIGHT' + #13#10 + ' WHERE ID=:ID;';
+
 procedure TestTAnsiSQLGenerator.TestGenerateUpdate;
 var
   ReturnValue: string;
   LCommand: TUpdateCommand;
+  LTable: TSQLTable;
 begin
-  ReturnValue := FAnsiSQLGenerator.GenerateUpdate(LCommand);
-  // TODO: Validate method results
+  LTable := CreateTestTable;
+  LCommand := TUpdateCommand.Create(LTable);
+  try
+    LCommand.UpdateFields.Add(TSQLField.Create('NAME', LTable));
+    LCommand.UpdateFields.Add(TSQLField.Create('AGE', LTable));
+    LCommand.UpdateFields.Add(TSQLField.Create('HEIGHT', LTable));
+    LCommand.WhereFields.Add(TSQLWhereField.Create('ID', LTable));
+
+    ReturnValue := FAnsiSQLGenerator.GenerateUpdate(LCommand);
+    CheckEqualsString(SQL_UPDATE_TEST, ReturnValue);
+  finally
+    LCommand.Free;
+    LTable.Free;
+  end;
 end;
+
+const
+  SQL_DELETE_TEST = 'DELETE FROM CUSTOMERS' + #13#10
+  + ' WHERE ID=:ID;';
 
 procedure TestTAnsiSQLGenerator.TestGenerateDelete;
 var
   ReturnValue: string;
   LCommand: TDeleteCommand;
+  LTable: TSQLTable;
 begin
-  ReturnValue := FAnsiSQLGenerator.GenerateDelete(LCommand);
-  // TODO: Validate method results
+  LTable := CreateTestTable;
+  LCommand := TDeleteCommand.Create(LTable);
+  try
+    LCommand.WhereFields.Add(TSQLWhereField.Create('ID', LTable));
+
+    ReturnValue := FAnsiSQLGenerator.GenerateDelete(LCommand);
+    CheckEqualsString(SQL_DELETE_TEST, ReturnValue);
+  finally
+    LCommand.Free;
+    LTable.Free;
+  end;
 end;
 
 procedure TestTAnsiSQLGenerator.TestGenerateCreateTable;

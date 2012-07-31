@@ -39,7 +39,7 @@ type
 
   TCascadeTypes = set of TCascadeType;
 
-  TColumnProperty = (cpRequired, cpUnique, cpDontInsert, cpDontUpdate);
+  TColumnProperty = (cpRequired, cpUnique, cpDontInsert, cpDontUpdate, cpPrimaryKey);
 
   TColumnProperties = set of TColumnProperty;
 

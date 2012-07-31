@@ -29,10 +29,27 @@ unit SQL.Commands.Factory;
 
 interface
 
+uses
+  Generics.Collections, SQL.Commands, Rtti, SQL.AbstractCommandExecutor;
+
 type
+  TCommandKey = record
+    EntityClass: TClass;
+    TypeInfo: Pointer;
+  end;
+
   TCommandFactory = class
+  private
+    FCommands: TDictionary<TCommandKey,TValue>;
   public
-    function GetCommand<T>(AClass: TClass): T;
+    constructor Create(); virtual;
+    destructor Destroy; override;
+
+    procedure Clear();
+
+    function GetCommand<T: TAbstractCommandExecutor, constructor>(AClass: TClass): T;
+
+
   end;
 
 var
@@ -45,9 +62,51 @@ uses
 
 { TCommandFactory }
 
-function TCommandFactory.GetCommand<T>(AClass: TClass): T;
+procedure TCommandFactory.Clear;
+var
+  LCommand: TValue;
+  LObj: TObject;
 begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
+  for LCommand in FCommands.Values do
+  begin
+    LObj := LCommand.AsObject;
+    if Assigned(LObj) then
+    begin
+      LObj.Free;
+    end;
+  end;
+  FCommands.Clear;
+end;
+
+constructor TCommandFactory.Create;
+begin
+  inherited Create;
+  FCommands := TDictionary<TCommandKey, TValue>.Create();
+end;
+
+destructor TCommandFactory.Destroy;
+begin
+  Clear;
+  FCommands.Free;
+  inherited Destroy;
+end;
+
+function TCommandFactory.GetCommand<T>(AClass: TClass): T;
+var
+  LCommand: TValue;
+  LKey: TCommandKey;
+begin
+  LKey.EntityClass := AClass;
+  LKey.TypeInfo := TypeInfo(T);
+
+  if not FCommands.TryGetValue(LKey, LCommand) then
+  begin
+    Result := T.Create;
+    Result.Build(AClass);
+    FCommands.Add(LKey, Result);
+  end
+  else
+    Result := LCommand.AsType<T>();
 end;
 
 initialization

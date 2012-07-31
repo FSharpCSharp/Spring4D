@@ -40,6 +40,7 @@ type
     procedure TestGetChangedMembers;
     procedure TestCopyFieldValues;
     procedure TestClone;
+    procedure GetPrimaryKey();
   end;
 
 implementation
@@ -48,6 +49,18 @@ uses
   DateUtils,
   SysUtils,
   Math;
+
+procedure TestTRttiExplorer.GetPrimaryKey;
+var
+  LColumn: Column;
+begin
+  LColumn := TRttiExplorer.GetPrimaryKeyColumn(FCustomer.ClassType);
+  CheckTrue(Assigned(LColumn));
+
+  CheckEqualsString('CUSTID', LColumn.Name);
+  CheckEqualsString('CUSTID',TRttiExplorer.GetPrimaryKeyColumnName(FCustomer.ClassType));
+  CheckEqualsString('FId',TRttiExplorer.GetPrimaryKeyColumnMemberName(FCustomer.ClassType));
+end;
 
 procedure TestTRttiExplorer.SetUp;
 begin

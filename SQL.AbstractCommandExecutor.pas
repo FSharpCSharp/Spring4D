@@ -42,21 +42,34 @@ type
   public
     constructor Create(); virtual;
     destructor Destroy; override;
+
+    procedure Build(AClass: TClass); virtual; abstract;
+
+    property Connection: IDBConnection read FConnection write FConnection;
+    property Generator: ISQLGenerator read FGenerator;
+    property EntityClass: TClass read FClass write FClass;
+    property ExecutionListeners: TList<ICommandExecutionListener> read FExecutionListeners;
   end;
 
 implementation
 
+uses
+  SQL.Register;
+
 { TAbstractCommandExecutor }
 
-constructor TAbstractCommandExecutor.Create;
+constructor TAbstractCommandExecutor.Create();
 begin
   inherited Create;
   FExecutionListeners := TList<ICommandExecutionListener>.Create;
+  FGenerator := TSQLGeneratorRegister.GetCurrentGenerator();
 end;
 
 destructor TAbstractCommandExecutor.Destroy;
 begin
   FExecutionListeners.Free;
+  FConnection := nil;
+  FGenerator := nil;
   inherited Destroy;
 end;
 

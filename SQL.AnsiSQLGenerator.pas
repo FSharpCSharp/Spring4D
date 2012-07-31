@@ -77,13 +77,45 @@ begin
 end;
 
 function TAnsiSQLGenerator.GenerateDelete(ADeleteCommand: TDeleteCommand): string;
+var
+  LSqlBuilder: TStringBuilder;
+  LWhereField: TSQLWhereField;
+  ix: Integer;
 begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
+  Assert(Assigned(ADeleteCommand));
+
+  LSqlBuilder := TStringBuilder.Create();
+  try
+    LSqlBuilder.Append('DELETE FROM ')
+      .Append(ADeleteCommand.Table.Name);
+
+    ix := 0;
+
+    for LWhereField in ADeleteCommand.WhereFields do
+    begin
+      if ix = 0 then
+        LSqlBuilder.AppendLine.Append(' WHERE ')
+      else
+        LSqlBuilder.Append(' AND ');
+
+      {TODO -oLinas -cGeneral : implement where operators}
+
+      LSqlBuilder.Append(Format('%0:S=:%0:S', [LWhereField.Fieldname]));
+
+      Inc(ix);
+    end;
+
+    LSqlBuilder.Append(';');
+
+    Result := LSqlBuilder.ToString;
+  finally
+    LSqlBuilder.Free;
+  end;
 end;
 
 function TAnsiSQLGenerator.GenerateGetLastInsertId: string;
 begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
+  Result := '';
 end;
 
 function TAnsiSQLGenerator.GenerateGetNextSequenceValue: string;
@@ -148,8 +180,52 @@ begin
 end;
 
 function TAnsiSQLGenerator.GenerateUpdate(AUpdateCommand: TUpdateCommand): string;
+var
+  LSqlBuilder: TStringBuilder;
+  LField: TSQLField;
+  LWhereField: TSQLWhereField;
+  ix: Integer;
 begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
+  Assert(Assigned(AUpdateCommand));
+  Assert(AUpdateCommand.UpdateFields.Count > 0, 'There are no fields to update');
+
+  LSqlBuilder := TStringBuilder.Create();
+  try
+    LSqlBuilder.Append('UPDATE ')
+      .Append(AUpdateCommand.Table.Name)
+      .Append(' SET ').AppendLine;
+
+    ix := 0;
+
+    for LField in AUpdateCommand.UpdateFields do
+    begin
+      if ix > 0 then
+        LSqlBuilder.Append(',');
+
+      LSqlBuilder.Append(Format('%0:S=:%0:S', [LField.Fieldname]));
+      Inc(ix);
+    end;
+
+    ix := 0;
+
+    for LWhereField in AUpdateCommand.WhereFields do
+    begin
+      if ix = 0 then
+        LSqlBuilder.AppendLine.Append(' WHERE ')
+      else
+        LSqlBuilder.Append(' AND ');
+
+      LSqlBuilder.Append(Format('%0:S=:%0:S', [LWhereField.Fieldname]));
+
+      Inc(ix);
+    end;
+
+    LSqlBuilder.Append(';');
+
+    Result := LSqlBuilder.ToString;
+  finally
+    LSqlBuilder.Free;
+  end;
 end;
 
 function TAnsiSQLGenerator.GetDriverName: string;
@@ -251,5 +327,7 @@ begin
     Inc(i);
   end;
 end;
+
+
 
 end.
