@@ -38,17 +38,15 @@ type
   private
     FTable: TSQLTable;
     FCommand: TDeleteCommand;
-    FSQL: string;
     FPrimaryKeyColumnName: string;
-  protected
-    function BuildParams(AEntity: TObject): TObjectList<TDBParam>; virtual;
   public
     constructor Create(); override;
     destructor Destroy; override;
 
     procedure Build(AClass: TClass); override;
+    procedure BuildParams(AEntity: TObject); override;
 
-    procedure Delete(AEntity: TObject);
+    procedure Execute(AEntity: TObject); override;
   end;
 
 implementation
@@ -78,17 +76,16 @@ begin
   FCommand.PrimaryKeyColumnName := FPrimaryKeyColumnName;
   FCommand.SetTable(nil);
 
-  FSQL := Generator.GenerateDelete(FCommand);
+  SQL := Generator.GenerateDelete(FCommand);
 end;
 
-function TDeleteExecutor.BuildParams(AEntity: TObject): TObjectList<TDBParam>;
+procedure TDeleteExecutor.BuildParams(AEntity: TObject);
 var
   LParam: TDBParam;
   LVal: TValue;
 begin
   Assert(FPrimaryKeyColumnName <> '');
-
-  Result := TObjectList<TDBParam>.Create(True);
+  inherited BuildParams(AEntity);
 
   LParam := TDBParam.Create;
   LParam.Name := ':' + FPrimaryKeyColumnName;
@@ -97,7 +94,7 @@ begin
  // LVal := TRttiExplorer.GetMemberValue(AEntity, FPrimaryKeyColumnName);
   LParam.Value := LVal.AsVariant;
   LParam.ParamType := FromTValueTypeToFieldType(LVal);
-  Result.Add(LParam);
+  SQLParameters.Add(LParam);
 end;
 
 constructor TDeleteExecutor.Create;
@@ -108,21 +105,22 @@ begin
   FPrimaryKeyColumnName := '';
 end;
 
-procedure TDeleteExecutor.Delete(AEntity: TObject);
+procedure TDeleteExecutor.Execute(AEntity: TObject);
 var
   LTran: IDBTransaction;
   LStmt: IDBStatement;
-  LParams: TObjectList<TDBParam>;
 begin
   Assert(Assigned(AEntity));
 
+  inherited Execute(AEntity);
+
   LTran := Connection.BeginTransaction;
   LStmt := Connection.CreateStatement;
-  LStmt.SetSQLCommand(FSQL);
-  {TODO -oLinas -cGeneral : assign parameters}
-  LParams := BuildParams(AEntity);
+  LStmt.SetSQLCommand(SQL);
+
+  BuildParams(AEntity);
   try
-    LStmt.SetParams(LParams);
+    LStmt.SetParams(SQLParameters);
 
     LStmt.Execute();
 
@@ -130,7 +128,6 @@ begin
   finally
     LTran := nil;
     LStmt := nil;
-    LParams.Free;
   end;
 end;
 

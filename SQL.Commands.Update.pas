@@ -38,18 +38,16 @@ type
   private
     FTable: TSQLTable;
     FCommand: TUpdateCommand;
-    FSQL: string;
     FColumns: TList<Column>;
     FPrimaryKeyColumnName: string;
-  protected
-    function BuildParams(AEntity: TObject): TObjectList<TDBParam>; virtual;
   public
     constructor Create(); override;
     destructor Destroy; override;
 
     procedure Build(AClass: TClass); override;
+    procedure BuildParams(AEntity: TObject); override;
 
-    procedure Update(AEntity: TObject); overload;
+    procedure Execute(AEntity: TObject); override;
     procedure Update(AEntity: TObject; AEntity2: TObject); overload;
   end;
 
@@ -65,21 +63,22 @@ uses
 
 { TUpdateCommand }
 
-procedure TUpdateExecutor.Update(AEntity: TObject);
+procedure TUpdateExecutor.Execute(AEntity: TObject);
 var
   LTran: IDBTransaction;
   LStmt: IDBStatement;
-  LParams: TObjectList<TDBParam>;
 begin
   Assert(Assigned(AEntity));
 
+  inherited Execute(AEntity);
+
   LTran := Connection.BeginTransaction;
   LStmt := Connection.CreateStatement;
-  LStmt.SetSQLCommand(FSQL);
-  {TODO -oLinas -cGeneral : assign parameters}
-  LParams := BuildParams(AEntity);
+  LStmt.SetSQLCommand(SQL);
+
+  BuildParams(AEntity);
   try
-    LStmt.SetParams(LParams);
+    LStmt.SetParams(SQLParameters);
 
     LStmt.Execute();
 
@@ -87,7 +86,6 @@ begin
   finally
     LTran := nil;
     LStmt := nil;
-    LParams.Free;
   end;
 end;
 
@@ -110,16 +108,16 @@ begin
   FCommand.PrimaryKeyColumnName := FPrimaryKeyColumnName;
   FCommand.SetTable(FColumns);
 
-  FSQL := Generator.GenerateUpdate(FCommand);
+  SQL := Generator.GenerateUpdate(FCommand);
 end;
 
-function TUpdateExecutor.BuildParams(AEntity: TObject): TObjectList<TDBParam>;
+procedure TUpdateExecutor.BuildParams(AEntity: TObject);
 var
   LParam: TDBParam;
   LColumn: Column;
   LVal: TValue;
 begin
-  Result := TObjectList<TDBParam>.Create(True);
+  inherited BuildParams(AEntity);
 
   for LColumn in FColumns do
   begin
@@ -128,7 +126,7 @@ begin
     LVal := TRttiExplorer.GetMemberValue(AEntity, LColumn.ClassMemberName);
     LParam.Value := LVal.AsVariant;
     LParam.ParamType := FromTValueTypeToFieldType(LVal);
-    Result.Add(LParam);
+    SQLParameters.Add(LParam);
   end;
 end;
 

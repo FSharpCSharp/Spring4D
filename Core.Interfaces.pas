@@ -35,6 +35,8 @@ uses
 type
   TDBDriverType = (dtSQLite = 0, dtADO);
 
+  TExecutionListenerProc = reference to procedure(const ACommand: string; const AParams: TObjectList<TDBParam>);
+
   IDBResultset = interface
     ['{4FA97CFB-4992-4DAA-BB2A-B5CAF84B6B47}']
     function IsEmpty(): Boolean;
@@ -66,6 +68,11 @@ type
     function CreateStatement(): IDBStatement;
     function BeginTransaction(): IDBTransaction;
     function GetDriverName(): string;
+    procedure AddExecutionListener(const AListenerProc: TExecutionListenerProc);
+    procedure ClearExecutionListeners();
+    function GetExecutionListeners: TList<TExecutionListenerProc>;
+    property ExecutionListeners: TList<TExecutionListenerProc> read GetExecutionListeners;
+    procedure NotifyExecutionListeners(const ACommand: string; const AParams: TObjectList<TDBParam>);
   end;
 
   IEntitySerializer = interface

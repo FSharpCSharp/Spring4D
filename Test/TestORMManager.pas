@@ -32,6 +32,7 @@ type
     procedure Insert();
     procedure Update();
     procedure Delete();
+    procedure ExecutionListeners();
   end;
 
   TInsertData = record
@@ -48,9 +49,10 @@ uses
   ,Core.ConnectionFactory
   ,SQLiteTable3
   ,SQL.Register
+  ,SQL.Params
   ,SvDesignPatterns
-  {$IFDEF USE_SPRING} ,Spring.Collections {$ELSE} ,Generics.Collections {$ENDIF}
-
+  {$IFDEF USE_SPRING} ,Spring.Collections {$ENDIF}
+  ,Generics.Collections
   ;
 
 var
@@ -97,6 +99,68 @@ begin
 
     LResults := TestDB.GetUniTableIntf('SELECT COUNT(*) FROM ' + TBL_PEOPLE);
     CheckEquals(0, LResults.Fields[0].AsInteger);
+
+  finally
+    LCustomer.Free;
+  end;
+end;
+
+procedure TestTEntityManager.ExecutionListeners;
+var
+  sLog, sLog2, sSql: string;
+  LCustomer: TCustomer;
+begin
+  sLog := '';
+  sLog2 := '';
+  FConnection.AddExecutionListener(
+    procedure(const ACommand: string; const AParams: TObjectList<TDBParam>)
+    begin
+      sLog := ACommand;
+    end);
+
+  FConnection.AddExecutionListener(
+    procedure(const ACommand: string; const AParams: TObjectList<TDBParam>)
+    begin
+      sLog2 := ACommand;
+    end);
+
+  InsertCustomer();
+  sSql := 'select * from ' + TBL_PEOPLE;
+  LCustomer := FManager.FirstOrDefault<TCustomer>(sSql, []);
+  try
+    CheckTrue(sLog <> '');
+    CheckTrue(sLog2 <> '');
+    CheckEqualsString(sLog, sLog2);
+
+    LCustomer.Name := 'Execution Listener test';
+    LCustomer.Age := 58;
+
+    sLog := '';
+    sLog2 := '';
+
+    FManager.Update(LCustomer);
+
+    CheckTrue(sLog <> '');
+    CheckTrue(sLog2 <> '');
+    CheckEqualsString(sLog, sLog2);
+
+    sLog := '';
+    sLog2 := '';
+    LCustomer.Name := 'Insert Execution Listener test';
+    FManager.Insert(LCustomer);
+
+    CheckTrue(sLog <> '');
+    CheckTrue(sLog2 <> '');
+    CheckEqualsString(sLog, sLog2);
+
+    sLog := '';
+    sLog2 := '';
+    FManager.Delete(LCustomer);
+    CheckTrue(sLog <> '');
+    CheckTrue(sLog2 <> '');
+    CheckEqualsString(sLog, sLog2);
+
+    Status(sLog);
 
   finally
     LCustomer.Free;

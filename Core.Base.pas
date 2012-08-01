@@ -52,6 +52,8 @@ type
   TDriverConnectionAdapter<T> = class(TInterfacedObject, IDBConnection)
   private
     FConnection: T;
+    FExecutionListeners: TList<TExecutionListenerProc>;
+    function GetExecutionListeners: TList<TExecutionListenerProc>;
   protected
     procedure Connect(); virtual; abstract;
     procedure Disconnect(); virtual; abstract;
@@ -59,11 +61,15 @@ type
     function CreateStatement(): IDBStatement; virtual; abstract;
     function BeginTransaction(): IDBTransaction; virtual; abstract;
     function GetDriverName(): string; virtual; abstract;
+    procedure AddExecutionListener(const AListenerProc: TExecutionListenerProc);
+    procedure ClearExecutionListeners();
+    procedure NotifyExecutionListeners(const ACommand: string; const AParams: TObjectList<TDBParam>);
   public
     constructor Create(const AConnection: T); virtual;
     destructor Destroy; override;
 
     property Connection: T read FConnection;
+    property ExecutionListeners: TList<TExecutionListenerProc> read GetExecutionListeners;
   end;
 
   TDriverStatementAdapter<T> = class(TInterfacedObject, IDBStatement)
@@ -98,15 +104,43 @@ end;
 
 { TDriverConnectionAdapter<T> }
 
+procedure TDriverConnectionAdapter<T>.AddExecutionListener(
+  const AListenerProc: TExecutionListenerProc);
+begin
+  FExecutionListeners.Add(AListenerProc);
+end;
+
+procedure TDriverConnectionAdapter<T>.ClearExecutionListeners;
+begin
+  FExecutionListeners.Clear;
+end;
+
 constructor TDriverConnectionAdapter<T>.Create(const AConnection: T);
 begin
   inherited Create;
   FConnection := AConnection;
+  FExecutionListeners := TList<TExecutionListenerProc>.Create;
 end;
 
 destructor TDriverConnectionAdapter<T>.Destroy;
 begin
+  FExecutionListeners.Free;
   inherited Destroy;
+end;
+
+function TDriverConnectionAdapter<T>.GetExecutionListeners: TList<TExecutionListenerProc>;
+begin
+  Result := FExecutionListeners;
+end;
+
+procedure TDriverConnectionAdapter<T>.NotifyExecutionListeners(const ACommand: string; const AParams: TObjectList<TDBParam>);
+var
+  LExecProc: TExecutionListenerProc;
+begin
+  for LExecProc in FExecutionListeners do
+  begin
+    LExecProc(ACommand, AParams);
+  end;
 end;
 
 { TDriverStatementAdapter<T> }

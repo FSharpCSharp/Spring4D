@@ -30,7 +30,7 @@ unit SQL.AbstractCommandExecutor;
 interface
 
 uses
-  Core.Interfaces, SQL.Interfaces, Generics.Collections;
+  Core.Interfaces, SQL.Interfaces, Generics.Collections, SQL.Params;
 
 type
   TAbstractCommandExecutor = class
@@ -38,17 +38,21 @@ type
     FConnection: IDBConnection;
     FGenerator: ISQLGenerator;
     FClass: TClass;
-    FExecutionListeners: TList<ICommandExecutionListener>;
+    FSQL: string;
+    FParams: TObjectList<TDBParam>;
   public
     constructor Create(); virtual;
     destructor Destroy; override;
 
+    procedure Execute(AEntity: TObject); virtual;
     procedure Build(AClass: TClass); virtual; abstract;
+    procedure BuildParams(AEntity: TObject); virtual;
 
     property Connection: IDBConnection read FConnection write FConnection;
     property Generator: ISQLGenerator read FGenerator;
     property EntityClass: TClass read FClass write FClass;
-    property ExecutionListeners: TList<ICommandExecutionListener> read FExecutionListeners;
+    property SQLParameters: TObjectList<TDBParam> read FParams;
+    property SQL: string read FSQL write FSQL;
   end;
 
 implementation
@@ -58,19 +62,31 @@ uses
 
 { TAbstractCommandExecutor }
 
+procedure TAbstractCommandExecutor.BuildParams(AEntity: TObject);
+begin
+  FParams.Clear;
+end;
+
 constructor TAbstractCommandExecutor.Create();
 begin
   inherited Create;
-  FExecutionListeners := TList<ICommandExecutionListener>.Create;
+ // FExecutionListeners := TList<ICommandExecutionListener>.Create;
   FGenerator := TSQLGeneratorRegister.GetCurrentGenerator();
+  FParams := TObjectList<TDBParam>.Create();
 end;
 
 destructor TAbstractCommandExecutor.Destroy;
 begin
-  FExecutionListeners.Free;
+ // FExecutionListeners.Free;
+  FParams.Free;
   FConnection := nil;
   FGenerator := nil;
   inherited Destroy;
+end;
+
+procedure TAbstractCommandExecutor.Execute(AEntity: TObject);
+begin
+  Connection.NotifyExecutionListeners(SQL, SQLParameters);
 end;
 
 end.

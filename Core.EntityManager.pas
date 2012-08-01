@@ -81,7 +81,9 @@ type
     /// Updates model in a database
     /// </summary>
     procedure Update(AEntity: TObject);
-
+    /// <summary>
+    /// Removes model from the database
+    /// </summary>
     procedure Delete(AEntity: TObject);
   end;
 
@@ -125,7 +127,7 @@ begin
 
   LDeleter.Connection := Connection;
   LDeleter.EntityClass := AEntity.ClassType;
-  LDeleter.Delete(AEntity);
+  LDeleter.Execute(AEntity);
 
   {TODO -oLinas -cGeneral : remove from entity maps}
  // FEntities.Remove(AEntity);
@@ -210,12 +212,24 @@ function TEntityManager.GetResultset(const ASql: string;
   const AParams: array of const): IDBResultset;
 var
   LStmt: IDBStatement;
+  LParams: TObjectList<TDBParam>;
 begin
   LStmt := Connection.CreateStatement();
   LStmt.SetSQLCommand(ASql);
-  LStmt.SetParams(AParams);
+  LParams := TObjectList<TDBParam>.Create();
+  try
+    if (Length(AParams) > 0) then
+    begin
+      ConvertParams(AParams, LParams);
+      LStmt.SetParams(LParams);
+    end;
 
-  Result := LStmt.ExecuteQuery();
+    Connection.NotifyExecutionListeners(ASql, LParams);
+    Result := LStmt.ExecuteQuery();
+
+  finally
+    LParams.Free;
+  end;
 end;
 
 procedure TEntityManager.Insert(AEntity: TObject);
@@ -226,7 +240,7 @@ begin
   {TODO -oLinas -cGeneral : finish implementing missing methods}
   LInserter.Connection := Connection;
   LInserter.EntityClass := AEntity.ClassType;
-  LInserter.Insert(AEntity);
+  LInserter.Execute(AEntity);
 
   {TODO -oLinas -cGeneral : add to entity maps}
  // FEntities.Add(AEntity);
@@ -255,7 +269,7 @@ begin
   try
     //if TRttiExplorer.HasSequence(Entity.ClassType{, True}) then
      // LInserter.LoadIdFromSequence(Entity);
-    LInserter.Insert(AEntity);
+    LInserter.Execute(AEntity);
     FEntities.Add(AEntity);
     FOldStateEntities.Add(TRttiExplorer.Clone(AEntity));
   finally
@@ -289,7 +303,7 @@ begin
   {TODO -oLinas -cGeneral : finish implementing missing methods}
   LUpdater.Connection := Connection;
   LUpdater.EntityClass := AEntity.ClassType;
-  LUpdater.Update(AEntity);
+  LUpdater.Execute(AEntity);
 
   {TODO -oLinas -cGeneral : update entity maps}
  // FEntities.Add(AEntity);
