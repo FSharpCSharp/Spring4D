@@ -30,7 +30,7 @@ unit Core.DatabaseManager;
 interface
 
 uses
-  Core.AbstractManager;
+  Core.AbstractManager, Core.Interfaces, SysUtils;
 
 type
   TDatabaseManager = class(TAbstractManager)
@@ -38,16 +38,120 @@ type
     procedure BuildDatabase();
   end;
 
+  EODBCException = class(Exception);
+
+  TBaseODBC = class(TInterfacedObject, IODBC)
+  private
+    FHandle: THandle;
+    SQLAllocEnv: function(var phenv: Pointer): SmallInt; stdcall;
+    SQLAllocConnect: function(henv: Pointer; var phdbc: Pointer): Smallint; stdcall;
+    SQLDataSourcesW: function(henv: Pointer; direction:word; szDSN: PWideChar; cbDSN: Word; var pbDSN: Word;
+      szDescr: PWideChar; cbDescr: Word; var pbDescr: Word): Smallint; stdcall;
+  protected
+    function GetDatasources: TArray<string>; virtual;
+  public
+    constructor Create(); virtual;
+    destructor Destroy; override;
+
+  end;
+
 implementation
 
 uses
-  Core.Exceptions;
+  Core.Exceptions
+  ,Classes
+  {$IFDEF MSWINDOWS}
+  ,Windows
+  {$ENDIF}
+  ;
+
+const
+  DLL_ODBC_32 = 'ODBC32.DLL';
+  DLL_ODBC_64 = 'ODBC32.DLL';
+
+  SQL_ERROR = -1;
+  SQL_SUCCESS = 0;
+  SQL_FETCH_NEXT = 1;
+  SQL_FETCH_FIRST = 2;
 
 { TDatabaseManager }
 
 procedure TDatabaseManager.BuildDatabase;
 begin
   raise EORMMethodNotImplemented.Create('Method not implemented');
+end;
+
+{ TBaseODBC }
+
+constructor TBaseODBC.Create;
+begin
+  inherited Create;
+  FHandle := 0;
+  SQLAllocEnv := nil;
+  SQLAllocConnect := nil;
+  SQLDataSourcesW := nil;
+  {$IFDEF MSWINDOWS}
+  FHandle := LoadLibrary(PChar(DLL_ODBC_32));
+  if FHandle <> 0 then
+  begin
+    SQLAllocEnv := GetProcAddress(FHandle, 'SQLAllocEnv');
+    SQLAllocConnect := GetProcAddress(FHandle, 'SQLAllocConnect');
+    SQLDataSourcesW := GetProcAddress(FHandle, 'SQLDataSourcesW');
+  end;
+  {$ENDIF}
+end;
+
+destructor TBaseODBC.Destroy;
+begin
+  {$IFDEF MSWINDOWS}
+  if FHandle <> 0 then
+    FreeLibrary(FHandle);
+  {$ENDIF}
+  inherited Destroy;
+end;
+
+function TBaseODBC.GetDatasources: TArray<string>;
+{$IFDEF MSWINDOWS}
+var
+  LHandle: Pointer;
+  LConnection: Pointer;
+  LDSN, LDescr: array[0..255] of WideChar;
+  LcbDsn, LcbDescr: Word;
+  LList: TStrings;
+{$ENDIF}
+begin
+  SetLength(Result, 0);
+
+  LList := TStringList.Create;
+  try
+    {$IFDEF MSWINDOWS}
+    if not Assigned(SQLDataSourcesW) then
+      Exit;
+
+    if (SQLAllocEnv(LHandle) <> SQL_SUCCESS) then
+      raise EODBCException.Create('Cannot allocate ODBC handle');
+
+    if (SQLAllocConnect(LHandle,LConnection) <> SQL_SUCCESS) then
+      raise EODBCException.Create('Cannot allocate ODBC connection');
+
+    if SQLDataSourcesW(LHandle, SQL_FETCH_FIRST, LDSN, SizeOf(LDSN),
+        LcbDsn, LDescr, SizeOf(LDescr), LcbDescr) = SQL_SUCCESS then
+      LList.Add(StrPas(LDSN))
+    else
+      Exit;
+
+    while SQLDataSourcesW(LHandle, SQL_FETCH_NEXT, LDSN, SizeOf(LDSN),
+        LcbDsn, LDescr, SizeOf(LDescr), LcbDescr) = SQL_SUCCESS do
+    begin
+      LList.Add(StrPas(LDSN));
+    end;
+
+    Result := LList.ToStringArray;
+
+    {$ENDIF}
+  finally
+    LList.Free;
+  end;
 end;
 
 end.

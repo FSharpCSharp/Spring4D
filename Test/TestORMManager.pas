@@ -30,6 +30,7 @@ type
     procedure First();
     procedure Fetch();
     procedure Insert();
+    procedure InsertFromCollection();
     procedure Update();
     procedure Delete();
     procedure ExecutionListeners();
@@ -169,40 +170,35 @@ end;
 
 procedure TestTEntityManager.Fetch;
 var
-  LCollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<TCustomer> {$ELSE} TObjectList<TCustomer> {$ENDIF} ;
-  LItems: {$IFDEF USE_SPRING} Spring.Collections.IList<TCustomer> {$ELSE} TObjectList<TCustomer> {$ENDIF};
+  LCollection: {$IFDEF USE_SPRING} Spring.Collections.IList<TCustomer> {$ELSE} TObjectList<TCustomer> {$ENDIF} ;
   sSql: string;
 begin
   sSql := 'SELECT * FROM ' + TBL_PEOPLE;
   {$IFDEF USE_SPRING}
-  LItems := TCollections.CreateList<TCustomer>(True);
+  LCollection := TCollections.CreateList<TCustomer>(True);
   {$ELSE}
-  LItems := TObjectList<TCustomer>.Create(True);
+  LCollection := TObjectList<TCustomer>.Create(True);
   {$ENDIF}
 
-  LCollection := LItems;
-
   FManager.Fetch<TCustomer>(sSql, [], LCollection);
-  CheckEquals(0, LItems.Count);
+  CheckEquals(0, LCollection.Count);
 
-  LItems.Clear;
-  LCollection := LItems;
+  LCollection.Clear;
 
   InsertCustomer();
   FManager.Fetch<TCustomer>(sSql, [], LCollection);
-  CheckEquals(1, LItems.Count);
-  CheckEquals(25, LItems[0].Age);
+  CheckEquals(1, LCollection.Count);
+  CheckEquals(25, LCollection[0].Age);
 
-  LItems.Clear;
-  LCollection := LItems;
+  LCollection.Clear;
 
   InsertCustomer(15);
   FManager.Fetch<TCustomer>(sSql, [], LCollection);
-  CheckEquals(2, LItems.Count);
-  CheckEquals(15, LItems[1].Age);
+  CheckEquals(2, LCollection.Count);
+  CheckEquals(15, LCollection[1].Age);
 
   {$IFNDEF USE_SPRING}
-  LItems.Free;
+  LCollection.Free;
   {$ENDIF}
 end;
 
@@ -285,6 +281,44 @@ begin
     CheckEquals(2, LCount);
   finally
     LCustomer.Free;
+  end;
+end;
+
+procedure TestTEntityManager.InsertFromCollection;
+var
+  LCollection: {$IFDEF USE_SPRING} Spring.Collections.IList<TCustomer> {$ELSE} TObjectList<TCustomer> {$ENDIF} ;
+  LCustomer: TCustomer;
+  i: Integer;
+  LTran: IDBTransaction;
+  LCount: Integer;
+begin
+  {$IFDEF USE_SPRING}
+  LCollection := TCollections.CreateList<TCustomer>(True);
+  {$ELSE}
+  LCollection := TObjectList<TCustomer>.Create(True);
+  {$ENDIF}
+  try
+    for i := 1 to 100 do
+    begin
+      LCustomer := TCustomer.Create;
+      LCustomer.Name := IntToStr(i);
+      LCustomer.Age := i;
+      LCustomer.LastEdited := EncodeDate(2009, 1, 12);
+      LCollection.Add(LCustomer);
+    end;
+
+    CheckEquals(100, LCollection.Count);
+
+    //wrap in the transaction
+    LTran := FManager.Connection.BeginTransaction;
+    FManager.Insert<TCustomer>(LCollection);
+    LTran.Commit;
+    LCount := TestDB.GetUniTableIntf('select count(*) from ' + TBL_PEOPLE).Fields[0].AsInteger;
+    CheckEquals(LCollection.Count, LCount);
+  finally
+    {$IFNDEF USE_SPRING}
+    LCollection.Free;
+    {$ENDIF}
   end;
 end;
 

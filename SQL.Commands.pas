@@ -80,14 +80,14 @@ type
   private
     FUpdateFields: TObjectList<TSQLField>;
     FWhereFields: TObjectList<TSQLWhereField>;
-    FPrimaryKeyColumnName: string;
+    FPrimaryKeyColumn: Column;
   public
     constructor Create(ATable: TSQLTable); override;
     destructor Destroy; override;
 
     procedure SetTable(AColumns: TList<Column>); override;
 
-    property PrimaryKeyColumnName: string read FPrimaryKeyColumnName write FPrimaryKeyColumnName;
+    property PrimaryKeyColumn: Column read FPrimaryKeyColumn write FPrimaryKeyColumn;
     property UpdateFields: TObjectList<TSQLField> read FUpdateFields;
     property WhereFields: TObjectList<TSQLWhereField> read FWhereFields;
   end;
@@ -176,7 +176,7 @@ begin
   inherited Create(ATable);
   FUpdateFields := TObjectList<TSQLField>.Create;
   FWhereFields := TObjectList<TSQLWhereField>.Create;
-  FPrimaryKeyColumnName := '';
+  FPrimaryKeyColumn := nil;
 end;
 
 destructor TUpdateCommand.Destroy;
@@ -199,7 +199,7 @@ begin
 
   for LColumn in AColumns do
   begin
-    if SameText(LColumn.ClassMemberName, FPrimaryKeyColumnName) then
+    if (LColumn = FPrimaryKeyColumn) { Assigned(FPrimaryKeyColumn) and (SameText(LColumn.Name, FPrimaryKeyColumn.Name))} then
     begin
       LWhereField := TSQLWhereField.Create(LColumn.Name, FTable);
       FWhereFields.Add(LWhereField);

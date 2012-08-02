@@ -44,6 +44,7 @@ type
     FAlias: string;
     function GetAlias: string;
     procedure SetName(const Value: string);
+    function GetName: string;
   public
     function SchemaExists(): Boolean;
 
@@ -53,7 +54,7 @@ type
 
     property Alias: string read GetAlias write FAlias;
     property Description: string read FDescription write FDescription;
-    property Name: string read FName write SetName;
+    property Name: string read GetName write SetName;
     property Schema: string read FSchema write FSchema;
   end;
 
@@ -172,11 +173,16 @@ end;
 
 function TSQLTable.GetFullTableName: string;
 begin
+  Result := Name + ' ' + Alias;
+end;
+
+function TSQLTable.GetName: string;
+begin
   Result := '';
   if SchemaExists then
     Result := Schema + '.';
 
-  Result := Result + Name + ' ' + Alias;
+  Result := Result + FName;
 end;
 
 function TSQLTable.SchemaExists: Boolean;

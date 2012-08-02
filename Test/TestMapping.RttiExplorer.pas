@@ -40,6 +40,7 @@ type
     procedure TestGetChangedMembers;
     procedure TestCopyFieldValues;
     procedure TestClone;
+    procedure TestCloneSpeed;
     procedure GetPrimaryKey();
   end;
 
@@ -48,7 +49,9 @@ implementation
 uses
   DateUtils,
   SysUtils,
-  Math;
+  Math
+  ,Diagnostics
+  ;
 
 procedure TestTRttiExplorer.GetPrimaryKey;
 var
@@ -272,7 +275,7 @@ end;
 
 procedure TestTRttiExplorer.TestGetChangedMembers;
 var
-  ReturnValue: TList<string>;
+  ReturnValue: TList<Column>;
   ADirtyObj: TCustomer;
   AOriginalObj: TCustomer;
 begin
@@ -348,6 +351,47 @@ begin
   finally
     AEntity.Free;
   end;
+end;
+
+procedure TestTRttiExplorer.TestCloneSpeed;
+var
+  LCustomer, LCloned: TCustomer;
+  i, iMax: Integer;
+  sw: TStopwatch;
+  LCustomers: TObjectList<TCustomer>;
+  LClonedCustomers: TObjectList<TCustomer>;
+begin
+  iMax := 10000;
+  LCustomers := TObjectList<TCustomer>.Create(True);
+  LClonedCustomers := TObjectList<TCustomer>.Create(True);
+  try
+    for i := 1 to iMax do
+    begin
+      LCustomer := TCustomer.Create;
+      LCustomer.Age := i;
+
+      LCustomers.Add(LCustomer);
+    end;
+
+
+    sw := TStopwatch.StartNew;
+
+    for i := 0 to LCustomers.Count - 1 do
+    begin
+      LCustomer := LCustomers[i];
+
+      LCloned := TRttiExplorer.Clone(LCustomer) as TCustomer;
+      LClonedCustomers.Add(LCloned);
+    end;
+
+    sw.Stop;
+  finally
+    LCustomers.Free;
+    LClonedCustomers.Free;
+  end;
+
+  Status(Format('Cloned %D objects in %D ms.',
+    [iMax, sw.ElapsedMilliseconds]));
 end;
 
 initialization

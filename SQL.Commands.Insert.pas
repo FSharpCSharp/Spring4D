@@ -132,14 +132,12 @@ end;
 
 procedure TInsertExecutor.Execute(AEntity: TObject);
 var
-  LTran: IDBTransaction;
   LStmt: IDBStatement;
 begin
   Assert(Assigned(AEntity));
 
   inherited Execute(AEntity);
 
-  LTran := Connection.BeginTransaction;
   LStmt := Connection.CreateStatement;
   LStmt.SetSQLCommand(SQL);
 
@@ -150,10 +148,7 @@ begin
     LStmt.Execute();
 
     LoadIdFromSequence(AEntity);
-
-    LTran.Commit;
   finally
-    LTran := nil;
     LStmt := nil;
   end;
 end;

@@ -30,52 +30,9 @@ unit Mapping.RttiExplorer;
 interface
 
 uses
-  Rtti, Generics.Collections, Mapping.Attributes;
+  Rtti, Generics.Collections, Mapping.Attributes, TypInfo;
 
 type
-  TValueHelper = record helper for TValue
-  public
-    function AsByte: Byte;
-    function AsCardinal: Cardinal;
-    function AsCurrency: Currency;
-    function AsDate: TDate;
-    function AsDateTime: TDateTime;
-    function AsDouble: Double;
-    function AsFloat: Extended;
-    function AsPointer: Pointer;
-    function AsShortInt: ShortInt;
-    function AsSingle: Single;
-    function AsSmallInt: SmallInt;
-    function AsTime: TTime;
-    function AsUInt64: UInt64;
-    function AsWord: Word;
-  
-    function IsFloat: Boolean;
-    function IsNumeric: Boolean;
-    function IsPointer: Boolean;
-    function IsString: Boolean;
-    function IsInstance: Boolean;
-    function IsInterface: Boolean;
-    function IsBoolean: Boolean;
-    function IsByte: Boolean;
-    function IsCardinal: Boolean;
-    function IsCurrency: Boolean;
-    function IsDate: Boolean;
-    function IsDateTime: Boolean;
-    function IsDouble: Boolean;
-    function IsInteger: Boolean;
-    function IsInt64: Boolean;
-    function IsShortInt: Boolean;
-    function IsSingle: Boolean;
-    function IsSmallInt: Boolean;
-    function IsTime: Boolean;
-    function IsUInt64: Boolean;
-    function IsWord: Boolean;
-    function IsVariant: Boolean;
-
-    function IsSameAs(const AValue: TValue): Boolean;
-  end;
-
   TRttiExplorer = class
   private
     class var FCtx: TRttiContext;
@@ -98,7 +55,8 @@ type
     class procedure SetMemberValue(AEntity: TObject; const AMemberName: string; const AValue: TValue); overload;
     class procedure SetMemberValue(AEntity: TObject; const AMemberColumn: Column; const AValue: TValue); overload;
     class function EntityChanged(AEntity1, AEntity2: TObject): Boolean;
-    class function GetChangedMembers(AOriginalObj, ADirtyObj: TObject): TList<string>;
+    class function GetChangedMembers(AOriginalObj, ADirtyObj: TObject): TList<Column>; overload;
+    class procedure GetChangedMembers(AOriginalObj, ADirtyObj: TObject; AList: TList<Column>); overload;
     class procedure CopyFieldValues(AEntityFrom, AEntityTo: TObject);
     class function Clone(AEntity: TObject): TObject;
   end;
@@ -106,9 +64,10 @@ type
 implementation
 
 uses
-  Core.Exceptions,
-  Math,
-  TypInfo;
+  Core.Exceptions
+  ,Core.Reflection
+  ,Core.Utils
+  ,Math;
 
 (*
   Copyright (c) 2011, Stefan Glienke
@@ -249,204 +208,6 @@ begin
   end;
 end;
 
-{ TValueHelper }
-
-function TValueHelper.AsByte: Byte;
-begin
-  Result := AsType<Byte>;
-end;
-
-function TValueHelper.AsCardinal: Cardinal;
-begin
-  Result := AsType<Cardinal>;
-end;
-
-function TValueHelper.AsCurrency: Currency;
-begin
-  Result := AsType<Currency>;
-end;
-
-function TValueHelper.AsDate: TDate;
-begin
-  Result := AsType<TDate>;
-end;
-
-function TValueHelper.AsDateTime: TDateTime;
-begin
-  Result := AsType<TDateTime>;
-end;
-
-function TValueHelper.AsDouble: Double;
-begin
-  Result := AsType<Double>;
-end;
-
-function TValueHelper.AsFloat: Extended;
-begin
-  Result := AsType<Extended>;
-end;
-
-function TValueHelper.AsPointer: Pointer;
-begin
-  Result := AsType<Pointer>;
-end;
-
-function TValueHelper.AsShortInt: ShortInt;
-begin
-  Result := AsType<ShortInt>;
-end;
-
-function TValueHelper.AsSingle: Single;
-begin
-  Result := AsType<Single>;
-end;
-
-function TValueHelper.AsSmallInt: SmallInt;
-begin
-  Result := AsType<SmallInt>;
-end;
-
-function TValueHelper.AsTime: TTime;
-begin
-  Result := AsType<TTime>;
-end;
-
-function TValueHelper.AsUInt64: UInt64;
-begin
-  Result := AsType<UInt64>;
-end;
-
-function TValueHelper.AsWord: Word;
-begin
-  Result := AsType<Word>;
-end;
-
-function TValueHelper.IsSameAs(const AValue: TValue): Boolean;
-begin
-  Result := ValueIsEqual(Self, AValue);
-end;
-
-function TValueHelper.IsBoolean: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(Boolean);
-end;
-
-function TValueHelper.IsByte: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(Byte);
-end;
-
-function TValueHelper.IsCardinal: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(Cardinal);
-  {$IFNDEF CPUX64}
-  Result := Result or (TypeInfo = System.TypeInfo(NativeUInt));
-  {$ENDIF}
-end;
-
-function TValueHelper.IsCurrency: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(Currency);
-end;
-
-function TValueHelper.IsDate: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(TDate);
-end;
-
-function TValueHelper.IsDateTime: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(TDateTime);
-end;
-
-function TValueHelper.IsDouble: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(Double);
-end;
-
-function TValueHelper.IsFloat: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(Extended);
-end;
-
-function TValueHelper.IsInstance: Boolean;
-begin
-  Result := Kind in [tkClass, tkInterface];
-end;
-
-function TValueHelper.IsInt64: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(Int64);
-  {$IFDEF CPUX64}
-  Result := Result or (TypeInfo = System.TypeInfo(NativeInt));
-  {$ENDIF}
-end;
-
-function TValueHelper.IsInteger: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(Integer);
-  {$IFNDEF CPUX64}
-  Result := Result or (TypeInfo = System.TypeInfo(NativeInt));
-  {$ENDIF}
-end;
-
-function TValueHelper.IsInterface: Boolean;
-begin
-  Result := Assigned(TypeInfo) and (TypeInfo.Kind = tkInterface);
-end;
-
-function TValueHelper.IsNumeric: Boolean;
-begin
-  Result := Kind in [tkInteger, tkChar, tkEnumeration, tkFloat, tkWChar, tkInt64];
-end;
-
-function TValueHelper.IsPointer: Boolean;
-begin
-  Result := Kind = tkPointer;
-end;
-
-function TValueHelper.IsShortInt: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(ShortInt);
-end;
-
-function TValueHelper.IsSingle: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(Single);
-end;
-
-function TValueHelper.IsSmallInt: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(SmallInt);
-end;
-
-function TValueHelper.IsString: Boolean;
-begin
-  Result := Kind in [tkChar, tkString, tkWChar, tkLString, tkWString, tkUString];
-end;
-
-function TValueHelper.IsTime: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(TTime);
-end;
-
-function TValueHelper.IsUInt64: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(UInt64);
-  {$IFDEF CPUX64}
-  Result := Result or (TypeInfo = System.TypeInfo(NativeInt));
-  {$ENDIF}
-end;
-
-function TValueHelper.IsVariant: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(Variant);
-end;
-
-function TValueHelper.IsWord: Boolean;
-begin
-  Result := TypeInfo = System.TypeInfo(Word);
-end;
 
 { TRttiExplorer }
 
@@ -478,7 +239,7 @@ end;
 
 class function TRttiExplorer.EntityChanged(AEntity1, AEntity2: TObject): Boolean;
 var
-  LChangedMembers: TList<string>;
+  LChangedMembers: TList<Column>;
 begin
   LChangedMembers := GetChangedMembers(AEntity1, AEntity2);
   try
@@ -510,7 +271,13 @@ begin
   end;
 end;
 
-class function TRttiExplorer.GetChangedMembers(AOriginalObj, ADirtyObj: TObject): TList<string>;
+class function TRttiExplorer.GetChangedMembers(AOriginalObj, ADirtyObj: TObject): TList<Column>;
+begin
+  Result := TList<Column>.Create;
+  GetChangedMembers(AOriginalObj, ADirtyObj, Result);
+end;
+
+class procedure TRttiExplorer.GetChangedMembers(AOriginalObj, ADirtyObj: TObject; AList: TList<Column>);
 var
   LRttiType: TRttiType;
   LMember: TRttiMember;
@@ -520,7 +287,8 @@ var
 begin
   Assert(AOriginalObj.ClassType = ADirtyObj.ClassType);
   LRttiType := FCtx.GetType(AOriginalObj.ClassType);
-  Result := TList<string>.Create;
+  AList.Clear;
+
   LColumns := GetColumns(AOriginalObj.ClassType);
   try
     for LCol in LColumns do
@@ -541,7 +309,7 @@ begin
         LOriginalValue := GetMemberValue(AOriginalObj, LMember);
         LDirtyValue := GetMemberValue(ADirtyObj, LMember);
         if not ValueIsEqual(LOriginalValue, LDirtyValue) then
-          Result.Add(LMember.Name);
+          AList.Add(LCol);
       end;
     end;
   finally
@@ -730,18 +498,25 @@ class procedure TRttiExplorer.SetMemberValue(AEntity: TObject; const AMemberName
 var
   LField: TRttiField;
   LProp: TRttiProperty;
+  LValue: TValue;
 begin
   LField := FCtx.GetType(AEntity.ClassInfo).GetField(AMemberName);
   if Assigned(LField) then
   begin
-    LField.SetValue(AEntity, AValue);
+    if TUtils.TryConvert(AValue, LField.RttiType.Handle, LValue) then
+    begin
+      LField.SetValue(AEntity, LValue);
+    end;
     Exit;
   end;
 
   LProp := FCtx.GetType(AEntity.ClassInfo).GetProperty(AMemberName);
   if Assigned(LProp) then
   begin
-    LProp.SetValue(AEntity, AValue);
+    if TUtils.TryConvert(AValue, LProp.RttiType.Handle, LValue) then
+    begin
+      LProp.SetValue(AEntity, LValue);
+    end;
     Exit;
   end;
 end;

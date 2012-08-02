@@ -54,7 +54,14 @@ uses
   TestAnsiSQLGenerator in 'TestAnsiSQLGenerator.pas',
   SQL.Commands in '..\SQL.Commands.pas',
   SQL.Types in '..\SQL.Types.pas',
-  Core.EntitySerializer in '..\Core.EntitySerializer.pas';
+  Core.EntitySerializer in '..\Core.EntitySerializer.pas',
+  Adapters.ADO in '..\Adapters.ADO.pas',
+  TestADOAdapter in 'TestADOAdapter.pas',
+  Adapters.MSSQL in '..\Adapters.MSSQL.pas',
+  Core.Utils in '..\Core.Utils.pas',
+  Core.Reflection in '..\Core.Reflection.pas',
+  Core.EntityCache in '..\Core.EntityCache.pas',
+  TestCoreEntityMap in 'TestCoreEntityMap.pas';
 
 {$R *.RES}
 

@@ -33,7 +33,7 @@ uses
   SQL.Params, Generics.Collections;
 
 type
-  TDBDriverType = (dtSQLite = 0, dtADO);
+  TDBDriverType = (dtSQLite = 0 {$IFDEF MSWINDOWS}, dtMSSQL{$ENDIF});
 
   TExecutionListenerProc = reference to procedure(const ACommand: string; const AParams: TObjectList<TDBParam>);
 
@@ -78,6 +78,11 @@ type
   IEntitySerializer = interface
     ['{BF7320F9-2B57-4B8C-997D-2F157D626D0D}']
 
+  end;
+
+  IODBC = interface
+    ['{7A235A2E-1ABA-4AD6-A6FD-276A16374596}']
+    function GetDatasources: TArray<string>;
   end;
 
 implementation

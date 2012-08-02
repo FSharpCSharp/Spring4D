@@ -133,9 +133,6 @@ begin
 
   Result := 'INSERT INTO ';
 
-  if AInsertCommand.Table.SchemaExists then
-    Result := Result + AInsertCommand.Table.Schema + '.';
-
   sFields := '';
   sParams := '';
 

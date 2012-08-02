@@ -107,14 +107,12 @@ end;
 
 procedure TDeleteExecutor.Execute(AEntity: TObject);
 var
-  LTran: IDBTransaction;
   LStmt: IDBStatement;
 begin
   Assert(Assigned(AEntity));
 
   inherited Execute(AEntity);
 
-  LTran := Connection.BeginTransaction;
   LStmt := Connection.CreateStatement;
   LStmt.SetSQLCommand(SQL);
 
@@ -123,10 +121,7 @@ begin
     LStmt.SetParams(SQLParameters);
 
     LStmt.Execute();
-
-    LTran.Commit;
   finally
-    LTran := nil;
     LStmt := nil;
   end;
 end;

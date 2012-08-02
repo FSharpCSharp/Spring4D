@@ -33,7 +33,7 @@ uses
   Generics.Collections, Rtti;
 
 type
-  TEntityMapKey = class
+  TEntityMapKey = record
   private
     FModelClass: TClass;
     FID: TValue;
@@ -47,6 +47,8 @@ type
   TEntityMap = class
   private
     FMap: TObjectDictionary<TEntityMapKey,TObject>;
+  protected
+    function GetObjectKey(AObject: TObject): TEntityMapKey; virtual;
   public
     constructor Create(AOwnsValues: Boolean); virtual;
     destructor Destroy; override;
@@ -54,7 +56,9 @@ type
     function IsMapped(AObject: TObject): Boolean;
     function IsIDMapped(): Boolean;
     procedure Add(AObject: TObject);
-    function Get(AClass: TClass): TObject;
+    procedure AddOrReplace(AObject: TObject);
+
+    function Get(AObject: TObject): TObject;
     procedure Remove(AObject: TObject);
     procedure Replace(AObject: TObject);
     procedure Clear(AAll: Boolean);
@@ -66,14 +70,22 @@ type
 implementation
 
 uses
-  Core.Exceptions;
+  Core.Exceptions
+  ,Core.Reflection
+  ,Core.EntityCache
+  ,Mapping.Attributes
+  ,Mapping.RttiExplorer
+  ,Generics.Defaults
+  ;
 
-{ TModelMapKey }
+{ TEntityMapKey }
 
 function TEntityMapKey.GetIDAsInt: Int64;
+var
+  LResult: TValue;
 begin
-  Assert(FID.IsType<Int64>);
-  Result := FID.AsInt64;
+  if FID.TryConvert(TypeInfo(Int64), LResult) then
+    Result := LResult.AsInt64;
 end;
 
 { TModelMap }
@@ -82,11 +94,20 @@ procedure TEntityMap.Add(AObject: TObject);
 var
   LKey: TEntityMapKey;
 begin
-  Assert(Assigned(AObject), 'Model not assigned');
-  LKey := TEntityMapKey.Create;
-  LKey.FModelClass := AObject.ClassType;
+  Assert(Assigned(AObject), 'Entity not assigned');
 
+  LKey := GetObjectKey(AObject);
   FMap.Add(LKey, AObject);
+end;
+
+procedure TEntityMap.AddOrReplace(AObject: TObject);
+var
+  LKey: TEntityMapKey;
+begin
+  Assert(Assigned(AObject), 'Entity not assigned');
+
+  LKey := GetObjectKey(AObject);
+  FMap.AddOrSetValue(LKey, AObject);
 end;
 
 procedure TEntityMap.Clear(AAll: Boolean);
@@ -97,15 +118,26 @@ end;
 constructor TEntityMap.Create(AOwnsValues: Boolean);
 var
   LOwnerships: TDictionaryOwnerships;
+  LComparer: IEqualityComparer<TEntityMapKey>;
 begin
   inherited Create;
 
   if AOwnsValues then
-    LOwnerships := [doOwnsKeys, doOwnsValues]
+    LOwnerships := [doOwnsValues]
   else
-    LOwnerships := [doOwnsKeys];
+    LOwnerships := [];
 
-  FMap := TObjectDictionary<TEntityMapKey,TObject>.Create(LOwnerships);
+  LComparer := TDelegatedEqualityComparer<TEntityMapKey>.Construct(
+    function(const Left, Right: TEntityMapKey): Boolean
+    begin
+      Result := (Left.ModelClass = Right.ModelClass) and (SameValue(Left.ID, Right.ID));
+    end,
+    function(const Value: TEntityMapKey): Integer
+    begin
+      Result := Value.GetIDAsInt - NativeInt(Value.ModelClass);
+    end);
+
+  FMap := TObjectDictionary<TEntityMapKey,TObject>.Create(LOwnerships, LComparer);
 end;
 
 destructor TEntityMap.Destroy;
@@ -114,14 +146,31 @@ begin
   inherited Destroy;
 end;
 
-function TEntityMap.Get(AClass: TClass): TObject;
+function TEntityMap.Get(AObject: TObject): TObject;
+var
+  LKey: TEntityMapKey;
 begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
+  LKey := GetObjectKey(AObject);
+  Result := FMap[LKey];
 end;
 
 function TEntityMap.GetList: TList<TObject>;
 begin
   raise EORMMethodNotImplemented.Create('Method not implemented');
+end;
+
+function TEntityMap.GetObjectKey(AObject: TObject): TEntityMapKey;
+var
+  LPrimaryKeyCol: Column;
+begin
+  Result.FModelClass := AObject.ClassType;
+  LPrimaryKeyCol := TEntityCache.Get(AObject.ClassType).PrimaryKeyColumn;
+  if Assigned(LPrimaryKeyCol) then
+  begin
+    Result.FID := TRttiExplorer.GetMemberValue(AObject, LPrimaryKeyCol.ClassMemberName);
+  end
+  else
+    Result.FID := TValue.Empty;
 end;
 
 function TEntityMap.HasIdValue(AObject: TObject): Boolean;
@@ -135,14 +184,19 @@ begin
 end;
 
 function TEntityMap.IsMapped(AObject: TObject): Boolean;
+var
+  LKey: TEntityMapKey;
 begin
-  {TODO -oLinas -cGeneral : implement}
-  raise EORMMethodNotImplemented.Create('Method not implemented');
+  LKey := GetObjectKey(AObject);
+  Result := FMap.ContainsKey(LKey);
 end;
 
 procedure TEntityMap.Remove(AObject: TObject);
+var
+  LKey: TEntityMapKey;
 begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
+  LKey := GetObjectKey(AObject);
+  FMap.Remove(LKey);
 end;
 
 procedure TEntityMap.Replace(AObject: TObject);

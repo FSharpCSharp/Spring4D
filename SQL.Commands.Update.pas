@@ -31,7 +31,7 @@ interface
 
 uses
   SQL.AbstractCommandExecutor, SQL.Types, SQL.Commands, SQL.Params, Generics.Collections
-  , Mapping.Attributes;
+  , Mapping.Attributes, Core.EntityMap;
 
 type
   TUpdateExecutor = class(TAbstractCommandExecutor)
@@ -39,7 +39,8 @@ type
     FTable: TSQLTable;
     FCommand: TUpdateCommand;
     FColumns: TList<Column>;
-    FPrimaryKeyColumnName: string;
+    FEntityMap: TEntityMap;
+    FMapped: Boolean;
   public
     constructor Create(); override;
     destructor Destroy; override;
@@ -49,6 +50,8 @@ type
 
     procedure Execute(AEntity: TObject); override;
     procedure Update(AEntity: TObject; AEntity2: TObject); overload;
+
+    property EntityMap: TEntityMap read FEntityMap write FEntityMap;
   end;
 
 implementation
@@ -56,6 +59,8 @@ implementation
 uses
   Core.Exceptions
   ,Core.Interfaces
+  ,Core.EntityCache
+  ,Core.Utils
   ,Mapping.RttiExplorer
   ,SysUtils
   ,Rtti
@@ -65,15 +70,26 @@ uses
 
 procedure TUpdateExecutor.Execute(AEntity: TObject);
 var
-  LTran: IDBTransaction;
   LStmt: IDBStatement;
+  LDirtyObject: TObject;
 begin
   Assert(Assigned(AEntity));
 
   inherited Execute(AEntity);
 
-  LTran := Connection.BeginTransaction;
   LStmt := Connection.CreateStatement;
+
+  FMapped := FEntityMap.IsMapped(AEntity);
+  if FMapped then
+  begin
+    LDirtyObject := FEntityMap.Get(AEntity);
+    FColumns := TRttiExplorer.GetChangedMembers(AEntity, LDirtyObject);
+  end;
+
+  FCommand.SetTable(FColumns);
+
+  SQL := Generator.GenerateUpdate(FCommand);
+
   LStmt.SetSQLCommand(SQL);
 
   BuildParams(AEntity);
@@ -81,10 +97,7 @@ begin
     LStmt.SetParams(SQLParameters);
 
     LStmt.Execute();
-
-    LTran.Commit;
   finally
-    LTran := nil;
     LStmt := nil;
   end;
 end;
@@ -92,23 +105,24 @@ end;
 procedure TUpdateExecutor.Build(AClass: TClass);
 var
   LAtrTable: Table;
+  LCache: TEntityData;
 begin
   EntityClass := AClass;
-  LAtrTable := TRttiExplorer.GetTable(EntityClass);
+  LCache := TEntityCache.Get(EntityClass);
+  LAtrTable := LCache.EntityTable;
+
   if not Assigned(LAtrTable) then
     raise ETableNotSpecified.Create('Table not specified');
 
   FTable.SetFromAttribute(LAtrTable);
 
-  if Assigned(FColumns) then
-    FreeAndNil(FColumns);
-  FColumns := TRttiExplorer.GetColumns(EntityClass);
-  FPrimaryKeyColumnName := TRttiExplorer.GetPrimaryKeyColumnName(EntityClass);
-   //add fields to tsqltable
-  FCommand.PrimaryKeyColumnName := FPrimaryKeyColumnName;
-  FCommand.SetTable(FColumns);
+  FColumns := LCache.Columns;
 
-  SQL := Generator.GenerateUpdate(FCommand);
+  FCommand.PrimaryKeyColumn := LCache.PrimaryKeyColumn;
+   //add fields to tsqltable
+//  FCommand.SetTable(FColumns);
+
+ // SQL := Generator.GenerateUpdate(FCommand);
 end;
 
 procedure TUpdateExecutor.BuildParams(AEntity: TObject);
@@ -124,7 +138,7 @@ begin
     LParam := TDBParam.Create;
     LParam.Name := ':' + LColumn.Name;
     LVal := TRttiExplorer.GetMemberValue(AEntity, LColumn.ClassMemberName);
-    LParam.Value := LVal.AsVariant;
+    LParam.Value := TUtils.AsVariant(LVal);
     LParam.ParamType := FromTValueTypeToFieldType(LVal);
     SQLParameters.Add(LParam);
   end;
@@ -135,15 +149,13 @@ begin
   inherited Create;
   FTable := TSQLTable.Create;
   FCommand := TUpdateCommand.Create(FTable);
-  FColumns := nil;
-  FPrimaryKeyColumnName := '';
 end;
 
 destructor TUpdateExecutor.Destroy;
 begin
   FTable.Free;
   FCommand.Free;
-  if Assigned(FColumns) then
+  if FMapped then
     FColumns.Free;
   inherited Destroy;
 end;

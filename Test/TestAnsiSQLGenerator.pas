@@ -253,7 +253,7 @@ begin
 end;
 
 const
-  SQL_UPDATE_TEST = 'UPDATE CUSTOMERS SET ' + #13#10
+  SQL_UPDATE_TEST = 'UPDATE TEST.CUSTOMERS SET ' + #13#10
   + 'NAME=:NAME,AGE=:AGE,HEIGHT=:HEIGHT' + #13#10 + ' WHERE ID=:ID;';
 
 procedure TestTAnsiSQLGenerator.TestGenerateUpdate;
@@ -279,7 +279,7 @@ begin
 end;
 
 const
-  SQL_DELETE_TEST = 'DELETE FROM CUSTOMERS' + #13#10
+  SQL_DELETE_TEST = 'DELETE FROM TEST.CUSTOMERS' + #13#10
   + ' WHERE ID=:ID;';
 
 procedure TestTAnsiSQLGenerator.TestGenerateDelete;

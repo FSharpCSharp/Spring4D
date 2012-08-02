@@ -107,7 +107,9 @@ implementation
 uses
   TypInfo,
   Core.Exceptions,
-  Mapping.RttiExplorer;
+  Mapping.RttiExplorer
+  ,Core.Reflection
+  ;
 
 { TEnum<T> }
 
@@ -208,7 +210,8 @@ begin
   LLeft := TValue.From<T>(Left);
   LRight := TValue.From<T>(Right);
 
-  Result := LLeft.IsSameAs(LRight);
+  Result := SameValue(LLeft, LRight);
+//  Result := LLeft.IsSameAs(LRight);
 end;
 
 function Nullable<T>.GetIsNull: Boolean;
@@ -246,7 +249,7 @@ begin
   LLeft := TValue.From<T>(Left);
   LRight := TValue.From<T>(Right);
 
-  Result := not LLeft.IsSameAs(LRight);
+  Result := not SameValue(LLeft, LRight); // LLeft.IsSameAs(LRight);
 end;
 
 procedure Nullable<T>.SetValue(const Value: T);

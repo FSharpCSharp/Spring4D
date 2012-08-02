@@ -71,20 +71,33 @@ type
     /// Retrieves multiple models from the sql statement into the ACollection
     /// </summary>
     procedure Fetch<T: class, constructor>(const ASql: string;
-      const AParams: array of const; var ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
+      const AParams: array of const; ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
                                                   {$ELSE} TObjectList<T> {$ENDIF} );
+
     /// <summary>
     /// Inserts model to the database
     /// </summary>
-    procedure Insert(AEntity: TObject);
+    procedure Insert(AEntity: TObject); overload;
+
+    procedure Insert<T: class, constructor>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
+      {$ELSE} TObjectList<T> {$ENDIF}); overload;
+
     /// <summary>
     /// Updates model in a database
     /// </summary>
-    procedure Update(AEntity: TObject);
+    procedure Update(AEntity: TObject); overload;
+    /// <summary>
+    /// Updates multiple models in a database
+    /// </summary>
+    procedure Update<T: class, constructor>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
+      {$ELSE} TObjectList<T> {$ENDIF}); overload;
     /// <summary>
     /// Removes model from the database
     /// </summary>
-    procedure Delete(AEntity: TObject);
+    procedure Delete(AEntity: TObject); overload;
+
+    procedure Delete<T: class, constructor>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
+      {$ELSE} TObjectList<T> {$ENDIF}); overload;
   end;
 
 
@@ -98,6 +111,8 @@ uses
   ,SQL.Commands.Factory
   ,Mapping.RttiExplorer
   ,SQL.Params
+  ,Core.Utils
+  ,Core.EntityCache
   ;
 
 { TEntityManager }
@@ -131,7 +146,18 @@ begin
 
   {TODO -oLinas -cGeneral : remove from entity maps}
  // FEntities.Remove(AEntity);
- // FOldStateEntities.Remove(AEntity);
+  FOldStateEntities.Remove(AEntity);
+end;
+
+procedure TEntityManager.Delete<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
+      {$ELSE} TObjectList<T> {$ENDIF});
+var
+  LEntity: T;
+begin
+  for LEntity in ACollection do
+  begin
+    Delete(LEntity);
+  end;
 end;
 
 destructor TEntityManager.Destroy;
@@ -142,7 +168,7 @@ begin
 end;
 
 procedure TEntityManager.Fetch<T>(const ASql: string; const AParams: array of const;
-  var ACollection: {$IFDEF USE_SPRING} ICollection<T> {$ELSE} TObjectList<T> {$ENDIF});
+  ACollection: {$IFDEF USE_SPRING} ICollection<T> {$ELSE} TObjectList<T> {$ENDIF});
 var
   LResults: IDBResultset;
   LCurrent: T;
@@ -199,13 +225,12 @@ var
   LColumns: TList<Column>;
 begin
   Result := T.Create;
+  {DONE -oLinas -cGeneral : make a cache for columns. it is not needed to get columns from the class each time}
 
-  LColumns := TRttiExplorer.GetColumns(TObject(Result).ClassType);
-  try
-    SetEntityColumns(Result, LColumns, AResultset);
-  finally
-    LColumns.Free;
-  end;
+  LColumns := TEntityCache.GetColumns(TObject(Result).ClassType);
+  SetEntityColumns(Result, LColumns, AResultset);
+
+  FOldStateEntities.AddOrReplace(TRttiExplorer.Clone(Result));
 end;
 
 function TEntityManager.GetResultset(const ASql: string;
@@ -244,7 +269,18 @@ begin
 
   {TODO -oLinas -cGeneral : add to entity maps}
  // FEntities.Add(AEntity);
- // FOldStateEntities.Add(TRttiExplorer.Clone(AEntity));
+  FOldStateEntities.AddOrReplace(TRttiExplorer.Clone(AEntity));
+end;
+
+procedure TEntityManager.Insert<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
+      {$ELSE} TObjectList<T> {$ENDIF});
+var
+  LEntity: T;
+begin
+  for LEntity in ACollection do
+  begin
+    Insert(LEntity);
+  end;
 end;
 
 function TEntityManager.Merge<T>(AEntity: T): T;
@@ -291,7 +327,7 @@ begin
   begin
     LVal := AResultset.GetFieldValue(LCol.Name);
 
-    TRttiExplorer.SetMemberValue(AEntity, LCol, TValue.FromVariant(LVal));
+    TRttiExplorer.SetMemberValue(AEntity, LCol, TUtils.FromVariant(LVal));
   end;
 end;
 
@@ -303,11 +339,23 @@ begin
   {TODO -oLinas -cGeneral : finish implementing missing methods}
   LUpdater.Connection := Connection;
   LUpdater.EntityClass := AEntity.ClassType;
+  LUpdater.EntityMap := FOldStateEntities;
   LUpdater.Execute(AEntity);
 
   {TODO -oLinas -cGeneral : update entity maps}
  // FEntities.Add(AEntity);
- // FOldStateEntities.Add(TRttiExplorer.Clone(AEntity));
+  FOldStateEntities.AddOrReplace(TRttiExplorer.Clone(AEntity));
+end;
+
+procedure TEntityManager.Update<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
+      {$ELSE} TObjectList<T> {$ENDIF});
+var
+  LEntity: T;
+begin
+  for LEntity in ACollection do
+  begin
+    Update(LEntity);
+  end;
 end;
 
 end.

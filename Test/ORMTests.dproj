@@ -33,6 +33,10 @@
 			<DCC_ExeOutput>.\$(Config)\$(Platform)</DCC_ExeOutput>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_1)'!=''">
+			<DCC_DebugInfoInExe>true</DCC_DebugInfoInExe>
+			<BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
+			<BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
+			<ILINK_FullDebugInfo>true</ILINK_FullDebugInfo>
 			<DCC_UnitSearchPath>..\External\Spring\Source\Base;..\External\Spring\Source\Base\Collections;..\External\Spring\Source\Base\Reflection;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DCC_DebugDCUs>true</DCC_DebugDCUs>
 			<DCC_MapFile>3</DCC_MapFile>
@@ -86,6 +90,14 @@
 			<DCCReference Include="..\SQL.Commands.pas"/>
 			<DCCReference Include="..\SQL.Types.pas"/>
 			<DCCReference Include="..\Core.EntitySerializer.pas"/>
+			<DCCReference Include="..\Adapters.ADO.pas"/>
+			<DCCReference Include="TestADOAdapter.pas"/>
+			<DCCReference Include="..\Adapters.MSSQL.pas"/>
+			<DCCReference Include="..\Core.Utils.pas"/>
+			<DCCReference Include="..\Core.Reflection.pas"/>
+			<DCCReference Include="..\Core.EntityCache.pas"/>
+			<DCCReference Include="TestCoreEntityMap.pas"/>
+			<None Include="Profiling\AQtimeModule1.aqt"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>
@@ -99,7 +111,7 @@
 			</BuildConfiguration>
 		</ItemGroup>
 		<Import Project="$(BDS)\Bin\CodeGear.Delphi.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')"/>
-		<Import Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj" Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')"/>
+		<Import Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\8.0\UserTools.proj" Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\8.0\UserTools.proj')"/>
 		<ProjectExtensions>
 			<Borland.Personality>Delphi.Personality.12</Borland.Personality>
 			<Borland.ProjectType/>
