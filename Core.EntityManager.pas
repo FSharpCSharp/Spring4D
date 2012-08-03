@@ -50,6 +50,7 @@ type
     function GetResultset(const ASql: string; const AParams: array of const): IDBResultset;
     function GetOne<T: class, constructor>(AResultset: IDBResultset): T;
 
+    function GetQueryCount(const ASql: string; const AParams: array of const): Int64;
   public
     constructor Create(AConnection: IDBConnection); override;
     destructor Destroy; override;
@@ -98,6 +99,9 @@ type
 
     procedure Delete<T: class, constructor>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
       {$ELSE} TObjectList<T> {$ENDIF}); overload;
+
+    function Page<T: class, constructor>(APage: Integer; AItemsPerPage: Integer;
+      const ASql: string; const AParams: array of const): IDBPage<T>;
   end;
 
 
@@ -107,12 +111,16 @@ uses
   SQL.Commands.Insert
   ,SQL.Commands.Update
   ,SQL.Commands.Delete
+  ,SQL.Commands.Page
+  ,SQL.Register
+  ,SQL.Interfaces
   ,Core.Exceptions
   ,SQL.Commands.Factory
   ,Mapping.RttiExplorer
   ,SQL.Params
   ,Core.Utils
   ,Core.EntityCache
+  ,Core.Base
   ;
 
 { TEntityManager }
@@ -233,6 +241,22 @@ begin
   FOldStateEntities.AddOrReplace(TRttiExplorer.Clone(Result));
 end;
 
+function TEntityManager.GetQueryCount(const ASql: string; const AParams: array of const): Int64;
+var
+  LGenerator: ISQLGenerator;
+  LSQL: string;
+  LResults: IDBResultset;
+begin
+  Result := 0;
+  LGenerator := TSQLGeneratorRegister.GetCurrentGenerator();
+  LSQL := LGenerator.GenerateGetQueryCount(ASql);
+  LResults := GetResultset(LSQL, AParams);
+  if not LResults.IsEmpty then
+  begin
+    Result := LResults.GetFieldValue(0);
+  end;
+end;
+
 function TEntityManager.GetResultset(const ASql: string;
   const AParams: array of const): IDBResultset;
 var
@@ -286,6 +310,24 @@ end;
 function TEntityManager.Merge<T>(AEntity: T): T;
 begin
   raise EORMMethodNotImplemented.Create('Method not implemented');
+end;
+
+function TEntityManager.Page<T>(APage, AItemsPerPage: Integer; const ASql: string;
+  const AParams: array of const): IDBPage<T>;
+var
+  LPager: TPager;
+  LSQL: string;
+begin
+  LPager := TPager.Create();
+  Result := TDriverPageAdapter<T>.Create(LPager);
+
+  LPager.Connection := Connection;
+  LPager.Page := APage;
+  LPager.ItemsPerPage := AItemsPerPage;
+  LPager.TotalItems := GetQueryCount(ASql, AParams);
+  LSQL := LPager.BuildSQL(ASql);
+
+  Fetch<T>(LSQL, AParams, Result.Items);
 end;
 
 procedure TEntityManager.Persist(AEntity: TObject);

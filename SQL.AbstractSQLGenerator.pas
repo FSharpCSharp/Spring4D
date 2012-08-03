@@ -45,6 +45,8 @@ type
     function GenerateCreateSequence(): string; virtual; abstract;
     function GenerateGetNextSequenceValue(): string; virtual; abstract;
     function GenerateGetLastInsertId(): string; virtual; abstract;
+    function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; virtual; abstract;
+    function GenerateGetQueryCount(const ASql: string): string; virtual; abstract;
   end;
 
 implementation

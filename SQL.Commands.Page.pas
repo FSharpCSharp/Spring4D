@@ -25,36 +25,87 @@
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *)
-unit SQL.Interfaces;
+unit SQL.Commands.Page;
 
 interface
 
 uses
-  Classes, SQL.Commands, SQL.Types;
+  SQL.AbstractCommandExecutor, SQL.Types, SQL.Commands, SQL.Params, Generics.Collections
+  , Mapping.Attributes;
 
 type
-  ICommandExecutionListener = interface
-    ['{590E86C8-0B05-4BFE-9B26-3A9A4D0510BF}']
-    procedure ExecutingCommand(const ACmd: string; AList: TList);
-  end;
+  TPageExecutor = class(TAbstractCommandExecutor)
+  private
+    FPage: Integer;
+    FItemsPerPage: Integer;
+    FTotalItems: Int64;
+    function GetLimit: Integer;
+    function GetOffset: Integer;
+  public
+    constructor Create(); override;
+    destructor Destroy; override;
 
-  ISQLGenerator = interface
-    ['{8F46D275-50E4-4DE8-9E56-7D6599935E32}']
-    function GetDriverName(): string;
-    function GenerateSelect(ASelectCommand: TSelectCommand): string;
-    function GenerateInsert(AInsertCommand: TInsertCommand): string;
-    function GenerateUpdate(AUpdateCommand: TUpdateCommand): string;
-    function GenerateDelete(ADeleteCommand: TDeleteCommand): string;
-    function GenerateCreateTable(): string;
-    function GenerateCreateFK(): string;
-    function GenerateCreateSequence(): string;
-    function GenerateGetNextSequenceValue(): string;
-    function GenerateGetLastInsertId(): string;
-    function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string;
-    function GenerateGetQueryCount(const ASql: string): string;
+    procedure Build(AClass: TClass); override;
+    procedure BuildParams(AEntity: TObject); override;
+    function BuildSQL(const ASql: string): string;
+    procedure Execute(AEntity: TObject); override;
 
+    property Page: Integer read FPage write FPage;
+    property ItemsPerPage: Integer read FItemsPerPage write FItemsPerPage;
+    property TotalItems: Int64 read FTotalItems write FTotalItems;
+    property Limit: Integer read GetLimit;
+    property Offset: Integer read GetOffset;
   end;
 
 implementation
+
+uses
+  Math
+  ;
+
+{ TPageExecutor }
+
+function TPageExecutor.BuildSQL(const ASql: string): string;
+begin
+  Result := Generator.GeneratePagedQuery(ASql, Limit, Offset);
+end;
+
+procedure TPageExecutor.Build(AClass: TClass);
+begin
+  //do nothing
+end;
+
+procedure TPageExecutor.BuildParams(AEntity: TObject);
+begin
+  inherited;
+
+end;
+
+constructor TPageExecutor.Create;
+begin
+  inherited Create;
+
+end;
+
+destructor TPageExecutor.Destroy;
+begin
+  inherited Destroy;
+end;
+
+procedure TPageExecutor.Execute(AEntity: TObject);
+begin
+  inherited;
+
+end;
+
+function TPageExecutor.GetLimit: Integer;
+begin
+  Result := ItemsPerPage;
+end;
+
+function TPageExecutor.GetOffset: Integer;
+begin
+  Result := Min( (Page * ItemsPerPage) - ItemsPerPage + 1, 1);
+end;
 
 end.

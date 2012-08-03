@@ -51,13 +51,17 @@ type
     function GenerateCreateSequence(): string; override;
     function GenerateGetNextSequenceValue(): string; override;
     function GenerateGetLastInsertId(): string; override;
+    function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; override;
+    function GenerateGetQueryCount(const ASql: string): string; override;
   end;
 
 implementation
 
 uses
-  Core.Exceptions,
-  SysUtils;
+  Core.Exceptions
+  ,SysUtils
+  ,StrUtils
+  ;
 
 { TAnsiSQLGenerator }
 
@@ -123,6 +127,30 @@ begin
   raise EORMMethodNotImplemented.Create('Method not implemented');
 end;
 
+function TAnsiSQLGenerator.GenerateGetQueryCount(const ASql: string): string;
+var
+  LBuilder: TStringBuilder;
+  LSQL: string;
+begin
+  LBuilder := TStringBuilder.Create();
+  try
+    LSQL := ASql;
+    if EndsStr(';', LSQL) then
+      SetLength(LSQL, Length(LSQL)-1);
+
+    LBuilder.Append('SELECT COUNT(*) FROM (')
+      .AppendLine
+      .Append(LSQL)
+      .AppendLine
+      .Append(') AS ORM_GET_QUERY_COUNT;')
+      ;
+
+    Result := LBuilder.ToString;
+  finally
+    LBuilder.Free;
+  end;
+end;
+
 function TAnsiSQLGenerator.GenerateInsert(AInsertCommand: TInsertCommand): string;
 var
   i: Integer;
@@ -150,6 +178,18 @@ begin
 
   Result := Result + AInsertCommand.Table.Name + ' (' + CRLF + '  ' + sFields + ')' + CRLF +
     '  VALUES (' + CRLF + sParams + ');';
+end;
+
+function TAnsiSQLGenerator.GeneratePagedQuery(const ASql: string; const ALimit,
+  AOffset: Integer): string;
+var
+  LSQL: string;
+begin
+  LSQL := ASql;
+  if EndsStr(';', LSQL) then
+    SetLength(LSQL, Length(LSQL)-1);
+
+  Result := LSQL + Format(' LIMIT %1:D,%0:D;', [ALimit, AOffset]);
 end;
 
 function TAnsiSQLGenerator.GenerateSelect(ASelectCommand: TSelectCommand): string;

@@ -29,8 +29,14 @@ unit Core.Base;
 
 interface
 
+{$I sv.inc}
+
 uses
-  Core.Interfaces, SQL.Params, Generics.Collections;
+  Core.Interfaces, SQL.Params, SQL.Interfaces
+  {$IFDEF USE_SPRING},Spring.Collections{$ENDIF}
+  , Generics.Collections
+  , SQL.Commands.Page
+  ;
 
 type
   TDriverResultSetAdapter<T> = class(TInterfacedObject, IDBResultset)
@@ -87,7 +93,51 @@ type
     property Statement: T read FStmt;
   end;
 
+  TPager = class
+  private
+    FConnection: IDBConnection;
+    FCurrentPage: Integer;
+    FPageSize: Integer;
+    FTotalItems: Int64;
+    FGenerator: ISQLGenerator;
+    function GetLimit: Integer;
+    function GetOffset: Integer;
+  public
+    constructor Create(); virtual;
+
+    function BuildSQL(const ASql: string): string;
+
+    property Connection: IDBConnection read FConnection write FConnection;
+    property Page: Integer read FCurrentPage write FCurrentPage;
+    property ItemsPerPage: Integer read FPageSize write FPageSize;
+    property TotalItems: Int64 read FTotalItems write FTotalItems;
+    property Limit: Integer read GetLimit;
+    property Offset: Integer read GetOffset;
+  end;
+
+  TDriverPageAdapter<T: class> = class(TInterfacedObject, IDBPage<T>)
+  private
+    FItems: {$IFDEF USE_SPRING} Spring.Collections.IList<T> {$ELSE}TObjectList<T> {$ENDIF};
+    FPager: TPager;
+  protected
+    function GetCurrentPage(): Integer;
+    function GetItemsPerPage(): Integer;
+    function GetTotalPages(): Integer;
+    function GetTotalItems(): Int64;
+    function GetItems(): {$IFDEF USE_SPRING} Spring.Collections.IList<T> {$ELSE}TObjectList<T> {$ENDIF};
+
+    property Items: {$IFDEF USE_SPRING} Spring.Collections.IList<T> {$ELSE}TObjectList<T> {$ENDIF} read GetItems;
+  public
+    constructor Create(const APager: TPager); virtual;
+    destructor Destroy; override;
+  end;
+
 implementation
+
+uses
+  SQL.Register
+  ,Math
+  ;
 
 { TDriverResultSetAdapter<T> }
 
@@ -170,6 +220,80 @@ begin
       LParams.Free;
     end;
   end;
+end;
+
+{ TDriverPageAdapter<T> }
+
+constructor TDriverPageAdapter<T>.Create(const APager: TPager);
+begin
+  inherited Create;
+  FPager := APager;
+  {$IFDEF USE_SPRING}
+  FItems := TCollections.CreateObjectList<T>(True);
+  {$ELSE}
+  FItems := TObjectList<T>.Create(True);
+  {$ENDIF}
+end;
+
+destructor TDriverPageAdapter<T>.Destroy;
+begin
+  {$IFNDEF USE_SPRING}
+  FItems.Free;
+  {$ELSE}
+  FItems := nil;
+  {$ENDIF}
+  FPager.Free;
+  inherited Destroy;
+end;
+
+function TDriverPageAdapter<T>.GetCurrentPage: Integer;
+begin
+  Result := FPager.Page;
+end;
+
+function TDriverPageAdapter<T>.GetItems: {$IFDEF USE_SPRING} Spring.Collections.IList<T> {$ELSE}TObjectList<T> {$ENDIF};
+begin
+  Result := FItems;
+end;
+
+function TDriverPageAdapter<T>.GetItemsPerPage: Integer;
+begin
+  Result := FPager.ItemsPerPage;
+end;
+
+function TDriverPageAdapter<T>.GetTotalItems: Int64;
+begin
+  Result := FPager.TotalItems;
+end;
+
+function TDriverPageAdapter<T>.GetTotalPages: Integer;
+begin
+  Result := GetTotalItems div GetItemsPerPage;
+  if (GetTotalItems mod GetItemsPerPage) <> 0 then
+    Inc(Result);
+end;
+
+{ TPager }
+
+function TPager.BuildSQL(const ASql: string): string;
+begin
+  Result := FGenerator.GeneratePagedQuery(ASql, Limit, Offset);
+end;
+
+constructor TPager.Create;
+begin
+  inherited Create;
+  FGenerator := TSQLGeneratorRegister.GetCurrentGenerator();
+end;
+
+function TPager.GetLimit: Integer;
+begin
+  Result := ItemsPerPage;
+end;
+
+function TPager.GetOffset: Integer;
+begin
+  Result := Min( (Page * ItemsPerPage) - ItemsPerPage + 1, 1);
 end;
 
 end.

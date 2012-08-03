@@ -57,6 +57,8 @@ type
     constructor Create(ATable: TSQLTable); override;
     destructor Destroy; override;
 
+    procedure SetTable(AColumns: TList<Column>); override;
+
     property SelectFields: TObjectList<TSQLSelectField> read FSelectFields;
     property Joins: TObjectList<TSQLJoin> read FJoins;
     property WhereFields: TObjectList<TSQLWhereField> read FWhereFields;
@@ -133,6 +135,18 @@ begin
   FGroupByFields.Free;
   FOrderByFields.Free;
   inherited Destroy;
+end;
+
+procedure TSelectCommand.SetTable(AColumns: TList<Column>);
+begin
+  Assert(Assigned(AColumns), 'AColumns not assigned');
+  FSelectFields.Clear;
+  FJoins.Clear;
+  FWhereFields.Clear;
+  FGroupByFields.Clear;
+  FOrderByFields.Clear;
+
+  {TODO -oLinas -cGeneral : add all select fields}
 end;
 
 { TInsertCommand }

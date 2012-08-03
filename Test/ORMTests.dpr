@@ -61,7 +61,8 @@ uses
   Core.Utils in '..\Core.Utils.pas',
   Core.Reflection in '..\Core.Reflection.pas',
   Core.EntityCache in '..\Core.EntityCache.pas',
-  TestCoreEntityMap in 'TestCoreEntityMap.pas';
+  TestCoreEntityMap in 'TestCoreEntityMap.pas',
+  SQL.Commands.Page in '..\SQL.Commands.Page.pas';
 
 {$R *.RES}
 

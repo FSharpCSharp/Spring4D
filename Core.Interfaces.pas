@@ -29,8 +29,13 @@ unit Core.Interfaces;
 
 interface
 
+{$I sv.inc}
+
 uses
-  SQL.Params, Generics.Collections;
+  SQL.Params
+  {$IFDEF USE_SPRING},Spring.Collections{$ENDIF}
+  ,Generics.Collections
+  ;
 
 type
   TDBDriverType = (dtSQLite = 0 {$IFDEF MSWINDOWS}, dtMSSQL{$ENDIF});
@@ -83,6 +88,17 @@ type
   IODBC = interface
     ['{7A235A2E-1ABA-4AD6-A6FD-276A16374596}']
     function GetDatasources: TArray<string>;
+  end;
+
+  IDBPage<T: class> = interface
+    ['{384357E2-A0B1-4EEE-9A22-2C01479D4148}']
+    function GetCurrentPage(): Integer;
+    function GetItemsPerPage(): Integer;
+    function GetTotalPages(): Integer;
+    function GetTotalItems(): Int64;
+    function GetItems(): {$IFDEF USE_SPRING} Spring.Collections.IList<T> {$ELSE}TObjectList<T> {$ENDIF};
+
+    property Items: {$IFDEF USE_SPRING} Spring.Collections.IList<T> {$ELSE}TObjectList<T> {$ENDIF} read GetItems;
   end;
 
 implementation

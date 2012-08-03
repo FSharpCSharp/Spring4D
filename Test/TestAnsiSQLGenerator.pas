@@ -34,6 +34,8 @@ type
     procedure TestGenerateCreateSequence;
     procedure TestGenerateGetNextSequenceValue;
     procedure TestGenerateGetLastInsertId;
+    procedure TestGeneratePagedQuery;
+    procedure TestGenerateGetQueryCount;
   end;
 
 implementation
@@ -253,6 +255,18 @@ begin
 end;
 
 const
+  SQL_PAGED_TEST = 'SELECT * FROM TEST.CUSTOMERS WHERE CUSTID = 1;';
+  SQL_PAGED = 'SELECT * FROM TEST.CUSTOMERS WHERE CUSTID = 1 LIMIT(10,1);';
+
+procedure TestTAnsiSQLGenerator.TestGeneratePagedQuery;
+var
+  LSQL: string;
+begin
+  LSQL := FAnsiSQLGenerator.GeneratePagedQuery(SQL_PAGED_TEST, 10, 1);
+  CheckEqualsString(SQL_PAGED, LSQL);
+end;
+
+const
   SQL_UPDATE_TEST = 'UPDATE TEST.CUSTOMERS SET ' + #13#10
   + 'NAME=:NAME,AGE=:AGE,HEIGHT=:HEIGHT' + #13#10 + ' WHERE ID=:ID;';
 
@@ -331,6 +345,20 @@ var
 begin
   ReturnValue := FAnsiSQLGenerator.GenerateGetNextSequenceValue;
   // TODO: Validate method results
+end;
+
+const
+  SQL_COUNT_TEST = 'SELECT * FROM TEST.CUSTOMERS WHERE CUSTID = 1;';
+  SQL_COUNT = 'SELECT COUNT(*) FROM (' + #13#10 +
+    'SELECT * FROM TEST.CUSTOMERS WHERE CUSTID = 1' + #13#10 +
+    ') AS ORM_GET_QUERY_COUNT;';
+
+procedure TestTAnsiSQLGenerator.TestGenerateGetQueryCount;
+var
+  LSQL: string;
+begin
+  LSQL := FAnsiSQLGenerator.GenerateGetQueryCount(SQL_COUNT_TEST);
+  CheckEqualsString(SQL_COUNT, LSQL);
 end;
 
 procedure TestTAnsiSQLGenerator.TestGenerateGetLastInsertId;

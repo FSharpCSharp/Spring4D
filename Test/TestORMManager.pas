@@ -34,6 +34,7 @@ type
     procedure Update();
     procedure Delete();
     procedure ExecutionListeners();
+    procedure Page();
   end;
 
   TInsertData = record
@@ -320,6 +321,25 @@ begin
     LCollection.Free;
     {$ENDIF}
   end;
+end;
+
+procedure TestTEntityManager.Page;
+var
+  LPage: IDBPage<TCustomer>;
+  i: Integer;
+  iTotal: Integer;
+begin
+  iTotal := 50;
+  TestDB.BeginTransaction;
+  for i := 1 to iTotal do
+  begin
+    InsertCustomer(i);
+  end;
+  TestDB.Commit;
+
+  LPage := FManager.Page<TCustomer>(1, 10, 'select * from ' + TBL_PEOPLE, []);
+  CheckEquals(iTotal, LPage.GetTotalItems);
+  CheckEquals(10, LPage.Items.Count);
 end;
 
 procedure TestTEntityManager.SetUp;

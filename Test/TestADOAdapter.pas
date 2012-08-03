@@ -103,6 +103,17 @@ type
     procedure TestFirst();
     procedure TestFetch();
     procedure TestFetchWorkers();
+    procedure TestPage();
+  end;
+
+  TestMSSQLSQLGenerator = class(TTestCase)
+  private
+    FSQLGenerator: TMSSQLServerSQLGenerator;
+  public
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestGeneratePagedQuery();
   end;
 
 implementation
@@ -484,6 +495,44 @@ begin
   end;
 end;
 
+procedure TestMSSQLAdapter.TestPage;
+var
+  LPage: IDBPage<TWorker>;
+begin
+  LPage := FManager.Page<TWorker>(1, 10, 'SELECT * FROM VIKARINA.DARSDLA WHERE IMONE = :0', [1]);
+  CheckEquals(10, LPage.Items.Count);
+end;
+
+{ TestMSSQLSQLGenerator }
+
+procedure TestMSSQLSQLGenerator.SetUp;
+begin
+  inherited;
+  FSQLGenerator := TMSSQLServerSQLGenerator.Create();
+end;
+
+procedure TestMSSQLSQLGenerator.TearDown;
+begin
+  FSQLGenerator.Free;
+  inherited;
+end;
+
+const
+  SQL_PAGED_TEST = 'SELECT * FROM VIKARINA.IMONES WHERE IMONE = 1;';
+  SQL_EXPECTED_PAGED = 	 'SELECT * FROM ('+
+		'  SELECT *,  ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS ORM_ROW_NUM FROM ('+
+		'    SELECT * FROM VIKARINA.IMONES WHERE IMONE = 1) AS ORM_TOTAL_1'+
+		'  ) AS ORM_TOTAL_2'+
+		' WHERE (ORM_ROW_NUM>=1) AND (ORM_ROW_NUM < 1 + 10);';
+
+procedure TestMSSQLSQLGenerator.TestGeneratePagedQuery;
+var
+  LSQL: string;
+begin
+  LSQL := FSQLGenerator.GeneratePagedQuery(SQL_PAGED_TEST, 10, 1);
+  CheckEqualsString(SQL_EXPECTED_PAGED, LSQL);
+end;
+
 type
   TMSSQLEvents = class
   public
@@ -508,6 +557,8 @@ var
 const
   DS_TEST_NAME = 'Viktor2008';
 
+
+
 initialization
   ODBC := TBaseODBC.Create;
   ODBCSources := ODBC.GetDatasources();
@@ -523,6 +574,7 @@ initialization
   RegisterTest(TestTADOTransactionAdapter.Suite);
   RegisterTest(TestTADOSQLGenerator.Suite);
   RegisterTest(TestMSSQLAdapter.Suite);
+  RegisterTest(TestMSSQLSQLGenerator.Suite);
 
   TestDB := TADOConnection.Create(nil);
   TestDB.LoginPrompt := False;

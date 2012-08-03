@@ -16,7 +16,7 @@ uses
 
 type
   // Test methods for class TEntityMap
-
+  {$HINTS OFF}
   TestTEntityMap = class(TTestCase)
   private
     FEntityMap: TEntityMap;
@@ -180,6 +180,8 @@ begin
   CheckTrue(False, 'Test Not implemented');
   // TODO: Validate method results
 end;
+
+{$HINTS ON}
 
 initialization
   // Register any test cases with the test runner
