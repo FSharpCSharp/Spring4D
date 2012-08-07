@@ -571,7 +571,10 @@ uses
   Generics.Collections,
   Math,
   StrUtils,
-  SysUtils;
+  SysUtils
+  ,Graphics
+  ,Core.Utils
+  ;
 
 type
   TArrayHelper = class
@@ -816,7 +819,7 @@ begin
   end else
   if Left.IsObject and Right.IsObject then
   begin
-    Result := Left.AsObject = Right.AsObject;
+    Result := TUtils.SameObject(Left.AsObject, Right.AsObject); // Left.AsObject = Right.AsObject;
   end else
   if Left.IsPointer and Right.IsPointer then
   begin
@@ -1903,6 +1906,7 @@ var
   LStrings: TStrings;
   LTypeData: PTypeData;
   i: Integer;
+  LStream: TStream;
 begin
   Result := False;
   if Assigned(ATypeInfo) then
@@ -2135,11 +2139,45 @@ begin
           end;
           tkClass:
           begin
-            if IsTypeCovariantTo(TypeInfo, ATypeInfo) then
+            if TypeInfo = System.TypeInfo(TMemoryStream) then
             begin
-              AResult := TValue.From(GetReferenceToRawData, ATypeInfo);
+              if (ATypeInfo = System.TypeInfo(TPicture)) then
+              begin
+                //load from TStream into TPicture
+                if TUtils.TryLoadFromStreamToPictureValue(Self.AsObject as TStream, AResult) then
+                begin
+                  Result := True;
+                  Exit;
+                end;
+              end;
+            end
+            else if TypeInfo = System.TypeInfo(TPicture) then
+            begin
+              LStream := nil;
+              //convert from picture to stream to be able to add it as a parameter
+              if AsObject <> nil then
+              begin
+
+                if (TPicture(AsObject).Graphic <> nil) then
+                begin
+                  LStream := TMemoryStream.Create;
+                  TPicture(AsObject).Graphic.SaveToStream(LStream);
+                  LStream.Position := 0;
+                end;
+              end;
+
+              AResult := LStream;
               Result := True;
+             end
+            else
+            begin
+              if IsTypeCovariantTo(TypeInfo, ATypeInfo) then
+              begin
+                AResult := TValue.From(GetReferenceToRawData, ATypeInfo);
+                Result := True;
+              end;
             end;
+
           end;
         end;
       end;

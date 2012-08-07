@@ -59,6 +59,7 @@ type
     class procedure GetChangedMembers(AOriginalObj, ADirtyObj: TObject; AList: TList<Column>); overload;
     class procedure CopyFieldValues(AEntityFrom, AEntityTo: TObject);
     class function Clone(AEntity: TObject): TObject;
+    class function CreateType(AClass: TClass): TObject;
   end;
 
 implementation
@@ -67,7 +68,9 @@ uses
   Core.Exceptions
   ,Core.Reflection
   ,Core.Utils
-  ,Math;
+  ,Math
+  ,Classes
+  ;
 
 (*
   Copyright (c) 2011, Stefan Glienke
@@ -223,7 +226,8 @@ class procedure TRttiExplorer.CopyFieldValues(AEntityFrom, AEntityTo: TObject);
 var
   LField: TRttiField;
   LType: TRttiType;
-  LValue: TValue;
+  LValue, LValueInstance: TValue;
+  LObj: TObject;
 begin
   Assert(AEntityFrom.ClassType = AEntityTo.ClassType);
   Assert(Assigned(AEntityFrom) and Assigned(AEntityTo));
@@ -231,10 +235,27 @@ begin
   LType := FCtx.GetType(AEntityFrom.ClassInfo);
   for LField in LType.GetFields do
   begin
-    LValue := LField.GetValue(AEntityFrom);
+    if LField.FieldType.IsInstance then
+    begin
+      LValue := TRttiExplorer.CreateType(LField.FieldType.AsInstance.MetaclassType);
+      LObj := LValue.AsObject;
+      LValueInstance := LField.GetValue(AEntityFrom);
+      if LObj is TPersistent then
+      begin
+        TPersistent(LObj).Assign(LValueInstance.AsObject as TPersistent);
+      end;
+    end
+    else
+      LValue := LField.GetValue(AEntityFrom);
+
     LField.SetValue(AEntityTo, LValue);
   end;
   {TODO -oLinas -cGeneral : what to do with properties? Should we need to write them too?}
+end;
+
+class function TRttiExplorer.CreateType(AClass: TClass): TObject;
+begin
+  Result := AClass.Create;
 end;
 
 class function TRttiExplorer.EntityChanged(AEntity1, AEntity2: TObject): Boolean;
@@ -308,7 +329,8 @@ begin
 
         LOriginalValue := GetMemberValue(AOriginalObj, LMember);
         LDirtyValue := GetMemberValue(ADirtyObj, LMember);
-        if not ValueIsEqual(LOriginalValue, LDirtyValue) then
+
+        if not Core.Reflection.SameValue(LOriginalValue, LDirtyValue) then
           AList.Add(LCol);
       end;
     end;
@@ -499,7 +521,9 @@ var
   LField: TRttiField;
   LProp: TRttiProperty;
   LValue: TValue;
+  LObject: TObject;
 begin
+  LValue := TValue.Empty;
   LField := FCtx.GetType(AEntity.ClassInfo).GetField(AMemberName);
   if Assigned(LField) then
   begin
@@ -507,17 +531,31 @@ begin
     begin
       LField.SetValue(AEntity, LValue);
     end;
-    Exit;
+  end
+  else
+  begin
+    LProp := FCtx.GetType(AEntity.ClassInfo).GetProperty(AMemberName);
+    if Assigned(LProp) then
+    begin
+      if TUtils.TryConvert(AValue, LProp.RttiType.Handle, LValue) then
+      begin
+        LProp.SetValue(AEntity, LValue);
+      end;
+    end;
   end;
 
-  LProp := FCtx.GetType(AEntity.ClassInfo).GetProperty(AMemberName);
-  if Assigned(LProp) then
+  if LValue.IsObject then
   begin
-    if TUtils.TryConvert(AValue, LProp.RttiType.Handle, LValue) then
-    begin
-      LProp.SetValue(AEntity, LValue);
-    end;
-    Exit;
+    LObject := LValue.AsObject;
+    if Assigned(LObject) then
+      LObject.Free;
+  end;
+
+  if AValue.IsObject then
+  begin
+    LObject := AValue.AsObject;
+    if Assigned(LObject) then
+      LObject.Free;
   end;
 end;
 

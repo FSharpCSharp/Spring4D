@@ -213,20 +213,20 @@ begin
 
   for LColumn in AColumns do
   begin
-    if (LColumn = FPrimaryKeyColumn) { Assigned(FPrimaryKeyColumn) and (SameText(LColumn.Name, FPrimaryKeyColumn.Name))} then
+    if not (cpDontUpdate in LColumn.Properties) then
     begin
-      LWhereField := TSQLWhereField.Create(LColumn.Name, FTable);
-      FWhereFields.Add(LWhereField);
-    end
-    else
-    begin
-      if not (cpDontUpdate in LColumn.Properties) then
-      begin
-        LField := TSQLField.Create(LColumn.Name, FTable);
-        FUpdateFields.Add(LField);
-      end;
+      LField := TSQLField.Create(LColumn.Name, FTable);
+      FUpdateFields.Add(LField);
     end;
   end;
+
+  //add primary key column
+  if Assigned(FPrimaryKeyColumn) then
+  begin
+    LWhereField := TSQLWhereField.Create(FPrimaryKeyColumn.Name, FTable);
+    FWhereFields.Add(LWhereField);
+  end;
+
 end;
 
 { TDeleteCommand }

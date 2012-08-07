@@ -31,7 +31,7 @@ interface
 
 uses
   SQL.AbstractCommandExecutor, SQL.Types, SQL.Commands, SQL.Params, Generics.Collections
-  , Mapping.Attributes, Core.EntityMap;
+  , Mapping.Attributes, Core.EntityMap, Classes;
 
 type
   TUpdateExecutor = class(TAbstractCommandExecutor)
@@ -64,6 +64,7 @@ uses
   ,Mapping.RttiExplorer
   ,SysUtils
   ,Rtti
+  ,Core.Reflection
   ;
 
 { TUpdateCommand }
@@ -72,6 +73,7 @@ procedure TUpdateExecutor.Execute(AEntity: TObject);
 var
   LStmt: IDBStatement;
   LDirtyObject: TObject;
+  iRes: NativeInt;
 begin
   Assert(Assigned(AEntity));
 
@@ -83,12 +85,16 @@ begin
   if FMapped then
   begin
     LDirtyObject := FEntityMap.Get(AEntity);
-    FColumns := TRttiExplorer.GetChangedMembers(AEntity, LDirtyObject);
+    FColumns.Clear;
+    TRttiExplorer.GetChangedMembers(AEntity, LDirtyObject, FColumns);
   end;
 
   FCommand.SetTable(FColumns);
 
   SQL := Generator.GenerateUpdate(FCommand);
+
+  if (SQL = '') then
+    Exit;
 
   LStmt.SetSQLCommand(SQL);
 
@@ -96,7 +102,11 @@ begin
   try
     LStmt.SetParams(SQLParameters);
 
-    LStmt.Execute();
+    iRes := LStmt.Execute();
+    if (iRes < 1) then
+    begin
+      raise EORMUpdateNotSuccessfulException.Create('Update was not succesful. No records were affected.');
+    end;
   finally
     LStmt := nil;
   end;
@@ -115,8 +125,8 @@ begin
     raise ETableNotSpecified.Create('Table not specified');
 
   FTable.SetFromAttribute(LAtrTable);
-
-  FColumns := LCache.Columns;
+  FColumns.Clear;
+  FColumns.AddRange(LCache.Columns);
 
   FCommand.PrimaryKeyColumn := LCache.PrimaryKeyColumn;
    //add fields to tsqltable
@@ -129,17 +139,18 @@ procedure TUpdateExecutor.BuildParams(AEntity: TObject);
 var
   LParam: TDBParam;
   LColumn: Column;
-  LVal: TValue;
 begin
   inherited BuildParams(AEntity);
 
   for LColumn in FColumns do
   begin
-    LParam := TDBParam.Create;
-    LParam.Name := ':' + LColumn.Name;
-    LVal := TRttiExplorer.GetMemberValue(AEntity, LColumn.ClassMemberName);
-    LParam.Value := TUtils.AsVariant(LVal);
-    LParam.ParamType := FromTValueTypeToFieldType(LVal);
+    LParam := CreateParam(AEntity, LColumn);
+    SQLParameters.Add(LParam);
+  end;
+
+  if Assigned(FCommand.PrimaryKeyColumn) then
+  begin
+    LParam := CreateParam(AEntity, FCommand.PrimaryKeyColumn);
     SQLParameters.Add(LParam);
   end;
 end;
@@ -148,6 +159,7 @@ constructor TUpdateExecutor.Create;
 begin
   inherited Create;
   FTable := TSQLTable.Create;
+  FColumns := TList<Column>.Create;
   FCommand := TUpdateCommand.Create(FTable);
 end;
 
@@ -155,8 +167,7 @@ destructor TUpdateExecutor.Destroy;
 begin
   FTable.Free;
   FCommand.Free;
-  if FMapped then
-    FColumns.Free;
+  FColumns.Free;
   inherited Destroy;
 end;
 

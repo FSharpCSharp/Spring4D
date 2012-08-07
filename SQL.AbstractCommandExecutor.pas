@@ -30,7 +30,7 @@ unit SQL.AbstractCommandExecutor;
 interface
 
 uses
-  Core.Interfaces, SQL.Interfaces, Generics.Collections, SQL.Params;
+  Core.Interfaces, SQL.Interfaces, Generics.Collections, SQL.Params, Mapping.Attributes;
 
 type
   TAbstractCommandExecutor = class
@@ -40,6 +40,8 @@ type
     FClass: TClass;
     FSQL: string;
     FParams: TObjectList<TDBParam>;
+  protected
+    function CreateParam(AEntity: TObject; AColumn: Column): TDBParam; virtual;
   public
     constructor Create(); virtual;
     destructor Destroy; override;
@@ -58,7 +60,13 @@ type
 implementation
 
 uses
-  SQL.Register;
+  SQL.Register
+  ,Rtti
+  ,Mapping.RttiExplorer
+  ,Core.Reflection
+  ,Classes
+  ,Core.Utils
+  ;
 
 { TAbstractCommandExecutor }
 
@@ -73,6 +81,25 @@ begin
  // FExecutionListeners := TList<ICommandExecutionListener>.Create;
   FGenerator := TSQLGeneratorRegister.GetCurrentGenerator();
   FParams := TObjectList<TDBParam>.Create();
+end;
+
+function TAbstractCommandExecutor.CreateParam(AEntity: TObject; AColumn: Column): TDBParam;
+var
+  LVal, LRes: TValue;
+begin
+  Result := TDBParam.Create;
+  Result.Name := ':' + AColumn.Name;
+  LVal := TRttiExplorer.GetMemberValue(AEntity, AColumn.ClassMemberName);
+  //convert/serialize objects to stream
+  if LVal.IsObject then
+  begin
+    if LVal.TryConvert(TypeInfo(TStream), LRes) then
+    begin
+      LVal := LRes.AsObject;
+    end;
+  end;
+
+  Result.Value := TUtils.AsVariant(LVal);
 end;
 
 destructor TAbstractCommandExecutor.Destroy;

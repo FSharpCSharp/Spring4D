@@ -56,6 +56,8 @@ type
 
   EORMRecordNotFoundException = class(Exception);
 
+  EORMUpdateNotSuccessfulException = class(EBaseORMException);
+
 implementation
 
 { EBaseORMException }

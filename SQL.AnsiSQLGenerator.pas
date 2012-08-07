@@ -224,7 +224,9 @@ var
   ix: Integer;
 begin
   Assert(Assigned(AUpdateCommand));
-  Assert(AUpdateCommand.UpdateFields.Count > 0, 'There are no fields to update');
+
+  if (AUpdateCommand.UpdateFields.Count < 1) then
+    Exit('');
 
   LSqlBuilder := TStringBuilder.Create();
   try

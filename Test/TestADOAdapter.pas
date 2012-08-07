@@ -104,6 +104,10 @@ type
     procedure TestFetch();
     procedure TestFetchWorkers();
     procedure TestPage();
+    procedure TestUpdate();
+    procedure TestUpdateNothingChanged();
+    procedure TestInsert();
+    procedure TestSave();
   end;
 
   TestMSSQLSQLGenerator = class(TTestCase)
@@ -126,6 +130,11 @@ uses
   {$IFDEF USE_SPRING} ,Spring.Collections {$ENDIF}
   ,DB
   ,Diagnostics
+  ,Graphics
+  ,pngimage
+  {$IFDEF MSWINDOWS}
+  ,Windows
+  {$ENDIF}
   ;
 
 var
@@ -160,6 +169,41 @@ var
 begin
   LTable := TestDB.Execute('SELECT COUNT(*) FROM VIKARINA.IMONES;');
   Result := LTable.Fields[0].Value;
+end;
+
+function GetSQLCount(const ACountSQL: string): Integer;
+var
+  LTable: _Recordset;
+begin
+  LTable := TestDB.Execute(ACountSQL);
+  Result := LTable.Fields[0].Value;
+end;
+
+function GetSQLFirstFieldValue(const ASQL: string): Variant;
+var
+  LTable: _Recordset;
+begin
+  LTable := TestDB.Execute(ASQL);
+  Result := LTable.Fields[0].Value;
+end;
+
+procedure UpdateLogo();
+var
+  dst: TADOQuery;
+begin
+  dst := TADOQuery.Create(nil);
+  try
+    dst.Connection := TestDB;
+    dst.SQL.Text := 'UPDATE VIKARINA.IMONES SET IMLOG = (SELECT TOP 1 NUOTRAUK FROM ASMKORT WHERE NUOTRAUK IS NOT NULL) WHERE IMONE = 1;';
+    dst.ExecSQL;
+  finally
+    dst.Free;
+  end;
+end;
+
+procedure RemoveLogo();
+begin
+  TestDB.Execute('UPDATE VIKARINA.IMONES SET IMLOG = NULL WHERE IMONE = 1;');
 end;
 
 procedure TestTADOResultSetAdapter.SetUp;
@@ -485,11 +529,51 @@ end;
 procedure TestMSSQLAdapter.TestFirst;
 var
   LCompany: TCompany;
+  sFile: string;
 begin
+  UpdateLogo();
+  sFile := IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0))) + 'Test.jpg';
   LCompany := FManager.FirstOrDefault<TCompany>('SELECT * FROM VIKARINA.IMONES;', []);
   try
     CheckTrue(Assigned(LCompany));
     CheckEquals(1, LCompany.ID);
+    CheckFalse(LCompany.Logo.Graphic.Empty);
+    LCompany.Logo.SaveToFile(sFile);
+    CheckTrue(FileExists(sFile));
+
+  finally
+    RemoveLogo();
+    DeleteFile(PChar(sFile));
+    LCompany.Free;
+  end;
+end;
+
+const
+  FILE_IMG_TEST_LOGO = 'DelphiOOP.png';
+
+procedure TestMSSQLAdapter.TestInsert;
+var
+  LCompany: TCompany;
+  sLogo, sOutputDir: string;
+  iCount: Integer;
+  LTran: IDBTransaction;
+begin
+  LCompany := TCompany.Create;
+  sOutputDir := IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0)));
+  sLogo := IncludeTrailingPathDelimiter(ExpandFileName(sOutputDir + '..\..')) + FILE_IMG_TEST_LOGO;
+  try
+    iCount := GetSQLCount('select count(*) from vikarina.imones;');
+    LCompany.Name := 'ORM';
+    LCompany.Address := 'ORM street';
+    LCompany.Telephone := '+37068569854';
+    LCompany.Logo.LoadFromFile(sLogo);
+    LCompany.ID := 7;
+
+    LTran := FManager.Connection.BeginTransaction;
+
+    FManager.Insert(LCompany);
+
+    CheckEquals(iCount + 1, GetSQLCount('select count(*) from vikarina.imones;'));
   finally
     LCompany.Free;
   end;
@@ -501,6 +585,85 @@ var
 begin
   LPage := FManager.Page<TWorker>(1, 10, 'SELECT * FROM VIKARINA.DARSDLA WHERE IMONE = :0', [1]);
   CheckEquals(10, LPage.Items.Count);
+end;
+
+
+
+procedure TestMSSQLAdapter.TestSave;
+var
+  LCompany: TCompany;
+  LTran: IDBTransaction;
+  iCount: Integer;
+begin
+  LCompany := TCompany.Create;
+  try
+    iCount := GetSQLCount('select count(*) from vikarina.imones;');
+    LCompany.Name := 'ORM';
+    LCompany.Address := 'ORM street';
+    LCompany.Telephone := '+37068569854';
+    LCompany.ID := 7;
+
+    LTran := FManager.Connection.BeginTransaction;
+
+    FManager.Save(LCompany);
+
+    CheckEquals(iCount + 1, GetSQLCount('select count(*) from vikarina.imones;'));
+
+    LCompany.Name := 'ORM Name changed';
+    FManager.Save(LCompany);
+    CheckEquals(iCount + 1, GetSQLCount('select count(*) from vikarina.imones;'));
+    CheckEqualsString(LCompany.Name,string(GetSQLFirstFieldValue('select IMPAV from vikarina.imones where imone = 7;')));
+
+  finally
+    LCompany.Free;
+  end;
+end;
+
+procedure TestMSSQLAdapter.TestUpdate;
+var
+  LCompany: TCompany;
+  sOutputDir, sDestDir, sFile: string;
+  LPic: TPicture;
+begin
+  UpdateLogo();
+  LPic := TPicture.Create;
+  sOutputDir := IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0)));
+  LCompany := FManager.FirstOrDefault<TCompany>('SELECT * FROM VIKARINA.IMONES;', []);
+  try
+    CheckTrue(Assigned(LCompany));
+    CheckEquals(1, LCompany.ID);
+    CheckFalse(LCompany.Logo.Graphic.Empty);
+    sDestDir := IncludeTrailingPathDelimiter(ExpandFileName(sOutputDir + '..\..'));
+    sFile := sDestDir + FILE_IMG_TEST_LOGO;
+    LPic.LoadFromFile(sFile);
+
+    LCompany.Logo.Assign(LPic);
+
+    FManager.Update(LCompany);
+    CheckEquals(0, GetSQLCount('select count(*) from vikarina.imones where imone = 1 and imlog is null;'));
+
+    LCompany.Logo.Assign(nil);
+    FManager.Update(LCompany);
+
+    CheckEquals(1, GetSQLCount('select count(*) from vikarina.imones where imone = 1 and imlog is null;'));
+    FManager.Update(LCompany);
+  finally
+    RemoveLogo();
+    LPic.Free;
+    LCompany.Free;
+  end;
+end;
+
+procedure TestMSSQLAdapter.TestUpdateNothingChanged;
+var
+  LCompany: TCompany;
+begin
+  LCompany := FManager.SingleOrDefault<TCompany>('SELECT * FROM VIKARINA.IMONES;', []);
+  try
+    FManager.Update(LCompany);
+  finally
+    LCompany.Free;
+  end;
 end;
 
 { TestMSSQLSQLGenerator }

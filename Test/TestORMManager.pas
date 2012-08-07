@@ -35,6 +35,7 @@ type
     procedure Delete();
     procedure ExecutionListeners();
     procedure Page();
+    procedure ExecuteScalar();
   end;
 
   TInsertData = record
@@ -105,6 +106,20 @@ begin
   finally
     LCustomer.Free;
   end;
+end;
+
+const
+  SQL_EXEC_SCALAR = 'SELECT COUNT(*) FROM ' + TBL_PEOPLE + ';';
+
+procedure TestTEntityManager.ExecuteScalar;
+var
+  LRes: Integer;
+begin
+  LRes := FManager.ExecuteScalar<Integer>(SQL_EXEC_SCALAR, []);
+  CheckEquals(0, LRes);
+  InsertCustomer();
+  LRes := FManager.ExecuteScalar<Integer>(SQL_EXEC_SCALAR, []);
+  CheckEquals(1, LRes);
 end;
 
 procedure TestTEntityManager.ExecutionListeners;

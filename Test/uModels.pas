@@ -32,7 +32,7 @@ unit uModels;
 interface
 
 uses
-  Mapping.Attributes, Generics.Collections, Core.Types;
+  Mapping.Attributes, Generics.Collections, Core.Types, Graphics;
 
 type
   TProduct = class;
@@ -71,7 +71,6 @@ type
     property LastEdited: TDateTime read FLastEdited write FLastEdited;
     [Column('EMAIL', [], 0, 0, 0, 'E-mail address')]
     property EMail: string read FEmail write FEmail;
-
     property Products: TObjectList<TProduct> read GetProducts;
   end;
 
@@ -85,16 +84,22 @@ type
     FName: string;
     FAddress: string;
     FTelephone: string;
+    FLogo: TPicture;
+    procedure SetLogo(const Value: TPicture);
   public
     constructor Create(); virtual;
+    destructor Destroy; override;
 
-    property ID: Integer read FId;
+
+    property ID: Integer read FId write FId;
     [Column('IMPAV', [], 50, 0, 0, 'Company name')]
     property Name: string read FName write FName;
     [Column('IMADR', [], 50, 0, 0, 'Company address')]
     property Address: string read FAddress write FAddress;
     [Column('IMTEL', [], 50, 0, 0, 'Company telephone number')]
     property Telephone: string read FTelephone write FTelephone;
+    [Column('IMLOG', [], 0, 0, 0, 'Company logo')]
+    property Logo: TPicture read FLogo write SetLogo;
   end;
 
   [Entity]
@@ -172,6 +177,18 @@ constructor TCompany.Create;
 begin
   inherited Create;
   FId := -1;
+  FLogo := TPicture.Create;
+end;
+
+destructor TCompany.Destroy;
+begin
+  FLogo.Free;
+  inherited Destroy;
+end;
+
+procedure TCompany.SetLogo(const Value: TPicture);
+begin
+  FLogo.Assign(Value);
 end;
 
 end.

@@ -62,12 +62,25 @@ type
     function FindAll<T: class>(): TObjectList<T>;
     procedure Flush();
     procedure Clear();
+    /// <summary>
+    /// Executes sql statement which does not return resultset
+    /// </summary>
+    function Execute(const ASql: string; const AParams: array of const): NativeUInt;
+    /// <summary>
+    /// Executes given sql statement and returns first column value. SQL statement should be like this:
+    ///  SELECT COUNT(*) FROM TABLE;
+    /// </summary>
+    function ExecuteScalar<T>(const ASql: string; const AParams: array of const): T;
 
     /// <summary>
     /// Retrieves first and only model from the sql statement
     /// </summary>
     function First<T: class, constructor>(const ASql: string; const AParams: array of const): T;
     function FirstOrDefault<T: class, constructor>(const ASql: string; const AParams: array of const): T;
+
+    function Single<T: class, constructor>(const ASql: string; const AParams: array of const): T;
+    function SingleOrDefault<T: class, constructor>(const ASql: string; const AParams: array of const): T;
+
     /// <summary>
     /// Retrieves multiple models from the sql statement into the ACollection
     /// </summary>
@@ -82,6 +95,10 @@ type
 
     procedure Insert<T: class, constructor>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
       {$ELSE} TObjectList<T> {$ENDIF}); overload;
+    /// <summary>
+    /// Checks if given entity is newly created (does not exist in the database yet)
+    /// </summary>
+    function IsNew(AEntity: TObject): Boolean;
 
     /// <summary>
     /// Updates model in a database
@@ -99,9 +116,16 @@ type
 
     procedure Delete<T: class, constructor>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
       {$ELSE} TObjectList<T> {$ENDIF}); overload;
-
+    /// <summary>
+    /// Fetches data in pages. You do not need to write custom sql for this, just use ordinary sql.
+    /// All the work will be done for you.
+    /// </summary>
     function Page<T: class, constructor>(APage: Integer; AItemsPerPage: Integer;
       const ASql: string; const AParams: array of const): IDBPage<T>;
+    /// <summary>
+    /// Saves the entity to the database. It will do update or the insert based on the entity state.
+    /// </summary>
+    procedure Save(AEntity: TObject);
   end;
 
 
@@ -173,6 +197,34 @@ begin
   FEntities.Free;
   FOldStateEntities.Free;
   inherited Destroy;
+end;
+
+function TEntityManager.Execute(const ASql: string; const AParams: array of const): NativeUInt;
+var
+  LStatement: IDBStatement;
+begin
+  LStatement := Connection.CreateStatement;
+  LStatement.SetSQLCommand(ASql);
+  if Length(AParams) > 0 then
+    LStatement.SetParams(AParams);
+
+  Result := LStatement.Execute;
+end;
+
+function TEntityManager.ExecuteScalar<T>(const ASql: string; const AParams: array of const): T;
+var
+  LResults: IDBResultset;
+  LVal: Variant;
+  LValue: TValue;
+begin
+  Result := System.Default(T);
+  LResults := GetResultset(ASql, AParams);
+  if not LResults.IsEmpty then
+  begin
+    LVal := LResults.GetFieldValue(0);
+    LValue := TUtils.FromVariant(LVal);
+    Result := LValue.AsType<T>;
+  end;
 end;
 
 procedure TEntityManager.Fetch<T>(const ASql: string; const AParams: array of const;
@@ -307,6 +359,11 @@ begin
   end;
 end;
 
+function TEntityManager.IsNew(AEntity: TObject): Boolean;
+begin
+  Result := not FOldStateEntities.IsMapped(AEntity);
+end;
+
 function TEntityManager.Merge<T>(AEntity: T): T;
 begin
   raise EORMMethodNotImplemented.Create('Method not implemented');
@@ -360,6 +417,14 @@ begin
   raise EORMMethodNotImplemented.Create('Method not implemented');
 end;
 
+procedure TEntityManager.Save(AEntity: TObject);
+begin
+  if IsNew(AEntity) then
+    Insert(AEntity)
+  else
+    Update(AEntity);
+end;
+
 procedure TEntityManager.SetEntityColumns(AEntity: TObject; AColumns: TList<Column>; AResultset: IDBResultset);
 var
   LCol: Column;
@@ -371,6 +436,16 @@ begin
 
     TRttiExplorer.SetMemberValue(AEntity, LCol, TUtils.FromVariant(LVal));
   end;
+end;
+
+function TEntityManager.Single<T>(const ASql: string; const AParams: array of const): T;
+begin
+  Result := First<T>(ASql, AParams);
+end;
+
+function TEntityManager.SingleOrDefault<T>(const ASql: string; const AParams: array of const): T;
+begin
+  Result := FirstOrDefault<T>(ASql, AParams);
 end;
 
 procedure TEntityManager.Update(AEntity: TObject);

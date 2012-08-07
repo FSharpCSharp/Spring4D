@@ -54,6 +54,7 @@ implementation
 uses
   Core.Exceptions
   ,Core.Interfaces
+  ,Core.Utils
   ,Mapping.RttiExplorer
   ,Rtti
   ;
@@ -92,8 +93,8 @@ begin
   //TRttiExplorer.GetPrimaryKeyValue
   LVal := TRttiExplorer.GetPrimaryKeyValue(AEntity);
  // LVal := TRttiExplorer.GetMemberValue(AEntity, FPrimaryKeyColumnName);
-  LParam.Value := LVal.AsVariant;
-  LParam.ParamType := FromTValueTypeToFieldType(LVal);
+  LParam.Value := TUtils.AsVariant(LVal); // LVal.AsVariant;
+ // LParam.ParamType := FromTValueTypeToFieldType(LVal);
   SQLParameters.Add(LParam);
 end;
 
