@@ -73,7 +73,7 @@ procedure TUpdateExecutor.Execute(AEntity: TObject);
 var
   LStmt: IDBStatement;
   LDirtyObject: TObject;
-  iRes: NativeInt;
+  iRes: NativeUInt;
 begin
   Assert(Assigned(AEntity));
 

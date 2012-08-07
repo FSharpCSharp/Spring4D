@@ -527,7 +527,7 @@ begin
   LField := FCtx.GetType(AEntity.ClassInfo).GetField(AMemberName);
   if Assigned(LField) then
   begin
-    if TUtils.TryConvert(AValue, LField.RttiType.Handle, LValue) then
+    if TUtils.TryConvert(AValue, LField.RttiType.Handle, LField, AEntity, LValue) then
     begin
       LField.SetValue(AEntity, LValue);
     end;
@@ -537,7 +537,7 @@ begin
     LProp := FCtx.GetType(AEntity.ClassInfo).GetProperty(AMemberName);
     if Assigned(LProp) then
     begin
-      if TUtils.TryConvert(AValue, LProp.RttiType.Handle, LValue) then
+      if TUtils.TryConvert(AValue, LProp.RttiType.Handle, LProp, AEntity, LValue) then
       begin
         LProp.SetValue(AEntity, LValue);
       end;

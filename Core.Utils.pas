@@ -37,7 +37,7 @@ type
   public
     class function AsVariant(const AValue: TValue): Variant;
     class function FromVariant(const AValue: Variant): TValue;
-    class function TryConvert(const AFrom: TValue; ATypeInfo: PTypeInfo; out AResult: TValue): Boolean;
+    class function TryConvert(const AFrom: TValue; ATypeInfo: PTypeInfo; ARttiMember: TRttiNamedObject; AEntity: TObject; out AResult: TValue): Boolean;
 
     class function TryLoadFromStreamToPictureValue(AStream: TStream; out APictureValue: TValue): Boolean;
     class function TryLoadFromBlobField(AField: TField; AToPicture: TPicture): Boolean;
@@ -46,6 +46,7 @@ type
     class function IsEnumerable(AObject: TObject; out AEnumeratorMethod: TRttiMethod): Boolean;
     class function SameObject(ALeft, ARight: TObject): Boolean;
     class function SameStream(ALeft, ARight: TStream): Boolean;
+    class function IsNullableType(ATypeInfo: PTypeInfo): Boolean;
   end;
 
 implementation
@@ -57,6 +58,7 @@ uses
   ,GIFImg
   ,Variants
   ,Generics.Collections
+  ,StrUtils
   ;
 
 { TUtils }
@@ -66,6 +68,7 @@ var
   LStream: TStream;
   DataPtr: Pointer;
   LRes: OleVariant;
+  LHasValueField, LValueField: TRttiField;
 begin
   case AValue.Kind of
     tkEnumeration:
@@ -83,6 +86,19 @@ begin
         Result := AValue.AsType<TDate>
       else
         Result := AValue.AsExtended;
+    end;
+    tkRecord:
+    begin
+      Result := Null;
+      if IsNullableType(AValue.TypeInfo) then
+      begin
+        LHasValueField := AValue.GetType().GetField('FHasValue');
+        if LHasValueField.GetValue(AValue.GetReferenceToRawData).AsBoolean then
+        begin
+          LValueField := AValue.GetType().GetField('FValue');
+          Result := TUtils.AsVariant(LValueField.GetValue(AValue.GetReferenceToRawData));
+        end;
+      end;
     end;
     tkClass:
     begin
@@ -140,6 +156,11 @@ var
 begin
   AEnumeratorMethod := LCtx.GetType(AObject.ClassInfo).GetMethod('GetEnumerator');
   Result := Assigned(AEnumeratorMethod);
+end;
+
+class function TUtils.IsNullableType(ATypeInfo: PTypeInfo): Boolean;
+begin
+  Result := StartsStr('Nullable', string(ATypeInfo.Name));
 end;
 
 class function TUtils.SameObject(ALeft, ARight: TObject): Boolean;
@@ -305,10 +326,41 @@ begin
     APictureValue := LPic;
 end;
 
-class function TUtils.TryConvert(const AFrom: TValue; ATypeInfo: PTypeInfo; out AResult: TValue): Boolean;
+class function TUtils.TryConvert(const AFrom: TValue; ATypeInfo: PTypeInfo; ARttiMember: TRttiNamedObject; AEntity: TObject; out AResult: TValue): Boolean;
+var
+  LValue: TValue;
+  LRecord: TRttiRecordType;
+  LValueField, LHasValueField: TRttiField;
 begin
   if (AFrom.TypeInfo <> ATypeInfo) then
   begin
+    case ATypeInfo.Kind of
+      tkRecord:
+      begin
+        if IsNullableType(ATypeInfo) then
+        begin
+          if ARttiMember is TRttiInstanceProperty then
+          begin
+            LRecord := TRttiInstanceProperty(ARttiMember).PropertyType.AsRecord;
+            LValueField := LRecord.GetField('FValue');
+            LHasValueField := LRecord.GetField('FHasValue');
+            TValue.MakeWithoutCopy(nil, ATypeInfo, AResult);
+            if AFrom.IsEmpty then
+            begin
+              LHasValueField.SetValue(AResult.GetReferenceToRawData, False);
+            end
+            else
+            begin
+              LHasValueField.SetValue(AResult.GetReferenceToRawData, True);
+              //get type from Nullable<T> and set value to this type
+              if AFrom.TryConvert(LValueField.FieldType.Handle, LValue) then
+                LValueField.SetValue(AResult.GetReferenceToRawData, LValue);
+            end;
+            Exit(True);
+          end;
+        end;
+      end;
+    end;
     Result := AFrom.TryConvert(ATypeInfo, AResult);
   end
   else

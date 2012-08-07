@@ -19,7 +19,7 @@ uses
   TestFramework,
   GUITestRunner,
   TextTestRunner,
-  TestORMManager in 'TestORMManager.pas',
+  TestEntityManager in 'TestEntityManager.pas',
   Core.AbstractManager in '..\Core.AbstractManager.pas',
   Core.Interfaces in '..\Core.Interfaces.pas',
   SQL.Params in '..\SQL.Params.pas',

@@ -55,6 +55,7 @@ type
     FHeight: Double;
     FLastEdited: TDateTime;
     FEmail: string;
+    FMiddleName: Nullable<string>;
     function GetProducts: TObjectList<TProduct>;
   public
     constructor Create();
@@ -71,6 +72,8 @@ type
     property LastEdited: TDateTime read FLastEdited write FLastEdited;
     [Column('EMAIL', [], 0, 0, 0, 'E-mail address')]
     property EMail: string read FEmail write FEmail;
+    [Column('MIDDLENAME', [], 50, 0, 0, 'Middle name')]
+    property MiddleName: Nullable<string> read FMiddleName write FMiddleName;
     property Products: TObjectList<TProduct> read GetProducts;
   end;
 

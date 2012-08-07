@@ -77,6 +77,7 @@ type
   /// <summary>
   /// Nullable type
   /// </summary>
+ // {$TYPEINFO ON}
   Nullable<T> = record
   private
     FValue: T;
@@ -101,6 +102,7 @@ type
     class operator NotEqual(const Left, Right: Nullable<T>): Boolean;
 
   end;
+ // {$TYPEINFO OFF}
 
 implementation
 
@@ -173,7 +175,7 @@ begin
       if not Assigned(FManager) then
         raise EEntityManagerNotSet.Create('Entity Manager for lazy value not set');
 
-      FValue := FManager.Find<T>(FId);
+     // FValue := FManager.Find<T>(FId);
     end;
     FLoaded := True;
   end;

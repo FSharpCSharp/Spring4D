@@ -203,7 +203,6 @@ begin
     sSql := FAnsiSQLGenerator.GenerateSelect(LCommand);
     CheckEqualsString(SQL_SELECT_TEST_JOIN_2_ORDER_GROUP, sSql);
 
-    {TODO -oLinas -cGeneral : Test where clause}
     LCommand.WhereFields.Add(TSQLWhereField.Create('NAME', LTable));
 
     sSql := FAnsiSQLGenerator.GenerateSelect(LCommand);
@@ -320,7 +319,6 @@ var
   ReturnValue: string;
 begin
   ReturnValue := FAnsiSQLGenerator.GenerateCreateTable;
-  // TODO: Validate method results
 end;
 
 procedure TestTAnsiSQLGenerator.TestGenerateCreateFK;
@@ -328,7 +326,6 @@ var
   ReturnValue: string;
 begin
   ReturnValue := FAnsiSQLGenerator.GenerateCreateFK;
-  // TODO: Validate method results
 end;
 
 procedure TestTAnsiSQLGenerator.TestGenerateCreateSequence;
@@ -336,7 +333,6 @@ var
   ReturnValue: string;
 begin
   ReturnValue := FAnsiSQLGenerator.GenerateCreateSequence;
-  // TODO: Validate method results
 end;
 
 procedure TestTAnsiSQLGenerator.TestGenerateGetNextSequenceValue;
@@ -344,7 +340,6 @@ var
   ReturnValue: string;
 begin
   ReturnValue := FAnsiSQLGenerator.GenerateGetNextSequenceValue;
-  // TODO: Validate method results
 end;
 
 const
@@ -366,7 +361,6 @@ var
   ReturnValue: string;
 begin
   ReturnValue := FAnsiSQLGenerator.GenerateGetLastInsertId;
-  // TODO: Validate method results
 end;
 
 initialization

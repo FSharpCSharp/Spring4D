@@ -1,4 +1,4 @@
-unit TestORMManager;
+unit TestEntityManager;
 {
 
   Delphi DUnit Test Case
@@ -36,6 +36,8 @@ type
     procedure ExecutionListeners();
     procedure Page();
     procedure ExecuteScalar();
+    procedure Execute();
+    procedure Nullable();
   end;
 
   TInsertData = record
@@ -67,7 +69,7 @@ const
 procedure CreateTables();
 begin
   TestDB.ExecSQL('CREATE TABLE IF NOT EXISTS '+ TBL_PEOPLE + ' ([CUSTID] INTEGER PRIMARY KEY, [CUSTAGE] INTEGER NULL,'+
-    '[CUSTNAME] VARCHAR (255), [CUSTHEIGHT] FLOAT, [LastEdited] DATETIME, [EMAIL] TEXT); ');
+    '[CUSTNAME] VARCHAR (255), [CUSTHEIGHT] FLOAT, [LastEdited] DATETIME, [EMAIL] TEXT, [MIDDLENAME] TEXT); ');
   if not TestDB.TableExists(TBL_PEOPLE) then
     raise Exception.Create('Table CUSTOMERS does not exist');
 end;
@@ -76,6 +78,12 @@ procedure InsertCustomer(AAge: Integer = 25; AName: string = 'Demo'; AHeight: Do
 begin
   TestDB.ExecSQL('INSERT INTO  ' + TBL_PEOPLE + ' ([CUSTAGE], [CUSTNAME], [CUSTHEIGHT]) VALUES (?,?,?);',
     [AAge, AName, AHeight]);
+end;
+
+procedure InsertCustomerNullable(AAge: Integer = 25; AName: string = 'Demo'; AHeight: Double = 15.25; const AMiddleName: string = ''; APicture: TStream = nil);
+begin
+  TestDB.ExecSQL('INSERT INTO  ' + TBL_PEOPLE + ' ([CUSTAGE], [CUSTNAME], [CUSTHEIGHT], [MIDDLENAME]) VALUES (?,?,?,?);',
+    [AAge, AName, AHeight, AMiddleName]);
 end;
 
 procedure ClearTable(const ATableName: string);
@@ -110,6 +118,11 @@ end;
 
 const
   SQL_EXEC_SCALAR = 'SELECT COUNT(*) FROM ' + TBL_PEOPLE + ';';
+
+procedure TestTEntityManager.Execute;
+begin
+  FManager.Execute('INSERT INTO CUSTOMERS SELECT * FROM CUSTOMERS;', []);
+end;
 
 procedure TestTEntityManager.ExecuteScalar;
 var
@@ -276,6 +289,7 @@ begin
     CheckEquals(LCustomer.Age, LTable.FieldByName['CUSTAGE'].AsInteger);
     LID := LTable.FieldByName['CUSTID'].AsInteger;
     CheckEquals(LID, LCustomer.ID);
+    CheckTrue(LTable.FieldByName['MIDDLENAME'].IsNull);
   finally
     LCustomer.Free;
   end;
@@ -285,6 +299,7 @@ begin
     LCustomer.Name := 'Insert test 2';
     LCustomer.Age := 15;
     LCustomer.Height := 41.1;
+    LCustomer.MiddleName := 'Middle Test';
 
     FManager.Insert(LCustomer);
     LTable := TestDB.GetUniTableIntf('select * from ' + TBL_PEOPLE + ' where [CUSTAGE] = 15;');
@@ -292,6 +307,7 @@ begin
     CheckEquals(LCustomer.Age, LTable.FieldByName['CUSTAGE'].AsInteger);
     LID := LTable.FieldByName['CUSTID'].AsInteger;
     CheckEquals(LID, LCustomer.ID);
+    CheckEqualsString(LCustomer.MiddleName, LTable.FieldByName['MIDDLENAME'].AsString);
 
     LCount := TestDB.GetUniTableIntf('select count(*) from ' + TBL_PEOPLE).Fields[0].AsInteger;
     CheckEquals(2, LCount);
@@ -335,6 +351,28 @@ begin
     {$IFNDEF USE_SPRING}
     LCollection.Free;
     {$ENDIF}
+  end;
+end;
+
+procedure TestTEntityManager.Nullable;
+var
+  LCustomer: TCustomer;
+begin
+  InsertCustomerNullable(25, 'Demo', 15.25, 'Middle');
+  LCustomer := FManager.SingleOrDefault<TCustomer>('SELECT * FROM ' + TBL_PEOPLE, []);
+  try
+    CheckTrue(LCustomer.MiddleName.HasValue);
+    CheckEqualsString('Middle', LCustomer.MiddleName.Value);
+  finally
+    LCustomer.Free;
+  end;
+
+  TestDB.ExecSQL('UPDATE ' + TBL_PEOPLE + ' SET MIDDLENAME = NULL;');
+  LCustomer := FManager.SingleOrDefault<TCustomer>('SELECT * FROM ' + TBL_PEOPLE, []);
+  try
+    CheckTrue(LCustomer.MiddleName.IsNull);
+  finally
+    LCustomer.Free;
   end;
 end;
 

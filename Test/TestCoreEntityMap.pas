@@ -106,7 +106,6 @@ var
   ReturnValue: Boolean;
 begin
   CheckTrue(False, 'Test Not implemented');
-  // TODO: Validate method results
 end;
 
 procedure TestTEntityMap.TestAdd;
@@ -114,18 +113,13 @@ var
   AObject: TObject;
 begin
   CheckTrue(False, 'Test Not implemented');
-  // TODO: Setup method call parameters
- // FEntityMap.Add(AObject);
-  // TODO: Validate method results
 end;
 
 procedure TestTEntityMap.TestAddOrReplace;
 var
   AObject: TObject;
 begin
-  // TODO: Setup method call parameters
   CheckTrue(False, 'Test Not implemented');
-  // TODO: Validate method results
 end;
 
 procedure TestTEntityMap.TestGet;
@@ -133,42 +127,33 @@ var
   ReturnValue: TObject;
   AObject: TObject;
 begin
-  // TODO: Setup method call parameters
   CheckTrue(False, 'Test Not implemented');
-  // TODO: Validate method results
 end;
 
 procedure TestTEntityMap.TestRemove;
 var
   AObject: TObject;
 begin
-  // TODO: Setup method call parameters
   CheckTrue(False, 'Test Not implemented');
-  // TODO: Validate method results
 end;
 
 procedure TestTEntityMap.TestReplace;
 var
   AObject: TObject;
 begin
-  // TODO: Setup method call parameters
   CheckTrue(False, 'Test Not implemented');
-  // TODO: Validate method results
 end;
 
 procedure TestTEntityMap.TestClear;
 var
   AAll: Boolean;
 begin
-  // TODO: Setup method call parameters
   CheckTrue(False, 'Test Not implemented');
-  // TODO: Validate method results
 end;
 
 procedure TestTEntityMap.TestGetList;
 begin
   //ReturnValue := FEntityMap.GetList;
-  // TODO: Validate method results
 end;
 
 procedure TestTEntityMap.TestHasIdValue;
@@ -176,9 +161,7 @@ var
   ReturnValue: Boolean;
   AObject: TObject;
 begin
-  // TODO: Setup method call parameters
   CheckTrue(False, 'Test Not implemented');
-  // TODO: Validate method results
 end;
 
 {$HINTS ON}

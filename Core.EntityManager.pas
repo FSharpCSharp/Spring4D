@@ -40,11 +40,8 @@ uses
 type
   TEntityManager = class(TAbstractManager)
   private
-    FEntities: TEntityMap;
     FOldStateEntities: TEntityMap;
   protected
-    procedure CascadePersist(AEntity: TObject);
-
     procedure SetEntityColumns(AEntity: TObject; AColumns: TList<Column>; AResultset: IDBResultset); virtual;
 
     function GetResultset(const ASql: string; const AParams: array of const): IDBResultset;
@@ -55,13 +52,6 @@ type
     constructor Create(AConnection: IDBConnection); override;
     destructor Destroy; override;
 
-    procedure Persist(AEntity: TObject);
-    function Merge<T>(AEntity: T): T;
-    procedure Remove(AEntity: TObject);
-    function Find<T>(const AId: TValue): T;
-    function FindAll<T: class>(): TObjectList<T>;
-    procedure Flush();
-    procedure Clear();
     /// <summary>
     /// Executes sql statement which does not return resultset
     /// </summary>
@@ -149,20 +139,9 @@ uses
 
 { TEntityManager }
 
-procedure TEntityManager.CascadePersist(AEntity: TObject);
-begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
-end;
-
-procedure TEntityManager.Clear;
-begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
-end;
-
 constructor TEntityManager.Create(AConnection: IDBConnection);
 begin
   inherited Create(AConnection);
-  FEntities := TEntityMap.Create(False);
   FOldStateEntities := TEntityMap.Create(True);
 end;
 
@@ -176,8 +155,6 @@ begin
   LDeleter.EntityClass := AEntity.ClassType;
   LDeleter.Execute(AEntity);
 
-  {TODO -oLinas -cGeneral : remove from entity maps}
- // FEntities.Remove(AEntity);
   FOldStateEntities.Remove(AEntity);
 end;
 
@@ -194,7 +171,6 @@ end;
 
 destructor TEntityManager.Destroy;
 begin
-  FEntities.Free;
   FOldStateEntities.Free;
   inherited Destroy;
 end;
@@ -245,16 +221,6 @@ begin
   end;
 end;
 
-function TEntityManager.Find<T>(const AId: TValue): T;
-begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
-end;
-
-function TEntityManager.FindAll<T>: TObjectList<T>;
-begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
-end;
-
 function TEntityManager.First<T>(const ASql: string; const AParams: array of const): T;
 var
   LResults: IDBResultset;
@@ -273,11 +239,6 @@ begin
   except
     Result := System.Default(T);
   end;
-end;
-
-procedure TEntityManager.Flush;
-begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
 end;
 
 function TEntityManager.GetOne<T>(AResultset: IDBResultset): T;
@@ -338,13 +299,10 @@ var
   LInserter: TInsertExecutor;
 begin
   LInserter := CommandFactory.GetCommand<TInsertExecutor>(AEntity.ClassType);
-  {TODO -oLinas -cGeneral : finish implementing missing methods}
   LInserter.Connection := Connection;
   LInserter.EntityClass := AEntity.ClassType;
   LInserter.Execute(AEntity);
 
-  {TODO -oLinas -cGeneral : add to entity maps}
- // FEntities.Add(AEntity);
   FOldStateEntities.AddOrReplace(TRttiExplorer.Clone(AEntity));
 end;
 
@@ -364,11 +322,6 @@ begin
   Result := not FOldStateEntities.IsMapped(AEntity);
 end;
 
-function TEntityManager.Merge<T>(AEntity: T): T;
-begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
-end;
-
 function TEntityManager.Page<T>(APage, AItemsPerPage: Integer; const ASql: string;
   const AParams: array of const): IDBPage<T>;
 var
@@ -377,7 +330,6 @@ var
 begin
   LPager := TPager.Create();
   Result := TDriverPageAdapter<T>.Create(LPager);
-
   LPager.Connection := Connection;
   LPager.Page := APage;
   LPager.ItemsPerPage := AItemsPerPage;
@@ -385,36 +337,6 @@ begin
   LSQL := LPager.BuildSQL(ASql);
 
   Fetch<T>(LSQL, AParams, Result.Items);
-end;
-
-procedure TEntityManager.Persist(AEntity: TObject);
-var
-  LInserter: TInsertExecutor;
-begin
-  if FEntities.IsMapped(AEntity) then
-    raise EEntityAlreadyPersisted.Create(AEntity);
-
-  if FEntities.HasIdValue(AEntity) then
-    raise ECannotPersististEntityWithId.Create(AEntity);
-
-  CascadePersist(AEntity);
-
-  LInserter := CommandFactory.GetCommand<TInsertExecutor>(AEntity.ClassType);
-
-  try
-    //if TRttiExplorer.HasSequence(Entity.ClassType{, True}) then
-     // LInserter.LoadIdFromSequence(Entity);
-    LInserter.Execute(AEntity);
-    FEntities.Add(AEntity);
-    FOldStateEntities.Add(TRttiExplorer.Clone(AEntity));
-  finally
-    LInserter.Free;
-  end;
-end;
-
-procedure TEntityManager.Remove(AEntity: TObject);
-begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
 end;
 
 procedure TEntityManager.Save(AEntity: TObject);
@@ -453,14 +375,11 @@ var
   LUpdater: TUpdateExecutor;
 begin
   LUpdater := CommandFactory.GetCommand<TUpdateExecutor>(AEntity.ClassType);
-  {TODO -oLinas -cGeneral : finish implementing missing methods}
   LUpdater.Connection := Connection;
   LUpdater.EntityClass := AEntity.ClassType;
   LUpdater.EntityMap := FOldStateEntities;
   LUpdater.Execute(AEntity);
 
-  {TODO -oLinas -cGeneral : update entity maps}
- // FEntities.Add(AEntity);
   FOldStateEntities.AddOrReplace(TRttiExplorer.Clone(AEntity));
 end;
 
