@@ -86,13 +86,23 @@ type
 
   end;
 
-  TWhereOperator = (woEqual, woNotEqual, woMore, woLess, woLike, woNotLike, 
+  TWhereOperator = (woEqual = 0, woNotEqual, woMore, woLess, woLike, woNotLike,
     woMoreOrEqual, woLessOrEqual, woIn, woNotIn);
 
+const
+  WhereOpNames: array[TWhereOperator] of string = (
+    {woEqual =} '=', {woNotEqual =} '<>', {woMore = }'>', {woLess = }'<', {woLike = }'LIKE', {woNotLike = }'NOT LIKE',
+    {woMoreOrEqual = }'>=', {woLessOrEqual = }'<=', {woIn = }'IN', {woNotIn = }'NOT IN');
+
+type
   TSQLWhereField = class(TSQLField)
   private
     FWhereOperator: TWhereOperator;
   public
+    constructor Create(const AFieldname: string; ATable: TSQLTable); override;
+
+    function ToSQLString(): string;
+
     property WhereOperator: TWhereOperator read FWhereOperator write FWhereOperator;
   end;
 
@@ -158,6 +168,8 @@ implementation
 uses
   Core.Exceptions,
   TypInfo;
+
+
 
 { TSQLTable }
 
@@ -312,6 +324,19 @@ begin
     otAscending:  Result := Result + ' ASC' ;
     otDescending: Result := Result + ' DESC';
   end;
+end;
+
+{ TSQLWhereField }
+
+constructor TSQLWhereField.Create(const AFieldname: string; ATable: TSQLTable);
+begin
+  inherited;
+  FWhereOperator := woEqual;
+end;
+
+function TSQLWhereField.ToSQLString: string;
+begin
+  Result := GetFullFieldname + ' ' + WhereOpNames[WhereOperator] + ' :' + Fieldname + ' ';
 end;
 
 end.

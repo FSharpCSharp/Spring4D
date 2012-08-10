@@ -53,17 +53,24 @@ type
     FWhereFields: TObjectList<TSQLWhereField>;
     FGroupByFields: TObjectList<TSQLGroupByField>;
     FOrderByFields: TObjectList<TSQLOrderField>;
+    FPrimaryKeyColumn: Column;
+    FForeignColumn: ForeignJoinColumnAttribute;
   public
     constructor Create(ATable: TSQLTable); override;
     destructor Destroy; override;
 
     procedure SetTable(AColumns: TList<Column>); override;
+    procedure SetFromPrimaryColumn();
+    procedure SetFromForeignColumn(ABaseTableClass, AForeignTableClass: TClass);
 
     property SelectFields: TObjectList<TSQLSelectField> read FSelectFields;
     property Joins: TObjectList<TSQLJoin> read FJoins;
     property WhereFields: TObjectList<TSQLWhereField> read FWhereFields;
     property GroupByFields: TObjectList<TSQLGroupByField> read FGroupByFields;
     property OrderByFields: TObjectList<TSQLOrderField> read FOrderByFields;
+
+    property ForeignColumn: ForeignJoinColumnAttribute read FForeignColumn write FForeignColumn;
+    property PrimaryKeyColumn: Column read FPrimaryKeyColumn write FPrimaryKeyColumn;
   end;
 
   TInsertCommand = class(TDMLCommand)
@@ -112,6 +119,7 @@ implementation
 
 uses
   Mapping.RttiExplorer
+  ,Core.EntityCache
   ,SysUtils
   ;
 
@@ -125,6 +133,7 @@ begin
   FWhereFields := TObjectList<TSQLWhereField>.Create;
   FGroupByFields := TObjectList<TSQLGroupByField>.Create;
   FOrderByFields := TObjectList<TSQLOrderField>.Create;
+  FForeignColumn := nil;
 end;
 
 destructor TSelectCommand.Destroy;
@@ -137,7 +146,40 @@ begin
   inherited Destroy;
 end;
 
+procedure TSelectCommand.SetFromForeignColumn(ABaseTableClass, AForeignTableClass: TClass);
+var
+  LPrimaryKeyColumn: Column;
+  LWhereField: TSQLWhereField;
+begin
+  FForeignColumn := nil;
+  LPrimaryKeyColumn := TEntityCache.Get(ABaseTableClass).PrimaryKeyColumn;
+  if not Assigned(LPrimaryKeyColumn) then
+    Exit;
+
+  FForeignColumn := TRttiExplorer.GetForeignKeyColumn(AForeignTableClass, LPrimaryKeyColumn);
+  if not Assigned(FForeignColumn) then
+    Exit;
+
+  LWhereField := TSQLWhereField.Create(FForeignColumn.Name, FTable);
+  FWhereFields.Add(LWhereField);
+end;
+
+procedure TSelectCommand.SetFromPrimaryColumn();
+var
+  LWhereField: TSQLWhereField;
+begin
+  FForeignColumn := nil;
+  if Assigned(FPrimaryKeyColumn) then
+  begin
+    LWhereField := TSQLWhereField.Create(FPrimaryKeyColumn.Name, FTable);
+    FWhereFields.Add(LWhereField);
+  end;
+end;
+
 procedure TSelectCommand.SetTable(AColumns: TList<Column>);
+var
+  LColumn: Column;
+  LSelectField: TSQLSelectField;
 begin
   Assert(Assigned(AColumns), 'AColumns not assigned');
   FSelectFields.Clear;
@@ -147,6 +189,12 @@ begin
   FOrderByFields.Clear;
 
   {TODO -oLinas -cGeneral : add all select fields}
+  for LColumn in AColumns do
+  begin
+    LSelectField := TSQLSelectField.Create(LColumn.Name, FTable);
+    FSelectFields.Add(LSelectField);
+  end;
+
 end;
 
 { TInsertCommand }

@@ -58,6 +58,18 @@ type
 
   EORMUpdateNotSuccessfulException = class(EBaseORMException);
 
+  EORMColumnCannotBeNull = class(EBaseORMException);
+
+  EORMContainerDoesNotHaveAddMethod = class(Exception);
+
+  EORMContainerDoesNotHaveClearMethod = class(Exception);
+
+  EORMContainerAddMustHaveOneParameter = class(Exception);
+
+  EORMContainerItemTypeNotSupported = class(Exception);
+
+  EORMUnsupportedType = class(Exception);
+
 implementation
 
 { EBaseORMException }

@@ -31,26 +31,42 @@ unit Core.EntityManager;
 interface
 
 uses
-  Core.AbstractManager, Core.EntityMap, Core.Interfaces, Generics.Collections, Rtti
+  Core.AbstractManager, Core.EntityMap, Core.Interfaces, Generics.Collections, Rtti, TypInfo
   {$IFDEF USE_SPRING}
   ,Spring.Collections
   {$ENDIF}
   ,Mapping.Attributes;
+
+const
+  IID_GETIMPLEMENTOR: TGUID = '{4C12C697-6FE2-4263-A2D8-85034F0D0E01}';
 
 type
   TEntityManager = class(TAbstractManager)
   private
     FOldStateEntities: TEntityMap;
   protected
-    procedure SetEntityColumns(AEntity: TObject; AColumns: TList<Column>; AResultset: IDBResultset); virtual;
+    procedure SetEntityColumns(AEntity: TObject; AColumns: TList<Column>; AResultset: IDBResultset); overload; virtual;
+    procedure SetEntityColumns(AEntity: TObject; AColumns: TList<ManyValuedAssociation>; AResultset: IDBResultset); overload; virtual;
+    procedure SetLazyColumns(AEntity: TObject);
 
+    procedure DoSetOne(AEntity: TObject; AResultset: IDBResultset); virtual;
     function GetResultset(const ASql: string; const AParams: array of const): IDBResultset;
-    function GetOne<T: class, constructor>(AResultset: IDBResultset): T;
+    function GetOne<T: class, constructor>(AResultset: IDBResultset): T; overload;
+    function GetOne(AResultset: IDBResultset; AClass: TClass): TObject; overload;
+    function GetObjectList<T: class, constructor>(AResultset: IDBResultset): T;
+    procedure SetInterfaceList<T>(var AValue: T; AResultset: IDBResultset);
+    procedure SetOne<T>(var AValue: T; AResultset: IDBResultset; AEntity: TObject);
+    function DoGetLazy<T>(const AID: TValue; AEntity: TObject; out AIsEnumerable: Boolean): IDBResultset;
+
+    function GetSelector(AClass: TClass): TObject;
 
     function GetQueryCount(const ASql: string; const AParams: array of const): Int64;
   public
     constructor Create(AConnection: IDBConnection); override;
     destructor Destroy; override;
+
+    function GetLazyValueClass<T: class, constructor>(const AID: TValue; AEntity: TObject): T;
+    procedure SetLazyValue<T>(var AValue: T; const AID: TValue; AEntity: TObject);
 
     /// <summary>
     /// Executes sql statement which does not return resultset
@@ -76,13 +92,20 @@ type
     /// </summary>
     procedure Fetch<T: class, constructor>(const ASql: string;
       const AParams: array of const; ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
-                                                  {$ELSE} TObjectList<T> {$ENDIF} );
-
+                                                  {$ELSE} TObjectList<T> {$ENDIF} ); overload;
+    /// <summary>
+    /// Retrieves multiple models from the sql statement
+    /// </summary>
+    function Fetch<T: class, constructor>(const ASql: string;
+      const AParams: array of const): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
+                                                  {$ELSE} TObjectList<T> {$ENDIF}; overload;
     /// <summary>
     /// Inserts model to the database
     /// </summary>
     procedure Insert(AEntity: TObject); overload;
-
+    /// <summary>
+    /// Inserts models to the database
+    /// </summary>
     procedure Insert<T: class, constructor>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
       {$ELSE} TObjectList<T> {$ENDIF}); overload;
     /// <summary>
@@ -103,7 +126,9 @@ type
     /// Removes model from the database
     /// </summary>
     procedure Delete(AEntity: TObject); overload;
-
+    /// <summary>
+    /// Removes models from the database
+    /// </summary>
     procedure Delete<T: class, constructor>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
       {$ELSE} TObjectList<T> {$ENDIF}); overload;
     /// <summary>
@@ -115,7 +140,12 @@ type
     /// <summary>
     /// Saves the entity to the database. It will do update or the insert based on the entity state.
     /// </summary>
-    procedure Save(AEntity: TObject);
+    procedure Save(AEntity: TObject); overload;
+    /// <summary>
+    /// Saves entities to the database. It will do update or the insert based on the entity state.
+    /// </summary>
+    procedure Save<T: class, constructor>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
+      {$ELSE} TObjectList<T> {$ENDIF}); overload;
   end;
 
 
@@ -123,6 +153,7 @@ implementation
 
 uses
   SQL.Commands.Insert
+  ,SQL.Commands.Select
   ,SQL.Commands.Update
   ,SQL.Commands.Delete
   ,SQL.Commands.Page
@@ -131,10 +162,12 @@ uses
   ,Core.Exceptions
   ,SQL.Commands.Factory
   ,Mapping.RttiExplorer
+  ,Core.Reflection
   ,SQL.Params
   ,Core.Utils
   ,Core.EntityCache
   ,Core.Base
+  ,SysUtils
   ;
 
 { TEntityManager }
@@ -173,6 +206,46 @@ destructor TEntityManager.Destroy;
 begin
   FOldStateEntities.Free;
   inherited Destroy;
+end;
+
+function TEntityManager.DoGetLazy<T>(const AID: TValue; AEntity: TObject; out AIsEnumerable: Boolean): IDBResultset;
+var
+  LSelecter: TSelectExecutor;
+  LBaseEntityClass, LEntityClass: TClass;
+  LEnumMethod: TRttiMethod;
+begin
+  LBaseEntityClass := AEntity.ClassType;
+  if not TRttiExplorer.TryGetEntityClass<T>(LEntityClass) then
+  begin
+    //we are fetching from the same table - AEntity
+    LEntityClass := LBaseEntityClass;
+  end;
+
+  LSelecter := GetSelector(LEntityClass) as TSelectExecutor;
+  LSelecter.EntityClass := LEntityClass;
+  LSelecter.Connection := Connection;
+  LSelecter.ID := AID;
+
+  AIsEnumerable := TUtils.IsEnumerable(TypeInfo(T), LEnumMethod);
+
+  if AIsEnumerable then
+    LSelecter.SelectType := stObjectList
+  else
+    LSelecter.SelectType := stOne;
+
+  Result := LSelecter.Select(AEntity);
+end;
+
+procedure TEntityManager.DoSetOne(AEntity: TObject; AResultset: IDBResultset);
+var
+  LColumns: TList<Column>;
+begin
+  LColumns := TEntityCache.GetColumns(AEntity.ClassType);
+  SetEntityColumns(AEntity, LColumns, AResultset);
+  //we need to set internal values for the lazy type field
+  SetLazyColumns(AEntity);
+
+  FOldStateEntities.AddOrReplace(TRttiExplorer.Clone(AEntity));
 end;
 
 function TEntityManager.Execute(const ASql: string; const AParams: array of const): NativeUInt;
@@ -221,6 +294,17 @@ begin
   end;
 end;
 
+function TEntityManager.Fetch<T>(const ASql: string; const AParams: array of const): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
+  {$ELSE} TObjectList<T> {$ENDIF};
+begin
+  {$IFDEF USE_SPRING}
+  Result := TCollections.CreateList<T>(True);
+  {$ELSE}
+  Result := TObjectList<T>.Create(True);
+  {$ENDIF}
+  Fetch<T>(ASql, AParams, Result);
+end;
+
 function TEntityManager.First<T>(const ASql: string; const AParams: array of const): T;
 var
   LResults: IDBResultset;
@@ -241,17 +325,151 @@ begin
   end;
 end;
 
-function TEntityManager.GetOne<T>(AResultset: IDBResultset): T;
+
+
+procedure TEntityManager.SetInterfaceList<T>(var AValue: T; AResultset: IDBResultset);
 var
-  LColumns: TList<Column>;
+  LCurrent: TObject;
+  LEntityClass: TClass;
+  LAddMethod: TRttiMethod;
+  LAddParameters: TArray<TRttiParameter>;
+  LValue: TValue;
+begin
+  if not (PTypeInfo(TypeInfo(T)).Kind = tkInterface) then
+    raise EORMUnsupportedType.Create('List must be Spring interface IList<T>.');
+
+  if not TRttiExplorer.TryGetEntityClass<T>(LEntityClass) then
+    raise EORMUnsupportedType.Create('List must be Spring interface IList<T>.');
+
+  if not TRttiExplorer.TryGetBasicMethod('Add', TypeInfo(T), LAddMethod) then
+    raise EORMContainerDoesNotHaveAddMethod.Create('Container does not have Add method');
+
+
+  LAddParameters := LAddMethod.GetParameters;
+  if (Length(LAddParameters) <> 1) then
+    raise EORMContainerAddMustHaveOneParameter.Create('Container''s Add method must have only one parameter.');
+
+  case LAddParameters[0].ParamType.TypeKind of
+    tkClass, tkClassRef, tkInterface, tkPointer, tkRecord:
+    else
+      raise EORMContainerItemTypeNotSupported.Create('Container''s items type not supported');
+  end;
+
+  LValue := TValue.From<T>(AValue);
+
+  while not AResultset.IsEmpty do
+  begin
+    LCurrent := GetOne(AResultset, LEntityClass);
+
+    LAddMethod.Invoke(LValue, [LCurrent]);
+
+    AResultset.Next;
+  end;
+end;
+
+procedure TEntityManager.SetLazyValue<T>(var AValue: T; const AID: TValue; AEntity: TObject);
+var
+  IsEnumerable: Boolean;
+  LResults: IDBResultset;
+begin
+  case PTypeInfo(TypeInfo(T)).Kind of
+    tkClass, tkClassRef, tkPointer, tkRecord, tkUnknown:
+    begin
+      raise EORMUnsupportedType.CreateFmt('Unsupported type for lazy value: %S.', [string(PTypeInfo(TypeInfo(T)).Name)]);
+    end;
+  end;
+
+  LResults := DoGetLazy<T>(AID, AEntity, IsEnumerable);
+
+  if IsEnumerable then
+    SetInterfaceList<T>(AValue, LResults)
+  else
+    SetOne<T>(AValue, LResults, AEntity);
+end;
+
+procedure TEntityManager.SetOne<T>(var AValue: T; AResultset: IDBResultset; AEntity: TObject);
+var
+  LValue, LConverted: TValue;
+  LType: TRttiType;
+  LColumn: Column;
+  LVal: Variant;
+begin
+  LType := TRttiExplorer.GetEntityRttiType<T>;
+  //{TODO -oLinas -cGeneral : maybe introduce new attribute for specifying simple lazy types. Maybe with SQL parameter}
+
+  if TRttiExplorer.TryGetColumnByMemberName(AEntity.ClassType, LType.Name, LColumn) then
+  begin
+    if not AResultset.IsEmpty then
+    begin
+      LVal := AResultset.GetFieldValue(LColumn.Name);
+      LValue := TUtils.FromVariant(LVal);
+      TRttiExplorer.SetMemberValue(Self, AEntity, LColumn, LValue);
+    end;
+  end;
+end;
+
+function TEntityManager.GetLazyValueClass<T>(const AID: TValue; AEntity: TObject): T;
+var
+  IsEnumerable: Boolean;
+  LResults: IDBResultset;
+begin
+  LResults := DoGetLazy<T>(AID, AEntity, IsEnumerable);
+
+  if IsEnumerable then
+    Result := GetObjectList<T>(LResults)
+  else
+    Result := GetOne<T>(LResults);
+end;
+
+function TEntityManager.GetObjectList<T>(AResultset: IDBResultset): T;
+var
+  LCurrent: TObject;
+  LEntityClass: TClass;
+  LAddMethod: TRttiMethod;
+  LProp: TRttiProperty;
+  LAddParameters: TArray<TRttiParameter>;
 begin
   Result := T.Create;
-  {DONE -oLinas -cGeneral : make a cache for columns. it is not needed to get columns from the class each time}
 
-  LColumns := TEntityCache.GetColumns(TObject(Result).ClassType);
-  SetEntityColumns(Result, LColumns, AResultset);
+  if not TRttiExplorer.TryGetEntityClass<T>(LEntityClass) then
+    LEntityClass := T;
 
-  FOldStateEntities.AddOrReplace(TRttiExplorer.Clone(Result));
+  if not TRttiExplorer.TryGetBasicMethod('Add', TypeInfo(T), LAddMethod) then
+    raise EORMContainerDoesNotHaveAddMethod.Create('Container does not have Add method');
+
+  LAddParameters := LAddMethod.GetParameters;
+  if (Length(LAddParameters) <> 1) then
+    raise EORMContainerAddMustHaveOneParameter.Create('Container''s Add method must have only one parameter.');
+
+  if Result.TryGetProperty('OwnsObjects', LProp) then
+    LProp.SetValue(TObject(Result), True);
+
+  case LAddParameters[0].ParamType.TypeKind of
+    tkClass, tkClassRef, tkInterface, tkPointer, tkRecord:
+    else
+      raise EORMContainerItemTypeNotSupported.Create('Container''s items type not supported');
+  end;
+
+  while not AResultset.IsEmpty do
+  begin
+    LCurrent := GetOne(AResultset, LEntityClass);
+
+    LAddMethod.Invoke(Result, [LCurrent]);
+
+    AResultset.Next;
+  end;
+end;
+
+function TEntityManager.GetOne(AResultset: IDBResultset; AClass: TClass): TObject;
+begin
+  Result := AClass.Create;
+  DoSetOne(Result, AResultset);
+end;
+
+function TEntityManager.GetOne<T>(AResultset: IDBResultset): T;
+begin
+  Result := T.Create;
+  DoSetOne(Result, AResultset);
 end;
 
 function TEntityManager.GetQueryCount(const ASql: string; const AParams: array of const): Int64;
@@ -294,6 +512,11 @@ begin
   end;
 end;
 
+function TEntityManager.GetSelector(AClass: TClass): TObject;
+begin
+  Result := CommandFactory.GetCommand<TSelectExecutor>(AClass);
+end;
+
 procedure TEntityManager.Insert(AEntity: TObject);
 var
   LInserter: TInsertExecutor;
@@ -303,6 +526,7 @@ begin
   LInserter.EntityClass := AEntity.ClassType;
   LInserter.Execute(AEntity);
 
+  SetLazyColumns(AEntity);
   FOldStateEntities.AddOrReplace(TRttiExplorer.Clone(AEntity));
 end;
 
@@ -347,16 +571,77 @@ begin
     Update(AEntity);
 end;
 
-procedure TEntityManager.SetEntityColumns(AEntity: TObject; AColumns: TList<Column>; AResultset: IDBResultset);
+procedure TEntityManager.Save<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
+      {$ELSE} TObjectList<T> {$ENDIF});
 var
-  LCol: Column;
+  LEntity: T;
+begin
+  for LEntity in ACollection do
+  begin
+    Save(LEntity);
+  end;
+end;
+
+procedure TEntityManager.SetEntityColumns(AEntity: TObject; AColumns: TList<ManyValuedAssociation>;
+  AResultset: IDBResultset);
+var
+  LCol: ManyValuedAssociation;
   LVal: Variant;
+  LValue: TValue;
 begin
   for LCol in AColumns do
   begin
-    LVal := AResultset.GetFieldValue(LCol.Name);
+    LVal := AResultset.GetFieldValue(LCol.MappedBy);
+    LValue := TUtils.FromVariant(LVal);
+    TRttiExplorer.SetMemberValue(Self, AEntity, LCol.ClassMemberName, LValue);
+  end;
+end;
 
-    TRttiExplorer.SetMemberValue(AEntity, LCol, TUtils.FromVariant(LVal));
+procedure TEntityManager.SetLazyColumns(AEntity: TObject);
+var
+  LCol: ManyValuedAssociation;
+  LValue: TValue;
+begin
+  for LCol in TEntityCache.Get(AEntity.ClassType).ManyValuedColumns do
+  begin
+    LValue := TRttiExplorer.GetMemberValue(AEntity, LCol.MappedBy); //get foreign key value
+    TRttiExplorer.SetMemberValue(Self, AEntity, LCol.ClassMemberName, LValue);
+  end;
+end;
+
+procedure TEntityManager.SetEntityColumns(AEntity: TObject; AColumns: TList<Column>; AResultset: IDBResultset);
+var
+  LCol, LPrimaryKeyColumn: Column;
+  LVal: Variant;
+  LValue, LPrimaryKey: TValue;
+  LTypeInfo: PTypeInfo;
+begin
+  LPrimaryKeyColumn := TEntityCache.Get(AEntity.ClassType).PrimaryKeyColumn;
+  //we must set primary key value first
+  if LPrimaryKeyColumn <> nil then
+  begin
+    LVal := AResultset.GetFieldValue(LPrimaryKeyColumn.Name);
+    LPrimaryKey := TUtils.FromVariant(LVal);
+    TRttiExplorer.SetMemberValue(Self, AEntity, LPrimaryKeyColumn, LPrimaryKey);
+  end;
+
+  for LCol in AColumns do
+  begin
+    if (cpPrimaryKey in LCol.Properties) then
+      Continue;
+
+    LTypeInfo := LCol.GetTypeInfo(AEntity.ClassInfo);
+    if (LTypeInfo <> nil) and (TUtils.IsLazyType(LTypeInfo)) then
+    begin
+      LValue := LPrimaryKey;
+    end
+    else
+    begin
+      LVal := AResultset.GetFieldValue(LCol.Name);
+      LValue := TUtils.FromVariant(LVal);
+    end;
+
+    TRttiExplorer.SetMemberValue(Self, AEntity, LCol, LValue);
   end;
 end;
 
@@ -380,6 +665,7 @@ begin
   LUpdater.EntityMap := FOldStateEntities;
   LUpdater.Execute(AEntity);
 
+  SetLazyColumns(AEntity);
   FOldStateEntities.AddOrReplace(TRttiExplorer.Clone(AEntity));
 end;
 

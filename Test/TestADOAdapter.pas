@@ -16,7 +16,7 @@ interface
 uses
   TestFramework, ADODB, Generics.Collections, Adapters.ADO, Core.Base, SysUtils,
   SQL.Params, Core.Interfaces, SQL.AnsiSQLGenerator, Adapters.MSSQL, Core.EntityManager
-  ,uModels;
+  ,uModels, VARTOTMASTModel;
 
 type
   // Test methods for class TADOResultSetAdapter
@@ -505,8 +505,10 @@ end;
 procedure TestMSSQLAdapter.TestFetchWorkers;
 var
   LWorkers: IList<TWorker>;
-  LWorker: TWorker;
+  LWorker, LWorker2: TWorker;
   sw: TStopwatch;
+  //LVartot: TVARTOTMAST;
+  LVartotojai: IList<TVARTOTMAST>;
 begin
   LWorkers := TCollections.CreateList<TWorker>(True);
   sw := TStopwatch.StartNew;
@@ -515,12 +517,19 @@ begin
   CheckTrue(LWorkers.Count > 0);
   LWorker := LWorkers.First;
 
+  LWorker2 := LWorkers.Where(function(const value: TWorker): Boolean begin Result := value.EndDate.HasValue; end).First;
+  CheckTrue(LWorker2.EndDate.HasValue);
+
   CheckEqualsString('vikarina', LWorker.LastEditedBy);
   LWorker.LastEditedBy := 'ORM Test Case';
   FManager.Update(LWorker);
 
   LWorker.LastEditedBy := 'vikarina';
   FManager.Update(LWorker);
+
+  LVartotojai := TCollections.CreateList<TVARTOTMAST>(True);
+  FManager.Fetch<TVARTOTMAST>('SELECT * FROM VIKARINA.VARTOTMAST;', [], LVartotojai);
+ // LVartot := LVartotojai.First;
 
   Status(Format('Fetched %0:D workers in %1:D ms.',
     [LWorkers.Count, sw.ElapsedMilliseconds]));

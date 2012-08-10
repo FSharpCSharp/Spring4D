@@ -27,17 +27,43 @@
 *)
 unit SQL.Commands.Select;
 
+{$I sv.inc}
+
 interface
 
 uses
-  SQL.AbstractCommandExecutor, Rtti, Generics.Collections;
+  SQL.AbstractCommandExecutor, Rtti, SQL.Commands, SQL.Types, Mapping.Attributes, Core.Interfaces
+  {$IFDEF USE_SPRING}
+  ,Spring.Collections
+  {$ENDIF}
+  , Generics.Collections
+  ;
 
 type
+  TSelectType = (stOne, stList, stObjectList);
+
   TSelectExecutor = class(TAbstractCommandExecutor)
+  private
+    FTable: TSQLTable;
+    FCommand: TSelectCommand;
+    FColumns: TList<Column>;
+    FSelectType: TSelectType;
+    FID: TValue;
   public
+    constructor Create(); override;
+    destructor Destroy; override;
+
+    procedure Execute(AEntity: TObject); override;
     procedure Build(AClass: TClass); override;
-    function Select(const AID: TValue): TObject;
-    function SelectAll(): TObjectList<TObject>;
+    procedure BuildParams(AEntity: TObject); override;
+
+    function Select(AEntity: TObject): IDBResultset;
+
+    procedure SelectList(AList: TObject) ;
+    procedure SelectObjectList(AList: TObject; AEnumMethod: TRttiMethod);
+
+    property ID: TValue read FID write FID;
+    property SelectType: TSelectType read FSelectType write FSelectType;
   end;
 
 
@@ -45,23 +71,114 @@ type
 implementation
 
 uses
-  Core.Exceptions;
+  Core.Exceptions
+  ,Mapping.RttiExplorer
+  ,Core.EntityCache
+  ,SQL.Params
+  ;
 
 { TSelectCommand }
 
 procedure TSelectExecutor.Build(AClass: TClass);
+var
+  LAtrTable: Table;
+  LCache: TEntityData;
 begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
+  EntityClass := AClass;
+  LCache := TEntityCache.Get(EntityClass);
+  LAtrTable := LCache.EntityTable;
+
+  if not Assigned(LAtrTable) then
+    raise ETableNotSpecified.Create('Table not specified');
+
+  FTable.SetFromAttribute(LAtrTable);
+  FColumns.Clear;
+  FColumns.AddRange(LCache.Columns);
+
+  FCommand.PrimaryKeyColumn := LCache.PrimaryKeyColumn;
+  FCommand.SetTable(FColumns);
 end;
 
-function TSelectExecutor.Select(const AID: TValue): TObject;
+procedure TSelectExecutor.BuildParams(AEntity: TObject);
+var
+  LParam: TDBParam;
 begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
+  inherited BuildParams(AEntity);
+
+  if Assigned(FCommand.ForeignColumn) then
+  begin
+    LParam := CreateParam(AEntity, FCommand.ForeignColumn);
+    SQLParameters.Add(LParam);
+  end
+  else if Assigned(FCommand.PrimaryKeyColumn) then
+  begin
+    LParam := CreateParam(AEntity, FCommand.PrimaryKeyColumn);
+    SQLParameters.Add(LParam);
+  end;
 end;
 
-function TSelectExecutor.SelectAll: TObjectList<TObject>;
+constructor TSelectExecutor.Create;
 begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
+  inherited Create;
+  FTable := TSQLTable.Create();
+  FColumns := TList<Column>.Create;
+  FCommand := TSelectCommand.Create(FTable);
+end;
+
+destructor TSelectExecutor.Destroy;
+begin
+  FTable.Free;
+  FCommand.Free;
+  FColumns.Free;
+  inherited Destroy;
+end;
+
+procedure TSelectExecutor.Execute(AEntity: TObject);
+begin
+  //add where fields if needed
+  FCommand.WhereFields.Clear;
+  {DONE -oLinas -cGeneral : Must know for what column to set where condition field and value. Setting always for primary key is not good for foreign key tables}
+   //AEntity - base table class type
+   //EntityClass - can be foreign table class type
+  if EntityClass = AEntity.ClassType then
+  begin
+    FCommand.SetFromPrimaryColumn();  //select from the same as base table
+  end
+  else
+  begin
+    //get foreign column name and compare it to the base table primary key column name
+    FCommand.SetFromForeignColumn(AEntity.ClassType, EntityClass);
+  end;
+
+  SQL := Generator.GenerateSelect(FCommand);
+  inherited Execute(AEntity);
+end;
+
+procedure TSelectExecutor.SelectObjectList(AList: TObject; AEnumMethod: TRttiMethod);
+begin
+  FSelectType := stObjectList;
+  {DONE -oLinas -cGeneral : fetch from FResultset}
+end;
+
+function TSelectExecutor.Select(AEntity: TObject): IDBResultset;
+var
+  LStmt: IDBStatement;
+begin
+  Execute(AEntity);
+  LStmt := Connection.CreateStatement;
+  LStmt.SetSQLCommand(SQL);
+
+  BuildParams(AEntity);
+  if SQLParameters.Count > 0 then
+    LStmt.SetParams(SQLParameters);
+
+  Result := LStmt.ExecuteQuery();
+end;
+
+procedure TSelectExecutor.SelectList(AList: TObject);
+begin
+  FSelectType := stList;
+   {DONE -oLinas -cGeneral : fetch from FResultset}
 end;
 
 end.

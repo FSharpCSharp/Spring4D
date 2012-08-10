@@ -38,8 +38,10 @@ type
   TEntityData = class
   private
     FColumns: TList<Column>;
+    FForeignKeyColumns: TList<ForeignJoinColumnAttribute>;
     FPrimaryKeyColumn: Column;
     FTable: Table;
+    FManyValuedColumns: TList<ManyValuedAssociation>;
   protected
     procedure SetEntityData(AClass: TClass); virtual;
   public
@@ -47,7 +49,10 @@ type
     destructor Destroy; override;
 
     property Columns: TList<Column> read FColumns;
+    property ForeignColumns: TList<ForeignJoinColumnAttribute> read FForeignKeyColumns;
+    property ManyValuedColumns: TList<ManyValuedAssociation> read FManyValuedColumns;
     property PrimaryKeyColumn: Column read FPrimaryKeyColumn;
+
     property EntityTable: Table read FTable;
   end;
 
@@ -80,23 +85,29 @@ uses
 constructor TEntityData.Create;
 begin
   inherited Create;
-  FColumns := nil;
+  FColumns := TList<Column>.Create;
   FPrimaryKeyColumn := nil;
   FTable := nil;
+  FForeignKeyColumns := TList<ForeignJoinColumnAttribute>.Create;
+  FManyValuedColumns := TList<ManyValuedAssociation>.Create;
 end;
 
 destructor TEntityData.Destroy;
 begin
   FColumns.Free;
+  FForeignKeyColumns.Free;
+  FManyValuedColumns.Free;
   inherited Destroy;
 end;
 
 
 procedure TEntityData.SetEntityData(AClass: TClass);
 begin
-  FColumns := TRttiExplorer.GetColumns(AClass);
+  TRttiExplorer.GetColumns(AClass, FColumns);
   FPrimaryKeyColumn := TRttiExplorer.GetPrimaryKeyColumn(AClass);
   FTable := TRttiExplorer.GetTable(AClass);
+  TRttiExplorer.GetClassMembers<ForeignJoinColumnAttribute>(AClass, FForeignKeyColumns);
+  TRttiExplorer.GetClassMembers<ManyValuedAssociation>(AClass, FManyValuedColumns);
 end;
 
 { TEntityCache }

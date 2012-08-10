@@ -30,7 +30,7 @@ unit Mapping.Attributes;
 interface
 
 uses
-  Generics.Collections, Rtti;
+  Generics.Collections, Rtti, TypInfo;
 
 type
   TFetchType = (ftEager, ftLazy);
@@ -54,6 +54,9 @@ type
     FMemberType: TMemberType;
     FClassMemberName: string;
   public
+    function AsRttiObject(ATypeInfo: PTypeInfo): TRttiNamedObject;
+    function GetTypeInfo(AEntityTypeInfo: PTypeInfo): PTypeInfo;
+
     property ClassMemberName: string read FClassMemberName write FClassMemberName;
     property MemberType: TMemberType read FMemberType write FMemberType;
   end;
@@ -128,7 +131,7 @@ type
     property ReferencedColumnName: string read FReferencedColName;
   end;
 
-  TForeignJoinColumn = class(JoinColumn);
+  ForeignJoinColumnAttribute = class(JoinColumn);
 
   Column = class(TORMAttribute)
   private
@@ -143,6 +146,7 @@ type
       AScale: Integer; const ADescription: string);
 
     function IsDiscriminator(): Boolean; virtual;
+
 
     property Name: string read FName;
     property Properties: TColumnProperties read FProperties;
@@ -295,6 +299,35 @@ constructor Inheritence.Create(AStrategy: TInheritenceStrategy);
 begin
   inherited Create;
   FStrategy := AStrategy;
+end;
+
+{ TORMAttribute }
+
+function TORMAttribute.AsRttiObject(ATypeInfo: PTypeInfo): TRttiNamedObject;
+var
+  LType: TRttiType;
+begin
+  LType := TRttiContext.Create.GetType(ATypeInfo);
+  Result := LType.GetField(ClassMemberName);
+  if not Assigned(Result) then
+    Result := LType.GetProperty(ClassMemberName);
+end;
+
+function TORMAttribute.GetTypeInfo(AEntityTypeInfo: PTypeInfo): PTypeInfo;
+var
+  LRttiObj: TRttiNamedObject;
+begin
+  Result := nil;
+
+  LRttiObj := AsRttiObject(AEntityTypeInfo);
+  if LRttiObj is TRttiField then
+  begin
+    Result := TRttiField(LRttiObj).FieldType.Handle;
+  end
+  else if LRttiObj is TRttiProperty then
+  begin
+    Result := TRttiProperty(LRttiObj).PropertyType.Handle;
+  end;
 end;
 
 end.

@@ -103,4 +103,7 @@ type
 
 implementation
 
+uses
+  RttiPatch;
+
 end.

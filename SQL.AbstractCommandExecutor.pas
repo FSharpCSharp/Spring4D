@@ -41,7 +41,8 @@ type
     FSQL: string;
     FParams: TObjectList<TDBParam>;
   protected
-    function CreateParam(AEntity: TObject; AColumn: Column): TDBParam; virtual;
+    function CreateParam(AEntity: TObject; AColumn: Column): TDBParam; overload; virtual;
+    function CreateParam(AEntity: TObject; AForeignColumn: ForeignJoinColumnAttribute): TDBParam; overload; virtual;
   public
     constructor Create(); virtual;
     destructor Destroy; override;
@@ -83,6 +84,25 @@ begin
   FParams := TObjectList<TDBParam>.Create();
 end;
 
+function TAbstractCommandExecutor.CreateParam(AEntity: TObject;
+  AForeignColumn: ForeignJoinColumnAttribute): TDBParam;
+var
+  LVal, LRes: TValue;
+begin
+  Result := TDBParam.Create;
+  Result.Name := ':' + AForeignColumn.Name;
+  LVal := TRttiExplorer.GetMemberValue(AEntity, AForeignColumn.ReferencedColumnName);
+  //convert/serialize objects to stream
+  if LVal.IsObject then
+  begin
+    if LVal.TryConvert(TypeInfo(TStream), LRes) then
+    begin
+      LVal := LRes.AsObject;
+    end;
+  end;
+  Result.Value := TUtils.AsVariant(LVal);
+end;
+
 function TAbstractCommandExecutor.CreateParam(AEntity: TObject; AColumn: Column): TDBParam;
 var
   LVal, LRes: TValue;
@@ -113,6 +133,8 @@ end;
 
 procedure TAbstractCommandExecutor.Execute(AEntity: TObject);
 begin
+  if (SQL = '') then
+    Exit;
   Connection.NotifyExecutionListeners(SQL, SQLParameters);
 end;
 

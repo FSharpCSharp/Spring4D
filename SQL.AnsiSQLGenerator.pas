@@ -39,6 +39,7 @@ type
     function GetJoinAsString(const AJoin: TSQLJoin): string; virtual;
     function GetJoinsAsString(const AJoinFields: TEnumerable<TSQLJoin>): string; virtual;
     function GetOrderAsString(const AOrderFields: TEnumerable<TSQLOrderField>): string; virtual;
+    function GetWhereAsString(const AWhereFields: TEnumerable<TSQLWhereField>): string; virtual;
     function GetSelectFieldsAsString(const ASelectFields: TEnumerable<TSQLSelectField>): string; virtual;
   public
     function GetDriverName(): string; override;
@@ -206,6 +207,7 @@ begin
       .Append(GetSelectFieldsAsString(ASelectCommand.SelectFields)).AppendLine
       .Append(' FROM ').Append(ASelectCommand.Table.GetFullTableName)
       .Append(GetJoinsAsString(ASelectCommand.Joins))
+      .Append(GetWhereAsString(ASelectCommand.WhereFields))
       .Append(GetGroupByAsString(ASelectCommand.GroupByFields))
       .Append(GetOrderAsString(ASelectCommand.OrderByFields))
       .Append(';');
@@ -368,5 +370,26 @@ begin
 end;
 
 
+
+function TAnsiSQLGenerator.GetWhereAsString(const AWhereFields: TEnumerable<TSQLWhereField>): string;
+var
+  i: Integer;
+  LField: TSQLWhereField;
+begin
+  Result := '';
+  i := 0;
+  for LField in AWhereFields do
+  begin
+    if i > 0 then
+      Result := Result + ' AND '
+    else
+      Result := CRLF + '  WHERE ';
+
+
+    Result := Result + LField.ToSQLString;
+
+    Inc(i);
+  end;
+end;
 
 end.

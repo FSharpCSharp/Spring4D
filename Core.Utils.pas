@@ -37,22 +37,31 @@ type
   public
     class function AsVariant(const AValue: TValue): Variant;
     class function FromVariant(const AValue: Variant): TValue;
-    class function TryConvert(const AFrom: TValue; ATypeInfo: PTypeInfo; ARttiMember: TRttiNamedObject; AEntity: TObject; out AResult: TValue): Boolean;
+    class function TryConvert(const AFrom: TValue; AManager: TObject; ARttiMember: TRttiNamedObject; AEntity: TObject; var AResult: TValue): Boolean;
 
     class function TryLoadFromStreamToPictureValue(AStream: TStream; out APictureValue: TValue): Boolean;
     class function TryLoadFromBlobField(AField: TField; AToPicture: TPicture): Boolean;
     class function TryLoadFromStreamSmart(AStream: TStream; AToPicture: TPicture): Boolean;
 
-    class function IsEnumerable(AObject: TObject; out AEnumeratorMethod: TRttiMethod): Boolean;
+    class function IsEnumerable(AObject: TObject; out AEnumeratorMethod: TRttiMethod): Boolean; overload;
+    class function IsEnumerable(ATypeInfo: PTypeInfo; out AEnumeratorMethod: TRttiMethod): Boolean; overload;
     class function SameObject(ALeft, ARight: TObject): Boolean;
     class function SameStream(ALeft, ARight: TStream): Boolean;
+    class procedure SetLazyValue(ARttiMember: TRttiNamedObject; AManager: TObject; const AID: TValue; AEntity: TObject; var AResult: TValue);
     class function IsNullableType(ATypeInfo: PTypeInfo): Boolean;
+    class function IsLazyType(ATypeInfo: PTypeInfo): Boolean;
+    class function TryGetNullableTypeValue(const ANullable: TValue; out AValue: TValue): Boolean;
+    class function TryGetLazyTypeValue(const ALazy: TValue; out AValue: TValue): Boolean;
+    class function InitLazyRecord(const AFrom: TValue; ATo: PTypeInfo; ARttiMember: TRttiNamedObject; AEntity: TObject): TValue;
   end;
 
 implementation
 
 uses
   Core.Reflection
+  ,Core.Exceptions
+  ,Core.EntityManager
+  ,Mapping.RttiExplorer
   ,jpeg
   ,pngimage
   ,GIFImg
@@ -150,17 +159,64 @@ begin
     Result := TValue.FromVariant(AValue);
 end;
 
+class function TUtils.TryGetLazyTypeValue(const ALazy: TValue; out AValue: TValue): Boolean;
+var
+  LRttiType: TRttiType;
+  LValueField: TRttiField;
+begin
+  Result := False;
+  if ALazy.Kind = tkRecord then
+  begin
+    LRttiType := ALazy.GetType();
+    LValueField := LRttiType.GetField('FLazy');
+    AValue := LValueField.GetValue(ALazy.GetReferenceToRawData);
+    Result := True;
+  end;
+end;
+
+class function TUtils.TryGetNullableTypeValue(const ANullable: TValue; out AValue: TValue): Boolean;
+var
+  LRttiType: TRttiType;
+  LValueField: TRttiField;
+begin
+  Result := False;
+  if ANullable.Kind = tkRecord then
+  begin
+    LRttiType := ANullable.GetType();
+    LValueField := LRttiType.GetField('FValue');
+    AValue := LValueField.GetValue(ANullable.GetReferenceToRawData);
+    Result := True;
+  end;
+end;
+
 class function TUtils.IsEnumerable(AObject: TObject; out AEnumeratorMethod: TRttiMethod): Boolean;
+begin
+  Result := IsEnumerable(AObject.ClassInfo, AEnumeratorMethod);
+end;
+
+class function TUtils.InitLazyRecord(const AFrom: TValue; ATo: PTypeInfo;
+  ARttiMember: TRttiNamedObject; AEntity: TObject): TValue;
+begin
+  {TODO -oLinas -cGeneral : finish lazy record initialization}
+end;
+
+class function TUtils.IsEnumerable(ATypeInfo: PTypeInfo;
+  out AEnumeratorMethod: TRttiMethod): Boolean;
 var
   LCtx: TRttiContext;
 begin
-  AEnumeratorMethod := LCtx.GetType(AObject.ClassInfo).GetMethod('GetEnumerator');
+  AEnumeratorMethod := LCtx.GetType(ATypeInfo).GetMethod('GetEnumerator');
   Result := Assigned(AEnumeratorMethod);
+end;
+
+class function TUtils.IsLazyType(ATypeInfo: PTypeInfo): Boolean;
+begin
+  Result := StartsText('Lazy<', string(ATypeInfo.Name)) or StartsText('LazyObject<', string(ATypeInfo.Name));
 end;
 
 class function TUtils.IsNullableType(ATypeInfo: PTypeInfo): Boolean;
 begin
-  Result := StartsStr('Nullable', string(ATypeInfo.Name));
+  Result := StartsText('Nullable<', string(ATypeInfo.Name));
 end;
 
 class function TUtils.SameObject(ALeft, ARight: TObject): Boolean;
@@ -225,6 +281,23 @@ begin
   end;
 
   Result := True;
+end;
+
+class procedure TUtils.SetLazyValue(ARttiMember: TRttiNamedObject; AManager: TObject; const AID: TValue; AEntity: TObject; var AResult: TValue);
+var
+  LRecord: TRttiRecordType;
+  LValueField: TRttiField;
+begin
+  AResult := TRttiExplorer.GetMemberValue(AEntity, ARttiMember);
+
+  LRecord := TRttiExplorer.GetAsRecord(ARttiMember);
+  //simple generic type
+  LValueField := LRecord.GetField('FManager');
+  LValueField.SetValue(AResult.GetReferenceToRawData, AManager);
+  LValueField := LRecord.GetField('FID');
+  LValueField.SetValue(AResult.GetReferenceToRawData, AID);
+  LValueField := LRecord.GetField('FEntity');
+  LValueField.SetValue(AResult.GetReferenceToRawData, AEntity);
 end;
 
 const
@@ -326,25 +399,28 @@ begin
     APictureValue := LPic;
 end;
 
-class function TUtils.TryConvert(const AFrom: TValue; ATypeInfo: PTypeInfo; ARttiMember: TRttiNamedObject; AEntity: TObject; out AResult: TValue): Boolean;
+class function TUtils.TryConvert(const AFrom: TValue; AManager: TObject; ARttiMember: TRttiNamedObject; AEntity: TObject; var AResult: TValue): Boolean;
 var
   LValue: TValue;
   LRecord: TRttiRecordType;
   LValueField, LHasValueField: TRttiField;
+  LTypeInfo: PTypeInfo;
 begin
-  if (AFrom.TypeInfo <> ATypeInfo) then
+  LTypeInfo := ARttiMember.GetTypeInfo;
+  if (AFrom.TypeInfo <> LTypeInfo) then
   begin
-    case ATypeInfo.Kind of
+    case LTypeInfo.Kind of
       tkRecord:
       begin
-        if IsNullableType(ATypeInfo) then
+        if IsNullableType(LTypeInfo) then
         begin
-          if ARttiMember is TRttiInstanceProperty then
+          LRecord := TRttiExplorer.GetAsRecord(ARttiMember);
+
+          if Assigned(LRecord) then
           begin
-            LRecord := TRttiInstanceProperty(ARttiMember).PropertyType.AsRecord;
             LValueField := LRecord.GetField('FValue');
             LHasValueField := LRecord.GetField('FHasValue');
-            TValue.MakeWithoutCopy(nil, ATypeInfo, AResult);
+            TValue.MakeWithoutCopy(nil, LTypeInfo, AResult);
             if AFrom.IsEmpty then
             begin
               LHasValueField.SetValue(AResult.GetReferenceToRawData, False);
@@ -358,10 +434,21 @@ begin
             end;
             Exit(True);
           end;
+        end
+        else if IsLazyType(LTypeInfo) then
+        begin
+          {TODO -oLinas -cGeneral : set lazy variables}
+          //AFrom value must be ID of lazy type
+          if AFrom.IsEmpty then
+            raise EORMColumnCannotBeNull.Create('Column for lazy type cannot be null');
+
+          SetLazyValue(ARttiMember, AManager, AFrom, AEntity, AResult);
+          Exit(True);
         end;
+
       end;
     end;
-    Result := AFrom.TryConvert(ATypeInfo, AResult);
+    Result := AFrom.TryConvert(LTypeInfo, AResult);
   end
   else
   begin

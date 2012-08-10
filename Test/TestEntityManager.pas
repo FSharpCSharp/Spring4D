@@ -38,6 +38,8 @@ type
     procedure ExecuteScalar();
     procedure Execute();
     procedure Nullable();
+    procedure GetLazyValueClass();
+    procedure GetLazyValue();
   end;
 
   TInsertData = record
@@ -65,11 +67,21 @@ var
 
 const
   TBL_PEOPLE = 'CUSTOMERS';
+  TBL_ORDERS = 'Customer_Orders';
 
 procedure CreateTables();
 begin
-  TestDB.ExecSQL('CREATE TABLE IF NOT EXISTS '+ TBL_PEOPLE + ' ([CUSTID] INTEGER PRIMARY KEY, [CUSTAGE] INTEGER NULL,'+
-    '[CUSTNAME] VARCHAR (255), [CUSTHEIGHT] FLOAT, [LastEdited] DATETIME, [EMAIL] TEXT, [MIDDLENAME] TEXT); ');
+  TestDB.ExecSQL('CREATE TABLE IF NOT EXISTS '+ TBL_PEOPLE + ' ([CUSTID] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, [CUSTAGE] INTEGER NULL,'+
+    '[CUSTNAME] VARCHAR (255), [CUSTHEIGHT] FLOAT, [LastEdited] DATETIME, [EMAIL] TEXT, [MIDDLENAME] TEXT, [AVATAR] BLOB); ');
+
+  TestDB.ExecSQL('CREATE TABLE IF NOT EXISTS '+ TBL_ORDERS + ' ('+
+    '"ORDER_ID" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,'+
+    '"Customer_ID" INTEGER NOT NULL CONSTRAINT "FK_Customer_Orders" REFERENCES "Customers"("CUSTID") ON DELETE CASCADE ON UPDATE CASCADE,'+
+    '"Customer_Payment_Method_Id" INTEGER,'+
+    '"Order_Status_Code" INTEGER,'+
+    '"Date_Order_Placed" DATETIME DEFAULT CURRENT_TIMESTAMP,'+
+    '"Total_Order_Price" FLOAT);');
+
   if not TestDB.TableExists(TBL_PEOPLE) then
     raise Exception.Create('Table CUSTOMERS does not exist');
 end;
@@ -84,6 +96,19 @@ procedure InsertCustomerNullable(AAge: Integer = 25; AName: string = 'Demo'; AHe
 begin
   TestDB.ExecSQL('INSERT INTO  ' + TBL_PEOPLE + ' ([CUSTAGE], [CUSTNAME], [CUSTHEIGHT], [MIDDLENAME]) VALUES (?,?,?,?);',
     [AAge, AName, AHeight, AMiddleName]);
+end;
+
+procedure InsertCustomerAvatar(AAge: Integer = 25; AName: string = 'Demo'; AHeight: Double = 15.25; const AMiddleName: string = ''; APicture: TStream = nil);
+begin
+  TestDB.ExecSQL('INSERT INTO  ' + TBL_PEOPLE + ' ([CUSTAGE], [CUSTNAME], [CUSTHEIGHT], [MIDDLENAME], [AVATAR]) VALUES (?,?,?,?,?);',
+    [AAge, AName, AHeight, AMiddleName, APicture]);
+end;
+
+procedure InsertCustomerOrder(ACustID: Integer; ACustPaymID: Integer; AOrderStatusCode: Integer; ATotalPrice: Double);
+begin
+  TestDB.ExecSQL('INSERT INTO  ' + TBL_ORDERS + ' ([Customer_Id], [Customer_Payment_Method_Id], [Order_Status_Code], [Total_Order_Price]) '+
+    ' VALUES (?,?,?,?);',
+    [ACustID, ACustPaymID, AOrderStatusCode, ATotalPrice]);
 end;
 
 procedure ClearTable(const ATableName: string);
@@ -235,13 +260,20 @@ procedure TestTEntityManager.First;
 var
   LCustomer: TCustomer;
   sSql: string;
+  fsPic: TFileStream;
 begin
   sSql := 'SELECT * FROM ' + TBL_PEOPLE;
   LCustomer := FManager.FirstOrDefault<TCustomer>(sSql, []);
 
   CheckTrue(System.Default(TCustomer) = LCustomer);
 
-  InsertCustomer();
+  fsPic := TFileStream.Create(PictureFilename, fmOpenRead or fmShareDenyNone);
+  try
+    InsertCustomerAvatar(25, 'Demo', 15.25, '', fsPic);
+
+  finally
+    fsPic.Free;
+  end;
 
   LCustomer := FManager.First<TCustomer>(sSql, []);
   try
@@ -267,6 +299,96 @@ begin
     CheckEquals(15, LCustomer.Age);
   finally
     FreeAndNil(LCustomer);
+  end;
+end;
+
+procedure TestTEntityManager.GetLazyValue;
+var
+  LCustomer: TCustomer;
+  LList: IList<TCustomer_Orders>;
+begin
+  LCustomer := TCustomer.Create;
+  try
+    LCustomer.Name := 'Test';
+    LCustomer.Age := 10;
+
+    FManager.Save(LCustomer);
+
+    InsertCustomerOrder(LCustomer.ID, 10, 5, 100.59);
+    InsertCustomerOrder(LCustomer.ID, 20, 15, 150.59);
+
+    CheckEquals(2, LCustomer.Orders.Count);
+
+    LList := TCollections.CreateObjectList<TCustomer_Orders>(True);
+
+    FManager.SetLazyValue<IList<TCustomer_Orders>>(LList, LCustomer.ID, LCustomer);
+
+    CheckEquals(2, LList.Count);
+    CheckEquals(LCustomer.ID, LList.First.Customer_ID);
+    CheckEquals(10, LList.First.Customer_Payment_Method_Id);
+    CheckEquals(5, LList.First.Order_Status_Code);
+    CheckEquals(LCustomer.ID, LList.Last.Customer_ID);
+    CheckEquals(20, LList.Last.Customer_Payment_Method_Id);
+    CheckEquals(15, LList.Last.Order_Status_Code);
+
+  finally
+    LCustomer.Free;
+  end;
+
+  LCustomer := FManager.SingleOrDefault<TCustomer>('SELECT * FROM ' + TBL_PEOPLE, []);
+  try
+    CheckEquals(2, LCustomer.OrdersIntf.Count);
+    CheckEquals(LCustomer.ID, LCustomer.OrdersIntf.First.Customer_ID);
+    CheckEquals(10, LCustomer.OrdersIntf.First.Customer_Payment_Method_Id);
+    CheckEquals(5, LCustomer.OrdersIntf.First.Order_Status_Code);
+    CheckEquals(LCustomer.ID, LCustomer.OrdersIntf.Last.Customer_ID);
+    CheckEquals(20, LCustomer.OrdersIntf.Last.Customer_Payment_Method_Id);
+    CheckEquals(15, LCustomer.OrdersIntf.Last.Order_Status_Code);
+  finally
+    LCustomer.Free;
+  end;
+end;
+
+procedure TestTEntityManager.GetLazyValueClass;
+var
+  LCustomer: TCustomer;
+  LOrder: TCustomer_Orders;
+  LList: TObjectList<TCustomer_Orders>;
+begin
+  LCustomer := TCustomer.Create;
+  try
+    LCustomer.Name := 'Test';
+    LCustomer.Age := 10;
+
+    FManager.Save(LCustomer);
+
+    InsertCustomerOrder(LCustomer.ID, 10, 5, 100.59);
+    InsertCustomerOrder(LCustomer.ID, 20, 15, 150.59);
+
+    CheckEquals(2, LCustomer.Orders.Count);
+
+    LOrder := FManager.GetLazyValueClass<TCustomer_Orders>(LCustomer.ID, LCustomer);
+    try
+      CheckTrue(Assigned(LOrder));
+      CheckEquals(LOrder.Customer_ID, LCustomer.ID);
+    finally
+      LOrder.Free;
+    end;
+
+    LList := FManager.GetLazyValueClass<TObjectList<TCustomer_Orders>>(LCustomer.ID, LCustomer);
+    try
+      CheckEquals(2, LList.Count);
+      CheckEquals(LCustomer.ID, LList.First.Customer_ID);
+      CheckEquals(10, LList.First.Customer_Payment_Method_Id);
+      CheckEquals(5, LList.First.Order_Status_Code);
+      CheckEquals(LCustomer.ID, LList.Last.Customer_ID);
+      CheckEquals(20, LList.Last.Customer_Payment_Method_Id);
+      CheckEquals(15, LList.Last.Order_Status_Code);
+    finally
+      LList.Free;
+    end;
+  finally
+    LCustomer.Free;
   end;
 end;
 

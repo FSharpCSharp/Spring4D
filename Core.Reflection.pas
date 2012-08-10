@@ -216,6 +216,11 @@ type
     function TryGetType(out AType: TRttiType): Boolean;
   end;
 
+  TRttiNamedObjectHelper = class helper for TRttiNamedObject
+  public
+    function GetTypeInfo: PTypeInfo;
+  end;
+
   {$REGION 'Documentation'}
   ///	<summary>
   ///	  Extends <see cref="Rtti.TRttiField">TRttiField</see> for easier RTTI
@@ -525,6 +530,7 @@ type
     function IsTime: Boolean;
     function IsUInt64: Boolean;
     function IsVariant: Boolean;
+    function IsRecord: Boolean;
     function IsWord: Boolean;
   end;
 
@@ -554,6 +560,7 @@ function TryGetRttiType(ATypeInfo: PTypeInfo; out AType: TRttiType): Boolean; ov
 
 function CompareValue(const Left, Right: TValue): Integer;
 function SameValue(const Left, Right: TValue): Boolean;
+
 
 function StripUnitName(const s: string): string;
 
@@ -585,6 +592,28 @@ type
 var
   Context: TRttiContext;
   Enumerations: TDictionary<PTypeInfo, TStrings>;
+
+function SameNullables(const ALeft, ARight: TValue): Boolean;
+var
+  LGetLeft, LGetRight: TValue;
+begin
+  Result := TUtils.TryGetNullableTypeValue(ALeft, LGetLeft) and TUtils.TryGetNullableTypeValue(ARight, LGetRight);
+  if Result then
+  begin
+    Result := SameValue(LGetLeft, LGetRight);
+  end;
+end;
+
+function SameLazies(const ALeft, ARight: TValue): Boolean;
+var
+  LGetLeft, LGetRight: TValue;
+begin
+  Result := TUtils.TryGetLazyTypeValue(ALeft, LGetLeft) and TUtils.TryGetLazyTypeValue(ARight, LGetRight);
+  if Result then
+  begin
+    Result := SameValue(LGetLeft, LGetRight);
+  end;
+end;
 
 function FindType(const AName: string; out AType: TRttiType): Boolean;
 var
@@ -828,6 +857,18 @@ begin
   if Left.IsVariant and Right.IsVariant then
   begin
     Result := Left.AsVariant = Right.AsVariant;
+  end else
+  if Left.IsRecord and Right.IsRecord then
+  begin
+    Result := False;
+    if TUtils.IsNullableType(Left.TypeInfo) then
+      Result := SameNullables(Left, Right)
+    else if TUtils.IsLazyType(Left.TypeInfo) then
+      Result := SameLazies(Left, Right);
+  end else
+  if Left.IsInterface and Right.IsInterface then
+  begin
+    Result := Left.AsInterface = Right.AsInterface;
   end else
   if Left.TypeInfo = Right.TypeInfo then
   begin
@@ -1782,6 +1823,11 @@ begin
   Result := Kind = tkPointer;
 end;
 
+function TValueHelper.IsRecord: Boolean;
+begin
+  Result := Kind = tkRecord;
+end;
+
 function TValueHelper.IsShortInt: Boolean;
 begin
   Result := TypeInfo = System.TypeInfo(ShortInt);
@@ -2246,6 +2292,17 @@ begin
       Result := TryCast(ATypeInfo, AResult);
     end;
   end;
+end;
+
+{ TRttiNamedObjectHelper }
+
+function TRttiNamedObjectHelper.GetTypeInfo: PTypeInfo;
+begin
+  Result := nil;
+  if Self is TRttiField then
+    Result := TRttiField(Self).FieldType.Handle
+  else if Self is TRttiProperty then
+    Result := TRttiProperty(Self).PropertyType.Handle;
 end;
 
 initialization

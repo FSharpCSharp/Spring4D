@@ -154,7 +154,7 @@ begin
 
   ReturnValue := TRttiExplorer.GetColumns(AClass);
   try
-    CheckEquals(7, ReturnValue.Count);
+    CheckEquals(8, ReturnValue.Count);
   finally
     ReturnValue.Free;
   end;
@@ -227,22 +227,22 @@ begin
   //string
   AValue := 'John White';
   AMemberName := 'Name';
-  TRttiExplorer.SetMemberValue(AEntity, AMemberName, AValue);
+  TRttiExplorer.SetMemberValue(nil, AEntity, AMemberName, AValue);
   CheckEqualsString('John White', FCustomer.Name);
   //integer
   AValue := 25;
   AMemberName := 'Age';
-  TRttiExplorer.SetMemberValue(AEntity, AMemberName, AValue);
+  TRttiExplorer.SetMemberValue(nil, AEntity, AMemberName, AValue);
   CheckEquals(25, FCustomer.Age);
   //tdatetime
   AValue := Today;
   AMemberName := 'LastEdited';
-  TRttiExplorer.SetMemberValue(AEntity, AMemberName, AValue);
+  TRttiExplorer.SetMemberValue(nil, AEntity, AMemberName, AValue);
   CheckTrue(SameDate(Today, FCustomer.LastEdited));
   //double
   AValue := 1.89;
   AMemberName := 'Height';
-  TRttiExplorer.SetMemberValue(AEntity, AMemberName, AValue);
+  TRttiExplorer.SetMemberValue(nil, AEntity, AMemberName, AValue);
   CheckTrue(SameValue(1.89, FCustomer.Height));
 end;
 

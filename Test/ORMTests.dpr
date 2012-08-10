@@ -16,6 +16,7 @@ program ORMTests;
 
 uses
   Forms,
+  SysUtils,
   TestFramework,
   GUITestRunner,
   TextTestRunner,
@@ -62,13 +63,20 @@ uses
   Core.Reflection in '..\Core.Reflection.pas',
   Core.EntityCache in '..\Core.EntityCache.pas',
   TestCoreEntityMap in 'TestCoreEntityMap.pas',
-  SQL.Commands.Page in '..\SQL.Commands.Page.pas';
+  SQL.Commands.Page in '..\SQL.Commands.Page.pas',
+  VARTOTMASTModel in 'VARTOTMASTModel.pas',
+  RttiPatch in '..\RttiPatch.pas';
 
 {$R *.RES}
+
+
 
 begin
   Application.Initialize;
   ReportMemoryLeaksOnShutdown := True;
+  OutputDir := IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0)));
+  PictureFilename := IncludeTrailingPathDelimiter(ExpandFileName(OutputDir + '..\..')) + 'DelphiOOP.png';
+
   if IsConsole then
     with TextTestRunner.RunRegisteredTests do
       Free
