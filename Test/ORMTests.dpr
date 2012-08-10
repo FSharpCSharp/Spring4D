@@ -65,7 +65,8 @@ uses
   TestCoreEntityMap in 'TestCoreEntityMap.pas',
   SQL.Commands.Page in '..\SQL.Commands.Page.pas',
   VARTOTMASTModel in 'VARTOTMASTModel.pas',
-  RttiPatch in '..\RttiPatch.pas';
+  RttiPatch in '..\RttiPatch.pas',
+  PatchUtils in '..\PatchUtils.pas';
 
 {$R *.RES}
 

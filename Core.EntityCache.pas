@@ -48,6 +48,10 @@ type
     constructor Create(); virtual;
     destructor Destroy; override;
 
+    function IsTableEntity(): Boolean;
+    function ColumnByMemberName(const AMemberName: string): Column;
+    function ColumnByName(const AColumnName: string): Column;
+
     property Columns: TList<Column> read FColumns;
     property ForeignColumns: TList<ForeignJoinColumnAttribute> read FForeignKeyColumns;
     property ManyValuedColumns: TList<ManyValuedAssociation> read FManyValuedColumns;
@@ -77,10 +81,31 @@ implementation
 uses
   Mapping.RttiExplorer
   ,Core.Exceptions
+  ,SysUtils
   ;
 
 
 { TEntityData }
+
+function TEntityData.ColumnByMemberName(const AMemberName: string): Column;
+begin
+  for Result in FColumns do
+  begin
+    if SameText(Result.ClassMemberName, AMemberName) then
+      Exit;
+  end;
+  Result := nil;
+end;
+
+function TEntityData.ColumnByName(const AColumnName: string): Column;
+begin
+  for Result in FColumns do
+  begin
+    if SameText(Result.Name, AColumnName) then
+      Exit;
+  end;
+  Result := nil;  
+end;
 
 constructor TEntityData.Create;
 begin
@@ -100,6 +125,11 @@ begin
   inherited Destroy;
 end;
 
+
+function TEntityData.IsTableEntity: Boolean;
+begin
+  Result := Assigned(FTable);
+end;
 
 procedure TEntityData.SetEntityData(AClass: TClass);
 begin

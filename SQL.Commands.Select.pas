@@ -49,6 +49,7 @@ type
     FColumns: TList<Column>;
     FSelectType: TSelectType;
     FID: TValue;
+    FLazyColumn: Column;
   public
     constructor Create(); override;
     destructor Destroy; override;
@@ -63,6 +64,7 @@ type
     procedure SelectObjectList(AList: TObject; AEnumMethod: TRttiMethod);
 
     property ID: TValue read FID write FID;
+    property LazyColumn: Column read FLazyColumn write FLazyColumn;
     property SelectType: TSelectType read FSelectType write FSelectType;
   end;
 
@@ -123,6 +125,7 @@ begin
   FTable := TSQLTable.Create();
   FColumns := TList<Column>.Create;
   FCommand := TSelectCommand.Create(FTable);
+  FLazyColumn := nil;
 end;
 
 destructor TSelectExecutor.Destroy;
@@ -134,6 +137,8 @@ begin
 end;
 
 procedure TSelectExecutor.Execute(AEntity: TObject);
+var
+  LSelects: TList<TSQLSelectField>;
 begin
   //add where fields if needed
   FCommand.WhereFields.Clear;
@@ -150,7 +155,25 @@ begin
     FCommand.SetFromForeignColumn(AEntity.ClassType, EntityClass);
   end;
 
-  SQL := Generator.GenerateSelect(FCommand);
+  if Assigned(FLazyColumn) then
+  begin
+    LSelects := TList<TSQLSelectField>.Create();
+    try
+      LSelects.AddRange(FCommand.SelectFields);
+      FCommand.SelectFields.OwnsObjects := False;
+      FCommand.SelectFields.Clear;
+      FCommand.SelectFields.Add(TSQLSelectField.Create(FLazyColumn.Name, FTable));
+      SQL := Generator.GenerateSelect(FCommand);
+      FCommand.SelectFields.OwnsObjects := True;
+      FCommand.SelectFields.Clear;
+      FCommand.SelectFields.AddRange(LSelects);
+    finally
+      LSelects.Free;
+    end;
+  end
+  else
+    SQL := Generator.GenerateSelect(FCommand);
+
   inherited Execute(AEntity);
 end;
 

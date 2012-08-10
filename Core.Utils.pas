@@ -30,7 +30,7 @@ unit Core.Utils;
 interface
 
 uses
-  Rtti, TypInfo, DB, Graphics, Classes, SysUtils;
+  Rtti, TypInfo, DB, Graphics, Classes, SysUtils, Mapping.Attributes;
 
 type
   TUtils = class sealed
@@ -62,6 +62,7 @@ uses
   ,Core.Exceptions
   ,Core.EntityManager
   ,Mapping.RttiExplorer
+  ,Core.EntityCache
   ,jpeg
   ,pngimage
   ,GIFImg
@@ -149,11 +150,11 @@ begin
     iDim := VarArrayDimCount(AValue);
     ptr := VarArrayLock(AValue);
     try
-      bStream.WriteBuffer(ptr^, VarArrayHighBound(AValue, iDim));
-      Result := bStream;
+      bStream.Write(ptr^, VarArrayHighBound(AValue, iDim) + 1);
     finally
       VarArrayUnlock(AValue);
     end;
+    Result := bStream;
   end
   else
     Result := TValue.FromVariant(AValue);
@@ -287,6 +288,7 @@ class procedure TUtils.SetLazyValue(ARttiMember: TRttiNamedObject; AManager: TOb
 var
   LRecord: TRttiRecordType;
   LValueField: TRttiField;
+  LCol: Column;
 begin
   AResult := TRttiExplorer.GetMemberValue(AEntity, ARttiMember);
 
@@ -298,6 +300,9 @@ begin
   LValueField.SetValue(AResult.GetReferenceToRawData, AID);
   LValueField := LRecord.GetField('FEntity');
   LValueField.SetValue(AResult.GetReferenceToRawData, AEntity);
+  LCol := TEntityCache.Get(AEntity.ClassType).ColumnByMemberName(ARttiMember.Name);
+  LValueField := LRecord.GetField('FColumn');
+  LValueField.SetValue(AResult.GetReferenceToRawData, LCol);
 end;
 
 const

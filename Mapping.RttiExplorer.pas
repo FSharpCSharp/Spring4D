@@ -58,9 +58,12 @@ type
     class function GetAsRecord(ARttiObject: TRttiNamedObject): TRttiRecordType;
     class function GetForeignKeyColumn(AClass: TClass; const ABaseTablePrimaryKeyColumn: Column): ForeignJoinColumnAttribute;
     class function TryGetPrimaryKeyValue(AColumns: TList<Column>; AResultset: IDBResultset; out AValue: TValue; out AColumn: Column): Boolean;
-    class function TryGetEntityClass<T>(out AClass: TClass): Boolean;
+    class function TryGetEntityClass<T>(out AClass: TClass): Boolean; overload;
+    class function TryGetEntityClass(ATypeInfo: PTypeInfo; out AClass: TClass): Boolean; overload;
     class function TryGetBasicMethod(const AMethodName: string; ATypeInfo: PTypeInfo; out AMethod: TRttiMethod): Boolean;
-    class function GetEntityRttiType<T>(): TRttiType;
+    class function GetEntityRttiType<T>(): TRttiType; overload;
+    class function GetEntityRttiType(ATypeInfo: PTypeInfo): TRttiType; overload;
+    class function GetRttiType(AEntity: TClass): TRttiType;
     class procedure SetMemberValue(AManager: TObject; AEntity: TObject; const AMemberName: string; const AValue: TValue); overload;
     class procedure SetMemberValue(AManager: TObject; AEntity: TObject; const AMemberColumn: Column; const AValue: TValue); overload;
     class function EntityChanged(AEntity1, AEntity2: TObject): Boolean;
@@ -578,18 +581,22 @@ begin
   Result := False;
 end;
 
-class function TRttiExplorer.TryGetEntityClass<T>(out AClass: TClass): Boolean;
+class function TRttiExplorer.TryGetEntityClass(ATypeInfo: PTypeInfo; out AClass: TClass): Boolean;
 var
-  LTypeInfo: PTypeInfo;
   LRttiType: TRttiType;
 begin
   Result := False;
-  LRttiType := GetEntityRttiType<T>;
+  LRttiType := GetEntityRttiType(ATypeInfo);
   if Assigned(LRttiType) then
   begin
     AClass := LRttiType.AsInstance.MetaclassType;
     Result := True;
   end;
+end;
+
+class function TRttiExplorer.TryGetEntityClass<T>(out AClass: TClass): Boolean;
+begin
+  Result := TryGetEntityClass(TypeInfo(T), AClass);
 end;
 
 class function TRttiExplorer.TryGetPrimaryKeyValue(AColumns: TList<Column>;
@@ -611,15 +618,12 @@ begin
   Result := False;
 end;
 
-class function TRttiExplorer.GetEntityRttiType<T>(): TRttiType;
+class function TRttiExplorer.GetEntityRttiType(ATypeInfo: PTypeInfo): TRttiType;
 var
-  LTypeInfo: PTypeInfo;
   LRttiType: TRttiType;
   LCurrType: TRttiType;
 begin
-  LTypeInfo := TypeInfo(T);
-  LRttiType := TRttiContext.Create.GetType(LTypeInfo);
- // LRttiType := GetRttiType(LTypeInfo);
+  LRttiType := TRttiContext.Create.GetType(ATypeInfo);
   for LCurrType in LRttiType.GetGenericArguments do
   begin
     if LCurrType.IsInstance then
@@ -628,7 +632,18 @@ begin
         Exit(LCurrType);
     end;
   end;
-  Result := LRttiType;
+
+  if LRttiType.IsInstance then
+  begin
+    if (TEntityCache.Get(LRttiType.AsInstance.MetaclassType).EntityTable <> nil) then
+      Exit(LRttiType);
+  end;
+  Result := nil;
+end;
+
+class function TRttiExplorer.GetEntityRttiType<T>(): TRttiType;
+begin
+  Result := GetEntityRttiType(TypeInfo(T));
 end;
 
 class function TRttiExplorer.GetForeignKeyColumn(AClass: TClass;
@@ -711,6 +726,11 @@ end;
 class function TRttiExplorer.GetPrimaryKeyValue(AEntity: TObject): TValue;
 begin
   Result := GetMemberValue(AEntity, GetPrimaryKeyColumnMemberName(AEntity.ClassType));
+end;
+
+class function TRttiExplorer.GetRttiType(AEntity: TClass): TRttiType;
+begin
+  Result := TRttiContext.Create.GetType(AEntity);
 end;
 
 class function TRttiExplorer.GetMemberValue(AEntity: TObject; const AMemberName: string): TValue;

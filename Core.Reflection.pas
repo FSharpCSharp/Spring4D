@@ -2302,7 +2302,9 @@ begin
   if Self is TRttiField then
     Result := TRttiField(Self).FieldType.Handle
   else if Self is TRttiProperty then
-    Result := TRttiProperty(Self).PropertyType.Handle;
+    Result := TRttiProperty(Self).PropertyType.Handle
+  else if Self is TRttiInstanceType then
+    Result := TRttiInstanceType(Self).Handle;
 end;
 
 initialization

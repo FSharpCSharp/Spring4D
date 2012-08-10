@@ -49,14 +49,14 @@ type
     procedure SetEntityColumns(AEntity: TObject; AColumns: TList<ManyValuedAssociation>; AResultset: IDBResultset); overload; virtual;
     procedure SetLazyColumns(AEntity: TObject);
 
-    procedure DoSetOne(AEntity: TObject; AResultset: IDBResultset); virtual;
+    procedure DoSetEntity(var AEntityToCreate: TObject; AResultset: IDBResultset; ARealEntity: TObject); virtual;
     function GetResultset(const ASql: string; const AParams: array of const): IDBResultset;
-    function GetOne<T: class, constructor>(AResultset: IDBResultset): T; overload;
+    function GetOne<T: class, constructor>(AResultset: IDBResultset; AEntity: TObject): T; overload;
     function GetOne(AResultset: IDBResultset; AClass: TClass): TObject; overload;
     function GetObjectList<T: class, constructor>(AResultset: IDBResultset): T;
     procedure SetInterfaceList<T>(var AValue: T; AResultset: IDBResultset);
     procedure SetOne<T>(var AValue: T; AResultset: IDBResultset; AEntity: TObject);
-    function DoGetLazy<T>(const AID: TValue; AEntity: TObject; out AIsEnumerable: Boolean): IDBResultset;
+    function DoGetLazy<T>(const AID: TValue; AEntity: TObject; AColumn: Column; out AIsEnumerable: Boolean): IDBResultset;
 
     function GetSelector(AClass: TClass): TObject;
 
@@ -65,8 +65,8 @@ type
     constructor Create(AConnection: IDBConnection); override;
     destructor Destroy; override;
 
-    function GetLazyValueClass<T: class, constructor>(const AID: TValue; AEntity: TObject): T;
-    procedure SetLazyValue<T>(var AValue: T; const AID: TValue; AEntity: TObject);
+    function GetLazyValueClass<T: class, constructor>(const AID: TValue; AEntity: TObject; AColumn: Column): T;
+    procedure SetLazyValue<T>(var AValue: T; const AID: TValue; AEntity: TObject; AColumn: Column);
 
     /// <summary>
     /// Executes sql statement which does not return resultset
@@ -208,14 +208,14 @@ begin
   inherited Destroy;
 end;
 
-function TEntityManager.DoGetLazy<T>(const AID: TValue; AEntity: TObject; out AIsEnumerable: Boolean): IDBResultset;
+function TEntityManager.DoGetLazy<T>(const AID: TValue; AEntity: TObject; AColumn: Column; out AIsEnumerable: Boolean): IDBResultset;
 var
   LSelecter: TSelectExecutor;
   LBaseEntityClass, LEntityClass: TClass;
   LEnumMethod: TRttiMethod;
 begin
   LBaseEntityClass := AEntity.ClassType;
-  if not TRttiExplorer.TryGetEntityClass<T>(LEntityClass) then
+  if not TRttiExplorer.TryGetEntityClass(TypeInfo(T), LEntityClass) then
   begin
     //we are fetching from the same table - AEntity
     LEntityClass := LBaseEntityClass;
@@ -225,6 +225,7 @@ begin
   LSelecter.EntityClass := LEntityClass;
   LSelecter.Connection := Connection;
   LSelecter.ID := AID;
+  LSelecter.LazyColumn := AColumn;
 
   AIsEnumerable := TUtils.IsEnumerable(TypeInfo(T), LEnumMethod);
 
@@ -236,16 +237,47 @@ begin
   Result := LSelecter.Select(AEntity);
 end;
 
-procedure TEntityManager.DoSetOne(AEntity: TObject; AResultset: IDBResultset);
+procedure TEntityManager.DoSetEntity(var AEntityToCreate: TObject; AResultset: IDBResultset; ARealEntity: TObject);
 var
   LColumns: TList<Column>;
+  LResult, LValue: TValue;
+  LVal: Variant;
+  LObj: TObject;
+  LSelector: TSelectExecutor;
 begin
-  LColumns := TEntityCache.GetColumns(AEntity.ClassType);
-  SetEntityColumns(AEntity, LColumns, AResultset);
-  //we need to set internal values for the lazy type field
-  SetLazyColumns(AEntity);
+  {TODO -oLinas -cGeneral : if AEntity class type is not our real Entity type, simply just set value}
+  if not TEntityCache.Get(AEntityToCreate.ClassType).IsTableEntity and Assigned(ARealEntity) then
+  begin
+    if not AResultset.IsEmpty then
+    begin
+      LSelector := GetSelector(ARealEntity.ClassType) as TSelectExecutor;
+      LVal := AResultset.GetFieldValue(0);
+      LValue := TUtils.FromVariant(LVal);
+    //  TRttiExplorer.SetMemberValue(Self, ARealEntity, LSelector.LazyColumn, LValue);
 
-  FOldStateEntities.AddOrReplace(TRttiExplorer.Clone(AEntity));
+      if TUtils.TryConvert(LValue, Self,
+        TRttiExplorer.GetRttiType(AEntityToCreate.ClassType), ARealEntity, LResult) then
+      begin
+        if AEntityToCreate <> nil then
+          FreeAndNil(AEntityToCreate);
+        AEntityToCreate := LResult.AsObject;
+        if LValue.IsObject then
+        begin
+          LObj := LValue.AsObject;
+          if Assigned(LObj) then
+            LObj.Free;
+        end;
+      end;
+    end;
+  end
+  else
+  begin
+    LColumns := TEntityCache.GetColumns(AEntityToCreate.ClassType);
+    SetEntityColumns(AEntityToCreate, LColumns, AResultset);
+    //we need to set internal values for the lazy type field
+    SetLazyColumns(AEntityToCreate);
+    FOldStateEntities.AddOrReplace(TRttiExplorer.Clone(AEntityToCreate));
+  end;
 end;
 
 function TEntityManager.Execute(const ASql: string; const AParams: array of const): NativeUInt;
@@ -286,7 +318,7 @@ begin
 
   while not LResults.IsEmpty do
   begin
-    LCurrent := GetOne<T>(LResults);
+    LCurrent := GetOne<T>(LResults, nil);
 
     ACollection.Add(LCurrent);
 
@@ -313,7 +345,7 @@ begin
   if LResults.IsEmpty then
     raise EORMRecordNotFoundException.Create('Query returned 0 records');
 
-  Result := GetOne<T>(LResults);
+  Result := GetOne<T>(LResults, nil);
 end;
 
 function TEntityManager.FirstOrDefault<T>(const ASql: string; const AParams: array of const): T;
@@ -338,7 +370,7 @@ begin
   if not (PTypeInfo(TypeInfo(T)).Kind = tkInterface) then
     raise EORMUnsupportedType.Create('List must be Spring interface IList<T>.');
 
-  if not TRttiExplorer.TryGetEntityClass<T>(LEntityClass) then
+  if not TRttiExplorer.TryGetEntityClass(TypeInfo(T), LEntityClass) then
     raise EORMUnsupportedType.Create('List must be Spring interface IList<T>.');
 
   if not TRttiExplorer.TryGetBasicMethod('Add', TypeInfo(T), LAddMethod) then
@@ -367,7 +399,7 @@ begin
   end;
 end;
 
-procedure TEntityManager.SetLazyValue<T>(var AValue: T; const AID: TValue; AEntity: TObject);
+procedure TEntityManager.SetLazyValue<T>(var AValue: T; const AID: TValue; AEntity: TObject; AColumn: Column);
 var
   IsEnumerable: Boolean;
   LResults: IDBResultset;
@@ -379,7 +411,7 @@ begin
     end;
   end;
 
-  LResults := DoGetLazy<T>(AID, AEntity, IsEnumerable);
+  LResults := DoGetLazy<T>(AID, AEntity, AColumn, IsEnumerable);
 
   if IsEnumerable then
     SetInterfaceList<T>(AValue, LResults)
@@ -394,7 +426,7 @@ var
   LColumn: Column;
   LVal: Variant;
 begin
-  LType := TRttiExplorer.GetEntityRttiType<T>;
+  LType := TRttiExplorer.GetEntityRttiType(TypeInfo(T));
   //{TODO -oLinas -cGeneral : maybe introduce new attribute for specifying simple lazy types. Maybe with SQL parameter}
 
   if TRttiExplorer.TryGetColumnByMemberName(AEntity.ClassType, LType.Name, LColumn) then
@@ -408,17 +440,17 @@ begin
   end;
 end;
 
-function TEntityManager.GetLazyValueClass<T>(const AID: TValue; AEntity: TObject): T;
+function TEntityManager.GetLazyValueClass<T>(const AID: TValue; AEntity: TObject; AColumn: Column): T;
 var
   IsEnumerable: Boolean;
   LResults: IDBResultset;
 begin
-  LResults := DoGetLazy<T>(AID, AEntity, IsEnumerable);
+  LResults := DoGetLazy<T>(AID, AEntity, AColumn, IsEnumerable);
 
   if IsEnumerable then
     Result := GetObjectList<T>(LResults)
   else
-    Result := GetOne<T>(LResults);
+    Result := GetOne<T>(LResults, AEntity);
 end;
 
 function TEntityManager.GetObjectList<T>(AResultset: IDBResultset): T;
@@ -431,7 +463,7 @@ var
 begin
   Result := T.Create;
 
-  if not TRttiExplorer.TryGetEntityClass<T>(LEntityClass) then
+  if not TRttiExplorer.TryGetEntityClass(TypeInfo(T), LEntityClass) then
     LEntityClass := T;
 
   if not TRttiExplorer.TryGetBasicMethod('Add', TypeInfo(T), LAddMethod) then
@@ -463,13 +495,13 @@ end;
 function TEntityManager.GetOne(AResultset: IDBResultset; AClass: TClass): TObject;
 begin
   Result := AClass.Create;
-  DoSetOne(Result, AResultset);
+  DoSetEntity(Result, AResultset, nil);
 end;
 
-function TEntityManager.GetOne<T>(AResultset: IDBResultset): T;
+function TEntityManager.GetOne<T>(AResultset: IDBResultset; AEntity: TObject): T;
 begin
   Result := T.Create;
-  DoSetOne(Result, AResultset);
+  DoSetEntity(TObject(Result), AResultset, AEntity);
 end;
 
 function TEntityManager.GetQueryCount(const ASql: string; const AParams: array of const): Int64;

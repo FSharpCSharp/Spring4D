@@ -69,6 +69,24 @@ const
   TBL_PEOPLE = 'CUSTOMERS';
   TBL_ORDERS = 'Customer_Orders';
 
+function GetPictureSize(APicture: TPicture): Int64;
+var
+  LStream: TMemoryStream;
+begin
+  Result := 0;
+  if Assigned(APicture) then
+  begin
+    LStream := TMemoryStream.Create;
+    try
+      APicture.Graphic.SaveToStream(LStream);
+
+      Result := LStream.Size;
+    finally
+      LStream.Free;
+    end;
+  end;
+end;
+
 procedure CreateTables();
 begin
   TestDB.ExecSQL('CREATE TABLE IF NOT EXISTS '+ TBL_PEOPLE + ' ([CUSTID] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, [CUSTAGE] INTEGER NULL,'+
@@ -99,9 +117,13 @@ begin
 end;
 
 procedure InsertCustomerAvatar(AAge: Integer = 25; AName: string = 'Demo'; AHeight: Double = 15.25; const AMiddleName: string = ''; APicture: TStream = nil);
+var
+  LRows: Integer;
 begin
   TestDB.ExecSQL('INSERT INTO  ' + TBL_PEOPLE + ' ([CUSTAGE], [CUSTNAME], [CUSTHEIGHT], [MIDDLENAME], [AVATAR]) VALUES (?,?,?,?,?);',
-    [AAge, AName, AHeight, AMiddleName, APicture]);
+    [AAge, AName, AHeight, AMiddleName, APicture], LRows);
+  if LRows < 1 then
+    raise Exception.Create('Cannot insert into table');
 end;
 
 procedure InsertCustomerOrder(ACustID: Integer; ACustPaymID: Integer; AOrderStatusCode: Integer; ATotalPrice: Double);
@@ -269,8 +291,8 @@ begin
 
   fsPic := TFileStream.Create(PictureFilename, fmOpenRead or fmShareDenyNone);
   try
+    fsPic.Position := 0;
     InsertCustomerAvatar(25, 'Demo', 15.25, '', fsPic);
-
   finally
     fsPic.Free;
   end;
@@ -279,6 +301,8 @@ begin
   try
     CheckTrue(Assigned(LCustomer));
     CheckEquals(25, LCustomer.Age);
+
+    CheckTrue(LCustomer.Avatar.Graphic <> nil);
   finally
     FreeAndNil(LCustomer);
   end;
@@ -321,7 +345,7 @@ begin
 
     LList := TCollections.CreateObjectList<TCustomer_Orders>(True);
 
-    FManager.SetLazyValue<IList<TCustomer_Orders>>(LList, LCustomer.ID, LCustomer);
+    FManager.SetLazyValue<IList<TCustomer_Orders>>(LList, LCustomer.ID, LCustomer, nil);
 
     CheckEquals(2, LList.Count);
     CheckEquals(LCustomer.ID, LList.First.Customer_ID);
@@ -347,6 +371,14 @@ begin
   finally
     LCustomer.Free;
   end;
+
+  ClearTable(TBL_ORDERS);
+  LCustomer := FManager.SingleOrDefault<TCustomer>('SELECT * FROM ' + TBL_PEOPLE, []);
+  try
+    CheckEquals(0, LCustomer.OrdersIntf.Count);
+  finally
+    LCustomer.Free;
+  end;
 end;
 
 procedure TestTEntityManager.GetLazyValueClass;
@@ -367,7 +399,7 @@ begin
 
     CheckEquals(2, LCustomer.Orders.Count);
 
-    LOrder := FManager.GetLazyValueClass<TCustomer_Orders>(LCustomer.ID, LCustomer);
+    LOrder := FManager.GetLazyValueClass<TCustomer_Orders>(LCustomer.ID, LCustomer, nil);
     try
       CheckTrue(Assigned(LOrder));
       CheckEquals(LOrder.Customer_ID, LCustomer.ID);
@@ -375,7 +407,7 @@ begin
       LOrder.Free;
     end;
 
-    LList := FManager.GetLazyValueClass<TObjectList<TCustomer_Orders>>(LCustomer.ID, LCustomer);
+    LList := FManager.GetLazyValueClass<TObjectList<TCustomer_Orders>>(LCustomer.ID, LCustomer, nil);
     try
       CheckEquals(2, LList.Count);
       CheckEquals(LCustomer.ID, LList.First.Customer_ID);
