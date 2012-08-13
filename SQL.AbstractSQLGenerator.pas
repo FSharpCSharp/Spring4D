@@ -30,7 +30,7 @@ unit SQL.AbstractSQLGenerator;
 interface
 
 uses
-  SQL.Interfaces, SQL.Commands;
+  SQL.Interfaces, SQL.Commands, Mapping.Attributes;
 
 type
   TAbstractSQLGenerator = class(TInterfacedObject, ISQLGenerator)
@@ -42,9 +42,9 @@ type
     function GenerateDelete(ADeleteCommand: TDeleteCommand): string; virtual; abstract;
     function GenerateCreateTable(): string; virtual; abstract;
     function GenerateCreateFK(): string; virtual; abstract;
-    function GenerateCreateSequence(): string; virtual; abstract;
-    function GenerateGetNextSequenceValue(): string; virtual; abstract;
-    function GenerateGetLastInsertId(): string; virtual; abstract;
+    function GenerateCreateSequence(ASequence: SequenceAttribute): string; virtual; abstract;
+    function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; virtual; abstract;
+    function GenerateGetLastInsertId(AIdentityColumn: Column): string; virtual; abstract;
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; virtual; abstract;
     function GenerateGetQueryCount(const ASql: string): string; virtual; abstract;
   end;

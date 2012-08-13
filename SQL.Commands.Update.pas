@@ -31,7 +31,7 @@ interface
 
 uses
   SQL.AbstractCommandExecutor, SQL.Types, SQL.Commands, SQL.Params, Generics.Collections
-  , Mapping.Attributes, Core.EntityMap, Classes;
+  , Mapping.Attributes, Core.EntityMap, Classes, Core.Interfaces;
 
 type
   TUpdateExecutor = class(TAbstractCommandExecutor)
@@ -58,7 +58,6 @@ implementation
 
 uses
   Core.Exceptions
-  ,Core.Interfaces
   ,Core.EntityCache
   ,Core.Utils
   ,Mapping.RttiExplorer
@@ -76,8 +75,6 @@ var
   iRes: NativeUInt;
 begin
   Assert(Assigned(AEntity));
-
-  inherited Execute(AEntity);
 
   LStmt := Connection.CreateStatement;
 
@@ -101,6 +98,8 @@ begin
   BuildParams(AEntity);
   try
     LStmt.SetParams(SQLParameters);
+
+    inherited Execute(AEntity);
 
     iRes := LStmt.Execute();
     if (iRes < 1) then
@@ -155,9 +154,9 @@ begin
   end;
 end;
 
-constructor TUpdateExecutor.Create;
+constructor TUpdateExecutor.Create();
 begin
-  inherited Create;
+  inherited Create();
   FTable := TSQLTable.Create;
   FColumns := TList<Column>.Create;
   FCommand := TUpdateCommand.Create(FTable);

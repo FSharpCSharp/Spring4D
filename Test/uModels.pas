@@ -34,6 +34,10 @@ interface
 uses
   Mapping.Attributes, Generics.Collections, Core.Types, Graphics, Spring.Collections;
 
+
+const
+  CustomerColumnCount = 8;
+
 type
   TProduct = class;
   TCustomer_Orders = class;
@@ -52,6 +56,8 @@ type
     FProducts: Lazy<TObjectList<TProduct>>;
     [Column('AVATAR', [], 50, 0, 0, 'Customers avatar')]
     FAvatar: LazyObject<TPicture>;
+ //   [Column('AVATARLAZY', [], 50, 0, 0, 'Customers avatar')]
+    FAvatarNullable: Lazy<Nullable<TPicture>>;
   private
     FName: string;
     FAge: Integer;
@@ -71,6 +77,7 @@ type
     procedure SetAvatar(const Value: TPicture);
     function GetOrders: TObjectList<TCustomer_Orders>;
     function GetOrdersIntf: IList<TCustomer_Orders>;
+    function GetAvatarLazy: Nullable<TPicture>;
   public
     constructor Create();
     destructor Destroy; override;
@@ -90,6 +97,7 @@ type
     property MiddleName: Nullable<string> read FMiddleName write FMiddleName;
     property Products: TObjectList<TProduct> read GetProducts;
     property Avatar: TPicture read GetAvatar write SetAvatar;
+    property AvatarLazy: Nullable<TPicture> read GetAvatarLazy;
     property Orders: TObjectList<TCustomer_Orders> read GetOrders;
     property OrdersIntf: IList<TCustomer_Orders> read GetOrdersIntf;
   end;
@@ -220,6 +228,11 @@ end;
 function TCustomer.GetAvatar: TPicture;
 begin
   Result := FAvatar.Value;
+end;
+
+function TCustomer.GetAvatarLazy: Nullable<TPicture>;
+begin
+  Result := FAvatarNullable.Value;
 end;
 
 function TCustomer.GetOrders: TObjectList<TCustomer_Orders>;

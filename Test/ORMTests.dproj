@@ -101,6 +101,9 @@
 			<DCCReference Include="VARTOTMASTModel.pas"/>
 			<DCCReference Include="..\RttiPatch.pas"/>
 			<DCCReference Include="..\PatchUtils.pas"/>
+			<DCCReference Include="..\Adapters.ASA.pas"/>
+			<DCCReference Include="TestAdaptersASA.pas"/>
+			<DCCReference Include="..\Adapters.Oracle.pas"/>
 			<None Include="Profiling\AQtimeModule1.aqt"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>

@@ -119,9 +119,9 @@ begin
   end;
 end;
 
-constructor TSelectExecutor.Create;
+constructor TSelectExecutor.Create();
 begin
-  inherited Create;
+  inherited Create();
   FTable := TSQLTable.Create();
   FColumns := TList<Column>.Create;
   FCommand := TSelectCommand.Create(FTable);

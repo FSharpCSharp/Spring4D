@@ -164,6 +164,7 @@ class function TUtils.TryGetLazyTypeValue(const ALazy: TValue; out AValue: TValu
 var
   LRttiType: TRttiType;
   LValueField: TRttiField;
+  LInterfaceMethod: TRttiMethod;
 begin
   Result := False;
   if ALazy.Kind = tkRecord then
@@ -171,7 +172,18 @@ begin
     LRttiType := ALazy.GetType();
     LValueField := LRttiType.GetField('FLazy');
     AValue := LValueField.GetValue(ALazy.GetReferenceToRawData);
-    Result := True;
+    Result := (AValue.AsInterface <> nil);
+    if Result then
+    begin
+      LRttiType := AValue.GetType;
+      LInterfaceMethod := LRttiType.AsInterface.GetMethod('ValueCreated');
+      Result := LInterfaceMethod.Invoke(AValue, []).AsBoolean;
+      if Result then
+      begin
+        LInterfaceMethod := LRttiType.AsInterface.GetMethod('GetValue');
+        AValue := LInterfaceMethod.Invoke(AValue, []);
+      end;
+    end;
   end;
 end;
 
@@ -184,9 +196,13 @@ begin
   if ANullable.Kind = tkRecord then
   begin
     LRttiType := ANullable.GetType();
-    LValueField := LRttiType.GetField('FValue');
-    AValue := LValueField.GetValue(ANullable.GetReferenceToRawData);
-    Result := True;
+    LValueField := LRttiType.GetField('FHasValue');
+    Result := LValueField.GetValue(ANullable.GetReferenceToRawData).AsBoolean;
+    if Result then
+    begin
+      LValueField := LRttiType.GetField('FValue');
+      AValue := LValueField.GetValue(ANullable.GetReferenceToRawData);
+    end;
   end;
 end;
 

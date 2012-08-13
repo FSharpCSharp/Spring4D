@@ -30,7 +30,7 @@ unit SQL.Commands.Factory;
 interface
 
 uses
-  Generics.Collections, SQL.Commands, Rtti, SQL.AbstractCommandExecutor;
+  Generics.Collections, SQL.Commands, Rtti, SQL.AbstractCommandExecutor, Core.Interfaces;
 
 type
   TCommandKey = record
@@ -47,7 +47,7 @@ type
 
     procedure Clear();
 
-    function GetCommand<T: TAbstractCommandExecutor, constructor>(AClass: TClass): T;
+    function GetCommand<T: TAbstractCommandExecutor, constructor>(AClass: TClass; AConnection: IDBConnection): T;
 
 
   end;
@@ -91,7 +91,7 @@ begin
   inherited Destroy;
 end;
 
-function TCommandFactory.GetCommand<T>(AClass: TClass): T;
+function TCommandFactory.GetCommand<T>(AClass: TClass; AConnection: IDBConnection): T;
 var
   LCommand: TValue;
   LKey: TCommandKey;
@@ -102,11 +102,15 @@ begin
   if not FCommands.TryGetValue(LKey, LCommand) then
   begin
     Result := T.Create;
+    Result.Connection := AConnection;
     Result.Build(AClass);
     FCommands.Add(LKey, Result);
   end
   else
+  begin
     Result := LCommand.AsType<T>();
+    Result.Connection := AConnection;
+  end;
 end;
 
 initialization

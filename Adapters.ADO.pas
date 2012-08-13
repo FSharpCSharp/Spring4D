@@ -33,7 +33,7 @@ interface
 
 uses
   Generics.Collections, Core.Interfaces, ADODB, Core.Base, SQL.Params, SysUtils
-  , SQL.AnsiSQLGenerator, DB;
+  , SQL.AnsiSQLGenerator, DB, Mapping.Attributes;
 
 
 type
@@ -92,7 +92,7 @@ type
   TADOSQLGenerator = class(TAnsiSQLGenerator)
   public
     function GetDriverName(): string; override;
-    function GenerateGetLastInsertId(): string; override;
+    function GenerateGetLastInsertId(AIdentityColumn: Column): string; override;
   end;
 
 
@@ -321,7 +321,7 @@ end;
 
 { TADOSQLGenerator }
 
-function TADOSQLGenerator.GenerateGetLastInsertId: string;
+function TADOSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: Column): string;
 begin
   Result := '';
 end;

@@ -66,7 +66,10 @@ uses
   SQL.Commands.Page in '..\SQL.Commands.Page.pas',
   VARTOTMASTModel in 'VARTOTMASTModel.pas',
   RttiPatch in '..\RttiPatch.pas',
-  PatchUtils in '..\PatchUtils.pas';
+  PatchUtils in '..\PatchUtils.pas',
+  Adapters.ASA in '..\Adapters.ASA.pas',
+  TestAdaptersASA in 'TestAdaptersASA.pas',
+  Adapters.Oracle in '..\Adapters.Oracle.pas';
 
 {$R *.RES}
 

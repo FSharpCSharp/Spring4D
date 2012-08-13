@@ -76,6 +76,7 @@ type
   TInsertCommand = class(TDMLCommand)
   private
     FInsertFields: TObjectList<TSQLField>;
+    FSequence: SequenceAttribute;
   public
     constructor Create(ATable: TSQLTable); override;
     destructor Destroy; override;
@@ -83,6 +84,7 @@ type
     procedure SetTable(AColumns: TList<Column>); override;
 
     property InsertFields: TObjectList<TSQLField> read FInsertFields;
+    property Sequence: SequenceAttribute read FSequence write FSequence;
   end;
 
   TUpdateCommand = class(TDMLCommand)
@@ -203,6 +205,7 @@ constructor TInsertCommand.Create(ATable: TSQLTable);
 begin
   inherited Create(ATable);
   FInsertFields := TObjectList<TSQLField>.Create;
+  FSequence := nil;
 end;
 
 destructor TInsertCommand.Destroy;
@@ -226,7 +229,7 @@ begin
     begin
       LField := TSQLField.Create(LColumn.Name, FTable);
       FInsertFields.Add(LField);
-    end;
+    end
   end;
 end;
 

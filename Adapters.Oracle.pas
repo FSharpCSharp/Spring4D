@@ -25,66 +25,51 @@
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *)
-unit Adapters.MSSQL;
+unit Adapters.Oracle;
 
 interface
 
-{$IFDEF MSWINDOWS}
-
 uses
-  Adapters.ADO, SysUtils, Mapping.Attributes;
-
-{
-  Must use OLEDB povider because ODBC providers are buggy with SQL SERVER
-  see: http://stackoverflow.com/questions/4877576/how-to-make-ado-parameter-to-update-sql-server-datetime-column
-
-  Connection string example: 'Provider=SQLOLEDB.1;Password=master;Persist Security Info=True;'+
-    'User ID=VIKARINA;Initial Catalog=ViktorDemo;Data Source=FILE_SERVER';
-
-
-}
+  SQL.AnsiSQLGenerator, Mapping.Attributes;
 
 type
-  TMSSQLResultsetAdapter = class(TADOResultSetAdapter);
-
-  TMSSQLStatementAdapter = class(TADOStatementAdapter);
-
-  TMSSQLConnectionAdapter = class(TADOConnectionAdapter)
-  public
-    function GetDriverName: string; override;
-  end;
-
-  TMSSQLTransactionAdapter = class(TADOTransactionAdapter);
-
-  TMSSQLServerSQLGenerator = class(TADOSQLGenerator)
+  TOracleSQLGenerator = class(TAnsiSQLGenerator)
   public
     function GetDriverName(): string; override;
+    function GenerateCreateSequence(ASequence: SequenceAttribute): string; override;
     function GenerateGetLastInsertId(AIdentityColumn: Column): string; override;
+    function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; override;
   end;
 
-  EMSSQLStatementAdapterException = Exception;
-
-{$ENDIF}
-
 implementation
 
-{$IFDEF MSWINDOWS}
-
 uses
-  SQL.Register
+  SysUtils
   ,StrUtils
+  ,SQL.Register
   ;
 
-{ TMSSQLServerSQLGenerator }
+{ TOracleSQLGenerator }
 
-function TMSSQLServerSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: Column): string;
+function TOracleSQLGenerator.GenerateCreateSequence(ASequence: SequenceAttribute): string;
 begin
-  Result := 'SELECT SCOPE_IDENTITY();';
+  Result := '';
 end;
 
-function TMSSQLServerSQLGenerator.GeneratePagedQuery(const ASql: string; const ALimit,
-  AOffset: Integer): string;
+function TOracleSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: Column): string;
+begin
+  Assert(Assigned(AIdentityColumn));
+  Result := Format('returning %0:S as NewID;', [AIdentityColumn.Name]);
+end;
+
+function TOracleSQLGenerator.GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;
+begin
+  Assert(Assigned(ASequence));
+  Result := Format('%0:S.nextval', [ASequence.SequenceName]);
+end;
+
+function TOracleSQLGenerator.GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string;
 var
   LBuilder: TStringBuilder;
   LSQL: string;
@@ -112,21 +97,12 @@ begin
   end;
 end;
 
-function TMSSQLServerSQLGenerator.GetDriverName: string;
+function TOracleSQLGenerator.GetDriverName: string;
 begin
-  Result := 'MSSQL';
-end;
-
-{ TMSSQLConnectionAdapter }
-
-function TMSSQLConnectionAdapter.GetDriverName: string;
-begin
-  Result := 'MSSQL';
+  Result := 'Oracle';
 end;
 
 initialization
-  TSQLGeneratorRegister.RegisterGenerator(TMSSQLServerSQLGenerator.Create());
-
-{$ENDIF}
+  TSQLGeneratorRegister.RegisterGenerator(TOracleSQLGenerator.Create());
 
 end.

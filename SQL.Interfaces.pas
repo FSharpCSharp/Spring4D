@@ -30,7 +30,7 @@ unit SQL.Interfaces;
 interface
 
 uses
-  Classes, SQL.Commands, SQL.Types;
+  Classes, SQL.Commands, SQL.Types, Mapping.Attributes;
 
 type
   ICommandExecutionListener = interface
@@ -47,9 +47,9 @@ type
     function GenerateDelete(ADeleteCommand: TDeleteCommand): string;
     function GenerateCreateTable(): string;
     function GenerateCreateFK(): string;
-    function GenerateCreateSequence(): string;
-    function GenerateGetNextSequenceValue(): string;
-    function GenerateGetLastInsertId(): string;
+    function GenerateCreateSequence(ASequence: SequenceAttribute): string;
+    function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;
+    function GenerateGetLastInsertId(AIdentityColumn: Column): string;
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string;
     function GenerateGetQueryCount(const ASql: string): string;
 

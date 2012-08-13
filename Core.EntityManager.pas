@@ -182,9 +182,9 @@ procedure TEntityManager.Delete(AEntity: TObject);
 var
   LDeleter: TDeleteExecutor;
 begin
-  LDeleter := CommandFactory.GetCommand<TDeleteExecutor>(AEntity.ClassType);
+  LDeleter := CommandFactory.GetCommand<TDeleteExecutor>(AEntity.ClassType, Connection);
 
-  LDeleter.Connection := Connection;
+  //LDeleter.Connection := Connection;
   LDeleter.EntityClass := AEntity.ClassType;
   LDeleter.Execute(AEntity);
 
@@ -243,17 +243,16 @@ var
   LResult, LValue: TValue;
   LVal: Variant;
   LObj: TObject;
-  LSelector: TSelectExecutor;
+ // LSelector: TSelectExecutor;
 begin
   {TODO -oLinas -cGeneral : if AEntity class type is not our real Entity type, simply just set value}
   if not TEntityCache.Get(AEntityToCreate.ClassType).IsTableEntity and Assigned(ARealEntity) then
   begin
     if not AResultset.IsEmpty then
     begin
-      LSelector := GetSelector(ARealEntity.ClassType) as TSelectExecutor;
+      //LSelector := GetSelector(ARealEntity.ClassType) as TSelectExecutor;
       LVal := AResultset.GetFieldValue(0);
       LValue := TUtils.FromVariant(LVal);
-    //  TRttiExplorer.SetMemberValue(Self, ARealEntity, LSelector.LazyColumn, LValue);
 
       if TUtils.TryConvert(LValue, Self,
         TRttiExplorer.GetRttiType(AEntityToCreate.ClassType), ARealEntity, LResult) then
@@ -411,6 +410,11 @@ begin
     end;
   end;
 
+  if not Assigned(AEntity) or AID.IsEmpty then
+  begin
+    Exit();
+  end;
+
   LResults := DoGetLazy<T>(AID, AEntity, AColumn, IsEnumerable);
 
   if IsEnumerable then
@@ -445,6 +449,10 @@ var
   IsEnumerable: Boolean;
   LResults: IDBResultset;
 begin
+  if not Assigned(AEntity) or AID.IsEmpty then
+    Exit(System.Default(T));
+
+
   LResults := DoGetLazy<T>(AID, AEntity, AColumn, IsEnumerable);
 
   if IsEnumerable then
@@ -546,15 +554,15 @@ end;
 
 function TEntityManager.GetSelector(AClass: TClass): TObject;
 begin
-  Result := CommandFactory.GetCommand<TSelectExecutor>(AClass);
+  Result := CommandFactory.GetCommand<TSelectExecutor>(AClass, Connection);
 end;
 
 procedure TEntityManager.Insert(AEntity: TObject);
 var
   LInserter: TInsertExecutor;
 begin
-  LInserter := CommandFactory.GetCommand<TInsertExecutor>(AEntity.ClassType);
-  LInserter.Connection := Connection;
+  LInserter := CommandFactory.GetCommand<TInsertExecutor>(AEntity.ClassType, Connection);
+//  LInserter.Connection := Connection;
   LInserter.EntityClass := AEntity.ClassType;
   LInserter.Execute(AEntity);
 
@@ -584,9 +592,8 @@ var
   LPager: TPager;
   LSQL: string;
 begin
-  LPager := TPager.Create();
+  LPager := TPager.Create(Connection);
   Result := TDriverPageAdapter<T>.Create(LPager);
-  LPager.Connection := Connection;
   LPager.Page := APage;
   LPager.ItemsPerPage := AItemsPerPage;
   LPager.TotalItems := GetQueryCount(ASql, AParams);
@@ -669,7 +676,11 @@ begin
     end
     else
     begin
-      LVal := AResultset.GetFieldValue(LCol.Name);
+      try
+        LVal := AResultset.GetFieldValue(LCol.Name);
+      except
+        raise EORMColumnNotFound.CreateFmt('Column "%S" not found.', [LCol.Name]);
+      end;
       LValue := TUtils.FromVariant(LVal);
     end;
 
@@ -691,8 +702,8 @@ procedure TEntityManager.Update(AEntity: TObject);
 var
   LUpdater: TUpdateExecutor;
 begin
-  LUpdater := CommandFactory.GetCommand<TUpdateExecutor>(AEntity.ClassType);
-  LUpdater.Connection := Connection;
+  LUpdater := CommandFactory.GetCommand<TUpdateExecutor>(AEntity.ClassType, Connection);
+//  LUpdater.Connection := Connection;
   LUpdater.EntityClass := AEntity.ClassType;
   LUpdater.EntityMap := FOldStateEntities;
   LUpdater.Execute(AEntity);

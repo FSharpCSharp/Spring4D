@@ -40,6 +40,7 @@ type
     FClass: TClass;
     FSQL: string;
     FParams: TObjectList<TDBParam>;
+    procedure SetConnection(const Value: IDBConnection);
   protected
     function CreateParam(AEntity: TObject; AColumn: Column): TDBParam; overload; virtual;
     function CreateParam(AEntity: TObject; AForeignColumn: ForeignJoinColumnAttribute): TDBParam; overload; virtual;
@@ -51,7 +52,7 @@ type
     procedure Build(AClass: TClass); virtual; abstract;
     procedure BuildParams(AEntity: TObject); virtual;
 
-    property Connection: IDBConnection read FConnection write FConnection;
+    property Connection: IDBConnection read FConnection write SetConnection;
     property Generator: ISQLGenerator read FGenerator;
     property EntityClass: TClass read FClass write FClass;
     property SQLParameters: TObjectList<TDBParam> read FParams;
@@ -79,8 +80,7 @@ end;
 constructor TAbstractCommandExecutor.Create();
 begin
   inherited Create;
- // FExecutionListeners := TList<ICommandExecutionListener>.Create;
-  FGenerator := TSQLGeneratorRegister.GetCurrentGenerator();
+  FGenerator := nil; //TSQLGeneratorRegister.GetCurrentGenerator();
   FParams := TObjectList<TDBParam>.Create();
 end;
 
@@ -109,8 +109,8 @@ var
 begin
   Result := TDBParam.Create;
   Result.Name := ':' + AColumn.Name;
-  LVal := TRttiExplorer.GetMemberValue(AEntity, AColumn.ClassMemberName);
-  //convert/serialize objects to stream
+  LVal := TRttiExplorer.GetMemberValueDeep(AEntity, AColumn.ClassMemberName);
+  //convert/serialize objects to stream. If value is nullable or lazy get it's real value
   if LVal.IsObject then
   begin
     if LVal.TryConvert(TypeInfo(TStream), LRes) then
@@ -136,6 +136,12 @@ begin
   if (SQL = '') then
     Exit;
   Connection.NotifyExecutionListeners(SQL, SQLParameters);
+end;
+
+procedure TAbstractCommandExecutor.SetConnection(const Value: IDBConnection);
+begin
+  FConnection := Value;
+  FGenerator := TSQLGeneratorRegister.GetGenerator(FConnection.GetDriverName);
 end;
 
 end.

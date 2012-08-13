@@ -71,6 +71,7 @@ type
   public
     constructor Create(const AValue: T);
 
+    function ToString(): string;
 
     property HasValue: Boolean read FHasValue;
     property IsNull: Boolean read GetIsNull;
@@ -85,7 +86,7 @@ type
 
   end;
 
-  ISvLazy<T> = interface
+  ISvLazy<T> = interface(IInvokable)
     ['{433C34BB-E5F3-4594-814C-70F02C415CB8}']
     function OwnsObjects: Boolean;
     function ValueCreated: Boolean;
@@ -139,6 +140,7 @@ type
     function GetDisableCache: Boolean;
     procedure SetDisableCache(const Value: Boolean);
     function DoGetValue(): T; virtual;
+    procedure CheckInitialized();
   public
     constructor Create(const AValueFactory: TFunc<T>; AOwnsObjects: Boolean = False); overload;
     constructor Create(AOwnsObjects: Boolean = False); overload;
@@ -162,7 +164,7 @@ type
   /// <summary>
   /// Represents lazy variable.
   /// </summary>
-  {TODO -oLinas -cGeneral : Make work without class type constraint}
+  {DONE -oLinas -cGeneral : Make work without class type constraint}
   Lazy<T> = record
   private
     FLazy: ISvLazy<T>;
@@ -189,7 +191,6 @@ type
     function IsValueCreated: Boolean;
 
     class operator Implicit(const ALazy: Lazy<T>): T; inline;
-    class operator Implicit(const AValueFactory: TFunc<T>): Lazy<T>; inline;
     class operator Implicit(const AValue: T): Lazy<T>; inline;
 
     property DisableCacheForNextGet: Boolean read GetDisableCache write SetDisableCache;
@@ -214,14 +215,12 @@ type
     /// </summary>
     /// <param name="AValueFactory">Anonymous method which gets value</param>
     /// <param name="AOwnsObjects">Boolean property to specify if lazy value should free it's value when it goes out of scope</param>
-    constructor Create(const AValueFactory: TFunc<T>);
-    constructor CreateLazy(const AValueFactory: TFunc<T>);
+    constructor Create(const AValue: T);
 
     procedure Assign(const AValue: T);
     function IsValueCreated: Boolean;
 
     class operator Implicit(const ALazy: LazyObject<T>): T; inline;
-    class operator Implicit(const AValueFactory: TFunc<T>): LazyObject<T>; inline;
     class operator Implicit(const AValue: T): LazyObject<T>; inline;
 
     property DisableCacheForNextGet: Boolean read GetDisableCache write SetDisableCache;
@@ -346,6 +345,18 @@ begin
   FHasValue := True;
 end;
 
+function Nullable<T>.ToString: string;
+var
+  LValue: TValue;
+begin
+  Result := '';
+  if FHasValue then
+  begin
+    LValue := TValue.From<T>(FValue);
+    Result := TValue.ToString(LValue);
+  end;
+end;
+
 { TSvLazy<T> }
 
 constructor TSvLazy<T>.Create(const AValueFactory: TFunc<T>; AOwnsObjects: Boolean);
@@ -367,6 +378,22 @@ begin
   FColumn := nil;
 end;
 
+procedure TSvLazy<T>.CheckInitialized;
+var
+  LValue: TValue;
+  LObj: TObject;
+begin
+  LValue := TValue.From<T>(FValue);
+  if LValue.IsObject then
+  begin
+    LObj := LValue.AsObject;
+    if not Assigned(LObj) then
+    begin
+      FValue := TRttiExplorer.CreateNewClass<T>();
+    end;
+  end;
+end;
+
 constructor TSvLazy<T>.Create(AValue: T; AOwnsObjects: Boolean);
 begin
   Create(AOwnsObjects);
@@ -385,7 +412,8 @@ end;
 
 function TSvLazy<T>.DoGetValue: T;
 begin
-  {TODO -oLinas -cGeneral : get not only one entity but also lists of them, or nullable types}
+  //check if FValue needs initialization
+  CheckInitialized();
   FManager.SetLazyValue<T>(FValue, TUtils.FromVariant(FID), FEntity, FColumn);
   Result := FValue;
 end;
@@ -420,6 +448,7 @@ begin
   if (not FValueCreated) or FDisableCache then
   begin
     FValue := DoGetValue;
+    CheckInitialized();
     FValueCreated := True;
   end;
 
@@ -558,11 +587,6 @@ begin
   Result := ALazy.Value;
 end;
 
-class operator Lazy<T>.Implicit(const AValueFactory: TFunc<T>): Lazy<T>;
-begin
-  Result := Lazy<T>.Create(AValueFactory);
-end;
-
 { LazyObject<T> }
 
 procedure LazyObject<T>.Assign(const AValue: T);
@@ -581,18 +605,13 @@ begin
   end
   else
   begin
-    FLazy := TSvLazyObject<T>.Create(function: T begin Result := AValue end);
+    FLazy := TSvLazyObject<T>.Create(AValue);
   end;
 end;
 
-constructor LazyObject<T>.Create(const AValueFactory: TFunc<T>);
+constructor LazyObject<T>.Create(const AValue: T);
 begin
-  FLazy := TSvLazyObject<T>.Create(AValueFactory, True);
-end;
-
-constructor LazyObject<T>.CreateLazy(const AValueFactory: TFunc<T>);
-begin
-  Create(AValueFactory);
+  FLazy := TSvLazyObject<T>.Create(AValue, True);
 end;
 
 function LazyObject<T>.GetDisableCache: Boolean;
@@ -624,12 +643,7 @@ end;
 
 class operator LazyObject<T>.Implicit(const AValue: T): LazyObject<T>;
 begin
-  Result := LazyObject<T>.Create(function: T begin Result := AValue; end);
-end;
-
-class operator LazyObject<T>.Implicit(const AValueFactory: TFunc<T>): LazyObject<T>;
-begin
-  Result := LazyObject<T>.Create(AValueFactory);
+  Result := LazyObject<T>.Create(AValue);
 end;
 
 function LazyObject<T>.IsValueCreated: Boolean;

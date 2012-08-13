@@ -468,7 +468,7 @@ procedure TestTADOSQLGenerator.TestGenerateGetLastInsertId;
 var
   ReturnValue: string;
 begin
-  ReturnValue := FADOSQLGenerator.GenerateGetLastInsertId;
+  ReturnValue := FADOSQLGenerator.GenerateGetLastInsertId(nil);
   CheckEqualsString('', ReturnValue);
 end;
 
@@ -479,7 +479,6 @@ end;
 procedure TestMSSQLAdapter.SetUp;
 begin
   inherited;
-  TSQLGeneratorRegister.SetCurrentGenerator('MSSQL');
   FConnection := ConnectionFactory.GetInstance(dtMSSQL);
   FManager := TEntityManager.Create(FConnection);
 end;

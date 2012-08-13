@@ -42,6 +42,7 @@ type
     FPrimaryKeyColumn: Column;
     FTable: Table;
     FManyValuedColumns: TList<ManyValuedAssociation>;
+    FSequence: SequenceAttribute;
   protected
     procedure SetEntityData(AClass: TClass); virtual;
   public
@@ -51,11 +52,14 @@ type
     function IsTableEntity(): Boolean;
     function ColumnByMemberName(const AMemberName: string): Column;
     function ColumnByName(const AColumnName: string): Column;
+    function HasSequence(): Boolean;
+
 
     property Columns: TList<Column> read FColumns;
     property ForeignColumns: TList<ForeignJoinColumnAttribute> read FForeignKeyColumns;
     property ManyValuedColumns: TList<ManyValuedAssociation> read FManyValuedColumns;
     property PrimaryKeyColumn: Column read FPrimaryKeyColumn;
+    property Sequence: SequenceAttribute read FSequence write FSequence;
 
     property EntityTable: Table read FTable;
   end;
@@ -113,6 +117,7 @@ begin
   FColumns := TList<Column>.Create;
   FPrimaryKeyColumn := nil;
   FTable := nil;
+  FSequence := nil;
   FForeignKeyColumns := TList<ForeignJoinColumnAttribute>.Create;
   FManyValuedColumns := TList<ManyValuedAssociation>.Create;
 end;
@@ -126,6 +131,11 @@ begin
 end;
 
 
+function TEntityData.HasSequence: Boolean;
+begin
+  Result := Assigned(FSequence);
+end;
+
 function TEntityData.IsTableEntity: Boolean;
 begin
   Result := Assigned(FTable);
@@ -135,9 +145,12 @@ procedure TEntityData.SetEntityData(AClass: TClass);
 begin
   TRttiExplorer.GetColumns(AClass, FColumns);
   FPrimaryKeyColumn := TRttiExplorer.GetPrimaryKeyColumn(AClass);
+  if Assigned(FPrimaryKeyColumn) then
+    FPrimaryKeyColumn.IsIdentity := TRttiExplorer.GetColumnIsIdentity(AClass, FPrimaryKeyColumn);
   FTable := TRttiExplorer.GetTable(AClass);
   TRttiExplorer.GetClassMembers<ForeignJoinColumnAttribute>(AClass, FForeignKeyColumns);
   TRttiExplorer.GetClassMembers<ManyValuedAssociation>(AClass, FManyValuedColumns);
+  FSequence := TRttiExplorer.GetSequence(AClass);
 end;
 
 { TEntityCache }

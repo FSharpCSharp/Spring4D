@@ -30,7 +30,7 @@ unit SQL.AnsiSQLGenerator;
 interface
 
 uses
-  SQL.AbstractSQLGenerator, SQL.Commands, SQL.Types, Generics.Collections;
+  SQL.AbstractSQLGenerator, SQL.Commands, SQL.Types, Generics.Collections, Mapping.Attributes;
 
 type
   TAnsiSQLGenerator = class(TAbstractSQLGenerator)
@@ -49,9 +49,9 @@ type
     function GenerateDelete(ADeleteCommand: TDeleteCommand): string; override;
     function GenerateCreateTable(): string; override;
     function GenerateCreateFK(): string; override;
-    function GenerateCreateSequence(): string; override;
-    function GenerateGetNextSequenceValue(): string; override;
-    function GenerateGetLastInsertId(): string; override;
+    function GenerateCreateSequence(ASequence: SequenceAttribute): string; override;
+    function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
+    function GenerateGetLastInsertId(AIdentityColumn: Column): string; override;
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; override;
     function GenerateGetQueryCount(const ASql: string): string; override;
   end;
@@ -71,9 +71,9 @@ begin
   raise EORMMethodNotImplemented.Create('Method not implemented');
 end;
 
-function TAnsiSQLGenerator.GenerateCreateSequence: string;
+function TAnsiSQLGenerator.GenerateCreateSequence(ASequence: SequenceAttribute): string;
 begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
+  Result := '';
 end;
 
 function TAnsiSQLGenerator.GenerateCreateTable: string;
@@ -118,14 +118,14 @@ begin
   end;
 end;
 
-function TAnsiSQLGenerator.GenerateGetLastInsertId: string;
+function TAnsiSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: Column): string;
 begin
   Result := '';
 end;
 
-function TAnsiSQLGenerator.GenerateGetNextSequenceValue: string;
+function TAnsiSQLGenerator.GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;
 begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
+  Result := '';
 end;
 
 function TAnsiSQLGenerator.GenerateGetQueryCount(const ASql: string): string;

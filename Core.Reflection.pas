@@ -219,6 +219,13 @@ type
   TRttiNamedObjectHelper = class helper for TRttiNamedObject
   public
     function GetTypeInfo: PTypeInfo;
+    function GetType(): TRttiType;
+
+    function AsProperty(): TRttiProperty;
+    function AsField(): TRttiField;
+
+    function IsProperty(): Boolean;
+    function isField(): Boolean;
   end;
 
   {$REGION 'Documentation'}
@@ -596,22 +603,34 @@ var
 function SameNullables(const ALeft, ARight: TValue): Boolean;
 var
   LGetLeft, LGetRight: TValue;
+  BLeft, BRight: Boolean;
 begin
-  Result := TUtils.TryGetNullableTypeValue(ALeft, LGetLeft) and TUtils.TryGetNullableTypeValue(ARight, LGetRight);
-  if Result then
+  BLeft := TUtils.TryGetNullableTypeValue(ALeft, LGetLeft);
+  BRight := TUtils.TryGetNullableTypeValue(ARight, LGetRight);
+  if BLeft and BRight then
   begin
     Result := SameValue(LGetLeft, LGetRight);
+  end
+  else
+  begin
+    Result := (not BLeft) and (not BRight);
   end;
 end;
 
 function SameLazies(const ALeft, ARight: TValue): Boolean;
 var
   LGetLeft, LGetRight: TValue;
+  BLeft, BRight: Boolean;
 begin
-  Result := TUtils.TryGetLazyTypeValue(ALeft, LGetLeft) and TUtils.TryGetLazyTypeValue(ARight, LGetRight);
-  if Result then
+  BLeft := TUtils.TryGetLazyTypeValue(ALeft, LGetLeft);
+  BRight := TUtils.TryGetLazyTypeValue(ARight, LGetRight);
+  if BLeft and BRight then
   begin
     Result := SameValue(LGetLeft, LGetRight);
+  end
+  else
+  begin
+    Result := (not BLeft) and (not BRight);
   end;
 end;
 
@@ -2296,6 +2315,25 @@ end;
 
 { TRttiNamedObjectHelper }
 
+function TRttiNamedObjectHelper.AsField: TRttiField;
+begin
+  Result := Self as TRttiField;
+end;
+
+function TRttiNamedObjectHelper.AsProperty: TRttiProperty;
+begin
+  Result := Self as TRttiProperty;
+end;
+
+function TRttiNamedObjectHelper.GetType: TRttiType;
+begin
+  Result := nil;
+  if isField then
+    Result := AsField.FieldType
+  else if IsProperty then
+    Result := AsProperty.PropertyType;
+end;
+
 function TRttiNamedObjectHelper.GetTypeInfo: PTypeInfo;
 begin
   Result := nil;
@@ -2305,6 +2343,16 @@ begin
     Result := TRttiProperty(Self).PropertyType.Handle
   else if Self is TRttiInstanceType then
     Result := TRttiInstanceType(Self).Handle;
+end;
+
+function TRttiNamedObjectHelper.isField: Boolean;
+begin
+  Result := Self is TRttiField;
+end;
+
+function TRttiNamedObjectHelper.IsProperty: Boolean;
+begin
+  Result := Self is TRttiProperty;
 end;
 
 initialization

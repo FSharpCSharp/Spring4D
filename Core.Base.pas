@@ -103,11 +103,11 @@ type
     function GetLimit: Integer;
     function GetOffset: Integer;
   public
-    constructor Create(); virtual;
+    constructor Create(AConnection: IDBConnection); virtual;
 
     function BuildSQL(const ASql: string): string;
 
-    property Connection: IDBConnection read FConnection write FConnection;
+    property Connection: IDBConnection read FConnection;
     property Page: Integer read FCurrentPage write FCurrentPage;
     property ItemsPerPage: Integer read FPageSize write FPageSize;
     property TotalItems: Int64 read FTotalItems write FTotalItems;
@@ -280,10 +280,11 @@ begin
   Result := FGenerator.GeneratePagedQuery(ASql, Limit, Offset);
 end;
 
-constructor TPager.Create;
+constructor TPager.Create(AConnection: IDBConnection);
 begin
   inherited Create;
-  FGenerator := TSQLGeneratorRegister.GetCurrentGenerator();
+  FConnection := AConnection;
+  FGenerator := TSQLGeneratorRegister.GetGenerator(AConnection.GetDriverName);
 end;
 
 function TPager.GetLimit: Integer;

@@ -25,65 +25,56 @@
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *)
-unit Adapters.MSSQL;
+unit Adapters.ASA;
 
 interface
-
-{$IFDEF MSWINDOWS}
 
 uses
   Adapters.ADO, SysUtils, Mapping.Attributes;
 
-{
-  Must use OLEDB povider because ODBC providers are buggy with SQL SERVER
-  see: http://stackoverflow.com/questions/4877576/how-to-make-ado-parameter-to-update-sql-server-datetime-column
-
-  Connection string example: 'Provider=SQLOLEDB.1;Password=master;Persist Security Info=True;'+
-    'User ID=VIKARINA;Initial Catalog=ViktorDemo;Data Source=FILE_SERVER';
-
-
-}
-
 type
-  TMSSQLResultsetAdapter = class(TADOResultSetAdapter);
+  TASAResultsetAdapter = class(TADOResultSetAdapter);
 
-  TMSSQLStatementAdapter = class(TADOStatementAdapter);
+  TASAStatementAdapter = class(TADOStatementAdapter);
 
-  TMSSQLConnectionAdapter = class(TADOConnectionAdapter)
+  TASAConnectionAdapter = class(TADOConnectionAdapter)
   public
     function GetDriverName: string; override;
   end;
 
-  TMSSQLTransactionAdapter = class(TADOTransactionAdapter);
+  TASATransactionAdapter = class(TADOTransactionAdapter);
 
-  TMSSQLServerSQLGenerator = class(TADOSQLGenerator)
+  TASASQLGenerator = class(TADOSQLGenerator)
   public
     function GetDriverName(): string; override;
     function GenerateGetLastInsertId(AIdentityColumn: Column): string; override;
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; override;
   end;
 
-  EMSSQLStatementAdapterException = Exception;
-
-{$ENDIF}
+  ESybaseASAStatementAdapterException = Exception;
 
 implementation
-
-{$IFDEF MSWINDOWS}
 
 uses
   SQL.Register
   ,StrUtils
   ;
 
-{ TMSSQLServerSQLGenerator }
+{ TASAConnectionAdapter }
 
-function TMSSQLServerSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: Column): string;
+function TASAConnectionAdapter.GetDriverName: string;
 begin
-  Result := 'SELECT SCOPE_IDENTITY();';
+  Result := 'ASA';
 end;
 
-function TMSSQLServerSQLGenerator.GeneratePagedQuery(const ASql: string; const ALimit,
+{ TASASQLGenerator }
+
+function TASASQLGenerator.GenerateGetLastInsertId(AIdentityColumn: Column): string;
+begin
+  Result := 'SELECT @@IDENTITY;';
+end;
+
+function TASASQLGenerator.GeneratePagedQuery(const ASql: string; const ALimit,
   AOffset: Integer): string;
 var
   LBuilder: TStringBuilder;
@@ -97,7 +88,7 @@ begin
 
     LBuilder.Append('SELECT * FROM (')
       .AppendLine
-      .Append('  SELECT *, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS ORM_ROW_NUM FROM (')
+      .Append('  SELECT *, ROW_NUMBER() OVER (ORDER BY (NULL)) AS ORM_ROW_NUM FROM (')
       .AppendLine.Append('    ')
       .Append(LSQL)
       .Append(') AS ORM_TOTAL_1')
@@ -112,21 +103,12 @@ begin
   end;
 end;
 
-function TMSSQLServerSQLGenerator.GetDriverName: string;
+function TASASQLGenerator.GetDriverName: string;
 begin
-  Result := 'MSSQL';
-end;
-
-{ TMSSQLConnectionAdapter }
-
-function TMSSQLConnectionAdapter.GetDriverName: string;
-begin
-  Result := 'MSSQL';
+  Result := 'ASA';
 end;
 
 initialization
-  TSQLGeneratorRegister.RegisterGenerator(TMSSQLServerSQLGenerator.Create());
-
-{$ENDIF}
+  TSQLGeneratorRegister.RegisterGenerator(TASASQLGenerator.Create());
 
 end.

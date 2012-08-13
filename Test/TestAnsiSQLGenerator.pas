@@ -332,14 +332,16 @@ procedure TestTAnsiSQLGenerator.TestGenerateCreateSequence;
 var
   ReturnValue: string;
 begin
-  ReturnValue := FAnsiSQLGenerator.GenerateCreateSequence;
+  ReturnValue := FAnsiSQLGenerator.GenerateCreateSequence(nil);
+  CheckEqualsString('', ReturnValue);
 end;
 
 procedure TestTAnsiSQLGenerator.TestGenerateGetNextSequenceValue;
 var
   ReturnValue: string;
 begin
-  ReturnValue := FAnsiSQLGenerator.GenerateGetNextSequenceValue;
+  ReturnValue := FAnsiSQLGenerator.GenerateGetNextSequenceValue(nil);
+  CheckEqualsString('', ReturnValue);
 end;
 
 const
@@ -360,7 +362,8 @@ procedure TestTAnsiSQLGenerator.TestGenerateGetLastInsertId;
 var
   ReturnValue: string;
 begin
-  ReturnValue := FAnsiSQLGenerator.GenerateGetLastInsertId;
+  ReturnValue := FAnsiSQLGenerator.GenerateGetLastInsertId(nil);
+  CheckEquals('', ReturnValue);
 end;
 
 initialization

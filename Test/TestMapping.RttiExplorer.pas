@@ -154,7 +154,7 @@ begin
 
   ReturnValue := TRttiExplorer.GetColumns(AClass);
   try
-    CheckEquals(8, ReturnValue.Count);
+    CheckEquals(CustomerColumnCount, ReturnValue.Count);
   finally
     ReturnValue.Free;
   end;

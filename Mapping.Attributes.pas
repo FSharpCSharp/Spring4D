@@ -141,13 +141,14 @@ type
     FPrecision: Integer;
     FScale: Integer;
     FDescription: string;
+    FIsIdentity: Boolean;
   public
     constructor Create(const AName: string; AProperties: TColumnProperties; ALength: Integer; APrecision: Integer;
       AScale: Integer; const ADescription: string);
 
     function IsDiscriminator(): Boolean; virtual;
 
-
+    property IsIdentity: Boolean read FIsIdentity write FIsIdentity;
     property Name: string read FName;
     property Properties: TColumnProperties read FProperties;
     property Length: Integer read FLength;

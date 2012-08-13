@@ -374,7 +374,7 @@ var
 begin
   ReturnValue := FSQLiteConnectionAdapter.GetDriverName;
 
-  CheckEqualsString('SQLITE', ReturnValue);
+  CheckEqualsString('SQLite3', ReturnValue);
 end;
 
 procedure TestTSQLiteTransactionAdapter.SetUp;

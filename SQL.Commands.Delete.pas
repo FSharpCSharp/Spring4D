@@ -31,7 +31,7 @@ interface
 
 uses
   SQL.AbstractCommandExecutor, SQL.Types, SQL.Commands, SQL.Params, Mapping.Attributes
-  ,Generics.Collections;
+  ,Generics.Collections, Core.Interfaces;
 
 type
   TDeleteExecutor = class(TAbstractCommandExecutor)
@@ -53,7 +53,6 @@ implementation
 
 uses
   Core.Exceptions
-  ,Core.Interfaces
   ,Core.Utils
   ,Mapping.RttiExplorer
   ,Rtti
@@ -98,9 +97,9 @@ begin
   SQLParameters.Add(LParam);
 end;
 
-constructor TDeleteExecutor.Create;
+constructor TDeleteExecutor.Create();
 begin
-  inherited Create;
+  inherited Create();
   FTable := TSQLTable.Create;
   FCommand := TDeleteCommand.Create(FTable);
   FPrimaryKeyColumnName := '';
@@ -112,14 +111,14 @@ var
 begin
   Assert(Assigned(AEntity));
 
-  inherited Execute(AEntity);
-
   LStmt := Connection.CreateStatement;
   LStmt.SetSQLCommand(SQL);
 
   BuildParams(AEntity);
   try
     LStmt.SetParams(SQLParameters);
+
+    inherited Execute(AEntity);
 
     LStmt.Execute();
   finally

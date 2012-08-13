@@ -31,7 +31,7 @@ interface
 
 uses
   SQL.AbstractCommandExecutor, SQL.Types, SQL.Commands, SQL.Params, Generics.Collections
-  , Mapping.Attributes;
+  , Mapping.Attributes, Core.Interfaces;
 
 type
   TPageExecutor = class(TAbstractCommandExecutor)
@@ -81,10 +81,9 @@ begin
 
 end;
 
-constructor TPageExecutor.Create;
+constructor TPageExecutor.Create();
 begin
-  inherited Create;
-
+  inherited Create();
 end;
 
 destructor TPageExecutor.Destroy;
@@ -94,8 +93,7 @@ end;
 
 procedure TPageExecutor.Execute(AEntity: TObject);
 begin
-  inherited;
-
+  inherited Execute(AEntity);
 end;
 
 function TPageExecutor.GetLimit: Integer;

@@ -26,6 +26,8 @@ type
   public
     procedure SetUp; override;
     procedure TearDown; override;
+
+    procedure GetLazyNullable();
   published
     procedure First();
     procedure Fetch();
@@ -40,6 +42,7 @@ type
     procedure Nullable();
     procedure GetLazyValueClass();
     procedure GetLazyValue();
+
   end;
 
   TInsertData = record
@@ -90,7 +93,7 @@ end;
 procedure CreateTables();
 begin
   TestDB.ExecSQL('CREATE TABLE IF NOT EXISTS '+ TBL_PEOPLE + ' ([CUSTID] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, [CUSTAGE] INTEGER NULL,'+
-    '[CUSTNAME] VARCHAR (255), [CUSTHEIGHT] FLOAT, [LastEdited] DATETIME, [EMAIL] TEXT, [MIDDLENAME] TEXT, [AVATAR] BLOB); ');
+    '[CUSTNAME] VARCHAR (255), [CUSTHEIGHT] FLOAT, [LastEdited] DATETIME, [EMAIL] TEXT, [MIDDLENAME] TEXT, [AVATAR] BLOB, [AVATARLAZY] BLOB NULL); ');
 
   TestDB.ExecSQL('CREATE TABLE IF NOT EXISTS '+ TBL_ORDERS + ' ('+
     '"ORDER_ID" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,'+
@@ -120,8 +123,8 @@ procedure InsertCustomerAvatar(AAge: Integer = 25; AName: string = 'Demo'; AHeig
 var
   LRows: Integer;
 begin
-  TestDB.ExecSQL('INSERT INTO  ' + TBL_PEOPLE + ' ([CUSTAGE], [CUSTNAME], [CUSTHEIGHT], [MIDDLENAME], [AVATAR]) VALUES (?,?,?,?,?);',
-    [AAge, AName, AHeight, AMiddleName, APicture], LRows);
+  TestDB.ExecSQL('INSERT INTO  ' + TBL_PEOPLE + ' ([CUSTAGE], [CUSTNAME], [CUSTHEIGHT], [MIDDLENAME], [AVATAR], [AVATARLAZY]) VALUES (?,?,?,?,?,?);',
+    [AAge, AName, AHeight, AMiddleName, APicture, APicture], LRows);
   if LRows < 1 then
     raise Exception.Create('Cannot insert into table');
 end;
@@ -185,6 +188,7 @@ end;
 procedure TestTEntityManager.ExecutionListeners;
 var
   sLog, sLog2, sSql: string;
+  iParamCount1, iParamCount2: Integer;
   LCustomer: TCustomer;
 begin
   sLog := '';
@@ -193,12 +197,14 @@ begin
     procedure(const ACommand: string; const AParams: TObjectList<TDBParam>)
     begin
       sLog := ACommand;
+      iParamCount1 := AParams.Count;
     end);
 
   FConnection.AddExecutionListener(
     procedure(const ACommand: string; const AParams: TObjectList<TDBParam>)
     begin
       sLog2 := ACommand;
+      iParamCount2 := AParams.Count;
     end);
 
   InsertCustomer();
@@ -208,6 +214,8 @@ begin
     CheckTrue(sLog <> '');
     CheckTrue(sLog2 <> '');
     CheckEqualsString(sLog, sLog2);
+    CheckEquals(0, iParamCount1);
+    CheckEquals(0, iParamCount2);
 
     LCustomer.Name := 'Execution Listener test';
     LCustomer.Age := 58;
@@ -220,6 +228,8 @@ begin
     CheckTrue(sLog <> '');
     CheckTrue(sLog2 <> '');
     CheckEqualsString(sLog, sLog2);
+    CheckTrue(iParamCount1 > 1);
+    CheckTrue(iParamCount2 > 1);
 
     sLog := '';
     sLog2 := '';
@@ -229,6 +239,8 @@ begin
     CheckTrue(sLog <> '');
     CheckTrue(sLog2 <> '');
     CheckEqualsString(sLog, sLog2);
+    CheckTrue(iParamCount1 > 0);
+    CheckTrue(iParamCount2 > 0);
 
     sLog := '';
     sLog2 := '';
@@ -236,6 +248,8 @@ begin
     CheckTrue(sLog <> '');
     CheckTrue(sLog2 <> '');
     CheckEqualsString(sLog, sLog2);
+    CheckTrue(iParamCount1 = 1);
+    CheckTrue(iParamCount2 = 1);
 
     Status(sLog);
 
@@ -323,6 +337,34 @@ begin
     CheckEquals(15, LCustomer.Age);
   finally
     FreeAndNil(LCustomer);
+  end;
+end;
+
+procedure TestTEntityManager.GetLazyNullable;
+var
+  LCustomer: TCustomer;
+  fsPic: TFileStream;
+begin
+  fsPic := TFileStream.Create(PictureFilename, fmOpenRead or fmShareDenyNone);
+  try
+    LCustomer := FManager.SingleOrDefault<TCustomer>('select * from ' + TBL_PEOPLE, []);
+    try
+      CheckTrue(LCustomer.AvatarLazy.IsNull);
+    finally
+      LCustomer.Free;
+    end;
+
+    InsertCustomerAvatar(25, 'Nullable Lazy', 2.36, 'Middle', fsPic);
+
+    LCustomer := FManager.SingleOrDefault<TCustomer>('select * from ' + TBL_PEOPLE, []);
+    try
+      CheckFalse(LCustomer.AvatarLazy.IsNull);
+    finally
+      LCustomer.Free;
+    end;
+
+  finally
+    fsPic.Free;
   end;
 end;
 
@@ -435,6 +477,7 @@ begin
     LCustomer.Name := 'Insert test';
     LCustomer.Age := 10;
     LCustomer.Height := 1.1;
+    LCustomer.Avatar.LoadFromFile(PictureFilename);
 
     FManager.Insert(LCustomer);
 
@@ -444,6 +487,7 @@ begin
     LID := LTable.FieldByName['CUSTID'].AsInteger;
     CheckEquals(LID, LCustomer.ID);
     CheckTrue(LTable.FieldByName['MIDDLENAME'].IsNull);
+    CheckFalse(LTable.FieldByName['AVATAR'].IsNull);
   finally
     LCustomer.Free;
   end;
@@ -551,7 +595,7 @@ end;
 
 procedure TestTEntityManager.SetUp;
 begin
-  TSQLGeneratorRegister.SetCurrentGenerator('SQLite3');
+ // TSQLGeneratorRegister.SetCurrentGenerator('SQLite3');
   FConnection := ConnectionFactory.GetInstance(dtSQLite);
 
   FManager := TEntityManager.Create(FConnection);
@@ -580,11 +624,19 @@ begin
     LCustomer.Age := 55;
     LCustomer.Name := 'Update Test';
 
+
     FManager.Update(LCustomer);
 
     LResults := TestDB.GetUniTableIntf('SELECT * FROM ' + TBL_PEOPLE);
     CheckEquals(LCustomer.Age, LResults.FieldByName['CUSTAGE'].AsInteger);
     CheckEqualsString(LCustomer.Name, LResults.FieldByName['CUSTNAME'].AsString);
+    CheckTrue(LCustomer.MiddleName.IsNull);
+
+    LCustomer.MiddleName := 'Middle';
+    FManager.Update(LCustomer);
+
+    LResults := TestDB.GetUniTableIntf('SELECT * FROM ' + TBL_PEOPLE);
+    CheckEqualsString(LCustomer.MiddleName, LResults.FieldByName['MIDDLENAME'].AsString);
 
   finally
     LCustomer.Free;
