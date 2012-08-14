@@ -54,19 +54,20 @@ uses
 
 function TOracleSQLGenerator.GenerateCreateSequence(ASequence: SequenceAttribute): string;
 begin
-  Result := '';
+  Result := Format('CREATE SEQUENCE "%0:S" MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY %2:D START WITH %1:D CACHE 20 NOORDER NOCYCLE;',
+    [ASequence.SequenceName, ASequence.InitialValue, ASequence.Increment]);
 end;
 
 function TOracleSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: Column): string;
 begin
-  Assert(Assigned(AIdentityColumn));
-  Result := Format('returning %0:S as NewID;', [AIdentityColumn.Name]);
+  Result := '';
+  //Result := Format('returning %0:S as NewID;', [AIdentityColumn.Name]);
 end;
 
 function TOracleSQLGenerator.GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;
 begin
   Assert(Assigned(ASequence));
-  Result := Format('%0:S.nextval', [ASequence.SequenceName]);
+  Result := Format('select %0:S.nextval from dual;', [ASequence.SequenceName]);
 end;
 
 function TOracleSQLGenerator.GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string;

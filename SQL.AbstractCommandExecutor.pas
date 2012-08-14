@@ -42,6 +42,7 @@ type
     FParams: TObjectList<TDBParam>;
     procedure SetConnection(const Value: IDBConnection);
   protected
+    function DoCreateParam(AColumn: Column; AValue: Variant): TDBParam; virtual;
     function CreateParam(AEntity: TObject; AColumn: Column): TDBParam; overload; virtual;
     function CreateParam(AEntity: TObject; AForeignColumn: ForeignJoinColumnAttribute): TDBParam; overload; virtual;
   public
@@ -129,6 +130,13 @@ begin
   FConnection := nil;
   FGenerator := nil;
   inherited Destroy;
+end;
+
+function TAbstractCommandExecutor.DoCreateParam(AColumn: Column; AValue: Variant): TDBParam;
+begin
+  Result := TDBParam.Create;
+  Result.Name := ':' + AColumn.Name;
+  Result.Value := AValue;
 end;
 
 procedure TAbstractCommandExecutor.Execute(AEntity: TObject);
