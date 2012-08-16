@@ -36,7 +36,7 @@ uses
 
 
 const
-  CustomerColumnCount = 8;
+  CustomerColumnCount = 9;
 
 type
   TProduct = class;

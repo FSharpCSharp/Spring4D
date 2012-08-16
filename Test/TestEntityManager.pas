@@ -45,6 +45,7 @@ type
     procedure GetLazyValue();
     procedure FindOne();
     procedure FindAll();
+    procedure Enums();
   end;
 
   TInsertData = record
@@ -116,6 +117,12 @@ begin
     [AAge, AName, AHeight]);
 end;
 
+procedure InsertCustomerEnum(AType: TCustomerType; AAge: Integer = 25; AName: string = 'Demo'; AHeight: Double = 15.25);
+begin
+  TestDB.ExecSQL('INSERT INTO  ' + TBL_PEOPLE + ' ([CUSTAGE], [CUSTNAME], [CUSTHEIGHT], [CUSTTYPE]) VALUES (?,?,?,?);',
+    [AAge, AName, AHeight, Ord(AType)]);
+end;
+
 procedure InsertCustomerNullable(AAge: Integer = 25; AName: string = 'Demo'; AHeight: Double = 15.25; const AMiddleName: string = ''; APicture: TStream = nil);
 begin
   TestDB.ExecSQL('INSERT INTO  ' + TBL_PEOPLE + ' ([CUSTAGE], [CUSTNAME], [CUSTHEIGHT], [MIDDLENAME]) VALUES (?,?,?,?);',
@@ -142,6 +149,11 @@ end;
 procedure ClearTable(const ATableName: string);
 begin
   TestDB.ExecSQL('DELETE FROM ' + ATableName + ';');
+end;
+
+function GetDBValue(const ASql: string): Variant;
+begin
+  Result := TestDB.GetUniTableIntf(ASql).Fields[0].Value;
 end;
 
 
@@ -171,6 +183,36 @@ end;
 
 const
   SQL_EXEC_SCALAR = 'SELECT COUNT(*) FROM ' + TBL_PEOPLE + ';';
+
+procedure TestTEntityManager.Enums;
+var
+  LCustomer: TCustomer;
+  iLastID: Integer;
+  LVal: Variant;
+begin
+  InsertCustomer();
+  iLastID := TestDB.GetLastInsertRowID;
+  LCustomer := FManager.FindOne<TCustomer>(iLastID);
+  try
+    CheckTrue(ctOneTime = LCustomer.CustomerType);
+  finally
+    LCustomer.Free;
+  end;
+
+  InsertCustomerEnum(ctBusinessClass);
+  iLastID := TestDB.GetLastInsertRowID;
+  LCustomer := FManager.FindOne<TCustomer>(iLastID);
+  try
+    CheckTrue(ctBusinessClass = LCustomer.CustomerType);
+
+    LCustomer.CustomerType := ctReturning;
+    FManager.Save(LCustomer);
+    LVal := GetDBValue(Format('select custtype from ' + TBL_PEOPLE + ' where custid = %D', [iLastID]));
+    CheckTrue(Integer(LVal) = Ord(ctReturning));
+  finally
+    LCustomer.Free;
+  end;
+end;
 
 procedure TestTEntityManager.Execute;
 begin
