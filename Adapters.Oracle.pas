@@ -82,15 +82,11 @@ begin
       SetLength(LSQL, Length(LSQL)-1);
 
     LBuilder.Append('SELECT * FROM (')
-      .AppendLine
-      .Append('  SELECT *, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS ORM_ROW_NUM FROM (')
       .AppendLine.Append('    ')
       .Append(LSQL)
       .Append(') AS ORM_TOTAL_1')
       .AppendLine
-      .Append('  ) AS ORM_TOTAL_2')
-      .AppendLine
-      .AppendFormat(' WHERE (ORM_ROW_NUM>=%0:D) AND (ORM_ROW_NUM < %0:D+%1:D);', [AOffset, ALimit]);
+      .AppendFormat(' WHERE (ROWNUM>=%0:D) AND (ROWNUM < %0:D+%1:D);', [AOffset, ALimit]);
 
     Result := LBuilder.ToString;
   finally

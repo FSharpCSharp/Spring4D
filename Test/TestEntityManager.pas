@@ -10,12 +10,13 @@ unit TestEntityManager;
 }
 
 {$I sv.inc}
+
 interface
 
 uses
   TestFramework, Windows, Forms, Dialogs, Controls, Classes, SysUtils,
   Variants, Graphics, Messages, StdCtrls, Core.EntityManager, Core.Interfaces
-  ,uModels;
+  ,uModels, Rtti;
 
 type
 
@@ -42,7 +43,8 @@ type
     procedure Nullable();
     procedure GetLazyValueClass();
     procedure GetLazyValue();
-
+    procedure FindOne();
+    procedure FindAll();
   end;
 
   TInsertData = record
@@ -287,10 +289,53 @@ begin
   FManager.Fetch<TCustomer>(sSql, [], LCollection);
   CheckEquals(2, LCollection.Count);
   CheckEquals(15, LCollection[1].Age);
+  {$IFNDEF USE_SPRING}
+  LCollection.Free;
+  {$ENDIF}
+end;
+
+procedure TestTEntityManager.FindAll;
+var
+  LCollection: {$IFDEF USE_SPRING} Spring.Collections.IList<TCustomer> {$ELSE} TObjectList<TCustomer> {$ENDIF} ;
+  i: Integer;
+begin
+  LCollection := FManager.FindAll<TCustomer>;
+  CheckEquals(0, LCollection.Count);
+  TestDB.BeginTransaction;
+  for i := 1 to 10 do
+  begin
+    InsertCustomer(i);
+  end;
+  TestDB.Commit;
+  {$IFNDEF USE_SPRING}
+  LCollection.Free;
+  {$ENDIF}
+
+  LCollection := FManager.FindAll<TCustomer>;
+  CheckEquals(10, LCollection.Count);
 
   {$IFNDEF USE_SPRING}
   LCollection.Free;
   {$ENDIF}
+end;
+
+procedure TestTEntityManager.FindOne;
+var
+  LCustomer: TCustomer;
+  RowID: Integer;
+begin
+  LCustomer := FManager.FindOne<TCustomer>(1);
+  CheckTrue(LCustomer = nil);
+
+  InsertCustomer();
+  RowID := TestDB.GetLastInsertRowID;
+  LCustomer := FManager.FindOne<TCustomer>(RowID);
+  try
+    CheckTrue(LCustomer <> nil);
+    CheckEquals(RowID, LCustomer.ID);
+  finally
+    LCustomer.Free;
+  end;
 end;
 
 procedure TestTEntityManager.First;
@@ -596,7 +641,6 @@ end;
 
 procedure TestTEntityManager.SetUp;
 begin
- // TSQLGeneratorRegister.SetCurrentGenerator('SQLite3');
   FConnection := ConnectionFactory.GetInstance(dtSQLite);
 
   FManager := TEntityManager.Create(FConnection);
