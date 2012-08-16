@@ -93,12 +93,28 @@ type
     procedure Fetch<T: class, constructor>(const ASql: string;
       const AParams: array of const; ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
                                                   {$ELSE} TObjectList<T> {$ENDIF} ); overload;
+
+    procedure Fetch<T: class, constructor>(AResultset: IDBResultset; ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
+                                                  {$ELSE} TObjectList<T> {$ENDIF}); overload;
+    function Fetch<T: class, constructor>(AResultset: IDBResultset): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
+                                                  {$ELSE} TObjectList<T> {$ENDIF}; overload;
     /// <summary>
     /// Retrieves multiple models from the sql statement
     /// </summary>
     function Fetch<T: class, constructor>(const ASql: string;
       const AParams: array of const): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
                                                   {$ELSE} TObjectList<T> {$ENDIF}; overload;
+    /// <summary>
+    /// Retrieves single model from the database based on its primary key value.
+    /// If record not found, nil is returned
+    /// </summary>
+    function FindOne<T: class, constructor>(const AID: TValue): T;
+    /// <summary>
+    /// Retrieves all models from PODO database table
+    /// </summary>
+    function FindAll<T: class, constructor>(): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
+                                                  {$ELSE} TObjectList<T> {$ENDIF};
+
     /// <summary>
     /// Inserts model to the database
     /// </summary>
@@ -183,8 +199,6 @@ var
   LDeleter: TDeleteExecutor;
 begin
   LDeleter := CommandFactory.GetCommand<TDeleteExecutor>(AEntity.ClassType, Connection);
-
-  //LDeleter.Connection := Connection;
   LDeleter.EntityClass := AEntity.ClassType;
   LDeleter.Execute(AEntity);
 
@@ -223,7 +237,7 @@ begin
 
   LSelecter := GetSelector(LEntityClass) as TSelectExecutor;
   LSelecter.EntityClass := LEntityClass;
-  LSelecter.Connection := Connection;
+ // LSelecter.Connection := Connection;
   LSelecter.ID := AID;
   LSelecter.LazyColumn := AColumn;
 
@@ -234,7 +248,7 @@ begin
   else
     LSelecter.SelectType := stOne;
 
-  Result := LSelecter.Select(AEntity);
+  Result := LSelecter.Select(AEntity, LBaseEntityClass);
 end;
 
 procedure TEntityManager.DoSetEntity(var AEntityToCreate: TObject; AResultset: IDBResultset; ARealEntity: TObject);
@@ -243,14 +257,12 @@ var
   LResult, LValue: TValue;
   LVal: Variant;
   LObj: TObject;
- // LSelector: TSelectExecutor;
 begin
   {TODO -oLinas -cGeneral : if AEntity class type is not our real Entity type, simply just set value}
   if not TEntityCache.Get(AEntityToCreate.ClassType).IsTableEntity and Assigned(ARealEntity) then
   begin
     if not AResultset.IsEmpty then
     begin
-      //LSelector := GetSelector(ARealEntity.ClassType) as TSelectExecutor;
       LVal := AResultset.GetFieldValue(0);
       LValue := TUtils.FromVariant(LVal);
 
@@ -311,18 +323,10 @@ procedure TEntityManager.Fetch<T>(const ASql: string; const AParams: array of co
   ACollection: {$IFDEF USE_SPRING} ICollection<T> {$ELSE} TObjectList<T> {$ENDIF});
 var
   LResults: IDBResultset;
-  LCurrent: T;
 begin
   LResults := GetResultset(ASql, AParams);
 
-  while not LResults.IsEmpty do
-  begin
-    LCurrent := GetOne<T>(LResults, nil);
-
-    ACollection.Add(LCurrent);
-
-    LResults.Next;
-  end;
+  Fetch<T>(LResults, ACollection);
 end;
 
 function TEntityManager.Fetch<T>(const ASql: string; const AParams: array of const): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
@@ -334,6 +338,76 @@ begin
   Result := TObjectList<T>.Create(True);
   {$ENDIF}
   Fetch<T>(ASql, AParams, Result);
+end;
+
+procedure TEntityManager.Fetch<T>(AResultset: IDBResultset; ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
+  {$ELSE} TObjectList<T> {$ENDIF});
+var
+  LCurrent: T;
+begin
+  while not AResultset.IsEmpty do
+  begin
+    LCurrent := GetOne<T>(AResultset, nil);
+
+    ACollection.Add(LCurrent);
+
+    AResultset.Next;
+  end;
+end;
+
+function TEntityManager.Fetch<T>(AResultset: IDBResultset): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
+  {$ELSE} TObjectList<T> {$ENDIF};
+begin
+  {$IFDEF USE_SPRING}
+  Result := TCollections.CreateList<T>(True);
+  {$ELSE}
+  Result := TObjectList<T>.Create(True);
+  {$ENDIF}
+  Fetch<T>(AResultset, Result);
+end;
+
+function TEntityManager.FindAll<T>: {$IFDEF USE_SPRING} Spring.Collections.IList<T>
+  {$ELSE} TObjectList<T> {$ENDIF};
+var
+  LEntityClass: TClass;
+  LSelecter: TSelectExecutor;
+  LResults: IDBResultset;
+begin
+  if not TRttiExplorer.TryGetEntityClass(TypeInfo(T), LEntityClass) then
+  begin
+    //we are fetching from the same table - AEntity
+    LEntityClass := T;
+  end;
+
+  LSelecter := GetSelector(LEntityClass) as TSelectExecutor;
+  LSelecter.EntityClass := LEntityClass;
+  LSelecter.LazyColumn := nil;
+  LResults := LSelecter.SelectAll(nil, LEntityClass);
+  Result := Fetch<T>(LResults);
+end;
+
+function TEntityManager.FindOne<T>(const AID: TValue): T;
+var
+  LSelecter: TSelectExecutor;
+  LEntityClass: TClass;
+  LResults: IDBResultset;
+begin
+  Result := System.Default(T);
+  if not TRttiExplorer.TryGetEntityClass(TypeInfo(T), LEntityClass) then
+  begin
+    //we are fetching from the same table - AEntity
+    LEntityClass := T;
+  end;
+
+  LSelecter := GetSelector(LEntityClass) as TSelectExecutor;
+  LSelecter.EntityClass := LEntityClass;
+  LSelecter.ID := AID;
+  LSelecter.LazyColumn := nil;
+  LResults := LSelecter.Select(nil, LEntityClass);
+  if not LResults.IsEmpty then
+  begin
+    Result := GetOne<T>(LResults, nil);
+  end;
 end;
 
 function TEntityManager.First<T>(const ASql: string; const AParams: array of const): T;
@@ -562,7 +636,6 @@ var
   LInserter: TInsertExecutor;
 begin
   LInserter := CommandFactory.GetCommand<TInsertExecutor>(AEntity.ClassType, Connection);
-//  LInserter.Connection := Connection;
   LInserter.EntityClass := AEntity.ClassType;
   LInserter.Execute(AEntity);
 
@@ -703,7 +776,6 @@ var
   LUpdater: TUpdateExecutor;
 begin
   LUpdater := CommandFactory.GetCommand<TUpdateExecutor>(AEntity.ClassType, Connection);
-//  LUpdater.Connection := Connection;
   LUpdater.EntityClass := AEntity.ClassType;
   LUpdater.EntityMap := FOldStateEntities;
   LUpdater.Execute(AEntity);

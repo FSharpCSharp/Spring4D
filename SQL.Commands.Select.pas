@@ -50,19 +50,22 @@ type
     FSelectType: TSelectType;
     FID: TValue;
     FLazyColumn: Column;
+    FSelectEntityClassType: TClass;
   public
     constructor Create(); override;
     destructor Destroy; override;
 
-    procedure Execute(AEntity: TObject); override;
+    procedure DoExecute(AEntity: TObject); virtual;
     procedure Build(AClass: TClass); override;
     procedure BuildParams(AEntity: TObject); override;
 
-    function Select(AEntity: TObject): IDBResultset;
+    function Select(AEntity: TObject; AEntityClassType: TClass): IDBResultset;
+    function SelectAll(AEntity: TObject; AEntityClassType: TClass): IDBResultset;
 
     procedure SelectList(AList: TObject) ;
     procedure SelectObjectList(AList: TObject; AEnumMethod: TRttiMethod);
 
+    property Command: TSelectCommand read FCommand;
     property ID: TValue read FID write FID;
     property LazyColumn: Column read FLazyColumn write FLazyColumn;
     property SelectType: TSelectType read FSelectType write FSelectType;
@@ -76,6 +79,7 @@ uses
   Core.Exceptions
   ,Mapping.RttiExplorer
   ,Core.EntityCache
+  ,Core.Utils
   ,SQL.Params
   ;
 
@@ -114,7 +118,10 @@ begin
   end
   else if Assigned(FCommand.PrimaryKeyColumn) then
   begin
-    LParam := CreateParam(AEntity, FCommand.PrimaryKeyColumn);
+    if AEntity = nil then
+      LParam := DoCreateParam(FCommand.PrimaryKeyColumn, TUtils.AsVariant(FID))
+    else
+      LParam := CreateParam(AEntity, FCommand.PrimaryKeyColumn);
     SQLParameters.Add(LParam);
   end;
 end;
@@ -136,7 +143,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TSelectExecutor.Execute(AEntity: TObject);
+procedure TSelectExecutor.DoExecute(AEntity: TObject);
 var
   LSelects: TList<TSQLSelectField>;
 begin
@@ -145,14 +152,14 @@ begin
   {DONE -oLinas -cGeneral : Must know for what column to set where condition field and value. Setting always for primary key is not good for foreign key tables}
    //AEntity - base table class type
    //EntityClass - can be foreign table class type
-  if EntityClass = AEntity.ClassType then
+  if EntityClass = FSelectEntityClassType then
   begin
     FCommand.SetFromPrimaryColumn();  //select from the same as base table
   end
   else
   begin
     //get foreign column name and compare it to the base table primary key column name
-    FCommand.SetFromForeignColumn(AEntity.ClassType, EntityClass);
+    FCommand.SetFromForeignColumn(FSelectEntityClassType, EntityClass);
   end;
 
   if Assigned(FLazyColumn) then
@@ -173,8 +180,6 @@ begin
   end
   else
     SQL := Generator.GenerateSelect(FCommand);
-
-  inherited Execute(AEntity);
 end;
 
 procedure TSelectExecutor.SelectObjectList(AList: TObject; AEnumMethod: TRttiMethod);
@@ -183,17 +188,40 @@ begin
   {DONE -oLinas -cGeneral : fetch from FResultset}
 end;
 
-function TSelectExecutor.Select(AEntity: TObject): IDBResultset;
+function TSelectExecutor.Select(AEntity: TObject; AEntityClassType: TClass): IDBResultset;
 var
   LStmt: IDBStatement;
 begin
-  Execute(AEntity);
+  FSelectEntityClassType := AEntityClassType;
+  DoExecute(AEntity);
   LStmt := Connection.CreateStatement;
   LStmt.SetSQLCommand(SQL);
 
   BuildParams(AEntity);
   if SQLParameters.Count > 0 then
     LStmt.SetParams(SQLParameters);
+
+  Execute(AEntity);
+
+  Result := LStmt.ExecuteQuery();
+end;
+
+function TSelectExecutor.SelectAll(AEntity: TObject; AEntityClassType: TClass): IDBResultset;
+var
+  LStmt: IDBStatement;
+begin
+  FSelectEntityClassType := AEntityClassType;
+  FCommand.WhereFields.Clear;
+  SQL := Generator.GenerateSelect(FCommand);
+
+  LStmt := Connection.CreateStatement;
+  LStmt.SetSQLCommand(SQL);
+
+  BuildParams(AEntity);
+  if SQLParameters.Count > 0 then
+    LStmt.SetParams(SQLParameters);
+
+  Execute(AEntity);
 
   Result := LStmt.ExecuteQuery();
 end;
