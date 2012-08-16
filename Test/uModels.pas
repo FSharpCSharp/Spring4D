@@ -42,6 +42,8 @@ type
   TProduct = class;
   TCustomer_Orders = class;
 
+  TCustomerType = (ctOneTime, ctReturning, ctBusinessClass, ctPrimary);
+
   [Entity]
   [Table('Customers')]
   [Sequence('SEQ_CUST', 1, 1)]
@@ -71,6 +73,7 @@ type
 
     [ManyValuedAssociation(ftLazy, False, [ctCascadeAll], 'FID')]
     FOrdersIntf: Lazy<IList<TCustomer_Orders>>;
+    FCustomerType: TCustomerType;
 
     function GetProducts: TObjectList<TProduct>;
     function GetAvatar: TPicture;
@@ -95,6 +98,8 @@ type
     property EMail: string read FEmail write FEmail;
     [Column('MIDDLENAME', [], 50, 0, 0, 'Middle name')]
     property MiddleName: Nullable<string> read FMiddleName write FMiddleName;
+    [Column('CUSTTYPE', [], 0, 0, 0, 'Customers type')]
+    property CustomerType: TCustomerType read FCustomerType write FCustomerType;
     property Products: TObjectList<TProduct> read GetProducts;
     property Avatar: TPicture read GetAvatar write SetAvatar;
     property AvatarLazy: Nullable<TPicture> read GetAvatarLazy;
