@@ -479,7 +479,7 @@ end;
 procedure TestMSSQLAdapter.SetUp;
 begin
   inherited;
-  FConnection := ConnectionFactory.GetInstance(dtMSSQL);
+  FConnection := TConnectionFactory.GetInstance(dtMSSQL, TestDB);
   FManager := TEntityManager.Create(FConnection);
 end;
 
@@ -704,22 +704,6 @@ begin
   CheckEqualsString(SQL_EXPECTED_PAGED, LSQL);
 end;
 
-type
-  TMSSQLEvents = class
-  public
-    class function GetConstructor: TFactoryMethod<IDBConnection>;
-  end;
-
-{ TMSSQLEvents }
-
-class function TMSSQLEvents.GetConstructor: TFactoryMethod<IDBConnection>;
-begin
-  Result := function: IDBConnection
-  begin
-    Result := TMSSQLConnectionAdapter.Create(TestDB);
-  end;
-end;
-
 var
   ODBC: IODBC;
   ODBCSources: TArray<string>;
@@ -753,7 +737,6 @@ initialization
     'User ID=VIKARINA;Initial Catalog=%0:S;Data Source=FILE_SERVER'
     ,['ViktorDemo']);
   TestDB.Open();
-  ConnectionFactory.RegisterFactoryMethod(dtMSSQL, TMSSQLEvents.GetConstructor() );
 
 finalization
   if fIndex <> -1 then

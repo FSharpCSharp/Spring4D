@@ -55,7 +55,7 @@ uses
 
 procedure TestTRttiExplorer.GetPrimaryKey;
 var
-  LColumn: Column;
+  LColumn: ColumnAttribute;
 begin
   LColumn := TRttiExplorer.GetPrimaryKeyColumn(FCustomer.ClassType);
   CheckTrue(Assigned(LColumn));
@@ -79,12 +79,12 @@ end;
 
 procedure TestTRttiExplorer.TestGetClassMembers;
 var
-  ReturnValue: TList<Entity>;
-  LColumns: TList<Column>;
+  ReturnValue: TList<EntityAttribute>;
+  LColumns: TList<ColumnAttribute>;
   AClassInfo: Pointer;
 begin
   AClassInfo := FProduct.ClassType;
-  ReturnValue := TRttiExplorer.GetClassMembers<Entity>(AClassInfo);
+  ReturnValue := TRttiExplorer.GetClassMembers<EntityAttribute>(AClassInfo);
   try
     CheckEquals(0, ReturnValue.Count);
 
@@ -92,7 +92,7 @@ begin
     ReturnValue.Free;
   end;
 
-  LColumns := TRttiExplorer.GetClassMembers<Column>(AClassInfo);
+  LColumns := TRttiExplorer.GetClassMembers<ColumnAttribute>(AClassInfo);
   try
     CheckEquals(3, LColumns.Count);
 
@@ -103,7 +103,7 @@ end;
 
 procedure TestTRttiExplorer.TestGetTable;
 var
-  ReturnValue: Table;
+  ReturnValue: TableAttribute;
   AClass: TClass;
 begin
   AClass := FProduct.ClassType;
@@ -147,7 +147,7 @@ end;
 
 procedure TestTRttiExplorer.TestGetColumns;
 var
-  ReturnValue: TList<Column>;
+  ReturnValue: TList<ColumnAttribute>;
   AClass: TClass;
 begin
   AClass := FCustomer.ClassType;
@@ -275,7 +275,7 @@ end;
 
 procedure TestTRttiExplorer.TestGetChangedMembers;
 var
-  ReturnValue: TList<Column>;
+  ReturnValue: TList<ColumnAttribute>;
   ADirtyObj: TCustomer;
   AOriginalObj: TCustomer;
 begin

@@ -39,7 +39,7 @@ type
   private
     FTable: TSQLTable;
   protected
-    procedure SetTable(AColumns: TList<Column>); virtual; abstract;
+    procedure SetTable(AColumns: TList<ColumnAttribute>); virtual; abstract;
   public
     constructor Create(ATable: TSQLTable); virtual;
 
@@ -53,13 +53,13 @@ type
     FWhereFields: TObjectList<TSQLWhereField>;
     FGroupByFields: TObjectList<TSQLGroupByField>;
     FOrderByFields: TObjectList<TSQLOrderField>;
-    FPrimaryKeyColumn: Column;
+    FPrimaryKeyColumn: ColumnAttribute;
     FForeignColumn: ForeignJoinColumnAttribute;
   public
     constructor Create(ATable: TSQLTable); override;
     destructor Destroy; override;
 
-    procedure SetTable(AColumns: TList<Column>); override;
+    procedure SetTable(AColumns: TList<ColumnAttribute>); override;
     procedure SetFromPrimaryColumn();
     procedure SetFromForeignColumn(ABaseTableClass, AForeignTableClass: TClass);
 
@@ -70,7 +70,7 @@ type
     property OrderByFields: TObjectList<TSQLOrderField> read FOrderByFields;
 
     property ForeignColumn: ForeignJoinColumnAttribute read FForeignColumn write FForeignColumn;
-    property PrimaryKeyColumn: Column read FPrimaryKeyColumn write FPrimaryKeyColumn;
+    property PrimaryKeyColumn: ColumnAttribute read FPrimaryKeyColumn write FPrimaryKeyColumn;
   end;
 
   TInsertCommand = class(TDMLCommand)
@@ -81,7 +81,7 @@ type
     constructor Create(ATable: TSQLTable); override;
     destructor Destroy; override;
 
-    procedure SetTable(AColumns: TList<Column>); override;
+    procedure SetTable(AColumns: TList<ColumnAttribute>); override;
 
     property InsertFields: TObjectList<TSQLField> read FInsertFields;
     property Sequence: SequenceAttribute read FSequence write FSequence;
@@ -91,14 +91,14 @@ type
   private
     FUpdateFields: TObjectList<TSQLField>;
     FWhereFields: TObjectList<TSQLWhereField>;
-    FPrimaryKeyColumn: Column;
+    FPrimaryKeyColumn: ColumnAttribute;
   public
     constructor Create(ATable: TSQLTable); override;
     destructor Destroy; override;
 
-    procedure SetTable(AColumns: TList<Column>); override;
+    procedure SetTable(AColumns: TList<ColumnAttribute>); override;
 
-    property PrimaryKeyColumn: Column read FPrimaryKeyColumn write FPrimaryKeyColumn;
+    property PrimaryKeyColumn: ColumnAttribute read FPrimaryKeyColumn write FPrimaryKeyColumn;
     property UpdateFields: TObjectList<TSQLField> read FUpdateFields;
     property WhereFields: TObjectList<TSQLWhereField> read FWhereFields;
   end;
@@ -111,7 +111,7 @@ type
     constructor Create(ATable: TSQLTable); override;
     destructor Destroy; override;
 
-    procedure SetTable(AColumns: TList<Column>); override;
+    procedure SetTable(AColumns: TList<ColumnAttribute>); override;
 
     property PrimaryKeyColumnName: string read FPrimaryKeyColumnName write FPrimaryKeyColumnName;
     property WhereFields: TObjectList<TSQLWhereField> read FWhereFields;
@@ -150,7 +150,7 @@ end;
 
 procedure TSelectCommand.SetFromForeignColumn(ABaseTableClass, AForeignTableClass: TClass);
 var
-  LPrimaryKeyColumn: Column;
+  LPrimaryKeyColumn: ColumnAttribute;
   LWhereField: TSQLWhereField;
 begin
   FForeignColumn := nil;
@@ -178,9 +178,9 @@ begin
   end;
 end;
 
-procedure TSelectCommand.SetTable(AColumns: TList<Column>);
+procedure TSelectCommand.SetTable(AColumns: TList<ColumnAttribute>);
 var
-  LColumn: Column;
+  LColumn: ColumnAttribute;
   LSelectField: TSQLSelectField;
 begin
   Assert(Assigned(AColumns), 'AColumns not assigned');
@@ -214,10 +214,10 @@ begin
   inherited Destroy;
 end;
 
-procedure TInsertCommand.SetTable(AColumns: TList<Column>);
+procedure TInsertCommand.SetTable(AColumns: TList<ColumnAttribute>);
 var
   LField: TSQLField;
-  LColumn: Column;
+  LColumn: ColumnAttribute;
 begin
   Assert(Assigned(AColumns), 'AColumns not assigned');
   //add fields
@@ -250,11 +250,11 @@ begin
   inherited Destroy;
 end;
 
-procedure TUpdateCommand.SetTable(AColumns: TList<Column>);
+procedure TUpdateCommand.SetTable(AColumns: TList<ColumnAttribute>);
 var
   LField: TSQLField;
   LWhereField: TSQLWhereField;
-  LColumn: Column;
+  LColumn: ColumnAttribute;
 begin
   Assert(Assigned(AColumns), 'AColumns not assigned');
   //add fields
@@ -294,7 +294,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TDeleteCommand.SetTable(AColumns: TList<Column>);
+procedure TDeleteCommand.SetTable(AColumns: TList<ColumnAttribute>);
 var
   LWhereField: TSQLWhereField;
 begin

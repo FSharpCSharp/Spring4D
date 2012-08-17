@@ -51,7 +51,7 @@ type
     function GenerateCreateFK(): string; override;
     function GenerateCreateSequence(ASequence: SequenceAttribute): string; override;
     function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
-    function GenerateGetLastInsertId(AIdentityColumn: Column): string; override;
+    function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; override;
     function GenerateGetQueryCount(const ASql: string): string; override;
   end;
@@ -118,7 +118,7 @@ begin
   end;
 end;
 
-function TAnsiSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: Column): string;
+function TAnsiSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
 begin
   Result := '';
 end;

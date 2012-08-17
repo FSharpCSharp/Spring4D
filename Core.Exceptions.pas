@@ -72,6 +72,9 @@ type
 
   EORMUnsupportedType = class(Exception);
 
+  EORMConnectionAlreadyRegistered = class(Exception);
+  EORMConnectionNotRegistered = class(Exception);
+
 implementation
 
 { EBaseORMException }

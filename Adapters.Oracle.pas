@@ -37,7 +37,7 @@ type
   public
     function GetDriverName(): string; override;
     function GenerateCreateSequence(ASequence: SequenceAttribute): string; override;
-    function GenerateGetLastInsertId(AIdentityColumn: Column): string; override;
+    function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
     function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; override;
   end;
@@ -58,7 +58,7 @@ begin
     [ASequence.SequenceName, ASequence.InitialValue, ASequence.Increment]);
 end;
 
-function TOracleSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: Column): string;
+function TOracleSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
 begin
   Result := '';
   //Result := Format('returning %0:S as NewID;', [AIdentityColumn.Name]);

@@ -62,7 +62,7 @@ uses
 
 procedure TDeleteExecutor.Build(AClass: TClass);
 var
-  LAtrTable: Table;
+  LAtrTable: TableAttribute;
 begin
   EntityClass := AClass;
   LAtrTable := TRttiExplorer.GetTable(EntityClass);

@@ -66,6 +66,7 @@ uses
   ,SvDesignPatterns
   {$IFDEF USE_SPRING} ,Spring.Collections {$ENDIF}
   ,Generics.Collections
+  ,Core.Reflection
   ;
 
 var
@@ -93,6 +94,8 @@ begin
   end;
 end;
 
+
+
 procedure CreateTables();
 begin
   TestDB.ExecSQL('CREATE TABLE IF NOT EXISTS '+ TBL_PEOPLE + ' ([CUSTID] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, [CUSTAGE] INTEGER NULL,'+
@@ -117,10 +120,10 @@ begin
     [AAge, AName, AHeight]);
 end;
 
-procedure InsertCustomerEnum(AType: TCustomerType; AAge: Integer = 25; AName: string = 'Demo'; AHeight: Double = 15.25);
+procedure InsertCustomerEnum(AType: Integer; AAge: Integer = 25; AName: string = 'Demo'; AHeight: Double = 15.25);
 begin
   TestDB.ExecSQL('INSERT INTO  ' + TBL_PEOPLE + ' ([CUSTAGE], [CUSTNAME], [CUSTHEIGHT], [CUSTTYPE]) VALUES (?,?,?,?);',
-    [AAge, AName, AHeight, Ord(AType)]);
+    [AAge, AName, AHeight, AType]);
 end;
 
 procedure InsertCustomerNullable(AAge: Integer = 25; AName: string = 'Demo'; AHeight: Double = 15.25; const AMiddleName: string = ''; APicture: TStream = nil);
@@ -199,7 +202,7 @@ begin
     LCustomer.Free;
   end;
 
-  InsertCustomerEnum(ctBusinessClass);
+  InsertCustomerEnum(Ord(ctBusinessClass));
   iLastID := TestDB.GetLastInsertRowID;
   LCustomer := FManager.FindOne<TCustomer>(iLastID);
   try
@@ -209,6 +212,15 @@ begin
     FManager.Save(LCustomer);
     LVal := GetDBValue(Format('select custtype from ' + TBL_PEOPLE + ' where custid = %D', [iLastID]));
     CheckTrue(Integer(LVal) = Ord(ctReturning));
+  finally
+    LCustomer.Free;
+  end;
+
+  InsertCustomerEnum(20);
+  iLastID := TestDB.GetLastInsertRowID;
+  LCustomer := FManager.FindOne<TCustomer>(iLastID);
+  try
+    CheckTrue(20 = Ord(LCustomer.CustomerType));
   finally
     LCustomer.Free;
   end;
@@ -683,8 +695,7 @@ end;
 
 procedure TestTEntityManager.SetUp;
 begin
-  FConnection := ConnectionFactory.GetInstance(dtSQLite);
-
+  FConnection := TConnectionFactory.GetInstance(dtSQLite, TestDB);
   FManager := TEntityManager.Create(FConnection);
 end;
 
@@ -734,7 +745,6 @@ type
   TSQLiteEvents = class
   public
     class procedure DoOnAfterOpen(Sender: TObject);
-    class function GetConstructor: TFactoryMethod<IDBConnection>;
   end;
 
 { TSQLiteEvents }
@@ -744,25 +754,14 @@ begin
   CreateTables();
 end;
 
-class function TSQLiteEvents.GetConstructor: TFactoryMethod<IDBConnection>;
-begin
-  Result := function: IDBConnection
-  begin
-    Result := TSQLiteConnectionAdapter.Create(TestDB);
-
-  end;
-end;
 
 initialization
-
   // Register any test cases with the test runner
   RegisterTest(TestTEntityManager.Suite);
 
   TestDB := TSQLiteDatabase.Create(':memory:');
   TestDB.OnAfterOpen := TSQLiteEvents.DoOnAfterOpen;
   CreateTables();
-
-  ConnectionFactory.RegisterFactoryMethod(dtSQLite, TSQLiteEvents.GetConstructor() );
 
 finalization
   TestDB.Free;

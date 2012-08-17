@@ -49,7 +49,7 @@ type
     function GenerateCreateFK(): string;
     function GenerateCreateSequence(ASequence: SequenceAttribute): string;
     function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;
-    function GenerateGetLastInsertId(AIdentityColumn: Column): string;
+    function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string;
     function GenerateGetQueryCount(const ASql: string): string;
 

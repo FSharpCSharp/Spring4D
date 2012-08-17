@@ -61,11 +61,11 @@ type
     property MemberType: TMemberType read FMemberType write FMemberType;
   end;
 
-  Entity = class(TORMAttribute);
+  EntityAttribute = class(TORMAttribute);
 
   Id = class(TORMAttribute);
 
-  Table = class(TORMAttribute)
+  TableAttribute = class(TORMAttribute)
   private
     FTable: string;
     FSchema: string;
@@ -133,7 +133,7 @@ type
 
   ForeignJoinColumnAttribute = class(JoinColumn);
 
-  Column = class(TORMAttribute)
+  ColumnAttribute = class(TORMAttribute)
   private
     FName: string;
     FProperties: TColumnProperties;
@@ -143,8 +143,9 @@ type
     FDescription: string;
     FIsIdentity: Boolean;
   public
+    constructor Create(const AName: string; AProperties: TColumnProperties = []); overload;
     constructor Create(const AName: string; AProperties: TColumnProperties; ALength: Integer; APrecision: Integer;
-      AScale: Integer; const ADescription: string);
+      AScale: Integer; const ADescription: string); overload;
 
     function IsDiscriminator(): Boolean; virtual;
 
@@ -166,7 +167,7 @@ type
     property Value: TValue read FValue;
   end;
 
-  DiscriminatorColumn = class(Column)
+  DiscriminatorColumn = class(ColumnAttribute)
   private
     FName: string;
     FDiscrType: TDiscriminatorType;
@@ -199,7 +200,7 @@ implementation
 
 { Table }
 
-constructor Table.Create(const ATablename: string; const ASchema: string);
+constructor TableAttribute.Create(const ATablename: string; const ASchema: string);
 begin
   inherited Create;
   FTable := ATablename;
@@ -254,19 +255,28 @@ end;
 
 { Column }
 
-constructor Column.Create(const AName: string; AProperties: TColumnProperties; ALength, APrecision, AScale: Integer;
+constructor ColumnAttribute.Create(const AName: string; AProperties: TColumnProperties; ALength, APrecision, AScale: Integer;
   const ADescription: string);
 begin
-  inherited Create;
-  FName := AName;
-  FProperties := AProperties;
+  Create(AName, AProperties);
   FLength := ALength;
   FPrecision := APrecision;
   FScale := AScale;
   FDescription := ADescription;
 end;
 
-function Column.IsDiscriminator: Boolean;
+constructor ColumnAttribute.Create(const AName: string; AProperties: TColumnProperties);
+begin
+  inherited Create();
+  FName := AName;
+  FProperties := AProperties;
+  FLength := 50;
+  FPrecision := 10;
+  FScale := 2;
+  FDescription := '';
+end;
+
+function ColumnAttribute.IsDiscriminator: Boolean;
 begin
   Result := False;
 end;

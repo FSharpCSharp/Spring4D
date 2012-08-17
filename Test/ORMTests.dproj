@@ -104,6 +104,7 @@
 			<DCCReference Include="..\Adapters.ASA.pas"/>
 			<DCCReference Include="TestAdaptersASA.pas"/>
 			<DCCReference Include="..\Adapters.Oracle.pas"/>
+			<DCCReference Include="..\Adapters.DBX.pas"/>
 			<None Include="Profiling\AQtimeModule1.aqt"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>

@@ -45,7 +45,7 @@ type
   private
     FOldStateEntities: TEntityMap;
   protected
-    procedure SetEntityColumns(AEntity: TObject; AColumns: TList<Column>; AResultset: IDBResultset); overload; virtual;
+    procedure SetEntityColumns(AEntity: TObject; AColumns: TList<ColumnAttribute>; AResultset: IDBResultset); overload; virtual;
     procedure SetEntityColumns(AEntity: TObject; AColumns: TList<ManyValuedAssociation>; AResultset: IDBResultset); overload; virtual;
     procedure SetLazyColumns(AEntity: TObject);
 
@@ -56,7 +56,7 @@ type
     function GetObjectList<T: class, constructor>(AResultset: IDBResultset): T;
     procedure SetInterfaceList<T>(var AValue: T; AResultset: IDBResultset);
     procedure SetOne<T>(var AValue: T; AResultset: IDBResultset; AEntity: TObject);
-    function DoGetLazy<T>(const AID: TValue; AEntity: TObject; AColumn: Column; out AIsEnumerable: Boolean): IDBResultset;
+    function DoGetLazy<T>(const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute; out AIsEnumerable: Boolean): IDBResultset;
 
     function GetSelector(AClass: TClass): TObject;
 
@@ -65,8 +65,8 @@ type
     constructor Create(AConnection: IDBConnection); override;
     destructor Destroy; override;
 
-    function GetLazyValueClass<T: class, constructor>(const AID: TValue; AEntity: TObject; AColumn: Column): T;
-    procedure SetLazyValue<T>(var AValue: T; const AID: TValue; AEntity: TObject; AColumn: Column);
+    function GetLazyValueClass<T: class, constructor>(const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute): T;
+    procedure SetLazyValue<T>(var AValue: T; const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute);
 
     /// <summary>
     /// Executes sql statement which does not return resultset
@@ -222,7 +222,7 @@ begin
   inherited Destroy;
 end;
 
-function TEntityManager.DoGetLazy<T>(const AID: TValue; AEntity: TObject; AColumn: Column; out AIsEnumerable: Boolean): IDBResultset;
+function TEntityManager.DoGetLazy<T>(const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute; out AIsEnumerable: Boolean): IDBResultset;
 var
   LSelecter: TSelectExecutor;
   LBaseEntityClass, LEntityClass: TClass;
@@ -253,7 +253,7 @@ end;
 
 procedure TEntityManager.DoSetEntity(var AEntityToCreate: TObject; AResultset: IDBResultset; ARealEntity: TObject);
 var
-  LColumns: TList<Column>;
+  LColumns: TList<ColumnAttribute>;
   LResult, LValue: TValue;
   LVal: Variant;
   LObj: TObject;
@@ -472,7 +472,7 @@ begin
   end;
 end;
 
-procedure TEntityManager.SetLazyValue<T>(var AValue: T; const AID: TValue; AEntity: TObject; AColumn: Column);
+procedure TEntityManager.SetLazyValue<T>(var AValue: T; const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute);
 var
   IsEnumerable: Boolean;
   LResults: IDBResultset;
@@ -501,7 +501,7 @@ procedure TEntityManager.SetOne<T>(var AValue: T; AResultset: IDBResultset; AEnt
 var
   LValue, LConverted: TValue;
   LType: TRttiType;
-  LColumn: Column;
+  LColumn: ColumnAttribute;
   LVal: Variant;
 begin
   LType := TRttiExplorer.GetEntityRttiType(TypeInfo(T));
@@ -518,7 +518,7 @@ begin
   end;
 end;
 
-function TEntityManager.GetLazyValueClass<T>(const AID: TValue; AEntity: TObject; AColumn: Column): T;
+function TEntityManager.GetLazyValueClass<T>(const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute): T;
 var
   IsEnumerable: Boolean;
   LResults: IDBResultset;
@@ -721,9 +721,9 @@ begin
   end;
 end;
 
-procedure TEntityManager.SetEntityColumns(AEntity: TObject; AColumns: TList<Column>; AResultset: IDBResultset);
+procedure TEntityManager.SetEntityColumns(AEntity: TObject; AColumns: TList<ColumnAttribute>; AResultset: IDBResultset);
 var
-  LCol, LPrimaryKeyColumn: Column;
+  LCol, LPrimaryKeyColumn: ColumnAttribute;
   LVal: Variant;
   LValue, LPrimaryKey: TValue;
   LTypeInfo: PTypeInfo;

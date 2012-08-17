@@ -44,7 +44,7 @@ type
     function GenerateCreateFK(): string; virtual; abstract;
     function GenerateCreateSequence(ASequence: SequenceAttribute): string; virtual; abstract;
     function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; virtual; abstract;
-    function GenerateGetLastInsertId(AIdentityColumn: Column): string; virtual; abstract;
+    function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; virtual; abstract;
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; virtual; abstract;
     function GenerateGetQueryCount(const ASql: string): string; virtual; abstract;
   end;

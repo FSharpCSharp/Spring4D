@@ -162,7 +162,7 @@ end;
 
 function TEntityMap.GetObjectKey(AObject: TObject): TEntityMapKey;
 var
-  LPrimaryKeyCol: Column;
+  LPrimaryKeyCol: ColumnAttribute;
 begin
   Result.FModelClass := AObject.ClassType;
   LPrimaryKeyCol := TEntityCache.Get(AObject.ClassType).PrimaryKeyColumn;

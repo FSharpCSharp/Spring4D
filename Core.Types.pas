@@ -105,9 +105,9 @@ type
     function GetEntity: TObject;
     procedure SetEntity(const Value: TObject);
     property Entity: TObject read GetEntity write SetEntity;
-    function GetColumn: Column;
-    procedure SetColumn(const Value: Column);
-    property EntityColumn: Column read GetColumn write SetColumn;
+    function GetColumn: ColumnAttribute;
+    procedure SetColumn(const Value: ColumnAttribute);
+    property EntityColumn: ColumnAttribute read GetColumn write SetColumn;
   end;
 
   ISvLazyObject<T: class, constructor> = interface(ISvLazy<T>)
@@ -124,7 +124,7 @@ type
     FID: Variant;
     FManager: TEntityManager;
     FEntity: TObject;
-    FColumn: Column;
+    FColumn: ColumnAttribute;
     function GetValue: T;
     function GetManager: TEntityManager;
     procedure SetManager(const Value: TEntityManager);
@@ -132,8 +132,8 @@ type
     procedure SetID(const Value: Variant);
     function GetEntity: TObject;
     procedure SetEntity(const Value: TObject);
-    function GetColumn: Column;
-    procedure SetColumn(const Value: Column);
+    function GetColumn: ColumnAttribute;
+    procedure SetColumn(const Value: ColumnAttribute);
   protected
     procedure SetValue(const AValue: T);
     function OwnsObjects: Boolean;
@@ -149,7 +149,7 @@ type
 
     function ValueCreated: Boolean;
 
-    property EntityColumn: Column read GetColumn write SetColumn;
+    property EntityColumn: ColumnAttribute read GetColumn write SetColumn;
     property DisableCacheForNextGet: Boolean read GetDisableCache write SetDisableCache;
     property ID: Variant read GetID write SetID;
     property Entity: TObject read GetEntity write SetEntity;
@@ -171,7 +171,7 @@ type
     FManager: TEntityManager;
     FID: Variant;
     FEntity: TObject;
-    FColumn: Column;
+    FColumn: ColumnAttribute;
     function GetValue: T;
     function GetDisableCache: Boolean;
     procedure SetDisableCache(const Value: Boolean);
@@ -205,7 +205,7 @@ type
     FManager: TEntityManager;
     FID: Variant;
     FEntity: TObject;
-    FColumn: Column;
+    FColumn: ColumnAttribute;
     function GetValue: T;
     function GetDisableCache: Boolean;
     procedure SetDisableCache(const Value: Boolean);
@@ -418,7 +418,7 @@ begin
   Result := FValue;
 end;
 
-function TSvLazy<T>.GetColumn: Column;
+function TSvLazy<T>.GetColumn: ColumnAttribute;
 begin
   Result := FColumn;
 end;
@@ -461,7 +461,7 @@ begin
   Result := FOwnsObjects;
 end;
 
-procedure TSvLazy<T>.SetColumn(const Value: Column);
+procedure TSvLazy<T>.SetColumn(const Value: ColumnAttribute);
 begin
   FColumn := Value;
 end;

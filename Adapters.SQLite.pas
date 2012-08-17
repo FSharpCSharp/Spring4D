@@ -79,13 +79,14 @@ type
   TSQLiteSQLGenerator = class(TAnsiSQLGenerator)
   public
     function GetDriverName(): string; override;
-    function GenerateGetLastInsertId(AIdentityColumn: Column): string; override;
+    function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
   end;
 
 implementation
 
 uses
   SQL.Register
+  ,Core.ConnectionFactory
   ;
 
 { TSQLiteResultSetAdapter }
@@ -267,7 +268,7 @@ end;
 
 { TSQLiteSQLGenerator }
 
-function TSQLiteSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: Column): string;
+function TSQLiteSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
 begin
   Result := 'SELECT last_insert_rowid();';
 end;
@@ -279,5 +280,6 @@ end;
 
 initialization
   TSQLGeneratorRegister.RegisterGenerator(TSQLiteSQLGenerator.Create());
+  TConnectionFactory.RegisterConnection<TSQLiteConnectionAdapter>(dtSQLite);
 
 end.

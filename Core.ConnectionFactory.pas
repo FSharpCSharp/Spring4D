@@ -31,18 +31,96 @@ interface
 
 uses
   Core.Interfaces
-  ,SvDesignPatterns;
+  ,Generics.Collections
+  ;
 
-var
-  ConnectionFactory: TFactory<TDBDriverType,IDBConnection> = nil;
+type
+  TConnectionFactory = class
+  private
+    class var FRegistered: TDictionary<TDBDriverType, TClass>;
+  protected
+    class function ConcreteCreate(AClass: TClass; AConcreteConnection: TObject): IDBConnection;
+  public
+    class constructor Create;
+    class destructor Destroy;
+
+    class function GetInstance(AKey: TDBDriverType; AConcreteConnection: TObject): IDBConnection;
+    class procedure RegisterConnection<T: class>(AKey: TDBDriverType);
+    class function IsRegistered(AKey: TDBDriverType): Boolean;
+
+  end;
+
 
 implementation
 
-initialization
-  ConnectionFactory := TFactory<TDBDriverType,IDBConnection>.Create;
-  ConnectionFactory.IsThreadSafe := True;
+uses
+  Core.Exceptions
+  ,Rtti
+  ,TypInfo
+  ;
 
-finalization
-  ConnectionFactory.Free;
+{ TConnectionFactory }
+
+class constructor TConnectionFactory.Create;
+begin
+  FRegistered := TDictionary<TDBDriverType, TClass>.Create(100);
+end;
+
+class destructor TConnectionFactory.Destroy;
+begin
+  FRegistered.Free;
+end;
+
+class function TConnectionFactory.ConcreteCreate(AClass: TClass; AConcreteConnection: TObject): IDBConnection;
+var
+  LParams: TArray<TRttiParameter>;
+  LMethod: TRttiMethod;
+begin
+  for LMethod in TRttiContext.Create.GetType(AClass).GetMethods() do
+  begin
+    if LMethod.IsConstructor then
+    begin
+      LParams := LMethod.GetParameters;
+      if (Length(LParams) = 1) then
+      begin
+        Result := LMethod.Invoke(AClass, [AConcreteConnection]).AsType<IDBConnection>;
+        Exit();
+      end;
+    end;
+  end;
+  Result := nil;
+end;
+
+class function TConnectionFactory.GetInstance(AKey: TDBDriverType;
+  AConcreteConnection: TObject): IDBConnection;
+var
+  LClass: TClass;
+begin
+  if not IsRegistered(AKey) then
+    raise EORMConnectionNotRegistered.Create('Connection not registered');
+
+  LClass := FRegistered[AKey];
+
+  Result := ConcreteCreate(LClass, AConcreteConnection);
+  if not Assigned(Result) then
+    raise EORMUnsupportedType.Create('Connection type not supported');
+end;
+
+class function TConnectionFactory.IsRegistered(AKey: TDBDriverType): Boolean;
+begin
+  Result := FRegistered.ContainsKey(AKey);
+end;
+
+class procedure TConnectionFactory.RegisterConnection<T>(AKey: TDBDriverType);
+var
+  LClass: TClass;
+begin
+  LClass := T;
+  if IsRegistered(AKey) then
+    raise EORMConnectionAlreadyRegistered.Create('Connection already registered');
+
+  FRegistered.Add(AKey, LClass);
+end;
+
 
 end.

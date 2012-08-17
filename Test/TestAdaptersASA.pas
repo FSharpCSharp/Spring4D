@@ -49,6 +49,7 @@ type
     procedure TearDown; override;
   published
     procedure TestFirst();
+    procedure TestSave();
   end;
 
 implementation
@@ -57,6 +58,7 @@ uses
   Core.ConnectionFactory
   ,Core.DatabaseManager
   ,SvDesignPatterns
+  ,TestADOAdapter
   ;
 
 var
@@ -64,6 +66,22 @@ var
 
 const
   SQL_SELECT_ALL = 'SELECT * FROM VIKARINA.IMONES;';
+
+function GetSQLCount(const ACountSQL: string): Integer;
+var
+  LTable: _Recordset;
+begin
+  LTable := TestDB.Execute(ACountSQL);
+  Result := LTable.Fields[0].Value;
+end;
+
+function GetSQLFirstFieldValue(const ASQL: string): Variant;
+var
+  LTable: _Recordset;
+begin
+  LTable := TestDB.Execute(ASQL);
+  Result := LTable.Fields[0].Value;
+end;
 
 procedure TestTASAConnectionAdapter.SetUp;
 begin
@@ -113,22 +131,6 @@ end;
 
 
 
-type
-  TASAEvents = class
-  public
-    class function GetConstructor: TFactoryMethod<IDBConnection>;
-  end;
-
-{ TMSSQLEvents }
-
-class function TASAEvents.GetConstructor: TFactoryMethod<IDBConnection>;
-begin
-  Result := function: IDBConnection
-  begin
-    Result := TASAConnectionAdapter.Create(TestDB);
-  end;
-end;
-
 var
   ODBC: IODBC;
   ODBCSources: TArray<string>;
@@ -140,7 +142,7 @@ var
 procedure TestASAAdapter.SetUp;
 begin
   inherited;
-  FConnection := ConnectionFactory.GetInstance(dtASA);
+  FConnection := TConnectionFactory.GetInstance(dtASA, TestDB);
   FManager := TEntityManager.Create(FConnection);
 end;
 
@@ -158,6 +160,36 @@ begin
   try
     CheckTrue(Assigned(LCompany));
     CheckEquals(1, LCompany.ID);
+  finally
+    LCompany.Free;
+  end;
+end;
+
+procedure TestASAAdapter.TestSave;
+var
+  LCompany: TCompany;
+  LTran: IDBTransaction;
+  iCount: Integer;
+begin
+  LCompany := TCompany.Create;
+  try
+    iCount := GetSQLCount('select count(*) from vikarina.imones;');
+    LCompany.Name := 'ORM';
+    LCompany.Address := 'ORM street';
+    LCompany.Telephone := '+37068569854';
+    LCompany.ID := 7;
+
+    LTran := FManager.Connection.BeginTransaction;
+
+    FManager.Save(LCompany);
+
+    CheckEquals(iCount + 1, GetSQLCount('select count(*) from vikarina.imones;'));
+
+    LCompany.Name := 'ORM Name changed';
+    FManager.Save(LCompany);
+    CheckEquals(iCount + 1, GetSQLCount('select count(*) from vikarina.imones;'));
+    CheckEqualsString(LCompany.Name,string(GetSQLFirstFieldValue('select IMPAV from vikarina.imones where imone = 7;')));
+
   finally
     LCompany.Free;
   end;
@@ -181,7 +213,6 @@ initialization
   //
   TestDB.ConnectionString := 'Provider=MSDASQL;Data Source=demo_syb;Password=master;Persist Security Info=True;User ID=VIKARINA';
   TestDB.Open();
-  ConnectionFactory.RegisterFactoryMethod(dtASA, TASAEvents.GetConstructor() );
 
 finalization
   if fIndex <> -1 then

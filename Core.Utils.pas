@@ -304,7 +304,7 @@ class procedure TUtils.SetLazyValue(ARttiMember: TRttiNamedObject; AManager: TOb
 var
   LRecord: TRttiRecordType;
   LValueField: TRttiField;
-  LCol: Column;
+  LCol: ColumnAttribute;
 begin
   AResult := TRttiExplorer.GetMemberValue(AEntity, ARttiMember);
 

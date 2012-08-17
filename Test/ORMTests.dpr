@@ -69,7 +69,8 @@ uses
   PatchUtils in '..\PatchUtils.pas',
   Adapters.ASA in '..\Adapters.ASA.pas',
   TestAdaptersASA in 'TestAdaptersASA.pas',
-  Adapters.Oracle in '..\Adapters.Oracle.pas';
+  Adapters.Oracle in '..\Adapters.Oracle.pas',
+  Adapters.DBX in '..\Adapters.DBX.pas';
 
 {$R *.RES}
 

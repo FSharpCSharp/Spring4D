@@ -37,10 +37,10 @@ uses
 type
   TEntityData = class
   private
-    FColumns: TList<Column>;
+    FColumns: TList<ColumnAttribute>;
     FForeignKeyColumns: TList<ForeignJoinColumnAttribute>;
-    FPrimaryKeyColumn: Column;
-    FTable: Table;
+    FPrimaryKeyColumn: ColumnAttribute;
+    FTable: TableAttribute;
     FManyValuedColumns: TList<ManyValuedAssociation>;
     FSequence: SequenceAttribute;
   protected
@@ -50,18 +50,18 @@ type
     destructor Destroy; override;
 
     function IsTableEntity(): Boolean;
-    function ColumnByMemberName(const AMemberName: string): Column;
-    function ColumnByName(const AColumnName: string): Column;
+    function ColumnByMemberName(const AMemberName: string): ColumnAttribute;
+    function ColumnByName(const AColumnName: string): ColumnAttribute;
     function HasSequence(): Boolean;
 
 
-    property Columns: TList<Column> read FColumns;
+    property Columns: TList<ColumnAttribute> read FColumns;
     property ForeignColumns: TList<ForeignJoinColumnAttribute> read FForeignKeyColumns;
     property ManyValuedColumns: TList<ManyValuedAssociation> read FManyValuedColumns;
-    property PrimaryKeyColumn: Column read FPrimaryKeyColumn;
+    property PrimaryKeyColumn: ColumnAttribute read FPrimaryKeyColumn;
     property Sequence: SequenceAttribute read FSequence write FSequence;
 
-    property EntityTable: Table read FTable;
+    property EntityTable: TableAttribute read FTable;
   end;
 
   TEntityCache = class
@@ -73,7 +73,7 @@ type
 
     class function Get(AClass: TClass): TEntityData;
     class function TryGet(AClass: TClass; out AEntityData: TEntityData): Boolean;
-    class function GetColumns(AClass: TClass): TList<Column>;
+    class function GetColumns(AClass: TClass): TList<ColumnAttribute>;
 
 
     class property Entities: TObjectDictionary<TClass, TEntityData> read FEntities;
@@ -91,7 +91,7 @@ uses
 
 { TEntityData }
 
-function TEntityData.ColumnByMemberName(const AMemberName: string): Column;
+function TEntityData.ColumnByMemberName(const AMemberName: string): ColumnAttribute;
 begin
   for Result in FColumns do
   begin
@@ -101,7 +101,7 @@ begin
   Result := nil;
 end;
 
-function TEntityData.ColumnByName(const AColumnName: string): Column;
+function TEntityData.ColumnByName(const AColumnName: string): ColumnAttribute;
 begin
   for Result in FColumns do
   begin
@@ -114,7 +114,7 @@ end;
 constructor TEntityData.Create;
 begin
   inherited Create;
-  FColumns := TList<Column>.Create;
+  FColumns := TList<ColumnAttribute>.Create;
   FPrimaryKeyColumn := nil;
   FTable := nil;
   FSequence := nil;
@@ -177,7 +177,7 @@ begin
   end;
 end;
 
-class function TEntityCache.GetColumns(AClass: TClass): TList<Column>;
+class function TEntityCache.GetColumns(AClass: TClass): TList<ColumnAttribute>;
 begin
   Result := Get(AClass).Columns;
 end;

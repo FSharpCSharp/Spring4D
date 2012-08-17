@@ -50,7 +50,7 @@ type
 
     function GetFullTableName(): string;
 
-    procedure SetFromAttribute(AAttribute: Table);
+    procedure SetFromAttribute(AAttribute: TableAttribute);
 
     property Alias: string read GetAlias write FAlias;
     property Description: string read FDescription write FDescription;
@@ -202,7 +202,7 @@ begin
   Result := (FSchema <> '');
 end;
 
-procedure TSQLTable.SetFromAttribute(AAttribute: Table);
+procedure TSQLTable.SetFromAttribute(AAttribute: TableAttribute);
 begin
   Name := AAttribute.TableName;
   Schema := AAttribute.Schema;

@@ -30,7 +30,7 @@ unit Adapters.ASA;
 interface
 
 uses
-  Adapters.ADO, SysUtils, Mapping.Attributes;
+  Adapters.ADO, SysUtils, Mapping.Attributes, Core.Interfaces;
 
 type
   TASAResultsetAdapter = class(TADOResultSetAdapter);
@@ -47,7 +47,7 @@ type
   TASASQLGenerator = class(TADOSQLGenerator)
   public
     function GetDriverName(): string; override;
-    function GenerateGetLastInsertId(AIdentityColumn: Column): string; override;
+    function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; override;
   end;
 
@@ -57,6 +57,7 @@ implementation
 
 uses
   SQL.Register
+  ,Core.ConnectionFactory
   ,StrUtils
   ;
 
@@ -69,7 +70,7 @@ end;
 
 { TASASQLGenerator }
 
-function TASASQLGenerator.GenerateGetLastInsertId(AIdentityColumn: Column): string;
+function TASASQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
 begin
   Result := 'SELECT @@IDENTITY;';
 end;
@@ -110,5 +111,5 @@ end;
 
 initialization
   TSQLGeneratorRegister.RegisterGenerator(TASASQLGenerator.Create());
-
+  TConnectionFactory.RegisterConnection<TASAConnectionAdapter>(dtASA);
 end.

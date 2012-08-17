@@ -38,7 +38,7 @@ type
   private
     FTable: TSQLTable;
     FCommand: TUpdateCommand;
-    FColumns: TList<Column>;
+    FColumns: TList<ColumnAttribute>;
     FEntityMap: TEntityMap;
     FMapped: Boolean;
   public
@@ -113,7 +113,7 @@ end;
 
 procedure TUpdateExecutor.Build(AClass: TClass);
 var
-  LAtrTable: Table;
+  LAtrTable: TableAttribute;
   LCache: TEntityData;
 begin
   EntityClass := AClass;
@@ -137,7 +137,7 @@ end;
 procedure TUpdateExecutor.BuildParams(AEntity: TObject);
 var
   LParam: TDBParam;
-  LColumn: Column;
+  LColumn: ColumnAttribute;
 begin
   inherited BuildParams(AEntity);
 
@@ -158,7 +158,7 @@ constructor TUpdateExecutor.Create();
 begin
   inherited Create();
   FTable := TSQLTable.Create;
-  FColumns := TList<Column>.Create;
+  FColumns := TList<ColumnAttribute>.Create;
   FCommand := TUpdateCommand.Create(FTable);
 end;
 

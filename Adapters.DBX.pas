@@ -25,25 +25,23 @@
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *)
-unit Adapters.ADO;
+unit Adapters.DBX;
 
 interface
 
-{$IFDEF MSWINDOWS}
-
 uses
-  Generics.Collections, Core.Interfaces, ADODB, Core.Base, SQL.Params, SysUtils
-  , SQL.AnsiSQLGenerator, DB, Mapping.Attributes;
-
+  SqlExpr, DB, Generics.Collections, Core.Interfaces, Core.Base, SQL.Params, SysUtils
+  , SQL.AnsiSQLGenerator, DBXCommon
+  ;
 
 type
-  TADOResultSetAdapter = class(TDriverResultSetAdapter<TADOQuery>)
+  TDBXResultSetAdapter = class(TDriverResultSetAdapter<TSQLQuery>)
   private
     FFieldCache: TDictionary<string,TField>;
   protected
     procedure BuildFieldCache();
   public
-    constructor Create(const ADataset: TADOQuery); override;
+    constructor Create(const ADataset: TSQLQuery); override;
     destructor Destroy; override;
 
     function IsEmpty(): Boolean; override;
@@ -51,14 +49,13 @@ type
     function GetFieldValue(AIndex: Integer): Variant; overload; override;
     function GetFieldValue(const AFieldname: string): Variant; overload; override;
     function GetFieldCount(): Integer; override;
-
   end;
 
-  EADOStatementAdapterException = Exception;
+  EDBXStatementAdapterException = Exception;
 
-  TADOStatementAdapter = class(TDriverStatementAdapter<TADOQuery>)
+  TDBXStatementAdapter = class(TDriverStatementAdapter<TSQLQuery>)
   public
-    constructor Create(const AStatement: TADOQuery); override;
+    constructor Create(const AStatement: TSQLQuery); override;
     destructor Destroy; override;
     procedure SetSQLCommand(const ACommandText: string); override;
     procedure SetParams(Params: TEnumerable<TDBParam>); overload; override;
@@ -66,9 +63,9 @@ type
     function ExecuteQuery(): IDBResultSet; override;
   end;
 
-  TADOConnectionAdapter = class(TDriverConnectionAdapter<TADOConnection>, IDBConnection)
+  TDBXConnectionAdapter = class(TDriverConnectionAdapter<TSQLConnection>, IDBConnection)
   public
-    constructor Create(const AConnection: TADOConnection); override;
+    constructor Create(const AConnection: TSQLConnection); override;
 
     procedure Connect; override;
     procedure Disconnect; override;
@@ -78,29 +75,23 @@ type
     function GetDriverName: string; override;
   end;
 
-  TADOTransactionAdapter = class(TInterfacedObject, IDBTransaction)
+  TDBXTransactionAdapter = class(TInterfacedObject, IDBTransaction)
   private
-    FADOConnection: TADOConnection;
+    FTransaction: TDBXTransaction;
   public
-    constructor Create(AConnection: TADOConnection);
+    constructor Create(ATransaction: TDBXTransaction);
     destructor Destroy; override;
 
     procedure Commit;
     procedure Rollback;
   end;
 
-  TADOSQLGenerator = class(TAnsiSQLGenerator)
+  TDBXSQLGenerator = class(TAnsiSQLGenerator)
   public
     function GetDriverName(): string; override;
-    function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
   end;
 
-
-{$ENDIF}
-
 implementation
-
-{$IFDEF MSWINDOWS}
 
 uses
   SQL.Register
@@ -108,10 +99,9 @@ uses
   ;
 
 
+{ TDBXResultSetAdapter }
 
-{ TADOResultSetAdapter }
-
-procedure TADOResultSetAdapter.BuildFieldCache;
+procedure TDBXResultSetAdapter.BuildFieldCache;
 var
   i: Integer;
 begin
@@ -124,86 +114,82 @@ begin
   end;
 end;
 
-constructor TADOResultSetAdapter.Create(const ADataset: TADOQuery);
+constructor TDBXResultSetAdapter.Create(const ADataset: TSQLQuery);
 begin
   inherited Create(ADataset);
   Dataset.DisableControls;
-  Dataset.CursorLocation := clUseServer;
-  Dataset.CursorType := ctOpenForwardOnly;
+ // Dataset.CursorLocation := clUseServer;
+ // Dataset.CursorType := ctOpenForwardOnly;
   FFieldCache := TDictionary<string,TField>.Create(Dataset.FieldCount * 2);
   BuildFieldCache();
 end;
 
-destructor TADOResultSetAdapter.Destroy;
+destructor TDBXResultSetAdapter.Destroy;
 begin
   FFieldCache.Free;
   Dataset.Free;
   inherited Destroy;
 end;
 
-function TADOResultSetAdapter.GetFieldCount: Integer;
+function TDBXResultSetAdapter.GetFieldCount: Integer;
 begin
   Result := Dataset.FieldCount;
 end;
 
-function TADOResultSetAdapter.GetFieldValue(AIndex: Integer): Variant;
+function TDBXResultSetAdapter.GetFieldValue(AIndex: Integer): Variant;
 begin
   Result := Dataset.Fields[AIndex].Value;
 end;
 
-function TADOResultSetAdapter.GetFieldValue(const AFieldname: string): Variant;
+function TDBXResultSetAdapter.GetFieldValue(const AFieldname: string): Variant;
 begin
   BuildFieldCache();
   Result := FFieldCache[UpperCase(AFieldname)].Value
- // Result := Dataset.FieldByName(AFieldname).Value;
 end;
 
-function TADOResultSetAdapter.IsEmpty: Boolean;
+function TDBXResultSetAdapter.IsEmpty: Boolean;
 begin
   Result := Dataset.Eof;
 end;
 
-function TADOResultSetAdapter.Next: Boolean;
+function TDBXResultSetAdapter.Next: Boolean;
 begin
   Dataset.Next;
   Result := not Dataset.Eof;
 end;
 
-{ TADOStatementAdapter }
+{ TDBXStatementAdapter }
 
-constructor TADOStatementAdapter.Create(const AStatement: TADOQuery);
+constructor TDBXStatementAdapter.Create(const AStatement: TSQLQuery);
 begin
   inherited Create(AStatement);
 end;
 
-destructor TADOStatementAdapter.Destroy;
+destructor TDBXStatementAdapter.Destroy;
 begin
   Statement.Free;
   inherited Destroy;
 end;
 
-function TADOStatementAdapter.Execute: NativeUInt;
+function TDBXStatementAdapter.Execute: NativeUInt;
 begin
   Result := Statement.ExecSQL();
 end;
 
-function TADOStatementAdapter.ExecuteQuery: IDBResultSet;
+function TDBXStatementAdapter.ExecuteQuery: IDBResultSet;
 var
-  LStmt: TADOQuery;
+  LStmt: TSQLQuery;
 begin
-  LStmt := TADOQuery.Create(nil);
-  LStmt.CursorLocation := clUseServer;
-  LStmt.CursorType := ctOpenForwardOnly;
-  LStmt.CacheSize := 50;
-  LStmt.Connection := Statement.Connection;
+  LStmt := TSQLQuery.Create(nil);
+  LStmt.SQLConnection := Statement.SQLConnection;
   LStmt.SQL.Text := Statement.SQL.Text;
-  LStmt.Parameters.AssignValues(Statement.Parameters);
+  LStmt.Params.AssignValues(Statement.Params);
   LStmt.DisableControls;
-  Result := TADOResultSetAdapter.Create(LStmt);
+  Result := TDBXResultSetAdapter.Create(LStmt);
   LStmt.Open();
 end;
 
-procedure TADOStatementAdapter.SetParams(Params: TEnumerable<TDBParam>);
+procedure TDBXStatementAdapter.SetParams(Params: TEnumerable<TDBParam>);
 var
   LParam: TDBParam;
   sParamName: string;
@@ -211,38 +197,40 @@ begin
   for LParam in Params do
   begin
     sParamName := LParam.Name;
-    //strip leading : in param name because ADO does not like them
+    {TODO -oLinas -cGeneral : dont know if DBX has the same param issue as ADO}
+    //strip leading : in param name because DBX does not like them
     if (LParam.Name <> '') and (StartsStr(':', LParam.Name)) then
     begin
       sParamName := Copy(LParam.Name, 2, Length(LParam.Name));
     end;
-    Statement.Parameters.ParamValues[sParamName] := LParam.Value;
+    Statement.Params.ParamValues[sParamName] := LParam.Value;
   end;
 end;
 
-procedure TADOStatementAdapter.SetSQLCommand(const ACommandText: string);
+procedure TDBXStatementAdapter.SetSQLCommand(const ACommandText: string);
 begin
   Statement.SQL.Text := ACommandText;
 end;
 
-{ TADOConnectionAdapter }
+{ TDBXConnectionAdapter }
 
-function TADOConnectionAdapter.BeginTransaction: IDBTransaction;
+function TDBXConnectionAdapter.BeginTransaction: IDBTransaction;
+var
+  LTran: TDBXTransaction;
 begin
   if Connection = nil then
     Exit(nil);
 
   Connection.Connected := True;
-
+  LTran := nil;
   if not Connection.InTransaction then
   begin
-    Connection.BeginTrans;
+    LTran := Connection.BeginTransaction;
   end;
-
-  Result := TADOTransactionAdapter.Create(Connection);
+  Result := TDBXTransactionAdapter.Create(LTran);
 end;
 
-procedure TADOConnectionAdapter.Connect;
+procedure TDBXConnectionAdapter.Connect;
 begin
   if Connection <> nil then
   begin
@@ -250,37 +238,37 @@ begin
   end;
 end;
 
-constructor TADOConnectionAdapter.Create(const AConnection: TADOConnection);
+constructor TDBXConnectionAdapter.Create(const AConnection: TSQLConnection);
 begin
   inherited Create(AConnection);
   Connection.LoginPrompt := False;
 end;
 
-function TADOConnectionAdapter.CreateStatement: IDBStatement;
+function TDBXConnectionAdapter.CreateStatement: IDBStatement;
 var
-  LStatement: TADOQuery;
+  LStatement: TSQLQuery;
 begin
   if Connection = nil then
     Exit(nil);
 
-  LStatement := TADOQuery.Create(nil);
-  LStatement.Connection := Connection;
+  LStatement := TSQLQuery.Create(nil);
+  LStatement.SQLConnection := Connection;
 
-  Result := TADOStatementAdapter.Create(LStatement);
+  Result := TDBXStatementAdapter.Create(LStatement);
 end;
 
-procedure TADOConnectionAdapter.Disconnect;
+procedure TDBXConnectionAdapter.Disconnect;
 begin
   if Connection <> nil then
     Connection.Connected := False;
 end;
 
-function TADOConnectionAdapter.GetDriverName: string;
+function TDBXConnectionAdapter.GetDriverName: string;
 begin
-  Result := 'ADO';
+  Result := 'DBX';
 end;
 
-function TADOConnectionAdapter.IsConnected: Boolean;
+function TDBXConnectionAdapter.IsConnected: Boolean;
 begin
   if Connection <> nil then
     Result := Connection.Connected
@@ -288,52 +276,44 @@ begin
     Result := False;
 end;
 
-{ TADOTransactionAdapter }
+{ TDBXTransactionAdapter }
 
-procedure TADOTransactionAdapter.Commit;
+procedure TDBXTransactionAdapter.Commit;
 begin
-  if (FADOConnection = nil) then
+  if (FTransaction = nil) then
     Exit;
 
-  FADOConnection.CommitTrans;
+  FTransaction.Connection.CommitFreeAndNil(FTransaction);
 end;
 
-constructor TADOTransactionAdapter.Create(AConnection: TADOConnection);
+constructor TDBXTransactionAdapter.Create(ATransaction: TDBXTransaction);
 begin
   inherited Create;
-  FADOConnection := AConnection;
+  FTransaction := ATransaction;
 end;
 
-destructor TADOTransactionAdapter.Destroy;
+destructor TDBXTransactionAdapter.Destroy;
 begin
-  if FADOConnection.InTransaction then
-    FADOConnection.RollbackTrans;
+  if Assigned(FTransaction) then
+    FTransaction.Connection.RollbackFreeAndNil(FTransaction);
+
   inherited Destroy;
 end;
 
-procedure TADOTransactionAdapter.Rollback;
+procedure TDBXTransactionAdapter.Rollback;
 begin
-  if (FADOConnection = nil) then
-    Exit;
-
-  FADOConnection.RollbackTrans;
+  if Assigned(FTransaction) then
+    FTransaction.Connection.RollbackFreeAndNil(FTransaction);
 end;
 
-{ TADOSQLGenerator }
+{ TDBXSQLGenerator }
 
-function TADOSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
+function TDBXSQLGenerator.GetDriverName: string;
 begin
-  Result := '';
-end;
-
-function TADOSQLGenerator.GetDriverName: string;
-begin
-  Result := 'ADO';
+  Result := 'DBX';
 end;
 
 initialization
-  TSQLGeneratorRegister.RegisterGenerator(TADOSQLGenerator.Create());
-
-{$ENDIF}
+  TSQLGeneratorRegister.RegisterGenerator(TDBXSQLGenerator.Create());
 
 end.

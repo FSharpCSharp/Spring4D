@@ -46,10 +46,10 @@ type
   private
     FTable: TSQLTable;
     FCommand: TSelectCommand;
-    FColumns: TList<Column>;
+    FColumns: TList<ColumnAttribute>;
     FSelectType: TSelectType;
     FID: TValue;
-    FLazyColumn: Column;
+    FLazyColumn: ColumnAttribute;
     FSelectEntityClassType: TClass;
   public
     constructor Create(); override;
@@ -67,7 +67,7 @@ type
 
     property Command: TSelectCommand read FCommand;
     property ID: TValue read FID write FID;
-    property LazyColumn: Column read FLazyColumn write FLazyColumn;
+    property LazyColumn: ColumnAttribute read FLazyColumn write FLazyColumn;
     property SelectType: TSelectType read FSelectType write FSelectType;
   end;
 
@@ -87,7 +87,7 @@ uses
 
 procedure TSelectExecutor.Build(AClass: TClass);
 var
-  LAtrTable: Table;
+  LAtrTable: TableAttribute;
   LCache: TEntityData;
 begin
   EntityClass := AClass;
@@ -130,7 +130,7 @@ constructor TSelectExecutor.Create();
 begin
   inherited Create();
   FTable := TSQLTable.Create();
-  FColumns := TList<Column>.Create;
+  FColumns := TList<ColumnAttribute>.Create;
   FCommand := TSelectCommand.Create(FTable);
   FLazyColumn := nil;
 end;
