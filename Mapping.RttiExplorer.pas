@@ -52,6 +52,8 @@ type
     class function GetClassMembers<T: TORMAttribute>(AClass: TClass): TList<T>; overload;
     class function GetColumns(AClass: TClass): TList<ColumnAttribute>; overload;
     class function GetColumnIsIdentity(AClass: TClass; AColumn: ColumnAttribute): Boolean;
+    class procedure GetConstructors(AClass: TClass; AList: TList<TRttiMethod>);
+    class function GetMethodWithLessParameters(AList: TList<TRttiMethod>): TRttiMethod;
     class function GetEntityRttiType(ATypeInfo: PTypeInfo): TRttiType; overload;
     class function GetEntityRttiType<T>(): TRttiType; overload;
     class function GetForeignKeyColumn(AClass: TClass; const ABaseTablePrimaryKeyColumn: ColumnAttribute): ForeignJoinColumnAttribute;
@@ -66,6 +68,7 @@ type
     class function GetRttiType(AEntity: TClass): TRttiType;
     class function GetSequence(AClass: TClass): SequenceAttribute;
     class function GetTable(AClass: TClass): TableAttribute;
+    class function GetMemberTypeInfo(AClass: TClass; const AMemberName: string): PTypeInfo;
     class function GetUniqueConstraints(AClass: TClass): TList<UniqueConstraint>;
     class function HasSequence(AClass: TClass): Boolean;
     class function TryGetBasicMethod(const AMethodName: string; ATypeInfo: PTypeInfo; out AMethod: TRttiMethod): Boolean;
@@ -80,6 +83,7 @@ type
     class procedure GetColumns(AClass: TClass; AColumns: TList<ColumnAttribute>); overload;
     class procedure SetMemberValue(AManager: TObject; AEntity: TObject; const AMemberColumn: ColumnAttribute; const AValue: TValue); overload;
     class procedure SetMemberValue(AManager: TObject; AEntity: TObject; const AMemberName: string; const AValue: TValue); overload;
+    class procedure SetMemberValueSimple(AEntity: TObject; const AMemberName: string; const AValue: TValue);
   end;
 
 implementation
@@ -540,6 +544,21 @@ begin
   GetClassMembers<ColumnAttribute>(AClass, AColumns);
 end;
 
+class procedure TRttiExplorer.GetConstructors(AClass: TClass; AList: TList<TRttiMethod>);
+var
+  LType: TRttiType;
+  LMethod: TRttiMethod;
+begin
+  LType := TRttiContext.Create.GetType(AClass);
+  for LMethod in LType.GetMethods do
+  begin
+    if LMethod.IsConstructor then
+    begin
+      AList.Add(LMethod);
+    end;
+  end;
+end;
+
 class function TRttiExplorer.GetColumns(AClass: TClass): TList<ColumnAttribute>;
 begin
   Result := GetClassMembers<ColumnAttribute>(AClass);
@@ -758,6 +777,29 @@ begin
   Result := GetMemberValue(AEntity, AMemberName, LMember);
 end;
 
+class function TRttiExplorer.GetMemberTypeInfo(AClass: TClass; const AMemberName: string): PTypeInfo;
+var
+  LType: TRttiType;
+  LField: TRttiField;
+  LProp: TRttiProperty;
+begin
+  Result := nil;
+  LType := TRttiContext.Create.GetType(AClass);
+  LField := LType.GetField(AMemberName);
+  if Assigned(LField) then
+  begin
+    Result := LField.FieldType.Handle;
+  end
+  else
+  begin
+    LProp := LType.GetProperty(AMemberName);
+    if Assigned(LProp) then
+    begin
+      Result := LProp.PropertyType.Handle;
+    end;
+  end;
+end;
+
 class function TRttiExplorer.GetMemberValue(AEntity: TObject; const AMembername: string;
   out ARttiMember: TRttiNamedObject): TValue;
 var
@@ -838,6 +880,26 @@ begin
   end;
 end;
 
+class function TRttiExplorer.GetMethodWithLessParameters(AList: TList<TRttiMethod>): TRttiMethod;
+var
+  i, iParams, iParamsOld, ix: Integer;
+begin
+  Assert(AList.Count > 0);
+  ix := 0;
+  iParamsOld := Length(AList[0].GetParameters);
+  for i := 1 to AList.Count - 1 do
+  begin
+    iParams := Length(AList[i].GetParameters);
+    if iParams < iParamsOld then
+    begin
+      iParamsOld := iParams;
+      ix := i;
+    end;
+  end;
+
+  Result := AList[ix];
+end;
+
 class function TRttiExplorer.GetSequence(AClass: TClass): SequenceAttribute;
 begin
   Result := GetClassAttribute<SequenceAttribute>(AClass);
@@ -909,5 +971,27 @@ begin
 end;
 
 
+
+class procedure TRttiExplorer.SetMemberValueSimple(AEntity: TObject; const AMemberName: string; const AValue: TValue);
+var
+  LType: TRttiType;
+  LField: TRttiField;
+  LProp: TRttiProperty;
+begin
+  LType := TRttiContext.Create.GetType(AEntity.ClassType);
+  LField := LType.GetField(AMemberName);
+  if Assigned(LField) then
+  begin
+    LField.SetValue(AEntity, AValue);
+  end
+  else
+  begin
+    LProp := LType.GetProperty(AMemberName);
+    if Assigned(LProp) then
+    begin
+      LProp.SetValue(AEntity, AValue);
+    end;
+  end;
+end;
 
 end.

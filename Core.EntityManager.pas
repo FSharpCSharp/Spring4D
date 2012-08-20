@@ -593,7 +593,7 @@ var
   LResults: IDBResultset;
 begin
   Result := 0;
-  LGenerator := TSQLGeneratorRegister.GetCurrentGenerator();
+  LGenerator := TSQLGeneratorRegister.GetGenerator(Connection.GetQueryLanguage);
   LSQL := LGenerator.GenerateGetQueryCount(ASql);
   LResults := GetResultset(LSQL, AParams);
   if not LResults.IsEmpty then

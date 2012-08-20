@@ -25,17 +25,17 @@
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *)
-unit Adapters.Oracle;
+unit SQL.OracleSQLGenerator;
 
 interface
 
 uses
-  SQL.AnsiSQLGenerator, Mapping.Attributes;
+  SQL.AnsiSQLGenerator, Mapping.Attributes, SQL.Interfaces;
 
 type
   TOracleSQLGenerator = class(TAnsiSQLGenerator)
   public
-    function GetDriverName(): string; override;
+    function GetQueryLanguage(): TQueryLanguage; override;
     function GenerateCreateSequence(ASequence: SequenceAttribute): string; override;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
     function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
@@ -94,9 +94,9 @@ begin
   end;
 end;
 
-function TOracleSQLGenerator.GetDriverName: string;
+function TOracleSQLGenerator.GetQueryLanguage: TQueryLanguage;
 begin
-  Result := 'Oracle';
+  Result := qlOracle;
 end;
 
 initialization

@@ -31,7 +31,7 @@ interface
 
 uses
   Generics.Collections, Core.Interfaces, SQLiteTable3, Core.Base, SQL.Params, SysUtils
-  , SQL.AnsiSQLGenerator, Mapping.Attributes;
+  , SQL.AnsiSQLGenerator, Mapping.Attributes, SQL.Interfaces;
 
 type
   TSQLiteResultSetAdapter = class(TDriverResultSetAdapter<ISQLiteTable>)
@@ -78,7 +78,7 @@ type
 
   TSQLiteSQLGenerator = class(TAnsiSQLGenerator)
   public
-    function GetDriverName(): string; override;
+    function GetQueryLanguage(): TQueryLanguage; override;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
   end;
 
@@ -273,9 +273,9 @@ begin
   Result := 'SELECT last_insert_rowid();';
 end;
 
-function TSQLiteSQLGenerator.GetDriverName: string;
+function TSQLiteSQLGenerator.GetQueryLanguage: TQueryLanguage;
 begin
-  Result := 'SQLite3';
+  Result := qlSQLite;
 end;
 
 initialization

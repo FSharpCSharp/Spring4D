@@ -32,19 +32,27 @@ interface
 uses
   Core.Interfaces
   ,Generics.Collections
+  ,SysUtils
   ;
 
 type
+  EORMTypeNotFoundException = Exception;
+  EORMConstructorNotFound = Exception;
+  EORMConnectionFactoryException = Exception;
+
   TConnectionFactory = class
   private
     class var FRegistered: TDictionary<TDBDriverType, TClass>;
   protected
-    class function ConcreteCreate(AClass: TClass; AConcreteConnection: TObject): IDBConnection;
+    class function ConcreteCreate(AClass: TClass; AConcreteConnection: TObject): IDBConnection; overload;
+    class function ConcreteCreate(AClass: TClass): TObject; overload;
   public
     class constructor Create;
     class destructor Destroy;
 
-    class function GetInstance(AKey: TDBDriverType; AConcreteConnection: TObject): IDBConnection;
+    class function GetInstance(AKey: TDBDriverType; AConcreteConnection: TObject): IDBConnection; overload;
+    class function GetInstance(AKey: TDBDriverType; const AJsonString: string): IDBConnection; overload;
+    class function GetInstanceFromFilename(AKey: TDBDriverType; const AJsonFilename: string): IDBConnection;
     class procedure RegisterConnection<T: class>(AKey: TDBDriverType);
     class function IsRegistered(AKey: TDBDriverType): Boolean;
 
@@ -55,20 +63,47 @@ implementation
 
 uses
   Core.Exceptions
+  ,Mapping.RttiExplorer
+  ,Core.Reflection
   ,Rtti
   ,TypInfo
+  ,DBXJSON
+  ,Classes
   ;
 
 { TConnectionFactory }
 
-class constructor TConnectionFactory.Create;
+class function TConnectionFactory.ConcreteCreate(AClass: TClass): TObject;
+var
+  LType: TRttiType;
+  LConstructors: TList<TRttiMethod>;
+  LMethod: TRttiMethod;
+  LParams: TArray<TRttiParameter>;
+  LArgs: array of TValue;
+  i: Integer;
 begin
-  FRegistered := TDictionary<TDBDriverType, TClass>.Create(100);
-end;
+  Result := nil;
+  LType := TRttiContext.Create.GetType(AClass);
+  LConstructors := TList<TRttiMethod>.Create;
+  try
+    TRttiExplorer.GetConstructors(AClass, LConstructors);
 
-class destructor TConnectionFactory.Destroy;
-begin
-  FRegistered.Free;
+    if LConstructors.Count < 0 then
+      raise EORMConstructorNotFound.Create('Constructor not found');
+
+    LMethod := TRttiExplorer.GetMethodWithLessParameters(LConstructors);
+    LParams := LMethod.GetParameters;
+    SetLength(LArgs, Length(LParams));
+    for i := Low(LArgs) to High(LArgs) do
+    begin
+      LArgs[i] := TValue.Empty;
+    end;
+
+    Result := LMethod.Invoke(LType.AsInstance.MetaclassType, LArgs).AsObject;
+
+  finally
+    LConstructors.Free;
+  end;
 end;
 
 class function TConnectionFactory.ConcreteCreate(AClass: TClass; AConcreteConnection: TObject): IDBConnection;
@@ -89,6 +124,85 @@ begin
     end;
   end;
   Result := nil;
+end;
+
+class constructor TConnectionFactory.Create;
+begin
+  FRegistered := TDictionary<TDBDriverType, TClass>.Create(100);
+end;
+
+class destructor TConnectionFactory.Destroy;
+begin
+  FRegistered.Free;
+end;
+
+class function TConnectionFactory.GetInstance(AKey: TDBDriverType; const AJsonString: string): IDBConnection;
+var
+  LConcreteConnection: TObject;
+  LJsonObj, LJsonProperties: TJSONObject;
+  LType: TRttiType;
+  i: Integer;
+  LPair: TJSONPair;
+  LValue, LConverted: TValue;
+  LProp: TRttiProperty;
+begin
+  //resolve connection from file
+  LConcreteConnection := nil;
+  LJsonObj := TJSONObject.ParseJSONValue(AJsonString) as TJSONObject;
+  if Assigned(LJsonObj) then
+  begin
+    try
+      LType := TRttiContext.Create.FindType(LJsonObj.Get(0).JsonString.Value);
+      if not Assigned(LType) and not LType.IsInstance then
+        raise EORMTypeNotFoundException.CreateFmt('Type %S not found or is not an instance', [LJsonObj.Get(0).JsonString.Value]);
+
+      //try to create instance
+      LConcreteConnection := ConcreteCreate(LType.AsInstance.MetaclassType);
+
+      LJsonProperties := LJsonObj.Get(0).JsonValue as TJSONObject;
+      //set properties from json config
+      for i := 0 to LJsonProperties.Size - 1 do
+      begin
+        LPair := LJsonProperties.Get(i);
+        LValue := LPair.JsonValue.Value;
+
+        if LValue.TryConvert(TRttiExplorer.GetMemberTypeInfo(LConcreteConnection.ClassType, LPair.JsonString.Value), LConverted) then
+          LValue := LConverted;
+        TRttiExplorer.SetMemberValueSimple(LConcreteConnection, LPair.JsonString.Value, LValue);
+      end;
+
+      //set connected property to true
+      LProp := LType.GetProperty('Connected');
+      if Assigned(LProp) then
+      begin
+        LProp.SetValue(LConcreteConnection, True);
+      end;
+
+    finally
+      LJsonObj.Free;
+    end;
+  end;
+
+  if not Assigned(LConcreteConnection) then
+    raise EORMConnectionFactoryException.Create('Could not create connection');
+
+  Result := GetInstance(AKey, LConcreteConnection);
+  Result.AutoFreeConnection := True;
+end;
+
+class function TConnectionFactory.GetInstanceFromFilename(AKey: TDBDriverType;
+  const AJsonFilename: string): IDBConnection;
+var
+  LFileStream: TStringStream;
+begin
+  LFileStream := TStringStream.Create();
+  try
+    LFileStream.LoadFromFile(AJsonFilename);
+    LFileStream.Position := 0;
+    Result := GetInstance(AKey, LFileStream.DataString);
+  finally
+    LFileStream.Free;
+  end;
 end;
 
 class function TConnectionFactory.GetInstance(AKey: TDBDriverType;

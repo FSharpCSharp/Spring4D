@@ -32,7 +32,7 @@ interface
 {$IFDEF MSWINDOWS}
 
 uses
-  Adapters.ADO, SysUtils, Mapping.Attributes, Core.Interfaces;
+  Adapters.ADO, SysUtils, Mapping.Attributes, SQL.Interfaces, Core.Interfaces;
 
 {
   Must use OLEDB povider because ODBC providers are buggy with SQL SERVER
@@ -58,7 +58,7 @@ type
 
   TMSSQLServerSQLGenerator = class(TADOSQLGenerator)
   public
-    function GetDriverName(): string; override;
+    function GetQueryLanguage(): TQueryLanguage; override;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; override;
   end;
@@ -113,9 +113,9 @@ begin
   end;
 end;
 
-function TMSSQLServerSQLGenerator.GetDriverName: string;
+function TMSSQLServerSQLGenerator.GetQueryLanguage: TQueryLanguage;
 begin
-  Result := 'MSSQL';
+  Result := qlMSSQL;
 end;
 
 { TMSSQLConnectionAdapter }

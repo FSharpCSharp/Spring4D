@@ -59,7 +59,13 @@ type
   private
     FConnection: T;
     FExecutionListeners: TList<TExecutionListenerProc>;
+    FQueryLanguage: TQueryLanguage;
+    FAutoFreeConnection: Boolean;
+
+    procedure SetQueryLanguage(AQueryLanguage: TQueryLanguage);
     function GetExecutionListeners: TList<TExecutionListenerProc>;
+    function GetAutoFreeConnection: Boolean;
+    procedure SetAutoFreeConnection(const Value: Boolean);
   protected
     procedure Connect(); virtual; abstract;
     procedure Disconnect(); virtual; abstract;
@@ -70,12 +76,17 @@ type
     procedure AddExecutionListener(const AListenerProc: TExecutionListenerProc);
     procedure ClearExecutionListeners();
     procedure NotifyExecutionListeners(const ACommand: string; const AParams: TObjectList<TDBParam>);
+
+    function GetQueryLanguage(): TQueryLanguage; virtual;
+    function TryResolveQueryLanguage(out AQueryLanguage: TQueryLanguage): Boolean; virtual;
   public
     constructor Create(const AConnection: T); virtual;
     destructor Destroy; override;
 
+    property AutoFreeConnection: Boolean read GetAutoFreeConnection write SetAutoFreeConnection;
     property Connection: T read FConnection;
     property ExecutionListeners: TList<TExecutionListenerProc> read GetExecutionListeners;
+    property QueryLanguage: TQueryLanguage read GetQueryLanguage write SetQueryLanguage;
   end;
 
   TDriverStatementAdapter<T> = class(TInterfacedObject, IDBStatement)
@@ -136,7 +147,9 @@ implementation
 
 uses
   SQL.Register
+  ,Mapping.RttiExplorer
   ,Math
+  ,StrUtils
   ;
 
 { TDriverResultSetAdapter<T> }
@@ -170,17 +183,31 @@ begin
   inherited Create;
   FConnection := AConnection;
   FExecutionListeners := TList<TExecutionListenerProc>.Create;
+  FQueryLanguage := qlAnsiSQL;
+  TryResolveQueryLanguage(FQueryLanguage);
 end;
 
 destructor TDriverConnectionAdapter<T>.Destroy;
 begin
   FExecutionListeners.Free;
+  if AutoFreeConnection then
+    TRttiExplorer.DestroyClass<T>(FConnection);
   inherited Destroy;
+end;
+
+function TDriverConnectionAdapter<T>.GetAutoFreeConnection: Boolean;
+begin
+  Result := FAutoFreeConnection;
 end;
 
 function TDriverConnectionAdapter<T>.GetExecutionListeners: TList<TExecutionListenerProc>;
 begin
   Result := FExecutionListeners;
+end;
+
+function TDriverConnectionAdapter<T>.GetQueryLanguage: TQueryLanguage;
+begin
+  Result := FQueryLanguage;
 end;
 
 procedure TDriverConnectionAdapter<T>.NotifyExecutionListeners(const ACommand: string; const AParams: TObjectList<TDBParam>);
@@ -190,6 +217,42 @@ begin
   for LExecProc in FExecutionListeners do
   begin
     LExecProc(ACommand, AParams);
+  end;
+end;
+
+procedure TDriverConnectionAdapter<T>.SetAutoFreeConnection(const Value: Boolean);
+begin
+  FAutoFreeConnection := Value;
+end;
+
+procedure TDriverConnectionAdapter<T>.SetQueryLanguage(AQueryLanguage: TQueryLanguage);
+begin
+  if FQueryLanguage <> AQueryLanguage then
+  begin
+    FQueryLanguage := AQueryLanguage;
+  end;
+end;
+
+function TDriverConnectionAdapter<T>.TryResolveQueryLanguage(
+  out AQueryLanguage: TQueryLanguage): Boolean;
+var
+  sDriverName: string;
+begin
+  Result := True;
+  sDriverName := GetDriverName;
+
+  if ContainsText(sDriverName, 'MSSQL') then
+    AQueryLanguage := qlMSSQL
+  else if ContainsText(sDriverName, 'SQLite') then
+    AQueryLanguage := qlSQLite
+  else if ContainsText(sDriverName, 'Oracle') then
+    AQueryLanguage := qlOracle
+  else if ContainsText(sDriverName, 'ASA') then
+    AQueryLanguage := qlASA
+  else
+  begin
+    Result := False;
+    AQueryLanguage := qlAnsiSQL;
   end;
 end;
 
@@ -284,7 +347,7 @@ constructor TPager.Create(AConnection: IDBConnection);
 begin
   inherited Create;
   FConnection := AConnection;
-  FGenerator := TSQLGeneratorRegister.GetGenerator(AConnection.GetDriverName);
+  FGenerator := TSQLGeneratorRegister.GetGenerator(AConnection.GetQueryLanguage);
 end;
 
 function TPager.GetLimit: Integer;

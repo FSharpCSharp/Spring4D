@@ -69,8 +69,12 @@ uses
   PatchUtils in '..\PatchUtils.pas',
   Adapters.ASA in '..\Adapters.ASA.pas',
   TestAdaptersASA in 'TestAdaptersASA.pas',
-  Adapters.Oracle in '..\Adapters.Oracle.pas',
-  Adapters.DBX in '..\Adapters.DBX.pas';
+  SQL.OracleSQLGenerator in '..\SQL.OracleSQLGenerator.pas',
+  Adapters.DBX in '..\Adapters.DBX.pas',
+  Adapters.UIB in '..\Adapters.UIB.pas',
+  TestAdapterUIB in 'TestAdapterUIB.pas',
+  SQL.FirebirdSQLGenerator in '..\SQL.FirebirdSQLGenerator.pas',
+  TestConnectionFactory in 'TestConnectionFactory.pas';
 
 {$R *.RES}
 

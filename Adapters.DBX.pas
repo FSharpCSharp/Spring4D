@@ -86,16 +86,12 @@ type
     procedure Rollback;
   end;
 
-  TDBXSQLGenerator = class(TAnsiSQLGenerator)
-  public
-    function GetDriverName(): string; override;
-  end;
-
 implementation
 
 uses
   SQL.Register
   ,StrUtils
+  ,Core.ConnectionFactory
   ;
 
 
@@ -143,7 +139,6 @@ end;
 
 function TDBXResultSetAdapter.GetFieldValue(const AFieldname: string): Variant;
 begin
-  BuildFieldCache();
   Result := FFieldCache[UpperCase(AFieldname)].Value
 end;
 
@@ -185,8 +180,8 @@ begin
   LStmt.SQL.Text := Statement.SQL.Text;
   LStmt.Params.AssignValues(Statement.Params);
   LStmt.DisableControls;
-  Result := TDBXResultSetAdapter.Create(LStmt);
   LStmt.Open();
+  Result := TDBXResultSetAdapter.Create(LStmt);
 end;
 
 procedure TDBXStatementAdapter.SetParams(Params: TEnumerable<TDBParam>);
@@ -306,14 +301,8 @@ begin
     FTransaction.Connection.RollbackFreeAndNil(FTransaction);
 end;
 
-{ TDBXSQLGenerator }
-
-function TDBXSQLGenerator.GetDriverName: string;
-begin
-  Result := 'DBX';
-end;
-
 initialization
-  TSQLGeneratorRegister.RegisterGenerator(TDBXSQLGenerator.Create());
+  TConnectionFactory.RegisterConnection<TDBXConnectionAdapter>(dtDBX);
+
 
 end.

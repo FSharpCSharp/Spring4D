@@ -35,10 +35,11 @@ uses
   SQL.Params
   {$IFDEF USE_SPRING},Spring.Collections{$ENDIF}
   ,Generics.Collections
+  ,SQL.Interfaces
   ;
 
 type
-  TDBDriverType = (dtSQLite = 0 {$IFDEF MSWINDOWS}, dtMSSQL{$ENDIF}, dtASA);
+  TDBDriverType = (dtSQLite = 0 {$IFDEF MSWINDOWS}, dtADO, dtMSSQL, dtASA{$ENDIF}, dtDBX, dtUIB);
 
   TExecutionListenerProc = reference to procedure(const ACommand: string; const AParams: TObjectList<TDBParam>);
 
@@ -73,11 +74,17 @@ type
     function CreateStatement(): IDBStatement;
     function BeginTransaction(): IDBTransaction;
     function GetDriverName(): string;
+    function GetQueryLanguage(): TQueryLanguage;
+    procedure SetQueryLanguage(AQuerLanguage: TQueryLanguage);
+
     procedure AddExecutionListener(const AListenerProc: TExecutionListenerProc);
     procedure ClearExecutionListeners();
     function GetExecutionListeners: TList<TExecutionListenerProc>;
     property ExecutionListeners: TList<TExecutionListenerProc> read GetExecutionListeners;
     procedure NotifyExecutionListeners(const ACommand: string; const AParams: TObjectList<TDBParam>);
+    function GetAutoFreeConnection: Boolean;
+    procedure SetAutoFreeConnection(const Value: Boolean);
+    property AutoFreeConnection: Boolean read GetAutoFreeConnection write SetAutoFreeConnection;
   end;
 
   IEntitySerializer = interface

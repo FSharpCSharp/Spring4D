@@ -38,9 +38,11 @@ type
     procedure ExecutingCommand(const ACmd: string; AList: TList);
   end;
 
+  TQueryLanguage = (qlAnsiSQL = 0, qlSQLite, qlMSSQL, qlASA, qlOracle, qlFirebird);
+
   ISQLGenerator = interface
     ['{8F46D275-50E4-4DE8-9E56-7D6599935E32}']
-    function GetDriverName(): string;
+    function GetQueryLanguage(): TQueryLanguage;
     function GenerateSelect(ASelectCommand: TSelectCommand): string;
     function GenerateInsert(AInsertCommand: TInsertCommand): string;
     function GenerateUpdate(AUpdateCommand: TUpdateCommand): string;

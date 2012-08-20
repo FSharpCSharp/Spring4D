@@ -91,7 +91,6 @@ type
 
   TADOSQLGenerator = class(TAnsiSQLGenerator)
   public
-    function GetDriverName(): string; override;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
   end;
 
@@ -105,6 +104,7 @@ implementation
 uses
   SQL.Register
   ,StrUtils
+  ,Core.ConnectionFactory
   ;
 
 
@@ -153,9 +153,7 @@ end;
 
 function TADOResultSetAdapter.GetFieldValue(const AFieldname: string): Variant;
 begin
-  BuildFieldCache();
   Result := FFieldCache[UpperCase(AFieldname)].Value
- // Result := Dataset.FieldByName(AFieldname).Value;
 end;
 
 function TADOResultSetAdapter.IsEmpty: Boolean;
@@ -199,8 +197,8 @@ begin
   LStmt.SQL.Text := Statement.SQL.Text;
   LStmt.Parameters.AssignValues(Statement.Parameters);
   LStmt.DisableControls;
-  Result := TADOResultSetAdapter.Create(LStmt);
   LStmt.Open();
+  Result := TADOResultSetAdapter.Create(LStmt);
 end;
 
 procedure TADOStatementAdapter.SetParams(Params: TEnumerable<TDBParam>);
@@ -326,13 +324,8 @@ begin
   Result := '';
 end;
 
-function TADOSQLGenerator.GetDriverName: string;
-begin
-  Result := 'ADO';
-end;
-
 initialization
-  TSQLGeneratorRegister.RegisterGenerator(TADOSQLGenerator.Create());
+  TConnectionFactory.RegisterConnection<TADOConnectionAdapter>(dtADO);
 
 {$ENDIF}
 

@@ -30,7 +30,8 @@ unit SQL.AnsiSQLGenerator;
 interface
 
 uses
-  SQL.AbstractSQLGenerator, SQL.Commands, SQL.Types, Generics.Collections, Mapping.Attributes;
+  SQL.AbstractSQLGenerator, SQL.Commands, SQL.Types, Generics.Collections, Mapping.Attributes
+  , SQL.Interfaces;
 
 type
   TAnsiSQLGenerator = class(TAbstractSQLGenerator)
@@ -42,7 +43,7 @@ type
     function GetWhereAsString(const AWhereFields: TEnumerable<TSQLWhereField>): string; virtual;
     function GetSelectFieldsAsString(const ASelectFields: TEnumerable<TSQLSelectField>): string; virtual;
   public
-    function GetDriverName(): string; override;
+    function GetQueryLanguage(): TQueryLanguage; override;
     function GenerateSelect(ASelectCommand: TSelectCommand): string; override;
     function GenerateInsert(AInsertCommand: TInsertCommand): string; override;
     function GenerateUpdate(AUpdateCommand: TUpdateCommand): string; override;
@@ -269,11 +270,6 @@ begin
   end;
 end;
 
-function TAnsiSQLGenerator.GetDriverName: string;
-begin
-  Result := 'ANSI-SQL';
-end;
-
 function TAnsiSQLGenerator.GetGroupByAsString(
   const AGroupFields: TEnumerable<TSQLGroupByField>): string;
 var
@@ -347,6 +343,11 @@ begin
 
     Inc(i);
   end;
+end;
+
+function TAnsiSQLGenerator.GetQueryLanguage: TQueryLanguage;
+begin
+  Result := qlAnsiSQL;
 end;
 
 function TAnsiSQLGenerator.GetSelectFieldsAsString(

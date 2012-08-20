@@ -35,16 +35,13 @@ uses
 type
   TSQLGeneratorRegister = class
   strict private
-    class var FGenerators: TDictionary<string,ISQLGenerator>;
-    class var FCurrentGeneratorName: string;
+    class var FGenerators: TDictionary<TQueryLanguage,ISQLGenerator>;
   private
     class constructor Create;
     class destructor Destroy;
   public
     class procedure RegisterGenerator(const AGenerator: ISQLGenerator);
-    class procedure SetCurrentGenerator(const ADriverName: string);
-    class function GetGenerator(const ADriverName: string): ISQLGenerator;
-    class function GetCurrentGenerator(): ISQLGenerator;
+    class function GetGenerator(const AQueryLanguage: TQueryLanguage): ISQLGenerator;
   end;
 
 implementation
@@ -58,10 +55,9 @@ class constructor TSQLGeneratorRegister.Create;
 var
   LGenerator: ISQLGenerator;
 begin
-  FGenerators := TDictionary<string,ISQLGenerator>.Create();
+  FGenerators := TDictionary<TQueryLanguage,ISQLGenerator>.Create();
   LGenerator := TAnsiSQLGenerator.Create;
   RegisterGenerator(LGenerator);
-  FCurrentGeneratorName := LGenerator.GetDriverName();
 end;
 
 class destructor TSQLGeneratorRegister.Destroy;
@@ -69,27 +65,15 @@ begin
   FGenerators.Free;
 end;
 
-class function TSQLGeneratorRegister.GetCurrentGenerator: ISQLGenerator;
+class function TSQLGeneratorRegister.GetGenerator(const AQueryLanguage: TQueryLanguage): ISQLGenerator;
 begin
-  Result := FGenerators[FCurrentGeneratorName];
-end;
-
-class function TSQLGeneratorRegister.GetGenerator(const ADriverName: string): ISQLGenerator;
-begin
-  Result := FGenerators[ADriverName];
+  Result := FGenerators[AQueryLanguage];
 end;
 
 class procedure TSQLGeneratorRegister.RegisterGenerator(const AGenerator: ISQLGenerator);
 begin
-  FGenerators.Add(AGenerator.GetDriverName, AGenerator);
+  FGenerators.Add(AGenerator.GetQueryLanguage, AGenerator);
 end;
 
-class procedure TSQLGeneratorRegister.SetCurrentGenerator(const ADriverName: string);
-begin
-  if (ADriverName <> FCurrentGeneratorName) then
-  begin
-    FCurrentGeneratorName := ADriverName;
-  end;
-end;
 
 end.

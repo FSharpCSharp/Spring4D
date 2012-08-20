@@ -88,7 +88,6 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   published
-    procedure TestGetDriverName;
     procedure TestGenerateGetLastInsertId;
   end;
 
@@ -454,14 +453,6 @@ procedure TestTADOSQLGenerator.TearDown;
 begin
   FADOSQLGenerator.Free;
   FADOSQLGenerator := nil;
-end;
-
-procedure TestTADOSQLGenerator.TestGetDriverName;
-var
-  ReturnValue: string;
-begin
-  ReturnValue := FADOSQLGenerator.GetDriverName;
-  CheckEqualsString('ADO', ReturnValue);
 end;
 
 procedure TestTADOSQLGenerator.TestGenerateGetLastInsertId;

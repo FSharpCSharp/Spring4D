@@ -35,7 +35,7 @@ uses
 type
   TAbstractSQLGenerator = class(TInterfacedObject, ISQLGenerator)
   protected
-    function GetDriverName(): string; virtual; abstract;
+    function GetQueryLanguage(): TQueryLanguage; virtual; abstract;
     function GenerateSelect(ASelectCommand: TSelectCommand): string; virtual; abstract;
     function GenerateInsert(AInsertCommand: TInsertCommand): string; virtual; abstract;
     function GenerateUpdate(AUpdateCommand: TUpdateCommand): string; virtual; abstract;

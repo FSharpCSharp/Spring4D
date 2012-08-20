@@ -36,7 +36,6 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   published
-    procedure TestGetDriverName;
     procedure TestGenerateGetLastInsertId;
   end;
 
@@ -111,14 +110,6 @@ procedure TestTASASQLGenerator.TearDown;
 begin
   FASASQLGenerator.Free;
   FASASQLGenerator := nil;
-end;
-
-procedure TestTASASQLGenerator.TestGetDriverName;
-var
-  ReturnValue: string;
-begin
-  ReturnValue := FASASQLGenerator.GetDriverName;
-  CheckEqualsString('ASA', ReturnValue);
 end;
 
 procedure TestTASASQLGenerator.TestGenerateGetLastInsertId;

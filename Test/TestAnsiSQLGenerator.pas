@@ -24,7 +24,6 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   published
-    procedure TestGetDriverName;
     procedure TestGenerateSelect;
     procedure TestGenerateInsert;
     procedure TestGenerateUpdate;
@@ -82,14 +81,6 @@ begin
   FAnsiSQLGenerator := nil;
 end;
 
-procedure TestTAnsiSQLGenerator.TestGetDriverName;
-var
-  ReturnValue: string;
-begin
-  ReturnValue := FAnsiSQLGenerator.GetDriverName;
-
-  CheckEqualsString('ANSI-SQL', ReturnValue);
-end;
 
 const
   SQL_SELECT_TEST_SIMPLE = 'SELECT A.NAME,A.AGE,A.HEIGHT'+ #13#10 +
