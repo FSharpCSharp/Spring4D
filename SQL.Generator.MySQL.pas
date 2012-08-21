@@ -25,38 +25,52 @@
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *)
-unit SQL.Interfaces;
+unit SQL.Generator.MySQL;
 
 interface
 
 uses
-  Classes, SQL.Commands, SQL.Types, Mapping.Attributes;
+  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces;
 
 type
-  ICommandExecutionListener = interface
-    ['{590E86C8-0B05-4BFE-9B26-3A9A4D0510BF}']
-    procedure ExecutingCommand(const ACmd: string; AList: TList);
-  end;
-
-  TQueryLanguage = (qlAnsiSQL = 0, qlSQLite, qlMSSQL, qlASA, qlOracle, qlFirebird, qlPostgreSQL, qlMySQL);
-
-  ISQLGenerator = interface
-    ['{8F46D275-50E4-4DE8-9E56-7D6599935E32}']
-    function GetQueryLanguage(): TQueryLanguage;
-    function GenerateSelect(ASelectCommand: TSelectCommand): string;
-    function GenerateInsert(AInsertCommand: TInsertCommand): string;
-    function GenerateUpdate(AUpdateCommand: TUpdateCommand): string;
-    function GenerateDelete(ADeleteCommand: TDeleteCommand): string;
-    function GenerateCreateTable(): string;
-    function GenerateCreateFK(): string;
-    function GenerateCreateSequence(ASequence: SequenceAttribute): string;
-    function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;
-    function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
-    function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string;
-    function GenerateGetQueryCount(const ASql: string): string;
-
+  TMySQLGenerator = class(TAnsiSQLGenerator)
+  public
+    function GetQueryLanguage(): TQueryLanguage; override;
+    function GenerateCreateSequence(ASequence: SequenceAttribute): string; override;
+    function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
+    function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
   end;
 
 implementation
+
+uses
+  SQL.Register
+  ,SysUtils
+  ;
+
+{ TMySQLGenerator }
+
+function TMySQLGenerator.GenerateCreateSequence(ASequence: SequenceAttribute): string;
+begin
+  Result := '';
+end;
+
+function TMySQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
+begin
+  Result := 'SELECT LAST_INSERT_ID();';
+end;
+
+function TMySQLGenerator.GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;
+begin
+  Result := '';
+end;
+
+function TMySQLGenerator.GetQueryLanguage: TQueryLanguage;
+begin
+  Result := qlMySQL;
+end;
+
+initialization
+  TSQLGeneratorRegister.RegisterGenerator(TMySQLGenerator.Create());
 
 end.

@@ -25,38 +25,55 @@
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *)
-unit SQL.Interfaces;
+unit SQL.Generator.PostgreSQL;
 
 interface
 
 uses
-  Classes, SQL.Commands, SQL.Types, Mapping.Attributes;
+  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces;
 
 type
-  ICommandExecutionListener = interface
-    ['{590E86C8-0B05-4BFE-9B26-3A9A4D0510BF}']
-    procedure ExecutingCommand(const ACmd: string; AList: TList);
-  end;
-
-  TQueryLanguage = (qlAnsiSQL = 0, qlSQLite, qlMSSQL, qlASA, qlOracle, qlFirebird, qlPostgreSQL, qlMySQL);
-
-  ISQLGenerator = interface
-    ['{8F46D275-50E4-4DE8-9E56-7D6599935E32}']
-    function GetQueryLanguage(): TQueryLanguage;
-    function GenerateSelect(ASelectCommand: TSelectCommand): string;
-    function GenerateInsert(AInsertCommand: TInsertCommand): string;
-    function GenerateUpdate(AUpdateCommand: TUpdateCommand): string;
-    function GenerateDelete(ADeleteCommand: TDeleteCommand): string;
-    function GenerateCreateTable(): string;
-    function GenerateCreateFK(): string;
-    function GenerateCreateSequence(ASequence: SequenceAttribute): string;
-    function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;
-    function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
-    function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string;
-    function GenerateGetQueryCount(const ASql: string): string;
-
+  TPostgreSQLGenerator = class(TAnsiSQLGenerator)
+  public
+    function GetQueryLanguage(): TQueryLanguage; override;
+    function GenerateCreateSequence(ASequence: SequenceAttribute): string; override;
+    function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
+    function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
   end;
 
 implementation
+
+uses
+  SQL.Register
+  ,SysUtils
+  ;
+
+
+
+{ TPostgreSQLGenerator }
+
+function TPostgreSQLGenerator.GenerateCreateSequence(ASequence: SequenceAttribute): string;
+begin
+  Result := Format('CREATE SEQUENCE %0:S INCREMENT %1:D MINVALUE %2:D;',
+    [ASequence.SequenceName, ASequence.Increment, ASequence.InitialValue]);
+end;
+
+function TPostgreSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
+begin
+  Result := '';
+end;
+
+function TPostgreSQLGenerator.GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;
+begin
+  Result := Format('SELECT nextval(%0:S);', [QuotedStr(ASequence.SequenceName)]);
+end;
+
+function TPostgreSQLGenerator.GetQueryLanguage: TQueryLanguage;
+begin
+  Result := qlPostgreSQL;
+end;
+
+initialization
+  TSQLGeneratorRegister.RegisterGenerator(TPostgreSQLGenerator.Create());
 
 end.

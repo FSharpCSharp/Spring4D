@@ -77,7 +77,9 @@ uses
   TestConnectionFactory in 'TestConnectionFactory.pas',
   SQL.Generator.MSSQL in '..\SQL.Generator.MSSQL.pas',
   SQL.Generator.ASA in '..\SQL.Generator.ASA.pas',
-  SQL.Generator.SQLite3 in '..\SQL.Generator.SQLite3.pas';
+  SQL.Generator.SQLite3 in '..\SQL.Generator.SQLite3.pas',
+  SQL.Generator.PostgreSQL in '..\SQL.Generator.PostgreSQL.pas',
+  SQL.Generator.MySQL in '..\SQL.Generator.MySQL.pas';
 
 {$R *.RES}
 
