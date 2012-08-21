@@ -47,7 +47,7 @@ type
 implementation
 
 uses
-  SQL.AnsiSQLGenerator;
+  SQL.Generator.Ansi;
 
 { TSQLGeneratorRegister }
 

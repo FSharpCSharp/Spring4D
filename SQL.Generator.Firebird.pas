@@ -25,40 +25,67 @@
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *)
-unit Adapters.ASA;
+unit SQL.Generator.Firebird;
 
 interface
 
 uses
-  Adapters.ADO, SysUtils, Core.Interfaces;
+  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces;
 
 type
-  TASAResultsetAdapter = class(TADOResultSetAdapter);
-
-  TASAStatementAdapter = class(TADOStatementAdapter);
-
-  TASAConnectionAdapter = class(TADOConnectionAdapter)
+  TFirebirdSQLGenerator = class(TAnsiSQLGenerator)
   public
-    function GetDriverName: string; override;
+    function GetQueryLanguage(): TQueryLanguage; override;
+    function GenerateCreateSequence(ASequence: SequenceAttribute): string; override;
+    function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
+    function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
+    function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; override;
   end;
-
-  TASATransactionAdapter = class(TADOTransactionAdapter);
-
-  ESybaseASAStatementAdapterException = Exception;
 
 implementation
 
 uses
-  Core.ConnectionFactory
+  SysUtils
+  ,StrUtils
+  ,SQL.Register
   ;
 
-{ TASAConnectionAdapter }
+{ TFirebirdSQLGenerator }
 
-function TASAConnectionAdapter.GetDriverName: string;
+function TFirebirdSQLGenerator.GenerateCreateSequence(ASequence: SequenceAttribute): string;
 begin
-  Result := 'ASA';
+  Result := Format('CREATE SEQUENCE %0:S;', [Asequence.SequenceName]);
+end;
+
+function TFirebirdSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
+begin
+  Result := '';
+end;
+
+function TFirebirdSQLGenerator.GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;
+begin
+  Assert(Assigned(ASequence));
+  Result := Format('SELECT NEXT VALUE FOR %0:S FROM RDB$DATABASE;', [ASequence.SequenceName]);
+end;
+
+function TFirebirdSQLGenerator.GeneratePagedQuery(const ASql: string; const ALimit,
+  AOffset: Integer): string;
+var
+  LSQL: string;
+begin
+  LSQL := ASql;
+  if EndsStr(';', LSQL) then
+    SetLength(LSQL, Length(LSQL)-1);
+
+  Result := LSQL + Format(' ROWS %1:D TO %0:D;', [AOffset + ALimit, AOffset]);
+end;
+
+function TFirebirdSQLGenerator.GetQueryLanguage: TQueryLanguage;
+begin
+  Result := qlFirebird;
 end;
 
 initialization
-  TConnectionFactory.RegisterConnection<TASAConnectionAdapter>(dtASA);
+  TSQLGeneratorRegister.RegisterGenerator(TFirebirdSQLGenerator.Create());
+
 end.

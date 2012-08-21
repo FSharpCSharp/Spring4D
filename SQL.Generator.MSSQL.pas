@@ -25,67 +25,71 @@
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *)
-unit SQL.FirebirdSQLGenerator;
+unit SQL.Generator.MSSQL;
 
 interface
 
 uses
-  SQL.AnsiSQLGenerator, Mapping.Attributes, SQL.Interfaces;
+  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces;
 
 type
-  TFirebirdSQLGenerator = class(TAnsiSQLGenerator)
+  TMSSQLServerSQLGenerator = class(TAnsiSQLGenerator)
   public
     function GetQueryLanguage(): TQueryLanguage; override;
-    function GenerateCreateSequence(ASequence: SequenceAttribute): string; override;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
-    function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; override;
   end;
 
 implementation
 
 uses
-  SysUtils
+  SQL.Register
   ,StrUtils
-  ,SQL.Register
+  ,SysUtils
   ;
 
-{ TFirebirdSQLGenerator }
+{ TMSSQLServerSQLGenerator }
 
-function TFirebirdSQLGenerator.GenerateCreateSequence(ASequence: SequenceAttribute): string;
+function TMSSQLServerSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
 begin
-  Result := Format('CREATE SEQUENCE %0:S;', [Asequence.SequenceName]);
+  Result := 'SELECT SCOPE_IDENTITY();';
 end;
 
-function TFirebirdSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
-begin
-  Result := '';
-end;
-
-function TFirebirdSQLGenerator.GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;
-begin
-  Assert(Assigned(ASequence));
-  Result := Format('SELECT NEXT VALUE FOR %0:S FROM RDB$DATABASE;', [ASequence.SequenceName]);
-end;
-
-function TFirebirdSQLGenerator.GeneratePagedQuery(const ASql: string; const ALimit,
+function TMSSQLServerSQLGenerator.GeneratePagedQuery(const ASql: string; const ALimit,
   AOffset: Integer): string;
 var
+  LBuilder: TStringBuilder;
   LSQL: string;
 begin
+  LBuilder := TStringBuilder.Create;
   LSQL := ASql;
-  if EndsStr(';', LSQL) then
-    SetLength(LSQL, Length(LSQL)-1);
+  try
+    if EndsStr(';', LSQL) then
+      SetLength(LSQL, Length(LSQL)-1);
 
-  Result := LSQL + Format(' ROWS %1:D TO %0:D;', [AOffset + ALimit, AOffset]);
+    LBuilder.Append('SELECT * FROM (')
+      .AppendLine
+      .Append('  SELECT *, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS ORM_ROW_NUM FROM (')
+      .AppendLine.Append('    ')
+      .Append(LSQL)
+      .Append(') AS ORM_TOTAL_1')
+      .AppendLine
+      .Append('  ) AS ORM_TOTAL_2')
+      .AppendLine
+      .AppendFormat(' WHERE (ORM_ROW_NUM>=%0:D) AND (ORM_ROW_NUM < %0:D+%1:D);', [AOffset, ALimit]);
+
+    Result := LBuilder.ToString;
+  finally
+    LBuilder.Free;
+  end;
 end;
 
-function TFirebirdSQLGenerator.GetQueryLanguage: TQueryLanguage;
+function TMSSQLServerSQLGenerator.GetQueryLanguage: TQueryLanguage;
 begin
-  Result := qlFirebird;
+  Result := qlMSSQL;
 end;
 
 initialization
-  TSQLGeneratorRegister.RegisterGenerator(TFirebirdSQLGenerator.Create());
+  TSQLGeneratorRegister.RegisterGenerator(TMSSQLServerSQLGenerator.Create());
 
 end.

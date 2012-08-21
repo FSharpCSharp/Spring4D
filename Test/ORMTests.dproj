@@ -71,7 +71,7 @@
 			<DCCReference Include="..\SQL.Commands.TableCreator.pas"/>
 			<DCCReference Include="..\SQL.Commands.SeqCreator.pas"/>
 			<DCCReference Include="..\SQL.AbstractSQLGenerator.pas"/>
-			<DCCReference Include="..\SQL.AnsiSQLGenerator.pas"/>
+			<DCCReference Include="..\SQL.Generator.Ansi.pas"/>
 			<DCCReference Include="..\SQL.Register.pas"/>
 			<DCCReference Include="..\Adapters.SQLite.pas"/>
 			<DCCReference Include="..\Core.Base.pas"/>
@@ -103,12 +103,15 @@
 			<DCCReference Include="..\PatchUtils.pas"/>
 			<DCCReference Include="..\Adapters.ASA.pas"/>
 			<DCCReference Include="TestAdaptersASA.pas"/>
-			<DCCReference Include="..\SQL.OracleSQLGenerator.pas"/>
+			<DCCReference Include="..\SQL.Generator.Oracle.pas"/>
 			<DCCReference Include="..\Adapters.DBX.pas"/>
 			<DCCReference Include="..\Adapters.UIB.pas"/>
 			<DCCReference Include="TestAdapterUIB.pas"/>
-			<DCCReference Include="..\SQL.FirebirdSQLGenerator.pas"/>
+			<DCCReference Include="..\SQL.Generator.Firebird.pas"/>
 			<DCCReference Include="TestConnectionFactory.pas"/>
+			<DCCReference Include="..\SQL.Generator.MSSQL.pas"/>
+			<DCCReference Include="..\SQL.Generator.ASA.pas"/>
+			<DCCReference Include="..\SQL.Generator.SQLite3.pas"/>
 			<None Include="Profiling\AQtimeModule1.aqt"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
@@ -123,7 +126,7 @@
 			</BuildConfiguration>
 		</ItemGroup>
 		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')" Project="$(BDS)\Bin\CodeGear.Delphi.Targets"/>
-		<Import Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\8.0\UserTools.proj')" Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\8.0\UserTools.proj"/>
+		<Import Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')" Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj"/>
 		<ProjectExtensions>
 			<Borland.Personality>Delphi.Personality.12</Borland.Personality>
 			<Borland.ProjectType/>

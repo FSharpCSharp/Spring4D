@@ -52,7 +52,7 @@ type
     class function GetClassMembers<T: TORMAttribute>(AClass: TClass): TList<T>; overload;
     class function GetColumns(AClass: TClass): TList<ColumnAttribute>; overload;
     class function GetColumnIsIdentity(AClass: TClass; AColumn: ColumnAttribute): Boolean;
-    class procedure GetConstructors(AClass: TClass; AList: TList<TRttiMethod>);
+    class procedure GetDeclaredConstructors(AClass: TClass; AList: TList<TRttiMethod>);
     class function GetMethodWithLessParameters(AList: TList<TRttiMethod>): TRttiMethod;
     class function GetEntityRttiType(ATypeInfo: PTypeInfo): TRttiType; overload;
     class function GetEntityRttiType<T>(): TRttiType; overload;
@@ -544,13 +544,13 @@ begin
   GetClassMembers<ColumnAttribute>(AClass, AColumns);
 end;
 
-class procedure TRttiExplorer.GetConstructors(AClass: TClass; AList: TList<TRttiMethod>);
+class procedure TRttiExplorer.GetDeclaredConstructors(AClass: TClass; AList: TList<TRttiMethod>);
 var
   LType: TRttiType;
   LMethod: TRttiMethod;
 begin
   LType := TRttiContext.Create.GetType(AClass);
-  for LMethod in LType.GetMethods do
+  for LMethod in LType.GetDeclaredMethods do
   begin
     if LMethod.IsConstructor then
     begin

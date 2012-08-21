@@ -12,7 +12,7 @@ unit TestAnsiSQLGenerator;
 interface
 
 uses
-  TestFramework, SQL.AbstractSQLGenerator, SQL.AnsiSQLGenerator, SQL.Commands, SQL.Types;
+  TestFramework, SQL.AbstractSQLGenerator, SQL.Generator.Ansi, SQL.Commands, SQL.Types;
 
 type
   // Test methods for class TAnsiSQLGenerator

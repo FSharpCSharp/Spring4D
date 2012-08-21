@@ -25,52 +25,37 @@
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *)
-unit SQL.OracleSQLGenerator;
+unit SQL.Generator.ASA;
 
 interface
 
 uses
-  SQL.AnsiSQLGenerator, Mapping.Attributes, SQL.Interfaces;
+  SQL.Generator.Ansi, SysUtils, Mapping.Attributes, SQL.Interfaces;
 
 type
-  TOracleSQLGenerator = class(TAnsiSQLGenerator)
+  TASASQLGenerator = class(TAnsiSQLGenerator)
   public
     function GetQueryLanguage(): TQueryLanguage; override;
-    function GenerateCreateSequence(ASequence: SequenceAttribute): string; override;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
-    function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; override;
   end;
 
 implementation
 
 uses
-  SysUtils
+  SQL.Register
   ,StrUtils
-  ,SQL.Register
   ;
 
-{ TOracleSQLGenerator }
+{ TASASQLGenerator }
 
-function TOracleSQLGenerator.GenerateCreateSequence(ASequence: SequenceAttribute): string;
+function TASASQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
 begin
-  Result := Format('CREATE SEQUENCE "%0:S" MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY %2:D START WITH %1:D CACHE 20 NOORDER NOCYCLE;',
-    [ASequence.SequenceName, ASequence.InitialValue, ASequence.Increment]);
+  Result := 'SELECT @@IDENTITY;';
 end;
 
-function TOracleSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
-begin
-  Result := '';
-  //Result := Format('returning %0:S as NewID;', [AIdentityColumn.Name]);
-end;
-
-function TOracleSQLGenerator.GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;
-begin
-  Assert(Assigned(ASequence));
-  Result := Format('select %0:S.nextval from dual;', [ASequence.SequenceName]);
-end;
-
-function TOracleSQLGenerator.GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string;
+function TASASQLGenerator.GeneratePagedQuery(const ASql: string; const ALimit,
+  AOffset: Integer): string;
 var
   LBuilder: TStringBuilder;
   LSQL: string;
@@ -82,11 +67,15 @@ begin
       SetLength(LSQL, Length(LSQL)-1);
 
     LBuilder.Append('SELECT * FROM (')
+      .AppendLine
+      .Append('  SELECT *, ROW_NUMBER() OVER (ORDER BY (NULL)) AS ORM_ROW_NUM FROM (')
       .AppendLine.Append('    ')
       .Append(LSQL)
       .Append(') AS ORM_TOTAL_1')
       .AppendLine
-      .AppendFormat(' WHERE (ROWNUM>=%0:D) AND (ROWNUM < %0:D+%1:D);', [AOffset, ALimit]);
+      .Append('  ) AS ORM_TOTAL_2')
+      .AppendLine
+      .AppendFormat(' WHERE (ORM_ROW_NUM>=%0:D) AND (ORM_ROW_NUM < %0:D+%1:D);', [AOffset, ALimit]);
 
     Result := LBuilder.ToString;
   finally
@@ -94,12 +83,13 @@ begin
   end;
 end;
 
-function TOracleSQLGenerator.GetQueryLanguage: TQueryLanguage;
+function TASASQLGenerator.GetQueryLanguage: TQueryLanguage;
 begin
-  Result := qlOracle;
+  Result := qlASA;
 end;
 
+
 initialization
-  TSQLGeneratorRegister.RegisterGenerator(TOracleSQLGenerator.Create());
+  TSQLGeneratorRegister.RegisterGenerator(TASASQLGenerator.Create());
 
 end.

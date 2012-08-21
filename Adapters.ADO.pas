@@ -33,7 +33,7 @@ interface
 
 uses
   Generics.Collections, Core.Interfaces, ADODB, Core.Base, SQL.Params, SysUtils
-  , SQL.AnsiSQLGenerator, DB, Mapping.Attributes;
+  , SQL.Generator.Ansi, DB, Mapping.Attributes;
 
 
 type

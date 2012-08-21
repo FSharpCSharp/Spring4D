@@ -31,7 +31,7 @@ interface
 
 uses
   Generics.Collections, Core.Interfaces, SQLiteTable3, Core.Base, SQL.Params, SysUtils
-  , SQL.AnsiSQLGenerator, Mapping.Attributes, SQL.Interfaces;
+  , Mapping.Attributes;
 
 type
   TSQLiteResultSetAdapter = class(TDriverResultSetAdapter<ISQLiteTable>)
@@ -76,17 +76,10 @@ type
     procedure Rollback;
   end;
 
-  TSQLiteSQLGenerator = class(TAnsiSQLGenerator)
-  public
-    function GetQueryLanguage(): TQueryLanguage; override;
-    function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
-  end;
-
 implementation
 
 uses
-  SQL.Register
-  ,Core.ConnectionFactory
+  Core.ConnectionFactory
   ;
 
 { TSQLiteResultSetAdapter }
@@ -266,20 +259,7 @@ begin
   FSQLiteConnection.Rollback;
 end;
 
-{ TSQLiteSQLGenerator }
-
-function TSQLiteSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
-begin
-  Result := 'SELECT last_insert_rowid();';
-end;
-
-function TSQLiteSQLGenerator.GetQueryLanguage: TQueryLanguage;
-begin
-  Result := qlSQLite;
-end;
-
 initialization
-  TSQLGeneratorRegister.RegisterGenerator(TSQLiteSQLGenerator.Create());
   TConnectionFactory.RegisterConnection<TSQLiteConnectionAdapter>(dtSQLite);
 
 end.

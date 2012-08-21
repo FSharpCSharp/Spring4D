@@ -25,40 +25,40 @@
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *)
-unit Adapters.ASA;
+unit SQL.Generator.SQLite3;
 
 interface
 
 uses
-  Adapters.ADO, SysUtils, Core.Interfaces;
+  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces;
 
 type
-  TASAResultsetAdapter = class(TADOResultSetAdapter);
-
-  TASAStatementAdapter = class(TADOStatementAdapter);
-
-  TASAConnectionAdapter = class(TADOConnectionAdapter)
+  TSQLiteSQLGenerator = class(TAnsiSQLGenerator)
   public
-    function GetDriverName: string; override;
+    function GetQueryLanguage(): TQueryLanguage; override;
+    function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
   end;
-
-  TASATransactionAdapter = class(TADOTransactionAdapter);
-
-  ESybaseASAStatementAdapterException = Exception;
 
 implementation
 
 uses
-  Core.ConnectionFactory
+  SQL.Register
   ;
 
-{ TASAConnectionAdapter }
 
-function TASAConnectionAdapter.GetDriverName: string;
+{ TSQLiteSQLGenerator }
+
+function TSQLiteSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
 begin
-  Result := 'ASA';
+  Result := 'SELECT last_insert_rowid();';
+end;
+
+function TSQLiteSQLGenerator.GetQueryLanguage: TQueryLanguage;
+begin
+  Result := qlSQLite;
 end;
 
 initialization
-  TConnectionFactory.RegisterConnection<TASAConnectionAdapter>(dtASA);
+  TSQLGeneratorRegister.RegisterGenerator(TSQLiteSQLGenerator.Create());
+
 end.

@@ -31,7 +31,7 @@ interface
 
 uses
   SqlExpr, DB, Generics.Collections, Core.Interfaces, Core.Base, SQL.Params, SysUtils
-  , SQL.AnsiSQLGenerator, DBXCommon
+  , SQL.Generator.Ansi, DBXCommon
   ;
 
 type

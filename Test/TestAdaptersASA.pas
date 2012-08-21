@@ -13,7 +13,7 @@ interface
 
 uses
   TestFramework, Adapters.ASA, SysUtils, Adapters.ADO, ADODB, Core.Interfaces, uModels
-  ,Generics.Collections, Core.EntityManager;
+  ,Generics.Collections, Core.EntityManager, SQL.Generator.ASA;
 
 type
   // Test methods for class TASAConnectionAdapter

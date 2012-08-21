@@ -86,7 +86,7 @@ begin
   LType := TRttiContext.Create.GetType(AClass);
   LConstructors := TList<TRttiMethod>.Create;
   try
-    TRttiExplorer.GetConstructors(AClass, LConstructors);
+    TRttiExplorer.GetDeclaredConstructors(AClass, LConstructors);
 
     if LConstructors.Count < 0 then
       raise EORMConstructorNotFound.Create('Constructor not found');

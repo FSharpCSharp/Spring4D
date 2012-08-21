@@ -15,8 +15,8 @@ interface
 
 uses
   TestFramework, ADODB, Generics.Collections, Adapters.ADO, Core.Base, SysUtils,
-  SQL.Params, Core.Interfaces, SQL.AnsiSQLGenerator, Adapters.MSSQL, Core.EntityManager
-  ,uModels, VARTOTMASTModel;
+  SQL.Params, Core.Interfaces, SQL.Generator.Ansi, Adapters.MSSQL, Core.EntityManager
+  ,uModels, VARTOTMASTModel, SQL.Generator.MSSQL;
 
 type
   // Test methods for class TADOResultSetAdapter

@@ -77,7 +77,7 @@ begin
 end;
 
 const
-  FILE_JSON = 'ConnectionFactory_Sqlite.json';
+  FILE_JSON = 'Conn_Sqlite.json';
 
 procedure TestTConnectionFactory.TestGetInstanceFromFilename;
 var

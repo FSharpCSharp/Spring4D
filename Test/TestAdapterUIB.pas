@@ -12,8 +12,8 @@ unit TestAdapterUIB;
 interface
 
 uses
-  TestFramework, Core.Interfaces, UIB, SQL.AnsiSQLGenerator, Generics.Collections, DB,
-  Core.Base, Adapters.UIB, uibdataset, SQL.Params, SysUtils;
+  TestFramework, Core.Interfaces, UIB, SQL.Generator.Ansi, Generics.Collections, DB,
+  Core.Base, Adapters.UIB, uibdataset, SQL.Params, SysUtils, Core.EntityManager;
 
 type
   // Test methods for class TUIBResultSetAdapter
@@ -34,10 +34,72 @@ type
     procedure TestGetFieldCount;
   end;
 
+  TestTUIBConnectionAdapter = class(TTestCase)
+  private
+    FConnection: IDBConnection;
+  public
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestConnect;
+    procedure TestDisconnect;
+    procedure TestIsConnected;
+    procedure TestCreateStatement;
+    procedure TestBeginTransaction;
+    procedure TestGetDriverName;
+  end;
+
+  TestTUIBRegression = class(TTestCase)
+  private
+    FConnection: IDBConnection;
+    FManager: TEntityManager;
+  public
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestFindAll;
+    procedure TestSave;
+  end;
+
 implementation
+
+uses
+  Core.ConnectionFactory
+  ,uModels
+  ,Spring.Collections
+  ;
+
+const
+  FILE_JSON = 'Conn_Firebird.json';
+
 
 var
   TestDB: TUIBDataBase = nil;
+
+function GetFirstValue(const ASQL: string): Variant;
+var
+  LTran: TUIBTransaction;
+  LDataset: TUIBDataSet;
+begin
+  LDataset := TUIBDataSet.Create(nil);
+  LTran := TUIBTransaction.Create(nil);
+  LTran.DataBase := TestDB;
+  try
+
+    LDataset.Database := TestDB;
+    LDataset.Transaction := LTran;
+    LDataset.DisableControls;
+    LDataset.SQL.Text := ASQL;
+    LDataset.Open;
+
+    Result := LDataset.Fields[0].Value;
+
+  finally
+    LTran.RemoveDatabase(TestDB);
+    LTran.Free;
+    LDataset.Free;
+  end;
+end;
 
 procedure TestTUIBResultSetAdapter.SetUp;
 begin
@@ -46,6 +108,7 @@ begin
   FDataset := TUIBDataSet.Create(nil);
   FDataset.Database := TestDB;
   FDataset.Transaction := FTransaction;
+  FDataset.UniDirectional := True;
   FDataset.SQL.Text := 'select * from IMONES;';
   FDataset.Open;
   FUIBResultSetAdapter := TUIBResultSetAdapter.Create(FDataset);
@@ -98,12 +161,159 @@ begin
   CheckTrue(ReturnValue > 100);
 end;
 
+{ TestTUIBConnectionAdapter }
+
+procedure TestTUIBConnectionAdapter.SetUp;
+var
+  sDir: string;
+begin
+  inherited;
+  sDir := IncludeTrailingPathDelimiter(ExtractFileDir(PictureFilename));
+  FConnection := TConnectionFactory.GetInstanceFromFilename(dtUIB, sDir + FILE_JSON);
+end;
+
+procedure TestTUIBConnectionAdapter.TearDown;
+begin
+  inherited;
+  FConnection := nil;
+end;
+
+
+procedure TestTUIBConnectionAdapter.TestBeginTransaction;
+var
+  LTran: IDBTransaction;
+  LVal: Variant;
+  LStmt: IDBStatement;
+begin
+  LVal := GetFirstValue(Format('SELECT COUNT(*) FROM VEIKLOS WHERE VEIKLOSID = %D', [283]));
+  CheckEquals(0, Integer(LVal));
+  LTran := FConnection.BeginTransaction;
+
+  LStmt := FConnection.CreateStatement;
+  LStmt.SetSQLCommand('insert into VEIKLOS("VEIKLOSID","KODAS","PAVADINIMAS","SAVAITES_DIENOS",'+
+    '"MENESIO_VALANDOS","SAVAITES_VALANDOS","IM_DALIS_SAV","ITERPE","ITERPTAS","KOREGAVO","KOREGUOTAS")'+
+    ' values (''283'',''ZVER282'',''Valymo árenginiai, maðinos'',Null,Null,Null,Null,''SYSDBA'',''2007-02-02 12:26:24'',Null,Null); ');
+  LStmt.Execute;
+
+  LStmt.SetSQLCommand(Format('SELECT COUNT(*) FROM VEIKLOS WHERE VEIKLOSID = %D', [283]));
+  LVal := LStmt.ExecuteQuery.GetFieldValue(0);
+  CheckEquals(1, Integer(LVal));
+  LTran.Rollback;
+
+  LStmt.SetSQLCommand(Format('SELECT COUNT(*) FROM VEIKLOS WHERE VEIKLOSID = %D', [283]));
+  LVal := LStmt.ExecuteQuery.GetFieldValue(0);
+  CheckEquals(0, Integer(LVal));
+end;
+
+procedure TestTUIBConnectionAdapter.TestConnect;
+begin
+  FConnection.Disconnect;
+  FConnection.Connect;
+  CheckTrue(FConnection.IsConnected);
+end;
+
+procedure TestTUIBConnectionAdapter.TestCreateStatement;
+var
+  LStmt: IDBStatement;
+begin
+  LStmt := FConnection.CreateStatement;
+  CheckTrue(Assigned(LStmt));
+end;
+
+procedure TestTUIBConnectionAdapter.TestDisconnect;
+begin
+  CheckTrue(FConnection.IsConnected);
+  FConnection.Disconnect;
+  CheckFalse(FConnection.IsConnected);
+  FConnection.Connect;
+  CheckTrue(FConnection.IsConnected);
+end;
+
+procedure TestTUIBConnectionAdapter.TestGetDriverName;
+begin
+  CheckEqualsString('UIB', FConnection.GetDriverName);
+end;
+
+procedure TestTUIBConnectionAdapter.TestIsConnected;
+begin
+  CheckTrue(FConnection.IsConnected);
+end;
+
+{ TestTUIBRegression }
+
+procedure TestTUIBRegression.SetUp;
+var
+  sDir: string;
+begin
+  inherited;
+  sDir := IncludeTrailingPathDelimiter(ExtractFileDir(PictureFilename));
+  FConnection := TConnectionFactory.GetInstanceFromFilename(dtUIB, sDir + FILE_JSON);
+  FManager := TEntityManager.Create(FConnection);
+end;
+
+procedure TestTUIBRegression.TearDown;
+begin
+  FManager.Free;
+  FConnection := nil;
+  inherited;
+end;
+
+procedure TestTUIBRegression.TestFindAll;
+var
+  AList: IList<TUIBCompany>;
+begin
+  AList := FManager.FindAll<TUIBCompany>();
+  CheckEquals(4, AList.Count);
+end;
+
+procedure TestTUIBRegression.TestSave;
+var
+  LCompany: TUIBCompany;
+  LTran: IDBTransaction;
+  sTel: string;
+  iCount: Integer;
+begin
+  LCompany := FManager.FindOne<TUIBCompany>(3);
+  try
+    CheckEquals(3, LCompany.ID);
+
+    LTran := FManager.Connection.BeginTransaction;
+    LCompany.Phone := '+3701258746';
+
+    FManager.Save(LCompany);
+
+    sTel := FManager.ExecuteScalar<string>('SELECT TELEFONAS FROM IMONES WHERE IMONESID = :0;', [3]);
+    CheckEqualsString(LCompany.Phone, sTel);
+  finally
+    LCompany.Free;
+  end;
+
+
+  LCompany := TUIBCompany.Create;
+  try
+    LCompany.Name := 'ORM';
+    LCompany.Phone := '118';
+
+    FManager.Save(LCompany);
+    sTel := FManager.ExecuteScalar<string>('SELECT TELEFONAS FROM IMONES WHERE PAVADINIMAS = :0;',
+      [LCompany.Name]);
+    CheckEqualsString(LCompany.Phone, sTel);
+
+    iCount := FManager.ExecuteScalar<Integer>('SELECT COUNT(*) FROM IMONES;', []);
+    CheckEquals(5, iCount);
+  finally
+    LCompany.Free;
+  end;
+end;
+
 initialization
   TestDB := TUIBDataBase.Create(nil);
   // Register any test cases with the test runner
   if FileExists('D:\DB\GDB\CAA\ALGA.GDB') then
   begin
     RegisterTest(TestTUIBResultSetAdapter.Suite);
+    RegisterTest(TestTUIBConnectionAdapter.Suite);
+    RegisterTest(TestTUIBRegression.Suite);
     TestDB.UserName := 'SYSDBA';
     TestDB.PassWord := 'masterkey';
     TestDB.DatabaseName := 'localhost:D:\DB\GDB\CAA\ALGA.GDB';

@@ -217,9 +217,9 @@ begin
   LStmt := Connection.CreateStatement;
   LStmt.SetSQLCommand(SQL);
 
-  BuildParams(AEntity);
+ { BuildParams(AEntity);
   if SQLParameters.Count > 0 then
-    LStmt.SetParams(SQLParameters);
+    LStmt.SetParams(SQLParameters); }
 
   Execute(AEntity);
 

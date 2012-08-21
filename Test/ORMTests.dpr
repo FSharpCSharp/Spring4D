@@ -37,7 +37,7 @@ uses
   SQL.Commands.TableCreator in '..\SQL.Commands.TableCreator.pas',
   SQL.Commands.SeqCreator in '..\SQL.Commands.SeqCreator.pas',
   SQL.AbstractSQLGenerator in '..\SQL.AbstractSQLGenerator.pas',
-  SQL.AnsiSQLGenerator in '..\SQL.AnsiSQLGenerator.pas',
+  SQL.Generator.Ansi in '..\SQL.Generator.Ansi.pas',
   SQL.Register in '..\SQL.Register.pas',
   Adapters.SQLite in '..\Adapters.SQLite.pas',
   Core.Base in '..\Core.Base.pas',
@@ -69,12 +69,15 @@ uses
   PatchUtils in '..\PatchUtils.pas',
   Adapters.ASA in '..\Adapters.ASA.pas',
   TestAdaptersASA in 'TestAdaptersASA.pas',
-  SQL.OracleSQLGenerator in '..\SQL.OracleSQLGenerator.pas',
+  SQL.Generator.Oracle in '..\SQL.Generator.Oracle.pas',
   Adapters.DBX in '..\Adapters.DBX.pas',
   Adapters.UIB in '..\Adapters.UIB.pas',
   TestAdapterUIB in 'TestAdapterUIB.pas',
-  SQL.FirebirdSQLGenerator in '..\SQL.FirebirdSQLGenerator.pas',
-  TestConnectionFactory in 'TestConnectionFactory.pas';
+  SQL.Generator.Firebird in '..\SQL.Generator.Firebird.pas',
+  TestConnectionFactory in 'TestConnectionFactory.pas',
+  SQL.Generator.MSSQL in '..\SQL.Generator.MSSQL.pas',
+  SQL.Generator.ASA in '..\SQL.Generator.ASA.pas',
+  SQL.Generator.SQLite3 in '..\SQL.Generator.SQLite3.pas';
 
 {$R *.RES}
 

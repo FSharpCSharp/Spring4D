@@ -31,13 +31,13 @@ interface
 
 uses
   DB, Generics.Collections, Core.Interfaces, Core.Base, SQL.Params, SysUtils
-  , SQL.AnsiSQLGenerator, UIB, uibdataset;
+  , SQL.Generator.Ansi, UIB, uibdataset, uiblib;
 
 type
   TUIBResultSetAdapter = class(TDriverResultSetAdapter<TUIBDataSet>)
   private
     FFieldCache: TDictionary<string,TField>;
-    FTransaction: TUIBTransaction;
+    FIsNewTransaction: Boolean;
   protected
     procedure BuildFieldCache();
   public
@@ -49,11 +49,15 @@ type
     function GetFieldValue(AIndex: Integer): Variant; overload; override;
     function GetFieldValue(const AFieldname: string): Variant; overload; override;
     function GetFieldCount(): Integer; override;
+
+    property IsNewTransaction: Boolean read FIsNewTransaction write FIsNewTransaction;
   end;
 
   EUIBStatementAdapterException = Exception;
 
   TUIBStatementAdapter = class(TDriverStatementAdapter<TUIBStatement>)
+  protected
+    procedure AssignParams(AFrom: TSQLParams; ATo: TSQLParams); virtual;
   public
     constructor Create(const AStatement: TUIBStatement); override;
     destructor Destroy; override;
@@ -66,6 +70,7 @@ type
   TUIBConnectionAdapter = class(TDriverConnectionAdapter<TUIBDataBase>, IDBConnection)
   public
     constructor Create(const AConnection: TUIBDataBase); override;
+    destructor Destroy; override;
 
     procedure Connect; override;
     procedure Disconnect; override;
@@ -73,6 +78,7 @@ type
     function CreateStatement: IDBStatement; override;
     function BeginTransaction: IDBTransaction; override;
     function GetDriverName: string; override;
+
   end;
 
   TUIBTransactionAdapter = class(TInterfacedObject, IDBTransaction)
@@ -94,6 +100,7 @@ uses
   ,Core.ConnectionFactory
   ;
 
+
 { TUIBResultSetAdapter }
 
 procedure TUIBResultSetAdapter.BuildFieldCache;
@@ -112,9 +119,7 @@ end;
 constructor TUIBResultSetAdapter.Create(const ADataset: TUIBDataSet);
 begin
   inherited Create(ADataset);
-  FTransaction := TUIBTransaction.Create(nil);
-  FTransaction.DataBase := ADataset.Database;
-  Dataset.Transaction := FTransaction;
+  Dataset.OnClose := etmStayIn;
   FFieldCache := TDictionary<string,TField>.Create(Dataset.FieldCount * 2);
   BuildFieldCache();
 end;
@@ -122,8 +127,9 @@ end;
 destructor TUIBResultSetAdapter.Destroy;
 begin
   FFieldCache.Free;
+  if FIsNewTransaction then
+    Dataset.Transaction.Free;
   Dataset.Free;
-  FTransaction.Free;
   inherited;
 end;
 
@@ -155,6 +161,17 @@ end;
 
 { TUIBStatementAdapter }
 
+procedure TUIBStatementAdapter.AssignParams(AFrom, ATo: TSQLParams);
+var
+  i: Integer;
+begin
+//  ATo.Parse(Statement.SQL.Text);
+  for i := 0 to AFrom.ParamCount - 1 do
+  begin
+    ATo.AsVariant[i] := AFrom.AsVariant[i];
+  end;
+end;
+
 constructor TUIBStatementAdapter.Create(const AStatement: TUIBStatement);
 begin
   inherited Create(AStatement);
@@ -168,26 +185,57 @@ end;
 
 function TUIBStatementAdapter.Execute: NativeUInt;
 begin
+  Statement.Prepare();
   Statement.ExecSQL();
   Result := Statement.RowsAffected;
+  Statement.Close(etmStayIn);
 end;
 
 function TUIBStatementAdapter.ExecuteQuery: IDBResultSet;
 var
-  LStmt: TUIBDataSet;
+  LDataset: TUIBDataSet;
+  LTran: TUIBTransaction;
+  LIsNewTran: Boolean;
 begin
-  LStmt := TUIBDataSet.Create(nil);
-  LStmt.DisableControls;
-  LStmt.Database := Statement.DataBase;
-  LStmt.SQL.Text := Statement.SQL.Text;
-  {TODO -oLinas -cGeneral : clone params}
-  LStmt.Open();
-  Result := TUIBResultSetAdapter.Create(LStmt);
+  LDataset := TUIBDataSet.Create(nil);
+  LIsNewTran := (Statement.DataBase.TransactionsCount < 1);
+  if not LIsNewTran then
+  begin
+    LTran := Statement.DataBase.Transactions[0];
+  end
+  else
+  begin
+    LTran := TUIBTransaction.Create(nil);
+    LTran.DefaultAction := etmRollback;
+    LTran.DataBase := Statement.DataBase;
+  end;
+  LTran.DefaultAction := etmRollback;
+  LDataset.DisableControls;
+  LDataset.Transaction := LTran;
+  LDataset.Database := Statement.DataBase;
+  LDataset.UniDirectional := True;
+  LDataset.SQL.Text := Statement.SQL.Text;
+  AssignParams(Statement.Params, LDataset.Params);
+  LDataset.Open();
+  Result := TUIBResultSetAdapter.Create(LDataset);
+  (Result as TUIBResultSetAdapter).IsNewTransaction := LIsNewTran;
 end;
 
 procedure TUIBStatementAdapter.SetParams(Params: TEnumerable<TDBParam>);
+var
+  LParam: TDBParam;
+  sParamName: string;
 begin
-  inherited;
+  for LParam in Params do
+  begin
+    sParamName := LParam.Name;
+    //strip leading : in param name because UIB does not like them
+    if (LParam.Name <> '') and (StartsStr(':', LParam.Name)) then
+    begin
+      sParamName := Copy(LParam.Name, 2, Length(LParam.Name));
+    end;
+    Statement.Params.ByNameAsVariant[sParamName] := LParam.Value;
+  end;
 end;
 
 procedure TUIBStatementAdapter.SetSQLCommand(const ACommandText: string);
@@ -210,6 +258,7 @@ begin
   begin
     LTran := TUIBTransaction.Create(nil);
     LTran.DataBase := Connection;
+    LTran.DefaultAction := etmRollback;
     LTran.StartTransaction;
   end
   else
@@ -234,14 +283,36 @@ end;
 function TUIBConnectionAdapter.CreateStatement: IDBStatement;
 var
   LStatement: TUIBStatement;
+  LTran: TUIBTransaction;
 begin
   if Connection = nil then
     Exit(nil);
 
   LStatement := TUIBStatement.Create(nil);
+  if Connection.TransactionsCount > 0 then
+    LTran := Connection.Transactions[0]
+  else
+  begin
+    LTran := TUIBTransaction.Create(nil);
+    LTran.DefaultAction := etmRollback;
+    LTran.DataBase := Connection;
+  end;
+
   LStatement.DataBase := Connection;
+  LStatement.Transaction := LTran;
 
   Result := TUIBStatementAdapter.Create(LStatement);
+end;
+
+destructor TUIBConnectionAdapter.Destroy;
+var
+  i: Integer;
+begin
+  for i := 0 to Connection.TransactionsCount - 1 do
+  begin
+    Connection.Transactions[i].Free;
+  end;
+  inherited Destroy;
 end;
 
 procedure TUIBConnectionAdapter.Disconnect;
@@ -277,6 +348,9 @@ constructor TUIBTransactionAdapter.Create(ATransaction: TUIBTransaction);
 begin
   inherited Create;
   FTransaction := ATransaction;
+  FTransaction.DefaultAction := etmRollback;
+  if not FTransaction.InTransaction then
+    FTransaction.StartTransaction;
 end;
 
 destructor TUIBTransactionAdapter.Destroy;
