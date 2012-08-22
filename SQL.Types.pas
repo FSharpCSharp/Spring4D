@@ -30,7 +30,7 @@ unit SQL.Types;
 interface
 
 uses
-  Generics.Collections, Mapping.Attributes;
+  Generics.Collections, Mapping.Attributes, TypInfo;
 
 const
   CRLF = #13#10;
@@ -84,6 +84,31 @@ type
 
   TSQLSelectField = class(TSQLField)
 
+  end;
+
+  TSQLCreateField = class(TSQLField)
+  private
+    FIsPrimaryKey: Boolean;
+    FIsIdentity: Boolean;
+    FTypeKindInfo: PTypeInfo;
+    FLength: Integer;
+    FScale: Integer;
+    FProperties: TColumnProperties;
+    FDescription: string;
+    FPrecision: Integer;
+    FColumnAttribute: ColumnAttribute;
+  public
+    procedure SetFromAttribute(AColumnAttr: ColumnAttribute); virtual;
+    function Clone(): TSQLCreateField;
+
+    property Description: string read FDescription;
+    property IsPrimaryKey: Boolean read FIsPrimaryKey;
+    property IsIdentity: Boolean read FIsIdentity;
+    property TypeKindInfo: PTypeInfo read FTypeKindInfo write FTypeKindInfo;
+    property Length: Integer read FLength;
+    property Precision: Integer read FPrecision;
+    property Scale: Integer read FScale;
+    property Properties: TColumnProperties read FProperties;
   end;
 
   TWhereOperator = (woEqual = 0, woNotEqual, woMore, woLess, woLike, woNotLike,
@@ -166,8 +191,8 @@ type
 implementation
 
 uses
-  Core.Exceptions,
-  TypInfo;
+  Core.Exceptions
+  ;
 
 
 
@@ -337,6 +362,33 @@ end;
 function TSQLWhereField.ToSQLString: string;
 begin
   Result := GetFullFieldname + ' ' + WhereOpNames[WhereOperator] + ' :' + Fieldname + ' ';
+end;
+
+{ TSQLCreateField }
+
+function TSQLCreateField.Clone: TSQLCreateField;
+begin
+  Result := TSQLCreateField.Create(FFieldname, FTable);
+  Result.SetFromAttribute(FColumnAttribute);
+end;
+
+procedure TSQLCreateField.SetFromAttribute(AColumnAttr: ColumnAttribute);
+begin
+  Assert(Assigned(AColumnAttr));
+  FColumnAttribute := AColumnAttr;
+  FProperties := AColumnAttr.Properties;
+  FLength := AColumnAttr.Length;
+  FScale := AColumnAttr.Scale;
+  FDescription := AColumnAttr.Description;
+  FPrecision := AColumnAttr.Precision;
+  FIsIdentity := AColumnAttr.IsIdentity;
+  if FIsIdentity then
+    FIsPrimaryKey := FIsIdentity
+  else
+  begin
+    FIsPrimaryKey := (cpPrimaryKey in AColumnAttr.Properties);
+  end;
+  FTypeKindInfo := AColumnAttr.GetColumnTypeInfo;
 end;
 
 end.

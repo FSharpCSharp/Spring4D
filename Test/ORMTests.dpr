@@ -79,7 +79,8 @@ uses
   SQL.Generator.ASA in '..\SQL.Generator.ASA.pas',
   SQL.Generator.SQLite3 in '..\SQL.Generator.SQLite3.pas',
   SQL.Generator.PostgreSQL in '..\SQL.Generator.PostgreSQL.pas',
-  SQL.Generator.MySQL in '..\SQL.Generator.MySQL.pas';
+  SQL.Generator.MySQL in '..\SQL.Generator.MySQL.pas',
+  TestDatabaseManager in 'TestDatabaseManager.pas';
 
 {$R *.RES}
 

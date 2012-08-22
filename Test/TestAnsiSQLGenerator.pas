@@ -41,7 +41,12 @@ implementation
 
 uses
   SysUtils,
-  StrUtils;
+  StrUtils
+  ,uModels
+  ,Mapping.RttiExplorer
+  ,Mapping.Attributes
+  ,Generics.Collections
+  ;
 
 function CreateTestTable(): TSQLTable;
 begin
@@ -308,8 +313,28 @@ end;
 procedure TestTAnsiSQLGenerator.TestGenerateCreateTable;
 var
   ReturnValue: string;
+  LCommand: TCreateTableCommand;
+  LTable: TSQLTable;
+  LCols: TList<ColumnAttribute>;
 begin
-  ReturnValue := FAnsiSQLGenerator.GenerateCreateTable;
+  ReturnValue := '';
+  LTable := CreateTestTable;
+  LCommand := TCreateTableCommand.Create(LTable);
+  try
+    LCols := TRttiExplorer.GetColumns(TCustomer);
+    try
+      LCommand.SetTable(LCols);
+
+      ReturnValue := FAnsiSQLGenerator.GenerateCreateTable(LCommand);
+      Status(ReturnValue);
+      CheckTrue(ReturnValue <> '');
+    finally
+      LCols.Free;
+    end;
+  finally
+    LTable.Free;
+    LCommand.Free;
+  end;
 end;
 
 procedure TestTAnsiSQLGenerator.TestGenerateCreateFK;

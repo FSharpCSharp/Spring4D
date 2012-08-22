@@ -128,14 +128,14 @@ type
     [Column('ORDER_ID', [cpPrimaryKey], -1, -1, -1, '')]
     property ORDER_ID: Integer read FORDER_ID write FORDER_ID;
     [Column('Customer_ID', [], -1, -1, -1, '')]
-    [ForeignJoinColumnAttribute('Customer_ID', [], 'FID')]
+    [ForeignJoinColumn('Customer_ID', 'FID', [fsOnDeleteCascade, fsOnUpdateCascade])]
     property Customer_ID: Integer read FCustomer_ID write FCustomer_ID;
     [Column('Customer_Payment_Method_Id', [], -1, -1, -1, '')]
     property Customer_Payment_Method_Id: Nullable<Integer> read FCustomer_Payment_Method_Id write FCustomer_Payment_Method_Id;
 
   end;
 
-  [Entity]
+ // [Entity]
   [Table('IMONES', 'VIKARINA')]
   TCompany = class
   private
@@ -162,7 +162,7 @@ type
     property Logo: TPicture read FLogo write SetLogo;
   end;
 
-  [Entity]
+ // [Entity]
   [Table('DARSDLA', 'VIKARINA')]
   TWorker = class
   private
@@ -210,7 +210,7 @@ type
     property Price: Double read FPrice write FPrice;
   end;
 
-  [Entity]
+  //[Entity]
   [Table('IMONES')]
   [Sequence('GNR_IMONESID', 1, 1)]
   TUIBCompany = class

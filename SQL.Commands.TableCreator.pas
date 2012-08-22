@@ -30,24 +30,81 @@ unit SQL.Commands.TableCreator;
 interface
 
 uses
-  SQL.AbstractCommandExecutor;
+  SQL.AbstractCommandExecutor, SQL.Commands, SQL.Types;
 
 type
   TTableCreateExecutor = class(TAbstractCommandExecutor)
+  private
+    FCommand: TCreateTableCommand;
+    FTable: TSQLTable;
   public
-    procedure CreateTables(AEntity: TObject);
+    constructor Create(); override;
+    destructor Destroy; override;
+
+    procedure Build(AClass: TClass); override;
+
+    procedure Execute(AEntity: TObject); override;
+
+    procedure CreateTables(AEntity: TClass);
   end;
 
 implementation
 
 uses
-  Core.Exceptions;
+  Core.Exceptions
+  ,Core.EntityCache
+  ,Core.Interfaces
+  ,Mapping.Attributes
+  ;
 
 { TTableCreateCommand }
 
-procedure TTableCreateExecutor.CreateTables(AEntity: TObject);
+procedure TTableCreateExecutor.Build(AClass: TClass);
+var
+  LAtrTable: TableAttribute;
+  LEntityData: TEntityData;
 begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
+  EntityClass := AClass;
+  LEntityData := TEntityCache.Get(AClass);
+  LAtrTable := LEntityData.EntityTable;
+  if not Assigned(LAtrTable) then
+    raise ETableNotSpecified.Create('Table not specified');
+
+  FTable.SetFromAttribute(LAtrTable);
+  FCommand.SetTable(LEntityData.Columns);
+
+  SQL := Generator.GenerateCreateTable(FCommand);
+end;
+
+constructor TTableCreateExecutor.Create;
+begin
+  inherited Create;
+  FTable := TSQLTable.Create;
+  FCommand := TCreateTableCommand.Create(FTable);
+end;
+
+procedure TTableCreateExecutor.CreateTables(AEntity: TClass);
+begin
+  Execute(nil);
+end;
+
+destructor TTableCreateExecutor.Destroy;
+begin
+  FTable.Free;
+  FCommand.Free;
+  inherited Destroy;
+end;
+
+procedure TTableCreateExecutor.Execute(AEntity: TObject);
+var
+  LStmt: IDBStatement;
+begin
+  LStmt := Connection.CreateStatement;
+  LStmt.SetSQLCommand(SQL);
+  //inherited only when SQL's are constructed
+  inherited Execute(AEntity);
+
+  LStmt.Execute();
 end;
 
 end.

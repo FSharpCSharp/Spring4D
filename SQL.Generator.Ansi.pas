@@ -31,7 +31,7 @@ interface
 
 uses
   SQL.AbstractSQLGenerator, SQL.Commands, SQL.Types, Generics.Collections, Mapping.Attributes
-  , SQL.Interfaces;
+  , SQL.Interfaces, TypInfo;
 
 type
   TAnsiSQLGenerator = class(TAbstractSQLGenerator)
@@ -48,19 +48,22 @@ type
     function GenerateInsert(AInsertCommand: TInsertCommand): string; override;
     function GenerateUpdate(AUpdateCommand: TUpdateCommand): string; override;
     function GenerateDelete(ADeleteCommand: TDeleteCommand): string; override;
-    function GenerateCreateTable(): string; override;
+    function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): string; override;
     function GenerateCreateFK(): string; override;
     function GenerateCreateSequence(ASequence: SequenceAttribute): string; override;
     function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; override;
     function GenerateGetQueryCount(const ASql: string): string; override;
+    function GetSQLDataTypeName(AField: TSQLCreateField): string; override;
   end;
 
 implementation
 
 uses
   Core.Exceptions
+  ,Core.Utils
+  ,Mapping.RttiExplorer
   ,SysUtils
   ,StrUtils
   ;
@@ -77,9 +80,41 @@ begin
   Result := '';
 end;
 
-function TAnsiSQLGenerator.GenerateCreateTable: string;
+function TAnsiSQLGenerator.GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): string;
+var
+  LSqlBuilder: TStringBuilder;
+  i: Integer;
+  LField: TSQLCreateField;
 begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
+  Assert(Assigned(ACreateTableCommand));
+
+  LSqlBuilder := TStringBuilder.Create();
+  try
+    LSqlBuilder.AppendFormat('CREATE TABLE %0:S ', [ACreateTableCommand.Table.Name])
+      .Append('(')
+      .AppendLine;
+    for i := 0 to ACreateTableCommand.Columns.Count - 1 do
+    begin
+      LField := ACreateTableCommand.Columns[i];
+      if i > 0 then
+        LSqlBuilder.Append(',').AppendLine;
+
+      //0 - Column name, 1 - Column data type name, 2 - NOT NULL condition
+      LSqlBuilder.AppendFormat('%0:S %1:S %2:S %3:S',
+        [
+          LField.Fieldname
+          ,GetSQLDataTypeName(LField)
+          ,IfThen(cpPrimaryKey in LField.Properties, 'PRIMARY KEY')
+          ,IfThen(cpNotNull in LField.Properties, 'NOT NULL', 'NULL')
+        ]
+      );
+    end;
+    LSqlBuilder.Append(');');
+
+    Result := LSqlBuilder.ToString;
+  finally
+    LSqlBuilder.Free;
+  end;
 end;
 
 function TAnsiSQLGenerator.GenerateDelete(ADeleteCommand: TDeleteCommand): string;
@@ -371,6 +406,63 @@ begin
 end;
 
 
+
+function TAnsiSQLGenerator.GetSQLDataTypeName(AField: TSQLCreateField): string;
+var
+  LDelphiTypeInfo: PTypeInfo;
+  LClonedField: TSQLCreateField;
+begin
+  Assert(AField <> nil);
+  Result := 'INTEGER';
+
+  LDelphiTypeInfo := AField.TypeKindInfo;
+
+  case AField.TypeKindInfo.Kind of
+    tkUnknown: ;
+    tkInteger, tkInt64, tkEnumeration, tkSet: Result := 'INTEGER';
+    tkChar: Result := Format('CHAR(%D)', [AField.Length]);
+    tkFloat:
+    begin
+      if (System.TypeInfo(TDate) = LDelphiTypeInfo) then
+        Result := 'DATE'
+      else if (System.TypeInfo(TDateTime) = LDelphiTypeInfo) then
+        Result := 'TIMESTAMP'
+      else if (System.TypeInfo(TTime) = LDelphiTypeInfo) then
+        Result := 'TIME'
+      else
+      begin
+        if AField.Precision <> 0 then
+        begin
+          Result := Format('NUMERIC(%0:D, %1:D)', [AField.Precision, AField.Scale]);
+        end
+        else
+          Result := 'FLOAT';
+      end;
+    end;
+    tkString, tkLString: Result := Format('VARCHAR(%D)', [AField.Length]);
+    tkClass, tkArray, tkDynArray, tkVariant: Result := 'BIT';
+    tkMethod: ;
+    tkWChar: Result := Format('NCHAR(%D)', [AField.Length]);
+    tkWString, tkUString: Result := Format('NVARCHAR(%D)', [AField.Length]);
+    tkRecord:
+    begin
+      if TUtils.IsNullableType(LDelphiTypeInfo) or TUtils.IsLazyType(LDelphiTypeInfo) then
+      begin
+        LClonedField := AField.Clone;
+        try
+          LClonedField.TypeKindInfo := TRttiExplorer.GetLastGenericArgumentType(LDelphiTypeInfo).Handle;
+          Result := GetSQLDataTypeName(LClonedField);
+        finally
+          LClonedField.Free;
+        end;
+      end;
+    end;
+    tkInterface: ;
+    tkClassRef: ;
+    tkPointer: ;
+    tkProcedure: ;
+  end;
+end;
 
 function TAnsiSQLGenerator.GetWhereAsString(const AWhereFields: TEnumerable<TSQLWhereField>): string;
 var

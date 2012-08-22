@@ -30,7 +30,7 @@ unit SQL.AbstractSQLGenerator;
 interface
 
 uses
-  SQL.Interfaces, SQL.Commands, Mapping.Attributes;
+  SQL.Interfaces, SQL.Commands, Mapping.Attributes, SQL.Types;
 
 type
   TAbstractSQLGenerator = class(TInterfacedObject, ISQLGenerator)
@@ -40,13 +40,14 @@ type
     function GenerateInsert(AInsertCommand: TInsertCommand): string; virtual; abstract;
     function GenerateUpdate(AUpdateCommand: TUpdateCommand): string; virtual; abstract;
     function GenerateDelete(ADeleteCommand: TDeleteCommand): string; virtual; abstract;
-    function GenerateCreateTable(): string; virtual; abstract;
+    function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): string; virtual; abstract;
     function GenerateCreateFK(): string; virtual; abstract;
     function GenerateCreateSequence(ASequence: SequenceAttribute): string; virtual; abstract;
     function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; virtual; abstract;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; virtual; abstract;
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; virtual; abstract;
     function GenerateGetQueryCount(const ASql: string): string; virtual; abstract;
+    function GetSQLDataTypeName(AField: TSQLCreateField): string; virtual; abstract;
   end;
 
 implementation

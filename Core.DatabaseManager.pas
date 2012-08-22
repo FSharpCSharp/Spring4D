@@ -59,6 +59,10 @@ implementation
 
 uses
   Core.Exceptions
+  ,SQL.Commands.Factory
+  ,SQL.Commands.TableCreator
+  ,Mapping.RttiExplorer
+  ,Generics.Collections
   ,Classes
   {$IFDEF MSWINDOWS}
   ,Windows
@@ -77,8 +81,29 @@ const
 { TDatabaseManager }
 
 procedure TDatabaseManager.BuildDatabase;
+var
+  LTableCreator: TTableCreateExecutor;
+  LEntities: TList<TClass>;
+  LEntityClass: TClass;
+  LTran: IDBTransaction;
 begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
+  LEntities := TRttiExplorer.GetEntities();
+  try
+    LTran := Connection.BeginTransaction;
+    for LEntityClass in LEntities do
+    begin
+      LTableCreator := CommandFactory.GetCommand<TTableCreateExecutor>(LEntityClass, Connection);
+      try
+        LTableCreator.EntityClass := LEntityClass;
+        LTableCreator.CreateTables(LEntityClass);
+      finally
+        LTableCreator.Free;
+      end;
+    end;
+    LTran.Commit;
+  finally
+    LEntities.Free;
+  end;
 end;
 
 { TBaseODBC }

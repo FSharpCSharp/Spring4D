@@ -37,9 +37,14 @@ type
 
   TCascadeType = (ctCascadeAll, ctCascadeMerge, ctCascadeRefresh, ctCascadeRemove);
 
+  TForeignStrategy = (fsOnDeleteSetNull, fsOnDeleteSetDefault, fsOnDeleteCascade, fsOnDeleteNoAction
+                      ,fsOnUpdateSetNull, fsOnUpdateSetDefault, fsOnUpdateCascade, fsOnUpdateNoAction);
+
+  TForeignStrategies = set of TForeignStrategy;
+
   TCascadeTypes = set of TCascadeType;
 
-  TColumnProperty = (cpRequired, cpUnique, cpDontInsert, cpDontUpdate, cpPrimaryKey);
+  TColumnProperty = (cpRequired, cpUnique, cpDontInsert, cpDontUpdate, cpPrimaryKey, cpNotNull);
 
   TColumnProperties = set of TColumnProperty;
 
@@ -53,10 +58,14 @@ type
   private
     FMemberType: TMemberType;
     FClassMemberName: string;
+    FTypeInfo: PTypeInfo;
   public
-    function AsRttiObject(ATypeInfo: PTypeInfo): TRttiNamedObject;
+    function AsRttiObject(ATypeInfo: PTypeInfo): TRttiNamedObject; overload;
+    function AsRttiObject(): TRttiNamedObject; overload;
     function GetTypeInfo(AEntityTypeInfo: PTypeInfo): PTypeInfo;
+    function GetColumnTypeInfo(): PTypeInfo;
 
+    property TypeInfo: PTypeInfo read FTypeInfo write FTypeInfo;
     property ClassMemberName: string read FClassMemberName write FClassMemberName;
     property MemberType: TMemberType read FMemberType write FMemberType;
   end;
@@ -121,17 +130,25 @@ type
   JoinColumn = class(TORMAttribute)
   private
     FName: string;
-    FProperties: TColumnProperties;
+   // FProperties: TColumnProperties;
     FReferencedColName: string;
   public
-    constructor Create(const AName: string; AProperties: TColumnProperties; const AReferencedColumnName: string);
+    constructor Create(const AName: string; const AReferencedColumnName: string);
 
     property Name: string read FName;
-    property Properties: TColumnProperties read FProperties;
+   // property Properties: TColumnProperties read FProperties;
     property ReferencedColumnName: string read FReferencedColName;
   end;
 
-  ForeignJoinColumnAttribute = class(JoinColumn);
+  ForeignJoinColumnAttribute = class(JoinColumn)
+  private
+    FForeignStrategies: TForeignStrategies;
+  public
+    constructor Create(const AName: string; const AReferencedColumnName: string;
+      AForeignStrategies: TForeignStrategies); overload;
+
+    property ForeignStrategies: TForeignStrategies read FForeignStrategies write FForeignStrategies;
+  end;
 
   ColumnAttribute = class(TORMAttribute)
   private
@@ -245,11 +262,11 @@ end;
 
 { JoinColumn }
 
-constructor JoinColumn.Create(const AName: string; AProperties: TColumnProperties; const AReferencedColumnName: string);
+constructor JoinColumn.Create(const AName: string; const AReferencedColumnName: string);
 begin
   inherited Create;
   FName := AName;
-  FProperties := AProperties;
+  //FProperties := AProperties;
   FReferencedColName := AReferencedColumnName;
 end;
 
@@ -324,6 +341,16 @@ begin
     Result := LType.GetProperty(ClassMemberName);
 end;
 
+function TORMAttribute.AsRttiObject: TRttiNamedObject;
+begin
+  Result := AsRttiObject(FTypeInfo);
+end;
+
+function TORMAttribute.GetColumnTypeInfo: PTypeInfo;
+begin
+  Result := GetTypeInfo(FTypeInfo);
+end;
+
 function TORMAttribute.GetTypeInfo(AEntityTypeInfo: PTypeInfo): PTypeInfo;
 var
   LRttiObj: TRttiNamedObject;
@@ -339,6 +366,15 @@ begin
   begin
     Result := TRttiProperty(LRttiObj).PropertyType.Handle;
   end;
+end;
+
+{ ForeignJoinColumnAttribute }
+
+constructor ForeignJoinColumnAttribute.Create(const AName, AReferencedColumnName: string;
+  AForeignStrategies: TForeignStrategies);
+begin
+  inherited Create(AName, AReferencedColumnName);
+  FForeignStrategies := AForeignStrategies;
 end;
 
 end.

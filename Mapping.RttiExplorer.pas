@@ -54,8 +54,10 @@ type
     class function GetColumnIsIdentity(AClass: TClass; AColumn: ColumnAttribute): Boolean;
     class procedure GetDeclaredConstructors(AClass: TClass; AList: TList<TRttiMethod>);
     class function GetMethodWithLessParameters(AList: TList<TRttiMethod>): TRttiMethod;
+    class function GetEntities(): TList<TClass>;
     class function GetEntityRttiType(ATypeInfo: PTypeInfo): TRttiType; overload;
     class function GetEntityRttiType<T>(): TRttiType; overload;
+    class function GetLastGenericArgumentType(ATypeInfo: PTypeInfo): TRttiType;
     class function GetForeignKeyColumn(AClass: TClass; const ABaseTablePrimaryKeyColumn: ColumnAttribute): ForeignJoinColumnAttribute;
     class function GetMemberValue(AEntity: TObject; const AMember: TRttiNamedObject): TValue; overload;
     class function GetMemberValue(AEntity: TObject; const AMemberName: string): TValue; overload;
@@ -509,6 +511,7 @@ begin
       begin
         TORMAttribute(LAttr).MemberType := mtField;
         TORMAttribute(LAttr).ClassMemberName := LField.Name;
+        TORMAttribute(LAttr).TypeInfo := LType.Handle;
         AList.Add(T(LAttr));
       end;
     end;
@@ -522,6 +525,7 @@ begin
       begin
         TORMAttribute(LAttr).MemberType := mtProperty;
         TORMAttribute(LAttr).ClassMemberName := LProp.Name;
+        TORMAttribute(LAttr).TypeInfo := LType.Handle;
         AList.Add(T(LAttr));
       end;
     end;
@@ -655,6 +659,28 @@ begin
   Result := False;
 end;
 
+class function TRttiExplorer.GetEntities: TList<TClass>;
+var
+  LType: TRttiType;
+  LClass: TClass;
+  LEntity: EntityAttribute;
+begin
+  Result := TList<TClass>.Create;
+
+  for LType in TRttiContext.Create.GetTypes do
+  begin
+    if LType.IsInstance then
+    begin
+      LClass := LType.AsInstance.MetaclassType;
+      LEntity := GetClassAttribute<EntityAttribute>(LClass);
+      if Assigned(LEntity) then
+      begin
+        Result.Add(LClass);
+      end;
+    end;
+  end;
+end;
+
 class function TRttiExplorer.GetEntityRttiType(ATypeInfo: PTypeInfo): TRttiType;
 var
   LRttiType: TRttiType;
@@ -696,6 +722,18 @@ begin
     end;
   end;
   Result := nil;
+end;
+
+class function TRttiExplorer.GetLastGenericArgumentType(ATypeInfo: PTypeInfo): TRttiType;
+var
+  LArgs: TArray<TRttiType>;
+begin
+  Result := TRttiContext.Create.GetType(ATypeInfo);
+  LArgs := Result.GetGenericArguments;
+  if Length(LArgs) > 0 then
+  begin
+    Result := LArgs[High(LArgs)];
+  end;
 end;
 
 class function TRttiExplorer.GetMemberValue(AEntity: TObject; const AMember: TRttiNamedObject): TValue;

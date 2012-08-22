@@ -117,6 +117,18 @@ type
     property WhereFields: TObjectList<TSQLWhereField> read FWhereFields;
   end;
 
+  TCreateTableCommand = class(TDMLCommand)
+  private
+    FColumns: TObjectList<TSQLCreateField>;
+  public
+    constructor Create(ATable: TSQLTable); override;
+    destructor Destroy; override;
+
+    procedure SetTable(AColumns: TList<ColumnAttribute>); override;
+
+    property Columns: TObjectList<TSQLCreateField> read FColumns;
+  end;
+
 implementation
 
 uses
@@ -312,6 +324,35 @@ constructor TDMLCommand.Create(ATable: TSQLTable);
 begin
   inherited Create;
   FTable := ATable;
+end;
+
+{ TCreateTableCommand }
+
+constructor TCreateTableCommand.Create(ATable: TSQLTable);
+begin
+  inherited Create(ATable);
+  FColumns := TObjectList<TSQLCreateField>.Create(True);
+end;
+
+destructor TCreateTableCommand.Destroy;
+begin
+  FColumns.Free;
+  inherited Destroy;
+end;
+
+procedure TCreateTableCommand.SetTable(AColumns: TList<ColumnAttribute>);
+var
+  LCol: ColumnAttribute;
+  LField: TSQLCreateField;
+begin
+  FColumns.Clear;
+
+  for LCol in AColumns do
+  begin
+    LField := TSQLCreateField.Create(LCol.Name, FTable);
+    LField.SetFromAttribute(LCol);
+    FColumns.Add(LField);
+  end;
 end;
 
 end.

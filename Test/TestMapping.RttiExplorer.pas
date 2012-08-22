@@ -42,6 +42,7 @@ type
     procedure TestClone;
     procedure TestCloneSpeed;
     procedure GetPrimaryKey();
+    procedure TestGetEntities();
   end;
 
 implementation
@@ -157,6 +158,18 @@ begin
     CheckEquals(CustomerColumnCount, ReturnValue.Count);
   finally
     ReturnValue.Free;
+  end;
+end;
+
+procedure TestTRttiExplorer.TestGetEntities;
+var
+  LEntities: TList<TClass>;
+begin
+  LEntities := TRttiExplorer.GetEntities;
+  try
+    CheckEquals(3, LEntities.Count);
+  finally
+    LEntities.Free;
   end;
 end;
 

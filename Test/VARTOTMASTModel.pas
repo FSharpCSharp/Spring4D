@@ -6,7 +6,7 @@ uses
   Mapping.Attributes, Core.Types, Graphics;
 
 type
-  [Entity]   
+ // [Entity]
   [Table('VARTOTMAST', 'VIKARINA')]
   TVARTOTMAST = class
   private

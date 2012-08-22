@@ -33,23 +33,19 @@ uses
   Generics.Collections, SQL.Commands, Rtti, SQL.AbstractCommandExecutor, Core.Interfaces;
 
 type
+{
   TCommandKey = record
     EntityClass: TClass;
     TypeInfo: Pointer;
   end;
+ }
 
   TCommandFactory = class
-  private
-    FCommands: TDictionary<TCommandKey,TValue>;
   public
     constructor Create(); virtual;
     destructor Destroy; override;
 
-    procedure Clear();
-
-    function GetCommand<T: TAbstractCommandExecutor, constructor>(AClass: TClass; AConnection: IDBConnection): T;
-
-
+    function GetCommand<T: TAbstractCommandExecutor, constructor>(AClass: TClass; const AConnection: IDBConnection): T;
   end;
 
 var
@@ -62,55 +58,22 @@ uses
 
 { TCommandFactory }
 
-procedure TCommandFactory.Clear;
-var
-  LCommand: TValue;
-  LObj: TObject;
-begin
-  for LCommand in FCommands.Values do
-  begin
-    LObj := LCommand.AsObject;
-    if Assigned(LObj) then
-    begin
-      LObj.Free;
-    end;
-  end;
-  FCommands.Clear;
-end;
 
 constructor TCommandFactory.Create;
 begin
   inherited Create;
-  FCommands := TDictionary<TCommandKey, TValue>.Create();
 end;
 
 destructor TCommandFactory.Destroy;
 begin
-  Clear;
-  FCommands.Free;
   inherited Destroy;
 end;
 
-function TCommandFactory.GetCommand<T>(AClass: TClass; AConnection: IDBConnection): T;
-var
-  LCommand: TValue;
-  LKey: TCommandKey;
+function TCommandFactory.GetCommand<T>(AClass: TClass; const AConnection: IDBConnection): T;
 begin
-  LKey.EntityClass := AClass;
-  LKey.TypeInfo := TypeInfo(T);
-
-  if not FCommands.TryGetValue(LKey, LCommand) then
-  begin
-    Result := T.Create;
-    Result.Connection := AConnection;
-    Result.Build(AClass);
-    FCommands.Add(LKey, Result);
-  end
-  else
-  begin
-    Result := LCommand.AsType<T>();
-    Result.Connection := AConnection;
-  end;
+  Result := T.Create;
+  Result.Connection := AConnection;
+  Result.Build(AClass);
 end;
 
 initialization

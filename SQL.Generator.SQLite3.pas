@@ -30,23 +30,66 @@ unit SQL.Generator.SQLite3;
 interface
 
 uses
-  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces;
+  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces, SQL.Commands, SQL.Types;
 
 type
   TSQLiteSQLGenerator = class(TAnsiSQLGenerator)
   public
     function GetQueryLanguage(): TQueryLanguage; override;
+    function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): string; override;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
+    function GetSQLDataTypeName(AField: TSQLCreateField): string; override;
   end;
 
 implementation
 
 uses
   SQL.Register
+  ,SysUtils
+  ,StrUtils
   ;
 
 
 { TSQLiteSQLGenerator }
+
+function TSQLiteSQLGenerator.GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): string;
+var
+  LSqlBuilder: TStringBuilder;
+  i: Integer;
+  LField: TSQLCreateField;
+begin
+  Assert(Assigned(ACreateTableCommand));
+
+  LSqlBuilder := TStringBuilder.Create();
+  try
+    LSqlBuilder.AppendFormat('CREATE TABLE %0:S ', [ACreateTableCommand.Table.Name])
+      .Append('(')
+      .AppendLine;
+    for i := 0 to ACreateTableCommand.Columns.Count - 1 do
+    begin
+      LField := ACreateTableCommand.Columns[i];
+      if i > 0 then
+        LSqlBuilder.Append(',').AppendLine;
+
+      //0 - Column name, 1 - Column data type name, 2 - NOT NULL condition
+      LSqlBuilder.AppendFormat('%0:S %1:S %2:S %3:S %4:S %5:S',
+        [
+          LField.Fieldname
+          ,GetSQLDataTypeName(LField)
+          ,IfThen(cpPrimaryKey in LField.Properties, 'PRIMARY KEY')
+          ,IfThen(LField.IsIdentity, 'AUTOINCREMENT')
+          ,IfThen(cpUnique in LField.Properties, 'UNIQUE')
+          ,IfThen(cpNotNull in LField.Properties, 'NOT NULL', 'NULL')
+        ]
+      );
+    end;
+    LSqlBuilder.Append(');');
+
+    Result := LSqlBuilder.ToString;
+  finally
+    LSqlBuilder.Free;
+  end;
+end;
 
 function TSQLiteSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
 begin
@@ -56,6 +99,15 @@ end;
 function TSQLiteSQLGenerator.GetQueryLanguage: TQueryLanguage;
 begin
   Result := qlSQLite;
+end;
+
+function TSQLiteSQLGenerator.GetSQLDataTypeName(AField: TSQLCreateField): string;
+begin
+  Result := inherited GetSQLDataTypeName(AField);
+  if Result = 'BIT' then
+    Result := 'BLOB'
+  else if ContainsStr(Result, 'CHAR') then
+    Result := 'TEXT';
 end;
 
 initialization

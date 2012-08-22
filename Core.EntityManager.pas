@@ -199,8 +199,12 @@ var
   LDeleter: TDeleteExecutor;
 begin
   LDeleter := CommandFactory.GetCommand<TDeleteExecutor>(AEntity.ClassType, Connection);
-  LDeleter.EntityClass := AEntity.ClassType;
-  LDeleter.Execute(AEntity);
+  try
+    LDeleter.EntityClass := AEntity.ClassType;
+    LDeleter.Execute(AEntity);
+  finally
+    LDeleter.Free;
+  end;
 
   FOldStateEntities.Remove(AEntity);
 end;
@@ -236,19 +240,23 @@ begin
   end;
 
   LSelecter := GetSelector(LEntityClass) as TSelectExecutor;
-  LSelecter.EntityClass := LEntityClass;
- // LSelecter.Connection := Connection;
-  LSelecter.ID := AID;
-  LSelecter.LazyColumn := AColumn;
+  try
+    LSelecter.EntityClass := LEntityClass;
+   // LSelecter.Connection := Connection;
+    LSelecter.ID := AID;
+    LSelecter.LazyColumn := AColumn;
 
-  AIsEnumerable := TUtils.IsEnumerable(TypeInfo(T), LEnumMethod);
+    AIsEnumerable := TUtils.IsEnumerable(TypeInfo(T), LEnumMethod);
 
-  if AIsEnumerable then
-    LSelecter.SelectType := stObjectList
-  else
-    LSelecter.SelectType := stOne;
+    if AIsEnumerable then
+      LSelecter.SelectType := stObjectList
+    else
+      LSelecter.SelectType := stOne;
 
-  Result := LSelecter.Select(AEntity, LBaseEntityClass);
+    Result := LSelecter.Select(AEntity, LBaseEntityClass);
+  finally
+    LSelecter.Free;
+  end;
 end;
 
 procedure TEntityManager.DoSetEntity(var AEntityToCreate: TObject; AResultset: IDBResultset; ARealEntity: TObject);
@@ -380,10 +388,14 @@ begin
   end;
 
   LSelecter := GetSelector(LEntityClass) as TSelectExecutor;
-  LSelecter.EntityClass := LEntityClass;
-  LSelecter.LazyColumn := nil;
-  LResults := LSelecter.SelectAll(nil, LEntityClass);
-  Result := Fetch<T>(LResults);
+  try
+    LSelecter.EntityClass := LEntityClass;
+    LSelecter.LazyColumn := nil;
+    LResults := LSelecter.SelectAll(nil, LEntityClass);
+    Result := Fetch<T>(LResults);
+  finally
+    LSelecter.Free;
+  end;
 end;
 
 function TEntityManager.FindOne<T>(const AID: TValue): T;
@@ -400,13 +412,17 @@ begin
   end;
 
   LSelecter := GetSelector(LEntityClass) as TSelectExecutor;
-  LSelecter.EntityClass := LEntityClass;
-  LSelecter.ID := AID;
-  LSelecter.LazyColumn := nil;
-  LResults := LSelecter.Select(nil, LEntityClass);
-  if not LResults.IsEmpty then
-  begin
-    Result := GetOne<T>(LResults, nil);
+  try
+    LSelecter.EntityClass := LEntityClass;
+    LSelecter.ID := AID;
+    LSelecter.LazyColumn := nil;
+    LResults := LSelecter.Select(nil, LEntityClass);
+    if not LResults.IsEmpty then
+    begin
+      Result := GetOne<T>(LResults, nil);
+    end;
+  finally
+    LSelecter.Free;
   end;
 end;
 
@@ -636,11 +652,15 @@ var
   LInserter: TInsertExecutor;
 begin
   LInserter := CommandFactory.GetCommand<TInsertExecutor>(AEntity.ClassType, Connection);
-  LInserter.EntityClass := AEntity.ClassType;
-  LInserter.Execute(AEntity);
+  try
+    LInserter.EntityClass := AEntity.ClassType;
+    LInserter.Execute(AEntity);
 
-  SetLazyColumns(AEntity);
-  FOldStateEntities.AddOrReplace(TRttiExplorer.Clone(AEntity));
+    SetLazyColumns(AEntity);
+    FOldStateEntities.AddOrReplace(TRttiExplorer.Clone(AEntity));
+  finally
+    LInserter.Free;
+  end;
 end;
 
 procedure TEntityManager.Insert<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
@@ -776,12 +796,16 @@ var
   LUpdater: TUpdateExecutor;
 begin
   LUpdater := CommandFactory.GetCommand<TUpdateExecutor>(AEntity.ClassType, Connection);
-  LUpdater.EntityClass := AEntity.ClassType;
-  LUpdater.EntityMap := FOldStateEntities;
-  LUpdater.Execute(AEntity);
+  try
+    LUpdater.EntityClass := AEntity.ClassType;
+    LUpdater.EntityMap := FOldStateEntities;
+    LUpdater.Execute(AEntity);
 
-  SetLazyColumns(AEntity);
-  FOldStateEntities.AddOrReplace(TRttiExplorer.Clone(AEntity));
+    SetLazyColumns(AEntity);
+    FOldStateEntities.AddOrReplace(TRttiExplorer.Clone(AEntity));
+  finally
+    LUpdater.Free;
+  end;
 end;
 
 procedure TEntityManager.Update<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>

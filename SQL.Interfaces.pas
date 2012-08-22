@@ -47,7 +47,7 @@ type
     function GenerateInsert(AInsertCommand: TInsertCommand): string;
     function GenerateUpdate(AUpdateCommand: TUpdateCommand): string;
     function GenerateDelete(ADeleteCommand: TDeleteCommand): string;
-    function GenerateCreateTable(): string;
+    function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): string;
     function GenerateCreateFK(): string;
     function GenerateCreateSequence(ASequence: SequenceAttribute): string;
     function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;

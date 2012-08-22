@@ -149,7 +149,8 @@ end;
 procedure TAbstractCommandExecutor.SetConnection(const Value: IDBConnection);
 begin
   FConnection := Value;
-  FGenerator := TSQLGeneratorRegister.GetGenerator(FConnection.GetQueryLanguage);
+  if Assigned(FConnection) then
+    FGenerator := TSQLGeneratorRegister.GetGenerator(FConnection.GetQueryLanguage);
 end;
 
 end.
