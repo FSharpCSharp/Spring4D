@@ -120,6 +120,8 @@ begin
   LUpdateManager := TDatabaseManager.Create(LConn);
   try
     LUpdateManager.BuildDatabase;
+
+
   finally
     LUpdateManager.Free;
    // DeleteFile(sFile);

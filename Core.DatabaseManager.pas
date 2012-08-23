@@ -103,7 +103,7 @@ end;
 procedure TDatabaseManager.BuildDatabase;
 var
   LEntities: TList<TClass>;
-  LTran, LTran2: IDBTransaction;
+  LTran: IDBTransaction;
 begin
   LEntities := TRttiExplorer.GetEntities();
   try
@@ -111,15 +111,11 @@ begin
 
     BuildTables(LEntities);
 
-    LTran.Commit;
-
-    LTran2 := Connection.BeginTransaction;
-
     BuildForeignKeys(LEntities);
 
     BuildSequences(LEntities);
 
-    LTran2.Commit;
+    LTran.Commit;
   finally
     LEntities.Free;
   end;

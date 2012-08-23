@@ -120,6 +120,7 @@ type
   TCreateTableCommand = class(TDMLCommand)
   private
     FColumns: TObjectList<TSQLCreateField>;
+    FDbColumns: TList<string>;
     FTableExists: Boolean;
   public
     constructor Create(ATable: TSQLTable); override;
@@ -128,6 +129,7 @@ type
     procedure SetTable(AColumns: TList<ColumnAttribute>); override;
 
     property TableExists: Boolean read FTableExists write FTableExists;
+    property DbColumns: TList<string> read FDbColumns;
     property Columns: TObjectList<TSQLCreateField> read FColumns;
   end;
 
@@ -139,6 +141,7 @@ type
     destructor Destroy; override;
 
     procedure SetTable(AColumns: TList<ColumnAttribute>); override;
+
 
     property ForeignKeys: TObjectList<TSQLForeignKeyField> read FForeigns;
   end;
@@ -160,6 +163,8 @@ uses
   Mapping.RttiExplorer
   ,Core.EntityCache
   ,SysUtils
+  ,StrUtils
+  ,Generics.Defaults
   ;
 
 { TSelectCommand }
@@ -354,14 +359,24 @@ end;
 { TCreateTableCommand }
 
 constructor TCreateTableCommand.Create(ATable: TSQLTable);
+var
+  LCaseInsensitiveComparer: IComparer<string>;
 begin
   inherited Create(ATable);
   FColumns := TObjectList<TSQLCreateField>.Create(True);
+  LCaseInsensitiveComparer := TComparer<string>.Construct(
+    function(const Left, Right: string): Integer
+    begin
+      Result := CompareText(Left, Right);
+    end);
+
+  FDbColumns := TList<string>.Create(LCaseInsensitiveComparer);
 end;
 
 destructor TCreateTableCommand.Destroy;
 begin
   FColumns.Free;
+  FDBColumns.Free;
   inherited Destroy;
 end;
 
@@ -371,6 +386,7 @@ var
   LField: TSQLCreateField;
 begin
   FColumns.Clear;
+  FDbColumns.Clear;
 
   for LCol in AColumns do
   begin

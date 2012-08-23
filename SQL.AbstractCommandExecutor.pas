@@ -30,7 +30,7 @@ unit SQL.AbstractCommandExecutor;
 interface
 
 uses
-  Core.Interfaces, SQL.Interfaces, Generics.Collections, SQL.Params, Mapping.Attributes;
+  Core.Interfaces, SQL.Interfaces, Generics.Collections, SQL.Params, Mapping.Attributes, SQL.Types;
 
 type
   TAbstractCommandExecutor = class
@@ -48,6 +48,9 @@ type
   public
     constructor Create(); virtual;
     destructor Destroy; override;
+
+    function TableExists(const ATablename: string): Boolean; virtual;
+    procedure FillDbTableColumns(const ATablename: string; AColumns: TList<string>); virtual;
 
     procedure Execute(AEntity: TObject); virtual;
     procedure Build(AClass: TClass); virtual; abstract;
@@ -146,11 +149,54 @@ begin
   Connection.NotifyExecutionListeners(SQL, SQLParameters);
 end;
 
+
+procedure TAbstractCommandExecutor.FillDbTableColumns(const ATablename: string; AColumns: TList<string>);
+var
+  LSqlTableCount: string;
+  LStmt: IDBStatement;
+  LResults: IDBResultset;
+  i: Integer;
+begin
+  LSqlTableCount := Generator.GetTableColumns(ATablename);
+  if (LSqlTableCount <> '') then
+  begin
+    LStmt := Connection.CreateStatement;
+    LStmt.SetSQLCommand(LSqlTableCount);
+    LResults := LStmt.ExecuteQuery;
+    AColumns.Clear;
+    for i := 0 to LResults.GetFieldCount - 1 do
+    begin
+      AColumns.Add(LResults.GetFieldName(i));
+    end;
+  end;
+end;
+
 procedure TAbstractCommandExecutor.SetConnection(const Value: IDBConnection);
 begin
   FConnection := Value;
   if Assigned(FConnection) then
     FGenerator := TSQLGeneratorRegister.GetGenerator(FConnection.GetQueryLanguage);
+end;
+
+function TAbstractCommandExecutor.TableExists(const ATablename: string): Boolean;
+var
+  LSqlTableCount: string;
+  LStmt: IDBStatement;
+  LResults: IDBResultset;
+begin
+  Result := False;
+  LSqlTableCount := Generator.GetSQLTableCount(ATablename);
+  if (LSqlTableCount <> '') then
+  begin
+    try
+      LStmt := Connection.CreateStatement;
+      LStmt.SetSQLCommand(LSqlTableCount);
+      LResults := LStmt.ExecuteQuery;
+      Result := not LResults.IsEmpty;
+    except
+      Result := False;
+    end;
+  end;
 end;
 
 end.

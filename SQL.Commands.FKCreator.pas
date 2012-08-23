@@ -72,6 +72,12 @@ begin
 
   FTable.SetFromAttribute(LAtrTable);
   FCommand.SetTable(LEntityData.Columns);
+  FCommand.TableExists := TableExists(FTable.Name);
+  if FCommand.TableExists then
+  begin
+    //get current columns from db table
+    FillDbTableColumns(FTable.Name, FCommand.DbColumns);
+  end;
 
   SQL := Generator.GenerateCreateFK(FCommand);
 end;

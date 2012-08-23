@@ -49,6 +49,8 @@ type
     function Next(): Boolean;
     function GetFieldValue(AIndex: Integer): Variant; overload;
     function GetFieldValue(const AFieldname: string): Variant; overload;
+    function GetFieldCount(): Integer;
+    function GetFieldName(AIndex: Integer): string;
   end;
 
   IDBStatement = interface

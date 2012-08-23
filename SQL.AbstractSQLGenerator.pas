@@ -53,6 +53,7 @@ type
     function GetSQLDataTypeName(AField: TSQLCreateField): string; virtual; abstract;
     function GetSQLTableCount(const ATablename: string): string; virtual; abstract;
     function GetSQLSequenceCount(const ASequenceName: string): string; virtual; abstract;
+    function GetTableColumns(const ATableName: string): string; virtual; abstract;
   end;
 
 implementation

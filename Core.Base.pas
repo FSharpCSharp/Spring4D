@@ -48,6 +48,7 @@ type
     function GetFieldValue(AIndex: Integer): Variant; overload; virtual; abstract;
     function GetFieldValue(const AFieldname: string): Variant; overload; virtual; abstract;
     function GetFieldCount(): Integer; virtual; abstract;
+    function GetFieldName(AIndex: Integer): string; virtual; abstract;
   public
     constructor Create(const ADataset: T); virtual;
     destructor Destroy; override;

@@ -42,7 +42,9 @@ type
     function GetOrderAsString(const AOrderFields: TEnumerable<TSQLOrderField>): string; virtual;
     function GetWhereAsString(const AWhereFields: TEnumerable<TSQLWhereField>): string; virtual;
     function GetSelectFieldsAsString(const ASelectFields: TEnumerable<TSQLSelectField>): string; virtual;
-    function GetCreateFieldsAsString(const ACreateFields: TEnumerable<TSQLCreateField>): string; virtual;
+    function GetCreateFieldsAsString(const ACreateFields: TEnumerable<TSQLCreateField>): string; overload; virtual;
+    function GetCreateFieldsAsString(const ACreateFields: TList<string>): string; overload; virtual;
+    function GetCopyFieldsAsString(const ACreateFields: TEnumerable<TSQLCreateField>; const ACopyFields: TList<string>): string; virtual;
   public
     function GetQueryLanguage(): TQueryLanguage; override;
     function GenerateSelect(ASelectCommand: TSelectCommand): string; override;
@@ -62,6 +64,7 @@ type
     function GetSQLDataTypeName(AField: TSQLCreateField): string; override;
     function GetSQLTableCount(const ATablename: string): string; override;
     function GetSQLSequenceCount(const ASequenceName: string): string; override;
+    function GetTableColumns(const ATableName: string): string; override;
   end;
 
 implementation
@@ -374,10 +377,45 @@ begin
       Result := Result + ',';
 
     Result := Result + LField.Fieldname;
-  end;
 
-  if (Result <> '') then
-    Result := Format('(%0:S)', [Result]);
+    Inc(i);
+  end;
+end;
+
+function TAnsiSQLGenerator.GetCopyFieldsAsString(const ACreateFields: TEnumerable<TSQLCreateField>;
+  const ACopyFields: TList<string>): string;
+var
+  LField: TSQLCreateField;
+  i: Integer;
+begin
+  Result := '';
+  i := 0;
+  for LField in ACreateFields do
+  begin
+    if i > 0 then
+      Result := Result + ',';
+
+    if ACopyFields.Contains(LField.Fieldname) then
+      Result := Result + LField.Fieldname
+    else
+      Result := Result + 'NULL';
+
+    Inc(i);
+  end;
+end;
+
+function TAnsiSQLGenerator.GetCreateFieldsAsString(const ACreateFields: TList<string>): string;
+var
+  i: Integer;
+begin
+  Result := '';
+  for i := 0 to ACreateFields.Count - 1 do
+  begin
+    if i > 0 then
+      Result := Result + ',';
+
+    Result := Result + ACreateFields[i];
+  end;
 end;
 
 function TAnsiSQLGenerator.GetGroupByAsString(
@@ -547,6 +585,11 @@ end;
 function TAnsiSQLGenerator.GetSQLTableCount(const ATablename: string): string;
 begin
   Result := Format('SELECT COUNT(*) FROM %0:S;', [ATablename]);
+end;
+
+function TAnsiSQLGenerator.GetTableColumns(const ATableName: string): string;
+begin
+  Result := Format('SELECT * FROM %0:S WHERE 1<>2;', [ATableName]);
 end;
 
 function TAnsiSQLGenerator.GetWhereAsString(const AWhereFields: TEnumerable<TSQLWhereField>): string;

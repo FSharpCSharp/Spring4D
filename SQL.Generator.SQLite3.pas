@@ -30,11 +30,14 @@ unit SQL.Generator.SQLite3;
 interface
 
 uses
-  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces, SQL.Commands, SQL.Types, Generics.Collections;
+  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces, SQL.Commands, SQL.Types, Generics.Collections, SysUtils;
 
 type
   TSQLiteSQLGenerator = class(TAnsiSQLGenerator)
   protected
+    procedure DoGenerateBackupTable(const ATableName: string; var ASqlBuilder: TStringBuilder); virtual;
+    procedure DoGenerateRestoreTable(const ATablename: string;
+      ACreateColumns: TObjectList<TSQLCreateField>; ADbColumns: TList<string>; var ASqlBuilder: TStringBuilder); virtual;
     function DoGenerateCreateTable(const ATableName: string; AColumns: TObjectList<TSQLCreateField>): string; virtual;
   public
     function GetQueryLanguage(): TQueryLanguage; override;
@@ -48,7 +51,6 @@ implementation
 
 uses
   SQL.Register
-  ,SysUtils
   ,StrUtils
   ;
 
@@ -58,6 +60,16 @@ uses
 const
   TBL_TEMP = 'ORMTEMPTABLE';
 
+procedure TSQLiteSQLGenerator.DoGenerateBackupTable(const ATableName: string; var ASqlBuilder: TStringBuilder);
+begin
+  ASqlBuilder.AppendFormat(' DROP TABLE IF EXISTS %0:S; ', [TBL_TEMP]).AppendLine;
+  //select old data to temporary table
+  ASqlBuilder.AppendFormat(' CREATE TEMPORARY TABLE %0:S AS SELECT * FROM %1:S; ',
+    [TBL_TEMP, ATableName]).AppendLine;
+  //drop table
+  ASqlBuilder.AppendFormat(' DROP TABLE IF EXISTS %0:S; ', [ATableName]).AppendLine;
+end;
+
 function TSQLiteSQLGenerator.DoGenerateCreateTable(const ATableName: string; AColumns: TObjectList<TSQLCreateField>): string;
 var
   LSqlBuilder: TStringBuilder;
@@ -66,7 +78,7 @@ var
 begin
   LSqlBuilder := TStringBuilder.Create();
   try
-    LSqlBuilder.AppendFormat('CREATE TABLE %0:S ', [ATableName])
+    LSqlBuilder.AppendFormat(' CREATE TABLE %0:S ', [ATableName])
       .Append('(')
       .AppendLine;
     for i := 0 to AColumns.Count - 1 do
@@ -76,7 +88,7 @@ begin
         LSqlBuilder.Append(',').AppendLine;
 
       //0 - Column name, 1 - Column data type name, 2 - NOT NULL condition
-      LSqlBuilder.AppendFormat('%0:S %1:S %2:S %3:S %4:S %5:S',
+      LSqlBuilder.AppendFormat(' %0:S %1:S %2:S %3:S %4:S %5:S',
         [
           LField.Fieldname
           ,GetSQLDataTypeName(LField)
@@ -95,6 +107,17 @@ begin
   end;
 end;
 
+procedure TSQLiteSQLGenerator.DoGenerateRestoreTable(const ATablename: string;
+  ACreateColumns: TObjectList<TSQLCreateField>; ADbColumns: TList<string>; var ASqlBuilder: TStringBuilder);
+begin
+  ASqlBuilder.AppendFormat(' INSERT INTO %0:S (%2:S) SELECT %3:S FROM %1:S;',
+    [ATablename, TBL_TEMP, GetCreateFieldsAsString(ACreateColumns),
+    GetCopyFieldsAsString(ACreateColumns, ADbColumns)]).AppendLine;
+
+  //drop temporary table
+  ASqlBuilder.AppendFormat(' DROP TABLE %0:S;', [TBL_TEMP]);
+end;
+
 function TSQLiteSQLGenerator.GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): string;
 var
   LSqlBuilder: TStringBuilder;
@@ -108,12 +131,7 @@ begin
 
   LSqlBuilder := TStringBuilder.Create;
   try
-    LSqlBuilder.AppendFormat('DROP TABLE IF EXISTS %0:S; ', [TBL_TEMP]).AppendLine;
-    //select old data to temporary table
-    LSqlBuilder.AppendFormat('CREATE TEMPORARY TABLE %0:S AS SELECT * FROM %1:S; ',
-      [TBL_TEMP, ACreateFKCommand.Table.Name]).AppendLine;
-    //drop table
-    LSqlBuilder.AppendFormat('DROP TABLE IF EXISTS %0:S; ', [ACreateFKCommand.Table.Name]).AppendLine;
+    DoGenerateBackupTable(ACreateFKCommand.Table.Name, LSqlBuilder);
     //recreate table with foreign keys
     LCreateTableString := DoGenerateCreateTable(ACreateFKCommand.Table.Name, ACreateFKCommand.Columns);
     LSqlBuilder.Append(LCreateTableString).Append(',').AppendLine;
@@ -123,19 +141,13 @@ begin
       if i > 0 then
         LSqlBuilder.Append(',').AppendLine;
 
-      LSqlBuilder.AppendFormat('CONSTRAINT %0:S FOREIGN KEY (%1:S) REFERENCES %2:S (%3:S)',
+      LSqlBuilder.AppendFormat(' CONSTRAINT %0:S FOREIGN KEY (%1:S) REFERENCES %2:S (%3:S)',
         [LField.ForeignKeyName, LField.Fieldname, LField.ReferencedTableName, LField.ReferencedColumnName]);
 
     end;
-
     LSqlBuilder.Append(');').AppendLine;
 
-    //fill new table with old data
-    LSqlBuilder.AppendFormat('INSERT INTO %0:S SELECT * FROM %1:S;',
-      [ACreateFKCommand.Table.Name, TBL_TEMP]).AppendLine;
-
-    //drop temporary table
-    LSqlBuilder.AppendFormat('DROP TABLE IF EXISTS %0:S;', [TBL_TEMP]);
+    DoGenerateRestoreTable(ACreateFKCommand.Table.Name, ACreateFKCommand.Columns, ACreateFKCommand.DbColumns, LSqlBuilder);
 
     Result := LSqlBuilder.ToString;
 
@@ -155,13 +167,7 @@ begin
   try
     if ACreateTableCommand.TableExists then
     begin
-      //drop if exists
-      LSqlBuilder.AppendFormat('DROP TABLE IF EXISTS %0:S; ', [TBL_TEMP]).AppendLine;
-
-      LSqlBuilder.AppendFormat('CREATE TEMPORARY TABLE %0:S AS SELECT * FROM %1:S; ',
-        [TBL_TEMP, ACreateTableCommand.Table.Name]).AppendLine;
-
-      LSqlBuilder.AppendFormat('DROP TABLE %0:S; ', [ACreateTableCommand.Table.Name]).AppendLine;
+      DoGenerateBackupTable(ACreateTableCommand.Table.Name, LSqlBuilder);
     end;
 
     LCreateTableString := DoGenerateCreateTable(ACreateTableCommand.Table.Name, ACreateTableCommand.Columns);
@@ -170,12 +176,7 @@ begin
 
     if ACreateTableCommand.TableExists then
     begin
-      LSqlBuilder.AppendFormat('INSERT INTO %0:S %1:S SELECT %1:S FROM %2:S; ',
-        [ACreateTableCommand.Table.Name, GetCreateFieldsAsString(ACreateTableCommand.Columns),
-        TBL_TEMP]).AppendLine;
-
-      //drop temporary table
-      LSqlBuilder.AppendFormat('DROP TABLE %0:S; ', [TBL_TEMP]);
+      DoGenerateRestoreTable(ACreateTableCommand.Table.Name, ACreateTableCommand.Columns, ACreateTableCommand.DbColumns, LSqlBuilder);
     end;
 
     Result := LSqlBuilder.ToString;

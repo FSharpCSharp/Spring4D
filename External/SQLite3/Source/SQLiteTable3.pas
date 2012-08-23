@@ -3123,6 +3123,7 @@ end;
 function TSQLitePreparedStatement.ExecSQL(const SQL: string; const Params: array of TVarRec): Boolean;
 var
   iStepResult: Integer;
+  LErrMsg: PAnsiChar;
 begin
   Result := False;
   try
@@ -3135,15 +3136,31 @@ begin
 
     SetParams(Params);
 
-    iStepResult := Sqlite3_step(FStmt);
-    Result := (iStepResult = SQLITE_DONE);
-    if not Result then
+    if fParams.Count > 0 then
     begin
-      SQLite3_reset(fstmt);
-      FDB.RaiseError('Error executing SQL statement', FSQL);
+      iStepResult := Sqlite3_step(FStmt);
+      Result := (iStepResult = SQLITE_DONE);
+      if not Result then
+      begin
+        SQLite3_reset(fstmt);
+        FDB.RaiseError('Error executing SQL statement', FSQL);
+      end;
+    end
+    else
+    begin
+      LErrMsg := nil;
+      iStepResult := SQLite3_Exec(FDB.DB, PAnsiChar(UTF8String(FSQL)), nil, nil, LErrMsg);
+      try
+        Result := (iStepResult = SQLITE_OK);
+        if not Result then
+        begin
+          FDB.RaiseError('Error executing SQL statement', FSQL);
+        end;
+      finally
+        if LErrMsg <> nil then
+          SQlite3_Free(LErrMsg);
+      end;
     end;
-
-
   finally
     if Assigned(FStmt) then
     begin

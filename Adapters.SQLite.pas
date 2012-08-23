@@ -41,6 +41,7 @@ type
     function GetFieldValue(AIndex: Integer): Variant; overload; override;
     function GetFieldValue(const AFieldname: string): Variant; overload; override;
     function GetFieldCount(): Integer; override;
+    function GetFieldName(AIndex: Integer): string; override;
   end;
 
   ESQLiteStatementAdapterException = Exception;
@@ -92,6 +93,11 @@ end;
 function TSQLiteResultSetAdapter.GetFieldCount: Integer;
 begin
   Result := Dataset.FieldCount;
+end;
+
+function TSQLiteResultSetAdapter.GetFieldName(AIndex: Integer): string;
+begin
+  Result := Dataset.Fields[AIndex].Name;
 end;
 
 function TSQLiteResultSetAdapter.GetFieldValue(const AFieldname: string): Variant;

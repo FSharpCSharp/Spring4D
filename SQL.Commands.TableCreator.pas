@@ -41,8 +41,6 @@ type
     constructor Create(); override;
     destructor Destroy; override;
 
-    function TableExists(): Boolean;
-
     procedure Build(AClass: TClass); override;
 
     procedure Execute(AEntity: TObject); override;
@@ -74,7 +72,12 @@ begin
 
   FTable.SetFromAttribute(LAtrTable);
   FCommand.SetTable(LEntityData.Columns);
-  FCommand.TableExists := TableExists;
+  FCommand.TableExists := TableExists(FTable.Name);
+  if FCommand.TableExists then
+  begin
+    //get current columns from db table
+    FillDbTableColumns(FTable.Name, FCommand.DbColumns);
+  end;
 
   SQL := Generator.GenerateCreateTable(FCommand);
 end;
@@ -111,27 +114,6 @@ begin
   inherited Execute(AEntity);
 
   LStmt.Execute();
-end;
-
-function TTableCreateExecutor.TableExists: Boolean;
-var
-  LSqlTableCount: string;
-  LStmt: IDBStatement;
-  LResults: IDBResultset;
-begin
-  Result := False;
-  LSqlTableCount := Generator.GetSQLTableCount(FTable.Name);
-  if (LSqlTableCount <> '') then
-  begin
-    try
-      LStmt := Connection.CreateStatement;
-      LStmt.SetSQLCommand(LSqlTableCount);
-      LResults := LStmt.ExecuteQuery;
-      Result := not LResults.IsEmpty;
-    except
-      Result := False;
-    end;
-  end;
 end;
 
 end.

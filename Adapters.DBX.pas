@@ -49,6 +49,7 @@ type
     function GetFieldValue(AIndex: Integer): Variant; overload; override;
     function GetFieldValue(const AFieldname: string): Variant; overload; override;
     function GetFieldCount(): Integer; override;
+    function GetFieldName(AIndex: Integer): string; override;
   end;
 
   EDBXStatementAdapterException = Exception;
@@ -130,6 +131,11 @@ end;
 function TDBXResultSetAdapter.GetFieldCount: Integer;
 begin
   Result := Dataset.FieldCount;
+end;
+
+function TDBXResultSetAdapter.GetFieldName(AIndex: Integer): string;
+begin
+  Result := Dataset.Fields[AIndex].FieldName;
 end;
 
 function TDBXResultSetAdapter.GetFieldValue(AIndex: Integer): Variant;
