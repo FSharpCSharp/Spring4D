@@ -30,16 +30,17 @@ unit SQL.Generator.Firebird;
 interface
 
 uses
-  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces;
+  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces, SQL.Commands;
 
 type
   TFirebirdSQLGenerator = class(TAnsiSQLGenerator)
   public
     function GetQueryLanguage(): TQueryLanguage; override;
-    function GenerateCreateSequence(ASequence: SequenceAttribute): string; override;
+    function GenerateCreateSequence(ASequence: TCreateSequenceCommand): string; override;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
     function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; override;
+    function GetSQLSequenceCount(const ASequenceName: string): string; override;
   end;
 
 implementation
@@ -52,9 +53,18 @@ uses
 
 { TFirebirdSQLGenerator }
 
-function TFirebirdSQLGenerator.GenerateCreateSequence(ASequence: SequenceAttribute): string;
+function TFirebirdSQLGenerator.GenerateCreateSequence(ASequence: TCreateSequenceCommand): string;
+var
+  LSequence: SequenceAttribute;
 begin
-  Result := Format('CREATE SEQUENCE %0:S;', [Asequence.SequenceName]);
+  LSequence := ASequence.Sequence;
+  Result := '';
+  if ASequence.SequenceExists then
+  begin
+    Result := Format('DROP SEQUENCE %0:S; ', [LSequence.SequenceName]);
+  end;
+
+  Result := Result + Format('CREATE SEQUENCE %0:S;', [LSequence.SequenceName]);
 end;
 
 function TFirebirdSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
@@ -83,6 +93,13 @@ end;
 function TFirebirdSQLGenerator.GetQueryLanguage: TQueryLanguage;
 begin
   Result := qlFirebird;
+end;
+
+function TFirebirdSQLGenerator.GetSQLSequenceCount(const ASequenceName: string): string;
+begin
+  Result := Format('SELECT COUNT(*) '+
+		'FROM RDB$GENERATORS '+
+		'WHERE (RDB$SYSTEM_FLAG=0) AND (RDB$GENERATOR_NAME = %0:S); ', [QuotedStr(ASequenceName)]);
 end;
 
 initialization

@@ -48,13 +48,14 @@ type
     function GenerateUpdate(AUpdateCommand: TUpdateCommand): string;
     function GenerateDelete(ADeleteCommand: TDeleteCommand): string;
     function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): string;
-    function GenerateCreateFK(): string;
-    function GenerateCreateSequence(ASequence: SequenceAttribute): string;
+    function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): string;
+    function GenerateCreateSequence(ASequence: TCreateSequenceCommand): string;
     function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string;
     function GenerateGetQueryCount(const ASql: string): string;
-
+    function GetSQLTableCount(const ATablename: string): string;
+    function GetSQLSequenceCount(const ASequenceName: string): string;
   end;
 
 implementation

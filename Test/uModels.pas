@@ -128,7 +128,7 @@ type
     [Column('ORDER_ID', [cpPrimaryKey], -1, -1, -1, '')]
     property ORDER_ID: Integer read FORDER_ID write FORDER_ID;
     [Column('Customer_ID', [], -1, -1, -1, '')]
-    [ForeignJoinColumn('Customer_ID', 'FID', [fsOnDeleteCascade, fsOnUpdateCascade])]
+    [ForeignJoinColumn('Customer_ID', 'Customers','CUSTID'{'FID'}, [fsOnDeleteCascade, fsOnUpdateCascade])]
     property Customer_ID: Integer read FCustomer_ID write FCustomer_ID;
     [Column('Customer_Payment_Method_Id', [], -1, -1, -1, '')]
     property Customer_Payment_Method_Id: Nullable<Integer> read FCustomer_Payment_Method_Id write FCustomer_Payment_Method_Id;

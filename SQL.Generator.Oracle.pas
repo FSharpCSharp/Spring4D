@@ -30,16 +30,17 @@ unit SQL.Generator.Oracle;
 interface
 
 uses
-  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces;
+  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces, SQL.Commands;
 
 type
   TOracleSQLGenerator = class(TAnsiSQLGenerator)
   public
     function GetQueryLanguage(): TQueryLanguage; override;
-    function GenerateCreateSequence(ASequence: SequenceAttribute): string; override;
+    function GenerateCreateSequence(ASequence: TCreateSequenceCommand): string; override;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
     function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; override;
+    function GetSQLSequenceCount(const ASequenceName: string): string; override;
   end;
 
 implementation
@@ -52,10 +53,19 @@ uses
 
 { TOracleSQLGenerator }
 
-function TOracleSQLGenerator.GenerateCreateSequence(ASequence: SequenceAttribute): string;
+function TOracleSQLGenerator.GenerateCreateSequence(ASequence: TCreateSequenceCommand): string;
+var
+  LSequence: SequenceAttribute;
 begin
-  Result := Format('CREATE SEQUENCE "%0:S" MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY %2:D START WITH %1:D CACHE 20 NOORDER NOCYCLE;',
-    [ASequence.SequenceName, ASequence.InitialValue, ASequence.Increment]);
+  LSequence := ASequence.Sequence;
+  Result := '';
+  if ASequence.SequenceExists then
+  begin
+    Result := Format('DROP SEQUENCE "%0:S"; ', [LSequence.SequenceName]);
+  end;
+
+  Result := Result + Format('CREATE SEQUENCE "%0:S" MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY %2:D START WITH %1:D CACHE 20 NOORDER NOCYCLE;',
+    [LSequence.SequenceName, LSequence.InitialValue, LSequence.Increment]);
 end;
 
 function TOracleSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
@@ -97,6 +107,12 @@ end;
 function TOracleSQLGenerator.GetQueryLanguage: TQueryLanguage;
 begin
   Result := qlOracle;
+end;
+
+function TOracleSQLGenerator.GetSQLSequenceCount(const ASequenceName: string): string;
+begin
+  Result := Format('SELECT COUNT(*) FROM USER_SEQUENCES WHERE SEQUENCE_NAME = %0:S; ',
+    [QuotedStr(ASequenceName)]);
 end;
 
 initialization

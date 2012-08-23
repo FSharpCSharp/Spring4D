@@ -702,6 +702,7 @@ end;
 procedure TestTEntityManager.TearDown;
 begin
   ClearTable(TBL_PEOPLE);
+  ClearTable(TBL_ORDERS);
   FManager.Free;
 end;
 

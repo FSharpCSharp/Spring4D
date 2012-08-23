@@ -30,24 +30,84 @@ unit SQL.Commands.FKCreator;
 interface
 
 uses
-  SQL.AbstractCommandExecutor;
+  SQL.AbstractCommandExecutor, SQL.Commands, SQL.Types;
 
 type
   TForeignKeyCreateExecutor = class(TAbstractCommandExecutor)
+  private
+    FCommand: TCreateFKCommand;
+    FTable: TSQLTable;
   public
-    procedure CreateForeignKeys(AEntity: TObject);
+    constructor Create(); override;
+    destructor Destroy; override;
+
+    procedure Build(AClass: TClass); override;
+
+    procedure Execute(AEntity: TObject); override;
+
+    procedure CreateForeignKeys(AEntity: TClass);
   end;
 
 implementation
 
 uses
-  Core.Exceptions;
+  Core.Exceptions
+  ,Core.EntityCache
+  ,Core.Interfaces
+  ,Mapping.Attributes
+  ;
 
 { TForeignKeyCreateCommand }
 
-procedure TForeignKeyCreateExecutor.CreateForeignKeys(AEntity: TObject);
+procedure TForeignKeyCreateExecutor.Build(AClass: TClass);
+var
+  LAtrTable: TableAttribute;
+  LEntityData: TEntityData;
 begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
+  EntityClass := AClass;
+  LEntityData := TEntityCache.Get(AClass);
+  LAtrTable := LEntityData.EntityTable;
+  if not Assigned(LAtrTable) then
+    raise ETableNotSpecified.Create('Table not specified');
+
+  FTable.SetFromAttribute(LAtrTable);
+  FCommand.SetTable(LEntityData.Columns);
+
+  SQL := Generator.GenerateCreateFK(FCommand);
+end;
+
+constructor TForeignKeyCreateExecutor.Create;
+begin
+  inherited Create;
+  FTable := TSQLTable.Create;
+  FCommand := TCreateFKCommand.Create(FTable);
+end;
+
+procedure TForeignKeyCreateExecutor.CreateForeignKeys(AEntity: TClass);
+begin
+  Execute(nil);
+end;
+
+destructor TForeignKeyCreateExecutor.Destroy;
+begin
+  FTable.Free;
+  FCommand.Free;
+  inherited Destroy;
+end;
+
+procedure TForeignKeyCreateExecutor.Execute(AEntity: TObject);
+var
+  LStmt: IDBStatement;
+begin
+  if (SQL = '') then
+    Exit;
+
+  LStmt := Connection.CreateStatement;
+  LStmt.SetSQLCommand(SQL);
+  //inherited only when SQL's are constructed
+  inherited Execute(AEntity);
+
+  LStmt.Execute();
 end;
 
 end.

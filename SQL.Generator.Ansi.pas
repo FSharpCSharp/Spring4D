@@ -42,6 +42,7 @@ type
     function GetOrderAsString(const AOrderFields: TEnumerable<TSQLOrderField>): string; virtual;
     function GetWhereAsString(const AWhereFields: TEnumerable<TSQLWhereField>): string; virtual;
     function GetSelectFieldsAsString(const ASelectFields: TEnumerable<TSQLSelectField>): string; virtual;
+    function GetCreateFieldsAsString(const ACreateFields: TEnumerable<TSQLCreateField>): string; virtual;
   public
     function GetQueryLanguage(): TQueryLanguage; override;
     function GenerateSelect(ASelectCommand: TSelectCommand): string; override;
@@ -49,13 +50,18 @@ type
     function GenerateUpdate(AUpdateCommand: TUpdateCommand): string; override;
     function GenerateDelete(ADeleteCommand: TDeleteCommand): string; override;
     function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): string; override;
-    function GenerateCreateFK(): string; override;
-    function GenerateCreateSequence(ASequence: SequenceAttribute): string; override;
+    function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): string; override;
+    /// <summary>
+    /// First drop sequence and then create it
+    /// </summary>
+    function GenerateCreateSequence(ASequence: TCreateSequenceCommand): string; override;
     function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; override;
     function GenerateGetQueryCount(const ASql: string): string; override;
     function GetSQLDataTypeName(AField: TSQLCreateField): string; override;
+    function GetSQLTableCount(const ATablename: string): string; override;
+    function GetSQLSequenceCount(const ASequenceName: string): string; override;
   end;
 
 implementation
@@ -70,12 +76,40 @@ uses
 
 { TAnsiSQLGenerator }
 
-function TAnsiSQLGenerator.GenerateCreateFK: string;
+function TAnsiSQLGenerator.GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): string;
+var
+  LSqlBuilder: TStringBuilder;
+  i: Integer;
+  LField: TSQLForeignKeyField;
 begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
+  LSqlBuilder := TStringBuilder.Create();
+  try
+    Result := '';
+
+    for i := 0 to ACreateFKCommand.ForeignKeys.Count - 1 do
+    begin
+      LField := ACreateFKCommand.ForeignKeys[i];
+      LSqlBuilder.Clear;
+      LSqlBuilder.AppendFormat('ALTER TABLE %0:S ', [ACreateFKCommand.Table.Name])
+        .AppendLine
+        .AppendFormat('ADD CONSTRAINT %0:S', [LField.ForeignKeyName])
+        .AppendLine
+        .AppendFormat('FOREIGN KEY (%0:S)', [LField.Fieldname])
+        .AppendLine
+        .AppendFormat(' REFERENCES %0:S.%1:S', [LField.ReferencedTableName, LField.ReferencedColumnName])
+        .AppendLine
+        .Append(LField.GetConstraintsAsString)
+        .Append(';').AppendLine;
+
+      Result := Result + LSqlBuilder.ToString;
+    end;
+
+  finally
+    LSqlBuilder.Free;
+  end;
 end;
 
-function TAnsiSQLGenerator.GenerateCreateSequence(ASequence: SequenceAttribute): string;
+function TAnsiSQLGenerator.GenerateCreateSequence(ASequence: TCreateSequenceCommand): string;
 begin
   Result := '';
 end;
@@ -90,6 +124,16 @@ begin
 
   LSqlBuilder := TStringBuilder.Create();
   try
+    if ACreateTableCommand.TableExists then
+    begin
+      LSqlBuilder.AppendFormat('SELECT * INTO %0:S FROM %1:S;',
+        [TBL_TEMP, ACreateTableCommand.Table.Name]).AppendLine;
+
+      LSqlBuilder.AppendFormat('DROP TABLE %0:S;',
+        [ACreateTableCommand.Table.Name]).AppendLine;
+    end;
+
+
     LSqlBuilder.AppendFormat('CREATE TABLE %0:S ', [ACreateTableCommand.Table.Name])
       .Append('(')
       .AppendLine;
@@ -110,6 +154,17 @@ begin
       );
     end;
     LSqlBuilder.Append(');');
+
+    if ACreateTableCommand.TableExists then
+    begin
+      LSqlBuilder.AppendLine.
+        AppendFormat('INSERT INTO %0:S %1:S SELECT %1:S FROM %2:S;',
+          [ACreateTableCommand.Table.Name, GetCreateFieldsAsString(ACreateTableCommand.Columns),
+          TBL_TEMP]).AppendLine;
+
+      //drop temporary table
+      LSqlBuilder.AppendFormat('DROP TABLE %0:S;', [TBL_TEMP]);
+    end;
 
     Result := LSqlBuilder.ToString;
   finally
@@ -305,6 +360,26 @@ begin
   end;
 end;
 
+function TAnsiSQLGenerator.GetCreateFieldsAsString(
+  const ACreateFields: TEnumerable<TSQLCreateField>): string;
+var
+  i: Integer;
+  LField: TSQLCreateField;
+begin
+  Result := '';
+  i := 0;
+  for LField in ACreateFields do
+  begin
+    if i > 0 then
+      Result := Result + ',';
+
+    Result := Result + LField.Fieldname;
+  end;
+
+  if (Result <> '') then
+    Result := Format('(%0:S)', [Result]);
+end;
+
 function TAnsiSQLGenerator.GetGroupByAsString(
   const AGroupFields: TEnumerable<TSQLGroupByField>): string;
 var
@@ -462,6 +537,16 @@ begin
     tkPointer: ;
     tkProcedure: ;
   end;
+end;
+
+function TAnsiSQLGenerator.GetSQLSequenceCount(const ASequenceName: string): string;
+begin
+  Result := '';
+end;
+
+function TAnsiSQLGenerator.GetSQLTableCount(const ATablename: string): string;
+begin
+  Result := Format('SELECT COUNT(*) FROM %0:S;', [ATablename]);
 end;
 
 function TAnsiSQLGenerator.GetWhereAsString(const AWhereFields: TEnumerable<TSQLWhereField>): string;

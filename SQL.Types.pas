@@ -111,6 +111,21 @@ type
     property Properties: TColumnProperties read FProperties;
   end;
 
+  TSQLForeignKeyField = class(TSQLField)
+  private
+    FReferencedColumnName: string;
+    FConstraints: TForeignStrategies;
+    FReferencedTableName: string;
+    function GetForeignKeyName: string;
+  public
+    function GetConstraintsAsString(): string;
+
+    property ForeignKeyName: string read GetForeignKeyName;
+    property ReferencedColumnName: string read FReferencedColumnName write FReferencedColumnName;
+    property ReferencedTableName: string read FReferencedTableName write FReferencedTableName;
+    property Constraints: TForeignStrategies read FConstraints write FConstraints;
+  end;
+
   TWhereOperator = (woEqual = 0, woNotEqual, woMore, woLess, woLike, woNotLike,
     woMoreOrEqual, woLessOrEqual, woIn, woNotIn);
 
@@ -192,6 +207,7 @@ implementation
 
 uses
   Core.Exceptions
+  ,SysUtils
   ;
 
 
@@ -389,6 +405,37 @@ begin
     FIsPrimaryKey := (cpPrimaryKey in AColumnAttr.Properties);
   end;
   FTypeKindInfo := AColumnAttr.GetColumnTypeInfo;
+end;
+
+{ TSQLForeignKeyField }
+
+function TSQLForeignKeyField.GetConstraintsAsString: string;
+var
+  LConstraint: TForeignStrategy;
+begin
+  Result := '';
+
+  for LConstraint in FConstraints do
+  begin
+    if LConstraint in FConstraints then
+    begin
+      case LConstraint of
+        fsOnDeleteSetNull: Result := Result + ' ON DELETE SET NULL';
+        fsOnDeleteSetDefault: Result := Result + ' ON DELETE SET DEFAULT';
+        fsOnDeleteCascade: Result := Result + ' ON DELETE CASCADE';
+        fsOnDeleteNoAction: Result := Result + ' ON DELETE NO ACTION';
+        fsOnUpdateSetNull: Result := Result + ' ON UPDATE SET NULL';
+        fsOnUpdateSetDefault: Result := Result + ' ON UPDATE SET DEFAULT';
+        fsOnUpdateCascade: Result := Result + ' ON UPDATE SET CASCADE';
+        fsOnUpdateNoAction: Result := Result + ' ON UPDATE NO ACTION';
+      end;
+    end;
+  end;
+end;
+
+function TSQLForeignKeyField.GetForeignKeyName: string;
+begin
+  Result := Format('FK_%0:S_%1:S', [Table.Name, Fieldname]);
 end;
 
 end.

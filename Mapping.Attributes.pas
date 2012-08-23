@@ -59,13 +59,15 @@ type
     FMemberType: TMemberType;
     FClassMemberName: string;
     FTypeInfo: PTypeInfo;
+    function GetBaseEntityClass: TClass;
   public
     function AsRttiObject(ATypeInfo: PTypeInfo): TRttiNamedObject; overload;
     function AsRttiObject(): TRttiNamedObject; overload;
     function GetTypeInfo(AEntityTypeInfo: PTypeInfo): PTypeInfo;
     function GetColumnTypeInfo(): PTypeInfo;
 
-    property TypeInfo: PTypeInfo read FTypeInfo write FTypeInfo;
+    property BaseEntityClass: TClass read GetBaseEntityClass;
+    property EntityTypeInfo: PTypeInfo read FTypeInfo write FTypeInfo;
     property ClassMemberName: string read FClassMemberName write FClassMemberName;
     property MemberType: TMemberType read FMemberType write FMemberType;
   end;
@@ -132,19 +134,21 @@ type
     FName: string;
    // FProperties: TColumnProperties;
     FReferencedColName: string;
+    FReferencedTableName: string;
   public
-    constructor Create(const AName: string; const AReferencedColumnName: string);
+    constructor Create(const AName: string; const AReferencedTableName, AReferencedColumnName: string);
 
     property Name: string read FName;
    // property Properties: TColumnProperties read FProperties;
     property ReferencedColumnName: string read FReferencedColName;
+    property ReferencedTableName: string read FReferencedTableName;
   end;
 
   ForeignJoinColumnAttribute = class(JoinColumn)
   private
     FForeignStrategies: TForeignStrategies;
   public
-    constructor Create(const AName: string; const AReferencedColumnName: string;
+    constructor Create(const AName: string; const AReferencedTableName, AReferencedColumnName: string;
       AForeignStrategies: TForeignStrategies); overload;
 
     property ForeignStrategies: TForeignStrategies read FForeignStrategies write FForeignStrategies;
@@ -262,12 +266,13 @@ end;
 
 { JoinColumn }
 
-constructor JoinColumn.Create(const AName: string; const AReferencedColumnName: string);
+constructor JoinColumn.Create(const AName: string; const AReferencedTableName, AReferencedColumnName: string);
 begin
   inherited Create;
   FName := AName;
   //FProperties := AProperties;
   FReferencedColName := AReferencedColumnName;
+  FReferencedTableName := AReferencedTableName;
 end;
 
 { Column }
@@ -346,6 +351,11 @@ begin
   Result := AsRttiObject(FTypeInfo);
 end;
 
+function TORMAttribute.GetBaseEntityClass: TClass;
+begin
+  Result := TRttiContext.Create.GetType(EntityTypeInfo).AsInstance.MetaclassType;
+end;
+
 function TORMAttribute.GetColumnTypeInfo: PTypeInfo;
 begin
   Result := GetTypeInfo(FTypeInfo);
@@ -370,10 +380,10 @@ end;
 
 { ForeignJoinColumnAttribute }
 
-constructor ForeignJoinColumnAttribute.Create(const AName, AReferencedColumnName: string;
+constructor ForeignJoinColumnAttribute.Create(const AName, AReferencedTableName, AReferencedColumnName: string;
   AForeignStrategies: TForeignStrategies);
 begin
-  inherited Create(AName, AReferencedColumnName);
+  inherited Create(AName, AReferencedTableName, AReferencedColumnName);
   FForeignStrategies := AForeignStrategies;
 end;
 

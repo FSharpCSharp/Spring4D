@@ -30,13 +30,13 @@ unit SQL.Generator.MySQL;
 interface
 
 uses
-  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces;
+  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces, SQL.Commands;
 
 type
   TMySQLGenerator = class(TAnsiSQLGenerator)
   public
     function GetQueryLanguage(): TQueryLanguage; override;
-    function GenerateCreateSequence(ASequence: SequenceAttribute): string; override;
+    function GenerateCreateSequence(ASequence: TCreateSequenceCommand): string; override;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
     function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
   end;
@@ -50,7 +50,7 @@ uses
 
 { TMySQLGenerator }
 
-function TMySQLGenerator.GenerateCreateSequence(ASequence: SequenceAttribute): string;
+function TMySQLGenerator.GenerateCreateSequence(ASequence: TCreateSequenceCommand): string;
 begin
   Result := '';
 end;

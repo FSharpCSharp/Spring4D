@@ -32,6 +32,9 @@ interface
 uses
   SQL.Interfaces, SQL.Commands, Mapping.Attributes, SQL.Types;
 
+const
+  TBL_TEMP = 'ORM_TEMP';
+
 type
   TAbstractSQLGenerator = class(TInterfacedObject, ISQLGenerator)
   protected
@@ -41,13 +44,15 @@ type
     function GenerateUpdate(AUpdateCommand: TUpdateCommand): string; virtual; abstract;
     function GenerateDelete(ADeleteCommand: TDeleteCommand): string; virtual; abstract;
     function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): string; virtual; abstract;
-    function GenerateCreateFK(): string; virtual; abstract;
-    function GenerateCreateSequence(ASequence: SequenceAttribute): string; virtual; abstract;
+    function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): string; virtual; abstract;
+    function GenerateCreateSequence(ASequence: TCreateSequenceCommand): string; virtual; abstract;
     function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; virtual; abstract;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; virtual; abstract;
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; virtual; abstract;
     function GenerateGetQueryCount(const ASql: string): string; virtual; abstract;
     function GetSQLDataTypeName(AField: TSQLCreateField): string; virtual; abstract;
+    function GetSQLTableCount(const ATablename: string): string; virtual; abstract;
+    function GetSQLSequenceCount(const ASequenceName: string): string; virtual; abstract;
   end;
 
 implementation

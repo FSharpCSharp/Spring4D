@@ -340,8 +340,28 @@ end;
 procedure TestTAnsiSQLGenerator.TestGenerateCreateFK;
 var
   ReturnValue: string;
+  LCommand: TCreateFKCommand;
+  LTable: TSQLTable;
+  LCols: TList<ColumnAttribute>;
 begin
-  ReturnValue := FAnsiSQLGenerator.GenerateCreateFK;
+  ReturnValue := '';
+  LTable := CreateTestTable;
+  LCommand := TCreateFKCommand.Create(LTable);
+  try
+    LCols := TRttiExplorer.GetColumns(TCustomer);
+    try
+      LCommand.SetTable(LCols);
+
+      ReturnValue := FAnsiSQLGenerator.GenerateCreateFK(LCommand);
+      Status(ReturnValue);
+      CheckTrue(ReturnValue <> '');
+    finally
+      LCols.Free;
+    end;
+  finally
+    LTable.Free;
+    LCommand.Free;
+  end;
 end;
 
 procedure TestTAnsiSQLGenerator.TestGenerateCreateSequence;

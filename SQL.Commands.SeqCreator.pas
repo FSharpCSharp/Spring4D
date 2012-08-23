@@ -30,25 +30,103 @@ unit SQL.Commands.SeqCreator;
 interface
 
 uses
-  SQL.AbstractCommandExecutor;
+  SQL.AbstractCommandExecutor, SQL.Commands, SQL.Types, Mapping.Attributes;
 
 type
   TSequenceCreateExecutor = class(TAbstractCommandExecutor)
+  private
+    FSequence: TCreateSequenceCommand;
+  protected
+    function SequenceExists(): Boolean; virtual;
   public
-    procedure CreateSequence(AEntity: TObject);
+    constructor Create(); override;
+    destructor Destroy; override;
+
+    procedure Build(AClass: TClass); override;
+
+    procedure Execute(AEntity: TObject); override;
+
+    procedure CreateSequence(AEntity: TClass);
   end;
 
 implementation
 
 uses
-  Core.Exceptions;
+  Core.Exceptions
+  ,Core.EntityCache
+  ,Core.Interfaces
+
+  ;
 
 
 { TSequenceCreateCommand }
 
-procedure TSequenceCreateExecutor.CreateSequence(AEntity: TObject);
+procedure TSequenceCreateExecutor.Build(AClass: TClass);
 begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
+  EntityClass := AClass;
+  FSequence.Sequence := TEntityCache.Get(AClass).Sequence;
+  SQL := '';
+  if Assigned(FSequence.Sequence) then
+  begin
+    FSequence.SequenceExists := SequenceExists;
+    SQL := Generator.GenerateCreateSequence(FSequence);
+  end;
+end;
+
+constructor TSequenceCreateExecutor.Create;
+begin
+  inherited Create;
+  FSequence := TCreateSequenceCommand.Create(nil);
+end;
+
+procedure TSequenceCreateExecutor.CreateSequence(AEntity: TClass);
+begin
+  Execute(nil);
+end;
+
+destructor TSequenceCreateExecutor.Destroy;
+begin
+  FSequence.Free;
+  inherited Destroy;
+end;
+
+procedure TSequenceCreateExecutor.Execute(AEntity: TObject);
+var
+  LStmt: IDBStatement;
+begin
+  if (SQL = '') then
+    Exit;
+
+  LStmt := Connection.CreateStatement;
+  LStmt.SetSQLCommand(SQL);
+  //inherited only when SQL's are constructed
+  inherited Execute(AEntity);
+
+  LStmt.Execute();
+end;
+
+function TSequenceCreateExecutor.SequenceExists: Boolean;
+var
+  LSqlSequenceCount: string;
+  LStmt: IDBStatement;
+  LResults: IDBResultset;
+begin
+  Result := False;
+  LSqlSequenceCount := Generator.GetSQLSequenceCount(FSequence.Sequence.SequenceName);
+  if (LSqlSequenceCount <> '') then
+  begin
+    try
+      LStmt := Connection.CreateStatement;
+      LStmt.SetSQLCommand(LSqlSequenceCount);
+      LResults := LStmt.ExecuteQuery;
+      if not LResults.IsEmpty then
+      begin
+        Result := (LResults.GetFieldValue(0) > 0);
+      end;
+    except
+      Result := False;
+    end;
+  end;
 end;
 
 end.

@@ -30,13 +30,13 @@ unit SQL.Generator.PostgreSQL;
 interface
 
 uses
-  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces;
+  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces, SQL.Commands;
 
 type
   TPostgreSQLGenerator = class(TAnsiSQLGenerator)
   public
     function GetQueryLanguage(): TQueryLanguage; override;
-    function GenerateCreateSequence(ASequence: SequenceAttribute): string; override;
+    function GenerateCreateSequence(ASequence: TCreateSequenceCommand): string; override;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
     function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
   end;
@@ -52,10 +52,17 @@ uses
 
 { TPostgreSQLGenerator }
 
-function TPostgreSQLGenerator.GenerateCreateSequence(ASequence: SequenceAttribute): string;
+function TPostgreSQLGenerator.GenerateCreateSequence(ASequence: TCreateSequenceCommand): string;
+var
+  LSequence: SequenceAttribute;
 begin
-  Result := Format('CREATE SEQUENCE %0:S INCREMENT %1:D MINVALUE %2:D;',
-    [ASequence.SequenceName, ASequence.Increment, ASequence.InitialValue]);
+  LSequence := ASequence.Sequence;
+  Result := '';
+
+  Result := Format('DROP SEQUENCE IF EXISTS %0:S; ', [LSequence.SequenceName]);
+
+  Result := Result + Format('CREATE SEQUENCE %0:S INCREMENT %1:D MINVALUE %2:D;',
+    [LSequence.SequenceName, LSequence.Increment, LSequence.InitialValue]);
 end;
 
 function TPostgreSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;

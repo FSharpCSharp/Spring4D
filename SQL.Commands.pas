@@ -120,13 +120,38 @@ type
   TCreateTableCommand = class(TDMLCommand)
   private
     FColumns: TObjectList<TSQLCreateField>;
+    FTableExists: Boolean;
   public
     constructor Create(ATable: TSQLTable); override;
     destructor Destroy; override;
 
     procedure SetTable(AColumns: TList<ColumnAttribute>); override;
 
+    property TableExists: Boolean read FTableExists write FTableExists;
     property Columns: TObjectList<TSQLCreateField> read FColumns;
+  end;
+
+  TCreateFKCommand = class(TCreateTableCommand)
+  private
+    FForeigns: TObjectList<TSQLForeignKeyField>;
+  public
+    constructor Create(ATable: TSQLTable); override;
+    destructor Destroy; override;
+
+    procedure SetTable(AColumns: TList<ColumnAttribute>); override;
+
+    property ForeignKeys: TObjectList<TSQLForeignKeyField> read FForeigns;
+  end;
+
+  TCreateSequenceCommand = class
+  private
+    FSequence: SequenceAttribute;
+    FSequenceExists: Boolean;
+  public
+    constructor Create(ASequenceAttribute: SequenceAttribute); virtual;
+
+    property SequenceExists: Boolean read FSequenceExists write FSequenceExists;
+    property Sequence: SequenceAttribute read FSequence write FSequence;
   end;
 
 implementation
@@ -353,6 +378,49 @@ begin
     LField.SetFromAttribute(LCol);
     FColumns.Add(LField);
   end;
+end;
+
+{ TCreateFKCommand }
+
+constructor TCreateFKCommand.Create(ATable: TSQLTable);
+begin
+  inherited Create(ATable);
+  FForeigns := TObjectList<TSQLForeignKeyField>.Create(True);
+end;
+
+destructor TCreateFKCommand.Destroy;
+begin
+  FForeigns.Free;
+  inherited Destroy;
+end;
+
+procedure TCreateFKCommand.SetTable(AColumns: TList<ColumnAttribute>);
+var
+  LCol: ColumnAttribute;
+  LForeignKeyColumn: ForeignJoinColumnAttribute;
+  LFKField: TSQLForeignKeyField;
+begin
+  inherited SetTable(AColumns);
+  FForeigns.Clear;
+  for LCol in AColumns do
+  begin
+    if TRttiExplorer.TryGetColumnAsForeignKey(LCol, LForeignKeyColumn) then
+    begin
+      LFKField := TSQLForeignKeyField.Create(LForeignKeyColumn.Name, Table);
+      LFKField.Constraints := LForeignKeyColumn.ForeignStrategies;
+      LFKField.ReferencedColumnName := LForeignKeyColumn.ReferencedColumnName;
+      LFKField.ReferencedTableName := LForeignKeyColumn.ReferencedTableName;
+      FForeigns.Add(LFKField);
+    end;
+  end;
+end;
+
+{ TCreateSequenceCommand }
+
+constructor TCreateSequenceCommand.Create(ASequenceAttribute: SequenceAttribute);
+begin
+  inherited Create;
+  FSequence := ASequenceAttribute;
 end;
 
 end.

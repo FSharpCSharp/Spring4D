@@ -30,10 +30,14 @@ unit Core.DatabaseManager;
 interface
 
 uses
-  Core.AbstractManager, Core.Interfaces, SysUtils;
+  Core.AbstractManager, Core.Interfaces, SysUtils, Generics.Collections;
 
 type
   TDatabaseManager = class(TAbstractManager)
+  protected
+    procedure BuildTables(AEntities: TList<TClass>); virtual;
+    procedure BuildForeignKeys(AEntities: TList<TClass>); virtual;
+    procedure BuildSequences(AEntities: TList<TClass>); virtual;
   public
     procedure BuildDatabase();
   end;
@@ -61,8 +65,9 @@ uses
   Core.Exceptions
   ,SQL.Commands.Factory
   ,SQL.Commands.TableCreator
+  ,SQL.Commands.FKCreator
+  ,SQL.Commands.SeqCreator
   ,Mapping.RttiExplorer
-  ,Generics.Collections
   ,Classes
   {$IFDEF MSWINDOWS}
   ,Windows
@@ -78,31 +83,92 @@ const
   SQL_FETCH_NEXT = 1;
   SQL_FETCH_FIRST = 2;
 
+function GetTableCreateExecutor(AClass: TClass; AConnection: IDBConnection): TTableCreateExecutor;
+begin
+  Result := CommandFactory.GetCommand<TTableCreateExecutor>(AClass, AConnection);
+end;
+
+function GetFKCreateExecutor(AClass: TClass; AConnection: IDBConnection): TForeignKeyCreateExecutor;
+begin
+  Result := CommandFactory.GetCommand<TForeignKeyCreateExecutor>(AClass, AConnection);
+end;
+
+function GetSequenceCreateExecutor(AClass: TClass; AConnection: IDBConnection): TSequenceCreateExecutor;
+begin
+  Result := CommandFactory.GetCommand<TSequenceCreateExecutor>(AClass, AConnection);
+end;
+
 { TDatabaseManager }
 
 procedure TDatabaseManager.BuildDatabase;
 var
-  LTableCreator: TTableCreateExecutor;
   LEntities: TList<TClass>;
-  LEntityClass: TClass;
   LTran: IDBTransaction;
 begin
   LEntities := TRttiExplorer.GetEntities();
   try
     LTran := Connection.BeginTransaction;
-    for LEntityClass in LEntities do
-    begin
-      LTableCreator := CommandFactory.GetCommand<TTableCreateExecutor>(LEntityClass, Connection);
-      try
-        LTableCreator.EntityClass := LEntityClass;
-        LTableCreator.CreateTables(LEntityClass);
-      finally
-        LTableCreator.Free;
-      end;
-    end;
+
+    BuildTables(LEntities);
+
+    BuildForeignKeys(LEntities);
+
+    BuildSequences(LEntities);
+
     LTran.Commit;
   finally
     LEntities.Free;
+  end;
+end;
+
+procedure TDatabaseManager.BuildForeignKeys(AEntities: TList<TClass>);
+var
+  LFkCreator: TForeignKeyCreateExecutor;
+  LEntityClass: TClass;
+begin
+  for LEntityClass in AEntities do
+  begin
+    LFkCreator := GetFKCreateExecutor(LEntityClass, Connection);
+    try
+      LFkCreator.EntityClass := LEntityClass;
+      LFkCreator.CreateForeignKeys(LEntityClass);
+    finally
+      LFkCreator.Free;
+    end;
+  end;
+end;
+
+procedure TDatabaseManager.BuildSequences(AEntities: TList<TClass>);
+var
+  LSequenceCreator: TSequenceCreateExecutor;
+  LEntityClass: TClass;
+begin
+  for LEntityClass in AEntities do
+  begin
+    LSequenceCreator := GetSequenceCreateExecutor(LEntityClass, Connection);
+    try
+      LSequenceCreator.EntityClass := LEntityClass;
+      LSequenceCreator.CreateSequence(LEntityClass);
+    finally
+      LSequenceCreator.Free;
+    end;
+  end;
+end;
+
+procedure TDatabaseManager.BuildTables(AEntities: TList<TClass>);
+var
+  LTableCreator: TTableCreateExecutor;
+  LEntityClass: TClass;
+begin
+  for LEntityClass in AEntities do
+  begin
+    LTableCreator := GetTableCreateExecutor(LEntityClass, Connection);
+    try
+      LTableCreator.EntityClass := LEntityClass;
+      LTableCreator.CreateTables(LEntityClass);
+    finally
+      LTableCreator.Free;
+    end;
   end;
 end;
 
