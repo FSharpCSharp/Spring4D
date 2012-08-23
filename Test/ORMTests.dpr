@@ -41,8 +41,6 @@ uses
   SQL.Register in '..\SQL.Register.pas',
   Adapters.SQLite in '..\Adapters.SQLite.pas',
   Core.Base in '..\Core.Base.pas',
-  SQLite3 in '..\..\SQLite3\Source\SQLite3.pas',
-  SQLiteTable3 in '..\..\SQLite3\Source\SQLiteTable3.pas',
   Mapping.Attributes in '..\Mapping.Attributes.pas',
   Core.Exceptions in '..\Core.Exceptions.pas',
   SQL.Commands.Factory in '..\SQL.Commands.Factory.pas',
@@ -80,7 +78,9 @@ uses
   SQL.Generator.SQLite3 in '..\SQL.Generator.SQLite3.pas',
   SQL.Generator.PostgreSQL in '..\SQL.Generator.PostgreSQL.pas',
   SQL.Generator.MySQL in '..\SQL.Generator.MySQL.pas',
-  TestDatabaseManager in 'TestDatabaseManager.pas';
+  TestDatabaseManager in 'TestDatabaseManager.pas',
+  SQLite3 in '..\External\SQLite3\Source\SQLite3.pas',
+  SQLiteTable3 in '..\External\SQLite3\Source\SQLiteTable3.pas';
 
 {$R *.RES}
 

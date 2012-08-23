@@ -75,8 +75,6 @@
 			<DCCReference Include="..\SQL.Register.pas"/>
 			<DCCReference Include="..\Adapters.SQLite.pas"/>
 			<DCCReference Include="..\Core.Base.pas"/>
-			<DCCReference Include="..\..\SQLite3\Source\SQLite3.pas"/>
-			<DCCReference Include="..\..\SQLite3\Source\SQLiteTable3.pas"/>
 			<DCCReference Include="..\Mapping.Attributes.pas"/>
 			<DCCReference Include="..\Core.Exceptions.pas"/>
 			<DCCReference Include="..\SQL.Commands.Factory.pas"/>
@@ -115,6 +113,8 @@
 			<DCCReference Include="..\SQL.Generator.PostgreSQL.pas"/>
 			<DCCReference Include="..\SQL.Generator.MySQL.pas"/>
 			<DCCReference Include="TestDatabaseManager.pas"/>
+			<DCCReference Include="..\External\SQLite3\Source\SQLite3.pas"/>
+			<DCCReference Include="..\External\SQLite3\Source\SQLiteTable3.pas"/>
 			<None Include="Profiling\AQtimeModule1.aqt"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
