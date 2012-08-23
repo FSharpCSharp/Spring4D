@@ -108,11 +108,12 @@ begin
 
   LSqlBuilder := TStringBuilder.Create;
   try
+    LSqlBuilder.AppendFormat('DROP TABLE IF EXISTS %0:S; ', [TBL_TEMP]).AppendLine;
     //select old data to temporary table
-    LSqlBuilder.AppendFormat('CREATE TEMPORARY TABLE %0:S AS SELECT * FROM %1:S;',
+    LSqlBuilder.AppendFormat('CREATE TEMPORARY TABLE %0:S AS SELECT * FROM %1:S; ',
       [TBL_TEMP, ACreateFKCommand.Table.Name]).AppendLine;
     //drop table
-    LSqlBuilder.AppendFormat('DROP TABLE %0:S;', [ACreateFKCommand.Table.Name]).AppendLine;
+    LSqlBuilder.AppendFormat('DROP TABLE IF EXISTS %0:S; ', [ACreateFKCommand.Table.Name]).AppendLine;
     //recreate table with foreign keys
     LCreateTableString := DoGenerateCreateTable(ACreateFKCommand.Table.Name, ACreateFKCommand.Columns);
     LSqlBuilder.Append(LCreateTableString).Append(',').AppendLine;
@@ -134,7 +135,7 @@ begin
       [ACreateFKCommand.Table.Name, TBL_TEMP]).AppendLine;
 
     //drop temporary table
-    LSqlBuilder.AppendFormat('DROP TABLE %0:S;', [TBL_TEMP]);
+    LSqlBuilder.AppendFormat('DROP TABLE IF EXISTS %0:S;', [TBL_TEMP]);
 
     Result := LSqlBuilder.ToString;
 
@@ -155,10 +156,12 @@ begin
     if ACreateTableCommand.TableExists then
     begin
       //drop if exists
-      LSqlBuilder.AppendFormat('CREATE TEMPORARY TABLE %0:S AS SELECT * FROM %1:S;',
+      LSqlBuilder.AppendFormat('DROP TABLE IF EXISTS %0:S; ', [TBL_TEMP]).AppendLine;
+
+      LSqlBuilder.AppendFormat('CREATE TEMPORARY TABLE %0:S AS SELECT * FROM %1:S; ',
         [TBL_TEMP, ACreateTableCommand.Table.Name]).AppendLine;
 
-      LSqlBuilder.AppendFormat('DROP TABLE %0:S;', [ACreateTableCommand.Table.Name]).AppendLine;
+      LSqlBuilder.AppendFormat('DROP TABLE %0:S; ', [ACreateTableCommand.Table.Name]).AppendLine;
     end;
 
     LCreateTableString := DoGenerateCreateTable(ACreateTableCommand.Table.Name, ACreateTableCommand.Columns);
@@ -167,12 +170,12 @@ begin
 
     if ACreateTableCommand.TableExists then
     begin
-      LSqlBuilder.AppendFormat('INSERT INTO %0:S %1:S SELECT %1:S FROM %2:S;',
+      LSqlBuilder.AppendFormat('INSERT INTO %0:S %1:S SELECT %1:S FROM %2:S; ',
         [ACreateTableCommand.Table.Name, GetCreateFieldsAsString(ACreateTableCommand.Columns),
         TBL_TEMP]).AppendLine;
 
       //drop temporary table
-      LSqlBuilder.AppendFormat('DROP TABLE %0:S;', [TBL_TEMP]);
+      LSqlBuilder.AppendFormat('DROP TABLE %0:S; ', [TBL_TEMP]);
     end;
 
     Result := LSqlBuilder.ToString;

@@ -127,10 +127,7 @@ begin
       LStmt := Connection.CreateStatement;
       LStmt.SetSQLCommand(LSqlTableCount);
       LResults := LStmt.ExecuteQuery;
-      if not LResults.IsEmpty then
-      begin
-        Result := (LResults.GetFieldValue(0) > 0);
-      end;
+      Result := not LResults.IsEmpty;
     except
       Result := False;
     end;
