@@ -30,7 +30,7 @@ unit SQL.Generator.Firebird;
 interface
 
 uses
-  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces, SQL.Commands;
+  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces, SQL.Commands, SQL.Types;
 
 type
   TFirebirdSQLGenerator = class(TAnsiSQLGenerator)
@@ -41,6 +41,7 @@ type
     function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; override;
     function GetSQLSequenceCount(const ASequenceName: string): string; override;
+    function GetSQLDataTypeName(AField: TSQLCreateField): string; override;
   end;
 
 implementation
@@ -93,6 +94,15 @@ end;
 function TFirebirdSQLGenerator.GetQueryLanguage: TQueryLanguage;
 begin
   Result := qlFirebird;
+end;
+
+function TFirebirdSQLGenerator.GetSQLDataTypeName(AField: TSQLCreateField): string;
+begin
+  Result := inherited GetSQLDataTypeName(AField);
+  if StartsText(Result, 'NCHAR') then
+    Result := Copy(Result, 2, Length(Result)) + ' CHARACTER SET UNICODE_FSS'
+  else if StartsText(Result, 'NVARCHAR') then
+    Result := Copy(Result, 2, Length(Result)) + ' CHARACTER SET UNICODE_FSS';
 end;
 
 function TFirebirdSQLGenerator.GetSQLSequenceCount(const ASequenceName: string): string;

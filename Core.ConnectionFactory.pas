@@ -145,6 +145,7 @@ var
   LPair: TJSONPair;
   LValue, LConverted: TValue;
   LProp: TRttiProperty;
+  bFree: Boolean;
 begin
   //resolve connection from file
   LConcreteConnection := nil;
@@ -166,7 +167,7 @@ begin
         LPair := LJsonProperties.Get(i);
         LValue := LPair.JsonValue.Value;
 
-        if LValue.TryConvert(TRttiExplorer.GetMemberTypeInfo(LConcreteConnection.ClassType, LPair.JsonString.Value), LConverted) then
+        if LValue.TryConvert(TRttiExplorer.GetMemberTypeInfo(LConcreteConnection.ClassType, LPair.JsonString.Value), LConverted, bFree) then
           LValue := LConverted;
         TRttiExplorer.SetMemberValueSimple(LConcreteConnection, LPair.JsonString.Value, LValue);
       end;

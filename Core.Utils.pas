@@ -117,13 +117,13 @@ begin
       begin
         LStream := AValue.AsObject as TStream;
 
-        LRes := VarArrayCreate([0, LStream.Size-1], varByte);
+        LRes := VarArrayCreate([0, LStream.Size], varByte);
         DataPtr := VarArrayLock(LRes);
         try
           LStream.ReadBuffer(DataPtr^, LStream.Size);
         finally
           VarArrayUnlock(LRes);
-          LStream.Free;
+        //  LStream.Free;
         end;
 
         Result := LRes;
@@ -426,7 +426,9 @@ var
   LRecord: TRttiRecordType;
   LValueField, LHasValueField: TRttiField;
   LTypeInfo: PTypeInfo;
+  bFree: Boolean;
 begin
+  bFree := False;
   LTypeInfo := ARttiMember.GetTypeInfo;
   if (AFrom.TypeInfo <> LTypeInfo) then
   begin
@@ -450,8 +452,13 @@ begin
             begin
               LHasValueField.SetValue(AResult.GetReferenceToRawData, True);
               //get type from Nullable<T> and set value to this type
-              if AFrom.TryConvert(LValueField.FieldType.Handle, LValue) then
+              if AFrom.TryConvert(LValueField.FieldType.Handle, LValue, bFree) then
                 LValueField.SetValue(AResult.GetReferenceToRawData, LValue);
+
+              if bFree then
+              begin
+                FreeValueObject(LValue);
+              end;
             end;
             Exit(True);
           end;
@@ -469,7 +476,11 @@ begin
 
       end;
     end;
-    Result := AFrom.TryConvert(LTypeInfo, AResult);
+    Result := AFrom.TryConvert(LTypeInfo, AResult, bFree);
+    if bFree then
+    begin
+      FreeValueObject(LValue);
+    end;
   end
   else
   begin

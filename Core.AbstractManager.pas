@@ -38,6 +38,8 @@ type
     FConnection: IDBConnection;
   public
     constructor Create(AConnection: IDBConnection); virtual;
+    destructor Destroy; override;
+
     property Connection: IDBConnection read FConnection;
   end;
 
@@ -49,6 +51,11 @@ constructor TAbstractManager.Create(AConnection: IDBConnection);
 begin
   inherited Create;
   FConnection := AConnection;
+end;
+
+destructor TAbstractManager.Destroy;
+begin
+  inherited Destroy;
 end;
 
 end.

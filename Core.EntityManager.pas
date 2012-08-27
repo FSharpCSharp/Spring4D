@@ -264,7 +264,6 @@ var
   LColumns: TList<ColumnAttribute>;
   LResult, LValue: TValue;
   LVal: Variant;
-  LObj: TObject;
 begin
   {TODO -oLinas -cGeneral : if AEntity class type is not our real Entity type, simply just set value}
   if not TEntityCache.Get(AEntityToCreate.ClassType).IsTableEntity and Assigned(ARealEntity) then
@@ -280,12 +279,7 @@ begin
         if AEntityToCreate <> nil then
           FreeAndNil(AEntityToCreate);
         AEntityToCreate := LResult.AsObject;
-        if LValue.IsObject then
-        begin
-          LObj := LValue.AsObject;
-          if Assigned(LObj) then
-            LObj.Free;
-        end;
+        FreeValueObject(LValue);
       end;
     end;
   end

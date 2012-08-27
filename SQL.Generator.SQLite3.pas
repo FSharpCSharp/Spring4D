@@ -35,10 +35,10 @@ uses
 type
   TSQLiteSQLGenerator = class(TAnsiSQLGenerator)
   protected
-    procedure DoGenerateBackupTable(const ATableName: string; var ASqlBuilder: TStringBuilder); virtual;
+    procedure DoGenerateBackupTable(const ATableName: string; var ASqlBuilder: TStringBuilder); override;
     procedure DoGenerateRestoreTable(const ATablename: string;
-      ACreateColumns: TObjectList<TSQLCreateField>; ADbColumns: TList<string>; var ASqlBuilder: TStringBuilder); virtual;
-    function DoGenerateCreateTable(const ATableName: string; AColumns: TObjectList<TSQLCreateField>): string; virtual;
+      ACreateColumns: TObjectList<TSQLCreateField>; ADbColumns: TList<string>; var ASqlBuilder: TStringBuilder); override;
+    function DoGenerateCreateTable(const ATableName: string; AColumns: TObjectList<TSQLCreateField>): string; override;
   public
     function GetQueryLanguage(): TQueryLanguage; override;
     function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): string; override;
@@ -115,7 +115,7 @@ begin
     GetCopyFieldsAsString(ACreateColumns, ADbColumns)]).AppendLine;
 
   //drop temporary table
-  ASqlBuilder.AppendFormat(' DROP TABLE %0:S;', [TBL_TEMP]);
+  ASqlBuilder.AppendFormat(' DROP TABLE IF EXISTS %0:S;', [TBL_TEMP]);
 end;
 
 function TSQLiteSQLGenerator.GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): string;
@@ -199,9 +199,7 @@ end;
 function TSQLiteSQLGenerator.GetSQLDataTypeName(AField: TSQLCreateField): string;
 begin
   Result := inherited GetSQLDataTypeName(AField);
-  if Result = 'BIT' then
-    Result := 'BLOB'
-  else if ContainsStr(Result, 'CHAR') then
+  if ContainsStr(Result, 'CHAR') then
     Result := 'TEXT';
 end;
 

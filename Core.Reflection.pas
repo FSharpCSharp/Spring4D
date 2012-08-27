@@ -495,7 +495,7 @@ type
     function IsInterface: Boolean;
 
     // conversion for almost all standard types
-    function TryConvert(ATypeInfo: PTypeInfo; out AResult: TValue): Boolean;
+    function TryConvert(ATypeInfo: PTypeInfo; out AResult: TValue; out AFreeAfter: Boolean): Boolean;
 
     function AsByte: Byte;
     function AsCardinal: Cardinal;
@@ -567,6 +567,7 @@ function TryGetRttiType(ATypeInfo: PTypeInfo; out AType: TRttiType): Boolean; ov
 
 function CompareValue(const Left, Right: TValue): Integer;
 function SameValue(const Left, Right: TValue): Boolean;
+procedure FreeValueObject(const AValue: TValue);
 
 
 function StripUnitName(const s: string): string;
@@ -895,6 +896,18 @@ begin
   end else
   begin
     Result := False;
+  end;
+end;
+
+procedure FreeValueObject(const AValue: TValue);
+var
+  LObj: TObject;
+begin
+  if AValue.IsObject then
+  begin
+    LObj := AValue.AsObject;
+    if Assigned(LObj) then
+      LObj.Free;
   end;
 end;
 
@@ -1313,11 +1326,18 @@ function TRttiPropertyHelper.TrySetValue(Instance: Pointer;
   Value: TValue): Boolean;
 var
   LValue: TValue;
+  bFree: Boolean;
 begin
-  Result := Value.TryConvert(PropertyType.Handle, LValue);
+  bFree := False;
+  Result := Value.TryConvert(PropertyType.Handle, LValue, bFree);
   if Result then
   begin
     SetValue(Instance, LValue);
+
+    if bFree then
+    begin
+      FreeValueObject(LValue);
+    end;
   end;
 end;
 
@@ -1963,7 +1983,7 @@ begin
 end;
 
 function TValueHelper.TryConvert(ATypeInfo: PTypeInfo;
-  out AResult: TValue): Boolean;
+  out AResult: TValue; out AFreeAfter: Boolean): Boolean;
 var
   LType: TRttiType;
   LMethod: TRttiMethod;
@@ -1974,6 +1994,7 @@ var
   LStream: TStream;
 begin
   Result := False;
+  AFreeAfter := False;
   if Assigned(ATypeInfo) then
   begin
     case Kind of
@@ -2159,6 +2180,11 @@ begin
               AResult := TValue.From<Char>(AsString[1]);
             end;
           end;
+          tkWString:
+          begin
+            AResult := TValue.From<WideString>(WideString(AsString));
+            Result := True;
+          end;
           tkFloat:
           begin
             if ATypeInfo = System.TypeInfo(TDate) then
@@ -2226,6 +2252,7 @@ begin
                 if (TPicture(AsObject).Graphic <> nil) then
                 begin
                   LStream := TMemoryStream.Create;
+                  AFreeAfter := True;
                   TPicture(AsObject).Graphic.SaveToStream(LStream);
                   LStream.Position := 0;
                 end;
@@ -2278,7 +2305,7 @@ begin
           end;
           tkClass:
           begin
-            Result := TValue.From<TObject>(Self.AsInterface as TObject).TryConvert(ATypeInfo, AResult);
+            Result := TValue.From<TObject>(Self.AsInterface as TObject).TryConvert(ATypeInfo, AResult, AFreeAfter);
           end;
         end;
       end;

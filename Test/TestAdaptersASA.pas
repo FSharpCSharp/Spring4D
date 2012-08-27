@@ -195,15 +195,23 @@ initialization
     fIndex := -1;
     Exit;
   end;
-  RegisterTest(TestTASAConnectionAdapter.Suite);
-  RegisterTest(TestTASASQLGenerator.Suite);
-  RegisterTest(TestASAAdapter.Suite);
+
 
   TestDB := TADOConnection.Create(nil);
   TestDB.LoginPrompt := False;
   //
   TestDB.ConnectionString := 'Provider=MSDASQL;Data Source=demo_syb;Password=master;Persist Security Info=True;User ID=VIKARINA';
-  TestDB.Open();
+  try
+    TestDB.Open();
+    if TestDB.Connected then
+    begin
+      RegisterTest(TestTASAConnectionAdapter.Suite);
+      RegisterTest(TestTASASQLGenerator.Suite);
+      RegisterTest(TestASAAdapter.Suite);
+    end;
+  except
+    raise;
+  end;
 
 finalization
   if fIndex <> -1 then

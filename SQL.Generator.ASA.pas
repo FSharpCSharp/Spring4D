@@ -30,7 +30,7 @@ unit SQL.Generator.ASA;
 interface
 
 uses
-  SQL.Generator.Ansi, SysUtils, Mapping.Attributes, SQL.Interfaces;
+  SQL.Generator.Ansi, SysUtils, Mapping.Attributes, SQL.Interfaces, SQL.Types;
 
 type
   TASASQLGenerator = class(TAnsiSQLGenerator)
@@ -38,6 +38,7 @@ type
     function GetQueryLanguage(): TQueryLanguage; override;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; override;
+    function GetSQLDataTypeName(AField: TSQLCreateField): string; override;
   end;
 
 implementation
@@ -88,6 +89,15 @@ begin
   Result := qlASA;
 end;
 
+
+function TASASQLGenerator.GetSQLDataTypeName(AField: TSQLCreateField): string;
+begin
+  Result := inherited GetSQLDataTypeName(AField);
+  if Result = 'BLOB' then
+    Result := 'IMAGE'
+  else if Result = 'TIMESTAMP' then
+    Result := 'DATETIME';
+end;
 
 initialization
   TSQLGeneratorRegister.RegisterGenerator(TASASQLGenerator.Create());

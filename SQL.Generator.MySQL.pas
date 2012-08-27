@@ -30,7 +30,7 @@ unit SQL.Generator.MySQL;
 interface
 
 uses
-  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces, SQL.Commands;
+  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces, SQL.Commands, SQL.Types;
 
 type
   TMySQLGenerator = class(TAnsiSQLGenerator)
@@ -39,6 +39,7 @@ type
     function GenerateCreateSequence(ASequence: TCreateSequenceCommand): string; override;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
     function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
+    function GetSQLDataTypeName(AField: TSQLCreateField): string; override;
   end;
 
 implementation
@@ -46,6 +47,7 @@ implementation
 uses
   SQL.Register
   ,SysUtils
+  ,StrUtils
   ;
 
 { TMySQLGenerator }
@@ -68,6 +70,17 @@ end;
 function TMySQLGenerator.GetQueryLanguage: TQueryLanguage;
 begin
   Result := qlMySQL;
+end;
+
+function TMySQLGenerator.GetSQLDataTypeName(AField: TSQLCreateField): string;
+begin
+  Result := inherited GetSQLDataTypeName(AField);
+  if StartsText('NUMERIC', Result) then
+    Result := 'DECIMAL' + Copy(Result, 8, Length(Result))
+  else if StartsText('NCHAR', Result) then
+    Result := Copy(Result, 2, Length(Result)) + ' CHARACTER SET ucs2'
+  else if StartsText('NVARCHAR', Result) then
+    Result := Copy(Result, 2, Length(Result)) + ' CHARACTER SET ucs2';
 end;
 
 initialization

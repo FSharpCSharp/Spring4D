@@ -16,7 +16,7 @@ interface
 uses
   TestFramework, ADODB, Generics.Collections, Adapters.ADO, Core.Base, SysUtils,
   SQL.Params, Core.Interfaces, SQL.Generator.Ansi, Adapters.MSSQL, Core.EntityManager
-  ,uModels, VARTOTMASTModel, SQL.Generator.MSSQL;
+  ,uModels, VARTOTMASTModel, SQL.Generator.MSSQL, Core.DatabaseManager;
 
 type
   // Test methods for class TADOResultSetAdapter
@@ -119,13 +119,24 @@ type
     procedure TestGeneratePagedQuery();
   end;
 
+  TestTDatabaseManagerMSSQL = class(TTestCase)
+  private
+    FConnection: IDBConnection;
+    FDatabaseManager: TDatabaseManager;
+  public
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestBuildDatabase;
+  end;
+
 implementation
 
 uses
   Core.ConnectionFactory
-  ,Core.DatabaseManager
   ,SvDesignPatterns
   ,SQL.Register
+  ,SQL.Interfaces
   {$IFDEF USE_SPRING} ,Spring.Collections {$ENDIF}
   ,DB
   ,Diagnostics
@@ -705,6 +716,31 @@ const
 
 
 
+{ TestTDatabaseManager }
+
+procedure TestTDatabaseManagerMSSQL.SetUp;
+var
+  sDir: string;
+begin
+  inherited;
+  sDir := IncludeTrailingPathDelimiter(ExtractFileDir(PictureFilename));
+  FConnection := TConnectionFactory.GetInstanceFromFilename(dtMSSQL, sDir + 'Conn_MSSQL.json');
+  FDatabaseManager := TDatabaseManager.Create(FConnection);
+end;
+
+procedure TestTDatabaseManagerMSSQL.TearDown;
+begin
+  inherited;
+  FConnection := nil;
+  FDatabaseManager.Free;
+end;
+
+procedure TestTDatabaseManagerMSSQL.TestBuildDatabase;
+begin
+  CheckTrue(FConnection.GetQueryLanguage = qlMSSQL);
+  FDatabaseManager.BuildDatabase;
+end;
+
 initialization
   ODBC := TBaseODBC.Create;
   ODBCSources := ODBC.GetDatasources();
@@ -714,20 +750,29 @@ initialization
     fIndex := -1;
     Exit;
   end;
-  RegisterTest(TestTADOResultSetAdapter.Suite);
-  RegisterTest(TestTADOStatementAdapter.Suite);
-  RegisterTest(TestTADOConnectionAdapter.Suite);
-  RegisterTest(TestTADOTransactionAdapter.Suite);
-  RegisterTest(TestTADOSQLGenerator.Suite);
-  RegisterTest(TestMSSQLAdapter.Suite);
-  RegisterTest(TestMSSQLSQLGenerator.Suite);
+
 
   TestDB := TADOConnection.Create(nil);
   TestDB.LoginPrompt := False;
   TestDB.ConnectionString := Format('Provider=SQLOLEDB.1;Password=master;Persist Security Info=True;'+
     'User ID=VIKARINA;Initial Catalog=%0:S;Data Source=FILE_SERVER'
     ,['ViktorDemo']);
-  TestDB.Open();
+  try
+    TestDB.Open();
+    if TestDB.Connected then
+    begin
+      RegisterTest(TestTADOResultSetAdapter.Suite);
+      RegisterTest(TestTADOStatementAdapter.Suite);
+      RegisterTest(TestTADOConnectionAdapter.Suite);
+      RegisterTest(TestTADOTransactionAdapter.Suite);
+      RegisterTest(TestTADOSQLGenerator.Suite);
+      RegisterTest(TestMSSQLAdapter.Suite);
+      RegisterTest(TestMSSQLSQLGenerator.Suite);
+      RegisterTest(TestTDatabaseManagerMSSQL.Suite);
+    end;
+  except
+    raise;
+  end;
 
 finalization
   if fIndex <> -1 then

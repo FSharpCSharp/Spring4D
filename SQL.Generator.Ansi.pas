@@ -31,11 +31,16 @@ interface
 
 uses
   SQL.AbstractSQLGenerator, SQL.Commands, SQL.Types, Generics.Collections, Mapping.Attributes
-  , SQL.Interfaces, TypInfo;
+  , SQL.Interfaces, TypInfo, SysUtils;
 
 type
   TAnsiSQLGenerator = class(TAbstractSQLGenerator)
   protected
+    procedure DoGenerateBackupTable(const ATableName: string; var ASqlBuilder: TStringBuilder); virtual;
+    procedure DoGenerateRestoreTable(const ATablename: string;
+      ACreateColumns: TObjectList<TSQLCreateField>; ADbColumns: TList<string>; var ASqlBuilder: TStringBuilder); virtual;
+    function DoGenerateCreateTable(const ATableName: string; AColumns: TObjectList<TSQLCreateField>): string; virtual;
+
     function GetGroupByAsString(const AGroupFields: TEnumerable<TSQLGroupByField>): string; virtual;
     function GetJoinAsString(const AJoin: TSQLJoin): string; virtual;
     function GetJoinsAsString(const AJoinFields: TEnumerable<TSQLJoin>): string; virtual;
@@ -45,6 +50,8 @@ type
     function GetCreateFieldsAsString(const ACreateFields: TEnumerable<TSQLCreateField>): string; overload; virtual;
     function GetCreateFieldsAsString(const ACreateFields: TList<string>): string; overload; virtual;
     function GetCopyFieldsAsString(const ACreateFields: TEnumerable<TSQLCreateField>; const ACopyFields: TList<string>): string; virtual;
+    function GetTempTableName(): string; virtual;
+    function GetPrimaryKeyDefinition(AField: TSQLCreateField): string; virtual;
   public
     function GetQueryLanguage(): TQueryLanguage; override;
     function GenerateSelect(ASelectCommand: TSelectCommand): string; override;
@@ -73,11 +80,67 @@ uses
   Core.Exceptions
   ,Core.Utils
   ,Mapping.RttiExplorer
-  ,SysUtils
   ,StrUtils
   ;
 
 { TAnsiSQLGenerator }
+
+procedure TAnsiSQLGenerator.DoGenerateBackupTable(const ATableName: string;
+  var ASqlBuilder: TStringBuilder);
+begin
+  //select old data to temporary table
+  ASqlBuilder.AppendFormat(' SELECT * INTO %0:S FROM %1:S;',
+        [GetTempTableName, ATableName]).AppendLine;
+  //drop table
+  ASqlBuilder.AppendFormat(' DROP TABLE %0:S; ', [ATableName]).AppendLine;
+end;
+
+function TAnsiSQLGenerator.DoGenerateCreateTable(const ATableName: string;
+  AColumns: TObjectList<TSQLCreateField>): string;
+var
+  LSqlBuilder: TStringBuilder;
+  i: Integer;
+  LField: TSQLCreateField;
+begin
+  LSqlBuilder := TStringBuilder.Create;
+  try
+    LSqlBuilder.AppendFormat(' CREATE TABLE %0:S ', [ATableName])
+      .Append('(')
+      .AppendLine;
+    for i := 0 to AColumns.Count - 1 do
+    begin
+      LField := AColumns[i];
+      if i > 0 then
+        LSqlBuilder.Append(',').AppendLine;
+
+      //0 - Column name, 1 - Column data type name, 2 - NOT NULL condition
+      LSqlBuilder.AppendFormat('%0:S %1:S %2:S %3:S',
+        [
+          LField.Fieldname
+          ,GetSQLDataTypeName(LField)
+          ,IfThen(cpPrimaryKey in LField.Properties, GetPrimaryKeyDefinition(LField))
+          ,IfThen(cpNotNull in LField.Properties, 'NOT NULL', 'NULL')
+        ]
+      );
+    end;
+
+    Result := LSqlBuilder.ToString;
+  finally
+    LSqlBuilder.Free;
+  end;
+end;
+
+procedure TAnsiSQLGenerator.DoGenerateRestoreTable(const ATablename: string;
+  ACreateColumns: TObjectList<TSQLCreateField>; ADbColumns: TList<string>;
+  var ASqlBuilder: TStringBuilder);
+begin
+  ASqlBuilder.AppendFormat(' INSERT INTO %0:S (%2:S) SELECT %3:S FROM %1:S;',
+    [ATablename, GetTempTableName, GetCreateFieldsAsString(ACreateColumns),
+    GetCopyFieldsAsString(ACreateColumns, ADbColumns)]).AppendLine;
+
+  //drop temporary table
+  ASqlBuilder.AppendFormat(' DROP TABLE %0:S;', [GetTempTableName]);
+end;
 
 function TAnsiSQLGenerator.GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): string;
 var
@@ -97,9 +160,9 @@ begin
         .AppendLine
         .AppendFormat('ADD CONSTRAINT %0:S', [LField.ForeignKeyName])
         .AppendLine
-        .AppendFormat('FOREIGN KEY (%0:S)', [LField.Fieldname])
+        .AppendFormat('FOREIGN KEY(%0:S)', [LField.Fieldname])
         .AppendLine
-        .AppendFormat(' REFERENCES %0:S.%1:S', [LField.ReferencedTableName, LField.ReferencedColumnName])
+        .AppendFormat(' REFERENCES %0:S (%1:S)', [LField.ReferencedTableName, LField.ReferencedColumnName])
         .AppendLine
         .Append(LField.GetConstraintsAsString)
         .Append(';').AppendLine;
@@ -120,8 +183,6 @@ end;
 function TAnsiSQLGenerator.GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): string;
 var
   LSqlBuilder: TStringBuilder;
-  i: Integer;
-  LField: TSQLCreateField;
 begin
   Assert(Assigned(ACreateTableCommand));
 
@@ -129,44 +190,16 @@ begin
   try
     if ACreateTableCommand.TableExists then
     begin
-      LSqlBuilder.AppendFormat('SELECT * INTO %0:S FROM %1:S;',
-        [TBL_TEMP, ACreateTableCommand.Table.Name]).AppendLine;
-
-      LSqlBuilder.AppendFormat('DROP TABLE %0:S;',
-        [ACreateTableCommand.Table.Name]).AppendLine;
+      DoGenerateBackupTable(ACreateTableCommand.Table.Name, LSqlBuilder);
     end;
 
-
-    LSqlBuilder.AppendFormat('CREATE TABLE %0:S ', [ACreateTableCommand.Table.Name])
-      .Append('(')
-      .AppendLine;
-    for i := 0 to ACreateTableCommand.Columns.Count - 1 do
-    begin
-      LField := ACreateTableCommand.Columns[i];
-      if i > 0 then
-        LSqlBuilder.Append(',').AppendLine;
-
-      //0 - Column name, 1 - Column data type name, 2 - NOT NULL condition
-      LSqlBuilder.AppendFormat('%0:S %1:S %2:S %3:S',
-        [
-          LField.Fieldname
-          ,GetSQLDataTypeName(LField)
-          ,IfThen(cpPrimaryKey in LField.Properties, 'PRIMARY KEY')
-          ,IfThen(cpNotNull in LField.Properties, 'NOT NULL', 'NULL')
-        ]
-      );
-    end;
+    LSqlBuilder.Append(DoGenerateCreateTable(ACreateTableCommand.Table.Name, ACreateTableCommand.Columns));
     LSqlBuilder.Append(');');
 
     if ACreateTableCommand.TableExists then
     begin
-      LSqlBuilder.AppendLine.
-        AppendFormat('INSERT INTO %0:S %1:S SELECT %1:S FROM %2:S;',
-          [ACreateTableCommand.Table.Name, GetCreateFieldsAsString(ACreateTableCommand.Columns),
-          TBL_TEMP]).AppendLine;
-
-      //drop temporary table
-      LSqlBuilder.AppendFormat('DROP TABLE %0:S;', [TBL_TEMP]);
+      DoGenerateRestoreTable(ACreateTableCommand.Table.Name, ACreateTableCommand.Columns,
+        ACreateTableCommand.DbColumns, LSqlBuilder);
     end;
 
     Result := LSqlBuilder.ToString;
@@ -493,6 +526,11 @@ begin
   end;
 end;
 
+function TAnsiSQLGenerator.GetPrimaryKeyDefinition(AField: TSQLCreateField): string;
+begin
+  Result := 'PRIMARY KEY';
+end;
+
 function TAnsiSQLGenerator.GetQueryLanguage: TQueryLanguage;
 begin
   Result := qlAnsiSQL;
@@ -532,7 +570,13 @@ begin
 
   case AField.TypeKindInfo.Kind of
     tkUnknown: ;
-    tkInteger, tkInt64, tkEnumeration, tkSet: Result := 'INTEGER';
+    tkInteger, tkInt64, tkEnumeration, tkSet:
+    begin
+      Result := 'INTEGER';
+      if (System.TypeInfo(Boolean) = LDelphiTypeInfo) then
+        Result := 'BIT';
+    end;
+
     tkChar: Result := Format('CHAR(%D)', [AField.Length]);
     tkFloat:
     begin
@@ -553,7 +597,7 @@ begin
       end;
     end;
     tkString, tkLString: Result := Format('VARCHAR(%D)', [AField.Length]);
-    tkClass, tkArray, tkDynArray, tkVariant: Result := 'BIT';
+    tkClass, tkArray, tkDynArray, tkVariant: Result := 'BLOB';
     tkMethod: ;
     tkWChar: Result := Format('NCHAR(%D)', [AField.Length]);
     tkWString, tkUString: Result := Format('NVARCHAR(%D)', [AField.Length]);
@@ -590,6 +634,11 @@ end;
 function TAnsiSQLGenerator.GetTableColumns(const ATableName: string): string;
 begin
   Result := Format('SELECT * FROM %0:S WHERE 1<>2;', [ATableName]);
+end;
+
+function TAnsiSQLGenerator.GetTempTableName: string;
+begin
+  Result := TBL_TEMP;
 end;
 
 function TAnsiSQLGenerator.GetWhereAsString(const AWhereFields: TEnumerable<TSQLWhereField>): string;

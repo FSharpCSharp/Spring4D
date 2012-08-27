@@ -311,13 +311,21 @@ initialization
   // Register any test cases with the test runner
   if FileExists('D:\DB\GDB\CAA\ALGA.GDB') then
   begin
-    RegisterTest(TestTUIBResultSetAdapter.Suite);
-    RegisterTest(TestTUIBConnectionAdapter.Suite);
-    RegisterTest(TestTUIBRegression.Suite);
     TestDB.UserName := 'SYSDBA';
     TestDB.PassWord := 'masterkey';
     TestDB.DatabaseName := 'localhost:D:\DB\GDB\CAA\ALGA.GDB';
-    TestDB.Connected := True;
+    try
+      TestDB.Connected := True;
+      if TestDB.Connected then
+      begin
+        RegisterTest(TestTUIBResultSetAdapter.Suite);
+        RegisterTest(TestTUIBConnectionAdapter.Suite);
+        RegisterTest(TestTUIBRegression.Suite);
+      end;
+    except
+      raise;
+    end;
+
   end;
 
 finalization

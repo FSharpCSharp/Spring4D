@@ -83,9 +83,10 @@ uses
 function TEntityMapKey.GetIDAsInt: Int64;
 var
   LResult: TValue;
+  bFree: Boolean;
 begin
   Result := -1;
-  if FID.TryConvert(TypeInfo(Int64), LResult) then
+  if FID.TryConvert(TypeInfo(Int64), LResult, bFree) then
     Result := LResult.AsInt64;
 end;
 

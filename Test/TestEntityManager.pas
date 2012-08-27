@@ -46,6 +46,7 @@ type
     procedure FindOne();
     procedure FindAll();
     procedure Enums();
+    procedure Streams();
   end;
 
   TInsertData = record
@@ -76,6 +77,8 @@ const
   TBL_PEOPLE = 'CUSTOMERS';
   TBL_ORDERS = 'Customer_Orders';
 
+  SQL_GET_ALL_CUSTOMERS = 'SELECT * FROM ' + TBL_PEOPLE + ';';
+
 function GetPictureSize(APicture: TPicture): Int64;
 var
   LStream: TMemoryStream;
@@ -100,7 +103,7 @@ procedure CreateTables();
 begin
   TestDB.ExecSQL('CREATE TABLE IF NOT EXISTS '+ TBL_PEOPLE + ' ([CUSTID] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, [CUSTAGE] INTEGER NULL,'+
     '[CUSTNAME] VARCHAR (255), [CUSTHEIGHT] FLOAT, [LastEdited] DATETIME, [EMAIL] TEXT, [MIDDLENAME] TEXT, [AVATAR] BLOB, [AVATARLAZY] BLOB NULL'+
-    ',[CUSTTYPE] INTEGER );');
+    ',[CUSTTYPE] INTEGER, [CUSTSTREAM] BLOB );');
 
   TestDB.ExecSQL('CREATE TABLE IF NOT EXISTS '+ TBL_ORDERS + ' ('+
     '"ORDER_ID" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,'+
@@ -697,6 +700,35 @@ procedure TestTEntityManager.SetUp;
 begin
   FConnection := TConnectionFactory.GetInstance(dtSQLite, TestDB);
   FManager := TEntityManager.Create(FConnection);
+end;
+
+procedure TestTEntityManager.Streams;
+var
+  LCustomer: TCustomer;
+  LResults: ISQLiteTable;
+  LStream: TMemoryStream;
+begin
+  LCustomer := TCustomer.Create;
+  try
+    CheckTrue(LCustomer.CustStream.Size <= 0);
+
+    LCustomer.CustStream.LoadFromFile(PictureFilename);
+
+    FManager.Save(LCustomer);
+
+    LResults := TestDB.GetUniTableIntf(SQL_GET_ALL_CUSTOMERS);
+    CheckFalse(LResults.EOF);
+    LStream := LResults.FieldByName['CUSTSTREAM'].AsBlob;
+    CheckTrue(Assigned(LStream));
+    try
+      CheckTrue(LStream.Size > 0);
+      CheckEquals(LCustomer.CustStream.Size, LStream.Size);
+    finally
+      LStream.Free;
+    end;
+  finally
+    LCustomer.Free;
+  end;
 end;
 
 procedure TestTEntityManager.TearDown;

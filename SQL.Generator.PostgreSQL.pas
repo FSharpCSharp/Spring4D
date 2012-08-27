@@ -30,7 +30,7 @@ unit SQL.Generator.PostgreSQL;
 interface
 
 uses
-  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces, SQL.Commands;
+  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces, SQL.Commands, SQL.Types;
 
 type
   TPostgreSQLGenerator = class(TAnsiSQLGenerator)
@@ -39,6 +39,7 @@ type
     function GenerateCreateSequence(ASequence: TCreateSequenceCommand): string; override;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
     function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
+    function GetSQLDataTypeName(AField: TSQLCreateField): string; override;
   end;
 
 implementation
@@ -46,6 +47,7 @@ implementation
 uses
   SQL.Register
   ,SysUtils
+  ,StrUtils
   ;
 
 
@@ -78,6 +80,21 @@ end;
 function TPostgreSQLGenerator.GetQueryLanguage: TQueryLanguage;
 begin
   Result := qlPostgreSQL;
+end;
+
+function TPostgreSQLGenerator.GetSQLDataTypeName(AField: TSQLCreateField): string;
+begin
+  Result := inherited GetSQLDataTypeName(AField);
+  if Result = 'FLOAT' then
+    Result := 'DOUBLE PRECISION'
+  else if StartsText('NCHAR', Result) then
+    Result := Copy(Result, 2, Length(Result))
+  else if StartsText('NVARCHAR', Result) then
+    Result := Copy(Result, 2, Length(Result))
+  else if Result = 'BLOB' then
+    Result := 'BYTEA'
+  else if Result = 'BIT' then
+    Result := 'BOOLEAN';
 end;
 
 initialization

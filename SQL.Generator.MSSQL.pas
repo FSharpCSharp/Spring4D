@@ -30,7 +30,7 @@ unit SQL.Generator.MSSQL;
 interface
 
 uses
-  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces;
+  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces, SQL.Types;
 
 type
   TMSSQLServerSQLGenerator = class(TAnsiSQLGenerator)
@@ -38,6 +38,9 @@ type
     function GetQueryLanguage(): TQueryLanguage; override;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; override;
+    function GetSQLDataTypeName(AField: TSQLCreateField): string; override;
+    function GetTempTableName(): string; override;
+    function GetPrimaryKeyDefinition(AField: TSQLCreateField): string; override;
   end;
 
 implementation
@@ -84,9 +87,32 @@ begin
   end;
 end;
 
+function TMSSQLServerSQLGenerator.GetPrimaryKeyDefinition(AField: TSQLCreateField): string;
+begin
+  Result := Format('CONSTRAINT PK_%0:S_%1:S PRIMARY KEY',
+    [AField.Table.GetNameWithoutSchema, AField.Fieldname]);
+end;
+
 function TMSSQLServerSQLGenerator.GetQueryLanguage: TQueryLanguage;
 begin
   Result := qlMSSQL;
+end;
+
+function TMSSQLServerSQLGenerator.GetSQLDataTypeName(AField: TSQLCreateField): string;
+begin
+  Result := inherited GetSQLDataTypeName(AField);
+  if Result = 'BLOB' then
+    Result := 'IMAGE'
+  else if Result = 'TIMESTAMP' then
+    Result := 'DATETIME';
+
+  if AField.IsIdentity then
+    Result := Result + ' IDENTITY(1,1)';
+end;
+
+function TMSSQLServerSQLGenerator.GetTempTableName: string;
+begin
+  Result := '#' + inherited GetTempTableName;
 end;
 
 initialization

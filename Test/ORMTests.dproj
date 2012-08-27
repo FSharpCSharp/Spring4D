@@ -37,7 +37,7 @@
 			<BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
 			<BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
 			<ILINK_FullDebugInfo>true</ILINK_FullDebugInfo>
-			<DCC_UnitSearchPath>..\External\Spring\Source\Base;..\External\Spring\Source\Base\Collections;..\External\Spring\Source\Base\Reflection;..\External\uib\Source\;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UnitSearchPath>..\External\Spring\Source\Base;..\External\Spring\Source\Base\Collections;..\External\Spring\Source\Base\Reflection;..\External\uib\Source\;..\External\FastMM\;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DCC_DebugDCUs>true</DCC_DebugDCUs>
 			<DCC_MapFile>3</DCC_MapFile>
 			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
@@ -54,6 +54,7 @@
 			<DelphiCompile Include="ORMTests.dpr">
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
+			<DCCReference Include="..\External\FastMM\FastMM4.pas"/>
 			<DCCReference Include="TestEntityManager.pas"/>
 			<DCCReference Include="..\Core.AbstractManager.pas"/>
 			<DCCReference Include="..\Core.Interfaces.pas"/>
@@ -129,7 +130,7 @@
 			</BuildConfiguration>
 		</ItemGroup>
 		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')" Project="$(BDS)\Bin\CodeGear.Delphi.Targets"/>
-		<Import Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\8.0\UserTools.proj')" Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\8.0\UserTools.proj"/>
+		<Import Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')" Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj"/>
 		<ProjectExtensions>
 			<Borland.Personality>Delphi.Personality.12</Borland.Personality>
 			<Borland.ProjectType/>

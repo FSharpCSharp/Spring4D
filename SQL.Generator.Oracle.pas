@@ -30,7 +30,7 @@ unit SQL.Generator.Oracle;
 interface
 
 uses
-  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces, SQL.Commands;
+  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces, SQL.Commands, SQL.Types;
 
 type
   TOracleSQLGenerator = class(TAnsiSQLGenerator)
@@ -41,6 +41,7 @@ type
     function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; override;
     function GetSQLSequenceCount(const ASequenceName: string): string; override;
+    function GetSQLDataTypeName(AField: TSQLCreateField): string; override;
   end;
 
 implementation
@@ -107,6 +108,23 @@ end;
 function TOracleSQLGenerator.GetQueryLanguage: TQueryLanguage;
 begin
   Result := qlOracle;
+end;
+
+function TOracleSQLGenerator.GetSQLDataTypeName(AField: TSQLCreateField): string;
+begin
+  Result := inherited GetSQLDataTypeName(AField);
+  if StartsText('NUMERIC', Result) then
+    Result := 'NUMBER' + Copy(Result, 8, Length(Result))
+  else if StartsText('NVARCHAR', Result) then
+    Result := 'NVARCHAR2' + Copy(Result, 9, Length(Result))
+  else if StartsText('VARCHAR', Result) then
+    Result := 'VARCHAR2' + Copy(Result, 8, Length(Result))
+  else if Result = 'INTEGER' then
+    Result := 'PLS_INTEGER'
+  else if Result = 'BIT' then
+    Result := 'PLS_INTEGER'
+  else if Result = 'FLOAT' then
+    Result := 'BINARY_DOUBLE';
 end;
 
 function TOracleSQLGenerator.GetSQLSequenceCount(const ASequenceName: string): string;

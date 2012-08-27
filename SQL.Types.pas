@@ -48,6 +48,7 @@ type
   public
     function SchemaExists(): Boolean;
 
+    function GetNameWithoutSchema(): string;
     function GetFullTableName(): string;
 
     procedure SetFromAttribute(AAttribute: TableAttribute);
@@ -238,6 +239,11 @@ begin
   Result := Result + FName;
 end;
 
+function TSQLTable.GetNameWithoutSchema: string;
+begin
+  Result := FName;
+end;
+
 function TSQLTable.SchemaExists: Boolean;
 begin
   Result := (FSchema <> '');
@@ -426,7 +432,7 @@ begin
         fsOnDeleteNoAction: Result := Result + ' ON DELETE NO ACTION';
         fsOnUpdateSetNull: Result := Result + ' ON UPDATE SET NULL';
         fsOnUpdateSetDefault: Result := Result + ' ON UPDATE SET DEFAULT';
-        fsOnUpdateCascade: Result := Result + ' ON UPDATE SET CASCADE';
+        fsOnUpdateCascade: Result := Result + ' ON UPDATE CASCADE';
         fsOnUpdateNoAction: Result := Result + ' ON UPDATE NO ACTION';
       end;
     end;

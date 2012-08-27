@@ -92,24 +92,31 @@ function TAbstractCommandExecutor.CreateParam(AEntity: TObject;
   AForeignColumn: ForeignJoinColumnAttribute): TDBParam;
 var
   LVal, LRes: TValue;
+  bFree: Boolean;
 begin
+  bFree := False;
   Result := TDBParam.Create;
   Result.Name := ':' + AForeignColumn.Name;
   LVal := TRttiExplorer.GetMemberValue(AEntity, AForeignColumn.ReferencedColumnName);
   //convert/serialize objects to stream
   if LVal.IsObject then
   begin
-    if LVal.TryConvert(TypeInfo(TStream), LRes) then
+    if LVal.TryConvert(TypeInfo(TStream), LRes, bFree) then
     begin
       LVal := LRes.AsObject;
     end;
   end;
   Result.Value := TUtils.AsVariant(LVal);
+  if bFree then
+  begin
+    FreeValueObject(LVal);
+  end;
 end;
 
 function TAbstractCommandExecutor.CreateParam(AEntity: TObject; AColumn: ColumnAttribute): TDBParam;
 var
   LVal, LRes: TValue;
+  bFree: Boolean;
 begin
   Result := TDBParam.Create;
   Result.Name := ':' + AColumn.Name;
@@ -117,13 +124,18 @@ begin
   //convert/serialize objects to stream. If value is nullable or lazy get it's real value
   if LVal.IsObject then
   begin
-    if LVal.TryConvert(TypeInfo(TStream), LRes) then
+    if LVal.TryConvert(TypeInfo(TStream), LRes, bFree) then
     begin
       LVal := LRes.AsObject;
     end;
   end;
 
   Result.Value := TUtils.AsVariant(LVal);
+
+  if bFree then
+  begin
+    FreeValueObject(LVal);
+  end;
 end;
 
 destructor TAbstractCommandExecutor.Destroy;
@@ -188,13 +200,18 @@ begin
   LSqlTableCount := Generator.GetSQLTableCount(ATablename);
   if (LSqlTableCount <> '') then
   begin
+    LStmt := Connection.CreateStatement;
+    LStmt.SetSQLCommand(LSqlTableCount);
     try
-      LStmt := Connection.CreateStatement;
-      LStmt.SetSQLCommand(LSqlTableCount);
-      LResults := LStmt.ExecuteQuery;
-      Result := not LResults.IsEmpty;
-    except
-      Result := False;
+      try
+        LResults := LStmt.ExecuteQuery;
+        Result := not LResults.IsEmpty;
+      except
+        Result := False;
+      end;
+    finally
+      LResults := nil;
+      LStmt := nil;
     end;
   end;
 end;
