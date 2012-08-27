@@ -201,9 +201,10 @@ begin
   if (LSqlTableCount <> '') then
   begin
     LStmt := Connection.CreateStatement;
-    LStmt.SetSQLCommand(LSqlTableCount);
     try
       try
+        LStmt.SetSQLCommand(LSqlTableCount);
+
         LResults := LStmt.ExecuteQuery;
         Result := not LResults.IsEmpty;
       except

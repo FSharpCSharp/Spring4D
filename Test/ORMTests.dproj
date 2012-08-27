@@ -54,7 +54,6 @@
 			<DelphiCompile Include="ORMTests.dpr">
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
-			<DCCReference Include="..\External\FastMM\FastMM4.pas"/>
 			<DCCReference Include="TestEntityManager.pas"/>
 			<DCCReference Include="..\Core.AbstractManager.pas"/>
 			<DCCReference Include="..\Core.Interfaces.pas"/>

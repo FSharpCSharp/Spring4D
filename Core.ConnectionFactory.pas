@@ -33,6 +33,8 @@ uses
   Core.Interfaces
   ,Generics.Collections
   ,SysUtils
+  ,DBXJSON
+  ,Rtti
   ;
 
 type
@@ -46,6 +48,10 @@ type
   protected
     class function ConcreteCreate(AClass: TClass; AConcreteConnection: TObject): IDBConnection; overload;
     class function ConcreteCreate(AClass: TClass): TObject; overload;
+
+    class function GetConnectionType(const AQualifiedName: string): TRttiType;
+    class procedure SetConnectionProperties(AConcreteConnection: TObject; AJsonObj: TJSONObject);
+    class procedure SetConnectionConnected(const AQualifiedName: string; AConcreteConnection: TObject);
   public
     class constructor Create;
     class destructor Destroy;
@@ -65,9 +71,7 @@ uses
   Core.Exceptions
   ,Mapping.RttiExplorer
   ,Core.Reflection
-  ,Rtti
   ,TypInfo
-  ,DBXJSON
   ,Classes
   ;
 
@@ -100,6 +104,9 @@ begin
     end;
 
     Result := LMethod.Invoke(LType.AsInstance.MetaclassType, LArgs).AsObject;
+
+    if not Assigned(Result) then
+      raise EORMConnectionFactoryException.Create('Could not create connection');
 
   finally
     LConstructors.Free;
@@ -139,13 +146,9 @@ end;
 class function TConnectionFactory.GetInstance(AKey: TDBDriverType; const AJsonString: string): IDBConnection;
 var
   LConcreteConnection: TObject;
-  LJsonObj, LJsonProperties: TJSONObject;
+  LJsonObj: TJSONObject;
   LType: TRttiType;
-  i: Integer;
-  LPair: TJSONPair;
-  LValue, LConverted: TValue;
-  LProp: TRttiProperty;
-  bFree: Boolean;
+  sQualifiedName: string;
 begin
   //resolve connection from file
   LConcreteConnection := nil;
@@ -153,40 +156,16 @@ begin
   if Assigned(LJsonObj) then
   begin
     try
-      LType := TRttiContext.Create.FindType(LJsonObj.Get(0).JsonString.Value);
-      if not Assigned(LType) and not LType.IsInstance then
-        raise EORMTypeNotFoundException.CreateFmt('Type %S not found or is not an instance', [LJsonObj.Get(0).JsonString.Value]);
-
+      sQualifiedName := LJsonObj.Get(0).JsonString.Value;
+      LType := GetConnectionType(sQualifiedName);
       //try to create instance
       LConcreteConnection := ConcreteCreate(LType.AsInstance.MetaclassType);
-
-      LJsonProperties := LJsonObj.Get(0).JsonValue as TJSONObject;
-      //set properties from json config
-      for i := 0 to LJsonProperties.Size - 1 do
-      begin
-        LPair := LJsonProperties.Get(i);
-        LValue := LPair.JsonValue.Value;
-
-        if LValue.TryConvert(TRttiExplorer.GetMemberTypeInfo(LConcreteConnection.ClassType, LPair.JsonString.Value), LConverted, bFree) then
-          LValue := LConverted;
-        TRttiExplorer.SetMemberValueSimple(LConcreteConnection, LPair.JsonString.Value, LValue);
-      end;
-
-      //set connected property to true
-      LProp := LType.GetProperty('Connected');
-      if Assigned(LProp) then
-      begin
-        LProp.SetValue(LConcreteConnection, True);
-      end;
-
+      SetConnectionProperties(LConcreteConnection, LJsonObj.Get(0).JsonValue as TJSONObject);
+      SetConnectionConnected(sQualifiedName, LConcreteConnection);
     finally
       LJsonObj.Free;
     end;
   end;
-
-  if not Assigned(LConcreteConnection) then
-    raise EORMConnectionFactoryException.Create('Could not create connection');
-
   Result := GetInstance(AKey, LConcreteConnection);
   Result.AutoFreeConnection := True;
 end;
@@ -224,6 +203,44 @@ end;
 class function TConnectionFactory.IsRegistered(AKey: TDBDriverType): Boolean;
 begin
   Result := FRegistered.ContainsKey(AKey);
+end;
+
+class function TConnectionFactory.GetConnectionType(const AQualifiedName: string): TRttiType;
+begin
+  Result := TRttiContext.Create.FindType(AQualifiedName);
+  if not Assigned(Result) and not Result.IsInstance then
+    raise EORMTypeNotFoundException.CreateFmt('Type %S not found or is not an instance', [AQualifiedName]);
+end;
+
+class procedure TConnectionFactory.SetConnectionProperties(AConcreteConnection: TObject; AJsonObj: TJSONObject);
+var
+  LPair: TJSONPair;
+  LValue: TValue;
+  bFree: Boolean;
+  i: Integer;
+  LConverted: TValue;
+begin
+  //set properties from json config
+  for i := 0 to AJsonObj.Size - 1 do
+  begin
+    LPair := AJsonObj.Get(i);
+    LValue := LPair.JsonValue.Value;
+    if LValue.TryConvert(TRttiExplorer.GetMemberTypeInfo(AConcreteConnection.ClassType, LPair.JsonString.Value), LConverted, bFree) then
+      LValue := LConverted;
+    TRttiExplorer.SetMemberValueSimple(AConcreteConnection, LPair.JsonString.Value, LValue);
+  end;
+end;
+
+class procedure TConnectionFactory.SetConnectionConnected(const AQualifiedName: string; AConcreteConnection: TObject);
+var
+  LProp: TRttiProperty;
+begin
+  //set connected property to true
+  LProp := TRttiContext.Create.FindType(AQualifiedName).GetProperty('Connected');
+  if Assigned(LProp) then
+  begin
+    LProp.SetValue(AConcreteConnection, True);
+  end;
 end;
 
 class procedure TConnectionFactory.RegisterConnection<T>(AKey: TDBDriverType);

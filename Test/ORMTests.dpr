@@ -15,7 +15,7 @@ program ORMTests;
 {$ENDIF}
 
 uses
-  FastMM4 in '..\External\FastMM\FastMM4.pas',
+//  FastMM4 in '..\External\FastMM\FastMM4.pas',
   Forms,
   SysUtils,
   TestFramework,
