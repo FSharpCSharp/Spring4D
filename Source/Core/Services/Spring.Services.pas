@@ -192,12 +192,16 @@ type
   ///	<seealso cref="ImplementsAttribute" />
   InjectAttribute = class(TCustomAttribute)
   private
-    fValue: string;
+    fValue: TValue;
     function GetHasValue: Boolean;
   public
     constructor Create; overload;
     constructor Create(const value: string); overload;
-    property Value: string read fValue;
+    constructor Create(value: Integer); overload;
+    constructor Create(value: Extended); overload;
+    constructor Create(value: Int64); overload;
+    constructor Create(value: Boolean); overload;
+    property Value: TValue read fValue;
     property HasValue: Boolean read GetHasValue;
   end;
 
@@ -431,7 +435,8 @@ end;
 
 constructor InjectAttribute.Create;
 begin
-  Create('');
+  inherited Create;
+  fValue := TValue.Empty;
 end;
 
 constructor InjectAttribute.Create(const value: string);
@@ -440,9 +445,33 @@ begin
   fValue := value;
 end;
 
+constructor InjectAttribute.Create(value: Integer);
+begin
+  inherited Create;
+  fValue := value;
+end;
+
+constructor InjectAttribute.Create(value: Extended);
+begin
+  inherited Create;
+  fValue := value;
+end;
+
+constructor InjectAttribute.Create(value: Int64);
+begin
+  inherited Create;
+  fValue := value;
+end;
+
+constructor InjectAttribute.Create(value: Boolean);
+begin
+  inherited Create;
+  fValue := value;
+end;
+
 function InjectAttribute.GetHasValue: Boolean;
 begin
-  Result := fValue <> '';
+  Result := not fValue.IsEmpty;
 end;
 
 { ImplementsAttribute }
