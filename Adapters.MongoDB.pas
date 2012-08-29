@@ -54,11 +54,11 @@ type
     property Connection: TMongoDBConnection read GetConnection;
   end;
 
-  TMongoResultSetAdapter = class(TDriverResultSetAdapter<TMongoWireQuery>)
+  TMongoResultSetAdapter = class(TDriverResultSetAdapter<TMongoDBQuery>)
   private
     FDoc: IBSONDocument;
   public
-    constructor Create(const ADataset: TMongoWireQuery); override;
+    constructor Create(const ADataset: TMongoDBQuery); override;
     destructor Destroy; override;
 
     function IsEmpty(): Boolean; override;
@@ -67,13 +67,15 @@ type
     function GetFieldValue(const AFieldname: string): Variant; overload; override;
     function GetFieldCount(): Integer; override;
     function GetFieldName(AIndex: Integer): string; override;
+
+    property Document: IBSONDocument read FDoc write FDoc;
   end;
 
   EMongoDBStatementAdapterException = Exception;
 
-  TMongoStatementAdapter = class(TDriverStatementAdapter<TMongoWireQuery>)
+  TMongoStatementAdapter = class(TDriverStatementAdapter<TMongoDBQuery>)
   public
-    constructor Create(const AStatement: TMongoWireQuery); override;
+    constructor Create(const AStatement: TMongoDBQuery); override;
     destructor Destroy; override;
     procedure SetSQLCommand(const ACommandText: string); override;
     procedure SetParams(Params: TEnumerable<TDBParam>); overload; override;
@@ -130,10 +132,10 @@ end;
 
 { TMongoResultSetAdapter }
 
-constructor TMongoResultSetAdapter.Create(const ADataset: TMongoWireQuery);
+constructor TMongoResultSetAdapter.Create(const ADataset: TMongoDBQuery);
 begin
   inherited Create(ADataset);
-  FDoc := BSON;
+  FDoc := nil;
 end;
 
 destructor TMongoResultSetAdapter.Destroy;
@@ -145,27 +147,34 @@ end;
 
 function TMongoResultSetAdapter.GetFieldCount: Integer;
 begin
-  Result := FDoc.GetFieldCount;
+  if Assigned(FDoc) then
+    Result := FDoc.GetFieldCount
+  else
+    Result := 0;
 end;
 
 function TMongoResultSetAdapter.GetFieldName(AIndex: Integer): string;
 begin
+  Assert(Assigned(FDoc), 'Document not assigned');
+
   Result := FDoc.GetItemKey(AIndex);
 end;
 
 function TMongoResultSetAdapter.GetFieldValue(const AFieldname: string): Variant;
 begin
+  Assert(Assigned(FDoc), 'Document not assigned');
   Result := FDoc[AFieldname];
 end;
 
 function TMongoResultSetAdapter.GetFieldValue(AIndex: Integer): Variant;
 begin
+  Assert(Assigned(FDoc), 'Document not assigned');
   Result := FDoc.GetItem(AIndex);
 end;
 
 function TMongoResultSetAdapter.IsEmpty: Boolean;
 begin
-  Result := Dataset.Next(FDoc);
+  Result := not Dataset.Next(FDoc);
 end;
 
 function TMongoResultSetAdapter.Next: Boolean;
@@ -175,7 +184,7 @@ end;
 
 { TMongoStatementAdapter }
 
-constructor TMongoStatementAdapter.Create(const AStatement: TMongoWireQuery);
+constructor TMongoStatementAdapter.Create(const AStatement: TMongoDBQuery);
 begin
   inherited Create(AStatement);
 
@@ -194,9 +203,9 @@ end;
 
 function TMongoStatementAdapter.ExecuteQuery: IDBResultSet;
 var
-  LQuery: TMongoWireQuery;
+  LQuery: TMongoDBQuery;
 begin
-  LQuery := TMongoWireQuery.Create(Statement.Owner);
+  LQuery := TMongoDBQuery.Create(Statement.Owner);
   Result := TMongoResultSetAdapter.Create(LQuery);
 end;
 
@@ -242,9 +251,9 @@ end;
 
 function TMongoConnectionAdapter.CreateStatement: IDBStatement;
 var
-  LStatement: TMongoWireQuery;
+  LStatement: TMongoDBQuery;
 begin
-  LStatement := TMongoWireQuery.Create(Connection);
+  LStatement := TMongoDBQuery.Create(Connection);
   Result := TMongoStatementAdapter.Create(LStatement);
 end;
 

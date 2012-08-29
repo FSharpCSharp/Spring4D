@@ -83,7 +83,8 @@ uses
   SQLiteTable3 in '..\External\SQLite3\Source\SQLiteTable3.pas',
   SQL.Generator.NoSQL in '..\SQL.Generator.NoSQL.pas',
   Adapters.MongoDB in '..\Adapters.MongoDB.pas',
-  mongoWire in '..\External\TMongoWire\mongoWire.pas';
+  mongoWire in '..\External\TMongoWire\mongoWire.pas',
+  TestAdapterMongoDB in 'TestAdapterMongoDB.pas';
 
 {$R *.RES}
 

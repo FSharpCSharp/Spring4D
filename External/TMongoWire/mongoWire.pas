@@ -169,8 +169,8 @@ var
   i,l:integer;
 begin
   FSocket.Close;
-  FSocket.RemoteHost:=ServerName;
-  FSocket.RemotePort:=IntToStr(Port);
+  FSocket.RemoteHost := AnsiString(ServerName);
+  FSocket.RemotePort := AnsiString(IntToStr(Port));
   FSocket.Open;
   if not FSocket.Connected then
     raise EMongoConnectFailed.Create('MongoWire: failed to connect to "'+ServerName+':'+IntToStr(Port)+'"');

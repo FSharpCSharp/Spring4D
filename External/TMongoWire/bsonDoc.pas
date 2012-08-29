@@ -264,7 +264,7 @@ var
       stmRead(@c,1);
      end;
     SetLength(s,sx);
-    Result:=UTF8Decode(s);
+    Result:=UTF8ToWideString(s);
   end;
   function stmReadString:WideString;
   var
@@ -282,7 +282,7 @@ var
     stmRead(@l,1);
     if l<>0 then
       raise EBSONException.Create('BSON string incorrectly terminated at offset '+IntToHex(lstart,8));
-    Result:=UTF8Decode(s);
+    Result:=UTF8ToWideString(s);
   end;
   {$IFDEF BSON_SUPPORT_REGEX}
   function stmReadRegEx:IRegExp2;
@@ -980,7 +980,7 @@ end;
 
 function TBSONDocument.GetFieldCount: Integer;
 begin
-  Result := Length(FElements);
+  Result := FElementIndex;
 end;
 
 function TBSONDocument.GetItem(AIndex: Integer): OLeVariant;
