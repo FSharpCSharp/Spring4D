@@ -1333,7 +1333,7 @@ end;
 
 procedure TFileSystemEntry.Refresh;
 begin
-  Create(FullName);
+  Self := TFileSystemEntry.Create(FullName);
 end;
 
 function TFileSystemEntry.GetDirectories: IEnumerable<TFileSystemEntry>;

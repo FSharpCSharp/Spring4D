@@ -35,9 +35,7 @@
 ///	      <b>Observer Pattern</b>
 ///	    </item>
 ///	    <item>
-///
-///	      <b><see cref="ISpecification&lt;T&gt;">Specification
-///	                Pattern</see></b>
+///	      <b><see cref="ISpecification&lt;T&gt;">Specification Pattern</see></b>
 ///	    </item>
 ///	  </list>
 ///	</summary>
