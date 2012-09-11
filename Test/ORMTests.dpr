@@ -92,14 +92,23 @@ uses
 
 begin
   Application.Initialize;
-  ReportMemoryLeaksOnShutdown := True;
   OutputDir := IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0)));
   PictureFilename := IncludeTrailingPathDelimiter(ExpandFileName(OutputDir + '..\..')) + 'DelphiOOP.png';
 
   if IsConsole then
-    with TextTestRunner.RunRegisteredTests do
-      Free
+  begin
+    with TextTestRunner.RunRegisteredTests(rxbHaltOnFailures) do
+    begin
+      //run automatically for CI
+      ReportMemoryLeaksOnShutdown := False;
+      ExitCode := FailureCount + ErrorCount;
+      Free;
+    end;
+  end
   else
+  begin
+    ReportMemoryLeaksOnShutdown := True;
     GUITestRunner.RunRegisteredTests;
+  end;
 end.
 
