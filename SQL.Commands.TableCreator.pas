@@ -46,6 +46,8 @@ type
     procedure Execute(AEntity: TObject); override;
 
     procedure CreateTables(AEntity: TClass);
+
+    property Table: TSQLTable read FTable;
   end;
 
 implementation

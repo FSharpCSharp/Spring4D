@@ -40,6 +40,8 @@ type
     procedure BuildSequences(AEntities: TList<TClass>); virtual;
   public
     procedure BuildDatabase();
+
+    function EntityExists(AEntityClass: TClass): Boolean;
   end;
 
   EODBCException = class(Exception);
@@ -169,6 +171,18 @@ begin
     finally
       LTableCreator.Free;
     end;
+  end;
+end;
+
+function TDatabaseManager.EntityExists(AEntityClass: TClass): Boolean;
+var
+  LTableCreator: TTableCreateExecutor;
+begin
+  LTableCreator := GetTableCreateExecutor(AEntityClass, Connection);
+  try
+    Result := LTableCreator.TableExists(LTableCreator.Table.Name);
+  finally
+    LTableCreator.Free;
   end;
 end;
 
