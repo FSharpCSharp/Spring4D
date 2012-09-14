@@ -72,17 +72,14 @@ type
   private
     FTable: TSQLTable;
     FFieldname: string;
-    FFreeTable: Boolean;
     function GetFieldname: string;
     function GetTable: TSQLTable;
   public
-    constructor Create(const AFieldname: string; ATable: TSQLTable; const AFreeTable: Boolean = False); virtual;
+    constructor Create(const AFieldname: string; ATable: TSQLTable); virtual;
     destructor Destroy; override;
 
     function GetFullFieldname(): string;
 
-
-    property AutoFreeTable: Boolean read FFreeTable write FFreeTable;
     property Fieldname: string read GetFieldname write FFieldname;
     property Table: TSQLTable read GetTable write FTable;
   end;
@@ -144,7 +141,7 @@ type
   private
     FWhereOperator: TWhereOperator;
   public
-    constructor Create(const AFieldname: string; ATable: TSQLTable); overload;
+    constructor Create(const AFieldname: string; ATable: TSQLTable); override;
 
     function ToSQLString(): string;
 
@@ -161,7 +158,7 @@ type
   private
     FOrderType: TOrderType;
   public
-    constructor Create(const AFieldname: string; ATable: TSQLTable); overload;
+    constructor Create(const AFieldname: string; ATable: TSQLTable); override;
 
     function GetFullOrderByFieldname(): string;
   
@@ -269,18 +266,15 @@ end;
 
 { TSQLField }
 
-constructor TSQLField.Create(const AFieldname: string; ATable: TSQLTable; const AFreeTable: Boolean);
+constructor TSQLField.Create(const AFieldname: string; ATable: TSQLTable);
 begin
   inherited Create;
   FFieldname := AFieldname;
   FTable := ATable;
-  FFreeTable := AFreeTable;
 end;
 
 destructor TSQLField.Destroy;
 begin
-  if FFreeTable then
-    FTable.Free;
   inherited Destroy;
 end;
 
