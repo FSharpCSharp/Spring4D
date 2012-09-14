@@ -207,21 +207,24 @@ var
   LMappedByCol: ColumnAttribute;
   LMappedByColname: string;
   LJoin: TSQLJoin;
+  i: Integer;
 begin
   LEntityData := TEntityCache.Get(AEntityClass);
+  i := 0;
 
   for LManyOneCol in LEntityData.ManyToOneColumns do
   begin
     LTable := TSQLTable.Create();
     LTable.SetFromAttribute(TRttiExplorer.GetTable(LManyOneCol.GetColumnTypeInfo));
     FTables.Add(LTable);
+    LTable.Alias := LTable.Alias + IntToStr(i);
 
     LMappedByCol := TManyToOneRelation.GetMappedByColumn(LManyOneCol, AEntityClass);
     LMappedByColname := LMappedByCol.Name;
     LMappedTableClass := TRttiExplorer.GetClassFromClassInfo(LManyOneCol.GetColumnTypeInfo);
     for LCol in TEntityCache.Get(LMappedTableClass).Columns do
     begin
-      LBuiltFieldname := TManyToOneRelation.BuildColumnName(LTable.Name, LMappedByColname, LCol.Name);
+      LBuiltFieldname := TManyToOneRelation.BuildColumnName(LTable.GetNameWithoutSchema, LMappedByColname, LCol.Name);
       LSelectField := TSQLSelectField.Create(LCol.Name + ' ' + LBuiltFieldname, LTable);
       FSelectFields.Add(LSelectField);
     end;
@@ -234,6 +237,7 @@ begin
     ));
 
     FJoins.Add(LJoin);
+    Inc(i);
   end;
 end;
 
