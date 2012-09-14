@@ -55,10 +55,12 @@ type
     FOrderByFields: TObjectList<TSQLOrderField>;
     FPrimaryKeyColumn: ColumnAttribute;
     FForeignColumn: ForeignJoinColumnAttribute;
+    FTables: TObjectList<TSQLTable>;
   public
     constructor Create(ATable: TSQLTable); override;
     destructor Destroy; override;
 
+    procedure SetAssociations(AEntityClass: TClass); virtual;
     procedure SetTable(AColumns: TList<ColumnAttribute>); override;
     procedure SetFromPrimaryColumn();
     procedure SetFromForeignColumn(ABaseTableClass, AForeignTableClass: TClass);
@@ -165,6 +167,7 @@ uses
   ,SysUtils
   ,StrUtils
   ,Generics.Defaults
+  ,Core.Relation.ManyToOne
   ;
 
 { TSelectCommand }
@@ -177,6 +180,7 @@ begin
   FWhereFields := TObjectList<TSQLWhereField>.Create;
   FGroupByFields := TObjectList<TSQLGroupByField>.Create;
   FOrderByFields := TObjectList<TSQLOrderField>.Create;
+  FTables := TObjectList<TSQLTable>.Create(True);
   FForeignColumn := nil;
 end;
 
@@ -187,7 +191,50 @@ begin
   FWhereFields.Free;
   FGroupByFields.Free;
   FOrderByFields.Free;
+  FTables.Free;
   inherited Destroy;
+end;
+
+procedure TSelectCommand.SetAssociations(AEntityClass: TClass);
+var
+  LEntityData: TEntityData;
+  LManyOneCol: ManyToOneAttribute;
+  LSelectField: TSQLSelectField;
+  LTable: TSQLTable;
+  LMappedTableClass: TClass;
+  LCol: ColumnAttribute;
+  LBuiltFieldname: string;
+  LMappedByCol: ColumnAttribute;
+  LMappedByColname: string;
+  LJoin: TSQLJoin;
+begin
+  LEntityData := TEntityCache.Get(AEntityClass);
+
+  for LManyOneCol in LEntityData.ManyToOneColumns do
+  begin
+    LTable := TSQLTable.Create();
+    LTable.SetFromAttribute(TRttiExplorer.GetTable(LManyOneCol.GetColumnTypeInfo));
+    FTables.Add(LTable);
+
+    LMappedByCol := TManyToOneRelation.GetMappedByColumn(LManyOneCol, AEntityClass);
+    LMappedByColname := LMappedByCol.Name;
+    LMappedTableClass := TRttiExplorer.GetClassFromClassInfo(LManyOneCol.GetColumnTypeInfo);
+    for LCol in TEntityCache.Get(LMappedTableClass).Columns do
+    begin
+      LBuiltFieldname := TManyToOneRelation.BuildColumnName(LTable.Name, LMappedByColname, LCol.Name);
+      LSelectField := TSQLSelectField.Create(LCol.Name + ' ' + LBuiltFieldname, LTable);
+      FSelectFields.Add(LSelectField);
+    end;
+    //add join
+    LJoin := TSQLJoin.Create(jtLeft);
+
+    LJoin.Segments.Add(TSQLJoinSegment.Create(
+      TSQLField.Create(TEntityCache.Get(LMappedTableClass).PrimaryKeyColumn.Name, LTable)
+      ,TSQLField.Create(LMappedByColname, Table)
+    ));
+
+    FJoins.Add(LJoin);
+  end;
 end;
 
 procedure TSelectCommand.SetFromForeignColumn(ABaseTableClass, AForeignTableClass: TClass);
@@ -238,7 +285,6 @@ begin
     LSelectField := TSQLSelectField.Create(LColumn.Name, FTable);
     FSelectFields.Add(LSelectField);
   end;
-
 end;
 
 { TInsertCommand }

@@ -45,6 +45,7 @@ type
   protected
     function IsEmpty(): Boolean; virtual; abstract;
     function Next(): Boolean; virtual; abstract;
+    function FieldnameExists(const AFieldName: string): Boolean; virtual; abstract;
     function GetFieldValue(AIndex: Integer): Variant; overload; virtual; abstract;
     function GetFieldValue(const AFieldname: string): Variant; overload; virtual; abstract;
     function GetFieldCount(): Integer; virtual; abstract;

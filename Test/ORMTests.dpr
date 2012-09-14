@@ -15,7 +15,6 @@ program ORMTests;
 {$ENDIF}
 
 uses
-//  FastMM4 in '..\External\FastMM\FastMM4.pas',
   Forms,
   SysUtils,
   TestFramework,
@@ -81,7 +80,9 @@ uses
   SQL.Generator.MySQL in '..\SQL.Generator.MySQL.pas',
   TestDatabaseManager in 'TestDatabaseManager.pas',
   SQLite3 in '..\External\SQLite3\Source\SQLite3.pas',
-  SQLiteTable3 in '..\External\SQLite3\Source\SQLiteTable3.pas';
+  SQLiteTable3 in '..\External\SQLite3\Source\SQLiteTable3.pas',
+  Core.Relation.Abstract in '..\Core.Relation.Abstract.pas',
+  Core.Relation.ManyToOne in '..\Core.Relation.ManyToOne.pas';
 
 {$R *.RES}
 

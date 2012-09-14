@@ -115,6 +115,8 @@
 			<DCCReference Include="TestDatabaseManager.pas"/>
 			<DCCReference Include="..\External\SQLite3\Source\SQLite3.pas"/>
 			<DCCReference Include="..\External\SQLite3\Source\SQLiteTable3.pas"/>
+			<DCCReference Include="..\Core.Relation.Abstract.pas"/>
+			<DCCReference Include="..\Core.Relation.ManyToOne.pas"/>
 			<None Include="Profiling\AQtimeModule1.aqt"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>

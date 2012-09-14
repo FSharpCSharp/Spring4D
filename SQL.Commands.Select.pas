@@ -103,6 +103,7 @@ begin
 
   FCommand.PrimaryKeyColumn := LCache.PrimaryKeyColumn;
   FCommand.SetTable(FColumns);
+  FCommand.SetAssociations(EntityClass);
 end;
 
 procedure TSelectExecutor.BuildParams(AEntity: TObject);

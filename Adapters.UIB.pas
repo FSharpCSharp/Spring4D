@@ -46,6 +46,7 @@ type
 
     function IsEmpty(): Boolean; override;
     function Next(): Boolean; override;
+    function FieldnameExists(const AFieldName: string): Boolean; override;
     function GetFieldValue(AIndex: Integer): Variant; overload; override;
     function GetFieldValue(const AFieldname: string): Variant; overload; override;
     function GetFieldCount(): Integer; override;
@@ -132,6 +133,11 @@ begin
     Dataset.Transaction.Free;
   Dataset.Free;
   inherited;
+end;
+
+function TUIBResultSetAdapter.FieldnameExists(const AFieldName: string): Boolean;
+begin
+  Result := FFieldCache.ContainsKey(UpperCase(AFieldName));
 end;
 
 function TUIBResultSetAdapter.GetFieldCount: Integer;

@@ -129,6 +129,10 @@ type
     property MappedBy: string read FMappedBy;
   end;
 
+  ManyToOneAttribute = class(ManyValuedAssociation)
+
+  end;
+
   JoinColumn = class(TORMAttribute)
   private
     FName: string;
@@ -177,6 +181,14 @@ type
     property Precision: Integer read FPrecision;
     property Scale: Integer read FScale;
     property Description: string read FDescription;
+  end;
+
+  TColumnData = record
+  public
+    Properties: TColumnProperties;
+    Name: string;
+    ColTypeInfo: PTypeInfo;
+    ClassMemberName: string;
   end;
 
   DiscriminatorValue = class(TORMAttribute)

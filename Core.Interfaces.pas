@@ -47,6 +47,7 @@ type
     ['{4FA97CFB-4992-4DAA-BB2A-B5CAF84B6B47}']
     function IsEmpty(): Boolean;
     function Next(): Boolean;
+    function FieldnameExists(const AFieldName: string): Boolean;
     function GetFieldValue(AIndex: Integer): Variant; overload;
     function GetFieldValue(const AFieldname: string): Variant; overload;
     function GetFieldCount(): Integer;

@@ -70,7 +70,9 @@ type
     class function GetPrimaryKeyValue(AEntity: TObject): TValue;
     class function GetRttiType(AEntity: TClass): TRttiType;
     class function GetSequence(AClass: TClass): SequenceAttribute;
-    class function GetTable(AClass: TClass): TableAttribute;
+    class function GetTable(AClass: TClass): TableAttribute; overload;
+    class function GetTable(AClassInfo: PTypeInfo): TableAttribute; overload;
+    class function GetClassFromClassInfo(AClassInfo: PTypeInfo): TClass;
     class function GetMemberTypeInfo(AClass: TClass; const AMemberName: string): PTypeInfo;
     class function GetUniqueConstraints(AClass: TClass): TList<UniqueConstraint>;
     class function HasSequence(AClass: TClass): Boolean;
@@ -505,6 +507,15 @@ begin
     end;
   end;
   Result := nil;
+end;
+
+class function TRttiExplorer.GetClassFromClassInfo(AClassInfo: PTypeInfo): TClass;
+var
+  LType: TRttiType;
+begin
+  LType := TRttiContext.Create.GetType(AClassInfo);
+  Assert(LType.IsInstance);
+  Result := LType.AsInstance.MetaclassType;
 end;
 
 class procedure TRttiExplorer.GetClassMembers<T>(AClass: TClass; AList: TList<T>);
@@ -988,6 +999,14 @@ end;
 class function TRttiExplorer.GetSequence(AClass: TClass): SequenceAttribute;
 begin
   Result := GetClassAttribute<SequenceAttribute>(AClass);
+end;
+
+class function TRttiExplorer.GetTable(AClassInfo: PTypeInfo): TableAttribute;
+var
+  LClass: TClass;
+begin
+  LClass := GetClassFromClassInfo(AClassInfo);
+  Result := GetTable(LClass);
 end;
 
 class function TRttiExplorer.GetTable(AClass: TClass): TableAttribute;

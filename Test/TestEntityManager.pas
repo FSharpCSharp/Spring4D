@@ -47,6 +47,7 @@ type
     procedure FindAll();
     procedure Enums();
     procedure Streams();
+    procedure ManyToOne();
   end;
 
   TInsertData = record
@@ -652,6 +653,57 @@ begin
     {$IFNDEF USE_SPRING}
     LCollection.Free;
     {$ENDIF}
+  end;
+end;
+
+const
+  SQL_MANY_TO_ONE: string = 'SELECT O.*, C.CUSTID CUSTOMERS_Customer_ID_CUSTID '+
+    ' ,C.CUSTNAME CUSTOMERS_Customer_ID_CUSTNAME, C.CUSTAGE CUSTOMERS_Customer_ID_CUSTAGE '+
+    ' FROM '+ TBL_ORDERS + ' O '+
+    ' LEFT OUTER JOIN ' + TBL_PEOPLE + ' C ON C.CUSTID=O.Customer_ID;';
+
+procedure TestTEntityManager.ManyToOne;
+var
+  LOrder: TCustomer_Orders;
+  LCustomer: TCustomer;
+  LID: Integer;
+begin
+  LCustomer := TCustomer.Create;
+  try
+    LCustomer.Name := 'ManyToOne';
+    LCustomer.Age := 15;
+
+    FManager.Save(LCustomer);
+
+    InsertCustomerOrder(LCustomer.ID, 1, 1, 100.50);
+
+    LOrder := FManager.Single<TCustomer_Orders>(SQL_MANY_TO_ONE, []);
+    CheckTrue(Assigned(LOrder), 'Cannot get Order from DB');
+    LID := LOrder.ORDER_ID;
+    CheckTrue(Assigned(LOrder.Customer), 'Cannot get customer (inside order) from DB');
+    CheckEqualsString(LCustomer.Name, LOrder.Customer.Name);
+    CheckEquals(LCustomer.Age, LOrder.Customer.Age);
+    FreeAndNil(LOrder);
+
+    LOrder := FManager.FindOne<TCustomer_Orders>(LID);
+    CheckTrue(Assigned(LOrder), 'Cannot get Order from DB');
+    CheckTrue(Assigned(LOrder.Customer), 'Cannot get customer (inside order) from DB');
+    CheckEqualsString(LCustomer.Name, LOrder.Customer.Name);
+    CheckEquals(LCustomer.Age, LOrder.Customer.Age);
+    FreeAndNil(LOrder);
+
+
+
+    ClearTable(TBL_PEOPLE);
+    LOrder := FManager.Single<TCustomer_Orders>(SQL_MANY_TO_ONE, []);
+    CheckTrue(Assigned(LOrder), 'Cannot get Order from DB');
+    CheckNotEqualsString(LCustomer.Name, LOrder.Customer.Name);
+    FreeAndNil(LOrder);
+
+
+
+  finally
+    LCustomer.Free;
   end;
 end;
 

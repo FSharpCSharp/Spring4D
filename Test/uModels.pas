@@ -122,7 +122,11 @@ type
     FORDER_ID: Integer;
     FCustomer_ID: Integer;
     FCustomer_Payment_Method_Id: Nullable<Integer>;
+    FCustomer: TCustomer;
   public
+    constructor Create(); virtual;
+    destructor Destroy; override;
+
     [Column('Order_Status_Code', [], 0, 0, 0, '')]
     property Order_Status_Code: Nullable<Integer> read FOrder_Status_Code write FOrder_Status_Code;
     [Column('Date_Order_Placed', [], 0, 0, 0, '')]
@@ -137,7 +141,8 @@ type
     property Customer_ID: Integer read FCustomer_ID write FCustomer_ID;
     [Column('Customer_Payment_Method_Id', [], 0, 0, 0, '')]
     property Customer_Payment_Method_Id: Nullable<Integer> read FCustomer_Payment_Method_Id write FCustomer_Payment_Method_Id;
-
+    [ManyToOne(ftEager, False, [ctCascadeAll], 'Customer_ID')]
+    property Customer: TCustomer read FCustomer write FCustomer;
   end;
 
  // [Entity]
@@ -314,6 +319,22 @@ end;
 procedure TCompany.SetLogo(const Value: TPicture);
 begin
   FLogo.Assign(Value);
+end;
+
+{ TCustomer_Orders }
+
+constructor TCustomer_Orders.Create;
+begin
+  inherited Create;
+  FCustomer := nil;
+end;
+
+destructor TCustomer_Orders.Destroy;
+begin
+  if Assigned(FCustomer) then
+    FCustomer.Free;
+
+  inherited Destroy;
 end;
 
 end.

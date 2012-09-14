@@ -38,13 +38,16 @@ type
   TEntityData = class
   private
     FColumns: TList<ColumnAttribute>;
+    FColumnsData: TList<TColumnData>;
     FForeignKeyColumns: TList<ForeignJoinColumnAttribute>;
     FPrimaryKeyColumn: ColumnAttribute;
     FTable: TableAttribute;
     FManyValuedColumns: TList<ManyValuedAssociation>;
+    FManyToOneColumns: TList<ManyToOneAttribute>;
     FSequence: SequenceAttribute;
   protected
     procedure SetEntityData(AClass: TClass); virtual;
+    procedure SetColumnsData(); virtual;
   public
     constructor Create(); virtual;
     destructor Destroy; override;
@@ -53,11 +56,13 @@ type
     function ColumnByMemberName(const AMemberName: string): ColumnAttribute;
     function ColumnByName(const AColumnName: string): ColumnAttribute;
     function HasSequence(): Boolean;
-
+    function HasManyToOneRelations(): Boolean;
 
     property Columns: TList<ColumnAttribute> read FColumns;
+    property ColumnsData: TList<TColumnData> read FColumnsData;
     property ForeignColumns: TList<ForeignJoinColumnAttribute> read FForeignKeyColumns;
     property ManyValuedColumns: TList<ManyValuedAssociation> read FManyValuedColumns;
+    property ManyToOneColumns: TList<ManyToOneAttribute> read FManyToOneColumns;
     property PrimaryKeyColumn: ColumnAttribute read FPrimaryKeyColumn;
     property Sequence: SequenceAttribute read FSequence write FSequence;
 
@@ -74,7 +79,7 @@ type
     class function Get(AClass: TClass): TEntityData;
     class function TryGet(AClass: TClass; out AEntityData: TEntityData): Boolean;
     class function GetColumns(AClass: TClass): TList<ColumnAttribute>;
-
+    class function GetColumnsData(AClass: TClass): TList<TColumnData>;
 
     class property Entities: TObjectDictionary<TClass, TEntityData> read FEntities;
   end;
@@ -115,21 +120,30 @@ constructor TEntityData.Create;
 begin
   inherited Create;
   FColumns := TList<ColumnAttribute>.Create;
+  FColumnsData := TList<TColumnData>.Create;
   FPrimaryKeyColumn := nil;
   FTable := nil;
   FSequence := nil;
   FForeignKeyColumns := TList<ForeignJoinColumnAttribute>.Create;
   FManyValuedColumns := TList<ManyValuedAssociation>.Create;
+  FManyToOneColumns := TList<ManyToOneAttribute>.Create;
 end;
 
 destructor TEntityData.Destroy;
 begin
   FColumns.Free;
+  FColumnsData.Free;
   FForeignKeyColumns.Free;
   FManyValuedColumns.Free;
+  FManyToOneColumns.Free;
   inherited Destroy;
 end;
 
+
+function TEntityData.HasManyToOneRelations: Boolean;
+begin
+  Result := FManyToOneColumns.Count > 0;
+end;
 
 function TEntityData.HasSequence: Boolean;
 begin
@@ -141,15 +155,35 @@ begin
   Result := Assigned(FTable);
 end;
 
+procedure TEntityData.SetColumnsData();
+var
+  LColData: TColumnData;
+  LCol: ColumnAttribute;
+begin
+  FColumnsData.Clear;
+
+  for LCol in FColumns do
+  begin
+    LColData.Properties := LCol.Properties;
+    LColData.Name := LCol.Name;
+    LColData.ColTypeInfo := LCol.GetColumnTypeInfo;
+    LColData.ClassMemberName := LCol.ClassMemberName;
+
+    FColumnsData.Add(LColData);
+  end;
+end;
+
 procedure TEntityData.SetEntityData(AClass: TClass);
 begin
   TRttiExplorer.GetColumns(AClass, FColumns);
+  SetColumnsData();
   FPrimaryKeyColumn := TRttiExplorer.GetPrimaryKeyColumn(AClass);
   if Assigned(FPrimaryKeyColumn) then
     FPrimaryKeyColumn.IsIdentity := TRttiExplorer.GetColumnIsIdentity(AClass, FPrimaryKeyColumn);
   FTable := TRttiExplorer.GetTable(AClass);
   TRttiExplorer.GetClassMembers<ForeignJoinColumnAttribute>(AClass, FForeignKeyColumns);
   TRttiExplorer.GetClassMembers<ManyValuedAssociation>(AClass, FManyValuedColumns);
+  TRttiExplorer.GetClassMembers<ManyToOneAttribute>(AClass, FManyToOneColumns);
   FSequence := TRttiExplorer.GetSequence(AClass);
 end;
 
@@ -180,6 +214,12 @@ end;
 class function TEntityCache.GetColumns(AClass: TClass): TList<ColumnAttribute>;
 begin
   Result := Get(AClass).Columns;
+end;
+
+class function TEntityCache.GetColumnsData(AClass: TClass): TList<TColumnData>;
+begin
+  Get(AClass).SetColumnsData();
+  Result := Get(AClass).ColumnsData;
 end;
 
 class function TEntityCache.TryGet(AClass: TClass; out AEntityData: TEntityData): Boolean;

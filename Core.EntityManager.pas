@@ -45,11 +45,14 @@ type
   private
     FOldStateEntities: TEntityMap;
   protected
-    procedure SetEntityColumns(AEntity: TObject; AColumns: TList<ColumnAttribute>; AResultset: IDBResultset); overload; virtual;
+    procedure SetEntityColumns(AEntity: TObject; AColumns: TList<TColumnData>; AResultset: IDBResultset); overload; virtual;
     procedure SetEntityColumns(AEntity: TObject; AColumns: TList<ManyValuedAssociation>; AResultset: IDBResultset); overload; virtual;
     procedure SetLazyColumns(AEntity: TObject);
+    procedure SetAssociations(AEntity: TObject; AResultset: IDBResultset); virtual;
 
     procedure DoSetEntity(var AEntityToCreate: TObject; AResultset: IDBResultset; ARealEntity: TObject); virtual;
+    procedure DoSetEntityValues(var AEntityToCreate: TObject; AResultset: IDBResultset; AColumns: TList<TColumnData>); virtual;
+
     function GetResultset(const ASql: string; const AParams: array of const): IDBResultset;
     function GetOne<T: class, constructor>(AResultset: IDBResultset; AEntity: TObject): T; overload;
     function GetOne(AResultset: IDBResultset; AClass: TClass): TObject; overload;
@@ -184,6 +187,7 @@ uses
   ,Core.EntityCache
   ,Core.Base
   ,SysUtils
+  ,Core.Relation.ManyToOne
   ;
 
 { TEntityManager }
@@ -261,7 +265,7 @@ end;
 
 procedure TEntityManager.DoSetEntity(var AEntityToCreate: TObject; AResultset: IDBResultset; ARealEntity: TObject);
 var
-  LColumns: TList<ColumnAttribute>;
+  LColumns: TList<TColumnData>;
   LResult, LValue: TValue;
   LVal: Variant;
 begin
@@ -285,12 +289,19 @@ begin
   end
   else
   begin
-    LColumns := TEntityCache.GetColumns(AEntityToCreate.ClassType);
-    SetEntityColumns(AEntityToCreate, LColumns, AResultset);
-    //we need to set internal values for the lazy type field
-    SetLazyColumns(AEntityToCreate);
-    FOldStateEntities.AddOrReplace(TRttiExplorer.Clone(AEntityToCreate));
+    LColumns := TEntityCache.GetColumnsData(AEntityToCreate.ClassType);
+    DoSetEntityValues(AEntityToCreate, AResultset, LColumns);
   end;
+end;
+
+procedure TEntityManager.DoSetEntityValues(var AEntityToCreate: TObject; AResultset: IDBResultset;
+  AColumns: TList<TColumnData>);
+begin
+  SetEntityColumns(AEntityToCreate, AColumns, AResultset);
+  //we need to set internal values for the lazy type field
+  SetLazyColumns(AEntityToCreate);
+  SetAssociations(AEntityToCreate, AResultset);
+  FOldStateEntities.AddOrReplace(TRttiExplorer.Clone(AEntityToCreate));
 end;
 
 function TEntityManager.Execute(const ASql: string; const AParams: array of const): NativeUInt;
@@ -708,6 +719,29 @@ begin
   end;
 end;
 
+procedure TEntityManager.SetAssociations(AEntity: TObject; AResultset: IDBResultset);
+var
+  LCol: TORMAttribute;
+  LEntityData: TEntityData;
+  LManyToOne: TManyToOneRelation;
+begin
+  LEntityData := TEntityCache.Get(AEntity.ClassType);
+
+  if LEntityData.HasManyToOneRelations then
+  begin
+    LManyToOne := TManyToOneRelation.Create;
+    try
+      for LCol in LEntityData.ManyToOneColumns do
+      begin
+        LManyToOne.SetAssociation(LCol, AEntity, AResultset);
+        DoSetEntityValues(LManyToOne.NewEntity, AResultset, LManyToOne.NewColumns);
+      end;
+    finally
+      LManyToOne.Free;
+    end;
+  end;
+end;
+
 procedure TEntityManager.SetEntityColumns(AEntity: TObject; AColumns: TList<ManyValuedAssociation>;
   AResultset: IDBResultset);
 var
@@ -735,28 +769,47 @@ begin
   end;
 end;
 
-procedure TEntityManager.SetEntityColumns(AEntity: TObject; AColumns: TList<ColumnAttribute>; AResultset: IDBResultset);
+procedure TEntityManager.SetEntityColumns(AEntity: TObject; AColumns: TList<TColumnData>; AResultset: IDBResultset);
 var
-  LCol, LPrimaryKeyColumn: ColumnAttribute;
+ // LPrimaryKeyColumn: ColumnAttribute;
+  LCol: TColumnData;
   LVal: Variant;
   LValue, LPrimaryKey: TValue;
   LTypeInfo: PTypeInfo;
 begin
-  LPrimaryKeyColumn := TEntityCache.Get(AEntity.ClassType).PrimaryKeyColumn;
+//  LPrimaryKeyColumn := TEntityCache.Get(AEntity.ClassType).PrimaryKeyColumn;
   //we must set primary key value first
-  if LPrimaryKeyColumn <> nil then
+ { if LPrimaryKeyColumn <> nil then
   begin
     LVal := AResultset.GetFieldValue(LPrimaryKeyColumn.Name);
     LPrimaryKey := TUtils.FromVariant(LVal);
     TRttiExplorer.SetMemberValue(Self, AEntity, LPrimaryKeyColumn, LPrimaryKey);
-  end;
+  end; }
 
   for LCol in AColumns do
   begin
     if (cpPrimaryKey in LCol.Properties) then
-      Continue;
+    begin
+      try
+        LVal := AResultset.GetFieldValue(LCol.Name);
+      except
+        raise EORMColumnNotFound.CreateFmt('Primary key column "%S" not found.', [LCol.Name]);
+      end;
+      LPrimaryKey := TUtils.FromVariant(LVal);
+      TRttiExplorer.SetMemberValue(Self, AEntity, LCol.ClassMemberName, LPrimaryKey);
+      Break;
+    end;
+  end;
 
-    LTypeInfo := LCol.GetTypeInfo(AEntity.ClassInfo);
+
+  for LCol in AColumns do
+  begin
+    if (cpPrimaryKey in LCol.Properties) then
+    begin
+      Continue;
+    end;
+
+    LTypeInfo := LCol.ColTypeInfo; //  GetTypeInfo(AEntity.ClassInfo);
     if (LTypeInfo <> nil) and (TUtils.IsLazyType(LTypeInfo)) then
     begin
       LValue := LPrimaryKey;
@@ -771,7 +824,7 @@ begin
       LValue := TUtils.FromVariant(LVal);
     end;
 
-    TRttiExplorer.SetMemberValue(Self, AEntity, LCol, LValue);
+    TRttiExplorer.SetMemberValue(Self, AEntity, LCol.ClassMemberName, LValue);
   end;
 end;
 

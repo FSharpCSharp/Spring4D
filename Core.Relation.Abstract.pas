@@ -25,65 +25,19 @@
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *)
-unit Core.Exceptions;
+unit Core.Relation.Abstract;
 
 interface
 
 uses
-  SysUtils;
+  Core.Interfaces, Mapping.Attributes;
 
 type
-  EBaseORMException = class(Exception)
-  public
-    constructor Create(AEntity: TObject); reintroduce; overload;
+  TAbstractRelation = class
+  protected
+    procedure SetAssociation(AAtribute: TORMAttribute; AEntity: TObject; AResultset: IDBResultset); virtual; abstract;
   end;
 
-  EEntityAlreadyPersisted = class(EBaseORMException);
-
-  ECannotPersististEntityWithId = class(EBaseORMException);
-
-  ETableNotSpecified = class(EBaseORMException);
-
-  EORMMethodNotImplemented = class(Exception);
-
-  EUnknownMember = class(Exception);
-
-  EORMEnumException = class(Exception);
-
-  EEntityManagerNotSet = class(Exception);
-
-  EUnknownJoinType = class(Exception);
-
-  EORMRecordNotFoundException = class(Exception);
-
-  EORMUpdateNotSuccessfulException = class(EBaseORMException);
-
-  EORMColumnCannotBeNull = class(EBaseORMException);
-
-  EORMColumnNotFound = class(EBaseORMException);
-
-  EORMContainerDoesNotHaveAddMethod = class(Exception);
-
-  EORMContainerDoesNotHaveClearMethod = class(Exception);
-
-  EORMContainerAddMustHaveOneParameter = class(Exception);
-
-  EORMContainerItemTypeNotSupported = class(Exception);
-
-  EORMUnsupportedType = class(Exception);
-
-  EORMConnectionAlreadyRegistered = class(Exception);
-  EORMConnectionNotRegistered = class(Exception);
-
-  EORMManyToOneMappedByColumnNotFound = class(Exception);
-
 implementation
-
-{ EBaseORMException }
-
-constructor EBaseORMException.Create(AEntity: TObject);
-begin
-  inherited Create(AEntity.ClassName);
-end;
 
 end.

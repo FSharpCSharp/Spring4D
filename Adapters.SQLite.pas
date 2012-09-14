@@ -38,6 +38,7 @@ type
   public
     function IsEmpty(): Boolean; override;
     function Next(): Boolean; override;
+    function FieldnameExists(const AFieldName: string): Boolean; override;
     function GetFieldValue(AIndex: Integer): Variant; overload; override;
     function GetFieldValue(const AFieldname: string): Variant; overload; override;
     function GetFieldCount(): Integer; override;
@@ -88,6 +89,11 @@ uses
 function TSQLiteResultSetAdapter.GetFieldValue(AIndex: Integer): Variant;
 begin
   Result := Dataset.Fields[AIndex].Value;
+end;
+
+function TSQLiteResultSetAdapter.FieldnameExists(const AFieldName: string): Boolean;
+begin
+  Result := (Dataset.FindField(AFieldName) <> nil);
 end;
 
 function TSQLiteResultSetAdapter.GetFieldCount: Integer;

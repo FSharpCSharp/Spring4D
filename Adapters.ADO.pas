@@ -48,6 +48,7 @@ type
 
     function IsEmpty(): Boolean; override;
     function Next(): Boolean; override;
+    function FieldnameExists(const AFieldName: string): Boolean; override;
     function GetFieldValue(AIndex: Integer): Variant; overload; override;
     function GetFieldValue(const AFieldname: string): Variant; overload; override;
     function GetFieldCount(): Integer; override;
@@ -139,6 +140,11 @@ begin
   FFieldCache.Free;
   Dataset.Free;
   inherited Destroy;
+end;
+
+function TADOResultSetAdapter.FieldnameExists(const AFieldName: string): Boolean;
+begin
+  Result := FFieldCache.ContainsKey(UpperCase(AFieldName));
 end;
 
 function TADOResultSetAdapter.GetFieldCount: Integer;
