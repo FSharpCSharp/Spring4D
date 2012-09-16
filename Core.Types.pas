@@ -185,7 +185,7 @@ type
     /// </summary>
     /// <param name="AValueFactory">Anonymous method which gets value</param>
     /// <param name="AOwnsObjects">Boolean property to specify if lazy value should free it's value when it goes out of scope</param>
-    constructor Create(AValue: T);
+    class function Create(const AValue: T): Lazy<T>; static;
 
     procedure Assign(const AValue: T);
     function IsValueCreated: Boolean;
@@ -511,9 +511,9 @@ begin
   end;
 end;
 
-constructor Lazy<T>.Create(AValue: T);
+class function Lazy<T>.Create(const AValue: T): Lazy<T>;
 begin
-  FLazy := TSvLazy<T>.Create(AValue, False);
+  Result.FLazy := TSvLazy<T>.Create(AValue, False);
 end;
 
 function Lazy<T>.GetDisableCache: Boolean;
@@ -554,7 +554,7 @@ end;
 
 class operator Lazy<T>.Implicit(const AValue: T): Lazy<T>;
 begin
-  Result := Lazy<T>.Create(AValue);
+  Result := Create(AValue);
 end;
 
 function Lazy<T>.IsValueCreated: Boolean;
