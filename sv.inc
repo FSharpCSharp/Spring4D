@@ -1,6 +1,6 @@
 {.$DEFINE LOAD_DYNAMICALLY}
  //define if you want to use Spring collections
-{$DEFINE USE_SPRING}
+{.$DEFINE USE_SPRING}
 //adapters
 {$DEFINE ADAPTER_SQLITE3}
 {$DEFINE ADAPTER_UIB}
