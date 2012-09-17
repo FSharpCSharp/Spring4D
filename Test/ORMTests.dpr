@@ -13,7 +13,7 @@ program ORMTests;
 {$IFDEF CONSOLE_TESTRUNNER}
 {$APPTYPE CONSOLE}
 {$ENDIF}
-
+{$I sv.inc}
 uses
   Forms,
   SysUtils,
