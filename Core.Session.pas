@@ -25,7 +25,7 @@
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *)
-unit Core.EntityManager;
+unit Core.Session;
 
 {$I sv.inc}
 interface
@@ -41,7 +41,7 @@ const
   IID_GETIMPLEMENTOR: TGUID = '{4C12C697-6FE2-4263-A2D8-85034F0D0E01}';
 
 type
-  TEntityManager = class(TAbstractManager)
+  TSession = class(TAbstractManager)
   private
     FOldStateEntities: TEntityMap;
   protected
@@ -118,9 +118,9 @@ type
     function FindAll<T: class, constructor>(): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
                                                   {$ELSE} TObjectList<T> {$ENDIF};
 
-    /// <summary>
-    /// Inserts model to the database
-    /// </summary>
+    ///	<summary>
+    ///	  Inserts model to the database
+    ///	</summary>
     procedure Insert(AEntity: TObject); overload;
     /// <summary>
     /// Inserts models to the database
@@ -192,13 +192,13 @@ uses
 
 { TEntityManager }
 
-constructor TEntityManager.Create(AConnection: IDBConnection);
+constructor TSession.Create(AConnection: IDBConnection);
 begin
   inherited Create(AConnection);
   FOldStateEntities := TEntityMap.Create(True);
 end;
 
-procedure TEntityManager.Delete(AEntity: TObject);
+procedure TSession.Delete(AEntity: TObject);
 var
   LDeleter: TDeleteExecutor;
 begin
@@ -213,7 +213,7 @@ begin
   FOldStateEntities.Remove(AEntity);
 end;
 
-procedure TEntityManager.Delete<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
+procedure TSession.Delete<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
       {$ELSE} TObjectList<T> {$ENDIF});
 var
   LEntity: T;
@@ -224,13 +224,13 @@ begin
   end;
 end;
 
-destructor TEntityManager.Destroy;
+destructor TSession.Destroy;
 begin
   FOldStateEntities.Free;
   inherited Destroy;
 end;
 
-function TEntityManager.DoGetLazy<T>(const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute; out AIsEnumerable: Boolean): IDBResultset;
+function TSession.DoGetLazy<T>(const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute; out AIsEnumerable: Boolean): IDBResultset;
 var
   LSelecter: TSelectExecutor;
   LBaseEntityClass, LEntityClass: TClass;
@@ -263,7 +263,7 @@ begin
   end;
 end;
 
-procedure TEntityManager.DoSetEntity(var AEntityToCreate: TObject; AResultset: IDBResultset; ARealEntity: TObject);
+procedure TSession.DoSetEntity(var AEntityToCreate: TObject; AResultset: IDBResultset; ARealEntity: TObject);
 var
   LColumns: TList<TColumnData>;
   LResult, LValue: TValue;
@@ -294,7 +294,7 @@ begin
   end;
 end;
 
-procedure TEntityManager.DoSetEntityValues(var AEntityToCreate: TObject; AResultset: IDBResultset;
+procedure TSession.DoSetEntityValues(var AEntityToCreate: TObject; AResultset: IDBResultset;
   AColumns: TList<TColumnData>);
 begin
   SetEntityColumns(AEntityToCreate, AColumns, AResultset);
@@ -304,7 +304,7 @@ begin
   FOldStateEntities.AddOrReplace(TRttiExplorer.Clone(AEntityToCreate));
 end;
 
-function TEntityManager.Execute(const ASql: string; const AParams: array of const): NativeUInt;
+function TSession.Execute(const ASql: string; const AParams: array of const): NativeUInt;
 var
   LStatement: IDBStatement;
 begin
@@ -316,7 +316,7 @@ begin
   Result := LStatement.Execute;
 end;
 
-function TEntityManager.ExecuteScalar<T>(const ASql: string; const AParams: array of const): T;
+function TSession.ExecuteScalar<T>(const ASql: string; const AParams: array of const): T;
 var
   LResults: IDBResultset;
   LVal: Variant;
@@ -332,7 +332,7 @@ begin
   end;
 end;
 
-procedure TEntityManager.Fetch<T>(const ASql: string; const AParams: array of const;
+procedure TSession.Fetch<T>(const ASql: string; const AParams: array of const;
   ACollection: {$IFDEF USE_SPRING} ICollection<T> {$ELSE} TObjectList<T> {$ENDIF});
 var
   LResults: IDBResultset;
@@ -342,7 +342,7 @@ begin
   Fetch<T>(LResults, ACollection);
 end;
 
-function TEntityManager.Fetch<T>(const ASql: string; const AParams: array of const): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
+function TSession.Fetch<T>(const ASql: string; const AParams: array of const): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
   {$ELSE} TObjectList<T> {$ENDIF};
 begin
   {$IFDEF USE_SPRING}
@@ -353,7 +353,7 @@ begin
   Fetch<T>(ASql, AParams, Result);
 end;
 
-procedure TEntityManager.Fetch<T>(AResultset: IDBResultset; ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
+procedure TSession.Fetch<T>(AResultset: IDBResultset; ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
   {$ELSE} TObjectList<T> {$ENDIF});
 var
   LCurrent: T;
@@ -368,7 +368,7 @@ begin
   end;
 end;
 
-function TEntityManager.Fetch<T>(AResultset: IDBResultset): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
+function TSession.Fetch<T>(AResultset: IDBResultset): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
   {$ELSE} TObjectList<T> {$ENDIF};
 begin
   {$IFDEF USE_SPRING}
@@ -379,7 +379,7 @@ begin
   Fetch<T>(AResultset, Result);
 end;
 
-function TEntityManager.FindAll<T>: {$IFDEF USE_SPRING} Spring.Collections.IList<T>
+function TSession.FindAll<T>: {$IFDEF USE_SPRING} Spring.Collections.IList<T>
   {$ELSE} TObjectList<T> {$ENDIF};
 var
   LEntityClass: TClass;
@@ -403,7 +403,7 @@ begin
   end;
 end;
 
-function TEntityManager.FindOne<T>(const AID: TValue): T;
+function TSession.FindOne<T>(const AID: TValue): T;
 var
   LSelecter: TSelectExecutor;
   LEntityClass: TClass;
@@ -431,7 +431,7 @@ begin
   end;
 end;
 
-function TEntityManager.First<T>(const ASql: string; const AParams: array of const): T;
+function TSession.First<T>(const ASql: string; const AParams: array of const): T;
 var
   LResults: IDBResultset;
 begin
@@ -442,7 +442,7 @@ begin
   Result := GetOne<T>(LResults, nil);
 end;
 
-function TEntityManager.FirstOrDefault<T>(const ASql: string; const AParams: array of const): T;
+function TSession.FirstOrDefault<T>(const ASql: string; const AParams: array of const): T;
 begin
   try
     Result := First<T>(ASql, AParams);
@@ -453,7 +453,7 @@ end;
 
 
 
-procedure TEntityManager.SetInterfaceList<T>(var AValue: T; AResultset: IDBResultset);
+procedure TSession.SetInterfaceList<T>(var AValue: T; AResultset: IDBResultset);
 var
   LCurrent: TObject;
   LEntityClass: TClass;
@@ -493,7 +493,7 @@ begin
   end;
 end;
 
-procedure TEntityManager.SetLazyValue<T>(var AValue: T; const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute);
+procedure TSession.SetLazyValue<T>(var AValue: T; const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute);
 var
   IsEnumerable: Boolean;
   LResults: IDBResultset;
@@ -518,7 +518,7 @@ begin
     SetOne<T>(AValue, LResults, AEntity);
 end;
 
-procedure TEntityManager.SetOne<T>(var AValue: T; AResultset: IDBResultset; AEntity: TObject);
+procedure TSession.SetOne<T>(var AValue: T; AResultset: IDBResultset; AEntity: TObject);
 var
   LValue, LConverted: TValue;
   LType: TRttiType;
@@ -539,14 +539,13 @@ begin
   end;
 end;
 
-function TEntityManager.GetLazyValueClass<T>(const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute): T;
+function TSession.GetLazyValueClass<T>(const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute): T;
 var
   IsEnumerable: Boolean;
   LResults: IDBResultset;
 begin
   if not Assigned(AEntity) or AID.IsEmpty then
     Exit(System.Default(T));
-
 
   LResults := DoGetLazy<T>(AID, AEntity, AColumn, IsEnumerable);
 
@@ -556,7 +555,7 @@ begin
     Result := GetOne<T>(LResults, AEntity);
 end;
 
-function TEntityManager.GetObjectList<T>(AResultset: IDBResultset): T;
+function TSession.GetObjectList<T>(AResultset: IDBResultset): T;
 var
   LCurrent: TObject;
   LEntityClass: TClass;
@@ -595,19 +594,19 @@ begin
   end;
 end;
 
-function TEntityManager.GetOne(AResultset: IDBResultset; AClass: TClass): TObject;
+function TSession.GetOne(AResultset: IDBResultset; AClass: TClass): TObject;
 begin
   Result := AClass.Create;
   DoSetEntity(Result, AResultset, nil);
 end;
 
-function TEntityManager.GetOne<T>(AResultset: IDBResultset; AEntity: TObject): T;
+function TSession.GetOne<T>(AResultset: IDBResultset; AEntity: TObject): T;
 begin
   Result := T.Create;
   DoSetEntity(TObject(Result), AResultset, AEntity);
 end;
 
-function TEntityManager.GetQueryCount(const ASql: string; const AParams: array of const): Int64;
+function TSession.GetQueryCount(const ASql: string; const AParams: array of const): Int64;
 var
   LGenerator: ISQLGenerator;
   LSQL: string;
@@ -623,7 +622,7 @@ begin
   end;
 end;
 
-function TEntityManager.GetResultset(const ASql: string;
+function TSession.GetResultset(const ASql: string;
   const AParams: array of const): IDBResultset;
 var
   LStmt: IDBStatement;
@@ -647,12 +646,12 @@ begin
   end;
 end;
 
-function TEntityManager.GetSelector(AClass: TClass): TObject;
+function TSession.GetSelector(AClass: TClass): TObject;
 begin
   Result := CommandFactory.GetCommand<TSelectExecutor>(AClass, Connection);
 end;
 
-procedure TEntityManager.Insert(AEntity: TObject);
+procedure TSession.Insert(AEntity: TObject);
 var
   LInserter: TInsertExecutor;
 begin
@@ -668,7 +667,7 @@ begin
   end;
 end;
 
-procedure TEntityManager.Insert<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
+procedure TSession.Insert<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
       {$ELSE} TObjectList<T> {$ENDIF});
 var
   LEntity: T;
@@ -679,12 +678,12 @@ begin
   end;
 end;
 
-function TEntityManager.IsNew(AEntity: TObject): Boolean;
+function TSession.IsNew(AEntity: TObject): Boolean;
 begin
   Result := not FOldStateEntities.IsMapped(AEntity);
 end;
 
-function TEntityManager.Page<T>(APage, AItemsPerPage: Integer; const ASql: string;
+function TSession.Page<T>(APage, AItemsPerPage: Integer; const ASql: string;
   const AParams: array of const): IDBPage<T>;
 var
   LPager: TPager;
@@ -700,7 +699,7 @@ begin
   Fetch<T>(LSQL, AParams, Result.Items);
 end;
 
-procedure TEntityManager.Save(AEntity: TObject);
+procedure TSession.Save(AEntity: TObject);
 begin
   if IsNew(AEntity) then
     Insert(AEntity)
@@ -708,7 +707,7 @@ begin
     Update(AEntity);
 end;
 
-procedure TEntityManager.Save<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
+procedure TSession.Save<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
       {$ELSE} TObjectList<T> {$ENDIF});
 var
   LEntity: T;
@@ -719,7 +718,7 @@ begin
   end;
 end;
 
-procedure TEntityManager.SetAssociations(AEntity: TObject; AResultset: IDBResultset);
+procedure TSession.SetAssociations(AEntity: TObject; AResultset: IDBResultset);
 var
   LCol: TORMAttribute;
   LEntityData: TEntityData;
@@ -742,7 +741,7 @@ begin
   end;
 end;
 
-procedure TEntityManager.SetEntityColumns(AEntity: TObject; AColumns: TList<ManyValuedAssociation>;
+procedure TSession.SetEntityColumns(AEntity: TObject; AColumns: TList<ManyValuedAssociation>;
   AResultset: IDBResultset);
 var
   LCol: ManyValuedAssociation;
@@ -757,7 +756,7 @@ begin
   end;
 end;
 
-procedure TEntityManager.SetLazyColumns(AEntity: TObject);
+procedure TSession.SetLazyColumns(AEntity: TObject);
 var
   LCol: ManyValuedAssociation;
   LValue: TValue;
@@ -769,38 +768,23 @@ begin
   end;
 end;
 
-procedure TEntityManager.SetEntityColumns(AEntity: TObject; AColumns: TList<TColumnData>; AResultset: IDBResultset);
+procedure TSession.SetEntityColumns(AEntity: TObject; AColumns: TList<TColumnData>; AResultset: IDBResultset);
 var
- // LPrimaryKeyColumn: ColumnAttribute;
   LCol: TColumnData;
   LVal: Variant;
   LValue, LPrimaryKey: TValue;
   LTypeInfo: PTypeInfo;
 begin
-//  LPrimaryKeyColumn := TEntityCache.Get(AEntity.ClassType).PrimaryKeyColumn;
-  //we must set primary key value first
- { if LPrimaryKeyColumn <> nil then
+  if TUtils.TryGetPrimaryKeyColumn(AColumns, LCol) then
   begin
-    LVal := AResultset.GetFieldValue(LPrimaryKeyColumn.Name);
-    LPrimaryKey := TUtils.FromVariant(LVal);
-    TRttiExplorer.SetMemberValue(Self, AEntity, LPrimaryKeyColumn, LPrimaryKey);
-  end; }
-
-  for LCol in AColumns do
-  begin
-    if (cpPrimaryKey in LCol.Properties) then
-    begin
-      try
-        LVal := AResultset.GetFieldValue(LCol.Name);
-      except
-        raise EORMColumnNotFound.CreateFmt('Primary key column "%S" not found.', [LCol.Name]);
-      end;
-      LPrimaryKey := TUtils.FromVariant(LVal);
-      TRttiExplorer.SetMemberValue(Self, AEntity, LCol.ClassMemberName, LPrimaryKey);
-      Break;
+    try
+      LVal := AResultset.GetFieldValue(LCol.Name);
+    except
+      raise EORMColumnNotFound.CreateFmt('Primary key column "%S" not found.', [LCol.Name]);
     end;
+    LPrimaryKey := TUtils.FromVariant(LVal);
+    TRttiExplorer.SetMemberValue(Self, AEntity, LCol.ClassMemberName, LPrimaryKey);
   end;
-
 
   for LCol in AColumns do
   begin
@@ -828,17 +812,17 @@ begin
   end;
 end;
 
-function TEntityManager.Single<T>(const ASql: string; const AParams: array of const): T;
+function TSession.Single<T>(const ASql: string; const AParams: array of const): T;
 begin
   Result := First<T>(ASql, AParams);
 end;
 
-function TEntityManager.SingleOrDefault<T>(const ASql: string; const AParams: array of const): T;
+function TSession.SingleOrDefault<T>(const ASql: string; const AParams: array of const): T;
 begin
   Result := FirstOrDefault<T>(ASql, AParams);
 end;
 
-procedure TEntityManager.Update(AEntity: TObject);
+procedure TSession.Update(AEntity: TObject);
 var
   LUpdater: TUpdateExecutor;
 begin
@@ -855,7 +839,7 @@ begin
   end;
 end;
 
-procedure TEntityManager.Update<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
+procedure TSession.Update<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
       {$ELSE} TObjectList<T> {$ENDIF});
 var
   LEntity: T;

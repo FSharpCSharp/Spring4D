@@ -13,7 +13,7 @@ interface
 
 uses
   TestFramework, Adapters.ASA, SysUtils, Adapters.ADO, ADODB, Core.Interfaces, uModels
-  ,Generics.Collections, Core.EntityManager, SQL.Generator.ASA;
+  ,Generics.Collections, Core.Session, SQL.Generator.ASA;
 
 type
   // Test methods for class TASAConnectionAdapter
@@ -42,7 +42,7 @@ type
   TestASAAdapter = class(TTestCase)
   private
     FConnection: IDBConnection;
-    FManager: TEntityManager;
+    FManager: TSession;
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -134,7 +134,7 @@ procedure TestASAAdapter.SetUp;
 begin
   inherited;
   FConnection := TConnectionFactory.GetInstance(dtASA, TestDB);
-  FManager := TEntityManager.Create(FConnection);
+  FManager := TSession.Create(FConnection);
 end;
 
 procedure TestASAAdapter.TearDown;

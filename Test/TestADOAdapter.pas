@@ -15,8 +15,8 @@ interface
 
 uses
   TestFramework, ADODB, Generics.Collections, Adapters.ADO, Core.Base, SysUtils,
-  SQL.Params, Core.Interfaces, SQL.Generator.Ansi, Adapters.MSSQL, Core.EntityManager
-  ,uModels, VARTOTMASTModel, SQL.Generator.MSSQL, Core.DatabaseManager;
+  SQL.Params, Core.Interfaces, SQL.Generator.Ansi, Adapters.MSSQL, Core.Session
+  ,uModels, VARTOTMASTModel, SQL.Generator.MSSQL, Core.DatabaseManager, Classes;
 
 type
   // Test methods for class TADOResultSetAdapter
@@ -94,7 +94,7 @@ type
   TestMSSQLAdapter = class(TTestCase)
   private
     FConnection: IDBConnection;
-    FManager: TEntityManager;
+    FManager: TSession;
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -482,7 +482,7 @@ procedure TestMSSQLAdapter.SetUp;
 begin
   inherited;
   FConnection := TConnectionFactory.GetInstance(dtMSSQL, TestDB);
-  FManager := TEntityManager.Create(FConnection);
+  FManager := TSession.Create(FConnection);
 end;
 
 procedure TestMSSQLAdapter.TearDown;

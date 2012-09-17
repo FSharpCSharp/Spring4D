@@ -5,9 +5,9 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ActnList, Menus, ComCtrls
-  ,Core.EntityManager, Core.Interfaces
+  ,Core.Session, Core.Interfaces
   ,Spring.Collections
-  ,ProductModel
+  ,ProductModel, System.Actions
   ;
 
 type
@@ -48,20 +48,20 @@ type
     { Private declarations }
     FConnection: IDBConnection;
     FProducts: IList<TProduct>;
-    FEntityManager: TEntityManager;
+    FSession: TSession;
   protected
     procedure DoBuildDatabase();
     procedure DoAddNewProduct();
     procedure DoEditProduct();
     procedure DoRemoveProduct();
-    procedure DoRefreshProducts();
+    procedure DoRepaint();
     procedure DoReLoadProducts();
     procedure DoCommitChanges();
     procedure DoCheckEntities();
   public
     { Public declarations }
     property Connection: IDBConnection read FConnection;
-    property EntityManager: TEntityManager read FEntityManager;
+    property Session: TSession read FSession;
   end;
 
 var
@@ -124,7 +124,7 @@ begin
     if LConfirmed  then
     begin
       FProducts.Add(LProduct);
-      DoRefreshProducts();
+      DoRepaint();
     end;
   finally
     if not LConfirmed then
@@ -164,8 +164,8 @@ procedure TfrmMain.DoCommitChanges;
 var
   LTran: IDBTransaction;
 begin
-  LTran := FEntityManager.Connection.BeginTransaction;
-  FEntityManager.Save<TProduct>(FProducts);
+  LTran := FSession.Connection.BeginTransaction;
+  FSession.Save<TProduct>(FProducts);
   LTran.Commit;
 end;
 
@@ -176,11 +176,11 @@ begin
   LProduct := FProducts[lvProducts.Selected.Index];
   if TfrmEditProduct.Edit(LProduct) then
   begin
-    DoRefreshProducts;
+    DoRepaint;
   end;
 end;
 
-procedure TfrmMain.DoRefreshProducts;
+procedure TfrmMain.DoRepaint;
 begin
   lvProducts.Items.Count := FProducts.Count;
   lvProducts.Invalidate;
@@ -191,8 +191,8 @@ procedure TfrmMain.DoReLoadProducts;
 begin
   lvProducts.Items.BeginUpdate;
   try
-    FProducts := FEntityManager.FindAll<TProduct>();
-    DoRefreshProducts();
+    FProducts := FSession.FindAll<TProduct>();
+    DoRepaint();
   finally
     lvProducts.Items.EndUpdate;
   end;
@@ -203,9 +203,9 @@ var
   LProduct: TProduct;
 begin
   LProduct := FProducts[lvProducts.Selected.Index];
-  FEntityManager.Delete(LProduct);
+  FSession.Delete(LProduct);
   FProducts.Remove(LProduct);
-  DoRefreshProducts();
+  DoRepaint();
 end;
 
 procedure TfrmMain.FormCreate(Sender: TObject);
@@ -215,16 +215,16 @@ begin
   LConnJson := IncludeTrailingPathDelimiter( ExpandFileName(IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0))) + '..\..\') )
     + 'Config\Conn_Sqlite.json';
   FConnection := TConnectionFactory.GetInstanceFromFilename(dtSQLite, LConnJson);
-  FEntityManager := TEntityManager.Create(FConnection);
+  FSession := TSession.Create(FConnection);
   FProducts := TCollections.CreateObjectList<TProduct>(True);
   DoCheckEntities();
-  DoRefreshProducts();
+  DoRepaint();
 end;
 
 procedure TfrmMain.FormDestroy(Sender: TObject);
 begin
   FProducts := nil;
-  FEntityManager.Free;
+  FSession.Free;
 end;
 
 procedure TfrmMain.lvProductsData(Sender: TObject; Item: TListItem);

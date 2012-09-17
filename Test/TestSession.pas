@@ -1,4 +1,4 @@
-unit TestEntityManager;
+unit TestSession;
 {
 
   Delphi DUnit Test Case
@@ -15,15 +15,15 @@ interface
 
 uses
   TestFramework, Windows, Forms, Dialogs, Controls, Classes, SysUtils,
-  Variants, Graphics, Messages, StdCtrls, Core.EntityManager, Core.Interfaces
+  Variants, Graphics, Messages, StdCtrls, Core.Session, Core.Interfaces
   ,uModels, Rtti;
 
 type
 
-  TestTEntityManager = class(TTestCase)
+  TestTSession = class(TTestCase)
   private
     FConnection: IDBConnection;
-    FManager: TEntityManager;
+    FManager: TSession;
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -164,7 +164,7 @@ begin
 end;
 
 
-procedure TestTEntityManager.Delete;
+procedure TestTSession.Delete;
 var
   LCustomer: TCustomer;
   sSql: string;
@@ -191,7 +191,7 @@ end;
 const
   SQL_EXEC_SCALAR = 'SELECT COUNT(*) FROM ' + TBL_PEOPLE + ';';
 
-procedure TestTEntityManager.Enums;
+procedure TestTSession.Enums;
 var
   LCustomer: TCustomer;
   iLastID: Integer;
@@ -230,12 +230,12 @@ begin
   end;
 end;
 
-procedure TestTEntityManager.Execute;
+procedure TestTSession.Execute;
 begin
   FManager.Execute('INSERT INTO CUSTOMERS SELECT * FROM CUSTOMERS;', []);
 end;
 
-procedure TestTEntityManager.ExecuteScalar;
+procedure TestTSession.ExecuteScalar;
 var
   LRes: Integer;
 begin
@@ -246,7 +246,7 @@ begin
   CheckEquals(1, LRes);
 end;
 
-procedure TestTEntityManager.ExecutionListeners;
+procedure TestTSession.ExecutionListeners;
 var
   sLog, sLog2, sSql: string;
   iParamCount1, iParamCount2: Integer;
@@ -319,7 +319,7 @@ begin
   end;
 end;
 
-procedure TestTEntityManager.Fetch;
+procedure TestTSession.Fetch;
 var
   LCollection: {$IFDEF USE_SPRING} Spring.Collections.IList<TCustomer> {$ELSE} TObjectList<TCustomer> {$ENDIF} ;
   sSql: string;
@@ -352,7 +352,7 @@ begin
   {$ENDIF}
 end;
 
-procedure TestTEntityManager.FindAll;
+procedure TestTSession.FindAll;
 var
   LCollection: {$IFDEF USE_SPRING} Spring.Collections.IList<TCustomer> {$ELSE} TObjectList<TCustomer> {$ENDIF} ;
   i: Integer;
@@ -377,7 +377,7 @@ begin
   {$ENDIF}
 end;
 
-procedure TestTEntityManager.FindOne;
+procedure TestTSession.FindOne;
 var
   LCustomer: TCustomer;
   RowID: Integer;
@@ -396,7 +396,7 @@ begin
   end;
 end;
 
-procedure TestTEntityManager.First;
+procedure TestTSession.First;
 var
   LCustomer: TCustomer;
   sSql: string;
@@ -444,7 +444,7 @@ begin
   end;
 end;
 
-procedure TestTEntityManager.GetLazyNullable;
+procedure TestTSession.GetLazyNullable;
 var
   LCustomer: TCustomer;
   fsPic: TFileStream;
@@ -472,7 +472,7 @@ begin
   end;
 end;
 
-procedure TestTEntityManager.GetLazyValue;
+procedure TestTSession.GetLazyValue;
 var
   LCustomer: TCustomer;
   LList: IList<TCustomer_Orders>;
@@ -527,7 +527,7 @@ begin
   end;
 end;
 
-procedure TestTEntityManager.GetLazyValueClass;
+procedure TestTSession.GetLazyValueClass;
 var
   LCustomer: TCustomer;
   LOrder: TCustomer_Orders;
@@ -570,7 +570,7 @@ begin
   end;
 end;
 
-procedure TestTEntityManager.Insert;
+procedure TestTSession.Insert;
 var
   LCustomer: TCustomer;
   LTable: ISQLiteTable;
@@ -618,7 +618,7 @@ begin
   end;
 end;
 
-procedure TestTEntityManager.InsertFromCollection;
+procedure TestTSession.InsertFromCollection;
 var
   LCollection: {$IFDEF USE_SPRING} Spring.Collections.IList<TCustomer> {$ELSE} TObjectList<TCustomer> {$ENDIF} ;
   LCustomer: TCustomer;
@@ -662,7 +662,7 @@ const
     ' FROM '+ TBL_ORDERS + ' O '+
     ' LEFT OUTER JOIN ' + TBL_PEOPLE + ' C ON C.CUSTID=O.Customer_ID;';
 
-procedure TestTEntityManager.ManyToOne;
+procedure TestTSession.ManyToOne;
 var
   LOrder: TCustomer_Orders;
   LCustomer: TCustomer;
@@ -707,7 +707,7 @@ begin
   end;
 end;
 
-procedure TestTEntityManager.Nullable;
+procedure TestTSession.Nullable;
 var
   LCustomer: TCustomer;
 begin
@@ -729,7 +729,7 @@ begin
   end;
 end;
 
-procedure TestTEntityManager.Page;
+procedure TestTSession.Page;
 var
   LPage: IDBPage<TCustomer>;
   i: Integer;
@@ -748,13 +748,13 @@ begin
   CheckEquals(10, LPage.Items.Count);
 end;
 
-procedure TestTEntityManager.SetUp;
+procedure TestTSession.SetUp;
 begin
   FConnection := TConnectionFactory.GetInstance(dtSQLite, TestDB);
-  FManager := TEntityManager.Create(FConnection);
+  FManager := TSession.Create(FConnection);
 end;
 
-procedure TestTEntityManager.Streams;
+procedure TestTSession.Streams;
 var
   LCustomer: TCustomer;
   LResults: ISQLiteTable;
@@ -783,14 +783,14 @@ begin
   end;
 end;
 
-procedure TestTEntityManager.TearDown;
+procedure TestTSession.TearDown;
 begin
   ClearTable(TBL_PEOPLE);
   ClearTable(TBL_ORDERS);
   FManager.Free;
 end;
 
-procedure TestTEntityManager.Update;
+procedure TestTSession.Update;
 var
   LCustomer: TCustomer;
   sSql: string;
@@ -842,7 +842,7 @@ end;
 
 initialization
   // Register any test cases with the test runner
-  RegisterTest(TestTEntityManager.Suite);
+  RegisterTest(TestTSession.Suite);
 
   TestDB := TSQLiteDatabase.Create(':memory:');
   TestDB.OnAfterOpen := TSQLiteEvents.DoOnAfterOpen;

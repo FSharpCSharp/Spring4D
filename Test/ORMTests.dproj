@@ -52,7 +52,7 @@
         <VerInfo_Locale>1033</VerInfo_Locale>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
-        <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
+        <DCC_Namespace>System.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
         <Icon_MainIcon>ORMTests_Icon2.ico</Icon_MainIcon>
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
     </PropertyGroup>
@@ -82,11 +82,11 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="TestEntityManager.pas"/>
+        <DCCReference Include="TestSession.pas"/>
         <DCCReference Include="..\Core.AbstractManager.pas"/>
         <DCCReference Include="..\Core.Interfaces.pas"/>
         <DCCReference Include="..\SQL.Params.pas"/>
-        <DCCReference Include="..\Core.EntityManager.pas"/>
+        <DCCReference Include="..\Core.Session.pas"/>
         <DCCReference Include="..\Core.EntityMap.pas"/>
         <DCCReference Include="..\Core.DatabaseManager.pas"/>
         <DCCReference Include="..\SQL.AbstractCommandExecutor.pas"/>
@@ -204,6 +204,7 @@
                 <Platform value="Win32">True</Platform>
                 <Platform value="Win64">False</Platform>
             </Platforms>
+            <ModelSupport>False</ModelSupport>
         </BorlandProject>
         <ProjectFileVersion>12</ProjectFileVersion>
     </ProjectExtensions>

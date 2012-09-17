@@ -30,7 +30,8 @@ unit Core.Utils;
 interface
 
 uses
-  Rtti, TypInfo, DB, Graphics, Classes, SysUtils, Mapping.Attributes;
+  Rtti, TypInfo, DB, Graphics, Classes, SysUtils, Mapping.Attributes
+  ,Generics.Collections;
 
 type
   TUtils = class sealed
@@ -52,6 +53,7 @@ type
     class function IsLazyType(ATypeInfo: PTypeInfo): Boolean;
     class function TryGetNullableTypeValue(const ANullable: TValue; out AValue: TValue): Boolean;
     class function TryGetLazyTypeValue(const ALazy: TValue; out AValue: TValue): Boolean;
+    class function TryGetPrimaryKeyColumn(AColumns: TList<TColumnData>; out AColumn: TColumnData): Boolean;
     class function InitLazyRecord(const AFrom: TValue; ATo: PTypeInfo; ARttiMember: TRttiNamedObject; AEntity: TObject): TValue;
   end;
 
@@ -60,14 +62,13 @@ implementation
 uses
   Core.Reflection
   ,Core.Exceptions
-  ,Core.EntityManager
+  ,Core.Session
   ,Mapping.RttiExplorer
   ,Core.EntityCache
   ,jpeg
   ,pngimage
   ,GIFImg
   ,Variants
-  ,Generics.Collections
   ,StrUtils
   ;
 
@@ -204,6 +205,22 @@ begin
       AValue := LValueField.GetValue(ANullable.GetReferenceToRawData);
     end;
   end;
+end;
+
+class function TUtils.TryGetPrimaryKeyColumn(AColumns: TList<TColumnData>;
+  out AColumn: TColumnData): Boolean;
+var
+  LCol: TColumnData;
+begin
+  for LCol in AColumns do
+  begin
+    if (cpPrimaryKey in LCol.Properties) then
+    begin
+      AColumn := LCol;
+      Exit(True);
+    end;
+  end;
+  Result := False;
 end;
 
 class function TUtils.IsEnumerable(AObject: TObject; out AEnumeratorMethod: TRttiMethod): Boolean;
