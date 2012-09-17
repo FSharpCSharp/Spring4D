@@ -317,11 +317,11 @@ begin
 
   for LColumn in AColumns do
   begin
-    if not (cpDontInsert in LColumn.Properties) then
+    if not (cpDontInsert in LColumn.Properties) and not LColumn.IsIdentity then  //fixes #22
     begin
       LField := TSQLField.Create(LColumn.Name, FTable);
       FInsertFields.Add(LField);
-    end
+    end;
   end;
 end;
 
