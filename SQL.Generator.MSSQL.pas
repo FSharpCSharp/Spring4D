@@ -55,7 +55,7 @@ uses
 
 function TMSSQLServerSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
 begin
-  Result := 'SELECT SCOPE_IDENTITY();';
+  Result := 'SELECT CAST( ISNULL(SCOPE_IDENTITY(), @@IDENTITY) AS BIGINT) AS _IDENTITY;';
 end;
 
 function TMSSQLServerSQLGenerator.GeneratePagedQuery(const ASql: string; const ALimit,

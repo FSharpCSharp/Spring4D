@@ -36,6 +36,7 @@ type
     procedure InsertFromCollection();
     procedure Update();
     procedure Delete();
+    procedure Save();
     procedure ExecutionListeners();
     procedure Page();
     procedure ExecuteScalar();
@@ -182,6 +183,20 @@ begin
 
     LResults := TestDB.GetUniTableIntf('SELECT COUNT(*) FROM ' + TBL_PEOPLE);
     CheckEquals(0, LResults.Fields[0].AsInteger);
+
+  finally
+    LCustomer.Free;
+  end;
+
+  //try insert after deletion
+  LCustomer := TCustomer.Create;
+  try
+    LCustomer.Name := 'Inserted';
+
+    FManager.Save(LCustomer);
+
+    LResults := TestDB.GetUniTableIntf('SELECT COUNT(*) FROM ' + TBL_PEOPLE);
+    CheckEquals(1, LResults.Fields[0].AsInteger);
 
   finally
     LCustomer.Free;
@@ -746,6 +761,54 @@ begin
   LPage := FManager.Page<TCustomer>(1, 10, 'select * from ' + TBL_PEOPLE, []);
   CheckEquals(iTotal, LPage.GetTotalItems);
   CheckEquals(10, LPage.Items.Count);
+end;
+
+procedure TestTSession.Save;
+var
+  LCustomer: TCustomer;
+  LTable: ISQLiteTable;
+  LID, LCount: Int64;
+begin
+  LCustomer := TCustomer.Create;
+  try
+    LCustomer.Name := 'Insert test';
+    LCustomer.Age := 10;
+    LCustomer.Height := 1.1;
+    LCustomer.Avatar.LoadFromFile(PictureFilename);
+
+    FManager.Save(LCustomer);
+
+    LTable := TestDB.GetUniTableIntf('select * from ' + TBL_PEOPLE);
+    CheckEqualsString(LCustomer.Name, LTable.FieldByName['CUSTNAME'].AsString);
+    CheckEquals(LCustomer.Age, LTable.FieldByName['CUSTAGE'].AsInteger);
+    LID := LTable.FieldByName['CUSTID'].AsInteger;
+    CheckEquals(LID, LCustomer.ID);
+    CheckTrue(LTable.FieldByName['MIDDLENAME'].IsNull);
+    CheckFalse(LTable.FieldByName['AVATAR'].IsNull);
+  finally
+    LCustomer.Free;
+  end;
+
+  LCustomer := TCustomer.Create;
+  try
+    LCustomer.Name := 'Insert test 2';
+    LCustomer.Age := 15;
+    LCustomer.Height := 41.1;
+    LCustomer.MiddleName := 'Middle Test';
+
+    FManager.Save(LCustomer);
+    LTable := TestDB.GetUniTableIntf('select * from ' + TBL_PEOPLE + ' where [CUSTAGE] = 15;');
+    CheckEqualsString(LCustomer.Name, LTable.FieldByName['CUSTNAME'].AsString);
+    CheckEquals(LCustomer.Age, LTable.FieldByName['CUSTAGE'].AsInteger);
+    LID := LTable.FieldByName['CUSTID'].AsInteger;
+    CheckEquals(LID, LCustomer.ID);
+    CheckEqualsString(LCustomer.MiddleName, LTable.FieldByName['MIDDLENAME'].AsString);
+
+    LCount := TestDB.GetUniTableIntf('select count(*) from ' + TBL_PEOPLE).Fields[0].AsInteger;
+    CheckEquals(2, LCount);
+  finally
+    LCustomer.Free;
+  end;
 end;
 
 procedure TestTSession.SetUp;

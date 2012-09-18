@@ -68,13 +68,14 @@ type
     procedure SetValue(const Value: T);
     function GetIsNull: Boolean;
     function GetValueOrDef: T;
+    procedure SetIsNull(const Value: Boolean);
   public
     constructor Create(const AValue: T);
 
     function ToString(): string;
 
     property HasValue: Boolean read FHasValue;
-    property IsNull: Boolean read GetIsNull;
+    property IsNull: Boolean read GetIsNull write SetIsNull;
     property Value: T read GetValue write SetValue;
     property ValueOrDef: T read GetValueOrDef;
 
@@ -337,6 +338,11 @@ begin
   LRight := TValue.From<T>(Right);
 
   Result := not SameValue(LLeft, LRight); // LLeft.IsSameAs(LRight);
+end;
+
+procedure Nullable<T>.SetIsNull(const Value: Boolean);
+begin
+  FHasValue := not Value;
 end;
 
 procedure Nullable<T>.SetValue(const Value: T);
