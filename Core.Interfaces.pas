@@ -60,7 +60,7 @@ type
     procedure SetParams(AParams: TEnumerable<TDBParam>); overload;
     procedure SetParams(const AParams: array of const); overload;
     function Execute(): NativeUInt;
-    function ExecuteQuery(): IDBResultset;
+    function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultset;
   end;
 
   IDBTransaction = interface

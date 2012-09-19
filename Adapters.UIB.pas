@@ -66,7 +66,7 @@ type
     procedure SetSQLCommand(const ACommandText: string); override;
     procedure SetParams(Params: TEnumerable<TDBParam>); overload; override;
     function Execute(): NativeUInt; override;
-    function ExecuteQuery(): IDBResultSet; override;
+    function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
   end;
 
   TUIBConnectionAdapter = class(TDriverConnectionAdapter<TUIBDataBase>, IDBConnection)
@@ -203,7 +203,7 @@ begin
   Statement.Close(etmStayIn);
 end;
 
-function TUIBStatementAdapter.ExecuteQuery: IDBResultSet;
+function TUIBStatementAdapter.ExecuteQuery(AServerSideCursor: Boolean): IDBResultSet;
 var
   LDataset: TUIBDataSet;
   LTran: TUIBTransaction;

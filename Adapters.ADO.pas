@@ -37,13 +37,13 @@ uses
 
 
 type
-  TADOResultSetAdapter = class(TDriverResultSetAdapter<TADOQuery>)
+  TADOResultSetAdapter = class(TDriverResultSetAdapter<TADODataSet>)
   private
     FFieldCache: TDictionary<string,TField>;
   protected
     procedure BuildFieldCache();
   public
-    constructor Create(const ADataset: TADOQuery); override;
+    constructor Create(const ADataset: TADODataSet); override;
     destructor Destroy; override;
 
     function IsEmpty(): Boolean; override;
@@ -64,7 +64,7 @@ type
     procedure SetSQLCommand(const ACommandText: string); override;
     procedure SetParams(Params: TEnumerable<TDBParam>); overload; override;
     function Execute(): NativeUInt; override;
-    function ExecuteQuery(): IDBResultSet; override;
+    function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
   end;
 
   TADOConnectionAdapter = class(TDriverConnectionAdapter<TADOConnection>, IDBConnection)
@@ -106,6 +106,7 @@ uses
   SQL.Register
   ,StrUtils
   ,Core.ConnectionFactory
+  ,ADOConst
   ;
 
 
@@ -125,12 +126,12 @@ begin
   end;
 end;
 
-constructor TADOResultSetAdapter.Create(const ADataset: TADOQuery);
+constructor TADOResultSetAdapter.Create(const ADataset: TADODataSet);
 begin
   inherited Create(ADataset);
   Dataset.DisableControls;
-  Dataset.CursorLocation := clUseServer;
-  Dataset.CursorType := ctOpenForwardOnly;
+//  Dataset.CursorLocation := clUseServer;
+//  Dataset.CursorType := ctOpenForwardOnly;
   FFieldCache := TDictionary<string,TField>.Create(Dataset.FieldCount * 2);
   BuildFieldCache();
 end;
@@ -196,19 +197,21 @@ begin
   Result := Statement.ExecSQL();
 end;
 
-function TADOStatementAdapter.ExecuteQuery: IDBResultSet;
+function TADOStatementAdapter.ExecuteQuery(AServerSideCursor: Boolean): IDBResultSet;
 var
-  LStmt: TADOQuery;
+  LStmt: TADODataSet;
 begin
-  LStmt := TADOQuery.Create(nil);
-  LStmt.CursorLocation := clUseServer;
+  LStmt := TADODataSet.Create(nil);
+  if AServerSideCursor then
+    LStmt.CursorLocation := clUseServer;
   LStmt.CursorType := ctOpenForwardOnly;
   LStmt.CacheSize := 50;
   LStmt.Connection := Statement.Connection;
-  LStmt.SQL.Text := Statement.SQL.Text;
+  LStmt.CommandText := Statement.SQL.Text;
   LStmt.Parameters.AssignValues(Statement.Parameters);
   LStmt.DisableControls;
   LStmt.Open();
+
   Result := TADOResultSetAdapter.Create(LStmt);
 end;
 

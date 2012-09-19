@@ -54,7 +54,7 @@ type
     procedure SetSQLCommand(const ACommandText: string); override;
     procedure SetParams(Params: TEnumerable<TDBParam>); overload; override;
     function Execute(): NativeUInt; override;
-    function ExecuteQuery(): IDBResultSet; override;
+    function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
   end;
 
   TSQLiteConnectionAdapter = class(TDriverConnectionAdapter<TSQLiteDatabase>, IDBConnection)
@@ -143,7 +143,7 @@ begin
     Result := 0;
 end;
 
-function TSQLiteStatementAdapter.ExecuteQuery: IDBResultSet;
+function TSQLiteStatementAdapter.ExecuteQuery(AServerSideCursor: Boolean): IDBResultSet;
 var
   LDataset: ISQLiteTable;
 begin

@@ -101,7 +101,7 @@ type
     procedure SetParams(Params: TEnumerable<TDBParam>); overload; virtual; abstract;
     procedure SetParams(const AParams: array of const); overload;
     function Execute(): NativeUInt; virtual; abstract;
-    function ExecuteQuery(): IDBResultSet; virtual; abstract;
+    function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; virtual; abstract;
 
     property Statement: T read FStmt;
   end;

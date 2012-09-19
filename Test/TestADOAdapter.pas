@@ -24,7 +24,7 @@ type
   TestTADOResultSetAdapter = class(TTestCase)
   private
     FADOResultSetAdapter: TADOResultSetAdapter;
-    FDataset: TADOQuery;
+    FDataset: TADODataSet;
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -153,7 +153,19 @@ var
 const
   SQL_SELECT_ALL = 'SELECT * FROM VIKARINA.IMONES;';
 
-function CreateUniDataset(const ASql: string): TADOQuery;
+function CreateUniDataset(const ASql: string): TADODataSet;
+begin
+  Result := TADODataSet.Create(nil);
+  Result.CursorType := ctOpenForwardOnly;
+  Result.CursorLocation := clUseServer;
+  Result.Connection := TestDB;
+  Result.CommandText := ASql;
+//  Result.SQL.Text := ASql;
+  Result.DisableControls;
+  Result.Open;
+end;
+
+function CreateUniQuery(const ASql: string): TADOQuery;
 begin
   Result := TADOQuery.Create(nil);
   Result.CursorType := ctOpenForwardOnly;
@@ -161,11 +173,7 @@ begin
   Result.Connection := TestDB;
   Result.SQL.Text := ASql;
   Result.DisableControls;
-  try
-    Result.Open;
-  finally
-    Result.EnableControls;
-  end;
+  Result.Open;
 end;
 
 procedure InsertCompany(ACompanyID: Integer);
@@ -273,7 +281,7 @@ end;
 procedure TestTADOResultSetAdapter.TestGetFieldCount;
 var
   ReturnValue: Integer;
-  LData: TADOQuery;
+  LData: TADODataSet;
 begin
   ReturnValue := FADOResultSetAdapter.GetFieldCount;
 
@@ -287,7 +295,7 @@ end;
 
 procedure TestTADOStatementAdapter.SetUp;
 begin
-  FStatement := CreateUniDataset(SQL_SELECT_ALL);
+  FStatement := CreateUniQuery(SQL_SELECT_ALL);
   FStatement.Close;
   FADOStatementAdapter := TADOStatementAdapter.Create(FStatement);
 end;

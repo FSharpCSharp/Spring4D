@@ -62,7 +62,7 @@ type
     procedure SetSQLCommand(const ACommandText: string); override;
     procedure SetParams(Params: TEnumerable<TDBParam>); overload; override;
     function Execute(): NativeUInt; override;
-    function ExecuteQuery(): IDBResultSet; override;
+    function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
   end;
 
   TDBXConnectionAdapter = class(TDriverConnectionAdapter<TSQLConnection>, IDBConnection)
@@ -183,7 +183,7 @@ begin
   Result := Statement.ExecSQL();
 end;
 
-function TDBXStatementAdapter.ExecuteQuery: IDBResultSet;
+function TDBXStatementAdapter.ExecuteQuery(AServerSideCursor: Boolean): IDBResultSet;
 var
   LStmt: TSQLQuery;
 begin
