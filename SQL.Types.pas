@@ -447,7 +447,7 @@ end;
 
 function TSQLForeignKeyField.GetForeignKeyName: string;
 begin
-  Result := Format('FK_%0:S_%1:S', [Table.Name, Fieldname]);
+  Result := Format('FK_%0:S_%1:S', [Table.GetNameWithoutSchema, Fieldname]);
 end;
 
 end.

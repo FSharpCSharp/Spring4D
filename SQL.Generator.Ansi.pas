@@ -572,9 +572,16 @@ begin
     tkUnknown: ;
     tkInteger, tkInt64, tkEnumeration, tkSet:
     begin
-      Result := 'INTEGER';
-      if (System.TypeInfo(Boolean) = LDelphiTypeInfo) then
-        Result := 'BIT';
+      if (AField.Precision > 0) then
+      begin
+        Result := Format('NUMERIC(%0:D, %1:D)', [AField.Precision, AField.Scale]);
+      end
+      else
+      begin
+        Result := 'INTEGER';
+        if (System.TypeInfo(Boolean) = LDelphiTypeInfo) then
+          Result := 'BIT';
+      end;
     end;
 
     tkChar: Result := Format('CHAR(%D)', [AField.Length]);
@@ -588,7 +595,7 @@ begin
         Result := 'TIME'
       else
       begin
-        if AField.Precision <> 0 then
+        if AField.Precision > 0 then
         begin
           Result := Format('NUMERIC(%0:D, %1:D)', [AField.Precision, AField.Scale]);
         end
