@@ -44,6 +44,7 @@ type
   TSession = class(TAbstractManager)
   private
     FOldStateEntities: TEntityMap;
+    FStartedTransaction: IDBTransaction;
   protected
     procedure SetEntityColumns(AEntity: TObject; AColumns: TList<TColumnData>; AResultset: IDBResultset); overload; virtual;
     procedure SetEntityColumns(AEntity: TObject; AColumns: TList<ManyValuedAssociation>; AResultset: IDBResultset); overload; virtual;
@@ -71,6 +72,10 @@ type
     function GetLazyValueClass<T: class, constructor>(const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute): T;
     procedure SetLazyValue<T>(var AValue: T; const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute);
 
+
+    function BeginTransaction(): IDBTransaction;
+    function GetCurrentTransaction(): IDBTransaction;
+    procedure ReleaseCurrentTransaction();
     /// <summary>
     /// Executes sql statement which does not return resultset
     /// </summary>
@@ -191,6 +196,12 @@ uses
   ;
 
 { TEntityManager }
+
+function TSession.BeginTransaction: IDBTransaction;
+begin
+  Result := Connection.BeginTransaction;
+  FStartedTransaction := Result;
+end;
 
 constructor TSession.Create(AConnection: IDBConnection);
 begin
@@ -539,6 +550,11 @@ begin
   end;
 end;
 
+function TSession.GetCurrentTransaction: IDBTransaction;
+begin
+  Result := FStartedTransaction;
+end;
+
 function TSession.GetLazyValueClass<T>(const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute): T;
 var
   IsEnumerable: Boolean;
@@ -697,6 +713,11 @@ begin
   LSQL := LPager.BuildSQL(ASql);
 
   Fetch<T>(LSQL, AParams, Result.Items);
+end;
+
+procedure TSession.ReleaseCurrentTransaction;
+begin
+  FStartedTransaction := nil;
 end;
 
 procedure TSession.Save(AEntity: TObject);

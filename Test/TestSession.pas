@@ -49,6 +49,7 @@ type
     procedure Enums();
     procedure Streams();
     procedure ManyToOne();
+    procedure Transactions();
   end;
 
   TInsertData = record
@@ -101,13 +102,20 @@ end;
 
 
 
-procedure CreateTables();
+procedure CreateTables(AConnection: TSQLiteDatabase = nil);
+var
+  LConn: TSQLiteDatabase;
 begin
-  TestDB.ExecSQL('CREATE TABLE IF NOT EXISTS '+ TBL_PEOPLE + ' ([CUSTID] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, [CUSTAGE] INTEGER NULL,'+
+  if Assigned(AConnection) then
+    LConn := AConnection
+  else
+    LConn := TestDB;
+
+  LConn.ExecSQL('CREATE TABLE IF NOT EXISTS '+ TBL_PEOPLE + ' ([CUSTID] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, [CUSTAGE] INTEGER NULL,'+
     '[CUSTNAME] VARCHAR (255), [CUSTHEIGHT] FLOAT, [LastEdited] DATETIME, [EMAIL] TEXT, [MIDDLENAME] TEXT, [AVATAR] BLOB, [AVATARLAZY] BLOB NULL'+
     ',[CUSTTYPE] INTEGER, [CUSTSTREAM] BLOB );');
 
-  TestDB.ExecSQL('CREATE TABLE IF NOT EXISTS '+ TBL_ORDERS + ' ('+
+  LConn.ExecSQL('CREATE TABLE IF NOT EXISTS '+ TBL_ORDERS + ' ('+
     '"ORDER_ID" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,'+
     '"Customer_ID" INTEGER NOT NULL CONSTRAINT "FK_Customer_Orders" REFERENCES "Customers"("CUSTID") ON DELETE CASCADE ON UPDATE CASCADE,'+
     '"Customer_Payment_Method_Id" INTEGER,'+
@@ -115,7 +123,7 @@ begin
     '"Date_Order_Placed" DATETIME DEFAULT CURRENT_TIMESTAMP,'+
     '"Total_Order_Price" FLOAT);');
 
-  if not TestDB.TableExists(TBL_PEOPLE) then
+  if not LConn.TableExists(TBL_PEOPLE) then
     raise Exception.Create('Table CUSTOMERS does not exist');
 end;
 
@@ -164,6 +172,23 @@ begin
   Result := TestDB.GetUniTableIntf(ASql).Fields[0].Value;
 end;
 
+
+function GetTableRecordCount(const ATablename: string; AConnection: TSQLiteDatabase = nil): Int64;
+var
+  LConn: TSQLiteDatabase;
+begin
+  if Assigned(AConnection) then
+  begin
+    LConn := TSQLiteDatabase.Create(AConnection.Filename);
+    try
+      Result := LConn.GetUniTableIntf('SELECT COUNT(*) FROM ' + ATablename).Fields[0].Value;
+    finally
+      LConn.Free;
+    end;
+  end
+  else
+    Result := GetDBValue('SELECT COUNT(*) FROM ' + ATablename);
+end;
 
 procedure TestTSession.Delete;
 var
@@ -851,6 +876,51 @@ begin
   ClearTable(TBL_PEOPLE);
   ClearTable(TBL_ORDERS);
   FManager.Free;
+end;
+
+procedure TestTSession.Transactions;
+var
+  LCustomer: TCustomer;
+  LDatabase: TSQLiteDatabase;
+  LSession: TSession;
+  LConn: IDBConnection;
+  sFile: string;
+begin
+  LCustomer := TCustomer.Create;
+  sFile := IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0))) + 'test.db';
+  DeleteFile(sFile);
+  LDatabase := TSQLiteDatabase.Create(sFile);
+  LDatabase.Open();
+  LConn := TConnectionFactory.GetInstance(dtSQLite, LDatabase);
+  LSession := TSession.Create(LConn);
+  CreateTables(LDatabase);
+  try
+    LCustomer.Name := 'Transactions';
+    LCustomer.Age := 1;
+
+    LSession.BeginTransaction;
+    LSession.Save(LCustomer);
+
+    CheckEquals(0, GetTableRecordCount(TBL_PEOPLE, LDatabase));
+    LSession.GetCurrentTransaction().Commit;
+    CheckEquals(1, GetTableRecordCount(TBL_PEOPLE, LDatabase));
+
+    LSession.BeginTransaction;
+    LSession.Delete(LCustomer);
+    LSession.GetCurrentTransaction().Rollback;
+    CheckEquals(1, GetTableRecordCount(TBL_PEOPLE, LDatabase));
+    LSession.ReleaseCurrentTransaction();
+  finally
+    LCustomer.Free;
+    LDatabase.Close;
+    LDatabase.Free;
+    LSession.Free;
+    LConn := nil;
+    if not DeleteFile(sFile) then
+    begin
+      Status('Cannot delete file. Error: ' + SysErrorMessage(GetLastError));
+    end;
+  end;
 end;
 
 procedure TestTSession.Update;
