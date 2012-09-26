@@ -82,7 +82,8 @@ uses
   SQLite3 in '..\External\SQLite3\Source\SQLite3.pas',
   SQLiteTable3 in '..\External\SQLite3\Source\SQLiteTable3.pas',
   Core.Relation.Abstract in '..\Core.Relation.Abstract.pas',
-  Core.Relation.ManyToOne in '..\Core.Relation.ManyToOne.pas';
+  Core.Relation.ManyToOne in '..\Core.Relation.ManyToOne.pas',
+  Core.Consts in '..\Core.Consts.pas';
 
 {$R *.RES}
 

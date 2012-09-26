@@ -67,7 +67,7 @@ type
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
   end;
 
-  TADOConnectionAdapter = class(TDriverConnectionAdapter<TADOConnection>, IDBConnection)
+  TADOConnectionAdapter = class(TDriverConnectionAdapter<TADOConnection>)
   public
     constructor Create(const AConnection: TADOConnection); override;
 
@@ -79,15 +79,12 @@ type
     function GetDriverName: string; override;
   end;
 
-  TADOTransactionAdapter = class(TInterfacedObject, IDBTransaction)
-  private
-    FADOConnection: TADOConnection;
+  TADOTransactionAdapter = class(TDriverTransactionAdapter<TADOConnection>)
+  protected
+    function InTransaction(): Boolean; override;
   public
-    constructor Create(AConnection: TADOConnection);
-    destructor Destroy; override;
-
-    procedure Commit;
-    procedure Rollback;
+    procedure Commit; override;
+    procedure Rollback; override;
   end;
 
   TADOSQLGenerator = class(TAnsiSQLGenerator)
@@ -107,6 +104,7 @@ uses
   ,StrUtils
   ,Core.ConnectionFactory
   ,ADOConst
+  ,Core.Consts
   ;
 
 
@@ -289,7 +287,7 @@ end;
 
 function TADOConnectionAdapter.GetDriverName: string;
 begin
-  Result := 'ADO';
+  Result := DRIVER_ADO;
 end;
 
 function TADOConnectionAdapter.IsConnected: Boolean;
@@ -304,31 +302,23 @@ end;
 
 procedure TADOTransactionAdapter.Commit;
 begin
-  if (FADOConnection = nil) then
+  if (Transaction = nil) then
     Exit;
 
-  FADOConnection.CommitTrans;
+  Transaction.CommitTrans;
 end;
 
-constructor TADOTransactionAdapter.Create(AConnection: TADOConnection);
+function TADOTransactionAdapter.InTransaction: Boolean;
 begin
-  inherited Create;
-  FADOConnection := AConnection;
-end;
-
-destructor TADOTransactionAdapter.Destroy;
-begin
-  if FADOConnection.InTransaction then
-    FADOConnection.RollbackTrans;
-  inherited Destroy;
+  Result := Transaction.InTransaction;
 end;
 
 procedure TADOTransactionAdapter.Rollback;
 begin
-  if (FADOConnection = nil) then
+  if (Transaction = nil) then
     Exit;
 
-  FADOConnection.RollbackTrans;
+  Transaction.RollbackTrans;
 end;
 
 { TADOSQLGenerator }

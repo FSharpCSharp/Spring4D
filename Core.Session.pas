@@ -73,8 +73,45 @@ type
     procedure SetLazyValue<T>(var AValue: T; const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute);
 
 
+    ///	<summary>
+    ///	  Starts a new transaction
+    ///	</summary>
+    ///	<remarks>
+    ///	  Can optionally return newly started transaction interface.
+    ///	</remarks>
     function BeginTransaction(): IDBTransaction;
-    function GetCurrentTransaction(): IDBTransaction;
+
+    ///	<summary>
+    ///	  Commits currently active transaction
+    ///	</summary>
+    ///	<remarks>
+    ///	  <para>
+    ///	    In order for this to work, transaction at first must be started by
+    ///	    calling BeginTransaction() and ReleaseCurrentTransaction() must not
+    ///	    be called after this.
+    ///	  </para>
+    ///	  <para>
+    ///	    After CommitTransaction() call there is no need to
+    ///	    ReleaseCurrentTransaction because it is done automatically. 
+    ///	  </para>
+    ///	</remarks>
+    procedure CommitTransaction();
+
+    ///	<summary>
+    ///	  Rollbacks currently active transaction.
+    ///	</summary>
+    ///	<remarks>
+    ///	  <para>
+    ///	    After the rollback is performed, all the changes are not reflected
+    ///	    in session entity classes. They need to be reloaded manually if
+    ///	    this is required.
+    ///	  </para>
+    ///	  <para>
+    ///	    After RollbackTransaction() call there is no need to
+    ///	    ReleaseCurrentTransaction because it is done automatically.
+    ///	  </para>
+    ///	</remarks>
+    procedure RollbackTransaction();
     procedure ReleaseCurrentTransaction();
     /// <summary>
     /// Executes sql statement which does not return resultset
@@ -92,6 +129,9 @@ type
     function First<T: class, constructor>(const ASql: string; const AParams: array of const): T;
     function FirstOrDefault<T: class, constructor>(const ASql: string; const AParams: array of const): T;
 
+    ///	<summary>
+    ///	  Retrieves only one entity model from the database.
+    ///	</summary>
     function Single<T: class, constructor>(const ASql: string; const AParams: array of const): T;
     function SingleOrDefault<T: class, constructor>(const ASql: string; const AParams: array of const): T;
 
@@ -193,6 +233,7 @@ uses
   ,Core.Base
   ,SysUtils
   ,Core.Relation.ManyToOne
+  ,Core.Consts
   ;
 
 { TEntityManager }
@@ -201,6 +242,15 @@ function TSession.BeginTransaction: IDBTransaction;
 begin
   Result := Connection.BeginTransaction;
   FStartedTransaction := Result;
+end;
+
+procedure TSession.CommitTransaction;
+begin
+  if not Assigned(FStartedTransaction) then
+    raise EORMTransactionNotStarted.Create(EXCEPTION_CANNOT_COMMIT);
+
+  FStartedTransaction.Commit;
+  ReleaseCurrentTransaction();
 end;
 
 constructor TSession.Create(AConnection: IDBConnection);
@@ -448,7 +498,7 @@ var
 begin
   LResults := GetResultset(ASql, AParams);
   if LResults.IsEmpty then
-    raise EORMRecordNotFoundException.Create('Query returned 0 records');
+    raise EORMRecordNotFoundException.Create(EXCEPTION_QUERY_NO_RECORDS);
 
   Result := GetOne<T>(LResults, nil);
 end;
@@ -473,23 +523,23 @@ var
   LValue: TValue;
 begin
   if not (PTypeInfo(TypeInfo(T)).Kind = tkInterface) then
-    raise EORMUnsupportedType.Create('List must be Spring interface IList<T>.');
+    raise EORMUnsupportedType.Create(EXCEPTION_UNSUPPORTED_CONTAINER_TYPE);
 
   if not TRttiExplorer.TryGetEntityClass(TypeInfo(T), LEntityClass) then
-    raise EORMUnsupportedType.Create('List must be Spring interface IList<T>.');
+    raise EORMUnsupportedType.Create(EXCEPTION_UNSUPPORTED_CONTAINER_TYPE);
 
-  if not TRttiExplorer.TryGetBasicMethod('Add', TypeInfo(T), LAddMethod) then
-    raise EORMContainerDoesNotHaveAddMethod.Create('Container does not have Add method');
+  if not TRttiExplorer.TryGetBasicMethod(METHODNAME_CONTAINER_ADD, TypeInfo(T), LAddMethod) then
+    raise EORMContainerDoesNotHaveAddMethod.Create(EXCEPTION_CONTAINER_DOESNOTHAVE_ADD);
 
 
   LAddParameters := LAddMethod.GetParameters;
   if (Length(LAddParameters) <> 1) then
-    raise EORMContainerAddMustHaveOneParameter.Create('Container''s Add method must have only one parameter.');
+    raise EORMContainerAddMustHaveOneParameter.Create(EXCEPTION_CONTAINER_ADD_ONE_PARAM);
 
   case LAddParameters[0].ParamType.TypeKind of
     tkClass, tkClassRef, tkInterface, tkPointer, tkRecord:
     else
-      raise EORMContainerItemTypeNotSupported.Create('Container''s items type not supported');
+      raise EORMContainerItemTypeNotSupported.Create(EXCEPTION_CONTAINER_ITEM_TYPE_NOTSUPPORTED);
   end;
 
   LValue := TValue.From<T>(AValue);
@@ -512,7 +562,7 @@ begin
   case PTypeInfo(TypeInfo(T)).Kind of
     tkClass, tkClassRef, tkPointer, tkRecord, tkUnknown:
     begin
-      raise EORMUnsupportedType.CreateFmt('Unsupported type for lazy value: %S.', [string(PTypeInfo(TypeInfo(T)).Name)]);
+      raise EORMUnsupportedType.CreateFmt(EXCEPTION_UNSUPPORTED_LAZY_TYPE, [string(PTypeInfo(TypeInfo(T)).Name)]);
     end;
   end;
 
@@ -550,11 +600,6 @@ begin
   end;
 end;
 
-function TSession.GetCurrentTransaction: IDBTransaction;
-begin
-  Result := FStartedTransaction;
-end;
-
 function TSession.GetLazyValueClass<T>(const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute): T;
 var
   IsEnumerable: Boolean;
@@ -584,20 +629,20 @@ begin
   if not TRttiExplorer.TryGetEntityClass(TypeInfo(T), LEntityClass) then
     LEntityClass := T;
 
-  if not TRttiExplorer.TryGetBasicMethod('Add', TypeInfo(T), LAddMethod) then
-    raise EORMContainerDoesNotHaveAddMethod.Create('Container does not have Add method');
+  if not TRttiExplorer.TryGetBasicMethod(METHODNAME_CONTAINER_ADD, TypeInfo(T), LAddMethod) then
+    raise EORMContainerDoesNotHaveAddMethod.Create(EXCEPTION_CONTAINER_DOESNOTHAVE_ADD);
 
   LAddParameters := LAddMethod.GetParameters;
   if (Length(LAddParameters) <> 1) then
-    raise EORMContainerAddMustHaveOneParameter.Create('Container''s Add method must have only one parameter.');
+    raise EORMContainerAddMustHaveOneParameter.Create(EXCEPTION_CONTAINER_ADD_ONE_PARAM);
 
-  if Result.TryGetProperty('OwnsObjects', LProp) then
+  if Result.TryGetProperty(METHODNAME_CONTAINER_OWNSOBJECTS, LProp) then
     LProp.SetValue(TObject(Result), True);
 
   case LAddParameters[0].ParamType.TypeKind of
     tkClass, tkClassRef, tkInterface, tkPointer, tkRecord:
     else
-      raise EORMContainerItemTypeNotSupported.Create('Container''s items type not supported');
+      raise EORMContainerItemTypeNotSupported.Create(EXCEPTION_CONTAINER_ITEM_TYPE_NOTSUPPORTED);
   end;
 
   while not AResultset.IsEmpty do
@@ -720,6 +765,15 @@ begin
   FStartedTransaction := nil;
 end;
 
+procedure TSession.RollbackTransaction;
+begin
+  if not Assigned(FStartedTransaction) then
+    raise EORMTransactionNotStarted.Create(EXCEPTION_CANNOT_ROLLBACK);
+
+  FStartedTransaction.Rollback();
+  ReleaseCurrentTransaction();
+end;
+
 procedure TSession.Save(AEntity: TObject);
 begin
   if IsNew(AEntity) then
@@ -801,7 +855,7 @@ begin
     try
       LVal := AResultset.GetFieldValue(LCol.Name);
     except
-      raise EORMColumnNotFound.CreateFmt('Primary key column "%S" not found.', [LCol.Name]);
+      raise EORMColumnNotFound.CreateFmt(EXCEPTION_PRIMARYKEY_NOTFOUND, [LCol.Name]);
     end;
     LPrimaryKey := TUtils.FromVariant(LVal);
     TRttiExplorer.SetMemberValue(Self, AEntity, LCol.ClassMemberName, LPrimaryKey);
@@ -824,7 +878,7 @@ begin
       try
         LVal := AResultset.GetFieldValue(LCol.Name);
       except
-        raise EORMColumnNotFound.CreateFmt('Column "%S" not found.', [LCol.Name]);
+        raise EORMColumnNotFound.CreateFmt(EXCEPTION_COLUMN_NOTFOUND, [LCol.Name]);
       end;
       LValue := TUtils.FromVariant(LVal);
     end;

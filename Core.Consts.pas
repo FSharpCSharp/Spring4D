@@ -1,4 +1,4 @@
-(*
+﻿(*
 * Copyright (c) 2012, Linas Naginionis
 * Contacts: lnaginionis@gmail.com or support@soundvibe.net
 * All rights reserved.
@@ -25,67 +25,37 @@
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *)
-unit Core.Exceptions;
+unit Core.Consts;
 
 interface
 
-uses
-  SysUtils;
+const
+  METHODNAME_CONTAINER_ADD = 'Add';
+  METHODNAME_CONTAINER_OWNSOBJECTS = 'OwnsObjects';
 
-type
-  EBaseORMException = class(Exception)
-  public
-    constructor Create(AEntity: TObject); reintroduce; overload;
-  end;
+  DRIVER_MSSQL = 'MSSQL';
+  DRIVER_SQLITE = 'SQLite3';
+  DRIVER_ORACLE = 'Oracle';  //not used yet
+  DRIVER_SYBASE_ASA = 'ASA';
+  DRIVER_MYSQL = 'MySQL';  //not used yet
+  DRIVER_FIREBIRD = 'Firebird';  //not used yet
+  DRIVER_POSTGRESQL = 'PostgreSQL';   //not used yet
+  DRIVER_ADO = 'ADO';
+  DRIVER_DBX = 'DBX';
+  DRIVER_UIB = 'UIB';
 
-  EEntityAlreadyPersisted = class(EBaseORMException);
-
-  ECannotPersististEntityWithId = class(EBaseORMException);
-
-  ETableNotSpecified = class(EBaseORMException);
-
-  EORMMethodNotImplemented = class(Exception);
-
-  EUnknownMember = class(Exception);
-
-  EORMEnumException = class(Exception);
-
-  EEntityManagerNotSet = class(Exception);
-
-  EUnknownJoinType = class(Exception);
-
-  EORMRecordNotFoundException = class(Exception);
-
-  EORMUpdateNotSuccessfulException = class(EBaseORMException);
-
-  EORMColumnCannotBeNull = class(EBaseORMException);
-
-  EORMColumnNotFound = class(EBaseORMException);
-
-  EORMContainerDoesNotHaveAddMethod = class(Exception);
-
-  EORMContainerDoesNotHaveClearMethod = class(Exception);
-
-  EORMContainerAddMustHaveOneParameter = class(Exception);
-
-  EORMContainerItemTypeNotSupported = class(Exception);
-
-  EORMUnsupportedType = class(Exception);
-
-  EORMConnectionAlreadyRegistered = class(Exception);
-  EORMConnectionNotRegistered = class(Exception);
-
-  EORMManyToOneMappedByColumnNotFound = class(Exception);
-
-  EORMTransactionNotStarted = class(Exception);
+resourcestring
+  EXCEPTION_CANNOT_COMMIT = 'Cannot commit unstarted transaction';
+  EXCEPTION_CANNOT_ROLLBACK = 'Cannot rollback unstarted transaction';
+  EXCEPTION_PRIMARYKEY_NOTFOUND = 'Primary key column "%S" not found.';
+  EXCEPTION_COLUMN_NOTFOUND = 'Column "%S" not found.';
+  EXCEPTION_CONTAINER_DOESNOTHAVE_ADD = 'Container does not have Add method';
+  EXCEPTION_CONTAINER_ADD_ONE_PARAM = 'Container''s Add method must have only one parameter.';
+  EXCEPTION_CONTAINER_ITEM_TYPE_NOTSUPPORTED = 'Container''s items type not supported';
+  EXCEPTION_UNSUPPORTED_LAZY_TYPE = 'Unsupported type for lazy value: %S.';
+  EXCEPTION_UNSUPPORTED_CONTAINER_TYPE = 'List must be Spring interface IList<T>.';
+  EXCEPTION_QUERY_NO_RECORDS = 'Query returned 0 records.';
 
 implementation
-
-{ EBaseORMException }
-
-constructor EBaseORMException.Create(AEntity: TObject);
-begin
-  inherited Create(AEntity.ClassName);
-end;
 
 end.

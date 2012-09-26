@@ -106,6 +106,20 @@ type
     property Statement: T read FStmt;
   end;
 
+  TDriverTransactionAdapter<T> = class(TInterfacedObject, IDBTransaction)
+  private
+    FTransaction: T;
+  protected
+    procedure Commit(); virtual; abstract;
+    procedure Rollback(); virtual; abstract;
+    function InTransaction(): Boolean; virtual; abstract;
+  public
+    constructor Create(const ATransaction: T); virtual;
+    destructor Destroy; override;
+
+    property Transaction: T read FTransaction;
+  end;
+
   TPager = class
   private
     FConnection: IDBConnection;
@@ -152,6 +166,7 @@ uses
   ,Mapping.RttiExplorer
   ,Math
   ,StrUtils
+  ,Core.Consts
   ;
 
 { TDriverResultSetAdapter<T> }
@@ -243,14 +258,22 @@ begin
   Result := True;
   sDriverName := GetDriverName;
 
-  if ContainsText(sDriverName, 'MSSQL') then
+  if ContainsText(sDriverName, DRIVER_MSSQL) then
     AQueryLanguage := qlMSSQL
-  else if ContainsText(sDriverName, 'SQLite') then
+  else if ContainsText(sDriverName, DRIVER_SQLITE) then
     AQueryLanguage := qlSQLite
-  else if ContainsText(sDriverName, 'Oracle') then
+  else if ContainsText(sDriverName, DRIVER_ORACLE) then
     AQueryLanguage := qlOracle
-  else if ContainsText(sDriverName, 'ASA') then
+  else if ContainsText(sDriverName, DRIVER_SYBASE_ASA) then
     AQueryLanguage := qlASA
+  else if ContainsText(sDriverName, DRIVER_MYSQL) then
+    AQueryLanguage := qlMySQL
+  else if ContainsText(sDriverName, DRIVER_UIB) then
+    AQueryLanguage := qlFirebird
+  else if ContainsText(sDriverName, DRIVER_FIREBIRD) then
+    AQueryLanguage := qlFirebird
+  else if ContainsText(sDriverName, DRIVER_POSTGRESQL) then
+    AQueryLanguage := qlPostgreSQL
   else
   begin
     Result := False;
@@ -360,6 +383,21 @@ end;
 function TPager.GetOffset: Integer;
 begin
   Result := Min( (Page * ItemsPerPage) - ItemsPerPage + 1, 1);
+end;
+
+{ TDriverTransactionAdapter<T> }
+
+constructor TDriverTransactionAdapter<T>.Create(const ATransaction: T);
+begin
+  inherited Create;
+  FTransaction := ATransaction;
+end;
+
+destructor TDriverTransactionAdapter<T>.Destroy;
+begin
+  if InTransaction then
+    Rollback();
+  inherited Destroy;
 end;
 
 end.

@@ -902,14 +902,13 @@ begin
     LSession.Save(LCustomer);
 
     CheckEquals(0, GetTableRecordCount(TBL_PEOPLE, LDatabase));
-    LSession.GetCurrentTransaction().Commit;
+    LSession.CommitTransaction;
     CheckEquals(1, GetTableRecordCount(TBL_PEOPLE, LDatabase));
 
     LSession.BeginTransaction;
     LSession.Delete(LCustomer);
-    LSession.GetCurrentTransaction().Rollback;
+    LSession.RollbackTransaction;
     CheckEquals(1, GetTableRecordCount(TBL_PEOPLE, LDatabase));
-    LSession.ReleaseCurrentTransaction();
   finally
     LCustomer.Free;
     LDatabase.Close;

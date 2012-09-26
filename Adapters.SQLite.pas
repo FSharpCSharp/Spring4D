@@ -57,7 +57,7 @@ type
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
   end;
 
-  TSQLiteConnectionAdapter = class(TDriverConnectionAdapter<TSQLiteDatabase>, IDBConnection)
+  TSQLiteConnectionAdapter = class(TDriverConnectionAdapter<TSQLiteDatabase>)
   public
     procedure Connect; override;
     procedure Disconnect; override;
@@ -67,21 +67,19 @@ type
     function GetDriverName: string; override;
   end;
 
-  TSQLiteTransactionAdapter = class(TInterfacedObject, IDBTransaction)
-  private
-    FSQLiteConnection: TSQLiteDatabase;
+  TSQLiteTransactionAdapter = class(TDriverTransactionAdapter<TSQLiteDatabase>)
+  protected
+    function InTransaction(): Boolean; override;
   public
-    constructor Create(AConnection: TSQLiteDatabase);
-    destructor Destroy; override;
-
-    procedure Commit;
-    procedure Rollback;
+    procedure Commit; override;
+    procedure Rollback; override;
   end;
 
 implementation
 
 uses
   Core.ConnectionFactory
+  ,Core.Consts
   ;
 
 { TSQLiteResultSetAdapter }
@@ -234,41 +232,30 @@ end;
 
 function TSQLiteConnectionAdapter.GetDriverName: string;
 begin
-  if Connection = nil then
-    Exit('')
-  else
-    Result := 'SQLite3';
+  Result := DRIVER_SQLITE;
 end;
 
 { TSQLiteTransactionAdapter }
 
 procedure TSQLiteTransactionAdapter.Commit;
 begin
-  if (FSQLiteConnection = nil) then
+  if (Transaction = nil) then
     Exit;
 
-  FSQLiteConnection.Commit;
+  Transaction.Commit;
 end;
 
-constructor TSQLiteTransactionAdapter.Create(AConnection: TSQLiteDatabase);
+function TSQLiteTransactionAdapter.InTransaction: Boolean;
 begin
-  inherited Create;
-  FSQLiteConnection := AConnection;
-end;
-
-destructor TSQLiteTransactionAdapter.Destroy;
-begin
-  if FSQLiteConnection.IsTransactionOpen then
-    Rollback;
-  inherited Destroy;
+  Result := Transaction.IsTransactionOpen;
 end;
 
 procedure TSQLiteTransactionAdapter.Rollback;
 begin
-  if (FSQLiteConnection = nil) then
+  if (Transaction = nil) then
     Exit;
 
-  FSQLiteConnection.Rollback;
+  Transaction.Rollback;
 end;
 
 initialization

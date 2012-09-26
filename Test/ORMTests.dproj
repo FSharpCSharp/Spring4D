@@ -159,6 +159,7 @@
         <DCCReference Include="..\External\SQLite3\Source\SQLiteTable3.pas"/>
         <DCCReference Include="..\Core.Relation.Abstract.pas"/>
         <DCCReference Include="..\Core.Relation.ManyToOne.pas"/>
+        <DCCReference Include="..\Core.Consts.pas"/>
         <None Include="Profiling\AQtimeModule1.aqt"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>

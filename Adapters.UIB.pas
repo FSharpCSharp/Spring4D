@@ -69,7 +69,7 @@ type
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
   end;
 
-  TUIBConnectionAdapter = class(TDriverConnectionAdapter<TUIBDataBase>, IDBConnection)
+  TUIBConnectionAdapter = class(TDriverConnectionAdapter<TUIBDataBase>)
   public
     constructor Create(const AConnection: TUIBDataBase); override;
     destructor Destroy; override;
@@ -83,15 +83,15 @@ type
 
   end;
 
-  TUIBTransactionAdapter = class(TInterfacedObject, IDBTransaction)
-  private
-    FTransaction: TUIBTransaction;
+  TUIBTransactionAdapter = class(TDriverTransactionAdapter<TUIBTransaction>)
+  protected
+    function InTransaction(): Boolean; override;
   public
-    constructor Create(ATransaction: TUIBTransaction);
+    constructor Create(const ATransaction: TUIBTransaction); override;
     destructor Destroy; override;
 
-    procedure Commit;
-    procedure Rollback;
+    procedure Commit; override;
+    procedure Rollback; override;
   end;
 
 implementation
@@ -100,6 +100,7 @@ uses
   SQL.Register
   ,StrUtils
   ,Core.ConnectionFactory
+  ,Core.Consts
   ;
 
 
@@ -335,7 +336,7 @@ end;
 
 function TUIBConnectionAdapter.GetDriverName: string;
 begin
-  Result := 'UIB';
+  Result := DRIVER_UIB;
 end;
 
 function TUIBConnectionAdapter.IsConnected: Boolean;
@@ -356,21 +357,23 @@ begin
   FTransaction.Commit;
 end;
 
-constructor TUIBTransactionAdapter.Create(ATransaction: TUIBTransaction);
+constructor TUIBTransactionAdapter.Create(const ATransaction: TUIBTransaction);
 begin
-  inherited Create;
-  FTransaction := ATransaction;
+  inherited Create(ATransaction);
   FTransaction.DefaultAction := etmRollback;
-  if not FTransaction.InTransaction then
+  if not InTransaction then
     FTransaction.StartTransaction;
 end;
 
 destructor TUIBTransactionAdapter.Destroy;
 begin
-  if FTransaction.InTransaction then
-    FTransaction.RollBack;
-  FTransaction.Free;
   inherited Destroy;
+  FTransaction.Free;
+end;
+
+function TUIBTransactionAdapter.InTransaction: Boolean;
+begin
+  Result := FTransaction.InTransaction;
 end;
 
 procedure TUIBTransactionAdapter.Rollback;

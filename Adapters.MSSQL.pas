@@ -66,6 +66,7 @@ implementation
 
 uses
   Core.ConnectionFactory
+  ,Core.Consts
   ;
 
 
@@ -73,7 +74,7 @@ uses
 
 function TMSSQLConnectionAdapter.GetDriverName: string;
 begin
-  Result := 'MSSQL';
+  Result := DRIVER_MSSQL;
 end;
 
 initialization
