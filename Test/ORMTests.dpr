@@ -83,7 +83,12 @@ uses
   SQLiteTable3 in '..\External\SQLite3\Source\SQLiteTable3.pas',
   Core.Relation.Abstract in '..\Core.Relation.Abstract.pas',
   Core.Relation.ManyToOne in '..\Core.Relation.ManyToOne.pas',
-  Core.Consts in '..\Core.Consts.pas';
+  Core.Consts in '..\Core.Consts.pas',
+  Core.Criteria.Abstract in '..\Core.Criteria.Abstract.pas',
+  Core.Criteria in '..\Core.Criteria.pas',
+  Core.Criteria.AbstractCriterion in '..\Core.Criteria.AbstractCriterion.pas',
+  Core.Criteria.Criterion in '..\Core.Criteria.Criterion.pas',
+  Core.Criteria.Restrictions in '..\Core.Criteria.Restrictions.pas';
 
 {$R *.RES}
 

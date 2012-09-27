@@ -160,6 +160,11 @@
         <DCCReference Include="..\Core.Relation.Abstract.pas"/>
         <DCCReference Include="..\Core.Relation.ManyToOne.pas"/>
         <DCCReference Include="..\Core.Consts.pas"/>
+        <DCCReference Include="..\Core.Criteria.Abstract.pas"/>
+        <DCCReference Include="..\Core.Criteria.pas"/>
+        <DCCReference Include="..\Core.Criteria.AbstractCriterion.pas"/>
+        <DCCReference Include="..\Core.Criteria.Criterion.pas"/>
+        <DCCReference Include="..\Core.Criteria.Restrictions.pas"/>
         <None Include="Profiling\AQtimeModule1.aqt"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
