@@ -8,21 +8,19 @@ uses
   {$IF CompilerVersion >= 23.0}System.SysUtils{$ELSE}SysUtils{$IFEND},
   uIsPalindrome in 'uIsPalindrome.pas';
 
-var
-  S: string;
-
 procedure TellIfPalindrome(const aString: string);
 begin
-  if IsPalindrome(S) then
+  if IsPalindrome(aString) then
   begin
-    Writeln('"', S, '"', ' is a palindrome');
+    Writeln('"', aString, '"', ' is a palindrome');
   end else
   begin
-    Writeln('"', S, '"', ' is NOT a palindrome');
+    Writeln('"', aString, '"', ' is NOT a palindrome');
   end;
 end;
 
-
+var
+  S: string;
 begin
   try
     S := 'rAceCar';
