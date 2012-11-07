@@ -161,8 +161,8 @@ procedure TTestSingletonLifetimeManager.TestReferences;
 var
   obj1, obj2: TObject;
 begin
-  obj1 := fLifetimeManager.GetInstance;
-  obj2 := fLifetimeManager.GetInstance;
+  obj1 := fLifetimeManager.GetInstance.AsObject;
+  obj2 := fLifetimeManager.GetInstance.AsObject;
   try
     CheckIs(obj1, TMockObject, 'obj1');
     CheckIs(obj2, TMockObject, 'obj2');
@@ -192,8 +192,8 @@ procedure TTestTransientLifetimeManager.TestReferences;
 var
   obj1, obj2: TObject;
 begin
-  obj1 := fLifetimeManager.GetInstance;
-  obj2 := fLifetimeManager.GetInstance;
+  obj1 := fLifetimeManager.GetInstance.AsObject;
+  obj2 := fLifetimeManager.GetInstance.AsObject;
   try
     CheckIs(obj1, TMockObject, 'obj1');
     CheckIs(obj2, TMockObject, 'obj2');
@@ -302,7 +302,7 @@ var
   intf: IInterface;
 begin
   fLifetimeManager := TSingletonLifetimeManager.Create(fModel);
-  obj := fLifetimeManager.GetInstance;
+  obj := fLifetimeManager.GetInstance.AsObject;
   CheckTrue(Supports(obj, IInterface, intf), 'interface not supported');
   intf := nil;
   fLifetimeManager := nil;

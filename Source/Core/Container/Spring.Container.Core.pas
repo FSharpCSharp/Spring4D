@@ -115,9 +115,9 @@ type
   ///	</summary>
   ILifetimeManager = interface
     ['{7DF9A902-B07A-468B-B201-B4561A921CF5}']
-    function GetInstance: TObject; overload;
-    function GetInstance(resolver: IDependencyResolver): TObject; overload;
-    procedure ReleaseInstance(instance: TObject);
+    function GetInstance: TValue; overload;
+    function GetInstance(resolver: IDependencyResolver): TValue; overload;
+    procedure ReleaseInstance(instance: TValue);
   end;
 
   ///	<summary>
@@ -322,6 +322,17 @@ type
   TObjectHolder = TObjectHolder<TObject>;
 
   {$ENDREGION}
+
+  TValueHolder = class(TInterfacedObject, TFunc<TValue>)
+  private
+    fValue: TValue;
+    fLifetimeWatcher: IInterface;
+  public
+    constructor Create(value: TValue; refCounting: TRefCounting); overload;
+    constructor Create(value: TValue; const lifetimeWatcher: IInterface); overload;
+    destructor Destroy; override;
+    function Invoke: TValue;
+  end;
 
   EContainerException = class(Exception);
 
@@ -651,6 +662,59 @@ end;
 function TObjectHolder<T>.Invoke: T;
 begin
   Result := fObject;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TValueHolder'}
+
+constructor TValueHolder.Create(value: TValue; refCounting: TRefCounting);
+var
+  lifetimeWatcher: IInterface;
+begin
+  TArgument.CheckNotNull(not value.IsEmpty, 'value');
+
+  if ((refCounting = TRefCounting.Unknown) and value.IsObject
+    and value.AsObject.InheritsFrom(TInterfacedObject))
+    or (refCounting = TRefCounting.True) then
+  begin
+    value.AsObject.GetInterface(IInterface, lifetimeWatcher);
+  end
+  else
+  begin
+    if value.Kind = tkInterface then
+    begin
+      lifetimeWatcher := value.AsInterface;
+    end
+    else
+    begin
+      lifetimeWatcher := nil;
+    end;
+  end;
+  Create(value, lifetimeWatcher);
+end;
+
+constructor TValueHolder.Create(value: TValue;
+  const lifetimeWatcher: IInterface);
+begin
+  inherited Create();
+  fValue := value;
+  fLifetimeWatcher := lifetimeWatcher;
+end;
+
+destructor TValueHolder.Destroy;
+begin
+  if not Assigned(fLifetimeWatcher) and fValue.IsObject then
+  begin
+    fValue.AsObject.Free;
+  end;
+  inherited Destroy;
+end;
+
+function TValueHolder.Invoke: TValue;
+begin
+  Result := fValue;
 end;
 
 {$ENDREGION}
