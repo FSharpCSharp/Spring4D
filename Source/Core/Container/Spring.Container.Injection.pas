@@ -51,13 +51,13 @@ type
     function GetTargetName: string;
   protected
     procedure Validate(target: TRttiMember); virtual;
-    procedure DoInject(instance: TObject; const arguments: array of TValue); virtual; abstract;
+    procedure DoInject(instance: TValue; const arguments: array of TValue); virtual; abstract;
     procedure InitializeDependencies(out dependencies: TArray<TRttiType>); virtual; abstract;
   public
     constructor Create(model: TComponentModel); overload;
     constructor Create(model: TComponentModel; const targetName: string); overload;
     procedure Initialize(target: TRttiMember); virtual;
-    procedure Inject(instance: TObject; const arguments: array of TValue);
+    procedure Inject(instance: TValue; const arguments: array of TValue);
     function GetDependencies: TArray<TRttiType>;
     property Target: TRttiMember read GetTarget;
     property TargetName: string read GetTargetName;
@@ -75,28 +75,28 @@ type
   protected
     procedure Validate(target: TRttiMember); override;
     procedure InitializeDependencies(out dependencies: TArray<TRttiType>); override;
-    procedure DoInject(instance: TObject; const arguments: array of TValue); override;
+    procedure DoInject(instance: TValue; const arguments: array of TValue); override;
   end;
 
   TPropertyInjection = class(TMemberInjectionBase)
   protected
     procedure Validate(target: TRttiMember); override;
     procedure InitializeDependencies(out dependencies: TArray<TRttiType>); override;
-    procedure DoInject(instance: TObject; const arguments: array of TValue); override;
+    procedure DoInject(instance: TValue; const arguments: array of TValue); override;
   end;
 
   TMethodInjection = class(TMemberInjectionBase)
   protected
     procedure Validate(target: TRttiMember); override;
     procedure InitializeDependencies(out dependencies: TArray<TRttiType>); override;
-    procedure DoInject(instance: TObject; const arguments: array of TValue); override;
+    procedure DoInject(instance: TValue; const arguments: array of TValue); override;
   end;
 
   TFieldInjection = class(TMemberInjectionBase)
   protected
     procedure Validate(target: TRttiMember); override;
     procedure InitializeDependencies(out dependencies: TArray<TRttiType>); override;
-    procedure DoInject(instance: TObject; const arguments: array of TValue); override;
+    procedure DoInject(instance: TValue; const arguments: array of TValue); override;
   end;
 
   TInjectionFactory = class(TInterfacedObject, IInjectionFactory)
@@ -142,7 +142,7 @@ procedure TInjectionBase.Validate(target: TRttiMember);
 begin
 end;
 
-procedure TInjectionBase.Inject(instance: TObject;
+procedure TInjectionBase.Inject(instance: TValue;
   const arguments: array of TValue);
 begin
   TArgument.CheckNotNull(instance, 'instance');
@@ -211,7 +211,7 @@ begin
   end;
 end;
 
-procedure TConstructorInjection.DoInject(instance: TObject;
+procedure TConstructorInjection.DoInject(instance: TValue;
   const arguments: array of TValue);
 begin
   Target.AsMethod.Invoke(instance, arguments);
@@ -237,7 +237,7 @@ begin
   dependencies := TArray<TRttiType>.Create(Target.AsProperty.PropertyType);
 end;
 
-procedure TPropertyInjection.DoInject(instance: TObject;
+procedure TPropertyInjection.DoInject(instance: TValue;
   const arguments: array of TValue);
 begin
   TArgument.CheckTrue(Length(arguments) = 1, SUnexpectedArgumentLength);
@@ -272,7 +272,7 @@ begin
   end;
 end;
 
-procedure TMethodInjection.DoInject(instance: TObject;
+procedure TMethodInjection.DoInject(instance: TValue;
   const arguments: array of TValue);
 begin
   Target.AsMethod.Invoke(instance, arguments);
@@ -298,7 +298,7 @@ begin
   dependencies := TArray<TRttiType>.Create(Target.AsField.FieldType);
 end;
 
-procedure TFieldInjection.DoInject(instance: TObject;
+procedure TFieldInjection.DoInject(instance: TValue;
   const arguments: array of TValue);
 begin
   TArgument.CheckTrue(Length(arguments) = 1, SUnexpectedArgumentLength);

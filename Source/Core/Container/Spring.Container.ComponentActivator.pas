@@ -49,8 +49,8 @@ type
     property Model: TComponentModel read fModel;
   public
     constructor Create(model: TComponentModel);
-    function CreateInstance: TObject; overload;
-    function CreateInstance(resolver: IDependencyResolver): TObject; overload; virtual; abstract;
+    function CreateInstance: TValue; overload;
+    function CreateInstance(resolver: IDependencyResolver): TValue; overload; virtual; abstract;
   end;
 
   ///	<summary>
@@ -60,10 +60,10 @@ type
   private
     fResolver: IDependencyResolver;
     function GetEligibleConstructor(model: TComponentModel; resolver: IDependencyResolver): IInjection; virtual;
-    procedure ExecuteInjections(instance: TObject; const injections: IList<IInjection>);
+    procedure ExecuteInjections(instance: TValue; const injections: IList<IInjection>);
   public
     constructor Create(model: TComponentModel; const resolver: IDependencyResolver);
-    function CreateInstance(resolver: IDependencyResolver): TObject; override;
+    function CreateInstance(resolver: IDependencyResolver): TValue; override;
   end;
 
   ///	<summary>
@@ -71,7 +71,7 @@ type
   ///	</summary>
   TDelegateComponentActivator = class(TComponentActivatorBase)
   public
-    function CreateInstance(resolver: IDependencyResolver): TObject; override;
+    function CreateInstance(resolver: IDependencyResolver): TValue; override;
   end;
 
 implementation
@@ -89,7 +89,7 @@ begin
   fModel := model;
 end;
 
-function TComponentActivatorBase.CreateInstance: TObject;
+function TComponentActivatorBase.CreateInstance: TValue;
 begin
   Result := CreateInstance(nil);
 end;
@@ -107,7 +107,7 @@ begin
 end;
 
 function TReflectionComponentActivator.CreateInstance(
-  resolver: IDependencyResolver): TObject;
+  resolver: IDependencyResolver): TValue;
 var
   constructorInjection: IInjection;
   constructorArguments: TArray<TValue>;
@@ -131,7 +131,7 @@ begin
   ExecuteInjections(Result, fModel.MethodInjections);
 end;
 
-procedure TReflectionComponentActivator.ExecuteInjections(instance: TObject;
+procedure TReflectionComponentActivator.ExecuteInjections(instance: TValue;
   const injections: IList<IInjection>);
 var
   injection: IInjection;
@@ -182,7 +182,7 @@ end;
 {$REGION 'TDelegateComponentActivator'}
 
 function TDelegateComponentActivator.CreateInstance(
-  resolver: IDependencyResolver): TObject;
+  resolver: IDependencyResolver): TValue;
 begin
   if not Assigned(fModel.ActivatorDelegate) then
   begin

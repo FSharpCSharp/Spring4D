@@ -161,7 +161,7 @@ type
 
   IObjectActivator = interface
     ['{CE05FB89-3467-449E-81EA-A5AEECAB7BB8}']
-    function CreateInstance: TObject;
+    function CreateInstance: TValue;
   end;
 
   TActivator = record
@@ -414,7 +414,6 @@ type
 implementation
 
 uses
-  //Spring.Helpers,  // Internal Error
   StrUtils,
   Spring.ResourceStrings;
 

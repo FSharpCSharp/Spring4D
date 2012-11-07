@@ -47,7 +47,7 @@ type
   private
     fLastID: Integer;
   public
-    function CreateInstance: TObject;
+    function CreateInstance: TValue;
     property LastID: Integer read fLastID;
   end;
 
@@ -70,7 +70,7 @@ implementation
 
 { TMockActivator }
 
-function TMockActivator.CreateInstance: TObject;
+function TMockActivator.CreateInstance: TValue;
 begin
   Inc(fLastID);
   Result := TMockIDObject.Create(fLastID);

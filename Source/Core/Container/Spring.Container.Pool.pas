@@ -80,7 +80,6 @@ type
     property MaxPoolsize: Nullable<Integer> read fMaxPoolsize;
   public
     constructor Create(const activator: IObjectActivator; minPoolSize, maxPoolSize: Integer);
-    destructor Destroy; override;
     function GetInstance: TObject; virtual;
     procedure ReleaseInstance(instance: TObject); virtual;
   end;
@@ -108,16 +107,9 @@ begin
   InitializePool;
 end;
 
-destructor TSimpleObjectPool.Destroy;
-begin
-//  fAvailableList.Free;
-//  fInstances.Free;
-  inherited Destroy;
-end;
-
 function TSimpleObjectPool.AddNewInstance: TObject;
 begin
-  Result := fActivator.CreateInstance;
+  Result := fActivator.CreateInstance.AsObject;
   MonitorEnter(TObject(fInstances));
   try
     fInstances.Add(Result);

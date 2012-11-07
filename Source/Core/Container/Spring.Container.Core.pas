@@ -125,7 +125,7 @@ type
   ///	</summary>
   IComponentActivator = interface(IObjectActivator)
     ['{18E6DF78-C947-484F-A0A8-D9A5B0BEC887}']
-    function CreateInstance(resolver: IDependencyResolver): TObject; overload;
+    function CreateInstance(resolver: IDependencyResolver): TValue; overload;
   end;
 
 
@@ -144,7 +144,7 @@ type
   {$ENDREGION}
 
     procedure Initialize(target: TRttiMember);
-    procedure Inject(instance: TObject; const arguments: array of TValue);
+    procedure Inject(instance: TValue; const arguments: array of TValue);
     function GetDependencies: TArray<TRttiType>;
     property DependencyCount: Integer read GetDependencyCount;
     property Target: TRttiMember read GetTarget;
