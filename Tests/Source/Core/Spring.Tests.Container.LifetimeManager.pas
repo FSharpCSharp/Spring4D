@@ -216,7 +216,7 @@ end;
 
 function TMockActivator.CreateInstance: TValue;
 begin
-  Result := fModel.ComponentType.MetaclassType.Create;
+  Result := fModel.ComponentType.AsInstance.MetaclassType.Create;
 end;
 
 function TMockActivator.CreateInstance(

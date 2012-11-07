@@ -518,11 +518,11 @@ var
   services: IEnumerable<TRttiInterfaceType>;
   service: TRttiInterfaceType;
 begin
-  if not model.Services.IsEmpty then Exit;
+  if not model.Services.IsEmpty and not model.ComponentType.IsInterface then Exit;
   services := model.ComponentType.GetInterfaces;
   for service in services do
   begin
-    if (service.BaseType <> nil) and not model.HasService(service.Handle) then
+    if Assigned(service.BaseType) and not model.HasService(service.Handle) then
     begin
       context.ComponentRegistry.RegisterService(model, service.Handle);
     end;

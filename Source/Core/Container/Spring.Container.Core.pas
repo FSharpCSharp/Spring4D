@@ -50,8 +50,8 @@ type
   IInjectionFactory = interface;
   ILifetimeManager = interface;
 
-  TActivatorDelegate = reference to function: TObject;
-  TActivatorDelegate<T: class> = reference to function: T;
+  TActivatorDelegate = reference to function: TValue;
+  TActivatorDelegate<T> = reference to function: T;
 
   ///	<summary>
   ///	  IContainerContext
@@ -207,7 +207,7 @@ type
   TComponentModel = class
   private
     fContext: IContainerContext;
-    fComponentType: TRttiInstanceType;
+    fComponentType: TRttiType;
     fLifetimeType: TLifetimeType;
     fLifetimeManager: ILifetimeManager;
     fComponentActivator: IComponentActivator;
@@ -235,7 +235,7 @@ type
     property Injections: IDictionary<IInjection, TArray<TValue>> read GetInjections;
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
   public
-    constructor Create(context: IContainerContext; componentType: TRttiInstanceType);
+    constructor Create(context: IContainerContext; componentType: TRttiType);
 
     {$REGION 'Typed Injections'}
 
@@ -262,7 +262,7 @@ type
     function GetInjectionArguments(const Inject: IInjection): TArray<TValue>;
     procedure UpdateInjectionArguments(const Inject: IInjection; const arguments: array of TValue);
 
-    property ComponentType: TRttiInstanceType read fComponentType;
+    property ComponentType: TRttiType read fComponentType;
     property ComponentTypeInfo: PTypeInfo read GetComponentTypeInfo;
     property Services: IDictionary<string, PTypeInfo> read GetServices;
     property DefaultServices: IList<PTypeInfo> read GetDefaultServices;
@@ -385,7 +385,7 @@ end;
 {$REGION 'TComponentModel'}
 
 constructor TComponentModel.Create(context: IContainerContext;
-  componentType: TRttiInstanceType);
+  componentType: TRttiType);
 begin
   inherited Create;
   fContext := context;

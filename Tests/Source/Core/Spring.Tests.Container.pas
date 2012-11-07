@@ -218,6 +218,14 @@ type
     procedure TestResolveWithMultipleParams;
   end;
 
+  TTestRegisterInterfaceTypes = class(TContainerTestCase)
+  published
+    procedure TestOneService;
+    procedure TestTwoServices;
+    procedure TestOneServiceAsSingleton;
+    procedure TestOneServiceAsSingletonPerThread;
+  end;
+
 implementation
 
 uses
@@ -1045,6 +1053,69 @@ begin
 
   CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>(
     TParameterOverride.Create('obj', fDummy)).Name);
+end;
+
+{ TTestRegisterFactory }
+
+procedure TTestRegisterInterfaceTypes.TestOneService;
+begin
+  fContainer.RegisterType<INameService>.DelegateTo(
+    function: INameService
+    begin
+      Result := TDynamicNameService.Create('test');
+    end);
+  fContainer.Build;
+
+  CheckEquals('test', fContainer.Resolve<INameService>.Name);
+end;
+
+procedure TTestRegisterInterfaceTypes.TestOneServiceAsSingleton;
+var
+  count: Integer;
+begin
+  count := 0;
+  fContainer.RegisterType<INameService>.DelegateTo(
+    function: INameService
+    begin
+      Result := TDynamicNameService.Create('test');
+      Inc(count);
+    end).AsSingleton;
+  fContainer.Build;
+
+  CheckEquals('test', fContainer.Resolve<INameService>.GetName());
+  CheckEquals('test', fContainer.Resolve<INameService>.GetName());
+  CheckEquals(1, count);
+end;
+
+procedure TTestRegisterInterfaceTypes.TestOneServiceAsSingletonPerThread;
+var
+  count: Integer;
+begin
+  count := 0;
+  fContainer.RegisterType<INameService>.DelegateTo(
+    function: INameService
+    begin
+      Result := TDynamicNameService.Create('test');
+      Inc(count);
+    end).AsSingletonPerThread;
+  fContainer.Build;
+
+  CheckEquals('test', fContainer.Resolve<INameService>.GetName());
+  CheckEquals('test', fContainer.Resolve<INameService>.GetName());
+  CheckEquals(1, count);
+end;
+
+procedure TTestRegisterInterfaceTypes.TestTwoServices;
+begin
+  fContainer.RegisterType<INameService>.DelegateTo(
+    function: INameService
+    begin
+      Result := TDynamicNameService.Create('test');
+    end).Implements<IAnotherNameService>('another');
+  fContainer.Build;
+
+  CheckEquals('test', fContainer.Resolve<INameService>.Name);
+  CheckEquals('test', fContainer.Resolve<IAnotherNameService>.Name);
 end;
 
 end.

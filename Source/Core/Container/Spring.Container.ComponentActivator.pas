@@ -122,7 +122,7 @@ begin
   else
     constructorArguments := fResolver.ResolveDependencies(constructorInjection);
   Result := TActivator.CreateInstance(
-    fModel.ComponentType,
+    fModel.ComponentType.AsInstance,
     constructorInjection.Target.AsMethod,
     constructorArguments
   );

@@ -1065,10 +1065,10 @@ begin
   begin
     list := TCollections.CreateDictionary<TGUID, TRttiInterfaceType>;
     classType := Self.AsInstance.MetaclassType;
-    while classType <> nil do
+    while Assigned(classType) do
     begin
       table := classType.GetInterfaceTable;
-      if table <> nil then
+      if Assigned(table) then
       begin
         for i := 0 to table.EntryCount - 1 do
         begin
@@ -1084,6 +1084,22 @@ begin
         end;
       end;
       classType := classType.ClassParent;
+    end;
+    Result := list.Values;
+  end
+  else
+  if Self.IsInterface then
+  begin
+    list := TCollections.CreateDictionary<TGUID, TRttiInterfaceType>;
+    aType := Self.AsInterface;
+    while Assigned(aType) do
+    begin
+      if aType.HasGuid and not list.ContainsKey(aType.GUID)
+        and not IsEqualGUID(aType.GUID, TGuid.Empty) then
+      begin
+        list[aType.GUID] := aType;
+      end;
+      aType := aType.BaseType;
     end;
     Result := list.Values;
   end;

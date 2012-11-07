@@ -70,10 +70,10 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    function RegisterType<TComponentType: class>: TRegistration<TComponentType>; overload;
+    function RegisterType<TComponentType>: TRegistration<TComponentType>; overload;
     function RegisterType(componentType: PTypeInfo): TRegistration; overload;
 
-    function RegisterComponent<TComponentType: class>: TRegistration<TComponentType>; overload; deprecated 'Use RegisterType';
+    function RegisterComponent<TComponentType>: TRegistration<TComponentType>; overload; deprecated 'Use RegisterType';
     function RegisterComponent(componentType: PTypeInfo): TRegistration; overload; deprecated 'Use RegisterType';
 
     procedure Build;

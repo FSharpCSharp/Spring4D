@@ -144,7 +144,8 @@ begin
     TTestDefaultResolve.Suite,
     TTestInjectionByValue.Suite,
     TTestObjectPool.Suite,
-    TTestResolverOverride.Suite
+    TTestResolverOverride.Suite,
+    TTestRegisterInterfaceTypes.Suite
   ]);
 
   RegisterTests('Spring.Extensions.Utils', [

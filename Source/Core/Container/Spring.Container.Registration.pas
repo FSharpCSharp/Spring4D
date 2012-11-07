@@ -122,7 +122,7 @@ type
   ///	  Internal helper class for generic fluent style registration of a
   ///	  component.
   ///	</summary>
-  TRegistration<T: class> = record
+  TRegistration<T> = record
   private
     fRegistration: TRegistration;
     constructor Create(const registry: IComponentRegistry);
@@ -177,7 +177,7 @@ type
     fRegistry: IComponentRegistry;
   public
     constructor Create(const registry: IComponentRegistry);
-    function RegisterComponent<TComponentType: class>: TRegistration<TComponentType>; overload;
+    function RegisterComponent<TComponentType>: TRegistration<TComponentType>; overload;
     function RegisterComponent(componentType: PTypeInfo): TRegistration; overload;
   end;
 
@@ -227,7 +227,8 @@ begin
   componentTypeObject := fRttiContext.GetType(componentType);
   serviceTypeObject := fRttiContext.GetType(serviceType);
   CheckIsNonGuidInterface(serviceTypeObject);
-  if not TType.IsAssignable(componentType, serviceType) then
+  if not TType.IsAssignable(componentType, serviceType) 
+    and not componentTypeObject.IsInterface then
   begin
     raise ERegistrationException.CreateResFmt(@SIncompatibleTypes, [
       GetTypeName(componentType), GetTypeName(serviceType)]);
@@ -279,11 +280,11 @@ end;
 function TComponentRegistry.RegisterComponent(
   componentTypeInfo: PTypeInfo): TComponentModel;
 var
-  componentType: TRttiInstanceType;
+  componentType: TRttiType;
 begin
   TArgument.CheckNotNull(componentTypeInfo, 'componentTypeInfo');
 
-  componentType := fRttiContext.GetType(componentTypeInfo).AsInstance;
+  componentType := fRttiContext.GetType(componentTypeInfo);
   Result := TComponentModel.Create(fContainerContext, componentType);
   fModels.Add(Result);
   OnComponentModelAdded(Result);
@@ -556,7 +557,11 @@ end;
 function TRegistration<T>.DelegateTo(
   const delegate: TActivatorDelegate<T>): TRegistration<T>;
 begin
-  fRegistration.DelegateTo(TActivatorDelegate(delegate));
+  fRegistration.DelegateTo(
+    function: TValue
+    begin
+      Result := TValue.From<T>(delegate());
+    end);
   Result := Self;
 end;
 
