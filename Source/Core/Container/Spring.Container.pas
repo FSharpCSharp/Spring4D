@@ -55,11 +55,13 @@ type
     fDependencyResolver: IDependencyResolver;
     fInjectionFactory: IInjectionFactory;
     fRegistrationManager: TRegistrationManager;
+    fExtensions: IList<IContainerExtension>;
   protected
     { Implements IContainerContext }
     function GetDependencyResolver: IDependencyResolver;
     function GetInjectionFactory: IInjectionFactory;
     function GetComponentRegistry: IComponentRegistry;
+    function GetServiceResolver: IServiceResolver;
     function CreateLifetimeManager(model: TComponentModel): ILifetimeManager;
     property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
     property DependencyResolver: IDependencyResolver read GetDependencyResolver;
@@ -69,6 +71,8 @@ type
   public
     constructor Create;
     destructor Destroy; override;
+
+    procedure AddExtension(extension: IContainerExtension);
 
     function RegisterType<TComponentType>: TRegistration<TComponentType>; overload;
     function RegisterType(componentType: PTypeInfo): TRegistration; overload;
@@ -156,6 +160,7 @@ begin
   fDependencyResolver := TDependencyResolver.Create(Self, fRegistry);
   fInjectionFactory := TInjectionFactory.Create;
   fRegistrationManager := TRegistrationManager.Create(fRegistry);
+  fExtensions := TCollections.CreateList<IContainerExtension>;
   InitializeInspectors;
 end;
 
@@ -165,6 +170,12 @@ begin
   fBuilder.ClearInspectors;
   fRegistry.UnregisterAll;
   inherited Destroy;
+end;
+
+procedure TContainer.AddExtension(extension: IContainerExtension);
+begin
+  extension.ContainerContext := Self;
+  fExtensions.Add(extension);
 end;
 
 procedure TContainer.Build;
@@ -234,6 +245,11 @@ end;
 function TContainer.GetInjectionFactory: IInjectionFactory;
 begin
   Result := fInjectionFactory;
+end;
+
+function TContainer.GetServiceResolver: IServiceResolver;
+begin
+  Result := fServiceResolver;
 end;
 
 function TContainer.RegisterComponent(componentType: PTypeInfo): TRegistration;

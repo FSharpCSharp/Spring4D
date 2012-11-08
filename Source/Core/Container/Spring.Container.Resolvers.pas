@@ -38,10 +38,13 @@ uses
   Spring.Container.Core;
 
 type
-  TResolver = class(TInterfacedObject)
+  TResolver = class(TInterfacedObject, IResolver)
   private
     fContext: IContainerContext;
     fRegistry: IComponentRegistry;
+    fOnResolve: IList<TOnResolveEvent>;
+    procedure DoResolve(var instance: TValue);
+    function GetOnResolve: IList<TOnResolveEvent>;
   protected
     procedure ConstructValue(typeInfo: PTypeInfo; const instance: TValue; out value: TValue);
 
@@ -162,6 +165,20 @@ begin
   inherited Create;
   fContext := context;
   fRegistry := registry;
+  fOnResolve := TCollections.CreateList<TOnResolveEvent>;
+end;
+
+procedure TResolver.DoResolve(var instance: TValue);
+var
+  event: TOnResolveEvent;
+begin
+  for event in fOnResolve do
+    event(Self, instance);
+end;
+
+function TResolver.GetOnResolve: IList<TOnResolveEvent>;
+begin
+  Result := fOnResolve;
 end;
 
 procedure TResolver.ConstructValue(typeInfo: PTypeInfo; const instance: TValue;
@@ -190,6 +207,8 @@ begin
   else
     value := TValue.Empty;
   end;
+
+  DoResolve(value);
 end;
 
 {$ENDREGION}

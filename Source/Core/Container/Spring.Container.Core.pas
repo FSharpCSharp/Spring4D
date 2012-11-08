@@ -49,6 +49,7 @@ type
   IInjection = interface;
   IInjectionFactory = interface;
   ILifetimeManager = interface;
+  IContainerExtension = interface;
 
   TActivatorDelegate = reference to function: TValue;
   TActivatorDelegate<T> = reference to function: T;
@@ -62,13 +63,24 @@ type
     function GetComponentRegistry: IComponentRegistry;
     function GetDependencyResolver: IDependencyResolver;
     function GetInjectionFactory: IInjectionFactory;
+    function GetServiceResolver: IServiceResolver;
   {$ENDREGION}
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(const name: string): Boolean; overload;
     function CreateLifetimeManager(model: TComponentModel): ILifetimeManager;
+    procedure AddExtension(extension: IContainerExtension);
     property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
     property DependencyResolver: IDependencyResolver read GetDependencyResolver;
+    property ServiceResolver: IServiceResolver read GetServiceResolver;
+  end;
+
+  IContainerExtension = interface
+    ['{E78748FB-D75C-447C-B984-9782A8F26C20}']
+    function GetContainerContext: IContainerContext;
+    procedure SetContainerContext(const value: IContainerContext);
+    property ContainerContext: IContainerContext
+      read GetContainerContext write SetContainerContext;
   end;
 
   ///	<summary>
@@ -166,7 +178,15 @@ type
     function CreateFieldInjection(model: TComponentModel; const fieldName: string): IInjection;
   end;
 
-  IDependencyResolver = interface
+  TOnResolveEvent = procedure(Sender: TObject; var instance: TValue) of object;
+
+  IResolver = interface
+    ['{EA0ABA0F-BED0-4897-9E50-133184E105B7}']
+    function GetOnResolve: IList<TOnResolveEvent>;
+    property OnResolve: IList<TOnResolveEvent> read GetOnResolve;
+  end;
+
+  IDependencyResolver = interface(IResolver)
     ['{15ADEA1D-7C3F-48D5-8E85-84B4332AFF5F}']
     function CanResolveDependencies(dependencies: TArray<TRttiType>): Boolean; overload;
     function CanResolveDependencies(dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean; overload;
@@ -190,7 +210,7 @@ type
   ///	<summary>
   ///	  Resolves services.
   ///	</summary>
-  IServiceResolver = interface
+  IServiceResolver = interface(IResolver)
     ['{14669EBA-4E57-4DF4-919D-377D8E90144C}']
     function CanResolve(serviceType: PTypeInfo): Boolean; overload;
     function CanResolve(const name: string): Boolean; overload;
