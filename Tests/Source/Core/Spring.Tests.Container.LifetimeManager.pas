@@ -42,13 +42,16 @@ type
     function GetDependencyResolver: IDependencyResolver;
     function GetInjectionFactory: IInjectionFactory;
     function GetComponentRegistry: IComponentRegistry;
+    function GetServiceResolver: IServiceResolver;
   public
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(const name: string): Boolean; overload;
     function CreateLifetimeManager(model: TComponentModel): ILifetimeManager;
+    procedure AddExtension(extension: IContainerExtension);
     property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
     property DependencyResolver: IDependencyResolver read GetDependencyResolver;
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
+    property ServiceResolver: IServiceResolver read GetServiceResolver;
   end;
 
   TMockActivator = class(TInterfaceBase, IComponentActivator, IInterface)
@@ -227,6 +230,11 @@ end;
 
 { TMockContext }
 
+procedure TMockContext.AddExtension(extension: IContainerExtension);
+begin
+  raise Exception.Create('AddExtension');
+end;
+
 function TMockContext.CreateLifetimeManager(
   model: TComponentModel): ILifetimeManager;
 begin
@@ -246,6 +254,11 @@ end;
 function TMockContext.GetInjectionFactory: IInjectionFactory;
 begin
   raise Exception.Create('GetInjectionFactory');
+end;
+
+function TMockContext.GetServiceResolver: IServiceResolver;
+begin
+  raise Exception.Create('GetServiceResolver');
 end;
 
 function TMockContext.HasService(const name: string): Boolean;
