@@ -42,6 +42,7 @@ contains
   Spring.Services.Logging in '..\..\Source\Core\Services\Spring.Services.Logging.pas',
   Spring.Container.ResourceStrings in '..\..\Source\Core\Container\Spring.Container.ResourceStrings.pas',
   Spring.Container.Pool in '..\..\Source\Core\Container\Spring.Container.Pool.pas',
-  Spring.Container.Injection in '..\..\Source\Core\Container\Spring.Container.Injection.pas';
+  Spring.Container.Injection in '..\..\Source\Core\Container\Spring.Container.Injection.pas',
+  Spring.Container.Extensions in '..\..\Source\Core\Container\Spring.Container.Extensions.pas';
 
 end.

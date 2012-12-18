@@ -75,12 +75,14 @@ type
     property ServiceResolver: IServiceResolver read GetServiceResolver;
   end;
 
+  ///	<summary>
+  ///	  Extends the container
+  ///	</summary>
   IContainerExtension = interface
     ['{E78748FB-D75C-447C-B984-9782A8F26C20}']
-    function GetContainerContext: IContainerContext;
-    procedure SetContainerContext(const value: IContainerContext);
-    property ContainerContext: IContainerContext
-      read GetContainerContext write SetContainerContext;
+    function GetContext: IContainerContext;
+    procedure SetContext(const value: IContainerContext);
+    property Context: IContainerContext read GetContext write SetContext;
   end;
 
   ///	<summary>
@@ -178,12 +180,12 @@ type
     function CreateFieldInjection(model: TComponentModel; const fieldName: string): IInjection;
   end;
 
-  TOnResolveEvent = procedure(Sender: TObject; var instance: TValue) of object;
+  TResolveEvent = procedure(Sender: TObject; var instance: TValue) of object;
 
   IResolver = interface
     ['{EA0ABA0F-BED0-4897-9E50-133184E105B7}']
-    function GetOnResolve: IList<TOnResolveEvent>;
-    property OnResolve: IList<TOnResolveEvent> read GetOnResolve;
+    function GetOnResolve: IList<TResolveEvent>;
+    property OnResolve: IList<TResolveEvent> read GetOnResolve;
   end;
 
   IDependencyResolver = interface(IResolver)

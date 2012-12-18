@@ -38,6 +38,7 @@ contains
   Spring.Container.Builder in '..\..\Source\Core\Container\Spring.Container.Builder.pas',
   Spring.Container.ComponentActivator in '..\..\Source\Core\Container\Spring.Container.ComponentActivator.pas',
   Spring.Container.Core in '..\..\Source\Core\Container\Spring.Container.Core.pas',
+  Spring.Container.Extensions in '..\..\Source\Core\Container\Spring.Container.Extensions.pas',
   Spring.Container.Injection in '..\..\Source\Core\Container\Spring.Container.Injection.pas',
   Spring.Container.LifetimeManager in '..\..\Source\Core\Container\Spring.Container.LifetimeManager.pas',
   Spring.Container in '..\..\Source\Core\Container\Spring.Container.pas',

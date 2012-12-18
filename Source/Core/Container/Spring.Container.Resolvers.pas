@@ -42,9 +42,9 @@ type
   private
     fContext: IContainerContext;
     fRegistry: IComponentRegistry;
-    fOnResolve: IList<TOnResolveEvent>;
+    fOnResolve: IList<TResolveEvent>;
     procedure DoResolve(var instance: TValue);
-    function GetOnResolve: IList<TOnResolveEvent>;
+    function GetOnResolve: IList<TResolveEvent>;
   protected
     procedure ConstructValue(typeInfo: PTypeInfo; const instance: TValue; out value: TValue);
 
@@ -165,18 +165,18 @@ begin
   inherited Create;
   fContext := context;
   fRegistry := registry;
-  fOnResolve := TCollections.CreateList<TOnResolveEvent>;
+  fOnResolve := TCollections.CreateList<TResolveEvent>;
 end;
 
 procedure TResolver.DoResolve(var instance: TValue);
 var
-  event: TOnResolveEvent;
+  event: TResolveEvent;
 begin
   for event in fOnResolve do
     event(Self, instance);
 end;
 
-function TResolver.GetOnResolve: IList<TOnResolveEvent>;
+function TResolver.GetOnResolve: IList<TResolveEvent>;
 begin
   Result := fOnResolve;
 end;

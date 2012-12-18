@@ -174,7 +174,7 @@ end;
 
 procedure TContainer.AddExtension(extension: IContainerExtension);
 begin
-  extension.ContainerContext := Self;
+  extension.Context := Self;
   fExtensions.Add(extension);
 end;
 
