@@ -43,6 +43,19 @@ type
 
   TExecutionListenerProc = reference to procedure(const ACommand: string; const AParams: TObjectList<TDBParam>);
 
+  ICriterion = interface(IInvokable)
+    ['{E22DFB1C-0E0E-45F4-9740-9469164B4557}']
+    function ToSqlString(): string;
+    procedure SetEntityClass(const Value: TClass);
+    function GetEntityClass: TClass;
+  end;
+
+  ICriteria = interface(IInvokable)
+    ['{09428AF2-3A36-44DB-B0E7-8B7D7620ED1C}']
+    function Add(ACriterion: ICriterion): ICriteria;
+    function Count(): Integer;
+  end;
+
   IDBResultset = interface
     ['{4FA97CFB-4992-4DAA-BB2A-B5CAF84B6B47}']
     function IsEmpty(): Boolean;

@@ -1,231 +1,200 @@
-﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <PropertyGroup>
-        <ProjectGuid>{CC690599-B805-4D3C-9773-6590AF435A87}</ProjectGuid>
-        <ProjectVersion>14.3</ProjectVersion>
-        <MainSource>ORMTests.dpr</MainSource>
-        <Base>True</Base>
-        <Config Condition="'$(Config)'==''">Debug</Config>
-        <AppType>Application</AppType>
-        <FrameworkType>VCL</FrameworkType>
-        <DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
-        <Platform Condition="'$(Platform)'==''">Win32</Platform>
-        <TargetedPlatforms>1</TargetedPlatforms>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Base)'=='true') or '$(Base_Win32)'!=''">
-        <Base_Win32>true</Base_Win32>
-        <CfgParent>Base</CfgParent>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Base)'=='true') or '$(Base_Win64)'!=''">
-        <Base_Win64>true</Base_Win64>
-        <CfgParent>Base</CfgParent>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_1)'!=''">
-        <Cfg_1>true</Cfg_1>
-        <CfgParent>Base</CfgParent>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_1)'=='true') or '$(Cfg_1_Win32)'!=''">
-        <Cfg_1_Win32>true</Cfg_1_Win32>
-        <CfgParent>Cfg_1</CfgParent>
-        <Cfg_1>true</Cfg_1>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_2)'!=''">
-        <Cfg_2>true</Cfg_2>
-        <CfgParent>Base</CfgParent>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Base)'!=''">
-        <Icon_MainIcon>ORMTests_Icon2.ico</Icon_MainIcon>
-        <Manifest_File>None</Manifest_File>
-        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=0.0.0.1;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
-        <VerInfo_Build>1</VerInfo_Build>
-        <VerInfo_Locale>1063</VerInfo_Locale>
-        <DCC_Namespace>Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Datasnap;Web;Soap;Winapi;Data.Win;$(DCC_Namespace)</DCC_Namespace>
-        <VerInfo_MajorVer>0</VerInfo_MajorVer>
-        <DCC_Define>_CONSOLE_TESTRUNNER;USE_SPRING;$(DCC_Define)</DCC_Define>
-        <DCC_UnitSearchPath>$(BDS)\Source\DUnit\src;..\External\delphi-oop\Core;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
-        <DCC_UsePackage>vcl;vclx;VclSmp;rtl;vclimg;svnui;svn;bdertl;TeeUI;TeeDB;Tee;vclactnband;vcldb;dbrtl;vcldbx;vcltouch;xmlrtl;dsnap;dsnapcon;vclib;ibxpress;adortl;IndyCore;IndySystem;IndyProtocols;inet;intrawebdb_110_150;Intraweb_110_150;vclie;websnap;webdsnap;inetdb;inetdbbde;inetdbxpress;soaprtl;vclribbon;dbexpress;DbxCommonDriver;DataSnapIndy10ServerTransport;DataSnapProviderClient;DbxClientDriver;DataSnapClient;dbxcds;DataSnapServer;AzureCloud;DBXInterBaseDriver;DBXMySQLDriver;DBXFirebirdDriver;DBXSybaseASEDriver;DBXSybaseASADriver;DBXOracleDriver;DBXMSSQLDriver;DBXInformixDriver;DBXDb2Driver;CodeSiteExpressVcl;$(DCC_UsePackage)</DCC_UsePackage>
-        <DCC_ImageBase>00400000</DCC_ImageBase>
-        <DCC_DcuOutput>.\$(Config)\$(Platform)\DCU</DCC_DcuOutput>
-        <DCC_ExeOutput>.\$(Config)\$(Platform)</DCC_ExeOutput>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Base_Win32)'!=''">
-        <VerInfo_Locale>1033</VerInfo_Locale>
-        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
-        <DCC_Namespace>System.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
-        <Icon_MainIcon>ORMTests_Icon2.ico</Icon_MainIcon>
-        <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Base_Win64)'!=''">
-        <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
-        <Icon_MainIcon>ORMTests_Icon2.ico</Icon_MainIcon>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_1)'!=''">
-        <DCC_DebugInfoInExe>true</DCC_DebugInfoInExe>
-        <BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
-        <BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
-        <ILINK_FullDebugInfo>true</ILINK_FullDebugInfo>
-        <DCC_UnitSearchPath>..\External\Spring\Source\Base;..\External\Spring\Source\Base\Collections;..\External\Spring\Source\Base\Reflection;..\External\uib\Source\;..\External\FastMM\;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
-        <DCC_DebugDCUs>true</DCC_DebugDCUs>
-        <DCC_MapFile>3</DCC_MapFile>
-        <DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
-        <DCC_Optimize>false</DCC_Optimize>
-        <DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
-        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
-        <VerInfo_Locale>1033</VerInfo_Locale>
-        <VerInfo_Build>0</VerInfo_Build>
-        <VerInfo_MajorVer>1</VerInfo_MajorVer>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_2)'!=''">
-        <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
-        <DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
-        <DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
-        <DCC_DebugInformation>false</DCC_DebugInformation>
-    </PropertyGroup>
-    <ItemGroup>
-        <DelphiCompile Include="$(MainSource)">
-            <MainSource>MainSource</MainSource>
-        </DelphiCompile>
-        <DCCReference Include="TestSession.pas"/>
-        <DCCReference Include="..\Core.AbstractManager.pas"/>
-        <DCCReference Include="..\Core.Interfaces.pas"/>
-        <DCCReference Include="..\SQL.Params.pas"/>
-        <DCCReference Include="..\Core.Session.pas"/>
-        <DCCReference Include="..\Core.EntityMap.pas"/>
-        <DCCReference Include="..\Core.DatabaseManager.pas"/>
-        <DCCReference Include="..\SQL.AbstractCommandExecutor.pas"/>
-        <DCCReference Include="..\SQL.Interfaces.pas"/>
-        <DCCReference Include="..\SQL.Commands.Select.pas"/>
-        <DCCReference Include="..\SQL.Commands.Delete.pas"/>
-        <DCCReference Include="..\SQL.Commands.Update.pas"/>
-        <DCCReference Include="..\SQL.Commands.Insert.pas"/>
-        <DCCReference Include="..\SQL.Commands.FKCreator.pas"/>
-        <DCCReference Include="..\SQL.Commands.TableCreator.pas"/>
-        <DCCReference Include="..\SQL.Commands.SeqCreator.pas"/>
-        <DCCReference Include="..\SQL.AbstractSQLGenerator.pas"/>
-        <DCCReference Include="..\SQL.Generator.Ansi.pas"/>
-        <DCCReference Include="..\SQL.Register.pas"/>
-        <DCCReference Include="..\Adapters.SQLite.pas"/>
-        <DCCReference Include="..\Core.Base.pas"/>
-        <DCCReference Include="..\Mapping.Attributes.pas"/>
-        <DCCReference Include="..\Core.Exceptions.pas"/>
-        <DCCReference Include="..\SQL.Commands.Factory.pas"/>
-        <DCCReference Include="..\Mapping.RttiExplorer.pas"/>
-        <DCCReference Include="TestMapping.RttiExplorer.pas"/>
-        <DCCReference Include="uModels.pas"/>
-        <DCCReference Include="..\Core.Types.pas"/>
-        <DCCReference Include="TestSQLiteAdapter.pas"/>
-        <DCCReference Include="..\Core.ConnectionFactory.pas"/>
-        <DCCReference Include="TestAnsiSQLGenerator.pas"/>
-        <DCCReference Include="..\SQL.Commands.pas"/>
-        <DCCReference Include="..\SQL.Types.pas"/>
-        <DCCReference Include="..\Core.EntitySerializer.pas"/>
-        <DCCReference Include="..\Adapters.ADO.pas"/>
-        <DCCReference Include="TestADOAdapter.pas"/>
-        <DCCReference Include="..\Adapters.MSSQL.pas"/>
-        <DCCReference Include="..\Core.Utils.pas"/>
-        <DCCReference Include="..\Core.Reflection.pas"/>
-        <DCCReference Include="..\Core.EntityCache.pas"/>
-        <DCCReference Include="TestCoreEntityMap.pas"/>
-        <DCCReference Include="..\SQL.Commands.Page.pas"/>
-        <DCCReference Include="VARTOTMASTModel.pas"/>
-        <DCCReference Include="..\RttiPatch.pas"/>
-        <DCCReference Include="..\PatchUtils.pas"/>
-        <DCCReference Include="..\Adapters.ASA.pas"/>
-        <DCCReference Include="TestAdaptersASA.pas"/>
-        <DCCReference Include="..\SQL.Generator.Oracle.pas"/>
-        <DCCReference Include="..\Adapters.DBX.pas"/>
-        <DCCReference Include="..\Adapters.UIB.pas"/>
-        <DCCReference Include="TestAdapterUIB.pas"/>
-        <DCCReference Include="..\SQL.Generator.Firebird.pas"/>
-        <DCCReference Include="TestConnectionFactory.pas"/>
-        <DCCReference Include="..\SQL.Generator.MSSQL.pas"/>
-        <DCCReference Include="..\SQL.Generator.ASA.pas"/>
-        <DCCReference Include="..\SQL.Generator.SQLite3.pas"/>
-        <DCCReference Include="..\SQL.Generator.PostgreSQL.pas"/>
-        <DCCReference Include="..\SQL.Generator.MySQL.pas"/>
-        <DCCReference Include="TestDatabaseManager.pas"/>
-        <DCCReference Include="..\External\SQLite3\Source\SQLite3.pas"/>
-        <DCCReference Include="..\External\SQLite3\Source\SQLiteTable3.pas"/>
-        <DCCReference Include="..\Core.Relation.Abstract.pas"/>
-        <DCCReference Include="..\Core.Relation.ManyToOne.pas"/>
-        <DCCReference Include="..\Core.Consts.pas"/>
-        <DCCReference Include="..\Core.Criteria.Abstract.pas"/>
-        <DCCReference Include="..\Core.Criteria.pas"/>
-        <DCCReference Include="..\Core.Criteria.AbstractCriterion.pas"/>
-        <DCCReference Include="..\Core.Criteria.Criterion.pas"/>
-        <DCCReference Include="..\Core.Criteria.Restrictions.pas"/>
-        <None Include="Profiling\AQtimeModule1.aqt"/>
-        <BuildConfiguration Include="Release">
-            <Key>Cfg_2</Key>
-            <CfgParent>Base</CfgParent>
-        </BuildConfiguration>
-        <BuildConfiguration Include="Base">
-            <Key>Base</Key>
-        </BuildConfiguration>
-        <BuildConfiguration Include="Debug">
-            <Key>Cfg_1</Key>
-            <CfgParent>Base</CfgParent>
-        </BuildConfiguration>
-    </ItemGroup>
-    <Import Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')" Project="$(BDS)\Bin\CodeGear.Delphi.Targets"/>
-    <Import Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')" Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj"/>
-    <ProjectExtensions>
-        <Borland.Personality>Delphi.Personality.12</Borland.Personality>
-        <Borland.ProjectType/>
-        <BorlandProject>
-            <Delphi.Personality>
-                <VersionInfo>
-                    <VersionInfo Name="IncludeVerInfo">True</VersionInfo>
-                    <VersionInfo Name="AutoIncBuild">False</VersionInfo>
-                    <VersionInfo Name="MajorVer">0</VersionInfo>
-                    <VersionInfo Name="MinorVer">0</VersionInfo>
-                    <VersionInfo Name="Release">0</VersionInfo>
-                    <VersionInfo Name="Build">1</VersionInfo>
-                    <VersionInfo Name="Debug">False</VersionInfo>
-                    <VersionInfo Name="PreRelease">False</VersionInfo>
-                    <VersionInfo Name="Special">False</VersionInfo>
-                    <VersionInfo Name="Private">False</VersionInfo>
-                    <VersionInfo Name="DLL">False</VersionInfo>
-                    <VersionInfo Name="Locale">1063</VersionInfo>
-                    <VersionInfo Name="CodePage">1257</VersionInfo>
-                </VersionInfo>
-                <VersionInfoKeys>
-                    <VersionInfoKeys Name="CompanyName"/>
-                    <VersionInfoKeys Name="FileDescription"/>
-                    <VersionInfoKeys Name="FileVersion">0.0.0.1</VersionInfoKeys>
-                    <VersionInfoKeys Name="InternalName"/>
-                    <VersionInfoKeys Name="LegalCopyright"/>
-                    <VersionInfoKeys Name="LegalTrademarks"/>
-                    <VersionInfoKeys Name="OriginalFilename"/>
-                    <VersionInfoKeys Name="ProductName"/>
-                    <VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys>
-                    <VersionInfoKeys Name="Comments"/>
-                </VersionInfoKeys>
-                <Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dcloffice2k170.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclofficexp170.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
-                </Excluded_Packages>
-                <Source>
-                    <Source Name="MainSource">ORMTests.dpr</Source>
-                </Source>
-            </Delphi.Personality>
-            <Platforms>
-                <Platform value="Win32">True</Platform>
-                <Platform value="Win64">False</Platform>
-            </Platforms>
-            <ModelSupport>False</ModelSupport>
-        </BorlandProject>
-        <ProjectFileVersion>12</ProjectFileVersion>
-    </ProjectExtensions>
-</Project>
+﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+		<PropertyGroup>
+			<ProjectGuid>{CC690599-B805-4D3C-9773-6590AF435A87}</ProjectGuid>
+			<ProjectVersion>14.3</ProjectVersion>
+			<MainSource>ORMTests.dpr</MainSource>
+			<Base>True</Base>
+			<Config Condition="'$(Config)'==''">Debug</Config>
+			<AppType>Application</AppType>
+			<FrameworkType>VCL</FrameworkType>
+			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
+			<Platform Condition="'$(Platform)'==''">Win32</Platform>
+			<TargetedPlatforms>1</TargetedPlatforms>
+			<Platform>Win32</Platform>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_1)'!=''">
+			<Cfg_1>true</Cfg_1>
+			<CfgParent>Base</CfgParent>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_2)'!=''">
+			<Cfg_2>true</Cfg_2>
+			<CfgParent>Base</CfgParent>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Base)'!=''">
+			<Icon_MainIcon>ORMTests_Icon2.ico</Icon_MainIcon>
+			<Manifest_File>None</Manifest_File>
+			<VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+			<VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=0.0.0.1;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+			<VerInfo_Build>1</VerInfo_Build>
+			<VerInfo_Locale>1063</VerInfo_Locale>
+			<DCC_Namespace>Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Datasnap;Web;Soap;Winapi;Data.Win;$(DCC_Namespace)</DCC_Namespace>
+			<VerInfo_MajorVer>0</VerInfo_MajorVer>
+			<DCC_Define>_CONSOLE_TESTRUNNER;USE_SPRING;$(DCC_Define)</DCC_Define>
+			<DCC_UnitSearchPath>$(BDS)\Source\DUnit\src;..\External\delphi-oop\Core;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UsePackage>vcl;vclx;VclSmp;rtl;vclimg;svnui;svn;bdertl;TeeUI;TeeDB;Tee;vclactnband;vcldb;dbrtl;vcldbx;vcltouch;xmlrtl;dsnap;dsnapcon;vclib;ibxpress;adortl;IndyCore;IndySystem;IndyProtocols;inet;intrawebdb_110_150;Intraweb_110_150;vclie;websnap;webdsnap;inetdb;inetdbbde;inetdbxpress;soaprtl;vclribbon;dbexpress;DbxCommonDriver;DataSnapIndy10ServerTransport;DataSnapProviderClient;DbxClientDriver;DataSnapClient;dbxcds;DataSnapServer;AzureCloud;DBXInterBaseDriver;DBXMySQLDriver;DBXFirebirdDriver;DBXSybaseASEDriver;DBXSybaseASADriver;DBXOracleDriver;DBXMSSQLDriver;DBXInformixDriver;DBXDb2Driver;CodeSiteExpressVcl;$(DCC_UsePackage)</DCC_UsePackage>
+			<DCC_ImageBase>00400000</DCC_ImageBase>
+			<DCC_DcuOutput>.\$(Config)\$(Platform)\DCU</DCC_DcuOutput>
+			<DCC_ExeOutput>.\$(Config)\$(Platform)</DCC_ExeOutput>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_1)'!=''">
+			<DCC_DebugInfoInExe>true</DCC_DebugInfoInExe>
+			<BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
+			<BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
+			<ILINK_FullDebugInfo>true</ILINK_FullDebugInfo>
+			<DCC_UnitSearchPath>..\External\Spring\Source\Base;..\External\Spring\Source\Base\Collections;..\External\Spring\Source\Base\Reflection;..\External\uib\Source\;..\External\FastMM\;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_DebugDCUs>true</DCC_DebugDCUs>
+			<DCC_MapFile>3</DCC_MapFile>
+			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
+			<DCC_Optimize>false</DCC_Optimize>
+			<DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_2)'!=''">
+			<DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
+			<DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
+			<DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
+			<DCC_DebugInformation>false</DCC_DebugInformation>
+		</PropertyGroup>
+		<ItemGroup>
+			<DelphiCompile Include="ORMTests.dpr">
+				<MainSource>MainSource</MainSource>
+			</DelphiCompile>
+			<DCCReference Include="TestSession.pas"/>
+			<DCCReference Include="..\Core.AbstractManager.pas"/>
+			<DCCReference Include="..\Core.Interfaces.pas"/>
+			<DCCReference Include="..\SQL.Params.pas"/>
+			<DCCReference Include="..\Core.Session.pas"/>
+			<DCCReference Include="..\Core.EntityMap.pas"/>
+			<DCCReference Include="..\Core.DatabaseManager.pas"/>
+			<DCCReference Include="..\SQL.AbstractCommandExecutor.pas"/>
+			<DCCReference Include="..\SQL.Interfaces.pas"/>
+			<DCCReference Include="..\SQL.Commands.Select.pas"/>
+			<DCCReference Include="..\SQL.Commands.Delete.pas"/>
+			<DCCReference Include="..\SQL.Commands.Update.pas"/>
+			<DCCReference Include="..\SQL.Commands.Insert.pas"/>
+			<DCCReference Include="..\SQL.Commands.FKCreator.pas"/>
+			<DCCReference Include="..\SQL.Commands.TableCreator.pas"/>
+			<DCCReference Include="..\SQL.Commands.SeqCreator.pas"/>
+			<DCCReference Include="..\SQL.AbstractSQLGenerator.pas"/>
+			<DCCReference Include="..\SQL.Generator.Ansi.pas"/>
+			<DCCReference Include="..\SQL.Register.pas"/>
+			<DCCReference Include="..\Adapters.SQLite.pas"/>
+			<DCCReference Include="..\Core.Base.pas"/>
+			<DCCReference Include="..\Mapping.Attributes.pas"/>
+			<DCCReference Include="..\Core.Exceptions.pas"/>
+			<DCCReference Include="..\SQL.Commands.Factory.pas"/>
+			<DCCReference Include="..\Mapping.RttiExplorer.pas"/>
+			<DCCReference Include="TestMapping.RttiExplorer.pas"/>
+			<DCCReference Include="uModels.pas"/>
+			<DCCReference Include="..\Core.Types.pas"/>
+			<DCCReference Include="TestSQLiteAdapter.pas"/>
+			<DCCReference Include="..\Core.ConnectionFactory.pas"/>
+			<DCCReference Include="TestAnsiSQLGenerator.pas"/>
+			<DCCReference Include="..\SQL.Commands.pas"/>
+			<DCCReference Include="..\SQL.Types.pas"/>
+			<DCCReference Include="..\Core.EntitySerializer.pas"/>
+			<DCCReference Include="..\Adapters.ADO.pas"/>
+			<DCCReference Include="TestADOAdapter.pas"/>
+			<DCCReference Include="..\Adapters.MSSQL.pas"/>
+			<DCCReference Include="..\Core.Utils.pas"/>
+			<DCCReference Include="..\Core.Reflection.pas"/>
+			<DCCReference Include="..\Core.EntityCache.pas"/>
+			<DCCReference Include="TestCoreEntityMap.pas"/>
+			<DCCReference Include="..\SQL.Commands.Page.pas"/>
+			<DCCReference Include="VARTOTMASTModel.pas"/>
+			<DCCReference Include="..\RttiPatch.pas"/>
+			<DCCReference Include="..\PatchUtils.pas"/>
+			<DCCReference Include="..\Adapters.ASA.pas"/>
+			<DCCReference Include="TestAdaptersASA.pas"/>
+			<DCCReference Include="..\SQL.Generator.Oracle.pas"/>
+			<DCCReference Include="..\Adapters.DBX.pas"/>
+			<DCCReference Include="..\Adapters.UIB.pas"/>
+			<DCCReference Include="TestAdapterUIB.pas"/>
+			<DCCReference Include="..\SQL.Generator.Firebird.pas"/>
+			<DCCReference Include="TestConnectionFactory.pas"/>
+			<DCCReference Include="..\SQL.Generator.MSSQL.pas"/>
+			<DCCReference Include="..\SQL.Generator.ASA.pas"/>
+			<DCCReference Include="..\SQL.Generator.SQLite3.pas"/>
+			<DCCReference Include="..\SQL.Generator.PostgreSQL.pas"/>
+			<DCCReference Include="..\SQL.Generator.MySQL.pas"/>
+			<DCCReference Include="TestDatabaseManager.pas"/>
+			<DCCReference Include="..\External\SQLite3\Source\SQLite3.pas"/>
+			<DCCReference Include="..\External\SQLite3\Source\SQLiteTable3.pas"/>
+			<DCCReference Include="..\Core.Relation.Abstract.pas"/>
+			<DCCReference Include="..\Core.Relation.ManyToOne.pas"/>
+			<DCCReference Include="..\Core.Consts.pas"/>
+			<DCCReference Include="..\Core.Criteria.Abstract.pas"/>
+			<DCCReference Include="..\Core.Criteria.pas"/>
+			<DCCReference Include="..\Core.Criteria.AbstractCriterion.pas"/>
+			<DCCReference Include="..\Core.Criteria.Criterion.pas"/>
+			<DCCReference Include="..\Core.Criteria.Restrictions.pas"/>
+			<DCCReference Include="TestCoreCriteria.pas"/>
+			<DCCReference Include="..\Core.Criteria.Criterion.SimpleExpression.pas"/>
+			<None Include="Profiling\AQtimeModule1.aqt"/>
+			<BuildConfiguration Include="Release">
+				<Key>Cfg_2</Key>
+				<CfgParent>Base</CfgParent>
+			</BuildConfiguration>
+			<BuildConfiguration Include="Base">
+				<Key>Base</Key>
+			</BuildConfiguration>
+			<BuildConfiguration Include="Debug">
+				<Key>Cfg_1</Key>
+				<CfgParent>Base</CfgParent>
+			</BuildConfiguration>
+		</ItemGroup>
+		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')" Project="$(BDS)\Bin\CodeGear.Delphi.Targets"/>
+		<Import Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\8.0\UserTools.proj')" Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\8.0\UserTools.proj"/>
+		<ProjectExtensions>
+			<Borland.Personality>Delphi.Personality.12</Borland.Personality>
+			<Borland.ProjectType/>
+			<BorlandProject>
+				<Delphi.Personality>
+					<VersionInfo>
+						<VersionInfo Name="IncludeVerInfo">True</VersionInfo>
+						<VersionInfo Name="AutoIncBuild">False</VersionInfo>
+						<VersionInfo Name="MajorVer">0</VersionInfo>
+						<VersionInfo Name="MinorVer">0</VersionInfo>
+						<VersionInfo Name="Release">0</VersionInfo>
+						<VersionInfo Name="Build">1</VersionInfo>
+						<VersionInfo Name="Debug">False</VersionInfo>
+						<VersionInfo Name="PreRelease">False</VersionInfo>
+						<VersionInfo Name="Special">False</VersionInfo>
+						<VersionInfo Name="Private">False</VersionInfo>
+						<VersionInfo Name="DLL">False</VersionInfo>
+						<VersionInfo Name="Locale">1063</VersionInfo>
+						<VersionInfo Name="CodePage">1257</VersionInfo>
+					</VersionInfo>
+					<VersionInfoKeys>
+						<VersionInfoKeys Name="CompanyName"/>
+						<VersionInfoKeys Name="FileDescription"/>
+						<VersionInfoKeys Name="FileVersion">0.0.0.1</VersionInfoKeys>
+						<VersionInfoKeys Name="InternalName"/>
+						<VersionInfoKeys Name="LegalCopyright"/>
+						<VersionInfoKeys Name="LegalTrademarks"/>
+						<VersionInfoKeys Name="OriginalFilename"/>
+						<VersionInfoKeys Name="ProductName"/>
+						<VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys>
+						<VersionInfoKeys Name="Comments"/>
+					</VersionInfoKeys>
+					<Excluded_Packages>
+						<Excluded_Packages Name="$(BDSBIN)\dcloffice2k170.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
+						<Excluded_Packages Name="$(BDSBIN)\dclofficexp170.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
+					</Excluded_Packages>
+					<Source>
+						<Source Name="MainSource">ORMTests.dpr</Source>
+					</Source>
+				</Delphi.Personality>
+				<Platforms>
+					<Platform value="Win64">False</Platform>
+					<Platform value="Win32">True</Platform>
+				</Platforms>
+				<ModelSupport>False</ModelSupport>
+			</BorlandProject>
+			<ProjectFileVersion>12</ProjectFileVersion>
+		</ProjectExtensions>
+	</Project>

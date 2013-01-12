@@ -1,3 +1,6 @@
+// JCL_DEBUG_EXPERT_GENERATEJDBG OFF
+// JCL_DEBUG_EXPERT_INSERTJDBG OFF
+// JCL_DEBUG_EXPERT_DELETEMAPFILE OFF
 program ORMTests;
 {
 
@@ -88,7 +91,9 @@ uses
   Core.Criteria in '..\Core.Criteria.pas',
   Core.Criteria.AbstractCriterion in '..\Core.Criteria.AbstractCriterion.pas',
   Core.Criteria.Criterion in '..\Core.Criteria.Criterion.pas',
-  Core.Criteria.Restrictions in '..\Core.Criteria.Restrictions.pas';
+  Core.Criteria.Restrictions in '..\Core.Criteria.Restrictions.pas',
+  TestCoreCriteria in 'TestCoreCriteria.pas',
+  Core.Criteria.Criterion.SimpleExpression in '..\Core.Criteria.Criterion.SimpleExpression.pas';
 
 {$R *.RES}
 

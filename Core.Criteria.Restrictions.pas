@@ -30,7 +30,8 @@ unit Core.Criteria.Restrictions;
 interface
 
 uses
-  Core.Criteria.Criterion
+  Core.Interfaces
+  ,Core.Criteria.Criterion
   ,Rtti
   ;
 
@@ -38,17 +39,22 @@ uses
 type
   TRestrictions = class sealed
   public
-    class function Eq(const APropertyName: string; const AValue: TValue): TCriterion;
+    class function Eq(const APropertyName: string; const AValue: TValue): ICriterion;
   end;
 
 implementation
 
+uses
+  Core.Criteria.Criterion.SimpleExpression
+  ;
+
 { TRestrictions }
 
 class function TRestrictions.Eq(const APropertyName: string;
-  const AValue: TValue): TCriterion;
+  const AValue: TValue): ICriterion;
 begin
   {TODO -oOwner -cGeneral : implement Eq criterion}
+  Result := TSimpleExpression.Create(APropertyName, AValue);
 end;
 
 end.

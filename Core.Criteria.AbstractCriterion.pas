@@ -29,15 +29,35 @@ unit Core.Criteria.AbstractCriterion;
 
 interface
 
+uses
+  Core.Interfaces
+  ;
+
 type
-  TAbstractCriterion = class(TInterfacedObject)
+  TAbstractCriterion = class(TInterfacedObject, ICriterion)
   private
     FEntityClass: TClass;
+    procedure SetEntityClass(const Value: TClass);
+    function GetEntityClass: TClass;
   public
-    property EntityClass: TClass read FEntityClass write FEntityClass;
+    function ToSqlString(): string; virtual; abstract;
+
+    property EntityClass: TClass read GetEntityClass write SetEntityClass;
   end;
 
 implementation
 
+
+{ TAbstractCriterion }
+
+function TAbstractCriterion.GetEntityClass: TClass;
+begin
+  Result := FEntityClass;
+end;
+
+procedure TAbstractCriterion.SetEntityClass(const Value: TClass);
+begin
+  FEntityClass := Value;
+end;
 
 end.

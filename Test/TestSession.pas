@@ -16,7 +16,7 @@ interface
 uses
   TestFramework, Windows, Forms, Dialogs, Controls, Classes, SysUtils,
   Variants, Graphics, Messages, StdCtrls, Core.Session, Core.Interfaces
-  ,uModels, Rtti;
+  ,uModels, Rtti, SQLiteTable3;
 
 type
 
@@ -59,12 +59,14 @@ type
     Picture: TStream;
   end;
 
+var
+  TestDB: TSQLiteDatabase = nil;
+
 implementation
 
 uses
   Adapters.SQLite
   ,Core.ConnectionFactory
-  ,SQLiteTable3
   ,SQL.Register
   ,SQL.Params
   ,SvDesignPatterns
@@ -72,9 +74,6 @@ uses
   ,Generics.Collections
   ,Core.Reflection
   ;
-
-var
-  TestDB: TSQLiteDatabase = nil;
 
 const
   TBL_PEOPLE = 'CUSTOMERS';

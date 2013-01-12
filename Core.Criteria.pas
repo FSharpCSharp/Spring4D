@@ -32,21 +32,18 @@ unit Core.Criteria;
 interface
 
 uses
-  Core.Criteria.Abstract
+  Core.Interfaces
+  ,Core.Session
+  ,Core.Criteria.Abstract
   ,Core.Criteria.Criterion
-  ,Generics.Collections
   {$IFDEF USE_SPRING},Spring.Collections {$ENDIF}
   ;
 
 type
   TCriteria<T: class, constructor> = class(TAbstractCriteria)
-  private
-    FCriterions: TObjectList<TCriterion>;
   public
-    constructor Create();
+    constructor Create(ASession: TSession); reintroduce;
     destructor Destroy; override;
-
-    function Add(const ACriterion: TCriterion): TCriteria<T>;
 
     function Fetch(): {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF};
   end;
@@ -55,22 +52,13 @@ implementation
 
 { TCriteria }
 
-function TCriteria<T>.Add(const ACriterion: TCriterion): TCriteria<T>;
+constructor TCriteria<T>.Create(ASession: TSession);
 begin
-  ACriterion.EntityClass := EntityClass;
-  FCriterions.Add(ACriterion);
-  Result := Self;
-end;
-
-constructor TCriteria<T>.Create();
-begin
-  inherited Create(T);
-  FCriterions := TObjectList<TCriterion>.Create(True);
+  inherited Create(T, ASession);
 end;
 
 destructor TCriteria<T>.Destroy;
 begin
-  FCriterions.Free;
   inherited Destroy;
 end;
 

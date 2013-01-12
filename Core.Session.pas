@@ -73,16 +73,19 @@ type
     procedure SetLazyValue<T>(var AValue: T; const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute);
 
 
+    {$REGION 'Documentation'}
     ///	<summary>
-    ///	  Starts a new transaction
+    ///	  Starts a new transaction.
     ///	</summary>
     ///	<remarks>
     ///	  Can optionally return newly started transaction interface.
     ///	</remarks>
+    {$ENDREGION}
     function BeginTransaction(): IDBTransaction;
 
+    {$REGION 'Documentation'}
     ///	<summary>
-    ///	  Commits currently active transaction
+    ///	  Commits currently active transaction.
     ///	</summary>
     ///	<remarks>
     ///	  <para>
@@ -95,8 +98,10 @@ type
     ///	    ReleaseCurrentTransaction because it is done automatically. 
     ///	  </para>
     ///	</remarks>
+    {$ENDREGION}
     procedure CommitTransaction();
 
+    {$REGION 'Documentation'}
     ///	<summary>
     ///	  Rollbacks currently active transaction.
     ///	</summary>
@@ -111,33 +116,52 @@ type
     ///	    ReleaseCurrentTransaction because it is done automatically.
     ///	  </para>
     ///	</remarks>
+    {$ENDREGION}
     procedure RollbackTransaction();
     procedure ReleaseCurrentTransaction();
-    /// <summary>
-    /// Executes sql statement which does not return resultset
-    /// </summary>
+
+    function CreateCriteria<T: class, constructor>(): ICriteria;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Executes sql statement which does not return resultset.
+    ///	</summary>
+    {$ENDREGION}
     function Execute(const ASql: string; const AParams: array of const): NativeUInt;
-    /// <summary>
-    /// Executes given sql statement and returns first column value. SQL statement should be like this:
-    ///  SELECT COUNT(*) FROM TABLE;
-    /// </summary>
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  <para>
+    ///	    Executes given sql statement and returns first column value. SQL
+    ///	    statement should be like this:
+    ///	  </para>
+    ///	  <code lang="Delphi">
+    ///	SELECT COUNT(*) FROM TABLE;</code>
+    ///	</summary>
+    {$ENDREGION}
     function ExecuteScalar<T>(const ASql: string; const AParams: array of const): T;
 
-    /// <summary>
-    /// Retrieves first and only model from the sql statement
-    /// </summary>
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Retrieves first and only model from the sql statement.
+    ///	</summary>
+    {$ENDREGION}
     function First<T: class, constructor>(const ASql: string; const AParams: array of const): T;
     function FirstOrDefault<T: class, constructor>(const ASql: string; const AParams: array of const): T;
 
+    {$REGION 'Documentation'}
     ///	<summary>
     ///	  Retrieves only one entity model from the database.
     ///	</summary>
+    {$ENDREGION}
     function Single<T: class, constructor>(const ASql: string; const AParams: array of const): T;
     function SingleOrDefault<T: class, constructor>(const ASql: string; const AParams: array of const): T;
 
-    /// <summary>
-    /// Retrieves multiple models from the sql statement into the ACollection
-    /// </summary>
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Retrieves multiple models from the sql statement into the ACollection.
+    ///	</summary>
+    {$ENDREGION}
     procedure Fetch<T: class, constructor>(const ASql: string;
       const AParams: array of const; ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
                                                   {$ELSE} TObjectList<T> {$ENDIF} ); overload;
@@ -146,68 +170,108 @@ type
                                                   {$ELSE} TObjectList<T> {$ENDIF}); overload;
     function Fetch<T: class, constructor>(AResultset: IDBResultset): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
                                                   {$ELSE} TObjectList<T> {$ENDIF}; overload;
-    /// <summary>
-    /// Retrieves multiple models from the sql statement
-    /// </summary>
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Retrieves multiple models from the sql statement.
+    ///	</summary>
+    {$ENDREGION}
     function Fetch<T: class, constructor>(const ASql: string;
       const AParams: array of const): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
                                                   {$ELSE} TObjectList<T> {$ENDIF}; overload;
-    /// <summary>
-    /// Retrieves single model from the database based on its primary key value.
-    /// If record not found, nil is returned
-    /// </summary>
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Retrieves single model from the database based on its primary key
+    ///	  value. If record not found, nil is returned.
+    ///	</summary>
+    {$ENDREGION}
     function FindOne<T: class, constructor>(const AID: TValue): T;
-    /// <summary>
-    /// Retrieves all models from PODO database table
-    /// </summary>
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Retrieves all models from PODO database table.
+    ///	</summary>
+    {$ENDREGION}
     function FindAll<T: class, constructor>(): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
                                                   {$ELSE} TObjectList<T> {$ENDIF};
 
+    {$REGION 'Documentation'}
     ///	<summary>
-    ///	  Inserts model to the database
+    ///	  Inserts model to the database .
     ///	</summary>
+    {$ENDREGION}
     procedure Insert(AEntity: TObject); overload;
-    /// <summary>
-    /// Inserts models to the database
-    /// </summary>
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Inserts models to the database.
+    ///	</summary>
+    {$ENDREGION}
     procedure Insert<T: class, constructor>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
       {$ELSE} TObjectList<T> {$ENDIF}); overload;
-    /// <summary>
-    /// Checks if given entity is newly created (does not exist in the database yet)
-    /// </summary>
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Checks if given entity is newly created (does not exist in the
+    ///	  database yet).
+    ///	</summary>
+    {$ENDREGION}
     function IsNew(AEntity: TObject): Boolean;
 
-    /// <summary>
-    /// Updates model in a database
-    /// </summary>
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Updates model in a database.
+    ///	</summary>
+    {$ENDREGION}
     procedure Update(AEntity: TObject); overload;
-    /// <summary>
-    /// Updates multiple models in a database
-    /// </summary>
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Updates multiple models in a database.
+    ///	</summary>
+    {$ENDREGION}
     procedure Update<T: class, constructor>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
       {$ELSE} TObjectList<T> {$ENDIF}); overload;
-    /// <summary>
-    /// Removes model from the database
-    /// </summary>
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Removes model from the database.
+    ///	</summary>
+    {$ENDREGION}
     procedure Delete(AEntity: TObject); overload;
-    /// <summary>
-    /// Removes models from the database
-    /// </summary>
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Removes models from the database.
+    ///	</summary>
+    {$ENDREGION}
     procedure Delete<T: class, constructor>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
       {$ELSE} TObjectList<T> {$ENDIF}); overload;
-    /// <summary>
-    /// Fetches data in pages. You do not need to write custom sql for this, just use ordinary sql.
-    /// All the work will be done for you.
-    /// </summary>
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Fetches data in pages. You do not need to write custom sql for this,
+    ///	  just use ordinary sql. All the work will be done for you.
+    ///	</summary>
+    {$ENDREGION}
     function Page<T: class, constructor>(APage: Integer; AItemsPerPage: Integer;
       const ASql: string; const AParams: array of const): IDBPage<T>;
-    /// <summary>
-    /// Saves the entity to the database. It will do update or the insert based on the entity state.
-    /// </summary>
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Saves the entity to the database. It will do update or the insert
+    ///	  based on the entity state.
+    ///	</summary>
+    {$ENDREGION}
     procedure Save(AEntity: TObject); overload;
-    /// <summary>
-    /// Saves entities to the database. It will do update or the insert based on the entity state.
-    /// </summary>
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Saves entities to the database. It will do update or the insert based
+    ///	  on the entity state.
+    ///	</summary>
+    {$ENDREGION}
     procedure Save<T: class, constructor>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
       {$ELSE} TObjectList<T> {$ENDIF}); overload;
   end;
@@ -234,6 +298,7 @@ uses
   ,SysUtils
   ,Core.Relation.ManyToOne
   ,Core.Consts
+  ,Core.Criteria
   ;
 
 { TEntityManager }
@@ -257,6 +322,11 @@ constructor TSession.Create(AConnection: IDBConnection);
 begin
   inherited Create(AConnection);
   FOldStateEntities := TEntityMap.Create(True);
+end;
+
+function TSession.CreateCriteria<T>: ICriteria;
+begin
+  Result := TCriteria<T>.Create(Self);
 end;
 
 procedure TSession.Delete(AEntity: TObject);

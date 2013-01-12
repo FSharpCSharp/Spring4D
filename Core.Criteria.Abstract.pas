@@ -29,24 +29,58 @@ unit Core.Criteria.Abstract;
 
 interface
 
+uses
+  Core.Interfaces
+  ,Generics.Collections
+  ,Core.Session
+  ;
+
 type
-  TAbstractCriteria = class(TInterfacedObject)
+  TAbstractCriteria = class(TInterfacedObject, ICriteria)
   private
     FEntityClass: TClass;
+    FCriterions: TList<ICriterion>;
+    FSession: TSession;
+  protected
+    constructor Create(AEntityClass: TClass; ASession: TSession); virtual;
   public
-    constructor Create(AEntityClass: TClass); virtual;
+    destructor Destroy; override;
+
+    function Add(ACriterion: ICriterion): ICriteria; virtual;
+    function Count(): Integer; virtual;
 
     property EntityClass: TClass read FEntityClass;
+    property Session: TSession read FSession;
   end;
 
 implementation
 
 { TAbstractCriteria }
 
-constructor TAbstractCriteria.Create(AEntityClass: TClass);
+function TAbstractCriteria.Add(ACriterion: ICriterion): ICriteria;
+begin
+  ACriterion.SetEntityClass(FEntityClass);
+  FCriterions.Add(ACriterion);
+  Result := Self;
+end;
+
+function TAbstractCriteria.Count: Integer;
+begin
+  Result := FCriterions.Count;
+end;
+
+constructor TAbstractCriteria.Create(AEntityClass: TClass; ASession: TSession);
 begin
   inherited Create;
   FEntityClass := AEntityClass;
+  FSession := ASession;
+  FCriterions := TList<ICriterion>.Create();
+end;
+
+destructor TAbstractCriteria.Destroy;
+begin
+  FCriterions.Free;
+  inherited Destroy;
 end;
 
 end.
