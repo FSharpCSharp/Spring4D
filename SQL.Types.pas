@@ -120,6 +120,9 @@ type
     FReferencedTableName: string;
     function GetForeignKeyName: string;
   public
+    constructor Create(const AFieldname: string; ATable: TSQLTable
+      ; const AReferencedColumnName, AReferencedTableName: string; AConstraints: TForeignStrategies); reintroduce; overload;
+
     function GetConstraintsAsString(): string;
 
     property ForeignKeyName: string read GetForeignKeyName;
@@ -129,12 +132,12 @@ type
   end;
 
   TWhereOperator = (woEqual = 0, woNotEqual, woMore, woLess, woLike, woNotLike,
-    woMoreOrEqual, woLessOrEqual, woIn, woNotIn);
+    woMoreOrEqual, woLessOrEqual, woIn, woNotIn, woIsNull, woIsNotNull);
 
 const
   WhereOpNames: array[TWhereOperator] of string = (
     {woEqual =} '=', {woNotEqual =} '<>', {woMore = }'>', {woLess = }'<', {woLike = }'LIKE', {woNotLike = }'NOT LIKE',
-    {woMoreOrEqual = }'>=', {woLessOrEqual = }'<=', {woIn = }'IN', {woNotIn = }'NOT IN');
+    {woMoreOrEqual = }'>=', {woLessOrEqual = }'<=', {woIn = }'IN', {woNotIn = }'NOT IN', {woIsNull} 'IS NULL', {woIsNotNull} 'IS NOT NULL');
 
 type
   TSQLWhereField = class(TSQLField)
@@ -389,7 +392,11 @@ end;
 
 function TSQLWhereField.ToSQLString: string;
 begin
-  Result := GetFullFieldname + ' ' + WhereOpNames[WhereOperator] + ' :' + Fieldname + ' ';
+  case WhereOperator of
+    woIsNull, woIsNotNull: Result := GetFullFieldname + ' ' + WhereOpNames[WhereOperator];
+    else
+      Result := GetFullFieldname + ' ' + WhereOpNames[WhereOperator] + ' :' + Fieldname + ' ';
+  end;
 end;
 
 { TSQLCreateField }
@@ -420,6 +427,15 @@ begin
 end;
 
 { TSQLForeignKeyField }
+
+constructor TSQLForeignKeyField.Create(const AFieldname: string; ATable: TSQLTable; const AReferencedColumnName,
+  AReferencedTableName: string; AConstraints: TForeignStrategies);
+begin
+  inherited Create(AFieldname, ATable);
+  FReferencedColumnName := AReferencedColumnName;
+  FReferencedTableName := AReferencedTableName;
+  FConstraints := AConstraints;
+end;
 
 function TSQLForeignKeyField.GetConstraintsAsString: string;
 var

@@ -67,7 +67,7 @@ var
   LCustomers: IList<TCustomer>;
 begin
   LCustomers := FCriteria.Add(TRestrictions.Eq('CustName', 'Foo'))
-    .Add(TRestrictions.Eq('CustAge', 42)).List;
+    .Add(TRestrictions.Eq('CustAge', 42)).Add(TRestrictions.IsNull('AVATAR')).List;
   CheckTrue(Assigned(LCustomers));
   CheckEquals(0, LCustomers.Count);
   InsertCustomer(42, 'Foo');

@@ -150,6 +150,10 @@ end;
 function TDBParam.GetName: string;
 begin
   Result := FName;
+  if (Length(Result) > 0) and not (CharInSet(Result[1], [':'])) then
+  begin
+    Result := ':' + Result;
+  end;
 end;
 
 procedure TDBParam.SetFromTValue(const AValue: TValue);

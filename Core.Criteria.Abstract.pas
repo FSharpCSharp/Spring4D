@@ -45,12 +45,10 @@ type
     FEntityClass: TClass;
     FCriterions: TList<ICriterion>;
     FSession: TSession;
-    FParamIndex: Integer;
   protected
     constructor Create(AEntityClass: TClass; ASession: TSession); virtual;
 
     function GenerateSqlStatement(out AParams: TObjectList<TDBParam>): string;
-    function GetParamName(): string;
     function DoList(): {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF}; virtual; abstract;
   public
     destructor Destroy; override;
@@ -77,7 +75,6 @@ uses
 
 function TAbstractCriteria<T>.Add(ACriterion: ICriterion): ICriteria<T>;
 begin
-  FParamIndex := 0;
   ACriterion.SetEntityClass(FEntityClass);
   FCriterions.Add(ACriterion);
   Result := Self;
@@ -94,7 +91,6 @@ begin
   FEntityClass := AEntityClass;
   FSession := ASession;
   FCriterions := TList<ICriterion>.Create();
-  FParamIndex := 0;
 end;
 
 destructor TAbstractCriteria<T>.Destroy;
@@ -123,24 +119,14 @@ begin
       LWhereField.WhereOperator := LCriterion.GetWhereOperator;
       LExecutor.Command.WhereFields.Add(LWhereField);
     end;
-
-
     Result := LExecutor.Generator.GenerateSelect(LExecutor.Command);
-
   finally
     LExecutor.Free;
   end;
 end;
 
-function TAbstractCriteria<T>.GetParamName: string;
-begin
-  Result := Format(':%D', [FParamIndex]);
-  Inc(FParamIndex);
-end;
-
 function TAbstractCriteria<T>.List: {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF};
 begin
-  FParamIndex := 0;
   Result := DoList();
 end;
 

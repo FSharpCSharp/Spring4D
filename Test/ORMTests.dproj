@@ -134,6 +134,7 @@
 			<DCCReference Include="..\Core.Criteria.Restrictions.pas"/>
 			<DCCReference Include="TestCoreCriteria.pas"/>
 			<DCCReference Include="..\Core.Criteria.Criterion.SimpleExpression.pas"/>
+			<DCCReference Include="..\Core.Criteria.Criterion.NullExpression.pas"/>
 			<None Include="Profiling\AQtimeModule1.aqt"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>

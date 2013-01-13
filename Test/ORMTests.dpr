@@ -93,7 +93,8 @@ uses
   Core.Criteria.Criterion in '..\Core.Criteria.Criterion.pas',
   Core.Criteria.Restrictions in '..\Core.Criteria.Restrictions.pas',
   TestCoreCriteria in 'TestCoreCriteria.pas',
-  Core.Criteria.Criterion.SimpleExpression in '..\Core.Criteria.Criterion.SimpleExpression.pas';
+  Core.Criteria.Criterion.SimpleExpression in '..\Core.Criteria.Criterion.SimpleExpression.pas',
+  Core.Criteria.Criterion.NullExpression in '..\Core.Criteria.Criterion.NullExpression.pas';
 
 {$R *.RES}
 

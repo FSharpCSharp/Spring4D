@@ -43,12 +43,15 @@ type
   public
     class function Eq(const APropertyName: string; const AValue: TValue): ICriterion;
     class function NotEq(const APropertyName: string; const AValue: TValue): ICriterion;
+    class function IsNull(const APropertyName: string): ICriterion;
+    class function IsNotNull(const APropertyName: string): ICriterion;
   end;
 
 implementation
 
 uses
   Core.Criteria.Criterion.SimpleExpression
+  ,Core.Criteria.Criterion.NullExpression
   ,SQL.Types
   ;
 
@@ -59,6 +62,16 @@ class function TRestrictions.Eq(const APropertyName: string;
 begin
   {TODO -oOwner -cGeneral : implement Eq criterion}
   Result := TSimpleExpression.Create(APropertyName, AValue, woEqual);
+end;
+
+class function TRestrictions.IsNotNull(const APropertyName: string): ICriterion;
+begin
+  Result := TNullExpression.Create(APropertyName, woIsNotNull);
+end;
+
+class function TRestrictions.IsNull(const APropertyName: string): ICriterion;
+begin
+  Result := TNullExpression.Create(APropertyName, woIsNull);
 end;
 
 class function TRestrictions.NotEq(const APropertyName: string; const AValue: TValue): ICriterion;
