@@ -29,8 +29,13 @@ unit Core.Criteria.AbstractCriterion;
 
 interface
 
+{$I sv.inc}
+
 uses
   Core.Interfaces
+  ,SQL.Types
+  ,SQL.Params
+  ,Generics.Collections
   ;
 
 type
@@ -40,7 +45,8 @@ type
     procedure SetEntityClass(const Value: TClass);
     function GetEntityClass: TClass;
   public
-    function ToSqlString(): string; virtual; abstract;
+    function ToSqlString(AParams: TObjectList<TDBParam>): string; virtual; abstract;
+    function GetWhereOperator(): TWhereOperator; virtual;
 
     property EntityClass: TClass read GetEntityClass write SetEntityClass;
   end;
@@ -53,6 +59,11 @@ implementation
 function TAbstractCriterion.GetEntityClass: TClass;
 begin
   Result := FEntityClass;
+end;
+
+function TAbstractCriterion.GetWhereOperator: TWhereOperator;
+begin
+  Result := woEqual;
 end;
 
 procedure TAbstractCriterion.SetEntityClass(const Value: TClass);

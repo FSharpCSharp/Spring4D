@@ -29,6 +29,8 @@ unit Core.Criteria.Restrictions;
 
 interface
 
+{$I sv.inc}
+
 uses
   Core.Interfaces
   ,Core.Criteria.Criterion
@@ -40,12 +42,14 @@ type
   TRestrictions = class sealed
   public
     class function Eq(const APropertyName: string; const AValue: TValue): ICriterion;
+    class function NotEq(const APropertyName: string; const AValue: TValue): ICriterion;
   end;
 
 implementation
 
 uses
   Core.Criteria.Criterion.SimpleExpression
+  ,SQL.Types
   ;
 
 { TRestrictions }
@@ -54,7 +58,12 @@ class function TRestrictions.Eq(const APropertyName: string;
   const AValue: TValue): ICriterion;
 begin
   {TODO -oOwner -cGeneral : implement Eq criterion}
-  Result := TSimpleExpression.Create(APropertyName, AValue);
+  Result := TSimpleExpression.Create(APropertyName, AValue, woEqual);
+end;
+
+class function TRestrictions.NotEq(const APropertyName: string; const AValue: TValue): ICriterion;
+begin
+  Result := TSimpleExpression.Create(APropertyName, AValue, woNotEqual);
 end;
 
 end.

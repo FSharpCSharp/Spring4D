@@ -11,6 +11,8 @@ unit TestCoreCriteria;
 
 interface
 
+{$I sv.inc}
+
 uses
   TestFramework, Spring.Collections, Core.Criteria, Generics.Collections, Core.Interfaces,
   Core.Criteria.Criterion, Core.Criteria.Abstract, uModels, Core.Criteria.Restrictions
@@ -23,13 +25,14 @@ type
 
   TestTCriteria = class(TTestCase)
   private
-    FCriteria: ICriteria;
+    FCriteria: ICriteria<TCustomer>;
     FSession: TSession;
   public
     procedure SetUp; override;
     procedure TearDown; override;
   published
     procedure TestAdd;
+    procedure TestList();
   end;
 
 implementation
@@ -58,6 +61,21 @@ begin
   CheckEquals(2, FCriteria.Count);
 end;
 
+
+procedure TestTCriteria.TestList;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  LCustomers := FCriteria.Add(TRestrictions.Eq('CustName', 'Foo'))
+    .Add(TRestrictions.Eq('CustAge', 42)).List;
+  CheckTrue(Assigned(LCustomers));
+  CheckEquals(0, LCustomers.Count);
+  InsertCustomer(42, 'Foo');
+  LCustomers := FCriteria.List;
+  CheckEquals(1, LCustomers.Count);
+  CheckEquals(42, LCustomers[0].Age);
+  CheckEquals('Foo', LCustomers[0].Name);
+end;
 
 initialization
   // Register any test cases with the test runner

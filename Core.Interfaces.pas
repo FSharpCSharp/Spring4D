@@ -36,6 +36,7 @@ uses
   {$IFDEF USE_SPRING},Spring.Collections{$ENDIF}
   ,Generics.Collections
   ,SQL.Interfaces
+  ,SQL.Types
   ;
 
 type
@@ -45,15 +46,17 @@ type
 
   ICriterion = interface(IInvokable)
     ['{E22DFB1C-0E0E-45F4-9740-9469164B4557}']
-    function ToSqlString(): string;
+    function ToSqlString(AParams: TObjectList<TDBParam>): string;
     procedure SetEntityClass(const Value: TClass);
     function GetEntityClass: TClass;
+    function GetWhereOperator(): TWhereOperator;
   end;
 
-  ICriteria = interface(IInvokable)
+  ICriteria<T: class, constructor> = interface(IInvokable)
     ['{09428AF2-3A36-44DB-B0E7-8B7D7620ED1C}']
-    function Add(ACriterion: ICriterion): ICriteria;
+    function Add(ACriterion: ICriterion): ICriteria<T>;
     function Count(): Integer;
+    function List(): {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF};
   end;
 
   IDBResultset = interface

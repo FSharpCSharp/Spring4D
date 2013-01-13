@@ -62,6 +62,8 @@ type
 var
   TestDB: TSQLiteDatabase = nil;
 
+procedure InsertCustomer(AAge: Integer = 25; AName: string = 'Demo'; AHeight: Double = 15.25; APicture: TStream = nil);
+
 implementation
 
 uses

@@ -29,58 +29,119 @@ unit Core.Criteria.Abstract;
 
 interface
 
+{$I sv.inc}
+
 uses
   Core.Interfaces
+  {$IFDEF USE_SPRING},Spring.Collections{$ENDIF}
   ,Generics.Collections
   ,Core.Session
+  ,SQL.Params
   ;
 
 type
-  TAbstractCriteria = class(TInterfacedObject, ICriteria)
+  TAbstractCriteria<T: class, constructor> = class(TInterfacedObject, ICriteria<T>)
   private
     FEntityClass: TClass;
     FCriterions: TList<ICriterion>;
     FSession: TSession;
+    FParamIndex: Integer;
   protected
     constructor Create(AEntityClass: TClass; ASession: TSession); virtual;
+
+    function GenerateSqlStatement(out AParams: TObjectList<TDBParam>): string;
+    function GetParamName(): string;
+    function DoList(): {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF}; virtual; abstract;
   public
     destructor Destroy; override;
 
-    function Add(ACriterion: ICriterion): ICriteria; virtual;
+    function Add(ACriterion: ICriterion): ICriteria<T>; virtual;
     function Count(): Integer; virtual;
+    function List(): {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF};
 
+    property Criterions: TList<ICriterion> read FCriterions;
     property EntityClass: TClass read FEntityClass;
     property Session: TSession read FSession;
   end;
 
 implementation
 
+uses
+  SysUtils
+  ,SQL.Commands.Select
+  ,SQL.Commands.Factory
+  ,SQL.Types
+  ;
+
 { TAbstractCriteria }
 
-function TAbstractCriteria.Add(ACriterion: ICriterion): ICriteria;
+function TAbstractCriteria<T>.Add(ACriterion: ICriterion): ICriteria<T>;
 begin
+  FParamIndex := 0;
   ACriterion.SetEntityClass(FEntityClass);
   FCriterions.Add(ACriterion);
   Result := Self;
 end;
 
-function TAbstractCriteria.Count: Integer;
+function TAbstractCriteria<T>.Count: Integer;
 begin
   Result := FCriterions.Count;
 end;
 
-constructor TAbstractCriteria.Create(AEntityClass: TClass; ASession: TSession);
+constructor TAbstractCriteria<T>.Create(AEntityClass: TClass; ASession: TSession);
 begin
   inherited Create;
   FEntityClass := AEntityClass;
   FSession := ASession;
   FCriterions := TList<ICriterion>.Create();
+  FParamIndex := 0;
 end;
 
-destructor TAbstractCriteria.Destroy;
+destructor TAbstractCriteria<T>.Destroy;
 begin
   FCriterions.Free;
   inherited Destroy;
+end;
+
+function TAbstractCriteria<T>.GenerateSqlStatement(out AParams: TObjectList<TDBParam>): string;
+var
+  LCriterion: ICriterion;
+  LCriterionSql: string;
+  LExecutor: TSelectExecutor;
+  LWhereField: TSQLWhereField;
+begin
+  LExecutor := CommandFactory.GetCommand<TSelectExecutor>(FEntityClass, FSession.Connection);
+  try
+    LExecutor.EntityClass := FEntityClass;
+    LExecutor.LazyColumn := nil;
+
+    AParams := TObjectList<TDBParam>.Create();
+    for LCriterion in Criterions do
+    begin
+      LCriterionSql := LCriterion.ToSqlString(AParams);
+      LWhereField := TSQLWhereField.Create(LCriterionSql, LExecutor.Command.Table);
+      LWhereField.WhereOperator := LCriterion.GetWhereOperator;
+      LExecutor.Command.WhereFields.Add(LWhereField);
+    end;
+
+
+    Result := LExecutor.Generator.GenerateSelect(LExecutor.Command);
+
+  finally
+    LExecutor.Free;
+  end;
+end;
+
+function TAbstractCriteria<T>.GetParamName: string;
+begin
+  Result := Format(':%D', [FParamIndex]);
+  Inc(FParamIndex);
+end;
+
+function TAbstractCriteria<T>.List: {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF};
+begin
+  FParamIndex := 0;
+  Result := DoList();
 end;
 
 end.

@@ -35,6 +35,7 @@ uses
   {$IFDEF USE_SPRING}
   ,Spring.Collections
   {$ENDIF}
+  ,SQL.Params
   ,Mapping.Attributes;
 
 const
@@ -54,7 +55,6 @@ type
     procedure DoSetEntity(var AEntityToCreate: TObject; AResultset: IDBResultset; ARealEntity: TObject); virtual;
     procedure DoSetEntityValues(var AEntityToCreate: TObject; AResultset: IDBResultset; AColumns: TList<TColumnData>); virtual;
 
-    function GetResultset(const ASql: string; const AParams: array of const): IDBResultset;
     function GetOne<T: class, constructor>(AResultset: IDBResultset; AEntity: TObject): T; overload;
     function GetOne(AResultset: IDBResultset; AClass: TClass): TObject; overload;
     function GetObjectList<T: class, constructor>(AResultset: IDBResultset): T;
@@ -72,6 +72,8 @@ type
     function GetLazyValueClass<T: class, constructor>(const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute): T;
     procedure SetLazyValue<T>(var AValue: T; const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute);
 
+    function GetResultset(const ASql: string; const AParams: array of const): IDBResultset; overload;
+    function GetResultset(const ASql: string; AParams: TObjectList<TDBParam>): IDBResultset; overload;
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -120,7 +122,7 @@ type
     procedure RollbackTransaction();
     procedure ReleaseCurrentTransaction();
 
-    function CreateCriteria<T: class, constructor>(): ICriteria;
+    function CreateCriteria<T: class, constructor>(): ICriteria<T>;
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -291,7 +293,6 @@ uses
   ,SQL.Commands.Factory
   ,Mapping.RttiExplorer
   ,Core.Reflection
-  ,SQL.Params
   ,Core.Utils
   ,Core.EntityCache
   ,Core.Base
@@ -324,7 +325,7 @@ begin
   FOldStateEntities := TEntityMap.Create(True);
 end;
 
-function TSession.CreateCriteria<T>: ICriteria;
+function TSession.CreateCriteria<T>: ICriteria<T>;
 begin
   Result := TCriteria<T>.Create(Self);
 end;
@@ -756,25 +757,36 @@ end;
 function TSession.GetResultset(const ASql: string;
   const AParams: array of const): IDBResultset;
 var
-  LStmt: IDBStatement;
   LParams: TObjectList<TDBParam>;
 begin
-  LStmt := Connection.CreateStatement();
-  LStmt.SetSQLCommand(ASql);
   LParams := TObjectList<TDBParam>.Create();
   try
     if (Length(AParams) > 0) then
     begin
       ConvertParams(AParams, LParams);
-      LStmt.SetParams(LParams);
     end;
-
-    Connection.NotifyExecutionListeners(ASql, LParams);
-    Result := LStmt.ExecuteQuery();
-
+    Result := GetResultset(ASql, LParams);
   finally
     LParams.Free;
   end;
+end;
+
+function TSession.GetResultset(const ASql: string;
+  AParams: TObjectList<TDBParam>): IDBResultset;
+var
+  LStmt: IDBStatement;
+begin
+  Assert(Assigned(AParams), 'Parameters must be assigned');
+  LStmt := Connection.CreateStatement();
+  LStmt.SetSQLCommand(ASql);
+
+  if (AParams.Count > 0) then
+  begin
+    LStmt.SetParams(AParams);
+  end;
+
+  Connection.NotifyExecutionListeners(ASql, AParams);
+  Result := LStmt.ExecuteQuery();
 end;
 
 function TSession.GetSelector(AClass: TClass): TObject;

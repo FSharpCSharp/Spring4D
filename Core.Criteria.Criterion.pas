@@ -29,6 +29,8 @@ unit Core.Criteria.Criterion;
 
 interface
 
+{$I sv.inc}
+
 uses
   Core.Criteria.AbstractCriterion
   ;

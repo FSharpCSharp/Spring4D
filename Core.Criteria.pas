@@ -40,15 +40,20 @@ uses
   ;
 
 type
-  TCriteria<T: class, constructor> = class(TAbstractCriteria)
+  TCriteria<T: class, constructor> = class(TAbstractCriteria<T>)
+  protected
+    function DoList(): {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF}; override;
   public
     constructor Create(ASession: TSession); reintroduce;
     destructor Destroy; override;
-
-    function Fetch(): {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF};
   end;
 
 implementation
+
+uses
+  SQL.Params
+  ,Generics.Collections
+  ;
 
 { TCriteria }
 
@@ -62,9 +67,19 @@ begin
   inherited Destroy;
 end;
 
-function TCriteria<T>.Fetch: {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF};
+function TCriteria<T>.DoList: {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF};
+var
+  LParams: TObjectList<TDBParam>;
+  LSql: string;
+  LResults: IDBResultset;
 begin
-  {TODO -oOwner -cGeneral : return the list of entities satisfying criteria}
+  LSql := GenerateSqlStatement(LParams);
+  try
+    LResults := Session.GetResultset(LSql, LParams);
+    Result := Session.Fetch<T>(LResults);
+  finally
+    LParams.Free;
+  end;
 end;
 
 end.
