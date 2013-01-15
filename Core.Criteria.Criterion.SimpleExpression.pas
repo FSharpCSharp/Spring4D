@@ -24,9 +24,16 @@ type
   public
     function ToSqlString(AParams: TObjectList<TDBParam>): string; override;
     function GetWhereOperator(): TWhereOperator; override;
+
+    property PropertyName: string read FPropertyName;
+    property Value: TValue read FValue;
   end;
 
 implementation
+
+uses
+  SysUtils
+  ;
 
 { TSimpleExpression }
 
@@ -48,7 +55,7 @@ var
   LParam: TDBParam;
 begin
   {TODO -oLinas -cGeneral : generate simple expression sql string}
-  Result := FPropertyName;
+  Result := UpperCase(FPropertyName);
   LParam := TDBParam.Create();
   LParam.SetFromTValue(FValue);
   LParam.Name := ':' + FPropertyName;

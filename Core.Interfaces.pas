@@ -44,17 +44,26 @@ type
 
   TExecutionListenerProc = reference to procedure(const ACommand: string; const AParams: TObjectList<TDBParam>);
 
+  IOrder = interface(IInvokable)
+    ['{F0047369-10D6-4A4D-9BB8-FD5699936D5D}']
+    function GetPropertyName(): string;
+    function GetOrderType(): TOrderType;
+  end;
+
   ICriterion = interface(IInvokable)
     ['{E22DFB1C-0E0E-45F4-9740-9469164B4557}']
     function ToSqlString(AParams: TObjectList<TDBParam>): string;
     procedure SetEntityClass(const Value: TClass);
     function GetEntityClass: TClass;
+    function GetMatchMode(): TMatchMode;
     function GetWhereOperator(): TWhereOperator;
   end;
 
   ICriteria<T: class, constructor> = interface(IInvokable)
     ['{09428AF2-3A36-44DB-B0E7-8B7D7620ED1C}']
     function Add(ACriterion: ICriterion): ICriteria<T>;
+    function AddOrder(AOrder: IOrder): ICriteria<T>;
+    procedure Clear();
     function Count(): Integer;
     function List(): {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF};
   end;

@@ -131,6 +131,8 @@ type
     property Constraints: TForeignStrategies read FConstraints write FConstraints;
   end;
 
+  TMatchMode = (mmExact, mmStart, mmEnd, mmAnywhere);
+
   TWhereOperator = (woEqual = 0, woNotEqual, woMore, woLess, woLike, woNotLike,
     woMoreOrEqual, woLessOrEqual, woIn, woNotIn, woIsNull, woIsNotNull);
 
@@ -143,11 +145,13 @@ type
   TSQLWhereField = class(TSQLField)
   private
     FWhereOperator: TWhereOperator;
+    FMatchMode: TMatchMode;
   public
     constructor Create(const AFieldname: string; ATable: TSQLTable); override;
 
     function ToSQLString(): string;
 
+    property MatchMode: TMatchMode read FMatchMode write FMatchMode;
     property WhereOperator: TWhereOperator read FWhereOperator write FWhereOperator;
   end;
 
@@ -208,12 +212,27 @@ type
     class function GetAlias(const ATable: TSQLTable): string;
   end;
 
+  function GetMatchModeString(AMatchMode: TMatchMode; const APattern: string): string;
+
 implementation
 
 uses
   Core.Exceptions
   ,SysUtils
   ;
+
+function GetMatchModeString(AMatchMode: TMatchMode; const APattern: string): string;
+const
+  MATCH_CHAR = '%';
+begin
+  case AMatchMode of
+    mmExact: Result := APattern;
+    mmStart: Result := APattern + MATCH_CHAR;
+    mmEnd: Result := MATCH_CHAR + APattern;
+    mmAnywhere: Result := MATCH_CHAR + APattern + MATCH_CHAR;
+  end;
+  Result := QuotedStr(Result);
+end;
 
 
 
@@ -388,12 +407,14 @@ constructor TSQLWhereField.Create(const AFieldname: string; ATable: TSQLTable);
 begin
   inherited Create(AFieldname, ATable);
   FWhereOperator := woEqual;
+  FMatchMode := mmExact;
 end;
 
 function TSQLWhereField.ToSQLString: string;
 begin
   case WhereOperator of
     woIsNull, woIsNotNull: Result := GetFullFieldname + ' ' + WhereOpNames[WhereOperator];
+    woLike, woNotLike: Result := GetFullFieldname;
     else
       Result := GetFullFieldname + ' ' + WhereOpNames[WhereOperator] + ' :' + Fieldname + ' ';
   end;

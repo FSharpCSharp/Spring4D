@@ -35,6 +35,7 @@ uses
   Core.Interfaces
   ,Core.Criteria.Criterion
   ,Rtti
+  ,SQL.Types
   ;
 
 
@@ -45,6 +46,8 @@ type
     class function NotEq(const APropertyName: string; const AValue: TValue): ICriterion;
     class function IsNull(const APropertyName: string): ICriterion;
     class function IsNotNull(const APropertyName: string): ICriterion;
+    class function Like(const APropertyName, AValue: string; AMatchMode: TMatchMode = mmExact): ICriterion;
+    class function NotLike(const APropertyName, AValue: string; AMatchMode: TMatchMode = mmExact): ICriterion;
   end;
 
 implementation
@@ -52,7 +55,7 @@ implementation
 uses
   Core.Criteria.Criterion.SimpleExpression
   ,Core.Criteria.Criterion.NullExpression
-  ,SQL.Types
+  ,Core.Criteria.Criterion.LikeExpression
   ;
 
 { TRestrictions }
@@ -74,9 +77,19 @@ begin
   Result := TNullExpression.Create(APropertyName, woIsNull);
 end;
 
+class function TRestrictions.Like(const APropertyName, AValue: string; AMatchMode: TMatchMode): ICriterion;
+begin
+  Result := TLikeExpression.Create(APropertyName, AValue, woLike, AMatchMode);
+end;
+
 class function TRestrictions.NotEq(const APropertyName: string; const AValue: TValue): ICriterion;
 begin
   Result := TSimpleExpression.Create(APropertyName, AValue, woNotEqual);
+end;
+
+class function TRestrictions.NotLike(const APropertyName, AValue: string; AMatchMode: TMatchMode): ICriterion;
+begin
+  Result := TLikeExpression.Create(APropertyName, AValue, woNotLike, AMatchMode);
 end;
 
 end.

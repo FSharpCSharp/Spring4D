@@ -44,6 +44,7 @@ type
   private
     FEntityClass: TClass;
     FCriterions: TList<ICriterion>;
+    FOrders: TList<IOrder>;
     FSession: TSession;
   protected
     constructor Create(AEntityClass: TClass; ASession: TSession); virtual;
@@ -54,6 +55,9 @@ type
     destructor Destroy; override;
 
     function Add(ACriterion: ICriterion): ICriteria<T>; virtual;
+    function AddOrder(AOrder: IOrder): ICriteria<T>; virtual;
+
+    procedure Clear(); virtual;
     function Count(): Integer; virtual;
     function List(): {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF};
 
@@ -80,6 +84,18 @@ begin
   Result := Self;
 end;
 
+function TAbstractCriteria<T>.AddOrder(AOrder: IOrder): ICriteria<T>;
+begin
+  FOrders.Add(AOrder);
+  Result := Self;
+end;
+
+procedure TAbstractCriteria<T>.Clear;
+begin
+  FCriterions.Clear;
+  FOrders.Clear;
+end;
+
 function TAbstractCriteria<T>.Count: Integer;
 begin
   Result := FCriterions.Count;
@@ -91,11 +107,13 @@ begin
   FEntityClass := AEntityClass;
   FSession := ASession;
   FCriterions := TList<ICriterion>.Create();
+  FOrders := TList<IOrder>.Create();
 end;
 
 destructor TAbstractCriteria<T>.Destroy;
 begin
   FCriterions.Free;
+  FOrders.Free;
   inherited Destroy;
 end;
 
@@ -105,6 +123,8 @@ var
   LCriterionSql: string;
   LExecutor: TSelectExecutor;
   LWhereField: TSQLWhereField;
+  LOrderField: TSQLOrderField;
+  LOrder: IOrder;
 begin
   LExecutor := CommandFactory.GetCommand<TSelectExecutor>(FEntityClass, FSession.Connection);
   try
@@ -117,8 +137,17 @@ begin
       LCriterionSql := LCriterion.ToSqlString(AParams);
       LWhereField := TSQLWhereField.Create(LCriterionSql, LExecutor.Command.Table);
       LWhereField.WhereOperator := LCriterion.GetWhereOperator;
+      LWhereField.MatchMode := LCriterion.GetMatchMode;
       LExecutor.Command.WhereFields.Add(LWhereField);
     end;
+
+    for LOrder in FOrders do
+    begin
+      LOrderField := TSQLOrderField.Create(LOrder.GetPropertyName, LExecutor.Command.Table);
+      LOrderField.OrderType := LOrder.GetOrderType;
+      LExecutor.Command.OrderByFields.Add(LOrderField);
+    end;
+
     Result := LExecutor.Generator.GenerateSelect(LExecutor.Command);
   finally
     LExecutor.Free;

@@ -94,7 +94,9 @@ uses
   Core.Criteria.Restrictions in '..\Core.Criteria.Restrictions.pas',
   TestCoreCriteria in 'TestCoreCriteria.pas',
   Core.Criteria.Criterion.SimpleExpression in '..\Core.Criteria.Criterion.SimpleExpression.pas',
-  Core.Criteria.Criterion.NullExpression in '..\Core.Criteria.Criterion.NullExpression.pas';
+  Core.Criteria.Criterion.NullExpression in '..\Core.Criteria.Criterion.NullExpression.pas',
+  Core.Criteria.Order in '..\Core.Criteria.Order.pas',
+  Core.Criteria.Criterion.LikeExpression in '..\Core.Criteria.Criterion.LikeExpression.pas';
 
 {$R *.RES}
 

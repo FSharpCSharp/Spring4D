@@ -149,7 +149,7 @@ end;
 
 function TDBParam.GetName: string;
 begin
-  Result := FName;
+  Result := UpperCase(FName);
   if (Length(Result) > 0) and not (CharInSet(Result[1], [':'])) then
   begin
     Result := ':' + Result;

@@ -63,6 +63,12 @@ var
   TestDB: TSQLiteDatabase = nil;
 
 procedure InsertCustomer(AAge: Integer = 25; AName: string = 'Demo'; AHeight: Double = 15.25; APicture: TStream = nil);
+procedure InsertCustomerOrder(ACustID: Integer; ACustPaymID: Integer; AOrderStatusCode: Integer; ATotalPrice: Double);
+procedure ClearTable(const ATableName: string);
+
+const
+  TBL_PEOPLE = 'CUSTOMERS';
+  TBL_ORDERS = 'Customer_Orders';
 
 implementation
 
@@ -77,10 +83,8 @@ uses
   ,Core.Reflection
   ;
 
-const
-  TBL_PEOPLE = 'CUSTOMERS';
-  TBL_ORDERS = 'Customer_Orders';
 
+const
   SQL_GET_ALL_CUSTOMERS = 'SELECT * FROM ' + TBL_PEOPLE + ';';
 
 function GetPictureSize(APicture: TPicture): Int64;

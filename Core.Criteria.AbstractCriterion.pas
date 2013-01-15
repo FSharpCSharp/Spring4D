@@ -46,6 +46,7 @@ type
     function GetEntityClass: TClass;
   public
     function ToSqlString(AParams: TObjectList<TDBParam>): string; virtual; abstract;
+    function GetMatchMode(): TMatchMode; virtual;
     function GetWhereOperator(): TWhereOperator; virtual;
 
     property EntityClass: TClass read GetEntityClass write SetEntityClass;
@@ -59,6 +60,11 @@ implementation
 function TAbstractCriterion.GetEntityClass: TClass;
 begin
   Result := FEntityClass;
+end;
+
+function TAbstractCriterion.GetMatchMode: TMatchMode;
+begin
+  Result := mmExact;
 end;
 
 function TAbstractCriterion.GetWhereOperator: TWhereOperator;

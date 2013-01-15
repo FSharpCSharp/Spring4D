@@ -31,15 +31,19 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   published
-    procedure TestAdd;
-    procedure TestList();
+    procedure Add_Eq;
+    procedure AddOrder();
+    procedure List_Eq_IsNull();
+    procedure List_Like();
   end;
 
 implementation
 
 uses
   Core.ConnectionFactory
+  ,Core.Criteria.Order
   ,TestSession
+  ,SQL.Types
   ;
 
 procedure TestTCriteria.SetUp;
@@ -50,11 +54,13 @@ end;
 
 procedure TestTCriteria.TearDown;
 begin
+  ClearTable(TBL_PEOPLE);
+  ClearTable(TBL_ORDERS);
   FCriteria := nil;
   FSession.Free;
 end;
 
-procedure TestTCriteria.TestAdd;
+procedure TestTCriteria.Add_Eq;
 begin
   FCriteria.Add(TRestrictions.Eq('Name', 'Foo'))
     .Add(TRestrictions.Eq('Age', 42));
@@ -62,7 +68,20 @@ begin
 end;
 
 
-procedure TestTCriteria.TestList;
+procedure TestTCriteria.AddOrder;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  InsertCustomer(42, 'foo');
+  InsertCustomer(110, 'foo');
+  FCriteria.Add(TRestrictions.Eq('CustName', 'foo'))
+    .AddOrder(TOrder.Desc('CustAge'));
+  LCustomers := FCriteria.List();
+  CheckEquals(110, LCustomers[0].Age);
+  CheckEquals(42, LCustomers[1].Age);
+end;
+
+procedure TestTCriteria.List_Eq_IsNull;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -75,6 +94,36 @@ begin
   CheckEquals(1, LCustomers.Count);
   CheckEquals(42, LCustomers[0].Age);
   CheckEquals('Foo', LCustomers[0].Name);
+  CheckEquals(0, LCustomers[0].Orders.Count);
+  InsertCustomerOrder(LCustomers[0].ID, 1, 100, 100.59);
+  LCustomers := FCriteria.List;
+  CheckEquals(1, LCustomers.Count);
+  CheckEquals(1, LCustomers[0].Orders.Count);
+  CheckEquals(100, LCustomers[0].Orders[0].Order_Status_Code);
+end;
+
+procedure TestTCriteria.List_Like;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  InsertCustomer(42, 'FooBar');
+  LCustomers := FCriteria.Add(TRestrictions.Like('CustName', 'Foo'))
+    .List;
+  CheckEquals(0, LCustomers.Count);
+  FCriteria.Clear;
+  FCriteria.Add(TRestrictions.Like('CustName', 'Foo', mmAnywhere));
+  LCustomers := FCriteria.List;
+  CheckEquals(1, LCustomers.Count);
+
+  FCriteria.Clear;
+  FCriteria.Add(TRestrictions.Like('CustName', 'Foo', mmStart));
+  LCustomers := FCriteria.List;
+  CheckEquals(1, LCustomers.Count);
+
+  FCriteria.Clear;
+  FCriteria.Add(TRestrictions.Like('CustName', 'Bar', mmEnd));
+  LCustomers := FCriteria.List;
+  CheckEquals(1, LCustomers.Count);
 end;
 
 initialization
