@@ -56,6 +56,7 @@ type
     fInjectionFactory: IInjectionFactory;
     fRegistrationManager: TRegistrationManager;
     fExtensions: IList<IContainerExtension>;
+    function GetContext: IContainerContext;
   protected
     { Implements IContainerContext }
     function GetDependencyResolver: IDependencyResolver;
@@ -100,6 +101,8 @@ type
     { Experimental Release Methods }
     procedure Release(instance: TObject); overload;
     procedure Release(instance: IInterface); overload;
+
+    property Context: IContainerContext read GetContext;
   end;
 
   TServiceLocatorAdapter = class(TInterfacedObject, IServiceLocator)
@@ -235,6 +238,11 @@ end;
 function TContainer.GetComponentRegistry: IComponentRegistry;
 begin
   Result := fRegistry;
+end;
+
+function TContainer.GetContext: IContainerContext;
+begin
+  Result := Self;
 end;
 
 function TContainer.GetDependencyResolver: IDependencyResolver;
