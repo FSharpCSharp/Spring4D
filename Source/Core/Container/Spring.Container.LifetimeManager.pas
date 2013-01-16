@@ -95,6 +95,9 @@ type
 
 implementation
 
+uses
+  TypInfo;
+
 {$REGION 'TLifetimeManagerBase'}
 
 constructor TLifetimeManagerBase.Create(model: TComponentModel);
@@ -141,7 +144,8 @@ procedure TLifetimeManagerBase.DoAfterConstruction(instance: TValue);
 var
   intf: Pointer;
 begin
-  if TryGetInterfaceWithoutCopy(instance, IInitializable, intf) then
+  if (instance.Kind in [tkClass, tkInterface])
+    and TryGetInterfaceWithoutCopy(instance, IInitializable, intf) then
   begin
     IInitializable(intf).Initialize;
   end;

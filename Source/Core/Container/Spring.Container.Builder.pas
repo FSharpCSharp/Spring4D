@@ -519,12 +519,19 @@ var
   service: TRttiInterfaceType;
 begin
   if not model.Services.IsEmpty and not model.ComponentType.IsInterface then Exit;
-  services := model.ComponentType.GetInterfaces;
-  for service in services do
+  if model.ComponentType.IsRecord and not model.HasService(model.ComponentTypeInfo) then
   begin
-    if Assigned(service.BaseType) and not model.HasService(service.Handle) then
+    context.ComponentRegistry.RegisterService(model, model.ComponentTypeInfo);
+  end
+  else
+  begin
+    services := model.ComponentType.GetInterfaces;
+    for service in services do
     begin
-      context.ComponentRegistry.RegisterService(model, service.Handle);
+      if Assigned(service.BaseType) and not model.HasService(service.Handle) then
+      begin
+        context.ComponentRegistry.RegisterService(model, service.Handle);
+      end;
     end;
   end;
 end;

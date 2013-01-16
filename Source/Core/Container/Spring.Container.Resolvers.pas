@@ -188,7 +188,7 @@ var
 begin
   Assert(not instance.IsEmpty, 'instance should not be empty.');
   case typeInfo.Kind of
-    tkClass:
+    tkClass, tkRecord:
     begin
       value := instance;
     end;
@@ -315,8 +315,8 @@ var
   instance: TValue;
 begin
   TArgument.CheckNotNull(dependency, 'dependency');
-  if not dependency.IsClassOrInterface
-    or (argument.Kind in [tkClass, tkInterface]) then
+  if not (dependency.IsClassOrInterface or dependency.IsRecord)
+    or (argument.Kind in [tkClass, tkInterface, tkRecord]) then
   begin
     Exit(argument);
   end;
