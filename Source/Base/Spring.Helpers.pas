@@ -60,6 +60,7 @@ uses
   Types,
   TypInfo,
   Rtti,
+  Generics.Collections,
   Spring,
   Spring.Collections,
   Spring.Reflection;
@@ -328,6 +329,11 @@ type
     ///	  the anonymous method that will be executed within the batch update.
     ///	</param>
     procedure ExecuteUpdate(proc: TProc);
+  end;
+
+  TArrayHelper = class helper for TArray
+  public
+    class function CreateArray<T>(const values: array of T): TArray<T>;
   end;
 
   // TPointHelper, TSizeHelper, TRectHelper
@@ -851,6 +857,22 @@ begin
     proc();
   finally
     EndUpdate;
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TArray Helper'}
+
+class function TArrayHelper.CreateArray<T>(const values: array of T): TArray<T>;
+var
+  i: Integer;
+begin
+  SetLength(Result, Length(values));
+  for i := 0 to High(values) do
+  begin
+    Result[i] := values[i];
   end;
 end;
 

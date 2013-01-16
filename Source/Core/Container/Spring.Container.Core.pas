@@ -29,13 +29,11 @@ unit Spring.Container.Core;
 interface
 
 uses
-  Classes,
   SysUtils,
   Rtti,
   TypInfo,
   Spring,
   Spring.Collections,
-  Spring.DesignPatterns,
   Spring.Reflection,
   Spring.Services;
 
@@ -141,7 +139,6 @@ type
     ['{18E6DF78-C947-484F-A0A8-D9A5B0BEC887}']
     function CreateInstance(resolver: IDependencyResolver): TValue; overload;
   end;
-
 
   ///	<summary>
   ///	  Represents an Inject of a member. e.g. constructor, method, property
@@ -303,48 +300,6 @@ type
     property FieldInjections: IInjectionList read GetFieldInjections;
   end;
 
-  {$REGION 'Deprecated'}
-
-
-  ///	<summary>
-  ///	  <para>
-  ///	    Provides a simple &amp; flexible implementation of
-  ///	    <b>Smart
-  ///	          Pointer</b>. This implementation is very skillful and the basic
-  ///	    idea comes from a post in Kelly Barry's blog.
-  ///	  </para>
-  ///	  <para>
-  ///	    The point is to use an anonymous method <c>TFunc&lt;T&gt;,</c>which
-  ///	    is internally implemented as an interface in Delphi for Win32, to
-  ///	    manage the lifetime of an object instance.
-  ///	  </para>
-  ///	</summary>
-  ///	<example>
-  ///	  The following example demonstrates how to use the Smart Pointer:
-  ///	  <code lang="Delphi">
-  ///	procedure TestSmartPointer;
-  ///	var
-  ///	  person: TFunc&lt;TPerson&gt;;
-  ///	begin
-  ///	  person := TObjectHolder&lt;TPerson&gt;.Create(TPerson.Create);
-  ///	  person.DoSomething;
-  ///	end;</code>
-  ///	</example>
-  TObjectHolder<T: class> = class(TInterfacedObject, TFunc<T>)
-  private
-    fObject: T;
-    fLifetimeWatcher: IInterface;
-  public
-    constructor Create(obj: T; refCounting: TRefCounting); overload;
-    constructor Create(obj: T; const lifetimeWatcher: IInterface); overload;
-    destructor Destroy; override;
-    function Invoke: T;
-  end;
-
-  TObjectHolder = TObjectHolder<TObject>;
-
-  {$ENDREGION}
-
   TValueHolder = class(TInterfacedObject, TFunc<TValue>)
   private
     fValue: TValue;
@@ -368,41 +323,12 @@ type
 
   EActivatorException = class(EContainerException);
 
-function CreateInjectionList: IInjectionList;
-
 implementation
 
 uses
   Generics.Collections,
   Spring.Helpers,
-  Spring.ResourceStrings,
   Spring.Container.ResourceStrings;
-
-{$REGION 'TArrayHelper'}
-
-type
-  TArrayHelper = class helper for TArray
-  public
-    class function CreateArray<T>(const values: array of T): TArray<T>; // deprecated;
-  end;
-
-class function TArrayHelper.CreateArray<T>(const values: array of T): TArray<T>;
-var
-  i: Integer;
-begin
-  SetLength(Result, Length(values));
-  for i := 0 to High(values) do
-  begin
-    Result[i] := values[i];
-  end;
-end;
-
-{$ENDREGION}
-
-function CreateInjectionList: IInjectionList;
-begin
-  Result := TCollections.CreateList<IInjection>;
-end;
 
 {$REGION 'TComponentModel'}
 
@@ -558,7 +484,7 @@ function TComponentModel.GetConstructorInjections: IInjectionList;
 begin
   if fConstructorInjections = nil then
   begin
-    fConstructorInjections := CreateInjectionList;
+    fConstructorInjections := TCollections.CreateList<IInjection>;
   end;
   Result := fConstructorInjections;
 end;
@@ -576,7 +502,7 @@ function TComponentModel.GetMethodInjections: IInjectionList;
 begin
   if fMethodInjections = nil then
   begin
-    fMethodInjections := CreateInjectionList;
+    fMethodInjections := TCollections.CreateList<IInjection>;
   end;
   Result := fMethodInjections;
 end;
@@ -585,7 +511,7 @@ function TComponentModel.GetPropertyInjections: IInjectionList;
 begin
   if fPropertyInjections = nil then
   begin
-    fPropertyInjections := CreateInjectionList;
+    fPropertyInjections := TCollections.CreateList<IInjection>;
   end;
   Result := fPropertyInjections;
 end;
@@ -628,7 +554,7 @@ function TComponentModel.GetFieldInjections: IInjectionList;
 begin
   if fFieldInjections = nil then
   begin
-    fFieldInjections := CreateInjectionList;
+    fFieldInjections := TCollections.CreateList<IInjection>;
   end;
   Result := fFieldInjections;
 end;
@@ -640,50 +566,6 @@ begin
     fInjectionArguments := TCollections.CreateDictionary<IInjection, TArray<TValue>>;
   end;
   Result := fInjectionArguments;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TObjectHolder<T>'}
-
-constructor TObjectHolder<T>.Create(obj: T; refCounting: TRefCounting);
-var
-  lifetimeWatcher: IInterface;
-begin
-  TArgument.CheckNotNull(PPointer(@obj)^, 'obj');
-
-  if ((refCounting = TRefCounting.Unknown) and obj.InheritsFrom(TInterfacedObject))
-    or (refCounting = TRefCounting.True) then
-  begin
-    obj.GetInterface(IInterface, lifetimeWatcher);
-  end
-  else
-  begin
-    lifetimeWatcher := nil;
-  end;
-  Create(obj, lifetimeWatcher);
-end;
-
-constructor TObjectHolder<T>.Create(obj: T; const lifetimeWatcher: IInterface);
-begin
-  inherited Create;
-  fObject := obj;
-  fLifetimeWatcher := lifetimeWatcher;
-end;
-
-destructor TObjectHolder<T>.Destroy;
-begin
-  if fLifetimeWatcher = nil then
-  begin
-    fObject.Free;
-  end;
-  inherited Destroy;
-end;
-
-function TObjectHolder<T>.Invoke: T;
-begin
-  Result := fObject;
 end;
 
 {$ENDREGION}
