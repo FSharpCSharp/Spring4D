@@ -120,6 +120,20 @@ type
     ///	</summary>
     {$ENDREGION}
     class function Lt(const APropertyName: string; const AValue: TValue): ICriterion;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Apply an <b>"in"</b> constraint to the named property.
+    ///	</summary>
+    {$ENDREGION}
+    class function &In<T>(const APropertyName: string; const AValues: TArray<T>): ICriterion;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Apply an <b>"not in"</b> constraint to the named property.
+    ///	</summary>
+    {$ENDREGION}
+    class function NotIn<T>(const APropertyName: string; const AValues: TArray<T>): ICriterion;
   end;
 
 implementation
@@ -128,6 +142,7 @@ uses
   Core.Criteria.Criterion.SimpleExpression
   ,Core.Criteria.Criterion.NullExpression
   ,Core.Criteria.Criterion.LikeExpression
+  ,Core.Criteria.Criterion.InExpression
   ;
 
 { TRestrictions }
@@ -146,6 +161,12 @@ end;
 class function TRestrictions.Gt(const APropertyName: string; const AValue: TValue): ICriterion;
 begin
   Result := TSimpleExpression.Create(APropertyName, AValue, woMore);
+end;
+
+class function TRestrictions.&In<T>(const APropertyName: string;
+  const AValues: TArray<T>): ICriterion;
+begin
+  Result := TInExpression<T>.Create(APropertyName, AValues, woIn);
 end;
 
 class function TRestrictions.IsNotNull(const APropertyName: string): ICriterion;
@@ -176,6 +197,12 @@ end;
 class function TRestrictions.NotEq(const APropertyName: string; const AValue: TValue): ICriterion;
 begin
   Result := TSimpleExpression.Create(APropertyName, AValue, woNotEqual);
+end;
+
+class function TRestrictions.NotIn<T>(const APropertyName: string;
+  const AValues: TArray<T>): ICriterion;
+begin
+  Result := TInExpression<T>.Create(APropertyName, AValues, woNotIn);
 end;
 
 class function TRestrictions.NotLike(const APropertyName, AValue: string; AMatchMode: TMatchMode): ICriterion;

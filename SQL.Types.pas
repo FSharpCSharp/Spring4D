@@ -414,7 +414,7 @@ function TSQLWhereField.ToSQLString: string;
 begin
   case WhereOperator of
     woIsNull, woIsNotNull: Result := GetFullFieldname + ' ' + WhereOpNames[WhereOperator];
-    woLike, woNotLike: Result := GetFullFieldname;
+    woLike, woNotLike, woIn, woNotIn: Result := GetFullFieldname;
     else
       Result := GetFullFieldname + ' ' + WhereOpNames[WhereOperator] + ' :' + Fieldname + ' ';
   end;

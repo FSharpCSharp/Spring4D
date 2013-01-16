@@ -96,7 +96,8 @@ uses
   Core.Criteria.Criterion.SimpleExpression in '..\Core.Criteria.Criterion.SimpleExpression.pas',
   Core.Criteria.Criterion.NullExpression in '..\Core.Criteria.Criterion.NullExpression.pas',
   Core.Criteria.Order in '..\Core.Criteria.Order.pas',
-  Core.Criteria.Criterion.LikeExpression in '..\Core.Criteria.Criterion.LikeExpression.pas';
+  Core.Criteria.Criterion.LikeExpression in '..\Core.Criteria.Criterion.LikeExpression.pas',
+  Core.Criteria.Criterion.InExpression in '..\Core.Criteria.Criterion.InExpression.pas';
 
 {$R *.RES}
 

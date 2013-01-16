@@ -37,6 +37,7 @@ type
     procedure List_Like();
     procedure List_Ge_Gt();
     procedure List_LEq_Lt();
+    procedure List_In_NotIn();
   end;
 
 implementation
@@ -122,6 +123,45 @@ begin
     .List;
   CheckEquals(1, LCustomers.Count);
   CheckEquals(50, LCustomers[0].Age);
+end;
+
+procedure TestTCriteria.List_In_NotIn;
+var
+  LCustomers: IList<TCustomer>;
+  LAges: TArray<Integer>;
+begin
+  InsertCustomer(42, 'Foo');
+  InsertCustomer(50, 'Bar');
+  InsertCustomer(68, 'FooBar');
+  InsertCustomer(10, 'Fbar');
+
+  LAges := TArray<Integer>.Create(10, 50);
+  LCustomers := FCriteria.Add(TRestrictions.In<Integer>('CustAge', LAges))
+    .List;
+  CheckEquals(2, LCustomers.Count);
+  CheckEquals(50, LCustomers[0].Age);
+  CheckEquals(10, LCustomers[1].Age);
+
+  FCriteria.Clear;
+  LCustomers := FCriteria.Add(TRestrictions.NotIn<Integer>('CustAge', LAges))
+    .List;
+  CheckEquals(2, LCustomers.Count);
+  CheckEquals(42, LCustomers[0].Age);
+  CheckEquals(68, LCustomers[1].Age);
+
+  FCriteria.Clear;
+  LCustomers := FCriteria.Add(TRestrictions.In<string>('CustName', TArray<string>.Create('Bar', 'Fbar')))
+    .List;
+  CheckEquals(2, LCustomers.Count);
+  CheckEquals('Bar', LCustomers[0].Name);
+  CheckEquals('Fbar', LCustomers[1].Name);
+
+  FCriteria.Clear;
+  LCustomers := FCriteria.Add(TRestrictions.NotIn<string>('CustName', TArray<string>.Create('Bar', 'Fbar')))
+    .List;
+  CheckEquals(2, LCustomers.Count);
+  CheckEquals('Foo', LCustomers[0].Name);
+  CheckEquals('FooBar', LCustomers[1].Name);
 end;
 
 procedure TestTCriteria.List_LEq_Lt;
