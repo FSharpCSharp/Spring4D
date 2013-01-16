@@ -138,6 +138,7 @@
 			<DCCReference Include="..\Core.Criteria.Order.pas"/>
 			<DCCReference Include="..\Core.Criteria.Criterion.LikeExpression.pas"/>
 			<DCCReference Include="..\Core.Criteria.Criterion.InExpression.pas"/>
+			<DCCReference Include="..\Core.Criteria.Properties.pas"/>
 			<None Include="Profiling\AQtimeModule1.aqt"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>

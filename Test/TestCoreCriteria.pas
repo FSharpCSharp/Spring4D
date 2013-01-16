@@ -38,6 +38,7 @@ type
     procedure List_Ge_Gt();
     procedure List_LEq_Lt();
     procedure List_In_NotIn();
+    procedure List_Property_Eq();
   end;
 
 implementation
@@ -45,6 +46,7 @@ implementation
 uses
   Core.ConnectionFactory
   ,Core.Criteria.Order
+  ,Core.Criteria.Properties
   ,TestSession
   ,SQL.Types
   ;
@@ -206,6 +208,22 @@ begin
   FCriteria.Add(TRestrictions.Like('CustName', 'Bar', mmEnd));
   LCustomers := FCriteria.List;
   CheckEquals(1, LCustomers.Count);
+end;
+
+procedure TestTCriteria.List_Property_Eq;
+var
+  LCustomers: IList<TCustomer>;
+  Age: IProperty;
+begin
+  Age := TProperty.ForName('CUSTAGE');
+  InsertCustomer(42, 'Foo');
+  InsertCustomer(50, 'Bar');
+
+  LCustomers := FCriteria.Add(Age.Eq(42))
+    .AddOrder(Age.Desc)
+    .List;
+  CheckEquals(1, LCustomers.Count);
+  CheckEquals(42, LCustomers[0].Age);
 end;
 
 initialization

@@ -97,7 +97,8 @@ uses
   Core.Criteria.Criterion.NullExpression in '..\Core.Criteria.Criterion.NullExpression.pas',
   Core.Criteria.Order in '..\Core.Criteria.Order.pas',
   Core.Criteria.Criterion.LikeExpression in '..\Core.Criteria.Criterion.LikeExpression.pas',
-  Core.Criteria.Criterion.InExpression in '..\Core.Criteria.Criterion.InExpression.pas';
+  Core.Criteria.Criterion.InExpression in '..\Core.Criteria.Criterion.InExpression.pas',
+  Core.Criteria.Properties in '..\Core.Criteria.Properties.pas';
 
 {$R *.RES}
 
