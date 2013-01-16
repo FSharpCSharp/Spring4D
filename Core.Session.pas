@@ -122,6 +122,12 @@ type
     procedure RollbackTransaction();
     procedure ReleaseCurrentTransaction();
 
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Create a new ICriteria&lt;T&gt; instance, for the given entity class,
+    ///	  or a superclass of an entity class.
+    ///	</summary>
+    {$ENDREGION}
     function CreateCriteria<T: class, constructor>(): ICriteria<T>;
 
     {$REGION 'Documentation'}

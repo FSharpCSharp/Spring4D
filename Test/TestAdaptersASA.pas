@@ -210,7 +210,7 @@ initialization
       RegisterTest(TestASAAdapter.Suite);
     end;
   except
-    raise;
+    //raise;
   end;
 
 finalization

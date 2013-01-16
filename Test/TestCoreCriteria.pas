@@ -35,6 +35,8 @@ type
     procedure AddOrder();
     procedure List_Eq_IsNull();
     procedure List_Like();
+    procedure List_Ge_Gt();
+    procedure List_LEq_Lt();
   end;
 
 implementation
@@ -100,6 +102,46 @@ begin
   CheckEquals(1, LCustomers.Count);
   CheckEquals(1, LCustomers[0].Orders.Count);
   CheckEquals(100, LCustomers[0].Orders[0].Order_Status_Code);
+end;
+
+procedure TestTCriteria.List_Ge_Gt;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  InsertCustomer(42, 'Foo');
+  InsertCustomer(50, 'Bar');
+
+  LCustomers := FCriteria.Add(TRestrictions.GEq('CustAge', 42))
+    .List;
+  CheckEquals(2, LCustomers.Count);
+  CheckEquals(42, LCustomers[0].Age);
+  CheckEquals(50, LCustomers[1].Age);
+
+  FCriteria.Clear;
+  LCustomers := FCriteria.Add(TRestrictions.Gt('CustAge', 42))
+    .List;
+  CheckEquals(1, LCustomers.Count);
+  CheckEquals(50, LCustomers[0].Age);
+end;
+
+procedure TestTCriteria.List_LEq_Lt;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  InsertCustomer(42, 'Foo');
+  InsertCustomer(50, 'Bar');
+
+  LCustomers := FCriteria.Add(TRestrictions.LEq('CustAge', 50))
+    .List;
+  CheckEquals(2, LCustomers.Count);
+  CheckEquals(42, LCustomers[0].Age);
+  CheckEquals(50, LCustomers[1].Age);
+
+  FCriteria.Clear;
+  LCustomers := FCriteria.Add(TRestrictions.Lt('CustAge', 50))
+    .List;
+  CheckEquals(1, LCustomers.Count);
+  CheckEquals(42, LCustomers[0].Age);
 end;
 
 procedure TestTCriteria.List_Like;

@@ -40,14 +40,86 @@ uses
 
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  The criterion package may be used by applications as a framework for
+  ///	  building new kinds of Criterion. However, it is intended that most
+  ///	  applications will simply use the built-in criterion types via the
+  ///	  static factory methods of this class.
+  ///	</summary>
+  {$ENDREGION}
   TRestrictions = class sealed
   public
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Apply an <b>"equal"</b> constraint to the named property.
+    ///	</summary>
+    {$ENDREGION}
     class function Eq(const APropertyName: string; const AValue: TValue): ICriterion;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Apply a <b>"not equal"</b> constraint to the named property.
+    ///	</summary>
+    {$ENDREGION}
     class function NotEq(const APropertyName: string; const AValue: TValue): ICriterion;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Apply a <b>"greater than or equal"</b> constraint to the named
+    ///	  property.
+    ///	</summary>
+    {$ENDREGION}
+    class function GEq(const APropertyName: string; const AValue: TValue): ICriterion;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Apply a <b>"greater than"</b> constraint to the named property.
+    ///	</summary>
+    {$ENDREGION}
+    class function Gt(const APropertyName: string; const AValue: TValue): ICriterion;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Apply an <b>"is null"</b> constraint to the named property.
+    ///	</summary>
+    {$ENDREGION}
     class function IsNull(const APropertyName: string): ICriterion;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Apply an <b>"is not null"</b> constraint to the named property.
+    ///	</summary>
+    {$ENDREGION}
     class function IsNotNull(const APropertyName: string): ICriterion;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Apply a <b>"like"</b> constraint to the named property.
+    ///	</summary>
+    {$ENDREGION}
     class function Like(const APropertyName, AValue: string; AMatchMode: TMatchMode = mmExact): ICriterion;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Apply a <b>"not like"</b> constraint to the named property.
+    ///	</summary>
+    {$ENDREGION}
     class function NotLike(const APropertyName, AValue: string; AMatchMode: TMatchMode = mmExact): ICriterion;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Apply a <b>"less than or equal"</b> constraint to the named property.
+    ///	</summary>
+    {$ENDREGION}
+    class function LEq(const APropertyName: string; const AValue: TValue): ICriterion;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Apply a <b>"less than"</b> constraint to the named property.
+    ///	</summary>
+    {$ENDREGION}
+    class function Lt(const APropertyName: string; const AValue: TValue): ICriterion;
   end;
 
 implementation
@@ -63,8 +135,17 @@ uses
 class function TRestrictions.Eq(const APropertyName: string;
   const AValue: TValue): ICriterion;
 begin
-  {TODO -oOwner -cGeneral : implement Eq criterion}
   Result := TSimpleExpression.Create(APropertyName, AValue, woEqual);
+end;
+
+class function TRestrictions.GEq(const APropertyName: string; const AValue: TValue): ICriterion;
+begin
+  Result := TSimpleExpression.Create(APropertyName, AValue, woMoreOrEqual);
+end;
+
+class function TRestrictions.Gt(const APropertyName: string; const AValue: TValue): ICriterion;
+begin
+  Result := TSimpleExpression.Create(APropertyName, AValue, woMore);
 end;
 
 class function TRestrictions.IsNotNull(const APropertyName: string): ICriterion;
@@ -77,9 +158,19 @@ begin
   Result := TNullExpression.Create(APropertyName, woIsNull);
 end;
 
+class function TRestrictions.LEq(const APropertyName: string; const AValue: TValue): ICriterion;
+begin
+  Result := TSimpleExpression.Create(APropertyName, AValue, woLessOrEqual);
+end;
+
 class function TRestrictions.Like(const APropertyName, AValue: string; AMatchMode: TMatchMode): ICriterion;
 begin
   Result := TLikeExpression.Create(APropertyName, AValue, woLike, AMatchMode);
+end;
+
+class function TRestrictions.Lt(const APropertyName: string; const AValue: TValue): ICriterion;
+begin
+  Result := TSimpleExpression.Create(APropertyName, AValue, woLess);
 end;
 
 class function TRestrictions.NotEq(const APropertyName: string; const AValue: TValue): ICriterion;

@@ -44,12 +44,26 @@ type
 
   TExecutionListenerProc = reference to procedure(const ACommand: string; const AParams: TObjectList<TDBParam>);
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents an order imposed upon a <c>ICriteria&lt;T&gt;</c> result set.
+  ///	</summary>
+  {$ENDREGION}
   IOrder = interface(IInvokable)
     ['{F0047369-10D6-4A4D-9BB8-FD5699936D5D}']
     function GetPropertyName(): string;
     function GetOrderType(): TOrderType;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  An object-oriented representation of a query criterion that may be used
+  ///	  as a restriction in a <c>ICriteria&lt;T&gt;</c> query. Built-in
+  ///	  criterion types are provided by the <c>TRestrictions</c> factory class.
+  ///	  This interface might be implemented by application classes that define
+  ///	  custom restriction criteria.
+  ///	</summary>
+  {$ENDREGION}
   ICriterion = interface(IInvokable)
     ['{E22DFB1C-0E0E-45F4-9740-9469164B4557}']
     function ToSqlString(AParams: TObjectList<TDBParam>): string;
@@ -59,15 +73,71 @@ type
     function GetWhereOperator(): TWhereOperator;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  <c>ICriteria&lt;T&gt;</c> is a simplified API for retrieving entities
+  ///	  by composing <c>ICriterion</c> objects. This is a very convenient
+  ///	  approach for functionality like "search" screens where there is a
+  ///	  variable number of conditions to be placed upon the result set. The
+  ///	  <c>TSession</c> is a factory for <c>ICriteria&lt;T&gt;</c>.
+  ///	  <c>ICriterion</c> instances are usually obtained via the factory
+  ///	  methods on <c>TRestrictions</c>.
+  ///	</summary>
+  ///	<example>
+  ///	  <code lang="Delphi">
+  ///	IList&lt;TCat&gt; cats = session.createCriteria&lt;TCat&gt;
+  ///	.add( TRestrictions.Like('name', 'Iz%') )
+  ///	.add( TRestrictions.Gt( 'weight', MIN_WEIGHT ) )
+  ///	.addOrder( TOrder.Asc('age') ) .List();</code>
+  ///	</example>
+  {$ENDREGION}
   ICriteria<T: class, constructor> = interface(IInvokable)
     ['{09428AF2-3A36-44DB-B0E7-8B7D7620ED1C}']
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Add a
+    ///	  <see cref="Core.Criteria.Restrictions|TRestrictions">restriction</see>
+    ///	   to constrain the results to be retrieved.
+    ///	</summary>
+    {$ENDREGION}
     function Add(ACriterion: ICriterion): ICriteria<T>;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Add an <see cref="Core.Criteria.Order|TOrder">ordering</see> to the
+    ///	  result set.
+    ///	</summary>
+    {$ENDREGION}
     function AddOrder(AOrder: IOrder): ICriteria<T>;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Clear current Criteria.
+    ///	</summary>
+    {$ENDREGION}
     procedure Clear();
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Get count of added <c>ICriterion</c>s.
+    ///	</summary>
+    {$ENDREGION}
     function Count(): Integer;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Get the results.
+    ///	</summary>
+    {$ENDREGION}
     function List(): {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF};
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents the result set to fetch data from the database.
+  ///	</summary>
+  {$ENDREGION}
   IDBResultset = interface
     ['{4FA97CFB-4992-4DAA-BB2A-B5CAF84B6B47}']
     function IsEmpty(): Boolean;
@@ -94,6 +164,11 @@ type
     procedure Rollback();
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents the database connection.
+  ///	</summary>
+  {$ENDREGION}
   IDBConnection = interface
     ['{256B8F14-7FF1-4442-A202-358B24756654}']
     procedure Connect();

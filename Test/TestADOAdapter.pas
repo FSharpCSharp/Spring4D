@@ -779,7 +779,7 @@ initialization
       RegisterTest(TestTDatabaseManagerMSSQL.Suite);
     end;
   except
-    raise;
+   // raise;
   end;
 
 finalization
