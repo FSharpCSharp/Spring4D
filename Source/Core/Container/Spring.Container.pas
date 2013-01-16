@@ -113,6 +113,8 @@ type
 
     function GetService(serviceType: PTypeInfo): TValue; overload;
     function GetService(serviceType: PTypeInfo; const name: string): TValue; overload;
+    function GetService(serviceType: PTypeInfo; const args: array of TValue): TValue; overload;
+    function GetService(serviceType: PTypeInfo; const name: string; const args: array of TValue): TValue; overload;
 
     function GetAllServices(serviceType: PTypeInfo): TArray<TValue>; overload;
 
@@ -424,6 +426,20 @@ end;
 function TServiceLocatorAdapter.GetService(serviceType: PTypeInfo; const name: string): TValue;
 begin
   Result := fContainer.Resolve({serviceType, }name);
+end;
+
+function TServiceLocatorAdapter.GetService(serviceType: PTypeInfo;
+  const args: array of TValue): TValue;
+begin
+  Result := fContainer.Resolve(serviceType,
+    TOrderedParametersOverride.Create(args));
+end;
+
+function TServiceLocatorAdapter.GetService(serviceType: PTypeInfo;
+  const name: string; const args: array of TValue): TValue;
+begin
+  Result := fContainer.Resolve({serviceType, }name,
+    TOrderedParametersOverride.Create(args));
 end;
 
 function TServiceLocatorAdapter.GetAllServices(serviceType: PTypeInfo): TArray<TValue>;

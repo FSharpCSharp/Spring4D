@@ -308,6 +308,8 @@ type
     ['{E8C39055-6634-4428-B343-2FB0E75527BC}']
     function GetService(serviceType: PTypeInfo): TValue; overload;
     function GetService(serviceType: PTypeInfo; const name: string): TValue; overload;
+    function GetService(serviceType: PTypeInfo; const args: array of TValue): TValue; overload;
+    function GetService(serviceType: PTypeInfo; const name: string; const args: array of TValue): TValue; overload;
 
     function GetAllServices(serviceType: PTypeInfo): TArray<TValue>; overload;
 
@@ -327,7 +329,7 @@ type
   ///	  using Spring.DI namespace in your library. The namespace is supposed to
   ///	  be used to register components in your bootstrap code.
   ///	</remarks>
-  TServiceLocator = class sealed
+  TServiceLocator = class sealed(TInterfaceBase, IServiceLocator)
   strict private
     class var fInstance: TServiceLocator;
     var fServiceLocatorProvider: TServiceLocatorDelegate;
@@ -346,8 +348,12 @@ type
 
     function GetService<T>: T; overload;
     function GetService<T>(const name: string): T; overload;
+    function GetService<T>(const args: array of TValue): T; overload;
+    function GetService<T>(const name: string; const args: array of TValue): T; overload;
     function GetService(serviceType: PTypeInfo): TValue; overload;
     function GetService(serviceType: PTypeInfo; const name: string): TValue; overload;
+    function GetService(serviceType: PTypeInfo; const args: array of TValue): TValue; overload;
+    function GetService(serviceType: PTypeInfo; const name: string; const args: array of TValue): TValue; overload;
 
     function GetAllServices<TServiceType>: TArray<TServiceType>; overload;
     function GetAllServices(serviceType: PTypeInfo): TArray<TValue>; overload;
@@ -537,6 +543,18 @@ begin
   Result := GetServiceLocator.GetService(serviceType, name);
 end;
 
+function TServiceLocator.GetService(serviceType: PTypeInfo;
+  const args: array of TValue): TValue;
+begin
+  Result := GetServiceLocator.GetService(serviceType, args);
+end;
+
+function TServiceLocator.GetService(serviceType: PTypeInfo; const name: string;
+  const args: array of TValue): TValue;
+begin
+  Result := GetServiceLocator.GetService(serviceType, name, args);
+end;
+
 function TServiceLocator.GetService<T>: T;
 var
   value: TValue;
@@ -550,6 +568,23 @@ var
   value: TValue;
 begin
   value := GetService(TypeInfo(T), name);
+  Result := value.AsType<T>;
+end;
+
+function TServiceLocator.GetService<T>(const args: array of TValue): T;
+var
+  value: TValue;
+begin
+  value := GetService(TypeInfo(T), args);
+  Result := value.AsType<T>;
+end;
+
+function TServiceLocator.GetService<T>(const name: string;
+  const args: array of TValue): T;
+var
+  value: TValue;
+begin
+  value := GetService(TypeInfo(T), name, args);
   Result := value.AsType<T>;
 end;
 
