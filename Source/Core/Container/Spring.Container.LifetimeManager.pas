@@ -128,24 +128,27 @@ var
   localIntf: Pointer; // weak-reference
 begin
   Assert(not instance.IsEmpty, 'instance should not be empty.');
-  if instance.IsObject then
-  begin
-    Result := GetInterface(instance.AsObject, IInitializable, intf);
-    Result := Result or (GetInterface(instance.AsObject, IInterface, localIntf)
-      and (IInterface(localIntf).QueryInterface(IID, intf) = S_OK));
-  end
+  case instance.Kind of
+    tkClass:
+    begin
+      Result := GetInterface(instance.AsObject, IInitializable, intf);
+      Result := Result or (GetInterface(instance.AsObject, IInterface, localIntf)
+        and (IInterface(localIntf).QueryInterface(IID, intf) = S_OK));
+    end;
+    tkInterface:
+    begin
+      Result := instance.AsInterface.QueryInterface(IID, intf) = S_OK;
+    end;
   else
-  begin
-    Result := instance.AsInterface.QueryInterface(IID, intf) = S_OK;
-  end;
+    Result := False;
+  end
 end;
 
 procedure TLifetimeManagerBase.DoAfterConstruction(instance: TValue);
 var
   intf: Pointer;
 begin
-  if (instance.Kind in [tkClass, tkInterface])
-    and TryGetInterfaceWithoutCopy(instance, IInitializable, intf) then
+  if TryGetInterfaceWithoutCopy(instance, IInitializable, intf) then
   begin
     IInitializable(intf).Initialize;
   end;
