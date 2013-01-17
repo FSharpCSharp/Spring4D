@@ -42,7 +42,12 @@ type
   EORMConstructorNotFound = Exception;
   EORMConnectionFactoryException = Exception;
 
-  TConnectionFactory = class
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Static class which acts as factory for <c>IDBConnection</c>s.
+  ///	</summary>
+  {$ENDREGION}
+  TConnectionFactory = class sealed
   private
     class var FRegistered: TDictionary<TDBDriverType, TClass>;
   protected

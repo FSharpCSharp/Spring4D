@@ -40,6 +40,11 @@ uses
   ;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Base implementation of <c>ICriteria&lt;T&gt;</c> interface.
+  ///	</summary>
+  {$ENDREGION}
   TAbstractCriteria<T: class, constructor> = class(TInterfacedObject, ICriteria<T>)
   private
     FEntityClass: TClass;
@@ -49,8 +54,9 @@ type
   protected
     constructor Create(AEntityClass: TClass; ASession: TSession); virtual;
 
-    function GenerateSqlStatement(out AParams: TObjectList<TDBParam>): string;
+    function GenerateSqlStatement(AParams: TObjectList<TDBParam>): string;
     function DoList(): {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF}; virtual; abstract;
+    function Page(APage: Integer; AItemsPerPage: Integer): IDBPage<T>; virtual;
   public
     destructor Destroy; override;
 
@@ -117,7 +123,7 @@ begin
   inherited Destroy;
 end;
 
-function TAbstractCriteria<T>.GenerateSqlStatement(out AParams: TObjectList<TDBParam>): string;
+function TAbstractCriteria<T>.GenerateSqlStatement(AParams: TObjectList<TDBParam>): string;
 var
   LCriterion: ICriterion;
   LCriterionSql: string;
@@ -131,7 +137,6 @@ begin
     LExecutor.EntityClass := FEntityClass;
     LExecutor.LazyColumn := nil;
 
-    AParams := TObjectList<TDBParam>.Create();
     for LCriterion in Criterions do
     begin
       LCriterionSql := LCriterion.ToSqlString(AParams);
@@ -157,6 +162,20 @@ end;
 function TAbstractCriteria<T>.List: {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF};
 begin
   Result := DoList();
+end;
+
+function TAbstractCriteria<T>.Page(APage, AItemsPerPage: Integer): IDBPage<T>;
+var
+  LSql: string;
+  LParams: TObjectList<TDBParam>;
+begin
+  LParams := TObjectList<TDBParam>.Create();
+  try
+    LSql := GenerateSqlStatement(LParams);
+    Result := FSession.Page<T>(APage, AItemsPerPage, LSql, LParams);
+  finally
+    LParams.Free;
+  end;
 end;
 
 end.

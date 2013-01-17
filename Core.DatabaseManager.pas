@@ -33,6 +33,11 @@ uses
   Core.AbstractManager, Core.Interfaces, SysUtils, Generics.Collections;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Responsible for building database structure from annotated entities.
+  ///	</summary>
+  {$ENDREGION}
   TDatabaseManager = class(TAbstractManager)
   protected
     procedure BuildTables(AEntities: TList<TClass>); virtual;

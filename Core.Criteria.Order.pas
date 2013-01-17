@@ -8,6 +8,11 @@ uses
   ;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Implementation of IOrder interface.
+  ///	</summary>
+  {$ENDREGION}
   TOrder = class(TInterfacedObject, IOrder)
   private
     FOrderType: TOrderType;

@@ -33,6 +33,11 @@ uses
   DB, Generics.Collections, Rtti;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents query parameter.
+  ///	</summary>
+  {$ENDREGION}
   TDBParam = class
   private
     FName: string;

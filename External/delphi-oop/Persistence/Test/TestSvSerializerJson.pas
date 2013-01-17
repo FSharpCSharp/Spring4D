@@ -388,6 +388,7 @@ type
     procedure TestHelper();
     procedure TestRegisteredConstructor();
     procedure TestInterfaceList();
+    procedure Test_ClassMethods();
   end;
 
   TestTSvSuperJsonSerializer = class(TestTSvJsonSerializerFactory)
@@ -409,6 +410,7 @@ uses
   DateUtils,
   TypInfo,
   Diagnostics,
+  SvSerializerRtti,
   SvSerializer.Extensions.SQLite;
 
 const
@@ -1196,6 +1198,27 @@ begin
   FILE_SERIALIZE := 'test.db3';
 
   TestSerializeAndDeserialize();
+end;
+
+procedure TestTSvJsonSerializerFactory.Test_ClassMethods;
+var
+  LBean: TBean;
+  LOutput: string;
+begin
+  LBean := TBean.Create;
+  try
+    LBean.FirstName := 'Class';
+
+    TSvSerializer.SerializeObject(LBean, LOutput, SerializerType);
+    CheckTrue(LOutput <> '');
+    LBean.Free;
+    LBean := TBean.Create;
+
+    TSvSerializer.DeSerializeObject(LBean, LOutput, SerializerType);
+    CheckEquals('Class', LBean.FirstName);
+  finally
+    LBean.Free;
+  end;
 end;
 
 { TMyRec }

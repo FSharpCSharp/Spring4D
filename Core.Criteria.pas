@@ -40,6 +40,11 @@ uses
   ;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Implementation of <c>ICriteria&lt;T&gt;</c> interface.
+  ///	</summary>
+  {$ENDREGION}
   TCriteria<T: class, constructor> = class(TAbstractCriteria<T>)
   protected
     function DoList(): {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF}; override;
@@ -73,8 +78,9 @@ var
   LSql: string;
   LResults: IDBResultset;
 begin
-  LSql := GenerateSqlStatement(LParams);
+  LParams := TObjectList<TDBParam>.Create(True);
   try
+    LSql := GenerateSqlStatement(LParams);
     LResults := Session.GetResultset(LSql, LParams);
     Result := Session.Fetch<T>(LResults);
   finally

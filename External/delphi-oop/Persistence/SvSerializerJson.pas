@@ -30,7 +30,7 @@ unit SvSerializerJson;
 interface
 
 uses
-  Classes, SvSerializer, SysUtils, DBXJSON, Rtti;
+  Classes, SvSerializer, SysUtils, DBXJSON, Rtti, SvSerializerAbstract;
 
 type
   TSvJsonString = class(TJSONString)
@@ -89,6 +89,10 @@ type
   end;
 
 implementation
+
+uses
+  SvSerializerFactory
+  ;
 
 const
   CT_QUALIFIEDNAME = 'QualifiedName';

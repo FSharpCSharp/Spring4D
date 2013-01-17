@@ -42,7 +42,7 @@ type
     FForeignKeyColumns: TList<ForeignJoinColumnAttribute>;
     FPrimaryKeyColumn: ColumnAttribute;
     FTable: TableAttribute;
-    FManyValuedColumns: TList<ManyValuedAssociation>;
+    FOneToManyColumns: TList<OneToManyAttribute>;
     FManyToOneColumns: TList<ManyToOneAttribute>;
     FSequence: SequenceAttribute;
   protected
@@ -61,7 +61,7 @@ type
     property Columns: TList<ColumnAttribute> read FColumns;
     property ColumnsData: TList<TColumnData> read FColumnsData;
     property ForeignColumns: TList<ForeignJoinColumnAttribute> read FForeignKeyColumns;
-    property ManyValuedColumns: TList<ManyValuedAssociation> read FManyValuedColumns;
+    property OneToManyColumns: TList<OneToManyAttribute> read FOneToManyColumns;
     property ManyToOneColumns: TList<ManyToOneAttribute> read FManyToOneColumns;
     property PrimaryKeyColumn: ColumnAttribute read FPrimaryKeyColumn;
     property Sequence: SequenceAttribute read FSequence write FSequence;
@@ -69,6 +69,11 @@ type
     property EntityTable: TableAttribute read FTable;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Class which holds cached data of annotated entities.
+  ///	</summary>
+  {$ENDREGION}
   TEntityCache = class
   private
     class var FEntities: TObjectDictionary<TClass,TEntityData>;
@@ -125,7 +130,7 @@ begin
   FTable := nil;
   FSequence := nil;
   FForeignKeyColumns := TList<ForeignJoinColumnAttribute>.Create;
-  FManyValuedColumns := TList<ManyValuedAssociation>.Create;
+  FOneToManyColumns := TList<OneToManyAttribute>.Create;
   FManyToOneColumns := TList<ManyToOneAttribute>.Create;
 end;
 
@@ -134,7 +139,7 @@ begin
   FColumns.Free;
   FColumnsData.Free;
   FForeignKeyColumns.Free;
-  FManyValuedColumns.Free;
+  FOneToManyColumns.Free;
   FManyToOneColumns.Free;
   inherited Destroy;
 end;
@@ -182,7 +187,7 @@ begin
     FPrimaryKeyColumn.IsIdentity := TRttiExplorer.GetColumnIsIdentity(AClass, FPrimaryKeyColumn);
   FTable := TRttiExplorer.GetTable(AClass);
   TRttiExplorer.GetClassMembers<ForeignJoinColumnAttribute>(AClass, FForeignKeyColumns);
-  TRttiExplorer.GetClassMembers<ManyValuedAssociation>(AClass, FManyValuedColumns);
+  TRttiExplorer.GetClassMembers<OneToManyAttribute>(AClass, FOneToManyColumns);
   TRttiExplorer.GetClassMembers<ManyToOneAttribute>(AClass, FManyToOneColumns);
   FSequence := TRttiExplorer.GetSequence(AClass);
 end;

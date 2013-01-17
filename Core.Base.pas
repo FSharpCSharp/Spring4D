@@ -39,6 +39,11 @@ uses
   ;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Base <c>IDBResultset</c> adapter which descendents must override.
+  ///	</summary>
+  {$ENDREGION}
   TDriverResultSetAdapter<T> = class(TInterfacedObject, IDBResultset)
   private
     FDataset: T;
@@ -57,6 +62,11 @@ type
     property Dataset: T read FDataset;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Base <c>IDBConnection</c> adapter which descendents must override.
+  ///	</summary>
+  {$ENDREGION}
   TDriverConnectionAdapter<T> = class(TInterfacedObject, IDBConnection)
   private
     FConnection: T;
@@ -91,6 +101,11 @@ type
     property QueryLanguage: TQueryLanguage read GetQueryLanguage write SetQueryLanguage;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Base <c>IDBStatement</c> adapter which descendents must override.
+  ///	</summary>
+  {$ENDREGION}
   TDriverStatementAdapter<T> = class(TInterfacedObject, IDBStatement)
   private
     FStmt: T;
@@ -106,6 +121,11 @@ type
     property Statement: T read FStmt;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Base <c>IDBTransaction</c> adapter which descendents must override.
+  ///	</summary>
+  {$ENDREGION}
   TDriverTransactionAdapter<T> = class(TInterfacedObject, IDBTransaction)
   private
     FTransaction: T;
@@ -120,6 +140,11 @@ type
     property Transaction: T read FTransaction;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Responsible for building paged queries.
+  ///	</summary>
+  {$ENDREGION}
   TPager = class
   private
     FConnection: IDBConnection;
@@ -142,6 +167,11 @@ type
     property Offset: Integer read GetOffset;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Base <c>IDBPage&lt;T&gt;</c> adapter which descendents must override.
+  ///	</summary>
+  {$ENDREGION}
   TDriverPageAdapter<T: class> = class(TInterfacedObject, IDBPage<T>)
   private
     FItems: {$IFDEF USE_SPRING} Spring.Collections.IList<T> {$ELSE}TObjectList<T> {$ENDIF};

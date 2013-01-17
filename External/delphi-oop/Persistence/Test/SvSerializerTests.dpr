@@ -26,7 +26,10 @@ uses
   SQLiteTable3 in 'SQLiteTable3.pas',
   SvSerializer.Extensions.SQLite in '..\SvSerializer.Extensions.SQLite.pas',
   SvSerializerSuperJson in '..\SvSerializerSuperJson.pas',
-  SvSerializerNativeXML in '..\SvSerializerNativeXML.pas';
+  SvSerializerNativeXML in '..\SvSerializerNativeXML.pas',
+  SvSerializerAbstract in '..\SvSerializerAbstract.pas',
+  SvSerializerFactory in '..\SvSerializerFactory.pas',
+  SvSerializerRtti in '..\SvSerializerRtti.pas';
 
 {$R *.RES}
 

@@ -35,6 +35,11 @@ uses
 type
   TDMLCommandType = (ctSelect, ctInsert, ctUpdate, ctDelete);
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents abstract DML command.
+  ///	</summary>
+  {$ENDREGION}
   TDMLCommand = class abstract
   private
     FTable: TSQLTable;
@@ -46,6 +51,11 @@ type
     property Table: TSQLTable read FTable;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents <c>select</c> command.
+  ///	</summary>
+  {$ENDREGION}
   TSelectCommand = class(TDMLCommand)
   private
     FSelectFields: TObjectList<TSQLSelectField>;
@@ -75,6 +85,11 @@ type
     property PrimaryKeyColumn: ColumnAttribute read FPrimaryKeyColumn write FPrimaryKeyColumn;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents <c>insert</c> command.
+  ///	</summary>
+  {$ENDREGION}
   TInsertCommand = class(TDMLCommand)
   private
     FInsertFields: TObjectList<TSQLField>;
@@ -89,6 +104,11 @@ type
     property Sequence: SequenceAttribute read FSequence write FSequence;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents <c>update</c> command.
+  ///	</summary>
+  {$ENDREGION}
   TUpdateCommand = class(TDMLCommand)
   private
     FUpdateFields: TObjectList<TSQLField>;
@@ -105,6 +125,11 @@ type
     property WhereFields: TObjectList<TSQLWhereField> read FWhereFields;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents <c>delete</c> command.
+  ///	</summary>
+  {$ENDREGION}
   TDeleteCommand = class(TDMLCommand)
   private
     FWhereFields: TObjectList<TSQLWhereField>;
@@ -119,6 +144,11 @@ type
     property WhereFields: TObjectList<TSQLWhereField> read FWhereFields;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents <c>create table</c> command.
+  ///	</summary>
+  {$ENDREGION}
   TCreateTableCommand = class(TDMLCommand)
   private
     FColumns: TObjectList<TSQLCreateField>;
@@ -135,6 +165,11 @@ type
     property Columns: TObjectList<TSQLCreateField> read FColumns;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents <c>create foreign key</c> command.
+  ///	</summary>
+  {$ENDREGION}
   TCreateFKCommand = class(TCreateTableCommand)
   private
     FForeigns: TObjectList<TSQLForeignKeyField>;
@@ -148,6 +183,11 @@ type
     property ForeignKeys: TObjectList<TSQLForeignKeyField> read FForeigns;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents <c>create sequence</c> command.
+  ///	</summary>
+  {$ENDREGION}
   TCreateSequenceCommand = class
   private
     FSequence: SequenceAttribute;

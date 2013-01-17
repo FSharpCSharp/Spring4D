@@ -42,6 +42,11 @@ uses
 type
   TSelectType = (stOne, stList, stObjectList);
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents <c>select</c> executor.
+  ///	</summary>
+  {$ENDREGION}
   TSelectExecutor = class(TAbstractCommandExecutor)
   private
     FTable: TSQLTable;

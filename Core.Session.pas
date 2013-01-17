@@ -47,6 +47,8 @@ type
     FOldStateEntities: TEntityMap;
     FStartedTransaction: IDBTransaction;
   protected
+    function GetPager(APage, AItemsInPage: Integer): TObject;
+  protected
     procedure SetEntityColumns(AEntity: TObject; AColumns: TList<TColumnData>; AResultset: IDBResultset); overload; virtual;
     procedure SetEntityColumns(AEntity: TObject; AColumns: TList<ManyValuedAssociation>; AResultset: IDBResultset); overload; virtual;
     procedure SetLazyColumns(AEntity: TObject);
@@ -64,7 +66,9 @@ type
 
     function GetSelector(AClass: TClass): TObject;
 
-    function GetQueryCount(const ASql: string; const AParams: array of const): Int64;
+    function GetQueryCountSql(const ASql: string): string;
+    function GetQueryCount(const ASql: string; const AParams: array of const): Int64; overload;
+    function GetQueryCount(const ASql: string; AParams:TObjectList<TDBParam>): Int64; overload;
   public
     constructor Create(AConnection: IDBConnection); override;
     destructor Destroy; override;
@@ -264,7 +268,16 @@ type
     ///	</summary>
     {$ENDREGION}
     function Page<T: class, constructor>(APage: Integer; AItemsPerPage: Integer;
-      const ASql: string; const AParams: array of const): IDBPage<T>;
+      const ASql: string; const AParams: array of const): IDBPage<T>; overload;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Fetches data in pages. You do not need to write custom sql for this,
+    ///	  just use ordinary sql. All the work will be done for you.
+    ///	</summary>
+    {$ENDREGION}
+    function Page<T: class, constructor>(APage: Integer; AItemsPerPage: Integer;
+      const ASql: string; AParams: TObjectList<TDBParam>): IDBPage<T>; overload;
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -693,6 +706,16 @@ begin
     Result := GetOne<T>(LResults, AEntity);
 end;
 
+function TSession.GetPager(APage, AItemsInPage: Integer): TObject;
+var
+  LPager: TPager;
+begin
+  Result := TPager.Create(Connection);
+  LPager := TPager(Result);
+  LPager.Page := APage;
+  LPager.ItemsPerPage := AItemsInPage;
+end;
+
 function TSession.GetObjectList<T>(AResultset: IDBResultset): T;
 var
   LCurrent: TObject;
@@ -746,18 +769,38 @@ end;
 
 function TSession.GetQueryCount(const ASql: string; const AParams: array of const): Int64;
 var
-  LGenerator: ISQLGenerator;
   LSQL: string;
   LResults: IDBResultset;
 begin
   Result := 0;
-  LGenerator := TSQLGeneratorRegister.GetGenerator(Connection.GetQueryLanguage);
-  LSQL := LGenerator.GenerateGetQueryCount(ASql);
+  LSQL := GetQueryCountSql(ASql);
   LResults := GetResultset(LSQL, AParams);
   if not LResults.IsEmpty then
   begin
     Result := LResults.GetFieldValue(0);
   end;
+end;
+
+function TSession.GetQueryCount(const ASql: string; AParams:TObjectList<TDBParam>): Int64;
+var
+  LSQL: string;
+  LResults: IDBResultset;
+begin
+  Result := 0;
+  LSQL := GetQueryCountSql(ASql);
+  LResults := GetResultset(LSQL, AParams);
+  if not LResults.IsEmpty then
+  begin
+    Result := LResults.GetFieldValue(0);
+  end;
+end;
+
+function TSession.GetQueryCountSql(const ASql: string): string;
+var
+  LGenerator: ISQLGenerator;
+begin
+  LGenerator := TSQLGeneratorRegister.GetGenerator(Connection.GetQueryLanguage);
+  Result := LGenerator.GenerateGetQueryCount(ASql);
 end;
 
 function TSession.GetResultset(const ASql: string;
@@ -833,15 +876,29 @@ begin
 end;
 
 function TSession.Page<T>(APage, AItemsPerPage: Integer; const ASql: string;
+  AParams: TObjectList<TDBParam>): IDBPage<T>;
+var
+  LPager: TPager;
+  LSQL: string;
+  LResultset: IDBResultset;
+begin
+  LPager := GetPager(APage, AItemsPerPage) as TPager;
+  Result := TDriverPageAdapter<T>.Create(LPager);
+  LPager.TotalItems := GetQueryCount(ASql, AParams);
+  LSQL := LPager.BuildSQL(ASql);
+
+  LResultset := GetResultset(LSQL, AParams);
+  Fetch<T>(LResultset, Result.Items);
+end;
+
+function TSession.Page<T>(APage, AItemsPerPage: Integer; const ASql: string;
   const AParams: array of const): IDBPage<T>;
 var
   LPager: TPager;
   LSQL: string;
 begin
-  LPager := TPager.Create(Connection);
+  LPager := GetPager(APage, AItemsPerPage) as TPager;
   Result := TDriverPageAdapter<T>.Create(LPager);
-  LPager.Page := APage;
-  LPager.ItemsPerPage := AItemsPerPage;
   LPager.TotalItems := GetQueryCount(ASql, AParams);
   LSQL := LPager.BuildSQL(ASql);
 
@@ -924,7 +981,7 @@ var
   LCol: ManyValuedAssociation;
   LValue: TValue;
 begin
-  for LCol in TEntityCache.Get(AEntity.ClassType).ManyValuedColumns do
+  for LCol in TEntityCache.Get(AEntity.ClassType).OneToManyColumns do
   begin
     LValue := TRttiExplorer.GetMemberValue(AEntity, LCol.MappedBy); //get foreign key value
     TRttiExplorer.SetMemberValue(Self, AEntity, LCol.ClassMemberName, LValue);

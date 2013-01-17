@@ -44,6 +44,25 @@ type
 
   TExecutionListenerProc = reference to procedure(const ACommand: string; const AParams: TObjectList<TDBParam>);
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents paged fetches.
+  ///	</summary>
+  ///	<remarks>
+  ///	  Pages are zero indexed.
+  ///	</remarks>
+  {$ENDREGION}
+  IDBPage<T: class> = interface(IInvokable)
+    ['{384357E2-A0B1-4EEE-9A22-2C01479D4148}']
+    function GetCurrentPage(): Integer;
+    function GetItemsPerPage(): Integer;
+    function GetTotalPages(): Integer;
+    function GetTotalItems(): Int64;
+    function GetItems(): {$IFDEF USE_SPRING} Spring.Collections.IList<T> {$ELSE}TObjectList<T> {$ENDIF};
+
+    property Items: {$IFDEF USE_SPRING} Spring.Collections.IList<T> {$ELSE}TObjectList<T> {$ENDIF} read GetItems;
+  end;
+
 
   {$REGION 'Documentation'}
   ///	<summary>
@@ -132,6 +151,19 @@ type
     ///	</summary>
     {$ENDREGION}
     function List(): {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF};
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Get the results in pages.
+    ///	</summary>
+    ///	<param name="APage">
+    ///	  Page index. Zero (0) indexed
+    ///	</param>
+    ///	<param name="AItemsPerPage">
+    ///	  Items include in on page.
+    ///	</param>
+    {$ENDREGION}
+    function Page(APage: Integer; AItemsPerPage: Integer): IDBPage<T>;
   end;
 
   {$REGION 'Documentation'}
@@ -139,7 +171,7 @@ type
   ///	  Represents the result set to fetch data from the database.
   ///	</summary>
   {$ENDREGION}
-  IDBResultset = interface
+  IDBResultset = interface(IInvokable)
     ['{4FA97CFB-4992-4DAA-BB2A-B5CAF84B6B47}']
     function IsEmpty(): Boolean;
     function Next(): Boolean;
@@ -150,7 +182,12 @@ type
     function GetFieldName(AIndex: Integer): string;
   end;
 
-  IDBStatement = interface
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents the executable database statement.
+  ///	</summary>
+  {$ENDREGION}
+  IDBStatement = interface(IInvokable)
     ['{DA905CAA-0FC2-4570-9788-1DC206600171}']
     procedure SetSQLCommand(const ACommandText: string);
     procedure SetParams(AParams: TEnumerable<TDBParam>); overload;
@@ -159,7 +196,16 @@ type
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultset;
   end;
 
-  IDBTransaction = interface
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents the database transaction.
+  ///	</summary>
+  ///	<remarks>
+  ///	  If transaction was not committed, rollback will be performed when
+  ///	  interface goes out of scope.
+  ///	</remarks>
+  {$ENDREGION}
+  IDBTransaction = interface(IInvokable)
     ['{AA35EE88-7271-4894-B6F0-06080C797BCF}']
     procedure Commit();
     procedure Rollback();
@@ -170,7 +216,7 @@ type
   ///	  Represents the database connection.
   ///	</summary>
   {$ENDREGION}
-  IDBConnection = interface
+  IDBConnection = interface(IInvokable)
     ['{256B8F14-7FF1-4442-A202-358B24756654}']
     procedure Connect();
     procedure Disconnect();
@@ -199,17 +245,6 @@ type
   IODBC = interface
     ['{7A235A2E-1ABA-4AD6-A6FD-276A16374596}']
     function GetDatasources: TArray<string>;
-  end;
-
-  IDBPage<T: class> = interface
-    ['{384357E2-A0B1-4EEE-9A22-2C01479D4148}']
-    function GetCurrentPage(): Integer;
-    function GetItemsPerPage(): Integer;
-    function GetTotalPages(): Integer;
-    function GetTotalItems(): Int64;
-    function GetItems(): {$IFDEF USE_SPRING} Spring.Collections.IList<T> {$ELSE}TObjectList<T> {$ENDIF};
-
-    property Items: {$IFDEF USE_SPRING} Spring.Collections.IList<T> {$ELSE}TObjectList<T> {$ENDIF} read GetItems;
   end;
 
 implementation

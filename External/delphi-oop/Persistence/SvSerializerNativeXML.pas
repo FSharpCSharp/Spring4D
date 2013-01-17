@@ -30,7 +30,7 @@ unit SvSerializerNativeXML;
 interface
 
 uses
-  Classes, SvSerializer, SysUtils, NativeXml, Rtti;
+  Classes, SvSerializer, SysUtils, NativeXml, Rtti, SvSerializerAbstract;
 
 type
   TSvXMLNode = class(TsdElement)
@@ -87,6 +87,10 @@ type
 
 
 implementation
+
+uses
+  SvSerializerFactory
+  ;
 
 { TSvNativeXMLSerializer }
 

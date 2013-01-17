@@ -139,6 +139,7 @@
 			<DCCReference Include="..\Core.Criteria.Criterion.InExpression.pas"/>
 			<DCCReference Include="..\Core.Criteria.Properties.pas"/>
 			<DCCReference Include="TestPersistence.pas"/>
+			<DCCReference Include="TestConsts.pas"/>
 			<None Include="Profiling\AQtimeModule1.aqt"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>

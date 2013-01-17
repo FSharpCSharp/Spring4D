@@ -99,7 +99,8 @@ uses
   Core.Criteria.Criterion.LikeExpression in '..\Core.Criteria.Criterion.LikeExpression.pas',
   Core.Criteria.Criterion.InExpression in '..\Core.Criteria.Criterion.InExpression.pas',
   Core.Criteria.Properties in '..\Core.Criteria.Properties.pas',
-  TestPersistence in 'TestPersistence.pas';
+  TestPersistence in 'TestPersistence.pas',
+  TestConsts in 'TestConsts.pas';
 
 {$R *.RES}
 
