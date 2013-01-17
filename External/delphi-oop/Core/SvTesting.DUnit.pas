@@ -87,21 +87,21 @@ procedure TSvTestCase.CheckEquals(expected, actual: TDate; msg: string);
 begin
   FCheckCalled := True;
   if not SameDate(expected, actual) then
-    FailNotEquals(DateToStr(expected), DateToStr(actual), msg, CallerAddr);
+    FailNotEquals(DateToStr(expected), DateToStr(actual), msg, {$IF CompilerVersion > 23} ReturnAddress {$ELSE} ErrorAddr {$IFEND});
 end;
 
 procedure TSvTestCase.CheckEquals(expected, actual: TDateTime; msg: string);
 begin
   FCheckCalled := True;
   if not SameDateTime(expected, actual) then
-    FailNotEquals(DateTimeToStr(expected), DateTimeToStr(actual), msg, CallerAddr);
+    FailNotEquals(DateTimeToStr(expected), DateTimeToStr(actual), msg, {$IF CompilerVersion > 23} ReturnAddress {$ELSE} ErrorAddr {$IFEND});
 end;
 
 procedure TSvTestCase.CheckEqualsStringCaseInsensitive(const expected, actual, msg: string);
 begin
   FCheckCalled := True;
   if not AnsiSameText(expected, actual) then
-    FailNotEquals(expected, actual, msg, CallerAddr);
+    FailNotEquals(expected, actual, msg, {$IF CompilerVersion > 23} ReturnAddress {$ELSE} ErrorAddr {$IFEND});
 end;
 
 procedure TSvTestCase.CheckForException(aExceptionType: TClassOfException; aCode: TProc;
@@ -125,7 +125,7 @@ procedure TSvTestCase.CheckNotEqualsStringCaseInsensitive(const expected, actual
 begin
   FCheckCalled := True;
   if AnsiSameText(expected, actual) then
-    FailEquals(expected, actual, msg, CallerAddr);
+    FailEquals(expected, actual, msg, {$IF CompilerVersion > 23} ReturnAddress {$ELSE} ErrorAddr {$IFEND});
 end;
 
 constructor TSvTestCase.Create(MethodName: string);

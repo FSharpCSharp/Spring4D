@@ -32,7 +32,8 @@ unit uModels;
 interface
 
 uses
-  Mapping.Attributes, Generics.Collections, Core.Types, Graphics, Spring.Collections, Classes;
+  Mapping.Attributes, Generics.Collections, Core.Types, Graphics, Spring.Collections, Classes
+  , SvSerializer, SvContainers ;
 
 
 const
@@ -55,7 +56,7 @@ type
     FId: Integer;
    // [ManyValuedAssociation(ftLazy, False, [ctCascadeAll], 'FProduct')]
    // [JoinColumn('PRODID', [], 'PRODID')]
-    FProducts: Lazy<TObjectList<TProduct>>;
+    FProducts: LazyObject<TSvObjectList<TProduct>>;
     [Column('AVATAR', [], 50, 0, 0, 'Customers avatar')]
     FAvatar: LazyObject<TPicture>;
     [Column('CUSTSTREAM', [], 50, 0, 0, 'Customers stream')]
@@ -77,7 +78,7 @@ type
     FOrdersIntf: Lazy<IList<TCustomer_Orders>>;
     FCustomerType: TCustomerType;
 
-    function GetProducts: TObjectList<TProduct>;
+    function GetProducts: TSvObjectList<TProduct>;
     function GetAvatar: TPicture;
     procedure SetAvatar(const Value: TPicture);
     function GetOrders: TObjectList<TCustomer_Orders>;
@@ -85,10 +86,13 @@ type
     function GetAvatarLazy: Nullable<TPicture>;
     function GetCustStream: TMemoryStream;
     procedure SetCustStream(const Value: TMemoryStream);
+    procedure SetProducts(const Value: TSvObjectList<TProduct>);
+    procedure SetOrdersIntf(const Value: IList<TCustomer_Orders>);
   public
     constructor Create();
     destructor Destroy; override;
   public
+    [SvTransient]
     property ID: Integer read FId;
     [Column('CUSTNAME', [], 50, 0, 0, 'Customers name')]
     property Name: string read FName write FName;
@@ -104,11 +108,13 @@ type
     property MiddleName: Nullable<string> read FMiddleName write FMiddleName;
     [Column('CUSTTYPE', [], 0, 0, 0, 'Customers type')]
     property CustomerType: TCustomerType read FCustomerType write FCustomerType;
-    property Products: TObjectList<TProduct> read GetProducts;
+    property Products: TSvObjectList<TProduct> read GetProducts write SetProducts;
+    [SvTransient]
     property Avatar: TPicture read GetAvatar write SetAvatar;
     property AvatarLazy: Nullable<TPicture> read GetAvatarLazy;
     property Orders: TObjectList<TCustomer_Orders> read GetOrders;
-    property OrdersIntf: IList<TCustomer_Orders> read GetOrdersIntf;
+    property OrdersIntf: IList<TCustomer_Orders> read GetOrdersIntf write SetOrdersIntf;
+    [SvTransient]
     property CustStream: TMemoryStream read GetCustStream write SetCustStream;
   end;
 
@@ -213,6 +219,7 @@ type
     FName: string;
     FPrice: Double;
   public
+    [SvTransient]
     property ID: Integer read FId;
     [Column('PRODNAME', [], 50, 0, 0, 'Product name')]
     property Name: string read FName write FName;
@@ -283,7 +290,7 @@ begin
   Result := FOrdersIntf.Value;
 end;
 
-function TCustomer.GetProducts: TObjectList<TProduct>;
+function TCustomer.GetProducts: TSvObjectList<TProduct>;
 begin
   Result := FProducts.Value;
 end;
@@ -299,6 +306,18 @@ begin
     FStream.Value.LoadFromStream(Value)
   else
     FStream.Value.Clear;
+end;
+
+procedure TCustomer.SetOrdersIntf(const Value: IList<TCustomer_Orders>);
+begin
+  FOrdersIntf.Value.Clear;
+  FOrdersIntf.Value.AddRange(Value);
+end;
+
+procedure TCustomer.SetProducts(const Value: TSvObjectList<TProduct>);
+begin
+  FProducts.Value.Clear;
+  FProducts.Value.AddRange(Value);
 end;
 
 { TCompany }

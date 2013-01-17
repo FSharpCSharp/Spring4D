@@ -215,13 +215,14 @@ type
   private
     sPath: string;
   public
-    function Add(const APath: string; IncludeTrailingDelimiter: Boolean = True): TPathBuilder;
+    function Add(const APath: string; AIncludeTrailingDelimiter: Boolean = True): TPathBuilder;
     function AddFile(const AFilename: string): TPathBuilder;
+    function GoUpFolder(AFolderCount: Integer = 1): TPathBuilder;
     function ToString(): string;
     class function Init(): TPathBuilder; static;
     class function InitCurrentDir(): TPathBuilder; static;
     class function InitHomePath(): TPathBuilder; static;
-    class function InitCustomPath(const APath: string): TPathBuilder; static;
+    class function InitCustomPath(const APath: string; AIncludeTrailingDelimiter: Boolean = True): TPathBuilder; static;
   end;
 
 
@@ -411,9 +412,10 @@ end;
 { TPathBuilder }
 
 function TPathBuilder.Add(const APath: string;
-  IncludeTrailingDelimiter: Boolean): TPathBuilder;
+  AIncludeTrailingDelimiter: Boolean): TPathBuilder;
 begin
-  if IncludeTrailingDelimiter then
+  sPath := IncludeTrailingPathDelimiter(sPath);
+  if AIncludeTrailingDelimiter then
   begin
     sPath := sPath + IncludeTrailingPathDelimiter(APath);
   end
@@ -427,7 +429,22 @@ end;
 
 function TPathBuilder.AddFile(const AFilename: string): TPathBuilder;
 begin
+  sPath := IncludeTrailingPathDelimiter(sPath);
   sPath := sPath + AFilename;
+  Result := Self;
+end;
+
+function TPathBuilder.GoUpFolder(AFolderCount: Integer): TPathBuilder;
+var
+  LDirs: string;
+  i: Integer;
+begin
+  LDirs := '';
+  for i := 1 to AFolderCount do
+  begin
+    LDirs := LDirs + '..' + PathDelim;
+  end;
+  sPath := ExpandFileName(IncludeTrailingPathDelimiter(sPath) + LDirs);
   Result := Self;
 end;
 
@@ -441,9 +458,12 @@ begin
   Result.sPath := IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0)));
 end;
 
-class function TPathBuilder.InitCustomPath(const APath: string): TPathBuilder;
+class function TPathBuilder.InitCustomPath(const APath: string; AIncludeTrailingDelimiter: Boolean): TPathBuilder;
 begin
-  Result.sPath := IncludeTrailingPathDelimiter(APath);
+  if AIncludeTrailingDelimiter then
+    Result.sPath := IncludeTrailingPathDelimiter(APath)
+  else
+    Result.sPath := APath;
 end;
 
 class function TPathBuilder.InitHomePath: TPathBuilder;

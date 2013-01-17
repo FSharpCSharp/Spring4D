@@ -636,16 +636,16 @@ var
   IsEnumerable: Boolean;
   LResults: IDBResultset;
 begin
+  if not Assigned(AEntity) or AID.IsEmpty then
+  begin
+    Exit();
+  end;
+
   case PTypeInfo(TypeInfo(T)).Kind of
     tkClass, tkClassRef, tkPointer, tkRecord, tkUnknown:
     begin
       raise EORMUnsupportedType.CreateFmt(EXCEPTION_UNSUPPORTED_LAZY_TYPE, [string(PTypeInfo(TypeInfo(T)).Name)]);
     end;
-  end;
-
-  if not Assigned(AEntity) or AID.IsEmpty then
-  begin
-    Exit();
   end;
 
   LResults := DoGetLazy<T>(AID, AEntity, AColumn, IsEnumerable);

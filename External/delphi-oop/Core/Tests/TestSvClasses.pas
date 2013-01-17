@@ -16,6 +16,15 @@ type
     procedure TestTuples8;
   end;
 
+  TestTPathBuilder = class(TTestCase)
+  private
+    FPathBuilder: TPathBuilder;
+  published
+    procedure TestAdd();
+    procedure TestAddFile();
+    procedure TestGoUpFolder();
+  end;
+
 implementation
 
 const
@@ -92,7 +101,54 @@ begin
   CheckEqualsString(STRING_TEST, tuple.Value7);
 end;
 
+{ TestTPathBuilder }
+
+procedure TestTPathBuilder.TestAdd;
+var
+  LPath: string;
+begin
+  LPath := 'E:\Testing\Demo';
+  FPathBuilder := TPathBuilder.InitCustomPath(LPath, False);
+  CheckEqualsString(LPath, FPathBuilder.ToString);
+
+  FPathBuilder.Add('SubDemo', False);
+  CheckEqualsString(LPath + '\SubDemo', FPathBuilder.ToString);
+
+  FPathBuilder.Add('SubDemo2', True);
+  CheckEqualsString(LPath + '\SubDemo\SubDemo2\', FPathBuilder.ToString);
+
+end;
+
+procedure TestTPathBuilder.TestAddFile;
+var
+  LPath: string;
+begin
+  LPath := 'E:\Testing\Demo';
+  FPathBuilder := TPathBuilder.InitCustomPath(LPath, False);
+  CheckEqualsString(LPath, FPathBuilder.ToString);
+
+  FPathBuilder.AddFile('SubDemo.txt');
+  CheckEqualsString(LPath + '\SubDemo.txt', FPathBuilder.ToString);
+end;
+
+procedure TestTPathBuilder.TestGoUpFolder;
+var
+  LPath: string;
+begin
+  LPath := 'E:\Testing\Demo\SubDemo\';
+  FPathBuilder := TPathBuilder.InitCustomPath(LPath);
+  CheckEqualsString(LPath, FPathBuilder.ToString);
+
+  FPathBuilder.GoUpFolder(1);
+  CheckEqualsString('E:\Testing\Demo\', FPathBuilder.ToString);
+
+  FPathBuilder := TPathBuilder.InitCustomPath('E:\Testing\Demo\SubDemo\SubDemo2\SubDemo3');
+  FPathBuilder.GoUpFolder(3);
+  CheckEqualsString('E:\Testing\Demo\', FPathBuilder.ToString);
+end;
+
 initialization
   RegisterTest(TestTSvTuples.Suite);
+  RegisterTest(TestTPathBuilder.Suite);
 
 end.

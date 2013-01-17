@@ -22,10 +22,10 @@ type
   TTestClass = class
   private
     FName: string;
-    FSecret: string;
+   // FSecret: string;
     FValues: TStrings;
 
-    property Secret: string read FSecret write FSecret;
+  //  property Secret: string read FSecret write FSecret;
   public
     constructor Create;
     destructor Destroy; override;
@@ -62,6 +62,8 @@ implementation
 
 uses
   TestFramework;
+
+{$HINTS OFF}
 
 procedure TestTSvRtti.SetUp;
 begin
@@ -231,6 +233,8 @@ procedure TTestClass.SomeLengthyOperation;
 begin
   Sleep(100);
 end;
+
+{$HINTS ON}
 
 initialization
   // Register any test cases with the test runner

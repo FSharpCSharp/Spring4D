@@ -32,8 +32,9 @@ type
 implementation
 
 uses
-  DateUtils,
-  Graphics;
+  DateUtils
+  ,Graphics
+  ;
 
 procedure TestTDataBindManager.SetUp;
 begin
@@ -56,6 +57,18 @@ begin
   FForm.Show;
 
   CheckEqualsString(FData.Name, FForm.edt1.Text);
+
+  FForm.edScript.Text := 'aaa';
+  Application.ProcessMessages;
+
+  CheckEqualsString(FData.Caption, UpperCase(FForm.edScript.Text));
+
+  FData.Caption := 'be';
+  CheckEqualsString('BE', FForm.edScript.Text);
+
+  FData.CurrentDate := Now;
+  CheckEqualsString(FormatDateTime('yyyy-mmmm-dd', FData.CurrentDate), FForm.edDate.Text);
+
   CheckTrue(FForm.CheckBox1.Checked);
   CheckEquals(FData.ID, FForm.SpinEdit1.Value);
   CheckTrue(SameDate(FData.Date, FForm.DateTimePicker1.Date));
@@ -65,6 +78,9 @@ begin
   CheckEquals(FData.Color, FForm.ColorBox1.Selected);
   CheckFalse(FForm.Button1.Enabled);
   FData.IsEnabled := True;
+
+
+
   CheckTrue(FForm.Button1.Enabled, 'Button Enabled hasnt changed');
   {TODO -oLinas -cGeneral : fix bindings for lists}
  // CheckEquals(3, FForm.ListBox1.Items.Count);

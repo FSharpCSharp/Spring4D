@@ -45,7 +45,8 @@ type
     class function GetAttributesOfType<T: class>(const ARttiObject: TRttiObject): TArray<T>;
     class function GetAttributeOfType<T: class>(const ARttiObject: TRttiObject): T;
 
-    class procedure SetValue<T>(const APropertyName: string; const AObject: T; const AValue: TValue);
+    class procedure SetValue<T>(const APropertyOrFieldName: string; const ATo: T; const AValue: TValue); overload;
+    class procedure SetValue(const APropertyOrFieldName: string; const AToObject: TObject; const AValue: TValue); overload;
     class procedure SetValueFromString(const AObject: TObject; const AValue: string; AField: TRttiField); overload;
     class procedure SetValueFromString(const AObject: TObject; const AValue: string; AProp: TRttiProperty); overload;
   end;
@@ -181,7 +182,35 @@ begin
     Exit(rProp.PropertyType.IsInstance);
 end;
 
-class procedure TSvRtti.SetValue<T>(const APropertyName: string; const AObject: T; const AValue: TValue);
+class procedure TSvRtti.SetValue(const APropertyOrFieldName: string; const AToObject: TObject;
+  const AValue: TValue);
+var
+  rType: TRttiType;
+  rField: TRttiField;
+  rProp: TRttiProperty;
+begin
+  rType := TRttiContext.Create.GetType(AToObject.ClassType);
+  rField := rType.GetField(APropertyOrFieldName);
+  if Assigned(rField) then
+  begin
+    rField.SetValue(AToObject, AValue)
+  end
+  else
+  begin
+    rProp := rType.GetProperty(APropertyOrFieldName);
+    if Assigned(rProp) then
+    begin
+      rProp.SetValue(AToObject, AValue)
+    end
+    else
+    begin
+      raise ESvRttiException.Create(Format('Property or field %S does not exist for a value %S',
+        [APropertyOrFieldName, AToObject.ToString]));
+    end;
+  end;
+end;
+
+class procedure TSvRtti.SetValue<T>(const APropertyOrFieldName: string; const ATo: T; const AValue: TValue);
 var
   rType: TRttiType;
   rField: TRttiField;
@@ -189,8 +218,8 @@ var
   obj: TValue;
 begin
   rType := TRttiContext.Create.GetType(TypeInfo(T));
-  rField := rType.GetField(APropertyName);
-  obj := TValue.From<T>(AObject);
+  rField := rType.GetField(APropertyOrFieldName);
+  obj := TValue.From<T>(ATo);
   if Assigned(rField) then
   begin
     if obj.IsObject then
@@ -200,7 +229,7 @@ begin
   end
   else
   begin
-    rProp := rType.GetProperty(APropertyName);
+    rProp := rType.GetProperty(APropertyOrFieldName);
     if Assigned(rProp) then
     begin
       if obj.IsObject then
@@ -211,7 +240,7 @@ begin
     else
     begin
       raise ESvRttiException.Create(Format('Property or field %S does not exist for a value %S',
-        [APropertyName, obj.ToString]));
+        [APropertyOrFieldName, obj.ToString]));
     end;
   end;
 end;

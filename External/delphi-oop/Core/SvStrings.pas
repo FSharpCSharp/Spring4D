@@ -8,11 +8,10 @@
 
 unit SvStrings;
 
-{$I sv.inc}
 interface
 
 uses
-  SysUtils, Generics.Collections, Classes;
+  SysUtils, Generics.Collections, Classes, StrUtils;
 
 type
   {$WARNINGS OFF}
@@ -456,7 +455,6 @@ type
 implementation
 
 uses
-  StrUtils,
   Character,
   //MessageDigest_5,
   IdGlobal,
@@ -673,7 +671,7 @@ begin
   strInput:= TStringStream.Create(FValue);
   strOutput:= TStringStream.Create;
   try
-    Zipper:= TZCompressionStream.Create(strOutput, TZCompressionLevel(ACompressionLevel) {$IFDEF DELPHI16_UP}, 128 {$ENDIF});
+    Zipper:= TZCompressionStream.Create(strOutput, TZCompressionLevel(ACompressionLevel) {$IF CompilerVersion > 22} , 128 {$IFEND});
     try
       Zipper.CopyFrom(strInput, strInput.Size);
     finally

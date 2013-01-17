@@ -340,7 +340,7 @@ end;
 
 procedure TSvFuture<T>.Assign(const AFunc: TFunc<T>);
 begin
-  Create(AFunc);
+  Self := TSvFuture<T>.Create(AFunc);
 end;
 
 class operator TSvFuture<T>.Implicit(const AFunc: TFunc<T>): TSvFuture<T>;
