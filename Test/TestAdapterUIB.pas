@@ -307,7 +307,7 @@ begin
 end;
 
 initialization
-  TestDB := TUIBDataBase.Create(nil);
+ { TestDB := TUIBDataBase.Create(nil);
   // Register any test cases with the test runner
   if FileExists('D:\DB\GDB\CAA\ALGA.GDB') then
   begin
@@ -326,10 +326,10 @@ initialization
       raise;
     end;
 
-  end;
+  end;  }
 
 finalization
-  TestDB.Free;
+ // TestDB.Free;
 
 end.
 

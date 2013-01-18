@@ -2230,7 +2230,8 @@ begin
           end;
           tkClass:
           begin
-            if TypeInfo = System.TypeInfo(TMemoryStream) then
+            {TODO -oLinas -cGeneral : refactor into separate method or class}
+            if (IsObject) and (AsObject <> nil) and (AsObject.InheritsFrom(TStream)) then
             begin
               if (ATypeInfo = System.TypeInfo(TPicture)) then
               begin
@@ -2246,7 +2247,7 @@ begin
             begin
               LStream := nil;
               //convert from picture to stream to be able to add it as a parameter
-              if AsObject <> nil then
+              if (IsObject) and (AsObject <> nil) then
               begin
 
                 if (TPicture(AsObject).Graphic <> nil) then

@@ -120,7 +120,7 @@ type
   end;
 
   [Entity]
-  [Table('Customer_Orders')]
+  [Table]
   TCustomer_Orders = class
   private
     FOrder_Status_Code: Nullable<Integer>;

@@ -714,10 +714,10 @@ begin
   CheckEqualsString(SQL_EXPECTED_PAGED, LSQL);
 end;
 
-var
-  ODBC: IODBC;
-  ODBCSources: TArray<string>;
-  fIndex: Integer;
+//var
+//  ODBC: IODBC;
+//  ODBCSources: TArray<string>;
+ // fIndex: Integer;
 
 const
   DS_TEST_NAME = 'Viktor2008';
@@ -750,7 +750,7 @@ begin
 end;
 
 initialization
-  ODBC := TBaseODBC.Create;
+ { ODBC := TBaseODBC.Create;
   ODBCSources := ODBC.GetDatasources();
   TArray.Sort<string>(ODBCSources);
   if not TArray.BinarySearch<string>(ODBCSources, DS_TEST_NAME, fIndex) then
@@ -780,15 +780,15 @@ initialization
     end;
   except
    // raise;
-  end;
+  end;    }
 
 finalization
-  if fIndex <> -1 then
+{  if fIndex <> -1 then
   begin
     TestDB.Free;
   end;
 
-  ODBC := nil;
+  ODBC := nil;     }
 
 {$ENDIF}
 

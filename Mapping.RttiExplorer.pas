@@ -529,6 +529,17 @@ begin
   AList.Clear;
   LType := FCtx.GetType(AClass);
   LTypeInfo := TypeInfo(T);
+
+  for LAttr in LType.GetAttributes do
+  begin
+    if LAttr is TORMAttribute then
+    begin
+      TORMAttribute(LAttr).ClassMemberName := LType.Name;
+      TORMAttribute(LAttr).EntityTypeInfo := LType.Handle;
+      TORMAttribute(LAttr).MemberType := mtClass;
+    end;
+  end;
+
   for LField in LType.GetFields do
   begin
     for LAttr in LField.GetAttributes do

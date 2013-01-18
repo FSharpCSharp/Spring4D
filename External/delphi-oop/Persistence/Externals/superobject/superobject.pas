@@ -84,6 +84,14 @@
 {$DEFINE WINDOWSNT_COMPATIBILITY}
 {.$DEFINE DEBUG} // track memory leack
 
+{$IF CompilerVersion >= 17}
+  {$DEFINE HAVE_INLINE}
+{$IFEND}
+
+{$IF CompilerVersion >= 21}
+  {$DEFINE HAVE_RTTI}
+  {$DEFINE NEED_FORMATSETTINGS}
+{$IFEND}
 
 {$if defined(FPC) or defined(VER170) or defined(VER180) or defined(VER190) or defined(VER200) or defined(VER210)}
   {$DEFINE HAVE_INLINE}

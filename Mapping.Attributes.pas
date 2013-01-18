@@ -52,7 +52,7 @@ type
   {TODO -oLinas -cGeneral : finish defining enums}
   TInheritenceStrategy = (isJoined, isSingleTable, isTablePerClass);
 
-  TMemberType = (mtField, mtProperty);
+  TMemberType = (mtField, mtProperty, mtClass);
 
   TORMAttribute = class(TCustomAttribute)
   private
@@ -95,10 +95,12 @@ type
   private
     FTable: string;
     FSchema: string;
+    function GetTableName: string;
   public
-    constructor Create(const ATablename: string; const ASchema: string = '');
+    constructor Create(); overload;
+    constructor Create(const ATablename: string; const ASchema: string = ''); overload;
 
-    property TableName: string read FTable;
+    property TableName: string read GetTableName;
     property Schema: string read FSchema;
   end;
 
@@ -309,13 +311,33 @@ type
 implementation
 
 
-{ Table }
+{ TableAttribute }
+
+constructor TableAttribute.Create;
+begin
+  inherited Create;
+  FTable := '';
+  FSchema := '';
+end;
 
 constructor TableAttribute.Create(const ATablename: string; const ASchema: string);
 begin
-  inherited Create;
+  Create;
   FTable := ATablename;
   FSchema := ASchema;
+end;
+
+function TableAttribute.GetTableName: string;
+begin
+  Result := FTable;
+  if (Result = '') then
+  begin
+    Result := ClassMemberName;
+    if (Result[1] = 'T') and (Length(Result) > 1) then
+    begin
+      Result := Copy(Result, 2, Length(Result));
+    end;
+  end;
 end;
 
 { UniqueConstraint }
@@ -505,5 +527,7 @@ begin
   inherited Create(AName, AReferencedTableName, AReferencedColumnName);
   FForeignStrategies := AForeignStrategies;
 end;
+
+
 
 end.

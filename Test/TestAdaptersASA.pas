@@ -197,7 +197,7 @@ initialization
   end;
 
 
-  TestDB := TADOConnection.Create(nil);
+ { TestDB := TADOConnection.Create(nil);
   TestDB.LoginPrompt := False;
   //
   TestDB.ConnectionString := 'Provider=MSDASQL;Data Source=demo_syb;Password=master;Persist Security Info=True;User ID=VIKARINA';
@@ -211,13 +211,13 @@ initialization
     end;
   except
     //raise;
-  end;
+  end;     }
 
 finalization
-  if fIndex <> -1 then
+ { if fIndex <> -1 then
   begin
     TestDB.Free;
-  end;
+  end; }
 
   ODBC := nil;
 
