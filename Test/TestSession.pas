@@ -66,9 +66,6 @@ procedure InsertCustomer(AAge: Integer = 25; AName: string = 'Demo'; AHeight: Do
 procedure InsertCustomerOrder(ACustID: Integer; ACustPaymID: Integer; AOrderStatusCode: Integer; ATotalPrice: Double);
 procedure ClearTable(const ATableName: string);
 
-const
-  TBL_PEOPLE = 'CUSTOMERS';
-  TBL_ORDERS = 'Customer_Orders';
 
 implementation
 
@@ -81,6 +78,7 @@ uses
   {$IFDEF USE_SPRING} ,Spring.Collections {$ENDIF}
   ,Generics.Collections
   ,Core.Reflection
+  ,TestConsts
   ;
 
 
@@ -134,19 +132,19 @@ end;
 
 procedure InsertCustomer(AAge: Integer = 25; AName: string = 'Demo'; AHeight: Double = 15.25; APicture: TStream = nil);
 begin
-  TestDB.ExecSQL('INSERT INTO  ' + TBL_PEOPLE + ' ([CUSTAGE], [CUSTNAME], [CUSTHEIGHT]) VALUES (?,?,?);',
+  TestDB.ExecSQL('INSERT INTO  ' + TBL_PEOPLE + ' (['+CUSTAGE+'], ['+CUSTNAME+'], ['+CUSTHEIGHT+']) VALUES (?,?,?);',
     [AAge, AName, AHeight]);
 end;
 
 procedure InsertCustomerEnum(AType: Integer; AAge: Integer = 25; AName: string = 'Demo'; AHeight: Double = 15.25);
 begin
-  TestDB.ExecSQL('INSERT INTO  ' + TBL_PEOPLE + ' ([CUSTAGE], [CUSTNAME], [CUSTHEIGHT], [CUSTTYPE]) VALUES (?,?,?,?);',
+  TestDB.ExecSQL('INSERT INTO  ' + TBL_PEOPLE + ' (['+CUSTAGE+'], ['+CUSTNAME+'], ['+CUSTHEIGHT+'], ['+CUSTTYPE+']) VALUES (?,?,?,?);',
     [AAge, AName, AHeight, AType]);
 end;
 
 procedure InsertCustomerNullable(AAge: Integer = 25; AName: string = 'Demo'; AHeight: Double = 15.25; const AMiddleName: string = ''; APicture: TStream = nil);
 begin
-  TestDB.ExecSQL('INSERT INTO  ' + TBL_PEOPLE + ' ([CUSTAGE], [CUSTNAME], [CUSTHEIGHT], [MIDDLENAME]) VALUES (?,?,?,?);',
+  TestDB.ExecSQL('INSERT INTO  ' + TBL_PEOPLE + ' (['+CUSTAGE+'], ['+CUSTNAME+'], ['+CUSTHEIGHT+'], ['+CUST_MIDDLENAME+']) VALUES (?,?,?,?);',
     [AAge, AName, AHeight, AMiddleName]);
 end;
 
@@ -154,7 +152,7 @@ procedure InsertCustomerAvatar(AAge: Integer = 25; AName: string = 'Demo'; AHeig
 var
   LRows: Integer;
 begin
-  TestDB.ExecSQL('INSERT INTO  ' + TBL_PEOPLE + ' ([CUSTAGE], [CUSTNAME], [CUSTHEIGHT], [MIDDLENAME], [AVATAR], [AVATARLAZY]) VALUES (?,?,?,?,?,?);',
+  TestDB.ExecSQL('INSERT INTO  ' + TBL_PEOPLE + ' (['+CUSTAGE+'], ['+CUSTNAME+'], ['+CUSTHEIGHT+'], ['+CUST_MIDDLENAME+'], ['+CUSTAVATAR+'], ['+CUSTAVATAR_LAZY+']) VALUES (?,?,?,?,?,?);',
     [AAge, AName, AHeight, AMiddleName, APicture, APicture], LRows);
   if LRows < 1 then
     raise Exception.Create('Cannot insert into table');
@@ -479,7 +477,7 @@ begin
     FreeAndNil(LCustomer);
   end;
 
-  sSql := sSql + ' WHERE [CUSTAGE] = :0 AND CUSTNAME=:1';
+  sSql := sSql + ' WHERE '+CUSTAGE+' = :0 AND '+CUSTNAME+'=:1';
   LCustomer := FManager.First<TCustomer>(sSql, [15, 'Demo']);
   try
     CheckTrue(Assigned(LCustomer));
@@ -631,12 +629,12 @@ begin
     FManager.Insert(LCustomer);
 
     LTable := TestDB.GetUniTableIntf('select * from ' + TBL_PEOPLE);
-    CheckEqualsString(LCustomer.Name, LTable.FieldByName['CUSTNAME'].AsString);
-    CheckEquals(LCustomer.Age, LTable.FieldByName['CUSTAGE'].AsInteger);
-    LID := LTable.FieldByName['CUSTID'].AsInteger;
+    CheckEqualsString(LCustomer.Name, LTable.FieldByName[CUSTNAME].AsString);
+    CheckEquals(LCustomer.Age, LTable.FieldByName[CUSTAGE].AsInteger);
+    LID := LTable.FieldByName[CUSTID].AsInteger;
     CheckEquals(LID, LCustomer.ID);
-    CheckTrue(LTable.FieldByName['MIDDLENAME'].IsNull);
-    CheckFalse(LTable.FieldByName['AVATAR'].IsNull);
+    CheckTrue(LTable.FieldByName[CUST_MIDDLENAME].IsNull);
+    CheckFalse(LTable.FieldByName[CUSTAVATAR].IsNull);
   finally
     LCustomer.Free;
   end;
@@ -649,12 +647,12 @@ begin
     LCustomer.MiddleName := 'Middle Test';
 
     FManager.Insert(LCustomer);
-    LTable := TestDB.GetUniTableIntf('select * from ' + TBL_PEOPLE + ' where [CUSTAGE] = 15;');
-    CheckEqualsString(LCustomer.Name, LTable.FieldByName['CUSTNAME'].AsString);
-    CheckEquals(LCustomer.Age, LTable.FieldByName['CUSTAGE'].AsInteger);
-    LID := LTable.FieldByName['CUSTID'].AsInteger;
+    LTable := TestDB.GetUniTableIntf('select * from ' + TBL_PEOPLE + ' where ['+CUSTAGE+'] = 15;');
+    CheckEqualsString(LCustomer.Name, LTable.FieldByName[CUSTNAME].AsString);
+    CheckEquals(LCustomer.Age, LTable.FieldByName[CUSTAGE].AsInteger);
+    LID := LTable.FieldByName[CUSTID].AsInteger;
     CheckEquals(LID, LCustomer.ID);
-    CheckEqualsString(LCustomer.MiddleName, LTable.FieldByName['MIDDLENAME'].AsString);
+    CheckEqualsString(LCustomer.MiddleName, LTable.FieldByName[CUST_MIDDLENAME].AsString);
 
     LCount := TestDB.GetUniTableIntf('select count(*) from ' + TBL_PEOPLE).Fields[0].AsInteger;
     CheckEquals(2, LCount);
@@ -765,7 +763,7 @@ begin
     LCustomer.Free;
   end;
 
-  TestDB.ExecSQL('UPDATE ' + TBL_PEOPLE + ' SET MIDDLENAME = NULL;');
+  TestDB.ExecSQL('UPDATE ' + TBL_PEOPLE + ' SET '+CUST_MIDDLENAME+' = NULL;');
   LCustomer := FManager.SingleOrDefault<TCustomer>('SELECT * FROM ' + TBL_PEOPLE, []);
   try
     CheckTrue(LCustomer.MiddleName.IsNull);
@@ -809,12 +807,12 @@ begin
     FManager.Save(LCustomer);
 
     LTable := TestDB.GetUniTableIntf('select * from ' + TBL_PEOPLE);
-    CheckEqualsString(LCustomer.Name, LTable.FieldByName['CUSTNAME'].AsString);
-    CheckEquals(LCustomer.Age, LTable.FieldByName['CUSTAGE'].AsInteger);
-    LID := LTable.FieldByName['CUSTID'].AsInteger;
+    CheckEqualsString(LCustomer.Name, LTable.FieldByName[CUSTNAME].AsString);
+    CheckEquals(LCustomer.Age, LTable.FieldByName[CUSTAGE].AsInteger);
+    LID := LTable.FieldByName[CUSTID].AsInteger;
     CheckEquals(LID, LCustomer.ID);
-    CheckTrue(LTable.FieldByName['MIDDLENAME'].IsNull);
-    CheckFalse(LTable.FieldByName['AVATAR'].IsNull);
+    CheckTrue(LTable.FieldByName[CUST_MIDDLENAME].IsNull);
+    CheckFalse(LTable.FieldByName[CUSTAVATAR].IsNull);
   finally
     LCustomer.Free;
   end;
@@ -827,12 +825,12 @@ begin
     LCustomer.MiddleName := 'Middle Test';
 
     FManager.Save(LCustomer);
-    LTable := TestDB.GetUniTableIntf('select * from ' + TBL_PEOPLE + ' where [CUSTAGE] = 15;');
-    CheckEqualsString(LCustomer.Name, LTable.FieldByName['CUSTNAME'].AsString);
-    CheckEquals(LCustomer.Age, LTable.FieldByName['CUSTAGE'].AsInteger);
-    LID := LTable.FieldByName['CUSTID'].AsInteger;
+    LTable := TestDB.GetUniTableIntf('select * from ' + TBL_PEOPLE + ' where ['+CUSTAGE+'] = 15;');
+    CheckEqualsString(LCustomer.Name, LTable.FieldByName[CUSTNAME].AsString);
+    CheckEquals(LCustomer.Age, LTable.FieldByName[CUSTAGE].AsInteger);
+    LID := LTable.FieldByName[CUSTID].AsInteger;
     CheckEquals(LID, LCustomer.ID);
-    CheckEqualsString(LCustomer.MiddleName, LTable.FieldByName['MIDDLENAME'].AsString);
+    CheckEqualsString(LCustomer.MiddleName, LTable.FieldByName[CUST_MIDDLENAME].AsString);
 
     LCount := TestDB.GetUniTableIntf('select count(*) from ' + TBL_PEOPLE).Fields[0].AsInteger;
     CheckEquals(2, LCount);
@@ -863,7 +861,7 @@ begin
 
     LResults := TestDB.GetUniTableIntf(SQL_GET_ALL_CUSTOMERS);
     CheckFalse(LResults.EOF);
-    LStream := LResults.FieldByName['CUSTSTREAM'].AsBlob;
+    LStream := LResults.FieldByName[CUST_STREAM].AsBlob;
     CheckTrue(Assigned(LStream));
     try
       CheckTrue(LStream.Size > 0);
@@ -948,15 +946,15 @@ begin
     FManager.Update(LCustomer);
 
     LResults := TestDB.GetUniTableIntf('SELECT * FROM ' + TBL_PEOPLE);
-    CheckEquals(LCustomer.Age, LResults.FieldByName['CUSTAGE'].AsInteger);
-    CheckEqualsString(LCustomer.Name, LResults.FieldByName['CUSTNAME'].AsString);
+    CheckEquals(LCustomer.Age, LResults.FieldByName[CUSTAGE].AsInteger);
+    CheckEqualsString(LCustomer.Name, LResults.FieldByName[CUSTNAME].AsString);
     CheckTrue(LCustomer.MiddleName.IsNull);
 
     LCustomer.MiddleName := 'Middle';
     FManager.Update(LCustomer);
 
     LResults := TestDB.GetUniTableIntf('SELECT * FROM ' + TBL_PEOPLE);
-    CheckEqualsString(LCustomer.MiddleName, LResults.FieldByName['MIDDLENAME'].AsString);
+    CheckEqualsString(LCustomer.MiddleName, LResults.FieldByName[CUST_MIDDLENAME].AsString);
 
   finally
     LCustomer.Free;
