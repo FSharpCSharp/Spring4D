@@ -222,6 +222,7 @@ begin
     mstDelete: Statement.Owner.Delete(NAME_COLLECTION, LDoc);
     mstSelect: Statement.Query(NAME_COLLECTION, LDoc);
   end;
+  Result := 1;
 end;
 
 function TMongoStatementAdapter.ExecuteQuery(AServerSideCursor: Boolean): IDBResultSet;
@@ -256,7 +257,6 @@ end;
 procedure TMongoStatementAdapter.SetParams(Params: TEnumerable<TDBParam>);
 begin
   inherited;
-
 end;
 
 procedure TMongoStatementAdapter.SetSQLCommand(const ACommandText: string);
