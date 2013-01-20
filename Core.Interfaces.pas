@@ -36,6 +36,7 @@ uses
   {$IFDEF USE_SPRING},Spring.Collections{$ENDIF}
   ,Generics.Collections
   ,SQL.Interfaces
+  ,SQL.Types
   ;
 
 type
@@ -43,32 +44,179 @@ type
 
   TExecutionListenerProc = reference to procedure(const ACommand: string; const AParams: TObjectList<TDBParam>);
 
-  IDBResultset = interface
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents paged fetches.
+  ///	</summary>
+  ///	<remarks>
+  ///	  Pages are zero indexed.
+  ///	</remarks>
+  {$ENDREGION}
+  IDBPage<T: class> = interface(IInvokable)
+    ['{384357E2-A0B1-4EEE-9A22-2C01479D4148}']
+    function GetCurrentPage(): Integer;
+    function GetItemsPerPage(): Integer;
+    function GetTotalPages(): Integer;
+    function GetTotalItems(): Int64;
+    function GetItems(): {$IFDEF USE_SPRING} Spring.Collections.IList<T> {$ELSE}TObjectList<T> {$ENDIF};
+
+    property Items: {$IFDEF USE_SPRING} Spring.Collections.IList<T> {$ELSE}TObjectList<T> {$ENDIF} read GetItems;
+  end;
+
+
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents an order imposed upon a <c>ICriteria&lt;T&gt;</c> result set.
+  ///	</summary>
+  {$ENDREGION}
+  IOrder = interface(IInvokable)
+    ['{F0047369-10D6-4A4D-9BB8-FD5699936D5D}']
+    function GetPropertyName(): string;
+    function GetOrderType(): TOrderType;
+  end;
+
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  An object-oriented representation of a query criterion that may be used
+  ///	  as a restriction in a <c>ICriteria&lt;T&gt;</c> query. Built-in
+  ///	  criterion types are provided by the <c>TRestrictions</c> factory class.
+  ///	  This interface might be implemented by application classes that define
+  ///	  custom restriction criteria.
+  ///	</summary>
+  {$ENDREGION}
+  ICriterion = interface(IInvokable)
+    ['{E22DFB1C-0E0E-45F4-9740-9469164B4557}']
+    function ToSqlString(AParams: TObjectList<TDBParam>): string;
+    procedure SetEntityClass(const Value: TClass);
+    function GetEntityClass: TClass;
+    function GetMatchMode(): TMatchMode;
+    function GetWhereOperator(): TWhereOperator;
+  end;
+
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  <c>ICriteria&lt;T&gt;</c> is a simplified API for retrieving entities
+  ///	  by composing <c>ICriterion</c> objects. This is a very convenient
+  ///	  approach for functionality like "search" screens where there is a
+  ///	  variable number of conditions to be placed upon the result set. The
+  ///	  <c>TSession</c> is a factory for <c>ICriteria&lt;T&gt;</c>.
+  ///	  <c>ICriterion</c> instances are usually obtained via the factory
+  ///	  methods on <c>TRestrictions</c>.
+  ///	</summary>
+  ///	<example>
+  ///	  <code lang="Delphi">
+  ///	IList&lt;TCat&gt; cats = session.createCriteria&lt;TCat&gt;
+  ///	.add( TRestrictions.Like('name', 'Iz%') )
+  ///	.add( TRestrictions.Gt( 'weight', MIN_WEIGHT ) )
+  ///	.addOrder( TOrder.Asc('age') ) .List();</code>
+  ///	</example>
+  {$ENDREGION}
+  ICriteria<T: class, constructor> = interface(IInvokable)
+    ['{09428AF2-3A36-44DB-B0E7-8B7D7620ED1C}']
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Add a
+    ///	  <see cref="Core.Criteria.Restrictions|TRestrictions">restriction</see>
+    ///	   to constrain the results to be retrieved.
+    ///	</summary>
+    {$ENDREGION}
+    function Add(ACriterion: ICriterion): ICriteria<T>;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Add an <see cref="Core.Criteria.Order|TOrder">ordering</see> to the
+    ///	  result set.
+    ///	</summary>
+    {$ENDREGION}
+    function AddOrder(AOrder: IOrder): ICriteria<T>;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Clear current Criteria.
+    ///	</summary>
+    {$ENDREGION}
+    procedure Clear();
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Get count of added <c>ICriterion</c>s.
+    ///	</summary>
+    {$ENDREGION}
+    function Count(): Integer;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Get the results.
+    ///	</summary>
+    {$ENDREGION}
+    function List(): {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF};
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Get the results in pages.
+    ///	</summary>
+    ///	<param name="APage">
+    ///	  Page index. Zero (0) indexed
+    ///	</param>
+    ///	<param name="AItemsPerPage">
+    ///	  Items include in on page.
+    ///	</param>
+    {$ENDREGION}
+    function Page(APage: Integer; AItemsPerPage: Integer): IDBPage<T>;
+  end;
+
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents the result set to fetch data from the database.
+  ///	</summary>
+  {$ENDREGION}
+  IDBResultset = interface(IInvokable)
     ['{4FA97CFB-4992-4DAA-BB2A-B5CAF84B6B47}']
     function IsEmpty(): Boolean;
     function Next(): Boolean;
+    function FieldnameExists(const AFieldName: string): Boolean;
     function GetFieldValue(AIndex: Integer): Variant; overload;
     function GetFieldValue(const AFieldname: string): Variant; overload;
     function GetFieldCount(): Integer;
     function GetFieldName(AIndex: Integer): string;
   end;
 
-  IDBStatement = interface
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents the executable database statement.
+  ///	</summary>
+  {$ENDREGION}
+  IDBStatement = interface(IInvokable)
     ['{DA905CAA-0FC2-4570-9788-1DC206600171}']
     procedure SetSQLCommand(const ACommandText: string);
     procedure SetParams(AParams: TEnumerable<TDBParam>); overload;
     procedure SetParams(const AParams: array of const); overload;
     function Execute(): NativeUInt;
-    function ExecuteQuery(): IDBResultset;
+    function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultset;
   end;
 
-  IDBTransaction = interface
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents the database transaction.
+  ///	</summary>
+  ///	<remarks>
+  ///	  If transaction was not committed, rollback will be performed when
+  ///	  interface goes out of scope.
+  ///	</remarks>
+  {$ENDREGION}
+  IDBTransaction = interface(IInvokable)
     ['{AA35EE88-7271-4894-B6F0-06080C797BCF}']
     procedure Commit();
     procedure Rollback();
   end;
 
-  IDBConnection = interface
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents the database connection.
+  ///	</summary>
+  {$ENDREGION}
+  IDBConnection = interface(IInvokable)
     ['{256B8F14-7FF1-4442-A202-358B24756654}']
     procedure Connect();
     procedure Disconnect();
@@ -97,17 +245,6 @@ type
   IODBC = interface
     ['{7A235A2E-1ABA-4AD6-A6FD-276A16374596}']
     function GetDatasources: TArray<string>;
-  end;
-
-  IDBPage<T: class> = interface
-    ['{384357E2-A0B1-4EEE-9A22-2C01479D4148}']
-    function GetCurrentPage(): Integer;
-    function GetItemsPerPage(): Integer;
-    function GetTotalPages(): Integer;
-    function GetTotalItems(): Int64;
-    function GetItems(): {$IFDEF USE_SPRING} Spring.Collections.IList<T> {$ELSE}TObjectList<T> {$ENDIF};
-
-    property Items: {$IFDEF USE_SPRING} Spring.Collections.IList<T> {$ELSE}TObjectList<T> {$ENDIF} read GetItems;
   end;
 
 implementation

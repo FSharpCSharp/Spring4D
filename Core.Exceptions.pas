@@ -75,6 +75,10 @@ type
   EORMConnectionAlreadyRegistered = class(Exception);
   EORMConnectionNotRegistered = class(Exception);
 
+  EORMManyToOneMappedByColumnNotFound = class(Exception);
+
+  EORMTransactionNotStarted = class(Exception);
+
 implementation
 
 { EBaseORMException }

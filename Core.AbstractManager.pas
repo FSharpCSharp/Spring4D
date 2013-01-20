@@ -33,6 +33,11 @@ uses
   Core.Interfaces;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Base manager.
+  ///	</summary>
+  {$ENDREGION}
   TAbstractManager = class(TInterfacedObject)
   private
     FConnection: IDBConnection;

@@ -39,7 +39,11 @@ uses
   SvDelegates in '..\SvDelegates.pas',
   SvTesting.DUnit in '..\SvTesting.DUnit.pas',
   TestSvRttiUtils in 'TestSvRttiUtils.pas',
-  TestSvTesting in 'TestSvTesting.pas';
+  TestSvTesting in 'TestSvTesting.pas',
+  SvLogging in '..\SvLogging.pas',
+  SvLogging.Log4D in '..\SvLogging.Log4D.pas',
+  SvLogging.Log4D.Appenders in '..\SvLogging.Log4D.Appenders.pas',
+  TestSvLoggingLog4D in 'TestSvLoggingLog4D.pas';
 
 {$R *.RES}
 

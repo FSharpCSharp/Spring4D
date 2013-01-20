@@ -46,6 +46,7 @@ type
 
     function IsEmpty(): Boolean; override;
     function Next(): Boolean; override;
+    function FieldnameExists(const AFieldName: string): Boolean; override;
     function GetFieldValue(AIndex: Integer): Variant; overload; override;
     function GetFieldValue(const AFieldname: string): Variant; overload; override;
     function GetFieldCount(): Integer; override;
@@ -61,10 +62,10 @@ type
     procedure SetSQLCommand(const ACommandText: string); override;
     procedure SetParams(Params: TEnumerable<TDBParam>); overload; override;
     function Execute(): NativeUInt; override;
-    function ExecuteQuery(): IDBResultSet; override;
+    function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
   end;
 
-  TDBXConnectionAdapter = class(TDriverConnectionAdapter<TSQLConnection>, IDBConnection)
+  TDBXConnectionAdapter = class(TDriverConnectionAdapter<TSQLConnection>)
   public
     constructor Create(const AConnection: TSQLConnection); override;
 
@@ -76,15 +77,12 @@ type
     function GetDriverName: string; override;
   end;
 
-  TDBXTransactionAdapter = class(TInterfacedObject, IDBTransaction)
-  private
-    FTransaction: TDBXTransaction;
+  TDBXTransactionAdapter = class(TDriverTransactionAdapter<TDBXTransaction>)
+  protected
+    function InTransaction(): Boolean; override;
   public
-    constructor Create(ATransaction: TDBXTransaction);
-    destructor Destroy; override;
-
-    procedure Commit;
-    procedure Rollback;
+    procedure Commit; override;
+    procedure Rollback; override;
   end;
 
 implementation
@@ -93,6 +91,7 @@ uses
   SQL.Register
   ,StrUtils
   ,Core.ConnectionFactory
+  ,Core.Consts
   ;
 
 
@@ -126,6 +125,11 @@ begin
   FFieldCache.Free;
   Dataset.Free;
   inherited Destroy;
+end;
+
+function TDBXResultSetAdapter.FieldnameExists(const AFieldName: string): Boolean;
+begin
+  Result := FFieldCache.ContainsKey(UpperCase(AFieldName));
 end;
 
 function TDBXResultSetAdapter.GetFieldCount: Integer;
@@ -177,7 +181,7 @@ begin
   Result := Statement.ExecSQL();
 end;
 
-function TDBXStatementAdapter.ExecuteQuery: IDBResultSet;
+function TDBXStatementAdapter.ExecuteQuery(AServerSideCursor: Boolean): IDBResultSet;
 var
   LStmt: TSQLQuery;
 begin
@@ -266,7 +270,7 @@ end;
 
 function TDBXConnectionAdapter.GetDriverName: string;
 begin
-  Result := 'DBX';
+  Result := DRIVER_DBX;
 end;
 
 function TDBXConnectionAdapter.IsConnected: Boolean;
@@ -284,27 +288,18 @@ begin
   if (FTransaction = nil) then
     Exit;
 
-  FTransaction.Connection.CommitFreeAndNil(FTransaction);
+  Transaction.Connection.CommitFreeAndNil(FTransaction);
 end;
 
-constructor TDBXTransactionAdapter.Create(ATransaction: TDBXTransaction);
+function TDBXTransactionAdapter.InTransaction: Boolean;
 begin
-  inherited Create;
-  FTransaction := ATransaction;
-end;
-
-destructor TDBXTransactionAdapter.Destroy;
-begin
-  if Assigned(FTransaction) then
-    FTransaction.Connection.RollbackFreeAndNil(FTransaction);
-
-  inherited Destroy;
+  Result := Assigned(FTransaction);
 end;
 
 procedure TDBXTransactionAdapter.Rollback;
 begin
   if Assigned(FTransaction) then
-    FTransaction.Connection.RollbackFreeAndNil(FTransaction);
+    Transaction.Connection.RollbackFreeAndNil(FTransaction);
 end;
 
 initialization

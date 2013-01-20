@@ -15,8 +15,8 @@ interface
 
 uses
   TestFramework, ADODB, Generics.Collections, Adapters.ADO, Core.Base, SysUtils,
-  SQL.Params, Core.Interfaces, SQL.Generator.Ansi, Adapters.MSSQL, Core.EntityManager
-  ,uModels, VARTOTMASTModel, SQL.Generator.MSSQL, Core.DatabaseManager;
+  SQL.Params, Core.Interfaces, SQL.Generator.Ansi, Adapters.MSSQL, Core.Session
+  ,uModels, VARTOTMASTModel, SQL.Generator.MSSQL, Core.DatabaseManager, Classes;
 
 type
   // Test methods for class TADOResultSetAdapter
@@ -24,7 +24,7 @@ type
   TestTADOResultSetAdapter = class(TTestCase)
   private
     FADOResultSetAdapter: TADOResultSetAdapter;
-    FDataset: TADOQuery;
+    FDataset: TADODataSet;
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -94,7 +94,7 @@ type
   TestMSSQLAdapter = class(TTestCase)
   private
     FConnection: IDBConnection;
-    FManager: TEntityManager;
+    FManager: TSession;
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -153,7 +153,19 @@ var
 const
   SQL_SELECT_ALL = 'SELECT * FROM VIKARINA.IMONES;';
 
-function CreateUniDataset(const ASql: string): TADOQuery;
+function CreateUniDataset(const ASql: string): TADODataSet;
+begin
+  Result := TADODataSet.Create(nil);
+  Result.CursorType := ctOpenForwardOnly;
+  Result.CursorLocation := clUseServer;
+  Result.Connection := TestDB;
+  Result.CommandText := ASql;
+//  Result.SQL.Text := ASql;
+  Result.DisableControls;
+  Result.Open;
+end;
+
+function CreateUniQuery(const ASql: string): TADOQuery;
 begin
   Result := TADOQuery.Create(nil);
   Result.CursorType := ctOpenForwardOnly;
@@ -161,11 +173,7 @@ begin
   Result.Connection := TestDB;
   Result.SQL.Text := ASql;
   Result.DisableControls;
-  try
-    Result.Open;
-  finally
-    Result.EnableControls;
-  end;
+  Result.Open;
 end;
 
 procedure InsertCompany(ACompanyID: Integer);
@@ -273,7 +281,7 @@ end;
 procedure TestTADOResultSetAdapter.TestGetFieldCount;
 var
   ReturnValue: Integer;
-  LData: TADOQuery;
+  LData: TADODataSet;
 begin
   ReturnValue := FADOResultSetAdapter.GetFieldCount;
 
@@ -287,7 +295,7 @@ end;
 
 procedure TestTADOStatementAdapter.SetUp;
 begin
-  FStatement := CreateUniDataset(SQL_SELECT_ALL);
+  FStatement := CreateUniQuery(SQL_SELECT_ALL);
   FStatement.Close;
   FADOStatementAdapter := TADOStatementAdapter.Create(FStatement);
 end;
@@ -482,7 +490,7 @@ procedure TestMSSQLAdapter.SetUp;
 begin
   inherited;
   FConnection := TConnectionFactory.GetInstance(dtMSSQL, TestDB);
-  FManager := TEntityManager.Create(FConnection);
+  FManager := TSession.Create(FConnection);
 end;
 
 procedure TestMSSQLAdapter.TearDown;
@@ -706,10 +714,10 @@ begin
   CheckEqualsString(SQL_EXPECTED_PAGED, LSQL);
 end;
 
-var
-  ODBC: IODBC;
-  ODBCSources: TArray<string>;
-  fIndex: Integer;
+//var
+//  ODBC: IODBC;
+//  ODBCSources: TArray<string>;
+ // fIndex: Integer;
 
 const
   DS_TEST_NAME = 'Viktor2008';
@@ -742,7 +750,7 @@ begin
 end;
 
 initialization
-  ODBC := TBaseODBC.Create;
+ { ODBC := TBaseODBC.Create;
   ODBCSources := ODBC.GetDatasources();
   TArray.Sort<string>(ODBCSources);
   if not TArray.BinarySearch<string>(ODBCSources, DS_TEST_NAME, fIndex) then
@@ -771,16 +779,16 @@ initialization
       RegisterTest(TestTDatabaseManagerMSSQL.Suite);
     end;
   except
-    raise;
-  end;
+   // raise;
+  end;    }
 
 finalization
-  if fIndex <> -1 then
+{  if fIndex <> -1 then
   begin
     TestDB.Free;
   end;
 
-  ODBC := nil;
+  ODBC := nil;     }
 
 {$ENDIF}
 

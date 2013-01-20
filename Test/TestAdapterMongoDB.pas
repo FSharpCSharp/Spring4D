@@ -17,6 +17,19 @@ uses
 
 type
   // Test methods for class TMongoResultSetAdapter
+  TBaseMongoTest = class(TTestCase)
+  private
+    FConnection: TMongoDBConnection;
+    FQuery: TMongoDBQuery;
+    function GetKeyValue(const AValue: Variant): Variant;
+  public
+    procedure SetUp; override;
+    procedure TearDown; override;
+
+    property Connection: TMongoDBConnection read FConnection;
+    property Query: TMongoDBQuery read FQuery;
+  end;
+
 
   TestTMongoResultSetAdapter = class(TTestCase)
   private
@@ -38,7 +51,7 @@ type
   end;
   // Test methods for class TMongoStatementAdapter
 
-  TestTMongoStatementAdapter = class(TTestCase)
+  TestTMongoStatementAdapter = class(TBaseMongoTest)
   private
     FConnection: TMongoDBConnection;
     FQuery: TMongoDBQuery;
@@ -58,7 +71,12 @@ type
   private
     FConnection: TMongoDBConnection;
     FMongoConnectionAdapter: TMongoConnectionAdapter;
+  protected
+    class constructor Create;
   public
+    class var
+      DirMongoDB: string;
+
     procedure SetUp; override;
     procedure TearDown; override;
   published
@@ -72,15 +90,22 @@ type
 
 implementation
 
+uses
+  Windows
+  ,ShellAPI
+  ,Forms
+  ,Messages
+  ;
+
 const
   CT_KEY = 'KEY';
   NAME_COLLECTION = 'UnitTests.MongoAdapter';
 
 
 
+
 procedure InsertObject(AConnection: TMongoDBConnection; const AValue: Variant);
 begin
-
   AConnection.Insert(NAME_COLLECTION, BSON([CT_KEY, AValue]));
 end;
 
@@ -115,8 +140,6 @@ begin
 end;
 
 procedure TestTMongoResultSetAdapter.TestIsEmpty;
-var
-  ReturnValue: Boolean;
 begin
   CheckTrue(FMongoResultSetAdapter.IsEmpty);
   InsertObject(FConnection, 10);
@@ -201,27 +224,28 @@ end;
 
 procedure TestTMongoStatementAdapter.SetUp;
 begin
-  FConnection := TMongoDBConnection.Create;
-  FConnection.Open();
-  FQuery := TMongoDBQuery.Create(FConnection);
-  FMongoStatementAdapter := TMongoStatementAdapter.Create(FQuery);
+  inherited;
+  FMongoStatementAdapter := TMongoStatementAdapter.Create(Query);
 end;
 
 procedure TestTMongoStatementAdapter.TearDown;
 begin
   FMongoStatementAdapter.Free;
   FMongoStatementAdapter := nil;
-  FQuery.Free;
-  FConnection.Free;
+  Connection.Free;
 end;
 
 procedure TestTMongoStatementAdapter.TestSetSQLCommand;
 var
-  ACommandText: string;
+  LJson: string;
+  LResult: Variant;
 begin
-  // TODO: Setup method call parameters
-  FMongoStatementAdapter.SetSQLCommand(ACommandText);
-  // TODO: Validate method results
+  LJson := 'I{"KEY": 1}';
+  FMongoStatementAdapter.SetSQLCommand(LJson);
+  FMongoStatementAdapter.Execute;
+
+  LResult := GetKeyValue(1);
+  CheckEquals(1, LResult);
 end;
 
 procedure TestTMongoStatementAdapter.TestSetParams;
@@ -233,23 +257,38 @@ end;
 
 procedure TestTMongoStatementAdapter.TestExecute;
 var
-  ReturnValue: NativeUInt;
+  LJson: string;
+  LResult: Variant;
 begin
-  ReturnValue := FMongoStatementAdapter.Execute;
-  // TODO: Validate method results
+  LJson := 'I{"KEY": 1}';
+  FMongoStatementAdapter.SetSQLCommand(LJson);
+  FMongoStatementAdapter.Execute;
+
+  LResult := GetKeyValue(1);
+  CheckEquals(1, LResult);
 end;
 
 procedure TestTMongoStatementAdapter.TestExecuteQuery;
 var
-  ReturnValue: IDBResultset;
+  LJson: string;
+  LResult: Variant;
+  LResultset: IDBResultset;
 begin
-  ReturnValue := FMongoStatementAdapter.ExecuteQuery;
-  // TODO: Validate method results
+  LJson := 'I{"KEY": 1}';
+  FMongoStatementAdapter.SetSQLCommand(LJson);
+  LResultset := FMongoStatementAdapter.ExecuteQuery;
+  LResult := LResultset.GetFieldValue(0);
+  CheckEquals(1, LResult);
+end;
+
+class constructor TestTMongoConnectionAdapter.Create;
+begin
+  DirMongoDB := 'D:\Downloads\Programming\General\NoSQL\mongodb-win32-i386-2.2.2\bin\';
 end;
 
 procedure TestTMongoConnectionAdapter.SetUp;
 begin
-  FConnection := TMongoDBConnection.Create;
+  FConnection := TMongoDBConnection.Create();
   FConnection.Open();
   FMongoConnectionAdapter := TMongoConnectionAdapter.Create(FConnection);
 end;
@@ -263,52 +302,110 @@ end;
 
 procedure TestTMongoConnectionAdapter.TestConnect;
 begin
+  CheckFalse(FMongoConnectionAdapter.IsConnected);
   FMongoConnectionAdapter.Connect;
-  // TODO: Validate method results
+  CheckTrue(FMongoConnectionAdapter.IsConnected);
 end;
 
 procedure TestTMongoConnectionAdapter.TestDisconnect;
 begin
+  FMongoConnectionAdapter.Connect;
+  CheckTrue(FMongoConnectionAdapter.IsConnected);
   FMongoConnectionAdapter.Disconnect;
-  // TODO: Validate method results
+  CheckFalse(FMongoConnectionAdapter.IsConnected);
 end;
 
 procedure TestTMongoConnectionAdapter.TestIsConnected;
-var
-  ReturnValue: Boolean;
 begin
-  ReturnValue := FMongoConnectionAdapter.IsConnected;
-  // TODO: Validate method results
+  CheckFalse(FMongoConnectionAdapter.IsConnected);
+  FMongoConnectionAdapter.Connect;
+  CheckTrue(FMongoConnectionAdapter.IsConnected);
 end;
 
 procedure TestTMongoConnectionAdapter.TestCreateStatement;
 var
-  ReturnValue: IDBStatement;
+  LStatement: IDBStatement;
 begin
-  ReturnValue := FMongoConnectionAdapter.CreateStatement;
-  // TODO: Validate method results
+  LStatement := FMongoConnectionAdapter.CreateStatement;
+  CheckTrue(Assigned(LStatement));
+  LStatement := nil;
 end;
 
 procedure TestTMongoConnectionAdapter.TestBeginTransaction;
 var
-  ReturnValue: IDBTransaction;
+  LTran: IDBTransaction;
 begin
-  ReturnValue := FMongoConnectionAdapter.BeginTransaction;
-  // TODO: Validate method results
+  LTran := FMongoConnectionAdapter.BeginTransaction;
+  CheckTrue(Assigned(LTran));
 end;
 
 procedure TestTMongoConnectionAdapter.TestGetDriverName;
 var
-  ReturnValue: string;
+  LDriverName: string;
 begin
-  ReturnValue := FMongoConnectionAdapter.GetDriverName;
-  // TODO: Validate method results
+  LDriverName := FMongoConnectionAdapter.GetDriverName;
+  CheckEquals('MongoDB', LDriverName);
+end;
+
+var
+  sExecLine: string;
+  StartInfo  : TStartupInfo;
+  ProcInfo   : TProcessInformation;
+  bCreated: Boolean;
+
+
+
+{ TBaseMongoTest }
+
+function TBaseMongoTest.GetKeyValue(const AValue: Variant): Variant;
+var
+  LDoc: IBSONDocument;
+begin
+  LDoc := BSON([CT_KEY, AValue]);
+  FQuery.Query(NAME_COLLECTION, LDoc);
+  Result := LDoc.Item[CT_KEY];
+end;
+
+procedure TBaseMongoTest.SetUp;
+begin
+  inherited;
+  FConnection := TMongoDBConnection.Create;
+  FConnection.Open();
+  FQuery := TMongoDBQuery.Create(FConnection);
+end;
+
+procedure TBaseMongoTest.TearDown;
+begin
+  FQuery.Free;
+  FConnection.Free;
+  inherited;
 end;
 
 initialization
-  // Register any test cases with the test runner
-  RegisterTest(TestTMongoResultSetAdapter.Suite);
-  RegisterTest(TestTMongoStatementAdapter.Suite);
-  RegisterTest(TestTMongoConnectionAdapter.Suite);
+  if DirectoryExists(TestTMongoConnectionAdapter.DirMongoDB) then
+  begin
+    sExecLine := TestTMongoConnectionAdapter.DirMongoDB + 'mongod.exe' +
+      Format(' --dbpath "%S" --journal', [TestTMongoConnectionAdapter.DirMongoDB + 'data\db']);
+
+    FillChar(StartInfo,SizeOf(TStartupInfo),#0);
+    FillChar(ProcInfo,SizeOf(TProcessInformation),#0);
+    StartInfo.cb := SizeOf(TStartupInfo);
+    StartInfo.wShowWindow := SW_HIDE;
+    bCreated := CreateProcess(nil, PChar(sExecLine), nil, nil, True, 0, nil, nil, StartInfo, ProcInfo);
+    if bCreated then
+    begin
+      RegisterTest(TestTMongoResultSetAdapter.Suite);
+      RegisterTest(TestTMongoStatementAdapter.Suite);
+      RegisterTest(TestTMongoConnectionAdapter.Suite);
+    end;
+  end;
+
+finalization
+  if bCreated then
+  begin
+    TerminateProcess(ProcInfo.hProcess, 0);
+  end;
+
+
 end.
 

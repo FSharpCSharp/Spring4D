@@ -13,7 +13,7 @@ interface
 
 uses
   TestFramework, Core.Interfaces, UIB, SQL.Generator.Ansi, Generics.Collections, DB,
-  Core.Base, Adapters.UIB, uibdataset, SQL.Params, SysUtils, Core.EntityManager;
+  Core.Base, Adapters.UIB, uibdataset, SQL.Params, SysUtils, Core.Session;
 
 type
   // Test methods for class TUIBResultSetAdapter
@@ -52,7 +52,7 @@ type
   TestTUIBRegression = class(TTestCase)
   private
     FConnection: IDBConnection;
-    FManager: TEntityManager;
+    FManager: TSession;
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -248,7 +248,7 @@ begin
   inherited;
   sDir := IncludeTrailingPathDelimiter(ExtractFileDir(PictureFilename));
   FConnection := TConnectionFactory.GetInstanceFromFilename(dtUIB, sDir + FILE_JSON);
-  FManager := TEntityManager.Create(FConnection);
+  FManager := TSession.Create(FConnection);
 end;
 
 procedure TestTUIBRegression.TearDown;
@@ -307,7 +307,7 @@ begin
 end;
 
 initialization
-  TestDB := TUIBDataBase.Create(nil);
+ { TestDB := TUIBDataBase.Create(nil);
   // Register any test cases with the test runner
   if FileExists('D:\DB\GDB\CAA\ALGA.GDB') then
   begin
@@ -326,10 +326,10 @@ initialization
       raise;
     end;
 
-  end;
+  end;  }
 
 finalization
-  TestDB.Free;
+ // TestDB.Free;
 
 end.
 

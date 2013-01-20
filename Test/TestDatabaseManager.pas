@@ -28,6 +28,7 @@ type
   published
     procedure TestBuildDatabase;
     procedure TestUpdateDatabase();
+    procedure TestEntityExists();
   end;
 
 implementation
@@ -104,6 +105,13 @@ begin
   CheckEquals(iCount, GetTableCount(FConnection));
 end;
 
+
+procedure TestTDatabaseManager.TestEntityExists;
+begin
+  CheckFalse(FDatabaseManager.EntityExists(TCustomer));
+  FDatabaseManager.BuildDatabase;
+  CheckTrue(FDatabaseManager.EntityExists(TCustomer));
+end;
 
 const
   FILE_DB = 'dbupdate.db3';

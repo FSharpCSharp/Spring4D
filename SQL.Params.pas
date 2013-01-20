@@ -33,18 +33,26 @@ uses
   DB, Generics.Collections, Rtti;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents query parameter.
+  ///	</summary>
+  {$ENDREGION}
   TDBParam = class
-  strict private
+  private
     FName: string;
     FParamType: TFieldType;
     FValue: Variant;
   private
     function GetName: string;
     procedure SetName(const Value: string);
+    procedure SetValue(const Value: Variant);
   public
+    procedure SetFromTValue(const AValue: TValue);
+
     property Name: string read GetName write SetName;
     property ParamType: TFieldType read FParamType write FParamType;
-    property Value: Variant read FValue write FValue;
+    property Value: Variant read FValue write SetValue;
   end;
 
   procedure ConvertParam(const AFrom: TVarRec; out ATo: TDBParam);
@@ -56,6 +64,7 @@ implementation
 uses
   SysUtils
   ,Core.Exceptions
+  ,Core.Utils
   ,Variants
   ;
 
@@ -65,52 +74,52 @@ begin
     vtAnsiString:
     begin
       ATo.ParamType := ftString;
-      ATo.Value := string(AFrom.VAnsiString);
+      ATo.FValue := string(AFrom.VAnsiString);
     end;
     vtWideString:
     begin
       ATo.ParamType := ftWideString;
-      ATo.Value := string(AFrom.VWideString);
+      ATo.FValue := string(AFrom.VWideString);
     end;
     vtUnicodeString:
     begin
       ATo.ParamType := ftWideString;
-      ATo.Value := string(AFrom.VUnicodeString);
+      ATo.FValue := string(AFrom.VUnicodeString);
     end;
     vtString:
     begin
       ATo.ParamType := ftString;
-      ATo.Value := string(AFrom.VString);
+      ATo.FValue := string(AFrom.VString);
     end;
     vtInt64:
     begin
       ATo.ParamType := ftLargeint;
-      ATo.Value := Int64(AFrom.VInt64^);
+      ATo.FValue := Int64(AFrom.VInt64^);
     end;
     vtInteger:
     begin
       ATo.ParamType := ftInteger;
-      ATo.Value := AFrom.VInteger;
+      ATo.FValue := AFrom.VInteger;
     end;
     vtExtended:
     begin
       ATo.ParamType := ftExtended;
-      ATo.Value := Extended(AFrom.VExtended^);
+      ATo.FValue := Extended(AFrom.VExtended^);
     end;
     vtCurrency:
     begin
       ATo.ParamType := ftCurrency;
-      ATo.Value := Currency(AFrom.VCurrency^);
+      ATo.FValue := Currency(AFrom.VCurrency^);
     end;
     vtBoolean:
     begin
       ATo.ParamType := ftBoolean;
-      ATo.Value := AFrom.VBoolean;
+      ATo.FValue := AFrom.VBoolean;
     end;
     vtVariant:
     begin
       ATo.ParamType := ftVariant;
-      ATo.Value := Variant(AFrom.VVariant^);
+      ATo.FValue := Variant(AFrom.VVariant^);
     end
     else
     begin
@@ -137,7 +146,7 @@ function FromTValueTypeToFieldType(const AValue: TValue): TFieldType;
 var
   LVariant: Variant;
 begin
-  LVariant := AValue.AsVariant;
+  LVariant := TUtils.AsVariant(AValue);
   Result := VarTypeToDataType(VarType(LVariant));
 end;
 
@@ -145,12 +154,30 @@ end;
 
 function TDBParam.GetName: string;
 begin
-  Result := FName;
+  Result := UpperCase(FName);
+  if (Length(Result) > 0) and not (CharInSet(Result[1], [':'])) then
+  begin
+    Result := ':' + Result;
+  end;
+end;
+
+procedure TDBParam.SetFromTValue(const AValue: TValue);
+var
+  LVariant: Variant;
+begin
+  LVariant := TUtils.AsVariant(AValue);
+  Value := LVariant;
 end;
 
 procedure TDBParam.SetName(const Value: string);
 begin
   FName := Value;
+end;
+
+procedure TDBParam.SetValue(const Value: Variant);
+begin
+  FParamType := VarTypeToDataType(VarType(Value));
+  FValue := Value;
 end;
 
 end.

@@ -50,13 +50,14 @@ implementation
 
 uses
   Core.ConnectionFactory
+  ,Core.Consts
   ;
 
 { TASAConnectionAdapter }
 
 function TASAConnectionAdapter.GetDriverName: string;
 begin
-  Result := 'ASA';
+  Result := DRIVER_SYBASE_ASA;
 end;
 
 initialization

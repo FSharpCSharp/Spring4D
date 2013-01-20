@@ -38,6 +38,7 @@ type
   public
     function IsEmpty(): Boolean; override;
     function Next(): Boolean; override;
+    function FieldnameExists(const AFieldName: string): Boolean; override;
     function GetFieldValue(AIndex: Integer): Variant; overload; override;
     function GetFieldValue(const AFieldname: string): Variant; overload; override;
     function GetFieldCount(): Integer; override;
@@ -53,10 +54,10 @@ type
     procedure SetSQLCommand(const ACommandText: string); override;
     procedure SetParams(Params: TEnumerable<TDBParam>); overload; override;
     function Execute(): NativeUInt; override;
-    function ExecuteQuery(): IDBResultSet; override;
+    function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
   end;
 
-  TSQLiteConnectionAdapter = class(TDriverConnectionAdapter<TSQLiteDatabase>, IDBConnection)
+  TSQLiteConnectionAdapter = class(TDriverConnectionAdapter<TSQLiteDatabase>)
   public
     procedure Connect; override;
     procedure Disconnect; override;
@@ -66,21 +67,19 @@ type
     function GetDriverName: string; override;
   end;
 
-  TSQLiteTransactionAdapter = class(TInterfacedObject, IDBTransaction)
-  private
-    FSQLiteConnection: TSQLiteDatabase;
+  TSQLiteTransactionAdapter = class(TDriverTransactionAdapter<TSQLiteDatabase>)
+  protected
+    function InTransaction(): Boolean; override;
   public
-    constructor Create(AConnection: TSQLiteDatabase);
-    destructor Destroy; override;
-
-    procedure Commit;
-    procedure Rollback;
+    procedure Commit; override;
+    procedure Rollback; override;
   end;
 
 implementation
 
 uses
   Core.ConnectionFactory
+  ,Core.Consts
   ;
 
 { TSQLiteResultSetAdapter }
@@ -88,6 +87,11 @@ uses
 function TSQLiteResultSetAdapter.GetFieldValue(AIndex: Integer): Variant;
 begin
   Result := Dataset.Fields[AIndex].Value;
+end;
+
+function TSQLiteResultSetAdapter.FieldnameExists(const AFieldName: string): Boolean;
+begin
+  Result := (Dataset.FindField(AFieldName) <> nil);
 end;
 
 function TSQLiteResultSetAdapter.GetFieldCount: Integer;
@@ -137,7 +141,7 @@ begin
     Result := 0;
 end;
 
-function TSQLiteStatementAdapter.ExecuteQuery: IDBResultSet;
+function TSQLiteStatementAdapter.ExecuteQuery(AServerSideCursor: Boolean): IDBResultSet;
 var
   LDataset: ISQLiteTable;
 begin
@@ -228,41 +232,30 @@ end;
 
 function TSQLiteConnectionAdapter.GetDriverName: string;
 begin
-  if Connection = nil then
-    Exit('')
-  else
-    Result := 'SQLite3';
+  Result := DRIVER_SQLITE;
 end;
 
 { TSQLiteTransactionAdapter }
 
 procedure TSQLiteTransactionAdapter.Commit;
 begin
-  if (FSQLiteConnection = nil) then
+  if (Transaction = nil) then
     Exit;
 
-  FSQLiteConnection.Commit;
+  Transaction.Commit;
 end;
 
-constructor TSQLiteTransactionAdapter.Create(AConnection: TSQLiteDatabase);
+function TSQLiteTransactionAdapter.InTransaction: Boolean;
 begin
-  inherited Create;
-  FSQLiteConnection := AConnection;
-end;
-
-destructor TSQLiteTransactionAdapter.Destroy;
-begin
-  if FSQLiteConnection.IsTransactionOpen then
-    Rollback;
-  inherited Destroy;
+  Result := Transaction.IsTransactionOpen;
 end;
 
 procedure TSQLiteTransactionAdapter.Rollback;
 begin
-  if (FSQLiteConnection = nil) then
+  if (Transaction = nil) then
     Exit;
 
-  FSQLiteConnection.Rollback;
+  Transaction.Rollback;
 end;
 
 initialization

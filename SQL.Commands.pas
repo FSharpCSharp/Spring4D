@@ -35,6 +35,11 @@ uses
 type
   TDMLCommandType = (ctSelect, ctInsert, ctUpdate, ctDelete);
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents abstract DML command.
+  ///	</summary>
+  {$ENDREGION}
   TDMLCommand = class abstract
   private
     FTable: TSQLTable;
@@ -46,6 +51,11 @@ type
     property Table: TSQLTable read FTable;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents <c>select</c> command.
+  ///	</summary>
+  {$ENDREGION}
   TSelectCommand = class(TDMLCommand)
   private
     FSelectFields: TObjectList<TSQLSelectField>;
@@ -55,10 +65,12 @@ type
     FOrderByFields: TObjectList<TSQLOrderField>;
     FPrimaryKeyColumn: ColumnAttribute;
     FForeignColumn: ForeignJoinColumnAttribute;
+    FTables: TObjectList<TSQLTable>;
   public
     constructor Create(ATable: TSQLTable); override;
     destructor Destroy; override;
 
+    procedure SetAssociations(AEntityClass: TClass); virtual;
     procedure SetTable(AColumns: TList<ColumnAttribute>); override;
     procedure SetFromPrimaryColumn();
     procedure SetFromForeignColumn(ABaseTableClass, AForeignTableClass: TClass);
@@ -73,6 +85,11 @@ type
     property PrimaryKeyColumn: ColumnAttribute read FPrimaryKeyColumn write FPrimaryKeyColumn;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents <c>insert</c> command.
+  ///	</summary>
+  {$ENDREGION}
   TInsertCommand = class(TDMLCommand)
   private
     FInsertFields: TObjectList<TSQLField>;
@@ -87,6 +104,11 @@ type
     property Sequence: SequenceAttribute read FSequence write FSequence;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents <c>update</c> command.
+  ///	</summary>
+  {$ENDREGION}
   TUpdateCommand = class(TDMLCommand)
   private
     FUpdateFields: TObjectList<TSQLField>;
@@ -103,6 +125,11 @@ type
     property WhereFields: TObjectList<TSQLWhereField> read FWhereFields;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents <c>delete</c> command.
+  ///	</summary>
+  {$ENDREGION}
   TDeleteCommand = class(TDMLCommand)
   private
     FWhereFields: TObjectList<TSQLWhereField>;
@@ -117,6 +144,11 @@ type
     property WhereFields: TObjectList<TSQLWhereField> read FWhereFields;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents <c>create table</c> command.
+  ///	</summary>
+  {$ENDREGION}
   TCreateTableCommand = class(TDMLCommand)
   private
     FColumns: TObjectList<TSQLCreateField>;
@@ -133,6 +165,11 @@ type
     property Columns: TObjectList<TSQLCreateField> read FColumns;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents <c>create foreign key</c> command.
+  ///	</summary>
+  {$ENDREGION}
   TCreateFKCommand = class(TCreateTableCommand)
   private
     FForeigns: TObjectList<TSQLForeignKeyField>;
@@ -146,6 +183,11 @@ type
     property ForeignKeys: TObjectList<TSQLForeignKeyField> read FForeigns;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents <c>create sequence</c> command.
+  ///	</summary>
+  {$ENDREGION}
   TCreateSequenceCommand = class
   private
     FSequence: SequenceAttribute;
@@ -165,6 +207,7 @@ uses
   ,SysUtils
   ,StrUtils
   ,Generics.Defaults
+  ,Core.Relation.ManyToOne
   ;
 
 { TSelectCommand }
@@ -177,6 +220,7 @@ begin
   FWhereFields := TObjectList<TSQLWhereField>.Create;
   FGroupByFields := TObjectList<TSQLGroupByField>.Create;
   FOrderByFields := TObjectList<TSQLOrderField>.Create;
+  FTables := TObjectList<TSQLTable>.Create(True);
   FForeignColumn := nil;
 end;
 
@@ -187,7 +231,54 @@ begin
   FWhereFields.Free;
   FGroupByFields.Free;
   FOrderByFields.Free;
+  FTables.Free;
   inherited Destroy;
+end;
+
+procedure TSelectCommand.SetAssociations(AEntityClass: TClass);
+var
+  LEntityData: TEntityData;
+  LManyOneCol: ManyToOneAttribute;
+  LSelectField: TSQLSelectField;
+  LTable: TSQLTable;
+  LMappedTableClass: TClass;
+  LCol: ColumnAttribute;
+  LBuiltFieldname: string;
+  LMappedByCol: ColumnAttribute;
+  LMappedByColname: string;
+  LJoin: TSQLJoin;
+  i: Integer;
+begin
+  LEntityData := TEntityCache.Get(AEntityClass);
+  i := 0;
+
+  for LManyOneCol in LEntityData.ManyToOneColumns do
+  begin
+    LTable := TSQLTable.Create();
+    LTable.SetFromAttribute(TRttiExplorer.GetTable(LManyOneCol.GetColumnTypeInfo));
+    FTables.Add(LTable);
+    LTable.Alias := LTable.Alias + IntToStr(i);
+
+    LMappedByCol := TManyToOneRelation.GetMappedByColumn(LManyOneCol, AEntityClass);
+    LMappedByColname := LMappedByCol.Name;
+    LMappedTableClass := TRttiExplorer.GetClassFromClassInfo(LManyOneCol.GetColumnTypeInfo);
+    for LCol in TEntityCache.Get(LMappedTableClass).Columns do
+    begin
+      LBuiltFieldname := TManyToOneRelation.BuildColumnName(LTable.GetNameWithoutSchema, LMappedByColname, LCol.Name);
+      LSelectField := TSQLSelectField.Create(LCol.Name + ' ' + LBuiltFieldname, LTable);
+      FSelectFields.Add(LSelectField);
+    end;
+    //add join
+    LJoin := TSQLJoin.Create(jtLeft);
+
+    LJoin.Segments.Add(TSQLJoinSegment.Create(
+      TSQLField.Create(TEntityCache.Get(LMappedTableClass).PrimaryKeyColumn.Name, LTable)
+      ,TSQLField.Create(LMappedByColname, Table)
+    ));
+
+    FJoins.Add(LJoin);
+    Inc(i);
+  end;
 end;
 
 procedure TSelectCommand.SetFromForeignColumn(ABaseTableClass, AForeignTableClass: TClass);
@@ -238,7 +329,6 @@ begin
     LSelectField := TSQLSelectField.Create(LColumn.Name, FTable);
     FSelectFields.Add(LSelectField);
   end;
-
 end;
 
 { TInsertCommand }
@@ -267,11 +357,11 @@ begin
 
   for LColumn in AColumns do
   begin
-    if not (cpDontInsert in LColumn.Properties) then
+    if not (cpDontInsert in LColumn.Properties) and not LColumn.IsIdentity then  //fixes #22
     begin
       LField := TSQLField.Create(LColumn.Name, FTable);
       FInsertFields.Add(LField);
-    end
+    end;
   end;
 end;
 

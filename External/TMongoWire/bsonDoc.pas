@@ -5,7 +5,7 @@ unit bsonDoc;
 interface
 
 uses
-  ComObj, ActiveX, SysUtils, WinTypes;
+  ComObj, ActiveX, SysUtils, Windows;
 
 const
   //bsonElement

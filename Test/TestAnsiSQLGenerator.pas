@@ -20,6 +20,8 @@ type
   TestTAnsiSQLGenerator = class(TTestCase)
   private
     FAnsiSQLGenerator: TAnsiSQLGenerator;
+  protected
+    procedure CheckEqualsSQL(const AExpected, ASQL: string);
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -75,6 +77,18 @@ begin
  // Result.Alias := 'P';
 end;
 
+procedure TestTAnsiSQLGenerator.CheckEqualsSQL(const AExpected, ASQL: string);
+var
+  LExpected, LSQL: string;
+begin
+  LExpected := ReplaceStr(AExpected, ' ', '');
+  LExpected := ReplaceStr(LExpected, #13#10, '');
+
+  LSQL := ReplaceStr(ASQL, ' ', '');
+  LSQL := ReplaceStr(LSQL, #13#10, '');
+  CheckEqualsString(LExpected, LSQL, 'SQL not equals');
+end;
+
 procedure TestTAnsiSQLGenerator.SetUp;
 begin
   FAnsiSQLGenerator := TAnsiSQLGenerator.Create();
@@ -128,7 +142,7 @@ const
     ' FROM TEST.CUSTOMERS A' + #13#10 +
     '  INNER JOIN TEST.PRODUCTS B ON B.ID=A.PRODID'+#13#10+
     '  LEFT OUTER JOIN TEST.COUNTRIES C ON C.ID=A.COUNTRYID'+#13#10+
-    '  WHERE (A.NAME = :NAME1) AND (A.AGE > :AGE1)'+#13#10+
+    '  WHERE A.NAME = :NAME'+#13#10+
     '  GROUP BY A.HEIGHT,A.NAME,A.AGE,C.COUNTRYNAME'+#13#10+
     '  ORDER BY A.AGE DESC,C.COUNTRYNAME ASC'+
     ';';
@@ -141,8 +155,11 @@ var
   LJoin: TSQLJoin;
 begin
   LTable := CreateTestTable;
+  LTable.Alias := 'A';
   LJoinTable := CreateTestJoinTable();
+  LJoinTable.Alias := 'B';
   LCountriesTable := CreateTestCOUNTRYTable;
+  LCountriesTable.Alias := 'C';
   LCommand := TSelectCommand.Create(LTable);
   try
     LCommand.SelectFields.Add(TSQLSelectField.Create('NAME', LTable));
@@ -164,7 +181,7 @@ begin
     LCommand.Joins.Add(LJoin);
 
     sSql := FAnsiSQLGenerator.GenerateSelect(LCommand);
-    CheckEqualsString(SQL_SELECT_TEST_JOIN, sSql);
+    CheckEqualsSQL(SQL_SELECT_TEST_JOIN, sSql);
 
     LCommand.SelectFields.Add(TSQLSelectField.Create('COUNTRYNAME', LCountriesTable));
     LJoin := TSQLJoin.Create(jtLeft);
@@ -179,7 +196,7 @@ begin
     LCommand.Joins.Add(LJoin);
 
     sSql := FAnsiSQLGenerator.GenerateSelect(LCommand);
-    CheckEqualsString(SQL_SELECT_TEST_JOIN_2, sSql);
+    CheckEqualsSQL(SQL_SELECT_TEST_JOIN_2, sSql);
 
     LCommand.OrderByFields.Add(TSQLOrderField.Create('AGE', LTable));
     LCommand.OrderByFields[0].OrderType := otDescending;
@@ -202,7 +219,7 @@ begin
     LCommand.WhereFields.Add(TSQLWhereField.Create('NAME', LTable));
 
     sSql := FAnsiSQLGenerator.GenerateSelect(LCommand);
-    CheckEqualsString(SQL_SELECT_TEST_JOIN_2_ORDER_GROUP_WHERE, sSql);
+    CheckEqualsSQL(SQL_SELECT_TEST_JOIN_2_ORDER_GROUP_WHERE, sSql);
 
   finally
     LTable.Free;
@@ -251,7 +268,7 @@ end;
 
 const
   SQL_PAGED_TEST = 'SELECT * FROM TEST.CUSTOMERS WHERE CUSTID = 1;';
-  SQL_PAGED = 'SELECT * FROM TEST.CUSTOMERS WHERE CUSTID = 1 LIMIT(10,1);';
+  SQL_PAGED = 'SELECT * FROM TEST.CUSTOMERS WHERE CUSTID = 1 LIMIT 1,10;';
 
 procedure TestTAnsiSQLGenerator.TestGeneratePagedQuery;
 var
@@ -339,22 +356,26 @@ end;
 
 procedure TestTAnsiSQLGenerator.TestGenerateCreateFK;
 var
-  ReturnValue: string;
+  LSQL: string;
   LCommand: TCreateFKCommand;
   LTable: TSQLTable;
   LCols: TList<ColumnAttribute>;
 begin
-  ReturnValue := '';
+  LSQL := '';
   LTable := CreateTestTable;
   LCommand := TCreateFKCommand.Create(LTable);
   try
     LCols := TRttiExplorer.GetColumns(TCustomer);
     try
       LCommand.SetTable(LCols);
+      LCommand.ForeignKeys.Add(
+        TSQLForeignKeyField.Create('FKColumn', LTable, 'RefColumn', 'RefTable', [fsOnDeleteCascade, fsOnUpdateCascade]
+        )
+      );
 
-      ReturnValue := FAnsiSQLGenerator.GenerateCreateFK(LCommand);
-      Status(ReturnValue);
-      CheckTrue(ReturnValue <> '');
+      LSQL := FAnsiSQLGenerator.GenerateCreateFK(LCommand);
+      Status(LSQL);
+      CheckTrue(LSQL <> '');
     finally
       LCols.Free;
     end;

@@ -616,7 +616,9 @@ function TMongoWireQuery.Next(Doc: IBSONDocument): boolean;
 var
   i:integer;
 begin
-  if Doc=nil then EMongoException.Create('MongoWireQuery.Next: Doc required');
+  if Doc=nil then
+    raise EMongoException.Create('MongoWireQuery.Next: Doc required');
+
   if FPageIndex=FNumberReturned then
    begin
     if FCursorID=0 then

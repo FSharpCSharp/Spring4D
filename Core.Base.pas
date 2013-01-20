@@ -39,12 +39,18 @@ uses
   ;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Base <c>IDBResultset</c> adapter which descendents must override.
+  ///	</summary>
+  {$ENDREGION}
   TDriverResultSetAdapter<T> = class(TInterfacedObject, IDBResultset)
   private
     FDataset: T;
   protected
     function IsEmpty(): Boolean; virtual; abstract;
     function Next(): Boolean; virtual; abstract;
+    function FieldnameExists(const AFieldName: string): Boolean; virtual; abstract;
     function GetFieldValue(AIndex: Integer): Variant; overload; virtual; abstract;
     function GetFieldValue(const AFieldname: string): Variant; overload; virtual; abstract;
     function GetFieldCount(): Integer; virtual; abstract;
@@ -56,6 +62,11 @@ type
     property Dataset: T read FDataset;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Base <c>IDBConnection</c> adapter which descendents must override.
+  ///	</summary>
+  {$ENDREGION}
   TDriverConnectionAdapter<T> = class(TInterfacedObject, IDBConnection)
   private
     FConnection: T;
@@ -90,6 +101,11 @@ type
     property QueryLanguage: TQueryLanguage read GetQueryLanguage write SetQueryLanguage;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Base <c>IDBStatement</c> adapter which descendents must override.
+  ///	</summary>
+  {$ENDREGION}
   TDriverStatementAdapter<T> = class(TInterfacedObject, IDBStatement)
   private
     FStmt: T;
@@ -100,11 +116,35 @@ type
     procedure SetParams(Params: TEnumerable<TDBParam>); overload; virtual; abstract;
     procedure SetParams(const AParams: array of const); overload;
     function Execute(): NativeUInt; virtual; abstract;
-    function ExecuteQuery(): IDBResultSet; virtual; abstract;
+    function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; virtual; abstract;
 
     property Statement: T read FStmt;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Base <c>IDBTransaction</c> adapter which descendents must override.
+  ///	</summary>
+  {$ENDREGION}
+  TDriverTransactionAdapter<T> = class(TInterfacedObject, IDBTransaction)
+  private
+    FTransaction: T;
+  protected
+    procedure Commit(); virtual; abstract;
+    procedure Rollback(); virtual; abstract;
+    function InTransaction(): Boolean; virtual; abstract;
+  public
+    constructor Create(const ATransaction: T); virtual;
+    destructor Destroy; override;
+
+    property Transaction: T read FTransaction;
+  end;
+
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Responsible for building paged queries.
+  ///	</summary>
+  {$ENDREGION}
   TPager = class
   private
     FConnection: IDBConnection;
@@ -127,6 +167,11 @@ type
     property Offset: Integer read GetOffset;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Base <c>IDBPage&lt;T&gt;</c> adapter which descendents must override.
+  ///	</summary>
+  {$ENDREGION}
   TDriverPageAdapter<T: class> = class(TInterfacedObject, IDBPage<T>)
   private
     FItems: {$IFDEF USE_SPRING} Spring.Collections.IList<T> {$ELSE}TObjectList<T> {$ENDIF};
@@ -151,6 +196,7 @@ uses
   ,Mapping.RttiExplorer
   ,Math
   ,StrUtils
+  ,Core.Consts
   ;
 
 { TDriverResultSetAdapter<T> }
@@ -242,14 +288,22 @@ begin
   Result := True;
   sDriverName := GetDriverName;
 
-  if ContainsText(sDriverName, 'MSSQL') then
+  if ContainsText(sDriverName, DRIVER_MSSQL) then
     AQueryLanguage := qlMSSQL
-  else if ContainsText(sDriverName, 'SQLite') then
+  else if ContainsText(sDriverName, DRIVER_SQLITE) then
     AQueryLanguage := qlSQLite
-  else if ContainsText(sDriverName, 'Oracle') then
+  else if ContainsText(sDriverName, DRIVER_ORACLE) then
     AQueryLanguage := qlOracle
-  else if ContainsText(sDriverName, 'ASA') then
+  else if ContainsText(sDriverName, DRIVER_SYBASE_ASA) then
     AQueryLanguage := qlASA
+  else if ContainsText(sDriverName, DRIVER_MYSQL) then
+    AQueryLanguage := qlMySQL
+  else if ContainsText(sDriverName, DRIVER_UIB) then
+    AQueryLanguage := qlFirebird
+  else if ContainsText(sDriverName, DRIVER_FIREBIRD) then
+    AQueryLanguage := qlFirebird
+  else if ContainsText(sDriverName, DRIVER_POSTGRESQL) then
+    AQueryLanguage := qlPostgreSQL
   else
   begin
     Result := False;
@@ -359,6 +413,21 @@ end;
 function TPager.GetOffset: Integer;
 begin
   Result := Min( (Page * ItemsPerPage) - ItemsPerPage + 1, 1);
+end;
+
+{ TDriverTransactionAdapter<T> }
+
+constructor TDriverTransactionAdapter<T>.Create(const ATransaction: T);
+begin
+  inherited Create;
+  FTransaction := ATransaction;
+end;
+
+destructor TDriverTransactionAdapter<T>.Destroy;
+begin
+  if InTransaction then
+    Rollback();
+  inherited Destroy;
 end;
 
 end.

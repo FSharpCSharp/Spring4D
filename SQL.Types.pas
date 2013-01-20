@@ -76,6 +76,7 @@ type
     function GetTable: TSQLTable;
   public
     constructor Create(const AFieldname: string; ATable: TSQLTable); virtual;
+    destructor Destroy; override;
 
     function GetFullFieldname(): string;
 
@@ -119,6 +120,9 @@ type
     FReferencedTableName: string;
     function GetForeignKeyName: string;
   public
+    constructor Create(const AFieldname: string; ATable: TSQLTable
+      ; const AReferencedColumnName, AReferencedTableName: string; AConstraints: TForeignStrategies); reintroduce; overload;
+
     function GetConstraintsAsString(): string;
 
     property ForeignKeyName: string read GetForeignKeyName;
@@ -127,23 +131,27 @@ type
     property Constraints: TForeignStrategies read FConstraints write FConstraints;
   end;
 
+  TMatchMode = (mmExact, mmStart, mmEnd, mmAnywhere);
+
   TWhereOperator = (woEqual = 0, woNotEqual, woMore, woLess, woLike, woNotLike,
-    woMoreOrEqual, woLessOrEqual, woIn, woNotIn);
+    woMoreOrEqual, woLessOrEqual, woIn, woNotIn, woIsNull, woIsNotNull);
 
 const
   WhereOpNames: array[TWhereOperator] of string = (
     {woEqual =} '=', {woNotEqual =} '<>', {woMore = }'>', {woLess = }'<', {woLike = }'LIKE', {woNotLike = }'NOT LIKE',
-    {woMoreOrEqual = }'>=', {woLessOrEqual = }'<=', {woIn = }'IN', {woNotIn = }'NOT IN');
+    {woMoreOrEqual = }'>=', {woLessOrEqual = }'<=', {woIn = }'IN', {woNotIn = }'NOT IN', {woIsNull} 'IS NULL', {woIsNotNull} 'IS NOT NULL');
 
 type
   TSQLWhereField = class(TSQLField)
   private
     FWhereOperator: TWhereOperator;
+    FMatchMode: TMatchMode;
   public
     constructor Create(const AFieldname: string; ATable: TSQLTable); override;
 
     function ToSQLString(): string;
 
+    property MatchMode: TMatchMode read FMatchMode write FMatchMode;
     property WhereOperator: TWhereOperator read FWhereOperator write FWhereOperator;
   end;
 
@@ -204,12 +212,27 @@ type
     class function GetAlias(const ATable: TSQLTable): string;
   end;
 
+  function GetMatchModeString(AMatchMode: TMatchMode; const APattern: string): string;
+
 implementation
 
 uses
   Core.Exceptions
   ,SysUtils
   ;
+
+function GetMatchModeString(AMatchMode: TMatchMode; const APattern: string): string;
+const
+  MATCH_CHAR = '%';
+begin
+  case AMatchMode of
+    mmExact: Result := APattern;
+    mmStart: Result := APattern + MATCH_CHAR;
+    mmEnd: Result := MATCH_CHAR + APattern;
+    mmAnywhere: Result := MATCH_CHAR + APattern + MATCH_CHAR;
+  end;
+  Result := QuotedStr(Result);
+end;
 
 
 
@@ -270,6 +293,11 @@ begin
   inherited Create;
   FFieldname := AFieldname;
   FTable := ATable;
+end;
+
+destructor TSQLField.Destroy;
+begin
+  inherited Destroy;
 end;
 
 function TSQLField.GetFieldname: string;
@@ -377,13 +405,19 @@ end;
 
 constructor TSQLWhereField.Create(const AFieldname: string; ATable: TSQLTable);
 begin
-  inherited;
+  inherited Create(AFieldname, ATable);
   FWhereOperator := woEqual;
+  FMatchMode := mmExact;
 end;
 
 function TSQLWhereField.ToSQLString: string;
 begin
-  Result := GetFullFieldname + ' ' + WhereOpNames[WhereOperator] + ' :' + Fieldname + ' ';
+  case WhereOperator of
+    woIsNull, woIsNotNull: Result := GetFullFieldname + ' ' + WhereOpNames[WhereOperator];
+    woLike, woNotLike, woIn, woNotIn: Result := GetFullFieldname;
+    else
+      Result := GetFullFieldname + ' ' + WhereOpNames[WhereOperator] + ' :' + Fieldname + ' ';
+  end;
 end;
 
 { TSQLCreateField }
@@ -415,6 +449,15 @@ end;
 
 { TSQLForeignKeyField }
 
+constructor TSQLForeignKeyField.Create(const AFieldname: string; ATable: TSQLTable; const AReferencedColumnName,
+  AReferencedTableName: string; AConstraints: TForeignStrategies);
+begin
+  inherited Create(AFieldname, ATable);
+  FReferencedColumnName := AReferencedColumnName;
+  FReferencedTableName := AReferencedTableName;
+  FConstraints := AConstraints;
+end;
+
 function TSQLForeignKeyField.GetConstraintsAsString: string;
 var
   LConstraint: TForeignStrategy;
@@ -441,7 +484,7 @@ end;
 
 function TSQLForeignKeyField.GetForeignKeyName: string;
 begin
-  Result := Format('FK_%0:S_%1:S', [Table.Name, Fieldname]);
+  Result := Format('FK_%0:S_%1:S', [Table.GetNameWithoutSchema, Fieldname]);
 end;
 
 end.

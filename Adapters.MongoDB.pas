@@ -73,14 +73,21 @@ type
 
   EMongoDBStatementAdapterException = Exception;
 
+  TMongoStatementType = (mstInsert, mstUpdate, mstDelete, mstSelect);
+
   TMongoStatementAdapter = class(TDriverStatementAdapter<TMongoDBQuery>)
+  private
+    FStmtText: string;
+    FStmtType: TMongoStatementType;
+  protected
+    function GetStatementType(var AStatementText: string): TMongoStatementType; virtual;
   public
     constructor Create(const AStatement: TMongoDBQuery); override;
     destructor Destroy; override;
     procedure SetSQLCommand(const ACommandText: string); override;
     procedure SetParams(Params: TEnumerable<TDBParam>); overload; override;
     function Execute(): NativeUInt; override;
-    function ExecuteQuery(): IDBResultSet; override;
+    function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
   end;
 
   TMongoConnectionAdapter = class(TDriverConnectionAdapter<TMongoDBConnection>, IDBConnection)
@@ -111,7 +118,13 @@ implementation
 uses
   StrUtils
   ,Core.ConnectionFactory
+  ,bsonUtils
   ;
+const
+  NAME_COLLECTION = 'UnitTests.MongoAdapter';
+
+var
+  MONGO_STATEMENT_TYPES: array[TMongoStatementType] of string = ('I', 'U', 'D', 'S');
 
 { TMongoDBConnection }
 
@@ -135,7 +148,7 @@ end;
 constructor TMongoResultSetAdapter.Create(const ADataset: TMongoDBQuery);
 begin
   inherited Create(ADataset);
-  FDoc := nil;
+  FDoc := BSON;
 end;
 
 destructor TMongoResultSetAdapter.Destroy;
@@ -187,26 +200,57 @@ end;
 constructor TMongoStatementAdapter.Create(const AStatement: TMongoDBQuery);
 begin
   inherited Create(AStatement);
-
+  FStmtText := '';
+  FStmtType := mstSelect;
 end;
 
 destructor TMongoStatementAdapter.Destroy;
 begin
-  //Statement.Free;
+  Statement.Free;
   inherited Destroy;
 end;
 
 function TMongoStatementAdapter.Execute: NativeUInt;
+var
+  LDoc: IBSONDocument;
 begin
-  {TODO -oLinas -cGeneral : update, delete or insert based on sql statement}
+  LDoc := JsonToBson(FStmtText);
+  {TODO -oLinas -cMongoDB : get table name, update selectors, etc.}
+  case FStmtType of
+    mstInsert: Statement.Owner.Insert(NAME_COLLECTION, LDoc);
+    mstUpdate: Statement.Owner.Update(NAME_COLLECTION, LDoc, LDoc);
+    mstDelete: Statement.Owner.Delete(NAME_COLLECTION, LDoc);
+    mstSelect: Statement.Query(NAME_COLLECTION, LDoc);
+  end;
 end;
 
-function TMongoStatementAdapter.ExecuteQuery: IDBResultSet;
+function TMongoStatementAdapter.ExecuteQuery(AServerSideCursor: Boolean): IDBResultSet;
 var
   LQuery: TMongoDBQuery;
+  LResultset: TMongoResultSetAdapter;
 begin
   LQuery := TMongoDBQuery.Create(Statement.Owner);
-  Result := TMongoResultSetAdapter.Create(LQuery);
+  LResultset := TMongoResultSetAdapter.Create(LQuery);
+  LResultset.Document := JsonToBson(FStmtText);
+  LQuery.Query(NAME_COLLECTION, LResultset.Document);
+  Result := LResultset;
+end;
+
+function TMongoStatementAdapter.GetStatementType(var AStatementText: string): TMongoStatementType;
+var
+  LIdentifier: string;
+begin
+  LIdentifier := AStatementText[1];
+  if LIdentifier = 'I' then
+    Result := mstInsert
+  else if LIdentifier = 'U' then
+    Result := mstUpdate
+  else if LIdentifier = 'D' then
+    Result := mstDelete
+  else
+    Result := mstSelect;
+
+  AStatementText := Copy(AStatementText, 2, Length(AStatementText));
 end;
 
 procedure TMongoStatementAdapter.SetParams(Params: TEnumerable<TDBParam>);
@@ -217,8 +261,11 @@ end;
 
 procedure TMongoStatementAdapter.SetSQLCommand(const ACommandText: string);
 begin
-  inherited;
+  if ACommandText = '' then
+    Exit;
 
+  FStmtText := ACommandText;
+  FStmtType := GetStatementType(FStmtText);
 end;
 
 { TMongoConnectionAdapter }

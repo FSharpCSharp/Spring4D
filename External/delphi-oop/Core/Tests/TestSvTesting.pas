@@ -13,10 +13,10 @@ type
   TTestClass = class
   private
     FName: string;
-    FSecret: string;
+  //  FSecret: string;
     FValues: TStrings;
 
-    property Secret: string read FSecret write FSecret;
+   // property Secret: string read FSecret write FSecret;
   public
     constructor Create;
     destructor Destroy; override;

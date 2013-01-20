@@ -19,6 +19,8 @@ __history
 *.bpl
 *.exe
 Win32
+Win64
+DCU
 
 *.obj
 *.tds
@@ -27,3 +29,5 @@ Win32
 *.dsk
 *.~*
 *.gex
+*.map
+*.rsm

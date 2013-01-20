@@ -1,3 +1,6 @@
+// JCL_DEBUG_EXPERT_GENERATEJDBG OFF
+// JCL_DEBUG_EXPERT_INSERTJDBG OFF
+// JCL_DEBUG_EXPERT_DELETEMAPFILE OFF
 program ORMTests;
 {
 
@@ -13,18 +16,18 @@ program ORMTests;
 {$IFDEF CONSOLE_TESTRUNNER}
 {$APPTYPE CONSOLE}
 {$ENDIF}
-
+{$I sv.inc}
 uses
   Forms,
   SysUtils,
   TestFramework,
   GUITestRunner,
   TextTestRunner,
-  TestEntityManager in 'TestEntityManager.pas',
+  TestSession in 'TestSession.pas',
   Core.AbstractManager in '..\Core.AbstractManager.pas',
   Core.Interfaces in '..\Core.Interfaces.pas',
   SQL.Params in '..\SQL.Params.pas',
-  Core.EntityManager in '..\Core.EntityManager.pas',
+  Core.Session in '..\Core.Session.pas',
   Core.EntityMap in '..\Core.EntityMap.pas',
   Core.DatabaseManager in '..\Core.DatabaseManager.pas',
   SQL.AbstractCommandExecutor in '..\SQL.AbstractCommandExecutor.pas',
@@ -81,6 +84,23 @@ uses
   TestDatabaseManager in 'TestDatabaseManager.pas',
   SQLite3 in '..\External\SQLite3\Source\SQLite3.pas',
   SQLiteTable3 in '..\External\SQLite3\Source\SQLiteTable3.pas',
+  Core.Relation.Abstract in '..\Core.Relation.Abstract.pas',
+  Core.Relation.ManyToOne in '..\Core.Relation.ManyToOne.pas',
+  Core.Consts in '..\Core.Consts.pas',
+  Core.Criteria.Abstract in '..\Core.Criteria.Abstract.pas',
+  Core.Criteria in '..\Core.Criteria.pas',
+  Core.Criteria.AbstractCriterion in '..\Core.Criteria.AbstractCriterion.pas',
+  Core.Criteria.Criterion in '..\Core.Criteria.Criterion.pas',
+  Core.Criteria.Restrictions in '..\Core.Criteria.Restrictions.pas',
+  TestCoreCriteria in 'TestCoreCriteria.pas',
+  Core.Criteria.Criterion.SimpleExpression in '..\Core.Criteria.Criterion.SimpleExpression.pas',
+  Core.Criteria.Criterion.NullExpression in '..\Core.Criteria.Criterion.NullExpression.pas',
+  Core.Criteria.Order in '..\Core.Criteria.Order.pas',
+  Core.Criteria.Criterion.LikeExpression in '..\Core.Criteria.Criterion.LikeExpression.pas',
+  Core.Criteria.Criterion.InExpression in '..\Core.Criteria.Criterion.InExpression.pas',
+  Core.Criteria.Properties in '..\Core.Criteria.Properties.pas',
+  TestPersistence in 'TestPersistence.pas',
+  TestConsts in 'TestConsts.pas',
   SQL.Generator.NoSQL in '..\SQL.Generator.NoSQL.pas',
   Adapters.MongoDB in '..\Adapters.MongoDB.pas',
   mongoWire in '..\External\TMongoWire\mongoWire.pas',

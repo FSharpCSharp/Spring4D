@@ -25,15 +25,11 @@ type
     procedure TearDown; override;
   published
     procedure TestIsMapped;
-    procedure TestIsIDMapped;
     procedure TestAdd;
     procedure TestAddOrReplace;
     procedure TestGet;
     procedure TestRemove;
-    procedure TestReplace;
     procedure TestClear;
-    procedure TestGetList;
-    procedure TestHasIdValue;
   end;
 
 implementation
@@ -60,7 +56,7 @@ end;
 
 procedure TestTEntityMap.SetUp;
 begin
-  FEntityMap := TEntityMap.Create(True);
+  FEntityMap := TEntityMap.Create(False);
 end;
 
 procedure TestTEntityMap.TearDown;
@@ -77,91 +73,111 @@ var
 begin
   AObject := CreateCustomer;
   LCompany := CreateCompany;
+  LClone := CreateCustomer;
+  LClonedCompany := CreateCompany;
   try
     ReturnValue := FEntityMap.IsMapped(AObject);
     CheckFalse(ReturnValue);
-    LClone := CreateCustomer;
-    FEntityMap.Add(LClone);
 
+    FEntityMap.Add(LClone);
     ReturnValue := FEntityMap.IsMapped(AObject);
     CheckTrue(ReturnValue);
 
     ReturnValue := FEntityMap.IsMapped(LCompany);
     CheckFalse(ReturnValue);
-
-    LClonedCompany := CreateCompany;
     FEntityMap.AddOrReplace(LClonedCompany);
 
     ReturnValue := FEntityMap.IsMapped(LCompany);
     CheckTrue(ReturnValue);
-
   finally
     AObject.Free;
     LCompany.Free;
+    LClone.Free;
+    LClonedCompany.Free;
   end;
-end;
-
-procedure TestTEntityMap.TestIsIDMapped;
-var
-  ReturnValue: Boolean;
-begin
-  CheckTrue(False, 'Test Not implemented');
 end;
 
 procedure TestTEntityMap.TestAdd;
 var
-  AObject: TObject;
+  LCustomer: TCustomer;
 begin
-  CheckTrue(False, 'Test Not implemented');
+  LCustomer := CreateCustomer;
+  try
+    CheckFalse(FEntityMap.IsMapped(LCustomer));
+    FEntityMap.Add(LCustomer);
+    CheckTrue(FEntityMap.IsMapped(LCustomer));
+  finally
+    LCustomer.Free;
+  end;
 end;
 
 procedure TestTEntityMap.TestAddOrReplace;
 var
-  AObject: TObject;
+  LCustomer: TCustomer;
 begin
-  CheckTrue(False, 'Test Not implemented');
+  LCustomer := CreateCustomer;
+  try
+    CheckFalse(FEntityMap.IsMapped(LCustomer));
+    FEntityMap.Add(LCustomer);
+    CheckTrue(FEntityMap.IsMapped(LCustomer));
+    FEntityMap.AddOrReplace(LCustomer);
+    CheckTrue(FEntityMap.IsMapped(LCustomer));
+  finally
+    LCustomer.Free;
+  end;
 end;
 
 procedure TestTEntityMap.TestGet;
 var
-  ReturnValue: TObject;
-  AObject: TObject;
+  LCustomer, LGotCustomer: TCustomer;
 begin
-  CheckTrue(False, 'Test Not implemented');
+  LCustomer := CreateCustomer;
+  try
+    LGotCustomer := nil;
+    try
+      LGotCustomer := FEntityMap.Get(LCustomer) as TCustomer;
+    except
+      on E:Exception do
+      begin
+        CheckTrue(LGotCustomer = nil);
+      end;
+    end;
+    FEntityMap.Add(LCustomer);
+    LGotCustomer := FEntityMap.Get(LCustomer) as TCustomer;
+    CheckTrue(LGotCustomer <> nil);
+  finally
+    LCustomer.Free;
+  end;
 end;
 
 procedure TestTEntityMap.TestRemove;
 var
-  AObject: TObject;
+  LCustomer: TCustomer;
 begin
-  CheckTrue(False, 'Test Not implemented');
-end;
-
-procedure TestTEntityMap.TestReplace;
-var
-  AObject: TObject;
-begin
-  CheckTrue(False, 'Test Not implemented');
+  LCustomer := CreateCustomer;
+  try
+    FEntityMap.Add(LCustomer);
+    CheckTrue(FEntityMap.IsMapped(LCustomer));
+    FEntityMap.Remove(LCustomer);
+    CheckFalse(FEntityMap.IsMapped(LCustomer));
+  finally
+    LCustomer.Free;
+  end;
 end;
 
 procedure TestTEntityMap.TestClear;
 var
-  AAll: Boolean;
+  LCustomer: TCustomer;
 begin
-  CheckTrue(False, 'Test Not implemented');
-end;
-
-procedure TestTEntityMap.TestGetList;
-begin
-  //ReturnValue := FEntityMap.GetList;
-end;
-
-procedure TestTEntityMap.TestHasIdValue;
-var
-  ReturnValue: Boolean;
-  AObject: TObject;
-begin
-  CheckTrue(False, 'Test Not implemented');
+  LCustomer := CreateCustomer;
+  try
+    FEntityMap.Add(LCustomer);
+    CheckTrue(FEntityMap.IsMapped(LCustomer));
+    FEntityMap.Clear(True);
+    CheckFalse(FEntityMap.IsMapped(LCustomer));
+  finally
+    LCustomer.Free;
+  end;
 end;
 
 {$HINTS ON}

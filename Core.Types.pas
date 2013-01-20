@@ -30,7 +30,7 @@ unit Core.Types;
 interface
 
 uses
-  Rtti, Core.EntityManager, SysUtils, Mapping.Attributes;
+  Rtti, Core.Session, SysUtils, Mapping.Attributes;
 
 type
   /// <summary>
@@ -68,13 +68,14 @@ type
     procedure SetValue(const Value: T);
     function GetIsNull: Boolean;
     function GetValueOrDef: T;
+    procedure SetIsNull(const Value: Boolean);
   public
     constructor Create(const AValue: T);
 
     function ToString(): string;
 
     property HasValue: Boolean read FHasValue;
-    property IsNull: Boolean read GetIsNull;
+    property IsNull: Boolean read GetIsNull write SetIsNull;
     property Value: T read GetValue write SetValue;
     property ValueOrDef: T read GetValueOrDef;
 
@@ -96,9 +97,9 @@ type
     procedure SetDisableCache(const Value: Boolean);
     property DisableCacheForNextGet: Boolean read GetDisableCache write SetDisableCache;
     property Value: T read GetValue;
-    function GetManager: TEntityManager;
-    procedure SetManager(const Value: TEntityManager);
-    property Manager: TEntityManager read GetManager write SetManager;
+    function GetManager: TSession;
+    procedure SetManager(const Value: TSession);
+    property Manager: TSession read GetManager write SetManager;
     function GetID: Variant;
     procedure SetID(const Value: Variant);
     property ID: Variant read GetID write SetID;
@@ -122,12 +123,12 @@ type
     FValue: T;
     FDisableCache: Boolean;
     FID: Variant;
-    FManager: TEntityManager;
+    FManager: TSession;
     FEntity: TObject;
     FColumn: ColumnAttribute;
     function GetValue: T;
-    function GetManager: TEntityManager;
-    procedure SetManager(const Value: TEntityManager);
+    function GetManager: TSession;
+    procedure SetManager(const Value: TSession);
     function GetID: Variant;
     procedure SetID(const Value: Variant);
     function GetEntity: TObject;
@@ -153,7 +154,7 @@ type
     property DisableCacheForNextGet: Boolean read GetDisableCache write SetDisableCache;
     property ID: Variant read GetID write SetID;
     property Entity: TObject read GetEntity write SetEntity;
-    property Manager: TEntityManager read GetManager write SetManager;
+    property Manager: TSession read GetManager write SetManager;
     property Value: T read GetValue;
   end;
 
@@ -168,15 +169,15 @@ type
   Lazy<T> = record
   private
     FLazy: ISvLazy<T>;
-    FManager: TEntityManager;
+    FManager: TSession;
     FID: Variant;
     FEntity: TObject;
     FColumn: ColumnAttribute;
     function GetValue: T;
     function GetDisableCache: Boolean;
     procedure SetDisableCache(const Value: Boolean);
-    procedure SetManager(const Value: TEntityManager);
-    function GetManager: TEntityManager;
+    procedure SetManager(const Value: TSession);
+    function GetManager: TSession;
     function GetID: Variant;
     procedure SetID(const Value: Variant);
   public
@@ -185,7 +186,7 @@ type
     /// </summary>
     /// <param name="AValueFactory">Anonymous method which gets value</param>
     /// <param name="AOwnsObjects">Boolean property to specify if lazy value should free it's value when it goes out of scope</param>
-    constructor Create(AValue: T);
+    class function Create(const AValue: T): Lazy<T>; static;
 
     procedure Assign(const AValue: T);
     function IsValueCreated: Boolean;
@@ -195,14 +196,14 @@ type
 
     property DisableCacheForNextGet: Boolean read GetDisableCache write SetDisableCache;
     property ID: Variant read GetID write SetID;
-    property Manager: TEntityManager read GetManager write SetManager;
+    property Manager: TSession read GetManager write SetManager;
     property Value: T read GetValue;
   end;
 
   LazyObject<T: class, constructor> = record
   private
     FLazy: ISvLazyObject<T>;
-    FManager: TEntityManager;
+    FManager: TSession;
     FID: Variant;
     FEntity: TObject;
     FColumn: ColumnAttribute;
@@ -339,6 +340,11 @@ begin
   Result := not SameValue(LLeft, LRight); // LLeft.IsSameAs(LRight);
 end;
 
+procedure Nullable<T>.SetIsNull(const Value: Boolean);
+begin
+  FHasValue := not Value;
+end;
+
 procedure Nullable<T>.SetValue(const Value: T);
 begin
   FValue := Value;
@@ -438,7 +444,7 @@ begin
   Result := FID;
 end;
 
-function TSvLazy<T>.GetManager: TEntityManager;
+function TSvLazy<T>.GetManager: TSession;
 begin
   Result := FManager;
 end;
@@ -481,7 +487,7 @@ begin
   FID := Value;
 end;
 
-procedure TSvLazy<T>.SetManager(const Value: TEntityManager);
+procedure TSvLazy<T>.SetManager(const Value: TSession);
 begin
   FManager := Value;
 end;
@@ -511,9 +517,9 @@ begin
   end;
 end;
 
-constructor Lazy<T>.Create(AValue: T);
+class function Lazy<T>.Create(const AValue: T): Lazy<T>;
 begin
-  FLazy := TSvLazy<T>.Create(AValue, False);
+  Result.FLazy := TSvLazy<T>.Create(AValue, False);
 end;
 
 function Lazy<T>.GetDisableCache: Boolean;
@@ -532,7 +538,7 @@ begin
     Result := FLazy.ID;
 end;
 
-function Lazy<T>.GetManager: TEntityManager;
+function Lazy<T>.GetManager: TSession;
 begin
   Result := nil;
   if Assigned(FLazy) then
@@ -554,7 +560,7 @@ end;
 
 class operator Lazy<T>.Implicit(const AValue: T): Lazy<T>;
 begin
-  Result := Lazy<T>.Create(AValue);
+  Result := Create(AValue);
 end;
 
 function Lazy<T>.IsValueCreated: Boolean;
@@ -576,7 +582,7 @@ begin
     FLazy.ID := Value;
 end;
 
-procedure Lazy<T>.SetManager(const Value: TEntityManager);
+procedure Lazy<T>.SetManager(const Value: TSession);
 begin
   if Assigned(FLazy) then
     FLazy.Manager := Value;

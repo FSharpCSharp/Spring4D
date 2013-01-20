@@ -55,6 +55,10 @@ type
     DateTimePicker1: TDateTimePicker;
     [Bind('Points', 'Position')]
     TrackBar1: TTrackBar;
+    [BindExpression('Caption', 'Text', 'Uppercase(Caption)', 'UpperCase(Text)')]
+    edScript: TEdit;
+    [BindExpression('CurrentDate', 'Text', 'FormatDateTime(''yyyy-mmmm-dd'',CurrentDate)', '')]
+    edDate: TEdit;
   private
     { Private declarations }
     FBinder: TBindingGroup;

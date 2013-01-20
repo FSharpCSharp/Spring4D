@@ -42,6 +42,11 @@ uses
 type
   TSelectType = (stOne, stList, stObjectList);
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents <c>select</c> executor.
+  ///	</summary>
+  {$ENDREGION}
   TSelectExecutor = class(TAbstractCommandExecutor)
   private
     FTable: TSQLTable;
@@ -103,6 +108,7 @@ begin
 
   FCommand.PrimaryKeyColumn := LCache.PrimaryKeyColumn;
   FCommand.SetTable(FColumns);
+  FCommand.SetAssociations(EntityClass);
 end;
 
 procedure TSelectExecutor.BuildParams(AEntity: TObject);

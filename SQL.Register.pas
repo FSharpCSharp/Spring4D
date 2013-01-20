@@ -33,6 +33,12 @@ uses
   SQL.Interfaces, SysUtils, Generics.Collections;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represent factory for <c>ISQLGenerators.</c> Each custom SQL generator
+  ///	  must register itself with this factory class.
+  ///	</summary>
+  {$ENDREGION}
   TSQLGeneratorRegister = class
   strict private
     class var FGenerators: TDictionary<TQueryLanguage,ISQLGenerator>;
