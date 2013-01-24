@@ -42,6 +42,21 @@ const
   IID_GETIMPLEMENTOR: TGUID = '{4C12C697-6FE2-4263-A2D8-85034F0D0E01}';
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  The main runtime class between an application and ORM. This is the
+  ///	  central API class abstracting the notion of a persistence service. The
+  ///	  main function of the Session is to offer create, read and delete
+  ///	  operations for instances of mapped entity classes. <c>Insert()</c>
+  ///	  results in an <c>SQL INSERT</c>, <c>delete()</c> in an <c>SQL DELETE</c>
+  ///	   and <c>update() </c>in an <c>SQL UPDATE</c>. Changes to persistent
+  ///	  instances are detected at flush time and also result in an
+  ///	  <c>SQL UPDATE</c>. <c>save()</c> results in either an <c>INSERT</c> or
+  ///	  an <c>UPDATE</c>. It is not intended that implementors be threadsafe.
+  ///	  Instead each thread/transaction should obtain its own instance from a
+  ///	  SessionFactory.
+  ///	</summary>
+  {$ENDREGION}
   TSession = class(TAbstractManager)
   private
     FOldStateEntities: TEntityMap;

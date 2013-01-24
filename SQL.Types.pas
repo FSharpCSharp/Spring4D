@@ -36,6 +36,11 @@ const
   CRLF = #13#10;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents Database table.
+  ///	</summary>
+  {$ENDREGION}
   TSQLTable = class
   private
     FName: string;
@@ -59,6 +64,11 @@ type
     property Schema: string read FSchema write FSchema;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents field of the database table.
+  ///	</summary>
+  {$ENDREGION}
   ISQLField = interface
     ['{2316102E-61A3-4454-A7B2-18090C384882}']
     function GetFieldname: string;
@@ -68,6 +78,11 @@ type
     property Table: TSQLTable read GetTable;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents field of the database table.
+  ///	</summary>
+  {$ENDREGION}
   TSQLField = class(TInterfacedObject, ISQLField)
   private
     FTable: TSQLTable;
@@ -84,10 +99,22 @@ type
     property Table: TSQLTable read GetTable write FTable;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents field of the database table which is used in <c>Select</c>
+  ///	  statements.
+  ///	</summary>
+  {$ENDREGION}
   TSQLSelectField = class(TSQLField)
 
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents field of the database table which is used in
+  ///	  <c>Create Table</c> statements.
+  ///	</summary>
+  {$ENDREGION}
   TSQLCreateField = class(TSQLField)
   private
     FIsPrimaryKey: Boolean;
@@ -113,6 +140,11 @@ type
     property Properties: TColumnProperties read FProperties;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents foreign key field of the database table.
+  ///	</summary>
+  {$ENDREGION}
   TSQLForeignKeyField = class(TSQLField)
   private
     FReferencedColumnName: string;
@@ -149,6 +181,12 @@ const
   StartOperators: TStartOperators = [woOr, woAnd, woNot];
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents field of the database table which is used in <c>where</c>
+  ///	  clause.
+  ///	</summary>
+  {$ENDREGION}
   TSQLWhereField = class(TSQLField)
   private
     FWhereOperator: TWhereOperator;
@@ -169,6 +207,12 @@ type
     property ParamName: string read FParamName write FParamName;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents field of the database table which is used in <c>where</c>
+  ///	  clause.
+  ///	</summary>
+  {$ENDREGION}
   TSQLWherePropertyField = class(TSQLWhereField)
   private
     FOtherTable: TSQLTable;
@@ -183,12 +227,24 @@ type
     property OtherTable: TSQLTable read FOtherTable write FOtherTable;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents field of the database table which is used in <c>Group By</c>
+  ///	  clause.
+  ///	</summary>
+  {$ENDREGION}
   TSQLGroupByField = class(TSQLField)
 
   end;
 
   TOrderType = (otAscending, otDescending);
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents field of the database table which is used in <c>Order By</c>
+  ///	  clause.
+  ///	</summary>
+  {$ENDREGION}
   TSQLOrderField = class(TSQLField)
   private
     FOrderType: TOrderType;
@@ -202,6 +258,11 @@ type
 
   TSQLJoinType = (jtInner, jtLeft);
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents join segment.
+  ///	</summary>
+  {$ENDREGION}
   TSQLJoinSegment = class
   private
     FPKField: ISQLField;
@@ -214,6 +275,11 @@ type
   end;
 
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents join of database tables.
+  ///	</summary>
+  {$ENDREGION}
   TSQLJoin = class
   private
     FJoinType: TSQLJoinType;
@@ -228,6 +294,11 @@ type
     property Segments: TObjectList<TSQLJoinSegment> read FSegments write FSegments;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Static class which is used to generate table aliases.
+  ///	</summary>
+  {$ENDREGION}
   TSQLAliasGenerator = class
   private
     class var FAliases: TDictionary<string,string>;
