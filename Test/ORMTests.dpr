@@ -106,7 +106,9 @@ uses
   mongoWire in '..\External\TMongoWire\mongoWire.pas',
   TestAdapterMongoDB in 'TestAdapterMongoDB.pas',
   SQL.Generator.MongoDB in '..\SQL.Generator.MongoDB.pas',
-  Core.Criteria.Criterion.LogicalExpression in '..\Core.Criteria.Criterion.LogicalExpression.pas';
+  Core.Criteria.Criterion.LogicalExpression in '..\Core.Criteria.Criterion.LogicalExpression.pas',
+  SvTesting.DUnit in '..\External\delphi-oop\Core\SvTesting.DUnit.pas',
+  Core.Criteria.Criterion.PropertyExpression in '..\Core.Criteria.Criterion.PropertyExpression.pas';
 
 {$R *.RES}
 
@@ -130,7 +132,7 @@ begin
   else
   begin
     ReportMemoryLeaksOnShutdown := True;
-    GUITestRunner.RunRegisteredTests;
+    TSvGUITestRunner.RunRegisteredTests;
   end;
 end.
 

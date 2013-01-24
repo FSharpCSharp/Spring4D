@@ -137,10 +137,66 @@ type
 
     {$REGION 'Documentation'}
     ///	<summary>
+    ///	  Return the conjuction of two expressions.
+    ///	</summary>
+    {$ENDREGION}
+    class function &And(ALeft, ARight: ICriterion): ICriterion;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
     ///	  Return the disjuction of two expressions.
     ///	</summary>
     {$ENDREGION}
     class function &Or(ALeft, ARight: ICriterion): ICriterion;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Return the negation of an expression.
+    ///	</summary>
+    {$ENDREGION}
+    class function &Not(AExpression: ICriterion): ICriterion;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Apply a "<b>not equal</b>" constraint to two properties.
+    ///	</summary>
+    {$ENDREGION}
+    class function NeProperty(const APropertyName, AOtherPropertyName: string): ICriterion;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Apply an "<b>equal</b>" constraint to two properties.
+    ///	</summary>
+    {$ENDREGION}
+    class function EqProperty(const APropertyName, AOtherPropertyName: string): ICriterion;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Apply a "<b>greater than or equal</b>" constraint to two properties.
+    ///	</summary>
+    {$ENDREGION}
+    class function GeProperty(const APropertyName, AOtherPropertyName: string): ICriterion;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Apply a "<b>greater than</b>" constraint to two properties.
+    ///	</summary>
+    {$ENDREGION}
+    class function GtProperty(const APropertyName, AOtherPropertyName: string): ICriterion;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Apply a "<b>less than or equal</b>" constraint to two properties.
+    ///	</summary>
+    {$ENDREGION}
+    class function LeProperty(const APropertyName, AOtherPropertyName: string): ICriterion;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Apply a "<b>less than</b>" constraint to two properties.
+    ///	</summary>
+    {$ENDREGION}
+    class function LtProperty(const APropertyName, AOtherPropertyName: string): ICriterion;
   end;
 
 implementation
@@ -151,6 +207,7 @@ uses
   ,Core.Criteria.Criterion.LikeExpression
   ,Core.Criteria.Criterion.InExpression
   ,Core.Criteria.Criterion.LogicalExpression
+  ,Core.Criteria.Criterion.PropertyExpression
   ;
 
 { TRestrictions }
@@ -160,10 +217,35 @@ begin
   Result := TLogicalExpression.Create(ALeft, ARight, woOr);
 end;
 
+class function TRestrictions.NeProperty(const APropertyName, AOtherPropertyName: string): ICriterion;
+begin
+  Result := TPropertyExpression.Create(APropertyName, AOtherPropertyName, woNotEqual);
+end;
+
+class function TRestrictions.&Not(AExpression: ICriterion): ICriterion;
+begin
+  Result := TLogicalExpression.Create(AExpression, nil, woNot);
+end;
+
+class function TRestrictions.&And(ALeft, ARight: ICriterion): ICriterion;
+begin
+  Result := TLogicalExpression.Create(ALeft, ARight, woAnd);
+end;
+
 class function TRestrictions.Eq(const APropertyName: string;
   const AValue: TValue): ICriterion;
 begin
   Result := TSimpleExpression.Create(APropertyName, AValue, woEqual);
+end;
+
+class function TRestrictions.EqProperty(const APropertyName, AOtherPropertyName: string): ICriterion;
+begin
+  Result := TPropertyExpression.Create(APropertyName, AOtherPropertyName, woEqual);
+end;
+
+class function TRestrictions.GeProperty(const APropertyName, AOtherPropertyName: string): ICriterion;
+begin
+  Result := TPropertyExpression.Create(APropertyName, AOtherPropertyName, woMoreOrEqual);
 end;
 
 class function TRestrictions.GEq(const APropertyName: string; const AValue: TValue): ICriterion;
@@ -174,6 +256,11 @@ end;
 class function TRestrictions.Gt(const APropertyName: string; const AValue: TValue): ICriterion;
 begin
   Result := TSimpleExpression.Create(APropertyName, AValue, woMore);
+end;
+
+class function TRestrictions.GtProperty(const APropertyName, AOtherPropertyName: string): ICriterion;
+begin
+  Result := TPropertyExpression.Create(APropertyName, AOtherPropertyName, woMore);
 end;
 
 class function TRestrictions.&In<T>(const APropertyName: string;
@@ -192,6 +279,11 @@ begin
   Result := TNullExpression.Create(APropertyName, woIsNull);
 end;
 
+class function TRestrictions.LeProperty(const APropertyName, AOtherPropertyName: string): ICriterion;
+begin
+  Result := TPropertyExpression.Create(APropertyName, AOtherPropertyName, woLessOrEqual);
+end;
+
 class function TRestrictions.LEq(const APropertyName: string; const AValue: TValue): ICriterion;
 begin
   Result := TSimpleExpression.Create(APropertyName, AValue, woLessOrEqual);
@@ -205,6 +297,11 @@ end;
 class function TRestrictions.Lt(const APropertyName: string; const AValue: TValue): ICriterion;
 begin
   Result := TSimpleExpression.Create(APropertyName, AValue, woLess);
+end;
+
+class function TRestrictions.LtProperty(const APropertyName, AOtherPropertyName: string): ICriterion;
+begin
+  Result := TPropertyExpression.Create(APropertyName, AOtherPropertyName, woLess);
 end;
 
 class function TRestrictions.NotEq(const APropertyName: string; const AValue: TValue): ICriterion;

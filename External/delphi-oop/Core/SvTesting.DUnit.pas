@@ -30,7 +30,7 @@ unit SvTesting.DUnit;
 interface
 
 uses
-  TestFramework, Rtti, SysUtils;
+  TestFramework, Rtti, SysUtils, GUITestRunner, Classes;
 
 type
   ETestTimeoutException = class(Exception);
@@ -65,13 +65,38 @@ type
 
   end;
 
+  TSvGUITestRunner = class(TGUITestRunner)
+  private
+    FProperties: TStringList;
+    FPropertiesFilename: string;
+  protected
+    procedure InitTree; override;
+    procedure LoadProperties(); virtual;
+    procedure SaveProperties(); virtual;
+    function TryFindTestNodeByIndex(AIndex: Integer; out ANode: TObject): Boolean;  virtual;
+    procedure RunSelectedTestActionExecuteChanged(Sender: TObject);
+    procedure ListSelectedTestsRecursive();
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+
+    class function RunRegisteredTests(): Integer;
+  end;
+
 implementation
 
 uses
   TypInfo,
   Diagnostics,
   SvRttiUtils,
-  DateUtils;
+  DateUtils,
+  ComCtrls,
+  Forms
+  ;
+
+const
+  PROPERTIES_FILENAME = 'SvDUnit.prop';
+  PROP_TESTTREE_SELECTED_INDEX = 'TestTreeSelectedIndex';
 
 { TimeoutAttribute }
 
@@ -176,6 +201,144 @@ end;
 function TSvTestCase.IsTimeoutEnabled: Boolean;
 begin
   Result := (FTimeout <> -1);
+end;
+
+{ TSvGUITestRunner }
+
+constructor TSvGUITestRunner.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FPropertiesFilename := IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0))) + PROPERTIES_FILENAME;
+  FProperties := TStringList.Create;
+  RunSelectedTestAction.OnUpdate := nil;
+  RunSelectedTestAction.OnExecute := RunSelectedTestActionExecuteChanged;
+  LoadProperties();
+end;
+
+destructor TSvGUITestRunner.Destroy;
+begin
+  SaveProperties();
+  FProperties.Free;
+  inherited Destroy;
+end;
+
+procedure TSvGUITestRunner.InitTree;
+var
+  LIndexString: string;
+  LNode: TObject;
+begin
+  inherited;
+  LIndexString := FProperties.Values[PROP_TESTTREE_SELECTED_INDEX];
+  if (LIndexString <> '') and (TryFindTestNodeByIndex(StrToIntDef(LIndexString, 0), LNode)) then
+  begin
+    TestTree.Selected := LNode as TTreeNode;
+  end;
+end;
+
+procedure TSvGUITestRunner.ListSelectedTestsRecursive;
+var
+  aTest: ITest;
+  LNode: TTreeNode;
+
+  procedure ProcessNode(ANode: TTreeNode);
+  begin
+    while Assigned(ANode) do
+    begin
+      if ANode.HasChildren then
+      begin
+        ProcessNode(ANode.getFirstChild);
+      end;
+
+      aTest := NodeToTest(ANode);
+      if Assigned(aTest) then
+        FSelectedTests.Add(aTest as ITest);
+
+      ANode := ANode.getNextSibling;
+    end;
+  end;
+
+begin
+  LNode := TestTree.Selected;
+  if Assigned(LNode) then
+  begin
+    if LNode.HasChildren then
+    begin
+      FSelectedTests.Free;
+      FSelectedTests := nil;
+      FSelectedTests := TInterfaceList.Create;
+      ProcessNode(LNode.getFirstChild);
+      while Assigned(LNode) do
+      begin
+        aTest := NodeToTest(LNode);
+        if Assigned(aTest) then
+          FSelectedTests.Add(aTest as ITest);
+
+        LNode := LNode.Parent;
+      end;
+    end
+    else
+    begin
+      ListSelectedTests;
+    end;
+  end;
+end;
+
+procedure TSvGUITestRunner.LoadProperties;
+begin
+  if FileExists(FPropertiesFilename) then
+    FProperties.LoadFromFile(FPropertiesFilename, TEncoding.UTF8);
+end;
+
+class function TSvGUITestRunner.RunRegisteredTests: Integer;
+var
+  LRunner: TSvGUITestRunner;
+begin
+  LRunner := TSvGUITestRunner.Create(Application);
+  try
+    LRunner.Suite := RegisteredTests();
+    LRunner.ShowModal;
+    Result := LRunner.ErrorCount + LRunner.FailureCount;
+  finally
+    LRunner.Free;
+  end;
+end;
+
+procedure TSvGUITestRunner.RunSelectedTestActionExecuteChanged(Sender: TObject);
+begin
+  Setup;
+  ListSelectedTestsRecursive;
+  ProgressBar.Max := 1;
+  ScoreBar.Max    := 1;
+  RunTheTest(Suite);
+  {$IFDEF VER130}
+    FreeAndNil(FSelectedTests);
+  {$ELSE}
+    FSelectedTests.Free;
+    FSelectedTests := nil;
+  {$ENDIF}
+end;
+
+procedure TSvGUITestRunner.SaveProperties;
+begin
+  if Assigned(TestTree.Selected) then
+    FProperties.Values[PROP_TESTTREE_SELECTED_INDEX] := IntToStr(TestTree.Selected.AbsoluteIndex);
+
+  FProperties.SaveToFile(FPropertiesFilename, TEncoding.UTF8);
+end;
+
+function TSvGUITestRunner.TryFindTestNodeByIndex(AIndex: Integer; out ANode: TObject): Boolean;
+var
+  LNode: TTreeNode;
+begin
+  for LNode in TestTree.Items do
+  begin
+    if LNode.AbsoluteIndex = AIndex then
+    begin
+      ANode := LNode;
+      Exit(True);
+    end;
+  end;
+  Result := False;
 end;
 
 end.

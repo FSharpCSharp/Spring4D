@@ -50,7 +50,7 @@ end;
 
 function TLogicalExpression.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand): string;
 var
-  LWhere, LOrEnd: TSQLWhereField;
+  LWhere, LEndOp: TSQLWhereField;
 begin
   Assert(ACommand is TWhereCommand);
 
@@ -59,15 +59,15 @@ begin
   LWhere.WhereOperator := GetWhereOperator;
   TWhereCommand(ACommand).WhereFields.Add(LWhere);
   LWhere.LeftSQL := FLeft.ToSqlString(AParams, ACommand);
-  LWhere.RightSQL := FRight.ToSqlString(AParams, ACommand);
+  if Assigned(FRight) then
+    LWhere.RightSQL := FRight.ToSqlString(AParams, ACommand);
 
-  LOrEnd := TSQLWhereField.Create('', '');
-  LOrEnd.MatchMode := GetMatchMode;
-  LOrEnd.WhereOperator := woOrEnd;
-  TWhereCommand(ACommand).WhereFields.Add(LOrEnd);
+  LEndOp := TSQLWhereField.Create('', '');
+  LEndOp.MatchMode := GetMatchMode;
+  LEndOp.WhereOperator := GetEndOperator(FOperator);
+  TWhereCommand(ACommand).WhereFields.Add(LEndOp);
 
   Result := LWhere.ToSQLString;
- // Result := Format('%0:S %1:S %2:S', [FLeft.ToSqlString(AParams, ACommand), LogicalOpNames[FOperator], FRight.ToSqlString(AParams, ACommand)]);
 end;
 
 end.

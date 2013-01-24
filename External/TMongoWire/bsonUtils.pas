@@ -128,9 +128,9 @@ begin
   stack[stackIndex].al:=VarArrayHighBound(stack[stackIndex].a,1)+1;
   stack[stackIndex].isDoc:=true;
   Result:='';//TODO: TStringBuilder
-  ods:=DecimalSeparator;
+  ods:=FormatSettings.DecimalSeparator;
   try
-    DecimalSeparator:='.';
+    FormatSettings.DecimalSeparator:='.';
     firstItem:=true;
     Result:=Result+'{';
     while stackIndex<>-1 do
@@ -235,7 +235,7 @@ begin
        end;
      end;
   finally
-    DecimalSeparator:=ods;
+    FormatSettings.DecimalSeparator:=ods;
   end;
 end;
 
@@ -433,9 +433,9 @@ begin
   al:=0;
   InObjectOrArray:=true;
   firstItem:=true;
-  ods:=DecimalSeparator;
+  ods:=FormatSettings.DecimalSeparator;
   try
-    DecimalSeparator:='.';
+    FormatSettings.DecimalSeparator:='.';
     d:=doc;
     //main loop over key/values and nested objects/arrays
     while (i<=l) and (stackIndex<>-1) do
@@ -541,17 +541,17 @@ begin
           v1:=i;
           if b then inc(i);
           v64:=0;
-          while (i<=l) and (char(jsonData[i]) in ['0'..'9']) do
+          while (i<=l) and (CharInSet(char(jsonData[i]), ['0'..'9'])) do
            begin
             v64:=v64*10+(word(jsonData[i]) and $F);//TODO: detect overflow
             inc(i);
            end;
-          if char(jsonData[i]) in ['.','e','E'] then
+          if CharInSet(char(jsonData[i]), ['.','e','E']) then
            begin
             //float
             inc(i);
-            while (i<=l) and (char(jsonData[i]) in
-              ['0'..'9','-','+','e','E']) do inc(i);
+            while (i<=l) and (CharInSet(char(jsonData[i]),
+              ['0'..'9','-','+','e','E'])) do inc(i);
             //try except EConvertError?
             SetValue(StrToFloat(Copy(jsonData,v1,i-v1)));
            end
@@ -646,7 +646,7 @@ begin
     if stackIndex<>-1 then raise EJsonDecodeException.Create(
       'JSON with '+IntToStr(stackIndex+1)+' objects or arrays not closed');
   finally
-    DecimalSeparator:=ods;
+    FormatSettings.DecimalSeparator:=ods;
   end;
 end;
 

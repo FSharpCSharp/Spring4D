@@ -134,18 +134,19 @@ type
   TMatchMode = (mmExact, mmStart, mmEnd, mmAnywhere);
 
   TWhereOperator = (woEqual = 0, woNotEqual, woMore, woLess, woLike, woNotLike,
-    woMoreOrEqual, woLessOrEqual, woIn, woNotIn, woIsNull, woIsNotNull, woOr, woOrEnd);
+    woMoreOrEqual, woLessOrEqual, woIn, woNotIn, woIsNull, woIsNotNull, woOr,
+    woOrEnd, woAnd, woAndEnd, woNot, woNotEnd);
 
-  TLogicalOperator = (loAnd = 0, loOr);
+  TStartOperators = set of TWhereOperator;
 
 const
   WhereOpNames: array[TWhereOperator] of string = (
     {woEqual =} '=', {woNotEqual =} '<>', {woMore = }'>', {woLess = }'<', {woLike = }'LIKE', {woNotLike = }'NOT LIKE',
     {woMoreOrEqual = }'>=', {woLessOrEqual = }'<=', {woIn = }'IN', {woNotIn = }'NOT IN', {woIsNull} 'IS NULL', {woIsNotNull} 'IS NOT NULL'
-    ,{woOr}'OR', {woOrEnd}''
+    ,{woOr}'OR', {woOrEnd}'', {woAnd} 'AND', {woAndEnd}'', {woNot}'NOT', {woNotEnd}''
     );
 
-  LogicalOpNames: array[TLogicalOperator] of string = ('AND', 'OR');
+  StartOperators: TStartOperators = [woOr, woAnd, woNot];
 
 type
   TSQLWhereField = class(TSQLField)
@@ -159,13 +160,27 @@ type
     constructor Create(const AFieldname: string; ATable: TSQLTable); overload; override;
     constructor Create(const ALeftSQL, ARightSQL: string); reintroduce; overload;
 
-    function ToSQLString(): string;
+    function ToSQLString(): string; virtual;
 
     property MatchMode: TMatchMode read FMatchMode write FMatchMode;
     property WhereOperator: TWhereOperator read FWhereOperator write FWhereOperator;
     property LeftSQL: string read FLeftSQL write FLeftSQL;
     property RightSQL: string read FRightSQL write FRightSQL;
     property ParamName: string read FParamName write FParamName;
+  end;
+
+  TSQLWherePropertyField = class(TSQLWhereField)
+  private
+    FOtherTable: TSQLTable;
+  public
+    constructor Create(const ALeftPropertyName, ARightPropertyName: string; ALeftTable, ARightTable: TSQLTable); overload;
+
+    function GetFullLeftFieldname(): string; virtual;
+    function GetFullRightFieldname(): string; virtual;
+
+    function ToSQLString(): string; override;
+
+    property OtherTable: TSQLTable read FOtherTable write FOtherTable;
   end;
 
   TSQLGroupByField = class(TSQLField)
@@ -226,6 +241,7 @@ type
   end;
 
   function GetMatchModeString(AMatchMode: TMatchMode; const APattern: string): string;
+  function GetEndOperator(AStartOperator: TWhereOperator): TWhereOperator;
 
 implementation
 
@@ -245,6 +261,16 @@ begin
     mmAnywhere: Result := MATCH_CHAR + APattern + MATCH_CHAR;
   end;
   Result := QuotedStr(Result);
+end;
+
+function GetEndOperator(AStartOperator: TWhereOperator): TWhereOperator;
+begin
+  Result := AStartOperator;
+  case AStartOperator of
+    woOr: Result := woOrEnd;
+    woAnd: Result := woAndEnd;
+    woNot: Result := woNotEnd;
+  end;
 end;
 
 
@@ -438,8 +464,9 @@ begin
   case WhereOperator of
     woIsNull, woIsNotNull: Result := GetFullFieldname + ' ' + WhereOpNames[WhereOperator];
     woLike, woNotLike, woIn, woNotIn: Result := GetFullFieldname;
-    woOr: Result := Format('(%S %S %S)', [FLeftSQL, WhereOpNames[WhereOperator], FRightSQL]);
-    woOrEnd: Result := '';
+    woOr, woAnd: Result := Format('(%S %S %S)', [FLeftSQL, WhereOpNames[WhereOperator], FRightSQL]);
+    woNot: Result := Format('%S (%S)', [WhereOpNames[WhereOperator], FLeftSQL]);
+    woOrEnd, woAndEnd, woNotEnd: Result := '';
     else
       Result := GetFullFieldname + ' ' + WhereOpNames[WhereOperator] + ' ' + FParamName + ' ';
   end;
@@ -510,6 +537,31 @@ end;
 function TSQLForeignKeyField.GetForeignKeyName: string;
 begin
   Result := Format('FK_%0:S_%1:S', [Table.GetNameWithoutSchema, Fieldname]);
+end;
+
+{ TSQLWherePropertyField }
+
+constructor TSQLWherePropertyField.Create(const ALeftPropertyName, ARightPropertyName: string; ALeftTable,
+  ARightTable: TSQLTable);
+begin
+  inherited Create(ALeftPropertyName, ARightPropertyName);
+  Table := ALeftTable;
+  FOtherTable := ARightTable;
+end;
+
+function TSQLWherePropertyField.GetFullLeftFieldname: string;
+begin
+  Result := Table.Alias + '.' + LeftSQL;
+end;
+
+function TSQLWherePropertyField.GetFullRightFieldname: string;
+begin
+  Result := FOtherTable.Alias + '.' + RightSQL;
+end;
+
+function TSQLWherePropertyField.ToSQLString: string;
+begin
+  Result := Format('%S %S %S', [GetFullLeftFieldname, WhereOpNames[WhereOperator], GetFullRightFieldname]);
 end;
 
 end.

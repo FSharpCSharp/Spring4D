@@ -41,6 +41,10 @@ type
     procedure List_Property_Eq();
     procedure Page_GEq_OrderDesc();
     procedure List_Or_And();
+    procedure List_Or_Or();
+    procedure List_And_And();
+    procedure List_Not_Eq();
+    procedure List_NeProperty();
   end;
 
 implementation
@@ -88,6 +92,58 @@ begin
   LCustomers := FCriteria.List();
   CheckEquals(110, LCustomers[0].Age);
   CheckEquals(42, LCustomers[1].Age);
+end;
+
+procedure TestTCriteria.List_And_And;
+var
+  LCustomers: IList<TCustomer>;
+  Age, Name: IProperty;
+begin
+  Age := TProperty.ForName(CUSTAGE);
+  Name := TProperty.ForName(CUSTNAME);
+  InsertCustomer(42, 'Foo');
+  InsertCustomer(50, 'Bar');
+
+  LCustomers := FCriteria.Add(TRestrictions.And(Age.Eq(42), Name.Eq('Foo')))
+    .Add(Age.GEq(10))
+    .AddOrder(Age.Desc)
+    .List;
+  CheckEquals(1, LCustomers.Count);
+  CheckEquals(42, LCustomers[0].Age);
+end;
+
+procedure TestTCriteria.List_NeProperty;
+var
+  LCustomers: IList<TCustomer>;
+  Age, ID: IProperty;
+begin
+  InsertCustomer(42, 'Foo');
+  InsertCustomer(50, 'Bar');
+
+  Age := TProperty<TCustomer>.ForName(CUSTAGE);
+  ID := TProperty<TCustomer>.ForName(CUSTID);
+
+  LCustomers := FCriteria.Add(TRestrictions.NeProperty(CUSTAGE, CUSTID))
+    .List;
+  CheckEquals(2, LCustomers.Count);
+  CheckEquals(42, LCustomers[0].Age);
+  CheckEquals(50, LCustomers[1].Age);
+
+  FCriteria.Clear;
+  LCustomers := FCriteria.Add(Age.NeProperty(ID))
+    .List;
+  CheckEquals(2, LCustomers.Count);
+  CheckEquals(42, LCustomers[0].Age);
+  CheckEquals(50, LCustomers[1].Age);
+
+  FCriteria.Clear;
+  Age := TProperty.ForName(CUSTAGE);
+  ID := TProperty.ForName(CUSTID);
+  LCustomers := FCriteria.Add(Age.NeProperty(ID)).Add(Age.NeProperty(TProperty.ForName(CUSTNAME)))
+    .List;
+  CheckEquals(2, LCustomers.Count);
+  CheckEquals(42, LCustomers[0].Age);
+  CheckEquals(50, LCustomers[1].Age);
 end;
 
 procedure TestTCriteria.List_Eq_IsNull;
@@ -214,6 +270,23 @@ begin
   CheckEquals(1, LCustomers.Count);
 end;
 
+procedure TestTCriteria.List_Not_Eq;
+var
+  LCustomers: IList<TCustomer>;
+  Age: IProperty;
+begin
+  Age := TProperty.ForName(CUSTAGE);
+  InsertCustomer(42, 'Foo');
+  InsertCustomer(50, 'Bar');
+
+  LCustomers := FCriteria.Add(TRestrictions.Not(Age.Eq(42)))
+    .Add(Age.GEq(10))
+    .AddOrder(Age.Desc)
+    .List;
+  CheckEquals(1, LCustomers.Count);
+  CheckEquals(50, LCustomers[0].Age);
+end;
+
 procedure TestTCriteria.List_Or_And;
 var
   LCustomers: IList<TCustomer>;
@@ -225,6 +298,24 @@ begin
 
   LCustomers := FCriteria.Add(TRestrictions.Or(Age.Eq(42), age.Eq(50)))
     .Add(Age.GEq(10))
+    .AddOrder(Age.Desc)
+    .List;
+  CheckEquals(2, LCustomers.Count);
+  CheckEquals(50, LCustomers[0].Age);
+  CheckEquals(42, LCustomers[1].Age);
+end;
+
+procedure TestTCriteria.List_Or_Or;
+var
+  LCustomers: IList<TCustomer>;
+  Age: IProperty;
+begin
+  Age := TProperty.ForName(CUSTAGE);
+  InsertCustomer(42, 'Foo');
+  InsertCustomer(50, 'Bar');
+
+  //WHERE ((A.CUSTAGE =:CUSTAGE1 OR A.CUSTAGE = :CUSTAGE2) OR A.CUSTAGE >=:CUSTAGE3)
+  LCustomers := FCriteria.Add(TRestrictions.Or(TRestrictions.Or(Age.Eq(42), Age.Eq(50)), Age.GEq(10)))
     .AddOrder(Age.Desc)
     .List;
   CheckEquals(2, LCustomers.Count);

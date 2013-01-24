@@ -45,7 +45,7 @@ type
     function GetJoinAsString(const AJoin: TSQLJoin): string; virtual;
     function GetJoinsAsString(const AJoinFields: TEnumerable<TSQLJoin>): string; virtual;
     function GetOrderAsString(const AOrderFields: TEnumerable<TSQLOrderField>): string; virtual;
-    function GetWhereAsString(const AWhereFields: TEnumerable<TSQLWhereField>): string; virtual;
+    function GetWhereAsString(const AWhereFields: TList<TSQLWhereField>): string; virtual;
     function GetSelectFieldsAsString(const ASelectFields: TEnumerable<TSQLSelectField>): string; virtual;
     function GetCreateFieldsAsString(const ACreateFields: TEnumerable<TSQLCreateField>): string; overload; virtual;
     function GetCreateFieldsAsString(const ACreateFields: TList<string>): string; overload; virtual;
@@ -648,39 +648,60 @@ begin
   Result := TBL_TEMP;
 end;
 
-function TAnsiSQLGenerator.GetWhereAsString(const AWhereFields: TEnumerable<TSQLWhereField>): string;
+function TAnsiSQLGenerator.GetWhereAsString(const AWhereFields: TList<TSQLWhereField>): string;
+
+  function FindEnd(AStartIndex: Integer; AStartToken, AEndToken: TWhereOperator): Integer;
+  var
+    LCount: Integer;
+  begin
+    LCount := 0;
+    for Result := AStartIndex to AWhereFields.Count - 1 do
+    begin
+      if (AWhereFields[Result].WhereOperator = AStartToken) then
+      begin
+        Inc(LCount);
+        Continue;
+      end;
+
+      if (AWhereFields[Result].WhereOperator = AEndToken) then
+      begin
+        Dec(LCount);
+
+        if LCount = 0 then
+        begin
+          Exit;
+        end;
+      end;
+    end;
+    Result := AStartIndex;
+  end;
+
 var
-  i: Integer;
+  i, ix: Integer;
   LField: TSQLWhereField;
-  LSkip: Boolean;
 begin
   Result := '';
-  i := 0;
-  LSkip := False;
-  for LField in AWhereFields do
+  ix := 0;
+  for i:=0 to AWhereFields.Count - 1 do
   begin
-    if not LSkip then
+    if i < ix then
+      Continue;
+
+    ix := i;
+
+    LField := AWhereFields[i];
+    if i > 0 then
+      Result := Result + ' AND '
+    else
+      Result := CRLF + '  WHERE ';
+
+    if LField.WhereOperator in StartOperators then
     begin
-      if i > 0 then
-        Result := Result + ' AND '
-      else
-        Result := CRLF + '  WHERE ';
+      ix := FindEnd(i, LField.WhereOperator, GetEndOperator(LField.WhereOperator));
     end;
 
-
-    case LField.WhereOperator of
-      woOr:
-      begin
-        Result := Result + LField.ToSQLString;
-        LSkip := True;
-      end;
-      woOrEnd: LSkip := False;
-    end;
-
-    Inc(i);
-
-    if not LSkip then
-      Result := Result + LField.ToSQLString;
+    Result := Result + LField.ToSQLString;
+    Inc(ix);
   end;
 end;
 
