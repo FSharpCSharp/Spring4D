@@ -41,6 +41,8 @@ type
     FTotalItems: Int64;
     function GetLimit: Integer;
     function GetOffset: Integer;
+  protected
+    function GetCommand: TDMLCommand; override;
   public
     constructor Create(); override;
     destructor Destroy; override;
@@ -94,6 +96,11 @@ end;
 procedure TPageExecutor.Execute(AEntity: TObject);
 begin
   inherited Execute(AEntity);
+end;
+
+function TPageExecutor.GetCommand: TDMLCommand;
+begin
+  Result := nil;
 end;
 
 function TPageExecutor.GetLimit: Integer;

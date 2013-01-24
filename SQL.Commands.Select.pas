@@ -56,6 +56,8 @@ type
     FID: TValue;
     FLazyColumn: ColumnAttribute;
     FSelectEntityClassType: TClass;
+  protected
+    function GetCommand: TDMLCommand; override;
   public
     constructor Create(); override;
     destructor Destroy; override;
@@ -186,6 +188,11 @@ begin
   end
   else
     SQL := Generator.GenerateSelect(FCommand);
+end;
+
+function TSelectExecutor.GetCommand: TDMLCommand;
+begin
+  Result := FCommand;
 end;
 
 procedure TSelectExecutor.SelectObjectList(AList: TObject; AEnumMethod: TRttiMethod);

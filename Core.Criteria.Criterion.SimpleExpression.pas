@@ -10,6 +10,7 @@ uses
   ,Rtti
   ,SQL.Types
   ,SQL.Params
+  ,SQL.Commands
   ,Generics.Collections
   ;
 
@@ -22,7 +23,7 @@ type
   public
     constructor Create(const APropertyName: string; const AValue: TValue; const AOperator: TWhereOperator); virtual;
   public
-    function ToSqlString(AParams: TObjectList<TDBParam>): string; override;
+    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand): string; override;
     function GetWhereOperator(): TWhereOperator; override;
 
     property PropertyName: string read FPropertyName;
@@ -50,15 +51,25 @@ begin
   Result := FOperator;
 end;
 
-function TSimpleExpression.ToSqlString(AParams: TObjectList<TDBParam>): string;
+function TSimpleExpression.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand): string;
 var
   LParam: TDBParam;
+  LWhere: TSQLWhereField;
+  LParamName: string;
 begin
+  Assert(ACommand is TWhereCommand);
+  LParamName := ACommand.GetAndIncParameterName(FPropertyName);
+  LWhere := TSQLWhereField.Create(UpperCase(FPropertyName), ACommand.Table);
+  LWhere.MatchMode := GetMatchMode;
+  LWhere.WhereOperator := GetWhereOperator;
+  LWhere.ParamName := LParamName;
+  TWhereCommand(ACommand).WhereFields.Add(LWhere);
+
   {TODO -oLinas -cGeneral : generate simple expression sql string}
-  Result := UpperCase(FPropertyName);
+  Result := LWhere.ToSQLString;
   LParam := TDBParam.Create();
   LParam.SetFromTValue(FValue);
-  LParam.Name := ':' + FPropertyName;
+  LParam.Name := LParamName;   {TODO -oLinas -cGeneral : what if there are more than 1 parameter with the same fieldname????}
   AParams.Add(LParam);
 end;
 

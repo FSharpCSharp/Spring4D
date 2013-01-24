@@ -9,6 +9,7 @@ uses
   ,Core.Criteria.AbstractCriterion
   ,SQL.Types
   ,SQL.Params
+  ,SQl.Commands
   ,Generics.Collections
   ;
 
@@ -20,11 +21,15 @@ type
   public
     constructor Create(const APropertyName: string; const AOperator: TWhereOperator); virtual;
   public
-    function ToSqlString(AParams: TObjectList<TDBParam>): string; override;
+    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand): string; override;
     function GetWhereOperator(): TWhereOperator; override;
   end;
 
 implementation
+
+uses
+  SysUtils
+  ;
 
 { TNullExpression }
 
@@ -40,9 +45,18 @@ begin
   Result := FOperator;
 end;
 
-function TNullExpression.ToSqlString(AParams: TObjectList<TDBParam>): string;
+function TNullExpression.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand): string;
+var
+  LWhere: TSQLWhereField;
 begin
-  Result := FPropertyName;
+  Assert(ACommand is TWhereCommand);
+
+  LWhere := TSQLWhereField.Create(FPropertyName, ACommand.Table);
+  LWhere.MatchMode := GetMatchMode;
+  LWhere.WhereOperator := GetWhereOperator;
+  TWhereCommand(ACommand).WhereFields.Add(LWhere);
+
+  Result := LWhere.ToSQLString;
 end;
 
 end.

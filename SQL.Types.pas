@@ -134,25 +134,38 @@ type
   TMatchMode = (mmExact, mmStart, mmEnd, mmAnywhere);
 
   TWhereOperator = (woEqual = 0, woNotEqual, woMore, woLess, woLike, woNotLike,
-    woMoreOrEqual, woLessOrEqual, woIn, woNotIn, woIsNull, woIsNotNull);
+    woMoreOrEqual, woLessOrEqual, woIn, woNotIn, woIsNull, woIsNotNull, woOr, woOrEnd);
+
+  TLogicalOperator = (loAnd = 0, loOr);
 
 const
   WhereOpNames: array[TWhereOperator] of string = (
     {woEqual =} '=', {woNotEqual =} '<>', {woMore = }'>', {woLess = }'<', {woLike = }'LIKE', {woNotLike = }'NOT LIKE',
-    {woMoreOrEqual = }'>=', {woLessOrEqual = }'<=', {woIn = }'IN', {woNotIn = }'NOT IN', {woIsNull} 'IS NULL', {woIsNotNull} 'IS NOT NULL');
+    {woMoreOrEqual = }'>=', {woLessOrEqual = }'<=', {woIn = }'IN', {woNotIn = }'NOT IN', {woIsNull} 'IS NULL', {woIsNotNull} 'IS NOT NULL'
+    ,{woOr}'OR', {woOrEnd}''
+    );
+
+  LogicalOpNames: array[TLogicalOperator] of string = ('AND', 'OR');
 
 type
   TSQLWhereField = class(TSQLField)
   private
     FWhereOperator: TWhereOperator;
     FMatchMode: TMatchMode;
+    FLeftSQL: string;
+    FRightSQL: string;
+    FParamName: string;
   public
-    constructor Create(const AFieldname: string; ATable: TSQLTable); override;
+    constructor Create(const AFieldname: string; ATable: TSQLTable); overload; override;
+    constructor Create(const ALeftSQL, ARightSQL: string); reintroduce; overload;
 
     function ToSQLString(): string;
 
     property MatchMode: TMatchMode read FMatchMode write FMatchMode;
     property WhereOperator: TWhereOperator read FWhereOperator write FWhereOperator;
+    property LeftSQL: string read FLeftSQL write FLeftSQL;
+    property RightSQL: string read FRightSQL write FRightSQL;
+    property ParamName: string read FParamName write FParamName;
   end;
 
   TSQLGroupByField = class(TSQLField)
@@ -408,6 +421,16 @@ begin
   inherited Create(AFieldname, ATable);
   FWhereOperator := woEqual;
   FMatchMode := mmExact;
+  FParamName := ':' + AFieldname;
+end;
+
+constructor TSQLWhereField.Create(const ALeftSQL, ARightSQL: string);
+begin
+  inherited Create('', nil);
+  FWhereOperator := woOr;
+  FMatchMode := mmExact;
+  FLeftSQL := ALeftSQL;
+  FRightSQL := ARightSQL;
 end;
 
 function TSQLWhereField.ToSQLString: string;
@@ -415,8 +438,10 @@ begin
   case WhereOperator of
     woIsNull, woIsNotNull: Result := GetFullFieldname + ' ' + WhereOpNames[WhereOperator];
     woLike, woNotLike, woIn, woNotIn: Result := GetFullFieldname;
+    woOr: Result := Format('(%S %S %S)', [FLeftSQL, WhereOpNames[WhereOperator], FRightSQL]);
+    woOrEnd: Result := '';
     else
-      Result := GetFullFieldname + ' ' + WhereOpNames[WhereOperator] + ' :' + Fieldname + ' ';
+      Result := GetFullFieldname + ' ' + WhereOpNames[WhereOperator] + ' ' + FParamName + ' ';
   end;
 end;
 

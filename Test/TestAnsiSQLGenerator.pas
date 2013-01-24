@@ -233,12 +233,12 @@ const
   SQL_INSERT_TEST = 'INSERT INTO TEST.CUSTOMERS ('+ #13#10 +
     '  NAME,AGE,HEIGHT)'+ #13#10 +
     '  VALUES ('+ #13#10 +
-    ':NAME,:AGE,:HEIGHT);';
+    ':NAME1,:AGE1,:HEIGHT1);';
 
   SQL_INSERT_TEST_WITHOUT_SCHEMA = 'INSERT INTO CUSTOMERS ('+ #13#10 +
     '  NAME,AGE,HEIGHT)'+ #13#10 +
     '  VALUES ('+ #13#10 +
-    ':NAME,:AGE,:HEIGHT);';
+    ':NAME2,:AGE2,:HEIGHT2);';
 
 procedure TestTAnsiSQLGenerator.TestGenerateInsert;
 var
@@ -280,7 +280,7 @@ end;
 
 const
   SQL_UPDATE_TEST = 'UPDATE TEST.CUSTOMERS SET ' + #13#10
-  + 'NAME=:NAME,AGE=:AGE,HEIGHT=:HEIGHT' + #13#10 + ' WHERE ID=:ID;';
+  + 'NAME=:NAME1,AGE=:AGE1,HEIGHT=:HEIGHT1' + #13#10 + ' WHERE ID=:ID1;';
 
 procedure TestTAnsiSQLGenerator.TestGenerateUpdate;
 var
@@ -306,7 +306,7 @@ end;
 
 const
   SQL_DELETE_TEST = 'DELETE FROM TEST.CUSTOMERS' + #13#10
-  + ' WHERE ID=:ID;';
+  + ' WHERE ID=:ID1;';
 
 procedure TestTAnsiSQLGenerator.TestGenerateDelete;
 var

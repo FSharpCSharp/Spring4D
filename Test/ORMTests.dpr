@@ -104,7 +104,9 @@ uses
   SQL.Generator.NoSQL in '..\SQL.Generator.NoSQL.pas',
   Adapters.MongoDB in '..\Adapters.MongoDB.pas',
   mongoWire in '..\External\TMongoWire\mongoWire.pas',
-  TestAdapterMongoDB in 'TestAdapterMongoDB.pas';
+  TestAdapterMongoDB in 'TestAdapterMongoDB.pas',
+  SQL.Generator.MongoDB in '..\SQL.Generator.MongoDB.pas',
+  Core.Criteria.Criterion.LogicalExpression in '..\Core.Criteria.Criterion.LogicalExpression.pas';
 
 {$R *.RES}
 

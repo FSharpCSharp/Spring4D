@@ -8,6 +8,7 @@ uses
   ,SQL.Types
   ,Rtti
   ,SQL.Params
+  ,SQL.Commands
   ,Generics.Collections
   ;
 
@@ -18,7 +19,7 @@ type
   public
     constructor Create(const APropertyName: string; const AValue: TValue; AOperator: TWhereOperator; const AMatchMode: TMatchMode); reintroduce; overload;
 
-    function ToSqlString(AParams: TObjectList<TDBParam>): string; override;
+    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand): string; override;
   end;
 
 implementation
@@ -35,9 +36,17 @@ begin
   FMatchMode := AMatchMode;
 end;
 
-function TLikeExpression.ToSqlString(AParams: TObjectList<TDBParam>): string;
+function TLikeExpression.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand): string;
+var
+  LWhere: TSQLWhereField;
 begin
+  Assert(ACommand is TWhereCommand);
   Result := Format('%S %S %S', [UpperCase(PropertyName), WhereOpNames[GetWhereOperator], GetMatchModeString(FMatchMode, Value.AsString)]);
+
+  LWhere := TSQLWhereField.Create(Result, ACommand.Table);
+  LWhere.MatchMode := GetMatchMode;
+  LWhere.WhereOperator := GetWhereOperator;
+  TWhereCommand(ACommand).WhereFields.Add(LWhere);
 end;
 
 end.

@@ -46,6 +46,7 @@ type
   protected
     function CanGetIdentity(): Boolean; virtual;
     function CanGetSequenceValue(): Boolean; virtual;
+    function GetCommand: TDMLCommand; override;
   public
     constructor Create(); override;
     destructor Destroy; override;
@@ -200,6 +201,11 @@ begin
     LStmt := nil;
     LResultset := nil;
   end;
+end;
+
+function TInsertExecutor.GetCommand: TDMLCommand;
+begin
+  Result := FCommand;
 end;
 
 procedure TInsertExecutor.LoadIdFromSequence(AEntity: TObject; AResultset: IDBResultset);

@@ -37,6 +37,7 @@ uses
   ,Generics.Collections
   ,SQL.Interfaces
   ,SQL.Types
+  ,SQL.Commands
   ;
 
 type
@@ -86,7 +87,7 @@ type
   {$ENDREGION}
   ICriterion = interface(IInvokable)
     ['{E22DFB1C-0E0E-45F4-9740-9469164B4557}']
-    function ToSqlString(AParams: TObjectList<TDBParam>): string;
+    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand): string;
     procedure SetEntityClass(const Value: TClass);
     function GetEntityClass: TClass;
     function GetMatchMode(): TMatchMode;

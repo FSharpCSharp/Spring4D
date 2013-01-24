@@ -30,7 +30,9 @@ unit SQL.AbstractCommandExecutor;
 interface
 
 uses
-  Core.Interfaces, SQL.Interfaces, Generics.Collections, SQL.Params, Mapping.Attributes, SQL.Types;
+  Core.Interfaces, SQL.Interfaces, Generics.Collections, SQL.Params, Mapping.Attributes, SQL.Types
+  ,SQL.Commands
+  ;
 
 type
   TAbstractCommandExecutor = class
@@ -45,6 +47,7 @@ type
     function DoCreateParam(AColumn: ColumnAttribute; AValue: Variant): TDBParam; virtual;
     function CreateParam(AEntity: TObject; AColumn: ColumnAttribute): TDBParam; overload; virtual;
     function CreateParam(AEntity: TObject; AForeignColumn: ForeignJoinColumnAttribute): TDBParam; overload; virtual;
+    function GetCommand: TDMLCommand; virtual; abstract;
   public
     constructor Create(); virtual;
     destructor Destroy; override;
@@ -56,6 +59,7 @@ type
     procedure Build(AClass: TClass); virtual; abstract;
     procedure BuildParams(AEntity: TObject); virtual;
 
+    property Command: TDMLCommand read GetCommand;
     property Connection: IDBConnection read FConnection write SetConnection;
     property Generator: ISQLGenerator read FGenerator;
     property EntityClass: TClass read FClass write FClass;
@@ -79,6 +83,8 @@ uses
 procedure TAbstractCommandExecutor.BuildParams(AEntity: TObject);
 begin
   FParams.Clear;
+  if Assigned(Command) then
+    Command.Entity := AEntity;
 end;
 
 constructor TAbstractCommandExecutor.Create();
@@ -96,7 +102,7 @@ var
 begin
   bFree := False;
   Result := TDBParam.Create;
-  Result.Name := ':' + AForeignColumn.Name;
+  Result.Name := Command.GetExistingParameterName(AForeignColumn.Name);// ':' + AForeignColumn.Name;
   LVal := TRttiExplorer.GetMemberValue(AEntity, AForeignColumn.ReferencedColumnName);
   //convert/serialize objects to stream
   if LVal.IsObject then
@@ -119,7 +125,7 @@ var
   bFree: Boolean;
 begin
   Result := TDBParam.Create;
-  Result.Name := ':' + AColumn.Name;
+  Result.Name := Command.GetExistingParameterName(AColumn.Name); //':' + AColumn.Name;
   LVal := TRttiExplorer.GetMemberValueDeep(AEntity, AColumn.ClassMemberName);
   //convert/serialize objects to stream. If value is nullable or lazy get it's real value
   if LVal.IsObject then
@@ -150,7 +156,7 @@ end;
 function TAbstractCommandExecutor.DoCreateParam(AColumn: ColumnAttribute; AValue: Variant): TDBParam;
 begin
   Result := TDBParam.Create;
-  Result.Name := ':' + AColumn.Name;
+  Result.Name := Command.GetExistingParameterName(AColumn.Name);// ':' + AColumn.Name;
   Result.Value := AValue;
 end;
 

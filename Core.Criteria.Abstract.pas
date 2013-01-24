@@ -126,7 +126,6 @@ end;
 function TAbstractCriteria<T>.GenerateSqlStatement(AParams: TObjectList<TDBParam>): string;
 var
   LCriterion: ICriterion;
-  LCriterionSql: string;
   LExecutor: TSelectExecutor;
   LWhereField: TSQLWhereField;
   LOrderField: TSQLOrderField;
@@ -139,11 +138,7 @@ begin
 
     for LCriterion in Criterions do
     begin
-      LCriterionSql := LCriterion.ToSqlString(AParams);
-      LWhereField := TSQLWhereField.Create(LCriterionSql, LExecutor.Command.Table);
-      LWhereField.WhereOperator := LCriterion.GetWhereOperator;
-      LWhereField.MatchMode := LCriterion.GetMatchMode;
-      LExecutor.Command.WhereFields.Add(LWhereField);
+      LCriterion.ToSqlString(AParams, LExecutor.Command);
     end;
 
     for LOrder in FOrders do

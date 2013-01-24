@@ -31,12 +31,14 @@ interface
 
 uses
   SQL.AbstractSQLGenerator, SQL.Commands, SQL.Types, Generics.Collections, Mapping.Attributes
-  , SQL.Interfaces;
+  , SQL.Interfaces, SvSerializer;
 
 type
   TNoSQLGenerator = class(TAbstractSQLGenerator)
+  private
+    class var FSerializerFormat: TSvSerializeFormat;
   protected
-
+    class constructor Create;
   public
     function GetQueryLanguage(): TQueryLanguage; override;
     function GenerateSelect(ASelectCommand: TSelectCommand): string; override;
@@ -53,6 +55,8 @@ type
     function GetSQLTableCount(const ATablename: string): string; override;
     function GetSQLSequenceCount(const ASequenceName: string): string; override;
     function GetTableColumns(const ATableName: string): string; override;
+
+    class property SerializerFormat: TSvSerializeFormat read FSerializerFormat write FSerializerFormat;
   end;
 
 implementation
@@ -60,10 +64,16 @@ implementation
 uses
   Core.Exceptions
   ,Core.Utils
+  ,SvSerializerSuperJson
   ;
 
 
 { TNoSQLGenerator }
+
+class constructor TNoSQLGenerator.Create;
+begin
+  FSerializerFormat := sstSuperJson;
+end;
 
 function TNoSQLGenerator.GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): string;
 begin
@@ -102,7 +112,8 @@ end;
 
 function TNoSQLGenerator.GenerateInsert(AInsertCommand: TInsertCommand): string;
 begin
-  Result := '';
+  Assert(Assigned(AInsertCommand.Entity));
+  TSvSerializer.SerializeObject(AInsertCommand.Entity, Result, FSerializerFormat);
 end;
 
 function TNoSQLGenerator.GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string;
@@ -117,7 +128,8 @@ end;
 
 function TNoSQLGenerator.GenerateUpdate(AUpdateCommand: TUpdateCommand): string;
 begin
-  Result := '';
+  Assert(Assigned(AUpdateCommand.Entity));
+  TSvSerializer.SerializeObject(AUpdateCommand.Entity, Result, FSerializerFormat);
 end;
 
 function TNoSQLGenerator.GetQueryLanguage: TQueryLanguage;

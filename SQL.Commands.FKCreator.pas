@@ -37,6 +37,8 @@ type
   private
     FCommand: TCreateFKCommand;
     FTable: TSQLTable;
+  protected
+    function GetCommand: TDMLCommand; override;
   public
     constructor Create(); override;
     destructor Destroy; override;
@@ -114,6 +116,11 @@ begin
   inherited Execute(AEntity);
 
   LStmt.Execute();
+end;
+
+function TForeignKeyCreateExecutor.GetCommand: TDMLCommand;
+begin
+  Result := FCommand;
 end;
 
 end.

@@ -39,6 +39,8 @@ type
     FTable: TSQLTable;
     FCommand: TDeleteCommand;
     FPrimaryKeyColumnName: string;
+  protected
+    function GetCommand: TDMLCommand; override;
   public
     constructor Create(); override;
     destructor Destroy; override;
@@ -88,7 +90,7 @@ begin
   inherited BuildParams(AEntity);
 
   LParam := TDBParam.Create;
-  LParam.Name := ':' + FPrimaryKeyColumnName;
+  LParam.Name := Command.GetExistingParameterName(FPrimaryKeyColumnName); // ':' + FPrimaryKeyColumnName;
   //TRttiExplorer.GetPrimaryKeyValue
   LVal := TRttiExplorer.GetPrimaryKeyValue(AEntity);
  // LVal := TRttiExplorer.GetMemberValue(AEntity, FPrimaryKeyColumnName);
@@ -124,6 +126,11 @@ begin
   finally
     LStmt := nil;
   end;
+end;
+
+function TDeleteExecutor.GetCommand: TDMLCommand;
+begin
+  Result := FCommand;
 end;
 
 destructor TDeleteExecutor.Destroy;

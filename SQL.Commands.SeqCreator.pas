@@ -38,6 +38,7 @@ type
     FSequence: TCreateSequenceCommand;
   protected
     function SequenceExists(): Boolean; virtual;
+    function GetCommand: TDMLCommand; override;
   public
     constructor Create(); override;
     destructor Destroy; override;
@@ -103,6 +104,11 @@ begin
   inherited Execute(AEntity);
 
   LStmt.Execute();
+end;
+
+function TSequenceCreateExecutor.GetCommand: TDMLCommand;
+begin
+  Result := nil;
 end;
 
 function TSequenceCreateExecutor.SequenceExists: Boolean;

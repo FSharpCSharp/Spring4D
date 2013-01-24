@@ -232,7 +232,7 @@ begin
 
       {TODO -oLinas -cGeneral : implement where operators}
 
-      LSqlBuilder.Append(Format('%0:S=:%0:S', [LWhereField.Fieldname]));
+      LSqlBuilder.Append(Format('%0:S=%1:S', [LWhereField.Fieldname, ADeleteCommand.GetAndIncParameterName(LWhereField.Fieldname)]));
 
       Inc(ix);
     end;
@@ -301,7 +301,7 @@ begin
     end;
 
     sFields := sFields + AInsertCommand.InsertFields[i].Fieldname;
-    sParams := sParams + ':' + AInsertCommand.InsertFields[i].Fieldname;
+    sParams := sParams + AInsertCommand.GetAndIncParameterName(AInsertCommand.InsertFields[i].Fieldname);//  ':' + AInsertCommand.InsertFields[i].Fieldname;
   end;
 
   Result := Result + AInsertCommand.Table.Name + ' (' + CRLF + '  ' + sFields + ')' + CRLF +
@@ -370,7 +370,7 @@ begin
       if ix > 0 then
         LSqlBuilder.Append(',');
 
-      LSqlBuilder.Append(Format('%0:S=:%0:S', [LField.Fieldname]));
+      LSqlBuilder.Append(Format('%0:S=%1:S', [LField.Fieldname, AUpdateCommand.GetAndIncParameterName(LField.Fieldname)]));
       Inc(ix);
     end;
 
@@ -383,7 +383,7 @@ begin
       else
         LSqlBuilder.Append(' AND ');
 
-      LSqlBuilder.Append(Format('%0:S=:%0:S', [LWhereField.Fieldname]));
+      LSqlBuilder.Append(Format('%0:S=%1:S', [LWhereField.Fieldname, AUpdateCommand.GetAndIncParameterName(LWhereField.Fieldname)]));
 
       Inc(ix);
     end;
@@ -652,20 +652,35 @@ function TAnsiSQLGenerator.GetWhereAsString(const AWhereFields: TEnumerable<TSQL
 var
   i: Integer;
   LField: TSQLWhereField;
+  LSkip: Boolean;
 begin
   Result := '';
   i := 0;
+  LSkip := False;
   for LField in AWhereFields do
   begin
-    if i > 0 then
-      Result := Result + ' AND '
-    else
-      Result := CRLF + '  WHERE ';
+    if not LSkip then
+    begin
+      if i > 0 then
+        Result := Result + ' AND '
+      else
+        Result := CRLF + '  WHERE ';
+    end;
 
 
-    Result := Result + LField.ToSQLString;
+    case LField.WhereOperator of
+      woOr:
+      begin
+        Result := Result + LField.ToSQLString;
+        LSkip := True;
+      end;
+      woOrEnd: LSkip := False;
+    end;
 
     Inc(i);
+
+    if not LSkip then
+      Result := Result + LField.ToSQLString;
   end;
 end;
 

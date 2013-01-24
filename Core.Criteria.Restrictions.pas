@@ -134,6 +134,13 @@ type
     ///	</summary>
     {$ENDREGION}
     class function NotIn<T>(const APropertyName: string; const AValues: TArray<T>): ICriterion;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Return the disjuction of two expressions.
+    ///	</summary>
+    {$ENDREGION}
+    class function &Or(ALeft, ARight: ICriterion): ICriterion;
   end;
 
 implementation
@@ -143,9 +150,15 @@ uses
   ,Core.Criteria.Criterion.NullExpression
   ,Core.Criteria.Criterion.LikeExpression
   ,Core.Criteria.Criterion.InExpression
+  ,Core.Criteria.Criterion.LogicalExpression
   ;
 
 { TRestrictions }
+
+class function TRestrictions.&Or(ALeft, ARight: ICriterion): ICriterion;
+begin
+  Result := TLogicalExpression.Create(ALeft, ARight, woOr);
+end;
 
 class function TRestrictions.Eq(const APropertyName: string;
   const AValue: TValue): ICriterion;

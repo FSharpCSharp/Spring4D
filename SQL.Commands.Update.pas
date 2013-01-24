@@ -41,6 +41,8 @@ type
     FColumns: TList<ColumnAttribute>;
     FEntityMap: TEntityMap;
     FMapped: Boolean;
+  protected
+    function GetCommand: TDMLCommand; override;
   public
     constructor Create(); override;
     destructor Destroy; override;
@@ -109,6 +111,11 @@ begin
   finally
     LStmt := nil;
   end;
+end;
+
+function TUpdateExecutor.GetCommand: TDMLCommand;
+begin
+  Result := FCommand;
 end;
 
 procedure TUpdateExecutor.Build(AClass: TClass);

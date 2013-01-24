@@ -35,6 +35,7 @@ uses
   Core.Interfaces
   ,SQL.Types
   ,SQL.Params
+  ,SQL.Commands
   ,Generics.Collections
   ;
 
@@ -45,7 +46,7 @@ type
     procedure SetEntityClass(const Value: TClass);
     function GetEntityClass: TClass;
   public
-    function ToSqlString(AParams: TObjectList<TDBParam>): string; virtual; abstract;
+    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand): string; virtual; abstract;
     function GetMatchMode(): TMatchMode; virtual;
     function GetWhereOperator(): TWhereOperator; virtual;
 

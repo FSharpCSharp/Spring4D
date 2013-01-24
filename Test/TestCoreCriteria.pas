@@ -40,6 +40,7 @@ type
     procedure List_In_NotIn();
     procedure List_Property_Eq();
     procedure Page_GEq_OrderDesc();
+    procedure List_Or_And();
   end;
 
 implementation
@@ -211,6 +212,24 @@ begin
   FCriteria.Add(TRestrictions.Like(CUSTNAME, 'Bar', mmEnd));
   LCustomers := FCriteria.List;
   CheckEquals(1, LCustomers.Count);
+end;
+
+procedure TestTCriteria.List_Or_And;
+var
+  LCustomers: IList<TCustomer>;
+  Age: IProperty;
+begin
+  Age := TProperty.ForName(CUSTAGE);
+  InsertCustomer(42, 'Foo');
+  InsertCustomer(50, 'Bar');
+
+  LCustomers := FCriteria.Add(TRestrictions.Or(Age.Eq(42), age.Eq(50)))
+    .Add(Age.GEq(10))
+    .AddOrder(Age.Desc)
+    .List;
+  CheckEquals(2, LCustomers.Count);
+  CheckEquals(50, LCustomers[0].Age);
+  CheckEquals(42, LCustomers[1].Age);
 end;
 
 procedure TestTCriteria.List_Property_Eq;

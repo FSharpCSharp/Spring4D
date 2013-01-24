@@ -8,6 +8,7 @@ uses
   ,SQL.Types
   ,Rtti
   ,SQL.Params
+  ,SQL.Commands
   ,Generics.Collections
   ;
 
@@ -20,7 +21,7 @@ type
   public
     constructor Create(const APropertyName: string; const AValues: TArray<T>; AOperator: TWhereOperator); reintroduce; overload;
 
-    function ToSqlString(AParams: TObjectList<TDBParam>): string; override;
+    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand): string; override;
   end;
 
 implementation
@@ -39,10 +40,19 @@ begin
   FValues := AValues;
 end;
 
-function TInExpression<T>.ToSqlString(AParams: TObjectList<TDBParam>): string;
+function TInExpression<T>.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand): string;
+var
+  LWhere: TSQLWhereField;
 begin
+  Assert(ACommand is TWhereCommand);
+
   Result := Format('%S %S (%S)',
     [UpperCase(PropertyName), WhereOpNames[GetWhereOperator], ValuesToSeparatedString()]);
+
+  LWhere := TSQLWhereField.Create(Result, ACommand.Table);
+  LWhere.MatchMode := GetMatchMode;
+  LWhere.WhereOperator := GetWhereOperator;
+  TWhereCommand(ACommand).WhereFields.Add(LWhere);
 end;
 
 function TInExpression<T>.ValuesToSeparatedString: string;

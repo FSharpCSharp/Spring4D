@@ -43,12 +43,29 @@ type
   TDMLCommand = class abstract
   private
     FTable: TSQLTable;
+    FEntity: TObject;
+    FParameterNames: TDictionary<string,Integer>;
   protected
     procedure SetTable(AColumns: TList<ColumnAttribute>); virtual; abstract;
   public
     constructor Create(ATable: TSQLTable); virtual;
+    destructor Destroy; override;
 
+    function GetAndIncParameterName(const AFieldname: string): string; virtual;
+    function GetExistingParameterName(const AFieldname: string): string; virtual;
+
+    property Entity: TObject read FEntity write FEntity;
     property Table: TSQLTable read FTable;
+  end;
+
+  TWhereCommand = class(TDMLCommand)
+  private
+    FWhereFields: TObjectList<TSQLWhereField>;
+  public
+    constructor Create(ATable: TSQLTable); override;
+    destructor Destroy; override;
+
+    property WhereFields: TObjectList<TSQLWhereField> read FWhereFields;
   end;
 
   {$REGION 'Documentation'}
@@ -56,11 +73,10 @@ type
   ///	  Represents <c>select</c> command.
   ///	</summary>
   {$ENDREGION}
-  TSelectCommand = class(TDMLCommand)
+  TSelectCommand = class(TWhereCommand)
   private
     FSelectFields: TObjectList<TSQLSelectField>;
     FJoins: TObjectList<TSQLJoin>;
-    FWhereFields: TObjectList<TSQLWhereField>;
     FGroupByFields: TObjectList<TSQLGroupByField>;
     FOrderByFields: TObjectList<TSQLOrderField>;
     FPrimaryKeyColumn: ColumnAttribute;
@@ -77,7 +93,6 @@ type
 
     property SelectFields: TObjectList<TSQLSelectField> read FSelectFields;
     property Joins: TObjectList<TSQLJoin> read FJoins;
-    property WhereFields: TObjectList<TSQLWhereField> read FWhereFields;
     property GroupByFields: TObjectList<TSQLGroupByField> read FGroupByFields;
     property OrderByFields: TObjectList<TSQLOrderField> read FOrderByFields;
 
@@ -109,10 +124,9 @@ type
   ///	  Represents <c>update</c> command.
   ///	</summary>
   {$ENDREGION}
-  TUpdateCommand = class(TDMLCommand)
+  TUpdateCommand = class(TWhereCommand)
   private
     FUpdateFields: TObjectList<TSQLField>;
-    FWhereFields: TObjectList<TSQLWhereField>;
     FPrimaryKeyColumn: ColumnAttribute;
   public
     constructor Create(ATable: TSQLTable); override;
@@ -122,7 +136,6 @@ type
 
     property PrimaryKeyColumn: ColumnAttribute read FPrimaryKeyColumn write FPrimaryKeyColumn;
     property UpdateFields: TObjectList<TSQLField> read FUpdateFields;
-    property WhereFields: TObjectList<TSQLWhereField> read FWhereFields;
   end;
 
   {$REGION 'Documentation'}
@@ -130,9 +143,8 @@ type
   ///	  Represents <c>delete</c> command.
   ///	</summary>
   {$ENDREGION}
-  TDeleteCommand = class(TDMLCommand)
+  TDeleteCommand = class(TWhereCommand)
   private
-    FWhereFields: TObjectList<TSQLWhereField>;
     FPrimaryKeyColumnName: string;
   public
     constructor Create(ATable: TSQLTable); override;
@@ -141,7 +153,6 @@ type
     procedure SetTable(AColumns: TList<ColumnAttribute>); override;
 
     property PrimaryKeyColumnName: string read FPrimaryKeyColumnName write FPrimaryKeyColumnName;
-    property WhereFields: TObjectList<TSQLWhereField> read FWhereFields;
   end;
 
   {$REGION 'Documentation'}
@@ -217,7 +228,6 @@ begin
   inherited Create(ATable);
   FSelectFields := TObjectList<TSQLSelectField>.Create;
   FJoins := TObjectList<TSQLJoin>.Create;
-  FWhereFields := TObjectList<TSQLWhereField>.Create;
   FGroupByFields := TObjectList<TSQLGroupByField>.Create;
   FOrderByFields := TObjectList<TSQLOrderField>.Create;
   FTables := TObjectList<TSQLTable>.Create(True);
@@ -228,7 +238,6 @@ destructor TSelectCommand.Destroy;
 begin
   FSelectFields.Free;
   FJoins.Free;
-  FWhereFields.Free;
   FGroupByFields.Free;
   FOrderByFields.Free;
   FTables.Free;
@@ -296,7 +305,8 @@ begin
     Exit;
 
   LWhereField := TSQLWhereField.Create(FForeignColumn.Name, FTable);
-  FWhereFields.Add(LWhereField);
+  LWhereField.ParamName := GetAndIncParameterName(FForeignColumn.Name);
+  WhereFields.Add(LWhereField);
 end;
 
 procedure TSelectCommand.SetFromPrimaryColumn();
@@ -307,7 +317,8 @@ begin
   if Assigned(FPrimaryKeyColumn) then
   begin
     LWhereField := TSQLWhereField.Create(FPrimaryKeyColumn.Name, FTable);
-    FWhereFields.Add(LWhereField);
+    LWhereField.ParamName := GetAndIncParameterName(FPrimaryKeyColumn.Name);
+    WhereFields.Add(LWhereField);
   end;
 end;
 
@@ -319,7 +330,7 @@ begin
   Assert(Assigned(AColumns), 'AColumns not assigned');
   FSelectFields.Clear;
   FJoins.Clear;
-  FWhereFields.Clear;
+  WhereFields.Clear;
   FGroupByFields.Clear;
   FOrderByFields.Clear;
 
@@ -371,14 +382,12 @@ constructor TUpdateCommand.Create(ATable: TSQLTable);
 begin
   inherited Create(ATable);
   FUpdateFields := TObjectList<TSQLField>.Create;
-  FWhereFields := TObjectList<TSQLWhereField>.Create;
   FPrimaryKeyColumn := nil;
 end;
 
 destructor TUpdateCommand.Destroy;
 begin
   FUpdateFields.Free;
-  FWhereFields.Free;
   inherited Destroy;
 end;
 
@@ -391,7 +400,7 @@ begin
   Assert(Assigned(AColumns), 'AColumns not assigned');
   //add fields
   FUpdateFields.Clear;
-  FWhereFields.Clear;
+  WhereFields.Clear;
 
   for LColumn in AColumns do
   begin
@@ -406,7 +415,8 @@ begin
   if Assigned(FPrimaryKeyColumn) then
   begin
     LWhereField := TSQLWhereField.Create(FPrimaryKeyColumn.Name, FTable);
-    FWhereFields.Add(LWhereField);
+    LWhereField.ParamName := GetAndIncParameterName(FPrimaryKeyColumn.Name);
+    WhereFields.Add(LWhereField);
   end;
 
 end;
@@ -417,12 +427,10 @@ constructor TDeleteCommand.Create(ATable: TSQLTable);
 begin
   inherited Create(ATable);
   FPrimaryKeyColumnName := '';
-  FWhereFields := TObjectList<TSQLWhereField>.Create;
 end;
 
 destructor TDeleteCommand.Destroy;
 begin
-  FWhereFields.Free;
   inherited Destroy;
 end;
 
@@ -432,10 +440,11 @@ var
 begin
   Assert(FPrimaryKeyColumnName <> '', 'Primary key column name is not specified for deletion');
   //add fields
-  FWhereFields.Clear;
+  WhereFields.Clear;
 
   LWhereField := TSQLWhereField.Create(FPrimaryKeyColumnName, FTable);
-  FWhereFields.Add(LWhereField);
+  LWhereField.ParamName := GetAndIncParameterName(FPrimaryKeyColumnName);
+  WhereFields.Add(LWhereField);
 end;
 
 { TDMLCommand }
@@ -444,6 +453,44 @@ constructor TDMLCommand.Create(ATable: TSQLTable);
 begin
   inherited Create;
   FTable := ATable;
+  FParameterNames := TDictionary<string,Integer>.Create();
+end;
+
+destructor TDMLCommand.Destroy;
+begin
+  FParameterNames.Free;
+  inherited Destroy;
+end;
+
+function TDMLCommand.GetAndIncParameterName(const AFieldname: string): string;
+var
+  LIndex: Integer;
+  LUpFieldname: string;
+begin
+  LUpFieldname := UpperCase(AFieldname);
+  if not FParameterNames.TryGetValue(LUpFieldname, LIndex) then
+  begin
+    LIndex := 1;
+  end
+  else
+  begin
+    Inc(LIndex);
+  end;
+  FParameterNames.AddOrSetValue(LUpFieldname, LIndex);
+  Result := Format(':%S%D', [LUpFieldname, LIndex]);
+end;
+
+function TDMLCommand.GetExistingParameterName(const AFieldname: string): string;
+var
+  LIndex: Integer;
+  LUpFieldname: string;
+begin
+  LUpFieldname := UpperCase(AFieldname);
+  if not FParameterNames.TryGetValue(LUpFieldname, LIndex) then
+  begin
+    LIndex := 1;
+  end;
+  Result := Format(':%S%D', [LUpFieldname, LIndex]);
 end;
 
 { TCreateTableCommand }
@@ -527,6 +574,20 @@ constructor TCreateSequenceCommand.Create(ASequenceAttribute: SequenceAttribute)
 begin
   inherited Create;
   FSequence := ASequenceAttribute;
+end;
+
+{ TWhereCommand }
+
+constructor TWhereCommand.Create(ATable: TSQLTable);
+begin
+  inherited Create(ATable);
+  FWhereFields := TObjectList<TSQLWhereField>.Create();
+end;
+
+destructor TWhereCommand.Destroy;
+begin
+  FWhereFields.Free;
+  inherited Destroy;
 end;
 
 end.
