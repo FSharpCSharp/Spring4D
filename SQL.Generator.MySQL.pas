@@ -33,6 +33,11 @@ uses
   SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces, SQL.Commands, SQL.Types;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents <b>MySQL</b> SQL generator.
+  ///	</summary>
+  {$ENDREGION}
   TMySQLGenerator = class(TAnsiSQLGenerator)
   public
     function GetQueryLanguage(): TQueryLanguage; override;

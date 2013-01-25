@@ -34,6 +34,11 @@ uses
   , SQL.Interfaces, SvSerializer;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents base <b>NoSQL</b> database statements generator.
+  ///	</summary>
+  {$ENDREGION}
   TNoSQLGenerator = class(TAbstractSQLGenerator)
   private
     class var FSerializerFormat: TSvSerializeFormat;

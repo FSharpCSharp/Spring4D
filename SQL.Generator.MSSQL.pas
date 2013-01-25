@@ -33,6 +33,11 @@ uses
   SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces, SQL.Types;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents <b>Microsoft SQL Server</b> SQL generator.
+  ///	</summary>
+  {$ENDREGION}
   TMSSQLServerSQLGenerator = class(TAnsiSQLGenerator)
   public
     function GetQueryLanguage(): TQueryLanguage; override;

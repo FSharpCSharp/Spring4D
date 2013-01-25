@@ -197,6 +197,13 @@ type
     ///	</summary>
     {$ENDREGION}
     class function LtProperty(const APropertyName, AOtherPropertyName: string): ICriterion;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Apply a "<b>between</b>" constraint to the named property.
+    ///	</summary>
+    {$ENDREGION}
+    class function Between(const APropertyName: string; const ALow, AHigh: TValue): ICriterion;
   end;
 
 implementation
@@ -208,6 +215,7 @@ uses
   ,Core.Criteria.Criterion.InExpression
   ,Core.Criteria.Criterion.LogicalExpression
   ,Core.Criteria.Criterion.PropertyExpression
+  ,Core.Criteria.Criterion.BetweenExpression
   ;
 
 { TRestrictions }
@@ -230,6 +238,12 @@ end;
 class function TRestrictions.&And(ALeft, ARight: ICriterion): ICriterion;
 begin
   Result := TLogicalExpression.Create(ALeft, ARight, woAnd);
+end;
+
+class function TRestrictions.Between(const APropertyName: string; const ALow,
+  AHigh: TValue): ICriterion;
+begin
+  Result := TBetweenExpression.Create(APropertyName, ALow, AHigh, woBetween);
 end;
 
 class function TRestrictions.Eq(const APropertyName: string;

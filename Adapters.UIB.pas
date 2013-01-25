@@ -34,6 +34,11 @@ uses
   , SQL.Generator.Ansi, UIB, uibdataset, uiblib;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents Unified Interbase resultset.
+  ///	</summary>
+  {$ENDREGION}
   TUIBResultSetAdapter = class(TDriverResultSetAdapter<TUIBDataSet>)
   private
     FFieldCache: TDictionary<string,TField>;
@@ -57,6 +62,11 @@ type
 
   EUIBStatementAdapterException = Exception;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents Unified Interbase statement.
+  ///	</summary>
+  {$ENDREGION}
   TUIBStatementAdapter = class(TDriverStatementAdapter<TUIBStatement>)
   protected
     procedure AssignParams(AFrom: TSQLParams; ATo: TSQLParams); virtual;
@@ -69,6 +79,11 @@ type
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents Unified Interbase connection.
+  ///	</summary>
+  {$ENDREGION}
   TUIBConnectionAdapter = class(TDriverConnectionAdapter<TUIBDataBase>)
   public
     constructor Create(const AConnection: TUIBDataBase); override;
@@ -83,6 +98,11 @@ type
 
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents Unified Interbase transaction.
+  ///	</summary>
+  {$ENDREGION}
   TUIBTransactionAdapter = class(TDriverTransactionAdapter<TUIBTransaction>)
   protected
     function InTransaction(): Boolean; override;

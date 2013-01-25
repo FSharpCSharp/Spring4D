@@ -35,6 +35,11 @@ uses
   ;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents DBX resultset.
+  ///	</summary>
+  {$ENDREGION}
   TDBXResultSetAdapter = class(TDriverResultSetAdapter<TSQLQuery>)
   private
     FFieldCache: TDictionary<string,TField>;
@@ -55,6 +60,11 @@ type
 
   EDBXStatementAdapterException = Exception;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents DBX statement.
+  ///	</summary>
+  {$ENDREGION}
   TDBXStatementAdapter = class(TDriverStatementAdapter<TSQLQuery>)
   public
     constructor Create(const AStatement: TSQLQuery); override;
@@ -65,6 +75,11 @@ type
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents DBX connection.
+  ///	</summary>
+  {$ENDREGION}
   TDBXConnectionAdapter = class(TDriverConnectionAdapter<TSQLConnection>)
   public
     constructor Create(const AConnection: TSQLConnection); override;
@@ -77,6 +92,11 @@ type
     function GetDriverName: string; override;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents DBX transaction.
+  ///	</summary>
+  {$ENDREGION}
   TDBXTransactionAdapter = class(TDriverTransactionAdapter<TDBXTransaction>)
   protected
     function InTransaction(): Boolean; override;

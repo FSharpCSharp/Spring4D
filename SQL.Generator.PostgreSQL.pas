@@ -33,6 +33,11 @@ uses
   SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces, SQL.Commands, SQL.Types;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents <b>PostgreSQL</b> SQL generator.
+  ///	</summary>
+  {$ENDREGION}
   TPostgreSQLGenerator = class(TAnsiSQLGenerator)
   public
     function GetQueryLanguage(): TQueryLanguage; override;

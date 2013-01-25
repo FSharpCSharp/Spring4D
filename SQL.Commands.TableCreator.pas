@@ -33,6 +33,12 @@ uses
   SQL.AbstractCommandExecutor, SQL.Commands, SQL.Types;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Responsible for building and executing statements which create tables
+  ///	  in the database.
+  ///	</summary>
+  {$ENDREGION}
   TTableCreateExecutor = class(TAbstractCommandExecutor)
   private
     FCommand: TCreateTableCommand;
@@ -72,7 +78,7 @@ begin
   LEntityData := TEntityCache.Get(AClass);
   LAtrTable := LEntityData.EntityTable;
   if not Assigned(LAtrTable) then
-    raise ETableNotSpecified.Create('Table not specified');
+    raise ETableNotSpecified.CreateFmt('Table not specified for class "%S"', [AClass.ClassName]);
 
   FTable.SetFromAttribute(LAtrTable);
   FCommand.SetTable(LEntityData.Columns);

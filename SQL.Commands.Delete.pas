@@ -34,6 +34,11 @@ uses
   ,Generics.Collections, Core.Interfaces;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Responsible for building and executing <c>delete</c> statements. 
+  ///	</summary>
+  {$ENDREGION}
   TDeleteExecutor = class(TAbstractCommandExecutor)
   private
     FTable: TSQLTable;
@@ -69,7 +74,7 @@ begin
   EntityClass := AClass;
   LAtrTable := TRttiExplorer.GetTable(EntityClass);
   if not Assigned(LAtrTable) then
-    raise ETableNotSpecified.Create('Table not specified');
+    raise ETableNotSpecified.CreateFmt('Table not specified for class "%S"', [AClass.ClassName]);
 
   FTable.SetFromAttribute(LAtrTable);
 
@@ -90,12 +95,9 @@ begin
   inherited BuildParams(AEntity);
 
   LParam := TDBParam.Create;
-  LParam.Name := Command.GetExistingParameterName(FPrimaryKeyColumnName); // ':' + FPrimaryKeyColumnName;
-  //TRttiExplorer.GetPrimaryKeyValue
+  LParam.Name := Command.GetExistingParameterName(FPrimaryKeyColumnName);
   LVal := TRttiExplorer.GetPrimaryKeyValue(AEntity);
- // LVal := TRttiExplorer.GetMemberValue(AEntity, FPrimaryKeyColumnName);
-  LParam.Value := TUtils.AsVariant(LVal); // LVal.AsVariant;
- // LParam.ParamType := FromTValueTypeToFieldType(LVal);
+  LParam.Value := TUtils.AsVariant(LVal);
   SQLParameters.Add(LParam);
 end;
 

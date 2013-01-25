@@ -34,6 +34,11 @@ uses
   , Mapping.Attributes, Core.EntityMap, Classes, Core.Interfaces;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Responsible for building and executing <c>update</c> statements.
+  ///	</summary>
+  {$ENDREGION}
   TUpdateExecutor = class(TAbstractCommandExecutor)
   private
     FTable: TSQLTable;
@@ -128,7 +133,7 @@ begin
   LAtrTable := LCache.EntityTable;
 
   if not Assigned(LAtrTable) then
-    raise ETableNotSpecified.Create('Table not specified');
+    raise ETableNotSpecified.CreateFmt('Table not specified for class "%S"', [AClass.ClassName]);
 
   FTable.SetFromAttribute(LAtrTable);
   FColumns.Clear;

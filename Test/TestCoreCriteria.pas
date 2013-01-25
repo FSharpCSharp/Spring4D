@@ -45,6 +45,7 @@ type
     procedure List_And_And();
     procedure List_Not_Eq();
     procedure List_NeProperty();
+    procedure List_Between();
   end;
 
 implementation
@@ -110,6 +111,29 @@ begin
     .List;
   CheckEquals(1, LCustomers.Count);
   CheckEquals(42, LCustomers[0].Age);
+end;
+
+procedure TestTCriteria.List_Between;
+var
+  LCustomers: IList<TCustomer>;
+  Age: IProperty;
+begin
+  Age := TProperty.ForName(CUSTAGE);
+  InsertCustomer(42, 'Foo');
+  InsertCustomer(50, 'Bar');
+
+  LCustomers := FCriteria.Add(TRestrictions.Between(CUSTAGE, 42, 50))
+    .List;
+
+  CheckEquals(2, LCustomers.Count);
+  CheckEquals(42, LCustomers[0].Age);
+  CheckEquals(50, LCustomers[1].Age);
+
+  FCriteria.Clear;
+  LCustomers := FCriteria.Add(Age.Between(43, 50))
+    .List;
+  CheckEquals(1, LCustomers.Count);
+  CheckEquals(50, LCustomers[0].Age);
 end;
 
 procedure TestTCriteria.List_NeProperty;

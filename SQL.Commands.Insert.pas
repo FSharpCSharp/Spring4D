@@ -34,6 +34,11 @@ uses
   , Mapping.Attributes;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Responsible for building and executing <c>insert</c> statements.
+  ///	</summary>
+  {$ENDREGION}
   TInsertExecutor = class(TAbstractCommandExecutor)
   private
     FTable: TSQLTable;
@@ -82,7 +87,7 @@ begin
   LEntityData := TEntityCache.Get(AClass);
   LAtrTable := LEntityData.EntityTable;
   if not Assigned(LAtrTable) then
-    raise ETableNotSpecified.Create('Table not specified');
+    raise ETableNotSpecified.CreateFmt('Table not specified for class "%S"', [AClass.ClassName]);
 
   FTable.SetFromAttribute(LAtrTable);
 

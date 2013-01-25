@@ -33,6 +33,12 @@ uses
   SQL.AbstractCommandExecutor, SQL.Commands, SQL.Types;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Responsible for building and executing statements to create foreign
+  ///	  keys.
+  ///	</summary>
+  {$ENDREGION}
   TForeignKeyCreateExecutor = class(TAbstractCommandExecutor)
   private
     FCommand: TCreateFKCommand;

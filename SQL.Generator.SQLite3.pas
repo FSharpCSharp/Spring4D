@@ -33,6 +33,11 @@ uses
   SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces, SQL.Commands, SQL.Types, Generics.Collections, SysUtils;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents <b>SQLite3</b> SQL generator.
+  ///	</summary>
+  {$ENDREGION}
   TSQLiteSQLGenerator = class(TAnsiSQLGenerator)
   protected
     procedure DoGenerateBackupTable(const ATableName: string; var ASqlBuilder: TStringBuilder); override;

@@ -33,15 +33,35 @@ uses
   Adapters.ADO, SysUtils, Core.Interfaces;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represent Sybase ASA resultset.
+  ///	</summary>
+  {$ENDREGION}
   TASAResultsetAdapter = class(TADOResultSetAdapter);
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represent Sybase ASA statement.
+  ///	</summary>
+  {$ENDREGION}
   TASAStatementAdapter = class(TADOStatementAdapter);
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represent Sybase ASA connection.
+  ///	</summary>
+  {$ENDREGION}
   TASAConnectionAdapter = class(TADOConnectionAdapter)
   public
     function GetDriverName: string; override;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represent Sybase ASA transaction.
+  ///	</summary>
+  {$ENDREGION}
   TASATransactionAdapter = class(TADOTransactionAdapter);
 
   ESybaseASAStatementAdapterException = Exception;

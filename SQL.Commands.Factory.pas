@@ -40,6 +40,11 @@ type
   end;
  }
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents factory which creates custom statement executors.
+  ///	</summary>
+  {$ENDREGION}
   TCommandFactory = class
   public
     constructor Create(); virtual;

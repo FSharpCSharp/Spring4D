@@ -34,6 +34,11 @@ uses
   , Mapping.Attributes, Core.Interfaces;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Responsible for building and executing paged statements.
+  ///	</summary>
+  {$ENDREGION}
   TPageExecutor = class(TAbstractCommandExecutor)
   private
     FPage: Integer;

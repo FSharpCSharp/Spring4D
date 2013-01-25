@@ -7,6 +7,11 @@ uses
   ;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents <b>MongoDB</b> query generator.
+  ///	</summary>
+  {$ENDREGION}
   TMongoDBGenerator = class(TNoSQLGenerator)
   public
     function GetQueryLanguage(): TQueryLanguage; override;

@@ -34,6 +34,7 @@ type
     function NotInStr(const AValues: TArray<string>): ICriterion;
     function &InInt(const AValues: TArray<Integer>): ICriterion;
     function NotInInt(const AValues: TArray<Integer>): ICriterion;
+    function Between(const ALow, AHigh: TValue): ICriterion;
 
     function EqProperty(AOther: IProperty): ICriterion; overload;
     function EqProperty(const AOtherPropertyName: string): ICriterion; overload;
@@ -68,8 +69,6 @@ type
     FEntityClass: TClass;
   protected
     constructor Create(); virtual;
-
-    class function CreateSQLTable(AEntityClass: TClass): TSQLTable;
   protected
     function Eq(const AValue: TValue): ICriterion; virtual;
     function NotEq(const AValue: TValue): ICriterion; virtual;
@@ -87,6 +86,7 @@ type
     function NotInStr(const AValues: TArray<string>): ICriterion; virtual;
     function &InInt(const AValues: TArray<Integer>): ICriterion; virtual;
     function NotInInt(const AValues: TArray<Integer>): ICriterion; virtual;
+    function Between(const ALow, AHigh: TValue): ICriterion; virtual;
     function Asc(): IOrder; virtual;
     function Desc(): IOrder; virtual;
 
@@ -129,7 +129,6 @@ uses
   Core.Criteria.Restrictions
   ,Core.Criteria.Order
   ,Core.Criteria.Criterion.PropertyExpression
-  ,Core.EntityCache
   ,Core.Exceptions
   ;
 
@@ -140,25 +139,15 @@ begin
   Result := TOrder.Asc(FPropertyName);
 end;
 
+function TProperty.Between(const ALow, AHigh: TValue): ICriterion;
+begin
+  Result := TRestrictions.Between(PropertyName, ALow, AHigh);
+end;
+
 constructor TProperty.Create;
 begin
   inherited Create();
   FEntityClass := nil;
-end;
-
-class function TProperty.CreateSQLTable(AEntityClass: TClass): TSQLTable;
-var
-  LEntityData: TEntityData;
-begin
-  if AEntityClass = nil then
-    Exit(nil);
-
-  LEntityData := TEntityCache.Get(AEntityClass);
-  if not LEntityData.IsTableEntity then
-    raise ETableNotSpecified.CreateFmt('Entity ("%S") is not a table', [AEntityClass.ClassName]);
-
-  Result := TSQLTable.Create;
-  Result.SetFromAttribute(LEntityData.EntityTable);
 end;
 
 function TProperty.Desc: IOrder;
@@ -174,13 +163,13 @@ end;
 function TProperty.EqProperty(const AOtherPropertyName: string): ICriterion;
 begin
   Result := TPropertyExpression.Create(PropertyName, AOtherPropertyName, woEqual
-    , CreateSQLTable(FEntityClass), nil);
+    , TSQLTable.CreateFromClass(FEntityClass), nil);
 end;
 
 function TProperty.EqProperty(AOther: IProperty): ICriterion;
 begin
   Result := TPropertyExpression.Create(PropertyName, AOther.GetPropertyName, woEqual
-    , CreateSQLTable(FEntityClass), CreateSQLTable(AOther.GetEntityClass));
+    , TSQLTable.CreateFromClass(FEntityClass), TSQLTable.CreateFromClass(AOther.GetEntityClass));
 end;
 
 class function TProperty.ForName(const APropertyName: string): TProperty;
@@ -192,13 +181,13 @@ end;
 function TProperty.GeProperty(const AOtherPropertyName: string): ICriterion;
 begin
   Result := TPropertyExpression.Create(PropertyName, AOtherPropertyName, woMoreOrEqual
-    , CreateSQLTable(FEntityClass), nil);
+    , TSQLTable.CreateFromClass(FEntityClass), nil);
 end;
 
 function TProperty.GeProperty(AOther: IProperty): ICriterion;
 begin
   Result := TPropertyExpression.Create(PropertyName, AOther.GetPropertyName, woMoreOrEqual
-    , CreateSQLTable(FEntityClass), CreateSQLTable(AOther.GetEntityClass));
+    , TSQLTable.CreateFromClass(FEntityClass), TSQLTable.CreateFromClass(AOther.GetEntityClass));
 end;
 
 function TProperty.GEq(const AValue: TValue): ICriterion;
@@ -224,13 +213,13 @@ end;
 function TProperty.GtProperty(AOther: IProperty): ICriterion;
 begin
   Result := TPropertyExpression.Create(PropertyName, AOther.GetPropertyName, woMore
-    , CreateSQLTable(FEntityClass), CreateSQLTable(AOther.GetEntityClass));
+    , TSQLTable.CreateFromClass(FEntityClass), TSQLTable.CreateFromClass(AOther.GetEntityClass));
 end;
 
 function TProperty.GtProperty(const AOtherPropertyName: string): ICriterion;
 begin
   Result := TPropertyExpression.Create(PropertyName, AOtherPropertyName, woMore
-    , CreateSQLTable(FEntityClass), nil);
+    , TSQLTable.CreateFromClass(FEntityClass), nil);
 end;
 
 function TProperty.&In<T>(const AValues: TArray<T>): ICriterion;
@@ -261,13 +250,13 @@ end;
 function TProperty.LeProperty(AOther: IProperty): ICriterion;
 begin
   Result := TPropertyExpression.Create(PropertyName, AOther.GetPropertyName, woLessOrEqual
-    , CreateSQLTable(FEntityClass), CreateSQLTable(AOther.GetEntityClass));
+    , TSQLTable.CreateFromClass(FEntityClass), TSQLTable.CreateFromClass(AOther.GetEntityClass));
 end;
 
 function TProperty.LeProperty(const AOtherPropertyName: string): ICriterion;
 begin
   Result := TPropertyExpression.Create(PropertyName, AOtherPropertyName, woLessOrEqual
-    , CreateSQLTable(FEntityClass), nil);
+    , TSQLTable.CreateFromClass(FEntityClass), nil);
 end;
 
 function TProperty.LEq(const AValue: TValue): ICriterion;
@@ -288,25 +277,25 @@ end;
 function TProperty.LtProperty(const AOtherPropertyName: string): ICriterion;
 begin
   Result := TPropertyExpression.Create(PropertyName, AOtherPropertyName, woLess
-    , CreateSQLTable(FEntityClass), nil);
+    , TSQLTable.CreateFromClass(FEntityClass), nil);
 end;
 
 function TProperty.LtProperty(AOther: IProperty): ICriterion;
 begin
   Result := TPropertyExpression.Create(PropertyName, AOther.GetPropertyName, woLess
-    , CreateSQLTable(FEntityClass), CreateSQLTable(AOther.GetEntityClass));
+    , TSQLTable.CreateFromClass(FEntityClass), TSQLTable.CreateFromClass(AOther.GetEntityClass));
 end;
 
 function TProperty.NeProperty(AOther: IProperty): ICriterion;
 begin
   Result := TPropertyExpression.Create(PropertyName, AOther.GetPropertyName, woNotEqual
-    , CreateSQLTable(FEntityClass), CreateSQLTable(AOther.GetEntityClass));
+    , TSQLTable.CreateFromClass(FEntityClass), TSQLTable.CreateFromClass(AOther.GetEntityClass));
 end;
 
 function TProperty.NeProperty(const AOtherPropertyName: string): ICriterion;
 begin
   Result := TPropertyExpression.Create(PropertyName, AOtherPropertyName, woNotEqual
-    , CreateSQLTable(FEntityClass), nil);
+    , TSQLTable.CreateFromClass(FEntityClass), nil);
 end;
 
 function TProperty.NotEq(const AValue: TValue): ICriterion;

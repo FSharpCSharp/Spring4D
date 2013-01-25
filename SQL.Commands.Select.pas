@@ -44,7 +44,8 @@ type
 
   {$REGION 'Documentation'}
   ///	<summary>
-  ///	  Represents <c>select</c> executor.
+  ///	  Represents <c>select</c> executor. Responsible for building and
+  ///	  executing <c>select</c> statements.
   ///	</summary>
   {$ENDREGION}
   TSelectExecutor = class(TAbstractCommandExecutor)
@@ -102,7 +103,7 @@ begin
   LAtrTable := LCache.EntityTable;
 
   if not Assigned(LAtrTable) then
-    raise ETableNotSpecified.Create('Table not specified');
+    raise ETableNotSpecified.CreateFmt('Table not specified for class "%S"', [AClass.ClassName]);
 
   FTable.SetFromAttribute(LAtrTable);
   FColumns.Clear;
@@ -198,7 +199,6 @@ end;
 procedure TSelectExecutor.SelectObjectList(AList: TObject; AEnumMethod: TRttiMethod);
 begin
   FSelectType := stObjectList;
-  {DONE -oLinas -cGeneral : fetch from FResultset}
 end;
 
 function TSelectExecutor.Select(AEntity: TObject; AEntityClassType: TClass): IDBResultset;
@@ -242,7 +242,6 @@ end;
 procedure TSelectExecutor.SelectList(AList: TObject);
 begin
   FSelectType := stList;
-   {DONE -oLinas -cGeneral : fetch from FResultset}
 end;
 
 end.

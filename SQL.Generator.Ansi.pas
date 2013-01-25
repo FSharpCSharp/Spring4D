@@ -34,6 +34,14 @@ uses
   , SQL.Interfaces, TypInfo, SysUtils;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents base class responsible for generating Ansi SQL compatible
+  ///	  statements. To write your custom SQL generator it is recommended to 
+  ///	  inherit your type from this class and override needed methods which 
+  ///	  requires different treatment for current database type.
+  ///	</summary>
+  {$ENDREGION}
   TAnsiSQLGenerator = class(TAbstractSQLGenerator)
   protected
     procedure DoGenerateBackupTable(const ATableName: string; var ASqlBuilder: TStringBuilder); virtual;

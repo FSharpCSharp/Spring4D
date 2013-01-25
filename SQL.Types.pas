@@ -51,6 +51,8 @@ type
     procedure SetName(const Value: string);
     function GetName: string;
   public
+    class function CreateFromClass(AEntityClass: TClass): TSQLTable;
+
     function SchemaExists(): Boolean;
 
     function GetNameWithoutSchema(): string;
@@ -167,7 +169,7 @@ type
 
   TWhereOperator = (woEqual = 0, woNotEqual, woMore, woLess, woLike, woNotLike,
     woMoreOrEqual, woLessOrEqual, woIn, woNotIn, woIsNull, woIsNotNull, woOr,
-    woOrEnd, woAnd, woAndEnd, woNot, woNotEnd);
+    woOrEnd, woAnd, woAndEnd, woNot, woNotEnd, woBetween);
 
   TStartOperators = set of TWhereOperator;
 
@@ -175,7 +177,7 @@ const
   WhereOpNames: array[TWhereOperator] of string = (
     {woEqual =} '=', {woNotEqual =} '<>', {woMore = }'>', {woLess = }'<', {woLike = }'LIKE', {woNotLike = }'NOT LIKE',
     {woMoreOrEqual = }'>=', {woLessOrEqual = }'<=', {woIn = }'IN', {woNotIn = }'NOT IN', {woIsNull} 'IS NULL', {woIsNotNull} 'IS NOT NULL'
-    ,{woOr}'OR', {woOrEnd}'', {woAnd} 'AND', {woAndEnd}'', {woNot}'NOT', {woNotEnd}''
+    ,{woOr}'OR', {woOrEnd}'', {woAnd} 'AND', {woAndEnd}'', {woNot}'NOT', {woNotEnd}'',{woBetween}'BETWEEN'
     );
 
   StartOperators: TStartOperators = [woOr, woAnd, woNot];
@@ -194,6 +196,7 @@ type
     FLeftSQL: string;
     FRightSQL: string;
     FParamName: string;
+    FParamName2: string;
   public
     constructor Create(const AFieldname: string; ATable: TSQLTable); overload; override;
     constructor Create(const ALeftSQL, ARightSQL: string); reintroduce; overload;
@@ -205,6 +208,7 @@ type
     property LeftSQL: string read FLeftSQL write FLeftSQL;
     property RightSQL: string read FRightSQL write FRightSQL;
     property ParamName: string read FParamName write FParamName;
+    property ParamName2: string read FParamName2 write FParamName2;
   end;
 
   {$REGION 'Documentation'}
@@ -318,6 +322,7 @@ implementation
 
 uses
   Core.Exceptions
+  ,Core.EntityCache
   ,SysUtils
   ;
 
@@ -347,6 +352,21 @@ end;
 
 
 { TSQLTable }
+
+class function TSQLTable.CreateFromClass(AEntityClass: TClass): TSQLTable;
+var
+  LEntityData: TEntityData;
+begin
+  if AEntityClass = nil then
+    Exit(nil);
+
+  LEntityData := TEntityCache.Get(AEntityClass);
+  if not LEntityData.IsTableEntity then
+    raise ETableNotSpecified.CreateFmt('Entity ("%S") is not a table', [AEntityClass.ClassName]);
+
+  Result := TSQLTable.Create;
+  Result.SetFromAttribute(LEntityData.EntityTable);
+end;
 
 function TSQLTable.GetAlias: string;
 begin
@@ -538,6 +558,7 @@ begin
     woOr, woAnd: Result := Format('(%S %S %S)', [FLeftSQL, WhereOpNames[WhereOperator], FRightSQL]);
     woNot: Result := Format('%S (%S)', [WhereOpNames[WhereOperator], FLeftSQL]);
     woOrEnd, woAndEnd, woNotEnd: Result := '';
+    woBetween: Result := Format('(%S %S %S AND %S)', [GetFullFieldname, WhereOpNames[WhereOperator], FParamName, FParamName2]);
     else
       Result := GetFullFieldname + ' ' + WhereOpNames[WhereOperator] + ' ' + FParamName + ' ';
   end;

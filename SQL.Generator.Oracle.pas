@@ -33,6 +33,11 @@ uses
   SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces, SQL.Commands, SQL.Types;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents <b>Oracle</b> SQL generator.
+  ///	</summary>
+  {$ENDREGION}
   TOracleSQLGenerator = class(TAnsiSQLGenerator)
   public
     function GetQueryLanguage(): TQueryLanguage; override;

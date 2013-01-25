@@ -33,6 +33,11 @@ uses
   SQL.Generator.Ansi, SysUtils, Mapping.Attributes, SQL.Interfaces, SQL.Types;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents <b>Sybase ASA</b> SQL generator.
+  ///	</summary>
+  {$ENDREGION}
   TASASQLGenerator = class(TAnsiSQLGenerator)
   public
     function GetQueryLanguage(): TQueryLanguage; override;

@@ -35,6 +35,11 @@ uses
 
 type
   {TODO -oLinas -cGeneral : finish implementing proper mongo db connection adapter}
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents MongoDB connection.
+  ///	</summary>
+  {$ENDREGION}
   TMongoDBConnection = class(TMongoWire)
   private
     FConnected: Boolean;
@@ -44,6 +49,11 @@ type
     property Connected: Boolean read GetConnected write SetConnected;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents MongoDB query.
+  ///	</summary>
+  {$ENDREGION}
   TMongoDBQuery = class(TMongoWireQuery)
   private
     FConnection: TMongoDBConnection;
@@ -54,6 +64,11 @@ type
     property Connection: TMongoDBConnection read GetConnection;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents MongoDB resultset.
+  ///	</summary>
+  {$ENDREGION}
   TMongoResultSetAdapter = class(TDriverResultSetAdapter<TMongoDBQuery>)
   private
     FDoc: IBSONDocument;
@@ -75,6 +90,11 @@ type
 
   TMongoStatementType = (mstInsert, mstUpdate, mstDelete, mstSelect);
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents MongoDB statement.
+  ///	</summary>
+  {$ENDREGION}
   TMongoStatementAdapter = class(TDriverStatementAdapter<TMongoDBQuery>)
   private
     FStmtText: string;
@@ -90,6 +110,11 @@ type
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents MongoDB connection.
+  ///	</summary>
+  {$ENDREGION}
   TMongoConnectionAdapter = class(TDriverConnectionAdapter<TMongoDBConnection>, IDBConnection)
   public
     constructor Create(const AConnection: TMongoDBConnection); override;
@@ -102,6 +127,11 @@ type
     function GetDriverName: string; override;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents MongoDB transaction.
+  ///	</summary>
+  {$ENDREGION}
   TMongoTransactionAdapter = class(TInterfacedObject, IDBTransaction)
   private
     FConnection: TMongoDBConnection;

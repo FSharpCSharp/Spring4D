@@ -33,6 +33,12 @@ uses
   SQL.AbstractCommandExecutor, SQL.Commands, SQL.Types, Mapping.Attributes;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Responsible for building and executing statements which create
+  ///	  sequences in the database.
+  ///	</summary>
+  {$ENDREGION}
   TSequenceCreateExecutor = class(TAbstractCommandExecutor)
   private
     FSequence: TCreateSequenceCommand;

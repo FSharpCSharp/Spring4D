@@ -102,7 +102,7 @@ var
 begin
   bFree := False;
   Result := TDBParam.Create;
-  Result.Name := Command.GetExistingParameterName(AForeignColumn.Name);// ':' + AForeignColumn.Name;
+  Result.Name := Command.GetExistingParameterName(AForeignColumn.Name);
   LVal := TRttiExplorer.GetMemberValue(AEntity, AForeignColumn.ReferencedColumnName);
   //convert/serialize objects to stream
   if LVal.IsObject then
@@ -125,7 +125,7 @@ var
   bFree: Boolean;
 begin
   Result := TDBParam.Create;
-  Result.Name := Command.GetExistingParameterName(AColumn.Name); //':' + AColumn.Name;
+  Result.Name := Command.GetExistingParameterName(AColumn.Name);
   LVal := TRttiExplorer.GetMemberValueDeep(AEntity, AColumn.ClassMemberName);
   //convert/serialize objects to stream. If value is nullable or lazy get it's real value
   if LVal.IsObject then
@@ -156,7 +156,7 @@ end;
 function TAbstractCommandExecutor.DoCreateParam(AColumn: ColumnAttribute; AValue: Variant): TDBParam;
 begin
   Result := TDBParam.Create;
-  Result.Name := Command.GetExistingParameterName(AColumn.Name);// ':' + AColumn.Name;
+  Result.Name := Command.GetExistingParameterName(AColumn.Name);
   Result.Value := AValue;
 end;
 

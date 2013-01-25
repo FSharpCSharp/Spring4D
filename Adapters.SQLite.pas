@@ -34,6 +34,11 @@ uses
   , Mapping.Attributes;
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents SQLite3 resultset.
+  ///	</summary>
+  {$ENDREGION}
   TSQLiteResultSetAdapter = class(TDriverResultSetAdapter<ISQLiteTable>)
   public
     function IsEmpty(): Boolean; override;
@@ -47,6 +52,11 @@ type
 
   ESQLiteStatementAdapterException = Exception;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents SQLite3 statement.
+  ///	</summary>
+  {$ENDREGION}
   TSQLiteStatementAdapter = class(TDriverStatementAdapter<ISQLitePreparedStatement>)
   public
     constructor Create(const AStatement: ISQLitePreparedStatement); override;
@@ -57,6 +67,11 @@ type
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents SQLite3 connection.
+  ///	</summary>
+  {$ENDREGION}
   TSQLiteConnectionAdapter = class(TDriverConnectionAdapter<TSQLiteDatabase>)
   public
     procedure Connect; override;
@@ -67,6 +82,11 @@ type
     function GetDriverName: string; override;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents SQLite3 transaction.
+  ///	</summary>
+  {$ENDREGION}
   TSQLiteTransactionAdapter = class(TDriverTransactionAdapter<TSQLiteDatabase>)
   protected
     function InTransaction(): Boolean; override;

@@ -45,15 +45,35 @@ uses
 }
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents Miscrosoft SQL Server resultset.
+  ///	</summary>
+  {$ENDREGION}
   TMSSQLResultsetAdapter = class(TADOResultSetAdapter);
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents Miscrosoft SQL Server statement.
+  ///	</summary>
+  {$ENDREGION}
   TMSSQLStatementAdapter = class(TADOStatementAdapter);
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents Miscrosoft SQL Server connection.
+  ///	</summary>
+  {$ENDREGION}
   TMSSQLConnectionAdapter = class(TADOConnectionAdapter)
   public
     function GetDriverName: string; override;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents Miscrosoft SQL Server transaction.
+  ///	</summary>
+  {$ENDREGION}
   TMSSQLTransactionAdapter = class(TADOTransactionAdapter);
 
   EMSSQLStatementAdapterException = Exception;

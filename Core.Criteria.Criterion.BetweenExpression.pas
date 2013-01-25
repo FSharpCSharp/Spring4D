@@ -1,4 +1,4 @@
-unit Core.Criteria.Criterion.SimpleExpression;
+unit Core.Criteria.Criterion.BetweenExpression;
 
 interface
 
@@ -15,19 +15,21 @@ uses
   ;
 
 type
-  TSimpleExpression = class(TAbstractCriterion)
+  TBetweenExpression = class(TAbstractCriterion)
   private
     FPropertyName: string;
-    FValue: TValue;
+    FLowValue: TValue;
     FOperator: TWhereOperator;
+    FHighValue: TValue;
   public
-    constructor Create(const APropertyName: string; const AValue: TValue; const AOperator: TWhereOperator); virtual;
+    constructor Create(const APropertyName: string; const ALowValue, AHighValue: TValue; const AOperator: TWhereOperator); virtual;
   public
     function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand): string; override;
     function GetWhereOperator(): TWhereOperator; override;
 
     property PropertyName: string read FPropertyName;
-    property Value: TValue read FValue;
+    property LowValue: TValue read FLowValue;
+    property HighValue: TValue read FHighValue write FHighValue;
   end;
 
 implementation
@@ -36,39 +38,51 @@ uses
   SysUtils
   ;
 
-{ TSimpleExpression }
 
-constructor TSimpleExpression.Create(const APropertyName: string; const AValue: TValue; const AOperator: TWhereOperator);
+{ TBetweenExpression }
+
+constructor TBetweenExpression.Create(const APropertyName: string; const ALowValue,
+  AHighValue: TValue; const AOperator: TWhereOperator);
 begin
   inherited Create();
   FPropertyName := APropertyName;
-  FValue := AValue;
+  FLowValue := ALowValue;
+  FHighValue := AHighValue;
   FOperator := AOperator;
 end;
 
-function TSimpleExpression.GetWhereOperator: TWhereOperator;
+function TBetweenExpression.GetWhereOperator: TWhereOperator;
 begin
   Result := FOperator;
 end;
 
-function TSimpleExpression.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand): string;
+function TBetweenExpression.ToSqlString(AParams: TObjectList<TDBParam>;
+  ACommand: TDMLCommand): string;
 var
   LParam: TDBParam;
   LWhere: TSQLWhereField;
-  LParamName: string;
+  LParamName, LParamName2: string;
 begin
   Assert(ACommand is TWhereCommand);
   LParamName := ACommand.GetAndIncParameterName(FPropertyName);
+  LParamName2 := ACommand.GetAndIncParameterName(FPropertyName);
   LWhere := TSQLWhereField.Create(UpperCase(FPropertyName), ACommand.Table);
   LWhere.MatchMode := GetMatchMode;
   LWhere.WhereOperator := GetWhereOperator;
   LWhere.ParamName := LParamName;
+  LWhere.ParamName2 := LParamName2;
   TWhereCommand(ACommand).WhereFields.Add(LWhere);
 
   Result := LWhere.ToSQLString;
+  //1st parameter Low
   LParam := TDBParam.Create();
-  LParam.SetFromTValue(FValue);
+  LParam.SetFromTValue(FLowValue);
   LParam.Name := LParamName;
+  AParams.Add(LParam);
+  //2nd parameter High
+  LParam := TDBParam.Create();
+  LParam.SetFromTValue(FHighValue);
+  LParam.Name := LParamName2;
   AParams.Add(LParam);
 end;
 

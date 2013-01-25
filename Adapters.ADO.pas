@@ -37,6 +37,11 @@ uses
 
 
 type
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represent ADO resultset.
+  ///	</summary>
+  {$ENDREGION}
   TADOResultSetAdapter = class(TDriverResultSetAdapter<TADODataSet>)
   private
     FFieldCache: TDictionary<string,TField>;
@@ -57,6 +62,11 @@ type
 
   EADOStatementAdapterException = Exception;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represent ADO statement.
+  ///	</summary>
+  {$ENDREGION}
   TADOStatementAdapter = class(TDriverStatementAdapter<TADOQuery>)
   public
     constructor Create(const AStatement: TADOQuery); override;
@@ -67,6 +77,11 @@ type
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represent ADO connection.
+  ///	</summary>
+  {$ENDREGION}
   TADOConnectionAdapter = class(TDriverConnectionAdapter<TADOConnection>)
   public
     constructor Create(const AConnection: TADOConnection); override;
@@ -79,6 +94,11 @@ type
     function GetDriverName: string; override;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represent ADO transaction.
+  ///	</summary>
+  {$ENDREGION}
   TADOTransactionAdapter = class(TDriverTransactionAdapter<TADOConnection>)
   protected
     function InTransaction(): Boolean; override;
@@ -87,6 +107,11 @@ type
     procedure Rollback; override;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represent <b>ADO</b> SQL generator.
+  ///	</summary>
+  {$ENDREGION}
   TADOSQLGenerator = class(TAnsiSQLGenerator)
   public
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
