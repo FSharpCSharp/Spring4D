@@ -36,7 +36,6 @@ uses
   ,Core.Session
   ,Core.Criteria.Abstract
   ,Core.Criteria.Criterion
-  {$IFDEF USE_SPRING},Spring.Collections {$ENDIF}
   ;
 
 type
@@ -46,8 +45,6 @@ type
   ///	</summary>
   {$ENDREGION}
   TCriteria<T: class, constructor> = class(TAbstractCriteria<T>)
-  protected
-    function DoList(): {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF}; override;
   public
     constructor Create(ASession: TSession); reintroduce;
     destructor Destroy; override;
@@ -70,22 +67,6 @@ end;
 destructor TCriteria<T>.Destroy;
 begin
   inherited Destroy;
-end;
-
-function TCriteria<T>.DoList: {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF};
-var
-  LParams: TObjectList<TDBParam>;
-  LSql: string;
-  LResults: IDBResultset;
-begin
-  LParams := TObjectList<TDBParam>.Create(True);
-  try
-    LSql := GenerateSqlStatement(LParams);
-    LResults := Session.GetResultset(LSql, LParams);
-    Result := Session.Fetch<T>(LResults);
-  finally
-    LParams.Free;
-  end;
 end;
 
 end.

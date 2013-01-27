@@ -71,6 +71,7 @@ type
 
     procedure DoSetEntity(var AEntityToCreate: TObject; AResultset: IDBResultset; ARealEntity: TObject); virtual;
     procedure DoSetEntityValues(var AEntityToCreate: TObject; AResultset: IDBResultset; AColumns: TList<TColumnData>); virtual;
+    procedure DoFetch<T: class, constructor>(AResultset: IDBResultset; const ACollection: TValue);
 
     function GetOne<T: class, constructor>(AResultset: IDBResultset; AEntity: TObject): T; overload;
     function GetOne(AResultset: IDBResultset; AClass: TClass): TObject; overload;
@@ -91,7 +92,18 @@ type
     function GetLazyValueClass<T: class, constructor>(const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute): T;
     procedure SetLazyValue<T>(var AValue: T; const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute);
 
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Gets the <c>Resultset</c> from SQL statement.
+    ///	</summary>
+    {$ENDREGION}
     function GetResultset(const ASql: string; const AParams: array of const): IDBResultset; overload;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Gets the <c>Resultset</c> from SQL statement.
+    ///	</summary>
+    {$ENDREGION}
     function GetResultset(const ASql: string; AParams: TObjectList<TDBParam>): IDBResultset; overload;
 
     {$REGION 'Documentation'}
@@ -170,32 +182,79 @@ type
 
     {$REGION 'Documentation'}
     ///	<summary>
-    ///	  Retrieves first and only model from the sql statement.
+    ///	  Tries to retrieves first and only model from the sql statement. If
+    ///	  not succeeds, returns false.
+    ///	</summary>
+    {$ENDREGION}
+    function TryFirst<T: class, constructor>(const ASql: string; const AParams: array of const; out AValue: T): Boolean;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Retrieves first and only model from the sql statement.  Raises an
+    ///	  <c>exception</c> if model does not exist.
     ///	</summary>
     {$ENDREGION}
     function First<T: class, constructor>(const ASql: string; const AParams: array of const): T;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Retrieves first and only model or the default value if model does not
+    ///	  exist.
+    ///	</summary>
+    {$ENDREGION}
     function FirstOrDefault<T: class, constructor>(const ASql: string; const AParams: array of const): T;
 
     {$REGION 'Documentation'}
     ///	<summary>
-    ///	  Retrieves only one entity model from the database.
+    ///	  Retrieves only one entity model from the database. Raises an
+    ///	  <c>exception</c> if model does not exist.
     ///	</summary>
     {$ENDREGION}
     function Single<T: class, constructor>(const ASql: string; const AParams: array of const): T;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Retrieves only one entity model from the database. Returns default
+    ///	  value if model does not exist.
+    ///	</summary>
+    {$ENDREGION}
     function SingleOrDefault<T: class, constructor>(const ASql: string; const AParams: array of const): T;
 
     {$REGION 'Documentation'}
     ///	<summary>
-    ///	  Retrieves multiple models from the sql statement into the ACollection.
+    ///	  Retrieves multiple models from the sql statement into the Collection (
+    ///	  <c>TObjectList&lt;T&gt;</c> or Spring <c>ICollection&lt;T&gt;</c>).
     ///	</summary>
     {$ENDREGION}
     procedure Fetch<T: class, constructor>(const ASql: string;
       const AParams: array of const; ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
                                                   {$ELSE} TObjectList<T> {$ENDIF} ); overload;
 
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Retrieves multiple models from the <c>Resultset</c> into the
+    ///	  Collection (<c>TObjectList&lt;T&gt;</c> or Spring
+    ///	  <c>ICollection&lt;T&gt;).</c>
+    ///	</summary>
+    {$ENDREGION}
     procedure Fetch<T: class, constructor>(AResultset: IDBResultset; ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
                                                   {$ELSE} TObjectList<T> {$ENDIF}); overload;
-    function Fetch<T: class, constructor>(AResultset: IDBResultset): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Retrieves multiple models from the <c>Resultset</c> into the any
+    ///	  Collection. Collection must contain <c>Add</c> method with single
+    ///	  parameter.
+    ///	</summary>
+    {$ENDREGION}
+    procedure Fetch<T: class, constructor>(AResultset: IDBResultset; const ACollection: TValue); overload;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Retrieves multiple models from the <c>resultset</c>.
+    ///	</summary>
+    {$ENDREGION}
+    function GetList<T: class, constructor>(AResultset: IDBResultset): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
                                                   {$ELSE} TObjectList<T> {$ENDIF}; overload;
 
     {$REGION 'Documentation'}
@@ -203,7 +262,7 @@ type
     ///	  Retrieves multiple models from the sql statement.
     ///	</summary>
     {$ENDREGION}
-    function Fetch<T: class, constructor>(const ASql: string;
+    function GetList<T: class, constructor>(const ASql: string;
       const AParams: array of const): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
                                                   {$ELSE} TObjectList<T> {$ENDIF}; overload;
 
@@ -235,7 +294,7 @@ type
     ///	  Inserts models to the database.
     ///	</summary>
     {$ENDREGION}
-    procedure Insert<T: class, constructor>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
+    procedure InsertList<T: class, constructor>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
       {$ELSE} TObjectList<T> {$ENDIF}); overload;
 
     {$REGION 'Documentation'}
@@ -258,7 +317,7 @@ type
     ///	  Updates multiple models in a database.
     ///	</summary>
     {$ENDREGION}
-    procedure Update<T: class, constructor>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
+    procedure UpdateList<T: class, constructor>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
       {$ELSE} TObjectList<T> {$ENDIF}); overload;
 
     {$REGION 'Documentation'}
@@ -273,7 +332,7 @@ type
     ///	  Removes models from the database.
     ///	</summary>
     {$ENDREGION}
-    procedure Delete<T: class, constructor>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
+    procedure DeleteList<T: class, constructor>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
       {$ELSE} TObjectList<T> {$ENDIF}); overload;
 
     {$REGION 'Documentation'}
@@ -308,7 +367,7 @@ type
     ///	  on the entity state.
     ///	</summary>
     {$ENDREGION}
-    procedure Save<T: class, constructor>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
+    procedure SaveList<T: class, constructor>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
       {$ELSE} TObjectList<T> {$ENDIF}); overload;
   end;
 
@@ -334,6 +393,7 @@ uses
   ,Core.Relation.ManyToOne
   ,Core.Consts
   ,Core.Criteria
+  ,Core.Collections
   ;
 
 { TEntityManager }
@@ -379,7 +439,7 @@ begin
   FOldStateEntities.Remove(AEntity);
 end;
 
-procedure TSession.Delete<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
+procedure TSession.DeleteList<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
       {$ELSE} TObjectList<T> {$ENDIF});
 var
   LEntity: T;
@@ -394,6 +454,23 @@ destructor TSession.Destroy;
 begin
   FOldStateEntities.Free;
   inherited Destroy;
+end;
+
+procedure TSession.DoFetch<T>(AResultset: IDBResultset; const ACollection: TValue);
+var
+  LCurrent: T;
+  LCollectionAdapter: ICollectionAdapter<T>;
+begin
+  LCollectionAdapter := TCollectionAdapter<T>.Wrap(ACollection);
+  if not LCollectionAdapter.IsAddSupported then
+    raise EORMContainerDoesNotHaveAddMethod.Create('Container does not have "Add" method.');
+
+  while not AResultset.IsEmpty do
+  begin
+    LCurrent := GetOne<T>(AResultset, nil);
+    LCollectionAdapter.Add(LCurrent);
+    AResultset.Next;
+  end;
 end;
 
 function TSession.DoGetLazy<T>(const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute; out AIsEnumerable: Boolean): IDBResultset;
@@ -508,7 +585,7 @@ begin
   Fetch<T>(LResults, ACollection);
 end;
 
-function TSession.Fetch<T>(const ASql: string; const AParams: array of const): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
+function TSession.GetList<T>(const ASql: string; const AParams: array of const): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
   {$ELSE} TObjectList<T> {$ENDIF};
 begin
   {$IFDEF USE_SPRING}
@@ -522,19 +599,14 @@ end;
 procedure TSession.Fetch<T>(AResultset: IDBResultset; ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
   {$ELSE} TObjectList<T> {$ENDIF});
 var
-  LCurrent: T;
+  LCollection: TValue;
 begin
-  while not AResultset.IsEmpty do
-  begin
-    LCurrent := GetOne<T>(AResultset, nil);
+  LCollection := TValue.From(ACollection);
 
-    ACollection.Add(LCurrent);
-
-    AResultset.Next;
-  end;
+  DoFetch<T>(AResultset, LCollection);
 end;
 
-function TSession.Fetch<T>(AResultset: IDBResultset): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
+function TSession.GetList<T>(AResultset: IDBResultset): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
   {$ELSE} TObjectList<T> {$ENDIF};
 begin
   {$IFDEF USE_SPRING}
@@ -543,6 +615,11 @@ begin
   Result := TObjectList<T>.Create(True);
   {$ENDIF}
   Fetch<T>(AResultset, Result);
+end;
+
+procedure TSession.Fetch<T>(AResultset: IDBResultset; const ACollection: TValue);
+begin
+  DoFetch<T>(AResultset, ACollection);
 end;
 
 function TSession.FindAll<T>: {$IFDEF USE_SPRING} Spring.Collections.IList<T>
@@ -563,7 +640,7 @@ begin
     LSelecter.EntityClass := LEntityClass;
     LSelecter.LazyColumn := nil;
     LResults := LSelecter.SelectAll(nil, LEntityClass);
-    Result := Fetch<T>(LResults);
+    Result := GetList<T>(LResults);
   finally
     LSelecter.Free;
   end;
@@ -598,26 +675,16 @@ begin
 end;
 
 function TSession.First<T>(const ASql: string; const AParams: array of const): T;
-var
-  LResults: IDBResultset;
 begin
-  LResults := GetResultset(ASql, AParams);
-  if LResults.IsEmpty then
+  if not TryFirst<T>(ASql, AParams, Result) then
     raise EORMRecordNotFoundException.Create(EXCEPTION_QUERY_NO_RECORDS);
-
-  Result := GetOne<T>(LResults, nil);
 end;
 
 function TSession.FirstOrDefault<T>(const ASql: string; const AParams: array of const): T;
 begin
-  try
-    Result := First<T>(ASql, AParams);
-  except
+  if not TryFirst<T>(ASql, AParams, Result) then
     Result := System.Default(T);
-  end;
 end;
-
-
 
 procedure TSession.SetInterfaceList<T>(var AValue: T; AResultset: IDBResultset);
 var
@@ -874,7 +941,7 @@ begin
   end;
 end;
 
-procedure TSession.Insert<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
+procedure TSession.InsertList<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
       {$ELSE} TObjectList<T> {$ENDIF});
 var
   LEntity: T;
@@ -942,7 +1009,7 @@ begin
     Update(AEntity);
 end;
 
-procedure TSession.Save<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
+procedure TSession.SaveList<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
       {$ELSE} TObjectList<T> {$ENDIF});
 var
   LEntity: T;
@@ -1057,6 +1124,16 @@ begin
   Result := FirstOrDefault<T>(ASql, AParams);
 end;
 
+function TSession.TryFirst<T>(const ASql: string; const AParams: array of const; out AValue: T): Boolean;
+var
+  LResults: IDBResultset;
+begin
+  LResults := GetResultset(ASql, AParams);
+  Result := not LResults.IsEmpty;
+  if Result then
+    AValue := GetOne<T>(LResults, nil);
+end;
+
 procedure TSession.Update(AEntity: TObject);
 var
   LUpdater: TUpdateExecutor;
@@ -1074,7 +1151,7 @@ begin
   end;
 end;
 
-procedure TSession.Update<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
+procedure TSession.UpdateList<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
       {$ELSE} TObjectList<T> {$ENDIF});
 var
   LEntity: T;

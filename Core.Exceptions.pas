@@ -66,6 +66,8 @@ type
 
   EORMContainerDoesNotHaveClearMethod = class(Exception);
 
+   EORMContainerDoesNotHaveCountMethod = class(Exception);
+
   EORMContainerAddMustHaveOneParameter = class(Exception);
 
   EORMContainerItemTypeNotSupported = class(Exception);

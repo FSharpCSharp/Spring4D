@@ -38,6 +38,7 @@ uses
   ,SQL.Interfaces
   ,SQL.Types
   ,SQL.Commands
+  ,Rtti
   ;
 
 type
@@ -155,6 +156,13 @@ type
 
     {$REGION 'Documentation'}
     ///	<summary>
+    ///	  fetch the results into the collection.
+    ///	</summary>
+    {$ENDREGION}
+    procedure Fetch(const ACollection: TValue);
+
+    {$REGION 'Documentation'}
+    ///	<summary>
     ///	  Get the results in pages.
     ///	</summary>
     ///	<param name="APage">
@@ -246,6 +254,23 @@ type
   IODBC = interface
     ['{7A235A2E-1ABA-4AD6-A6FD-276A16374596}']
     function GetDatasources: TArray<string>;
+  end;
+
+  ICollectionEnumerator<T: class, constructor> = interface(IInvokable)
+    ['{B1908786-00B2-454E-9D87-054A0A2CE8B3}']
+    function GetCurrent: T;
+    function MoveNext(): Boolean;
+    property Current: T read GetCurrent;
+  end;
+
+  ICollectionAdapter<T: class, constructor> = interface(IInvokable)
+    ['{378C9FEF-BAE0-4C47-A21E-7A8A510C6757}']
+    procedure Add(AEntity: T);
+    procedure Clear();
+    function Count: Integer;
+    function GetEnumerator(): ICollectionEnumerator<T>;
+
+    function IsAddSupported(): Boolean;
   end;
 
 implementation

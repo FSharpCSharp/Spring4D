@@ -57,6 +57,7 @@ type
     function GetItem(AIndex: Integer): OLeVariant;
     function GetFieldCount: Integer;
     function GetItemKey(AIndex: Integer): WideString;
+    function GetKeyIndex(const Key: WideString): boolean;
   end;
 
   //TODO: ActiveX enumerator over elements
@@ -73,7 +74,7 @@ type
     FSorted:array of integer;
     FGotIndex,FGotSorted:integer;
     FGotMatch:boolean;
-    function GetKeyIndex(const Key: WideString): boolean;
+
   protected
     function Get_Item(const Key: WideString): OleVariant; safecall;
     procedure Set_Item(const Key: WideString; Value: OleVariant); safecall;
@@ -89,7 +90,7 @@ type
     function GetItem(AIndex: Integer): OleVariant;
     function GetItemKey(AIndex: Integer): WideString;
     function GetFieldCount: Integer;
-
+    function GetKeyIndex(const Key: WideString): boolean;
     procedure Clear; safecall;
     //TODO: function toJSON:WideString;
     property Item[const Key: WideString]: OleVariant read Get_Item write Set_Item; default;

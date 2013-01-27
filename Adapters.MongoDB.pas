@@ -82,6 +82,7 @@ type
     function GetFieldValue(const AFieldname: string): Variant; overload; override;
     function GetFieldCount(): Integer; override;
     function GetFieldName(AIndex: Integer): string; override;
+    function FieldnameExists(const AFieldName: string): Boolean; override;
 
     property Document: IBSONDocument read FDoc write FDoc;
   end;
@@ -149,6 +150,7 @@ uses
   StrUtils
   ,Core.ConnectionFactory
   ,bsonUtils
+  ,Variants
   ;
 const
   NAME_COLLECTION = 'UnitTests.MongoAdapter';
@@ -186,6 +188,15 @@ begin
   FDoc := nil;
   Dataset.Free;
   inherited Destroy;
+end;
+
+function TMongoResultSetAdapter.FieldnameExists(const AFieldName: string): Boolean;
+begin
+  Result := False;
+  if Assigned(FDoc) then
+  begin
+    Result := FDoc.GetKeyIndex(AFieldName);
+  end;
 end;
 
 function TMongoResultSetAdapter.GetFieldCount: Integer;

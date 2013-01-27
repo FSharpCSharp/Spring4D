@@ -68,6 +68,7 @@ type
     class function GetPrimaryKeyColumnMemberName(AClass: TClass): string;
     class function GetPrimaryKeyColumnName(AClass: TClass): string;
     class function GetPrimaryKeyValue(AEntity: TObject): TValue;
+    class function GetRawPointer(const AInstance: TValue): Pointer;
     class function GetRttiType(AEntity: TClass): TRttiType;
     class function GetSequence(AClass: TClass): SequenceAttribute;
     class function GetTable(AClass: TClass): TableAttribute; overload;
@@ -82,6 +83,7 @@ type
     class function TryGetEntityClass(ATypeInfo: PTypeInfo; out AClass: TClass): Boolean; overload;
     class function TryGetEntityClass<T>(out AClass: TClass): Boolean; overload;
     class function TryGetPrimaryKeyValue(AColumns: TList<ColumnAttribute>; AResultset: IDBResultset; out AValue: TValue; out AColumn: ColumnAttribute): Boolean;
+    class function TryGetMethod(ATypeInfo: PTypeInfo; const AMethodName: string; out AAddMethod: TRttiMethod; AParamCount: Integer = 1): Boolean;
     class procedure CopyFieldValues(AEntityFrom, AEntityTo: TObject);
     class procedure DestroyClass<T>(var AObject: T);
     class procedure GetChangedMembers(AOriginalObj, ADirtyObj: TObject; AList: TList<ColumnAttribute>); overload;
@@ -643,6 +645,24 @@ begin
   AMethod := LMethod;
 end;
 
+class function TRttiExplorer.TryGetMethod(ATypeInfo: PTypeInfo; const AMethodName: string
+  ; out AAddMethod: TRttiMethod; AParamCount: Integer): Boolean;
+var
+  LType: TRttiType;
+  LMethod: TRttiMethod;
+begin
+  LType :=  TRttiContext.Create.GetType(ATypeInfo);
+  for LMethod in LType.GetMethods do
+  begin
+    if SameText(LMethod.Name, AMethodName) and (Length(LMethod.GetParameters) = AParamCount) then
+    begin
+      AAddMethod := LMethod;
+      Exit(True);
+    end;
+  end;
+  Result := False;
+end;
+
 class function TRttiExplorer.TryGetColumnAsForeignKey(AColumn: ColumnAttribute;
   out AForeignKeyCol: ForeignJoinColumnAttribute): Boolean;
 var
@@ -870,6 +890,14 @@ end;
 class function TRttiExplorer.GetPrimaryKeyValue(AEntity: TObject): TValue;
 begin
   Result := GetMemberValue(AEntity, GetPrimaryKeyColumnMemberName(AEntity.ClassType));
+end;
+
+class function TRttiExplorer.GetRawPointer(const AInstance: TValue): Pointer;
+begin
+  if AInstance.IsObject then
+    Result := AInstance.AsObject
+  else
+    Result := AInstance.GetReferenceToRawData;
 end;
 
 class function TRttiExplorer.GetRttiType(AEntity: TClass): TRttiType;

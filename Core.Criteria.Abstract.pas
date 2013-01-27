@@ -37,6 +37,7 @@ uses
   ,Generics.Collections
   ,Core.Session
   ,SQL.Params
+  ,Rtti
   ;
 
 type
@@ -55,7 +56,8 @@ type
     constructor Create(AEntityClass: TClass; ASession: TSession); virtual;
 
     function GenerateSqlStatement(AParams: TObjectList<TDBParam>): string;
-    function DoList(): {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF}; virtual; abstract;
+    function CreateList(): {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF}; virtual;
+    procedure DoFetch(const ACollection: TValue); virtual;
     function Page(APage: Integer; AItemsPerPage: Integer): IDBPage<T>; virtual;
   public
     destructor Destroy; override;
@@ -66,6 +68,7 @@ type
     procedure Clear(); virtual;
     function Count(): Integer; virtual;
     function List(): {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF};
+    procedure Fetch(const ACollection: TValue);
 
     property Criterions: TList<ICriterion> read FCriterions;
     property EntityClass: TClass read FEntityClass;
@@ -123,6 +126,36 @@ begin
   inherited Destroy;
 end;
 
+procedure TAbstractCriteria<T>.DoFetch(const ACollection: TValue);
+var
+  LParams: TObjectList<TDBParam>;
+  LSql: string;
+  LResults: IDBResultset;
+begin
+  LParams := TObjectList<TDBParam>.Create(True);
+  try
+    LSql := GenerateSqlStatement(LParams);
+    LResults := Session.GetResultset(LSql, LParams);
+    Session.Fetch<T>(LResults, ACollection);
+  finally
+    LParams.Free;
+  end;
+end;
+
+function TAbstractCriteria<T>.CreateList: {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF};
+begin
+  {$IFDEF USE_SPRING}
+  Result := TCollections.CreateList<T>(True);
+  {$ELSE}
+  Result := TObjectList<T>.Create(True);
+  {$ENDIF}
+end;
+
+procedure TAbstractCriteria<T>.Fetch(const ACollection: TValue);
+begin
+  DoFetch(ACollection);
+end;
+
 function TAbstractCriteria<T>.GenerateSqlStatement(AParams: TObjectList<TDBParam>): string;
 var
   LCriterion: ICriterion;
@@ -155,8 +188,12 @@ begin
 end;
 
 function TAbstractCriteria<T>.List: {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF};
+var
+  LCollection: TValue;
 begin
-  Result := DoList();
+  Result := CreateList();
+  LCollection := TValue.From<{$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF}>(Result);
+  DoFetch(LCollection);
 end;
 
 function TAbstractCriteria<T>.Page(APage, AItemsPerPage: Integer): IDBPage<T>;

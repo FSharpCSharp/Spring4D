@@ -109,7 +109,10 @@ uses
   Core.Criteria.Criterion.LogicalExpression in '..\Core.Criteria.Criterion.LogicalExpression.pas',
   SvTesting.DUnit in '..\External\delphi-oop\Core\SvTesting.DUnit.pas',
   Core.Criteria.Criterion.PropertyExpression in '..\Core.Criteria.Criterion.PropertyExpression.pas',
-  Core.Criteria.Criterion.BetweenExpression in '..\Core.Criteria.Criterion.BetweenExpression.pas';
+  Core.Criteria.Criterion.BetweenExpression in '..\Core.Criteria.Criterion.BetweenExpression.pas',
+  Core.Collections in '..\Core.Collections.pas',
+  TestCoreCollections in 'TestCoreCollections.pas',
+  Core.Collections.Enumerator in '..\Core.Collections.Enumerator.pas';
 
 {$R *.RES}
 

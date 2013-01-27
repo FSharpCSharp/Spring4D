@@ -53,8 +53,8 @@ type
 
   TestTMongoStatementAdapter = class(TBaseMongoTest)
   private
-    FConnection: TMongoDBConnection;
-    FQuery: TMongoDBQuery;
+//    FConnection: TMongoDBConnection;
+   // FQuery: TMongoDBQuery;
     FMongoStatementAdapter: TMongoStatementAdapter;
   public
     procedure SetUp; override;

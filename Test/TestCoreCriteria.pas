@@ -46,6 +46,7 @@ type
     procedure List_Not_Eq();
     procedure List_NeProperty();
     procedure List_Between();
+    procedure Fetch();
   end;
 
 implementation
@@ -57,6 +58,7 @@ uses
   ,TestSession
   ,SQL.Types
   ,TestConsts
+  ,Rtti
   ;
 
 
@@ -81,6 +83,24 @@ begin
   CheckEquals(2, FCriteria.Count);
 end;
 
+
+procedure TestTCriteria.Fetch;
+var
+  LCustomers: IList<TCustomer>;
+  Age, Name: IProperty;
+begin
+  Age := TProperty.ForName(CUSTAGE);
+  Name := TProperty.ForName(CUSTNAME);
+  InsertCustomer(42, 'Foo');
+  InsertCustomer(50, 'Bar');
+  LCustomers := TCollections.CreateObjectList<TCustomer>;
+  FCriteria.Add(TRestrictions.And(Age.Eq(42), Name.Eq('Foo')))
+    .Add(Age.GEq(10))
+    .AddOrder(Age.Desc)
+    .Fetch(TValue.From(LCustomers));
+  CheckEquals(1, LCustomers.Count);
+  CheckEquals(42, LCustomers[0].Age);
+end;
 
 procedure TestTCriteria.AddOrder;
 var

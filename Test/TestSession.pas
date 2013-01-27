@@ -50,6 +50,7 @@ type
     procedure Streams();
     procedure ManyToOne();
     procedure Transactions();
+    procedure FetchCollection();
   end;
 
   TInsertData = record
@@ -395,6 +396,16 @@ begin
   {$ENDIF}
 end;
 
+procedure TestTSession.FetchCollection;
+var
+  LCollection: IList<TCustomer>;
+begin
+  InsertCustomer();
+  LCollection := TCollections.CreateObjectList<TCustomer>;
+  FManager.Fetch<TCustomer>('SELECT * FROM ' + TBL_PEOPLE, [], LCollection);
+  CheckEquals(1, LCollection.Count);
+end;
+
 procedure TestTSession.FindAll;
 var
   LCollection: {$IFDEF USE_SPRING} Spring.Collections.IList<TCustomer> {$ELSE} TObjectList<TCustomer> {$ENDIF} ;
@@ -688,7 +699,7 @@ begin
 
     //wrap in the transaction
     LTran := FManager.Connection.BeginTransaction;
-    FManager.Insert<TCustomer>(LCollection);
+    FManager.InsertList<TCustomer>(LCollection);
     LTran.Commit;
     LCount := TestDB.GetUniTableIntf('select count(*) from ' + TBL_PEOPLE).Fields[0].AsInteger;
     CheckEquals(LCollection.Count, LCount);

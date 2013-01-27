@@ -60,6 +60,7 @@ type
     function GetSQLTableCount(const ATablename: string): string; override;
     function GetSQLSequenceCount(const ASequenceName: string): string; override;
     function GetTableColumns(const ATableName: string): string; override;
+    function GetSQLDataTypeName(AField: TSQLCreateField): string; override;
 
     class property SerializerFormat: TSvSerializeFormat read FSerializerFormat write FSerializerFormat;
   end;
@@ -140,6 +141,11 @@ end;
 function TNoSQLGenerator.GetQueryLanguage: TQueryLanguage;
 begin
   Result := qlNoSQL;
+end;
+
+function TNoSQLGenerator.GetSQLDataTypeName(AField: TSQLCreateField): string;
+begin
+  Result := '';
 end;
 
 function TNoSQLGenerator.GetSQLSequenceCount(const ASequenceName: string): string;
