@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project Version="1.0">
+  <Title>Marshmallow ORM Documentation</Title>
+  <Summary>Documentation of Marshmallow - ORM framework for Delphi</Summary>
+  <Author>Linas Naginionis</Author>
+  <Copyright>Linas Naginionis</Copyright>
+  <Comment/>
+  <Language>1063</Language>
+  <Charset>1</Charset>
+  <HeaderHtml>&lt;%TopicTitle%&gt;</HeaderHtml>
+  <FooterHtml>&lt;a href="https://bitbucket.org/soundvibe/orm/wiki/Home" target="_blank"&gt;Marshmallow&lt;/a&gt; - modern ORM framework for Delphi</FooterHtml>
+  <CustomDefines/>
+  <ShowImplementationSection>false</ShowImplementationSection>
+  <ShowPrivateMembers>false</ShowPrivateMembers>
+  <Sources>
+    <Source>.\Marshmallow_Documentation.dpk</Source>
+  </Sources>
+  <Outputs>
+    <Output Type="HTML">
+      <Active>true</Active>
+      <OutputDirectory>..\Docs\Html</OutputDirectory>
+    </Output>
+    <Output Type="CHM">
+      <Active>true</Active>
+      <OutputFileName>..\Docs\CHM\Marshmallow_Documentation.chm</OutputFileName>
+    </Output>
+    <Output Type="MSHELP2">
+      <Active>false</Active>
+      <OutputFileName>Doc\MSHelp2\Marshmallow_Documentation.HxS</OutputFileName>
+      <Namespace>Marshmallow_Documentation</Namespace>
+      <TitleID>library</TitleID>
+    </Output>
+    <Output Type="HelpAndManual">
+      <Active>false</Active>
+      <OutputFileName>Doc\Help&amp;Manual\Marshmallow_Documentation.hmxp</OutputFileName>
+    </Output>
+  </Outputs>
+</Project>
