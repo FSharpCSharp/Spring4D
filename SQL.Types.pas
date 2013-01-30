@@ -76,6 +76,9 @@ type
     function GetFieldname: string;
     function GetFullFieldname(): string;
     function GetTable: TSQLTable;
+    function GetAlias: string;
+    procedure SetAlias(const Value: string);
+    property Alias: string read GetAlias write SetAlias;
     property Fieldname: string read GetFieldname;
     property Table: TSQLTable read GetTable;
   end;
@@ -89,14 +92,18 @@ type
   private
     FTable: TSQLTable;
     FFieldname: string;
+    FAlias: string;
     function GetFieldname: string;
     function GetTable: TSQLTable;
+    function GetAlias: string;
+    procedure SetAlias(const Value: string);
   public
     constructor Create(const AFieldname: string; ATable: TSQLTable); virtual;
     destructor Destroy; override;
 
-    function GetFullFieldname(): string;
+    function GetFullFieldname(): string; virtual;
 
+    property Alias: string read GetAlias write SetAlias;
     property Fieldname: string read GetFieldname write FFieldname;
     property Table: TSQLTable read GetTable write FTable;
   end;
@@ -423,11 +430,17 @@ begin
   inherited Create;
   FFieldname := AFieldname;
   FTable := ATable;
+  FAlias := '';
 end;
 
 destructor TSQLField.Destroy;
 begin
   inherited Destroy;
+end;
+
+function TSQLField.GetAlias: string;
+begin
+  Result := FAlias;  
 end;
 
 function TSQLField.GetFieldname: string;
@@ -437,12 +450,20 @@ end;
 
 function TSQLField.GetFullFieldname: string;
 begin
-  Result := Table.Alias + '.' + Fieldname;
+  if (FAlias <> '') then
+    Result := FAlias
+  else
+    Result := Table.Alias + '.' + Fieldname;
 end;
 
 function TSQLField.GetTable: TSQLTable;
 begin
   Result := FTable;
+end;
+
+procedure TSQLField.SetAlias(const Value: string);
+begin
+  FAlias := Value;
 end;
 
 { TSQLJoin }
