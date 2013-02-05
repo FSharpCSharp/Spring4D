@@ -80,6 +80,7 @@ var
   DataPtr: Pointer;
   LRes: OleVariant;
   LHasValueField, LValueField: TRttiField;
+  LHasValue: TValue;
 begin
   case AValue.Kind of
     tkEnumeration:
@@ -104,7 +105,11 @@ begin
       if IsNullableType(AValue.TypeInfo) then
       begin
         LHasValueField := AValue.GetType().GetField('FHasValue');
-        if LHasValueField.GetValue(AValue.GetReferenceToRawData).AsBoolean then
+        LHasValue := LHasValueField.GetValue(AValue.GetReferenceToRawData);
+        if  ((LHasValue.TypeInfo = TypeInfo(Boolean)) and (LHasValue.AsBoolean)) //Marshmallow Nullable
+          or
+         ((LHasValue.TypeInfo = TypeInfo(string)) and ((LHasValue.AsString = '@'))) //Spring Nullable
+          then
         begin
           LValueField := AValue.GetType().GetField('FValue');
           Result := TUtils.AsVariant(LValueField.GetValue(AValue.GetReferenceToRawData));
@@ -192,13 +197,18 @@ class function TUtils.TryGetNullableTypeValue(const ANullable: TValue; out AValu
 var
   LRttiType: TRttiType;
   LValueField: TRttiField;
+  LHasValue: TValue;
 begin
   Result := False;
   if ANullable.Kind = tkRecord then
   begin
     LRttiType := ANullable.GetType();
     LValueField := LRttiType.GetField('FHasValue');
-    Result := LValueField.GetValue(ANullable.GetReferenceToRawData).AsBoolean;
+    LHasValue := LValueField.GetValue(ANullable.GetReferenceToRawData);
+    Result := ((LHasValue.TypeInfo = TypeInfo(Boolean)) and (LHasValue.AsBoolean)) //Marshmallow Nullable
+      or
+     ((LHasValue.TypeInfo = TypeInfo(string)) and ((LHasValue.AsString = '@'))); //Spring Nullable
+
     if Result then
     begin
       LValueField := LRttiType.GetField('FValue');
@@ -250,7 +260,7 @@ end;
 
 class function TUtils.IsNullableType(ATypeInfo: PTypeInfo): Boolean;
 begin
-  Result := StartsText('Nullable<', string(ATypeInfo.Name));
+  Result := StartsText('Nullable', string(ATypeInfo.Name));
 end;
 
 class function TUtils.SameObject(ALeft, ARight: TObject): Boolean;
