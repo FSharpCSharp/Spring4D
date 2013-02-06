@@ -357,8 +357,8 @@ begin
   Age := TProperty.ForName(CUSTAGE);
   InsertCustomer(42, 'Foo');
   InsertCustomer(50, 'Bar');
-
   //WHERE ((A.CUSTAGE =:CUSTAGE1 OR A.CUSTAGE = :CUSTAGE2) OR A.CUSTAGE >=:CUSTAGE3)
+  //ORDER BY A.CUSTAGE DESC
   LCustomers := FCriteria.Add(TRestrictions.Or(TRestrictions.Or(Age.Eq(42), Age.Eq(50)), Age.GEq(10)))
     .AddOrder(Age.Desc)
     .List;

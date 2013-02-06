@@ -112,7 +112,12 @@ uses
   Core.Criteria.Criterion.BetweenExpression in '..\Core.Criteria.Criterion.BetweenExpression.pas',
   Core.Collections in '..\Core.Collections.pas',
   TestCoreCollections in 'TestCoreCollections.pas',
-  Core.Collections.Enumerator in '..\Core.Collections.Enumerator.pas';
+  Core.Collections.Enumerator in '..\Core.Collections.Enumerator.pas',
+  TestObjectDataset in 'TestObjectDataset.pas',
+  Adapters.ObjectDataset.Abstract in '..\Adapters.ObjectDataset.Abstract.pas',
+  Adapters.ObjectDataset in '..\Adapters.ObjectDataset.pas',
+  ViewTestObjectDataset in 'ViewTestObjectDataset.pas' {frmObjectDatasetTest},
+  Adapters.ObjectDataset.Blobs in '..\Adapters.ObjectDataset.Blobs.pas';
 
 {$R *.RES}
 
