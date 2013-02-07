@@ -589,6 +589,7 @@ uses
   SysUtils
   ,Graphics
   ,Core.Utils
+  ,Variants
   ;
 
 type
@@ -759,6 +760,9 @@ end;
 {$ENDIF}
 
 function CompareValue(const Left, Right: TValue): Integer;
+var
+  LLeft, LRight: TValue;
+  LeftNull, RightNull: Boolean;
 begin
   if Left.IsOrdinal and Right.IsOrdinal then
   begin
@@ -771,6 +775,33 @@ begin
   if Left.IsString and Right.IsString then
   begin
     Result := SysUtils.CompareStr(Left.AsString, Right.AsString);
+  end
+  else if (Left.TypeInfo = TypeInfo(Variant)) and (Right.TypeInfo = TypeInfo(Variant)) then
+  begin
+    Result := Integer(VarCompareValue(Left.AsVariant, Right.AsVariant));
+  end
+  else if TUtils.IsNullableType(Left.TypeInfo) and TUtils.IsNullableType(Right.TypeInfo) then
+  begin
+    LeftNull := not TUtils.TryGetNullableTypeValue(Left, LLeft);
+    RightNull := not TUtils.TryGetNullableTypeValue(Right, LRight);
+    if LeftNull then
+    begin
+      if RightNull then
+        Result := 0
+      else
+        Result := 1;
+    end
+    else if RightNull then
+    begin
+      if LeftNull then
+        Result := 0
+      else
+        Result := -1;
+    end
+    else
+    begin
+      Result := CompareValue(LLeft, LRight);
+    end;
   end else
   begin
     Result := 0;

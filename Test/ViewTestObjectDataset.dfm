@@ -17,7 +17,7 @@ object frmObjectDatasetTest: TfrmObjectDatasetTest
     Left = 0
     Top = 25
     Width = 665
-    Height = 367
+    Height = 346
     Align = alClient
     BorderStyle = bsNone
     DataSource = dsList
@@ -36,12 +36,32 @@ object frmObjectDatasetTest: TfrmObjectDatasetTest
     DataSource = dsList
     Align = alTop
     TabOrder = 1
+  end
+  object edFilter: TEdit
+    Left = 0
+    Top = 371
+    Width = 665
+    Height = 21
+    Align = alBottom
+    TabOrder = 2
+    OnKeyDown = edFilterKeyDown
     ExplicitLeft = 16
-    ExplicitTop = 8
-    ExplicitWidth = 240
+    ExplicitTop = 376
+    ExplicitWidth = 121
   end
   object dsList: TDataSource
     Left = 488
     Top = 264
+  end
+  object JvMemoryData1: TJvMemoryData
+    Filtered = True
+    FilterOptions = [foCaseInsensitive]
+    FieldDefs = <>
+    LoadRecords = True
+    ApplyMode = amAppend
+    ExactApply = True
+    OneValueInArray = False
+    Left = 424
+    Top = 184
   end
 end

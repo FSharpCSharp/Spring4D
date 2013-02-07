@@ -4,6 +4,7 @@ interface
 
 uses
   Adapters.ObjectDataset.Abstract
+  ,Adapters.ObjectDataset.ExprParser
   ,Classes
   ,Spring.Collections
   ,Rtti
@@ -18,14 +19,21 @@ type
     FProperties: IList<TRttiProperty>;
     FDefaultStringFieldLength: Integer;
     FItemTypeInfo: PTypeInfo;
+    FFilterParser: TExprParser;
+    function GetSort: string;
+    procedure SetSort(const Value: string);
   protected
     procedure DoDeleteRecord(Index: Integer); override;
     procedure DoGetFieldValue(Field: TField; Index: Integer; var Value: Variant); override;
     procedure DoPostRecord(Index: Integer); override;
     function ConvertPropertyValueToVariant(const AValue: TValue): Variant; virtual;
     procedure InitRttiPropertiesFromItemType(AItemTypeInfo: PTypeInfo); virtual;
+    procedure UpdateFilter(); override;
+    function ParserGetVariableValue(Sender: TObject; const VarName: string; var Value: Variant): Boolean; virtual;
+    function RecordFilter: Boolean; override;
 
     function  GetRecordCount: Integer; override;
+    function DataListCount(): Integer; override;
 
     procedure LoadFieldDefsFromFields(Fields: TFields; FieldDefs: TFieldDefs); virtual;
     procedure LoadFieldDefsFromItemType; virtual;
@@ -33,11 +41,20 @@ type
     procedure InternalInitFieldDefs; override;
     procedure InternalOpen; override;
     function  IsCursorOpen: Boolean; override;
+    procedure SetFilterText(const Value: string); override;
+
+    function CompareRecords(const Item1, Item2: Integer; AIndexFieldList: IList<TIndexFieldInfo>): Integer; virtual;
+    procedure InternalSetSort(AIndexFieldList: IList<TIndexFieldInfo>); virtual;
+    function CreateIndexList(const ASortText: string): IList<TIndexFieldInfo>;
+    procedure QuickSort(L, R: Integer; Compare: TCompareRecords; AIndexFieldList: IList<TIndexFieldInfo>); virtual;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
     procedure SetDataList<T: class>(ADataList: IList<T>);
+
+    property Sort: string read GetSort write SetSort;
+
     property DataList: IList read FDataList;
   published
     property DefaultStringFieldLength: Integer read FDefaultStringFieldLength write FDefaultStringFieldLength default 250;
@@ -76,12 +93,109 @@ uses
   ,Mapping.Attributes
   ,SysUtils
   ,Spring.Reflection.ValueConverters
+  ,StrUtils
+  ,Variants    
+  ,Core.Reflection
   ;
 
 type
   EObjectDatasetException = class(Exception);
+  
+  {$WARNINGS OFF}
+  TWideCharSet = set of Char;
+  {$WARNINGS ON}
 
 { TObjectDataset }
+
+
+
+
+function SplitString(const AText: string; const ADelimiters: TWideCharSet;
+  const ARemoveEmptyEntries: Boolean): TArray<string>;
+var
+  LResCount, I, LLag,
+    LPrevIndex, LCurrPiece: NativeInt;
+  LPiece: string;
+begin
+  { Initialize, set all to zero }
+  SetLength(Result , 0);
+
+  { Do nothing for empty strings }
+  if System.Length(AText) = 0 then
+    Exit;
+
+  { Determine the length of the resulting array }
+  LResCount := 0;
+
+  for I := 1 to System.Length(AText) do
+    if CharInSet(AText[I], ADelimiters) then
+      Inc(LResCount);
+
+  { Set the length of the output split array }
+  SetLength(Result, LResCount + 1);
+
+  { Split the string and fill the resulting array }
+  LPrevIndex := 1;
+  LCurrPiece := 0;
+  LLag := 0;
+
+  for I := 1 to System.Length(AText) do
+    if CharInSet(AText[I], ADelimiters) then
+    begin
+      LPiece := System.Copy(AText, LPrevIndex, (I - LPrevIndex));
+
+      if ARemoveEmptyEntries and (System.Length(LPiece) = 0) then
+        Inc(LLag)
+      else
+        Result[LCurrPiece - LLag] := LPiece;
+
+      { Adjust prev index and current piece }
+      LPrevIndex := I + 1;
+      Inc(LCurrPiece);
+    end;
+
+  { Copy the remaining piece of the string }
+  LPiece := Copy(AText, LPrevIndex, System.Length(AText) - LPrevIndex + 1);
+
+  { Doom! }
+  if ARemoveEmptyEntries and (System.Length(LPiece) = 0) then
+    Inc(LLag)
+  else
+    Result[LCurrPiece - LLag] := LPiece;
+
+  { Re-adjust the array for the missing pieces }
+  if LLag > 0 then
+    System.SetLength(Result, LResCount - LLag + 1);
+end;
+
+function TObjectDataset.CompareRecords(const Item1, Item2: Integer;
+  AIndexFieldList: IList<TIndexFieldInfo>): Integer;
+var
+  i: Integer;
+  LFieldInfo: TIndexFieldInfo;
+  LData1, LData2: TValue;
+  LValue1, LValue2: TValue;
+  LItem1, LItem2: Integer;
+begin
+  {TODO -oLinas -cGeneral : compare records}
+  Result := 0; 
+  for i := 0 to AIndexFieldList.Count - 1 do
+  begin
+    LFieldInfo := AIndexFieldList[i];        
+    
+    LData1 := FDataList[Item1];
+    LData2 := FDataList[Item2];
+
+    LValue1 := LFieldInfo.RttiProperty.GetValue(TRttiExplorer.GetRawPointer(LData1));
+    LValue2 := LFieldInfo.RttiProperty.GetValue(TRttiExplorer.GetRawPointer(LData2));  
+    Result := CompareValue(LValue1, LValue2);
+    if LFieldInfo.Descending then
+      Result := -Result;
+      
+    if Result <> 0 then
+      Exit;  
+  end;
+end;
 
 function TObjectDataset.ConvertPropertyValueToVariant(const AValue: TValue): Variant;
 begin
@@ -92,11 +206,47 @@ constructor TObjectDataset.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   FProperties := TCollections.CreateList<TRttiProperty>;
+  FFilterParser := TExprParser.Create;
+  FFilterParser.OnGetVariable := ParserGetVariableValue;
   FDefaultStringFieldLength := 250;
+end;
+
+function TObjectDataset.CreateIndexList(const ASortText: string): IList<TIndexFieldInfo>;
+var
+  LText, LItem: string;
+  LSplittedFields: TArray<string>;
+  LIndexFieldItem: TIndexFieldInfo;
+  iPos: Integer;
+begin
+  Result := TCollections.CreateList<TIndexFieldInfo>;
+  {TODO -oLinas -cGeneral : maybe avoid TSvStrings dependency}
+  LSplittedFields := SplitString(ASortText, [','], True);
+  for LText in LSplittedFields do
+  begin
+    LItem := UpperCase(LText);
+    LIndexFieldItem.Descending := PosEx('DESC', LItem) > 1;
+    LItem := Trim(LText);
+    iPos := PosEx(' ', LItem);
+    if iPos > 1 then
+      LItem := Copy(LItem, 1, iPos - 1);           
+    
+    LIndexFieldItem.Field := FindField(LItem);
+    LIndexFieldItem.RttiProperty := FProperties[LIndexFieldItem.Field.Index];
+    LIndexFieldItem.CaseInsensitive := True;
+    Result.Add(LIndexFieldItem);
+  end;
+end;
+
+function TObjectDataset.DataListCount: Integer;
+begin
+  Result := -1;
+  if Assigned(FDataList) then
+    Result := FDataList.Count;
 end;
 
 destructor TObjectDataset.Destroy;
 begin
+  FFilterParser.Free;
   inherited Destroy;
 end;
 
@@ -153,7 +303,17 @@ function TObjectDataset.GetRecordCount: Integer;
 begin
   Result := -1;
   if Assigned(FDataList) then
-    Result := FDataList.Count;
+  begin
+    if IsFilterEntered then
+      Result := FilteredIndexes.Count
+    else
+      Result := FDataList.Count;
+  end;
+end;
+
+function TObjectDataset.GetSort: string;
+begin
+  Result := '';
 end;
 
 procedure TObjectDataset.InitRttiPropertiesFromItemType(AItemTypeInfo: PTypeInfo);
@@ -207,6 +367,28 @@ begin
 
   BindFields(True);
   SetRecBufSize();
+end;
+
+procedure TObjectDataset.InternalSetSort(AIndexFieldList: IList<TIndexFieldInfo>);
+var
+  Pos: DB.TBookmark;
+begin
+  if IsEmpty then
+    Exit;
+  Pos := Bookmark;
+  try      
+    QuickSort(0, DataListCount - 1, CompareRecords, AIndexFieldList);
+    SetBufListSize(0);
+    try
+      SetBufListSize(BufferCount + 1);
+    except
+      SetState(dsInactive);
+      CloseCursor;
+      raise;
+    end;
+  finally
+    Bookmark := Pos;
+  end;
 end;
 
 function TObjectDataset.IsCursorOpen: Boolean;
@@ -352,10 +534,141 @@ begin
   end;
 end;
 
+function TObjectDataset.ParserGetVariableValue(Sender: TObject; const VarName: string;
+  var Value: Variant): Boolean;
+var
+  LField: TField;
+  LRecBuf: TRecordBuffer;
+begin        
+  Result := False;
+  LField := FindField(Varname);
+  if Assigned(LField) then
+  begin       
+    if GetActiveRecBuf(LRecBuf) then
+    begin           
+      DoGetFieldValue(LField, Current, Value);
+   //   Value := LField.Value;
+      Result := True;
+    end;        
+  end;
+end;
+
+procedure TObjectDataset.QuickSort(L, R: Integer; Compare: TCompareRecords; AIndexFieldList: IList<TIndexFieldInfo>);
+var
+  I, J: Integer;
+  P: Integer;
+begin
+  repeat
+    I := L;
+    J := R;
+    P := (L + R) shr 1;
+    repeat
+      while Compare(I, P, AIndexFieldList) < 0 do
+        Inc(I);
+      while Compare(J, P, AIndexFieldList) > 0 do
+        Dec(J);
+      if I <= J then
+      begin
+        FDataList.Exchange(I, J);
+        Inc(I);
+        Dec(J);
+      end;
+    until I > J;
+    if L < J then
+      QuickSort(L, J, Compare, AIndexFieldList);
+    L := I;
+  until I >= R;
+end;
+
+function TObjectDataset.RecordFilter: Boolean;
+var
+  SaveState: TDataSetState;
+  LValue: Variant;
+begin
+  Result := True;
+  if Assigned(OnFilterRecord) or (FFilterParser <> nil) then
+  begin
+    if (Current >= 0) and (Current < DataListCount { RecordCount}) then
+    begin
+      SaveState := SetTempState(dsFilter);
+      try
+        if Assigned(OnFilterRecord) then
+          OnFilterRecord(Self, Result)
+        else
+        begin
+          if FFilterParser.Eval() then
+          begin
+            FFilterParser.EnableWildcardMatching := not (foNoPartialCompare in FilterOptions);
+            FFilterParser.CaseInsensitive := foCaseInsensitive in FilterOptions;
+            LValue := FFilterParser.Value;
+            Result := LValue;
+          end;
+        end;         
+      except
+        InternalHandleException;
+      end;
+      RestoreState(SaveState);
+    end
+    else
+      Result := False;
+  end;  
+end;
+
 procedure TObjectDataset.SetDataList<T>(ADataList: IList<T>);
 begin
   FItemTypeInfo := TypeInfo(T);
   FDataList := ADataList.AsList;
+end;
+
+
+procedure TObjectDataset.SetFilterText(const Value: string);
+var
+  LSaveState: TDataSetState;
+begin
+  if (Value = Filter) then
+    Exit; 
+
+  LSaveState := SetTempState(dsFilter);
+  try
+    if Active then
+    begin
+      CheckBrowseMode;
+      inherited SetFilterText(Value);
+      UpdateFilter;
+      if Filtered then
+        First;
+    end
+    else
+    begin
+      inherited SetFilterText(Value);
+      UpdateFilter;
+    end;
+  finally
+    RestoreState(LSaveState);
+  end;     
+end;
+
+procedure TObjectDataset.SetSort(const Value: string);
+var
+  LIndexFieldList: IList<TIndexFieldInfo>;
+begin
+  CheckActive;
+  UpdateCursorPos;
+  LIndexFieldList := CreateIndexList(Value);
+  InternalSetSort(LIndexFieldList);
+  Resync([]);
+end;
+
+procedure TObjectDataset.UpdateFilter;
+begin
+  FilteredIndexes.Clear;
+  if Filter <> '' then
+  begin
+    if foCaseInsensitive in FilterOptions then
+      FFilterParser.Expression := AnsiUpperCase(Filter)
+    else
+      FFilterParser.Expression := Filter;
+  end;
 end;
 
 end.

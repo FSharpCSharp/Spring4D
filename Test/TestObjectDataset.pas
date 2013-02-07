@@ -23,6 +23,9 @@ type
     procedure Edit();
     procedure Insert();
     procedure Delete();
+    procedure Sort();
+    procedure Locate();
+    procedure Filter();
     procedure TestGUI;
   end;
 
@@ -33,6 +36,7 @@ uses
   ViewTestObjectDataset
   ,Forms
   ,DateUtils
+  ,DB
   ;
 
 
@@ -139,6 +143,21 @@ begin
   CheckEquals('Foo', LCustomers.Last.Name);
 end;
 
+procedure TestTObjectDataset.Locate;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  LCustomers := CreateCustomersList(10);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+
+  CheckTrue( FDataset.Locate('Age', 5, []) );
+  CheckEquals(5, FDataset.FieldByName('Age').AsInteger);
+  CheckEquals(5, LCustomers[FDataset.Index].Age);
+
+  CheckFalse( FDataset.Locate('Age', 50, []) );
+end;
+
 procedure TestTObjectDataset.Open;
 var
   LCustomers: IList<TCustomer>;
@@ -195,10 +214,63 @@ begin
   FDataset := TObjectDataset.Create(nil);
 end;
 
+procedure TestTObjectDataset.Sort;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  LCustomers := CreateCustomersList(10);
+
+  LCustomers.First.Age := 2;
+  LCustomers.First.Name := 'Bob';
+  LCustomers.First.MiddleName := 'Middle';
+
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+
+  FDataset.Filter := 'Age > 1';
+  FDataset.Filtered := True;
+
+  FDataset.Sort := 'Age Desc, Name, MIDDLENAME';
+
+//  CheckEquals(10, LCustomers.First.Age);
+  CheckEquals(10, FDataset.FieldByName('Age').AsInteger);
+
+//  CheckEquals('FirstName', FDataset.FieldByName('Name').AsString);
+  CheckEquals('FirstName', LCustomers.Last.Name);
+  CheckEquals('Bob', LCustomers[8].Name);
+  CheckEquals(9, FDataset.RecordCount);
+
+  FDataset.Filtered := False;
+
+  FDataset.Sort := 'Age Desc, MIDDLENAME, Name';
+  CheckEquals('Bob', LCustomers[8].Name);
+  CheckEquals('Middle', LCustomers[8].MiddleName);
+end;
+
 procedure TestTObjectDataset.TearDown;
 begin
   inherited;
   FDataset.Free;
+end;
+
+procedure TestTObjectDataset.Filter;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  LCustomers := CreateCustomersList(10);
+
+ { LCustomers.First.Age := 2;
+  LCustomers.First.Name := 'Bob';
+  LCustomers.First.MiddleName := 'Middle'; }
+  FDataset.Filtered := True;
+ // FDataset.FilterOptions := [foCaseInsensitive];
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+
+
+  FDataset.Filter := '(Age = 2)';
+  CheckEquals(2, FDataset.FieldByName('Age').AsInteger);
+  CheckEquals(1, FDataset.RecordCount);
 end;
 
 procedure TestTObjectDataset.TestGUI;
@@ -207,11 +279,16 @@ var
   LView: TfrmObjectDatasetTest;
 begin
   LCustomers := CreateCustomersList(150);
+  LCustomers.First.Age := 2;
+  LCustomers.First.Name := 'Bob';
   FDataset.SetDataList<TCustomer>(LCustomers);
   FDataset.Open;
   LView := TfrmObjectDatasetTest.Create(nil);
   try
     LView.dsList.DataSet := FDataset;
+    FDataset.Sort := 'Age Desc, NAME';
+    FDataset.Filtered := True;
+
     LView.ShowModal;
   finally
     LView.Free;

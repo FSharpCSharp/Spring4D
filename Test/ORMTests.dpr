@@ -117,7 +117,8 @@ uses
   Adapters.ObjectDataset.Abstract in '..\Adapters.ObjectDataset.Abstract.pas',
   Adapters.ObjectDataset in '..\Adapters.ObjectDataset.pas',
   ViewTestObjectDataset in 'ViewTestObjectDataset.pas' {frmObjectDatasetTest},
-  Adapters.ObjectDataset.Blobs in '..\Adapters.ObjectDataset.Blobs.pas';
+  Adapters.ObjectDataset.Blobs in '..\Adapters.ObjectDataset.Blobs.pas',
+  Adapters.ObjectDataset.ExprParser in '..\Adapters.ObjectDataset.ExprParser.pas';
 
 {$R *.RES}
 
