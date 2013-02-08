@@ -707,8 +707,11 @@ begin
     end
     else
     begin
-      if (State in [dsFilter]) and (GetMode <> gmCurrent) and (FCurrent > -1) and (FCurrent < DataListCount) then
-        FilteredIndexes.Add(FCurrent);
+      if (State in [dsFilter]) and (Filtered) {and (GetMode <> gmCurrent)} and (FCurrent > -1) and (FCurrent < DataListCount) then
+      begin
+        if not FilteredIndexes.Contains(FCurrent) then
+          FilteredIndexes.Add(FCurrent);
+      end;
     end;
 
     if Result = grOK then

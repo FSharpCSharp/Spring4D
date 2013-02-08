@@ -35,11 +35,13 @@ type
     function ParserGetVariableValue(Sender: TObject; const VarName: string; var Value: Variant): Boolean; virtual;
     function RecordFilter: Boolean; override;
 
-    function  GetRecordCount: Integer; override;
+    function GetRecordCount: Integer; override;
     function DataListCount(): Integer; override;
 
     procedure LoadFieldDefsFromFields(Fields: TFields; FieldDefs: TFieldDefs); virtual;
     procedure LoadFieldDefsFromItemType; virtual;
+    procedure RefreshData(); virtual;
+    procedure FilterRecord(AIndex: Integer); virtual;
 
     procedure InternalInitFieldDefs; override;
     procedure InternalOpen; override;
@@ -296,7 +298,10 @@ begin
   if State = dsInsert then
   begin
     FDataList.Add(LItem);
+    Index := FDataList.Count - 1;
   end;
+
+  FilterRecord(Index);
 end;
 
 function TObjectDataset.GetFilterCount: Integer;
@@ -647,6 +652,38 @@ begin
     Result := False;
 end;
 
+procedure TObjectDataset.RefreshData;
+var
+  LRecBuf: TRecordBuffer;
+  LGetResult: TGetResult;
+begin
+  FilteredIndexes.Clear;
+  SetCurrent(-1);
+  LGetResult := grOK;
+  while GetActiveRecBuf(LRecBuf) and (LGetResult <> grEOF) do
+  begin
+    LGetResult := GetRecord(LRecBuf, gmNext, False);
+  end;
+end;
+
+procedure TObjectDataset.FilterRecord(AIndex: Integer);
+var
+  LRecBuf: TRecordBuffer;
+begin
+  if (IsFilterEntered) and (AIndex > -1) and (AIndex < DataListCount) then
+  begin
+    SetCurrent(AIndex);
+    if GetActiveRecBuf(LRecBuf) then
+    begin
+      if RecordFilter then
+      begin
+        if not FilteredIndexes.Contains(AIndex) then
+          FilteredIndexes.Add(AIndex);
+      end;
+    end;
+  end;
+end;
+
 procedure TObjectDataset.SetDataList<T>(ADataList: IList<T>);
 begin
   FItemTypeInfo := TypeInfo(T);
@@ -712,12 +749,7 @@ begin
 
   LSaveState := SetTempState(dsFilter);
   try
-    FilteredIndexes.Clear;
-    SetCurrent(-1);
-    while not Eof do
-    begin
-      Next;
-    end;
+    RefreshData();
   finally
     RestoreState(LSaveState);
   end;
