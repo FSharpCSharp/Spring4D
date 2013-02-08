@@ -44,7 +44,20 @@ type
     procedure SetIndex(const Value: Integer);
   protected
     function GetColumnAttributeClass(): TAttributeClass; virtual;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Are filter set and filter text entered?
+    ///	</summary>
+    {$ENDREGION}
     function IsFilterEntered(): Boolean;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Are FilterIndexed fields available?
+    ///	</summary>
+    {$ENDREGION}
+    function IsFiltered(): Boolean;
     // Abstract methods
     procedure DoDeleteRecord(Index: Integer); virtual; abstract;
     procedure DoGetFieldValue(Field: TField; Index: Integer; var Value: Variant); virtual; abstract;
@@ -486,7 +499,7 @@ begin
   if GetActiveRecBuf(LRecBuf) and (PArrayRecInfo(LRecBuf)^.BookmarkFlag = bfCurrent) then
     Result := PArrayRecInfo(LRecBuf)^.Index + 1;
 
-  if IsFilterEntered then
+  if IsFiltered then
     Result := FFilteredIndexes.IndexOf(Result-1) + 1;     {TODO -oOwner -cCategory : Maybe better use dictionary?}
 end;
 
@@ -580,8 +593,7 @@ begin
           begin
             repeat
               Inc(FCurrent);
-              if IsFilterEntered then
-                Accept := RecordFilter;
+              Accept := RecordFilter;
             until Accept or (FCurrent > LRecCount - 1);
 
             if not Accept then
@@ -631,9 +643,7 @@ begin
             repeat
              // FCurrent := Min(FCurrent - 1, LRecCount - 1);
               Dec(FCurrent);
-              if IsFilterEntered then
-                Accept := RecordFilter;
-           //   FCurrent := Min(FCurrent - 1, LRecCount - 1);
+              Accept := RecordFilter;
             until Accept or (FCurrent < 0);
             if not Accept then
             begin
@@ -660,7 +670,7 @@ begin
             Result := grEOF;
            // FCurrent := LRecCount - 1;
           end
-          else if IsFilterEntered then
+          else
           begin
             Accept := RecordFilter();
           end;
@@ -796,6 +806,11 @@ end;
 function TAbstractObjectDataset.IsCursorOpen: Boolean;
 begin
   Result := FInternalOpen;
+end;
+
+function TAbstractObjectDataset.IsFiltered: Boolean;
+begin
+  Result := Filtered and (FilteredIndexes.Count > 0);
 end;
 
 function TAbstractObjectDataset.IsFilterEntered: Boolean;
@@ -945,6 +960,11 @@ begin
     if Filtered then
     begin
       UpdateFilter;
+    end
+    else
+    begin
+      if Active then
+        Resync([]);
     end;
   end;
 end;
@@ -967,7 +987,7 @@ procedure TAbstractObjectDataset.SetRecNo(Value: Integer);
 begin
   CheckBrowseMode;
   Value :=  Min(max(Value, 1), RecordCount);
-  if IsFilterEntered then
+  if IsFiltered then
     Value := FilteredIndexes[Value];
 
   if RecNo <> Value then

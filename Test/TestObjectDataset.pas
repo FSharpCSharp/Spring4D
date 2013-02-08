@@ -38,6 +38,7 @@ uses
   ,Forms
   ,DateUtils
   ,DB
+  ,SysUtils
   ;
 
 
@@ -274,6 +275,8 @@ end;
 procedure TestTObjectDataset.Sort;
 var
   LCustomers: IList<TCustomer>;
+  i: Integer;
+  LMsg: string;
 begin
   LCustomers := CreateCustomersList(10);
 
@@ -283,8 +286,10 @@ begin
 
   FDataset.SetDataList<TCustomer>(LCustomers);
   FDataset.Open;
+
   FDataset.Filtered := True;
   FDataset.Filter := 'Age > 2';
+
   CheckEquals(1, FDataset.RecNo);
   FDataset.Last;
   CheckEquals(8, FDataset.RecNo);
@@ -292,16 +297,36 @@ begin
   FDataset.Sort := 'Age Desc, Name, MIDDLENAME';
   FDataset.First;
   CheckEquals(1, FDataset.RecNo);
-//  CheckEquals(10, LCustomers.First.Age);
   CheckEquals(10, FDataset.FieldByName('Age').AsInteger);
-
-//  CheckEquals('FirstName', FDataset.FieldByName('Name').AsString);
   CheckEquals('FirstName', LCustomers.Last.Name);
   CheckEquals(8, FDataset.RecordCount);
 
+
+  LMsg := '';
+  Status(Format('Filter: %S. Sort: %S', [FDataset.Filter, FDataset.Sort]));
+  for i := 0 to LCustomers.Count - 1 do
+  begin
+    Status(LMsg + Format('%D %S %D', [i, LCustomers[i].Name, LCustomers[i].Age]));
+  end;
+
   FDataset.Filtered := False;
+
+  LMsg := '';
+  Status(Format('Filtered false. Sort: %S', [FDataset.Sort]));
+  for i := 0 to LCustomers.Count - 1 do
+  begin
+    Status(LMsg + Format('%D %S %D', [i, LCustomers[i].Name, LCustomers[i].Age]));
+  end;
+
   CheckEquals(10, FDataset.RecordCount);
-  FDataset.Sort := 'Age Desc, MIDDLENAME, Name';
+  FDataset.Sort := 'Age Desc, Name';
+
+  LMsg := '';
+  Status(Format('Filter: %S. Sort: %S', [FDataset.Filter, FDataset.Sort]));
+  for i := 0 to LCustomers.Count - 1 do
+  begin
+    Status(LMsg + Format('%D %S %D', [i, LCustomers[i].Name, LCustomers[i].Age]));
+  end;
 
   FDataset.Last;
   CheckEquals(10, FDataset.RecNo);

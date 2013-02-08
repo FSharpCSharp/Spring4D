@@ -393,9 +393,9 @@ begin
   Pos := Bookmark;
   try
     QuickSort(0, RecordCount - 1, CompareRecords, AIndexFieldList);
-    //SetBufListSize(0);
+    SetBufListSize(0);
     try
-   //   SetBufListSize(BufferCount + 1);
+      SetBufListSize(BufferCount + 1);
     except
       SetState(dsInactive);
       CloseCursor;
@@ -628,7 +628,7 @@ var
   SaveState: TDataSetState;
   LValue: Variant;
 begin
-  Result := False;
+  Result := True;
   if (Current >= 0) and (Current < DataListCount { RecordCount}) then
   begin
     SaveState := SetTempState(dsFilter);
@@ -637,7 +637,7 @@ begin
         OnFilterRecord(Self, Result)
       else
       begin
-        if FFilterParser.Eval() then
+        if (IsFilterEntered) and (FFilterParser.Eval()) then
         begin
           FFilterParser.EnableWildcardMatching := not (foNoPartialCompare in FilterOptions);
           FFilterParser.CaseInsensitive := foCaseInsensitive in FilterOptions;
@@ -649,7 +649,9 @@ begin
       InternalHandleException;
     end;
     RestoreState(SaveState);
-  end;
+  end
+  else
+    Result := False;
 end;
 
 procedure TObjectDataset.SetDataList<T>(ADataList: IList<T>);
@@ -697,8 +699,11 @@ procedure TObjectDataset.UpdateFilter;
 var
   LSaveState: TDataSetState;
 begin
-  if Filter <> '' then
-  begin
+  if not Active then
+    Exit;
+
+//  if Filter <> '' then
+//  begin
     if foCaseInsensitive in FilterOptions then
       FFilterParser.Expression := AnsiUpperCase(Filter)
     else
@@ -716,7 +721,7 @@ begin
       RestoreState(LSaveState);
     end;
     First;
-  end;
+ // end;
   if Sorted then
     SetSort(Sort);
 end;
