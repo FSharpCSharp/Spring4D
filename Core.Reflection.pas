@@ -797,14 +797,14 @@ begin
       if RightNull then
         Result := 0
       else
-        Result := -1;
+        Result := 1;
     end
     else if RightNull then
     begin
       if LeftNull then
         Result := 0
       else
-        Result := 1;
+        Result := -1;
     end
     else
     begin

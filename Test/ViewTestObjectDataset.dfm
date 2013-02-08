@@ -12,6 +12,7 @@ object frmObjectDatasetTest: TfrmObjectDatasetTest
   Font.Style = []
   OldCreateOrder = False
   OnCreate = FormCreate
+  OnShow = FormShow
   DesignSize = (
     665
     392)
@@ -21,7 +22,7 @@ object frmObjectDatasetTest: TfrmObjectDatasetTest
     Left = 0
     Top = 25
     Width = 665
-    Height = 346
+    Height = 327
     Align = alClient
     BorderStyle = bsNone
     DataSource = dsList
@@ -44,12 +45,13 @@ object frmObjectDatasetTest: TfrmObjectDatasetTest
   end
   object edFilter: TEdit
     Left = 0
-    Top = 371
+    Top = 352
     Width = 665
     Height = 21
     Align = alBottom
     TabOrder = 2
     OnKeyDown = edFilterKeyDown
+    ExplicitTop = 371
   end
   object cbFiltered: TCheckBox
     Left = 560
@@ -62,6 +64,15 @@ object frmObjectDatasetTest: TfrmObjectDatasetTest
     State = cbChecked
     TabOrder = 3
     OnClick = cbFilteredClick
+  end
+  object sbTotal: TStatusBar
+    Left = 0
+    Top = 373
+    Width = 665
+    Height = 19
+    Panels = <>
+    SimplePanel = True
+    ExplicitTop = 390
   end
   object dsList: TDataSource
     Left = 488

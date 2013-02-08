@@ -28,7 +28,7 @@ type
 
   TAttributeClass = class of TCustomAttribute;
 
-  TCompareRecords = function(const Item1, Item2: Integer; AIndexFieldList: IList<TIndexFieldInfo>): Integer of object;
+  TCompareRecords = function(const Item1, Item2: TValue; AIndexFieldList: IList<TIndexFieldInfo>): Integer of object;
 
   TAbstractObjectDataset = class(TDataset)
   private
@@ -136,6 +136,30 @@ type
     function GetFieldData(Field: TField; Buffer: Pointer; NativeFormat: Boolean): Boolean; override;
     procedure SetFieldData(Field: TField; Buffer: Pointer); override;
     procedure SetFieldData(Field: TField; Buffer: Pointer; NativeFormat: Boolean); override;
+  published
+    property AfterCancel;
+    property AfterClose;
+    property AfterDelete;
+    property AfterEdit;
+    property AfterInsert;
+    property AfterOpen;
+    property AfterPost;
+    property AfterRefresh;
+    property AfterScroll;
+    property BeforeCancel;
+    property BeforeClose;
+    property BeforeDelete;
+    property BeforeEdit;
+    property BeforeInsert;
+    property BeforeOpen;
+    property BeforePost;
+    property BeforeRefresh;
+    property BeforeScroll;
+
+    property OnCalcFields;
+    property OnDeleteError;
+    property OnEditError;
+    property OnFilterRecord;
   end;
 
 resourcestring
@@ -956,15 +980,25 @@ procedure TAbstractObjectDataset.SetFiltered(Value: Boolean);
 begin
   if Filtered <> Value then
   begin
-    inherited SetFiltered(Value);
-    if Filtered then
+    if Active then
     begin
-      UpdateFilter;
+      CheckBrowseMode;
+      inherited SetFiltered(Value);
+      if Value then
+      begin
+        UpdateFilter;
+        First;
+      end
+      else
+      begin
+        UpdateFilter();
+        Resync([]);
+        First;
+      end;
     end
     else
     begin
-      if Active then
-        Resync([]);
+      inherited SetFiltered(Value);
     end;
   end;
 end;

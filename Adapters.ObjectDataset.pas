@@ -24,6 +24,7 @@ type
     FSort: string;
     function GetSort: string;
     procedure SetSort(const Value: string);
+    function GetFilterCount: Integer;
   protected
     procedure DoDeleteRecord(Index: Integer); override;
     procedure DoGetFieldValue(Field: TField; Index: Integer; var Value: Variant); override;
@@ -45,16 +46,17 @@ type
     function  IsCursorOpen: Boolean; override;
     procedure SetFilterText(const Value: string); override;
 
-    function CompareRecords(const Item1, Item2: Integer; AIndexFieldList: IList<TIndexFieldInfo>): Integer; virtual;
+    function CompareRecords(const Item1, Item2: TValue; AIndexFieldList: IList<TIndexFieldInfo>): Integer; virtual;
     procedure InternalSetSort(AIndexFieldList: IList<TIndexFieldInfo>); virtual;
     function CreateIndexList(const ASortText: string): IList<TIndexFieldInfo>;
-    procedure QuickSort(L, R: Integer; Compare: TCompareRecords; AIndexFieldList: IList<TIndexFieldInfo>); virtual;
+    procedure QuickSort(ALow, AHigh: Integer; Compare: TCompareRecords; AIndexFieldList: IList<TIndexFieldInfo>); virtual;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
     procedure SetDataList<T: class>(ADataList: IList<T>);
 
+    property FilterCount: Integer read GetFilterCount;
     property Sorted: Boolean read FSorted;
     property Sort: string read GetSort write SetSort;
 
@@ -97,7 +99,7 @@ uses
   ,SysUtils
   ,Spring.Reflection.ValueConverters
   ,StrUtils
-  ,Variants    
+  ,Variants
   ,Core.Reflection
   ;
 
@@ -171,44 +173,27 @@ begin
     System.SetLength(Result, LResCount - LLag + 1);
 end;
 
-function TObjectDataset.CompareRecords(const Item1, Item2: Integer;
+function TObjectDataset.CompareRecords(const Item1, Item2: TValue;
   AIndexFieldList: IList<TIndexFieldInfo>): Integer;
 var
   i: Integer;
   LFieldInfo: TIndexFieldInfo;
-  LData1, LData2: TValue;
   LValue1, LValue2: TValue;
-  LItem1, LItem2: Integer;
 begin
   Result := 0;
-
-  if Item1 = Item2 then
-    Exit;
-
-  LItem1 := Item1;
-  LItem2 := Item2;
 
   for i := 0 to AIndexFieldList.Count - 1 do
   begin
     LFieldInfo := AIndexFieldList[i];
+    LValue1 := LFieldInfo.RttiProperty.GetValue(TRttiExplorer.GetRawPointer(Item1));
+    LValue2 := LFieldInfo.RttiProperty.GetValue(TRttiExplorer.GetRawPointer(Item2));
 
-    if Filtered and (FilteredIndexes.Count > 0) then
-    begin
-      LItem1 := FilteredIndexes[Item1];
-      LItem2 := FilteredIndexes[Item2];
-    end;
-
-    LData1 := FDataList[LItem1];
-    LData2 := FDataList[LItem2];
-
-    LValue1 := LFieldInfo.RttiProperty.GetValue(TRttiExplorer.GetRawPointer(LData1));
-    LValue2 := LFieldInfo.RttiProperty.GetValue(TRttiExplorer.GetRawPointer(LData2));  
     Result := CompareValue(LValue1, LValue2);
     if LFieldInfo.Descending then
       Result := -Result;
-      
+
     if Result <> 0 then
-      Exit;  
+      Exit;
   end;
 end;
 
@@ -314,6 +299,11 @@ begin
   end;
 end;
 
+function TObjectDataset.GetFilterCount: Integer;
+begin
+  Result := FilteredIndexes.Count;
+end;
+
 function TObjectDataset.GetRecordCount: Integer;
 begin
   Result := -1;
@@ -393,14 +383,14 @@ begin
   Pos := Bookmark;
   try
     QuickSort(0, RecordCount - 1, CompareRecords, AIndexFieldList);
-    SetBufListSize(0);
-    try
-      SetBufListSize(BufferCount + 1);
-    except
-      SetState(dsInactive);
-      CloseCursor;
-      raise;
-    end;
+   // SetBufListSize(0);
+    //try
+      //SetBufListSize(BufferCount + 1);
+   // except
+    //  SetState(dsInactive);
+   //   CloseCursor;
+    //  raise;
+    //end;
   finally
     Bookmark := Pos;
   end;
@@ -569,59 +559,62 @@ begin
   end;
 end;
 
-procedure TObjectDataset.QuickSort(L, R: Integer; Compare: TCompareRecords; AIndexFieldList: IList<TIndexFieldInfo>);
+procedure TObjectDataset.QuickSort(ALow, AHigh: Integer; Compare: TCompareRecords; AIndexFieldList: IList<TIndexFieldInfo>);
 var
-  I, J: Integer;
-  P: Integer;
-  LDataListI, LDataListJ: Integer;
+  LLow, LHigh: Integer;
+  iPivot: Integer;
+  LPivot: TValue;
 begin
+  if (FDataList.Count = 0) or ( (AHigh - ALow) <= 0 ) then
+    Exit;
+
   repeat
-    I := L;
-    J := R;
-    P := (L + R) shr 1;
+    LLow := ALow;
+    LHigh := AHigh;
+    iPivot := (ALow + (AHigh - ALow) shr 1);
+    if IsFiltered then
+    begin
+      LPivot := FDataList[ FilteredIndexes[iPivot] ];
+    end
+    else
+      LPivot := FDataList[iPivot];
+
     repeat
-      while Compare(I, P, AIndexFieldList) < 0 do
-        Inc(I);
-      while Compare(J, P, AIndexFieldList) > 0 do
-        Dec(J);
-      if I <= J then
+      if IsFiltered then
+        while Compare(FDataList[ FilteredIndexes[LLow] ], LPivot, AIndexFieldList) < 0 do
+          Inc(LLow)
+      else
+        while Compare(FDataList[LLow], LPivot, AIndexFieldList) < 0 do
+          Inc(LLow);
+
+      if IsFiltered then
+        while Compare(FDataList[ FilteredIndexes[LHigh] ], LPivot, AIndexFieldList) > 0 do
+          Dec(LHigh)
+      else
+        while Compare(FDataList[LHigh], LPivot, AIndexFieldList) > 0 do
+          Dec(LHigh);
+
+      if LLow <= LHigh then
       begin
-        LDataListI := I;
-        LDataListJ := J;
-        if Filtered and (FilteredIndexes.Count > 0) then
+        if LLow <> LHigh then
         begin
-          LDataListI := FilteredIndexes[I];
-          LDataListJ := FilteredIndexes[J];
+          if IsFiltered then
+            FDataList.Exchange(FilteredIndexes[LLow], FilteredIndexes[LHigh])
+          else
+            FDataList.Exchange(LLow, LHigh);
         end;
-        FDataList.Exchange(LDataListI, LDataListJ);
-        //if Filtered then
-       // begin
-         // FilteredIndexes.Exchange(I, J);
-       // end;
 
-
-       { if (Filtered) and (FilteredIndexes.Count > 0) then
-        begin
-          LFilterIndex := FilteredIndexes.IndexOf(I);
-          if LFilterIndex > -1 then
-          begin
-            FilteredIndexes[LFilterIndex] := J;
-          end;
-          LFilterIndex := FilteredIndexes.IndexOf(J);
-          if LFilterIndex > -1 then
-          begin
-            FilteredIndexes[LFilterIndex] := I;
-          end;
-        end;}
-        Inc(I);
-        Dec(J);
+        Inc(LLow);
+        Dec(LHigh);
       end;
-    until I > J;
-    if L < J then
-      QuickSort(L, J, Compare, AIndexFieldList);
-    L := I;
-  until I >= R;
+    until LLow > LHigh;
+
+    if ALow < LHigh then
+      QuickSort(ALow, LHigh, Compare, AIndexFieldList);
+    ALow := LLow;
+  until LLow >= AHigh;
 end;
+
 
 function TObjectDataset.RecordFilter: Boolean;
 var
@@ -664,18 +657,28 @@ end;
 procedure TObjectDataset.SetFilterText(const Value: string);
 begin
   if (Value = Filter) then
-    Exit; 
+    Exit;
 
   if Active then
   begin
     CheckBrowseMode;
     inherited SetFilterText(Value);
-    UpdateFilter;
+
+    if Filtered then
+    begin
+      UpdateFilter;
+      First;
+    end
+    else
+    begin
+      UpdateFilter();
+      Resync([]);
+      First;
+    end;
   end
   else
   begin
     inherited SetFilterText(Value);
-    UpdateFilter;
   end;
 end;
 
@@ -688,7 +691,7 @@ begin
     Post;
 
   FSort := Value;
- // UpdateCursorPos;
+  UpdateCursorPos;
   LIndexFieldList := CreateIndexList(Value);
   InternalSetSort(LIndexFieldList);
   FSorted := LIndexFieldList.Count > 0;
@@ -702,28 +705,34 @@ begin
   if not Active then
     Exit;
 
-//  if Filter <> '' then
-//  begin
-    if foCaseInsensitive in FilterOptions then
-      FFilterParser.Expression := AnsiUpperCase(Filter)
-    else
-      FFilterParser.Expression := Filter;
+  if foCaseInsensitive in FilterOptions then
+    FFilterParser.Expression := AnsiUpperCase(Filter)
+  else
+    FFilterParser.Expression := Filter;
 
-    LSaveState := SetTempState(dsFilter);
-    try
-      FilteredIndexes.Clear;
-      SetCurrent(-1);
-      while not Eof do
-      begin
-        Next;
-      end;
-    finally
-      RestoreState(LSaveState);
+  LSaveState := SetTempState(dsFilter);
+  try
+    FilteredIndexes.Clear;
+    SetCurrent(-1);
+    while not Eof do
+    begin
+      Next;
     end;
+  finally
+    RestoreState(LSaveState);
+  end;
+
+  DisableControls;
+  try
     First;
- // end;
-  if Sorted then
-    SetSort(Sort);
+    if Sorted then
+      SetSort(Sort);
+  finally
+    EnableControls;
+  end;
+  UpdateCursorPos;
+  Resync([]);
+  First;
 end;
 
 end.
