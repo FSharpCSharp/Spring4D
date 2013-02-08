@@ -11,6 +11,10 @@ object frmObjectDatasetTest: TfrmObjectDatasetTest
   Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
+  OnCreate = FormCreate
+  DesignSize = (
+    665
+    392)
   PixelsPerInch = 96
   TextHeight = 13
   object dbgList: TDBGrid
@@ -27,6 +31,7 @@ object frmObjectDatasetTest: TfrmObjectDatasetTest
     TitleFont.Height = -11
     TitleFont.Name = 'Tahoma'
     TitleFont.Style = []
+    OnTitleClick = dbgListTitleClick
   end
   object DBNavigator1: TDBNavigator
     Left = 0
@@ -45,9 +50,18 @@ object frmObjectDatasetTest: TfrmObjectDatasetTest
     Align = alBottom
     TabOrder = 2
     OnKeyDown = edFilterKeyDown
-    ExplicitLeft = 16
-    ExplicitTop = 376
-    ExplicitWidth = 121
+  end
+  object cbFiltered: TCheckBox
+    Left = 560
+    Top = 367
+    Width = 97
+    Height = 17
+    Anchors = [akRight, akBottom]
+    Caption = 'Filtered'
+    Checked = True
+    State = cbChecked
+    TabOrder = 3
+    OnClick = cbFilteredClick
   end
   object dsList: TDataSource
     Left = 488

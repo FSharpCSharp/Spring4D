@@ -331,9 +331,9 @@ begin
       ',': CToken := tkComa;
       ' ', #09: ;
     else
-      if C in cOperators then
+      if CharInSet(C, cOperators) then
       begin
-        if (C in ['>', '<']) and (Str[Min(idx, Len)] = '=') then
+        if (CharInSet(C, ['>', '<'])) and (Str[Min(idx, Len)] = '=') then
         begin
           Inc(idx);
           if C = '>' then
@@ -367,11 +367,11 @@ begin
           end
         end
         else
-        if C in cNumbers then
+        if CharInSet(C, cNumbers) then
         begin
           CToken := tkInteger;
           S := S + C;
-          while (Idx <= Len) and (Str[Idx] in cNumbers) do
+          while (Idx <= Len) and (CharInSet(Str[Idx], cNumbers)) do
           begin
             S := S + Str[Idx]; // ahuser: performance suicide
             Inc(Idx);
@@ -381,7 +381,7 @@ begin
             CToken := tkNumber;
             Inc(Idx);
             S := S + '.';
-            while (Idx <= Len) and (Str[Idx] in cNumbers) do
+            while (Idx <= Len) and (CharInSet(Str[Idx], cNumbers)) do
             begin
               S := S + Str[Idx]; // ahuser: performance suicide
               Inc(Idx);
@@ -393,18 +393,18 @@ begin
         begin
           CToken := tkNumber;
           S := S + C;
-          while (Idx <= Len) and (Str[Idx] in cNumbers) do
+          while (Idx <= Len) and (CharInSet(Str[Idx], cNumbers)) do
           begin
             S := S + Str[Idx]; // ahuser: performance suicide
             Inc(Idx);
           end;
         end
         else
-        if C in cLetters then
+        if CharInSet(C, cLetters) then
         begin
           CToken := tkIdentifier;
           S := S + C;
-          while (Idx <= Len) and (Str[Idx] in cLettersAndNumbers) do
+          while (Idx <= Len) and (CharInSet(Str[Idx], cLettersAndNumbers)) do
           begin
             S := S + Str[Idx]; // ahuser: performance suicide
             Inc(Idx);
@@ -533,7 +533,7 @@ begin
 
     if Lex.Token = tkOperator then
     begin
-      if Lex.Chr in ['+', '-'] then
+      if CharInSet(Lex.Chr, ['+', '-']) then
       begin
         LexAccept();
         RightNode := Expr();
@@ -567,7 +567,7 @@ begin
 
     if Lex.Token = tkOperator then
     begin
-      if Lex.Chr in ['*', '/', '=', '&', '|', '<', '>', '~', '{', '}', '?'] then
+      if CharInSet(Lex.Chr, ['*', '/', '=', '&', '|', '<', '>', '~', '{', '}', '?']) then
       begin
         LexAccept();
         RightNode := Expr();
@@ -610,7 +610,7 @@ begin
         end;
       tkOperator:                       // unary minus
         begin
-          if Lex.Chr in ['+', '-', '!'] then
+          if CharInSet(Lex.Chr, ['+', '-', '!']) then
           begin
             LexAccept();
             CNode := TNodeUnary.Create(Self, Lex, Factor());

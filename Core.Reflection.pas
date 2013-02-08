@@ -763,6 +763,7 @@ function CompareValue(const Left, Right: TValue): Integer;
 var
   LLeft, LRight: TValue;
   LeftNull, RightNull: Boolean;
+  LRel: TVariantRelationship;
 begin
   if Left.IsOrdinal and Right.IsOrdinal then
   begin
@@ -778,7 +779,14 @@ begin
   end
   else if (Left.TypeInfo = TypeInfo(Variant)) and (Right.TypeInfo = TypeInfo(Variant)) then
   begin
-    Result := Integer(VarCompareValue(Left.AsVariant, Right.AsVariant));
+    Result := 0;
+    LRel := VarCompareValue(Left.AsVariant, Right.AsVariant);
+    case LRel of
+      vrEqual: Result := 0;
+      vrLessThan: Result := -1;
+      vrGreaterThan: Result := 1;
+      vrNotEqual: Result := -1;
+    end;
   end
   else if TUtils.IsNullableType(Left.TypeInfo) and TUtils.IsNullableType(Right.TypeInfo) then
   begin
@@ -789,14 +797,14 @@ begin
       if RightNull then
         Result := 0
       else
-        Result := 1;
+        Result := -1;
     end
     else if RightNull then
     begin
       if LeftNull then
         Result := 0
       else
-        Result := -1;
+        Result := 1;
     end
     else
     begin

@@ -24,6 +24,7 @@ type
     procedure Insert();
     procedure Delete();
     procedure Sort();
+    procedure SimpleSort();
     procedure Locate();
     procedure Filter();
     procedure TestGUI;
@@ -117,6 +118,8 @@ begin
   LDate := Today;
   FDataset.FieldByName('LastEdited').AsDateTime := LDate;
   FDataset.Post;
+  CheckEquals(1, FDataset.RecNo);
+  CheckEquals(999, FDataset.FieldByName('Age').AsInteger);
   CheckEquals(999, LCustomers[0].Age);
   CheckEquals('Middle', LCustomers[0].MiddleName);
   CheckEquals(LDate, LCustomers[0].LastEdited);
@@ -138,9 +141,27 @@ begin
   FDataset.Post;
 
   CheckEquals(11, LCustomers.Count);
+  CheckEquals(11, FDataset.RecordCount);
+  CheckEquals(11, FDataset.RecNo);
+  CheckEquals(999, FDataset.FieldByName('Age').AsInteger);
+  CheckEquals('Middle', FDataset.FieldByName('MiddleName').AsString);
+  CheckEquals('Foo', FDataset.FieldByName('Name').AsString);
+
   CheckEquals(999, LCustomers.Last.Age);
   CheckEquals('Middle', LCustomers.Last.MiddleName);
   CheckEquals('Foo', LCustomers.Last.Name);
+
+  FDataset.Append;
+  FDataset.FieldByName('Name').AsString := 'Bar';
+  FDataset.FieldByName('Age').AsInteger := 111;
+  FDataset.FieldByName('MiddleName').AsString := 'Marley';
+  FDataset.Post;
+  CheckEquals(12, LCustomers.Count);
+  CheckEquals(12, FDataset.RecordCount);
+  CheckEquals(12, FDataset.RecNo);
+  CheckEquals(111, FDataset.FieldByName('Age').AsInteger);
+  CheckEquals('Marley', FDataset.FieldByName('MiddleName').AsString);
+  CheckEquals('Bar', FDataset.FieldByName('Name').AsString);
 end;
 
 procedure TestTObjectDataset.Locate;
@@ -214,6 +235,42 @@ begin
   FDataset := TObjectDataset.Create(nil);
 end;
 
+procedure TestTObjectDataset.SimpleSort;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  LCustomers := CreateCustomersList(3);
+  LCustomers.First.Name := 'Bob';
+  LCustomers.First.MiddleName := 'Middle';
+
+  LCustomers.Last.Name := 'Michael';
+  LCustomers.Last.MiddleName := 'Jordan';
+
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+
+  FDataset.Filtered := False;
+
+  FDataset.Sort := 'Age Desc, MIDDLENAME, Name';
+  CheckEquals(3, FDataset.RecordCount);
+  CheckEquals(1, FDataset.RecNo);
+  CheckEquals('Michael', FDataset.FieldByName('Name').AsString);
+  CheckEquals('Jordan', FDataset.FieldByName('MiddleName').AsString);
+
+  FDataset.Next;
+  CheckEquals(2, FDataset.RecNo);
+  CheckEquals('FirstName', FDataset.FieldByName('Name').AsString);
+  CheckTrue(FDataset.FieldByName('MiddleName').IsNull);
+
+  FDataset.Sort := 'Age Asc, MIDDLENAME, Name';
+  CheckEquals(2, FDataset.RecNo);
+  CheckEquals('FirstName', FDataset.FieldByName('Name').AsString);
+  CheckTrue(FDataset.FieldByName('MiddleName').IsNull);
+  FDataset.First;
+  CheckEquals('Bob', FDataset.FieldByName('Name').AsString);
+  CheckEquals('Middle', FDataset.FieldByName('MiddleName').AsString);
+end;
+
 procedure TestTObjectDataset.Sort;
 var
   LCustomers: IList<TCustomer>;
@@ -226,23 +283,33 @@ begin
 
   FDataset.SetDataList<TCustomer>(LCustomers);
   FDataset.Open;
-
-  FDataset.Filter := 'Age > 1';
   FDataset.Filtered := True;
+  FDataset.Filter := 'Age > 2';
+  CheckEquals(1, FDataset.RecNo);
+  FDataset.Last;
+  CheckEquals(8, FDataset.RecNo);
 
   FDataset.Sort := 'Age Desc, Name, MIDDLENAME';
-
+  FDataset.First;
+  CheckEquals(1, FDataset.RecNo);
 //  CheckEquals(10, LCustomers.First.Age);
   CheckEquals(10, FDataset.FieldByName('Age').AsInteger);
 
 //  CheckEquals('FirstName', FDataset.FieldByName('Name').AsString);
   CheckEquals('FirstName', LCustomers.Last.Name);
-  CheckEquals('Bob', LCustomers[8].Name);
-  CheckEquals(9, FDataset.RecordCount);
+  CheckEquals(8, FDataset.RecordCount);
 
   FDataset.Filtered := False;
-
+  CheckEquals(10, FDataset.RecordCount);
   FDataset.Sort := 'Age Desc, MIDDLENAME, Name';
+
+  FDataset.Last;
+  CheckEquals(10, FDataset.RecNo);
+  FDataset.Prior;
+  CheckEquals(9, FDataset.RecNo);
+  CheckEquals('Bob', FDataset.FieldByName('Name').AsString);
+  CheckEquals('Middle', FDataset.FieldByName('MiddleName').AsString);
+
   CheckEquals('Bob', LCustomers[8].Name);
   CheckEquals('Middle', LCustomers[8].MiddleName);
 end;

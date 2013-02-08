@@ -35,7 +35,6 @@ type
     FRowBufSize: Integer;
     FFilterBuffer: TRecordBuffer;
     FOldValueBuffer: TRecordBuffer;
-    FEditBuffer: TRecordBuffer;
     FReadOnly: Boolean;
     FCurrent: Integer;
     FInternalOpen: Boolean;
@@ -360,14 +359,14 @@ begin
         RecBuf := nil
       else
         RecBuf := ActiveBuffer;
-    dsEdit, dsInsert:
+    {dsEdit :
     begin
       if FEditBuffer = nil then
         RecBuf := ActiveBuffer
       else
         RecBuf := FEditBuffer;
-    end;
-    dsNewValue:
+    end;                      }
+    dsNewValue, dsInsert, dsEdit:
       RecBuf := ActiveBuffer;
 
     dsCalcFields, dsInternalCalc:
@@ -414,7 +413,7 @@ var
   procedure RefreshBuffers;
   begin
     Reserved := Pointer(FieldListCheckSum(Self));
-    UpdateCursorPos;
+   // UpdateCursorPos;
     Resync([]);
   end;
 
@@ -428,14 +427,14 @@ var
   end;
 
 begin
-  if not Assigned(Reserved) then
-    RefreshBuffers;
-  if (State = dsOldValue) and (FModifiedFields.IndexOf(Field) <> -1) then
+ // if not Assigned(Reserved) then
+ //   RefreshBuffers;
+{  if (State = dsOldValue) and (FModifiedFields.IndexOf(Field) <> -1) then
   begin
     Result := True;
     LRecBuf := FOldValueBuffer;
   end
-  else
+  else}
     Result := GetActiveRecBuf(LRecBuf);
 
   if not Result then
@@ -493,36 +492,11 @@ end;
 
 function TAbstractObjectDataset.GetRecord(Buffer: TRecordBuffer; GetMode: TGetMode;
   DoCheck: Boolean): TGetResult;
-//var
-//  LAccept: Boolean;
- // LSaveState: TDataSetState;
 begin
   if Filtered then
     FFilterBuffer := Buffer;
 
-{  if Filtered then
-  begin
-  //  LSaveState := SetTempState(dsFilter);
-    try
-      Result := InternalGetRecord(Buffer, GetMode, DoCheck);
-      LAccept := True;
-      repeat
-        Result := InternalGetRecord(Buffer, GetMode, DoCheck);
-        if Result = grOK then
-        begin
-          OnFilterRecord(Self, LAccept);
-          if not LAccept and (GetMode = gmCurrent) then
-            Result := grError;
-        end;
-      until LAccept or (Result <> grOK);
-    except
-      Application.HandleException(Self);
-      Result := grError;
-    end;
-    RestoreState(LSaveState);
-  end
-  else  }
-    Result := InternalGetRecord(Buffer, GetMode, DoCheck);
+  Result := InternalGetRecord(Buffer, GetMode, DoCheck);
 end;
 
 function TAbstractObjectDataset.GetRecordCount: Integer;
@@ -579,8 +553,8 @@ end;
 procedure TAbstractObjectDataset.InternalFirst;
 begin
   FCurrent := -1;
-  if IsFilterEntered then
-    FCurrent := FilteredIndexes.FirstOrDefault(-1);
+//  if IsFilterEntered then
+//    FCurrent := FilteredIndexes.FirstOrDefault(-1);
 end;
 
 function TAbstractObjectDataset.InternalGetRecord(Buffer: TRecordBuffer; GetMode: TGetMode;
@@ -600,7 +574,7 @@ begin
           if FCurrent + 1 >= LRecCount then
           begin
             Inc(FCurrent);
-            Result := grEOF;
+            Accept := False;
           end
           else
           begin
@@ -655,15 +629,23 @@ begin
           else
           begin
             repeat
-              FCurrent := Min(FCurrent - 1, LRecCount - 1);
-              //Dec(FCurrent);
+             // FCurrent := Min(FCurrent - 1, LRecCount - 1);
+              Dec(FCurrent);
               if IsFilterEntered then
                 Accept := RecordFilter;
+           //   FCurrent := Min(FCurrent - 1, LRecCount - 1);
             until Accept or (FCurrent < 0);
             if not Accept then
             begin
               Result := grBOF;
               FCurrent := -1;
+            end
+            else
+            begin
+              if FCurrent >= LRecCount then
+              begin
+                Result := grEOF;
+              end;
             end;
           end;
         end;
@@ -674,15 +656,13 @@ begin
           if FCurrent < 0 then
             Result := grBOF
           else if FCurrent >= LRecCount then
-            Result := grEOF
+          begin
+            Result := grEOF;
+           // FCurrent := LRecCount - 1;
+          end
           else if IsFilterEntered then
           begin
             Accept := RecordFilter();
-            if not Accept then
-            begin
-              Result := grError;
-              Exit;
-            end;
           end;
         end;
     end;
@@ -693,7 +673,7 @@ begin
     end
     else
     begin
-      if State in [dsFilter] then
+      if (State in [dsFilter]) and (GetMode <> gmCurrent) and (FCurrent > -1) and (FCurrent < DataListCount) then
         FilteredIndexes.Add(FCurrent);
     end;
 
@@ -719,7 +699,7 @@ var
 begin
   LOld := FCurrent;
   FCurrent := PInteger(Bookmark)^;
-  if IsFilterEntered then
+  if Filtered and (FilteredIndexes.Count > 0) then
   begin
     if not RecordFilter then
       FCurrent := LOld;
@@ -774,9 +754,9 @@ end;
 
 procedure TAbstractObjectDataset.InternalLast;
 begin
-  if IsFilterEntered then
-    FCurrent := FilteredIndexes.LastOrDefault(-1)
-  else
+ // if IsFilterEntered then
+ //   FCurrent := FilteredIndexes.LastOrDefault(RecordCount)
+ // else
     FCurrent := DataListCount {RecordCount};
 end;
 
@@ -928,6 +908,7 @@ var
 begin
   if not(State in dsWriteModes) then
     DatabaseError(SNotEditing, Self);
+
   GetActiveRecBuf(LRecBuf);
 
   if Field.FieldNo > 0 then
@@ -951,30 +932,19 @@ begin
     BufferToVar(LData);
 
   PVariantList(LRecBuf + sizeof(TArrayRecInfo))[Field.Index] := LData;
-  if State in [dsEdit, dsInsert] then
-    FEditBuffer := LRecBuf;
 
   if not (State in [dsCalcFields, dsInternalCalc, dsFilter, dsNewValue]) then
     DataEvent(deFieldChange, Longint(Field));
 end;
 
 procedure TAbstractObjectDataset.SetFiltered(Value: Boolean);
-var
-  LSaveState: TDataSetState;
 begin
   if Filtered <> Value then
   begin
-    FFilteredIndexes.Clear;
-    LSaveState := SetTempState(dsFilter);
-    try
-      inherited SetFiltered(Value);
-      if Filtered then
-      begin
-        UpdateFilter;
-        First;
-      end;
-    finally
-      RestoreState(LSaveState);
+    inherited SetFiltered(Value);
+    if Filtered then
+    begin
+      UpdateFilter;
     end;
   end;
 end;
