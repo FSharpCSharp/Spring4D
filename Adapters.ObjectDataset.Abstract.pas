@@ -39,7 +39,7 @@ type
     FCurrent: Integer;
     FInternalOpen: Boolean;
     FModifiedFields: IList<TField>;
-    FFilteredIndexes: IList<Integer>;
+    FFilterList: IList;
     function GetIndex: Integer;
     procedure SetIndex(const Value: Integer);
   protected
@@ -77,6 +77,7 @@ type
     procedure SetCurrent(AValue: Integer); virtual;
     procedure SetRecBufSize(); virtual;
     function DataListCount(): Integer; virtual;
+    function GetCurrentDataList(): IList; virtual; abstract;
 
     // Abstract overrides
     function AllocRecordBuffer: TRecordBuffer; override;
@@ -111,7 +112,7 @@ type
     destructor Destroy; override;
 
     property Current: Integer read FCurrent;
-    property FilteredIndexes: IList<Integer> read FFilteredIndexes;
+    property FilterList: IList read FFilterList write FFilterList;
     property Index: Integer read GetIndex write SetIndex;
     property ModifiedFields: IList<TField> read FModifiedFields;
     property ReadOnly: Boolean read FReadOnly write FReadOnly default False;
@@ -305,7 +306,7 @@ end;
 function TAbstractObjectDataset.BookmarkValid(Bookmark: TBookmark): Boolean;
 begin
   if Assigned(Bookmark) and (PInteger(Bookmark)^ >= 0) and
-    (PInteger(Bookmark)^ < DataListCount {RecordCount}) then
+    (PInteger(Bookmark)^ < RecordCount) then
     Result := True
   else
     Result := False;
@@ -333,7 +334,6 @@ begin
   FInternalOpen := False;
   FReadOnly := False;
   FModifiedFields := TCollections.CreateList<TField>();
-  FFilteredIndexes := TCollections.CreateList<Integer>;
 end;
 
 
@@ -464,15 +464,7 @@ var
   end;
 
 begin
- // if not Assigned(Reserved) then
- //   RefreshBuffers;
-{  if (State = dsOldValue) and (FModifiedFields.IndexOf(Field) <> -1) then
-  begin
-    Result := True;
-    LRecBuf := FOldValueBuffer;
-  end
-  else}
-    Result := GetActiveRecBuf(LRecBuf);
+  Result := GetActiveRecBuf(LRecBuf);
 
   if not Result then
     Exit;
@@ -504,9 +496,6 @@ begin
   CheckActive;
   if GetActiveRecBuf(LRecBuf) and (PArrayRecInfo(LRecBuf)^.BookmarkFlag = bfCurrent) then
     Result := PArrayRecInfo(LRecBuf)^.Index;
- // Result := RecNo;
- // if Result > -1 then
-//    dec(Result);
 end;
 
 function TAbstractObjectDataset.GetFieldData(Field: TField; Buffer: Pointer): Boolean;
@@ -522,9 +511,6 @@ begin
   Result := -1;
   if GetActiveRecBuf(LRecBuf) and (PArrayRecInfo(LRecBuf)^.BookmarkFlag = bfCurrent) then
     Result := PArrayRecInfo(LRecBuf)^.Index + 1;
-
-  if IsFiltered then
-    Result := FFilteredIndexes.IndexOf(Result-1) + 1;     {TODO -oOwner -cCategory : Maybe better use dictionary?}
 end;
 
 function TAbstractObjectDataset.GetRecord(Buffer: TRecordBuffer; GetMode: TGetMode;
@@ -590,128 +576,57 @@ end;
 procedure TAbstractObjectDataset.InternalFirst;
 begin
   FCurrent := -1;
-//  if IsFilterEntered then
-//    FCurrent := FilteredIndexes.FirstOrDefault(-1);
 end;
 
 function TAbstractObjectDataset.InternalGetRecord(Buffer: TRecordBuffer; GetMode: TGetMode;
   DoCheck: Boolean): TGetResult;
 var
   LRecCount: Integer;
-  Accept: Boolean;
+  LDataList: IList;
 begin
-  Accept := True;
   try
+    LDataList := GetCurrentDataList();
+    if not Assigned(LDataList) then
+    begin
+      Result := grEOF;
+      Exit;
+    end;
+
+    LRecCount := LDataList.Count;
     Result := grOK;
     case GetMode of
       gmNext:
         begin
-          LRecCount := DataListCount {RecordCount};
-
-          if FCurrent + 1 >= LRecCount then
-          begin
+          if FCurrent < LRecCount then
             Inc(FCurrent);
-            Accept := False;
-          end
-          else
-          begin
-            repeat
-              Inc(FCurrent);
-              Accept := RecordFilter;
-            until Accept or (FCurrent > LRecCount - 1);
-
-            if not Accept then
-            begin
-              Result := grEOF;
-              FCurrent := FCurrent - 1;
-            end;
-          end;
-
-
-
-          {if FCurrent < LRecCount then
-            inc(FCurrent);
-
           if FCurrent >= LRecCount then
-            Result := grEOF
-          else
           begin
-            if IsFilterEntered then
-              Accept := RecordFilter();
-          end;  }
+            Result := grEOF;
+          end;
         end;
       gmPrior:
         begin
-         { if FCurrent <= 0 then
+          if FCurrent <=0 then
             FCurrent := -1
           else
           begin
-            LRecCount := RecordCount;
             FCurrent := Min(FCurrent - 1, LRecCount - 1);
-
-            if IsFilterEntered then
-              Accept := RecordFilter();
           end;
 
           if FCurrent < 0 then
-            Result := grBOF;   }
-          LRecCount :=  DataListCount {RecordCount};
-
-          if FCurrent <= 0 then
-          begin
             Result := grBOF;
-            FCurrent := -1;
-          end
-          else
-          begin
-            repeat
-             // FCurrent := Min(FCurrent - 1, LRecCount - 1);
-              Dec(FCurrent);
-              Accept := RecordFilter;
-            until Accept or (FCurrent < 0);
-            if not Accept then
-            begin
-              Result := grBOF;
-              FCurrent := -1;
-            end
-            else
-            begin
-              if FCurrent >= LRecCount then
-              begin
-                Result := grEOF;
-              end;
-            end;
-          end;
         end;
 
       gmCurrent:
         begin
-          LRecCount := DataListCount {RecordCount};
           if FCurrent < 0 then
             Result := grBOF
           else if FCurrent >= LRecCount then
           begin
             Result := grEOF;
-           // FCurrent := LRecCount - 1;
-          end
-          else
-          begin
-            Accept := RecordFilter();
+            FCurrent := LRecCount;
           end;
         end;
-    end;
-
-    if not Accept then
-    begin
-      Result := grEOF;
-    end
-    else
-    begin
-      if (State in [dsFilter]) and (Filtered) {and (GetMode <> gmCurrent)} and (FCurrent > -1) and (FCurrent < DataListCount) then
-      begin
-        if not FilteredIndexes.Contains(FCurrent) then
-          FilteredIndexes.Add(FCurrent);
-      end;
     end;
 
     if Result = grOK then
@@ -731,16 +646,8 @@ begin
 end;
 
 procedure TAbstractObjectDataset.InternalGotoBookmark(Bookmark: Pointer);
-var
-  LOld: Integer;
 begin
-  LOld := FCurrent;
   FCurrent := PInteger(Bookmark)^;
-  if Filtered and (FilteredIndexes.Count > 0) then
-  begin
-    if not RecordFilter then
-      FCurrent := LOld;
-  end;
 end;
 
 procedure TAbstractObjectDataset.InternalHandleException;
@@ -791,10 +698,7 @@ end;
 
 procedure TAbstractObjectDataset.InternalLast;
 begin
- // if IsFilterEntered then
- //   FCurrent := FilteredIndexes.LastOrDefault(RecordCount)
- // else
-    FCurrent := DataListCount {RecordCount};
+  FCurrent := RecordCount;
 end;
 
 procedure TAbstractObjectDataset.InternalOpen;
@@ -837,7 +741,7 @@ end;
 
 function TAbstractObjectDataset.IsFiltered: Boolean;
 begin
-  Result := Filtered and (FilteredIndexes.Count > 0);
+  Result := Filtered and (Assigned(FilterList));
 end;
 
 function TAbstractObjectDataset.IsFilterEntered: Boolean;
@@ -1008,7 +912,7 @@ end;
 
 procedure TAbstractObjectDataset.SetIndex(const Value: Integer);
 begin
-  if (Value < 0) or (Value >= DataListCount) then
+  if (Value < 0) or (Value >= RecordCount) then
     raise EAbstractObjectDatasetException.Create(SIndexOutOfRange);
 
   FCurrent := Value;
@@ -1024,8 +928,8 @@ procedure TAbstractObjectDataset.SetRecNo(Value: Integer);
 begin
   CheckBrowseMode;
   Value :=  Min(max(Value, 1), RecordCount);
-  if IsFiltered then
-    Value := FilteredIndexes[Value];
+//  if IsFiltered then
+  //  Value := FilteredIndexes[Value];
 
   if RecNo <> Value then
   begin

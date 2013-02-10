@@ -22,6 +22,7 @@ type
     FFilterParser: TExprParser;
     FSorted: Boolean;
     FSort: string;
+    FFilterIndex: Integer;
     function GetSort: string;
     procedure SetSort(const Value: string);
     function GetFilterCount: Integer;
@@ -35,13 +36,15 @@ type
     function ParserGetVariableValue(Sender: TObject; const VarName: string; var Value: Variant): Boolean; virtual;
     function RecordFilter: Boolean; override;
 
+    function GetCurrentDataList(): IList; override;
     function GetRecordCount: Integer; override;
     function DataListCount(): Integer; override;
 
+    function InternalGetFieldValue(AField: TField; const AItem: TValue): Variant; virtual;
     procedure LoadFieldDefsFromFields(Fields: TFields; FieldDefs: TFieldDefs); virtual;
     procedure LoadFieldDefsFromItemType; virtual;
     procedure RefreshData(); virtual;
-    procedure FilterRecord(AIndex: Integer); virtual;
+    procedure FilterRecord(ADataListIndex: Integer); virtual;
 
     procedure InternalInitFieldDefs; override;
     procedure InternalOpen; override;
@@ -241,7 +244,7 @@ end;
 
 function TObjectDataset.DataListCount: Integer;
 begin
-  Result := -1;
+  Result := 0;
   if Assigned(FDataList) then
     Result := FDataList.Count;
 end;
@@ -260,14 +263,14 @@ end;
 procedure TObjectDataset.DoGetFieldValue(Field: TField; Index: Integer; var Value: Variant);
 var
   LItem: TValue;
-  LProperty: TRttiProperty;
+  LDataList: IList;
 begin
-  LItem := DataList[Index];
-  if FProperties.IsEmpty then
-    InitRttiPropertiesFromItemType(LItem.TypeInfo);
-
-  LProperty := FProperties[Field.FieldNo - 1];
-  Value := ConvertPropertyValueToVariant(LProperty.GetValue(TRttiExplorer.GetRawPointer(LItem)));
+  LDataList := GetCurrentDataList();
+  if Assigned(LDataList) then
+  begin
+    LItem := LDataList[Index];
+    Value := InternalGetFieldValue(Field, LItem);
+  end;
 end;
 
 procedure TObjectDataset.DoPostRecord(Index: Integer);
@@ -279,11 +282,13 @@ var
   i: Integer;
   LProp: TRttiProperty;
   LField: TField;
+  LDataList: IList;
 begin
+  LDataList := GetCurrentDataList();
   if State = dsInsert then
     LItem := TRttiExplorer.CreateType(FItemTypeInfo)
   else
-    LItem := FDataList[Index];
+    LItem := LDataList[Index];
 
   for i := 0 to ModifiedFields.Count - 1 do
   begin
@@ -304,20 +309,28 @@ begin
   FilterRecord(Index);
 end;
 
+function TObjectDataset.GetCurrentDataList: IList;
+begin
+  if Filtered then
+    Result := FilterList
+  else
+    Result := DataList;
+end;
+
 function TObjectDataset.GetFilterCount: Integer;
 begin
-  Result := FilteredIndexes.Count;
+  Result := FilterList.Count;
 end;
 
 function TObjectDataset.GetRecordCount: Integer;
+var
+  LDataList: IList;
 begin
-  Result := -1;
-  if Assigned(FDataList) then
+  Result := 0;
+  LDataList := GetCurrentDataList();
+  if Assigned(LDataList) then
   begin
-    if IsFilterEntered then
-      Result := FilteredIndexes.Count
-    else
-      Result := FDataList.Count;
+    Result := LDataList.Count;
   end;
 end;
 
@@ -349,6 +362,17 @@ begin
       end;
     end;
   end;
+end;
+
+function TObjectDataset.InternalGetFieldValue(AField: TField; const AItem: TValue): Variant;
+var
+  LProperty: TRttiProperty;
+begin
+  if FProperties.IsEmpty then
+    InitRttiPropertiesFromItemType(AItem.TypeInfo);
+
+  LProperty := FProperties[AField.FieldNo - 1];
+  Result := ConvertPropertyValueToVariant(LProperty.GetValue(TRttiExplorer.GetRawPointer(AItem)));
 end;
 
 procedure TObjectDataset.InternalInitFieldDefs;
@@ -548,19 +572,15 @@ function TObjectDataset.ParserGetVariableValue(Sender: TObject; const VarName: s
   var Value: Variant): Boolean;
 var
   LField: TField;
-  LRecBuf: TRecordBuffer;
+ // LRecBuf: TRecordBuffer;
 begin
   Result := False;
   {TODO -oLinas -cGeneral : room for improvement, FindField could be slow. Maybe cache is needed}
   LField := FindField(Varname);
   if Assigned(LField) then
-  begin       
-    if GetActiveRecBuf(LRecBuf) then
-    begin           
-      DoGetFieldValue(LField, Current, Value);
-   //   Value := LField.Value;
-      Result := True;
-    end;        
+  begin
+    Value := InternalGetFieldValue(LField, FDataList[FFilterIndex]);
+    Result := True;
   end;
 end;
 
@@ -569,44 +589,31 @@ var
   LLow, LHigh: Integer;
   iPivot: Integer;
   LPivot: TValue;
+  LDataList: IList;
 begin
-  if (FDataList.Count = 0) or ( (AHigh - ALow) <= 0 ) then
+  if (RecordCount = 0) or ( (AHigh - ALow) <= 0 ) then
     Exit;
+
+  LDataList := GetCurrentDataList();
 
   repeat
     LLow := ALow;
     LHigh := AHigh;
     iPivot := (ALow + (AHigh - ALow) shr 1);
-    if IsFiltered then
-    begin
-      LPivot := FDataList[ FilteredIndexes[iPivot] ];
-    end
-    else
-      LPivot := FDataList[iPivot];
+    LPivot := LDataList[iPivot];
 
     repeat
-      if IsFiltered then
-        while Compare(FDataList[ FilteredIndexes[LLow] ], LPivot, AIndexFieldList) < 0 do
-          Inc(LLow)
-      else
-        while Compare(FDataList[LLow], LPivot, AIndexFieldList) < 0 do
-          Inc(LLow);
+      while Compare(LDataList[LLow], LPivot, AIndexFieldList) < 0 do
+        Inc(LLow);
 
-      if IsFiltered then
-        while Compare(FDataList[ FilteredIndexes[LHigh] ], LPivot, AIndexFieldList) > 0 do
-          Dec(LHigh)
-      else
-        while Compare(FDataList[LHigh], LPivot, AIndexFieldList) > 0 do
-          Dec(LHigh);
+      while Compare(LDataList[LHigh], LPivot, AIndexFieldList) > 0 do
+        Dec(LHigh);
 
       if LLow <= LHigh then
       begin
         if LLow <> LHigh then
         begin
-          if IsFiltered then
-            FDataList.Exchange(FilteredIndexes[LLow], FilteredIndexes[LHigh])
-          else
-            FDataList.Exchange(LLow, LHigh);
+          LDataList.Exchange(LLow, LHigh);
         end;
 
         Inc(LLow);
@@ -627,7 +634,7 @@ var
   LValue: Variant;
 begin
   Result := True;
-  if (Current >= 0) and (Current < DataListCount { RecordCount}) then
+  if (FFilterIndex >= 0) and (FFilterIndex <  DataListCount ) then
   begin
     SaveState := SetTempState(dsFilter);
     try
@@ -654,32 +661,28 @@ end;
 
 procedure TObjectDataset.RefreshData;
 var
-  LRecBuf: TRecordBuffer;
-  LGetResult: TGetResult;
+  i: Integer;
 begin
-  FilteredIndexes.Clear;
-  SetCurrent(-1);
-  LGetResult := grOK;
-  while GetActiveRecBuf(LRecBuf) and (LGetResult <> grEOF) do
+  FilterList.Clear;
+  for i := 0 to FDataList.Count - 1 do
   begin
-    LGetResult := GetRecord(LRecBuf, gmNext, False);
+    FFilterIndex := i;
+    if RecordFilter then
+    begin
+      FilterList.Add(FDataList[i]);
+    end;
   end;
 end;
 
-procedure TObjectDataset.FilterRecord(AIndex: Integer);
-var
-  LRecBuf: TRecordBuffer;
+procedure TObjectDataset.FilterRecord(ADataListIndex: Integer);
 begin
-  if (IsFilterEntered) and (AIndex > -1) and (AIndex < DataListCount) then
+  if (Filtered) and (ADataListIndex > -1) and (ADataListIndex < DataListCount) then
   begin
-    SetCurrent(AIndex);
-    if GetActiveRecBuf(LRecBuf) then
+    FFilterIndex := ADataListIndex;
+    if RecordFilter then
     begin
-      if RecordFilter then
-      begin
-        if not FilteredIndexes.Contains(AIndex) then
-          FilteredIndexes.Add(AIndex);
-      end;
+      if not FilterList.Contains(FDataList[ADataListIndex]) then
+        FilterList.Add(FDataList[ADataListIndex]);
     end;
   end;
 end;
@@ -688,6 +691,7 @@ procedure TObjectDataset.SetDataList<T>(ADataList: IList<T>);
 begin
   FItemTypeInfo := TypeInfo(T);
   FDataList := ADataList.AsList;
+  FilterList := TCollections.CreateObjectList<T>(False).AsList;
 end;
 
 
