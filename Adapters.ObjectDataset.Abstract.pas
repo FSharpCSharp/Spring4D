@@ -7,6 +7,7 @@ uses
   ,Classes
   ,Spring.Collections
   ,Rtti
+  ,Core.Algorythms.Sort
   ;
 
 type
@@ -19,16 +20,7 @@ type
     BookmarkFlag: TBookmarkFlag;
   end;
 
-  TIndexFieldInfo = record
-    Field: TField;
-    RttiProperty: TRttiProperty;
-    Descending: Boolean;
-    CaseInsensitive: Boolean;
-  end;
-
   TAttributeClass = class of TCustomAttribute;
-
-  TCompareRecords = function(const Item1, Item2: TValue; AIndexFieldList: IList<TIndexFieldInfo>): Integer of object;
 
   TAbstractObjectDataset = class(TDataset)
   private

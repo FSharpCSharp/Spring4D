@@ -160,6 +160,7 @@
 			</DCCReference>
 			<DCCReference Include="..\Adapters.ObjectDataset.Blobs.pas"/>
 			<DCCReference Include="..\Adapters.ObjectDataset.ExprParser.pas"/>
+			<DCCReference Include="..\Core.Algorythms.Sort.pas"/>
 			<None Include="Profiling\AQtimeModule1.aqt"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>

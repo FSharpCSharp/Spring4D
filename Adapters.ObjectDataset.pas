@@ -5,6 +5,7 @@ interface
 uses
   Adapters.ObjectDataset.Abstract
   ,Adapters.ObjectDataset.ExprParser
+  ,Core.Algorythms.Sort
   ,Classes
   ,Spring.Collections
   ,Rtti
@@ -23,7 +24,6 @@ type
     FSorted: Boolean;
     FSort: string;
     FFilterIndex: Integer;
-    FCacheArray: TArray<TValue>;
 
     FOnAfterFilter: TNotifyEvent;
     FOnBeforeFilter: TNotifyEvent;
@@ -66,8 +66,6 @@ type
     function CompareRecords(const Item1, Item2: TValue; AIndexFieldList: IList<TIndexFieldInfo>): Integer; virtual;
     procedure InternalSetSort(AIndexFieldList: IList<TIndexFieldInfo>); virtual;
     function CreateIndexList(const ASortText: string): IList<TIndexFieldInfo>;
-    procedure QuickSort(ALow, AHigh: Integer; Compare: TCompareRecords; AIndexFieldList: IList<TIndexFieldInfo>); virtual;
-    procedure MergeSort(ALow, AHigh: Integer; Compare: TCompareRecords; AIndexFieldList: IList<TIndexFieldInfo>); virtual;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -507,14 +505,26 @@ end;
 procedure TObjectDataset.InternalSetSort(AIndexFieldList: IList<TIndexFieldInfo>);
 var
   Pos: DB.TBookmark;
+  LDataList: IList;
+  LOldValue: Boolean;
+  LOwnsObjectsProp: TRttiProperty;
 begin
   if IsEmpty then
     Exit;
   Pos := Bookmark;
+  LDataList := GetCurrentDataList;
+  LOldValue := True;
+  LOwnsObjectsProp := TRttiContext.Create.GetType(LDataList.AsObject.ClassType).GetProperty('OwnsObjects');
   try
-    SetLength(FCacheArray, RecordCount);
-   // MergeSort(0, RecordCount - 1, CompareRecords, AIndexFieldList);
-    QuickSort(0, RecordCount - 1, CompareRecords, AIndexFieldList);
+    if Assigned(LOwnsObjectsProp) then
+    begin
+      LOldValue := LOwnsObjectsProp.GetValue(LDataList.AsObject).AsBoolean;
+      LOwnsObjectsProp.SetValue(LDataList.AsObject, False);
+    end;
+
+   // TQuickSort.Sort(LDataList, CompareRecords, AIndexFieldList, FilteredIndexes, Filtered);
+    TMergeSort.Sort(LDataList, CompareRecords, AIndexFieldList, FilteredIndexes, Filtered);
+   // TTimSort.Sort(LDataList, CompareRecords, AIndexFieldList);
    // SetBufListSize(0);
     //try
       //SetBufListSize(BufferCount + 1);
@@ -524,7 +534,8 @@ begin
     //  raise;
     //end;
   finally
-    SetLength(FCacheArray, 0);
+    if Assigned(LOwnsObjectsProp) then
+      LOwnsObjectsProp.SetValue(LDataList.AsObject, LOldValue);
     Bookmark := Pos;
   end;
 end;
@@ -675,70 +686,6 @@ begin
   end;
 end;
 
-
-procedure TObjectDataset.MergeSort(ALow, AHigh: Integer; Compare: TCompareRecords;
-  AIndexFieldList: IList<TIndexFieldInfo>);
-var
-  LDataList: IList;
-  LCache: TArray<TValue>;
-
-  procedure Merge(Low, Mid, High: Integer);
-  var
-    i, j, k: Integer;
-  begin
-    for i := Low to High do
-    begin
-      LCache[i] := LDataList[i];
-    end;
-
-    i := Low;
-    j := Mid + 1;
-    k := Low;
-
-    while (i <= Mid) and (j <= High) do
-    begin
-      if (Compare(LCache[i], LCache[j], AIndexFieldList) <= 0) then
-      begin
-        LDataList[k] := LCache[i];
-        Inc(i);
-      end
-      else
-      begin
-        LDataList[k] := LCache[j];
-        Inc(j);
-      end;
-      Inc(k);
-    end;
-
-    while (i <= Mid) do
-    begin
-      LDataList[k] := LCache[i];
-      Inc(k);
-      Inc(i);
-    end;
-
-  end;
-
-  procedure PerformMergeSort(ALowIndex, AHighIndex: Integer; CompareMethod: TCompareRecords;
-    AIndexFields: IList<TIndexFieldInfo>);
-  var
-    iMid: Integer;
-  begin
-    if ALowIndex < AHighIndex then
-    begin
-      iMid:= (AHighIndex + ALowIndex) div 2;
-      PerformMergeSort( ALowIndex, iMid, CompareMethod, AIndexFields );
-      PerformMergeSort( iMid+1, AHighIndex, CompareMethod, AIndexFields );
-      Merge(ALowIndex, iMid, AHighIndex);
-    end;
-  end;
-
-begin
-  LDataList := GetCurrentDataList;
-  SetLength(LCache, LDataList.Count);
-  PerformMergeSort(ALow, AHigh, Compare, AIndexFieldList);
-end;
-
 function TObjectDataset.ParserGetVariableValue(Sender: TObject; const VarName: string;
   var Value: Variant): Boolean;
 var
@@ -752,52 +699,6 @@ begin
     Result := True;
   end;
 end;
-
-procedure TObjectDataset.QuickSort(ALow, AHigh: Integer; Compare: TCompareRecords; AIndexFieldList: IList<TIndexFieldInfo>);
-var
-  LLow, LHigh: Integer;
-  iPivot: Integer;
-  LPivot: TValue;
-  LDataList: IList;
-begin
-  if (RecordCount = 0) or ( (AHigh - ALow) <= 0 ) then
-    Exit;
-
-  LDataList := GetCurrentDataList();
-
-  repeat
-    LLow := ALow;
-    LHigh := AHigh;
-    iPivot := (ALow + (AHigh - ALow) shr 1);
-    LPivot := LDataList[iPivot];
-
-    repeat
-      while Compare(LDataList[LLow], LPivot, AIndexFieldList) < 0 do
-        Inc(LLow);
-
-      while Compare(LDataList[LHigh], LPivot, AIndexFieldList) > 0 do
-        Dec(LHigh);
-
-      if LLow <= LHigh then
-      begin
-        if LLow <> LHigh then
-        begin
-          LDataList.Exchange(LLow, LHigh);
-          if Filtered then
-            FilteredIndexes.Exchange(LLow, LHigh);
-        end;
-
-        Inc(LLow);
-        Dec(LHigh);
-      end;
-    until LLow > LHigh;
-
-    if ALow < LHigh then
-      QuickSort(ALow, LHigh, Compare, AIndexFieldList);
-    ALow := LLow;
-  until LLow >= AHigh;
-end;
-
 
 procedure TObjectDataset.RebuildPropertiesCache;
 var

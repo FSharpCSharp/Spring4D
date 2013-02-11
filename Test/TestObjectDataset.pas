@@ -8,9 +8,13 @@ uses
   TestFramework, Adapters.ObjectDataset, Spring.Collections, uModels;
 
 type
+  TMockObjectDataset = class(TObjectDataset)
+
+  end;
+
   TestTObjectDataset = class(TTestCase)
   private
-    FDataset: TObjectDataset;
+    FDataset: TMockObjectDataset;
   protected
     function CreateCustomersList(ASize: Integer = 10): IList<TCustomer>; virtual;
     function CreateCustomersOrdersList(ASize: Integer = 10): IList<TCustomer_Orders>; virtual;
@@ -27,6 +31,7 @@ type
     procedure Sort();
     procedure SimpleSort();
     procedure Sort_Regression();
+    procedure MergeSort_Try();
     procedure Locate();
     procedure Filter();
     procedure QuickSortTest();
@@ -204,6 +209,18 @@ begin
   CheckFalse( FDataset.Locate('Age', 50, []) );
 end;
 
+procedure TestTObjectDataset.MergeSort_Try;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  LCustomers := CreateCustomersList(10);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+
+ // FDataset.MergeSort(0, LCustomers.Count - 1, FDataset.CompareRecords, );
+
+end;
+
 procedure TestTObjectDataset.Open;
 var
   LCustomers: IList<TCustomer>;
@@ -271,7 +288,7 @@ end;
 procedure TestTObjectDataset.SetUp;
 begin
   inherited;
-  FDataset := TObjectDataset.Create(nil);
+  FDataset := TMockObjectDataset.Create(nil);
 end;
 
 procedure TestTObjectDataset.SimpleSort;
@@ -520,7 +537,7 @@ var
   LCustomers: IList<TCustomer>;
   LView: TfrmObjectDatasetTest;
 begin
-  LCustomers := CreateCustomersList(150);
+  LCustomers := CreateCustomersList(100000);
   LCustomers.First.Age := 2;
   LCustomers.First.Name := 'Bob';
   FDataset.SetDataList<TCustomer>(LCustomers);
