@@ -40,6 +40,8 @@ type
     FInternalOpen: Boolean;
     FModifiedFields: IList<TField>;
     FFilterList: IList;
+    FFilteredIndexes: IList<Integer>;
+    FFieldsCache: IDictionary<string,TField>;
     function GetIndex: Integer;
     procedure SetIndex(const Value: Integer);
   protected
@@ -64,6 +66,7 @@ type
     procedure DoPostRecord(Index: Integer); virtual; abstract;
     function RecordFilter: Boolean; virtual; abstract;
     procedure UpdateFilter(); virtual; abstract;
+    procedure RebuildPropertiesCache(); virtual; abstract;
 
     // Basic overrides
     function GetCanModify: Boolean; override;
@@ -76,6 +79,7 @@ type
     procedure SetRecNo(Value: Integer); override;
     procedure SetCurrent(AValue: Integer); virtual;
     procedure SetRecBufSize(); virtual;
+    procedure RebuildFieldCache();
     function DataListCount(): Integer; virtual;
     function GetCurrentDataList(): IList; virtual; abstract;
 
@@ -87,6 +91,7 @@ type
     function GetRecord(Buffer: TRecordBuffer; GetMode: TGetMode;
       DoCheck: Boolean): TGetResult; override;
     function GetRecordSize: Word; override;
+    procedure BindFields(Binding: Boolean); override;
 
     procedure InternalAddRecord(Buffer: Pointer; Append: Boolean); override;
     procedure InternalClose; override;
@@ -107,16 +112,38 @@ type
 
     function InternalGetRecord(Buffer: TRecordBuffer; GetMode: TGetMode; DoCheck: Boolean): TGetResult; virtual;
     procedure VariantToBuffer(Field: TField; Data: Variant; Buffer: Pointer; NativeFormat: Boolean); virtual;
+    function FieldListCheckSum(): NativeInt; virtual;
+  protected
+    property FilteredIndexes: IList<Integer> read FFilteredIndexes;
+    property FilterList: IList read FFilterList write FFilterList;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Represents current cursor index in the dataset.
+    ///	</summary>
+    {$ENDREGION}
     property Current: Integer read FCurrent;
-    property FilterList: IList read FFilterList write FFilterList;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Represents the current index of the dataset.
+    ///	</summary>
+    {$ENDREGION}
     property Index: Integer read GetIndex write SetIndex;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Represents modified fields of the current record.
+    ///	</summary>
+    {$ENDREGION}
     property ModifiedFields: IList<TField> read FModifiedFields;
     property ReadOnly: Boolean read FReadOnly write FReadOnly default False;
   public
+    function FindField(const FieldName: string): TField; reintroduce;
+
     function BookmarkValid(Bookmark: TBookmark): Boolean; override;
     function CompareBookmarks(Bookmark1, Bookmark2: TBookmark): Integer; override;
     function CreateBlobStream(Field: TField; Mode: TBlobStreamMode): TStream; override;
@@ -183,6 +210,7 @@ uses
   ,Mapping.Attributes
   ,Adapters.ObjectDataset.Blobs
   ,Contnrs
+  ,Generics.Defaults
   ;
 
 type
@@ -303,6 +331,12 @@ begin
     Result := nil;
 end;
 
+procedure TAbstractObjectDataset.BindFields(Binding: Boolean);
+begin
+  inherited BindFields(Binding);
+  RebuildFieldCache();
+end;
+
 function TAbstractObjectDataset.BookmarkValid(Bookmark: TBookmark): Boolean;
 begin
   if Assigned(Bookmark) and (PInteger(Bookmark)^ >= 0) and
@@ -329,11 +363,28 @@ begin
 end;
 
 constructor TAbstractObjectDataset.Create(AOwner: TComponent);
+var
+  LCaseInsensitiveComparer: IEqualityComparer<string>;
 begin
   inherited Create(AOwner);
   FInternalOpen := False;
   FReadOnly := False;
   FModifiedFields := TCollections.CreateList<TField>();
+  FFilteredIndexes := TCollections.CreateList<Integer>();
+
+  LCaseInsensitiveComparer := TEqualityComparer<string>.Construct(
+    function(const Left, Right: string): Boolean
+    begin
+      Result := SameText(Left, Right);
+    end,
+    function(const Value: string): Integer
+    var s: string;
+    begin
+      s := UpperCase(Value);
+      Result := BobJenkinsHash(s[1], Length(s) * SizeOf(s[1]), 0);
+    end
+  );
+  FFieldsCache := TCollections.CreateDictionary<string,TField>(LCaseInsensitiveComparer);
 end;
 
 
@@ -343,16 +394,18 @@ begin
 end;
 
 {$IF CompilerVersion >=23}
-procedure TCustomObjectDataset.DataEvent(Event: TDataEvent; Info: NativeInt);
+procedure TAbstractObjectDataset.DataEvent(Event: TDataEvent; Info: NativeInt);
 {$ELSE}
 procedure TAbstractObjectDataset.DataEvent(Event: TDataEvent; Info: Integer);
 {$IFEND}
 begin
   case Event of
     deLayoutChange:
-      if Active and Assigned(Reserved) and
-        (FieldListCheckSum(Self) <> Integer(Reserved)) then
-        Reserved := nil;
+      if Active then
+      begin
+        if Assigned(Reserved) and (FieldListCheckSum <> NativeInt(Reserved)) then
+          Reserved := nil;
+      end;
   end;
   inherited;
 end;
@@ -381,6 +434,23 @@ begin
   inherited DoOnNewRecord;
 end;
 
+function TAbstractObjectDataset.FieldListCheckSum: NativeInt;
+var
+  I: Integer;
+begin
+  Result := 0;
+  for I := 0 to Fields.Count - 1 do
+  begin
+    Result := Result + (NativeInt(Fields[I]) shr (I mod 16));
+  end;
+end;
+
+function TAbstractObjectDataset.FindField(const FieldName: string): TField;
+begin
+  if not FFieldsCache.TryGetValue(FieldName, Result) then
+    Result := nil;
+end;
+
 procedure TAbstractObjectDataset.FreeRecordBuffer(var Buffer: TRecordBuffer);
 begin
   Finalize(PVariantList(Buffer + sizeof(TArrayRecInfo))^, Fields.Count);
@@ -396,13 +466,7 @@ begin
         RecBuf := nil
       else
         RecBuf := ActiveBuffer;
-    {dsEdit :
-    begin
-      if FEditBuffer = nil then
-        RecBuf := ActiveBuffer
-      else
-        RecBuf := FEditBuffer;
-    end;                      }
+
     dsNewValue, dsInsert, dsEdit:
       RecBuf := ActiveBuffer;
 
@@ -449,8 +513,8 @@ var
 
   procedure RefreshBuffers;
   begin
-    Reserved := Pointer(FieldListCheckSum(Self));
-   // UpdateCursorPos;
+    Reserved := Pointer(FieldListCheckSum);
+    UpdateCursorPos;
     Resync([]);
   end;
 
@@ -464,6 +528,9 @@ var
   end;
 
 begin
+  if not Assigned(Reserved) then
+    RefreshBuffers;
+
   Result := GetActiveRecBuf(LRecBuf);
 
   if not Result then
@@ -558,8 +625,8 @@ procedure TAbstractObjectDataset.InternalDelete;
 var
   LRecBuf: TRecordBuffer;
 begin
-  GetActiveRecBuf(LRecBuf);
-  DoDeleteRecord(PArrayRecInfo(LRecBuf)^.Index);
+  if GetActiveRecBuf(LRecBuf) then
+    DoDeleteRecord(PArrayRecInfo(LRecBuf)^.Index);
 end;
 
 procedure TAbstractObjectDataset.InternalEdit;
@@ -710,9 +777,9 @@ begin
 
   FieldDefs.Updated := False;
   FieldDefs.Update;
-  Reserved := Pointer(FieldListCheckSum(Self));
+ { Reserved := Pointer(FieldListCheckSum(Self));
   BindFields(True);
-  SetRecBufSize();
+  SetRecBufSize(); }
 end;
 
 procedure TAbstractObjectDataset.InternalPost;
@@ -765,6 +832,17 @@ function TAbstractObjectDataset.Lookup(const KeyFields: string; const KeyValues:
   const ResultFields: string): Variant;
 begin
   Result := inherited Lookup(KeyFields, KeyValues, ResultFields);
+end;
+
+procedure TAbstractObjectDataset.RebuildFieldCache;
+var
+  i: Integer;
+begin
+  FFieldsCache.Clear;
+  for i := 0 to Fields.Count - 1 do
+  begin
+    FFieldsCache.Add(Fields[i].FieldName, Fields[i]);
+  end;
 end;
 
 procedure TAbstractObjectDataset.SetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);
@@ -916,7 +994,6 @@ begin
     raise EAbstractObjectDatasetException.Create(SIndexOutOfRange);
 
   FCurrent := Value;
- // RecNo := Value + 1;
 end;
 
 procedure TAbstractObjectDataset.SetRecBufSize;
@@ -928,8 +1005,6 @@ procedure TAbstractObjectDataset.SetRecNo(Value: Integer);
 begin
   CheckBrowseMode;
   Value :=  Min(max(Value, 1), RecordCount);
-//  if IsFiltered then
-  //  Value := FilteredIndexes[Value];
 
   if RecNo <> Value then
   begin

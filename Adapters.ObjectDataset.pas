@@ -23,13 +23,25 @@ type
     FSorted: Boolean;
     FSort: string;
     FFilterIndex: Integer;
+    FCacheArray: TArray<TValue>;
+
+    FOnAfterFilter: TNotifyEvent;
+    FOnBeforeFilter: TNotifyEvent;
+
     function GetSort: string;
     procedure SetSort(const Value: string);
     function GetFilterCount: Integer;
   protected
+    procedure DoAfterOpen; override;
     procedure DoDeleteRecord(Index: Integer); override;
     procedure DoGetFieldValue(Field: TField; Index: Integer; var Value: Variant); override;
     procedure DoPostRecord(Index: Integer); override;
+    procedure RebuildPropertiesCache(); override;
+
+    procedure DoOnAfterFilter(); virtual;
+    procedure DoOnBeforeFilter(); virtual;
+
+
     function ConvertPropertyValueToVariant(const AValue: TValue): Variant; virtual;
     procedure InitRttiPropertiesFromItemType(AItemTypeInfo: PTypeInfo); virtual;
     procedure UpdateFilter(); override;
@@ -43,8 +55,8 @@ type
     function InternalGetFieldValue(AField: TField; const AItem: TValue): Variant; virtual;
     procedure LoadFieldDefsFromFields(Fields: TFields; FieldDefs: TFieldDefs); virtual;
     procedure LoadFieldDefsFromItemType; virtual;
-    procedure RefreshData(); virtual;
-    procedure FilterRecord(ADataListIndex: Integer); virtual;
+    procedure RefreshFilter(); virtual;
+    procedure DoFilterRecord(ADataListIndex: Integer); virtual;
 
     procedure InternalInitFieldDefs; override;
     procedure InternalOpen; override;
@@ -55,19 +67,69 @@ type
     procedure InternalSetSort(AIndexFieldList: IList<TIndexFieldInfo>); virtual;
     function CreateIndexList(const ASortText: string): IList<TIndexFieldInfo>;
     procedure QuickSort(ALow, AHigh: Integer; Compare: TCompareRecords; AIndexFieldList: IList<TIndexFieldInfo>); virtual;
+    procedure MergeSort(ALow, AHigh: Integer; Compare: TCompareRecords; AIndexFieldList: IList<TIndexFieldInfo>); virtual;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Returns newly created list of data containing only filtered items.
+    ///	</summary>
+    {$ENDREGION}
+    function GetFilteredDataList<T: class>(): IList<T>;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Sets the list which will represent the data for the dataset. Dataset
+    ///	  will create it's fields based on model's public or published 
+    ///	  properties which are marked with <c>[Column]</c> attribute.
+    ///	</summary>
+    {$ENDREGION}
     procedure SetDataList<T: class>(ADataList: IList<T>);
 
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Returns the total count of filtered records.
+    ///	</summary>
+    {$ENDREGION}
     property FilterCount: Integer read GetFilterCount;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Checks if dataset is sorted.
+    ///	</summary>
+    {$ENDREGION}
     property Sorted: Boolean read FSorted;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Sorting conditions separated by commas. Can set  different sort order
+    ///	  for multiple fields - <c>Asc</c> stands for ascending, <c>Desc</c> -
+    ///	  descending.
+    ///	</summary>
+    ///	<example>
+    ///	  <code>
+    ///	MyDataset.Sort := 'Name, Id Desc, Description Asc';</code>
+    ///	</example>
+    {$ENDREGION}
     property Sort: string read GetSort write SetSort;
 
     property DataList: IList read FDataList;
   published
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Default length for the string type field in the dataset.
+    ///	</summary>
+    ///	<remarks>
+    ///	  Defaults to <c>250</c> if not set.
+    ///	</remarks>
+    {$ENDREGION}
     property DefaultStringFieldLength: Integer read FDefaultStringFieldLength write FDefaultStringFieldLength default 250;
+    property Filter;
+    property Filtered;
+    property FilterOptions;
+
 
     property AfterCancel;
     property AfterClose;
@@ -88,6 +150,8 @@ type
     property BeforeRefresh;
     property BeforeScroll;
 
+    property OnAfterFilter: TNotifyEvent read FOnAfterFilter write FOnAfterFilter;
+    property OnBeforeFilter: TNotifyEvent read FOnBeforeFilter write FOnBeforeFilter;
     property OnDeleteError;
     property OnEditError;
     property OnFilterRecord;
@@ -224,7 +288,6 @@ var
   iPos: Integer;
 begin
   Result := TCollections.CreateList<TIndexFieldInfo>;
-  {TODO -oLinas -cGeneral : maybe avoid TSvStrings dependency}
   LSplittedFields := SplitString(ASortText, [','], True);
   for LText in LSplittedFields do
   begin
@@ -255,9 +318,30 @@ begin
   inherited Destroy;
 end;
 
-procedure TObjectDataset.DoDeleteRecord(Index: Integer);
+procedure TObjectDataset.DoAfterOpen;
 begin
-  FDataList.Delete(Index);
+  if Filtered then
+  begin
+    UpdateFilter;
+    First;
+  end;
+
+  inherited DoAfterOpen;
+end;
+
+procedure TObjectDataset.DoDeleteRecord(Index: Integer);
+var
+  LDataListIndex: Integer;
+begin
+  if not Filtered then
+    FDataList.Delete(Index)
+  else
+  begin
+    LDataListIndex := FilteredIndexes[Index];
+    FilterList.Delete(Index);
+    FilteredIndexes.Delete(Index);
+    FDataList.Delete(LDataListIndex);
+  end;
 end;
 
 procedure TObjectDataset.DoGetFieldValue(Field: TField; Index: Integer; var Value: Variant);
@@ -271,6 +355,18 @@ begin
     LItem := LDataList[Index];
     Value := InternalGetFieldValue(Field, LItem);
   end;
+end;
+
+procedure TObjectDataset.DoOnAfterFilter;
+begin
+  if Assigned(FOnAfterFilter) then
+    FOnAfterFilter(Self);
+end;
+
+procedure TObjectDataset.DoOnBeforeFilter;
+begin
+  if Assigned(FOnBeforeFilter) then
+    FOnBeforeFilter(Self);
 end;
 
 procedure TObjectDataset.DoPostRecord(Index: Integer);
@@ -306,7 +402,7 @@ begin
     Index := FDataList.Count - 1;
   end;
 
-  FilterRecord(Index);
+  DoFilterRecord(Index);
 end;
 
 function TObjectDataset.GetCurrentDataList: IList;
@@ -319,7 +415,15 @@ end;
 
 function TObjectDataset.GetFilterCount: Integer;
 begin
-  Result := FilterList.Count;
+  Result := 0;
+  if Filtered then
+    Result := FilterList.Count;
+end;
+
+function TObjectDataset.GetFilteredDataList<T>: IList<T>;
+begin
+  Result := TCollections.CreateObjectList<T>(False);
+  Result.AsList.AddRange(FilterList);
 end;
 
 function TObjectDataset.GetRecordCount: Integer;
@@ -390,15 +494,12 @@ end;
 
 procedure TObjectDataset.InternalOpen;
 begin
-  SetCurrent(-1);
-  BookmarkSize := SizeOf(Integer);
-
-  FieldDefs.Updated := False;
-  FieldDefs.Update;
+  inherited InternalOpen;
 
   if DefaultFields then
     CreateFields;
 
+  Reserved := Pointer(FieldListCheckSum);
   BindFields(True);
   SetRecBufSize();
 end;
@@ -411,6 +512,8 @@ begin
     Exit;
   Pos := Bookmark;
   try
+    SetLength(FCacheArray, RecordCount);
+   // MergeSort(0, RecordCount - 1, CompareRecords, AIndexFieldList);
     QuickSort(0, RecordCount - 1, CompareRecords, AIndexFieldList);
    // SetBufListSize(0);
     //try
@@ -421,13 +524,17 @@ begin
     //  raise;
     //end;
   finally
+    SetLength(FCacheArray, 0);
     Bookmark := Pos;
   end;
 end;
 
 function TObjectDataset.IsCursorOpen: Boolean;
+var
+  LDataList: IList;
 begin
-  Result := Assigned(FDataList);
+  LDataList := GetCurrentDataList();
+  Result := Assigned(LDataList);
 end;
 
 procedure TObjectDataset.LoadFieldDefsFromFields(Fields: TFields; FieldDefs: TFieldDefs);
@@ -568,14 +675,76 @@ begin
   end;
 end;
 
+
+procedure TObjectDataset.MergeSort(ALow, AHigh: Integer; Compare: TCompareRecords;
+  AIndexFieldList: IList<TIndexFieldInfo>);
+var
+  LDataList: IList;
+  LCache: TArray<TValue>;
+
+  procedure Merge(Low, Mid, High: Integer);
+  var
+    i, j, k: Integer;
+  begin
+    for i := Low to High do
+    begin
+      LCache[i] := LDataList[i];
+    end;
+
+    i := Low;
+    j := Mid + 1;
+    k := Low;
+
+    while (i <= Mid) and (j <= High) do
+    begin
+      if (Compare(LCache[i], LCache[j], AIndexFieldList) <= 0) then
+      begin
+        LDataList[k] := LCache[i];
+        Inc(i);
+      end
+      else
+      begin
+        LDataList[k] := LCache[j];
+        Inc(j);
+      end;
+      Inc(k);
+    end;
+
+    while (i <= Mid) do
+    begin
+      LDataList[k] := LCache[i];
+      Inc(k);
+      Inc(i);
+    end;
+
+  end;
+
+  procedure PerformMergeSort(ALowIndex, AHighIndex: Integer; CompareMethod: TCompareRecords;
+    AIndexFields: IList<TIndexFieldInfo>);
+  var
+    iMid: Integer;
+  begin
+    if ALowIndex < AHighIndex then
+    begin
+      iMid:= (AHighIndex + ALowIndex) div 2;
+      PerformMergeSort( ALowIndex, iMid, CompareMethod, AIndexFields );
+      PerformMergeSort( iMid+1, AHighIndex, CompareMethod, AIndexFields );
+      Merge(ALowIndex, iMid, AHighIndex);
+    end;
+  end;
+
+begin
+  LDataList := GetCurrentDataList;
+  SetLength(LCache, LDataList.Count);
+  PerformMergeSort(ALow, AHigh, Compare, AIndexFieldList);
+end;
+
 function TObjectDataset.ParserGetVariableValue(Sender: TObject; const VarName: string;
   var Value: Variant): Boolean;
 var
   LField: TField;
- // LRecBuf: TRecordBuffer;
 begin
   Result := False;
-  {TODO -oLinas -cGeneral : room for improvement, FindField could be slow. Maybe cache is needed}
   LField := FindField(Varname);
   if Assigned(LField) then
   begin
@@ -614,6 +783,8 @@ begin
         if LLow <> LHigh then
         begin
           LDataList.Exchange(LLow, LHigh);
+          if Filtered then
+            FilteredIndexes.Exchange(LLow, LHigh);
         end;
 
         Inc(LLow);
@@ -627,6 +798,19 @@ begin
   until LLow >= AHigh;
 end;
 
+
+procedure TObjectDataset.RebuildPropertiesCache;
+var
+  LType: TRttiType;
+  i: Integer;
+begin
+  FProperties.Clear;
+  LType := TRttiContext.Create.GetType(FItemTypeInfo);
+  for i := 0 to Fields.Count - 1 do
+  begin
+    FProperties.Add( LType.GetProperty(Fields[i].FieldName) );
+  end;
+end;
 
 function TObjectDataset.RecordFilter: Boolean;
 var
@@ -659,22 +843,24 @@ begin
     Result := False;
 end;
 
-procedure TObjectDataset.RefreshData;
+procedure TObjectDataset.RefreshFilter;
 var
   i: Integer;
 begin
   FilterList.Clear;
+  FilteredIndexes.Clear;
   for i := 0 to FDataList.Count - 1 do
   begin
     FFilterIndex := i;
     if RecordFilter then
     begin
       FilterList.Add(FDataList[i]);
+      FilteredIndexes.Add(i);
     end;
   end;
 end;
 
-procedure TObjectDataset.FilterRecord(ADataListIndex: Integer);
+procedure TObjectDataset.DoFilterRecord(ADataListIndex: Integer);
 begin
   if (Filtered) and (ADataListIndex > -1) and (ADataListIndex < DataListCount) then
   begin
@@ -682,7 +868,10 @@ begin
     if RecordFilter then
     begin
       if not FilterList.Contains(FDataList[ADataListIndex]) then
+      begin
         FilterList.Add(FDataList[ADataListIndex]);
+        FilteredIndexes.Add(ADataListIndex);
+      end;
     end;
   end;
 end;
@@ -692,6 +881,7 @@ begin
   FItemTypeInfo := TypeInfo(T);
   FDataList := ADataList.AsList;
   FilterList := TCollections.CreateObjectList<T>(False).AsList;
+  FilteredIndexes.Clear;
 end;
 
 
@@ -746,14 +936,19 @@ begin
   if not Active then
     Exit;
 
-  if foCaseInsensitive in FilterOptions then
-    FFilterParser.Expression := AnsiUpperCase(Filter)
-  else
-    FFilterParser.Expression := Filter;
+  DoOnBeforeFilter;
+
+  if IsFilterEntered then
+  begin
+    if foCaseInsensitive in FilterOptions then
+      FFilterParser.Expression := AnsiUpperCase(Filter)
+    else
+      FFilterParser.Expression := Filter;
+  end;
 
   LSaveState := SetTempState(dsFilter);
   try
-    RefreshData();
+    RefreshFilter();
   finally
     RestoreState(LSaveState);
   end;
@@ -769,6 +964,8 @@ begin
   UpdateCursorPos;
   Resync([]);
   First;
+
+  DoOnAfterFilter;
 end;
 
 end.

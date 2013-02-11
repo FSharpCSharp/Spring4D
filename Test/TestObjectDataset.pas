@@ -23,12 +23,13 @@ type
     procedure Edit();
     procedure Insert();
     procedure Delete();
+    procedure Delete_Filtered();
     procedure Sort();
     procedure SimpleSort();
     procedure Sort_Regression();
     procedure Locate();
     procedure Filter();
-    procedure QuiclSortTest();
+    procedure QuickSortTest();
     procedure TestGUI;
   end;
 
@@ -107,6 +108,24 @@ begin
   CheckEquals(8, FDataset.RecordCount);
 end;
 
+
+procedure TestTObjectDataset.Delete_Filtered;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  LCustomers := CreateCustomersList(10);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Filtered := True;
+  FDataset.Filter := 'Age < 3';
+  FDataset.Open;
+
+  CheckEquals(2, FDataset.RecordCount);
+  FDataset.Delete;
+  CheckEquals(1, FDataset.RecordCount);
+  FDataset.Delete;
+  CheckEquals(0, FDataset.RecordCount);
+  CheckEquals(8, LCustomers.Count);
+end;
 
 procedure TestTObjectDataset.Edit;
 var
@@ -235,7 +254,7 @@ begin
   CheckTrue(LOrders.First.Total_Order_Price.IsNull);
 end;
 
-procedure TestTObjectDataset.QuiclSortTest;
+procedure TestTObjectDataset.QuickSortTest;
 var
   LArray: TArray<Integer>;
 begin
@@ -247,9 +266,6 @@ begin
     end
     )
   );
-
-
-
 end;
 
 procedure TestTObjectDataset.SetUp;
@@ -359,6 +375,26 @@ begin
 
   CheckEquals('Bob', LCustomers[8].Name);
   CheckEquals('Middle', LCustomers[8].MiddleName);
+
+  FDataset.Append;
+  FDataset.FieldByName('name').AsString := 'aaa';
+  FDataset.FieldByName('Age').AsInteger := 15;
+  FDataset.Post;
+
+  FDataset.Sort := 'name asc';
+
+  LMsg := '';
+  Status(Format('Filter: %S. Sort: %S', [FDataset.Filter, FDataset.Sort]));
+  for i := 0 to LCustomers.Count - 1 do
+  begin
+    Status(LMsg + Format('%D %S %D %S', [i, LCustomers[i].Name, LCustomers[i].Age, LCustomers[i].MiddleName.ToString]));
+  end;
+
+  CheckEquals(11, FDataset.RecNo);
+  FDataset.First;
+  CheckEquals('aaa', FDataset.FieldByName('Name').AsString);
+  FDataset.Next;
+  CheckEquals('Bob', FDataset.FieldByName('Name').AsString);
 end;
 
 procedure TestTObjectDataset.Sort_Regression;
@@ -477,8 +513,6 @@ begin
 
   FDataset.Filter := '(Age > 2)';
   CheckEquals(8, FDataset.RecordCount);
-
-  {TODO -oLinas -cGeneral : wrong filtercount in GUI when filtered second time}
 end;
 
 procedure TestTObjectDataset.TestGUI;

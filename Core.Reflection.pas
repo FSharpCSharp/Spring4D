@@ -775,7 +775,7 @@ begin
   end else
   if Left.IsString and Right.IsString then
   begin
-    Result := SysUtils.CompareStr(Left.AsString, Right.AsString);
+    Result := SysUtils.AnsiCompareStr(Left.AsString, Right.AsString);
   end
   else if (Left.TypeInfo = TypeInfo(Variant)) and (Right.TypeInfo = TypeInfo(Variant)) then
   begin

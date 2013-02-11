@@ -51,7 +51,6 @@ object frmObjectDatasetTest: TfrmObjectDatasetTest
     Align = alBottom
     TabOrder = 2
     OnKeyDown = edFilterKeyDown
-    ExplicitTop = 371
   end
   object cbFiltered: TCheckBox
     Left = 560
@@ -72,7 +71,6 @@ object frmObjectDatasetTest: TfrmObjectDatasetTest
     Height = 19
     Panels = <>
     SimplePanel = True
-    ExplicitTop = 390
   end
   object dsList: TDataSource
     Left = 488
