@@ -72,6 +72,8 @@ type
   public
     constructor Create(const AValue: T);
 
+    function GetValueOrDefault(): T; overload;
+    function GetValueOrDefault(const ADef: T): T; overload;
     function ToString(): string;
 
     property HasValue: Boolean read FHasValue;
@@ -318,6 +320,19 @@ begin
     Result := FValue
   else
     Result := System.Default(T);
+end;
+
+function Nullable<T>.GetValueOrDefault: T;
+begin
+  Result := GetValueOrDefault(System.Default(T));
+end;
+
+function Nullable<T>.GetValueOrDefault(const ADef: T): T;
+begin
+  if FHasValue then
+    Result := FValue
+  else
+    Result := ADef;
 end;
 
 class operator Nullable<T>.Implicit(const Value: T): Nullable<T>;
