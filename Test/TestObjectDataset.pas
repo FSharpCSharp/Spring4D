@@ -49,6 +49,7 @@ uses
   ,SysUtils
   ,Generics.Collections
   ,Generics.Defaults
+  ,Diagnostics
   ;
 
 
@@ -536,6 +537,7 @@ procedure TestTObjectDataset.TestGUI;
 var
   LCustomers: IList<TCustomer>;
   LView: TfrmObjectDatasetTest;
+  sw: TStopwatch;
 begin
   LCustomers := CreateCustomersList(100000);
   LCustomers.First.Age := 2;
@@ -546,9 +548,11 @@ begin
   try
     LView.Dataset := FDataset;
     LView.dsList.DataSet := FDataset;
+    sw := TStopwatch.StartNew;
     FDataset.Sort := 'Age Desc, NAME';
     FDataset.Filtered := True;
-
+    sw.Stop;
+    Status(Format('Elapsed time: %D ms', [sw.ElapsedMilliseconds]));
 
 
     LView.ShowModal;

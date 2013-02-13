@@ -64,7 +64,7 @@ type
     procedure SetFilterText(const Value: string); override;
 
     function CompareRecords(const Item1, Item2: TValue; AIndexFieldList: IList<TIndexFieldInfo>): Integer; virtual;
-    procedure InternalSetSort(AIndexFieldList: IList<TIndexFieldInfo>); virtual;
+    procedure InternalSetSort(AIndexFieldList: IList<TIndexFieldInfo>; AChanged: Boolean); virtual;
     function CreateIndexList(const ASortText: string): IList<TIndexFieldInfo>;
   public
     constructor Create(AOwner: TComponent); override;
@@ -502,7 +502,7 @@ begin
   SetRecBufSize();
 end;
 
-procedure TObjectDataset.InternalSetSort(AIndexFieldList: IList<TIndexFieldInfo>);
+procedure TObjectDataset.InternalSetSort(AIndexFieldList: IList<TIndexFieldInfo>; AChanged: Boolean);
 var
   Pos: DB.TBookmark;
   LDataList: IList;
@@ -522,9 +522,11 @@ begin
       LOwnsObjectsProp.SetValue(LDataList.AsObject, False);
     end;
 
-   // TQuickSort.Sort(LDataList, CompareRecords, AIndexFieldList, FilteredIndexes, Filtered);
-    TMergeSort.Sort(LDataList, CompareRecords, AIndexFieldList, FilteredIndexes, Filtered);
-   // TTimSort.Sort(LDataList, CompareRecords, AIndexFieldList);
+    if AChanged then
+      TMergeSort.Sort(LDataList, CompareRecords, AIndexFieldList, FilteredIndexes, Filtered)
+    else
+      TInsertionSort.Sort(LDataList, CompareRecords, AIndexFieldList, FilteredIndexes, Filtered);
+
    // SetBufListSize(0);
     //try
       //SetBufListSize(BufferCount + 1);
@@ -817,15 +819,17 @@ end;
 procedure TObjectDataset.SetSort(const Value: string);
 var
   LIndexFieldList: IList<TIndexFieldInfo>;
+  LChanged: Boolean;
 begin
   CheckActive;
   if State in dsEditModes then
     Post;
 
+  LChanged := Value <> FSort;
   FSort := Value;
   UpdateCursorPos;
   LIndexFieldList := CreateIndexList(Value);
-  InternalSetSort(LIndexFieldList);
+  InternalSetSort(LIndexFieldList, LChanged);
   FSorted := LIndexFieldList.Count > 0;
   Resync([]);
 end;

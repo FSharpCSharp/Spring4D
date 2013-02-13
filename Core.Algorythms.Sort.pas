@@ -83,6 +83,33 @@ type
       ; AFilteredIndexes: IList<Integer>; AFiltered: Boolean);
   end;
 
+  TInsertionSort = class sealed
+  private
+    class var
+      FDataList: IList;
+      FFilteredIndexes: IList<Integer>;
+      FFiltered: Boolean;
+  private
+    class procedure InsertionSort(ALow, AHigh: Integer; Compare: TCompareRecords; AIndexFieldList: IList<TIndexFieldInfo>);
+  public
+    class procedure Sort(ADataList: IList; AComparator: TCompareRecords; AIndexFields: IList<TIndexFieldInfo>
+      ; AFilteredIndexes: IList<Integer>; AFiltered: Boolean);
+  end;
+
+  TBinaryInsertionSort = class sealed
+  private
+    class var
+      FDataList: IList;
+      FFilteredIndexes: IList<Integer>;
+      FFiltered: Boolean;
+  private
+    class function BinarySearch(ALow, AHigh: Integer; const AKey: TValue; Compare: TCompareRecords; AIndexFieldList: IList<TIndexFieldInfo>): Integer;
+    class procedure BinaryInsertionSort(ALow, AHigh: Integer; Compare: TCompareRecords; AIndexFieldList: IList<TIndexFieldInfo>);
+  public
+    class procedure Sort(ADataList: IList; AComparator: TCompareRecords; AIndexFields: IList<TIndexFieldInfo>
+      ; AFilteredIndexes: IList<Integer>; AFiltered: Boolean);
+  end;
+
 implementation
 
 uses
@@ -949,6 +976,99 @@ begin
   FFiltered := AFiltered;
 
   MergeSort(0, FDataList.Count - 1, AComparator, AIndexFields);
+end;
+
+{ TInsertionSort }
+
+class procedure TInsertionSort.InsertionSort(ALow, AHigh: Integer; Compare: TCompareRecords;
+  AIndexFieldList: IList<TIndexFieldInfo>);
+var
+  i, j : Integer;
+  LTemp: TValue;
+Begin
+  for i:= 2 to AHigh Do
+  Begin
+    LTemp := FDataList[i];
+    j := i;
+    while (j > 1) and (Compare(FDataList[j-1], LTemp, AIndexFieldList) > 0) do
+    begin
+      FDataList[j] := FDataList[j-1];
+      if FFiltered then
+      begin
+        FFilteredIndexes[j] := j - 1;
+      end;
+      Dec(j);
+    end;
+    FDataList[j]:= LTemp;
+    if FFiltered then
+    begin
+      FFilteredIndexes[j] := i;
+    end;
+  End;
+end;
+
+class procedure TInsertionSort.Sort(ADataList: IList; AComparator: TCompareRecords;
+  AIndexFields: IList<TIndexFieldInfo>; AFilteredIndexes: IList<Integer>; AFiltered: Boolean);
+begin
+  FDataList := ADataList;
+  FFilteredIndexes := AFilteredIndexes;
+  FFiltered := AFiltered;
+
+  InsertionSort(0, FDataList.Count - 1, AComparator, AIndexFields);
+end;
+
+{ TBinaryInsertionSort }
+
+class procedure TBinaryInsertionSort.BinaryInsertionSort(ALow, AHigh: Integer; Compare: TCompareRecords;
+  AIndexFieldList: IList<TIndexFieldInfo>);
+var
+  i, j, ins: Integer;
+  LTemp: TValue;
+begin
+  for i := 1 to AHigh do
+  begin
+    ins := BinarySearch(0, i, FDataList[i], Compare, AIndexFieldList);
+    LTemp := FDataList[i];
+
+    for j := i downto ins + 1 do
+    begin
+      FDataList[j + 1] := FDataList[j];
+    end;
+
+    FDataList[ins] := LTemp;
+  end;
+end;
+
+class function TBinaryInsertionSort.BinarySearch(ALow, AHigh: Integer; const AKey: TValue; Compare: TCompareRecords; AIndexFieldList: IList<TIndexFieldInfo>): Integer;
+var
+  iMid: Integer;
+begin
+  if ALow = AHigh then
+    Exit(ALow);
+
+  iMid := ALow + ((AHigh - ALow) div 2);
+  if (Compare(AKey, FDataList[iMid], AIndexFieldList) > 0) then
+  begin
+    Result := BinarySearch(iMid + 1, AHigh, AKey, Compare, AIndexFieldList);
+  end
+  else if (Compare(AKey, FDataList[iMid], AIndexFieldList) < 0) then
+  begin
+    Result := BinarySearch(ALow, iMid, AKey, Compare, AIndexFieldList);
+  end
+  else
+  begin
+    Result := iMid;
+  end;
+end;
+
+class procedure TBinaryInsertionSort.Sort(ADataList: IList; AComparator: TCompareRecords;
+  AIndexFields: IList<TIndexFieldInfo>; AFilteredIndexes: IList<Integer>; AFiltered: Boolean);
+begin
+  FDataList := ADataList;
+  FFilteredIndexes := AFilteredIndexes;
+  FFiltered := AFiltered;
+
+  BinaryInsertionSort(0, FDataList.Count - 1, AComparator, AIndexFields);
 end;
 
 end.
