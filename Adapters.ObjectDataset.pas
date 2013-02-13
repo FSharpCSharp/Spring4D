@@ -41,6 +41,7 @@ type
     procedure DoOnAfterFilter(); virtual;
     procedure DoOnBeforeFilter(); virtual;
 
+    function GetChangedSortText(const ASortText: string): string;
 
     function ConvertPropertyValueToVariant(const AValue: TValue): Variant; virtual;
     procedure InitRttiPropertiesFromItemType(AItemTypeInfo: PTypeInfo); virtual;
@@ -64,7 +65,7 @@ type
     procedure SetFilterText(const Value: string); override;
 
     function CompareRecords(const Item1, Item2: TValue; AIndexFieldList: IList<TIndexFieldInfo>): Integer; virtual;
-    procedure InternalSetSort(AIndexFieldList: IList<TIndexFieldInfo>; AChanged: Boolean); virtual;
+    procedure InternalSetSort(const AValue: string); virtual;
     function CreateIndexList(const ASortText: string): IList<TIndexFieldInfo>;
   public
     constructor Create(AOwner: TComponent); override;
@@ -168,6 +169,7 @@ uses
   ,StrUtils
   ,Variants
   ,Core.Reflection
+  ,Spring.SystemUtils
   ;
 
 type
@@ -387,6 +389,7 @@ begin
   for i := 0 to ModifiedFields.Count - 1 do
   begin
     LField := ModifiedFields[i];
+
     LProp := FProperties[LField.FieldNo - 1];
     LFieldValue := LField.Value;
     LValueFromVariant := TUtils.FromVariant(LFieldValue);
@@ -401,6 +404,18 @@ begin
   end;
 
   DoFilterRecord(Index);
+  if Sorted then
+    InternalSetSort(Sort);
+end;
+
+function TObjectDataset.GetChangedSortText(const ASortText: string): string;
+begin
+  Result := ASortText;
+
+  if EndsStr(' ', Result) then
+    Result := Copy(Result, 1, Length(Result) - 1)
+  else
+    Result := Result + ' ';
 end;
 
 function TObjectDataset.GetCurrentDataList: IList;
@@ -502,15 +517,21 @@ begin
   SetRecBufSize();
 end;
 
-procedure TObjectDataset.InternalSetSort(AIndexFieldList: IList<TIndexFieldInfo>; AChanged: Boolean);
+procedure TObjectDataset.InternalSetSort(const AValue: string);
 var
   Pos: DB.TBookmark;
   LDataList: IList;
   LOldValue: Boolean;
   LOwnsObjectsProp: TRttiProperty;
+  LChanged: Boolean;
+  LIndexFieldList: IList<TIndexFieldInfo>;
 begin
   if IsEmpty then
     Exit;
+
+  LChanged := AValue <> FSort;
+  LIndexFieldList := CreateIndexList(AValue);
+
   Pos := Bookmark;
   LDataList := GetCurrentDataList;
   LOldValue := True;
@@ -522,19 +543,14 @@ begin
       LOwnsObjectsProp.SetValue(LDataList.AsObject, False);
     end;
 
-    if AChanged then
-      TMergeSort.Sort(LDataList, CompareRecords, AIndexFieldList, FilteredIndexes, Filtered)
+    if LChanged then
+      TMergeSort.Sort(LDataList, CompareRecords, LIndexFieldList, FilteredIndexes, Filtered)
     else
-      TInsertionSort.Sort(LDataList, CompareRecords, AIndexFieldList, FilteredIndexes, Filtered);
+      TInsertionSort.Sort(LDataList, CompareRecords, LIndexFieldList, FilteredIndexes, Filtered);
 
-   // SetBufListSize(0);
-    //try
-      //SetBufListSize(BufferCount + 1);
-   // except
-    //  SetState(dsInactive);
-   //   CloseCursor;
-    //  raise;
-    //end;
+    FSorted := LIndexFieldList.Count > 0;
+    FSort := AValue;
+
   finally
     if Assigned(LOwnsObjectsProp) then
       LOwnsObjectsProp.SetValue(LDataList.AsObject, LOldValue);
@@ -586,35 +602,14 @@ var
   LPropPrettyName: string;
   LFieldType: TFieldType;
   LFieldDef: TFieldDef;
-  LLength: Integer;
-begin
-  InitRttiPropertiesFromItemType(FItemTypeInfo);
+  LLength, LPrecision, LScale: Integer;
+  LRequired, LDontUpdate, LHidden: Boolean;
 
-  if FProperties.IsEmpty then
-    raise EObjectDatasetException.Create(SColumnPropertiesNotSpecified);
-
-  for i := 0 to FProperties.Count - 1 do
+  procedure DoGetFieldType(ATypeInfo: PTypeInfo);
+  var
+    LTypeInfo: PTypeInfo;
   begin
-    LProp := FProperties[i];
-    LPropPrettyName := LProp.Name;
-    LLength := -2;
-    for LAttrib in LProp.GetAttributes do
-    begin
-      if LAttrib is ColumnAttribute then
-      begin
-        LPropPrettyName := ColumnAttribute(LAttrib).Name;
-        LLength := ColumnAttribute(LAttrib).Length;
-       // LPrecision := ColumnAttribute(LAttrib).Precision;
-       // LScale := ColumnAttribute(LAttrib).Scale;
-        if (ColumnAttribute(LAttrib).Description <> '') then
-          LPropPrettyName := ColumnAttribute(LAttrib).Description;
-        Break;
-      end;
-    end;
-
-    LFieldType := ftWideString;
-
-    case LProp.PropertyType.TypeKind of
+    case ATypeInfo.Kind of
       tkInteger:
       begin
         LFieldType := ftInteger;
@@ -658,10 +653,26 @@ begin
         if LLength = -2 then
           LLength := FDefaultStringFieldLength;
       end;
-      tkVariant, tkClass, tkArray, tkDynArray:
+      tkVariant, tkArray, tkDynArray:
       begin
         LFieldType := ftVariant;
         LLength := -2;
+      end;
+      tkClass:
+      begin
+        if TypeInfo(TStringStream) = ATypeInfo then
+          LFieldType := ftMemo
+        else
+          LFieldType := ftBlob;
+        LLength := -2;
+        LDontUpdate := True;
+      end;
+      tkRecord:
+      begin
+        if TryGetUnderlyingTypeInfo(ATypeInfo, LTypeInfo) then
+        begin
+          DoGetFieldType(LTypeInfo);
+        end;
       end;
       tkInt64:
       begin
@@ -675,13 +686,81 @@ begin
           LLength := FDefaultStringFieldLength;
       end;
     end;
+  end;
+
+begin
+  InitRttiPropertiesFromItemType(FItemTypeInfo);
+
+  if FProperties.IsEmpty then
+    raise EObjectDatasetException.Create(SColumnPropertiesNotSpecified);
+
+  for i := 0 to FProperties.Count - 1 do
+  begin
+    LProp := FProperties[i];
+    LPropPrettyName := LProp.Name;
+    LLength := -2;
+    LPrecision := -2;
+    LScale := -2;
+    LRequired := False;
+    LDontUpdate := False;
+    LHidden := False;
+
+    for LAttrib in LProp.GetAttributes do
+    begin
+      if LAttrib is ColumnAttribute then
+      begin
+        if (ColumnAttribute(LAttrib).Name <> '') then
+          LPropPrettyName := ColumnAttribute(LAttrib).Name;
+
+        if (ColumnAttribute(LAttrib).Length <> 0) then
+          LLength := ColumnAttribute(LAttrib).Length;
+
+        if (ColumnAttribute(LAttrib).Precision <> 0) then
+          LPrecision := ColumnAttribute(LAttrib).Precision;
+
+        if (ColumnAttribute(LAttrib).Scale <> 0) then
+          LScale := ColumnAttribute(LAttrib).Scale;
+
+        if (ColumnAttribute(LAttrib).Description <> '') then
+          LPropPrettyName := ColumnAttribute(LAttrib).Description;
+
+        LRequired := ( cpRequired in ColumnAttribute(LAttrib).Properties );
+        LDontUpdate := ( cpDontInsert in ColumnAttribute(LAttrib).Properties )
+          or ( cpDontUpdate in ColumnAttribute(LAttrib).Properties );
+
+        LHidden :=  ( cpHidden in ColumnAttribute(LAttrib).Properties );
+
+        Break;
+      end;
+    end;
+
+    LFieldType := ftWideString;
+
+    DoGetFieldType(LProp.PropertyType.Handle);
 
     LFieldDef := FieldDefs.AddFieldDef;
-    LFieldDef.Name := LProp.Name;
-    LFieldDef.DisplayName := LPropPrettyName;
+    LFieldDef.Name := LPropPrettyName; // LProp.Name;
+
     LFieldDef.DataType := LFieldType;
     if LLength <> -2 then
       LFieldDef.Size := LLength;
+
+    LFieldDef.Required := LRequired;
+
+    if LFieldType = ftBCD then
+    begin
+      if LPrecision <> -2 then
+        LFieldDef.Precision := LPrecision;
+
+      if LScale <> -2 then
+        LFieldDef.Size := LScale;
+    end;
+
+    if LDontUpdate then
+      LFieldDef.Attributes := LFieldDef.Attributes + [DB.faReadOnly];
+
+    if LHidden then
+      LFieldDef.Attributes := LFieldDef.Attributes + [DB.faHiddenCol];
 
     if not LProp.IsWritable then
       LFieldDef.Attributes := LFieldDef.Attributes + [DB.faReadOnly];
@@ -817,20 +896,13 @@ begin
 end;
 
 procedure TObjectDataset.SetSort(const Value: string);
-var
-  LIndexFieldList: IList<TIndexFieldInfo>;
-  LChanged: Boolean;
 begin
   CheckActive;
   if State in dsEditModes then
     Post;
 
-  LChanged := Value <> FSort;
-  FSort := Value;
   UpdateCursorPos;
-  LIndexFieldList := CreateIndexList(Value);
-  InternalSetSort(LIndexFieldList, LChanged);
-  FSorted := LIndexFieldList.Count > 0;
+  InternalSetSort(Value);
   Resync([]);
 end;
 
@@ -862,7 +934,7 @@ begin
   try
     First;
     if Sorted then
-      SetSort(Sort);
+      InternalSetSort( GetChangedSortText(Sort) );   //must use mergesort so we change sort text
   finally
     EnableControls;
   end;

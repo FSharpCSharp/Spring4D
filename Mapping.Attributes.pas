@@ -44,7 +44,7 @@ type
 
   TCascadeTypes = set of TCascadeType;
 
-  TColumnProperty = (cpRequired, cpUnique, cpDontInsert, cpDontUpdate, cpPrimaryKey, cpNotNull);
+  TColumnProperty = (cpRequired, cpUnique, cpDontInsert, cpDontUpdate, cpPrimaryKey, cpNotNull, cpHidden);
 
   TColumnProperties = set of TColumnProperty;
 

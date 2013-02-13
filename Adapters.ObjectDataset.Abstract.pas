@@ -778,6 +778,7 @@ procedure TAbstractObjectDataset.InternalPost;
 var
   LRecBuf: TRecordBuffer;
 begin
+  inherited InternalPost;
   UpdateCursorPos;
   GetActiveRecBuf(LRecBuf);
 

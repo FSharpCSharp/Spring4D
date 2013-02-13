@@ -36,6 +36,8 @@ uses
 type
   TUtils = class sealed
   public
+    class function LoadFromStreamToVariant(AStream: TStream): OleVariant;
+
     class function AsVariant(const AValue: TValue): Variant;
     class function FromVariant(const AValue: Variant): TValue;
     class function TryConvert(const AFrom: TValue; AManager: TObject; ARttiMember: TRttiNamedObject; AEntity: TObject; var AResult: TValue): Boolean;
@@ -77,10 +79,9 @@ uses
 class function TUtils.AsVariant(const AValue: TValue): Variant;
 var
   LStream: TStream;
-  DataPtr: Pointer;
-  LRes: OleVariant;
   LHasValueField, LValueField: TRttiField;
   LHasValue: TValue;
+  LPersist: IStreamPersist;
 begin
   case AValue.Kind of
     tkEnumeration:
@@ -121,18 +122,23 @@ begin
       Result := Null;
       if (AValue.AsObject <> nil) then
       begin
-        LStream := AValue.AsObject as TStream;
-
-        LRes := VarArrayCreate([0, LStream.Size], varByte);
-        DataPtr := VarArrayLock(LRes);
-        try
-          LStream.ReadBuffer(DataPtr^, LStream.Size);
-        finally
-          VarArrayUnlock(LRes);
-        //  LStream.Free;
+        if (AValue.AsObject is TStream) then
+        begin
+          LStream := AValue.AsObject as TStream;
+          LStream.Position := 0;
+          Result := LoadFromStreamToVariant(LStream);
+        end
+        else if Supports(AValue.AsObject, IStreamPersist, LPersist) then
+        begin
+          LStream := TMemoryStream.Create;
+          try
+            LPersist.SaveToStream(LStream);
+            LStream.Position := 0;
+            Result := LoadFromStreamToVariant(LStream);
+          finally
+            LStream.Free;
+          end;
         end;
-
-        Result := LRes;
       end;
     end
     else
@@ -261,6 +267,19 @@ end;
 class function TUtils.IsNullableType(ATypeInfo: PTypeInfo): Boolean;
 begin
   Result := StartsText('Nullable', string(ATypeInfo.Name));
+end;
+
+class function TUtils.LoadFromStreamToVariant(AStream: TStream): OleVariant;
+var
+  DataPtr: Pointer;
+begin
+  Result := VarArrayCreate([0, AStream.Size], varByte);
+  DataPtr := VarArrayLock(Result);
+  try
+    AStream.ReadBuffer(DataPtr^, AStream.Size);
+  finally
+    VarArrayUnlock(Result);
+  end;
 end;
 
 class function TUtils.SameObject(ALeft, ARight: TObject): Boolean;
