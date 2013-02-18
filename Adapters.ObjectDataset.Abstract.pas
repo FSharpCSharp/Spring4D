@@ -48,6 +48,9 @@ type
     FFilterList: IList;
     FFilteredIndexes: IList<Integer>;
     FFieldsCache: IDictionary<string,TField>;
+    {$IF CompilerVersion >=24}
+    FReserved: Pointer;
+    {$IFEND}
     function GetIndex: Integer;
     procedure SetIndex(const Value: Integer);
   protected
@@ -100,7 +103,6 @@ type
     function GetRecordSize: Word; override;
     procedure BindFields(Binding: Boolean); override;
 
-    procedure InternalAddRecord(Buffer: Pointer; Append: Boolean); override;
     procedure InternalClose; override;
     procedure InternalDelete; override;
     procedure InternalFirst; override;
@@ -118,11 +120,18 @@ type
     procedure SetBookmarkData(Buffer: TRecordBuffer; Data: Pointer); override;
 
     function InternalGetRecord(Buffer: TRecordBuffer; GetMode: TGetMode; DoCheck: Boolean): TGetResult; virtual;
+    {$IF CompilerVersion >=24}
+    procedure VariantToBuffer(Field: TField; Data: Variant; Buffer: TValueBuffer; NativeFormat: Boolean); virtual;
+    {$ELSE}
     procedure VariantToBuffer(Field: TField; Data: Variant; Buffer: Pointer; NativeFormat: Boolean); virtual;
+    {$IFEND}
     function FieldListCheckSum(): NativeInt; virtual;
   protected
     property FilteredIndexes: IList<Integer> read FFilteredIndexes;
     property FilterList: IList read FFilterList write FFilterList;
+    {$IF CompilerVersion >=24}
+    property Reserved: Pointer read FReserved write FReserved;
+    {$IFEND}
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -158,7 +167,7 @@ type
     {$IF CompilerVersion >= 23}
     procedure DataEvent(Event: TDataEvent; Info: NativeInt); override;
     {$ELSE}
-    procedure DataEvent(Event: TDataEvent; Info: Longint); override;
+    procedure DataEvent(Event: TDataEvent; Info: LongInt); override;
     {$IFEND}
 
     function GetBlobFieldData(FieldNo: Integer; var Buffer: TBlobByteData): Integer; override;
@@ -167,10 +176,20 @@ type
     function Lookup(const KeyFields: string; const KeyValues: Variant;
       const ResultFields: string): Variant; override;
     function GetActiveRecBuf(var RecBuf: TRecordBuffer): Boolean; virtual;
+    {$IF CompilerVersion >= 24}
+    function GetFieldData(Field: TField; Buffer: TValueBuffer): Boolean; override;
+    function GetFieldData(Field: TField; Buffer: TValueBuffer; NativeFormat: Boolean): Boolean; override;
+    {$ELSE}
     function GetFieldData(Field: TField; Buffer: Pointer): Boolean; override;
     function GetFieldData(Field: TField; Buffer: Pointer; NativeFormat: Boolean): Boolean; override;
+    {$IFEND}
+    {$IF CompilerVersion >= 24}
+    procedure SetFieldData(Field: TField; Buffer: TValueBuffer); override;
+    procedure SetFieldData(Field: TField; Buffer: TValueBuffer; NativeFormat: Boolean); override;
+    {$ELSE}
     procedure SetFieldData(Field: TField; Buffer: Pointer); override;
     procedure SetFieldData(Field: TField; Buffer: Pointer; NativeFormat: Boolean); override;
+    {$IFEND}
   published
     property AfterCancel;
     property AfterClose;
@@ -218,6 +237,7 @@ uses
   ,Adapters.ObjectDataset.Blobs
   ,Contnrs
   ,Generics.Defaults
+  ,Generics.Collections
   ;
 
 type
@@ -227,7 +247,7 @@ function DataSetLocateThrough(DataSet: TDataSet; const KeyFields: string;
   const KeyValues: Variant; Options: TLocateOptions): Boolean;
 var
   FieldCount: Integer;
-  Fields: TObjectList;
+  Fields: TObjectList{$IF CompilerVersion >= 24}<TField>{$IFEND};
   Fld: TField;
   Bookmark: TBookmark;
 
@@ -280,7 +300,7 @@ begin
   if DataSet.IsEmpty then
     Exit;
 
-  Fields := TObjectList.Create(False);
+  Fields := TObjectList{$IF CompilerVersion >= 24}<TField>{$IFEND}.Create(False);
   try
     DataSet.GetFieldList(Fields, KeyFields);
     FieldCount := Fields.Count;
@@ -398,7 +418,7 @@ end;
 {$IF CompilerVersion >=23}
 procedure TAbstractObjectDataset.DataEvent(Event: TDataEvent; Info: NativeInt);
 {$ELSE}
-procedure TAbstractObjectDataset.DataEvent(Event: TDataEvent; Info: Integer);
+procedure TAbstractObjectDataset.DataEvent(Event: TDataEvent; Info: LongInt);
 {$IFEND}
 begin
   case Event of
@@ -507,8 +527,13 @@ begin
   Result := ColumnAttribute;
 end;
 
+{$IF CompilerVersion >= 24}
+function TAbstractObjectDataset.GetFieldData(Field: TField; Buffer: TValueBuffer;
+  NativeFormat: Boolean): Boolean;
+{$ELSE}
 function TAbstractObjectDataset.GetFieldData(Field: TField; Buffer: Pointer;
   NativeFormat: Boolean): Boolean;
+{$IFEND}
 var
   LRecBuf: TRecordBuffer;
   LData: Variant;
@@ -557,6 +582,15 @@ begin
     VariantToBuffer(Field, LData, Buffer, NativeFormat);
 end;
 
+{$IF CompilerVersion >= 24}
+function TAbstractObjectDataset.GetFieldData(Field: TField; Buffer: TValueBuffer): Boolean;
+{$ELSE}
+function TAbstractObjectDataset.GetFieldData(Field: TField; Buffer: Pointer): Boolean;
+{$IFEND}
+begin
+  Result := GetFieldData(Field, Buffer, True);
+end;
+
 function TAbstractObjectDataset.GetFieldDefsClass: TFieldDefsClass;
 begin
   Result := TObjectDatasetFieldDefs;
@@ -570,11 +604,6 @@ begin
   CheckActive;
   if GetActiveRecBuf(LRecBuf) and (PArrayRecInfo(LRecBuf)^.BookmarkFlag = bfCurrent) then
     Result := PArrayRecInfo(LRecBuf)^.Index;
-end;
-
-function TAbstractObjectDataset.GetFieldData(Field: TField; Buffer: Pointer): Boolean;
-begin
-  Result := GetFieldData(Field, Buffer, True);
 end;
 
 function TAbstractObjectDataset.GetRecNo: Longint;
@@ -604,11 +633,6 @@ end;
 function TAbstractObjectDataset.GetRecordSize: Word;
 begin
   Result := sizeof(TArrayRecInfo);
-end;
-
-procedure TAbstractObjectDataset.InternalAddRecord(Buffer: Pointer; Append: Boolean);
-begin
-  inherited;
 end;
 
 procedure TAbstractObjectDataset.InternalClose;
@@ -872,13 +896,91 @@ begin
   FCurrent := AValue;
 end;
 
+{$IF CompilerVersion >= 24}
+procedure TAbstractObjectDataset.SetFieldData(Field: TField; Buffer: TValueBuffer);
+{$ELSE}
 procedure TAbstractObjectDataset.SetFieldData(Field: TField; Buffer: Pointer);
+{$IFEND}
 begin
   SetFieldData(Field, Buffer, True);
 end;
 
+{$IF CompilerVersion >= 24}
+procedure TAbstractObjectDataset.SetFieldData(Field: TField; Buffer: TValueBuffer; NativeFormat: Boolean);
+{$ELSE}
 procedure TAbstractObjectDataset.SetFieldData(Field: TField; Buffer: Pointer; NativeFormat: Boolean);
+{$IFEND}
 
+  {$IF CompilerVersion >= 24}
+  procedure BufferToVar(var AData: Variant);
+  var
+    LUnknown: IUnknown;
+    LDispatch: IDispatch;
+    TempBuff: TValueBuffer;
+  begin
+    case Field.DataType of
+      ftString, ftFixedChar, ftGuid:
+        AData := AnsiString(PAnsiChar(Buffer));
+      ftWideString, ftFixedWideChar:
+        AData := WideString(PWideChar(Buffer));
+      ftAutoInc, ftInteger:
+        AData := TBitConverter.ToLongInt(Buffer);
+      ftSmallInt:
+        AData := TBitConverter.ToSmallInt(Buffer);
+      ftWord:
+        AData := TBitConverter.ToWord(Buffer);
+      ftBoolean:
+        AData := TBitConverter.ToWordBool(Buffer);
+      ftFloat, ftCurrency:
+        AData := TBitConverter.ToDouble(Buffer);
+      ftBlob, ftMemo, ftGraphic, ftVariant, ftWideMemo:
+        AData := TBitConverter.ToVariant(Buffer);
+      ftInterface:
+      begin
+        Move(Buffer[0], LUnknown, SizeOf(IUnknown));
+        AData := LUnknown;
+      end;
+      ftIDispatch:
+      begin
+        Move(Buffer[0], LDispatch, SizeOf(IDispatch));
+        AData := LDispatch;
+      end;
+      ftDate, ftTime, ftDateTime:
+        if NativeFormat then
+        begin
+          SetLength(TempBuff, SizeOf(TVarData(AData).VDate));
+          DataConvert(Field, Buffer, TempBuff, False);
+          TVarData(AData).VDate := TBitConverter.ToDouble(TempBuff);
+        end
+        else
+          AData := TBitConverter.ToDouble(Buffer);
+      ftBCD:
+        if NativeFormat then
+        begin
+          SetLength(TempBuff, SizeOf(TVarData(AData).VCurrency));
+          DataConvert(Field, Buffer, TempBuff, False);
+          TVarData(AData).VCurrency := TBitConverter.ToCurrency(TempBuff);
+        end
+        else
+          AData := TBitConverter.ToCurrency(Buffer);
+      ftBytes, ftVarBytes:
+        if NativeFormat then
+        begin
+          TempBuff := BytesOf(@AData, SizeOf(Variant));
+          DataConvert(Field, Buffer, TempBuff, False);
+          AData := TBitConverter.ToVariant(TempBuff);
+        end
+        else
+          Move(Buffer[0], AData, SizeOf(OleVariant));
+      ftLargeInt:
+        AData := TBitConverter.ToLargeInt(Buffer);
+      else
+        DatabaseErrorFmt(SUnsupportedFieldType, [FieldTypeNames[Field.DataType],
+          Field.DisplayName]);
+    end;
+
+  end;
+  {$ELSE}
   procedure BufferToVar(var AData: Variant);
   begin
     case Field.DataType of
@@ -934,6 +1036,7 @@ procedure TAbstractObjectDataset.SetFieldData(Field: TField; Buffer: Pointer; Na
         Field.DisplayName]);
     end;
   end;
+  {$IFEND}
 
 var
   LData: Variant;
@@ -1024,8 +1127,118 @@ begin
   end;
 end;
 
+{$IF CompilerVersion >=24}
+procedure TAbstractObjectDataset.VariantToBuffer(Field: TField; Data: Variant; Buffer: TValueBuffer;
+  NativeFormat: Boolean);
+var
+  TempBuff: TValueBuffer;
+  PData: Pointer;
+
+  procedure CurrToBuffer(const C: Currency);
+  var
+    LBuff: TValueBuffer;
+  begin
+    if NativeFormat then
+    begin
+      SetLength(LBuff, SizeOf(Currency));
+      TBitConverter.FromCurrency(C, LBuff);
+      DataConvert(Field, LBuff, Buffer, True)
+    end
+    else
+      TBitConverter.FromCurrency(C, Buffer);
+  end;
+
+
+begin
+  case Field.DataType of
+    ftGuid, ftFixedChar, ftString:
+      begin
+        PAnsiChar(Buffer)[Field.Size] := #0;
+        WideCharToMultiByte(0, 0, tagVariant(Data).bStrVal, SysStringLen(tagVariant(Data).bStrVal)+1,
+          @Buffer[0], Field.Size, nil, nil);
+      end;
+    ftFixedWideChar, ftWideString:
+      begin
+        TempBuff := TEncoding.Unicode.GetBytes(tagVariant(Data).bstrVal);
+        SetLength(TempBuff, Length(TempBuff) + SizeOf(Char));
+        TempBuff[Length(TempBuff) - 2] := 0;
+        TempBuff[Length(TempBuff) - 1] := 0;
+        Move(TempBuff[0], Buffer[0], Length(TempBuff));
+      end;
+    ftSmallint:
+      if tagVariant(Data).vt = VT_UI1 then
+        TBitConverter.FromSmallInt(Byte(tagVariant(Data).cVal), Buffer)
+      else
+        TBitConverter.FromSmallInt(tagVariant(Data).iVal, Buffer);
+    ftWord:
+      if tagVariant(Data).vt = VT_UI1 then
+        TBitConverter.FromWord(tagVariant(Data).bVal, Buffer)
+      else
+        TBitConverter.FromWord(tagVariant(Data).uiVal, Buffer);
+    ftAutoInc, ftInteger:
+      TBitConverter.FromInteger(Data, Buffer);
+    ftFloat, ftCurrency:
+      if tagVariant(Data).vt = VT_R8 then
+        TBitConverter.FromDouble(tagVariant(Data).dblVal, Buffer)
+      else
+        TBitConverter.FromDouble(Data, Buffer);
+    ftFMTBCD:
+      TBitConverter.FromBcd(VarToBcd(Data), Buffer);
+    ftBCD:
+      if tagVariant(Data).vt = VT_CY then
+        CurrToBuffer(tagVariant(Data).cyVal)
+      else
+        CurrToBuffer(Data);
+    ftBoolean:
+      TBitConverter.FromWordBool(tagVariant(Data).vbool, Buffer);
+    ftDate, ftTime, ftDateTime:
+      if NativeFormat then
+      begin
+        SetLength(TempBuff, SizeOf(Double));
+        TBitConverter.FromDouble(data, TempBuff);
+        DataConvert(Field, TempBuff, Buffer, True);
+      end
+      else
+        TBitConverter.FromDouble(tagVariant(Data).date, Buffer);
+    ftBytes, ftVarBytes:
+      if NativeFormat then
+      begin
+        PData := VarArrayLock(Data);
+        try
+          DataConvert(Field, BytesOf(PData, VarArrayHighBound(Data, 1) - VarArrayLowBound(Data, 1) + 1), Buffer, True);
+        finally
+          VarArrayUnlock(Data);
+        end;
+      end
+      else
+        TBitConverter.FromVariant(Data, Buffer);
+    ftInterface:
+      begin
+        TempBuff := BytesOf(@Data, SizeOf(IUnknown));
+        Move(TempBuff[0], Buffer[0], SizeOf(IUnknown));
+      end;
+    ftIDispatch:
+      begin
+        TempBuff := BytesOf(@Data, SizeOf(IDispatch));
+        Move(TempBuff[0], Buffer[0], SizeOf(IDispatch));
+      end;
+    ftLargeInt:
+    begin
+      if PDecimal(@Data)^.sign > 0 then
+        TBitConverter.FromLargeInt(-1*PDecimal(@Data)^.Lo64, Buffer)
+      else
+        TBitConverter.FromLargeInt(PDecimal(@Data)^.Lo64, Buffer);
+    end;
+    ftBlob..ftTypedBinary, ftVariant, ftWideMemo: TBitConverter.FromVariant(Data, Buffer);
+  else
+    DatabaseErrorFmt(SUnsupportedFieldType, [FieldTypeNames[Field.DataType],
+      Field.DisplayName]);
+  end;
+end;
+{$ELSE}
 procedure TAbstractObjectDataset.VariantToBuffer(Field: TField; Data: Variant; Buffer: Pointer;
   NativeFormat: Boolean);
+
 
   procedure CurrToBuffer(const C: Currency);
     begin
@@ -1127,7 +1340,7 @@ begin
   end;
 
 end;
-
+{$IFEND}
 { TObjectDatasetFieldDefs }
 
 function TObjectDatasetFieldDefs.GetFieldDefClass: TFieldDefClass;

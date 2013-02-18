@@ -27,12 +27,12 @@
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
 			<Icon_MainIcon>ORMTests_Icon2.ico</Icon_MainIcon>
-			<Manifest_File>None</Manifest_File>
+			<Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
 			<VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
 			<VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=0.0.0.1;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
 			<VerInfo_Build>1</VerInfo_Build>
 			<VerInfo_Locale>1063</VerInfo_Locale>
-			<DCC_Namespace>Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Datasnap;Web;Soap;Winapi;Data.Win;$(DCC_Namespace)</DCC_Namespace>
+			<DCC_Namespace>Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Datasnap;Web;Soap;Winapi;Data.Win;System.Win;Web.Win;$(DCC_Namespace)</DCC_Namespace>
 			<VerInfo_MajorVer>0</VerInfo_MajorVer>
 			<DCC_Define>_CONSOLE_TESTRUNNER;USE_SPRING;$(DCC_Define)</DCC_Define>
 			<DCC_UnitSearchPath>$(BDS)\Source\DUnit\src;..\External\delphi-oop\Core;..\External\delphi-oop\Persistence;..\External\Spring\Source\Base;..\External\Spring\Source\Base\Collections;..\External\Spring\Source\Base\Reflection;..\External\uib\Source\;..\External\FastMM\;..\External\delphi-oop\Persistence\Externals\superobject;..\External\TMongoWire\;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
@@ -59,7 +59,7 @@
 			<DCC_DebugInformation>false</DCC_DebugInformation>
 		</PropertyGroup>
 		<ItemGroup>
-			<DelphiCompile Include="ORMTests.dpr">
+			<DelphiCompile Include="$(MainSource)">
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
 			<DCCReference Include="TestSession.pas"/>
@@ -209,8 +209,8 @@
 						<VersionInfoKeys Name="Comments"/>
 					</VersionInfoKeys>
 					<Excluded_Packages>
-						<Excluded_Packages Name="$(BDSBIN)\dcloffice2k170.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
-						<Excluded_Packages Name="$(BDSBIN)\dclofficexp170.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
+						<Excluded_Packages Name="$(BDSBIN)\dcloffice2k160.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
+						<Excluded_Packages Name="$(BDSBIN)\dclofficexp160.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
 					</Excluded_Packages>
 					<Source>
 						<Source Name="MainSource">ORMTests.dpr</Source>
@@ -224,4 +224,5 @@
 			</BorlandProject>
 			<ProjectFileVersion>12</ProjectFileVersion>
 		</ProjectExtensions>
+		<Import Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')" Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj"/>
 	</Project>

@@ -76,15 +76,4 @@ object frmObjectDatasetTest: TfrmObjectDatasetTest
     Left = 488
     Top = 264
   end
-  object JvMemoryData1: TJvMemoryData
-    Filtered = True
-    FilterOptions = [foCaseInsensitive]
-    FieldDefs = <>
-    LoadRecords = True
-    ApplyMode = amAppend
-    ExactApply = True
-    OneValueInArray = False
-    Left = 424
-    Top = 184
-  end
 end

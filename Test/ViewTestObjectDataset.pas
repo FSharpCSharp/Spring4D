@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, ExtCtrls, DBCtrls, Grids, DBGrids, DB, JvMemoryDataset, StdCtrls, ComCtrls
+  Dialogs, ExtCtrls, DBCtrls, Grids, DBGrids, DB, StdCtrls, ComCtrls
   ,Adapters.ObjectDataset
   ;
 
@@ -13,7 +13,6 @@ type
     dsList: TDataSource;
     dbgList: TDBGrid;
     DBNavigator1: TDBNavigator;
-    JvMemoryData1: TJvMemoryData;
     edFilter: TEdit;
     cbFiltered: TCheckBox;
     sbTotal: TStatusBar;

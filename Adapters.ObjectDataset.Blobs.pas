@@ -76,7 +76,11 @@ end;
 
 procedure TSvBlobStream.ReadBlobData;
 begin
+  {$IF CompilerVersion >= 24}
+  FFieldData := FField.AsVariant;
+  {$ELSE}
   FDataSet.GetFieldData(FField, @FFieldData, True);
+  {$IFEND}
   if not VarIsNull(FFieldData) then
   begin
     if VarType(FFieldData) = varOleStr then
