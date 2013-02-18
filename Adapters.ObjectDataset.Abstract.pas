@@ -261,12 +261,10 @@ var
 
 begin
   Result := False;
-  with DataSet do
-  begin
-    CheckBrowseMode;
-    if IsEmpty then
-      Exit;
-  end;
+  DataSet.CheckBrowseMode;
+  if DataSet.IsEmpty then
+    Exit;
+
   Fields := TObjectList.Create(False);
   try
     DataSet.GetFieldList(Fields, KeyFields);
@@ -278,16 +276,13 @@ begin
     try
       Bookmark := DataSet.Bookmark;
       try
-        with DataSet do
+        DataSet.First;
+        while not DataSet.Eof do
         begin
-          First;
-          while not Eof do
-          begin
-            Result := CompareRecord;
-            if Result then
-              Break;
-            Next;
-          end;
+          Result := CompareRecord;
+          if Result then
+            Break;
+          DataSet.Next;
         end;
       finally
         if not Result and DataSet.BookmarkValid(TBookmark(Bookmark)) then

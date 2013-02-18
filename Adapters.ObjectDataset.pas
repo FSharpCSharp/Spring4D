@@ -575,22 +575,21 @@ begin
   for I := 0 to Fields.Count - 1 do
   begin
     LField := Fields[I];
-    with LField do
-      if FieldDefs.IndexOf(FieldName) = -1 then
-      begin
-        LFieldDef := FieldDefs.AddFieldDef;
-        LFieldDef.Name := FieldName;
-        LFieldDef.DataType := DataType;
-        LFieldDef.Size := Size;
-        if Required then
-          LFieldDef.Attributes := [DB.faRequired];
-        if ReadOnly then
-          LFieldDef.Attributes := LFieldDef.Attributes + [DB.faReadonly];
-        if (DataType = ftBCD) and (LField is TBCDField) then
-          LFieldDef.Precision := TBCDField(LField).Precision;
-        if LField is TObjectField then
-          LoadFieldDefsFromFields(TObjectField(LField).Fields, LFieldDef.ChildDefs);
-      end;
+    if FieldDefs.IndexOf(LField.FieldName) = -1 then
+    begin
+      LFieldDef := FieldDefs.AddFieldDef;
+      LFieldDef.Name := LField.FieldName;
+      LFieldDef.DataType := LField.DataType;
+      LFieldDef.Size := LField.Size;
+      if LField.Required then
+        LFieldDef.Attributes := [DB.faRequired];
+      if LField.ReadOnly then
+        LFieldDef.Attributes := LFieldDef.Attributes + [DB.faReadonly];
+      if (LField.DataType = ftBCD) and (LField is TBCDField) then
+        LFieldDef.Precision := TBCDField(LField).Precision;
+      if LField is TObjectField then
+        LoadFieldDefsFromFields(TObjectField(LField).Fields, LFieldDef.ChildDefs);
+    end;
   end;
 end;
 
