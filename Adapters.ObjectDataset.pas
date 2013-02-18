@@ -612,12 +612,23 @@ var
     case ATypeInfo.Kind of
       tkInteger:
       begin
-        LFieldType := ftInteger;
         LLength := -2;
+        if (ATypeInfo = TypeInfo(Word)) then
+        begin
+          LFieldType := ftWord;
+        end
+        else if (ATypeInfo = TypeInfo(SmallInt)) then
+        begin
+          LFieldType := ftSmallint;
+        end
+        else
+        begin
+          LFieldType := ftInteger;
+        end;
       end;
       tkEnumeration:
       begin
-        if (LProp.PropertyType.Handle = TypeInfo(Boolean)) then
+        if (ATypeInfo = TypeInfo(Boolean)) then
         begin
           LFieldType := ftBoolean;
           LLength := -2;
@@ -631,14 +642,24 @@ var
       end;
       tkFloat:
       begin
-        if (LProp.PropertyType.Handle = TypeInfo(TDate)) then
+        if (ATypeInfo = TypeInfo(TDate)) then
         begin
           LFieldType := ftDate;
           LLength := -2;
         end
-        else if (LProp.PropertyType.Handle = TypeInfo(TDateTime)) then
+        else if (ATypeInfo = TypeInfo(TDateTime)) then
         begin
           LFieldType := ftDateTime;
+          LLength := -2;
+        end
+        else if (ATypeInfo = TypeInfo(Currency)) then
+        begin
+          LFieldType := ftCurrency;
+          LLength := -2;
+        end
+        else if (ATypeInfo = TypeInfo(TTime)) then
+        begin
+          LFieldType := ftTime;
           LLength := -2;
         end
         else
