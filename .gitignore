@@ -18,8 +18,9 @@ __history
 # binaries
 *.bpl
 *.exe
-Win32
-Win64
+*.dll
+Win32\*
+Win64\*
 DCU
 
 *.obj
@@ -30,4 +31,8 @@ DCU
 *.~*
 *.gex
 *.map
-*.rsm
+*.rsm  
+*.db
+*.db3 
+!sqlite3.dll
+

@@ -22,6 +22,20 @@ type
 
   TAttributeClass = class of TCustomAttribute;
 
+  TObjectDatasetFieldDef = class(TFieldDef)
+  private
+    FDisplayName: string;
+  protected
+    function GetDisplayName: string; override;
+  public
+    procedure SetRealDisplayName(const Value: string);
+  end;
+
+  TObjectDatasetFieldDefs = class(TFieldDefs)
+  protected
+    function GetFieldDefClass: TFieldDefClass; override;
+  end;
+
   TAbstractObjectDataset = class(TDataset)
   private
     FRowBufSize: Integer;
@@ -64,6 +78,7 @@ type
     function GetCanModify: Boolean; override;
     function GetRecNo: Longint; override;
     function GetRecordCount: Integer; override;
+    function GetFieldDefsClass: TFieldDefsClass; override;
     procedure SetFiltered(Value: Boolean); override;
 
     procedure DoOnNewRecord; override;
@@ -542,6 +557,11 @@ begin
     VariantToBuffer(Field, LData, Buffer, NativeFormat);
 end;
 
+function TAbstractObjectDataset.GetFieldDefsClass: TFieldDefsClass;
+begin
+  Result := TObjectDatasetFieldDefs;
+end;
+
 function TAbstractObjectDataset.GetIndex: Integer;
 var
   LRecBuf: TRecordBuffer;
@@ -829,6 +849,7 @@ begin
   FFieldsCache.Clear;
   for i := 0 to Fields.Count - 1 do
   begin
+    Fields[i].DisplayLabel := FieldDefs[i].DisplayName;
     FFieldsCache.Add(Fields[i].FieldName, Fields[i]);
   end;
 end;
@@ -1105,6 +1126,25 @@ begin
       Field.DisplayName]);
   end;
 
+end;
+
+{ TObjectDatasetFieldDefs }
+
+function TObjectDatasetFieldDefs.GetFieldDefClass: TFieldDefClass;
+begin
+  Result := TObjectDatasetFieldDef;
+end;
+
+{ TObjectDatasetFieldDef }
+
+function TObjectDatasetFieldDef.GetDisplayName: string;
+begin
+  Result := FDisplayName;
+end;
+
+procedure TObjectDatasetFieldDef.SetRealDisplayName(const Value: string);
+begin
+  FDisplayName := Value;
 end;
 
 end.

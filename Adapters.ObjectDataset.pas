@@ -600,7 +600,7 @@ var
   LAttrib: TCustomAttribute;
   LPropPrettyName: string;
   LFieldType: TFieldType;
-  LFieldDef: TFieldDef;
+  LFieldDef: TObjectDatasetFieldDef;
   LLength, LPrecision, LScale: Integer;
   LRequired, LDontUpdate, LHidden: Boolean;
 
@@ -758,8 +758,9 @@ begin
 
     DoGetFieldType(LProp.PropertyType.Handle);
 
-    LFieldDef := FieldDefs.AddFieldDef;
-    LFieldDef.Name := LPropPrettyName; // LProp.Name;
+    LFieldDef := FieldDefs.AddFieldDef as TObjectDatasetFieldDef;
+    LFieldDef.Name := LProp.Name;
+    LFieldDef.SetRealDisplayName(LPropPrettyName);
 
     LFieldDef.DataType := LFieldType;
     if LLength <> -2 then
