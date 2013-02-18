@@ -519,7 +519,7 @@ end;
 
 procedure TObjectDataset.InternalSetSort(const AValue: string);
 var
-  Pos: DB.TBookmark;
+  Pos: Integer;
   LDataList: IList;
   LOldValue: Boolean;
   LOwnsObjectsProp: TRttiProperty;
@@ -532,7 +532,7 @@ begin
   LChanged := AValue <> FSort;
   LIndexFieldList := CreateIndexList(AValue);
 
-  Pos := Bookmark;
+  Pos := Current;
   LDataList := GetCurrentDataList;
   LOldValue := True;
   LOwnsObjectsProp := TRttiContext.Create.GetType(LDataList.AsObject.ClassType).GetProperty('OwnsObjects');
@@ -554,7 +554,7 @@ begin
   finally
     if Assigned(LOwnsObjectsProp) then
       LOwnsObjectsProp.SetValue(LDataList.AsObject, LOldValue);
-    Bookmark := Pos;
+    SetCurrent(Pos);
   end;
 end;
 
@@ -659,6 +659,11 @@ var
         else if (ATypeInfo = TypeInfo(TTime)) then
         begin
           LFieldType := ftTime;
+          LLength := -2;
+        end
+        else if (LPrecision <> -2) or (LScale <> -2) then
+        begin
+          LFieldType := ftBCD;
           LLength := -2;
         end
         else
@@ -768,7 +773,7 @@ begin
 
     LFieldDef.Required := LRequired;
 
-    if LFieldType = ftBCD then
+    if LFieldType in [ftFMTBcd, ftBCD] then
     begin
       if LPrecision <> -2 then
         LFieldDef.Precision := LPrecision;
