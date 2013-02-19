@@ -48,6 +48,7 @@ type
     FFilterList: IList;
     FFilteredIndexes: IList<Integer>;
     FFieldsCache: IDictionary<string,TField>;
+    FFilterCache: IDictionary<string, Variant>;
     {$IF CompilerVersion >=24}
     FReserved: Pointer;
     {$IFEND}
@@ -134,6 +135,7 @@ type
   protected
     property FilteredIndexes: IList<Integer> read FFilteredIndexes;
     property FilterList: IList read FFilterList write FFilterList;
+    property FilterCache: IDictionary<string, Variant> read FFilterCache write FFilterCache;
     {$IF CompilerVersion >=24}
     property Reserved: Pointer read FReserved write FReserved;
     {$IFEND}
@@ -393,7 +395,8 @@ begin
       Result := BobJenkinsHash(s[1], Length(s) * SizeOf(s[1]), 0);
     end
   );
-  FFieldsCache := TCollections.CreateDictionary<string,TField>(LCaseInsensitiveComparer);
+  FFieldsCache := TCollections.CreateDictionary<string,TField>(500, LCaseInsensitiveComparer);
+  FFilterCache := TCollections.CreateDictionary<string,Variant>(500,LCaseInsensitiveComparer);
 end;
 
 

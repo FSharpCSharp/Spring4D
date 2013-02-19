@@ -778,6 +778,14 @@ var
     end;
   end;
 
+  function CanEvalLike(): Boolean;
+  begin
+    Result := False;
+    case VarType(LeftValue) of
+      varString, varUString, varOleStr, varStrArg: Result := True;
+    end;
+  end;
+
   function EvalEquality: Boolean;
   begin
     // Special case, at least one of both is null:
@@ -785,7 +793,7 @@ var
       Result := (LeftValue = Null) and (RightValue = Null)
     else
     begin
-      if FParser.Parent.FEnableWildcardMatching and (TVarData(LeftValue).VType<>varDate) then
+      if (FParser.Parent.FEnableWildcardMatching) and (CanEvalLike) then
       begin
         Result := EvalLike;
       end
@@ -844,41 +852,68 @@ var
       Result := LeftValue <> RightValue;
   end;
 
-var
-  LeftStr, RightStr: string;
 begin
   // Determine values to have them handy.
-  LeftValue := FLeftNode.Eval;
-  RightValue := FRightNode.Eval;
-  FixupValues(LeftValue, RightValue);
-
+//  FixupValues(LeftValue, RightValue);
   case FOperator.Chr of
     '+':
       begin
-        // force string concatenation
-        if (TVarData(LeftValue).VType = varString) or
-          (TVarData(LeftValue).VType = varOleStr) then
-        begin
-          LeftStr := LeftValue;
-          RightStr := RightValue;
-          LeftStr := LeftStr + RightStr;
-          Result := LeftStr;
-        end
-        else
-          Result := LeftValue + RightValue;
+        LeftValue := FLeftNode.Eval;
+        RightValue := FRightNode.Eval;
+        Result := LeftValue + RightValue;
       end;
-    '-': Result := LeftValue - RightValue;
+    '-':
+      begin
+        LeftValue := FLeftNode.Eval;
+        RightValue := FRightNode.Eval;
+        Result := LeftValue - RightValue;
+      end;
     '*': Result := FLeftNode.Eval * FRightNode.Eval;
     '/': Result := FLeftNode.Eval / FRightNode.Eval;
-    '=': Result := EvalEquality();
-    '<': Result := EvalLT();
-    '>': Result := EvalGT();
+    '=':
+      begin
+        LeftValue := FLeftNode.Eval;
+        RightValue := FRightNode.Eval;
+        Result := EvalEquality();
+      end;
+    '<':
+      begin
+        LeftValue := FLeftNode.Eval;
+        RightValue := FRightNode.Eval;
+        Result := EvalLT();
+      end;
+    '>':
+      begin
+        LeftValue := FLeftNode.Eval;
+        RightValue := FRightNode.Eval;
+        Result := EvalGT();
+      end;
     '&': Result := FLeftNode.Eval and FRightNode.Eval;
     '|': Result := FLeftNode.Eval or FRightNode.Eval;
-    '~': Result := EvalLike;
-    '{': Result := EvalLTEq;
-    '}': Result := EvalGTEq;
-    '?': Result := EvalNEQ;
+    '~':
+      begin
+        LeftValue := FLeftNode.Eval;
+        RightValue := FRightNode.Eval;
+        Result := EvalLike;
+      end;
+    '{':
+      begin
+        LeftValue := FLeftNode.Eval;
+        RightValue := FRightNode.Eval;
+        Result := EvalLTEq;
+      end;
+    '}':
+      begin
+        LeftValue := FLeftNode.Eval;
+        RightValue := FRightNode.Eval;
+        Result := EvalGTEq;
+      end;
+    '?':
+      begin
+        LeftValue := FLeftNode.Eval;
+        RightValue := FRightNode.Eval;
+        Result := EvalNEQ;
+      end;
   else
     Result := Null;
   end;
@@ -956,7 +991,6 @@ var
   VArgs: Variant;
   I: Integer;
 begin
-
   VArgs := VarArrayCreate([0, FArgs.Count - 1], varVariant);
   for I := 0 to FArgs.Count - 1 do
     VArgs[I] := TNode(FArgs[I]).Eval();
@@ -1022,6 +1056,7 @@ begin
   Scan.DebugPrint();
   {$ENDIF TESTING_PARSER}
   Parser := TParser(FParser);
+  Assert(Assigned(Parser), 'Parser not assigned');
   if Parser.Execute() then
   begin
     FValue := Parser.Value;

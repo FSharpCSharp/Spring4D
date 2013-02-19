@@ -802,10 +802,19 @@ var
   LField: TField;
 begin
   Result := False;
-  LField := FindField(Varname);
-  if Assigned(LField) then
+
+  if not FilterCache.TryGetValue(VarName, Value) then
   begin
-    Value := InternalGetFieldValue(LField, FDataList[FFilterIndex]);
+    LField := FindField(Varname);
+    if Assigned(LField) then
+    begin
+      Value := InternalGetFieldValue(LField, FDataList[FFilterIndex]);
+      FilterCache.Add(VarName, Value);
+      Result := True;
+    end;
+  end
+  else
+  begin
     Result := True;
   end;
 end;
@@ -824,31 +833,23 @@ begin
 end;
 
 function TObjectDataset.RecordFilter: Boolean;
-var
-  SaveState: TDataSetState;
-  LValue: Variant;
 begin
   Result := True;
   if (FFilterIndex >= 0) and (FFilterIndex <  DataListCount ) then
   begin
-    SaveState := SetTempState(dsFilter);
     try
       if Assigned(OnFilterRecord) then
         OnFilterRecord(Self, Result)
       else
       begin
-        if (IsFilterEntered) and (FFilterParser.Eval()) then
+        if (FFilterParser.Eval()) then
         begin
-          FFilterParser.EnableWildcardMatching := not (foNoPartialCompare in FilterOptions);
-          FFilterParser.CaseInsensitive := foCaseInsensitive in FilterOptions;
-          LValue := FFilterParser.Value;
-          Result := LValue;
+          Result := FFilterParser.Value;
         end;
       end;
     except
       InternalHandleException;
     end;
-    RestoreState(SaveState);
   end
   else
     Result := False;
@@ -860,15 +861,27 @@ var
 begin
   FilterList.Clear;
   FilteredIndexes.Clear;
+  if not IsFilterEntered then
+  begin
+    for i := 0 to FDataList.Count - 1 do
+    begin
+      FilterList.Add(FDataList[i]);
+      FilteredIndexes.Add(i);
+    end;
+    Exit;
+  end;
+
   for i := 0 to FDataList.Count - 1 do
   begin
     FFilterIndex := i;
+    FilterCache.Clear;
     if RecordFilter then
     begin
       FilterList.Add(FDataList[i]);
       FilteredIndexes.Add(i);
     end;
   end;
+  FilterCache.Clear;
 end;
 
 procedure TObjectDataset.DoFilterRecord(ADataListIndex: Integer);
@@ -946,6 +959,9 @@ begin
 
   if IsFilterEntered then
   begin
+    FFilterParser.EnableWildcardMatching := not (foNoPartialCompare in FilterOptions);
+    FFilterParser.CaseInsensitive := foCaseInsensitive in FilterOptions;
+
     if foCaseInsensitive in FilterOptions then
       FFilterParser.Expression := AnsiUpperCase(Filter)
     else

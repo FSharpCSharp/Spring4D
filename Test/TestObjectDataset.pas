@@ -37,6 +37,7 @@ type
     procedure MergeSort_Try();
     procedure Locate();
     procedure Filter();
+    procedure Filter_Performance_Test();
     procedure QuickSortTest();
     procedure ClearField_SimpleType();
     procedure ClearField_Nullable();
@@ -676,6 +677,22 @@ begin
 
   FDataset.Filter := '(Age > 2)';
   CheckEquals(8, FDataset.RecordCount);
+end;
+
+procedure TestTObjectDataset.Filter_Performance_Test;
+var
+  LCustomers: IList<TCustomer>;
+  sw: TStopwatch;
+begin
+  LCustomers := CreateCustomersList(50000);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+  FDataset.Filter := '((AGE = 2)) OR ((AGE = 3)) OR ((AGE = 4)) OR ((AGE = 1)) OR ((AGE = 100)) OR ((AGE = 1000)) OR ((AGE = 999)) OR ((AGE = -1))';
+  sw := TStopwatch.StartNew;
+  FDataset.Filtered := True;
+  sw.Stop;
+  CheckEquals(7, FDataset.RecordCount);
+  Status(Format('%D records in %D ms', [LCustomers.Count, sw.ElapsedMilliseconds]));
 end;
 
 procedure TestTObjectDataset.TestGUI;
