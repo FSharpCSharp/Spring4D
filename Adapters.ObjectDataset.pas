@@ -38,34 +38,31 @@ type
     procedure DoPostRecord(Index: Integer); override;
     procedure RebuildPropertiesCache(); override;
 
-    procedure DoOnAfterFilter(); virtual;
-    procedure DoOnBeforeFilter(); virtual;
-
-    function GetChangedSortText(const ASortText: string): string;
-
-    function ConvertPropertyValueToVariant(const AValue: TValue): Variant; virtual;
-    procedure InitRttiPropertiesFromItemType(AItemTypeInfo: PTypeInfo); virtual;
     procedure UpdateFilter(); override;
-    function ParserGetVariableValue(Sender: TObject; const VarName: string; var Value: Variant): Boolean; virtual;
     function RecordFilter: Boolean; override;
-
     function GetCurrentDataList(): IList; override;
     function GetRecordCount: Integer; override;
     function DataListCount(): Integer; override;
 
+    procedure DoOnAfterFilter(); virtual;
+    procedure DoOnBeforeFilter(); virtual;
+    function ConvertPropertyValueToVariant(const AValue: TValue): Variant; virtual;
+    procedure InitRttiPropertiesFromItemType(AItemTypeInfo: PTypeInfo); virtual;
+    function ParserGetVariableValue(Sender: TObject; const VarName: string; var Value: Variant): Boolean; virtual;
     function InternalGetFieldValue(AField: TField; const AItem: TValue): Variant; virtual;
     procedure LoadFieldDefsFromFields(Fields: TFields; FieldDefs: TFieldDefs); virtual;
     procedure LoadFieldDefsFromItemType; virtual;
     procedure RefreshFilter(); virtual;
     procedure DoFilterRecord(ADataListIndex: Integer); virtual;
+    function CompareRecords(const Item1, Item2: TValue; AIndexFieldList: IList<TIndexFieldInfo>): Integer; virtual;
+    procedure InternalSetSort(const AValue: string); virtual;
 
     procedure InternalInitFieldDefs; override;
     procedure InternalOpen; override;
     function  IsCursorOpen: Boolean; override;
     procedure SetFilterText(const Value: string); override;
 
-    function CompareRecords(const Item1, Item2: TValue; AIndexFieldList: IList<TIndexFieldInfo>): Integer; virtual;
-    procedure InternalSetSort(const AValue: string); virtual;
+    function GetChangedSortText(const ASortText: string): string;
     function CreateIndexList(const ASortText: string): IList<TIndexFieldInfo>;
   public
     constructor Create(AOwner: TComponent); override;

@@ -119,7 +119,8 @@ uses
   ViewTestObjectDataset in 'ViewTestObjectDataset.pas' {frmObjectDatasetTest},
   Adapters.ObjectDataset.Blobs in '..\Adapters.ObjectDataset.Blobs.pas',
   Adapters.ObjectDataset.ExprParser in '..\Adapters.ObjectDataset.ExprParser.pas',
-  Core.Algorythms.Sort in '..\Core.Algorythms.Sort.pas';
+  Core.Algorythms.Sort in '..\Core.Algorythms.Sort.pas',
+  Adapters.ObjectDataset.ActiveX in '..\Adapters.ObjectDataset.ActiveX.pas';
 
 {$R *.RES}
 

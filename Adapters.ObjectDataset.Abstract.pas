@@ -103,6 +103,11 @@ type
     function GetRecordSize: Word; override;
     procedure BindFields(Binding: Boolean); override;
 
+    {$IF CompilerVersion >=24}
+    procedure InternalAddRecord(Buffer: TValueBuffer; Append: Boolean); override;
+    {$ELSE}
+    procedure InternalAddRecord(Buffer: Pointer; Append: Boolean); override;
+    {$IFEND}
     procedure InternalClose; override;
     procedure InternalDelete; override;
     procedure InternalFirst; override;
@@ -230,11 +235,10 @@ uses
   ,Forms
   ,DBConsts
   ,FMTBcd
-  ,ActiveX
-  ,Windows
   ,WideStrUtils
   ,Mapping.Attributes
   ,Adapters.ObjectDataset.Blobs
+  ,Adapters.ObjectDataset.ActiveX
   ,Contnrs
   ,Generics.Defaults
   ,Generics.Collections
@@ -280,16 +284,16 @@ var
   begin
     if FieldCount = 1 then
     begin
-      Fld := TField(Fields.First);      {BG}
-      Result := CompareField(Fld, KeyValues)  {BG}
+      Fld := TField(Fields.First);
+      Result := CompareField(Fld, KeyValues)
     end
     else
     begin
       Result := True;
       for I := 0 to FieldCount - 1 do
       begin
-        Fld := TField(Fields[I]);                  {BG}
-        Result := Result and CompareField(Fld, KeyValues[I]);  {BG}
+        Fld := TField(Fields[I]);
+        Result := Result and CompareField(Fld, KeyValues[I]);
       end;
     end;
   end;
@@ -331,15 +335,6 @@ begin
   end;
 end;
 
-function FieldListCheckSum(Dataset: TDataSet): Integer;
-var
-  I: Integer;
-begin
-  Result := 0;
-  for I := 0 to Dataset.Fields.Count - 1 do
-    Result := Result + (Integer(Dataset.Fields[I]) shr (I mod 16));
-end;
-
 { TCustomObjectDataset }
 
 function TAbstractObjectDataset.AllocRecordBuffer: TRecordBuffer;
@@ -361,11 +356,8 @@ end;
 
 function TAbstractObjectDataset.BookmarkValid(Bookmark: TBookmark): Boolean;
 begin
-  if Assigned(Bookmark) and (PInteger(Bookmark)^ >= 0) and
-    (PInteger(Bookmark)^ < RecordCount) then
-    Result := True
-  else
-    Result := False;
+  Result := Assigned(Bookmark) and (PInteger(Bookmark)^ >= 0) and
+    (PInteger(Bookmark)^ < RecordCount);
 end;
 
 function TAbstractObjectDataset.CompareBookmarks(Bookmark1, Bookmark2: TBookmark): Integer;
@@ -375,12 +367,7 @@ begin
   Result := LRetCodes[Bookmark1 = nil, Bookmark2 = nil];
   if Result = 2 then
   begin
-    if PInteger(Bookmark1)^ < PInteger(Bookmark2)^ then
-      Result := -1
-    else if PInteger(Bookmark1)^ > PInteger(Bookmark2)^ then
-      Result := 1
-    else
-      Result := 0;
+    Result := PInteger(Bookmark1)^ - PInteger(Bookmark2)^;
   end;
 end;
 
@@ -547,7 +534,7 @@ var
 
   function DataToInt64: Int64;
   begin
-    {TODO -oLinas -cGeneral : get rid of ActiveX dependency}
+    {DONE -oLinas -cGeneral : get rid of ActiveX dependency}
     if Decimal(LData).sign > 0 then
       Result := -1 * Decimal(LData).Lo64
     else
@@ -633,6 +620,16 @@ end;
 function TAbstractObjectDataset.GetRecordSize: Word;
 begin
   Result := sizeof(TArrayRecInfo);
+end;
+
+
+{$IF CompilerVersion >=24}
+procedure TAbstractObjectDataset.InternalAddRecord(Buffer: TValueBuffer; Append: Boolean);
+{$ELSE}
+procedure TAbstractObjectDataset.InternalAddRecord(Buffer: Pointer; Append: Boolean);
+{$IFEND}
+begin
+  DoPostRecord(Current);
 end;
 
 procedure TAbstractObjectDataset.InternalClose;
@@ -1272,8 +1269,9 @@ begin
           if LLength = 0 then
             PAnsiChar(Buffer)[0] := #0
           else
-            WideCharToMultiByte(0, 0, tagVariant(Data).bStrVal, LLength + 1, Buffer,
-              Field.Size, nil, nil);
+            StrCopy(Buffer, tagVariant(Data).bStrVal);
+          //  WideCharToMultiByte(0, 0, tagVariant(Data).bStrVal, LLength + 1, Buffer,
+           //   Field.Size, nil, nil);
         end;
       end;
     ftFixedWideChar, ftWideString:

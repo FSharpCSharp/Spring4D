@@ -765,6 +765,27 @@ var
   LeftNull, RightNull: Boolean;
   LRel: TVariantRelationship;
 begin
+  if Left.IsEmpty or Right.IsEmpty then
+  begin
+    Result := 0;
+    LeftNull := Left.IsEmpty;
+    RightNull := Right.IsEmpty;
+    if LeftNull then
+    begin
+      if RightNull then
+        Result := 0
+      else
+        Result := 1;
+    end
+    else if RightNull then
+    begin
+      if LeftNull then
+        Result := 0
+      else
+        Result := -1;
+    end;
+  end
+  else
   if Left.IsOrdinal and Right.IsOrdinal then
   begin
     Result := Math.CompareValue(Left.AsOrdinal, Right.AsOrdinal);

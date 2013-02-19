@@ -28,6 +28,9 @@ type
     procedure Insert();
     procedure Delete();
     procedure Delete_Filtered();
+    procedure Delete_Last();
+    procedure Eof_AfterLast();
+    procedure Eof_AfterNext();
     procedure Sort();
     procedure SimpleSort();
     procedure Sort_Regression();
@@ -35,6 +38,11 @@ type
     procedure Locate();
     procedure Filter();
     procedure QuickSortTest();
+    procedure ClearField_SimpleType();
+    procedure ClearField_Nullable();
+    procedure Iterating();
+    procedure Iterating_Empty();
+    procedure AddRecord();
     procedure TestGUI;
   end;
 
@@ -55,6 +63,54 @@ uses
 
 { TestTObjectDataset }
 
+procedure TestTObjectDataset.AddRecord;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  LCustomers := CreateCustomersList(10);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+
+  FDataset.AppendRecord(['Insert', 59]);
+  CheckEquals(11, FDataset.RecordCount);
+  FDataset.Last;
+  CheckEquals('Insert', FDataset.Fields[0].AsString);
+  CheckEquals(59, FDataset.Fields[1].AsInteger);
+end;
+
+procedure TestTObjectDataset.ClearField_Nullable;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  LCustomers := CreateCustomersList(10);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+  LCustomers.First.MiddleName := 'Foo';
+  CheckFalse(LCustomers.First.MiddleName.IsNull);
+
+  FDataset.Edit;
+  FDataset.FieldByName('MiddleName').Clear;
+  FDataset.Post;
+  CheckTrue(LCustomers.First.MiddleName.IsNull);
+end;
+
+procedure TestTObjectDataset.ClearField_SimpleType;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  LCustomers := CreateCustomersList(10);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+  LCustomers.First.Age := 1;
+  //clear simple type
+  CheckEquals(1, LCustomers.First.Age);
+  FDataset.Edit;
+  FDataset.FieldByName('Age').Clear;
+  FDataset.Post;
+  CheckEquals(0, LCustomers.First.Age);
+  //clear nullable type
+end;
+
 function TestTObjectDataset.CreateCustomersList(ASize: Integer): IList<TCustomer>;
 var
   LCustomer: TCustomer;
@@ -68,8 +124,6 @@ begin
     LCustomer.Age := i;
     LCustomer.EMail := 'aaa@aaa.com';
     LCustomer.Height := 100.5;
-
-
     Result.Add(LCustomer);
   end;
 end;
@@ -133,6 +187,27 @@ begin
   CheckEquals(8, LCustomers.Count);
 end;
 
+procedure TestTObjectDataset.Delete_Last;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  LCustomers := CreateCustomersList(10);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+  FDataset.Last;
+
+  FDataset.Delete;
+  CheckEquals(9, FDataset.RecordCount);
+  CheckEquals(9, FDataset.RecNo);
+  CheckEquals(9, FDataset.FieldByName('Age').AsInteger);
+  CheckEquals('FirstName', FDataset.FieldByName('Name').AsString);
+
+  FDataset.Delete;
+  CheckEquals(8, FDataset.RecordCount);
+  CheckEquals(8, FDataset.RecNo);
+  CheckEquals(8, FDataset.FieldByName('Age').AsInteger);
+end;
+
 procedure TestTObjectDataset.Edit;
 var
   LCustomers: IList<TCustomer>;
@@ -154,6 +229,37 @@ begin
   CheckEquals(999, LCustomers[0].Age);
   CheckEquals('Middle', LCustomers[0].MiddleName);
   CheckEquals(LDate, LCustomers[0].LastEdited);
+end;
+
+procedure TestTObjectDataset.Eof_AfterLast;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  LCustomers := CreateCustomersList(10);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+  CheckFalse(FDataset.Eof);
+  CheckTrue(FDataset.Bof);
+  FDataset.Last;
+  CheckTrue(FDataset.Eof);
+  CheckFalse(FDataset.Bof);
+
+end;
+
+procedure TestTObjectDataset.Eof_AfterNext;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  LCustomers := CreateCustomersList(10);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+  FDataset.Last;
+  FDataset.Prior;
+  CheckFalse(FDataset.Eof);
+  FDataset.Next;
+  CheckFalse(FDataset.Eof);
+  FDataset.Next;
+  CheckTrue(FDataset.Eof);
 end;
 
 procedure TestTObjectDataset.Insert;
@@ -195,6 +301,44 @@ begin
   CheckEquals('Bar', FDataset.FieldByName('Name').AsString);
 end;
 
+procedure TestTObjectDataset.Iterating;
+var
+  LCustomers: IList<TCustomer>;
+  i: Integer;
+begin
+  LCustomers := CreateCustomersList(10);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+
+  i := 0;
+
+  while not FDataset.Eof do
+  begin
+    Inc(i);
+    CheckEquals(i, FDataset.FieldByName('Age').AsInteger);
+    FDataset.Next;
+  end;
+
+  CheckEquals(10, i);
+end;
+
+procedure TestTObjectDataset.Iterating_Empty;
+var
+  LCustomers: IList<TCustomer>;
+  i: Integer;
+begin
+  LCustomers := CreateCustomersList(0);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+  i := 0;
+  while not FDataset.Eof do
+  begin
+    FDataset.Next;
+    Inc(i);
+  end;
+  CheckEquals(0, i);
+end;
+
 procedure TestTObjectDataset.Locate;
 var
   LCustomers: IList<TCustomer>;
@@ -204,6 +348,7 @@ begin
   FDataset.Open;
 
   CheckTrue( FDataset.Locate('Age', 5, []) );
+  CheckEquals(5, FDataset.RecNo);
   CheckEquals(5, FDataset.FieldByName('Age').AsInteger);
   CheckEquals(5, LCustomers[FDataset.Index].Age);
 
