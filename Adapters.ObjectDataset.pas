@@ -389,12 +389,18 @@ begin
   for i := 0 to ModifiedFields.Count - 1 do
   begin
     LField := ModifiedFields[i];
-
     LProp := FProperties[LField.FieldNo - 1];
     LFieldValue := LField.Value;
-    LValueFromVariant := TUtils.FromVariant(LFieldValue);
-    if TValueConverter.Default.TryConvertTo(LValueFromVariant, LProp.PropertyType.Handle, LConvertedValue, TValue.Empty) then
-      LProp.SetValue(TRttiExplorer.GetRawPointer(LItem), LConvertedValue);
+    if VarIsNull(LFieldValue) then
+    begin
+      LProp.SetValue(TRttiExplorer.GetRawPointer(LItem), TValue.Empty);
+    end
+    else
+    begin
+      LValueFromVariant := TUtils.FromVariant(LFieldValue);
+      if TValueConverter.Default.TryConvertTo(LValueFromVariant, LProp.PropertyType.Handle, LConvertedValue, TValue.Empty) then
+        LProp.SetValue(TRttiExplorer.GetRawPointer(LItem), LConvertedValue);
+    end;
   end;
 
   if State = dsInsert then
