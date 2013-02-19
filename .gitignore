@@ -40,3 +40,4 @@ DCU
 /Demos/GettingStarted/Release/Win32/*.db3
 
 /Demos/GettingStarted/Debug/Win32/*.db3
+/Test/Debug/Win32/SvDUnit.prop
