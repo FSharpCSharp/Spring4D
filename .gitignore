@@ -36,6 +36,9 @@ DCU
 *.db3 
 
 !sqlite3.dll
+!/Packages/Marshmallow.res
+!/Packages/ObjectDataset.res
+!/Packages/ObjectDataset_Design_XE.res
  
 /Demos/GettingStarted/Release/Win32/*.db3
 
