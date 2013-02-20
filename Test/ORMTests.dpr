@@ -120,7 +120,8 @@ uses
   Adapters.ObjectDataset.Blobs in '..\Adapters.ObjectDataset.Blobs.pas',
   Adapters.ObjectDataset.ExprParser in '..\Adapters.ObjectDataset.ExprParser.pas',
   Core.Algorythms.Sort in '..\Core.Algorythms.Sort.pas',
-  Adapters.ObjectDataset.ActiveX in '..\Adapters.ObjectDataset.ActiveX.pas';
+  Adapters.ObjectDataset.ActiveX in '..\Adapters.ObjectDataset.ActiveX.pas',
+  Adapters.ObjectDataset.IndexList in '..\Adapters.ObjectDataset.IndexList.pas';
 
 {$R *.RES}
 

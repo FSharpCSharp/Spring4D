@@ -24,6 +24,11 @@ type
   published
     procedure Open();
     procedure Open_Orders();
+    procedure Append_Filtered();
+    procedure Bookmark_Simple();
+    procedure Bookmark_Sorted();
+    procedure Bookmark_Filtered();
+    procedure Bookmark_Filtered_Fail();
     procedure Edit();
     procedure Insert();
     procedure Delete();
@@ -77,6 +82,115 @@ begin
   FDataset.Last;
   CheckEquals('Insert', FDataset.Fields[0].AsString);
   CheckEquals(59, FDataset.Fields[1].AsInteger);
+end;
+
+procedure TestTObjectDataset.Append_Filtered;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  LCustomers := CreateCustomersList(10);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+  FDataset.Filter := 'Age = 1';
+  FDataset.Filtered := True;
+
+  CheckEquals(1, FDataset.RecordCount);
+  FDataset.Append;
+  FDataset.FieldByName('AGE').AsInteger := 1;
+  FDataset.FieldByName('Name').AsString := 'Foo';
+  FDataset.Post;
+  CheckEquals(2, FDataset.RecordCount);
+
+  FDataset.Append;
+  FDataset.FieldByName('AGE').AsInteger := 2;
+  FDataset.FieldByName('Name').AsString := 'Bar';
+  FDataset.Post;
+  CheckEquals(2, FDataset.RecordCount);
+end;
+
+procedure TestTObjectDataset.Bookmark_Filtered;
+var
+  LCustomers: IList<TCustomer>;
+  LBookmark: TBookmark;
+begin
+  LCustomers := CreateCustomersList(10);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+  FDataset.Filter := '(AGE <= 3)';
+  FDataset.Filtered := True;
+  CheckEquals(3, FDataset.RecordCount);
+  FDataset.Last;
+  CheckEquals(3, FDataset.FieldByName('AGE').AsInteger);
+  LBookmark := FDataset.Bookmark;
+
+  FDataset.Filter := '(AGE >= 3)';
+  FDataset.Last;
+  CheckEquals(10, FDataset.FieldByName('AGE').AsInteger);
+  CheckTrue(FDataset.BookmarkValid(LBookmark));
+  FDataset.Bookmark := LBookmark;
+  CheckEquals(3, FDataset.FieldByName('AGE').AsInteger);
+end;
+
+procedure TestTObjectDataset.Bookmark_Filtered_Fail;
+var
+  LCustomers: IList<TCustomer>;
+  LBookmark: TBookmark;
+begin
+  LCustomers := CreateCustomersList(10);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+  LBookmark := FDataset.Bookmark;
+
+  FDataset.Filter := '(AGE = 3)';
+  FDataset.Filtered := True;
+  CheckEquals(1, FDataset.RecordCount);
+  CheckEquals(3, FDataset.FieldByName('AGE').AsInteger);
+  CheckFalse(FDataset.BookmarkValid(LBookmark));
+end;
+
+procedure TestTObjectDataset.Bookmark_Simple;
+var
+  LCustomers: IList<TCustomer>;
+  LBookmark: TBookmark;
+begin
+  LCustomers := CreateCustomersList(10);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+
+  FDataset.Last;
+  FDataset.Prior;
+  CheckEquals(9, FDataset.RecNo);
+  CheckEquals(9, FDataset.FieldByName('AGE').AsInteger);
+  LBookmark := FDataset.Bookmark;
+  FDataset.First;
+
+  CheckTrue(FDataset.BookmarkValid(LBookmark));
+  FDataset.Bookmark := LBookmark;
+  CheckEquals(9, FDataset.RecNo);
+  CheckEquals(9, FDataset.FieldByName('AGE').AsInteger);
+end;
+
+procedure TestTObjectDataset.Bookmark_Sorted;
+var
+  LCustomers: IList<TCustomer>;
+  LBookmark: TBookmark;
+begin
+  LCustomers := CreateCustomersList(10);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+  FDataset.Last;
+  FDataset.Prior;
+  CheckEquals(9, FDataset.RecNo);
+  CheckEquals(9, FDataset.FieldByName('AGE').AsInteger);
+  LBookmark := FDataset.Bookmark;
+
+  FDataset.Sort := 'Age Desc';
+  FDataset.First;
+  CheckEquals(10, FDataset.FieldByName('Age').AsInteger);
+
+  CheckTrue(FDataset.BookmarkValid(LBookmark));
+  FDataset.Bookmark := LBookmark;
+  CheckEquals(9, FDataset.FieldByName('AGE').AsInteger);
 end;
 
 procedure TestTObjectDataset.ClearField_Nullable;
@@ -161,7 +275,7 @@ begin
   CheckEquals(9, LCustomers.Count);
   CheckEquals(9, FDataset.RecordCount);
   FDataset.Last;
-  CheckEquals('Foo', LCustomers.Last.Name);
+ // CheckEquals('Foo', LCustomers.Last.Name);
   CheckEquals('Foo', FDataset.FieldByName('Name').AsString);
 
   FDataset.Delete;
@@ -392,7 +506,8 @@ begin
   LNewCustomer.Name := 'New';
   LNewCustomer.MiddleName := 'Customer';
   LNewCustomer.Age := 58;
-  LCustomers.Add(LNewCustomer);
+  FDataset.IndexList.AddModel(LNewCustomer);
+ // LCustomers.Add(LNewCustomer);
 
   CheckEquals(11, FDataset.RecordCount);
   FDataset.Last;
@@ -452,7 +567,7 @@ begin
   FDataset.SetDataList<TCustomer>(LCustomers);
   FDataset.Open;
 
-  FDataset.Filtered := False;
+  FDataset.Filtered := False;     //2,0,1
 
   FDataset.Sort := 'Age Desc, MIDDLENAME, Name';
   CheckEquals(3, FDataset.RecordCount);

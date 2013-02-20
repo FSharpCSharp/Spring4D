@@ -798,6 +798,10 @@ begin
   begin
     Result := SysUtils.AnsiCompareStr(Left.AsString, Right.AsString);
   end
+  else if Left.IsObject and Right.IsObject then
+  begin
+    Result := NativeInt(Left.AsObject) - NativeInt(Right.AsObject);
+  end
   else if (Left.TypeInfo = TypeInfo(Variant)) and (Right.TypeInfo = TypeInfo(Variant)) then
   begin
     Result := 0;

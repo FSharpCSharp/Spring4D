@@ -4,6 +4,7 @@ interface
 
 uses
   Spring.Collections
+  ,Adapters.ObjectDataset.IndexList
   ,Rtti
   ,DB
   ;
@@ -73,26 +74,26 @@ type
   TMergeSort = class sealed
   private
     class var
-      FDataList: IList;
+      FDataList: TODIndexList;
       FFilteredIndexes: IList<Integer>;
       FFiltered: Boolean;
   private
     class procedure MergeSort(ALow, AHigh: Integer; Compare: TCompareRecords; AIndexFieldList: IList<TIndexFieldInfo>);
   public
-    class procedure Sort(ADataList: IList; AComparator: TCompareRecords; AIndexFields: IList<TIndexFieldInfo>
+    class procedure Sort(ADataList: TODIndexList; AComparator: TCompareRecords; AIndexFields: IList<TIndexFieldInfo>
       ; AFilteredIndexes: IList<Integer>; AFiltered: Boolean);
   end;
 
   TInsertionSort = class sealed
   private
     class var
-      FDataList: IList;
+      FDataList: TODIndexList;
       FFilteredIndexes: IList<Integer>;
       FFiltered: Boolean;
   private
     class procedure InsertionSort(ALow, AHigh: Integer; Compare: TCompareRecords; AIndexFieldList: IList<TIndexFieldInfo>);
   public
-    class procedure Sort(ADataList: IList; AComparator: TCompareRecords; AIndexFields: IList<TIndexFieldInfo>
+    class procedure Sort(ADataList: TODIndexList; AComparator: TCompareRecords; AIndexFields: IList<TIndexFieldInfo>
       ; AFilteredIndexes: IList<Integer>; AFiltered: Boolean);
   end;
 
@@ -913,7 +914,7 @@ var
   begin
     for i := Low to High do
     begin
-      LCache[i] := FDataList[i];
+      LCache[i] := FDataList.GetModel(i);
     end;
 
     i := Low;
@@ -924,16 +925,20 @@ var
     begin
       if (Compare(LCache[i], LCache[j], AIndexFieldList) <= 0) then
       begin
-        FDataList[k] := LCache[i];
-        if FFiltered then
-          FFilteredIndexes[k] := i;
+        FDataList.SetModel(k, LCache[i]);
+      //  FDataList[k] := i;
+       // FDataList[k] := LCache[i];
+       // if FFiltered then
+       //   FFilteredIndexes[k] := i;
         Inc(i);
       end
       else
       begin
-        FDataList[k] := LCache[j];
-        if FFiltered then
-          FFilteredIndexes[k] := j;
+        FDataList.SetModel(k, LCache[j]);
+       // FDataList[k] := j;
+       // FDataList[k] := LCache[j];
+        //if FFiltered then
+        //  FFilteredIndexes[k] := j;
         Inc(j);
       end;
       Inc(k);
@@ -941,9 +946,11 @@ var
 
     while (i <= Mid) do
     begin
-      FDataList[k] := LCache[i];
-      if FFiltered then
-        FFilteredIndexes[k] := i;
+      FDataList.SetModel(k, LCache[i]);
+    //  FDataList[k] := i;
+      //FDataList[k] := LCache[i];
+     // if FFiltered then
+      //  FFilteredIndexes[k] := i;
       Inc(k);
       Inc(i);
     end;
@@ -968,7 +975,7 @@ begin
   PerformMergeSort(ALow, AHigh, Compare, AIndexFieldList);
 end;
 
-class procedure TMergeSort.Sort(ADataList: IList; AComparator: TCompareRecords; AIndexFields: IList<TIndexFieldInfo>;
+class procedure TMergeSort.Sort(ADataList: TODIndexList; AComparator: TCompareRecords; AIndexFields: IList<TIndexFieldInfo>;
   AFilteredIndexes: IList<Integer>; AFiltered: Boolean);
 begin
   FDataList := ADataList;
@@ -987,27 +994,32 @@ var
   LTemp: TValue;
 Begin
   for i:= 2 to AHigh Do
-  Begin
-    LTemp := FDataList[i];
+  begin
+    LTemp := FDataList.GetModel(i);
+    //LTemp := FDataList[i];
     j := i;
-    while (j > 1) and (Compare(FDataList[j-1], LTemp, AIndexFieldList) > 0) do
+    while (j > 1) and (Compare(FDataList.GetModel(j-1), LTemp, AIndexFieldList) > 0) do
     begin
-      FDataList[j] := FDataList[j-1];
-      if FFiltered then
-      begin
-        FFilteredIndexes[j] := j - 1;
-      end;
+      FDataList.SetModel(j, FDataList.GetModel(j-1));
+    //  FDataList[j] := FDataList[j-1];
+     // if FFiltered then
+     // begin
+      //  FFilteredIndexes[j] := j - 1;
+    //  end;
       Dec(j);
     end;
-    FDataList[j]:= LTemp;
+    FDataList.SetModel(j, LTemp);
+
+  //  FDataList[j] := i;
+   { FDataList[j]:= LTemp;
     if FFiltered then
     begin
       FFilteredIndexes[j] := i;
-    end;
+    end;}
   End;
 end;
 
-class procedure TInsertionSort.Sort(ADataList: IList; AComparator: TCompareRecords;
+class procedure TInsertionSort.Sort(ADataList: TODIndexList; AComparator: TCompareRecords;
   AIndexFields: IList<TIndexFieldInfo>; AFilteredIndexes: IList<Integer>; AFiltered: Boolean);
 begin
   FDataList := ADataList;

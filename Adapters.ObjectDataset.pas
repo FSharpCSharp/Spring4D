@@ -53,7 +53,7 @@ type
     procedure LoadFieldDefsFromFields(Fields: TFields; FieldDefs: TFieldDefs); virtual;
     procedure LoadFieldDefsFromItemType; virtual;
     procedure RefreshFilter(); virtual;
-    procedure DoFilterRecord(ADataListIndex: Integer); virtual;
+    procedure DoFilterRecord(AIndex: Integer); virtual;
     function CompareRecords(const Item1, Item2: TValue; AIndexFieldList: IList<TIndexFieldInfo>): Integer; virtual;
     procedure InternalSetSort(const AValue: string); virtual;
 
@@ -322,36 +322,20 @@ begin
     UpdateFilter;
     First;
   end;
-
   inherited DoAfterOpen;
 end;
 
 procedure TObjectDataset.DoDeleteRecord(Index: Integer);
-var
-  LDataListIndex: Integer;
 begin
-  if not Filtered then
-    FDataList.Delete(Index)
-  else
-  begin
-    LDataListIndex := FilteredIndexes[Index];
-    FilterList.Delete(Index);
-    FilteredIndexes.Delete(Index);
-    FDataList.Delete(LDataListIndex);
-  end;
+  IndexList.DeleteModel(Index);
 end;
 
 procedure TObjectDataset.DoGetFieldValue(Field: TField; Index: Integer; var Value: Variant);
 var
   LItem: TValue;
-  LDataList: IList;
 begin
-  LDataList := GetCurrentDataList();
-  if Assigned(LDataList) then
-  begin
-    LItem := LDataList[Index];
-    Value := InternalGetFieldValue(Field, LItem);
-  end;
+  LItem := IndexList.GetModel(Index);
+  Value := InternalGetFieldValue(Field, LItem);
 end;
 
 procedure TObjectDataset.DoOnAfterFilter;
@@ -375,13 +359,11 @@ var
   i: Integer;
   LProp: TRttiProperty;
   LField: TField;
-  LDataList: IList;
 begin
-  LDataList := GetCurrentDataList();
   if State = dsInsert then
     LItem := TRttiExplorer.CreateType(FItemTypeInfo)
   else
-    LItem := LDataList[Index];
+    LItem := IndexList.GetModel(Index);
 
   for i := 0 to ModifiedFields.Count - 1 do
   begin
@@ -402,8 +384,7 @@ begin
 
   if State = dsInsert then
   begin
-    FDataList.Add(LItem);
-    Index := FDataList.Count - 1;
+    Index := IndexList.AddModel(LItem);
   end;
 
   DoFilterRecord(Index);
@@ -423,35 +404,32 @@ end;
 
 function TObjectDataset.GetCurrentDataList: IList;
 begin
-  if Filtered then
-    Result := FilterList
-  else
-    Result := DataList;
+  Result := DataList;
 end;
 
 function TObjectDataset.GetFilterCount: Integer;
 begin
   Result := 0;
   if Filtered then
-    Result := FilterList.Count;
+    Result := IndexList.Count;
 end;
 
 function TObjectDataset.GetFilteredDataList<T>: IList<T>;
+var
+  LList: IList;
+  i: Integer;
 begin
   Result := TCollections.CreateObjectList<T>(False);
-  Result.AsList.AddRange(FilterList);
+  LList := Result.AsList;
+  for i := 0 to IndexList.Count - 1 do
+  begin
+    LList.Add(IndexList.GetModel(i));
+  end;
 end;
 
 function TObjectDataset.GetRecordCount: Integer;
-var
-  LDataList: IList;
 begin
-  Result := 0;
-  LDataList := GetCurrentDataList();
-  if Assigned(LDataList) then
-  begin
-    Result := LDataList.Count;
-  end;
+  Result := IndexList.Count;
 end;
 
 function TObjectDataset.GetSort: string;
@@ -536,7 +514,7 @@ begin
   LIndexFieldList := CreateIndexList(AValue);
 
   Pos := Current;
-  LDataList := GetCurrentDataList;
+  LDataList := FDataList;
   LOldValue := True;
   LOwnsObjectsProp := TRttiContext.Create.GetType(LDataList.AsObject.ClassType).GetProperty('OwnsObjects');
   try
@@ -545,11 +523,10 @@ begin
       LOldValue := LOwnsObjectsProp.GetValue(LDataList.AsObject).AsBoolean;
       LOwnsObjectsProp.SetValue(LDataList.AsObject, False);
     end;
-
     if LChanged then
-      TMergeSort.Sort(LDataList, CompareRecords, LIndexFieldList, FilteredIndexes, Filtered)
+      TMergeSort.Sort(IndexList, CompareRecords, LIndexFieldList, nil, Filtered)
     else
-      TInsertionSort.Sort(LDataList, CompareRecords, LIndexFieldList, FilteredIndexes, Filtered);
+      TInsertionSort.Sort(IndexList, CompareRecords, LIndexFieldList, nil, Filtered);
 
     FSorted := LIndexFieldList.Count > 0;
     FSort := AValue;
@@ -562,11 +539,8 @@ begin
 end;
 
 function TObjectDataset.IsCursorOpen: Boolean;
-var
-  LDataList: IList;
 begin
-  LDataList := GetCurrentDataList();
-  Result := Assigned(LDataList);
+  Result := Assigned(FDataList);
 end;
 
 procedure TObjectDataset.LoadFieldDefsFromFields(Fields: TFields; FieldDefs: TFieldDefs);
@@ -859,15 +833,10 @@ procedure TObjectDataset.RefreshFilter;
 var
   i: Integer;
 begin
-  FilterList.Clear;
-  FilteredIndexes.Clear;
+  IndexList.Clear;
   if not IsFilterEntered then
   begin
-    for i := 0 to FDataList.Count - 1 do
-    begin
-      FilterList.Add(FDataList[i]);
-      FilteredIndexes.Add(i);
-    end;
+    IndexList.Rebuild;
     Exit;
   end;
 
@@ -877,25 +846,21 @@ begin
     FilterCache.Clear;
     if RecordFilter then
     begin
-      FilterList.Add(FDataList[i]);
-      FilteredIndexes.Add(i);
+      IndexList.Add(i);
     end;
   end;
   FilterCache.Clear;
 end;
 
-procedure TObjectDataset.DoFilterRecord(ADataListIndex: Integer);
+procedure TObjectDataset.DoFilterRecord(AIndex: Integer);
 begin
-  if (Filtered) and (ADataListIndex > -1) and (ADataListIndex < DataListCount) then
+  if (Filtered) and (AIndex > -1) and (AIndex < RecordCount) then
   begin
-    FFilterIndex := ADataListIndex;
-    if RecordFilter then
+    FilterCache.Clear;
+    FFilterIndex := IndexList[AIndex];
+    if not RecordFilter then
     begin
-      if not FilterList.Contains(FDataList[ADataListIndex]) then
-      begin
-        FilterList.Add(FDataList[ADataListIndex]);
-        FilteredIndexes.Add(ADataListIndex);
-      end;
+      IndexList.Delete(AIndex);
     end;
   end;
 end;
@@ -904,8 +869,8 @@ procedure TObjectDataset.SetDataList<T>(ADataList: IList<T>);
 begin
   FItemTypeInfo := TypeInfo(T);
   FDataList := ADataList.AsList;
-  FilterList := TCollections.CreateObjectList<T>(False).AsList;
-  FilteredIndexes.Clear;
+  IndexList.DataList := FDataList;
+  IndexList.Rebuild;
 end;
 
 

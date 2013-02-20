@@ -8,6 +8,8 @@ uses
   ,Spring.Collections
   ,Rtti
   ,Core.Algorythms.Sort
+  ,Generics.Collections
+  ,Adapters.ObjectDataset.IndexList
   ;
 
 type
@@ -45,10 +47,9 @@ type
     FCurrent: Integer;
     FInternalOpen: Boolean;
     FModifiedFields: IList<TField>;
-    FFilterList: IList;
-    FFilteredIndexes: IList<Integer>;
     FFieldsCache: IDictionary<string,TField>;
     FFilterCache: IDictionary<string, Variant>;
+    FIndexList: TODIndexList;
     {$IF CompilerVersion >=24}
     FReserved: Pointer;
     {$IFEND}
@@ -133,8 +134,6 @@ type
     {$IFEND}
     function FieldListCheckSum(): NativeInt; virtual;
   protected
-    property FilteredIndexes: IList<Integer> read FFilteredIndexes;
-    property FilterList: IList read FFilterList write FFilterList;
     property FilterCache: IDictionary<string, Variant> read FFilterCache write FFilterCache;
     {$IF CompilerVersion >=24}
     property Reserved: Pointer read FReserved write FReserved;
@@ -156,6 +155,8 @@ type
     ///	</summary>
     {$ENDREGION}
     property Index: Integer read GetIndex write SetIndex;
+
+    property IndexList: TODIndexList read FIndexList;
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -243,7 +244,7 @@ uses
   ,Adapters.ObjectDataset.ActiveX
   ,Contnrs
   ,Generics.Defaults
-  ,Generics.Collections
+  ,Core.Reflection
   ;
 
 type
@@ -357,19 +358,32 @@ begin
 end;
 
 function TAbstractObjectDataset.BookmarkValid(Bookmark: TBookmark): Boolean;
+var
+  LValue: TValue;
+  LDataListIndex: Integer;
 begin
-  Result := Assigned(Bookmark) and (PInteger(Bookmark)^ >= 0) and
-    (PInteger(Bookmark)^ < RecordCount);
+  LValue := PObject(Bookmark)^;
+  Result := Assigned(Bookmark) and (not LValue.IsEmpty);
+  if Result then
+  begin
+    LDataListIndex := IndexList.DataList.IndexOf(LValue);
+    Result := IndexList.Contains(LDataListIndex);
+  end;
 end;
 
 function TAbstractObjectDataset.CompareBookmarks(Bookmark1, Bookmark2: TBookmark): Integer;
 const
   LRetCodes: array [Boolean, Boolean] of ShortInt = ((2, -1), (1, 0));
+var
+  LValue1, LValue2: TValue;
 begin
   Result := LRetCodes[Bookmark1 = nil, Bookmark2 = nil];
   if Result = 2 then
   begin
-    Result := PInteger(Bookmark1)^ - PInteger(Bookmark2)^;
+    LValue1 := PObject(Bookmark1)^;
+    LValue2 := PObject(Bookmark2)^;
+    Result := CompareValue(LValue1, LValue2);
+   // Result := PInteger(Bookmark1)^ - PInteger(Bookmark2)^;
   end;
 end;
 
@@ -381,7 +395,7 @@ begin
   FInternalOpen := False;
   FReadOnly := False;
   FModifiedFields := TCollections.CreateList<TField>();
-  FFilteredIndexes := TCollections.CreateList<Integer>();
+  FIndexList := TODIndexList.Create();
 
   LCaseInsensitiveComparer := TEqualityComparer<string>.Construct(
     function(const Left, Right: string): Boolean
@@ -429,6 +443,7 @@ end;
 
 destructor TAbstractObjectDataset.Destroy;
 begin
+  FIndexList.Free;
   inherited Destroy;
 end;
 
@@ -499,7 +514,8 @@ end;
 
 procedure TAbstractObjectDataset.GetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);
 begin
-  PInteger(Data)^ := PArrayRecInfo(Buffer)^.Index;
+  PObject(Data)^ := IndexList.GetModel(PArrayRecInfo(Buffer)^.Index).AsObject;
+ // PInteger(Data)^ := IndexList[PArrayRecInfo(Buffer)^.Index];
 end;
 
 function TAbstractObjectDataset.GetBookmarkFlag(Buffer: TRecordBuffer): TBookmarkFlag;
@@ -680,17 +696,9 @@ function TAbstractObjectDataset.InternalGetRecord(Buffer: TRecordBuffer; GetMode
   DoCheck: Boolean): TGetResult;
 var
   LRecCount: Integer;
-  LDataList: IList;
 begin
   try
-    LDataList := GetCurrentDataList();
-    if not Assigned(LDataList) then
-    begin
-      Result := grEOF;
-      Exit;
-    end;
-
-    LRecCount := LDataList.Count;
+    LRecCount := IndexList.Count;
     Result := grOK;
     case GetMode of
       gmNext:
@@ -744,8 +752,13 @@ begin
 end;
 
 procedure TAbstractObjectDataset.InternalGotoBookmark(Bookmark: Pointer);
+var
+  LValue: TValue;
+  LDataListIndex: Integer;
 begin
-  FCurrent := PInteger(Bookmark)^;
+  LValue := PObject(Bookmark)^; // PInteger(Bookmark)^;
+  LDataListIndex := IndexList.DataList.IndexOf(LValue);
+  FCurrent := IndexList.IndexOf(LDataListIndex);
 end;
 
 procedure TAbstractObjectDataset.InternalHandleException;
@@ -840,7 +853,7 @@ end;
 
 function TAbstractObjectDataset.IsFiltered: Boolean;
 begin
-  Result := Filtered and (Assigned(FilterList));
+  Result := Filtered;
 end;
 
 function TAbstractObjectDataset.IsFilterEntered: Boolean;
@@ -1360,5 +1373,7 @@ procedure TObjectDatasetFieldDef.SetRealDisplayName(const Value: string);
 begin
   FDisplayName := Value;
 end;
+
+
 
 end.
