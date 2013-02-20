@@ -42,6 +42,7 @@ type
     procedure MergeSort_Try();
     procedure Locate();
     procedure Filter();
+    procedure Filter_DateTime();
     procedure Filter_Performance_Test();
     procedure QuickSortTest();
     procedure ClearField_SimpleType();
@@ -776,10 +777,6 @@ var
   LCustomers: IList<TCustomer>;
 begin
   LCustomers := CreateCustomersList(10);
-
- { LCustomers.First.Age := 2;
-  LCustomers.First.Name := 'Bob';
-  LCustomers.First.MiddleName := 'Middle'; }
   FDataset.Filtered := True;
   FDataset.FilterOptions := [foCaseInsensitive];
   FDataset.SetDataList<TCustomer>(LCustomers);
@@ -792,6 +789,22 @@ begin
 
   FDataset.Filter := '(Age > 2)';
   CheckEquals(8, FDataset.RecordCount);
+end;
+
+procedure TestTObjectDataset.Filter_DateTime;
+var
+  LCustomers: IList<TCustomer>;
+  LDate: TDate;
+begin
+  LCustomers := CreateCustomersList(10);
+  LDate := EncodeDate(2013,1,1);
+  LCustomers.Last.LastEdited := LDate;
+
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+  FDataset.Filter := '(LastEdited = ''2013-01-01'')';
+  FDataset.Filtered := True;
+  CheckEquals(1, FDataset.RecordCount);
 end;
 
 procedure TestTObjectDataset.Filter_Performance_Test;

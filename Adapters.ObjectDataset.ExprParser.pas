@@ -698,55 +698,51 @@ function TNodeBin.Eval: Variant;
 var
   LeftValue, RightValue: Variant;
 
-  function FixupBoolean(var AVal1: Variant; var AVal2: Variant): Boolean;
+  procedure FixupValues();
   begin
-    Result := (TVarData(AVal1).VType = varBoolean) or (TVarData(AVal2).VType = varBoolean);
-    if Result then
-    begin
-      if UpperCase(AVal1) = 'TRUE' then
-        AVal1 := 1
-      else
-        AVal1 := 0;
+    LeftValue := FLeftNode.Eval;
+    RightValue := FRightNode.Eval;
 
-      if UpperCase(AVal2) = 'TRUE' then
-        AVal2 := 1
-      else
-        AVal1 := 0;
+    case VarType(LeftValue) of
+      varDate:
+      begin
+        case VarType(RightValue) of
+          varString, varUString: RightValue := StrToDateTime(RightValue);
+        end;
+      end;
+      varBoolean:
+      begin
+        if UpperCase(RightValue) = 'TRUE' then
+          RightValue := True
+        else
+          RightValue := False;
+      end;
+      varString, varUString:
+      begin
+        if FParser.Parent.FCaseInsensitive then
+          LeftValue := UpperCase(LeftValue);
+      end;
     end;
-  end;
 
-  function FixupDateTime(var AVal1: Variant; var AVal2: Variant): Boolean;
-  begin
-    Result := TVarData(AVal1).VType = varDate;
-    if Result then
-    begin
-      if TVarData(AVal2).VType = varString then
-        AVal2 := StrToDateTime(AVal2); //convert;
-    end;
-  end;
-
-  function FixupString(var aVal: Variant): Boolean;
-  begin
-    Result:=((TVarData(aVal).VType = varString) {$IFDEF UNICODE}or (TVarData(aVal).VType = varUString){$ENDIF UNICODE}) and FParser.Parent.FCaseInsensitive;
-    if Result then
-      aVal := AnsiUpperCase(aVal);
-  end;
-
-  //returns 'True' if a conversion was necessary.
-  function FixupValues(var AVal1: Variant; var AVal2: Variant): Boolean;
-  var
-    bChanged: Boolean;
-  begin
-    Result := FixupDateTime(AVal1, AVal2);
-    if not Result then
-      Result := FixupDateTime(AVal2, AVal1);
-    if not Result then
-      Result := FixupBoolean(AVal1, AVal2);
-    if not Result then //ensure that the 'String' case is the last one
-    begin
-      Result := FixupString(AVal1);
-      bChanged := FixupString(AVal2);
-      Result := Result or bChanged; //ensure that both Fixups are executed regardless of optimisations
+    case VarType(RightValue) of
+      varDate:
+      begin
+        case VarType(LeftValue) of
+          varString, varUString: LeftValue := StrToDateTime(LeftValue);
+        end;
+      end;
+      varBoolean:
+      begin
+        if UpperCase(LeftValue) = 'TRUE' then
+          LeftValue := True
+        else
+          LeftValue := False;
+      end;
+      varString, varUString:
+      begin
+        if FParser.Parent.FCaseInsensitive then
+          RightValue := UpperCase(RightValue);
+      end;
     end;
   end;
 
@@ -766,8 +762,8 @@ var
 
       LeftStr := LeftValue;
       RightStr := RightValue;
-      Wildcard1 := (PosEx('*', LeftStr) > 0) or (PosEx('?', LeftStr) > 0);
-      Wildcard2 := (PosEx('*', RightStr) > 0) or (PosEx('?', RightStr) > 0);
+      Wildcard1 := (PosEx('*', LeftStr) > 0) {or (PosEx('?', LeftStr) > 0)};
+      Wildcard2 := (PosEx('*', RightStr) > 0) {or (PosEx('?', RightStr) > 0)};
       if Wildcard1 and not Wildcard2 then
         Result := MatchesMask(RightStr, LeftStr)
       else
@@ -853,65 +849,54 @@ var
   end;
 
 begin
-  // Determine values to have them handy.
-//  FixupValues(LeftValue, RightValue);
   case FOperator.Chr of
     '+':
       begin
-        LeftValue := FLeftNode.Eval;
-        RightValue := FRightNode.Eval;
+        FixupValues();
         Result := LeftValue + RightValue;
       end;
     '-':
       begin
-        LeftValue := FLeftNode.Eval;
-        RightValue := FRightNode.Eval;
+        FixupValues();
         Result := LeftValue - RightValue;
       end;
     '*': Result := FLeftNode.Eval * FRightNode.Eval;
     '/': Result := FLeftNode.Eval / FRightNode.Eval;
     '=':
       begin
-        LeftValue := FLeftNode.Eval;
-        RightValue := FRightNode.Eval;
+        FixupValues();
         Result := EvalEquality();
       end;
     '<':
       begin
-        LeftValue := FLeftNode.Eval;
-        RightValue := FRightNode.Eval;
+        FixupValues();
         Result := EvalLT();
       end;
     '>':
       begin
-        LeftValue := FLeftNode.Eval;
-        RightValue := FRightNode.Eval;
+        FixupValues();
         Result := EvalGT();
       end;
     '&': Result := FLeftNode.Eval and FRightNode.Eval;
     '|': Result := FLeftNode.Eval or FRightNode.Eval;
     '~':
       begin
-        LeftValue := FLeftNode.Eval;
-        RightValue := FRightNode.Eval;
+        FixupValues();
         Result := EvalLike;
       end;
     '{':
       begin
-        LeftValue := FLeftNode.Eval;
-        RightValue := FRightNode.Eval;
+        FixupValues();
         Result := EvalLTEq;
       end;
     '}':
       begin
-        LeftValue := FLeftNode.Eval;
-        RightValue := FRightNode.Eval;
+        FixupValues();
         Result := EvalGTEq;
       end;
     '?':
       begin
-        LeftValue := FLeftNode.Eval;
-        RightValue := FRightNode.Eval;
+        FixupValues();
         Result := EvalNEQ;
       end;
   else

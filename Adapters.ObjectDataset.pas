@@ -854,7 +854,7 @@ end;
 
 procedure TObjectDataset.DoFilterRecord(AIndex: Integer);
 begin
-  if (Filtered) and (AIndex > -1) and (AIndex < RecordCount) then
+  if (IsFilterEntered) and (AIndex > -1) and (AIndex < RecordCount) then
   begin
     FilterCache.Clear;
     FFilterIndex := IndexList[AIndex];
