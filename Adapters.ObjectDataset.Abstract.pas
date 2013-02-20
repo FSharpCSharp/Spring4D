@@ -74,7 +74,7 @@ type
     // Abstract methods
     procedure DoDeleteRecord(Index: Integer); virtual; abstract;
     procedure DoGetFieldValue(Field: TField; Index: Integer; var Value: Variant); virtual; abstract;
-    procedure DoPostRecord(Index: Integer); virtual; abstract;
+    procedure DoPostRecord(Index: Integer; Append: Boolean); virtual; abstract;
     function RecordFilter: Boolean; virtual; abstract;
     procedure UpdateFilter(); virtual; abstract;
     procedure RebuildPropertiesCache(); virtual; abstract;
@@ -360,14 +360,12 @@ end;
 function TAbstractObjectDataset.BookmarkValid(Bookmark: TBookmark): Boolean;
 var
   LValue: TValue;
-  LDataListIndex: Integer;
 begin
   LValue := PObject(Bookmark)^;
   Result := Assigned(Bookmark) and (not LValue.IsEmpty);
   if Result then
   begin
-    LDataListIndex := IndexList.DataList.IndexOf(LValue);
-    Result := IndexList.Contains(LDataListIndex);
+    Result := IndexList.ContainsModel(LValue);
   end;
 end;
 
@@ -648,7 +646,7 @@ procedure TAbstractObjectDataset.InternalAddRecord(Buffer: TValueBuffer; Append:
 procedure TAbstractObjectDataset.InternalAddRecord(Buffer: Pointer; Append: Boolean);
 {$IFEND}
 begin
-  DoPostRecord(Current);
+  DoPostRecord(Current, Append);
 end;
 
 procedure TAbstractObjectDataset.InternalClose;
@@ -754,11 +752,9 @@ end;
 procedure TAbstractObjectDataset.InternalGotoBookmark(Bookmark: Pointer);
 var
   LValue: TValue;
-  LDataListIndex: Integer;
 begin
   LValue := PObject(Bookmark)^; // PInteger(Bookmark)^;
-  LDataListIndex := IndexList.DataList.IndexOf(LValue);
-  FCurrent := IndexList.IndexOf(LDataListIndex);
+  FCurrent := IndexList.IndexOfModel(LValue);
 end;
 
 procedure TAbstractObjectDataset.InternalHandleException;
@@ -835,9 +831,9 @@ begin
   GetActiveRecBuf(LRecBuf);
 
   if PArrayRecInfo(LRecBuf)^.BookmarkFlag = bfEof then
-    DoPostRecord(-1)
+    DoPostRecord(-1, True)
   else
-    DoPostRecord(PArrayRecInfo(LRecBuf)^.Index);
+    DoPostRecord(ActiveRecord {PArrayRecInfo(LRecBuf)^.Index}, False);
 end;
 
 procedure TAbstractObjectDataset.InternalSetToRecord(Buffer: TRecordBuffer);

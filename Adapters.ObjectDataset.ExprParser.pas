@@ -107,13 +107,17 @@ const
     '&',
     '|',
     '!',
-    '~'];
+    '~',
+    '?', //<>
+    '{',  //<=
+    '}'   //>=
+    ];
 
 type
   TToken = (tkNA, tkEOF, tkError,
     tkLParen, tkRParen, tkComa,
     tkOperator, tkIdentifier,
-    tkNumber, tkInteger, tkString);
+    tkNumber, tkInteger, tkString, tkNull);
 
   TLex = class
   private
@@ -280,7 +284,7 @@ const
     ('N/A', 'End of expression', 'Error',
     '(', ')', ',',
     'Operator', 'Identifier',
-    'Number', 'Integer', 'String');
+    'Number', 'Integer', 'String', 'Null');
 begin
   Result := TokenStr[Token];
   case Token of
@@ -428,16 +432,14 @@ begin
         begin
           if CompareText(S, 'and') = 0 then
             Add(TLex.Create(tkOperator, '&', StartIdx))
+          else if CompareText(S, 'or') = 0 then
+            Add(TLex.Create(tkOperator, '|', StartIdx))
+          else if CompareText(S, 'like') = 0 then
+            Add(TLex.Create(tkOperator, '~', StartIdx))
+          else if SameText(S, 'Null') then
+            Add(TLex.Create(tkNull, StartIdx))
           else
-            if CompareText(S, 'or') = 0 then
-              Add(TLex.Create(tkOperator, '|', StartIdx))
-            else
-            begin
-              if CompareText(S, 'like')=0 then
-                Add(TLex.Create(tkOperator, '~', StartIdx))
-              else
-                Add(TLex.Create(CToken, S, StartIdx));
-            end;
+            Add(TLex.Create(CToken, S, StartIdx));
 
           S := '';
         end
@@ -567,7 +569,8 @@ begin
 
     if Lex.Token = tkOperator then
     begin
-      if CharInSet(Lex.Chr, ['*', '/', '=', '&', '|', '<', '>', '~', '{', '}', '?']) then
+      if CharInSet(Lex.Chr, cOperators) then
+     // if CharInSet(Lex.Chr, ['*', '/', '=', '&', '|', '<', '>', '~', '{', '}', '?']) then
       begin
         LexAccept();
         RightNode := Expr();
@@ -618,7 +621,7 @@ begin
           else
             raise EParserError.Create('Unexpected ', Lex);
         end;
-      tkNumber, tkInteger, tkString:
+      tkNumber, tkInteger, tkString, tkNull:
         begin
           CNode := TNodeCValue.Create(Self, Lex);
           LexAccept();
@@ -712,10 +715,7 @@ var
       end;
       varBoolean:
       begin
-        if UpperCase(RightValue) = 'TRUE' then
-          RightValue := True
-        else
-          RightValue := False;
+        RightValue := (SameText(RightValue, 'TRUE')) or (RightValue = 1);
       end;
       varString, varUString:
       begin
@@ -733,10 +733,7 @@ var
       end;
       varBoolean:
       begin
-        if UpperCase(LeftValue) = 'TRUE' then
-          LeftValue := True
-        else
-          LeftValue := False;
+        LeftValue := (SameText(LeftValue, 'TRUE')) or (LeftValue = 1);
       end;
       varString, varUString:
       begin
@@ -766,8 +763,7 @@ var
       Wildcard2 := (PosEx('*', RightStr) > 0) {or (PosEx('?', RightStr) > 0)};
       if Wildcard1 and not Wildcard2 then
         Result := MatchesMask(RightStr, LeftStr)
-      else
-      if Wildcard2 then
+      else if Wildcard2 then
         Result := MatchesMask(LeftStr, RightStr)
       else
         Result := LeftValue = RightValue;
@@ -843,7 +839,7 @@ var
     // Special case, at least one of both is Null:
     if (LeftValue = Null) or (RightValue = Null) then
       // Null is considered to be smaller than any value.
-      Result := RightValue = Null
+      Result := not ((LeftValue = Null) and (RightValue = Null))
     else
       Result := LeftValue <> RightValue;
   end;

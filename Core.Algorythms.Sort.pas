@@ -916,29 +916,19 @@ var
     begin
       LCache[i] := FDataList.GetModel(i);
     end;
-
     i := Low;
     j := Mid + 1;
     k := Low;
-
     while (i <= Mid) and (j <= High) do
     begin
       if (Compare(LCache[i], LCache[j], AIndexFieldList) <= 0) then
       begin
         FDataList.SetModel(k, LCache[i]);
-      //  FDataList[k] := i;
-       // FDataList[k] := LCache[i];
-       // if FFiltered then
-       //   FFilteredIndexes[k] := i;
         Inc(i);
       end
       else
       begin
         FDataList.SetModel(k, LCache[j]);
-       // FDataList[k] := j;
-       // FDataList[k] := LCache[j];
-        //if FFiltered then
-        //  FFilteredIndexes[k] := j;
         Inc(j);
       end;
       Inc(k);
@@ -947,10 +937,6 @@ var
     while (i <= Mid) do
     begin
       FDataList.SetModel(k, LCache[i]);
-    //  FDataList[k] := i;
-      //FDataList[k] := LCache[i];
-     // if FFiltered then
-      //  FFilteredIndexes[k] := i;
       Inc(k);
       Inc(i);
     end;
@@ -993,29 +979,16 @@ var
   i, j : Integer;
   LTemp: TValue;
 Begin
-  for i:= 2 to AHigh Do
+  for i:= 1 to AHigh Do
   begin
     LTemp := FDataList.GetModel(i);
-    //LTemp := FDataList[i];
     j := i;
-    while (j > 1) and (Compare(FDataList.GetModel(j-1), LTemp, AIndexFieldList) > 0) do
+    while (j > 0) and (Compare(FDataList.GetModel(j-1), LTemp, AIndexFieldList) > 0) do
     begin
       FDataList.SetModel(j, FDataList.GetModel(j-1));
-    //  FDataList[j] := FDataList[j-1];
-     // if FFiltered then
-     // begin
-      //  FFilteredIndexes[j] := j - 1;
-    //  end;
       Dec(j);
     end;
     FDataList.SetModel(j, LTemp);
-
-  //  FDataList[j] := i;
-   { FDataList[j]:= LTemp;
-    if FFiltered then
-    begin
-      FFilteredIndexes[j] := i;
-    end;}
   End;
 end;
 

@@ -35,7 +35,7 @@ type
     procedure DoAfterOpen; override;
     procedure DoDeleteRecord(Index: Integer); override;
     procedure DoGetFieldValue(Field: TField; Index: Integer; var Value: Variant); override;
-    procedure DoPostRecord(Index: Integer); override;
+    procedure DoPostRecord(Index: Integer; Append: Boolean); override;
     procedure RebuildPropertiesCache(); override;
 
     procedure UpdateFilter(); override;
@@ -350,7 +350,7 @@ begin
     FOnBeforeFilter(Self);
 end;
 
-procedure TObjectDataset.DoPostRecord(Index: Integer);
+procedure TObjectDataset.DoPostRecord(Index: Integer; Append: Boolean);
 var
   LItem: TValue;
   LConvertedValue: TValue;
@@ -384,12 +384,17 @@ begin
 
   if State = dsInsert then
   begin
-    Index := IndexList.AddModel(LItem);
+    if Append then
+      Index := IndexList.AddModel(LItem)
+    else
+      IndexList.InsertModel(LItem, Index);
   end;
 
   DoFilterRecord(Index);
   if Sorted then
     InternalSetSort(Sort);
+
+  SetCurrent(Index);
 end;
 
 function TObjectDataset.GetChangedSortText(const ASortText: string): string;

@@ -22,34 +22,38 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   published
-    procedure Open();
-    procedure Open_Orders();
+    procedure AddRecord();
+    procedure Append();
     procedure Append_Filtered();
+    procedure Bookmark_Filtered();
+    procedure Bookmark_Filtered_2();
+    procedure Bookmark_Filtered_Fail();
     procedure Bookmark_Simple();
     procedure Bookmark_Sorted();
-    procedure Bookmark_Filtered();
-    procedure Bookmark_Filtered_Fail();
-    procedure Edit();
-    procedure Insert();
+    procedure ClearField_Nullable();
+    procedure ClearField_SimpleType();
     procedure Delete();
     procedure Delete_Filtered();
+    procedure Delete_Sorted();
     procedure Delete_Last();
+    procedure Edit();
     procedure Eof_AfterLast();
     procedure Eof_AfterNext();
-    procedure Sort();
-    procedure SimpleSort();
-    procedure Sort_Regression();
-    procedure MergeSort_Try();
-    procedure Locate();
     procedure Filter();
     procedure Filter_DateTime();
+    procedure Filter_Null();
     procedure Filter_Performance_Test();
-    procedure QuickSortTest();
-    procedure ClearField_SimpleType();
-    procedure ClearField_Nullable();
+    procedure Insert_Simple();
     procedure Iterating();
     procedure Iterating_Empty();
-    procedure AddRecord();
+    procedure Locate();
+    procedure MergeSort_Try();
+    procedure Open();
+    procedure Open_Orders();
+    procedure QuickSortTest();
+    procedure SimpleSort();
+    procedure Sort();
+    procedure Sort_Regression();
     procedure TestGUI;
   end;
 
@@ -128,6 +132,35 @@ begin
   FDataset.Last;
   CheckEquals(10, FDataset.FieldByName('AGE').AsInteger);
   CheckTrue(FDataset.BookmarkValid(LBookmark));
+  FDataset.Bookmark := LBookmark;
+  CheckEquals(3, FDataset.FieldByName('AGE').AsInteger);
+end;
+
+procedure TestTObjectDataset.Bookmark_Filtered_2;
+var
+  LCustomers: IList<TCustomer>;
+  LBookmark: TBookmark;
+begin
+  LCustomers := CreateCustomersList(10);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+  FDataset.Filter := '(AGE <= 3)';
+  FDataset.Filtered := True;
+  CheckEquals(3, FDataset.RecordCount);
+  FDataset.Last;
+  CheckEquals(3, FDataset.FieldByName('AGE').AsInteger);
+  LBookmark := FDataset.Bookmark;
+
+  FDataset.Filter := '';
+  CheckEquals(10, FDataset.RecordCount);
+  FDataset.Bookmark := LBookmark;
+  CheckEquals(3, FDataset.FieldByName('AGE').AsInteger);
+
+  FDataset.Filter := '(AGE > 3)';
+  CheckEquals(7, FDataset.RecordCount);
+  FDataset.Filter := '';
+  CheckEquals(10, FDataset.RecordCount);
+  FDataset.First;
   FDataset.Bookmark := LBookmark;
   CheckEquals(3, FDataset.FieldByName('AGE').AsInteger);
 end;
@@ -324,6 +357,24 @@ begin
   CheckEquals(8, FDataset.FieldByName('Age').AsInteger);
 end;
 
+procedure TestTObjectDataset.Delete_Sorted;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  LCustomers := CreateCustomersList(10);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+  FDataset.Sort := 'AGE DESC';
+  FDataset.RecNo := 5;
+  FDataset.Insert;
+  FDataset.FieldByName('age').AsInteger := 0;
+  FDataset.Post;
+  FDataset.Last;
+  CheckEquals(0, FDataset.FieldByName('age').AsInteger);
+  FDataset.Delete;
+  CheckEquals(10, FDataset.RecordCount);
+end;
+
 procedure TestTObjectDataset.Edit;
 var
   LCustomers: IList<TCustomer>;
@@ -378,7 +429,7 @@ begin
   CheckTrue(FDataset.Eof);
 end;
 
-procedure TestTObjectDataset.Insert;
+procedure TestTObjectDataset.Append;
 var
   LCustomers: IList<TCustomer>;
 begin
@@ -415,6 +466,23 @@ begin
   CheckEquals(111, FDataset.FieldByName('Age').AsInteger);
   CheckEquals('Marley', FDataset.FieldByName('MiddleName').AsString);
   CheckEquals('Bar', FDataset.FieldByName('Name').AsString);
+end;
+
+procedure TestTObjectDataset.Insert_Simple;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  LCustomers := CreateCustomersList(5);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+  FDataset.Insert;
+  FDataset.FieldByName('Age').AsInteger := 6;
+  FDataset.FieldByName('Name').AsString := 'Foo';
+  FDataset.Post;
+  CheckEquals(6, FDataset.RecordCount);
+  CheckEquals(1, FDataset.RecNo);
+  CheckEquals(6, FDataset.FieldByName('Age').AsInteger);
+  CheckEquals('Foo', FDataset.FieldByName('Name').AsString);
 end;
 
 procedure TestTObjectDataset.Iterating;
@@ -807,6 +875,21 @@ begin
   CheckEquals(1, FDataset.RecordCount);
 end;
 
+procedure TestTObjectDataset.Filter_Null;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  LCustomers := CreateCustomersList(5);
+  LCustomers.Last.MiddleName := 'Foo';
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+  FDataset.Filter := '(MiddleName <> Null)';
+  FDataset.Filtered := True;
+  CheckEquals(1, FDataset.RecordCount);
+  FDataset.Filter := '(MiddleName = Null)';
+  CheckEquals(4, FDataset.RecordCount);
+end;
+
 procedure TestTObjectDataset.Filter_Performance_Test;
 var
   LCustomers: IList<TCustomer>;
@@ -829,7 +912,7 @@ var
   LView: TfrmObjectDatasetTest;
   sw: TStopwatch;
 begin
-  LCustomers := CreateCustomersList(100000);
+  LCustomers := CreateCustomersList(10);
   LCustomers.First.Age := 2;
   LCustomers.First.Name := 'Bob';
   FDataset.SetDataList<TCustomer>(LCustomers);
@@ -839,12 +922,10 @@ begin
     LView.Dataset := FDataset;
     LView.dsList.DataSet := FDataset;
     sw := TStopwatch.StartNew;
-    FDataset.Sort := 'Age Desc, NAME';
+  //  FDataset.Sort := 'Age Desc, NAME';
     FDataset.Filtered := True;
     sw.Stop;
     Status(Format('Elapsed time: %D ms', [sw.ElapsedMilliseconds]));
-
-
     LView.ShowModal;
   finally
     LView.Free;
