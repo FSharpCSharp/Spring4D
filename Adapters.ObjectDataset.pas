@@ -75,6 +75,8 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
+    procedure Clone(ASource: TObjectDataset);
+
     {$REGION 'Documentation'}
     ///	<summary>
     ///	  Returns underlying model object from the current row.
@@ -183,6 +185,7 @@ uses
   ,Core.Reflection
   ,Spring.SystemUtils
   ,DateUtils
+  ,Adapters.ObjectDataset.ExprParser.Functions
   ;
 
 type
@@ -251,6 +254,24 @@ begin
 end;
 
 { TObjectDataset }
+
+procedure TObjectDataset.Clone(ASource: TObjectDataset);
+begin
+  if Active then
+    Close;
+
+  FItemTypeInfo := ASource.FItemTypeInfo;
+  FDataList := ASource.DataList;
+  IndexList.DataList := ASource.IndexList.DataList;
+  IndexList.Rebuild;
+
+  FilterOptions := ASource.FilterOptions;
+  Filter := ASource.Filter;
+  Filtered := ASource.Filtered;
+  Open;
+  if ASource.Sorted then
+    Sort := ASource.Sort;
+end;
 
 function TObjectDataset.CompareRecords(const Item1, Item2: TValue;
   AIndexFieldList: IList<TIndexFieldInfo>): Integer;
@@ -443,9 +464,9 @@ end;
 function TObjectDataset.GetCurrentModel<T>: T;
 begin
   Result := System.Default(T);
-  if Active and (Current > -1) and (Current < RecordCount) then
+  if Active and (Index > -1) and (Index < RecordCount) then
   begin
-    Result := IndexList.GetModel(Current).AsType<T>;
+    Result := IndexList.GetModel(Index).AsType<T>;
   end;
 end;
 
@@ -817,33 +838,14 @@ end;
 
 function TObjectDataset.ParserGetFunctionValue(Sender: TObject; const FuncName: string;
   const Args: Variant; var ResVal: Variant): Boolean;
+var
+  LGetValueFunc: TFunctionGetValueProc;
 begin
-  if SameText(FuncName, 'today') then
+  Result := TFilterFunctions.TryGetFunction(FuncName, LGetValueFunc);
+  if Result then
   begin
-    ResVal := Today;
-    Exit(True);
-  end
-  else if SameText(FuncName, 'getdate') then
-  begin
-    ResVal := Now;
-    Exit(True);
-  end
-  else if SameText(FuncName, 'isnull') then
-  begin
-    ResVal := Null;
-    Exit(True);
-  end
-  else if SameText(FuncName, 'isnotnull') then
-  begin
-    ResVal := 1;
-    Exit(True);
-  end
-  else if SameText(FuncName, 'abs') then
-  begin
-    ResVal := Abs(Args[0]);
-    Exit(True);
+    ResVal := LGetValueFunc(Args);
   end;
-  Result := False;
 end;
 
 function TObjectDataset.ParserGetVariableValue(Sender: TObject; const VarName: string;

@@ -767,7 +767,8 @@ end;
 
 procedure TAbstractObjectDataset.InternalHandleException;
 begin
-  inherited;
+  if Assigned(Classes.ApplicationHandleException) then
+    Classes.ApplicationHandleException(Self);
 end;
 
 procedure TAbstractObjectDataset.InternalInitFieldDefs;
@@ -843,7 +844,6 @@ begin
   UpdateCursorPos;
   GetActiveRecBuf(LRecBuf);
 
-
   case PArrayRecInfo(LRecBuf)^.BookmarkFlag of
     bfEOF: DoPostRecord(-1, True);
     bfInserted: DoPostRecord(FInsertIndex, False)
@@ -904,11 +904,18 @@ begin
 end;
 
 procedure TAbstractObjectDataset.SetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);
+{var
+  LValue: TValue;}
 begin
-  if PArrayRecInfo(Buffer)^.BookmarkFlag in [bfCurrent, bfInserted] then
-    PArrayRecInfo(Buffer)^.Index := PInteger(Data)^
+  inherited;
+  //we dont need this method because we get FInsertIndex OnBeforeInsert event
+  {if PArrayRecInfo(Buffer)^.BookmarkFlag in [bfCurrent, bfInserted] then
+  begin
+    LValue := PObject(Data)^;
+    PArrayRecInfo(Buffer)^.Index := IndexList.IndexOfModel(LValue);
+  end
   else
-    PArrayRecInfo(Buffer)^.Index := -1;
+    PArrayRecInfo(Buffer)^.Index := -1;}
 end;
 
 procedure TAbstractObjectDataset.SetBookmarkFlag(Buffer: TRecordBuffer; Value: TBookmarkFlag);

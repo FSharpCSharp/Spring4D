@@ -2,8 +2,8 @@ object frmObjectDatasetTest: TfrmObjectDatasetTest
   Left = 0
   Top = 0
   Caption = 'TObjectDataset Test'
-  ClientHeight = 392
-  ClientWidth = 665
+  ClientHeight = 590
+  ClientWidth = 1051
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -14,15 +14,24 @@ object frmObjectDatasetTest: TfrmObjectDatasetTest
   OnCreate = FormCreate
   OnShow = FormShow
   DesignSize = (
-    665
-    392)
+    1051
+    590)
   PixelsPerInch = 96
   TextHeight = 13
+  object Splitter1: TSplitter
+    Left = 565
+    Top = 25
+    Height = 525
+    Align = alRight
+    ExplicitLeft = 448
+    ExplicitTop = 152
+    ExplicitHeight = 100
+  end
   object dbgList: TDBGrid
     Left = 0
     Top = 25
-    Width = 665
-    Height = 327
+    Width = 565
+    Height = 525
     Align = alClient
     BorderStyle = bsNone
     DataSource = dsList
@@ -37,24 +46,51 @@ object frmObjectDatasetTest: TfrmObjectDatasetTest
   object DBNavigator1: TDBNavigator
     Left = 0
     Top = 0
-    Width = 665
+    Width = 1051
     Height = 25
     DataSource = dsList
     Align = alTop
     TabOrder = 1
+    ExplicitWidth = 665
   end
   object edFilter: TEdit
     Left = 0
-    Top = 352
-    Width = 665
+    Top = 550
+    Width = 1051
     Height = 21
     Align = alBottom
     TabOrder = 2
     OnKeyDown = edFilterKeyDown
+    ExplicitTop = 352
+    ExplicitWidth = 665
+  end
+  object sbTotal: TStatusBar
+    Left = 0
+    Top = 571
+    Width = 1051
+    Height = 19
+    Panels = <>
+    SimplePanel = True
+    ExplicitTop = 373
+    ExplicitWidth = 665
+  end
+  object dbgClone: TDBGrid
+    Left = 568
+    Top = 25
+    Width = 483
+    Height = 525
+    Align = alRight
+    DataSource = dsClone
+    TabOrder = 5
+    TitleFont.Charset = DEFAULT_CHARSET
+    TitleFont.Color = clWindowText
+    TitleFont.Height = -11
+    TitleFont.Name = 'Tahoma'
+    TitleFont.Style = []
   end
   object cbFiltered: TCheckBox
-    Left = 560
-    Top = 367
+    Left = 946
+    Top = 527
     Width = 97
     Height = 17
     Anchors = [akRight, akBottom]
@@ -63,17 +99,15 @@ object frmObjectDatasetTest: TfrmObjectDatasetTest
     State = cbChecked
     TabOrder = 3
     OnClick = cbFilteredClick
-  end
-  object sbTotal: TStatusBar
-    Left = 0
-    Top = 373
-    Width = 665
-    Height = 19
-    Panels = <>
-    SimplePanel = True
+    ExplicitLeft = 683
+    ExplicitTop = 426
   end
   object dsList: TDataSource
     Left = 488
     Top = 264
+  end
+  object dsClone: TDataSource
+    Left = 664
+    Top = 224
   end
 end

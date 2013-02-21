@@ -354,7 +354,7 @@ begin
           CToken := tkString;
           while (Idx <= Len) and (Str[Idx] <> C) do
           begin
-            S := S + Str[Idx]; // ahuser: performance suicide
+            S := S + Str[Idx];
             Inc(Idx);
           end;
           if (Idx <= Len) and (Str[Idx] = C) then
@@ -372,7 +372,7 @@ begin
           S := S + C;
           while (Idx <= Len) and (CharInSet(Str[Idx], cNumbers)) do
           begin
-            S := S + Str[Idx]; // ahuser: performance suicide
+            S := S + Str[Idx];
             Inc(Idx);
           end;
           if ((Idx <= Len) and (Str[Idx] = '.')) then
@@ -382,7 +382,7 @@ begin
             S := S + '.';
             while (Idx <= Len) and (CharInSet(Str[Idx], cNumbers)) do
             begin
-              S := S + Str[Idx]; // ahuser: performance suicide
+              S := S + Str[Idx];
               Inc(Idx);
             end;
           end;
@@ -394,7 +394,7 @@ begin
           S := S + C;
           while (Idx <= Len) and (CharInSet(Str[Idx], cNumbers)) do
           begin
-            S := S + Str[Idx]; // ahuser: performance suicide
+            S := S + Str[Idx];
             Inc(Idx);
           end;
         end
@@ -405,7 +405,7 @@ begin
           S := S + C;
           while (Idx <= Len) and (CharInSet(Str[Idx], cLettersAndNumbers)) do
           begin
-            S := S + Str[Idx]; // ahuser: performance suicide
+            S := S + Str[Idx];
             Inc(Idx);
           end;
         end
@@ -871,7 +871,6 @@ begin
       begin
         Result := FLeftNode.Eval or FRightNode.Eval;
       end;
-
     '~':
       begin
         FixupValues();

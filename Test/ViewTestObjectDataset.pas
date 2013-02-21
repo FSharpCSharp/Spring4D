@@ -16,6 +16,9 @@ type
     edFilter: TEdit;
     cbFiltered: TCheckBox;
     sbTotal: TStatusBar;
+    dbgClone: TDBGrid;
+    Splitter1: TSplitter;
+    dsClone: TDataSource;
     procedure edFilterKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure dbgListTitleClick(Column: TColumn);
     procedure FormCreate(Sender: TObject);

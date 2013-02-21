@@ -121,7 +121,8 @@ uses
   Adapters.ObjectDataset.ExprParser in '..\Adapters.ObjectDataset.ExprParser.pas',
   Core.Algorythms.Sort in '..\Core.Algorythms.Sort.pas',
   Adapters.ObjectDataset.ActiveX in '..\Adapters.ObjectDataset.ActiveX.pas',
-  Adapters.ObjectDataset.IndexList in '..\Adapters.ObjectDataset.IndexList.pas';
+  Adapters.ObjectDataset.IndexList in '..\Adapters.ObjectDataset.IndexList.pas',
+  Adapters.ObjectDataset.ExprParser.Functions in '..\Adapters.ObjectDataset.ExprParser.Functions.pas';
 
 {$R *.RES}
 

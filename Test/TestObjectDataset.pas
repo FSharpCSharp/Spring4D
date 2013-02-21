@@ -45,6 +45,7 @@ type
     procedure Eof_AfterLast();
     procedure Eof_AfterNext();
     procedure Filter();
+    procedure Filter_Custom_Functions();
     procedure Filter_DateTime();
     procedure Filter_Null();
     procedure Filter_Performance_Test();
@@ -945,6 +946,29 @@ begin
   CheckEquals(8, FDataset.RecordCount);
 end;
 
+procedure TestTObjectDataset.Filter_Custom_Functions;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  LCustomers := CreateCustomersList(10);
+  LCustomers.First.MiddleName := 'Foo';
+  LCustomers.Last.MiddleName := 'Bar';
+  FDataset.Filtered := True;
+  FDataset.FilterOptions := [foCaseInsensitive];
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+  FDataset.Filter := '(IsNull(MiddleName, ''1'') = ''1'')';
+  CheckEquals(8, FDataset.RecordCount);
+  FDataset.Filter := '(LastEdited = Today())';
+
+  FDataset.Filter := '(Name = substr(Name,1,50))';
+  CheckEquals(10, FDataset.RecordCount);
+  FDataset.Filter := '(Length(Name) = 9)';
+  CheckEquals(10, FDataset.RecordCount);
+  FDataset.Filter := '(Length(Name) = 10)';
+  CheckEquals(0, FDataset.RecordCount);
+end;
+
 procedure TestTObjectDataset.Filter_DateTime;
 var
   LCustomers: IList<TCustomer>;
@@ -984,7 +1008,8 @@ begin
   LCustomers := CreateCustomersList(50000);
   FDataset.SetDataList<TCustomer>(LCustomers);
   FDataset.Open;
-  FDataset.Filter := '((AGE = 2)) OR ((AGE = 3)) OR ((AGE = 4)) OR ((AGE = 1)) OR ((AGE = 100)) OR ((AGE = 1000)) OR ((AGE = 999)) OR ((AGE = -1))';
+  FDataset.Filter := '((AGE = 2)) OR ((AGE = 3)) OR ((AGE = 4)) OR ((AGE = 1)) OR ((AGE = 100)) OR ((AGE = 1000)) OR ((AGE = 999)) OR '+
+  ' ((NAME = ''Some Long Name Name sdsdsd sdsd aaaaaaaaaaaaaaaaaaaaaaaaaa     WWEEW    sdddddddddddddddddd sd sd  sds d sd sds d sdds sd wewewew vew ewe we we we we we we''))';
   sw := TStopwatch.StartNew;
   FDataset.Filtered := True;
   sw.Stop;
@@ -1100,6 +1125,7 @@ var
   LCustomers: IList<TCustomer>;
   LView: TfrmObjectDatasetTest;
   sw: TStopwatch;
+  LClonedDataset: TObjectDataset;
 begin
   LCustomers := CreateCustomersList(1000);
   LCustomers.First.Age := 2;
@@ -1107,17 +1133,24 @@ begin
   FDataset.SetDataList<TCustomer>(LCustomers);
   FDataset.Open;
   LView := TfrmObjectDatasetTest.Create(nil);
+  LClonedDataset := TObjectDataset.Create(nil);
   try
     LView.Dataset := FDataset;
     LView.dsList.DataSet := FDataset;
+
     sw := TStopwatch.StartNew;
   //  FDataset.Sort := 'Age Desc, NAME';
     FDataset.Filtered := True;
     sw.Stop;
     Status(Format('Elapsed time: %D ms', [sw.ElapsedMilliseconds]));
+
+    LClonedDataset.Clone(FDataset);
+    LView.dsClone.DataSet := LClonedDataset;
+
     LView.ShowModal;
   finally
     LView.Free;
+    LClonedDataset.Free;
   end;
 end;
 
