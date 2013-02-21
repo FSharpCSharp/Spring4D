@@ -50,6 +50,7 @@ type
     FFieldsCache: IDictionary<string,TField>;
     FFilterCache: IDictionary<string, Variant>;
     FIndexList: TODIndexList;
+    FInsertIndex: Integer;
     {$IF CompilerVersion >=24}
     FReserved: Pointer;
     {$IFEND}
@@ -117,6 +118,8 @@ type
     procedure InternalHandleException; override;
     procedure InternalInitFieldDefs; override;
     procedure InternalInitRecord(Buffer: TRecordBuffer); override;
+    procedure InternalInsert; override;
+    procedure DoBeforeInsert; override;
     procedure InternalLast; override;
     procedure InternalOpen; override;
     procedure InternalPost; override;
@@ -442,6 +445,12 @@ destructor TAbstractObjectDataset.Destroy;
 begin
   FIndexList.Free;
   inherited Destroy;
+end;
+
+procedure TAbstractObjectDataset.DoBeforeInsert;
+begin
+  FInsertIndex := Max(RecNo - 1, 0);
+  inherited;
 end;
 
 procedure TAbstractObjectDataset.DoOnNewRecord;
@@ -802,6 +811,11 @@ begin
     PVariantList(Buffer + sizeof(TArrayRecInfo))[I] := Null;
 end;
 
+procedure TAbstractObjectDataset.InternalInsert;
+begin
+  inherited;
+end;
+
 procedure TAbstractObjectDataset.InternalLast;
 begin
   FCurrent := RecordCount;
@@ -829,10 +843,13 @@ begin
   UpdateCursorPos;
   GetActiveRecBuf(LRecBuf);
 
-  if PArrayRecInfo(LRecBuf)^.BookmarkFlag = bfEof then
-    DoPostRecord(-1, True)
-  else
-    DoPostRecord(ActiveRecord {PArrayRecInfo(LRecBuf)^.Index}, False);
+
+  case PArrayRecInfo(LRecBuf)^.BookmarkFlag of
+    bfEOF: DoPostRecord(-1, True);
+    bfInserted: DoPostRecord(FInsertIndex, False)
+    else
+      DoPostRecord(PArrayRecInfo(LRecBuf)^.Index, False)
+  end;
 end;
 
 procedure TAbstractObjectDataset.InternalSetToRecord(Buffer: TRecordBuffer);

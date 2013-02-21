@@ -20,6 +20,12 @@
 			<CfgParent>Base</CfgParent>
 			<Base>true</Base>
 		</PropertyGroup>
+		<PropertyGroup Condition="'$(Platform)'=='Win32' and '$(Cfg_1)'=='true' or '$(Cfg_1_Win32)'!=''">
+			<Cfg_1_Win32>true</Cfg_1_Win32>
+			<CfgParent>Cfg_1</CfgParent>
+			<Cfg_1>true</Cfg_1>
+			<Base>true</Base>
+		</PropertyGroup>
 		<PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_2)'!=''">
 			<Cfg_2>true</Cfg_2>
 			<CfgParent>Base</CfgParent>
@@ -51,6 +57,9 @@
 			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
 			<DCC_Optimize>false</DCC_Optimize>
 			<DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
+			<DCC_Define>TESTING_PARSER;$(DCC_Define)</DCC_Define>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2)'!=''">
 			<DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
@@ -186,22 +195,22 @@
 					<VersionInfo>
 						<VersionInfo Name="IncludeVerInfo">True</VersionInfo>
 						<VersionInfo Name="AutoIncBuild">False</VersionInfo>
-						<VersionInfo Name="MajorVer">1</VersionInfo>
+						<VersionInfo Name="MajorVer">0</VersionInfo>
 						<VersionInfo Name="MinorVer">0</VersionInfo>
 						<VersionInfo Name="Release">0</VersionInfo>
-						<VersionInfo Name="Build">0</VersionInfo>
+						<VersionInfo Name="Build">1</VersionInfo>
 						<VersionInfo Name="Debug">False</VersionInfo>
 						<VersionInfo Name="PreRelease">False</VersionInfo>
 						<VersionInfo Name="Special">False</VersionInfo>
 						<VersionInfo Name="Private">False</VersionInfo>
 						<VersionInfo Name="DLL">False</VersionInfo>
-						<VersionInfo Name="Locale">1033</VersionInfo>
-						<VersionInfo Name="CodePage">1252</VersionInfo>
+						<VersionInfo Name="Locale">1063</VersionInfo>
+						<VersionInfo Name="CodePage">1257</VersionInfo>
 					</VersionInfo>
 					<VersionInfoKeys>
 						<VersionInfoKeys Name="CompanyName"/>
 						<VersionInfoKeys Name="FileDescription"/>
-						<VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys>
+						<VersionInfoKeys Name="FileVersion">0.0.0.1</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName"/>
 						<VersionInfoKeys Name="LegalCopyright"/>
 						<VersionInfoKeys Name="LegalTrademarks"/>

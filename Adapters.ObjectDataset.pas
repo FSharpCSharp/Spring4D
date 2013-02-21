@@ -55,6 +55,8 @@ type
     function ConvertPropertyValueToVariant(const AValue: TValue): Variant; virtual;
     function InternalGetFieldValue(AField: TField; const AItem: TValue): Variant; virtual;
     function ParserGetVariableValue(Sender: TObject; const VarName: string; var Value: Variant): Boolean; virtual;
+    function ParserGetFunctionValue(Sender: TObject; const FuncName: string; const Args: Variant
+      ; var ResVal: Variant): Boolean; virtual;
     procedure DoFilterRecord(AIndex: Integer); virtual;
     procedure InitRttiPropertiesFromItemType(AItemTypeInfo: PTypeInfo); virtual;
     procedure InternalSetSort(const AValue: string); virtual;
@@ -180,6 +182,7 @@ uses
   ,Variants
   ,Core.Reflection
   ,Spring.SystemUtils
+  ,DateUtils
   ;
 
 type
@@ -284,6 +287,7 @@ begin
   FProperties := TCollections.CreateList<TRttiProperty>;
   FFilterParser := TExprParser.Create;
   FFilterParser.OnGetVariable := ParserGetVariableValue;
+  FFilterParser.OnExecuteFunction := ParserGetFunctionValue;
   FDefaultStringFieldLength := 250;
 end;
 
@@ -809,6 +813,37 @@ begin
     if not LProp.IsWritable then
       LFieldDef.Attributes := LFieldDef.Attributes + [DB.faReadOnly];
   end;
+end;
+
+function TObjectDataset.ParserGetFunctionValue(Sender: TObject; const FuncName: string;
+  const Args: Variant; var ResVal: Variant): Boolean;
+begin
+  if SameText(FuncName, 'today') then
+  begin
+    ResVal := Today;
+    Exit(True);
+  end
+  else if SameText(FuncName, 'getdate') then
+  begin
+    ResVal := Now;
+    Exit(True);
+  end
+  else if SameText(FuncName, 'isnull') then
+  begin
+    ResVal := Null;
+    Exit(True);
+  end
+  else if SameText(FuncName, 'isnotnull') then
+  begin
+    ResVal := 1;
+    Exit(True);
+  end
+  else if SameText(FuncName, 'abs') then
+  begin
+    ResVal := Abs(Args[0]);
+    Exit(True);
+  end;
+  Result := False;
 end;
 
 function TObjectDataset.ParserGetVariableValue(Sender: TObject; const VarName: string;

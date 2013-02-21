@@ -867,7 +867,11 @@ begin
         Result := EvalGT();
       end;
     '&': Result := FLeftNode.Eval and FRightNode.Eval;
-    '|': Result := FLeftNode.Eval or FRightNode.Eval;
+    '|':
+      begin
+        Result := FLeftNode.Eval or FRightNode.Eval;
+      end;
+
     '~':
       begin
         FixupValues();

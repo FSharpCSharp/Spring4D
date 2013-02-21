@@ -48,6 +48,7 @@ type
     procedure Filter_DateTime();
     procedure Filter_Null();
     procedure Filter_Performance_Test();
+    procedure Filter_Without_Brackets();
     procedure GetCurrentModel_Filtered();
     procedure GetCurrentModel_Simple();
     procedure GetCurrentModel_Sorted();
@@ -991,6 +992,20 @@ begin
   Status(Format('%D records in %D ms', [LCustomers.Count, sw.ElapsedMilliseconds]));
 end;
 
+procedure TestTObjectDataset.Filter_Without_Brackets;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  LCustomers := CreateCustomersList(10);
+  LCustomers.First.Age := 11;
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+  FDataset.Filter := '(AGE = 1) OR (AGE = 2)';
+  FDataset.Filtered := True;
+ // CheckEquals(1, FDataset.FieldByName('AGE').AsInteger);
+  CheckEquals(1, FDataset.RecordCount);
+end;
+
 procedure TestTObjectDataset.GetCurrentModel_Filtered;
 var
   LCustomers: IList<TCustomer>;
@@ -1086,7 +1101,7 @@ var
   LView: TfrmObjectDatasetTest;
   sw: TStopwatch;
 begin
-  LCustomers := CreateCustomersList(10);
+  LCustomers := CreateCustomersList(1000);
   LCustomers.First.Age := 2;
   LCustomers.First.Name := 'Bob';
   FDataset.SetDataList<TCustomer>(LCustomers);
