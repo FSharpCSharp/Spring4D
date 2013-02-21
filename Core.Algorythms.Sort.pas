@@ -75,26 +75,20 @@ type
   private
     class var
       FDataList: TODIndexList;
-      FFilteredIndexes: IList<Integer>;
-      FFiltered: Boolean;
   private
     class procedure MergeSort(ALow, AHigh: Integer; Compare: TCompareRecords; AIndexFieldList: IList<TIndexFieldInfo>);
   public
-    class procedure Sort(ADataList: TODIndexList; AComparator: TCompareRecords; AIndexFields: IList<TIndexFieldInfo>
-      ; AFilteredIndexes: IList<Integer>; AFiltered: Boolean);
+    class procedure Sort(ADataList: TODIndexList; AComparator: TCompareRecords; AIndexFields: IList<TIndexFieldInfo>);
   end;
 
   TInsertionSort = class sealed
   private
     class var
       FDataList: TODIndexList;
-      FFilteredIndexes: IList<Integer>;
-      FFiltered: Boolean;
   private
     class procedure InsertionSort(ALow, AHigh: Integer; Compare: TCompareRecords; AIndexFieldList: IList<TIndexFieldInfo>);
   public
-    class procedure Sort(ADataList: TODIndexList; AComparator: TCompareRecords; AIndexFields: IList<TIndexFieldInfo>
-      ; AFilteredIndexes: IList<Integer>; AFiltered: Boolean);
+    class procedure Sort(ADataList: TODIndexList; AComparator: TCompareRecords; AIndexFields: IList<TIndexFieldInfo>);
   end;
 
   TBinaryInsertionSort = class sealed
@@ -961,13 +955,9 @@ begin
   PerformMergeSort(ALow, AHigh, Compare, AIndexFieldList);
 end;
 
-class procedure TMergeSort.Sort(ADataList: TODIndexList; AComparator: TCompareRecords; AIndexFields: IList<TIndexFieldInfo>;
-  AFilteredIndexes: IList<Integer>; AFiltered: Boolean);
+class procedure TMergeSort.Sort(ADataList: TODIndexList; AComparator: TCompareRecords; AIndexFields: IList<TIndexFieldInfo>);
 begin
   FDataList := ADataList;
-  FFilteredIndexes := AFilteredIndexes;
-  FFiltered := AFiltered;
-
   MergeSort(0, FDataList.Count - 1, AComparator, AIndexFields);
 end;
 
@@ -993,12 +983,9 @@ Begin
 end;
 
 class procedure TInsertionSort.Sort(ADataList: TODIndexList; AComparator: TCompareRecords;
-  AIndexFields: IList<TIndexFieldInfo>; AFilteredIndexes: IList<Integer>; AFiltered: Boolean);
+  AIndexFields: IList<TIndexFieldInfo>);
 begin
   FDataList := ADataList;
-  FFilteredIndexes := AFilteredIndexes;
-  FFiltered := AFiltered;
-
   InsertionSort(0, FDataList.Count - 1, AComparator, AIndexFields);
 end;
 

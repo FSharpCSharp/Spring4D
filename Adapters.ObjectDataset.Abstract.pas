@@ -75,7 +75,7 @@ type
     procedure DoDeleteRecord(Index: Integer); virtual; abstract;
     procedure DoGetFieldValue(Field: TField; Index: Integer; var Value: Variant); virtual; abstract;
     procedure DoPostRecord(Index: Integer; Append: Boolean); virtual; abstract;
-    function RecordFilter: Boolean; virtual; abstract;
+    function RecordConformsFilter: Boolean; virtual; abstract;
     procedure UpdateFilter(); virtual; abstract;
     procedure RebuildPropertiesCache(); virtual; abstract;
 
@@ -235,7 +235,6 @@ uses
   Variants
   ,SysUtils
   ,Math
-  ,Forms
   ,DBConsts
   ,FMTBcd
   ,WideStrUtils
@@ -759,7 +758,7 @@ end;
 
 procedure TAbstractObjectDataset.InternalHandleException;
 begin
-  Application.HandleException(Self);
+  inherited;
 end;
 
 procedure TAbstractObjectDataset.InternalInitFieldDefs;

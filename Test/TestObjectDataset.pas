@@ -43,6 +43,10 @@ type
     procedure Filter_DateTime();
     procedure Filter_Null();
     procedure Filter_Performance_Test();
+    procedure GetCurrentModel_Filtered();
+    procedure GetCurrentModel_Simple();
+    procedure GetCurrentModel_Sorted();
+    procedure GetCurrentModel_RandomAccess();
     procedure Insert_Simple();
     procedure Iterating();
     procedure Iterating_Empty();
@@ -904,6 +908,95 @@ begin
   sw.Stop;
   CheckEquals(7, FDataset.RecordCount);
   Status(Format('%D records in %D ms', [LCustomers.Count, sw.ElapsedMilliseconds]));
+end;
+
+procedure TestTObjectDataset.GetCurrentModel_Filtered;
+var
+  LCustomers: IList<TCustomer>;
+  LCurrentCustomer: TCustomer;
+  i: Integer;
+begin
+  LCustomers := CreateCustomersList(5);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+  FDataset.Filter := '(Age < 2)';
+  FDataset.Filtered := True;
+  i := 1;
+  while not FDataset.Eof do
+  begin
+    LCurrentCustomer := FDataset.GetCurrentModel<TCustomer>;
+    CheckEquals(i, LCurrentCustomer.Age);
+
+    FDataset.Next;
+    Inc(i);
+  end;
+end;
+
+procedure TestTObjectDataset.GetCurrentModel_RandomAccess;
+var
+  LCustomers: IList<TCustomer>;
+  LCurrentCustomer: TCustomer;
+  LBookmark: TBookmark;
+begin
+  LCustomers := CreateCustomersList(10);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+  FDataset.Last;
+
+  LCurrentCustomer := FDataset.GetCurrentModel<TCustomer>;
+  CheckEquals(10, LCurrentCustomer.Age);
+
+  FDataset.RecNo := 5;
+  CheckEquals(5, FDataset.GetCurrentModel<TCustomer>.Age);
+
+  FDataset.Prior;
+  CheckEquals(4, FDataset.GetCurrentModel<TCustomer>.Age);
+  LBookmark := FDataset.Bookmark;
+  FDataset.First;
+  FDataset.Bookmark := LBookmark;
+  CheckEquals(4, FDataset.GetCurrentModel<TCustomer>.Age);
+end;
+
+procedure TestTObjectDataset.GetCurrentModel_Simple;
+var
+  LCustomers: IList<TCustomer>;
+  LCurrentCustomer: TCustomer;
+  i: Integer;
+begin
+  LCustomers := CreateCustomersList(5);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+  FDataset.First;
+  i := 1;
+  while not FDataset.Eof do
+  begin
+    LCurrentCustomer := FDataset.GetCurrentModel<TCustomer>;
+    CheckEquals(i, LCurrentCustomer.Age);
+
+    FDataset.Next;
+    Inc(i);
+  end;
+end;
+
+procedure TestTObjectDataset.GetCurrentModel_Sorted;
+var
+  LCustomers: IList<TCustomer>;
+  LCurrentCustomer: TCustomer;
+  i: Integer;
+begin
+  LCustomers := CreateCustomersList(5);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+  FDataset.Sort := 'AGE DESC';
+  i := 5;
+  while not FDataset.Eof do
+  begin
+    LCurrentCustomer := FDataset.GetCurrentModel<TCustomer>;
+    CheckEquals(i, LCurrentCustomer.Age);
+
+    FDataset.Next;
+    Dec(i);
+  end;
 end;
 
 procedure TestTObjectDataset.TestGUI;

@@ -64,8 +64,6 @@ type
     function Eval(const AExpression: string): Boolean; overload;
 
     property ErrorMessage: string read FErrorMessage;
-
-  {published} // ahuser: not a TPersistent derived class
     property Expression: string read FExpression write SetExpression;
     property OnGetVariable: TOnGetVariableValue read FOnGetVariable write FOnGetVariable;
     property OnExecuteFunction: TOnExecuteFunction read FOnExecuteFunction write FOnExecuteFunction;
@@ -159,9 +157,6 @@ type
   public
     constructor Create(Parser: TParser); virtual;
 
-    // Delphi 5 compiler shows hints about a not exported or used symbol
-    // TNode.Eval. This is a compiler bug that is caused by the "abstract" keyword.
-	
     function Eval(): Variant; virtual; abstract;
   end;
 
@@ -499,7 +494,6 @@ begin
       on E: Exception do
       begin
         FErrorMessage := E.Message;
-//        raise;
       end;
     end;
   end;
@@ -570,7 +564,6 @@ begin
     if Lex.Token = tkOperator then
     begin
       if CharInSet(Lex.Chr, cOperators) then
-     // if CharInSet(Lex.Chr, ['*', '/', '=', '&', '|', '<', '>', '~', '{', '}', '?']) then
       begin
         LexAccept();
         RightNode := Expr();

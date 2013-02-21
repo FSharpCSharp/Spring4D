@@ -17,16 +17,18 @@ type
   TObjectDataset = class(TAbstractObjectDataset)
   private
     FDataList: IList;
-    FProperties: IList<TRttiProperty>;
     FDefaultStringFieldLength: Integer;
-    FItemTypeInfo: PTypeInfo;
-    FFilterParser: TExprParser;
-    FSorted: Boolean;
-    FSort: string;
     FFilterIndex: Integer;
+    FFilterParser: TExprParser;
+    FItemTypeInfo: PTypeInfo;
+    FProperties: IList<TRttiProperty>;
+    FSort: string;
+    FSorted: Boolean;
 
     FOnAfterFilter: TNotifyEvent;
+    FOnAfterSort: TNotifyEvent;
     FOnBeforeFilter: TNotifyEvent;
+    FOnBeforeSort: TNotifyEvent;
 
     function GetSort: string;
     procedure SetSort(const Value: string);
@@ -38,28 +40,31 @@ type
     procedure DoPostRecord(Index: Integer; Append: Boolean); override;
     procedure RebuildPropertiesCache(); override;
 
-    procedure UpdateFilter(); override;
-    function RecordFilter: Boolean; override;
+    function DataListCount(): Integer; override;
     function GetCurrentDataList(): IList; override;
     function GetRecordCount: Integer; override;
-    function DataListCount(): Integer; override;
+    function RecordConformsFilter: Boolean; override;
+    procedure UpdateFilter(); override;
 
     procedure DoOnAfterFilter(); virtual;
     procedure DoOnBeforeFilter(); virtual;
+    procedure DoOnBeforeSort(); virtual;
+    procedure DoOnAfterSort(); virtual;
+
+    function CompareRecords(const Item1, Item2: TValue; AIndexFieldList: IList<TIndexFieldInfo>): Integer; virtual;
     function ConvertPropertyValueToVariant(const AValue: TValue): Variant; virtual;
-    procedure InitRttiPropertiesFromItemType(AItemTypeInfo: PTypeInfo); virtual;
-    function ParserGetVariableValue(Sender: TObject; const VarName: string; var Value: Variant): Boolean; virtual;
     function InternalGetFieldValue(AField: TField; const AItem: TValue): Variant; virtual;
+    function ParserGetVariableValue(Sender: TObject; const VarName: string; var Value: Variant): Boolean; virtual;
+    procedure DoFilterRecord(AIndex: Integer); virtual;
+    procedure InitRttiPropertiesFromItemType(AItemTypeInfo: PTypeInfo); virtual;
+    procedure InternalSetSort(const AValue: string); virtual;
     procedure LoadFieldDefsFromFields(Fields: TFields; FieldDefs: TFieldDefs); virtual;
     procedure LoadFieldDefsFromItemType; virtual;
     procedure RefreshFilter(); virtual;
-    procedure DoFilterRecord(AIndex: Integer); virtual;
-    function CompareRecords(const Item1, Item2: TValue; AIndexFieldList: IList<TIndexFieldInfo>): Integer; virtual;
-    procedure InternalSetSort(const AValue: string); virtual;
 
+    function  IsCursorOpen: Boolean; override;
     procedure InternalInitFieldDefs; override;
     procedure InternalOpen; override;
-    function  IsCursorOpen: Boolean; override;
     procedure SetFilterText(const Value: string); override;
 
     function GetChangedSortText(const ASortText: string): string;
@@ -67,6 +72,13 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Returns underlying model object from the current row.
+    ///	</summary>
+    {$ENDREGION}
+    function GetCurrentModel<T: class>(): T;
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -148,6 +160,8 @@ type
 
     property OnAfterFilter: TNotifyEvent read FOnAfterFilter write FOnAfterFilter;
     property OnBeforeFilter: TNotifyEvent read FOnBeforeFilter write FOnBeforeFilter;
+    property OnAfterSort: TNotifyEvent read FOnAfterSort write FOnAfterSort;
+    property OnBeforeSort: TNotifyEvent read FOnBeforeSort write FOnBeforeSort;
     property OnDeleteError;
     property OnEditError;
     property OnFilterRecord;
@@ -344,10 +358,22 @@ begin
     FOnAfterFilter(Self);
 end;
 
+procedure TObjectDataset.DoOnAfterSort;
+begin
+  if Assigned(FOnAfterSort) then
+    FOnAfterSort(Self);
+end;
+
 procedure TObjectDataset.DoOnBeforeFilter;
 begin
   if Assigned(FOnBeforeFilter) then
     FOnBeforeFilter(Self);
+end;
+
+procedure TObjectDataset.DoOnBeforeSort;
+begin
+  if Assigned(FOnBeforeSort) then
+    FOnBeforeSort(Self);
 end;
 
 procedure TObjectDataset.DoPostRecord(Index: Integer; Append: Boolean);
@@ -410,6 +436,15 @@ end;
 function TObjectDataset.GetCurrentDataList: IList;
 begin
   Result := DataList;
+end;
+
+function TObjectDataset.GetCurrentModel<T>: T;
+begin
+  Result := System.Default(T);
+  if Active and (Current > -1) and (Current < RecordCount) then
+  begin
+    Result := IndexList.GetModel(Current).AsType<T>;
+  end;
 end;
 
 function TObjectDataset.GetFilterCount: Integer;
@@ -515,6 +550,8 @@ begin
   if IsEmpty then
     Exit;
 
+  DoOnBeforeSort();
+
   LChanged := AValue <> FSort;
   LIndexFieldList := CreateIndexList(AValue);
 
@@ -529,9 +566,9 @@ begin
       LOwnsObjectsProp.SetValue(LDataList.AsObject, False);
     end;
     if LChanged then
-      TMergeSort.Sort(IndexList, CompareRecords, LIndexFieldList, nil, Filtered)
+      TMergeSort.Sort(IndexList, CompareRecords, LIndexFieldList)
     else
-      TInsertionSort.Sort(IndexList, CompareRecords, LIndexFieldList, nil, Filtered);
+      TInsertionSort.Sort(IndexList, CompareRecords, LIndexFieldList);
 
     FSorted := LIndexFieldList.Count > 0;
     FSort := AValue;
@@ -541,6 +578,7 @@ begin
       LOwnsObjectsProp.SetValue(LDataList.AsObject, LOldValue);
     SetCurrent(Pos);
   end;
+  DoOnAfterSort();
 end;
 
 function TObjectDataset.IsCursorOpen: Boolean;
@@ -811,23 +849,19 @@ begin
   end;
 end;
 
-function TObjectDataset.RecordFilter: Boolean;
+function TObjectDataset.RecordConformsFilter: Boolean;
 begin
   Result := True;
   if (FFilterIndex >= 0) and (FFilterIndex <  DataListCount ) then
   begin
-    try
-      if Assigned(OnFilterRecord) then
-        OnFilterRecord(Self, Result)
-      else
+    if Assigned(OnFilterRecord) then
+      OnFilterRecord(Self, Result)
+    else
+    begin
+      if (FFilterParser.Eval()) then
       begin
-        if (FFilterParser.Eval()) then
-        begin
-          Result := FFilterParser.Value;
-        end;
+        Result := FFilterParser.Value;
       end;
-    except
-      InternalHandleException;
     end;
   end
   else
@@ -849,7 +883,7 @@ begin
   begin
     FFilterIndex := i;
     FilterCache.Clear;
-    if RecordFilter then
+    if RecordConformsFilter then
     begin
       IndexList.Add(i);
     end;
@@ -863,7 +897,7 @@ begin
   begin
     FilterCache.Clear;
     FFilterIndex := IndexList[AIndex];
-    if not RecordFilter then
+    if not RecordConformsFilter then
     begin
       IndexList.Delete(AIndex);
     end;
