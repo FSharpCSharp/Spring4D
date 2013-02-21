@@ -51,6 +51,9 @@ type
     procedure ManyToOne();
     procedure Transactions();
     procedure FetchCollection();
+    {$IFDEF USE_SPRING}
+    procedure ListSession_Begin_Commit();
+    {$ENDIF}
   end;
 
   TInsertData = record
@@ -80,6 +83,7 @@ uses
   ,Generics.Collections
   ,Core.Reflection
   ,TestConsts
+  ,Core.Criteria.Properties
   ;
 
 
@@ -709,6 +713,51 @@ begin
     {$ENDIF}
   end;
 end;
+
+{$IFDEF USE_SPRING}
+procedure TestTSession.ListSession_Begin_Commit;
+var
+  LCustomers: IList<TCustomer>;
+  LCustomer: TCustomer;
+  LListSession: IListSession<TCustomer>;
+  LProp: IProperty;
+begin
+  //fetch some customers from db
+  InsertCustomer(15, 'Bar');
+  InsertCustomer(10, 'Foo');
+  LCustomers := FManager.FindAll<TCustomer>;
+  CheckEquals(2, LCustomers.Count);
+  LListSession := FManager.BeginListSession<TCustomer>(LCustomers);
+
+  //add some customers
+  LCustomer := TCustomer.Create();
+  LCustomer.Age := 1;
+  LCustomer.Name := 'New';
+  LCustomers.Add(LCustomer);
+
+  LCustomer := TCustomer.Create();
+  LCustomer.Age := 9;
+  LCustomer.Name := 'Cloud';
+  LCustomers.Add(LCustomer);
+
+
+  //delete customer which was fetched from database
+  LCustomers.Delete(0);
+
+  //edit customer which was fetched from the database
+  LCustomers.First.Name := 'Edited Foo';
+  LListSession.CommitListSession;
+
+ // LCustomers := FManager.FindAll<TCustomer>;
+  LProp := TProperty<TCustomer>.ForName('CUSTAGE');
+  LCustomers := FManager.CreateCriteria<TCustomer>.AddOrder(LProp.Asc).List;
+  CheckEquals(3, LCustomers.Count);
+  CheckEquals(1, LCustomers.First.Age);
+  CheckEquals(9, LCustomers[1].Age);
+  CheckEquals(10, LCustomers[2].Age);
+  CheckEquals('Edited Foo', LCustomers[2].Name);
+end;
+{$ENDIF}
 
 const
   SQL_MANY_TO_ONE: string = 'SELECT O.*, C.CUSTID CUSTOMERS_Customer_ID_CUSTID '+

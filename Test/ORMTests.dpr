@@ -122,7 +122,8 @@ uses
   Core.Algorythms.Sort in '..\Core.Algorythms.Sort.pas',
   Adapters.ObjectDataset.ActiveX in '..\Adapters.ObjectDataset.ActiveX.pas',
   Adapters.ObjectDataset.IndexList in '..\Adapters.ObjectDataset.IndexList.pas',
-  Adapters.ObjectDataset.ExprParser.Functions in '..\Adapters.ObjectDataset.ExprParser.Functions.pas';
+  Adapters.ObjectDataset.ExprParser.Functions in '..\Adapters.ObjectDataset.ExprParser.Functions.pas',
+  Core.ListSession in '..\Core.ListSession.pas';
 
 {$R *.RES}
 

@@ -106,6 +106,18 @@ type
     {$ENDREGION}
     function GetResultset(const ASql: string; AParams: TObjectList<TDBParam>): IDBResultset; overload;
 
+    {$IFDEF USE_SPRING}
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Starts a new List Session. ListSession monitors changes in the specified list and can commit or rollback these changes to the database
+    ///	</summary>
+    ///	<remarks>
+    ///	  Can return newly started list transaction interface which controls how changes will be reflected in the database.
+    ///	</remarks>
+    {$ENDREGION}
+    function BeginListSession<T: class, constructor>(AList: IList<T>): IListSession<T>;
+    {$ENDIF}
+
     {$REGION 'Documentation'}
     ///	<summary>
     ///	  Starts a new transaction.
@@ -369,6 +381,8 @@ type
     {$ENDREGION}
     procedure SaveList<T: class, constructor>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
       {$ELSE} TObjectList<T> {$ENDIF}); overload;
+
+    property OldStateEntities: TEntityMap read FOldStateEntities;
   end;
 
 
@@ -394,15 +408,28 @@ uses
   ,Core.Consts
   ,Core.Criteria
   ,Core.Collections
+  {$IFDEF USE_SPRING}
+  ,Core.ListSession
+  {$ENDIF}
   ;
 
 { TEntityManager }
+
+{$IFDEF USE_SPRING}
+function TSession.BeginListSession<T>(AList: IList<T>): IListSession<T>;
+begin
+  Result := TListSession<T>.Create(Self, AList);
+end;
+
+{$ENDIF}
 
 function TSession.BeginTransaction: IDBTransaction;
 begin
   Result := Connection.BeginTransaction;
   FStartedTransaction := Result;
 end;
+
+
 
 procedure TSession.CommitTransaction;
 begin

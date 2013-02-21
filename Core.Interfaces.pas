@@ -246,6 +246,24 @@ type
     property AutoFreeConnection: Boolean read GetAutoFreeConnection write SetAutoFreeConnection;
   end;
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents list session which can be used to sync changes in the list
+  ///	  with the database table. E.g. we could fetch some entities into the
+  ///	  list from the database using <see cref="Core.Session|TSession" />.
+  ///	  After List Session is started, we can make changes in the list (add new
+  ///	  entities, remove current entities, change entity properties, etc.). If
+  ///	  we want that these changes should also change database table we must
+  ///	  call <see cref="CommitListSession" />. To clear changes history we must
+  ///	  call <see cref="RollbackListSession" />.
+  ///	</summary>
+  {$ENDREGION}
+  IListSession<T: class, constructor> = interface(IInvokable)
+    ['{D3F67BC4-1F62-4C1F-8E1F-4CD3A414F79D}']
+    procedure CommitListSession();
+    procedure RollbackListSession();
+  end;
+
   IEntitySerializer = interface
     ['{BF7320F9-2B57-4B8C-997D-2F157D626D0D}']
 

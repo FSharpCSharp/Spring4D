@@ -81,6 +81,8 @@ type
 
   EORMTransactionNotStarted = class(Exception);
 
+  EORMListInSession = class(Exception);
+
 implementation
 
 { EBaseORMException }

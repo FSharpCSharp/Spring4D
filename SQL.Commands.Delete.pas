@@ -31,7 +31,7 @@ interface
 
 uses
   SQL.AbstractCommandExecutor, SQL.Types, SQL.Commands, SQL.Params, Mapping.Attributes
-  ,Generics.Collections, Core.Interfaces;
+  ,Generics.Collections, Core.Interfaces, Rtti;
 
 type
   {$REGION 'Documentation'}
@@ -44,8 +44,11 @@ type
     FTable: TSQLTable;
     FCommand: TDeleteCommand;
     FPrimaryKeyColumnName: string;
+    FEntity: TObject;
   protected
     function GetCommand: TDMLCommand; override;
+
+    function GetPrimaryKeyValue(): TValue; virtual;
   public
     constructor Create(); override;
     destructor Destroy; override;
@@ -56,13 +59,23 @@ type
     procedure Execute(AEntity: TObject); override;
   end;
 
+  TDeleteByValueExecutor = class(TDeleteExecutor)
+  private
+    FPrimaryKeyValue: TValue;
+  protected
+    function GetPrimaryKeyValue(): TValue; override;
+  public
+    procedure Execute(AEntity: TObject); override;
+
+    property PrimaryKeyValue: TValue read FPrimaryKeyValue write FPrimaryKeyValue;
+  end;
+
 implementation
 
 uses
   Core.Exceptions
   ,Core.Utils
   ,Mapping.RttiExplorer
-  ,Rtti
   ;
 
 { TDeleteCommand }
@@ -92,11 +105,12 @@ var
   LVal: TValue;
 begin
   Assert(FPrimaryKeyColumnName <> '');
+  FEntity := AEntity;
   inherited BuildParams(AEntity);
 
   LParam := TDBParam.Create;
   LParam.Name := Command.GetExistingParameterName(FPrimaryKeyColumnName);
-  LVal := TRttiExplorer.GetPrimaryKeyValue(AEntity);
+  LVal :=  GetPrimaryKeyValue();
   LParam.Value := TUtils.AsVariant(LVal);
   SQLParameters.Add(LParam);
 end;
@@ -135,11 +149,42 @@ begin
   Result := FCommand;
 end;
 
+function TDeleteExecutor.GetPrimaryKeyValue: TValue;
+begin
+  Result := TRttiExplorer.GetPrimaryKeyValue(FEntity);
+end;
+
 destructor TDeleteExecutor.Destroy;
 begin
   FTable.Free;
   FCommand.Free;
   inherited Destroy;
+end;
+
+{ TDeleteByValueExecutor }
+
+procedure TDeleteByValueExecutor.Execute(AEntity: TObject);
+var
+  LStmt: IDBStatement;
+begin
+  LStmt := Connection.CreateStatement;
+  LStmt.SetSQLCommand(SQL);
+
+  BuildParams(AEntity);
+  try
+    LStmt.SetParams(SQLParameters);
+
+    Connection.NotifyExecutionListeners(SQL, SQLParameters);
+
+    LStmt.Execute();
+  finally
+    LStmt := nil;
+  end;
+end;
+
+function TDeleteByValueExecutor.GetPrimaryKeyValue: TValue;
+begin
+  Result := FPrimaryKeyValue;
 end;
 
 end.
