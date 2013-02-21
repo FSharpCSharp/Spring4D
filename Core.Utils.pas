@@ -492,11 +492,17 @@ begin
             TValue.MakeWithoutCopy(nil, LTypeInfo, AResult);
             if AFrom.IsEmpty then
             begin
-              LHasValueField.SetValue(AResult.GetReferenceToRawData, False);
+              if (LHasValueField.FieldType.TypeKind in [tkString, tkUString]) then
+                LHasValueField.SetValue(AResult.GetReferenceToRawData, '') //Spring Nullable
+              else
+                LHasValueField.SetValue(AResult.GetReferenceToRawData, False);//Marshmallow Nullable
             end
             else
             begin
-              LHasValueField.SetValue(AResult.GetReferenceToRawData, True);
+              if (LHasValueField.FieldType.TypeKind in [tkString, tkUString]) then
+                LHasValueField.SetValue(AResult.GetReferenceToRawData, '@')  //Spring Nullable
+              else
+                LHasValueField.SetValue(AResult.GetReferenceToRawData, True); //Marshmallow Nullable
               //get type from Nullable<T> and set value to this type
               if AFrom.TryConvert(LValueField.FieldType.Handle, LValue, bFree) then
                 LValueField.SetValue(AResult.GetReferenceToRawData, LValue);

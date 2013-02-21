@@ -15,9 +15,11 @@ type
   TestTObjectDataset = class(TTestCase)
   private
     FDataset: TMockObjectDataset;
+    FRemovedItemAge: Integer;
   protected
     function CreateCustomersList(ASize: Integer = 10): IList<TCustomer>; virtual;
     function CreateCustomersOrdersList(ASize: Integer = 10): IList<TCustomer_Orders>; virtual;
+    procedure DoListChanged(Sender: TObject; const Item: TCustomer; Action: TCollectionChangedAction); virtual;
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -36,7 +38,10 @@ type
     procedure Delete_Filtered();
     procedure Delete_Sorted();
     procedure Delete_Last();
+    procedure Delete_Notification();
     procedure Edit();
+    procedure Edit_Nullable();
+    procedure Edit_SpringNullable();
     procedure Eof_AfterLast();
     procedure Eof_AfterNext();
     procedure Filter();
@@ -73,7 +78,21 @@ uses
   ,Generics.Collections
   ,Generics.Defaults
   ,Diagnostics
+  ,Spring
+  ,Mapping.Attributes
   ;
+
+type
+  TSpringNullableTest = class
+  private
+    FName: Spring.Nullable<string>;
+    FAge: Spring.Nullable<Integer>;
+  public
+    [Column]
+    property Name: Spring.Nullable<string> read FName write FName;
+    [Column]
+    property Age: Spring.Nullable<Integer> read FAge write FAge;
+  end;
 
 
 { TestTObjectDataset }
@@ -361,6 +380,20 @@ begin
   CheckEquals(8, FDataset.FieldByName('Age').AsInteger);
 end;
 
+procedure TestTObjectDataset.Delete_Notification;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  LCustomers := CreateCustomersList(10);
+  LCustomers.OnChanged.Add(DoListChanged);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+  FRemovedItemAge := -1;
+  FDataset.Last;
+  FDataset.Delete;
+  CheckEquals(10, FRemovedItemAge);
+end;
+
 procedure TestTObjectDataset.Delete_Sorted;
 var
   LCustomers: IList<TCustomer>;
@@ -377,6 +410,18 @@ begin
   CheckEquals(0, FDataset.FieldByName('age').AsInteger);
   FDataset.Delete;
   CheckEquals(10, FDataset.RecordCount);
+end;
+
+procedure TestTObjectDataset.DoListChanged(Sender: TObject; const Item: TCustomer;
+  Action: TCollectionChangedAction);
+begin
+  case Action of
+    caAdded: ;
+    caRemoved: FRemovedItemAge := item.Age;
+    caReplaced: ;
+    caMoved: ;
+    caReseted: ;
+  end;
 end;
 
 procedure TestTObjectDataset.Edit;
@@ -400,6 +445,42 @@ begin
   CheckEquals(999, LCustomers[0].Age);
   CheckEquals('Middle', LCustomers[0].MiddleName);
   CheckEquals(LDate, LCustomers[0].LastEdited);
+end;
+
+procedure TestTObjectDataset.Edit_Nullable;
+var
+  LCustomers: IList<TCustomer>;
+begin
+  LCustomers := CreateCustomersList(10);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+
+  FDataset.RecNo := 4;
+  FDataset.Edit;
+  FDataset.FieldByName('MiddleName').AsString := 'Foo';
+  FDataset.Post;
+  CheckEquals('Foo', FDataset.FieldByName('MiddleName').AsString);
+end;
+
+procedure TestTObjectDataset.Edit_SpringNullable;
+var
+  LCustomers: IList<TSpringNullableTest>;
+begin
+  LCustomers := TCollections.CreateObjectList<TSpringNullableTest>(True);
+  LCustomers.Add(TSpringNullableTest.Create);
+  LCustomers.Add(TSpringNullableTest.Create);
+  LCustomers.Add(TSpringNullableTest.Create);
+
+  FDataset.SetDataList<TSpringNullableTest>(LCustomers);
+  FDataset.Open;
+
+  FDataset.RecNo := 2;
+  FDataset.Edit;
+  FDataset.FieldByName('Name').AsString := 'Foo';
+  FDataset.FieldByName('Age').AsInteger := 10;
+  FDataset.Post;
+  CheckEquals('Foo', FDataset.FieldByName('Name').AsString);
+  CheckEquals(10, FDataset.FieldByName('Age').AsInteger);
 end;
 
 procedure TestTObjectDataset.Eof_AfterLast;

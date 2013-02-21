@@ -176,7 +176,6 @@ uses
   ,Mapping.RttiExplorer
   ,Mapping.Attributes
   ,SysUtils
-  ,Spring.Reflection.ValueConverters
   ,StrUtils
   ,Variants
   ,Core.Reflection
@@ -189,11 +188,6 @@ type
   {$WARNINGS OFF}
   TWideCharSet = set of Char;
   {$WARNINGS ON}
-
-{ TObjectDataset }
-
-
-
 
 function SplitString(const AText: string; const ADelimiters: TWideCharSet;
   const ARemoveEmptyEntries: Boolean): TArray<string>;
@@ -252,6 +246,8 @@ begin
   if LLag > 0 then
     System.SetLength(Result, LResCount - LLag + 1);
 end;
+
+{ TObjectDataset }
 
 function TObjectDataset.CompareRecords(const Item1, Item2: TValue;
   AIndexFieldList: IList<TIndexFieldInfo>): Integer;
@@ -403,7 +399,9 @@ begin
     else
     begin
       LValueFromVariant := TUtils.FromVariant(LFieldValue);
-      if TValueConverter.Default.TryConvertTo(LValueFromVariant, LProp.PropertyType.Handle, LConvertedValue, TValue.Empty) then
+
+      if TUtils.TryConvert(LValueFromVariant, nil, LProp, LItem.AsObject, LConvertedValue) then
+     // if TValueConverter.Default.TryConvertTo(LValueFromVariant, LProp.PropertyType.Handle, LConvertedValue, TValue.Empty) then
         LProp.SetValue(TRttiExplorer.GetRawPointer(LItem), LConvertedValue);
     end;
   end;
