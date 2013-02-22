@@ -21,6 +21,7 @@ type
     FFilterIndex: Integer;
     FFilterParser: TExprParser;
     FItemTypeInfo: PTypeInfo;
+    FIndexFieldList: IList<TIndexFieldInfo>;
     FProperties: IList<TRttiProperty>;
     FSort: string;
     FSorted: Boolean;
@@ -71,6 +72,7 @@ type
 
     function GetChangedSortText(const ASortText: string): string;
     function CreateIndexList(const ASortText: string): IList<TIndexFieldInfo>;
+    function FieldInSortIndex(AField: TField): Boolean;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -406,15 +408,24 @@ var
   i: Integer;
   LProp: TRttiProperty;
   LField: TField;
+  LNeedsSort: Boolean;
 begin
   if State = dsInsert then
     LItem := TRttiExplorer.CreateType(FItemTypeInfo)
   else
     LItem := IndexList.GetModel(Index);
 
+  LNeedsSort := False;
+
   for i := 0 to ModifiedFields.Count - 1 do
   begin
     LField := ModifiedFields[i];
+
+    if not LNeedsSort and Sorted then
+    begin
+      LNeedsSort := FieldInSortIndex(LField);
+    end;
+
     LProp := FProperties[LField.FieldNo - 1];
     LFieldValue := LField.Value;
     if VarIsNull(LFieldValue) then
@@ -440,10 +451,27 @@ begin
   end;
 
   DoFilterRecord(Index);
-  if Sorted then
+  if Sorted and LNeedsSort then
     InternalSetSort(Sort);
 
   SetCurrent(Index);
+end;
+
+function TObjectDataset.FieldInSortIndex(AField: TField): Boolean;
+var
+  i: Integer;
+begin
+  if Sorted and Assigned(FIndexFieldList) then
+  begin
+    for i := 0 to FIndexFieldList.Count - 1 do
+    begin
+      if (AField = FIndexFieldList[i].Field) then
+      begin
+        Exit(True);
+      end;
+    end;
+  end;
+  Result := False;
 end;
 
 function TObjectDataset.GetChangedSortText(const ASortText: string): string;
@@ -568,7 +596,6 @@ var
   LOldValue: Boolean;
   LOwnsObjectsProp: TRttiProperty;
   LChanged: Boolean;
-  LIndexFieldList: IList<TIndexFieldInfo>;
 begin
   if IsEmpty then
     Exit;
@@ -576,7 +603,7 @@ begin
   DoOnBeforeSort();
 
   LChanged := AValue <> FSort;
-  LIndexFieldList := CreateIndexList(AValue);
+  FIndexFieldList := CreateIndexList(AValue);
 
   Pos := Current;
   LDataList := FDataList;
@@ -589,11 +616,11 @@ begin
       LOwnsObjectsProp.SetValue(LDataList.AsObject, False);
     end;
     if LChanged then
-      TMergeSort.Sort(IndexList, CompareRecords, LIndexFieldList)
+      TMergeSort.Sort(IndexList, CompareRecords, FIndexFieldList)
     else
-      TInsertionSort.Sort(IndexList, CompareRecords, LIndexFieldList);
+      TInsertionSort.Sort(IndexList, CompareRecords, FIndexFieldList);
 
-    FSorted := LIndexFieldList.Count > 0;
+    FSorted := FIndexFieldList.Count > 0;
     FSort := AValue;
 
   finally
