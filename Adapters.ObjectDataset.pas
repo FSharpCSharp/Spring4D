@@ -947,7 +947,7 @@ begin
     FilterCache.Clear;
     if RecordConformsFilter then
     begin
-      IndexList.Add(i);
+      IndexList.Add(i, FDataList[i]);
     end;
   end;
   FilterCache.Clear;
@@ -958,7 +958,7 @@ begin
   if (IsFilterEntered) and (AIndex > -1) and (AIndex < RecordCount) then
   begin
     FilterCache.Clear;
-    FFilterIndex := IndexList[AIndex];
+    FFilterIndex := IndexList[AIndex].DataListIndex;
     if not RecordConformsFilter then
     begin
       IndexList.Delete(AIndex);
