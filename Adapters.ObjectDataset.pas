@@ -25,6 +25,7 @@ type
     FProperties: IList<TRttiProperty>;
     FSort: string;
     FSorted: Boolean;
+    FCtx: TRttiContext;
 
     FOnAfterFilter: TNotifyEvent;
     FOnAfterSort: TNotifyEvent;
@@ -312,6 +313,7 @@ begin
   FFilterParser.OnGetVariable := ParserGetVariableValue;
   FFilterParser.OnExecuteFunction := ParserGetFunctionValue;
   FDefaultStringFieldLength := 250;
+  FCtx := TRttiContext.Create;
 end;
 
 function TObjectDataset.CreateIndexList(const ASortText: string): IList<TIndexFieldInfo>;
@@ -536,7 +538,7 @@ var
 begin
   FProperties.Clear;
 
-  LType := TRttiContext.Create.GetType(AItemTypeInfo);
+  LType := FCtx.GetType(AItemTypeInfo);
   for LProp in LType.GetProperties do
   begin
     if not (LProp.Visibility in [mvPublic, mvPublished]) then
@@ -608,7 +610,7 @@ begin
   Pos := Current;
   LDataList := FDataList;
   LOldValue := True;
-  LOwnsObjectsProp := TRttiContext.Create.GetType(LDataList.AsObject.ClassType).GetProperty('OwnsObjects');
+  LOwnsObjectsProp := FCtx.GetType(LDataList.AsObject.ClassType).GetProperty('OwnsObjects');
   try
     if Assigned(LOwnsObjectsProp) then
     begin
@@ -903,7 +905,7 @@ var
   i: Integer;
 begin
   FProperties.Clear;
-  LType := TRttiContext.Create.GetType(FItemTypeInfo);
+  LType := FCtx.GetType(FItemTypeInfo);
   for i := 0 to Fields.Count - 1 do
   begin
     FProperties.Add( LType.GetProperty(Fields[i].FieldName) );
