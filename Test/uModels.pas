@@ -107,7 +107,7 @@ type
     property EMail: string read FEmail write FEmail;
     [Column('MIDDLENAME', [], 50, 0, 0, 'Middle name')]
     property MiddleName: Nullable<string> read FMiddleName write FMiddleName;
-    [Column('CUSTTYPE', [], 0, 0, 0, 'Customers type')]
+    [Column('CUSTTYPE', [cpHidden], 0, 0, 0, 'Customers type')]
     property CustomerType: TCustomerType read FCustomerType write FCustomerType;
     property Products: TSvObjectList<TProduct> read GetProducts write SetProducts;
     [SvTransient]

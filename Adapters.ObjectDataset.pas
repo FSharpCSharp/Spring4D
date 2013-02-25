@@ -855,8 +855,7 @@ begin
     if LDontUpdate then
       LFieldDef.Attributes := LFieldDef.Attributes + [DB.faReadOnly];
 
-    if LHidden then
-      LFieldDef.Attributes := LFieldDef.Attributes + [DB.faHiddenCol];
+    LFieldDef.Visible := not LHidden;
 
     if not LProp.IsWritable then
       LFieldDef.Attributes := LFieldDef.Attributes + [DB.faReadOnly];

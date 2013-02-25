@@ -27,10 +27,12 @@ type
   TObjectDatasetFieldDef = class(TFieldDef)
   private
     FDisplayName: string;
+    FVisible: Boolean;
   protected
     function GetDisplayName: string; override;
   public
     procedure SetRealDisplayName(const Value: string);
+    property Visible: Boolean read FVisible write FVisible;
   end;
 
   TObjectDatasetFieldDefs = class(TFieldDefs)
@@ -85,6 +87,7 @@ type
     function GetRecNo: Longint; override;
     function GetRecordCount: Integer; override;
     function GetFieldDefsClass: TFieldDefsClass; override;
+    function GetFieldClass(FieldDef: TFieldDef): TFieldClass; override;
     procedure SetFiltered(Value: Boolean); override;
 
     procedure DoOnNewRecord; override;
@@ -543,6 +546,11 @@ end;
 function TAbstractObjectDataset.GetFieldData(Field: TField; Buffer: TValueBuffer;
   NativeFormat: Boolean): Boolean;
 {$ELSE}
+function TAbstractObjectDataset.GetFieldClass(FieldDef: TFieldDef): TFieldClass;
+begin
+  Result := inherited GetFieldClass(FieldDef);
+end;
+
 function TAbstractObjectDataset.GetFieldData(Field: TField; Buffer: Pointer;
   NativeFormat: Boolean): Boolean;
 {$IFEND}
@@ -899,6 +907,7 @@ begin
   for i := 0 to Fields.Count - 1 do
   begin
     Fields[i].DisplayLabel := FieldDefs[i].DisplayName;
+    Fields[i].Visible := (FieldDefs[i] as TObjectDatasetFieldDef).Visible;
     FFieldsCache.Add(Fields[i].FieldName, Fields[i]);
   end;
 end;
@@ -1382,6 +1391,7 @@ begin
 end;
 
 { TObjectDatasetFieldDef }
+
 
 function TObjectDatasetFieldDef.GetDisplayName: string;
 begin
