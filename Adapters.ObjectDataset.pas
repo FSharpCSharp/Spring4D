@@ -61,7 +61,7 @@ type
       ; var ResVal: Variant): Boolean; virtual;
     procedure DoFilterRecord(AIndex: Integer); virtual;
     procedure InitRttiPropertiesFromItemType(AItemTypeInfo: PTypeInfo); virtual;
-    procedure InternalSetSort(const AValue: string); virtual;
+    procedure InternalSetSort(const AValue: string; AIndex: Integer = 0); virtual;
     procedure LoadFieldDefsFromFields(Fields: TFields; FieldDefs: TFieldDefs); virtual;
     procedure LoadFieldDefsFromItemType; virtual;
     procedure RefreshFilter(); virtual;
@@ -458,7 +458,7 @@ begin
 
   DoFilterRecord(Index);
   if Sorted and LNeedsSort then
-    InternalSetSort(Sort);
+    InternalSetSort(Sort, Index);
 
   SetCurrent(Index);
 end;
@@ -595,7 +595,7 @@ begin
   SetRecBufSize();
 end;
 
-procedure TObjectDataset.InternalSetSort(const AValue: string);
+procedure TObjectDataset.InternalSetSort(const AValue: string; AIndex: Integer);
 var
   Pos: Integer;
   LDataList: IList;
@@ -624,7 +624,7 @@ begin
     if LChanged then
       TMergeSort.Sort(IndexList, CompareRecords, FIndexFieldList)
     else
-      TInsertionSort.Sort(IndexList, CompareRecords, FIndexFieldList);
+      TInsertionSort.Sort(AIndex, IndexList, CompareRecords, FIndexFieldList);
 
     FSorted := FIndexFieldList.Count > 0;
     FSort := AValue;

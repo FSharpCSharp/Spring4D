@@ -65,6 +65,7 @@ type
     procedure SimpleSort();
     procedure Sort();
     procedure Sort_Regression();
+    procedure InsertionSort_Speed();
     procedure TestGUI;
   end;
 
@@ -553,6 +554,30 @@ begin
   CheckEquals(111, FDataset.FieldByName('Age').AsInteger);
   CheckEquals('Marley', FDataset.FieldByName('MiddleName').AsString);
   CheckEquals('Bar', FDataset.FieldByName('Name').AsString);
+end;
+
+procedure TestTObjectDataset.InsertionSort_Speed;
+var
+  LCustomers: IList<TCustomer>;
+  swMerge, swInsertion: TStopwatch;
+begin
+  LCustomers := CreateCustomersList(10000);
+  FDataset.SetDataList<TCustomer>(LCustomers);
+  FDataset.Open;
+  //now merge sort will be used
+  swMerge := TStopwatch.StartNew;
+  FDataset.Sort := 'Age Desc';
+  swMerge.Stop;
+  FDataset.RecNo := 99995;
+  swInsertion := TStopwatch.StartNew;
+  FDataset.Edit;
+  FDataset.FieldByName('Age').AsInteger := 99996;
+  swInsertion := TStopwatch.StartNew;
+  FDataset.Post;
+  swInsertion.Stop;
+  Status(Format('Merge Sort in %D ms. Insertion sort in %D ms.',
+    [swMerge.ElapsedMilliseconds, swInsertion.ElapsedMilliseconds]));
+  CheckTrue(swMerge.ElapsedMilliseconds > swInsertion.ElapsedMilliseconds);
 end;
 
 procedure TestTObjectDataset.Insert_Simple;

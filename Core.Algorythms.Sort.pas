@@ -88,7 +88,7 @@ type
   private
     class procedure InsertionSort(ALow, AHigh: Integer; Compare: TCompareRecords; AIndexFieldList: IList<TIndexFieldInfo>);
   public
-    class procedure Sort(ADataList: TODIndexList; AComparator: TCompareRecords; AIndexFields: IList<TIndexFieldInfo>);
+    class procedure Sort(AStartIndex: Integer; ADataList: TODIndexList; AComparator: TCompareRecords; AIndexFields: IList<TIndexFieldInfo>);
   end;
 
   TBinaryInsertionSort = class sealed
@@ -969,7 +969,7 @@ var
   i, j : Integer;
   LTemp: TValue;
 Begin
-  for i:= 1 to AHigh Do
+  for i:= ALow + 1 to AHigh Do
   begin
     LTemp := FDataList.GetModel(i);
     j := i;
@@ -982,11 +982,14 @@ Begin
   End;
 end;
 
-class procedure TInsertionSort.Sort(ADataList: TODIndexList; AComparator: TCompareRecords;
+class procedure TInsertionSort.Sort(AStartIndex: Integer; ADataList: TODIndexList; AComparator: TCompareRecords;
   AIndexFields: IList<TIndexFieldInfo>);
 begin
   FDataList := ADataList;
-  InsertionSort(0, FDataList.Count - 1, AComparator, AIndexFields);
+  AStartIndex := AStartIndex - 1;
+  if AStartIndex < 0 then
+    AStartIndex := 0;
+  InsertionSort(AStartIndex, FDataList.Count - 1, AComparator, AIndexFields);
 end;
 
 { TBinaryInsertionSort }
