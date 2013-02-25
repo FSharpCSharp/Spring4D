@@ -78,6 +78,11 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Makes the current dataset clone of <c>ASource</c>.
+    ///	</summary>
+    {$ENDREGION}
     procedure Clone(ASource: TObjectDataset);
 
     {$REGION 'Documentation'}
@@ -266,7 +271,6 @@ begin
   FItemTypeInfo := ASource.FItemTypeInfo;
   FDataList := ASource.DataList;
   IndexList.DataList := ASource.IndexList.DataList;
-  IndexList.Rebuild;
 
   FilterOptions := ASource.FilterOptions;
   Filter := ASource.Filter;
@@ -972,7 +976,6 @@ begin
   FItemTypeInfo := TypeInfo(T);
   FDataList := ADataList.AsList;
   IndexList.DataList := FDataList;
-  IndexList.Rebuild;
 end;
 
 
