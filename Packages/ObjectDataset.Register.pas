@@ -2,8 +2,6 @@ unit ObjectDataset.Register;
 
 interface
 
-{$R ObjectDataset.res}
-
 uses
   Adapters.ObjectDataset
   ,Classes
@@ -12,6 +10,8 @@ uses
   procedure Register;
 
 implementation
+
+{$R 'ObjectDataset.dcr'}
 
 procedure Register;
 begin
