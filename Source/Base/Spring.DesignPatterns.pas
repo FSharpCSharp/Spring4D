@@ -518,7 +518,7 @@ begin
   internalSpecification := specification;
   if internalSpecification is TSpecificationBase<T> then
   begin
-    Result := TSpecificationBase<T>(internalSpecification);
+    Result := internalSpecification as TSpecificationBase<T>;
   end
   else if internalSpecification <> nil then
   begin
