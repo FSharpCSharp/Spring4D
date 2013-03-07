@@ -72,6 +72,9 @@ type
     procedure TestIssue41_DifferentName;
     procedure TestIssue41_DifferentService;
     procedure TestIssue41_DifferentLifetimes;
+
+    procedure TestIssue49;
+    procedure TestIssue50;
   end;
 
   // Same Service, Different Implementations
@@ -538,6 +541,47 @@ begin
 
   service := fContainer.Resolve<INameService>;
   CheckEquals('first', service.Name, 'resolving of service "first" failed');
+end;
+
+procedure TTestSimpleContainer.TestIssue49;
+var
+  count: Integer;
+begin
+  fContainer.RegisterType<TNameServiceWithAggregation>.Implements<INameService>;
+  fContainer.RegisterType<TNameAgeComponent>.Implements<IAgeService>.DelegateTo(
+    function: TNameAgeComponent
+    begin
+      Result := TNameAgeComponent.Create;
+      Inc(count);
+    end);
+  fContainer.Build;
+  fContainer.Build;
+
+  count := 0;
+  fContainer.Resolve<INameService>;
+  CheckEquals(1, count);
+end;
+
+procedure TTestSimpleContainer.TestIssue50;
+var
+  count: Integer;
+begin
+  fContainer.RegisterType<TNameServiceWithAggregation>.Implements<INameService>.DelegateTo(
+    function: TNameServiceWithAggregation
+    begin
+      Result := TNameServiceWithAggregation.Create;
+    end);
+  fContainer.RegisterType<TNameAgeComponent>.Implements<IAgeService>.DelegateTo(
+    function: TNameAgeComponent
+    begin
+      Result := TNameAgeComponent.Create;
+      Inc(count);
+    end);
+  fContainer.Build;
+
+  count := 0;
+  fContainer.Resolve<INameService>;
+  CheckEquals(1, count);
 end;
 
 {$ENDREGION}

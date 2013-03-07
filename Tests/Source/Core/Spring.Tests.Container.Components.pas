@@ -100,6 +100,8 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'IAgeService and TNameAgeComponent'}
+
   IAgeService = interface
     ['{E859410D-9980-47A9-8EA7-120C35F6BDCC}']
     function GetAge: Integer;
@@ -115,6 +117,15 @@ type
     property Age: Integer read GetAge;
     const NameString: string = 'Complex';
     const DefaultAge: Integer = 100;
+  end;
+
+  {$ENDREGION}
+
+
+  TNameServiceWithAggregation = class(TNameService)
+  protected
+    [Inject]
+    fAgeService: IAgeService;
   end;
 
   IAnotherService = interface
