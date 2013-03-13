@@ -7,7 +7,10 @@ uses
   Dialogs, ActnList, Menus, ComCtrls
   ,Core.Session, Core.Interfaces
   ,Spring.Collections
-  ,ProductModel, System.Actions
+  ,ProductModel
+  {$IF CompilerVersion > 23}
+  , System.Actions
+  {$IFEND}
   ;
 
 type
@@ -165,7 +168,7 @@ var
   LTran: IDBTransaction;
 begin
   LTran := FSession.Connection.BeginTransaction;
-  FSession.Save<TProduct>(FProducts);
+  FSession.SaveList<TProduct>(FProducts);
   LTran.Commit;
 end;
 

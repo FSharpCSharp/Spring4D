@@ -1,0 +1,55 @@
+Beta Testing License Agreement for Marshmallow ORM
+
+Linas Naginionis LICENSES THIS SOFTWARE PRODUCT TO YOU SUBJECT TO THE TERMS CONTAINED IN THIS END USER LICENSE AGREEMENT (THIS "AGREEMENT" or "EULA"). READ THE TERMS AND CONDITIONS OF THIS AGREEMENT CAREFULLY BEFORE INSTALLING, COPYING AND USING THIS COMPUTER SOFTWARE AND THE ACCOMPANYING DOCUMENTATION (THE "SOFTWARE"). THE SOFTWARE IS COPYRIGHTED AND IT IS LICENSED TO YOU UNDER THIS EULA, NOT SOLD TO YOU. BY INSTALLING, COPYING OR OTHERWISE USING THE SOFTWARE, YOU AGREE TO BE BOUND BY THE TERMS OF THIS EULA. IF YOU ARE NOT WILLING TO BE BOUND BY THE TERMS OF THIS EULA, DO NOT INSTALL, COPY OR USE THE SOFTWARE.
+THIS EULA IS A LEGAL AGREEMENT CONCERNING THE SOFTWARE BETWEEN YOU, AS EITHER AN INDIVIDUAL OR A SINGLE BUSINESS ENTITY AND Linas Naginionis. THIS AGREEMENT SUPERSEDES AND REPLACES ANY PRIOR PROPOSAL, REPRESENTATION, OR UNDERSTANDING YOU MAY HAVE HAD WITH Linas Naginionis RELATING TO THE SOFTWARE.
+
+BETA DISCLAIMER
+
+THE BETA SOFTWARE LICENSED HEREUNDER IS BELIEVED TO CONTAIN DEFECTS AND A PRIMARY PURPOSE OF THIS BETA TESTING LICENSE IS TO OBTAIN FEEDBACK ON SOFTWARE PERFORMANCE AND THE IDENTIFICATION OF DEFECTS. LICENSEE IS ADVISED TO SAFEGUARD IMPORTANT DATA, TO USE CAUTION AND NOT TO RELY IN ANY WAY ON THE CORRECT FUNCTIONING OR PERFORMANCE OF THE SOFTWARE AND/OR ACCOMPANYING MATERIALS.
+
+Confidentiality
+
+You agree that, unless otherwise specifically provided herein or agreed by the Linas Naginionis in writing, the Software and the Documentation, including the specific design and structure of individual programs and the Software, provided to you by Linas Naginionis constitute confidential proprietary information of Linas Naginionis. You shall permit only authorized users, who possess rightfully, obtained license keys, to use the Software or to view the Documentation. You agree not to transfer, copy, disclose, provide or otherwise make available such confidential information in any form to any third party without the prior written consent of Linas Naginionis. You agree to implement reasonable security measures to protect such confidential information, but without limitation to the foregoing, shall use best efforts to maintain the security of the Software provided to you by Linas Naginionis. You will use your best efforts to cooperate with and assist Linas Naginionis in identifying and preventing any unauthorized use, copying, or disclosure of the Software, Documentation, or any portion thereof.
+
+Feedback
+
+It is expressly understood, acknowledged and agreed that you shall, regardless of whether or not formally requested to do, provide to Linas Naginionis reasonable suggestions, comments and feedback regarding the Software, including but not limited to usability, bug reports and test results, with respect to Software testing (collectively, "Feedback"). If you provide such Feedback to Linas Naginionis, you shall grant Linas Naginionis the following worldwide, non-exclusive, perpetual, irrevocable, royalty free, fully paid up rights: (i) to make, use, copy, modify, sell, distribute, sub-license, and create derivative works of, the Feedback as part of any Linas Naginionis product, technology, service, specification or other documentation (individually and collectively, "Linas Naginionis Products"); (ii) to publicly perform or display, import, broadcast, transmit, distribute, license, offer to sell, and sell, rent, lease or lend copies of the Feedback (and derivative works thereof) as part of any Linas Naginionis Product; (iii) solely with respect to Licensee's copyright and trade secret rights, to sublicense to third parties the foregoing rights, including the right to sublicense to further third parties; and (iv) to sublicense to third parties any claims of any patents owned or licensable by Licensee that are necessarily infringed by a third party product, technology or service that uses, interfaces, interoperates or communicates with the feedback or portion thereof incorporated into a Linas Naginionis Product, technology or service. Further, you warrant that your Feedback is not subject to any license terms that would purport to require Linas Naginionis to comply with any additional obligations with respect to any Linas Naginionis Products that incorporate any Feedback.
+
+Grant of License
+
+Subject to the terms and conditions of this Agreement, Linas Naginionis hereby grants to you a non-exclusive, non-transferable license (without the right to sublicense) (i) to use the Software in accordance with the Documentation solely for purposes of internal testing and evaluation, and (ii) to copy Software for archival or backup purposes, provided that all titles and trademarks, copyright, and restricted rights notices are reproduced on such copies.
+
+Restrictions on Grant
+
+Except as otherwise specifically permitted in this Agreement, you may not: (a) modify or create any derivative works of any Software or documentation, including translation or localization; (code written to published APIs (application programming interfaces) for the Software shall not be deemed derivative works); (b) copy the Software except as provided in this Agreement or elsewhere by Linas Naginionis; (c) separate Software, which is licensed as a single product, into its component parts. (d) sublicense or permit simultaneous use of the Software by more than one user; (e) reverse engineer, decompile, or disassemble or otherwise attempt to derive the source code for any Product the Software (except to the extent applicable laws specifically prohibit such restriction); (f) redistribute, encumber, sell, rent, lease, sublicense, use the Software in a timesharing or service bureau arrangement, or otherwise transfer rights to any Software. You may NOT transfer the Software under any circumstances; (g) remove or alter any trademark, logo, copyright or other proprietary notices, legends, symbols or labels in the Product(s); (h) publish any results of benchmark tests run on any Software to a third party without Linas Naginionis prior written consent; or (i) use any Software on a system with more CPUs than the number licensed, by more users than have been licensed, on more computers or computing devices than the number licensed, or by more developers than the number licensed, as applicable.
+
+Beta-Software Product Support
+
+Linas Naginionis is under no obligation to provide technical support under the terms of this license, and provides no assurance that any specific errors or discrepancies in the Software will be corrected.
+
+Ownership and Copyright of Software
+
+Title to the Software and all copies thereof remain with Linas Naginionis and/or or its suppliers. The Software is copyrighted and is protected by EU copyright laws and international treaty provisions. Licensee will not remove copyright notices from the Software. Licensee agrees to prevent any unauthorized copying of the Software. Except as expressly provided herein, Linas Naginionis does not grant any express or implied right to you under Linas Naginionis patents, copyrights, trademarks, or trade secret information.
+
+Term Of This Agreement
+
+Your rights with respect to the Beta Software will terminate upon the earlier of (a) the initial commercial release by Linas Naginionis of a generally available version of the Software or (b) six months after the last date you receive the Software or any update thereto. Either party may terminate this Agreement at any time for any reason or no reason by providing the other party advance written notice thereof. Upon any expiration or termination of this Agreement, the rights and licenses granted to you under this Agreement shall immediately terminate, and you shall immediately cease using, and will return to Linas Naginionis (or, at Linas Naginionis' request, destroy), the Software, Documentation, and all other tangible items in your possession or control that are proprietary to or contain Confidential Information.
+
+Disclaimer
+
+THE SOFTWARE AND DOCUMENTATION ARE LICENSED "AS IS", AND Linas Naginionis DISCLAIMS ANY AND ALL OTHER WARRANTIES, WHETHER EXPRESS OR IMPLIED, INCLUDING, WITHOUT LIMITATION, ANY IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, TO THE EXTENT AUTHORIZED BY LAW. WITHOUT LIMITATION OF THE FOREGOING, Linas Naginionis EXPRESSLY DOES NOT WARRANTS THAT THE SOFTWARE WILL MEET YOUR REQUIREMENTS OR THAT OPERATION OF THE SOFTWARE WILL BE UNINTERRUPTED OR ERROR FREE. YOU ASSUME RESPONSIBILITY FOR SELECTING THE SOFTWARE TO ACHIEVE YOUR INTENDED RESULTS, AND FOR THE RESULTS OBTAINED FROM YOUR USE OF THE SOFTWARE. YOU SHALL BEAR THE ENTIRE RISK AS TO THE QUALITY AND THE PERFORMANCE OF THE SOFTWARE.
+
+Limitation of Liability
+
+Provision of any Software under this Agreement is experimental and shall not create any obligation for Linas Naginionis to continue to develop, productize, support, repair, offer for sale or in any other way continue to provide or develop Software either to Licensee or to any other party.
+Linas Naginionis CUMULATIVE LIABILITY TO YOU OR ANY PARTY RELATED TO YOU FOR ANY LOSS OR DAMAGES ARISING OUT OF OR RELATING TO THIS AGREEMENT, OR INSTALLATION OR USE OF THE SOFTWARE AND DOCUMENTATION SHALL NOT EXCEED THE AMOUNT OF LICENSE FEES PAID TO Linas Naginionis BY YOU UNDER THIS AGREEMENT. THIS LIMITATION APPLIES TO ALL CAUSES OF ACTION OR CLAIMS IN THE AGGREGATE, INCLUDING, WITHOUT LIMITATION, BREACH OF CONTRACT, BREACH OF WARRANTY, INDEMNITY, NEGLIGENCE, STRICT LIABILITY, MISREPRESENTATION, AND OTHER TORTS. IN NO EVENT SHALL Linas Naginionis BE LIABLE TO YOU OR ANY PARTY RELATED TO YOU FOR ANY INDIRECT, INCIDENTAL, CONSEQUENTIAL, SPECIAL, EXEMPLARY, OR PUNITIVE DAMAGES OR LOST PROFITS, EVEN IF Linas Naginionis HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+Entire Agreement
+
+This Agreement constitutes the complete and exclusive agreement between you and Linas Naginionis with respect to the subject matter hereof, and supersedes all prior or contemporaneous oral or written communications, proposals, representations, understandings, or agreements not specifically incorporated herein. This Agreement may not be amended except in a writing duly signed by you and an authorized representative of Linas Naginionis.
+
+Contact Info
+
+Product site: https://bitbucket.org/soundvibe/orm/wiki/Home
+
+Copyright (C) 2013 Linas Naginionis. All rights reserved.
