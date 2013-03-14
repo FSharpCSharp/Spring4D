@@ -119,6 +119,14 @@ type
     property CustStream: TMemoryStream read GetCustStream write SetCustStream;
   end;
 
+  TForeignCustomer = class(TCustomer)
+  private
+    FCountry: Nullable<string>;
+  public
+    [Column]
+    property Country: Nullable<string> read FCountry write FCountry;
+  end;
+
   [Entity]
   [Table]
   TCustomer_Orders = class

@@ -32,6 +32,7 @@ type
   published
     procedure First();
     procedure Fetch();
+    procedure Inheritance_Simple_Customer();
     procedure Insert();
     procedure InsertFromCollection();
     procedure Update();
@@ -121,7 +122,7 @@ begin
 
   LConn.ExecSQL('CREATE TABLE IF NOT EXISTS '+ TBL_PEOPLE + ' ([CUSTID] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, [CUSTAGE] INTEGER NULL,'+
     '[CUSTNAME] VARCHAR (255), [CUSTHEIGHT] FLOAT, [LastEdited] DATETIME, [EMAIL] TEXT, [MIDDLENAME] TEXT, [AVATAR] BLOB, [AVATARLAZY] BLOB NULL'+
-    ',[CUSTTYPE] INTEGER, [CUSTSTREAM] BLOB );');
+    ',[CUSTTYPE] INTEGER, [CUSTSTREAM] BLOB, [COUNTRY] TEXT );');
 
   LConn.ExecSQL('CREATE TABLE IF NOT EXISTS '+ TBL_ORDERS + ' ('+
     '"ORDER_ID" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,'+
@@ -624,6 +625,49 @@ begin
       LList.Free;
     end;
   finally
+    LCustomer.Free;
+  end;
+end;
+
+procedure TestTSession.Inheritance_Simple_Customer;
+var
+  LCustomer: TCustomer;
+  LForeignCustomer: TForeignCustomer;
+begin
+  LForeignCustomer := TForeignCustomer.Create;
+  LCustomer := nil;
+  try
+    LForeignCustomer.Country := 'US';
+    LForeignCustomer.Name := 'John';
+    LForeignCustomer.Age := 28;
+    LForeignCustomer.EMail := 'john@gmail.com';
+
+    FManager.Save(LForeignCustomer);
+
+    LCustomer := FManager.FindOne<TCustomer>(LForeignCustomer.ID);
+
+    CheckEquals('John', LCustomer.Name);
+    CheckEquals(28, LCustomer.Age);
+    LForeignCustomer.Free;
+
+    LForeignCustomer := FManager.FindOne<TForeignCustomer>(LCustomer.ID);
+    CheckEquals('US', LForeignCustomer.Country);
+    CheckEquals('John', LForeignCustomer.Name);
+    CheckEquals(28, LForeignCustomer.Age);
+
+    LCustomer.Free;
+    LForeignCustomer.Free;
+    ClearTable(TBL_PEOPLE);
+
+    LCustomer := TCustomer.Create;
+    LCustomer.Name := 'Foo';
+    FManager.Save(LCustomer);
+    LForeignCustomer := FManager.FindOne<TForeignCustomer>(LCustomer.ID);
+
+    CheckEquals('Foo', LForeignCustomer.Name);
+    CheckTrue(LForeignCustomer.Country.IsNull);
+  finally
+    LForeignCustomer.Free;
     LCustomer.Free;
   end;
 end;
