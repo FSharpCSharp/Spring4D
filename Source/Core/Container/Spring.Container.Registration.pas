@@ -299,11 +299,11 @@ function TComponentRegistry.FindOne(componentType: PTypeInfo): TComponentModel;
 begin
   TArgument.CheckNotNull(componentType, 'componentType');
 
-  Result := fModels.Where(
+  Result := fModels.FirstOrDefault(
     function(const model: TComponentModel): Boolean
     begin
       Result := model.ComponentTypeInfo = componentType;
-    end).FirstOrDefault;
+    end);
 end;
 
 function TComponentRegistry.FindAll: IEnumerable<TComponentModel>;
