@@ -978,11 +978,6 @@ function TTypeToNullableConverter.DoConvertTo(const value: TValue;
 var
   underlyingTypeInfo: PTypeInfo;
   underlyingValue: TValue;
-  valueBuffer: TBytes;
-  hasValueFlag: string;
-  p: Pointer;
-  us: UnicodeString;
-  ws: WideString;
 begin
   if TryGetUnderlyingTypeInfo(targetTypeInfo, underlyingTypeInfo) then
   begin
@@ -991,33 +986,8 @@ begin
       Result := TValueConverter.Default.TryConvertTo(value, underlyingTypeInfo,
         underlyingValue, parameter);
 
-    p := underlyingValue.GetReferenceToRawData;
-    SetLength(valueBuffer, GetTypeData(targetTypeInfo).RecSize);
-    FillChar(PByte(valueBuffer)^, Length(valueBuffer), 0);
-    if not IsManaged(underlyingTypeInfo) then
-    begin
-      Move(PByte(p)^, PByte(valueBuffer)^, Length(valueBuffer) - SizeOf(string));
-    end
-    else
-      case underlyingTypeInfo.Kind of
-        tkUString, tkLString:
-        begin
-          us := PString(p)^;
-          PPointer(@valueBuffer[0])^ := Pointer(us);
-        end;
-        tkWString:
-        begin
-          ws := PWideString(p)^;
-          PPointer(@valueBuffer[0])^ := Pointer(ws);
-        end;
-      end;
-    if value.GetReferenceToRawData <> nil then
-    begin
-      hasValueFlag := '@';
-      PPointer(PByte(valueBuffer) + Length(valueBuffer) - SizeOf(string))^ := Pointer(hasValueFlag);
-    end;
-    p := PByte(valueBuffer);
-    TValue.Make(p, targetTypeInfo, Result);
+    TValue.Make(nil, targetTypeInfo, Result);
+    TrySetUnderlyingValue(Result, underlyingValue);
   end;
 end;
 

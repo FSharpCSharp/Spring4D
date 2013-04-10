@@ -190,6 +190,20 @@ function TryGetUnderlyingTypeInfo(typeInfo: PTypeInfo; out underlyingTypeInfo: P
 function TryGetUnderlyingValue(const value: TValue; out underlyingValue: TValue): Boolean;
 
 ///	<summary>
+///	  Try setting the underlying value of a nullable type.
+///	</summary>
+///	<param name="value">
+///	  the value
+///	</param>
+///	<param name="underlyingValue">
+///	  the underlying value.
+///	</param>
+///	<returns>
+///	  Returns True if the value is a <c>Nullable&lt;T&gt;</c> and it has value.
+///	</returns>
+function TrySetUnderlyingValue(const value: TValue; const underlyingValue: TValue): Boolean;
+
+///	<summary>
 ///	  Uses this function to get an interface instance from a TValue.
 ///	</summary>
 ///	<remarks>
@@ -489,6 +503,14 @@ begin
   Result := SplitString(buffer);
 end;
 
+function IsNullableType(typeInfo: PTypeInfo): Boolean;
+const
+  PrefixString = 'Nullable<';    // DO NOT LOCALIZE
+begin
+  Result := Assigned(typeInfo) and (typeInfo.Kind = tkRecord)
+    and StartsText(PrefixString, GetTypeName(typeInfo));
+end;
+
 function TryGetUnderlyingTypeName(typeInfo: PTypeInfo; out underlyingTypeName: string): Boolean;
 const
   PrefixString = 'Nullable<';    // DO NOT LOCALIZE
@@ -496,58 +518,90 @@ const
 var
   typeName: string;
 begin
-  if (typeInfo = nil) or (typeInfo.Kind <> tkRecord) then
+  Result := IsNullableType(typeInfo);
+  if Result then
   begin
-    Exit(False);
+    typeName := GetTypeName(typeInfo);
+    underlyingTypeName := Copy(typeName, PrefixStringLength + 1,
+      Length(typeName) - PrefixStringLength - 1);
   end;
-  typeName := TypInfo.GetTypeName(typeInfo);
-  if (Length(typeName) < PrefixStringLength) or
-    not SameText(LeftStr(typeName, PrefixStringLength), PrefixString) then
-  begin
-    Exit(False);
-  end;
-  Result := True;
-  underlyingTypeName := Copy(typeName, PrefixStringLength + 1,
-    Length(typeName) - PrefixStringLength - 1);
 end;
 
 function TryGetUnderlyingTypeInfo(typeInfo: PTypeInfo; out underlyingTypeInfo: PTypeInfo): Boolean;
 var
-  underlyingTypeName: string;
-  rttiType: TRttiType;
   context: TRttiContext;
+  rttiType: TRttiType;
+  valueField: TRttiField;
 begin
-  Result := TryGetUnderlyingTypeName(typeInfo, underlyingTypeName);
+  Result := IsNullableType(typeInfo);
   if Result then
   begin
-    context := TRttiContext.Create;
-    rttiType := context.FindType(underlyingTypeName);
-    if rttiType <> nil then
-      underlyingTypeInfo := rttiType.Handle
+    rttiType := context.GetType(typeInfo);
+    valueField := rttiType.GetField('fValue');
+    Result := Assigned(valueField);
+    if Result then
+      underlyingTypeInfo := valueField.FieldType.Handle
     else
       underlyingTypeInfo := nil;
-    Result := underlyingTypeInfo <> nil;
   end;
 end;
 
 function TryGetUnderlyingValue(const value: TValue; out underlyingValue: TValue): Boolean;
 var
-  underlyingTypeInfo: PTypeInfo;
-  hasValueString: string;
-  p: Pointer;
+  typeInfo: PTypeInfo;
+  context: TRttiContext;
+  rttiType: TRttiType;
+  hasValueField: TRttiField;
+  instance: Pointer;
+  valueField: TRttiField;
 begin
-  Result := TryGetUnderlyingTypeInfo(value.TypeInfo, underlyingTypeInfo);
-  if not Result then
+  typeInfo := value.TypeInfo;
+  Result := IsNullableType(typeInfo);
+  if Result then
   begin
-    Exit;
+    rttiType := context.GetType(typeInfo);
+    hasValueField := rttiType.GetField('fHasValue');
+    if Assigned(hasValueField) then
+    begin
+      instance := value.GetReferenceToRawData;
+      Result := hasValueField.GetValue(instance).AsString <> '';
+      if Result then
+      begin
+        valueField := rttiType.GetField('fValue');
+        Result := Assigned(valueField);
+        if Result then
+          underlyingValue := valueField.GetValue(instance);
+      end;
+    end;
   end;
-  p := value.GetReferenceToRawData;
-  hasValueString := PString(PByte(p) + (value.DataSize - SizeOf(string)))^;
-  if hasValueString = '' then
+end;
+
+function TrySetUnderlyingValue(const value: TValue; const underlyingValue: TValue): Boolean;
+var
+  typeInfo: PTypeInfo;
+  context: TRttiContext;
+  rttiType: TRttiType;
+  hasValueField: TRttiField;
+  instance: Pointer;
+  valueField: TRttiField;
+begin
+  typeInfo := value.TypeInfo;
+  Result := IsNullableType(typeInfo);
+  if Result then
   begin
-    Exit(False);
+    rttiType := context.GetType(typeInfo);
+    valueField := rttiType.GetField('fValue');
+    if Assigned(valueField) then
+    begin
+      hasValueField := rttiType.GetField('fHasValue');
+      if Assigned(hasValueField) then
+      begin
+        instance := value.GetReferenceToRawData;
+        valueField.SetValue(instance, underlyingValue);
+        hasValueField.SetValue(instance, '@');
+      end;
+    end;
   end;
-  TValue.Make(p, underlyingTypeInfo, underlyingValue);
 end;
 
 function TryGetInterface(const instance: TValue; const guid: TGuid; out intf): Boolean;
