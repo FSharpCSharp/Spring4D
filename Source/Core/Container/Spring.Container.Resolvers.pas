@@ -232,6 +232,10 @@ begin
   if argument.IsEmpty then
   begin
     models := Registry.FindAll(dependency.Handle);
+    if models.IsEmpty and dependency.IsClassOrInterface then
+    begin
+      raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
+    end;
     if models.Count > 1 then
     begin
       raise EUnsatisfiedDependencyException.CreateResFmt(@SUnsatisfiedDependency,
@@ -274,8 +278,6 @@ end;
 
 function TDependencyResolver.CanResolveDependency(dependency: TRttiType;
   const argument: TValue): Boolean;
-//var
-//  predicate: TPredicate<TComponentModel>;
 begin
   if dependency.IsClassOrInterface then
   begin
@@ -285,16 +287,8 @@ begin
     end
     else
     begin
-//      predicate := 
-//        function (c: TComponentModel): Boolean
-//        begin
-//          Result := c.HasService(dependency.Handle);
-//        end;
-//      Result := argument.IsType<string> and
-//        fRegistry.FindAll(dependency.Handle).Any(predicate);
       Result := argument.IsType<string> and
         Registry.HasService(argument.AsString);
-//        Registry.HasService(dependency.Handle, argument.AsString);
     end;
   end
   else
