@@ -573,6 +573,7 @@ type
     procedure Remove(const key: TKey); overload;
     function ContainsKey(const key: TKey): Boolean;
     function ContainsValue(const value: TValue): Boolean;
+    function ExtractPair(const key: TKey): TPair<TKey, TValue>;
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
 
     function AsDictionary: IDictionary;
