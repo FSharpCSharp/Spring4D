@@ -96,6 +96,7 @@ type
 implementation
 
 uses
+  Rtti,
   TypInfo;
 
 {$REGION 'TLifetimeManagerBase'}

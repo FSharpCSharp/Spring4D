@@ -1492,9 +1492,9 @@ constructor TMethodInvocations.TMethodInfo.Create(typeInfo: PTypeInfo);
 var
   typeData: PTypeData;
   P: PByte;
-  curReg: Integer;
   I: Integer;
 {$IFNDEF CPUX64}
+  curReg: Integer;
   Size: Integer;
 {$ENDIF}
 begin
@@ -1505,6 +1505,7 @@ begin
   ParamInfos := PParameterInfos(Cardinal(P) + 1);
 
 {$IFNDEF CPUX64}
+  curReg := paStack;
   if CallConvention = ccReg then
   begin
     curReg := paEDX;
@@ -1512,7 +1513,6 @@ begin
   end else
 {$ENDIF}
   begin
-    curReg := paStack;
     StackSize := SizeOf(Pointer); // Self in stack
   end;
 
