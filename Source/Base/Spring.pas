@@ -1998,12 +1998,13 @@ end;
 
 class operator Event<T>.Implicit(const e: Event<T>): IEvent<T>;
 begin
-  Result := e.EnsureInitialized;
+  e.EnsureInitialized;
+  Result := e.fInstance;
 end;
 
 class operator Event<T>.Implicit(const e: Event<T>): T;
 begin
-  Result := e.EnsureInitialized.GetInvoke;
+  Result := e.GetInvoke;
 end;
 
 {$ENDREGION}

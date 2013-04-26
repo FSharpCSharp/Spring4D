@@ -84,6 +84,7 @@ type
     procedure TestInvoke;
     procedure TestOneHandler;
     procedure TestTwoHandlers;
+    procedure TestIssue58;
   end;
 
 
@@ -219,6 +220,14 @@ begin
   fEvent.Invoke(Self);
   CheckFalse(fAInvoked);
   CheckFalse(fBInvoked);
+end;
+
+procedure TTestEmptyMulticastEvent.TestIssue58;
+var
+  e: Event<TNotifyEvent>;
+  i: IEvent<TNotifyEvent>;
+begin
+  i := e;
 end;
 
 procedure TTestEmptyMulticastEvent.TestOneHandler;
