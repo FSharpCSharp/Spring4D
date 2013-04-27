@@ -188,6 +188,7 @@ end;
 
 begin
   RegisterTestCases;
+  ReportMemoryLeaksOnShutdown := True;
   {$IFDEF CONSOLE_TESTRUNNER}
     {$IFDEF XMLOUTPUT}
       if ConfigFile <> '' then

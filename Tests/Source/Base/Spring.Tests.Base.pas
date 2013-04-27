@@ -226,8 +226,11 @@ procedure TTestEmptyMulticastEvent.TestIssue58;
 var
   e: Event<TNotifyEvent>;
   i: IEvent<TNotifyEvent>;
+  t: TNotifyEvent;
 begin
   i := e;
+  t := e;
+  Check(Assigned(i));
 end;
 
 procedure TTestEmptyMulticastEvent.TestOneHandler;

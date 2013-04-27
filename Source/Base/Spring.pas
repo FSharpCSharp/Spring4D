@@ -697,8 +697,8 @@ type
     property IsEmpty: Boolean read GetIsEmpty;
 
     class operator Implicit(const e: IEvent<T>): Event<T>;
-    class operator Implicit(const e: Event<T>): IEvent<T>;
-    class operator Implicit(const e: Event<T>): T;
+    class operator Implicit(var e: Event<T>): IEvent<T>;
+    class operator Implicit(var e: Event<T>): T;
     class operator Implicit(const eventHandler: T): Event<T>;
   end;
 
@@ -1996,13 +1996,13 @@ begin
   Result.fInstance := e;
 end;
 
-class operator Event<T>.Implicit(const e: Event<T>): IEvent<T>;
+class operator Event<T>.Implicit(var e: Event<T>): IEvent<T>;
 begin
   e.EnsureInitialized;
   Result := e.fInstance;
 end;
 
-class operator Event<T>.Implicit(const e: Event<T>): T;
+class operator Event<T>.Implicit(var e: Event<T>): T;
 begin
   Result := e.GetInvoke;
 end;
