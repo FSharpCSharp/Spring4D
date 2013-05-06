@@ -29,7 +29,7 @@ unit Spring.Container.ResourceStrings;
 interface
 
 resourcestring
-  SNonGuidInterfaceServicesAreNotSupported = 'Non-Guid Interface Services are not supported.';
+  SMissingGuid = 'The service type "%s" is missing a guid.';
   SIncompatibleTypes = 'The component type "%s" is incompatible with the service type "%s".';
   SDuplicatedName = 'Duplicated name found: "%s".';
   SCircularDependencyDetected = 'A circle was detected when trying to resolve the dependency: %s.';
@@ -54,7 +54,6 @@ resourcestring
   SUnsatisfiedTarget = 'Unsatisfied target: "%s".';
   SComponentNotFound = 'Cannot found the component registered.';
   SUnexpectedLifetimeType = 'Unexpected lifetimeType.';
-
   SActivatorDelegateExpected = 'An activator delegate was expected.';
 
 implementation
