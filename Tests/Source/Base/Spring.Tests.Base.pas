@@ -56,6 +56,13 @@ type
     procedure TestEquals;
   end;
 
+  TTestNullableBoolean = class(TTestCase)
+  private
+    fBoolean: Nullable<Boolean>;
+  published
+    procedure TestIssue55;
+  end;
+
   TTestLazy = class(TTestCase)
   private
     fBalance: ILazy<Integer>;
@@ -174,6 +181,20 @@ begin
 
   b := 3;
   CheckFalse(a.Equals(b));
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestNullableBoolean'}
+
+procedure TTestNullableBoolean.TestIssue55;
+var
+  v: Variant;
+begin
+  fBoolean := True;
+  v := fBoolean;
+  CheckTrue(v);
 end;
 
 {$ENDREGION}
@@ -304,5 +325,6 @@ begin
 end;
 
 {$ENDREGION}
+
 
 end.

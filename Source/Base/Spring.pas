@@ -1208,7 +1208,10 @@ begin
   if value.HasValue then
   begin
     v := TValue.From<T>(value.Value);
-    Result := v.AsVariant;
+    if v.IsType<Boolean> then
+      Result := v.AsBoolean
+    else
+      Result := v.AsVariant;
   end
   else
   begin

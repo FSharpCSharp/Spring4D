@@ -69,6 +69,7 @@ procedure RegisterTestCases;
 begin
   RegisterTests('Spring.Base', [
     TRepeatedTest.Create(TTestNullableInteger.Suite, 3),
+    TTestNullableBoolean.Suite,
     TTestLazy.Suite,
     TTestEmptyMulticastEvent.Suite,
     TTestEmptyHashSet.Suite,
