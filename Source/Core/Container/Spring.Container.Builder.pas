@@ -402,7 +402,7 @@ begin
     end
     else
     begin
-      model.ComponentActivator := TDelegateComponentActivator.Create(model);
+      model.ComponentActivator := TDelegateComponentActivator.Create(model, context.DependencyResolver);
     end;
   end;
 end;
