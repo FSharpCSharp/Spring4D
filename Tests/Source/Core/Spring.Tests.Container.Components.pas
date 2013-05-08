@@ -123,9 +123,17 @@ type
 
 
   TNameServiceWithAggregation = class(TNameService)
+  private
+    fMethodCallCount: Integer;
   protected
     [Inject]
     fAgeService: IAgeService;
+  public
+    [Inject]
+    procedure Init;
+    [Inject]
+    property AgeService: IAgeService read fAgeService write fAgeService;
+    property MethodCallCount: Integer read fMethodCallCount;
   end;
 
   IAnotherService = interface
@@ -600,6 +608,13 @@ end;
 procedure TInitializableComponent.Initialize;
 begin
   fIsInitialized := True;
+end;
+
+{ TNameServiceWithAggregation }
+
+procedure TNameServiceWithAggregation.Init;
+begin
+  Inc(fMethodCallCount);
 end;
 
 end.

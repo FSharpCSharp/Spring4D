@@ -546,8 +546,12 @@ end;
 procedure TTestSimpleContainer.TestIssue49;
 var
   count: Integer;
+  obj: TNameServiceWithAggregation;
 begin
-  fContainer.RegisterType<TNameServiceWithAggregation>.Implements<INameService>;
+  fContainer.RegisterType<TNameServiceWithAggregation>.Implements<INameService>
+    .InjectField('fAgeService').InjectField('fAgeService')
+    .InjectProperty('AgeService').InjectProperty('AgeService')
+    .InjectMethod('Init').InjectMethod('Init');
   fContainer.RegisterType<TNameAgeComponent>.Implements<IAgeService>.DelegateTo(
     function: TNameAgeComponent
     begin
@@ -558,13 +562,15 @@ begin
   fContainer.Build;
 
   count := 0;
-  fContainer.Resolve<INameService>;
-  CheckEquals(1, count);
+  obj := fContainer.Resolve<INameService> as TNameServiceWithAggregation;
+  CheckEquals(2, count); // field and property
+  CheckEquals(1, obj.MethodCallCount);
 end;
 
 procedure TTestSimpleContainer.TestIssue50;
 var
   count: Integer;
+  obj: TNameServiceWithAggregation;
 begin
   fContainer.RegisterType<TNameServiceWithAggregation>.Implements<INameService>.DelegateTo(
     function: TNameServiceWithAggregation
@@ -580,8 +586,9 @@ begin
   fContainer.Build;
 
   count := 0;
-  fContainer.Resolve<INameService>;
-  CheckEquals(1, count);
+  obj := fContainer.Resolve<INameService> as TNameServiceWithAggregation;
+  CheckEquals(2, count); // field and property
+  CheckEquals(1, obj.MethodCallCount);
 end;
 
 {$ENDREGION}
