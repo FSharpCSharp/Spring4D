@@ -29,16 +29,12 @@ unit Spring.Container.Builder;
 interface
 
 uses
-  Classes,
-  SysUtils,
   Rtti,
   TypInfo,
   Spring,
   Spring.Collections,
-  //Spring.Collections.Lists,
-  Spring.DesignPatterns,
-  Spring.Services,
-  Spring.Container.Core;
+  Spring.Container.Core,
+  Spring.Services;
 
 type
   TComponentBuilder = class(TInterfacedObject, IComponentBuilder)
@@ -109,31 +105,13 @@ type
     procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); override;
   end;
 
-  TInjectableMethodFilter = class(TSpecificationBase<TRttiMethod>)
-  private
-    fContext: IContainerContext;
-    fModel: TComponentModel;
-    fInjection: IInjection;
-    fArguments: TArray<TValue>;
-  public
-    constructor Create(const context: IContainerContext; model: TComponentModel;
-      const injection: IInjection);
-    function IsSatisfiedBy(const method: TRttiMethod): Boolean; override;
-  end;
-
-  TInjectionFilters = class
-  public
-    class function IsInjectableMethod(const context: IContainerContext;
-      model: TComponentModel; const injection: IInjection): TSpecification<TRttiMethod>;
-  end;
-
 implementation
 
 uses
-  Spring.Reflection,
   Spring.Helpers,
-  Spring.Container.Injection,
+  Spring.Reflection,
   Spring.Container.ComponentActivator,
+  Spring.Container.Injection,
   Spring.Container.ResourceStrings;
 
 
@@ -294,6 +272,7 @@ var
   condition: TPredicate<TRttiMethod>;
   method: TRttiMethod;
   injection: IInjection;
+  injectionExists: Boolean;
   parameters: TArray<TRttiParameter>;
   parameter: TRttiParameter;
   arguments: TArray<TValue>;
@@ -306,7 +285,12 @@ begin
     not TMethodFilters.IsConstructor;
   for method in model.ComponentType.Methods.Where(condition) do
   begin
-    injection := context.InjectionFactory.CreateMethodInjection(model, method.Name);
+    injectionExists := model.MethodInjections.TryGetFirst(injection,
+      TInjectionFilters.ContainsMember(method));
+    if not injectionExists then
+    begin
+      injection := context.InjectionFactory.CreateMethodInjection(model, method.Name);
+    end;
     injection.Initialize(method);
     parameters := method.GetParameters;
     SetLength(arguments, Length(parameters));
@@ -323,7 +307,10 @@ begin
       end;
     end;
     model.UpdateInjectionArguments(injection, arguments);
-    model.MethodInjections.Add(injection);
+    if not injectionExists then
+    begin
+      model.MethodInjections.Add(injection);
+    end;
   end;
 end;
 
@@ -338,20 +325,29 @@ var
   condition: TPredicate<TRttiProperty>;
   propertyMember: TRttiProperty;
   injection: IInjection;
+  injectionExists: Boolean;
   attribute: InjectAttribute;
 begin
   condition := TPropertyFilters.IsInvokable and
     TPropertyFilters.HasAttribute(InjectAttribute);
   for propertyMember in model.ComponentType.Properties.Where(condition) do
   begin
-    injection := context.InjectionFactory.CreatePropertyInjection(model, propertyMember.Name);
+    injectionExists := model.PropertyInjections.TryGetFirst(injection,
+      TInjectionFilters.ContainsMember(propertyMember));
+    if not injectionExists then
+    begin
+      injection := context.InjectionFactory.CreatePropertyInjection(model, propertyMember.Name);
+    end;
     injection.Initialize(propertyMember);
     if propertyMember.TryGetCustomAttribute<InjectAttribute>(attribute) and
       attribute.HasValue then
     begin
       model.UpdateInjectionArguments(injection, [attribute.Value]);
     end;
-    model.PropertyInjections.Add(injection);
+    if not injectionExists then
+    begin
+      model.PropertyInjections.Add(injection);
+    end;
   end;
 end;
 
@@ -366,18 +362,27 @@ var
   condition: TPredicate<TRttiField>;
   field: TRttiField;
   injection: IInjection;
+  injectionExists: Boolean;
   attribute: InjectAttribute;
 begin
   condition := TFieldFilters.HasAttribute(InjectAttribute);
   for field in model.ComponentType.Fields.Where(condition) do
   begin
-    injection := context.InjectionFactory.CreateFieldInjection(model, field.Name);
+    injectionExists := model.FieldInjections.TryGetFirst(injection,
+      TInjectionFilters.ContainsMember(field));
+    if not injectionExists then
+    begin
+      injection := context.InjectionFactory.CreateFieldInjection(model, field.Name);
+    end;
     injection.Initialize(field);
     if field.TryGetCustomAttribute<InjectAttribute>(attribute) and attribute.HasValue then
     begin
       model.UpdateInjectionArguments(injection, [attribute.Value]);
     end;
-    model.FieldInjections.Add(injection);
+    if not injectionExists then
+    begin
+      model.FieldInjections.Add(injection);
+    end;
   end;
 end;
 
@@ -467,49 +472,6 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TInjectionFilters'}
-
-class function TInjectionFilters.IsInjectableMethod(
-  const context: IContainerContext; model: TComponentModel;
-  const injection: IInjection): TSpecification<TRttiMethod>;
-begin
-  Result := TInjectableMethodFilter.Create(context, model, injection);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TInjectableMethodFilter'}
-
-constructor TInjectableMethodFilter.Create(const context: IContainerContext;
-  model: TComponentModel; const injection: IInjection);
-begin
-  inherited Create;
-  fContext := context;
-  fModel := model;
-  fInjection := injection;
-  fArguments := model.GetInjectionArguments(fInjection);
-end;
-
-function TInjectableMethodFilter.IsSatisfiedBy(
-  const method: TRttiMethod): Boolean;
-var
-  dependencies: TArray<TRttiType>;
-  parameters: TArray<TRttiParameter>;
-  i: Integer;
-begin
-  parameters := method.GetParameters;
-  SetLength(dependencies, Length(parameters));
-  for i := 0 to High(dependencies) do
-  begin
-    dependencies[i] := parameters[i].ParamType;
-  end;
-  Result := fContext.DependencyResolver.CanResolveDependencies(dependencies, fArguments);
-end;
-
-{$ENDREGION}
-
-
 {$REGION 'TInterfaceInspector'}
 
 procedure TInterfaceInspector.DoProcessModel(const context: IContainerContext;
@@ -538,5 +500,5 @@ end;
 
 {$ENDREGION}
 
-end.
 
+end.

@@ -29,11 +29,12 @@ unit Spring.Container.Core;
 interface
 
 uses
-  SysUtils,
   Rtti,
+  SysUtils,
   TypInfo,
   Spring,
   Spring.Collections,
+  Spring.DesignPatterns,
   Spring.Reflection,
   Spring.Services;
 
@@ -323,12 +324,41 @@ type
 
   EActivatorException = class(EContainerException);
 
+  TInjectableMethodFilter = class(TSpecificationBase<TRttiMethod>)
+  private
+    fContext: IContainerContext;
+    fModel: TComponentModel;
+    fInjection: IInjection;
+    fArguments: TArray<TValue>;
+  public
+    constructor Create(const context: IContainerContext; model: TComponentModel;
+      const injection: IInjection);
+    function IsSatisfiedBy(const method: TRttiMethod): Boolean; override;
+  end;
+
+  TContainsMemberFilter = class(TSpecificationBase<IInjection>)
+  private
+    fMember: TRttiMember;
+  public
+    constructor Create(member: TRttiMember);
+    function IsSatisfiedBy(const injection: IInjection): Boolean; override;
+  end;
+
+  TInjectionFilters = class
+  public
+    class function ContainsMember(member: TRttiMember): TSpecification<IInjection>;
+    class function IsInjectableMethod(const context: IContainerContext;
+      model: TComponentModel; const injection: IInjection): TSpecification<TRttiMethod>;
+  end;
+
 implementation
 
 uses
   Generics.Collections,
   Spring.Helpers,
+  Spring.Container.Builder,
   Spring.Container.ResourceStrings;
+
 
 {$REGION 'TComponentModel'}
 
@@ -361,15 +391,27 @@ end;
 function TComponentModel.InjectMethod(const methodName: string): IInjection;
 var
   method: TRttiMethod;
+  injectionExists: Boolean;
 begin
   method := ComponentType.GetMethod(methodName);
   if method = nil then
   begin
     raise ERegistrationException.CreateResFmt(@SNoSuchMethod, [methodName]);
   end;
-  Result := InjectionFactory.CreateMethodInjection(Self, methodName);
+  injectionExists := MethodInjections.TryGetFirst(Result,
+    TInjectionFilters.ContainsMember(method));
+//  Result := MethodInjections.FirstOrDefault(
+//    TInjectionFilters.ContainsMember(method));
+//  injectionExists := Assigned(Result);
+  if not injectionExists then
+  begin
+    Result := InjectionFactory.CreateMethodInjection(Self, methodName);
+  end;
   Result.Initialize(method);
-  MethodInjections.Add(Result);
+  if not injectionExists then
+  begin
+    MethodInjections.Add(Result);
+  end;
 end;
 
 function TComponentModel.InjectMethod(const methodName: string;
@@ -377,6 +419,7 @@ function TComponentModel.InjectMethod(const methodName: string;
 var
   predicate: TPredicate<TRttiMethod>;
   method: TRttiMethod;
+  injectionExists: Boolean;
 begin
   predicate := TMethodFilters.IsNamed(methodName) and
     TMethodFilters.IsInstanceMethod and
@@ -386,44 +429,79 @@ begin
   begin
     raise ERegistrationException.CreateResFmt(@SUnsatisfiedMethodParameterTypes, [methodName]);
   end;
-  Result := InjectionFactory.CreateMethodInjection(Self, methodName);
+  injectionExists := MethodInjections.TryGetFirst(Result,
+    TInjectionFilters.ContainsMember(method));
+//  Result := MethodInjections.FirstOrDefault(
+//    TInjectionFilters.ContainsMember(method));
+//  injectionExists := Assigned(Result);
+  if not injectionExists then
+  begin
+    Result := InjectionFactory.CreateMethodInjection(Self, methodName);
+  end;
   Result.Initialize(method);
-  MethodInjections.Add(Result);
+  if not injectionExists then
+  begin
+    MethodInjections.Add(Result);
+  end;
 end;
 
 function TComponentModel.InjectProperty(const propertyName: string): IInjection;
 var
   propertyMember: TRttiProperty;
+  injectionExists: Boolean;
 begin
   propertyMember := ComponentType.GetProperty(propertyName);
   if propertyMember = nil then
   begin
     raise ERegistrationException.CreateResFmt(@SNoSuchProperty, [propertyName]);
   end;
-  Result := InjectionFactory.CreatePropertyInjection(Self, propertyName);
+  injectionExists := PropertyInjections.TryGetFirst(Result,
+    TInjectionFilters.ContainsMember(propertyMember));
+//  Result := PropertyInjections.FirstOrDefault(
+//    TInjectionFilters.ContainsMember(propertyMember));
+//  injectionExists := Assigned(Result);
+  if not injectionExists then
+  begin
+    Result := InjectionFactory.CreatePropertyInjection(Self, propertyName);
+  end;
   Result.Initialize(propertyMember);
-  PropertyInjections.Add(Result);
+  if not injectionExists then
+  begin
+    PropertyInjections.Add(Result);
+  end;
 end;
 
 function TComponentModel.InjectField(const fieldName: string): IInjection;
 var
   field: TRttiField;
+  injectionExists: Boolean;
 begin
   field := ComponentType.GetField(fieldName);
   if field = nil then
   begin
     raise ERegistrationException.CreateResFmt(@SNoSuchField, [fieldName]);
   end;
-  Result := InjectionFactory.CreateFieldInjection(Self, fieldName);
+  injectionExists := FieldInjections.TryGetFirst(Result,
+    TInjectionFilters.ContainsMember(field));
+//  Result := FieldInjections.FirstOrDefault(
+//    TInjectionFilters.ContainsMember(field));
+//  injectionExists := Assigned(Result);
+  if not injectionExists then
+  begin
+    Result := InjectionFactory.CreateFieldInjection(Self, fieldName);
+  end;
   Result.Initialize(field);
-  FieldInjections.Add(Result);
+  if not injectionExists then
+  begin
+    FieldInjections.Add(Result);
+  end;
 end;
 
 procedure TComponentModel.UpdateInjectionArguments(const Inject: IInjection;
   const arguments: array of TValue);
 begin
   TArgument.CheckNotNull(Inject, 'Inject');
-  Injections.Add(Inject, TArray.CreateArray<TValue>(arguments));
+  Injections.AddOrSetValue(Inject, TArray.CreateArray<TValue>(arguments));
 end;
 
 procedure TComponentModel.InjectConstructor(const arguments: array of TValue);
@@ -622,5 +700,72 @@ begin
 end;
 
 {$ENDREGION}
+
+
+{$REGION 'TInjectableMethodFilter'}
+
+constructor TInjectableMethodFilter.Create(const context: IContainerContext;
+  model: TComponentModel; const injection: IInjection);
+begin
+  inherited Create;
+  fContext := context;
+  fModel := model;
+  fInjection := injection;
+  fArguments := model.GetInjectionArguments(fInjection);
+end;
+
+function TInjectableMethodFilter.IsSatisfiedBy(
+  const method: TRttiMethod): Boolean;
+var
+  dependencies: TArray<TRttiType>;
+  parameters: TArray<TRttiParameter>;
+  i: Integer;
+begin
+  parameters := method.GetParameters;
+  SetLength(dependencies, Length(parameters));
+  for i := 0 to High(dependencies) do
+  begin
+    dependencies[i] := parameters[i].ParamType;
+  end;
+  Result := fContext.DependencyResolver.CanResolveDependencies(dependencies, fArguments);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TContainsMemberFilter'}
+
+constructor TContainsMemberFilter.Create(member: TRttiMember);
+begin
+  inherited Create;
+  fMember := member;
+end;
+
+function TContainsMemberFilter.IsSatisfiedBy(
+  const injection: IInjection): Boolean;
+begin
+  Result := injection.Target = fmember;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TInjectionFilters'}
+
+class function TInjectionFilters.ContainsMember(
+  member: TRttiMember): TSpecification<IInjection>;
+begin
+  Result := TContainsMemberFilter.Create(member);
+end;
+
+class function TInjectionFilters.IsInjectableMethod(
+  const context: IContainerContext; model: TComponentModel;
+  const injection: IInjection): TSpecification<TRttiMethod>;
+begin
+  Result := TInjectableMethodFilter.Create(context, model, injection);
+end;
+
+{$ENDREGION}
+
 
 end.
