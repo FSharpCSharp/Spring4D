@@ -158,8 +158,10 @@ type
     function GetComparer: IComparer<T>; virtual;    
   public
     function GetEnumerator: IEnumerator<T>; virtual; abstract;
-    function TryGetFirst(out value: T): Boolean; virtual;
-    function TryGetLast(out value: T): Boolean; virtual;
+    function TryGetFirst(out value: T): Boolean; overload;
+    function TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean; overload; virtual;
+    function TryGetLast(out value: T): Boolean; overload;
+    function TryGetLast(out value: T; const predicate: TPredicate<T>): Boolean; overload; virtual;
     function First: T; overload; virtual;
     function First(const predicate: TPredicate<T>): T; overload; virtual;
     function FirstOrDefault: T; overload; virtual;
@@ -312,8 +314,8 @@ type
     constructor Create(const collection: TEnumerable<T>); overload;
     destructor Destroy; override;
 
-    function TryGetFirst(out value: T): Boolean; override;
-    function TryGetLast(out value: T): Boolean; override;
+    function TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean; override;
+    function TryGetLast(out value: T; const predicate: TPredicate<T>): Boolean; override;
     function Contains(const item: T): Boolean; override;
     function ToArray: TArray<T>; override;
     function Reversed: IEnumerable<T>; override;
@@ -545,29 +547,42 @@ begin
 end;
 
 function TEnumerableBase<T>.TryGetFirst(out value: T): Boolean;
-var
-  enumerator: IEnumerator<T>;
 begin
-  enumerator := GetEnumerator;
-  Result := enumerator.MoveNext;
-  if Result then
+  Result := TryGetFirst(value, nil);
+end;
+
+function TEnumerableBase<T>.TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean;
+var
+  item: T;
+begin
+  for item in Self do
   begin
-    value := enumerator.Current;
-  end
+    if not Assigned(predicate) or predicate(item) then
+    begin
+      value := item;
+      Exit(True);
+    end;
+  end;
+  Result := False;
 end;
 
 function TEnumerableBase<T>.TryGetLast(out value: T): Boolean;
-var
-  enumerator: IEnumerator<T>;
-  hasNext: Boolean;
 begin
-  enumerator := GetEnumerator;
-  Result := enumerator.MoveNext;
-  hasNext := Result;
-  while hasNext do
+  Result := TryGetLast(value, nil);
+end;
+
+function TEnumerableBase<T>.TryGetLast(out value: T; const predicate: TPredicate<T>): Boolean;
+var
+  item: T;
+begin
+  Result := False;
+  for item in Self do
   begin
-    value := enumerator.Current;
-    hasNext := enumerator.MoveNext;
+    if not Assigned(predicate) or predicate(item) then
+    begin
+      value := item;
+      Result := True;
+    end;
   end;
 end;
 
@@ -1463,18 +1478,28 @@ begin
   Result := fComparer;
 end;
 
-function TListBase<T>.TryGetFirst(out value: T): Boolean;
+function TListBase<T>.TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean;
 begin
-  Result := Count > 0;
-  if Result then
-    value := Items[0];
+  if not Assigned(predicate) then
+  begin
+    Result := Count > 0;
+    if Result then
+      value := Items[0];
+  end
+  else
+    Result := inherited;
 end;
 
-function TListBase<T>.TryGetLast(out value: T): Boolean;
+function TListBase<T>.TryGetLast(out value: T; const predicate: TPredicate<T>): Boolean;
 begin
-  Result := Count > 0;
-  if Result then
-    value := Items[Count - 1];
+  if not Assigned(predicate) then
+  begin
+    Result := Count > 0;
+    if Result then
+      value := Items[Count - 1];
+  end
+  else
+    Result := inherited;
 end;
 
 function TListBase<T>.GetOnChanged: ICollectionChangedDelegate<T>;

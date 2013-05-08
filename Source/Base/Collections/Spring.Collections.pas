@@ -174,14 +174,26 @@ type
     function AsObject: TObject;
 
     ///	<summary>
-    ///	  Try getting the first element.
+    ///	  Try getting the first element of a sequence.
     ///	</summary>
-    function TryGetFirst(out value: T): Boolean;
+    function TryGetFirst(out value: T): Boolean; overload;
 
     ///	<summary>
-    ///	  Try getting the last element.
+    ///	  Returns the first element in a sequence that satisfies a specified
+    ///	  condition.
     ///	</summary>
-    function TryGetLast(out value: T): Boolean;
+    function TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean; overload;
+
+    ///	<summary>
+    ///	  Try getting the last element of a sequence.
+    ///	</summary>
+    function TryGetLast(out value: T): Boolean; overload;
+
+    ///	<summary>
+    ///	  Try getting the last element in a sequence that satisfies a specified
+    ///	  condition.
+    ///	</summary>
+    function TryGetLast(out value: T; const predicate: TPredicate<T>): Boolean; overload;
 
     ///	<summary>
     ///	  Returns the first element of a sequence.

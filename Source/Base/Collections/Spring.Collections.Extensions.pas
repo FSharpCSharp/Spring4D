@@ -277,8 +277,8 @@ type
   public
     constructor Create(const first, second: IEnumerable<T>);
     function GetEnumerator: IEnumerator<T>; override;
-    function TryGetFirst(out value: T): Boolean; override;
-    function TryGetLast(out value: T): Boolean; override;
+    function TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean; override;
+    function TryGetLast(out value: T; const predicate: TPredicate<T>): Boolean; override;
   end;
 
   TReversedEnumerable<T> = class(TEnumerableBase<T>)
@@ -822,14 +822,14 @@ begin
   Result := fFirst.IsEmpty and fSecond.IsEmpty;
 end;
 
-function TConcatEnumerable<T>.TryGetFirst(out value: T): Boolean;
+function TConcatEnumerable<T>.TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean;
 begin
-  Result := fFirst.TryGetFirst(value) or fSecond.TryGetFirst(value);
+  Result := fFirst.TryGetFirst(value, predicate) or fSecond.TryGetFirst(value, predicate);
 end;
 
-function TConcatEnumerable<T>.TryGetLast(out value: T): Boolean;
+function TConcatEnumerable<T>.TryGetLast(out value: T; const predicate: TPredicate<T>): Boolean;
 begin
-  Result := fSecond.TryGetLast(value) or fFirst.TryGetLast(value);
+  Result := fSecond.TryGetLast(value, predicate) or fFirst.TryGetLast(value, predicate);
 end;
 
 {$ENDREGION}
