@@ -56,7 +56,6 @@
 			<DelphiCompile Include="GettingStarted.dpr">
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
-			<DCCReference Include="Source\UsedUnits.pas"/>
 			<DCCReference Include="Views\ViewMain.pas">
 				<Form>frmMain</Form>
 			</DCCReference>
@@ -64,6 +63,7 @@
 			<DCCReference Include="Views\ViewEditProduct.pas">
 				<Form>frmEditProduct</Form>
 			</DCCReference>
+			<DCCReference Include="..\..\Adapters.SQLite.pas"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>

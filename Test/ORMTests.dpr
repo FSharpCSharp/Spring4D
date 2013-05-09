@@ -123,7 +123,8 @@ uses
   Adapters.ObjectDataset.ActiveX in '..\Adapters.ObjectDataset.ActiveX.pas',
   Adapters.ObjectDataset.IndexList in '..\Adapters.ObjectDataset.IndexList.pas',
   Adapters.ObjectDataset.ExprParser.Functions in '..\Adapters.ObjectDataset.ExprParser.Functions.pas',
-  Core.ListSession in '..\Core.ListSession.pas';
+  Core.ListSession in '..\Core.ListSession.pas',
+  SQL.Generators.Register in '..\SQL.Generators.Register.pas';
 
 {$R *.RES}
 

@@ -61,4 +61,9 @@ type
 
 implementation
 
+uses
+  //auto register all generators
+  SQL.Generators.Register
+  ;
+
 end.

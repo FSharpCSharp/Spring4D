@@ -53,7 +53,8 @@ type
 implementation
 
 uses
-  SQL.Generator.Ansi;
+  SQL.Generator.Ansi
+  ;
 
 { TSQLGeneratorRegister }
 
@@ -78,7 +79,7 @@ end;
 
 class procedure TSQLGeneratorRegister.RegisterGenerator(const AGenerator: ISQLGenerator);
 begin
-  FGenerators.Add(AGenerator.GetQueryLanguage, AGenerator);
+  FGenerators.AddOrSetValue(AGenerator.GetQueryLanguage, AGenerator);
 end;
 
 

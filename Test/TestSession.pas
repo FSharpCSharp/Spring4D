@@ -185,12 +185,15 @@ end;
 function GetTableRecordCount(const ATablename: string; AConnection: TSQLiteDatabase = nil): Int64;
 var
   LConn: TSQLiteDatabase;
+  LTable: ISQLiteTable;
 begin
   if Assigned(AConnection) then
   begin
     LConn := TSQLiteDatabase.Create(AConnection.Filename);
     try
-      Result := LConn.GetUniTableIntf('SELECT COUNT(*) FROM ' + ATablename).Fields[0].Value;
+      LTable := LConn.GetUniTableIntf('SELECT COUNT(*) FROM ' + ATablename);
+      Result := LTable.Fields[0].Value;
+      LTable := nil;    //force table destroy because otherwise db handle is not closed
     finally
       LConn.Free;
     end;
@@ -997,7 +1000,7 @@ begin
   sFile := IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0))) + 'test.db';
   DeleteFile(sFile);
   LDatabase := TSQLiteDatabase.Create(sFile);
-  LDatabase.Open();
+ // LDatabase.Open();
   LConn := TConnectionFactory.GetInstance(dtSQLite, LDatabase);
   LSession := TSession.Create(LConn);
   CreateTables(LDatabase);
