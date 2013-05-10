@@ -30,28 +30,24 @@ unit Spring.Container.Pool;  // experimental;
 interface
 
 uses
-//  Classes,
-  SysUtils,
-  Types,
-  TypInfo,
-  Rtti,
   Spring,
   Spring.Collections,
-  Spring.Reflection;
+  Spring.Container.Core;
 
 type
   IObjectPool = interface
     ['{E5842280-3750-46C0-8C91-0888EFFB0ED5}']
-    function GetInstance: TObject;
+    procedure Initialize(const resolver: IDependencyResolver);
+    function GetInstance(const resolver: IDependencyResolver): TObject;
     procedure ReleaseInstance(instance: TObject);
   end;
 
   IObjectPool<T> = interface(IObjectPool)
-    function GetInstance: T;
+    function GetInstance(const resolver: IDependencyResolver): T;
     procedure ReleaseInstance(instance: T);
   end;
 
-  IPoolableObjectFactory = interface(IObjectActivator)
+  IPoolableObjectFactory = interface(IComponentActivator)
     ['{56F9E805-A115-4E3A-8583-8D0B5462D98A}']
     function Validate(instance: TObject): Boolean;
     procedure Activate(instance: TObject);
@@ -66,21 +62,22 @@ type
 
   TSimpleObjectPool = class(TInterfacedObject, IObjectPool)
   private
-    fActivator: IObjectActivator;
+    fActivator: IComponentActivator;
     fMinPoolsize: Nullable<Integer>;
     fMaxPoolsize: Nullable<Integer>;
     fAvailableList: IQueue<TObject>;
     fActiveList: IList<TObject>;
     fInstances: IList<TObject>;
+    fInitialized: Boolean;
   protected
-    procedure InitializePool; virtual;
-    function AddNewInstance: TObject;
+    function AddNewInstance(const resolver: IDependencyResolver): TObject;
     function GetAvailableObject: TObject;
     property MinPoolsize: Nullable<Integer> read fMinPoolsize;
     property MaxPoolsize: Nullable<Integer> read fMaxPoolsize;
   public
-    constructor Create(const activator: IObjectActivator; minPoolSize, maxPoolSize: Integer);
-    function GetInstance: TObject; virtual;
+    constructor Create(const activator: IComponentActivator; minPoolSize, maxPoolSize: Integer);
+    procedure Initialize(const resolver: IDependencyResolver); virtual;
+    function GetInstance(const resolver: IDependencyResolver): TObject; virtual;
     procedure ReleaseInstance(instance: TObject); virtual;
   end;
 
@@ -88,7 +85,7 @@ implementation
 
 { TSimpleObjectPool }
 
-constructor TSimpleObjectPool.Create(const activator: IObjectActivator;
+constructor TSimpleObjectPool.Create(const activator: IComponentActivator;
   minPoolSize, maxPoolSize: Integer);
 begin
   inherited Create;
@@ -104,12 +101,11 @@ begin
   fInstances := TCollections.CreateObjectList<TObject>;
   fAvailableList := TCollections.CreateQueue<TObject>;
   fActiveList := TCollections.CreateList<TObject>;
-  InitializePool;
 end;
 
-function TSimpleObjectPool.AddNewInstance: TObject;
+function TSimpleObjectPool.AddNewInstance(const resolver: IDependencyResolver): TObject;
 begin
-  Result := fActivator.CreateInstance.AsObject;
+  Result := fActivator.CreateInstance(resolver).AsObject;
   MonitorEnter(TObject(fInstances));
   try
     fInstances.Add(Result);
@@ -118,7 +114,7 @@ begin
   end;
 end;
 
-procedure TSimpleObjectPool.InitializePool;
+procedure TSimpleObjectPool.Initialize(const resolver: IDependencyResolver);
 var
   instance: TObject;
   i: Integer;
@@ -129,9 +125,10 @@ begin
   end;
   for i := 0 to fMinPoolsize.Value - 1 do
   begin
-    instance := AddNewInstance;
+    instance := AddNewInstance(resolver);
     fAvailableList.Enqueue(instance);
   end;
+  fInitialized := True;
 end;
 
 function TSimpleObjectPool.GetAvailableObject: TObject;
@@ -139,10 +136,13 @@ begin
   Result := fAvailableList.Dequeue;
 end;
 
-function TSimpleObjectPool.GetInstance: TObject;
+function TSimpleObjectPool.GetInstance(const resolver: IDependencyResolver): TObject;
 var
   instance: TObject;
 begin
+  if not fInitialized then
+    Initialize(resolver);
+
   MonitorEnter(TObject(fAvailableList));
   try
     if fAvailableList.Count > 0 then
@@ -151,7 +151,7 @@ begin
     end
     else
     begin
-      instance := AddNewInstance;
+      instance := AddNewInstance(resolver);
     end;
   finally
     MonitorExit(TObject(fAvailableList));
@@ -170,7 +170,6 @@ end;
 procedure TSimpleObjectPool.ReleaseInstance(instance: TObject);
 begin
   TArgument.CheckNotNull(instance, 'instance');
-
 
   MonitorEnter(TObject(fActiveList));
   try

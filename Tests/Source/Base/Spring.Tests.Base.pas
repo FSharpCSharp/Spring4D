@@ -250,7 +250,7 @@ var
   t: TNotifyEvent;
 begin
   i := e;
-  t := e;
+  t := e.Invoke;
   Check(Assigned(i));
 end;
 

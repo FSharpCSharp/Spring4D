@@ -398,11 +398,11 @@ begin
   begin
     if not Assigned(model.ActivatorDelegate) then
     begin
-      model.ComponentActivator := TReflectionComponentActivator.Create(model, context.DependencyResolver);
+      model.ComponentActivator := TReflectionComponentActivator.Create(model);
     end
     else
     begin
-      model.ComponentActivator := TDelegateComponentActivator.Create(model, context.DependencyResolver);
+      model.ComponentActivator := TDelegateComponentActivator.Create(model);
     end;
   end;
 end;

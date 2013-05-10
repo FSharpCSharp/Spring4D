@@ -59,8 +59,7 @@ type
     fModel: TComponentModel;
   public
     constructor Create(model: TComponentModel);
-    function CreateInstance: TValue; overload;
-    function CreateInstance(resolver: IDependencyResolver): TValue; overload;
+    function CreateInstance(const resolver: IDependencyResolver): TValue; overload;
     property Model: TComponentModel read fModel;
   end;
 
@@ -164,8 +163,8 @@ procedure TTestSingletonLifetimeManager.TestReferences;
 var
   obj1, obj2: TObject;
 begin
-  obj1 := fLifetimeManager.GetInstance.AsObject;
-  obj2 := fLifetimeManager.GetInstance.AsObject;
+  obj1 := fLifetimeManager.GetInstance(nil).AsObject;
+  obj2 := fLifetimeManager.GetInstance(nil).AsObject;
   try
     CheckIs(obj1, TMockObject, 'obj1');
     CheckIs(obj2, TMockObject, 'obj2');
@@ -195,8 +194,8 @@ procedure TTestTransientLifetimeManager.TestReferences;
 var
   obj1, obj2: TObject;
 begin
-  obj1 := fLifetimeManager.GetInstance.AsObject;
-  obj2 := fLifetimeManager.GetInstance.AsObject;
+  obj1 := fLifetimeManager.GetInstance(nil).AsObject;
+  obj2 := fLifetimeManager.GetInstance(nil).AsObject;
   try
     CheckIs(obj1, TMockObject, 'obj1');
     CheckIs(obj2, TMockObject, 'obj2');
@@ -217,15 +216,10 @@ begin
   fModel := model;
 end;
 
-function TMockActivator.CreateInstance: TValue;
+function TMockActivator.CreateInstance(
+  const resolver: IDependencyResolver): TValue;
 begin
   Result := fModel.ComponentType.AsInstance.MetaclassType.Create;
-end;
-
-function TMockActivator.CreateInstance(
-  resolver: IDependencyResolver): TValue;
-begin
-  Result := CreateInstance;
 end;
 
 { TMockContext }
@@ -315,7 +309,7 @@ var
   intf: IInterface;
 begin
   fLifetimeManager := TSingletonLifetimeManager.Create(fModel);
-  obj := fLifetimeManager.GetInstance.AsObject;
+  obj := fLifetimeManager.GetInstance(nil).AsObject;
   CheckTrue(Supports(obj, IInterface, intf), 'interface not supported');
   intf := nil;
   fLifetimeManager := nil;

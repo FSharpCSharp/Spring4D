@@ -31,7 +31,7 @@ uses
   SysUtils,
   TestFramework,
   Spring,
-  Spring.Reflection,
+  Spring.Container.Core,
   Spring.Container.Pool;
 
 type
@@ -43,11 +43,11 @@ type
     property ID: Integer read fID;
   end;
 
-  TMockActivator = class(TInterfaceBase, IObjectActivator)
+  TMockActivator = class(TInterfaceBase, IComponentActivator)
   private
     fLastID: Integer;
   public
-    function CreateInstance: TValue;
+    function CreateInstance(const resolver: IDependencyResolver): TValue;
     property LastID: Integer read fLastID;
   end;
 
@@ -70,7 +70,7 @@ implementation
 
 { TMockActivator }
 
-function TMockActivator.CreateInstance: TValue;
+function TMockActivator.CreateInstance(const resolver: IDependencyResolver): TValue;
 begin
   Inc(fLastID);
   Result := TMockIDObject.Create(fLastID);
@@ -118,7 +118,7 @@ begin
   fPool := CreatePool(0, 0);
   CheckEquals(0, fActivator.LastID, 'LastID should be 0.');
 
-  obj := fPool.GetInstance;
+  obj := fPool.GetInstance(nil);
   CheckObject(obj, 1, 'ID should be 1.');
   CheckEquals(1, fActivator.LastID, 'LastID should be 1.');
   fPool.ReleaseInstance(obj);
@@ -130,18 +130,19 @@ var
   obj: TObject;
 begin
   fPool := CreatePool(1, 0);
+  fPool.Initialize(nil);
   CheckEquals(1, fActivator.LastID, 'LastID should be 1.');
 
-  obj := fPool.GetInstance;
+  obj := fPool.GetInstance(nil);
   CheckObject(obj, 1, 'ID should be 1.');
   fPool.ReleaseInstance(obj);
   CheckEquals(1, fActivator.LastID, 'LastID should be still 1.');
 
-  obj := fPool.GetInstance;
+  obj := fPool.GetInstance(nil);
   CheckObject(obj, 1, 'ID should be still 1.');
   CheckEquals(1, fActivator.LastID, 'LastID should be still 1.');
 
-  obj := fPool.GetInstance;
+  obj := fPool.GetInstance(nil);
   CheckObject(obj, 2, 'ID should be 2.');
   CheckEquals(2, fActivator.LastID, 'LastID should be 2.');
 end;
@@ -151,15 +152,16 @@ var
   obj: TObject;
 begin
   fPool := CreatePool(3, 5);
+  fPool.Initialize(nil);
   CheckEquals(3, fActivator.LastID, 'LastID should be 3.');
 
-  obj := fPool.GetInstance;
+  obj := fPool.GetInstance(nil);
   CheckObject(obj, 1, 'ID should be 1.');
 
-  obj := fPool.GetInstance;
+  obj := fPool.GetInstance(nil);
   CheckObject(obj, 2, 'ID should be 2.');
 
-  obj := fPool.GetInstance;
+  obj := fPool.GetInstance(nil);
   CheckObject(obj, 3, 'ID should be 3.');
 
   CheckEquals(3, fActivator.LastID, 'LastID should be still 3.');

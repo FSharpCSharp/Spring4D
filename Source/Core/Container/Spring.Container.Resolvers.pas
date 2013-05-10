@@ -68,10 +68,10 @@ type
     function ResolveDependency(dependency: TRttiType): TValue; overload; virtual;
     function ResolveDependency(dependency: TRttiType; const argument: TValue): TValue; overload; virtual;
 
-    function CanResolveDependencies(dependencies: TArray<TRttiType>): Boolean; overload; virtual;
-    function CanResolveDependencies(dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean; overload; virtual;
-    function ResolveDependencies(dependencies: TArray<TRttiType>): TArray<TValue>; overload; virtual;
-    function ResolveDependencies(dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): TArray<TValue>; overload; virtual;
+    function CanResolveDependencies(const dependencies: TArray<TRttiType>): Boolean; overload; virtual;
+    function CanResolveDependencies(const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean; overload; virtual;
+    function ResolveDependencies(const dependencies: TArray<TRttiType>): TArray<TValue>; overload; virtual;
+    function ResolveDependencies(const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): TArray<TValue>; overload; virtual;
 
     function CanResolveDependencies(const Inject: IInjection): Boolean; overload; virtual;
     function CanResolveDependencies(const Inject: IInjection; const arguments: TArray<TValue>): Boolean; overload; virtual;
@@ -113,8 +113,8 @@ type
         constructor Create(const context: IContainerContext; const registry: IComponentRegistry;
           const name: string; const value: TValue);
 
-        function CanResolveDependencies(dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean; override;
-        function ResolveDependencies(dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): TArray<TValue>; override;
+        function CanResolveDependencies(const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean; override;
+        function ResolveDependencies(const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): TArray<TValue>; override;
 
         function CanResolveDependencies(const Inject: IInjection): Boolean; override;
         function ResolveDependencies(const Inject: IInjection): TArray<TValue>; override;
@@ -319,7 +319,7 @@ begin
   if model = nil then Exit(argument);
   fDependencyTypes.Add(dependency);
   try
-    instance := model.LifetimeManager.GetInstance;
+    instance := model.LifetimeManager.GetInstance(Self);
   finally
     fDependencyTypes.Remove(dependency);
   end;
@@ -327,13 +327,13 @@ begin
 end;
 
 function TDependencyResolver.CanResolveDependencies(
-  dependencies: TArray<TRttiType>): Boolean;
+  const dependencies: TArray<TRttiType>): Boolean;
 begin
   Result := CanResolveDependencies(dependencies, nil);
 end;
 
 function TDependencyResolver.CanResolveDependencies(
-  dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean;
+  const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean;
 var
   dependency: TRttiType;
   i: Integer;
@@ -367,13 +367,13 @@ begin
 end;
 
 function TDependencyResolver.ResolveDependencies(
-  dependencies: TArray<TRttiType>): TArray<TValue>;
+  const dependencies: TArray<TRttiType>): TArray<TValue>;
 begin
   Result := ResolveDependencies(dependencies, nil);
 end;
 
 function TDependencyResolver.ResolveDependencies(
-  dependencies: TArray<TRttiType>;
+  const dependencies: TArray<TRttiType>;
   const arguments: TArray<TValue>): TArray<TValue>;
 var
   dependency: TRttiType;
@@ -510,7 +510,7 @@ begin
   if Assigned(resolverOverride) then
     resolver := resolverOverride.GetResolver(Context)
   else
-    resolver := nil;
+    resolver := Context.DependencyResolver;
   Result := DoResolve(model, serviceType, resolver);
 end;
 
@@ -535,7 +535,7 @@ begin
   if Assigned(resolverOverride) then
     resolver := resolverOverride.GetResolver(Context)
   else
-    resolver := nil;
+    resolver := Context.DependencyResolver;
   Result := DoResolve(model, serviceType, resolver);
 end;
 
@@ -550,7 +550,7 @@ begin
   for i := 0 to models.Count - 1 do
   begin
     model := models[i];
-    Result[i] := DoResolve(model, serviceType, nil);
+    Result[i] := DoResolve(model, serviceType, Context.DependencyResolver);
   end;
 end;
 
@@ -637,7 +637,7 @@ begin
 end;
 
 function TParameterOverride.TResolver.CanResolveDependencies(
-  dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean;
+  const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean;
 var
   dependency: TRttiType;
   i: Integer;
@@ -683,7 +683,7 @@ begin
 end;
 
 function TParameterOverride.TResolver.ResolveDependencies(
-  dependencies: TArray<TRttiType>;
+  const dependencies: TArray<TRttiType>;
   const arguments: TArray<TValue>): TArray<TValue>;
 var
   dependency: TRttiType;

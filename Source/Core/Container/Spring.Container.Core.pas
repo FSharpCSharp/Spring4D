@@ -35,7 +35,6 @@ uses
   Spring,
   Spring.Collections,
   Spring.DesignPatterns,
-  Spring.Reflection,
   Spring.Services;
 
 type
@@ -128,17 +127,16 @@ type
   ///	</summary>
   ILifetimeManager = interface
     ['{7DF9A902-B07A-468B-B201-B4561A921CF5}']
-    function GetInstance: TValue; overload;
-    function GetInstance(resolver: IDependencyResolver): TValue; overload;
+    function GetInstance(const resolver: IDependencyResolver): TValue;
     procedure ReleaseInstance(instance: TValue);
   end;
 
   ///	<summary>
   ///	  Component Activator
   ///	</summary>
-  IComponentActivator = interface(IObjectActivator)
+  IComponentActivator = interface
     ['{18E6DF78-C947-484F-A0A8-D9A5B0BEC887}']
-    function CreateInstance(resolver: IDependencyResolver): TValue; overload;
+    function CreateInstance(const resolver: IDependencyResolver): TValue;
   end;
 
   ///	<summary>
@@ -156,7 +154,7 @@ type
   {$ENDREGION}
 
     procedure Initialize(target: TRttiMember);
-    procedure Inject(instance: TValue; const arguments: array of TValue);
+    procedure Inject(const instance: TValue; const arguments: array of TValue);
     function GetDependencies: TArray<TRttiType>;
     property DependencyCount: Integer read GetDependencyCount;
     property Target: TRttiMember read GetTarget;
@@ -188,10 +186,10 @@ type
 
   IDependencyResolver = interface(IResolver)
     ['{15ADEA1D-7C3F-48D5-8E85-84B4332AFF5F}']
-    function CanResolveDependencies(dependencies: TArray<TRttiType>): Boolean; overload;
-    function CanResolveDependencies(dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean; overload;
-    function ResolveDependencies(dependencies: TArray<TRttiType>): TArray<TValue>; overload;
-    function ResolveDependencies(dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): TArray<TValue>; overload;
+    function CanResolveDependencies(const dependencies: TArray<TRttiType>): Boolean; overload;
+    function CanResolveDependencies(const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean; overload;
+    function ResolveDependencies(const dependencies: TArray<TRttiType>): TArray<TValue>; overload;
+    function ResolveDependencies(const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): TArray<TValue>; overload;
 
     function CanResolveDependencies(const Inject: IInjection): Boolean; overload;
     function CanResolveDependencies(const Inject: IInjection; const arguments: TArray<TValue>): Boolean; overload;
@@ -357,7 +355,8 @@ uses
   Generics.Collections,
   Spring.Helpers,
   Spring.Container.Builder,
-  Spring.Container.ResourceStrings;
+  Spring.Container.ResourceStrings,
+  Spring.Reflection;
 
 
 {$REGION 'TComponentModel'}
@@ -400,9 +399,6 @@ begin
   end;
   injectionExists := MethodInjections.TryGetFirst(Result,
     TInjectionFilters.ContainsMember(method));
-//  Result := MethodInjections.FirstOrDefault(
-//    TInjectionFilters.ContainsMember(method));
-//  injectionExists := Assigned(Result);
   if not injectionExists then
   begin
     Result := InjectionFactory.CreateMethodInjection(Self, methodName);
@@ -431,9 +427,6 @@ begin
   end;
   injectionExists := MethodInjections.TryGetFirst(Result,
     TInjectionFilters.ContainsMember(method));
-//  Result := MethodInjections.FirstOrDefault(
-//    TInjectionFilters.ContainsMember(method));
-//  injectionExists := Assigned(Result);
   if not injectionExists then
   begin
     Result := InjectionFactory.CreateMethodInjection(Self, methodName);
@@ -457,9 +450,6 @@ begin
   end;
   injectionExists := PropertyInjections.TryGetFirst(Result,
     TInjectionFilters.ContainsMember(propertyMember));
-//  Result := PropertyInjections.FirstOrDefault(
-//    TInjectionFilters.ContainsMember(propertyMember));
-//  injectionExists := Assigned(Result);
   if not injectionExists then
   begin
     Result := InjectionFactory.CreatePropertyInjection(Self, propertyName);
@@ -483,9 +473,6 @@ begin
   end;
   injectionExists := FieldInjections.TryGetFirst(Result,
     TInjectionFilters.ContainsMember(field));
-//  Result := FieldInjections.FirstOrDefault(
-//    TInjectionFilters.ContainsMember(field));
-//  injectionExists := Assigned(Result);
   if not injectionExists then
   begin
     Result := InjectionFactory.CreateFieldInjection(Self, fieldName);

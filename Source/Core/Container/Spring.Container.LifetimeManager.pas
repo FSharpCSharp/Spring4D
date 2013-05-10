@@ -51,8 +51,7 @@ type
     property Model: TComponentModel read fModel;
   public
     constructor Create(model: TComponentModel);
-    function GetInstance: TValue; overload;
-    function GetInstance(resolver: IDependencyResolver): TValue; overload; virtual; abstract;
+    function GetInstance(const resolver: IDependencyResolver): TValue; overload; virtual; abstract;
     procedure ReleaseInstance(instance: TValue); virtual; abstract;
   end;
 
@@ -61,13 +60,13 @@ type
     fInstance: TFunc<TValue>;
   public
     destructor Destroy; override;
-    function GetInstance(resolver: IDependencyResolver): TValue; override;
+    function GetInstance(const resolver: IDependencyResolver): TValue; override;
     procedure ReleaseInstance(instance: TValue); override;
   end;
 
   TTransientLifetimeManager = class(TLifetimeManagerBase)
   public
-    function GetInstance(resolver: IDependencyResolver): TValue; override;
+    function GetInstance(const resolver: IDependencyResolver): TValue; override;
     procedure ReleaseInstance(instance: TValue); override;
   end;
 
@@ -80,7 +79,7 @@ type
   public
     constructor Create(model: TComponentModel);
     destructor Destroy; override;
-    function GetInstance(resolver: IDependencyResolver): TValue; override;
+    function GetInstance(const resolver: IDependencyResolver): TValue; override;
     procedure ReleaseInstance(instance: TValue); override;
   end;
 
@@ -89,7 +88,7 @@ type
     fPool: IObjectPool;
   public
     constructor Create(model: TComponentModel);
-    function GetInstance(resolver: IDependencyResolver): TValue; override;
+    function GetInstance(const resolver: IDependencyResolver): TValue; override;
     procedure ReleaseInstance(instance: TValue); override;
   end;
 
@@ -170,11 +169,6 @@ begin
   Result := fModel.ComponentActivator;
 end;
 
-function TLifetimeManagerBase.GetInstance: TValue;
-begin
-  Result := GetInstance(nil);
-end;
-
 {$ENDREGION}
 
 
@@ -189,7 +183,8 @@ begin
   inherited Destroy;
 end;
 
-function TSingletonLifetimeManager.GetInstance(resolver: IDependencyResolver): TValue;
+function TSingletonLifetimeManager.GetInstance(
+  const resolver: IDependencyResolver): TValue;
 var
   newInstance: TValue;
 begin
@@ -211,7 +206,8 @@ end;
 
 {$REGION 'TTransientLifetimeManager'}
 
-function TTransientLifetimeManager.GetInstance(resolver: IDependencyResolver): TValue;
+function TTransientLifetimeManager.GetInstance(
+  const resolver: IDependencyResolver): TValue;
 begin
   Result := ComponentActivator.CreateInstance(resolver);
   DoAfterConstruction(Result);
@@ -260,7 +256,7 @@ begin
 end;
 
 function TSingletonPerThreadLifetimeManager.GetInstance(
-  resolver: IDependencyResolver): TValue;
+  const resolver: IDependencyResolver): TValue;
 var
   threadID: THandle;
   instance: TValue;
@@ -297,9 +293,9 @@ begin
   fPool := TSimpleObjectPool.Create(model.ComponentActivator, model.MinPoolsize, model.MaxPoolsize);
 end;
 
-function TPooledLifetimeManager.GetInstance(resolver: IDependencyResolver): TValue;
+function TPooledLifetimeManager.GetInstance(const resolver: IDependencyResolver): TValue;
 begin
-  Result := fPool.GetInstance;
+  Result := fPool.GetInstance(resolver);
   DoAfterConstruction(Result);
 end;
 
