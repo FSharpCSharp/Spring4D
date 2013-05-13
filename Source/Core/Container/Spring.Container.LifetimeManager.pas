@@ -43,16 +43,16 @@ type
     fModel: TComponentModel;
     function GetActivator: IComponentActivator;
   protected
-    procedure DoAfterConstruction(instance: TValue); virtual;
-    procedure DoBeforeDestruction(instance: TValue); virtual;
+    procedure DoAfterConstruction(const instance: TValue); virtual;
+    procedure DoBeforeDestruction(const instance: TValue); virtual;
   protected
-    function TryGetInterfaceWithoutCopy(instance: TValue; const IID: TGUID; out intf): Boolean;
+    function TryGetInterfaceWithoutCopy(const instance: TValue; const IID: TGUID; out intf): Boolean;
     property ComponentActivator: IComponentActivator read GetActivator;
     property Model: TComponentModel read fModel;
   public
     constructor Create(model: TComponentModel);
     function GetInstance(const resolver: IDependencyResolver): TValue; overload; virtual; abstract;
-    procedure ReleaseInstance(instance: TValue); virtual; abstract;
+    procedure ReleaseInstance(const instance: TValue); virtual; abstract;
   end;
 
   TSingletonLifetimeManager = class(TLifetimeManagerBase)
@@ -61,13 +61,13 @@ type
   public
     destructor Destroy; override;
     function GetInstance(const resolver: IDependencyResolver): TValue; override;
-    procedure ReleaseInstance(instance: TValue); override;
+    procedure ReleaseInstance(const instance: TValue); override;
   end;
 
   TTransientLifetimeManager = class(TLifetimeManagerBase)
   public
     function GetInstance(const resolver: IDependencyResolver): TValue; override;
-    procedure ReleaseInstance(instance: TValue); override;
+    procedure ReleaseInstance(const instance: TValue); override;
   end;
 
   TSingletonPerThreadLifetimeManager = class(TLifetimeManagerBase)
@@ -75,12 +75,12 @@ type
     fInstances: TDictionary<TThreadID, TFunc<TValue>>;
   protected
     procedure HandleValueNotify(sender: TObject; const item: TFunc<TValue>; action: TCollectionNotification);
-    function CreateHolder(instance: TValue): TFunc<TValue>; virtual;
+    function CreateHolder(const instance: TValue): TFunc<TValue>; virtual;
   public
     constructor Create(model: TComponentModel);
     destructor Destroy; override;
     function GetInstance(const resolver: IDependencyResolver): TValue; override;
-    procedure ReleaseInstance(instance: TValue); override;
+    procedure ReleaseInstance(const instance: TValue); override;
   end;
 
   TPooledLifetimeManager = class(TLifetimeManagerBase)
@@ -89,7 +89,7 @@ type
   public
     constructor Create(model: TComponentModel);
     function GetInstance(const resolver: IDependencyResolver): TValue; override;
-    procedure ReleaseInstance(instance: TValue); override;
+    procedure ReleaseInstance(const instance: TValue); override;
   end;
 
 implementation
@@ -107,7 +107,7 @@ begin
   fModel := model;
 end;
 
-function TLifetimeManagerBase.TryGetInterfaceWithoutCopy(instance: TValue;
+function TLifetimeManagerBase.TryGetInterfaceWithoutCopy(const instance: TValue;
   const IID: TGUID; out intf): Boolean;
 
   function GetInterface(Self: TObject; const IID: TGUID; out Obj): Boolean;
@@ -144,7 +144,7 @@ begin
   end
 end;
 
-procedure TLifetimeManagerBase.DoAfterConstruction(instance: TValue);
+procedure TLifetimeManagerBase.DoAfterConstruction(const instance: TValue);
 var
   intf: Pointer;
 begin
@@ -154,7 +154,7 @@ begin
   end;
 end;
 
-procedure TLifetimeManagerBase.DoBeforeDestruction(instance: TValue);
+procedure TLifetimeManagerBase.DoBeforeDestruction(const instance: TValue);
 var
   intf: Pointer;
 begin
@@ -197,7 +197,7 @@ begin
   Result := fInstance;
 end;
 
-procedure TSingletonLifetimeManager.ReleaseInstance(instance: TValue);
+procedure TSingletonLifetimeManager.ReleaseInstance(const instance: TValue);
 begin
 end;
 
@@ -213,7 +213,7 @@ begin
   DoAfterConstruction(Result);
 end;
 
-procedure TTransientLifetimeManager.ReleaseInstance(instance: TValue);
+procedure TTransientLifetimeManager.ReleaseInstance(const instance: TValue);
 begin
   TArgument.CheckNotNull(instance, 'instance');
   DoBeforeDestruction(instance);
@@ -241,7 +241,7 @@ begin
   inherited Destroy;
 end;
 
-function TSingletonPerThreadLifetimeManager.CreateHolder(instance: TValue): TFunc<TValue>;
+function TSingletonPerThreadLifetimeManager.CreateHolder(const instance: TValue): TFunc<TValue>;
 begin
   Result := TValueHolder.Create(instance, Model.RefCounting);
 end;
@@ -278,7 +278,7 @@ begin
   Result := holder;
 end;
 
-procedure TSingletonPerThreadLifetimeManager.ReleaseInstance(instance: TValue);
+procedure TSingletonPerThreadLifetimeManager.ReleaseInstance(const instance: TValue);
 begin
 end;
 
@@ -299,7 +299,7 @@ begin
   DoAfterConstruction(Result);
 end;
 
-procedure TPooledLifetimeManager.ReleaseInstance(instance: TValue);
+procedure TPooledLifetimeManager.ReleaseInstance(const instance: TValue);
 begin
   TArgument.CheckNotNull(instance, 'instance');
   DoBeforeDestruction(instance);

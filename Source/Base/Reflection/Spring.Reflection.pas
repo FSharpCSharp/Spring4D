@@ -166,11 +166,11 @@ type
 
   TActivator = record
   public
-    class function CreateInstance(instanceType: TRttiInstanceType): TObject; overload; static;
-    class function CreateInstance(const typeName: string): TObject; overload; static;
-    class function CreateInstance(const typeInfo: PTypeInfo): TObject; overload; static;
+    class function CreateInstance(instanceType: TRttiInstanceType): TValue; overload; static;
+    class function CreateInstance(const typeName: string): TValue; overload; static;
+    class function CreateInstance(const typeInfo: PTypeInfo): TValue; overload; static;
     class function CreateInstance(instanceType: TRttiInstanceType;
-      constructorMethod: TRttiMethod; const arguments: array of TValue): TObject; overload; static;
+      constructorMethod: TRttiMethod; const arguments: array of TValue): TValue; overload; static;
   end;
 
   {$ENDREGION}
@@ -607,69 +607,63 @@ end;
 {$REGION 'TActivator'}
 
 class function TActivator.CreateInstance(instanceType: TRttiInstanceType;
-  constructorMethod: TRttiMethod; const arguments: array of TValue): TObject;
+  constructorMethod: TRttiMethod; const arguments: array of TValue): TValue;
 begin
   TArgument.CheckNotNull(instanceType, 'instanceType');
   TArgument.CheckNotNull(constructorMethod, 'constructorMethod');
-  Result := constructorMethod.Invoke(instanceType.MetaclassType, arguments).AsObject;
+  Result := constructorMethod.Invoke(instanceType.MetaclassType, arguments);
 end;
 
-class function TActivator.CreateInstance(const typeName: string): TObject;
+class function TActivator.CreateInstance(const typeName: string): TValue;
 var
   context: TRttiContext;
   typeObj: TRttiType;
 begin
-  Result := nil;
-  context := TRttiContext.Create;
-  try
-    typeObj := context.FindType(typeName);
-    if not (typeObj is TRttiInstanceType) then
-    begin
-      Exit;
-    end;
+  typeObj := context.FindType(typeName);
+  if typeObj is TRttiInstanceType then
+  begin
     Result := TActivator.CreateInstance(TRttiInstanceType(typeObj));
-  finally
-    context.Free;
+  end
+  else
+  begin
+    Result := TValue.Empty;
   end;
 end;
 
-class function TActivator.CreateInstance(const typeInfo: PTypeInfo): TObject;
+class function TActivator.CreateInstance(const typeInfo: PTypeInfo): TValue;
 var
   context: TRttiContext;
   typeObj: TRttiType;
 begin
   TArgument.CheckNotNull(typeInfo, 'typeInfo');
 
-  Result := nil;
-  context := TRttiContext.Create;
-  try
-    typeObj := context.GetType(typeInfo);
-    if not (typeObj is TRttiInstanceType) then
-    begin
-      Exit;
-    end;
+  typeObj := context.GetType(typeInfo);
+  if typeObj is TRttiInstanceType then
+  begin
     Result := TActivator.CreateInstance(TRttiInstanceType(typeObj));
-  finally
-    context.Free;
+  end
+  else
+  begin
+    Result := TValue.Empty;
   end;
 end;
 
 class function TActivator.CreateInstance(
-  instanceType: TRttiInstanceType): TObject;
+  instanceType: TRttiInstanceType): TValue;
 var
   method: TRttiMethod;
 begin
   TArgument.CheckNotNull(instanceType, 'instanceType');
 
-  Result := nil;
   for method in instanceType.GetMethods do
   begin
     if method.IsConstructor and (Length(method.GetParameters) = 0) then
     begin
-      Result := method.Invoke(instanceType.MetaclassType, []).AsObject;
-      Break;
+      Result := method.Invoke(instanceType.MetaclassType, []);
+      Exit;
     end;
   end;
+  Result := TValue.Empty;
 end;
 
 {$ENDREGION}
