@@ -63,6 +63,7 @@ type
     function GetInjectionFactory: IInjectionFactory;
     function GetComponentRegistry: IComponentRegistry;
     function GetServiceResolver: IServiceResolver;
+    procedure CheckIsClass(componentType: TRttiType);
     function CreateLifetimeManager(model: TComponentModel): ILifetimeManager;
     property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
     property DependencyResolver: IDependencyResolver read GetDependencyResolver;
@@ -138,6 +139,7 @@ function GlobalContainer: TContainer;
 implementation
 
 uses
+  Spring.Helpers,
   Spring.Container.Builder,
   Spring.Container.LifetimeManager,
   Spring.Container.Injection,
@@ -188,6 +190,19 @@ begin
   fBuilder.BuildAll;
 end;
 
+procedure TContainer.CheckIsClass(componentType: TRttiType);
+begin
+  if not componentType.IsClass then
+  begin
+    if componentType.IsPublicType then
+      raise ERegistrationException.CreateResFmt(@SPoolingNotSupported, [
+        componentType.QualifiedName])
+    else
+      raise ERegistrationException.CreateResFmt(@SPoolingNotSupported, [
+        componentType.Name]);
+  end;
+end;
+
 procedure TContainer.InitializeInspectors;
 var
   inspectors: TArray<IBuilderInspector>;
@@ -215,25 +230,24 @@ begin
   TArgument.CheckNotNull(model, 'model');
   case model.LifetimeType of
     TLifetimeType.Singleton:
-      begin
-        Result := TSingletonLifetimeManager.Create(model);
-      end;
+    begin
+      Result := TSingletonLifetimeManager.Create(model);
+    end;
     TLifetimeType.Transient:
-      begin
-        Result := TTransientLifetimeManager.Create(model);
-      end;
+    begin
+      Result := TTransientLifetimeManager.Create(model);
+    end;
     TLifetimeType.SingletonPerThread:
-      begin
-        Result := TSingletonPerThreadLifetimeManager.Create(model);
-      end;
+    begin
+      Result := TSingletonPerThreadLifetimeManager.Create(model);
+    end;
     TLifetimeType.Pooled:
-      begin
-        Result := TPooledLifetimeManager.Create(model);
-      end;
-    else
-      begin
-        raise ERegistrationException.CreateRes(@SUnexpectedLifetimeType);
-      end;
+    begin
+      CheckIsClass(model.ComponentType);
+      Result := TPooledLifetimeManager.Create(model);
+    end;
+  else
+    raise ERegistrationException.CreateRes(@SUnexpectedLifetimeType);
   end;
 end;
 

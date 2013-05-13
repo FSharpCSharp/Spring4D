@@ -157,6 +157,7 @@ uses
   Spring.Container.LifetimeManager,
   Spring.Container.ResourceStrings;
 
+
 {$REGION 'TResolver'}
 
 constructor TResolver.Create(const context: IContainerContext;
@@ -314,14 +315,19 @@ begin
   begin
     Exit(argument);
   end;
-  CheckCircularDependency(dependency);
-  model := GetEligibleModel(dependency, argument);
-  if model = nil then Exit(argument);
-  fDependencyTypes.Add(dependency);
+  MonitorEnter(Self);
   try
-    instance := model.LifetimeManager.GetInstance(Self);
+    CheckCircularDependency(dependency);
+    model := GetEligibleModel(dependency, argument);
+    if model = nil then Exit(argument);
+    fDependencyTypes.Add(dependency);
+    try
+      instance := model.LifetimeManager.GetInstance(Self);
+    finally
+      fDependencyTypes.Remove(dependency);
+    end;
   finally
-    fDependencyTypes.Remove(dependency);
+    MonitorExit(Self);
   end;
   ConstructValue(dependency.Handle, instance, Result);
 end;
@@ -730,5 +736,6 @@ begin
 end;
 
 {$ENDREGION}
+
 
 end.

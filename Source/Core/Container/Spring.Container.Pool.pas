@@ -71,7 +71,10 @@ type
     fInitialized: Boolean;
   protected
     function AddNewInstance(const resolver: IDependencyResolver): TObject;
+    procedure CollectInactiveInstances;
     function GetAvailableObject: TObject;
+    procedure InstancesChanged(Sender: TObject; const item: TObject;
+      action: TCollectionChangedAction);
     property MinPoolsize: Nullable<Integer> read fMinPoolsize;
     property MaxPoolsize: Nullable<Integer> read fMaxPoolsize;
   public
@@ -83,7 +86,11 @@ type
 
 implementation
 
-{ TSimpleObjectPool }
+type
+  TInterfacedObjectAccess = class(TInterfacedObject);
+
+
+{$REGION 'TSimpleObjectPool'}
 
 constructor TSimpleObjectPool.Create(const activator: IComponentActivator;
   minPoolSize, maxPoolSize: Integer);
@@ -98,7 +105,8 @@ begin
   begin
     fMaxPoolsize := maxPoolSize;
   end;
-  fInstances := TCollections.CreateObjectList<TObject>;
+  fInstances := TCollections.CreateList<TObject>;
+  fInstances.OnChanged.Add(InstancesChanged);
   fAvailableList := TCollections.CreateQueue<TObject>;
   fActiveList := TCollections.CreateList<TObject>;
 end;
@@ -106,11 +114,23 @@ end;
 function TSimpleObjectPool.AddNewInstance(const resolver: IDependencyResolver): TObject;
 begin
   Result := fActivator.CreateInstance(resolver).AsObject;
-  MonitorEnter(TObject(fInstances));
-  try
-    fInstances.Add(Result);
-  finally
-    MonitorExit(TObject(fInstances));
+  if Result.InheritsFrom(TInterfacedObject) then
+    TInterfacedObjectAccess(Result)._AddRef;
+  fInstances.Add(Result);
+end;
+
+procedure TSimpleObjectPool.CollectInactiveInstances;
+var
+  instance: TObject;
+begin
+  for instance in fInstances do
+  begin
+    if instance.InheritsFrom(TInterfacedObject)
+      and (TInterfacedObject(instance).RefCount = 1)
+      and fActiveList.Contains(instance) then
+    begin
+      ReleaseInstance(instance);
+    end;
   end;
 end;
 
@@ -131,62 +151,72 @@ begin
   fInitialized := True;
 end;
 
+procedure TSimpleObjectPool.InstancesChanged(Sender: TObject;
+  const item: TObject; action: TCollectionChangedAction);
+begin
+  if action = caRemoved then
+  begin
+    if item.InheritsFrom(TInterfacedObject) then
+    begin
+      TInterfacedObjectAccess(item)._Release;
+    end
+    else
+    begin
+      item.Free;
+    end;
+  end;
+end;
+
 function TSimpleObjectPool.GetAvailableObject: TObject;
 begin
   Result := fAvailableList.Dequeue;
 end;
 
 function TSimpleObjectPool.GetInstance(const resolver: IDependencyResolver): TObject;
-var
-  instance: TObject;
 begin
-  if not fInitialized then
-    Initialize(resolver);
-
-  MonitorEnter(TObject(fAvailableList));
+  MonitorEnter(Self);
   try
-    if fAvailableList.Count > 0 then
+    if not fInitialized then
+      Initialize(resolver);
+
+    if fAvailableList.IsEmpty then
     begin
-      instance := GetAvailableObject;
+      CollectInactiveInstances;
+    end;
+
+    if not fAvailableList.IsEmpty then
+    begin
+      Result := GetAvailableObject;
     end
     else
     begin
-      instance := AddNewInstance(resolver);
+      Result := AddNewInstance(resolver);
     end;
-  finally
-    MonitorExit(TObject(fAvailableList));
-  end;
 
-  MonitorEnter(TObject(fActiveList));
-  try
-    fActiveList.Add(instance);
+    fActiveList.Add(Result);
   finally
-    MonitorExit(TObject(fActiveList));
+    MonitorExit(Self);
   end;
-
-  Result := instance;
 end;
 
 procedure TSimpleObjectPool.ReleaseInstance(instance: TObject);
 begin
   TArgument.CheckNotNull(instance, 'instance');
 
-  MonitorEnter(TObject(fActiveList));
+  MonitorEnter(Self);
   try
     fActiveList.Remove(instance);
-  finally
-    MonitorExit(TObject(fActiveList));
-  end;
 
-  MonitorEnter(TObject(fAvailableList));
-  try
     if not fMaxPoolsize.HasValue or (fAvailableList.Count < fMaxPoolsize.Value) then
     begin
       fAvailableList.Enqueue(instance);
     end;
   finally
-    MonitorExit(TObject(fAvailableList));
+    MonitorExit(Self);
   end;
 end;
+
+{$ENDREGION}
+
 
 end.

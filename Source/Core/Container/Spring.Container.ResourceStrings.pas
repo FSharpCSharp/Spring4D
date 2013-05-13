@@ -55,6 +55,7 @@ resourcestring
   SComponentNotFound = 'Cannot found the component registered.';
   SUnexpectedLifetimeType = 'Unexpected lifetimeType.';
   SActivatorDelegateExpected = 'An activator delegate was expected.';
+  SPoolingNotSupported = 'Pooling not supported for type: "%s".';
 
 implementation
 
