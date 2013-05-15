@@ -2,32 +2,32 @@ unit uOrderValidator;
 
 interface
 
-implementation
-
 uses
-     uOrder
-   , uOrderInterfaces
-   , Spring.Container
-   ;
+  uOrder,
+  uOrderInterfaces;
 
 type
-
   TOrderValidator = class(TInterfacedObject, IOrderValidator)
+  public
     function ValidateOrder(aOrder: TOrder): Boolean;
   end;
 
+implementation
+
+uses
+  Spring.Container;
 
 { TOrderValidator }
 
 function TOrderValidator.ValidateOrder(aOrder: TOrder): Boolean;
 begin
-  Result := aOrder <> nil;
+  Result := Assigned(aOrder);
   {$IFDEF CONSOLEAPP}
-    WriteLn('Validating Order....');
+  Writeln('Validating Order....');
   {$ENDIF}
 end;
 
 initialization
-  GlobalContainer.RegisterType<TOrderValidator>.Implements<IOrderValidator>;
+  GlobalContainer.RegisterType<TOrderValidator>;
 
 end.

@@ -3,10 +3,11 @@ unit uOrderProcessor;
 interface
 
 uses
-     uOrder, uOrderEntry, uOrderValidator;
+  uOrder,
+  uOrderEntry,
+  uOrderValidator;
 
 type
-
   IOrderProcessor = interface
     function ProcessOrder(aOrder: TOrder): Boolean;
   end;
@@ -42,7 +43,7 @@ begin
   end;
 
   {$IFDEF CONSOLEAPP}
-    WriteLn('Order has been processed....');
+  Writeln('Order has been processed....');
   {$ENDIF}
 end;
 

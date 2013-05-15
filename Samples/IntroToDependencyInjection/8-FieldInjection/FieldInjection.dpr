@@ -2,11 +2,10 @@ program FieldInjection;
 
 {$APPTYPE CONSOLE}
 
-{$R *.res}
-
 uses
   SysUtils,
   uDoOrderProcessing in 'uDoOrderProcessing.pas',
+  uOrder in 'uOrder.pas',
   uOrderEntry in 'uOrderEntry.pas',
   uOrderInterfaces in 'uOrderInterfaces.pas',
   uOrderProcessor in 'uOrderProcessor.pas',
@@ -19,5 +18,5 @@ begin
     on E: Exception do
       Writeln(E.ClassName, ': ', E.Message);
   end;
-  ReadLn;
+  Readln;
 end.

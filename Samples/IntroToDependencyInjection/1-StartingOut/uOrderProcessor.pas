@@ -3,7 +3,9 @@ unit uOrderProcessor;
 interface
 
 uses
-     uOrder, uOrderEntry, uOrderValidator;
+  uOrder,
+  uOrderEntry,
+  uOrderValidator;
 
 type
   TOrderProcessor = class
@@ -44,7 +46,7 @@ begin
     Result := FOrderEntry.EnterOrderIntoDatabase(aOrder);
   end;
   {$IFDEF CONSOLEAPP}
-  WriteLn('Order has been processed....');
+  Writeln('Order has been processed....');
   {$ENDIF}
 end;
 

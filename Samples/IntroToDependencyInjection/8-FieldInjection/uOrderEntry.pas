@@ -2,31 +2,32 @@ unit uOrderEntry;
 
 interface
 
+uses
+  uOrder,
+  uOrderInterfaces;
+
+type
+  TOrderEntry = class(TInterfacedObject, IOrderEntry)
+  public
+    function EnterOrderIntoDatabase(aOrder: TOrder): Boolean;
+  end;
+
 implementation
 
 uses
-      uOrder
-    , uOrderInterfaces
-    , Spring.Container
-    ;
-
-type
-
-  TOrderEntry = class(TInterfacedObject, IOrderEntry)
-    function EnterOrderIntoDatabase(aOrder: TOrder): Boolean;
-  end;
+  Spring.Container;
 
 { TOrderEntry }
 
 function TOrderEntry.EnterOrderIntoDatabase(aOrder: TOrder): Boolean;
 begin
-  Result := aOrder <> nil;
+  Result := Assigned(aOrder);
   {$IFDEF CONSOLEAPP}
-    WriteLn('Entering order into the database....');
+  Writeln('Entering order into the database....');
   {$ENDIF}
 end;
 
 initialization
-  GlobalContainer.RegisterType<TOrderEntry>.Implements<IOrderEntry>;
+  GlobalContainer.RegisterType<TOrderEntry>;
 
 end.

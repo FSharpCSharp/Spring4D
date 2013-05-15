@@ -2,24 +2,26 @@ unit uOrderProcessor;
 
 interface
 
-implementation
-
 uses
-       uOrder
-     , uOrderInterfaces
-     , Spring.Container
-     , Spring.Services
-     ;
+  uOrder,
+  uOrderInterfaces,
+  Spring.Services;
 
 type
   TOrderProcessor = class(TInterfacedObject, IOrderProcessor)
   private
     [Inject]
     FOrderValidator: IOrderValidator;
+    [Inject]
     FOrderEntry: IOrderEntry;
   public
     function ProcessOrder(aOrder: TOrder): Boolean;
   end;
+
+implementation
+
+uses
+  Spring.Container;
 
 { TOrderProcessor }
 
@@ -35,11 +37,11 @@ begin
   end;
 
   {$IFDEF CONSOLEAPP}
-    WriteLn('Order has been processed....');
+  Writeln('Order has been processed....');
   {$ENDIF}
 end;
 
 initialization
-  GlobalContainer.RegisterType<TOrderProcessor>.Implements<IOrderProcessor>.InjectField('FOrderEntry');
+  GlobalContainer.RegisterType<TOrderProcessor>;
 
 end.

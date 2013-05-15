@@ -2,14 +2,14 @@ unit uOrderProcessor;
 
 interface
 
+uses
+  uOrder,
+  uOrderInterfaces;
+
 implementation
 
 uses
-       uOrder
-     , uOrderInterfaces
-     , Spring.Container
-     , Spring.Services
-     ;
+  Spring.Container;
 
 type
   TOrderProcessor = class(TInterfacedObject, IOrderProcessor)
@@ -17,13 +17,13 @@ type
     FOrderValidator: IOrderValidator;
     FOrderEntry: IOrderEntry;
   public
-    constructor Create(aOrderValidator: IOrderValidator; aOrderEntry: IOrderEntry; aSomeInt: integer = 1);
+    constructor Create(const aOrderValidator: IOrderValidator; aOrderEntry: IOrderEntry);
     function ProcessOrder(aOrder: TOrder): Boolean;
   end;
 
 { TOrderProcessor }
 
-constructor TOrderProcessor.Create(aOrderValidator: IOrderValidator; aOrderEntry: IOrderEntry; aSomeInt: integer = 1);
+constructor TOrderProcessor.Create(const aOrderValidator: IOrderValidator; aOrderEntry: IOrderEntry);
 begin
   FOrderValidator := aOrderValidator;
   FOrderEntry := aOrderEntry;
@@ -41,16 +41,11 @@ begin
   end;
 
   {$IFDEF CONSOLEAPP}
-    WriteLn('Order has been processed....');
+  Writeln('Order has been processed....');
   {$ENDIF}
 end;
 
 initialization
-  GlobalContainer.RegisterType<TOrderProcessor>.Implements<IOrderProcessor>.DelegateTo(
-    function: TOrderProcessor
-    begin
-      Result := TOrderProcessor.Create(ServiceLocator.GetService<IOrderValidator>, ServiceLocator.GetService<IOrderEntry>, 99);
-    end
-  );
+  GlobalContainer.RegisterType<TOrderProcessor>;
 
 end.

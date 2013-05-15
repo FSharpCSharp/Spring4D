@@ -7,11 +7,10 @@ procedure DoOrderProcessing;
 implementation
 
 uses
-        uOrder
-      , Spring.Container
-      , Spring.Services
-      , uOrderInterfaces
-      ;
+  Spring.Container,
+  Spring.Services,
+  uOrder,
+  uOrderInterfaces;
 
 procedure DoOrderProcessing;
 var
@@ -24,7 +23,9 @@ begin
     OrderProcessor := ServiceLocator.GetService<IOrderProcessor>;
     if OrderProcessor.ProcessOrder(Order) then
     begin
-      WriteLn('Order successfully processed....');
+      {$IFDEF CONSOLEAPP}
+      Writeln('Order successfully processed....');
+      {$ENDIF}
     end;
   finally
     Order.Free;

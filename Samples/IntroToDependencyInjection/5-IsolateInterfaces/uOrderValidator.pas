@@ -3,11 +3,12 @@ unit uOrderValidator;
 interface
 
 uses
-  uOrder, uOrderInterfaces;
+  uOrder,
+  uOrderInterfaces;
 
 type
-
   TOrderValidator = class(TInterfacedObject, IOrderValidator)
+  public
     function ValidateOrder(aOrder: TOrder): Boolean;
   end;
 
@@ -17,9 +18,9 @@ implementation
 
 function TOrderValidator.ValidateOrder(aOrder: TOrder): Boolean;
 begin
-  Result := aOrder <> nil;
+  Result := Assigned(aOrder);
   {$IFDEF CONSOLEAPP}
-    WriteLn('Validating Order....');
+  WriteLn('Validating Order....');
   {$ENDIF}
 end;
 

@@ -4,7 +4,6 @@ interface
 
 type
   TOrder = class
-
   end;
 
 implementation

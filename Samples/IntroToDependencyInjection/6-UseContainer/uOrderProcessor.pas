@@ -3,10 +3,10 @@ unit uOrderProcessor;
 interface
 
 uses
-     uOrder, uOrderInterfaces;
+  uOrder,
+  uOrderInterfaces;
 
 type
-
   TOrderProcessor = class(TInterfacedObject, IOrderProcessor)
   private
     FOrderValidator: IOrderValidator;
@@ -17,7 +17,6 @@ type
   end;
 
 implementation
-
 
 { TOrderProcessor }
 
@@ -39,7 +38,7 @@ begin
   end;
 
   {$IFDEF CONSOLEAPP}
-    WriteLn('Order has been processed....');
+  Writeln('Order has been processed....');
   {$ENDIF}
 end;
 

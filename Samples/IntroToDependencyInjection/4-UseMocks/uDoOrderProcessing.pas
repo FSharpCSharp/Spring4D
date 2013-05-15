@@ -7,7 +7,10 @@ procedure DoOrderProcessing;
 implementation
 
 uses
-   uOrder, uOrderValidator, uOrderEntry, uOrderProcessor;
+  uOrder,
+  uOrderProcessor,
+  uOrderValidator,
+  uOrderEntry;
 
 procedure DoOrderProcessing;
 var
@@ -20,7 +23,9 @@ begin
     try
       if OrderProcessor.ProcessOrder(Order) then
       begin
-        WriteLn('Order successfully processed....');
+        {$IFDEF CONSOLEAPP}
+        Writeln('Order successfully processed....');
+        {$ENDIF}
       end;
     finally
       OrderProcessor.Free;

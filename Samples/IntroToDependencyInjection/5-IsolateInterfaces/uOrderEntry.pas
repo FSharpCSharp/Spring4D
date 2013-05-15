@@ -3,11 +3,12 @@ unit uOrderEntry;
 interface
 
 uses
-    uOrder, uOrderInterfaces;
+  uOrder,
+  uOrderInterfaces;
 
 type
-
   TOrderEntry = class(TInterfacedObject, IOrderEntry)
+  public
     function EnterOrderIntoDatabase(aOrder: TOrder): Boolean;
   end;
 
@@ -17,9 +18,9 @@ implementation
 
 function TOrderEntry.EnterOrderIntoDatabase(aOrder: TOrder): Boolean;
 begin
-  Result := aOrder <> nil;
+  Result := Assigned(aOrder);
   {$IFDEF CONSOLEAPP}
-    WriteLn('Entering order into the database....');
+  WriteLn('Entering order into the database....');
   {$ENDIF}
 end;
 

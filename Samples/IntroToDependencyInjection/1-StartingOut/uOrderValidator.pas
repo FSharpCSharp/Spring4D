@@ -6,8 +6,8 @@ uses
   uOrder;
 
 type
-
   TOrderValidator = class
+  public
     function ValidateOrder(aOrder: TOrder): Boolean;
   end;
 
@@ -17,9 +17,9 @@ implementation
 
 function TOrderValidator.ValidateOrder(aOrder: TOrder): Boolean;
 begin
-  Result := aOrder <> nil;
+  Result := Assigned(aOrder);
   {$IFDEF CONSOLEAPP}
-    WriteLn('Validating Order....');
+  Writeln('Validating Order....');
   {$ENDIF}
 end;
 
