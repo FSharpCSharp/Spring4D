@@ -33,19 +33,22 @@ unit Spring;
 interface
 
 uses
-  SysUtils,
   Classes,
-  TypInfo,
-  Types,
-  SyncObjs,
-  Generics.Defaults,
-  Generics.Collections,
   Diagnostics,
-  TimeSpan,
+  Generics.Collections,
+  Generics.Defaults,
   Rtti,
+  SyncObjs,
+  SysUtils,
+  TimeSpan,
+  Types,
+  TypInfo,
   Variants;
 
 type
+
+  {$REGION 'Type redefinitions'}
+
   ///	<summary>
   ///	  Represents a dynamic array of Byte.
   ///	</summary>
@@ -80,6 +83,11 @@ type
   TThreadID = LongWord;
 {$ENDIF}
 
+  {$ENDREGION}
+
+
+  {$REGION 'Procedure types'}
+
   ///	<summary>
   ///	  Represents a logical predicate.
   ///	</summary>
@@ -93,39 +101,45 @@ type
   ///	<remarks>
   ///	  <note type="tip">
   ///	    This type redefined the
-  ///	    <see cref="SysUtils|TPredicate`1">SysUtils.TPredicate&lt;T&gt;</see>ty
-  ///	     pe with a const parameter.
+  ///	    <see cref="SysUtils|TPredicate`1">SysUtils.TPredicate&lt;T&gt;</see> 
+  ///	    type with a const parameter.
   ///	  </note>
   ///	</remarks>
-  ///	<seealso cref="Spring.DesignPatterns|ISpecification{T}" />
+  ///	<seealso cref="Spring.DesignPatterns|ISpecification&lt;T&gt;" />
   TPredicate<T> = reference to function(const value: T): Boolean;
 
   ///	<summary>
   ///	  Represents an anonymous method that has a single parameter and does not
   ///	  return a value.
   ///	</summary>
-  ///	<seealso cref="TActionProc{T}" />
-  ///	<seealso cref="TActionMethod{T}" />
+  ///	<seealso cref="TActionProc&lt;T&gt;" />
+  ///	<seealso cref="TActionMethod&lt;T&gt;" />
   TAction<T> = reference to procedure(const obj: T);
 
   ///	<summary>
   ///	  Represents a procedure that has a single parameter and does not return
   ///	  a value.
   ///	</summary>
-  ///	<seealso cref="TAction{T}" />
-  ///	<seealso cref="TActionMethod{T}" />
+  ///	<seealso cref="TAction&lt;T&gt;" />
+  ///	<seealso cref="TActionMethod&lt;T&gt;" />
   TActionProc<T> = procedure(const obj: T);
 
   ///	<summary>
   ///	  Represents a instance method that has a single parameter and does not
   ///	  return a value.
   ///	</summary>
-  ///	<seealso cref="TAction{T}" />
-  ///	<seealso cref="TActionProc{T}" />
+  ///	<seealso cref="TAction&lt;T&gt;" />
+  ///	<seealso cref="TActionProc&lt;T&gt;" />
   TActionMethod<T> = procedure(const obj: T) of object;
 
+  {$ENDREGION}
+
+
+  {$REGION 'TInterfaceBase'}
+
   ///	<summary>
-  ///	  Provides a non-reference-counted <see cref="System|IInterface" /> implementation.
+  ///	  Provides a non-reference-counted <see cref="System|IInterface" /> 
+  ///	  implementation.
   ///	</summary>
   TInterfaceBase = class abstract(TObject, IInterface)
   protected
@@ -133,6 +147,11 @@ type
     function _AddRef: Integer; stdcall;
     function _Release: Integer; stdcall;
   end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TArgument'}
 
   ///	<summary>
   ///	  Provides static methods to check arguments and raise argument
@@ -218,6 +237,8 @@ type
     class procedure RaiseInvalidEnumArgumentException(const argumentName: string); overload; static; inline;
   end;
 
+  {$ENDREGION}
+
 
   {$REGION 'Nullable Types'}
 
@@ -226,8 +247,8 @@ type
   ///	  underlying value type, plus an additional <c>Null</c> value.
   ///	</summary>
   ///	<typeparam name="T">
-  ///	  The underlying value type of the <see cref="Nullable&lt;T&gt;" />generic
-  ///	   type.
+  ///	  The underlying value type of the <see cref="Nullable&lt;T&gt;" /> 
+  ///	  generic type.
   ///	</typeparam>
   Nullable<T> = record
   private
@@ -242,8 +263,8 @@ type
     ///	  Internal use. Marks the current instance as null.
     ///	</summary>
     ///	<remarks>
-    ///	  The Nullable{T} type is immutable so that this method must be
-    ///	  private.
+    ///	  The <see cref="Nullable&lt;T&gt;" /> type is immutable so that this
+    ///	  method must be private.
     ///	</remarks>
     procedure Clear;
 
@@ -253,30 +274,30 @@ type
     class function VarIsNullOrEmpty(const value: Variant): Boolean; static;
   public
     ///	<summary>
-    ///	  Initializes a new instance of the <c>Nullable{T}</c> structure to the
-    ///	  specified value.
+    ///	  Initializes a new instance of the <see cref="Nullable&lt;T&gt;" />stru
+    ///	  cture to the specified value.
     ///	</summary>
     constructor Create(const value: T); overload;
 
     ///	<summary>
-    ///	  Initializes a new instance of the <c>Nullable{T}</c> structure to the
-    ///	  specified value.
+    ///	  Initializes a new instance of the <see cref="Nullable&lt;T&gt;" />stru
+    ///	  cture to the specified value.
     ///	</summary>
     constructor Create(const value: Variant); overload;
 
     ///	<summary>
-    ///	  Retrieves the value of the current <c>Nullable{T}</c> object, or the
-    ///	  object's default value.
+    ///	  Retrieves the value of the current <see cref="Nullable&lt;T&gt;" />obj
+    ///	  ect, or the object's default value.
     ///	</summary>
     function GetValueOrDefault: T; overload;
 
     ///	<summary>
-    ///	  Retrieves the value of the current <c>Nullable{T}</c> object, or the
-    ///	  specified default value.
+    ///	  Retrieves the value of the current <see cref="Nullable&lt;T&gt;" />obj
+    ///	  ect, or the specified default value.
     ///	</summary>
     ///	<param name="defaultValue">
     ///	  A value to return if the <see cref="HasValue" /> property is
-    ///	  <c>false</c>.
+    ///	  <c>False</c>.
     ///	</param>
     ///	<returns>
     ///	  The value of the <see cref="Value" /> property if the
@@ -301,13 +322,13 @@ type
     function Equals(const other: Nullable<T>): Boolean;
 
     ///	<summary>
-    ///	  Gets a value indicating whether the current <c>Nullable{T}</c>structure
-    ///	  has a value.
+    ///	  Gets a value indicating whether the current
+    ///	  <see cref="Nullable&lt;T&gt;" /> structure has a value.
     ///	</summary>
     property HasValue: Boolean read GetHasValue;
 
     ///	<summary>
-    ///	  Gets the value of the current <c>Nullable&lt;T&gt;</c> value.
+    ///	  Gets the value of the current <see cref="Nullable&lt;T&gt;" /> value.
     ///	</summary>
     ///	<exception cref="Spring|EInvalidOperationException">
     ///	  Raised if the value is null.
@@ -389,22 +410,22 @@ type
   ///	<summary>
   ///	  Provides support for lazy initialization.
   ///	</summary>
-  ///	<preliminary />
   ILazy = interface
     ['{40223BA9-0C66-49E7-AA33-BDAEF9F506D6}']
-    function GetValue: TValue;
     function GetIsValueCreated: Boolean;
-
-    ///	<summary>
-    ///	  Gets the lazily initialized value of the current <c>ILazy</c> instance.
-    ///	</summary>
-    property Value: TValue read GetValue;
+    function GetValue: TValue;
 
     ///	<summary>
     ///	  Gets a value that indicates whether a value has been created for this
     ///	  <c>ILazy</c> instance.
     ///	</summary>
     property IsValueCreated: Boolean read GetIsValueCreated;
+
+    ///	<summary>
+    ///	  Gets the lazily initialized value of the current <c>ILazy</c>
+    ///	  instance.
+    ///	</summary>
+    property Value: TValue read GetValue;
   end;
 
   ///	<summary>
@@ -415,21 +436,26 @@ type
     property Value: T read GetValue;
   end;
 
-  TLazy<T> = class(TInterfacedObject, ILazy<T>, ILazy, TFunc<T>)
+  TLazy = class(TInterfacedObject, ILazy)
   protected
+    fIsValueCreated: Boolean;
+    function GetIsValueCreated: Boolean;
+    function NonGenericGetValue: TValue; virtual; abstract;
+    function ILazy.GetValue = NonGenericGetValue;
+  end;
+
+  TLazy<T> = class(TLazy, ILazy<T>, TFunc<T>)
+  private
     fValueFactory: TFunc<T>;
     fValue: T;
-    fIsValueCreated: Boolean;
-  protected
     procedure EnsureInitialized; inline;
-    function GetGenericValue: T;
-    function GetValue: TValue;
-    function GetIsValueCreated: Boolean;
-    function ILazy<T>.GetValue = GetGenericValue;
-    function TFunc<T>.Invoke = GetGenericValue;
+  protected
+    function GetValue: T;
+    function NonGenericGetValue: TValue; override;
+    function TFunc<T>.Invoke = GetValue;
   public
     ///	<summary>
-    ///	  Initializes a new instance of <see cref="TLazy{T}" /> with a
+    ///	  Initializes a new instance of <see cref="TLazy&lt;T&gt;" /> with a
     ///	  delegate.
     ///	</summary>
     ///	<param name="valueFactory">
@@ -442,35 +468,36 @@ type
     constructor Create(const valueFactory: TFunc<T>);
 
     ///	<summary>
-    ///	  Initializes a new instance of <see cref="TLazy{T}" /> with a
+    ///	  Initializes a new instance of <see cref="TLazy&lt;T&gt;" /> with a
     ///	  specified value.
     ///	</summary>
     ///	<param name="value">
     ///	  The initialized value.
     ///	</param>
     constructor CreateFrom(const value: T);
-    property Value: T read GetGenericValue;
+
     property IsValueCreated: Boolean read GetIsValueCreated;
+    property Value: T read GetValue;
   end;
 
   Lazy<T> = record
   private
     fLazy: ILazy<T>;
-    function GetValue: T;
-    function GetIsValueCreated: Boolean;
     function GetIsAssigned: Boolean;
+    function GetIsValueCreated: Boolean;
+    function GetValue: T;
   public
     constructor Create(const valueFactory: TFunc<T>);
     constructor CreateFrom(const value: T);
 
-    property AsLazy: ILazy<T> read fLazy;
-    property Value: T read GetValue;
-    property IsValueCreated: Boolean read GetIsValueCreated;
-    property IsAssigned: Boolean read GetIsAssigned;
-
-    class operator Implicit(const lazy: Lazy<T>): T;
-    class operator Implicit(const value: T): Lazy<T>;
     class operator Implicit(const value: Lazy<T>): ILazy<T>;
+    class operator Implicit(const value: Lazy<T>): T;
+    class operator Implicit(const value: T): Lazy<T>;
+    class operator Implicit(const value: TLazy<T>): Lazy<T>;
+
+    property IsAssigned: Boolean read GetIsAssigned;
+    property IsValueCreated: Boolean read GetIsValueCreated;
+    property Value: T read GetValue;
   end;
 
   TLazyInitializer = record
@@ -746,6 +773,9 @@ type
 
   {$ENDREGION}
 
+
+  {$REGION 'Routines'}
+
 procedure PlatformNotImplemented;
 
 ///	<summary>
@@ -760,12 +790,14 @@ procedure CheckArgumentNotNull(const value: IInterface; const argumentName: stri
 ///	</summary>
 procedure CheckArgumentNotNull(value: Pointer; const argumentName: string); overload;
 
+  {$ENDREGION}
+
 
 implementation
 
 uses
-  StrUtils,
   Spring.ResourceStrings;
+
 
 {$REGION 'Routines'}
 
@@ -1264,11 +1296,21 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TLazy'}
+
+function TLazy.GetIsValueCreated: Boolean;
+begin
+  Result := fIsValueCreated;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TLazy<T>'}
 
 constructor TLazy<T>.Create(const valueFactory: TFunc<T>);
 begin
-  CheckArgumentNotNull(PPointer(@valueFactory)^, 'valueFactory');
+  CheckArgumentNotNull(Pointer(@valueFactory), 'valueFactory');
 
   inherited Create;
   fValueFactory := valueFactory;
@@ -1284,27 +1326,22 @@ end;
 
 procedure TLazy<T>.EnsureInitialized;
 begin
-  if IsValueCreated then
+  if fIsValueCreated then
     Exit;
 
   fValue := fValueFactory();
   fIsValueCreated := True;
 end;
 
-function TLazy<T>.GetGenericValue: T;
+function TLazy<T>.GetValue: T;
 begin
   EnsureInitialized;
   Result := fValue;
 end;
 
-function TLazy<T>.GetValue: TValue;
+function TLazy<T>.NonGenericGetValue: TValue;
 begin
-  Result := TValue.From<T>(GetGenericValue);
-end;
-
-function TLazy<T>.GetIsValueCreated: Boolean;
-begin
-  Result := fIsValueCreated;
+  Result := TValue.From<T>(Value);
 end;
 
 {$ENDREGION}
@@ -1339,9 +1376,14 @@ begin
   Result := Assigned(fLazy);
 end;
 
-class operator Lazy<T>.Implicit(const lazy: Lazy<T>): T;
+class operator Lazy<T>.Implicit(const value: Lazy<T>): ILazy<T>;
 begin
-  Result := lazy.Value;
+  Result := value.fLazy;
+end;
+
+class operator Lazy<T>.Implicit(const value: Lazy<T>): T;
+begin
+  Result := value.Value;
 end;
 
 class operator Lazy<T>.Implicit(const value: T): Lazy<T>;
@@ -1349,9 +1391,9 @@ begin
   Result.fLazy := TLazy<T>.CreateFrom(value);
 end;
 
-class operator Lazy<T>.Implicit(const value: Lazy<T>): ILazy<T>;
+class operator Lazy<T>.Implicit(const value: TLazy<T>): Lazy<T>;
 begin
-  Result := value.fLazy;
+  Result.fLazy := value;
 end;
 
 {$ENDREGION}
@@ -2011,5 +2053,6 @@ begin
 end;
 
 {$ENDREGION}
+
 
 end.

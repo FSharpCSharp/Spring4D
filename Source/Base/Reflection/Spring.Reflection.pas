@@ -30,12 +30,10 @@ unit Spring.Reflection;
 interface
 
 uses
-  Classes,
-  SysUtils,
-  Types,
-  TypInfo,
-  SyncObjs,
   Rtti,
+  SyncObjs,
+  SysUtils,
+  TypInfo,
   Spring,
   Spring.Collections,
   Spring.Collections.Base,
@@ -78,6 +76,11 @@ type
     ///	  Returns true if the typeFrom is assignable to the typeTo.
     ///	</summary>
     class function IsAssignable(typeFrom, typeTo: PTypeInfo): Boolean; overload;
+
+    ///	<summary>
+    ///	  Returns <c>True</c> if the typeInfo is a delegate type.
+    ///	</summary>
+    class function IsDelegate(typeInfo: PTypeInfo): Boolean; overload;
     class function TryGetInterfaceType(const guid: TGUID; out aType: TRttiInterfaceType): Boolean;
     class property Context: TRttiContext read fContext;
   end;
@@ -138,20 +141,21 @@ type
   end;
 
   TRttiTypeEnumerable = class(TEnumerableBase<TRttiType>)
+  private
+    type
+      TEnumerator = class(TEnumeratorBase<TRttiType>)
+      private
+        fContext: TRttiContext;
+        fIndex: Integer;
+        fTypes: TArray<TRttiType>;
+      protected
+        function GetCurrent: TRttiType; override;
+      public
+        constructor Create;
+        function MoveNext: Boolean; override;
+      end;
   public
     function GetEnumerator: IEnumerator<TRttiType>; override;
-  end;
-
-  TRttiTypeEnumerator = class(TEnumeratorBase<TRttiType>)
-  private
-    fContext: TRttiContext;
-    fTypes: TArray<TRttiType>;
-    fIndex: Integer;
-  protected
-    function GetCurrent: TRttiType; override;
-  public
-    constructor Create;
-    function MoveNext: Boolean; override;
   end;
 
   {$ENDREGION}
@@ -176,7 +180,7 @@ type
   {$ENDREGION}
 
 
-  TGetRttiMembersFunc<T> = reference to function(targetType: TRttiType): TArray<T>;
+  TGetRttiMembersFunc<T: TRttiMember> = reference to function(targetType: TRttiType): TArray<T>;
 
 
   {$REGION 'TRttiMemberEnumerable<T: TRttiMember>'}
@@ -375,8 +379,6 @@ type
   {$ENDREGION}
 
 
-type
-
   {$REGION 'Internal Class Helpers'}
 
   ///	<summary>
@@ -504,6 +506,20 @@ begin
   else
   begin
     Result := False;
+  end;
+end;
+
+class function TType.IsDelegate(typeInfo: PTypeInfo): Boolean;
+var
+  name: string;
+begin
+  Result := Assigned(typeInfo) and (typeInfo.Kind = tkInterface);
+  if Result then
+  begin
+    name := GetTypeName(typeInfo);
+    Result := StartsText('TFunc<', name)
+      or StartsText('TProc<', name)
+      or StartsText('TPredicate<', name);
   end;
 end;
 
@@ -1057,36 +1073,38 @@ end;
 {$ENDREGION}
 
 
-{ TRttiTypeEnumerable }
+{$REGION 'TRttiTypeEnumerable'}
 
 function TRttiTypeEnumerable.GetEnumerator: IEnumerator<TRttiType>;
 begin
-  Result := TRttiTypeEnumerator.Create;
+  Result := TEnumerator.Create;
 end;
 
+{$ENDREGION}
 
-{ TRttiTypeEnumerator<T> }
 
-constructor TRttiTypeEnumerator.Create;
+{$REGION 'TRttiTypeEnumerable.TEnumerator'}
+
+constructor TRttiTypeEnumerable.TEnumerator.Create;
 begin
   fContext := TRttiContext.Create;
   fTypes := fContext.GetTypes;
   fIndex := -1;
 end;
 
-function TRttiTypeEnumerator.GetCurrent: TRttiType;
+function TRttiTypeEnumerable.TEnumerator.GetCurrent: TRttiType;
 begin
   Result := fTypes[fIndex];
 end;
 
-function TRttiTypeEnumerator.MoveNext: Boolean;
+function TRttiTypeEnumerable.TEnumerator.MoveNext: Boolean;
 begin
   Result := fIndex < Length(fTypes) - 1;
   if Result then
     Inc(fIndex);
 end;
 
+{$ENDREGION}
+
+
 end.
-
-
-

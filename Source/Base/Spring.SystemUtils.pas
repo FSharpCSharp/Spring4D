@@ -33,10 +33,8 @@ interface
 
 uses
   SysUtils,
-  Classes,
-  TypInfo,
   Types,
-  Rtti,
+  TypInfo,
   Spring;
 
 type
@@ -158,7 +156,7 @@ function SplitString(const buffer: PChar): TStringDynArray; overload;
 ///	  are delimited by null char (#0) and ends with an additional null char.
 ///	</summary>
 function SplitNullTerminatedStrings(const buffer: PChar): TStringDynArray;
-  deprecated 'Use the SpitString(PChar) function instead.';
+  deprecated 'Use the SplitString(PChar) function instead.';
 
 
 ///	<summary>
@@ -247,12 +245,54 @@ function TryConvertStrToDateTime(const s, format: string; out value: TDateTime):
 ///	</param>
 function ConvertStrToDateTime(const s, format: string): TDateTime;
 
+type
+  ///	<summary>
+  ///	  Specifies the kind of a lazy type.
+  ///	</summary>
+  TLazyKind = (
+    ///	<summary>
+    ///	  Not a lazy type.
+    ///	</summary>
+    lkNone,
+
+    ///	<summary>
+    ///	  Type is <see cref="SysUtils|TFunc&lt;T&gt;" />.
+    ///	</summary>
+    lkFunc,
+
+    ///	<summary>
+    ///	  Type is <see cref="Spring|Lazy&lt;T&gt;" />.
+    ///	</summary>
+    lkRecord,
+
+    ///	<summary>
+    ///	  Type is <see cref="Spring|ILazy&lt;T&gt;" />.
+    ///	</summary>
+    lkInterface
+  );
+
+///	<summary>
+///	  Returns the <see cref="TLazyKind" /> of the typeInfo.
+///	</summary>
+function GetLazyKind(typeInfo: PTypeInfo): TLazyKind;
+
+///	<summary>
+///	  Returns the underlying type name of the lazy type.
+///	</summary>
+function GetLazyTypeName(typeInfo: PTypeInfo): string;
+
+///	<summary>
+///	  Returns <c>True</c> of the type is a lazy type.
+///	</summary>
+function IsLazyType(typeInfo: PTypeInfo): Boolean;
+
 implementation
 
 uses
-  Variants,
   DateUtils,
+  Rtti,
   StrUtils,
+  Variants,
   Spring.ResourceStrings;
 
 {$REGION 'TEnum'}
@@ -675,7 +715,7 @@ begin
       year := ExtractElementDef('YY', 1899);
       if year < 1899 then
       begin
-        Inc(year, (DateUtils.YearOf(Today) div 100) * 100);
+        Inc(year, (YearOf(Today) div 100) * 100);
       end;
     end;
     month := ExtractElementDef('MM', 12);
@@ -696,6 +736,46 @@ begin
   begin
     raise EConvertError.CreateResFmt(@SInvalidDateTime, [s]);
   end;
+end;
+
+const
+  LazyPrefixStrings: array[lkFunc..High(TLazyKind)] of string = (
+    'TFunc<', 'Lazy<', 'ILazy<');
+
+function GetLazyKind(typeInfo: PTypeInfo): TLazyKind;
+var
+  name: string;
+begin
+  if Assigned(typeInfo) then
+  begin
+    name := GetTypeName(typeInfo);
+    for Result := lkFunc to High(TLazyKind) do
+    begin
+      if StartsText(LazyPrefixStrings[Result], name) then
+        Exit;
+    end;
+  end;
+  Result := lkNone;
+end;
+
+function GetLazyTypeName(typeInfo: PTypeInfo): string;
+var
+  lazyKind: TLazyKind;
+  name: string;
+  i: Integer;
+begin
+  lazyKind := GetLazyKind(typeInfo);
+  name := GetTypeName(typeInfo);
+  if lazyKind > lkNone then
+  begin
+    i := Length(LazyPrefixStrings[lazyKind]) + 1;
+    Result := Copy(name, i, Length(name) - i )
+  end;
+end;
+
+function IsLazyType(typeInfo: PTypeInfo): Boolean;
+begin
+  Result := GetLazyKind(typeInfo) <> lkNone;
 end;
 
 end.
