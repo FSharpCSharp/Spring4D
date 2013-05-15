@@ -146,7 +146,9 @@ begin
     TTestInjectionByValue.Suite,
     TTestObjectPool.Suite,
     TTestResolverOverride.Suite,
-    TTestRegisterInterfaceTypes.Suite
+    TTestRegisterInterfaceTypes.Suite,
+    TTestLazyDependencies.Suite,
+    TTestLazyDependenciesDetectRecursion.Suite
   ]);
 
   RegisterTests('Spring.Extensions.Utils', [

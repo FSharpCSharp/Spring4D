@@ -229,6 +229,23 @@ type
     procedure TestOneServiceAsSingletonPerThread;
   end;
 
+  TTestLazyDependencies = class(TContainerTestCase)
+  private
+    fCalled: Boolean;
+  protected
+    procedure SetUp; override;
+    procedure PerformChecks; virtual;
+  published
+    procedure TestDependencyTypeIsFunc;
+    procedure TestDependencyTypeIsRecord;
+    procedure TestDependencyTypeIsInterface;
+  end;
+
+  TTestLazyDependenciesDetectRecursion = class(TTestLazyDependencies)
+  protected
+    procedure PerformChecks; override;
+  end;
+
 implementation
 
 uses
@@ -1167,6 +1184,70 @@ begin
 
   CheckEquals('test', fContainer.Resolve<INameService>.Name);
   CheckEquals('test', fContainer.Resolve<IAnotherNameService>.Name);
+end;
+
+{ TTestResolveLazy }
+
+procedure TTestLazyDependencies.PerformChecks;
+var
+  nameService: INameService;
+begin
+  fCalled := False;
+  nameService := fContainer.Resolve<INameService>('service');
+  CheckFalse(fCalled);
+  CheckEquals(TNameService.NameString, nameService.Name);
+  CheckTrue(fCalled);
+end;
+
+procedure TTestLazyDependencies.SetUp;
+begin
+  inherited;
+
+  fContainer.RegisterType<INameService>.Implements<INameService>('lazy').DelegateTo(
+    function: INameService
+    begin
+      Result := TNameService.Create;
+      fCalled := True;
+    end);
+end;
+
+procedure TTestLazyDependencies.TestDependencyTypeIsFunc;
+begin
+  fContainer.RegisterType<TNameServiceLazyWithFunc>.Implements<INameService>('service');
+  fContainer.Build;
+
+  PerformChecks;
+end;
+
+procedure TTestLazyDependencies.TestDependencyTypeIsInterface;
+begin
+  fContainer.RegisterType<TNameServiceLazyWithInterface>.Implements<INameService>('service');
+  fContainer.Build;
+
+  PerformChecks;
+end;
+
+procedure TTestLazyDependencies.TestDependencyTypeIsRecord;
+begin
+  fContainer.RegisterType<TNameServiceLazyWithRecord>.Implements<INameService>('service');
+  fContainer.Build;
+
+  PerformChecks;
+end;
+
+{ TTestResolveLazyRecursive }
+
+procedure TTestLazyDependenciesDetectRecursion.PerformChecks;
+begin
+  fContainer.Context.ComponentRegistry.FindOne('service').InjectField('fNameService', 'service');
+
+  try
+    inherited;
+  except
+    on E: Exception do
+      fCalled := E is ECircularDependencyException;
+  end;
+  CheckTrue(fCalled);
 end;
 
 end.

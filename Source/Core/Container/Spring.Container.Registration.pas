@@ -212,7 +212,8 @@ end;
 
 procedure TComponentRegistry.CheckIsNonGuidInterface(serviceType: TRttiType);
 begin
-  if serviceType.IsInterface and not TRttiInterfaceType(serviceType).HasGuid then
+  if serviceType.IsInterface and not TRttiInterfaceType(serviceType).HasGuid
+    and not TType.IsDelegate(serviceType.Handle) then
   begin
     if serviceType.IsPublicType then
       raise ERegistrationException.CreateResFmt(@SMissingGuid, [serviceType.QualifiedName])

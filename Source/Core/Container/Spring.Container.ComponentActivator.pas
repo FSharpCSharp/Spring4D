@@ -118,9 +118,18 @@ begin
     constructorInjection.Target.AsMethod,
     constructorArguments
   );
-  ExecuteInjections(Result, fModel.FieldInjections, resolver);
-  ExecuteInjections(Result, fModel.PropertyInjections, resolver);
-  ExecuteInjections(Result, fModel.MethodInjections, resolver);
+  try
+    ExecuteInjections(Result, fModel.FieldInjections, resolver);
+    ExecuteInjections(Result, fModel.PropertyInjections, resolver);
+    ExecuteInjections(Result, fModel.MethodInjections, resolver);
+  except
+    if not Result.IsEmpty and Result.IsObject then
+    begin
+      Result.AsObject.Free;
+      Result := TValue.Empty;
+    end;
+    raise;
+  end;
 end;
 
 function TReflectionComponentActivator.GetEligibleConstructor(
@@ -165,9 +174,18 @@ begin
     raise EActivatorException.CreateRes(@SActivatorDelegateExpected);
   end;
   Result := fModel.ActivatorDelegate.Invoke;
-  ExecuteInjections(Result, fModel.FieldInjections, resolver);
-  ExecuteInjections(Result, fModel.PropertyInjections, resolver);
-  ExecuteInjections(Result, fModel.MethodInjections, resolver);
+  try
+    ExecuteInjections(Result, fModel.FieldInjections, resolver);
+    ExecuteInjections(Result, fModel.PropertyInjections, resolver);
+    ExecuteInjections(Result, fModel.MethodInjections, resolver);
+  except
+    if not Result.IsEmpty and Result.IsObject then
+    begin
+      Result.AsObject.Free;
+      Result := TValue.Empty;
+    end;
+    raise;
+  end;
 end;
 
 {$ENDREGION}

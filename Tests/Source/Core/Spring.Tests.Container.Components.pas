@@ -122,6 +122,8 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TNameServiceWithAggregation'}
+
   TNameServiceWithAggregation = class(TNameService)
   private
     fMethodCallCount: Integer;
@@ -136,6 +138,11 @@ type
     property MethodCallCount: Integer read fMethodCallCount;
   end;
 
+  {$ENDREGION}
+
+
+  {$REGION 'IAnotherService and TInitializableComponent'}
+
   IAnotherService = interface
     ['{6BE967C9-C4EE-40FD-805D-B48320A0F510}']
   end;
@@ -147,6 +154,8 @@ type
     procedure Initialize;
     property IsInitialized: Boolean read fIsInitialized;
   end;
+
+  {$ENDREGION}
 
 
   {$REGION 'TBootstrapComponent'}
@@ -337,6 +346,35 @@ type
     fChicken: IChicken;
   public
     constructor Create(const chicken: IChicken);
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'Lazy dependencies'}
+
+  TNameServiceLazyWithFunc = class(TInterfacedObject, INameService)
+  private
+    [Inject('lazy')]
+    fNameService: TFunc<INameService>;
+  public
+    function GetName: string;
+  end;
+
+  TNameServiceLazyWithRecord = class(TInterfacedObject, INameService)
+  private
+    [Inject('lazy')]
+    fNameService: Lazy<INameService>;
+  public
+    function GetName: string;
+  end;
+
+  TNameServiceLazyWithInterface = class(TInterfacedObject, INameService)
+  private
+    [Inject('lazy')]
+    fNameService: ILazy<INameService>;
+  public
+    function GetName: string;
   end;
 
   {$ENDREGION}
@@ -615,6 +653,27 @@ end;
 procedure TNameServiceWithAggregation.Init;
 begin
   Inc(fMethodCallCount);
+end;
+
+{ TNameServiceLazyWithFunc }
+
+function TNameServiceLazyWithFunc.GetName: string;
+begin
+  Result := fNameService.Name;
+end;
+
+{ TNameServiceLazyWithRecord }
+
+function TNameServiceLazyWithRecord.GetName: string;
+begin
+  Result := fNameService.Value.Name;
+end;
+
+{ TNameServiceLazyWithInterface }
+
+function TNameServiceLazyWithInterface.GetName: string;
+begin
+  Result := fNameService.Value.Name;
 end;
 
 end.

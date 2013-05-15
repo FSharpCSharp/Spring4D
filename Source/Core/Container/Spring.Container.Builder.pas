@@ -495,6 +495,10 @@ begin
         context.ComponentRegistry.RegisterService(model, service.Handle);
       end;
     end;
+    if TType.IsDelegate(model.ComponentTypeInfo) then
+    begin
+      context.ComponentRegistry.RegisterService(model, model.ComponentType.Handle);
+    end;
   end;
 end;
 

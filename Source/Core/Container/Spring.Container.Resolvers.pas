@@ -68,6 +68,8 @@ type
     function ResolveDependency(dependency: TRttiType): TValue; overload; virtual;
     function ResolveDependency(dependency: TRttiType; const argument: TValue): TValue; overload; virtual;
 
+    function ResolveLazyDependency(dependency: TRttiType; argument: TValue): TValue;
+
     function CanResolveDependencies(const dependencies: TArray<TRttiType>): Boolean; overload; virtual;
     function CanResolveDependencies(const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean; overload; virtual;
     function ResolveDependencies(const dependencies: TArray<TRttiType>): TArray<TValue>; overload; virtual;
@@ -150,9 +152,11 @@ type
 
 implementation
 
-uses
+uses                     
   Spring.Helpers,
+  Spring.Reflection,
   Spring.ResourceStrings,
+  Spring.SystemUtils,
   Spring.Container.ComponentActivator,
   Spring.Container.LifetimeManager,
   Spring.Container.ResourceStrings;
@@ -201,7 +205,14 @@ begin
       end
       else
       begin
-        instance.AsInterface.QueryInterface(GetTypeData(typeInfo).Guid, localInterface);
+        if TType.IsDelegate(typeInfo) then
+        begin
+          IInterface(localInterface) := instance.AsInterface;
+        end
+        else
+        begin
+          instance.AsInterface.QueryInterface(GetTypeData(typeInfo).Guid, localInterface);
+        end;
       end;
       TValue.MakeWithoutCopy(@localInterface, typeInfo, value);
     end;
@@ -233,7 +244,8 @@ begin
   if argument.IsEmpty then
   begin
     models := Registry.FindAll(dependency.Handle);
-    if models.IsEmpty and dependency.IsClassOrInterface then
+    if models.IsEmpty and dependency.IsClassOrInterface
+      and not IsLazyType(dependency.Handle) then
     begin
       raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
     end;
@@ -248,20 +260,24 @@ begin
   begin
     name := argument.AsString;
     Result := Registry.FindOne(name);
-    if Result = nil then
+    if not Assigned(Result) then
     begin
+      if IsLazyType(dependency.Handle) then
+        Exit;
       raise EResolveException.CreateResFmt(@SInvalidServiceName, [name]);
     end;
     if not Result.HasService(dependency.Handle) then
     begin
-      raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
+      if not IsLazyType(dependency.Handle) then
+        raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
+      Result := nil;
     end;
   end;
 end;
 
 procedure TDependencyResolver.CheckCircularDependency(dependency: TRttiType);
 begin
-  Assert(dependency <> nil, 'dependency should not be nil.');
+  Assert(Assigned(dependency), 'dependency should not be nil.');
   if fDependencyTypes.Contains(dependency) then
   begin
     raise ECircularDependencyException.CreateResFmt(
@@ -284,7 +300,7 @@ begin
   begin
     if argument.IsEmpty then
     begin
-      Result := Registry.FindAll(dependency.Handle).Count = 1;
+      Result := (Registry.FindAll(dependency.Handle).Count = 1) or IsLazyType(dependency.Handle);
     end
     else
     begin
@@ -319,7 +335,11 @@ begin
   try
     CheckCircularDependency(dependency);
     model := GetEligibleModel(dependency, argument);
-    if model = nil then Exit(argument);
+    if not Assigned(model) then
+    begin
+      Result := ResolveLazyDependency(dependency, argument);
+      Exit;
+    end;
     fDependencyTypes.Add(dependency);
     try
       instance := model.LifetimeManager.GetInstance(Self);
@@ -330,6 +350,64 @@ begin
     MonitorExit(Self);
   end;
   ConstructValue(dependency.Handle, instance, Result);
+end;
+
+function TDependencyResolver.ResolveLazyDependency(dependency: TRttiType;
+  argument: TValue): TValue;
+var
+  lazyKind: TLazyKind;
+  name: string;
+  context: TRttiContext;
+  modelType: TRttiType;
+  objectValue: TLazy<TObject>;
+  interfaceValue: TLazy<IInterface>;
+begin
+  lazyKind := GetLazyKind(dependency.Handle);
+  if lazyKind = lkNone then
+    Exit(argument);
+
+  name := GetLazyTypeName(dependency.Handle);
+  modelType := context.FindType(name);
+  if not Assigned(modelType) or not CanResolveDependency(modelType, argument) then
+  begin
+    raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
+  end;
+  CheckCircularDependency(modelType);
+
+  case modelType.TypeKind of
+    tkClass:
+    begin
+      objectValue := TLazy<TObject>.Create(
+        function: TObject
+        begin
+          Result := ResolveDependency(modelType, argument).AsObject;
+        end);
+
+      case lazyKind of
+        lkFunc: Result := TValue.From<TFunc<TObject>>(objectValue);
+        lkRecord: Result := TValue.From<Lazy<TObject>>(objectValue);
+        lkInterface: Result := TValue.From<ILazy<TObject>>(objectValue);
+      end;
+    end;
+    tkInterface:
+    begin
+      interfaceValue := TLazy<IInterface>.Create(
+        function: IInterface
+        begin
+          Result := ResolveDependency(modelType, argument).AsInterface;
+        end);
+
+      case lazyKind of
+        lkFunc: Result := TValue.From<TFunc<IInterface>>(interfaceValue);
+        lkRecord: Result := TValue.From<Lazy<IInterface>>(interfaceValue);
+        lkInterface: Result := TValue.From<ILazy<IInterface>>(interfaceValue);
+      end;
+    end;
+  else
+    raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
+  end;
+
+  TValueData(Result).FTypeInfo := dependency.Handle;
 end;
 
 function TDependencyResolver.CanResolveDependencies(
@@ -470,9 +548,9 @@ function TServiceResolver.DoResolve(model: TComponentModel;
 var
   instance: TValue;
 begin
-  Assert(model <> nil, 'model should not be nil.');
-  Assert(serviceType <> nil, 'serviceType should not be nil.');
-  if model.LifetimeManager = nil then
+  Assert(Assigned(model), 'model should not be nil.');
+  Assert(Assigned(serviceType), 'serviceType should not be nil.');
+  if not Assigned(model.LifetimeManager) then
   begin
     raise EResolveException.CreateRes(@SLifetimeManagerMissing);
   end;
@@ -533,7 +611,7 @@ var
   resolver: IDependencyResolver;
 begin
   model := Registry.FindOne(name);
-  if model = nil then
+  if not Assigned(model) then
   begin
     raise EResolveException.CreateResFmt(@SInvalidServiceName, [name]);
   end;
