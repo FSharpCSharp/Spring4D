@@ -56,11 +56,9 @@ interface
 
 uses
   Classes,
-  SysUtils,
-  Types,
-  TypInfo,
-  Rtti,
   Generics.Collections,
+  Rtti,
+  SysUtils,
   Spring,
   Spring.Collections,
   Spring.Reflection;
@@ -514,7 +512,9 @@ implementation
 
 uses
   StrUtils,
+  TypInfo,
   Spring.ResourceStrings;
+
 
 {$REGION 'TGuidHelper'}
 
@@ -1280,5 +1280,6 @@ begin
 end;
 
 {$ENDREGION}
+
 
 end.

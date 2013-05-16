@@ -31,9 +31,6 @@ unit Spring.Container;
 interface
 
 uses
-  Classes,
-  SysUtils,
-  TypInfo,
   Rtti,
   Spring,
   Spring.Collections,
@@ -42,10 +39,8 @@ uses
   Spring.Container.Registration;
 
 type
-  TValue = Rtti.TValue;
-
   ///	<summary>
-  ///	  Represents a Dependency Inject Container.
+  ///	  Represents a Dependency Injection Container.
   ///	</summary>
   TContainer = class(TInterfaceBase, IContainerContext, IInterface)
   private
@@ -56,20 +51,23 @@ type
     fInjectionFactory: IInjectionFactory;
     fRegistrationManager: TRegistrationManager;
     fExtensions: IList<IContainerExtension>;
+    class var GlobalInstance: TContainer;
     function GetContext: IContainerContext;
   protected
-    { Implements IContainerContext }
+    class constructor Create;
+    class destructor Destroy;
+  {$REGION 'Implements IContainerContext'}
     function GetDependencyResolver: IDependencyResolver;
     function GetInjectionFactory: IInjectionFactory;
     function GetComponentRegistry: IComponentRegistry;
     function GetServiceResolver: IServiceResolver;
+  {$ENDREGION}
     procedure CheckIsClass(componentType: TRttiType);
     function CreateLifetimeManager(model: TComponentModel): ILifetimeManager;
+    procedure InitializeInspectors; virtual;
     property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
     property DependencyResolver: IDependencyResolver read GetDependencyResolver;
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
-  protected
-    procedure InitializeInspectors; virtual;
   public
     constructor Create;
     destructor Destroy; override;
@@ -106,9 +104,15 @@ type
     property Context: IContainerContext read GetContext;
   end;
 
+  ///	<summary>
+  ///	  Adapter to get access to a <see cref="TContainer" /> instance over the
+  ///	  <see cref="Spring.Services|IServiceLocator" /> interface.
+  ///	</summary>
   TServiceLocatorAdapter = class(TInterfacedObject, IServiceLocator)
   private
     fContainer: TContainer;
+    class var GlobalInstance: IServiceLocator;
+    class constructor Create;
   public
     constructor Create(container: TContainer);
 
@@ -123,6 +127,7 @@ type
     function HasService(serviceType: PTypeInfo; const name: string): Boolean; overload;
   end;
 
+
 {$REGION 'Exceptions'}
 
   EContainerException = Spring.Container.Core.EContainerException;
@@ -134,29 +139,37 @@ type
 
 {$ENDREGION}
 
-function GlobalContainer: TContainer;
+
+function GlobalContainer: TContainer; inline;
 
 implementation
 
 uses
+  TypInfo,
   Spring.Helpers,
   Spring.Container.Builder,
-  Spring.Container.LifetimeManager,
   Spring.Container.Injection,
+  Spring.Container.LifetimeManager,
   Spring.Container.Resolvers,
   Spring.Container.ResourceStrings;
 
-var
-  _GlobalContainer: TContainer;
-  _GlobalServiceLocator: IServiceLocator;
-
 function GlobalContainer: TContainer;
 begin
-  Result := _GlobalContainer;
+  Result := TContainer.GlobalInstance;
 end;
 
 
 {$REGION 'TContainer'}
+
+class constructor TContainer.Create;
+begin
+  GlobalInstance := TContainer.Create;
+end;
+
+class destructor TContainer.Destroy;
+begin
+  GlobalInstance.Free;
+end;
 
 constructor TContainer.Create;
 begin
@@ -426,6 +439,16 @@ end;
 
 {$REGION 'TServiceLocatorAdapter'}
 
+class constructor TServiceLocatorAdapter.Create;
+begin
+  GlobalInstance := TServiceLocatorAdapter.Create(GlobalContainer);
+  ServiceLocator.Initialize(
+    function: IServiceLocator
+    begin
+      Result := GlobalInstance;
+    end);
+end;
+
 constructor TServiceLocatorAdapter.Create(container: TContainer);
 begin
   inherited Create;
@@ -473,23 +496,5 @@ end;
 
 {$ENDREGION}
 
-procedure InitializeGlobalContainer;
-begin
-  _GlobalContainer := TContainer.Create;
-  _GlobalServiceLocator := TServiceLocatorAdapter.Create(_GlobalContainer);
-  ServiceLocator.Initialize(
-    function: IServiceLocator
-    begin
-      Result := _GlobalServiceLocator;
-    end
-  );
-end;
-
-initialization
-  InitializeGlobalContainer;
-
-finalization
-  _GlobalServiceLocator := nil;
-  FreeAndNil(_GlobalContainer);
 
 end.
