@@ -39,9 +39,9 @@
 {                                                                                                  }
 {**************************************************************************************************}
 {                                                                                                  }
-{ Last modified: $Date:: 2012-09-04 16:01:38 +0200 (Di, 04 Sep 2012)                             $ }
-{ Revision:      $Rev:: 161                                                                      $ }
-{ Author:        $Author:: outchy                                                                $ }
+{ Last modified: $Date::                                                                         $ }
+{ Revision:      $Rev::                                                                          $ }
+{ Author:        $Author::                                                                       $ }
 {                                                                                                  }
 {**************************************************************************************************}
 
@@ -146,8 +146,8 @@
   DELPHIXE2           Alias for DELPHI16
   DELPHI17            Defined when compiling with Delphi XE3 for Win32 (Codename WATERDRAGON)
   DELPHIXE3           Alias for DELPHI17
-  DELPHI18            Defined when compiling with Delphi XE3.5 for Win32 (Codename QUINTESSENCE)
-  DELPHIXE3_5         Alias for DELPHI18
+  DELPHI18            Defined when compiling with Delphi XE4 for Win32 (Codename QUINTESSENCE)
+  DELPHIXE4           Alias for DELPHI18
   DELPHI1_UP          Defined when compiling with Delphi 1 or higher
   DELPHI2_UP          Defined when compiling with Delphi 2 or higher
   DELPHI3_UP          Defined when compiling with Delphi 3 or higher
@@ -172,8 +172,8 @@
   DELPHIXE2_UP        Alias for DELPHI16_UP
   DELPHI17_UP         Defined when compiling with Delphi XE3 for Win32 or higher
   DELPHIXE3_UP        Alias for DELPHI17_UP
-  DELPHI18_UP         Defined when compiling with Delphi XE3.5 for Win32 or higher
-  DELPHIXE3_5_UP      Alias for DELPHI18_UP
+  DELPHI18_UP         Defined when compiling with Delphi XE4 for Win32 or higher
+  DELPHIXE4_UP        Alias for DELPHI18_UP
 
 
 - Kylix Versions
@@ -229,7 +229,7 @@
   DELPHICOMPILER15_UP  Defined when compiling with Delphi XE for Win32 or higher
   DELPHICOMPILER16_UP  Defined when compiling with Delphi XE2 for Win32 or higher
   DELPHICOMPILER17_UP  Defined when compiling with Delphi XE3 for Win32 or higher
-  DELPHICOMPILER18_UP  Defined when compiling with Delphi XE3.5 for Win32 or higher
+  DELPHICOMPILER18_UP  Defined when compiling with Delphi XE4 for Win32 or higher
 
 
 - C++Builder Versions
@@ -251,8 +251,8 @@
   BCB14        Defined when compiling with C++Builder Personality of RAD Studio 2010 (also known as C++Builder 2010) (Codename WEAVER)
   BCB15        Defined when compiling with C++Builder Personality of RAD Studio XE (also known as C++Builder XE) (Codename FULCRUM)
   BCB16        Defined when compiling with C++Builder Personality of RAD Studio XE2 (also known as C++Builder XE2) (Codename PULSAR)
-  BCB17        Defined when compiling with C++Builder Personality of RAD Studio XE3 (also known as C++Builder XE3) (Codename WATERDRAGON / PROJECT64)
-  BCB18        Defined when compiling with C++Builder Personality of RAD Studio XE3.5 (also known as C++Builder XE3.5) (Codename QUINTESSENCE)
+  BCB17        Defined when compiling with C++Builder Personality of RAD Studio XE3 (also known as C++Builder XE3) (Codename WATERDRAGON)
+  BCB18        Defined when compiling with C++Builder Personality of RAD Studio XE4 (also known as C++Builder XE4) (Codename QUINTESSENCE)
   BCB1_UP      Defined when compiling with C++Builder 1 or higher
   BCB3_UP      Defined when compiling with C++Builder 3 or higher
   BCB4_UP      Defined when compiling with C++Builder 4 or higher
@@ -265,7 +265,7 @@
   BCB15_UP     Defined when compiling with C++Builder Personality of RAD Studio XE or higher
   BCB16_UP     Defined when compiling with C++Builder Personality of RAD Studio XE2 or higher
   BCB17_UP     Defined when compiling with C++Builder Personality of RAD Studio XE3 or higher
-  BCB18_UP     Defined when compiling with C++Builder Personality of RAD Studio XE3.5 or higher
+  BCB18_UP     Defined when compiling with C++Builder Personality of RAD Studio XE4 or higher
 
 
 - RAD Studio / Borland Developer Studio Versions
@@ -288,8 +288,8 @@
   BDS7         Defined when compiling with BDS 7.0 (Embarcadero RAD Studio 2010) (Codename WEAVER)
   BDS8         Defined when compiling with BDS 8.0 (Embarcadero RAD Studio XE) (Codename FULCRUM)
   BDS9         Defined when compiling with BDS 9.0 (Embarcadero RAD Studio XE2) (Codename PULSAR)
-  BDS10        Defined when compiling with BDS 10.0 (Embarcadero RAD Studio XE3) (Codename WATERDRAGON / PROJECT64)
-  BDS11        Defined when compiling with BDS 11.0 (Embarcadero RAD Studio XE3.5) (Codename QUINTESSENCE)
+  BDS10        Defined when compiling with BDS 10.0 (Embarcadero RAD Studio XE3) (Codename WATERDRAGON)
+  BDS11        Defined when compiling with BDS 11.0 (Embarcadero RAD Studio XE4) (Codename QUINTESSENCE)
   BDS2_UP      Defined when compiling with BDS 2.0 or higher
   BDS3_UP      Defined when compiling with BDS 3.0 or higher
   BDS4_UP      Defined when compiling with BDS 4.0 or higher
@@ -485,6 +485,7 @@
   HAS_UNIT_REGULAREXPRESSIONSAPI Unit RegularExpressionsAPI is available (D15+)
   HAS_UNIT_SYSTEM_UITYPES        Unit System.UITypes is available (D16+)
   HAS_UNIT_SYSTEM_ACTIONS        Unit System.Actions is available (D17+)
+  DEPRECATED_SYSUTILS_ANSISTRINGS  AnsiString functions from SysUtils are deprecated and moved to System.AnsiStrings (D18+)
 
 
 - Compiler Settings
@@ -804,7 +805,7 @@
       {$UNDEF UNKNOWN_COMPILER_VERSION}
     {$ENDIF VER240}
 
-    {$IFDEF VER250} // RAD Studio XE3.5
+    {$IFDEF VER250} // RAD Studio XE4
       {$DEFINE BDS}
       {$DEFINE BDS11}
       {$DEFINE COMPILER18}
@@ -812,7 +813,7 @@
         {$DEFINE BCB18}
       {$ELSE}
         {$DEFINE DELPHI18}
-        {$DEFINE DELPHIXE3_5} // synonym to DELPHI18
+        {$DEFINE DELPHIXE4} // synonym to DELPHI18
         {$DEFINE DELPHICOMPILER18}
       {$ENDIF BCB}
       {$DEFINE RTL250_UP}
@@ -827,7 +828,7 @@
         {$DEFINE BCB18}
       {$ELSE}
         {$DEFINE DELPHI18}
-        {$DEFINE DELPHIXE3_5} // synonym to DELPHI18
+        {$DEFINE DELPHIXE4} // synonym to DELPHI18
         {$DEFINE DELPHICOMPILER18}
       {$ENDIF BCB}
       {$DEFINE RTL250_UP}
@@ -873,7 +874,7 @@
 {------------------------------------------------------------------------------}
 
 {$IFDEF DELPHI18_UP}
-  {$DEFINE DELPHIXE3_5_UP} // synonym to DELPHI18_UP
+  {$DEFINE DELPHIXE4_UP} // synonym to DELPHI18_UP
   {$DEFINE DELPHI17_UP}
 {$ENDIF}
 
@@ -1402,6 +1403,10 @@
 {$IFDEF RTL240_UP}
   {$DEFINE HAS_UNIT_SYSTEM_ACTIONS}
 {$ENDIF RTL240_UP}
+
+{$IFDEF RTL250_UP}
+  {$DEFINE DEPRECATED_SYSUTILS_ANSISTRINGS}
+{$ENDIF RTL250_UP}
 
 {------------------------------------------------------------------------------}
 { Cross-platform related defines                                               }

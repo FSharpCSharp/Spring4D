@@ -217,7 +217,7 @@ type
     class procedure RaiseArgumentException(const msg: string); overload; static; inline;
 
     ///	<summary>
-    ///	  Raises an EArgumentException exception.
+    ///	  Raises an <see cref="EFormatException" /> exception.
     ///	</summary>
     class procedure RaiseArgumentFormatException(const argumentName: string); overload; static; inline;
 
@@ -813,7 +813,7 @@ end;
 
 procedure CheckArgumentNotNull(value: Pointer; const argumentName: string);
 begin
-  if value = nil then
+  if not Assigned(value) then
   begin
     TArgument.RaiseArgumentNullException(argumentName);
   end;
@@ -932,18 +932,23 @@ end;
 class procedure TArgument.CheckInheritsFrom(const checkclazz, clazz: TClass;
   const parameterName: string);
 begin
-  ASSERT(Assigned(checkclazz));
-  ASSERT(Assigned(clazz));
+  Assert(Assigned(checkclazz));
+  Assert(Assigned(clazz));
 
-  if (not checkclazz.InheritsFrom(clazz)) then
-    raise EArgumentException.CreateResFmt(@SBadObjectInheritance, [parameterName, checkclazz.ClassName, clazz.ClassName]);
+  if not checkclazz.InheritsFrom(clazz) then
+  begin
+    raise EArgumentException.CreateResFmt(@SBadObjectInheritance, [parameterName,
+      checkclazz.ClassName, clazz.ClassName]);
+  end;
 end;
 
 class procedure TArgument.CheckInheritsFrom(obj: TObject; const clazz: TClass;
   const parameterName: string);
 begin
   if Assigned(obj) then
+  begin
     CheckInheritsFrom(obj.ClassType, clazz, parameterName);
+  end;
 end;
 
 class procedure TArgument.CheckNotNull(condition: Boolean;
@@ -957,22 +962,23 @@ end;
 
 class procedure TArgument.CheckNotNull(p: Pointer; const argumentName: string);
 begin
-  TArgument.CheckNotNull(p <> nil, argumentName);
+  TArgument.CheckNotNull(Assigned(p), argumentName);
 end;
 
 class procedure TArgument.CheckNotNull(const intf: IInterface;
   const argumentName: string);
 begin
-  TArgument.CheckNotNull(intf <> nil, argumentName);
+  TArgument.CheckNotNull(Assigned(intf), argumentName);
 end;
 
 class procedure TArgument.CheckNotNull(obj: TObject;
   const argumentName: string);
 begin
-  TArgument.CheckNotNull(obj <> nil, argumentName);
+  TArgument.CheckNotNull(Assigned(obj), argumentName);
 end;
 
-class procedure TArgument.CheckNotNull<T>(const value: T; const argumentName: string);
+class procedure TArgument.CheckNotNull<T>(const value: T;
+  const argumentName: string);
 begin
   if IsNullReference(value, TypeInfo(T)) then
   begin
@@ -1001,14 +1007,12 @@ begin
   TArgument.CheckTypeKind(typeInfo, [tkEnumeration], 'T');
 
   data := GetTypeData(typeInfo);
-  Assert(data <> nil, 'data must not be nil.');
+  Assert(Assigned(data), 'data must not be nil.');
 
   if (value < data.MinValue) or (value > data.MaxValue) then
   begin
-    msg := Format(
-      SInvalidEnumArgument,
-      [argumentName, GetTypeName(typeInfo), value]
-    );
+    msg := Format(SInvalidEnumArgument, [argumentName,
+      GetTypeName(typeInfo), value]);
     raise EInvalidEnumArgumentException.Create(msg);
   end;
 end;
@@ -1086,7 +1090,8 @@ begin
   TArgument.CheckNotNull(typeInfo, argumentName);
   if typeInfo.Kind <> expectedTypeKind then
   begin
-    raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument, [typeInfo.Name, argumentName]);
+    raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument, [
+      typeInfo.Name, argumentName]);
   end;
 end;
 
@@ -1096,28 +1101,19 @@ begin
   TArgument.CheckNotNull(typeInfo, argumentName);
   if not (typeInfo.Kind in expectedTypeKinds) then
   begin
-    raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument, [typeInfo.Name, argumentName]);
+    raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument, [
+      typeInfo.Name, argumentName]);
   end;
 end;
 
-//  TTypeKind = (tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
-//    tkString, tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString,
-//    tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray, tkUString,
-//    tkClassRef, tkPointer, tkProcedure);
 class function TArgument.IsNullReference(const value; typeInfo: PTypeInfo): Boolean;
+const
+  ReferenceKinds = [
+    tkClass, tkMethod, tkInterface, tkClassRef, tkPointer, tkProcedure];
 begin
-  Result := (typeInfo <> nil) and
-    (typeInfo.Kind in [tkPointer, tkClass, tkClassRef, tkInterface, tkProcedure, tkMethod]);
+  Result := Assigned(typeInfo) and (typeInfo.Kind in ReferenceKinds);
   Result := Result and not Assigned(@value);
 end;
-
-//class function TArgument.IsNullReference<T>(const value: T): Boolean;
-//var
-//  localTypeInfo: PTypeInfo;
-//begin
-//  localTypeInfo := TypeInfo(T);
-//  Result := TArgument.IsNullReference(value, localTypeInfo);
-//end;
 
 class procedure TArgument.RaiseArgumentException(const msg: string);
 begin
@@ -1127,24 +1123,27 @@ end;
 class procedure TArgument.RaiseArgumentNullException(
   const argumentName: string);
 begin
-  raise EArgumentNullException.CreateResFmt(@SArgumentNullException, [argumentName]);
+  raise EArgumentNullException.CreateResFmt(
+    @SArgumentNullException, [argumentName]);
 end;
 
 class procedure TArgument.RaiseArgumentOutOfRangeException(
   const argumentName: string);
 begin
-  raise EArgumentOutOfRangeException.CreateResFmt(@SArgumentOutOfRangeException, [argumentName]);
+  raise EArgumentOutOfRangeException.CreateResFmt(
+    @SArgumentOutOfRangeException, [argumentName]);
 end;
 
 class procedure TArgument.RaiseArgumentFormatException(const argumentName: string);
 begin
-  raise EConvertError.CreateResFmt(@SInvalidArgumentFormat, [argumentName]);
+  raise EFormatException.CreateResFmt(@SInvalidArgumentFormat, [argumentName]);
 end;
 
 class procedure TArgument.RaiseInvalidEnumArgumentException(
   const argumentName: string);
 begin
-  raise EInvalidEnumArgumentException.CreateResFmt(@SInvalidEnumArgument, [argumentName]);
+  raise EInvalidEnumArgumentException.CreateResFmt(
+    @SInvalidEnumArgument, [argumentName]);
 end;
 
 {$ENDREGION}
@@ -1268,7 +1267,7 @@ end;
 
 class operator Nullable<T>.Implicit(value: Pointer): Nullable<T>;
 begin
-  if value = nil then
+  if not Assigned(value) then
   begin
     Result.Clear;
   end
@@ -1401,7 +1400,8 @@ end;
 
 {$REGION 'TLazyInitializer'}
 
-class function TLazyInitializer.InterlockedCompareExchange(var target: Pointer; value, comparand: Pointer): Pointer;
+class function TLazyInitializer.InterlockedCompareExchange(var target: Pointer;
+  value, comparand: Pointer): Pointer;
 {$IFNDEF DELPHIXE_UP}
 asm
   XCHG EAX, EDX
@@ -1414,14 +1414,16 @@ begin
 end;
 {$ENDIF}
 
-class function TLazyInitializer.EnsureInitialized<T>(var target: T; const factoryMethod: TFunc<T>): T;
+class function TLazyInitializer.EnsureInitialized<T>(var target: T;
+  const factoryMethod: TFunc<T>): T;
 var
   localValue: T;
 begin
   if PPointer(@target)^ = nil then
   begin
     localValue := factoryMethod();
-    if TLazyInitializer.InterlockedCompareExchange(PPointer(@target)^, PPointer(@localValue)^, nil) <> nil then
+    if TLazyInitializer.InterlockedCompareExchange(PPointer(@target)^,
+      PPointer(@localValue)^, nil) <> nil then
     begin
       if PTypeInfo(TypeInfo(T)).Kind = tkClass then
       begin
@@ -1443,7 +1445,8 @@ begin
   if PPointer(@target)^ = nil then
   begin
     localValue := T.Create;
-    if TLazyInitializer.InterlockedCompareExchange(PPointer(@target)^, PPointer(@localValue)^, nil) <> nil then
+    if TLazyInitializer.InterlockedCompareExchange(PPointer(@target)^,
+      PPointer(@localValue)^, nil) <> nil then
       localValue.Free;
   end;
   Result := target;
@@ -1907,7 +1910,7 @@ end;
 
 procedure TEvent.InvocationsNeeded;
 begin
-  if fInvocations = nil then
+  if not Assigned(fInvocations) then
   begin
     fInvocations := TMethodInvocations.Create(fTypeInfo);
     PMethod(@fInvoke)^.Data := fInvocations;

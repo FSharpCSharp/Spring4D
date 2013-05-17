@@ -40,6 +40,7 @@ resourcestring
   SInvalidEnumArgument         = 'Invalid enum argument: %s';
   SUnexpectedTypeKindArgument  = 'Unexpected type kind %s for the argument %s.';
   SInvalidOperationBufferSizeShouldBeSame = 'Buffer size should be the same.';
+  SInvalidArgumentFormat = 'Invalid format for argument "%s".';
 
   SCannotAccessRegistryKey     = 'Cannot access the registry key: %s.';
 
@@ -137,13 +138,6 @@ resourcestring
   {$ENDREGION}
 
 
-  {$REGION 'Spring.Numerics'}
-
-  SInvalidArgumentFormat = 'Invalid format for argument "%s".';
-
-  {$ENDREGION}
-
-
   {$REGION 'Spring.Utils'}
 
   SDriveNotReady              = 'Drive "%S" is not ready.';
@@ -192,6 +186,7 @@ resourcestring
   SInvalidOperationCurrent = 'Invalid operation. The enumerable collection is empty.';
 
   {$ENDREGION}
+
 
 implementation
 
