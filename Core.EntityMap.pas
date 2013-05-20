@@ -136,7 +136,7 @@ begin
     end,
     function(const Value: TEntityMapKey): Integer
     begin
-      Result := Value.GetIDAsInt - NativeInt(Value.ModelClass);
+      Result := NativeInt(Value.ModelClass);
     end);
 
   FMap := TObjectDictionary<TEntityMapKey,TObject>.Create(LOwnerships, LComparer);

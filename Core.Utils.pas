@@ -72,6 +72,7 @@ uses
   ,GIFImg
   ,Variants
   ,StrUtils
+  ,FMTBcd
   ;
 
 { TUtils }
@@ -169,7 +170,13 @@ begin
     Result := bStream;
   end
   else
-    Result := TValue.FromVariant(AValue);
+  begin
+    case VarType(AValue) of
+      273 {FMTBcdVariantType.VarType}: Result := Double(AValue); //Oracle sometimes returns this vartype for some columns
+      else
+        Result := TValue.FromVariant(AValue);
+    end;
+  end;
 end;
 
 class function TUtils.TryGetLazyTypeValue(const ALazy: TValue; out AValue: TValue): Boolean;

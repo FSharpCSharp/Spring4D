@@ -60,6 +60,7 @@ type
     function GetCopyFieldsAsString(const ACreateFields: TEnumerable<TSQLCreateField>; const ACopyFields: TList<string>): string; virtual;
     function GetTempTableName(): string; virtual;
     function GetPrimaryKeyDefinition(AField: TSQLCreateField): string; virtual;
+    function GetSplitStatementSymbol(): string; virtual;
   public
     function GetQueryLanguage(): TQueryLanguage; override;
     function GenerateSelect(ASelectCommand: TSelectCommand): string; override;
@@ -97,10 +98,10 @@ procedure TAnsiSQLGenerator.DoGenerateBackupTable(const ATableName: string;
   var ASqlBuilder: TStringBuilder);
 begin
   //select old data to temporary table
-  ASqlBuilder.AppendFormat(' SELECT * INTO %0:S FROM %1:S;',
-        [GetTempTableName, ATableName]).AppendLine;
+  ASqlBuilder.AppendFormat(' SELECT * INTO %0:S FROM %1:S %2:S',
+        [GetTempTableName, ATableName, GetSplitStatementSymbol]).AppendLine;
   //drop table
-  ASqlBuilder.AppendFormat(' DROP TABLE %0:S; ', [ATableName]).AppendLine;
+  ASqlBuilder.AppendFormat(' DROP TABLE %0:S%1:S ', [ATableName, GetSplitStatementSymbol]).AppendLine;
 end;
 
 function TAnsiSQLGenerator.DoGenerateCreateTable(const ATableName: string;
@@ -142,12 +143,12 @@ procedure TAnsiSQLGenerator.DoGenerateRestoreTable(const ATablename: string;
   ACreateColumns: TObjectList<TSQLCreateField>; ADbColumns: TList<string>;
   var ASqlBuilder: TStringBuilder);
 begin
-  ASqlBuilder.AppendFormat(' INSERT INTO %0:S (%2:S) SELECT %3:S FROM %1:S;',
+  ASqlBuilder.AppendFormat(' INSERT INTO %0:S (%2:S) SELECT %3:S FROM %1:S %4:S',
     [ATablename, GetTempTableName, GetCreateFieldsAsString(ACreateColumns),
-    GetCopyFieldsAsString(ACreateColumns, ADbColumns)]).AppendLine;
+    GetCopyFieldsAsString(ACreateColumns, ADbColumns), GetSplitStatementSymbol]).AppendLine;
 
   //drop temporary table
-  ASqlBuilder.AppendFormat(' DROP TABLE %0:S;', [GetTempTableName]);
+  ASqlBuilder.AppendFormat(' DROP TABLE %0:S %1:S', [GetTempTableName, GetSplitStatementSymbol]);
 end;
 
 function TAnsiSQLGenerator.GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): string;
@@ -173,7 +174,7 @@ begin
         .AppendFormat(' REFERENCES %0:S (%1:S)', [LField.ReferencedTableName, LField.ReferencedColumnName])
         .AppendLine
         .Append(LField.GetConstraintsAsString)
-        .Append(';').AppendLine;
+        .Append(GetSplitStatementSymbol).AppendLine;
 
       Result := Result + LSqlBuilder.ToString;
     end;
@@ -202,7 +203,7 @@ begin
     end;
 
     LSqlBuilder.Append(DoGenerateCreateTable(ACreateTableCommand.Table.Name, ACreateTableCommand.Columns));
-    LSqlBuilder.Append(');');
+    LSqlBuilder.Append(')').Append(GetSplitStatementSymbol);
 
     if ACreateTableCommand.TableExists then
     begin
@@ -245,7 +246,7 @@ begin
       Inc(ix);
     end;
 
-    LSqlBuilder.Append(';');
+    LSqlBuilder.Append(GetSplitStatementSymbol);
 
     Result := LSqlBuilder.ToString;
   finally
@@ -278,7 +279,7 @@ begin
       .AppendLine
       .Append(LSQL)
       .AppendLine
-      .Append(') AS ORM_GET_QUERY_COUNT;')
+      .Append(') AS ORM_GET_QUERY_COUNT').Append(GetSplitStatementSymbol)
       ;
 
     Result := LBuilder.ToString;
@@ -313,7 +314,7 @@ begin
   end;
 
   Result := Result + AInsertCommand.Table.Name + ' (' + CRLF + '  ' + sFields + ')' + CRLF +
-    '  VALUES (' + CRLF + sParams + ');';
+    '  VALUES (' + CRLF + sParams + ')' + GetSplitStatementSymbol;
 end;
 
 function TAnsiSQLGenerator.GeneratePagedQuery(const ASql: string; const ALimit,
@@ -325,7 +326,7 @@ begin
   if EndsStr(';', LSQL) then
     SetLength(LSQL, Length(LSQL)-1);
 
-  Result := LSQL + Format(' LIMIT %1:D,%0:D;', [ALimit, AOffset]);
+  Result := LSQL + Format(' LIMIT %1:D,%0:D %2:S', [ALimit, AOffset, GetSplitStatementSymbol]);
 end;
 
 function TAnsiSQLGenerator.GenerateSelect(ASelectCommand: TSelectCommand): string;
@@ -345,7 +346,7 @@ begin
       .Append(GetWhereAsString(ASelectCommand.WhereFields))
       .Append(GetGroupByAsString(ASelectCommand.GroupByFields))
       .Append(GetOrderAsString(ASelectCommand.OrderByFields))
-      .Append(';');
+      .Append(GetSplitStatementSymbol);
 
     Result := LSqlBuilder.ToString;
   finally
@@ -396,7 +397,7 @@ begin
       Inc(ix);
     end;
 
-    LSqlBuilder.Append(';');
+    LSqlBuilder.Append(GetSplitStatementSymbol);
 
     Result := LSqlBuilder.ToString;
   finally
@@ -566,6 +567,11 @@ end;
 
 
 
+function TAnsiSQLGenerator.GetSplitStatementSymbol: string;
+begin
+  Result := ';';
+end;
+
 function TAnsiSQLGenerator.GetSQLDataTypeName(AField: TSQLCreateField): string;
 var
   LDelphiTypeInfo: PTypeInfo;
@@ -643,12 +649,12 @@ end;
 
 function TAnsiSQLGenerator.GetSQLTableCount(const ATablename: string): string;
 begin
-  Result := Format('SELECT COUNT(*) FROM %0:S;', [ATablename]);
+  Result := Format('SELECT COUNT(*) FROM %0:S %1:S', [ATablename, GetSplitStatementSymbol]);
 end;
 
 function TAnsiSQLGenerator.GetTableColumns(const ATableName: string): string;
 begin
-  Result := Format('SELECT * FROM %0:S WHERE 1<>2;', [ATableName]);
+  Result := Format('SELECT * FROM %0:S WHERE 1<>2 %1:S', [ATableName, GetSplitStatementSymbol]);
 end;
 
 function TAnsiSQLGenerator.GetTempTableName: string;

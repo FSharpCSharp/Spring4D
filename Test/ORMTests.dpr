@@ -124,7 +124,9 @@ uses
   Adapters.ObjectDataset.IndexList in '..\Adapters.ObjectDataset.IndexList.pas',
   Adapters.ObjectDataset.ExprParser.Functions in '..\Adapters.ObjectDataset.ExprParser.Functions.pas',
   Core.ListSession in '..\Core.ListSession.pas',
-  SQL.Generators.Register in '..\SQL.Generators.Register.pas';
+  SQL.Generators.Register in '..\SQL.Generators.Register.pas',
+  TestAdaptersOracle in 'TestAdaptersOracle.pas',
+  Adapters.Oracle in '..\Adapters.Oracle.pas';
 
 {$R *.RES}
 

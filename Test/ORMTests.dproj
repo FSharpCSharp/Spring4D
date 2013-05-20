@@ -166,6 +166,8 @@
 			<DCCReference Include="..\Adapters.ObjectDataset.ExprParser.Functions.pas"/>
 			<DCCReference Include="..\Core.ListSession.pas"/>
 			<DCCReference Include="..\SQL.Generators.Register.pas"/>
+			<DCCReference Include="TestAdaptersOracle.pas"/>
+			<DCCReference Include="..\Adapters.Oracle.pas"/>
 			<None Include="Profiling\AQtimeModule1.aqt"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>

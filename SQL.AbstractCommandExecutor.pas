@@ -76,6 +76,7 @@ uses
   ,Core.Reflection
   ,Classes
   ,Core.Utils
+  ,Variants
   ;
 
 { TAbstractCommandExecutor }
@@ -113,6 +114,14 @@ begin
     end;
   end;
   Result.Value := TUtils.AsVariant(LVal);
+
+  if VarIsNull(Result.Value) or VarIsEmpty(Result.Value) then
+  begin
+    Result.SetParamTypeFromTypeInfo
+      ( TRttiExplorer.GetMemberTypeInfo(AEntity.ClassType, AForeignColumn.ReferencedColumnName)
+      );
+  end;
+
   if bFree then
   begin
     FreeValueObject(LVal);
@@ -137,6 +146,10 @@ begin
   end;
 
   Result.Value := TUtils.AsVariant(LVal);
+  if (VarIsNull(Result.Value) or VarIsEmpty(Result.Value)) and (Connection.GetQueryLanguage = qlOracle) then
+  begin
+    Result.SetParamTypeFromTypeInfo(TRttiExplorer.GetMemberTypeInfo(AColumn.BaseEntityClass, AColumn.ClassMemberName));
+  end;
 
   if bFree then
   begin

@@ -39,14 +39,23 @@ type
   ///	</summary>
   {$ENDREGION}
   TDatabaseManager = class(TAbstractManager)
+  private
+    FEntities: TList<TClass>;
   protected
     procedure BuildTables(AEntities: TList<TClass>); virtual;
     procedure BuildForeignKeys(AEntities: TList<TClass>); virtual;
     procedure BuildSequences(AEntities: TList<TClass>); virtual;
   public
+    constructor Create(AConnection: IDBConnection); override;
+    destructor Destroy; override;
+
     procedure BuildDatabase();
 
+    procedure RegisterEntity(AEntityClass: TClass);
+    procedure ClearEntities();
+
     function EntityExists(AEntityClass: TClass): Boolean;
+
   end;
 
   EODBCException = class(Exception);
@@ -109,23 +118,20 @@ end;
 
 procedure TDatabaseManager.BuildDatabase;
 var
-  LEntities: TList<TClass>;
   LTran: IDBTransaction;
 begin
-  LEntities := TRttiExplorer.GetEntities();
-  try
-    LTran := Connection.BeginTransaction;
+  if (FEntities.Count < 1) then
+    Exit;
 
-    BuildTables(LEntities);
+  LTran := Connection.BeginTransaction;
 
-    BuildForeignKeys(LEntities);
+  BuildTables(FEntities);
 
-    BuildSequences(LEntities);
+  BuildForeignKeys(FEntities);
 
-    LTran.Commit;
-  finally
-    LEntities.Free;
-  end;
+  BuildSequences(FEntities);
+
+  LTran.Commit;
 end;
 
 procedure TDatabaseManager.BuildForeignKeys(AEntities: TList<TClass>);
@@ -179,6 +185,23 @@ begin
   end;
 end;
 
+procedure TDatabaseManager.ClearEntities;
+begin
+  FEntities.Clear;
+end;
+
+constructor TDatabaseManager.Create(AConnection: IDBConnection);
+begin
+  inherited Create(AConnection);
+  FEntities := TRttiExplorer.GetEntities;
+end;
+
+destructor TDatabaseManager.Destroy;
+begin
+  FEntities.Free;
+  inherited Destroy;
+end;
+
 function TDatabaseManager.EntityExists(AEntityClass: TClass): Boolean;
 var
   LTableCreator: TTableCreateExecutor;
@@ -189,6 +212,11 @@ begin
   finally
     LTableCreator.Free;
   end;
+end;
+
+procedure TDatabaseManager.RegisterEntity(AEntityClass: TClass);
+begin
+  FEntities.Add(AEntityClass);
 end;
 
 { TBaseODBC }

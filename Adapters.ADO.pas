@@ -72,6 +72,7 @@ type
     constructor Create(const AStatement: TADOQuery); override;
     destructor Destroy; override;
     procedure SetSQLCommand(const ACommandText: string); override;
+    procedure SetParam(ADBParam: TDBParam); virtual;
     procedure SetParams(Params: TEnumerable<TDBParam>); overload; override;
     function Execute(): NativeUInt; override;
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
@@ -130,6 +131,7 @@ uses
   ,Core.ConnectionFactory
   ,ADOConst
   ,Core.Consts
+  ,Variants
   ;
 
 
@@ -238,20 +240,26 @@ begin
   Result := TADOResultSetAdapter.Create(LStmt);
 end;
 
+procedure TADOStatementAdapter.SetParam(ADBParam: TDBParam);
+var
+  sParamName: string;
+begin
+  sParamName := ADBParam.Name;
+  //strip leading : in param name because ADO does not like them
+  if (ADBParam.Name <> '') and (StartsStr(':', ADBParam.Name)) then
+  begin
+    sParamName := Copy(ADBParam.Name, 2, Length(ADBParam.Name));
+  end;
+  Statement.Parameters.ParamValues[sParamName] := ADBParam.Value;
+end;
+
 procedure TADOStatementAdapter.SetParams(Params: TEnumerable<TDBParam>);
 var
   LParam: TDBParam;
-  sParamName: string;
 begin
   for LParam in Params do
   begin
-    sParamName := LParam.Name;
-    //strip leading : in param name because ADO does not like them
-    if (LParam.Name <> '') and (StartsStr(':', LParam.Name)) then
-    begin
-      sParamName := Copy(LParam.Name, 2, Length(LParam.Name));
-    end;
-    Statement.Parameters.ParamValues[sParamName] := LParam.Value;
+    SetParam(LParam);
   end;
 end;
 

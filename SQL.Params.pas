@@ -30,7 +30,7 @@ unit SQL.Params;
 interface
 
 uses
-  DB, Generics.Collections, Rtti;
+  DB, TypInfo, Generics.Collections, Rtti;
 
 type
   {$REGION 'Documentation'}
@@ -43,13 +43,16 @@ type
     FName: string;
     FParamType: TFieldType;
     FValue: Variant;
+    FTypeInfo: PTypeInfo;
   private
     function GetName: string;
     procedure SetName(const Value: string);
     procedure SetValue(const Value: Variant);
   public
     procedure SetFromTValue(const AValue: TValue);
+    procedure SetParamTypeFromTypeInfo(ATypeInfo: PTypeInfo);
 
+    property TypeInfo: PTypeInfo read FTypeInfo;
     property Name: string read GetName write SetName;
     property ParamType: TFieldType read FParamType write FParamType;
     property Value: Variant read FValue write SetValue;
@@ -58,6 +61,7 @@ type
   procedure ConvertParam(const AFrom: TVarRec; out ATo: TDBParam);
   procedure ConvertParams(const AFrom: array of const; ATo: TObjectList<TDBParam>);
   function FromTValueTypeToFieldType(const AValue: TValue): TFieldType;
+  function FromTypeInfoToFieldType(ATypeInfo: PTypeInfo): TFieldType;
 
 implementation
 
@@ -103,7 +107,7 @@ begin
     end;
     vtExtended:
     begin
-      ATo.ParamType := ftExtended;
+      ATo.ParamType := DB.ftExtended;
       ATo.FValue := Extended(AFrom.VExtended^);
     end;
     vtCurrency:
@@ -150,6 +154,26 @@ begin
   Result := VarTypeToDataType(VarType(LVariant));
 end;
 
+function FromTypeInfoToFieldType(ATypeInfo: PTypeInfo): TFieldType;
+begin
+  case ATypeInfo.Kind of
+    tkUnknown: Result := ftUnknown;
+    tkInteger: Result := ftInteger;
+    tkChar, tkLString, tkString: Result := ftString;
+    tkEnumeration, tkSet: Result := ftInteger;
+    tkFloat: Result := ftFloat;
+    tkClass: Result := ftBlob;
+    tkWChar, tkWString, tkUString: Result := ftWideString;
+    tkVariant: Result := ftVariant;
+    tkArray, tkRecord, tkInterface, tkDynArray: Result := ftBlob;
+    tkInt64: Result := ftLargeint;
+    tkClassRef: Result := ftReference;
+    tkPointer: Result := ftReference;
+    else
+      Result := ftUnknown;
+  end;
+end;
+
 { TDBParam }
 
 function TDBParam.GetName: string;
@@ -172,6 +196,12 @@ end;
 procedure TDBParam.SetName(const Value: string);
 begin
   FName := Value;
+end;
+
+procedure TDBParam.SetParamTypeFromTypeInfo(ATypeInfo: PTypeInfo);
+begin
+  FTypeInfo := ATypeInfo;
+  FParamType := FromTypeInfoToFieldType(FTypeInfo);
 end;
 
 procedure TDBParam.SetValue(const Value: Variant);

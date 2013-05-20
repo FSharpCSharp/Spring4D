@@ -39,7 +39,10 @@ type
   ///	</summary>
   {$ENDREGION}
   TOracleSQLGenerator = class(TAnsiSQLGenerator)
+  protected
+    function GetSplitStatementSymbol(): string; override;
   public
+    function GenerateGetQueryCount(const ASql: string): string; override;
     function GetQueryLanguage(): TQueryLanguage; override;
     function GenerateCreateSequence(ASequence: TCreateSequenceCommand): string; override;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
@@ -64,14 +67,16 @@ var
   LSequence: SequenceAttribute;
 begin
   LSequence := ASequence.Sequence;
-  Result := '';
+  Result := 'BEGIN ';
   if ASequence.SequenceExists then
   begin
-    Result := Format('DROP SEQUENCE "%0:S"; ', [LSequence.SequenceName]);
+    Result := Result + 'EXECUTE IMMEDIATE ' + QuotedStr(Format('DROP SEQUENCE "%0:S" ', [LSequence.SequenceName])) + ';';
   end;
 
-  Result := Result + Format('CREATE SEQUENCE "%0:S" MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY %2:D START WITH %1:D CACHE 20 NOORDER NOCYCLE;',
-    [LSequence.SequenceName, LSequence.InitialValue, LSequence.Increment]);
+  Result := Result + ' EXECUTE IMMEDIATE ' + QuotedStr(Format('CREATE SEQUENCE "%0:S" MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY %2:D START WITH %1:D CACHE 20 NOORDER NOCYCLE',
+    [LSequence.SequenceName, LSequence.InitialValue, LSequence.Increment]));
+
+  Result := Result + ' END;';
 end;
 
 function TOracleSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
@@ -83,7 +88,31 @@ end;
 function TOracleSQLGenerator.GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;
 begin
   Assert(Assigned(ASequence));
-  Result := Format('select %0:S.nextval from dual;', [ASequence.SequenceName]);
+  Result := Format('select %0:S.nextval from dual', [ASequence.SequenceName]);
+end;
+
+function TOracleSQLGenerator.GenerateGetQueryCount(const ASql: string): string;
+var
+  LBuilder: TStringBuilder;
+  LSQL: string;
+begin
+  LBuilder := TStringBuilder.Create();
+  try
+    LSQL := ASql;
+    if EndsStr(';', LSQL) then
+      SetLength(LSQL, Length(LSQL)-1);
+
+    LBuilder.Append('SELECT COUNT(*) FROM (')
+      .AppendLine
+      .Append(LSQL)
+      .AppendLine
+      .Append(')').Append(GetSplitStatementSymbol)
+      ;
+
+    Result := LBuilder.ToString;
+  finally
+    LBuilder.Free;
+  end;
 end;
 
 function TOracleSQLGenerator.GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string;
@@ -100,9 +129,9 @@ begin
     LBuilder.Append('SELECT * FROM (')
       .AppendLine.Append('    ')
       .Append(LSQL)
-      .Append(') AS ORM_TOTAL_1')
+      .Append(') ')
       .AppendLine
-      .AppendFormat(' WHERE (ROWNUM>=%0:D) AND (ROWNUM < %0:D+%1:D);', [AOffset, ALimit]);
+      .AppendFormat(' WHERE (ROWNUM>=%0:D) AND (ROWNUM < %0:D+%1:D)', [AOffset, ALimit]);
 
     Result := LBuilder.ToString;
   finally
@@ -115,6 +144,11 @@ begin
   Result := qlOracle;
 end;
 
+function TOracleSQLGenerator.GetSplitStatementSymbol: string;
+begin
+  Result := '';
+end;
+
 function TOracleSQLGenerator.GetSQLDataTypeName(AField: TSQLCreateField): string;
 begin
   Result := inherited GetSQLDataTypeName(AField);
@@ -124,17 +158,17 @@ begin
     Result := 'NVARCHAR2' + Copy(Result, 9, Length(Result))
   else if StartsText('VARCHAR', Result) then
     Result := 'VARCHAR2' + Copy(Result, 8, Length(Result))
-  else if Result = 'INTEGER' then
-    Result := 'PLS_INTEGER'
+ // else if Result = 'INTEGER' then
+ //   Result := 'PLS_INTEGER'
   else if Result = 'BIT' then
-    Result := 'PLS_INTEGER'
+    Result := 'SMALLINT' // 'PLS_INTEGER'
   else if Result = 'FLOAT' then
     Result := 'BINARY_DOUBLE';
 end;
 
 function TOracleSQLGenerator.GetSQLSequenceCount(const ASequenceName: string): string;
 begin
-  Result := Format('SELECT COUNT(*) FROM USER_SEQUENCES WHERE SEQUENCE_NAME = %0:S; ',
+  Result := Format('SELECT COUNT(*) FROM USER_SEQUENCES WHERE SEQUENCE_NAME = %0:S ',
     [QuotedStr(ASequenceName)]);
 end;
 
