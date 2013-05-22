@@ -124,6 +124,9 @@ uses
   ;
 
 
+type
+  EUIBAdapterException = class(Exception);
+
 { TUIBResultSetAdapter }
 
 procedure TUIBResultSetAdapter.BuildFieldCache;
@@ -249,9 +252,18 @@ begin
   LDataset.UniDirectional := True;
   LDataset.SQL.Text := Statement.SQL.Text;
   AssignParams(Statement.Params, LDataset.Params);
-  LDataset.Open();
-  Result := TUIBResultSetAdapter.Create(LDataset);
-  (Result as TUIBResultSetAdapter).IsNewTransaction := LIsNewTran;
+  try
+    LDataset.Open();
+    Result := TUIBResultSetAdapter.Create(LDataset);
+    (Result as TUIBResultSetAdapter).IsNewTransaction := LIsNewTran;
+  except
+    on E:Exception do
+    begin
+      Result := TUIBResultSetAdapter.Create(LDataset);
+      (Result as TUIBResultSetAdapter).IsNewTransaction := LIsNewTran;
+      raise EUIBAdapterException.CreateFmt(EXCEPTION_CANNOT_OPEN_QUERY, [E.Message]);
+    end;
+  end;
 end;
 
 procedure TUIBStatementAdapter.SetParams(Params: TEnumerable<TDBParam>);

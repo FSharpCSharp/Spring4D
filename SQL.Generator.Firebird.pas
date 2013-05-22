@@ -47,6 +47,7 @@ type
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; override;
     function GetSQLSequenceCount(const ASequenceName: string): string; override;
     function GetSQLDataTypeName(AField: TSQLCreateField): string; override;
+    function GetSQLTableExists(const ATablename: string): string; override;
   end;
 
 implementation
@@ -115,6 +116,13 @@ begin
   Result := Format('SELECT COUNT(*) '+
 		'FROM RDB$GENERATORS '+
 		'WHERE (RDB$SYSTEM_FLAG=0) AND (RDB$GENERATOR_NAME = %0:S); ', [QuotedStr(ASequenceName)]);
+end;
+
+function TFirebirdSQLGenerator.GetSQLTableExists(const ATablename: string): string;
+begin
+  Result := '';
+ { Result := Format('SELECT COUNT(*) FROM RDB$RELATIONS WHERE RDB$RELATION_NAME = %0:S '
+    , [QuotedStr(ATablename)]);}
 end;
 
 initialization

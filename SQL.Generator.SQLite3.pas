@@ -40,16 +40,16 @@ type
   {$ENDREGION}
   TSQLiteSQLGenerator = class(TAnsiSQLGenerator)
   protected
-    procedure DoGenerateBackupTable(const ATableName: string; var ASqlBuilder: TStringBuilder); override;
-    procedure DoGenerateRestoreTable(const ATablename: string;
-      ACreateColumns: TObjectList<TSQLCreateField>; ADbColumns: TList<string>; var ASqlBuilder: TStringBuilder); override;
+    function DoGenerateBackupTable(const ATableName: string): TArray<string>; override;
+    function DoGenerateRestoreTable(const ATablename: string;
+      ACreateColumns: TObjectList<TSQLCreateField>; ADbColumns: TList<string>): TArray<string>; override;
     function DoGenerateCreateTable(const ATableName: string; AColumns: TObjectList<TSQLCreateField>): string; override;
   public
     function GetQueryLanguage(): TQueryLanguage; override;
-    function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): string; override;
-    function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): string; override;
+    function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): TList<string>; override;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
     function GetSQLDataTypeName(AField: TSQLCreateField): string; override;
+    function GetSQLTableExists(const ATablename: string): string; override;
   end;
 
 implementation
@@ -65,14 +65,15 @@ uses
 const
   TBL_TEMP = 'ORMTEMPTABLE';
 
-procedure TSQLiteSQLGenerator.DoGenerateBackupTable(const ATableName: string; var ASqlBuilder: TStringBuilder);
+function TSQLiteSQLGenerator.DoGenerateBackupTable(const ATableName: string): TArray<string>;
 begin
-  ASqlBuilder.AppendFormat(' DROP TABLE IF EXISTS %0:S; ', [TBL_TEMP]).AppendLine;
+  SetLength(Result, 3);
+  Result[0] := Format(' DROP TABLE IF EXISTS %0:S ', [TBL_TEMP]);
   //select old data to temporary table
-  ASqlBuilder.AppendFormat(' CREATE TEMPORARY TABLE %0:S AS SELECT * FROM %1:S; ',
-    [TBL_TEMP, ATableName]).AppendLine;
+  Result[1] := Format(' CREATE TEMPORARY TABLE %0:S AS SELECT * FROM %1:S ',
+    [TBL_TEMP, ATableName]);
   //drop table
-  ASqlBuilder.AppendFormat(' DROP TABLE IF EXISTS %0:S; ', [ATableName]).AppendLine;
+  Result[2] := Format(' DROP TABLE IF EXISTS %0:S ', [ATableName]);
 end;
 
 function TSQLiteSQLGenerator.DoGenerateCreateTable(const ATableName: string; AColumns: TObjectList<TSQLCreateField>): string;
@@ -104,7 +105,7 @@ begin
         ]
       );
     end;
-    //LSqlBuilder.Append(');');
+    LSqlBuilder.Append(')');
 
     Result := LSqlBuilder.ToString;
   finally
@@ -112,33 +113,41 @@ begin
   end;
 end;
 
-procedure TSQLiteSQLGenerator.DoGenerateRestoreTable(const ATablename: string;
-  ACreateColumns: TObjectList<TSQLCreateField>; ADbColumns: TList<string>; var ASqlBuilder: TStringBuilder);
+function TSQLiteSQLGenerator.DoGenerateRestoreTable(const ATablename: string;
+  ACreateColumns: TObjectList<TSQLCreateField>; ADbColumns: TList<string>): TArray<string>;
 begin
-  ASqlBuilder.AppendFormat(' INSERT INTO %0:S (%2:S) SELECT %3:S FROM %1:S;',
+  SetLength(Result, 2);
+  Result[0] := Format(' INSERT INTO %0:S (%2:S) SELECT %3:S FROM %1:S',
     [ATablename, TBL_TEMP, GetCreateFieldsAsString(ACreateColumns),
-    GetCopyFieldsAsString(ACreateColumns, ADbColumns)]).AppendLine;
+    GetCopyFieldsAsString(ACreateColumns, ADbColumns)]);
 
   //drop temporary table
-  ASqlBuilder.AppendFormat(' DROP TABLE IF EXISTS %0:S;', [TBL_TEMP]);
+  Result[1] := Format(' DROP TABLE IF EXISTS %0:S', [TBL_TEMP]);
 end;
 
-function TSQLiteSQLGenerator.GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): string;
+function TSQLiteSQLGenerator.GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): TList<string>;
 var
   LSqlBuilder: TStringBuilder;
   LCreateTableString: string;
   i: Integer;
   LField: TSQLForeignKeyField;
+  LRes: TArray<string>;
 begin
   Assert(Assigned(ACreateFKCommand));
+  Result := TList<string>.Create;
+
   if ACreateFKCommand.ForeignKeys.Count < 1 then
-    Exit('');
+    Exit;
 
   LSqlBuilder := TStringBuilder.Create;
   try
-    DoGenerateBackupTable(ACreateFKCommand.Table.Name, LSqlBuilder);
+    LRes := DoGenerateBackupTable(ACreateFKCommand.Table.Name);
+    Result.AddRange(LRes);
     //recreate table with foreign keys
     LCreateTableString := DoGenerateCreateTable(ACreateFKCommand.Table.Name, ACreateFKCommand.Columns);
+    //remove ")" from the end of the string
+    SetLength(LCreateTableString, Length(LCreateTableString)-1);
+
     LSqlBuilder.Append(LCreateTableString).Append(',').AppendLine;
     for i := 0 to ACreateFKCommand.ForeignKeys.Count - 1 do
     begin
@@ -150,42 +159,12 @@ begin
         [LField.ForeignKeyName, LField.Fieldname, LField.ReferencedTableName, LField.ReferencedColumnName]);
 
     end;
-    LSqlBuilder.Append(');').AppendLine;
+    LSqlBuilder.Append(');');
 
-    DoGenerateRestoreTable(ACreateFKCommand.Table.Name, ACreateFKCommand.Columns, ACreateFKCommand.DbColumns, LSqlBuilder);
+    Result.Add(LSqlBuilder.ToString);
 
-    Result := LSqlBuilder.ToString;
-
-  finally
-    LSqlBuilder.Free;
-  end;
-end;
-
-function TSQLiteSQLGenerator.GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): string;
-var
-  LSqlBuilder: TStringBuilder;
-  LCreateTableString: string;
-begin
-  Assert(Assigned(ACreateTableCommand));
-
-  LSqlBuilder := TStringBuilder.Create;
-  try
-    if ACreateTableCommand.TableExists then
-    begin
-      DoGenerateBackupTable(ACreateTableCommand.Table.Name, LSqlBuilder);
-    end;
-
-    LCreateTableString := DoGenerateCreateTable(ACreateTableCommand.Table.Name, ACreateTableCommand.Columns);
-    LSqlBuilder.Append(LCreateTableString)
-      .Append(');').AppendLine;
-
-    if ACreateTableCommand.TableExists then
-    begin
-      DoGenerateRestoreTable(ACreateTableCommand.Table.Name, ACreateTableCommand.Columns, ACreateTableCommand.DbColumns, LSqlBuilder);
-    end;
-
-    Result := LSqlBuilder.ToString;
-
+    LRes := DoGenerateRestoreTable(ACreateFKCommand.Table.Name, ACreateFKCommand.Columns, ACreateFKCommand.DbColumns);
+    Result.AddRange(LRes);
   finally
     LSqlBuilder.Free;
   end;
@@ -206,6 +185,12 @@ begin
   Result := inherited GetSQLDataTypeName(AField);
   if ContainsStr(Result, 'CHAR') then
     Result := 'TEXT';
+end;
+
+function TSQLiteSQLGenerator.GetSQLTableExists(const ATablename: string): string;
+begin
+  Result := 'select count(*) from sqlite_master where [type] = ''table'' and lower([name]) = ''' +
+    LowerCase(ATablename) + ''' ';
 end;
 
 initialization

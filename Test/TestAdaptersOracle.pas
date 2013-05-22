@@ -73,7 +73,7 @@ var
 begin
   LConn := CreateTestConnection;
   try
-    LConn.Execute('DROP TABLE VIKARINA.IMONES');
+    LConn.Execute('DROP TABLE ' + TBL_COMPANY);
   finally
     LConn.Free;
   end;
@@ -85,7 +85,7 @@ var
 begin
   LConn := CreateTestConnection;
   try
-    LConn.Execute(Format('INSERT INTO VIKARINA.IMONES (IMONE, IMPAV) VALUES (%0:D, %1:S)'
+    LConn.Execute(Format('INSERT INTO '+ TBL_COMPANY + ' (IMONE, IMPAV) VALUES (%0:D, %1:S)'
       ,
         [
           AID
@@ -149,7 +149,7 @@ var
   LCompany: TCompany;
 begin
   //insert company
-//  InsertCompany(1, 'Oracle Company');
+  InsertCompany(1, 'Oracle Company');
   LCompany := FManager.FindOne<TCompany>(1);
   try
     CheckTrue(Assigned(LCompany));
@@ -165,13 +165,21 @@ var
   LCriteria: ICriteria<TCompany>;
   LItems: IList<TCompany>;
   Imone: IProperty;
+  i: Integer;
 begin
+  for i := 1 to 20 do
+  begin
+    InsertCompany(i, Format('%D Company', [i]));
+  end;
   Imone := TProperty<TCompany>.ForName('IMONE');
 
   LCriteria := FManager.CreateCriteria<TCompany>;
   LCriteria.Add(Imone.GEq(1));
   LItems := LCriteria.Page(1, 10).Items;
-  CheckEquals(1, LItems.Count);
+  CheckEquals(10, LItems.Count);
+
+  LItems := LCriteria.Page(2, 10).Items;
+  CheckEquals(10, LItems.Count);
 end;
 
 procedure TestOracleSession.Save_Delete;
@@ -180,9 +188,10 @@ var
 begin
   LCompany := TCompany.Create;
   try
+    InsertCompany(1, 'Oracle Company');
     LCompany.Name := 'Inserted Company';
     LCompany.ID := 2;
-   // LCompany.Logo.LoadFromFile(PictureFilename);
+    LCompany.Logo.LoadFromFile(PictureFilename);
     FManager.Save(LCompany);
     CheckEquals(2, GetTableCount(TBL_COMPANY));
 
@@ -200,12 +209,12 @@ begin
   FConnection.AutoFreeConnection := True;
   FManager := TSession.Create(FConnection);
 
- // CreateTestTables(FConnection);
+  CreateTestTables(FConnection);
 end;
 
 procedure TestOracleSession.TearDown;
 begin
- // DropTestTables;
+  DropTestTables;
   FManager.Free;
   FConnection := nil;
   inherited;

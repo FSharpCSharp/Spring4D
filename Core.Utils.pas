@@ -72,7 +72,6 @@ uses
   ,GIFImg
   ,Variants
   ,StrUtils
-  ,FMTBcd
   ;
 
 { TUtils }

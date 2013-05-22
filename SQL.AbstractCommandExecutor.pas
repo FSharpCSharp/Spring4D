@@ -45,6 +45,7 @@ type
     procedure SetConnection(const Value: IDBConnection);
   protected
     function DoCreateParam(AColumn: ColumnAttribute; AValue: Variant): TDBParam; virtual;
+    function CanUpdateParamFieldType(const AValue: Variant): Boolean; virtual;
     function CreateParam(AEntity: TObject; AColumn: ColumnAttribute): TDBParam; overload; virtual;
     function CreateParam(AEntity: TObject; AForeignColumn: ForeignJoinColumnAttribute): TDBParam; overload; virtual;
     function GetCommand: TDMLCommand; virtual; abstract;
@@ -88,6 +89,11 @@ begin
     Command.Entity := AEntity;
 end;
 
+function TAbstractCommandExecutor.CanUpdateParamFieldType(const AValue: Variant): Boolean;
+begin
+  Result := (VarIsNull(AValue) or VarIsEmpty(AValue)) and (Connection.GetQueryLanguage = qlOracle);
+end;
+
 constructor TAbstractCommandExecutor.Create();
 begin
   inherited Create;
@@ -115,7 +121,7 @@ begin
   end;
   Result.Value := TUtils.AsVariant(LVal);
 
-  if VarIsNull(Result.Value) or VarIsEmpty(Result.Value) then
+  if CanUpdateParamFieldType(Result.Value) then
   begin
     Result.SetParamTypeFromTypeInfo
       ( TRttiExplorer.GetMemberTypeInfo(AEntity.ClassType, AForeignColumn.ReferencedColumnName)
@@ -146,7 +152,7 @@ begin
   end;
 
   Result.Value := TUtils.AsVariant(LVal);
-  if (VarIsNull(Result.Value) or VarIsEmpty(Result.Value)) and (Connection.GetQueryLanguage = qlOracle) then
+  if CanUpdateParamFieldType(Result.Value) then
   begin
     Result.SetParamTypeFromTypeInfo(TRttiExplorer.GetMemberTypeInfo(AColumn.BaseEntityClass, AColumn.ClassMemberName));
   end;
@@ -211,21 +217,31 @@ end;
 
 function TAbstractCommandExecutor.TableExists(const ATablename: string): Boolean;
 var
-  LSqlTableCount: string;
+  LSqlTableCount, LSqlTableExists: string;
   LStmt: IDBStatement;
   LResults: IDBResultset;
 begin
   Result := False;
-  LSqlTableCount := Generator.GetSQLTableCount(ATablename);
-  if (LSqlTableCount <> '') then
+  LSqlTableCount := '';
+  LSqlTableExists := Generator.GetSQLTableExists(ATablename);
+  if (LSqlTableExists = '') then
+    LSqlTableCount := Generator.GetSQLTableCount(ATablename);
+  if (LSqlTableCount <> '') or (LSqlTableExists <> '') then
   begin
     LStmt := Connection.CreateStatement;
     try
       try
-        LStmt.SetSQLCommand(LSqlTableCount);
+        if (LSqlTableExists <> '') then
+          LStmt.SetSQLCommand(LSqlTableExists)
+        else
+          LStmt.SetSQLCommand(LSqlTableCount);
 
         LResults := LStmt.ExecuteQuery;
-        Result := not LResults.IsEmpty;
+
+        if (LSqlTableExists <> '') then
+          Result := (LResults.GetFieldValue(0) > 0)
+        else
+          Result := not LResults.IsEmpty;
       except
         Result := False;
       end;

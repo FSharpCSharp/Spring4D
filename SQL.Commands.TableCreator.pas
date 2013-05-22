@@ -30,7 +30,7 @@ unit SQL.Commands.TableCreator;
 interface
 
 uses
-  SQL.AbstractCommandExecutor, SQL.Commands, SQL.Types;
+  SQL.AbstractCommandExecutor, SQL.Commands, SQL.Types, Generics.Collections;
 
 type
   {$REGION 'Documentation'}
@@ -43,6 +43,7 @@ type
   private
     FCommand: TCreateTableCommand;
     FTable: TSQLTable;
+    FSQLs: TList<string>;
   protected
     function GetCommand: TDMLCommand; override;
   public
@@ -89,7 +90,7 @@ begin
     FillDbTableColumns(FTable.Name, FCommand.DbColumns);
   end;
 
-  SQL := Generator.GenerateCreateTable(FCommand);
+  FSQLs := Generator.GenerateCreateTable(FCommand);
 end;
 
 constructor TTableCreateExecutor.Create;
@@ -97,6 +98,7 @@ begin
   inherited Create;
   FTable := TSQLTable.Create;
   FCommand := TCreateTableCommand.Create(FTable);
+  FSQLs := nil;
 end;
 
 procedure TTableCreateExecutor.CreateTables(AEntity: TClass);
@@ -108,22 +110,28 @@ destructor TTableCreateExecutor.Destroy;
 begin
   FTable.Free;
   FCommand.Free;
+  FSQLs.Free;
   inherited Destroy;
 end;
 
 procedure TTableCreateExecutor.Execute(AEntity: TObject);
 var
   LStmt: IDBStatement;
+  LSql: string;
 begin
-  if (SQL = '') then
-    Exit;
+  for LSql in FSQLs do
+  begin
+    SQL := LSql;
+    if (SQL = '') then
+      Continue;
 
-  LStmt := Connection.CreateStatement;
-  LStmt.SetSQLCommand(SQL);
-  //inherited only when SQL's are constructed
-  inherited Execute(AEntity);
+    LStmt := Connection.CreateStatement;
+    LStmt.SetSQLCommand(SQL);
+    //inherited only when SQL's are constructed
+    inherited Execute(AEntity);
 
-  LStmt.Execute();
+    LStmt.Execute();
+  end;
 end;
 
 function TTableCreateExecutor.GetCommand: TDMLCommand;

@@ -50,8 +50,8 @@ type
     function GenerateInsert(AInsertCommand: TInsertCommand): string; override;
     function GenerateUpdate(AUpdateCommand: TUpdateCommand): string; override;
     function GenerateDelete(ADeleteCommand: TDeleteCommand): string; override;
-    function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): string; override;
-    function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): string; override;
+    function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): TList<string>; override;
+    function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): TList<string>; override;
     function GenerateCreateSequence(ASequence: TCreateSequenceCommand): string; override;
     function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
@@ -61,6 +61,7 @@ type
     function GetSQLSequenceCount(const ASequenceName: string): string; override;
     function GetTableColumns(const ATableName: string): string; override;
     function GetSQLDataTypeName(AField: TSQLCreateField): string; override;
+    function GetSQLTableExists(const ATablename: string): string; override;
 
     class property SerializerFormat: TSvSerializeFormat read FSerializerFormat write FSerializerFormat;
   end;
@@ -81,9 +82,9 @@ begin
   FSerializerFormat := sstSuperJson;
 end;
 
-function TNoSQLGenerator.GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): string;
+function TNoSQLGenerator.GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): TList<string>;
 begin
-  Result := '';
+  Result := TList<string>.Create;
 end;
 
 function TNoSQLGenerator.GenerateCreateSequence(ASequence: TCreateSequenceCommand): string;
@@ -91,9 +92,9 @@ begin
   Result := '';
 end;
 
-function TNoSQLGenerator.GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): string;
+function TNoSQLGenerator.GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): TList<string>;
 begin
-  Result := '';
+  Result := TList<string>.Create;
 end;
 
 function TNoSQLGenerator.GenerateDelete(ADeleteCommand: TDeleteCommand): string;
@@ -154,6 +155,11 @@ begin
 end;
 
 function TNoSQLGenerator.GetSQLTableCount(const ATablename: string): string;
+begin
+  Result := '';
+end;
+
+function TNoSQLGenerator.GetSQLTableExists(const ATablename: string): string;
 begin
   Result := '';
 end;

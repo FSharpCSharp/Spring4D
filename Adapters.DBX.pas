@@ -114,6 +114,9 @@ uses
   ,Core.Consts
   ;
 
+type
+  EDBXAdapterException = class(Exception);
+
 
 { TDBXResultSetAdapter }
 
@@ -210,8 +213,16 @@ begin
   LStmt.SQL.Text := Statement.SQL.Text;
   LStmt.Params.AssignValues(Statement.Params);
   LStmt.DisableControls;
-  LStmt.Open();
-  Result := TDBXResultSetAdapter.Create(LStmt);
+  try
+    LStmt.Open();
+    Result := TDBXResultSetAdapter.Create(LStmt);
+  except
+    on E:Exception do
+    begin
+      Result := TDBXResultSetAdapter.Create(LStmt);
+      raise EDBXAdapterException.CreateFmt(EXCEPTION_CANNOT_OPEN_QUERY, [E.Message]);
+    end;
+  end;
 end;
 
 procedure TDBXStatementAdapter.SetParams(Params: TEnumerable<TDBParam>);

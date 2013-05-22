@@ -135,6 +135,9 @@ uses
   ;
 
 
+type
+  EADOAdapterException = class(Exception);
+
 
 { TADOResultSetAdapter }
 
@@ -235,9 +238,17 @@ begin
   LStmt.CommandText := Statement.SQL.Text;
   LStmt.Parameters.AssignValues(Statement.Parameters);
   LStmt.DisableControls;
-  LStmt.Open();
-
-  Result := TADOResultSetAdapter.Create(LStmt);
+  try
+    LStmt.Open();
+    Result := TADOResultSetAdapter.Create(LStmt);
+  except
+    on E:Exception do
+    begin
+      //make sure that resultset is always created to avoid memory leak
+      Result := TADOResultSetAdapter.Create(LStmt);
+      raise EADOAdapterException.CreateFmt(EXCEPTION_CANNOT_OPEN_QUERY, [E.Message]);
+    end;
+  end;
 end;
 
 procedure TADOStatementAdapter.SetParam(ADBParam: TDBParam);

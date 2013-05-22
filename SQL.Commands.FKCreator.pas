@@ -30,7 +30,7 @@ unit SQL.Commands.FKCreator;
 interface
 
 uses
-  SQL.AbstractCommandExecutor, SQL.Commands, SQL.Types;
+  SQL.AbstractCommandExecutor, SQL.Commands, SQL.Types, Generics.Collections;
 
 type
   {$REGION 'Documentation'}
@@ -43,6 +43,7 @@ type
   private
     FCommand: TCreateFKCommand;
     FTable: TSQLTable;
+    FSQLs: TList<string>;
   protected
     function GetCommand: TDMLCommand; override;
   public
@@ -87,7 +88,7 @@ begin
     FillDbTableColumns(FTable.Name, FCommand.DbColumns);
   end;
 
-  SQL := Generator.GenerateCreateFK(FCommand);
+  FSQLs := Generator.GenerateCreateFK(FCommand);
 end;
 
 constructor TForeignKeyCreateExecutor.Create;
@@ -95,6 +96,7 @@ begin
   inherited Create;
   FTable := TSQLTable.Create;
   FCommand := TCreateFKCommand.Create(FTable);
+  FSQLs := nil;
 end;
 
 procedure TForeignKeyCreateExecutor.CreateForeignKeys(AEntity: TClass);
@@ -106,22 +108,28 @@ destructor TForeignKeyCreateExecutor.Destroy;
 begin
   FTable.Free;
   FCommand.Free;
+  FSQLs.Free;
   inherited Destroy;
 end;
 
 procedure TForeignKeyCreateExecutor.Execute(AEntity: TObject);
 var
   LStmt: IDBStatement;
+  LSql: string;
 begin
-  if (SQL = '') then
-    Exit;
+  for LSql in FSQLs do
+  begin
+    SQL := LSql;
+    if (SQL = '') then
+      Exit;
 
-  LStmt := Connection.CreateStatement;
-  LStmt.SetSQLCommand(SQL);
-  //inherited only when SQL's are constructed
-  inherited Execute(AEntity);
+    LStmt := Connection.CreateStatement;
+    LStmt.SetSQLCommand(SQL);
+    //inherited only when SQL's are constructed
+    inherited Execute(AEntity);
 
-  LStmt.Execute();
+    LStmt.Execute();
+  end;
 end;
 
 function TForeignKeyCreateExecutor.GetCommand: TDMLCommand;

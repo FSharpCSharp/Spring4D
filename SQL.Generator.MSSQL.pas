@@ -46,6 +46,7 @@ type
     function GetSQLDataTypeName(AField: TSQLCreateField): string; override;
     function GetTempTableName(): string; override;
     function GetPrimaryKeyDefinition(AField: TSQLCreateField): string; override;
+    function GetSQLTableExists(const ATablename: string): string; override;
   end;
 
 implementation
@@ -113,6 +114,19 @@ begin
 
   if AField.IsIdentity then
     Result := Result + ' IDENTITY(1,1)';
+end;
+
+function TMSSQLServerSQLGenerator.GetSQLTableExists(const ATablename: string): string;
+var
+  LSchema, LTable: string;
+begin
+  ParseFullTablename(ATablename, LTable, LSchema);
+  if (LSchema <> '') then
+    Result := Format('SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = %1:S AND TABLE_NAME = %0:S '
+    , [QuotedStr(LTable), QuotedStr(LSchema)])
+  else
+    Result := Format('SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = %0:S'
+    , [QuotedStr(LTable)]);
 end;
 
 function TMSSQLServerSQLGenerator.GetTempTableName: string;

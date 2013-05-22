@@ -30,7 +30,7 @@ unit SQL.AbstractSQLGenerator;
 interface
 
 uses
-  SQL.Interfaces, SQL.Commands, Mapping.Attributes, SQL.Types;
+  SQL.Interfaces, SQL.Commands, Mapping.Attributes, SQL.Types, Generics.Collections;
 
 const
   TBL_TEMP = 'ORM_TEMP';
@@ -43,8 +43,8 @@ type
     function GenerateInsert(AInsertCommand: TInsertCommand): string; virtual; abstract;
     function GenerateUpdate(AUpdateCommand: TUpdateCommand): string; virtual; abstract;
     function GenerateDelete(ADeleteCommand: TDeleteCommand): string; virtual; abstract;
-    function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): string; virtual; abstract;
-    function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): string; virtual; abstract;
+    function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): TList<string>; virtual; abstract;
+    function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): TList<string>; virtual; abstract;
     function GenerateCreateSequence(ASequence: TCreateSequenceCommand): string; virtual; abstract;
     function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; virtual; abstract;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; virtual; abstract;
@@ -54,6 +54,7 @@ type
     function GetSQLTableCount(const ATablename: string): string; virtual; abstract;
     function GetSQLSequenceCount(const ASequenceName: string): string; virtual; abstract;
     function GetTableColumns(const ATableName: string): string; virtual; abstract;
+    function GetSQLTableExists(const ATablename: string): string; virtual; abstract;
   end;
 
 implementation

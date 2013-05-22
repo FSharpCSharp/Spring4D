@@ -126,7 +126,8 @@ uses
   Core.ListSession in '..\Core.ListSession.pas',
   SQL.Generators.Register in '..\SQL.Generators.Register.pas',
   TestAdaptersOracle in 'TestAdaptersOracle.pas',
-  Adapters.Oracle in '..\Adapters.Oracle.pas';
+  Adapters.Oracle in '..\Adapters.Oracle.pas',
+  TestCommands in 'TestCommands.pas';
 
 {$R *.RES}
 

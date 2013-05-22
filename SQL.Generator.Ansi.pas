@@ -44,9 +44,9 @@ type
   {$ENDREGION}
   TAnsiSQLGenerator = class(TAbstractSQLGenerator)
   protected
-    procedure DoGenerateBackupTable(const ATableName: string; var ASqlBuilder: TStringBuilder); virtual;
-    procedure DoGenerateRestoreTable(const ATablename: string;
-      ACreateColumns: TObjectList<TSQLCreateField>; ADbColumns: TList<string>; var ASqlBuilder: TStringBuilder); virtual;
+    function DoGenerateBackupTable(const ATableName: string): TArray<string>; virtual;
+    function DoGenerateRestoreTable(const ATablename: string;
+      ACreateColumns: TObjectList<TSQLCreateField>; ADbColumns: TList<string>): TArray<string>; virtual;
     function DoGenerateCreateTable(const ATableName: string; AColumns: TObjectList<TSQLCreateField>): string; virtual;
 
     function GetGroupByAsString(const AGroupFields: TEnumerable<TSQLGroupByField>): string; virtual;
@@ -61,14 +61,15 @@ type
     function GetTempTableName(): string; virtual;
     function GetPrimaryKeyDefinition(AField: TSQLCreateField): string; virtual;
     function GetSplitStatementSymbol(): string; virtual;
+    procedure ParseFullTablename(const AFullTablename: string; out ATablename, ASchemaName: string); virtual;
   public
     function GetQueryLanguage(): TQueryLanguage; override;
     function GenerateSelect(ASelectCommand: TSelectCommand): string; override;
     function GenerateInsert(AInsertCommand: TInsertCommand): string; override;
     function GenerateUpdate(AUpdateCommand: TUpdateCommand): string; override;
     function GenerateDelete(ADeleteCommand: TDeleteCommand): string; override;
-    function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): string; override;
-    function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): string; override;
+    function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand):  TList<string>; override;
+    function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): TList<string>; override;
     /// <summary>
     /// First drop sequence and then create it
     /// </summary>
@@ -81,6 +82,15 @@ type
     function GetSQLTableCount(const ATablename: string): string; override;
     function GetSQLSequenceCount(const ASequenceName: string): string; override;
     function GetTableColumns(const ATableName: string): string; override;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Constructs a query which checks if given table exists in the
+    ///	  database. Query which executes returned statement should return 0 or
+    ///	  raise an exception if table does not exist and &gt; 0 when it exists.
+    ///	</summary>
+    {$ENDREGION}
+    function GetSQLTableExists(const ATablename: string): string; override;
   end;
 
 implementation
@@ -94,14 +104,14 @@ uses
 
 { TAnsiSQLGenerator }
 
-procedure TAnsiSQLGenerator.DoGenerateBackupTable(const ATableName: string;
-  var ASqlBuilder: TStringBuilder);
+function TAnsiSQLGenerator.DoGenerateBackupTable(const ATableName: string): TArray<string>;
 begin
   //select old data to temporary table
-  ASqlBuilder.AppendFormat(' SELECT * INTO %0:S FROM %1:S %2:S',
-        [GetTempTableName, ATableName, GetSplitStatementSymbol]).AppendLine;
+  SetLength(Result, 2);
+  Result[0] := Format('SELECT * INTO %0:S FROM %1:S',
+        [GetTempTableName, ATableName]);
   //drop table
-  ASqlBuilder.AppendFormat(' DROP TABLE %0:S%1:S ', [ATableName, GetSplitStatementSymbol]).AppendLine;
+  Result[1] := Format('DROP TABLE %0:S ', [ATableName]);
 end;
 
 function TAnsiSQLGenerator.DoGenerateCreateTable(const ATableName: string;
@@ -113,7 +123,7 @@ var
 begin
   LSqlBuilder := TStringBuilder.Create;
   try
-    LSqlBuilder.AppendFormat(' CREATE TABLE %0:S ', [ATableName])
+    LSqlBuilder.AppendFormat('CREATE TABLE %0:S ', [ATableName])
       .Append('(')
       .AppendLine;
     for i := 0 to AColumns.Count - 1 do
@@ -133,34 +143,36 @@ begin
       );
     end;
 
+    LSqlBuilder.AppendLine.Append(')');
+
     Result := LSqlBuilder.ToString;
   finally
     LSqlBuilder.Free;
   end;
 end;
 
-procedure TAnsiSQLGenerator.DoGenerateRestoreTable(const ATablename: string;
-  ACreateColumns: TObjectList<TSQLCreateField>; ADbColumns: TList<string>;
-  var ASqlBuilder: TStringBuilder);
+function TAnsiSQLGenerator.DoGenerateRestoreTable(const ATablename: string;
+  ACreateColumns: TObjectList<TSQLCreateField>; ADbColumns: TList<string>): TArray<string>;
 begin
-  ASqlBuilder.AppendFormat(' INSERT INTO %0:S (%2:S) SELECT %3:S FROM %1:S %4:S',
+  SetLength(Result, 2);
+
+  Result[0] := Format('INSERT INTO %0:S (%2:S) SELECT %3:S FROM %1:S' + #13#10,
     [ATablename, GetTempTableName, GetCreateFieldsAsString(ACreateColumns),
-    GetCopyFieldsAsString(ACreateColumns, ADbColumns), GetSplitStatementSymbol]).AppendLine;
+    GetCopyFieldsAsString(ACreateColumns, ADbColumns)]);
 
   //drop temporary table
-  ASqlBuilder.AppendFormat(' DROP TABLE %0:S %1:S', [GetTempTableName, GetSplitStatementSymbol]);
+  Result[1] := Format('DROP TABLE %0:S', [GetTempTableName]);
 end;
 
-function TAnsiSQLGenerator.GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): string;
+function TAnsiSQLGenerator.GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): TList<string>;
 var
   LSqlBuilder: TStringBuilder;
   i: Integer;
   LField: TSQLForeignKeyField;
 begin
+  Result := TList<string>.Create;
   LSqlBuilder := TStringBuilder.Create();
   try
-    Result := '';
-
     for i := 0 to ACreateFKCommand.ForeignKeys.Count - 1 do
     begin
       LField := ACreateFKCommand.ForeignKeys[i];
@@ -173,12 +185,10 @@ begin
         .AppendLine
         .AppendFormat(' REFERENCES %0:S (%1:S)', [LField.ReferencedTableName, LField.ReferencedColumnName])
         .AppendLine
-        .Append(LField.GetConstraintsAsString)
-        .Append(GetSplitStatementSymbol).AppendLine;
+        .Append(LField.GetConstraintsAsString);
 
-      Result := Result + LSqlBuilder.ToString;
+      Result.Add(LSqlBuilder.ToString)
     end;
-
   finally
     LSqlBuilder.Free;
   end;
@@ -189,31 +199,26 @@ begin
   Result := '';
 end;
 
-function TAnsiSQLGenerator.GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): string;
+function TAnsiSQLGenerator.GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): TList<string>;
 var
-  LSqlBuilder: TStringBuilder;
+  LResult: TArray<string>;
 begin
   Assert(Assigned(ACreateTableCommand));
+  Result := TList<string>.Create;
 
-  LSqlBuilder := TStringBuilder.Create();
-  try
-    if ACreateTableCommand.TableExists then
-    begin
-      DoGenerateBackupTable(ACreateTableCommand.Table.Name, LSqlBuilder);
-    end;
+  if ACreateTableCommand.TableExists then
+  begin
+    LResult := DoGenerateBackupTable(ACreateTableCommand.Table.Name);
+    Result.AddRange(LResult);
+  end;
 
-    LSqlBuilder.Append(DoGenerateCreateTable(ACreateTableCommand.Table.Name, ACreateTableCommand.Columns));
-    LSqlBuilder.Append(')').Append(GetSplitStatementSymbol);
+  Result.Add( DoGenerateCreateTable(ACreateTableCommand.Table.Name, ACreateTableCommand.Columns) );
 
-    if ACreateTableCommand.TableExists then
-    begin
-      DoGenerateRestoreTable(ACreateTableCommand.Table.Name, ACreateTableCommand.Columns,
-        ACreateTableCommand.DbColumns, LSqlBuilder);
-    end;
-
-    Result := LSqlBuilder.ToString;
-  finally
-    LSqlBuilder.Free;
+  if ACreateTableCommand.TableExists then
+  begin
+    LResult := DoGenerateRestoreTable(ACreateTableCommand.Table.Name, ACreateTableCommand.Columns,
+      ACreateTableCommand.DbColumns);
+    Result.AddRange(LResult);
   end;
 end;
 
@@ -545,6 +550,20 @@ begin
   Result := qlAnsiSQL;
 end;
 
+procedure TAnsiSQLGenerator.ParseFullTablename(const AFullTablename: string; out ATablename, ASchemaName: string);
+var
+  LPos: Integer;
+begin
+  LPos := PosEx('.', AFullTablename);
+  ATablename := AFullTablename;
+  ASchemaName := '';
+  if LPos > 1 then
+  begin
+    ASchemaName := Copy(AFullTablename, 1, LPos - 1);
+    ATablename := Copy(AFullTablename, LPos + 1, Length(AFullTablename) - 1);
+  end;
+end;
+
 function TAnsiSQLGenerator.GetSelectFieldsAsString(
   const ASelectFields: TEnumerable<TSQLSelectField>): string;
 var
@@ -650,6 +669,11 @@ end;
 function TAnsiSQLGenerator.GetSQLTableCount(const ATablename: string): string;
 begin
   Result := Format('SELECT COUNT(*) FROM %0:S %1:S', [ATablename, GetSplitStatementSymbol]);
+end;
+
+function TAnsiSQLGenerator.GetSQLTableExists(const ATablename: string): string;
+begin
+  Result := ''; //override to implement specific functionality
 end;
 
 function TAnsiSQLGenerator.GetTableColumns(const ATableName: string): string;

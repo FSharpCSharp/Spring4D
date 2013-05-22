@@ -329,24 +329,24 @@ end;
 
 procedure TestTAnsiSQLGenerator.TestGenerateCreateTable;
 var
-  ReturnValue: string;
+  ReturnValue: TList<string>;
   LCommand: TCreateTableCommand;
   LTable: TSQLTable;
   LCols: TList<ColumnAttribute>;
 begin
-  ReturnValue := '';
   LTable := CreateTestTable;
   LCommand := TCreateTableCommand.Create(LTable);
   try
     LCols := TRttiExplorer.GetColumns(TCustomer);
+    ReturnValue := nil;
     try
       LCommand.SetTable(LCols);
 
       ReturnValue := FAnsiSQLGenerator.GenerateCreateTable(LCommand);
-      Status(ReturnValue);
-      CheckTrue(ReturnValue <> '');
+      CheckTrue(ReturnValue.Count > 0);
     finally
       LCols.Free;
+      ReturnValue.Free;
     end;
   finally
     LTable.Free;
@@ -356,16 +356,16 @@ end;
 
 procedure TestTAnsiSQLGenerator.TestGenerateCreateFK;
 var
-  LSQL: string;
+  LSQL: TList<string>;
   LCommand: TCreateFKCommand;
   LTable: TSQLTable;
   LCols: TList<ColumnAttribute>;
 begin
-  LSQL := '';
   LTable := CreateTestTable;
   LCommand := TCreateFKCommand.Create(LTable);
   try
     LCols := TRttiExplorer.GetColumns(TCustomer);
+    LSQL := nil;
     try
       LCommand.SetTable(LCols);
       LCommand.ForeignKeys.Add(
@@ -374,10 +374,10 @@ begin
       );
 
       LSQL := FAnsiSQLGenerator.GenerateCreateFK(LCommand);
-      Status(LSQL);
-      CheckTrue(LSQL <> '');
+      CheckTrue(LSQL.Count > 0);
     finally
       LCols.Free;
+      LSQL.Free;
     end;
   finally
     LTable.Free;

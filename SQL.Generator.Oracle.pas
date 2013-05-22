@@ -42,6 +42,7 @@ type
   protected
     function GetSplitStatementSymbol(): string; override;
   public
+    function DoGenerateBackupTable(const ATableName: string): TArray<string>; override;
     function GenerateGetQueryCount(const ASql: string): string; override;
     function GetQueryLanguage(): TQueryLanguage; override;
     function GenerateCreateSequence(ASequence: TCreateSequenceCommand): string; override;
@@ -50,6 +51,7 @@ type
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; override;
     function GetSQLSequenceCount(const ASequenceName: string): string; override;
     function GetSQLDataTypeName(AField: TSQLCreateField): string; override;
+    function GetSQLTableExists(const ATablename: string): string; override;
   end;
 
 implementation
@@ -61,6 +63,15 @@ uses
   ;
 
 { TOracleSQLGenerator }
+
+function TOracleSQLGenerator.DoGenerateBackupTable(const ATableName: string): TArray<string>;
+begin
+  SetLength(Result, 2);
+  Result[0] := Format('CREATE TABLE %0:S AS SELECT * FROM %1:S',
+        [GetTempTableName, ATableName]);
+  //drop table
+  Result[1] := Format('DROP TABLE %0:S ', [ATableName]);
+end;
 
 function TOracleSQLGenerator.GenerateCreateSequence(ASequence: TCreateSequenceCommand): string;
 var
@@ -82,7 +93,6 @@ end;
 function TOracleSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
 begin
   Result := '';
-  //Result := Format('returning %0:S as NewID;', [AIdentityColumn.Name]);
 end;
 
 function TOracleSQLGenerator.GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;
@@ -158,8 +168,6 @@ begin
     Result := 'NVARCHAR2' + Copy(Result, 9, Length(Result))
   else if StartsText('VARCHAR', Result) then
     Result := 'VARCHAR2' + Copy(Result, 8, Length(Result))
- // else if Result = 'INTEGER' then
- //   Result := 'PLS_INTEGER'
   else if Result = 'BIT' then
     Result := 'SMALLINT' // 'PLS_INTEGER'
   else if Result = 'FLOAT' then
@@ -170,6 +178,19 @@ function TOracleSQLGenerator.GetSQLSequenceCount(const ASequenceName: string): s
 begin
   Result := Format('SELECT COUNT(*) FROM USER_SEQUENCES WHERE SEQUENCE_NAME = %0:S ',
     [QuotedStr(ASequenceName)]);
+end;
+
+function TOracleSQLGenerator.GetSQLTableExists(const ATablename: string): string;
+var
+  LSchema, LTable: string;
+begin
+  ParseFullTablename(ATablename, LTable, LSchema);
+  if (LSchema <> '') then
+    Result := Format('SELECT COUNT(*) FROM ALL_OBJECTS WHERE OBJECT_TYPE = (''TABLE'') AND UPPER(OBJECT_NAME) = %0:S AND UPPER(OWNER) = %1:S'
+    , [QuotedStr(UpperCase(LTable)), QuotedStr(UpperCase(LSchema))])
+  else
+    Result := Format('SELECT COUNT(*) FROM ALL_OBJECTS WHERE OBJECT_TYPE = (''TABLE'') AND UPPER(OBJECT_NAME) = %0:S'
+    , [QuotedStr(UpperCase(LTable))]);
 end;
 
 initialization

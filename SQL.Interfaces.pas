@@ -30,7 +30,7 @@ unit SQL.Interfaces;
 interface
 
 uses
-  Classes, SQL.Commands, SQL.Types, Mapping.Attributes;
+  Classes, SQL.Commands, SQL.Types, Mapping.Attributes, Generics.Collections;
 
 type
   ICommandExecutionListener = interface
@@ -47,8 +47,8 @@ type
     function GenerateInsert(AInsertCommand: TInsertCommand): string;
     function GenerateUpdate(AUpdateCommand: TUpdateCommand): string;
     function GenerateDelete(ADeleteCommand: TDeleteCommand): string;
-    function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): string;
-    function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): string;
+    function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): TList<string>;
+    function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): TList<string>;
     function GenerateCreateSequence(ASequence: TCreateSequenceCommand): string;
     function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
@@ -57,6 +57,7 @@ type
     function GetSQLTableCount(const ATablename: string): string;
     function GetSQLSequenceCount(const ASequenceName: string): string;
     function GetTableColumns(const ATableName: string): string;
+    function GetSQLTableExists(const ATablename: string): string;
   end;
 
 implementation
