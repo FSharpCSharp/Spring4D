@@ -40,6 +40,7 @@ type
     procedure List_In_NotIn();
     procedure List_Property_Eq();
     procedure Page_GEq_OrderDesc();
+    procedure Page_SubEntities();
     procedure List_Or_And();
     procedure List_Or_Or();
     procedure List_And_And();
@@ -57,7 +58,10 @@ uses
   ,Core.Criteria.Properties
   ,TestSession
   ,SQL.Types
+  ,SQL.Params
   ,TestConsts
+  ,SysUtils
+  ,Variants
   ,Rtti
   ;
 
@@ -66,6 +70,20 @@ procedure TestTCriteria.SetUp;
 begin
   FSession := TSession.Create(TConnectionFactory.GetInstance(dtSQLite, TestDB));
   FCriteria := FSession.CreateCriteria<TCustomer>;
+
+
+  FSession.Connection.AddExecutionListener(
+    procedure(const ACommand: string; const AParams: TObjectList<TDBParam>)
+    var
+      i: Integer;
+    begin
+      Status(ACommand);
+      for i := 0 to AParams.Count - 1 do
+      begin
+        Status(Format('Param %0:S = %1:S', [AParams[i].Name, VarToStrDef(AParams[i].Value, 'NULL')]));
+        Status(' ');
+      end;
+    end);
 end;
 
 procedure TestTCriteria.TearDown;
@@ -403,6 +421,37 @@ begin
   CheckEquals(2, LPage.GetTotalPages);
   CheckEquals(10, LPage.Items[0].Age);
   CheckEquals(8, LPage.Items[2].Age);
+end;
+
+procedure TestTCriteria.Page_SubEntities;
+var
+  LPage: IDBPage<TCustomer>;
+  Age: IProperty;
+  i: Integer;
+begin
+  Age := TProperty.ForName(CUSTAGE);
+  //add 10 customers
+  for i := 1 to 10 do
+  begin
+    InsertCustomer(i, 'Foo', Abs(i/2));
+    InsertCustomerOrder(i, i + 10, -1, i + 100);
+  end;
+
+  CheckEquals(10, FSession.FindAll<TCustomer_Orders>.Count);
+
+  LPage := FCriteria.Add(Age.GEq(5))
+    .AddOrder(Age.Desc).Page(0, 3);
+
+  CheckEquals(6, LPage.GetTotalItems);
+  CheckEquals(2, LPage.GetTotalPages);
+  CheckEquals(10, LPage.Items[0].Age);
+  CheckEquals(8, LPage.Items[2].Age);
+
+  CheckEquals(10, LPage.Items[0].ID);
+  CheckEquals(10, LPage.Items[0].Age);
+
+  CheckEquals(20, LPage.Items[0].OrdersIntf.First.Customer_Payment_Method_Id);
+
 end;
 
 initialization

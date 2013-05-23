@@ -19,7 +19,7 @@ uses
   ,uModels, Rtti, SQLiteTable3;
 
 type
-
+  {$DEFINE USE_SPRING}
   TestTSession = class(TTestCase)
   private
     FConnection: IDBConnection;
@@ -38,6 +38,8 @@ type
     procedure Update();
     procedure Delete();
     procedure Save();
+    procedure SaveAll_OneToMany();
+    procedure SaveAll_ManyToOne();
     procedure ExecutionListeners();
     procedure Page();
     procedure ExecuteScalar();
@@ -812,6 +814,18 @@ const
     ' FROM '+ TBL_ORDERS + ' O '+
     ' LEFT OUTER JOIN ' + TBL_PEOPLE + ' C ON C.CUSTID=O.Customer_ID;';
 
+ {
+ SELECT B.Order_Status_Code,B.Date_Order_Placed,B.Total_Order_Price,B.ORDER_ID,B.Customer_ID,
+ B.Customer_Payment_Method_Id,A0.CUSTID Customers_Customer_ID_CUSTID,A0.AVATAR Customers_Customer_ID_AVATAR,
+ A0.CUSTSTREAM Customers_Customer_ID_CUSTSTREAM,A0.CUSTNAME Customers_Customer_ID_CUSTNAME,
+ A0.CUSTAGE Customers_Customer_ID_CUSTAGE,A0.CUSTHEIGHT Customers_Customer_ID_CUSTHEIGHT,
+ A0.LastEdited Customers_Customer_ID_LastEdited,A0.EMAIL Customers_Customer_ID_EMAIL,
+ A0.MIDDLENAME Customers_Customer_ID_MIDDLENAME,A0.CUSTTYPE Customers_Customer_ID_CUSTTYPE
+ FROM Customer_Orders B
+  LEFT OUTER JOIN Customers A0 ON A0.CUSTID=B.Customer_ID LIMIT 0,1 ;
+
+ }
+
 procedure TestTSession.ManyToOne;
 var
   LOrder: TCustomer_Orders;
@@ -849,9 +863,6 @@ begin
     CheckTrue(Assigned(LOrder), 'Cannot get Order from DB');
     CheckNotEqualsString(LCustomer.Name, LOrder.Customer.Name);
     FreeAndNil(LOrder);
-
-
-
   finally
     LCustomer.Free;
   end;
@@ -893,7 +904,7 @@ begin
   end;
   TestDB.Commit;
 
-  LPage := FManager.Page<TCustomer>(1, 10, 'select * from ' + TBL_PEOPLE, []);
+  LPage := FManager.Page<TCustomer>(0, 10, 'select * from ' + TBL_PEOPLE, []);
   CheckEquals(iTotal, LPage.GetTotalItems);
   CheckEquals(10, LPage.Items.Count);
 end;
@@ -946,10 +957,116 @@ begin
   end;
 end;
 
+procedure TestTSession.SaveAll_ManyToOne;
+var
+  LCustomers: IList<TCustomer>;
+  LOrder1, LOrder2, LNewOrder1, LNewOrder2: TCustomer_Orders;
+begin
+  InsertCustomer();
+  LCustomers := FManager.FindAll<TCustomer>;
+
+  LOrder1 := TCustomer_Orders.Create;
+  LOrder2 := TCustomer_Orders.Create;
+  LNewOrder1 := nil;
+  LNewOrder2 := nil;
+  try
+    LOrder1.Customer_ID := LCustomers.First.ID;
+    LOrder1.Order_Status_Code := 100;
+
+    LOrder2.Customer_ID := LCustomers.First.ID;
+    LOrder2.Order_Status_Code := 2;
+
+    LOrder1.Customer := FManager.FindOne<TCustomer>(LOrder1.Customer_ID);
+    LOrder2.Customer := FManager.FindOne<TCustomer>(LOrder2.Customer_ID);
+
+    LOrder1.Customer.Name := 'John Malkowich';
+
+    FManager.SaveAll(LOrder1);
+
+    CheckEquals(1, GetTableRecordCount(TBL_ORDERS));
+
+    LNewOrder1 := FManager.FindOne<TCustomer_Orders>(LOrder1.ORDER_ID);
+    CheckEquals(LOrder1.Customer.Name, LNewOrder1.Customer.Name);
+
+    LOrder2.Customer.Name := 'Bob Marley';
+    FManager.SaveAll(LOrder2);
+
+    LNewOrder2 := FManager.FindOne<TCustomer_Orders>(LOrder2.ORDER_ID);
+    CheckEquals(LOrder2.Customer.Name, LNewOrder2.Customer.Name);
+
+  finally
+    LOrder1.Free;
+    LOrder2.Free;
+    LNewOrder1.Free;
+    LNewOrder2.Free;
+  end;
+end;
+
+procedure TestTSession.SaveAll_OneToMany;
+var
+  LCustomer: TCustomer;
+  LNewCustomers: IList<TCustomer>;
+  LNewOrders: IList<TCustomer_Orders>;
+  LCustId: Integer;
+begin
+  LCustomer := TCustomer.Create;
+  try
+    CheckEquals(0, GetTableRecordCount(TBL_PEOPLE));
+    CheckEquals(0, GetTableRecordCount(TBL_ORDERS));
+
+    LCustomer.Name := 'Foo';
+    LCustomer.Age := 15;
+
+    FManager.Save(LCustomer);
+    LCustId := LCustomer.ID;
+    LCustomer.Free;
+    InsertCustomerOrder(LCustId, 1, 2, 10);
+    InsertCustomerOrder(LCustId, 2, 3, 20);
+
+    LCustomer := FManager.FindOne<TCustomer>(LCustId);
+    CheckEquals(2, LCustomer.OrdersIntf.Count);
+
+    //change values of subentities
+    LCustomer.OrdersIntf.First.Order_Status_Code := 99;
+    LCustomer.OrdersIntf.Last.Order_Status_Code := 111;
+    FManager.SaveAll(LCustomer);
+
+    CheckEquals(1, GetTableRecordCount(TBL_PEOPLE));
+    CheckEquals(2, GetTableRecordCount(TBL_ORDERS));
+
+    LNewCustomers := FManager.FindAll<TCustomer>;
+    CheckEquals(1, LNewCustomers.Count);
+    CheckEquals('Foo', LNewCustomers.First.Name);
+    CheckEquals(15, LNewCustomers.First.Age);
+
+    LNewOrders := FManager.FindAll<TCustomer_Orders>;
+    CheckEquals(2, LNewOrders.Count);
+    CheckEquals(10, LNewOrders.First.Total_Order_Price);
+    CheckEquals(99, LNewOrders.First.Order_Status_Code);
+
+    CheckEquals(20, LNewOrders.Last.Total_Order_Price, 0.01);
+    CheckEquals(111, LNewOrders.Last.Order_Status_Code, 0.01);
+  finally
+    LCustomer.Free;
+  end;
+end;
+
 procedure TestTSession.SetUp;
 begin
   FConnection := TConnectionFactory.GetInstance(dtSQLite, TestDB);
   FManager := TSession.Create(FConnection);
+  FConnection.AddExecutionListener(
+    procedure(const ACommand: string; const AParams: TObjectList<TDBParam>)
+    var
+      i: Integer;
+    begin
+      Status(ACommand);
+      for i := 0 to AParams.Count - 1 do
+      begin
+        Status(Format('Param %0:S = %1:S', [AParams[i].Name, VarToStrDef(AParams[i].Value, 'NULL')]));
+        Status(' ');
+      end;
+    end);
 end;
 
 procedure TestTSession.Streams;

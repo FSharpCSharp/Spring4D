@@ -58,12 +58,15 @@ type
     class function GetEntities(): TList<TClass>;
     class function GetEntityRttiType(ATypeInfo: PTypeInfo): TRttiType; overload;
     class function GetEntityRttiType<T>(): TRttiType; overload;
+    class function GetSubEntityFromMemberDeep(AEntity: TObject; ARttiMember: TRttiNamedObject): TList<TObject>;
+    class function GetRelationsOf(AEntity: TObject): TList<TObject>;
     class function GetLastGenericArgumentType(ATypeInfo: PTypeInfo): TRttiType;
     class function GetForeignKeyColumn(AClass: TClass; const ABaseTablePrimaryKeyColumn: ColumnAttribute): ForeignJoinColumnAttribute;
     class function GetMemberValue(AEntity: TObject; const AMember: TRttiNamedObject): TValue; overload;
     class function GetMemberValue(AEntity: TObject; const AMemberName: string): TValue; overload;
     class function GetMemberValue(AEntity: TObject; const AMembername: string; out ARttiMember: TRttiNamedObject): TValue; overload;
-    class function GetMemberValueDeep(AEntity: TObject; const AMemberName: string): TValue;
+    class function GetMemberValueDeep(AEntity: TObject; const AMemberName: string): TValue; overload;
+    class function GetMemberValueDeep(const AInitialValue: TValue; ARttiType: TRttiType): TValue; overload;
     class function GetPrimaryKeyColumn(AClass: TClass): ColumnAttribute;
     class function GetPrimaryKeyColumnMemberName(AClass: TClass): string;
     class function GetPrimaryKeyColumnName(AClass: TClass): string;
@@ -101,6 +104,7 @@ uses
   ,Core.Reflection
   ,Core.EntityCache
   ,Core.Utils
+  ,Core.Collections
   ,SysUtils
   ,Math
   ,Classes
@@ -909,6 +913,45 @@ begin
     Result := AInstance.GetReferenceToRawData;
 end;
 
+class function TRttiExplorer.GetRelationsOf(AEntity: TObject): TList<TObject>;
+var
+  LType: TRttiType;
+  LField: TRttiField;
+  LProperty: TRttiProperty;
+  LEntities: TList<TObject>;
+begin
+  Result := TList<TObject>.Create;
+  //look for OneToMany or ManyToOne attributes
+  LType := TRttiContext.Create.GetType(AEntity.ClassType);
+  for LField in LType.GetFields do
+  begin
+    if (LField.HasAttributeOfType<ManyValuedAssociation>) then
+    begin
+      LEntities := GetSubEntityFromMemberDeep(AEntity, LField);
+      try
+        if LEntities.Count > 0 then
+          Result.AddRange(LEntities);
+      finally
+        LEntities.Free;
+      end;          
+    end;
+  end;
+
+  for LProperty in LType.GetProperties do
+  begin
+    if (LProperty.HasAttributeOfType<ManyValuedAssociation>) then
+    begin
+      LEntities := GetSubEntityFromMemberDeep(AEntity, LProperty);
+      try
+        if LEntities.Count > 0 then
+          Result.AddRange(LEntities);
+      finally
+        LEntities.Free;
+      end;  
+    end;
+  end;
+end;
+
 class function TRttiExplorer.GetRttiType(AEntity: TClass): TRttiType;
 begin
   Result := TRttiContext.Create.GetType(AEntity);
@@ -969,28 +1012,21 @@ begin
   Result := TValue.Empty;
 end;
 
-class function TRttiExplorer.GetMemberValueDeep(AEntity: TObject;
-  const AMemberName: string): TValue;
+class function TRttiExplorer.GetMemberValueDeep(const AInitialValue: TValue;
+  ARttiType: TRttiType): TValue;
 var
-  LMember: TRttiNamedObject;
-  LType: TRttiType;
   LRecordField: TRttiField;
   LInterfaceMethod: TRttiMethod;
 begin
-  Result := GetMemberValue(AEntity, AMemberName, LMember);
-
-  if Result.IsEmpty then
-    Exit;
-
-  LType := LMember.GetType;
+  Result := AInitialValue;
   if TUtils.IsNullableType(Result.TypeInfo) then
   begin
-    if LType is TRttiRecordType then
+    if ARttiType is TRttiRecordType then
     begin
-      LRecordField := TRttiRecordType(LType).GetField('FHasValue');
+      LRecordField := TRttiRecordType(ARttiType).GetField('FHasValue');
       if LRecordField.GetValue(Result.GetReferenceToRawData).AsBoolean then
       begin
-        LRecordField := TRttiRecordType(LType).GetField('FValue');
+        LRecordField := TRttiRecordType(ARttiType).GetField('FValue');
         Result := LRecordField.GetValue(Result.GetReferenceToRawData);
       end
       else
@@ -1001,19 +1037,19 @@ begin
   end
   else if TUtils.IsLazyType(Result.TypeInfo) then
   begin
-    if LType is TRttiRecordType then
+    if ARttiType is TRttiRecordType then
     begin
-      LRecordField := TRttiRecordType(LType).GetField('FLazy');
+      LRecordField := TRttiRecordType(ARttiType).GetField('FLazy');
       Result := LRecordField.GetValue(Result.GetReferenceToRawData);
-      LType := Result.GetType;
+      ARttiType := Result.GetType;
 
       if Result.AsInterface = nil then
         Exit(TValue.Empty);
 
-      LInterfaceMethod := LType.AsInterface.GetMethod('ValueCreated');
+      LInterfaceMethod := ARttiType.AsInterface.GetMethod('ValueCreated');
       if LInterfaceMethod.Invoke(Result, []).AsBoolean then
       begin
-        LInterfaceMethod := LType.AsInterface.GetMethod('GetValue');
+        LInterfaceMethod := ARttiType.AsInterface.GetMethod('GetValue');
         Result := LInterfaceMethod.Invoke(Result, []);
       end
       else
@@ -1021,7 +1057,20 @@ begin
         Result := TValue.Empty;
       end;
     end;
-  end;
+  end; 
+end;
+
+class function TRttiExplorer.GetMemberValueDeep(AEntity: TObject;
+  const AMemberName: string): TValue;
+var
+  LMember: TRttiNamedObject;
+begin
+  Result := GetMemberValue(AEntity, AMemberName, LMember);
+
+  if Result.IsEmpty then
+    Exit;
+
+  Result := GetMemberValueDeep(Result, LMember.GetType);
 end;
 
 class function TRttiExplorer.GetMethodWithLessParameters(AList: TList<TRttiMethod>): TRttiMethod;
@@ -1047,6 +1096,39 @@ end;
 class function TRttiExplorer.GetSequence(AClass: TClass): SequenceAttribute;
 begin
   Result := GetClassAttribute<SequenceAttribute>(AClass);
+end;
+
+class function TRttiExplorer.GetSubEntityFromMemberDeep(AEntity: TObject; ARttiMember: TRttiNamedObject): TList<TObject>;
+var
+  LMemberValue: TValue;
+  LDeepValue: TValue;
+  LEnumMethod: TRttiMethod;
+  LCollectionAdapter: ICollectionAdapter<TObject>;
+  LCurrent: TObject;
+begin
+  Result := TList<TObject>.Create;
+
+  LMemberValue := GetMemberValue(AEntity, ARttiMember);
+  if LMemberValue.IsEmpty then
+    Exit;
+    
+  LDeepValue := GetMemberValueDeep(LMemberValue, ARttiMember.GetType);
+  if LDeepValue.IsEmpty then
+    Exit;
+  
+  if TUtils.IsEnumerable(LDeepValue.TypeInfo, LEnumMethod) then
+  begin
+    LCollectionAdapter := TCollectionAdapter<TObject>.Wrap(LDeepValue);
+
+    for LCurrent in LCollectionAdapter do
+    begin
+      Result.Add(LCurrent);
+    end;                       
+    LDeepValue := TValue.Empty; 
+  end;
+
+  if (LDeepValue.IsObject) and (LDeepValue.AsObject <> nil) then
+    Result.Add(LDeepValue.AsObject);
 end;
 
 class function TRttiExplorer.GetTable(AClassInfo: PTypeInfo): TableAttribute;

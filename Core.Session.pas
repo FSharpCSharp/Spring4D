@@ -222,7 +222,7 @@ type
     ///	  <c>exception</c> if model does not exist.
     ///	</summary>
     {$ENDREGION}
-    function Single<T: class, constructor>(const ASql: string; const AParams: array of const): T;
+    function Single<T: class, constructor>(const ASql: string; const AParams: array of const): T; overload;
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -372,6 +372,25 @@ type
     ///	</summary>
     {$ENDREGION}
     procedure Save(AEntity: TObject); overload;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Saves the entity and all entities it contains to the database. It
+    ///	  will do update or the insert based on the entity state.
+    ///	</summary>
+    ///	<remarks>
+    ///	  <para>
+    ///	    Use with caution when inserting new entities containing identity
+    ///	    primary keys. If both base (main) and sub entities are newly
+    ///	    created then framework won't be able to resolve their relationships
+    ///	    because their primary keys aren't known at save time.
+    ///	  </para>
+    ///	  <para>
+    ///	    Works best when entities are updated.
+    ///	  </para>
+    ///	</remarks>
+    {$ENDREGION}
+    procedure SaveAll(AEntity: TObject);
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -1034,6 +1053,23 @@ begin
     Insert(AEntity)
   else
     Update(AEntity);
+end;
+
+procedure TSession.SaveAll(AEntity: TObject);
+var
+  LRelations: TList<TObject>;
+  i: Integer;
+begin
+  LRelations := TRttiExplorer.GetRelationsOf(AEntity);
+  try
+    for i := 0 to LRelations.Count - 1 do
+    begin
+      SaveAll(LRelations[i]);
+    end;
+    Save(AEntity);
+  finally
+    LRelations.Free;
+  end;
 end;
 
 procedure TSession.SaveList<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
