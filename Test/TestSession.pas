@@ -69,9 +69,10 @@ type
 var
   TestDB: TSQLiteDatabase = nil;
 
-procedure InsertCustomer(AAge: Integer = 25; AName: string = 'Demo'; AHeight: Double = 15.25; APicture: TStream = nil);
-procedure InsertCustomerOrder(ACustID: Integer; ACustPaymID: Integer; AOrderStatusCode: Integer; ATotalPrice: Double);
+function InsertCustomer(AAge: Integer = 25; AName: string = 'Demo'; AHeight: Double = 15.25; APicture: TStream = nil): Variant;
+function InsertCustomerOrder(ACustID: Integer; ACustPaymID: Integer; AOrderStatusCode: Integer; ATotalPrice: Double): Variant;
 procedure ClearTable(const ATableName: string);
+function GetTableRecordCount(const ATablename: string; AConnection: TSQLiteDatabase = nil): Int64;
 
 
 implementation
@@ -122,6 +123,8 @@ begin
   else
     LConn := TestDB;
 
+  LConn.ExecSQL('pragma foreign_keys=ON');
+
   LConn.ExecSQL('CREATE TABLE IF NOT EXISTS '+ TBL_PEOPLE + ' ([CUSTID] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, [CUSTAGE] INTEGER NULL,'+
     '[CUSTNAME] VARCHAR (255), [CUSTHEIGHT] FLOAT, [LastEdited] DATETIME, [EMAIL] TEXT, [MIDDLENAME] TEXT, [AVATAR] BLOB, [AVATARLAZY] BLOB NULL'+
     ',[CUSTTYPE] INTEGER, [CUSTSTREAM] BLOB, [COUNTRY] TEXT );');
@@ -132,16 +135,18 @@ begin
     '"Customer_Payment_Method_Id" INTEGER,'+
     '"Order_Status_Code" INTEGER,'+
     '"Date_Order_Placed" DATETIME DEFAULT CURRENT_TIMESTAMP,'+
-    '"Total_Order_Price" FLOAT);');
+    '"Total_Order_Price" FLOAT) '+
+    ';');
 
   if not LConn.TableExists(TBL_PEOPLE) then
     raise Exception.Create('Table CUSTOMERS does not exist');
 end;
 
-procedure InsertCustomer(AAge: Integer = 25; AName: string = 'Demo'; AHeight: Double = 15.25; APicture: TStream = nil);
+function InsertCustomer(AAge: Integer = 25; AName: string = 'Demo'; AHeight: Double = 15.25; APicture: TStream = nil): Variant;
 begin
   TestDB.ExecSQL('INSERT INTO  ' + TBL_PEOPLE + ' (['+CUSTAGE+'], ['+CUSTNAME+'], ['+CUSTHEIGHT+']) VALUES (?,?,?);',
     [AAge, AName, AHeight]);
+  Result := TestDB.GetLastInsertRowID;
 end;
 
 procedure InsertCustomerEnum(AType: Integer; AAge: Integer = 25; AName: string = 'Demo'; AHeight: Double = 15.25);
@@ -166,11 +171,12 @@ begin
     raise Exception.Create('Cannot insert into table');
 end;
 
-procedure InsertCustomerOrder(ACustID: Integer; ACustPaymID: Integer; AOrderStatusCode: Integer; ATotalPrice: Double);
+function InsertCustomerOrder(ACustID: Integer; ACustPaymID: Integer; AOrderStatusCode: Integer; ATotalPrice: Double): Variant;
 begin
   TestDB.ExecSQL('INSERT INTO  ' + TBL_ORDERS + ' ([Customer_Id], [Customer_Payment_Method_Id], [Order_Status_Code], [Total_Order_Price]) '+
     ' VALUES (?,?,?,?);',
     [ACustID, ACustPaymID, AOrderStatusCode, ATotalPrice]);
+  Result := TestDB.GetLastInsertRowID;
 end;
 
 procedure ClearTable(const ATableName: string);
@@ -354,8 +360,8 @@ begin
     CheckTrue(sLog <> '');
     CheckTrue(sLog2 <> '');
     CheckEqualsString(sLog, sLog2);
-    CheckTrue(iParamCount1 > 0);
-    CheckTrue(iParamCount2 > 0);
+    CheckTrue(iParamCount1 = 0);  //last statement fetches identity value so there are no parameteres
+    CheckTrue(iParamCount2 = 0);
 
     sLog := '';
     sLog2 := '';
@@ -856,13 +862,9 @@ begin
     CheckEquals(LCustomer.Age, LOrder.Customer.Age);
     FreeAndNil(LOrder);
 
-
-
-    ClearTable(TBL_PEOPLE);
-    LOrder := FManager.Single<TCustomer_Orders>(SQL_MANY_TO_ONE, []);
-    CheckTrue(Assigned(LOrder), 'Cannot get Order from DB');
-    CheckNotEqualsString(LCustomer.Name, LOrder.Customer.Name);
-    FreeAndNil(LOrder);
+    ClearTable(TBL_PEOPLE);  //cascade also deletes records from related table
+    LOrder := FManager.SingleOrDefault<TCustomer_Orders>(SQL_MANY_TO_ONE, []);
+    CheckFalse(Assigned(LOrder), 'Cannot get Order from DB');
   finally
     LCustomer.Free;
   end;
@@ -904,9 +906,20 @@ begin
   end;
   TestDB.Commit;
 
-  LPage := FManager.Page<TCustomer>(0, 10, 'select * from ' + TBL_PEOPLE, []);
+  LPage := FManager.Page<TCustomer>(1, 10, 'select * from ' + TBL_PEOPLE, []);
   CheckEquals(iTotal, LPage.GetTotalItems);
   CheckEquals(10, LPage.Items.Count);
+  CheckEquals(1, LPage.Items[0].Age);
+
+  LPage := FManager.Page<TCustomer>(2, 10, 'select * from ' + TBL_PEOPLE, []);
+  CheckEquals(iTotal, LPage.GetTotalItems);
+  CheckEquals(10, LPage.Items.Count);
+  CheckEquals(11, LPage.Items[0].Age);
+
+  LPage := FManager.Page<TCustomer>(3, 4);
+  CheckEquals(iTotal, LPage.GetTotalItems);
+  CheckEquals(4, LPage.Items.Count);
+  CheckEquals(9, LPage.Items[0].Age);
 end;
 
 procedure TestTSession.Save;
@@ -1063,9 +1076,9 @@ begin
       Status(ACommand);
       for i := 0 to AParams.Count - 1 do
       begin
-        Status(Format('Param %0:S = %1:S', [AParams[i].Name, VarToStrDef(AParams[i].Value, 'NULL')]));
-        Status(' ');
+        Status(Format('%2:D Param %0:S = %1:S', [AParams[i].Name, VarToStrDef(AParams[i].Value, 'NULL'), i]));
       end;
+      Status('-----');
     end);
 end;
 

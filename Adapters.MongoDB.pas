@@ -106,7 +106,7 @@ type
     constructor Create(const AStatement: TMongoDBQuery); override;
     destructor Destroy; override;
     procedure SetSQLCommand(const ACommandText: string); override;
-    procedure SetParams(Params: TEnumerable<TDBParam>); overload; override;
+    procedure SetParams(Params: TObjectList<TDBParam>); overload; override;
     function Execute(): NativeUInt; override;
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
   end;
@@ -255,6 +255,7 @@ function TMongoStatementAdapter.Execute: NativeUInt;
 var
   LDoc: IBSONDocument;
 begin
+  inherited;
   LDoc := JsonToBson(FStmtText);
   {TODO -oLinas -cMongoDB : get table name, update selectors, etc.}
   case FStmtType of
@@ -271,6 +272,7 @@ var
   LQuery: TMongoDBQuery;
   LResultset: TMongoResultSetAdapter;
 begin
+  inherited;
   LQuery := TMongoDBQuery.Create(Statement.Owner);
   LResultset := TMongoResultSetAdapter.Create(LQuery);
   LResultset.Document := JsonToBson(FStmtText);
@@ -295,13 +297,14 @@ begin
   AStatementText := Copy(AStatementText, 2, Length(AStatementText));
 end;
 
-procedure TMongoStatementAdapter.SetParams(Params: TEnumerable<TDBParam>);
+procedure TMongoStatementAdapter.SetParams(Params: TObjectList<TDBParam>);
 begin
   inherited;
 end;
 
 procedure TMongoStatementAdapter.SetSQLCommand(const ACommandText: string);
 begin
+  inherited;
   if ACommandText = '' then
     Exit;
 
@@ -340,9 +343,12 @@ end;
 function TMongoConnectionAdapter.CreateStatement: IDBStatement;
 var
   LStatement: TMongoDBQuery;
+  LAdapter: TMongoStatementAdapter;
 begin
   LStatement := TMongoDBQuery.Create(Connection);
-  Result := TMongoStatementAdapter.Create(LStatement);
+  LAdapter := TMongoStatementAdapter.Create(LStatement);
+  LAdapter.ExecutionListeners := ExecutionListeners;
+  Result := LAdapter;
 end;
 
 procedure TMongoConnectionAdapter.Disconnect;

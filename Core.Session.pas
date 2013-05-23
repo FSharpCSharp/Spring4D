@@ -241,7 +241,6 @@ type
     procedure Fetch<T: class, constructor>(const ASql: string;
       const AParams: array of const; ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
                                                   {$ELSE} TObjectList<T> {$ENDIF} ); overload;
-
     {$REGION 'Documentation'}
     ///	<summary>
     ///	  Retrieves multiple models from the <c>Resultset</c> into the
@@ -349,8 +348,16 @@ type
 
     {$REGION 'Documentation'}
     ///	<summary>
+    ///	  Fetches data in pages. Pages are 1-indexed.
+    ///	</summary>
+    {$ENDREGION}
+    function Page<T: class, constructor>(APage: Integer; AItemsPerPage: Integer): IDBPage<T>; overload;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
     ///	  Fetches data in pages. You do not need to write custom sql for this,
-    ///	  just use ordinary sql. All the work will be done for you.
+    ///	  just use ordinary sql. All the work will be done for you.  Pages are
+    ///	  1-indexed.
     ///	</summary>
     {$ENDREGION}
     function Page<T: class, constructor>(APage: Integer; AItemsPerPage: Integer;
@@ -359,7 +366,8 @@ type
     {$REGION 'Documentation'}
     ///	<summary>
     ///	  Fetches data in pages. You do not need to write custom sql for this,
-    ///	  just use ordinary sql. All the work will be done for you.
+    ///	  just use ordinary sql. All the work will be done for you. Pages are
+    ///	  1-indexed.
     ///	</summary>
     {$ENDREGION}
     function Page<T: class, constructor>(APage: Integer; AItemsPerPage: Integer;
@@ -961,8 +969,6 @@ begin
   begin
     LStmt.SetParams(AParams);
   end;
-
-  Connection.NotifyExecutionListeners(ASql, AParams);
   Result := LStmt.ExecuteQuery();
 end;
 
@@ -1001,6 +1007,11 @@ end;
 function TSession.IsNew(AEntity: TObject): Boolean;
 begin
   Result := not FOldStateEntities.IsMapped(AEntity);
+end;
+
+function TSession.Page<T>(APage, AItemsPerPage: Integer): IDBPage<T>;
+begin
+  Result := CreateCriteria<T>.Page(APage, AItemsPerPage);
 end;
 
 function TSession.Page<T>(APage, AItemsPerPage: Integer; const ASql: string;

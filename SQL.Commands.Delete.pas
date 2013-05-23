@@ -174,8 +174,6 @@ begin
   try
     LStmt.SetParams(SQLParameters);
 
-    Connection.NotifyExecutionListeners(SQL, SQLParameters);
-
     LStmt.Execute();
   finally
     LStmt := nil;

@@ -181,11 +181,8 @@ end;
 
 procedure TAbstractCommandExecutor.Execute(AEntity: TObject);
 begin
-  if (SQL = '') then
-    Exit;
-  Connection.NotifyExecutionListeners(SQL, SQLParameters);
+  //
 end;
-
 
 procedure TAbstractCommandExecutor.FillDbTableColumns(const ATablename: string; AColumns: TList<string>);
 var
@@ -253,3 +250,4 @@ begin
 end;
 
 end.
+

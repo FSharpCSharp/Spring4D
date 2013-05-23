@@ -199,7 +199,7 @@ type
   IDBStatement = interface(IInvokable)
     ['{DA905CAA-0FC2-4570-9788-1DC206600171}']
     procedure SetSQLCommand(const ACommandText: string);
-    procedure SetParams(AParams: TEnumerable<TDBParam>); overload;
+    procedure SetParams(AParams: TObjectList<TDBParam>); overload;
     procedure SetParams(const AParams: array of const); overload;
     function Execute(): NativeUInt;
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultset;
@@ -240,7 +240,6 @@ type
     procedure ClearExecutionListeners();
     function GetExecutionListeners: TList<TExecutionListenerProc>;
     property ExecutionListeners: TList<TExecutionListenerProc> read GetExecutionListeners;
-    procedure NotifyExecutionListeners(const ACommand: string; const AParams: TObjectList<TDBParam>);
     function GetAutoFreeConnection: Boolean;
     procedure SetAutoFreeConnection(const Value: Boolean);
     property AutoFreeConnection: Boolean read GetAutoFreeConnection write SetAutoFreeConnection;

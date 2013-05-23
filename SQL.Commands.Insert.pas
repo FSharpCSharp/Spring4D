@@ -175,7 +175,6 @@ begin
   begin
     //retrieve identity value from the sequence
     LStmt.SetSQLCommand(FGetSequenceValueSQL);
-    Connection.NotifyExecutionListeners(FGetSequenceValueSQL, SQLParameters);
     LSequenceValue := LStmt.ExecuteQuery.GetFieldValue(0);
   end;
 

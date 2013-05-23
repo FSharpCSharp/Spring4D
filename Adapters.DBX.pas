@@ -70,7 +70,7 @@ type
     constructor Create(const AStatement: TSQLQuery); override;
     destructor Destroy; override;
     procedure SetSQLCommand(const ACommandText: string); override;
-    procedure SetParams(Params: TEnumerable<TDBParam>); overload; override;
+    procedure SetParams(Params: TObjectList<TDBParam>); overload; override;
     function Execute(): NativeUInt; override;
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
   end;
@@ -201,6 +201,7 @@ end;
 
 function TDBXStatementAdapter.Execute: NativeUInt;
 begin
+  inherited;
   Result := Statement.ExecSQL();
 end;
 
@@ -208,6 +209,7 @@ function TDBXStatementAdapter.ExecuteQuery(AServerSideCursor: Boolean): IDBResul
 var
   LStmt: TSQLQuery;
 begin
+  inherited;
   LStmt := TSQLQuery.Create(nil);
   LStmt.SQLConnection := Statement.SQLConnection;
   LStmt.SQL.Text := Statement.SQL.Text;
@@ -225,11 +227,12 @@ begin
   end;
 end;
 
-procedure TDBXStatementAdapter.SetParams(Params: TEnumerable<TDBParam>);
+procedure TDBXStatementAdapter.SetParams(Params: TObjectList<TDBParam>);
 var
   LParam: TDBParam;
   sParamName: string;
 begin
+  inherited;
   for LParam in Params do
   begin
     sParamName := LParam.Name;
@@ -245,6 +248,7 @@ end;
 
 procedure TDBXStatementAdapter.SetSQLCommand(const ACommandText: string);
 begin
+  inherited;
   Statement.SQL.Text := ACommandText;
 end;
 
@@ -283,6 +287,7 @@ end;
 function TDBXConnectionAdapter.CreateStatement: IDBStatement;
 var
   LStatement: TSQLQuery;
+  LAdapter: TDBXStatementAdapter;
 begin
   if Connection = nil then
     Exit(nil);
@@ -290,7 +295,9 @@ begin
   LStatement := TSQLQuery.Create(nil);
   LStatement.SQLConnection := Connection;
 
-  Result := TDBXStatementAdapter.Create(LStatement);
+  LAdapter := TDBXStatementAdapter.Create(LStatement);
+  LAdapter.ExecutionListeners := ExecutionListeners;
+  Result := LAdapter;
 end;
 
 procedure TDBXConnectionAdapter.Disconnect;

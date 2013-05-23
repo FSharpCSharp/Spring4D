@@ -21,7 +21,7 @@ type
   TOracleStatementAdapter = class(TADOStatementAdapter)
   public
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
-     procedure SetParam(ADBParam: TDBParam); override;
+    procedure SetParam(ADBParam: TDBParam); override;
   end;
 
 
@@ -63,6 +63,7 @@ uses
 function TOracleConnectionAdapter.CreateStatement: IDBStatement;
 var
   LStatement: TADOQuery;
+  LAdapter: TOracleStatementAdapter;
 begin
   if Connection = nil then
     Exit(nil);
@@ -70,7 +71,9 @@ begin
   LStatement := TADOQuery.Create(nil);
   LStatement.Connection := Connection;
 
-  Result := TOracleStatementAdapter.Create(LStatement);
+  LAdapter := TOracleStatementAdapter.Create(LStatement);
+  LAdapter.ExecutionListeners := ExecutionListeners;
+  Result := LAdapter;
 end;
 
 function TOracleConnectionAdapter.GetDriverName: string;

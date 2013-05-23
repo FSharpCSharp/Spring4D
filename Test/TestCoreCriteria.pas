@@ -80,9 +80,9 @@ begin
       Status(ACommand);
       for i := 0 to AParams.Count - 1 do
       begin
-        Status(Format('Param %0:S = %1:S', [AParams[i].Name, VarToStrDef(AParams[i].Value, 'NULL')]));
-        Status(' ');
+        Status(Format('%2:D Param %0:S = %1:S', [AParams[i].Name, VarToStrDef(AParams[i].Value, 'NULL'), i]));
       end;
+      Status('-----');
     end);
 end;
 
@@ -428,13 +428,14 @@ var
   LPage: IDBPage<TCustomer>;
   Age: IProperty;
   i: Integer;
+  LCustId: Integer;
 begin
   Age := TProperty.ForName(CUSTAGE);
   //add 10 customers
   for i := 1 to 10 do
   begin
-    InsertCustomer(i, 'Foo', Abs(i/2));
-    InsertCustomerOrder(i, i + 10, -1, i + 100);
+    LCustId := InsertCustomer(i, 'Foo', Abs(i/2));
+    InsertCustomerOrder(LCustId, i + 10, -1, i + 100);
   end;
 
   CheckEquals(10, FSession.FindAll<TCustomer_Orders>.Count);
@@ -447,11 +448,8 @@ begin
   CheckEquals(10, LPage.Items[0].Age);
   CheckEquals(8, LPage.Items[2].Age);
 
-  CheckEquals(10, LPage.Items[0].ID);
   CheckEquals(10, LPage.Items[0].Age);
-
   CheckEquals(20, LPage.Items[0].OrdersIntf.First.Customer_Payment_Method_Id);
-
 end;
 
 initialization

@@ -87,7 +87,6 @@ type
     function GetDriverName(): string; virtual; abstract;
     procedure AddExecutionListener(const AListenerProc: TExecutionListenerProc);
     procedure ClearExecutionListeners();
-    procedure NotifyExecutionListeners(const ACommand: string; const AParams: TObjectList<TDBParam>);
 
     function GetQueryLanguage(): TQueryLanguage; virtual;
     function TryResolveQueryLanguage(out AQueryLanguage: TQueryLanguage): Boolean; virtual;
@@ -109,15 +108,21 @@ type
   TDriverStatementAdapter<T> = class(TInterfacedObject, IDBStatement)
   private
     FStmt: T;
+    FExecutionListeners: TList<TExecutionListenerProc>;
+    FParams: TObjectList<TDBParam>;
+    FSQL: string;
+  protected
+    procedure NotifyListeners(); virtual;
   public
     constructor Create(const AStatement: T); virtual;
     destructor Destroy; override;
-    procedure SetSQLCommand(const ACommandText: string); virtual; abstract;
-    procedure SetParams(Params: TEnumerable<TDBParam>); overload; virtual; abstract;
+    procedure SetSQLCommand(const ACommandText: string); virtual;
+    procedure SetParams(Params: TObjectList<TDBParam>); overload; virtual;
     procedure SetParams(const AParams: array of const); overload;
-    function Execute(): NativeUInt; virtual; abstract;
-    function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; virtual; abstract;
+    function Execute(): NativeUInt; virtual;
+    function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; virtual;
 
+    property ExecutionListeners: TList<TExecutionListenerProc> read FExecutionListeners write FExecutionListeners;
     property Statement: T read FStmt;
   end;
 
@@ -257,16 +262,6 @@ begin
   Result := FQueryLanguage;
 end;
 
-procedure TDriverConnectionAdapter<T>.NotifyExecutionListeners(const ACommand: string; const AParams: TObjectList<TDBParam>);
-var
-  LExecProc: TExecutionListenerProc;
-begin
-  for LExecProc in FExecutionListeners do
-  begin
-    LExecProc(ACommand, AParams);
-  end;
-end;
-
 procedure TDriverConnectionAdapter<T>.SetAutoFreeConnection(const Value: Boolean);
 begin
   FAutoFreeConnection := Value;
@@ -317,11 +312,55 @@ constructor TDriverStatementAdapter<T>.Create(const AStatement: T);
 begin
   inherited Create;
   FStmt := AStatement;
+  FParams := nil;
+  FExecutionListeners := nil;
 end;
 
 destructor TDriverStatementAdapter<T>.Destroy;
 begin
   inherited Destroy;
+end;
+
+function TDriverStatementAdapter<T>.Execute: NativeUInt;
+begin
+  NotifyListeners();
+end;
+
+function TDriverStatementAdapter<T>.ExecuteQuery(AServerSideCursor: Boolean): IDBResultSet;
+begin
+  NotifyListeners();
+end;
+
+procedure TDriverStatementAdapter<T>.NotifyListeners;
+var
+  LListener: TExecutionListenerProc;
+  LParams: TObjectList<TDBParam>;
+  LParamsCreated: Boolean;
+begin
+  if Assigned(FExecutionListeners) and (FSQL <> '') then
+  begin
+    LParams := FParams;
+    if not Assigned(LParams) then
+    begin
+      LParamsCreated := True;
+      LParams := TObjectList<TDBParam>.Create(True);
+    end;
+
+    try     
+      for LListener in FExecutionListeners do
+      begin
+        LListener(FSQL, LParams);
+      end;
+    finally
+      if LParamsCreated then
+        LParams.Free;
+    end;
+  end;
+end;
+
+procedure TDriverStatementAdapter<T>.SetParams(Params: TObjectList<TDBParam>);
+begin
+  FParams := Params;
 end;
 
 procedure TDriverStatementAdapter<T>.SetParams(const AParams: array of const);
@@ -338,6 +377,11 @@ begin
       LParams.Free;
     end;
   end;
+end;
+
+procedure TDriverStatementAdapter<T>.SetSQLCommand(const ACommandText: string);
+begin
+  FSQL := ACommandText;
 end;
 
 { TDriverPageAdapter<T> }
@@ -412,7 +456,10 @@ end;
 
 function TPager.GetOffset: Integer;
 begin
-  Result := Min( (Page * ItemsPerPage) - ItemsPerPage + 1, 1);
+  if (Page <= 1) then
+    Result := 0
+  else
+    Result := (Page * ItemsPerPage) - ItemsPerPage;
 end;
 
 { TDriverTransactionAdapter<T> }

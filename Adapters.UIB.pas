@@ -74,7 +74,7 @@ type
     constructor Create(const AStatement: TUIBStatement); override;
     destructor Destroy; override;
     procedure SetSQLCommand(const ACommandText: string); override;
-    procedure SetParams(Params: TEnumerable<TDBParam>); overload; override;
+    procedure SetParams(Params: TObjectList<TDBParam>); overload; override;
     function Execute(): NativeUInt; override;
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
   end;
@@ -221,6 +221,7 @@ end;
 
 function TUIBStatementAdapter.Execute: NativeUInt;
 begin
+  inherited;
   Statement.Prepare();
   Statement.ExecSQL();
   Result := Statement.RowsAffected;
@@ -233,6 +234,7 @@ var
   LTran: TUIBTransaction;
   LIsNewTran: Boolean;
 begin
+  inherited;
   LDataset := TUIBDataSet.Create(nil);
   LIsNewTran := (Statement.DataBase.TransactionsCount < 1);
   if not LIsNewTran then
@@ -266,11 +268,12 @@ begin
   end;
 end;
 
-procedure TUIBStatementAdapter.SetParams(Params: TEnumerable<TDBParam>);
+procedure TUIBStatementAdapter.SetParams(Params: TObjectList<TDBParam>);
 var
   LParam: TDBParam;
   sParamName: string;
 begin
+  inherited;
   for LParam in Params do
   begin
     sParamName := LParam.Name;
@@ -285,6 +288,7 @@ end;
 
 procedure TUIBStatementAdapter.SetSQLCommand(const ACommandText: string);
 begin
+  inherited;
   Statement.SQL.Text := ACommandText;
 end;
 
@@ -329,6 +333,7 @@ function TUIBConnectionAdapter.CreateStatement: IDBStatement;
 var
   LStatement: TUIBStatement;
   LTran: TUIBTransaction;
+  LAdapter: TUIBStatementAdapter;
 begin
   if Connection = nil then
     Exit(nil);
@@ -346,7 +351,9 @@ begin
   LStatement.DataBase := Connection;
   LStatement.Transaction := LTran;
 
-  Result := TUIBStatementAdapter.Create(LStatement);
+  LAdapter := TUIBStatementAdapter.Create(LStatement);
+  LAdapter.ExecutionListeners := ExecutionListeners;
+  Result := LAdapter;
 end;
 
 destructor TUIBConnectionAdapter.Destroy;

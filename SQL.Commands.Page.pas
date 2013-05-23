@@ -115,7 +115,10 @@ end;
 
 function TPageExecutor.GetOffset: Integer;
 begin
-  Result := Min( (Page * ItemsPerPage) - ItemsPerPage + 1, 1);
+  if (Page <= 1) then
+    Result := 0
+  else
+    Result := (Page * ItemsPerPage) - ItemsPerPage;
 end;
 
 end.

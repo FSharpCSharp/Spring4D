@@ -73,7 +73,7 @@ type
     destructor Destroy; override;
     procedure SetSQLCommand(const ACommandText: string); override;
     procedure SetParam(ADBParam: TDBParam); virtual;
-    procedure SetParams(Params: TEnumerable<TDBParam>); overload; override;
+    procedure SetParams(Params: TObjectList<TDBParam>); overload; override;
     function Execute(): NativeUInt; override;
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
   end;
@@ -222,6 +222,7 @@ end;
 
 function TADOStatementAdapter.Execute: NativeUInt;
 begin
+  inherited;
   Result := Statement.ExecSQL();
 end;
 
@@ -229,6 +230,7 @@ function TADOStatementAdapter.ExecuteQuery(AServerSideCursor: Boolean): IDBResul
 var
   LStmt: TADODataSet;
 begin
+  inherited;
   LStmt := TADODataSet.Create(nil);
   if AServerSideCursor then
     LStmt.CursorLocation := clUseServer;
@@ -264,10 +266,11 @@ begin
   Statement.Parameters.ParamValues[sParamName] := ADBParam.Value;
 end;
 
-procedure TADOStatementAdapter.SetParams(Params: TEnumerable<TDBParam>);
+procedure TADOStatementAdapter.SetParams(Params: TObjectList<TDBParam>);
 var
   LParam: TDBParam;
 begin
+  inherited;
   for LParam in Params do
   begin
     SetParam(LParam);
@@ -276,6 +279,7 @@ end;
 
 procedure TADOStatementAdapter.SetSQLCommand(const ACommandText: string);
 begin
+  inherited;
   Statement.SQL.Text := ACommandText;
 end;
 
@@ -313,6 +317,7 @@ end;
 function TADOConnectionAdapter.CreateStatement: IDBStatement;
 var
   LStatement: TADOQuery;
+  LAdapter: TADOStatementAdapter;
 begin
   if Connection = nil then
     Exit(nil);
@@ -320,7 +325,9 @@ begin
   LStatement := TADOQuery.Create(nil);
   LStatement.Connection := Connection;
 
-  Result := TADOStatementAdapter.Create(LStatement);
+  LAdapter := TADOStatementAdapter.Create(LStatement);
+  LAdapter.ExecutionListeners := ExecutionListeners;
+  Result := LAdapter;
 end;
 
 procedure TADOConnectionAdapter.Disconnect;

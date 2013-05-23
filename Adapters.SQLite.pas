@@ -62,7 +62,7 @@ type
     constructor Create(const AStatement: ISQLitePreparedStatement); override;
     destructor Destroy; override;
     procedure SetSQLCommand(const ACommandText: string); override;
-    procedure SetParams(Params: TEnumerable<TDBParam>); overload; override;
+    procedure SetParams(Params: TObjectList<TDBParam>); overload; override;
     function Execute(): NativeUInt; override;
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
   end;
@@ -155,6 +155,7 @@ function TSQLiteStatementAdapter.Execute: NativeUInt;
 var
   LAffected: Integer;
 begin
+  inherited;
   if Statement.ExecSQL(LAffected) then
     Result := LAffected
   else
@@ -165,6 +166,7 @@ function TSQLiteStatementAdapter.ExecuteQuery(AServerSideCursor: Boolean): IDBRe
 var
   LDataset: ISQLiteTable;
 begin
+  inherited;
   LDataset := Statement.ExecQueryIntf;
   Result := TSQLiteResultSetAdapter.Create(LDataset);
 end;
@@ -183,10 +185,11 @@ begin
   Result := nil;
 end;
 
-procedure TSQLiteStatementAdapter.SetParams(Params: TEnumerable<TDBParam>);
+procedure TSQLiteStatementAdapter.SetParams(Params: TObjectList<TDBParam>);
 var
   P: TDBParam;
 begin
+  inherited;
   for P in Params do
   begin
    { LParam := GetParamByName(FSQLiteStmt, P.Name);
@@ -199,6 +202,7 @@ end;
 
 procedure TSQLiteStatementAdapter.SetSQLCommand(const ACommandText: string);
 begin
+  inherited;
   Statement.PrepareStatement(ACommandText);
 end;
 
@@ -228,12 +232,15 @@ end;
 function TSQLiteConnectionAdapter.CreateStatement: IDBStatement;
 var
   Statement: TSQLitePreparedStatement;
+  LAdapter: TSQLiteStatementAdapter;
 begin
   if Connection = nil then
     Exit(nil);
 
   Statement := TSQLitePreparedStatement.Create(Connection);
-  Result := TSQLiteStatementAdapter.Create(Statement);
+  LAdapter := TSQLiteStatementAdapter.Create(Statement);
+  LAdapter.ExecutionListeners := ExecutionListeners;
+  Result := LAdapter;
 end;
 
 procedure TSQLiteConnectionAdapter.Disconnect;
