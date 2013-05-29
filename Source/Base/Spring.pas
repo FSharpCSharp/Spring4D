@@ -620,6 +620,8 @@ type
       public
 {$IFNDEF CPUX64}
         Registers: array[paEDX..paECX] of Cardinal;
+        EAXRegister: Cardinal;
+        ReturnAddress: Pointer;
 {$ENDIF}
         Stack: array[0..1023] of Byte;
       end;
@@ -1537,6 +1539,18 @@ begin
 end;
 
 constructor TMethodInvocations.TMethodInfo.Create(typeInfo: PTypeInfo);
+
+  function PassByRef(P: PByte; ParamInfos: PParameterInfos; I: Integer): Boolean;
+  begin
+    Result := (TParamFlags(P[0]) * [pfVar, pfConst, pfAddress, pfReference, pfOut] <> [])
+      and not (ParamInfos^[I]^.Kind in [tkFloat, tkMethod, tkInt64]);
+  end;
+
+  function Align4(Value: Integer): Integer;
+  begin
+    Result := (Value + 3) and not 3;
+  end;
+
 var
   typeData: PTypeData;
   P: PByte;
@@ -1569,23 +1583,22 @@ begin
   for I := 0 to typeData^.ParamCount - 1 do
   begin
 {$IFNDEF CPUX64}
-    if TParamFlags(P[0]) * [pfVar, pfConst, pfAddress, pfReference, pfOut] <> [] then
+    if PassByRef(P, ParamInfos, I) then
       Size := 4
     else
       Size := GetTypeSize(ParamInfos^[I]^);
-    if (Size <= 4) and (curReg <= paECX) then
+    if (Size <= 4) and (curReg <= paECX) and (ParamInfos^[I]^.Kind <> tkFloat) then
       Inc(curReg)
     else
     begin
       if Size < 4 then
         Size := 4;
-      Inc(StackSize, Size);
+      Inc(StackSize, Align4(Size));
     end;
 {$ELSE}
     if I < 3 then
     begin
-      if (TParamFlags(P[0]) * [pfVar, pfConst, pfAddress, pfReference, pfOut] = [])
-        and (ParamInfos^[I]^.Kind = tkFloat) then
+      if ParamInfos^[I]^.Kind = tkFloat then
         RegisterFlag := RegisterFlag or (1 shl (I + 1));
     end;
     Inc(StackSize, 8);
@@ -1604,6 +1617,98 @@ end;
 
 
 {$REGION 'TMethodInvocations'}
+
+procedure InvokeMethod(const Method: TMethod;
+  Parameters: Pointer; StackSize: Integer);
+const
+  PointerSize = SizeOf(Pointer);
+const
+  paEDX = Word(1);
+  paECX = Word(2);
+type
+  TParameters = packed record
+  public
+{$IFNDEF CPUX64}
+    Registers: array[paEDX..paECX] of Cardinal;
+    EAXRegister: Cardinal;
+    ReturnAddress: Pointer;
+{$ENDIF}
+    Stack: array[0..1023] of Byte;
+  end;
+{$IFNDEF CPUX64}
+asm
+  push ebp
+  mov ebp,esp
+  push eax // ebp-4 = Method
+  push ebx
+  mov ebx, edx // ebx = Parameters
+
+  // if StackSize > 0
+  test ecx,ecx
+  jz @@no_stack
+
+  // stack address alignment
+  add ecx,PointerSize-1
+  and ecx,not(PointerSize-1)
+  and ecx,$ffff
+  sub esp,ecx
+
+  // put stack address as second parameter
+  mov edx,esp
+
+  // put params on stack as first parameter
+  lea eax,[ebx].TParameters.Stack
+
+  call Move
+
+@@no_stack:
+  mov edx,[ebx].TParameters.Registers.dword[0]
+  mov ecx,[ebx].TParameters.Registers.dword[4]
+  mov ebx,[ebp-$04]
+  mov eax,[ebx].TMethod.Data
+  call [ebx].TMethod.Code
+
+  pop ebx
+  pop eax
+  mov esp,ebp
+  pop ebp
+end;
+{$ELSE}
+asm
+  .params 60
+  mov [rbp+$200],Method
+  mov [rbp+$208],Parameters
+  test r8,r8
+  jz @@no_stack
+
+  // put params on stack as first parameter
+  lea rcx,[Parameters].TParameters.Stack
+
+  // put stack address as second parameter
+  mov rdx,rsp
+
+  call Move
+
+  mov rdx,[rbp+$208]
+
+@@no_stack:
+  mov rcx,[rdx].TParameters.Stack.qword[0]
+  mov r8,[rdx].TParameters.Stack.qword[16]
+  mov r9,[rdx].TParameters.Stack.qword[24]
+
+  movsd xmm0,[rdx].TParameters.Stack.qword[0]
+  movsd xmm1,[rdx].TParameters.Stack.qword[8]
+  movsd xmm2,[rdx].TParameters.Stack.qword[16]
+  movsd xmm3,[rdx].TParameters.Stack.qword[24]
+
+  mov rdx,[rdx].TParameters.Stack.qword[8]
+
+  mov rax,[rbp+$200]
+  lea rax,[rax]
+  mov rcx,[rax].TMethod.Data
+  call [rax].TMethod.Code
+end;
+{$ENDIF}
 
 constructor TMethodInvocations.Create(methodTypeInfo: PTypeInfo);
 begin
@@ -1671,86 +1776,12 @@ begin
 end;
 
 procedure TMethodInvocations.InternalInvokeHandlers(Params: PParameters);
-{$IFNDEF CPUX64}
 var
-  method: TMethod;
-  stackSize: Integer;
-  callConvention: TCallConv;
   i: Integer;
 begin
-  stackSize := fMethodInfo.stackSize;
-  callConvention := fMethodInfo.CallConvention;
   for i := 0 to fMethods.Count - 1 do
-  begin
-    method := fMethods[i];
-    // Check to see if there is anything on the stack.
-    if StackSize > 0 then
-    asm
-      // if there are items on the stack, allocate the space there and
-      // move that data over.
-      MOV ECX,StackSize
-      SUB ESP,ECX
-      MOV EDX,ESP
-      MOV EAX,Params
-      LEA EAX,[EAX].TParameters.Stack[8]
-      CALL System.Move
-    end;
-    asm
-      // Now we need to load up the registers. EDX and ECX may have some data
-      // so load them on up.
-      MOV EAX,Params
-      MOV EDX,[EAX].TParameters.Registers.DWORD[0]
-      MOV ECX,[EAX].TParameters.Registers.DWORD[4]
-      // EAX is always "Self" and it changes on a per method pointer instance, so
-      // grab it out of the method data.
-      MOV EAX, method.Data
-      CMP callConvention, ccReg
-      JZ @BeginCall
-      Mov [ESP], EAX // eax -> Self, put it into internal stack
-    @BeginCall:
-      // Now we call the method. This depends on the fact that the called method
-      // will clean up the stack if we did any manipulations above.
-      CALL method.Code
-    end;
-  end;
+    InvokeMethod(fMethods[i], Params, fMethodInfo.StackSize);
 end;
-{$ELSE}
-var
-  method: TMethod;
-  args: TArray<TValue>;
-  p: PByte;
-  i: Integer;
-begin
-  if fMethods.Count > 0 then
-  begin
-    SetLength(args, fMethodInfo.TypeData.ParamCount + 1);
-    p := @fMethodInfo.TypeData.ParamList;
-
-    for i := 1 to fMethodInfo.TypeData.ParamCount do
-    begin
-      if TParamFlags(p[0]) * [pfVar, pfConst, pfOut] <> [] then
-      begin
-        args[i] := TValue.From<Pointer>(PPointer(@Params.Stack[i * 8])^);
-      end
-      else
-      begin
-        TValue.Make(Pointer(@Params.Stack[i * 8]), fMethodInfo.ParamInfos[i - 1]^, args[i]);
-      end;
-      Inc(p, 1 + p[1] + 1);
-      Inc(p, p[0] + 1);
-    end;
-
-    for i := 0 to fMethods.Count - 1 do
-    begin
-      method := fMethods[i];
-      args[0] := TValue.From<TObject>(method.Data);
-      // workaround for incorrect type guess in Rtti.pas
-      TValueData(args[0]).FTypeInfo := TypeInfo(TObject);
-      Rtti.Invoke(method.Code, args, fMethodInfo.CallConvention, nil);
-    end;
-  end;
-end;
-{$ENDIF}
 
 procedure TMethodInvocations.InvokeEventHandlerStub;
 {$IFNDEF CPUX64}
@@ -1799,7 +1830,7 @@ asm
 end;
 {$ELSE}
 asm
-        MOV     AX, WORD PTR [RCX].TMethodInvocations.TMethodInfo.RegisterFlag
+        MOV     AX, WORD PTR [RCX].TMethodInvocations.fMethodInfo.RegisterFlag
 @@FIRST:
         TEST    AX, $01
         JZ      @@SAVE_RCX

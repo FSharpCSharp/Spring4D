@@ -76,22 +76,35 @@ type
 
   TTestEmptyMulticastEvent = class(TTestCase)
   private
+    type
+      TEventInt64 = procedure(const Value: Int64 ) of object;
+      TEventSingle = procedure(const Value: Single ) of object;
+      TEventDouble = procedure(const Value: Double ) of object;
+      TEventExtended = procedure(const Value: Extended ) of object;
+  private
     fEvent: IMulticastNotifyEvent;
     fASender: TObject;
     fAInvoked: Boolean;
     fBSender: TObject;
     fBInvoked: Boolean;
+    fHandlerInvokeCount: Integer;
   protected
     procedure SetUp; override;
     procedure TearDown; override;
     procedure HandlerA(sender: TObject);
     procedure HandlerB(sender: TObject);
+
+    procedure HandlerInt64(const value: Int64);
+    procedure HandlerSingle(const value: Single);
+    procedure HandlerDouble(const value: Double);
+    procedure HandlerExtended(const value: Extended);
   published
     procedure TestEmpty;
     procedure TestInvoke;
     procedure TestOneHandler;
     procedure TestTwoHandlers;
     procedure TestIssue58;
+    procedure TestIssue60;
   end;
 
 
@@ -216,6 +229,7 @@ begin
   fAInvoked := False;
   fBSender := nil;
   fBInvoked := False;
+  fHandlerInvokeCount := 0;
 end;
 
 procedure TTestEmptyMulticastEvent.HandlerA(sender: TObject);
@@ -228,6 +242,30 @@ procedure TTestEmptyMulticastEvent.HandlerB(sender: TObject);
 begin
   fBSender := sender;
   fBInvoked := True;
+end;
+
+procedure TTestEmptyMulticastEvent.HandlerDouble(const value: Double);
+begin
+  CheckEquals(42, value);
+  Inc(fHandlerInvokeCount);
+end;
+
+procedure TTestEmptyMulticastEvent.HandlerExtended(const value: Extended);
+begin
+  CheckEquals(42, value);
+  Inc(fHandlerInvokeCount);
+end;
+
+procedure TTestEmptyMulticastEvent.HandlerInt64(const value: Int64);
+begin
+  CheckEquals(42, value);
+  Inc(fHandlerInvokeCount);
+end;
+
+procedure TTestEmptyMulticastEvent.HandlerSingle(const value: Single);
+begin
+  CheckEquals(42, value);
+  Inc(fHandlerInvokeCount);
 end;
 
 procedure TTestEmptyMulticastEvent.TestEmpty;
@@ -252,6 +290,31 @@ begin
   i := e;
   t := e.Invoke;
   Check(Assigned(i));
+end;
+
+procedure TTestEmptyMulticastEvent.TestIssue60;
+var
+  eventInt64: Event<TEventInt64>;
+  eventSingle: Event<TEventSingle>;
+  eventDouble: Event<TEventDouble>;
+  eventExtended: Event<TEventExtended>;
+begin
+  eventInt64 := Event<TEventInt64>.Create;
+  eventSingle := Event<TEventSingle>.Create;
+  eventDouble := Event<TEventDouble>.Create;
+  eventExtended := Event<TEventExtended>.Create;
+
+  eventInt64.Add(HandlerInt64);
+  eventSingle.Add(HandlerSingle);
+  eventDouble.Add(HandlerDouble);
+  eventExtended.Add(HandlerExtended);
+
+  eventInt64.Invoke(42);
+  eventSingle.Invoke(42);
+  eventDouble.Invoke(42);
+  eventExtended.Invoke(42);
+
+  CheckEquals(4, fHandlerInvokeCount);
 end;
 
 procedure TTestEmptyMulticastEvent.TestOneHandler;
