@@ -10,6 +10,7 @@ uses
   ,SQL.Types
   ,SQL.Params
   ,SQl.Commands
+  ,SQL.Interfaces
   ,Generics.Collections
   ;
 
@@ -21,7 +22,7 @@ type
   public
     constructor Create(const APropertyName: string; const AOperator: TWhereOperator); virtual;
   public
-    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand): string; override;
+    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator): string; override;
     function GetWhereOperator(): TWhereOperator; override;
   end;
 
@@ -45,18 +46,18 @@ begin
   Result := FOperator;
 end;
 
-function TNullExpression.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand): string;
+function TNullExpression.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator): string;
 var
   LWhere: TSQLWhereField;
 begin
   Assert(ACommand is TWhereCommand);
-
+  inherited;
   LWhere := TSQLWhereField.Create(FPropertyName, ACommand.Table);
   LWhere.MatchMode := GetMatchMode;
   LWhere.WhereOperator := GetWhereOperator;
   TWhereCommand(ACommand).WhereFields.Add(LWhere);
 
-  Result := LWhere.ToSQLString;
+  Result := LWhere.ToSQLString(Generator.GetEscapeFieldnameChar);
 end;
 
 end.

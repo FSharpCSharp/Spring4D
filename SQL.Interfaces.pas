@@ -58,6 +58,7 @@ type
     function GetSQLSequenceCount(const ASequenceName: string): string;
     function GetTableColumns(const ATableName: string): string;
     function GetSQLTableExists(const ATablename: string): string;
+    function GetEscapeFieldnameChar(): Char;
   end;
 
 implementation

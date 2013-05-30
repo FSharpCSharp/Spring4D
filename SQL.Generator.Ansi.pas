@@ -62,6 +62,7 @@ type
     function GetPrimaryKeyDefinition(AField: TSQLCreateField): string; virtual;
     function GetSplitStatementSymbol(): string; virtual;
     procedure ParseFullTablename(const AFullTablename: string; out ATablename, ASchemaName: string); virtual;
+    function GetEscapeFieldnameChar(): Char; override;
   public
     function GetQueryLanguage(): TQueryLanguage; override;
     function GenerateSelect(ASelectCommand: TSelectCommand): string; override;
@@ -135,7 +136,7 @@ begin
       //0 - Column name, 1 - Column data type name, 2 - NOT NULL condition
       LSqlBuilder.AppendFormat('%0:S %1:S %2:S %3:S',
         [
-          LField.Fieldname
+          LField.GetEscapedFieldname(GetEscapeFieldnameChar)
           ,GetSQLDataTypeName(LField)
           ,IfThen(cpPrimaryKey in LField.Properties, GetPrimaryKeyDefinition(LField))
           ,IfThen(cpNotNull in LField.Properties, 'NOT NULL', 'NULL')
@@ -181,9 +182,9 @@ begin
         .AppendLine
         .AppendFormat('ADD CONSTRAINT %0:S', [LField.ForeignKeyName])
         .AppendLine
-        .AppendFormat('FOREIGN KEY(%0:S)', [LField.Fieldname])
+        .AppendFormat('FOREIGN KEY(%0:S)', [LField.GetEscapedFieldname(GetEscapeFieldnameChar)])
         .AppendLine
-        .AppendFormat(' REFERENCES %0:S (%1:S)', [LField.ReferencedTableName, LField.ReferencedColumnName])
+        .AppendFormat(' REFERENCES %0:S (%1:S)', [LField.ReferencedTableName, LField.GetEscapedName(LField.ReferencedColumnName, GetEscapeFieldnameChar)])
         .AppendLine
         .Append(LField.GetConstraintsAsString);
 
@@ -246,7 +247,7 @@ begin
 
       {TODO -oLinas -cGeneral : implement where operators}
 
-      LSqlBuilder.Append(Format('%0:S=%1:S', [LWhereField.Fieldname, ADeleteCommand.GetAndIncParameterName(LWhereField.Fieldname)]));
+      LSqlBuilder.Append(Format('%0:S=%1:S', [LWhereField.GetEscapedFieldname(GetEscapeFieldnameChar), ADeleteCommand.GetAndIncParameterName(LWhereField.Fieldname)]));
 
       Inc(ix);
     end;
@@ -314,7 +315,7 @@ begin
       sParams := sParams + ',';
     end;
 
-    sFields := sFields + AInsertCommand.InsertFields[i].Fieldname;
+    sFields := sFields + AInsertCommand.InsertFields[i].GetEscapedFieldname(GetEscapeFieldnameChar);
     sParams := sParams + AInsertCommand.GetAndIncParameterName(AInsertCommand.InsertFields[i].Fieldname);//  ':' + AInsertCommand.InsertFields[i].Fieldname;
   end;
 
@@ -384,7 +385,7 @@ begin
       if ix > 0 then
         LSqlBuilder.Append(',');
 
-      LSqlBuilder.Append(Format('%0:S=%1:S', [LField.Fieldname, AUpdateCommand.GetAndIncParameterName(LField.Fieldname)]));
+      LSqlBuilder.Append(Format('%0:S=%1:S', [LField.GetEscapedFieldname(GetEscapeFieldnameChar), AUpdateCommand.GetAndIncParameterName(LField.Fieldname)]));
       Inc(ix);
     end;
 
@@ -397,7 +398,7 @@ begin
       else
         LSqlBuilder.Append(' AND ');
 
-      LSqlBuilder.Append(Format('%0:S=%1:S', [LWhereField.Fieldname, AUpdateCommand.GetAndIncParameterName(LWhereField.Fieldname)]));
+      LSqlBuilder.Append(Format('%0:S=%1:S', [LWhereField.GetEscapedFieldname(GetEscapeFieldnameChar), AUpdateCommand.GetAndIncParameterName(LWhereField.Fieldname)]));
 
       Inc(ix);
     end;
@@ -423,7 +424,7 @@ begin
     if i > 0 then
       Result := Result + ',';
 
-    Result := Result + LField.Fieldname;
+    Result := Result + LField.GetEscapedFieldname(GetEscapeFieldnameChar);
 
     Inc(i);
   end;
@@ -443,7 +444,7 @@ begin
       Result := Result + ',';
 
     if ACopyFields.Contains(LField.Fieldname) then
-      Result := Result + LField.Fieldname
+      Result := Result + LField.GetEscapedFieldname(GetEscapeFieldnameChar)
     else
       Result := Result + 'NULL';
 
@@ -465,6 +466,11 @@ begin
   end;
 end;
 
+function TAnsiSQLGenerator.GetEscapeFieldnameChar: Char;
+begin
+  Result := '"';
+end;
+
 function TAnsiSQLGenerator.GetGroupByAsString(
   const AGroupFields: TEnumerable<TSQLGroupByField>): string;
 var
@@ -481,7 +487,7 @@ begin
     else
       Result := CRLF + '  GROUP BY ';
 
-    Result := Result + LField.GetFullFieldname;
+    Result := Result + LField.GetFullFieldname(GetEscapeFieldnameChar);
 
     Inc(i);
   end;
@@ -503,7 +509,7 @@ begin
 
     Result := Result +
       LSegment.PKField.Table.GetFullTableName + ' ON '  +
-      LSegment.PKField.GetFullFieldname + '=' + LSegment.FKField.GetFullFieldname;
+      LSegment.PKField.GetFullFieldname(GetEscapeFieldnameChar) + '=' + LSegment.FKField.GetFullFieldname(GetEscapeFieldnameChar);
   end;
 end;
 
@@ -534,7 +540,7 @@ begin
       Result := CRLF + '  ORDER BY ';
 
 
-    Result := Result + LField.GetFullOrderByFieldname;
+    Result := Result + LField.GetFullOrderByFieldname(GetEscapeFieldnameChar);
 
     Inc(i);
   end;
@@ -578,7 +584,7 @@ begin
     if i > 0 then
       Result := Result + ',';
 
-    Result := Result + LField.GetFullFieldname;
+    Result := Result + LField.GetFullFieldname(GetEscapeFieldnameChar);
 
     Inc(i);
   end;
@@ -738,7 +744,7 @@ begin
       ix := FindEnd(i, LField.WhereOperator, GetEndOperator(LField.WhereOperator));
     end;
 
-    Result := Result + LField.ToSQLString;
+    Result := Result + LField.ToSQLString(GetEscapeFieldnameChar);
     Inc(ix);
   end;
 end;

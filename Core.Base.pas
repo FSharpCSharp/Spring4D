@@ -340,6 +340,7 @@ begin
   if Assigned(FExecutionListeners) and (FSQL <> '') then
   begin
     LParams := FParams;
+    LParamsCreated := False;
     if not Assigned(LParams) then
     begin
       LParamsCreated := True;

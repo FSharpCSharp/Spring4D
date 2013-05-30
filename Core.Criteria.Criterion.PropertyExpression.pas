@@ -11,6 +11,7 @@ uses
   ,SQL.Types
   ,SQL.Params
   ,SQL.Commands
+  ,SQL.Interfaces
   ,Generics.Collections
   ;
 
@@ -28,7 +29,7 @@ type
     destructor Destroy; override;
   public
     function GetWhereOperator(): TWhereOperator; override;
-    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand): string; override;
+    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator): string; override;
 
   end;
 
@@ -64,12 +65,13 @@ begin
   Result := FOperator;
 end;
 
-function TPropertyExpression.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand): string;
+function TPropertyExpression.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator): string;
 var
   LWhere: TSQLWherePropertyField;
   LTable, LOtherTable: TSQLTable;
 begin
   Assert(ACommand is TWhereCommand);
+  inherited;
   LTable := FTable;
   LOtherTable := FOtherTable;
 

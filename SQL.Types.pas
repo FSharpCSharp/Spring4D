@@ -74,7 +74,7 @@ type
   ISQLField = interface
     ['{2316102E-61A3-4454-A7B2-18090C384882}']
     function GetFieldname: string;
-    function GetFullFieldname(): string;
+    function GetFullFieldname(const AEscapeChar: Char): string;
     function GetTable: TSQLTable;
     function GetAlias: string;
     procedure SetAlias(const Value: string);
@@ -101,7 +101,9 @@ type
     constructor Create(const AFieldname: string; ATable: TSQLTable); virtual;
     destructor Destroy; override;
 
-    function GetFullFieldname(): string; virtual;
+    function GetFullFieldname(const AEscapeChar: Char): string; virtual;
+    function GetEscapedName(const AName: string; const AEscapeChar: Char): string; virtual;
+    function GetEscapedFieldname(const AEscapeChar: Char): string; virtual;
 
     property Alias: string read GetAlias write SetAlias;
     property Fieldname: string read GetFieldname write FFieldname;
@@ -208,7 +210,7 @@ type
     constructor Create(const AFieldname: string; ATable: TSQLTable); overload; override;
     constructor Create(const ALeftSQL, ARightSQL: string); reintroduce; overload;
 
-    function ToSQLString(): string; virtual;
+    function ToSQLString(const AEscapeChar: Char): string; virtual;
 
     property MatchMode: TMatchMode read FMatchMode write FMatchMode;
     property WhereOperator: TWhereOperator read FWhereOperator write FWhereOperator;
@@ -233,7 +235,7 @@ type
     function GetFullLeftFieldname(): string; virtual;
     function GetFullRightFieldname(): string; virtual;
 
-    function ToSQLString(): string; override;
+    function ToSQLString(const AEscapeChar: Char): string; override;
 
     property OtherTable: TSQLTable read FOtherTable write FOtherTable;
   end;
@@ -262,8 +264,8 @@ type
   public
     constructor Create(const AFieldname: string; ATable: TSQLTable); override;
 
-    function GetFullOrderByFieldname(): string;
-  
+    function GetFullOrderByFieldname(const AEscapeChar: Char): string;
+
     property OrderType: TOrderType read FOrderType write FOrderType;
   end;
 
@@ -331,6 +333,7 @@ uses
   Core.Exceptions
   ,Core.EntityCache
   ,SysUtils
+  ,StrUtils
   ;
 
 function GetMatchModeString(AMatchMode: TMatchMode; const APattern: string): string;
@@ -443,17 +446,39 @@ begin
   Result := FAlias;  
 end;
 
+function TSQLField.GetEscapedFieldname(const AEscapeChar: Char): string;
+var
+  LPos: Integer;
+  LFieldname, LAliasName: string;
+begin
+  LPos := PosEx(' ', FFieldname);
+  if LPos > 1 then
+  begin
+    //escape all words including alias name
+    LFieldname := GetEscapedName(Copy(FFieldname, 1, LPos - 1), AEscapeChar);
+    LAliasName := Copy(FFieldname, LPos, Length(FFieldname));
+    Result := LFieldname + LAliasName;
+  end
+  else
+    Result := GetEscapedName(FFieldname, AEscapeChar);
+end;
+
+function TSQLField.GetEscapedName(const AName: string; const AEscapeChar: Char): string;
+begin
+  Result := AnsiQuotedStr(AName, AEscapeChar);
+end;
+
 function TSQLField.GetFieldname: string;
 begin
   Result := FFieldname;
 end;
 
-function TSQLField.GetFullFieldname: string;
+function TSQLField.GetFullFieldname(const AEscapeChar: Char): string;
 begin
   if (FAlias <> '') then
     Result := FAlias
   else
-    Result := Table.Alias + '.' + Fieldname;
+    Result := Table.Alias + '.' + GetEscapedFieldname(AEscapeChar);
 end;
 
 function TSQLField.GetTable: TSQLTable;
@@ -542,9 +567,9 @@ begin
   FOrderType := otAscending;
 end;
 
-function TSQLOrderField.GetFullOrderByFieldname: string;
+function TSQLOrderField.GetFullOrderByFieldname(const AEscapeChar: Char): string;
 begin
-  Result := GetFullFieldname;
+  Result := GetFullFieldname(AEscapeChar);
 
   case FOrderType of
     otAscending:  Result := Result + ' ASC' ;
@@ -571,17 +596,17 @@ begin
   FRightSQL := ARightSQL;
 end;
 
-function TSQLWhereField.ToSQLString: string;
+function TSQLWhereField.ToSQLString(const AEscapeChar: Char): string;
 begin
   case WhereOperator of
-    woIsNull, woIsNotNull: Result := GetFullFieldname + ' ' + WhereOpNames[WhereOperator];
-    woLike, woNotLike, woIn, woNotIn: Result := GetFullFieldname;
+    woIsNull, woIsNotNull: Result := GetFullFieldname(AEscapeChar) + ' ' + WhereOpNames[WhereOperator];
+    woLike, woNotLike, woIn, woNotIn: Result := GetFullFieldname(AEscapeChar);
     woOr, woAnd: Result := Format('(%S %S %S)', [FLeftSQL, WhereOpNames[WhereOperator], FRightSQL]);
     woNot: Result := Format('%S (%S)', [WhereOpNames[WhereOperator], FLeftSQL]);
     woOrEnd, woAndEnd, woNotEnd: Result := '';
-    woBetween: Result := Format('(%S %S %S AND %S)', [GetFullFieldname, WhereOpNames[WhereOperator], FParamName, FParamName2]);
+    woBetween: Result := Format('(%S %S %S AND %S)', [GetFullFieldname(AEscapeChar), WhereOpNames[WhereOperator], FParamName, FParamName2]);
     else
-      Result := GetFullFieldname + ' ' + WhereOpNames[WhereOperator] + ' ' + FParamName + ' ';
+      Result := GetFullFieldname(AEscapeChar) + ' ' + WhereOpNames[WhereOperator] + ' ' + FParamName + ' ';
   end;
 end;
 
@@ -672,7 +697,7 @@ begin
   Result := FOtherTable.Alias + '.' + RightSQL;
 end;
 
-function TSQLWherePropertyField.ToSQLString: string;
+function TSQLWherePropertyField.ToSQLString(const AEscapeChar: Char): string;
 begin
   Result := Format('%S %S %S', [GetFullLeftFieldname, WhereOpNames[WhereOperator], GetFullRightFieldname]);
 end;

@@ -171,7 +171,7 @@ begin
 
     for LCriterion in Criterions do
     begin
-      LCriterion.ToSqlString(AParams, LExecutor.Command);
+      LCriterion.ToSqlString(AParams, LExecutor.Command, LExecutor.Generator);
     end;
 
     for LOrder in FOrders do

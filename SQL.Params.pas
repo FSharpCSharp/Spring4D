@@ -49,8 +49,11 @@ type
     procedure SetName(const Value: string);
     procedure SetValue(const Value: Variant);
   public
+    destructor Destroy; override;
+
     procedure SetFromTValue(const AValue: TValue);
     procedure SetParamTypeFromTypeInfo(ATypeInfo: PTypeInfo);
+
 
     property TypeInfo: PTypeInfo read FTypeInfo;
     property Name: string read GetName write SetName;
@@ -175,6 +178,12 @@ begin
 end;
 
 { TDBParam }
+
+destructor TDBParam.Destroy;
+begin
+  //
+  inherited Destroy;
+end;
 
 function TDBParam.GetName: string;
 begin

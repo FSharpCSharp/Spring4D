@@ -36,6 +36,7 @@ uses
   ,SQL.Types
   ,SQL.Params
   ,SQL.Commands
+  ,SQL.Interfaces
   ,Generics.Collections
   ;
 
@@ -43,20 +44,31 @@ type
   TAbstractCriterion = class(TInterfacedObject, ICriterion)
   private
     FEntityClass: TClass;
+    FGenerator: ISQLGenerator;
     procedure SetEntityClass(const Value: TClass);
     function GetEntityClass: TClass;
   public
-    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand): string; virtual; abstract;
+    destructor Destroy; override;
+
+    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator): string; virtual;
     function GetMatchMode(): TMatchMode; virtual;
     function GetWhereOperator(): TWhereOperator; virtual;
 
+
     property EntityClass: TClass read GetEntityClass write SetEntityClass;
+    property Generator: ISQLGenerator read FGenerator;
   end;
 
 implementation
 
 
 { TAbstractCriterion }
+
+destructor TAbstractCriterion.Destroy;
+begin
+  FGenerator := nil;
+  inherited Destroy;
+end;
 
 function TAbstractCriterion.GetEntityClass: TClass;
 begin
@@ -76,6 +88,12 @@ end;
 procedure TAbstractCriterion.SetEntityClass(const Value: TClass);
 begin
   FEntityClass := Value;
+end;
+
+function TAbstractCriterion.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand;
+  AGenerator: ISQLGenerator): string;
+begin
+  FGenerator := AGenerator;
 end;
 
 end.

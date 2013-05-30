@@ -137,11 +137,12 @@ begin
       SetLength(LSQL, Length(LSQL)-1);
 
     LBuilder.Append('SELECT * FROM (')
-      .AppendLine.Append('    ')
+      .AppendLine.Append(' SELECT AROWNUM.*, ROWNUM r___  FROM (  ')
       .Append(LSQL)
-      .Append(') ')
+      .Append(') AROWNUM ')
+      .AppendFormat('WHERE ROWNUM < (%0:D+%1:D) )', [AOffset+1, ALimit])
       .AppendLine
-      .AppendFormat(' WHERE (ROWNUM>=%0:D) AND (ROWNUM < %0:D+%1:D)', [AOffset, ALimit]);
+      .AppendFormat(' WHERE r___ >=%0:D', [AOffset+1]);
 
     Result := LBuilder.ToString;
   finally

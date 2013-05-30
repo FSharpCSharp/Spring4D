@@ -38,6 +38,8 @@ uses
   ,SvDesignPatterns
   ,Spring.Collections
   ,Core.Criteria.Properties
+  ,SQL.Params
+  ,Variants
   ;
 
 const
@@ -208,6 +210,19 @@ begin
   FConnection := TConnectionFactory.GetInstance(dtOracle, CreateTestConnection);
   FConnection.AutoFreeConnection := True;
   FManager := TSession.Create(FConnection);
+
+  FConnection.AddExecutionListener(
+    procedure(const ACommand: string; const AParams: TObjectList<TDBParam>)
+    var
+      i: Integer;
+    begin
+      Status(ACommand);
+      for i := 0 to AParams.Count - 1 do
+      begin
+        Status(Format('%2:D Param %0:S = %1:S', [AParams[i].Name, VarToStrDef(AParams[i].Value, 'NULL'), i]));
+      end;
+      Status('-----');
+    end);
 
   CreateTestTables(FConnection);
 end;

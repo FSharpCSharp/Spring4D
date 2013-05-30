@@ -62,6 +62,7 @@ type
     function GetTableColumns(const ATableName: string): string; override;
     function GetSQLDataTypeName(AField: TSQLCreateField): string; override;
     function GetSQLTableExists(const ATablename: string): string; override;
+    function GetEscapeFieldnameChar(): Char; override;
 
     class property SerializerFormat: TSvSerializeFormat read FSerializerFormat write FSerializerFormat;
   end;
@@ -137,6 +138,11 @@ function TNoSQLGenerator.GenerateUpdate(AUpdateCommand: TUpdateCommand): string;
 begin
   Assert(Assigned(AUpdateCommand.Entity));
   TSvSerializer.SerializeObject(AUpdateCommand.Entity, Result, FSerializerFormat);
+end;
+
+function TNoSQLGenerator.GetEscapeFieldnameChar: Char;
+begin
+  Result := '"';
 end;
 
 function TNoSQLGenerator.GetQueryLanguage: TQueryLanguage;

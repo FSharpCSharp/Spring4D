@@ -9,6 +9,7 @@ uses
   ,Rtti
   ,SQL.Params
   ,SQL.Commands
+  ,SQL.Interfaces
   ,Generics.Collections
   ;
 
@@ -21,7 +22,7 @@ type
   public
     constructor Create(const APropertyName: string; const AValues: TArray<T>; AOperator: TWhereOperator); reintroduce; overload;
 
-    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand): string; override;
+    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator): string; override;
   end;
 
 implementation
@@ -40,7 +41,7 @@ begin
   FValues := AValues;
 end;
 
-function TInExpression<T>.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand): string;
+function TInExpression<T>.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator): string;
 var
   LWhere: TSQLWhereField;
 begin
