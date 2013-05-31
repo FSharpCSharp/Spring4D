@@ -234,6 +234,9 @@ type
     constructor Create(const AName: string; AProperties: TColumnProperties; ALength: Integer; APrecision: Integer;
       AScale: Integer; const ADescription: string = ''); overload;
 
+    function CanInsert(): Boolean; virtual;
+    function CanUpdate(): Boolean; virtual;
+
     function IsDiscriminator(): Boolean; virtual;
 
     property IsIdentity: Boolean read FIsIdentity write FIsIdentity;
@@ -387,6 +390,16 @@ begin
 end;
 
 { Column }
+
+function ColumnAttribute.CanInsert: Boolean;
+begin
+  Result := not (cpDontInsert in Properties);
+end;
+
+function ColumnAttribute.CanUpdate: Boolean;
+begin
+  Result := not (cpDontUpdate in Properties);
+end;
 
 constructor ColumnAttribute.Create(const AName: string; AProperties: TColumnProperties; ALength, APrecision, AScale: Integer;
   const ADescription: string);

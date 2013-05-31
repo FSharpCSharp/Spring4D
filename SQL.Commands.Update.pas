@@ -155,8 +155,11 @@ begin
 
   for LColumn in FColumns do
   begin
-    LParam := CreateParam(AEntity, LColumn);
-    SQLParameters.Add(LParam);
+    if LColumn.CanUpdate then
+    begin
+      LParam := CreateParam(AEntity, LColumn);
+      SQLParameters.Add(LParam);
+    end;
   end;
 
   if Assigned(FCommand.PrimaryKeyColumn) then
