@@ -66,7 +66,7 @@ type
 
   EORMContainerDoesNotHaveClearMethod = class(Exception);
 
-   EORMContainerDoesNotHaveCountMethod = class(Exception);
+  EORMContainerDoesNotHaveCountMethod = class(Exception);
 
   EORMContainerAddMustHaveOneParameter = class(Exception);
 
@@ -82,6 +82,8 @@ type
   EORMTransactionNotStarted = class(Exception);
 
   EORMListInSession = class(Exception);
+
+  EORMCannotConvertValue = class(Exception);
 
 implementation
 

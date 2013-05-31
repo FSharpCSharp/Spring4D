@@ -295,15 +295,21 @@ begin
   FManager.Execute('INSERT INTO CUSTOMERS SELECT * FROM CUSTOMERS;', []);
 end;
 
+const
+  SQL_EXEC_SCALAR_DOUBLE = 'SELECT CAST( COUNT(*) AS TEXT) FROM ' + TBL_PEOPLE + ';';
+
 procedure TestTSession.ExecuteScalar;
 var
   LRes: Integer;
+  LResDouble: Double;
 begin
   LRes := FManager.ExecuteScalar<Integer>(SQL_EXEC_SCALAR, []);
   CheckEquals(0, LRes);
   InsertCustomer();
   LRes := FManager.ExecuteScalar<Integer>(SQL_EXEC_SCALAR, []);
   CheckEquals(1, LRes);
+  LResDouble := FManager.ExecuteScalar<Double>(SQL_EXEC_SCALAR_DOUBLE, []);
+  CheckEquals(1, LResDouble, 0.1);
 end;
 
 procedure TestTSession.ExecutionListeners;

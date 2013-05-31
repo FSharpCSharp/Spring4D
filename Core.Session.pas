@@ -617,15 +617,20 @@ function TSession.ExecuteScalar<T>(const ASql: string; const AParams: array of c
 var
   LResults: IDBResultset;
   LVal: Variant;
-  LValue: TValue;
+  LValue, LConvertedValue: TValue;
+  LMustFree: Boolean;
 begin
   Result := System.Default(T);
   LResults := GetResultset(ASql, AParams);
   if not LResults.IsEmpty then
   begin
     LVal := LResults.GetFieldValue(0);
+
     LValue := TUtils.FromVariant(LVal);
-    Result := LValue.AsType<T>;
+    if not LValue.TryConvert(TypeInfo(T), LConvertedValue, LMustFree) then
+      raise EORMCannotConvertValue.CreateFmt(EXCEPTION_CANNOT_CONVERT_TYPE
+        , [LValue.TypeInfo.Name, PTypeInfo(TypeInfo(T)).Name]);
+    Result := LConvertedValue.AsType<T>;
   end;
 end;
 
