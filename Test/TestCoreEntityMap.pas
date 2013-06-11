@@ -27,6 +27,7 @@ type
     procedure TestIsMapped;
     procedure TestAdd;
     procedure TestAddOrReplace;
+    procedure TestAddOrReplace_Clone_Speed();
     procedure TestGet;
     procedure TestRemove;
     procedure TestClear;
@@ -38,6 +39,8 @@ implementation
 uses
   SysUtils
   ,Mapping.Attributes
+  ,Mapping.RttiExplorer
+  ,Diagnostics
   ;
 
 type
@@ -141,6 +144,37 @@ begin
     CheckTrue(FEntityMap.IsMapped(LCustomer));
   finally
     LCustomer.Free;
+  end;
+end;
+
+procedure TestTEntityMap.TestAddOrReplace_Clone_Speed;
+var
+  iCount: Integer;
+  sw: TStopwatch;
+  i: Integer;
+  LCustomers: TObjectList<TCustomer>;
+begin
+  FEntityMap.Free;
+  FEntityMap := TEntityMap.Create(True);
+  iCount := 50000;
+  LCustomers := TObjectList<TCustomer>.Create(True);
+  try
+    for i := 1 to iCount do
+    begin
+      LCustomers.Add(CreateCustomer);
+    end;
+
+    sw := TStopwatch.StartNew;
+    for i := 0 to iCount - 1 do
+    begin
+      FEntityMap.AddOrReplace(TRttiExplorer.Clone(LCustomers[i]));
+    end;
+    sw.Stop;
+
+    Status(Format('%D items in %D ms', [iCount, sw.ElapsedMilliseconds]));
+
+  finally
+    LCustomers.Free;
   end;
 end;
 

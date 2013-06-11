@@ -19,11 +19,15 @@ uses
   ,uModels, Rtti, SQLiteTable3;
 
 type
+  TMockSession = class(TSession)
+
+  end;
+
   {$DEFINE USE_SPRING}
   TestTSession = class(TTestCase)
   private
     FConnection: IDBConnection;
-    FManager: TSession;
+    FManager: TMockSession;
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -53,6 +57,7 @@ type
     procedure Streams();
     procedure ManyToOne();
     procedure Transactions();
+    procedure GetOne();
     procedure FetchCollection();
     {$IFDEF USE_SPRING}
     procedure ListSession_Begin_Commit();
@@ -88,6 +93,7 @@ uses
   ,Core.Reflection
   ,TestConsts
   ,Core.Criteria.Properties
+  ,Diagnostics
   ;
 
 
@@ -646,6 +652,44 @@ begin
   end;
 end;
 
+procedure TestTSession.GetOne;
+var
+  LResultset: IDBResultset;
+  LEntity: TCustomer;
+  sw: TStopwatch;
+  iCount: Integer;
+  i: Integer;
+begin
+  iCount := 10000;
+
+  TestDB.BeginTransaction;
+  for i := 0 to iCount - 1 do
+  begin
+    InsertCustomer(i);
+  end;
+  TestDB.Commit;
+
+  LResultset := FManager.GetResultset('SELECT * FROM CUSTOMERS', []);
+  i := 0;
+  sw := TStopwatch.StartNew;
+  while not LResultset.IsEmpty do
+  begin
+    LEntity := FManager.GetOne<TCustomer>(LResultset, nil);
+    try
+      Inc(i);
+      LResultset.Next;
+    finally
+      LEntity.Free;
+    end;
+  end;
+
+  sw.Stop;
+  CheckEquals(iCount, i);
+
+  Status(Format('GetOne %D objects in %D ms.',
+    [iCount, sw.ElapsedMilliseconds]));
+end;
+
 procedure TestTSession.Inheritance_Simple_Customer;
 var
   LCustomer: TCustomer;
@@ -1073,7 +1117,7 @@ end;
 procedure TestTSession.SetUp;
 begin
   FConnection := TConnectionFactory.GetInstance(dtSQLite, TestDB);
-  FManager := TSession.Create(FConnection);
+  FManager := TMockSession.Create(FConnection);
   FConnection.AddExecutionListener(
     procedure(const ACommand: string; const AParams: TObjectList<TDBParam>)
     var

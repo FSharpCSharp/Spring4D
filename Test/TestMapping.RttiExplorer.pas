@@ -378,7 +378,7 @@ var
   LCustomers: TObjectList<TCustomer>;
   LClonedCustomers: TObjectList<TCustomer>;
 begin
-  iMax := 10000;
+  iMax := 100000;
   LCustomers := TObjectList<TCustomer>.Create(True);
   LClonedCustomers := TObjectList<TCustomer>.Create(True);
   try

@@ -33,16 +33,7 @@ uses
   Generics.Collections, Rtti;
 
 type
-  TEntityMapKey = record
-  private
-    FModelClass: TClass;
-    FID: TValue;
-  public
-    function GetIDAsInt(): Int64;
-
-    property ModelClass: TClass read FModelClass write FModelClass;
-    property ID: TValue read FID write FID;
-  end;
+  TEntityMapKey = string;
 
   TEntityMap = class
   private
@@ -76,21 +67,11 @@ uses
   ,Mapping.Attributes
   ,Mapping.RttiExplorer
   ,Generics.Defaults
+  ,Core.Utils
+  ,Variants
   ;
 
-{ TEntityMapKey }
-
-function TEntityMapKey.GetIDAsInt: Int64;
-var
-  LResult: TValue;
-  bFree: Boolean;
-begin
-  Result := -1;
-  if FID.TryConvert(TypeInfo(Int64), LResult, bFree) then
-    Result := LResult.AsInt64;
-end;
-
-{ TModelMap }
+{ TEntityMap }
 
 procedure TEntityMap.Add(AObject: TObject);
 var
@@ -120,7 +101,6 @@ end;
 constructor TEntityMap.Create(AOwnsValues: Boolean);
 var
   LOwnerships: TDictionaryOwnerships;
-  LComparer: IEqualityComparer<TEntityMapKey>;
 begin
   inherited Create;
 
@@ -129,17 +109,7 @@ begin
   else
     LOwnerships := [];
 
-  LComparer := TDelegatedEqualityComparer<TEntityMapKey>.Construct(
-    function(const Left, Right: TEntityMapKey): Boolean
-    begin
-      Result := (Left.ModelClass = Right.ModelClass) and (SameValue(Left.ID, Right.ID));
-    end,
-    function(const Value: TEntityMapKey): Integer
-    begin
-      Result := NativeInt(Value.ModelClass);
-    end);
-
-  FMap := TObjectDictionary<TEntityMapKey,TObject>.Create(LOwnerships, LComparer);
+  FMap := TObjectDictionary<TEntityMapKey,TObject>.Create(LOwnerships);
 end;
 
 destructor TEntityMap.Destroy;
@@ -164,15 +134,17 @@ end;
 function TEntityMap.GetObjectKey(AObject: TObject): TEntityMapKey;
 var
   LPrimaryKeyCol: ColumnAttribute;
+  LId: TValue;
 begin
-  Result.FModelClass := AObject.ClassType;
   LPrimaryKeyCol := TEntityCache.Get(AObject.ClassType).PrimaryKeyColumn;
   if Assigned(LPrimaryKeyCol) then
   begin
-    Result.FID := TRttiExplorer.GetMemberValue(AObject, LPrimaryKeyCol.ClassMemberName);
+    LId := TRttiExplorer.GetMemberValue(AObject, LPrimaryKeyCol.ClassMemberName);
   end
   else
-    Result.FID := TValue.Empty;
+    LId := TValue.Empty;
+
+  Result := AObject.ClassName + '_' + VarToStrDef(TUtils.AsVariant(LId), '-1');
 end;
 
 function TEntityMap.HasIdValue(AObject: TObject): Boolean;

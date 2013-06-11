@@ -264,8 +264,7 @@ class procedure TRttiExplorer.CopyFieldValues(AEntityFrom, AEntityTo: TObject);
 var
   LField: TRttiField;
   LType: TRttiType;
-  LValue, LValueInstance: TValue;
-  LObj: TObject;
+  LValueTo, LValueFrom: TValue;
 begin
   Assert(AEntityFrom.ClassType = AEntityTo.ClassType);
   Assert(Assigned(AEntityFrom) and Assigned(AEntityTo));
@@ -275,18 +274,19 @@ begin
   begin
     if LField.FieldType.IsInstance then
     begin
-      LValue := TRttiExplorer.CreateType(LField.FieldType.AsInstance.MetaclassType);
-      LObj := LValue.AsObject;
-      LValueInstance := LField.GetValue(AEntityFrom);
-      if LObj is TPersistent then
+      LValueTo := TRttiExplorer.CreateType(LField.FieldType.AsInstance.MetaclassType);
+      LValueFrom := LField.GetValue(AEntityFrom);
+      if LValueTo.AsObject is TPersistent then
       begin
-        TPersistent(LObj).Assign(LValueInstance.AsObject as TPersistent);
-      end;
+        TPersistent(LValueTo.AsObject).Assign(LValueFrom.AsObject as TPersistent);
+      end
+      else
+        CopyFieldValues(LValueFrom.AsObject, LValueTo.AsObject);
     end
     else
-      LValue := LField.GetValue(AEntityFrom);
+      LValueTo := LField.GetValue(AEntityFrom);
 
-    LField.SetValue(AEntityTo, LValue);
+    LField.SetValue(AEntityTo, LValueTo);
   end;
   {TODO -oLinas -cGeneral : what to do with properties? Should we need to write them too?}
 end;
