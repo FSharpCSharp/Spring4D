@@ -45,6 +45,9 @@ type
   public
     NewEntity: TObject;
 
+    constructor Create(); virtual;
+    destructor Destroy; override;
+
     class function BuildColumnName(const ATableName, AMappedByColName, AColumnName: string): string;
     class function GetMappedByColumn(AFromColumn: ManyToOneAttribute; AClass: TClass): ColumnAttribute;
 
@@ -74,6 +77,19 @@ begin
                                      ,AMappedByColName              //mapped by column name
                                      ,AColumnName                   //column name
                                       ]);
+end;
+
+constructor TManyToOneRelation.Create;
+begin
+  inherited Create;
+  FNewColumns := nil;
+end;
+
+destructor TManyToOneRelation.Destroy;
+begin
+  if Assigned(FNewColumns) then
+    FNewColumns.Free;
+  inherited Destroy;
 end;
 
 function TManyToOneRelation.DoBuildColumnName(AColumn: TColumnData): string;
@@ -120,7 +136,10 @@ begin
   LEntityData := TEntityCache.Get(FNewEntityClass);
   FNewTableName := LEntityData.EntityTable.TableName;
   NewEntity := FNewEntityClass.Create;
-  FNewColumns := TEntityCache.GetColumnsData(FNewEntityClass);
+//  FNewColumns := TEntityCache.GetColumnsData(FNewEntityClass);
+  if Assigned(FNewColumns) then
+    FNewColumns.Free;
+  FNewColumns := TEntityCache.CreateColumnsData(FNewEntityClass);
   //get column name from MappedBy field or property
   FMappedByCol := GetMappedByColumn(LCol, AEntity.ClassType);
   //resolve columns which we need to set

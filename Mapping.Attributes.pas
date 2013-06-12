@@ -225,6 +225,7 @@ type
     FDescription: string;
     FIsIdentity: Boolean;
     function GetName: string;
+    function GetIsPrimaryKey: Boolean;
   public
     constructor Create(); overload;
     constructor Create(AProperties: TColumnProperties); overload;
@@ -240,6 +241,7 @@ type
     function IsDiscriminator(): Boolean; virtual;
 
     property IsIdentity: Boolean read FIsIdentity write FIsIdentity;
+    property IsPrimaryKey: Boolean read GetIsPrimaryKey;
     property Name: string read GetName;
     property Properties: TColumnProperties read FProperties;
     property Length: Integer read FLength;
@@ -393,12 +395,12 @@ end;
 
 function ColumnAttribute.CanInsert: Boolean;
 begin
-  Result := not (cpDontInsert in Properties);
+  Result := (not (cpDontInsert in Properties)) and (not IsIdentity);
 end;
 
 function ColumnAttribute.CanUpdate: Boolean;
 begin
-  Result := not (cpDontUpdate in Properties);
+  Result := (not (cpDontUpdate in Properties)) and (not IsPrimaryKey);
 end;
 
 constructor ColumnAttribute.Create(const AName: string; AProperties: TColumnProperties; ALength, APrecision, AScale: Integer;
@@ -420,6 +422,11 @@ begin
   FPrecision := APrecision;
   FScale := AScale;
   FDescription := ADescription;
+end;
+
+function ColumnAttribute.GetIsPrimaryKey: Boolean;
+begin
+  Result := (cpPrimaryKey in Properties);
 end;
 
 function ColumnAttribute.GetName: string;

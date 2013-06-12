@@ -28,6 +28,9 @@ type
   private
     FConnection: IDBConnection;
     FManager: TMockSession;
+  protected
+    function GenericCreate<T: class, constructor>: T;
+    function SimpleCreate(AClass: TClass): TObject;
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -40,6 +43,7 @@ type
     procedure Insert();
     procedure InsertFromCollection();
     procedure Update();
+    procedure Update_NotMapped();
     procedure Delete();
     procedure Save();
     procedure SaveAll_OneToMany();
@@ -88,6 +92,7 @@ uses
   ,SQL.Register
   ,SQL.Params
   ,SvDesignPatterns
+  ,SvRttiUtils
   {$IFDEF USE_SPRING} ,Spring.Collections {$ENDIF}
   ,Generics.Collections
   ,Core.Reflection
@@ -526,6 +531,11 @@ begin
   end;
 end;
 
+function TestTSession.GenericCreate<T>: T;
+begin
+  Result := T.Create;
+end;
+
 procedure TestTSession.GetLazyNullable;
 var
   LCustomer: TCustomer;
@@ -656,11 +666,12 @@ procedure TestTSession.GetOne;
 var
   LResultset: IDBResultset;
   LEntity: TCustomer;
+  LObject: TObject;
   sw: TStopwatch;
   iCount: Integer;
   i: Integer;
 begin
-  iCount := 10000;
+  iCount := 50000;
 
   TestDB.BeginTransaction;
   for i := 0 to iCount - 1 do
@@ -668,6 +679,28 @@ begin
     InsertCustomer(i);
   end;
   TestDB.Commit;
+
+
+  sw := TStopwatch.StartNew;
+  for i := 1 to iCount do
+  begin
+    LEntity := GenericCreate<TCustomer>;
+    LEntity.Free;
+  end;
+  sw.Stop;
+  Status(Format('GenericCreate %D objects in %D ms.',
+    [iCount, sw.ElapsedMilliseconds]));
+
+  sw := TStopwatch.StartNew;
+  for i := 1 to iCount do
+  begin
+    LObject := SimpleCreate(TCustomer);
+    LObject.Free;
+  end;
+  sw.Stop;
+  Status(Format('SimpleCreate %D objects in %D ms.',
+    [iCount, sw.ElapsedMilliseconds]));
+
 
   LResultset := FManager.GetResultset('SELECT * FROM CUSTOMERS', []);
   i := 0;
@@ -1132,6 +1165,11 @@ begin
     end);
 end;
 
+function TestTSession.SimpleCreate(AClass: TClass): TObject;
+begin
+  Result := AClass.Create;
+end;
+
 procedure TestTSession.Streams;
 var
   LCustomer: TCustomer;
@@ -1245,6 +1283,31 @@ begin
 
   finally
     LCustomer.Free;
+  end;
+end;
+
+procedure TestTSession.Update_NotMapped;
+var
+  LId: Integer;
+  LCustomer, LDBCustomer: TCustomer;
+begin
+  LId := InsertCustomer(25, 'Foo', 1.1);
+
+  LCustomer := TCustomer.Create;
+  LDBCustomer := nil;
+  try
+    TSvRtti.SetValue('FId', LCustomer, LId);
+    LCustomer.Age := 25;
+    LCustomer.Name := 'Bar';
+    LCustomer.Height := 1.1;
+
+    FManager.Update(LCustomer);
+
+    LDBCustomer := FManager.FindOne<TCustomer>(LId);
+    CheckEquals(LCustomer.Name, LDBCustomer.Name);
+  finally
+    LCustomer.Free;
+    LDBCustomer.Free;
   end;
 end;
 

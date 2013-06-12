@@ -76,7 +76,7 @@ type
   {$ENDREGION}
   TEntityCache = class
   private
-    class var FEntities: TObjectDictionary<TClass,TEntityData>;
+    class var FEntities: TObjectDictionary<string,TEntityData>;
   public
     class constructor Create;
     class destructor Destroy;
@@ -85,8 +85,9 @@ type
     class function TryGet(AClass: TClass; out AEntityData: TEntityData): Boolean;
     class function GetColumns(AClass: TClass): TList<ColumnAttribute>;
     class function GetColumnsData(AClass: TClass): TList<TColumnData>;
+    class function CreateColumnsData(AClass: TClass): TList<TColumnData>;
 
-    class property Entities: TObjectDictionary<TClass, TEntityData> read FEntities;
+    class property Entities: TObjectDictionary<string, TEntityData> read FEntities;
   end;
 
 
@@ -165,7 +166,8 @@ var
   LColData: TColumnData;
   LCol: ColumnAttribute;
 begin
-  FColumnsData.Clear;
+  if FColumnsData.Count > 0 then
+    Exit;
 
   for LCol in FColumns do
   begin
@@ -196,7 +198,17 @@ end;
 
 class constructor TEntityCache.Create;
 begin
-  FEntities := TObjectDictionary<TClass,TEntityData>.Create([doOwnsValues], 100);
+  FEntities := TObjectDictionary<string,TEntityData>.Create([doOwnsValues], 100);
+end;
+
+class function TEntityCache.CreateColumnsData(AClass: TClass): TList<TColumnData>;
+var
+  LEntityData: TEntityData;
+begin
+  Result := TList<TColumnData>.Create;
+  LEntityData := Get(AClass);
+  LEntityData.SetColumnsData();
+  Result.AddRange(LEntityData.ColumnsData);
 end;
 
 class destructor TEntityCache.Destroy;
@@ -212,7 +224,7 @@ begin
   begin
     Result := TEntityData.Create;
     Result.SetEntityData(AClass);
-    FEntities.Add(AClass, Result);
+    FEntities.Add(AClass.ClassName, Result);
   end;
 end;
 
@@ -229,7 +241,7 @@ end;
 
 class function TEntityCache.TryGet(AClass: TClass; out AEntityData: TEntityData): Boolean;
 begin
-  Result := FEntities.TryGetValue(AClass, AEntityData);
+  Result := FEntities.TryGetValue(AClass.ClassName, AEntityData);
 end;
 
 end.

@@ -368,7 +368,7 @@ begin
 
   for LColumn in AColumns do
   begin
-    if not (cpDontInsert in LColumn.Properties) and not LColumn.IsIdentity then  //fixes #22
+    if (LColumn.CanInsert) then  //fixes #22
     begin
       LField := TSQLField.Create(LColumn.Name, FTable);
       FInsertFields.Add(LField);
@@ -404,7 +404,7 @@ begin
 
   for LColumn in AColumns do
   begin
-    if not (cpDontUpdate in LColumn.Properties) then
+    if (LColumn.CanUpdate) then
     begin
       LField := TSQLField.Create(LColumn.Name, FTable);
       FUpdateFields.Add(LField);
