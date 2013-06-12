@@ -33,9 +33,32 @@ uses
   Rtti, Generics.Collections, Mapping.Attributes, TypInfo, Core.Interfaces;
 
 type
+  TRttiCache = class
+  private
+    FFields: TDictionary<string, TRttiField>;
+    FProperties: TDictionary<string,TRttiProperty>;
+    FCtx: TRttiContext;
+  protected
+    function GetKey(AClass: TClass; const AName: string): string;
+  public
+    constructor Create(); virtual;
+    destructor Destroy; override;
+
+    procedure Clear;
+    procedure RebuildCache(); virtual;
+
+    function GetField(AClass: TClass; const AFieldName: string): TRttiField;
+    function GetProperty(AClass: TClass; const APropertyName: string): TRttiProperty;
+    function GetNamedObject(AClass: TClass; const APropertyName: string): TRttiNamedObject;
+  end;
+
   TRttiExplorer = class
   private
     class var FCtx: TRttiContext;
+    class var FRttiCache: TRttiCache;
+  protected
+    class constructor Create;
+    class destructor Destroy;
   public
     class function Clone(AEntity: TObject): TObject;
     class function CreateNewClass<T>: T;
@@ -80,6 +103,7 @@ type
     class function GetMemberTypeInfo(AClass: TClass; const AMemberName: string): PTypeInfo;
     class function GetUniqueConstraints(AClass: TClass): TList<UniqueConstraint>;
     class function HasSequence(AClass: TClass): Boolean;
+    class function HasColumns(AClass: TClass): Boolean;
     class function TryGetColumnAsForeignKey(AColumn: ColumnAttribute; out AForeignKeyCol: ForeignJoinColumnAttribute): Boolean;
     class function TryGetBasicMethod(const AMethodName: string; ATypeInfo: PTypeInfo; out AMethod: TRttiMethod): Boolean;
     class function TryGetColumnByMemberName(AClass: TClass; const AClassMemberName: string; out AColumn: ColumnAttribute): Boolean;
@@ -95,6 +119,7 @@ type
     class procedure SetMemberValue(AManager: TObject; AEntity: TObject; const AMemberColumn: ColumnAttribute; const AValue: TValue); overload;
     class procedure SetMemberValue(AManager: TObject; AEntity: TObject; const AMemberName: string; const AValue: TValue); overload;
     class procedure SetMemberValueSimple(AEntity: TObject; const AMemberName: string; const AValue: TValue);
+    class procedure SetValue(AInstance: Pointer; ANamedObject: TRttiNamedObject; const AValue: TValue);
   end;
 
 implementation
@@ -291,6 +316,11 @@ begin
   {TODO -oLinas -cGeneral : what to do with properties? Should we need to write them too?}
 end;
 
+class constructor TRttiExplorer.Create;
+begin
+  FRttiCache := TRttiCache.Create;
+end;
+
 class function TRttiExplorer.CreateNewClass<T>: T;
 var
   rType: TRttiType;
@@ -363,6 +393,11 @@ end;
 class function TRttiExplorer.CreateType(AClass: TClass): TObject;
 begin
   Result := AClass.Create;
+end;
+
+class destructor TRttiExplorer.Destroy;
+begin
+  FRttiCache.Free;
 end;
 
 class procedure TRttiExplorer.DestroyClass<T>(var AObject: T);
@@ -541,6 +576,7 @@ var
   LAttr: TCustomAttribute;
   LTypeInfo: Pointer;
 begin
+  {TODO -oLinas -cGeneral : use FRttiCache for this task, this should increase performance}
   AList.Clear;
   LType := FCtx.GetType(AClass);
   LTypeInfo := TypeInfo(T);
@@ -838,22 +874,6 @@ begin
   end;
 end;
 
-class function TRttiExplorer.GetMemberValue(AEntity: TObject; const AMember: TRttiNamedObject): TValue;
-begin
-  if AMember is TRttiField then
-  begin
-    Result := TRttiField(AMember).GetValue(AEntity);
-  end
-  else if AMember is TRttiProperty then
-  begin
-    Result := TRttiProperty(AMember).GetValue(AEntity); 
-  end
-  else
-  begin
-    Result := TValue.Empty;
-  end;
-end;
-
 class function TRttiExplorer.GetPrimaryKeyColumn(AClass: TClass): ColumnAttribute;
 var
   LColumns: TList<ColumnAttribute>;
@@ -957,6 +977,35 @@ begin
   Result := TRttiContext.Create.GetType(AEntity);
 end;
 
+class function TRttiExplorer.GetMemberTypeInfo(AClass: TClass; const AMemberName: string): PTypeInfo;
+var
+  LNamedObj: TRttiNamedObject;
+begin
+  Result := nil;
+
+  LNamedObj := FRttiCache.GetNamedObject(AClass, AMemberName);
+  if Assigned(LNamedObj) then
+  begin
+    Result := LNamedObj.GetTypeInfo;
+  end;
+end;
+
+class function TRttiExplorer.GetMemberValue(AEntity: TObject; const AMember: TRttiNamedObject): TValue;
+begin
+  if AMember is TRttiField then
+  begin
+    Result := TRttiField(AMember).GetValue(AEntity);
+  end
+  else if AMember is TRttiProperty then
+  begin
+    Result := TRttiProperty(AMember).GetValue(AEntity);
+  end
+  else
+  begin
+    Result := TValue.Empty;
+  end;
+end;
+
 class function TRttiExplorer.GetMemberValue(AEntity: TObject; const AMemberName: string): TValue;
 var
   LMember: TRttiNamedObject;
@@ -964,52 +1013,11 @@ begin
   Result := GetMemberValue(AEntity, AMemberName, LMember);
 end;
 
-class function TRttiExplorer.GetMemberTypeInfo(AClass: TClass; const AMemberName: string): PTypeInfo;
-var
-  LType: TRttiType;
-  LField: TRttiField;
-  LProp: TRttiProperty;
-begin
-  Result := nil;
-  LType := TRttiContext.Create.GetType(AClass);
-  LField := LType.GetField(AMemberName);
-  if Assigned(LField) then
-  begin
-    Result := LField.FieldType.Handle;
-  end
-  else
-  begin
-    LProp := LType.GetProperty(AMemberName);
-    if Assigned(LProp) then
-    begin
-      Result := LProp.PropertyType.Handle;
-    end;
-  end;
-end;
-
 class function TRttiExplorer.GetMemberValue(AEntity: TObject; const AMembername: string;
   out ARttiMember: TRttiNamedObject): TValue;
-var
-  LField: TRttiField;
-  LProp: TRttiProperty;
 begin
-  LField := FCtx.GetType(AEntity.ClassInfo).GetField(AMemberName);
-  if Assigned(LField) then
-  begin
-    Result := LField.GetValue(AEntity);
-    ARttiMember := LField;
-    Exit;
-  end;
-
-  LProp := FCtx.GetType(AEntity.ClassInfo).GetProperty(AMemberName);
-  if Assigned(LProp) then
-  begin
-    Result := LProp.GetValue(AEntity);
-    ARttiMember := LProp;
-    Exit;
-  end;
-
-  Result := TValue.Empty;
+  ARttiMember := FRttiCache.GetNamedObject(AEntity.ClassType, AMembername);
+  Result := GetMemberValue(AEntity, ARttiMember);
 end;
 
 class function TRttiExplorer.GetMemberValueDeep(const AInitialValue: TValue;
@@ -1159,6 +1167,18 @@ begin
   Result := GetClassMembers<UniqueConstraint>(AClass);
 end;
 
+class function TRttiExplorer.HasColumns(AClass: TClass): Boolean;
+var
+  LList: TList<ColumnAttribute>;
+begin
+  LList := GetColumns(AClass);
+  try
+    Result := LList.Count > 0;
+  finally
+    LList.Free;
+  end;
+end;
+
 class function TRttiExplorer.HasSequence(AClass: TClass): Boolean;
 begin
   Result := (GetSequence(AClass) <> System.Default(SequenceAttribute) );
@@ -1173,29 +1193,18 @@ end;
 
 class procedure TRttiExplorer.SetMemberValue(AManager: TObject; AEntity: TObject; const AMemberName: string; const AValue: TValue);
 var
-  LField: TRttiField;
-  LProp: TRttiProperty;
   LValue: TValue;
   LObject: TObject;
+  LNamedObject: TRttiNamedObject;
 begin
   LValue := TValue.Empty;
-  LField := FCtx.GetType(AEntity.ClassInfo).GetField(AMemberName);
-  if Assigned(LField) then
+
+  LNamedObject := FRttiCache.GetNamedObject(AEntity.ClassType, AMemberName);
+  if Assigned(LNamedObject) then
   begin
-    if TUtils.TryConvert(AValue, AManager, LField, AEntity, LValue) then
+    if TUtils.TryConvert(AValue, AManager, LNamedObject, AEntity, LValue) then
     begin
-      LField.SetValue(AEntity, LValue);
-    end;
-  end
-  else
-  begin
-    LProp := FCtx.GetType(AEntity.ClassInfo).GetProperty(AMemberName);
-    if Assigned(LProp) then
-    begin
-      if TUtils.TryConvert(AValue, AManager, LProp, AEntity, LValue) then
-      begin
-        LProp.SetValue(AEntity, LValue);
-      end;
+      SetValue(AEntity, LNamedObject, LValue);
     end;
   end;
 
@@ -1214,26 +1223,99 @@ begin
   end;
 end;
 
-
-
 class procedure TRttiExplorer.SetMemberValueSimple(AEntity: TObject; const AMemberName: string; const AValue: TValue);
 var
-  LType: TRttiType;
-  LField: TRttiField;
-  LProp: TRttiProperty;
+  LNamedObject: TRttiNamedObject;
 begin
-  LType := TRttiContext.Create.GetType(AEntity.ClassType);
-  LField := LType.GetField(AMemberName);
-  if Assigned(LField) then
+  LNamedObject := FRttiCache.GetNamedObject(AEntity.ClassType, AMemberName);
+  if Assigned(LNamedObject) then
   begin
-    LField.SetValue(AEntity, AValue);
-  end
+    SetValue(AEntity, LNamedObject, AValue);
+  end;
+end;
+
+class procedure TRttiExplorer.SetValue(AInstance: Pointer; ANamedObject: TRttiNamedObject; const AValue: TValue);
+begin
+  if ANamedObject.isField then
+    ANamedObject.AsField.SetValue(AInstance, AValue)
   else
+    ANamedObject.AsProperty.SetValue(AInstance, AValue);
+end;
+
+{ TRttiCache }
+
+procedure TRttiCache.Clear;
+begin
+  FFields.Clear;
+  FProperties.Clear;
+end;
+
+constructor TRttiCache.Create;
+begin
+  inherited Create;
+  FFields := TDictionary<string, TRttiField>.Create();
+  FProperties := TDictionary<string,TRttiProperty>.Create();
+  RebuildCache();
+end;
+
+destructor TRttiCache.Destroy;
+begin
+  FFields.Free;
+  FProperties.Free;
+  inherited Destroy;
+end;
+
+function TRttiCache.GetField(AClass: TClass; const AFieldName: string): TRttiField;
+begin
+  if not FFields.TryGetValue(GetKey(AClass, AFieldName), Result) then
+    Result := nil;
+end;
+
+function TRttiCache.GetKey(AClass: TClass; const AName: string): string;
+begin
+  Result := UpperCase(AClass.UnitName + '.' + AClass.ClassName + '_' + AName);
+end;
+
+function TRttiCache.GetNamedObject(AClass: TClass; const APropertyName: string): TRttiNamedObject;
+begin
+  Result := GetField(AClass, APropertyName);
+  if Result = nil then
+    Result := GetProperty(AClass, APropertyName);
+end;
+
+function TRttiCache.GetProperty(AClass: TClass; const APropertyName: string): TRttiProperty;
+begin
+  if not FProperties.TryGetValue(GetKey(AClass, APropertyName), Result) then
+    Result := nil;
+end;
+
+procedure TRttiCache.RebuildCache;
+var
+  LType: TRttiType;
+  LClass: TClass;
+  LProp: TRttiProperty;
+  LField: TRttiField;
+begin
+  Clear;
+
+  for LType in FCtx.GetTypes do
   begin
-    LProp := LType.GetProperty(AMemberName);
-    if Assigned(LProp) then
+    if not LType.IsInstance then
+      Continue;
+
+    LClass := LType.AsInstance.MetaclassType;
+
+    if TRttiExplorer.HasColumns(LClass) then
     begin
-      LProp.SetValue(AEntity, AValue);
+      for LField in LType.GetFields do
+      begin
+        FFields.Add(GetKey(LClass, LField.Name), LField);
+      end;
+
+      for LProp in LType.GetProperties do
+      begin
+        FProperties.Add(GetKey(LClass, LProp.Name), LProp);
+      end;
     end;
   end;
 end;

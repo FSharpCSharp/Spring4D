@@ -30,12 +30,14 @@ unit Core.Relation.ManyToOne;
 interface
 
 uses
-  Core.Relation.Abstract, Core.Interfaces, Mapping.Attributes, Generics.Collections;
+  Core.Relation.Abstract, Core.Interfaces, Mapping.Attributes, Generics.Collections
+  ,Core.EntityCache
+  ;
 
 type
   TManyToOneRelation = class(TAbstractRelation)
   private
-    FNewColumns: TList<TColumnData>;
+    FNewColumns: TColumnDataList;
     FNewEntityClass: TClass;
     FMappedByCol: ColumnAttribute;
     FNewTableName: string;
@@ -53,14 +55,13 @@ type
 
     procedure SetAssociation(AAtribute: TORMAttribute; AEntity: TObject; AResultset: IDBResultset); override;
     property NewEntityClass: TClass read FNewEntityClass;
-    property NewColumns: TList<TColumnData> read FNewColumns;
+    property NewColumns: TColumnDataList read FNewColumns;
   end;
 
 implementation
 
 uses
-  Core.EntityCache
-  ,Core.Exceptions
+  Core.Exceptions
   ,Mapping.RttiExplorer
   ,Rtti
   ,StrUtils
@@ -122,6 +123,8 @@ begin
     end;
     LCol.Name := LColName;
     FNewColumns[i] := LCol;
+    if LCol.IsPrimaryKey then
+      FNewColumns.PrimaryKeyColumn := LCol;
   end;
 end;
 

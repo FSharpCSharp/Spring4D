@@ -35,10 +35,50 @@ uses
   ;
 
 type
+  TColumnDataList = class;
+
+  TColumnDataListEnumerator = class(TEnumerator<TColumnData>)
+  private
+    FList: TColumnDataList;
+    FIndex: Integer;
+  protected
+    function DoGetCurrent: TColumnData; override;
+    function DoMoveNext: Boolean; override;
+  public
+    constructor Create(AList: TColumnDataList); virtual;
+  end;
+
+  TColumnDataList = class
+  private
+    FList: TList<TColumnData>;
+    FPrimaryKeyColumn: TColumnData;
+    FPrimaryKeyExists: Boolean;
+    function GetItem(Index: Integer): TColumnData;
+    procedure SetItem(Index: Integer; const Value: TColumnData);
+  protected
+    procedure SetPrimaryKeyColumn(const Value: TColumnData); virtual;
+  public
+    constructor Create(); virtual;
+    destructor Destroy; override;
+
+    function GetEnumerator: TColumnDataListEnumerator;
+
+    function Add(const AColumnData: TColumnData): Integer;
+    function IsEmpty: Boolean;
+    function Count: Integer;
+    procedure Delete(AIndex: Integer);
+
+    function TryGetPrimaryKeyColumn(out APrimaryKeyColumn: TColumnData): Boolean;
+
+    property Items[Index: Integer]: TColumnData read GetItem write SetItem; default;
+    property PrimaryKeyColumn: TColumnData read FPrimaryKeyColumn write SetPrimaryKeyColumn;
+    property List: TList<TColumnData> read FList;
+  end;
+
   TEntityData = class
   private
     FColumns: TList<ColumnAttribute>;
-    FColumnsData: TList<TColumnData>;
+    FColumnsData: TColumnDataList;
     FForeignKeyColumns: TList<ForeignJoinColumnAttribute>;
     FPrimaryKeyColumn: ColumnAttribute;
     FTable: TableAttribute;
@@ -59,7 +99,7 @@ type
     function HasManyToOneRelations(): Boolean;
 
     property Columns: TList<ColumnAttribute> read FColumns;
-    property ColumnsData: TList<TColumnData> read FColumnsData;
+    property ColumnsData: TColumnDataList read FColumnsData;
     property ForeignColumns: TList<ForeignJoinColumnAttribute> read FForeignKeyColumns;
     property OneToManyColumns: TList<OneToManyAttribute> read FOneToManyColumns;
     property ManyToOneColumns: TList<ManyToOneAttribute> read FManyToOneColumns;
@@ -84,8 +124,8 @@ type
     class function Get(AClass: TClass): TEntityData;
     class function TryGet(AClass: TClass; out AEntityData: TEntityData): Boolean;
     class function GetColumns(AClass: TClass): TList<ColumnAttribute>;
-    class function GetColumnsData(AClass: TClass): TList<TColumnData>;
-    class function CreateColumnsData(AClass: TClass): TList<TColumnData>;
+    class function GetColumnsData(AClass: TClass): TColumnDataList;
+    class function CreateColumnsData(AClass: TClass): TColumnDataList;
 
     class property Entities: TObjectDictionary<string, TEntityData> read FEntities;
   end;
@@ -126,7 +166,7 @@ constructor TEntityData.Create;
 begin
   inherited Create;
   FColumns := TList<ColumnAttribute>.Create;
-  FColumnsData := TList<TColumnData>.Create;
+  FColumnsData := TColumnDataList.Create;
   FPrimaryKeyColumn := nil;
   FTable := nil;
   FSequence := nil;
@@ -176,6 +216,11 @@ begin
     LColData.ColTypeInfo := LCol.GetColumnTypeInfo;
     LColData.ClassMemberName := LCol.ClassMemberName;
 
+    if LCol.IsPrimaryKey then
+    begin
+      FColumnsData.PrimaryKeyColumn := LColData;
+    end;
+
     FColumnsData.Add(LColData);
   end;
 end;
@@ -201,14 +246,15 @@ begin
   FEntities := TObjectDictionary<string,TEntityData>.Create([doOwnsValues], 100);
 end;
 
-class function TEntityCache.CreateColumnsData(AClass: TClass): TList<TColumnData>;
+class function TEntityCache.CreateColumnsData(AClass: TClass): TColumnDataList;
 var
   LEntityData: TEntityData;
 begin
-  Result := TList<TColumnData>.Create;
+  Result := TColumnDataList.Create;
   LEntityData := Get(AClass);
   LEntityData.SetColumnsData();
-  Result.AddRange(LEntityData.ColumnsData);
+  Result.List.AddRange(LEntityData.ColumnsData.List);
+  Result.PrimaryKeyColumn := LEntityData.ColumnsData.PrimaryKeyColumn;
 end;
 
 class destructor TEntityCache.Destroy;
@@ -233,15 +279,103 @@ begin
   Result := Get(AClass).Columns;
 end;
 
-class function TEntityCache.GetColumnsData(AClass: TClass): TList<TColumnData>;
+class function TEntityCache.GetColumnsData(AClass: TClass): TColumnDataList;
+var
+  LEntityData: TEntityData;
 begin
-  Get(AClass).SetColumnsData();
-  Result := Get(AClass).ColumnsData;
+  LEntityData := Get(AClass);
+  LEntityData.SetColumnsData();
+  Result := LEntityData.ColumnsData;
 end;
 
 class function TEntityCache.TryGet(AClass: TClass; out AEntityData: TEntityData): Boolean;
 begin
   Result := FEntities.TryGetValue(AClass.ClassName, AEntityData);
+end;
+
+{ TColumnDataList }
+
+function TColumnDataList.Add(const AColumnData: TColumnData): Integer;
+begin
+  Result := FList.Add(AColumnData);
+end;
+
+function TColumnDataList.Count: Integer;
+begin
+  Result := FList.Count;
+end;
+
+constructor TColumnDataList.Create;
+begin
+  inherited Create;
+  FPrimaryKeyExists := False;
+  FList := TList<TColumnData>.Create;
+end;
+
+procedure TColumnDataList.Delete(AIndex: Integer);
+begin
+  FList.Delete(AIndex);
+end;
+
+destructor TColumnDataList.Destroy;
+begin
+  FList.Free;
+  inherited Destroy;
+end;
+
+function TColumnDataList.GetEnumerator: TColumnDataListEnumerator;
+begin
+  Result := TColumnDataListEnumerator.Create(Self);
+end;
+
+function TColumnDataList.GetItem(Index: Integer): TColumnData;
+begin
+  Result := FList[Index];
+end;
+
+function TColumnDataList.IsEmpty: Boolean;
+begin
+  Result := Count = 0;
+end;
+
+procedure TColumnDataList.SetItem(Index: Integer; const Value: TColumnData);
+begin
+  FList[Index] := Value;
+end;
+
+procedure TColumnDataList.SetPrimaryKeyColumn(const Value: TColumnData);
+begin
+  FPrimaryKeyColumn := Value;
+  FPrimaryKeyExists := True;
+end;
+
+function TColumnDataList.TryGetPrimaryKeyColumn(out APrimaryKeyColumn: TColumnData): Boolean;
+begin
+  Result := FPrimaryKeyExists;
+  if Result then
+    APrimaryKeyColumn := FPrimaryKeyColumn;
+end;
+
+{ TColumnDataListEnumerator }
+
+constructor TColumnDataListEnumerator.Create(AList: TColumnDataList);
+begin
+  inherited Create;
+  FList := AList;
+  FIndex := -1;
+end;
+
+function TColumnDataListEnumerator.DoGetCurrent: TColumnData;
+begin
+  Result := FList.List[FIndex];
+end;
+
+function TColumnDataListEnumerator.DoMoveNext: Boolean;
+begin
+  if FIndex >= FList.Count then
+    Exit(False);
+  Inc(FIndex);
+  Result := FIndex < FList.Count;
 end;
 
 end.

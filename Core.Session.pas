@@ -32,6 +32,7 @@ interface
 
 uses
   Core.AbstractManager, Core.EntityMap, Core.Interfaces, Generics.Collections, Rtti, TypInfo
+  ,Core.EntityCache
   {$IFDEF USE_SPRING}
   ,Spring.Collections
   {$ENDIF}
@@ -64,13 +65,13 @@ type
   protected
     function GetPager(APage, AItemsInPage: Integer): TObject;
   protected
-    procedure SetEntityColumns(AEntity: TObject; AColumns: TList<TColumnData>; AResultset: IDBResultset); overload; virtual;
+    procedure SetEntityColumns(AEntity: TObject; AColumns: TColumnDataList; AResultset: IDBResultset); overload; virtual;
     procedure SetEntityColumns(AEntity: TObject; AColumns: TList<ManyValuedAssociation>; AResultset: IDBResultset); overload; virtual;
     procedure SetLazyColumns(AEntity: TObject);
     procedure SetAssociations(AEntity: TObject; AResultset: IDBResultset); virtual;
 
     procedure DoSetEntity(var AEntityToCreate: TObject; AResultset: IDBResultset; ARealEntity: TObject); virtual;
-    procedure DoSetEntityValues(var AEntityToCreate: TObject; AResultset: IDBResultset; AColumns: TList<TColumnData>); virtual;
+    procedure DoSetEntityValues(var AEntityToCreate: TObject; AResultset: IDBResultset; AColumns: TColumnDataList); virtual;
     procedure DoFetch<T: class, constructor>(AResultset: IDBResultset; const ACollection: TValue);
 
     function GetOne<T: class, constructor>(AResultset: IDBResultset; AEntity: TObject): T; overload;
@@ -428,7 +429,6 @@ uses
   ,Mapping.RttiExplorer
   ,Core.Reflection
   ,Core.Utils
-  ,Core.EntityCache
   ,Core.Base
   ,SysUtils
   ,Core.Relation.ManyToOne
@@ -562,7 +562,7 @@ end;
 
 procedure TSession.DoSetEntity(var AEntityToCreate: TObject; AResultset: IDBResultset; ARealEntity: TObject);
 var
-  LColumns: TList<TColumnData>;
+  LColumns: TColumnDataList;
   LResult, LValue: TValue;
   LVal: Variant;
 begin
@@ -592,7 +592,7 @@ begin
 end;
 
 procedure TSession.DoSetEntityValues(var AEntityToCreate: TObject; AResultset: IDBResultset;
-  AColumns: TList<TColumnData>);
+  AColumns: TColumnDataList);
 begin
   SetEntityColumns(AEntityToCreate, AColumns, AResultset);
   //we need to set internal values for the lazy type field
@@ -1149,14 +1149,14 @@ begin
   end;
 end;
 
-procedure TSession.SetEntityColumns(AEntity: TObject; AColumns: TList<TColumnData>; AResultset: IDBResultset);
+procedure TSession.SetEntityColumns(AEntity: TObject; AColumns: TColumnDataList; AResultset: IDBResultset);
 var
   LCol: TColumnData;
   LVal: Variant;
   LValue, LPrimaryKey: TValue;
   LTypeInfo: PTypeInfo;
 begin
-  if TUtils.TryGetPrimaryKeyColumn(AColumns, LCol) then
+  if AColumns.TryGetPrimaryKeyColumn(LCol) then
   begin
     try
       LVal := AResultset.GetFieldValue(LCol.Name);
@@ -1169,7 +1169,7 @@ begin
 
   for LCol in AColumns do
   begin
-    if (cpPrimaryKey in LCol.Properties) then
+    if LCol.IsPrimaryKey then
     begin
       Continue;
     end;
@@ -1177,7 +1177,7 @@ begin
     LTypeInfo := LCol.ColTypeInfo; //  GetTypeInfo(AEntity.ClassInfo);
     if (LTypeInfo <> nil) and (TUtils.IsLazyType(LTypeInfo)) then
     begin
-      LValue := LPrimaryKey;
+      LValue := LPrimaryKey; //assign primary key value to lazy type, later convert procedure will assign it to lazy type's private field
     end
     else
     begin

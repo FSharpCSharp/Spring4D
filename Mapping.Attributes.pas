@@ -256,6 +256,8 @@ type
     Name: string;
     ColTypeInfo: PTypeInfo;
     ClassMemberName: string;
+  public
+    function IsPrimaryKey: Boolean;
   end;
 
   {$REGION 'Documentation'}
@@ -549,5 +551,12 @@ begin
 end;
 
 
+
+{ TColumnData }
+
+function TColumnData.IsPrimaryKey: Boolean;
+begin
+  Result := cpPrimaryKey in Properties;
+end;
 
 end.

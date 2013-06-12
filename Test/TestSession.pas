@@ -670,6 +670,7 @@ var
   sw: TStopwatch;
   iCount: Integer;
   i: Integer;
+  LVal, LVal2: Variant;
 begin
   iCount := 50000;
 
@@ -720,6 +721,22 @@ begin
   CheckEquals(iCount, i);
 
   Status(Format('GetOne %D objects in %D ms.',
+    [iCount, sw.ElapsedMilliseconds]));
+
+  LResultset := FManager.GetResultset('SELECT * FROM CUSTOMERS', []);
+  sw := TStopwatch.StartNew;
+  while not LResultset.IsEmpty do
+  begin
+    for i := 0 to LResultset.GetFieldCount - 1 do
+    begin
+      LVal := LResultset.GetFieldValue(i);
+      if not VarIsNull(LVal) then
+        LVal2 := LVal;
+    end;
+    LResultset.Next;
+  end;
+  sw.Stop;
+  Status(Format('Resultset %D objects in %D ms.',
     [iCount, sw.ElapsedMilliseconds]));
 end;
 
