@@ -1017,21 +1017,31 @@ class function TRttiExplorer.GetMemberValueDeep(const AInitialValue: TValue;
 var
   LRecordField: TRttiField;
   LInterfaceMethod: TRttiMethod;
+  LHasValue: TValue;
 begin
   Result := AInitialValue;
   if TUtils.IsNullableType(Result.TypeInfo) then
   begin
+    Result := TValue.Empty;
     if ARttiType is TRttiRecordType then
     begin
       LRecordField := TRttiRecordType(ARttiType).GetField('FHasValue');
-      if LRecordField.GetValue(Result.GetReferenceToRawData).AsBoolean then
+      LHasValue := LRecordField.GetValue(AInitialValue.GetReferenceToRawData);
+      if (LHasValue.Kind in [tkUString, tkString]) then //Spring Nullable
       begin
-        LRecordField := TRttiRecordType(ARttiType).GetField('FValue');
-        Result := LRecordField.GetValue(Result.GetReferenceToRawData);
+        if (LHasValue.AsString = '@') then //not null
+        begin
+          LRecordField := TRttiRecordType(ARttiType).GetField('FValue');
+          Result := LRecordField.GetValue(AInitialValue.GetReferenceToRawData);
+        end;
       end
-      else
+      else //Marshmallow Nullable
       begin
-        Result := TValue.Empty;
+        if LHasValue.AsBoolean then
+        begin
+          LRecordField := TRttiRecordType(ARttiType).GetField('FValue');
+          Result := LRecordField.GetValue(AInitialValue.GetReferenceToRawData);
+        end;
       end;
     end;
   end
