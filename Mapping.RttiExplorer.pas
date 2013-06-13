@@ -120,6 +120,8 @@ type
     class procedure SetMemberValue(AManager: TObject; AEntity: TObject; const AMemberName: string; const AValue: TValue); overload;
     class procedure SetMemberValueSimple(AEntity: TObject; const AMemberName: string; const AValue: TValue);
     class procedure SetValue(AInstance: Pointer; ANamedObject: TRttiNamedObject; const AValue: TValue);
+
+    class property RttiCache: TRttiCache read FRttiCache;
   end;
 
 implementation
@@ -746,18 +748,9 @@ end;
 
 class function TRttiExplorer.TryGetColumnByMemberName(AClass: TClass;
   const AClassMemberName: string; out AColumn: ColumnAttribute): Boolean;
-var
-  LCol: ColumnAttribute;
 begin
-  for LCol in TEntityCache.Get(AClass).Columns do
-  begin
-    if SameText(LCol.ClassMemberName, AClassMemberName) then
-    begin
-      AColumn := LCol;
-      Exit(True);
-    end;
-  end;
-  Result := False;
+  AColumn := TEntityCache.Get(AClass).ColumnByMemberName(AClassMemberName);
+  Result := Assigned(AColumn);
 end;
 
 class function TRttiExplorer.TryGetEntityClass(ATypeInfo: PTypeInfo; out AClass: TClass): Boolean;

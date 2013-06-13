@@ -1141,8 +1141,13 @@ procedure TSession.SetLazyColumns(AEntity: TObject);
 var
   LCol: ManyValuedAssociation;
   LValue: TValue;
+  LColumns: TList<OneToManyAttribute>;
 begin
-  for LCol in TEntityCache.Get(AEntity.ClassType).OneToManyColumns do
+  LColumns := TEntityCache.Get(AEntity.ClassType).OneToManyColumns;
+  if LColumns.Count < 1 then
+    Exit;
+
+  for LCol in LColumns do
   begin
     LValue := TRttiExplorer.GetMemberValue(AEntity, LCol.MappedBy); //get foreign key value
     TRttiExplorer.SetMemberValue(Self, AEntity, LCol.ClassMemberName, LValue);

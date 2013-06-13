@@ -78,6 +78,7 @@ type
   TEntityData = class
   private
     FColumns: TList<ColumnAttribute>;
+    FColumnMembernameIndex: TDictionary<string, ColumnAttribute>;
     FColumnsData: TColumnDataList;
     FForeignKeyColumns: TList<ForeignJoinColumnAttribute>;
     FPrimaryKeyColumn: ColumnAttribute;
@@ -144,12 +145,8 @@ uses
 
 function TEntityData.ColumnByMemberName(const AMemberName: string): ColumnAttribute;
 begin
-  for Result in FColumns do
-  begin
-    if SameText(Result.ClassMemberName, AMemberName) then
-      Exit;
-  end;
-  Result := nil;
+  if not FColumnMembernameIndex.TryGetValue(AMemberName, Result) then
+    Result := nil;
 end;
 
 function TEntityData.ColumnByName(const AColumnName: string): ColumnAttribute;
@@ -173,6 +170,7 @@ begin
   FForeignKeyColumns := TList<ForeignJoinColumnAttribute>.Create;
   FOneToManyColumns := TList<OneToManyAttribute>.Create;
   FManyToOneColumns := TList<ManyToOneAttribute>.Create;
+  FColumnMembernameIndex := TDictionary<string, ColumnAttribute>.Create();
 end;
 
 destructor TEntityData.Destroy;
@@ -182,6 +180,7 @@ begin
   FForeignKeyColumns.Free;
   FOneToManyColumns.Free;
   FManyToOneColumns.Free;
+  FColumnMembernameIndex.Free;
   inherited Destroy;
 end;
 
@@ -222,6 +221,7 @@ begin
     end;
 
     FColumnsData.Add(LColData);
+    FColumnMembernameIndex.Add(LCol.ClassMemberName, LCol);
   end;
 end;
 

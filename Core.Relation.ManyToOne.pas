@@ -139,7 +139,6 @@ begin
   LEntityData := TEntityCache.Get(FNewEntityClass);
   FNewTableName := LEntityData.EntityTable.TableName;
   NewEntity := FNewEntityClass.Create;
-//  FNewColumns := TEntityCache.GetColumnsData(FNewEntityClass);
   if Assigned(FNewColumns) then
     FNewColumns.Free;
   FNewColumns := TEntityCache.CreateColumnsData(FNewEntityClass);

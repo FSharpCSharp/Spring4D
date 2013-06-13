@@ -357,20 +357,34 @@ var
   LRecord: TRttiRecordType;
   LValueField: TRttiField;
   LCol: ColumnAttribute;
+  LFieldname: string;
 begin
   AResult := TRttiExplorer.GetMemberValue(AEntity, ARttiMember);
 
   LRecord := TRttiExplorer.GetAsRecord(ARttiMember);
   //simple generic type
-  LValueField := LRecord.GetField('FManager');
-  LValueField.SetValue(AResult.GetReferenceToRawData, AManager);
-  LValueField := LRecord.GetField('FID');
-  LValueField.SetValue(AResult.GetReferenceToRawData, AID);
-  LValueField := LRecord.GetField('FEntity');
-  LValueField.SetValue(AResult.GetReferenceToRawData, AEntity);
-  LCol := TEntityCache.Get(AEntity.ClassType).ColumnByMemberName(ARttiMember.Name);
-  LValueField := LRecord.GetField('FColumn');
-  LValueField.SetValue(AResult.GetReferenceToRawData, LCol);
+  for LValueField in LRecord.GetFields do
+  begin
+    LFieldname := LValueField.Name;
+
+    if SameStr(LFieldname, 'FManager') then
+    begin
+      LValueField.SetValue(AResult.GetReferenceToRawData, AManager);
+    end
+    else if SameStr(LFieldname, 'FID') then
+    begin
+      LValueField.SetValue(AResult.GetReferenceToRawData, AID);
+    end
+    else if SameStr(LFieldname, 'FEntity') then
+    begin
+      LValueField.SetValue(AResult.GetReferenceToRawData, AEntity);
+    end
+    else if SameStr(LFieldname, 'FColumn') then
+    begin
+      LCol := TEntityCache.Get(AEntity.ClassType).ColumnByMemberName(ARttiMember.Name);
+      LValueField.SetValue(AResult.GetReferenceToRawData, LCol);
+    end;
+  end;
 end;
 
 const
@@ -476,7 +490,7 @@ class function TUtils.TryConvert(const AFrom: TValue; AManager: TObject; ARttiMe
 var
   LValue: TValue;
   LRecord: TRttiRecordType;
-  LValueField, LHasValueField: TRttiField;
+  LValueField, LHasValueField, LField: TRttiField;
   LTypeInfo: PTypeInfo;
   bFree: Boolean;
 begin
@@ -493,8 +507,22 @@ begin
 
           if Assigned(LRecord) then
           begin
-            LValueField := LRecord.GetField('FValue');
-            LHasValueField := LRecord.GetField('FHasValue');
+            LValueField := nil;
+            LHasValueField := nil;
+            for LField in LRecord.GetFields do
+            begin
+              if Assigned(LValueField) and (Assigned(LHasValueField)) then
+                Break;
+
+              if SameText(LField.Name, 'FValue') then
+              begin
+                LValueField := LField;
+              end
+              else if SameText(LField.Name, 'FHasValue') then
+              begin
+                LHasValueField := LField;
+              end;
+            end;
             TValue.MakeWithoutCopy(nil, LTypeInfo, AResult);
             if AFrom.IsEmpty then
             begin
