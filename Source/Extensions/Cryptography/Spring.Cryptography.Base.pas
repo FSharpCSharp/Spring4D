@@ -27,6 +27,7 @@ unit Spring.Cryptography.Base;
 interface
 
 {$I Spring.inc}
+{$R-}
 
 uses
   Classes,

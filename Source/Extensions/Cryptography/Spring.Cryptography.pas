@@ -29,6 +29,7 @@
 unit Spring.Cryptography;
 
 {$I Spring.inc}
+{$R-}
 
 interface
 
