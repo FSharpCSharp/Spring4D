@@ -110,7 +110,7 @@ type
     procedure BindFields(Binding: Boolean); override;
 
     {$IF CompilerVersion >=24}
-    procedure InternalAddRecord(Buffer: TValueBuffer; Append: Boolean); override;
+    procedure InternalAddRecord(Buffer: TRecordBuffer; Append: Boolean); override;
     {$ELSE}
     procedure InternalAddRecord(Buffer: Pointer; Append: Boolean); override;
     {$IFEND}
@@ -130,7 +130,11 @@ type
     function IsCursorOpen: Boolean; override;
     procedure SetBookmarkFlag(Buffer: TRecordBuffer; Value: TBookmarkFlag);
       override;
-    procedure SetBookmarkData(Buffer: TRecordBuffer; Data: Pointer); override;
+    {$IF CompilerVersion >=24}
+    procedure SetBookmarkData(Buffer: TRecordBuffer; Data: TBookmark); overload; override;
+    {$ELSE}
+    procedure SetBookmarkData(Buffer: TRecordBuffer; Data: Pointer); overload; override;
+    {$IFEND}
 
     function InternalGetRecord(Buffer: TRecordBuffer; GetMode: TGetMode; DoCheck: Boolean): TGetResult; virtual;
     {$IF CompilerVersion >=24}
@@ -250,6 +254,10 @@ uses
   ,Contnrs
   ,Generics.Defaults
   ,Core.Reflection
+  {$IFDEF MSWINDOWS}
+  ,Windows
+  ,ActiveX
+  {$ENDIF}
   ;
 
 type
@@ -542,15 +550,15 @@ begin
   Result := ColumnAttribute;
 end;
 
-{$IF CompilerVersion >= 24}
-function TAbstractObjectDataset.GetFieldData(Field: TField; Buffer: TValueBuffer;
-  NativeFormat: Boolean): Boolean;
-{$ELSE}
 function TAbstractObjectDataset.GetFieldClass(FieldDef: TFieldDef): TFieldClass;
 begin
   Result := inherited GetFieldClass(FieldDef);
 end;
 
+{$IF CompilerVersion >= 24}
+function TAbstractObjectDataset.GetFieldData(Field: TField; Buffer: TValueBuffer;
+  NativeFormat: Boolean): Boolean;
+{$ELSE}
 function TAbstractObjectDataset.GetFieldData(Field: TField; Buffer: Pointer;
   NativeFormat: Boolean): Boolean;
 {$IFEND}
@@ -657,7 +665,7 @@ end;
 
 
 {$IF CompilerVersion >=24}
-procedure TAbstractObjectDataset.InternalAddRecord(Buffer: TValueBuffer; Append: Boolean);
+procedure TAbstractObjectDataset.InternalAddRecord(Buffer: TRecordBuffer; Append: Boolean);
 {$ELSE}
 procedure TAbstractObjectDataset.InternalAddRecord(Buffer: Pointer; Append: Boolean);
 {$IFEND}
@@ -912,7 +920,12 @@ begin
   end;
 end;
 
+{$IF CompilerVersion >=24}
+procedure TAbstractObjectDataset.SetBookmarkData(Buffer: TRecordBuffer;
+  Data: TBookmark);
+{$ELSE}
 procedure TAbstractObjectDataset.SetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);
+{$IFEND}
 {var
   LValue: TValue;}
 begin
@@ -1195,8 +1208,14 @@ begin
     ftGuid, ftFixedChar, ftString:
       begin
         PAnsiChar(Buffer)[Field.Size] := #0;
+        {$IFDEF MSWINDOWS}
         WideCharToMultiByte(0, 0, tagVariant(Data).bStrVal, SysStringLen(tagVariant(Data).bStrVal)+1,
           @Buffer[0], Field.Size, nil, nil);
+        {$ELSE}
+        TempBuff := TEncoding.Default.GetBytes(String(tagVariant(Data).bStrVal)));
+        Move(TempBuff[0], Buffer[0], Length(TempBuff));
+        {$ENDIF}
+
       end;
     ftFixedWideChar, ftWideString:
       begin

@@ -37,6 +37,7 @@ type
   private
     FFields: TDictionary<string, TRttiField>;
     FProperties: TDictionary<string,TRttiProperty>;
+    FTypes: TDictionary<PTypeInfo, TRttiType>;
     FCtx: TRttiContext;
   protected
     function GetKey(AClass: TClass; const AName: string): string;
@@ -50,6 +51,8 @@ type
     function GetField(AClass: TClass; const AFieldName: string): TRttiField;
     function GetProperty(AClass: TClass; const APropertyName: string): TRttiProperty;
     function GetNamedObject(AClass: TClass; const APropertyName: string): TRttiNamedObject;
+    function GetType(ATypeInfo: PTypeInfo): TRttiType; overload;
+    function GetType(AClass: TClass): TRttiType; overload;
   end;
 
   TRttiExplorer = class
@@ -296,7 +299,7 @@ begin
   Assert(AEntityFrom.ClassType = AEntityTo.ClassType);
   Assert(Assigned(AEntityFrom) and Assigned(AEntityTo));
 
-  LType := FCtx.GetType(AEntityFrom.ClassInfo);
+  LType := FRttiCache.GetType(AEntityFrom.ClassInfo);
   for LField in LType.GetFields do
   begin
     if LField.FieldType.IsInstance then
@@ -321,6 +324,7 @@ end;
 class constructor TRttiExplorer.Create;
 begin
   FRttiCache := TRttiCache.Create;
+  FRttiCache.RebuildCache;
 end;
 
 class function TRttiExplorer.CreateNewClass<T>: T;
@@ -329,7 +333,7 @@ var
   AMethCreate: TRttiMethod;
   instanceType: TRttiInstanceType;
 begin
-  rType := TRttiContext.Create.GetType(TypeInfo(T));
+  rType := FRttiCache.GetType(TypeInfo(T));// TRttiContext.Create.GetType(TypeInfo(T));
   if rType.IsInstance then
   begin
     for AMethCreate in rType.GetMethods do
@@ -350,7 +354,7 @@ class function TRttiExplorer.CreateNewInterface(AInterfaceTypeInfo, AClassTypeIn
 var
   rType: TRttiType;
 begin
-  rType := TRttiContext.Create.GetType(AInterfaceTypeInfo);
+  rType := FRttiCache.GetType(AInterfaceTypeInfo);
   if rType.IsInterface then
   begin
     Supports(CreateType(AClassTypeInfo), rType.AsInterface.GUID, Result);
@@ -361,7 +365,7 @@ class function TRttiExplorer.CreateNewInterface<TInterfaceType, TClassType>: TIn
 var
   rType: TRttiType;
 begin
-  rType := TRttiContext.Create.GetType(TypeInfo(TInterfaceType));
+  rType := FRttiCache.GetType(TypeInfo(TInterfaceType));
   if rType.IsInterface then
   begin
     Supports(CreateType(TypeInfo(TClassType)), rType.AsInterface.GUID, Result);
@@ -374,7 +378,7 @@ var
   AMethCreate: TRttiMethod;
   instanceType: TRttiInstanceType;
 begin
-  rType := TRttiContext.Create.GetType(ATypeInfo);
+  rType := FRttiCache.GetType(ATypeInfo);
   if rType.IsInstance then
   begin
     for AMethCreate in rType.GetMethods do
@@ -409,7 +413,7 @@ var
   LObject: TValue;
   LObj: TObject;
 begin
-  rType := TRttiContext.Create.GetType(TypeInfo(T));
+  rType := FRttiCache.GetType(TypeInfo(T));
   if rType.IsInstance then
   begin
     LObject := TValue.From<T>(AObject);
@@ -502,7 +506,7 @@ var
   LColumns: TList<ColumnAttribute>;
 begin
   Assert(AOriginalObj.ClassType = ADirtyObj.ClassType);
-  LRttiType := FCtx.GetType(AOriginalObj.ClassType);
+  LRttiType := FRttiCache.GetType(AOriginalObj.ClassInfo);
   AList.Clear;
 
   LColumns := GetColumns(AOriginalObj.ClassType);
@@ -513,8 +517,8 @@ begin
       begin
 
         case LCol.MemberType of
-          mtField:    LMember := LRttiType.GetField(LCol.ClassMemberName);
-          mtProperty: LMember := LRttiType.GetProperty(LCol.ClassMemberName);
+          mtField:    LMember := FRttiCache.GetField(LRttiType.AsInstance.MetaclassType, LCol.ClassMemberName); // LRttiType.GetField(LCol.ClassMemberName);
+          mtProperty: LMember := FRttiCache.GetProperty(LRttiType.AsInstance.MetaclassType, LCol.ClassMemberName); // LRttiType.GetProperty(LCol.ClassMemberName);
         else
           LMember := nil;
         end;
@@ -544,7 +548,7 @@ begin
   LTypeInfo := TypeInfo(T);
   LClass := AClass;
   repeat
-    LType := FCtx.GetType(LClass);
+    LType := FRttiCache.GetType(LClass);
     for LAttr in LType.GetAttributes do
     begin
       if (LAttr.ClassInfo = LTypeInfo) then
@@ -565,7 +569,7 @@ class function TRttiExplorer.GetClassFromClassInfo(AClassInfo: PTypeInfo): TClas
 var
   LType: TRttiType;
 begin
-  LType := TRttiContext.Create.GetType(AClassInfo);
+  LType := FRttiCache.GetType(AClassInfo);
   Assert(LType.IsInstance);
   Result := LType.AsInstance.MetaclassType;
 end;
@@ -580,7 +584,7 @@ var
 begin
   {TODO -oLinas -cGeneral : use FRttiCache for this task, this should increase performance}
   AList.Clear;
-  LType := FCtx.GetType(AClass);
+  LType := FRttiCache.GetType(AClass);
   LTypeInfo := TypeInfo(T);
 
   for LAttr in LType.GetAttributes do
@@ -643,7 +647,7 @@ var
   LType: TRttiType;
   LMethod: TRttiMethod;
 begin
-  LType := TRttiContext.Create.GetType(AClass);
+  LType := FRttiCache.GetType(AClass);
   for LMethod in LType.GetDeclaredMethods do
   begin
     if LMethod.IsConstructor then
@@ -669,7 +673,7 @@ begin
   LMethod := nil;
   iParCount := 0;
   iCurrParCount := 0;
-  LType := TRttiContext.Create.GetType(ATypeInfo);
+  LType := FRttiCache.GetType(ATypeInfo);
   for LResultMethod in LType.GetMethods do
   begin
     if SameText(LResultMethod.Name, AMethodName) then
@@ -702,7 +706,7 @@ var
   LType: TRttiType;
   LMethod: TRttiMethod;
 begin
-  LType :=  TRttiContext.Create.GetType(ATypeInfo);
+  LType := FCtx.GetType(ATypeInfo);
   for LMethod in LType.GetMethods do
   begin
     if SameText(LMethod.Name, AMethodName) and (Length(LMethod.GetParameters) = AParamCount) then
@@ -717,29 +721,17 @@ end;
 class function TRttiExplorer.TryGetColumnAsForeignKey(AColumn: ColumnAttribute;
   out AForeignKeyCol: ForeignJoinColumnAttribute): Boolean;
 var
-  LType: TRttiType;
-  LField: TRttiField;
-  LProp: TRttiProperty;
+  LNamedObject: TRttiNamedObject;
   LCustomAttribute: TCustomAttribute;
 begin
   Result := False;
   LCustomAttribute := nil;
-  LType := TRttiContext.Create.GetType(AColumn.BaseEntityClass);
-  LField := LType.GetField(AColumn.ClassMemberName);
-  if Assigned(LField) then
+
+  LNamedObject := FRttiCache.GetNamedObject(AColumn.BaseEntityClass, AColumn.ClassMemberName);
+  if Assigned(LNamedObject) then
   begin
-    //ForeignJoinColumnAttribute
-    LCustomAttribute := GetAttributeOfClass(LField, ForeignJoinColumnAttribute);
+    LCustomAttribute := GetAttributeOfClass(LNamedObject, ForeignJoinColumnAttribute);
     Result := Assigned(LCustomAttribute);
-  end
-  else
-  begin
-    LProp := LType.GetProperty(AColumn.ClassMemberName);
-    if Assigned(LProp) then
-    begin
-      LCustomAttribute := GetAttributeOfClass(LProp, ForeignJoinColumnAttribute);
-      Result := Assigned(LCustomAttribute);
-    end;
   end;
 
   if Result then
@@ -798,7 +790,7 @@ var
 begin
   Result := TList<TClass>.Create;
 
-  for LType in TRttiContext.Create.GetTypes do
+  for LType in FCtx.GetTypes do
   begin
     if LType.IsInstance then
     begin
@@ -817,7 +809,7 @@ var
   LRttiType: TRttiType;
   LCurrType: TRttiType;
 begin
-  LRttiType := TRttiContext.Create.GetType(ATypeInfo);
+  LRttiType := FRttiCache.GetType(ATypeInfo);
   for LCurrType in LRttiType.GetGenericArguments do
   begin
     if LCurrType.IsInstance then
@@ -935,7 +927,7 @@ var
 begin
   Result := TList<TObject>.Create;
   //look for OneToMany or ManyToOne attributes
-  LType := TRttiContext.Create.GetType(AEntity.ClassType);
+  LType := FRttiCache.GetType(AEntity.ClassType);
   for LField in LType.GetFields do
   begin
     if (LField.HasAttributeOfType<ManyValuedAssociation>) then
@@ -1241,6 +1233,7 @@ procedure TRttiCache.Clear;
 begin
   FFields.Clear;
   FProperties.Clear;
+  FTypes.Clear;
 end;
 
 constructor TRttiCache.Create;
@@ -1248,13 +1241,14 @@ begin
   inherited Create;
   FFields := TDictionary<string, TRttiField>.Create();
   FProperties := TDictionary<string,TRttiProperty>.Create();
-  RebuildCache();
+  FTypes := TDictionary<PTypeInfo, TRttiType>.Create();
 end;
 
 destructor TRttiCache.Destroy;
 begin
   FFields.Free;
   FProperties.Free;
+  FTypes.Free;
   inherited Destroy;
 end;
 
@@ -1282,6 +1276,25 @@ begin
     Result := nil;
 end;
 
+function TRttiCache.GetType(AClass: TClass): TRttiType;
+begin
+  Result := nil;
+  if Assigned(AClass) then
+  begin
+    Result := GetType(AClass.ClassInfo);
+    if (Result = nil) then
+    begin
+      Result := FCtx.GetType(AClass);
+    end;
+  end;
+end;
+
+function TRttiCache.GetType(ATypeInfo: PTypeInfo): TRttiType;
+begin
+  if not FTypes.TryGetValue(ATypeInfo, Result) then
+    Result := nil;
+end;
+
 procedure TRttiCache.RebuildCache;
 var
   LType: TRttiType;
@@ -1293,6 +1306,8 @@ begin
 
   for LType in FCtx.GetTypes do
   begin
+    FTypes.Add(LType.Handle, LType);
+
     if not LType.IsInstance then
       Continue;
 
@@ -1300,6 +1315,8 @@ begin
 
     if TRttiExplorer.HasColumns(LClass) then
     begin
+
+
       for LField in LType.GetFields do
       begin
         FFields.Add(GetKey(LClass, LField.Name), LField);

@@ -208,6 +208,7 @@ var
 begin
   LTest1 := TTest1.Create;
   LTest2 := TTest2.Create;
+  TRttiExplorer.RttiCache.RebuildCache;
   try
     LTest2.FId := 220;
 
