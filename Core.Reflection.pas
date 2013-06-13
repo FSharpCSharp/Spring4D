@@ -482,6 +482,7 @@ type
   {$ENDREGION}
   TValueHelper = record helper for TValue
   private
+    function GetRttiType: TRttiType;
     class function FromFloat(ATypeInfo: PTypeInfo; AValue: Extended): TValue; static;
   public
     function GetType: TRttiType;
@@ -519,6 +520,7 @@ type
     class function Equals(const Left, Right: TArray<TValue>): Boolean; overload; static;
 
     class function From(ABuffer: Pointer; ATypeInfo: PTypeInfo): TValue; overload; static;
+    class function From(AObject: TObject; AClass: TClass): TValue; overload; static;
     class function FromBoolean(const Value: Boolean): TValue; static;
     class function FromString(const Value: string): TValue; static;
 
@@ -539,6 +541,8 @@ type
     function IsVariant: Boolean;
     function IsRecord: Boolean;
     function IsWord: Boolean;
+
+    property RttiType: TRttiType read GetRttiType;
   end;
 
   PObject = ^TObject;
@@ -601,6 +605,490 @@ type
 var
   Context: TRttiContext;
   Enumerations: TDictionary<PTypeInfo, TStrings>;
+
+{$REGION 'Conversion functions'}
+type
+  TConvertFunc = function(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+
+function ConvFail(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+begin
+  Result := False;
+end;
+
+function ConvAny2Nullable(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+var
+  LType: TRttiType;
+  LValue: TValue;
+  LBuffer: array of Byte;
+  LFree: Boolean;
+begin
+  Result := TryGetRttiType(ATarget, LType) and LType.IsGenericTypeOf('Nullable')
+    and ASource.TryConvert(LType.GetGenericArguments[0].Handle, LValue, LFree);
+  if Result then
+  begin
+    SetLength(LBuffer, LType.TypeSize);
+    Move(LValue.GetReferenceToRawData^, LBuffer[0], LType.TypeSize - SizeOf(string));
+    PString(@LBuffer[LType.TypeSize - SizeOf(string)])^ := DefaultTrueBoolStr;
+    TValue.Make(LBuffer, LType.Handle, AResult);
+    PString(@LBuffer[LType.TypeSize - SizeOf(string)])^ := '';
+  end
+end;
+
+function ConvClass2Class(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+begin
+  Result := ASource.TryCast(ATarget, AResult);
+  if not Result and IsTypeCovariantTo(ASource.TypeInfo, ATarget) then
+  begin
+    AResult := TValue.From(ASource.AsObject, GetTypeData(ATarget).ClassType);
+    Result := True;
+  end;
+end;
+
+function ConvClass2Enum(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+begin
+  Result := ATarget = TypeInfo(Boolean);
+  if Result then
+    AResult := ASource.AsObject <> nil;
+end;
+
+function ConvEnum2Class(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+var
+  LType: TRttiType;
+  LStrings: TStrings;
+  i: Integer;
+begin
+  Result := TryGetRttiType(ATarget, LType)
+    and LType.AsInstance.MetaclassType.InheritsFrom(TStrings);
+  if Result then
+  begin
+    if not Enumerations.TryGetValue(ASource.TypeInfo, LStrings) then
+    begin
+      LStrings := TStringList.Create;
+      with TRttiEnumerationType(ASource.RttiType) do
+      begin
+        for i := MinValue to MaxValue do
+        begin
+          LStrings.Add(GetEnumName(Handle, i));
+        end;
+      end;
+      Enumerations.Add(ASource.TypeInfo, LStrings);
+    end;
+    AResult := TValue.From(LStrings, TStrings);
+    Result := True;
+  end;
+end;
+
+function ConvFloat2Ord(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+begin
+  Result := Frac(ASource.AsExtended) = 0;
+  if Result then
+    AResult := TValue.FromOrdinal(ATarget, Trunc(ASource.AsExtended));
+end;
+
+function ConvFloat2Str(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+var
+  LValue: TValue;
+begin
+  if ASource.TypeInfo = TypeInfo(TDate) then
+    LValue := DateToStr(ASource.AsExtended)
+  else if ASource.TypeInfo = TypeInfo(TDateTime) then
+    LValue := DateTimeToStr(ASource.AsExtended)
+  else if ASource.TypeInfo = TypeInfo(TTime) then
+    LValue := TimeToStr(ASource.AsExtended)
+  else
+    LValue := FloatToStr(ASource.AsExtended);
+  Result := LValue.TryCast(ATarget, AResult);
+end;
+
+function ConvIntf2Class(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+begin
+  Result := ConvClass2Class(ASource.AsInterface as TObject, ATarget, AResult);
+end;
+
+function ConvIntf2Intf(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+var
+  LSourceType, LTargetType: TRttiType;
+  LMethod: TRttiMethod;
+  LInterface: IInterface;
+begin
+  Result := ASource.TryCast(ATarget, AResult);
+  if not Result then
+  begin
+    if IsTypeCovariantTo(ASource.TypeInfo, ATarget) then
+    begin
+      AResult := TValue.From(ASource.GetReferenceToRawData, ATarget);
+      Result := True;
+    end else
+    if TryGetRttiType(ASource.TypeInfo, LSourceType) and LSourceType.IsGenericTypeOf('IList') then
+    begin
+      if (ATarget.Name = 'IList') and LSourceType.TryGetMethod('AsList', LMethod) then
+      begin
+        LInterface := LMethod.Invoke(ASource, []).AsInterface;
+        AResult := TValue.From(@LInterface, ATarget);
+        Result := True;
+      end else
+      // assume that the two lists are contravariant
+      // TODO: check type parameters for compatibility
+      if TryGetRttiType(ATarget, LTargetType) and LTargetType.IsGenericTypeOf('IList') then
+      begin
+        LInterface := ASource.AsInterface;
+        AResult := TValue.From(@LInterface, ATarget);
+        Result := True;
+      end;
+    end;
+  end;
+end;
+
+function ConvNullable2Any(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+var
+  LType: TRttiType;
+  LValue: TValue;
+  LFree: Boolean;
+begin
+  Result := TryGetRttiType(ASource.TypeInfo, LType)
+    and LType.IsGenericTypeOf('Nullable');
+  if Result then
+  begin
+    LValue := TValue.From(ASource.GetReferenceToRawData, LType.GetGenericArguments[0].Handle);
+    Result := LValue.TryConvert(ATarget, AResult, LFree);
+  end
+end;
+
+function ConvOrd2Float(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+begin
+  AResult := TValue.FromFloat(ATarget, ASource.AsOrdinal);
+  Result := True;
+end;
+
+function ConvOrd2Ord(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+begin
+  AResult := TValue.FromOrdinal(ATarget, ASource.AsOrdinal);
+  Result := True;
+end;
+
+function ConvOrd2Str(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+var
+  LValue: TValue;
+begin
+  LValue := ASource.ToString;
+  Result := LValue.TryCast(ATarget, AResult);
+end;
+
+function ConvRec2Meth(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+begin
+  if ASource.TypeInfo = TypeInfo(TMethod) then
+  begin
+    AResult := TValue.From(ASource.GetReferenceToRawData, ATarget);
+    Result := True;
+  end
+  else
+  begin
+    Result := ConvNullable2Any(ASource, ATarget, AResult);
+  end;
+end;
+
+function ConvSet2Class(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+var
+  LType: TRttiType;
+  LTypeData: PTypeData;
+  LStrings: TStrings;
+  i: Integer;
+begin
+  Result := TryGetRttiType(ATarget, LType)
+    and LType.AsInstance.MetaclassType.InheritsFrom(TStrings);
+  if Result then
+  begin
+    LTypeData := GetTypeData(ASource.TypeInfo);
+    if not Enumerations.TryGetValue(LTypeData.CompType^, LStrings) then
+    begin
+      LStrings := TStringList.Create;
+      with TRttiEnumerationType(TRttiSetType(ASource.RttiType).ElementType) do
+      begin
+        for i := MinValue to MaxValue do
+        begin
+          LStrings.Add(GetEnumName(Handle, i));
+        end;
+      end;
+      Enumerations.Add(LTypeData.CompType^, LStrings);
+    end;
+    AResult := TValue.From(LStrings, TStrings);
+  end
+end;
+
+function ConvStr2Enum(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+begin
+  AResult := TValue.FromOrdinal(ATarget, GetEnumValue(ATarget, ASource.AsString));
+  Result := True;
+end;
+
+function ConvStr2Float(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+begin
+  if ATarget = TypeInfo(TDate) then
+    AResult := TValue.From<TDate>(StrToDateDef(ASource.AsString, 0))
+  else if ATarget = TypeInfo(TDateTime) then
+    AResult := TValue.From<TDateTime>(StrToDateTimeDef(ASource.AsString, 0))
+  else if ATarget = TypeInfo(TTime) then
+    AResult := TValue.From<TTime>(StrToTimeDef(ASource.AsString, 0))
+  else
+    AResult := TValue.FromFloat(ATarget, StrToFloatDef(ASource.AsString, 0));
+  Result := True;
+end;
+
+function ConvStr2Ord(const ASource: TValue; ATarget: PTypeInfo; out AResult: TValue): Boolean;
+begin
+  AResult := TValue.FromOrdinal(ATarget, StrToInt64Def(ASource.AsString, 0));
+  Result := True;
+end;
+
+{$ENDREGION}
+
+{$REGION 'Conversions'}
+const
+  Conversions: array[TTypeKind, TTypeKind] of TConvertFunc = (
+    // tkUnknown
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkInteger
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvOrd2Ord, ConvOrd2Ord, ConvOrd2Ord, ConvOrd2Float, ConvOrd2Str,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvOrd2Ord, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvOrd2Str, ConvFail, ConvFail, ConvFail
+    ),
+    // tkChar
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvOrd2Ord, ConvOrd2Ord, ConvOrd2Ord, ConvOrd2Float, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvOrd2Ord, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkEnumeration
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvOrd2Ord, ConvOrd2Ord, ConvOrd2Ord, ConvOrd2Float, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvEnum2Class, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvOrd2Ord, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvOrd2Str, ConvFail, ConvFail, ConvFail
+    ),
+    // tkFloat
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFloat2Ord, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFloat2Ord, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFloat2Str, ConvFail, ConvFail, ConvFail
+    ),
+    // tkString
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkSet
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvSet2Class, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkClass
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvClass2Enum, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvClass2Class, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkMethod
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkWChar
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvOrd2Ord, ConvOrd2Ord, ConvOrd2Ord, ConvOrd2Float, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvOrd2Ord, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkLString
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkWString
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkVariant
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkArray
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkRecord
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvRec2Meth, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkInterface
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvIntf2Class, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvIntf2Intf, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkInt64
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvOrd2Ord, ConvOrd2Ord, ConvOrd2Ord, ConvOrd2Float, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvOrd2Ord, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvOrd2Str, ConvFail, ConvFail, ConvFail
+    ),
+    // tkDynArray
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkUString
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvStr2Ord, ConvFail, ConvStr2Enum, ConvStr2Float, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvStr2Ord, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkClassRef
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkPointer
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    ),
+    // tkProcedure
+    (
+      // tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat, tkString,
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray
+      ConvFail, ConvFail, ConvFail, ConvFail, ConvFail, ConvFail,
+      // tkUString, tkClassRef, tkPointer, tkProcedure
+      ConvFail, ConvFail, ConvFail, ConvFail
+    )
+  );
+{$ENDREGION}
 
 function SameNullables(const ALeft, ARight: TValue): Boolean;
 var
@@ -1820,6 +2308,11 @@ begin
   TValue.Make(ABuffer, ATypeInfo, Result);
 end;
 
+class function TValueHelper.From(AObject: TObject; AClass: TClass): TValue;
+begin
+  TValue.Make(NativeInt(AObject), AClass.ClassInfo, Result);
+end;
+
 class function TValueHelper.FromBoolean(const Value: Boolean): TValue;
 begin
   Result := TValue.From<Boolean>(Value);
@@ -1840,6 +2333,11 @@ end;
 class function TValueHelper.FromString(const Value: string): TValue;
 begin
   Result := TValue.From<string>(Value);
+end;
+
+function TValueHelper.GetRttiType: TRttiType;
+begin
+  Result := Context.GetType(TypeInfo);
 end;
 
 function TValueHelper.GetType: TRttiType;
@@ -2052,352 +2550,125 @@ var
   LType: TRttiType;
   LMethod: TRttiMethod;
   LInterface: IInterface;
-  LStrings: TStrings;
-  LTypeData: PTypeData;
-  i: Integer;
   LStream: TStream;
 begin
   Result := False;
   AFreeAfter := False;
+  if (Self.TypeInfo = nil) then
+  begin
+    Exit;
+  end;
+
   if Assigned(ATypeInfo) then
   begin
-    case Kind of
-      tkInteger, tkEnumeration, tkChar, tkWChar, tkInt64:
-      begin
-        case ATypeInfo.Kind of
-          tkInteger, tkEnumeration, tkChar, tkInt64:
-          begin
-            AResult := TValue.FromOrdinal(ATypeInfo, AsOrdinal);
-            Result := True;
-          end;
-          tkFloat:
-          begin
-            AResult := TValue.FromFloat(ATypeInfo, AsOrdinal);
-            Result := True;
-          end;
-          tkUString:
-          begin
-            if IsBoolean then
+    if (ATypeInfo = Self.TypeInfo) then
+    begin
+      AResult := Self;
+      Exit(True);
+    end;
+
+    Result := Conversions[Kind, ATypeInfo.Kind](Self, ATypeInfo, AResult);
+
+    if not Result then
+    begin
+      case Kind of
+        tkClass:
+        begin
+          case ATypeInfo.Kind of
+            tkClass:
             begin
-              AResult := TValue.FromString(BoolToStr(AsBoolean, True));
-              Result := True;
-            end else
-            if IsInt64 then
-            begin
-              AResult := TValue.FromString(IntToStr(AsInt64));
-              Result := True;
-            end else
-            if IsInteger then
-            begin
-              AResult := TValue.FromString(IntToStr(AsInteger));
-              Result := True;
-            end else
-            if IsSmallInt then
-            begin
-              AResult := TValue.FromString(IntToStr(AsSmallInt));
-              Result := True;
-            end else
-            if IsShortInt then
-            begin
-              AResult := TValue.FromString(IntToStr(AsShortInt));
-              Result := True;
-            end else
-            if IsUInt64 then
-            begin
-              AResult := TValue.FromString(UIntToStr(AsUInt64));
-              Result := True;
-            end else
-            if IsCardinal then
-            begin
-              AResult := TValue.FromString(UIntToStr(AsCardinal));
-              Result := True;
-            end else
-            if IsWord then
-            begin
-              AResult := TValue.FromString(UIntToStr(AsWord));
-              Result := True;
-            end else
-            if IsByte then
-            begin
-              AResult := TValue.FromString(UIntToStr(AsByte));
-              Result := True;
-            end else
-            begin
-              AResult := TValue.FromString(ToString);
-              Result := True;
-            end;
-          end;
-          tkClass:
-          begin
-            LType := GetRttiType(ATypeInfo);
-            if (Kind = tkEnumeration)
-              and LType.AsInstance.MetaclassType.InheritsFrom(TStrings) then
-            begin
-              if not Enumerations.TryGetValue(TypeInfo, LStrings) then
+              {TODO -oLinas -cGeneral : refactor into separate method or class}
+              if (IsObject) and (AsObject <> nil) and (AsObject.InheritsFrom(TStream)) then
               begin
-                LStrings := TStringList.Create;
-                with TRttiEnumerationType(GetType()) do
+                if (ATypeInfo = System.TypeInfo(TPicture)) then
                 begin
-                  for i := MinValue to MaxValue do
+                  //load from TStream into TPicture
+                  if TUtils.TryLoadFromStreamToPictureValue(Self.AsObject as TStream, AResult) then
                   begin
-                    LStrings.Add(GetEnumName(Handle, i));
+                    Result := True;
+                    Exit;
                   end;
                 end;
-                Enumerations.Add(TypeInfo, LStrings);
-              end;
-              AResult := TValue.From<TStrings>(LStrings);
-              Result := True;
-            end;
-          end;
-        end;
-      end;
-      tkFloat:
-      begin
-        case ATypeInfo.Kind of
-          tkInteger, tkInt64:
-          begin
-            Result := Frac(AsExtended) = 0;
-            if Result then
-            begin
-              AResult := TValue.FromOrdinal(ATypeInfo, Trunc(AsExtended));
-            end;
-          end;
-          tkUString:
-          begin
-            if IsDate then
-            begin
-              AResult := TValue.FromString(DateToStr(AsDate));
-              Result := True;
-            end
-            else
-            if IsDateTime then
-            begin
-              AResult := TValue.FromString(DateTimeToStr(AsDateTime));
-              Result := True;
-            end
-            else
-            if IsTime then
-            begin
-              AResult := TValue.FromString(TimeToStr(AsTime));
-              Result := True;
-            end
-            else
-            begin
-              AResult := TValue.FromString(FloatToStr(AsExtended));
-              Result := True;
-            end;
-          end;
-        end;
-      end;
-      tkSet:
-      begin
-        case ATypeInfo.Kind of
-          tkClass:
-          begin
-            LType := GetRttiType(ATypeInfo);
-            if LType.AsInstance.MetaclassType.InheritsFrom(TStrings) then
-            begin
-              LTypeData := GetTypeData(TypeInfo);
-              if not Enumerations.TryGetValue(LTypeData.CompType^, LStrings) then
+              end
+              else if TypeInfo = System.TypeInfo(TPicture) then
               begin
-                LStrings := TStringList.Create;
-                with TRttiEnumerationType(TRttiSetType(GetType()).ElementType) do
+                LStream := nil;
+                //convert from picture to stream to be able to add it as a parameter
+                if (IsObject) and (AsObject <> nil) then
                 begin
-                  for i := MinValue to MaxValue do
+                  if (TPicture(AsObject).Graphic <> nil) then
                   begin
-                    LStrings.Add(GetEnumName(Handle, i));
+                    LStream := TMemoryStream.Create;
+                    AFreeAfter := True;
+                    TPicture(AsObject).Graphic.SaveToStream(LStream);
+                    LStream.Position := 0;
                   end;
                 end;
-                Enumerations.Add(LTypeData.CompType^, LStrings);
-              end;
-              AResult := TValue.From<TStrings>(LStrings);
-              Result := True;
-            end;
-          end;
-        end;
-      end;
-      tkUString:
-      begin
-        case ATypeInfo.Kind of
-          tkEnumeration:
-          begin
-            if ATypeInfo = System.TypeInfo(Boolean) then
-            begin
-              AResult := TValue.FromBoolean(StrToBoolDef(AsString, False));
-              Result := True;
-            end else
-            begin
-              AResult := TValue.FromOrdinal(ATypeInfo, GetEnumValue(ATypeInfo, AsString));
-              Result := True;
-            end;
-          end;
-          tkInteger, tkChar, tkInt64:
-          begin
-            AResult := TValue.FromOrdinal(ATypeInfo, StrToIntDef(AsString, 0));
-            Result := True;
-          end;
-          tkWChar:
-          begin
-            Result := Length(AsString) = 1;
-            if Result then
-            begin
-              AResult := TValue.From<Char>(AsString[1]);
-            end;
-          end;
-          tkWString:
-          begin
-            AResult := TValue.From<WideString>(WideString(AsString));
-            Result := True;
-          end;
-          tkFloat:
-          begin
-            if ATypeInfo = System.TypeInfo(TDate) then
-            begin
-              AResult := TValue.From<TDate>(StrToDateDef(AsString, 0));
-              Result := True;
-            end
-            else
-            if ATypeInfo = System.TypeInfo(TDateTime) then
-            begin
-              AResult := TValue.From<TDateTime>(StrToDateTimeDef(AsString, 0));
-              Result := True;
-            end
-            else
-            if ATypeInfo = System.TypeInfo(TTime) then
-            begin
-              AResult := TValue.From<TTime>(StrToTimeDef(AsString, 0));
-              Result := True;
-            end
-            else
-            begin
-              AResult := TValue.FromFloat(ATypeInfo, StrToFloatDef(AsString, 0));
-              Result := True;
-            end;
-          end;
-        end;
-      end;
-      tkClass:
-      begin
-        case ATypeInfo.Kind of
-          tkInteger, tkEnumeration, tkChar, tkWChar, tkInt64:
-          begin
-            if ATypeInfo = System.TypeInfo(Boolean) then
-            begin
-              AResult := TValue.FromBoolean(AsObject <> nil);
-              Result := True;
-            end
-            else
-            begin
-              AResult := TValue.FromOrdinal(ATypeInfo, Int64(AsObject));
-              Result := True;
-            end;
-          end;
-          tkClass:
-          begin
-            {TODO -oLinas -cGeneral : refactor into separate method or class}
-            if (IsObject) and (AsObject <> nil) and (AsObject.InheritsFrom(TStream)) then
-            begin
-              if (ATypeInfo = System.TypeInfo(TPicture)) then
+                AResult := LStream;
+                Result := True;
+              end
+              else
               begin
-                //load from TStream into TPicture
-                if TUtils.TryLoadFromStreamToPictureValue(Self.AsObject as TStream, AResult) then
+                if IsTypeCovariantTo(TypeInfo, ATypeInfo) then
                 begin
+                  AResult := TValue.From(GetReferenceToRawData, ATypeInfo);
                   Result := True;
-                  Exit;
                 end;
               end;
-            end
-            else if TypeInfo = System.TypeInfo(TPicture) then
-            begin
-              LStream := nil;
-              //convert from picture to stream to be able to add it as a parameter
-              if (IsObject) and (AsObject <> nil) then
-              begin
+            end;
+          end;
+        end;
 
-                if (TPicture(AsObject).Graphic <> nil) then
-                begin
-                  LStream := TMemoryStream.Create;
-                  AFreeAfter := True;
-                  TPicture(AsObject).Graphic.SaveToStream(LStream);
-                  LStream.Position := 0;
-                end;
-              end;
-
-              AResult := LStream;
-              Result := True;
-             end
-            else
+        tkInterface:
+        begin
+          case ATypeInfo.Kind of
+            tkInterface:
             begin
               if IsTypeCovariantTo(TypeInfo, ATypeInfo) then
               begin
                 AResult := TValue.From(GetReferenceToRawData, ATypeInfo);
                 Result := True;
+              end else if TryGetRttiType(TypeInfo, LType) and (ATypeInfo.Name = 'IList')
+                and LType.IsGenericTypeOf('IList') and LType.TryGetMethod('AsList', LMethod) then
+              begin
+                LInterface := LMethod.Invoke(Self, []).AsInterface;
+                TValue.Make(@LInterface, ATypeInfo, AResult);
+                Result := True;
               end;
             end;
+            tkClass:
+            begin
+              Result := TValue.From<TObject>(Self.AsInterface as TObject).TryConvert(ATypeInfo, AResult, AFreeAfter);
+            end;
+          end;
+        end;
 
-          end;
-        end;
-      end;
-      tkRecord:
-      begin
-        case ATypeInfo.Kind of
-          tkMethod:
-          begin
-            if TypeInfo = System.TypeInfo(System.TMethod) then
+        {$IFDEF VER210}
+        // workaround for bug in RTTI.pas (fixed in XE)
+        tkUnknown:
+        begin
+          case ATypeInfo.Kind of
+            tkInteger, tkEnumeration, tkChar, tkWChar, tkInt64:
             begin
-              TValue.Make(GetReferenceToRawData, ATypeInfo, AResult);
+              AResult := TValue.FromOrdinal(ATypeInfo, 0);
+              Result := True;
+            end;
+            tkFloat:
+            begin
+              AResult := TValue.From<Extended>(0);
+              Result := True;
+            end;
+            tkUString:
+            begin
+              AResult := TValue.FromString('');
               Result := True;
             end;
           end;
         end;
+        {$ENDIF}
       end;
-      tkInterface:
-      begin
-        case ATypeInfo.Kind of
-          tkInterface:
-          begin
-            if IsTypeCovariantTo(TypeInfo, ATypeInfo) then
-            begin
-              AResult := TValue.From(GetReferenceToRawData, ATypeInfo);
-              Result := True;
-            end else if TryGetRttiType(TypeInfo, LType) and (ATypeInfo.Name = 'IList')
-              and LType.IsGenericTypeOf('IList') and LType.TryGetMethod('AsList', LMethod) then
-            begin
-              LInterface := LMethod.Invoke(Self, []).AsInterface;
-              TValue.Make(@LInterface, ATypeInfo, AResult);
-              Result := True;
-            end;
-          end;
-          tkClass:
-          begin
-            Result := TValue.From<TObject>(Self.AsInterface as TObject).TryConvert(ATypeInfo, AResult, AFreeAfter);
-          end;
-        end;
-      end;
-{$IFDEF VER210}
-      // workaround for bug in RTTI.pas (fixed in XE)
-      tkUnknown:
-      begin
-        case ATypeInfo.Kind of
-          tkInteger, tkEnumeration, tkChar, tkWChar, tkInt64:
-          begin
-            AResult := TValue.FromOrdinal(ATypeInfo, 0);
-            Result := True;
-          end;
-          tkFloat:
-          begin
-            AResult := TValue.From<Extended>(0);
-            Result := True;
-          end;
-          tkUString:
-          begin
-            AResult := TValue.FromString('');
-            Result := True;
-          end;
-        end;
-      end;
-{$ENDIF}
     end;
+
     if not Result then
     begin
       Result := TryCast(ATypeInfo, AResult);

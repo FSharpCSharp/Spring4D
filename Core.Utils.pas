@@ -504,7 +504,6 @@ begin
         if IsNullableType(LTypeInfo) then
         begin
           LRecord := TRttiExplorer.GetAsRecord(ARttiMember);
-
           if Assigned(LRecord) then
           begin
             LValueField := nil;
