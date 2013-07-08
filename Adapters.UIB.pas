@@ -303,15 +303,15 @@ begin
 
   Connection.Connected := True;
 
-  if Connection.TransactionsCount < 1 then
-  begin
+ // if Connection.TransactionsCount < 1 then
+ // begin
     LTran := TUIBTransaction.Create(nil);
     LTran.DataBase := Connection;
     LTran.DefaultAction := etmRollback;
     LTran.StartTransaction;
-  end
-  else
-    LTran := Connection.Transactions[0];
+ // end
+ // else
+ //   LTran := Connection.Transactions[0];
 
   Result := TUIBTransactionAdapter.Create(LTran);
 end;
@@ -340,7 +340,7 @@ begin
 
   LStatement := TUIBStatement.Create(nil);
   if Connection.TransactionsCount > 0 then
-    LTran := Connection.Transactions[0]
+    LTran := Connection.Transactions[Connection.TransactionsCount - 1]
   else
   begin
     LTran := TUIBTransaction.Create(nil);

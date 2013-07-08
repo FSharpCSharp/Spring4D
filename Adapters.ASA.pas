@@ -54,6 +54,7 @@ type
   {$ENDREGION}
   TASAConnectionAdapter = class(TADOConnectionAdapter)
   public
+    function BeginTransaction: IDBTransaction; override;
     function GetDriverName: string; override;
   end;
 
@@ -62,7 +63,11 @@ type
   ///	  Represent Sybase ASA transaction.
   ///	</summary>
   {$ENDREGION}
-  TASATransactionAdapter = class(TADOTransactionAdapter);
+  TASATransactionAdapter = class(TADOTransactionAdapter)
+  public
+    procedure Commit; override;
+    procedure Rollback; override;
+  end;
 
   ESybaseASAStatementAdapterException = Exception;
 
@@ -75,9 +80,42 @@ uses
 
 { TASAConnectionAdapter }
 
+function TASAConnectionAdapter.BeginTransaction: IDBTransaction;
+begin
+  if (Connection = nil) then
+    Exit(nil);
+
+  Connection.Connected := True;
+
+  GenerateNewID();
+
+  Connection.Execute(SQL_BEGIN_TRAN + GetTransactionName);
+
+  Result := TASATransactionAdapter.Create(Connection);
+  Result.TransactionName := GetTransactionName;
+end;
+
 function TASAConnectionAdapter.GetDriverName: string;
 begin
   Result := DRIVER_SYBASE_ASA;
+end;
+
+{ TASATransactionAdapter }
+
+procedure TASATransactionAdapter.Commit;
+begin
+  if (Transaction = nil) then
+    Exit;
+
+  Transaction.Execute(SQL_COMMIT_TRAN + TransactionName);
+end;
+
+procedure TASATransactionAdapter.Rollback;
+begin
+  if (Transaction = nil) then
+    Exit;
+
+  Transaction.Execute(SQL_ROLLBACK_TRAN + TransactionName);
 end;
 
 initialization

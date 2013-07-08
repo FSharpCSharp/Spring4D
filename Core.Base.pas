@@ -73,6 +73,7 @@ type
     FExecutionListeners: TList<TExecutionListenerProc>;
     FQueryLanguage: TQueryLanguage;
     FAutoFreeConnection: Boolean;
+    FTranID: Integer;
 
     procedure SetQueryLanguage(AQueryLanguage: TQueryLanguage);
     function GetExecutionListeners: TList<TExecutionListenerProc>;
@@ -83,8 +84,10 @@ type
     procedure Disconnect(); virtual; abstract;
     function IsConnected(): Boolean; virtual; abstract;
     function CreateStatement(): IDBStatement; virtual; abstract;
-    function BeginTransaction(): IDBTransaction; virtual; abstract;
+    function BeginTransaction(): IDBTransaction; virtual;
     function GetDriverName(): string; virtual; abstract;
+    function GetTransactionName(): string; virtual;
+    function GenerateNewID(): Integer; virtual;
     procedure AddExecutionListener(const AListenerProc: TExecutionListenerProc);
     procedure ClearExecutionListeners();
 
@@ -98,6 +101,7 @@ type
     property Connection: T read FConnection;
     property ExecutionListeners: TList<TExecutionListenerProc> read GetExecutionListeners;
     property QueryLanguage: TQueryLanguage read GetQueryLanguage write SetQueryLanguage;
+    property TranId: Integer read FTranID;
   end;
 
   {$REGION 'Documentation'}
@@ -134,6 +138,9 @@ type
   TDriverTransactionAdapter<T> = class(TInterfacedObject, IDBTransaction)
   private
     FTransaction: T;
+    FTransactionName: string;
+    function GetTransactionName: string;
+    procedure SetTransactionName(const Value: string);
   protected
     procedure Commit(); virtual; abstract;
     procedure Rollback(); virtual; abstract;
@@ -143,6 +150,7 @@ type
     destructor Destroy; override;
 
     property Transaction: T read FTransaction;
+    property TransactionName: string read GetTransactionName write SetTransactionName;
   end;
 
   {$REGION 'Documentation'}
@@ -202,6 +210,8 @@ uses
   ,Math
   ,StrUtils
   ,Core.Consts
+  ,SyncObjs
+  ,SysUtils
   ;
 
 { TDriverResultSetAdapter<T> }
@@ -225,6 +235,11 @@ begin
   FExecutionListeners.Add(AListenerProc);
 end;
 
+function TDriverConnectionAdapter<T>.BeginTransaction: IDBTransaction;
+begin
+  GenerateNewID();
+end;
+
 procedure TDriverConnectionAdapter<T>.ClearExecutionListeners;
 begin
   FExecutionListeners.Clear;
@@ -236,6 +251,7 @@ begin
   FConnection := AConnection;
   FExecutionListeners := TList<TExecutionListenerProc>.Create;
   FQueryLanguage := qlAnsiSQL;
+  FTranID := 0;
   TryResolveQueryLanguage(FQueryLanguage);
 end;
 
@@ -245,6 +261,12 @@ begin
   if AutoFreeConnection then
     TRttiExplorer.DestroyClass<T>(FConnection);
   inherited Destroy;
+end;
+
+function TDriverConnectionAdapter<T>.GenerateNewID: Integer;
+begin
+  TInterlocked.Increment(FTranID);
+  Result := FTranID;
 end;
 
 function TDriverConnectionAdapter<T>.GetAutoFreeConnection: Boolean;
@@ -260,6 +282,11 @@ end;
 function TDriverConnectionAdapter<T>.GetQueryLanguage: TQueryLanguage;
 begin
   Result := FQueryLanguage;
+end;
+
+function TDriverConnectionAdapter<T>.GetTransactionName: string;
+begin
+  Result := 'T' + IntToStr(FTranID);
 end;
 
 procedure TDriverConnectionAdapter<T>.SetAutoFreeConnection(const Value: Boolean);
@@ -476,6 +503,16 @@ begin
   if InTransaction then
     Rollback();
   inherited Destroy;
+end;
+
+function TDriverTransactionAdapter<T>.GetTransactionName: string;
+begin
+  Result := FTransactionName;
+end;
+
+procedure TDriverTransactionAdapter<T>.SetTransactionName(const Value: string);
+begin
+  FTransactionName := Value;
 end;
 
 end.

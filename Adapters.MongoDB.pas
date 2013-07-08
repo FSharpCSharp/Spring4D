@@ -136,6 +136,9 @@ type
   TMongoTransactionAdapter = class(TInterfacedObject, IDBTransaction)
   private
     FConnection: TMongoDBConnection;
+  protected
+    function GetTransactionName: string;
+    procedure SetTransactionName(const Value: string);
   public
     constructor Create(AConnection: TMongoDBConnection);
     destructor Destroy; override;
@@ -388,7 +391,17 @@ begin
   inherited Destroy;
 end;
 
+function TMongoTransactionAdapter.GetTransactionName: string;
+begin
+  Result := '';
+end;
+
 procedure TMongoTransactionAdapter.Rollback;
+begin
+  //
+end;
+
+procedure TMongoTransactionAdapter.SetTransactionName(const Value: string);
 begin
   //
 end;

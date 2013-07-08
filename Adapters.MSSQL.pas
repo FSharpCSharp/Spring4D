@@ -66,6 +66,7 @@ type
   {$ENDREGION}
   TMSSQLConnectionAdapter = class(TADOConnectionAdapter)
   public
+    function BeginTransaction: IDBTransaction; override;
     function GetDriverName: string; override;
   end;
 
@@ -74,7 +75,11 @@ type
   ///	  Represents Miscrosoft SQL Server transaction.
   ///	</summary>
   {$ENDREGION}
-  TMSSQLTransactionAdapter = class(TADOTransactionAdapter);
+  TMSSQLTransactionAdapter = class(TADOTransactionAdapter)
+  public
+    procedure Commit; override;
+    procedure Rollback; override;
+  end;
 
   EMSSQLStatementAdapterException = Exception;
 
@@ -92,9 +97,42 @@ uses
 
 { TMSSQLConnectionAdapter }
 
+function TMSSQLConnectionAdapter.BeginTransaction: IDBTransaction;
+begin
+  if (Connection = nil) then
+    Exit(nil);
+
+  Connection.Connected := True;
+
+  GenerateNewID();
+
+  Connection.Execute(SQL_BEGIN_TRAN + GetTransactionName);
+
+  Result := TMSSQLTransactionAdapter.Create(Connection);
+  Result.TransactionName := GetTransactionName;
+end;
+
 function TMSSQLConnectionAdapter.GetDriverName: string;
 begin
   Result := DRIVER_MSSQL;
+end;
+
+{ TMSSQLTransactionAdapter }
+
+procedure TMSSQLTransactionAdapter.Commit;
+begin
+  if (Transaction = nil) then
+    Exit;
+
+  Transaction.Execute(SQL_COMMIT_TRAN + TransactionName);
+end;
+
+procedure TMSSQLTransactionAdapter.Rollback;
+begin
+  if (Transaction = nil) then
+    Exit;
+
+  Transaction.Execute(SQL_ROLLBACK_TRAN + TransactionName);
 end;
 
 initialization

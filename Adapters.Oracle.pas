@@ -32,6 +32,7 @@ type
   {$ENDREGION}
   TOracleConnectionAdapter = class(TADOConnectionAdapter)
   public
+    function BeginTransaction: IDBTransaction; override;
     function GetDriverName: string; override;
     function CreateStatement: IDBStatement; override;
   end;
@@ -41,7 +42,11 @@ type
   ///	  Represents Oracle transaction.
   ///	</summary>
   {$ENDREGION}
-  TOracleTransactionAdapter = class(TADOTransactionAdapter);
+  TOracleTransactionAdapter = class(TADOTransactionAdapter)
+  public
+    procedure Commit; override;
+    procedure Rollback; override;
+  end;
 
   EOracleStatementAdapterException = Exception;
 
@@ -59,6 +64,21 @@ uses
   ;
 
 { TOracleConnectionAdapter }
+
+function TOracleConnectionAdapter.BeginTransaction: IDBTransaction;
+begin
+  if (Connection = nil) then
+    Exit(nil);
+
+  Connection.Connected := True;
+
+  GenerateNewID();
+
+  Connection.Execute(SQL_BEGIN_SAVEPOINT + GetTransactionName);
+
+  Result := TOracleTransactionAdapter.Create(Connection);
+  Result.TransactionName := GetTransactionName;
+end;
 
 function TOracleConnectionAdapter.CreateStatement: IDBStatement;
 var
@@ -109,6 +129,24 @@ begin
   end
   else
     Statement.Parameters.ParamValues[sParamName] := ADBParam.Value;
+end;
+
+{ TOracleTransactionAdapter }
+
+procedure TOracleTransactionAdapter.Commit;
+begin
+  if (Transaction = nil) then
+    Exit;
+
+  Transaction.Execute('COMMIT');
+end;
+
+procedure TOracleTransactionAdapter.Rollback;
+begin
+  if (Transaction = nil) then
+    Exit;
+
+  Transaction.Execute(SQL_ROLLBACK_SAVEPOINT + TransactionName);
 end;
 
 initialization

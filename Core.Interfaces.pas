@@ -218,6 +218,9 @@ type
     ['{AA35EE88-7271-4894-B6F0-06080C797BCF}']
     procedure Commit();
     procedure Rollback();
+    function GetTransactionName: string;
+    procedure SetTransactionName(const Value: string);
+    property TransactionName: string read GetTransactionName write SetTransactionName;
   end;
 
   {$REGION 'Documentation'}

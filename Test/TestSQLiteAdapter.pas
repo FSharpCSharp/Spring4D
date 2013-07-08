@@ -66,6 +66,8 @@ type
   TestTSQLiteTransactionAdapter = class(TTestCase)
   private
     FSQLiteTransactionAdapter: TSQLiteTransactionAdapter;
+  protected
+    function CreateAndBeginTransaction(): TSQLiteTransactionAdapter;
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -365,7 +367,7 @@ var
 begin
   ReturnValue := FSQLiteConnectionAdapter.BeginTransaction;
   CheckTrue(Assigned(ReturnValue));
-  CheckTrue(TestDB.IsTransactionOpen);
+  CheckTrue(ReturnValue.TransactionName <> '');
 end;
 
 procedure TestTSQLiteConnectionAdapter.TestGetDriverName;
@@ -377,10 +379,16 @@ begin
   CheckEqualsString('SQLite3', ReturnValue);
 end;
 
+function TestTSQLiteTransactionAdapter.CreateAndBeginTransaction: TSQLiteTransactionAdapter;
+begin
+  Result := TSQLiteTransactionAdapter.Create(TestDB);
+  Result.TransactionName := 'T1';
+  Result.Transaction.ExecSQL('SAVEPOINT T1');
+end;
+
 procedure TestTSQLiteTransactionAdapter.SetUp;
 begin
-  FSQLiteTransactionAdapter := TSQLiteTransactionAdapter.Create(TestDB);
-  TestDB.BeginTransaction;
+  FSQLiteTransactionAdapter := CreateAndBeginTransaction;
 end;
 
 procedure TestTSQLiteTransactionAdapter.TearDown;
@@ -395,7 +403,8 @@ begin
   FSQLiteTransactionAdapter.Commit;
   CheckEquals(1, GetCustomersCount);
 
-  TestDB.BeginTransaction;
+  FSQLiteTransactionAdapter.Free;
+  FSQLiteTransactionAdapter := CreateAndBeginTransaction;
   DeleteAllCustomers;
   FSQLiteTransactionAdapter.Commit;
   CheckEquals(0, GetCustomersCount);
@@ -408,7 +417,8 @@ begin
   CheckEquals(0, GetCustomersCount);
 
   InsertCustomer('Test', 15, 1.1);
-  TestDB.BeginTransaction;
+  FSQLiteTransactionAdapter.Free;
+  FSQLiteTransactionAdapter := CreateAndBeginTransaction;
   InsertCustomer('Test2', 15, 1.1);
   FSQLiteTransactionAdapter.Rollback;
   CheckEquals(1, GetCustomersCount);

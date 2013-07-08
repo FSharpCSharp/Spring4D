@@ -61,6 +61,7 @@ type
     procedure Streams();
     procedure ManyToOne();
     procedure Transactions();
+    procedure Transactions_Nested();
     procedure GetOne();
     procedure FetchCollection();
     {$IFDEF USE_SPRING}
@@ -1256,6 +1257,53 @@ begin
     CheckEquals(1, GetTableRecordCount(TBL_PEOPLE, LDatabase));
   finally
     LCustomer.Free;
+    LDatabase.Close;
+    LDatabase.Free;
+    LSession.Free;
+    LConn := nil;
+    if not DeleteFile(sFile) then
+    begin
+      Status('Cannot delete file. Error: ' + SysErrorMessage(GetLastError));
+    end;
+  end;
+end;
+
+procedure TestTSession.Transactions_Nested;
+var
+  LTran1, LTran2: IDBTransaction;
+  LCustomer, LDbCustomer: TCustomer;
+  sFile: string;
+  LDatabase: TSQLiteDatabase;
+  LConn: IDBConnection;
+  LSession: TSession;
+begin
+  sFile := IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0))) + 'test.db';
+  DeleteFile(sFile);
+  LDatabase := TSQLiteDatabase.Create(sFile);
+  LConn := TConnectionFactory.GetInstance(dtSQLite, LDatabase);
+  LSession := TSession.Create(LConn);
+  CreateTables(LDatabase);
+
+  LTran1 := LSession.Connection.BeginTransaction;
+  LCustomer := TCustomer.Create;
+  LDbCustomer := TCustomer.Create;
+  try
+    LCustomer.Name := 'Tran1';
+    LDbCustomer.Name := 'Tran2';
+
+    LSession.Save(LCustomer);
+    LTran2 := LSession.Connection.BeginTransaction;
+    LSession.Save(LDbCustomer);
+    CheckEquals(0, GetTableRecordCount(TBL_PEOPLE, LDatabase));
+
+    LTran2.Commit;
+    CheckEquals(0, GetTableRecordCount(TBL_PEOPLE, LDatabase));
+
+    LTran1.Commit;
+    CheckEquals(2, GetTableRecordCount(TBL_PEOPLE, LDatabase));
+  finally
+    LCustomer.Free;
+    LDbCustomer.Free;
     LDatabase.Close;
     LDatabase.Free;
     LSession.Free;

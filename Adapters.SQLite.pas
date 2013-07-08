@@ -215,12 +215,12 @@ begin
 
   Connection.Connected := true;
 
-  if not Connection.IsTransactionOpen then
-  begin
-    Connection.BeginTransaction;
-  end;
+  inherited;
+
+  Connection.ExecSQL(SQL_BEGIN_SAVEPOINT + GetTransactionName);
 
   Result := TSQLiteTransactionAdapter.Create(Connection);
+  Result.TransactionName := GetTransactionName;
 end;
 
 procedure TSQLiteConnectionAdapter.Connect;
@@ -269,7 +269,7 @@ begin
   if (Transaction = nil) then
     Exit;
 
-  Transaction.Commit;
+  Transaction.ExecSQL('RELEASE SAVEPOINT ' + TransactionName);
 end;
 
 function TSQLiteTransactionAdapter.InTransaction: Boolean;
@@ -282,7 +282,7 @@ begin
   if (Transaction = nil) then
     Exit;
 
-  Transaction.Rollback;
+  Transaction.ExecSQL('ROLLBACK TRANSACTION TO SAVEPOINT ' + TransactionName);
 end;
 
 initialization

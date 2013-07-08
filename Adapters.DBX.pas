@@ -262,11 +262,11 @@ begin
     Exit(nil);
 
   Connection.Connected := True;
-  LTran := nil;
-  if not Connection.InTransaction then
-  begin
-    LTran := Connection.BeginTransaction;
-  end;
+ // LTran := nil;
+ // if not Connection.InTransaction then
+ // begin
+  LTran := Connection.BeginTransaction;
+//  end;
   Result := TDBXTransactionAdapter.Create(LTran);
 end;
 
