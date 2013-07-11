@@ -66,7 +66,7 @@ type
   ///	  Provides an abstract implementation for the
   ///	  <see cref="IEnumerable">IEnumerable</see> interface.
   ///	</summary>
-  TEnumerableBase = class abstract(TInterfacedObject, IEnumerable)
+  TEnumerableBase = class abstract(TInterfacedObject, IInterface, IEnumerable)
   protected
     function NonGenericGetEnumerator: IEnumerator; virtual; abstract;
 
@@ -112,6 +112,9 @@ type
     function IEnumerable.EqualsTo = NonGenericEqualsTo;
     function IEnumerable.ToList = NonGenericToList;
     function IEnumerable.ToSet = NonGenericToSet;
+
+    function _AddRef: Integer; virtual; stdcall;
+    function _Release: Integer; virtual; stdcall;
 
     function GetCount: Integer; virtual;
     function GetElementType: PTypeInfo; virtual; abstract;
@@ -251,8 +254,8 @@ type
   protected
 
   {$REGION 'Implements IInterface'}
-    function _AddRef: Integer; stdcall;
-    function _Release: Integer; stdcall;
+    function _AddRef: Integer; override;
+    function _Release: Integer; override;
   {$ENDREGION}
   public
     constructor Create(const controller: IInterface);
@@ -404,6 +407,16 @@ end;
 function TEnumerableBase.GetIsEmpty: Boolean;
 begin
   Result := Count = 0;
+end;
+
+function TEnumerableBase._AddRef: Integer;
+begin
+  Result := inherited _AddRef;
+end;
+
+function TEnumerableBase._Release: Integer;
+begin
+  Result := inherited _Release;
 end;
 
 {$ENDREGION}
@@ -1183,12 +1196,12 @@ end;
 
 function TContainedCollectionBase<T>._AddRef: Integer;
 begin
-  Result := Controller._AddRef;
+  Result := IInterface(FController)._AddRef;
 end;
 
 function TContainedCollectionBase<T>._Release: Integer;
 begin
-  Result := Controller._Release;
+  Result := IInterface(FController)._Release;
 end;
 
 {$ENDREGION}

@@ -90,6 +90,7 @@ type
     procedure TestDictionaryKeysAreEmpty;
     procedure TestDictionaryValuesAreEmpty;
     procedure TestDictionaryContainsReturnsFalse;
+    procedure TestDictionaryValuesReferenceCounting;
   end;
 
   TTestStringIntegerDictionary = class(TExceptionCheckerTestCase)
@@ -677,6 +678,14 @@ var
 begin
   Result := SUT.Values;
   CheckEquals(0, Result.Count);
+end;
+
+procedure TTestEmptyStringIntegerDictionary.TestDictionaryValuesReferenceCounting;
+var
+  query: IEnumerable<Integer>;
+begin
+  query := SUT.Values.Skip(1);
+  CheckNotNull(query);
 end;
 
 { TTestEmptyStackofStrings }
