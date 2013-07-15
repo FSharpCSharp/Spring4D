@@ -326,7 +326,7 @@ type
   ///	  shared instance.
   ///	</summary>
   ///	<remarks>
-  ///	  You should use ServiceLocator to query a service instead of directly
+  ///	  You should use ServiceLocator to query a service insteading of directly
   ///	  using Spring.Container namespace in your library. The namespace is
   ///	  supposed to be used to register components in your bootstrap code.
   ///	</remarks>
@@ -366,7 +366,7 @@ type
   {$ENDREGION}
 
 
-{$REGION 'Deprecated LifetimeType constants'}
+  {$REGION 'Deprecated LifetimeType constants'}
 
 const
   ltUnknown = TLifetimeType.Unknown deprecated;
@@ -376,7 +376,7 @@ const
   ltPooled = TLifetimeType.Pooled deprecated;
   ltCustom = TLifetimeType.Custom deprecated;
 
-{$ENDREGION}
+  {$ENDREGION}
 
 
 ///	<summary>

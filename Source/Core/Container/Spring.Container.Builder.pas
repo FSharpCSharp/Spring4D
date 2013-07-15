@@ -30,11 +30,9 @@ interface
 
 uses
   Rtti,
-  TypInfo,
   Spring,
   Spring.Collections,
-  Spring.Container.Core,
-  Spring.Services;
+  Spring.Container.Core;
 
 type
   TComponentBuilder = class(TInterfacedObject, IComponentBuilder)
@@ -108,11 +106,13 @@ type
 implementation
 
 uses
-  Spring.Helpers,
-  Spring.Reflection,
+  TypInfo,
   Spring.Container.ComponentActivator,
   Spring.Container.Injection,
-  Spring.Container.ResourceStrings;
+  Spring.Container.ResourceStrings,
+  Spring.Helpers,
+  Spring.Reflection,
+  Spring.Services;
 
 
 {$REGION 'TComponentBuilder'}

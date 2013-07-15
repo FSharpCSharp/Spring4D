@@ -31,8 +31,7 @@ interface
 uses
   Spring,
   Spring.Collections,
-  Spring.Container.Core,
-  Spring.Services;
+  Spring.Container.Core;
 
 type
   ///	<summary>
@@ -72,7 +71,8 @@ implementation
 uses
   Spring.Container.ResourceStrings,
   Spring.Helpers,
-  Spring.Reflection;
+  Spring.Reflection,
+  Spring.Services;
 
 
 {$REGION 'TComponentActivatorBase'}

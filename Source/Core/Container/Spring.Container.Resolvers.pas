@@ -29,10 +29,7 @@ unit Spring.Container.Resolvers;
 interface
 
 uses
-  Classes,
-  SysUtils,
   Rtti,
-  TypInfo,
   Spring,
   Spring.Collections,
   Spring.Container.Core;
@@ -152,14 +149,13 @@ type
 
 implementation
 
-uses                     
+uses
+  SysUtils,
+  TypInfo,
+  Spring.Container.ResourceStrings,
   Spring.Helpers,
   Spring.Reflection,
-  Spring.ResourceStrings,
-  Spring.SystemUtils,
-  Spring.Container.ComponentActivator,
-  Spring.Container.LifetimeManager,
-  Spring.Container.ResourceStrings;
+  Spring.SystemUtils;
 
 
 {$REGION 'TResolver'}
@@ -625,16 +621,17 @@ end;
 
 function TServiceResolver.ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
 var
-  models: IList<TComponentModel>;
+  models: IEnumerable<TComponentModel>;
   model: TComponentModel;
   i: Integer;
 begin
-  models := Registry.FindAll(serviceType).ToList;
+  models := Registry.FindAll(serviceType);
   SetLength(Result, models.Count);
-  for i := 0 to models.Count - 1 do
+  i := 0;
+  for model in models do
   begin
-    model := models[i];
     Result[i] := DoResolve(model, serviceType, Context.DependencyResolver);
+    Inc(i);
   end;
 end;
 

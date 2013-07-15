@@ -29,10 +29,7 @@ unit Spring.Container.Injection;
 interface
 
 uses
-  Classes,
-  SysUtils,
   Rtti,
-  TypInfo,
   Spring,
   Spring.Collections,
   Spring.Container.Core;
@@ -105,9 +102,10 @@ type
 implementation
 
 uses
-  Spring.ResourceStrings,
+  SysUtils,
   Spring.Container.ResourceStrings,
-  Spring.Helpers;
+  Spring.Helpers,
+  Spring.ResourceStrings;
 
 
 {$REGION 'TInjectionBase'}
@@ -330,5 +328,6 @@ begin
 end;
 
 {$ENDREGION}
+
 
 end.

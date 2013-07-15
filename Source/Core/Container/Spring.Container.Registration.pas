@@ -30,14 +30,11 @@ unit Spring.Container.Registration;
 interface
 
 uses
-  Classes,
-  SysUtils,
   Rtti,
-  TypInfo,
   Spring,
   Spring.Collections,
-  Spring.Services,
-  Spring.Container.Core;
+  Spring.Container.Core,
+  Spring.Services;
 
 type
   ///	<summary>
@@ -185,10 +182,11 @@ type
 implementation
 
 uses
-  Spring.Reflection,
+  TypInfo,
+  Spring.Container.ResourceStrings,
   Spring.Helpers,
-  Spring.ResourceStrings,
-  Spring.Container.ResourceStrings;
+  Spring.Reflection;
+
 
 {$REGION 'TComponentRegistry'}
 
@@ -698,5 +696,6 @@ begin
 end;
 
 {$ENDREGION}
+
 
 end.

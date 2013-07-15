@@ -34,9 +34,9 @@ uses
   Rtti,
   Spring,
   Spring.Collections,
-  Spring.Services,
   Spring.Container.Core,
-  Spring.Container.Registration;
+  Spring.Container.Registration,
+  Spring.Services;
 
 type
   ///	<summary>
@@ -74,8 +74,12 @@ type
 
     procedure AddExtension(extension: IContainerExtension);
 
+    function RegisterInstance<TServiceType>(const instance: TServiceType): TRegistration<TServiceType>; overload;
+
     function RegisterType<TComponentType>: TRegistration<TComponentType>; overload;
     function RegisterType(componentType: PTypeInfo): TRegistration; overload;
+    function RegisterType<TServiceType, TComponentType>(
+      const name: string = ''): TRegistration<TComponentType>; overload;
 
     function RegisterComponent<TComponentType>: TRegistration<TComponentType>; overload; deprecated 'Use RegisterType';
     function RegisterComponent(componentType: PTypeInfo): TRegistration; overload; deprecated 'Use RegisterType';
@@ -146,12 +150,12 @@ implementation
 
 uses
   TypInfo,
-  Spring.Helpers,
   Spring.Container.Builder,
   Spring.Container.Injection,
   Spring.Container.LifetimeManager,
   Spring.Container.Resolvers,
-  Spring.Container.ResourceStrings;
+  Spring.Container.ResourceStrings,
+  Spring.Helpers;
 
 function GlobalContainer: TContainer;
 begin
@@ -299,9 +303,27 @@ begin
   Result := fRegistrationManager.RegisterComponent<TComponentType>;
 end;
 
+function TContainer.RegisterInstance<TServiceType>(
+  const instance: TServiceType): TRegistration<TServiceType>;
+begin
+  Result := fRegistrationManager.RegisterComponent<TServiceType>;
+  Result := Result.DelegateTo(
+    function: TServiceType
+    begin
+      Result := instance;
+    end);
+end;
+
 function TContainer.RegisterType<TComponentType>: TRegistration<TComponentType>;
 begin
   Result := fRegistrationManager.RegisterComponent<TComponentType>;
+end;
+
+function TContainer.RegisterType<TServiceType, TComponentType>(
+  const name: string): TRegistration<TComponentType>;
+begin
+  Result := fRegistrationManager.RegisterComponent<TComponentType>;
+  Result := Result.Implements<TServiceType>(name);
 end;
 
 function TContainer.RegisterType(componentType: PTypeInfo): TRegistration;
@@ -383,7 +405,6 @@ begin
   Result := fServiceResolver.Resolve(name);
 end;
 
-
 function TContainer.Resolve(const name: string;
   resolverOverride: IResolverOverride): TValue;
 begin
@@ -393,19 +414,20 @@ end;
 function TContainer.ResolveAll<TServiceType>: TArray<TServiceType>;
 var
   serviceType: PTypeInfo;
-  models: IList<TComponentModel>;
+  models: IEnumerable<TComponentModel>;
   model: TComponentModel;
   value: TValue;
   i: Integer;
 begin
   serviceType := TypeInfo(TServiceType);
-  models := fRegistry.FindAll(serviceType).ToList;
+  models := fRegistry.FindAll(serviceType);
   SetLength(Result, models.Count);
-  for i := 0 to models.Count - 1 do
+  i := 0;
+  for model in models do
   begin
-    model := models[i];
     value := Resolve(model.GetServiceName(serviceType));
     Result[i] := value.AsType<TServiceType>;
+    Inc(i);
   end;
 end;
 

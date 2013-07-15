@@ -29,7 +29,7 @@ unit Spring.Container.Extensions;
 interface
 
 uses
-  Rtti,
+  Spring,
   Spring.Container.Core;
 
 type
@@ -44,7 +44,8 @@ type
 
 implementation
 
-{ TContainerExtension }
+
+{$REGION 'TContainerExtension'}
 
 procedure TContainerExtension.DoResolve(Sender: TObject; var instance: TValue);
 begin
@@ -73,5 +74,8 @@ begin
     fContext.ServiceResolver.OnResolve.Add(DoResolve);
   end;
 end;
+
+{$ENDREGION}
+
 
 end.

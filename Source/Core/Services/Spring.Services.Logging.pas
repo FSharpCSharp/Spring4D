@@ -32,11 +32,8 @@ unit Spring.Services.Logging;
 interface
 
 uses
-  Classes,
   SysUtils,
-  TypInfo,
-  Spring,
-  Spring.Services;
+  Spring;
 
 type
   ILogger = interface
@@ -102,6 +99,10 @@ function GetLogger(const name: string): ILogger; overload;
 function DefaultLogger: ILogger;
 
 implementation
+
+uses
+  Spring.Services;
+
 
 function LoggerFactory: ILoggerFactory;
 begin

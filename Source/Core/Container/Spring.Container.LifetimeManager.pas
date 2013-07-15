@@ -31,9 +31,8 @@ interface
 uses
   Classes,
   SysUtils,
-  Generics.Collections,
   Spring,
-  Spring.Services,
+  Spring.Collections,
   Spring.Container.Core,
   Spring.Container.Pool;
 
@@ -72,13 +71,12 @@ type
 
   TSingletonPerThreadLifetimeManager = class(TLifetimeManagerBase)
   private
-    fInstances: TDictionary<TThreadID, TFunc<TValue>>;
+    fInstances: IDictionary<TThreadID, TFunc<TValue>>;
   protected
     procedure HandleValueNotify(sender: TObject; const item: TFunc<TValue>; action: TCollectionNotification);
     function CreateHolder(const instance: TValue): TFunc<TValue>; virtual;
   public
     constructor Create(model: TComponentModel);
-    destructor Destroy; override;
     function GetInstance(const resolver: IDependencyResolver): TValue; override;
     procedure ReleaseInstance(const instance: TValue); override;
   end;
@@ -95,8 +93,9 @@ type
 implementation
 
 uses
-  Rtti,
-  TypInfo;
+  TypInfo,
+  Spring.Services;
+
 
 {$REGION 'TLifetimeManagerBase'}
 
@@ -231,14 +230,8 @@ end;
 constructor TSingletonPerThreadLifetimeManager.Create(model: TComponentModel);
 begin
   inherited Create(model);
-  fInstances := TDictionary<TThreadID, TFunc<TValue>>.Create;
-  fInstances.OnValueNotify := HandleValueNotify;
-end;
-
-destructor TSingletonPerThreadLifetimeManager.Destroy;
-begin
-  fInstances.Free;
-  inherited Destroy;
+  fInstances := TCollections.CreateDictionary<TThreadID, TFunc<TValue>>;
+  fInstances.OnValueNotify.Add(HandleValueNotify);
 end;
 
 function TSingletonPerThreadLifetimeManager.CreateHolder(const instance: TValue): TFunc<TValue>;
@@ -263,7 +256,7 @@ var
   holder: TFunc<TValue>;
 begin
   threadID := TThread.CurrentThread.ThreadID;
-  MonitorEnter(fInstances);
+  MonitorEnter(Self);
   try
     if not fInstances.TryGetValue(threadID, holder) then
     begin
@@ -273,7 +266,7 @@ begin
       DoAfterConstruction(holder);
     end;
   finally
-    MonitorExit(fInstances);
+    MonitorExit(Self);
   end;
   Result := holder;
 end;

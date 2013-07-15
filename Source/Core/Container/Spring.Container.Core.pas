@@ -31,7 +31,6 @@ interface
 uses
   Rtti,
   SysUtils,
-  TypInfo,
   Spring,
   Spring.Collections,
   Spring.DesignPatterns,
@@ -353,9 +352,9 @@ implementation
 
 uses
   Generics.Collections,
-  Spring.Helpers,
-  Spring.Container.Builder,
+  TypInfo,
   Spring.Container.ResourceStrings,
+  Spring.Helpers,
   Spring.Reflection;
 
 
@@ -378,7 +377,7 @@ begin
   predicate := TMethodFilters.IsConstructor and
     TMethodFilters.HasParameterTypes(parameterTypes);
   method := ComponentType.Methods.FirstOrDefault(predicate);
-  if method = nil then
+  if not Assigned(method) then
   begin
     raise ERegistrationException.CreateRes(@SUnsatisfiedConstructorParameters);
   end;
@@ -393,7 +392,7 @@ var
   injectionExists: Boolean;
 begin
   method := ComponentType.GetMethod(methodName);
-  if method = nil then
+  if not Assigned(method) then
   begin
     raise ERegistrationException.CreateResFmt(@SNoSuchMethod, [methodName]);
   end;
@@ -421,7 +420,7 @@ begin
     TMethodFilters.IsInstanceMethod and
     TMethodFilters.HasParameterTypes(parameterTypes);
   method := ComponentType.Methods.FirstOrDefault(predicate);
-  if method = nil then
+  if not Assigned(method) then
   begin
     raise ERegistrationException.CreateResFmt(@SUnsatisfiedMethodParameterTypes, [methodName]);
   end;
@@ -444,7 +443,7 @@ var
   injectionExists: Boolean;
 begin
   propertyMember := ComponentType.GetProperty(propertyName);
-  if propertyMember = nil then
+  if not Assigned(propertyMember) then
   begin
     raise ERegistrationException.CreateResFmt(@SNoSuchProperty, [propertyName]);
   end;
@@ -467,7 +466,7 @@ var
   injectionExists: Boolean;
 begin
   field := ComponentType.GetField(fieldName);
-  if field = nil then
+  if not Assigned(field) then
   begin
     raise ERegistrationException.CreateResFmt(@SNoSuchField, [fieldName]);
   end;
@@ -547,7 +546,7 @@ end;
 
 function TComponentModel.GetConstructorInjections: IInjectionList;
 begin
-  if fConstructorInjections = nil then
+  if not Assigned(fConstructorInjections) then
   begin
     fConstructorInjections := TCollections.CreateList<IInjection>;
   end;
@@ -556,7 +555,7 @@ end;
 
 function TComponentModel.GetDefaultServices: IList<PTypeInfo>;
 begin
-  if fDefaultServices = nil then
+  if not Assigned(fDefaultServices) then
   begin
     fDefaultServices := TCollections.CreateList<PTypeInfo>;
   end;
@@ -565,7 +564,7 @@ end;
 
 function TComponentModel.GetMethodInjections: IInjectionList;
 begin
-  if fMethodInjections = nil then
+  if not Assigned(fMethodInjections) then
   begin
     fMethodInjections := TCollections.CreateList<IInjection>;
   end;
@@ -574,7 +573,7 @@ end;
 
 function TComponentModel.GetPropertyInjections: IInjectionList;
 begin
-  if fPropertyInjections = nil then
+  if not Assigned(fPropertyInjections) then
   begin
     fPropertyInjections := TCollections.CreateList<IInjection>;
   end;
@@ -608,7 +607,7 @@ end;
 
 function TComponentModel.GetServices: IDictionary<string, PTypeInfo>;
 begin
-  if fServices = nil then
+  if not Assigned(fServices) then
   begin
     fServices := TCollections.CreateDictionary<string, PTypeInfo>;
   end;
@@ -617,7 +616,7 @@ end;
 
 function TComponentModel.GetFieldInjections: IInjectionList;
 begin
-  if fFieldInjections = nil then
+  if not Assigned(fFieldInjections) then
   begin
     fFieldInjections := TCollections.CreateList<IInjection>;
   end;
@@ -626,7 +625,7 @@ end;
 
 function TComponentModel.GetInjections: IDictionary<IInjection, TArray<TValue>>;
 begin
-  if fInjectionArguments = nil then
+  if not Assigned(fInjectionArguments) then
   begin
     fInjectionArguments := TCollections.CreateDictionary<IInjection, TArray<TValue>>;
   end;
