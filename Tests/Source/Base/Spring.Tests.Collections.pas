@@ -24,6 +24,8 @@
 
 unit Spring.Tests.Collections;
 
+{$I Spring.inc}
+
 interface
 
 uses
@@ -32,11 +34,6 @@ uses
   SysUtils,
   Spring,
   Spring.Collections;
-
-type
-  TTestCode = reference to procedure;
-  TClassOfException = class of Exception;
-  ESpringTestsException = class(Exception);
 
 type
   TTestEmptyHashSet = class(TTestCase)
@@ -50,7 +47,7 @@ type
     procedure TestEmpty;
     procedure TestAddDuplications;
     procedure TestExceptWith;
-    procedure TestIntesectWith;
+    procedure TestIntersectWith;
     procedure TestUnionWith;
     procedure TestSetEquals;
   end;
@@ -65,16 +62,16 @@ type
     procedure CheckSet(const collection: ISet<Integer>; const values: array of Integer);
   published
     procedure TestExceptWith;
-    procedure TestIntesectWith;
+    procedure TestIntersectWith;
+    procedure TestIntersectWithList;
     procedure TestUnionWith;
     procedure TestSetEquals;
+    procedure TestSetEqualsList;
   end;
 
   TExceptionCheckerTestCase = class(TTestCase)
   protected
-    procedure CheckException(aExceptionType: TClassOfException; aCode: TTestCode; const aMessage: String);
-    procedure CheckExceptionNotRaised(aExceptionType: TClassOfException; aCode: TTestCode; const aMessage: String);
-
+    procedure CheckException(aExceptionType: ExceptionClass; aCode: TProc; const aMessage: string);
   end;
 
   TTestIntegerList = class(TExceptionCheckerTestCase)
@@ -94,7 +91,7 @@ type
     procedure TestListSimpleDelete;
     procedure TestListMultipleDelete;
     procedure TestListSimpleExchange;
-    procedure TesListtReverse;
+    procedure TestListReverse;
     procedure TestListSort;
     procedure TestListIndexOf;
     procedure TestLastIndexOf;
@@ -178,7 +175,7 @@ type
     procedure TestNonGenericNotifyEvent;
   end;
 
-  TTestEmptyQueueofInteger = class(TExceptionCheckerTestCase)
+  TTestEmptyQueueOfInteger = class(TExceptionCheckerTestCase)
   private
     SUT: IQueue<integer>;
   protected
@@ -196,7 +193,7 @@ type
     const MaxItems = 1000;
   private
     SUT: IQueue<integer>;
-    procedure FillQueue;  // Will test Engueue method
+    procedure FillQueue;  // Will test Enqueue method
   protected
     procedure SetUp; override;
     procedure TearDown; override;
@@ -247,7 +244,6 @@ type
     procedure TestElementAt;
   end;
 
-
 implementation
 
 { TTestEmptyHashSet }
@@ -277,7 +273,7 @@ begin
   CheckEquals(0, fSet.Count);
 end;
 
-procedure TTestEmptyHashSet.TestIntesectWith;
+procedure TTestEmptyHashSet.TestIntersectWith;
 begin
   fSet.IntersectWith(fEmpty);
   CheckEquals(0, fSet.Count);
@@ -338,16 +334,26 @@ begin
   CheckSet(fSet1, [2]);
 end;
 
-procedure TTestNormalHashSet.TestIntesectWith;
+procedure TTestNormalHashSet.TestIntersectWith;
 begin
   fSet1.IntersectWith(fSet2);
+  CheckSet(fSet1, [1, 3]);
+end;
+
+procedure TTestNormalHashSet.TestIntersectWithList;
+var
+  list: IList<Integer>;
+begin
+  list := TCollections.CreateList<Integer>;
+  list.AddRange([3, 1, 4, 5]);
+  fSet1.IntersectWith(list);
   CheckSet(fSet1, [1, 3]);
 end;
 
 procedure TTestNormalHashSet.TestUnionWith;
 begin
   fSet1.UnionWith(fSet2);
-  CheckSet(fSet1, [1,2,3,4,5]);
+  CheckSet(fSet1, [1, 2, 3, 4, 5]);
 end;
 
 procedure TTestNormalHashSet.TestSetEquals;
@@ -355,6 +361,16 @@ begin
   CheckFalse(fSet1.SetEquals(fSet2));
   CheckTrue(fSet1.SetEquals(fSet1));
   CheckTrue(fSet2.SetEquals(fSet2));
+end;
+
+procedure TTestNormalHashSet.TestSetEqualsList;
+var
+  list: IList<Integer>;
+begin
+  list := TCollections.CreateList<Integer>;
+  list.AddRange([3, 2, 1]);
+  CheckTrue(fSet1.SetEquals(list));
+  CheckFalse(fSet2.SetEquals(list));
 end;
 
 { TTestIntegerList }
@@ -383,7 +399,6 @@ begin
   SUT.Add(3);
 
   CheckEquals(2, SUT.LastIndexOf(1));
-
 end;
 
 procedure TTestIntegerList.TestListClear;
@@ -412,7 +427,6 @@ begin
   end;
 end;
 
-
 procedure TTestIntegerList.TestListCountWithInsert;
 var
   i: Integer;
@@ -432,22 +446,22 @@ begin
   CheckEquals(0, SUT.Count);
 end;
 
-procedure TTestIntegerList.TesListtReverse;
+procedure TTestIntegerList.TestListReverse;
 var
   i: Integer;
 begin
- for i := 0 to ListCountLimit do
- begin
-   SUT.Add(i);
- end;
- CheckEquals(ListCountLimit + 1, SUT.Count, 'TestReverse: List count incorrect after initial adds');
+  for i := 0 to ListCountLimit do
+  begin
+    SUT.Add(i);
+  end;
+  CheckEquals(ListCountLimit + 1, SUT.Count, 'TestReverse: List count incorrect after initial adds');
 
- SUT.Reverse;
+  SUT.Reverse;
 
- for i := ListCountLimit downto 0 do
- begin
-   CheckEquals(i, SUT[ListCountLimit - i]);
- end;
+  for i := ListCountLimit downto 0 do
+  begin
+    CheckEquals(i, SUT[ListCountLimit - i]);
+  end;
 end;
 
 procedure TTestIntegerList.TestListSimpleExchange;
@@ -579,13 +593,12 @@ end;
 
 procedure TTestIntegerList.SimpleFillList;
 begin
-  if SUT = nil then
-    raise ESpringTestsException.Create('SUT is nil');
+  Assert(Assigned(SUT), 'SUT is nil');
   SUT.Add(1);
   SUT.Add(2);
   SUT.Add(3);
 end;
-//
+
 { TTestStringIntegerDictionary }
 
 procedure TTestStringIntegerDictionary.SetUp;
@@ -605,16 +618,13 @@ end;
 
 procedure TTestStringIntegerDictionary.TestDictionaryContainsKey;
 begin
-
   CheckTrue(SUT.ContainsKey('one'), '"one" not found by ContainsKey');
   CheckTrue(SUT.ContainsKey('two'), '"two" not found by ContainsKey');
   CheckTrue(SUT.ContainsKey('three'), '"three" not found by ContainsKey');
-
 end;
 
 procedure TTestStringIntegerDictionary.TestDictionaryContainsValue;
 begin
-
   CheckTrue(SUT.ContainsValue(1), '1 not found by ContainsValue');
   CheckTrue(SUT.ContainsValue(2), '2 not found by ContainsValue');
   CheckTrue(SUT.ContainsValue(3), '3 not found by ContainsValue');
@@ -623,21 +633,18 @@ end;
 procedure TTestStringIntegerDictionary.TestDictionaryCountWithAdd;
 begin
   CheckEquals(3, SUT.Count, 'TestDictionaryCountWithAdd: Count is not correct');
-
 end;
 
 procedure TTestStringIntegerDictionary.TestDictionaryKeys;
 var
   Result: ICollection<string>;
 begin
-
   Result := SUT.Keys;
   CheckEquals(3, Result.Count, 'TestDictionaryKeys: Keys call returns wrong count');
 
   CheckTrue(Result.Contains('one'), 'TestDictionaryKeys: Keys doesn''t contain "one"');
   CheckTrue(Result.Contains('two'), 'TestDictionaryKeys: Keys doesn''t contain "two"');
   CheckTrue(Result.Contains('three'), 'TestDictionaryKeys: Keys doesn''t contain "three"');
-
 end;
 
 procedure TTestStringIntegerDictionary.TestDictionarySimpleValues;
@@ -653,14 +660,12 @@ procedure TTestStringIntegerDictionary.TestDictionaryValues;
 var
   Result: ICollection<integer>;
 begin
-
   Result := SUT.Values;
   CheckEquals(3, Result.Count, 'TestDictionaryKeys: Values call returns wrong count');
 
   CheckTrue(Result.Contains(1), 'TestDictionaryKeys: Values doesn''t contain "one"');
   CheckTrue(Result.Contains(2), 'TestDictionaryKeys: Values doesn''t contain "two"');
   CheckTrue(Result.Contains(3), 'TestDictionaryKeys: Values doesn''t contain "three"');
-
 end;
 
 { TTestEmptyStringIntegerDictionary }
@@ -679,8 +684,8 @@ end;
 
 procedure TTestEmptyStringIntegerDictionary.TestDictionaryContainsReturnsFalse;
 begin
-   CheckFalse(SUT.ContainsKey('blah'));
-   CheckFalse(SUT.ContainsValue(42));
+  CheckFalse(SUT.ContainsKey('blah'));
+  CheckFalse(SUT.ContainsValue(42));
 end;
 
 procedure TTestEmptyStringIntegerDictionary.TestDictionaryIsInitializedEmpty;
@@ -739,26 +744,8 @@ end;
 
 { TExceptionCheckerTestCase }
 
-procedure TExceptionCheckerTestCase.CheckException(aExceptionType: TClassOfException; aCode: TTestCode; const aMessage: String);
-var
-  WasException: Boolean;
-begin
-  WasException := False;
-  try
-    aCode;
-  except
-    on E: Exception do
-    begin
-      if E is aExceptionType then
-      begin
-        WasException := True;
-      end;
-    end;
-  end;
-  Check(WasException, aMessage);
-end;
-
-procedure TExceptionCheckerTestCase.CheckExceptionNotRaised(aExceptionType: TClassOfException; aCode: TTestCode; const aMessage: String);
+procedure TExceptionCheckerTestCase.CheckException(
+  aExceptionType: ExceptionClass; aCode: TProc; const aMessage: string);
 var
   WasException: Boolean;
 begin
@@ -845,7 +832,6 @@ procedure TTestStackOfInteger.TestStackPopPushBalances;
 var
   i: Integer;
 begin
-
   FillStack;
 
   for i := 0 to MaxStackItems do
@@ -855,7 +841,6 @@ begin
 
   // Should be empty
   CheckEquals(0, SUT.Count);
-
 end;
 
 { TTestStackOfIntegerNotifyEvent }
@@ -976,36 +961,36 @@ end;
 
 { TTestEmptyQueueofTObject }
 
-procedure TTestEmptyQueueofInteger.SetUp;
+procedure TTestEmptyQueueOfInteger.SetUp;
 begin
   inherited;
   SUT := TCollections.CreateQueue<integer>
 end;
 
-procedure TTestEmptyQueueofInteger.TearDown;
+procedure TTestEmptyQueueOfInteger.TearDown;
 begin
   inherited;
   SUT := nil;
 end;
 
-procedure TTestEmptyQueueofInteger.TestClearOnEmptyQueue;
+procedure TTestEmptyQueueOfInteger.TestClearOnEmptyQueue;
 begin
   CheckEquals(0, SUT.Count, 'Queue not empty before call to clear');
   SUT.Clear;
   CheckEquals(0, SUT.Count, 'Queue not empty after call to clear');
 end;
 
-procedure TTestEmptyQueueofInteger.TestEmptyQueueIsEmpty;
+procedure TTestEmptyQueueOfInteger.TestEmptyQueueIsEmpty;
 begin
   CheckEquals(0, SUT.Count);
 end;
 
-procedure TTestEmptyQueueofInteger.TestPeekRaisesException;
+procedure TTestEmptyQueueOfInteger.TestPeekRaisesException;
 begin
   CheckException(EListError, procedure() begin SUT.Peek end, 'EListError was not raised on Peek call with empty Queue');
 end;
 
-procedure TTestEmptyQueueofInteger.TestDequeueRaisesException;
+procedure TTestEmptyQueueOfInteger.TestDequeueRaisesException;
 begin
   CheckException(EListError, procedure() begin SUT.Dequeue end, 'EListError was not raised on Peek call with empty Queue');
 end;
@@ -1243,12 +1228,10 @@ begin
 end;
 
 procedure TTestListOfIntegerAsIEnumerable.TestCheckSingleRaisedExceptionWhenHasMultipleItems;
-var
-  TempCode: TTestCode;
 begin
   FillList;
-  TempCode := procedure begin SUT.Single end;
-  CheckException(EInvalidOperationException, TempCode, 'SUT has more thann one item, but failed to raise the EInvalidOperationException when the Single method was called.');
+  CheckException(EInvalidOperationException, procedure begin SUT.Single end,
+    'SUT has more thann one item, but failed to raise the EInvalidOperationException when the Single method was called.');
 end;
 
 procedure TTestListOfIntegerAsIEnumerable.TestContains;

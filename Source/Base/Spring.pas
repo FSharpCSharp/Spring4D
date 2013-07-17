@@ -1113,8 +1113,14 @@ const
   ReferenceKinds = [
     tkClass, tkMethod, tkInterface, tkClassRef, tkPointer, tkProcedure];
 begin
-  Result := Assigned(typeInfo) and (typeInfo.Kind in ReferenceKinds);
-  Result := Result and not Assigned(@value);
+  Result := False;
+  if Assigned(typeInfo) and (typeInfo.Kind in ReferenceKinds) then
+  begin
+    if typeInfo.Kind = tkMethod then
+      Result := not Assigned(TMethod(value).Code) and not Assigned(TMethod(value).Data)
+    else
+      Result := not Assigned(PPointer(@value)^);
+  end;
 end;
 
 class procedure TArgument.RaiseArgumentException(const msg: string);

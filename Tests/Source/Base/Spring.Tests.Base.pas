@@ -63,6 +63,11 @@ type
     procedure TestIssue55;
   end;
 
+  TTestArgument = class(TTestCase)
+  published
+    procedure TestIsNullReference;
+  end;
+
   TTestLazy = class(TTestCase)
   private
     fBalance: ILazy<Integer>;
@@ -74,13 +79,13 @@ type
     procedure TestByValue;
   end;
 
-  TTestEmptyMulticastEvent = class(TTestCase)
+  TTestMulticastEvent = class(TTestCase)
   private
     type
-      TEventInt64 = procedure(const Value: Int64 ) of object;
-      TEventSingle = procedure(const Value: Single ) of object;
-      TEventDouble = procedure(const Value: Double ) of object;
-      TEventExtended = procedure(const Value: Extended ) of object;
+      TEventInt64 = procedure(const Value: Int64) of object;
+      TEventSingle = procedure(const Value: Single) of object;
+      TEventDouble = procedure(const Value: Double) of object;
+      TEventExtended = procedure(const Value: Extended) of object;
   private
     fEvent: IMulticastNotifyEvent;
     fASender: TObject;
@@ -103,10 +108,10 @@ type
     procedure TestInvoke;
     procedure TestOneHandler;
     procedure TestTwoHandlers;
+    procedure TestRecordType;
     procedure TestIssue58;
     procedure TestIssue60;
   end;
-
 
 implementation
 
@@ -213,15 +218,15 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TTestEmptyMulticastEvent'}
+{$REGION 'TTestMulticastEvent'}
 
-procedure TTestEmptyMulticastEvent.SetUp;
+procedure TTestMulticastEvent.SetUp;
 begin
   inherited;
   fEvent := TMulticastNotifyEvent.Create;
 end;
 
-procedure TTestEmptyMulticastEvent.TearDown;
+procedure TTestMulticastEvent.TearDown;
 begin
   inherited;
   fEvent := nil;
@@ -232,56 +237,56 @@ begin
   fHandlerInvokeCount := 0;
 end;
 
-procedure TTestEmptyMulticastEvent.HandlerA(sender: TObject);
+procedure TTestMulticastEvent.HandlerA(sender: TObject);
 begin
   fASender := sender;
   fAInvoked := True;
 end;
 
-procedure TTestEmptyMulticastEvent.HandlerB(sender: TObject);
+procedure TTestMulticastEvent.HandlerB(sender: TObject);
 begin
   fBSender := sender;
   fBInvoked := True;
 end;
 
-procedure TTestEmptyMulticastEvent.HandlerDouble(const value: Double);
+procedure TTestMulticastEvent.HandlerDouble(const value: Double);
 begin
   CheckEquals(42, value);
   Inc(fHandlerInvokeCount);
 end;
 
-procedure TTestEmptyMulticastEvent.HandlerExtended(const value: Extended);
+procedure TTestMulticastEvent.HandlerExtended(const value: Extended);
 begin
   CheckEquals(42, value);
   Inc(fHandlerInvokeCount);
 end;
 
-procedure TTestEmptyMulticastEvent.HandlerInt64(const value: Int64);
+procedure TTestMulticastEvent.HandlerInt64(const value: Int64);
 begin
   CheckEquals(42, value);
   Inc(fHandlerInvokeCount);
 end;
 
-procedure TTestEmptyMulticastEvent.HandlerSingle(const value: Single);
+procedure TTestMulticastEvent.HandlerSingle(const value: Single);
 begin
   CheckEquals(42, value);
   Inc(fHandlerInvokeCount);
 end;
 
-procedure TTestEmptyMulticastEvent.TestEmpty;
+procedure TTestMulticastEvent.TestEmpty;
 begin
   CheckEquals(0, fEvent.Count);
   CheckTrue(fEvent.IsEmpty);
 end;
 
-procedure TTestEmptyMulticastEvent.TestInvoke;
+procedure TTestMulticastEvent.TestInvoke;
 begin
   fEvent.Invoke(Self);
   CheckFalse(fAInvoked);
   CheckFalse(fBInvoked);
 end;
 
-procedure TTestEmptyMulticastEvent.TestIssue58;
+procedure TTestMulticastEvent.TestIssue58;
 var
   e: Event<TNotifyEvent>;
   i: IEvent<TNotifyEvent>;
@@ -292,7 +297,7 @@ begin
   Check(Assigned(i));
 end;
 
-procedure TTestEmptyMulticastEvent.TestIssue60;
+procedure TTestMulticastEvent.TestIssue60;
 var
   eventInt64: Event<TEventInt64>;
   eventSingle: Event<TEventSingle>;
@@ -317,7 +322,7 @@ begin
   CheckEquals(4, fHandlerInvokeCount);
 end;
 
-procedure TTestEmptyMulticastEvent.TestOneHandler;
+procedure TTestMulticastEvent.TestOneHandler;
 begin
   fEvent.Add(HandlerA);
   CheckEquals(1, fEvent.Count);
@@ -333,7 +338,32 @@ begin
   CheckEquals(0, fEvent.Count);
 end;
 
-procedure TTestEmptyMulticastEvent.TestTwoHandlers;
+procedure TTestMulticastEvent.TestRecordType;
+var
+  e: Event<TNotifyEvent>;
+begin
+  CheckTrue(e.IsEmpty);
+
+  e.Add(HandlerA);
+  e.Add(HandlerB);
+  e.Invoke(nil);
+
+  CheckFalse(e.IsEmpty);
+  CheckEquals(2, e.Count);
+
+  CheckTrue(fAInvoked);
+  CheckSame(nil, fASender);
+  CheckTrue(fBInvoked);
+  CheckSame(nil, fBSender);
+
+  e.Remove(HandlerA);
+  CheckEquals(1, e.Count);
+
+  e.Remove(HandlerB);
+  CheckEquals(0, e.Count);
+end;
+
+procedure TTestMulticastEvent.TestTwoHandlers;
 begin
   fEvent.Add(HandlerA);
   fEvent.Add(HandlerB);
@@ -385,6 +415,27 @@ begin
   CheckEquals(CExpectedBalance, (fBalance as ILazy).Value.AsInteger);
 
   CheckTrue(fBalance.IsValueCreated);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestArgument'}
+
+procedure TTestArgument.TestIsNullReference;
+var
+  obj: TObject;
+  intf: IInterface;
+  e: TNotifyEvent;
+begin
+  obj := nil;
+  CheckTrue(TArgument.IsNullReference(obj, TypeInfo(TObject)));
+  CheckTrue(TArgument.IsNullReference(intf, TypeInfo(IInterface)));
+  e := nil;
+  CheckTrue(TArgument.IsNullReference(e, TypeInfo(TNotifyEvent)));
+  TMethod(e).Data := Self;
+  CheckFalse(Assigned(e));
+  CheckFalse(TArgument.IsNullReference(e, TypeInfo(TNotifyEvent)));
 end;
 
 {$ENDREGION}

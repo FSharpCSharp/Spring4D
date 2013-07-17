@@ -27,8 +27,6 @@ unit Spring.Tests.Pool;
 interface
 
 uses
-  Classes,
-  SysUtils,
   TestFramework,
   Spring,
   Spring.Container.Core,
@@ -95,8 +93,9 @@ end;
 procedure TTestObjectPool.TearDown;
 begin
   fPool := nil;
-  FreeAndNil(fActivator);
-  inherited TearDown;
+  fActivator.Free;
+  fActivator := nil;
+  inherited;
 end;
 
 function TTestObjectPool.CreatePool(initialPoolSize,

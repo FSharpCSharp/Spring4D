@@ -326,7 +326,7 @@ begin
   end
   else
   begin
-    Result := TCollections.CreateList<TComponentModel>;;
+    Result := TCollections.CreateList<TComponentModel>;
   end;
 end;
 

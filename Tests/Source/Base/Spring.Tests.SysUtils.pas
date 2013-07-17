@@ -27,10 +27,7 @@ unit Spring.Tests.SysUtils;
 interface
 
 uses
-  Classes,
   SysUtils,
-  TypInfo,
-  Types,
   TestFramework,
   Spring,
   Spring.SystemUtils;
@@ -83,7 +80,9 @@ type
 implementation
 
 uses
-  DateUtils;
+  Classes,
+  DateUtils,
+  TypInfo;
 
 
 {$REGION 'TTestSplitString'}

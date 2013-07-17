@@ -59,6 +59,7 @@ type
     fModel: TComponentModel;
   public
     constructor Create(model: TComponentModel);
+    function CreateInstance: TValue; overload;
     function CreateInstance(const resolver: IDependencyResolver): TValue; overload;
     property Model: TComponentModel read fModel;
   end;
@@ -216,10 +217,15 @@ begin
   fModel := model;
 end;
 
+function TMockActivator.CreateInstance: TValue;
+begin
+  Result := fModel.ComponentType.AsInstance.MetaclassType.Create;
+end;
+
 function TMockActivator.CreateInstance(
   const resolver: IDependencyResolver): TValue;
 begin
-  Result := fModel.ComponentType.AsInstance.MetaclassType.Create;
+  Result := CreateInstance;
 end;
 
 { TMockContext }
