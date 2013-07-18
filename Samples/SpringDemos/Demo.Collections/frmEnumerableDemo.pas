@@ -126,7 +126,7 @@ begin
   Clear;
   Predicate := function(const Pair: TIntegerStringPair): Boolean
                begin
-                 Result :=  Pair.Key > 5;
+                 Result :=  Pair.Key < 5;
                end;
 
   // Same as TSkipWhileEnumerable<TIntegerStringPair>.Create(List, Predicate);
