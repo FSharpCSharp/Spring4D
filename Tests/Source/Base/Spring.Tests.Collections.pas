@@ -30,6 +30,7 @@ interface
 
 uses
   TestFramework,
+  Spring.TestUtils,
   Classes,
   SysUtils,
   Spring,
@@ -67,11 +68,6 @@ type
     procedure TestUnionWith;
     procedure TestSetEquals;
     procedure TestSetEqualsList;
-  end;
-
-  TExceptionCheckerTestCase = class(TTestCase)
-  protected
-    procedure CheckException(aExceptionType: ExceptionClass; aCode: TProc; const aMessage: string);
   end;
 
   TTestIntegerList = class(TExceptionCheckerTestCase)
@@ -740,28 +736,6 @@ end;
 procedure TTestEmptyStackofStrings.TestStackInitializesEmpty;
 begin
   CheckEquals(0, SUT.Count);
-end;
-
-{ TExceptionCheckerTestCase }
-
-procedure TExceptionCheckerTestCase.CheckException(
-  aExceptionType: ExceptionClass; aCode: TProc; const aMessage: string);
-var
-  WasException: Boolean;
-begin
-  WasException := False;
-  try
-    aCode;
-  except
-    on E: Exception do
-    begin
-      if E is aExceptionType then
-      begin
-        WasException := True;
-      end;
-    end;
-  end;
-  Check(WasException, aMessage);
 end;
 
 { TTestStackOfInteger }

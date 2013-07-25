@@ -103,6 +103,7 @@ implementation
 
 uses
   SysUtils,
+  TypInfo,
   Spring.Container.ResourceStrings,
   Spring.Helpers,
   Spring.ResourceStrings;

@@ -39,6 +39,7 @@ uses
   GUITestRunner,
   TextTestRunner,
   FinalBuilder.XMLTestRunner in 'Source\FinalBuilder.XMLTestRunner.pas',
+  Spring.TestUtils in 'Source\Spring.TestUtils.pas',
   Spring.Tests.Base in 'Source\Base\Spring.Tests.Base.pas',
   Spring.Tests.Collections in 'Source\Base\Spring.Tests.Collections.pas',
   Spring.Tests.DesignPatterns in 'Source\Base\Spring.Tests.DesignPatterns.pas',
@@ -51,19 +52,6 @@ uses
   Spring.Tests.Pool in 'Source\Core\Spring.Tests.Pool.pas',
   Spring.Tests.Cryptography in 'Source\Extensions\Spring.Tests.Cryptography.pas',
   Spring.Tests.Utils in 'Source\Extensions\Spring.Tests.Utils.pas';
-
-{$IFDEF XMLOUTPUT}
-var
-  OutputFile: string = 'Spring.Tests.Reports.xml';
-
-var
-  ConfigFile: string;
-{$ENDIF}
-
-{$IFDEF CONSOLE_TESTRUNNER}
-var
-  ExitBehavior: TRunnerExitBehavior;
-{$ENDIF}
 
 procedure RegisterTestCases;
 begin
@@ -190,6 +178,15 @@ begin
 //  ]);
 end;
 
+{$IFDEF CONSOLE_TESTRUNNER}
+var
+{$IFDEF XMLOUTPUT}
+  OutputFile: string = 'Spring.Tests.Reports.xml';
+  ConfigFile: string;
+{$ELSE}
+  ExitBehavior: TRunnerExitBehavior = rxbContinue;
+{$ENDIF}
+{$ENDIF}
 begin
   RegisterTestCases;
   ReportMemoryLeaksOnShutdown := True;
@@ -204,7 +201,7 @@ begin
         OutputFile := ParamStr(1);
       WriteLn('Writing output to ' + OutputFile);
       WriteLn('Running ' + IntToStr(RegisteredTests.CountEnabledTestCases) + ' of ' + IntToStr(RegisteredTests.CountTestCases) + ' test cases');
-      FinalBuilder.XMLTestRunner.RunRegisteredTests(OutputFile);
+      FinalBuilder.XMLTestRunner.RunRegisteredTests(OutputFile).Free;
     {$ELSE}
       WriteLn('To run with rxbPause, use -p switch');
       WriteLn('To run with rxbHaltOnFailures, use -h switch');
@@ -213,10 +210,8 @@ begin
       if FindCmdLineSwitch('p', ['-', '/'], true) then
         ExitBehavior := rxbPause
       else if FindCmdLineSwitch('h', ['-', '/'], true) then
-        ExitBehavior := rxbHaltOnFailures
-      else
-        ExitBehavior := rxbContinue;
-      TextTestRunner.RunRegisteredTests(ExitBehavior);
+        ExitBehavior := rxbHaltOnFailures;
+      TextTestRunner.RunRegisteredTests(ExitBehavior).Free;
     {$ENDIF}
   {$ELSE}
     Application.Initialize;

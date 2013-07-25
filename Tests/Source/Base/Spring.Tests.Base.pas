@@ -29,16 +29,8 @@ unit Spring.Tests.Base;
 interface
 
 uses
-  Classes,
-  TypInfo,
-  DateUtils,
-  SysUtils,
-  Graphics,
-  Variants,
-  Types,
   TestFramework,
-  TestExtensions,
-  Generics.Defaults,
+  Spring.TestUtils,
   Spring;
 
 type
@@ -63,9 +55,10 @@ type
     procedure TestIssue55;
   end;
 
-  TTestArgument = class(TTestCase)
+  TTestArgument = class(TExceptionCheckerTestCase)
   published
     procedure TestIsNullReference;
+    procedure TestCheckRange;
   end;
 
   TTestLazy = class(TTestCase)
@@ -114,6 +107,11 @@ type
   end;
 
 implementation
+
+uses
+  Classes,
+  SysUtils,
+  Variants;
 
 
 {$REGION 'TTestNullableInteger'}
@@ -421,6 +419,87 @@ end;
 
 
 {$REGION 'TTestArgument'}
+
+procedure TTestArgument.TestCheckRange;
+var
+  dynArray: array of Byte;
+const
+  len = 4;
+  idx = 1;
+begin
+  // check string (1-based)
+  CheckException(EArgumentOutOfRangeException,
+    procedure
+    begin
+      TArgument.CheckRange('abcde', 0);
+    end);
+  TArgument.CheckRange('abcde', 1);
+  TArgument.CheckRange('abcde', 5);
+  CheckException(EArgumentOutOfRangeException,
+    procedure
+    begin
+      TArgument.CheckRange('abcde', 6);
+    end);
+
+  // check 0-based byte array
+  SetLength(dynArray, 4);
+  CheckException(EArgumentOutOfRangeException,
+    procedure
+    begin
+      TArgument.CheckRange(dynArray, -1);
+    end);
+  TArgument.CheckRange(dynArray, 0);
+  TArgument.CheckRange(dynArray, 3);
+  CheckException(EArgumentOutOfRangeException,
+    procedure
+    begin
+      TArgument.CheckRange(dynArray, 4);
+    end);
+
+  // check 1-based range
+  CheckException(EArgumentOutOfRangeException,
+    procedure
+    begin
+      TArgument.CheckRange(len, 0, 0, idx);
+    end);
+  CheckException(EArgumentOutOfRangeException,
+    procedure
+    begin
+      TArgument.CheckRange(len, 0, 1, idx);
+    end);
+  CheckException(EArgumentOutOfRangeException,
+    procedure
+    begin
+      TArgument.CheckRange(len, 0, 5, idx);
+    end);
+  CheckException(EArgumentOutOfRangeException,
+    procedure
+    begin
+      TArgument.CheckRange(len, 1, -1, idx);
+    end);
+  TArgument.CheckRange(len, 1, 0, idx);
+  TArgument.CheckRange(len, 1, 1, idx);
+  CheckException(EArgumentOutOfRangeException,
+    procedure
+    begin
+      TArgument.CheckRange(len, 1, 5, idx);
+    end);
+  CheckException(EArgumentOutOfRangeException,
+    procedure
+    begin
+      TArgument.CheckRange(len, 5, 0, idx);
+    end);
+  CheckException(EArgumentOutOfRangeException,
+    procedure
+    begin
+      TArgument.CheckRange(len, 5, 1, idx);
+    end);
+  CheckException(EArgumentOutOfRangeException,
+    procedure
+    begin
+      TArgument.CheckRange(len, 5, 5, idx);
+    end);
+end;
 
 procedure TTestArgument.TestIsNullReference;
 var

@@ -274,26 +274,26 @@ type
     class function VarIsNullOrEmpty(const value: Variant): Boolean; static;
   public
     ///	<summary>
-    ///	  Initializes a new instance of the <see cref="Nullable&lt;T&gt;" />stru
-    ///	  cture to the specified value.
+    ///	  Initializes a new instance of the <see cref="Nullable&lt;T&gt;" /> 
+    ///	  structure to the specified value.
     ///	</summary>
     constructor Create(const value: T); overload;
 
     ///	<summary>
-    ///	  Initializes a new instance of the <see cref="Nullable&lt;T&gt;" />stru
-    ///	  cture to the specified value.
+    ///	  Initializes a new instance of the <see cref="Nullable&lt;T&gt;" /> 
+    ///	  structure to the specified value.
     ///	</summary>
     constructor Create(const value: Variant); overload;
 
     ///	<summary>
-    ///	  Retrieves the value of the current <see cref="Nullable&lt;T&gt;" />obj
-    ///	  ect, or the object's default value.
+    ///	  Retrieves the value of the current <see cref="Nullable&lt;T&gt;" /> 
+    ///	  object, or the object's default value.
     ///	</summary>
     function GetValueOrDefault: T; overload;
 
     ///	<summary>
-    ///	  Retrieves the value of the current <see cref="Nullable&lt;T&gt;" />obj
-    ///	  ect, or the specified default value.
+    ///	  Retrieves the value of the current <see cref="Nullable&lt;T&gt;" /> 
+    ///	  object, or the specified default value.
     ///	</summary>
     ///	<param name="defaultValue">
     ///	  A value to return if the <see cref="HasValue" /> property is
@@ -574,7 +574,7 @@ type
     ///	  Iterates all event handlers and perform the specified action on each
     ///	  one.
     ///	</summary>
-    procedure ForEach(action: TAction<T>);
+    procedure ForEach(const action: TAction<T>);
 
     ///	<summary>
     ///	  Invokes all event handlers.
@@ -590,7 +590,7 @@ type
     ///	  Gets the value indicates whether the multicast event is enabled, or
     ///	  sets the value to enable or disable the event.
     ///	</summary>
-    property Enabled: Boolean read GetEnabled write SetEnabled;  // experimental
+    property Enabled: Boolean read GetEnabled write SetEnabled;
 
     ///	<summary>
     ///	  Gets a value indicates whether there is not any event handler.
@@ -699,7 +699,7 @@ type
 
     procedure Add(handler: T); overload;
     procedure Remove(handler: T); overload;
-    procedure ForEach(action: TAction<T>);
+    procedure ForEach(const action: TAction<T>);
 
     property Invoke: T read GetInvoke;
   end;
@@ -792,12 +792,16 @@ procedure CheckArgumentNotNull(const value: IInterface; const argumentName: stri
 ///	</summary>
 procedure CheckArgumentNotNull(value: Pointer; const argumentName: string); overload;
 
-  {$ENDREGION}
+  
+function InheritsFrom(sourceType, targetType: PTypeInfo): Boolean;
+
+{$ENDREGION}
 
 
 implementation
 
 uses
+  Character,
   Spring.ResourceStrings;
 
 
@@ -818,6 +822,20 @@ begin
   if not Assigned(value) then
   begin
     TArgument.RaiseArgumentNullException(argumentName);
+  end;
+end;
+
+function InheritsFrom(sourceType, targetType: PTypeInfo): Boolean;
+var
+  sourceData, targetData: PTypeData;
+begin
+  Result := sourceType = targetType;
+
+  if (sourceType.Kind = tkClass) and (targetType.Kind = tkClass) then
+  begin
+    sourceData := GetTypeData(sourceType);
+    targetData := GetTypeData(targetType);
+    Result := sourceData.ClassType.InheritsFrom(targetData.ClassType);
   end;
 end;
 
@@ -875,7 +893,7 @@ class procedure TArgument.DoCheckIndex(const length, index, indexBase: Integer);
 const
   IndexArgName = 'index';
 begin
-  if (index < indexBase) or (index > length - indexBase - 1) then
+  if (index < indexBase) or (index > length + indexBase - 1) then
   begin
     TArgument.RaiseArgumentOutOfRangeException(IndexArgName);
   end;
@@ -888,13 +906,12 @@ const
   CountArgName = 'count';
 begin
   TArgument.CheckRange(
-    (startIndex >= indexBase) and (startIndex <= indexBase + length - 1),
-    StartIndexArgName
-  );
+    (startIndex >= indexBase) and (startIndex < indexBase + length),
+    StartIndexArgName);
   TArgument.CheckRange(count >= 0, CountArgName);
   if count > 0 then
   begin
-    TArgument.CheckRange(startIndex + count <= indexBase + length, CountArgName);
+    TArgument.CheckRange(count <= indexBase + length - startIndex, CountArgName);
   end;
 end;
 
@@ -1982,7 +1999,7 @@ begin
   inherited Create(TypeInfo(T));
 end;
 
-procedure TEvent<T>.ForEach(action: TAction<T>);
+procedure TEvent<T>.ForEach(const action: TAction<T>);
 begin
   inherited ForEach(TAction<TMethod>(action));
 end;

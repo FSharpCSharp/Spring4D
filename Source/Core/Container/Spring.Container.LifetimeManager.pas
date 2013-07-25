@@ -93,6 +93,7 @@ type
 implementation
 
 uses
+  Rtti,
   TypInfo,
   Spring.Services;
 
