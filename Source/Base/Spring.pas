@@ -801,7 +801,6 @@ function InheritsFrom(sourceType, targetType: PTypeInfo): Boolean;
 implementation
 
 uses
-  Character,
   Spring.ResourceStrings;
 
 

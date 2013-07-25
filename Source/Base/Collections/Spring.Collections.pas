@@ -771,6 +771,27 @@ type
     class function Empty<T>: IEnumerable<T>;
   end;
 
+  TStringComparer = class(TCustomComparer<string>)
+  private
+    fLocaleOptions: TLocaleOptions;
+    fIgnoreCase: Boolean;
+    class var
+      fOrdinal: TStringComparer;
+      fOrdinalIgnoreCase: TStringComparer;
+  protected
+    function Compare(const Left, Right: string): Integer; override;
+    function Equals(const Left, Right: string): Boolean;
+      reintroduce; overload; override;
+    function GetHashCode(const Value: string): Integer;
+      reintroduce; overload; override;
+  public
+    constructor Create(localeOptions: TLocaleOptions; ignoreCase: Boolean);
+    class destructor Destroy;
+
+    class function Ordinal: TStringComparer;
+    class function OrdinalIgnoreCase: TStringComparer;
+  end;
+
 const
   cnAdded = Generics.Collections.cnAdded;
   cnRemoved = Generics.Collections.cnRemoved;
@@ -782,6 +803,7 @@ const
 implementation
 
 uses
+  Character,
   Spring.ResourceStrings,
   Spring.Collections.Sets,
   Spring.Collections.Stacks,
@@ -921,6 +943,99 @@ end;
 class function TCollections.Empty<T>: IEnumerable<T>;
 begin
   Result := TNullEnumerable<T>.Create;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TStringComparer'}
+
+constructor TStringComparer.Create(localeOptions: TLocaleOptions;
+  ignoreCase: Boolean);
+begin
+  inherited Create;
+  fLocaleOptions := localeOptions;
+  fIgnoreCase := ignoreCase;
+end;
+
+class destructor TStringComparer.Destroy;
+begin
+  FreeAndNil(fOrdinal);
+  FreeAndNil(fOrdinalIgnoreCase);
+end;
+
+function TStringComparer.Compare(const Left, Right: string): Integer;
+var
+  L, R: string;
+begin
+  if fIgnoreCase then
+  begin
+{$IFNDEF DELPHIXE4_UP}
+    L := TCharacter.ToUpper(Left);
+    R := TCharacter.ToUpper(Right);
+{$ELSE}
+    L := Left.ToUpper;
+    R := Right.ToUpper;
+{$ENDIF}
+  end else
+  begin
+    L := Left;
+    R := Right;
+  end;
+
+  Result := CompareStr(Left, Right, fLocaleOptions);
+end;
+
+function TStringComparer.Equals(const Left, Right: string): Boolean;
+var
+  L, R: string;
+begin
+  if fIgnoreCase then
+  begin
+{$IFNDEF DELPHIXE4_UP}
+    L := TCharacter.ToUpper(Left);
+    R := TCharacter.ToUpper(Right);
+{$ELSE}
+    L := Left.ToUpper;
+    R := Right.ToUpper;
+{$ENDIF}
+  end else
+  begin
+    L := Left;
+    R := Right;
+  end;
+
+  Result := SameStr(L, R, fLocaleOptions);
+end;
+
+function TStringComparer.GetHashCode(const Value: string): Integer;
+var
+  s: string;
+begin
+  if fIgnoreCase then
+{$IFNDEF DELPHIXE4_UP}
+    S := TCharacter.ToUpper(Value)
+{$ELSE}
+    S := Value.ToUpper
+{$ENDIF}
+  else
+    S := Value;
+
+  Result := BobJenkinsHash(PChar(S)^, SizeOf(Char) * Length(S), 0);
+end;
+
+class function TStringComparer.Ordinal: TStringComparer;
+begin
+  if not Assigned(fOrdinal) then
+    fOrdinal := TStringComparer.Create(loInvariantLocale, False);
+  Result := fOrdinal;
+end;
+
+class function TStringComparer.OrdinalIgnoreCase: TStringComparer;
+begin
+  if not Assigned(fOrdinalIgnoreCase) then
+    fOrdinalIgnoreCase := TStringComparer.Create(loInvariantLocale, True);
+  Result := fOrdinalIgnoreCase;
 end;
 
 {$ENDREGION}
