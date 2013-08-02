@@ -139,8 +139,8 @@ end;
 
 procedure TLifetimeManagerTestCase.TearDown;
 begin
-  fActivator.Free;
   fModel.Free;
+  fActivator.Free;
   fContext.Free;
   fContainerContext := nil;
   inherited;
@@ -298,12 +298,14 @@ begin
   fModel.RefCounting := TRefCounting.True;
   fActivator := TMockActivator.Create(fModel);
   fModel.ComponentActivator := fActivator;
+  fLifetimeManager := TSingletonLifetimeManager.Create(fModel);
 end;
 
 procedure TTestRefCounting.TearDown;
 begin
-  fActivator.Free;
+  fLifetimeManager := nil;
   fModel.Free;
+  fActivator.Free;
   fContext.Free;
   fContainerContext := nil;
   inherited;
@@ -314,11 +316,8 @@ var
   obj: TObject;
   intf: IInterface;
 begin
-  fLifetimeManager := TSingletonLifetimeManager.Create(fModel);
   obj := fLifetimeManager.GetInstance(nil).AsObject;
   CheckTrue(Supports(obj, IInterface, intf), 'interface not supported');
-  intf := nil;
-  fLifetimeManager := nil;
 end;
 
 end.
