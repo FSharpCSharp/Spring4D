@@ -73,7 +73,7 @@ type
   private
     fInstances: IDictionary<TThreadID, TFunc<TValue>>;
   protected
-    procedure HandleValueNotify(sender: TObject; const item: TFunc<TValue>; action: TCollectionNotification);
+    procedure HandleValueNotify(sender: TObject; const item: TFunc<TValue>; action: TCollectionChangedAction);
     function CreateHolder(const instance: TValue): TFunc<TValue>; virtual;
   public
     constructor Create(model: TComponentModel);
@@ -241,9 +241,9 @@ begin
 end;
 
 procedure TSingletonPerThreadLifetimeManager.HandleValueNotify(sender: TObject;
-  const item: TFunc<TValue>; action: TCollectionNotification);
+  const item: TFunc<TValue>; action: TCollectionChangedAction);
 begin
-  if action = cnRemoved then
+  if action = caRemoved then
   begin
     DoBeforeDestruction(item);
   end;

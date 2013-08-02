@@ -277,22 +277,17 @@ type
       end;
   private
     fComparer: IComparer<T>;
-    fOnChanged: ICollectionChangedDelegate<T>;
-    fOnNotify: ICollectionNotifyDelegate<T>;
-    function GetOnChanged: ICollectionChangedDelegate<T>;
-    function GetOnNotify: ICollectionNotifyDelegate<T>;
+    fOnChanged: ICollectionChangedEvent<T>;
+    function GetOnChanged: ICollectionChangedEvent<T>;
     function NonGenericGetOnChanged: IEvent;
-    function NonGenericGetOnNotify: IEvent;
     function IList.GetOnChanged = NonGenericGetOnChanged;
-    function IList.GetOnNotify = NonGenericGetOnNotify;
   protected
     function GetComparer: IComparer<T>; override;
-    procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
-    procedure Notify(const item: T; action: TCollectionNotification); virtual;
+    procedure Notify(const item: T; action: TCollectionChangedAction); virtual;
     procedure DoSort(const comparer: IComparer<T>); virtual;
     procedure DoInsert(index: Integer; const item: T); virtual; abstract;
-    procedure DoDelete(index: Integer; notification: TCollectionNotification); virtual; abstract;
-    procedure DoDeleteRange(index, count: Integer; notification: TCollectionNotification); virtual; abstract;
+    procedure DoDelete(index: Integer; notification: TCollectionChangedAction); virtual; abstract;
+    procedure DoDeleteRange(index, count: Integer; notification: TCollectionChangedAction); virtual; abstract;
     function GetItem(index: Integer): T; virtual; abstract;
     procedure SetItem(index: Integer; const value: T); virtual; abstract;
 
@@ -348,17 +343,19 @@ type
     function AsList: IList;
 
     property Items[index: Integer]: T read GetItem write SetItem; default;
-    property OnChanged: ICollectionChangedDelegate<T> read GetOnChanged;
-    property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
+    property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
+    property OnNotify: ICollectionChangedEvent<T> read GetOnChanged; // deprecated
   end;
 
 implementation
 
 uses
-  Spring.Collections.Sets,
-  Spring.Collections.Lists,
+  Spring.Collections.Events,
   Spring.Collections.Extensions,
+  Spring.Collections.Lists,
+  Spring.Collections.Sets,
   Spring.ResourceStrings;
+
 
 {$REGION 'TEnumeratorBase'}
 
@@ -1218,6 +1215,7 @@ constructor TListBase<T>.Create(const comparer: IComparer<T>);
 begin
   inherited Create;
   fComparer := comparer;
+  fOnChanged := TCollectionChangedEventImpl<T>.Create;
   if fComparer = nil then
     fComparer := TComparer<T>.Default;
 end;
@@ -1254,7 +1252,7 @@ begin
   Result := index > -1;
   if Result then
   begin
-    DoDelete(index, cnRemoved);
+    DoDelete(index, caRemoved);
   end;
 end;
 
@@ -1277,7 +1275,7 @@ begin
   else
   begin
     Result := Items[index];
-    DoDelete(index, cnExtracted);
+    DoDelete(index, caExtracted);
   end;
 end;
 
@@ -1285,7 +1283,7 @@ procedure TListBase<T>.Delete(index: Integer);
 begin
   TArgument.CheckRange((index >= 0) and (index < Count), 'index');
 
-  DoDelete(index, cnRemoved);
+  DoDelete(index, caRemoved);
 end;
 
 procedure TListBase<T>.DeleteRange(startIndex, count: Integer);
@@ -1299,7 +1297,7 @@ begin
   if count = 0 then
     Exit;
 
-  DoDeleteRange(startIndex, count, cnRemoved);
+  DoDeleteRange(startIndex, count, caRemoved);
 end;
 
 procedure TListBase<T>.Add(const item: T);
@@ -1310,14 +1308,6 @@ end;
 function TListBase<T>.AsList: IList;
 begin
   Result := Self;
-end;
-
-procedure TListBase<T>.Changed(const item: T; action: TCollectionChangedAction);
-begin
-  if (fOnChanged <> nil) and not fOnChanged.IsEmpty and fOnChanged.Enabled then
-  begin
-    fOnChanged.Invoke(Self, item, action);
-  end;
 end;
 
 procedure TListBase<T>.Clear;
@@ -1418,11 +1408,6 @@ begin
   Result := GetOnChanged;
 end;
 
-function TListBase<T>.NonGenericGetOnNotify: IEvent;
-begin
-  Result := GetOnNotify;
-end;
-
 function TListBase<T>.NonGenericIndexOf(const item: TValue): Integer;
 begin
   Result := IndexOf(item.AsType<T>);
@@ -1457,17 +1442,9 @@ begin
   SetItem(index, value.AsType<T>);
 end;
 
-procedure TListBase<T>.Notify(const item: T; action: TCollectionNotification);
+procedure TListBase<T>.Notify(const item: T; action: TCollectionChangedAction);
 begin
-  case action of
-    cnAdded: Changed(item, caAdded);
-    cnRemoved: Changed(item, caRemoved);
-  end;
-
-  if (fOnNotify <> nil) and not fOnNotify.IsEmpty and fOnNotify.Enabled then
-  begin
-    fOnNotify.Invoke(Self, item, action);
-  end;
+  fOnChanged.Invoke(Self, item, action);
 end;
 
 function TListBase<T>.ToArray: TArray<T>;
@@ -1515,22 +1492,9 @@ begin
     Result := inherited;
 end;
 
-function TListBase<T>.GetOnChanged: ICollectionChangedDelegate<T>;
+function TListBase<T>.GetOnChanged: ICollectionChangedEvent<T>;
 begin
-  if fOnChanged = nil then
-  begin
-    fOnChanged := TCollectionChangedDelegate<T>.Create;
-  end;
   Result := fOnChanged;
-end;
-
-function TListBase<T>.GetOnNotify: ICollectionNotifyDelegate<T>;
-begin
-  if fOnNotify = nil then
-  begin
-    fOnNotify := TCollectionNotifyDelegate<T>.Create;
-  end;
-  Result := fOnNotify;
 end;
 
 procedure TListBase<T>.Sort;

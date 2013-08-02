@@ -27,7 +27,6 @@ unit Spring.Collections.Dictionaries;
 interface
 
 uses
-  TypInfo,
   Generics.Collections,
   Spring,
   Spring.Collections,
@@ -97,12 +96,12 @@ type
     fOwnership: TOwnershipType;
     fKeys: TKeyCollection;
     fValues: TValueCollection;
-    fOnKeyNotify: ICollectionNotifyDelegate<TKey>;
-    fOnValueNotify: ICollectionNotifyDelegate<TValue>;
+    fOnKeyNotify: ICollectionChangedEvent<TKey>;
+    fOnValueNotify: ICollectionChangedEvent<TValue>;
     procedure DoKeyNotify(Sender: TObject; const Item: TKey; Action: TCollectionNotification);
     procedure DoValueNotify(Sender: TObject; const Item: TValue; Action: TCollectionNotification);
-    function GetOnKeyNotify: ICollectionNotifyDelegate<TKey>;
-    function GetOnValueNotify: ICollectionNotifyDelegate<TValue>;
+    function GetOnKeyNotify: ICollectionChangedEvent<TKey>;
+    function GetOnValueNotify: ICollectionChangedEvent<TValue>;
   protected
     procedure NonGenericAdd(const key, value: Spring.TValue);
     procedure IDictionary.Add = NonGenericAdd;
@@ -155,8 +154,8 @@ type
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
     property Keys: ICollection<TKey> read GetKeys;
     property Values: ICollection<TValue> read GetValues;
-    property OnKeyNotify: ICollectionNotifyDelegate<TKey> read GetOnKeyNotify;
-    property OnValueNotify: ICollectionNotifyDelegate<TValue> read GetOnValueNotify;
+    property OnKeyNotify: ICollectionChangedEvent<TKey> read GetOnKeyNotify;
+    property OnValueNotify: ICollectionChangedEvent<TValue> read GetOnValueNotify;
   {$ENDREGION}
   end;
 
@@ -164,6 +163,7 @@ implementation
 
 uses
   Generics.Defaults,
+  Spring.Collections.Events,
   Spring.Collections.Extensions;
 
 
@@ -177,6 +177,8 @@ begin
   fOwnership := ownership;
   fDictionary.OnKeyNotify := DoKeyNotify;
   fDictionary.OnValueNotify := DoValueNotify;
+  fOnKeyNotify := TCollectionChangedEventImpl<TKey>.Create;
+  fOnValueNotify := TCollectionChangedEventImpl<TValue>.Create;
 end;
 
 constructor TDictionary<TKey, TValue>.Create;
@@ -201,19 +203,13 @@ end;
 procedure TDictionary<TKey, TValue>.DoKeyNotify(Sender: TObject;
   const Item: TKey; Action: TCollectionNotification);
 begin
-  if fOnKeyNotify <> nil then
-  begin
-    fOnKeyNotify.Invoke(sender, item, action);
-  end;
+  fOnKeyNotify.Invoke(Sender, item, TCollectionChangedAction(action));
 end;
 
 procedure TDictionary<TKey, TValue>.DoValueNotify(Sender: TObject;
   const Item: TValue; Action: TCollectionNotification);
 begin
-  if fOnValueNotify <> nil then
-  begin
-    fOnValueNotify.Invoke(sender, item, action);
-  end;
+  fOnValueNotify.Invoke(Sender, item, TCollectionChangedAction(action));
 end;
 
 function TDictionary<TKey, TValue>.GetEnumerator: IEnumerator<TPair<TKey, TValue>>;
@@ -366,21 +362,13 @@ begin
   Result := TypeInfo(TKey);
 end;
 
-function TDictionary<TKey, TValue>.GetOnKeyNotify: ICollectionNotifyDelegate<TKey>;
+function TDictionary<TKey, TValue>.GetOnKeyNotify: ICollectionChangedEvent<TKey>;
 begin
-  if fOnKeyNotify = nil then
-  begin
-    fOnKeyNotify := TCollectionNotifyDelegate<TKey>.Create;
-  end;
   Result := fOnKeyNotify;
 end;
 
-function TDictionary<TKey, TValue>.GetOnValueNotify: ICollectionNotifyDelegate<TValue>;
+function TDictionary<TKey, TValue>.GetOnValueNotify: ICollectionChangedEvent<TValue>;
 begin
-  if fOnValueNotify = nil then
-  begin
-    fOnValueNotify := TCollectionNotifyDelegate<TValue>.Create;
-  end;
   Result := fOnValueNotify;
 end;
 

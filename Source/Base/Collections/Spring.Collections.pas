@@ -62,20 +62,19 @@ type
   IQueue<T> = interface;
   ISet<T> = interface;
 
-  ICollectionNotifyDelegate<T> = interface;
-
-  TCollectionNotification = Generics.Collections.TCollectionNotification;
-
-  TCollectionChangedAction = (caAdded, caRemoved, caReplaced, caMoved, caReseted);
+  TCollectionChangedAction = (
+    caAdded,
+    caRemoved,
+    caExtracted,
+    caReplaced,
+    caMoved,
+    caReseted
+  );
 
   TCollectionChangedEvent<T> = procedure(Sender: TObject; const Item: T;
     Action: TCollectionChangedAction) of object;
 
-  ICollectionChangedDelegate<T> = interface(IEvent<TCollectionChangedEvent<T>>)
-  end;
-
-  TCollectionChangedDelegate<T> = class(TEvent<TCollectionChangedEvent<T>>,
-    ICollectionChangedDelegate<T>)
+  ICollectionChangedEvent<T> = interface(IEvent<TCollectionChangedEvent<T>>)
   end;
 
   IEnumerator = interface(IInvokable)
@@ -491,7 +490,6 @@ type
   {$REGION 'Property Accessors'}
     function GetItem(index: Integer): TValue;
     function GetOnChanged: IEvent;
-    function GetOnNotify: IEvent;
     procedure SetItem(index: Integer; const item: TValue);
   {$ENDREGION}
     procedure Insert(index: Integer; const item: TValue);
@@ -512,7 +510,7 @@ type
 
     property Items[index: Integer]: TValue read GetItem write SetItem; default;
     property OnChanged: IEvent read GetOnChanged;
-    property OnNotify: IEvent read GetOnNotify;
+    property OnNotify: IEvent read GetOnChanged; // deprecated
   end;
 
   ///	<summary>
@@ -522,8 +520,7 @@ type
   IList<T> = interface(ICollection<T>)
   {$REGION 'Property Accessors'}
     function GetItem(index: Integer): T;
-    function GetOnChanged: ICollectionChangedDelegate<T>;
-    function GetOnNotify: ICollectionNotifyDelegate<T>;
+    function GetOnChanged: ICollectionChangedEvent<T>;
     procedure SetItem(index: Integer; const item: T);
   {$ENDREGION}
     procedure Insert(index: Integer; const item: T);
@@ -549,8 +546,8 @@ type
     function AsList: IList;
 
     property Items[index: Integer]: T read GetItem write SetItem; default;
-    property OnChanged: ICollectionChangedDelegate<T> read GetOnChanged;
-    property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
+    property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
+    property OnNotify: ICollectionChangedEvent<T> read GetOnChanged; // deprecated
   end;
 
   IDictionary = interface(ICollection)
@@ -576,8 +573,8 @@ type
     function GetItem(const key: TKey): TValue;
     function GetKeys: ICollection<TKey>;
     function GetValues: ICollection<TValue>;
-    function GetOnKeyNotify: ICollectionNotifyDelegate<TKey>;
-    function GetOnValueNotify: ICollectionNotifyDelegate<TValue>;
+    function GetOnKeyNotify: ICollectionChangedEvent<TKey>;
+    function GetOnValueNotify: ICollectionChangedEvent<TValue>;
     procedure SetItem(const key: TKey; const value: TValue);
   {$ENDREGION}
     procedure Add(const key: TKey; const value: TValue); overload;
@@ -604,8 +601,8 @@ type
     ///	</summary>
     property Values: ICollection<TValue> read GetValues;
 
-    property OnKeyNotify: ICollectionNotifyDelegate<TKey> read GetOnKeyNotify;
-    property OnValueNotify: ICollectionNotifyDelegate<TValue> read GetOnValueNotify;
+    property OnKeyNotify: ICollectionChangedEvent<TKey> read GetOnKeyNotify;
+    property OnValueNotify: ICollectionChangedEvent<TValue> read GetOnValueNotify;
   end;
 
   IStack = interface(IEnumerable)
@@ -624,7 +621,7 @@ type
 
   IStack<T> = interface(IEnumerable<T>)
   {$REGION 'Property Getters'}
-    function GetOnNotify: ICollectionNotifyDelegate<T>;
+    function GetOnNotify: ICollectionChangedEvent<T>;
   {$ENDREGION}
     procedure Clear;
     procedure Push(const item: T);
@@ -633,7 +630,7 @@ type
     function PeekOrDefault: T;
     function TryPeek(out item: T): Boolean;
     function AsStack: IStack;
-    property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
+    property OnNotify: ICollectionChangedEvent<T> read GetOnNotify;
   end;
 
   IQueue = interface(IEnumerable)
@@ -653,7 +650,7 @@ type
   IQueue<T> = interface(IEnumerable<T>)
     ['{D305A076-3F19-497C-94E3-6BD1C7A30F3F}']
   {$REGION 'Property Getters'}
-    function GetOnNotify: ICollectionNotifyDelegate<T>;
+    function GetOnNotify: ICollectionChangedEvent<T>;
   {$ENDREGION}
     procedure Clear;
     procedure Enqueue(const item: T);
@@ -662,7 +659,7 @@ type
     function PeekOrDefault: T;
     function TryPeek(out item: T): Boolean;
     function AsQueue: IQueue;
-    property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
+    property OnNotify: ICollectionChangedEvent<T> read GetOnNotify;
   end;
 
   ISet = interface(ICollection)
@@ -682,15 +679,6 @@ type
     function Overlaps(const collection: IEnumerable<T>): Boolean;
     function AsSet: ISet;
   end;
-
-  ICollectionNotifyDelegate<T> = interface(IEvent<TCollectionNotifyEvent<T>>)
-  end;
-
-  TCollectionNotifyDelegate<T> = class(TEvent<TCollectionNotifyEvent<T>>, ICollectionNotifyDelegate<T>)
-  end;
-
-  TCollectionNotifyEvent<T> = procedure(Sender: TObject; const Item: T;
-    Action: TCollectionNotification) of object;
 
   ///	<summary>
   ///	  Internal interface. Reserved for future use.

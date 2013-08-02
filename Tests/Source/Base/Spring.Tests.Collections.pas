@@ -31,8 +31,6 @@ interface
 uses
   TestFramework,
   Spring.TestUtils,
-  Classes,
-  SysUtils,
   Spring,
   Spring.Collections;
 
@@ -158,9 +156,9 @@ type
     SUT: IStack<Integer>;
     fAInvoked, fBInvoked: Boolean;
     fAItem, fBItem: Integer;
-    fAAction, fBAction: TCollectionNotification;
-    procedure HandlerA(Sender: TObject; const Item: Integer; Action: TCollectionNotification);
-    procedure HandlerB(Sender: TObject; const Item: Integer; Action: TCollectionNotification);
+    fAAction, fBAction: TCollectionChangedAction;
+    procedure HandlerA(Sender: TObject; const Item: Integer; Action: TCollectionChangedAction);
+    procedure HandlerB(Sender: TObject; const Item: Integer; Action: TCollectionChangedAction);
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -204,9 +202,9 @@ type
     SUT: IQueue<Integer>;
     fAInvoked, fBInvoked: Boolean;
     fAItem, fBItem: Integer;
-    fAAction, fBAction: TCollectionNotification;
-    procedure HandlerA(Sender: TObject; const Item: Integer; Action: TCollectionNotification);
-    procedure HandlerB(Sender: TObject; const Item: Integer; Action: TCollectionNotification);
+    fAAction, fBAction: TCollectionChangedAction;
+    procedure HandlerA(Sender: TObject; const Item: Integer; Action: TCollectionChangedAction);
+    procedure HandlerB(Sender: TObject; const Item: Integer; Action: TCollectionChangedAction);
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -241,6 +239,10 @@ type
   end;
 
 implementation
+
+uses
+  Classes,
+  SysUtils;
 
 { TTestEmptyHashSet }
 
@@ -834,7 +836,7 @@ begin
 end;
 
 procedure TTestStackOfIntegerNotifyEvent.HandlerA(Sender: TObject;
-  const Item: Integer; Action: TCollectionNotification);
+  const Item: Integer; Action: TCollectionChangedAction);
 begin
   fAItem := Item;
   fAAction := Action;
@@ -842,7 +844,7 @@ begin
 end;
 
 procedure TTestStackOfIntegerNotifyEvent.HandlerB(Sender: TObject;
-  const Item: Integer; Action: TCollectionNotification);
+  const Item: Integer; Action: TCollectionChangedAction);
 begin
   fBitem := Item;
   fBAction := Action;
@@ -867,14 +869,14 @@ begin
   SUT.Push(0);
 
   CheckTrue(fAInvoked, 'handler A not invoked');
-  CheckTrue(fAAction = cnAdded, 'handler A: different collection notifications');
+  CheckTrue(fAAction = caAdded, 'handler A: different collection notifications');
   CheckEquals(0, fAItem, 'handler A: different item');
 
   CheckFalse(fBInvoked, 'handler B not registered as callback');
 
   SUT.Pop;
 
-  CheckTrue(fAAction = cnRemoved, 'different collection notifications');
+  CheckTrue(fAAction = caRemoved, 'different collection notifications');
 
   SUT.OnNotify.Remove(HandlerA);
   CheckEquals(0, SUT.OnNotify.Count);
@@ -889,17 +891,17 @@ begin
   SUT.Push(0);
 
   CheckTrue(fAInvoked, 'handler A not invoked');
-  CheckTrue(fAAction = cnAdded, 'handler A: different collection notifications');
+  CheckTrue(fAAction = caAdded, 'handler A: different collection notifications');
   CheckEquals(0, fAItem, 'handler A: different item');
   CheckTrue(fBInvoked, 'handler B not invoked');
-  CheckTrue(fBAction = cnAdded, 'handler B: different collection notifications');
+  CheckTrue(fBAction = caAdded, 'handler B: different collection notifications');
   CheckEquals(0, fBItem, 'handler B: different item');
 
   SUT.Pop;
 
-  CheckTrue(fAAction = cnRemoved, 'handler A: different collection notifications');
+  CheckTrue(fAAction = caRemoved, 'handler A: different collection notifications');
   CheckEquals(0, fAItem, 'handler A: different item');
-  CheckTrue(fBAction = cnRemoved, 'handler B: different collection notifications');
+  CheckTrue(fBAction = caRemoved, 'handler B: different collection notifications');
   CheckEquals(0, fBItem, 'handler B: different item');
 
   SUT.OnNotify.Remove(HandlerA);
@@ -929,7 +931,7 @@ begin
   stack.Push(0);
 
   CheckTrue(fAInvoked, 'handler A not invoked');
-  CheckTrue(fAAction = cnAdded, 'handler A: different collection notifications');
+  CheckTrue(fAAction = caAdded, 'handler A: different collection notifications');
   CheckEquals(0, fAItem, 'handler A: different item');
 end;
 
@@ -1043,7 +1045,7 @@ begin
 end;
 
 procedure TTestQueueOfIntegerNotifyEvent.HandlerA(Sender: TObject;
-  const Item: Integer; Action: TCollectionNotification);
+  const Item: Integer; Action: TCollectionChangedAction);
 begin
   fAItem := Item;
   fAAction := Action;
@@ -1051,7 +1053,7 @@ begin
 end;
 
 procedure TTestQueueOfIntegerNotifyEvent.HandlerB(Sender: TObject;
-  const Item: Integer; Action: TCollectionNotification);
+  const Item: Integer; Action: TCollectionChangedAction);
 begin
   fBitem := Item;
   fBAction := Action;
@@ -1076,14 +1078,14 @@ begin
   SUT.Enqueue(0);
 
   CheckTrue(fAInvoked, 'handler A not invoked');
-  CheckTrue(fAAction = cnAdded, 'handler A: different collection notifications');
+  CheckTrue(fAAction = caAdded, 'handler A: different collection notifications');
   CheckEquals(0, fAItem, 'handler A: different item');
 
   CheckFalse(fBInvoked, 'handler B not registered as callback');
 
   SUT.Dequeue;
 
-  CheckTrue(fAAction = cnRemoved, 'different collection notifications');
+  CheckTrue(fAAction = caRemoved, 'different collection notifications');
 
   SUT.OnNotify.Remove(HandlerA);
   CheckEquals(0, SUT.OnNotify.Count);
@@ -1098,17 +1100,17 @@ begin
   SUT.Enqueue(0);
 
   CheckTrue(fAInvoked, 'handler A not invoked');
-  CheckTrue(fAAction = cnAdded, 'handler A: different collection notifications');
+  CheckTrue(fAAction = caAdded, 'handler A: different collection notifications');
   CheckEquals(0, fAItem, 'handler A: different item');
   CheckTrue(fBInvoked, 'handler B not invoked');
-  CheckTrue(fBAction = cnAdded, 'handler B: different collection notifications');
+  CheckTrue(fBAction = caAdded, 'handler B: different collection notifications');
   CheckEquals(0, fBItem, 'handler B: different item');
 
   SUT.Dequeue;
 
-  CheckTrue(fAAction = cnRemoved, 'handler A: different collection notifications');
+  CheckTrue(fAAction = caRemoved, 'handler A: different collection notifications');
   CheckEquals(0, fAItem, 'handler A: different item');
-  CheckTrue(fBAction = cnRemoved, 'handler B: different collection notifications');
+  CheckTrue(fBAction = caRemoved, 'handler B: different collection notifications');
   CheckEquals(0, fBItem, 'handler B: different item');
 
   SUT.OnNotify.Remove(HandlerA);
@@ -1138,7 +1140,7 @@ begin
   queue.Enqueue(0);
 
   CheckTrue(fAInvoked, 'handler A not invoked');
-  CheckTrue(fAAction = cnAdded, 'handler A: different collection notifications');
+  CheckTrue(fAAction = caAdded, 'handler A: different collection notifications');
   CheckEquals(0, fAItem, 'handler A: different item');
 end;
 

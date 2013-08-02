@@ -31,7 +31,8 @@ interface
 uses
   TestFramework,
   Spring.TestUtils,
-  Spring;
+  Spring,
+  Spring.Events;
 
 type
   TTestNullableInteger = class(TTestCase)

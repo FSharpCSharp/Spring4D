@@ -41,8 +41,8 @@ type
   private
     fStack: TGenericStack;
     fOwnership: TOwnershipType;
-    fOnNotify: ICollectionNotifyDelegate<T>;
-    function GetOnNotify: ICollectionNotifyDelegate<T>;
+    fOnNotify: ICollectionChangedEvent<T>;
+    function GetOnNotify: ICollectionChangedEvent<T>;
     function NonGenericGetOnNotify: IEvent;
     function IStack.GetOnNotify = NonGenericGetOnNotify;
   protected
@@ -54,7 +54,7 @@ type
     function NonGenericPeekOrDefault: TValue;
     function NonGenericTryPeek(out item: TValue): Boolean;
 
-    procedure Notify(const item: T; action: TCollectionNotification); virtual;
+    procedure Notify(const item: T; action: TCollectionChangedAction); virtual;
 
     procedure IStack.Push = NonGenericPush;
     function IStack.Pop = NonGenericPop;
@@ -80,12 +80,13 @@ type
     function TryPeek(out item: T): Boolean;
     procedure TrimExcess;
     function AsStack: IStack;
-    property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
+    property OnNotify: ICollectionChangedEvent<T> read GetOnNotify;
   end;
 
 implementation
 
 uses
+  Spring.Collections.Events,
   Spring.Collections.Extensions;
 
 
@@ -97,6 +98,7 @@ begin
   inherited Create;
   fStack := stack;
   fOwnership := ownership;
+  fOnNotify := TCollectionChangedEventImpl<T>.Create;
 end;
 
 constructor TStack<T>.Create(const collection: IEnumerable<T>);
@@ -151,12 +153,8 @@ begin
   Result := fStack.Count;
 end;
 
-function TStack<T>.GetOnNotify: ICollectionNotifyDelegate<T>;
+function TStack<T>.GetOnNotify: ICollectionChangedEvent<T>;
 begin
-  if fOnNotify = nil then
-  begin
-    fOnNotify := TCollectionNotifyDelegate<T>.Create;
-  end;
   Result := fOnNotify;
 end;
 
@@ -199,26 +197,23 @@ begin
     item := TValue.From<T>(value);
 end;
 
-procedure TStack<T>.Notify(const item: T; action: TCollectionNotification);
+procedure TStack<T>.Notify(const item: T; action: TCollectionChangedAction);
 begin
-  if (fOnNotify <> nil) and not fOnNotify.IsEmpty and fOnNotify.Enabled then
-  begin
-    fOnNotify.Invoke(Self, item, action);
-  end;
+  fOnNotify.Invoke(Self, item, action);
 end;
 
 procedure TStack<T>.Push(const item: T);
 begin
   fStack.Push(item);
 
-  Notify(item, cnAdded);
+  Notify(item, caAdded);
 end;
 
 function TStack<T>.Pop: T;
 begin
   Result := fStack.Pop;
 
-  Notify(Result, cnRemoved);
+  Notify(Result, caRemoved);
 end;
 
 function TStack<T>.AsStack: IStack;

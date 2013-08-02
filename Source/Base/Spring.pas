@@ -598,118 +598,15 @@ type
     property IsEmpty: Boolean read GetIsEmpty;
   end;
 
-  PMethod = ^TMethod;
-
-  ///	<summary>
-  ///	  Internal Use.
-  ///	</summary>
-  TMethodInvocations = class
-  private
-    const
-      paEAX = Word(0);
-      paEDX = Word(1);
-      paECX = Word(2);
-      paStack = Word(3);
-
-    type
-      PParameterInfos = ^TParameterInfos;
-      TParameterInfos = array[0..255] of ^PTypeInfo;
-
-      PParameters = ^TParameters;
-      TParameters = packed record
-      public
-{$IFNDEF CPUX64}
-        Registers: array[paEDX..paECX] of Cardinal;
-        EAXRegister: Cardinal;
-        ReturnAddress: Pointer;
-{$ENDIF}
-        Stack: array[0..1023] of Byte;
-      end;
-
-      PMethodInfo = ^TMethodInfo;
-      TMethodInfo = record
-        TypeData: PTypeData;
-        ParamInfos: PParameterInfos;
-        StackSize: Integer;
-        CallConvention: TCallConv;
-{$IFDEF CPUX64}
-        RegisterFlag: Word;
-{$ENDIF CPUX64}
-        constructor Create(typeInfo: PTypeInfo);
-      end;
-  private
-    fMethodType: PTypeInfo;
-    fMethodInfo: TMethodInfo;
-    fMethods: TList<TMethod>;
-    function GetCount: Integer;
-    function GetIsEmpty: Boolean;
-  protected
-    procedure InternalInvokeHandlers(Params: PParameters);
-    procedure InvokeEventHandlerStub;
-  public
-    constructor Create(methodTypeInfo: PTypeInfo);
-    destructor Destroy; override;
-    procedure Add(const method: TMethod);
-    procedure Remove(const method: TMethod);
-    procedure RemoveAll(instance: Pointer);
-    function  IndexOf(const method: TMethod): Integer;
-    procedure Clear;
-    procedure ForEach(const action: TAction<TMethod>);
-    property Count: Integer read GetCount;
-    property IsEmpty: Boolean read GetIsEmpty;
-  end;
-
-  TEvent = class(TInterfacedObject, IEvent)
-  private
-    
-    fInvocations: TMethodInvocations;
-    fInvoke: TMethod;
-    fEnabled: Boolean;
-    fTypeInfo: PTypeInfo;
-    function GetInvoke: TMethod;
-    function GetCount: Integer;
-    function GetEnabled: Boolean;
-    
-    function GetIsEmpty: Boolean;
-    procedure SetEnabled(const value: Boolean);
-  protected
-    procedure InvocationsNeeded; inline;
-    property Invocations: TMethodInvocations read fInvocations;
-  public
-    constructor Create(typeInfo: PTypeInfo);
-    destructor Destroy; override;
-
-    procedure Add(const handler: TMethod);
-    procedure Remove(const handler: TMethod); overload;
-    procedure RemoveAll(instance: Pointer);
-    procedure Clear;
-    procedure ForEach(const action: TAction<TMethod>);
-
-    property Invoke: TMethod read GetInvoke;
-    property Count: Integer read GetCount;
-    property Enabled: Boolean read GetEnabled write SetEnabled;
-    property IsEmpty: Boolean read GetIsEmpty;
-  end;
-
-  TEvent<T> = class(TEvent, IEvent<T>)
-  private
-    function GetInvoke: T;
-  public
-    constructor Create;
-
-    procedure Add(handler: T); overload;
-    procedure Remove(handler: T); overload;
-    procedure ForEach(const action: TAction<T>);
-
-    property Invoke: T read GetInvoke;
-  end;
-
   Event<T> = record
   private
     fInstance: IEvent<T>;
-    function GetInvoke: T;
     function GetCount: Integer;
+    function GetEnabled: Boolean;
+    function GetInvoke: T;
     function GetIsEmpty: Boolean;
+    procedure SetEnabled(const value: Boolean);
+    procedure EnsureInitialized;
   public
     class function Create: Event<T>; static;
 
@@ -718,22 +615,16 @@ type
     procedure RemoveAll(instance: Pointer);
     procedure Clear;
 
-    function EnsureInitialized: Event<T>; inline;
-    function GetInstance: IEvent<T>; inline; deprecated 'Use EnsureInitialized instead.';
-
-    property Invoke: T read GetInvoke;
     property Count: Integer read GetCount;
+    property Enabled: Boolean read GetEnabled write SetEnabled;
+    property Invoke: T read GetInvoke;
     property IsEmpty: Boolean read GetIsEmpty;
 
-    class operator Implicit(const e: IEvent<T>): Event<T>;
-    class operator Implicit(var e: Event<T>): IEvent<T>;
-    class operator Implicit(var e: Event<T>): T;
-    class operator Implicit(const eventHandler: T): Event<T>;
+    class operator Implicit(const value: IEvent<T>): Event<T>;
+    class operator Implicit(var value: Event<T>): IEvent<T>;
+    class operator Implicit(var value: Event<T>): T;
+    class operator Implicit(const value: T): Event<T>;
   end;
-
-  IMulticastNotifyEvent = IEvent<TNotifyEvent>;
-
-  TMulticastNotifyEvent = TEvent<TNotifyEvent>;
 
   {$ENDREGION}
 
@@ -801,6 +692,7 @@ function InheritsFrom(sourceType, targetType: PTypeInfo): Boolean;
 implementation
 
 uses
+  Spring.Events,
   Spring.ResourceStrings;
 
 
@@ -1019,7 +911,6 @@ class procedure TArgument.CheckEnum<T>(const value: Integer;
 var
   typeInfo: PTypeInfo;
   data: PTypeData;
-  msg: string;
 begin
   typeInfo := System.TypeInfo(T);
   TArgument.CheckTypeKind(typeInfo, [tkEnumeration], 'T');
@@ -1029,9 +920,8 @@ begin
 
   if (value < data.MinValue) or (value > data.MaxValue) then
   begin
-    msg := Format(SInvalidEnumArgument, [argumentName,
-      GetTypeName(typeInfo), value]);
-    raise EInvalidEnumArgumentException.Create(msg);
+    raise EInvalidEnumArgumentException.CreateResFmt(@SInvalidEnumArgument, [
+      argumentName, GetTypeName(typeInfo), value]);
   end;
 end;
 
@@ -1333,7 +1223,7 @@ end;
 
 constructor TLazy<T>.Create(const valueFactory: TFunc<T>);
 begin
-  CheckArgumentNotNull(Pointer(@valueFactory), 'valueFactory');
+  TArgument.CheckNotNull(Assigned(valueFactory), 'valueFactory');
 
   inherited Create;
   fValueFactory := valueFactory;
@@ -1471,551 +1361,11 @@ begin
     localValue := T.Create;
     if TLazyInitializer.InterlockedCompareExchange(PPointer(@target)^,
       PPointer(@localValue)^, nil) <> nil then
+    begin
       localValue.Free;
+    end;
   end;
   Result := target;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TMethodInfo'}
-
-function AdditionalInfoOf(TypeData: PTypeData): Pointer;
-var
-  P: PByte;
-  I: Integer;
-begin
-  P := @TypeData^.ParamList;
-  // Skip parameter names and types
-  for I := 1 to TypeData^.ParamCount do
-  begin
-    Inc(P, 1 + P[1] + 1);
-    Inc(P, P[0] + 1 );
-  end;
-  if TypeData^.MethodKind = mkFunction then
-    // Skip return type name and info
-    Inc(P, P[0] + 1 + 4);
-  Result := P;
-end;
-
-//  TTypeKind = (tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
-//    tkString, tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString,
-//    tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray, tkUString,
-//    tkClassRef, tkPointer, tkProcedure);
-
-function GetTypeSize(typeInfo: PTypeInfo): Integer;
-var
-  typeData: PTypeData;
-const
-  COrdinalSizes: array[TOrdType] of Integer = (1, 1, 2, 2, 4, 4);
-  CFloatSizes: array[TFloatType] of Integer = (4, 8, SizeOf(Extended), 8, 8);
-  CSetSizes: array[TOrdType] of Integer = (1, 1, 2, 2, 4, 4);
-begin
-  case typeInfo^.Kind of
-    tkChar:
-      Result := 1;
-    tkWChar:
-      Result := 2;
-    tkInteger, tkEnumeration:
-      begin
-        typeData := GetTypeData(typeInfo);
-        Result := COrdinalSizes[typeData.OrdType];
-      end;
-    tkFloat:
-      begin
-        typeData := GetTypeData(typeInfo);
-        Result := CFloatSizes[typeData^.FloatType];
-      end;
-    // TODO: Validate tkString
-    tkString, tkLString, tkUString, tkWString, tkInterface, tkClass, tkClassRef, tkDynArray:
-      Result := SizeOf(Pointer);
-    tkMethod:
-      Result := SizeOf(TMethod);
-    tkInt64:
-      Result := 8;
-    tkVariant:
-      Result := 16;
-    tkSet:
-      begin
-        // big sets have no typeInfo for now
-        typeData := GetTypeData(typeInfo);
-        Result := CSetSizes[typeData^.OrdType];
-      end;
-    tkRecord:
-      begin
-        typeData := GetTypeData(typeInfo);
-        Result := typeData.RecSize;
-      end;
-    tkArray:
-      begin
-        typeData := GetTypeData(typeInfo);
-        Result := typeData.ArrayData.Size;
-      end;
-    else
-      begin
-        Assert(False, 'Unsupported type');
-        Result := -1;
-      end;
-  end;
-end;
-
-constructor TMethodInvocations.TMethodInfo.Create(typeInfo: PTypeInfo);
-
-  function PassByRef(P: PByte; ParamInfos: PParameterInfos; I: Integer): Boolean;
-  begin
-    Result := (TParamFlags(P[0]) * [pfVar, pfConst, pfAddress, pfReference, pfOut] <> [])
-      and not (ParamInfos^[I]^.Kind in [tkFloat, tkMethod, tkInt64]);
-  end;
-
-  function Align4(Value: Integer): Integer;
-  begin
-    Result := (Value + 3) and not 3;
-  end;
-
-var
-  typeData: PTypeData;
-  P: PByte;
-  I: Integer;
-{$IFNDEF CPUX64}
-  curReg: Integer;
-  Size: Integer;
-{$ENDIF}
-begin
-  typeData := GetTypeData(typeInfo);
-  Self.TypeData := typeData;
-  P := AdditionalInfoOf(typeData);
-  CallConvention := TCallConv(PByte(p)^);
-  ParamInfos := PParameterInfos(Cardinal(P) + 1);
-
-{$IFNDEF CPUX64}
-  curReg := paStack;
-  if CallConvention = ccReg then
-  begin
-    curReg := paEDX;
-    StackSize := 0;
-  end else
-{$ENDIF}
-  begin
-    StackSize := SizeOf(Pointer); // Self in stack
-  end;
-
-  P := @typeData^.ParamList;
-
-  for I := 0 to typeData^.ParamCount - 1 do
-  begin
-{$IFNDEF CPUX64}
-    if PassByRef(P, ParamInfos, I) then
-      Size := 4
-    else
-      Size := GetTypeSize(ParamInfos^[I]^);
-    if (Size <= 4) and (curReg <= paECX) and (ParamInfos^[I]^.Kind <> tkFloat) then
-      Inc(curReg)
-    else
-    begin
-      if Size < 4 then
-        Size := 4;
-      Inc(StackSize, Align4(Size));
-    end;
-{$ELSE}
-    if I < 3 then
-    begin
-      if ParamInfos^[I]^.Kind = tkFloat then
-        RegisterFlag := RegisterFlag or (1 shl (I + 1));
-    end;
-    Inc(StackSize, 8);
-{$ENDIF}
-    Inc(P, 1 + P[1] + 1);
-    Inc(P, P[0] + 1);
-  end;
-
-{$IFDEF CPUX64}
-  if StackSize < 32 then
-    StackSize := 32;
-{$ENDIF}
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TMethodInvocations'}
-
-procedure InvokeMethod(const Method: TMethod;
-  Parameters: Pointer; StackSize: Integer);
-const
-  PointerSize = SizeOf(Pointer);
-const
-  paEDX = Word(1);
-  paECX = Word(2);
-type
-  TParameters = packed record
-  public
-{$IFNDEF CPUX64}
-    Registers: array[paEDX..paECX] of Cardinal;
-    EAXRegister: Cardinal;
-    ReturnAddress: Pointer;
-{$ENDIF}
-    Stack: array[0..1023] of Byte;
-  end;
-{$IFNDEF CPUX64}
-asm
-  push ebp
-  mov ebp,esp
-  push eax // ebp-4 = Method
-  push ebx
-  mov ebx, edx // ebx = Parameters
-
-  // if StackSize > 0
-  test ecx,ecx
-  jz @@no_stack
-
-  // stack address alignment
-  add ecx,PointerSize-1
-  and ecx,not(PointerSize-1)
-  and ecx,$ffff
-  sub esp,ecx
-
-  // put stack address as second parameter
-  mov edx,esp
-
-  // put params on stack as first parameter
-  lea eax,[ebx].TParameters.Stack
-
-  call Move
-
-@@no_stack:
-  mov edx,[ebx].TParameters.Registers.dword[0]
-  mov ecx,[ebx].TParameters.Registers.dword[4]
-  mov ebx,[ebp-$04]
-  mov eax,[ebx].TMethod.Data
-  call [ebx].TMethod.Code
-
-  pop ebx
-  pop eax
-  mov esp,ebp
-  pop ebp
-end;
-{$ELSE}
-asm
-  .params 60
-  mov [rbp+$200],Method
-  mov [rbp+$208],Parameters
-  test r8,r8
-  jz @@no_stack
-
-  // put params on stack as first parameter
-  lea rcx,[Parameters].TParameters.Stack
-
-  // put stack address as second parameter
-  mov rdx,rsp
-
-  call Move
-
-  mov rdx,[rbp+$208]
-
-@@no_stack:
-  mov rcx,[rdx].TParameters.Stack.qword[0]
-  mov r8,[rdx].TParameters.Stack.qword[16]
-  mov r9,[rdx].TParameters.Stack.qword[24]
-
-  movsd xmm0,[rdx].TParameters.Stack.qword[0]
-  movsd xmm1,[rdx].TParameters.Stack.qword[8]
-  movsd xmm2,[rdx].TParameters.Stack.qword[16]
-  movsd xmm3,[rdx].TParameters.Stack.qword[24]
-
-  mov rdx,[rdx].TParameters.Stack.qword[8]
-
-  mov rax,[rbp+$200]
-  lea rax,[rax]
-  mov rcx,[rax].TMethod.Data
-  call [rax].TMethod.Code
-end;
-{$ENDIF}
-
-constructor TMethodInvocations.Create(methodTypeInfo: PTypeInfo);
-begin
-  inherited Create;
-  fMethodType := methodTypeInfo;
-  fMethodInfo := TMethodInfo.Create(fMethodType);
-  fMethods := TList<TMethod>.Create;
-end;
-
-destructor TMethodInvocations.Destroy;
-begin
-  fMethods.Free;
-  inherited;
-end;
-
-procedure TMethodInvocations.ForEach(const action: TAction<TMethod>);
-var
-  method: TMethod;
-begin
-  for method in fMethods do
-  begin
-    action(method);
-  end;
-end;
-
-procedure TMethodInvocations.Add(const method: TMethod);
-begin
-  fMethods.Add(method);
-end;
-
-procedure TMethodInvocations.Remove(const method: TMethod);
-begin
-  fMethods.Remove(method);
-end;
-
-procedure TMethodInvocations.RemoveAll(instance: Pointer);
-var
-  i: Integer;
-begin
-  for i := Count - 1 downto 0 do
-  begin
-    if fMethods[i].Data = instance then
-      fMethods.Delete(i);
-  end;
-end;
-
-procedure TMethodInvocations.Clear;
-begin
-  fMethods.Clear;
-end;
-
-function TMethodInvocations.IndexOf(const method: TMethod): Integer;
-begin
-  Result := fMethods.IndexOf(method);
-end;
-
-function TMethodInvocations.GetCount: Integer;
-begin
-  Result := fMethods.Count;
-end;
-
-function TMethodInvocations.GetIsEmpty: Boolean;
-begin
-  Result := Count = 0;
-end;
-
-procedure TMethodInvocations.InternalInvokeHandlers(Params: PParameters);
-var
-  i: Integer;
-begin
-  for i := 0 to fMethods.Count - 1 do
-    InvokeMethod(fMethods[i], Params, fMethodInfo.StackSize);
-end;
-
-procedure TMethodInvocations.InvokeEventHandlerStub;
-{$IFNDEF CPUX64}
-const
-  PtrSize = SizeOf(Pointer);
-asm
-        // is register conversion call ?
-        CMP     BYTE PTR Self.fMethodInfo.CallConvention, ccReg
-        JZ      @Begin
-        Mov     EAX, [esp + 4]
-@Begin:
-        PUSH    EAX
-        PUSH    ECX
-        PUSH    EDX
-        MOV     EDX,ESP
-        CALL    InternalInvokeHandlers
-        // Pop EDX and ECX off the stack while preserving all registers.
-        MOV     [ESP+4],EAX
-        POP     EAX
-        POP     EAX
-        POP     ECX		// Self
-        Mov     EAX, ECX
-        MOV     ECX,[ECX].fMethodInfo.StackSize
-        TEST    ECX,ECX
-        JZ      @@SimpleRet
-        // Jump to the actual return instruction since it is most likely not just a RET
-        //JMP     ECX    // Data Exec. Prevention: Jumping into a GetMem allocated memory block
-
-        // stack address alignment
-        // In cdecl call conversion, the caller will clear the stack
-        CMP     DWORD PTR [EAX].fMethodInfo.CallConvention, ccCdecl
-        JZ      @@SimpleRet
-        ADD     ECX, PtrSize - 1
-        AND     ECX, NOT (PtrSize - 1)
-        AND     ECX, $FFFF
-
-        // clean up the stack
-        PUSH    EAX                         // we need this register, so save it
-        MOV     EAX,[ESP + 4]               // Load the return address
-        MOV     [ESP + ECX + 4], EAX        // Just blast it over the first param on the stack
-        POP     EAX
-        ADD     ESP,ECX                     // This will move the stack back to where the moved
-                                            // return address is now located. The next RET
-                                            // instruction will do the final stack cleanup
-@@SimpleRet:
-end;
-{$ELSE}
-asm
-        MOV     AX, WORD PTR [RCX].TMethodInvocations.fMethodInfo.RegisterFlag
-@@FIRST:
-        TEST    AX, $01
-        JZ      @@SAVE_RCX
-@@SAVE_XMM0:
-        MOVSD   QWORD PTR [RSP+$08], XMM0
-        JMP     @@SECOND
-@@SAVE_RCX:
-        MOV     QWORD PTR [RSP+$08], RCX
-
-@@SECOND:
-        TEST    AX, $02
-        JZ      @@SAVE_RDX
-@@SAVE_XMM1:
-        MOVSD   QWORD PTR [RSP+$10], XMM1
-        JMP     @@THIRD
-@@SAVE_RDX:
-        MOV     QWORD PTR [RSP+$10], RDX
-
-@@THIRD:
-        TEST    AX, $04
-        JZ      @@SAVE_R8
-@@SAVE_XMM2:
-        MOVSD   QWORD PTR [RSP+$18], XMM2
-        JMP     @@FORTH
-@@SAVE_R8:
-        MOV     QWORD PTR [RSP+$18], R8
-
-@@FORTH:
-        TEST    AX, $08
-        JZ      @@SAVE_R9
-@@SAVE_XMM3:
-        MOVSD   QWORD PTR [RSP+$20], XMM3
-        JMP     @@1
-@@SAVE_R9:
-        MOV     QWORD PTR [RSP+$20], R9
-
-@@1:    LEA     RDX, QWORD PTR [RSP+$08]
-        MOV     RAX, RCX
-        SUB     RSP, $28
-        CALL    InternalInvokeHandlers
-        ADD     RSP, $28
-end;
-{$ENDIF}
-
-{$ENDREGION}
-
-
-{$REGION 'TEvent'}
-
-constructor TEvent.Create(typeInfo: PTypeInfo);
-begin
-  if not Assigned(typeInfo) then
-    raise EInvalidOperationException.CreateRes(@SNoTypeInfo);
-  if typeInfo.Kind <> tkMethod then
-    raise EInvalidOperationException.CreateRes(@STypeParameterShouldBeMethod);
-  inherited Create;
-  fEnabled := True;
-  fTypeInfo := typeInfo;
-end;
-
-destructor TEvent.Destroy;
-begin
-  fInvocations.Free;
-  inherited Destroy;
-end;
-
-procedure TEvent.Add(const handler: TMethod);
-begin
-  InvocationsNeeded;
-  fInvocations.Add(handler);
-end;
-
-procedure TEvent.Clear;
-begin
-  if Assigned(fInvocations) then
-    fInvocations.Clear;
-end;
-
-procedure TEvent.ForEach(const action: TAction<TMethod>);
-begin
-  InvocationsNeeded;
-  fInvocations.ForEach(action);
-end;
-
-function TEvent.GetCount: Integer;
-begin
-  if Assigned(fInvocations) then
-    Result := fInvocations.Count
-  else
-    Result := 0;
-end;
-
-function TEvent.GetEnabled: Boolean;
-begin
-  Result := fEnabled;
-end;
-
-function TEvent.GetInvoke: TMethod;
-begin
-  InvocationsNeeded;
-  Result := fInvoke;
-end;
-
-function TEvent.GetIsEmpty: Boolean;
-begin
-  Result := Count = 0;
-end;
-
-procedure TEvent.InvocationsNeeded;
-begin
-  if not Assigned(fInvocations) then
-  begin
-    fInvocations := TMethodInvocations.Create(fTypeInfo);
-    PMethod(@fInvoke)^.Data := fInvocations;
-    PMethod(@fInvoke)^.Code := @TMethodInvocations.InvokeEventHandlerStub;
-  end;
-end;
-
-procedure TEvent.Remove(const handler: TMethod);
-begin
-  InvocationsNeeded;
-  fInvocations.Remove(PMethod(@handler)^);
-end;
-
-procedure TEvent.RemoveAll(instance: Pointer);
-begin
-  InvocationsNeeded;
-  fInvocations.RemoveAll(instance);
-end;
-
-procedure TEvent.SetEnabled(const value: Boolean);
-begin
-  fEnabled := value;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TEvent<T>'}
-
-constructor TEvent<T>.Create;
-begin
-  inherited Create(TypeInfo(T));
-end;
-
-procedure TEvent<T>.ForEach(const action: TAction<T>);
-begin
-  inherited ForEach(TAction<TMethod>(action));
-end;
-
-procedure TEvent<T>.Add(handler: T);
-begin
-  inherited Add(PMethod(@handler)^);
-end;
-
-procedure TEvent<T>.Remove(handler: T);
-begin
-  inherited Remove(PMethod(@handler)^);
-end;
-
-function TEvent<T>.GetInvoke: T;
-begin
-  PMethod(@Result)^ := inherited Invoke;
 end;
 
 {$ENDREGION}
@@ -2028,31 +1378,10 @@ begin
   Result := TEvent<T>.Create;
 end;
 
-function Event<T>.EnsureInitialized: Event<T>;
-begin
-  if not Assigned(fInstance) then
-  begin
-    fInstance := TEvent<T>.Create;
-  end;
-  Result.fInstance := fInstance;
-end;
-
 procedure Event<T>.Add(const handler: T);
 begin
   EnsureInitialized;
   fInstance.Add(handler);
-end;
-
-procedure Event<T>.Remove(const handler: T);
-begin
-  EnsureInitialized;
-  fInstance.Remove(handler);
-end;
-
-procedure Event<T>.RemoveAll(instance: Pointer);
-begin
-  if Assigned(fInstance) then
-    fInstance.RemoveAll(instance);
 end;
 
 procedure Event<T>.Clear;
@@ -2061,18 +1390,23 @@ begin
     fInstance.Clear;
 end;
 
+procedure Event<T>.EnsureInitialized;
+begin
+  if not Assigned(fInstance) then
+    fInstance := TEvent<T>.Create;
+end;
+
 function Event<T>.GetCount: Integer;
 begin
   if Assigned(fInstance) then
-    Exit(fInstance.Count)
+    Result := fInstance.Count
   else
-    Exit(0);
+    Result := 0;
 end;
 
-function Event<T>.GetInstance: IEvent<T>;
+function Event<T>.GetEnabled: Boolean;
 begin
-  EnsureInitialized;
-  Result := fInstance;
+  Result := not Assigned(fInstance) or fInstance.Enabled;
 end;
 
 function Event<T>.GetInvoke: T;
@@ -2086,26 +1420,44 @@ begin
   Result := not Assigned(fInstance) or fInstance.IsEmpty;
 end;
 
-class operator Event<T>.Implicit(const eventHandler: T): Event<T>;
+procedure Event<T>.Remove(const handler: T);
+begin
+  if Assigned(fInstance) then
+    fInstance.Remove(handler);
+end;
+
+procedure Event<T>.RemoveAll(instance: Pointer);
+begin
+  if Assigned(fInstance) then
+    fInstance.RemoveAll(instance);
+end;
+
+procedure Event<T>.SetEnabled(const value: Boolean);
+begin
+  EnsureInitialized;
+  fInstance.Enabled := value;
+end;
+
+class operator Event<T>.Implicit(const value: IEvent<T>): Event<T>;
+begin
+  Result.fInstance := value;
+end;
+
+class operator Event<T>.Implicit(var value: Event<T>): IEvent<T>;
+begin
+  value.EnsureInitialized;
+  Result := value.fInstance;
+end;
+
+class operator Event<T>.Implicit(var value: Event<T>): T;
+begin
+  Result := value.Invoke;
+end;
+
+class operator Event<T>.Implicit(const value: T): Event<T>;
 begin
   Result.Clear;
-  Result.Add(eventHandler);
-end;
-
-class operator Event<T>.Implicit(const e: IEvent<T>): Event<T>;
-begin
-  Result.fInstance := e;
-end;
-
-class operator Event<T>.Implicit(var e: Event<T>): IEvent<T>;
-begin
-  e.EnsureInitialized;
-  Result := e.fInstance;
-end;
-
-class operator Event<T>.Implicit(var e: Event<T>): T;
-begin
-  Result := e.GetInvoke;
+  Result.Add(value);
 end;
 
 {$ENDREGION}

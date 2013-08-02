@@ -40,8 +40,8 @@ type
   private
     fQueue: TGenericQueue;
     fOwnership: TOwnershipType;
-    fOnNotify: ICollectionNotifyDelegate<T>;
-    function GetOnNotify: ICollectionNotifyDelegate<T>;
+    fOnNotify: ICollectionChangedEvent<T>;
+    function GetOnNotify: ICollectionChangedEvent<T>;
     function NonGenericGetOnNotify: IEvent;
     function IQueue.GetOnNotify = NonGenericGetOnNotify;
   protected
@@ -53,7 +53,7 @@ type
     function NonGenericPeekOrDefault: TValue;
     function NonGenericTryPeek(out item: TValue): Boolean;
 
-    procedure Notify(const item: T; action: TCollectionNotification); virtual;
+    procedure Notify(const item: T; action: TCollectionChangedAction); virtual;
 
     procedure IQueue.Enqueue = NonGenericEnqueue;
     function IQueue.Dequeue = NonGenericDequeue;
@@ -75,12 +75,13 @@ type
     procedure Clear;
     procedure TrimExcess;
     function AsQueue: IQueue;
-    property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
+    property OnNotify: ICollectionChangedEvent<T> read GetOnNotify;
   end;
 
 implementation
 
 uses
+  Spring.Collections.Events,
   Spring.Collections.Extensions;
 
 
@@ -90,6 +91,7 @@ constructor TQueue<T>.Create(queue: TGenericQueue; ownership: TOwnershipType);
 begin
   fQueue := queue;
   fOwnership := ownership;
+  fOnNotify := TCollectionChangedEventImpl<T>.Create;
 end;
 
 constructor TQueue<T>.Create(const collection: IEnumerable<T>);
@@ -141,14 +143,14 @@ procedure TQueue<T>.Enqueue(const item: T);
 begin
   fQueue.Enqueue(item);
 
-  Notify(item, cnAdded);
+  Notify(item, caAdded);
 end;
 
 function TQueue<T>.Dequeue: T;
 begin
   Result := fQueue.Dequeue;
 
-  Notify(Result, cnRemoved);
+  Notify(Result, caRemoved);
 end;
 
 function TQueue<T>.AsQueue: IQueue;
@@ -195,12 +197,8 @@ begin
   Result := fQueue.Count;
 end;
 
-function TQueue<T>.GetOnNotify: ICollectionNotifyDelegate<T>;
+function TQueue<T>.GetOnNotify: ICollectionChangedEvent<T>;
 begin
-  if fOnNotify = nil then
-  begin
-    fOnNotify := TCollectionNotifyDelegate<T>.Create;
-  end;
   Result := fOnNotify;
 end;
 
@@ -238,12 +236,9 @@ begin
     item := TValue.From<T>(value);
 end;
 
-procedure TQueue<T>.Notify(const item: T; action: TCollectionNotification);
+procedure TQueue<T>.Notify(const item: T; action: TCollectionChangedAction);
 begin
-  if (fOnNotify <> nil) and not fOnNotify.IsEmpty and fOnNotify.Enabled then
-  begin
-    fOnNotify.Invoke(Self, item, action);
-  end;
+  fOnNotify.Invoke(Self, item, action);
 end;
 
 {$ENDREGION}
