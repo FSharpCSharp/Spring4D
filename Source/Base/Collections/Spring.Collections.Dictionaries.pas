@@ -96,12 +96,12 @@ type
     fOwnership: TOwnershipType;
     fKeys: TKeyCollection;
     fValues: TValueCollection;
-    fOnKeyNotify: ICollectionChangedEvent<TKey>;
-    fOnValueNotify: ICollectionChangedEvent<TValue>;
+    fOnKeyChanged: ICollectionChangedEvent<TKey>;
+    fOnValueChanged: ICollectionChangedEvent<TValue>;
     procedure DoKeyNotify(Sender: TObject; const Item: TKey; Action: TCollectionNotification);
     procedure DoValueNotify(Sender: TObject; const Item: TValue; Action: TCollectionNotification);
-    function GetOnKeyNotify: ICollectionChangedEvent<TKey>;
-    function GetOnValueNotify: ICollectionChangedEvent<TValue>;
+    function GetOnKeyChanged: ICollectionChangedEvent<TKey>;
+    function GetOnValueChanged: ICollectionChangedEvent<TValue>;
   protected
     procedure NonGenericAdd(const key, value: Spring.TValue);
     procedure IDictionary.Add = NonGenericAdd;
@@ -154,8 +154,8 @@ type
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
     property Keys: ICollection<TKey> read GetKeys;
     property Values: ICollection<TValue> read GetValues;
-    property OnKeyNotify: ICollectionChangedEvent<TKey> read GetOnKeyNotify;
-    property OnValueNotify: ICollectionChangedEvent<TValue> read GetOnValueNotify;
+    property OnKeyChanged: ICollectionChangedEvent<TKey> read GetOnKeyChanged;
+    property OnValueChanged: ICollectionChangedEvent<TValue> read GetOnValueChanged;
   {$ENDREGION}
   end;
 
@@ -177,8 +177,8 @@ begin
   fOwnership := ownership;
   fDictionary.OnKeyNotify := DoKeyNotify;
   fDictionary.OnValueNotify := DoValueNotify;
-  fOnKeyNotify := TCollectionChangedEventImpl<TKey>.Create;
-  fOnValueNotify := TCollectionChangedEventImpl<TValue>.Create;
+  fOnKeyChanged := TCollectionChangedEventImpl<TKey>.Create;
+  fOnValueChanged := TCollectionChangedEventImpl<TValue>.Create;
 end;
 
 constructor TDictionary<TKey, TValue>.Create;
@@ -203,13 +203,13 @@ end;
 procedure TDictionary<TKey, TValue>.DoKeyNotify(Sender: TObject;
   const Item: TKey; Action: TCollectionNotification);
 begin
-  fOnKeyNotify.Invoke(Sender, item, TCollectionChangedAction(action));
+  fOnKeyChanged.Invoke(Sender, item, TCollectionChangedAction(action));
 end;
 
 procedure TDictionary<TKey, TValue>.DoValueNotify(Sender: TObject;
   const Item: TValue; Action: TCollectionNotification);
 begin
-  fOnValueNotify.Invoke(Sender, item, TCollectionChangedAction(action));
+  fOnValueChanged.Invoke(Sender, item, TCollectionChangedAction(action));
 end;
 
 function TDictionary<TKey, TValue>.GetEnumerator: IEnumerator<TPair<TKey, TValue>>;
@@ -362,14 +362,14 @@ begin
   Result := TypeInfo(TKey);
 end;
 
-function TDictionary<TKey, TValue>.GetOnKeyNotify: ICollectionChangedEvent<TKey>;
+function TDictionary<TKey, TValue>.GetOnKeyChanged: ICollectionChangedEvent<TKey>;
 begin
-  Result := fOnKeyNotify;
+  Result := fOnKeyChanged;
 end;
 
-function TDictionary<TKey, TValue>.GetOnValueNotify: ICollectionChangedEvent<TValue>;
+function TDictionary<TKey, TValue>.GetOnValueChanged: ICollectionChangedEvent<TValue>;
 begin
-  Result := fOnValueNotify;
+  Result := fOnValueChanged;
 end;
 
 function TDictionary<TKey, TValue>.GetValues: ICollection<TValue>;

@@ -68,10 +68,10 @@ begin
     TTestEmptyStringIntegerDictionary.Suite,
     TTestEmptyStackofStrings.Suite,
     TTestStackOfInteger.Suite,
-    TTestStackOfIntegerNotifyEvent.Suite,
+    TTestStackOfIntegerChangedEvent.Suite,
     TTestEmptyQueueofInteger.Suite,
     TTestQueueOfInteger.Suite,
-    TTestQueueOfIntegerNotifyEvent.Suite,
+    TTestQueueOfIntegerChangedEvent.Suite,
     TTestListOfIntegerAsIEnumerable.Suite
 
   ]);

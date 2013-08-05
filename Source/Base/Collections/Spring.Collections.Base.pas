@@ -283,7 +283,7 @@ type
     function IList.GetOnChanged = NonGenericGetOnChanged;
   protected
     function GetComparer: IComparer<T>; override;
-    procedure Notify(const item: T; action: TCollectionChangedAction); virtual;
+    procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
     procedure DoSort(const comparer: IComparer<T>); virtual;
     procedure DoInsert(index: Integer; const item: T); virtual; abstract;
     procedure DoDelete(index: Integer; notification: TCollectionChangedAction); virtual; abstract;
@@ -344,7 +344,6 @@ type
 
     property Items[index: Integer]: T read GetItem write SetItem; default;
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
-    property OnNotify: ICollectionChangedEvent<T> read GetOnChanged; // deprecated
   end;
 
 implementation
@@ -1442,7 +1441,7 @@ begin
   SetItem(index, value.AsType<T>);
 end;
 
-procedure TListBase<T>.Notify(const item: T; action: TCollectionChangedAction);
+procedure TListBase<T>.Changed(const item: T; action: TCollectionChangedAction);
 begin
   fOnChanged.Invoke(Self, item, action);
 end;

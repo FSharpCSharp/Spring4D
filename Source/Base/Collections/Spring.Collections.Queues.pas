@@ -40,10 +40,10 @@ type
   private
     fQueue: TGenericQueue;
     fOwnership: TOwnershipType;
-    fOnNotify: ICollectionChangedEvent<T>;
-    function GetOnNotify: ICollectionChangedEvent<T>;
-    function NonGenericGetOnNotify: IEvent;
-    function IQueue.GetOnNotify = NonGenericGetOnNotify;
+    fOnChanged: ICollectionChangedEvent<T>;
+    function GetOnChanged: ICollectionChangedEvent<T>;
+    function NonGenericGetOnChanged: IEvent;
+    function IQueue.GetOnChanged = NonGenericGetOnChanged;
   protected
     function GetCount: Integer; override;
 
@@ -53,7 +53,7 @@ type
     function NonGenericPeekOrDefault: TValue;
     function NonGenericTryPeek(out item: TValue): Boolean;
 
-    procedure Notify(const item: T; action: TCollectionChangedAction); virtual;
+    procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
 
     procedure IQueue.Enqueue = NonGenericEnqueue;
     function IQueue.Dequeue = NonGenericDequeue;
@@ -75,7 +75,7 @@ type
     procedure Clear;
     procedure TrimExcess;
     function AsQueue: IQueue;
-    property OnNotify: ICollectionChangedEvent<T> read GetOnNotify;
+    property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
 implementation
@@ -91,7 +91,7 @@ constructor TQueue<T>.Create(queue: TGenericQueue; ownership: TOwnershipType);
 begin
   fQueue := queue;
   fOwnership := ownership;
-  fOnNotify := TCollectionChangedEventImpl<T>.Create;
+  fOnChanged := TCollectionChangedEventImpl<T>.Create;
 end;
 
 constructor TQueue<T>.Create(const collection: IEnumerable<T>);
@@ -143,14 +143,14 @@ procedure TQueue<T>.Enqueue(const item: T);
 begin
   fQueue.Enqueue(item);
 
-  Notify(item, caAdded);
+  Changed(item, caAdded);
 end;
 
 function TQueue<T>.Dequeue: T;
 begin
   Result := fQueue.Dequeue;
 
-  Notify(Result, caRemoved);
+  Changed(Result, caRemoved);
 end;
 
 function TQueue<T>.AsQueue: IQueue;
@@ -197,9 +197,9 @@ begin
   Result := fQueue.Count;
 end;
 
-function TQueue<T>.GetOnNotify: ICollectionChangedEvent<T>;
+function TQueue<T>.GetOnChanged: ICollectionChangedEvent<T>;
 begin
-  Result := fOnNotify;
+  Result := fOnChanged;
 end;
 
 function TQueue<T>.NonGenericDequeue: TValue;
@@ -212,9 +212,9 @@ begin
   Enqueue(item.AsType<T>);
 end;
 
-function TQueue<T>.NonGenericGetOnNotify: IEvent;
+function TQueue<T>.NonGenericGetOnChanged: IEvent;
 begin
-  Result := GetOnNotify;
+  Result := GetOnChanged;
 end;
 
 function TQueue<T>.NonGenericPeek: TValue;
@@ -236,9 +236,9 @@ begin
     item := TValue.From<T>(value);
 end;
 
-procedure TQueue<T>.Notify(const item: T; action: TCollectionChangedAction);
+procedure TQueue<T>.Changed(const item: T; action: TCollectionChangedAction);
 begin
-  fOnNotify.Invoke(Self, item, action);
+  fOnChanged.Invoke(Self, item, action);
 end;
 
 {$ENDREGION}

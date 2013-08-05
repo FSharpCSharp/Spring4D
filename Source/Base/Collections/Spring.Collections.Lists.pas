@@ -66,7 +66,7 @@ type
     function GetOwnsObjects: Boolean;
     procedure SetOwnsObjects(const value: Boolean);
   protected
-    procedure Notify(const item: T; action: TCollectionChangedAction); override;
+    procedure Changed(const item: T; action: TCollectionChangedAction); override;
   public
     constructor Create(ownsObjects: Boolean = True); overload;
     constructor Create(const comparer: IComparer<T>; ownsObjects: Boolean = True); overload;
@@ -105,8 +105,8 @@ begin
   oldItem := fItems[index];
   fItems[index] := value;
 
-  Notify(oldItem, caRemoved);
-  Notify(value, caAdded);
+  Changed(oldItem, caRemoved);
+  Changed(value, caAdded);
 end;
 
 procedure TList<T>.DoInsert(index: Integer; const item: T);
@@ -119,7 +119,7 @@ begin
   end;
   fItems[index] := item;
   Inc(fCount);
-  Notify(item, caAdded);
+  Changed(item, caAdded);
 end;
 
 procedure TList<T>.DoDelete(index: Integer;
@@ -137,7 +137,7 @@ begin
     System.Move(fItems[index + 1], fItems[index], (Count - index) * SizeOf(T));
     FillChar(fItems[Count], SizeOf(T), 0);
   end;
-  Notify(oldItem, notification);
+  Changed(oldItem, notification);
 end;
 
 procedure TList<T>.DoDeleteRange(startIndex, count: Integer;
@@ -164,7 +164,7 @@ begin
 
   for i := 0 to Length(oldItems) - 1 do
   begin
-    Notify(oldItems[i], caRemoved);
+    Changed(oldItems[i], caRemoved);
   end;
 end;
 
@@ -187,7 +187,7 @@ begin
   FillChar(fItems[newIndex], SizeOf(T), 0);
   fItems[newIndex] := temp;
 
-  Notify(temp, caMoved);
+  Changed(temp, caMoved);
 end;
 
 procedure TList<T>.Clear;
@@ -227,8 +227,8 @@ begin
   fItems[index1] := fItems[index2];
   fItems[index2] := temp;
 
-  Notify(fItems[index2], caMoved);
-  Notify(fItems[index1], caMoved);
+  Changed(fItems[index2], caMoved);
+  Changed(fItems[index1], caMoved);
 end;
 
 function TList<T>.GetCapacity: Integer;
@@ -294,7 +294,7 @@ begin
   fOwnsObjects := value;
 end;
 
-procedure TObjectList<T>.Notify(const item: T; action: TCollectionChangedAction);
+procedure TObjectList<T>.Changed(const item: T; action: TCollectionChangedAction);
 begin
   inherited;
   if OwnsObjects and (action = caRemoved) then

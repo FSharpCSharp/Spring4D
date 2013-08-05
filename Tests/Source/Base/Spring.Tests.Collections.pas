@@ -151,7 +151,7 @@ type
     procedure TestStackPeekOrDefault;
   end;
 
-  TTestStackOfIntegerNotifyEvent = class(TExceptionCheckerTestCase)
+  TTestStackOfIntegerChangedEvent = class(TExceptionCheckerTestCase)
   private
     SUT: IStack<Integer>;
     fAInvoked, fBInvoked: Boolean;
@@ -166,7 +166,7 @@ type
     procedure TestEmpty;
     procedure TestOneHandler;
     procedure TestTwoHandlers;
-    procedure TestNonGenericNotifyEvent;
+    procedure TestNonGenericChangedEvent;
   end;
 
   TTestEmptyQueueOfInteger = class(TExceptionCheckerTestCase)
@@ -197,7 +197,7 @@ type
     procedure TestQueuePeek;
   end;
 
-  TTestQueueOfIntegerNotifyEvent = class(TExceptionCheckerTestCase)
+  TTestQueueOfIntegerChangedEvent = class(TExceptionCheckerTestCase)
   private
     SUT: IQueue<Integer>;
     fAInvoked, fBInvoked: Boolean;
@@ -212,7 +212,7 @@ type
     procedure TestEmpty;
     procedure TestOneHandler;
     procedure TestTwoHandlers;
-    procedure TestNonGenericNotifyEvent;
+    procedure TestNonGenericChangedEvent;
   end;
 
   TTestListOfIntegerAsIEnumerable = class(TExceptionCheckerTestCase)
@@ -819,15 +819,15 @@ begin
   CheckEquals(0, SUT.Count);
 end;
 
-{ TTestStackOfIntegerNotifyEvent }
+{ TTestStackOfIntegerChangedEvent }
 
-procedure TTestStackOfIntegerNotifyEvent.SetUp;
+procedure TTestStackOfIntegerChangedEvent.SetUp;
 begin
   inherited;
   SUT := TCollections.CreateStack<Integer>;
 end;
 
-procedure TTestStackOfIntegerNotifyEvent.TearDown;
+procedure TTestStackOfIntegerChangedEvent.TearDown;
 begin
   inherited;
   SUT := nil;
@@ -835,7 +835,7 @@ begin
   fBInvoked := False;
 end;
 
-procedure TTestStackOfIntegerNotifyEvent.HandlerA(Sender: TObject;
+procedure TTestStackOfIntegerChangedEvent.HandlerA(Sender: TObject;
   const Item: Integer; Action: TCollectionChangedAction);
 begin
   fAItem := Item;
@@ -843,7 +843,7 @@ begin
   fAInvoked := True;
 end;
 
-procedure TTestStackOfIntegerNotifyEvent.HandlerB(Sender: TObject;
+procedure TTestStackOfIntegerChangedEvent.HandlerB(Sender: TObject;
   const Item: Integer; Action: TCollectionChangedAction);
 begin
   fBitem := Item;
@@ -851,10 +851,10 @@ begin
   fBInvoked := True;
 end;
 
-procedure TTestStackOfIntegerNotifyEvent.TestEmpty;
+procedure TTestStackOfIntegerChangedEvent.TestEmpty;
 begin
-  CheckEquals(0, SUT.OnNotify.Count);
-  CheckTrue(SUT.OnNotify.IsEmpty);
+  CheckEquals(0, SUT.OnChanged.Count);
+  CheckTrue(SUT.OnChanged.IsEmpty);
 
   SUT.Push(0);
 
@@ -862,9 +862,9 @@ begin
   CheckFalse(fBInvoked);
 end;
 
-procedure TTestStackOfIntegerNotifyEvent.TestOneHandler;
+procedure TTestStackOfIntegerChangedEvent.TestOneHandler;
 begin
-  SUT.OnNotify.Add(HandlerA);
+  SUT.OnChanged.Add(HandlerA);
 
   SUT.Push(0);
 
@@ -878,15 +878,15 @@ begin
 
   CheckTrue(fAAction = caRemoved, 'different collection notifications');
 
-  SUT.OnNotify.Remove(HandlerA);
-  CheckEquals(0, SUT.OnNotify.Count);
-  CheckTrue(SUT.OnNotify.IsEmpty);
+  SUT.OnChanged.Remove(HandlerA);
+  CheckEquals(0, SUT.OnChanged.Count);
+  CheckTrue(SUT.OnChanged.IsEmpty);
 end;
 
-procedure TTestStackOfIntegerNotifyEvent.TestTwoHandlers;
+procedure TTestStackOfIntegerChangedEvent.TestTwoHandlers;
 begin
-  SUT.OnNotify.Add(HandlerA);
-  SUT.OnNotify.Add(HandlerB);
+  SUT.OnChanged.Add(HandlerA);
+  SUT.OnChanged.Add(HandlerB);
 
   SUT.Push(0);
 
@@ -904,14 +904,14 @@ begin
   CheckTrue(fBAction = caRemoved, 'handler B: different collection notifications');
   CheckEquals(0, fBItem, 'handler B: different item');
 
-  SUT.OnNotify.Remove(HandlerA);
-  CheckEquals(1, SUT.OnNotify.Count);
-  CheckFalse(SUT.OnNotify.IsEmpty);
-  SUT.OnNotify.Remove(HandlerB);
-  CheckTrue(SUT.OnNotify.IsEmpty);
+  SUT.OnChanged.Remove(HandlerA);
+  CheckEquals(1, SUT.OnChanged.Count);
+  CheckFalse(SUT.OnChanged.IsEmpty);
+  SUT.OnChanged.Remove(HandlerB);
+  CheckTrue(SUT.OnChanged.IsEmpty);
 end;
 
-procedure TTestStackOfIntegerNotifyEvent.TestNonGenericNotifyEvent;
+procedure TTestStackOfIntegerChangedEvent.TestNonGenericChangedEvent;
 var
   stack: IStack;
   method: TMethod;
@@ -919,14 +919,14 @@ begin
   stack := SUT.AsStack;
 
   CheckTrue(stack.IsEmpty);
-  CheckTrue(stack.OnNotify.Enabled);
+  CheckTrue(stack.OnChanged.Enabled);
 
-  method.Code := @TTestStackOfIntegerNotifyEvent.HandlerA;
+  method.Code := @TTestStackOfIntegerChangedEvent.HandlerA;
   method.Data := Pointer(Self);
 
-  stack.OnNotify.Add(method);
+  stack.OnChanged.Add(method);
 
-  CheckEquals(1, stack.OnNotify.Count);
+  CheckEquals(1, stack.OnChanged.Count);
 
   stack.Push(0);
 
@@ -1028,15 +1028,15 @@ begin
   CheckEquals(Expected, Actual);
 end;
 
-{ TTestQueueOfIntegerNotifyEvent }
+{ TTestQueueOfIntegerChangedEvent }
 
-procedure TTestQueueOfIntegerNotifyEvent.SetUp;
+procedure TTestQueueOfIntegerChangedEvent.SetUp;
 begin
   inherited;
   SUT := TCollections.CreateQueue<Integer>;
 end;
 
-procedure TTestQueueOfIntegerNotifyEvent.TearDown;
+procedure TTestQueueOfIntegerChangedEvent.TearDown;
 begin
   inherited;
   SUT := nil;
@@ -1044,7 +1044,7 @@ begin
   fBInvoked := False;
 end;
 
-procedure TTestQueueOfIntegerNotifyEvent.HandlerA(Sender: TObject;
+procedure TTestQueueOfIntegerChangedEvent.HandlerA(Sender: TObject;
   const Item: Integer; Action: TCollectionChangedAction);
 begin
   fAItem := Item;
@@ -1052,7 +1052,7 @@ begin
   fAInvoked := True;
 end;
 
-procedure TTestQueueOfIntegerNotifyEvent.HandlerB(Sender: TObject;
+procedure TTestQueueOfIntegerChangedEvent.HandlerB(Sender: TObject;
   const Item: Integer; Action: TCollectionChangedAction);
 begin
   fBitem := Item;
@@ -1060,10 +1060,10 @@ begin
   fBInvoked := True;
 end;
 
-procedure TTestQueueOfIntegerNotifyEvent.TestEmpty;
+procedure TTestQueueOfIntegerChangedEvent.TestEmpty;
 begin
-  CheckEquals(0, SUT.OnNotify.Count);
-  CheckTrue(SUT.OnNotify.IsEmpty);
+  CheckEquals(0, SUT.OnChanged.Count);
+  CheckTrue(SUT.OnChanged.IsEmpty);
 
   SUT.Enqueue(0);
 
@@ -1071,9 +1071,9 @@ begin
   CheckFalse(fBInvoked);
 end;
 
-procedure TTestQueueOfIntegerNotifyEvent.TestOneHandler;
+procedure TTestQueueOfIntegerChangedEvent.TestOneHandler;
 begin
-  SUT.OnNotify.Add(HandlerA);
+  SUT.OnChanged.Add(HandlerA);
 
   SUT.Enqueue(0);
 
@@ -1087,15 +1087,15 @@ begin
 
   CheckTrue(fAAction = caRemoved, 'different collection notifications');
 
-  SUT.OnNotify.Remove(HandlerA);
-  CheckEquals(0, SUT.OnNotify.Count);
-  CheckTrue(SUT.OnNotify.IsEmpty);
+  SUT.OnChanged.Remove(HandlerA);
+  CheckEquals(0, SUT.OnChanged.Count);
+  CheckTrue(SUT.OnChanged.IsEmpty);
 end;
 
-procedure TTestQueueOfIntegerNotifyEvent.TestTwoHandlers;
+procedure TTestQueueOfIntegerChangedEvent.TestTwoHandlers;
 begin
-  SUT.OnNotify.Add(HandlerA);
-  SUT.OnNotify.Add(HandlerB);
+  SUT.OnChanged.Add(HandlerA);
+  SUT.OnChanged.Add(HandlerB);
 
   SUT.Enqueue(0);
 
@@ -1113,14 +1113,14 @@ begin
   CheckTrue(fBAction = caRemoved, 'handler B: different collection notifications');
   CheckEquals(0, fBItem, 'handler B: different item');
 
-  SUT.OnNotify.Remove(HandlerA);
-  CheckEquals(1, SUT.OnNotify.Count);
-  CheckFalse(SUT.OnNotify.IsEmpty);
-  SUT.OnNotify.Remove(HandlerB);
-  CheckTrue(SUT.OnNotify.IsEmpty);
+  SUT.OnChanged.Remove(HandlerA);
+  CheckEquals(1, SUT.OnChanged.Count);
+  CheckFalse(SUT.OnChanged.IsEmpty);
+  SUT.OnChanged.Remove(HandlerB);
+  CheckTrue(SUT.OnChanged.IsEmpty);
 end;
 
-procedure TTestQueueOfIntegerNotifyEvent.TestNonGenericNotifyEvent;
+procedure TTestQueueOfIntegerChangedEvent.TestNonGenericChangedEvent;
 var
   queue: IQueue;
   method: TMethod;
@@ -1128,14 +1128,14 @@ begin
   queue := SUT.AsQueue;
 
   CheckTrue(queue.IsEmpty);
-  CheckTrue(queue.OnNotify.Enabled);
+  CheckTrue(queue.OnChanged.Enabled);
 
-  method.Code := @TTestStackOfIntegerNotifyEvent.HandlerA;
+  method.Code := @TTestStackOfIntegerChangedEvent.HandlerA;
   method.Data := Pointer(Self);
 
-  queue.OnNotify.Add(method);
+  queue.OnChanged.Add(method);
 
-  CheckEquals(1, queue.OnNotify.Count);
+  CheckEquals(1, queue.OnChanged.Count);
 
   queue.Enqueue(0);
 

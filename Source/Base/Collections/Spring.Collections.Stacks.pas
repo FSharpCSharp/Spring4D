@@ -41,10 +41,10 @@ type
   private
     fStack: TGenericStack;
     fOwnership: TOwnershipType;
-    fOnNotify: ICollectionChangedEvent<T>;
-    function GetOnNotify: ICollectionChangedEvent<T>;
-    function NonGenericGetOnNotify: IEvent;
-    function IStack.GetOnNotify = NonGenericGetOnNotify;
+    fOnChanged: ICollectionChangedEvent<T>;
+    function GetOnChanged: ICollectionChangedEvent<T>;
+    function NonGenericGetOnChanged: IEvent;
+    function IStack.GetOnChanged = NonGenericGetOnChanged;
   protected
     function GetCount: Integer; override;
 
@@ -54,7 +54,7 @@ type
     function NonGenericPeekOrDefault: TValue;
     function NonGenericTryPeek(out item: TValue): Boolean;
 
-    procedure Notify(const item: T; action: TCollectionChangedAction); virtual;
+    procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
 
     procedure IStack.Push = NonGenericPush;
     function IStack.Pop = NonGenericPop;
@@ -80,7 +80,7 @@ type
     function TryPeek(out item: T): Boolean;
     procedure TrimExcess;
     function AsStack: IStack;
-    property OnNotify: ICollectionChangedEvent<T> read GetOnNotify;
+    property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
 implementation
@@ -98,7 +98,7 @@ begin
   inherited Create;
   fStack := stack;
   fOwnership := ownership;
-  fOnNotify := TCollectionChangedEventImpl<T>.Create;
+  fOnChanged := TCollectionChangedEventImpl<T>.Create;
 end;
 
 constructor TStack<T>.Create(const collection: IEnumerable<T>);
@@ -135,7 +135,7 @@ destructor TStack<T>.Destroy;
 begin
   if fOwnership = otOwned then
   begin
-    // call our Clear to trigger Notify
+    // call our Clear to trigger Changed
     Clear;
     fStack.Free;
   end;
@@ -153,9 +153,9 @@ begin
   Result := fStack.Count;
 end;
 
-function TStack<T>.GetOnNotify: ICollectionChangedEvent<T>;
+function TStack<T>.GetOnChanged: ICollectionChangedEvent<T>;
 begin
-  Result := fOnNotify;
+  Result := fOnChanged;
 end;
 
 class function TStack<T>.GetStackItem(stack: TGenericStack; index: Integer): T;
@@ -163,9 +163,9 @@ begin
   Result := TArray<T>(PInteger(NativeInt(stack) + hfFieldSize + SizeOf(Integer))^)[index];
 end;
 
-function TStack<T>.NonGenericGetOnNotify: IEvent;
+function TStack<T>.NonGenericGetOnChanged: IEvent;
 begin
-  Result := GetOnNotify;
+  Result := GetOnChanged;
 end;
 
 function TStack<T>.NonGenericPeek: TValue;
@@ -197,23 +197,23 @@ begin
     item := TValue.From<T>(value);
 end;
 
-procedure TStack<T>.Notify(const item: T; action: TCollectionChangedAction);
+procedure TStack<T>.Changed(const item: T; action: TCollectionChangedAction);
 begin
-  fOnNotify.Invoke(Self, item, action);
+  fOnChanged.Invoke(Self, item, action);
 end;
 
 procedure TStack<T>.Push(const item: T);
 begin
   fStack.Push(item);
 
-  Notify(item, caAdded);
+  Changed(item, caAdded);
 end;
 
 function TStack<T>.Pop: T;
 begin
   Result := fStack.Pop;
 
-  Notify(Result, caRemoved);
+  Changed(Result, caRemoved);
 end;
 
 function TStack<T>.AsStack: IStack;
@@ -223,7 +223,7 @@ end;
 
 procedure TStack<T>.Clear;
 begin
-  // do not call fStack.Clear because we want our Notify to be triggered.
+  // do not call fStack.Clear because we want our Changed to be triggered.
   while Count > 0 do
     Pop;
   TrimExcess;
