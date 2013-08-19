@@ -84,6 +84,7 @@ type
     class function GetEntities(): TList<TClass>;
     class function GetEntityRttiType(ATypeInfo: PTypeInfo): TRttiType; overload;
     class function GetEntityRttiType<T>(): TRttiType; overload;
+    class function HasInstanceField(AClass: TClass): Boolean;
     class function GetSubEntityFromMemberDeep(AEntity: TObject; ARttiMember: TRttiNamedObject): TList<TObject>;
     class function GetRelationsOf(AEntity: TObject): TList<TObject>;
     class function GetLastGenericArgumentType(ATypeInfo: PTypeInfo): TRttiType;
@@ -279,15 +280,99 @@ begin
   end;
 end;
 
+procedure CopyRecord(Dest, Source, TypeInfo: Pointer);
+asm
+  jmp System.@CopyRecord
+end;
+
+function GetInlineSize(TypeInfo: PTypeInfo): Integer;
+begin
+  if TypeInfo = nil then
+    Exit(0);
+
+  case TypeInfo^.Kind of
+    tkInteger, tkEnumeration, tkChar, tkWChar, tkSet:
+      case GetTypeData(TypeInfo)^.OrdType of
+        otSByte, otUByte: Exit(1);
+        otSWord, otUWord: Exit(2);
+        otSLong, otULong: Exit(4);
+      else
+        Exit(0);
+      end;
+    tkFloat:
+      case GetTypeData(TypeInfo)^.FloatType of
+        ftSingle: Exit(4);
+        ftDouble: Exit(8);
+        ftExtended: Exit(SizeOf(Extended));
+        ftComp: Exit(8);
+        ftCurr: Exit(8);
+      else
+        Exit(0);
+      end;
+    tkClass, tkClassRef: Exit(SizeOf(Pointer));
+    tkMethod: Exit(SizeOf(TMethod));
+    tkInt64: Exit(8);
+    tkDynArray, tkUString, tkLString, tkWString, tkInterface: Exit(-SizeOf(Pointer));
+    tkString: Exit(-GetTypeData(TypeInfo)^.MaxLength + 1);
+    tkPointer: Exit(SizeOf(Pointer));
+    tkRecord: Exit(-GetTypeData(TypeInfo)^.RecSize);
+    tkArray: Exit(-GetTypeData(TypeInfo)^.ArrayData.Size);
+    tkVariant: Exit(-SizeOf(Variant));
+  else
+    Exit(0);
+  end;
+end;
+
+procedure CopyObject(Source: TObject; var Dest: TObject);
+var
+  ClassPtr: TClass;
+  InitTable: PTypeInfo;
+  TypeData: PTypeData;
+  SourcePtr, DestPtr: Pointer;
+  Size: Integer;
+  ManagedField: PManagedField;
+begin
+  ClassPtr := Source.ClassType;
+  if TEntityCache.Get(ClassPtr).HasInstanceField then
+    TRttiExplorer.CopyFieldValues(Source, Dest)
+  else
+  begin
+    SourcePtr := Source;
+    DestPtr := TObject(Dest);
+    Size := 0;
+    InitTable := PPointer(PByte(ClassPtr) + vmtInitTable)^;
+    if InitTable <> nil then
+    begin
+      // Copy ref-counted values
+      CopyArray(DestPtr, SourcePtr, ClassPtr, 1);
+      // Determine remaining memory size to be copied
+      TypeData := GetTypeData(InitTable);
+      ManagedField := Pointer(PByte(TypeData) + SizeOf(Integer) * 2);
+      Inc(ManagedField, TypeData.ManagedFldCount - 1);
+      Size := ManagedField.FldOffset + Abs(GetInlineSize(ManagedField.TypeRef^));
+
+      if Size < Source.InstanceSize then
+      begin
+        SourcePtr := PByte(SourcePtr) + Size;
+        DestPtr := PByte(DestPtr) + Size;
+      end;
+    end;
+    Move(SourcePtr^, DestPtr^, Source.InstanceSize - Size - hfFieldSize); // do not copy the hidden MonitorField
+  end;
+end;
+
 
 { TRttiExplorer }
 
 class function TRttiExplorer.Clone(AEntity: TObject): TObject;
 begin
   Assert(Assigned(AEntity));
-
   Result := AEntity.ClassType.Create;
+  {$IF not defined(CPU386)}
   CopyFieldValues(AEntity, Result);
+  {$ELSE}
+  CopyObject(AEntity, Result);
+  {$IFEND}
 end;
 
 class procedure TRttiExplorer.CopyFieldValues(AEntityFrom, AEntityTo: TObject);
@@ -1094,6 +1179,31 @@ begin
   end;
 
   Result := AList[ix];
+end;
+
+class function TRttiExplorer.HasInstanceField(AClass: TClass): Boolean;
+var
+  LField: TRttiField;
+  LProp: TRttiProperty;
+begin
+  //enumerate fields
+  for LField in FCtx.GetType(AClass).GetFields do
+  begin
+    if (LField.FieldType.IsInstance) then
+    begin
+      Exit(True);
+    end;
+  end;
+
+  for LProp in FCtx.GetType(AClass).GetProperties do
+  begin
+    if (LProp.PropertyType.IsInstance) then
+    begin
+      Exit(True);
+    end;
+  end;
+
+  Result := False;
 end;
 
 class function TRttiExplorer.GetSequence(AClass: TClass): SequenceAttribute;

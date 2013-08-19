@@ -47,6 +47,7 @@ uses
   Math
   ,Diagnostics
   ,Spring.Collections
+  ,Classes
   ;
 
 procedure TestTRttiExplorer.TryGetMethod;
@@ -353,20 +354,43 @@ procedure TestTRttiExplorer.TestClone;
 var
   ReturnValue: TCustomer;
   AEntity: TCustomer;
+  LStream: TMemoryStream;
+  LOrder: TCustomer_Orders;
 begin
   AEntity := TCustomer.Create;
+  LStream := TMemoryStream.Create;
   try
     AEntity.Name := 'Clone';
+    AEntity.Age := 4589;
+    AEntity.LastEdited := EncodeDate(2011,1,1);
+    AEntity.Height := 1.1234;
+    AEntity.CustomerType := ctBusinessClass;
+    AEntity.MiddleName := 'Bob';
+    AEntity.CustStream := LStream;
+
+    LOrder := TCustomer_Orders.Create;
+    LOrder.Customer_Payment_Method_Id := 15;
+    AEntity.OrdersIntf.Add(LOrder);
 
     ReturnValue := TRttiExplorer.Clone(AEntity) as TCustomer;
     try
       CheckFalse(TRttiExplorer.EntityChanged(AEntity, ReturnValue));
       CheckEqualsString('Clone', ReturnValue.Name);
+      CheckEquals(AEntity.Age, ReturnValue.Age);
+      CheckTrue(SameDate(AEntity.LastEdited, ReturnValue.LastEdited));
+      CheckEquals(AEntity.Height, ReturnValue.Height);
+      CheckEquals(Ord(AEntity.CustomerType), Ord(ReturnValue.CustomerType));
+      CheckEquals(AEntity.MiddleName.Value, ReturnValue.MiddleName.Value);
+      CheckTrue(Assigned(ReturnValue.CustStream));
+      CheckEquals(1, ReturnValue.OrdersIntf.Count);
+      CheckEquals(15, ReturnValue.OrdersIntf[0].Customer_Payment_Method_Id.Value);
+
     finally
       ReturnValue.Free;
     end;
   finally
     AEntity.Free;
+    LStream.Free;
   end;
 end;
 
@@ -377,6 +401,8 @@ var
   sw: TStopwatch;
   LCustomers: TObjectList<TCustomer>;
   LClonedCustomers: TObjectList<TCustomer>;
+  LWorker, LClonedWorker: TWorker;
+  LWorkers, LClonedWorkers: TObjectList<TWorker>;
 begin
   iMax := 100000;
   LCustomers := TObjectList<TCustomer>.Create(True);
@@ -407,7 +433,39 @@ begin
     LClonedCustomers.Free;
   end;
 
-  Status(Format('Cloned %D objects in %D ms.',
+  Status(Format('Cloned %D complex objects in %D ms.',
+    [iMax, sw.ElapsedMilliseconds]));
+
+  //start cloning simple objects - models without another instances declared in their fields or properties. In this case much faster clone should be used
+  LWorkers := TObjectList<TWorker>.Create(True);
+  LClonedWorkers := TObjectList<TWorker>.Create(True);
+  try
+    for i := 1 to iMax do
+    begin
+      LWorker := TWorker.Create;
+      LWorker.TabNr := i;
+
+      LWorkers.Add(LWorker);
+    end;
+
+    sw := TStopwatch.StartNew;
+
+    for i := 0 to LWorkers.Count - 1 do
+    begin
+      LWorker := LWorkers[i];
+
+      LClonedWorker := TRttiExplorer.Clone(LWorker) as TWorker;
+      LClonedWorkers.Add(LClonedWorker);
+    end;
+
+    sw.Stop;
+
+  finally
+    LWorkers.Free;
+    LClonedWorkers.Free;
+  end;
+
+  Status(Format('Cloned %D simple objects in %D ms.',
     [iMax, sw.ElapsedMilliseconds]));
 end;
 

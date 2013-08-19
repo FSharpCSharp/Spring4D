@@ -63,7 +63,7 @@ type
     FStream: LazyObject<TMemoryStream>;
  //   [Column('AVATARLAZY', [], 50, 0, 0, 'Customers avatar')]
     FAvatarNullable: Lazy<Nullable<TPicture>>;
-  private
+  public
     FName: string;
     FAge: Integer;
     FHeight: Double;

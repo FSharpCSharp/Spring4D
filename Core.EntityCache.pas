@@ -86,6 +86,7 @@ type
     FOneToManyColumns: TList<OneToManyAttribute>;
     FManyToOneColumns: TList<ManyToOneAttribute>;
     FSequence: SequenceAttribute;
+    FHasInstanceField: Boolean;
   protected
     procedure SetEntityData(AClass: TClass); virtual;
     procedure SetColumnsData(); virtual;
@@ -96,6 +97,7 @@ type
     function IsTableEntity(): Boolean;
     function ColumnByMemberName(const AMemberName: string): ColumnAttribute;
     function ColumnByName(const AColumnName: string): ColumnAttribute;
+    function HasInstanceField: Boolean;
     function HasSequence(): Boolean;
     function HasManyToOneRelations(): Boolean;
 
@@ -185,6 +187,11 @@ begin
 end;
 
 
+function TEntityData.HasInstanceField: Boolean;
+begin
+  Result := FHasInstanceField;
+end;
+
 function TEntityData.HasManyToOneRelations: Boolean;
 begin
   Result := FManyToOneColumns.Count > 0;
@@ -237,6 +244,7 @@ begin
   TRttiExplorer.GetClassMembers<OneToManyAttribute>(AClass, FOneToManyColumns);
   TRttiExplorer.GetClassMembers<ManyToOneAttribute>(AClass, FManyToOneColumns);
   FSequence := TRttiExplorer.GetSequence(AClass);
+  FHasInstanceField := TRttiExplorer.HasInstanceField(AClass);
 end;
 
 { TEntityCache }
