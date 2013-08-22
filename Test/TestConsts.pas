@@ -13,8 +13,12 @@ const
   CUSTHEIGHT = 'CUSTHEIGHT';
   CUSTTYPE = 'CUSTTYPE';
 
+  PRODNAME = 'PRODNAME';
+  PRODPRICE = 'PRODPRICE';
+
   TBL_PEOPLE = 'CUSTOMERS';
   TBL_ORDERS = 'Customer_Orders';
+  TBL_PRODUCTS = 'PRODUCTS';
 
 implementation
 

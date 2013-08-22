@@ -261,12 +261,12 @@ begin
   FDataset.SetDataList<TCustomer>(LCustomers);
   FDataset.Open;
   LCustomers.First.MiddleName := 'Foo';
-  CheckFalse(LCustomers.First.MiddleName.IsNull);
+  CheckTrue(LCustomers.First.MiddleName.HasValue);
 
   FDataset.Edit;
   FDataset.FieldByName('MiddleName').Clear;
   FDataset.Post;
-  CheckTrue(LCustomers.First.MiddleName.IsNull);
+  CheckFalse(LCustomers.First.MiddleName.HasValue);
 end;
 
 procedure TestTObjectDataset.ClearField_SimpleType;
@@ -823,7 +823,7 @@ begin
   Status(Format('Filter: %S. Sort: %S', [FDataset.Filter, FDataset.Sort]));
   for i := 0 to LCustomers.Count - 1 do
   begin
-    Status(LMsg + Format('%D %S %D %S', [i, LCustomers[i].Name, LCustomers[i].Age, LCustomers[i].MiddleName.ToString]));
+    Status(LMsg + Format('%D %S %D %S', [i, LCustomers[i].Name, LCustomers[i].Age, LCustomers[i].MiddleName.GetValueOrDefault]));
   end;
 
   FDataset.Last;
@@ -847,7 +847,7 @@ begin
   Status(Format('Filter: %S. Sort: %S', [FDataset.Filter, FDataset.Sort]));
   for i := 0 to LCustomers.Count - 1 do
   begin
-    Status(LMsg + Format('%D %S %D %S', [i, LCustomers[i].Name, LCustomers[i].Age, LCustomers[i].MiddleName.ToString]));
+    Status(LMsg + Format('%D %S %D %S', [i, LCustomers[i].Name, LCustomers[i].Age, LCustomers[i].MiddleName.GetValueOrDefault]));
   end;
 
   CheckEquals(11, FDataset.RecNo);

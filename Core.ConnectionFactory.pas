@@ -97,8 +97,8 @@ begin
   try
     TRttiExplorer.GetDeclaredConstructors(AClass, LConstructors);
 
-    if LConstructors.Count < 0 then
-      raise EORMConstructorNotFound.Create('Constructor not found');
+    if LConstructors.Count < 1 then
+      raise EORMConstructorNotFound.CreateFmt('Constructor for class %S not found', [AClass.ClassName]);
 
     LMethod := TRttiExplorer.GetMethodWithLessParameters(LConstructors);
     LParams := LMethod.GetParameters;

@@ -127,7 +127,8 @@ uses
   SQL.Generators.Register in '..\SQL.Generators.Register.pas',
   TestAdaptersOracle in 'TestAdaptersOracle.pas',
   Adapters.Oracle in '..\Adapters.Oracle.pas',
-  TestCommands in 'TestCommands.pas';
+  TestCommands in 'TestCommands.pas',
+  TestCoreUtils in 'TestCoreUtils.pas';
 
 {$R *.RES}
 

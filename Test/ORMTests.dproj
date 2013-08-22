@@ -169,6 +169,7 @@
 			<DCCReference Include="TestAdaptersOracle.pas"/>
 			<DCCReference Include="..\Adapters.Oracle.pas"/>
 			<DCCReference Include="TestCommands.pas"/>
+			<DCCReference Include="TestCoreUtils.pas"/>
 			<None Include="Profiling\AQtimeModule1.aqt"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>

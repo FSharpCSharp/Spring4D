@@ -60,7 +60,7 @@ type
   /// Nullable type
   /// </summary>
  // {$TYPEINFO ON}
-  Nullable<T> = record
+  Nullable<T> = packed record
   private
     FValue: T;
     FHasValue: Boolean;
@@ -102,9 +102,9 @@ type
     function GetManager: TSession;
     procedure SetManager(const Value: TSession);
     property Manager: TSession read GetManager write SetManager;
-    function GetID: Variant;
-    procedure SetID(const Value: Variant);
-    property ID: Variant read GetID write SetID;
+    function GetID: TValue;
+    procedure SetID(const Value: TValue);
+    property ID: TValue read GetID write SetID;
     function GetEntity: TObject;
     procedure SetEntity(const Value: TObject);
     property Entity: TObject read GetEntity write SetEntity;
@@ -117,6 +117,13 @@ type
     ['{A5749874-ABD7-45F3-A9E9-4EB9826C0329}']
   end;
 
+  TLazyVarData = record
+    ID: TValue;
+    Manager: TSession;
+    Entity: TObject;
+    Column: ColumnAttribute;
+  end;
+
   TSvLazy<T> = class(TInterfacedObject, ISvLazy<T>)
   private
     FValueFactory: TFunc<T>;
@@ -124,15 +131,12 @@ type
     FOwnsObjects: Boolean;
     FValue: T;
     FDisableCache: Boolean;
-    FID: Variant;
-    FManager: TSession;
-    FEntity: TObject;
-    FColumn: ColumnAttribute;
+    FVarData: TLazyVarData;
     function GetValue: T;
     function GetManager: TSession;
     procedure SetManager(const Value: TSession);
-    function GetID: Variant;
-    procedure SetID(const Value: Variant);
+    function GetID: TValue;
+    procedure SetID(const Value: TValue);
     function GetEntity: TObject;
     procedure SetEntity(const Value: TObject);
     function GetColumn: ColumnAttribute;
@@ -154,7 +158,7 @@ type
 
     property EntityColumn: ColumnAttribute read GetColumn write SetColumn;
     property DisableCacheForNextGet: Boolean read GetDisableCache write SetDisableCache;
-    property ID: Variant read GetID write SetID;
+    property ID: TValue read GetID write SetID;
     property Entity: TObject read GetEntity write SetEntity;
     property Manager: TSession read GetManager write SetManager;
     property Value: T read GetValue;
@@ -171,17 +175,14 @@ type
   Lazy<T> = record
   private
     FLazy: ISvLazy<T>;
-    FManager: TSession;
-    FID: Variant;
-    FEntity: TObject;
-    FColumn: ColumnAttribute;
+    FVarData: TLazyVarData;
     function GetValue: T;
     function GetDisableCache: Boolean;
     procedure SetDisableCache(const Value: Boolean);
     procedure SetManager(const Value: TSession);
     function GetManager: TSession;
-    function GetID: Variant;
-    procedure SetID(const Value: Variant);
+    function GetID: TValue;
+    procedure SetID(const Value: TValue);
   public
     /// <summary>
     /// Initializes lazy value with anonymous getValue factory
@@ -197,7 +198,7 @@ type
     class operator Implicit(const AValue: T): Lazy<T>; inline;
 
     property DisableCacheForNextGet: Boolean read GetDisableCache write SetDisableCache;
-    property ID: Variant read GetID write SetID;
+    property ID: TValue read GetID write SetID;
     property Manager: TSession read GetManager write SetManager;
     property Value: T read GetValue;
   end;
@@ -205,10 +206,7 @@ type
   LazyObject<T: class, constructor> = record
   private
     FLazy: ISvLazyObject<T>;
-    FManager: TSession;
-    FID: Variant;
-    FEntity: TObject;
-    FColumn: ColumnAttribute;
+    FVarData: TLazyVarData;
     function GetValue: T;
     function GetDisableCache: Boolean;
     procedure SetDisableCache(const Value: Boolean);
@@ -240,6 +238,7 @@ uses
   Mapping.RttiExplorer
   ,Core.Reflection
   ,Core.Utils
+  ,Core.EntityCache
   ,Variants
   ;
 
@@ -386,7 +385,7 @@ begin
   FValueFactory := AValueFactory;
   FValueCreated := False;
   FOwnsObjects := AOwnsObjects;
-  FManager := nil;
+  FVarData.Manager := nil;
 end;
 
 constructor TSvLazy<T>.Create(AOwnsObjects: Boolean);
@@ -394,9 +393,9 @@ begin
   inherited Create;
   FValueCreated := False;
   FOwnsObjects := AOwnsObjects;
-  FManager := nil;
-  FEntity := nil;
-  FColumn := nil;
+  FVarData.Manager := nil;
+  FVarData.Entity := nil;
+  FVarData.Column := nil;
 end;
 
 procedure TSvLazy<T>.CheckInitialized;
@@ -435,13 +434,13 @@ function TSvLazy<T>.DoGetValue: T;
 begin
   //check if FValue needs initialization
   CheckInitialized();
-  FManager.SetLazyValue<T>(FValue, TUtils.FromVariant(FID), FEntity, FColumn);
+  FVarData.Manager.SetLazyValue<T>(FValue, FVarData.ID, FVarData.Entity, FVarData.Column);
   Result := FValue;
 end;
 
 function TSvLazy<T>.GetColumn: ColumnAttribute;
 begin
-  Result := FColumn;
+  Result := FVarData.Column;
 end;
 
 function TSvLazy<T>.GetDisableCache: Boolean;
@@ -451,17 +450,17 @@ end;
 
 function TSvLazy<T>.GetEntity: TObject;
 begin
-  Result := FEntity;
+  Result := FVarData.Entity;
 end;
 
-function TSvLazy<T>.GetID: Variant;
+function TSvLazy<T>.GetID: TValue;
 begin
-  Result := FID;
+  Result := FVarData.ID;
 end;
 
 function TSvLazy<T>.GetManager: TSession;
 begin
-  Result := FManager;
+  Result := FVarData.Manager;
 end;
 
 function TSvLazy<T>.GetValue: T;
@@ -484,7 +483,7 @@ end;
 
 procedure TSvLazy<T>.SetColumn(const Value: ColumnAttribute);
 begin
-  FColumn := Value;
+  FVarData.Column := Value;
 end;
 
 procedure TSvLazy<T>.SetDisableCache(const Value: Boolean);
@@ -494,17 +493,17 @@ end;
 
 procedure TSvLazy<T>.SetEntity(const Value: TObject);
 begin
-  FEntity := Value;
+  FVarData.Entity := Value;
 end;
 
-procedure TSvLazy<T>.SetID(const Value: Variant);
+procedure TSvLazy<T>.SetID(const Value: TValue);
 begin
-  FID := Value;
+  FVarData.ID := Value;
 end;
 
 procedure TSvLazy<T>.SetManager(const Value: TSession);
 begin
-  FManager := Value;
+  FVarData.Manager := Value;
 end;
 
 procedure TSvLazy<T>.SetValue(const AValue: T);
@@ -546,9 +545,9 @@ begin
   end;
 end;
 
-function Lazy<T>.GetID: Variant;
+function Lazy<T>.GetID: TValue;
 begin
-  Result := Unassigned;
+  Result := TValue.Empty;
   if Assigned(FLazy) then
     Result := FLazy.ID;
 end;
@@ -566,10 +565,10 @@ begin
   begin
     FLazy := TSvLazy<T>.Create(False);
   end;
-  FLazy.Manager := FManager;
-  FLazy.ID := FID;
-  FLazy.Entity := FEntity;
-  FLazy.EntityColumn := FColumn;
+  FLazy.Manager := FVarData.Manager;
+  FLazy.ID := FVarData.ID;
+  FLazy.Entity := FVarData.Entity;
+  FLazy.EntityColumn := FVarData.Column;
   Result := FLazy.Value;
 end;
 
@@ -591,7 +590,7 @@ begin
   FLazy.DisableCacheForNextGet := Value;
 end;
 
-procedure Lazy<T>.SetID(const Value: Variant);
+procedure Lazy<T>.SetID(const Value: TValue);
 begin
   if Assigned(FLazy) then
     FLazy.ID := Value;
@@ -650,10 +649,10 @@ begin
   begin
     FLazy := TSvLazyObject<T>.Create(True);
   end;
-  FLazy.Manager := FManager;
-  FLazy.ID := FID;
-  FLazy.Entity := FEntity;
-  FLazy.EntityColumn := FColumn;
+  FLazy.Manager := FVarData.Manager;
+  FLazy.ID := FVarData.ID;
+  FLazy.Entity := FVarData.Entity;
+  FLazy.EntityColumn := FVarData.Column;
   Result := FLazy.Value;
 end;
 
@@ -684,7 +683,7 @@ end;
 
 function TSvLazyObject<T>.DoGetValue: T;
 begin
-  Result := FManager.GetLazyValueClass<T>(TUtils.FromVariant(FID), FEntity, FColumn);
+  Result := FVarData.Manager.GetLazyValueClass<T>(FVarData.ID, FVarData.Entity, FVarData.Column);
 end;
 
 end.

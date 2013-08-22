@@ -150,6 +150,9 @@ begin
     '"Total_Order_Price" FLOAT) '+
     ';');
 
+  LConn.ExecSQL('CREATE TABLE IF NOT EXISTS '+ TBL_PRODUCTS + ' ([PRODID] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, '+
+    '[PRODNAME] VARCHAR (255), [PRODPRICE] FLOAT );');
+
   if not LConn.TableExists(TBL_PEOPLE) then
     raise Exception.Create('Table CUSTOMERS does not exist');
 end;
@@ -188,6 +191,13 @@ begin
   TestDB.ExecSQL('INSERT INTO  ' + TBL_ORDERS + ' ([Customer_Id], [Customer_Payment_Method_Id], [Order_Status_Code], [Total_Order_Price]) '+
     ' VALUES (?,?,?,?);',
     [ACustID, ACustPaymID, AOrderStatusCode, ATotalPrice]);
+  Result := TestDB.GetLastInsertRowID;
+end;
+
+function InsertProduct(AName: string = 'Product'; APrice: Double = 1.99): Variant;
+begin
+  TestDB.ExecSQL('INSERT INTO  ' + TBL_PRODUCTS + ' (['+PRODNAME+'], ['+PRODPRICE+']) VALUES (?,?);',
+    [AName, APrice]);
   Result := TestDB.GetLastInsertRowID;
 end;
 
@@ -672,13 +682,23 @@ var
   iCount: Integer;
   i: Integer;
   LVal, LVal2: Variant;
+  LProduct: TProduct;
 begin
   iCount := 50000;
 
+  //insert customers
   TestDB.BeginTransaction;
   for i := 0 to iCount - 1 do
   begin
     InsertCustomer(i);
+  end;
+  TestDB.Commit;
+
+  //insert products
+  TestDB.BeginTransaction;
+  for i := 1 to iCount do
+  begin
+    InsertProduct('Product ' + IntToStr(i), i);
   end;
   TestDB.Commit;
 
@@ -703,8 +723,8 @@ begin
   Status(Format('SimpleCreate %D objects in %D ms.',
     [iCount, sw.ElapsedMilliseconds]));
 
-
-  LResultset := FManager.GetResultset('SELECT * FROM CUSTOMERS', []);
+  //get customers
+  LResultset := FManager.GetResultset('SELECT * FROM ' + TBL_PEOPLE, []);
   i := 0;
   sw := TStopwatch.StartNew;
   while not LResultset.IsEmpty do
@@ -721,9 +741,30 @@ begin
   sw.Stop;
   CheckEquals(iCount, i);
 
-  Status(Format('GetOne %D objects in %D ms.',
+  Status(Format('GetOne complex TCustomer %D objects in %D ms.',
     [iCount, sw.ElapsedMilliseconds]));
 
+  //get products
+  LResultset := FManager.GetResultset('SELECT * FROM ' + TBL_PRODUCTS, []);
+  i := 0;
+  sw := TStopwatch.StartNew;
+  while not LResultset.IsEmpty do
+  begin
+    LProduct := FManager.GetOne<TProduct>(LResultset, nil);
+    try
+      Inc(i);
+      LResultset.Next;
+    finally
+      LProduct.Free;
+    end;
+  end;
+  sw.Stop;
+  CheckEquals(iCount, i);
+
+  Status(Format('GetOne simple TProduct %D objects in %D ms.',
+    [iCount, sw.ElapsedMilliseconds]));
+
+  //get customers non object
   LResultset := FManager.GetResultset('SELECT * FROM CUSTOMERS', []);
   sw := TStopwatch.StartNew;
   while not LResultset.IsEmpty do
@@ -987,7 +1028,7 @@ begin
   TestDB.ExecSQL('UPDATE ' + TBL_PEOPLE + ' SET '+CUST_MIDDLENAME+' = NULL;');
   LCustomer := FManager.SingleOrDefault<TCustomer>('SELECT * FROM ' + TBL_PEOPLE, []);
   try
-    CheckTrue(LCustomer.MiddleName.IsNull);
+    CheckFalse(LCustomer.MiddleName.HasValue);
   finally
     LCustomer.Free;
   end;
@@ -1221,6 +1262,7 @@ procedure TestTSession.TearDown;
 begin
   ClearTable(TBL_PEOPLE);
   ClearTable(TBL_ORDERS);
+  ClearTable(TBL_PRODUCTS);
   FManager.Free;
 end;
 
@@ -1338,7 +1380,7 @@ begin
     LResults := TestDB.GetUniTableIntf('SELECT * FROM ' + TBL_PEOPLE);
     CheckEquals(LCustomer.Age, LResults.FieldByName[CUSTAGE].AsInteger);
     CheckEqualsString(LCustomer.Name, LResults.FieldByName[CUSTNAME].AsString);
-    CheckTrue(LCustomer.MiddleName.IsNull);
+    CheckFalse(LCustomer.MiddleName.HasValue);
 
     LCustomer.MiddleName := 'Middle';
     FManager.Update(LCustomer);

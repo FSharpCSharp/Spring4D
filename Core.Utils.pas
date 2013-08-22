@@ -65,6 +65,7 @@ uses
   Core.Reflection
   ,Core.Exceptions
   ,Core.Session
+  ,Core.Types
   ,Mapping.RttiExplorer
   ,Core.EntityCache
   ,jpeg
@@ -355,36 +356,27 @@ end;
 class procedure TUtils.SetLazyValue(ARttiMember: TRttiNamedObject; AManager: TObject; const AID: TValue; AEntity: TObject; var AResult: TValue);
 var
   LRecord: TRttiRecordType;
-  LValueField: TRttiField;
+  LVarDataField: TRttiField;
+  LVarDataRecord: TLazyVarData;
   LCol: ColumnAttribute;
-  LFieldname: string;
+  LFields: TArray<TRttiField>;
+  LRef: Pointer;
 begin
   AResult := TRttiExplorer.GetMemberValue(AEntity, ARttiMember);
-
+  LRef := AResult.GetReferenceToRawData;
   LRecord := TRttiExplorer.GetAsRecord(ARttiMember);
-  //simple generic type
-  for LValueField in LRecord.GetFields do
-  begin
-    LFieldname := LValueField.Name;
+  //get fields
+  LFields := LRecord.GetFields;
+  LVarDataField := LFields[1];
 
-    if SameStr(LFieldname, 'FManager') then
-    begin
-      LValueField.SetValue(AResult.GetReferenceToRawData, AManager);
-    end
-    else if SameStr(LFieldname, 'FID') then
-    begin
-      LValueField.SetValue(AResult.GetReferenceToRawData, AID);
-    end
-    else if SameStr(LFieldname, 'FEntity') then
-    begin
-      LValueField.SetValue(AResult.GetReferenceToRawData, AEntity);
-    end
-    else if SameStr(LFieldname, 'FColumn') then
-    begin
-      LCol := TEntityCache.Get(AEntity.ClassType).ColumnByMemberName(ARttiMember.Name);
-      LValueField.SetValue(AResult.GetReferenceToRawData, LCol);
-    end;
-  end;
+  LCol := TEntityCache.Get(AEntity.ClassType).ColumnByMemberName(ARttiMember.Name);
+  //assign values
+  LVarDataRecord.ID := AID;
+  LVarDataRecord.Manager := TSession(AManager);
+  LVarDataRecord.Entity := AEntity;
+  LVarDataRecord.Column := LCol;
+  //set field value
+  LVarDataField.SetValue(LRef, TValue.From<TLazyVarData>(LVarDataRecord) );
 end;
 
 const
@@ -490,9 +482,11 @@ class function TUtils.TryConvert(const AFrom: TValue; AManager: TObject; ARttiMe
 var
   LValue: TValue;
   LRecord: TRttiRecordType;
-  LValueField, LHasValueField, LField: TRttiField;
+  LValueField, LHasValueField: TRttiField;
   LTypeInfo: PTypeInfo;
   bFree: Boolean;
+  LResultRef: Pointer;
+  LFields: TArray<TRttiField>;
 begin
   bFree := False;
   LTypeInfo := ARttiMember.GetTypeInfo;
@@ -506,39 +500,29 @@ begin
           LRecord := TRttiExplorer.GetAsRecord(ARttiMember);
           if Assigned(LRecord) then
           begin
-            LValueField := nil;
-            LHasValueField := nil;
-            for LField in LRecord.GetFields do
-            begin
-              if Assigned(LValueField) and (Assigned(LHasValueField)) then
-                Break;
-
-              if SameText(LField.Name, 'FValue') then
-              begin
-                LValueField := LField;
-              end
-              else if SameText(LField.Name, 'FHasValue') then
-              begin
-                LHasValueField := LField;
-              end;
-            end;
+            LFields := LRecord.GetFields;
+            Assert(Length(LFields) = 2);
+            LValueField := LFields[0];
+            LHasValueField := LFields[1];
             TValue.MakeWithoutCopy(nil, LTypeInfo, AResult);
+            LResultRef := AResult.GetReferenceToRawData;
             if AFrom.IsEmpty then
             begin
               if (LHasValueField.FieldType.TypeKind in [tkString, tkUString]) then
-                LHasValueField.SetValue(AResult.GetReferenceToRawData, '') //Spring Nullable
+                LHasValueField.SetValue(LResultRef, '') //Spring Nullable
               else
-                LHasValueField.SetValue(AResult.GetReferenceToRawData, False);//Marshmallow Nullable
+                LHasValueField.SetValue(LResultRef, False);//Marshmallow Nullable
             end
             else
             begin
               if (LHasValueField.FieldType.TypeKind in [tkString, tkUString]) then
-                LHasValueField.SetValue(AResult.GetReferenceToRawData, '@')  //Spring Nullable
-              else
-                LHasValueField.SetValue(AResult.GetReferenceToRawData, True); //Marshmallow Nullable
+                LHasValueField.SetValue(LResultRef, '@')  //Spring Nullable
+              else   //Marshmallow Nullable
+                PBoolean(PByte(LResultRef) + (AResult.DataSize - SizeOf(Boolean)))^ := True; //faster than LHasValueField.SetValue(LResultRef, True);
+
               //get type from Nullable<T> and set value to this type
               if AFrom.TryConvert(LValueField.FieldType.Handle, LValue, bFree) then
-                LValueField.SetValue(AResult.GetReferenceToRawData, LValue);
+                LValue.ExtractRawData(LResultRef); // faster than LValueField.SetValue(LResultRef, LValue);
 
               if bFree then
               begin

@@ -32,6 +32,7 @@ interface
 uses
   Mapping.Attributes
   ,Generics.Collections
+  ,Classes
   ;
 
 type
@@ -75,7 +76,7 @@ type
     property List: TList<TColumnData> read FList;
   end;
 
-  TEntityData = class
+  TEntityData = class(TPersistent)
   private
     FColumns: TList<ColumnAttribute>;
     FColumnMembernameIndex: TDictionary<string, ColumnAttribute>;
@@ -87,7 +88,9 @@ type
     FManyToOneColumns: TList<ManyToOneAttribute>;
     FSequence: SequenceAttribute;
     FHasInstanceField: Boolean;
+    FEntityClass: TClass;
   protected
+     procedure AssignTo(Dest: TPersistent); override;
     procedure SetEntityData(AClass: TClass); virtual;
     procedure SetColumnsData(); virtual;
   public
@@ -102,13 +105,14 @@ type
     function HasManyToOneRelations(): Boolean;
 
     property Columns: TList<ColumnAttribute> read FColumns;
-    property ColumnsData: TColumnDataList read FColumnsData;
+    property ColumnsData: TColumnDataList read FColumnsData write FColumnsData;
     property ForeignColumns: TList<ForeignJoinColumnAttribute> read FForeignKeyColumns;
     property OneToManyColumns: TList<OneToManyAttribute> read FOneToManyColumns;
     property ManyToOneColumns: TList<ManyToOneAttribute> read FManyToOneColumns;
     property PrimaryKeyColumn: ColumnAttribute read FPrimaryKeyColumn;
     property Sequence: SequenceAttribute read FSequence write FSequence;
 
+    property EntityClass: TClass read FEntityClass;
     property EntityTable: TableAttribute read FTable;
   end;
 
@@ -144,6 +148,44 @@ uses
 
 
 { TEntityData }
+
+procedure TEntityData.AssignTo(Dest: TPersistent);
+var
+  LDest: TEntityData;
+  LPair: TPair<string, ColumnAttribute>;
+begin
+  if Dest is TEntityData then
+  begin
+    LDest := TEntityData(Dest);
+
+    LDest.FTable := FTable;
+    LDest.FColumns.Clear;
+    LDest.FColumns.AddRange(Columns);
+    LDest.FColumnMembernameIndex.Clear;
+    for LPair in FColumnMembernameIndex do
+    begin
+      LDest.FColumnMembernameIndex.Add(LPair.Key, LPair.Value);
+    end;
+
+    LDest.FColumnsData.FList.Clear;
+    LDest.FColumnsData.FList.AddRange(FColumnsData.FList);
+
+    LDest.FForeignKeyColumns.Clear;
+    LDest.FForeignKeyColumns.AddRange(FForeignKeyColumns);
+
+    LDest.FPrimaryKeyColumn := FPrimaryKeyColumn;
+
+    LDest.FOneToManyColumns.Clear;
+    LDest.FOneToManyColumns.AddRange(FOneToManyColumns);
+
+    LDest.FManyToOneColumns.Clear;
+    LDest.FManyToOneColumns.AddRange(ManyToOneColumns);
+
+    LDest.FSequence := FSequence;
+
+    LDest.FHasInstanceField := FHasInstanceField;
+  end;
+end;
 
 function TEntityData.ColumnByMemberName(const AMemberName: string): ColumnAttribute;
 begin
@@ -234,6 +276,7 @@ end;
 
 procedure TEntityData.SetEntityData(AClass: TClass);
 begin
+  FEntityClass := AClass;
   TRttiExplorer.GetColumns(AClass, FColumns);
   SetColumnsData();
   FPrimaryKeyColumn := TRttiExplorer.GetPrimaryKeyColumn(AClass);

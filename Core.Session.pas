@@ -67,11 +67,11 @@ type
   protected
     procedure SetEntityColumns(AEntity: TObject; AColumns: TColumnDataList; AResultset: IDBResultset); overload; virtual;
     procedure SetEntityColumns(AEntity: TObject; AColumns: TList<ManyValuedAssociation>; AResultset: IDBResultset); overload; virtual;
-    procedure SetLazyColumns(AEntity: TObject);
-    procedure SetAssociations(AEntity: TObject; AResultset: IDBResultset); virtual;
+    procedure SetLazyColumns(AEntity: TObject; AEntityData: TEntityData);
+    procedure SetAssociations(AEntity: TObject; AResultset: IDBResultset; AEntityData: TEntityData); virtual;
 
     procedure DoSetEntity(var AEntityToCreate: TObject; AResultset: IDBResultset; ARealEntity: TObject); virtual;
-    procedure DoSetEntityValues(var AEntityToCreate: TObject; AResultset: IDBResultset; AColumns: TColumnDataList); virtual;
+    procedure DoSetEntityValues(var AEntityToCreate: TObject; AResultset: IDBResultset; AColumns: TColumnDataList; AEntityData: TEntityData); virtual;
     procedure DoFetch<T: class, constructor>(AResultset: IDBResultset; const ACollection: TValue);
 
     function GetOne<T: class, constructor>(AResultset: IDBResultset; AEntity: TObject): T; overload;
@@ -562,12 +562,13 @@ end;
 
 procedure TSession.DoSetEntity(var AEntityToCreate: TObject; AResultset: IDBResultset; ARealEntity: TObject);
 var
-  LColumns: TColumnDataList;
+  LEntityData: TEntityData;
   LResult, LValue: TValue;
   LVal: Variant;
 begin
+  LEntityData := TEntityCache.Get(AEntityToCreate.ClassType);
   {TODO -oLinas -cGeneral : if AEntity class type is not our real Entity type, simply just set value}
-  if not TEntityCache.Get(AEntityToCreate.ClassType).IsTableEntity and Assigned(ARealEntity) then
+  if not LEntityData.IsTableEntity and Assigned(ARealEntity) then
   begin
     if not AResultset.IsEmpty then
     begin
@@ -586,18 +587,23 @@ begin
   end
   else
   begin
-    LColumns := TEntityCache.GetColumnsData(AEntityToCreate.ClassType);
-    DoSetEntityValues(AEntityToCreate, AResultset, LColumns);
+    DoSetEntityValues(AEntityToCreate, AResultset, LEntityData.ColumnsData, LEntityData);
   end;
 end;
 
 procedure TSession.DoSetEntityValues(var AEntityToCreate: TObject; AResultset: IDBResultset;
-  AColumns: TColumnDataList);
+  AColumns: TColumnDataList; AEntityData: TEntityData);
+var
+  LEntityData: TEntityData;
 begin
   SetEntityColumns(AEntityToCreate, AColumns, AResultset);
   //we need to set internal values for the lazy type field
-  SetLazyColumns(AEntityToCreate);
-  SetAssociations(AEntityToCreate, AResultset);
+  LEntityData := AEntityData;
+  if (AEntityToCreate.ClassType <> AEntityData.EntityClass) then
+    LEntityData := TEntityCache.Get(AEntityToCreate.ClassType);
+
+  SetLazyColumns(AEntityToCreate, LEntityData);
+  SetAssociations(AEntityToCreate, AResultset, LEntityData);
   FOldStateEntities.AddOrReplace(TRttiExplorer.Clone(AEntityToCreate));
 end;
 
@@ -991,7 +997,7 @@ begin
     LInserter.EntityClass := AEntity.ClassType;
     LInserter.Execute(AEntity);
 
-    SetLazyColumns(AEntity);
+    SetLazyColumns(AEntity, TEntityCache.Get(AEntity.ClassType));
     FOldStateEntities.AddOrReplace(TRttiExplorer.Clone(AEntity));
   finally
     LInserter.Free;
@@ -1099,22 +1105,19 @@ begin
   end;
 end;
 
-procedure TSession.SetAssociations(AEntity: TObject; AResultset: IDBResultset);
+procedure TSession.SetAssociations(AEntity: TObject; AResultset: IDBResultset; AEntityData: TEntityData);
 var
   LCol: TORMAttribute;
-  LEntityData: TEntityData;
   LManyToOne: TManyToOneRelation;
 begin
-  LEntityData := TEntityCache.Get(AEntity.ClassType);
-
-  if LEntityData.HasManyToOneRelations then
+  if AEntityData.HasManyToOneRelations then
   begin
     LManyToOne := TManyToOneRelation.Create;
     try
-      for LCol in LEntityData.ManyToOneColumns do
+      for LCol in AEntityData.ManyToOneColumns do
       begin
         LManyToOne.SetAssociation(LCol, AEntity, AResultset);
-        DoSetEntityValues(LManyToOne.NewEntity, AResultset, LManyToOne.NewColumns);
+        DoSetEntityValues(LManyToOne.NewEntity, AResultset, LManyToOne.NewColumns, AEntityData);
       end;
     finally
       LManyToOne.Free;
@@ -1137,13 +1140,13 @@ begin
   end;
 end;
 
-procedure TSession.SetLazyColumns(AEntity: TObject);
+procedure TSession.SetLazyColumns(AEntity: TObject; AEntityData: TEntityData);
 var
   LCol: ManyValuedAssociation;
   LValue: TValue;
   LColumns: TList<OneToManyAttribute>;
 begin
-  LColumns := TEntityCache.Get(AEntity.ClassType).OneToManyColumns;
+  LColumns := AEntityData.OneToManyColumns;
   if LColumns.Count < 1 then
     Exit;
 
@@ -1228,7 +1231,7 @@ begin
     LUpdater.EntityMap := FOldStateEntities;
     LUpdater.Execute(AEntity);
 
-    SetLazyColumns(AEntity);
+    SetLazyColumns(AEntity, TEntityCache.Get(AEntity.ClassType));
     FOldStateEntities.AddOrReplace(TRttiExplorer.Clone(AEntity));
   finally
     LUpdater.Free;

@@ -36,7 +36,7 @@ var
 begin
   LCustomer := TCustomer.Create;
   try
-    LCustomer.MiddleName.Value := 'Nullable';
+    LCustomer.MiddleName := 'Nullable';
     FSerializer.AddObject('', LCustomer);
     FSerializer.Serialize(LOutput, TEncoding.UTF8);
 
@@ -46,7 +46,7 @@ begin
     FSerializer.AddObject('', LCustomer);
     FSerializer.DeSerialize(LOutput, TEncoding.UTF8);
 
-    CheckFalse(LCustomer.MiddleName.IsNull);
+    CheckTrue(LCustomer.MiddleName.HasValue);
     CheckEquals('Nullable', LCustomer.MiddleName.Value);
     CheckTrue(LCustomer.AvatarLazy.IsNull);
   finally

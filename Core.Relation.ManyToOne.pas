@@ -41,6 +41,7 @@ type
     FNewEntityClass: TClass;
     FMappedByCol: ColumnAttribute;
     FNewTableName: string;
+    FEntityData: TEntityData;
   protected
     function DoBuildColumnName(AColumn: TColumnData): string; virtual;
     procedure ResolveColumns(AResultset: IDBResultset); virtual;
@@ -54,6 +55,8 @@ type
     class function GetMappedByColumn(AFromColumn: ManyToOneAttribute; AClass: TClass): ColumnAttribute;
 
     procedure SetAssociation(AAtribute: TORMAttribute; AEntity: TObject; AResultset: IDBResultset); override;
+
+    property EntityData: TEntityData read FEntityData;
     property NewEntityClass: TClass read FNewEntityClass;
     property NewColumns: TColumnDataList read FNewColumns;
   end;
@@ -131,13 +134,12 @@ end;
 procedure TManyToOneRelation.SetAssociation(AAtribute: TORMAttribute; AEntity: TObject; AResultset: IDBResultset);
 var
   LCol: ManyToOneAttribute;
-  LEntityData: TEntityData;
 begin
   LCol := AAtribute as ManyToOneAttribute;
   //check if entity has associations attributes
   FNewEntityClass := TRttiContext.Create.GetType(LCol.GetColumnTypeInfo).AsInstance.MetaclassType;
-  LEntityData := TEntityCache.Get(FNewEntityClass);
-  FNewTableName := LEntityData.EntityTable.TableName;
+  FEntityData := TEntityCache.Get(FNewEntityClass);
+  FNewTableName := FEntityData.EntityTable.TableName;
   NewEntity := FNewEntityClass.Create;
   if Assigned(FNewColumns) then
     FNewColumns.Free;
