@@ -1418,23 +1418,21 @@ begin
   begin
     FTypes.Add(LType.Handle, LType);
 
-    if not LType.IsInstance then
-      Continue;
-
-    LClass := LType.AsInstance.MetaclassType;
-
-    if TRttiExplorer.HasColumns(LClass) then
+    if LType.IsInstance then
     begin
+      LClass := LType.AsInstance.MetaclassType;
 
-
-      for LField in LType.GetFields do
+      if TRttiExplorer.HasColumns(LClass) then
       begin
-        FFields.Add(GetKey(LClass, LField.Name), LField);
-      end;
+        for LField in LType.GetFields do
+        begin
+          FFields.Add(GetKey(LClass, LField.Name), LField);
+        end;
 
-      for LProp in LType.GetProperties do
-      begin
-        FProperties.Add(GetKey(LClass, LProp.Name), LProp);
+        for LProp in LType.GetProperties do
+        begin
+          FProperties.Add(GetKey(LClass, LProp.Name), LProp);
+        end;
       end;
     end;
   end;

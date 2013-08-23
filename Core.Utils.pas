@@ -40,22 +40,27 @@ type
 
     class function AsVariant(const AValue: TValue): Variant;
     class function FromVariant(const AValue: Variant): TValue;
+
     class function TryConvert(const AFrom: TValue; AManager: TObject; ARttiMember: TRttiNamedObject; AEntity: TObject; var AResult: TValue): Boolean;
 
+    class function TryGetNullableTypeValue(const ANullable: TValue; out AValue: TValue): Boolean;
+    class function TryGetLazyTypeValue(const ALazy: TValue; out AValue: TValue): Boolean;
+    class function TryGetPrimaryKeyColumn(AColumns: TList<TColumnData>; out AColumn: TColumnData): Boolean;
     class function TryLoadFromStreamToPictureValue(AStream: TStream; out APictureValue: TValue): Boolean;
     class function TryLoadFromBlobField(AField: TField; AToPicture: TPicture): Boolean;
     class function TryLoadFromStreamSmart(AStream: TStream; AToPicture: TPicture): Boolean;
 
     class function IsEnumerable(AObject: TObject; out AEnumeratorMethod: TRttiMethod): Boolean; overload;
     class function IsEnumerable(ATypeInfo: PTypeInfo; out AEnumeratorMethod: TRttiMethod): Boolean; overload;
-    class function SameObject(ALeft, ARight: TObject): Boolean;
-    class function SameStream(ALeft, ARight: TStream): Boolean;
-    class procedure SetLazyValue(ARttiMember: TRttiNamedObject; AManager: TObject; const AID: TValue; AEntity: TObject; var AResult: TValue);
     class function IsNullableType(ATypeInfo: PTypeInfo): Boolean;
     class function IsLazyType(ATypeInfo: PTypeInfo): Boolean;
-    class function TryGetNullableTypeValue(const ANullable: TValue; out AValue: TValue): Boolean;
-    class function TryGetLazyTypeValue(const ALazy: TValue; out AValue: TValue): Boolean;
-    class function TryGetPrimaryKeyColumn(AColumns: TList<TColumnData>; out AColumn: TColumnData): Boolean;
+
+    class function SameObject(ALeft, ARight: TObject): Boolean;
+    class function SameStream(ALeft, ARight: TStream): Boolean;
+
+    class procedure SetLazyValue(ARttiMember: TRttiNamedObject; AManager: TObject; const AID: TValue; AEntity: TObject; var AResult: TValue);
+    class procedure SetNullableValue(ARttiMember: TRttiNamedObject; const AFrom: TValue; var AResult: TValue);
+
     class function InitLazyRecord(const AFrom: TValue; ATo: PTypeInfo; ARttiMember: TRttiNamedObject; AEntity: TObject): TValue;
   end;
 
@@ -80,8 +85,7 @@ uses
 class function TUtils.AsVariant(const AValue: TValue): Variant;
 var
   LStream: TStream;
-  LHasValueField, LValueField: TRttiField;
-  LHasValue: TValue;
+  LValue: TValue;
   LPersist: IStreamPersist;
 begin
   case AValue.Kind of
@@ -106,16 +110,8 @@ begin
       Result := Null;
       if IsNullableType(AValue.TypeInfo) then
       begin
-        LHasValueField := AValue.GetType().GetField('FHasValue');
-        LHasValue := LHasValueField.GetValue(AValue.GetReferenceToRawData);
-        if  ((LHasValue.TypeInfo = TypeInfo(Boolean)) and (LHasValue.AsBoolean)) //Marshmallow Nullable
-          or
-         ((LHasValue.TypeInfo = TypeInfo(string)) and ((LHasValue.AsString = '@'))) //Spring Nullable
-          then
-        begin
-          LValueField := AValue.GetType().GetField('FValue');
-          Result := TUtils.AsVariant(LValueField.GetValue(AValue.GetReferenceToRawData));
-        end;
+        if TryGetNullableTypeValue(AValue, LValue) then
+          Result := TUtils.AsVariant(LValue);
       end;
     end;
     tkClass:
@@ -210,22 +206,27 @@ class function TUtils.TryGetNullableTypeValue(const ANullable: TValue; out AValu
 var
   LRttiType: TRttiType;
   LValueField: TRttiField;
+  LFields: TArray<TRttiField>;
   LHasValue: TValue;
+  LRef: Pointer;
 begin
   Result := False;
   if ANullable.Kind = tkRecord then
   begin
     LRttiType := ANullable.GetType();
-    LValueField := LRttiType.GetField('FHasValue');
-    LHasValue := LValueField.GetValue(ANullable.GetReferenceToRawData);
+    LFields := LRttiType.GetFields;
+    //get FHasValue field
+    LValueField := LFields[1]; // LRttiType.GetField('FHasValue');
+    LRef := ANullable.GetReferenceToRawData;
+    LHasValue := LValueField.GetValue(LRef);
     Result := ((LHasValue.TypeInfo = TypeInfo(Boolean)) and (LHasValue.AsBoolean)) //Marshmallow Nullable
       or
      ((LHasValue.TypeInfo = TypeInfo(string)) and ((LHasValue.AsString = '@'))); //Spring Nullable
 
     if Result then
     begin
-      LValueField := LRttiType.GetField('FValue');
-      AValue := LValueField.GetValue(ANullable.GetReferenceToRawData);
+      LValueField := LFields[0]; // LRttiType.GetField('FValue');
+      AValue := LValueField.GetValue(LRef);
     end;
   end;
 end;
@@ -268,12 +269,12 @@ end;
 
 class function TUtils.IsLazyType(ATypeInfo: PTypeInfo): Boolean;
 begin
-  Result := StartsText('Lazy<', string(ATypeInfo.Name)) or StartsText('LazyObject<', string(ATypeInfo.Name));
+  Result := ( StartsText('Lazy', string(ATypeInfo.Name)) ) and (ATypeInfo.Kind = tkRecord);
 end;
 
 class function TUtils.IsNullableType(ATypeInfo: PTypeInfo): Boolean;
 begin
-  Result := StartsText('Nullable', string(ATypeInfo.Name));
+  Result := ( StartsText('Nullable', string(ATypeInfo.Name)) ) and (ATypeInfo.Kind = tkRecord);
 end;
 
 class function TUtils.LoadFromStreamToVariant(AStream: TStream): OleVariant;
@@ -358,7 +359,6 @@ var
   LRecord: TRttiRecordType;
   LVarDataField: TRttiField;
   LVarDataRecord: TLazyVarData;
-  LCol: ColumnAttribute;
   LFields: TArray<TRttiField>;
   LRef: Pointer;
 begin
@@ -369,14 +369,63 @@ begin
   LFields := LRecord.GetFields;
   LVarDataField := LFields[1];
 
-  LCol := TEntityCache.Get(AEntity.ClassType).ColumnByMemberName(ARttiMember.Name);
   //assign values
   LVarDataRecord.ID := AID;
   LVarDataRecord.Manager := TSession(AManager);
   LVarDataRecord.Entity := AEntity;
-  LVarDataRecord.Column := LCol;
+  LVarDataRecord.Column := nil;
+  LVarDataRecord.RttiMemberName := ARttiMember.Name;
   //set field value
-  LVarDataField.SetValue(LRef, TValue.From<TLazyVarData>(LVarDataRecord) );
+  TValue.From<TLazyVarData>(LVarDataRecord).ExtractRawData(PByte(LRef) + LVarDataField.Offset);
+ // LVarDataField.SetValue(LRef, TValue.From<TLazyVarData>(LVarDataRecord) );
+end;
+
+class procedure TUtils.SetNullableValue(ARttiMember: TRttiNamedObject; const AFrom: TValue; var AResult: TValue);
+var
+  LRecord: TRttiRecordType;
+  LFields: TArray<TRttiField>;
+  LValueField, LHasValueField: TRttiField;
+  LValue: TValue;
+  LResultRef: Pointer;
+  bFree: Boolean;
+begin
+  bFree := False;
+  LRecord := TRttiExplorer.GetAsRecord(ARttiMember);
+  if Assigned(LRecord) then
+  begin
+    LFields := LRecord.GetFields;
+    Assert(Length(LFields) = 2);
+    LValueField := LFields[0];
+    LHasValueField := LFields[1];
+    TValue.MakeWithoutCopy(nil, LRecord.Handle, AResult);
+    LResultRef := AResult.GetReferenceToRawData;
+    if AFrom.IsEmpty then
+    begin
+      if (LHasValueField.FieldType.TypeKind in [tkString, tkUString]) then
+        TValue.From<string>('').ExtractRawData(PByte(LResultRef) + LHasValueField.Offset)
+       // LHasValueField.SetValue(LResultRef, '') //Spring Nullable
+      else
+        TValue.From<Boolean>(False).ExtractRawData(PByte(LResultRef) + LHasValueField.Offset);
+       // LHasValueField.SetValue(LResultRef, False);//Marshmallow Nullable
+    end
+    else
+    begin
+      if (LHasValueField.FieldType.TypeKind in [tkString, tkUString]) then
+        TValue.From<string>('@').ExtractRawData(PByte(LResultRef) + LHasValueField.Offset)
+        //LHasValueField.SetValue(LResultRef, '@')  //Spring Nullable
+      else   //Marshmallow Nullable
+        PBoolean(PByte(LResultRef) + (AResult.DataSize - SizeOf(Boolean)))^ := True; //faster than LHasValueField.SetValue(LResultRef, True);
+
+      //get type from Nullable<T> and set value to this type
+      if AFrom.TryConvert(LValueField.FieldType.Handle, LValue, bFree) then
+        LValue.ExtractRawData(PByte(LResultRef) + LValueField.Offset); // faster than LValueField.SetValue(LResultRef, LValue);
+
+      if bFree then
+      begin
+        FreeValueObject(LValue);
+      end;
+    end;
+  end;
 end;
 
 const
@@ -480,13 +529,8 @@ end;
 
 class function TUtils.TryConvert(const AFrom: TValue; AManager: TObject; ARttiMember: TRttiNamedObject; AEntity: TObject; var AResult: TValue): Boolean;
 var
-  LValue: TValue;
-  LRecord: TRttiRecordType;
-  LValueField, LHasValueField: TRttiField;
   LTypeInfo: PTypeInfo;
   bFree: Boolean;
-  LResultRef: Pointer;
-  LFields: TArray<TRttiField>;
 begin
   bFree := False;
   LTypeInfo := ARttiMember.GetTypeInfo;
@@ -497,40 +541,8 @@ begin
       begin
         if IsNullableType(LTypeInfo) then
         begin
-          LRecord := TRttiExplorer.GetAsRecord(ARttiMember);
-          if Assigned(LRecord) then
-          begin
-            LFields := LRecord.GetFields;
-            Assert(Length(LFields) = 2);
-            LValueField := LFields[0];
-            LHasValueField := LFields[1];
-            TValue.MakeWithoutCopy(nil, LTypeInfo, AResult);
-            LResultRef := AResult.GetReferenceToRawData;
-            if AFrom.IsEmpty then
-            begin
-              if (LHasValueField.FieldType.TypeKind in [tkString, tkUString]) then
-                LHasValueField.SetValue(LResultRef, '') //Spring Nullable
-              else
-                LHasValueField.SetValue(LResultRef, False);//Marshmallow Nullable
-            end
-            else
-            begin
-              if (LHasValueField.FieldType.TypeKind in [tkString, tkUString]) then
-                LHasValueField.SetValue(LResultRef, '@')  //Spring Nullable
-              else   //Marshmallow Nullable
-                PBoolean(PByte(LResultRef) + (AResult.DataSize - SizeOf(Boolean)))^ := True; //faster than LHasValueField.SetValue(LResultRef, True);
-
-              //get type from Nullable<T> and set value to this type
-              if AFrom.TryConvert(LValueField.FieldType.Handle, LValue, bFree) then
-                LValue.ExtractRawData(LResultRef); // faster than LValueField.SetValue(LResultRef, LValue);
-
-              if bFree then
-              begin
-                FreeValueObject(LValue);
-              end;
-            end;
-            Exit(True);
-          end;
+          SetNullableValue(ARttiMember, AFrom, AResult);
+          Exit(True);
         end
         else if IsLazyType(LTypeInfo) then
         begin
@@ -548,7 +560,7 @@ begin
     Result := AFrom.TryConvert(LTypeInfo, AResult, bFree);
     if bFree then
     begin
-      FreeValueObject(LValue);
+      FreeValueObject(AResult);
     end;
   end
   else
@@ -557,8 +569,6 @@ begin
     AResult := AFrom;
   end;
 end;
-
-
 
 class function TUtils.TryLoadFromBlobField(AField: TField; AToPicture: TPicture): Boolean;
 var

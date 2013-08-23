@@ -38,13 +38,11 @@ uses
 procedure TTestCoreUtils.Setup;
 begin
   inherited;
-
 end;
 
 procedure TTestCoreUtils.TearDown;
 begin
   inherited;
-
 end;
 
 procedure TTestCoreUtils.TryConvert_Lazy;
@@ -170,7 +168,6 @@ begin
     LCount := 100000;
 
     sw := TStopwatch.StartNew;
-
     for i := 1 to LCount do
     begin
       bOK := TUtils.TryConvert(LFrom, nil, LRttiMember, LEntity, LResult);

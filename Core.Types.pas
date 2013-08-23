@@ -111,6 +111,9 @@ type
     function GetColumn: ColumnAttribute;
     procedure SetColumn(const Value: ColumnAttribute);
     property EntityColumn: ColumnAttribute read GetColumn write SetColumn;
+    function GetRttiMember: string;
+    procedure SetRttiMember(const Value: string);
+    property RttiMember: string read GetRttiMember write SetRttiMember;
   end;
 
   ISvLazyObject<T: class, constructor> = interface(ISvLazy<T>)
@@ -121,6 +124,7 @@ type
     ID: TValue;
     Manager: TSession;
     Entity: TObject;
+    RttiMemberName: string;
     Column: ColumnAttribute;
   end;
 
@@ -141,6 +145,8 @@ type
     procedure SetEntity(const Value: TObject);
     function GetColumn: ColumnAttribute;
     procedure SetColumn(const Value: ColumnAttribute);
+    function GetRttiMember: string;
+    procedure SetRttiMember(const Value: string);
   protected
     procedure SetValue(const AValue: T);
     function OwnsObjects: Boolean;
@@ -161,6 +167,7 @@ type
     property ID: TValue read GetID write SetID;
     property Entity: TObject read GetEntity write SetEntity;
     property Manager: TSession read GetManager write SetManager;
+    property RttiMember: string read GetRttiMember write SetRttiMember;
     property Value: T read GetValue;
   end;
 
@@ -396,6 +403,7 @@ begin
   FVarData.Manager := nil;
   FVarData.Entity := nil;
   FVarData.Column := nil;
+  FVarData.RttiMemberName := '';
 end;
 
 procedure TSvLazy<T>.CheckInitialized;
@@ -434,12 +442,16 @@ function TSvLazy<T>.DoGetValue: T;
 begin
   //check if FValue needs initialization
   CheckInitialized();
-  FVarData.Manager.SetLazyValue<T>(FValue, FVarData.ID, FVarData.Entity, FVarData.Column);
+  FVarData.Manager.SetLazyValue<T>(FValue, FVarData.ID, FVarData.Entity, GetColumn);
   Result := FValue;
 end;
 
 function TSvLazy<T>.GetColumn: ColumnAttribute;
 begin
+  if (FVarData.Column = nil) and (FVarData.Entity <> nil) then
+  begin
+    FVarData.Column := TEntityCache.Get(FVarData.Entity.ClassType).ColumnByMemberName(FVarData.RttiMemberName);
+  end;
   Result := FVarData.Column;
 end;
 
@@ -461,6 +473,11 @@ end;
 function TSvLazy<T>.GetManager: TSession;
 begin
   Result := FVarData.Manager;
+end;
+
+function TSvLazy<T>.GetRttiMember: string;
+begin
+  Result := FVarData.RttiMemberName;
 end;
 
 function TSvLazy<T>.GetValue: T;
@@ -504,6 +521,11 @@ end;
 procedure TSvLazy<T>.SetManager(const Value: TSession);
 begin
   FVarData.Manager := Value;
+end;
+
+procedure TSvLazy<T>.SetRttiMember(const Value: string);
+begin
+  FVarData.RttiMemberName := Value;
 end;
 
 procedure TSvLazy<T>.SetValue(const AValue: T);
@@ -652,6 +674,7 @@ begin
   FLazy.Manager := FVarData.Manager;
   FLazy.ID := FVarData.ID;
   FLazy.Entity := FVarData.Entity;
+  FLazy.RttiMember := FVarData.RttiMemberName;
   FLazy.EntityColumn := FVarData.Column;
   Result := FLazy.Value;
 end;
@@ -683,7 +706,7 @@ end;
 
 function TSvLazyObject<T>.DoGetValue: T;
 begin
-  Result := FVarData.Manager.GetLazyValueClass<T>(FVarData.ID, FVarData.Entity, FVarData.Column);
+  Result := FVarData.Manager.GetLazyValueClass<T>(FVarData.ID, FVarData.Entity, GetColumn);
 end;
 
 end.
