@@ -1092,59 +1092,17 @@ end;
 
 class function TRttiExplorer.GetMemberValueDeep(const AInitialValue: TValue;
   ARttiType: TRttiType): TValue;
-var
-  LRecordField: TRttiField;
-  LInterfaceMethod: TRttiMethod;
-  LHasValue: TValue;
 begin
   Result := AInitialValue;
   if TUtils.IsNullableType(Result.TypeInfo) then
   begin
-    Result := TValue.Empty;
-    if ARttiType is TRttiRecordType then
-    begin
-      LRecordField := TRttiRecordType(ARttiType).GetField('FHasValue');
-      LHasValue := LRecordField.GetValue(AInitialValue.GetReferenceToRawData);
-      if (LHasValue.Kind in [tkUString, tkString]) then //Spring Nullable
-      begin
-        if (LHasValue.AsString = '@') then //not null
-        begin
-          LRecordField := TRttiRecordType(ARttiType).GetField('FValue');
-          Result := LRecordField.GetValue(AInitialValue.GetReferenceToRawData);
-        end;
-      end
-      else //Marshmallow Nullable
-      begin
-        if LHasValue.AsBoolean then
-        begin
-          LRecordField := TRttiRecordType(ARttiType).GetField('FValue');
-          Result := LRecordField.GetValue(AInitialValue.GetReferenceToRawData);
-        end;
-      end;
-    end;
+    if not TUtils.TryGetNullableTypeValue(AInitialValue, Result) then
+      Result := TValue.Empty;
   end
   else if TUtils.IsLazyType(Result.TypeInfo) then
   begin
-    if ARttiType is TRttiRecordType then
-    begin
-      LRecordField := TRttiRecordType(ARttiType).GetField('FLazy');
-      Result := LRecordField.GetValue(Result.GetReferenceToRawData);
-      ARttiType := Result.GetType;
-
-      if Result.AsInterface = nil then
-        Exit(TValue.Empty);
-
-      LInterfaceMethod := ARttiType.AsInterface.GetMethod('ValueCreated');
-      if LInterfaceMethod.Invoke(Result, []).AsBoolean then
-      begin
-        LInterfaceMethod := ARttiType.AsInterface.GetMethod('GetValue');
-        Result := LInterfaceMethod.Invoke(Result, []);
-      end
-      else
-      begin
-        Result := TValue.Empty;
-      end;
-    end;
+    if not TUtils.TryGetLazyTypeValue(AInitialValue, Result) then
+      Result := TValue.Empty;
   end; 
 end;
 
