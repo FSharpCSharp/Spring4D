@@ -762,24 +762,24 @@ end;
 
 class procedure Guard.DoCheckArrayIndex(const length, index: Integer);
 begin
-  DoCheckIndex(length, index, 0);
+  Guard.DoCheckIndex(length, index, 0);
 end;
 
 class procedure Guard.DoCheckArrayRange(const length, startIndex,
   count: Integer);
 begin
-  CheckRange(length, startIndex, count, 0);
+  Guard.CheckRange(length, startIndex, count, 0);
 end;
 
 class procedure Guard.DoCheckStringIndex(const length, index: Integer);
 begin
-  DoCheckIndex(length, index, 1);
+  Guard.DoCheckIndex(length, index, 1);
 end;
 
 class procedure Guard.DoCheckStringRange(const length, startIndex,
   count: Integer);
 begin
-  CheckRange(length, startIndex, count, 1);
+  Guard.CheckRange(length, startIndex, count, 1);
 end;
 
 class procedure Guard.DoCheckIndex(const length, index, indexBase: Integer);
@@ -788,7 +788,7 @@ const
 begin
   if (index < indexBase) or (index > length + indexBase - 1) then
   begin
-    RaiseArgumentOutOfRangeException(IndexArgName);
+    Guard.RaiseArgumentOutOfRangeException(IndexArgName);
   end;
 end;
 
@@ -798,12 +798,13 @@ const
   StartIndexArgName = 'startIndex';
   CountArgName = 'count';
 begin
-  CheckRange((startIndex >= indexBase) and (startIndex < indexBase + length),
+  Guard.CheckRange(
+    (startIndex >= indexBase) and (startIndex < indexBase + length),
     StartIndexArgName);
-  CheckRange(count >= 0, CountArgName);
+  Guard.CheckRange(count >= 0, CountArgName);
   if count > 0 then
   begin
-    CheckRange(count <= indexBase + length - startIndex, CountArgName);
+    Guard.CheckRange(count <= indexBase + length - startIndex, CountArgName);
   end;
 end;
 
@@ -812,14 +813,14 @@ class procedure Guard.CheckRange<T>(const buffer: array of T;
 begin
   if (index < 0) or (index >= Length(buffer)) then
   begin
-    RaiseArgumentOutOfRangeException('index');
+    Guard.RaiseArgumentOutOfRangeException('index');
   end;
 end;
 
 class procedure Guard.CheckRange<T>(const buffer: array of T;
   const startIndex, count: Integer);
 begin
-  DoCheckArrayRange(Length(buffer), startIndex, count);
+  Guard.DoCheckArrayRange(Length(buffer), startIndex, count);
 end;
 
 class procedure Guard.CheckTrue(condition: Boolean;
@@ -827,7 +828,7 @@ class procedure Guard.CheckTrue(condition: Boolean;
 begin
   if not condition then
   begin
-    raise EArgumentException.Create(msg);
+    Guard.RaiseArgumentException(msg);
   end;
 end;
 
@@ -836,15 +837,15 @@ class procedure Guard.CheckFalse(condition: Boolean;
 begin
   if condition then
   begin
-    raise EArgumentException.Create(msg);
+    Guard.RaiseArgumentException(msg);
   end;
 end;
 
 class procedure Guard.CheckInheritsFrom(const checkclazz, clazz: TClass;
   const parameterName: string);
 begin
-  Assert(Assigned(checkclazz));
-  Assert(Assigned(clazz));
+  Guard.CheckNotNull(checkclazz, 'checkclazz');
+  Guard.CheckNotNull(clazz, 'clazz');
 
   if not checkclazz.InheritsFrom(clazz) then
   begin
@@ -858,7 +859,7 @@ class procedure Guard.CheckInheritsFrom(obj: TObject; const clazz: TClass;
 begin
   if Assigned(obj) then
   begin
-    CheckInheritsFrom(obj.ClassType, clazz, parameterName);
+    Guard.CheckInheritsFrom(obj.ClassType, clazz, parameterName);
   end;
 end;
 
@@ -867,33 +868,33 @@ class procedure Guard.CheckNotNull(condition: Boolean;
 begin
   if not condition then
   begin
-    RaiseArgumentNullException(parameterName);
+    Guard.RaiseArgumentNullException(parameterName);
   end;
 end;
 
 class procedure Guard.CheckNotNull(p: Pointer; const argumentName: string);
 begin
-  CheckNotNull(Assigned(p), argumentName);
+  Guard.CheckNotNull(Assigned(p), argumentName);
 end;
 
 class procedure Guard.CheckNotNull(const intf: IInterface;
   const argumentName: string);
 begin
-  CheckNotNull(Assigned(intf), argumentName);
+  Guard.CheckNotNull(Assigned(intf), argumentName);
 end;
 
 class procedure Guard.CheckNotNull(obj: TObject;
   const argumentName: string);
 begin
-  CheckNotNull(Assigned(obj), argumentName);
+  Guard.CheckNotNull(Assigned(obj), argumentName);
 end;
 
 class procedure Guard.CheckNotNull<T>(const value: T;
   const argumentName: string);
 begin
-  if IsNullReference(value, TypeInfo(T)) then
+  if Guard.IsNullReference(value, TypeInfo(T)) then
   begin
-    RaiseArgumentNullException(argumentName);
+    Guard.RaiseArgumentNullException(argumentName);
   end;
 end;
 
@@ -904,7 +905,7 @@ var
 begin
   intValue := 0;
   Move(value, intValue, SizeOf(T));
-  CheckEnum<T>(intValue, argumentName);
+  Guard.CheckEnum<T>(intValue, argumentName);
 end;
 
 class procedure Guard.CheckEnum<T>(const value: Integer;
@@ -914,7 +915,7 @@ var
   data: PTypeData;
 begin
   typeInfo := System.TypeInfo(T);
-  CheckTypeKind(typeInfo, [tkEnumeration], 'T');
+  Guard.CheckTypeKind(typeInfo, [tkEnumeration], 'T');
 
   data := GetTypeData(typeInfo);
   Assert(Assigned(data), 'data must not be nil.');
@@ -931,72 +932,72 @@ class procedure Guard.CheckRange(condition: Boolean;
 begin
   if not condition then
   begin
-    RaiseArgumentOutOfRangeException(argumentName);
+    Guard.RaiseArgumentOutOfRangeException(argumentName);
   end;
 end;
 
 class procedure Guard.CheckRange(const buffer: array of Byte;
   const startIndex, count: Integer);
 begin
-  DoCheckArrayRange(Length(buffer), startIndex, count);
+  Guard.DoCheckArrayRange(Length(buffer), startIndex, count);
 end;
 
 class procedure Guard.CheckRange(const buffer: array of Char;
   const startIndex, count: Integer);
 begin
-  DoCheckArrayRange(Length(buffer), startIndex, count);
+  Guard.DoCheckArrayRange(Length(buffer), startIndex, count);
 end;
 
 class procedure Guard.CheckRange(const buffer: array of Byte;
   const index: Integer);
 begin
-  DoCheckArrayIndex(Length(buffer), index);
+  Guard.DoCheckArrayIndex(Length(buffer), index);
 end;
 
 class procedure Guard.CheckRange(const buffer: array of Char;
   const index: Integer);
 begin
-  DoCheckArrayIndex(Length(buffer), index);
+  Guard.DoCheckArrayIndex(Length(buffer), index);
 end;
 
 class procedure Guard.CheckRange(const s: string; const index: Integer);
 begin
-  DoCheckStringIndex(Length(s), index);
+  Guard.DoCheckStringIndex(Length(s), index);
 end;
 
 class procedure Guard.CheckRange(const s: string; const startIndex,
   count: Integer);
 begin
-  DoCheckStringRange(Length(s), startIndex, count);
+  Guard.DoCheckStringRange(Length(s), startIndex, count);
 end;
 
 class procedure Guard.CheckRange(const s: WideString; const index: Integer);
 begin
-  DoCheckStringIndex(Length(s), index);
+  Guard.DoCheckStringIndex(Length(s), index);
 end;
 
 class procedure Guard.CheckRange(const s: WideString; const startIndex,
   count: Integer);
 begin
-  DoCheckStringRange(Length(s), startIndex, count);
+  Guard.DoCheckStringRange(Length(s), startIndex, count);
 end;
 
 class procedure Guard.CheckRange(const s: RawByteString;
   const index: Integer);
 begin
-  DoCheckStringIndex(Length(s), index);
+  Guard.DoCheckStringIndex(Length(s), index);
 end;
 
 class procedure Guard.CheckRange(const s: RawByteString; const startIndex,
   count: Integer);
 begin
-  DoCheckStringRange(Length(s), startIndex, count);
+  Guard.DoCheckStringRange(Length(s), startIndex, count);
 end;
 
 class procedure Guard.CheckTypeKind(typeInfo: PTypeInfo;
   const expectedTypeKind: TTypeKind; const argumentName: string);
 begin
-  CheckNotNull(typeInfo, argumentName);
+  Guard.CheckNotNull(typeInfo, argumentName);
   if typeInfo.Kind <> expectedTypeKind then
   begin
     raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument, [
@@ -1007,7 +1008,7 @@ end;
 class procedure Guard.CheckTypeKind(typeInfo: PTypeInfo;
   const expectedTypeKinds: TTypeKinds; const argumentName: string);
 begin
-  CheckNotNull(typeInfo, argumentName);
+  Guard.CheckNotNull(typeInfo, argumentName);
   if not (typeInfo.Kind in expectedTypeKinds) then
   begin
     raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument, [
