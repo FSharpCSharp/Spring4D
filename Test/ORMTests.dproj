@@ -4,7 +4,7 @@
 			<ProjectVersion>14.3</ProjectVersion>
 			<MainSource>ORMTests.dpr</MainSource>
 			<Base>True</Base>
-			<Config Condition="'$(Config)'==''">Release</Config>
+			<Config Condition="'$(Config)'==''">Debug</Config>
 			<AppType>Application</AppType>
 			<FrameworkType>VCL</FrameworkType>
 			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
@@ -170,6 +170,11 @@
 			<DCCReference Include="..\Adapters.Oracle.pas"/>
 			<DCCReference Include="TestCommands.pas"/>
 			<DCCReference Include="TestCoreUtils.pas"/>
+			<DCCReference Include="CodeGeneratorTest.pas"/>
+			<DCCReference Include="..\Mapping.CodeGenerator.pas"/>
+			<DCCReference Include="..\Mapping.CodeGenerator.Abstract.pas"/>
+			<DCCReference Include="..\Mapping.CodeGenerator.DB.pas"/>
+			<DCCReference Include="EntityModelDataLoaderTests.pas"/>
 			<None Include="Profiling\AQtimeModule1.aqt"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>

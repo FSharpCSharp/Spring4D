@@ -128,7 +128,12 @@ uses
   TestAdaptersOracle in 'TestAdaptersOracle.pas',
   Adapters.Oracle in '..\Adapters.Oracle.pas',
   TestCommands in 'TestCommands.pas',
-  TestCoreUtils in 'TestCoreUtils.pas';
+  TestCoreUtils in 'TestCoreUtils.pas',
+  CodeGeneratorTest in 'CodeGeneratorTest.pas',
+  Mapping.CodeGenerator in '..\Mapping.CodeGenerator.pas',
+  Mapping.CodeGenerator.Abstract in '..\Mapping.CodeGenerator.Abstract.pas',
+  Mapping.CodeGenerator.DB in '..\Mapping.CodeGenerator.DB.pas',
+  EntityModelDataLoaderTests in 'EntityModelDataLoaderTests.pas';
 
 {$R *.RES}
 

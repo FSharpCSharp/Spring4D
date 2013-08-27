@@ -269,12 +269,12 @@ end;
 
 class function TUtils.IsLazyType(ATypeInfo: PTypeInfo): Boolean;
 begin
-  Result := ( StartsText('Lazy', string(ATypeInfo.Name)) ) and (ATypeInfo.Kind = tkRecord);
+  Result := ( PosEx('Lazy', string(ATypeInfo.Name)) = 1 ) and (ATypeInfo.Kind = tkRecord);
 end;
 
 class function TUtils.IsNullableType(ATypeInfo: PTypeInfo): Boolean;
 begin
-  Result := ( StartsText('Nullable', string(ATypeInfo.Name)) ) and (ATypeInfo.Kind = tkRecord);
+  Result := ( PosEx('Nullable', string(ATypeInfo.Name)) = 1 ) and (ATypeInfo.Kind = tkRecord);
 end;
 
 class function TUtils.LoadFromStreamToVariant(AStream: TStream): OleVariant;
@@ -558,10 +558,10 @@ begin
       end;
     end;
     Result := AFrom.TryConvert(LTypeInfo, AResult, bFree);
-    if bFree then
+    {if bFree then
     begin
       FreeValueObject(AResult);
-    end;
+    end;   }
   end
   else
   begin
