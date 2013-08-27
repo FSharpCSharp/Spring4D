@@ -321,7 +321,7 @@ var
   model: TComponentModel;
   instance: TValue;
 begin
-  TArgument.CheckNotNull(dependency, 'dependency');
+  Guard.CheckNotNull(dependency, 'dependency');
   if not (dependency.IsClassOrInterface or dependency.IsRecord)
     or (argument.Kind in [tkClass, tkInterface, tkRecord]) then
   begin
@@ -489,7 +489,7 @@ function TDependencyResolver.CanResolveDependencies(
 var
   arguments: TArray<TValue>;
 begin
-  TArgument.CheckNotNull(Inject, 'Inject');
+  Guard.CheckNotNull(Inject, 'Inject');
   arguments := Inject.Model.GetInjectionArguments(Inject);
   Result := CanResolveDependencies(Inject, arguments);
 end;
@@ -499,7 +499,7 @@ function TDependencyResolver.CanResolveDependencies(const Inject: IInjection;
 var
   dependencyTypes: TArray<TRttiType>;
 begin
-  TArgument.CheckNotNull(Inject, 'Inject');
+  Guard.CheckNotNull(Inject, 'Inject');
   dependencyTypes := Inject.GetDependencies;
   Result := CanResolveDependencies(dependencyTypes, arguments);
 end;
@@ -509,7 +509,7 @@ function TDependencyResolver.ResolveDependencies(
 var
   dependencyArguments: TArray<TValue>;
 begin
-  TArgument.CheckNotNull(Inject, 'Inject');
+  Guard.CheckNotNull(Inject, 'Inject');
   dependencyArguments := Inject.Model.GetInjectionArguments(Inject);
   Result := ResolveDependencies(Inject, dependencyArguments);
 end;
@@ -519,7 +519,7 @@ function TDependencyResolver.ResolveDependencies(const Inject: IInjection;
 var
   dependencyTypes: TArray<TRttiType>;
 begin
-  TArgument.CheckNotNull(Inject, 'Inject');
+  Guard.CheckNotNull(Inject, 'Inject');
   dependencyTypes := Inject.GetDependencies;
   Result := ResolveDependencies(dependencyTypes, arguments);
 end;
@@ -675,14 +675,14 @@ end;
 function TOrderedParametersOverride.TResolver.CanResolveDependencies(
   const Inject: IInjection): Boolean;
 begin
-  TArgument.CheckNotNull(Inject, 'Inject');
+  Guard.CheckNotNull(Inject, 'Inject');
   Result := CanResolveDependencies(Inject, fArguments);
 end;
 
 function TOrderedParametersOverride.TResolver.ResolveDependencies(
   const Inject: IInjection): TArray<TValue>;
 begin
-  TArgument.CheckNotNull(Inject, 'Inject');
+  Guard.CheckNotNull(Inject, 'Inject');
   Result := fArguments;
 end;
 
@@ -758,7 +758,7 @@ end;
 function TParameterOverride.TResolver.CanResolveDependencies(
   const Inject: IInjection): Boolean;
 begin
-  TArgument.CheckNotNull(Inject, 'Inject');
+  Guard.CheckNotNull(Inject, 'Inject');
   fInject := Inject;
   Result := inherited;
 end;
@@ -805,7 +805,7 @@ end;
 function TParameterOverride.TResolver.ResolveDependencies(
   const Inject: IInjection): TArray<TValue>;
 begin
-  TArgument.CheckNotNull(Inject, 'Inject');
+  Guard.CheckNotNull(Inject, 'Inject');
   fInject := Inject;
   Result := inherited;
 end;

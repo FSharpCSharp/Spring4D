@@ -201,7 +201,7 @@ end;
 
 procedure TSimpleObjectPool.ReleaseInstance(instance: TObject);
 begin
-  TArgument.CheckNotNull(instance, 'instance');
+  Guard.CheckNotNull(instance, 'instance');
 
   MonitorEnter(Self);
   try

@@ -691,7 +691,7 @@ end;
 
 procedure TStringsHelper.ExecuteUpdate(proc: TProc);
 begin
-  TArgument.CheckNotNull(Assigned(proc), 'proc');
+  Guard.CheckNotNull(Assigned(proc), 'proc');
 
   BeginUpdate;
   try
@@ -706,7 +706,7 @@ procedure TStringsHelper.ExtractNames(strings: TStrings);
 var
   i: Integer;
 begin
-  TArgument.CheckNotNull(strings, 'strings');
+  Guard.CheckNotNull(strings, 'strings');
 
   strings.BeginUpdate;
   try
@@ -723,7 +723,7 @@ procedure TStringsHelper.ExtractValues(strings: TStrings);
 var
   i: Integer;
 begin
-  TArgument.CheckNotNull(strings, 'strings');
+  Guard.CheckNotNull(strings, 'strings');
 
   strings.BeginUpdate;
   try
@@ -849,7 +849,7 @@ end;
 
 procedure TCollectionHelper.ExecuteUpdate(proc: TProc);
 begin
-  TArgument.CheckNotNull(Assigned(proc), 'proc');
+  Guard.CheckNotNull(Assigned(proc), 'proc');
 
   BeginUpdate;
   try

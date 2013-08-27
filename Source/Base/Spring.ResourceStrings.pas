@@ -35,8 +35,8 @@ resourcestring
   SNotSupportedOperation       = 'Not supported operation.';
   SNoDelegateAssigned          = 'No delegate has been assigned.';
 
-  SArgumentOutOfRangeException = 'EArgumentOutOfRangeException: %s';
-  SArgumentNullException       = 'EArgumentNullException: %s';
+  SArgumentOutOfRangeException = 'Specified argument was out of the range of valid values: %s';
+  SArgumentNullException       = 'Specified argument cannot be nil: %s';
   SInvalidEnumArgument         = 'Invalid enum argument: %s';
   SUnexpectedTypeKindArgument  = 'Unexpected type kind %s for the argument %s.';
   SInvalidOperationBufferSizeShouldBeSame = 'Buffer size should be the same.';

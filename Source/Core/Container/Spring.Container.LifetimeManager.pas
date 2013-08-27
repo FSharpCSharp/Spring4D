@@ -102,7 +102,7 @@ uses
 
 constructor TLifetimeManagerBase.Create(model: TComponentModel);
 begin
-  TArgument.CheckNotNull(model, 'model');
+  Guard.CheckNotNull(model, 'model');
   inherited Create;
   fModel := model;
 end;
@@ -215,7 +215,7 @@ end;
 
 procedure TTransientLifetimeManager.ReleaseInstance(const instance: TValue);
 begin
-  TArgument.CheckNotNull(instance, 'instance');
+  Guard.CheckNotNull(instance, 'instance');
   DoBeforeDestruction(instance);
   if instance.IsObject then
   begin
@@ -295,7 +295,7 @@ end;
 
 procedure TPooledLifetimeManager.ReleaseInstance(const instance: TValue);
 begin
-  TArgument.CheckNotNull(instance, 'instance');
+  Guard.CheckNotNull(instance, 'instance');
   DoBeforeDestruction(instance);
   fPool.ReleaseInstance(instance.AsObject);
 end;

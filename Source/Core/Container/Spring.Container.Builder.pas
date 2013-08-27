@@ -42,7 +42,6 @@ type
     fInspectors: IList<IBuilderInspector>;
   public
     constructor Create(context: IContainerContext; registry: IComponentRegistry);
-    destructor Destroy; override;
     procedure AddInspector(const inspector: IBuilderInspector);
     procedure RemoveInspector(const inspector: IBuilderInspector);
     procedure ClearInspectors;
@@ -120,29 +119,23 @@ uses
 constructor TComponentBuilder.Create(
   context: IContainerContext; registry: IComponentRegistry);
 begin
-  TArgument.CheckNotNull(context, 'context');
-  TArgument.CheckNotNull(registry, 'registry');
+  Guard.CheckNotNull(context, 'context');
+  Guard.CheckNotNull(registry, 'registry');
   inherited Create;
   fContext := context;
   fRegistry := registry;
   fInspectors := TCollections.CreateList<IBuilderInspector>;
 end;
 
-destructor TComponentBuilder.Destroy;
-begin
-  //fInspectors.Free;
-  inherited Destroy;
-end;
-
 procedure TComponentBuilder.AddInspector(const inspector: IBuilderInspector);
 begin
-  TArgument.CheckNotNull(inspector, 'inspector');
+  Guard.CheckNotNull(inspector, 'inspector');
   fInspectors.Add(inspector);
 end;
 
 procedure TComponentBuilder.RemoveInspector(const inspector: IBuilderInspector);
 begin
-  TArgument.CheckNotNull(inspector, 'inspector');
+  Guard.CheckNotNull(inspector, 'inspector');
   fInspectors.Remove(inspector);
 end;
 
@@ -179,8 +172,8 @@ end;
 procedure TInspectorBase.ProcessModel(
   const context: IContainerContext; model: TComponentModel);
 begin
-  TArgument.CheckNotNull(context, 'context');
-  TArgument.CheckNotNull(model, 'model');
+  Guard.CheckNotNull(context, 'context');
+  Guard.CheckNotNull(model, 'model');
   DoProcessModel(context, model);
 end;
 

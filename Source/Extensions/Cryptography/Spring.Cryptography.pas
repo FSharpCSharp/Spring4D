@@ -539,14 +539,14 @@ end;
 
 constructor TBuffer.Create(size: Integer);
 begin
-  TArgument.CheckRange(size >= 0, 'size');
+  Guard.CheckRange(size >= 0, 'size');
 
   SetLength(fBytes, size);
 end;
 
 constructor TBuffer.Create(const buffer: Pointer; count: Integer);
 begin
-  TArgument.CheckRange(count >= 0, 'count');
+  Guard.CheckRange(count >= 0, 'count');
 
   SetLength(fBytes, count);
   Move(buffer^, fBytes[0], count);
@@ -554,8 +554,8 @@ end;
 
 constructor TBuffer.Create(const buffer: Pointer; startIndex, count: Integer);
 begin
-  TArgument.CheckRange(startIndex >= 0, 'startIndex');
-  TArgument.CheckRange(count >= 0, 'count');
+  Guard.CheckRange(startIndex >= 0, 'startIndex');
+  Guard.CheckRange(count >= 0, 'count');
 
   SetLength(fBytes, count);
   Move(PByte(buffer)[startIndex], fBytes[0], count);
@@ -568,7 +568,7 @@ end;
 
 constructor TBuffer.Create(const buffer: array of Byte; startIndex, count: Integer);
 begin
-  TArgument.CheckRange(buffer, startIndex, count);
+  Guard.CheckRange(buffer, startIndex, count);
 
   Create(@buffer[startIndex], count);
 end;
@@ -595,14 +595,14 @@ end;
 
 constructor TBuffer.Create(const buffer: array of Char; startIndex, count: Integer);
 begin
-  TArgument.CheckRange(buffer, startIndex, count);
+  Guard.CheckRange(buffer, startIndex, count);
 
   Create(@buffer[startIndex], count * SizeOf(Char));
 end;
 
 class function TBuffer.BytesOf(const value: Byte; count: Integer): TBytes;
 begin
-  TArgument.CheckRange(count >= 0, 'count');
+  Guard.CheckRange(count >= 0, 'count');
 
   SetLength(Result, count);
   FillChar(Result[0], count, value);
@@ -610,7 +610,7 @@ end;
 
 class function TBuffer.GetByte(const buffer; const index: Integer): Byte;
 begin
-  TArgument.CheckRange(index >= 0, 'index');
+  Guard.CheckRange(index >= 0, 'index');
 
   Result := PByte(@buffer)[index];
 end;
@@ -625,7 +625,7 @@ end;
 class procedure TBuffer.SetByte(var buffer; const index: Integer;
   const value: Byte);
 begin
-  TArgument.CheckRange(index >= 0, 'index');
+  Guard.CheckRange(index >= 0, 'index');
 
   PByte(@buffer)[index] := value;
 end;
@@ -718,7 +718,7 @@ end;
 
 function TBuffer.Copy(startIndex, count: Integer): TBytes;
 begin
-  TArgument.CheckRange(fBytes, startIndex, count);
+  Guard.CheckRange(fBytes, startIndex, count);
 
   SetLength(Result, count);
   Move(fBytes[startIndex], Result[0], count);
@@ -736,7 +736,7 @@ end;
 
 function TBuffer.Left(count: Integer): TBuffer;
 begin
-  TArgument.CheckRange((count >= 0) and (count <= Size), 'count');
+  Guard.CheckRange((count >= 0) and (count <= Size), 'count');
 
   Result := Mid(0, count);
 end;
@@ -748,7 +748,7 @@ end;
 
 function TBuffer.Right(count: Integer): TBuffer;
 begin
-  TArgument.CheckRange((count >= 0) and (count <= Size), 'count');
+  Guard.CheckRange((count >= 0) and (count <= Size), 'count');
 
   Result := Mid(Size - count, count);
 end;
@@ -793,7 +793,7 @@ end;
 
 function TBuffer.Equals(const buffer: Pointer; count: Integer): Boolean;
 begin
-  TArgument.CheckRange(count >= 0, 'count');
+  Guard.CheckRange(count >= 0, 'count');
 
   Result := (count = Self.Size) and CompareMem(Self.Memory, buffer, count);
 end;
@@ -843,14 +843,14 @@ end;
 
 function TBuffer.GetByteItem(const index: Integer): Byte;
 begin
-  TArgument.CheckRange((index >= 0) and (index < Size), 'index');
+  Guard.CheckRange((index >= 0) and (index < Size), 'index');
 
   Result := fBytes[index];
 end;
 
 procedure TBuffer.SetByteItem(const index: Integer; const value: Byte);
 begin
-  TArgument.CheckRange((index >= 0) and (index < Size), 'index');
+  Guard.CheckRange((index >= 0) and (index < Size), 'index');
 
   fBytes[index] := value;
 end;

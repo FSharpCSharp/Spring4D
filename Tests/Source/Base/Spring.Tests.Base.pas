@@ -56,7 +56,7 @@ type
     procedure TestIssue55;
   end;
 
-  TTestArgument = class(TExceptionCheckerTestCase)
+  TTestGuard = class(TExceptionCheckerTestCase)
   published
     procedure TestIsNullReference;
     procedure TestCheckRange;
@@ -419,9 +419,9 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TTestArgument'}
+{$REGION 'TTestGuard'}
 
-procedure TTestArgument.TestCheckRange;
+procedure TTestGuard.TestCheckRange;
 var
   dynArray: array of Byte;
 const
@@ -432,14 +432,14 @@ begin
   CheckException(EArgumentOutOfRangeException,
     procedure
     begin
-      TArgument.CheckRange('abcde', 0);
+      Guard.CheckRange('abcde', 0);
     end);
-  TArgument.CheckRange('abcde', 1);
-  TArgument.CheckRange('abcde', 5);
+  Guard.CheckRange('abcde', 1);
+  Guard.CheckRange('abcde', 5);
   CheckException(EArgumentOutOfRangeException,
     procedure
     begin
-      TArgument.CheckRange('abcde', 6);
+      Guard.CheckRange('abcde', 6);
     end);
 
   // check 0-based byte array
@@ -447,75 +447,75 @@ begin
   CheckException(EArgumentOutOfRangeException,
     procedure
     begin
-      TArgument.CheckRange(dynArray, -1);
+      Guard.CheckRange(dynArray, -1);
     end);
-  TArgument.CheckRange(dynArray, 0);
-  TArgument.CheckRange(dynArray, 3);
+  Guard.CheckRange(dynArray, 0);
+  Guard.CheckRange(dynArray, 3);
   CheckException(EArgumentOutOfRangeException,
     procedure
     begin
-      TArgument.CheckRange(dynArray, 4);
+      Guard.CheckRange(dynArray, 4);
     end);
 
   // check 1-based range
   CheckException(EArgumentOutOfRangeException,
     procedure
     begin
-      TArgument.CheckRange(len, 0, 0, idx);
+      Guard.CheckRange(len, 0, 0, idx);
     end);
   CheckException(EArgumentOutOfRangeException,
     procedure
     begin
-      TArgument.CheckRange(len, 0, 1, idx);
+      Guard.CheckRange(len, 0, 1, idx);
     end);
   CheckException(EArgumentOutOfRangeException,
     procedure
     begin
-      TArgument.CheckRange(len, 0, 5, idx);
+      Guard.CheckRange(len, 0, 5, idx);
     end);
   CheckException(EArgumentOutOfRangeException,
     procedure
     begin
-      TArgument.CheckRange(len, 1, -1, idx);
+      Guard.CheckRange(len, 1, -1, idx);
     end);
-  TArgument.CheckRange(len, 1, 0, idx);
-  TArgument.CheckRange(len, 1, 1, idx);
+  Guard.CheckRange(len, 1, 0, idx);
+  Guard.CheckRange(len, 1, 1, idx);
   CheckException(EArgumentOutOfRangeException,
     procedure
     begin
-      TArgument.CheckRange(len, 1, 5, idx);
-    end);
-  CheckException(EArgumentOutOfRangeException,
-    procedure
-    begin
-      TArgument.CheckRange(len, 5, 0, idx);
+      Guard.CheckRange(len, 1, 5, idx);
     end);
   CheckException(EArgumentOutOfRangeException,
     procedure
     begin
-      TArgument.CheckRange(len, 5, 1, idx);
+      Guard.CheckRange(len, 5, 0, idx);
     end);
   CheckException(EArgumentOutOfRangeException,
     procedure
     begin
-      TArgument.CheckRange(len, 5, 5, idx);
+      Guard.CheckRange(len, 5, 1, idx);
+    end);
+  CheckException(EArgumentOutOfRangeException,
+    procedure
+    begin
+      Guard.CheckRange(len, 5, 5, idx);
     end);
 end;
 
-procedure TTestArgument.TestIsNullReference;
+procedure TTestGuard.TestIsNullReference;
 var
   obj: TObject;
   intf: IInterface;
   e: TNotifyEvent;
 begin
   obj := nil;
-  CheckTrue(TArgument.IsNullReference(obj, TypeInfo(TObject)));
-  CheckTrue(TArgument.IsNullReference(intf, TypeInfo(IInterface)));
+  CheckTrue(Guard.IsNullReference(obj, TypeInfo(TObject)));
+  CheckTrue(Guard.IsNullReference(intf, TypeInfo(IInterface)));
   e := nil;
-  CheckTrue(TArgument.IsNullReference(e, TypeInfo(TNotifyEvent)));
+  CheckTrue(Guard.IsNullReference(e, TypeInfo(TNotifyEvent)));
   TMethod(e).Data := Self;
   CheckFalse(Assigned(e));
-  CheckFalse(TArgument.IsNullReference(e, TypeInfo(TNotifyEvent)));
+  CheckFalse(Guard.IsNullReference(e, TypeInfo(TNotifyEvent)));
 end;
 
 {$ENDREGION}

@@ -456,7 +456,7 @@ end;
 
 class function TType.GetFullName(typeInfo: PTypeInfo): string;
 begin
-  TArgument.CheckNotNull(typeInfo, 'typeInfo');
+  Guard.CheckNotNull(typeInfo, 'typeInfo');
   Result := fContext.GetType(typeInfo).QualifiedName;
 end;
 
@@ -477,8 +477,8 @@ class function TType.IsAssignable(typeFrom, typeTo: PTypeInfo): Boolean;
 var
   dataFrom, dataTo: PTypeData;
 begin
-  TArgument.CheckNotNull(typeFrom, 'typeFrom');
-  TArgument.CheckNotNull(typeTo, 'typeTo');
+  Guard.CheckNotNull(typeFrom, 'typeFrom');
+  Guard.CheckNotNull(typeTo, 'typeTo');
   if typeFrom = typeTo then
   begin
     Exit(True);
@@ -625,8 +625,8 @@ end;
 class function TActivator.CreateInstance(instanceType: TRttiInstanceType;
   constructorMethod: TRttiMethod; const arguments: array of TValue): TValue;
 begin
-  TArgument.CheckNotNull(instanceType, 'instanceType');
-  TArgument.CheckNotNull(constructorMethod, 'constructorMethod');
+  Guard.CheckNotNull(instanceType, 'instanceType');
+  Guard.CheckNotNull(constructorMethod, 'constructorMethod');
   Result := constructorMethod.Invoke(instanceType.MetaclassType, arguments);
 end;
 
@@ -651,7 +651,7 @@ var
   context: TRttiContext;
   typeObj: TRttiType;
 begin
-  TArgument.CheckNotNull(typeInfo, 'typeInfo');
+  Guard.CheckNotNull(typeInfo, 'typeInfo');
 
   typeObj := context.GetType(typeInfo);
   if typeObj is TRttiInstanceType then
@@ -669,7 +669,7 @@ class function TActivator.CreateInstance(
 var
   method: TRttiMethod;
 begin
-  TArgument.CheckNotNull(instanceType, 'instanceType');
+  Guard.CheckNotNull(instanceType, 'instanceType');
 
   for method in instanceType.GetMethods do
   begin
@@ -786,7 +786,7 @@ end;
 function TMemberSpecificationBase<T>.IsSatisfiedBy(
   const member: T): Boolean;
 begin
-//  TArgument.CheckNotNull<T>(member, 'member');
+//  Guard.CheckNotNull<T>(member, 'member');
   Result := Accept(member);
 end;
 
@@ -1044,19 +1044,19 @@ end;
 
 function TReflection.GetType(const typeInfo: PTypeInfo): TRttiType;
 begin
-  TArgument.CheckNotNull(typeInfo, 'typeInfo');
+  Guard.CheckNotNull(typeInfo, 'typeInfo');
   Result := fContext.GetType(typeInfo);
 end;
 
 function TReflection.GetType(const classType: TClass): TRttiType;
 begin
-  TArgument.CheckNotNull(classType, 'classType');
+  Guard.CheckNotNull(classType, 'classType');
   Result := fContext.GetType(classType.ClassInfo);
 end;
 
 function TReflection.GetType(const instance: TObject): TRttiType;
 begin
-  TArgument.CheckNotNull(instance, 'instance');
+  Guard.CheckNotNull(instance, 'instance');
   Result := fContext.GetType(instance.ClassInfo);
 end;
 

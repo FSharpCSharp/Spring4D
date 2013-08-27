@@ -486,7 +486,7 @@ end;
 procedure TComponentModel.UpdateInjectionArguments(const Inject: IInjection;
   const arguments: array of TValue);
 begin
-  TArgument.CheckNotNull(Inject, 'Inject');
+  Guard.CheckNotNull(Inject, 'Inject');
   Injections.AddOrSetValue(Inject, TArray.CreateArray<TValue>(arguments));
 end;
 
@@ -530,7 +530,7 @@ end;
 function TComponentModel.GetInjectionArguments(
   const Inject: IInjection): TArray<TValue>;
 begin
-  TArgument.CheckNotNull(Inject, 'Inject');
+  Guard.CheckNotNull(Inject, 'Inject');
   Injections.TryGetValue(Inject, Result);
 end;
 
@@ -589,7 +589,7 @@ function TComponentModel.GetServiceName(serviceType: PTypeInfo): string;
 var
   item: TPair<string, PTypeInfo>;
 begin
-  TArgument.CheckNotNull(serviceType, 'serviceType');
+  Guard.CheckNotNull(serviceType, 'serviceType');
   Result := '';
   for item in Services do
   begin
@@ -641,7 +641,7 @@ constructor TValueHolder.Create(value: TValue; refCounting: TRefCounting);
 var
   lifetimeWatcher: IInterface;
 begin
-  TArgument.CheckNotNull(not value.IsEmpty, 'value');
+  Guard.CheckNotNull(not value.IsEmpty, 'value');
 
   if ((refCounting = TRefCounting.Unknown) and value.IsObject
     and value.AsObject.InheritsFrom(TInterfacedObject))

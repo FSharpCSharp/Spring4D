@@ -424,7 +424,7 @@ function TEnumerableBase<T>.Contains(const item: T): Boolean;
 var
   comparer: IEqualityComparer<T>;
 begin
-  TArgument.CheckNotNull<T>(item, 'item');
+  Guard.CheckNotNull<T>(item, 'item');
 
   comparer := TEqualityComparer<T>.Default;
   Result := Contains(item, comparer);
@@ -434,7 +434,7 @@ function TEnumerableBase<T>.All(const predicate: TPredicate<T>): Boolean;
 var
   item: T;
 begin
-  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
 
   Result := True;
   for item in Self do
@@ -448,7 +448,7 @@ function TEnumerableBase<T>.Any(const predicate: TPredicate<T>): Boolean;
 var
   item: T;
 begin
-  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
 
   Result := False;
   for item in Self do
@@ -461,7 +461,7 @@ end;
 function TEnumerableBase<T>.Concat(
   const collection: IEnumerable<T>): IEnumerable<T>;
 begin
-  TArgument.CheckNotNull(Assigned(collection), 'collection');
+  Guard.CheckNotNull(Assigned(collection), 'collection');
 
   Result := TConcatEnumerable<T>.Create(Self, collection);
 end;
@@ -471,7 +471,7 @@ function TEnumerableBase<T>.Contains(const item: T;
 var
   enumerator: IEnumerator<T>;
 begin
-  TArgument.CheckNotNull<T>(item, 'item');
+  Guard.CheckNotNull<T>(item, 'item');
 
   enumerator := GetEnumerator;
   Result := False;
@@ -489,7 +489,7 @@ var
   enumerator: IEnumerator<T>;
   localIndex: Integer;
 begin
-  TArgument.CheckRange(index >= 0, 'index');
+  Guard.CheckRange(index >= 0, 'index');
 
   enumerator := GetEnumerator;
   localIndex := 0;
@@ -501,7 +501,7 @@ begin
     end;
     Inc(localIndex);
   end;
-  TArgument.RaiseArgumentOutOfRangeException('index');
+  Guard.RaiseArgumentOutOfRangeException('index');
 end;
 
 function TEnumerableBase<T>.ElementAtOrDefault(index: Integer): T;
@@ -509,7 +509,7 @@ var
   enumerator: IEnumerator<T>;
   localIndex: Integer;
 begin
-  TArgument.CheckRange(index >= 0, 'index');
+  Guard.CheckRange(index >= 0, 'index');
 
   enumerator := GetEnumerator;
   localIndex := 0;
@@ -535,8 +535,8 @@ var
   e1, e2: IEnumerator<T>;
   hasNext: Boolean;
 begin
-  TArgument.CheckNotNull(Assigned(collection), 'collection');
-  TArgument.CheckNotNull(Assigned(comparer), 'comparer');
+  Guard.CheckNotNull(Assigned(collection), 'collection');
+  Guard.CheckNotNull(Assigned(comparer), 'comparer');
 
   e1 := GetEnumerator;
   e2 := collection.GetEnumerator;
@@ -633,7 +633,7 @@ procedure TEnumerableBase<T>.ForEach(const action: TAction<T>);
 var
   item: T;
 begin
-  TArgument.CheckNotNull(Assigned(action), 'action');
+  Guard.CheckNotNull(Assigned(action), 'action');
 
   for item in Self do
   begin
@@ -645,7 +645,7 @@ procedure TEnumerableBase<T>.ForEach(const action: TActionProc<T>);
 var
   item: T;
 begin
-  TArgument.CheckNotNull(Assigned(action), 'action');
+  Guard.CheckNotNull(Assigned(action), 'action');
 
   for item in Self do
   begin
@@ -657,7 +657,7 @@ procedure TEnumerableBase<T>.ForEach(const action: TActionMethod<T>);
 var
   item: T;
 begin
-  TArgument.CheckNotNull(Assigned(action), 'action');
+  Guard.CheckNotNull(Assigned(action), 'action');
 
   for item in Self do
   begin
@@ -849,14 +849,14 @@ function TEnumerableBase<T>.NonGenericToList: IList;
 begin
   Supports(ToList, IList, Result);
 
-  TArgument.CheckNotNull(Result, 'Result');
+  Guard.CheckNotNull(Result, 'Result');
 end;
 
 function TEnumerableBase<T>.NonGenericToSet: ISet;
 begin
   Supports(ToSet, ISet, Result);
 
-  TArgument.CheckNotNull(Result, 'Result');
+  Guard.CheckNotNull(Result, 'Result');
 end;
 
 function TEnumerableBase<T>.NonGenericTryGetFirst(out value: TValue): Boolean;
@@ -908,7 +908,7 @@ var
   item: T;
   isSatisfied: Boolean;
 begin
-  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
 
   enumerator := GetEnumerator;
 
@@ -961,7 +961,7 @@ var
   item: T;
   isSatisfied: Boolean;
 begin
-  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
 
   enumerator := GetEnumerator;
   if not enumerator.MoveNext then
@@ -994,7 +994,7 @@ end;
 function TEnumerableBase<T>.Where(
   const predicate: TPredicate<T>): IEnumerable<T>;
 begin
-  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
 
   Result := TWhereEnumerable<T>.Create(Self, predicate);
 end;
@@ -1007,7 +1007,7 @@ end;
 function TEnumerableBase<T>.SkipWhile(
   const predicate: TPredicate<T>): IEnumerable<T>;
 begin
-  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
 
   Result := TSkipWhileEnumerable<T>.Create(Self, predicate);
 end;
@@ -1015,7 +1015,7 @@ end;
 function TEnumerableBase<T>.SkipWhile(
   const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>;
 begin
-  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
 
   Result := TSkipWhileIndexEnumerable<T>.Create(Self, predicate);
 end;
@@ -1028,7 +1028,7 @@ end;
 function TEnumerableBase<T>.TakeWhile(
   const predicate: TPredicate<T>): IEnumerable<T>;
 begin
-  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
 
   Result := TTakeWhileEnumerable<T>.Create(Self, predicate);
 end;
@@ -1036,7 +1036,7 @@ end;
 function TEnumerableBase<T>.TakeWhile(
   const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>;
 begin
-  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
 
   Result := TTakeWhileIndexEnumerable<T>.Create(Self, predicate);
 end;
@@ -1280,7 +1280,7 @@ end;
 
 procedure TListBase<T>.Delete(index: Integer);
 begin
-  TArgument.CheckRange((index >= 0) and (index < Count), 'index');
+  Guard.CheckRange((index >= 0) and (index < Count), 'index');
 
   DoDelete(index, caRemoved);
 end;
@@ -1341,7 +1341,7 @@ procedure TListBase<T>.InsertRange(index: Integer; const collection: array of T)
 var
   item: T;
 begin
-  TArgument.CheckRange((index >= 0) and (index <= Count), 'index');
+  Guard.CheckRange((index >= 0) and (index <= Count), 'index');
 
   for item in collection do
   begin
@@ -1355,7 +1355,7 @@ procedure TListBase<T>.InsertRange(index: Integer;
 var
   item: T;
 begin
-  TArgument.CheckRange((index >= 0) and (index <= Count), 'index');
+  Guard.CheckRange((index >= 0) and (index <= Count), 'index');
 
   for item in collection do
   begin
@@ -1369,7 +1369,7 @@ procedure TListBase<T>.InsertRange(index: Integer;
 var
   item: T;
 begin
-  TArgument.CheckRange((index >= 0) and (index <= Count), 'index');
+  Guard.CheckRange((index >= 0) and (index <= Count), 'index');
 
   for item in collection do
   begin
@@ -1380,7 +1380,7 @@ end;
 
 procedure TListBase<T>.Insert(index: Integer; const item: T);
 begin
-  TArgument.CheckRange((index >= 0) and (index <= Count), 'index');
+  Guard.CheckRange((index >= 0) and (index <= Count), 'index');
 
   DoInsert(index, item);
 end;
@@ -1422,7 +1422,7 @@ procedure TListBase<T>.NonGenericInsertRange(index: Integer;
 var
   item: TValue;
 begin
-  TArgument.CheckRange((index >= 0) and (index <= Count), 'index');
+  Guard.CheckRange((index >= 0) and (index <= Count), 'index');
 
   for item in collection do
   begin

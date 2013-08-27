@@ -124,7 +124,7 @@ procedure THashSet<T>.ExceptWith(const collection: IEnumerable<T>);
 var
   item: T;
 begin
-  TArgument.CheckNotNull(collection <> nil, 'collection');
+  Guard.CheckNotNull(collection <> nil, 'collection');
 
   for item in collection do
   begin
@@ -137,7 +137,7 @@ var
   item: T;
   list: IList<T>;
 begin
-  TArgument.CheckNotNull(collection <> nil, 'collection');
+  Guard.CheckNotNull(collection <> nil, 'collection');
 
   list := TList<T>.Create;
   for item in Self do
@@ -182,7 +182,7 @@ procedure THashSet<T>.UnionWith(const collection: IEnumerable<T>);
 var
   item: T;
 begin
-  TArgument.CheckNotNull(collection <> nil, 'collection');
+  Guard.CheckNotNull(collection <> nil, 'collection');
 
   for item in collection do
   begin
@@ -194,7 +194,7 @@ function THashSet<T>.Overlaps(const collection: IEnumerable<T>): Boolean;
 var
   item: T;
 begin
-  TArgument.CheckNotNull(collection <> nil, 'collection');
+  Guard.CheckNotNull(collection <> nil, 'collection');
 
   for item in collection do
   begin
@@ -209,7 +209,7 @@ var
   item: T;
   localSet: ISet<T>;
 begin
-  TArgument.CheckNotNull(collection <> nil, 'collection');
+  Guard.CheckNotNull(collection <> nil, 'collection');
 
   localSet := THashSet<T>.Create;
 

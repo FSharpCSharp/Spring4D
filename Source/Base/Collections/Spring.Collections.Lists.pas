@@ -91,7 +91,7 @@ end;
 
 function TList<T>.GetItem(index: Integer): T;
 begin
-  TArgument.CheckRange((index >= 0) and (index < Count), 'index');
+  Guard.CheckRange((index >= 0) and (index < Count), 'index');
 
   Result := fItems[index];
 end;
@@ -100,7 +100,7 @@ procedure TList<T>.SetItem(index: Integer; const value: T);
 var
   oldItem: T;
 begin
-  TArgument.CheckRange((index >= 0) and (index < Count), 'index');
+  Guard.CheckRange((index >= 0) and (index < Count), 'index');
 
   oldItem := fItems[index];
   fItems[index] := value;
@@ -220,8 +220,8 @@ procedure TList<T>.Exchange(index1, index2: Integer);
 var
   temp: T;
 begin
-  TArgument.CheckRange((index1 >= 0) and (index1 < Count), 'index1');
-  TArgument.CheckRange((index2 >= 0) and (index2 < Count), 'index2');
+  Guard.CheckRange((index1 >= 0) and (index1 < Count), 'index1');
+  Guard.CheckRange((index2 >= 0) and (index2 < Count), 'index2');
 
   temp := fItems[index1];
   fItems[index1] := fItems[index2];

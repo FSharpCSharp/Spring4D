@@ -174,7 +174,7 @@ end;
 function THashAlgorithmBase.ComputeHash(const buffer: array of Byte; startIndex,
   count: Integer): TBuffer;
 begin
-  TArgument.CheckRange(buffer, startIndex, count);
+  Guard.CheckRange(buffer, startIndex, count);
   Result := ComputeHash(@buffer[startIndex], count);
 end;
 
@@ -199,7 +199,7 @@ var
   buffer: array[0..512-1] of Byte;
   count: Integer;
 begin
-  TArgument.CheckNotNull(inputStream, 'inputStream');
+  Guard.CheckNotNull(inputStream, 'inputStream');
   HashInit;
   count := inputStream.Read(buffer[0], Length(buffer));
   while count > 0 do
@@ -259,7 +259,7 @@ end;
 function TSymmetricAlgorithmBase.Encrypt(const buffer: array of Byte;
   startIndex, count: Integer): TBuffer;
 begin
-  TArgument.CheckRange(buffer, startIndex, count);
+  Guard.CheckRange(buffer, startIndex, count);
   Result := Encrypt(@buffer[startIndex], count);
 end;
 
@@ -292,8 +292,8 @@ var
   outputBuffer: TBuffer;
   bytes: Integer;
 begin
-  TArgument.CheckNotNull(inputStream, 'inputStream');
-  TArgument.CheckNotNull(outputStream, 'outputStream');
+  Guard.CheckNotNull(inputStream, 'inputStream');
+  Guard.CheckNotNull(outputStream, 'outputStream');
   inputBuffer.Size := BlockSizeInBytes;
   outputBuffer.Size := BlockSizeInBytes;
   bytes := inputStream.Read(inputBuffer.Memory^, inputBuffer.Size);
@@ -315,7 +315,7 @@ var
   startIndex: Integer;
   firstBlock: Boolean;
 begin
-  TArgument.CheckRange(count >= 0, 'count');
+  Guard.CheckRange(count >= 0, 'count');
   if count = 0 then
   begin
     Exit(TBuffer.Empty);
@@ -369,7 +369,7 @@ var
   p: PByte;
   firstBlock: Boolean;
 begin
-  TArgument.CheckRange(count >= 0, 'count');
+  Guard.CheckRange(count >= 0, 'count');
 
   firstBlock := True;
   Result := TBuffer.Empty;
@@ -417,7 +417,7 @@ procedure TSymmetricAlgorithmBase.AddPadding(var buffer: TBuffer; startIndex,
 var
   i: Integer;
 begin
-  TArgument.CheckRange(buffer.Size, startIndex, count);
+  Guard.CheckRange(buffer.Size, startIndex, count);
   case PaddingMode of
     TPaddingMode.None: ;
     TPaddingMode.PKCS7:
@@ -513,7 +513,7 @@ end;
 function TSymmetricAlgorithmBase.Decrypt(const buffer: array of Byte;
   startIndex, count: Integer): TBuffer;
 begin
-  TArgument.CheckRange(buffer, startIndex, count);
+  Guard.CheckRange(buffer, startIndex, count);
   Result := Decrypt(@buffer[startIndex], count);
 end;
 
@@ -540,8 +540,8 @@ var
   count: Integer;
   outputBuffer: TBuffer;
 begin
-  TArgument.CheckNotNull(inputStream, 'inputStream');
-  TArgument.CheckNotNull(outputStream, 'outputStream');
+  Guard.CheckNotNull(inputStream, 'inputStream');
+  Guard.CheckNotNull(outputStream, 'outputStream');
   SetLength(buffer, BlockSizeInBytes);
   count := inputStream.Read(buffer[0], Length(buffer));
   while count >= BlockSizeInBytes do

@@ -1026,8 +1026,8 @@ end;
 
 function CreateCallback(obj: TObject; methodAddress: Pointer): TCallbackFunc;
 begin
-  TArgument.CheckNotNull(obj, 'obj');
-  TArgument.CheckNotNull(methodAddress, 'methodAddress');
+  Guard.CheckNotNull(obj, 'obj');
+  Guard.CheckNotNull(methodAddress, 'methodAddress');
   Result := TCallback.Create(obj, methodAddress);
 end;
 
@@ -1078,20 +1078,20 @@ end;
 
 procedure Synchronize(threadProc: TThreadProcedure);
 begin
-  TArgument.CheckNotNull(Assigned(threadProc), 'threadProc');
+  Guard.CheckNotNull(Assigned(threadProc), 'threadProc');
   TThread.Synchronize(TThread.CurrentThread, threadProc);
 end;
 
 procedure Queue(threadProc: TThreadProcedure);
 begin
-  TArgument.CheckNotNull(Assigned(threadProc), 'threadProc');
+  Guard.CheckNotNull(Assigned(threadProc), 'threadProc');
   TThread.Queue(TThread.CurrentThread, threadProc);
 end;
 
 function TryGetPropInfo(instance: TObject; const propertyName: string;
   out propInfo: PPropInfo): Boolean;
 begin
-  TArgument.CheckNotNull(instance, 'instance');
+  Guard.CheckNotNull(instance, 'instance');
   propInfo := GetPropInfo(instance, propertyName);
   Result := propInfo <> nil;
 end;
@@ -1108,8 +1108,8 @@ end;
 
 procedure Lock(obj: TObject; const proc: TProc);
 begin
-  TArgument.CheckNotNull(obj, 'obj');
-  TArgument.CheckNotNull(Assigned(proc), 'proc');
+  Guard.CheckNotNull(obj, 'obj');
+  Guard.CheckNotNull(Assigned(proc), 'proc');
 
   System.MonitorEnter(obj);
   try
@@ -1123,15 +1123,15 @@ procedure Lock(const intf: IInterface; const proc: TProc);
 var
   obj: TObject;
 begin
-  TArgument.CheckNotNull(intf, 'intf');
+  Guard.CheckNotNull(intf, 'intf');
   obj := TObject(intf);
   Lock(obj, proc);
 end;
 
 procedure UpdateStrings(strings: TStrings; proc: TProc);
 begin
-  TArgument.CheckNotNull(strings, 'strings');
-  TArgument.CheckNotNull(Assigned(proc), 'proc');
+  Guard.CheckNotNull(strings, 'strings');
+  Guard.CheckNotNull(Assigned(proc), 'proc');
 
   strings.BeginUpdate;
   try
@@ -1237,8 +1237,8 @@ end;
 constructor TVersion.InternalCreate(defined, major, minor, build, reversion: Integer);
 begin
   Assert(defined in [2, 3, 4], '"defined" should be in [2, 3, 4].');
-  TArgument.CheckRange(IsDefined(major), 'major');
-  TArgument.CheckRange(IsDefined(minor), 'minor');
+  Guard.CheckRange(IsDefined(major), 'major');
+  Guard.CheckRange(IsDefined(minor), 'minor');
   fMajor := major;
   fMinor := minor;
   case defined of
@@ -1249,14 +1249,14 @@ begin
     end;
     3:
     begin
-      TArgument.CheckRange(IsDefined(build), 'build');
+      Guard.CheckRange(IsDefined(build), 'build');
       fBuild := build;
       fReversion := fCUndefined;
     end;
     4:
     begin
-      TArgument.CheckRange(IsDefined(build), 'build');
-      TArgument.CheckRange(IsDefined(reversion), 'reversion');
+      Guard.CheckRange(IsDefined(build), 'build');
+      Guard.CheckRange(IsDefined(reversion), 'reversion');
       fBuild := build;
       fReversion := reversion;
     end;
@@ -1322,19 +1322,19 @@ end;
 
 function TVersion.ToString(fieldCount: Integer): string;
 begin
-  TArgument.CheckRange(fieldCount in [0..4], 'fieldCount');
+  Guard.CheckRange(fieldCount in [0..4], 'fieldCount');
   case fieldCount of
     0: Result := '';
     1: Result := Format('%d', [major]);
     2: Result := Format('%d.%d', [major, minor]);
     3:
     begin
-      TArgument.CheckTrue(IsDefined(build), SIllegalFieldCount);
+      Guard.CheckTrue(IsDefined(build), SIllegalFieldCount);
       Result := Format('%d.%d.%d', [major, minor, build]);
     end;
     4:
     begin
-      TArgument.CheckTrue(IsDefined(build) and IsDefined(reversion), SIllegalFieldCount);
+      Guard.CheckTrue(IsDefined(build) and IsDefined(reversion), SIllegalFieldCount);
       Result := Format('%d.%d.%d.%d', [major, minor, build, reversion]);
     end;
   end;
@@ -1840,7 +1840,7 @@ var
     end;
   end;
 begin
-  TArgument.CheckEnum<TEnvironmentVariableTarget>(target, 'target');
+  Guard.CheckEnum<TEnvironmentVariableTarget>(target, 'target');
   if target = evtProcess then
   begin
     Result := GetProcessEnvironmentVariable;
@@ -1902,8 +1902,8 @@ var
   value: string;
   i: Integer;
 begin
-  TArgument.CheckNotNull(list, 'list');
-  TArgument.CheckEnum<TEnvironmentVariableTarget>(target, 'target');
+  Guard.CheckNotNull(list, 'list');
+  Guard.CheckEnum<TEnvironmentVariableTarget>(target, 'target');
   if target = evtProcess then
   begin
     GetProcessEnvironmentVariables(list);
@@ -1933,7 +1933,7 @@ class procedure TEnvironment.SetEnvironmentVariable(const variable,
 var
   registry: TRegistry;
 begin
-  TArgument.CheckEnum<TEnvironmentVariableTarget>(target, 'target');
+  Guard.CheckEnum<TEnvironmentVariableTarget>(target, 'target');
   if target = evtProcess then
   begin
     Win32Check(Windows.SetEnvironmentVariable(PChar(variable), PChar(value)));

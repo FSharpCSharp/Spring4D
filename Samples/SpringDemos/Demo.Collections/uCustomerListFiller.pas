@@ -14,7 +14,7 @@ implementation
 
 procedure FillListWithCustomers(aList: IList<TCustomer>);
 begin
-  TArgument.CheckNotNull(aList, 'aList');
+  Guard.CheckNotNull(aList, 'aList');
 
   aList.Add(TCustomer.Create('Nick', 'Hodges', 1000000));
   aList.Add(TCustomer.Create('Michael', 'Miller', 500000));
@@ -26,8 +26,6 @@ begin
   aList.Add(TCustomer.Create('Lisa', 'Williams', 66000));
   aList.Add(TCustomer.Create('Allen', 'Rogers', 77000));
   aList.Add(TCustomer.Create('Wendy', 'Harding', 88000));
-
-
 end;
 
 end.

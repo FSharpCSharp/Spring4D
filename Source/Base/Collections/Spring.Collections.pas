@@ -836,7 +836,7 @@ class function TCollections.CreateDictionary<TKey, TValue>(
   dictionary: Generics.Collections.TDictionary<TKey, TValue>;
   ownership: TOwnershipType): IDictionary<TKey, TValue>;
 begin
-  TArgument.CheckNotNull(dictionary, 'dictionary');
+  Guard.CheckNotNull(dictionary, 'dictionary');
   Result := TDictionary<TKey, TValue>.Create(dictionary, ownership);
 end;
 
@@ -861,7 +861,7 @@ class function TCollections.CreateDictionary<TKey, TValue>(capacity: Integer;
 var
   dictionary: Generics.Collections.TDictionary<TKey,TValue>;
 begin
-  TArgument.CheckRange(capacity >= 0, 'capacity');
+  Guard.CheckRange(capacity >= 0, 'capacity');
   dictionary := Generics.Collections.TDictionary<TKey,TValue>.Create(capacity, comparer);
   Result := TDictionary<TKey, TValue>.Create(dictionary, otOwned);
 end;

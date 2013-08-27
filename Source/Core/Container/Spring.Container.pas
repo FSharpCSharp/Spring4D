@@ -244,7 +244,7 @@ end;
 function TContainer.CreateLifetimeManager(
   model: TComponentModel): ILifetimeManager;
 begin
-  TArgument.CheckNotNull(model, 'model');
+  Guard.CheckNotNull(model, 'model');
   case model.LifetimeType of
     TLifetimeType.Singleton:
     begin
@@ -440,7 +440,7 @@ procedure TContainer.Release(instance: TObject);
 var
   model: TComponentModel;
 begin
-  TArgument.CheckNotNull(instance, 'instance');
+  Guard.CheckNotNull(instance, 'instance');
 
   model := fRegistry.FindOne(instance.ClassInfo);
   if model = nil then
@@ -452,7 +452,7 @@ end;
 
 procedure TContainer.Release(instance: IInterface);
 begin
-  TArgument.CheckNotNull(instance, 'instance');
+  Guard.CheckNotNull(instance, 'instance');
   { TODO: -oOwner -cGeneral : Release instance of IInterface }
 end;
 

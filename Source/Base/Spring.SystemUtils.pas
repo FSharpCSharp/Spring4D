@@ -300,7 +300,7 @@ uses
 class function TEnum.GetEnumTypeInfo<T>: PTypeInfo;
 begin
   Result := TypeInfo(T);
-  TArgument.CheckTypeKind(Result, tkEnumeration, 'T');
+  Guard.CheckTypeKind(Result, tkEnumeration, 'T');
 end;
 
 class function TEnum.GetEnumTypeData<T>: PTypeData;
@@ -323,7 +323,7 @@ var
   data: PTypeData;
 begin
   typeInfo := System.TypeInfo(T);
-  TArgument.CheckTypeKind(typeInfo, [tkEnumeration], 'T');
+  Guard.CheckTypeKind(typeInfo, [tkEnumeration], 'T');
 
   data := GetTypeData(typeInfo);
   Assert(data <> nil, 'data must not be nil.');
@@ -342,7 +342,7 @@ class function TEnum.GetName<T>(const value: Integer): string;
 var
   typeInfo: PTypeInfo;
 begin
-  TArgument.CheckEnum<T>(value, 'value');
+  Guard.CheckEnum<T>(value, 'value');
 
   typeInfo := GetEnumTypeInfo<T>;
   Result := GetEnumName(typeInfo, value);
@@ -374,7 +374,7 @@ end;
 
 class function TEnum.GetValue<T>(const value: T): Integer;
 begin
-  TArgument.CheckEnum<T>(value, 'value');
+  Guard.CheckEnum<T>(value, 'value');
 
   Result := TEnum.ConvertToInteger<T>(value);
 end;
@@ -501,7 +501,7 @@ var
     end;
   end;
 begin
-  TArgument.CheckRange(len >= 0, 'len');
+  Guard.CheckRange(len >= 0, 'len');
 
   if (buffer = nil) or (len = 0) then Exit;
   head := buffer;

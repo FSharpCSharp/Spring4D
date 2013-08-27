@@ -787,8 +787,8 @@ function TValueConverter.ConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo;
   const parameter: TValue): TValue;
 begin
-  TArgument.CheckNotNull(value.TypeInfo, 'value.TypeInfo');
-  TArgument.CheckNotNull(targetTypeInfo, 'targetTypeInfo');
+  Guard.CheckNotNull(value.TypeInfo, 'value.TypeInfo');
+  Guard.CheckNotNull(targetTypeInfo, 'targetTypeInfo');
   try
     Result := DoConvertTo(value, targetTypeInfo, parameter);
   except
@@ -1659,8 +1659,8 @@ class procedure TValueConverterFactory.RegisterConverter(const sourceTypeInfo,
 var
   key: TConvertedTypeInfo;
 begin
-  TArgument.CheckNotNull(sourceTypeInfo, 'sourceTypeInfo');
-  TArgument.CheckNotNull(targetTypeInfo, 'targetTypeInfo');
+  Guard.CheckNotNull(sourceTypeInfo, 'sourceTypeInfo');
+  Guard.CheckNotNull(targetTypeInfo, 'targetTypeInfo');
 
   System.MonitorEnter(fTypeInfoToTypeInfoRegistry);
   try
@@ -1679,8 +1679,8 @@ class procedure TValueConverterFactory.RegisterConverter(
 var
   key: TConvertedTypeInfo;
 begin
-  TArgument.CheckFalse(SizeOf(targetTypeKinds) = 0, SEmptySourceTypeKind);
-  TArgument.CheckNotNull(sourceTypeInfo, 'targetTypeInfo');
+  Guard.CheckFalse(SizeOf(targetTypeKinds) = 0, SEmptySourceTypeKind);
+  Guard.CheckNotNull(sourceTypeInfo, 'targetTypeInfo');
 
   System.MonitorEnter(fTypeInfoToTypeKindsRegistry);
   try
@@ -1699,8 +1699,8 @@ class procedure TValueConverterFactory.RegisterConverter(
 var
   key: TConvertedTypeInfo;
 begin
-  TArgument.CheckFalse(SizeOf(sourceTypeKinds) = 0, SEmptySourceTypeKind);
-  TArgument.CheckNotNull(targetTypeInfo, 'targetTypeInfo');
+  Guard.CheckFalse(SizeOf(sourceTypeKinds) = 0, SEmptySourceTypeKind);
+  Guard.CheckNotNull(targetTypeInfo, 'targetTypeInfo');
 
   System.MonitorEnter(fTypeKindsToTypeInfoRegistry);
   try
@@ -1718,8 +1718,8 @@ class procedure TValueConverterFactory.RegisterConverter(const sourceTypeKinds,
 var
   key: TConvertedTypeInfo;
 begin
-  TArgument.CheckFalse(SizeOf(sourceTypeKinds) = 0, SEmptySourceTypeKind);
-  TArgument.CheckFalse(SizeOf(targetTypeKinds) = 0, SEmptyTargetTypeKind);
+  Guard.CheckFalse(SizeOf(sourceTypeKinds) = 0, SEmptySourceTypeKind);
+  Guard.CheckFalse(SizeOf(targetTypeKinds) = 0, SEmptyTargetTypeKind);
 
   System.MonitorEnter(fTypeKindsToTypeKindsRegistry);
   try

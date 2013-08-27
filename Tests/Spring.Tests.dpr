@@ -58,7 +58,7 @@ begin
   RegisterTests('Spring.Base', [
     TRepeatedTest.Create(TTestNullableInteger.Suite, 3),
     TTestNullableBoolean.Suite,
-    TTestArgument.Suite,
+    TTestGuard.Suite,
     TTestLazy.Suite,
     TTestMulticastEvent.Suite,
     TTestEmptyHashSet.Suite,

@@ -126,7 +126,7 @@ end;
 
 procedure TInjectionBase.Initialize(target: TRttiMember);
 begin
-  TArgument.CheckNotNull(target, 'target');
+  Guard.CheckNotNull(target, 'target');
   Validate(target);
   fTarget := target;
   InitializeDependencies(fDependencies);
@@ -139,7 +139,7 @@ end;
 procedure TInjectionBase.Inject(const instance: TValue;
   const arguments: array of TValue);
 begin
-  TArgument.CheckNotNull(instance, 'instance');
+  Guard.CheckNotNull(instance, 'instance');
   if fTarget = nil then
   begin
     raise EInjectionException.CreateRes(@SInjectionTargetNeeded);
@@ -234,7 +234,7 @@ end;
 procedure TPropertyInjection.DoInject(const instance: TValue;
   const arguments: array of TValue);
 begin
-  TArgument.CheckTrue(Length(arguments) = 1, SUnexpectedArgumentLength);
+  Guard.CheckTrue(Length(arguments) = 1, SUnexpectedArgumentLength);
   Target.AsProperty.SetValue(instance, arguments[0]);
 end;
 
@@ -295,7 +295,7 @@ end;
 procedure TFieldInjection.DoInject(const instance: TValue;
   const arguments: array of TValue);
 begin
-  TArgument.CheckTrue(Length(arguments) = 1, SUnexpectedArgumentLength);
+  Guard.CheckTrue(Length(arguments) = 1, SUnexpectedArgumentLength);
   Target.AsField.SetValue(instance, arguments[0]);
 end;
 

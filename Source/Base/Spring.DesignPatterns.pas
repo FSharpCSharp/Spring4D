@@ -409,7 +409,7 @@ procedure TObservable<T>.NotifyListeners(callback: TProc<T>);
 var
   listener: T;
 begin
-  TArgument.CheckNotNull(Assigned(callback), 'callback');
+  Guard.CheckNotNull(Assigned(callback), 'callback');
 
   for listener in Listeners do
   begin
@@ -721,7 +721,7 @@ end;
 
 function TClassTypeRegistry<TValue>.TryGetValue(classType: TClass; out value: TValue): Boolean;
 begin
-  TArgument.CheckNotNull(classType, 'classType');
+  Guard.CheckNotNull(classType, 'classType');
 
   Result := fLookup.TryGetValue(classType, value);
   while not Result and (classType.ClassParent <> nil) do

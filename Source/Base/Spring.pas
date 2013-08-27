@@ -151,7 +151,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TArgument'}
+  {$REGION 'Guard'}
 
   ///	<summary>
   ///	  Provides static methods to check arguments and raise argument
@@ -161,7 +161,7 @@ type
   ///	  It's recommended that all arguments of public types and members should
   ///	  be checked.
   ///	</remarks>
-  TArgument = class
+  Guard = record
   strict private
     class procedure DoCheckIndex(const length, index, indexBase: Integer); overload; static; inline;
   private
@@ -236,6 +236,8 @@ type
     ///	</summary>
     class procedure RaiseInvalidEnumArgumentException(const argumentName: string); overload; static; inline;
   end;
+
+  TArgument = Guard deprecated 'Use Guard instead';
 
   {$ENDREGION}
 
@@ -712,7 +714,7 @@ procedure CheckArgumentNotNull(value: Pointer; const argumentName: string);
 begin
   if not Assigned(value) then
   begin
-    TArgument.RaiseArgumentNullException(argumentName);
+    Guard.RaiseArgumentNullException(argumentName);
   end;
 end;
 
@@ -756,57 +758,56 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TArgument'}
+{$REGION 'Guard'}
 
-class procedure TArgument.DoCheckArrayIndex(const length, index: Integer);
+class procedure Guard.DoCheckArrayIndex(const length, index: Integer);
 begin
   DoCheckIndex(length, index, 0);
 end;
 
-class procedure TArgument.DoCheckArrayRange(const length, startIndex,
+class procedure Guard.DoCheckArrayRange(const length, startIndex,
   count: Integer);
 begin
-  TArgument.CheckRange(length, startIndex, count, 0);
+  CheckRange(length, startIndex, count, 0);
 end;
 
-class procedure TArgument.DoCheckStringIndex(const length, index: Integer);
+class procedure Guard.DoCheckStringIndex(const length, index: Integer);
 begin
   DoCheckIndex(length, index, 1);
 end;
 
-class procedure TArgument.DoCheckStringRange(const length, startIndex,
+class procedure Guard.DoCheckStringRange(const length, startIndex,
   count: Integer);
 begin
-  TArgument.CheckRange(length, startIndex, count, 1);
+  CheckRange(length, startIndex, count, 1);
 end;
 
-class procedure TArgument.DoCheckIndex(const length, index, indexBase: Integer);
+class procedure Guard.DoCheckIndex(const length, index, indexBase: Integer);
 const
   IndexArgName = 'index';
 begin
   if (index < indexBase) or (index > length + indexBase - 1) then
   begin
-    TArgument.RaiseArgumentOutOfRangeException(IndexArgName);
+    RaiseArgumentOutOfRangeException(IndexArgName);
   end;
 end;
 
-class procedure TArgument.CheckRange(const length, startIndex,
+class procedure Guard.CheckRange(const length, startIndex,
   count, indexBase: Integer);
 const
   StartIndexArgName = 'startIndex';
   CountArgName = 'count';
 begin
-  TArgument.CheckRange(
-    (startIndex >= indexBase) and (startIndex < indexBase + length),
+  CheckRange((startIndex >= indexBase) and (startIndex < indexBase + length),
     StartIndexArgName);
-  TArgument.CheckRange(count >= 0, CountArgName);
+  CheckRange(count >= 0, CountArgName);
   if count > 0 then
   begin
-    TArgument.CheckRange(count <= indexBase + length - startIndex, CountArgName);
+    CheckRange(count <= indexBase + length - startIndex, CountArgName);
   end;
 end;
 
-class procedure TArgument.CheckRange<T>(const buffer: array of T;
+class procedure Guard.CheckRange<T>(const buffer: array of T;
   const index: Integer);
 begin
   if (index < 0) or (index >= Length(buffer)) then
@@ -815,13 +816,13 @@ begin
   end;
 end;
 
-class procedure TArgument.CheckRange<T>(const buffer: array of T;
+class procedure Guard.CheckRange<T>(const buffer: array of T;
   const startIndex, count: Integer);
 begin
   DoCheckArrayRange(Length(buffer), startIndex, count);
 end;
 
-class procedure TArgument.CheckTrue(condition: Boolean;
+class procedure Guard.CheckTrue(condition: Boolean;
   const msg: string);
 begin
   if not condition then
@@ -830,7 +831,7 @@ begin
   end;
 end;
 
-class procedure TArgument.CheckFalse(condition: Boolean;
+class procedure Guard.CheckFalse(condition: Boolean;
   const msg: string);
 begin
   if condition then
@@ -839,7 +840,7 @@ begin
   end;
 end;
 
-class procedure TArgument.CheckInheritsFrom(const checkclazz, clazz: TClass;
+class procedure Guard.CheckInheritsFrom(const checkclazz, clazz: TClass;
   const parameterName: string);
 begin
   Assert(Assigned(checkclazz));
@@ -852,7 +853,7 @@ begin
   end;
 end;
 
-class procedure TArgument.CheckInheritsFrom(obj: TObject; const clazz: TClass;
+class procedure Guard.CheckInheritsFrom(obj: TObject; const clazz: TClass;
   const parameterName: string);
 begin
   if Assigned(obj) then
@@ -861,59 +862,59 @@ begin
   end;
 end;
 
-class procedure TArgument.CheckNotNull(condition: Boolean;
+class procedure Guard.CheckNotNull(condition: Boolean;
   const parameterName: string);
 begin
   if not condition then
   begin
-    TArgument.RaiseArgumentNullException(parameterName);
+    RaiseArgumentNullException(parameterName);
   end;
 end;
 
-class procedure TArgument.CheckNotNull(p: Pointer; const argumentName: string);
+class procedure Guard.CheckNotNull(p: Pointer; const argumentName: string);
 begin
-  TArgument.CheckNotNull(Assigned(p), argumentName);
+  CheckNotNull(Assigned(p), argumentName);
 end;
 
-class procedure TArgument.CheckNotNull(const intf: IInterface;
+class procedure Guard.CheckNotNull(const intf: IInterface;
   const argumentName: string);
 begin
-  TArgument.CheckNotNull(Assigned(intf), argumentName);
+  CheckNotNull(Assigned(intf), argumentName);
 end;
 
-class procedure TArgument.CheckNotNull(obj: TObject;
+class procedure Guard.CheckNotNull(obj: TObject;
   const argumentName: string);
 begin
-  TArgument.CheckNotNull(Assigned(obj), argumentName);
+  CheckNotNull(Assigned(obj), argumentName);
 end;
 
-class procedure TArgument.CheckNotNull<T>(const value: T;
+class procedure Guard.CheckNotNull<T>(const value: T;
   const argumentName: string);
 begin
   if IsNullReference(value, TypeInfo(T)) then
   begin
-    TArgument.RaiseArgumentNullException(argumentName);
+    RaiseArgumentNullException(argumentName);
   end;
 end;
 
-class procedure TArgument.CheckEnum<T>(const value: T;
+class procedure Guard.CheckEnum<T>(const value: T;
   const argumentName: string);
 var
   intValue: Integer;
 begin
   intValue := 0;
   Move(value, intValue, SizeOf(T));
-  TArgument.CheckEnum<T>(intValue, argumentName);
+  CheckEnum<T>(intValue, argumentName);
 end;
 
-class procedure TArgument.CheckEnum<T>(const value: Integer;
+class procedure Guard.CheckEnum<T>(const value: Integer;
   const argumentName: string);
 var
   typeInfo: PTypeInfo;
   data: PTypeData;
 begin
   typeInfo := System.TypeInfo(T);
-  TArgument.CheckTypeKind(typeInfo, [tkEnumeration], 'T');
+  CheckTypeKind(typeInfo, [tkEnumeration], 'T');
 
   data := GetTypeData(typeInfo);
   Assert(Assigned(data), 'data must not be nil.');
@@ -925,77 +926,77 @@ begin
   end;
 end;
 
-class procedure TArgument.CheckRange(condition: Boolean;
+class procedure Guard.CheckRange(condition: Boolean;
   const argumentName: string);
 begin
   if not condition then
   begin
-    TArgument.RaiseArgumentOutOfRangeException(argumentName);
+    RaiseArgumentOutOfRangeException(argumentName);
   end;
 end;
 
-class procedure TArgument.CheckRange(const buffer: array of Byte;
+class procedure Guard.CheckRange(const buffer: array of Byte;
   const startIndex, count: Integer);
 begin
-  TArgument.DoCheckArrayRange(Length(buffer), startIndex, count);
+  DoCheckArrayRange(Length(buffer), startIndex, count);
 end;
 
-class procedure TArgument.CheckRange(const buffer: array of Char;
+class procedure Guard.CheckRange(const buffer: array of Char;
   const startIndex, count: Integer);
 begin
-  TArgument.DoCheckArrayRange(Length(buffer), startIndex, count);
+  DoCheckArrayRange(Length(buffer), startIndex, count);
 end;
 
-class procedure TArgument.CheckRange(const buffer: array of Byte;
+class procedure Guard.CheckRange(const buffer: array of Byte;
   const index: Integer);
 begin
-  TArgument.DoCheckArrayIndex(Length(buffer), index);
+  DoCheckArrayIndex(Length(buffer), index);
 end;
 
-class procedure TArgument.CheckRange(const buffer: array of Char;
+class procedure Guard.CheckRange(const buffer: array of Char;
   const index: Integer);
 begin
-  TArgument.DoCheckArrayIndex(Length(buffer), index);
+  DoCheckArrayIndex(Length(buffer), index);
 end;
 
-class procedure TArgument.CheckRange(const s: string; const index: Integer);
+class procedure Guard.CheckRange(const s: string; const index: Integer);
 begin
-  TArgument.DoCheckStringIndex(Length(s), index);
+  DoCheckStringIndex(Length(s), index);
 end;
 
-class procedure TArgument.CheckRange(const s: string; const startIndex,
+class procedure Guard.CheckRange(const s: string; const startIndex,
   count: Integer);
 begin
-  TArgument.DoCheckStringRange(Length(s), startIndex, count);
+  DoCheckStringRange(Length(s), startIndex, count);
 end;
 
-class procedure TArgument.CheckRange(const s: WideString; const index: Integer);
+class procedure Guard.CheckRange(const s: WideString; const index: Integer);
 begin
-  TArgument.DoCheckStringIndex(Length(s), index);
+  DoCheckStringIndex(Length(s), index);
 end;
 
-class procedure TArgument.CheckRange(const s: WideString; const startIndex,
+class procedure Guard.CheckRange(const s: WideString; const startIndex,
   count: Integer);
 begin
-  TArgument.DoCheckStringRange(Length(s), startIndex, count);
+  DoCheckStringRange(Length(s), startIndex, count);
 end;
 
-class procedure TArgument.CheckRange(const s: RawByteString;
+class procedure Guard.CheckRange(const s: RawByteString;
   const index: Integer);
 begin
-  TArgument.DoCheckStringIndex(Length(s), index);
+  DoCheckStringIndex(Length(s), index);
 end;
 
-class procedure TArgument.CheckRange(const s: RawByteString; const startIndex,
+class procedure Guard.CheckRange(const s: RawByteString; const startIndex,
   count: Integer);
 begin
-  TArgument.DoCheckStringRange(Length(s), startIndex, count);
+  DoCheckStringRange(Length(s), startIndex, count);
 end;
 
-class procedure TArgument.CheckTypeKind(typeInfo: PTypeInfo;
+class procedure Guard.CheckTypeKind(typeInfo: PTypeInfo;
   const expectedTypeKind: TTypeKind; const argumentName: string);
 begin
-  TArgument.CheckNotNull(typeInfo, argumentName);
+  CheckNotNull(typeInfo, argumentName);
   if typeInfo.Kind <> expectedTypeKind then
   begin
     raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument, [
@@ -1003,10 +1004,10 @@ begin
   end;
 end;
 
-class procedure TArgument.CheckTypeKind(typeInfo: PTypeInfo;
+class procedure Guard.CheckTypeKind(typeInfo: PTypeInfo;
   const expectedTypeKinds: TTypeKinds; const argumentName: string);
 begin
-  TArgument.CheckNotNull(typeInfo, argumentName);
+  CheckNotNull(typeInfo, argumentName);
   if not (typeInfo.Kind in expectedTypeKinds) then
   begin
     raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument, [
@@ -1014,7 +1015,7 @@ begin
   end;
 end;
 
-class function TArgument.IsNullReference(const value; typeInfo: PTypeInfo): Boolean;
+class function Guard.IsNullReference(const value; typeInfo: PTypeInfo): Boolean;
 const
   ReferenceKinds = [
     tkClass, tkMethod, tkInterface, tkClassRef, tkPointer, tkProcedure];
@@ -1029,31 +1030,31 @@ begin
   end;
 end;
 
-class procedure TArgument.RaiseArgumentException(const msg: string);
+class procedure Guard.RaiseArgumentException(const msg: string);
 begin
   raise EArgumentException.Create(msg);
 end;
 
-class procedure TArgument.RaiseArgumentNullException(
+class procedure Guard.RaiseArgumentNullException(
   const argumentName: string);
 begin
   raise EArgumentNullException.CreateResFmt(
     @SArgumentNullException, [argumentName]);
 end;
 
-class procedure TArgument.RaiseArgumentOutOfRangeException(
+class procedure Guard.RaiseArgumentOutOfRangeException(
   const argumentName: string);
 begin
   raise EArgumentOutOfRangeException.CreateResFmt(
     @SArgumentOutOfRangeException, [argumentName]);
 end;
 
-class procedure TArgument.RaiseArgumentFormatException(const argumentName: string);
+class procedure Guard.RaiseArgumentFormatException(const argumentName: string);
 begin
   raise EFormatException.CreateResFmt(@SInvalidArgumentFormat, [argumentName]);
 end;
 
-class procedure TArgument.RaiseInvalidEnumArgumentException(
+class procedure Guard.RaiseInvalidEnumArgumentException(
   const argumentName: string);
 begin
   raise EInvalidEnumArgumentException.CreateResFmt(
@@ -1223,7 +1224,7 @@ end;
 
 constructor TLazy<T>.Create(const valueFactory: TFunc<T>);
 begin
-  TArgument.CheckNotNull(Assigned(valueFactory), 'valueFactory');
+  Guard.CheckNotNull(Assigned(valueFactory), 'valueFactory');
 
   inherited Create;
   fValueFactory := valueFactory;

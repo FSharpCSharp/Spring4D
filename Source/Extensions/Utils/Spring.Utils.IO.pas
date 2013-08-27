@@ -925,7 +925,7 @@ const
     tymed: LongInt($FFFFFFFF)
   );
 begin
-  TArgument.CheckNotNull(dataObject, 'dataObject');
+  Guard.CheckNotNull(dataObject, 'dataObject');
 
   OleCheck(dataObject.GetData(f, medium));
   handle := medium.hGlobal;
@@ -945,7 +945,7 @@ const
     tymed: LongInt($FFFFFFFF)
   );
 begin
-  TArgument.CheckNotNull(list, 'list');
+  Guard.CheckNotNull(list, 'list');
 
   count := DragQueryFile(dropHandle, $FFFFFFFF, nil, 0);
   try
@@ -1949,7 +1949,7 @@ end;
 
 procedure TFileSearchWorker.Initialize(const collections: IEnumerable<IFileEnumerable>);
 begin
-//  TArgument.CheckNotNull(collections, 'collections');
+//  Guard.CheckNotNull(collections, 'collections');
   fCollections := collections;
 end;
 

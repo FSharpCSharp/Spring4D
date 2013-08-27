@@ -445,7 +445,7 @@ end;
 
 constructor TBootstrapComponent.Create(const nameService: INameService);
 begin
-  TArgument.CheckNotNull(nameService, 'nameService');
+  Guard.CheckNotNull(nameService, 'nameService');
   inherited Create;
   fNameService := nameService;
 end;
@@ -453,8 +453,8 @@ end;
 constructor TBootstrapComponent.Create(const nameService: INameService;
   ageService: TAgeServiceBase);
 begin
-  TArgument.CheckNotNull(nameService, 'nameService');
-  TArgument.CheckNotNull(ageService, 'ageService');
+  Guard.CheckNotNull(nameService, 'nameService');
+  Guard.CheckNotNull(ageService, 'ageService');
   inherited Create;
   fNameService := nameService;
   fAgeService := ageService;
@@ -465,7 +465,7 @@ end;
 constructor TPrimitiveComponent.Create(const nameService: INameService;
   integerArg: Integer; const stringArg: string);
 begin
-  TArgument.CheckNotNull(nameService, 'nameService');
+  Guard.CheckNotNull(nameService, 'nameService');
   inherited Create;
   fNameService := nameService;
   fIntegerArg := integerArg;

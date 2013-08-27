@@ -192,7 +192,7 @@ uses
 
 constructor TComponentRegistry.Create(const context: IContainerContext);
 begin
-  TArgument.CheckNotNull(context, 'context');
+  Guard.CheckNotNull(context, 'context');
 
   inherited Create;
   fContainerContext := context;
@@ -264,8 +264,8 @@ var
   models: IList<TComponentModel>;
   serviceName: string;
 begin
-  TArgument.CheckNotNull(model, 'model');
-  TArgument.CheckNotNull(serviceType, 'serviceType');
+  Guard.CheckNotNull(model, 'model');
+  Guard.CheckNotNull(serviceType, 'serviceType');
 
   serviceName := name;
   Validate(model.ComponentTypeInfo, serviceType, serviceName);
@@ -284,7 +284,7 @@ function TComponentRegistry.RegisterComponent(
 var
   componentType: TRttiType;
 begin
-  TArgument.CheckNotNull(componentTypeInfo, 'componentTypeInfo');
+  Guard.CheckNotNull(componentTypeInfo, 'componentTypeInfo');
 
   componentType := fRttiContext.GetType(componentTypeInfo);
   Result := TComponentModel.Create(fContainerContext, componentType);
@@ -299,7 +299,7 @@ end;
 
 function TComponentRegistry.FindOne(componentType: PTypeInfo): TComponentModel;
 begin
-  TArgument.CheckNotNull(componentType, 'componentType');
+  Guard.CheckNotNull(componentType, 'componentType');
 
   Result := fModels.FirstOrDefault(
     function(const model: TComponentModel): Boolean
@@ -318,7 +318,7 @@ function TComponentRegistry.FindAll(
 var
   models: IList<TComponentModel>;
 begin
-  TArgument.CheckNotNull(serviceType, 'serviceType');
+  Guard.CheckNotNull(serviceType, 'serviceType');
 
   if fServiceTypeMappings.TryGetValue(serviceType, models) then
   begin
@@ -346,7 +346,7 @@ end;
 
 function TComponentRegistry.HasService(serviceType: PTypeInfo): Boolean;
 begin
-  TArgument.CheckNotNull(serviceType, 'serviceType');
+  Guard.CheckNotNull(serviceType, 'serviceType');
 
   Result := fServiceTypeMappings.ContainsKey(serviceType);
 end;
@@ -361,7 +361,7 @@ function TComponentRegistry.HasService(serviceType: PTypeInfo;
 var
   model: TComponentModel;
 begin
-  TArgument.CheckNotNull(serviceType, 'serviceType');
+  Guard.CheckNotNull(serviceType, 'serviceType');
 
   Result := fServiceNameMappings.TryGetValue(name, model) and
     model.HasService(serviceType);
@@ -387,8 +387,8 @@ end;
 constructor TRegistration.Create(const registry: IComponentRegistry;
   componentType: PTypeInfo);
 begin
-  TArgument.CheckNotNull(registry, 'registry');
-  TArgument.CheckNotNull(componentType, 'componentType');
+  Guard.CheckNotNull(registry, 'registry');
+  Guard.CheckNotNull(componentType, 'componentType');
 {$IFNDEF DELPHIXE_UP}
   fRegistry := registry as TComponentRegistry;
 {$ELSE}
@@ -686,7 +686,7 @@ end;
 function TRegistrationManager.RegisterComponent(
   componentType: PTypeInfo): TRegistration;
 begin
-  TArgument.CheckNotNull(componentType, 'componentType');
+  Guard.CheckNotNull(componentType, 'componentType');
   Result := TRegistration.Create(fRegistry, componentType);
 end;
 
