@@ -29,7 +29,7 @@ type
     class procedure SetValue(AProp: TRttiProperty; const AInstance, AValue: TValue); overload;
     class procedure SetValue(AField: TRttiField; const AInstance, AValue: TValue); overload;
     class function GetValue(AProp: TRttiProperty; const AInstance: TValue): TValue;
-
+    class function GetPropertyByName(const APropName: string; ARttiType: TRttiType): TRttiProperty;
     class function CreateType(ATypeInfo: PTypeInfo): TObject; overload;
 
     class procedure RegisterConstructor(ATypeInfo: PTypeInfo; AMethod: TConstructorMethod);
@@ -97,6 +97,20 @@ end;
 class function TSvRttiInfo.GetPackages: TArray<TRttiPackage>;
 begin
   Result := FCtx.GetPackages;
+end;
+
+class function TSvRttiInfo.GetPropertyByName(const APropName: string; ARttiType: TRttiType): TRttiProperty;
+var
+  LProp: TRttiProperty;
+begin
+  for LProp in ARttiType.GetProperties do
+  begin
+    if SameText(APropName, LProp.Name) then
+    begin
+      Exit(LProp);
+    end;
+  end;
+  Result := nil;
 end;
 
 class function TSvRttiInfo.GetType(AClass: TClass): TRttiType;

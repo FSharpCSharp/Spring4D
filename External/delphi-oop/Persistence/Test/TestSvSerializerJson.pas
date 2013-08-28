@@ -43,6 +43,13 @@ type
     property Name: string read FName write FName;
   end;
 
+  TSurName = class(TName)
+  private
+    FSurName: string;
+  public
+    property SurName: string read FSurName write FSurName;
+  end;
+
   TRegisterConstructor = class
   private
     FItems: TObjectList<TName>;
@@ -369,6 +376,8 @@ type
   public
     procedure SetUp; override;
     procedure TearDown; override;
+
+    property Serializer: TSvSerializer read FSerializer;
     property SerializerType: TSvSerializeFormat read FSerializerType write FSerializerType;
   protected
     FILE_SERIALIZE: string;
@@ -389,6 +398,9 @@ type
     procedure TestRegisteredConstructor();
     procedure TestInterfaceList();
     procedure Test_ClassMethods();
+    procedure TestNewPropertyAdded();
+    procedure SerializeListOnly();
+    procedure DateSupportTest();
   end;
 
   TestTSvSuperJsonSerializer = class(TestTSvJsonSerializerFactory)
@@ -401,6 +413,8 @@ type
   public
     procedure SetUp; override;
     procedure TearDown; override;
+  published
+    procedure DeserializeFromXMLString();
   end;
 
 implementation
@@ -482,6 +496,72 @@ end;
 procedure TDemoObj.SetName(const Value: string);
 begin
   FName := Value;
+end;
+
+type
+  TDateBean = class
+  private
+    FCurrentDate: TDate;
+    FCurrentDateTime: TDateTime;
+  public
+    property CurrentDate: TDate read FCurrentDate write FCurrentDate;
+    property CurrentDateTime: TDateTime read FCurrentDateTime write FCurrentDateTime;
+  end;
+
+procedure TestTSvJsonSerializerFactory.DateSupportTest;
+var
+  LBean: TDateBean;
+  LNow: TDateTime;
+  LOutputString: string;
+begin
+  LBean := TDateBean.Create;
+  try
+    LNow := EncodeDateTime(2012,1,1,12,0,0,0);
+    LBean.CurrentDate := Today;
+    LBean.CurrentDateTime := LNow;
+
+    LOutputString := '';
+    Serializer.SerializeObject(LBean, LOutputString, Serializer.SerializeFormat);
+    CheckTrue(LOutputString <> '');
+    CheckTrue(Pos('2012-01-01 12:00:00', LOutputString) > 1);
+  finally
+    LBean.Free;
+  end;
+
+  LBean := TDateBean.Create;
+  try
+    Serializer.DeSerializeObject(LBean, LOutputString, Serializer.SerializeFormat);
+    CheckTrue(SameDate(Today, LBean.CurrentDate));
+    CheckTrue(SameDateTime(LNow, LBean.CurrentDateTime) );
+  finally
+    LBean.Free;
+  end;
+end;
+
+procedure TestTSvJsonSerializerFactory.SerializeListOnly;
+var
+  LList: TObjectList<TDummy>;
+  LOutput: string;
+begin
+  LList := TObjectList<TDummy>.Create(True);
+  try
+    LList.Add(TDummy.Create('Foobar'));
+
+    FSerializer.AddObject('', LList);
+    LOutput := '';
+    FSerializer.Serialize(LOutput, TEncoding.UTF8);
+    CheckTrue(LOutput <> '');
+
+    LList.Free;
+    LList := TObjectList<TDummy>.Create(True);
+    FSerializer.RemoveObject('');
+    FSerializer.AddObject('', LList);
+    FSerializer.DeSerialize(LOutput, TEncoding.UTF8);
+    CheckEquals(1, LList.Count);
+    CheckEquals('Foobar', LList[0].Dummy);
+  finally
+    LList.Free;
+  end;
 end;
 
 procedure TestTSvJsonSerializerFactory.SetUp;
@@ -763,6 +843,29 @@ begin
     CheckEquals(10, obj.InvData.RecordCount);
   finally
     obj.Free;
+  end;
+end;
+
+procedure TestTSvJsonSerializerFactory.TestNewPropertyAdded;
+var
+  LName: TName;
+  LSurname: TSurName;
+  LOutput: string;
+begin
+  LName := TName.Create('Bob');
+  LSurname := TSurName.Create('John');
+  try
+    LSurname.SurName := 'Marley';
+    LOutput := '';
+    TSvSerializer.SerializeObject(LName, LOutput, SerializerType);
+    CheckTrue(LOutput <> '');
+
+    TSvSerializer.DeSerializeObject(LSurname, LOutput, SerializerType);
+    CheckEquals('Bob', LSurname.Name);
+    CheckEquals('Marley', LSurname.SurName);
+  finally
+    LName.Free;
+    LSurname.Free;
   end;
 end;
 
@@ -1410,6 +1513,53 @@ begin
 end;
 
 { TestTSvNativeXMLSerializer }
+
+type
+  TAsmuo = class
+  private
+    FASM_ID: Integer;
+    FASM_VARDAS: string;
+    FASM_PAVARDE: string;
+  public
+    property ASM_ID: Integer read FASM_ID write FASM_ID;
+    property ASM_VARDAS: string read FASM_VARDAS write FASM_VARDAS;
+    property ASM_PAVARDE: string read FASM_PAVARDE write FASM_PAVARDE;
+  end;
+
+procedure TestTSvNativeXMLSerializer.DeserializeFromXMLString;
+var
+  LAsmenys: TObjectList<TAsmuo>;
+const
+  ASMENYS_XML: string = '<?xml version = ''1.0'' encoding=''UTF-8'' ?> '+
+  '<ASMENYS> '+
+  '<ASMUO> '+
+  '	<ASM_ID>111</ASM_ID> '+
+  '	<ASM_VARDAS>VARDENĖ</ASM_VARDAS> '+
+  '	<ASM_PAVARDE>PAVARDENĖ</ASM_PAVARDE> '+
+  '</ASMUO> '+
+  '<ASMUO> '+
+  '	<ASM_ID>112</ASM_ID> '+
+  '	<ASM_VARDAS>VARDENIS</ASM_VARDAS> '+
+  '	<ASM_PAVARDE>PAVARDENIS</ASM_PAVARDE> '+
+  '</ASMUO> '+
+  '</ASMENYS> ';
+begin
+  LAsmenys := TObjectList<TAsmuo>.Create(True);
+  try
+    TSvSerializer.DeSerializeObject(LAsmenys, ASMENYS_XML, sstNativeXML);
+    CheckEquals(2, LAsmenys.Count);
+    CheckEquals(111, LAsmenys[0].ASM_ID);
+    CheckEquals(112, LAsmenys[1].ASM_ID);
+
+    CheckEquals('VARDENĖ', LAsmenys[0].ASM_VARDAS);
+    CheckEquals('VARDENIS', LAsmenys[1].ASM_VARDAS);
+
+    CheckEquals('PAVARDENĖ', LAsmenys[0].ASM_PAVARDE);
+    CheckEquals('PAVARDENIS', LAsmenys[1].ASM_PAVARDE);
+  finally
+    LAsmenys.Free;
+  end;
+end;
 
 procedure TestTSvNativeXMLSerializer.SetUp;
 begin

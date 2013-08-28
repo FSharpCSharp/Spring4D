@@ -42,6 +42,10 @@ type
     FLogger: TLogLogger;
   protected
     function GetLogLevel(ASvLevel: TSvLogLevel): TLogLevel;
+    function ToSvLogLevel(ALevel: TLogLevel): TSvLogLevel;
+
+    function GetLevel: TSvLogLevel; override;
+    procedure SetLevel(const Value: TSvLogLevel); override;
   public
     procedure Log(ALevel: TSvLogLevel; const AMessage: string; AException: Exception = nil); override;
 
@@ -72,6 +76,11 @@ begin
   inherited Destroy;
 end;
 
+function TLog4DLogger.GetLevel: TSvLogLevel;
+begin
+  Result := ToSvLogLevel(FLogger.Level);
+end;
+
 function TLog4DLogger.GetLogLevel(ASvLevel: TSvLogLevel): TLogLevel;
 begin
   Result := LOG_LEVELS[ASvLevel];
@@ -80,6 +89,23 @@ end;
 procedure TLog4DLogger.Log(ALevel: TSvLogLevel; const AMessage: string; AException: Exception = nil);
 begin
   FLogger.Log(GetLogLevel(ALevel), AMessage, AException);
+end;
+
+procedure TLog4DLogger.SetLevel(const Value: TSvLogLevel);
+begin
+  FLogger.Level := GetLogLevel(Value);
+end;
+
+function TLog4DLogger.ToSvLogLevel(ALevel: TLogLevel): TSvLogLevel;
+begin
+  for Result := Low(LOG_LEVELS) to High(LOG_LEVELS) do
+  begin
+    if (LOG_LEVELS[Result] = ALevel) then
+    begin
+      Exit;
+    end;
+  end;
+  Result := TSvLogLevel.Off;
 end;
 
 procedure RegisterLogLevels();

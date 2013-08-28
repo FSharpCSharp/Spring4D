@@ -98,13 +98,17 @@ end;
 procedure TSvSuperJsonSerializer.BeginDeSerialization(AStream: TStream);
 begin
   inherited;
-  RootObject := TSuperObject.ParseStream(AStream, False);
+  if AStream is TStringStream then
+    RootObject := TSuperObject.ParseString(PWideChar(TStringStream(AStream).DataString), False)
+  else
+    RootObject := TSuperObject.ParseStream(AStream, False);
 end;
 
 procedure TSvSuperJsonSerializer.BeginSerialization;
 begin
   inherited;
-  RootObject := SO();
+  RootObject := nil;
+  //RootObject := SO();
 end;
 
 constructor TSvSuperJsonSerializer.Create(AOwner: TSvSerializer);
@@ -246,8 +250,23 @@ end;
 
 function TSvSuperJsonSerializer.GetValueByName(const AName: string;
   AObject: ISuperObject): ISuperObject;
+var
+  LObj: TSuperTableString;
+  LEntry: TSuperAvlEntry;
 begin
-  Result := AObject.O[AName];
+  Result := nil;
+  LObj := AObject.AsObject;
+
+  if not Assigned(LObj) then
+    Exit;
+
+  for LEntry in LObj do
+  begin
+    if SameText(LEntry.Name, AName) then
+    begin
+      Exit(LEntry.Value);
+    end;
+  end;
 end;
 
 function TSvSuperJsonSerializer.IsArray(AValue: ISuperObject): Boolean;
@@ -288,7 +307,7 @@ end;
 procedure TSvSuperJsonSerializer.ObjectAdd(AObject: ISuperObject; const AName: string;
   const AValue: ISuperObject);
 begin
-  AObject.O[AName] := AValue;
+  AObject.AsObject.O[AName] := AValue;
 end;
 
 function TSvSuperJsonSerializer.SOString(const AValue: string): ISuperObject;

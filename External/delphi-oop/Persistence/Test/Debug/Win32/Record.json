@@ -1,8 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
-<root>
+<>
 	<TMyRec.Main>
 		<FString type="string">Some unicode Português &quot; Русский/ Ελληνικά</FString>
 		<FInt type="number">2147483647</FInt>
 		<FDouble type="number">15865874.1569854</FDouble>
 	</TMyRec.Main>
-</root>
+</>

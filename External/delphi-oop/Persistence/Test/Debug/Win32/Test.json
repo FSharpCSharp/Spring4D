@@ -1,8 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
-<root>
+<>
 	<TDemoObj.Test>
 		<Name type="string">Some unicode Português &quot; Русский/ Ελληνικά</Name>
 		<ASet type="string">[deTwo,deThree]</ASet>
-		<Value type="string">15865874,1569854</Value>
+		<Value type="string">15865874.1569854</Value>
 	</TDemoObj.Test>
-</root>
+</>

@@ -76,6 +76,7 @@ type
   protected
     function GetViewComponent(const AComponentName: string): TValue; virtual;
     procedure InjectViewProperties(); virtual;
+    procedure BindMethods(); virtual;
     /// <remarks>
     /// Descendants must override and write initialization code here
     /// </remarks>
@@ -96,7 +97,7 @@ type
     property AutoFreeModel: Boolean read GetAutoFreeModel write SetAutoFreeModel;
 
     property Model: TModel read GetModel;
-
+    property View: TObject read FView;
   end;
 
   TControllerFactory<TModel: class> = class
@@ -115,6 +116,7 @@ implementation
 uses
   SvBindings
   ,SysUtils
+  ,TypInfo
   ;
 
 type
@@ -129,14 +131,49 @@ begin
   Result := TDataBindManager.AddBinding(ASource, ASourcePropertyName, ATarget, ATargetPropertyName, ABindingMode, AConverter);
 end;
 
+procedure TBaseController<TModel>.BindMethods;
+var
+  LMethod: TRttiMethod;
+  LControlProp: TRttiProperty;
+  LType: TRttiType;
+  LAttr: BindAttribute;
+  LMethodAttr: BindEventAttribute;
+  LVal: TValue;
+  LNewMethod: TMethod;
+  LNewValue: TValue;
+begin
+  LType := TRttiContext.Create.GetType(Self.ClassInfo);
+  for LMethod in LType.GetMethods do
+  begin
+    LAttr := TDataBindManager.GetBinderAttribute(LMethod);
+    if Assigned(LAttr) and (LAttr is BindEventAttribute) then
+    begin
+      LMethodAttr := BindEventAttribute(LAttr);
+      LVal := TDataBindManager.GetPropertyValueByName(Self, LMethodAttr.ControlName);
+      if LVal.IsObject then
+      begin
+        LControlProp := TRttiContext.Create.GetType(LVal.TypeInfo).GetProperty(LMethodAttr.EventName);
+        if Assigned(LControlProp) then
+        begin
+          LNewMethod.Code := LMethod.CodeAddress;
+          LNewMethod.Data := Self;
+          TValue.Make(@LNewMethod, LControlProp.PropertyType.Handle, LNewValue);
+          LControlProp.SetValue(LVal.AsObject, LNewValue);
+        end;
+      end;
+    end;
+  end;
+end;
+
 constructor TBaseController<TModel>.Create(AModel: TModel; AView: TObject);
 begin
   inherited Create();
   FModel := AModel;
   FView := AView;
   InjectViewProperties();
-  TDataBindManager.BindView(Self, AModel);
   Initialize();
+  TDataBindManager.BindView(Self, AModel);
+  BindMethods();
 end;
 
 destructor TBaseController<TModel>.Destroy;

@@ -43,7 +43,9 @@ uses
   SvLogging in '..\SvLogging.pas',
   SvLogging.Log4D in '..\SvLogging.Log4D.pas',
   SvLogging.Log4D.Appenders in '..\SvLogging.Log4D.Appenders.pas',
-  TestSvLoggingLog4D in 'TestSvLoggingLog4D.pas';
+  TestSvLoggingLog4D in 'TestSvLoggingLog4D.pas',
+  TestTSvDB in 'TestTSvDB.pas',
+  SvDB in '..\SvDB.pas';
 
 {$R *.RES}
 
@@ -56,6 +58,7 @@ begin
     with TextTestRunner.RunRegisteredTests do
       Free
   else
-    GUITestRunner.RunRegisteredTests;
+    TSvGUITestRunner.RunRegisteredTests;
+   // GUITestRunner.RunRegisteredTests;
 end.
 

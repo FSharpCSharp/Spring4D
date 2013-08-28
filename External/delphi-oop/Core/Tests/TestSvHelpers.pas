@@ -22,6 +22,7 @@ uses
   jpeg,
   Types,
   DBClient,
+  MidasLib,
   DB;
 
 { TestHelpers }

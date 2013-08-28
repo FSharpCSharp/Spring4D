@@ -59,9 +59,16 @@ type
 
     procedure Log(ALevel: TSvLogLevel; const AMessage: string; AException: Exception = nil);
     procedure LogFmt(ALevel: TSvLogLevel; const AMessage: string; const AParameters: array of const; AException: Exception = nil);
+
+    function GetLevel: TSvLogLevel;
+    procedure SetLevel(const Value: TSvLogLevel);
+    property Level: TSvLogLevel read GetLevel write SetLevel;
   end;
 
   TSvBaseLogger = class(TInterfacedObject, ISvLogger)
+  protected
+    function GetLevel: TSvLogLevel; virtual; abstract;
+    procedure SetLevel(const Value: TSvLogLevel); virtual; abstract;
   public
     procedure Fatal(const AMessage: string; AException: Exception = nil);
     procedure Error(const AMessage: string; AException: Exception = nil);
@@ -72,11 +79,34 @@ type
 
     procedure Log(ALevel: TSvLogLevel; const AMessage: string; AException: Exception = nil); virtual; abstract;
     procedure LogFmt(ALevel: TSvLogLevel; const AMessage: string; const AParameters: array of const; AException: Exception = nil); virtual;
+
+    property Level: TSvLogLevel read GetLevel write SetLevel;
   end;
 
 
+function Logger(): ISvLogger;
+
+procedure CreateLogger(var ALogger: ISvLogger);
 
 implementation
+
+type
+  ESvLoggerException = class(Exception);
+
+var
+  FLogger: ISvLogger = nil;
+
+function Logger(): ISvLogger;
+begin
+  if not Assigned(FLogger) then
+    raise ESvLoggerException.Create('Logger not created. You must "CreateLogger" before using it.');
+  Result := FLogger;
+end;
+
+procedure CreateLogger(var ALogger: ISvLogger);
+begin
+  FLogger := ALogger;
+end;
 
 { TSvBaseLogger }
 

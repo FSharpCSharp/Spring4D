@@ -217,6 +217,7 @@ type
   public
     function Add(const APath: string; AIncludeTrailingDelimiter: Boolean = True): TPathBuilder;
     function AddFile(const AFilename: string): TPathBuilder;
+    function AddFolder(const AFolderName: string): TPathBuilder;
     function GoUpFolder(AFolderCount: Integer = 1): TPathBuilder;
     function ToString(): string;
     class function Init(): TPathBuilder; static;
@@ -432,6 +433,11 @@ begin
   sPath := IncludeTrailingPathDelimiter(sPath);
   sPath := sPath + AFilename;
   Result := Self;
+end;
+
+function TPathBuilder.AddFolder(const AFolderName: string): TPathBuilder;
+begin
+  Result := Add(AFolderName, True);
 end;
 
 function TPathBuilder.GoUpFolder(AFolderCount: Integer): TPathBuilder;

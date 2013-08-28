@@ -83,6 +83,8 @@ constructor TMemoAppender.Create(const AName: string; const AMemo: TMemo);
 begin
   inherited Create(AName);
   FMemo := AMemo;
+  if Assigned(FMemo) then
+    FMemo.HandleNeeded;
 end;
 
 procedure TMemoAppender.DoAppend(const Message: string);

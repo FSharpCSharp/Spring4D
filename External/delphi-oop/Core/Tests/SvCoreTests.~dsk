@@ -1,65 +1,52 @@
 ﻿[Closed Files]
-File_0=TSourceModule,'D:\Delphi Projects\SVN Projects\sv-utils\Core\SvHelpers.pas',0,1,163,48,180,0,0,,
-File_1=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\SOURCE\RTL\SYS\System.pas',0,1,1,1,11,0,0,,
-File_2=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\source\rtl\common\Rtti.pas',0,1,159,60,180,0,0,,
-File_3=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\source\rtl\common\Generics.Defaults.pas',0,1,71,38,47,0,0,,
-File_4=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\source\rtl\common\Generics.Collections.pas',0,1,1924,26,1946,0,0,,
-File_5=TSourceModule,'D:\Delphi Projects\SVN Projects\sv-utils\Tests\FastMM4Options.inc',0,1,262,17,168,0,0,,
-File_6=TSourceModule,'D:\Delphi Projects\SVN Projects\sv-utils\Tests\TestSvClasses.pas',0,1,1,72,75,0,0,,
-File_7=TSourceModule,'D:\Delphi Projects\SVN Projects\sv-utils\Tests\TestSvHelpers.pas',0,1,61,76,69,0,0,,
-File_8=TSourceModule,'D:\Delphi Projects\Bendri\StringContainers.pas',0,1,424,50,439,0,0,,
-File_9=TSourceModule,'D:\Delphi Projects\SVN Projects\sv-utils\Tests\FastMM4.pas',0,1,1,1,1,0,0,,
+File_0=TSourceModule,'D:\Delphi Projects\SVN Projects\delphi-oop\Core\Externals\log4d\src\Log4D.pas',0,1,2183,62,2205,0,0,,
+File_1=TSourceModule,'D:\Delphi Projects\SVN Projects\delphi-oop\Core\SvTesting.DUnit.pas',0,1,22,75,47,0,0,,
+File_2=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\source\rtl\common\TypInfo.pas',0,1,1068,1,1074,0,0,,
+File_3=TSourceModule,'D:\Delphi Projects\VtDSpPrisk\Sqls.pas',0,1,109,92,152,0,0,,
+File_4=TSourceModule,'D:\Delphi Projects\SVN Projects\delphi-oop\Core\ISQLBuilderVisualizer.pas',0,1,184,66,209,0,0,,
+File_5=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\source\ToolsAPI\DesignIntf.pas',0,1,1150,1,1173,0,0,,
+File_6=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\SOURCE\RTL\SYS\System.pas',0,1,1,1,11,0,0,,
+File_7=TSourceModule,'D:\komponentai\Mano\Visualizers\TColorVisualizer\ColorVisualizer.pas',0,1,35,97,31,0,0,,
+File_8=TSourceModule,'C:\Program Files\Embarcadero\RAD Studio\8.0\source\Visualizers\StringListVisualizer.pas',0,1,156,49,287,0,0,,
+File_9=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\source\ToolsAPI\ToolsAPI.pas',0,1,6965,57,7206,0,0,,
+File_10=TSourceModule,'C:\Program Files\Embarcadero\RAD Studio\8.0\source\Visualizers\DateTimeVisualizer.pas',0,1,1,22,34,0,0,,
+File_11=TSourceModule,'D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\TestTSvSQLBuilder.pas',0,1,4,29,7,0,0,,
+File_12=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\Source\DUnit\src\TestFramework.pas',0,1,1379,1,1403,0,0,,
+File_13=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\source\rtl\common\Classes.pas',0,1,4099,1,4129,0,0,,
+File_14=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\SOURCE\VCL\ComCtrls.pas',0,1,10760,1,10787,0,0,,
+File_15=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\SOURCE\VCL\Forms.pas',0,1,750,40,756,0,0,,
+File_16=TSourceModule,'D:\Delphi Projects\SVN Projects\delphi-oop\Core\SvClasses.pas',0,1,28,47,33,0,0,{{38,2}
+File_17=TSourceModule,'D:\Delphi Projects\SVN Projects\delphi-oop\Core\Externals\log4d\demo\Log4DDemo1.pas',0,1,174,35,91,0,0,,
+File_18=TSourceModule,'D:\Delphi Projects\SVN Projects\delphi-oop\Core\SvLogging.Log4D.pas',0,1,30,85,40,0,0,,
+File_19=TSourceModule,'D:\Delphi Projects\SVN Projects\delphi-oop\Core\SvLogging.pas',0,1,34,85,50,0,0,,
 
 [Modules]
-Module0=D:\Delphi Projects\SVN Projects\sv-utils\Tests\TestSvEvents.pas
-Module1=D:\Delphi Projects\SVN Projects\sv-utils\Core\SvDelegates.pas
-Module2=D:\Delphi Projects\SVN Projects\delphisorcery\Source\Core\DSharp.Core.Events.pas
-Module3=c:\program files\embarcadero\rad studio\8.0\source\rtl\common\TypInfo.pas
-Module4=c:\program files\embarcadero\rad studio\8.0\SOURCE\RTL\SYS\SysUtils.pas
-Module5=D:\Delphi Projects\SVN Projects\sv-utils\Core\SvClasses.pas
-Module6=D:\Delphi Projects\SVN Projects\sv-utils\Core\SvDesignPatterns.pas
-Module7=default.htm
-Module8=D:\Delphi Projects\SVN Projects\sv-utils\Tests\SvCoreTests.dproj
-Module9=D:\Delphi Projects\SVN Projects\sv-utils\Core\SvCollections.Tries.pas
-Module10=D:\Delphi Projects\SVN Projects\sv-utils\Core\SvContainers.pas
-Module11=D:\Delphi Projects\SVN Projects\sv-utils\Tests\TestSvContainers.pas
-Module12=D:\Delphi Projects\SVN Projects\sv-utils\Tests\TestSvDesignPatterns.pas
-Module13=D:\Delphi Projects\SVN Projects\sv-utils\Tests\TestSvThreading.pas
-Module14=D:\Delphi Projects\SVN Projects\sv-utils\Core\SvThreading.pas
-Count=15
+Module0=D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\TestTSvDB.pas
+Module1=D:\Delphi Projects\SVN Projects\delphi-oop\Core\SvLogging.Log4D.Appenders.pas
+Module2=D:\Delphi Projects\SVN Projects\delphi-oop\Core\SvDB.pas
+Module3=default.htm
+Module4=D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\SvCoreTests.dproj
+Module5=D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\TestSvLoggingLog4D.pas
+Module6=D:\Delphi Projects\SVN Projects\delphi-oop\Core\SvDesignPatterns.pas
+Module7=D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\TestSvTesting.pas
+Module8=c:\program files\embarcadero\rad studio\8.0\Source\DUnit\src\GUITestRunner.pas
+Module9=D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\TestSvClasses.pas
+Module10=D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\TestSvDesignPatterns.pas
+Module11=D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\TestSvContainers.pas
+Count=12
 EditWindowCount=1
 
-[D:\Delphi Projects\SVN Projects\sv-utils\Tests\TestSvEvents.pas]
+[D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\TestTSvDB.pas]
 ModuleType=TSourceModule
 FormState=0
 FormOnTop=0
 
-[D:\Delphi Projects\SVN Projects\sv-utils\Core\SvDelegates.pas]
+[D:\Delphi Projects\SVN Projects\delphi-oop\Core\SvLogging.Log4D.Appenders.pas]
 ModuleType=TSourceModule
 FormState=0
 FormOnTop=0
 
-[D:\Delphi Projects\SVN Projects\delphisorcery\Source\Core\DSharp.Core.Events.pas]
-ModuleType=TSourceModule
-FormState=0
-FormOnTop=0
-
-[c:\program files\embarcadero\rad studio\8.0\source\rtl\common\TypInfo.pas]
-ModuleType=TSourceModule
-FormState=0
-FormOnTop=0
-
-[c:\program files\embarcadero\rad studio\8.0\SOURCE\RTL\SYS\SysUtils.pas]
-ModuleType=TSourceModule
-FormState=0
-FormOnTop=0
-
-[D:\Delphi Projects\SVN Projects\sv-utils\Core\SvClasses.pas]
-ModuleType=TSourceModule
-FormState=0
-FormOnTop=0
-
-[D:\Delphi Projects\SVN Projects\sv-utils\Core\SvDesignPatterns.pas]
+[D:\Delphi Projects\SVN Projects\delphi-oop\Core\SvDB.pas]
 ModuleType=TSourceModule
 FormState=0
 FormOnTop=0
@@ -67,42 +54,47 @@ FormOnTop=0
 [default.htm]
 ModuleType=TURLModule
 
-[D:\Delphi Projects\SVN Projects\sv-utils\Tests\SvCoreTests.dproj]
+[D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\SvCoreTests.dproj]
 ModuleType=TBaseProject
 
-[D:\Delphi Projects\SVN Projects\sv-utils\Core\SvCollections.Tries.pas]
+[D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\TestSvLoggingLog4D.pas]
 ModuleType=TSourceModule
 FormState=0
 FormOnTop=0
 
-[D:\Delphi Projects\SVN Projects\sv-utils\Core\SvContainers.pas]
+[D:\Delphi Projects\SVN Projects\delphi-oop\Core\SvDesignPatterns.pas]
 ModuleType=TSourceModule
 FormState=0
 FormOnTop=0
 
-[D:\Delphi Projects\SVN Projects\sv-utils\Tests\TestSvContainers.pas]
+[D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\TestSvTesting.pas]
 ModuleType=TSourceModule
 FormState=0
 FormOnTop=0
 
-[D:\Delphi Projects\SVN Projects\sv-utils\Tests\TestSvDesignPatterns.pas]
+[c:\program files\embarcadero\rad studio\8.0\Source\DUnit\src\GUITestRunner.pas]
+ModuleType=TSourceModule
+FormState=1
+FormOnTop=0
+
+[D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\TestSvClasses.pas]
 ModuleType=TSourceModule
 FormState=0
 FormOnTop=0
 
-[D:\Delphi Projects\SVN Projects\sv-utils\Tests\TestSvThreading.pas]
+[D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\TestSvDesignPatterns.pas]
 ModuleType=TSourceModule
 FormState=0
 FormOnTop=0
 
-[D:\Delphi Projects\SVN Projects\sv-utils\Core\SvThreading.pas]
+[D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\TestSvContainers.pas]
 ModuleType=TSourceModule
 FormState=0
 FormOnTop=0
 
 [EditWindow0]
-ViewCount=15
-CurrentEditView=D:\Delphi Projects\SVN Projects\sv-utils\Tests\TestSvEvents.pas
+ViewCount=12
+CurrentEditView=D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\TestTSvDB.pas
 View0=0
 View1=1
 View2=2
@@ -115,9 +107,6 @@ View8=8
 View9=9
 View10=10
 View11=11
-View12=12
-View13=13
-View14=14
 PercentageSizes=1
 Create=1
 Visible=1
@@ -135,8 +124,8 @@ DockedToMainForm=1
 BorlandEditorCodeExplorer=BorlandEditorCodeExplorer@EditWindow0
 TopPanelSize=0
 LeftPanelSize=1953
-LeftPanelClients=PropertyInspector,StructureView
-LeftPanelData=000008000101000000001D1000000000000001A10700000000000001000000005E0900001100000053747275637475726556696577466F726D0100000000A51C00001100000050726F7065727479496E73706563746F72FFFFFFFF
+LeftPanelClients=StructureView,DockSite4
+LeftPanelData=000008000101000000001D1000000000000001A10700000000000001000000005E0900001100000053747275637475726556696577466F726D0100000000A51C000009000000446F636B5369746534FFFFFFFF
 RightPanelSize=1594
 RightPanelClients=DockSite2,DockSite3
 RightPanelData=000008000101000000001D10000000000000013A060000000000000100000000990D000009000000446F636B53697465320100000000A51C000009000000446F636B5369746533FFFFFFFF
@@ -151,157 +140,124 @@ WelcomePageURL=bds:/default.htm
 
 [View1]
 CustomEditViewType=TEditView
-Module=D:\Delphi Projects\SVN Projects\sv-utils\Tests\SvCoreTests.dpr
-CursorX=74
-CursorY=30
-TopLine=1
+Module=D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\SvCoreTests.dpr
+CursorX=89
+CursorY=37
+TopLine=22
 LeftCol=1
 Elisions=
 Bookmarks=
-EditViewName=D:\Delphi Projects\SVN Projects\sv-utils\Tests\SvCoreTests.dpr
+EditViewName=D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\SvCoreTests.dpr
 
 [View2]
 CustomEditViewType=TEditView
-Module=D:\Delphi Projects\SVN Projects\sv-utils\Tests\TestSvThreading.pas
+Module=c:\program files\embarcadero\rad studio\8.0\Source\DUnit\src\GUITestRunner.pas
 CursorX=46
-CursorY=17
+CursorY=1844
+TopLine=1829
+LeftCol=1
+Elisions=
+Bookmarks=
+EditViewName=c:\program files\embarcadero\rad studio\8.0\Source\DUnit\src\GUITestRunner.pas
+
+[View3]
+CustomEditViewType=TEditView
+Module=D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\TestSvClasses.pas
+CursorX=14
+CursorY=3
 TopLine=1
 LeftCol=1
 Elisions=
 Bookmarks=
-EditViewName=D:\Delphi Projects\SVN Projects\sv-utils\Tests\TestSvThreading.pas
-
-[View3]
-CustomEditViewType=TEditView
-Module=D:\Delphi Projects\SVN Projects\sv-utils\Tests\TestSvDesignPatterns.pas
-CursorX=70
-CursorY=67
-TopLine=21
-LeftCol=1
-Elisions=
-Bookmarks=
-EditViewName=D:\Delphi Projects\SVN Projects\sv-utils\Tests\TestSvDesignPatterns.pas
+EditViewName=D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\TestSvClasses.pas
 
 [View4]
 CustomEditViewType=TEditView
-Module=D:\Delphi Projects\SVN Projects\sv-utils\Core\SvDesignPatterns.pas
-CursorX=38
-CursorY=33
+Module=D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\TestSvLoggingLog4D.pas
+CursorX=61
+CursorY=40
+TopLine=10
+LeftCol=1
+Elisions=
+Bookmarks=
+EditViewName=D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\TestSvLoggingLog4D.pas
+
+[View5]
+CustomEditViewType=TEditView
+Module=D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\TestTSvDB.pas
+CursorX=74
+CursorY=51
 TopLine=19
 LeftCol=1
 Elisions=
 Bookmarks=
-EditViewName=D:\Delphi Projects\SVN Projects\sv-utils\Core\SvDesignPatterns.pas
-
-[View5]
-CustomEditViewType=TEditView
-Module=D:\Delphi Projects\SVN Projects\sv-utils\Tests\TestSvEvents.pas
-CursorX=54
-CursorY=58
-TopLine=25
-LeftCol=1
-Elisions=
-Bookmarks=
-EditViewName=D:\Delphi Projects\SVN Projects\sv-utils\Tests\TestSvEvents.pas
+EditViewName=D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\TestTSvDB.pas
 
 [View6]
 CustomEditViewType=TEditView
-Module=D:\Delphi Projects\SVN Projects\sv-utils\Core\SvDelegates.pas
-CursorX=61
-CursorY=86
-TopLine=72
+Module=D:\Delphi Projects\SVN Projects\delphi-oop\Core\SvDB.pas
+CursorX=5
+CursorY=88
+TopLine=167
 LeftCol=1
-Elisions=
+Elisions={{12,2},{50,13},{'Documentation'}}{{53,4},{57,15},{'Documentation'}}{{60,4},{64,15},{'Documentation'}}{{67,4},{71,15},{'Documentation'}}{{74,4},{78,15},{'Documentation'}}{{81,4},{85,15},{'Documentation'}}{{88,4},{93,15},{'Documentation'}}{{96,4},{102,15},{'Documentation'}}{{105,4},{109,15},{'Documentation'}}{{112,4},{116,15},{'Documentation'}}{{119,4},{123,15},{'Documentation'}}{{126,4},{131,15},{'Documentation'}}{{134,4},{138,15},{'Documentation'}}{{141,4},{145,15},{'Documentation'}}{{148,4},{152,15},{'Documentation'}}{{155,4},{159,15},{'Documentation'}}{{162,4},{166,15},{'Documentation'}}{{169,4},{173,15},{'Documentation'}}{{180,4},{184,15},{'Documentation'}}{{187,4},{191,15},{'Documentation'}}{{194,4},{198,15},{'Documentation'}}
 Bookmarks=
-EditViewName=D:\Delphi Projects\SVN Projects\sv-utils\Core\SvDelegates.pas
+EditViewName=D:\Delphi Projects\SVN Projects\delphi-oop\Core\SvDB.pas
 
 [View7]
 CustomEditViewType=TEditView
-Module=D:\Delphi Projects\SVN Projects\delphisorcery\Source\Core\DSharp.Core.Events.pas
-CursorX=78
-CursorY=55
-TopLine=38
+Module=D:\Delphi Projects\SVN Projects\delphi-oop\Core\SvLogging.Log4D.Appenders.pas
+CursorX=64
+CursorY=30
+TopLine=5
 LeftCol=1
 Elisions=
 Bookmarks=
-EditViewName=D:\Delphi Projects\SVN Projects\delphisorcery\Source\Core\DSharp.Core.Events.pas
+EditViewName=D:\Delphi Projects\SVN Projects\delphi-oop\Core\SvLogging.Log4D.Appenders.pas
 
 [View8]
 CustomEditViewType=TEditView
-Module=c:\program files\embarcadero\rad studio\8.0\source\rtl\common\TypInfo.pas
-CursorX=48
-CursorY=495
-TopLine=544
-LeftCol=1
-Elisions=
-Bookmarks=
-EditViewName=c:\program files\embarcadero\rad studio\8.0\source\rtl\common\TypInfo.pas
-
-[View9]
-CustomEditViewType=TEditView
-Module=D:\Delphi Projects\SVN Projects\sv-utils\Tests\TestSvContainers.pas
-CursorX=27
-CursorY=137
-TopLine=112
-LeftCol=1
-Elisions=
-Bookmarks=
-EditViewName=D:\Delphi Projects\SVN Projects\sv-utils\Tests\TestSvContainers.pas
-
-[View10]
-CustomEditViewType=TEditView
-Module=D:\Delphi Projects\SVN Projects\sv-utils\Core\SvContainers.pas
-CursorX=96
-CursorY=159
+Module=D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\TestSvTesting.pas
+CursorX=18
+CursorY=33
 TopLine=1
 LeftCol=1
 Elisions=
 Bookmarks=
-EditViewName=D:\Delphi Projects\SVN Projects\sv-utils\Core\SvContainers.pas
+EditViewName=D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\TestSvTesting.pas
 
-[View11]
+[View9]
 CustomEditViewType=TEditView
-Module=D:\Delphi Projects\SVN Projects\sv-utils\Core\SvCollections.Tries.pas
-CursorX=75
-CursorY=138
-TopLine=123
-LeftCol=1
-Elisions={{99,60},{114,10},{''}}
-Bookmarks=
-EditViewName=D:\Delphi Projects\SVN Projects\sv-utils\Core\SvCollections.Tries.pas
-
-[View12]
-CustomEditViewType=TEditView
-Module=D:\Delphi Projects\SVN Projects\sv-utils\Core\SvThreading.pas
-CursorX=8
-CursorY=34
-TopLine=11
-LeftCol=1
-Elisions={{91,0},{109,11},{'Doc'}}
-Bookmarks=
-EditViewName=D:\Delphi Projects\SVN Projects\sv-utils\Core\SvThreading.pas
-
-[View13]
-CustomEditViewType=TEditView
-Module=c:\program files\embarcadero\rad studio\8.0\SOURCE\RTL\SYS\SysUtils.pas
-CursorX=55
-CursorY=3909
-TopLine=3887
+Module=D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\TestSvContainers.pas
+CursorX=1
+CursorY=1
+TopLine=43
 LeftCol=1
 Elisions=
 Bookmarks=
-EditViewName=c:\program files\embarcadero\rad studio\8.0\SOURCE\RTL\SYS\SysUtils.pas
+EditViewName=D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\TestSvContainers.pas
 
-[View14]
+[View10]
 CustomEditViewType=TEditView
-Module=D:\Delphi Projects\SVN Projects\sv-utils\Core\SvClasses.pas
-CursorX=56
-CursorY=33
-TopLine=7
+Module=D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\TestSvDesignPatterns.pas
+CursorX=60
+CursorY=15
+TopLine=4
 LeftCol=1
-Elisions={{38,2},{194,13},{'Tuples'}}{{199,0},{346,11},{'Tuples Implementation'}}
+Elisions=
 Bookmarks=
-EditViewName=D:\Delphi Projects\SVN Projects\sv-utils\Core\SvClasses.pas
+EditViewName=D:\Delphi Projects\SVN Projects\delphi-oop\Core\Tests\TestSvDesignPatterns.pas
+
+[View11]
+CustomEditViewType=TEditView
+Module=D:\Delphi Projects\SVN Projects\delphi-oop\Core\SvDesignPatterns.pas
+CursorX=98
+CursorY=104
+TopLine=86
+LeftCol=1
+Elisions=
+Bookmarks=
+EditViewName=D:\Delphi Projects\SVN Projects\delphi-oop\Core\SvDesignPatterns.pas
 
 [Watches]
 Count=0
@@ -560,18 +516,18 @@ Visible=1
 Docked=1
 State=0
 Left=0
-Top=282
+Top=0
 Width=1953
-Height=5010
+Height=4764
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=1953
-ClientHeight=5010
-TBDockHeight=6965
+ClientHeight=4764
+TBDockHeight=6866
 LRDockWidth=1953
 Dockable=1
 StayOnTop=0
-SplitPos=132
+SplitPos=166
 
 [TFileExplorerForm]
 PercentageSizes=1
@@ -918,157 +874,24 @@ LRDockWidth=2714
 Dockable=1
 StayOnTop=0
 
-[Item__6A6C0F8B_01A1_4681_BE6C_415858C81E8F_]
+[DocumentationView]
 PercentageSizes=1
 Create=1
-Visible=0
-Docked=0
+Visible=1
+Docked=1
 State=0
 Left=0
 Top=0
-Width=2745
-Height=2986
-MaxLeft=-5
-MaxTop=-10
-ClientWidth=2661
-ClientHeight=2652
-TBDockHeight=2986
-LRDockWidth=2745
+Width=979
+Height=6719
+MaxLeft=-1
+MaxTop=-1
+ClientWidth=979
+ClientHeight=6719
+TBDockHeight=3448
+LRDockWidth=2380
 Dockable=1
-StayOnTop=0
-
-[Item__0CA5EFB5_542C_498F_A410_F4A5076E35ED_]
-PercentageSizes=1
-Create=1
-Visible=0
-Docked=0
-State=0
-Left=0
-Top=0
-Width=2745
-Height=2986
-MaxLeft=-5
-MaxTop=-10
-ClientWidth=2661
-ClientHeight=2652
-TBDockHeight=2986
-LRDockWidth=2745
-Dockable=1
-StayOnTop=0
-
-[Item__010A724C_3C7B_480B_BF27_8192C32C9C0E_]
-PercentageSizes=1
-Create=1
-Visible=0
-Docked=0
-State=0
-Left=0
-Top=0
-Width=2745
-Height=2986
-MaxLeft=-5
-MaxTop=-10
-ClientWidth=2661
-ClientHeight=2652
-TBDockHeight=2986
-LRDockWidth=2745
-Dockable=1
-StayOnTop=0
-
-[Item__DE4BD091_1D08_4D00_B823_ABD09E9EBFCA_]
-PercentageSizes=1
-Create=1
-Visible=0
-Docked=0
-State=0
-Left=0
-Top=0
-Width=2745
-Height=2986
-MaxLeft=-5
-MaxTop=-10
-ClientWidth=2661
-ClientHeight=2652
-TBDockHeight=2986
-LRDockWidth=2745
-Dockable=1
-StayOnTop=0
-
-[Item__8A0AA136_D1EB_4684_92F3_417CDA72879A_]
-PercentageSizes=1
-Create=1
-Visible=0
-Docked=0
-State=0
-Left=0
-Top=0
-Width=2745
-Height=2986
-MaxLeft=-5
-MaxTop=-10
-ClientWidth=2661
-ClientHeight=2652
-TBDockHeight=2986
-LRDockWidth=2745
-Dockable=1
-StayOnTop=0
-
-[Item__75610DE4_BABE_42A4_930D_C40378349D63_]
-PercentageSizes=1
-Create=1
-Visible=0
-Docked=0
-State=0
-Left=0
-Top=0
-Width=2745
-Height=2986
-MaxLeft=-5
-MaxTop=-10
-ClientWidth=2661
-ClientHeight=2652
-TBDockHeight=2986
-LRDockWidth=2745
-Dockable=1
-StayOnTop=0
-
-[Item__CE401FF6_F956_4BDB_9F54_088BD85F0CF4_]
-PercentageSizes=1
-Create=1
-Visible=0
-Docked=0
-State=0
-Left=0
-Top=0
-Width=2745
-Height=2986
-MaxLeft=-5
-MaxTop=-10
-ClientWidth=2661
-ClientHeight=2652
-TBDockHeight=2986
-LRDockWidth=2745
-Dockable=1
-StayOnTop=0
-
-[Item__C74C7DBB_4D99_4FF4_BABE_F02A005254E6_]
-PercentageSizes=1
-Create=1
-Visible=0
-Docked=0
-State=0
-Left=0
-Top=0
-Width=2745
-Height=2986
-MaxLeft=-5
-MaxTop=-10
-ClientWidth=2661
-ClientHeight=2652
-TBDockHeight=2986
-LRDockWidth=2745
-Dockable=1
-StayOnTop=0
+StayOnTop=1
 
 [BorlandEditorCodeExplorer@EditWindow0]
 PercentageSizes=1
@@ -1090,7 +913,7 @@ Dockable=1
 StayOnTop=0
 
 [DockHosts]
-DockHostCount=4
+DockHostCount=5
 
 [DockSite0]
 HostDockSite=DockBottomPanel
@@ -1187,4 +1010,28 @@ StayOnTop=0
 TabPosition=1
 ActiveTabID=ToolForm
 TabDockClients=ToolForm,TemplateView
+
+[DockSite4]
+HostDockSite=DockLeftPanel
+DockSiteType=1
+PercentageSizes=1
+Create=1
+Visible=1
+Docked=1
+State=0
+Left=0
+Top=282
+Width=1953
+Height=5010
+MaxLeft=-1
+MaxTop=-1
+ClientWidth=1953
+ClientHeight=5010
+TBDockHeight=6965
+LRDockWidth=1953
+Dockable=1
+StayOnTop=0
+TabPosition=1
+ActiveTabID=PropertyInspector
+TabDockClients=PropertyInspector,DocumentationView
 

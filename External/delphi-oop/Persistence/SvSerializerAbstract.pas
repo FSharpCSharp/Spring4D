@@ -96,6 +96,7 @@ type
     function GetValueByName(const AName: string; AObject: T): T; virtual; abstract;
     function EnumerateObject(AObject: T): TArray<TEnumEntry<T>>; virtual; abstract;
     //setters
+    function CreateRootObject(AType: TRttiType): T; virtual;
     function CreateObject(): T; virtual; abstract;
     function CreateArray(): T; virtual; abstract;
     function CreateBoolean(AValue: Boolean): T; virtual; abstract;
@@ -196,6 +197,15 @@ begin
   FOldFormatSettings := FormatSettings;
 end;
 
+function TSvAbstractSerializer<T>.CreateRootObject(AType: TRttiType): T;
+var
+  LEnumMethod: TRttiMethod;
+begin
+  Result := System.Default(T);
+  if not IsTypeEnumerable(AType, LEnumMethod) then
+    Result := CreateObject;
+end;
+
 function TSvAbstractSerializer<T>.DeserializeDataset(AArray: T; var AValue: TValue): Boolean;
 var
   LDst: TDataSet;
@@ -261,6 +271,7 @@ var
   I: Integer;
   LSkip: Boolean;
   LField: TRttiField;
+  LEnumMethod: TRttiMethod;
   LAttrib: SvSerialize;
 begin
   inherited;
@@ -292,7 +303,7 @@ begin
             if IsAssigned(LPair) then
             begin
               LValue := SetValue(LPair, obj, LProp, LProp.PropertyType, LSkip);
-              if not LSkip then
+              if not LSkip and LProp.IsWritable  then
                 TSvRttiInfo.SetValue(LProp, obj, LValue);
             end;
           end;
@@ -313,6 +324,10 @@ begin
                 TSvRttiInfo.SetValue(LField, obj, LValue);
             end;
           end;
+        end
+        else if (IsTypeEnumerable(LType, LEnumMethod)) then
+        begin
+          TryDeserializeContainer(RootObject, obj, LType, LSkip, nil, obj, LSkip);
         end
         else
         begin
@@ -781,7 +796,19 @@ begin
       begin
         Result := CreateString(AFrom.ToString);
       end;
-      tkFloat: Result := CreateDouble(AFrom.AsExtended);
+      tkFloat:
+      begin
+        if (TypeInfo(TDate) = AFrom.TypeInfo) then
+        begin
+          Result := CreateString(DateToStr(AFrom.AsExtended, FFormatSettings));
+        end
+        else if (TypeInfo(TDateTime) = AFrom.TypeInfo)  then
+        begin
+          Result := CreateString(DateTimeToStr(AFrom.AsExtended, FFormatSettings));
+        end
+        else
+          Result := CreateDouble(AFrom.AsExtended);
+      end;
       tkString, tkWChar, tkLString, tkWString, tkChar, tkUString:
         Result := CreateString(AFrom.AsString);
       tkArray, tkDynArray:
@@ -923,11 +950,16 @@ var
   I: Integer;
   LField: TRttiField;
   LAttrib: SvSerialize;
+  LEnumMethod: TRttiMethod;
 begin
   if not obj.IsEmpty and (Assigned(AStream)) then
   begin
     FStream := AStream;
     LType := TSvRttiInfo.GetType(obj);
+
+    if not IsAssigned(RootObject) then
+      RootObject := CreateRootObject(LType);
+
     //create main object
     if AKey = '' then
     begin
@@ -935,6 +967,8 @@ begin
     end
     else
     begin
+      if not IsAssigned(RootObject) then
+        RootObject := CreateObject();
       LObject := CreateObject;
       ObjectAdd(RootObject, GetObjectUniqueName(AKey, obj), LObject);
     end;
@@ -962,6 +996,10 @@ begin
           LPropName := LField.Name;
           ObjectAdd(LObject, LPropName, GetValue(LValue, TRttiProperty(LField)));
         end;
+      end
+      else if IsTypeEnumerable(LType, LEnumMethod) then
+      begin
+        RootObject := GetValue(obj, nil);
       end
       else
       begin
@@ -999,10 +1037,11 @@ begin
     LCurrProp := AType.GetProperty(LEnumerator[i].Key);
     if Assigned(LCurrProp) then
     begin
-      if IsTransient(LCurrProp) then
+      if IsTransient(LCurrProp) or (not LCurrProp.IsWritable) then
       begin
         Continue;
       end;
+
       LCurrProp.SetValue(GetRawPointer(AValue), SetValue(LEnumerator[i].Value, AValue, LCurrProp,
         LCurrProp.PropertyType, ASkip));
     end;
@@ -1053,8 +1092,10 @@ begin
     end
     else
     begin
-      Skip := True;
-      PostError('Unsupported value type: ' + GetTypeName( System.TypeInfo(T)));
+      //try get value as string and convert it to corresponding type
+      Result := DoSetFromString(AFrom, AType, Skip);
+     // if Skip then
+     //   PostError('Unsupported value type: ' + GetTypeName( System.TypeInfo(T)));
     end;
   end;
 end;

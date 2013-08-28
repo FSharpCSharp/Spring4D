@@ -10,7 +10,10 @@ uses
 type
   TDelphiUnitCodeGenerator = class(TAbstractCodeGenerator)
   private
-    FBuilder: TStringBuilder;
+    FIntfBuilder: TStringBuilder;
+    FImplBuilder: TStringBuilder;
+    FUnitPrefix: string;
+    FUseNullableTypes: Boolean;
   protected
     function AddTypeAttribute(const AAtributeText: string): TStringBuilder; virtual;
     function AddClassAttribute(const AAtributeText: string): TStringBuilder; virtual;
@@ -23,13 +26,19 @@ type
     function GetPrivateFieldName(AColumnData: TColumnData): string; virtual;
     function GetColumnAttributeText(AColumnData: TColumnData): string; virtual;
     function GetColumnProperties(AColumnData: TColumnData): string; virtual;
+    function GetColumnTypeName(AColumnData: TColumnData): string; virtual;
 
     function DoGenerate(AEntityData: TEntityModelData): string; override;
   public
     constructor Create(); virtual;
     destructor Destroy; override;
 
+    function GetUnitName(AEntityData: TEntityModelData): string;
+
     function Generate(AEntityData: TEntityModelData): string;
+
+    property UnitPrefix: string read FUnitPrefix write FUnitPrefix;
+    property UseNullableTypes: Boolean read FUseNullableTypes write FUseNullableTypes;
   end;
 
 implementation
@@ -43,12 +52,12 @@ const
 
 function TDelphiUnitCodeGenerator.AddTypeAttribute(const AAtributeText: string): TStringBuilder;
 begin
-  Result := FBuilder.AppendLine.Append(GetIndent).Append(AAtributeText);
+  Result := FIntfBuilder.AppendLine.Append(GetIndent).Append(AAtributeText);
 end;
 
 function TDelphiUnitCodeGenerator.AddClassAttribute(const AAtributeText: string): TStringBuilder;
 begin
-  Result := FBuilder.AppendLine.Append(GetIndent).Append(GetIndent).Append(AAtributeText);
+  Result := FIntfBuilder.AppendLine.Append(GetIndent).Append(GetIndent).Append(AAtributeText);
 end;
 
 function TDelphiUnitCodeGenerator.AddEntityDeclaration(AEntityData: TEntityModelData): TStringBuilder;
@@ -57,15 +66,15 @@ begin
   AddTypeAttribute('[Entity]');
   AddTypeAttribute(Format('[Table(%0:S, %1:S)]', [QuotedStr(AEntityData.TableName), QuotedStr(AEntityData.SchemaName)]));
 
-  FBuilder.AppendLine.Append(GetIndent);
+  FIntfBuilder.AppendLine.Append(GetIndent);
 
-  Result := FBuilder.Append(GetEntityTypePrefix).Append(AEntityData.TableName).Append(' = class');
+  Result := FIntfBuilder.Append(GetEntityTypePrefix).Append(AEntityData.TableName).Append(' = class');
 end;
 
 function TDelphiUnitCodeGenerator.AddPrivateField(AColumnData: TColumnData): TStringBuilder;
 begin
-  Result := FBuilder.AppendLine.Append(GetIndent).Append(GetIndent).Append(GetPrivateFieldName(AColumnData))
-    .Append(': ').Append(AColumnData.ColumnTypeName).Append(';');
+  Result := FIntfBuilder.AppendLine.Append(GetIndent).Append(GetIndent).Append(GetPrivateFieldName(AColumnData))
+    .Append(': ').Append(GetColumnTypeName(AColumnData)).Append(';');
 end;
 
 function TDelphiUnitCodeGenerator.AddPublicProperty(AColumnData: TColumnData): TStringBuilder;
@@ -77,26 +86,30 @@ begin
 
   AddClassAttribute(GetColumnAttributeText(AColumnData));
 
-  Result := FBuilder.AppendLine.Append(GetIndent).Append(GetIndent).Append('property ')
-    .Append(AColumnData.ColumnName).Append(': ').Append(AColumnData.ColumnTypeName)
+  Result := FIntfBuilder.AppendLine.Append(GetIndent).Append(GetIndent).Append('property ')
+    .Append(AColumnData.ColumnName).Append(': ').Append(GetColumnTypeName(AColumnData))
     .Append(' read ').Append(GetPrivateFieldName(AColumnData)).Append(' write ')
     .Append(GetPrivateFieldName(AColumnData)).Append(';');
+  {TODO -oLinas -cGeneral : add implementation section if needed, e.g. for lazy types}
 end;
 
 function TDelphiUnitCodeGenerator.AddUnit(const AUnitName: string): TStringBuilder;
 begin
-  Result := FBuilder.AppendLine.Append(GetIndent).Append(',').Append(AUnitName);
+  Result := FIntfBuilder.AppendLine.Append(GetIndent).Append(',').Append(AUnitName);
 end;
 
 constructor TDelphiUnitCodeGenerator.Create;
 begin
   inherited Create;
-  FBuilder := TStringBuilder.Create;
+  FIntfBuilder := TStringBuilder.Create;
+  FImplBuilder := TStringBuilder.Create;
+  FUnitPrefix := 'ORM.Model.';
 end;
 
 destructor TDelphiUnitCodeGenerator.Destroy;
 begin
-  FBuilder.Free;
+  FIntfBuilder.Free;
+  FImplBuilder.Free;
   inherited Destroy;
 end;
 
@@ -104,25 +117,27 @@ function TDelphiUnitCodeGenerator.DoGenerate(AEntityData: TEntityModelData): str
 var
   LColumnData: TColumnData;
 begin
-  FBuilder.Clear;
+  FIntfBuilder.Clear;
+  FImplBuilder.Clear;
 
-  FBuilder.AppendFormat('unit %S;', [AEntityData.GetUnitName]).AppendLine.AppendLine;
+  FIntfBuilder.AppendFormat('unit %S;', [GetUnitName(AEntityData)]).AppendLine.AppendLine;
 
-  FBuilder.Append('interface').AppendLine.AppendLine;
+  FIntfBuilder.Append('interface').AppendLine.AppendLine;
+  FImplBuilder.AppendLine.AppendLine.Append('implementation').AppendLine;
 
-  FBuilder.Append('uses').AppendLine.Append(GetIndent).Append(UNIT_ATTRIBUTES);
+  FIntfBuilder.Append('uses').AppendLine.Append(GetIndent).Append(UNIT_ATTRIBUTES);
   AddUnit(UNIT_TYPES);
   AddUnit(UNIT_GRAPHICS);
-  FBuilder.AppendLine.Append(GetIndent).Append(';');
+  FIntfBuilder.AppendLine.Append(GetIndent).Append(';');
 
-  FBuilder.AppendLine.AppendLine;
+  FIntfBuilder.AppendLine.AppendLine;
 
-  FBuilder.Append('type');
+  FIntfBuilder.Append('type');
 
   AddEntityDeclaration(AEntityData);
 
   //add private fields
-  FBuilder.AppendLine.Append(GetIndent).Append('private');
+  FIntfBuilder.AppendLine.Append(GetIndent).Append('private');
 
   for LColumnData in AEntityData.Columns do
   begin
@@ -131,20 +146,20 @@ begin
 
   //add public properties
 
-  FBuilder.AppendLine.Append(GetIndent).Append('public');
+  FIntfBuilder.AppendLine.Append(GetIndent).Append('public');
 
   for LColumnData in AEntityData.Columns do
   begin
     AddPublicProperty(LColumnData);
   end;
 
-  FBuilder.AppendLine.Append(GetIndent).Append('end').Append(';');
+  FIntfBuilder.AppendLine.Append(GetIndent).Append('end').Append(';');
 
-  FBuilder.AppendLine.AppendLine.Append('implementation');
+ // FIntfBuilder.AppendLine.AppendLine.Append('implementation');
 
-  FBuilder.AppendLine.AppendLine.Append('end').Append('.');
+  FImplBuilder.AppendLine.AppendLine.Append('end').Append('.');
 
-  Result := FBuilder.ToString;
+  Result := FIntfBuilder.ToString + FImplBuilder.ToString;
 end;
 
 function TDelphiUnitCodeGenerator.Generate(AEntityData: TEntityModelData): string;
@@ -169,10 +184,10 @@ begin
       LBuilder.Append(',').Append(AColumnData.ColumnLength.Value);
 
     if AColumnData.ColumnPrecision.HasValue then
+    begin
       LBuilder.Append(',').Append(AColumnData.ColumnPrecision.Value);
-
-    if AColumnData.ColumnScale.HasValue then
-      LBuilder.Append(',', AColumnData.ColumnScale.Value);
+      LBuilder.Append(',').Append(AColumnData.ColumnScale.GetValueOrDefault(0));
+    end;
 
     if AColumnData.ColumnDescription.HasValue then
       LBuilder.Append(',').Append(AColumnData.ColumnDescription);
@@ -188,7 +203,7 @@ end;
 
 function TDelphiUnitCodeGenerator.GetColumnProperties(AColumnData: TColumnData): string;
 begin
-  Result := '[';
+  Result := '';
   if AColumnData.IsRequired then
     Result := Result + 'cpRequired,';
 
@@ -215,12 +230,26 @@ begin
     SetLength(Result, Length(Result)-1);
   end;
 
-  Result := Result + ']';
+  Result := '[' + Result + ']';
+end;
+
+function TDelphiUnitCodeGenerator.GetColumnTypeName(AColumnData: TColumnData): string;
+begin
+  Result := AColumnData.ColumnTypeName;
+  if FUseNullableTypes and not AColumnData.IsRequired then
+  begin
+    Result := 'Nullable<' + Result + '>';
+  end;
 end;
 
 function TDelphiUnitCodeGenerator.GetPrivateFieldName(AColumnData: TColumnData): string;
 begin
   Result := GetFielnamePrefix + AColumnData.ColumnName;
+end;
+
+function TDelphiUnitCodeGenerator.GetUnitName(AEntityData: TEntityModelData): string;
+begin
+  Result := FUnitPrefix + AEntityData.TableName;
 end;
 
 end.

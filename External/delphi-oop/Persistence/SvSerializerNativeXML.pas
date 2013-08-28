@@ -60,6 +60,7 @@ type
     function EnumerateObject(AObject: TXMLNode): TArray<TEnumEntry<TXMLNode>>; override;
 
     //setters
+    function CreateRootObject(AType: TRttiType): TXMLNode; override;
     function CreateObject(): TXMLNode; override;
     function CreateArray(): TXMLNode; override;
     function CreateBoolean(AValue: Boolean): TXMLNode; override;
@@ -113,14 +114,14 @@ end;
 procedure TSvNativeXMLSerializer.BeginSerialization;
 begin
   inherited;
-  RootObject := FXML.Root;
+  RootObject := nil;
 end;
 
 constructor TSvNativeXMLSerializer.Create(AOwner: TSvSerializer);
 begin
   inherited Create(AOwner);
   RootObject := nil;
-  FXML := TNativeXML.CreateEx(nil, True, False, True, 'root');
+  FXML := TNativeXML.CreateEx(nil, True, False, False, 'root');
   FXML.XmlFormat := xfReadable;
 end;
 
@@ -170,6 +171,17 @@ begin
   Result := TSvXMLNode.Create(FXML);
 end;
 
+function TSvNativeXMLSerializer.CreateRootObject(AType: TRttiType): TXMLNode;
+var
+  LEnumMethod: TRttiMethod;
+begin
+  Result := nil;
+  if not IsTypeEnumerable(AType, LEnumMethod) then
+  begin
+    Result := CreateObject;
+  end;
+end;
+
 function TSvNativeXMLSerializer.CreateString(const AValue: string): TXMLNode;
 begin
   Result := TSvXMLNode.Create(FXML);
@@ -180,6 +192,8 @@ end;
 destructor TSvNativeXMLSerializer.Destroy;
 begin
   FXML.Free;
+  if Assigned(RootObject) and (RootObject is TSvXMLNode) then
+    RootObject.Free;
   inherited Destroy;
 end;
 
@@ -283,7 +297,7 @@ end;
 
 function TSvNativeXMLSerializer.ToString: string;
 begin
-  Result := FXML.WriteToString();
+  Result := string(RootObject.WriteToString);
 end;
 
 initialization

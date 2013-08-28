@@ -29,7 +29,8 @@ uses
   SvSerializerNativeXML in '..\SvSerializerNativeXML.pas',
   SvSerializerAbstract in '..\SvSerializerAbstract.pas',
   SvSerializerFactory in '..\SvSerializerFactory.pas',
-  SvSerializerRtti in '..\SvSerializerRtti.pas';
+  SvSerializerRtti in '..\SvSerializerRtti.pas',
+  SvTesting.DUnit in '..\..\Core\SvTesting.DUnit.pas';
 
 {$R *.RES}
 
@@ -40,6 +41,6 @@ begin
     with TextTestRunner.RunRegisteredTests do
       Free
   else
-    GUITestRunner.RunRegisteredTests;
+    TSvGUITestRunner.RunRegisteredTests;
 end.
 

@@ -72,6 +72,14 @@ type
     property TargetExpression: string read FTargetExpression write FTargetExpression;
   end;
 
+  BindEventAttribute = class(BindAttribute)
+  public
+    ControlName: string;
+    EventName: string;
+  public
+    constructor Create(const AControlName: string; const AEventName: string); overload;
+  end;
+
 
   IBindableView = interface
     ['{98861A3F-AFC5-4E32-A81E-18061A964F75}']
@@ -93,7 +101,6 @@ type
     class constructor Create;
     class destructor Destroy;
 
-    class function GetBinderAttribute(AMember: TRttiMember): BindAttribute;
     class procedure AddSourceNotification(const APropName: string; ABinding: TBinding; ASource: TObject);
   protected
     class procedure SourceObjUpdated(ASender: TObject;
@@ -107,6 +114,8 @@ type
       ABindingMode: TBindingMode = BindingModeDefault;
       AConverter: IValueConverter = nil): TBinding;
     class function GetBindingForTarget(ATarget: TObject): TBinding;
+    class function GetBinderAttribute(AMember: TRttiMember): BindAttribute;
+    class function GetPropertyValueByName(AObject: TObject; const APropertyname: string): TValue;
     class procedure UpdateTargets();
     class procedure UpdateSources();
 
@@ -310,6 +319,30 @@ begin
     raise Exception.Create('Converter not registered');
 end;
 
+class function TDataBindManager.GetPropertyValueByName(AObject: TObject;
+  const APropertyname: string): TValue;
+var
+  LType: TRttiType;
+  LField: TRttiField;
+  LProp: TRttiProperty;
+begin
+  Result := TValue.Empty;
+  LType := TRttiContext.Create.GetType(AObject.ClassInfo);
+  LField := LType.GetField(APropertyname);
+  if Assigned(LField) then
+  begin
+    Result := LField.GetValue(AObject);
+    Exit;
+  end;
+
+  LProp := LType.GetProperty(APropertyname);
+  if Assigned(LProp) then
+  begin
+    Result := LProp.GetValue(AObject);
+    Exit;
+  end;
+end;
+
 class procedure TDataBindManager.RegisterConverter(AKey: TBindConverterType;
   AGetInstanceFunc: TGetInstanceFunc);
 begin
@@ -380,6 +413,15 @@ begin
   inherited Create(ASourcePropertyName, ATargetPropertyName, ABindingMode, Ord(bctDWScriptExpression));
   FSourceExpression := ASourceToTargetExpression;
   FTargetExpression := ATargetToSourceExpression;
+end;
+
+{ BindEventAttribute }
+
+constructor BindEventAttribute.Create(const AControlName, AEventName: string);
+begin
+  inherited Create();
+  ControlName := AControlName;
+  EventName := AEventName;
 end;
 
 initialization

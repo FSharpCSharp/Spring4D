@@ -54,8 +54,7 @@ type
     constructor Create(); virtual;
     destructor Destroy; override;
 
-
-    function GetUnitName(): string; virtual;
+    function ToString(): string; override;
 
     property TableName: string read FTableName write FTableName;
     property SchemaName: string read FSchemaName write FSchemaName;
@@ -75,6 +74,10 @@ type
 
 implementation
 
+uses
+  SysUtils
+  ;
+
 { TEntityData }
 
 constructor TEntityModelData.Create;
@@ -89,9 +92,16 @@ begin
   inherited Destroy;
 end;
 
-function TEntityModelData.GetUnitName: string;
+function TEntityModelData.ToString: string;
+var
+  LSchema: string;
 begin
-  Result := 'ORM.Model.' + TableName;
+  LSchema := SchemaName;
+
+  if LSchema <> '' then
+    LSchema := LSchema + '.';
+
+  Result := Format('%0:S%1:S [%2:D]', [LSchema, TableName, Columns.Count]);
 end;
 
 { TColumnData }
