@@ -150,18 +150,23 @@ resourcestring
   SCDRomDescription           = 'CD-Rom Drive';
   SRamDescription             = 'Ram Drive';
 
-  SUnknownOSDescription      = 'Unknown Operating System';
-  SWin95Description          = 'Microsoft Windows 95';
-  SWin98Description          = 'Microsoft Windows 98';
-  SWinMEDescription          = 'Microsoft Windows ME';
-  SWinNT351Description       = 'Microsoft Windows NT 3.51';
-  SWinNT40Description        = 'Microsoft Windows NT 4';
-  SWinServer2000Description  = 'Microsoft Windows Server 2000';
-  SWinXPDescription          = 'Microsoft Windows XP';
-  SWinServer2003Description  = 'Microsoft Windows Server 2003';
-  SWinVistaDescription       = 'Microsoft Windows Vista';
-  SWinServer2008Description  = 'Microsoft Windows Server 2008';
-  SWin7Description           = 'Microsoft Windows 7';
+  SUnknownOSDescription       = 'Unknown Operating System';
+  SWin95Description           = 'Microsoft Windows 95';
+  SWin98Description           = 'Microsoft Windows 98';
+  SWinMEDescription           = 'Microsoft Windows ME';
+  SWinNT351Description        = 'Microsoft Windows NT 3.51';
+  SWinNT40Description         = 'Microsoft Windows NT 4';
+  SWinServer2000Description   = 'Microsoft Windows Server 2000';
+  SWinXPDescription           = 'Microsoft Windows XP';
+  SWinServer2003Description   = 'Microsoft Windows Server 2003';
+  SWinVistaDescription        = 'Microsoft Windows Vista';
+  SWinServer2008Description   = 'Microsoft Windows Server 2008';
+  SWin7Description            = 'Microsoft Windows 7';
+  SWinServer2008R2Description = 'Microsoft Windows Server 2008 R2';
+  SWin8Description            = 'Microsoft Windows 8';
+  SWinServer2012Description   = 'Microsoft Windows Server 2012';
+  SWin81Description           = 'Microsoft Windows 8.1';
+  SWinServer2012R2Description = 'Microsoft Windows Server 2012 R2';
 
 
   SFileVersionInfoFormat =

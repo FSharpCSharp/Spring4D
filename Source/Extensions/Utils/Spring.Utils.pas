@@ -241,7 +241,12 @@ type
     vtWinServer2003,
     vtWinVista,
     vtWinServer2008,
-    vtWin7
+    vtWin7,
+    vtWinServer2008R2,
+    vtWin8,
+    vtWinServer2012,
+    vtWin81,
+    vtWinServer2012R2
   );
 
   TOSProductType = (
@@ -998,7 +1003,12 @@ const
     SWinServer2003Description,
     SWinVistaDescription,
     SWinServer2008Description,
-    SWin7Description
+    SWin7Description,
+    SWinServer2008R2Description,
+    SWin8Description,
+    SWinServer2012Description,
+    SWin81Description,
+    SWinServer2012R2Description
   );
 
 
@@ -1638,7 +1648,21 @@ begin
           if productType = ptWorkstation then
             Result := vtWin7
           else
-            Result := vtWinServer2008;   { TODO: WinServer2008 R2 }
+            Result := vtWinServer2008R2;
+        end;
+        2:
+        begin
+          if productType = ptWorkstation then
+            Result := vtWin8
+          else
+            Result := vtWinServer2012;
+        end;
+        3:
+        begin
+          if productType = ptWorkstation then
+            Result := vtWin81
+          else
+            Result := vtWinServer2012R2;
         end;
       end;
     end;
