@@ -576,10 +576,10 @@ var
   function DataToInt64: Int64;
   begin
     {DONE -oLinas -cGeneral : get rid of ActiveX dependency}
-    if Decimal(LData).sign > 0 then
-      Result := -1 * Decimal(LData).Lo64
+    if PDecimal(@LData)^{Decimal(LData)}.sign > 0 then
+      Result := -1 * PDecimal(@LData)^{Decimal(LData)}.Lo64
     else
-      Result := Decimal(LData).Lo64;
+      Result := PDecimal(@LData)^{Decimal(LData)}.Lo64;
   end;
 
 begin
