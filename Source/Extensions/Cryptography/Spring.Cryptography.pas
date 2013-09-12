@@ -617,7 +617,7 @@ end;
 
 procedure TBuffer.SaveToStream(stream: TStream);
 begin
-  CheckArgumentNotNull(stream, 'stream');
+  Guard.CheckNotNull(stream, 'stream');
 
   stream.WriteBuffer(fBytes[0], Length(fBytes));
 end;

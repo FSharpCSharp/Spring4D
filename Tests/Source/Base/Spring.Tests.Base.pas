@@ -60,6 +60,7 @@ type
   published
     procedure TestIsNullReference;
     procedure TestCheckRange;
+    procedure TestNotNull;
   end;
 
   TTestLazy = class(TTestCase)
@@ -341,6 +342,7 @@ procedure TTestMulticastEvent.TestRecordType;
 var
   e: Event<TNotifyEvent>;
 begin
+  CheckTrue(e.Enabled);
   CheckTrue(e.IsEmpty);
 
   e.Add(HandlerA);
@@ -516,6 +518,15 @@ begin
   TMethod(e).Data := Self;
   CheckFalse(Assigned(e));
   CheckFalse(Guard.IsNullReference(e, TypeInfo(TNotifyEvent)));
+end;
+
+procedure TTestGuard.TestNotNull;
+var
+  intf: IInterface;
+begin
+  StartExpectingException(EArgumentNullException);
+  Guard.CheckNotNull(intf, 'intf');
+  StopExpectingException();
 end;
 
 {$ENDREGION}

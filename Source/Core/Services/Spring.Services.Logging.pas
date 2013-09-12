@@ -118,7 +118,7 @@ function GetLogger(classType: TClass): ILogger; overload;
 var
   typeInfo: PTypeInfo;
 begin
-  CheckArgumentNotNull(classType, 'classType');
+  Guard.CheckNotNull(classType, 'classType');
 
   typeInfo := classType.ClassInfo;
   Result := LoggerFactory.GetLogger(typeInfo);
