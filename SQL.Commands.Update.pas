@@ -79,7 +79,6 @@ procedure TUpdateExecutor.Execute(AEntity: TObject);
 var
   LStmt: IDBStatement;
   LDirtyObject: TObject;
-  iRes: NativeUInt;
 begin
   Assert(Assigned(AEntity));
 
@@ -108,11 +107,7 @@ begin
 
     inherited Execute(AEntity);
 
-    iRes := LStmt.Execute();
-    if (iRes < 1) then
-    begin
-      raise EORMUpdateNotSuccessfulException.Create('Update was not succesful. No records were affected.');
-    end;
+    LStmt.Execute();
   finally
     LStmt := nil;
   end;

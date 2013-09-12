@@ -4,7 +4,7 @@
 			<ProjectVersion>12.3</ProjectVersion>
 			<MainSource>MORMCodeGenerator.dpr</MainSource>
 			<Base>True</Base>
-			<Config Condition="'$(Config)'==''">Release</Config>
+			<Config Condition="'$(Config)'==''">Debug</Config>
 			<Platform>Win32</Platform>
 			<AppType>Application</AppType>
 			<FrameworkType>VCL</FrameworkType>
