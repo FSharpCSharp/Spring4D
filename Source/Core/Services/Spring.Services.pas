@@ -297,6 +297,16 @@ type
     procedure Dispose;
   end;
 
+  ///	<summary>
+  ///	  Lifecycle interface. Implement this interface on a class that does not
+  ///	  inherit from TInterfacedObject to make it compatible with pooling.
+  ///	</summary>
+  IRefCounted = interface
+    ['{8779F9E7-2311-44AB-94A6-6BADE93551FF}']
+    function GetRefCount: Integer;
+    property RefCount: Integer read GetRefCount;
+  end;
+
   {$ENDREGION}
 
 

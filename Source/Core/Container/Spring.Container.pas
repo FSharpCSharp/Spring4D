@@ -62,7 +62,7 @@ type
     function GetComponentRegistry: IComponentRegistry;
     function GetServiceResolver: IServiceResolver;
   {$ENDREGION}
-    procedure CheckIsClass(componentType: TRttiType);
+    procedure CheckPoolingSupported(componentType: TRttiType);
     function CreateLifetimeManager(model: TComponentModel): ILifetimeManager;
     procedure InitializeInspectors; virtual;
     property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
@@ -149,6 +149,7 @@ function GlobalContainer: TContainer; inline;
 implementation
 
 uses
+  SysUtils,
   TypInfo,
   Spring.Container.Builder,
   Spring.Container.Injection,
@@ -207,9 +208,11 @@ begin
   fBuilder.BuildAll;
 end;
 
-procedure TContainer.CheckIsClass(componentType: TRttiType);
+procedure TContainer.CheckPoolingSupported(componentType: TRttiType);
 begin
-  if not componentType.IsClass then
+  if not (componentType.IsInstance
+    and (componentType.AsInstance.MetaclassType.InheritsFrom(TInterfacedObject)
+    or Supports(componentType.AsInstance.MetaclassType, IRefCounted))) then
   begin
     if componentType.IsPublicType then
       raise ERegistrationException.CreateResFmt(@SPoolingNotSupported, [
@@ -260,7 +263,7 @@ begin
     end;
     TLifetimeType.Pooled:
     begin
-      CheckIsClass(model.ComponentType);
+      CheckPoolingSupported(model.ComponentType);
       Result := TPooledLifetimeManager.Create(model);
     end;
   else

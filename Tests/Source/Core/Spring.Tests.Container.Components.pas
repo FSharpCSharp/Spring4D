@@ -27,6 +27,7 @@ unit Spring.Tests.Container.Components;
 interface
 
 uses
+  Classes,
   SysUtils,
   TestFramework,
   Spring,
@@ -73,6 +74,31 @@ type
     constructor Create(const name: string); overload;
     constructor Create(obj: TObject); overload;
     constructor Create(const name: string; obj: TObject); overload;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TRefCounted and TCustomNameService'}
+
+  TRefCounted = class(TObject, IRefCounted)
+  private
+    fRefCount: Integer;
+    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
+    function _AddRef: Integer; stdcall;
+    function _Release: Integer; stdcall;
+    function GetRefCount: Integer;
+  end;
+
+  TCustomNameService = class(TRefCounted, INameService)
+  private
+    fName: string;
+    function GetName: string;
+  public
+    constructor Create;
+    property Name: string read GetName;
+  public
+    const NameString: string = 'Custom Name';
   end;
 
   {$ENDREGION}
@@ -141,7 +167,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'IAnotherService and TInitializableComponent'}
+  {$REGION 'IAnotherService, TInitializableComponent and TRecyclableComponent'}
 
   IAnotherService = interface
     ['{6BE967C9-C4EE-40FD-805D-B48320A0F510}']
@@ -153,6 +179,17 @@ type
   public
     procedure Initialize;
     property IsInitialized: Boolean read fIsInitialized;
+  end;
+
+  TRecyclableComponent = class(TInterfacedObject, IInitializable, IRecyclable, IAnotherService)
+  private
+    fIsInitialized: Boolean;
+    fIsRecycled: Boolean;
+  public
+    procedure Initialize;
+    procedure Recycle;
+    property IsInitialized: Boolean read fIsInitialized;
+    property IsRecycled: Boolean read fIsRecycled;
   end;
 
   {$ENDREGION}
@@ -676,5 +713,60 @@ begin
   Result := fNameService.Value.Name;
 end;
 
-end.
+{ TRefCounted }
 
+function TRefCounted.GetRefCount: Integer;
+begin
+  Result := fRefCount;
+end;
+
+function TRefCounted.QueryInterface(const IID: TGUID; out Obj): HResult;
+begin
+  if GetInterface(IID, Obj) then
+    Result := 0
+  else
+    Result := E_NOINTERFACE;
+end;
+
+function TRefCounted._AddRef: Integer;
+begin
+  Inc(fRefCount);
+  Result := fRefCount;
+end;
+
+function TRefCounted._Release: Integer;
+begin
+  Dec(fRefCount);
+  Result := fRefCount;
+  if Result = 0 then
+    Destroy;
+end;
+
+{ TCustomNameService }
+
+constructor TCustomNameService.Create;
+begin
+  inherited Create;
+  fName := NameString;
+end;
+
+function TCustomNameService.GetName: string;
+begin
+  Result := fName;
+end;
+
+{ TRecyclableComponent }
+
+procedure TRecyclableComponent.Initialize;
+begin
+  fIsInitialized := True;
+  fIsRecycled := False;
+end;
+
+procedure TRecyclableComponent.Recycle;
+begin
+  fIsInitialized := False;
+  fIsRecycled := True;
+end;
+
+end.

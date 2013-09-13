@@ -22,14 +22,14 @@
 {                                                                           }
 {***************************************************************************}
 
-///	<preliminary />
-unit Spring.Container.Pool;  // experimental;
+unit Spring.Container.Pool;
 
 {$I Spring.inc}
 
 interface
 
 uses
+  SyncObjs,
   Spring,
   Spring.Collections,
   Spring.Container.Core;
@@ -62,6 +62,7 @@ type
 
   TSimpleObjectPool = class(TInterfacedObject, IObjectPool)
   private
+    fLock: TCriticalSection;
     fActivator: IComponentActivator;
     fMinPoolsize: Nullable<Integer>;
     fMaxPoolsize: Nullable<Integer>;
@@ -79,12 +80,17 @@ type
     property MaxPoolsize: Nullable<Integer> read fMaxPoolsize;
   public
     constructor Create(const activator: IComponentActivator; minPoolSize, maxPoolSize: Integer);
+    destructor Destroy; override;
     procedure Initialize(const resolver: IDependencyResolver); virtual;
     function GetInstance(const resolver: IDependencyResolver): TObject; virtual;
     procedure ReleaseInstance(instance: TObject); virtual;
   end;
 
 implementation
+
+uses
+  SysUtils,
+  Spring.Services;
 
 type
   TInterfacedObjectAccess = class(TInterfacedObject);
@@ -109,19 +115,31 @@ begin
   fInstances.OnChanged.Add(InstancesChanged);
   fAvailableList := TCollections.CreateQueue<TObject>;
   fActiveList := TCollections.CreateList<TObject>;
+  fLock := TCriticalSection.Create;
+end;
+
+destructor TSimpleObjectPool.Destroy;
+begin
+  fLock.Free;
+  inherited;
 end;
 
 function TSimpleObjectPool.AddNewInstance(const resolver: IDependencyResolver): TObject;
+var
+  refCounted: IRefCounted;
 begin
   Result := fActivator.CreateInstance(resolver).AsObject;
   if Result.InheritsFrom(TInterfacedObject) then
-    TInterfacedObjectAccess(Result)._AddRef;
+    TInterfacedObjectAccess(Result)._AddRef
+  else if Supports(Result, IRefCounted, refCounted) then
+    refCounted._AddRef;
   fInstances.Add(Result);
 end;
 
 procedure TSimpleObjectPool.CollectInactiveInstances;
 var
   instance: TObject;
+  refCounted: IRefCounted;
 begin
   for instance in fInstances do
   begin
@@ -130,19 +148,24 @@ begin
       and fActiveList.Contains(instance) then
     begin
       ReleaseInstance(instance);
+    end else
+    if Supports(instance, IRefCounted, refCounted)
+      and (refCounted.RefCount = 2)
+      and fActiveList.Contains(instance) then
+    begin
+      refCounted := nil;
+      ReleaseInstance(instance);
     end;
   end;
 end;
 
 procedure TSimpleObjectPool.Initialize(const resolver: IDependencyResolver);
 var
-  instance: TObject;
   i: Integer;
+  instance: TObject;
 begin
   if not fMinPoolsize.HasValue then
-  begin
     Exit;
-  end;
   for i := 0 to fMinPoolsize.Value - 1 do
   begin
     instance := AddNewInstance(resolver);
@@ -153,17 +176,17 @@ end;
 
 procedure TSimpleObjectPool.InstancesChanged(Sender: TObject;
   const item: TObject; action: TCollectionChangedAction);
+var
+  refCounted: IRefCounted;
 begin
   if action = caRemoved then
   begin
     if item.InheritsFrom(TInterfacedObject) then
-    begin
-      TInterfacedObjectAccess(item)._Release;
-    end
+      TInterfacedObjectAccess(item)._Release
+    else if Supports(item, IRefCounted, refCounted) then
+      refCounted._Release
     else
-    begin
       item.Free;
-    end;
   end;
 end;
 
@@ -174,45 +197,44 @@ end;
 
 function TSimpleObjectPool.GetInstance(const resolver: IDependencyResolver): TObject;
 begin
-  MonitorEnter(Self);
+  fLock.Acquire;
   try
     if not fInitialized then
       Initialize(resolver);
 
     if fAvailableList.IsEmpty then
-    begin
       CollectInactiveInstances;
-    end;
 
     if not fAvailableList.IsEmpty then
-    begin
-      Result := GetAvailableObject;
-    end
+      Result := GetAvailableObject
     else
-    begin
       Result := AddNewInstance(resolver);
-    end;
 
     fActiveList.Add(Result);
   finally
-    MonitorExit(Self);
+    fLock.Release;
   end;
 end;
 
 procedure TSimpleObjectPool.ReleaseInstance(instance: TObject);
+var
+  recyclable: IRecyclable;
 begin
   Guard.CheckNotNull(instance, 'instance');
 
-  MonitorEnter(Self);
+  fLock.Acquire;
   try
     fActiveList.Remove(instance);
 
+    if Supports(instance, IRecyclable, recyclable) then
+      recyclable.Recycle;
+
     if not fMaxPoolsize.HasValue or (fAvailableList.Count < fMaxPoolsize.Value) then
-    begin
-      fAvailableList.Enqueue(instance);
-    end;
+      fAvailableList.Enqueue(instance)
+    else
+      fInstances.Remove(instance);
   finally
-    MonitorExit(Self);
+    fLock.Release;
   end;
 end;
 

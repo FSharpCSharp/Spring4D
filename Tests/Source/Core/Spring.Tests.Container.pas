@@ -67,7 +67,10 @@ type
     procedure TestSingleton;
     procedure TestTransient;
     procedure TestPerThread;
+    procedure TestPooled;
+    procedure TestPooledRefCountedInterface;
     procedure TestInitializable;
+    procedure TestRecyclable;
 
     procedure TestIssue41_DifferentName;
     procedure TestIssue41_DifferentService;
@@ -484,6 +487,90 @@ begin
   end;
 end;
 
+procedure TTestSimpleContainer.TestPooled;
+var
+  service1, service2, service3: INameService;
+  count: Integer;
+begin
+  count := 0;
+  fContainer.RegisterType<TNameService>
+    .Implements<INameService>
+    .DelegateTo(
+      function: TNameService
+      begin
+        Result := TNameService.Create;
+        Inc(count);
+      end)
+    .AsPooled(2, 2);
+  fContainer.Build;
+  CheckEquals(0, count); // pool did not create any instances yet
+  service1 := fContainer.Resolve<INameService>;
+  CheckEquals(2, count); // pool created the minimum number of instances upon first request
+  service2 := fContainer.Resolve<INameService>;
+  service3 := fContainer.Resolve<INameService>;
+  CheckEquals(3, count); // pool created one additional instance
+  service3 := nil;
+  service2 := nil;
+  service1 := nil;
+  service1 := fContainer.Resolve<INameService>; // pool collects unused instances up to maximum count
+  service2 := fContainer.Resolve<INameService>;
+  CheckEquals(3, count);
+  service3 := fContainer.Resolve<INameService>; // pool creates a new instance again
+  CheckEquals(4, count);
+end;
+
+procedure TTestSimpleContainer.TestPooledRefCountedInterface;
+var
+  service1, service2, service3: INameService;
+  count: Integer;
+begin
+  count := 0;
+  fContainer.RegisterType<TCustomNameService>
+    .Implements<INameService>
+    .DelegateTo(
+      function: TCustomNameService
+      begin
+        Result := TCustomNameService.Create;
+        Inc(count);
+      end)
+    .AsPooled(2, 2);
+  fContainer.Build;
+  CheckEquals(0, count); // pool did not create any instances yet
+  service1 := fContainer.Resolve<INameService>;
+  CheckEquals(2, count); // pool created the minimum number of instances upon first request
+  service2 := fContainer.Resolve<INameService>;
+  service3 := fContainer.Resolve<INameService>;
+  CheckEquals(3, count); // pool created one additional instance
+  service3 := nil;
+  service2 := nil;
+  service1 := nil;
+  service1 := fContainer.Resolve<INameService>; // pool collects unused instances up to maximum count
+  service2 := fContainer.Resolve<INameService>;
+  CheckEquals(3, count);
+  service3 := fContainer.Resolve<INameService>; // pool creates a new instance again
+  CheckEquals(4, count);
+end;
+
+procedure TTestSimpleContainer.TestRecyclable;
+var
+  service1, service2: IAnotherService;
+  instance: TRecyclableComponent;
+begin
+  fContainer.RegisterType<TRecyclableComponent>.AsPooled(2, 2);
+  fContainer.Build;
+  service1 := fContainer.Resolve<IAnotherService>;
+  service2 := fContainer.Resolve<IAnotherService>;
+  CheckTrue(service2 is TRecyclableComponent, 'Unknown component');
+  instance := TRecyclableComponent(service2); // remember second because the first will be returned again later
+  CheckTrue(instance.IsInitialized, 'IsInitialized');
+  CheckFalse(instance.IsRecycled, 'IsRecycled');
+  service1 := nil;
+  service2 := nil;
+  service1 := fContainer.Resolve<IAnotherService>; // pool has no available and collects all unused
+  CheckFalse(instance.IsInitialized, 'IsInitialized');
+  CheckTrue(instance.IsRecycled, 'IsRecycled');
+end;
+
 procedure TTestSimpleContainer.TestInitializable;
 var
   service: IAnotherService;
@@ -492,7 +579,7 @@ begin
   fContainer.Build;
   service := fContainer.Resolve<IAnotherService>;
   CheckTrue(service is TInitializableComponent, 'Unknown component.');
-  CheckTrue(TInitializableComponent(service).IsInitialized, 'IsInitialized should be true.');
+  CheckTrue(TInitializableComponent(service).IsInitialized, 'IsInitialized');
 end;
 
 procedure TTestSimpleContainer.TestIssue41_DifferentLifetimes;
