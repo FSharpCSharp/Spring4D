@@ -149,7 +149,7 @@
   DELPHI18            Defined when compiling with Delphi XE4 for Win32 (Codename QUINTESSENCE)
   DELPHIXE4           Alias for DELPHI18
   DELPHI19            Defined when compiling with Delphi XE5 for Win32 (Codename ZEPHYR)
-  DELPHIXE5           Alias for DELPHI19
+  DELPHIXE5           Alias for DELPHI15
   DELPHI1_UP          Defined when compiling with Delphi 1 or higher
   DELPHI2_UP          Defined when compiling with Delphi 2 or higher
   DELPHI3_UP          Defined when compiling with Delphi 3 or higher
@@ -217,6 +217,7 @@
   DELPHICOMPILER16     Defined when compiling with Delphi Personality of BDS 9.0
   DELPHICOMPILER17     Defined when compiling with Delphi Personality of BDS 10.0
   DELPHICOMPILER18     Defined when compiling with Delphi Personality of BDS 11.0
+  DELPHICOMPILER19     Defined when compiling with Delphi Personality of BDS 12.0
   DELPHICOMPILER1_UP   Defined when compiling with Delphi 1 or higher
   DELPHICOMPILER2_UP   Defined when compiling with Delphi 2 or higher
   DELPHICOMPILER3_UP   Defined when compiling with Delphi 3 or higher
@@ -1290,7 +1291,7 @@
   {$DEFINE SUPPORTS_SINGLE}
   {$DEFINE SUPPORTS_DOUBLE}
   {$DEFINE SUPPORTS_EXTENDED}
-  {$DEFINE SUPPORTS_PACKAGES} 
+  {$DEFINE SUPPORTS_PACKAGES}
 {$ENDIF COMPILER1_UP}
 
 {$IFDEF COMPILER2_UP}
