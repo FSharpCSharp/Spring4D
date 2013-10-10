@@ -17,13 +17,13 @@ type
     FOrderValidator: IOrderValidator;
     FOrderEntry: IOrderEntry;
   public
-    constructor Create(const aOrderValidator: IOrderValidator; aOrderEntry: IOrderEntry);
+    constructor Create(aOrderValidator: IOrderValidator; aOrderEntry: IOrderEntry);
     function ProcessOrder(aOrder: TOrder): Boolean;
   end;
 
 { TOrderProcessor }
 
-constructor TOrderProcessor.Create(const aOrderValidator: IOrderValidator; aOrderEntry: IOrderEntry);
+constructor TOrderProcessor.Create(aOrderValidator: IOrderValidator; aOrderEntry: IOrderEntry);
 begin
   FOrderValidator := aOrderValidator;
   FOrderEntry := aOrderEntry;

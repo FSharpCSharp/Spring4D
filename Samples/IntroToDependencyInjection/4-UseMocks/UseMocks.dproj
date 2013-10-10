@@ -60,8 +60,10 @@
 			<DCCReference Include="uDoOrderProcessing.pas"/>
 			<DCCReference Include="uOrder.pas"/>
 			<DCCReference Include="uOrderEntry.pas"/>
+			<DCCReference Include="uOrderEntryMock.pas"/>
 			<DCCReference Include="uOrderProcessor.pas"/>
 			<DCCReference Include="uOrderValidator.pas"/>
+			<DCCReference Include="uOrderValidatorMock.pas"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>

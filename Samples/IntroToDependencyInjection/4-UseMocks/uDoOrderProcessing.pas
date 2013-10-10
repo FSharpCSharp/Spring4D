@@ -9,26 +9,22 @@ implementation
 uses
   uOrder,
   uOrderProcessor,
-  uOrderValidator,
-  uOrderEntry;
+  uOrderValidatorMock,
+  uOrderEntryMock;
 
 procedure DoOrderProcessing;
 var
   Order: TOrder;
-  OrderProcessor: TOrderProcessor;
+  OrderProcessor: IOrderProcessor;
 begin
   Order := TOrder.Create;
+  OrderProcessor := TOrderProcessor.Create(TOrderValidatorMock.Create, TOrderEntryMock.Create);
   try
-    OrderProcessor := TOrderProcessor.Create(TOrderValidator.Create, TOrderEntry.Create);
-    try
-      if OrderProcessor.ProcessOrder(Order) then
-      begin
-        {$IFDEF CONSOLEAPP}
-        Writeln('Order successfully processed....');
-        {$ENDIF}
-      end;
-    finally
-      OrderProcessor.Free;
+    if OrderProcessor.ProcessOrder(Order) then
+    begin
+      {$IFDEF CONSOLEAPP}
+      Writeln('Order successfully processed....');
+      {$ENDIF}
     end;
   finally
     Order.Free;
