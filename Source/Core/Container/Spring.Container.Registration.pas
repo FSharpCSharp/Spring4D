@@ -45,6 +45,7 @@ type
     fContainerContext: IContainerContext;
     fRttiContext: TRttiContext;
     fModels: IList<TComponentModel>;
+    fDefaultRegistrations: IDictionary<PTypeInfo, TComponentModel>;
     fServiceTypeMappings: IDictionary<PTypeInfo, IList<TComponentModel>>;
     fServiceNameMappings: IDictionary<string, TComponentModel>;
   protected
@@ -58,12 +59,15 @@ type
     function RegisterComponent(componentTypeInfo: PTypeInfo): TComponentModel;
     procedure RegisterService(model: TComponentModel; serviceType: PTypeInfo); overload;
     procedure RegisterService(model: TComponentModel; serviceType: PTypeInfo; const name: string); overload;
+    procedure RegisterDefault(model: TComponentModel; serviceType: PTypeInfo);
     procedure UnregisterAll;
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(const name: string): Boolean; overload;
     function HasService(serviceType: PTypeInfo; const name: string): Boolean; overload;
+    function HasDefault(serviceType: PTypeInfo): Boolean;
     function FindOne(componentType: PTypeInfo): TComponentModel; overload;
     function FindOne(const name: string): TComponentModel; overload;
+    function FindDefault(serviceType: PTypeInfo): TComponentModel;
     function FindAll: IEnumerable<TComponentModel>; overload;
     function FindAll(serviceType: PTypeInfo): IEnumerable<TComponentModel>; overload;
   end;
@@ -112,7 +116,8 @@ type
     function AsTransient: TRegistration;
     function AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration;
 
-    function AsDefault(serviceType: PTypeInfo): TRegistration;
+    function AsDefault: TRegistration; overload;
+    function AsDefault(serviceType: PTypeInfo): TRegistration; overload;
   end;
 
   ///	<summary>
@@ -156,6 +161,7 @@ type
     function AsTransient: TRegistration<T>;
     function AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration<T>;
 
+    function AsDefault: TRegistration<T>; overload;
     function AsDefault(serviceType: PTypeInfo): TRegistration<T>; overload;
     function AsDefault<TServiceType>: TRegistration<T>; overload;
   end;
@@ -198,6 +204,7 @@ begin
   fContainerContext := context;
   fRttiContext := TRttiContext.Create;
   fModels := TCollections.CreateObjectList<TComponentModel>(True);
+  fDefaultRegistrations := TCollections.CreateDictionary<PTypeInfo, TComponentModel>;
   fServiceTypeMappings := TCollections.CreateDictionary<PTypeInfo, IList<TComponentModel>>;
   fServiceNameMappings := TCollections.CreateDictionary<string, TComponentModel>;
 end;
@@ -249,6 +256,7 @@ procedure TComponentRegistry.UnregisterAll;
 begin
   fServiceNameMappings.Clear;
   fServiceTypeMappings.Clear;
+  fDefaultRegistrations.Clear;
   fModels.Clear;
 end;
 
@@ -277,6 +285,17 @@ begin
   end;
   models.Add(model);
   fServiceNameMappings.Add(serviceName, model);
+  if name = '' then
+    RegisterDefault(model, serviceType);
+end;
+
+procedure TComponentRegistry.RegisterDefault(model: TComponentModel;
+  serviceType: PTypeInfo);
+begin
+  if not model.HasService(serviceType) then
+    raise ERegistrationException.CreateResFmt(@SMissingServiceType,
+      [GetTypeName(serviceType)]);
+  fDefaultRegistrations.AddOrSetValue(serviceType, model);
 end;
 
 function TComponentRegistry.RegisterComponent(
@@ -306,6 +325,21 @@ begin
     begin
       Result := model.ComponentTypeInfo = componentType;
     end);
+end;
+
+function TComponentRegistry.FindDefault(
+  serviceType: PTypeInfo): TComponentModel;
+var
+  models: IList<TComponentModel>;
+begin
+  Guard.CheckNotNull(serviceType, 'serviceType');
+
+  if not fDefaultRegistrations.TryGetValue(serviceType, Result)
+    and fServiceTypeMappings.TryGetValue(serviceType, models)
+    and (models.Count = 1) then
+  begin
+    Result := models[0];
+  end;
 end;
 
 function TComponentRegistry.FindAll: IEnumerable<TComponentModel>;
@@ -365,6 +399,15 @@ begin
 
   Result := fServiceNameMappings.TryGetValue(name, model) and
     model.HasService(serviceType);
+end;
+
+function TComponentRegistry.HasDefault(serviceType: PTypeInfo): Boolean;
+var
+  models: IList<TComponentModel>;
+begin
+  Result := fDefaultRegistrations.ContainsKey(serviceType)
+    or (fServiceTypeMappings.TryGetValue(serviceType, models)
+    and (models.Count = 1));
 end;
 
 procedure TComponentRegistry.OnComponentModelAdded(model: TComponentModel);
@@ -509,15 +552,18 @@ begin
   Result := Self;
 end;
 
-function TRegistration.AsDefault(serviceType: PTypeInfo): TRegistration;
+function TRegistration.AsDefault: TRegistration;
 var
-  model: TComponentModel;
+  serviceType: PTypeInfo;
 begin
-  for model in fRegistry.FindAll(serviceType) do
-  begin
-    model.DefaultServices.Remove(serviceType);
-  end;
-  fModel.DefaultServices.Add(serviceType);
+  for serviceType in fModel.Services.Values do
+    fRegistry.RegisterDefault(fModel, serviceType);
+  Result := Self;
+end;
+
+function TRegistration.AsDefault(serviceType: PTypeInfo): TRegistration;
+begin
+  fRegistry.RegisterDefault(fModel, serviceType);
   Result := Self;
 end;
 
@@ -657,6 +703,12 @@ end;
 function TRegistration<T>.AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration<T>;
 begin
   fRegistration.AsPooled(minPoolSize, maxPoolSize);
+  Result := Self;
+end;
+
+function TRegistration<T>.AsDefault: TRegistration<T>;
+begin
+  fRegistration.AsDefault;
   Result := Self;
 end;
 

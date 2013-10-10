@@ -234,23 +234,27 @@ end;
 function TDependencyResolver.GetEligibleModel(dependency: TRttiType;
   const argument: TValue): TComponentModel;
 var
-  models: IEnumerable<TComponentModel>;
   name: string;
 begin
   if argument.IsEmpty then
   begin
-    models := Registry.FindAll(dependency.Handle);
-    if models.IsEmpty and dependency.IsClassOrInterface
-      and not IsLazyType(dependency.Handle) then
+    if not Registry.HasService(dependency.Handle) then
     begin
-      raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
-    end;
-    if models.Count > 1 then
+      if dependency.IsClassOrInterface and not IsLazyType(dependency.Handle) then
+      begin
+        raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
+      end;
+      Result := nil;
+    end
+    else
     begin
-      raise EUnsatisfiedDependencyException.CreateResFmt(@SUnsatisfiedDependency,
-        [dependency.Name]);
+      Result := Registry.FindDefault(dependency.Handle);
+      if not Assigned(Result) then
+      begin
+        raise EUnsatisfiedDependencyException.CreateResFmt(@SUnsatisfiedDependency,
+          [dependency.Name]);
+      end;
     end;
-    Result := models.FirstOrDefault;
   end
   else
   begin
@@ -296,7 +300,7 @@ begin
   begin
     if argument.IsEmpty then
     begin
-      Result := (Registry.FindAll(dependency.Handle).Count = 1) or IsLazyType(dependency.Handle);
+      Result := Registry.HasDefault(dependency.Handle) or IsLazyType(dependency.Handle);
     end
     else
     begin
@@ -563,30 +567,23 @@ function TServiceResolver.Resolve(serviceType: PTypeInfo;
   resolverOverride: IResolverOverride): TValue;
 var
   serviceName: string;
-  models: IEnumerable<TComponentModel>;
   model: TComponentModel;
   resolver: IDependencyResolver;
 begin
   serviceName := GetTypeName(serviceType);
-  models := Registry.FindAll(serviceType);
-  if models.IsEmpty then
+  if not Registry.HasService(serviceType) then
   begin
     raise EResolveException.CreateResFmt(@SNoComponentRegistered, [serviceName]);
-  end;
-  if models.Count > 1 then
+  end
+  else
   begin
-    models := models.Where(
-      function(const model: TComponentModel): Boolean
-      begin
-        Result := model.DefaultServices.Contains(serviceType);
-      end);
-    if models.Count <> 1 then
+    model := Registry.FindDefault(serviceType);
+    if not Assigned(model) then
     begin
       raise EUnsatisfiedDependencyException.CreateResFmt(@SUnsatisfiedDependency,
         [serviceName]);
     end;
   end;
-  model := models.First;
   if Assigned(resolverOverride) then
     resolver := resolverOverride.GetResolver(Context)
   else

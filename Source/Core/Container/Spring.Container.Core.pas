@@ -90,14 +90,17 @@ type
     function RegisterComponent(componentType: PTypeInfo): TComponentModel;
     procedure RegisterService(model: TComponentModel; serviceType: PTypeInfo); overload;
     procedure RegisterService(model: TComponentModel; serviceType: PTypeInfo; const name: string); overload;
+    procedure RegisterDefault(model: TComponentModel; serviceType: PTypeInfo);
     procedure UnregisterAll;
 
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(const name: string): Boolean; overload;
     function HasService(serviceType: PTypeInfo; const name: string): Boolean; overload;
+    function HasDefault(serviceType: PTypeInfo): Boolean;
 
     function FindOne(componentType: PTypeInfo): TComponentModel; overload;
     function FindOne(const name: string): TComponentModel; overload;
+    function FindDefault(serviceType: PTypeInfo): TComponentModel;
     function FindAll: IEnumerable<TComponentModel>; overload;
     function FindAll(serviceType: PTypeInfo): IEnumerable<TComponentModel>; overload;
   end;
@@ -233,7 +236,6 @@ type
     fMaxPoolsize: Integer;
     fRefCounting: TRefCounting;
     fServices: IDictionary<string, PTypeInfo>;
-    fDefaultServices: IList<PTypeInfo>;
     fConstructorInjections: IInjectionList;
     fMethodInjections: IInjectionList;
     fPropertyInjections: IInjectionList;
@@ -243,7 +245,6 @@ type
     function GetInjectionFactory: IInjectionFactory;
   protected
     function GetServices: IDictionary<string, PTypeInfo>;
-    function GetDefaultServices: IList<PTypeInfo>;
     function GetConstructorInjections: IInjectionList;
     function GetMethodInjections: IInjectionList;
     function GetPropertyInjections: IInjectionList;
@@ -282,7 +283,6 @@ type
     property ComponentType: TRttiType read fComponentType;
     property ComponentTypeInfo: PTypeInfo read GetComponentTypeInfo;
     property Services: IDictionary<string, PTypeInfo> read GetServices;
-    property DefaultServices: IList<PTypeInfo> read GetDefaultServices;
     property MinPoolsize: Integer read fMinPoolsize write fMinPoolsize;
     property MaxPoolsize: Integer read fMaxPoolsize write fMaxPoolsize;
     property RefCounting: TRefCounting read fRefCounting write fRefCounting;
@@ -551,15 +551,6 @@ begin
     fConstructorInjections := TCollections.CreateList<IInjection>;
   end;
   Result := fConstructorInjections;
-end;
-
-function TComponentModel.GetDefaultServices: IList<PTypeInfo>;
-begin
-  if not Assigned(fDefaultServices) then
-  begin
-    fDefaultServices := TCollections.CreateList<PTypeInfo>;
-  end;
-  Result := fDefaultServices;
 end;
 
 function TComponentModel.GetMethodInjections: IInjectionList;

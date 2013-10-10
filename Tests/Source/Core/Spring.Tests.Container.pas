@@ -205,6 +205,8 @@ type
   TTestDefaultResolve = class(TContainerTestCase)
   published
     procedure TestResolve;
+    procedure TestResolveDependency;
+    procedure TestRegisterDefault;
   end;
 
   TTestInjectionByValue = class(TContainerTestCase)
@@ -1140,11 +1142,34 @@ end;
 
 { TTestDefaultResolve }
 
-procedure TTestDefaultResolve.TestResolve;
+procedure TTestDefaultResolve.TestRegisterDefault;
 begin
-  fContainer.RegisterType<TNameService>.Implements<INameService>('default').AsDefault<INameService>;
+  StartExpectingException(ERegistrationException);
+  fContainer.RegisterType<INameService, TNameService>.AsDefault<IAgeService>;
+  StopExpectingException;
+end;
+
+procedure TTestDefaultResolve.TestResolve;
+var
+  service: INameService;
+begin
+  fContainer.RegisterType<TNameService>.Implements<INameService>;
   fContainer.RegisterType<TAnotherNameService>.Implements<INameService>('another');
   fContainer.Build;
+  service := fContainer.Resolve<INameService>;
+  CheckEquals('Name', service.Name);
+end;
+
+procedure TTestDefaultResolve.TestResolveDependency;
+var
+  component: TBootstrapComponent;
+begin
+  fContainer.RegisterType<TNameService>.Implements<INameService>;
+  fContainer.RegisterType<TAnotherNameService>.Implements<INameService>('another');
+  fContainer.RegisterType<TBootstrapComponent>.AsSingleton;
+  fContainer.Build;
+  component := fContainer.Resolve<TBootstrapComponent>;
+  CheckEquals('Name', component.NameService.Name);
 end;
 
 { TTestInjectionByValue }
