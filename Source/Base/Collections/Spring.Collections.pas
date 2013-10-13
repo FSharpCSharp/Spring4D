@@ -969,7 +969,7 @@ begin
     R := Right;
   end;
 
-  Result := CompareStr(Left, Right, fLocaleOptions);
+  Result := CompareStr(L, R, fLocaleOptions);
 end;
 
 function TStringComparer.Equals(const Left, Right: string): Boolean;
