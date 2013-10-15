@@ -631,6 +631,22 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'Property change notification'}
+
+  TPropertyChangedEvent = procedure(Sender: TObject;
+    const PropertyName: string) of object;
+
+  IPropertyChangedEvent = IEvent<TPropertyChangedEvent>;
+
+  INotifyPropertyChanged = interface
+    ['{A517EC98-C651-466B-8290-F7EE96877E03}']
+    function GetOnPropertyChanged: IPropertyChangedEvent;
+    property OnPropertyChanged: IPropertyChangedEvent read GetOnPropertyChanged;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'Exceptions'}
 
   ENotSupportedException    = SysUtils.ENotSupportedException;
@@ -1091,9 +1107,7 @@ begin
     fHasValue := CHasValueFlag;
   end
   else
-  begin
     Clear;
-  end;
 end;
 
 procedure Nullable<T>.Clear;
@@ -1115,9 +1129,7 @@ end;
 function Nullable<T>.GetValue: T;
 begin
   if not HasValue then
-  begin
     raise EInvalidOperationException.CreateRes(@SNullableTypeHasNoValue);
-  end;
   Result := fValue;
 end;
 
@@ -1168,9 +1180,7 @@ begin
       Result := v.AsVariant;
   end
   else
-  begin
     Result := Null;
-  end;
 end;
 
 class operator Nullable<T>.Implicit(const value: Variant): Nullable<T>;
@@ -1183,21 +1193,15 @@ begin
     Result := Nullable<T>.Create(v.AsType<T>);
   end
   else
-  begin
     Result.Clear;
-  end;
 end;
 
 class operator Nullable<T>.Implicit(value: Pointer): Nullable<T>;
 begin
   if not Assigned(value) then
-  begin
-    Result.Clear;
-  end
+    Result.Clear
   else
-  begin
     raise EInvalidOperationException.CreateRes(@SCannotAssignPointerToNullable);
-  end;
 end;
 
 class operator Nullable<T>.Explicit(const value: Nullable<T>): T;
@@ -1473,3 +1477,5 @@ end;
 
 
 end.
+
+
