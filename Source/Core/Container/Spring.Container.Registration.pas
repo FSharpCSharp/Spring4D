@@ -244,7 +244,7 @@ begin
   end;
   if serviceName = '' then
   begin
-    serviceName := GetDefaultTypeName(componentTypeObject) + '.' + serviceTypeObject.Name;
+    serviceName := GetDefaultTypeName(serviceTypeObject) + '@' + GetDefaultTypeName(componentTypeObject);
   end;
   if HasService(serviceName) then
   begin
