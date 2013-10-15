@@ -35,6 +35,8 @@ uses
   Spring,
   Spring.Container,
   Spring.Services,
+  // DO NOT CHANGE ORDER OF FOLLOWING UNITS !!!
+  Spring.Tests.Container.Interfaces,
   Spring.Tests.Container.Components;
 
 type
@@ -1125,9 +1127,16 @@ begin
 end;
 
 procedure TTestRegisterInterfaces.TestTwoServicesWithSameName;
+var
+  s1: INameService;
+  s2: Spring.Tests.Container.Interfaces.INameService;
 begin
   fContainer.RegisterType<TNameServiceWithTwoInterfaces>;
   fContainer.Build;
+  s1 := fContainer.Resolve<INameService>;
+  s2 := fContainer.Resolve<Spring.Tests.Container.Interfaces.INameService>;
+  CheckTrue(s1 is TNameServiceWithTwoInterfaces, 's1');
+  CheckTrue(s2 is TNameServiceWithTwoInterfaces, 's2');
 end;
 
 procedure TTestRegisterInterfaces.TestInheritedService;
