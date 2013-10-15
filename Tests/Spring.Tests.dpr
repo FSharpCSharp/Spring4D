@@ -1,4 +1,4 @@
-{***************************************************************************}
+ {***************************************************************************}
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
@@ -47,6 +47,7 @@ uses
   Spring.Tests.Reflection.ValueConverters in 'Source\Base\Spring.Tests.Reflection.ValueConverters.pas',
   Spring.Tests.SysUtils in 'Source\Base\Spring.Tests.SysUtils.pas',
   Spring.Tests.Container.Components in 'Source\Core\Spring.Tests.Container.Components.pas',
+  Spring.Tests.Container.Interfaces in 'Source\Core\Spring.Tests.Container.Interfaces.pas',
   Spring.Tests.Container.LifetimeManager in 'Source\Core\Spring.Tests.Container.LifetimeManager.pas',
   Spring.Tests.Container in 'Source\Core\Spring.Tests.Container.pas',
   Spring.Tests.Pool in 'Source\Core\Spring.Tests.Pool.pas',
@@ -66,10 +67,10 @@ begin
     TTestIntegerList.Suite,
     TTestStringIntegerDictionary.Suite,
     TTestEmptyStringIntegerDictionary.Suite,
-    TTestEmptyStackofStrings.Suite,
+    TTestEmptyStackOfStrings.Suite,
     TTestStackOfInteger.Suite,
     TTestStackOfIntegerChangedEvent.Suite,
-    TTestEmptyQueueofInteger.Suite,
+    TTestEmptyQueueOfInteger.Suite,
     TTestQueueOfInteger.Suite,
     TTestQueueOfIntegerChangedEvent.Suite,
     TTestListOfIntegerAsIEnumerable.Suite

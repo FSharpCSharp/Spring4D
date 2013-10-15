@@ -198,8 +198,9 @@ type
   TTestRegisterInterfaces = class(TContainerTestCase)
   published
     procedure TestOneService;
-    procedure TestOneServices;
+    procedure TestTwoServices;
     procedure TestInheritedService;
+    procedure TestTwoServicesWithSameName;
   end;
 
   TTestDefaultResolve = class(TContainerTestCase)
@@ -1110,7 +1111,7 @@ begin
   CheckTrue(service is TNameService);
 end;
 
-procedure TTestRegisterInterfaces.TestOneServices;
+procedure TTestRegisterInterfaces.TestTwoServices;
 var
   s1: INameService;
   s2: IAgeService;
@@ -1121,6 +1122,12 @@ begin
   s2 := fContainer.Resolve<IAgeService>;
   CheckTrue(s1 is TNameAgeComponent, 's1');
   CheckTrue(s2 is TNameAgeComponent, 's2');
+end;
+
+procedure TTestRegisterInterfaces.TestTwoServicesWithSameName;
+begin
+  fContainer.RegisterType<TNameServiceWithTwoInterfaces>;
+  fContainer.Build;
 end;
 
 procedure TTestRegisterInterfaces.TestInheritedService;

@@ -32,7 +32,8 @@ uses
   TestFramework,
   Spring,
   Spring.Services,
-  Spring.Container.Core;
+  Spring.Container.Core,
+  Spring.Tests.Container.Interfaces;
 
 type
   {$REGION 'INameService, TNameService and TAnotherNameService'}
@@ -56,6 +57,10 @@ type
     property Name: string read GetName;
   public
     const NameString: string = 'Name';
+  end;
+
+  TNameServiceWithTwoInterfaces = class(TNameService,
+    Spring.Tests.Container.Interfaces.INameService)
   end;
 
   TAnotherNameService = class(TInterfacedObject, INameService, IInterface)

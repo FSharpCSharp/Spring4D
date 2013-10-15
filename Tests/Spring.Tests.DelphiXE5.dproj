@@ -106,6 +106,7 @@
         <DCCReference Include="Source\Base\Spring.Tests.Reflection.ValueConverters.pas"/>
         <DCCReference Include="Source\Base\Spring.Tests.SysUtils.pas"/>
         <DCCReference Include="Source\Core\Spring.Tests.Container.Components.pas"/>
+        <DCCReference Include="Source\Core\Spring.Tests.Container.Interfaces.pas"/>
         <DCCReference Include="Source\Core\Spring.Tests.Container.LifetimeManager.pas"/>
         <DCCReference Include="Source\Core\Spring.Tests.Container.pas"/>
         <DCCReference Include="Source\Core\Spring.Tests.Pool.pas"/>
