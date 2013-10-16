@@ -707,6 +707,9 @@ procedure CheckArgumentNotNull(value: Pointer; const argumentName: string); over
 
 function InheritsFrom(sourceType, targetType: PTypeInfo): Boolean;
 
+function GetQualifiedClassName(AInstance: TObject): string; overload; inline;
+function GetQualifiedClassName(AClass: TClass): string; overload; {$IFDEF DELPHIXE2_UP}inline;{$ENDIF}
+
 {$ENDREGION}
 
 
@@ -756,6 +759,28 @@ begin
     targetData := GetTypeData(targetType);
     Result := sourceData.ClassType.InheritsFrom(targetData.ClassType);
   end;
+end;
+
+function GetQualifiedClassName(AInstance: TObject): string;
+begin
+  Result := GetQualifiedClassName(AInstance.ClassType);
+end;
+
+function GetQualifiedClassName(AClass: TClass): string;
+{$IFNDEF DELPHIXE2_UP}
+var
+  LUnitName: string;
+{$ENDIF}
+begin
+{$IFDEF DELPHIXE2_UP}
+  Result := AClass.QualifiedClassName;
+{$ELSE}
+  LUnitName := AClass.UnitName;
+  if LUnitName <> '' then
+    Result := AClass.ClassName
+  else
+    Result := LUnitName + '.' + AClass.ClassName;
+{$ENDIF}
 end;
 
 {$ENDREGION}
