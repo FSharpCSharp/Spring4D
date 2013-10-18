@@ -17,3 +17,5 @@ del /f /q /s *.dcp
 del /f /q /s *.dsk
 del /f /q /s *.rsm
 del /f /q /s Tests\*.exe
+del /f /q /s Tests\*.ini
+del /f /q /s Tests\*.xml
