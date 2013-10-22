@@ -141,7 +141,7 @@ var
   instance: TObject;
   refCounted: IRefCounted;
 begin
-  for instance in fInstances do
+  for instance in fInstances.ToArray do
   begin
     if instance.InheritsFrom(TInterfacedObject)
       and (TInterfacedObject(instance).RefCount = 1)
