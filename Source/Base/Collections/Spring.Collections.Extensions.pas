@@ -77,14 +77,14 @@ type
     property Current: T read GetCurrent;
   end;
 
-  TNullEnumerator<T> = class(TEnumeratorBase<T>)
+  TEmptyEnumerator<T> = class(TEnumeratorBase<T>)
   protected
     function GetCurrent: T; override;
   public
     function MoveNext: Boolean; override;
   end;
 
-  TNullEnumerable<T> = class(TEnumerableBase<T>)
+  TEmptyEnumerable<T> = class(TEnumerableBase<T>)
   public
     function GetEnumerator: IEnumerator<T>; override;
   end;
@@ -383,14 +383,14 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TNullEnumerator<T>'}
+{$REGION 'TEmptyEnumerator<T>'}
 
-function TNullEnumerator<T>.GetCurrent: T;
+function TEmptyEnumerator<T>.GetCurrent: T;
 begin
   raise EInvalidOperationException.CreateRes(@SEnumEmpty);
 end;
 
-function TNullEnumerator<T>.MoveNext: Boolean;
+function TEmptyEnumerator<T>.MoveNext: Boolean;
 begin
   Result := False;
 end;
@@ -398,11 +398,11 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TNullEnumerable<T>'}
+{$REGION 'TEmptyEnumerable<T>'}
 
-function TNullEnumerable<T>.GetEnumerator: IEnumerator<T>;
+function TEmptyEnumerable<T>.GetEnumerator: IEnumerator<T>;
 begin
-  Result := TNullEnumerator<T>.Create;
+  Result := TEmptyEnumerator<T>.Create;
 end;
 
 {$ENDREGION}

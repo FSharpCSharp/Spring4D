@@ -1327,7 +1327,7 @@ begin
   end
   else
   begin
-    Result := TNullEnumerable<TFileSystemEntry>.Create;
+    Result := TEmptyEnumerable<TFileSystemEntry>.Create;
   end;
 end;
 

@@ -928,7 +928,7 @@ end;
 
 class function TCollections.Empty<T>: IEnumerable<T>;
 begin
-  Result := TNullEnumerable<T>.Create;
+  Result := TEmptyEnumerable<T>.Create;
 end;
 
 {$ENDREGION}
