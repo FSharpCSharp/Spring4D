@@ -705,10 +705,14 @@ procedure CheckArgumentNotNull(const value: IInterface; const argumentName: stri
 ///	</summary>
 procedure CheckArgumentNotNull(value: Pointer; const argumentName: string); overload; deprecated 'Use Guard.CheckNotNull instead';
 
-function InheritsFrom(sourceType, targetType: PTypeInfo): Boolean;
-
 function GetQualifiedClassName(AInstance: TObject): string; overload; inline;
 function GetQualifiedClassName(AClass: TClass): string; overload; {$IFDEF DELPHIXE2_UP}inline;{$ENDIF}
+
+///	<summary>
+///	  Determines whether an instance of <c>leftType</c> can be assigned from an
+///	  instance of <c>rightType</c>.
+///	</summary>
+function IsAssignableFrom(leftType, rightType: PTypeInfo): Boolean;
 
 {$ENDREGION}
 
@@ -747,20 +751,6 @@ begin
   end;
 end;
 
-function InheritsFrom(sourceType, targetType: PTypeInfo): Boolean;
-var
-  sourceData, targetData: PTypeData;
-begin
-  Result := sourceType = targetType;
-
-  if (sourceType.Kind = tkClass) and (targetType.Kind = tkClass) then
-  begin
-    sourceData := GetTypeData(sourceType);
-    targetData := GetTypeData(targetType);
-    Result := sourceData.ClassType.InheritsFrom(targetData.ClassType);
-  end;
-end;
-
 function GetQualifiedClassName(AInstance: TObject): string;
 begin
   Result := GetQualifiedClassName(AInstance.ClassType);
@@ -781,6 +771,40 @@ begin
   else
     Result := LUnitName + '.' + AClass.ClassName;
 {$ENDIF}
+end;
+
+function IsAssignableFrom(leftType, rightType: PTypeInfo): Boolean;
+var
+  leftData, rightData: PTypeData;
+begin
+  Guard.CheckNotNull(leftType, 'leftType');
+  Guard.CheckNotNull(rightType, 'rightType');
+
+  if leftType = rightType then
+    Exit(True);
+
+  leftData := GetTypeData(leftType);
+  rightData := GetTypeData(rightType);
+  if (rightType.Kind = tkClass) and (leftType.Kind = tkClass) then
+  begin
+    Result := rightData.ClassType.InheritsFrom(leftData.ClassType);
+  end
+  else if (rightType.Kind = tkClass) and (leftType.Kind = tkInterface) then
+  begin
+    Result := (ifHasGuid in leftData.IntfFlags) and
+      Supports(rightData.ClassType, leftData.Guid);
+  end
+  else if (rightType.Kind = tkInterface) and (leftType.Kind = tkInterface) then
+  begin
+    Result := Assigned(rightData.IntfParent) and (rightData.IntfParent^ = leftType);
+    while not Result and Assigned(rightData.IntfParent) do
+    begin
+      Result := rightData.IntfParent^ = leftType;
+      rightData := GetTypeData(rightData.IntfParent^);
+    end;
+  end
+  else
+    Result := False;
 end;
 
 {$ENDREGION}

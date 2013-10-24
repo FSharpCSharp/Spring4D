@@ -75,7 +75,7 @@ type
     ///	<summary>
     ///	  Returns true if the typeFrom is assignable to the typeTo.
     ///	</summary>
-    class function IsAssignable(typeFrom, typeTo: PTypeInfo): Boolean; overload;
+    class function IsAssignable(typeFrom, typeTo: PTypeInfo): Boolean; inline;
 
     ///	<summary>
     ///	  Returns <c>True</c> if the typeInfo is a delegate type.
@@ -474,39 +474,8 @@ begin
 end;
 
 class function TType.IsAssignable(typeFrom, typeTo: PTypeInfo): Boolean;
-var
-  dataFrom, dataTo: PTypeData;
 begin
-  Guard.CheckNotNull(typeFrom, 'typeFrom');
-  Guard.CheckNotNull(typeTo, 'typeTo');
-  if typeFrom = typeTo then
-  begin
-    Exit(True);
-  end;
-  dataFrom := TypInfo.GetTypeData(typeFrom);
-  dataTo := TypInfo.GetTypeData(typeTo);
-  if (typeFrom.Kind = tkClass) and (typeTo.Kind = tkClass) then
-  begin
-    Result := dataFrom.ClassType.InheritsFrom(dataTo.ClassType);
-  end
-  else if (typeFrom.Kind = tkClass) and (typeTo.Kind = tkInterface) then
-  begin
-    Result := (ifHasGuid in dataTo.IntfFlags) and
-      Supports(dataFrom.ClassType, dataTo.Guid);
-  end
-  else if (typeFrom.Kind = tkInterface) and (typeTo.Kind = tkInterface) then
-  begin
-    Result := Assigned(dataFrom.IntfParent) and (dataFrom.IntfParent^ = typeTo);
-    while not Result and Assigned(dataFrom.IntfParent) do
-    begin
-      Result := dataFrom.IntfParent^ = typeTo;
-      dataFrom := TypInfo.GetTypeData(dataFrom.IntfParent^);
-    end;
-  end
-  else
-  begin
-    Result := False;
-  end;
+  Result := IsAssignableFrom(typeTo, typeFrom);
 end;
 
 class function TType.IsDelegate(typeInfo: PTypeInfo): Boolean;
@@ -538,12 +507,10 @@ begin
         fInterfaceTypes := TCollections.CreateDictionary<TGuid, TRttiInterfaceType>;
         for item in fContext.GetTypes do
         begin
-          if (item is TRttiInterfaceType) and (ifHasGuid in TRttiInterfaceType(item).IntfFlags) then
+          if (item is TRttiInterfaceType) and (ifHasGuid in TRttiInterfaceType(item).IntfFlags)
+            and not fInterfaceTypes.ContainsKey(TRttiInterfaceType(item).GUID) then
           begin
-            if not fInterfaceTypes.ContainsKey(TRttiInterfaceType(item).GUID) then  // TEMP
-            begin
-              fInterfaceTypes.Add(TRttiInterfaceType(item).GUID, TRttiInterfaceType(item));
-            end;
+            fInterfaceTypes.Add(TRttiInterfaceType(item).GUID, TRttiInterfaceType(item));
           end;
         end;
       end;
@@ -730,7 +697,7 @@ begin
     fEnumerateBaseType, finalPredicate);
 end;
 
-{ TRttiMemberEnumerableEx<T>.TEnumerator }
+{ TRttiMemberEnumerable<T>.TEnumerator }
 
 constructor TRttiMemberEnumerable<T>.TEnumerator.Create(
   collection: TRttiMemberEnumerable<T>);
