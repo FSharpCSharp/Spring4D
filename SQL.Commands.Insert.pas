@@ -102,7 +102,11 @@ begin
 
   if LEntityData.HasSequence then
   begin
-    FGetSequenceValueSQL := Generator.GenerateGetNextSequenceValue(LEntityData.Sequence);
+    if (LEntityData.Sequence.SeqSQL <> '') then
+      FGetSequenceValueSQL := LEntityData.Sequence.SeqSQL
+    else
+      FGetSequenceValueSQL := Generator.GenerateGetNextSequenceValue(LEntityData.Sequence);
+
     if (FGetSequenceValueSQL <> '') then
       FCommand.InsertFields.Add(TSQLField.Create(LEntityData.PrimaryKeyColumn.Name, FTable));
   end;
@@ -201,6 +205,12 @@ begin
       LResultset := LStmt.ExecuteQuery(False);
 
     LoadIdFromSequence(AEntity, LResultset);
+
+    if CanGetSequenceValue then
+    begin
+      TRttiExplorer.SetMemberValue(nil, AEntity, FPrimaryKeyColumn, TValue.FromVariant(LSequenceValue));
+    end;
+
   finally
     LStmt := nil;
     LResultset := nil;

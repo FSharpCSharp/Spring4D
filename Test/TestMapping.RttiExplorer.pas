@@ -11,6 +11,10 @@ uses
 type
   // Test methods for class TRttiExplorer
 
+  TForeignCustomer = class(TCustomer)
+
+  end;
+
   TestTRttiExplorer = class(TTestCase)
   private
     FCustomer: TCustomer;
@@ -180,15 +184,25 @@ end;
 
 procedure TestTRttiExplorer.TestGetSequence;
 var
-  ReturnValue: SequenceAttribute;
+  LSequence: SequenceAttribute;
   AClass: TClass;
+  LForeigner: TForeignCustomer;
 begin
   AClass := FCustomer.ClassType;
 
-  ReturnValue := TRttiExplorer.GetSequence(AClass);
+  LSequence := TRttiExplorer.GetSequence(AClass);
 
-  CheckTrue(Assigned(ReturnValue));
-  CheckEquals(1, ReturnValue.Increment);
+  CheckTrue(Assigned(LSequence));
+  CheckEquals(1, LSequence.Increment);
+
+  LForeigner := TForeignCustomer.Create;
+  try
+    AClass := LForeigner.ClassType;
+    LSequence := TRttiExplorer.GetSequence(AClass);
+    CheckTrue(Assigned(LSequence));
+  finally
+    LForeigner.Free;
+  end;
 end;
 
 procedure TestTRttiExplorer.TestHasSequence;

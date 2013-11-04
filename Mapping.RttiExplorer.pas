@@ -369,11 +369,11 @@ class function TRttiExplorer.Clone(AEntity: TObject): TObject;
 begin
   Assert(Assigned(AEntity));
   Result := AEntity.ClassType.Create;
-  {$IF not defined(CPU386)}
+ // {$IF not defined(CPU386)}
   CopyFieldValues(AEntity, Result);
-  {$ELSE}
-  CopyObject(AEntity, Result);
-  {$IFEND}
+ // {$ELSE}
+ // CopyObject(AEntity, Result);
+ // {$IFEND}
 end;
 
 class procedure TRttiExplorer.CopyFieldValues(AEntityFrom, AEntityTo: TObject);
@@ -1167,7 +1167,7 @@ end;
 
 class function TRttiExplorer.GetSequence(AClass: TClass): SequenceAttribute;
 begin
-  Result := GetClassAttribute<SequenceAttribute>(AClass);
+  Result := GetClassAttribute<SequenceAttribute>(AClass, True);
 end;
 
 class function TRttiExplorer.GetSubEntityFromMemberDeep(AEntity: TObject; ARttiMember: TRttiNamedObject): TList<TObject>;

@@ -127,18 +127,26 @@ type
   ///	  Specifies properties for databases which uses sequences instead of
   ///	  identities.
   ///	</summary>
+  ///	<remarks>
+  ///	  If ASeqSQL is defned then framework will execute this SQL statement
+  ///	  when performing an insert. Returned value will be written into the 
+  ///	  entity's primary key column.
+  ///	</remarks>
   {$ENDREGION}
   SequenceAttribute = class(TORMAttribute)
   private
     FSeqName: string;
     FInitValue: NativeInt;
     FIncrement: Integer;
+    FSeqSQL: string;
   public
-    constructor Create(const ASeqName: string; AInitValue: NativeInt; AIncrement: Integer);
+    constructor Create(const ASeqName: string; AInitValue: NativeInt; AIncrement: Integer);  overload;
+    constructor Create(const ASeqSQL: string); overload;
 
     property SequenceName: string read FSeqName;
     property InitialValue: NativeInt read FInitValue;
     property Increment: Integer read FIncrement;
+    property SeqSQL: string read FSeqSQL;
   end;
 
   Association = class(TORMAttribute)
@@ -234,6 +242,11 @@ type
     constructor Create(const AName: string; AProperties: TColumnProperties = []); overload;
     constructor Create(const AName: string; AProperties: TColumnProperties; ALength: Integer; APrecision: Integer;
       AScale: Integer; const ADescription: string = ''); overload;
+    constructor Create(const AName: string; AProperties: TColumnProperties; APrecision: Integer;
+      AScale: Integer; const ADescription: string = ''); overload;
+    constructor Create(const AName: string; AProperties: TColumnProperties; ALength: Integer;
+      const ADescription: string = ''); overload;
+
 
     function CanInsert(): Boolean; virtual;
     function CanUpdate(): Boolean; virtual;
@@ -362,7 +375,15 @@ begin
   FSeqName := ASeqName;
   FInitValue := AInitValue;
   FIncrement := AIncrement;
+  FSeqSQL := '';
 end;
+
+constructor SequenceAttribute.Create(const ASeqSQL: string);
+begin
+  inherited Create;
+  FSeqSQL := ASeqSQL;
+end;
+
 
 { Association }
 
@@ -424,6 +445,18 @@ begin
   FPrecision := APrecision;
   FScale := AScale;
   FDescription := ADescription;
+end;
+
+constructor ColumnAttribute.Create(const AName: string; AProperties: TColumnProperties; APrecision,
+  AScale: Integer; const ADescription: string);
+begin
+  Create(AName, AProperties, 0, APrecision, AScale, ADescription);
+end;
+
+constructor ColumnAttribute.Create(const AName: string; AProperties: TColumnProperties;
+  ALength: Integer; const ADescription: string);
+begin
+  Create(AName, AProperties, ALength, 0, 0, ADescription);
 end;
 
 function ColumnAttribute.GetIsPrimaryKey: Boolean;
@@ -558,5 +591,10 @@ function TColumnData.IsPrimaryKey: Boolean;
 begin
   Result := cpPrimaryKey in Properties;
 end;
+
+
+
+
+
 
 end.
