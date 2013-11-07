@@ -40,7 +40,6 @@ uses
   Spring.Tests.Container.Components;
 
 type
-//  [Ignore]
   TContainerTestCase = class abstract(TTestCase)
   protected
     fContainer: TContainer;
@@ -55,6 +54,10 @@ type
     procedure TestRegisterNonGuidInterfaceService;
     procedure TestRegisterGenericInterfaceService;
     procedure TestRegisterUnassignableService;
+    procedure TestRegisterTwoUnnamedServicesImplicit;
+    procedure TestRegisterTwoUnnamedServicesExplicit;
+    procedure TestRegisterTwoNamedDifferentServices;
+    procedure TestResolveReturnsUnnamedService;
     procedure TestResolveAll;
     procedure TestResolveAllNonGeneric;
   end;
@@ -127,7 +130,6 @@ type
     procedure TestStringArgument;
   end;
 
-//  [Ignore]
   TTypedInjectionTestCase = class abstract(TContainerTestCase)
   private
     fNameService: INameService;
@@ -153,7 +155,6 @@ type
     procedure DoRegisterComponents; override;
   end;
 
-//  [Ignore]
   TNamedInjectionsTestCase = class(TContainerTestCase)
   private
     fExplorer: IInjectionExplorer;
@@ -297,6 +298,28 @@ begin
   fContainer.RegisterType<TNonGuid>.Implements<INonGuid>;
 end;
 
+procedure TTestEmptyContainer.TestRegisterTwoNamedDifferentServices;
+begin
+  fContainer.RegisterType<TNameService>.Implements<INameService>;
+  fContainer.RegisterType<TNameAgeComponent>.Implements<IAgeService>;
+  fContainer.Build;
+end;
+
+procedure TTestEmptyContainer.TestRegisterTwoUnnamedServicesExplicit;
+begin
+  ExpectedException := ERegistrationException;
+  fContainer.RegisterType<TNameService>.Implements<INameService>;
+  fContainer.RegisterType<TAnotherNameService>.Implements<INameService>;
+end;
+
+procedure TTestEmptyContainer.TestRegisterTwoUnnamedServicesImplicit;
+begin
+  ExpectedException := ERegistrationException;
+  fContainer.RegisterType<TNameService>;
+  fContainer.RegisterType<TAnotherNameService>;
+  fContainer.Build;
+end;
+
 procedure TTestEmptyContainer.TestRegisterGenericInterfaceService;
 begin
   ExpectedException := ERegistrationException;
@@ -323,6 +346,17 @@ var
 begin
   services := fContainer.ResolveAll(TypeInfo(INameService));
   CheckEquals(0, Length(services));
+end;
+
+procedure TTestEmptyContainer.TestResolveReturnsUnnamedService;
+var
+  service: INameService;
+begin
+  fContainer.RegisterType<TNameService>.Implements<INameService>;
+  fContainer.RegisterType<TAnotherNameService>.Implements<INameService>('some');
+  fContainer.Build;
+  service := fContainer.Resolve<INameService>;
+  CheckTrue(service is TNameService, 'service should be a TNameService instance.');
 end;
 
 {$ENDREGION}
@@ -1062,6 +1096,8 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TTestImplementsAttribute'}
+
 type
   IS1 = interface
     ['{E6DE68D5-988C-4817-880E-58903EE8B78C}']
@@ -1079,8 +1115,6 @@ type
   TS2 = class(TInterfacedObject, IS1, IS2)
   end;
 
-{ TTestImplementsAttribute }
-
 procedure TTestImplementsAttribute.TestImplements;
 var
   s1: IS1;
@@ -1097,11 +1131,14 @@ begin
   CheckTrue(s2 is TS2, 's2');
 end;
 
+{$ENDREGION}
+
+
+{$REGION 'TTestRegisterInterfaces'}
+
 type
   TComplex = class(TNameAgeComponent, IAnotherService)
   end;
-
-{ TTestRegisterInterfaces }
 
 procedure TTestRegisterInterfaces.TestOneService;
 var
@@ -1156,7 +1193,10 @@ begin
   CheckTrue(s3 is TComplex, 's3');
 end;
 
-{ TTestDefaultResolve }
+{$ENDREGION}
+
+
+{$REGION 'TTestDefaultResolve'}
 
 procedure TTestDefaultResolve.TestRegisterDefault;
 begin
@@ -1188,7 +1228,10 @@ begin
   CheckEquals('Name', component.NameService.Name);
 end;
 
-{ TTestInjectionByValue }
+{$ENDREGION}
+
+
+{$REGION 'TTestInjectionByValue'}
 
 procedure TTestInjectionByValue.TestInjectField;
 begin
@@ -1198,7 +1241,10 @@ begin
   CheckTrue(fContainer.Resolve<IPrimitive>.NameService <> nil)
 end;
 
-{ TTestResolverOverride }
+{$ENDREGION}
+
+
+{$REGION 'TTestResolverOverride'}
 
 procedure TTestResolverOverride.SetUp;
 begin
@@ -1251,7 +1297,10 @@ begin
     TParameterOverride.Create('obj', fDummy)).Name);
 end;
 
-{ TTestRegisterFactory }
+{$ENDREGION}
+
+
+{$REGION 'TTestRegisterFactory'}
 
 procedure TTestRegisterInterfaceTypes.TestOneService;
 begin
@@ -1314,7 +1363,10 @@ begin
   CheckEquals('test', fContainer.Resolve<IAnotherNameService>.Name);
 end;
 
-{ TTestResolveLazy }
+{$ENDREGION}
+
+
+{$REGION 'TTestResolveLazy'}
 
 procedure TTestLazyDependencies.PerformChecks;
 var
@@ -1363,7 +1415,10 @@ begin
   PerformChecks;
 end;
 
-{ TTestResolveLazyRecursive }
+{$ENDREGION}
+
+
+{$REGION 'TTestResolveLazyRecursive'}
 
 procedure TTestLazyDependenciesDetectRecursion.PerformChecks;
 begin
@@ -1377,5 +1432,8 @@ begin
   end;
   CheckTrue(fCalled);
 end;
+
+{$ENDREGION}
+
 
 end.

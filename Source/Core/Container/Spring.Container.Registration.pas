@@ -46,6 +46,7 @@ type
     fRttiContext: TRttiContext;
     fModels: IList<TComponentModel>;
     fDefaultRegistrations: IDictionary<PTypeInfo, TComponentModel>;
+    fUnnamedRegistrations: IDictionary<PTypeInfo, TComponentModel>;
     fServiceTypeMappings: IDictionary<PTypeInfo, IList<TComponentModel>>;
     fServiceNameMappings: IDictionary<string, TComponentModel>;
   protected
@@ -205,6 +206,7 @@ begin
   fRttiContext := TRttiContext.Create;
   fModels := TCollections.CreateObjectList<TComponentModel>(True);
   fDefaultRegistrations := TCollections.CreateDictionary<PTypeInfo, TComponentModel>;
+  fUnnamedRegistrations := TCollections.CreateDictionary<PTypeInfo, TComponentModel>;
   fServiceTypeMappings := TCollections.CreateDictionary<PTypeInfo, IList<TComponentModel>>;
   fServiceNameMappings := TCollections.CreateDictionary<string, TComponentModel>;
 end;
@@ -244,6 +246,10 @@ begin
   end;
   if serviceName = '' then
   begin
+    if fUnnamedRegistrations.ContainsKey(serviceType) then
+      raise ERegistrationException.CreateResFmt(@SDuplicatedUnnamedService, [
+        GetTypeName(serviceType)]);
+
     serviceName := GetDefaultTypeName(serviceTypeObject) + '@' + GetDefaultTypeName(componentTypeObject);
   end;
   if HasService(serviceName) then
@@ -286,7 +292,10 @@ begin
   models.Add(model);
   fServiceNameMappings.Add(serviceName, model);
   if name = '' then
+  begin
+    fUnnamedRegistrations.Add(serviceType, model);
     RegisterDefault(model, serviceType);
+  end;
 end;
 
 procedure TComponentRegistry.RegisterDefault(model: TComponentModel;

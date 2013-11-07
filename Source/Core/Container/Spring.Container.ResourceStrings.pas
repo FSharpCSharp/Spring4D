@@ -32,6 +32,7 @@ resourcestring
   SMissingGuid = 'The service type "%s" is missing a guid.';
   SIncompatibleTypes = 'The component type "%s" is incompatible with the service type "%s".';
   SDuplicatedName = 'Duplicated name found: "%s".';
+  SDuplicatedUnnamedService = 'Cannot have more than one unnamed registration for service type "%s".';
   SMissingServiceType = 'The service type "%s" cannot be the default as it has not been registered.';
   SCircularDependencyDetected = 'A circle was detected when trying to resolve the dependency: %s.';
   SCannotResolveDependency = 'Cannot resolve the dependency: %s.';
