@@ -143,6 +143,8 @@ implementation
 uses
   Mapping.RttiExplorer
   ,Core.Exceptions
+  ,Core.Comparers
+  ,Generics.Defaults
   ,SysUtils
   ;
 
@@ -204,6 +206,8 @@ begin
 end;
 
 constructor TEntityData.Create;
+var
+  LCaseInsensitiveComparer: IEqualityComparer<string>;
 begin
   inherited Create;
   FColumns := TList<ColumnAttribute>.Create;
@@ -214,7 +218,9 @@ begin
   FForeignKeyColumns := TList<ForeignJoinColumnAttribute>.Create;
   FOneToManyColumns := TList<OneToManyAttribute>.Create;
   FManyToOneColumns := TList<ManyToOneAttribute>.Create;
-  FColumnMembernameIndex := TDictionary<string, ColumnAttribute>.Create();
+
+  LCaseInsensitiveComparer := TStringCaseInsensitiveComparer.Create;
+  FColumnMembernameIndex := TDictionary<string, ColumnAttribute>.Create(LCaseInsensitiveComparer);
 end;
 
 destructor TEntityData.Destroy;

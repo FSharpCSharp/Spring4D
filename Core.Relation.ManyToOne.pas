@@ -105,8 +105,8 @@ class function TManyToOneRelation.GetMappedByColumn(AFromColumn: ManyToOneAttrib
 begin
   Result := nil;
   if not TRttiExplorer.TryGetColumnByMemberName(AClass, AFromColumn.MappedBy, Result) then
-    raise EORMManyToOneMappedByColumnNotFound.CreateFmt('Mapped by column not found in the base class "%S".'
-      , [AClass.ClassName]);
+    raise EORMManyToOneMappedByColumnNotFound.CreateFmt('Mapped by column ("%S") not found in the base class "%S".'
+      , [AFromColumn.MappedBy, AClass.ClassName]);
 end;
 
 procedure TManyToOneRelation.ResolveColumns(AResultset: IDBResultset);

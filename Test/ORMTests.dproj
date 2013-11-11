@@ -175,6 +175,7 @@
 			<DCCReference Include="..\Mapping.CodeGenerator.Abstract.pas"/>
 			<DCCReference Include="..\Mapping.CodeGenerator.DB.pas"/>
 			<DCCReference Include="EntityModelDataLoaderTests.pas"/>
+			<DCCReference Include="..\Core.Comparers.pas"/>
 			<None Include="Profiling\AQtimeModule1.aqt"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>

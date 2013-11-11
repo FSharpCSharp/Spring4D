@@ -133,7 +133,8 @@ uses
   Mapping.CodeGenerator in '..\Mapping.CodeGenerator.pas',
   Mapping.CodeGenerator.Abstract in '..\Mapping.CodeGenerator.Abstract.pas',
   Mapping.CodeGenerator.DB in '..\Mapping.CodeGenerator.DB.pas',
-  EntityModelDataLoaderTests in 'EntityModelDataLoaderTests.pas';
+  EntityModelDataLoaderTests in 'EntityModelDataLoaderTests.pas',
+  Core.Comparers in '..\Core.Comparers.pas';
 
 {$R *.RES}
 
