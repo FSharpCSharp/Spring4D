@@ -255,9 +255,15 @@ type
     procedure PerformChecks; override;
   end;
 
+  TTestDecoratorExtension = class(TContainerTestCase)
+  published
+    procedure TestResolveReturnsDecorator;
+  end;
+
 implementation
 
 uses
+  Spring.Container.DecoratorExtension,
   Spring.Container.Resolvers;
 
 
@@ -1438,6 +1444,24 @@ begin
       fCalled := E is ECircularDependencyException;
   end;
   CheckTrue(fCalled);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestDecoratorExtension'}
+
+procedure TTestDecoratorExtension.TestResolveReturnsDecorator;
+var
+  service: IAgeService;
+begin
+  fContainer.AddExtension<TDecoratorContainerExtension>;
+  fContainer.RegisterType<TAgeServiceDecorator>;
+  fContainer.RegisterType<TNameAgeComponent>;
+  fContainer.Build;
+
+  service := fContainer.Resolve<IAgeService>;
+  CheckTrue(service is TAgeServiceDecorator);
 end;
 
 {$ENDREGION}

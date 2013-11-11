@@ -150,6 +150,14 @@ type
     const DefaultAge: Integer = 100;
   end;
 
+  TAgeServiceDecorator = class(TInterfacedObject, IAgeService)
+  private
+    fAgeServive: IAgeService;
+  public
+    constructor Create(const ageService: IAgeService);
+    function GetAge: Integer;
+  end;
+
   {$ENDREGION}
 
 
@@ -772,6 +780,18 @@ procedure TRecyclableComponent.Recycle;
 begin
   fIsInitialized := False;
   fIsRecycled := True;
+end;
+
+{ TAgeServiceDecorator }
+
+constructor TAgeServiceDecorator.Create(const ageService: IAgeService);
+begin
+  fAgeServive := ageService;
+end;
+
+function TAgeServiceDecorator.GetAge: Integer;
+begin
+  Result := fAgeServive.Age;
 end;
 
 end.
