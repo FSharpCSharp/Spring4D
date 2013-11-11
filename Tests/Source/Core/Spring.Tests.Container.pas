@@ -306,18 +306,25 @@ begin
 end;
 
 procedure TTestEmptyContainer.TestRegisterTwoUnnamedServicesExplicit;
+var
+  service: INameService;
 begin
-  ExpectedException := ERegistrationException;
   fContainer.RegisterType<TNameService>.Implements<INameService>;
   fContainer.RegisterType<TAnotherNameService>.Implements<INameService>;
+  fContainer.Build;
+  service := fContainer.Resolve<INameService>;
+  CheckTrue(service is TAnotherNameService);
 end;
 
 procedure TTestEmptyContainer.TestRegisterTwoUnnamedServicesImplicit;
+var
+  service: INameService;
 begin
-  ExpectedException := ERegistrationException;
   fContainer.RegisterType<TNameService>;
   fContainer.RegisterType<TAnotherNameService>;
   fContainer.Build;
+  service := fContainer.Resolve<INameService>;
+  CheckTrue(service is TAnotherNameService);
 end;
 
 procedure TTestEmptyContainer.TestRegisterGenericInterfaceService;

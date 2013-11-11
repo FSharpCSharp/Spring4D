@@ -246,9 +246,9 @@ begin
   end;
   if serviceName = '' then
   begin
-    if fUnnamedRegistrations.ContainsKey(serviceType) then
-      raise ERegistrationException.CreateResFmt(@SDuplicatedUnnamedService, [
-        GetTypeName(serviceType)]);
+//    if fUnnamedRegistrations.ContainsKey(serviceType) then
+//      raise ERegistrationException.CreateResFmt(@SDuplicatedUnnamedService, [
+//        GetTypeName(serviceType)]);
 
     serviceName := GetDefaultTypeName(serviceTypeObject) + '@' + GetDefaultTypeName(componentTypeObject);
   end;
@@ -293,7 +293,7 @@ begin
   fServiceNameMappings.Add(serviceName, model);
   if name = '' then
   begin
-    fUnnamedRegistrations.Add(serviceType, model);
+    fUnnamedRegistrations.AddOrSetValue(serviceType, model);
     RegisterDefault(model, serviceType);
   end;
 end;
