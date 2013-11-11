@@ -211,7 +211,6 @@ type
       enumerateBaseType: Boolean); overload;
     constructor Create(parentType: TRttiType; const func: TGetRttiMembersFunc<T>;
       enumerateBaseType: Boolean; const predicate: TPredicate<T>); overload;
-    function Where(const predicate: TPredicate<T>): IEnumerable<T>; override;
     function GetEnumerator: IEnumerator<T>; override;
   end;
 
@@ -676,28 +675,10 @@ begin
   Result := TEnumerator.Create(Self);
 end;
 
-function TRttiMemberEnumerable<T>.Where(
-  const predicate: TPredicate<T>): IEnumerable<T>;
-var
-  finalPredicate: TPredicate<T>;
-begin
-  if not Assigned(fPredicate) then
-  begin
-    finalPredicate := predicate;
-  end
-  else
-  begin
-    finalPredicate :=
-      function(const value: T): Boolean
-      begin
-        Result := fPredicate(value) and predicate(value);
-      end;
-  end;
-  Result := TRttiMemberEnumerable<T>.Create(fParentType, fGetMembersFunc,
-    fEnumerateBaseType, finalPredicate);
-end;
+{$ENDREGION}
 
-{ TRttiMemberEnumerable<T>.TEnumerator }
+
+{$REGION 'TRttiMemberEnumerable<T>.TEnumerator'}
 
 constructor TRttiMemberEnumerable<T>.TEnumerator.Create(
   collection: TRttiMemberEnumerable<T>);
