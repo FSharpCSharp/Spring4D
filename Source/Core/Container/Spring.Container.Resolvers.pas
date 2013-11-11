@@ -39,9 +39,9 @@ type
   private
     fContext: IContainerContext;
     fRegistry: IComponentRegistry;
-    fOnResolve: IList<TResolveEvent>;
+    fOnResolve: Event<TResolveEvent>;
     procedure DoResolve(var instance: TValue);
-    function GetOnResolve: IList<TResolveEvent>;
+    function GetOnResolve: IEvent<TResolveEvent>;
   protected
     procedure ConstructValue(typeInfo: PTypeInfo; const instance: TValue; out value: TValue);
 
@@ -49,6 +49,8 @@ type
     property Registry: IComponentRegistry read fRegistry;
   public
     constructor Create(const context: IContainerContext; const registry: IComponentRegistry);
+
+    property OnResolve: IEvent<TResolveEvent> read GetOnResolve;
   end;
 
   TDependencyResolver = class(TResolver, IDependencyResolver, IInterface)
@@ -147,6 +149,29 @@ type
     function GetResolver(context: IContainerContext): IDependencyResolver; override;
   end;
 
+  TDependencyOverride = class(TResolverOverride)
+  private
+    fTypeInfo: PTypeInfo;
+    fValue: TValue;
+
+    type
+      TResolver = class(TDependencyResolver)
+      private
+        fTypeInfo: PTypeInfo;
+        fValue: TValue;
+      public
+        constructor Create(const context: IContainerContext; const registry: IComponentRegistry;
+          typeInfo: PTypeInfo; const value: TValue);
+
+        function CanResolveDependency(dependency: TRttiType; const argument: TValue): Boolean; override;
+        function ResolveDependency(dependency: TRttiType; const argument: TValue): TValue; override;
+      end;
+  public
+    constructor Create(typeInfo: PTypeInfo; const value: TValue);
+
+    function GetResolver(context: IContainerContext): IDependencyResolver; override;
+  end;
+
 implementation
 
 uses
@@ -163,21 +188,19 @@ uses
 constructor TResolver.Create(const context: IContainerContext;
   const registry: IComponentRegistry);
 begin
+  Guard.CheckNotNull(context, 'context');
+  Guard.CheckNotNull(registry, 'registry');
   inherited Create;
   fContext := context;
   fRegistry := registry;
-  fOnResolve := TCollections.CreateList<TResolveEvent>;
 end;
 
 procedure TResolver.DoResolve(var instance: TValue);
-var
-  event: TResolveEvent;
 begin
-  for event in fOnResolve do
-    event(Self, instance);
+  fOnResolve.Invoke(Self, instance);
 end;
 
-function TResolver.GetOnResolve: IList<TResolveEvent>;
+function TResolver.GetOnResolve: IEvent<TResolveEvent>;
 begin
   Result := fOnResolve;
 end;
@@ -251,8 +274,8 @@ begin
       Result := Registry.FindDefault(dependency.Handle);
       if not Assigned(Result) then
       begin
-        raise EUnsatisfiedDependencyException.CreateResFmt(@SUnsatisfiedDependency,
-          [dependency.Name]);
+        raise EUnsatisfiedDependencyException.CreateResFmt(
+          @SUnsatisfiedDependency, [dependency.Name]);
       end;
     end;
   end
@@ -281,9 +304,7 @@ begin
   if fDependencyTypes.Contains(dependency) then
   begin
     raise ECircularDependencyException.CreateResFmt(
-      @SCircularDependencyDetected,
-      [dependency.Name]
-    );
+      @SCircularDependencyDetected, [dependency.Name]);
   end;
 end;
 
@@ -580,8 +601,8 @@ begin
     model := Registry.FindDefault(serviceType);
     if not Assigned(model) then
     begin
-      raise EUnsatisfiedDependencyException.CreateResFmt(@SUnsatisfiedDependency,
-        [serviceName]);
+      raise EUnsatisfiedDependencyException.CreateResFmt(
+        @SUnsatisfiedDependency, [serviceName]);
     end;
   end;
   if Assigned(resolverOverride) then
@@ -805,6 +826,50 @@ begin
   Guard.CheckNotNull(Inject, 'Inject');
   fInject := Inject;
   Result := inherited;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TDependencyOverride'}
+
+constructor TDependencyOverride.Create(typeInfo: PTypeInfo;
+  const value: TValue);
+begin
+  fTypeInfo := typeInfo;
+  fValue := value;
+end;
+
+function TDependencyOverride.GetResolver(
+  context: IContainerContext): IDependencyResolver;
+begin
+  Result := TResolver.Create(context, context.ComponentRegistry, fTypeInfo, fValue)
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TDependencyOverride.TResolver'}
+
+constructor TDependencyOverride.TResolver.Create(
+  const context: IContainerContext; const registry: IComponentRegistry;
+  typeInfo: PTypeInfo; const value: TValue);
+begin
+  inherited Create(context, registry);
+  fTypeInfo := typeInfo;
+  fValue := value;
+end;
+
+function TDependencyOverride.TResolver.CanResolveDependency(
+  dependency: TRttiType; const argument: TValue): Boolean;
+begin
+  Result := dependency.Handle = fTypeInfo;
+end;
+
+function TDependencyOverride.TResolver.ResolveDependency(dependency: TRttiType;
+  const argument: TValue): TValue;
+begin
+  Result := fValue;
 end;
 
 {$ENDREGION}

@@ -57,22 +57,26 @@ type
     class constructor Create;
     class destructor Destroy;
   {$REGION 'Implements IContainerContext'}
+    function GetComponentBuilder: IComponentBuilder;
+    function GetComponentRegistry: IComponentRegistry;
     function GetDependencyResolver: IDependencyResolver;
     function GetInjectionFactory: IInjectionFactory;
-    function GetComponentRegistry: IComponentRegistry;
     function GetServiceResolver: IServiceResolver;
   {$ENDREGION}
     procedure CheckPoolingSupported(componentType: TRttiType);
     function CreateLifetimeManager(model: TComponentModel): ILifetimeManager;
     procedure InitializeInspectors; virtual;
+    property ComponentBuilder: IComponentBuilder read GetComponentBuilder;
     property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
     property DependencyResolver: IDependencyResolver read GetDependencyResolver;
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
+    property ServiceResolver: IServiceResolver read GetServiceResolver;
   public
     constructor Create;
     destructor Destroy; override;
 
-    procedure AddExtension(extension: IContainerExtension);
+    procedure AddExtension(const extension: IContainerExtension); overload;
+    procedure AddExtension<T: IContainerExtension, constructor>; overload;
 
     function RegisterInstance<TServiceType>(const instance: TServiceType): TRegistration<TServiceType>; overload;
 
@@ -197,10 +201,16 @@ begin
   inherited Destroy;
 end;
 
-procedure TContainer.AddExtension(extension: IContainerExtension);
+procedure TContainer.AddExtension(const extension: IContainerExtension);
 begin
-  extension.Context := Self;
   fExtensions.Add(extension);
+  extension.InitializeExtension(Self);
+  extension.Initialize;
+end;
+
+procedure TContainer.AddExtension<T>;
+begin
+  AddExtension(T.Create);
 end;
 
 procedure TContainer.Build;
@@ -269,6 +279,11 @@ begin
   else
     raise ERegistrationException.CreateRes(@SUnexpectedLifetimeType);
   end;
+end;
+
+function TContainer.GetComponentBuilder: IComponentBuilder;
+begin
+  Result := fBuilder;
 end;
 
 function TContainer.GetComponentRegistry: IComponentRegistry;

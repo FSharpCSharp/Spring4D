@@ -39,15 +39,17 @@ uses
 type
   TMockContext = class(TInterfacedObject, IContainerContext)
   public
+    function GetComponentBuilder: IComponentBuilder;
+    function GetComponentRegistry: IComponentRegistry;
     function GetDependencyResolver: IDependencyResolver;
     function GetInjectionFactory: IInjectionFactory;
-    function GetComponentRegistry: IComponentRegistry;
     function GetServiceResolver: IServiceResolver;
   public
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(const name: string): Boolean; overload;
     function CreateLifetimeManager(model: TComponentModel): ILifetimeManager;
-    procedure AddExtension(extension: IContainerExtension);
+    procedure AddExtension(const extension: IContainerExtension);
+    property ComponentBuilder: IComponentBuilder read GetComponentBuilder;
     property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
     property DependencyResolver: IDependencyResolver read GetDependencyResolver;
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
@@ -230,15 +232,19 @@ end;
 
 { TMockContext }
 
-procedure TMockContext.AddExtension(extension: IContainerExtension);
+procedure TMockContext.AddExtension(const extension: IContainerExtension);
 begin
   raise Exception.Create('AddExtension');
 end;
 
-function TMockContext.CreateLifetimeManager(
-  model: TComponentModel): ILifetimeManager;
+function TMockContext.CreateLifetimeManager(model: TComponentModel): ILifetimeManager;
 begin
   raise Exception.Create('CreateLifetimeManager');
+end;
+
+function TMockContext.GetComponentBuilder: IComponentBuilder;
+begin
+  raise Exception.Create('GetComponentBuilder');
 end;
 
 function TMockContext.GetComponentRegistry: IComponentRegistry;

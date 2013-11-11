@@ -41,7 +41,7 @@ type
     fRegistry: IComponentRegistry;
     fInspectors: IList<IBuilderInspector>;
   public
-    constructor Create(context: IContainerContext; registry: IComponentRegistry);
+    constructor Create(const context: IContainerContext; const registry: IComponentRegistry);
     procedure AddInspector(const inspector: IBuilderInspector);
     procedure RemoveInspector(const inspector: IBuilderInspector);
     procedure ClearInspectors;
@@ -116,8 +116,8 @@ uses
 
 {$REGION 'TComponentBuilder'}
 
-constructor TComponentBuilder.Create(
-  context: IContainerContext; registry: IComponentRegistry);
+constructor TComponentBuilder.Create(const context: IContainerContext;
+  const registry: IComponentRegistry);
 begin
   Guard.CheckNotNull(context, 'context');
   Guard.CheckNotNull(registry, 'registry');

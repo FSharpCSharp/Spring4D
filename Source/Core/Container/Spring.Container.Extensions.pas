@@ -29,17 +29,39 @@ unit Spring.Container.Extensions;
 interface
 
 uses
-  Spring,
   Spring.Container.Core;
 
 type
+  ///	<summary>
+  ///	  Base class for all <see cref="TContainer" /> extension objects.
+  ///	</summary>
   TContainerExtension = class(TInterfacedObject, IContainerExtension)
   private
     fContext: IContainerContext;
-    function GetContext: IContainerContext;
-    procedure SetContext(const value: IContainerContext);
   protected
-    procedure DoResolve(Sender: TObject; var instance: TValue); virtual;
+    ///	<summary>
+    ///	  Initial the container with this extension's functionality.
+    ///	</summary>
+    ///	<remarks>
+    ///	  When overridden in a derived class, this method will modify the given
+    ///	  Context to install its functions into the container.
+    ///	</remarks>
+    procedure Initialize; virtual; abstract;
+
+    ///	<summary>
+    ///	  The container calls this method when the extension is added.
+    ///	</summary>
+    ///	<param name="context">
+    ///	  An <see cref="IContainerContext" /> instance that gives the extension
+    ///	  access to the internals of the container.
+    ///	</param>
+    procedure InitializeExtension(const context: IContainerContext);
+
+    ///	<summary>
+    ///	  The IContainerContext instance used to manipulate the inner state of
+    ///	  the container.
+    ///	</summary>
+    property Context: IContainerContext read fContext;
   end;
 
 implementation
@@ -47,32 +69,10 @@ implementation
 
 {$REGION 'TContainerExtension'}
 
-procedure TContainerExtension.DoResolve(Sender: TObject; var instance: TValue);
+procedure TContainerExtension.InitializeExtension(
+  const context: IContainerContext);
 begin
-
-end;
-
-function TContainerExtension.GetContext: IContainerContext;
-begin
-  Result := fContext;
-end;
-
-procedure TContainerExtension.SetContext(
-  const value: IContainerContext);
-begin
-  if Assigned(fContext) then
-  begin
-    fContext.DependencyResolver.OnResolve.Remove(DoResolve);
-    fContext.ServiceResolver.OnResolve.Remove(DoResolve);
-  end;
-
-  fContext := value;
-
-  if Assigned(fContext) then
-  begin
-    fContext.DependencyResolver.OnResolve.Add(DoResolve);
-    fContext.ServiceResolver.OnResolve.Add(DoResolve);
-  end;
+  fContext := context;
 end;
 
 {$ENDREGION}

@@ -39,6 +39,7 @@ uses
 type
   { Forward Declarations }
   TComponentModel = class;
+  IComponentBuilder = interface;
   IComponentRegistry = interface;
   IBuilderInspector = interface;
   IServiceResolver = interface;
@@ -57,6 +58,7 @@ type
   IContainerContext = interface
     ['{9E90EADB-A720-4394-A5E0-5DF0550C1E92}']
   {$REGION 'Property Accessors'}
+    function GetComponentBuilder: IComponentBuilder;
     function GetComponentRegistry: IComponentRegistry;
     function GetDependencyResolver: IDependencyResolver;
     function GetInjectionFactory: IInjectionFactory;
@@ -65,10 +67,11 @@ type
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(const name: string): Boolean; overload;
     function CreateLifetimeManager(model: TComponentModel): ILifetimeManager;
-    procedure AddExtension(extension: IContainerExtension);
+    procedure AddExtension(const extension: IContainerExtension);
+    property ComponentBuilder: IComponentBuilder read GetComponentBuilder;
     property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
-    property InjectionFactory: IInjectionFactory read GetInjectionFactory;
     property DependencyResolver: IDependencyResolver read GetDependencyResolver;
+    property InjectionFactory: IInjectionFactory read GetInjectionFactory;
     property ServiceResolver: IServiceResolver read GetServiceResolver;
   end;
 
@@ -77,9 +80,8 @@ type
   ///	</summary>
   IContainerExtension = interface
     ['{E78748FB-D75C-447C-B984-9782A8F26C20}']
-    function GetContext: IContainerContext;
-    procedure SetContext(const value: IContainerContext);
-    property Context: IContainerContext read GetContext write SetContext;
+    procedure Initialize;
+    procedure InitializeExtension(const context: IContainerContext);
   end;
 
   ///	<summary>
@@ -182,8 +184,8 @@ type
 
   IResolver = interface
     ['{EA0ABA0F-BED0-4897-9E50-133184E105B7}']
-    function GetOnResolve: IList<TResolveEvent>;
-    property OnResolve: IList<TResolveEvent> read GetOnResolve;
+    function GetOnResolve: IEvent<TResolveEvent>;
+    property OnResolve: IEvent<TResolveEvent> read GetOnResolve;
   end;
 
   IDependencyResolver = interface(IResolver)
@@ -253,7 +255,7 @@ type
     property Injections: IDictionary<IInjection, TArray<TValue>> read GetInjections;
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
   public
-    constructor Create(context: IContainerContext; componentType: TRttiType);
+    constructor Create(const context: IContainerContext; componentType: TRttiType);
 
     {$REGION 'Typed Injections'}
 
@@ -360,7 +362,7 @@ uses
 
 {$REGION 'TComponentModel'}
 
-constructor TComponentModel.Create(context: IContainerContext;
+constructor TComponentModel.Create(const context: IContainerContext;
   componentType: TRttiType);
 begin
   inherited Create;
