@@ -52,7 +52,7 @@ var
 begin
   Assert(ACommand is TWhereCommand);
   inherited;
-  LWhere := TSQLWhereField.Create(FPropertyName, ACommand.Table);
+  LWhere := TSQLWhereField.Create(FPropertyName, GetCriterionTable(ACommand) );
   LWhere.MatchMode := GetMatchMode;
   LWhere.WhereOperator := GetWhereOperator;
   TWhereCommand(ACommand).WhereFields.Add(LWhere);

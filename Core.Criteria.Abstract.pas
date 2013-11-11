@@ -88,7 +88,8 @@ uses
 
 function TAbstractCriteria<T>.Add(ACriterion: ICriterion): ICriteria<T>;
 begin
-  ACriterion.SetEntityClass(FEntityClass);
+  if (ACriterion.GetEntityClass = nil) then
+    ACriterion.SetEntityClass(FEntityClass);
   FCriterions.Add(ACriterion);
   Result := Self;
 end;
@@ -176,7 +177,7 @@ begin
 
     for LOrder in FOrders do
     begin
-      LOrderField := TSQLOrderField.Create(LOrder.GetPropertyName, LExecutor.Command.Table);
+      LOrderField := TSQLOrderField.Create(LOrder.GetPropertyName, LExecutor.Command.FindTable(LOrder.GetEntityClass));
       LOrderField.OrderType := LOrder.GetOrderType;
       LExecutor.Command.OrderByFields.Add(LOrderField);
     end;

@@ -48,6 +48,7 @@ type
     procedure List_NeProperty();
     procedure List_Between();
     procedure Fetch();
+    procedure Add_SubEntity_Criterion();
   end;
 
 implementation
@@ -101,6 +102,41 @@ begin
   CheckEquals(2, FCriteria.Count);
 end;
 
+
+procedure TestTCriteria.Add_SubEntity_Criterion;
+var
+  LOrders: IList<TCustomer_Orders>;
+  Age: IProperty;
+  i, LCustId: Integer;
+  LCriteria: ICriteria<TCustomer_Orders>;
+begin
+  LCriteria := FSession.CreateCriteria<TCustomer_Orders>;
+
+  Age := TProperty<TCustomer>.ForName(CUSTAGE);
+
+  for i := 1 to 10 do
+  begin
+    LCustId := InsertCustomer(i, 'Foo', Abs(i/2));
+    InsertCustomerOrder(LCustId, i + 10, -1, i + 100);
+  end;
+
+  LOrders := LCriteria.Add( Age.Eq(1) ).List();
+  CheckEquals(1, LOrders.Count);
+  CheckEquals(1, LOrders.First.Customer.Age);
+
+  LCriteria.Clear;
+
+  LOrders := LCriteria.Add( Age.GEq(1) ).List();
+  CheckEquals(10, LOrders.Count);
+  CheckEquals(1, LOrders.First.Customer.Age);
+
+  LCriteria.Clear;
+  LOrders := LCriteria.Add( Age.InInt(TArray<Integer>.Create(1,2,3)) )
+    .AddOrder( Age.Desc )
+    .List();
+  CheckEquals(3, LOrders.Count);
+  CheckEquals(3, LOrders.First.Customer.Age);
+end;
 
 procedure TestTCriteria.Fetch;
 var

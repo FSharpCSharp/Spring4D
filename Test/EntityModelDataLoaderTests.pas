@@ -72,6 +72,6 @@ begin
 end;
 
 initialization
-  RegisterTest(TEntityModelDataLoaderTests.Suite);
+  //RegisterTest(TEntityModelDataLoaderTests.Suite);
 
 end.

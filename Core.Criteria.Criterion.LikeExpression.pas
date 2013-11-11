@@ -45,7 +45,7 @@ begin
 
   Result := Format('%S %S %S', [UpperCase(PropertyName), WhereOpNames[GetWhereOperator], GetMatchModeString(FMatchMode, Value.AsString)]);
 
-  LWhere := TSQLWhereField.Create(Result, ACommand.Table);
+  LWhere := TSQLWhereField.Create(Result, GetCriterionTable(ACommand) );
   LWhere.MatchMode := GetMatchMode;
   LWhere.WhereOperator := GetWhereOperator;
   TWhereCommand(ACommand).WhereFields.Add(LWhere);

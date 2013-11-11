@@ -47,6 +47,8 @@ type
     FGenerator: ISQLGenerator;
     procedure SetEntityClass(const Value: TClass);
     function GetEntityClass: TClass;
+  protected
+    function GetCriterionTable(ACommand: TDMLCommand): TSQLTable; virtual;
   public
     destructor Destroy; override;
 
@@ -61,6 +63,11 @@ type
 
 implementation
 
+uses
+  Core.EntityCache
+  ,SysUtils
+  ;
+
 
 { TAbstractCriterion }
 
@@ -68,6 +75,15 @@ destructor TAbstractCriterion.Destroy;
 begin
   FGenerator := nil;
   inherited Destroy;
+end;
+
+function TAbstractCriterion.GetCriterionTable(ACommand: TDMLCommand): TSQLTable;
+begin
+  Result := ACommand.Table;
+  if (ACommand is TSelectCommand) then
+  begin
+    Result := TSelectCommand(ACommand).FindTable(EntityClass);
+  end;
 end;
 
 function TAbstractCriterion.GetEntityClass: TClass;

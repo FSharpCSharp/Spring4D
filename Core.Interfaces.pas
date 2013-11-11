@@ -75,6 +75,8 @@ type
     ['{F0047369-10D6-4A4D-9BB8-FD5699936D5D}']
     function GetPropertyName(): string;
     function GetOrderType(): TOrderType;
+    function GetEntityClass(): TClass;
+    procedure SetEntityClass(AClass: TClass);
   end;
 
   {$REGION 'Documentation'}
@@ -173,6 +175,55 @@ type
     ///	</param>
     {$ENDREGION}
     function Page(APage: Integer; AItemsPerPage: Integer): IDBPage<T>;
+  end;
+
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  A factory for property-specific criterion and projection instances.
+  ///	</summary>
+  ///	<remarks>
+  ///	  For detailed methods documentation look in
+  ///	  <see cref="Core.Criteria.Restrictions|TRestrictions" />.
+  ///	</remarks>
+  {$ENDREGION}
+  IProperty = interface(IInvokable)
+    ['{2F58C81C-4817-43E7-BA3F-7570FE2A6823}']
+    function Eq(const AValue: TValue): ICriterion;
+    function NotEq(const AValue: TValue): ICriterion;
+    function GEq(const AValue: TValue): ICriterion;
+    function Gt(const AValue: TValue): ICriterion;
+    function IsNull(): ICriterion;
+    function IsNotNull(): ICriterion;
+    function Like(const AValue: string; AMatchMode: TMatchMode = mmExact): ICriterion;
+    function NotLike(const AValue: string; AMatchMode: TMatchMode = mmExact): ICriterion;
+    function LEq(const AValue: TValue): ICriterion;
+    function Lt(const AValue: TValue): ICriterion;
+    function &InStr(const AValues: TArray<string>): ICriterion;
+    function NotInStr(const AValues: TArray<string>): ICriterion;
+    function &InInt(const AValues: TArray<Integer>): ICriterion;
+    function NotInInt(const AValues: TArray<Integer>): ICriterion;
+    function Between(const ALow, AHigh: TValue): ICriterion;
+
+    function EqProperty(AOther: IProperty): ICriterion; overload;
+    function EqProperty(const AOtherPropertyName: string): ICriterion; overload;
+    function NeProperty(AOther: IProperty): ICriterion; overload;
+    function NeProperty(const AOtherPropertyName: string): ICriterion; overload;
+    function GeProperty(AOther: IProperty): ICriterion; overload;
+    function GeProperty(const AOtherPropertyName: string): ICriterion; overload;
+    function GtProperty(AOther: IProperty): ICriterion; overload;
+    function GtProperty(const AOtherPropertyName: string): ICriterion; overload;
+    function LeProperty(AOther: IProperty): ICriterion; overload;
+    function LeProperty(const AOtherPropertyName: string): ICriterion; overload;
+    function LtProperty(AOther: IProperty): ICriterion; overload;
+    function LtProperty(const AOtherPropertyName: string): ICriterion; overload;
+
+    function GetPropertyName(): string;
+    function GetEntityClass(): TClass;
+    procedure SetEntityClass(AClass: TClass);
+    procedure SetPropertyName(const Value: string);
+
+    function Asc(): IOrder;
+    function Desc(): IOrder;
   end;
 
   {$REGION 'Documentation'}

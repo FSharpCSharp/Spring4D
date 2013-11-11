@@ -86,6 +86,8 @@ type
     constructor Create(ATable: TSQLTable); override;
     destructor Destroy; override;
 
+    function FindTable(AClass: TClass): TSQLTable;
+
     procedure SetAssociations(AEntityClass: TClass); virtual;
     procedure SetTable(AColumns: TList<ColumnAttribute>); override;
     procedure SetFromPrimaryColumn();
@@ -98,6 +100,7 @@ type
 
     property ForeignColumn: ForeignJoinColumnAttribute read FForeignColumn write FForeignColumn;
     property PrimaryKeyColumn: ColumnAttribute read FPrimaryKeyColumn write FPrimaryKeyColumn;
+    property Tables: TObjectList<TSQLTable> read FTables;
   end;
 
   {$REGION 'Documentation'}
@@ -242,6 +245,26 @@ begin
   FOrderByFields.Free;
   FTables.Free;
   inherited Destroy;
+end;
+
+function TSelectCommand.FindTable(AClass: TClass): TSQLTable;
+var
+  LTableName: string;
+  LCurrentSQLTable: TSQLTable;
+begin
+  if AClass = nil then
+    Exit(Table);
+
+  LTableName := TEntityCache.Get(AClass).EntityTable.TableName;
+
+  for LCurrentSQLTable in FTables do
+  begin
+    if SameText( LCurrentSQLTable.GetNameWithoutSchema, LTableName) then
+    begin
+      Exit(LCurrentSQLTable);
+    end;
+  end;
+  Result := Table;
 end;
 
 procedure TSelectCommand.SetAssociations(AEntityClass: TClass);
