@@ -163,7 +163,7 @@ begin
         typeData := GetTypeData(typeInfo);
         Result := CFloatSizes[typeData^.FloatType];
       end;
-    tkString, tkLString, tkUString, tkWString, tkInterface, tkClass, tkClassRef, tkDynArray:
+    tkString, tkLString, tkUString, tkWString, tkInterface, tkClass, tkClassRef, tkDynArray, tkPointer:
       Result := SizeOf(Pointer);
     tkMethod:
       Result := SizeOf(TMethod);
