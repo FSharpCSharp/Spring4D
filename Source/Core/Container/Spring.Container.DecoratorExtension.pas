@@ -66,6 +66,7 @@ implementation
 
 uses
   Rtti,
+  TypInfo,
   Spring.Container.Resolvers,
   Spring.Helpers,
   Spring.Reflection;
@@ -130,10 +131,25 @@ end;
 
 function TDecoratorComponentActivator.CreateInstance(
   const resolver: IDependencyResolver): TValue;
+
+{$IFDEF DELPHI2010}
+  function ConvClass2Inf(const AObject: TObject; ATarget: PTypeInfo): TValue;
+  var
+    intf: Pointer;
+  begin
+    if AObject.GetInterface(GetTypeData(ATarget).Guid, intf) then
+      TValue.MakeWithoutCopy(@intf, ATarget, Result);
+  end;
+{$ENDIF}
+
 var
   dependencyOverride: IResolverOverride;
 begin
   Result := fComponentActivator.CreateInstance(resolver);
+{$IFDEF DELPHI2010}
+  if Result.IsObject and (fServiceType.Kind = tkInterface) then
+    Result := ConvClass2Inf(Result.AsObject, fServiceType);
+{$ENDIF}
   dependencyOverride := TDependencyOverride.Create(fServiceType, Result);
   Result := fDecoratorActivator.CreateInstance(dependencyOverride.GetResolver(fContext));
 end;

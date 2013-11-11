@@ -209,8 +209,11 @@ begin
 end;
 
 procedure TContainer.AddExtension<T>;
+var
+  extension: IContainerExtension;
 begin
-  AddExtension(T.Create);
+  extension := T.Create;
+  AddExtension(extension);
 end;
 
 procedure TContainer.Build;
