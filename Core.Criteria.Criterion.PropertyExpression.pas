@@ -75,11 +75,14 @@ begin
   LTable := FTable;
   LOtherTable := FOtherTable;
 
+  LTable := GetCriterionTable(ACommand, LTable);
+  LOtherTable := GetCriterionTable(ACommand, LOtherTable);
+
   if not Assigned(LTable) then
-    LTable := GetCriterionTable(ACommand);
+    LTable := ACommand.Table;
 
   if not Assigned(LOtherTable) then
-    LOtherTable := GetCriterionTable(ACommand);
+    LOtherTable := ACommand.Table;
 
   LWhere := TSQLWherePropertyField.Create(UpperCase(FPropertyName), UpperCase(FOtherPropertyName)
     , LTable, LOtherTable);

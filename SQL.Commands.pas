@@ -87,6 +87,7 @@ type
     destructor Destroy; override;
 
     function FindTable(AClass: TClass): TSQLTable;
+    function FindCorrespondingTable(ATable: TSQLTable): TSQLTable;
 
     procedure SetAssociations(AEntityClass: TClass); virtual;
     procedure SetTable(AColumns: TList<ColumnAttribute>); override;
@@ -245,6 +246,24 @@ begin
   FOrderByFields.Free;
   FTables.Free;
   inherited Destroy;
+end;
+
+function TSelectCommand.FindCorrespondingTable(ATable: TSQLTable): TSQLTable;
+var
+  LCurrentSQLTable: TSQLTable;
+begin
+  Result := ATable;
+
+  if (ATable = nil) then
+    Exit;
+
+  for LCurrentSQLTable in FTables do
+  begin
+    if SameText(LCurrentSQLTable.GetNameWithoutSchema, ATable.GetNameWithoutSchema) then
+    begin
+      Exit(LCurrentSQLTable);
+    end;
+  end;
 end;
 
 function TSelectCommand.FindTable(AClass: TClass): TSQLTable;

@@ -48,7 +48,8 @@ type
     procedure SetEntityClass(const Value: TClass);
     function GetEntityClass: TClass;
   protected
-    function GetCriterionTable(ACommand: TDMLCommand): TSQLTable; virtual;
+    function GetCriterionTable(ACommand: TDMLCommand): TSQLTable; overload; virtual;
+    function GetCriterionTable(ACommand: TDMLCommand; ATable: TSQLTable): TSQLTable; overload; virtual;
   public
     destructor Destroy; override;
 
@@ -83,6 +84,15 @@ begin
   if (ACommand is TSelectCommand) then
   begin
     Result := TSelectCommand(ACommand).FindTable(EntityClass);
+  end;
+end;
+
+function TAbstractCriterion.GetCriterionTable(ACommand: TDMLCommand; ATable: TSQLTable): TSQLTable;
+begin
+  Result := ATable;
+  if (ACommand is TSelectCommand) then
+  begin
+    Result := TSelectCommand(ACommand).FindCorrespondingTable(ATable);
   end;
 end;
 
