@@ -591,6 +591,7 @@ begin
   FLazy.ID := FVarData.ID;
   FLazy.Entity := FVarData.Entity;
   FLazy.EntityColumn := FVarData.Column;
+  FLazy.RttiMember := FVarData.RttiMemberName;
   Result := FLazy.Value;
 end;
 

@@ -377,7 +377,7 @@ begin
   LVarDataRecord.RttiMemberName := ARttiMember.Name;
   //set field value
   TValue.From<TLazyVarData>(LVarDataRecord).ExtractRawData(PByte(LRef) + LVarDataField.Offset);
- // LVarDataField.SetValue(LRef, TValue.From<TLazyVarData>(LVarDataRecord) );
+//  LVarDataField.SetValue(LRef, TValue.From<TLazyVarData>(LVarDataRecord) );
 end;
 
 class procedure TUtils.SetNullableValue(ARttiMember: TRttiNamedObject; const AFrom: TValue; var AResult: TValue);

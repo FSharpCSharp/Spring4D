@@ -140,7 +140,7 @@ begin
   FNewEntityClass := TRttiContext.Create.GetType(LCol.GetColumnTypeInfo).AsInstance.MetaclassType;
   FEntityData := TEntityCache.Get(FNewEntityClass);
   FNewTableName := FEntityData.EntityTable.TableName;
-  NewEntity := FNewEntityClass.Create;
+  NewEntity := TRttiExplorer.CreateType(FNewEntityClass);
   if Assigned(FNewColumns) then
     FNewColumns.Free;
   FNewColumns := TEntityCache.CreateColumnsData(FNewEntityClass);

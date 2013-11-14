@@ -484,7 +484,7 @@ end;
 
 class function TRttiExplorer.CreateType(AClass: TClass): TObject;
 begin
-  Result := AClass.Create;
+  Result := CreateType(AClass.ClassInfo);
 end;
 
 class destructor TRttiExplorer.Destroy;
