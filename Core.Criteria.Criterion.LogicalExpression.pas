@@ -25,7 +25,7 @@ type
     constructor Create(ALeft, ARight: ICriterion; const AOperator: TWhereOperator); virtual;
   public
     function GetWhereOperator(): TWhereOperator; override;
-    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator): string; override;
+    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; override;
   end;
 
 implementation
@@ -49,7 +49,7 @@ begin
   Result := FOperator;
 end;
 
-function TLogicalExpression.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator): string;
+function TLogicalExpression.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
 var
   LWhere, LEndOp: TSQLWhereField;
 begin
@@ -58,17 +58,25 @@ begin
   LWhere := TSQLWhereField.Create('', '');
   LWhere.MatchMode := GetMatchMode;
   LWhere.WhereOperator := GetWhereOperator;
-  TWhereCommand(ACommand).WhereFields.Add(LWhere);
-  LWhere.LeftSQL := FLeft.ToSqlString(AParams, ACommand, AGenerator);
+  if AAddToCommand then
+    TWhereCommand(ACommand).WhereFields.Add(LWhere);
+  LWhere.LeftSQL := FLeft.ToSqlString(AParams, ACommand, AGenerator, AAddToCommand);
   if Assigned(FRight) then
-    LWhere.RightSQL := FRight.ToSqlString(AParams, ACommand, AGenerator);
+    LWhere.RightSQL := FRight.ToSqlString(AParams, ACommand, AGenerator, AAddToCommand);
 
   LEndOp := TSQLWhereField.Create('', '');
   LEndOp.MatchMode := GetMatchMode;
   LEndOp.WhereOperator := GetEndOperator(FOperator);
-  TWhereCommand(ACommand).WhereFields.Add(LEndOp);
+  if AAddToCommand then
+    TWhereCommand(ACommand).WhereFields.Add(LEndOp);
 
   Result := LWhere.ToSQLString(AGenerator.GetEscapeFieldnameChar);
+
+  if not AAddToCommand then
+  begin
+    LWhere.Free;
+    LEndOp.Free;
+  end;
 end;
 
 end.

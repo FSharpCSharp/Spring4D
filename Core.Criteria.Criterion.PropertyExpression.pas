@@ -29,7 +29,7 @@ type
     destructor Destroy; override;
   public
     function GetWhereOperator(): TWhereOperator; override;
-    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator): string; override;
+    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; override;
 
   end;
 
@@ -65,7 +65,7 @@ begin
   Result := FOperator;
 end;
 
-function TPropertyExpression.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator): string;
+function TPropertyExpression.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
 var
   LWhere: TSQLWherePropertyField;
   LTable, LOtherTable: TSQLTable;
@@ -88,7 +88,10 @@ begin
     , LTable, LOtherTable);
   LWhere.MatchMode := GetMatchMode;
   LWhere.WhereOperator := GetWhereOperator;
-  TWhereCommand(ACommand).WhereFields.Add(LWhere);
+  if AAddToCommand then
+    TWhereCommand(ACommand).WhereFields.Add(LWhere)
+  else
+    LWhere.Free;
 end;
 
 end.

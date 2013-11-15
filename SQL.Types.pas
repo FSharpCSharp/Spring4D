@@ -178,7 +178,7 @@ type
 
   TWhereOperator = (woEqual = 0, woNotEqual, woMore, woLess, woLike, woNotLike,
     woMoreOrEqual, woLessOrEqual, woIn, woNotIn, woIsNull, woIsNotNull, woOr,
-    woOrEnd, woAnd, woAndEnd, woNot, woNotEnd, woBetween);
+    woOrEnd, woAnd, woAndEnd, woNot, woNotEnd, woBetween, woJunction);
 
   TStartOperators = set of TWhereOperator;
 
@@ -186,7 +186,7 @@ const
   WhereOpNames: array[TWhereOperator] of string = (
     {woEqual =} '=', {woNotEqual =} '<>', {woMore = }'>', {woLess = }'<', {woLike = }'LIKE', {woNotLike = }'NOT LIKE',
     {woMoreOrEqual = }'>=', {woLessOrEqual = }'<=', {woIn = }'IN', {woNotIn = }'NOT IN', {woIsNull} 'IS NULL', {woIsNotNull} 'IS NOT NULL'
-    ,{woOr}'OR', {woOrEnd}'', {woAnd} 'AND', {woAndEnd}'', {woNot}'NOT', {woNotEnd}'',{woBetween}'BETWEEN'
+    ,{woOr}'OR', {woOrEnd}'', {woAnd} 'AND', {woAndEnd}'', {woNot}'NOT', {woNotEnd}'',{woBetween}'BETWEEN', {woJunction} ''
     );
 
   StartOperators: TStartOperators = [woOr, woAnd, woNot];
@@ -604,6 +604,7 @@ begin
     woOr, woAnd: Result := Format('(%S %S %S)', [FLeftSQL, WhereOpNames[WhereOperator], FRightSQL]);
     woNot: Result := Format('%S (%S)', [WhereOpNames[WhereOperator], FLeftSQL]);
     woOrEnd, woAndEnd, woNotEnd: Result := '';
+    woJunction: Result := Format('(%S)', [FLeftSQL]);
     woBetween: Result := Format('(%S %S %S AND %S)', [GetFullFieldname(AEscapeChar), WhereOpNames[WhereOperator], FParamName, FParamName2]);
     else
       Result := GetFullFieldname(AEscapeChar) + ' ' + WhereOpNames[WhereOperator] + ' ' + FParamName + ' ';

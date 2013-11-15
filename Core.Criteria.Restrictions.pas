@@ -36,6 +36,8 @@ uses
   ,Core.Criteria.Criterion
   ,Rtti
   ,SQL.Types
+  ,Core.Criteria.Criterion.Disjunction
+  ,Core.Criteria.Criterion.Conjunction
   ;
 
 
@@ -204,6 +206,20 @@ type
     ///	</summary>
     {$ENDREGION}
     class function Between(const APropertyName: string; const ALow, AHigh: TValue): ICriterion;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Group expressions together in a single conjunction (A and B and C...)
+    ///	</summary>
+    {$ENDREGION}
+    class function Conjunction(): TConjunction;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Group expressions together in a single disjunction (A or B or C...)
+    ///	</summary>
+    {$ENDREGION}
+    class function Disjunction(): TDisjunction;
   end;
 
 implementation
@@ -244,6 +260,16 @@ class function TRestrictions.Between(const APropertyName: string; const ALow,
   AHigh: TValue): ICriterion;
 begin
   Result := TBetweenExpression.Create(APropertyName, ALow, AHigh, woBetween);
+end;
+
+class function TRestrictions.Conjunction: TConjunction;
+begin
+  Result := TConjunction.Create();
+end;
+
+class function TRestrictions.Disjunction: TDisjunction;
+begin
+  Result := TDisjunction.Create();
 end;
 
 class function TRestrictions.Eq(const APropertyName: string;

@@ -25,7 +25,7 @@ type
   public
     constructor Create(const APropertyName: string; const ALowValue, AHighValue: TValue; const AOperator: TWhereOperator); virtual;
   public
-    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator): string; override;
+    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; override;
     function GetWhereOperator(): TWhereOperator; override;
 
     property PropertyName: string read FPropertyName;
@@ -58,7 +58,7 @@ begin
 end;
 
 function TBetweenExpression.ToSqlString(AParams: TObjectList<TDBParam>;
-  ACommand: TDMLCommand; AGenerator: ISQLGenerator): string;
+  ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
 var
   LParam: TDBParam;
   LWhere: TSQLWhereField;
@@ -73,10 +73,16 @@ begin
   LWhere.WhereOperator := GetWhereOperator;
   LWhere.ParamName := LParamName;
   LWhere.ParamName2 := LParamName2;
-  TWhereCommand(ACommand).WhereFields.Add(LWhere);
-
 
   Result := LWhere.ToSQLString(AGenerator.GetEscapeFieldnameChar); {TODO -oLinas -cGeneral : fix escape fields}
+
+  if AAddToCommand then
+    TWhereCommand(ACommand).WhereFields.Add(LWhere)
+  else
+    LWhere.Free;
+
+
+
   //1st parameter Low
   LParam := TDBParam.Create();
   LParam.SetFromTValue(FLowValue);

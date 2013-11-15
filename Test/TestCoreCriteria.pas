@@ -49,6 +49,8 @@ type
     procedure List_Between();
     procedure Fetch();
     procedure Add_SubEntity_Criterion();
+    procedure Disjunction();
+    procedure Conjunction();
   end;
 
 implementation
@@ -136,6 +138,51 @@ begin
     .List();
   CheckEquals(3, LOrders.Count);
   CheckEquals(3, LOrders.First.Customer.Age);
+end;
+
+procedure TestTCriteria.Conjunction;
+var
+  LCustomers: IList<TCustomer>;
+  Age, Name: IProperty;
+begin
+  Age := TProperty.ForName(CUSTAGE);
+  Name := TProperty.ForName(CUSTNAME);
+  InsertCustomer(42, 'Foo');
+  InsertCustomer(50, 'Bar');
+
+  LCustomers := FCriteria.Add(
+    TRestrictions
+      .Conjunction()
+        .Add(Age.Eq(42))
+        .Add(Name.Eq('Foo')))
+    .AddOrder(Age.Desc)
+    .List;
+  CheckEquals(1, LCustomers.Count);
+  CheckEquals(42, LCustomers[0].Age);
+  CheckEquals('Foo', LCustomers[0].Name);
+end;
+
+procedure TestTCriteria.Disjunction;
+var
+  LCustomers: IList<TCustomer>;
+  Age, Name: IProperty;
+begin
+  Age := TProperty.ForName(CUSTAGE);
+  Name := TProperty.ForName(CUSTNAME);
+  InsertCustomer(42, 'Foo');
+  InsertCustomer(50, 'Bar');
+
+  LCustomers := FCriteria.Add(
+    TRestrictions
+      .Disjunction()
+        .Add(Age.Eq(42))
+        .Add(Name.Eq('Foo'))
+        .Add(Age.Eq(50)))
+    .AddOrder(Age.Desc)
+    .List;
+  CheckEquals(2, LCustomers.Count);
+  CheckEquals(50, LCustomers[0].Age);
+  CheckEquals(42, LCustomers[1].Age);
 end;
 
 procedure TestTCriteria.Fetch;

@@ -20,7 +20,7 @@ type
   public
     constructor Create(const APropertyName: string; const AValue: TValue; AOperator: TWhereOperator; const AMatchMode: TMatchMode); reintroduce; overload;
 
-    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator): string; override;
+    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; override;
   end;
 
 implementation
@@ -37,7 +37,7 @@ begin
   FMatchMode := AMatchMode;
 end;
 
-function TLikeExpression.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator): string;
+function TLikeExpression.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
 var
   LWhere: TSQLWhereField;
 begin
@@ -48,7 +48,11 @@ begin
   LWhere := TSQLWhereField.Create(Result, GetCriterionTable(ACommand) );
   LWhere.MatchMode := GetMatchMode;
   LWhere.WhereOperator := GetWhereOperator;
-  TWhereCommand(ACommand).WhereFields.Add(LWhere);
+
+  if AAddToCommand then
+    TWhereCommand(ACommand).WhereFields.Add(LWhere)
+  else
+    LWhere.Free;
 end;
 
 end.

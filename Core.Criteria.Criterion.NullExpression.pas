@@ -22,7 +22,7 @@ type
   public
     constructor Create(const APropertyName: string; const AOperator: TWhereOperator); virtual;
   public
-    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator): string; override;
+    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; override;
     function GetWhereOperator(): TWhereOperator; override;
   end;
 
@@ -46,7 +46,7 @@ begin
   Result := FOperator;
 end;
 
-function TNullExpression.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator): string;
+function TNullExpression.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
 var
   LWhere: TSQLWhereField;
 begin
@@ -55,9 +55,16 @@ begin
   LWhere := TSQLWhereField.Create(FPropertyName, GetCriterionTable(ACommand) );
   LWhere.MatchMode := GetMatchMode;
   LWhere.WhereOperator := GetWhereOperator;
-  TWhereCommand(ACommand).WhereFields.Add(LWhere);
-
   Result := LWhere.ToSQLString(Generator.GetEscapeFieldnameChar);
+
+  if AAddToCommand then
+  begin
+    TWhereCommand(ACommand).WhereFields.Add(LWhere);
+  end
+  else
+  begin
+    LWhere.Free;
+  end;
 end;
 
 end.

@@ -134,7 +134,10 @@ uses
   Mapping.CodeGenerator.Abstract in '..\Mapping.CodeGenerator.Abstract.pas',
   Mapping.CodeGenerator.DB in '..\Mapping.CodeGenerator.DB.pas',
   EntityModelDataLoaderTests in 'EntityModelDataLoaderTests.pas',
-  Core.Comparers in '..\Core.Comparers.pas';
+  Core.Comparers in '..\Core.Comparers.pas',
+  Core.Criteria.Criterion.Junction in '..\Core.Criteria.Criterion.Junction.pas',
+  Core.Criteria.Criterion.Disjunction in '..\Core.Criteria.Criterion.Disjunction.pas',
+  Core.Criteria.Criterion.Conjunction in '..\Core.Criteria.Criterion.Conjunction.pas';
 
 {$R *.RES}
 

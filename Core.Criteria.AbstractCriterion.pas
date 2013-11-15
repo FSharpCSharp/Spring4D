@@ -53,7 +53,7 @@ type
   public
     destructor Destroy; override;
 
-    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator): string; virtual;
+    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; virtual;
     function GetMatchMode(): TMatchMode; virtual;
     function GetWhereOperator(): TWhereOperator; virtual;
 
@@ -117,7 +117,7 @@ begin
 end;
 
 function TAbstractCriterion.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand;
-  AGenerator: ISQLGenerator): string;
+  AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
 begin
   FGenerator := AGenerator;
 end;

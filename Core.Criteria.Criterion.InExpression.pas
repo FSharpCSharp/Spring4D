@@ -22,7 +22,7 @@ type
   public
     constructor Create(const APropertyName: string; const AValues: TArray<T>; AOperator: TWhereOperator); reintroduce; overload;
 
-    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator): string; override;
+    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; override;
   end;
 
 implementation
@@ -41,7 +41,7 @@ begin
   FValues := AValues;
 end;
 
-function TInExpression<T>.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator): string;
+function TInExpression<T>.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
 var
   LWhere: TSQLWhereField;
 begin
@@ -53,7 +53,11 @@ begin
   LWhere := TSQLWhereField.Create(Result, GetCriterionTable(ACommand));
   LWhere.MatchMode := GetMatchMode;
   LWhere.WhereOperator := GetWhereOperator;
-  TWhereCommand(ACommand).WhereFields.Add(LWhere);
+
+  if AAddToCommand then
+    TWhereCommand(ACommand).WhereFields.Add(LWhere)
+  else
+    LWhere.Free;
 end;
 
 function TInExpression<T>.ValuesToSeparatedString: string;
