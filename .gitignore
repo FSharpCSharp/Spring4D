@@ -1,0 +1,15 @@
+*.bak
+*.cbk
+*.dcu
+*.ddp
+*.drc
+*.dsk
+*.identcache
+*.local
+*.map
+*.skincfg
+*.tvsconfig
+*.*~*
+__history
+dunit.ini
+Spring.Tests.exe
