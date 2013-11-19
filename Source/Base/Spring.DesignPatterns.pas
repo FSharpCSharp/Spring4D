@@ -48,7 +48,6 @@ interface
 
 uses
   Classes,
-  Contnrs,
   SysUtils,
   SyncObjs,
   TypInfo,
@@ -85,7 +84,7 @@ type
       ///	  Tracks all instances of the singleton objects and free them in
       ///	  reversed order.
       ///	</summary>
-      fInstances: TObjectList;
+      fInstances: IList<TObject>;
 
       fCriticalSection: TCriticalSection;
 
@@ -318,14 +317,13 @@ uses
 class constructor TSingleton.Create;
 begin
   fMappings :=  TCollections.CreateDictionary<TClass, TObject>(4);
-  fInstances := TObjectList.Create(True);
+  fInstances := TCollections.CreateObjectList<TObject>(True);
   fCriticalSection := TCriticalSection.Create;
 end;
 
 class destructor TSingleton.Destroy;
 begin
   fCriticalSection.Free;
-  fInstances.Free;
 end;
 
 class function TSingleton.GetInstance<T>: T;
