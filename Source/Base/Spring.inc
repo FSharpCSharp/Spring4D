@@ -31,8 +31,12 @@
   {$MESSAGE ERROR 'This framework requires Delphi 2010 or higher.'}}
 {$ENDIF}
 
-{$IFNDEF MSWINDOWS}
-  {$MESSAGE ERROR 'This framework currently only supports Windows.'}
+{$IFDEF MSWINDOWS}
+{$else} {$ifdef MACOS}
+  {$MESSAGE WARN 'This framework currently is experpimental on Mac OS X and has not been tested there yet.'}
+{$endif OSX}
+{$else}
+  {$MESSAGE ERROR 'This framework currently only supports Windows (tested) and Mac OS X (experimental).'}
 {$ENDIF}
 
 {$WARN UNIT_PLATFORM OFF}    // Turn off UNIT_PLATFORM warning

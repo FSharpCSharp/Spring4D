@@ -790,6 +790,9 @@ implementation
 
 uses
   Character,
+{$ifdef MACOS}
+  Macapi.CoreFoundation, // Solves [dccosx Hint] H2443 Inline function 'TStringHelper.ToUpper' has not been expanded because unit 'Macapi.CoreFoundation' is not specified in USES list
+{$endif MACOS}
   Spring.ResourceStrings,
   Spring.Collections.Sets,
   Spring.Collections.Stacks,
