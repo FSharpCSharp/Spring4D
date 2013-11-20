@@ -74,11 +74,17 @@ type
     const NameString: string = 'Another Name';
   end;
 
+  IAgeService = interface;
+
   TDynamicNameService = class(TNameService, IAnotherNameService)
+  private
+    fAgeService: IAgeService;
   public
     constructor Create(const name: string); overload;
     constructor Create(obj: TObject); overload;
     constructor Create(const name: string; obj: TObject); overload;
+
+    property AgeService: IAgeService read fAgeService;
   end;
 
   {$ENDREGION}
@@ -141,9 +147,11 @@ type
 
   TNameAgeComponent = class(TInterfacedObject, INameService, IAgeService)
   private
+    fAge: Integer;
     function GetName: string;
     function GetAge: Integer;
   public
+    constructor Create(age: Integer); overload;
     property Name: string read GetName;
     property Age: Integer read GetAge;
     const NameString: string = 'Complex';
@@ -642,14 +650,21 @@ end;
 
 { TNameAgeComponent }
 
+constructor TNameAgeComponent.Create(age: Integer);
+begin
+  fAge := age;
+end;
+
 function TNameAgeComponent.GetAge: Integer;
 begin
   Result := TNameAgeComponent.DefaultAge;
+  if fAge > 0 then
+    Result := fAge;
 end;
 
 function TNameAgeComponent.GetName: string;
 begin
-  Result := TNameAgeComponent.NameString;
+  Result := TNameAgeComponent.NameString
 end;
 
 { TInjectionComponent }

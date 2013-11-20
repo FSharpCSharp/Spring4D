@@ -701,7 +701,10 @@ function TOrderedParametersOverride.TResolver.ResolveDependencies(
   const Inject: IInjection): TArray<TValue>;
 begin
   Guard.CheckNotNull(Inject, 'Inject');
-  Result := fArguments;
+  if Inject.Target.IsConstructor then
+    Result := fArguments
+  else
+    Result := fContext.DependencyResolver.ResolveDependencies(Inject);
 end;
 
 {$ENDREGION}
