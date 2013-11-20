@@ -96,8 +96,8 @@ begin
   begin
     // only support decorators that have a constructor
     // with exact one parameter that is of the decorating type
-    predicate := TMethodFilters.IsConstructor and
-      TMethodFilters.HasParameterTypes([serviceType]);
+    predicate := TMethodFilters.IsConstructor
+      and TMethodFilters.ContainsParameterType(serviceType);
     decoratorModel := nil;
     for componentModel in context.ComponentRegistry.FindAll(serviceType) do
     begin
