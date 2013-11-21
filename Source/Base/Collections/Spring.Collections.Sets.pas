@@ -32,15 +32,24 @@ uses
   Generics.Defaults,
   Generics.Collections,
   Spring.Collections,
-  Spring.Collections.Base;
+  Spring.Collections.Base,
+  Spring.Collections.Extensions;
 
 type
-  THashSet<T> = class(TCollectionBase<T>, ISet<T>, ISet)
+  THashSetBase<T> = class abstract(TCollectionBase<T>)
   private
     type
       TGenericDictionary = Generics.Collections.TDictionary<T, Integer>;
   private
     fDictionary: TGenericDictionary;
+  public
+    procedure Add(const item: T); override;
+  end;
+
+  THashSet<T> = class(THashSetBase<T>, ISet<T>, ISet)
+  private
+    type
+      TEnumerator = TEnumeratorAdapter<T>;
   protected
     function GetCount: Integer; override;
 
@@ -55,9 +64,6 @@ type
     procedure ISet.UnionWith = NonGenericUnionWith;
     function ISet.SetEquals = NonGenericSetEquals;
     function ISet.Overlaps = NonGenericOverlaps;
-
-    function AddInternal(const item: T): Boolean;
-    function ISet<T>.Add = AddInternal;
   public
     constructor Create; overload;
     constructor Create(const comparer: IEqualityComparer<T>); overload;
@@ -65,16 +71,18 @@ type
 
     function GetEnumerator: IEnumerator<T>; override;
 
-    procedure Add(const item: T); override;
+    function Add(const item: T): Boolean; reintroduce;
     function Remove(const item: T): Boolean; override;
     procedure Clear; override;
 
-    function Contains(const item: T; const comparer: IEqualityComparer<T>): Boolean; override;
+    function Contains(const item: T): Boolean; override;
+
     procedure ExceptWith(const collection: IEnumerable<T>);
     procedure IntersectWith(const collection: IEnumerable<T>);
     procedure UnionWith(const collection: IEnumerable<T>);
     function SetEquals(const collection: IEnumerable<T>): Boolean;
     function Overlaps(const collection: IEnumerable<T>): Boolean;
+
     function AsSet: ISet;
   end;
 
@@ -82,8 +90,17 @@ implementation
 
 uses
   Spring,
-  Spring.Collections.Lists,
-  Spring.Collections.Extensions;
+  Spring.Collections.Lists;
+
+
+{$REGION 'THashSetBase<T>'}
+
+procedure THashSetBase<T>.Add(const item: T);
+begin
+  fDictionary.Add(item, 0);
+end;
+
+{$ENDREGION}
 
 
 {$REGION 'THashSet<T>'}
@@ -108,16 +125,11 @@ begin
   inherited Destroy;
 end;
 
-procedure THashSet<T>.Add(const item: T);
-begin
-  AddInternal(item);
-end;
-
-function THashSet<T>.AddInternal(const item: T): Boolean;
+function THashSet<T>.Add(const item: T): Boolean;
 begin
   Result := not fDictionary.ContainsKey(item);
   if Result then
-    fDictionary.Add(item, 0);
+    inherited Add(item);
 end;
 
 function THashSet<T>.Remove(const item: T): Boolean;
@@ -137,7 +149,7 @@ begin
   fDictionary.Clear;
 end;
 
-function THashSet<T>.Contains(const item: T; const comparer: IEqualityComparer<T>): Boolean;
+function THashSet<T>.Contains(const item: T): Boolean;
 begin
   Result := fDictionary.ContainsKey(item);
 end;
@@ -146,7 +158,7 @@ procedure THashSet<T>.ExceptWith(const collection: IEnumerable<T>);
 var
   item: T;
 begin
-  Guard.CheckNotNull(collection <> nil, 'collection');
+  Guard.CheckNotNull(Assigned(collection), 'collection');
 
   for item in collection do
     fDictionary.Remove(item);
@@ -157,7 +169,7 @@ var
   item: T;
   list: IList<T>;
 begin
-  Guard.CheckNotNull(collection <> nil, 'collection');
+  Guard.CheckNotNull(Assigned(collection), 'collection');
 
   list := TList<T>.Create;
   for item in Self do
@@ -198,7 +210,7 @@ procedure THashSet<T>.UnionWith(const collection: IEnumerable<T>);
 var
   item: T;
 begin
-  Guard.CheckNotNull(collection <> nil, 'collection');
+  Guard.CheckNotNull(Assigned(collection), 'collection');
 
   for item in collection do
     Add(item);
@@ -208,7 +220,7 @@ function THashSet<T>.Overlaps(const collection: IEnumerable<T>): Boolean;
 var
   item: T;
 begin
-  Guard.CheckNotNull(collection <> nil, 'collection');
+  Guard.CheckNotNull(Assigned(collection), 'collection');
 
   for item in collection do
     if Contains(item) then
@@ -222,7 +234,7 @@ var
   item: T;
   localSet: ISet<T>;
 begin
-  Guard.CheckNotNull(collection <> nil, 'collection');
+  Guard.CheckNotNull(Assigned(collection), 'collection');
 
   localSet := THashSet<T>.Create;
 
@@ -242,7 +254,7 @@ end;
 
 function THashSet<T>.GetEnumerator: IEnumerator<T>;
 begin
-  Result := TEnumeratorAdapter<T>.Create(fDictionary.Keys);
+  Result := TEnumerator.Create(fDictionary.Keys);
 end;
 
 function THashSet<T>.GetCount: Integer;
@@ -251,5 +263,6 @@ begin
 end;
 
 {$ENDREGION}
+
 
 end.
