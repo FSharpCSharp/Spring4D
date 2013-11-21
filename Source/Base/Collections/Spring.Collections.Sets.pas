@@ -37,7 +37,10 @@ uses
 type
   THashSet<T> = class(TCollectionBase<T>, ISet<T>, ISet)
   private
-    fDictionary: Generics.Collections.TDictionary<T,Integer>; // TEMP Impl
+    type
+      TGenericDictionary = Generics.Collections.TDictionary<T, Integer>;
+  private
+    fDictionary: TGenericDictionary;
   protected
     function GetCount: Integer; override;
 
@@ -52,6 +55,9 @@ type
     procedure ISet.UnionWith = NonGenericUnionWith;
     function ISet.SetEquals = NonGenericSetEquals;
     function ISet.Overlaps = NonGenericOverlaps;
+
+    function AddInternal(const item: T): Boolean;
+    function ISet<T>.Add = AddInternal;
   public
     constructor Create;
     destructor Destroy; override;
@@ -59,7 +65,7 @@ type
     function GetEnumerator: IEnumerator<T>; override;
 
     procedure Add(const item: T); override;
-    function  Remove(const item: T): Boolean; override;
+    function Remove(const item: T): Boolean; override;
     procedure Clear; override;
 
     function Contains(const item: T; const comparer: IEqualityComparer<T>): Boolean; override;
@@ -84,7 +90,7 @@ uses
 constructor THashSet<T>.Create;
 begin
   inherited Create;
-  fDictionary := Generics.Collections.TDictionary<T, Integer>.Create;
+  fDictionary := TGenericDictionary.Create;
 end;
 
 destructor THashSet<T>.Destroy;
@@ -95,7 +101,14 @@ end;
 
 procedure THashSet<T>.Add(const item: T);
 begin
-  fDictionary.AddOrSetValue(item, 0);
+  AddInternal(item);
+end;
+
+function THashSet<T>.AddInternal(const item: T): Boolean;
+begin
+  Result := not fDictionary.ContainsKey(item);
+  if Result then
+    fDictionary.Add(item, 0);
 end;
 
 function THashSet<T>.Remove(const item: T): Boolean;
@@ -127,9 +140,7 @@ begin
   Guard.CheckNotNull(collection <> nil, 'collection');
 
   for item in collection do
-  begin
     fDictionary.Remove(item);
-  end;
 end;
 
 procedure THashSet<T>.IntersectWith(const collection: IEnumerable<T>);
@@ -141,15 +152,11 @@ begin
 
   list := TList<T>.Create;
   for item in Self do
-  begin
     if not collection.Contains(item) then
       list.Add(item);
-  end;
 
   for item in list do
-  begin
     Remove(item);
-  end;
 end;
 
 procedure THashSet<T>.NonGenericExceptWith(const collection: IEnumerable);
@@ -185,9 +192,7 @@ begin
   Guard.CheckNotNull(collection <> nil, 'collection');
 
   for item in collection do
-  begin
     Add(item);
-  end;
 end;
 
 function THashSet<T>.Overlaps(const collection: IEnumerable<T>): Boolean;
@@ -197,10 +202,9 @@ begin
   Guard.CheckNotNull(collection <> nil, 'collection');
 
   for item in collection do
-  begin
     if Contains(item) then
-      Exit(True)
-  end;
+      Exit(True);
+
   Result := False;
 end;
 
@@ -221,10 +225,8 @@ begin
   end;
 
   for item in Self do
-  begin
     if not localSet.Contains(item) then
       Exit(False);
-  end;
 
   Result := True;
 end;

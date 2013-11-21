@@ -662,6 +662,7 @@ type
 
   ISet = interface(ICollection)
     ['{D83ED568-A7C8-4142-BA0F-5A273AF1AA07}']
+//    function Add(const item: TValue): Boolean;
     procedure ExceptWith(const collection: IEnumerable);
     procedure IntersectWith(const collection: IEnumerable);
     procedure UnionWith(const collection: IEnumerable);
@@ -670,6 +671,7 @@ type
   end;
 
   ISet<T> = interface(ICollection<T>)
+    function Add(const item: T): Boolean;
     procedure ExceptWith(const collection: IEnumerable<T>);
     procedure IntersectWith(const collection: IEnumerable<T>);
     procedure UnionWith(const collection: IEnumerable<T>);

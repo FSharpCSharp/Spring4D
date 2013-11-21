@@ -285,10 +285,10 @@ end;
 
 procedure TTestEmptyHashSet.TestAddDuplications;
 begin
-  fSet.Add(2);
+  CheckTrue(fSet.Add(2));
   CheckEquals(1, fSet.Count);
 
-  fSet.Add(2);
+  CheckFalse(fSet.Add(2));
   CheckEquals(1, fSet.Count);
 end;
 
