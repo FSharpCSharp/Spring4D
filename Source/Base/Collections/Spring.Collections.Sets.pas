@@ -59,7 +59,8 @@ type
     function AddInternal(const item: T): Boolean;
     function ISet<T>.Add = AddInternal;
   public
-    constructor Create;
+    constructor Create; overload;
+    constructor Create(const comparer: IEqualityComparer<T>); overload;
     destructor Destroy; override;
 
     function GetEnumerator: IEnumerator<T>; override;
@@ -88,9 +89,17 @@ uses
 {$REGION 'THashSet<T>'}
 
 constructor THashSet<T>.Create;
+var
+  // use variable to pass nil because of codegen bug in XE2 and XE3 in x64
+  comparer: IEqualityComparer<T>;
+begin
+  Create(comparer);
+end;
+
+constructor THashSet<T>.Create(const comparer: IEqualityComparer<T>);
 begin
   inherited Create;
-  fDictionary := TGenericDictionary.Create;
+  fDictionary := TGenericDictionary.Create(comparer);
 end;
 
 destructor THashSet<T>.Destroy;
