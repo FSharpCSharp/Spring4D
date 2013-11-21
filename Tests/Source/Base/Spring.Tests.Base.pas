@@ -47,6 +47,7 @@ type
     procedure TestLocalVariable;
     procedure TestFromVariant;
     procedure TestEquals;
+    procedure TestDefaultReturnsInitialValue;
   end;
 
   TTestNullableBoolean = class(TTestCase)
@@ -144,6 +145,12 @@ begin
   fInteger := 5;
   Assert(fInteger.HasValue);
   fInteger := nil;
+  CheckFalse(fInteger.HasValue);
+end;
+
+procedure TTestNullableInteger.TestDefaultReturnsInitialValue;
+begin
+  fInteger := Default(Nullable<Integer>);
   CheckFalse(fInteger.HasValue);
 end;
 
