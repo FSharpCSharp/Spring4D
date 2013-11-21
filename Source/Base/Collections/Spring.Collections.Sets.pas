@@ -62,11 +62,11 @@ type
   protected
     function GetCount: Integer; override;
 
-    procedure NonGenericExceptWith(const collection: IEnumerable);
-    procedure NonGenericIntersectWith(const collection: IEnumerable);
-    procedure NonGenericUnionWith(const collection: IEnumerable);
-    function NonGenericSetEquals(const collection: IEnumerable): Boolean;
-    function NonGenericOverlaps(const collection: IEnumerable): Boolean;
+    procedure NonGenericExceptWith(const other: IEnumerable);
+    procedure NonGenericIntersectWith(const other: IEnumerable);
+    procedure NonGenericUnionWith(const other: IEnumerable);
+    function NonGenericSetEquals(const other: IEnumerable): Boolean;
+    function NonGenericOverlaps(const other: IEnumerable): Boolean;
 
     procedure ISet.ExceptWith = NonGenericExceptWith;
     procedure ISet.IntersectWith = NonGenericIntersectWith;
@@ -155,74 +155,77 @@ type
     ///	  Removes all elements in the specified collection from the current
     ///	  <see cref="THashSet&lt;T&gt;" /> object.
     ///	</summary>
-    ///	<param name="collection">
+    ///	<param name="other">
     ///	  The collection of items to remove from the
     ///	  <see cref="THashSet&lt;T&gt;" /> object.
     ///	</param>
     ///	<exception cref="ArgumentNullException">
-    ///	  <i>collection</i> is <b>nil</b>.
+    ///	  <i>other</i> is <b>nil</b>.
     ///	</exception>
-    procedure ExceptWith(const collection: IEnumerable<T>);
+    procedure ExceptWith(const other: IEnumerable<T>);
 
     ///	<summary>
     ///	  Modifies the current <see cref="THashSet&lt;T&gt;" /> object to
     ///	  contain only elements that are present in that object and in the
     ///	  specified collection.
     ///	</summary>
-    ///	<param name="collection">
+    ///	<param name="other">
     ///	  The collection to compare to the current
     ///	  <see cref="THashSet&lt;T&gt;" /> object.
     ///	</param>
     ///	<exception cref="ArgumentNullException">
-    ///	  <i>collection</i> is <b>nil</b>.
+    ///	  <i>other</i> is <b>nil</b>.
     ///	</exception>
-    procedure IntersectWith(const collection: IEnumerable<T>);
+    procedure IntersectWith(const other: IEnumerable<T>);
 
     ///	<summary>
     ///	  Modifies the current <see cref="THashSet&lt;T&gt;" /> object to
     ///	  contain all elements that are present in itself, the specified
     ///	  collection, or both.
     ///	</summary>
-    ///	<param name="collection">
+    ///	<param name="other">
     ///	  The collection to compare to the current
     ///	  <see cref="THashSet&lt;T&gt;" /> object.
     ///	</param>
     ///	<exception cref="ArgumentNullException">
-    ///	  <i>collection</i> is <b>nil</b>.
+    ///	  <i>other</i> is <b>nil</b>.
     ///	</exception>
-    procedure UnionWith(const collection: IEnumerable<T>);
+    procedure UnionWith(const other: IEnumerable<T>);
 
     ///	<summary>
     ///	  Determines whether a <see cref="THashSet&lt;T&gt;" /> object and the
     ///	  specified collection contain the same elements.
     ///	</summary>
-    ///	<param name="collection">
+    ///	<param name="other">
     ///	  The collection to compare to the current
     ///	  <see cref="THashSet&lt;T&gt;" /> object.
     ///	</param>
     ///	<returns>
     ///	  <b>True</b> if the <see cref="THashSet&lt;T&gt;" /> object is equal
-    ///	  to <i>collection</i>; otherwise, <b>False</b>.
+    ///	  to <i>other</i>; otherwise, <b>False</b>.
     ///	</returns>
-    function SetEquals(const collection: IEnumerable<T>): Boolean;
+    ///	<exception cref="ArgumentNullException">
+    ///	  <i>other</i> is <b>nil</b>.
+    ///	</exception>
+    function SetEquals(const other: IEnumerable<T>): Boolean;
 
     ///	<summary>
     ///	  Determines whether the current <see cref="THashSet&lt;T&gt;" />
     ///	  object and a specified collection share common elements.
     ///	</summary>
-    ///	<param name="collection">
+    ///	<param name="other">
     ///	  The collection to compare to the current
     ///	  <see cref="THashSet&lt;T&gt;" /> object.
     ///	</param>
     ///	<returns>
-    ///	  <b>True</b> if the <see cref="THashSet&lt;T&gt;" /> object and 
-    ///	  <i>collection</i> share at least one common element; otherwise,
+    ///	  <b>True</b> if the <see cref="THashSet&lt;T&gt;" /> object and
+    ///	  <i>other</i> share at least one common element; otherwise,
     ///	  <b>False</b>.
     ///	</returns>
     ///	<exception cref="ArgumentNullException">
-    ///	  <i>collection</i> is <b>nil</b>.
+    ///	  <i>other</i> is <b>nil</b>.
     ///	</exception>
-    function Overlaps(const collection: IEnumerable<T>): Boolean;
+    function Overlaps(const other: IEnumerable<T>): Boolean;
 
     function AsSet: ISet;
   end;
@@ -295,91 +298,90 @@ begin
   Result := fDictionary.ContainsKey(item);
 end;
 
-procedure THashSet<T>.ExceptWith(const collection: IEnumerable<T>);
+procedure THashSet<T>.ExceptWith(const other: IEnumerable<T>);
 var
   item: T;
 begin
-  Guard.CheckNotNull(Assigned(collection), 'collection');
+  Guard.CheckNotNull(Assigned(other), 'other');
 
-  for item in collection do
+  for item in other do
     fDictionary.Remove(item);
 end;
 
-procedure THashSet<T>.IntersectWith(const collection: IEnumerable<T>);
+procedure THashSet<T>.IntersectWith(const other: IEnumerable<T>);
 var
   item: T;
   list: IList<T>;
 begin
-  Guard.CheckNotNull(Assigned(collection), 'collection');
+  Guard.CheckNotNull(Assigned(other), 'other');
 
   list := TList<T>.Create;
   for item in Self do
-    if not collection.Contains(item) then
+    if not other.Contains(item) then
       list.Add(item);
 
   for item in list do
     Remove(item);
 end;
 
-procedure THashSet<T>.NonGenericExceptWith(const collection: IEnumerable);
+procedure THashSet<T>.NonGenericExceptWith(const other: IEnumerable);
 begin
-  ExceptWith(collection as THashSet<T>);
+  ExceptWith(other as THashSet<T>);
 end;
 
-procedure THashSet<T>.NonGenericIntersectWith(const collection: IEnumerable);
+procedure THashSet<T>.NonGenericIntersectWith(const other: IEnumerable);
 begin
-  IntersectWith(collection as THashSet<T>);
+  IntersectWith(other as THashSet<T>);
 end;
 
-function THashSet<T>.NonGenericOverlaps(const collection: IEnumerable): Boolean;
+function THashSet<T>.NonGenericOverlaps(const other: IEnumerable): Boolean;
 begin
-  Result := Overlaps(collection as THashSet<T>);
+  Result := Overlaps(other as THashSet<T>);
 end;
 
-function THashSet<T>.NonGenericSetEquals(
-  const collection: IEnumerable): Boolean;
+function THashSet<T>.NonGenericSetEquals(const other: IEnumerable): Boolean;
 begin
-  Result := SetEquals(collection as THashSet<T>);
+  Result := SetEquals(other as THashSet<T>);
 end;
 
-procedure THashSet<T>.NonGenericUnionWith(const collection: IEnumerable);
+procedure THashSet<T>.NonGenericUnionWith(const other: IEnumerable);
 begin
-  UnionWith(collection as THashSet<T>);
+  UnionWith(other as THashSet<T>);
 end;
 
-procedure THashSet<T>.UnionWith(const collection: IEnumerable<T>);
+procedure THashSet<T>.UnionWith(const other: IEnumerable<T>);
 var
   item: T;
 begin
-  Guard.CheckNotNull(Assigned(collection), 'collection');
+  Guard.CheckNotNull(Assigned(other), 'other');
 
-  for item in collection do
+  for item in other do
     Add(item);
 end;
 
-function THashSet<T>.Overlaps(const collection: IEnumerable<T>): Boolean;
+function THashSet<T>.Overlaps(const other: IEnumerable<T>): Boolean;
 var
   item: T;
 begin
-  Guard.CheckNotNull(Assigned(collection), 'collection');
+  Guard.CheckNotNull(Assigned(other), 'other');
 
-  for item in collection do
+  for item in other do
     if Contains(item) then
       Exit(True);
 
   Result := False;
 end;
 
-function THashSet<T>.SetEquals(const collection: IEnumerable<T>): Boolean;
+function THashSet<T>.SetEquals(const other: IEnumerable<T>): Boolean;
 var
   item: T;
   localSet: ISet<T>;
 begin
-  Guard.CheckNotNull(Assigned(collection), 'collection');
+  Guard.CheckNotNull(Assigned(other), 'other');
 
   localSet := THashSet<T>.Create;
 
-  for item in collection do
+  for item in other do
   begin
     localSet.Add(item);
     if not Contains(item) then

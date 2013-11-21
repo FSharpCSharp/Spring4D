@@ -663,11 +663,11 @@ type
   ISet = interface(ICollection)
     ['{D83ED568-A7C8-4142-BA0F-5A273AF1AA07}']
 //    function Add(const item: TValue): Boolean;
-    procedure ExceptWith(const collection: IEnumerable);
-    procedure IntersectWith(const collection: IEnumerable);
-    procedure UnionWith(const collection: IEnumerable);
-    function SetEquals(const collection: IEnumerable): Boolean;
-    function Overlaps(const collection: IEnumerable): Boolean;
+    procedure ExceptWith(const other: IEnumerable);
+    procedure IntersectWith(const other: IEnumerable);
+    procedure UnionWith(const other: IEnumerable);
+    function SetEquals(const other: IEnumerable): Boolean;
+    function Overlaps(const other: IEnumerable): Boolean;
   end;
 
   ///	<summary>
@@ -694,69 +694,69 @@ type
     ///	<summary>
     ///	  Removes all elements in the specified collection from the current set.
     ///	</summary>
-    ///	<param name="collection">
+    ///	<param name="other">
     ///	  The collection of items to remove from the set.
     ///	</param>
     ///	<exception cref="ArgumentNullException">
-    ///	  <i>collection</i> is <b>nil</b>.
+    ///	  <i>other</i> is <b>nil</b>.
     ///	</exception>
-    procedure ExceptWith(const collection: IEnumerable<T>);
+    procedure ExceptWith(const other: IEnumerable<T>);
 
     ///	<summary>
     ///	  Modifies the current set so that it contains only elements that are
     ///	  also in a specified collection.
     ///	</summary>
-    ///	<param name="collection">
+    ///	<param name="other">
     ///	  The collection to compare to the current set.
     ///	</param>
     ///	<exception cref="ArgumentNullException">
-    ///	  <i>collection</i> is <b>nil</b>.
+    ///	  <i>other</i> is <b>nil</b>.
     ///	</exception>
-    procedure IntersectWith(const collection: IEnumerable<T>);
+    procedure IntersectWith(const other: IEnumerable<T>);
 
     ///	<summary>
     ///	  Modifies the current set so that it contains all elements that are
     ///	  present in either the current set or the specified collection.
     ///	</summary>
-    ///	<param name="collection">
+    ///	<param name="other">
     ///	  The collection to compare to the current set.
     ///	</param>
     ///	<exception cref="ArgumentNullException">
-    ///	  <i>collection</i> is <b>nil</b>.
+    ///	  <i>other</i> is <b>nil</b>.
     ///	</exception>
-    procedure UnionWith(const collection: IEnumerable<T>);
+    procedure UnionWith(const other: IEnumerable<T>);
 
     ///	<summary>
     ///	  Determines whether the current set and the specified collection
     ///	  contain the same elements.
     ///	</summary>
-    ///	<param name="collection">
+    ///	<param name="other">
     ///	  The collection to compare to the current set.
     ///	</param>
     ///	<returns>
-    ///	  <b>True</b> if the current set is equal to <i>collection</i>;
+    ///	  <b>True</b> if the current set is equal to <i>other</i>;
     ///	  otherwise, <b>False</b>.
     ///	</returns>
     ///	<exception cref="ArgumentNullException">
-    ///	  <i>collection</i> is <b>nil</b>.
+    ///	  <i>other</i> is <b>nil</b>.
     ///	</exception>
-    function SetEquals(const collection: IEnumerable<T>): Boolean;
+    function SetEquals(const other: IEnumerable<T>): Boolean;
 
     ///	<summary>
     ///	  Determines whether the current set overlaps with the specified
     ///	  collection.
     ///	</summary>
-    ///	<param name="collection">
+    ///	<param name="other">
     ///	  The collection to compare to the current set.
     ///	</param>
     ///	<returns>
-    ///	  <b>True</b> if the current set and <i>collection</i> share at least
+    ///	  <b>True</b> if the current set and <i>other</i> share at least
     ///	  one common element; otherwise, <b>False</b>.
     ///	</returns>
     ///	<exception cref="ArgumentNullException">
-    ///	  <i>collection</i> is <b>nil</b>.
+    ///	  <i>other</i> is <b>nil</b>.
     ///	</exception>
-    function Overlaps(const collection: IEnumerable<T>): Boolean;
+    function Overlaps(const other: IEnumerable<T>): Boolean;
 
     function AsSet: ISet;
   end;
