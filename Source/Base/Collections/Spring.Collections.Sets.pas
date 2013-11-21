@@ -159,7 +159,7 @@ type
     ///	  The collection of items to remove from the
     ///	  <see cref="THashSet&lt;T&gt;" /> object.
     ///	</param>
-    ///	<exception cref="ArgumentNullException">
+    ///	<exception cref="EArgumentNullException">
     ///	  <i>other</i> is <b>nil</b>.
     ///	</exception>
     procedure ExceptWith(const other: IEnumerable<T>);
@@ -173,7 +173,7 @@ type
     ///	  The collection to compare to the current
     ///	  <see cref="THashSet&lt;T&gt;" /> object.
     ///	</param>
-    ///	<exception cref="ArgumentNullException">
+    ///	<exception cref="EArgumentNullException">
     ///	  <i>other</i> is <b>nil</b>.
     ///	</exception>
     procedure IntersectWith(const other: IEnumerable<T>);
@@ -187,10 +187,44 @@ type
     ///	  The collection to compare to the current
     ///	  <see cref="THashSet&lt;T&gt;" /> object.
     ///	</param>
-    ///	<exception cref="ArgumentNullException">
+    ///	<exception cref="EArgumentNullException">
     ///	  <i>other</i> is <b>nil</b>.
     ///	</exception>
     procedure UnionWith(const other: IEnumerable<T>);
+
+    ///	<summary>
+    ///	  Determines whether a <see cref="THashSet&lt;T&gt;" /> object is a
+    ///	  subset of the specified collection.
+    ///	</summary>
+    ///	<param name="other">
+    ///	  The collection to compare to the current
+    ///	  <see cref="THashSet&lt;T&gt;" /> object.
+    ///	</param>
+    ///	<returns>
+    ///	  <b>True</b> if the <see cref="THashSet&lt;T&gt;" /> object is a
+    ///	  subset of <i>other</i>; otherwise, <b>False</b>.
+    ///	</returns>
+    ///	<exception cref="EArgumentNullException">
+    ///	  <i>other</i> is <b>nil</b>.
+    ///	</exception>
+    function IsSubsetOf(const other: IEnumerable<T>): Boolean;
+
+    ///	<summary>
+    ///	  Determines whether a <see cref="THashSet&lt;T&gt;" /> object is a
+    ///	  superset of the specified collection.
+    ///	</summary>
+    ///	<param name="other">
+    ///	  The collection to compare to the current
+    ///	  <see cref="THashSet&lt;T&gt;" /> object.
+    ///	</param>
+    ///	<returns>
+    ///	  <b>True</b> if the <see cref="THashSet&lt;T&gt;" /> object is a
+    ///	  superset of <i>other</i>; otherwise, <b>False</b>.
+    ///	</returns>
+    ///	<exception cref="EArgumentNullException">
+    ///	  <i>other</i> is <b>nil</b>.
+    ///	</exception>
+    function IsSupersetOf(const other: IEnumerable<T>): Boolean;
 
     ///	<summary>
     ///	  Determines whether a <see cref="THashSet&lt;T&gt;" /> object and the
@@ -204,7 +238,7 @@ type
     ///	  <b>True</b> if the <see cref="THashSet&lt;T&gt;" /> object is equal
     ///	  to <i>other</i>; otherwise, <b>False</b>.
     ///	</returns>
-    ///	<exception cref="ArgumentNullException">
+    ///	<exception cref="EArgumentNullException">
     ///	  <i>other</i> is <b>nil</b>.
     ///	</exception>
     function SetEquals(const other: IEnumerable<T>): Boolean;
@@ -222,7 +256,7 @@ type
     ///	  <i>other</i> share at least one common element; otherwise,
     ///	  <b>False</b>.
     ///	</returns>
-    ///	<exception cref="ArgumentNullException">
+    ///	<exception cref="EArgumentNullException">
     ///	  <i>other</i> is <b>nil</b>.
     ///	</exception>
     function Overlaps(const other: IEnumerable<T>): Boolean;
@@ -322,6 +356,32 @@ begin
 
   for item in list do
     Remove(item);
+end;
+
+function THashSet<T>.IsSubsetOf(const other: IEnumerable<T>): Boolean;
+var
+  item: T;
+begin
+  Guard.CheckNotNull(Assigned(other), 'other');
+
+  for item in Self do
+    if not other.Contains(item) then
+      Exit(False);
+
+  Result := True;
+end;
+
+function THashSet<T>.IsSupersetOf(const other: IEnumerable<T>): Boolean;
+var
+  item: T;
+begin
+  Guard.CheckNotNull(Assigned(other), 'other');
+
+  for item in other do
+    if not Contains(item) then
+      Exit(False);
+
+  Result := True;
 end;
 
 procedure THashSet<T>.NonGenericExceptWith(const other: IEnumerable);

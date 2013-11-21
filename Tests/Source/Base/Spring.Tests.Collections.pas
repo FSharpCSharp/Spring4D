@@ -66,6 +66,8 @@ type
     procedure TestUnionWith;
     procedure TestSetEquals;
     procedure TestSetEqualsList;
+    procedure TestIsSubsetOf;
+    procedure TestIsSupersetOf;
   end;
 
   TTestIntegerList = class(TExceptionCheckerTestCase)
@@ -346,6 +348,20 @@ begin
   list.AddRange([3, 1, 4, 5]);
   fSet1.IntersectWith(list);
   CheckSet(fSet1, [1, 3]);
+end;
+
+procedure TTestNormalHashSet.TestIsSubsetOf;
+begin
+  CheckFalse(fSet1.IsSubsetOf(fSet2));
+  fSet2.Add(2);
+  CheckTrue(fSet1.IsSubsetOf(fSet2));
+end;
+
+procedure TTestNormalHashSet.TestIsSupersetOf;
+begin
+  CheckFalse(fSet2.IsSupersetOf(fSet1));
+  fSet2.Add(2);
+  CheckTrue(fSet2.IsSupersetOf(fSet1));
 end;
 
 procedure TTestNormalHashSet.TestUnionWith;
