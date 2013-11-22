@@ -701,7 +701,10 @@ function TOrderedParametersOverride.TResolver.ResolveDependencies(
   const Inject: IInjection): TArray<TValue>;
 begin
   Guard.CheckNotNull(Inject, 'Inject');
-  Result := fArguments;
+  if Inject.Target.IsConstructor then
+    Result := fArguments
+  else
+    Result := fContext.DependencyResolver.ResolveDependencies(Inject);
 end;
 
 {$ENDREGION}
@@ -864,12 +867,17 @@ function TDependencyOverride.TResolver.CanResolveDependency(
   dependency: TRttiType; const argument: TValue): Boolean;
 begin
   Result := dependency.Handle = fTypeInfo;
+  if not Result then
+    Result := fContext.DependencyResolver.CanResolveDependency(dependency, argument);
 end;
 
 function TDependencyOverride.TResolver.ResolveDependency(dependency: TRttiType;
   const argument: TValue): TValue;
 begin
-  Result := fValue;
+  if dependency.Handle = fTypeInfo then
+    Result := fValue
+  else
+    Result := fContext.DependencyResolver.ResolveDependency(dependency, argument);
 end;
 
 {$ENDREGION}

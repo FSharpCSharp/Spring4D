@@ -662,19 +662,133 @@ type
 
   ISet = interface(ICollection)
     ['{D83ED568-A7C8-4142-BA0F-5A273AF1AA07}']
-    procedure ExceptWith(const collection: IEnumerable);
-    procedure IntersectWith(const collection: IEnumerable);
-    procedure UnionWith(const collection: IEnumerable);
-    function SetEquals(const collection: IEnumerable): Boolean;
-    function Overlaps(const collection: IEnumerable): Boolean;
+//    function Add(const item: TValue): Boolean;
+    procedure ExceptWith(const other: IEnumerable);
+    procedure IntersectWith(const other: IEnumerable);
+    procedure UnionWith(const other: IEnumerable);
+    function SetEquals(const other: IEnumerable): Boolean;
+    function Overlaps(const other: IEnumerable): Boolean;
   end;
 
+  ///	<summary>
+  ///	  Provides the base interface for the abstraction of sets.
+  ///	</summary>
+  ///	<typeparam name="T">
+  ///	  The type of elements in the set.
+  ///	</typeparam>
   ISet<T> = interface(ICollection<T>)
-    procedure ExceptWith(const collection: IEnumerable<T>);
-    procedure IntersectWith(const collection: IEnumerable<T>);
-    procedure UnionWith(const collection: IEnumerable<T>);
-    function SetEquals(const collection: IEnumerable<T>): Boolean;
-    function Overlaps(const collection: IEnumerable<T>): Boolean;
+
+    ///	<summary>
+    ///	  Adds an element to the current set and returns a value to indicate if
+    ///	  the element was successfully added.
+    ///	</summary>
+    ///	<param name="item">
+    ///	  The element to add to the set.
+    ///	</param>
+    ///	<returns>
+    ///	  <b>True</b> if the element is added to the set; <b>False</b> if the
+    ///	  element is already in the set.
+    ///	</returns>
+    function Add(const item: T): Boolean;
+
+    ///	<summary>
+    ///	  Removes all elements in the specified collection from the current set.
+    ///	</summary>
+    ///	<param name="other">
+    ///	  The collection of items to remove from the set.
+    ///	</param>
+    ///	<exception cref="EArgumentNullException">
+    ///	  <i>other</i> is <b>nil</b>.
+    ///	</exception>
+    procedure ExceptWith(const other: IEnumerable<T>);
+
+    ///	<summary>
+    ///	  Modifies the current set so that it contains only elements that are
+    ///	  also in a specified collection.
+    ///	</summary>
+    ///	<param name="other">
+    ///	  The collection to compare to the current set.
+    ///	</param>
+    ///	<exception cref="EArgumentNullException">
+    ///	  <i>other</i> is <b>nil</b>.
+    ///	</exception>
+    procedure IntersectWith(const other: IEnumerable<T>);
+
+    ///	<summary>
+    ///	  Modifies the current set so that it contains all elements that are
+    ///	  present in either the current set or the specified collection.
+    ///	</summary>
+    ///	<param name="other">
+    ///	  The collection to compare to the current set.
+    ///	</param>
+    ///	<exception cref="EArgumentNullException">
+    ///	  <i>other</i> is <b>nil</b>.
+    ///	</exception>
+    procedure UnionWith(const other: IEnumerable<T>);
+
+    ///	<summary>
+    ///	  Determines whether a set is a subset of a specified collection.
+    ///	</summary>
+    ///	<param name="other">
+    ///	  The collection to compare to the current set.
+    ///	</param>
+    ///	<returns>
+    ///	  <b>True</b> if the current set is a subset of <i>other</i>;
+    ///	  otherwise, <b>False</b>.
+    ///	</returns>
+    ///	<exception cref="EArgumentNullException">
+    ///	  <i>other</i> is <b>nil</b>.
+    ///	</exception>
+    function IsSubsetOf(const other: IEnumerable<T>): Boolean;
+
+    ///	<summary>
+    ///	  Determines whether the current set is a superset of a specified
+    ///	  collection.
+    ///	</summary>
+    ///	<param name="other">
+    ///	  The collection to compare to the current set.
+    ///	</param>
+    ///	<returns>
+    ///	  <b>True</b> if the current set is a superset of <i>other</i>;
+    ///	  otherwise, <b>False</b>.
+    ///	</returns>
+    ///	<exception cref="EArgumentNullException">
+    ///	  <i>other</i> is <b>nil</b>.
+    ///	</exception>
+    function IsSupersetOf(const other: IEnumerable<T>): Boolean;
+
+    ///	<summary>
+    ///	  Determines whether the current set and the specified collection
+    ///	  contain the same elements.
+    ///	</summary>
+    ///	<param name="other">
+    ///	  The collection to compare to the current set.
+    ///	</param>
+    ///	<returns>
+    ///	  <b>True</b> if the current set is equal to <i>other</i>;
+    ///	  otherwise, <b>False</b>.
+    ///	</returns>
+    ///	<exception cref="EArgumentNullException">
+    ///	  <i>other</i> is <b>nil</b>.
+    ///	</exception>
+    function SetEquals(const other: IEnumerable<T>): Boolean;
+
+    ///	<summary>
+    ///	  Determines whether the current set overlaps with the specified
+    ///	  collection.
+    ///	</summary>
+    ///	<param name="other">
+    ///	  The collection to compare to the current set.
+    ///	</param>
+    ///	<returns>
+    ///	  <b>True</b> if the current set and <i>other</i> share at least
+    ///	  one common element; otherwise, <b>False</b>.
+    ///	</returns>
+    ///	<exception cref="EArgumentNullException">
+    ///	  <i>other</i> is <b>nil</b>.
+    ///	</exception>
+    function Overlaps(const other: IEnumerable<T>): Boolean;
+
     function AsSet: ISet;
   end;
 

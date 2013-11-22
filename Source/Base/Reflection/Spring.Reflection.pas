@@ -225,6 +225,7 @@ type
   ///	</summary>
   TFiltersBase<T: TRttiMember> = class
   public
+    class function ContainsParameterType(typeInfo: PTypeInfo): TSpecification<T>;
     class function HasAttribute(attributeClass: TAttributeClass): TSpecification<T>;
     class function HasParameterTypes(const types: array of PTypeInfo): TSpecification<T>;
     class function HasParameterFlags(const flags: TParamFlags): TSpecification<T>;
@@ -322,6 +323,20 @@ type
     function Accept(const member: T): Boolean; override;
   public
     constructor Create(const types: array of PTypeInfo);
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TContainsParameterTypeFilter<T: TRttiMember>'}
+
+  TContainsParameterTypeFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
+  private
+    fTypeInfo: PTypeInfo;
+  protected
+    function Accept(const member: T): Boolean; override;
+  public
+    constructor Create(const typeInfo: PTypeInfo);
   end;
 
   {$ENDREGION}
@@ -743,6 +758,12 @@ end;
 
 {$REGION 'TFiltersBase<T>'}
 
+class function TFiltersBase<T>.ContainsParameterType(
+  typeInfo: PTypeInfo): TSpecification<T>;
+begin
+  Result := TContainsParameterTypeFilter<T>.Create(typeInfo);
+end;
+
 class function TFiltersBase<T>.HasAttribute(
   attributeClass: TAttributeClass): TSpecification<T>;
 begin
@@ -796,7 +817,7 @@ end;
 
 {$REGION 'Filters'}
 
-{ THasAttributeFilter }
+{ THasAttributeFilter<T> }
 
 constructor THasAttributeFilter<T>.Create(attributeClass: TAttributeClass);
 begin
@@ -888,7 +909,35 @@ begin
   end;
 end;
 
-{ THasParameterFlagsFilter }
+{ TContainsParameterTypeFilter<T> }
+
+constructor TContainsParameterTypeFilter<T>.Create(const typeInfo: PTypeInfo);
+begin
+  inherited Create;
+  fTypeInfo := typeInfo;
+end;
+
+function TContainsParameterTypeFilter<T>.Accept(const member: T): Boolean;
+var
+  parameters: TArray<TRttiParameter>;
+  parameter: TRttiParameter;
+begin
+  Result := False;
+  if member.IsMethod then
+  begin
+    parameters := member.AsMethod.GetParameters;
+    for parameter in parameters do
+    begin
+      if parameter.ParamType.Handle = fTypeInfo then
+      begin
+        Result := True;
+        Break;
+      end;
+    end;
+  end;
+end;
+
+{ THasParameterFlagsFilter<T> }
 
 constructor THasParameterFlagsFilter<T>.Create(const flags: TParamFlags);
 begin
@@ -947,14 +996,14 @@ begin
   Result := member.InheritsFrom(fMemberClass);
 end;
 
-{ TConstructorFilter }
+{ TConstructorFilter<T> }
 
 function TConstructorFilter<T>.Accept(const member: T): Boolean;
 begin
   Result := member.IsConstructor;
 end;
 
-{ TInstanceMethodFilter }
+{ TInstanceMethodFilter<T> }
 
 function TInstanceMethodFilter<T>.Accept(const member: T): Boolean;
 begin

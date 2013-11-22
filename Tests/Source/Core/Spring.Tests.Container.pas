@@ -228,6 +228,7 @@ type
     procedure TestResolve;
     procedure TestResolveWithClass;
     procedure TestResolveWithMultipleParams;
+    procedure TestResolveWithDependency;
   end;
 
   TTestRegisterInterfaceTypes = class(TContainerTestCase)
@@ -258,6 +259,7 @@ type
   TTestDecoratorExtension = class(TContainerTestCase)
   published
     procedure TestResolveReturnsDecorator;
+    procedure TestResolveWithResolverOverride;
   end;
 
 implementation
@@ -1298,6 +1300,26 @@ begin
     TParameterOverride.Create('obj', fDummy)).Name);
 end;
 
+procedure TTestResolverOverride.TestResolveWithDependency;
+var
+  service: INameService;
+begin
+  fContainer.RegisterType<TDynamicNameService>.Implements<INameService>('dynamic')
+    .InjectField('fAgeService');
+  fContainer.RegisterType<TNameAgeComponent>.Implements<IAgeService>;
+  fContainer.Build;
+
+  service := fContainer.Resolve<INameService>(
+    TOrderedParametersOverride.Create([fDummy]));
+  CheckEquals(fdummy.ClassName, service.Name);
+  CheckNotNull((service as TDynamicNameService).AgeService);
+
+  service := fContainer.Resolve<INameService>(
+    TParameterOverride.Create('obj', fDummy));
+  CheckEquals(fdummy.ClassName, service.Name);
+  CheckNotNull((service as TDynamicNameService).AgeService);
+end;
+
 procedure TTestResolverOverride.TestResolveWithMultipleParams;
 begin
   fContainer.RegisterType<TDynamicNameService>.Implements<INameService>('dynamic');
@@ -1462,6 +1484,21 @@ begin
 
   service := fContainer.Resolve<IAgeService>;
   CheckTrue(service is TAgeServiceDecorator);
+end;
+
+procedure TTestDecoratorExtension.TestResolveWithResolverOverride;
+var
+  service: IAgeService;
+begin
+  fContainer.AddExtension<TDecoratorContainerExtension>;
+  fContainer.RegisterType<TAgeServiceDecorator>;
+  fContainer.RegisterType<TNameAgeComponent>;
+  fContainer.Build;
+
+  service := fContainer.Resolve<IAgeService>(
+    TParameterOverride.Create('age', 21));
+  CheckTrue(service is TAgeServiceDecorator);
+  CheckEquals(21, service.Age);
 end;
 
 {$ENDREGION}
