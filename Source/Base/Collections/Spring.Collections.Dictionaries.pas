@@ -132,7 +132,7 @@ type
     procedure SetItem(const key: TKey; const value: TValue); virtual;
     procedure Add(const key: TKey; const value: TValue); reintroduce; overload; virtual;
     procedure AddOrSetValue(const key: TKey; const value: TValue); virtual;
-    procedure Remove(const key: TKey); reintroduce; overload;
+    function Remove(const key: TKey): Boolean; reintroduce; overload;
     function ContainsKey(const key: TKey): Boolean;
     function ContainsValue(const value: TValue): Boolean;
     function ExtractPair(const key: TKey): TPair<TKey, TValue>;
@@ -330,9 +330,11 @@ begin
   Result := fDictionary.TryGetValue(key, value);
 end;
 
-procedure TDictionary<TKey, TValue>.Remove(const key: TKey);
+function TDictionary<TKey, TValue>.Remove(const key: TKey): Boolean;
 begin
-  fDictionary.Remove(key);
+  Result := fDictionary.ContainsKey(key);
+  if Result then
+    fDictionary.Remove(key);
 end;
 
 function TDictionary<TKey, TValue>.GetKeys: ICollection<TKey>;

@@ -868,10 +868,6 @@ type
     procedure Delete(index: Integer);
     procedure DeleteRange(index, count: Integer);
 
-//    function Extract(const item: TValue): TValue;
-//    procedure ExtractRange(const collection: array of TValue); overload;
-//    procedure ExtractRange(const collection: IEnumerable); overload;
-
     procedure Exchange(index1, index2: Integer);
     procedure Move(currentIndex, newIndex: Integer);
 
@@ -963,10 +959,6 @@ type
     procedure Delete(index: Integer);
     procedure DeleteRange(index, count: Integer);
 
-//    function Extract(const item: T): T;
-//    procedure ExtractRange(const collection: array of T); overload;
-//    procedure ExtractRange(const collection: IEnumerable<T>); overload;
-
     procedure Exchange(index1, index2: Integer);
     procedure Move(currentIndex, newIndex: Integer);
 
@@ -1031,7 +1023,7 @@ type
     procedure Add(const key, value: TValue);
     procedure AddOrSetValue(const key, value: TValue);
 
-    procedure Remove(const key: TValue); overload;
+    function Remove(const key: TValue): Boolean; overload;
 
     function ExtractPair(const key: TValue): TPair<TValue, TValue>;
 
@@ -1180,8 +1172,7 @@ type
     ///	  <b>False</b>. This method also returns <b>False</b> if <i>key</i> was
     ///	  not found in the original IDictionary&lt;TKey, TValue&gt;.
     ///	</returns>
-//    function Remove(const key: TKey): Boolean;
-    procedure Remove(const key: TKey); overload;
+    function Remove(const key: TKey): Boolean;
 
     function ExtractPair(const key: TKey): TPair<TKey, TValue>;
 
