@@ -311,18 +311,6 @@ type
     ///	  An IEnumerable&lt;T&gt; that contains the concatenated elements of
     ///	  the two input sequences.
     ///	</returns>
-//    function Concat(const second: array of T): IEnumerable<T>; overload;
-
-    ///	<summary>
-    ///	  Concatenates two sequences.
-    ///	</summary>
-    ///	<param name="second">
-    ///	  The sequence to concatenate to the first sequence.
-    ///	</param>
-    ///	<returns>
-    ///	  An IEnumerable&lt;T&gt; that contains the concatenated elements of
-    ///	  the two input sequences.
-    ///	</returns>
     function Concat(const second: IEnumerable<T>): IEnumerable<T>; overload;
 
     ///	<summary>
@@ -395,12 +383,6 @@ type
     ///	  source sequence.
     ///	</returns>
 //    function ElementAtOrDefault(index: Integer; const defaultValue: T): T; overload;
-
-    ///	<summary>
-    ///	  Determines whether two sequences are equal by comparing the elements
-    ///	  by using the default equality comparer for their type.
-    ///	</summary>
-//    function EqualsTo(const collection: array of T): Boolean; overload;
 
     ///	<summary>
     ///	  Determines whether two sequences are equal by comparing the elements
