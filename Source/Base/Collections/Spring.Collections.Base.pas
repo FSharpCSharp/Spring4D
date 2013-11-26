@@ -203,8 +203,6 @@ type
     function Concat(const collection: IEnumerable<T>): IEnumerable<T>;
     function Reversed: IEnumerable<T>; virtual;
     procedure ForEach(const action: TAction<T>); overload;
-    procedure ForEach(const action: TActionProc<T>); overload;
-    procedure ForEach(const action: TActionMethod<T>); overload;
     function EqualsTo(const collection: IEnumerable<T>): Boolean; overload;
     function EqualsTo(const collection: IEnumerable<T>; const comparer: IEqualityComparer<T>): Boolean; overload;
     function ToArray: TArray<T>; virtual;
@@ -656,30 +654,6 @@ begin
 end;
 
 procedure TEnumerableBase<T>.ForEach(const action: TAction<T>);
-var
-  item: T;
-begin
-  Guard.CheckNotNull(Assigned(action), 'action');
-
-  for item in Self do
-  begin
-    action(item);
-  end;
-end;
-
-procedure TEnumerableBase<T>.ForEach(const action: TActionProc<T>);
-var
-  item: T;
-begin
-  Guard.CheckNotNull(Assigned(action), 'action');
-
-  for item in Self do
-  begin
-    action(item);
-  end;
-end;
-
-procedure TEnumerableBase<T>.ForEach(const action: TActionMethod<T>);
 var
   item: T;
 begin
