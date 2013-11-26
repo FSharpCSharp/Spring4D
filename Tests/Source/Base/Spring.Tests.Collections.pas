@@ -652,7 +652,7 @@ end;
 
 procedure TTestStringIntegerDictionary.TestDictionaryKeys;
 var
-  Result: ICollection<string>;
+  Result: IReadOnlyCollection<string>;
 begin
   Result := SUT.Keys;
   CheckEquals(3, Result.Count, 'TestDictionaryKeys: Keys call returns wrong count');
@@ -673,7 +673,7 @@ end;
 
 procedure TTestStringIntegerDictionary.TestDictionaryValues;
 var
-  Result: ICollection<integer>;
+  Result: IReadOnlyCollection<Integer>;
 begin
   Result := SUT.Values;
   CheckEquals(3, Result.Count, 'TestDictionaryKeys: Values call returns wrong count');
@@ -710,7 +710,7 @@ end;
 
 procedure TTestEmptyStringIntegerDictionary.TestDictionaryKeysAreEmpty;
 var
-  Result: ICollection<string>;
+  Result: IReadOnlyCollection<string>;
 begin
   Result := SUT.Keys;
   CheckEquals(0, Result.Count);
@@ -718,7 +718,7 @@ end;
 
 procedure TTestEmptyStringIntegerDictionary.TestDictionaryValuesAreEmpty;
 var
-  Result: ICollection<integer>;
+  Result: IReadOnlyCollection<Integer>;
 begin
   Result := SUT.Values;
   CheckEquals(0, Result.Count);

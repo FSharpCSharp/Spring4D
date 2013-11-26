@@ -24,6 +24,8 @@
 
 unit Spring.Collections.Base;
 
+{$I Spring.inc}
+
 interface
 
 uses
@@ -234,7 +236,6 @@ type
     fController: Pointer;
     function GetController: IInterface;
   protected
-
   {$REGION 'Implements IInterface'}
     function _AddRef: Integer; override;
     function _Release: Integer; override;
@@ -242,6 +243,18 @@ type
   public
     constructor Create(const controller: IInterface);
     property Controller: IInterface read GetController;
+  end;
+
+  TContainedReadOnlyCollection<T> = class(TEnumerableBase<T>, IReadOnlyCollection<T>)
+  private
+    fController: Pointer;
+  protected
+  {$REGION 'Implements IInterface'}
+    function _AddRef: Integer; override;
+    function _Release: Integer; override;
+  {$ENDREGION}
+  public
+    constructor Create(const controller: IInterface);
   end;
 
   TListBase<T> = class abstract(TCollectionBase<T>, IList<T>)
@@ -1166,6 +1179,27 @@ end;
 function TContainedCollectionBase<T>._Release: Integer;
 begin
   Result := IInterface(FController)._Release;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TContainedReadOnlyCollection<T>'}
+
+constructor TContainedReadOnlyCollection<T>.Create(const controller: IInterface);
+begin
+  inherited Create;
+  fController := Pointer(controller);
+end;
+
+function TContainedReadOnlyCollection<T>._AddRef: Integer;
+begin
+  Result := IInterface(fController)._AddRef;
+end;
+
+function TContainedReadOnlyCollection<T>._Release: Integer;
+begin
+  Result := IInterface(fController)._Release;
 end;
 
 {$ENDREGION}

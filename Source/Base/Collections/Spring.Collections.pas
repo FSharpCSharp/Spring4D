@@ -1117,11 +1117,11 @@ type
     ['{7F0D544F-6A59-4FA0-9C96-DB09029CC835}']
   {$REGION 'Property Accessors'}
     function GetItem(const key: TKey): TValue;
-    function GetKeys: ICollection<TKey>;//IReadOnlyCollection<TKey>;
+    function GetKeys: IReadOnlyCollection<TKey>;
     function GetKeyType: PTypeInfo;
     function GetOnKeyChanged: ICollectionChangedEvent<TKey>;
     function GetOnValueChanged: ICollectionChangedEvent<TValue>;
-    function GetValues: ICollection<TValue>;//IReadOnlyCollection<TValue>;
+    function GetValues: IReadOnlyCollection<TValue>;
     function GetValueType: PTypeInfo;
     procedure SetItem(const key: TKey; const value: TValue);
   {$ENDREGION}
@@ -1215,7 +1215,7 @@ type
     ///	  An <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the keys of
     ///	  the object that implements IDictionary&lt;TKey, TValue&gt;.
     ///	</value>
-    property Keys: ICollection<TKey> read GetKeys;//IReadOnlyCollection<TKey> read GetKeys;
+    property Keys: IReadOnlyCollection<TKey> read GetKeys;
 
     ///	<summary>
     ///	  Gets an <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the
@@ -1225,7 +1225,7 @@ type
     ///	  An <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the values
     ///	  in the object that implements IDictionary&lt;TKey, TValue&gt;.
     ///	</value>
-    property Values: ICollection<TValue> read GetValues;//IReadOnlyCollection<TValue> read GetValues;
+    property Values: IReadOnlyCollection<TValue> read GetValues;
 
     property OnKeyChanged: ICollectionChangedEvent<TKey> read GetOnKeyChanged;
     property OnValueChanged: ICollectionChangedEvent<TValue> read GetOnValueChanged;
