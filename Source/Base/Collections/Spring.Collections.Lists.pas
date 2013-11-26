@@ -70,6 +70,8 @@ type
   public
     constructor Create(ownsObjects: Boolean = True); overload;
     constructor Create(const comparer: IComparer<T>; ownsObjects: Boolean = True); overload;
+    constructor Create(const collection: array of T; ownsObjects: Boolean = True); overload;
+    constructor Create(const collection: IEnumerable<T>; ownsObjects: Boolean = True); overload;
     constructor Create(collection: TEnumerable<T>; ownsObjects: Boolean = True); overload;
 
     property OwnsObjects: Boolean read GetOwnsObjects write SetOwnsObjects;
@@ -267,7 +269,8 @@ end;
 
 constructor TObjectList<T>.Create(ownsObjects: Boolean);
 begin
-  Create(TComparer<T>.Default(), ownsObjects);
+  inherited Create;
+  fOwnsObjects := ownsObjects;
 end;
 
 constructor TObjectList<T>.Create(const comparer: IComparer<T>;
@@ -277,11 +280,25 @@ begin
   fOwnsObjects := ownsObjects;
 end;
 
+constructor TObjectList<T>.Create(const collection: array of T;
+  ownsObjects: Boolean);
+begin
+  inherited Create(collection);
+  fOwnsObjects := ownsObjects;
+end;
+
+constructor TObjectList<T>.Create(const collection: IEnumerable<T>;
+  ownsObjects: Boolean);
+begin
+  inherited Create(collection);
+  fOwnsObjects := ownsObjects;
+end;
+
 constructor TObjectList<T>.Create(collection: TEnumerable<T>;
   ownsObjects: Boolean);
 begin
-  Create(TComparer<T>.Default(), ownsObjects);
-  AddRange(collection);
+  inherited Create(collection);
+  fOwnsObjects := ownsObjects;
 end;
 
 function TObjectList<T>.GetOwnsObjects: Boolean;

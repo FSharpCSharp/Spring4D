@@ -1667,10 +1667,13 @@ type
   public
     class function CreateList<T>: IList<T>; overload; static;
     class function CreateList<T>(const comparer: IComparer<T>): IList<T>; overload; static;
+    class function CreateList<T>(const values: array of T): IList<T>; overload; static;
+    class function CreateList<T>(const values: IEnumerable<T>): IList<T>; overload; static;
     class function CreateList<T: class>(ownsObjects: Boolean): IList<T>; overload; static;
     class function CreateList<T: class>(ownsObjects: Boolean; const comparer: IComparer<T>): IList<T>; overload; static;
     class function CreateObjectList<T: class>(ownsObjects: Boolean = True): IList<T>; overload; static;
     class function CreateObjectList<T: class>(ownsObjects: Boolean; const comparer: IComparer<T>): IList<T>; overload; static;
+    class function CreateObjectList<T: class>(const values: array of T; ownsObjects: Boolean = True): IList<T>; overload; static;
 
     class function CreateDictionary<TKey, TValue>: IDictionary<TKey, TValue>; overload; static;
     class function CreateDictionary<TKey, TValue>(capacity: Integer): IDictionary<TKey, TValue>; overload; static;
@@ -1750,9 +1753,19 @@ begin
   Result := TList<T>.Create(comparer);
 end;
 
+class function TCollections.CreateList<T>(const values: array of T): IList<T>;
+begin
+  Result := TList<T>.Create(values);
+end;
+
+class function TCollections.CreateList<T>(const values: IEnumerable<T>): IList<T>;
+begin
+  Result := TList<T>.Create(values);
+end;
+
 class function TCollections.CreateList<T>(ownsObjects: Boolean): IList<T>;
 begin
-  Result := TCollections.CreateList<T>(ownsObjects, TComparer<T>.Default);
+  Result := TCollections.CreateList<T>(ownsObjects, TComparer<T>.Default());
 end;
 
 class function TCollections.CreateList<T>(ownsObjects: Boolean;
@@ -1766,9 +1779,16 @@ begin
   Result := TObjectList<T>.Create(TComparer<T>.Default(), ownsObjects);
 end;
 
-class function TCollections.CreateObjectList<T>(ownsObjects: Boolean; const comparer: IComparer<T>): IList<T>;
+class function TCollections.CreateObjectList<T>(ownsObjects: Boolean;
+  const comparer: IComparer<T>): IList<T>;
 begin
   Result := TObjectList<T>.Create(comparer, ownsObjects);
+end;
+
+class function TCollections.CreateObjectList<T>(const values: array of T;
+  ownsObjects: Boolean): IList<T>;
+begin
+  Result := TObjectList<T>.Create(values, ownsObjects);
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>(
