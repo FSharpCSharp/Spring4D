@@ -732,18 +732,6 @@ type
     function Where(const predicate: TPredicate<T>): IEnumerable<T>; overload;
 
     ///	<summary>
-    ///	  Creates a new list which is filled with the elements in the
-    ///	  collection.
-    ///	</summary>
-    function ToList: IList<T>;
-
-    ///	<summary>
-    ///	  Creates a new list which is filled with the elements in the
-    ///	  collection.
-    ///	</summary>
-    function ToSet: ISet<T>;
-
-    ///	<summary>
     ///	  Gets the assigned comparer. If not comparer was assigned it returns
     ///	  the default comparer.
     ///	</summary>
@@ -817,10 +805,10 @@ type
     ///	<param name="index">
     ///	  The zero-based index in array at which copying begins.
     ///	</param>
-//    procedure CopyTo(var values: TArray<T>; index: Integer);
+    procedure CopyTo(var values: TArray<T>; index: Integer);
 
     ///	<summary>
-    ///	  Removes the first occurrence of a specific element from the
+    ///	  Removes the first occurrence of a specific element from the
     ///	  ICollection&lt;T&gt;.
     ///	</summary>
     ///	<param name="item">
@@ -837,10 +825,10 @@ type
     procedure RemoveRange(const collection: IEnumerable<T>); overload;
     procedure RemoveRange(const collection: TEnumerable<T>); overload;
 
-//    function Extract(const item: T): T;
-//    procedure ExtractRange(const collection: array of T); overload;
-//    procedure ExtractRange(const collection: IEnumerable<T>); overload;
-//    procedure ExtractRange(const collection: TEnumerable<T>); overload;
+    function Extract(const item: T): T;
+    procedure ExtractRange(const collection: array of T); overload;
+    procedure ExtractRange(const collection: IEnumerable<T>); overload;
+    procedure ExtractRange(const collection: TEnumerable<T>); overload;
 
     ///	<summary>
     ///	  Gets a value indicating whether the ICollection&lt;T&gt; is read-only.

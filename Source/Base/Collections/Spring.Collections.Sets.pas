@@ -122,6 +122,8 @@ type
     ///	</returns>
     function Remove(const item: T): Boolean; override;
 
+    function Extract(const item: T): T; override;
+
     ///	<summary>
     ///	  Removes all elements from a <see cref="THashSet&lt;T&gt;" /> object.
     ///	</summary>
@@ -295,6 +297,14 @@ begin
   Result := not fDictionary.ContainsKey(item);
   if Result then
     inherited Add(item);
+end;
+
+function THashSet<T>.Extract(const item: T): T;
+begin
+  if fDictionary.ContainsKey(item) then
+    Result := fDictionary.ExtractPair(item).Key
+  else
+    Result := Default(T);
 end;
 
 function THashSet<T>.Remove(const item: T): Boolean;

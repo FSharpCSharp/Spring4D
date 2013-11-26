@@ -187,8 +187,6 @@ type
     function Where(const predicate: TPredicate<T>): IEnumerable<T>; virtual;
 
     function ToArray: TArray<T>; virtual;
-    function ToList: IList<T>; virtual;
-    function ToSet: ISet<T>; virtual;
   end;
 
   ///	<summary>
@@ -205,6 +203,10 @@ type
     function GetIsReadOnly: Boolean; virtual;
   {$ENDREGION}
   public
+    constructor Create(const collection: array of T); overload;
+    constructor Create(const collection: IEnumerable<T>); overload;
+    constructor Create(const collection: TEnumerable<T>); overload;
+
     procedure Add(const item: T); virtual; abstract;
     procedure AddRange(const collection: array of T); overload; virtual;
     procedure AddRange(const collection: IEnumerable<T>); overload; virtual;
@@ -217,12 +219,12 @@ type
     procedure RemoveRange(const collection: IEnumerable<T>); overload; virtual;
     procedure RemoveRange(const collection: TEnumerable<T>); overload; virtual;
 
-//    function Extract(const item: T): T; virtual; abstract;
-//    procedure ExtractRange(const collection: array of T); overload; virtual;
-//    procedure ExtractRange(const collection: IEnumerable<T>); overload; virtual;
-//    procedure ExtractRange(const collection: TEnumerable<T>); overload; virtual;
+    function Extract(const item: T): T; virtual; abstract;
+    procedure ExtractRange(const collection: array of T); overload; virtual;
+    procedure ExtractRange(const collection: IEnumerable<T>); overload; virtual;
+    procedure ExtractRange(const collection: TEnumerable<T>); overload; virtual;
 
-//    procedure CopyTo(var values: TArray<T>; index: Integer); virtual;
+    procedure CopyTo(var values: TArray<T>; index: Integer); virtual;
 
     property IsReadOnly: Boolean read GetIsReadOnly;
   end;
@@ -268,9 +270,6 @@ type
     procedure SetItem(index: Integer; const value: T); virtual; abstract;
   public
     constructor Create; overload; override;
-    constructor Create(const collection: array of T); overload;
-    constructor Create(const collection: IEnumerable<T>); overload;
-    constructor Create(const collection: TEnumerable<T>); overload;
     destructor Destroy; override;
 
     function TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean; override;
@@ -291,7 +290,7 @@ type
     procedure InsertRange(index: Integer; const collection: TEnumerable<T>); overload; virtual;
     procedure Delete(index: Integer);
     procedure DeleteRange(startIndex, count: Integer);
-    function Extract(const item: T): T;
+    function Extract(const item: T): T; override;
     function IndexOf(const item: T): Integer;
     function LastIndexOf(const item: T): Integer;
     procedure Exchange(index1, index2: Integer); virtual; abstract;
@@ -765,11 +764,7 @@ end;
 //end;
 
 function TEnumerableBase<T>.Reversed: IEnumerable<T>;
-var
-  list: IList<T>;
 begin
-  list := ToList;
-  Result := TReversedEnumerable<T>.Create(list);
 //  Result := TReversedIterator<T>.Create(Self);
 end;
 
@@ -905,20 +900,17 @@ begin
 end;
 
 function TEnumerableBase<T>.ToArray: TArray<T>;
+var
+  enumerator: IEnumerator<T>;
+  i: Integer;
 begin
-  Result := ToList.ToArray;
-end;
-
-function TEnumerableBase<T>.ToList: IList<T>;
-begin
-  Result := TList<T>.Create;
-  Result.AddRange(Self);
-end;
-
-function TEnumerableBase<T>.ToSet: ISet<T>;
-begin
-  Result := THashSet<T>.Create;
-  Result.AddRange(Self);
+  SetLength(Result, Count);
+  enumerator := GetEnumerator;
+  for i := 0 to Length(Result) - 1 do
+  begin
+    enumerator.MoveNext;
+    Result[i] := enumerator.Current;
+  end;
 end;
 
 function TEnumerableBase<T>.TryGetElementAt(out value: T;
@@ -1042,14 +1034,30 @@ end;
 
 {$REGION 'TCollectionBase<T>'}
 
+constructor TCollectionBase<T>.Create(const collection: array of T);
+begin
+  Create;
+  AddRange(collection);
+end;
+
+constructor TCollectionBase<T>.Create(const collection: IEnumerable<T>);
+begin
+  Create;
+  AddRange(collection);
+end;
+
+constructor TCollectionBase<T>.Create(const collection: TEnumerable<T>);
+begin
+  Create;
+  AddRange(collection);
+end;
+
 procedure TCollectionBase<T>.AddRange(const collection: array of T);
 var
   item: T;
 begin
   for item in collection do
-  begin
     Add(item);
-  end;
 end;
 
 procedure TCollectionBase<T>.AddRange(const collection: IEnumerable<T>);
@@ -1057,9 +1065,7 @@ var
   item: T;
 begin
   for item in collection do
-  begin
     Add(item);
-  end;
 end;
 
 procedure TCollectionBase<T>.AddRange(const collection: TEnumerable<T>);
@@ -1067,9 +1073,49 @@ var
   item: T;
 begin
   for item in collection do
-  begin
     Add(item);
+end;
+
+procedure TCollectionBase<T>.CopyTo(var values: TArray<T>; index: Integer);
+var
+  item: T;
+begin
+  Guard.CheckRange(Length(values), index, Count);
+
+  for item in Self do
+  begin
+    values[index] := item;
+    Inc(index);
   end;
+end;
+
+procedure TCollectionBase<T>.ExtractRange(const collection: array of T);
+var
+  item: T;
+begin
+  for item in collection do
+    Extract(item);
+end;
+
+procedure TCollectionBase<T>.ExtractRange(const collection: IEnumerable<T>);
+var
+  item: T;
+begin
+  for item in collection do
+    Extract(item);
+end;
+
+procedure TCollectionBase<T>.ExtractRange(const collection: TEnumerable<T>);
+var
+  item: T;
+begin
+  for item in collection do
+    Extract(item);
+end;
+
+function TCollectionBase<T>.GetIsReadOnly: Boolean;
+begin
+  Result := False;
 end;
 
 procedure TCollectionBase<T>.RemoveRange(const collection: array of T);
@@ -1077,9 +1123,7 @@ var
   item: T;
 begin
   for item in collection do
-  begin
     Remove(item);
-  end;
 end;
 
 procedure TCollectionBase<T>.RemoveRange(const collection: TEnumerable<T>);
@@ -1087,9 +1131,7 @@ var
   item: T;
 begin
   for item in collection do
-  begin
     Remove(item);
-  end;
 end;
 
 procedure TCollectionBase<T>.RemoveRange(const collection: IEnumerable<T>);
@@ -1097,14 +1139,7 @@ var
   item: T;
 begin
   for item in collection do
-  begin
     Remove(item);
-  end;
-end;
-
-function TCollectionBase<T>.GetIsReadOnly: Boolean;
-begin
-  Result := False;
 end;
 
 {$ENDREGION}
@@ -1142,24 +1177,6 @@ constructor TListBase<T>.Create;
 begin
   inherited Create;
   fOnChanged := TCollectionChangedEventImpl<T>.Create;
-end;
-
-constructor TListBase<T>.Create(const collection: array of T);
-begin
-  Create;
-  AddRange(collection);
-end;
-
-constructor TListBase<T>.Create(const collection: IEnumerable<T>);
-begin
-  Create;
-  AddRange(collection);
-end;
-
-constructor TListBase<T>.Create(const collection: TEnumerable<T>);
-begin
-  Create;
-  AddRange(collection);
 end;
 
 destructor TListBase<T>.Destroy;

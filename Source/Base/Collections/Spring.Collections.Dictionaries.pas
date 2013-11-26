@@ -62,7 +62,7 @@ type
         procedure Add(const item: TKey); overload; override;
         procedure Clear; override;
         function Remove(const item: TKey): Boolean; overload; override;
-        function Extract(const item: TKey): TKey;
+        function Extract(const item: TKey): TKey; override;
       {$ENDREGION}
       end;
 
@@ -87,7 +87,7 @@ type
         procedure Add(const item: TValue); overload; override;
         procedure Clear; override;
         function Remove(const item: TValue): Boolean; overload; override;
-        function Extract(const item: TValue): TValue;
+        function Extract(const item: TValue): TValue; override;
         property IsReadOnly: Boolean read GetIsReadOnly;
       {$ENDREGION}
       end;
@@ -122,7 +122,7 @@ type
     procedure Add(const item: TPair<TKey,TValue>); overload; override;
     procedure Clear; override;
     function Remove(const item: TPair<TKey,TValue>): Boolean; overload; override;
-    function Extract(const item: TPair<TKey,TValue>): TPair<TKey,TValue>;
+    function Extract(const item: TPair<TKey,TValue>): TPair<TKey,TValue>; override;
   {$ENDREGION}
 
   {$REGION 'Implements IDictionary<TKey,TValue>'}
