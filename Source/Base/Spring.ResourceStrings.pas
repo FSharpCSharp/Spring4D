@@ -92,10 +92,10 @@ resourcestring
   SEnumEnded = 'Enum ended.';
   SEnumEmpty = 'Invalid Operation. The enumeration is empty.';
 
-  SSequenceIsEmpty = 'This sequence is empty.';
-  SNoElementSatisfiesCondition = 'No element satisfies the condition in predicate.';
-  SMoreThanOneElementSatisfied = 'More than one element satisfies the condition in predicate.';
-  SSequenceContainsMoreThanOneElement = 'This sequence contains more than one element.';
+  SSequenceContainsNoElements = 'Sequence contains no elements.';
+  SSequenceContainsNoMatchingElement = 'Sequence contains no matching element.';
+  SSequenceContainsMoreThanOneMatchingElement = 'Sequence contains more than one matching element.';
+  SSequenceContainsMoreThanOneElement = 'Sequence contains more than one element.';
 
   {$ENDREGION}
 

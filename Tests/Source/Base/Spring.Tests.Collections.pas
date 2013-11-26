@@ -237,6 +237,7 @@ type
     procedure TestMax;
     procedure TestContains;
     procedure TestCheckSingleRaisedExceptionWhenHasMultipleItems;
+    procedure TestCheckSingleRaisedExceptionWhenEmpty;
     procedure TestElementAt;
   end;
 
@@ -1217,6 +1218,12 @@ begin
   ExpectedResult := 1;
   ActualResult := SUT.Single;
   CheckEquals(ExpectedResult, ActualResult);
+end;
+
+procedure TTestListOfIntegerAsIEnumerable.TestCheckSingleRaisedExceptionWhenEmpty;
+begin
+  CheckException(EInvalidOperationException, procedure begin SUT.Single(function(const i: Integer): Boolean begin Result := i = 2 end) end,
+    'SUT is empty, but failed to raise the EInvalidOperationException when the Single method was called');
 end;
 
 procedure TTestListOfIntegerAsIEnumerable.TestCheckSingleRaisedExceptionWhenHasMultipleItems;

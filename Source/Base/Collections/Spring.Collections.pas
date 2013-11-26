@@ -287,7 +287,7 @@ type
     ///	  <b>True</b> if the source sequence contains any elements; otherwise,
     ///	  <b>False</b>.
     ///	</returns>
-//    function Any: Boolean; overload;
+    function Any: Boolean; overload;
 
     ///	<summary>
     ///	  Determines whether any element of a sequence satisfies a condition.
@@ -340,7 +340,7 @@ type
     ///	  <b>True</b> if the source sequence contains an element that has the
     ///	  specified value; otherwise, <b>False</b>.
     ///	</returns>
-    function Contains(const value: T; const comparer: IEqualityComparer<T>): Boolean; overload;
+    function Contains(const value: T; comparer: IEqualityComparer<T>): Boolean; overload;
 
     ///	<summary>
     ///	  Returns the element at a specified index in a sequence.
@@ -382,7 +382,7 @@ type
     ///	  sequence; otherwise, the element at the specified position in the
     ///	  source sequence.
     ///	</returns>
-//    function ElementAtOrDefault(index: Integer; const defaultValue: T): T; overload;
+    function ElementAtOrDefault(index: Integer; const defaultValue: T): T; overload;
 
     ///	<summary>
     ///	  Determines whether two sequences are equal by comparing the elements
@@ -469,7 +469,7 @@ type
     ///	  test specified by predicate; otherwise, the first element in source
     ///	  that passes the test specified by predicate.
     ///	</returns>
-//    function FirstOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
+    function FirstOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
 
     ///	<summary>
     ///	  Performs the specified action on each element of a sequence.
@@ -549,7 +549,7 @@ type
     ///	  the test in the predicate function; otherwise, the last element that
     ///	  passes the test in the predicate function.
     ///	</returns>
-//    function LastOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
+    function LastOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
 
     ///	<summary>
     ///	  Returns the maximum value in a sequence.
@@ -569,7 +569,7 @@ type
     ///	<returns>
     ///	  The maximum value in the sequence.
     ///	</returns>
-//    function Max(const comparer: IComparer<T>): T; overload;
+    function Max(const comparer: IComparer<T>): T; overload;
 
     ///	<summary>
     ///	  Returns the minimum value in a sequence.
@@ -589,7 +589,7 @@ type
     ///	<returns>
     ///	  The minimum value in the sequence.
     ///	</returns>
-//    function Min(const comparer: IComparer<T>): T; overload;
+    function Min(const comparer: IComparer<T>): T; overload;
 
     ///	<summary>
     ///	  Sorts the elements of a sequence in ascending order using the default
@@ -632,7 +632,7 @@ type
     ///	  value if the sequence is empty; this method throws an exception if
     ///	  there is more than one element in the sequence.
     ///	</summary>
-//    function SingleOrDefault(const defaultValue: T): T; overload;
+    function SingleOrDefault(const defaultValue: T): T; overload;
 
     ///	<summary>
     ///	  Returns the only element of a sequence that satisfies a specified
@@ -647,7 +647,7 @@ type
     ///	  this method throws an exception if more than one element satisfies
     ///	  the condition.
     ///	</summary>
-//    function SingleOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
+    function SingleOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
 
     ///	<summary>
     ///	  Bypasses a specified number of elements in a sequence and then
@@ -718,13 +718,13 @@ type
     ///	<summary>
     ///	  Try getting the only element in a sequence.
     ///	</summary>
-//    function TryGetSingle(out value: T): Boolean; overload;
+    function TryGetSingle(out value: T): Boolean; overload;
 
     ///	<summary>
     ///	  Try getting the only element in a sequence that satisfies a specified
     ///	  condition.
     ///	</summary>
-//    function TryGetSingle(out value: T; const predicate: TPredicate<T>): Boolean; overload;
+    function TryGetSingle(out value: T; const predicate: TPredicate<T>): Boolean; overload;
 
     ///	<summary>
     ///	  Filters a sequence of values based on a predicate.

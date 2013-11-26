@@ -109,13 +109,13 @@ type
 
     function GetEnumeratorNonGeneric: IEnumerator; override; final;
 
-//    function TryGetElementAt(out value: T; index: Integer): Boolean; virtual;
+    function TryGetElementAt(out value: T; index: Integer): Boolean; virtual;
     function TryGetFirst(out value: T): Boolean; overload;
     function TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean; overload; virtual;
     function TryGetLast(out value: T): Boolean; overload;
     function TryGetLast(out value: T; const predicate: TPredicate<T>): Boolean; overload; virtual;
-//    function TryGetSingle(out value: T): Boolean; overload; virtual;
-//    function TryGetSingle(out value: T; const predicate: TPredicate<T>): Boolean; overload;
+    function TryGetSingle(out value: T): Boolean; overload; virtual;
+    function TryGetSingle(out value: T; const predicate: TPredicate<T>): Boolean; overload;
 
     property Comparer: IComparer<T> read GetComparer;
     class property EqualityComparer: IEqualityComparer<T> read GetEqualityComparer;
@@ -129,17 +129,17 @@ type
     function GetEnumerator: IEnumerator<T>; virtual;
 
     function All(const predicate: TPredicate<T>): Boolean;
-//    function Any: Boolean; overload;
-    function Any(const predicate: TPredicate<T>): Boolean;
+    function Any: Boolean; overload;
+    function Any(const predicate: TPredicate<T>): Boolean; overload;
 
-    function Concat(const collection: IEnumerable<T>): IEnumerable<T>;
+    function Concat(const second: IEnumerable<T>): IEnumerable<T>;
 
-    function Contains(const item: T): Boolean; overload; virtual;
-    function Contains(const item: T; const comparer: IEqualityComparer<T>): Boolean; overload; virtual;
+    function Contains(const value: T): Boolean; overload; virtual;
+    function Contains(const value: T; comparer: IEqualityComparer<T>): Boolean; overload; virtual;
 
     function ElementAt(index: Integer): T;
-    function ElementAtOrDefault(index: Integer): T;
-//    function ElementAtOrDefault(index: Integer; const defaultValue: T): T; overload;
+    function ElementAtOrDefault(index: Integer): T; overload;
+    function ElementAtOrDefault(index: Integer; const defaultValue: T): T; overload;
 
     function EqualsTo(const collection: IEnumerable<T>): Boolean; overload;
     function EqualsTo(const collection: IEnumerable<T>; const comparer: IEqualityComparer<T>): Boolean; overload;
@@ -149,7 +149,7 @@ type
     function FirstOrDefault: T; overload; virtual;
     function FirstOrDefault(const defaultValue: T): T; overload;
     function FirstOrDefault(const predicate: TPredicate<T>): T; overload; virtual;
-//    function FirstOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
+    function FirstOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
 
     procedure ForEach(const action: TAction<T>); overload;
 
@@ -158,12 +158,12 @@ type
     function LastOrDefault: T; overload; virtual;
     function LastOrDefault(const defaultValue: T): T; overload;
     function LastOrDefault(const predicate: TPredicate<T>): T; overload; virtual;
-//    function LastOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
+    function LastOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
 
     function Max: T; overload;
-//    function Max(const comparer: IComparer<T>): T; overload;
+    function Max(const comparer: IComparer<T>): T; overload;
     function Min: T; overload;
-//    function Min(const comparer: IComparer<T>): T; overload;
+    function Min(const comparer: IComparer<T>): T; overload;
 
 //    function Ordered: IEnumerable<T>; overload;
 //    function Ordered(const comparison: TComparison<T>): IEnumerable<T>; overload;
@@ -173,9 +173,9 @@ type
     function Single: T; overload;
     function Single(const predicate: TPredicate<T>): T; overload;
     function SingleOrDefault: T; overload;
-//    function SingleOrDefault(const defaultValue: T): T; overload; virtual;
+    function SingleOrDefault(const defaultValue: T): T; overload; virtual;
     function SingleOrDefault(const predicate: TPredicate<T>): T; overload;
-//    function SingleOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
+    function SingleOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
 
     function Skip(count: Integer): IEnumerable<T>;
     function SkipWhile(const predicate: TPredicate<T>): IEnumerable<T>; overload;
@@ -451,10 +451,16 @@ begin
 
   Result := True;
   for item in Self do
-  begin
     if not predicate(item) then
       Exit(False);
-  end;
+end;
+
+function TEnumerableBase<T>.Any: Boolean;
+var
+  enumerator: IEnumerator;
+begin
+  enumerator := GetEnumerator;
+  Result := enumerator.MoveNext;
 end;
 
 function TEnumerableBase<T>.Any(const predicate: TPredicate<T>): Boolean;
@@ -465,91 +471,61 @@ begin
 
   Result := False;
   for item in Self do
-  begin
     if predicate(item) then
       Exit(True);
-  end;
 end;
 
 function TEnumerableBase<T>.Concat(
-  const collection: IEnumerable<T>): IEnumerable<T>;
+  const second: IEnumerable<T>): IEnumerable<T>;
 begin
-  Guard.CheckNotNull(Assigned(collection), 'collection');
+  Guard.CheckNotNull(Assigned(second), 'second');
 
-  Result := TConcatEnumerable<T>.Create(Self, collection);
+  Result := TConcatEnumerable<T>.Create(Self, second);
 end;
 
-function TEnumerableBase<T>.Contains(const item: T): Boolean;
-var
-  comparer: IEqualityComparer<T>;
+function TEnumerableBase<T>.Contains(const value: T): Boolean;
 begin
-  Guard.CheckNotNull<T>(item, 'item');
-
-  comparer := TEqualityComparer<T>.Default;
-  Result := Contains(item, comparer);
+  Result := Contains(value, nil);
 end;
 
-function TEnumerableBase<T>.Contains(const item: T;
-  const comparer: IEqualityComparer<T>): Boolean;
+function TEnumerableBase<T>.Contains(const value: T;
+  comparer: IEqualityComparer<T>): Boolean;
 var
-  enumerator: IEnumerator<T>;
+  item: T;
 begin
-  Guard.CheckNotNull<T>(item, 'item');
+  Guard.CheckNotNull<T>(value, 'value');
 
-  enumerator := GetEnumerator;
-  Result := False;
-  while enumerator.MoveNext do
-  begin
-    if comparer.Equals(enumerator.Current, item) then
-    begin
+  if not Assigned(comparer) then
+    comparer := EqualityComparer;
+
+  for item in Self do
+    if comparer.Equals(value, item) then
       Exit(True);
-    end;
-  end;
+  Result := False;
 end;
 
 function TEnumerableBase<T>.ElementAt(index: Integer): T;
-var
-  enumerator: IEnumerator<T>;
-  localIndex: Integer;
 begin
-  Guard.CheckRange(index >= 0, 'index');
-
-  enumerator := GetEnumerator;
-  localIndex := 0;
-  while enumerator.MoveNext do
-  begin
-    if localIndex = index then
-    begin
-      Exit(enumerator.Current);
-    end;
-    Inc(localIndex);
-  end;
-  Guard.RaiseArgumentOutOfRangeException('index');
+  if not TryGetElementAt(Result, index) then
+    raise EArgumentOutOfRangeException.Create('index');
 end;
 
 function TEnumerableBase<T>.ElementAtOrDefault(index: Integer): T;
-var
-  enumerator: IEnumerator<T>;
-  localIndex: Integer;
 begin
-  Guard.CheckRange(index >= 0, 'index');
+  if not TryGetElementAt(Result, index) then
+    Result := Default(T);
+end;
 
-  enumerator := GetEnumerator;
-  localIndex := 0;
-  while enumerator.MoveNext do
-  begin
-    if localIndex = index then
-    begin
-      Exit(enumerator.Current);
-    end;
-    Inc(localIndex);
-  end;
-  Result := Default(T);
+function TEnumerableBase<T>.ElementAtOrDefault(index: Integer;
+  const defaultValue: T): T;
+begin
+  if not TryGetElementAt(Result, index) then
+    Result := defaultValue;
 end;
 
 function TEnumerableBase<T>.EqualsTo(const collection: IEnumerable<T>): Boolean;
 begin
-  Result := EqualsTo(collection, TEqualityComparer<T>.Default);
+  Result := EqualsTo(collection, EqualityComparer);
 end;
 
 function TEnumerableBase<T>.EqualsTo(const collection: IEnumerable<T>;
@@ -572,44 +548,65 @@ begin
     else if not hasNext then
       Exit(True);
     if hasNext and not comparer.Equals(e1.Current, e2.Current) then
-    begin
       Exit(False);
-    end;
   end;
 end;
 
 function TEnumerableBase<T>.First: T;
+var
+  enumerator: IEnumerator<T>;
 begin
-  if not TryGetFirst(Result) then
-  begin
-    raise EInvalidOperationException.Create('First');  // TEMP
-  end;
+  enumerator := GetEnumerator;
+  if enumerator.MoveNext then
+    Result := enumerator.Current
+  else
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
 end;
 
 function TEnumerableBase<T>.First(const predicate: TPredicate<T>): T;
+var
+  item: T;
 begin
-  Result := Where(predicate).First; // TEMP
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
+
+  for item in Self do
+    if predicate(item) then
+      Exit(item);
+  raise EInvalidOperationException.CreateRes(@SSequenceContainsNoMatchingElement);
 end;
 
 function TEnumerableBase<T>.FirstOrDefault: T;
 begin
-  if not TryGetFirst(Result) then
-  begin
-    Result := Default(T);
-  end;
+  Result := FirstOrDefault(Default(T));
 end;
 
 function TEnumerableBase<T>.FirstOrDefault(const defaultValue: T): T;
+var
+  enumerator: IEnumerator<T>;
 begin
-  if not TryGetFirst(Result) then
-  begin
+  enumerator := GetEnumerator;
+  if enumerator.MoveNext then
+    Result := enumerator.Current
+  else
     Result := defaultValue;
-  end;
 end;
 
 function TEnumerableBase<T>.FirstOrDefault(const predicate: TPredicate<T>): T;
 begin
-  Result := Where(predicate).FirstOrDefault; // TEMP
+  Result := FirstOrDefault(predicate, Default(T));
+end;
+
+function TEnumerableBase<T>.FirstOrDefault(const predicate: TPredicate<T>;
+  const defaultValue: T): T;
+var
+  item: T;
+begin
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
+
+  for item in Self do
+    if predicate(item) then
+      Exit(item);
+  Result := defaultValue;
 end;
 
 procedure TEnumerableBase<T>.ForEach(const action: TAction<T>);
@@ -619,9 +616,7 @@ begin
   Guard.CheckNotNull(Assigned(action), 'action');
 
   for item in Self do
-  begin
     action(item);
-  end;
 end;
 
 function TEnumerableBase<T>.GetComparer: IComparer<T>;
@@ -652,96 +647,147 @@ begin
 end;
 
 function TEnumerableBase<T>.Last: T;
+var
+  enumerator: IEnumerator<T>;
 begin
-  if not TryGetLast(Result) then
-  begin
-    raise EInvalidOperationException.Create('Last');  // TEMP
-  end;
+  enumerator := GetEnumerator;
+  if not enumerator.MoveNext then
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+  repeat
+    Result := enumerator.Current;
+  until not enumerator.MoveNext;
 end;
 
 function TEnumerableBase<T>.Last(const predicate: TPredicate<T>): T;
+var
+  item: T;
+  found: Boolean;
 begin
-  Result := Where(predicate).Last;
-end;
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
 
-function TEnumerableBase<T>.LastOrDefault(const defaultValue: T): T;
-begin
-  if not TryGetLast(Result) then
+  found := False;
+  for item in Self do
   begin
-    Result := defaultValue;
+    if predicate(item) then
+    begin
+      found := True;
+      Result := item;
+    end;
   end;
+  if not found then
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoMatchingElement);
 end;
 
 function TEnumerableBase<T>.LastOrDefault: T;
 begin
-  if not TryGetLast(Result) then
-  begin
-    Result := Default(T);
-  end;
+  Result := LastOrDefault(Default(T));
+end;
+
+function TEnumerableBase<T>.LastOrDefault(const defaultValue: T): T;
+var
+  item: T;
+begin
+  Result := defaultValue;
+  for item in Self do
+    Result := item;
 end;
 
 function TEnumerableBase<T>.LastOrDefault(const predicate: TPredicate<T>): T;
 begin
-  Result := Where(predicate).LastOrDefault;
+  Result := LastOrDefault(predicate, Default(T));
+end;
+
+function TEnumerableBase<T>.LastOrDefault(const predicate: TPredicate<T>;
+  const defaultValue: T): T;
+var
+  item: T;
+begin
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
+
+  Result := defaultValue;
+  for item in Self do
+    if predicate(item) then
+      Result := item;
 end;
 
 function TEnumerableBase<T>.Max: T;
+begin
+  Result := Max(Comparer);
+end;
+
+function TEnumerableBase<T>.Max(const comparer: IComparer<T>): T;
 var
-  comparer: IComparer<T>;
-  hasElement: Boolean;
+  flag: Boolean;
   item: T;
 begin
-  comparer := GetComparer;
-  hasElement := False;
+  Guard.CheckNotNull(Assigned(comparer), 'comparer');
+
+  flag := False;
   for item in Self do
   begin
-    if hasElement then
+    if flag then
     begin
       if comparer.Compare(item, Result) > 0 then
-      begin
         Result := item;
-      end;
     end
     else
     begin
-      hasElement := True;
+      flag := True;
       Result := item;
     end;
   end;
-  if not hasElement then
-  begin
-    raise EInvalidOperationException.CreateRes(@SSequenceIsEmpty);
-  end;
+  if not flag then
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
 end;
 
 function TEnumerableBase<T>.Min: T;
+begin
+  Result := Min(Comparer);
+end;
+
+function TEnumerableBase<T>.Min(const comparer: IComparer<T>): T;
 var
-  comparer: IComparer<T>;
-  hasElement: Boolean;
+  flag: Boolean;
   item: T;
 begin
-  comparer := GetComparer;
-  hasElement := False;
+  Guard.CheckNotNull(Assigned(comparer), 'comparer');
+
+  flag := False;
   for item in Self do
   begin
-    if hasElement then
+    if flag then
     begin
-      if comparer.Compare(item, Result) < 0 then
-      begin
+      if fComparer.Compare(item, Result) < 0 then
         Result := item;
-      end;
     end
     else
     begin
-      hasElement := True;
+      flag := True;
       Result := item;
     end;
   end;
-  if not hasElement then
-  begin
-    raise EInvalidOperationException.CreateRes(@SSequenceIsEmpty);
-  end;
+  if not flag then
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
 end;
+
+//function TEnumerableBase<T>.Ordered: IEnumerable<T>;
+//var
+//  comparer: IComparer<T>;
+//begin
+//  comparer := TComparer<T>.Default;
+//  Result := TOrderedIterator<T>.Create(Self, comparer);
+//end;
+//
+//function TEnumerableBase<T>.Ordered(
+//  const comparison: TComparison<T>): IEnumerable<T>;
+//var
+//  comparer: IComparer<T>;
+//begin
+//  Guard.CheckNotNull(Assigned(comparison), 'comparison');
+//
+//  comparer := TComparer<T>.Construct(comparison);
+//  Result := TOrderedIterator<T>.Create(Self, comparer);
+//end;
 
 function TEnumerableBase<T>.Reversed: IEnumerable<T>;
 var
@@ -749,112 +795,96 @@ var
 begin
   list := ToList;
   Result := TReversedEnumerable<T>.Create(list);
+//  Result := TReversedIterator<T>.Create(Self);
 end;
 
 function TEnumerableBase<T>.Single: T;
 var
   enumerator: IEnumerator<T>;
-  item: T;
 begin
   enumerator := GetEnumerator;
   if not enumerator.MoveNext then
-  begin
-    raise EInvalidOperationException.CreateRes(@SSequenceIsEmpty);
-  end;
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
   Result := enumerator.Current;
   if enumerator.MoveNext then
-  begin
     raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement);
-  end;
 end;
 
 function TEnumerableBase<T>.Single(const predicate: TPredicate<T>): T;
 var
   enumerator: IEnumerator<T>;
   item: T;
-  isSatisfied: Boolean;
+  found: Boolean;
 begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 
   enumerator := GetEnumerator;
-
   if not enumerator.MoveNext then
-  begin
-    raise EInvalidOperationException.CreateRes(@SSequenceIsEmpty);
-  end;
-
-  Result := enumerator.Current;
-  isSatisfied := predicate(Result);
-
-  while enumerator.MoveNext do
-  begin
-    Result := enumerator.Current;
-    if predicate(Result) then
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+  found := False;
+  repeat
+    item := enumerator.Current;
+    if predicate(item) then
     begin
-      if isSatisfied then
-      begin
-        raise EInvalidOperationException.CreateRes(@SMoreThanOneElementSatisfied);
-      end;
-      isSatisfied := True;
+      if found then
+        raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneMatchingElement);
+      found := True;
+      Result := item;
     end;
-  end;
-  if not isSatisfied then
-  begin
-    raise EInvalidOperationException.CreateRes(@SNoElementSatisfiesCondition);
-  end;
+  until not enumerator.MoveNext;
+  if not found then
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoMatchingElement);
 end;
 
 function TEnumerableBase<T>.SingleOrDefault: T;
+begin
+  Result := SingleOrDefault(Default(T));
+end;
+
+function TEnumerableBase<T>.SingleOrDefault(const defaultValue: T): T;
 var
   enumerator: IEnumerator<T>;
-  item: T;
 begin
+  Result := defaultValue;
   enumerator := GetEnumerator;
-  if not enumerator.MoveNext then
-  begin
-    Exit(Default(T));
-  end;
-  Result := enumerator.Current;
   if enumerator.MoveNext then
   begin
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement);
+    Result := enumerator.Current;
+    if enumerator.MoveNext then
+      raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement);
   end;
 end;
 
 function TEnumerableBase<T>.SingleOrDefault(const predicate: TPredicate<T>): T;
+begin
+  Result := SingleOrDefault(predicate, Default(T));
+end;
+
+function TEnumerableBase<T>.SingleOrDefault(const predicate: TPredicate<T>;
+  const defaultValue: T): T;
 var
   enumerator: IEnumerator<T>;
   item: T;
-  isSatisfied: Boolean;
+  found: Boolean;
 begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 
   enumerator := GetEnumerator;
   if not enumerator.MoveNext then
-  begin
     Exit(Default(T));
-  end;
-
-  Result := enumerator.Current;
-  isSatisfied := predicate(Result);
-
-  while enumerator.MoveNext do
-  begin
-    Result := enumerator.Current;
-    if predicate(Result) then
+  found := False;
+  repeat
+    item := enumerator.Current;
+    if predicate(item) then
     begin
-      if isSatisfied then
-      begin
-        raise EInvalidOperationException.CreateRes(@SMoreThanOneElementSatisfied);
-      end;
-      isSatisfied := True;
+      if found then
+        raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneMatchingElement);
+      found := True;
+      Result := item;
     end;
-  end;
-
-  if not isSatisfied then
-  begin
-    Result := Default(T);
-  end;
+  until not enumerator.MoveNext;
+  if not found then
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoMatchingElement);
 end;
 
 function TEnumerableBase<T>.Skip(count: Integer): IEnumerable<T>;
@@ -916,29 +946,66 @@ begin
   Result.AddRange(Self);
 end;
 
-function TEnumerableBase<T>.TryGetFirst(out value: T): Boolean;
+function TEnumerableBase<T>.TryGetElementAt(out value: T;
+  index: Integer): Boolean;
+var
+  item: T;
 begin
-  Result := TryGetFirst(value, nil);
+  if index < 0 then
+    Exit(False);
+  for item in Self do
+  begin
+    if index = 0 then
+    begin
+      value := item;
+      Exit(True);
+    end;
+    Dec(index);
+  end;
+  Result := False;
+end;
+
+function TEnumerableBase<T>.TryGetFirst(out value: T): Boolean;
+var
+  enumerator: IEnumerator<T>;
+begin
+  Result := False;
+  enumerator := GetEnumerator;
+  if enumerator.MoveNext then
+  begin
+    value := enumerator.Current;
+    Result := True;
+  end;
 end;
 
 function TEnumerableBase<T>.TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean;
 var
   item: T;
 begin
+  Result := False;
   for item in Self do
   begin
-    if not Assigned(predicate) or predicate(item) then
+    if predicate(item) then
     begin
       value := item;
       Exit(True);
     end;
   end;
-  Result := False;
 end;
 
 function TEnumerableBase<T>.TryGetLast(out value: T): Boolean;
+var
+  enumerator: IEnumerator<T>;
 begin
-  Result := TryGetLast(value, nil);
+  Result := False;
+  enumerator := GetEnumerator;
+  if enumerator.MoveNext then
+  begin
+    repeat
+      value := enumerator.Current;
+    until not enumerator.MoveNext;
+    Result := True;
+  end;
 end;
 
 function TEnumerableBase<T>.TryGetLast(out value: T; const predicate: TPredicate<T>): Boolean;
@@ -948,8 +1015,39 @@ begin
   Result := False;
   for item in Self do
   begin
-    if not Assigned(predicate) or predicate(item) then
+    if predicate(item) then
     begin
+      value := item;
+      Result := True;
+    end;
+  end;
+end;
+
+function TEnumerableBase<T>.TryGetSingle(out value: T): Boolean;
+var
+  enumerator: IEnumerator<T>;
+begin
+  Result := False;
+  enumerator := GetEnumerator;
+  if enumerator.MoveNext then
+  begin
+    value := enumerator.Current;
+    Result := not enumerator.MoveNext;
+  end;
+end;
+
+function TEnumerableBase<T>.TryGetSingle(out value: T;
+  const predicate: TPredicate<T>): Boolean;
+var
+  item: T;
+begin
+  Result := False;
+  for item in Self do
+  begin
+    if predicate(item) then
+    begin
+      if Result then
+        Exit(False);
       value := item;
       Result := True;
     end;
