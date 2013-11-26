@@ -267,7 +267,7 @@ end;
 
 constructor TObjectList<T>.Create(ownsObjects: Boolean);
 begin
-  Create(TComparer<T>.Default, ownsObjects);
+  Create(TComparer<T>.Default(), ownsObjects);
 end;
 
 constructor TObjectList<T>.Create(const comparer: IComparer<T>;
@@ -280,7 +280,7 @@ end;
 constructor TObjectList<T>.Create(collection: TEnumerable<T>;
   ownsObjects: Boolean);
 begin
-  Create(TComparer<T>.Default, ownsObjects);
+  Create(TComparer<T>.Default(), ownsObjects);
   AddRange(collection);
 end;
 

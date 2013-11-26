@@ -121,7 +121,7 @@ type
   public
     constructor Create(dictionary: TGenericDictionary;
       ownership: TOwnershipType = otReference); overload;
-    constructor Create; overload;
+    constructor Create; overload; override;
     destructor Destroy; override;
 
   {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}

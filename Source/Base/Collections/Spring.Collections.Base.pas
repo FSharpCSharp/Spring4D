@@ -57,7 +57,7 @@ type
   TEnumeratorBase<T> = class abstract(TEnumeratorBase, IEnumerator<T>)
   protected
     function NonGenericGetCurrent: TValue; override; final;
-    function GetCurrent: T; virtual; abstract;
+    function GetCurrent: T; virtual;
   public
     property Current: T read GetCurrent;
   end;
@@ -131,6 +131,8 @@ type
   ///	  Methods).
   ///	</summary>
   TEnumerableBase<T> = class abstract(TEnumerableBase, IEnumerable<T>, IElementType)
+  private
+    fComparer: IComparer<T>;
   protected
     function NonGenericGetEnumerator: IEnumerator; override; final;
     function NonGenericTryGetFirst(out value: TValue): Boolean; override; final;
@@ -154,13 +156,17 @@ type
     function NonGenericToList: IList; override; final;
     function NonGenericToSet: ISet; override; final;
 
-  {$REGION 'Implements IElementType'}
+  {$REGION 'Property Accessors'}
+    function GetComparer: IComparer<T>;
     function GetElementType: PTypeInfo; override;
   {$ENDREGION}
-
-    function GetComparer: IComparer<T>; virtual;    
   public
-    function GetEnumerator: IEnumerator<T>; virtual; abstract;
+    constructor Create; overload; virtual;
+    constructor Create(const comparer: IComparer<T>); overload;
+    constructor Create(const comparer: TComparison<T>); overload;
+
+    function GetEnumerator: IEnumerator<T>; virtual;
+
     function TryGetFirst(out value: T): Boolean; overload;
     function TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean; overload; virtual;
     function TryGetLast(out value: T): Boolean; overload;
@@ -276,13 +282,11 @@ type
         function MoveNext: Boolean; override;
       end;
   private
-    fComparer: IComparer<T>;
     fOnChanged: ICollectionChangedEvent<T>;
     function GetOnChanged: ICollectionChangedEvent<T>;
     function NonGenericGetOnChanged: IEvent;
     function IList.GetOnChanged = NonGenericGetOnChanged;
   protected
-    function GetComparer: IComparer<T>; override;
     procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
     procedure DoSort(const comparer: IComparer<T>); virtual;
     procedure DoInsert(index: Integer; const item: T); virtual; abstract;
@@ -305,8 +309,7 @@ type
     function IList.IndexOf = NonGenericIndexOf;
     function IList.LastIndexOf = NonGenericLastIndexOf;
   public
-    constructor Create; overload;
-    constructor Create(const comparer: IComparer<T>); overload;
+    constructor Create; overload; override;
     constructor Create(const collection: array of T); overload;
     constructor Create(const collection: IEnumerable<T>); overload;
     constructor Create(const collection: TEnumerable<T>); overload;
@@ -373,6 +376,11 @@ end;
 
 {$REGION 'TEnumeratorBase<T>'}
 
+function TEnumeratorBase<T>.GetCurrent: T;
+begin
+  raise ENotSupportedException.Create('GetCurrent');
+end;
+
 function TEnumeratorBase<T>.NonGenericGetCurrent: TValue;
 begin
   Result := TValue.From<T>(GetCurrent);
@@ -419,6 +427,24 @@ end;
 
 
 {$REGION 'TEnumerableBase<T>'}
+
+constructor TEnumerableBase<T>.Create;
+begin
+  inherited Create;
+  fComparer := TComparer<T>.Default;
+end;
+
+constructor TEnumerableBase<T>.Create(const comparer: IComparer<T>);
+begin
+  Create;
+  if Assigned(comparer) then
+    fComparer := comparer;
+end;
+
+constructor TEnumerableBase<T>.Create(const comparer: TComparison<T>);
+begin
+  Create(TComparer<T>.Construct(comparer));
+end;
 
 function TEnumerableBase<T>.Contains(const item: T): Boolean;
 var
@@ -1060,12 +1086,17 @@ end;
 
 function TEnumerableBase<T>.GetComparer: IComparer<T>;
 begin
-  Result := TComparer<T>.Default;
+  Result := fComparer;
 end;
 
 function TEnumerableBase<T>.GetElementType: PTypeInfo;
 begin
   Result := TypeInfo(T);
+end;
+
+function TEnumerableBase<T>.GetEnumerator: IEnumerator<T>;
+begin
+  Result := TEnumeratorBase<T>.Create;
 end;
 
 {$ENDREGION}
@@ -1207,16 +1238,8 @@ end;
 
 constructor TListBase<T>.Create;
 begin
-  Create(TComparer<T>.Default);
-end;
-
-constructor TListBase<T>.Create(const comparer: IComparer<T>);
-begin
   inherited Create;
-  fComparer := comparer;
   fOnChanged := TCollectionChangedEventImpl<T>.Create;
-  if fComparer = nil then
-    fComparer := TComparer<T>.Default;
 end;
 
 constructor TListBase<T>.Create(const collection: array of T);
@@ -1460,11 +1483,6 @@ end;
 function TListBase<T>.GetEnumerator: IEnumerator<T>;
 begin
   Result := TEnumerator.Create(Self);
-end;
-
-function TListBase<T>.GetComparer: IComparer<T>;
-begin
-  Result := fComparer;
 end;
 
 function TListBase<T>.TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean;

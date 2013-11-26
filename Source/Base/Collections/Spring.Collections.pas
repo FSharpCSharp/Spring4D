@@ -938,7 +938,7 @@ end;
 
 class function TCollections.CreateObjectList<T>(ownsObjects: Boolean): IList<T>;
 begin
-  Result := TObjectList<T>.Create(TComparer<T>.Default, ownsObjects);
+  Result := TObjectList<T>.Create(TComparer<T>.Default(), ownsObjects);
 end;
 
 class function TCollections.CreateObjectList<T>(ownsObjects: Boolean; const comparer: IComparer<T>): IList<T>;

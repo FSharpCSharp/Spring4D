@@ -61,7 +61,7 @@ type
     function IQueue.PeekOrDefault = NonGenericPeekOrDefault;
     function IQueue.TryPeek = NonGenericTryPeek;
   public
-    constructor Create; overload;
+    constructor Create; overload; override;
     constructor Create(const collection: IEnumerable<T>); overload;
     constructor Create(const collection: TEnumerable<T>); overload;
     constructor Create(queue: TGenericQueue; ownership: TOwnershipType); overload;

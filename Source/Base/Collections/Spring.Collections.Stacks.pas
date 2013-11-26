@@ -64,7 +64,7 @@ type
 
     class function GetStackItem(stack: TGenericStack; index: Integer): T;
   public
-    constructor Create; overload;
+    constructor Create; overload; override;
     constructor Create(const collection: IEnumerable<T>); overload;
     constructor Create(const collection: TEnumerable<T>); overload;
     constructor Create(stack: TGenericStack; ownership: TOwnershipType); overload;

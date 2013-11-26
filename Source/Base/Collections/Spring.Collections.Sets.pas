@@ -79,7 +79,7 @@ type
     ///	  class that is empty and uses the default equality comparer for the
     ///	  set type.
     ///	</summary>
-    constructor Create; overload;
+    constructor Create; overload; override;
 
     ///	<summary>
     ///	  Initializes a new instance of the <see cref="THashSet&lt;T&gt;" />
