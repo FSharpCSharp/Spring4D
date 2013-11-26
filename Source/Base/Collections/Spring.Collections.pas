@@ -194,27 +194,13 @@ type
     function GetIsEmpty: Boolean;
   {$ENDREGION}
 
+    ///	<summary>
+    ///	  Returns the reference to this instance.
+    ///	</summary>
+    ///	<returns>
+    ///	  The <see cref="TObject" /> instance behind this IEnumerable reference.
+    ///	</returns>
     function AsObject: TObject;
-    function TryGetFirst(out value: TValue): Boolean;
-    function TryGetLast(out value: TValue): Boolean;
-    function First: TValue;
-    function FirstOrDefault: TValue;
-    function Last: TValue;
-    function LastOrDefault: TValue;
-    function Single: TValue;
-    function SingleOrDefault: TValue;
-    function ElementAt(index: Integer): TValue;
-    function ElementAtOrDefault(index: Integer): TValue;
-    function Contains(const item: TValue): Boolean; overload;
-    function Min: TValue;
-    function Max: TValue;
-    function Skip(count: Integer): IEnumerable;
-    function Take(count: Integer): IEnumerable;
-    function Concat(const collection: IEnumerable): IEnumerable;
-    function Reversed: IEnumerable;
-    function EqualsTo(const collection: IEnumerable): Boolean; overload;
-    function ToList: IList;
-    function ToSet: ISet;
 
     ///	<summary>
     ///	  Returns an enumerator that iterates through a collection.

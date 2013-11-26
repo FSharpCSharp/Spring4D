@@ -27,36 +27,35 @@ unit Spring.Collections.Base;
 interface
 
 uses
-  SysUtils,
-  TypInfo,
   Generics.Collections,
   Generics.Defaults,
-  Rtti,
+  SysUtils,
   Spring,
   Spring.Collections;
 
 type
   ///	<summary>
   ///	  Provides an abstract implementation for the
-  ///	  <see cref="IEnumerator">IEnumerator</see> interface.
+  ///	  <see cref="Spring.Collections|IEnumerator" /> interface.
   ///	</summary>
   TEnumeratorBase = class abstract(TInterfacedObject, IEnumerator)
   protected
-    function NonGenericGetCurrent: TValue; virtual; abstract;
-    function IEnumerator.GetCurrent = NonGenericGetCurrent;
+    function GetCurrentNonGeneric: TValue; virtual; abstract;
+    function IEnumerator.GetCurrent = GetCurrentNonGeneric;
   public
     function MoveNext: Boolean; virtual;
     procedure Reset; virtual;
-    property Current: TValue read NonGenericGetCurrent;
+
+    property Current: TValue read GetCurrentNonGeneric;
   end;
 
   ///	<summary>
-  ///	  Provides an abstract implementation for the
-  ///	  <see cref="IEnumerator{T}">IEnumerator&lt;T&gt;</see> interface.
+  ///	  Provides a default implementation for the
+  ///	  <see cref="Spring.Collections|IEnumerator&lt;T&gt;" /> interface.
   ///	</summary>
   TEnumeratorBase<T> = class abstract(TEnumeratorBase, IEnumerator<T>)
   protected
-    function NonGenericGetCurrent: TValue; override; final;
+    function GetCurrentNonGeneric: TValue; override; final;
     function GetCurrent: T; virtual;
   public
     property Current: T read GetCurrent;
@@ -64,106 +63,60 @@ type
 
   ///	<summary>
   ///	  Provides an abstract implementation for the
-  ///	  <see cref="IEnumerable">IEnumerable</see> interface.
+  ///	  <see cref="Spring.Collections|IEnumerable" /> interface.
   ///	</summary>
-  TEnumerableBase = class abstract(TInterfacedObject, IInterface, IEnumerable)
+  TEnumerableBase = class abstract(TInterfacedObject, IInterface,
+    IElementType, ICountable, IEnumerable)
   protected
-    function NonGenericGetEnumerator: IEnumerator; virtual; abstract;
-
-    function NonGenericTryGetFirst(out value: TValue): Boolean; virtual; abstract;
-    function NonGenericTryGetLast(out value: TValue): Boolean; virtual; abstract;
-    function NonGenericFirst: TValue; virtual; abstract;
-    function NonGenericFirstOrDefault: TValue; virtual; abstract;
-    function NonGenericLast: TValue; virtual; abstract;
-    function NonGenericLastOrDefault: TValue; virtual; abstract;
-    function NonGenericSingle: TValue; virtual; abstract;
-    function NonGenericSingleOrDefault: TValue; virtual; abstract;
-    function NonGenericElementAt(index: Integer): TValue; virtual; abstract;
-    function NonGenericElementAtOrDefault(index: Integer): TValue; virtual; abstract;
-    function NonGenericContains(const item: TValue): Boolean; virtual; abstract;
-    function NonGenericMin: TValue; virtual; abstract;
-    function NonGenericMax: TValue; virtual; abstract;
-    function NonGenericSkip(count: Integer): IEnumerable; virtual; abstract;
-    function NonGenericTake(count: Integer): IEnumerable; virtual; abstract;
-    function NonGenericConcat(const collection: IEnumerable): IEnumerable; virtual; abstract;
-    function NonGenericReversed: IEnumerable; virtual; abstract;
-    function NonGenericEqualsTo(const collection: IEnumerable): Boolean; virtual; abstract;
-    function NonGenericToList: IList; virtual; abstract;
-    function NonGenericToSet: ISet; virtual; abstract;
-
-    function IEnumerable.GetEnumerator = NonGenericGetEnumerator;
-    function IEnumerable.TryGetFirst = NonGenericTryGetFirst;
-    function IEnumerable.TryGetLast = NonGenericTryGetLast;
-    function IEnumerable.First = NonGenericFirst;
-    function IEnumerable.FirstOrDefault = NonGenericFirstOrDefault;
-    function IEnumerable.Last = NonGenericLast;
-    function IEnumerable.LastOrDefault = NonGenericLastOrDefault;
-    function IEnumerable.Single = NonGenericSingle;
-    function IEnumerable.SingleOrDefault = NonGenericSingleOrDefault;
-    function IEnumerable.ElementAt = NonGenericElementAt;
-    function IEnumerable.ElementAtOrDefault = NonGenericElementAtOrDefault;
-    function IEnumerable.Contains = NonGenericContains;
-    function IEnumerable.Min = NonGenericMin;
-    function IEnumerable.Max = NonGenericMax;
-    function IEnumerable.Skip = NonGenericSkip;
-    function IEnumerable.Take = NonGenericTake;
-    function IEnumerable.Concat = NonGenericConcat;
-    function IEnumerable.Reversed = NonGenericReversed;
-    function IEnumerable.EqualsTo = NonGenericEqualsTo;
-    function IEnumerable.ToList = NonGenericToList;
-    function IEnumerable.ToSet = NonGenericToSet;
-
-    function _AddRef: Integer; virtual; stdcall;
-    function _Release: Integer; virtual; stdcall;
-
+  {$REGION 'Property Accessors'}
     function GetCount: Integer; virtual;
     function GetElementType: PTypeInfo; virtual; abstract;
     function GetIsEmpty: Boolean; virtual;
+  {$ENDREGION}
+
+  {$REGION 'Implements IInterface'}
+    function QueryInterface(const IID: TGUID; out Obj): HResult; virtual; stdcall;
+    function _AddRef: Integer; virtual; stdcall;
+    function _Release: Integer; virtual; stdcall;
+  {$ENDREGION}
+
+    function GetEnumeratorNonGeneric: IEnumerator; virtual; abstract;
+    function IEnumerable.GetEnumerator = GetEnumeratorNonGeneric;
   public
     function AsObject: TObject;
 
+    function GetEnumerator: IEnumerator;
+
     property Count: Integer read GetCount;
+    property ElementType: PTypeInfo read GetElementType;
     property IsEmpty: Boolean read GetIsEmpty;
   end;
 
   ///	<summary>
-  ///	  Provides a default implementation for <c>IEnumerable(T)</c> (Extension
-  ///	  Methods).
+  ///	  Provides a default implementation for the
+  ///	  <see cref="Spring.Collections|IEnumerable&lt;T&gt;" /> interface.
   ///	</summary>
-  TEnumerableBase<T> = class abstract(TEnumerableBase, IEnumerable<T>, IElementType)
+  TEnumerableBase<T> = class abstract(TEnumerableBase, IEnumerable<T>)
   private
     fComparer: IComparer<T>;
+    class var fEqualityComparer: IEqualityComparer<T>;
+    class function GetEqualityComparer: IEqualityComparer<T>; static;
   protected
-    function NonGenericGetEnumerator: IEnumerator; override; final;
-    function NonGenericTryGetFirst(out value: TValue): Boolean; override; final;
-    function NonGenericTryGetLast(out value: TValue): Boolean; override; final;
-    function NonGenericFirst: TValue; override; final;
-    function NonGenericFirstOrDefault: TValue; override; final;
-    function NonGenericLast: TValue; override; final;
-    function NonGenericLastOrDefault: TValue; override; final;
-    function NonGenericSingle: TValue; override; final;
-    function NonGenericSingleOrDefault: TValue; override; final;
-    function NonGenericElementAt(index: Integer): TValue; override; final;
-    function NonGenericElementAtOrDefault(index: Integer): TValue; override; final;
-    function NonGenericContains(const item: TValue): Boolean; override; final;
-    function NonGenericMin: TValue; override; final;
-    function NonGenericMax: TValue; override; final;
-    function NonGenericSkip(count: Integer): IEnumerable; override; final;
-    function NonGenericTake(count: Integer): IEnumerable; override; final;
-    function NonGenericConcat(const collection: IEnumerable): IEnumerable; override; final;
-    function NonGenericReversed: IEnumerable; override; final;
-    function NonGenericEqualsTo(const collection: IEnumerable): Boolean; override; final;
-    function NonGenericToList: IList; override; final;
-    function NonGenericToSet: ISet; override; final;
-
   {$REGION 'Property Accessors'}
     function GetComparer: IComparer<T>;
-    function GetElementType: PTypeInfo; override;
+    function GetElementType: PTypeInfo; override; final;
   {$ENDREGION}
+
+    function GetEnumeratorNonGeneric: IEnumerator; override; final;
+
+    property Comparer: IComparer<T> read GetComparer;
+    class property EqualityComparer: IEqualityComparer<T> read GetEqualityComparer;
   public
     constructor Create; overload; virtual;
     constructor Create(const comparer: IComparer<T>); overload;
     constructor Create(const comparer: TComparison<T>); overload;
+
+    class destructor Destroy;
 
     function GetEnumerator: IEnumerator<T>; virtual;
 
@@ -379,7 +332,7 @@ begin
   raise ENotSupportedException.Create('GetCurrent');
 end;
 
-function TEnumeratorBase<T>.NonGenericGetCurrent: TValue;
+function TEnumeratorBase<T>.GetCurrentNonGeneric: TValue;
 begin
   Result := TValue.From<T>(GetCurrent);
 end;
@@ -399,16 +352,27 @@ var
   enumerator: IEnumerator;
 begin
   Result := 0;
-  enumerator := NonGenericGetEnumerator;
+  enumerator := GetEnumerator;
   while enumerator.MoveNext do
-  begin
     Inc(Result);
-  end;
+end;
+
+function TEnumerableBase.GetEnumerator: IEnumerator;
+begin
+  Result := GetEnumeratorNonGeneric;
 end;
 
 function TEnumerableBase.GetIsEmpty: Boolean;
+var
+  enumerator: IEnumerator;
 begin
-  Result := Count = 0;
+  enumerator := GetEnumerator;
+  Result := not enumerator.MoveNext;
+end;
+
+function TEnumerableBase.QueryInterface(const IID: TGUID; out Obj): HResult;
+begin
+  Result := inherited QueryInterface(IID, Obj);
 end;
 
 function TEnumerableBase._AddRef: Integer;
@@ -442,6 +406,11 @@ end;
 constructor TEnumerableBase<T>.Create(const comparer: TComparison<T>);
 begin
   Create(TComparer<T>.Construct(comparer));
+end;
+
+class destructor TEnumerableBase<T>.Destroy;
+begin
+  fEqualityComparer := nil;
 end;
 
 function TEnumerableBase<T>.Contains(const item: T): Boolean;
@@ -665,6 +634,13 @@ begin
   end;
 end;
 
+class function TEnumerableBase<T>.GetEqualityComparer: IEqualityComparer<T>;
+begin
+  if not Assigned(fEqualityComparer) then
+    fEqualityComparer := TEqualityComparer<T>.Default;
+  Result := fEqualityComparer;
+end;
+
 function TEnumerableBase<T>.Last: T;
 begin
   if not TryGetLast(Result) then
@@ -757,124 +733,9 @@ begin
   end;
 end;
 
-function TEnumerableBase<T>.NonGenericConcat(
-  const collection: IEnumerable): IEnumerable;
-begin
-  Result := Concat(collection as TEnumerableBase<T>);
-end;
-
-function TEnumerableBase<T>.NonGenericContains(const item: TValue): Boolean;
-begin
-  Result := Contains(item.AsType<T>);
-end;
-
-function TEnumerableBase<T>.NonGenericElementAt(index: Integer): TValue;
-begin
-  Result := TValue.From<T>(ElementAt(index));
-end;
-
-function TEnumerableBase<T>.NonGenericElementAtOrDefault(
-  index: Integer): TValue;
-begin
-  Result := TValue.From<T>(ElementAtOrDefault(index));
-end;
-
-function TEnumerableBase<T>.NonGenericEqualsTo(
-  const collection: IEnumerable): Boolean;
-begin
-  Result := EqualsTo(collection as TEnumerableBase<T>);
-end;
-
-function TEnumerableBase<T>.NonGenericFirst: TValue;
-begin
-  Result := TValue.From<T>(First);
-end;
-
-function TEnumerableBase<T>.NonGenericFirstOrDefault: TValue;
-begin
-  Result := TValue.From<T>(FirstOrDefault);
-end;
-
-function TEnumerableBase<T>.NonGenericGetEnumerator: IEnumerator;
+function TEnumerableBase<T>.GetEnumeratorNonGeneric: IEnumerator;
 begin
   Result := GetEnumerator;
-end;
-
-function TEnumerableBase<T>.NonGenericLast: TValue;
-begin
-  Result := TValue.From<T>(Last);
-end;
-
-function TEnumerableBase<T>.NonGenericLastOrDefault: TValue;
-begin
-  Result := TValue.From<T>(LastOrDefault);
-end;
-
-function TEnumerableBase<T>.NonGenericMax: TValue;
-begin
-  Result := TValue.From<T>(Max);
-end;
-
-function TEnumerableBase<T>.NonGenericMin: TValue;
-begin
-  Result := TValue.From<T>(Min);
-end;
-
-function TEnumerableBase<T>.NonGenericReversed: IEnumerable;
-begin
-  Result := Reversed;
-end;
-
-function TEnumerableBase<T>.NonGenericSingle: TValue;
-begin
-  Result := TValue.From<T>(Single);
-end;
-
-function TEnumerableBase<T>.NonGenericSingleOrDefault: TValue;
-begin
-  Result := TValue.From<T>(SingleOrDefault);
-end;
-
-function TEnumerableBase<T>.NonGenericSkip(count: Integer): IEnumerable;
-begin
-  Result := Skip(count);
-end;
-
-function TEnumerableBase<T>.NonGenericTake(count: Integer): IEnumerable;
-begin
-  Result := Take(count);
-end;
-
-function TEnumerableBase<T>.NonGenericToList: IList;
-begin
-  Supports(ToList, IList, Result);
-
-  Guard.CheckNotNull(Result, 'Result');
-end;
-
-function TEnumerableBase<T>.NonGenericToSet: ISet;
-begin
-  Supports(ToSet, ISet, Result);
-
-  Guard.CheckNotNull(Result, 'Result');
-end;
-
-function TEnumerableBase<T>.NonGenericTryGetFirst(out value: TValue): Boolean;
-var
-  item: T;
-begin  
-  Result := TryGetFirst(item);
-  if Result then
-    value := TValue.From<T>(item);
-end;
-
-function TEnumerableBase<T>.NonGenericTryGetLast(out value: TValue): Boolean;
-var
-  item: T;
-begin  
-  Result := TryGetLast(item);
-  if Result then
-    value := TValue.From<T>(item);
 end;
 
 function TEnumerableBase<T>.Reversed: IEnumerable<T>;
