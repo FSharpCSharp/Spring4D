@@ -39,7 +39,7 @@ type
   ///	  <see cref="Spring.Collections|IEnumerator" /> interface.
   ///	</summary>
   TEnumeratorBase = class abstract(TInterfacedObject, IEnumerator)
-  protected
+  private
     function GetCurrentNonGeneric: TValue; virtual; abstract;
     function IEnumerator.GetCurrent = GetCurrentNonGeneric;
   public
@@ -54,8 +54,9 @@ type
   ///	  <see cref="Spring.Collections|IEnumerator&lt;T&gt;" /> interface.
   ///	</summary>
   TEnumeratorBase<T> = class abstract(TEnumeratorBase, IEnumerator<T>)
-  protected
+  private
     function GetCurrentNonGeneric: TValue; override; final;
+  protected
     function GetCurrent: T; virtual;
   public
     property Current: T read GetCurrent;
@@ -67,21 +68,21 @@ type
   ///	</summary>
   TEnumerableBase = class abstract(TInterfacedObject, IInterface,
     IElementType, ICountable, IEnumerable)
-  protected
+  private
+    function GetEnumeratorNonGeneric: IEnumerator; virtual; abstract;
+    function IEnumerable.GetEnumerator = GetEnumeratorNonGeneric;
   {$REGION 'Property Accessors'}
-    function GetCount: Integer; virtual;
     function GetElementType: PTypeInfo; virtual; abstract;
+  protected
+    function GetCount: Integer; virtual;
     function GetIsEmpty: Boolean; virtual;
   {$ENDREGION}
-
+  protected
   {$REGION 'Implements IInterface'}
     function QueryInterface(const IID: TGUID; out Obj): HResult; virtual; stdcall;
     function _AddRef: Integer; virtual; stdcall;
     function _Release: Integer; virtual; stdcall;
   {$ENDREGION}
-
-    function GetEnumeratorNonGeneric: IEnumerator; virtual; abstract;
-    function IEnumerable.GetEnumerator = GetEnumeratorNonGeneric;
   public
     function AsObject: TObject;
 
@@ -100,15 +101,13 @@ type
   private
     fComparer: IComparer<T>;
     class var fEqualityComparer: IEqualityComparer<T>;
-    class function GetEqualityComparer: IEqualityComparer<T>; static;
-  protected
+    function GetEnumeratorNonGeneric: IEnumerator; override; final;
   {$REGION 'Property Accessors'}
     function GetComparer: IComparer<T>;
     function GetElementType: PTypeInfo; override; final;
+    class function GetEqualityComparer: IEqualityComparer<T>; static;
   {$ENDREGION}
-
-    function GetEnumeratorNonGeneric: IEnumerator; override; final;
-
+  protected
     function TryGetElementAt(out value: T; index: Integer): Boolean; virtual;
     function TryGetFirst(out value: T): Boolean; overload;
     function TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean; overload; virtual;
@@ -200,36 +199,30 @@ type
   ///	  The Add/Remove/Extract/Clear methods are abstract. IsReadOnly returns
   ///	  <c>False</c> by default.
   ///	</remarks>
-  TCollectionBase<T> = class abstract(TEnumerableBase<T>, ICollection<T>, ICollection)
+  TCollectionBase<T> = class abstract(TEnumerableBase<T>, ICollection<T>)
   protected
   {$REGION 'Property Accessors'}
-//    function GetIsEmpty: Boolean; override;
     function GetIsReadOnly: Boolean; virtual;
   {$ENDREGION}
-
-    procedure NonGenericAdd(const item: TValue);
-    procedure ICollection.Add = NonGenericAdd;
-    procedure NonGenericAddRange(const collection: IEnumerable);
-    procedure ICollection.AddRange = NonGenericAddRange;
-
-    function NonGenericRemove(const item: TValue): Boolean;
-    function ICollection.Remove = NonGenericRemove;
-    procedure NonGenericRemoveRange(const collection: IEnumerable);
-    procedure ICollection.RemoveRange = NonGenericRemoveRange;
   public
     procedure Add(const item: T); virtual; abstract;
     procedure AddRange(const collection: array of T); overload; virtual;
     procedure AddRange(const collection: IEnumerable<T>); overload; virtual;
     procedure AddRange(const collection: TEnumerable<T>); overload; virtual;
 
+    procedure Clear; virtual; abstract;
+
     function Remove(const item: T): Boolean; virtual; abstract;
     procedure RemoveRange(const collection: array of T); overload; virtual;
     procedure RemoveRange(const collection: IEnumerable<T>); overload; virtual;
     procedure RemoveRange(const collection: TEnumerable<T>); overload; virtual;
 
-    procedure Clear; virtual; abstract;
+//    function Extract(const item: T): T; virtual; abstract;
+//    procedure ExtractRange(const collection: array of T); overload; virtual;
+//    procedure ExtractRange(const collection: IEnumerable<T>); overload; virtual;
+//    procedure ExtractRange(const collection: TEnumerable<T>); overload; virtual;
 
-    function AsCollection: ICollection;
+//    procedure CopyTo(var values: TArray<T>; index: Integer); virtual;
 
     property IsReadOnly: Boolean read GetIsReadOnly;
   end;
@@ -249,7 +242,7 @@ type
     property Controller: IInterface read GetController;
   end;
 
-  TListBase<T> = class abstract(TCollectionBase<T>, IList<T>, IList)
+  TListBase<T> = class abstract(TCollectionBase<T>, IList<T>)
   protected
     type
       TEnumerator = class(TEnumeratorBase<T>)
@@ -265,8 +258,6 @@ type
   private
     fOnChanged: ICollectionChangedEvent<T>;
     function GetOnChanged: ICollectionChangedEvent<T>;
-    function NonGenericGetOnChanged: IEvent;
-    function IList.GetOnChanged = NonGenericGetOnChanged;
   protected
     procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
     procedure DoSort(const comparer: IComparer<T>); virtual;
@@ -275,20 +266,6 @@ type
     procedure DoDeleteRange(index, count: Integer; notification: TCollectionChangedAction); virtual; abstract;
     function GetItem(index: Integer): T; virtual; abstract;
     procedure SetItem(index: Integer; const value: T); virtual; abstract;
-
-    function NonGenericGetItem(index: Integer): TValue;
-    procedure NonGenericSetItem(index: Integer; const value: TValue);
-    procedure NonGenericInsert(index: Integer; const item: TValue);
-    procedure NonGenericInsertRange(index: Integer; const collection: IEnumerable);
-    function NonGenericIndexOf(const item: TValue): Integer;
-    function NonGenericLastIndexOf(const item: TValue): Integer;
-
-    function IList.GetItem = NonGenericGetItem;
-    procedure IList.SetItem = NonGenericSetItem;
-    procedure IList.Insert = NonGenericInsert;
-    procedure IList.InsertRange = NonGenericInsertRange;
-    function IList.IndexOf = NonGenericIndexOf;
-    function IList.LastIndexOf = NonGenericLastIndexOf;
   public
     constructor Create; overload; override;
     constructor Create(const collection: array of T); overload;
@@ -323,8 +300,6 @@ type
     procedure Sort(const comparer: IComparer<T>); overload;
     procedure Sort(const comparison: TComparison<T>); overload;
     procedure Reverse; virtual; abstract;
-
-    function AsList: IList;
 
     property Items[index: Integer]: T read GetItem write SetItem; default;
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
@@ -1097,11 +1072,6 @@ begin
   end;
 end;
 
-function TCollectionBase<T>.AsCollection: ICollection;
-begin
-  Result := Self;
-end;
-
 procedure TCollectionBase<T>.RemoveRange(const collection: array of T);
 var
   item: T;
@@ -1135,37 +1105,6 @@ end;
 function TCollectionBase<T>.GetIsReadOnly: Boolean;
 begin
   Result := False;
-end;
-
-procedure TCollectionBase<T>.NonGenericAdd(const item: TValue);
-begin
-  Add(item.AsType<T>);
-end;
-
-procedure TCollectionBase<T>.NonGenericAddRange(const collection: IEnumerable);
-var
-  item: TValue;
-begin
-  for item in collection do
-  begin
-    Add(item.AsType<T>);
-  end;
-end;
-
-function TCollectionBase<T>.NonGenericRemove(const item: TValue): Boolean;
-begin
-  Result := Remove(item.AsType<T>);
-end;
-
-procedure TCollectionBase<T>.NonGenericRemoveRange(
-  const collection: IEnumerable);
-var
-  item: TValue;
-begin
-  for item in collection do
-  begin
-    Remove(item.AsType<T>);
-  end;
 end;
 
 {$ENDREGION}
@@ -1290,11 +1229,6 @@ begin
   Insert(Count, item);
 end;
 
-function TListBase<T>.AsList: IList;
-begin
-  Result := Self;
-end;
-
 procedure TListBase<T>.Clear;
 begin
   if Count > 0 then
@@ -1381,50 +1315,6 @@ begin
       Exit(i);
   end;
   Result := -1;
-end;
-
-function TListBase<T>.NonGenericGetItem(index: Integer): TValue;
-begin
-  Result := TValue.From<T>(GetItem(index));
-end;
-
-function TListBase<T>.NonGenericGetOnChanged: IEvent;
-begin
-  Result := GetOnChanged;
-end;
-
-function TListBase<T>.NonGenericIndexOf(const item: TValue): Integer;
-begin
-  Result := IndexOf(item.AsType<T>);
-end;
-
-procedure TListBase<T>.NonGenericInsert(index: Integer; const item: TValue);
-begin
-  Insert(index, item.AsType<T>);
-end;
-
-procedure TListBase<T>.NonGenericInsertRange(index: Integer;
-  const collection: IEnumerable);
-var
-  item: TValue;
-begin
-  Guard.CheckRange((index >= 0) and (index <= Count), 'index');
-
-  for item in collection do
-  begin
-    Insert(index, item.AsType<T>);
-    Inc(index);
-  end;
-end;
-
-function TListBase<T>.NonGenericLastIndexOf(const item: TValue): Integer;
-begin
-  Result := LastIndexOf(item.AsType<T>);
-end;
-
-procedure TListBase<T>.NonGenericSetItem(index: Integer; const value: TValue);
-begin
-  SetItem(index, value.AsType<T>);
 end;
 
 procedure TListBase<T>.Changed(const item: T; action: TCollectionChangedAction);

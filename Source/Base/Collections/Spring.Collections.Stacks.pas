@@ -33,8 +33,7 @@ uses
   Spring.Collections.Base;
 
 type
-
-  TStack<T> = class(TEnumerableBase<T>, IStack<T>, IStack)
+  TStack<T> = class(TEnumerableBase<T>, IStack<T>)
   private
     type
       TGenericStack = Generics.Collections.TStack<T>;
@@ -43,25 +42,10 @@ type
     fOwnership: TOwnershipType;
     fOnChanged: ICollectionChangedEvent<T>;
     function GetOnChanged: ICollectionChangedEvent<T>;
-    function NonGenericGetOnChanged: IEvent;
-    function IStack.GetOnChanged = NonGenericGetOnChanged;
   protected
     function GetCount: Integer; override;
 
-    procedure NonGenericPush(const item: TValue);
-    function NonGenericPop: TValue;
-    function NonGenericPeek: TValue;
-    function NonGenericPeekOrDefault: TValue;
-    function NonGenericTryPeek(out item: TValue): Boolean;
-
     procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
-
-    procedure IStack.Push = NonGenericPush;
-    function IStack.Pop = NonGenericPop;
-    function IStack.Peek = NonGenericPeek;
-    function IStack.PeekOrDefault = NonGenericPeekOrDefault;
-    function IStack.TryPeek = NonGenericTryPeek;
-
     class function GetStackItem(stack: TGenericStack; index: Integer): T;
   public
     constructor Create; overload; override;
@@ -79,7 +63,6 @@ type
     function PeekOrDefault: T; 
     function TryPeek(out item: T): Boolean;
     procedure TrimExcess;
-    function AsStack: IStack;
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
@@ -163,40 +146,6 @@ begin
   Result := TArray<T>(PInteger(NativeInt(stack) + hfFieldSize + SizeOf(Integer))^)[index];
 end;
 
-function TStack<T>.NonGenericGetOnChanged: IEvent;
-begin
-  Result := GetOnChanged;
-end;
-
-function TStack<T>.NonGenericPeek: TValue;
-begin
-  Result := TValue.From<T>(Peek);
-end;
-
-function TStack<T>.NonGenericPeekOrDefault: TValue;
-begin
-  Result := TValue.From<T>(PeekOrDefault);
-end;
-
-function TStack<T>.NonGenericPop: TValue;
-begin
-  Result := TValue.From<T>(Pop);
-end;
-
-procedure TStack<T>.NonGenericPush(const item: TValue);
-begin
-  Push(item.AsType<T>);
-end;
-
-function TStack<T>.NonGenericTryPeek(out item: TValue): Boolean;
-var
-  value: T;
-begin
-  Result := TryPeek(value);
-  if Result then
-    item := TValue.From<T>(value);
-end;
-
 procedure TStack<T>.Changed(const item: T; action: TCollectionChangedAction);
 begin
   fOnChanged.Invoke(Self, item, action);
@@ -214,11 +163,6 @@ begin
   Result := fStack.Pop;
 
   Changed(Result, caRemoved);
-end;
-
-function TStack<T>.AsStack: IStack;
-begin
-  Result := Self;
 end;
 
 procedure TStack<T>.Clear;
@@ -257,5 +201,6 @@ begin
 end;
 
 {$ENDREGION}
+
 
 end.

@@ -760,16 +760,15 @@ type
     function GetIsReadOnly: Boolean;
   {$ENDREGION}
 
-//    function Add(const item: TValue): Boolean;
     procedure Add(const item: TValue);
-//    procedure AddRange(const collection: array of TValue); overload;
+    procedure AddRange(const collection: array of TValue); overload;
     procedure AddRange(const collection: IEnumerable); overload;
 
-    function Remove(const item: TValue): Boolean;
-//    procedure RemoveRange(const collection: array of TValue); overload;
-    procedure RemoveRange(const collection: IEnumerable); overload;
-
     procedure Clear;
+
+    function Remove(const item: TValue): Boolean;
+    procedure RemoveRange(const collection: array of TValue); overload;
+    procedure RemoveRange(const collection: IEnumerable); overload;
 
     property IsReadOnly: Boolean read GetIsReadOnly;
   end;
@@ -794,9 +793,8 @@ type
     ///	  Adds an item to the ICollection&lt;T&gt;.
     ///	</summary>
     ///	<param name="item">
-    ///	  The element to add to the ICollection&lt;T&gt;.
+    ///	  The element to add to the ICollection&lt;T&gt;.
     ///	</param>
-//    function Add(const item: T): Boolean;
     procedure Add(const item: T);
     procedure AddRange(const collection: array of T); overload;
     procedure AddRange(const collection: IEnumerable<T>); overload;
@@ -839,7 +837,10 @@ type
     procedure RemoveRange(const collection: IEnumerable<T>); overload;
     procedure RemoveRange(const collection: TEnumerable<T>); overload;
 
-    function AsCollection: ICollection;
+//    function Extract(const item: T): T;
+//    procedure ExtractRange(const collection: array of T); overload;
+//    procedure ExtractRange(const collection: IEnumerable<T>); overload;
+//    procedure ExtractRange(const collection: TEnumerable<T>); overload;
 
     ///	<summary>
     ///	  Gets a value indicating whether the ICollection&lt;T&gt; is read-only.
@@ -873,8 +874,8 @@ type
   {$ENDREGION}
 
     procedure Insert(index: Integer; const item: TValue);
-//    procedure InsertRange(index: Integer; const collection: array of TValue); overload;
-    procedure InsertRange(index: Integer; const collection: IEnumerable);
+    procedure InsertRange(index: Integer; const collection: array of TValue); overload;
+    procedure InsertRange(index: Integer; const collection: IEnumerable); overload;
 
     procedure Delete(index: Integer);
     procedure DeleteRange(index, count: Integer);
@@ -1009,7 +1010,6 @@ type
 //    function LastIndexOf(const item: T; index: Integer): Integer; overload;
 //    function LastIndexOf(const item: T; index, count: Integer): Integer; overload;
 
-    function AsList: IList;
 //    function AsReadOnly: IReadOnlyList<T>;
 
     property Items[index: Integer]: T read GetItem write SetItem; default;
@@ -1034,24 +1034,28 @@ type
   IDictionary = interface(ICollection)
     ['{9AC642EE-F236-421D-8546-DCA0D8D53791}']
   {$REGION 'Property Accessors'}
+    function GetOnKeyChanged: IEvent;
+    function GetOnValueChanged: IEvent;
     function GetKeyType: PTypeInfo;
-//    function GetOnKeyChanged: IEvent;
-//    function GetOnValueChanged: IEvent;
     function GetValueType: PTypeInfo;
   {$ENDREGION}
 
     procedure Add(const key, value: TValue);
     procedure AddOrSetValue(const key, value: TValue);
-//    function ExtractPair(const key: TValue): TPair<TValue, TValue>;
+
     procedure Remove(const key: TValue); overload;
+
+    function ExtractPair(const key: TValue): TPair<TValue, TValue>;
+
     function ContainsKey(const key: TValue): Boolean;
     function ContainsValue(const value: TValue): Boolean;
+
     function TryGetValue(const key: TValue; out value: TValue): Boolean;
 
-//    function AsReadOnly: IReadOnlyDictionary;
+    function AsReadOnly: IReadOnlyDictionary;
 
-//    property OnKeyChanged: IEvent read GetOnKeyChanged;
-//    property OnValueChanged: IEvent read GetOnValueChanged;
+    property OnKeyChanged: IEvent read GetOnKeyChanged;
+    property OnValueChanged: IEvent read GetOnValueChanged;
     property KeyType: PTypeInfo read GetKeyType;
     property ValueType: PTypeInfo read GetValueType;
   end;
@@ -1175,7 +1179,6 @@ type
     ///	  The value to locate in the IDictionary&lt;TKey, TValue&gt;.
     ///	</param>
     function ContainsValue(const value: TValue): Boolean;
-    function ExtractPair(const key: TKey): TPair<TKey, TValue>;
 
     ///	<summary>
     ///	  Removes the element with the specified key from the
@@ -1191,6 +1194,8 @@ type
     ///	</returns>
 //    function Remove(const key: TKey): Boolean;
     procedure Remove(const key: TKey); overload;
+
+    function ExtractPair(const key: TKey): TPair<TKey, TValue>;
 
     ///	<summary>
     ///	  Gets the value associated with the specified key.
@@ -1210,7 +1215,6 @@ type
     ///	</returns>
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
 
-    function AsDictionary: IDictionary;
 //    function AsReadOnly: IReadOnlyDictionary<TKey, TValue>;
 
     ///	<summary>
@@ -1311,7 +1315,7 @@ type
     function Peek: T;
     function PeekOrDefault: T;
     function TryPeek(out item: T): Boolean;
-    function AsStack: IStack;
+
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
@@ -1375,13 +1379,13 @@ type
     function Peek: T;
     function PeekOrDefault: T;
     function TryPeek(out item: T): Boolean;
-    function AsQueue: IQueue;
+
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
   ISet = interface(ICollection)
     ['{D83ED568-A7C8-4142-BA0F-5A273AF1AA07}']
-//    function Add(const item: TValue): Boolean;
+    function Add(const item: TValue): Boolean;
     procedure ExceptWith(const other: IEnumerable);
     procedure IntersectWith(const other: IEnumerable);
     procedure UnionWith(const other: IEnumerable);
@@ -1507,8 +1511,6 @@ type
     ///	  <i>other</i> is <b>nil</b>.
     ///	</exception>
     function Overlaps(const other: IEnumerable<T>): Boolean;
-
-    function AsSet: ISet;
   end;
 
   ///	<summary>

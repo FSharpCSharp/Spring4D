@@ -33,7 +33,7 @@ uses
   Spring.Collections.Base;
 
 type
-  TQueue<T> = class(TEnumerableBase<T>, IQueue<T>, IQueue)
+  TQueue<T> = class(TEnumerableBase<T>, IQueue<T>)
   private
     type
       TGenericQueue = Generics.Collections.TQueue<T>;
@@ -42,24 +42,10 @@ type
     fOwnership: TOwnershipType;
     fOnChanged: ICollectionChangedEvent<T>;
     function GetOnChanged: ICollectionChangedEvent<T>;
-    function NonGenericGetOnChanged: IEvent;
-    function IQueue.GetOnChanged = NonGenericGetOnChanged;
   protected
     function GetCount: Integer; override;
 
-    procedure NonGenericEnqueue(const item: TValue);
-    function NonGenericDequeue: TValue;
-    function NonGenericPeek: TValue;
-    function NonGenericPeekOrDefault: TValue;
-    function NonGenericTryPeek(out item: TValue): Boolean;
-
     procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
-
-    procedure IQueue.Enqueue = NonGenericEnqueue;
-    function IQueue.Dequeue = NonGenericDequeue;
-    function IQueue.Peek = NonGenericPeek;
-    function IQueue.PeekOrDefault = NonGenericPeekOrDefault;
-    function IQueue.TryPeek = NonGenericTryPeek;
   public
     constructor Create; overload; override;
     constructor Create(const collection: IEnumerable<T>); overload;
@@ -74,7 +60,6 @@ type
     function TryPeek(out item: T): Boolean;
     procedure Clear;
     procedure TrimExcess;
-    function AsQueue: IQueue;
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
@@ -153,11 +138,6 @@ begin
   Changed(Result, caRemoved);
 end;
 
-function TQueue<T>.AsQueue: IQueue;
-begin
-  Result := Self;
-end;
-
 procedure TQueue<T>.Clear;
 begin
   while Count > 0 do
@@ -202,45 +182,12 @@ begin
   Result := fOnChanged;
 end;
 
-function TQueue<T>.NonGenericDequeue: TValue;
-begin
-  Result := TValue.From<T>(Dequeue);
-end;
-
-procedure TQueue<T>.NonGenericEnqueue(const item: TValue);
-begin
-  Enqueue(item.AsType<T>);
-end;
-
-function TQueue<T>.NonGenericGetOnChanged: IEvent;
-begin
-  Result := GetOnChanged;
-end;
-
-function TQueue<T>.NonGenericPeek: TValue;
-begin
-  Result := TValue.From<T>(Peek);
-end;
-
-function TQueue<T>.NonGenericPeekOrDefault: TValue;
-begin
-  Result := TValue.From<T>(PeekOrDefault);
-end;
-
-function TQueue<T>.NonGenericTryPeek(out item: TValue): Boolean;
-var
-  value: T;
-begin
-  Result := TryPeek(value);
-  if Result then
-    item := TValue.From<T>(value);
-end;
-
 procedure TQueue<T>.Changed(const item: T; action: TCollectionChangedAction);
 begin
   fOnChanged.Invoke(Self, item, action);
 end;
 
 {$ENDREGION}
+
 
 end.

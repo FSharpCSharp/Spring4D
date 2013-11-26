@@ -55,24 +55,12 @@ type
   ///	<typeparam name="T">
   ///	  The type of elements in the hash set.
   ///	</typeparam>
-  THashSet<T> = class(THashSetBase<T>, ISet<T>, ISet)
+  THashSet<T> = class(THashSetBase<T>, ISet<T>)
   private
     type
       TEnumerator = TEnumeratorAdapter<T>;
   protected
     function GetCount: Integer; override;
-
-    procedure NonGenericExceptWith(const other: IEnumerable);
-    procedure NonGenericIntersectWith(const other: IEnumerable);
-    procedure NonGenericUnionWith(const other: IEnumerable);
-    function NonGenericSetEquals(const other: IEnumerable): Boolean;
-    function NonGenericOverlaps(const other: IEnumerable): Boolean;
-
-    procedure ISet.ExceptWith = NonGenericExceptWith;
-    procedure ISet.IntersectWith = NonGenericIntersectWith;
-    procedure ISet.UnionWith = NonGenericUnionWith;
-    function ISet.SetEquals = NonGenericSetEquals;
-    function ISet.Overlaps = NonGenericOverlaps;
   public
     ///	<summary>
     ///	  Initializes a new instance of the <see cref="THashSet&lt;T&gt;" />
@@ -93,6 +81,7 @@ type
     ///	  type.
     ///	</param>
     constructor Create(const comparer: IEqualityComparer<T>); overload;
+
     destructor Destroy; override;
 
     ///	<summary>
@@ -260,8 +249,6 @@ type
     ///	  <i>other</i> is <b>nil</b>.
     ///	</exception>
     function Overlaps(const other: IEnumerable<T>): Boolean;
-
-    function AsSet: ISet;
   end;
 
 implementation
@@ -315,11 +302,6 @@ begin
   Result := fDictionary.ContainsKey(item);
   if Result then
     fDictionary.Remove(item);
-end;
-
-function THashSet<T>.AsSet: ISet;
-begin
-  Result := Self;
 end;
 
 procedure THashSet<T>.Clear;
@@ -382,31 +364,6 @@ begin
       Exit(False);
 
   Result := True;
-end;
-
-procedure THashSet<T>.NonGenericExceptWith(const other: IEnumerable);
-begin
-  ExceptWith(other as THashSet<T>);
-end;
-
-procedure THashSet<T>.NonGenericIntersectWith(const other: IEnumerable);
-begin
-  IntersectWith(other as THashSet<T>);
-end;
-
-function THashSet<T>.NonGenericOverlaps(const other: IEnumerable): Boolean;
-begin
-  Result := Overlaps(other as THashSet<T>);
-end;
-
-function THashSet<T>.NonGenericSetEquals(const other: IEnumerable): Boolean;
-begin
-  Result := SetEquals(other as THashSet<T>);
-end;
-
-procedure THashSet<T>.NonGenericUnionWith(const other: IEnumerable);
-begin
-  UnionWith(other as THashSet<T>);
 end;
 
 procedure THashSet<T>.UnionWith(const other: IEnumerable<T>);

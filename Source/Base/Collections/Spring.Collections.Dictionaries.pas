@@ -34,7 +34,7 @@ uses
 
 type
 
-  TDictionary<TKey, TValue> = class(TCollectionBase<TPair<TKey, TValue>>, IDictionary<TKey, TValue>, IDictionary)
+  TDictionary<TKey, TValue> = class(TCollectionBase<TPair<TKey, TValue>>, IDictionary<TKey, TValue>)
   protected
     type
       TGenericDictionary = Generics.Collections.TDictionary<TKey, TValue>;
@@ -103,19 +103,6 @@ type
     function GetOnKeyChanged: ICollectionChangedEvent<TKey>;
     function GetOnValueChanged: ICollectionChangedEvent<TValue>;
   protected
-    procedure NonGenericAdd(const key, value: Spring.TValue);
-    procedure IDictionary.Add = NonGenericAdd;
-    procedure NonGenericAddOrSetValue(const key, value: Spring.TValue);
-    procedure IDictionary.AddOrSetValue = NonGenericAddOrSetValue;
-    procedure NonGenericRemove(const key: Spring.TValue); overload;
-    procedure IDictionary.Remove = NonGenericRemove;
-    function NonGenericContainsKey(const key: Spring.TValue): Boolean;
-    function IDictionary.ContainsKey = NonGenericContainsKey;
-    function NonGenericContainsValue(const value: Spring.TValue): Boolean;
-    function IDictionary.ContainsValue = NonGenericContainsValue;
-    function NonGenericTryGetValue(const key: Spring.TValue; out value: Spring.TValue): Boolean;
-    function IDictionary.TryGetValue = NonGenericTryGetValue;
-
     function GetKeyType: PTypeInfo;
     function GetValueType: PTypeInfo;
   public
@@ -317,7 +304,7 @@ end;
 
 function TDictionary<TKey, TValue>.AsDictionary: IDictionary;
 begin
-  Result := Self;
+//  Result := Self;
 end;
 
 function TDictionary<TKey, TValue>.ContainsKey(const key: TKey): Boolean;
@@ -384,45 +371,6 @@ end;
 function TDictionary<TKey, TValue>.GetValueType: PTypeInfo;
 begin
   Result := TypeInfo(TValue);
-end;
-
-procedure TDictionary<TKey, TValue>.NonGenericAdd(const key,
-  value: Spring.TValue);
-begin
-  Add(key.AsType<TKey>, value.AsType<TValue>);
-end;
-
-procedure TDictionary<TKey, TValue>.NonGenericAddOrSetValue(const key,
-  value: Spring.TValue);
-begin
-  AddOrSetValue(key.AsType<TKey>, value.AsType<TValue>);
-end;
-
-function TDictionary<TKey, TValue>.NonGenericContainsKey(
-  const key: Spring.TValue): Boolean;
-begin
-  Result := ContainsKey(key.AsType<TKey>);
-end;
-
-function TDictionary<TKey, TValue>.NonGenericContainsValue(
-  const value: Spring.TValue): Boolean;
-begin
-  Result := ContainsValue(value.AsType<TValue>);
-end;
-
-procedure TDictionary<TKey, TValue>.NonGenericRemove(const key: Spring.TValue);
-begin
-  Remove(key.AsType<TKey>);
-end;
-
-function TDictionary<TKey, TValue>.NonGenericTryGetValue(
-  const key: Spring.TValue; out value: Spring.TValue): Boolean;
-var
-  item: TValue;
-begin
-  Result := TryGetValue(key.AsType<TKey>, item);
-  if Result then
-    value := Spring.TValue.From<TValue>(item);
 end;
 
 function TDictionary<TKey, TValue>.GetItem(const key: TKey): TValue;
@@ -575,5 +523,6 @@ begin
 end;
 
 {$ENDREGION}
+
 
 end.
