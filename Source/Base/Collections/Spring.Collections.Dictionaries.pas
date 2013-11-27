@@ -84,6 +84,8 @@ type
     fValues: TValueCollection;
     fOnKeyChanged: ICollectionChangedEvent<TKey>;
     fOnValueChanged: ICollectionChangedEvent<TValue>;
+    fOnKeyNotify: TCollectionNotifyEvent<TKey>;
+    fOnValueNotify: TCollectionNotifyEvent<TValue>;
     procedure DoKeyNotify(Sender: TObject; const Item: TKey; Action: TCollectionNotification);
     procedure DoValueNotify(Sender: TObject; const Item: TValue; Action: TCollectionNotification);
     function GetOnKeyChanged: ICollectionChangedEvent<TKey>;
@@ -132,7 +134,7 @@ type
 
     function AsReadOnly: IReadOnlyDictionary<TKey, TValue>;
 
-    property Item[const key: TKey]: TValue read GetItem write SetItem; default;
+    property Items[const key: TKey]: TValue read GetItem write SetItem; default;
     property Keys: IReadOnlyCollection<TKey> read GetKeys;
     property Values: IReadOnlyCollection<TValue> read GetValues;
     property OnKeyChanged: ICollectionChangedEvent<TKey> read GetOnKeyChanged;
@@ -155,6 +157,8 @@ begin
   inherited Create;
   fDictionary := dictionary;
   fOwnership := ownership;
+  fOnKeyNotify := fDictionary.OnKeyNotify;
+  fOnValueNotify := fDictionary.OnValueNotify;
   fDictionary.OnKeyNotify := DoKeyNotify;
   fDictionary.OnValueNotify := DoValueNotify;
   fOnKeyChanged := TCollectionChangedEventImpl<TKey>.Create;
@@ -200,7 +204,12 @@ begin
   fKeys.Free;
   fValues.Free;
   if fOwnership = otOwned then
-    fDictionary.Free;
+    fDictionary.Free
+  else
+  begin
+    fDictionary.OnKeyNotify := fOnKeyNotify;
+    fDictionary.OnValueNotify := fOnValueNotify;
+  end;
 
   inherited Destroy;
 end;
@@ -208,13 +217,13 @@ end;
 procedure TDictionary<TKey, TValue>.DoKeyNotify(Sender: TObject;
   const Item: TKey; Action: TCollectionNotification);
 begin
-  fOnKeyChanged.Invoke(Sender, item, TCollectionChangedAction(action));
+  fOnKeyChanged.Invoke(Self, item, TCollectionChangedAction(action));
 end;
 
 procedure TDictionary<TKey, TValue>.DoValueNotify(Sender: TObject;
   const Item: TValue; Action: TCollectionNotification);
 begin
-  fOnValueChanged.Invoke(Sender, item, TCollectionChangedAction(action));
+  fOnValueChanged.Invoke(Self, item, TCollectionChangedAction(action));
 end;
 
 function TDictionary<TKey, TValue>.GetEnumerator: IEnumerator<TPair<TKey, TValue>>;

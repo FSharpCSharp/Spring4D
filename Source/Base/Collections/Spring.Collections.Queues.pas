@@ -24,11 +24,12 @@
 
 unit Spring.Collections.Queues;
 
+{$I Spring.inc}
+
 interface
 
 uses
   Generics.Collections,
-  Spring,
   Spring.Collections,
   Spring.Collections.Base;
 
@@ -41,25 +42,32 @@ type
     fQueue: TGenericQueue;
     fOwnership: TOwnershipType;
     fOnChanged: ICollectionChangedEvent<T>;
+    fOnNotify: TCollectionNotifyEvent<T>;
+    procedure DoNotify(Sender: TObject; const Item: T;
+      Action: TCollectionNotification);
     function GetOnChanged: ICollectionChangedEvent<T>;
   protected
     function GetCount: Integer; override;
-
     procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
   public
     constructor Create; overload; override;
+    constructor Create(const collection: array of T); overload;
     constructor Create(const collection: IEnumerable<T>); overload;
     constructor Create(const collection: TEnumerable<T>); overload;
     constructor Create(queue: TGenericQueue; ownership: TOwnershipType); overload;
     destructor Destroy; override;
+
     function GetEnumerator: IEnumerator<T>; override;
+
+    procedure Clear;
     procedure Enqueue(const item: T);
     function Dequeue: T;
     function Peek: T;
     function PeekOrDefault: T;
     function TryPeek(out item: T): Boolean;
-    procedure Clear;
+
     procedure TrimExcess;
+
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
@@ -74,9 +82,21 @@ uses
 
 constructor TQueue<T>.Create(queue: TGenericQueue; ownership: TOwnershipType);
 begin
+  inherited Create;
   fQueue := queue;
+  fOnNotify := fQueue.OnNotify;
+  fQueue.OnNotify := DoNotify;
   fOwnership := ownership;
   fOnChanged := TCollectionChangedEventImpl<T>.Create;
+end;
+
+constructor TQueue<T>.Create(const collection: array of T);
+var
+  item: T;
+begin
+  Create;
+  for item in collection do
+    Enqueue(item);
 end;
 
 constructor TQueue<T>.Create(const collection: IEnumerable<T>);
@@ -85,9 +105,7 @@ var
 begin
   Create;
   for item in collection do
-  begin
     Enqueue(item);
-  end;
 end;
 
 constructor TQueue<T>.Create(const collection: TEnumerable<T>);
@@ -96,9 +114,7 @@ var
 begin
   Create;
   for item in collection do
-  begin
     Enqueue(item);
-  end;
 end;
 
 constructor TQueue<T>.Create;
@@ -112,11 +128,17 @@ end;
 destructor TQueue<T>.Destroy;
 begin
   if fOwnership = otOwned then
-  begin
-    Clear;
-    fQueue.Free;
-  end;
+    fQueue.Free
+  else
+    fQueue.OnNotify := fOnNotify;
+
   inherited Destroy;
+end;
+
+procedure TQueue<T>.DoNotify(Sender: TObject; const Item: T;
+  Action: TCollectionNotification);
+begin
+  Changed(Item, TCollectionChangedAction(Action));
 end;
 
 function TQueue<T>.GetEnumerator: IEnumerator<T>;
@@ -127,22 +149,16 @@ end;
 procedure TQueue<T>.Enqueue(const item: T);
 begin
   fQueue.Enqueue(item);
-
-  Changed(item, caAdded);
 end;
 
 function TQueue<T>.Dequeue: T;
 begin
   Result := fQueue.Dequeue;
-
-  Changed(Result, caRemoved);
 end;
 
 procedure TQueue<T>.Clear;
 begin
-  while Count > 0 do
-    Dequeue;
-  TrimExcess;
+  fQueue.Clear;
 end;
 
 function TQueue<T>.Peek: T;
