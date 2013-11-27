@@ -35,8 +35,12 @@ uses
 type
 
   ///	<summary>
-  ///	  Provides an array-based implementation of IList{T}.
+  ///	  Represents a strongly typed list of elements that can be accessed by
+  ///	  index. Provides methods to search, sort, and manipulate lists.
   ///	</summary>
+  ///	<typeparam name="T">
+  ///	  The type of elements in the list.
+  ///	</typeparam>
   TList<T> = class(TListBase<T>)
   private
     fItems: array of T;

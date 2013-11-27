@@ -875,7 +875,7 @@ end;
 
 function TEnumerableBase<T>.Skip(count: Integer): IEnumerable<T>;
 begin
-  Result := TSkipEnumerable<T>.Create(Self, count);
+  Result := TSkipIterator<T>.Create(Self, count);
 end;
 
 function TEnumerableBase<T>.SkipWhile(
@@ -883,7 +883,7 @@ function TEnumerableBase<T>.SkipWhile(
 begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 
-  Result := TSkipWhileEnumerable<T>.Create(Self, predicate);
+  Result := TSkipWhileIterator<T>.Create(Self, predicate);
 end;
 
 function TEnumerableBase<T>.SkipWhile(
@@ -891,12 +891,12 @@ function TEnumerableBase<T>.SkipWhile(
 begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 
-  Result := TSkipWhileIndexEnumerable<T>.Create(Self, predicate);
+  Result := TSkipWhileIndexIterator<T>.Create(Self, predicate);
 end;
 
 function TEnumerableBase<T>.Take(count: Integer): IEnumerable<T>;
 begin
-  Result := TTakeEnumerable<T>.Create(Self, count);
+  Result := TTakeIterator<T>.Create(Self, count);
 end;
 
 function TEnumerableBase<T>.TakeWhile(
@@ -904,7 +904,7 @@ function TEnumerableBase<T>.TakeWhile(
 begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 
-  Result := TTakeWhileEnumerable<T>.Create(Self, predicate);
+  Result := TTakeWhileIterator<T>.Create(Self, predicate);
 end;
 
 function TEnumerableBase<T>.TakeWhile(
@@ -912,7 +912,7 @@ function TEnumerableBase<T>.TakeWhile(
 begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 
-  Result := TTakeWhileIndexEnumerable<T>.Create(Self, predicate);
+  Result := TTakeWhileIndexIterator<T>.Create(Self, predicate);
 end;
 
 function TEnumerableBase<T>.ToArray: TArray<T>;
@@ -1042,7 +1042,7 @@ function TEnumerableBase<T>.Where(
 begin
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 
-  Result := TWhereEnumerable<T>.Create(Self, predicate);
+  Result := TWhereIterator<T>.Create(Self, predicate);
 end;
 
 {$ENDREGION}
