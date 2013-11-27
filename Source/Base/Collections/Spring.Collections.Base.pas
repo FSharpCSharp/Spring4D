@@ -257,7 +257,7 @@ type
     constructor Create(const controller: IInterface);
   end;
 
-  TListBase<T> = class abstract(TCollectionBase<T>, IList<T>)
+  TListBase<T> = class abstract(TCollectionBase<T>, IList<T>, IReadOnlyList<T>)
   protected
     type
       TEnumerator = class(TEnumeratorBase<T>)
@@ -313,6 +313,8 @@ type
     procedure Sort(const comparison: TComparison<T>); overload;
     procedure Reverse; virtual; abstract;
 
+    function AsReadOnly: IReadOnlyList<T>;
+
     property Items[index: Integer]: T read GetItem write SetItem; default;
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
@@ -320,6 +322,7 @@ type
 implementation
 
 uses
+  TypInfo,
   Spring.Collections.Events,
   Spring.Collections.Extensions,
   Spring.Collections.Lists,
@@ -1217,6 +1220,11 @@ destructor TListBase<T>.Destroy;
 begin
   Clear;
   inherited Destroy;
+end;
+
+function TListBase<T>.AsReadOnly: IReadOnlyList<T>;
+begin
+  Result := Self;
 end;
 
 function TListBase<T>.Remove(const item: T): Boolean;

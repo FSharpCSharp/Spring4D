@@ -990,7 +990,7 @@ type
 //    function LastIndexOf(const item: T; index: Integer): Integer; overload;
 //    function LastIndexOf(const item: T; index, count: Integer): Integer; overload;
 
-//    function AsReadOnly: IReadOnlyList<T>;
+    function AsReadOnly: IReadOnlyList<T>;
 
     property Items[index: Integer]: T read GetItem write SetItem; default;
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
@@ -1194,7 +1194,7 @@ type
     ///	</returns>
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
 
-//    function AsReadOnly: IReadOnlyDictionary<TKey, TValue>;
+    function AsReadOnly: IReadOnlyDictionary<TKey, TValue>;
 
     ///	<summary>
     ///	  Gets or sets the element with the specified key.
