@@ -470,7 +470,7 @@ function TEnumerableBase<T>.Concat(
 begin
   Guard.CheckNotNull(Assigned(second), 'second');
 
-  Result := TConcatEnumerable<T>.Create(Self, second);
+  Result := TConcatIterator<T>.Create(Self, second);
 end;
 
 function TEnumerableBase<T>.Contains(const value: T): Boolean;
@@ -1245,7 +1245,7 @@ end;
 
 function TListBase<T>.Reversed: IEnumerable<T>;
 begin
-  Result := TReversedEnumerable<T>.Create(Self);
+  Result := TReversedIterator<T>.Create(Self);
 end;
 
 function TListBase<T>.Extract(const item: T): T;

@@ -251,52 +251,27 @@ type
     function MoveNext: Boolean; override;
   end;
 
-  TConcatEnumerable<T> = class(TEnumerableBase<T>)
-  private
-    type
-      TEnumerator = class(TEnumeratorBase<T>)
-      private
-        fFirst: IEnumerator<T>;
-        fSecond: IEnumerator<T>;
-        fCurrentEnumerator: IEnumerator<T>;
-      protected
-        function GetCurrent: T; override;
-      public
-        constructor Create(const first, second: IEnumerable<T>);
-        function MoveNext: Boolean; override;
-      end;
+  TConcatIterator<T> = class(TIterator<T>)
   private
     fFirst: IEnumerable<T>;
     fSecond: IEnumerable<T>;
-  protected
-    function GetCount: Integer; override;
-    function GetIsEmpty: Boolean; override;
+    fEnumerator: IEnumerator<T>;
+    fFlag: Boolean;
   public
     constructor Create(const first, second: IEnumerable<T>);
-    function GetEnumerator: IEnumerator<T>; override;
-    function TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean; override;
-    function TryGetLast(out value: T; const predicate: TPredicate<T>): Boolean; override;
+    function Clone: TIterator<T>; override;
+    function MoveNext: Boolean; override;
   end;
 
-  TReversedEnumerable<T> = class(TEnumerableBase<T>)
+  TReversedIterator<T> = class(TIterator<T>)
   private
-    type
-      TEnumerator = class(TEnumeratorBase<T>)
-      private
-        fList: IList<T>;
-        fCount: Integer;
-        fIndex: Integer;
-      protected
-        function GetCurrent: T; override;
-      public
-        constructor Create(const list: IList<T>);
-        function MoveNext: Boolean; override;
-      end;
-  private
-    fList: IList<T>;
+    fSource: IEnumerable<T>;
+    fBuffer: TBuffer<T>;
+    fIndex: Integer;
   public
-    constructor Create(const list: IList<T>);
-    function GetEnumerator: IEnumerator<T>; override;
+    constructor Create(const source: IEnumerable<T>);
+    function Clone: TIterator<T>; override;
+    function MoveNext: Boolean; override;
   end;
 
 implementation
@@ -937,110 +912,100 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TConcatEnumerable<T>'}
+{$REGION 'TConcatIterator<T>'}
 
-constructor TConcatEnumerable<T>.Create(const first, second: IEnumerable<T>);
+constructor TConcatIterator<T>.Create(const first, second: IEnumerable<T>);
 begin
+  Guard.CheckNotNull(Assigned(first), 'first');
+  Guard.CheckNotNull(Assigned(second), 'second');
+
   inherited Create;
   fFirst := first;
   fSecond := second;
 end;
 
-function TConcatEnumerable<T>.GetEnumerator: IEnumerator<T>;
+function TConcatIterator<T>.Clone: TIterator<T>;
 begin
-  Result := TEnumerator.Create(fFirst, fSecond);
+  Result := TConcatIterator<T>.Create(fFirst, fSecond);
 end;
 
-function TConcatEnumerable<T>.GetCount: Integer;
+function TConcatIterator<T>.MoveNext: Boolean;
 begin
-  Result := fFirst.Count + fSecond.Count;
-end;
+  Result := False;
 
-function TConcatEnumerable<T>.GetIsEmpty: Boolean;
-begin
-  Result := fFirst.IsEmpty and fSecond.IsEmpty;
-end;
-
-function TConcatEnumerable<T>.TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean;
-begin
-  Result := fFirst.TryGetFirst(value, predicate) or fSecond.TryGetFirst(value, predicate);
-end;
-
-function TConcatEnumerable<T>.TryGetLast(out value: T; const predicate: TPredicate<T>): Boolean;
-begin
-  Result := fSecond.TryGetLast(value, predicate) or fFirst.TryGetLast(value, predicate);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TConcatEnumerable<T>.TEnumerator'}
-
-constructor TConcatEnumerable<T>.TEnumerator.Create(const first,
-  second: IEnumerable<T>);
-begin
-  inherited Create;
-  fFirst := first.GetEnumerator;
-  fSecond := second.GetEnumerator;
-  fCurrentEnumerator := fFirst;
-end;
-
-function TConcatEnumerable<T>.TEnumerator.GetCurrent: T;
-begin
-  Result := fCurrentEnumerator.Current;
-end;
-
-function TConcatEnumerable<T>.TEnumerator.MoveNext: Boolean;
-begin
-  Result := fCurrentEnumerator.MoveNext;
-
-  if not Result and (fCurrentEnumerator = fFirst) then
+  if fState = STATE_ENUMERATOR then
   begin
-    fCurrentEnumerator := fSecond;
-    Result := fCurrentEnumerator.MoveNext;
+    fEnumerator := fFirst.GetEnumerator;
+    fState := STATE_RUNNING;
+  end;
+
+  if fState = STATE_RUNNING then
+  begin
+    repeat
+      if fEnumerator.MoveNext then
+      begin
+        fCurrent := fEnumerator.Current;
+        Result := True;
+      end
+      else
+      begin
+        if not fFlag then
+        begin
+          fEnumerator := fSecond.GetEnumerator;
+          fFlag := True;
+        end
+        else
+        begin
+          fState := STATE_FINISHED;
+          fEnumerator := nil;
+          Break;
+        end;
+      end;
+    until Result;
   end;
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TReversedEnumerable<T>'}
+{$REGION 'TReversedIterator<T>'}
 
-constructor TReversedEnumerable<T>.Create(const list: IList<T>);
+constructor TReversedIterator<T>.Create(const source: IEnumerable<T>);
 begin
-  inherited Create;
-  fList := list;
+  Guard.CheckNotNull(Assigned(source), 'source');
+
+  inherited Create(source.Comparer);
+  fSource := source;
 end;
 
-function TReversedEnumerable<T>.GetEnumerator: IEnumerator<T>;
+function TReversedIterator<T>.Clone: TIterator<T>;
 begin
-  Result := TEnumerator.Create(fList);
+  Result := TReversedIterator<T>.Create(fSource);
+end;
+
+function TReversedIterator<T>.MoveNext: Boolean;
+begin
+  Result := False;
+
+  if fState = STATE_ENUMERATOR then
+  begin
+    fBuffer := TBuffer<T>.Create(fSource);
+    fIndex := fBuffer.count - 1;
+    fState := STATE_RUNNING;
+  end;
+
+  if fState = STATE_RUNNING then
+  begin
+    if (fIndex >= 0) and (fIndex <= fBuffer.count) then
+    begin
+      fCurrent := fBuffer.items[fIndex];
+      Dec(fIndex);
+      Result := True;
+    end;
+  end;
 end;
 
 {$ENDREGION}
 
-
-{$REGION 'TReversedEnumerable<T>.TEnumerator'}
-
-constructor TReversedEnumerable<T>.TEnumerator.Create(const list: IList<T>);
-begin
-  inherited Create;
-  fList := list;
-  fCount := fList.Count;
-  fIndex := fCount;
-end;
-
-function TReversedEnumerable<T>.TEnumerator.GetCurrent: T;
-begin
-  Result := fList[fIndex];
-end;
-
-function TReversedEnumerable<T>.TEnumerator.MoveNext: Boolean;
-begin
-  Result := (fIndex > 0) and (fIndex <= fCount);
-  Dec(fIndex);
-end;
-
-{$ENDREGION}
 
 end.
