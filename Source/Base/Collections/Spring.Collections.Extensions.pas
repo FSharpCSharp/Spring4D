@@ -29,63 +29,96 @@ unit Spring.Collections.Extensions;
 interface
 
 uses
-  SysUtils,
   Generics.Collections,
+  Generics.Defaults,
+  SysUtils,
   Spring,
   Spring.Collections,
   Spring.Collections.Base;
 
 type
-  TArrayEnumerator<T> = class(TEnumeratorBase<T>)
+  TEmptyEnumerable<T> = class(TEnumerableBase<T>);
+
+  TBuffer<T> = record
   private
-    fArray: TArray<T>;
-    fIndex: Integer;
-  protected
-    function GetCurrent: T; override;
+    items: TArray<T>;
+    count: Integer;
   public
-    constructor Create(const value: TArray<T>);
-    function MoveNext: Boolean; override;
+    constructor Create(source: IEnumerable<T>);
   end;
 
-  TArrayReversedEnumerator<T> = class(TEnumeratorBase<T>)
-  private
-    fArray: TArray<T>;
-    fIndex: Integer;
+  TIteratorBase<T> = class(TEnumerableBase<T>, IEnumerator)
   protected
-    function GetCurrent: T; override;
+    function GetCurrentNonGeneric: TValue; virtual; abstract;
+    function IEnumerator.GetCurrent = GetCurrentNonGeneric;
   public
-    constructor Create(const value: TArray<T>);
+    function MoveNext: Boolean; virtual;
+    procedure Reset; virtual;
+  end;
+
+  TIterator<T> = class(TIteratorBase<T>, IEnumerator<T>)
+  private
+    fInitialThreadId: Cardinal;
+  protected
+    fState: Integer;
+    fCurrent: T;
+    const
+      STATE_INITIAL    = -2; // initial state, before GetEnumerator
+      STATE_FINISHED   = -1; // end of enumerator
+      STATE_ENUMERATOR = 0;  // before calling MoveNext
+      STATE_RUNNING    = 1;  // enumeration is running
+  protected
+    function Clone: TIterator<T>; virtual; abstract;
+    function GetCurrent: T;
+    function GetCurrentNonGeneric: TValue; override; final;
+  public
+    constructor Create; override;
+    function GetEnumerator: IEnumerator<T>; override; final;
+  end;
+
+  TArrayIterator<T> = class(TIterator<T>)
+  private
+    fValues: TArray<T>;
+    fIndex: Integer;
+  public
+    constructor Create(const values: array of T); overload;
+    function Clone: TIterator<T>; override;
     function MoveNext: Boolean; override;
   end;
 
   ///	<summary>
-  ///	  The adapter implementation for <c>IEnumerator{T}</c>.
+  ///	  The adapter implementation for
+  ///	  <see cref="Spring.Collections|IEnumerator&lt;T&gt;" />.
   ///	</summary>
   TEnumeratorAdapter<T> = class(TEnumeratorBase<T>)
-  public
+  private
     type
       TGenericEnumerable = Generics.Collections.TEnumerable<T>;
       TGenericEnumerator = Generics.Collections.TEnumerator<T>;
   private
+    fSource: TGenericEnumerable;
     fEnumerator: TGenericEnumerator;
   protected
     function GetCurrent: T; override;
   public
-    constructor Create(collection: TGenericEnumerable);
+    constructor Create(source: TGenericEnumerable);
     destructor Destroy; override;
     function MoveNext: Boolean; override;
     property Current: T read GetCurrent;
   end;
 
-  TEmptyEnumerator<T> = class(TEnumeratorBase<T>)
-  protected
-    function GetCurrent: T; override;
+  ///	<summary>
+  ///	  The adapter implementation for
+  ///	  <see cref="Spring.Collections|IEnumerable&lt;T&gt;" />.
+  ///	</summary>
+  TEnumerableAdapter<T> = class(TEnumerableBase<T>)
+  private
+    type
+      TGenericEnumerable = Generics.Collections.TEnumerable<T>;
+  private
+    fSource: TGenericEnumerable;
   public
-    function MoveNext: Boolean; override;
-  end;
-
-  TEmptyEnumerable<T> = class(TEnumerableBase<T>)
-  public
+    constructor Create(source: TGenericEnumerable);
     function GetEnumerator: IEnumerator<T>; override;
   end;
 
@@ -305,15 +338,150 @@ type
 implementation
 
 uses
+  Classes,
   Spring.ResourceStrings;
+
+
+{$REGION 'TBuffer<T>'}
+
+constructor TBuffer<T>.Create(source: IEnumerable<T>);
+var
+  item: T;
+  collection: ICollection<T>;
+begin
+  Guard.CheckNotNull(Assigned(source), 'source');
+
+  items := nil;
+  count := 0;
+  if Supports(source, ICollection<T>, collection) then
+  begin
+    count := collection.Count;
+    if count > 0 then
+    begin
+      SetLength(items, count);
+      collection.CopyTo(items, 0);
+    end;
+  end
+  else
+  begin
+    for item in source do
+    begin
+      if items = nil then
+        SetLength(items, 4)
+      else if Length(items) = count then
+        SetLength(items, count * 2);
+      items[count] := item;
+      Inc(count);
+    end;
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TIteratorBase<T>' }
+
+function TIteratorBase<T>.MoveNext: Boolean;
+begin
+  Result := False;
+end;
+
+procedure TIteratorBase<T>.Reset;
+begin
+  raise ENotSupportedException.CreateRes(@SCannotResetEnumerator);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TIterator<T>'}
+
+constructor TIterator<T>.Create;
+begin
+  inherited Create;
+  fState := STATE_INITIAL;
+  fInitialThreadId := TThread.CurrentThread.ThreadID;
+end;
+
+function TIterator<T>.GetCurrent: T;
+begin
+  Result := fCurrent;
+end;
+
+function TIterator<T>.GetCurrentNonGeneric: TValue;
+begin
+  Result := TValue.From<T>(GetCurrent);
+end;
+
+function TIterator<T>.GetEnumerator: IEnumerator<T>;
+var
+  iterator: TIterator<T>;
+begin
+  if (fInitialThreadId = TThread.CurrentThread.ThreadID) and (fState = STATE_INITIAL) then
+  begin
+    fState := STATE_ENUMERATOR;
+    Result := Self;
+  end
+  else
+  begin
+    iterator := Clone;
+    iterator.fState := STATE_ENUMERATOR;
+    Result := iterator;
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TArrayIterator<T>'}
+
+constructor TArrayIterator<T>.Create(const values: array of T);
+var
+  i: Integer;
+begin
+  inherited Create;
+  SetLength(fValues, Length(values));
+  for i := 0 to High(values) do
+    fValues[i] := values[i];
+end;
+
+function TArrayIterator<T>.Clone: TIterator<T>;
+begin
+  Result := TArrayIterator<T>.Create(fValues);
+end;
+
+function TArrayIterator<T>.MoveNext: Boolean;
+begin
+  Result := False;
+
+  if fState = STATE_ENUMERATOR then
+  begin
+    fIndex := -1;
+    fState := STATE_RUNNING;
+  end;
+
+  if fState = STATE_RUNNING then
+  begin
+    if fIndex < Length(fValues) - 1 then
+    begin
+      Inc(fIndex);
+      fCurrent := fValues[fIndex];
+      Result := True;
+    end;
+  end;
+end;
+
+{$ENDREGION}
 
 
 {$REGION 'TEnumeratorAdapter<T>'}
 
-constructor TEnumeratorAdapter<T>.Create(collection: TGenericEnumerable);
+constructor TEnumeratorAdapter<T>.Create(source: TGenericEnumerable);
 begin
+  Guard.CheckNotNull(Assigned(source), 'source');
+
   inherited Create;
-  fEnumerator := collection.GetEnumerator;
+  fSource := source;
 end;
 
 destructor TEnumeratorAdapter<T>.Destroy;
@@ -329,80 +497,27 @@ end;
 
 function TEnumeratorAdapter<T>.MoveNext: Boolean;
 begin
+  if not Assigned(fEnumerator) then
+    fEnumerator := fSource.GetEnumerator;
   Result := fEnumerator.MoveNext;
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TArrayEnumerator<T>'}
+{$REGION 'TEnumerableAdapter<T>'}
 
-constructor TArrayEnumerator<T>.Create(const value: TArray<T>);
+constructor TEnumerableAdapter<T>.Create(source: TGenericEnumerable);
 begin
+  Guard.CheckNotNull(Assigned(source), 'source');
+
   inherited Create;
-  fArray := value;
-  fIndex := -1;
+  fSource := source;
 end;
 
-function TArrayEnumerator<T>.GetCurrent: T;
+function TEnumerableAdapter<T>.GetEnumerator: IEnumerator<T>;
 begin
-  Result := fArray[fIndex];
-end;
-
-function TArrayEnumerator<T>.MoveNext: Boolean;
-begin
-  Result := fIndex < Length(fArray) - 1;
-  if Result then
-    Inc(fIndex);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TArrayReversedEnumerator<T>'}
-
-constructor TArrayReversedEnumerator<T>.Create(const value: TArray<T>);
-begin
-  inherited Create;
-  fArray := value;
-  fIndex := Length(fArray);
-end;
-
-function TArrayReversedEnumerator<T>.GetCurrent: T;
-begin
-  Result := fArray[fIndex];
-end;
-
-function TArrayReversedEnumerator<T>.MoveNext: Boolean;
-begin
-  Result := fIndex > 0;
-  if Result then
-    Dec(fIndex);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TEmptyEnumerator<T>'}
-
-function TEmptyEnumerator<T>.GetCurrent: T;
-begin
-  raise EInvalidOperationException.CreateRes(@SEnumEmpty);
-end;
-
-function TEmptyEnumerator<T>.MoveNext: Boolean;
-begin
-  Result := False;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TEmptyEnumerable<T>'}
-
-function TEmptyEnumerable<T>.GetEnumerator: IEnumerator<T>;
-begin
-  Result := TEmptyEnumerator<T>.Create;
+  Result := TEnumeratorAdapter<T>.Create(fSource);
 end;
 
 {$ENDREGION}

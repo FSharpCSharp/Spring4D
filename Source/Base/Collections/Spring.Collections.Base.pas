@@ -349,7 +349,7 @@ end;
 
 function TEnumeratorBase<T>.GetCurrent: T;
 begin
-  raise ENotSupportedException.Create('GetCurrent');
+  raise EInvalidOperationException.CreateRes(@SEnumEmpty);
 end;
 
 function TEnumeratorBase<T>.GetCurrentNonGeneric: TValue;
