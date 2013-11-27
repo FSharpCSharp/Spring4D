@@ -414,63 +414,104 @@ type
   ///	</summary>
   ILazy = interface
     ['{40223BA9-0C66-49E7-AA33-BDAEF9F506D6}']
+  {$REGION 'Property Accessors'}
     function GetIsValueCreated: Boolean;
     function GetValue: TValue;
+  {$ENDREGION}
 
     ///	<summary>
     ///	  Gets a value that indicates whether a value has been created for this
-    ///	  <c>ILazy</c> instance.
+    ///	  <see cref="ILazy" /> instance.
     ///	</summary>
+    ///	<value>
+    ///	  <b>True</b> if a value has been created for this
+    ///	  <see cref="ILazy" /> instance; otherwise, <b>False</b>.
+    ///	</value>
     property IsValueCreated: Boolean read GetIsValueCreated;
 
     ///	<summary>
-    ///	  Gets the lazily initialized value of the current <c>ILazy</c>
-    ///	  instance.
+    ///	  Gets the lazily initialized value of the current
+    ///	  <see cref="ILazy" /> instance.
     ///	</summary>
+    ///	<value>
+    ///	  The lazily initialized value of the current
+    ///	  <see cref="ILazy" /> instance.
+    ///	</value>
     property Value: TValue read GetValue;
   end;
 
   ///	<summary>
-  ///	  Provides support for lazy initialization by generic.
+  ///	  Provides support for lazy initialization.
   ///	</summary>
   ILazy<T> = interface(ILazy)
+  {$REGION 'Property Accessors'}
     function GetValue: T;
+  {$ENDREGION}
+
+    ///	<summary>
+    ///	  Gets the lazily initialized value of the current
+    ///	  <see cref="ILazy&lt;T&gt;" /> instance.
+    ///	</summary>
+    ///	<value>
+    ///	  The lazily initialized value of the current
+    ///	  <see cref="ILazy&lt;T&gt;" /> instance.
+    ///	</value>
     property Value: T read GetValue;
   end;
 
   TLazy = class(TInterfacedObject, ILazy)
-  protected
+  private
     fIsValueCreated: Boolean;
+  {$REGION 'Property Accessors'}
     function GetIsValueCreated: Boolean;
-    function NonGenericGetValue: TValue; virtual; abstract;
-    function ILazy.GetValue = NonGenericGetValue;
+    function GetValueNonGeneric: TValue; virtual; abstract;
+    function ILazy.GetValue = GetValueNonGeneric;
+  {$ENDREGION}
+  public
+    ///	<summary>
+    ///	  Gets a value that indicates whether a value has been created for this
+    ///	  <see cref="TLazy&lt;T&gt;" /> instance.
+    ///	</summary>
+    ///	<value>
+    ///	  <b>True</b> if a value has been created for this
+    ///	  <see cref="TLazy&lt;T&gt;" /> instance; otherwise, <b>False</b>.
+    ///	</value>
+    property IsValueCreated: Boolean read GetIsValueCreated;
   end;
 
+  ///	<summary>
+  ///	  Provides support for lazy initialization.
+  ///	</summary>
+  ///	<typeparam name="T">
+  ///	  The type of object that is being lazily initialized.
+  ///	</typeparam>
   TLazy<T> = class(TLazy, ILazy<T>, TFunc<T>)
   private
     fValueFactory: TFunc<T>;
     fValue: T;
     procedure EnsureInitialized; inline;
-  protected
+  {$REGION 'Property Accessors'}
     function GetValue: T;
-    function NonGenericGetValue: TValue; override;
+    function GetValueNonGeneric: TValue; override; final;
     function TFunc<T>.Invoke = GetValue;
+  {$ENDREGION}
   public
     ///	<summary>
-    ///	  Initializes a new instance of <see cref="TLazy&lt;T&gt;" /> with a
-    ///	  delegate.
+    ///	  Initializes a new instance of the <see cref="TLazy&lt;T&gt;" />
+    ///	  class. When lazy initialization occurs, the specified initialization
+    ///	  function is used.
     ///	</summary>
     ///	<param name="valueFactory">
     ///	  The delegate that is invoked to produce the lazily initialized value
     ///	  when it is needed.
     ///	</param>
     ///	<exception cref="EArgumentNullException">
-    ///	  Raised if the <paramref name="valueFactory" /> is null.
+    ///	  <i>valueFactory</i> is <b>nil</b>.
     ///	</exception>
     constructor Create(const valueFactory: TFunc<T>);
 
     ///	<summary>
-    ///	  Initializes a new instance of <see cref="TLazy&lt;T&gt;" /> with a
+    ///	  Initializes a new instance of <see cref="TLazy&lt;T&gt;" /> with the
     ///	  specified value.
     ///	</summary>
     ///	<param name="value">
@@ -478,10 +519,23 @@ type
     ///	</param>
     constructor CreateFrom(const value: T);
 
-    property IsValueCreated: Boolean read GetIsValueCreated;
+    ///	<summary>
+    ///	  Gets the lazily initialized value of the current
+    ///	  <see cref="TLazy&lt;T&gt;" /> instance.
+    ///	</summary>
+    ///	<value>
+    ///	  The lazily initialized value of the current
+    ///	  <see cref="TLazy&lt;T&gt;" /> instance.
+    ///	</value>
     property Value: T read GetValue;
   end;
 
+  ///	<summary>
+  ///	  Provides support for lazy initialization.
+  ///	</summary>
+  ///	<typeparam name="T">
+  ///	  The type of object that is being lazily initialized.
+  ///	</typeparam>
   Lazy<T> = record
   private
     fLazy: ILazy<T>;
@@ -489,7 +543,27 @@ type
     function GetIsValueCreated: Boolean;
     function GetValue: T;
   public
+    ///	<summary>
+    ///	  Initializes a new instance of the <see cref="Lazy&lt;T&gt;" />
+    ///	  record. When lazy initialization occurs, the specified initialization
+    ///	  function is used.
+    ///	</summary>
+    ///	<param name="valueFactory">
+    ///	  The delegate that is invoked to produce the lazily initialized value
+    ///	  when it is needed.
+    ///	</param>
+    ///	<exception cref="EArgumentNullException">
+    ///	  <i>valueFactory</i> is <b>nil</b>.
+    ///	</exception>
     constructor Create(const valueFactory: TFunc<T>);
+
+    ///	<summary>
+    ///	  Initializes a new instance of <see cref="Lazy&lt;T&gt;" /> with the
+    ///	  specified value.
+    ///	</summary>
+    ///	<param name="value">
+    ///	  The initialized value.
+    ///	</param>
     constructor CreateFrom(const value: T);
 
     class operator Implicit(const value: Lazy<T>): ILazy<T>;
@@ -498,7 +572,27 @@ type
     class operator Implicit(const value: TLazy<T>): Lazy<T>;
 
     property IsAssigned: Boolean read GetIsAssigned;
+
+    ///	<summary>
+    ///	  Gets a value that indicates whether a value has been created for this
+    ///	  <see cref="Lazy&lt;T&gt;" /> instance.
+    ///	</summary>
+    ///	<value>
+    ///	  <b>True</b> if a value has been created for this
+    ///	  <see cref="Lazy&lt;T&gt;" /> instance; otherwise, <b>False</b>.
+    ///	</value>
     property IsValueCreated: Boolean read GetIsValueCreated;
+
+    ///	<summary>
+    ///	  Gets the lazily initialized value of the current
+    ///	  <see cref="Lazy&lt;T&gt;" /> instance.
+    ///	</summary>
+    ///	<value>
+    ///	  The lazily initialized value of the current
+    ///	  <see cref="Lazy&lt;T&gt;" /> instance.
+    ///	</value>
+    ///	<exception cref="Spring|EInvalidOperationException">
+    ///	</exception>
     property Value: T read GetValue;
   end;
 
@@ -1304,6 +1398,9 @@ begin
   if fIsValueCreated then
     Exit;
 
+  if not Assigned(fValueFactory) then
+    raise EInvalidOperationException.CreateRes(@SNoDelegateAssigned);
+
   fValue := fValueFactory();
   fIsValueCreated := True;
 end;
@@ -1314,7 +1411,7 @@ begin
   Result := fValue;
 end;
 
-function TLazy<T>.NonGenericGetValue: TValue;
+function TLazy<T>.GetValueNonGeneric: TValue;
 begin
   Result := TValue.From<T>(Value);
 end;
@@ -1338,6 +1435,7 @@ function Lazy<T>.GetValue: T;
 begin
   if not Assigned(fLazy) then
     raise EInvalidOperationException.CreateRes(@SNoDelegateAssigned);
+
   Result := fLazy.Value;
 end;
 
