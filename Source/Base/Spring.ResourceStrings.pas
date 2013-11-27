@@ -91,6 +91,7 @@ resourcestring
   SEnumNotStarted = 'Enum not started.';
   SEnumEnded = 'Enum ended.';
   SEnumEmpty = 'Invalid Operation. The enumeration is empty.';
+  SEnumFailedVersion = 'Collection was modified; enumeration operation may not execute.';
 
   SSequenceContainsNoElements = 'Sequence contains no elements.';
   SSequenceContainsNoMatchingElement = 'Sequence contains no matching element.';

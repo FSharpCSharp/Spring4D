@@ -257,19 +257,11 @@ type
     constructor Create(const controller: IInterface);
   end;
 
+  ///	<summary>
+  ///	  Provides an abstract implementation for the
+  ///	  <see cref="Spring.Collections|IList&lt;T&gt;" /> interface.
+  ///	</summary>
   TListBase<T> = class abstract(TCollectionBase<T>, IList<T>, IReadOnlyList<T>)
-  protected
-    type
-      TEnumerator = class(TEnumeratorBase<T>)
-      private
-        fList: TListBase<T>;
-        fIndex: Integer;
-      protected
-        function GetCurrent: T; override;
-      public
-        constructor Create(const list: TListBase<T>);
-        function MoveNext: Boolean; override;
-      end;
   private
     fOnChanged: ICollectionChangedEvent<T>;
     function GetOnChanged: ICollectionChangedEvent<T>;
@@ -290,8 +282,6 @@ type
     function Contains(const item: T): Boolean; override;
     function ToArray: TArray<T>; override;
     function Reversed: IEnumerable<T>; override;
-
-    function GetEnumerator: IEnumerator<T>; override;
 
     procedure Add(const item: T); override;
     function  Remove(const item: T): Boolean; override;
@@ -1392,11 +1382,6 @@ begin
   end;
 end;
 
-function TListBase<T>.GetEnumerator: IEnumerator<T>;
-begin
-  Result := TEnumerator.Create(Self);
-end;
-
 function TListBase<T>.TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean;
 begin
   if not Assigned(predicate) then
@@ -1442,30 +1427,6 @@ var
 begin
   comparer := TComparer<T>.Construct(comparison);
   DoSort(comparer);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TListBase<T>.TEnumerator'}
-
-constructor TListBase<T>.TEnumerator.Create(const list: TListBase<T>);
-begin
-  inherited Create;
-  fList := list;
-  fIndex := -1;
-end;
-
-function TListBase<T>.TEnumerator.MoveNext: Boolean;
-begin
-  Result := fIndex < fList.Count - 1;
-  if Result then
-    Inc(fIndex);
-end;
-
-function TListBase<T>.TEnumerator.GetCurrent: T;
-begin
-  Result := fList[fIndex];
 end;
 
 {$ENDREGION}

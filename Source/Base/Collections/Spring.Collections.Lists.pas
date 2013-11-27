@@ -29,6 +29,7 @@ interface
 uses
   Generics.Defaults,
   Generics.Collections,
+  Spring,
   Spring.Collections,
   Spring.Collections.Base;
 
@@ -43,8 +44,26 @@ type
   ///	</typeparam>
   TList<T> = class(TListBase<T>)
   private
+    type
+      TEnumerator = class(TEnumeratorBase<T>)
+      private
+        fList: TList<T>;
+        fIndex: Integer;
+        fVersion: Integer;
+        fCurrent: T;
+      protected
+        function GetCurrent: T; override;
+      public
+        constructor Create(const list: TList<T>);
+        destructor Destroy; override;
+        function MoveNext: Boolean; override;
+        procedure Reset; override;
+      end;
+  private
     fItems: array of T;
     fCount: Integer;
+//    fOnChanged: ICollectionChangedEvent<T>;
+    fVersion: Integer;
   protected
     function GetCapacity: Integer;
     function GetCount: Integer; override;
@@ -58,6 +77,8 @@ type
     function EnsureCapacity(value: Integer): Integer;
     property Capacity: Integer read GetCapacity write SetCapacity;
   public
+    function GetEnumerator: IEnumerator<T>; override;
+
     procedure Clear; override;
     procedure Exchange(index1, index2: Integer); override;
     procedure Move(currentIndex, newIndex: Integer); override;
@@ -85,7 +106,7 @@ implementation
 
 uses
   SysUtils,
-  Spring;
+  Spring.ResourceStrings;
 
 
 {$REGION 'TList<T>'}
@@ -93,6 +114,11 @@ uses
 function TList<T>.GetCount: Integer;
 begin
   Result := fCount;
+end;
+
+function TList<T>.GetEnumerator: IEnumerator<T>;
+begin
+  Result := TEnumerator.Create(Self);
 end;
 
 function TList<T>.GetItem(index: Integer): T;
@@ -269,6 +295,56 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TList<T>.TEnumerator'}
+
+constructor TList<T>.TEnumerator.Create(const list: TList<T>);
+begin
+  inherited Create;
+  fList := list;
+  fList._AddRef;
+  fVersion := fList.fVersion;
+end;
+
+destructor TList<T>.TEnumerator.Destroy;
+begin
+  fList._Release;
+  inherited Destroy;
+end;
+
+function TList<T>.TEnumerator.MoveNext: Boolean;
+begin
+  Result := False;
+
+  if fVersion <> fList.fVersion then
+    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
+
+  if fIndex < fList.fCount then
+  begin
+    fCurrent := fList.fItems[fIndex];
+    Inc(fIndex);
+    Result := True;
+  end
+  else
+    fCurrent := Default(T);
+end;
+
+function TList<T>.TEnumerator.GetCurrent: T;
+begin
+  Result := fCurrent;
+end;
+
+procedure TList<T>.TEnumerator.Reset;
+begin
+  if fVersion <> fList.fVersion then
+    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
+
+  fIndex := 0;
+  fCurrent := Default(T);
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TObjectList<T>'}
 
 constructor TObjectList<T>.Create(ownsObjects: Boolean);
@@ -323,5 +399,6 @@ begin
 end;
 
 {$ENDREGION}
+
 
 end.
