@@ -111,10 +111,10 @@ type
   {$ENDREGION}
   protected
     function TryGetElementAt(out value: T; index: Integer): Boolean; virtual;
-    function TryGetFirst(out value: T): Boolean; overload;
-    function TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean; overload; virtual;
-    function TryGetLast(out value: T): Boolean; overload;
-    function TryGetLast(out value: T; const predicate: TPredicate<T>): Boolean; overload; virtual;
+    function TryGetFirst(out value: T): Boolean; overload; virtual;
+    function TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean; overload;
+    function TryGetLast(out value: T): Boolean; overload; virtual;
+    function TryGetLast(out value: T; const predicate: TPredicate<T>): Boolean; overload;
     function TryGetSingle(out value: T): Boolean; overload; virtual;
     function TryGetSingle(out value: T; const predicate: TPredicate<T>): Boolean; overload;
 
@@ -264,44 +264,47 @@ type
   TListBase<T> = class abstract(TCollectionBase<T>, IList<T>, IReadOnlyList<T>)
   private
     fOnChanged: ICollectionChangedEvent<T>;
-    function GetOnChanged: ICollectionChangedEvent<T>;
   protected
-    procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
-    procedure DoSort(const comparer: IComparer<T>); virtual;
-    procedure DoInsert(index: Integer; const item: T); virtual; abstract;
-    procedure DoDelete(index: Integer; notification: TCollectionChangedAction); virtual; abstract;
-    procedure DoDeleteRange(index, count: Integer; notification: TCollectionChangedAction); virtual; abstract;
+  {$REGION 'Property Accessors'}
     function GetItem(index: Integer): T; virtual; abstract;
+    function GetOnChanged: ICollectionChangedEvent<T>; 
     procedure SetItem(index: Integer; const value: T); virtual; abstract;
+  {$ENDREGION}
+    procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
+    function TryGetElementAt(out value: T; index: Integer): Boolean; override;
+    function TryGetFirst(out value: T): Boolean; override;
+    function TryGetLast(out value: T): Boolean; override;
+    function TryGetSingle(out value: T): Boolean; override;
   public
     constructor Create; overload; override;
     destructor Destroy; override;
 
-    function TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean; override;
-    function TryGetLast(out value: T; const predicate: TPredicate<T>): Boolean; override;
     function Contains(const item: T): Boolean; override;
-    function ToArray: TArray<T>; override;
     function Reversed: IEnumerable<T>; override;
 
     procedure Add(const item: T); override;
-    function  Remove(const item: T): Boolean; override;
+    function Remove(const item: T): Boolean; override;
     procedure Clear; override;
 
-    procedure Insert(index: Integer; const item: T); virtual;
+    procedure Insert(index: Integer; const item: T); virtual; abstract;
     procedure InsertRange(index: Integer; const collection: array of T); overload; virtual;
     procedure InsertRange(index: Integer; const collection: IEnumerable<T>); overload; virtual;
     procedure InsertRange(index: Integer; const collection: TEnumerable<T>); overload; virtual;
-    procedure Delete(index: Integer);
-    procedure DeleteRange(startIndex, count: Integer);
-    function Extract(const item: T): T; override;
+    procedure Delete(index: Integer); virtual; abstract;
+    procedure DeleteRange(startIndex, count: Integer); virtual; abstract;
     function IndexOf(const item: T): Integer;
     function LastIndexOf(const item: T): Integer;
     procedure Exchange(index1, index2: Integer); virtual; abstract;
     procedure Move(currentIndex, newIndex: Integer); virtual; abstract;
+
+    procedure Reverse; overload;
+    procedure Reverse(index, count: Integer); overload; virtual; abstract;
+
     procedure Sort; overload;
-    procedure Sort(const comparer: IComparer<T>); overload;
+    procedure Sort(const comparer: IComparer<T>); overload; virtual; abstract;
     procedure Sort(const comparison: TComparison<T>); overload;
-    procedure Reverse; virtual; abstract;
+
+    function ToArray: TArray<T>; override;
 
     function AsReadOnly: IReadOnlyList<T>;
 
@@ -1224,53 +1227,17 @@ begin
   index := IndexOf(item);
   Result := index > -1;
   if Result then
-  begin
-    DoDelete(index, caRemoved);
-  end;
+    Delete(index);
 end;
 
-procedure TListBase<T>.DoSort(const comparer: IComparer<T>);
+procedure TListBase<T>.Reverse;
 begin
+  Reverse(0, Count);
 end;
 
 function TListBase<T>.Reversed: IEnumerable<T>;
 begin
   Result := TReversedIterator<T>.Create(Self);
-end;
-
-function TListBase<T>.Extract(const item: T): T;
-var
-  index: Integer;
-begin
-  index := IndexOf(item);
-  if index < 0 then
-    Result := Default(T)
-  else
-  begin
-    Result := Items[index];
-    DoDelete(index, caExtracted);
-  end;
-end;
-
-procedure TListBase<T>.Delete(index: Integer);
-begin
-  Guard.CheckRange((index >= 0) and (index < Count), 'index');
-
-  DoDelete(index, caRemoved);
-end;
-
-procedure TListBase<T>.DeleteRange(startIndex, count: Integer);
-begin
-  if (startIndex < 0) or
-    (count < 0) or
-    (startIndex + count > Self.Count) or
-    (startIndex + count < 0) then
-    raise EArgumentOutOfRangeException.CreateRes(@SArgumentOutOfRangeException);
-
-  if count = 0 then
-    Exit;
-
-  DoDeleteRange(startIndex, count, caRemoved);
 end;
 
 procedure TListBase<T>.Add(const item: T);
@@ -1347,13 +1314,6 @@ begin
   end;
 end;
 
-procedure TListBase<T>.Insert(index: Integer; const item: T);
-begin
-  Guard.CheckRange((index >= 0) and (index <= Count), 'index');
-
-  DoInsert(index, item);
-end;
-
 function TListBase<T>.LastIndexOf(const item: T): Integer;
 var
   i: Integer;
@@ -1377,33 +1337,35 @@ var
 begin
   SetLength(Result, Count);
   for i := 0 to Length(Result) - 1 do
-  begin
     Result[i] := Items[i];
-  end;
 end;
 
-function TListBase<T>.TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean;
+function TListBase<T>.TryGetElementAt(out value: T; index: Integer): Boolean;
 begin
-  if not Assigned(predicate) then
-  begin
-    Result := Count > 0;
-    if Result then
-      value := Items[0];
-  end
-  else
-    Result := inherited;
+  Result := (index >= 0) and (index < Count);
+  if Result then
+    value := Items[index];
 end;
 
-function TListBase<T>.TryGetLast(out value: T; const predicate: TPredicate<T>): Boolean;
+function TListBase<T>.TryGetFirst(out value: T): Boolean;
 begin
-  if not Assigned(predicate) then
-  begin
-    Result := Count > 0;
-    if Result then
-      value := Items[Count - 1];
-  end
-  else
-    Result := inherited;
+  Result := Count > 0;
+  if Result then
+    value := Items[0];
+end;
+
+function TListBase<T>.TryGetLast(out value: T): Boolean;
+begin
+  Result := Count > 0;
+  if Result then
+    value := Items[Count - 1];
+end;
+
+function TListBase<T>.TryGetSingle(out value: T): Boolean;
+begin
+  Result := Count = 1;
+  if Result then
+    value := Items[0];
 end;
 
 function TListBase<T>.GetOnChanged: ICollectionChangedEvent<T>;
@@ -1413,12 +1375,7 @@ end;
 
 procedure TListBase<T>.Sort;
 begin
-  DoSort(fComparer);
-end;
-
-procedure TListBase<T>.Sort(const comparer: IComparer<T>);
-begin
-  DoSort(comparer);
+  Sort(Comparer);
 end;
 
 procedure TListBase<T>.Sort(const comparison: TComparison<T>);
@@ -1426,7 +1383,7 @@ var
   comparer: IComparer<T>;
 begin
   comparer := TComparer<T>.Construct(comparison);
-  DoSort(comparer);
+  Sort(comparer);
 end;
 
 {$ENDREGION}
