@@ -30,9 +30,12 @@ interface
 
 uses
   Classes,
+{$ifdef MSWINDOWS}
   Windows,
+{$endif MSWINDOWS}
   SysUtils,
   IOUtils,
+{$ifdef MSWINDOWS}
 {$IFDEF HAS_UNITSCOPE}
   System.Win.ComObj,
 {$ELSE}
@@ -40,6 +43,7 @@ uses
 {$ENDIF}
   ActiveX,
   ShellAPI,
+{$endif MSWINDOWS}
   Masks,
   Generics.Collections,
   Spring,
@@ -48,6 +52,7 @@ uses
   Spring.Utils;
 
 type
+{$ifdef MSWINDOWS}
   ///	<summary>
   ///	  Drive Type Enumeration
   ///	</summary>
@@ -202,6 +207,7 @@ type
     ///	</summary>
     property VolumeLabel: string read GetVolumeLabel write SetVolumeLabel;
   end;
+{$endif MSWINDOWS}
 
 
   {$REGION 'TSizeUnit, TSize'}
@@ -257,6 +263,7 @@ type
   {$ENDREGION}
 
 
+{$ifdef MSWINDOWS}
   {$REGION 'TFileSystemEntry'}
 
   PFileSystemEntry = ^TFileSystemEntry;
@@ -401,6 +408,7 @@ type
   IFileEnumerator = IEnumerator<TFileSystemEntry>;
 
   {$ENDREGION}
+{$endif MSWINDOWS}
 
 
   {$REGION 'Search Pattern Matcher'}
@@ -475,6 +483,7 @@ type
   {$ENDREGION}
 
 
+{$ifdef MSWINDOWS}
   // Spring.TPredicate<TFileSystemEntry>
   TFileSystemEntryPredicate = reference to function (const entry:TFileSystemEntry): Boolean;
 
@@ -842,14 +851,18 @@ type
   ///	  GetDroppedFiles
   ///	</summary>
   procedure GetDroppedFiles(dropHandle: THandle; list: TStrings); overload;
+{$endif MSWINDOWS}
 
 implementation
 
 uses
   Spring.ResourceStrings,
+{$ifdef MSWINDOWS}
   Spring.Utils.WinAPI,
+{$endif MSWINDOWS}
   Spring.Collections.Extensions;
 
+{$ifdef MSWINDOWS}
 const
   DriveTypeStrings: array[TDriveType] of string = (
     SUnknownDriveDescription,
@@ -860,7 +873,9 @@ const
     SCDRomDescription,
     SRamDescription
   );
+{$endif MSWINDOWS}
 
+{$ifdef MSWINDOWS}
 {$REGION 'Routines'}
 
 function EnumerateDirectories(const path: string): IFileEnumerable;
@@ -961,8 +976,10 @@ begin
 end;
 
 {$ENDREGION}
+{$endif MSWINDOWS}
 
 
+{$ifdef MSWINDOWS}
 {$REGION 'TDriveInfo'}
 
 constructor TDriveInfo.Create(const driveName: string);
@@ -1123,6 +1140,7 @@ begin
 end;
 
 {$ENDREGION}
+{$endif MSWINDOWS}
 
 
 {$REGION 'TSizeUnit'}
@@ -1263,6 +1281,7 @@ end;
 {$ENDREGION}
 
 
+{$ifdef MSWINDOWS}
 {$REGION 'TFileSystemEntry'}
 
 constructor TFileSystemEntry.Create(const fileName: string);
@@ -1515,6 +1534,7 @@ begin
 end;
 
 {$ENDREGION}
+{$endif MSWINDOWS}
 
 
 {$REGION 'TSearchPatternMatcher'}
@@ -1621,6 +1641,7 @@ end;
 {$ENDREGION}
 
 
+{$ifdef MSWINDOWS}
 {$REGION 'TFileEnumerable'}
 
 constructor TFileEnumerable.Create(const path, searchPattern: string;
@@ -2450,5 +2471,6 @@ begin
 end;
 
 {$ENDREGION}
+{$endif MSWINDOWS}
 
 end.
