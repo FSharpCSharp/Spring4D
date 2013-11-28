@@ -26,7 +26,7 @@ unit Spring.Container.Resolvers;
 
 {$I Spring.inc}
 
-interface
+interface
 
 uses
   Rtti,
@@ -68,6 +68,7 @@ type
     function ResolveDependency(dependency: TRttiType; const argument: TValue): TValue; overload; virtual;
 
     function ResolveLazyDependency(dependency: TRttiType; argument: TValue): TValue;
+    function ResolveManyDependency(dependency: TRttiType; argument: TValue): TValue;
 
     function CanResolveDependencies(const dependencies: TArray<TRttiType>): Boolean; overload; virtual;
     function CanResolveDependencies(const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean; overload; virtual;
@@ -347,6 +348,13 @@ var
   instance: TValue;
 begin
   Guard.CheckNotNull(dependency, 'dependency');
+
+  if (dependency is TRttiDynamicArrayType) then
+  begin
+    Result := ResolveManyDependency(dependency, argument);
+    Exit;
+  end;
+
   if not (dependency.IsClassOrInterface or dependency.IsRecord)
     or (argument.Kind in [tkClass, tkInterface, tkRecord]) then
   begin
@@ -380,8 +388,8 @@ var
   name: string;
   context: TRttiContext;
   modelType: TRttiType;
-  objectValue: TLazy<TObject>;
-  interfaceValue: TLazy<IInterface>;
+  valueFactoryObj: TFunc<TObject>;
+  valueFactoryIntf: TFunc<IInterface>;
 begin
   lazyKind := GetLazyKind(dependency.Handle);
   if lazyKind = lkNone then
@@ -398,30 +406,30 @@ begin
   case modelType.TypeKind of
     tkClass:
     begin
-      objectValue := TLazy<TObject>.Create(
+      valueFactoryObj :=
         function: TObject
         begin
           Result := ResolveDependency(modelType, argument).AsObject;
-        end);
+        end;
 
       case lazyKind of
-        lkFunc: Result := TValue.From<TFunc<TObject>>(objectValue);
-        lkRecord: Result := TValue.From<Lazy<TObject>>(objectValue);
-        lkInterface: Result := TValue.From<ILazy<TObject>>(objectValue);
+        lkFunc: Result := TValue.From<TFunc<TObject>>(valueFactoryObj);
+        lkRecord: Result := TValue.From<Lazy<TObject>>(Lazy<TObject>.Create(valueFactoryObj));
+        lkInterface: Result := TValue.From<ILazy<TObject>>(TLazy<TObject>.Create(valueFactoryObj));
       end;
     end;
     tkInterface:
     begin
-      interfaceValue := TLazy<IInterface>.Create(
+      valueFactoryIntf :=
         function: IInterface
         begin
           Result := ResolveDependency(modelType, argument).AsInterface;
-        end);
+        end;
 
       case lazyKind of
-        lkFunc: Result := TValue.From<TFunc<IInterface>>(interfaceValue);
-        lkRecord: Result := TValue.From<Lazy<IInterface>>(interfaceValue);
-        lkInterface: Result := TValue.From<ILazy<IInterface>>(interfaceValue);
+        lkFunc: Result := TValue.From<TFunc<IInterface>>(valueFactoryIntf);
+        lkRecord: Result := TValue.From<Lazy<IInterface>>(Lazy<IInterface>.Create(valueFactoryIntf));
+        lkInterface: Result := TValue.From<ILazy<IInterface>>(TLazy<IInterface>.Create(valueFactoryIntf));
       end;
     end;
   else
@@ -429,6 +437,46 @@ begin
   end;
 
   TValueData(Result).FTypeInfo := dependency.Handle;
+end;
+
+function TDependencyResolver.ResolveManyDependency(dependency: TRttiType;
+  argument: TValue): TValue;
+var
+  dependencyType: TRttiType;
+  isLazyType: Boolean;
+  lazyTypeName: string;
+  lazyType: PTypeInfo;
+  context: TRttiContext;
+  models: IEnumerable<TComponentModel>;
+  values: array of TValue;
+  i: Integer;
+  model: TComponentModel;
+begin
+  if dependency is TRttiDynamicArrayType then
+  begin
+    dependencyType := TRttiDynamicArrayType(dependency).ElementType;
+    isLazyType := Spring.SystemUtils.IsLazyType(dependencyType.Handle);
+    lazyType := nil;
+    if isLazyType then
+    begin
+      lazyTypeName := GetLazyTypeName(dependencyType.Handle);
+      lazyType := context.FindType(lazyTypeName).Handle;
+      models := fRegistry.FindAll(lazyType);
+    end
+    else
+      models := fRegistry.FindAll(dependencyType.Handle);
+    SetLength(values, models.Count);
+    i := 0;
+    for model in models do
+    begin
+      if isLazyType then
+        values[i] := ResolveLazyDependency(dependencyType, model.GetServiceName(lazyType))
+      else
+        values[i] := ResolveDependency(dependencyType, model.GetServiceName(dependencyType.Handle));
+      Inc(i);
+    end;
+    Result := TValue.FromArray(dependency.Handle, values);
+  end;
 end;
 
 function TDependencyResolver.CanResolveDependencies(

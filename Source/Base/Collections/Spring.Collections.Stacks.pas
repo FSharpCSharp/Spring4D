@@ -24,17 +24,17 @@
 
 unit Spring.Collections.Stacks;
 
+{$I Spring.inc}
+
 interface
 
 uses
   Generics.Collections,
-  Spring,
   Spring.Collections,
   Spring.Collections.Base;
 
 type
-
-  TStack<T> = class(TEnumerableBase<T>, IStack<T>, IStack)
+  TStack<T> = class(TEnumerableBase<T>, IStack<T>)
   private
     type
       TGenericStack = Generics.Collections.TStack<T>;
@@ -42,44 +42,32 @@ type
     fStack: TGenericStack;
     fOwnership: TOwnershipType;
     fOnChanged: ICollectionChangedEvent<T>;
+    fOnNotify: TCollectionNotifyEvent<T>;
+    procedure DoNotify(Sender: TObject; const Item: T;
+      Action: TCollectionNotification);
     function GetOnChanged: ICollectionChangedEvent<T>;
-    function NonGenericGetOnChanged: IEvent;
-    function IStack.GetOnChanged = NonGenericGetOnChanged;
   protected
     function GetCount: Integer; override;
-
-    procedure NonGenericPush(const item: TValue);
-    function NonGenericPop: TValue;
-    function NonGenericPeek: TValue;
-    function NonGenericPeekOrDefault: TValue;
-    function NonGenericTryPeek(out item: TValue): Boolean;
-
     procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
-
-    procedure IStack.Push = NonGenericPush;
-    function IStack.Pop = NonGenericPop;
-    function IStack.Peek = NonGenericPeek;
-    function IStack.PeekOrDefault = NonGenericPeekOrDefault;
-    function IStack.TryPeek = NonGenericTryPeek;
-
-    class function GetStackItem(stack: TGenericStack; index: Integer): T;
   public
-    constructor Create; overload;
+    constructor Create; overload; override;
+    constructor Create(const collection: array of T); overload;
     constructor Create(const collection: IEnumerable<T>); overload;
     constructor Create(const collection: TEnumerable<T>); overload;
     constructor Create(stack: TGenericStack; ownership: TOwnershipType); overload;
     destructor Destroy; override;
 
     function GetEnumerator: IEnumerator<T>; override;
-    procedure Clear;
 
+    procedure Clear;
     procedure Push(const item: T);
     function Pop: T;
     function Peek: T;
-    function PeekOrDefault: T; 
+    function PeekOrDefault: T;
     function TryPeek(out item: T): Boolean;
+
     procedure TrimExcess;
-    function AsStack: IStack;
+
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
@@ -92,13 +80,23 @@ uses
 
 {$REGION 'TStack<T>'}
 
-constructor TStack<T>.Create(stack: TGenericStack;
-  ownership: TOwnershipType);
+constructor TStack<T>.Create(stack: TGenericStack; ownership: TOwnershipType);
 begin
   inherited Create;
   fStack := stack;
+  fOnNotify := fStack.OnNotify;
+  fStack.OnNotify := DoNotify;
   fOwnership := ownership;
   fOnChanged := TCollectionChangedEventImpl<T>.Create;
+end;
+
+constructor TStack<T>.Create(const collection: array of T);
+var
+  item: T;
+begin
+  Create;
+  for item in collection do
+    Push(item);
 end;
 
 constructor TStack<T>.Create(const collection: IEnumerable<T>);
@@ -107,9 +105,7 @@ var
 begin
   Create;
   for item in collection do
-  begin
     Push(item);
-  end;
 end;
 
 constructor TStack<T>.Create(const collection: TEnumerable<T>);
@@ -118,9 +114,7 @@ var
 begin
   Create;
   for item in collection do
-  begin
     Push(item);
-  end;
 end;
 
 constructor TStack<T>.Create;
@@ -134,13 +128,17 @@ end;
 destructor TStack<T>.Destroy;
 begin
   if fOwnership = otOwned then
-  begin
-    // call our Clear to trigger Changed
-    Clear;
-    fStack.Free;
-  end;
+    fStack.Free
+  else
+    fStack.OnNotify := fOnNotify;
 
   inherited Destroy;
+end;
+
+procedure TStack<T>.DoNotify(Sender: TObject; const Item: T;
+  Action: TCollectionNotification);
+begin
+  Changed(Item, TCollectionChangedAction(Action));
 end;
 
 function TStack<T>.GetEnumerator: IEnumerator<T>;
@@ -158,45 +156,6 @@ begin
   Result := fOnChanged;
 end;
 
-class function TStack<T>.GetStackItem(stack: TGenericStack; index: Integer): T;
-begin
-  Result := TArray<T>(PInteger(NativeInt(stack) + hfFieldSize + SizeOf(Integer))^)[index];
-end;
-
-function TStack<T>.NonGenericGetOnChanged: IEvent;
-begin
-  Result := GetOnChanged;
-end;
-
-function TStack<T>.NonGenericPeek: TValue;
-begin
-  Result := TValue.From<T>(Peek);
-end;
-
-function TStack<T>.NonGenericPeekOrDefault: TValue;
-begin
-  Result := TValue.From<T>(PeekOrDefault);
-end;
-
-function TStack<T>.NonGenericPop: TValue;
-begin
-  Result := TValue.From<T>(Pop);
-end;
-
-procedure TStack<T>.NonGenericPush(const item: TValue);
-begin
-  Push(item.AsType<T>);
-end;
-
-function TStack<T>.NonGenericTryPeek(out item: TValue): Boolean;
-var
-  value: T;
-begin
-  Result := TryPeek(value);
-  if Result then
-    item := TValue.From<T>(value);
-end;
-
 procedure TStack<T>.Changed(const item: T; action: TCollectionChangedAction);
 begin
   fOnChanged.Invoke(Self, item, action);
@@ -205,28 +164,16 @@ end;
 procedure TStack<T>.Push(const item: T);
 begin
   fStack.Push(item);
-
-  Changed(item, caAdded);
 end;
 
 function TStack<T>.Pop: T;
 begin
   Result := fStack.Pop;
-
-  Changed(Result, caRemoved);
-end;
-
-function TStack<T>.AsStack: IStack;
-begin
-  Result := Self;
 end;
 
 procedure TStack<T>.Clear;
 begin
-  // do not call fStack.Clear because we want our Changed to be triggered.
-  while Count > 0 do
-    Pop;
-  TrimExcess;
+  fStack.Clear;
 end;
 
 function TStack<T>.Peek: T;
@@ -257,5 +204,6 @@ begin
 end;
 
 {$ENDREGION}
+
 
 end.

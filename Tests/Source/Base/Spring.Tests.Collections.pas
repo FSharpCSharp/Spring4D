@@ -237,6 +237,7 @@ type
     procedure TestMax;
     procedure TestContains;
     procedure TestCheckSingleRaisedExceptionWhenHasMultipleItems;
+    procedure TestCheckSingleRaisedExceptionWhenEmpty;
     procedure TestElementAt;
   end;
 
@@ -651,7 +652,7 @@ end;
 
 procedure TTestStringIntegerDictionary.TestDictionaryKeys;
 var
-  Result: ICollection<string>;
+  Result: IReadOnlyCollection<string>;
 begin
   Result := SUT.Keys;
   CheckEquals(3, Result.Count, 'TestDictionaryKeys: Keys call returns wrong count');
@@ -672,7 +673,7 @@ end;
 
 procedure TTestStringIntegerDictionary.TestDictionaryValues;
 var
-  Result: ICollection<integer>;
+  Result: IReadOnlyCollection<Integer>;
 begin
   Result := SUT.Values;
   CheckEquals(3, Result.Count, 'TestDictionaryKeys: Values call returns wrong count');
@@ -709,7 +710,7 @@ end;
 
 procedure TTestEmptyStringIntegerDictionary.TestDictionaryKeysAreEmpty;
 var
-  Result: ICollection<string>;
+  Result: IReadOnlyCollection<string>;
 begin
   Result := SUT.Keys;
   CheckEquals(0, Result.Count);
@@ -717,7 +718,7 @@ end;
 
 procedure TTestEmptyStringIntegerDictionary.TestDictionaryValuesAreEmpty;
 var
-  Result: ICollection<integer>;
+  Result: IReadOnlyCollection<Integer>;
 begin
   Result := SUT.Values;
   CheckEquals(0, Result.Count);
@@ -929,22 +930,23 @@ end;
 
 procedure TTestStackOfIntegerChangedEvent.TestNonGenericChangedEvent;
 var
-  stack: IStack;
+  event: IEvent;
   method: TMethod;
 begin
-  stack := SUT.AsStack;
+  event := SUT.OnChanged;
 
-  CheckTrue(stack.IsEmpty);
-  CheckTrue(stack.OnChanged.Enabled);
+  CheckTrue(event.IsEmpty);
+  CheckTrue(event.Enabled);
 
   method.Code := @TTestStackOfIntegerChangedEvent.HandlerA;
   method.Data := Pointer(Self);
 
-  stack.OnChanged.Add(method);
+  event.Add(method);
 
-  CheckEquals(1, stack.OnChanged.Count);
+  CheckEquals(1, event.Count);
+  CheckEquals(1, SUT.OnChanged.Count);
 
-  stack.Push(0);
+  SUT.Push(0);
 
   CheckTrue(fAInvoked, 'handler A not invoked');
   CheckTrue(fAAction = caAdded, 'handler A: different collection notifications');
@@ -1138,22 +1140,23 @@ end;
 
 procedure TTestQueueOfIntegerChangedEvent.TestNonGenericChangedEvent;
 var
-  queue: IQueue;
+  event: IEvent;
   method: TMethod;
 begin
-  queue := SUT.AsQueue;
+  event := SUT.OnChanged;
 
-  CheckTrue(queue.IsEmpty);
-  CheckTrue(queue.OnChanged.Enabled);
+  CheckTrue(event.IsEmpty);
+  CheckTrue(event.Enabled);
 
   method.Code := @TTestStackOfIntegerChangedEvent.HandlerA;
   method.Data := Pointer(Self);
 
-  queue.OnChanged.Add(method);
+  event.Add(method);
 
-  CheckEquals(1, queue.OnChanged.Count);
+  CheckEquals(1, event.Count);
+  CheckEquals(1, SUT.OnChanged.Count);
 
-  queue.Enqueue(0);
+  SUT.Enqueue(0);
 
   CheckTrue(fAInvoked, 'handler A not invoked');
   CheckTrue(fAAction = caAdded, 'handler A: different collection notifications');
@@ -1217,6 +1220,12 @@ begin
   ExpectedResult := 1;
   ActualResult := SUT.Single;
   CheckEquals(ExpectedResult, ActualResult);
+end;
+
+procedure TTestListOfIntegerAsIEnumerable.TestCheckSingleRaisedExceptionWhenEmpty;
+begin
+  CheckException(EInvalidOperationException, procedure begin SUT.Single(function(const i: Integer): Boolean begin Result := i = 2 end) end,
+    'SUT is empty, but failed to raise the EInvalidOperationException when the Single method was called');
 end;
 
 procedure TTestListOfIntegerAsIEnumerable.TestCheckSingleRaisedExceptionWhenHasMultipleItems;
