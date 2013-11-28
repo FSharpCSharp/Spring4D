@@ -23,7 +23,7 @@
  * Contributor(s):
  * Kent Beck <kentbeck@csi.com>
  * Erich Gamma <Erich_Gamma@oti.com>
- * Juanco Aez <juanco@users.sourceforge.net>
+ * Juanco Anez <juanco@users.sourceforge.net>
  * Chris Morris <chrismo@users.sourceforge.net>
  * Jeff Moore <JeffMoore@users.sourceforge.net>
  * Kris Golko <neuromancer@users.sourceforge.net>
@@ -41,7 +41,8 @@ interface
 uses
   SysUtils,
   Classes,
-  TestFramework;
+  TestFramework,
+  Diagnostics;
 
 const
    DEFAULT_FILENAME = 'dunit-report.xml';
@@ -53,7 +54,7 @@ type
      FFileName : String;
 
   protected
-     startTime : Cardinal;
+     stopWatch : TStopWatch;
      dtStartTime : TDateTime;
      dtEndTime : TDateTime;
 
@@ -113,11 +114,14 @@ var
 
 implementation
 
-uses Forms, Windows;
-
 const
    CRLF = #13#10;
    MAX_DEEP = 5;
+
+function ExeName: string;
+begin
+  Result := ParamStr(0);
+end;
 
 function IsValidXMLChar(wc: WideChar): Boolean;
 begin
@@ -278,7 +282,7 @@ var
   Preamble: TBytes;
 {$ENDIF}
 begin
-   startTime := GetTickCount;
+   stopWatch := TStopWatch.StartNew();
    dtStartTime := Now;
    FOutputFile := TFileStream.Create(FFileName,fmCreate);
 {$IFDEF UNICODE}
@@ -305,7 +309,9 @@ var
   successRate : Integer;
   h, m, s, l :Word;
 begin
-   runtime := (GetTickCount - startTime) / 1000;
+   stopWatch.Stop();
+   runtime := stopWatch.ElapsedMilliseconds / 1000;
+
    if testResult.RunCount > 0 then
      successRate :=  Trunc(
         ((testResult.runCount - testResult.failureCount - testResult.errorCount)
@@ -337,8 +343,6 @@ begin
       writeln;
 
    end;
-
-
 end;
 
 class function TXMLTestListener.RunTest(suite: ITest; outputFile:String): TTestResult;
@@ -405,7 +409,7 @@ end;
 
 procedure TXMLTestListener.EndSuite(suite: ITest);
 begin
-     if CompareText(suite.Name, ExtractFileName(Application.ExeName)) = 0 then
+     if CompareText(suite.Name, ExtractFileName(ExeName)) = 0 then
        Exit;
      writeReport('</results>');
      writeReport('</test-suite>');
@@ -416,7 +420,7 @@ procedure TXMLTestListener.StartSuite(suite: ITest);
 var
   s : string;
 begin
-   if CompareText(suite.Name, ExtractFileName(Application.ExeName)) = 0 then
+   if CompareText(suite.Name, ExtractFileName(ExeName)) = 0 then
      Exit;
    s := GetCurrentSuiteName + suite.Name;
    writeReport(Format('<test-suite name="%s" total="%d" notrun="%d">', [s, suite.CountTestCases, suite.CountTestCases - suite.CountEnabledTestCases]));
