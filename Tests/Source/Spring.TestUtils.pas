@@ -32,6 +32,8 @@ uses
   TestFramework,
   SysUtils;
 
+procedure ProcessTestResult(const ATestResult: TTestResult);
+
 type
   TExceptionCheckerTestCase = class(TTestCase)
   protected
@@ -39,6 +41,11 @@ type
   end;
 
 implementation
+
+procedure ProcessTestResult(const ATestResult: TTestResult);
+begin
+  ATestResult.Free();
+end;
 
 { TExceptionCheckerTestCase }
 
