@@ -73,10 +73,10 @@ type
   private
     function GetEnumeratorNonGeneric: IEnumerator; virtual; abstract;
     function IEnumerable.GetEnumerator = GetEnumeratorNonGeneric;
-  {$REGION 'Property Accessors'}
-    function GetElementType: PTypeInfo; virtual; abstract;
   protected
+  {$REGION 'Property Accessors'}
     function GetCount: Integer; virtual;
+    function GetElementType: PTypeInfo; virtual; abstract;
     function GetIsEmpty: Boolean; virtual;
   {$ENDREGION}
   protected
@@ -104,12 +104,12 @@ type
     fComparer: IComparer<T>;
     class var fEqualityComparer: IEqualityComparer<T>;
     function GetEnumeratorNonGeneric: IEnumerator; override; final;
+  protected
   {$REGION 'Property Accessors'}
     function GetComparer: IComparer<T>;
-    function GetElementType: PTypeInfo; override; final;
+    function GetElementType: PTypeInfo; override;
     class function GetEqualityComparer: IEqualityComparer<T>; static;
   {$ENDREGION}
-  protected
     function TryGetElementAt(out value: T; index: Integer): Boolean; virtual;
     function TryGetFirst(out value: T): Boolean; overload; virtual;
     function TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean; overload;
@@ -261,9 +261,13 @@ type
   ///	  Provides an abstract implementation for the
   ///	  <see cref="Spring.Collections|IList&lt;T&gt;" /> interface.
   ///	</summary>
-  TListBase<T> = class abstract(TCollectionBase<T>, IList<T>, IReadOnlyList<T>)
+  TListBase<T> = class abstract(TCollectionBase<T>, IList<T>, IReadOnlyList<T>, IList)
   private
     fOnChanged: ICollectionChangedEvent<T>;
+    function AsList: IList;
+  {$HINTS OFF}
+    property List: IList read AsList implements IList;
+  {$HINTS ON}
   protected
   {$REGION 'Property Accessors'}
     function GetItem(index: Integer): T; virtual; abstract;
@@ -330,6 +334,7 @@ implementation
 
 uses
   TypInfo,
+  Spring.Collections.Adapters,
   Spring.Collections.Events,
   Spring.Collections.Extensions,
   Spring.ResourceStrings;
@@ -1085,6 +1090,8 @@ procedure TCollectionBase<T>.AddRange(const collection: IEnumerable<T>);
 var
   item: T;
 begin
+  Guard.CheckNotNull(Assigned(collection), 'collection');
+
   for item in collection do
     Add(item);
 end;
@@ -1093,6 +1100,8 @@ procedure TCollectionBase<T>.AddRange(const collection: TEnumerable<T>);
 var
   item: T;
 begin
+  Guard.CheckNotNull(Assigned(collection), 'collection');
+
   for item in collection do
     Add(item);
 end;
@@ -1122,6 +1131,8 @@ procedure TCollectionBase<T>.ExtractRange(const collection: IEnumerable<T>);
 var
   item: T;
 begin
+  Guard.CheckNotNull(Assigned(collection), 'collection');
+
   for item in collection do
     Extract(item);
 end;
@@ -1130,6 +1141,8 @@ procedure TCollectionBase<T>.ExtractRange(const collection: TEnumerable<T>);
 var
   item: T;
 begin
+  Guard.CheckNotNull(Assigned(collection), 'collection');
+
   for item in collection do
     Extract(item);
 end;
@@ -1151,6 +1164,8 @@ procedure TCollectionBase<T>.RemoveRange(const collection: TEnumerable<T>);
 var
   item: T;
 begin
+  Guard.CheckNotNull(Assigned(collection), 'collection');
+
   for item in collection do
     Remove(item);
 end;
@@ -1159,6 +1174,8 @@ procedure TCollectionBase<T>.RemoveRange(const collection: IEnumerable<T>);
 var
   item: T;
 begin
+  Guard.CheckNotNull(Assigned(collection), 'collection');
+
   for item in collection do
     Remove(item);
 end;
@@ -1230,6 +1247,11 @@ end;
 procedure TListBase<T>.Add(const item: T);
 begin
   Insert(Count, item);
+end;
+
+function TListBase<T>.AsList: IList;
+begin
+  Result := TListAdapter<T>.Create(Self);
 end;
 
 function TListBase<T>.AsReadOnly: IReadOnlyList<T>;
@@ -1313,6 +1335,7 @@ var
   item: T;
 begin
   Guard.CheckRange((index >= 0) and (index <= Count), 'index');
+  Guard.CheckNotNull(Assigned(collection), 'collection');
 
   for item in collection do
   begin
@@ -1327,6 +1350,7 @@ var
   item: T;
 begin
   Guard.CheckRange((index >= 0) and (index <= Count), 'index');
+  Guard.CheckNotNull(Assigned(collection), 'collection');
 
   for item in collection do
   begin

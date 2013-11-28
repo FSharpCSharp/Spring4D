@@ -36,7 +36,15 @@ uses
   Spring.Collections.Base;
 
 type
-
+  ///	<summary>
+  ///	  Represents a collection of keys and values.
+  ///	</summary>
+  ///	<typeparam name="TKey">
+  ///	  The type of the keys in the dictionary.
+  ///	</typeparam>
+  ///	<typeparam name="TValue">
+  ///	  The type of the values in the dictionary.
+  ///	</typeparam>
   TDictionary<TKey, TValue> = class(TCollectionBase<TPair<TKey, TValue>>,
     IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>)
   protected
