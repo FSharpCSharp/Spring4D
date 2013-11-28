@@ -31,7 +31,6 @@ interface
 uses
   Classes,
   SysUtils,
-  Graphics,
   TestFramework,
   Spring,
   Spring.Helpers;
