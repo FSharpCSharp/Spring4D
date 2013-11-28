@@ -872,17 +872,17 @@ type
     procedure Move(currentIndex, newIndex: Integer);
 
     procedure Reverse; overload;
-//    procedure Reverse(index, count: Integer); overload;
+    procedure Reverse(index, count: Integer); overload;
 
     procedure Sort;
 
     function IndexOf(const item: TValue): Integer; overload;
-//    function IndexOf(const item: TValue; index: Integer): Integer; overload;
-//    function IndexOf(const item: TValue; index, count: Integer): Integer; overload;
+    function IndexOf(const item: TValue; index: Integer): Integer; overload;
+    function IndexOf(const item: TValue; index, count: Integer): Integer; overload;
 
     function LastIndexOf(const item: TValue): Integer; overload;
-//    function LastIndexOf(const item: TValue; index: Integer): Integer; overload;
-//    function LastIndexOf(const item: TValue; index, count: Integer): Integer; overload;
+    function LastIndexOf(const item: TValue; index: Integer): Integer; overload;
+    function LastIndexOf(const item: TValue; index, count: Integer): Integer; overload;
 
     property Items[index: Integer]: TValue read GetItem write SetItem; default;
     property OnChanged: IEvent read GetOnChanged;
@@ -963,7 +963,7 @@ type
     procedure Move(currentIndex, newIndex: Integer);
 
     procedure Reverse; overload;
-//    procedure Reverse(index, count: Integer); overload;
+    procedure Reverse(index, count: Integer); overload;
 
     procedure Sort; overload;
     procedure Sort(const comparer: IComparer<T>); overload;
@@ -983,12 +983,12 @@ type
     ///	  always returns the first instance found.
     ///	</remarks>
     function IndexOf(const item: T): Integer; overload;
-//    function IndexOf(const item: T; index: Integer): Integer; overload;
-//    function IndexOf(const item: T; index, count: Integer): Integer; overload;
+    function IndexOf(const item: T; index: Integer): Integer; overload;
+    function IndexOf(const item: T; index, count: Integer): Integer; overload;
 
     function LastIndexOf(const item: T): Integer; overload;
-//    function LastIndexOf(const item: T; index: Integer): Integer; overload;
-//    function LastIndexOf(const item: T; index, count: Integer): Integer; overload;
+    function LastIndexOf(const item: T; index: Integer): Integer; overload;
+    function LastIndexOf(const item: T; index, count: Integer): Integer; overload;
 
     function AsReadOnly: IReadOnlyList<T>;
 

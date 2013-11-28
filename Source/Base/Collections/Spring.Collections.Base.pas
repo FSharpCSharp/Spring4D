@@ -146,19 +146,19 @@ type
     function EqualsTo(const collection: IEnumerable<T>; const comparer: IEqualityComparer<T>): Boolean; overload;
 
     function First: T; overload; virtual;
-    function First(const predicate: TPredicate<T>): T; overload; virtual;
-    function FirstOrDefault: T; overload; virtual;
-    function FirstOrDefault(const defaultValue: T): T; overload;
-    function FirstOrDefault(const predicate: TPredicate<T>): T; overload; virtual;
+    function First(const predicate: TPredicate<T>): T; overload;
+    function FirstOrDefault: T; overload;
+    function FirstOrDefault(const defaultValue: T): T; overload; virtual;
+    function FirstOrDefault(const predicate: TPredicate<T>): T; overload;
     function FirstOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
 
     procedure ForEach(const action: TAction<T>); overload;
 
     function Last: T; overload; virtual;
-    function Last(const predicate: TPredicate<T>): T; overload; virtual;
-    function LastOrDefault: T; overload; virtual;
-    function LastOrDefault(const defaultValue: T): T; overload;
-    function LastOrDefault(const predicate: TPredicate<T>): T; overload; virtual;
+    function Last(const predicate: TPredicate<T>): T; overload;
+    function LastOrDefault: T; overload;
+    function LastOrDefault(const defaultValue: T): T; overload; virtual;
+    function LastOrDefault(const predicate: TPredicate<T>): T; overload;
     function LastOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
 
     function Max: T; overload;
@@ -171,7 +171,7 @@ type
 
     function Reversed: IEnumerable<T>; virtual;
 
-    function Single: T; overload;
+    function Single: T; overload; virtual;
     function Single(const predicate: TPredicate<T>): T; overload;
     function SingleOrDefault: T; overload;
     function SingleOrDefault(const defaultValue: T): T; overload; virtual;
@@ -279,21 +279,35 @@ type
     constructor Create; overload; override;
     destructor Destroy; override;
 
-    function Contains(const item: T): Boolean; override;
-    function Reversed: IEnumerable<T>; override;
-
     procedure Add(const item: T); override;
     function Remove(const item: T): Boolean; override;
     procedure Clear; override;
+
+    function First: T; overload; override;
+    function FirstOrDefault(const defaultValue: T): T; overload; override;
+
+    function Last: T; overload; override;
+    function LastOrDefault(const defaultValue: T): T; overload; override;
+
+    function Single: T; overload; override;
+    function SingleOrDefault(const defaultValue: T): T; overload; override;
 
     procedure Insert(index: Integer; const item: T); virtual; abstract;
     procedure InsertRange(index: Integer; const collection: array of T); overload; virtual;
     procedure InsertRange(index: Integer; const collection: IEnumerable<T>); overload; virtual;
     procedure InsertRange(index: Integer; const collection: TEnumerable<T>); overload; virtual;
+
     procedure Delete(index: Integer); virtual; abstract;
     procedure DeleteRange(startIndex, count: Integer); virtual; abstract;
-    function IndexOf(const item: T): Integer;
-    function LastIndexOf(const item: T): Integer;
+
+    function IndexOf(const item: T): Integer; overload;
+    function IndexOf(const item: T; index: Integer): Integer; overload;
+    function IndexOf(const item: T; index, count: Integer): Integer; overload;
+
+    function LastIndexOf(const item: T): Integer; overload;
+    function LastIndexOf(const item: T; index: Integer): Integer; overload;
+    function LastIndexOf(const item: T; index, count: Integer): Integer; overload;
+
     procedure Exchange(index1, index2: Integer); virtual; abstract;
     procedure Move(currentIndex, newIndex: Integer); virtual; abstract;
 
@@ -318,8 +332,6 @@ uses
   TypInfo,
   Spring.Collections.Events,
   Spring.Collections.Extensions,
-  Spring.Collections.Lists,
-  Spring.Collections.Sets,
   Spring.ResourceStrings;
 
 
@@ -774,7 +786,7 @@ end;
 
 function TEnumerableBase<T>.Reversed: IEnumerable<T>;
 begin
-//  Result := TReversedIterator<T>.Create(Self);
+  Result := TReversedIterator<T>.Create(Self);
 end;
 
 function TEnumerableBase<T>.Single: T;
@@ -1215,61 +1227,70 @@ begin
   inherited Destroy;
 end;
 
-function TListBase<T>.AsReadOnly: IReadOnlyList<T>;
-begin
-  Result := Self;
-end;
-
-function TListBase<T>.Remove(const item: T): Boolean;
-var
-  index: Integer;
-begin
-  index := IndexOf(item);
-  Result := index > -1;
-  if Result then
-    Delete(index);
-end;
-
-procedure TListBase<T>.Reverse;
-begin
-  Reverse(0, Count);
-end;
-
-function TListBase<T>.Reversed: IEnumerable<T>;
-begin
-  Result := TReversedIterator<T>.Create(Self);
-end;
-
 procedure TListBase<T>.Add(const item: T);
 begin
   Insert(Count, item);
 end;
 
+function TListBase<T>.AsReadOnly: IReadOnlyList<T>;
+begin
+  Result := Self;
+end;
+
+procedure TListBase<T>.Changed(const item: T; action: TCollectionChangedAction);
+begin
+  fOnChanged.Invoke(Self, item, action);
+end;
+
 procedure TListBase<T>.Clear;
 begin
   if Count > 0 then
-  begin
     DeleteRange(0, Count);
-  end;
 end;
 
-function TListBase<T>.Contains(const item: T): Boolean;
-var
-  index: Integer;
+function TListBase<T>.First: T;
 begin
-  index := IndexOf(item);
-  Result := index > -1;
+  if Count > 0 then
+    Result := Items[0]
+  else
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+end;
+
+function TListBase<T>.FirstOrDefault(const defaultValue: T): T;
+begin
+  if Count > 0 then
+    Result := Items[0]
+  else
+    Result := defaultValue;
+end;
+
+function TListBase<T>.GetOnChanged: ICollectionChangedEvent<T>;
+begin
+  Result := fOnChanged;
 end;
 
 function TListBase<T>.IndexOf(const item: T): Integer;
+begin
+  Result := IndexOf(item, 0, Count);
+end;
+
+function TListBase<T>.IndexOf(const item: T; index: Integer): Integer;
+begin
+  Result := IndexOf(item, index, Count - index);
+end;
+
+function TListBase<T>.IndexOf(const item: T; index, count: Integer): Integer;
 var
+  comparer: IEqualityComparer<T>;
   i: Integer;
 begin
-  for i := 0 to Count - 1 do
-  begin
-    if fComparer.Compare(Items[i], item) = 0 then
+  Guard.CheckRange((index >= 0) and (index <= Self.Count), 'index');
+  Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
+
+  comparer := EqualityComparer;
+  for i := index to index + count - 1 do
+    if comparer.Equals(Items[i], item) then
       Exit(i);
-  end;
   Result := -1;
 end;
 
@@ -1314,21 +1335,99 @@ begin
   end;
 end;
 
-function TListBase<T>.LastIndexOf(const item: T): Integer;
+function TListBase<T>.Last: T;
 var
+  count: Integer;
+begin
+  count := Self.Count;
+  if count = 0 then
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+  Result := Items[count - 1];
+end;
+
+function TListBase<T>.LastOrDefault(const defaultValue: T): T;
+var
+  count: Integer;
+begin
+  count := Self.Count;
+  if count = 0 then
+    Result := defaultValue
+  else
+    Result := Items[count - 1];
+end;
+
+function TListBase<T>.LastIndexOf(const item: T): Integer;
+begin
+  Result := LastIndexOf(item, Count - 1, Count);
+end;
+
+function TListBase<T>.LastIndexOf(const item: T; index: Integer): Integer;
+begin
+  Result := LastIndexOf(item, index, index + 1);
+end;
+
+function TListBase<T>.LastIndexOf(const item: T; index,
+  count: Integer): Integer;
+var
+  comparer: IEqualityComparer<T>;
   i: Integer;
 begin
-  for i := Count - 1 downto 0 do
-  begin
-    if fComparer.Compare(Items[i], item) = 0 then
+  Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
+  Guard.CheckRange((count >= 0) and (count <= index + 1), 'count');
+
+  comparer := EqualityComparer;
+  for i := index downto index - count + 1 do
+    if comparer.Equals(Items[i], item) then
       Exit(i);
-  end;
   Result := -1;
 end;
 
-procedure TListBase<T>.Changed(const item: T; action: TCollectionChangedAction);
+function TListBase<T>.Remove(const item: T): Boolean;
+var
+  index: Integer;
 begin
-  fOnChanged.Invoke(Self, item, action);
+  index := IndexOf(item);
+  Result := index > -1;
+  if Result then
+    Delete(index);
+end;
+
+procedure TListBase<T>.Reverse;
+begin
+  Reverse(0, Count);
+end;
+
+function TListBase<T>.Single: T;
+begin
+  case Count of
+    0: raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+    1: Result := Items[0];
+  else
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement);
+  end;
+end;
+
+function TListBase<T>.SingleOrDefault(const defaultValue: T): T;
+begin
+  case Count of
+    0: Result := defaultValue;
+    1: Result := Items[0];
+  else
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement);
+  end;
+end;
+
+procedure TListBase<T>.Sort;
+begin
+  Sort(Comparer);
+end;
+
+procedure TListBase<T>.Sort(const comparison: TComparison<T>);
+var
+  comparer: IComparer<T>;
+begin
+  comparer := TComparer<T>.Construct(comparison);
+  Sort(comparer);
 end;
 
 function TListBase<T>.ToArray: TArray<T>;
@@ -1366,24 +1465,6 @@ begin
   Result := Count = 1;
   if Result then
     value := Items[0];
-end;
-
-function TListBase<T>.GetOnChanged: ICollectionChangedEvent<T>;
-begin
-  Result := fOnChanged;
-end;
-
-procedure TListBase<T>.Sort;
-begin
-  Sort(Comparer);
-end;
-
-procedure TListBase<T>.Sort(const comparison: TComparison<T>);
-var
-  comparer: IComparer<T>;
-begin
-  comparer := TComparer<T>.Construct(comparison);
-  Sort(comparer);
 end;
 
 {$ENDREGION}

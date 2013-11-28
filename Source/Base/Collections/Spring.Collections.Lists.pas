@@ -81,8 +81,10 @@ type
     procedure Clear; override;
 
     procedure Insert(index: Integer; const item: T); override;
+
     procedure Delete(index: Integer); override;
     procedure DeleteRange(index, count: Integer); override;
+
     function Extract(const item: T): T; override;
 
     procedure Exchange(index1, index2: Integer); override;
@@ -123,17 +125,6 @@ uses
 
 {$REGION 'TList<T>'}
 
-procedure TList<T>.CopyTo(var values: TArray<T>; index: Integer);
-var
-  i: Integer;
-begin
-  Guard.CheckRange(Length(values), index, fCount);
-  Guard.CheckRange(Length(fItems), 0, fCount);
-
-  for i := 0 to fCount - 1 do
-    values[i + index] := fItems[i];
-end;
-
 function TList<T>.GetCount: Integer;
 begin
   Result := fCount;
@@ -146,7 +137,7 @@ end;
 
 function TList<T>.GetItem(index: Integer): T;
 begin
-  Guard.CheckRange((index >= 0) and (index < Count), 'index');
+  Guard.CheckRange((index >= 0) and (index < fCount), 'index');
 
   Result := fItems[index];
 end;
@@ -162,27 +153,14 @@ procedure TList<T>.SetItem(index: Integer; const value: T);
 var
   oldItem: T;
 begin
-  Guard.CheckRange((index >= 0) and (index < Count), 'index');
+  Guard.CheckRange((index >= 0) and (index < fCount), 'index');
 
   oldItem := fItems[index];
   fItems[index] := value;
+  IncreaseVersion;
 
   Changed(oldItem, caRemoved);
   Changed(value, caAdded);
-end;
-
-procedure TList<T>.Sort(const comparer: IComparer<T>);
-begin
-  TArray.Sort<T>(fItems, comparer, 0, fCount);
-  IncreaseVersion;
-
-  Changed(Default(T), caReseted);
-end;
-
-function TList<T>.ToArray: TArray<T>;
-begin
-  Result := TArray<T>(fItems);
-  SetLength(Result, fCount);
 end;
 
 procedure TList<T>.Insert(index: Integer; const item: T);
@@ -200,13 +178,6 @@ begin
   IncreaseVersion;
 
   Changed(item, caAdded);
-end;
-
-procedure TList<T>.Delete(index: Integer);
-begin
-  Guard.CheckRange((index >= 0) and (index < fCount), 'index');
-
-  DeleteInternal(index, caRemoved);
 end;
 
 procedure TList<T>.DeleteInternal(index: Integer;
@@ -242,7 +213,7 @@ begin
   SetLength(oldItems, count);
   System.Move(fItems[index], oldItems[0], count * SizeOf(T));
 
-  tailCount := Self.fCount - (index + count);
+  tailCount := fCount - (index + count);
   if tailCount > 0 then
   begin
     System.Move(fItems[index + count], fItems[index], tailCount * SizeOf(T));
@@ -257,24 +228,21 @@ begin
     Changed(oldItems[i], caRemoved);
 end;
 
-function TList<T>.Extract(const item: T): T;
-var
-  index: Integer;
+procedure TList<T>.Sort(const comparer: IComparer<T>);
 begin
-  index := IndexOf(item);
-  if index < 0 then
-    Result := Default(T)
-  else
-  begin
-    Result := fItems[index];
-    DeleteInternal(index, caExtracted);
-  end;
+  TArray.Sort<T>(fItems, comparer, 0, fCount);
+  IncreaseVersion;
+
+  Changed(Default(T), caReseted);
 end;
 
 procedure TList<T>.Move(currentIndex, newIndex: Integer);
 var
   temp: T;
 begin
+  Guard.CheckRange((currentIndex >= 0) and (currentIndex < fCount), 'currentIndex');
+  Guard.CheckRange((newIndex >= 0) and (newIndex < fCount), 'newIndex');
+
   temp := fItems[currentIndex];
   fItems[currentIndex] := Default(T);
   if currentIndex < newIndex then
@@ -284,13 +252,14 @@ begin
 
   FillChar(fItems[newIndex], SizeOf(T), 0);
   fItems[newIndex] := temp;
+  IncreaseVersion;
 
   Changed(temp, caMoved);
 end;
 
 procedure TList<T>.Clear;
 begin
-  inherited;
+  inherited Clear;
   Capacity := 0;
 end;
 
@@ -318,12 +287,13 @@ procedure TList<T>.Exchange(index1, index2: Integer);
 var
   temp: T;
 begin
-  Guard.CheckRange((index1 >= 0) and (index1 < Count), 'index1');
-  Guard.CheckRange((index2 >= 0) and (index2 < Count), 'index2');
+  Guard.CheckRange((index1 >= 0) and (index1 < fCount), 'index1');
+  Guard.CheckRange((index2 >= 0) and (index2 < fCount), 'index2');
 
   temp := fItems[index1];
   fItems[index1] := fItems[index2];
   fItems[index2] := temp;
+  IncreaseVersion;
 
   Changed(fItems[index2], caMoved);
   Changed(fItems[index1], caMoved);
@@ -352,6 +322,7 @@ begin
     Inc(index1);
     Dec(index2);
   end;
+  IncreaseVersion;
 
   Changed(Default(T), caReseted);
 end;
@@ -359,10 +330,46 @@ end;
 procedure TList<T>.SetCapacity(value: Integer);
 begin
   if value < Count then
-  begin
     DeleteRange(Count - value + 1, Count - value);
-  end;
   SetLength(fItems, value);
+end;
+
+procedure TList<T>.Delete(index: Integer);
+begin
+  Guard.CheckRange((index >= 0) and (index < fCount), 'index');
+
+  DeleteInternal(index, caRemoved);
+end;
+
+function TList<T>.Extract(const item: T): T;
+var
+  index: Integer;
+begin
+  index := IndexOf(item);
+  if index < 0 then
+    Result := Default(T)
+  else
+  begin
+    Result := fItems[index];
+    DeleteInternal(index, caExtracted);
+  end;
+end;
+
+procedure TList<T>.CopyTo(var values: TArray<T>; index: Integer);
+var
+  i: Integer;
+begin
+  Guard.CheckRange(Length(values), index, fCount);
+  Guard.CheckRange(Length(fItems), 0, fCount);
+
+  for i := 0 to fCount - 1 do
+    values[i + index] := fItems[i];
+end;
+
+function TList<T>.ToArray: TArray<T>;
+begin
+  Result := TArray<T>(fItems);
+  SetLength(Result, fCount);
 end;
 
 {$ENDREGION}
@@ -466,7 +473,7 @@ end;
 
 procedure TObjectList<T>.Changed(const item: T; action: TCollectionChangedAction);
 begin
-  inherited;
+  inherited Changed(item, action);
   if OwnsObjects and (action = caRemoved) then
     item.Free;
 end;
