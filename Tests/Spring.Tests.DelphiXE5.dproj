@@ -97,8 +97,9 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="Source\Spring.RunTestsUsingConsole.pas"/>
         <DCCReference Include="Source\FinalBuilder.XMLTestRunner.pas"/>
+        <DCCReference Include="Source\Spring.RunTestsUsingConsole.pas"/>
+        <DCCReference Include="Source\Spring.RunTestsUsingVclGui.pas"/>
         <DCCReference Include="Source\Spring.RunTestsUsingXmlOutput.pas"/>
         <DCCReference Include="Source\Spring.TestUtils.pas"/>
         <DCCReference Include="Source\Base\Spring.Tests.Base.pas"/>
@@ -115,6 +116,7 @@
         <DCCReference Include="Source\Extensions\Spring.Tests.Cryptography.pas"/>
         <DCCReference Include="Source\Extensions\Spring.Tests.Utils.pas"/>
         <DCCReference Include="Source\Spring.TestRegistration.pas"/>
+        <None Include="Spring.Tests.inc"/>
         <BuildConfiguration Include="Debug">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

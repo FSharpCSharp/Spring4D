@@ -24,16 +24,7 @@
 
 program Spring.Tests;
 
-{$DEFINE CONSOLE_TESTRUNNER}
-
-{$ifdef MACOS}
-  {$define CONSOLE_TESTRUNNER}
-{$endif MACOS}
-
-{$IFDEF CONSOLE_TESTRUNNER}
-  {$APPTYPE CONSOLE}
-  {$DEFINE XMLOUTPUT}
-{$ENDIF}
+{$i Spring.Tests.inc}
 
 uses
   SysUtils,
@@ -41,15 +32,14 @@ uses
   TestExtensions,
   {$ifdef CONSOLE_TESTRUNNER}
   TextTestRunner,
-  Spring.RunTestsUsingConsole in 'Source\Spring.RunTestsUsingConsole.pas',
   {$else}
   Forms,
   GUITestRunner,
   {$endif CONSOLE_TESTRUNNER}
-  {$ifdef XMLOUTPUT}
   FinalBuilder.XMLTestRunner in 'Source\FinalBuilder.XMLTestRunner.pas',
+  Spring.RunTestsUsingConsole in 'Source\Spring.RunTestsUsingConsole.pas',
+  Spring.RunTestsUsingVclGui in 'Source\Spring.RunTestsUsingVclGui.pas',
   Spring.RunTestsUsingXmlOutput in 'Source\Spring.RunTestsUsingXmlOutput.pas',
-  {$endif XMLOUTPUT}
   Spring.TestUtils in 'Source\Spring.TestUtils.pas',
   Spring.Tests.Base in 'Source\Base\Spring.Tests.Base.pas',
   Spring.Tests.Collections in 'Source\Base\Spring.Tests.Collections.pas',
