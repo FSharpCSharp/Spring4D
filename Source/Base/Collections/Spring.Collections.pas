@@ -33,8 +33,8 @@ unit Spring.Collections;
 interface
 
 uses
-  Generics.Defaults,
   Generics.Collections,
+  Generics.Defaults,
   SysUtils,
   Spring;
 
@@ -758,6 +758,10 @@ type
     procedure RemoveRange(const collection: array of TValue); overload;
     procedure RemoveRange(const collection: IEnumerable); overload;
 
+    function Extract(const item: TValue): TValue;
+    procedure ExtractRange(const collection: array of TValue); overload;
+    procedure ExtractRange(const collection: IEnumerable); overload;
+
     property IsReadOnly: Boolean read GetIsReadOnly;
   end;
 
@@ -884,6 +888,8 @@ type
     function LastIndexOf(const item: TValue; index: Integer): Integer; overload;
     function LastIndexOf(const item: TValue; index, count: Integer): Integer; overload;
 
+    function AsReadOnly: IReadOnlyList;
+
     property Items[index: Integer]: TValue read GetItem write SetItem; default;
     property OnChanged: IEvent read GetOnChanged;
   end;
@@ -990,6 +996,7 @@ type
     function LastIndexOf(const item: T; index: Integer): Integer; overload;
     function LastIndexOf(const item: T; index, count: Integer): Integer; overload;
 
+    function AsList: IList;
     function AsReadOnly: IReadOnlyList<T>;
 
     property Items[index: Integer]: T read GetItem write SetItem; default;
@@ -1368,6 +1375,8 @@ type
     procedure ExceptWith(const other: IEnumerable);
     procedure IntersectWith(const other: IEnumerable);
     procedure UnionWith(const other: IEnumerable);
+    function IsSubsetOf(const other: IEnumerable): Boolean;
+    function IsSupersetOf(const other: IEnumerable): Boolean;
     function SetEquals(const other: IEnumerable): Boolean;
     function Overlaps(const other: IEnumerable): Boolean;
   end;
@@ -1379,6 +1388,7 @@ type
   ///	  The type of elements in the set.
   ///	</typeparam>
   ISet<T> = interface(ICollection<T>)
+    ['{DC0B211F-E9FD-41D6-BEE0-FCB9F79327AB}']
 
     ///	<summary>
     ///	  Adds an element to the current set and returns a value to indicate if
@@ -1639,7 +1649,9 @@ type
     class function CreateQueue<T>: IQueue<T>; overload; static;
     class function CreateQueue<T: class>(ownsObjects: Boolean): IQueue<T>; overload; static;
 
-    class function CreateSet<T>: ISet<T>; overload;
+    class function CreateSet<T>: ISet<T>; overload; static;
+    class function CreateSet<T>(const comparer: IEqualityComparer<T>): ISet<T>; overload; static;
+    class function CreateSet<T>(const values: IEnumerable<T>): ISet<T>; overload; static;
 
     ///	<summary>
     ///	  Returns an empty <see cref="IEnumerable&lt;T&gt;" /> that has the
@@ -1832,6 +1844,17 @@ end;
 class function TCollections.CreateSet<T>: ISet<T>;
 begin
   Result := THashSet<T>.Create;
+end;
+
+class function TCollections.CreateSet<T>(
+  const comparer: IEqualityComparer<T>): ISet<T>;
+begin
+  Result := THashSet<T>.Create(comparer);
+end;
+
+class function TCollections.CreateSet<T>(const values: IEnumerable<T>): ISet<T>;
+begin
+  Result := THashSet<T>.Create(values);
 end;
 
 class function TCollections.Empty<T>: IEnumerable<T>;

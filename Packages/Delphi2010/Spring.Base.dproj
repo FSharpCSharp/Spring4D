@@ -49,6 +49,7 @@
 			<DCCReference Include="vcl.dcp"/>
 			<DCCReference Include="..\..\Source\Base\Spring.pas"/>
 			<DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.pas"/>
+			<DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Adapters.pas"/>
 			<DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Base.pas"/>
 			<DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Dictionaries.pas"/>
 			<DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Events.pas"/>

@@ -632,7 +632,7 @@ constructor TSkipIterator<T>.Create(const source: IEnumerable<T>;
 begin
   Guard.CheckNotNull(Assigned(source), 'source');
 
-  inherited Create(source.Comparer);;
+  inherited Create(source.Comparer);
   fSource := source;
   fCount := count;
 end;
