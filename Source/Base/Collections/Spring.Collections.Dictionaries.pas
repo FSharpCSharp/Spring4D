@@ -50,7 +50,7 @@ type
   protected
     type
       TGenericDictionary = Generics.Collections.TDictionary<TKey, TValue>;
-      TGenericPair = Generics.Collections.TPair<TKey,TValue>;
+      TGenericPair = Generics.Collections.TPair<TKey, TValue>;
 
       TKeyCollection = class(TContainedReadOnlyCollection<TKey>)
       private
@@ -234,15 +234,15 @@ begin
   fOnValueChanged.Invoke(Self, item, TCollectionChangedAction(action));
 end;
 
-function TDictionary<TKey, TValue>.GetEnumerator: IEnumerator<TPair<TKey, TValue>>;
+function TDictionary<TKey, TValue>.GetEnumerator: IEnumerator<TGenericPair>;
 var
-  dictionary: TEnumerable<TPair<TKey, TValue>>;
+  dictionary: TEnumerable<TGenericPair>;
 begin
-  dictionary := TEnumerable<TPair<TKey, TValue>>(fDictionary);
+  dictionary := TEnumerable<TGenericPair>(fDictionary);
   Result := TEnumeratorAdapter<TGenericPair>.Create(dictionary);
 end;
 
-procedure TDictionary<TKey, TValue>.Add(const item: TPair<TKey, TValue>);
+procedure TDictionary<TKey, TValue>.Add(const item: TGenericPair);
 begin
   fDictionary.Add(item.Key, item.Value);
 end;
@@ -353,7 +353,7 @@ begin
 end;
 
 function TDictionary<TKey, TValue>.ExtractPair(
-  const key: TKey): TPair<TKey, TValue>;
+  const key: TKey): TGenericPair;
 begin
   Result := fDictionary.ExtractPair(key);
 end;
