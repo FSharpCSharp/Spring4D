@@ -29,35 +29,74 @@ interface
 uses
   Generics.Defaults,
   Generics.Collections,
+  Spring,
   Spring.Collections,
   Spring.Collections.Base;
 
 type
 
   ///	<summary>
-  ///	  Provides an array-based implementation of IList{T}.
+  ///	  Represents a strongly typed list of elements that can be accessed by
+  ///	  index. Provides methods to search, sort, and manipulate lists.
   ///	</summary>
+  ///	<typeparam name="T">
+  ///	  The type of elements in the list.
+  ///	</typeparam>
   TList<T> = class(TListBase<T>)
+  private
+    type
+      TEnumerator = class(TEnumeratorBase<T>)
+      private
+        fList: TList<T>;
+        fIndex: Integer;
+        fVersion: Integer;
+        fCurrent: T;
+      protected
+        function GetCurrent: T; override;
+      public
+        constructor Create(const list: TList<T>);
+        destructor Destroy; override;
+        function MoveNext: Boolean; override;
+        procedure Reset; override;
+      end;
   private
     fItems: array of T;
     fCount: Integer;
+    fVersion: Integer;
+    procedure DeleteInternal(index: Integer; notification: TCollectionChangedAction);
+    procedure IncreaseVersion; inline;
   protected
+  {$REGION 'Property Accessors'}
     function GetCapacity: Integer;
     function GetCount: Integer; override;
     function GetItem(index: Integer): T; override;
     procedure SetCapacity(value: Integer);
     procedure SetItem(index: Integer; const value: T); override;
-    procedure DoInsert(index: Integer; const item: T); override;
-    procedure DoDelete(index: Integer; notification: TCollectionChangedAction); override;
-    procedure DoDeleteRange(startIndex, count: Integer; notification: TCollectionChangedAction); override;
-    procedure DoSort(const comparer: IComparer<T>); override;
+  {$ENDREGION}
+
     function EnsureCapacity(value: Integer): Integer;
-    property Capacity: Integer read GetCapacity write SetCapacity;
   public
+    function GetEnumerator: IEnumerator<T>; override;
+
     procedure Clear; override;
+
+    procedure Insert(index: Integer; const item: T); override;
+
+    procedure Delete(index: Integer); override;
+    procedure DeleteRange(index, count: Integer); override;
+
+    function Extract(const item: T): T; override;
+
     procedure Exchange(index1, index2: Integer); override;
     procedure Move(currentIndex, newIndex: Integer); override;
-    procedure Reverse; override;
+
+    procedure Reverse(index, count: Integer); override;
+    procedure Sort(const comparer: IComparer<T>); override;
+
+    procedure CopyTo(var values: TArray<T>; index: Integer); override;
+    function ToArray: TArray<T>; override;
+
+    property Capacity: Integer read GetCapacity write SetCapacity;
   end;
 
   TObjectList<T: class> = class(TList<T>, ICollectionOwnership)
@@ -70,6 +109,8 @@ type
   public
     constructor Create(ownsObjects: Boolean = True); overload;
     constructor Create(const comparer: IComparer<T>; ownsObjects: Boolean = True); overload;
+    constructor Create(const collection: array of T; ownsObjects: Boolean = True); overload;
+    constructor Create(const collection: IEnumerable<T>; ownsObjects: Boolean = True); overload;
     constructor Create(collection: TEnumerable<T>; ownsObjects: Boolean = True); overload;
 
     property OwnsObjects: Boolean read GetOwnsObjects write SetOwnsObjects;
@@ -79,7 +120,7 @@ implementation
 
 uses
   SysUtils,
-  Spring;
+  Spring.ResourceStrings;
 
 
 {$REGION 'TList<T>'}
@@ -89,94 +130,119 @@ begin
   Result := fCount;
 end;
 
+function TList<T>.GetEnumerator: IEnumerator<T>;
+begin
+  Result := TEnumerator.Create(Self);
+end;
+
 function TList<T>.GetItem(index: Integer): T;
 begin
-  Guard.CheckRange((index >= 0) and (index < Count), 'index');
+  Guard.CheckRange((index >= 0) and (index < fCount), 'index');
 
   Result := fItems[index];
 end;
+
+{$IFOPT Q+}{$DEFINE OVERFLOW_CHECKS_ON}{$Q-}{$ENDIF}
+procedure TList<T>.IncreaseVersion;
+begin
+  Inc(fVersion);
+end;
+{$IFDEF OVERFLOW_CHECKS_ON}{$Q+}{$ENDIF}
 
 procedure TList<T>.SetItem(index: Integer; const value: T);
 var
   oldItem: T;
 begin
-  Guard.CheckRange((index >= 0) and (index < Count), 'index');
+  Guard.CheckRange((index >= 0) and (index < fCount), 'index');
 
   oldItem := fItems[index];
   fItems[index] := value;
+  IncreaseVersion;
 
   Changed(oldItem, caRemoved);
   Changed(value, caAdded);
 end;
 
-procedure TList<T>.DoInsert(index: Integer; const item: T);
+procedure TList<T>.Insert(index: Integer; const item: T);
 begin
-  EnsureCapacity(Count + 1);
-  if index <> Count then
+  Guard.CheckRange((index >= 0) and (index <= fCount), 'index');
+
+  EnsureCapacity(fCount + 1);
+  if index <> fCount then
   begin
-    System.Move(fItems[index], fItems[index + 1], (Count - index) * SizeOf(T));
+    System.Move(fItems[index], fItems[index + 1], (fCount - index) * SizeOf(T));
     FillChar(fItems[index], SizeOf(fItems[index]), 0);
   end;
   fItems[index] := item;
   Inc(fCount);
+  IncreaseVersion;
+
   Changed(item, caAdded);
 end;
 
-procedure TList<T>.DoDelete(index: Integer;
+procedure TList<T>.DeleteInternal(index: Integer;
   notification: TCollectionChangedAction);
 var
   oldItem: T;
 begin
-  Assert((index >= 0) and (index <= Count));
-
   oldItem := fItems[index];
   fItems[index] := Default(T);
   Dec(fCount);
-  if index <> Count then
+  if index <> fCount then
   begin
-    System.Move(fItems[index + 1], fItems[index], (Count - index) * SizeOf(T));
-    FillChar(fItems[Count], SizeOf(T), 0);
+    System.Move(fItems[index + 1], fItems[index], (fCount - index) * SizeOf(T));
+    FillChar(fItems[fCount], SizeOf(T), 0);
   end;
+  IncreaseVersion;
+
   Changed(oldItem, notification);
 end;
 
-procedure TList<T>.DoDeleteRange(startIndex, count: Integer;
-  notification: TCollectionChangedAction);
+procedure TList<T>.DeleteRange(index, count: Integer);
 var
   oldItems: array of T;
   tailCount,
   i: Integer;
 begin
-  SetLength(oldItems, count);
-  System.Move(fItems[startIndex], oldItems[0], count * SizeOf(T));
+  Guard.CheckRange((index >= 0) and (index < fCount), 'index');
+  Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
 
-  tailCount := Self.Count - (startIndex + count);
+  if count = 0 then
+    Exit;
+
+  SetLength(oldItems, count);
+  System.Move(fItems[index], oldItems[0], count * SizeOf(T));
+
+  tailCount := fCount - (index + count);
   if tailCount > 0 then
   begin
-    System.Move(fItems[startIndex + count], fItems[startIndex], tailCount * SizeOf(T));
-    FillChar(fItems[Self.Count - count], count * SizeOf(T), 0);
+    System.Move(fItems[index + count], fItems[index], tailCount * SizeOf(T));
+    FillChar(fItems[fCount - count], count * SizeOf(T), 0);
   end
   else
-  begin
-    FillChar(fItems[startIndex], count * SizeOf(T), 0);
-  end;
+    FillChar(fItems[index], count * SizeOf(T), 0);
   Dec(fCount, count);
+  IncreaseVersion;
 
   for i := 0 to Length(oldItems) - 1 do
-  begin
     Changed(oldItems[i], caRemoved);
-  end;
 end;
 
-procedure TList<T>.DoSort(const comparer: IComparer<T>);
+procedure TList<T>.Sort(const comparer: IComparer<T>);
 begin
-  TArray.Sort<T>(fItems, comparer, 0, Count);
+  TArray.Sort<T>(fItems, comparer, 0, fCount);
+  IncreaseVersion;
+
+  Changed(Default(T), caReseted);
 end;
 
 procedure TList<T>.Move(currentIndex, newIndex: Integer);
 var
   temp: T;
 begin
+  Guard.CheckRange((currentIndex >= 0) and (currentIndex < fCount), 'currentIndex');
+  Guard.CheckRange((newIndex >= 0) and (newIndex < fCount), 'newIndex');
+
   temp := fItems[currentIndex];
   fItems[currentIndex] := Default(T);
   if currentIndex < newIndex then
@@ -186,13 +252,14 @@ begin
 
   FillChar(fItems[newIndex], SizeOf(T), 0);
   fItems[newIndex] := temp;
+  IncreaseVersion;
 
   Changed(temp, caMoved);
 end;
 
 procedure TList<T>.Clear;
 begin
-  inherited;
+  inherited Clear;
   Capacity := 0;
 end;
 
@@ -220,12 +287,13 @@ procedure TList<T>.Exchange(index1, index2: Integer);
 var
   temp: T;
 begin
-  Guard.CheckRange((index1 >= 0) and (index1 < Count), 'index1');
-  Guard.CheckRange((index2 >= 0) and (index2 < Count), 'index2');
+  Guard.CheckRange((index1 >= 0) and (index1 < fCount), 'index1');
+  Guard.CheckRange((index2 >= 0) and (index2 < fCount), 'index2');
 
   temp := fItems[index1];
   fItems[index1] := fItems[index2];
   fItems[index2] := temp;
+  IncreaseVersion;
 
   Changed(fItems[index2], caMoved);
   Changed(fItems[index1], caMoved);
@@ -236,28 +304,122 @@ begin
   Result := Length(fItems);
 end;
 
-procedure TList<T>.Reverse;
+procedure TList<T>.Reverse(index, count: Integer);
 var
-  tmp: T;
-  b, e: Integer;
+  temp: T;
+  index1, index2: Integer;
 begin
-  b := 0;
-  e := Count - 1;
-  while b < e do
+  Guard.CheckRange((index >= 0) and (index < fCount), 'index');
+  Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
+
+  index1 := index;
+  index2 := index + count - 1;
+  while index1 < index2 do
   begin
-    Exchange(b, e);
-    Inc(b);
-    Dec(e);
+    temp := fItems[index1];
+    fItems[index1] := fItems[index2];
+    fItems[index2] := temp;
+    Inc(index1);
+    Dec(index2);
   end;
+  IncreaseVersion;
+
+  Changed(Default(T), caReseted);
 end;
 
 procedure TList<T>.SetCapacity(value: Integer);
 begin
   if value < Count then
-  begin
     DeleteRange(Count - value + 1, Count - value);
-  end;
   SetLength(fItems, value);
+end;
+
+procedure TList<T>.Delete(index: Integer);
+begin
+  Guard.CheckRange((index >= 0) and (index < fCount), 'index');
+
+  DeleteInternal(index, caRemoved);
+end;
+
+function TList<T>.Extract(const item: T): T;
+var
+  index: Integer;
+begin
+  index := IndexOf(item);
+  if index < 0 then
+    Result := Default(T)
+  else
+  begin
+    Result := fItems[index];
+    DeleteInternal(index, caExtracted);
+  end;
+end;
+
+procedure TList<T>.CopyTo(var values: TArray<T>; index: Integer);
+var
+  i: Integer;
+begin
+  Guard.CheckRange(Length(values), index, fCount);
+  Guard.CheckRange(Length(fItems), 0, fCount);
+
+  for i := 0 to fCount - 1 do
+    values[i + index] := fItems[i];
+end;
+
+function TList<T>.ToArray: TArray<T>;
+begin
+  Result := TArray<T>(fItems);
+  SetLength(Result, fCount);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TList<T>.TEnumerator'}
+
+constructor TList<T>.TEnumerator.Create(const list: TList<T>);
+begin
+  inherited Create;
+  fList := list;
+  fList._AddRef;
+  fVersion := fList.fVersion;
+end;
+
+destructor TList<T>.TEnumerator.Destroy;
+begin
+  fList._Release;
+  inherited Destroy;
+end;
+
+function TList<T>.TEnumerator.MoveNext: Boolean;
+begin
+  Result := False;
+
+  if fVersion <> fList.fVersion then
+    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
+
+  if fIndex < fList.fCount then
+  begin
+    fCurrent := fList.fItems[fIndex];
+    Inc(fIndex);
+    Result := True;
+  end
+  else
+    fCurrent := Default(T);
+end;
+
+function TList<T>.TEnumerator.GetCurrent: T;
+begin
+  Result := fCurrent;
+end;
+
+procedure TList<T>.TEnumerator.Reset;
+begin
+  if fVersion <> fList.fVersion then
+    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
+
+  fIndex := 0;
+  fCurrent := Default(T);
 end;
 
 {$ENDREGION}
@@ -267,7 +429,8 @@ end;
 
 constructor TObjectList<T>.Create(ownsObjects: Boolean);
 begin
-  Create(TComparer<T>.Default, ownsObjects);
+  inherited Create;
+  fOwnsObjects := ownsObjects;
 end;
 
 constructor TObjectList<T>.Create(const comparer: IComparer<T>;
@@ -277,11 +440,25 @@ begin
   fOwnsObjects := ownsObjects;
 end;
 
+constructor TObjectList<T>.Create(const collection: array of T;
+  ownsObjects: Boolean);
+begin
+  inherited Create(collection);
+  fOwnsObjects := ownsObjects;
+end;
+
+constructor TObjectList<T>.Create(const collection: IEnumerable<T>;
+  ownsObjects: Boolean);
+begin
+  inherited Create(collection);
+  fOwnsObjects := ownsObjects;
+end;
+
 constructor TObjectList<T>.Create(collection: TEnumerable<T>;
   ownsObjects: Boolean);
 begin
-  Create(TComparer<T>.Default, ownsObjects);
-  AddRange(collection);
+  inherited Create(collection);
+  fOwnsObjects := ownsObjects;
 end;
 
 function TObjectList<T>.GetOwnsObjects: Boolean;
@@ -296,11 +473,12 @@ end;
 
 procedure TObjectList<T>.Changed(const item: T; action: TCollectionChangedAction);
 begin
-  inherited;
+  inherited Changed(item, action);
   if OwnsObjects and (action = caRemoved) then
     item.Free;
 end;
 
 {$ENDREGION}
+
 
 end.

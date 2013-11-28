@@ -26,7 +26,6 @@
 ///	  The Spring.Collections namespaces introduce the Collections Framework in
 ///	  spring4d.
 ///	</summary>
-///	<preliminary />
 unit Spring.Collections;
 
 {$I Spring.inc}
@@ -34,20 +33,24 @@ unit Spring.Collections;
 interface
 
 uses
-  Classes,
-  SysUtils,
-  TypInfo,
-  Rtti,
   Generics.Defaults,
   Generics.Collections,
+  SysUtils,
   Spring;
 
+const
+  doOwnsKeys = Generics.Collections.doOwnsKeys;
+  doOwnsValues = Generics.Collections.doOwnsValues;
+
 type
-  { Forward Declarations }
+  {$REGION 'Forward definitions'}
   IEnumerator = interface;
   IEnumerable = interface;
+  IReadOnlyCollection = interface;
   ICollection = interface;
+  IReadOnlyList = interface;
   IList = interface;
+  IReadOnlyDictionary = interface;
   IDictionary = interface;
   IStack = interface;
   IQueue = interface;
@@ -55,20 +58,58 @@ type
 
   IEnumerator<T> = interface;
   IEnumerable<T> = interface;
+  IReadOnlyCollection<T> = interface;
   ICollection<T> = interface;
+  IReadOnlyList<T> = interface;
   IList<T> = interface;
+  IReadOnlyDictionary<TKey, TValue> = interface;
   IDictionary<TKey, TValue> = interface;
   IStack<T> = interface;
   IQueue<T> = interface;
   ISet<T> = interface;
 
+  IGrouping<TKey, TElement> = interface;
+  ILookup<TKey, TElement> = interface;
+  {$ENDREGION}
+
+  ///	<summary>
+  ///	  Describes the action that caused a CollectionChanged event.
+  ///	</summary>
   TCollectionChangedAction = (
+    ///	<summary>
+    ///	  An item was added to the collection.
+    ///	</summary>
     caAdded,
+
+    ///	<summary>
+    ///	  An item was removed from the collection.
+    ///	</summary>
     caRemoved,
+
+    ///	<summary>
+    ///	  An item was removed from the collection without considering ownership.
+    ///	</summary>
     caExtracted,
+
+    ///	<summary>
+    ///	  An item was replaced in the collection.
+    ///	</summary>
     caReplaced,
+
+    ///	<summary>
+    ///	  An item was moved within the collection.
+    ///	</summary>
     caMoved,
-    caReseted
+
+    ///	<summary>
+    ///	  The content of the collection changed dramatically.
+    ///	</summary>
+    caReseted,
+
+    ///	<summary>
+    ///	  An item in the collection was changed.
+    ///	</summary>
+    caChanged
   );
 
   TCollectionChangedEvent<T> = procedure(Sender: TObject; const Item: T;
@@ -77,180 +118,495 @@ type
   ICollectionChangedEvent<T> = interface(IEvent<TCollectionChangedEvent<T>>)
   end;
 
+  ///	<summary>
+  ///	  Supports a simple iteration over a non-generic collection.
+  ///	</summary>
   IEnumerator = interface(IInvokable)
     ['{A2AD52DC-FA9F-4121-9B54-5C427DA5E62C}']
+  {$REGION 'Property Accessors'}
     function GetCurrent: TValue;
-    function MoveNext: Boolean;
-    procedure Reset;
-    property Current: TValue read GetCurrent;
-  end;
-
-  ///	<summary>
-  ///	  Represents an iterator over a generic enumerable collection.
-  ///	</summary>
-  IEnumerator<T> = interface(IEnumerator)
-
-    ///	<summary>
-    ///	  The getter of the <see cref="Current" /> property.
-    ///	</summary>
-    ///	<exception cref="Spring|EInvalidOperationException">
-    ///	  The enumerator has not been started or ended.
-    ///	</exception>
-    function GetCurrent: T;
+  {$ENDREGION}
 
     ///	<summary>
     ///	  Advances the enumerator to the next element of the collection.
     ///	</summary>
+    ///	<returns>
+    ///	  <b>True</b> if the enumerator was successfully advanced to the next
+    ///	  element; <b>False</b> if the enumerator has passed the end of the
+    ///	  collection.
+    ///	</returns>
     ///	<exception cref="Spring|EInvalidOperationException">
     ///	  The collection was modified after the enumerator was created.
     ///	</exception>
     function MoveNext: Boolean;
 
+    ///	<summary>
+    ///	  Sets the enumerator to its initial position, which is before the
+    ///	  first element in the collection.
+    ///	</summary>
     ///	<exception cref="Spring|EInvalidOperationException">
     ///	  The collection was modified after the enumerator was created.
     ///	</exception>
     ///	<exception cref="Spring|ENotSupportedException">
-    ///	  The Reset method is not supported.
+    ///	  The Reset method is not supported. 
     ///	</exception>
     procedure Reset;
 
     ///	<summary>
     ///	  Gets the current element in the collection.
     ///	</summary>
-    property Current: T read GetCurrent;
-  end;
-
-  IEnumerable = interface(IInvokable)
-    ['{6BC97F33-C0A8-4770-8E1C-C2017527B7E7}']
-    function GetEnumerator: IEnumerator;
-    function AsObject: TObject;
-    function TryGetFirst(out value: TValue): Boolean;
-    function TryGetLast(out value: TValue): Boolean;
-    function First: TValue;
-    function FirstOrDefault: TValue;
-    function Last: TValue;
-    function LastOrDefault: TValue;
-    function Single: TValue;
-    function SingleOrDefault: TValue;
-    function ElementAt(index: Integer): TValue;
-    function ElementAtOrDefault(index: Integer): TValue;
-    function Contains(const item: TValue): Boolean; overload;
-    function Min: TValue;
-    function Max: TValue;
-    function Skip(count: Integer): IEnumerable;
-    function Take(count: Integer): IEnumerable;
-    function Concat(const collection: IEnumerable): IEnumerable;
-    function Reversed: IEnumerable;
-    function EqualsTo(const collection: IEnumerable): Boolean; overload;
-    function ToList: IList;
-    function ToSet: ISet;
-    function GetCount: Integer;
-    function GetIsEmpty: Boolean;
-    property Count: Integer read GetCount;
-    property IsEmpty: Boolean read GetIsEmpty;
-
-    function GetElementType: PTypeInfo;
-    property ElementType: PTypeInfo read GetElementType;
+    ///	<value>
+    ///	  The current element in the collection.
+    ///	</value>
+    property Current: TValue read GetCurrent;
   end;
 
   ///	<summary>
-  ///	  Provides limited LINQ-like enumerable extension methods for
-  ///	  <c>IEnumerable{T}</c>.
+  ///	  Supports a simple iteration over a generic collection.
   ///	</summary>
-  ///	<seealso href="http://msdn.microsoft.com/en-us/magazine/cc700332.aspx">
-  ///	  The LINQ Enumerable Class
-  ///	</seealso>
-  IEnumerable<T> = interface(IEnumerable)
+  ///	<typeparam name="T">
+  ///	  The type of objects to enumerate.
+  ///	</typeparam>
+  IEnumerator<T> = interface(IEnumerator)
+    ['{E6525A22-15EF-46EB-8A68-8CB202DA7D67}']
+  {$REGION 'Property Accessors'}
+    function GetCurrent: T;
+  {$ENDREGION}
+
+    ///	<summary>
+    ///	  Gets the current element in the collection.
+    ///	</summary>
+    ///	<value>
+    ///	  The current element in the collection.
+    ///	</value>
+    property Current: T read GetCurrent;
+  end;
+
+  ///	<summary>
+  ///	  Exposes an enumerator, which supports a simple iteration over a
+  ///	  non-generic collection.
+  ///	</summary>
+  IEnumerable = interface(IInvokable)
+    ['{6BC97F33-C0A8-4770-8E1C-C2017527B7E7}']
+  {$REGION 'Property Accessors'}
+    function GetCount: Integer;
+    function GetElementType: PTypeInfo;
+    function GetIsEmpty: Boolean;
+  {$ENDREGION}
+
+    ///	<summary>
+    ///	  Returns the reference to this instance.
+    ///	</summary>
+    ///	<returns>
+    ///	  The <see cref="TObject" /> instance behind this IEnumerable reference.
+    ///	</returns>
+    function AsObject: TObject;
 
     ///	<summary>
     ///	  Returns an enumerator that iterates through a collection.
     ///	</summary>
+    ///	<returns>
+    ///	  An <see cref="IEnumerator" /> object that can be used to iterate
+    ///	  through the collection.
+    ///	</returns>
+    function GetEnumerator: IEnumerator;
+
+    ///	<summary>
+    ///	  Returns the number of elements in a sequence.
+    ///	</summary>
+    ///	<value>
+    ///	  The number of elements in the sequence.
+    ///	</value>
+    property Count: Integer read GetCount;
+
+    ///	<summary>
+    ///	  Returns the type of the elements in the sequence.
+    ///	</summary>
+    ///	<value>
+    ///	  The type of the elements in the sequence.
+    ///	</value>
+    property ElementType: PTypeInfo read GetElementType;
+
+    ///	<summary>
+    ///	  Determines whether a sequence contains no elements.
+    ///	</summary>
+    ///	<value>
+    ///	  <b>True</b> if the source sequence contains no elements; otherwise,
+    ///	  <b>False</b>.
+    ///	</value>
+    property IsEmpty: Boolean read GetIsEmpty;
+  end;
+
+  ///	<summary>
+  ///	  Exposes the enumerator, which supports a simple iteration over a
+  ///	  collection of a specified type.
+  ///	</summary>
+  ///	<typeparam name="T">
+  ///	  The type of objects to enumerate.
+  ///	</typeparam>
+  ///	<seealso href="http://msdn.microsoft.com/en-us/magazine/cc700332.aspx">
+  ///	  The LINQ Enumerable Class
+  ///	</seealso>
+  IEnumerable<T> = interface(IEnumerable)
+    ['{A6B46D30-5B0F-495F-B7EC-46FBC5A75D24}']
+
+    ///	<summary>
+    ///	  Returns the specified comparer for this instance.
+    ///	</summary>
+    ///	<returns>
+    ///	  Returns the specified IComparer&lt;T&gt; for this instance.
+    ///	</returns>
+    function GetComparer: IComparer<T>;
+
+    ///	<summary>
+    ///	  Returns an enumerator that iterates through the collection.
+    ///	</summary>
+    ///	<returns>
+    ///	  An <see cref="IEnumerator&lt;T&gt;" /> that can be used to iterate
+    ///	  through the collection.
+    ///	</returns>
     function GetEnumerator: IEnumerator<T>;
 
     ///	<summary>
-    ///	  Returns the reference to the instance.
+    ///	  Determines whether all elements of a sequence satisfy a condition.
     ///	</summary>
-    function AsObject: TObject;
+    ///	<param name="predicate">
+    ///	  A function to test each element for a condition.
+    ///	</param>
+    ///	<returns>
+    ///	  <b>True</b> if every element of the source sequence passes the test
+    ///	  in the specified predicate, or if the sequence is empty; otherwise,
+    ///	  <b>False</b>.
+    ///	</returns>
+    function All(const predicate: TPredicate<T>): Boolean;
 
     ///	<summary>
-    ///	  Try getting the first element of a sequence.
+    ///	  Determines whether a sequence contains any elements.
     ///	</summary>
-    function TryGetFirst(out value: T): Boolean; overload;
+    ///	<returns>
+    ///	  <b>True</b> if the source sequence contains any elements; otherwise,
+    ///	  <b>False</b>.
+    ///	</returns>
+    function Any: Boolean; overload;
 
     ///	<summary>
-    ///	  Returns the first element in a sequence that satisfies a specified
-    ///	  condition.
+    ///	  Determines whether any element of a sequence satisfies a condition.
     ///	</summary>
-    function TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean; overload;
+    ///	<param name="predicate">
+    ///	  A function to test each element for a condition.
+    ///	</param>
+    ///	<returns>
+    ///	  <b>True</b> if any elements in the source sequence pass the test in
+    ///	  the specified predicate; otherwise, <b>False</b>.
+    ///	</returns>
+    function Any(const predicate: TPredicate<T>): Boolean; overload;
 
     ///	<summary>
-    ///	  Try getting the last element of a sequence.
+    ///	  Concatenates two sequences.
     ///	</summary>
-    function TryGetLast(out value: T): Boolean; overload;
+    ///	<param name="second">
+    ///	  The sequence to concatenate to the first sequence.
+    ///	</param>
+    ///	<returns>
+    ///	  An IEnumerable&lt;T&gt; that contains the concatenated elements of
+    ///	  the two input sequences.
+    ///	</returns>
+    function Concat(const second: IEnumerable<T>): IEnumerable<T>; overload;
 
     ///	<summary>
-    ///	  Try getting the last element in a sequence that satisfies a specified
-    ///	  condition.
+    ///	  Determines whether a sequence contains a specified element by using
+    ///	  the default equality comparer.
     ///	</summary>
-    function TryGetLast(out value: T; const predicate: TPredicate<T>): Boolean; overload;
+    ///	<param name="value">
+    ///	  The value to locate in the sequence.
+    ///	</param>
+    ///	<returns>
+    ///	  <b>True</b> if the source sequence contains an element that has the
+    ///	  specified value; otherwise, <b>False</b>.
+    ///	</returns>
+    function Contains(const value: T): Boolean; overload;
+
+    ///	<summary>
+    ///	  Determines whether a sequence contains a specified element by using a
+    ///	  specified <see cref="IEqualityComparer&lt;T&gt;" />.
+    ///	</summary>
+    ///	<param name="value">
+    ///	  The value to locate in the sequence.
+    ///	</param>
+    ///	<param name="comparer">
+    ///	  An equality comparer to compare values.
+    ///	</param>
+    ///	<returns>
+    ///	  <b>True</b> if the source sequence contains an element that has the
+    ///	  specified value; otherwise, <b>False</b>.
+    ///	</returns>
+    function Contains(const value: T; comparer: IEqualityComparer<T>): Boolean; overload;
+
+    ///	<summary>
+    ///	  Returns the element at a specified index in a sequence.
+    ///	</summary>
+    ///	<param name="index">
+    ///	  The zero-based index of the element to retrieve.
+    ///	</param>
+    ///	<returns>
+    ///	  The element at the specified position in the source sequence.
+    ///	</returns>
+    function ElementAt(index: Integer): T;
+
+    ///	<summary>
+    ///	  Returns the element at a specified index in a sequence or a default
+    ///	  value if the index is out of range.
+    ///	</summary>
+    ///	<param name="index">
+    ///	  The zero-based index of the element to retrieve.
+    ///	</param>
+    ///	<returns>
+    ///	  <b>Default</b>(<i>T</i>) if the index is outside the bounds of the
+    ///	  source sequence; otherwise, the element at the specified position in
+    ///	  the source sequence.
+    ///	</returns>
+    function ElementAtOrDefault(index: Integer): T; overload;
+
+    ///	<summary>
+    ///	  Returns the element at a specified index in a sequence or the
+    ///	  specified default value if the index is out of range.
+    ///	</summary>
+    ///	<param name="index">
+    ///	  The zero-based index of the element to retrieve.
+    ///	</param>
+    ///	<param name="defaultValue">
+    ///	  The value to return if the index is out of range.
+    ///	</param>
+    ///	<returns>
+    ///	  <i>DefaultValue</i> if the index is outside the bounds of the source
+    ///	  sequence; otherwise, the element at the specified position in the
+    ///	  source sequence.
+    ///	</returns>
+    function ElementAtOrDefault(index: Integer; const defaultValue: T): T; overload;
+
+    ///	<summary>
+    ///	  Determines whether two sequences are equal by comparing the elements
+    ///	  by using the default equality comparer for their type.
+    ///	</summary>
+    function EqualsTo(const collection: IEnumerable<T>): Boolean; overload;
+
+    ///	<summary>
+    ///	  Determines whether two sequences are equal by comparing their
+    ///	  elements by using a specified <c>IEqualityComparer&lt;T&gt;.</c>
+    ///	</summary>
+    function EqualsTo(const collection: IEnumerable<T>; const comparer: IEqualityComparer<T>): Boolean; overload;
 
     ///	<summary>
     ///	  Returns the first element of a sequence.
     ///	</summary>
+    ///	<returns>
+    ///	  The first element in the specified sequence.
+    ///	</returns>
     function First: T; overload;
 
     ///	<summary>
     ///	  Returns the first element in a sequence that satisfies a specified
     ///	  condition.
     ///	</summary>
+    ///	<param name="predicate">
+    ///	  A function to test each element for a condition.
+    ///	</param>
+    ///	<returns>
+    ///	  The first element in the sequence that passes the test in the
+    ///	  specified predicate function.
+    ///	</returns>
     function First(const predicate: TPredicate<T>): T; overload;
 
     ///	<summary>
     ///	  Returns the first element of a sequence, or a default value if the
     ///	  sequence contains no elements.
     ///	</summary>
+    ///	<returns>
+    ///	  <b>Default</b>(<i>T</i>) if source is empty; otherwise, the first
+    ///	  element in source.
+    ///	</returns>
     function FirstOrDefault: T; overload;
 
     ///	<summary>
-    ///	  Returns the first element of a sequence, or the specified
-    ///	  defaultValue if the sequence contains no elements.
+    ///	  Returns the first element of a sequence, or the specified default
+    ///	  value if the sequence contains no elements.
     ///	</summary>
+    ///	<param name="defaultValue">
+    ///	  The value to return if the sequence contains no elements.
+    ///	</param>
+    ///	<returns>
+    ///	  <i>DefaultValue</i> if source is empty; otherwise, the first element
+    ///	  in source.
+    ///	</returns>
     function FirstOrDefault(const defaultValue: T): T; overload;
 
     ///	<summary>
     ///	  Returns the first element of the sequence that satisfies a condition
     ///	  or a default value if no such element is found.
     ///	</summary>
+    ///	<param name="predicate">
+    ///	  A function to test each element for a condition.
+    ///	</param>
+    ///	<returns>
+    ///	  <b>Default</b>(<i>T</i>) if source is empty or if no element passes
+    ///	  the test specified by predicate; otherwise, the first element in
+    ///	  source that passes the test specified by predicate.
+    ///	</returns>
     function FirstOrDefault(const predicate: TPredicate<T>): T; overload;
+
+    ///	<summary>
+    ///	  Returns the first element of the sequence that satisfies a condition
+    ///	  or the specified default value if no such element is found.
+    ///	</summary>
+    ///	<param name="predicate">
+    ///	  A function to test each element for a condition.
+    ///	</param>
+    ///	<param name="defaultValue">
+    ///	  The value to return if no element is found.
+    ///	</param>
+    ///	<returns>
+    ///	  <i>DefaultValue</i> if source is empty or if no element passes the
+    ///	  test specified by predicate; otherwise, the first element in source
+    ///	  that passes the test specified by predicate.
+    ///	</returns>
+    function FirstOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
+
+    ///	<summary>
+    ///	  Performs the specified action on each element of a sequence.
+    ///	</summary>
+    procedure ForEach(const action: TAction<T>);
 
     ///	<summary>
     ///	  Returns the last element of a sequence.
     ///	</summary>
+    ///	<returns>
+    ///	  The value at the last position in the source sequence.
+    ///	</returns>
     function Last: T; overload;
 
     ///	<summary>
     ///	  Returns the last element of a sequence that satisfies a specified
     ///	  condition.
     ///	</summary>
+    ///	<param name="predicate">
+    ///	  A function to test each element for a condition.
+    ///	</param>
+    ///	<returns>
+    ///	  The last element in the sequence that passes the test in the
+    ///	  specified predicate function.
+    ///	</returns>
     function Last(const predicate: TPredicate<T>): T; overload;
 
     ///	<summary>
     ///	  Returns the last element of a sequence, or a default value if the
     ///	  sequence contains no elements.
     ///	</summary>
+    ///	<returns>
+    ///	  <b>Default</b>(<i>T</i>) if the source sequence is empty; otherwise,
+    ///	  the last element in the IEnumerable&lt;T&gt;.
+    ///	</returns>
     function LastOrDefault: T; overload;
 
     ///	<summary>
     ///	  Returns the last element of a sequence, or the specified default
     ///	  value if the sequence contains no elements.
     ///	</summary>
+    ///	<param name="defaultValue">
+    ///	  The value to return if the sequence contains no elements.
+    ///	</param>
+    ///	<returns>
+    ///	  <i>DefaultValue</i> if the source sequence is empty; otherwise, the
+    ///	  last element in the IEnumerable&lt;T&gt;.
+    ///	</returns>
     function LastOrDefault(const defaultValue: T): T; overload;
 
     ///	<summary>
     ///	  Returns the last element of a sequence that satisfies a condition or
     ///	  a default value if no such element is found.
     ///	</summary>
+    ///	<param name="predicate">
+    ///	  A function to test each element for a condition.
+    ///	</param>
+    ///	<returns>
+    ///	  <b>Default</b>(<i>T</i>) if the sequence is empty or if no elements
+    ///	  pass the test in the predicate function; otherwise, the last element
+    ///	  that passes the test in the predicate function.
+    ///	</returns>
     function LastOrDefault(const predicate: TPredicate<T>): T; overload;
+
+    ///	<summary>
+    ///	  Returns the last element of a sequence that satisfies a condition or
+    ///	  the specified default value if no such element is found.
+    ///	</summary>
+    ///	<param name="predicate">
+    ///	  A function to test each element for a condition.
+    ///	</param>
+    ///	<param name="defaultValue">
+    ///	  The value to return if no element is found.
+    ///	</param>
+    ///	<returns>
+    ///	  <i>DefaultValue</i> if the sequence is empty or if no elements pass
+    ///	  the test in the predicate function; otherwise, the last element that
+    ///	  passes the test in the predicate function.
+    ///	</returns>
+    function LastOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
+
+    ///	<summary>
+    ///	  Returns the maximum value in a sequence.
+    ///	</summary>
+    ///	<returns>
+    ///	  The maximum value in the sequence.
+    ///	</returns>
+    function Max: T; overload;
+
+    ///	<summary>
+    ///	  Returns the maximum value in a sequence by using the specified
+    ///	  <see cref="IComparer&lt;T&gt;" />.
+    ///	</summary>
+    ///	<param name="comparer">
+    ///	  An <see cref="IComparer&lt;T&gt;" /> to compare values.
+    ///	</param>
+    ///	<returns>
+    ///	  The maximum value in the sequence.
+    ///	</returns>
+    function Max(const comparer: IComparer<T>): T; overload;
+
+    ///	<summary>
+    ///	  Returns the minimum value in a sequence.
+    ///	</summary>
+    ///	<returns>
+    ///	  The minimum value in the sequence.
+    ///	</returns>
+    function Min: T; overload;
+
+    ///	<summary>
+    ///	  Returns the minimum value in a sequence by using the specified
+    ///	  <see cref="IComparer&lt;T&gt;" />.
+    ///	</summary>
+    ///	<param name="comparer">
+    ///	  An <see cref="IComparer&lt;T&gt;" /> to compare values.
+    ///	</param>
+    ///	<returns>
+    ///	  The minimum value in the sequence.
+    ///	</returns>
+    function Min(const comparer: IComparer<T>): T; overload;
+
+    ///	<summary>
+    ///	  Sorts the elements of a sequence in ascending order using the default
+    ///	  comparer for their type.
+    ///	</summary>
+//    function Ordered: IEnumerable<T>; overload;
+
+    ///	<summary>
+    ///	  Sorts the elements of a sequence in ascending order using the
+    ///	  specified TComparison&lt;T&gt;.
+    ///	</summary>
+//    function Ordered(const comparison: TComparison<T>): IEnumerable<T>; overload;
+
+    ///	<summary>
+    ///	  Inverts the order of the elements in a sequence.
+    ///	</summary>
+    function Reversed: IEnumerable<T>;
 
     ///	<summary>
     ///	  Returns the only element of a sequence, and throws an exception if
@@ -272,6 +628,13 @@ type
     function SingleOrDefault: T; overload;
 
     ///	<summary>
+    ///	  Returns the only element of a sequence, or the specified default
+    ///	  value if the sequence is empty; this method throws an exception if
+    ///	  there is more than one element in the sequence.
+    ///	</summary>
+    function SingleOrDefault(const defaultValue: T): T; overload;
+
+    ///	<summary>
     ///	  Returns the only element of a sequence that satisfies a specified
     ///	  condition or a default value if no such element exists; this method
     ///	  throws an exception if more than one element satisfies the condition.
@@ -279,52 +642,12 @@ type
     function SingleOrDefault(const predicate: TPredicate<T>): T; overload;
 
     ///	<summary>
-    ///	  Returns the element at a specified index in a sequence.
+    ///	  Returns the only element of a sequence that satisfies a specified
+    ///	  condition or the specified default value if no such element exists;
+    ///	  this method throws an exception if more than one element satisfies
+    ///	  the condition.
     ///	</summary>
-    function ElementAt(index: Integer): T;
-
-    ///	<summary>
-    ///	  Returns the element at a specified index in a sequence or a default
-    ///	  value if the index is out of range.
-    ///	</summary>
-    function ElementAtOrDefault(index: Integer): T;
-
-    ///	<summary>
-    ///	  Determines whether all elements of a sequence satisfy a condition.
-    ///	</summary>
-    function All(const predicate: TPredicate<T>): Boolean;
-
-    ///	<summary>
-    ///	  Determines whether any element of a sequence satisfies a condition.
-    ///	</summary>
-    function Any(const predicate: TPredicate<T>): Boolean;
-
-    ///	<summary>
-    ///	  Determines whether a sequence contains a specified element by using
-    ///	  the default equality comparer.
-    ///	</summary>
-    function Contains(const item: T): Boolean; overload;
-
-    ///	<summary>
-    ///	  Determines whether a sequence contains a specified element by using a
-    ///	  specified <c>IEqualityComparer{T}.</c>
-    ///	</summary>
-    function Contains(const item: T; const comparer: IEqualityComparer<T>): Boolean; overload;
-
-    ///	<summary>
-    ///	  Returns the minimum value in a sequence.
-    ///	</summary>
-    function Min: T;
-
-    ///	<summary>
-    ///	  Returns the maximum value in a sequence.
-    ///	</summary>
-    function Max: T;
-
-    ///	<summary>
-    ///	  Filters a sequence of values based on a predicate.
-    ///	</summary>
-    function Where(const predicate: TPredicate<T>): IEnumerable<T>;
+    function SingleOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
 
     ///	<summary>
     ///	  Bypasses a specified number of elements in a sequence and then
@@ -365,82 +688,58 @@ type
     function TakeWhile(const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>; overload;
 
     ///	<summary>
-    ///	  Concatenates two sequences.
-    ///	</summary>
-    function Concat(const collection: IEnumerable<T>): IEnumerable<T>;
-    
-
-    ///	<summary>
-    ///	  Inverts the order of the elements in a sequence.
-    ///	</summary>
-    function Reversed: IEnumerable<T>;
-
-    ///	<summary>
-    ///	  Performs the specified action on each element of a sequence.
-    ///	</summary>
-    procedure ForEach(const action: TAction<T>); overload;
-
-    ///	<summary>
-    ///	  Performs the specified action on each element of a sequence.
-    ///	</summary>
-    procedure ForEach(const action: TActionProc<T>); overload;
-
-  {$IFDEF DELPHIXE_UP}
-    /// <summary>
-    /// Performs the specified action on each element of a sequence.
-    /// </summary>
-    procedure ForEach(const action: TActionMethod<T>); overload;
-  {$ENDIF}
-
-    ///	<summary>
-    ///	  Determines whether two sequences are equal by comparing the elements
-    ///	  by using the default equality comparer for their type.
-    ///	</summary>
-    function EqualsTo(const collection: IEnumerable<T>): Boolean; overload;
-
-    ///	<summary>
-    ///	  Determines whether two sequences are equal by comparing their
-    ///	  elements by using a specified IEqualityComparer{T}.
-    ///	</summary>
-    function EqualsTo(const collection: IEnumerable<T>; const comparer: IEqualityComparer<T>): Boolean; overload;
-
-    ///	<summary>
     ///	  Creates a new array which is filled with the elements in the
     ///	  collection.
     ///	</summary>
     function ToArray: TArray<T>;
 
     ///	<summary>
-    ///	  Creates a new list which is filled with the elements in the
-    ///	  collection.
+    ///	  Try getting the first element in a sequence.
     ///	</summary>
-    function ToList: IList<T>;
+    function TryGetFirst(out value: T): Boolean; overload;
 
     ///	<summary>
-    ///	  Creates a new list which is filled with the elements in the
-    ///	  collection.
+    ///	  Try getting the first element in a sequence that satisfies a
+    ///	  specified condition.
     ///	</summary>
-    function ToSet: ISet<T>;
+    function TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean; overload;
 
     ///	<summary>
-    ///	  The getter of the <see cref="Count" /> property.
+    ///	  Try getting the last element in a sequence.
     ///	</summary>
-    function GetCount: Integer;
+    function TryGetLast(out value: T): Boolean; overload;
 
     ///	<summary>
-    ///	  The getter of the <see cref="IsEmpty" /> property.
+    ///	  Try getting the last element in a sequence that satisfies a specified
+    ///	  condition.
     ///	</summary>
-    function GetIsEmpty: Boolean;
+    function TryGetLast(out value: T; const predicate: TPredicate<T>): Boolean; overload;
 
     ///	<summary>
-    ///	  Gets the number of elements in the collection.
+    ///	  Try getting the only element in a sequence.
     ///	</summary>
-    property Count: Integer read GetCount;
+    function TryGetSingle(out value: T): Boolean; overload;
 
     ///	<summary>
-    ///	  Gets a value which indicates whether this collection is empty or not.
+    ///	  Try getting the only element in a sequence that satisfies a specified
+    ///	  condition.
     ///	</summary>
-    property IsEmpty: Boolean read GetIsEmpty;
+    function TryGetSingle(out value: T; const predicate: TPredicate<T>): Boolean; overload;
+
+    ///	<summary>
+    ///	  Filters a sequence of values based on a predicate.
+    ///	</summary>
+    function Where(const predicate: TPredicate<T>): IEnumerable<T>; overload;
+
+    ///	<summary>
+    ///	  Gets the assigned comparer. If not comparer was assigned it returns
+    ///	  the default comparer.
+    ///	</summary>
+    property Comparer: IComparer<T> read GetComparer;
+  end;
+
+  IReadOnlyCollection = interface(IEnumerable)
+    ['{4DE35086-06DC-4F99-AE63-BCF4ADB2828D}']
   end;
 
   ICollection = interface(IEnumerable)
@@ -450,39 +749,108 @@ type
   {$ENDREGION}
 
     procedure Add(const item: TValue);
-    procedure AddRange(const collection: IEnumerable);
-
-    function Remove(const item: TValue): Boolean;
-    procedure RemoveRange(const collection: IEnumerable); overload;
+    procedure AddRange(const collection: array of TValue); overload;
+    procedure AddRange(const collection: IEnumerable); overload;
 
     procedure Clear;
 
+    function Remove(const item: TValue): Boolean;
+    procedure RemoveRange(const collection: array of TValue); overload;
+    procedure RemoveRange(const collection: IEnumerable); overload;
+
     property IsReadOnly: Boolean read GetIsReadOnly;
+  end;
+
+  ///	<summary>
+  ///	  Represents a strongly-typed, read-only collection of elements.
+  ///	</summary>
+  IReadOnlyCollection<T> = interface(IEnumerable<T>)
+    ['{E1368FD5-02AE-4481-A9DC-96329DFF606C}']
   end;
 
   ///	<summary>
   ///	  Defines methods to manipulate generic collections.
   ///	</summary>
   ICollection<T> = interface(IEnumerable<T>)
+    ['{9BFD9B06-45CD-4C80-B145-01B09D432CF0}']
   {$REGION 'Property Accessors'}
     function GetIsReadOnly: Boolean;
   {$ENDREGION}
 
+    ///	<summary>
+    ///	  Adds an item to the ICollection&lt;T&gt;.
+    ///	</summary>
+    ///	<param name="item">
+    ///	  The element to add to the ICollection&lt;T&gt;.
+    ///	</param>
     procedure Add(const item: T);
     procedure AddRange(const collection: array of T); overload;
     procedure AddRange(const collection: IEnumerable<T>); overload;
     procedure AddRange(const collection: TEnumerable<T>); overload;
 
+    ///	<summary>
+    ///	  Removes all items from the ICollection&lt;T&gt;.
+    ///	</summary>
+    procedure Clear;
+
+    ///	<summary>
+    ///	  Copies the elements of the ICollection&lt;T&gt; to an array, starting
+    ///	  at a particular array index.
+    ///	</summary>
+    ///	<param name="values">
+    ///	  The one-dimensional array that is the destination of the elements
+    ///	  copied from ICollection&lt;T&gt;. The array must have zero-based
+    ///	  indexing.
+    ///	</param>
+    ///	<param name="index">
+    ///	  The zero-based index in array at which copying begins.
+    ///	</param>
+    procedure CopyTo(var values: TArray<T>; index: Integer);
+
+    ///	<summary>
+    ///	  Removes the first occurrence of a specific element from the
+    ///	  ICollection&lt;T&gt;.
+    ///	</summary>
+    ///	<param name="item">
+    ///	  The element to remove from the ICollection&lt;T&gt;.
+    ///	</param>
+    ///	<returns>
+    ///	  <b>True</b> if <i>item</i> was successfully removed from the
+    ///	  ICollection&lt;T&gt;; otherwise, <b>False</b>. This method also
+    ///	  returns <b>False</b> if <i>item</i> is not found in the original
+    ///	  ICollection&lt;T&gt;.
+    ///	</returns>
     function Remove(const item: T): Boolean;
     procedure RemoveRange(const collection: array of T); overload;
     procedure RemoveRange(const collection: IEnumerable<T>); overload;
     procedure RemoveRange(const collection: TEnumerable<T>); overload;
 
-    procedure Clear;
+    function Extract(const item: T): T;
+    procedure ExtractRange(const collection: array of T); overload;
+    procedure ExtractRange(const collection: IEnumerable<T>); overload;
+    procedure ExtractRange(const collection: TEnumerable<T>); overload;
 
-    function AsCollection: ICollection;
-
+    ///	<summary>
+    ///	  Gets a value indicating whether the ICollection&lt;T&gt; is read-only.
+    ///	</summary>
+    ///	<value>
+    ///	  <b>True</b> if the ICollection&lt;T&gt; is read-only; otherwise,
+    ///	  <b>False</b>.
+    ///	</value>
+    ///	<remarks>
+    ///	  A collection that is read-only does not allow the addition, removal,
+    ///	  or modification of elements after the collection is created.
+    ///	</remarks>
     property IsReadOnly: Boolean read GetIsReadOnly;
+  end;
+
+  IReadOnlyList = interface(IReadOnlyCollection)
+    ['{3DFEBF5A-8BF2-4152-A105-BECF01AFB60F}']
+  {$REGION 'Property Accessors'}
+    function GetItem(index: Integer): TValue;
+  {$ENDREGION}
+
+    property Item[index: Integer]: TValue read GetItem; default;
   end;
 
   IList = interface(ICollection)
@@ -492,8 +860,10 @@ type
     function GetOnChanged: IEvent;
     procedure SetItem(index: Integer; const item: TValue);
   {$ENDREGION}
+
     procedure Insert(index: Integer; const item: TValue);
-    procedure InsertRange(index: Integer; const collection: IEnumerable);
+    procedure InsertRange(index: Integer; const collection: array of TValue); overload;
+    procedure InsertRange(index: Integer; const collection: IEnumerable); overload;
 
     procedure Delete(index: Integer);
     procedure DeleteRange(index, count: Integer);
@@ -501,64 +871,241 @@ type
     procedure Exchange(index1, index2: Integer);
     procedure Move(currentIndex, newIndex: Integer);
 
-    procedure Reverse;
+    procedure Reverse; overload;
+    procedure Reverse(index, count: Integer); overload;
 
     procedure Sort;
 
-    function IndexOf(const item: TValue): Integer;
-    function LastIndexOf(const item: TValue): Integer;
+    function IndexOf(const item: TValue): Integer; overload;
+    function IndexOf(const item: TValue; index: Integer): Integer; overload;
+    function IndexOf(const item: TValue; index, count: Integer): Integer; overload;
+
+    function LastIndexOf(const item: TValue): Integer; overload;
+    function LastIndexOf(const item: TValue; index: Integer): Integer; overload;
+    function LastIndexOf(const item: TValue; index, count: Integer): Integer; overload;
 
     property Items[index: Integer]: TValue read GetItem write SetItem; default;
     property OnChanged: IEvent read GetOnChanged;
   end;
 
   ///	<summary>
-  ///	  Represents a collection of objects that can be individually accessed by
+  ///	  Represents a read-only collection of elements that can be accessed by
+  ///	  index.
+  ///	</summary>
+  IReadOnlyList<T> = interface(IReadOnlyCollection<T>)
+    ['{82A74ABB-509E-4AC0-9268-A993E7DC3AB3}']
+  {$REGION 'Property Accessors'}
+    function GetItem(index: Integer): T;
+  {$ENDREGION}
+
+    ///	<summary>
+    ///	  Determines the index of a specific item in the IReadOnlyList&lt;T&gt;.
+    ///	</summary>
+    ///	<param name="item">
+    ///	  The object to locate in the IReadOnlyList&lt;T&gt;.
+    ///	</param>
+    ///	<returns>
+    ///	  The index of <i>item</i> if found in the list; otherwise, -1.
+    ///	</returns>
+    function IndexOf(const item: T): Integer;
+
+    ///	<summary>
+    ///	  Gets the element at the specified index in the read-only list.
+    ///	</summary>
+    ///	<param name="index">
+    ///	  The zero-based index of the element to get.
+    ///	</param>
+    ///	<value>
+    ///	  The element at the specified index in the read-only list.
+    ///	</value>
+    property Item[index: Integer]: T read GetItem; default;
+  end;
+
+  ///	<summary>
+  ///	  Represents a collection of elements that can be individually accessed by
   ///	  index.
   ///	</summary>
   IList<T> = interface(ICollection<T>)
+    ['{B6B4E1E1-0D29-40E1-854C-A93DEA8D1AA5}']
   {$REGION 'Property Accessors'}
     function GetItem(index: Integer): T;
     function GetOnChanged: ICollectionChangedEvent<T>;
     procedure SetItem(index: Integer; const item: T);
   {$ENDREGION}
+
+    ///	<summary>
+    ///	  Inserts an item to the IList&lt;T&gt; at the specified index.
+    ///	</summary>
+    ///	<param name="index">
+    ///	  The zero-based index at which item should be inserted.
+    ///	</param>
+    ///	<param name="item">
+    ///	  The element to insert into the IList&lt;T&gt;.
+    ///	</param>
     procedure Insert(index: Integer; const item: T);
     procedure InsertRange(index: Integer; const collection: array of T); overload;
     procedure InsertRange(index: Integer; const collection: IEnumerable<T>); overload;
     procedure InsertRange(index: Integer; const collection: TEnumerable<T>); overload;
 
+    ///	<summary>
+    ///	  Removes the item at the specified index.
+    ///	</summary>
+    ///	<param name="index">
+    ///	  The zero-based index of the item to remove.
+    ///	</param>
+    ///	<exception cref="ArgumentOutOfRangeException">
+    ///	  <i>index</i> is not a valid index in the IList&lt;T&gt;.
+    ///	</exception>
     procedure Delete(index: Integer);
     procedure DeleteRange(index, count: Integer);
 
     procedure Exchange(index1, index2: Integer);
     procedure Move(currentIndex, newIndex: Integer);
 
-    procedure Reverse;
+    procedure Reverse; overload;
+    procedure Reverse(index, count: Integer); overload;
 
     procedure Sort; overload;
     procedure Sort(const comparer: IComparer<T>); overload;
     procedure Sort(const comparer: TComparison<T>); overload;
 
-    function IndexOf(const item: T): Integer;
-    function LastIndexOf(const item: T): Integer;
+    ///	<summary>
+    ///	  Determines the index of a specific item in the IList&lt;T&gt;.
+    ///	</summary>
+    ///	<param name="item">
+    ///	  The element to locate in the IList&lt;T&gt;.
+    ///	</param>
+    ///	<returns>
+    ///	  The index of <i>item</i> if found in the list; otherwise, -1.
+    ///	</returns>
+    ///	<remarks>
+    ///	  If an element occurs multiple times in the list, the IndexOf method
+    ///	  always returns the first instance found.
+    ///	</remarks>
+    function IndexOf(const item: T): Integer; overload;
+    function IndexOf(const item: T; index: Integer): Integer; overload;
+    function IndexOf(const item: T; index, count: Integer): Integer; overload;
 
-    function AsList: IList;
+    function LastIndexOf(const item: T): Integer; overload;
+    function LastIndexOf(const item: T; index: Integer): Integer; overload;
+    function LastIndexOf(const item: T; index, count: Integer): Integer; overload;
+
+    function AsReadOnly: IReadOnlyList<T>;
 
     property Items[index: Integer]: T read GetItem write SetItem; default;
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
-  IDictionary = interface(ICollection)
-    ['{9AC642EE-F236-421D-8546-DCA0D8D53791}']
-    procedure Add(const key, value: TValue);
-    procedure AddOrSetValue(const key, value: TValue);
-    procedure Remove(const key: TValue); overload;
+  IReadOnlyDictionary = interface(IReadOnlyCollection)
+    ['{D963ED30-C16F-488B-9BC6-1292DD57B295}']
+  {$REGION 'Property Accessors'}
+    function GetKeyType: PTypeInfo;
+    function GetValueType: PTypeInfo;
+  {$ENDREGION}
+
     function ContainsKey(const key: TValue): Boolean;
     function ContainsValue(const value: TValue): Boolean;
     function TryGetValue(const key: TValue; out value: TValue): Boolean;
 
+    property KeyType: PTypeInfo read GetKeyType;
+    property ValueType: PTypeInfo read GetValueType;
+  end;
+
+  IDictionary = interface(ICollection)
+    ['{9AC642EE-F236-421D-8546-DCA0D8D53791}']
+  {$REGION 'Property Accessors'}
+    function GetOnKeyChanged: IEvent;
+    function GetOnValueChanged: IEvent;
     function GetKeyType: PTypeInfo;
     function GetValueType: PTypeInfo;
+  {$ENDREGION}
+
+    procedure Add(const key, value: TValue);
+    procedure AddOrSetValue(const key, value: TValue);
+
+    function Remove(const key: TValue): Boolean; overload;
+
+    function ExtractPair(const key: TValue): TPair<TValue, TValue>;
+
+    function ContainsKey(const key: TValue): Boolean;
+    function ContainsValue(const value: TValue): Boolean;
+
+    function TryGetValue(const key: TValue; out value: TValue): Boolean;
+
+    function AsReadOnly: IReadOnlyDictionary;
+
+    property OnKeyChanged: IEvent read GetOnKeyChanged;
+    property OnValueChanged: IEvent read GetOnValueChanged;
+    property KeyType: PTypeInfo read GetKeyType;
+    property ValueType: PTypeInfo read GetValueType;
+  end;
+
+  ///	<summary>
+  ///	  Represents a generic read-only collection of key/value pairs.
+  ///	</summary>
+  ///	<typeparam name="TKey">
+  ///	  The type of keys in the read-only dictionary.
+  ///	</typeparam>
+  ///	<typeparam name="TValue">
+  ///	  The type of values in the read-only dictionary.
+  ///	</typeparam>
+  IReadOnlyDictionary<TKey, TValue> = interface(IReadOnlyCollection<TPair<TKey, TValue>>)
+    ['{39F7C68B-373E-4758-808C-705D3978E38F}']
+  {$REGION 'Property Accessors'}
+    function GetItem(const key: TKey): TValue;
+    function GetKeys: IReadOnlyCollection<TKey>;
+    function GetKeyType: PTypeInfo;
+    function GetValues: IReadOnlyCollection<TValue>;
+    function GetValueType: PTypeInfo;
+  {$ENDREGION}
+
+    ///	<summary>
+    ///	  Determines whether the read-only dictionary contains an element that
+    ///	  has the specified key.
+    ///	</summary>
+    function ContainsKey(const key: TKey): Boolean;
+
+    ///	<summary>
+    ///	  Determines whether the read-only dictionary contains an element that
+    ///	  has the specified value.
+    ///	</summary>
+    function ContainsValue(const value: TValue): Boolean;
+
+    ///	<summary>
+    ///	  Gets the value associated with the specified key.
+    ///	</summary>
+    ///	<param name="key">
+    ///	  The key whose value to get.
+    ///	</param>
+    ///	<param name="value">
+    ///	  When this method returns, the value associated with the specified
+    ///	  key, if the key is found; otherwise, the default value for the type
+    ///	  of the value parameter. This parameter is passed uninitialized.
+    ///	</param>
+    ///	<returns>
+    ///	  <b>True</b> if the object that implements IDictionary&lt;TKey,
+    ///	  TValue&gt; contains an element with the specified key; otherwise,
+    ///	  <b>False</b>.
+    ///	</returns>
+    function TryGetValue(const key: TKey; out value: TValue): Boolean;
+
+    ///	<summary>
+    ///	  Gets the element that has the specified key in the read-only
+    ///	  dictionary.
+    ///	</summary>
+    property Items[const key: TKey]: TValue read GetItem; default;
+
+    ///	<summary>
+    ///	  Gets an enumerable collection that contains the keys in the read-only
+    ///	  dictionary.
+    ///	</summary>
+    property Keys: IReadOnlyCollection<TKey> read GetKeys;
+
+    ///	<summary>
+    ///	  Gets an enumerable collection that contains the values in the
+    ///	  read-only dictionary.
+    ///	</summary>
+    property Values: IReadOnlyCollection<TValue> read GetValues;
     property KeyType: PTypeInfo read GetKeyType;
     property ValueType: PTypeInfo read GetValueType;
   end;
@@ -567,47 +1114,131 @@ type
   ///	  Represents a generic collection of key/value pairs.
   ///	</summary>
   IDictionary<TKey, TValue> = interface(ICollection<TPair<TKey, TValue>>)
+    ['{7F0D544F-6A59-4FA0-9C96-DB09029CC835}']
   {$REGION 'Property Accessors'}
     function GetItem(const key: TKey): TValue;
-    function GetKeys: ICollection<TKey>;
-    function GetValues: ICollection<TValue>;
+    function GetKeys: IReadOnlyCollection<TKey>;
+    function GetKeyType: PTypeInfo;
     function GetOnKeyChanged: ICollectionChangedEvent<TKey>;
     function GetOnValueChanged: ICollectionChangedEvent<TValue>;
+    function GetValues: IReadOnlyCollection<TValue>;
+    function GetValueType: PTypeInfo;
     procedure SetItem(const key: TKey; const value: TValue);
   {$ENDREGION}
+
+    ///	<summary>
+    ///	  Adds an element with the provided key and value to the
+    ///	  IDictionary&lt;TKey, TValue&gt;.
+    ///	</summary>
+    ///	<param name="key">
+    ///	  The item to use as the key of the element to add.
+    ///	</param>
+    ///	<param name="value">
+    ///	  The item to use as the value of the element to add.
+    ///	</param>
     procedure Add(const key: TKey; const value: TValue); overload;
     procedure AddOrSetValue(const key: TKey; const value: TValue);
-    procedure Remove(const key: TKey); overload;
+
+    ///	<summary>
+    ///	  Determines whether the IDictionary&lt;TKey, TValue&gt; contains an
+    ///	  element with the specified key.
+    ///	</summary>
+    ///	<param name="key">
+    ///	  The key to locate in the IDictionary&lt;TKey, TValue&gt;.
+    ///	</param>
+    ///	<returns>
+    ///	  <b>True</b> if the IDictionary&lt;TKey, TValue&gt; contains an
+    ///	  element with the key; otherwise, <b>False</b>.
+    ///	</returns>
     function ContainsKey(const key: TKey): Boolean;
+    ///	<summary>
+    ///	  Determines whether the IDictionary&lt;TKey, TValue&gt; contains an
+    ///	  element with the specified value.
+    ///	</summary>
+    ///	<param name="value">
+    ///	  The value to locate in the IDictionary&lt;TKey, TValue&gt;.
+    ///	</param>
     function ContainsValue(const value: TValue): Boolean;
+
+    ///	<summary>
+    ///	  Removes the element with the specified key from the
+    ///	  IDictionary&lt;TKey, TValue&gt;.
+    ///	</summary>
+    ///	<param name="key">
+    ///	  The key of the element to remove.
+    ///	</param>
+    ///	<returns>
+    ///	  <b>True</b> if the element is successfully removed; otherwise,
+    ///	  <b>False</b>. This method also returns <b>False</b> if <i>key</i> was
+    ///	  not found in the original IDictionary&lt;TKey, TValue&gt;.
+    ///	</returns>
+    function Remove(const key: TKey): Boolean;
+
     function ExtractPair(const key: TKey): TPair<TKey, TValue>;
+
+    ///	<summary>
+    ///	  Gets the value associated with the specified key.
+    ///	</summary>
+    ///	<param name="key">
+    ///	  The key whose value to get.
+    ///	</param>
+    ///	<param name="value">
+    ///	  When this method returns, the value associated with the specified
+    ///	  key, if the key is found; otherwise, the default value for the type
+    ///	  of the value parameter. This parameter is passed uninitialized.
+    ///	</param>
+    ///	<returns>
+    ///	  <b>True</b> if the object that implements IDictionary&lt;TKey,
+    ///	  TValue&gt; contains an element with the specified key; otherwise,
+    ///	  <b>False</b>.
+    ///	</returns>
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
 
-    function AsDictionary: IDictionary;
+    function AsReadOnly: IReadOnlyDictionary<TKey, TValue>;
 
+    ///	<summary>
+    ///	  Gets or sets the element with the specified key.
+    ///	</summary>
+    ///	<param name="key">
+    ///	  The key of the element to get or set.
+    ///	</param>
+    ///	<value>
+    ///	  The element with the specified key.
+    ///	</value>
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
 
     ///	<summary>
-    ///	  Gets a read-only collection which contains all keys in the
-    ///	  dictionary.
+    ///	  Gets an <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the
+    ///	  keys of the IDictionary&lt;TKey, TValue&gt;.
     ///	</summary>
-    property Keys: ICollection<TKey> read GetKeys;
+    ///	<value>
+    ///	  An <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the keys of
+    ///	  the object that implements IDictionary&lt;TKey, TValue&gt;.
+    ///	</value>
+    property Keys: IReadOnlyCollection<TKey> read GetKeys;
 
     ///	<summary>
-    ///	  Gets a read-only collection which contains all values in the
-    ///	  dictionary.
+    ///	  Gets an <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the
+    ///	  values in the IDictionary&lt;TKey, TValue&gt;.
     ///	</summary>
-    property Values: ICollection<TValue> read GetValues;
+    ///	<value>
+    ///	  An <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the values
+    ///	  in the object that implements IDictionary&lt;TKey, TValue&gt;.
+    ///	</value>
+    property Values: IReadOnlyCollection<TValue> read GetValues;
 
     property OnKeyChanged: ICollectionChangedEvent<TKey> read GetOnKeyChanged;
     property OnValueChanged: ICollectionChangedEvent<TValue> read GetOnValueChanged;
+    property KeyType: PTypeInfo read GetKeyType;
+    property ValueType: PTypeInfo read GetValueType;
   end;
 
   IStack = interface(IEnumerable)
     ['{82F7B40F-3B32-417F-8001-51458BCE553A}']
-  {$REGION 'Property Getters'}
+  {$REGION 'Property Accessors'}
     function GetOnChanged: IEvent;
   {$ENDREGION}
+
     procedure Clear;
     procedure Push(const item: TValue);
     function Pop: TValue;
@@ -617,25 +1248,62 @@ type
     property OnChanged: IEvent read GetOnChanged;
   end;
 
+  ///	<summary>
+  ///	  Represents a variable size last-in-first-out (LIFO) collection of
+  ///	  instances of the same arbitrary type.
+  ///	</summary>
+  ///	<typeparam name="T">
+  ///	  Specifies the type of elements in the stack.
+  ///	</typeparam>
   IStack<T> = interface(IEnumerable<T>)
-  {$REGION 'Property Getters'}
+    ['{5BD7BDD3-0198-4727-B97C-658BF194FF63}']
+  {$REGION 'Property Accessors'}
     function GetOnChanged: ICollectionChangedEvent<T>;
   {$ENDREGION}
+
+    ///	<summary>
+    ///	  Removes all elements from the IStack&lt;T&gt;.
+    ///	</summary>
     procedure Clear;
+
+    ///	<summary>
+    ///	  Inserts an element at the top of the IStack&lt;T&gt;.
+    ///	</summary>
+    ///	<param name="item">
+    ///	  The element to push onto the IStack&lt;T&gt;. The value can be 
+    ///	  <b>nil</b> for reference types.
+    ///	</param>
     procedure Push(const item: T);
+
+    ///	<summary>
+    ///	  Removes and returns the element at the top of the
+    ///	  IStack&lt;T&gt;.
+    ///	</summary>
+    ///	<returns>
+    ///	  The element removed from the top of the IStack&lt;T&gt;.
+    ///	</returns>
     function Pop: T;
+
+    ///	<summary>
+    ///	  Returns the element at the top of the IStack&lt;T&gt; without
+    ///	  removing it.
+    ///	</summary>
+    ///	<returns>
+    ///	  The element at the top of the IStack&lt;T&gt;.
+    ///	</returns>
     function Peek: T;
     function PeekOrDefault: T;
     function TryPeek(out item: T): Boolean;
-    function AsStack: IStack;
+
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
   IQueue = interface(IEnumerable)
     ['{B3377E32-ADA1-414F-8762-1EA0E4FEF794}']
-  {$REGION 'Property Getters'}
+  {$REGION 'Property Accessors'}
     function GetOnChanged: IEvent;
   {$ENDREGION}
+
     procedure Clear;
     procedure Enqueue(const item: TValue);
     function Dequeue: TValue;
@@ -645,24 +1313,58 @@ type
     property OnChanged: IEvent read GetOnChanged;
   end;
 
+  ///	<summary>
+  ///	  Represents a first-in, first-out collection of elements.
+  ///	</summary>
+  ///	<typeparam name="T">
+  ///	  Specifies the type of elements in the queue.
+  ///	</typeparam>
   IQueue<T> = interface(IEnumerable<T>)
     ['{D305A076-3F19-497C-94E3-6BD1C7A30F3F}']
-  {$REGION 'Property Getters'}
+  {$REGION 'Property Accessors'}
     function GetOnChanged: ICollectionChangedEvent<T>;
   {$ENDREGION}
+
+    ///	<summary>
+    ///	  Removes all elements from the IQueue&lt;T&gt;.
+    ///	</summary>
     procedure Clear;
+
+    ///	<summary>
+    ///	  Adds an element to the end of the IQueue&lt;T&gt;. 
+    ///	</summary>
+    ///	<param name="item">
+    ///	  The element to add to the IQueue&lt;T&gt;. The value can be <b>nil</b>
+    ///	   for reference types.
+    ///	</param>
     procedure Enqueue(const item: T);
+
+    ///	<summary>
+    ///	  Removes and returns the element at the beginning of the
+    ///	  IQueue&lt;T&gt;. 
+    ///	</summary>
+    ///	<returns>
+    ///	  The element that is removed from the beginning of the IQueue&lt;T&gt;.
+    ///	</returns>
     function Dequeue: T;
+
+    ///	<summary>
+    ///	  Returns the element at the beginning of the IQueue&lt;T&gt; without
+    ///	  removing it.
+    ///	</summary>
+    ///	<returns>
+    ///	  The element at the beginning of the IQueue&lt;T&gt;.
+    ///	</returns>
     function Peek: T;
     function PeekOrDefault: T;
     function TryPeek(out item: T): Boolean;
-    function AsQueue: IQueue;
+
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
   ISet = interface(ICollection)
     ['{D83ED568-A7C8-4142-BA0F-5A273AF1AA07}']
-//    function Add(const item: TValue): Boolean;
+    function Add(const item: TValue): Boolean;
     procedure ExceptWith(const other: IEnumerable);
     procedure IntersectWith(const other: IEnumerable);
     procedure UnionWith(const other: IEnumerable);
@@ -788,8 +1490,75 @@ type
     ///	  <i>other</i> is <b>nil</b>.
     ///	</exception>
     function Overlaps(const other: IEnumerable<T>): Boolean;
+  end;
 
-    function AsSet: ISet;
+  ///	<summary>
+  ///	  Represents a collection of elements that have a common key.
+  ///	</summary>
+  ///	<typeparam name="TKey">
+  ///	  The type of the key of the IGrouping&lt;TKey, TElement&gt;.
+  ///	</typeparam>
+  ///	<typeparam name="TElement">
+  ///	  The type of the values in the IGrouping&lt;TKey, TElement&gt;.
+  ///	</typeparam>
+  IGrouping<TKey, TElement> = interface(IEnumerable<TElement>)
+    ['{CFC3071C-663A-400A-B21B-1F5E28BA4892}']
+  {$REGION 'Property Accessors'}
+    function GetKey: TKey;
+  {$ENDREGION}
+
+    ///	<summary>
+    ///	  Gets the key of the IGrouping&lt;TKey, TElement&gt;.
+    ///	</summary>
+    ///	<value>
+    ///	  The key of the IGrouping&lt;TKey, TElement&gt;.
+    ///	</value>
+    property Key: TKey read GetKey;
+  end;
+
+  ///	<summary>
+  ///	  Defines an indexer, size property, and Boolean search method for data
+  ///	  structures that map keys to <see cref="IEnumerable&lt;T&gt;" />
+  ///	  sequences of values.
+  ///	</summary>
+  ///	<typeparam name="TKey">
+  ///	  The type of the keys in the ILookup&lt;TKey, TElement&gt;.
+  ///	</typeparam>
+  ///	<typeparam name="TElement">
+  ///	  The type of the elements in the <see cref="IEnumerable&lt;T&gt;" />
+  ///	  sequences that make up the values in the ILookup&lt;TKey, TElement&gt;.
+  ///	</typeparam>
+  ILookup<TKey, TElement> = interface(IEnumerable<IGrouping<TKey, TElement>>)
+    ['{B2380533-F2B1-465B-84B2-97FA79A6EE09}']
+  {$REGION 'Property Accessors'}
+    function GetItem(const key: TKey): IEnumerable<TElement>;
+  {$ENDREGION}
+
+    ///	<summary>
+    ///	  Determines whether a specified key exists in the ILookup&lt;TKey,
+    ///	  TElement&gt;.
+    ///	</summary>
+    ///	<param name="key">
+    ///	  The key to search for in the ILookup&lt;TKey, TElement&gt;.
+    ///	</param>
+    ///	<returns>
+    ///	  <b>True</b> if <i>key</i> is in the ILookup&lt;TKey, TElement&gt;;
+    ///	  otherwise, <b>False</b>.
+    ///	</returns>
+    function Contains(const key: TKey): Boolean;
+
+    ///	<summary>
+    ///	  Gets the <see cref="IEnumerable&lt;T&gt;" /> sequence of values
+    ///	  indexed by a specified key.
+    ///	</summary>
+    ///	<param name="key">
+    ///	  The key of the desired sequence of values.
+    ///	</param>
+    ///	<value>
+    ///	  The <see cref="IEnumerable&lt;T&gt;" /> sequence of values indexed by
+    ///	  the specified key.
+    ///	</value>
+    property Item[const key: TKey]: IEnumerable<TElement> read GetItem; default;
   end;
 
   ///	<summary>
@@ -797,8 +1566,10 @@ type
   ///	</summary>
   ICountable = interface
     ['{CA225A9C-B6FD-4D6E-B3BD-22119CCE6C87}']
+  {$REGION 'Property Accessors'}
     function GetCount: Integer;
     function GetIsEmpty: Boolean;
+  {$ENDREGION}
 
     property Count: Integer read GetCount;
     property IsEmpty: Boolean read GetIsEmpty;
@@ -809,18 +1580,20 @@ type
   ///	</summary>
   IElementType = interface
     ['{FE986DD7-41D5-4312-A2F9-94F7D9E642EE}']
+  {$REGION 'Property Accessors'}
     function GetElementType: PTypeInfo;
+  {$ENDREGION}
 
     property ElementType: PTypeInfo read GetElementType;
   end;
 
   ICollectionOwnership = interface
     ['{6D028EAF-3D14-4362-898C-BFAD1110547F}']
-
-    {$REGION 'Property Accessors'}
+  {$REGION 'Property Accessors'}
       function GetOwnsObjects: Boolean;
       procedure SetOwnsObjects(const value: Boolean);
-    {$ENDREGION}
+  {$ENDREGION}
+
     property OwnsObjects: Boolean read GetOwnsObjects write SetOwnsObjects;
   end;
 
@@ -836,17 +1609,20 @@ type
 
   ///	<summary>
   ///	  Provides static methods to create an instance of various interfaced
-  ///	  generic collections such as <c>IList{T}</c>,
-  ///	  <c>IDictionary{TKey, TValue}</c>.
+  ///	  generic collections such as <see cref="IList&lt;T&gt;" /> or
+  ///	  <see cref="IDictionary&lt;TKey, TValue&gt;" />.
   ///	</summary>
   TCollections = class
   public
     class function CreateList<T>: IList<T>; overload; static;
     class function CreateList<T>(const comparer: IComparer<T>): IList<T>; overload; static;
+    class function CreateList<T>(const values: array of T): IList<T>; overload; static;
+    class function CreateList<T>(const values: IEnumerable<T>): IList<T>; overload; static;
     class function CreateList<T: class>(ownsObjects: Boolean): IList<T>; overload; static;
     class function CreateList<T: class>(ownsObjects: Boolean; const comparer: IComparer<T>): IList<T>; overload; static;
     class function CreateObjectList<T: class>(ownsObjects: Boolean = True): IList<T>; overload; static;
     class function CreateObjectList<T: class>(ownsObjects: Boolean; const comparer: IComparer<T>): IList<T>; overload; static;
+    class function CreateObjectList<T: class>(const values: array of T; ownsObjects: Boolean = True): IList<T>; overload; static;
 
     class function CreateDictionary<TKey, TValue>: IDictionary<TKey, TValue>; overload; static;
     class function CreateDictionary<TKey, TValue>(capacity: Integer): IDictionary<TKey, TValue>; overload; static;
@@ -866,9 +1642,18 @@ type
     class function CreateSet<T>: ISet<T>; overload;
 
     ///	<summary>
-    ///	  Creates a readonly empty collection.
+    ///	  Returns an empty <see cref="IEnumerable&lt;T&gt;" /> that has the
+    ///	  specified type argument.
     ///	</summary>
-    class function Empty<T>: IEnumerable<T>;
+    ///	<typeparam name="T">
+    ///	  The type to assign to the type parameter of the returned generic
+    ///	  <see cref="IEnumerable&lt;T&gt;" />.
+    ///	</typeparam>
+    ///	<returns>
+    ///	  An empty <see cref="IEnumerable&lt;T&gt;" /> whose type argument is
+    ///	  <i>T</i>.
+    ///	</returns>
+    class function Empty<T>: IEnumerable<T>; static;
   end;
 
   TStringComparer = class(TCustomComparer<string>)
@@ -892,28 +1677,20 @@ type
     class function OrdinalIgnoreCase: TStringComparer;
   end;
 
-const
-  cnAdded = Generics.Collections.cnAdded;
-  cnRemoved = Generics.Collections.cnRemoved;
-  cnExtracted = Generics.Collections.cnExtracted;
-
-  doOwnsKeys = Generics.Collections.doOwnsKeys;
-  doOwnsValues = Generics.Collections.doOwnsValues;
-
 implementation
 
 uses
-  Character,
 {$ifdef MACOS}
   Macapi.CoreFoundation, // Solves [dccosx Hint] H2443 Inline function 'TStringHelper.ToUpper' has not been expanded because unit 'Macapi.CoreFoundation' is not specified in USES list
 {$endif MACOS}
-  Spring.ResourceStrings,
+  Character,
+  Spring.Collections.Dictionaries,
+  Spring.Collections.Extensions,
+  Spring.Collections.Lists,
+  Spring.Collections.Queues,
   Spring.Collections.Sets,
   Spring.Collections.Stacks,
-  Spring.Collections.Queues,
-  Spring.Collections.Lists,
-  Spring.Collections.Dictionaries,
-  Spring.Collections.Extensions;
+  Spring.ResourceStrings;
 
 
 {$REGION 'TCollections'}
@@ -928,9 +1705,19 @@ begin
   Result := TList<T>.Create(comparer);
 end;
 
+class function TCollections.CreateList<T>(const values: array of T): IList<T>;
+begin
+  Result := TList<T>.Create(values);
+end;
+
+class function TCollections.CreateList<T>(const values: IEnumerable<T>): IList<T>;
+begin
+  Result := TList<T>.Create(values);
+end;
+
 class function TCollections.CreateList<T>(ownsObjects: Boolean): IList<T>;
 begin
-  Result := TCollections.CreateList<T>(ownsObjects, TComparer<T>.Default);
+  Result := TCollections.CreateList<T>(ownsObjects, TComparer<T>.Default());
 end;
 
 class function TCollections.CreateList<T>(ownsObjects: Boolean;
@@ -941,12 +1728,19 @@ end;
 
 class function TCollections.CreateObjectList<T>(ownsObjects: Boolean): IList<T>;
 begin
-  Result := TObjectList<T>.Create(TComparer<T>.Default, ownsObjects);
+  Result := TObjectList<T>.Create(TComparer<T>.Default(), ownsObjects);
 end;
 
-class function TCollections.CreateObjectList<T>(ownsObjects: Boolean; const comparer: IComparer<T>): IList<T>;
+class function TCollections.CreateObjectList<T>(ownsObjects: Boolean;
+  const comparer: IComparer<T>): IList<T>;
 begin
   Result := TObjectList<T>.Create(comparer, ownsObjects);
+end;
+
+class function TCollections.CreateObjectList<T>(const values: array of T;
+  ownsObjects: Boolean): IList<T>;
+begin
+  Result := TObjectList<T>.Create(values, ownsObjects);
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>(
