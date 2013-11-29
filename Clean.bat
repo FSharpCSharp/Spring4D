@@ -26,3 +26,6 @@ del /f /q /s Tests\*.xml
 for /f "tokens=* delims=" %%i in ('dir /s /b /a:d __history') do (
   rd /s /q "%%i"
 )
+if "%1"=="" goto :eof
+pause
+
