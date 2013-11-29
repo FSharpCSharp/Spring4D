@@ -24,11 +24,14 @@
 
 unit Spring.Events;
 
+{$I Spring.inc}
+
 interface
 
 uses
   Classes,
   Generics.Collections,
+  SysUtils,
   Spring,
   Spring.Events.Base,
   TypInfo;
@@ -64,33 +67,33 @@ type
 
       PMethodInfo = ^TMethodInfo;
       TMethodInfo = record
-        TypeData: PTypeData;
         ParamInfos: PParameterInfos;
         StackSize: Integer;
         CallConvention: TCallConv;
 {$IFDEF CPUX64}
         RegisterFlag: Word;
-{$ENDIF CPUX64}
-        constructor Create(typeInfo: PTypeInfo);
+{$ENDIF}
+        constructor Create(typeData: PTypeData);
       end;
 
       TMethodInvokeEvent = procedure(Params: Pointer; StackSize: Integer) of object;
   private
-    fMethodType: PTypeInfo;
     fMethodInfo: TMethodInfo;
     fMethodInvokeEvent: TMethodInvokeEvent;
   protected
     procedure InternalInvokeHandlers(Params: PParameters);
     procedure InvokeEventHandlerStub;
   public
-    constructor Create(methodTypeInfo: PTypeInfo; methodInvokeEvent: TMethodInvokeEvent);
+    constructor Create(methodTypeData: PTypeData; methodInvokeEvent: TMethodInvokeEvent);
   end;
 
-  TEvent = class(TEventBase)
+  TEvent = class(TEventBase, TProc)
   private
     fInvocations: TMethodInvocations;
     fTypeInfo: PTypeInfo;
+    function Cast(const handler): TMethod;
     procedure InternalInvoke(Params: Pointer; StackSize: Integer);
+    procedure Invoke;
   public
     constructor Create(typeInfo: PTypeInfo);
     destructor Destroy; override;
@@ -105,8 +108,6 @@ type
     procedure Add(handler: T); overload;
     procedure Remove(handler: T); overload;
     procedure ForEach(const action: TAction<T>);
-
-    property Invoke: T read GetInvoke;
   end;
 
   IMulticastNotifyEvent = IEvent<TNotifyEvent>;
@@ -286,7 +287,7 @@ asm
 end;
 {$ENDIF}
 
-constructor TMethodInvocations.TMethodInfo.Create(typeInfo: PTypeInfo);
+constructor TMethodInvocations.TMethodInfo.Create(typeData: PTypeData);
 
   function PassByRef(P: PByte; ParamInfos: PParameterInfos; I: Integer): Boolean;
   begin
@@ -300,7 +301,6 @@ constructor TMethodInvocations.TMethodInfo.Create(typeInfo: PTypeInfo);
   end;
 
 var
-  typeData: PTypeData;
   P: PByte;
   I: Integer;
 {$IFNDEF CPUX64}
@@ -308,8 +308,6 @@ var
   Size: Integer;
 {$ENDIF}
 begin
-  typeData := GetTypeData(typeInfo);
-  Self.TypeData := typeData;
   P := AdditionalInfoOf(typeData);
   CallConvention := TCallConv(PByte(p)^);
   ParamInfos := PParameterInfos(Cardinal(P) + 1);
@@ -364,12 +362,11 @@ end;
 
 {$REGION 'TMethodInvocations'}
 
-constructor TMethodInvocations.Create(methodTypeInfo: PTypeInfo;
+constructor TMethodInvocations.Create(methodTypeData: PTypeData;
   methodInvokeEvent: TMethodInvokeEvent);
 begin
   inherited Create;
-  fMethodType := methodTypeInfo;
-  fMethodInfo := TMethodInfo.Create(fMethodType);
+  fMethodInfo := TMethodInfo.Create(methodTypeData);
   fMethodInvokeEvent := methodInvokeEvent;
 end;
 
@@ -476,17 +473,97 @@ end;
 
 {$REGION 'TEvent'}
 
-constructor TEvent.Create(typeInfo: PTypeInfo);
+procedure GetMethodTypeData(Method: TRttiMethod; var TypeData: PTypeData);
+
+  procedure WriteByte(var Dest: PByte; b: Byte);
+  begin
+    Dest[0] := b;
+    Inc(Dest);
+  end;
+
+  procedure WritePackedShortString(var Dest: PByte; const s: string);
+  begin
+    PShortString(Dest)^ := ShortString(s);
+    Inc(Dest, Dest[0] + 1);
+  end;
+
+  procedure WritePointer(var Dest: PByte; p: Pointer);
+  begin
+    PPointer(Dest)^ := p;
+    Inc(Dest, SizeOf(Pointer));
+  end;
+
+var
+  params: TArray<TRttiParameter>;
+  i: Integer;
+  p: PByte;
 begin
+  TypeData.MethodKind := Method.MethodKind;
+  params := Method.GetParameters;
+  TypeData.ParamCount := Length(params);
+  p := @TypeData.ParamList;
+  for i := Low(params) to High(params) do
+  begin
+    WriteByte(p, Byte(params[i].Flags));
+    WritePackedShortString(p, params[i].Name);
+    WritePackedShortString(p, params[i].ParamType.Name);
+  end;
+  if method.MethodKind = mkFunction then
+  begin
+    WritePackedShortString(p, method.ReturnType.Name);
+    WritePointer(p, method.ReturnType.Handle);
+  end;
+  WriteByte(p, Byte(method.CallingConvention));
+  for i := Low(params) to High(params) do
+  begin
+    WritePointer(p, Pointer(NativeInt(params[i].ParamType.Handle) - SizeOf(Pointer)));
+  end;
+end;
+
+procedure MethodReferenceToMethodPointer(const AMethodReference; const AMethodPointer);
+type
+  TVtable = array[0..3] of Pointer;
+  PVtable = ^TVtable;
+  PPVtable = ^PVtable;
+begin
+  // 3 is offset of Invoke, after QI, AddRef, Release
+  PMethod(@AMethodPointer).Code := PPVtable(AMethodReference)^^[3];
+  PMethod(@AMethodPointer).Data := Pointer(AMethodReference);
+end;
+
+constructor TEvent.Create(typeInfo: PTypeInfo);
+var
+  typeData: PTypeData;
+  ctx: TRttiContext;
+  method: TRttiMethod;
+begin
+  fTypeInfo := typeInfo;
   if not Assigned(typeInfo) then
     raise EInvalidOperationException.CreateRes(@SNoTypeInfo);
-  if typeInfo.Kind <> tkMethod then
-    raise EInvalidOperationException.CreateRes(@STypeParameterShouldBeMethod);
 
   inherited Create;
 
-  fTypeInfo := typeInfo;
-  fInvocations := TMethodInvocations.Create(fTypeInfo, InternalInvoke);
+  if typeInfo.Kind = tkMethod then
+  begin
+    typeData := GetTypeData(typeInfo);
+    fInvocations := TMethodInvocations.Create(typeData, InternalInvoke);
+  end
+  else if typeInfo.Kind = tkInterface then
+  begin
+    method := ctx.GetType(typeInfo).GetMethod('Invoke');
+    if not Assigned(method) then
+      raise EInvalidOperationException.CreateResFmt(@STypeParameterContainsNoRtti, [typeInfo.Name]);
+    New(typeData);
+    try
+      GetMethodTypeData(method, typeData);
+      fInvocations := TMethodInvocations.Create(typeData, InternalInvoke);
+    finally
+      Dispose(typeData);
+    end;
+  end
+  else
+    raise EInvalidOperationException.CreateResFmt(@STypeParameterShouldBeMethod, [typeInfo.Name]);
+
   fInvoke.Data := fInvocations;
   fInvoke.Code := @TMethodInvocations.InvokeEventHandlerStub;
 end;
@@ -497,6 +574,14 @@ begin
   inherited Destroy;
 end;
 
+function TEvent.Cast(const handler): TMethod;
+begin
+  if fTypeInfo.Kind = tkInterface then
+    MethodReferenceToMethodPointer(handler, Result)
+  else
+    Result := PMethod(@handler)^;
+end;
+
 procedure TEvent.InternalInvoke(Params: Pointer; StackSize: Integer);
 var
   i: Integer;
@@ -504,6 +589,17 @@ begin
   if Enabled then
     for i := 0 to Handlers.Count - 1 do
       InvokeMethod(Handlers[i], Params, StackSize);
+end;
+
+procedure TEvent.Invoke;
+asm
+{$IFDEF CPUX64}
+  push [rcx].fInvoke.Code
+  mov rcx,[rcx].fInvoke.Data
+{$ELSE}
+  push [eax].fInvoke.Code
+  mov eax,[eax].fInvoke.Data
+{$ENDIF}
 end;
 
 {$ENDREGION}
@@ -523,17 +619,20 @@ end;
 
 procedure TEvent<T>.Add(handler: T);
 begin
-  inherited Add(PMethod(@handler)^);
+  inherited Add(Cast(handler));
 end;
 
 procedure TEvent<T>.Remove(handler: T);
 begin
-  inherited Remove(PMethod(@handler)^);
+  inherited Remove(Cast(handler));
 end;
 
 function TEvent<T>.GetInvoke: T;
 begin
-  PMethod(@Result)^ := inherited Invoke;
+  if fTypeInfo.Kind = tkInterface then
+    TProc(PPointer(@Result)^) := Self
+  else
+    PMethod(@Result)^ := fInvoke;
 end;
 
 {$ENDREGION}
