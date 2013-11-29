@@ -52,7 +52,10 @@ type
     BalloonHint1: TBalloonHint;
     grpConfiguration: TRadioGroup;
     btnClean: TButton;
-    chkTests: TCheckBox;
+    chkRunTests: TCheckBox;
+    grpBuildOptions: TGroupBox;
+    chkModifyDelphiRegistrySettings: TCheckBox;
+    chkPauseAfterEachStep: TCheckBox;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure btnBuildClick(Sender: TObject);
@@ -62,7 +65,9 @@ type
     procedure lbTargetsClickCheck(Sender: TObject);
     procedure lblHomepageLinkClick(Sender: TObject; const Link: string;
       LinkType: TSysLinkType);
-    procedure chkTestsClick(Sender: TObject);
+    procedure chkRunTestsClick(Sender: TObject);
+    procedure chkModifyDelphiRegistrySettingsClick(Sender: TObject);
+    procedure chkPauseAfterEachStepClick(Sender: TObject);
   private
     fBuildEngine: TBuildEngine;
   end;
@@ -91,7 +96,9 @@ begin
   fBuildEngine.ConfigureCompilers(ApplicationPath + CCompilerSettingsFileName);
   fBuildEngine.LoadSettings(ApplicationPath + CBuildSettingsFileName);
   grpConfiguration.ItemIndex := Ord(fBuildEngine.ConfigurationType);
-  chkTests.Checked := fBuildEngine.RunTests;
+  chkPauseAfterEachStep.Checked := fBuildEngine.PauseAfterEachStep;
+  chkRunTests.Checked := fBuildEngine.RunTests;
+  chkModifyDelphiRegistrySettings.Checked := fBuildEngine.ModifyDelphiRegistrySettings;
 
   lbTargets.Clear;
   for task in fBuildEngine.Tasks do
@@ -138,12 +145,12 @@ end;
 
 procedure TfrmMain.btnBuildClick(Sender: TObject);
 begin
-  fBuildEngine.BuildAll;
+  fBuildEngine.BuildAll();
 end;
 
 procedure TfrmMain.btnCleanClick(Sender: TObject);
 begin
-  fBuildEngine.CleanUp;
+  fBuildEngine.CleanUp();
 end;
 
 procedure TfrmMain.btnCloseClick(Sender: TObject);
@@ -151,9 +158,19 @@ begin
   Close;
 end;
 
-procedure TfrmMain.chkTestsClick(Sender: TObject);
+procedure TfrmMain.chkRunTestsClick(Sender: TObject);
 begin
-  fBuildEngine.RunTests := chkTests.Checked;
+  fBuildEngine.RunTests := chkRunTests.Checked;
+end;
+
+procedure TfrmMain.chkModifyDelphiRegistrySettingsClick(Sender: TObject);
+begin
+  fBuildEngine.ModifyDelphiRegistrySettings := chkModifyDelphiRegistrySettings.Checked;
+end;
+
+procedure TfrmMain.chkPauseAfterEachStepClick(Sender: TObject);
+begin
+  fBuildEngine.PauseAfterEachStep := chkPauseAfterEachStep.Checked;
 end;
 
 end.

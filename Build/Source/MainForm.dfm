@@ -5,8 +5,8 @@ object frmMain: TfrmMain
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = 'Build Spring4d'
-  ClientHeight = 412
-  ClientWidth = 489
+  ClientHeight = 472
+  ClientWidth = 513
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -337,50 +337,50 @@ object frmMain: TfrmMain
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   DesignSize = (
-    489
-    412)
+    513
+    472)
   PixelsPerInch = 96
   TextHeight = 13
   object lblDetails: TLabel
     Left = 8
-    Top = 192
+    Top = 239
     Width = 36
     Height = 13
-    Caption = 'Details:'
+    Caption = '&Details:'
   end
   object btnBuild: TButton
-    Left = 384
-    Top = 146
-    Width = 97
+    Left = 359
+    Top = 204
+    Width = 146
     Height = 25
-    Anchors = [akRight, akBottom]
+    Anchors = [akLeft, akTop, akRight]
     Caption = '&Build'
-    TabOrder = 0
+    TabOrder = 4
     OnClick = btnBuildClick
   end
   object mmoDetails: TMemo
     Left = 8
-    Top = 208
-    Width = 473
-    Height = 165
+    Top = 255
+    Width = 497
+    Height = 184
     Anchors = [akLeft, akTop, akRight, akBottom]
     ReadOnly = True
     ScrollBars = ssBoth
-    TabOrder = 1
+    TabOrder = 5
   end
   object grpTargets: TGroupBox
     Left = 8
     Top = 8
     Width = 345
-    Height = 178
-    Caption = 'Targets'
-    TabOrder = 2
+    Height = 225
+    Caption = '&Targets'
+    TabOrder = 0
     object lbTargets: TCheckListBox
       AlignWithMargins = True
       Left = 10
       Top = 19
       Width = 325
-      Height = 144
+      Height = 200
       Margins.Left = 8
       Margins.Top = 4
       Margins.Right = 8
@@ -405,47 +405,82 @@ object frmMain: TfrmMain
   end
   object lblHomepage: TLinkLabel
     Left = 8
-    Top = 385
+    Top = 445
     Width = 113
     Height = 19
     Hint = 'Visit the home page'
     CustomHint = BalloonHint1
     Anchors = [akLeft, akBottom]
     Caption = '<a href="http://www.spring4d.org">Spring4d Homepage</a>'
-    TabOrder = 3
+    TabOrder = 6
     UseVisualStyle = True
     OnLinkClick = lblHomepageLinkClick
   end
   object grpConfiguration: TRadioGroup
-    Left = 384
+    Left = 359
     Top = 8
-    Width = 97
-    Height = 89
-    Caption = 'Configuration'
+    Width = 146
+    Height = 64
+    Anchors = [akLeft, akTop, akRight]
+    Caption = 'Build C&onfiguration'
     ItemIndex = 1
     Items.Strings = (
       'Debug'
       'Release')
-    TabOrder = 4
+    TabOrder = 1
     OnClick = grpConfigurationClick
   end
-  object btnClean: TButton
-    Left = 384
-    Top = 115
-    Width = 97
-    Height = 25
-    Caption = '&Clean'
-    TabOrder = 5
-    OnClick = btnCleanClick
+  object grpBuildOptions: TGroupBox
+    Left = 359
+    Top = 78
+    Width = 146
+    Height = 89
+    Anchors = [akLeft, akTop, akRight]
+    Caption = 'Build options'
+    TabOrder = 2
+    DesignSize = (
+      146
+      89)
+    object chkRunTests: TCheckBox
+      Left = 9
+      Top = 21
+      Width = 128
+      Height = 17
+      Anchors = [akLeft, akTop, akRight]
+      Caption = '&Run tests'
+      TabOrder = 0
+      OnClick = chkRunTestsClick
+    end
+    object chkModifyDelphiRegistrySettings: TCheckBox
+      Left = 9
+      Top = 44
+      Width = 128
+      Height = 17
+      Anchors = [akLeft, akTop, akRight]
+      Caption = '&Update Delphi Registry'
+      TabOrder = 1
+      OnClick = chkModifyDelphiRegistrySettingsClick
+    end
+    object chkPauseAfterEachStep: TCheckBox
+      Left = 9
+      Top = 67
+      Width = 128
+      Height = 17
+      Anchors = [akLeft, akTop, akRight]
+      Caption = '&Pause after each step'
+      TabOrder = 2
+      OnClick = chkPauseAfterEachStepClick
+    end
   end
-  object chkTests: TCheckBox
-    Left = 384
-    Top = 185
-    Width = 97
-    Height = 17
-    Caption = 'Run tests'
-    TabOrder = 6
-    OnClick = chkTestsClick
+  object btnClean: TButton
+    Left = 359
+    Top = 173
+    Width = 146
+    Height = 25
+    Anchors = [akLeft, akTop, akRight]
+    Caption = '&Clean'
+    TabOrder = 3
+    OnClick = btnCleanClick
   end
   object BalloonHint1: TBalloonHint
     Left = 32
