@@ -279,7 +279,7 @@ var
 begin
   Clear;
   // Note that the order is changed
-  for Pair in List.ToSet.ToList do
+  for Pair in TCollections.CreateSet<TIntegerStringPair>(List) do
   begin
     AddToMemo(Pair.Value);
   end;
