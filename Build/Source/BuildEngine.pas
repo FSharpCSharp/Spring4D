@@ -45,8 +45,38 @@ type
     Release
   );
 
-  TCompilerTarget = class
-  private
+  TCompilerTargetBase = class
+  strict private
+    fBrowsingPaths: TStrings;
+    fDisplayName: string;
+    fEnvironmentVariables: TStrings;
+    fExists: Boolean;
+    fLibraryPaths: TStrings;
+    fPlatform: string;
+    fRootDir: string;
+    fTypeName: string;
+  strict protected
+    function GetBrowsingPaths(): TStrings; virtual;
+    function GetEnvironmentVariables(): TStrings; virtual;
+    function GetLibraryPaths(): TStrings; virtual;
+  public
+    destructor Destroy(); override;
+    property BrowsingPaths: TStrings read GetBrowsingPaths;
+    {TODO -o##jwp -cFix : R/O}
+    property DisplayName: string read fDisplayName write fDisplayName;
+    property EnvironmentVariables: TStrings read GetEnvironmentVariables;
+    {TODO -o##jwp -cFix : R/O}
+    property Exists: Boolean read fExists write fExists;
+    property LibraryPaths: TStrings read GetLibraryPaths;
+    {TODO -o##jwp -cFix : R/O}
+    property Platform: string read fPlatform write fPlatform;
+    {TODO -o##jwp -cFix : R/O}
+    property RootDir: string read fRootDir write fRootDir;
+    {TODO -o##jwp -cFix : R/O}
+    property TypeName: string read fTypeName write fTypeName;
+  end;
+  TCompilerTarget = class(TCompilerTargetBase)
+  strict private
     type
       TKeys = record
         BDS: string;
@@ -54,44 +84,27 @@ type
         Globals: string;
         EnvironmentVariables: string;
       end;
-
       TNames = record
         RootDir: string;
         LibraryPath: string;
         BrowsingPath: string;
       end;
-  private
+  strict private
     fRegistry: TRegistry;
-    fBrowsingPaths: TStrings;
-    fLibraryPaths: TStrings;
-    fEnvironmentVariables: TStrings;
-    fTypeName: string;
-    fDisplayName: string;
-    fPlatform: string;
-    fRootDir: string;
-    fExists: Boolean;
     fKeys: TKeys;
     fNames: TNames;
-  protected
-    procedure EnsureOpenKey(const key: string; createIfNotExists: Boolean = False);
-    procedure LoadEnvironmentVariables(environmentVariables: TStrings);
-    procedure SaveEnvironmentVariables(environmentVariables: TStrings);
+  strict protected
+    procedure EnsureOpenKey(const aKey: string; aCreateIfNotExists: Boolean = False); virtual;
+    procedure LoadEnvironmentVariables(const aEnvironmentVariables: TStrings); virtual;
+    procedure SaveEnvironmentVariables(const aEnvironmentVariables: TStrings); virtual;
     property Keys: TKeys read fKeys;
     property Names: TNames read fNames;
   public
     constructor Create;
     destructor Destroy; override;
-    procedure Configure(const typeName: string; properties: TStrings);
-    procedure LoadOptions;
-    procedure SaveOptions;
-    property TypeName: string read fTypeName;
-    property DisplayName: string read fDisplayName;
-    property Platform: string read fPlatform;
-    property Exists: Boolean read fExists;
-    property RootDir: string read fRootDir;
-    property LibraryPaths: TStrings read fLibraryPaths;
-    property BrowsingPaths: TStrings read fBrowsingPaths;
-    property EnvironmentVariables: TStrings read fEnvironmentVariables;
+    procedure Configure(const aTypeName: string; const aProperties: TStrings); virtual;
+    procedure LoadOptions; virtual;
+    procedure SaveOptions; virtual;
   end;
 
   TBuildTask = class
@@ -102,44 +115,53 @@ type
     Compiler: TCompilerTarget;
     Projects: TStrings;
     UnitOutputPath: string;
-    function Name: string;
-    function CanBuild: Boolean;
+    function Name: string; virtual;
+    function CanBuild: Boolean; virtual;
   end;
 
-  TBuildEngine = class
-  private
+  TBuildEngineBase = class
+  strict private
     fConfigurationType: TConfigurationType;
-    fSourceBaseDir: string;
+    FModifyDelphiRegistrySettings: Boolean;
+    FPauseAfterEachStep: Boolean;
+    fRunTests: Boolean;
+    fSelectedTasks: IList<TBuildTask>;
     fSourcePaths: TStrings;
-
     fTargets: IList<TCompilerTarget>;
     fTasks: IList<TBuildTask>;
-    fSelectedTasks: IList<TBuildTask>;
-    fRunTests: Boolean;
-  protected
-    procedure RemoveReleatedEntries(const baseDir: string; entries: TStrings);
-    procedure ExecuteCommandLine(const applicationName, commandLine: string;
-      var exitCode: Cardinal; const workingDirectory: string = '');
-    procedure BuildTarget(task: TBuildTask);
+  strict protected
+    function GetSelectedTasks(): IList<TBuildTask>; virtual;
+    function GetSourcePaths(): TStrings; virtual;
+    function GetTargets(): IList<TCompilerTarget>; virtual;
+    function GetTasks(): IList<TBuildTask>; virtual;
+    property Targets: IList<TCompilerTarget> read GetTargets;
+  public
+    destructor Destroy(); override;
+    property ConfigurationType: TConfigurationType read fConfigurationType write fConfigurationType;
+    property ModifyDelphiRegistrySettings: Boolean read FModifyDelphiRegistrySettings write FModifyDelphiRegistrySettings;
+    property PauseAfterEachStep: Boolean read FPauseAfterEachStep write FPauseAfterEachStep;
+    property RunTests: Boolean read fRunTests write fRunTests;
+    property SelectedTasks: IList<TBuildTask> read GetSelectedTasks;
+    property SourcePaths: TStrings read GetSourcePaths;
+    property Tasks: IList<TBuildTask> read GetTasks;
+  end;
 
-    property Targets: IList<TCompilerTarget> read fTargets;
+  TBuildEngine = class(TBuildEngineBase)
+  strict private
+    fSourceBaseDir: string;
+  strict protected
+    procedure RemoveReleatedEntries(const aBaseDir: string; aEntries: TStrings); virtual;
+    procedure ExecuteCommandLine(const aApplicationName, aCommandLine: string;
+      var exitCode: Cardinal; const aWorkingDirectory: string = ''); virtual;
+    procedure BuildTarget(const aTask: TBuildTask); virtual;
   public
     constructor Create;
-    destructor Destroy; override;
-
-    procedure ConfigureCompilers(const fileName: string);
-    procedure LoadSettings(const fileName: string);
-    procedure SaveSettings(const fileName: string);
+    procedure ConfigureCompilers(const aFileName: string);
+    procedure LoadSettings(const aFileName: string);
+    procedure SaveSettings(const aFileName: string);
 
     procedure CleanUp;
     procedure BuildAll;
-
-    property ConfigurationType: TConfigurationType read fConfigurationType write fConfigurationType;
-    property SourcePaths: TStrings read fSourcePaths;
-
-    property Tasks: IList<TBuildTask> read fTasks;
-    property SelectedTasks: IList<TBuildTask> read fSelectedTasks;
-    property RunTests: Boolean read fRunTests write fRunTests;
   end;
 
   ECommandLineException = class(Exception);
@@ -153,6 +175,7 @@ resourcestring
 implementation
 
 const
+  SPause = ' pause';
   ConfigurationNames: array[TConfigurationType] of string = (
     'Debug',
     'Release'
@@ -161,23 +184,50 @@ const
 type
   TStringsHelper = class helper for TStrings
   public
-    function GetValueOrDefault(const name, defaultValue: string): string;
+    function AddIfNotExists(const S: string): Integer; virtual;
+    procedure AddStringsThatNotExist(const aStrings: TStrings); overload; virtual;
+    function GetValueOrDefault(const aName, aDefaultValue: string): string;
   end;
 
 {$REGION 'TStringsHelper'}
+function TStringsHelper.AddIfNotExists(const S: string): Integer;
+begin
+  if -1 = Self.IndexOf(S) then
+    Result := Add(S)
+  else
+    Result := -1;
+end;
 
-function TStringsHelper.GetValueOrDefault(const name, defaultValue: string): string;
+procedure TStringsHelper.AddStringsThatNotExist(const aStrings: TStrings);
+var
+  I: Integer;
+  S: string;
+begin
+  BeginUpdate();
+  try
+    for I := 0 to aStrings.Count - 1 do
+    begin
+      S := aStrings[I];
+      if -1 = Self.IndexOf(S) then
+        AddObject(S, aStrings.Objects[I]);
+    end;
+  finally
+    EndUpdate();
+  end;
+end;
+
+function TStringsHelper.GetValueOrDefault(const aName, aDefaultValue: string): string;
 var
   index: Integer;
 begin
-  index := IndexOfName(name);
+  index := IndexOfName(aName);
   if index > -1 then
   begin
     Result := ValueFromIndex[index];
   end
   else
   begin
-    Result := defaultValue;
+    Result := aDefaultValue;
   end;
 end;
 
@@ -188,44 +238,38 @@ end;
 
 constructor TCompilerTarget.Create;
 begin
-  inherited Create;
-  fRegistry := TRegistry.Create;
+  inherited Create();
+  fRegistry := TRegistry.Create();
   fRegistry.RootKey := HKEY_CURRENT_USER;
-  fLibraryPaths := TStringList.Create;
-  fLibraryPaths.Delimiter := ';';
-  fLibraryPaths.StrictDelimiter := True;
-  fBrowsingPaths := TStringList.Create;
-  fBrowsingPaths.Delimiter := ';';
-  fBrowsingPaths.StrictDelimiter := True;
-  fEnvironmentVariables := TStringList.Create;
+  LibraryPaths.Delimiter := ';';
+  LibraryPaths.StrictDelimiter := True;
+  BrowsingPaths.Delimiter := ';';
+  BrowsingPaths.StrictDelimiter := True;
 end;
 
 destructor TCompilerTarget.Destroy;
 begin
-  fEnvironmentVariables.Free;
-  fBrowsingPaths.Free;
-  fLibraryPaths.Free;
-  fRegistry.Free;
-  inherited Destroy;
+  fRegistry.Free();
+  inherited Destroy();
 end;
 
-procedure TCompilerTarget.EnsureOpenKey(const key: string; createIfNotExists: Boolean);
+procedure TCompilerTarget.EnsureOpenKey(const aKey: string; aCreateIfNotExists: Boolean);
 begin
-  if not fRegistry.OpenKey(key, createIfNotExists) then
+  if not fRegistry.OpenKey(aKey, aCreateIfNotExists) then
   begin
-    raise ERegistryException.CreateResFmt(@SFailedToOpenRegistryKey, [key]);
+    raise ERegistryException.CreateResFmt(@SFailedToOpenRegistryKey, [aKey]);
   end;
 end;
 
-procedure TCompilerTarget.LoadEnvironmentVariables(environmentVariables: TStrings);
+procedure TCompilerTarget.LoadEnvironmentVariables(const aEnvironmentVariables: TStrings);
 var
   i: Integer;
 begin
   if fRegistry.KeyExists(Keys.EnvironmentVariables) then
   begin
     EnsureOpenKey(Keys.EnvironmentVariables);
-    fRegistry.GetValueNames(environmentVariables);
-    with environmentVariables do
+    fRegistry.GetValueNames(aEnvironmentVariables);
+    with aEnvironmentVariables do {TODO -o##jwp -cCleanup : Remove with}
     for i := 0 to Count - 1 do
     begin
       Strings[i] := Strings[i] + NameValueSeparator + fRegistry.ReadString(Strings[i]);
@@ -234,12 +278,12 @@ begin
   end;
 end;
 
-procedure TCompilerTarget.SaveEnvironmentVariables(environmentVariables: TStrings);
+procedure TCompilerTarget.SaveEnvironmentVariables(const aEnvironmentVariables: TStrings);
 var
   i: Integer;
 begin
   EnsureOpenKey(Keys.EnvironmentVariables, True);
-  with environmentVariables do
+  with aEnvironmentVariables do {TODO -o##jwp -cCleanup : Remove with}
   for i := 0 to Count - 1 do
   begin
     fRegistry.WriteString(Names[i], ValueFromIndex[i]);
@@ -249,61 +293,61 @@ end;
 
 procedure TCompilerTarget.LoadOptions;
 var
-  path: string;
+  lPath: string;
 begin
-  with fRegistry do
+  with fRegistry do {TODO -o##jwp -cCleanup : Remove with}
   begin
     EnsureOpenKey(Keys.BDS);
-    fRootDir := ReadString(Names.RootDir);
+    RootDir := ReadString(Names.RootDir);
     CloseKey;
 
     EnsureOpenKey(Keys.LibraryKey);
-    path := ReadString(Names.LibraryPath);
-    fLibraryPaths.DelimitedText := path;
-    path := ReadString(Names.BrowsingPath);
-    fBrowsingPaths.DelimitedText := path;
+    lPath := ReadString(Names.LibraryPath);
+    LibraryPaths.DelimitedText := lPath;
+    lPath := ReadString(Names.BrowsingPath);
+    BrowsingPaths.DelimitedText := lPath;
     CloseKey;
 
-    LoadEnvironmentVariables(fEnvironmentVariables);
+    LoadEnvironmentVariables(EnvironmentVariables);
   end;
 end;
 
 procedure TCompilerTarget.SaveOptions;
 begin
   EnsureOpenKey(Keys.LibraryKey);
-  fRegistry.WriteString(Names.LibraryPath, fLibraryPaths.DelimitedText);
-  fRegistry.WriteString(Names.BrowsingPath, fBrowsingPaths.DelimitedText);
+  fRegistry.WriteString(Names.LibraryPath, LibraryPaths.DelimitedText);
+  fRegistry.WriteString(Names.BrowsingPath, BrowsingPaths.DelimitedText);
   fRegistry.CloseKey;
 
-  SaveEnvironmentVariables(fEnvironmentVariables);
+  SaveEnvironmentVariables(EnvironmentVariables);
 
   EnsureOpenKey(Keys.Globals);
   fRegistry.WriteString('ForceEnvOptionsUpdate', '1');
   fRegistry.CloseKey;
 end;
 
-procedure TCompilerTarget.Configure(const typeName: string; properties: TStrings);
+procedure TCompilerTarget.Configure(const aTypeName: string; const aProperties: TStrings);
 var
-  fileName: string;
+  lFileName: string;
 begin
-  Guard.CheckNotNull(properties, 'properties');
+  Guard.CheckNotNull(aProperties, 'aProperties');
 
-  fTypeName := typeName;
-  fDisplayName := properties.GetValueOrDefault('DisplayName', '');
-  fPlatform := properties.GetValueOrDefault('Platform', 'Win32');
-  fKeys.BDS := properties.GetValueOrDefault('Keys.BDS', '');
-  fKeys.LibraryKey := IncludeTrailingPathDelimiter(fKeys.BDS) + properties.GetValueOrDefault('Keys.Library', 'Library');
-  fKeys.Globals := IncludeTrailingPathDelimiter(fKeys.BDS) + properties.GetValueOrDefault('Keys.Globals', 'Globals');
-  fKeys.EnvironmentVariables := IncludeTrailingPathDelimiter(fKeys.BDS) + properties.GetValueOrDefault('Keys.EnvironmentVariables', 'Environment Variables');
-  fNames.LibraryPath := properties.GetValueOrDefault('Names.LibraryPath', 'Search Path');
-  fNames.BrowsingPath := properties.GetValueOrDefault('Names.BrowsingPath', 'Browsing Path');
-  fNames.RootDir := properties.GetValueOrDefault('Names.RootDir', 'RootDir');
-  fExists := fRegistry.KeyExists(fKeys.BDS);
-  if fExists then
+  TypeName := aTypeName;
+  DisplayName := aProperties.GetValueOrDefault('DisplayName', '');
+  Platform := aProperties.GetValueOrDefault('Platform', 'Win32');
+  fKeys.BDS := aProperties.GetValueOrDefault('Keys.BDS', '');
+  fKeys.LibraryKey := IncludeTrailingPathDelimiter(fKeys.BDS) + aProperties.GetValueOrDefault('Keys.Library', 'Library');
+  fKeys.Globals := IncludeTrailingPathDelimiter(fKeys.BDS) + aProperties.GetValueOrDefault('Keys.Globals', 'Globals');
+  fKeys.EnvironmentVariables := IncludeTrailingPathDelimiter(fKeys.BDS) + aProperties.GetValueOrDefault('Keys.EnvironmentVariables', 'Environment Variables');
+  fNames.LibraryPath := aProperties.GetValueOrDefault('Names.LibraryPath', 'Search Path');
+  fNames.BrowsingPath := aProperties.GetValueOrDefault('Names.BrowsingPath', 'Browsing Path');
+  fNames.RootDir := aProperties.GetValueOrDefault('Names.RootDir', 'RootDir');
+  Exists := fRegistry.KeyExists(fKeys.BDS);
+  if Exists then
   begin
     EnsureOpenKey(fKeys.BDS);
-    fileName := fRegistry.ReadString('App');
-    fExists := FileExists(fileName);
+    lFileName := fRegistry.ReadString('App');
+    Exists := FileExists(lFileName);
     fRegistry.CloseKey;
   end;
 end;
@@ -315,16 +359,16 @@ end;
 
 constructor TBuildTask.Create;
 begin
-  inherited Create;
-  Projects := TStringList.Create;
+  inherited Create();
+  Projects := TStringList.Create();
   Projects.Delimiter := ';';
   Projects.StrictDelimiter := True;
 end;
 
 destructor TBuildTask.Destroy;
 begin
-  Projects.Free;
-  inherited Destroy;
+  Projects.Free();
+  inherited Destroy();
 end;
 
 function TBuildTask.Name: string;
@@ -344,252 +388,332 @@ end;
 
 constructor TBuildEngine.Create;
 begin
-  inherited Create;
-  fConfigurationType := TConfigurationType.Release;
-  fTargets := TCollections.CreateObjectList<TCompilerTarget>;
-  fTasks := TCollections.CreateObjectList<TBuildTask>;
-  fSelectedTasks := TCollections.CreateList<TBuildTask>;
-  fSourcePaths := TStringList.Create;
-  fSourcePaths.Delimiter := ';';
-  fSourcePaths.StrictDelimiter := True;
+  inherited Create();
+  ConfigurationType := TConfigurationType.Release;
+  SourcePaths.Delimiter := ';';
+  SourcePaths.StrictDelimiter := True;
 end;
 
-destructor TBuildEngine.Destroy;
-begin
-  fSourcePaths.Free;
-  inherited Destroy;
-end;
-
-procedure TBuildEngine.ExecuteCommandLine(const applicationName, commandLine: string;
-  var exitCode: Cardinal; const workingDirectory: string);
+procedure TBuildEngine.ExecuteCommandLine(const aApplicationName, aCommandLine: string;
+  var exitCode: Cardinal; const aWorkingDirectory: string);
 const
   nSize: Cardinal = 1024;
 var
-  localCommandLine: string;
-  startupInfo: TStartupInfo;
-  processInfo: TProcessInformation;
-  currentDirectory: PChar;
+  lLocalCommandLine: string;
+  lStartupInfo: TStartupInfo;
+  lProcessInfo: TProcessInformation;
+  lCurrentDirectory: PChar;
 begin
-  ZeroMemory(@startupInfo, SizeOf(startupInfo));
-  ZeroMemory(@processInfo, SizeOf(processInfo));
-  startupInfo.cb := SizeOf(startupInfo);
-  localCommandLine := commandLine;
-  UniqueString(localCommandLine);
-  if workingDirectory <> '' then
-    currentDirectory := PChar(workingDirectory)
+  ZeroMemory(@lStartupInfo, SizeOf(lStartupInfo));
+  ZeroMemory(@lProcessInfo, SizeOf(lProcessInfo));
+  lStartupInfo.cb := SizeOf(lStartupInfo);
+  lLocalCommandLine := aCommandLine;
+  UniqueString(lLocalCommandLine);
+  if aWorkingDirectory <> '' then
+    lCurrentDirectory := PChar(aWorkingDirectory)
   else
-    currentDirectory := nil;
-  if not CreateProcess(PChar(applicationName), PChar(localCommandLine), nil, nil, True,
-    0, nil, currentDirectory, startupInfo, processInfo) then
+    lCurrentDirectory := nil;
+  if not CreateProcess(PChar(aApplicationName), PChar(lLocalCommandLine), nil, nil, True,
+    0, nil, lCurrentDirectory, lStartupInfo, lProcessInfo) then
   begin
-    raise ECommandLineException.CreateResFmt(@SFailedToCreateProcess, [applicationName]);
+    raise ECommandLineException.CreateResFmt(@SFailedToCreateProcess, [aApplicationName]);
   end;
-  WaitForSingleObject(processInfo.hProcess, INFINITE);
-  GetExitCodeProcess(processInfo.hProcess, exitCode);
-  CloseHandle(processInfo.hProcess);
-  CloseHandle(processInfo.hThread);
+  try
+    WaitForSingleObject(lProcessInfo.hProcess, INFINITE);
+    GetExitCodeProcess(lProcessInfo.hProcess, exitCode);
+  finally
+    CloseHandle(lProcessInfo.hProcess);
+    CloseHandle(lProcessInfo.hThread);
+  end;
 end;
 
 procedure TBuildEngine.BuildAll;
 var
-  task: TBuildTask;
+  lTask: TBuildTask;
 begin
-  for task in SelectedTasks do
+  for lTask in SelectedTasks do
   begin
-    BuildTarget(task);
+    BuildTarget(lTask);
   end;
 end;
 
-procedure TBuildEngine.BuildTarget(task: TBuildTask);
+procedure TBuildEngine.BuildTarget(const aTask: TBuildTask);
 var
-  projectPath: string;
-  unitOutputPath: string;
-  configurationName: string;
-  projectName: string;
-  commandFileName: string;
-  commandLine: string;
-  exitCode: Cardinal;
-  rsvars: string;
-  target: TCompilerTarget;
+  lProjectPath: string;
+  lUnitOutputPath: string;
+  lConfigurationName: string;
+  lProjectName: string;
+  lCommandFileName: string;
+  lCommandLine: string;
+  lExitCode: Cardinal;
+  lPauseAfterEachStep: string;
+  lPlatform: string;
+  lRsVars: string;
+  lTarget: TCompilerTarget;
 begin
-  Guard.CheckNotNull(task, 'task');
-  target := task.Compiler;
+  Guard.CheckNotNull(aTask, 'aTask');
+  lTarget := aTask.Compiler;
 
-  projectPath := ExtractFilePath(ParamStr(0));
-  configurationName := ConfigurationNames[fConfigurationType];
+  lProjectPath := ExtractFilePath(ParamStr(0));
+  lConfigurationName := ConfigurationNames[ConfigurationType];
 
-  RemoveReleatedEntries(projectPath, target.LibraryPaths);
-  RemoveReleatedEntries(projectPath, target.BrowsingPaths);
+  RemoveReleatedEntries(lProjectPath, lTarget.LibraryPaths);
+  RemoveReleatedEntries(lProjectPath, lTarget.BrowsingPaths);
 
-  unitOutputPath := projectPath + task.UnitOutputPath;
-  unitOutputPath := StringReplace(unitOutputPath, '$(Config)', configurationName, [rfIgnoreCase, rfReplaceAll]);
-  unitOutputPath := StringReplace(unitOutputPath, '$(Platform)', target.Platform, [rfIgnoreCase, rfReplaceAll]);
+  lUnitOutputPath := lProjectPath + aTask.UnitOutputPath;
+  lUnitOutputPath := StringReplace(lUnitOutputPath, '$(Config)', lConfigurationName, [rfIgnoreCase, rfReplaceAll]);
+  lPlatform := lTarget.Platform;
+  lUnitOutputPath := StringReplace(lUnitOutputPath, '$(Platform)', lPlatform, [rfIgnoreCase, rfReplaceAll]);
 
-  target.LibraryPaths.Add(unitOutputPath);
-  target.BrowsingPaths.AddStrings(fSourcePaths);
-  target.SaveOptions;
+  lTarget.LibraryPaths.AddIfNotExists(lUnitOutputPath);
+  lTarget.BrowsingPaths.AddStringsThatNotExist(SourcePaths);
+  if ModifyDelphiRegistrySettings then
+    lTarget.SaveOptions();
 
-  commandFileName := IncludeTrailingPathDelimiter(TEnvironment.GetFolderPath(sfSystem)) + 'cmd.exe';
-  rsvars := IncludeTrailingPathDelimiter(target.RootDir) + 'bin\rsvars.bat';
-  for projectName in task.Projects do
+  lCommandFileName := IncludeTrailingPathDelimiter(TEnvironment.GetFolderPath(sfSystem)) + 'cmd.exe';
+  lRsVars := IncludeTrailingPathDelimiter(lTarget.RootDir) + 'bin\rsvars.bat';
+  for lProjectName in aTask.Projects do
   begin
-    commandLine := Format('/C BuildHelper "%0:s" "%1:s" "Config=%2:s" "Platform=%3:s"', [
-      rsvars, projectName, configurationName, target.Platform
+    if PauseAfterEachStep then
+      lPauseAfterEachStep := SPause
+    else
+      lPauseAfterEachStep := '';
+    lCommandLine := Format('/C BuildHelper "%0:s" "%1:s" "Config=%2:s" "Platform=%3:s"%4:s', [
+      lRsVars, lProjectName, lConfigurationName, lPlatform, lPauseAfterEachStep
     ]);
-    ExecuteCommandLine(commandFileName, commandLine, exitCode);
-    if exitCode <> 0 then
+    ExecuteCommandLine(lCommandFileName, lCommandLine, lExitCode);
+    if lExitCode <> 0 then
     begin
-      raise EBuildException.CreateResFmt(@SBuildFailed, [projectName]);
+      raise EBuildException.CreateResFmt(@SBuildFailed, [lProjectName]);
     end;
   end;
 
-  if fRunTests then
+  if RunTests then
   begin
-    commandLine := Format('%0:s\Tests\Bin\%1:s\Spring.Tests.exe', [
-      ExcludeTrailingPathDelimiter(projectPath),
-      StringReplace(task.Compiler.TypeName, '.', '\', [])]);
-    ExecuteCommandLine(commandLine, '', exitCode, ExtractFileDir(commandLine));
+    if (lPlatForm = 'Win32') or (lPlatform = 'Win64') then
+    begin
+      lCommandLine := Format('%0:s\Tests\Bin\%1:s\Spring.Tests.exe', [
+        ExcludeTrailingPathDelimiter(lProjectPath),
+        StringReplace(aTask.Compiler.TypeName, '.', '\', [])]);
+      ExecuteCommandLine(lCommandLine, '', lExitCode, ExtractFileDir(lCommandLine));
+    end;
   end;
 end;
 
 procedure TBuildEngine.CleanUp;
+const
+  SCClean = '/C Clean';
 var
-  commandFileName: string;
-  exitCode: Cardinal;
+  lCleanCommand: string;
+  lCommandFileName: string;
+  lExitCode: Cardinal;
 begin
-  commandFileName := IncludeTrailingPathDelimiter(TEnvironment.GetFolderPath(sfSystem)) + 'cmd.exe';
-  ExecuteCommandLine(commandFileName, '/C Clean', exitCode);
+  lCommandFileName := IncludeTrailingPathDelimiter(TEnvironment.GetFolderPath(sfSystem)) + 'cmd.exe';
+  if PauseAfterEachStep then
+    lCleanCommand := SCClean + SPause
+  else
+    lCleanCommand := SCClean;
+  ExecuteCommandLine(lCommandFileName, lCleanCommand, lExitCode);
 end;
 
-procedure TBuildEngine.ConfigureCompilers(const fileName: string);
+procedure TBuildEngine.ConfigureCompilers(const aFileName: string);
 var
-  ini: TIniFile;
-  sections: TStrings;
-  properties: TStrings;
-  sectionName: string;
-  target: TCompilerTarget;
+  lIni: TIniFile;
+  lSections: TStrings;
+  lProperties: TStrings;
+  lSectionName: string;
+  lTarget: TCompilerTarget;
 begin
-  CheckFileExists(fileName);
+  CheckFileExists(aFileName);
 
-  fTargets.Clear;
+  Targets.Clear();
 
-  ini := TIniFile.Create(fileName);
-  sections := nil;
-  properties := nil;
+  lIni := TIniFile.Create(aFileName);
+  lSections := nil;
+  lProperties := nil;
   try
-    sections := TStringList.Create;
-    properties := TStringList.Create;
+    lSections := TStringList.Create();
+    lProperties := TStringList.Create();
 
-    ini.ReadSections(sections);
+    lIni.ReadSections(lSections);
 
-    for sectionName in sections do
+    for lSectionName in lSections do
     begin
-      ini.ReadSectionValues(sectionName, properties);
-      target := TCompilerTarget.Create;
-      fTargets.Add(target);
-      target.Configure(sectionName, properties);
-      if target.Exists then
-        target.LoadOptions;
+      lIni.ReadSectionValues(lSectionName, lProperties);
+      lTarget := TCompilerTarget.Create();
+      Targets.Add(lTarget);
+      lTarget.Configure(lSectionName, lProperties);
+      if lTarget.Exists then
+        lTarget.LoadOptions();
     end;
   finally
-    properties.Free;
-    sections.Free;
-    ini.Free;
+    lProperties.Free();
+    lSections.Free();
+    lIni.Free();
   end;
 end;
 
-procedure TBuildEngine.LoadSettings(const fileName: string);
+procedure TBuildEngine.LoadSettings(const aFileName: string);
 var
-  ini: TCustomIniFile;
-  sections: TStrings;
-  sectionName: string;
-  config: string;
-  target: TCompilerTarget;
-  task: TBuildTask;
+  lIni: TCustomIniFile;
+  lSections: TStrings;
+  lSectionName: string;
+  lConfig: string;
+  lTarget: TCompilerTarget;
+  lTask: TBuildTask;
   i: Integer;
-  selectedTasks: TStrings;
+  lSelectedTasks: TStrings;
 begin
-  ini := TIniFile.Create(fileName);
-  sections := TStringList.Create;
-  selectedTasks := TStringList.Create;
-  selectedTasks.Delimiter := ';';
+  lIni := TIniFile.Create(aFileName);
+  lSections := TStringList.Create();
+  lSelectedTasks := TStringList.Create();
+  lSelectedTasks.Delimiter := ';';
   try
-    config := ini.ReadString('Globals', 'Config', 'Debug');
-    if SameText(config, 'Debug') then
-      fConfigurationType := TConfigurationType.Debug
+    lConfig := lIni.ReadString('Globals', 'Config', 'Debug');
+    if SameText(lConfig, 'Debug') then
+      ConfigurationType := TConfigurationType.Debug
     else
-      fConfigurationType := TConfigurationType.Release;
-    fSourceBaseDir := ini.ReadString('Globals', 'SourceBaseDir', '');
+      ConfigurationType := TConfigurationType.Release;
+    fSourceBaseDir := lIni.ReadString('Globals', 'SourceBaseDir', '');
     fSourceBaseDir := ApplicationPath + fSourceBaseDir;
-    fSourcePaths.DelimitedText := ini.ReadString('Globals', 'SourcePaths', '');
-    for i := 0 to fSourcePaths.Count - 1 do
+    SourcePaths.DelimitedText := lIni.ReadString('Globals', 'SourcePaths', '');
+    for i := 0 to SourcePaths.Count - 1 do
     begin
-      fSourcePaths[i] := IncludeTrailingPathDelimiter(fSourceBaseDir) + fSourcePaths[i];
+      SourcePaths[i] := IncludeTrailingPathDelimiter(fSourceBaseDir) + SourcePaths[i];
     end;
-    selectedTasks.DelimitedText := ini.ReadString('Globals', 'SelectedTasks', '');
-    fRunTests := ini.ReadBool('Globals', 'RunTests', False);
+    lSelectedTasks.DelimitedText := lIni.ReadString('Globals', 'SelectedTasks', '');
+    PauseAfterEachStep := lIni.ReadBool('Globals', 'PauseAfterEachStep', False);
+    RunTests := lIni.ReadBool('Globals', 'RunTests', False);
+    ModifyDelphiRegistrySettings := lIni.ReadBool('Globals', 'ModifyDelphiRegistrySettings', False);
 
-    for target in fTargets do
+    for lTarget in Targets do
     begin
-      sectionName := target.TypeName;
-      if ini.SectionExists(sectionName) then
+      lSectionName := lTarget.TypeName;
+      if lIni.SectionExists(lSectionName) then
       begin
-        task := TBuildTask.Create;
-        fTasks.Add(task);
-        task.Compiler := target;
-        task.Projects.DelimitedText := ini.ReadString(sectionName, 'Projects', '');
-        task.UnitOutputPath := ini.ReadString(sectionName, 'UnitOutputPaths', '');
-        if task.CanBuild and ((selectedTasks.Count = 0) or (selectedTasks.IndexOf(sectionName) > -1)) then
-          fSelectedTasks.Add(task);
+        lTask := TBuildTask.Create();
+        Tasks.Add(lTask);
+        lTask.Compiler := lTarget;
+        lTask.Projects.DelimitedText := lIni.ReadString(lSectionName, 'Projects', '');
+        lTask.UnitOutputPath := lIni.ReadString(lSectionName, 'UnitOutputPaths', '');
+        if lTask.CanBuild and ((lSelectedTasks.Count = 0) or (lSelectedTasks.IndexOf(lSectionName) > -1)) then
+          SelectedTasks.Add(lTask);
       end;
     end;
   finally
-    selectedTasks.Free;
-    sections.Free;
-    ini.Free;
+    lSelectedTasks.Free();
+    lSections.Free();
+    lIni.Free();
   end;
 end;
 
-procedure TBuildEngine.RemoveReleatedEntries(const baseDir: string; entries: TStrings);
+procedure TBuildEngine.RemoveReleatedEntries(const aBaseDir: string; aEntries: TStrings);
 var
-  entry: string;
+  lEntry: string;
   i: Integer;
 begin
-  Assert(entries <> nil, 'entries should not be nil.');
-  for i := entries.Count - 1 downto 0 do
+  Assert(aEntries <> nil, 'entries should not be nil.');
+  for i := aEntries.Count - 1 downto 0 do
   begin
-    entry := entries[i];
-    if (Pos(baseDir, entry) > 0) {or (Pos('$(SPRING)', entry) > 0)} then
+    lEntry := aEntries[i];
+    if (Pos(aBaseDir, lEntry) > 0) {or (Pos('$(SPRING)', entry) > 0)} then
     begin
-      entries.Delete(i);
+      aEntries.Delete(i);
     end;
   end;
 end;
 
-procedure TBuildEngine.SaveSettings(const fileName: string);
+procedure TBuildEngine.SaveSettings(const aFileName: string);
 var
-  ini: TCustomIniFile;
-  selectedTasks: TStrings;
-  task: TBuildTask;
+  lIni: TCustomIniFile;
+  lSelectedTasks: TStrings;
+  lTask: TBuildTask;
 begin
-  ini := TIniFile.Create(fileName);
-  selectedTasks := TStringList.Create;
-  selectedTasks.Delimiter := ';';
+  lIni := TIniFile.Create(aFileName);
+  lSelectedTasks := TStringList.Create();
+  lSelectedTasks.Delimiter := ';';
   try
-    for task in fSelectedTasks do
+    for lTask in SelectedTasks do
     begin
-      selectedTasks.Add(task.Compiler.TypeName);
+      lSelectedTasks.Add(lTask.Compiler.TypeName);
     end;
-    ini.WriteString('Globals', 'Config', ConfigurationNames[fConfigurationType]);
-    ini.WriteString('Globals', 'SelectedTasks', selectedTasks.DelimitedText);
-    ini.WriteBool('Globals', 'RunTests', fRunTests);
+    lIni.WriteString('Globals', 'Config', ConfigurationNames[ConfigurationType]);
+    lIni.WriteString('Globals', 'SelectedTasks', lSelectedTasks.DelimitedText);
+    lIni.WriteBool('Globals', 'PauseAfterEachStep', PauseAfterEachStep);
+    lIni.WriteBool('Globals', 'RunTests', RunTests);
+    lIni.WriteBool('Globals', 'ModifyDelphiRegistrySettings', ModifyDelphiRegistrySettings);
   finally
-    ini.Free;
-    selectedTasks.Free;
+    lIni.Free();
+    lSelectedTasks.Free();
   end;
+end;
+
+destructor TCompilerTargetBase.Destroy();
+begin
+  fBrowsingPaths.Free();
+  fEnvironmentVariables.Free();
+  fLibraryPaths.Free();
+  inherited Destroy();
+end;
+
+function TCompilerTargetBase.GetBrowsingPaths(): TStrings;
+begin
+  if not Assigned(fBrowsingPaths) then
+    fBrowsingPaths := TStringList.Create();
+  Result := fBrowsingPaths;
+end;
+
+function TCompilerTargetBase.GetEnvironmentVariables(): TStrings;
+begin
+  if not Assigned(fEnvironmentVariables) then
+    fEnvironmentVariables := TStringList.Create();
+  Result := fEnvironmentVariables;
+end;
+
+function TCompilerTargetBase.GetLibraryPaths(): TStrings;
+begin
+  if not Assigned(FLibraryPaths) then
+    FLibraryPaths := TStringList.Create();
+  Result := fLibraryPaths;
+end;
+
+destructor TBuildEngineBase.Destroy();
+begin
+  fSourcePaths.Free();
+  inherited Destroy();
+end;
+
+function TBuildEngineBase.GetSelectedTasks(): IList<TBuildTask>;
+begin
+  // SelectedTasks references elements in Tasks (Tasks owns all objects), hence CreateList
+  if not Assigned(fSelectedTasks) then
+    fSelectedTasks := TCollections.CreateList<TBuildTask>;
+  Result := fSelectedTasks;
+end;
+
+function TBuildEngineBase.GetSourcePaths(): TStrings;
+begin
+  if not Assigned(fSourcePaths) then
+    fSourcePaths := TStringList.Create;
+  Result := fSourcePaths;
+end;
+
+function TBuildEngineBase.GetTargets(): IList<TCompilerTarget>;
+begin
+  // Targets owns all objects, hence CreateObjectList
+  if not Assigned(fTargets) then
+    fTargets := TCollections.CreateObjectList<TCompilerTarget>;
+  Result := fTargets;
+end;
+
+function TBuildEngineBase.GetTasks(): IList<TBuildTask>;
+begin
+  // Tasks owns all objects, hence CreateObjectList
+  if not Assigned(fTasks) then
+    fTasks := TCollections.CreateObjectList<TBuildTask>;
+  Result := fTasks;
 end;
 
 {$ENDREGION}
-
 
 end.
