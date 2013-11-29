@@ -34,7 +34,19 @@ uses
   Spring.Container.Resolvers in '..\Source\Core\Container\Spring.Container.Resolvers.pas',
   Spring.Container.ResourceStrings in '..\Source\Core\Container\Spring.Container.ResourceStrings.pas',
   Spring.Services in '..\Source\Core\Services\Spring.Services.pas',
-  Spring.Services.Logging in '..\Source\Core\Services\Spring.Services.Logging.pas';
+  Spring.Services.Logging in '..\Source\Core\Services\Spring.Services.Logging.pas',
+  Spring.Cryptography.Base in '..\Source\Extensions\Cryptography\Spring.Cryptography.Base.pas',
+  Spring.Cryptography.CRC in '..\Source\Extensions\Cryptography\Spring.Cryptography.CRC.pas',
+  Spring.Cryptography.DES in '..\Source\Extensions\Cryptography\Spring.Cryptography.DES.pas',
+  Spring.Cryptography.MD5 in '..\Source\Extensions\Cryptography\Spring.Cryptography.MD5.pas',
+  Spring.Cryptography in '..\Source\Extensions\Cryptography\Spring.Cryptography.pas',
+  Spring.Cryptography.SHA in '..\Source\Extensions\Cryptography\Spring.Cryptography.SHA.pas',
+  Spring.Cryptography.Utils in '..\Source\Extensions\Cryptography\Spring.Cryptography.Utils.pas',
+  Spring.Utils.IO in '..\Source\Extensions\Utils\Spring.Utils.IO.pas',
+{$ifdef MSWINDOWS}
+  Spring.Utils.WinApi in '..\Source\Extensions\Utils\Spring.Utils.WinApi.pas',
+{$endif MSWINDOWS}
+  Spring.Utils in '..\Source\Extensions\Utils\Spring.Utils.pas';
 
 begin
 end.
