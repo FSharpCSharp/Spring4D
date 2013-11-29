@@ -27,8 +27,8 @@ unit Spring.Collections.Lists;
 interface
 
 uses
-  Generics.Defaults,
   Generics.Collections,
+  Generics.Defaults,
   Spring,
   Spring.Collections,
   Spring.Collections.Base;
@@ -102,8 +102,10 @@ type
   TObjectList<T: class> = class(TList<T>, ICollectionOwnership)
   private
     fOwnsObjects: Boolean;
+  {$REGION 'Property Accessors'}
     function GetOwnsObjects: Boolean;
     procedure SetOwnsObjects(const value: Boolean);
+  {$ENDREGION}
   protected
     procedure Changed(const item: T; action: TCollectionChangedAction); override;
   public

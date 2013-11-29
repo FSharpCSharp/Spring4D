@@ -775,6 +775,9 @@ type
   ///	<summary>
   ///	  Defines methods to manipulate generic collections.
   ///	</summary>
+  ///	<typeparam name="T">
+  ///	  The type of the elements in the collection.
+  ///	</typeparam>
   ICollection<T> = interface(IEnumerable<T>)
     ['{9BFD9B06-45CD-4C80-B145-01B09D432CF0}']
   {$REGION 'Property Accessors'}
@@ -1120,6 +1123,12 @@ type
   ///	<summary>
   ///	  Represents a generic collection of key/value pairs.
   ///	</summary>
+  ///	<typeparam name="TKey">
+  ///	  The type of keys in the dictionary.
+  ///	</typeparam>
+  ///	<typeparam name="TValue">
+  ///	  The type of values in the dictionary.
+  ///	</typeparam>
   IDictionary<TKey, TValue> = interface(ICollection<TPair<TKey, TValue>>)
     ['{7F0D544F-6A59-4FA0-9C96-DB09029CC835}']
   {$REGION 'Property Accessors'}
@@ -1645,9 +1654,11 @@ type
 
     class function CreateStack<T>: IStack<T>; overload; static;
     class function CreateStack<T: class>(ownsObjects: Boolean): IStack<T>; overload; static;
+    class function CreateStack<T>(const values: IEnumerable<T>): IStack<T>; overload; static;
 
     class function CreateQueue<T>: IQueue<T>; overload; static;
     class function CreateQueue<T: class>(ownsObjects: Boolean): IQueue<T>; overload; static;
+    class function CreateQueue<T>(const values: IEnumerable<T>): IQueue<T>; overload; static;
 
     class function CreateSet<T>: ISet<T>; overload; static;
     class function CreateSet<T>(const comparer: IEqualityComparer<T>): ISet<T>; overload; static;
@@ -1825,6 +1836,12 @@ begin
   Result := TStack<T>.Create(stack, otOwned);
 end;
 
+class function TCollections.CreateStack<T>(
+  const values: IEnumerable<T>): IStack<T>;
+begin
+  Result := TStack<T>.Create(values);
+end;
+
 class function TCollections.CreateQueue<T>: IQueue<T>;
 var
   queue: Generics.Collections.TQueue<T>;
@@ -1839,6 +1856,12 @@ var
 begin
   queue := Generics.Collections.TObjectQueue<T>.Create(ownsObjects);
   Result := TQueue<T>.Create(queue, otOwned);
+end;
+
+class function TCollections.CreateQueue<T>(
+  const values: IEnumerable<T>): IQueue<T>;
+begin
+  Result := TQueue<T>.Create(values);
 end;
 
 class function TCollections.CreateSet<T>: ISet<T>;

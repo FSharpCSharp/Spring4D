@@ -29,11 +29,10 @@ interface
 {$I Spring.inc}
 
 uses
-  Generics.Defaults,
   Generics.Collections,
+  Generics.Defaults,
   Spring.Collections,
-  Spring.Collections.Base,
-  Spring.Collections.Extensions;
+  Spring.Collections.Base;
 
 type
   ///	<summary>
@@ -56,9 +55,6 @@ type
   ///	  The type of elements in the hash set.
   ///	</typeparam>
   THashSet<T> = class(THashSetBase<T>, ISet<T>)
-  private
-    type
-      TEnumerator = TEnumeratorAdapter<T>;
   protected
     function GetCount: Integer; override;
   public
@@ -257,6 +253,7 @@ implementation
 
 uses
   Spring,
+  Spring.Collections.Extensions,
   Spring.Collections.Lists;
 
 
@@ -424,7 +421,7 @@ end;
 
 function THashSet<T>.GetEnumerator: IEnumerator<T>;
 begin
-  Result := TEnumerator.Create(fDictionary.Keys);
+  Result := TEnumeratorAdapter<T>.Create(fDictionary.Keys);
 end;
 
 function THashSet<T>.GetCount: Integer;
