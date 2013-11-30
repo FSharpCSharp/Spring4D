@@ -75,6 +75,10 @@ type
     procedure TestByValue;
   end;
 
+  {$M+}
+  TProc<T1, T2> = reference to procedure(arg1: T1; arg2: T2);
+  {$M-}
+
   TTestMulticastEvent = class(TTestCase)
   private
     type
@@ -82,6 +86,9 @@ type
       TEventSingle = procedure(const Value: Single) of object;
       TEventDouble = procedure(const Value: Double) of object;
       TEventExtended = procedure(const Value: Extended) of object;
+    const
+      CNumber = 5;
+      CText = 'test';
   private
     fEvent: IMulticastNotifyEvent;
     fASender: TObject;
@@ -89,6 +96,7 @@ type
     fBSender: TObject;
     fBInvoked: Boolean;
     fHandlerInvokeCount: Integer;
+    fProc: TProc<Integer, string>;
   protected
     procedure SetUp; override;
     procedure TearDown; override;
@@ -107,6 +115,8 @@ type
     procedure TestRecordType;
     procedure TestIssue58;
     procedure TestIssue60;
+
+    procedure TestDelegate;
   end;
 
 implementation
@@ -231,6 +241,12 @@ procedure TTestMulticastEvent.SetUp;
 begin
   inherited;
   fEvent := TMulticastNotifyEvent.Create;
+  fProc :=
+    procedure(i: Integer; s: string)
+    begin
+      Inc(fHandlerInvokeCount, i);
+      CheckEquals(CText, s);
+    end;
 end;
 
 procedure TTestMulticastEvent.TearDown;
@@ -278,6 +294,20 @@ procedure TTestMulticastEvent.HandlerSingle(const value: Single);
 begin
   CheckEquals(42, value);
   Inc(fHandlerInvokeCount);
+end;
+
+procedure TTestMulticastEvent.TestDelegate;
+var
+  e: Event<TProc<Integer, string>>;
+begin
+  e.Add(fProc);
+  CheckEquals(1, e.Count);
+  e.Invoke(CNumber, CText);
+  CheckEquals(CNumber, fHandlerInvokeCount);
+  e.Remove(fProc);
+  CheckEquals(0, e.Count);
+  e.Invoke(CNumber, CText);
+  CheckEquals(CNumber, fHandlerInvokeCount);
 end;
 
 procedure TTestMulticastEvent.TestEmpty;
