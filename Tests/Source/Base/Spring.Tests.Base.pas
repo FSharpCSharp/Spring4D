@@ -376,10 +376,7 @@ end;
 
 procedure TTestMulticastEvent.TestIssue60Double();
 var
-  eventInt64: Event<TEventInt64>;
-  eventSingle: Event<TEventSingle>;
   eventDouble: Event<TEventDouble>;
-  eventExtended: Event<TEventExtended>;
   expected: Integer;
 begin
   expected := 0;
@@ -387,21 +384,9 @@ begin
   Writeln('TTestMulticastEvent.TestIssue60Double');
   Writeln(Format('Entry: Expected=%d, got fHandlerInvokeCount=%d', [expected, fHandlerInvokeCount]));
 {$endif LogConsole}
-//  eventInt64 := Event<TEventInt64>.Create;
-//  eventSingle := Event<TEventSingle>.Create;
   eventDouble := Event<TEventDouble>.Create;
-//  eventExtended := Event<TEventExtended>.Create;
-
-//  eventInt64.Add(HandlerInt64);
-//  eventSingle.Add(HandlerSingle);
   eventDouble.Add(HandlerDouble);
-//  eventExtended.Add(HandlerExtended);
-
-//  eventInt64.Invoke(42); Inc(expected);
-//  eventSingle.Invoke(42); Inc(expected);
   eventDouble.Invoke(42); Inc(expected);
-//  eventExtended.Invoke(42); Inc(expected);
-
 {$ifdef LogConsole}
   Writeln(Format('Exit: Expected=%d, got fHandlerInvokeCount=%d', [expected, fHandlerInvokeCount]));
 {$endif LogConsole}
@@ -410,9 +395,6 @@ end;
 
 procedure TTestMulticastEvent.TestIssue60Extended();
 var
-  eventInt64: Event<TEventInt64>;
-  eventSingle: Event<TEventSingle>;
-  eventDouble: Event<TEventDouble>;
   eventExtended: Event<TEventExtended>;
   expected: Integer;
 begin
@@ -421,21 +403,9 @@ begin
   Writeln('TTestMulticastEvent.TestIssue60Extended');
   Writeln(Format('Entry: Expected=%d, got fHandlerInvokeCount=%d', [expected, fHandlerInvokeCount]));
 {$endif LogConsole}
-//  eventInt64 := Event<TEventInt64>.Create;
-//  eventSingle := Event<TEventSingle>.Create;
-//  eventDouble := Event<TEventDouble>.Create;
   eventExtended := Event<TEventExtended>.Create;
-
-//  eventInt64.Add(HandlerInt64);
-//  eventSingle.Add(HandlerSingle);
-//  eventDouble.Add(HandlerDouble);
   eventExtended.Add(HandlerExtended);
-
-//  eventInt64.Invoke(42); Inc(expected);
-//  eventSingle.Invoke(42); Inc(expected);
-//  eventDouble.Invoke(42); Inc(expected);
   eventExtended.Invoke(42); Inc(expected);
-
 {$ifdef LogConsole}
   Writeln(Format('Exit: Expected=%d, got fHandlerInvokeCount=%d', [expected, fHandlerInvokeCount]));
 {$endif LogConsole}
@@ -445,9 +415,6 @@ end;
 procedure TTestMulticastEvent.TestIssue60Int64();
 var
   eventInt64: Event<TEventInt64>;
-  eventSingle: Event<TEventSingle>;
-  eventDouble: Event<TEventDouble>;
-  eventExtended: Event<TEventExtended>;
   expected: Integer;
 begin
   expected := 0;
@@ -456,20 +423,8 @@ begin
   Writeln(Format('Entry: Expected=%d, got fHandlerInvokeCount=%d', [expected, fHandlerInvokeCount]));
 {$endif LogConsole}
   eventInt64 := Event<TEventInt64>.Create;
-//  eventSingle := Event<TEventSingle>.Create;
-//  eventDouble := Event<TEventDouble>.Create;
-//  eventExtended := Event<TEventExtended>.Create;
-
   eventInt64.Add(HandlerInt64);
-//  eventSingle.Add(HandlerSingle);
-//  eventDouble.Add(HandlerDouble);
-//  eventExtended.Add(HandlerExtended);
-
   eventInt64.Invoke(42); Inc(expected);
-//  eventSingle.Invoke(42); Inc(expected);
-//  eventDouble.Invoke(42); Inc(expected);
-//  eventExtended.Invoke(42); Inc(expected);
-
 {$ifdef LogConsole}
   Writeln(Format('Exit: Expected=%d, got fHandlerInvokeCount=%d', [expected, fHandlerInvokeCount]));
 {$endif LogConsole}
@@ -478,10 +433,7 @@ end;
 
 procedure TTestMulticastEvent.TestIssue60Single();
 var
-  eventInt64: Event<TEventInt64>;
   eventSingle: Event<TEventSingle>;
-  eventDouble: Event<TEventDouble>;
-  eventExtended: Event<TEventExtended>;
   expected: Integer;
 begin
   expected := 0;
@@ -489,21 +441,9 @@ begin
   Writeln('TTestMulticastEvent.TestIssue60Single');
   Writeln(Format('Entry: Expected=%d, got fHandlerInvokeCount=%d', [expected, fHandlerInvokeCount]));
 {$endif LogConsole}
-//  eventInt64 := Event<TEventInt64>.Create;
   eventSingle := Event<TEventSingle>.Create;
-//  eventDouble := Event<TEventDouble>.Create;
-//  eventExtended := Event<TEventExtended>.Create;
-
-//  eventInt64.Add(HandlerInt64);
   eventSingle.Add(HandlerSingle);
-//  eventDouble.Add(HandlerDouble);
-//  eventExtended.Add(HandlerExtended);
-
-//  eventInt64.Invoke(42); Inc(expected);
   eventSingle.Invoke(42); Inc(expected);
-//  eventDouble.Invoke(42); Inc(expected);
-//  eventExtended.Invoke(42); Inc(expected);
-
 {$ifdef LogConsole}
   Writeln(Format('Exit: Expected=%d, got fHandlerInvokeCount=%d', [expected, fHandlerInvokeCount]));
 {$endif LogConsole}
