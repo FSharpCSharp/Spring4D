@@ -43,10 +43,11 @@ uses
   Spring.Cryptography.SHA in '..\Source\Extensions\Cryptography\Spring.Cryptography.SHA.pas',
   Spring.Cryptography.Utils in '..\Source\Extensions\Cryptography\Spring.Cryptography.Utils.pas',
   Spring.Utils.IO in '..\Source\Extensions\Utils\Spring.Utils.IO.pas',
-{$ifdef MSWINDOWS}
+  {$ifdef MSWINDOWS}
   Spring.Utils.WinApi in '..\Source\Extensions\Utils\Spring.Utils.WinApi.pas',
-{$endif MSWINDOWS}
-  Spring.Utils in '..\Source\Extensions\Utils\Spring.Utils.pas';
+  {$endif MSWINDOWS}
+  Spring.Utils in '..\Source\Extensions\Utils\Spring.Utils.pas',
+  Spring.Collections.Adapters in '..\Source\Base\Collections\Spring.Collections.Adapters.pas';
 
 begin
 end.

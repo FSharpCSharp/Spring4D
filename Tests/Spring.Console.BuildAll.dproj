@@ -203,6 +203,7 @@
         <DCCReference Include="..\Source\Extensions\Utils\Spring.Utils.IO.pas"/>
         <DCCReference Include="..\Source\Extensions\Utils\Spring.Utils.WinApi.pas"/>
         <DCCReference Include="..\Source\Extensions\Utils\Spring.Utils.pas"/>
+        <DCCReference Include="..\Source\Base\Collections\Spring.Collections.Adapters.pas"/>
         <None Include="Spring.Console.BuildAll.dpr"/>
         <None Include="..\Source\Base\Spring.inc"/>
         <BuildConfiguration Include="Release">
