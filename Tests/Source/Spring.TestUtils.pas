@@ -28,6 +28,8 @@ unit Spring.TestUtils;
 
 interface
 
+{$i Spring.Tests.inc}
+
 uses
   TestFramework,
   SysUtils;
