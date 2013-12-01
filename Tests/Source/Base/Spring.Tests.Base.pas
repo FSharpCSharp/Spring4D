@@ -26,6 +26,10 @@ unit Spring.Tests.Base;
 
 {$I Spring.inc}
 
+{$ifdef MACOS}
+  {$define LogConsole}
+{$endif MACOS}
+
 interface
 
 uses
@@ -80,7 +84,7 @@ type
   {$M-}
 
   TTestMulticastEvent = class(TTestCase)
-  private
+  strict private
     type
       TEventInt64 = procedure(const Value: Int64) of object;
       TEventSingle = procedure(const Value: Single) of object;
@@ -89,7 +93,7 @@ type
     const
       CNumber = 5;
       CText = 'test';
-  private
+  strict private
     fEvent: IMulticastNotifyEvent;
     fASender: TObject;
     fAInvoked: Boolean;
@@ -97,7 +101,7 @@ type
     fBInvoked: Boolean;
     fHandlerInvokeCount: Integer;
     fProc: TProc<Integer, string>;
-  protected
+  strict protected
     procedure SetUp; override;
     procedure TearDown; override;
     procedure HandlerA(sender: TObject);
@@ -114,9 +118,12 @@ type
     procedure TestTwoHandlers;
     procedure TestRecordType;
     procedure TestIssue58;
-    procedure TestIssue60;
-
     procedure TestDelegate;
+    procedure TestIssue60();
+    procedure TestIssue60Double();
+    procedure TestIssue60Extended();
+    procedure TestIssue60Int64();
+    procedure TestIssue60Single();
   end;
 
 implementation
@@ -125,7 +132,6 @@ uses
   Classes,
   SysUtils,
   Variants;
-
 
 {$REGION 'TTestNullableInteger'}
 
@@ -334,13 +340,19 @@ begin
   Check(Assigned(i));
 end;
 
-procedure TTestMulticastEvent.TestIssue60;
+procedure TTestMulticastEvent.TestIssue60();
 var
   eventInt64: Event<TEventInt64>;
   eventSingle: Event<TEventSingle>;
   eventDouble: Event<TEventDouble>;
   eventExtended: Event<TEventExtended>;
+  expected: Integer;
 begin
+  expected := 0;
+{$ifdef LogConsole}
+  Writeln('TTestMulticastEvent.TestIssue60');
+  Writeln(Format('Entry: Expected=%d, got fHandlerInvokeCount=%d', [expected, fHandlerInvokeCount]));
+{$endif LogConsole}
   eventInt64 := Event<TEventInt64>.Create;
   eventSingle := Event<TEventSingle>.Create;
   eventDouble := Event<TEventDouble>.Create;
@@ -351,12 +363,151 @@ begin
   eventDouble.Add(HandlerDouble);
   eventExtended.Add(HandlerExtended);
 
-  eventInt64.Invoke(42);
-  eventSingle.Invoke(42);
-  eventDouble.Invoke(42);
-  eventExtended.Invoke(42);
+  eventInt64.Invoke(42); Inc(expected);
+  eventSingle.Invoke(42); Inc(expected);
+  eventDouble.Invoke(42); Inc(expected);
+  eventExtended.Invoke(42); Inc(expected);
 
-  CheckEquals(4, fHandlerInvokeCount);
+{$ifdef LogConsole}
+  Writeln(Format('Exit: Expected=%d, got fHandlerInvokeCount=%d', [expected, fHandlerInvokeCount]));
+{$endif LogConsole}
+  CheckEquals(expected, fHandlerInvokeCount);
+end;
+
+procedure TTestMulticastEvent.TestIssue60Double();
+var
+  eventInt64: Event<TEventInt64>;
+  eventSingle: Event<TEventSingle>;
+  eventDouble: Event<TEventDouble>;
+  eventExtended: Event<TEventExtended>;
+  expected: Integer;
+begin
+  expected := 0;
+{$ifdef LogConsole}
+  Writeln('TTestMulticastEvent.TestIssue60Double');
+  Writeln(Format('Entry: Expected=%d, got fHandlerInvokeCount=%d', [expected, fHandlerInvokeCount]));
+{$endif LogConsole}
+//  eventInt64 := Event<TEventInt64>.Create;
+//  eventSingle := Event<TEventSingle>.Create;
+  eventDouble := Event<TEventDouble>.Create;
+//  eventExtended := Event<TEventExtended>.Create;
+
+//  eventInt64.Add(HandlerInt64);
+//  eventSingle.Add(HandlerSingle);
+  eventDouble.Add(HandlerDouble);
+//  eventExtended.Add(HandlerExtended);
+
+//  eventInt64.Invoke(42); Inc(expected);
+//  eventSingle.Invoke(42); Inc(expected);
+  eventDouble.Invoke(42); Inc(expected);
+//  eventExtended.Invoke(42); Inc(expected);
+
+{$ifdef LogConsole}
+  Writeln(Format('Exit: Expected=%d, got fHandlerInvokeCount=%d', [expected, fHandlerInvokeCount]));
+{$endif LogConsole}
+  CheckEquals(expected, fHandlerInvokeCount);
+end;
+
+procedure TTestMulticastEvent.TestIssue60Extended();
+var
+  eventInt64: Event<TEventInt64>;
+  eventSingle: Event<TEventSingle>;
+  eventDouble: Event<TEventDouble>;
+  eventExtended: Event<TEventExtended>;
+  expected: Integer;
+begin
+  expected := 0;
+{$ifdef LogConsole}
+  Writeln('TTestMulticastEvent.TestIssue60Extended');
+  Writeln(Format('Entry: Expected=%d, got fHandlerInvokeCount=%d', [expected, fHandlerInvokeCount]));
+{$endif LogConsole}
+//  eventInt64 := Event<TEventInt64>.Create;
+//  eventSingle := Event<TEventSingle>.Create;
+//  eventDouble := Event<TEventDouble>.Create;
+  eventExtended := Event<TEventExtended>.Create;
+
+//  eventInt64.Add(HandlerInt64);
+//  eventSingle.Add(HandlerSingle);
+//  eventDouble.Add(HandlerDouble);
+  eventExtended.Add(HandlerExtended);
+
+//  eventInt64.Invoke(42); Inc(expected);
+//  eventSingle.Invoke(42); Inc(expected);
+//  eventDouble.Invoke(42); Inc(expected);
+  eventExtended.Invoke(42); Inc(expected);
+
+{$ifdef LogConsole}
+  Writeln(Format('Exit: Expected=%d, got fHandlerInvokeCount=%d', [expected, fHandlerInvokeCount]));
+{$endif LogConsole}
+  CheckEquals(expected, fHandlerInvokeCount);
+end;
+
+procedure TTestMulticastEvent.TestIssue60Int64();
+var
+  eventInt64: Event<TEventInt64>;
+  eventSingle: Event<TEventSingle>;
+  eventDouble: Event<TEventDouble>;
+  eventExtended: Event<TEventExtended>;
+  expected: Integer;
+begin
+  expected := 0;
+{$ifdef LogConsole}
+  Writeln('TTestMulticastEvent.TestIssue60Int64');
+  Writeln(Format('Entry: Expected=%d, got fHandlerInvokeCount=%d', [expected, fHandlerInvokeCount]));
+{$endif LogConsole}
+  eventInt64 := Event<TEventInt64>.Create;
+//  eventSingle := Event<TEventSingle>.Create;
+//  eventDouble := Event<TEventDouble>.Create;
+//  eventExtended := Event<TEventExtended>.Create;
+
+  eventInt64.Add(HandlerInt64);
+//  eventSingle.Add(HandlerSingle);
+//  eventDouble.Add(HandlerDouble);
+//  eventExtended.Add(HandlerExtended);
+
+  eventInt64.Invoke(42); Inc(expected);
+//  eventSingle.Invoke(42); Inc(expected);
+//  eventDouble.Invoke(42); Inc(expected);
+//  eventExtended.Invoke(42); Inc(expected);
+
+{$ifdef LogConsole}
+  Writeln(Format('Exit: Expected=%d, got fHandlerInvokeCount=%d', [expected, fHandlerInvokeCount]));
+{$endif LogConsole}
+  CheckEquals(expected, fHandlerInvokeCount);
+end;
+
+procedure TTestMulticastEvent.TestIssue60Single();
+var
+  eventInt64: Event<TEventInt64>;
+  eventSingle: Event<TEventSingle>;
+  eventDouble: Event<TEventDouble>;
+  eventExtended: Event<TEventExtended>;
+  expected: Integer;
+begin
+  expected := 0;
+{$ifdef LogConsole}
+  Writeln('TTestMulticastEvent.TestIssue60Single');
+  Writeln(Format('Entry: Expected=%d, got fHandlerInvokeCount=%d', [expected, fHandlerInvokeCount]));
+{$endif LogConsole}
+//  eventInt64 := Event<TEventInt64>.Create;
+  eventSingle := Event<TEventSingle>.Create;
+//  eventDouble := Event<TEventDouble>.Create;
+//  eventExtended := Event<TEventExtended>.Create;
+
+//  eventInt64.Add(HandlerInt64);
+  eventSingle.Add(HandlerSingle);
+//  eventDouble.Add(HandlerDouble);
+//  eventExtended.Add(HandlerExtended);
+
+//  eventInt64.Invoke(42); Inc(expected);
+  eventSingle.Invoke(42); Inc(expected);
+//  eventDouble.Invoke(42); Inc(expected);
+//  eventExtended.Invoke(42); Inc(expected);
+
+{$ifdef LogConsole}
+  Writeln(Format('Exit: Expected=%d, got fHandlerInvokeCount=%d', [expected, fHandlerInvokeCount]));
+{$endif LogConsole}
+  CheckEquals(expected, fHandlerInvokeCount);
 end;
 
 procedure TTestMulticastEvent.TestOneHandler;
