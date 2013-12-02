@@ -469,19 +469,20 @@ type
 
 implementation
 
+{$I 'spring.inc'}
+
 {$define UseGenericUI} // for MACOS and other non Windows platforms
 {$ifdef MSWINDOWS}
   {$undef UseGenericUI}
 {$endif MSWINDOWS}
 
 uses
-{$ifdef UseGenericUI}
-  Fmx.Graphics,
+{$ifdef HAS_UNIT_SYSTEM_UITYPES}
   System.UITypes,
   System.UIConsts,
 {$else}
   Graphics,
-{$endif UseGenericUI}
+{$endif HAS_UNIT_SYSTEM_UITYPES}
   DateUtils,
   Spring;
 
@@ -492,13 +493,23 @@ const
 // or old-style Vcl.Graphics TColor consts.
   RedString = 'clRed';
   BlueString = 'clBlue';
-{$ifdef UseGenericUI}
+{$ifdef HAS_UNIT_SYSTEM_UITYPES}
   RedValue = TColors.Red;
   BlueValue = TColors.Blue;
 {$else}
   RedValue = clRed;
   BlueValue = clBlue;
-{$endif MACOS}
+{$endif HAS_UNIT_SYSTEM_UITYPES}
+
+{$IFDEF HAS_UNIT_SYSTEM_UITYPES}
+function ColorToRGB(i : TColor) : Longint;
+begin
+  if (Assigned(TColors.ColorToRGB)) then
+    Result := TColors.ColorToRGB(i)
+  else Result := i;
+end;
+{$ENDIF}
+
 
 {$REGION 'TTestFromString'}
 
@@ -2534,9 +2545,7 @@ begin
     TypeInfo(Cardinal));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Cardinal>(outInt));
-{$ifndef UseGenericUI}
-  CheckEquals(ColorToRGB(RedValue), outInt); {TODO -o##jwp -cMACOS : Find MAC OS equivalent}
-{$endif UseGenericUI}
+  CheckEquals(ColorToRGB(RedValue), outInt);
 end;
 
 procedure TTestFromColor.TestColorToInteger;
@@ -2548,9 +2557,7 @@ begin
     TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Integer>(outInt));
-{$ifndef UseGenericUI}
-  CheckEquals(ColorToRGB(RedValue), outInt); {TODO -o##jwp -cMACOS : Find MAC OS equivalent}
-{$endif UseGenericUI}
+  CheckEquals(ColorToRGB(RedValue), outInt);
 end;
 
 procedure TTestFromColor.TestColorToSmallInt;
@@ -2562,9 +2569,7 @@ begin
     TypeInfo(SmallInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<SmallInt>(outInt));
-{$ifndef UseGenericUI}
-  CheckEquals(ColorToRGB(RedValue), outInt); {TODO -o##jwp -cMACOS : Find MAC OS equivalent}
-{$endif UseGenericUI}
+  CheckEquals(ColorToRGB(RedValue), outInt);
 end;
 
 procedure TTestFromColor.TestColorToNullableColor;
@@ -2624,9 +2629,7 @@ begin
     TypeInfo(Nullable<Integer>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Integer>>(outNullable));
-{$ifndef UseGenericUI}
-  CheckEquals(ColorToRGB(RedValue), outNullable.Value); {TODO -o##jwp -cMACOS : Find MAC OS equivalent}
-{$endif UseGenericUI}
+  CheckEquals(ColorToRGB(RedValue), outNullable.Value);
 end;
 
 procedure TTestFromColor.TestColorToNullableCardinal;
@@ -2638,9 +2641,7 @@ begin
     TypeInfo(Nullable<Cardinal>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Cardinal>>(outNullable));
-{$ifndef UseGenericUI}
-  CheckEquals(ColorToRGB(RedValue), outNullable.Value); {TODO -o##jwp -cMACOS : Find MAC OS equivalent}
-{$endif UseGenericUI}
+  CheckEquals(ColorToRGB(RedValue), outNullable.Value);
 end;
 
 procedure TTestFromColor.TestColorToNullableSmallInt;
@@ -2652,9 +2653,7 @@ begin
     TypeInfo(Nullable<SmallInt>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<SmallInt>>(outNullable));
-{$ifndef UseGenericUI}
-  CheckEquals(ColorToRGB(RedValue), outNullable.Value); {TODO -o##jwp -cMACOS : Find MAC OS equivalent}
-{$endif UseGenericUI}
+  CheckEquals(ColorToRGB(RedValue), outNullable.Value);
 end;
 
 {$ENDREGION}
