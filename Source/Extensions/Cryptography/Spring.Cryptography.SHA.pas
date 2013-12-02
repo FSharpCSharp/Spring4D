@@ -394,7 +394,7 @@ asm
 end;
 {$ELSE}
 begin
-  if (t >= 0) and (t <= 19) then
+  if {(t >= 0) and} (t <= 19) then
   begin
     Result := $5A827999;
   end

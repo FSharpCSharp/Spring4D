@@ -151,8 +151,10 @@ type
     constructor Create(const buffer: array of Char); overload;
     constructor Create(const buffer: array of Char; startIndex, count: Integer); overload;
     constructor Create(const s: string); overload;
+{$IFNDEF NEXTGEN}
     constructor Create(const s: WideString); overload;
     constructor Create(const s: RawByteString); overload;
+{$ENDIF}
 
     class function FromHexString(const s: string): TBuffer; static;
 
@@ -178,7 +180,9 @@ type
 
     function EnsureSize(size: Integer): TBuffer; overload;
     function EnsureSize(size: Integer; value: Byte): TBuffer; overload;
+{$IFNDEF NEXTGEN}
     function EnsureSize(size: Integer; value: AnsiChar): TBuffer; overload;
+{$ENDIF}
 
     function Equals(const buffer: TBuffer): Boolean; overload;
     function Equals(const buffer: array of Byte): Boolean; overload;
@@ -234,8 +238,10 @@ type
     function ComputeHash(const buffer: array of Byte; startIndex, count: Integer): TBuffer; overload;
     function ComputeHash(const buffer: Pointer; count: Integer): TBuffer; overload;
     function ComputeHash(const inputString: string): TBuffer; overload;
+{$IFNDEF NEXTGEN}
     function ComputeHash(const inputString: WideString): TBuffer; overload;
     function ComputeHash(const inputString: RawByteString): TBuffer; overload;
+{$ENDIF}
     function ComputeHash(const inputStream: TStream): TBuffer; overload;  // experimental
     function ComputeHashOfFile(const fileName: string): TBuffer;  // callback?
 
@@ -298,8 +304,10 @@ type
     function  Encrypt(const buffer: array of Byte; startIndex, count: Integer): TBuffer; overload;
     function  Encrypt(const buffer: Pointer; count: Integer): TBuffer; overload;
     function  Encrypt(const inputString: string): TBuffer; overload;
+{$IFNDEF NEXTGEN}
     function  Encrypt(const inputString: WideString): TBuffer; overload;
     function  Encrypt(const inputString: RawByteString): TBuffer; overload;
+{$ENDIF}
     procedure Encrypt(inputStream, outputStream: TStream); overload;  // experimental
 
     function  Decrypt(const buffer: TBuffer): TBuffer; overload;
@@ -307,8 +315,10 @@ type
     function  Decrypt(const buffer: array of Byte; startIndex, count: Integer): TBuffer; overload;
     function  Decrypt(const buffer: Pointer; count: Integer): TBuffer; overload;
     function  Decrypt(const inputString: string): TBuffer; overload;
+{$IFNDEF NEXTGEN}
     function  Decrypt(const inputString: WideString): TBuffer; overload;
     function  Decrypt(const inputString: RawByteString): TBuffer; overload;
+{$ENDIF}
     procedure Decrypt(inputStream, outputStream: TStream); overload; // experimental
 
     ///	<summary>
@@ -578,6 +588,7 @@ begin
   Create(PByte(s), Length(s) * SizeOf(Char));
 end;
 
+{$IFNDEF NEXTGEN}
 constructor TBuffer.Create(const s: WideString);
 begin
   Create(PByte(s), Length(s) * SizeOf(Char));
@@ -587,6 +598,7 @@ constructor TBuffer.Create(const s: RawByteString);
 begin
   Create(PByte(s), Length(s));
 end;
+{$ENDIF}
 
 constructor TBuffer.Create(const buffer: array of Char);
 begin

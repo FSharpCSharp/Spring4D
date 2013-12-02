@@ -67,7 +67,7 @@ type
   end;
 
 procedure MD5Init(var Context: TMD5Context);
-procedure MD5Update(var Context: TMD5Context; Input: PAnsiChar; Length: longword);
+procedure MD5Update(var Context: TMD5Context; Input: PByte; Length: longword);
 procedure MD5Final(var Context: TMD5Context; var Digest: TMD5Digest);
 
 implementation
@@ -376,7 +376,7 @@ begin
 end;
 
 // Update given Context to include Length bytes of Input
-procedure MD5Update(var Context: TMD5Context; Input: PAnsiChar; Length: longword);
+procedure MD5Update(var Context: TMD5Context; Input: PByte; Length: longword);
 var
   Index: longword;
   PartLen: longword;
