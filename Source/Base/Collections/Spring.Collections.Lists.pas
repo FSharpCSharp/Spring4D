@@ -60,6 +60,7 @@ type
         procedure Reset; override;
       end;
   private
+    fArrayManager: TArrayManager<T>;
     fItems: array of T;
     fCount: Integer;
     fVersion: Integer;
@@ -97,6 +98,8 @@ type
     function ToArray: TArray<T>; override;
 
     property Capacity: Integer read GetCapacity write SetCapacity;
+    procedure AfterConstruction; override;
+    destructor Destroy; override;
   end;
 
   TObjectList<T: class> = class(TList<T>, ICollectionOwnership)
@@ -172,8 +175,10 @@ begin
   EnsureCapacity(fCount + 1);
   if index <> fCount then
   begin
-    System.Move(fItems[index], fItems[index + 1], (fCount - index) * SizeOf(T));
-    FillChar(fItems[index], SizeOf(fItems[index]), 0);
+    //System.Move(fItems[index], fItems[index + 1], (fCount - index) * SizeOf(T));
+    //System.FillChar(fItems[index], SizeOf(fItems[index]), 0);
+    fArrayManager.Move(fItems, index, index + 1, fCount - index);
+    fArrayManager.Finalize(fItems, index, 1);
   end;
   fItems[index] := item;
   Inc(fCount);
@@ -192,8 +197,10 @@ begin
   Dec(fCount);
   if index <> fCount then
   begin
-    System.Move(fItems[index + 1], fItems[index], (fCount - index) * SizeOf(T));
-    FillChar(fItems[fCount], SizeOf(T), 0);
+    //System.Move(fItems[index + 1], fItems[index], (fCount - index) * SizeOf(T));
+    //System.FillChar(fItems[fCount], SizeOf(T), 0);
+    fArrayManager.Move(fItems, index + 1, index, fCount - index);
+    fArrayManager.Finalize(fItems, fCount, 1);
   end;
   IncreaseVersion;
 
@@ -213,16 +220,20 @@ begin
     Exit;
 
   SetLength(oldItems, count);
-  System.Move(fItems[index], oldItems[0], count * SizeOf(T));
+  //System.Move(fItems[index], oldItems[0], count * SizeOf(T));
+  fArrayManager.Move(fItems, oldItems, index, 0, count);
 
   tailCount := fCount - (index + count);
   if tailCount > 0 then
   begin
-    System.Move(fItems[index + count], fItems[index], tailCount * SizeOf(T));
-    FillChar(fItems[fCount - count], count * SizeOf(T), 0);
+    //System.Move(fItems[index + count], fItems[index], tailCount * SizeOf(T));
+    //System.FillChar(fItems[fCount - count], count * SizeOf(T), 0);
+    fArrayManager.Move(fItems, index + count, index, tailCount);
+    fArrayManager.Finalize(fItems, fCount - count, count);
   end
   else
-    FillChar(fItems[index], count * SizeOf(T), 0);
+    //System.FillChar(fItems[index], count * SizeOf(T), 0);
+    fArrayManager.Finalize(fItems, index, count);
   Dec(fCount, count);
   IncreaseVersion;
 
@@ -248,15 +259,37 @@ begin
   temp := fItems[currentIndex];
   fItems[currentIndex] := Default(T);
   if currentIndex < newIndex then
-    System.Move(fItems[currentIndex + 1], fItems[currentIndex], (newIndex - currentIndex) * SizeOf(T))
+	//System.Move(fItems[currentIndex + 1], fItems[currentIndex], (newIndex - currentIndex) * SizeOf(T))
+	fArrayManager.Move(fItems, currentIndex + 1, currentIndex, newIndex - currentIndex)
   else
-    System.Move(fItems[newIndex], fItems[newIndex + 1], (currentIndex - newIndex) * SizeOf(T));
+	//System.Move(fItems[newIndex], fItems[newIndex + 1], (currentIndex - newIndex) * SizeOf(T));
+	fArrayManager.Move(fItems, newIndex, newIndex + 1, currentIndex - newIndex);
 
-  FillChar(fItems[newIndex], SizeOf(T), 0);
+  //System.FillChar(fItems[newIndex], SizeOf(T), 0);
+  fArrayManager.Finalize(fItems, newIndex, 1);
   fItems[newIndex] := temp;
   IncreaseVersion;
 
   Changed(temp, caMoved);
+end;
+
+procedure TList<T>.AfterConstruction;
+begin
+  inherited;
+{$IF Defined(WEAKREF)}
+  if HasWeakRef then
+    FArrayManager := TManualArrayManager<T>.Create
+  else
+{$ENDIF}
+	FArrayManager := TMoveArrayManager<T>.Create;
+end;
+
+destructor TList<T>.Destroy;
+begin
+  inherited;
+{$IFNDEF AUTOREFCOUNT}
+  FArrayManager.Free;
+{$ENDIF}
 end;
 
 procedure TList<T>.Clear;
@@ -477,7 +510,11 @@ procedure TObjectList<T>.Changed(const item: T; action: TCollectionChangedAction
 begin
   inherited Changed(item, action);
   if OwnsObjects and (action = caRemoved) then
+{$IFNDEF AUTOREFCOUNT}
     item.Free;
+{$ELSE}
+    item.DisposeOf;
+{$ENDIF}
 end;
 
 {$ENDREGION}
