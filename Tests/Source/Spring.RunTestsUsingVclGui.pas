@@ -24,17 +24,17 @@
 
 unit Spring.RunTestsUsingVclGui;
 
+{$I Spring.Tests.inc}
+
 interface
 
-{$i Spring.Tests.inc}
-
-{$ifndef CONSOLE_TESTRUNNER}
+{$IFNDEF CONSOLE_TESTRUNNER}
 procedure RunRegisteredTestCases();
-{$endif CONSOLE_TESTRUNNER}
+{$ENDIF CONSOLE_TESTRUNNER}
 
 implementation
 
-{$ifndef CONSOLE_TESTRUNNER}
+{$IFNDEF CONSOLE_TESTRUNNER}
 uses
   Forms,
   GUITestRunner;
@@ -44,6 +44,6 @@ begin
   Application.Initialize();
   TGUITestRunner.RunRegisteredTests();
 end;
-{$endif CONSOLE_TESTRUNNER}
+{$ENDIF CONSOLE_TESTRUNNER}
 
 end.

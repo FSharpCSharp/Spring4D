@@ -24,18 +24,9 @@
 
 program Spring.Tests;
 
-{$i Spring.Tests.inc}
+{$I Spring.Tests.inc}
 
 uses
-  SysUtils,
-  TestFramework,
-  TestExtensions,
-  {$ifdef CONSOLE_TESTRUNNER}
-  TextTestRunner,
-  {$else}
-  Forms,
-  GUITestRunner,
-  {$endif CONSOLE_TESTRUNNER}
   FinalBuilder.XMLTestRunner in 'Source\FinalBuilder.XMLTestRunner.pas',
   Spring.RunTestsUsingConsole in 'Source\Spring.RunTestsUsingConsole.pas',
   Spring.RunTestsUsingVclGui in 'Source\Spring.RunTestsUsingVclGui.pas',

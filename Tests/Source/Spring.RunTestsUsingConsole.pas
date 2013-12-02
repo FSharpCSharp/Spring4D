@@ -24,17 +24,17 @@
 
 unit Spring.RunTestsUsingConsole;
 
+{$I Spring.Tests.inc}
+
 interface
 
-{$i Spring.Tests.inc}
-
-{$ifdef CONSOLE_TESTRUNNER}
+{$IFDEF CONSOLE_TESTRUNNER}
 procedure RunRegisteredTestCases();
-{$endif CONSOLE_TESTRUNNER}
+{$ENDIF CONSOLE_TESTRUNNER}
 
 implementation
 
-{$ifdef CONSOLE_TESTRUNNER}
+{$IFDEF CONSOLE_TESTRUNNER}
 uses
   SysUtils,
   TextTestRunner,
@@ -54,13 +54,13 @@ begin
   else if FindCmdLineSwitch('h', ['-', '/'], true) then
     ExitBehavior := rxbHaltOnFailures;
   ProcessTestResult(TextTestRunner.RunRegisteredTests(ExitBehavior));
-{$ifdef MACOS}
-  {$ifdef DEBUG}
+{$IFDEF MACOS}
+  {$IFDEF DEBUG}
   Write('Press <Enter>');
   Readln;
-  {$endif DEBUG}
-{$endif MACOS}
+  {$ENDIF DEBUG}
+{$ENDIF MACOS}
 end;
-{$endif CONSOLE_TESTRUNNER}
+{$ENDIF CONSOLE_TESTRUNNER}
 
 end.

@@ -24,17 +24,17 @@
 
 unit Spring.RunTestsUsingXmlOutput;
 
+{$I Spring.Tests.inc}
+
 interface
 
-{$i Spring.Tests.inc}
-
-{$ifdef XMLOUTPUT}
+{$IFDEF XMLOUTPUT}
 procedure RunRegisteredTestCases();
-{$endif XMLOUTPUT}
+{$ENDIF XMLOUTPUT}
 
 implementation
 
-{$ifdef XMLOUTPUT}
+{$IFDEf XMLOUTPUT}
 uses
   SysUtils,
   TestFramework,
@@ -58,6 +58,6 @@ begin
   WriteLn(Format('Running %d of %d test cases', [RegisteredTests.CountEnabledTestCases, RegisteredTests.CountTestCases]));
   ProcessTestResult(FinalBuilder.XMLTestRunner.RunRegisteredTests(OutputFile));
 end;
-{$endif XMLOUTPUT}
+{$ENDIF XMLOUTPUT}
 
 end.
