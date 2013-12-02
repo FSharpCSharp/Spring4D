@@ -36,6 +36,7 @@ uses
   Spring.Events.Base,
   TypInfo;
 
+{$IFNDEF CPUARM}
 type
   PMethod = ^TMethod;
 
@@ -113,6 +114,7 @@ type
   IMulticastNotifyEvent = IEvent<TNotifyEvent>;
 
   TMulticastNotifyEvent = TEvent<TNotifyEvent>;
+{$ENDIF CPUARM}
 
 implementation
 
@@ -121,6 +123,7 @@ uses
   Spring.ResourceStrings;
 
 
+{$IFNDEF CPUARM}
 {$REGION 'TMethodInfo'}
 
 function AdditionalInfoOf(TypeData: PTypeData): Pointer;
@@ -537,6 +540,8 @@ var
   ctx: TRttiContext;
   method: TRttiMethod;
 begin
+  //TODO: If Embt ever adds TRttiMethodType.CreateImplementation this could be done in pure pascal way
+
   fTypeInfo := typeInfo;
   if not Assigned(typeInfo) then
     raise EInvalidOperationException.CreateRes(@SNoTypeInfo);
@@ -636,6 +641,7 @@ begin
 end;
 
 {$ENDREGION}
+{$ENDIF CPUARM}
 
 
 end.

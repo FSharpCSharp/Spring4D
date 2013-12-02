@@ -79,6 +79,7 @@ type
     procedure TestByValue;
   end;
 
+{$IFNDEF CPUARM}
   {$M+}
   TProc<T1, T2> = reference to procedure(arg1: T1; arg2: T2);
   {$M-}
@@ -125,6 +126,7 @@ type
     procedure TestIssue60Int64();
     procedure TestIssue60Single();
   end;
+{$ENDIF CPUARM}
 
 implementation
 
@@ -241,6 +243,7 @@ end;
 {$ENDREGION}
 
 
+{$IFNDEF CPUARM}
 {$REGION 'TTestMulticastEvent'}
 
 procedure TTestMulticastEvent.SetUp;
@@ -511,6 +514,7 @@ begin
 end;
 
 {$ENDREGION}
+{$ENDIF CPUARM}
 
 
 {$REGION 'TTestLazy'}
