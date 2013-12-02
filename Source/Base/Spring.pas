@@ -1529,11 +1529,13 @@ begin
       PPointer(@localValue)^, nil) <> nil then
     begin
       localValue.Free;
+    end;
 {$ELSE}
     if AtomicCmpExchange(PPointer(@target)^, Pointer(localvalue), nil) = nil then
-        target.__ObjAddRef;
-{$ENDIF AUTOREFCOUNT}
+    begin
+      target.__ObjAddRef;
     end;
+{$ENDIF AUTOREFCOUNT}
   end;
   Result := target;
 end;

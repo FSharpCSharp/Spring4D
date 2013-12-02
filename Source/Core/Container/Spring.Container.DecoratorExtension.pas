@@ -45,7 +45,7 @@ type
 
   TDecoratorInspector = class(TInspectorBase)
   protected
-    procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); override;
+    procedure DoProcessModel(const context: IContainerContext; const model: TComponentModel); override;
   end;
 
   TDecoratorComponentActivator = class(TInterfacedObject, IComponentActivator)
@@ -85,7 +85,7 @@ end;
 {$REGION 'TDecoratorInspector'}
 
 procedure TDecoratorInspector.DoProcessModel(const context: IContainerContext;
-  model: TComponentModel);
+  const model: TComponentModel);
 var
   serviceType: PTypeInfo;
   componentModel: TComponentModel;

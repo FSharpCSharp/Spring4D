@@ -64,7 +64,7 @@ type
     function GetServiceResolver: IServiceResolver;
   {$ENDREGION}
     procedure CheckPoolingSupported(componentType: TRttiType);
-    function CreateLifetimeManager(model: TComponentModel): ILifetimeManager;
+    function CreateLifetimeManager(const model: TComponentModel): ILifetimeManager;
     procedure InitializeInspectors; virtual;
     property ComponentBuilder: IComponentBuilder read GetComponentBuilder;
     property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
@@ -118,11 +118,11 @@ type
   ///	</summary>
   TServiceLocatorAdapter = class(TInterfacedObject, IServiceLocator)
   private
-    fContainer: TContainer;
+    [Weak] fContainer: TContainer;
     class var GlobalInstance: IServiceLocator;
     class constructor Create;
   public
-    constructor Create(container: TContainer);
+    constructor Create(const container: TContainer);
 
     function GetService(serviceType: PTypeInfo): TValue; overload;
     function GetService(serviceType: PTypeInfo; const name: string): TValue; overload;
@@ -147,7 +147,19 @@ type
 
 {$ENDREGION}
 
+procedure CleanupGlobalContainer;
 
+///<summary>
+///    Returns global instance of the container, calling this function in ARC
+///    environment will cause TContainer to increment the reference count for
+///    each call.
+///    Most functions will therefore decrement the reference count upon exiting,
+///    this may not be a problem for most functions but poses a problem for main
+///    function that (on mobile platofrms) may never exit thus making it
+///    impossible to release global container prior exit.
+///</summary>
+//TODO: It may be better to create a record that wraps the container in order to stop
+//ARC from incrementing/decrementing the count each time GlobalCOntainer is accessed
 function GlobalContainer: TContainer; inline;
 
 implementation
@@ -258,7 +270,7 @@ begin
 end;
 
 function TContainer.CreateLifetimeManager(
-  model: TComponentModel): ILifetimeManager;
+  const model: TComponentModel): ILifetimeManager;
 begin
   Guard.CheckNotNull(model, 'model');
   case model.LifetimeType of
@@ -492,7 +504,7 @@ begin
     end);
 end;
 
-constructor TServiceLocatorAdapter.Create(container: TContainer);
+constructor TServiceLocatorAdapter.Create(const container: TContainer);
 begin
   inherited Create;
   fContainer := container;
@@ -539,5 +551,11 @@ end;
 
 {$ENDREGION}
 
+
+procedure CleanupGlobalContainer;
+begin
+  TServiceLocatorAdapter.GlobalInstance:=nil;
+  FreeAndNil(TContainer.GlobalInstance);
+end;
 
 end.

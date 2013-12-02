@@ -186,7 +186,11 @@ begin
     else if Supports(item, IRefCounted, refCounted) then
       refCounted._Release
     else
+{$IFNDEF AUTOREFCOUNT}
       item.Free;
+{$ELSE}
+      item.DisposeOf;
+{$ENDIF}
   end;
 end;
 

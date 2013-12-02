@@ -83,15 +83,15 @@ type
 
   TServiceResolver = class(TResolver, IServiceResolver, IInterface)
   protected
-    function DoResolve(model: TComponentModel; serviceType: PTypeInfo;
-      resolver: IDependencyResolver): TValue;
+    function DoResolve(const model: TComponentModel; serviceType: PTypeInfo;
+      const resolver: IDependencyResolver): TValue;
   public
     function CanResolve(serviceType: PTypeInfo): Boolean; overload;
     function CanResolve(const name: string): Boolean; overload;
     function Resolve(serviceType: PTypeInfo): TValue; overload;
-    function Resolve(serviceType: PTypeInfo; resolverOverride: IResolverOverride): TValue; overload;
+    function Resolve(serviceType: PTypeInfo; const resolverOverride: IResolverOverride): TValue; overload;
     function Resolve(const name: string): TValue; overload;
-    function Resolve(const name: string; resolverOverride: IResolverOverride): TValue; overload;
+    function Resolve(const name: string; const resolverOverride: IResolverOverride): TValue; overload;
     function ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
   end;
 
@@ -612,8 +612,8 @@ begin
   Result := Registry.HasService(name);
 end;
 
-function TServiceResolver.DoResolve(model: TComponentModel;
-  serviceType: PTypeInfo; resolver: IDependencyResolver): TValue;
+function TServiceResolver.DoResolve(const model: TComponentModel;
+  serviceType: PTypeInfo; const resolver: IDependencyResolver): TValue;
 var
   instance: TValue;
 begin
@@ -633,7 +633,7 @@ begin
 end;
 
 function TServiceResolver.Resolve(serviceType: PTypeInfo;
-  resolverOverride: IResolverOverride): TValue;
+  const resolverOverride: IResolverOverride): TValue;
 var
   serviceName: string;
   model: TComponentModel;
@@ -666,7 +666,7 @@ begin
 end;
 
 function TServiceResolver.Resolve(const name: string;
-  resolverOverride: IResolverOverride): TValue;
+  const resolverOverride: IResolverOverride): TValue;
 var
   model: TComponentModel;
   serviceType: PTypeInfo;

@@ -47,7 +47,7 @@ type
   public
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(const name: string): Boolean; overload;
-    function CreateLifetimeManager(model: TComponentModel): ILifetimeManager;
+    function CreateLifetimeManager(const model: TComponentModel): ILifetimeManager;
     procedure AddExtension(const extension: IContainerExtension);
     property ComponentBuilder: IComponentBuilder read GetComponentBuilder;
     property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
@@ -70,6 +70,10 @@ type
   end;
 
   TMockComponent = class(TComponent, IInterface)
+{$IFNDEF AUTOREFCOUNT}
+  private class var
+	fFreed : Boolean;
+{$ENDIF}
   private
     fRefCount: Integer;
   protected
@@ -237,7 +241,7 @@ begin
   raise Exception.Create('AddExtension');
 end;
 
-function TMockContext.CreateLifetimeManager(model: TComponentModel): ILifetimeManager;
+function TMockContext.CreateLifetimeManager(const model: TComponentModel): ILifetimeManager;
 begin
   raise Exception.Create('CreateLifetimeManager');
 end;
@@ -282,15 +286,25 @@ end;
 function TMockComponent._AddRef: Integer;
 begin
   Inc(fRefCount);
+{$IFNDEF AUTOREFCOUNT}
   Result := fRefCount;
+{$ELSE}
+  Result := inherited __ObjAddRef;
+{$ENDIF}
 end;
 
 function TMockComponent._Release: Integer;
 begin
   Dec(fRefCount);
+{$IFNDEF AUTOREFCOUNT}
   Result := fRefCount;
-  if Result = 0 then
+  if Result = 0 then begin
+    fFreed := true;
     Destroy;
+  end;
+{$ELSE}
+  Result := inherited __ObjRelease;
+{$ENDIF}
 end;
 
 { TTestRefCounting }
@@ -321,9 +335,34 @@ procedure TTestRefCounting.TestReferences;
 var
   obj: TObject;
   intf: IInterface;
+  val: TValue;
 begin
-  obj := fLifetimeManager.GetInstance(nil).AsObject;
+  fLifetimeManager := TSingletonLifetimeManager.Create(fModel);
+{$IFNDEF AUTOREFCOUNT}
+  TMockComponent.fFreed := false;
+{$ENDIF}
+  val := fLifetimeManager.GetInstance(nil);
+  obj := val.AsObject;
+{$IFDEF AUTOREFCOUNT}
+  val := val.Empty; //Clear the TValue so that it doesn't keep holding reference count to obj
+{$ENDIF}
+  CheckNotNull(obj, 'returned object must not be nil');
   CheckTrue(Supports(obj, IInterface, intf), 'interface not supported');
+  CheckIs(obj, TMockComponent, 'invalid object returned: ' + obj.ClassName);
+  CheckEquals(2, TMockComponent(obj).fRefCount, 'invalid reference count');
+  intf := nil;
+  CheckEquals(1, TMockComponent(obj).fRefCount, 'invalid reference count');
+  fLifetimeManager := nil;
+{$IFNDEF AUTOREFCOUNT}
+  //Check that reference count reached zero
+  CheckTrue(TMockComponent.fFreed, 'invalid reference count');
+{$ELSE}
+  //Since automatic reference countin is in place, the object isn't destroyed
+  //and we can safely test our own reference count
+  CheckEquals(0, TMockComponent(obj).fRefCount, 'invalid reference count');
+  CheckEquals(1, obj.RefCount, 'invalid reference count');
+  obj := nil;
+{$ENDIF}
 end;
 
 end.

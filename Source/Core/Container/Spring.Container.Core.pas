@@ -66,13 +66,14 @@ type
   {$ENDREGION}
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(const name: string): Boolean; overload;
-    function CreateLifetimeManager(model: TComponentModel): ILifetimeManager;
+    function CreateLifetimeManager(const model: TComponentModel): ILifetimeManager;
     procedure AddExtension(const extension: IContainerExtension);
     property ComponentBuilder: IComponentBuilder read GetComponentBuilder;
     property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
     property DependencyResolver: IDependencyResolver read GetDependencyResolver;
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
     property ServiceResolver: IServiceResolver read GetServiceResolver;
+    property ComponentBuilder: IComponentBuilder read GetComponentBuilder;
   end;
 
   ///	<summary>
@@ -90,9 +91,9 @@ type
   IComponentRegistry = interface
     ['{CBCA1D0F-1244-4AB4-AB07-091053932166}']
     function RegisterComponent(componentType: PTypeInfo): TComponentModel;
-    procedure RegisterService(model: TComponentModel; serviceType: PTypeInfo); overload;
-    procedure RegisterService(model: TComponentModel; serviceType: PTypeInfo; const name: string); overload;
-    procedure RegisterDefault(model: TComponentModel; serviceType: PTypeInfo);
+    procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo); overload;
+    procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo; const name: string); overload;
+    procedure RegisterDefault(const model: TComponentModel; serviceType: PTypeInfo);
     procedure UnregisterAll;
 
     function HasService(serviceType: PTypeInfo): Boolean; overload;
@@ -114,7 +115,7 @@ type
     procedure RemoveInspector(const inspector: IBuilderInspector);
     procedure ClearInspectors;
     // Build
-    procedure Build(model: TComponentModel);
+    procedure Build(const model: TComponentModel);
     procedure BuildAll;
   end;
 
@@ -123,7 +124,7 @@ type
   ///	</summary>
   IBuilderInspector = interface
     ['{3E2F36D1-2C0D-4D6A-91B3-49B09BD31318}']
-    procedure ProcessModel(const context: IContainerContext; model: TComponentModel);
+    procedure ProcessModel(const context: IContainerContext; const model: TComponentModel);
   end;
 
   ///	<summary>
@@ -174,10 +175,10 @@ type
   ///	</summary>
   IInjectionFactory = interface
     ['{EA75E648-C3EB-4CE7-912A-AB82B12BBD87}']
-    function CreateConstructorInjection(model: TComponentModel): IInjection;
-    function CreateMethodInjection(model: TComponentModel; const methodName: string): IInjection;
-    function CreatePropertyInjection(model: TComponentModel; const propertyName: string): IInjection;
-    function CreateFieldInjection(model: TComponentModel; const fieldName: string): IInjection;
+    function CreateConstructorInjection(const model: TComponentModel): IInjection;
+    function CreateMethodInjection(const model: TComponentModel; const methodName: string): IInjection;
+    function CreatePropertyInjection(const model: TComponentModel; const propertyName: string): IInjection;
+    function CreateFieldInjection(const model: TComponentModel; const fieldName: string): IInjection;
   end;
 
   TResolveEvent = procedure(Sender: TObject; var instance: TValue) of object;
@@ -222,9 +223,9 @@ type
     function CanResolve(serviceType: PTypeInfo): Boolean; overload;
     function CanResolve(const name: string): Boolean; overload;
     function Resolve(serviceType: PTypeInfo): TValue; overload;
-    function Resolve(serviceType: PTypeInfo; resolverOverride: IResolverOverride): TValue; overload;
-    function Resolve(const name: string): TValue; overload;
-    function Resolve(const name: string; resolverOverride: IResolverOverride): TValue; overload;
+	function Resolve(serviceType: PTypeInfo; const resolverOverride: IResolverOverride): TValue; overload;
+	function Resolve(const name: string): TValue; overload;
+    function Resolve(const name: string; const resolverOverride: IResolverOverride): TValue; overload;
     function ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
   end;
 
@@ -331,11 +332,11 @@ type
   TInjectableMethodFilter = class(TSpecificationBase<TRttiMethod>)
   private
     fContext: IContainerContext;
-    fModel: TComponentModel;
+    [Weak] fModel: TComponentModel;
     fInjection: IInjection;
     fArguments: TArray<TValue>;
   public
-    constructor Create(const context: IContainerContext; model: TComponentModel;
+    constructor Create(const context: IContainerContext; const model: TComponentModel;
       const injection: IInjection);
     function IsSatisfiedBy(const method: TRttiMethod): Boolean; override;
   end;
@@ -352,7 +353,7 @@ type
   public
     class function ContainsMember(member: TRttiMember): TSpecification<IInjection>;
     class function IsInjectableMethod(const context: IContainerContext;
-      model: TComponentModel; const injection: IInjection): TSpecification<TRttiMethod>;
+      const model: TComponentModel; const injection: IInjection): TSpecification<TRttiMethod>;
   end;
 
 implementation
@@ -671,10 +672,14 @@ end;
 
 destructor TValueHolder.Destroy;
 begin
+{$IFNDEF AUTOREFCOUNT}
   if not Assigned(fLifetimeWatcher) and fValue.IsObject then
   begin
     fValue.AsObject.Free;
   end;
+{$ELSE}
+  fValue:=nil;
+{$ENDIF}
   inherited Destroy;
 end;
 
@@ -689,7 +694,7 @@ end;
 {$REGION 'TInjectableMethodFilter'}
 
 constructor TInjectableMethodFilter.Create(const context: IContainerContext;
-  model: TComponentModel; const injection: IInjection);
+  const model: TComponentModel; const injection: IInjection);
 begin
   inherited Create;
   fContext := context;
@@ -743,7 +748,7 @@ begin
 end;
 
 class function TInjectionFilters.IsInjectableMethod(
-  const context: IContainerContext; model: TComponentModel;
+  const context: IContainerContext; const model: TComponentModel;
   const injection: IInjection): TSpecification<TRttiMethod>;
 begin
   Result := TInjectableMethodFilter.Create(context, model, injection);

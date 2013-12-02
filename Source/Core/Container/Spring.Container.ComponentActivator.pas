@@ -39,11 +39,11 @@ type
   ///	</summary>
   TComponentActivatorBase = class abstract(TInterfacedObject, IComponentActivator, IInterface)
   protected
-    fModel: TComponentModel;
+    [Weak] fModel: TComponentModel;
     procedure ExecuteInjections(const instance: TValue;
       const injections: IList<IInjection>; const resolver: IDependencyResolver);
   public
-    constructor Create(model: TComponentModel);
+    constructor Create(const model: TComponentModel);
     function CreateInstance(const resolver: IDependencyResolver): TValue; overload; virtual; abstract;
   end;
 
@@ -52,7 +52,7 @@ type
   ///	</summary>
   TReflectionComponentActivator = class(TComponentActivatorBase)
   private
-    function GetEligibleConstructor(model: TComponentModel;
+    function GetEligibleConstructor(const model: TComponentModel;
       const resolver: IDependencyResolver): IInjection;
   public
     function CreateInstance(const resolver: IDependencyResolver): TValue; override;
@@ -77,7 +77,7 @@ uses
 
 {$REGION 'TComponentActivatorBase'}
 
-constructor TComponentActivatorBase.Create(model: TComponentModel);
+constructor TComponentActivatorBase.Create(const model: TComponentModel);
 begin
   inherited Create;
   fModel := model;
@@ -125,7 +125,9 @@ begin
   except
     if not Result.IsEmpty and Result.IsObject then
     begin
+{$IFNDEF AUTOREFCOUNT}
       Result.AsObject.Free;
+{$ENDIF}
       Result := TValue.Empty;
     end;
     raise;
@@ -133,7 +135,7 @@ begin
 end;
 
 function TReflectionComponentActivator.GetEligibleConstructor(
-  model: TComponentModel; const resolver: IDependencyResolver): IInjection;
+  const model: TComponentModel; const resolver: IDependencyResolver): IInjection;
 var
   candidate: IInjection;
   winner: IInjection;
@@ -181,7 +183,9 @@ begin
   except
     if not Result.IsEmpty and Result.IsObject then
     begin
+{$IFNDEF AUTOREFCOUNT}
       Result.AsObject.Free;
+{$ENDIF}
       Result := TValue.Empty;
     end;
     raise;
