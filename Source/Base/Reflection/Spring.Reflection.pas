@@ -217,23 +217,35 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TFiltersNamed<T: TRttiMember>'}
+
+  TFiltersNamed<T: TRttiNamedObject> = class
+  public
+    class function IsNamed(const name: string): TSpecification<T>;
+    class function HasAttribute(attributeClass: TAttributeClass): TSpecification<T>;
+  end;
+
+  {$ENDREGION}
+
   {$REGION 'TFiltersBase<T: TRttiMember>'}
+
+  TMethodKinds = set of TMethodKind;
 
   ///	<summary>
   ///	  Provides static methods to create specifications to filter TRttiMember
   ///	  objects.
   ///	</summary>
-  TFiltersBase<T: TRttiMember> = class
+  TFiltersBase<T: TRttiMember> = class(TFiltersNamed<T>)
   public
     class function ContainsParameterType(typeInfo: PTypeInfo): TSpecification<T>;
-    class function HasAttribute(attributeClass: TAttributeClass): TSpecification<T>;
     class function HasParameterTypes(const types: array of PTypeInfo): TSpecification<T>;
     class function HasParameterFlags(const flags: TParamFlags): TSpecification<T>;
-    class function IsNamed(const name: string): TSpecification<T>;
     class function IsTypeOf<TType>: TSpecification<T>; overload;
     class function IsTypeOf(typeInfo: PTypeInfo): TSpecification<T>; overload;
     class function IsConstructor: TSpecification<T>;
     class function IsInstanceMethod: TSpecification<T>;
+    class function IsClassMethod: TSpecification<T>;
+    class function IsMethodKind(const kinds : TMethodKinds): TSpecification<T>;
     class function IsInvokable: TSpecification<T>;
   end;
 
@@ -242,17 +254,23 @@ type
 
   {$REGION 'Filters'}
 
+  TPackageFilters = class(TFiltersNamed<TRttiPackage>);
   TMemberFilters = class(TFiltersBase<TRttiMember>);
   TMethodFilters = class(TFiltersBase<TRttiMethod>);
   TPropertyFilters = class(TFiltersBase<TRttiProperty>);
   TFieldFilters = class(TFiltersBase<TRttiField>);
+  TTypeFilters = class(TFiltersNamed<TRttiType>)
+  public
+    class function IsClass : TSpecification<TRttiType>;
+    class function IsInterface : TSpecification<TRttiType>;
+  end;
 
   {$ENDREGION}
 
 
   {$REGION 'TMemberSpecificationBase<T: TRttiMember>'}
 
-  TMemberSpecificationBase<T: TRttiMember> = class abstract(TSpecificationBase<T>)
+  TMemberSpecificationBase<T: TRttiObject> = class abstract(TSpecificationBase<T>)
   protected
     function Accept(const member: T): Boolean; virtual; abstract;
   public
@@ -264,7 +282,7 @@ type
 
   {$REGION 'TNameFilter<T: TRttiMember>'}
 
-  TNameFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
+  TNameFilter<T: TRttiNamedObject> = class(TMemberSpecificationBase<T>)
   private
     fName: string;
   protected
@@ -288,7 +306,7 @@ type
 
   {$REGION 'THasAttributeFilter<T: TRttiMember>'}
 
-  THasAttributeFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
+  THasAttributeFilter<T: TRttiObject> = class(TMemberSpecificationBase<T>)
   private
     fAttributeClass: TAttributeClass;
   protected
@@ -378,6 +396,14 @@ type
 
   {$ENDREGION}
 
+  {$REGION 'TClassMethodFilter<T: TRttiMember>'}
+
+  TClassMethodFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
+  protected
+    function Accept(const member: T): Boolean; override;
+  end;
+
+  {$ENDREGION}
 
   {$REGION 'THasParameterFlagsFilter<T: TRttiMember>'}
 
@@ -392,6 +418,39 @@ type
 
   {$ENDREGION}
 
+  {$REGION 'TMethodKindFilter<T: TRttiMember>'}
+
+  TMethodKindFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
+  private
+    fFlags: TMethodKinds;
+  protected
+    function Accept(const member: T): Boolean; override;
+  public
+    constructor Create(const flags: TMethodKinds);
+  end;
+
+  {$ENDREGION}
+
+  {$REGION 'TIsClassFilter>'}
+
+  TIsClassFilter = class(TMemberSpecificationBase<TRttiType>)
+  protected
+    function Accept(const member: TRttiType): Boolean; override;
+  end;
+
+  {$ENDREGION}
+
+  {$REGION 'TIsInterfaceFilter>'}
+
+  TIsInterfaceFilter = class(TMemberSpecificationBase<TRttiType>)
+  protected
+    function Accept(const member: TRttiType): Boolean; override;
+  end;
+
+  {$ENDREGION}
+
+
+type
 
   {$REGION 'Internal Class Helpers'}
 
@@ -755,6 +814,20 @@ end;
 
 {$ENDREGION}
 
+{$REGION 'TFiltersNamed<T>'}
+
+class function TFiltersNamed<T>.IsNamed(const name: string): TSpecification<T>;
+begin
+  Result := TNameFilter<T>.Create(name);
+end;
+
+class function TFiltersNamed<T>.HasAttribute(
+  attributeClass: TAttributeClass): TSpecification<T>;
+begin
+  Result := THasAttributeFilter<T>.Create(attributeClass);
+end;
+
+{$ENDREGION}
 
 {$REGION 'TFiltersBase<T>'}
 
@@ -762,12 +835,6 @@ class function TFiltersBase<T>.ContainsParameterType(
   typeInfo: PTypeInfo): TSpecification<T>;
 begin
   Result := TContainsParameterTypeFilter<T>.Create(typeInfo);
-end;
-
-class function TFiltersBase<T>.HasAttribute(
-  attributeClass: TAttributeClass): TSpecification<T>;
-begin
-  Result := THasAttributeFilter<T>.Create(attributeClass);
 end;
 
 class function TFiltersBase<T>.HasParameterTypes(
@@ -782,11 +849,6 @@ begin
   Result := THasParameterFlagsFilter<T>.Create(flags);
 end;
 
-class function TFiltersBase<T>.IsNamed(const name: string): TSpecification<T>;
-begin
-  Result := TNameFilter<T>.Create(name);
-end;
-
 class function TFiltersBase<T>.IsTypeOf(typeInfo: PTypeInfo): TSpecification<T>;
 begin
   Result := TTypeFilter<T>.Create(typeInfo);
@@ -795,6 +857,11 @@ end;
 class function TFiltersBase<T>.IsTypeOf<TType>: TSpecification<T>;
 begin
   Result := IsTypeOf(TypeInfo(TType));
+end;
+
+class function TFiltersBase<T>.IsClassMethod: TSpecification<T>;
+begin
+  Result := TClassMethodFilter<T>.Create;
 end;
 
 class function TFiltersBase<T>.IsConstructor: TSpecification<T>;
@@ -812,8 +879,27 @@ begin
   Result := TInvokableFilter<T>.Create;
 end;
 
+class function TFiltersBase<T>.IsMethodKind(
+  const kinds: TMethodKinds): TSpecification<T>;
+begin
+  Result := TMethodKindFilter<T>.Create(kinds);
+end;
+
 {$ENDREGION}
 
+{$REGION 'TTypeFilters'}
+
+class function TTypeFilters.IsClass: TSpecification<TRttiType>;
+begin
+  Result := TIsClassFilter.Create;
+end;
+
+class function TTypeFilters.IsInterface: TSpecification<TRttiType>;
+begin
+  Result := TIsInterfaceFilter.Create;
+end;
+
+{$ENDREGION}
 
 {$REGION 'Filters'}
 
@@ -850,7 +936,7 @@ end;
 
 function TNameFilter<T>.Accept(const member: T): Boolean;
 begin
-  Result := SameText(TRttiMember(member).Name, fName);
+  Result := SameText(TRttiNamedObject(member).Name, fName);
 end;
 
 { TTypeFilter<T> }
@@ -965,6 +1051,23 @@ begin
   end;
 end;
 
+{ TMethodKindFilter<T> }
+
+function TMethodKindFilter<T>.Accept(const member: T): Boolean;
+begin
+  Result := False;
+  if member.IsMethod then
+  begin
+    Result := member.AsMethod.MethodKind in fFlags;
+  end;
+end;
+
+constructor TMethodKindFilter<T>.Create(const flags: TMethodKinds);
+begin
+  inherited Create;
+  fFlags:=flags;
+end;
+
 { TInvokableFilter<T> }
 
 function TInvokableFilter<T>.Accept(const member: T): Boolean;
@@ -1008,6 +1111,27 @@ end;
 function TInstanceMethodFilter<T>.Accept(const member: T): Boolean;
 begin
   Result := member.IsMethod and not member.AsMethod.IsClassMethod;
+end;
+
+{ TClassMethodFilter<T> }
+
+function TClassMethodFilter<T>.Accept(const member: T): Boolean;
+begin
+  Result := member.IsMethod and member.AsMethod.IsClassMethod;
+end;
+
+{ TIsClassFilter }
+
+function TIsClassFilter.Accept(const member: TRttiType): Boolean;
+begin
+  Result := member.IsInstance;
+end;
+
+{ TIsInterfaceFilter }
+
+function TIsInterfaceFilter.Accept(const member: TRttiType): Boolean;
+begin
+  Result := member is TRttiInterfaceType;
 end;
 
 {$ENDREGION}
