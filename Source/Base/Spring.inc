@@ -31,15 +31,17 @@
   {$MESSAGE ERROR 'This framework requires Delphi 2010 or higher.'}}
 {$ENDIF}
 
-{$IFDEF MSWINDOWS}
-{$else} {$ifdef MACOS}
-  {$MESSAGE WARN 'This framework currently is experpimental on Mac OS X and has not been tested there yet.'}
-{$endif OSX}
-{$else}
-  {$MESSAGE ERROR 'This framework currently only supports Windows (tested) and Mac OS X (experimental).'}
-{$ENDIF}
+{$IF Defined(MSWINDOWS)}
 
-{$WARN UNIT_PLATFORM OFF}    // Turn off UNIT_PLATFORM warning
-{$WARN SYMBOL_PLATFORM OFF}  // Turn off SYMBOL_PLATFORM warning
+{$ELSE IF Defined(MACOS) OR Defined(IOS) or Defined(ANDROID)}
+  {$MESSAGE WARN 'This framework currently is experpimental on Mac OS X, iOS, Android and has not been tested there yet.'}
+{$ELSE}
+  {$MESSAGE ERROR 'This framework currently only supports Windows (tested) and Mac OS X, iOS, Android (experimental).'}
+{$IFEND}
+
+{$IFNDEF NEXTGEN}
+  {$WARN UNIT_PLATFORM OFF}    // Turn off UNIT_PLATFORM warning
+  {$WARN SYMBOL_PLATFORM OFF}  // Turn off SYMBOL_PLATFORM warning
+{$ENDIF}
 
 {$ENDIF ~SPRING_INC}

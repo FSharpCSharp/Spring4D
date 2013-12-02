@@ -196,10 +196,12 @@ type
     class procedure CheckRange<T>(const buffer: array of T; startIndex, count: Integer); overload; static;
     class procedure CheckRange(const s: string; index: Integer); overload; static; inline;
     class procedure CheckRange(const s: string; startIndex, count: Integer); overload; static; inline;
+{$IFNDEF NEXTGEN}
     class procedure CheckRange(const s: WideString; index: Integer); overload; static; inline;
     class procedure CheckRange(const s: WideString; startIndex, count: Integer); overload; static; inline;
     class procedure CheckRange(const s: RawByteString; index: Integer); overload; static; inline;
     class procedure CheckRange(const s: RawByteString; startIndex, count: Integer); overload; static; inline;
+{$ENDIF}
     class procedure CheckRange(condition: Boolean; const argumentName: string); overload; static; inline;
     class procedure CheckRange(length, startIndex, count: Integer; indexBase: Integer = 0); overload; static; inline;
 
@@ -353,7 +355,7 @@ type
   ///	  Represents a nullable unicode string.
   ///	</summary>
   TNullableString = Nullable<string>;
-
+{$IFNDEF NEXTGEN}
   ///	<summary>
   ///	  Represents a nullable ansi string.
   ///	</summary>
@@ -363,7 +365,7 @@ type
   ///	  Represents a nullable wide string.
   ///	</summary>
   TNullableWideString = Nullable<WideString>;
-
+{$ENDIF}
   ///	<summary>
   ///	  Represents a nullable integer.
   ///	</summary>
@@ -1134,6 +1136,7 @@ begin
   Guard.DoCheckStringRange(Length(s), startIndex, count);
 end;
 
+{$IFNDEF NEXTGEN}
 class procedure Guard.CheckRange(const s: WideString; index: Integer);
 begin
   Guard.DoCheckStringIndex(Length(s), index);
@@ -1153,15 +1156,16 @@ class procedure Guard.CheckRange(const s: RawByteString; startIndex, count: Inte
 begin
   Guard.DoCheckStringRange(Length(s), startIndex, count);
 end;
-
+{$ENDIF}
 class procedure Guard.CheckTypeKind(typeInfo: PTypeInfo;
   expectedTypeKind: TTypeKind; const argumentName: string);
 begin
   Guard.CheckNotNull(typeInfo, argumentName);
   if typeInfo.Kind <> expectedTypeKind then
   begin
-    raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument, [
-      typeInfo.Name, argumentName]);
+    raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument,
+      [{$IFNDEF NEXTGEN}typeInfo.Name{$ELSE}typeInfo.NameFld.ToString{$ENDIF},
+      argumentName]);
   end;
 end;
 
@@ -1171,8 +1175,9 @@ begin
   Guard.CheckNotNull(typeInfo, argumentName);
   if not (typeInfo.Kind in expectedTypeKinds) then
   begin
-    raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument, [
-      typeInfo.Name, argumentName]);
+    raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument,
+        [{$IFNDEF NEXTGEN}typeInfo.Name{$ELSE}typeInfo.NameFld.ToString{$ENDIF},
+        argumentName]);
   end;
 end;
 
@@ -1519,10 +1524,15 @@ begin
   if PPointer(@target)^ = nil then
   begin
     localValue := T.Create;
+{$IFNDEF AUTOREFCOUNT}
     if TLazyInitializer.InterlockedCompareExchange(PPointer(@target)^,
       PPointer(@localValue)^, nil) <> nil then
     begin
       localValue.Free;
+{$ELSE}
+    if AtomicCmpExchange(PPointer(@target)^, Pointer(localvalue), nil) = nil then
+        target.__ObjAddRef;
+{$ENDIF AUTOREFCOUNT}
     end;
   end;
   Result := target;
@@ -1535,7 +1545,11 @@ end;
 
 class function Event<T>.Create: Event<T>;
 begin
+{$IFNDEF CPUARM}
   Result := TEvent<T>.Create;
+{$ELSE}
+  raise ENotImplementedException.Create('Not implemented');
+{$ENDIF}
 end;
 
 procedure Event<T>.Add(const handler: T);
@@ -1552,8 +1566,12 @@ end;
 
 procedure Event<T>.EnsureInitialized;
 begin
+{$IFNDEF CPUARM}
   if not Assigned(fInstance) then
     fInstance := TEvent<T>.Create;
+{$ELSE}
+  raise ENotImplementedException.Create('Not implemented');
+{$ENDIF}
 end;
 
 function Event<T>.GetCount: Integer;
