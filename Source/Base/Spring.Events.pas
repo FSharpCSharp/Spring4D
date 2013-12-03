@@ -485,10 +485,23 @@ procedure GetMethodTypeData(Method: TRttiMethod; var TypeData: PTypeData);
   end;
 
   procedure WritePackedShortString(var Dest: PByte; const s: string);
+{$IFNDEF NEXTGEN}
   begin
     PShortString(Dest)^ := ShortString(s);
     Inc(Dest, Dest[0] + 1);
   end;
+{$ELSE}
+  var
+    buffer: TBytes;
+  begin
+    buffer := TEncoding.ANSI.GetBytes(s);
+    if (Length(buffer) > 255) then SetLength(buffer, 255);
+    Dest^ := Length(buffer);
+    Inc(Dest);
+    Move(buffer[0], Dest^, Length(buffer));
+    Inc(Dest, Length(buffer));
+  end;
+{$ENDIF}
 
   procedure WritePointer(var Dest: PByte; p: Pointer);
   begin

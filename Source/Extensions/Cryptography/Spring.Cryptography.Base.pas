@@ -194,7 +194,7 @@ end;
 {$IFNDEF NEXTGEN}
 function THashAlgorithmBase.ComputeHash(const inputString: WideString): TBuffer;
 begin
-  Result := ComputeHash(PByte(inputString), Length(inputString) * SizeOf(Char));
+  Result := ComputeHash(PByte(inputString), Length(inputString) * SizeOf(WideChar));
 end;
 
 function THashAlgorithmBase.ComputeHash(

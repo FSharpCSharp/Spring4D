@@ -127,7 +127,7 @@ begin
 end;
 
 function F(x, y, z: LongWord): LongWord;
-{$IFNDEF CPUX64}
+{$IFDEF CPUX86}
 asm
   // Result := (x and y) or ((not x) and z);
   AND EDX, EAX
@@ -142,7 +142,7 @@ end;
 {$ENDIF}
 
 function G(x, y, z: LongWord): LongWord;
-{$IFNDEF CPUX64}
+{$IFDEF CPUX86}
 asm
   //Result := (x and z) or (y and (not z));
   AND EAX, ECX
@@ -157,7 +157,7 @@ end;
 {$ENDIF}
 
 function H(x, y, z: LongWord): LongWord;
-{$IFNDEF CPUX64}
+{$IFDEF CPUX86}
 asm
   //Result := x xor y xor z;
   XOR EAX, EDX
@@ -170,7 +170,7 @@ end;
 {$ENDIF}
 
 function I(x, y, z: LongWord): LongWord;
-{$IFNDEF CPUX64}
+{$IFDEF CPUX86}
 asm
   //Result := y xor (x or (not z));
   NOT ECX
@@ -184,7 +184,7 @@ end;
 {$ENDIF}
 
 procedure rot(var x: LongWord; n: BYTE);
-{$IFNDEF CPUX64}
+{$IFDEF CPUX86}
 asm
   //x := (x shl n) or (x shr (32 - n));
   PUSH EBX

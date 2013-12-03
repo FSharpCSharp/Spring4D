@@ -1061,11 +1061,11 @@ const
 implementation
 
 uses
-{$IFDEF MACOS}
+{$IFDEF POSIX}
+  Posix.Stdlib,
   Posix.Unistd,
-  FireDAC.Stan.Util,
-  IOUtils,
-{$ENDIF MACOS}
+  System.IOUtils,
+{$ENDIF POSIX}
   Math,
   Spring.ResourceStrings;
 
@@ -2010,10 +2010,10 @@ var
   p: PChar;
   strings: TStringDynArray;
 {$ENDIF MSWINDOWS}
-{$IFDEF MACOS}
+{$IFDEF POSIX}
   pEnviron: PMarshaledAString;
   current: string;
-{$ENDIF MACOS}
+{$ENDIF POSIX}
 begin
   Assert(list <> nil, 'list should not be nil.');
 {$IFDEF MSWINDOWS}
@@ -2038,7 +2038,7 @@ begin
     Win32Check(Windows.FreeEnvironmentStrings(p));
   end;
 {$ENDIF MSWINDOWS}
-{$IFDEF MACOS}
+{$IFDEF POSIX}
   pEnviron := environ; {TODO -o##jwp -cTest : Test this code; it is based on http://stackoverflow.com/questions/2085302/printing-all-environment-variables-in-c-c/12059006#12059006 }
   if pEnviron <> nil then
   begin
@@ -2053,7 +2053,7 @@ begin
       list.EndUpdate();
     end;
   end;
-{$ENDIF MACOS}
+{$ENDIF POSIX}
 end;
 
 class procedure TEnvironment.GetEnvironmentVariables(list: TStrings);
@@ -2061,9 +2061,9 @@ begin
 {$IFDEF MSWINDOWS}
   TEnvironment.GetEnvironmentVariables(list, evtProcess);
 {$ENDIF MSWINDOWS}
-{$IFDEF MACOS}
+{$IFDEF POSIX}
   TEnvironment.GetProcessEnvironmentVariables(list);
-{$ENDIF MACOS}
+{$ENDIF POSIX}
 end;
 
 {$IFDEF MSWINDOWS}
@@ -2097,13 +2097,17 @@ end;
 {$ENDIF MSWINDOWS}
 
 class procedure TEnvironment.SetEnvironmentVariable(const variable, value: string);
+{$IFDEF POSIX}
+var
+  M1, M2: TMarshaller;
+{$ENDIF}
 begin
 {$IFDEF MSWINDOWS}
   TEnvironment.SetEnvironmentVariable(variable, value, evtProcess);
 {$ENDIF MSWINDOWS}
-{$IFDEF MACOS}
-  FDSetEnv(variable, value); {TODO -o##jwp -cOptimize : See if we can do this without FireDAC.Stan.Util }
-{$ENDIF MACOS}
+{$IFDEF POSIX}
+  setenv(M1.AsAnsi(variable).ToPointer, M2.AsAnsi(value).ToPointer, 1);
+{$ENDIF POSIX}
 end;
 
 {$IFDEF MSWINDOWS}
@@ -2166,10 +2170,10 @@ begin
   SetLength(Result, size - 1);
   Windows.GetCurrentDirectory(size, PChar(Result));
 {$ENDIF MSWINDOWS}
-{$IFDEF MACOS}
+{$IFDEF POSIX}
 begin
   Result := TDirectory.GetCurrentDirectory();
-{$ENDIF MACOS}
+{$ENDIF POSIX}
 end;
 
 {$IFDEF MSWINDOWS}

@@ -66,8 +66,8 @@ type
 
   TTestEnum = class(TTestCase)
   published
-	procedure TestGetNameByEnum;
-	procedure TestGetNames;
+    procedure TestGetNameByEnum;
+    procedure TestGetNames;
     procedure TestGetNameByInteger;
     procedure TestGetValueByEnum;
     procedure TestGetValueByName;
@@ -265,8 +265,8 @@ begin
   names := TEnum.GetNames<TSeekOrigin>;
   for item := Low(TSeekOrigin) to High(TSeekOrigin) do
   begin
-	expectedName := GetEnumName(pInfo, Ord(item));
-	actualName := names[Ord(item)];
+    expectedName := GetEnumName(pInfo, Ord(item));
+    actualName := names[Ord(item)];
     CheckEquals(expectedName, actualName);
   end;
 end;

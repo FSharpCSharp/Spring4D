@@ -45,7 +45,9 @@ implementation
 
 procedure ProcessTestResult(const ATestResult: TTestResult);
 begin
+{$IFNDEF AUTOREFCUNT}
   ATestResult.Free();
+{$ENDIF}
 end;
 
 { TExceptionCheckerTestCase }

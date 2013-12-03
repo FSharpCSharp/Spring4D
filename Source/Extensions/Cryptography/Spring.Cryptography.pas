@@ -30,6 +30,7 @@ unit Spring.Cryptography;
 
 {$I Spring.inc}
 {$R-}
+{$ZEROBASEDSTRINGS OFF}
 
 interface
 
@@ -645,7 +646,11 @@ end;
 class function TBuffer.FromHexString(const s: string): TBuffer;
 var
   buffer: string;
+{$IFNDEF NEXTGEN}
   text: string;
+{$ELSE}
+  text: TBytes;
+{$ENDIF}
   bytes: TBytes;
   index: Integer;
   i: Integer;
@@ -660,20 +665,50 @@ begin
     if CharInSet(buffer[i], HexCharSet) then
     begin
       Inc(index);
+{$IFNDEF NEXTGEN}
       text[index] := buffer[i];
+{$ELSE}
+      text[index - 1] := Ord(buffer[i]);
+{$ENDIF}
     end;
   end;
   SetLength(bytes, index div 2);
+{$IFNDEF NEXTGEN}
   Classes.HexToBin(PChar(text), PByte(bytes), Length(bytes));
+{$ELSE}
+  Classes.HexToBin(text, 0, bytes, 0, Length(bytes));
+{$ENDIF}
   Result := TBuffer.Create(bytes);
 end;
 
 class function TBuffer.ConvertToHexString(const buffer: Pointer;
   count: Integer): string;
+{$IFNDEF NEXTGEN}
 begin
   SetLength(Result, count * 2);
   Classes.BinToHex(buffer, PChar(Result), count);
 end;
+{$ELSE}
+var
+  buff: TBytes;
+  text: TBytes;
+  i: Integer;
+begin
+  if (count = 0) then
+  begin
+    SetLength(Result, 0);
+    Exit;
+  end;
+
+  SetLength(buff, count);
+  Move(buffer^, buff[0], count);
+  SetLength(text, count * 2);
+  Classes.BinToHex(text, 0, buff, 0, count);
+  SetLength(Result, count * 2);
+  for i := 1 to Length(Result) do
+    Result[i]:=Char(text[i - 1]);
+end;
+{$ENDIF}
 
 class function TBuffer.ConvertToHexString(const buffer: Pointer; count: Integer;
   const prefix, delimiter: string): string;
@@ -787,10 +822,12 @@ begin
   Result := data;
 end;
 
+{$IFNDEF NEXTGEN}
 function TBuffer.EnsureSize(size: Integer; value: AnsiChar): TBuffer;
 begin
   Result := Self.EnsureSize(size, Byte(value));
 end;
+{$ENDIF}
 
 function TBuffer.Equals(const buffer: TBuffer): Boolean;
 begin

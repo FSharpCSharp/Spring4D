@@ -1,0 +1,216 @@
+object FMXTestRunner: TFMXTestRunner
+  Left = 0
+  Top = 0
+  Caption = 'TFMXTestRunner'
+  ClientHeight = 588
+  ClientWidth = 533
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [dkDesktop]
+  OnShow = FormShow
+  DesignerMobile = True
+  DesignerWidth = 533
+  DesignerHeight = 588
+  DesignerDeviceName = ''
+  DesignerOrientation = 0
+  DesignerOSVersion = ''
+  object Header: TToolBar
+    Height = 48.000000000000000000
+    TabOrder = 0
+    Width = 533.000000000000000000
+    object HeaderLabel: TLabel
+      Align = alCenter
+      AutoSize = True
+      Height = 19.000000000000000000
+      StyleLookup = 'toollabel'
+      Text = 'FMX dUnit Test Runner'
+      TextAlign = taCenter
+      Width = 116.000000000000000000
+      WordWrap = False
+      Trimming = ttCharacter
+    end
+  end
+  object TabControl1: TTabControl
+    Align = alClient
+    FullSize = True
+    Height = 492.000000000000000000
+    TabHeight = 49.000000000000000000
+    TabIndex = 0
+    TabOrder = 1
+    TabPosition = tpNone
+    Width = 533.000000000000000000
+    object TabItem1: TTabItem
+      WordWrap = False
+      Height = 8.000000000000000000
+      IsSelected = True
+      Position.X = 257.500000000000000000
+      Position.Y = 473.000000000000000000
+      TabOrder = 0
+      Text = 'TabItem1'
+      Trimming = ttCharacter
+      Width = 8.000000000000000000
+      object TestTree: TTreeView
+        Align = alClient
+        Height = 293.000000000000000000
+        TabOrder = 0
+        Width = 533.000000000000000000
+        ShowCheckboxes = True
+        object TreeViewItem1: TTreeViewItem
+          IsChecked = False
+          IsExpanded = True
+          IsSelected = False
+          TabOrder = 0
+          Text = 'TreeViewItem1'
+          object TreeViewItem2: TTreeViewItem
+            IsChecked = False
+            IsExpanded = False
+            IsSelected = False
+            TabOrder = 0
+            Text = 'TreeViewItem2'
+          end
+        end
+      end
+      object Panel1: TPanel
+        Align = alBottom
+        Height = 199.000000000000000000
+        Position.Y = 293.000000000000000000
+        Width = 533.000000000000000000
+        TabOrder = 1
+        object Memo: TMemo
+          Touch.InteractiveGestures = [igPan, igLongTap, igDoubleTap]
+          Align = alClient
+          Height = 199.000000000000000000
+          TabOrder = 0
+          Width = 533.000000000000000000
+          ReadOnly = True
+          WordWrap = True
+          StyledSettings = [ssFamily, ssStyle, ssFontColor]
+        end
+      end
+    end
+    object TabItem2: TTabItem
+      WordWrap = False
+      Height = 8.000000000000000000
+      IsSelected = False
+      Position.X = 267.500000000000000000
+      Position.Y = 473.000000000000000000
+      TabOrder = 1
+      Text = 'TabItem2'
+      Trimming = ttCharacter
+      Width = 8.000000000000000000
+      object ListBox1: TListBox
+        Anchors = [akLeft, akTop, akRight]
+        Height = 217.000000000000000000
+        Position.X = 16.000000000000000000
+        Position.Y = 16.000000000000000000
+        StyleLookup = 'transparentlistboxstyle'
+        TabOrder = 0
+        Width = 502.000000000000000000
+        DefaultItemStyles.ItemStyle = 'listboxitemnodetail'
+        DefaultItemStyles.GroupHeaderStyle = ''
+        DefaultItemStyles.GroupFooterStyle = ''
+        GroupingKind = gsGrouped
+        object ListBoxGroupHeader1: TListBoxGroupHeader
+          Height = 30.000000000000000000
+          StyleLookup = 'listboxgroupheader'
+          Text = 'Settings'
+          Width = 502.000000000000000000
+        end
+        object chkBreakOnFailures: TListBoxItem
+          Height = 44.000000000000000000
+          Position.Y = 30.000000000000000000
+          StyleLookup = 'listboxitemnodetail'
+          Text = 'Break on failures'
+          Width = 502.000000000000000000
+          OnClick = ListBoxItemCheckInvert
+        end
+        object chkFailIfNoChecksExecuted: TListBoxItem
+          Height = 44.000000000000000000
+          Position.Y = 74.000000000000000000
+          StyleLookup = 'listboxitemnodetail'
+          Text = 'Fail if no checks executed'
+          Width = 502.000000000000000000
+          OnClick = ListBoxItemCheckInvert
+        end
+        object chkFailIfMemoryLeaked: TListBoxItem
+          Enabled = False
+          Height = 44.000000000000000000
+          Position.Y = 118.000000000000000000
+          StyleLookup = 'listboxitemnodetail'
+          Text = 'Fail if memory leaked'
+          Width = 502.000000000000000000
+          OnClick = ListBoxItemCheckInvert
+        end
+        object chkIngnoreLeaksInSetupTeardown: TListBoxItem
+          Enabled = False
+          Height = 44.000000000000000000
+          Position.Y = 162.000000000000000000
+          StyleLookup = 'listboxitemnodetail'
+          Text = 'Ingnore leaks in setup/teardown'
+          Width = 502.000000000000000000
+          OnClick = ListBoxItemCheckInvert
+        end
+      end
+    end
+  end
+  object ToolBar1: TToolBar
+    Align = alBottom
+    Height = 48.000000000000000000
+    Position.Y = 540.000000000000000000
+    TabOrder = 2
+    Width = 533.000000000000000000
+    object cmdRun: TButton
+      Action = RunTests
+      Align = alLeft
+      Height = 48.000000000000000000
+      StyleLookup = 'playtoolbuttonbordered'
+      TabOrder = 0
+      Trimming = ttCharacter
+      Width = 48.000000000000000000
+    end
+    object cmdSettings: TButton
+      Action = ChangeTab2
+      Align = alRight
+      Height = 48.000000000000000000
+      Position.X = 485.000000000000000000
+      StyleLookup = 'detailstoolbuttonbordered'
+      TabOrder = 1
+      Trimming = ttCharacter
+      Width = 48.000000000000000000
+    end
+    object cmdBack: TButton
+      Action = ChangeTab1
+      Align = alLeft
+      Height = 48.000000000000000000
+      StyleLookup = 'priortoolbuttonbordered'
+      TabOrder = 2
+      Trimming = ttCharacter
+      Visible = False
+      Width = 48.000000000000000000
+    end
+  end
+  object ActionList1: TActionList
+    Left = 432
+    Top = 440
+    object RunTests: TAction
+      Text = 'Run...'
+      OnExecute = RunTestsExecute
+      OnUpdate = RunTestsUpdate
+    end
+    object StopTests: TAction
+      Text = 'StopTests'
+    end
+    object ChangeTab2: TChangeTabAction
+      Category = 'Tab'
+      Tab = TabItem2
+      Transition = ttSlide
+      OnUpdate = ChangeTab2Update
+    end
+    object ChangeTab1: TChangeTabAction
+      Category = 'Tab'
+      Tab = TabItem1
+      Transition = ttSlide
+      OnUpdate = ChangeTabUpdate
+    end
+  end
+end

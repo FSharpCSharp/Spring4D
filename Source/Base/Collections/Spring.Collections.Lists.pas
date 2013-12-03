@@ -259,11 +259,11 @@ begin
   temp := fItems[currentIndex];
   fItems[currentIndex] := Default(T);
   if currentIndex < newIndex then
-	//System.Move(fItems[currentIndex + 1], fItems[currentIndex], (newIndex - currentIndex) * SizeOf(T))
-	fArrayManager.Move(fItems, currentIndex + 1, currentIndex, newIndex - currentIndex)
+    //System.Move(fItems[currentIndex + 1], fItems[currentIndex], (newIndex - currentIndex) * SizeOf(T))
+    fArrayManager.Move(fItems, currentIndex + 1, currentIndex, newIndex - currentIndex)
   else
-	//System.Move(fItems[newIndex], fItems[newIndex + 1], (currentIndex - newIndex) * SizeOf(T));
-	fArrayManager.Move(fItems, newIndex, newIndex + 1, currentIndex - newIndex);
+    //System.Move(fItems[newIndex], fItems[newIndex + 1], (currentIndex - newIndex) * SizeOf(T));
+    fArrayManager.Move(fItems, newIndex, newIndex + 1, currentIndex - newIndex);
 
   //System.FillChar(fItems[newIndex], SizeOf(T), 0);
   fArrayManager.Finalize(fItems, newIndex, 1);
@@ -281,7 +281,7 @@ begin
     FArrayManager := TManualArrayManager<T>.Create
   else
 {$ENDIF}
-	FArrayManager := TMoveArrayManager<T>.Create;
+    FArrayManager := TMoveArrayManager<T>.Create;
 end;
 
 destructor TList<T>.Destroy;

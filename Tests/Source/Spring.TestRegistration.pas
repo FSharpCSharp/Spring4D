@@ -34,7 +34,9 @@ implementation
 
 uses
   TestFramework,
+{$IFNDEF NEXTGEN}
   TestExtensions,
+{$ENDIF}
   Spring.Tests.Base,
   Spring.Tests.Collections,
   Spring.Tests.SysUtils,
@@ -50,11 +52,17 @@ uses
 procedure RegisterTestCases();
 begin
   RegisterTests('Spring.Base', [
-//    TRepeatedTest.Create(TTestNullableInteger.Suite, 3),
-//    TTestNullableBoolean.Suite,
-//    TTestGuard.Suite,
-//    TTestLazy.Suite,
-    TTestMulticastEvent.Suite{,
+{$IFNDEF NEXTGEN}
+    TRepeatedTest.Create(TTestNullableInteger.Suite, 3),
+{$ELSE}
+    TTestNullableInteger.Suite,
+{$ENDIF}
+    TTestNullableBoolean.Suite,
+    TTestGuard.Suite,
+    TTestLazy.Suite,
+{$IFNDEF CPUARM}
+    TTestMulticastEvent.Suite, //UNSUPPORTED on ARM
+{$ENDIF}
     TTestEmptyHashSet.Suite,
     TTestNormalHashSet.Suite,
     TTestIntegerList.Suite,
@@ -67,9 +75,8 @@ begin
     TTestQueueOfInteger.Suite,
     TTestQueueOfIntegerChangedEvent.Suite,
     TTestListOfIntegerAsIEnumerable.Suite
-}
   ]);
-{
+
   RegisterTests('Spring.Base.SysUtils', [
     TTestSplitString.Suite,
     TTestTryConvertStrToDateTime.Suite,
@@ -87,7 +94,9 @@ begin
 
   RegisterTests('Spring.Base.Reflection.ValueConverters', [
     TTestFromString.Suite,
+{$IFNDEF NEXTGEN}
     TTestFromWideString.Suite,
+{$ENDIF}
     TTestFromInteger.Suite,
     TTestFromCardinal.Suite,
     TTestFromSmallInt.Suite,
@@ -171,7 +180,7 @@ begin
 //  RegisterTests('Spring.Core.Logging', [
 //     TTestLoggingConfig.Suite
 //  ]);
-}
+
 end;
 
 end.

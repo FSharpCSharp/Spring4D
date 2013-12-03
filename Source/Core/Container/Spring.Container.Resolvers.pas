@@ -39,9 +39,18 @@ type
   private
     fContext: IContainerContext;
     fRegistry: IComponentRegistry;
+{$IFNDEF CPUARM}
     fOnResolve: Event<TResolveEvent>;
+{$ELSE}
+    //Events are not supported on ARM
+    fOnResolve: IList<TResolveEvent>;
+{$ENDIF}
     procedure DoResolve(var instance: TValue);
+{$IFNDEF CPUARM}
     function GetOnResolve: IEvent<TResolveEvent>;
+{$ELSE}
+    function GetOnResolve: IList<TResolveEvent>;
+{$ENDIF}
   protected
     procedure ConstructValue(typeInfo: PTypeInfo; const instance: TValue; out value: TValue);
 
@@ -50,7 +59,11 @@ type
   public
     constructor Create(const context: IContainerContext; const registry: IComponentRegistry);
 
+{$IFNDEF CPUARM}
     property OnResolve: IEvent<TResolveEvent> read GetOnResolve;
+{$ELSE}
+    property OnResolve: IList<TResolveEvent> read GetOnResolve;
+{$ENDIF}
   end;
 
   TDependencyResolver = class(TResolver, IDependencyResolver, IInterface)
@@ -194,14 +207,31 @@ begin
   inherited Create;
   fContext := context;
   fRegistry := registry;
+{$IFDEF CPUARM}
+  fOnResolve := TCollections.CreateList<TResolveEvent>;
+{$ENDIF}
 end;
 
 procedure TResolver.DoResolve(var instance: TValue);
+{$IFNDEF CPUARM}
 begin
   fOnResolve.Invoke(Self, instance);
 end;
+{$ELSE}
+//There is some bug in delphi that makes this to fail in some conditions
+var
+  m : TMethod;
+  i : Integer;
+begin
+  for i := 0 to fOnResolve.Count - 1 do begin
+    m.Code:=TMethod(fOnResolve[i]).Code;
+    m.Data:=TMethod(fOnResolve[i]).Data;
+    TResolveEvent(m)(Self, instance);
+  end;
+end;
+{$ENDIF}
 
-function TResolver.GetOnResolve: IEvent<TResolveEvent>;
+function TResolver.GetOnResolve: {$IFNDEF CPUARM}IEvent{$ELSE}IList{$ENDIF}<TResolveEvent>;
 begin
   Result := fOnResolve;
 end;

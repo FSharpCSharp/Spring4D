@@ -15,6 +15,12 @@
         <Projects Include="..\..\Tests\Spring.Tests.DelphiXE5.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="..\..\Tests\dUnit.Tests.Mobile.DelphiXE5.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="..\..\Tests\Spring.Tests.Mobile.DelphiXE5.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -59,14 +65,32 @@
     <Target Name="Spring_Tests_DelphiXE5:Make">
         <MSBuild Projects="..\..\Tests\Spring.Tests.DelphiXE5.dproj" Targets="Make"/>
     </Target>
+    <Target Name="dUnit_Tests_Mobile_DelphiXE5">
+        <MSBuild Projects="..\..\Tests\dUnit.Tests.Mobile.DelphiXE5.dproj"/>
+    </Target>
+    <Target Name="dUnit_Tests_Mobile_DelphiXE5:Clean">
+        <MSBuild Projects="..\..\Tests\dUnit.Tests.Mobile.DelphiXE5.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="dUnit_Tests_Mobile_DelphiXE5:Make">
+        <MSBuild Projects="..\..\Tests\dUnit.Tests.Mobile.DelphiXE5.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Spring_Tests_Mobile_DelphiXE5">
+        <MSBuild Projects="..\..\Tests\Spring.Tests.Mobile.DelphiXE5.dproj"/>
+    </Target>
+    <Target Name="Spring_Tests_Mobile_DelphiXE5:Clean">
+        <MSBuild Projects="..\..\Tests\Spring.Tests.Mobile.DelphiXE5.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Spring_Tests_Mobile_DelphiXE5:Make">
+        <MSBuild Projects="..\..\Tests\Spring.Tests.Mobile.DelphiXE5.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="Spring_Base;Spring_Core;Spring_Extensions;Spring_Tests_DelphiXE5"/>
+        <CallTarget Targets="Spring_Base;Spring_Core;Spring_Extensions;Spring_Tests_DelphiXE5;dUnit_Tests_Mobile_DelphiXE5;Spring_Tests_Mobile_DelphiXE5"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="Spring_Base:Clean;Spring_Core:Clean;Spring_Extensions:Clean;Spring_Tests_DelphiXE5:Clean"/>
+        <CallTarget Targets="Spring_Base:Clean;Spring_Core:Clean;Spring_Extensions:Clean;Spring_Tests_DelphiXE5:Clean;dUnit_Tests_Mobile_DelphiXE5:Clean;Spring_Tests_Mobile_DelphiXE5:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="Spring_Base:Make;Spring_Core:Make;Spring_Extensions:Make;Spring_Tests_DelphiXE5:Make"/>
+        <CallTarget Targets="Spring_Base:Make;Spring_Core:Make;Spring_Extensions:Make;Spring_Tests_DelphiXE5:Make;dUnit_Tests_Mobile_DelphiXE5:Make;Spring_Tests_Mobile_DelphiXE5:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>
