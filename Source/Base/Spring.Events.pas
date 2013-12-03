@@ -145,15 +145,36 @@ function GetTypeSize(typeInfo: PTypeInfo): Integer;
 var
   typeData: PTypeData;
 const
-  COrdinalSizes: array[TOrdType] of Integer = (1, 1, 2, 2, 4, 4);
-  CFloatSizes: array[TFloatType] of Integer = (4, 8, SizeOf(Extended), 8, 8);
-  CSetSizes: array[TOrdType] of Integer = (1, 1, 2, 2, 4, 4);
+  COrdinalSizes: array[TOrdType] of Integer = (
+    SizeOf(ShortInt){1},
+    SizeOf(Byte){1},
+    SizeOf(SmallInt){2},
+    SizeOf(Word){2},
+    SizeOf(Integer){4},
+    SizeOf(Cardinal){4});
+  CFloatSizes: array[TFloatType] of Integer = (
+    SizeOf(Single){4},
+    SizeOf(Double){8},
+{$IFDEF MACOS}
+    16,
+{$ELSE}
+    SizeOf(Extended){10},
+{$ENDIF MACOS}
+    SizeOf(Comp){8},
+    SizeOf(Currency){8});
+  CSetSizes: array[TOrdType] of Integer = (
+    SizeOf(ShortInt){1},
+    SizeOf(Byte){1},
+    SizeOf(SmallInt){2},
+    SizeOf(Word){2},
+    SizeOf(Integer){4},
+    SizeOf(Cardinal){4});
 begin
   case typeInfo^.Kind of
     tkChar:
-      Result := 1;
+      Result := SizeOf(AnsiChar){1};
     tkWChar:
-      Result := 2;
+      Result := SizeOf(WideChar){2};
     tkInteger, tkEnumeration:
       begin
         typeData := GetTypeData(typeInfo);
@@ -169,9 +190,9 @@ begin
     tkMethod:
       Result := SizeOf(TMethod);
     tkInt64:
-      Result := 8;
+      Result := SizeOf(Int64){8};
     tkVariant:
-      Result := 16;
+      Result := 16; // http://docwiki.embarcadero.com/RADStudio/en/Variant_Types
     tkSet:
       begin
         // big sets have no typeInfo for now
@@ -190,7 +211,7 @@ begin
       end;
     else
       begin
-        Assert(False, 'Unsupported type');
+        Assert(False, 'Unsupported type'); { TODO -o##jwp -cEnhance : add more context to the assert }
         Result := -1;
       end;
   end;
@@ -225,6 +246,8 @@ asm
   jz @@no_stack
 
   // stack address alignment
+  {TODO -o##jwp -cOSX32/MACOS : Research 16-byte stack alignment: http://docwiki.embarcadero.com/RADStudio/XE5/en/Delphi_Considerations_for_Cross-Platform_Applications#Stack_Alignment_Issue_on_OS_X }
+  // http://docwiki.embarcadero.com/RADStudio/XE5/en/Conditional_compilation_(Delphi)
   add ecx,PointerSize-1
   and ecx,not(PointerSize-1)
   and ecx,$ffff
@@ -297,6 +320,8 @@ constructor TMethodInvocations.TMethodInfo.Create(typeData: PTypeData);
 
   function Align4(Value: Integer): Integer;
   begin
+    {TODO -o##jwp -cOSX32/MACOS : Research 16-byte stack alignment: http://docwiki.embarcadero.com/RADStudio/XE5/en/Delphi_Considerations_for_Cross-Platform_Applications#Stack_Alignment_Issue_on_OS_X }
+    // http://docwiki.embarcadero.com/RADStudio/XE5/en/Conditional_compilation_(Delphi)
     Result := (Value + 3) and not 3;
   end;
 
@@ -404,6 +429,8 @@ asm
         //JMP     ECX    // Data Exec. Prevention: Jumping into a GetMem allocated memory block
 
         // stack address alignment
+        {TODO -o##jwp -cOSX32/MACOS : Research 16-byte stack alignment: http://docwiki.embarcadero.com/RADStudio/XE5/en/Delphi_Considerations_for_Cross-Platform_Applications#Stack_Alignment_Issue_on_OS_X }
+        // http://docwiki.embarcadero.com/RADStudio/XE5/en/Conditional_compilation_(Delphi)
         // In cdecl call conversion, the caller will clear the stack
         CMP     DWORD PTR [EAX].fMethodInfo.CallConvention, ccCdecl
         JZ      @@SimpleRet
