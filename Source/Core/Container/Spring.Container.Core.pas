@@ -341,7 +341,8 @@ type
   TInjectableMethodFilter = class(TSpecificationBase<TRttiMethod>)
   private
     fContext: IContainerContext;
-    [Weak] fModel: TComponentModel;
+    {$IFDEF NEXTGEN}[Weak]{$ENDIF}
+    fModel: TComponentModel;
     fInjection: IInjection;
     fArguments: TArray<TValue>;
   public

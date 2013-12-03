@@ -112,7 +112,7 @@ type
   {$ENDREGION}
 {$IF Defined(WEAKREF)}
     function HasWeakRef: Boolean;
-{$ENDIF}
+{$IFEND}
     function TryGetElementAt(out value: T; index: Integer): Boolean; virtual;
     function TryGetFirst(out value: T): Boolean; overload; virtual;
     function TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean; overload;
@@ -654,7 +654,7 @@ function TEnumerableBase<T>.HasWeakRef: Boolean;
 begin
   Result := System.TypInfo.HasWeakRef(TypeInfo(T));
 end;
-{$ENDIF}
+{$IFEND}
 
 function TEnumerableBase<T>.Last: T;
 var

@@ -39,7 +39,8 @@ uses
 type
   TLifetimeManagerBase = class abstract(TInterfacedObject, ILifetimeManager, IInterface)
   private
-    [Weak] fModel: TComponentModel;
+    {$IFDEF NEXTGEN}[Weak]{$ENDIF}
+    fModel: TComponentModel;
     function GetActivator: IComponentActivator;
   protected
     procedure DoAfterConstruction(const instance: TValue); virtual;

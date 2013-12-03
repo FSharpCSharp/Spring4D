@@ -30,7 +30,9 @@ unit Spring.Cryptography;
 
 {$I Spring.inc}
 {$R-}
-{$ZEROBASEDSTRINGS OFF}
+{$IFDEF DELPHI_XE5_UP}
+  {$ZEROBASEDSTRINGS OFF}
+{$ENDIF}
 
 interface
 

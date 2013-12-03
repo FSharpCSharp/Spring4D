@@ -30,12 +30,12 @@
 {$IFDEF CPU386}
   //Keep this for older delphi compatibility (older than XE3)
   {$IFNDEF CPUX86}
-    {$MESSAGE 'Forcibly defining CPUX86'}
     {$DEFINE CPUX86}
   {$ENDIF}
 {$ENDIF}
 
-{$I jedi.inc}                // Import JEDI Development environment directives
+// Import JEDI Development environment directives
+{$I jedi.inc}                
 
 {$IFNDEF DELPHI2010_UP}
   {$MESSAGE ERROR 'This framework requires Delphi 2010 or higher.'}}
@@ -44,7 +44,7 @@
 {$IF Defined(MSWINDOWS)}
 
 {$ELSE IF Defined(MACOS) OR Defined(IOS) or Defined(ANDROID)}
-  {$MESSAGE WARN 'This framework currently is experpimental on Mac OS X, iOS, Android and has not been tested there yet.'}
+  {$MESSAGE WARN 'This framework currently is experimental on Mac OS X, iOS, Android and has not been tested there yet.'}
 {$ELSE}
   {$MESSAGE ERROR 'This framework currently only supports Windows (tested) and Mac OS X, iOS, Android (experimental).'}
 {$IFEND}

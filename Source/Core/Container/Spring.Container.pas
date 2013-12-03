@@ -118,7 +118,8 @@ type
   ///	</summary>
   TServiceLocatorAdapter = class(TInterfacedObject, IServiceLocator)
   private
-    [Weak] fContainer: TContainer;
+    {$IFDEF NEXTGEN}[Weak]{$ENDIF}
+    fContainer: TContainer;
     class var GlobalInstance: IServiceLocator;
     class constructor Create;
   public

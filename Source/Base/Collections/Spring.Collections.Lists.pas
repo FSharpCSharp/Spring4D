@@ -60,7 +60,9 @@ type
         procedure Reset; override;
       end;
   private
+  {$IFDEF NEXTGEN}
     fArrayManager: TArrayManager<T>;
+  {$ENDIF}
     fItems: array of T;
     fCount: Integer;
     fVersion: Integer;
@@ -175,10 +177,13 @@ begin
   EnsureCapacity(fCount + 1);
   if index <> fCount then
   begin
-    //System.Move(fItems[index], fItems[index + 1], (fCount - index) * SizeOf(T));
-    //System.FillChar(fItems[index], SizeOf(fItems[index]), 0);
+{$IFNDEF NEXTGEN}
+    System.Move(fItems[index], fItems[index + 1], (fCount - index) * SizeOf(T));
+    System.FillChar(fItems[index], SizeOf(fItems[index]), 0);
+{$ELSE}
     fArrayManager.Move(fItems, index, index + 1, fCount - index);
     fArrayManager.Finalize(fItems, index, 1);
+{$ENDIF}
   end;
   fItems[index] := item;
   Inc(fCount);
@@ -197,10 +202,13 @@ begin
   Dec(fCount);
   if index <> fCount then
   begin
-    //System.Move(fItems[index + 1], fItems[index], (fCount - index) * SizeOf(T));
-    //System.FillChar(fItems[fCount], SizeOf(T), 0);
+{$IFNDEF NEXTGEN}
+    System.Move(fItems[index + 1], fItems[index], (fCount - index) * SizeOf(T));
+    System.FillChar(fItems[fCount], SizeOf(T), 0);
+{$ELSE}
     fArrayManager.Move(fItems, index + 1, index, fCount - index);
     fArrayManager.Finalize(fItems, fCount, 1);
+{$ENDIF}
   end;
   IncreaseVersion;
 
@@ -220,20 +228,30 @@ begin
     Exit;
 
   SetLength(oldItems, count);
-  //System.Move(fItems[index], oldItems[0], count * SizeOf(T));
+{$IFNDEF NEXTGEN}
+  System.Move(fItems[index], oldItems[0], count * SizeOf(T));
+{$ELSE}
   fArrayManager.Move(fItems, oldItems, index, 0, count);
+{$ENDIF}
 
   tailCount := fCount - (index + count);
   if tailCount > 0 then
   begin
-    //System.Move(fItems[index + count], fItems[index], tailCount * SizeOf(T));
-    //System.FillChar(fItems[fCount - count], count * SizeOf(T), 0);
+{$IFNDEF NEXTGEN}
+    System.Move(fItems[index + count], fItems[index], tailCount * SizeOf(T));
+    System.FillChar(fItems[fCount - count], count * SizeOf(T), 0);
+{$ELSE}
     fArrayManager.Move(fItems, index + count, index, tailCount);
     fArrayManager.Finalize(fItems, fCount - count, count);
+{$ENDIF}
   end
   else
-    //System.FillChar(fItems[index], count * SizeOf(T), 0);
+{$IFNDEF NEXTGEN}
+    System.FillChar(fItems[index], count * SizeOf(T), 0);
+{$ELSE}
     fArrayManager.Finalize(fItems, index, count);
+{$ENDIF}
+
   Dec(fCount, count);
   IncreaseVersion;
 
@@ -259,14 +277,23 @@ begin
   temp := fItems[currentIndex];
   fItems[currentIndex] := Default(T);
   if currentIndex < newIndex then
-    //System.Move(fItems[currentIndex + 1], fItems[currentIndex], (newIndex - currentIndex) * SizeOf(T))
+{$IFNDEF NEXTGEN}
+    System.Move(fItems[currentIndex + 1], fItems[currentIndex], (newIndex - currentIndex) * SizeOf(T))
+{$ELSE}
     fArrayManager.Move(fItems, currentIndex + 1, currentIndex, newIndex - currentIndex)
+{$ENDIF}
   else
-    //System.Move(fItems[newIndex], fItems[newIndex + 1], (currentIndex - newIndex) * SizeOf(T));
+{$IFNDEF NEXTGEN}
+    System.Move(fItems[newIndex], fItems[newIndex + 1], (currentIndex - newIndex) * SizeOf(T));
+{$ELSE}
     fArrayManager.Move(fItems, newIndex, newIndex + 1, currentIndex - newIndex);
+{$ENDIF}
 
-  //System.FillChar(fItems[newIndex], SizeOf(T), 0);
+{$IFNDEF NEXTGEN}
+  System.FillChar(fItems[newIndex], SizeOf(T), 0);
+{$ELSE}
   fArrayManager.Finalize(fItems, newIndex, 1);
+{$ENDIF}
   fItems[newIndex] := temp;
   IncreaseVersion;
 
@@ -276,19 +303,23 @@ end;
 procedure TList<T>.AfterConstruction;
 begin
   inherited;
+{$IFDEF NEXTGEN}
 {$IF Defined(WEAKREF)}
   if HasWeakRef then
-    FArrayManager := TManualArrayManager<T>.Create
+    fArrayManager := TManualArrayManager<T>.Create
   else
+{$IFEND}
+   fArrayManager := TMoveArrayManager<T>.Create;
 {$ENDIF}
-    FArrayManager := TMoveArrayManager<T>.Create;
 end;
 
 destructor TList<T>.Destroy;
 begin
   inherited;
+{$IFDEF NEXTGEN}
 {$IFNDEF AUTOREFCOUNT}
-  FArrayManager.Free;
+  fArrayManager.Free;
+{$ENDIF}
 {$ENDIF}
 end;
 
