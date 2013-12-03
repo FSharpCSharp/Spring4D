@@ -25,10 +25,9 @@
 unit Spring.TestUtils;
 
 {$I Spring.inc}
+{$I Spring.Tests.inc}
 
 interface
-
-{$i Spring.Tests.inc}
 
 uses
   TestFramework,

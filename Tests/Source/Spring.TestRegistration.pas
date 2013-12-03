@@ -24,9 +24,9 @@
 
 unit Spring.TestRegistration; // should be platform neutral
 
-interface
+{$I Spring.Tests.inc}
 
-{$i Spring.Tests.inc}
+interface
 
 procedure RegisterTestCases();
 
