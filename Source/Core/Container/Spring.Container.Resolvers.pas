@@ -39,18 +39,9 @@ type
   private
     fContext: IContainerContext;
     fRegistry: IComponentRegistry;
-{$IFNDEF CPUARM}
-    fOnResolve: Event<TResolveEvent>;
-{$ELSE}
-    //Events are not supported on ARM
-    fOnResolve: IList<TResolveEvent>;
-{$ENDIF}
+    fOnResolve: IEvent<TResolveEvent>;
     procedure DoResolve(var instance: TValue);
-{$IFNDEF CPUARM}
     function GetOnResolve: IEvent<TResolveEvent>;
-{$ELSE}
-    function GetOnResolve: IList<TResolveEvent>;
-{$ENDIF}
   protected
     procedure ConstructValue(typeInfo: PTypeInfo; const instance: TValue; out value: TValue);
 
@@ -59,11 +50,7 @@ type
   public
     constructor Create(const context: IContainerContext; const registry: IComponentRegistry);
 
-{$IFNDEF CPUARM}
     property OnResolve: IEvent<TResolveEvent> read GetOnResolve;
-{$ELSE}
-    property OnResolve: IList<TResolveEvent> read GetOnResolve;
-{$ENDIF}
   end;
 
   TDependencyResolver = class(TResolver, IDependencyResolver, IInterface)
@@ -192,9 +179,68 @@ uses
   SysUtils,
   TypInfo,
   Spring.Container.ResourceStrings,
+  Spring.Events.Base,
   Spring.Helpers,
   Spring.Reflection,
   Spring.SystemUtils;
+
+
+{$REGION 'TResolveEventImpl'}
+
+type
+  TResolveEventImpl = class(TEventBase, IEvent<TResolveEvent>)
+  private
+    function GetInvoke: TResolveEvent;
+    procedure Add(handler: TResolveEvent);
+    procedure Remove(handler: TResolveEvent);
+    procedure ForEach(const action: TAction<TResolveEvent>);
+
+    procedure InternalInvoke(Sender: TObject; var instance: TValue);
+  public
+    constructor Create;
+  end;
+
+constructor TResolveEventImpl.Create;
+begin
+  inherited;
+  fInvoke.Code := @TResolveEventImpl.InternalInvoke;
+  fInvoke.Data := Self;
+end;
+
+procedure TResolveEventImpl.Add(handler: TResolveEvent);
+begin
+  inherited Add(TMethod(handler));
+end;
+
+procedure TResolveEventImpl.ForEach(const action: TAction<TResolveEvent>);
+var
+  i: Integer;
+begin
+  for i := 0 to Handlers.Count - 1 do
+    action(TResolveEvent(Handlers.Items[i]));
+end;
+
+function TResolveEventImpl.GetInvoke: TResolveEvent;
+begin
+  Result := TResolveEvent(inherited Invoke);
+end;
+
+procedure TResolveEventImpl.InternalInvoke(Sender: TObject;
+  var instance: TValue);
+var
+  i: Integer;
+begin
+  if Enabled then
+    for i := 0 to Handlers.Count - 1 do
+      TResolveEvent(Handlers.Items[i])(Sender, instance);
+end;
+
+procedure TResolveEventImpl.Remove(handler: TResolveEvent);
+begin
+  inherited Remove(TMethod(handler));
+end;
+
+{$ENDREGION}
 
 
 {$REGION 'TResolver'}
@@ -207,31 +253,15 @@ begin
   inherited Create;
   fContext := context;
   fRegistry := registry;
-{$IFDEF CPUARM}
-  fOnResolve := TCollections.CreateList<TResolveEvent>;
-{$ENDIF}
+  fOnResolve := TResolveEventImpl.Create;
 end;
 
 procedure TResolver.DoResolve(var instance: TValue);
-{$IFNDEF CPUARM}
 begin
   fOnResolve.Invoke(Self, instance);
 end;
-{$ELSE}
-//There is some bug in delphi that makes this to fail in some conditions
-var
-  m : TMethod;
-  i : Integer;
-begin
-  for i := 0 to fOnResolve.Count - 1 do begin
-    m.Code:=TMethod(fOnResolve[i]).Code;
-    m.Data:=TMethod(fOnResolve[i]).Data;
-    TResolveEvent(m)(Self, instance);
-  end;
-end;
-{$ENDIF}
 
-function TResolver.GetOnResolve: {$IFNDEF CPUARM}IEvent{$ELSE}IList{$ENDIF}<TResolveEvent>;
+function TResolver.GetOnResolve: IEvent<TResolveEvent>;
 begin
   Result := fOnResolve;
 end;

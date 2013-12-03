@@ -183,20 +183,11 @@ type
 
   TResolveEvent = procedure(Sender: TObject; var instance: TValue) of object;
 
-{$IFNDEF CPUARM}
   IResolver = interface
     ['{EA0ABA0F-BED0-4897-9E50-133184E105B7}']
     function GetOnResolve: IEvent<TResolveEvent>;
     property OnResolve: IEvent<TResolveEvent> read GetOnResolve;
   end;
-{$ELSE}
-  //Since the intreface is different define another GUID just to be safe
-  IResolver = interface
-    ['{0406A537-0333-489D-91FC-7361138512A1}']
-    function GetOnResolve: IList<TResolveEvent>;
-    property OnResolve: IList<TResolveEvent> read GetOnResolve;
-  end;
-{$ENDIF}
 
   IDependencyResolver = interface(IResolver)
     ['{15ADEA1D-7C3F-48D5-8E85-84B4332AFF5F}']
