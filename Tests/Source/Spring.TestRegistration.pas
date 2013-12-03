@@ -50,11 +50,12 @@ uses
 procedure RegisterTestCases();
 begin
   RegisterTests('Spring.Base', [
-//    TRepeatedTest.Create(TTestNullableInteger.Suite, 3),
-//    TTestNullableBoolean.Suite,
-//    TTestGuard.Suite,
-//    TTestLazy.Suite,
-    TTestMulticastEvent.Suite{,
+    TRepeatedTest.Create(TTestNullableInteger.Suite, 3),
+    TTestNullableBoolean.Suite,
+    TTestGuard.Suite,
+    TTestLazy.Suite,
+    TTestMulticastEvent.Suite,
+    TTestMulticastEventStackSize.Suite,
     TTestEmptyHashSet.Suite,
     TTestNormalHashSet.Suite,
     TTestIntegerList.Suite,
@@ -67,9 +68,8 @@ begin
     TTestQueueOfInteger.Suite,
     TTestQueueOfIntegerChangedEvent.Suite,
     TTestListOfIntegerAsIEnumerable.Suite
-}
   ]);
-{
+
   RegisterTests('Spring.Base.SysUtils', [
     TTestSplitString.Suite,
     TTestTryConvertStrToDateTime.Suite,
@@ -171,7 +171,6 @@ begin
 //  RegisterTests('Spring.Core.Logging', [
 //     TTestLoggingConfig.Suite
 //  ]);
-}
 end;
 
 end.
