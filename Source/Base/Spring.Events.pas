@@ -174,8 +174,10 @@ const
     SizeOf(Cardinal){4});
 begin
   case typeInfo^.Kind of
+{$IFNDEF NEXTGEN}
     tkChar:
       Result := SizeOf(AnsiChar){1};
+{$ENDIF}
     tkWChar:
       Result := SizeOf(WideChar){2};
     tkInteger, tkEnumeration:

@@ -79,6 +79,7 @@ type
     procedure TestByValue;
   end;
 
+{$IFNDEF CPUARM}
   {$M+}
   TProc<T1, T2> = reference to procedure(arg1: T1; arg2: T2);
   {$M-}
@@ -163,6 +164,7 @@ type
     procedure TestIssue60Single();
     procedure TestIssue60SingleAssignedConst();
   end;
+{$ENDIF ~CPUARM}
 
 implementation
 
@@ -280,6 +282,7 @@ end;
 
 
 {$REGION 'TTestMulticastEvent'}
+{$IFNDEF CPUARM}
 
 procedure TTestMulticastEvent.SetUp;
 begin
@@ -466,6 +469,7 @@ begin
   CheckEquals(0, fEvent.Count);
 end;
 
+{$ENDIF ~CPUARM}
 {$ENDREGION}
 
 
@@ -592,16 +596,22 @@ procedure TTestGuard.TestIsNullReference;
 var
   obj: TObject;
   intf: IInterface;
+{$IFNDEF NEXTGEN}
   e: TNotifyEvent;
+{$ENDIF}
 begin
   obj := nil;
   CheckTrue(Guard.IsNullReference(obj, TypeInfo(TObject)));
   CheckTrue(Guard.IsNullReference(intf, TypeInfo(IInterface)));
+{$IFNDEF NEXTGEN}
   e := nil;
   CheckTrue(Guard.IsNullReference(e, TypeInfo(TNotifyEvent)));
   TMethod(e).Data := Self;
   CheckFalse(Assigned(e));
   CheckFalse(Guard.IsNullReference(e, TypeInfo(TNotifyEvent)));
+{$ELSE}
+  {$MESSAGE WARN 'Delphi problem'}
+{$ENDIF}
 end;
 
 procedure TTestGuard.TestNotNull;
@@ -616,6 +626,7 @@ end;
 {$ENDREGION}
 
 {$REGION 'TTestMulticastEventStackSize'}
+{$IFNDEF CPUARM}
 
 procedure TTestMulticastEventStackSize.SetUp;
 begin
@@ -836,6 +847,7 @@ begin
   CheckEquals(expected, fHandlerInvokeCount);
 end;
 
+{$ENDIF CPUARM}
 {$ENDREGION}
 
 end.

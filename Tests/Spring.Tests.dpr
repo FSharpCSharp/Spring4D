@@ -51,5 +51,4 @@ begin
   RegisterTestCases();
   ReportMemoryLeaksOnShutdown := True;
   RunRegisteredTestCases(); // all RunTestsUsing* units should support this method
-  {TODO -o##jwp -cFixInDUnit : Console app on OSX32 $IFDEF MACOS throws error at termination: Runtime error 230 at 00039F83 }
 end.
