@@ -224,14 +224,34 @@ end;
 
 procedure TDictionary<TKey, TValue>.DoKeyNotify(Sender: TObject;
   const Item: TKey; Action: TCollectionNotification);
+{$IFDEF CPUARM}
+var [Unsafe] e : TCollectionChangedEvent<TKey>;
+{$ENDIF}
 begin
+{$IFNDEF CPUARM}
   fOnKeyChanged.Invoke(Self, item, TCollectionChangedAction(action));
+{$ELSE}
+  // There is some bug in Delphi compiler/RTL which corrupts the event's
+  // fInvoke getter in some situations
+  e := fOnKeyChanged.Invoke;
+  e(Self, item, TCollectionChangedAction(action));
+{$ENDIF}
 end;
 
 procedure TDictionary<TKey, TValue>.DoValueNotify(Sender: TObject;
   const Item: TValue; Action: TCollectionNotification);
+{$IFDEF CPUARM}
+var [Unsafe] e : TCollectionChangedEvent<TValue>;
+{$ENDIF}
 begin
+{$IFNDEF CPUARM}
   fOnValueChanged.Invoke(Self, item, TCollectionChangedAction(action));
+{$ELSE}
+  // There is some bug in Delphi compiler/RTL which corrupts the event's
+  // fInvoke getter in some situations
+  e := fOnValueChanged.Invoke;
+  e(Self, item, TCollectionChangedAction(action));
+{$ENDIF}
 end;
 
 function TDictionary<TKey, TValue>.GetEnumerator: IEnumerator<TGenericPair>;
