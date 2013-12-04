@@ -332,7 +332,7 @@ type
   TInjectableMethodFilter = class(TSpecificationBase<TRttiMethod>)
   private
     fContext: IContainerContext;
-    {$IFDEF NEXTGEN}[Weak]{$ENDIF}
+    {$IFDEF WEAKREF}[Weak]{$ENDIF}
     fModel: TComponentModel;
     fInjection: IInjection;
     fArguments: TArray<TValue>;

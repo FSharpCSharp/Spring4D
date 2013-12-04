@@ -39,7 +39,7 @@ type
   ///	</summary>
   TComponentActivatorBase = class abstract(TInterfacedObject, IComponentActivator, IInterface)
   protected
-    {$IFDEF NEXTGEN}[Weak]{$ENDIF}
+    {$IFDEF WEAKREF}[Weak]{$ENDIF}
     fModel: TComponentModel;
     procedure ExecuteInjections(const instance: TValue;
       const injections: IList<IInjection>; const resolver: IDependencyResolver);

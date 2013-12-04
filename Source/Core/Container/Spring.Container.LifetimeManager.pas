@@ -39,7 +39,7 @@ uses
 type
   TLifetimeManagerBase = class abstract(TInterfacedObject, ILifetimeManager, IInterface)
   private
-    {$IFDEF NEXTGEN}[Weak]{$ENDIF}
+    {$IFDEF WEAKREF}[Weak]{$ENDIF}
     fModel: TComponentModel;
     function GetActivator: IComponentActivator;
   protected

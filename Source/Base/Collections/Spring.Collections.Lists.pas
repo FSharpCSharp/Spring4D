@@ -60,7 +60,7 @@ type
         procedure Reset; override;
       end;
   private
-  {$IFDEF NEXTGEN}
+  {$IFDEF WEAKREF}
     fArrayManager: TArrayManager<T>;
   {$ENDIF}
     fItems: array of T;
@@ -177,7 +177,7 @@ begin
   EnsureCapacity(fCount + 1);
   if index <> fCount then
   begin
-{$IFNDEF NEXTGEN}
+{$IFNDEF WEAKREF}
     System.Move(fItems[index], fItems[index + 1], (fCount - index) * SizeOf(T));
     System.FillChar(fItems[index], SizeOf(fItems[index]), 0);
 {$ELSE}
@@ -202,7 +202,7 @@ begin
   Dec(fCount);
   if index <> fCount then
   begin
-{$IFNDEF NEXTGEN}
+{$IFNDEF WEAKREF}
     System.Move(fItems[index + 1], fItems[index], (fCount - index) * SizeOf(T));
     System.FillChar(fItems[fCount], SizeOf(T), 0);
 {$ELSE}
@@ -228,7 +228,7 @@ begin
     Exit;
 
   SetLength(oldItems, count);
-{$IFNDEF NEXTGEN}
+{$IFNDEF WEAKREF}
   System.Move(fItems[index], oldItems[0], count * SizeOf(T));
 {$ELSE}
   fArrayManager.Move(fItems, oldItems, index, 0, count);
@@ -237,7 +237,7 @@ begin
   tailCount := fCount - (index + count);
   if tailCount > 0 then
   begin
-{$IFNDEF NEXTGEN}
+{$IFNDEF WEAKREF}
     System.Move(fItems[index + count], fItems[index], tailCount * SizeOf(T));
     System.FillChar(fItems[fCount - count], count * SizeOf(T), 0);
 {$ELSE}
@@ -246,7 +246,7 @@ begin
 {$ENDIF}
   end
   else
-{$IFNDEF NEXTGEN}
+{$IFNDEF WEAKREF}
     System.FillChar(fItems[index], count * SizeOf(T), 0);
 {$ELSE}
     fArrayManager.Finalize(fItems, index, count);
@@ -277,19 +277,19 @@ begin
   temp := fItems[currentIndex];
   fItems[currentIndex] := Default(T);
   if currentIndex < newIndex then
-{$IFNDEF NEXTGEN}
+{$IFNDEF WEAKREF}
     System.Move(fItems[currentIndex + 1], fItems[currentIndex], (newIndex - currentIndex) * SizeOf(T))
 {$ELSE}
     fArrayManager.Move(fItems, currentIndex + 1, currentIndex, newIndex - currentIndex)
 {$ENDIF}
   else
-{$IFNDEF NEXTGEN}
+{$IFNDEF WEAKREF}
     System.Move(fItems[newIndex], fItems[newIndex + 1], (currentIndex - newIndex) * SizeOf(T));
 {$ELSE}
     fArrayManager.Move(fItems, newIndex, newIndex + 1, currentIndex - newIndex);
 {$ENDIF}
 
-{$IFNDEF NEXTGEN}
+{$IFNDEF WEAKREF}
   System.FillChar(fItems[newIndex], SizeOf(T), 0);
 {$ELSE}
   fArrayManager.Finalize(fItems, newIndex, 1);
@@ -303,20 +303,18 @@ end;
 procedure TList<T>.AfterConstruction;
 begin
   inherited;
-{$IFDEF NEXTGEN}
-{$IF Defined(WEAKREF)}
+{$IFDEF WEAKREF}
   if HasWeakRef then
     fArrayManager := TManualArrayManager<T>.Create
   else
-{$IFEND}
-   fArrayManager := TMoveArrayManager<T>.Create;
+    fArrayManager := TMoveArrayManager<T>.Create;
 {$ENDIF}
 end;
 
 destructor TList<T>.Destroy;
 begin
   inherited;
-{$IFDEF NEXTGEN}
+{$IFDEF WEAKREF}
 {$IFNDEF AUTOREFCOUNT}
   fArrayManager.Free;
 {$ENDIF}

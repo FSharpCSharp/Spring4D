@@ -25,17 +25,18 @@
 {$IFNDEF SPRING_INC}
 {$DEFINE SPRING_INC}
 
-//Keep this here as putting it after JEDI will somehow confuse delphi compiler
-//and makes it define CPU386
+// Import JEDI Development environment directives
+// Will assert correct CPU type and defaults to CPU386 if CPU type is unknown
+// (Delphi older than XE3).
+{$I jedi.inc}
+
+// JEDI will assert that at least CPU386 is defined
 {$IFDEF CPU386}
-  //Keep this for older delphi compatibility (older than XE3)
+  // Keep this for older delphi compatibility (older than XE3)
   {$IFNDEF CPUX86}
     {$DEFINE CPUX86}
   {$ENDIF}
 {$ENDIF}
-
-// Import JEDI Development environment directives
-{$I jedi.inc}                
 
 {$IFNDEF DELPHI2010_UP}
   {$MESSAGE ERROR 'This framework requires Delphi 2010 or higher.'}}

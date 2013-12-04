@@ -37,7 +37,7 @@ uses
 type
   TInjectionBase = class abstract(TInterfacedObject, IInjection, IInterface)
   private
-    {$IFDEF NEXTGEN}[Weak]{$ENDIF}
+    {$IFDEF WEAKREF}[Weak]{$ENDIF}
     fModel: TComponentModel;  // Consider remove the dependency of TComponentModel
     fTarget: TRttiMember;
     fTargetName: string;
