@@ -1064,6 +1064,7 @@ uses
 {$IFDEF POSIX}
   Posix.Stdlib,
   Posix.Unistd,
+  Posix.Dlfcn,
   System.IOUtils,
 {$ENDIF POSIX}
   Math,
