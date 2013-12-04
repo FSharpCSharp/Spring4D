@@ -62,6 +62,7 @@ begin
     TTestLazy.Suite,
 {$IFNDEF CPUARM}
     TTestMulticastEvent.Suite, //UNSUPPORTED on ARM
+    TTestMulticastEventStackSize.Suite,
 {$ENDIF}
     TTestEmptyHashSet.Suite,
     TTestNormalHashSet.Suite,
