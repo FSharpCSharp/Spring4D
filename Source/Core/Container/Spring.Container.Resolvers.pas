@@ -40,6 +40,9 @@ type
     fContext: IContainerContext;
     fRegistry: IComponentRegistry;
     fOnResolve: IEvent<TResolveEvent>;
+  {$IFDEF CPUARM}
+    fOnResolveObj: TObject;
+  {$ENDIF}
     procedure DoResolve(var instance: TValue);
     function GetOnResolve: IEvent<TResolveEvent>;
   protected
@@ -254,11 +257,22 @@ begin
   fContext := context;
   fRegistry := registry;
   fOnResolve := TResolveEventImpl.Create;
+{$IFDEF CPUARM}
+  // Cast the interface only here
+  fOnResolveObj := TObject(fOnResolve);
+{$ENDIF}
 end;
 
 procedure TResolver.DoResolve(var instance: TValue);
 begin
+{$IFNDEF CPUARM}
   fOnResolve.Invoke(Self, instance);
+{$ELSE}
+  // There is some bug in Delphi compiler/RTL which corrupts the event's
+  // fInvoke getter in some situations, also get rid of interface casting to
+  // TObject as this takes some time.
+  TResolveEventImpl(fOnResolveObj).InternalInvoke(Self, instance);
+{$ENDIF}
 end;
 
 function TResolver.GetOnResolve: IEvent<TResolveEvent>;
