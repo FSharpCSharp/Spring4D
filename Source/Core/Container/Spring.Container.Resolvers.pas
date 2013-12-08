@@ -318,7 +318,7 @@ end;
 function TDependencyResolver.CanResolveDependency(dependency: TRttiType;
   const argument: TValue): Boolean;
 begin
-  if dependency.IsClassOrInterface then
+  if dependency.IsClassOrInterface or dependency.IsRecord then
   begin
     if argument.IsEmpty then
     begin
