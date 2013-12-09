@@ -461,6 +461,7 @@ type
 
   TLazy = class(TInterfacedObject, ILazy)
   private
+    fLock: TCriticalSection;
     fIsValueCreated: Boolean;
   {$REGION 'Property Accessors'}
     function GetIsValueCreated: Boolean;
@@ -468,6 +469,9 @@ type
     function ILazy.GetValue = GetValueNonGeneric;
   {$ENDREGION}
   public
+    constructor Create;
+    destructor Destroy; override;
+
     ///	<summary>
     ///	  Gets a value that indicates whether a value has been created for this
     ///	  <see cref="TLazy&lt;T&gt;" /> instance.
@@ -1367,6 +1371,18 @@ end;
 
 {$REGION 'TLazy'}
 
+constructor TLazy.Create;
+begin
+  inherited;
+  fLock := TCriticalSection.Create;
+end;
+
+destructor TLazy.Destroy;
+begin
+  fLock.Free;
+  inherited;
+end;
+
 function TLazy.GetIsValueCreated: Boolean;
 begin
   Result := fIsValueCreated;
@@ -1383,7 +1399,6 @@ begin
 
   inherited Create;
   fValueFactory := valueFactory;
-  fIsValueCreated := False;
 end;
 
 constructor TLazy<T>.CreateFrom(const value: T);
@@ -1398,11 +1413,19 @@ begin
   if fIsValueCreated then
     Exit;
 
-  if not Assigned(fValueFactory) then
-    raise EInvalidOperationException.CreateRes(@SNoDelegateAssigned);
+  fLock.Enter;
+  try
+    if fIsValueCreated then
+      Exit;
 
-  fValue := fValueFactory();
-  fIsValueCreated := True;
+    if not Assigned(fValueFactory) then
+      raise EInvalidOperationException.CreateRes(@SNoDelegateAssigned);
+
+    fValue := fValueFactory();
+    fIsValueCreated := True;
+  finally
+    fLock.Leave;
+  end;
 end;
 
 function TLazy<T>.GetValue: T;
