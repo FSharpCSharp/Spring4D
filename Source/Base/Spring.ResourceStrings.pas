@@ -99,6 +99,9 @@ resourcestring
   SSequenceContainsMoreThanOneMatchingElement = 'Sequence contains more than one matching element.';
   SSequenceContainsMoreThanOneElement = 'Sequence contains more than one element.';
 
+  SLinkedListEmpty = 'The LinkedList is empty.';
+  SLinkedListNodeIsAttached = 'The LinkedList node already belongs to a LinkedList.';
+
   {$ENDREGION}
 
 
