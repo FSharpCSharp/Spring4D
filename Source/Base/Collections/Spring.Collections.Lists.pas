@@ -118,6 +118,21 @@ type
     property OwnsObjects: Boolean read GetOwnsObjects write SetOwnsObjects;
   end;
 
+  TSortedList<T> = class(TList<T>)
+  protected
+    procedure SetItem(index: Integer; const value: T); override;
+  public
+    procedure Add(const item: T); override;
+    procedure Insert(index: Integer; const item: T); override;
+
+    function Contains(const value: T): Boolean; override;
+    function IndexOf(const item: T; index, count: Integer): Integer; override;
+    function LastIndexOf(const item: T; index, count: Integer): Integer; override;
+
+    procedure Exchange(index1, index2: Integer); override;
+    procedure Move(currentIndex, newIndex: Integer); override;
+  end;
+
 implementation
 
 uses
@@ -478,6 +493,65 @@ begin
   inherited Changed(item, action);
   if OwnsObjects and (action = caRemoved) then
     item.Free;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TSortedList<T>'}
+
+procedure TSortedList<T>.Add(const item: T);
+var
+  index: Integer;
+begin
+  TArray.BinarySearch<T>(fItems, item, index, Comparer, 0, Count);
+  inherited Insert(index, item);
+end;
+
+function TSortedList<T>.Contains(const value: T): Boolean;
+var
+  index: Integer;
+begin
+  Result := TArray.BinarySearch<T>(fItems, value, index, Comparer, 0, Count);
+end;
+
+procedure TSortedList<T>.Exchange(index1, index2: Integer);
+begin
+  raise EInvalidOperationException.Create('Exchange');
+end;
+
+function TSortedList<T>.IndexOf(const item: T; index, count: Integer): Integer;
+begin
+  Guard.CheckRange((index >= 0) and (index <= Self.Count), 'index');
+  Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
+
+  TArray.BinarySearch<T>(fItems, item, Result, Comparer, index, count);
+end;
+
+procedure TSortedList<T>.Insert(index: Integer; const item: T);
+begin
+  raise EInvalidOperationException.Create('Insert');
+end;
+
+function TSortedList<T>.LastIndexOf(const item: T; index,
+  count: Integer): Integer;
+begin
+  Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
+  Guard.CheckRange((count >= 0) and (count <= index + 1), 'count');
+
+  inherited;
+//  TArray.BinarySearch<T>(fItems, item, Result, fComparer, index - count + 1, count);
+end;
+
+procedure TSortedList<T>.Move(currentIndex, newIndex: Integer);
+begin
+  raise EInvalidOperationException.Create('Move');
+end;
+
+procedure TSortedList<T>.SetItem(index: Integer; const value: T);
+begin
+  Delete(index);
+  Add(value);
 end;
 
 {$ENDREGION}

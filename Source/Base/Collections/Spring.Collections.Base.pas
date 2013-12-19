@@ -306,11 +306,11 @@ type
 
     function IndexOf(const item: T): Integer; overload;
     function IndexOf(const item: T; index: Integer): Integer; overload;
-    function IndexOf(const item: T; index, count: Integer): Integer; overload;
+    function IndexOf(const item: T; index, count: Integer): Integer; overload; virtual;
 
     function LastIndexOf(const item: T): Integer; overload;
     function LastIndexOf(const item: T; index: Integer): Integer; overload;
-    function LastIndexOf(const item: T; index, count: Integer): Integer; overload;
+    function LastIndexOf(const item: T; index, count: Integer): Integer; overload; virtual;
 
     procedure Exchange(index1, index2: Integer); virtual; abstract;
     procedure Move(currentIndex, newIndex: Integer); virtual; abstract;
