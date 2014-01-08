@@ -105,9 +105,14 @@ type
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(const name: string): Boolean; overload;
 
+{$IFNDEF AUTOREFCOUNT}
     { Experimental Release Methods }
     procedure Release(instance: TObject); overload;
     procedure Release(instance: IInterface); overload;
+{$ELSE}
+    // Dangerous since the instance should be cleared by this function but
+    // passing as var is not possible here
+{$ENDIF}
 
     property Context: IContainerContext read GetContext;
   end;
@@ -211,6 +216,18 @@ begin
   fRegistrationManager.Free;
   fBuilder.ClearInspectors;
   fRegistry.UnregisterAll;
+
+  // Since many of these object hold Self as a field, it is better (and on
+  // Android required) to release these interfaces here rather than in
+  // CleanupInstance (which on android produces a lots of AVs probably due
+  // to calling virtual __ObjRelease on almost destroyed object)
+  fExtensions:=nil;
+  fInjectionFactory:=nil;
+  fDependencyResolver:=nil;
+  fServiceResolver:=nil;
+  fBuilder:=nil;
+  fRegistry:=nil;
+
   inherited Destroy;
 end;
 
@@ -470,6 +487,7 @@ begin
   Result := fServiceResolver.ResolveAll(serviceType);
 end;
 
+{$IFNDEF AUTOREFCOUNT}
 procedure TContainer.Release(instance: TObject);
 var
   model: TComponentModel;
@@ -489,6 +507,7 @@ begin
   Guard.CheckNotNull(instance, 'instance');
   { TODO: -oOwner -cGeneral : Release instance of IInterface }
 end;
+{$ENDIF}
 
 {$ENDREGION}
 

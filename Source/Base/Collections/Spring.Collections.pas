@@ -62,6 +62,7 @@ type
   ICollection<T> = interface;
   IReadOnlyList<T> = interface;
   IList<T> = interface;
+  ILinkedList<T> = interface;
   IReadOnlyDictionary<TKey, TValue> = interface;
   IDictionary<TKey, TValue> = interface;
   IStack<T> = interface;
@@ -1006,6 +1007,409 @@ type
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
+  {$REGION 'Documentation'}
+  /// <summary>
+  ///   Represents a node in a
+  ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />. This class
+  ///   cannot be inherited.
+  /// </summary>
+  /// <typeparam name="T">
+  ///   Specifies the element type of the linked list.
+  /// </typeparam>
+  {$ENDREGION}
+  TLinkedListNode<T> = class sealed
+  protected
+    fList: Pointer;
+    fNext: TLinkedListNode<T>;
+    fPrev: TLinkedListNode<T>;
+    fItem: T;
+    function GetList: ILinkedList<T>;
+    function GetNext: TLinkedListNode<T>;
+    function GetPrevious: TLinkedListNode<T>;
+  public
+    constructor Create(const value: T); overload;
+
+    property List: ILinkedList<T> read GetList;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Gets the next node in the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <value>
+    ///   A reference to the next node in the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />, or <b>nil</b>
+    ///   if the current node is the last element (Last) of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </value>
+    {$ENDREGION}
+    property Next: TLinkedListNode<T> read GetNext;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Gets the previous node in the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <value>
+    ///   A reference to the previous node in the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />, or null if
+    ///   the current node is the first element (First) of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </value>
+    {$ENDREGION}
+    property Previous: TLinkedListNode<T> read GetPrevious;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Gets the value contained in the node.
+    /// </summary>
+    /// <value>
+    ///   The value contained in the node.
+    /// </value>
+    {$ENDREGION}
+    property Value: T read fItem write fItem;
+  end;
+
+  {$REGION 'Documentation'}
+  /// <summary>
+  ///   Represents a doubly linked list.
+  /// </summary>
+  /// <typeparam name="T">
+  ///   Specifies the element type of the linked list.
+  /// </typeparam>
+  {$ENDREGION}
+  ILinkedList<T> = interface(ICollection<T>)
+    ['{73351AD9-15A5-4DA0-9BB7-D8FF66A3077E}']
+  {$REGION 'Property Accessors'}
+    function GetFirst: TLinkedListNode<T>;
+    function GetLast: TLinkedListNode<T>;
+    function GetOnChanged: ICollectionChangedEvent<T>;
+  {$ENDREGION}
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Adds the specified new node after the specified existing node in the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <param name="node">
+    ///   The <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" /> after
+    ///   which to insert <i>newNode</i>.
+    /// </param>
+    /// <param name="value">
+    ///   The new <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" /> to
+    ///   add to the <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </param>
+    /// <exception cref="Spring|EArgumentNullException">
+    ///   <para>
+    ///     <i>node</i> is <b>nil</b>.
+    ///   </para>
+    ///   <para>
+    ///     -or-
+    ///   </para>
+    ///   <para>
+    ///     <i>newNode</i> is <b>nil</b>.
+    ///   </para>
+    /// </exception>
+    /// <exception cref="Spring|EInvalidOperationException">
+    ///   <para>
+    ///     <i>node</i> is not in the current
+    ///     <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    ///   </para>
+    ///   <para>
+    ///     -or-
+    ///   </para>
+    ///   <para>
+    ///     <i>newNode</i> belongs to another
+    ///     <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    ///   </para>
+    /// </exception>
+    {$ENDREGION}
+    procedure AddAfter(const node: TLinkedListNode<T>; const newNode: TLinkedListNode<T>); overload;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Adds a new node containing the specified value after the specified
+    ///   existing node in the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <param name="node">
+    ///   The <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" /> after
+    ///   which to insert a new
+    ///   <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" /> containing
+    ///   <i>value</i>.
+    /// </param>
+    /// <param name="value">
+    ///   The value to add to the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </param>
+    /// <returns>
+    ///   The new <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" />
+    ///   containing <i>value</i>.
+    /// </returns>
+    /// <exception cref="Spring|EArgumentNullException">
+    ///   <i>node</i> is <b>nil</b>.
+    /// </exception>
+    /// <exception cref="Spring|EInvalidOperationException">
+    ///   <i>node</i> is not in the current
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </exception>
+    {$ENDREGION}
+    function AddAfter(const node: TLinkedListNode<T>; const value: T): TLinkedListNode<T>; overload;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Adds the specified new node before the specified existing node in the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <param name="node">
+    ///   The <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" /> before
+    ///   which to insert <i>newNode</i>.
+    /// </param>
+    /// <param name="newNode">
+    ///   The new <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" /> to
+    ///   add to the <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </param>
+    /// <exception cref="Spring|EArgumentNullException">
+    ///   <para>
+    ///     <i>node</i> is <b>nil</b>.
+    ///   </para>
+    ///   <para>
+    ///     -or-
+    ///   </para>
+    ///   <para>
+    ///     <i>newNode</i> is <b>nil</b>.
+    ///   </para>
+    /// </exception>
+    /// <exception cref="Spring|EInvalidOperationException">
+    ///   <para>
+    ///     <i>node</i> is not in the current
+    ///     <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    ///   </para>
+    ///   <para>
+    ///     -or-
+    ///   </para>
+    ///   <para>
+    ///     <i>newNode</i> belongs to another
+    ///     <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    ///   </para>
+    /// </exception>
+    {$ENDREGION}
+    procedure AddBefore(const node: TLinkedListNode<T>; const newNode: TLinkedListNode<T>); overload;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Adds a new node containing the specified value before the specified
+    ///   existing node in the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <param name="node">
+    ///   The <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" /> before
+    ///   which to insert a new
+    ///   <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" /> containing
+    ///   <i>value</i>.
+    /// </param>
+    /// <param name="value">
+    ///   The value to add to the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </param>
+    /// <returns>
+    ///   The new <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" />
+    ///   containing <i>value</i>.
+    /// </returns>
+    /// <exception cref="Spring|EArgumentNullException">
+    ///   <i>node</i> is <b>nil</b>.
+    /// </exception>
+    /// <exception cref="Spring|EInvalidOperationException">
+    ///   <i>node</i> is not in the current
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </exception>
+    {$ENDREGION}
+    function AddBefore(const node: TLinkedListNode<T>; const value: T): TLinkedListNode<T>; overload;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Adds the specified new node at the start of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <param name="node">
+    ///   The new <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" /> to
+    ///   add at the start of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </param>
+    /// <exception cref="Spring|EArgumentNullException">
+    ///   <i>node</i> is <b>nil</b>.
+    /// </exception>
+    /// <exception cref="Spring|EInvalidOperationException">
+    ///   <i>node</i> belongs to another
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </exception>
+    {$ENDREGION}
+    procedure AddFirst(const node: TLinkedListNode<T>); overload;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Adds a new node containing the specified value at the start of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <param name="value">
+    ///   The value to add at the start of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </param>
+    /// <returns>
+    ///   The new <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" />
+    ///   containing <i>value</i>.
+    /// </returns>
+    {$ENDREGION}
+    function AddFirst(const value: T): TLinkedListNode<T>; overload;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Adds the specified new node at the end of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <param name="node">
+    ///   The new <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" /> to
+    ///   add at the end of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </param>
+    /// <exception cref="Spring|EArgumentNullException">
+    ///   <i>node</i> is <b>nil</b>.
+    /// </exception>
+    /// <exception cref="Spring|EInvalidOperationException">
+    ///   <i>node</i> belongs to another
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </exception>
+    {$ENDREGION}
+    procedure AddLast(const node: TLinkedListNode<T>); overload;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Adds a new node containing the specified value at the end of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <param name="value">
+    ///   The value to add at the end of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </param>
+    /// <returns>
+    ///   The new <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" />
+    ///   containing <i>value</i>.
+    /// </returns>
+    {$ENDREGION}
+    function AddLast(const value: T): TLinkedListNode<T>; overload;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Finds the first node that contains the specified value.
+    /// </summary>
+    /// <param name="value">
+    ///   The value to locate in the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </param>
+    /// <returns>
+    ///   The first <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" />
+    ///   that contains the specified value, if found; otherwise, <b>nil</b>.
+    /// </returns>
+    {$ENDREGION}
+    function Find(const value: T): TLinkedListNode<T>;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Finds the last node that contains the specified value.
+    /// </summary>
+    /// <param name="value">
+    ///   The value to locate in the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </param>
+    /// <returns>
+    ///   The last <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" />
+    ///   that contains the specified value, if found; otherwise, <b>nil</b>.
+    /// </returns>
+    {$ENDREGION}
+    function FindLast(const value: T): TLinkedListNode<T>;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Removes the specified node from the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <param name="node">
+    ///   The <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" /> to
+    ///   remove from the <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />
+    ///    .
+    /// </param>
+    /// <exception cref="Spring|EArgumentNullException">
+    ///   <i>node</i> is <b>nil</b>.
+    /// </exception>
+    /// <exception cref="Spring|EInvalidOperationException">
+    ///   <i>node</i> is not in the current
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </exception>
+    {$ENDREGION}
+    procedure Remove(const node: TLinkedListNode<T>); overload;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Removes the node at the start of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <exception cref="Spring|EInvalidOperationException">
+    ///   The <see cref="Spring.Collections|ILinkedList&lt;T&gt;" /> is empty.
+    /// </exception>
+    {$ENDREGION}
+    procedure RemoveFirst;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Removes the node at the end of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <exception cref="Spring|EInvalidOperationException">
+    ///   The <see cref="Spring.Collections|ILinkedList&lt;T&gt;" /> is empty.
+    /// </exception>
+    {$ENDREGION}
+    procedure RemoveLast;
+
+    {$WARNINGS OFF}
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Gets the first node of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <value>
+    ///   The first <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" />
+    ///   of the <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </value>
+    {$ENDREGION}
+    property First: TLinkedListNode<T> read GetFirst;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Gets the last node of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <value>
+    ///   The last <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" />
+    ///   of the <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </value>
+    {$ENDREGION}
+    property Last: TLinkedListNode<T> read GetLast;
+    {$WARNINGS ON}
+
+    property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
+  end;
+
+//  TKeyValuePair<TKey, TValue> = record
+//  private
+//    fKey: TKey;
+//    fValue: TValue;
+//  public
+//    constructor Create(const key: TKey; const value: TValue);
+//
+//    property Key: TKey read fKey;
+//    property Value: TValue read fValue;
+//  end;
+
   IReadOnlyDictionary = interface(IReadOnlyCollection)
     ['{D963ED30-C16F-488B-9BC6-1292DD57B295}']
   {$REGION 'Property Accessors'}
@@ -1710,6 +2114,7 @@ uses
   Spring.Collections.Dictionaries,
   Spring.Collections.Extensions,
   Spring.Collections.Lists,
+  Spring.Collections.LinkedLists,
   Spring.Collections.Queues,
   Spring.Collections.Sets,
   Spring.Collections.Stacks,
@@ -1980,6 +2385,50 @@ begin
     fOrdinalIgnoreCase := TStringComparer.Create(loInvariantLocale, True);
   Result := fOrdinalIgnoreCase;
 end;
+
+{$ENDREGION}
+
+
+{$REGION 'TLinkedListNode<T>'}
+
+constructor TLinkedListNode<T>.Create(const value: T);
+begin
+  inherited Create;
+  fItem := value;
+end;
+
+function TLinkedListNode<T>.GetList: ILinkedList<T>;
+begin
+  Result := TLinkedList<T>(fList);
+end;
+
+function TLinkedListNode<T>.GetNext: TLinkedListNode<T>;
+begin
+  if Assigned(fNext) and (fNext <> TLinkedList<T>(fList).fHead) then
+    Result := fNext
+  else
+    Result := nil;
+end;
+
+function TLinkedListNode<T>.GetPrevious: TLinkedListNode<T>;
+begin
+  if Assigned(fPrev) and (Self <> TLinkedList<T>(fList).fHead) then
+    Result := fPrev
+  else
+    Result := nil;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TKeyValuePair<TKey, TValue>'}
+
+//constructor TKeyValuePair<TKey, TValue>.Create(const key: TKey;
+//  const value: TValue);
+//begin
+//  fKey := key;
+//  fValue := value;
+//end;
 
 {$ENDREGION}
 

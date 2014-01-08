@@ -32,7 +32,9 @@ uses
   TestFramework,
   Spring.TestUtils,
   Spring,
-  Spring.Collections;
+  Spring.Collections,
+  Spring.Collections.LinkedLists,
+  Spring.Collections.Lists;
 
 type
   TTestEmptyHashSet = class(TTestCase)
@@ -241,6 +243,38 @@ type
     procedure TestElementAt;
   end;
 
+  TTestLinkedList = class(TExceptionCheckerTestCase)
+  private
+    SUT: ILinkedList<integer>;
+    fItem: Integer;
+    fAction: TCollectionChangedAction;
+  protected
+    procedure ListChanged(Sender: TObject; const Item: Integer;
+      Action: TCollectionChangedAction);
+    procedure SetUp; override;
+    procedure TearDown; override;
+
+    procedure CheckCount(expectedCount: Integer);
+    procedure CheckEvent(expectedItem: Integer;
+      expectedAction: TCollectionChangedAction);
+    procedure CheckNode(node: TLinkedListNode<Integer>;
+      expectedValue: Integer;
+      expectedNext: TLinkedListNode<Integer>;
+      expectedPrevious: TLinkedListNode<Integer>);
+  published
+    procedure TestAddFirstNode_EmptyList;
+    procedure TestAddFirstValue_EmptyList;
+
+    procedure TestAddFirstNode_ListContainsTwoItems;
+    procedure TestAddFirstValue_ListContainsTwoItems;
+
+    procedure TestAddLastNode_EmptyList;
+    procedure TestAddLastValue_EmptyList;
+
+    procedure TestAddLastNode_ListContainsTwoItems;
+    procedure TestAddLastValue_ListContainsTwoItems;
+  end;
+
 implementation
 
 uses
@@ -403,7 +437,7 @@ begin
 end;
 
 const
-  ListCountLimit = 1000;
+  ListCountLimit = 1000;//0000;
 
 procedure TTestIntegerList.TestLastIndexOf;
 begin
@@ -435,6 +469,7 @@ procedure TTestIntegerList.TestListCountWithAdd;
 var
   i: Integer;
 begin
+  (SUT as TList<Integer>).Capacity := ListCountLimit;
   for i := 1 to ListCountLimit do
   begin
     SUT.Add(i);
@@ -1263,6 +1298,155 @@ procedure TTestListOfIntegerAsIEnumerable.TestEnumerableHasCorrectCountAfterFill
 begin
   FillList;
   CheckEquals(MaxItems, SUT.Count);
+end;
+
+{ TTestLinkedList }
+
+procedure TTestLinkedList.CheckEvent(expectedItem: Integer;
+  expectedAction: TCollectionChangedAction);
+begin
+  CheckEquals(expectedItem, fItem, 'expectedItem');
+  CheckTrue(expectedAction = fAction, 'expectedAction');
+end;
+
+procedure TTestLinkedList.CheckCount(expectedCount: Integer);
+begin
+  CheckEquals(expectedCount, SUT.Count, 'expectedCount');
+end;
+
+procedure TTestLinkedList.CheckNode(node: TLinkedListNode<Integer>;
+  expectedValue: Integer; expectedNext,
+  expectedPrevious: TLinkedListNode<Integer>);
+begin
+  CheckNotNull(node, 'node');
+  CheckEquals(expectedValue, node.Value, 'node.Value');
+  CheckSame(SUT, node.List, 'node.List');
+  CheckSame(expectedNext, node.Next, 'node.Next');
+  CheckSame(expectedPrevious, node.Previous, 'node.Previous');
+end;
+
+procedure TTestLinkedList.ListChanged(Sender: TObject; const Item: Integer;
+  Action: TCollectionChangedAction);
+begin
+  fItem := Item;
+  fAction := Action;
+end;
+
+procedure TTestLinkedList.SetUp;
+begin
+  SUT := TLinkedList<Integer>.Create;
+  SUT.OnChanged.Add(ListChanged);
+  fItem := 0;
+  fAction := caChanged;
+end;
+
+procedure TTestLinkedList.TearDown;
+begin
+  SUT := nil;
+end;
+
+procedure TTestLinkedList.TestAddFirstNode_EmptyList;
+var
+  node: TLinkedListNode<Integer>;
+begin
+  node := TLinkedListNode<Integer>.Create(1);
+  SUT.AddFirst(node);
+
+  CheckCount(1);
+  CheckEvent(1, caAdded);
+  CheckNode(node, 1, nil, nil);
+end;
+
+procedure TTestLinkedList.TestAddFirstNode_ListContainsTwoItems;
+var
+  node, nextNode: TLinkedListNode<Integer>;
+begin
+  nextNode := SUT.AddFirst(1);
+  SUT.Add(2);
+
+  node := TLinkedListNode<Integer>.Create(3);
+  SUT.AddFirst(node);
+
+  CheckCount(3);
+  CheckEvent(3, caAdded);
+  CheckNode(node, 3, nextNode, nil);
+end;
+
+procedure TTestLinkedList.TestAddFirstValue_EmptyList;
+var
+  node: TLinkedListNode<Integer>;
+begin
+  node := SUT.AddFirst(1);
+
+  CheckCount(1);
+  CheckEvent(1, caAdded);
+  CheckNode(node, 1, nil, nil);
+end;
+
+procedure TTestLinkedList.TestAddFirstValue_ListContainsTwoItems;
+var
+  node, nextNode: TLinkedListNode<Integer>;
+begin
+  nextNode := SUT.AddFirst(1);
+  SUT.Add(2);
+
+  node := SUT.AddFirst(3);
+
+  CheckCount(3);
+  CheckEvent(3, caAdded);
+  CheckNode(node, 3, nextNode, nil);
+end;
+
+procedure TTestLinkedList.TestAddLastNode_EmptyList;
+var
+  node: TLinkedListNode<Integer>;
+begin
+  node := TLinkedListNode<Integer>.Create(1);
+  SUT.AddLast(node);
+
+  CheckCount(1);
+  CheckEvent(1, caAdded);
+  CheckNode(node, 1, nil, nil);
+end;
+
+procedure TTestLinkedList.TestAddLastNode_ListContainsTwoItems;
+var
+  node, prevNode: TLinkedListNode<Integer>;
+begin
+  SUT.Add(1);
+  prevNode := SUT.AddLast(2);
+
+  node := TLinkedListNode<Integer>.Create(3);
+  SUT.AddLast(node);
+
+  CheckCount(3);
+  CheckEvent(3, caAdded);
+  CheckNode(node, 3, nil, prevNode);
+end;
+
+procedure TTestLinkedList.TestAddLastValue_EmptyList;
+var
+  node: TLinkedListNode<Integer>;
+begin
+  node := SUT.AddLast(1);
+
+  CheckCount(1);
+  CheckEvent(1, caAdded);
+  CheckNode(node, 1, nil, nil);
+end;
+
+procedure TTestLinkedList.TestAddLastValue_ListContainsTwoItems;
+var
+  node, prevNode: TLinkedListNode<Integer>;
+begin
+  SUT.Add(1);
+  prevNode := SUT.AddLast(2);
+
+  node := SUT.AddLast(3);
+
+  CheckCount(3);
+  CheckEvent(3, caAdded);
+  CheckNode(node, 3, nil, prevNode);
 end;
 
 end.

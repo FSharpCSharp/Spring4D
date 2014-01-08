@@ -39,8 +39,8 @@ type
   private
     fContext: IContainerContext;
     fRegistry: IComponentRegistry;
-	fOnResolve: IEvent<TResolveEvent>;
-	procedure DoResolve(var instance: TValue);
+    fOnResolve: IEvent<TResolveEvent>;
+    procedure DoResolve(var instance: TValue);
     function GetOnResolve: IEvent<TResolveEvent>;
   protected
     procedure ConstructValue(typeInfo: PTypeInfo; const instance: TValue; out value: TValue);
@@ -387,6 +387,11 @@ end;
 
 function TDependencyResolver.CanResolveDependency(dependency: TRttiType;
   const argument: TValue): Boolean;
+var
+  serviceName: string;
+  serviceType: PTypeInfo;
+  lazyType: TRttiType;
+  model: TComponentModel;
 begin
   if dependency.IsClassOrInterface or dependency.IsRecord then
   begin
@@ -396,8 +401,23 @@ begin
     end
     else
     begin
-      Result := argument.IsType<string> and
-        Registry.HasService(argument.AsString);
+      Result := argument.IsType<string>;
+      if Result then
+      begin
+        serviceName := argument.AsString;
+        model := Registry.FindOne(serviceName);
+        Result := Assigned(model);
+        if Result then
+        begin
+          serviceType := model.Services[serviceName];
+          Result := serviceType = dependency.Handle;
+          if not Result and IsLazyType(dependency.Handle) then
+          begin
+            lazyType := TType.FindType(GetLazyTypeName(dependency.Handle));
+            Result := Assigned(lazyType) and (serviceType = lazyType.Handle);
+          end;
+        end;
+      end;
     end;
   end
   else
