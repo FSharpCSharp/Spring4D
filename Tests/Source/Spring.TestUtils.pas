@@ -45,7 +45,7 @@ implementation
 
 procedure ProcessTestResult(const ATestResult: TTestResult);
 begin
-{$IFNDEF AUTOREFCUNT}
+{$IFNDEF AUTOREFCOUNT}
   ATestResult.Free();
 {$ENDIF}
 end;
