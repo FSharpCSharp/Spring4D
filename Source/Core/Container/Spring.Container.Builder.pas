@@ -197,11 +197,13 @@ begin
     if model.ComponentType.TryGetCustomAttribute<LifetimeAttributeBase>(attribute) then
     begin
       model.LifetimeType := attribute.LifetimeType;
+{$WARN SYMBOL_EXPERIMENTAL OFF}
       if attribute is PooledAttribute then
       begin
         model.MinPoolsize := PooledAttribute(attribute).MinPoolsize;
         model.MaxPoolsize := PooledAttribute(attribute).MaxPoolsize;
       end;
+{$WARN SYMBOL_EXPERIMENTAL ON}
     end
     else
     begin

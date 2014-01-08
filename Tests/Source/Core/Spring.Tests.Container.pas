@@ -561,10 +561,6 @@ procedure TTestSimpleContainer.TestPerThread;
 var
   thread1, thread2: TTestSingletonThread;
 begin
-{$IFDEF NEXTGEN}
-  Exit;
-  {$MESSAGE WARN 'Fix me'}
-{$ENDIF}
   fContainer.RegisterType<TNameService>
     .Implements<INameService>
     .AsSingletonPerThread;

@@ -36,7 +36,7 @@ uses
   Spring.Events.Base,
   TypInfo;
 
-{$IFNDEF CPUARM}
+{$IFDEF SPRING_HAS_GENERIC_EVENTS}
 type
   PMethod = ^TMethod;
 
@@ -114,7 +114,7 @@ type
   IMulticastNotifyEvent = IEvent<TNotifyEvent>;
 
   TMulticastNotifyEvent = TEvent<TNotifyEvent>;
-{$ENDIF CPUARM}
+{$ENDIF SPRING_HAS_GENERIC_EVENTS}
 
 implementation
 
@@ -123,7 +123,7 @@ uses
   Spring.ResourceStrings;
 
 
-{$IFNDEF CPUARM}
+{$IFDEF SPRING_HAS_GENERIC_EVENTS}
 {$REGION 'TMethodInfo'}
 
 function AdditionalInfoOf(TypeData: PTypeData): Pointer;
@@ -683,7 +683,7 @@ begin
 end;
 
 {$ENDREGION}
-{$ENDIF CPUARM}
+{$ENDIF SPRING_HAS_GENERIC_EVENTS}
 
 
 end.

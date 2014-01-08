@@ -1270,17 +1270,18 @@ begin
 end;
 
 procedure TListBase<T>.Changed(const item: T; action: TCollectionChangedAction);
-{$IFDEF CPUARM}
-var [Unsafe] e : TCollectionChangedEvent<T>;
+{$IFDEF FIX_EVENT_INVOKES}
+var e : TMethod;
 {$ENDIF}
 begin
-{$IFNDEF CPUARM}
+{$IFNDEF FIX_EVENT_INVOKES}
   fOnChanged.Invoke(Self, item, action);
 {$ELSE}
   // There is some bug in Delphi compiler/RTL which corrupts the event's
   // fInvoke getter in some situations
-  e := fOnChanged.Invoke;
-  e(Self, item, action);
+  e.Code:=IEvent(fOnChanged).Invoke.Code;
+  e.Data:=IEvent(fOnChanged).Invoke.Data;
+  TCollectionChangedEvent<T>(e)(Self, item, action);
 {$ENDIF}
 end;
 

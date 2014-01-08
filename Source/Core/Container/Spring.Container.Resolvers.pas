@@ -49,6 +49,7 @@ type
     property Registry: IComponentRegistry read fRegistry;
   public
     constructor Create(const context: IContainerContext; const registry: IComponentRegistry);
+    destructor Destroy; override;
 
     property OnResolve: IEvent<TResolveEvent> read GetOnResolve;
   end;
@@ -256,18 +257,25 @@ begin
   fOnResolve := TResolveEventImpl.Create;
 end;
 
+destructor TResolver.Destroy;
+begin
+  fOnResolve := nil;
+  inherited;
+end;
+
 procedure TResolver.DoResolve(var instance: TValue);
-{$IFDEF CPUARM}
-var [Unsafe] e : TResolveEvent;
+{$IFDEF FIX_EVENT_INVOKES}
+var e : TMethod;
 {$ENDIF}
 begin
-{$IFNDEF CPUARM}
+{$IFNDEF FIX_EVENT_INVOKES}
   fOnResolve.Invoke(Self, instance);
 {$ELSE}
   // There is some bug in Delphi compiler/RTL which corrupts the event's
   // fInvoke getter in some situations
-  e := fOnResolve.Invoke;
-  e(Self, instance);
+  e.Code:=IEvent(fOnResolve).Invoke.Code;
+  e.Data:=IEvent(fOnResolve).Invoke.Data;
+  TResolveEvent(e)(Self, instance);
 {$ENDIF}
 end;
 

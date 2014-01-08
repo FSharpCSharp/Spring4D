@@ -7,12 +7,13 @@
     <ItemGroup Condition="'$(Platform)'=='iOSDevice'"/>
     <ItemGroup Condition="'$(Platform)'=='Win32'"/>
     <ItemGroup Condition="'$(Platform)'=='OSX32'">
-        <DeployFile Include="Bin\DelphiXE5\OSX32\Spring.Tests.rsm" Condition="'$(Config)'=='Debug'">
+        <DeployFile Include="Bin\DelphiXE5\OSX32\Spring.Tests" Condition="'$(Config)'=='Debug'">
             <RemoteDir>Spring.Tests.DelphiXE5\</RemoteDir>
-            <RemoteName>Spring.Tests.rsm</RemoteName>
+            <RemoteName>Spring.Tests</RemoteName>
             <Operation>1</Operation>
             <LocalCommand/>
             <RemoteCommand/>
+            <Required>True</Required>
         </DeployFile>
         <DeployFile Include="$(BDS)\Redist\osx32\libcgunwind.1.0.dylib">
             <RemoteDir>Spring.Tests.DelphiXE5\</RemoteDir>
@@ -21,13 +22,12 @@
             <LocalCommand/>
             <RemoteCommand/>
         </DeployFile>
-        <DeployFile Include="Bin\DelphiXE5\OSX32\Spring.Tests" Condition="'$(Config)'=='Debug'">
+        <DeployFile Include="Bin\DelphiXE5\OSX32\Spring.Tests.rsm" Condition="'$(Config)'=='Debug'">
             <RemoteDir>Spring.Tests.DelphiXE5\</RemoteDir>
-            <RemoteName>Spring.Tests</RemoteName>
+            <RemoteName>Spring.Tests.rsm</RemoteName>
             <Operation>1</Operation>
             <LocalCommand/>
             <RemoteCommand/>
-            <Required>True</Required>
         </DeployFile>
     </ItemGroup>
     <ItemGroup Condition="'$(Platform)'=='Win64'"/>

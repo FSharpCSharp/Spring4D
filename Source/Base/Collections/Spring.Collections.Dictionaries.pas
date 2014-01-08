@@ -224,33 +224,35 @@ end;
 
 procedure TDictionary<TKey, TValue>.DoKeyNotify(Sender: TObject;
   const Item: TKey; Action: TCollectionNotification);
-{$IFDEF CPUARM}
-var [Unsafe] e : TCollectionChangedEvent<TKey>;
+{$IFDEF FIX_EVENT_INVOKES}
+var e : TMethod;
 {$ENDIF}
 begin
-{$IFNDEF CPUARM}
+{$IFNDEF FIX_EVENT_INVOKES}
   fOnKeyChanged.Invoke(Self, item, TCollectionChangedAction(action));
 {$ELSE}
   // There is some bug in Delphi compiler/RTL which corrupts the event's
   // fInvoke getter in some situations
-  e := fOnKeyChanged.Invoke;
-  e(Self, item, TCollectionChangedAction(action));
+  e.Code:=IEvent(fOnKeyChanged).Invoke.Code;
+  e.Data:=IEvent(fOnKeyChanged).Invoke.Data;
+  TCollectionChangedEvent<TKey>(e)(Self, item, TCollectionChangedAction(action));
 {$ENDIF}
 end;
 
 procedure TDictionary<TKey, TValue>.DoValueNotify(Sender: TObject;
   const Item: TValue; Action: TCollectionNotification);
-{$IFDEF CPUARM}
-var [Unsafe] e : TCollectionChangedEvent<TValue>;
+{$IFDEF FIX_EVENT_INVOKES}
+var e : TMethod;
 {$ENDIF}
 begin
-{$IFNDEF CPUARM}
+{$IFNDEF FIX_EVENT_INVOKES}
   fOnValueChanged.Invoke(Self, item, TCollectionChangedAction(action));
 {$ELSE}
   // There is some bug in Delphi compiler/RTL which corrupts the event's
   // fInvoke getter in some situations
-  e := fOnValueChanged.Invoke;
-  e(Self, item, TCollectionChangedAction(action));
+  e.Code:=IEvent(fOnValueChanged).Invoke.Code;
+  e.Data:=IEvent(fOnValueChanged).Invoke.Data;
+  TCollectionChangedEvent<TValue>(e)(Self, item, TCollectionChangedAction(action));
 {$ENDIF}
 end;
 
