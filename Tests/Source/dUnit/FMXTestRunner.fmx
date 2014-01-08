@@ -2,7 +2,7 @@ object FMXTestRunner: TFMXTestRunner
   Left = 0
   Top = 0
   Caption = 'TFMXTestRunner'
-  ClientHeight = 588
+  ClientHeight = 545
   ClientWidth = 533
   FormFactor.Width = 320
   FormFactor.Height = 480
@@ -10,7 +10,7 @@ object FMXTestRunner: TFMXTestRunner
   OnShow = FormShow
   DesignerMobile = True
   DesignerWidth = 533
-  DesignerHeight = 588
+  DesignerHeight = 545
   DesignerDeviceName = ''
   DesignerOrientation = 0
   DesignerOSVersion = ''
@@ -33,7 +33,7 @@ object FMXTestRunner: TFMXTestRunner
   object TabControl1: TTabControl
     Align = alClient
     FullSize = True
-    Height = 492.000000000000000000
+    Height = 449.000000000000000000
     TabHeight = 49.000000000000000000
     TabIndex = 0
     TabOrder = 1
@@ -44,14 +44,14 @@ object FMXTestRunner: TFMXTestRunner
       Height = 8.000000000000000000
       IsSelected = True
       Position.X = 257.500000000000000000
-      Position.Y = 473.000000000000000000
+      Position.Y = 430.000000000000000000
       TabOrder = 0
       Text = 'TabItem1'
       Trimming = ttCharacter
       Width = 8.000000000000000000
       object TestTree: TTreeView
         Align = alClient
-        Height = 293.000000000000000000
+        Height = 250.000000000000000000
         TabOrder = 0
         Width = 533.000000000000000000
         ShowCheckboxes = True
@@ -73,7 +73,7 @@ object FMXTestRunner: TFMXTestRunner
       object Panel1: TPanel
         Align = alBottom
         Height = 199.000000000000000000
-        Position.Y = 293.000000000000000000
+        Position.Y = 250.000000000000000000
         Width = 533.000000000000000000
         TabOrder = 1
         object Memo: TMemo
@@ -93,7 +93,7 @@ object FMXTestRunner: TFMXTestRunner
       Height = 8.000000000000000000
       IsSelected = False
       Position.X = 267.500000000000000000
-      Position.Y = 473.000000000000000000
+      Position.Y = 430.000000000000000000
       TabOrder = 1
       Text = 'TabItem2'
       Trimming = ttCharacter
@@ -156,7 +156,7 @@ object FMXTestRunner: TFMXTestRunner
   object ToolBar1: TToolBar
     Align = alBottom
     Height = 48.000000000000000000
-    Position.Y = 540.000000000000000000
+    Position.Y = 497.000000000000000000
     TabOrder = 2
     Width = 533.000000000000000000
     object cmdRun: TButton

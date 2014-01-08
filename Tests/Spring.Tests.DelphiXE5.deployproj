@@ -6,7 +6,6 @@
     <ItemGroup Condition="'$(Platform)'=='Android'"/>
     <ItemGroup Condition="'$(Platform)'=='iOSDevice'"/>
     <ItemGroup Condition="'$(Platform)'=='Win32'"/>
-    <ItemGroup Condition="'$(Platform)'=='Win64'"/>
     <ItemGroup Condition="'$(Platform)'=='OSX32'">
         <DeployFile Include="Bin\DelphiXE5\OSX32\Spring.Tests.rsm" Condition="'$(Config)'=='Debug'">
             <RemoteDir>Spring.Tests.DelphiXE5\</RemoteDir>
@@ -31,6 +30,7 @@
             <Required>True</Required>
         </DeployFile>
     </ItemGroup>
+    <ItemGroup Condition="'$(Platform)'=='Win64'"/>
     <ItemGroup Condition="'$(Platform)'=='iOSSimulator'">
         <DeployFile Include="$(BDS)\Redist\osx32\libcgunwind.1.0.dylib">
             <RemoteDir>Spring.Tests.DelphiXE5.app\</RemoteDir>

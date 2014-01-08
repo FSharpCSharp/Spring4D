@@ -312,17 +312,25 @@ begin
     Exit;
 
   NewNode := TTestTreeItem.Create(Self);
-  if (RootNode = nil) then NewNode.Parent:=TestTree
-  else NewNode.Parent:=RootNode;
+  if (RootNode = nil) then begin
+    NewNode.Parent:=TestTree;
+  end
+  else begin
+    NewNode.Parent:=RootNode;
+  end;
   NewNode.data := TValue.From(ATest);
   NewNode.Text := ATest.Name;
   NewNode.IsChecked := ATest.Enabled;
 
   TestTests := ATest.Tests;
-  for i := 0 to TestTests.count - 1 do
-  begin
-    FillTestTree(NewNode, TestTests[i] as ITest);
-  end;
+  if (TestTests.Count > 0) then begin
+    if (RootNode <> nil) then RootNode.Expand;
+    for i := 0 to TestTests.count - 1 do
+    begin
+      FillTestTree(NewNode, TestTests[i] as ITest);
+    end;
+  end
+  else if (RootNode <> nil) then RootNode.Collapse;
 end;
 
 procedure TFMXTestRunner.FormShow(Sender: TObject);
@@ -488,9 +496,10 @@ end;
 
 procedure TFMXTestRunner.SetupTree;
 begin
+  TestTree.BeginUpdate;
 	TestTree.Clear;
 	FillTestTree(nil, Suite);
-	TestTree.ExpandAll;
+  TestTree.EndUpdate;
 end;
 
 function TFMXTestRunner.ShouldRunTest(test: ITest): boolean;

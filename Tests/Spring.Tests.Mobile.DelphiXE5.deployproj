@@ -71,7 +71,6 @@
     </ItemGroup>
     <ItemGroup Condition="'$(Platform)'=='iOSDevice'"/>
     <ItemGroup Condition="'$(Platform)'=='Win32'"/>
-    <ItemGroup Condition="'$(Platform)'=='Win64'"/>
     <ItemGroup Condition="'$(Platform)'=='OSX32'">
         <DeployFile Include="$(BDS)\Redist\osx32\libcgunwind.1.0.dylib">
             <RemoteDir>Spring.Tests.Mobile.DelphiXE5.app\Contents\MacOS\</RemoteDir>
@@ -81,6 +80,7 @@
             <RemoteCommand/>
         </DeployFile>
     </ItemGroup>
+    <ItemGroup Condition="'$(Platform)'=='Win64'"/>
     <ItemGroup Condition="'$(Platform)'=='iOSSimulator'">
         <DeployFile Include="$(BDS)\bin\Artwork\iOS\iPhone\FM_ApplicationIcon_57x57.png" Condition="'$(Config)'=='Debug'">
             <RemoteDir>Spring.Tests.Mobile.DelphiXE5.app\</RemoteDir>
