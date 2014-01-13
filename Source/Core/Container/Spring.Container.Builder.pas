@@ -472,28 +472,29 @@ end;
 procedure TInterfaceInspector.DoProcessModel(const context: IContainerContext;
   const model: TComponentModel);
 var
+  attributes: TArray<ImplementsAttribute>;
+  attribute: ImplementsAttribute;
   services: IEnumerable<TRttiInterfaceType>;
   service: TRttiInterfaceType;
 begin
   if not model.Services.IsEmpty and not model.ComponentType.IsInterface then Exit;
   if model.ComponentType.IsRecord and not model.HasService(model.ComponentTypeInfo) then
-  begin
-    context.ComponentRegistry.RegisterService(model, model.ComponentTypeInfo);
-  end
+    context.ComponentRegistry.RegisterService(model, model.ComponentTypeInfo)
   else
   begin
+    attributes := model.ComponentType.GetCustomAttributes<ImplementsAttribute>;
+    for attribute in attributes do
+      context.ComponentRegistry.RegisterService(model, attribute.ServiceType, attribute.Name);
+
     services := model.ComponentType.GetInterfaces;
     for service in services do
-    begin
       if Assigned(service.BaseType) and not model.HasService(service.Handle) then
-      begin
         context.ComponentRegistry.RegisterService(model, service.Handle);
-      end;
-    end;
     if TType.IsDelegate(model.ComponentTypeInfo) then
-    begin
       context.ComponentRegistry.RegisterService(model, model.ComponentType.Handle);
-    end;
+
+    if model.Services.IsEmpty then
+      context.ComponentRegistry.RegisterService(model, model.ComponentType.Handle);
   end;
 end;
 

@@ -440,14 +440,14 @@ end;
 
 procedure TTestSimpleContainer.TestServiceSameAsComponent;
 var
-  service: TNameService;
+  service: TAgeServiceBase;
 begin
-  fContainer.RegisterType<TNameService>; //.Implements<TNameService>;
+  fContainer.RegisterType<TAgeServiceImpl>;
   fContainer.Build;
-  service := fContainer.Resolve<TNameService>;
+  service := fContainer.Resolve<TAgeServiceImpl>;
   try
     CheckNotNull(service, 'service should not be null.');
-    CheckEquals(TNameService.NameString, service.Name);
+    CheckEquals(TAgeServiceImpl.DefaultAge, service.Age);
   finally
 {$IFNDEF AUTOREFCOUNT}
     fContainer.Release(service);

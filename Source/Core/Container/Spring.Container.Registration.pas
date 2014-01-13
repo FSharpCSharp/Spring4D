@@ -50,7 +50,6 @@ type
     fServiceTypeMappings: IDictionary<PTypeInfo, IList<TComponentModel>>;
     fServiceNameMappings: IDictionary<string, TComponentModel>;
   protected
-    procedure OnComponentModelAdded(model: TComponentModel);
     procedure CheckIsNonGuidInterface(serviceType: TRttiType);
     procedure Validate(componentType, serviceType: PTypeInfo; var serviceName: string);
     function GetDefaultTypeName(serviceType: TRttiType): string;
@@ -317,7 +316,6 @@ begin
   componentType := fRttiContext.GetType(componentTypeInfo);
   Result := TComponentModel.Create(fContainerContext, componentType);
   fModels.Add(Result);
-  OnComponentModelAdded(Result);
 end;
 
 function TComponentRegistry.FindOne(const name: string): TComponentModel;
@@ -417,18 +415,6 @@ begin
   Result := fDefaultRegistrations.ContainsKey(serviceType)
     or (fServiceTypeMappings.TryGetValue(serviceType, models)
     and (models.Count = 1));
-end;
-
-procedure TComponentRegistry.OnComponentModelAdded(model: TComponentModel);
-var
-  attributes: TArray<ImplementsAttribute>;
-  attribute: ImplementsAttribute;
-begin
-  attributes := model.ComponentType.GetCustomAttributes<ImplementsAttribute>;
-  for attribute in attributes do
-  begin
-    RegisterService(model, attribute.ServiceType, attribute.Name);
-  end;
 end;
 
 {$ENDREGION}
