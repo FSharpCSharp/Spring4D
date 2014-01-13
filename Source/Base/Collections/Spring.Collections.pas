@@ -2081,6 +2081,8 @@ type
     ///	  <i>T</i>.
     ///	</returns>
     class function Empty<T>: IEnumerable<T>; static;
+
+    class function Query<T>(const source: TEnumerable<T>): IEnumerable<T>; static;
   end;
 
   TStringComparer = class(TCustomComparer<string>)
@@ -2291,6 +2293,12 @@ end;
 class function TCollections.Empty<T>: IEnumerable<T>;
 begin
   Result := TEmptyEnumerable<T>.Create;
+end;
+
+class function TCollections.Query<T>(
+  const source: TEnumerable<T>): IEnumerable<T>;
+begin
+  Result := TEnumerableAdapter<T>.Create(source);
 end;
 
 {$ENDREGION}

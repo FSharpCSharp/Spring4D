@@ -27,6 +27,7 @@ unit Spring.Collections.Lists;
 interface
 
 uses
+  Classes,
   Generics.Collections,
   Generics.Defaults,
   Spring,
@@ -133,6 +134,52 @@ type
     function Contains(const value: T): Boolean; override;
     function IndexOf(const item: T; index, count: Integer): Integer; override;
     function LastIndexOf(const item: T; index, count: Integer): Integer; override;
+
+    procedure Exchange(index1, index2: Integer); override;
+    procedure Move(currentIndex, newIndex: Integer); override;
+  end;
+
+  TCollectionList<T: TCollectionItem> = class(TListBase<T>)
+  private
+    type
+      TEnumerator = class(TEnumeratorBase<T>)
+      private
+        fList: TCollectionList<T>;
+        fIndex: Integer;
+        fVersion: Integer;
+        fCurrent: T;
+      protected
+        function GetCurrent: T; override;
+      public
+        constructor Create(const list: TCollectionList<T>);
+        destructor Destroy; override;
+        function MoveNext: Boolean; override;
+        procedure Reset; override;
+      end;
+  private
+    fCollection: TCollection;
+    fVersion: Integer;
+    procedure DeleteInternal(index: Integer; notification: TCollectionChangedAction);
+    procedure IncreaseVersion; inline;
+  protected
+  {$REGION 'Property Accessors'}
+    function GetCount: Integer; override;
+    function GetItem(index: Integer): T; override;
+    procedure SetItem(index: Integer; const value: T); override;
+  {$ENDREGION}
+
+  public
+    constructor Create(const collection: TCollection);
+    destructor Destroy; override;
+
+    function GetEnumerator: IEnumerator<T>; override;
+
+    procedure Insert(index: Integer; const item: T); override;
+
+    procedure Delete(index: Integer); override;
+    procedure DeleteRange(index, count: Integer); override;
+
+    function Extract(const item: T): T; override;
 
     procedure Exchange(index1, index2: Integer); override;
     procedure Move(currentIndex, newIndex: Integer); override;
@@ -618,6 +665,203 @@ procedure TSortedList<T>.SetItem(index: Integer; const value: T);
 begin
   Delete(index);
   Add(value);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TCollectionList<T>' }
+
+constructor TCollectionList<T>.Create(const collection: TCollection);
+begin
+  inherited Create;
+  fCollection := collection;
+end;
+
+procedure TCollectionList<T>.Delete(index: Integer);
+begin
+  Guard.CheckRange((index >= 0) and (index < Count), 'index');
+
+  DeleteInternal(index, caRemoved);
+end;
+
+procedure TCollectionList<T>.DeleteInternal(index: Integer;
+  notification: TCollectionChangedAction);
+var
+  oldItem: T;
+begin
+  oldItem := T(fCollection.Items[index]);
+  oldItem.Collection := nil;
+  IncreaseVersion;
+
+  Changed(oldItem, notification);
+  if notification = caRemoved then
+    oldItem.Free;
+end;
+
+procedure TCollectionList<T>.DeleteRange(index, count: Integer);
+var
+  oldItems: array of T;
+  i: Integer;
+begin
+  Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
+  Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
+
+  if count = 0 then
+    Exit;
+
+  SetLength(oldItems, count);
+
+  for i := count downto 1 do
+  begin
+    oldItems[count - i] := T(fCollection.Items[index]);
+    fCollection.Items[index].Collection := nil;
+  end;
+  IncreaseVersion;
+
+  for i := 0 to Length(oldItems) - 1 do
+  begin
+    Changed(oldItems[i], caRemoved);
+    oldItems[i].Free;
+  end;
+end;
+
+destructor TCollectionList<T>.Destroy;
+begin
+
+end;
+
+procedure TCollectionList<T>.Exchange(index1, index2: Integer);
+var
+  temp: T;
+begin
+  Guard.CheckRange((index1 >= 0) and (index1 < Count), 'index1');
+  Guard.CheckRange((index2 >= 0) and (index2 < Count), 'index2');
+
+  temp := T(fCollection.Items[index1]);
+  fCollection.Items[index2].Index := index1;
+  temp.Index := index2;
+  IncreaseVersion;
+
+  Changed(fCollection.Items[index2], caMoved);
+  Changed(fCollection.Items[index1], caMoved);
+end;
+
+function TCollectionList<T>.Extract(const item: T): T;
+var
+  index: Integer;
+begin
+  index := IndexOf(item);
+  if index < 0 then
+    Result := Default(T)
+  else
+  begin
+    Result := T(fCollection.Items[index]);
+    DeleteInternal(index, caExtracted);
+  end;
+end;
+
+function TCollectionList<T>.GetCount: Integer;
+begin
+  Result := fCollection.Count;
+end;
+
+function TCollectionList<T>.GetEnumerator: IEnumerator<T>;
+begin
+  Result := TEnumerator.Create(Self);
+end;
+
+function TCollectionList<T>.GetItem(index: Integer): T;
+begin
+  Guard.CheckRange((index >= 0) and (index < Count), 'index');
+
+  Result := T(fCollection.Items[index]);
+end;
+
+{$IFOPT Q+}{$DEFINE OVERFLOW_CHECKS_ON}{$Q-}{$ENDIF}
+procedure TCollectionList<T>.IncreaseVersion;
+begin
+  Inc(fVersion);
+end;
+{$IFDEF OVERFLOW_CHECKS_ON}{$Q+}{$ENDIF}
+
+procedure TCollectionList<T>.Insert(index: Integer; const item: T);
+begin
+  Guard.CheckRange((index >= 0) and (index <= Count), 'index');
+
+  item.Collection := fCollection;
+  item.Index := index;
+  IncreaseVersion;
+
+  Changed(item, caAdded);
+end;
+
+procedure TCollectionList<T>.Move(currentIndex, newIndex: Integer);
+begin
+  Guard.CheckRange((currentIndex >= 0) and (currentIndex < Count), 'currentIndex');
+  Guard.CheckRange((newIndex >= 0) and (newIndex < Count), 'newIndex');
+
+  fCollection.Items[currentIndex].Index := newIndex;
+  IncreaseVersion;
+
+  Changed(fCollection.Items[newIndex], caMoved);
+end;
+
+procedure TCollectionList<T>.SetItem(index: Integer; const value: T);
+begin
+  Guard.CheckRange((index >= 0) and (index < Count), 'index');
+
+  fCollection.Items[index] := value;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TCollectionList<T>.TEnumerator'}
+
+constructor TCollectionList<T>.TEnumerator.Create(const list: TCollectionList<T>);
+begin
+  inherited Create;
+  fList := list;
+  fList._AddRef;
+  fVersion := fList.fVersion;
+end;
+
+destructor TCollectionList<T>.TEnumerator.Destroy;
+begin
+  fList._Release;
+  inherited Destroy;
+end;
+
+function TCollectionList<T>.TEnumerator.MoveNext: Boolean;
+begin
+  Result := False;
+
+  if fVersion <> fList.fVersion then
+    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
+
+  if fIndex < fList.Count then
+  begin
+    fCurrent := fList.Items[fIndex];
+    Inc(fIndex);
+    Result := True;
+  end
+  else
+    fCurrent := Default(T);
+end;
+
+function TCollectionList<T>.TEnumerator.GetCurrent: T;
+begin
+  Result := fCurrent;
+end;
+
+procedure TCollectionList<T>.TEnumerator.Reset;
+begin
+  if fVersion <> fList.fVersion then
+    raise EInvalidOperationException.CreateRes(@SEnumFailedVersion);
+
+  fIndex := 0;
+  fCurrent := Default(T);
 end;
 
 {$ENDREGION}
