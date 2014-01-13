@@ -30,6 +30,10 @@
 // (Delphi older than XE3).
 {$I jedi.inc}
 
+{$IFDEF DELPHIXE5_UP}
+  {$LEGACYIFEND ON}
+{$ENDIF}
+
 // JEDI will assert that at least CPU386 is defined
 {$IFDEF CPU386}
   // Keep this for older delphi compatibility (older than XE3)
@@ -49,7 +53,7 @@
 {$ELSE}
   // Current System.Rtti doesn't support creating implementations that we need
   // so until that happens Events cannot be supported on non-Intel architectures
-{$ENDIF}
+{$IFEND}
 
 {$IFNDEF DELPHI2010_UP}
   {$MESSAGE ERROR 'This framework requires Delphi 2010 or higher.'}}
