@@ -153,6 +153,7 @@ type
     constructor Create(const s: string); overload;
     constructor Create(const s: WideString); overload;
     constructor Create(const s: RawByteString); overload;
+    constructor Create(stream: TStream); overload;
 
     class function FromHexString(const s: string): TBuffer; static;
 
@@ -185,6 +186,7 @@ type
     function Equals(const buffer: Pointer; count: Integer): Boolean; overload;
     function Equals(const hexString: string): Boolean; overload;
 
+    procedure LoadFromStream(stream: TStream);
     procedure SaveToStream(stream: TStream);
 
     function ToBytes: TBytes;
@@ -600,6 +602,11 @@ begin
   Create(@buffer[startIndex], count * SizeOf(Char));
 end;
 
+constructor TBuffer.Create(stream: TStream);
+begin
+  LoadFromStream(stream);
+end;
+
 class function TBuffer.BytesOf(const value: Byte; count: Integer): TBytes;
 begin
   Guard.CheckRange(count >= 0, 'count');
@@ -613,6 +620,14 @@ begin
   Guard.CheckRange(index >= 0, 'index');
 
   Result := PByte(@buffer)[index];
+end;
+
+procedure TBuffer.LoadFromStream(stream: TStream);
+begin
+  Guard.CheckNotNull(stream, 'stream');
+
+  SetLength(fBytes, stream.Size - stream.Position);
+  stream.ReadBuffer(fBytes[0], Length(fBytes));
 end;
 
 procedure TBuffer.SaveToStream(stream: TStream);
