@@ -52,6 +52,8 @@ type
     fExtensions: IList<IContainerExtension>;
     class var GlobalInstance: TContainer;
     function GetContext: IContainerContext;
+    type
+      TValueArray = array of TValue;
   protected
     class constructor Create;
     class destructor Destroy;
@@ -427,22 +429,13 @@ end;
 
 function TContainer.ResolveAll<TServiceType>: TArray<TServiceType>;
 var
-  serviceType: PTypeInfo;
-  models: IEnumerable<TComponentModel>;
-  model: TComponentModel;
-  value: TValue;
+  values: TArray<TValue>;
   i: Integer;
 begin
-  serviceType := TypeInfo(TServiceType);
-  models := fRegistry.FindAll(serviceType);
-  SetLength(Result, models.Count);
-  i := 0;
-  for model in models do
-  begin
-    value := Resolve(model.GetServiceName(serviceType));
-    Result[i] := value.AsType<TServiceType>;
-    Inc(i);
-  end;
+  values := fServiceResolver.ResolveAll(TypeInfo(TServiceType));
+  SetLength(Result, Length(values));
+  for i := Low(values) to High(values) do
+    Result[i] := TValueArray(values)[i].AsType<TServiceType>;
 end;
 
 function TContainer.ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
