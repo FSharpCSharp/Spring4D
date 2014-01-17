@@ -269,6 +269,7 @@ type
   published
     procedure TestInjectArray;
     procedure TestInjectEnumerable;
+    procedure TestNoRecursion;
   end;
 
 
@@ -1557,6 +1558,20 @@ begin
   CheckIs(service.CollectionItems[0], TCollectionItemA);
   CheckIs(service.CollectionItems[1], TCollectionItemB);
   CheckIs(service.CollectionItems[2], TCollectionItemC);
+end;
+
+procedure TTestManyDependencies.TestNoRecursion;
+var
+  service: ICollectionItem;
+begin
+  fContainer.RegisterType<ICollectionItem, TCollectionItemD>();
+  fContainer.Build;
+  service := fContainer.Resolve<ICollectionItem>;
+  CheckIs(service, TCollectionItemD);
+  CheckEquals(3, Length((service as TCollectionItemD).CollectionItems));
+  CheckIs((service as TCollectionItemD).CollectionItems[0], TCollectionItemA);
+  CheckIs((service as TCollectionItemD).CollectionItems[1], TCollectionItemB);
+  CheckIs((service as TCollectionItemD).CollectionItems[2], TCollectionItemC);
 end;
 
 {$ENDREGION}

@@ -580,7 +580,7 @@ end;
 
 function TComponentModel.HasService(serviceType: PTypeInfo): Boolean;
 begin
-  Result := fServices.Values.Contains(serviceType);
+  Result := Assigned(fServices) and fServices.Values.Contains(serviceType);
 end;
 
 function TComponentModel.GetServiceName(serviceType: PTypeInfo): string;

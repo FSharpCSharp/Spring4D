@@ -408,12 +408,18 @@ function TComponentRegistry.FindAll(
   serviceType: PTypeInfo): IEnumerable<TComponentModel>;
 var
   models: IList<TComponentModel>;
+  defaultModel: TComponentModel;
 begin
   Guard.CheckNotNull(serviceType, 'serviceType');
 
   if fServiceTypeMappings.TryGetValue(serviceType, models) then
   begin
-    Result := models;
+    fUnnamedRegistrations.TryGetValue(serviceType, defaultModel);
+    Result := models.Where(
+      function(const model: TComponentModel): Boolean
+      begin
+        Result := model <> defaultModel;
+      end);
   end
   else
   begin

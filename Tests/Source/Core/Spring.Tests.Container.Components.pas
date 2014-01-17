@@ -454,6 +454,14 @@ type
   TCollectionItemC = class(TInterfacedObject, ICollectionItem)
   end;
 
+  TCollectionItemD = class(TInterfacedObject, ICollectionItem)
+  private
+    fCollectionItems: TArray<ICollectionItem>;
+  public
+    constructor Create(const collectionItems: TArray<ICollectionItem>);
+    property CollectionItems: TArray<ICollectionItem> read fCollectionItems;
+  end;
+
   ICollectionService = interface
     ['{31D36D13-CC5A-4FFB-A285-3146EDBAECAB}']
     function GetCollectionItems: TArray<ICollectionItem>;
@@ -875,6 +883,14 @@ constructor TCollectionServiceB.Create(
   const collectionItems: IEnumerable<ICollectionItem>);
 begin
   fCollectionItems := collectionItems.ToArray;
+end;
+
+{ TCollectionItemD }
+
+constructor TCollectionItemD.Create(
+  const collectionItems: TArray<ICollectionItem>);
+begin
+  fCollectionItems := collectionItems;
 end;
 
 end.
