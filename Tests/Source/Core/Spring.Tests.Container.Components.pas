@@ -31,6 +31,7 @@ uses
   SysUtils,
   TestFramework,
   Spring,
+  Spring.Collections,
   Spring.Services,
   Spring.Container.Core,
   Spring.Tests.Container.Interfaces;
@@ -438,6 +439,50 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'Many dependencies'}
+
+  ICollectionItem = interface
+    ['{9B5C78C1-8077-4866-A854-14A20D632342}']
+  end;
+
+  TCollectionItemA = class(TInterfacedObject, ICollectionItem)
+  end;
+
+  TCollectionItemB = class(TInterfacedObject, ICollectionItem)
+  end;
+
+  TCollectionItemC = class(TInterfacedObject, ICollectionItem)
+  end;
+
+  ICollectionService = interface
+    ['{31D36D13-CC5A-4FFB-A285-3146EDBAECAB}']
+    function GetCollectionItems: TArray<ICollectionItem>;
+    property CollectionItems: TArray<ICollectionItem> read GetCollectionItems;
+  end;
+
+  TCollectionService = class abstract(TInterfacedObject, ICollectionService)
+  private
+    fCollectionItems: TArray<ICollectionItem>;
+    function GetCollectionItems: TArray<ICollectionItem>;
+  public
+    property CollectionItems: TArray<ICollectionItem> read GetCollectionItems;
+  end;
+
+  TCollectionServiceA = class(TCollectionService)
+  public
+    [Inject]
+    constructor Create(const collectionItems: TArray<ICollectionItem>);
+  end;
+
+  TCollectionServiceB = class(TCollectionService)
+  public
+    [Inject]
+    constructor Create(const collectionItems: IEnumerable<ICollectionItem>);
+  end;
+
+  {$ENDREGION}
+
+
 implementation
 
 { TNameService }
@@ -807,6 +852,29 @@ end;
 function TAgeServiceDecorator.GetAge: Integer;
 begin
   Result := fAgeServive.Age;
+end;
+
+{ TCollectionService }
+
+function TCollectionService.GetCollectionItems: TArray<ICollectionItem>;
+begin
+  Result := fCollectionItems;
+end;
+
+{ TCollectionServiceA }
+
+constructor TCollectionServiceA.Create(
+  const collectionItems: TArray<ICollectionItem>);
+begin
+  fCollectionItems := collectionItems;
+end;
+
+{ TCollectionServiceB }
+
+constructor TCollectionServiceB.Create(
+  const collectionItems: IEnumerable<ICollectionItem>);
+begin
+  fCollectionItems := collectionItems.ToArray;
 end;
 
 end.

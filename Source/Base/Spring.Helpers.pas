@@ -375,6 +375,8 @@ type
     function GetIsClassOrInterface: Boolean;
     function GetAsClass: TRttiInstanceType;
     function GetIsGenericType: Boolean;
+    function GetAsDynamicArray: TRttiDynamicArrayType;
+    function GetIsDynamicArray: Boolean;
     function InternalGetConstructors(enumerateBaseType: Boolean = True): IEnumerable<TRttiMethod>;
     function InternalGetMethods(enumerateBaseType: Boolean = True): IEnumerable<TRttiMethod>;
     function InternalGetProperties(enumerateBaseType: Boolean = True): IEnumerable<TRttiProperty>;
@@ -446,9 +448,11 @@ type
 
     property AsClass: TRttiInstanceType read GetAsClass;
     property AsInterface: TRttiInterfaceType read GetAsInterface;
+    property AsDynamicArray: TRttiDynamicArrayType read GetAsDynamicArray;
     property IsClass: Boolean read GetIsClass;
     property IsInterface: Boolean read GetIsInterface;
     property IsClassOrInterface: Boolean read GetIsClassOrInterface;
+    property IsDynamicArray: Boolean read GetIsDynamicArray;
 
     ///	<summary>
     ///	  Gets a value indicates whether the current type is generic.
@@ -1069,6 +1073,11 @@ begin
   Result := Self as TRttiInstanceType;
 end;
 
+function TRttiTypeHelper.GetAsDynamicArray: TRttiDynamicArrayType;
+begin
+  Result := Self as TRttiDynamicArrayType;
+end;
+
 function TRttiTypeHelper.GetAsInterface: TRttiInterfaceType;
 begin
   Result := Self as TRttiInterfaceType;
@@ -1135,6 +1144,11 @@ end;
 function TRttiTypeHelper.GetIsClassOrInterface: Boolean;
 begin
   Result := Self.IsClass or Self.IsInterface;
+end;
+
+function TRttiTypeHelper.GetIsDynamicArray: Boolean;
+begin
+  Result := Self is TRttiDynamicArrayType;
 end;
 
 function TRttiTypeHelper.GetIsGenericType: Boolean;

@@ -43,6 +43,7 @@ type
   TContainerTestCase = class abstract(TTestCase)
   protected
     fContainer: TContainer;
+    procedure CheckIs(AInterface: IInterface; AClass: TClass; msg: string = ''); overload;
     procedure SetUp; override;
     procedure TearDown; override;
   end;
@@ -262,14 +263,29 @@ type
     procedure TestResolveWithResolverOverride;
   end;
 
+  TTestManyDependencies = class(TContainerTestCase)
+  protected
+    procedure SetUp; override;
+  published
+    procedure TestInjectArray;
+    procedure TestInjectEnumerable;
+  end;
+
+
 implementation
 
 uses
+  Spring.Collections,
   Spring.Container.DecoratorExtension,
   Spring.Container.Resolvers;
 
 
 {$REGION 'TContainerTestCase'}
+
+procedure TContainerTestCase.CheckIs(AInterface: IInterface; AClass: TClass; msg: string);
+begin
+  CheckIs(AInterface as TObject, AClass, msg);
+end;
 
 procedure TContainerTestCase.SetUp;
 begin
@@ -1499,6 +1515,48 @@ begin
     TParameterOverride.Create('age', 21));
   CheckTrue(service is TAgeServiceDecorator);
   CheckEquals(21, service.Age);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestManyDependencies'}
+
+procedure TTestManyDependencies.SetUp;
+begin
+  inherited;
+  fContainer.RegisterType<ICollectionItem, TCollectionItemA>('a');
+  fContainer.RegisterType<ICollectionItem, TCollectionItemB>('b');
+  fContainer.RegisterType<ICollectionItem, TCollectionItemC>('c');
+end;
+
+procedure TTestManyDependencies.TestInjectArray;
+var
+  service: ICollectionService;
+begin
+  fContainer.RegisterType<ICollectionService, TCollectionServiceA>;
+  fContainer.Build;
+  service := fContainer.Resolve<ICollectionService>;
+  CheckEquals(3, Length(service.CollectionItems));
+  CheckIs(service.CollectionItems[0], TCollectionItemA);
+  CheckIs(service.CollectionItems[1], TCollectionItemB);
+  CheckIs(service.CollectionItems[2], TCollectionItemC);
+end;
+
+procedure TTestManyDependencies.TestInjectEnumerable;
+var
+  service: ICollectionService;
+begin
+  fContainer.RegisterType<ICollectionService, TCollectionServiceB>;
+  fContainer.RegisterType<IInterface, TCollectionServiceB>;
+  fContainer.RegisterType<IEnumerable<ICollectionItem>, TArray<ICollectionItem>>;
+
+  fContainer.Build;
+  service := fContainer.Resolve<ICollectionService>;
+  CheckEquals(3, Length(service.CollectionItems));
+  CheckIs(service.CollectionItems[0], TCollectionItemA);
+  CheckIs(service.CollectionItems[1], TCollectionItemB);
+  CheckIs(service.CollectionItems[2], TCollectionItemC);
 end;
 
 {$ENDREGION}

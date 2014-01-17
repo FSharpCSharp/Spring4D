@@ -475,7 +475,7 @@ var
   services: IEnumerable<TRttiInterfaceType>;
   service: TRttiInterfaceType;
 begin
-  if not model.Services.IsEmpty and not model.ComponentType.IsInterface then Exit;
+  if not model.Services.IsEmpty then Exit;
   if model.ComponentType.IsRecord and not model.HasService(model.ComponentTypeInfo) then
     context.ComponentRegistry.RegisterService(model, model.ComponentTypeInfo)
   else

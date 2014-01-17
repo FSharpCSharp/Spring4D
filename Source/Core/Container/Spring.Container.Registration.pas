@@ -22,7 +22,6 @@
 {                                                                           }
 {***************************************************************************}
 
-{TODO -oOwner -cGeneral : Add DelegateTo(TClass)}
 unit Spring.Container.Registration;
 
 {$I Spring.inc}
@@ -52,6 +51,7 @@ type
   protected
     procedure CheckIsNonGuidInterface(serviceType: TRttiType);
     procedure Validate(componentType, serviceType: PTypeInfo; var serviceName: string);
+    function BuildActivatorDelegate(elementTypeInfo: PTypeInfo; out componentType: TRttiType): TActivatorDelegate;
     function GetDefaultTypeName(serviceType: TRttiType): string;
   public
     constructor Create(const context: IContainerContext);
@@ -189,7 +189,8 @@ implementation
 
 uses
   TypInfo,
-  Spring.Container.ResourceStrings,
+  Spring.Collections.Lists,
+  Spring.Container.ResourceStrings,    
   Spring.Helpers,
   Spring.Reflection;
 
@@ -214,6 +215,45 @@ destructor TComponentRegistry.Destroy;
 begin
   fRttiContext.Free;
   inherited Destroy;
+end;
+
+function TComponentRegistry.BuildActivatorDelegate(elementTypeInfo: PTypeInfo;
+  out componentType: TRttiType): TActivatorDelegate;
+begin
+  case elementTypeInfo.Kind of
+    tkClass:
+    begin
+      componentType := fRttiContext.GetType(TypeInfo(TList<TObject>));
+      Result :=
+        function: TValue
+        var
+          list: TList<TObject>;
+          value: TValue;
+        begin
+          list := TList<TObject>.Create;
+          for value in fContainerContext.ServiceResolver.ResolveAll(elementTypeInfo) do
+            list.Add(value.AsObject);
+          Result := TValue.From<TList<TObject>>(list);
+        end;
+    end;
+    tkInterface:
+    begin
+      componentType := fRttiContext.GetType(TypeInfo(TList<IInterface>));
+      Result :=
+        function: TValue
+        var
+          list: TList<IInterface>;
+          value: TValue;
+        begin
+          list := TList<IInterface>.Create;
+          for value in fContainerContext.ServiceResolver.ResolveAll(elementTypeInfo) do
+            list.Add(value.AsInterface);
+          Result := TValue.From<TList<IInterface>>(list);
+        end;
+    end
+  else
+    raise ERegistrationException.CreateResFmt(@SUnsupportedType, [componentType.Name]);
+  end;
 end;
 
 procedure TComponentRegistry.CheckIsNonGuidInterface(serviceType: TRttiType);
@@ -310,11 +350,21 @@ function TComponentRegistry.RegisterComponent(
   componentTypeInfo: PTypeInfo): TComponentModel;
 var
   componentType: TRttiType;
+  elementTypeInfo: PTypeInfo;
+  activatorDelegate: TActivatorDelegate;
 begin
   Guard.CheckNotNull(componentTypeInfo, 'componentTypeInfo');
 
   componentType := fRttiContext.GetType(componentTypeInfo);
+  if componentType.IsDynamicArray then
+  begin
+    elementTypeInfo := componentType.AsDynamicArray.ElementType.Handle;
+    activatorDelegate := BuildActivatorDelegate(elementTypeInfo, componentType);
+  end;
   Result := TComponentModel.Create(fContainerContext, componentType);
+  Result.ActivatorDelegate := activatorDelegate;
+  if componentType.IsInterface then
+    RegisterService(Result, componentType.Handle);
   fModels.Add(Result);
 end;
 

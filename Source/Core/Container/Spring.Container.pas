@@ -23,7 +23,6 @@
 {***************************************************************************}
 
 {TODO -oOwner -cGeneral : Thread Safety}
-
 unit Spring.Container;
 
 {$I Spring.inc}
@@ -84,6 +83,8 @@ type
     function RegisterType(componentType: PTypeInfo): TRegistration; overload;
     function RegisterType<TServiceType, TComponentType>(
       const name: string = ''): TRegistration<TComponentType>; overload;
+    function RegisterType(serviceType, componentType: PTypeInfo;
+      const name: string = ''): TRegistration; overload;
 
     function RegisterComponent<TComponentType>: TRegistration<TComponentType>; overload; deprecated 'Use RegisterType';
     function RegisterComponent(componentType: PTypeInfo): TRegistration; overload; deprecated 'Use RegisterType';
@@ -352,6 +353,13 @@ begin
   Result := fRegistrationManager.RegisterComponent(componentType);
 end;
 
+function TContainer.RegisterType(serviceType, componentType: PTypeInfo;
+  const name: string): TRegistration;
+begin
+  Result := fRegistrationManager.RegisterComponent(componentType);
+  Result := Result.Implements(serviceType, name);
+end;
+
 function TContainer.HasService(serviceType: PTypeInfo): Boolean;
 begin
   Result := fRegistry.HasService(serviceType);
@@ -459,7 +467,7 @@ end;
 procedure TContainer.Release(instance: IInterface);
 begin
   Guard.CheckNotNull(instance, 'instance');
-  { TODO: -oOwner -cGeneral : Release instance of IInterface }
+  {TODO -oOwner -cGeneral : Release instance of IInterface }
 end;
 
 {$ENDREGION}
