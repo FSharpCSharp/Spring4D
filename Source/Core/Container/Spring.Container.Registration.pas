@@ -258,7 +258,7 @@ end;
 
 procedure TComponentRegistry.CheckIsNonGuidInterface(serviceType: TRttiType);
 begin
-  if serviceType.IsInterface and not TRttiInterfaceType(serviceType).HasGuid
+  if serviceType.IsInterface and not serviceType.AsInterface.HasGuid
     and not TType.IsDelegate(serviceType.Handle) then
   begin
     if serviceType.IsPublicType then

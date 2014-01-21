@@ -469,9 +469,9 @@ type
   end;
 
   TCollectionService = class abstract(TInterfacedObject, ICollectionService)
-  private
+  protected
     fCollectionItems: TArray<ICollectionItem>;
-    function GetCollectionItems: TArray<ICollectionItem>;
+    function GetCollectionItems: TArray<ICollectionItem>; virtual;
   public
     property CollectionItems: TArray<ICollectionItem> read GetCollectionItems;
   end;
@@ -486,6 +486,15 @@ type
   public
     [Inject]
     constructor Create(const collectionItems: IEnumerable<ICollectionItem>);
+  end;
+
+  TCollectionServiceC = class(TCollectionService)
+  protected
+    fCollectionItemFactories: TArray<TFunc<ICollectionItem>>;
+    function GetCollectionItems: TArray<ICollectionItem>; override;
+  public
+    [Inject]
+    constructor Create(const collectionItems: TArray<TFunc<ICollectionItem>>);
   end;
 
   {$ENDREGION}
@@ -891,6 +900,27 @@ constructor TCollectionItemD.Create(
   const collectionItems: TArray<ICollectionItem>);
 begin
   fCollectionItems := collectionItems;
+end;
+
+{ TCollectionServiceC }
+
+constructor TCollectionServiceC.Create(
+  const collectionItems: TArray<TFunc<ICollectionItem>>);
+begin
+  fCollectionItemFactories := collectionItems;
+end;
+
+function TCollectionServiceC.GetCollectionItems: TArray<ICollectionItem>;
+var
+  i: Integer;
+begin
+  if not Assigned(fCollectionItems) then
+  begin
+    SetLength(fCollectionItems, Length(fCollectionItemFactories));
+    for i := Low(fCollectionItemFactories) to High(fCollectionItemFactories) do
+      fCollectionItems[i] := fCollectionItemFactories[i]();
+  end;
+  Result := fCollectionItems;
 end;
 
 end.

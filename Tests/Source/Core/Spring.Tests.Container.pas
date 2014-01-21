@@ -269,6 +269,7 @@ type
   published
     procedure TestInjectArray;
     procedure TestInjectEnumerable;
+    procedure TestInjectArrayOfLazy;
     procedure TestNoRecursion;
     procedure TestResolveArrayOfLazy;
   end;
@@ -1545,6 +1546,19 @@ begin
   CheckIs(service.CollectionItems[2], TCollectionItemC);
 end;
 
+procedure TTestManyDependencies.TestInjectArrayOfLazy;
+var
+  service: ICollectionService;
+begin
+  fContainer.RegisterType<ICollectionService, TCollectionServiceC>;
+  fContainer.Build;
+  service := fContainer.Resolve<ICollectionService>;
+  CheckEquals(3, Length(service.CollectionItems));
+  CheckIs(service.CollectionItems[0], TCollectionItemA);
+  CheckIs(service.CollectionItems[1], TCollectionItemB);
+  CheckIs(service.CollectionItems[2], TCollectionItemC);
+end;
+
 procedure TTestManyDependencies.TestInjectEnumerable;
 var
   service: ICollectionService;
@@ -1576,14 +1590,13 @@ begin
 end;
 
 procedure TTestManyDependencies.TestResolveArrayOfLazy;
-var
-  services: TArray<Lazy<ICollectionItem>>;
+//var
+//  services: TArray<Lazy<ICollectionItem>>;
 begin
   // TODO: refactor resolvers to make this test pass without duplicating code
 //  fContainer.RegisterType<ICollectionItem, TCollectionItemD>;
 //  fContainer.Build;
-//  services :=
-//  fContainer.Resolve<Lazy<ICollectionItem>>;
+//  services := fContainer.ResolveAll<Lazy<ICollectionItem>>;
 //  CheckEquals(3, Length(services));
 end;
 

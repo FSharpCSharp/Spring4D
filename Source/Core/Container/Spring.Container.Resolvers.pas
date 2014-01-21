@@ -183,8 +183,7 @@ uses
   TypInfo,
   Spring.Container.ResourceStrings,
   Spring.Helpers,
-  Spring.Reflection,
-  Spring.SystemUtils;
+  Spring.Reflection;
 
 
 {$REGION 'TResolver'}
@@ -231,6 +230,7 @@ begin
       begin
         if TType.IsDelegate(typeInfo) then
         begin
+          localInterface := nil;
           IInterface(localInterface) := instance.AsInterface;
         end
         else
@@ -275,7 +275,7 @@ begin
   begin
     if not Registry.HasService(dependency.Handle) then
     begin
-      if dependency.IsClassOrInterface and not IsLazyType(dependency.Handle) then
+      if dependency.IsClassOrInterface and not TType.IsLazy(dependency.Handle) then
       begin
         raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
       end;
@@ -297,13 +297,13 @@ begin
     Result := Registry.FindOne(name);
     if not Assigned(Result) then
     begin
-      if IsLazyType(dependency.Handle) then
+      if TType.IsLazy(dependency.Handle) then
         Exit;
       raise EResolveException.CreateResFmt(@SInvalidServiceName, [name]);
     end;
     if not Result.HasService(dependency.Handle) then
     begin
-      if not IsLazyType(dependency.Handle) then
+      if not TType.IsLazy(dependency.Handle) then
         raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
       Result := nil;
     end;
@@ -337,7 +337,7 @@ begin
   begin
     if argument.IsEmpty then
     begin
-      Result := Registry.HasDefault(dependency.Handle) or IsLazyType(dependency.Handle);
+      Result := Registry.HasDefault(dependency.Handle) or TType.IsLazy(dependency.Handle);
     end
     else
     begin
@@ -351,9 +351,9 @@ begin
         begin
           serviceType := model.Services[serviceName];
           Result := serviceType = dependency.Handle;
-          if not Result and IsLazyType(dependency.Handle) then
+          if not Result and TType.IsLazy(dependency.Handle) then
           begin
-            lazyType := TType.FindType(GetLazyTypeName(dependency.Handle));
+            lazyType := TType.FindType(TType.GetLazyTypeName(dependency.Handle));
             Result := Assigned(lazyType) and (serviceType = lazyType.Handle);
           end;
         end;
@@ -361,9 +361,7 @@ begin
     end;
   end
   else
-  begin
-    Result := argument.IsType(dependency.Handle);
-  end;
+    Result := argument.IsEmpty or argument.IsType(dependency.Handle);
 end;
 
 function TDependencyResolver.ResolveDependency(dependency: TRttiType): TValue;
@@ -388,7 +386,12 @@ begin
   if not (dependency.IsClassOrInterface or dependency.IsRecord)
     or (argument.Kind in [tkClass, tkInterface, tkRecord]) then
   begin
-    Exit(argument);
+    Result := argument;
+{$IFDEF DELPHI2010}
+    if Result.IsEmpty then
+      TValue.Make(nil, dependency.Handle, Result);
+{$ENDIF}
+    Exit;
   end;
 
   fLock.Enter;
@@ -423,11 +426,11 @@ var
   valueFactoryObj: TFunc<TObject>;
   valueFactoryIntf: TFunc<IInterface>;
 begin
-  lazyKind := GetLazyKind(dependency.Handle);
+  lazyKind := TType.GetLazyKind(dependency.Handle);
   if lazyKind = lkNone then
     Exit(argument);
 
-  name := GetLazyTypeName(dependency.Handle);
+  name := TType.GetLazyTypeName(dependency.Handle);
   modelType := context.FindType(name);
   if not Assigned(modelType) or not CanResolveDependency(modelType, argument) then
   begin
@@ -475,40 +478,33 @@ function TDependencyResolver.ResolveManyDependency(dependency: TRttiType;
   argument: TValue): TValue;
 var
   dependencyType: TRttiType;
-  isLazyType: Boolean;
+  serviceType: PTypeInfo;
   lazyTypeName: string;
-  lazyType: PTypeInfo;
-  context: TRttiContext;
   models: IEnumerable<TComponentModel>;
   values: array of TValue;
   i: Integer;
   model: TComponentModel;
 begin
-  if dependency is TRttiDynamicArrayType then
+  if not dependency.IsDynamicArray then
+    raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
+
+  dependencyType := dependency.AsDynamicArray.ElementType;
+  if TType.IsLazy(dependencyType.Handle) then
   begin
-    dependencyType := TRttiDynamicArrayType(dependency).ElementType;
-    isLazyType := Spring.SystemUtils.IsLazyType(dependencyType.Handle);
-    lazyType := nil;
-    if isLazyType then
-    begin
-      lazyTypeName := GetLazyTypeName(dependencyType.Handle);
-      lazyType := context.FindType(lazyTypeName).Handle;
-      models := fRegistry.FindAll(lazyType);
-    end
-    else
-      models := fRegistry.FindAll(dependencyType.Handle);
-    SetLength(values, models.Count);
-    i := 0;
-    for model in models do
-    begin
-      if isLazyType then
-        values[i] := ResolveLazyDependency(dependencyType, model.GetServiceName(lazyType))
-      else
-        values[i] := ResolveDependency(dependencyType, model.GetServiceName(dependencyType.Handle));
-      Inc(i);
-    end;
-    Result := TValue.FromArray(dependency.Handle, values);
+    lazyTypeName := TType.GetLazyTypeName(dependencyType.Handle);
+    serviceType := TType.FindType(lazyTypeName).Handle;
+  end
+  else
+    serviceType := dependencyType.Handle;
+  models := fRegistry.FindAll(serviceType);
+  SetLength(values, models.Count);
+  i := 0;
+  for model in models do
+  begin
+    values[i] := ResolveDependency(dependencyType, model.GetServiceName(serviceType));
+    Inc(i);
   end;
+  Result := TValue.FromArray(dependency.Handle, values);
 end;
 
 function TDependencyResolver.CanResolveDependencies(
