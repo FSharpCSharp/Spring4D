@@ -86,7 +86,7 @@ type
 
   TServiceResolver = class(TResolver, IServiceResolver, IInterface)
   protected
-    function DoResolve(model: TComponentModel; serviceType: PTypeInfo;
+    function InternalResolve(model: TComponentModel; serviceType: PTypeInfo;
       resolver: IDependencyResolver): TValue;
   public
     function CanResolve(serviceType: PTypeInfo): Boolean; overload;
@@ -644,7 +644,7 @@ begin
   Result := Registry.HasService(name);
 end;
 
-function TServiceResolver.DoResolve(model: TComponentModel;
+function TServiceResolver.InternalResolve(model: TComponentModel;
   serviceType: PTypeInfo; resolver: IDependencyResolver): TValue;
 var
   instance: TValue;
@@ -690,7 +690,7 @@ begin
     resolver := resolverOverride.GetResolver(Context)
   else
     resolver := Context.DependencyResolver;
-  Result := DoResolve(model, serviceType, resolver);
+  Result := InternalResolve(model, serviceType, resolver);
 end;
 
 function TServiceResolver.Resolve(const name: string): TValue;
@@ -715,7 +715,7 @@ begin
     resolver := resolverOverride.GetResolver(Context)
   else
     resolver := Context.DependencyResolver;
-  Result := DoResolve(model, serviceType, resolver);
+  Result := InternalResolve(model, serviceType, resolver);
 end;
 
 function TServiceResolver.ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
@@ -729,7 +729,7 @@ begin
   i := 0;
   for model in models do
   begin
-    Result[i] := DoResolve(model, serviceType, Context.DependencyResolver);
+    Result[i] := InternalResolve(model, serviceType, Context.DependencyResolver);
     Inc(i);
   end;
 end;
