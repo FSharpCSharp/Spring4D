@@ -429,16 +429,12 @@ end;
 
 function TComponentRegistry.GetDefaultTypeName(serviceType: TRttiType): string;
 begin
-  Assert(serviceType <> nil, 'serviceType should not be nil');
+  Guard.CheckNotNull(serviceType, 'serviceType');
 
   if serviceType.IsPublicType then
-  begin
-    Result := serviceType.QualifiedName;
-  end
+    Result := serviceType.QualifiedName
   else
-  begin
     Result := serviceType.Name;
-  end;
 end;
 
 function TComponentRegistry.HasService(serviceType: PTypeInfo): Boolean;

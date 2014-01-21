@@ -641,7 +641,7 @@ end;
 
 constructor TInjectionExplorerComponent.Create(const service: INameService);
 begin
-  Assert(fConstructorInjection = nil, 'This constructor should only called once.');
+  Guard.CheckTrue(fConstructorInjection = nil, 'This constructor should only called once.');
   inherited Create;
   fConstructorInjection := service;
 end;

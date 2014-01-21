@@ -1088,7 +1088,7 @@ begin
   Guard.CheckTypeKind(typeInfo, [tkEnumeration], 'T');
 
   data := GetTypeData(typeInfo);
-  Assert(Assigned(data), 'data must not be nil.');
+  Guard.CheckNotNull(data, 'data');
 
   if (argumentValue < data.MinValue) or (argumentValue > data.MaxValue) then
   begin

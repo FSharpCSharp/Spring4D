@@ -30,6 +30,7 @@ unit Spring.Container.Resolvers;
 
 uses
   Rtti,
+  SyncObjs,
   Spring,
   Spring.Collections,
   Spring.Container.Core;
@@ -55,12 +56,14 @@ type
 
   TDependencyResolver = class(TResolver, IDependencyResolver, IInterface)
   private
+    fLock: TCriticalSection;
     fDependencyTypes: IList<TRttiType>;
   protected
     procedure CheckCircularDependency(dependency: TRttiType);
     function GetEligibleModel(dependency: TRttiType; const argument: TValue): TComponentModel;
   public
     constructor Create(const context: IContainerContext; const registry: IComponentRegistry);
+    destructor Destroy; override;
 
     function CanResolveDependency(dependency: TRttiType): Boolean; overload; virtual;
     function CanResolveDependency(dependency: TRttiType; const argument: TValue): Boolean; overload; virtual;
@@ -211,7 +214,8 @@ procedure TResolver.ConstructValue(typeInfo: PTypeInfo; const instance: TValue;
 var
   localInterface: Pointer;
 begin
-  Assert(not instance.IsEmpty, 'instance should not be empty.');
+  Guard.CheckFalse(instance.IsEmpty, 'instance should not be empty.');
+
   case typeInfo.Kind of
     tkClass, tkRecord:
     begin
@@ -253,6 +257,13 @@ constructor TDependencyResolver.Create(const context: IContainerContext;
 begin
   inherited Create(context, registry);
   fDependencyTypes := TCollections.CreateList<TRttiType>;
+  fLock := TCriticalSection.Create;
+end;
+
+destructor TDependencyResolver.Destroy;
+begin
+  fLock.Free;
+  inherited;
 end;
 
 function TDependencyResolver.GetEligibleModel(dependency: TRttiType;
@@ -301,12 +312,11 @@ end;
 
 procedure TDependencyResolver.CheckCircularDependency(dependency: TRttiType);
 begin
-  Assert(Assigned(dependency), 'dependency should not be nil.');
+  Guard.CheckNotNull(dependency, 'dependency');
+
   if fDependencyTypes.Contains(dependency) then
-  begin
     raise ECircularDependencyException.CreateResFmt(
       @SCircularDependencyDetected, [dependency.Name]);
-  end;
 end;
 
 function TDependencyResolver.CanResolveDependency(
@@ -369,7 +379,7 @@ var
 begin
   Guard.CheckNotNull(dependency, 'dependency');
 
-  if (dependency is TRttiDynamicArrayType) then
+  if dependency.IsDynamicArray then
   begin
     Result := ResolveManyDependency(dependency, argument);
     Exit;
@@ -380,7 +390,8 @@ begin
   begin
     Exit(argument);
   end;
-  MonitorEnter(Self);
+
+  fLock.Enter;
   try
     CheckCircularDependency(dependency);
     model := GetEligibleModel(dependency, argument);
@@ -396,8 +407,9 @@ begin
       fDependencyTypes.Remove(dependency);
     end;
   finally
-    MonitorExit(Self);
+    fLock.Leave;
   end;
+
   ConstructValue(dependency.Handle, instance, Result);
 end;
 
@@ -637,12 +649,10 @@ function TServiceResolver.DoResolve(model: TComponentModel;
 var
   instance: TValue;
 begin
-  Assert(Assigned(model), 'model should not be nil.');
-  Assert(Assigned(serviceType), 'serviceType should not be nil.');
-  if not Assigned(model.LifetimeManager) then
-  begin
-    raise EResolveException.CreateRes(@SLifetimeManagerMissing);
-  end;
+  Guard.CheckNotNull(model, 'model');
+  Guard.CheckNotNull(serviceType, 'serviceType');
+  Guard.CheckNotNull(model.LifetimeManager, 'model.LifetimeManager');
+
   instance := model.LifetimeManager.GetInstance(resolver);
   ConstructValue(serviceType, instance, Result);
 end;
@@ -660,6 +670,9 @@ var
   resolver: IDependencyResolver;
 begin
   serviceName := GetTypeName(serviceType);
+//  if IsLazyType(serviceType) then
+//    serviceType := TType.FindType(GetLazyTypeName(serviceType)).Handle;
+
   if not Registry.HasService(serviceType) then
   begin
     raise EResolveException.CreateResFmt(@SNoComponentRegistered, [serviceName]);

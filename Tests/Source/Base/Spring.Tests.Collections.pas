@@ -643,7 +643,7 @@ end;
 
 procedure TTestIntegerList.SimpleFillList;
 begin
-  Assert(Assigned(SUT), 'SUT is nil');
+  CheckNotNull(SUT, 'SUT is nil');
   SUT.Add(1);
   SUT.Add(2);
   SUT.Add(3);

@@ -127,7 +127,8 @@ function TLifetimeManagerBase.TryGetInterfaceWithoutCopy(const instance: TValue;
 var
   localIntf: Pointer; // weak-reference
 begin
-  Assert(not instance.IsEmpty, 'instance should not be empty.');
+  Guard.CheckFalse(instance.IsEmpty, 'instance should not be empty.');
+
   case instance.Kind of
     tkClass:
     begin
