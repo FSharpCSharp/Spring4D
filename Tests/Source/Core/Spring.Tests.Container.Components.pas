@@ -31,6 +31,7 @@ uses
   SysUtils,
   TestFramework,
   Spring,
+  Spring.Collections,
   Spring.Services,
   Spring.Container.Core,
   Spring.Tests.Container.Interfaces;
@@ -438,6 +439,67 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'Many dependencies'}
+
+  ICollectionItem = interface
+    ['{9B5C78C1-8077-4866-A854-14A20D632342}']
+  end;
+
+  TCollectionItemA = class(TInterfacedObject, ICollectionItem)
+  end;
+
+  TCollectionItemB = class(TInterfacedObject, ICollectionItem)
+  end;
+
+  TCollectionItemC = class(TInterfacedObject, ICollectionItem)
+  end;
+
+  TCollectionItemD = class(TInterfacedObject, ICollectionItem)
+  private
+    fCollectionItems: TArray<ICollectionItem>;
+  public
+    constructor Create(const collectionItems: TArray<ICollectionItem>);
+    property CollectionItems: TArray<ICollectionItem> read fCollectionItems;
+  end;
+
+  ICollectionService = interface
+    ['{31D36D13-CC5A-4FFB-A285-3146EDBAECAB}']
+    function GetCollectionItems: TArray<ICollectionItem>;
+    property CollectionItems: TArray<ICollectionItem> read GetCollectionItems;
+  end;
+
+  TCollectionService = class abstract(TInterfacedObject, ICollectionService)
+  protected
+    fCollectionItems: TArray<ICollectionItem>;
+    function GetCollectionItems: TArray<ICollectionItem>; virtual;
+  public
+    property CollectionItems: TArray<ICollectionItem> read GetCollectionItems;
+  end;
+
+  TCollectionServiceA = class(TCollectionService)
+  public
+    [Inject]
+    constructor Create(const collectionItems: TArray<ICollectionItem>);
+  end;
+
+  TCollectionServiceB = class(TCollectionService)
+  public
+    [Inject]
+    constructor Create(const collectionItems: IEnumerable<ICollectionItem>);
+  end;
+
+  TCollectionServiceC = class(TCollectionService)
+  protected
+    fCollectionItemFactories: TArray<TFunc<ICollectionItem>>;
+    function GetCollectionItems: TArray<ICollectionItem>; override;
+  public
+    [Inject]
+    constructor Create(const collectionItems: TArray<TFunc<ICollectionItem>>);
+  end;
+
+  {$ENDREGION}
+
+
 implementation
 
 { TNameService }
@@ -588,7 +650,7 @@ end;
 
 constructor TInjectionExplorerComponent.Create(const service: INameService);
 begin
-  Assert(fConstructorInjection = nil, 'This constructor should only called once.');
+  Guard.CheckTrue(fConstructorInjection = nil, 'This constructor should only called once.');
   inherited Create;
   fConstructorInjection := service;
 end;
@@ -807,6 +869,58 @@ end;
 function TAgeServiceDecorator.GetAge: Integer;
 begin
   Result := fAgeServive.Age;
+end;
+
+{ TCollectionService }
+
+function TCollectionService.GetCollectionItems: TArray<ICollectionItem>;
+begin
+  Result := fCollectionItems;
+end;
+
+{ TCollectionServiceA }
+
+constructor TCollectionServiceA.Create(
+  const collectionItems: TArray<ICollectionItem>);
+begin
+  fCollectionItems := collectionItems;
+end;
+
+{ TCollectionServiceB }
+
+constructor TCollectionServiceB.Create(
+  const collectionItems: IEnumerable<ICollectionItem>);
+begin
+  fCollectionItems := collectionItems.ToArray;
+end;
+
+{ TCollectionItemD }
+
+constructor TCollectionItemD.Create(
+  const collectionItems: TArray<ICollectionItem>);
+begin
+  fCollectionItems := collectionItems;
+end;
+
+{ TCollectionServiceC }
+
+constructor TCollectionServiceC.Create(
+  const collectionItems: TArray<TFunc<ICollectionItem>>);
+begin
+  fCollectionItemFactories := collectionItems;
+end;
+
+function TCollectionServiceC.GetCollectionItems: TArray<ICollectionItem>;
+var
+  i: Integer;
+begin
+  if not Assigned(fCollectionItems) then
+  begin
+    SetLength(fCollectionItems, Length(fCollectionItemFactories));
+    for i := Low(fCollectionItemFactories) to High(fCollectionItemFactories) do
+      fCollectionItems[i] := fCollectionItemFactories[i]();
+  end;
+  Result := fCollectionItems;
 end;
 
 end.

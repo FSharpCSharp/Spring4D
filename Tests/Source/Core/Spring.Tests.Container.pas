@@ -48,6 +48,7 @@ type
   TContainerTestCase = class abstract(TTestCase)
   protected
     fContainer: TContainer;
+    procedure CheckIs(AInterface: IInterface; AClass: TClass; msg: string = ''); overload;
     procedure SetUp; override;
     procedure TearDown; override;
   end;
@@ -275,14 +276,32 @@ type
     procedure TestResolveWithResolverOverride;
   end;
 
+  TTestManyDependencies = class(TContainerTestCase)
+  protected
+    procedure SetUp; override;
+  published
+    procedure TestInjectArray;
+    procedure TestInjectEnumerable;
+    procedure TestInjectArrayOfLazy;
+    procedure TestNoRecursion;
+    procedure TestResolveArrayOfLazy;
+  end;
+
+
 implementation
 
 uses
+  Spring.Collections,
   Spring.Container.DecoratorExtension,
   Spring.Container.Resolvers;
 
 
 {$REGION 'TContainerTestCase'}
+
+procedure TContainerTestCase.CheckIs(AInterface: IInterface; AClass: TClass; msg: string);
+begin
+  CheckIs(AInterface as TObject, AClass, msg);
+end;
 
 procedure TContainerTestCase.SetUp;
 begin
@@ -908,8 +927,8 @@ begin
     );
   fContainer.Build;
   fPrimitive := fContainer.Resolve<IPrimitive>;
-  Assert(fPrimitive <> nil, 'fPrimitive should not be nil.');
-  Assert(fPrimitive.NameService <> nil, 'fPrimitive.NameService should not be nil.');
+  CheckNotNull(fPrimitive, 'fPrimitive should not be nil.');
+  CheckNotNull(fPrimitive.NameService, 'fPrimitive.NameService should not be nil.');
 end;
 
 procedure TTestActivatorDelegate.TestNameService;
@@ -940,8 +959,8 @@ begin
   DoRegisterComponents;
   fContainer.Build;
   fNameService := fContainer.Resolve<INameService>;
-  Assert(fNameService is TNameService, 'fNameService should be TNameService.');
-  Assert(fNameService.Name = TNameService.NameString, 'fNameService.Name is wrong.');
+  CheckIs(fNameService, TNameService, 'fNameService should be TNameService.');
+  CheckEquals(TNameService.NameString, fNameService.Name, 'fNameService.Name is wrong.');
   fInjectionExplorer := fContainer.Resolve<IInjectionExplorer>;
 end;
 
@@ -1151,8 +1170,8 @@ begin
   fContainer.Build;
   fNameService := fContainer.Resolve<INameService>('default');
   fAgeService := fContainer.Resolve<IAgeService>;
-  Assert(fNameService <> nil, 'fNameService should not be nil.');
-  Assert(fAgeService <> nil, 'fAgeService should not be nil.');
+  CheckNotNull(fNameService, 'fNameService should not be nil.');
+  CheckNotNull(fAgeService, 'fAgeService should not be nil.');
 end;
 
 procedure TTestImplementsDifferentServices.TearDown;
@@ -1267,7 +1286,7 @@ var
   s2: IAgeService;
   s3: IAnotherService;
 begin
-  Assert(TypeInfo(IAnotherService) <> nil);
+  CheckTrue(Assigned(TypeInfo(IAnotherService)));
   fContainer.RegisterType<TComplex>;
   fContainer.Build;
   s1 := fContainer.Resolve<INameService>;
@@ -1566,6 +1585,86 @@ begin
     TParameterOverride.Create('age', 21));
   CheckTrue(service is TAgeServiceDecorator);
   CheckEquals(21, service.Age);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestManyDependencies'}
+
+procedure TTestManyDependencies.SetUp;
+begin
+  inherited;
+  fContainer.RegisterType<ICollectionItem, TCollectionItemA>('a');
+  fContainer.RegisterType<ICollectionItem, TCollectionItemB>('b');
+  fContainer.RegisterType<ICollectionItem, TCollectionItemC>('c');
+end;
+
+procedure TTestManyDependencies.TestInjectArray;
+var
+  service: ICollectionService;
+begin
+  fContainer.RegisterType<ICollectionService, TCollectionServiceA>;
+  fContainer.Build;
+  service := fContainer.Resolve<ICollectionService>;
+  CheckEquals(3, Length(service.CollectionItems));
+  CheckIs(service.CollectionItems[0], TCollectionItemA);
+  CheckIs(service.CollectionItems[1], TCollectionItemB);
+  CheckIs(service.CollectionItems[2], TCollectionItemC);
+end;
+
+procedure TTestManyDependencies.TestInjectArrayOfLazy;
+var
+  service: ICollectionService;
+begin
+  fContainer.RegisterType<ICollectionService, TCollectionServiceC>;
+  fContainer.Build;
+  service := fContainer.Resolve<ICollectionService>;
+  CheckEquals(3, Length(service.CollectionItems));
+  CheckIs(service.CollectionItems[0], TCollectionItemA);
+  CheckIs(service.CollectionItems[1], TCollectionItemB);
+  CheckIs(service.CollectionItems[2], TCollectionItemC);
+end;
+
+procedure TTestManyDependencies.TestInjectEnumerable;
+var
+  service: ICollectionService;
+begin
+  fContainer.RegisterType<ICollectionService, TCollectionServiceB>;
+  fContainer.RegisterType<IInterface, TCollectionServiceB>;
+  fContainer.RegisterType<IEnumerable<ICollectionItem>, TArray<ICollectionItem>>;
+
+  fContainer.Build;
+  service := fContainer.Resolve<ICollectionService>;
+  CheckEquals(3, Length(service.CollectionItems));
+  CheckIs(service.CollectionItems[0], TCollectionItemA);
+  CheckIs(service.CollectionItems[1], TCollectionItemB);
+  CheckIs(service.CollectionItems[2], TCollectionItemC);
+end;
+
+procedure TTestManyDependencies.TestNoRecursion;
+var
+  service: ICollectionItem;
+begin
+  fContainer.RegisterType<ICollectionItem, TCollectionItemD>;
+  fContainer.Build;
+  service := fContainer.Resolve<ICollectionItem>;
+  CheckIs(service, TCollectionItemD);
+  CheckEquals(3, Length((service as TCollectionItemD).CollectionItems));
+  CheckIs((service as TCollectionItemD).CollectionItems[0], TCollectionItemA);
+  CheckIs((service as TCollectionItemD).CollectionItems[1], TCollectionItemB);
+  CheckIs((service as TCollectionItemD).CollectionItems[2], TCollectionItemC);
+end;
+
+procedure TTestManyDependencies.TestResolveArrayOfLazy;
+//var
+//  services: TArray<Lazy<ICollectionItem>>;
+begin
+  // TODO: refactor resolvers to make this test pass without duplicating code
+//  fContainer.RegisterType<ICollectionItem, TCollectionItemD>;
+//  fContainer.Build;
+//  services := fContainer.ResolveAll<Lazy<ICollectionItem>>;
+//  CheckEquals(3, Length(services));
 end;
 
 {$ENDREGION}

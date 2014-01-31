@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -128,7 +128,8 @@ function TLifetimeManagerBase.TryGetInterfaceWithoutCopy(const instance: TValue;
 var
   localIntf: Pointer; // weak-reference
 begin
-  Assert(not instance.IsEmpty, 'instance should not be empty.');
+  Guard.CheckFalse(instance.IsEmpty, 'instance should not be empty.');
+
   case instance.Kind of
     tkClass:
     begin

@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -31,6 +31,7 @@ interface
 resourcestring
   SMissingGuid = 'The service type "%s" is missing a guid.';
   SIncompatibleTypes = 'The component type "%s" is incompatible with the service type "%s".';
+  SUnsupportedType = 'The component type "%s" is not supported.';
   SDuplicatedName = 'Duplicated name found: "%s".';
   SDuplicatedUnnamedService = 'Cannot have more than one unnamed registration for service type "%s".';
   SMissingServiceType = 'The service type "%s" cannot be the default as it has not been registered.';

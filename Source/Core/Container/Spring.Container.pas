@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -23,7 +23,6 @@
 {***************************************************************************}
 
 {TODO -oOwner -cGeneral : Thread Safety}
-
 unit Spring.Container;
 
 {$I Spring.inc}
@@ -53,6 +52,8 @@ type
     fExtensions: IList<IContainerExtension>;
     class var GlobalInstance: TContainer;
     function GetContext: IContainerContext;
+    type
+      TValueArray = array of TValue;
   protected
     class constructor Create;
     class destructor Destroy;
@@ -84,6 +85,8 @@ type
     function RegisterType(componentType: PTypeInfo): TRegistration; overload;
     function RegisterType<TServiceType, TComponentType>(
       const name: string = ''): TRegistration<TComponentType>; overload;
+    function RegisterType(serviceType, componentType: PTypeInfo;
+      const name: string = ''): TRegistration; overload;
 
     function RegisterComponent<TComponentType>: TRegistration<TComponentType>; overload; deprecated 'Use RegisterType';
     function RegisterComponent(componentType: PTypeInfo): TRegistration; overload; deprecated 'Use RegisterType';
@@ -382,6 +385,13 @@ begin
   Result := fRegistrationManager.RegisterComponent(componentType);
 end;
 
+function TContainer.RegisterType(serviceType, componentType: PTypeInfo;
+  const name: string): TRegistration;
+begin
+  Result := fRegistrationManager.RegisterComponent(componentType);
+  Result := Result.Implements(serviceType, name);
+end;
+
 function TContainer.HasService(serviceType: PTypeInfo): Boolean;
 begin
   Result := fRegistry.HasService(serviceType);
@@ -449,22 +459,13 @@ end;
 
 function TContainer.ResolveAll<TServiceType>: TArray<TServiceType>;
 var
-  serviceType: PTypeInfo;
-  models: IEnumerable<TComponentModel>;
-  model: TComponentModel;
-  value: TValue;
+  values: TArray<TValue>;
   i: Integer;
 begin
-  serviceType := TypeInfo(TServiceType);
-  models := fRegistry.FindAll(serviceType);
-  SetLength(Result, models.Count);
-  i := 0;
-  for model in models do
-  begin
-    value := Resolve(model.GetServiceName(serviceType));
-    Result[i] := value.AsType<TServiceType>;
-    Inc(i);
-  end;
+  values := fServiceResolver.ResolveAll(TypeInfo(TServiceType));
+  SetLength(Result, Length(values));
+  for i := Low(values) to High(values) do
+    Result[i] := TValueArray(values)[i].AsType<TServiceType>;
 end;
 
 function TContainer.ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
@@ -490,7 +491,7 @@ end;
 procedure TContainer.Release(instance: IInterface);
 begin
   Guard.CheckNotNull(instance, 'instance');
-  { TODO: -oOwner -cGeneral : Release instance of IInterface }
+  {TODO -oOwner -cGeneral : Release instance of IInterface }
 end;
 {$ENDIF}
 

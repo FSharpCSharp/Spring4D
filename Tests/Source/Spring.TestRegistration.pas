@@ -143,7 +143,8 @@ begin
     TTestRegisterInterfaceTypes.Suite,
     TTestLazyDependencies.Suite,
     TTestLazyDependenciesDetectRecursion.Suite,
-    TTestDecoratorExtension.Suite
+    TTestDecoratorExtension.Suite,
+    TTestManyDependencies.Suite
   ]);
 
   RegisterTests('Spring.Extensions.Utils', [

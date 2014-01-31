@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,7 +22,6 @@
 {                                                                           }
 {***************************************************************************}
 
-{TODO -oOwner -cGeneral : Add DelegateTo(TClass)}
 unit Spring.Container.Registration;
 
 {$I Spring.inc}
@@ -52,6 +51,7 @@ type
   protected
     procedure CheckIsNonGuidInterface(serviceType: TRttiType);
     procedure Validate(componentType, serviceType: PTypeInfo; var serviceName: string);
+    function BuildActivatorDelegate(elementTypeInfo: PTypeInfo; out componentType: TRttiType): TActivatorDelegate;
     function GetDefaultTypeName(serviceType: TRttiType): string;
   public
     constructor Create(const context: IContainerContext);
@@ -189,7 +189,8 @@ implementation
 
 uses
   TypInfo,
-  Spring.Container.ResourceStrings,
+  Spring.Collections.Lists,
+  Spring.Container.ResourceStrings,    
   Spring.Helpers,
   Spring.Reflection;
 
@@ -216,9 +217,48 @@ begin
   inherited Destroy;
 end;
 
+function TComponentRegistry.BuildActivatorDelegate(elementTypeInfo: PTypeInfo;
+  out componentType: TRttiType): TActivatorDelegate;
+begin
+  case elementTypeInfo.Kind of
+    tkClass:
+    begin
+      componentType := fRttiContext.GetType(TypeInfo(TList<TObject>));
+      Result :=
+        function: TValue
+        var
+          list: TList<TObject>;
+          value: TValue;
+        begin
+          list := TList<TObject>.Create;
+          for value in fContainerContext.ServiceResolver.ResolveAll(elementTypeInfo) do
+            list.Add(value.AsObject);
+          Result := TValue.From<TList<TObject>>(list);
+        end;
+    end;
+    tkInterface:
+    begin
+      componentType := fRttiContext.GetType(TypeInfo(TList<IInterface>));
+      Result :=
+        function: TValue
+        var
+          list: TList<IInterface>;
+          value: TValue;
+        begin
+          list := TList<IInterface>.Create;
+          for value in fContainerContext.ServiceResolver.ResolveAll(elementTypeInfo) do
+            list.Add(value.AsInterface);
+          Result := TValue.From<TList<IInterface>>(list);
+        end;
+    end
+  else
+    raise ERegistrationException.CreateResFmt(@SUnsupportedType, [componentType.Name]);
+  end;
+end;
+
 procedure TComponentRegistry.CheckIsNonGuidInterface(serviceType: TRttiType);
 begin
-  if serviceType.IsInterface and not TRttiInterfaceType(serviceType).HasGuid
+  if serviceType.IsInterface and not serviceType.AsInterface.HasGuid
     and not TType.IsDelegate(serviceType.Handle) then
   begin
     if serviceType.IsPublicType then
@@ -310,11 +350,21 @@ function TComponentRegistry.RegisterComponent(
   componentTypeInfo: PTypeInfo): TComponentModel;
 var
   componentType: TRttiType;
+  elementTypeInfo: PTypeInfo;
+  activatorDelegate: TActivatorDelegate;
 begin
   Guard.CheckNotNull(componentTypeInfo, 'componentTypeInfo');
 
   componentType := fRttiContext.GetType(componentTypeInfo);
+  if componentType.IsDynamicArray then
+  begin
+    elementTypeInfo := componentType.AsDynamicArray.ElementType.Handle;
+    activatorDelegate := BuildActivatorDelegate(elementTypeInfo, componentType);
+  end;
   Result := TComponentModel.Create(fContainerContext, componentType);
+  Result.ActivatorDelegate := activatorDelegate;
+  if componentType.IsInterface then
+    RegisterService(Result, componentType.Handle);
   fModels.Add(Result);
 end;
 
@@ -358,12 +408,18 @@ function TComponentRegistry.FindAll(
   serviceType: PTypeInfo): IEnumerable<TComponentModel>;
 var
   models: IList<TComponentModel>;
+  defaultModel: TComponentModel;
 begin
   Guard.CheckNotNull(serviceType, 'serviceType');
 
   if fServiceTypeMappings.TryGetValue(serviceType, models) then
   begin
-    Result := models;
+    fUnnamedRegistrations.TryGetValue(serviceType, defaultModel);
+    Result := models.Where(
+      function(const model: TComponentModel): Boolean
+      begin
+        Result := model <> defaultModel;
+      end);
   end
   else
   begin
@@ -373,16 +429,12 @@ end;
 
 function TComponentRegistry.GetDefaultTypeName(serviceType: TRttiType): string;
 begin
-  Assert(serviceType <> nil, 'serviceType should not be nil');
+  Guard.CheckNotNull(serviceType, 'serviceType');
 
   if serviceType.IsPublicType then
-  begin
-    Result := serviceType.QualifiedName;
-  end
+    Result := serviceType.QualifiedName
   else
-  begin
     Result := serviceType.Name;
-  end;
 end;
 
 function TComponentRegistry.HasService(serviceType: PTypeInfo): Boolean;

@@ -182,7 +182,7 @@ end;
 
 procedure TTestNullableInteger.GetValueOrDefault;
 begin
-  Assert(not fInteger.HasValue);
+  CheckFalse(fInteger.HasValue);
   CheckEquals(Default(Integer), fInteger.GetValueOrDefault);
   CheckEquals(18, fInteger.GetValueOrDefault(18));
 end;
@@ -199,7 +199,7 @@ end;
 procedure TTestNullableInteger.TestAssignNil;
 begin
   fInteger := 5;
-  Assert(fInteger.HasValue);
+  CheckTrue(fInteger.HasValue);
   fInteger := nil;
   CheckFalse(fInteger.HasValue);
 end;
@@ -247,8 +247,8 @@ procedure TTestNullableInteger.TestEquals;
 var
   a, b: Nullable<Integer>;
 begin
-  Assert(not a.HasValue);
-  Assert(not b.HasValue);
+  CheckFalse(a.HasValue);
+  CheckFalse(b.HasValue);
 
   CheckTrue(a.Equals(b));
   CheckTrue(b.Equals(a));

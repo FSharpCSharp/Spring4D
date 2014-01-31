@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -694,6 +694,16 @@ type
   end;
 
   TCastIterator<T, TResult> = class(TIterator<TResult>)
+  private
+    fSource: IEnumerable<T>;
+    fEnumerator: IEnumerator<T>;
+  public
+    constructor Create(const source: IEnumerable<T>);
+    function Clone: TIterator<TResult>; override;
+    function MoveNext: Boolean; override;
+  end;
+
+  TOfTypeIterator<T, TResult> = class(TIterator<TResult>)
   private
     fSource: IEnumerable<T>;
     fEnumerator: IEnumerator<T>;
@@ -2851,6 +2861,49 @@ begin
       value := TValue.From<T>(current);
       fCurrent := value.AsType<TResult>;
       Result := True;
+    end;
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TOfTypeIterator<T, TResult>'}
+
+constructor TOfTypeIterator<T, TResult>.Create(const source: IEnumerable<T>);
+begin
+  Guard.CheckNotNull(Assigned(source), 'source');
+
+  inherited Create;
+  fSource := source;
+end;
+
+function TOfTypeIterator<T, TResult>.Clone: TIterator<TResult>;
+begin
+  Result := TOfTypeIterator<T, TResult>.Create(fSource);
+end;
+
+function TOfTypeIterator<T, TResult>.MoveNext: Boolean;
+var
+  current: T;
+  value: TValue;
+begin
+  Result := False;
+
+  if fState = STATE_ENUMERATOR then
+  begin
+    fEnumerator := fSource.GetEnumerator;
+    fState := STATE_RUNNING;
+  end;
+
+  if fState = STATE_RUNNING then
+  begin
+    while fEnumerator.MoveNext do
+    begin
+      current := fEnumerator.Current;
+      value := TValue.From<T>(current);
+      if value.TryAsType<TResult>(fCurrent) then
+        Exit(True);
     end;
   end;
 end;

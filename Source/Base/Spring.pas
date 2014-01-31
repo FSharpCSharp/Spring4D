@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -1090,7 +1090,7 @@ begin
   Guard.CheckTypeKind(typeInfo, [tkEnumeration], 'T');
 
   data := GetTypeData(typeInfo);
-  Assert(Assigned(data), 'data must not be nil.');
+  Guard.CheckNotNull(data, 'data');
 
   if (argumentValue < data.MinValue) or (argumentValue > data.MaxValue) then
   begin

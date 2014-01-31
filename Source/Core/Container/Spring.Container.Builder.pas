@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -477,7 +477,7 @@ var
   services: IEnumerable<TRttiInterfaceType>;
   service: TRttiInterfaceType;
 begin
-  if not model.Services.IsEmpty and not model.ComponentType.IsInterface then Exit;
+  if not model.Services.IsEmpty then Exit;
   if model.ComponentType.IsRecord and not model.HasService(model.ComponentTypeInfo) then
     context.ComponentRegistry.RegisterService(model, model.ComponentTypeInfo)
   else

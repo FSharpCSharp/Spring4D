@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -40,6 +40,31 @@ uses
   Spring.DesignPatterns;
 
 type
+
+  ///	<summary>
+  ///	  Specifies the kind of a lazy type.
+  ///	</summary>
+  TLazyKind = (
+    ///	<summary>
+    ///	  Not a lazy type.
+    ///	</summary>
+    lkNone,
+
+    ///	<summary>
+    ///	  Type is <see cref="SysUtils|TFunc&lt;T&gt;" />.
+    ///	</summary>
+    lkFunc,
+
+    ///	<summary>
+    ///	  Type is <see cref="Spring|Lazy&lt;T&gt;" />.
+    ///	</summary>
+    lkRecord,
+
+    ///	<summary>
+    ///	  Type is <see cref="Spring|ILazy&lt;T&gt;" />.
+    ///	</summary>
+    lkInterface
+  );
 
   {$REGION 'TType'}
 
@@ -82,6 +107,22 @@ type
     ///	</summary>
     class function IsDelegate(typeInfo: PTypeInfo): Boolean; overload;
     class function TryGetInterfaceType(const guid: TGUID; out aType: TRttiInterfaceType): Boolean;
+
+    ///	<summary>
+    ///	  Returns the <see cref="TLazyKind" /> of the typeInfo.
+    ///	</summary>
+    class function GetLazyKind(typeInfo: PTypeInfo): TLazyKind;
+
+    ///	<summary>
+    ///	  Returns the underlying type name of the lazy type.
+    ///	</summary>
+    class function GetLazyTypeName(typeInfo: PTypeInfo): string;
+
+    ///	<summary>
+    ///	  Returns <c>True</c> of the type is a lazy type.
+    ///	</summary>
+    class function IsLazy(typeInfo: PTypeInfo): Boolean;
+
     class property Context: TRttiContext read fContext;
   end;
 
@@ -541,6 +582,39 @@ begin
   Result := TType.GetFullName(typeInfo);
 end;
 
+const
+  LazyPrefixStrings: array[lkFunc..High(TLazyKind)] of string = (
+    'TFunc<', 'Lazy<', 'ILazy<');
+
+class function TType.GetLazyKind(typeInfo: PTypeInfo): TLazyKind;
+var
+  name: string;
+begin
+  if Assigned(typeInfo) then
+  begin
+    name := GetTypeName(typeInfo);
+    for Result := lkFunc to High(TLazyKind) do
+      if StartsText(LazyPrefixStrings[Result], name) then
+        Exit;
+  end;
+  Result := lkNone;
+end;
+
+class function TType.GetLazyTypeName(typeInfo: PTypeInfo): string;
+var
+  lazyKind: TLazyKind;
+  name: string;
+  i: Integer;
+begin
+  lazyKind := GetLazyKind(typeInfo);
+  name := GetTypeName(typeInfo);
+  if lazyKind > lkNone then
+  begin
+    i := Length(LazyPrefixStrings[lazyKind]) + 1;
+    Result := Copy(name, i, Length(name) - i )
+  end;
+end;
+
 class function TType.FindType(const qualifiedName: string): TRttiType;
 begin
   Result := fContext.FindType(qualifiedName);
@@ -552,17 +626,26 @@ begin
 end;
 
 class function TType.IsDelegate(typeInfo: PTypeInfo): Boolean;
+const
+  DelegatePrefixStrings: array[0..2] of string = (
+    'TFunc<', 'TProc<', 'TPredicate<');
 var
   name: string;
+  i: Integer;
 begin
   Result := Assigned(typeInfo) and (typeInfo.Kind = tkInterface);
   if Result then
   begin
     name := GetTypeName(typeInfo);
-    Result := StartsText('TFunc<', name)
-      or StartsText('TProc<', name)
-      or StartsText('TPredicate<', name);
+    for i := Low(DelegatePrefixStrings) to High(DelegatePrefixStrings) do
+      if StartsText(DelegatePrefixStrings[i], name) then
+        Exit;
   end;
+end;
+
+class function TType.IsLazy(typeInfo: PTypeInfo): Boolean;
+begin
+  Result := GetLazyKind(typeInfo) <> lkNone;
 end;
 
 class function TType.TryGetInterfaceType(const guid: TGUID;
