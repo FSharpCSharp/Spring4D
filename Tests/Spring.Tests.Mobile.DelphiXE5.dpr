@@ -2,11 +2,7 @@ program Spring.Tests.Mobile.DelphiXE5;
 
 uses
   System.StartUpCopy,
-  FMX.Forms,
   TestFramework,
-{$IFNDEF CPUARM}
-  TestExtensions,
-{$ENDIF }
   FMXTestRunner in 'Source\dUnit\FMXTestRunner.pas' {FMXTestRunner},
   Spring.TestUtils in 'Source\Spring.TestUtils.pas',
   Spring.Tests.Base in 'Source\Base\Spring.Tests.Base.pas',

@@ -34,9 +34,7 @@ implementation
 
 uses
   TestFramework,
-{$IFNDEF NEXTGEN}
-  TestExtensions,
-{$ENDIF}
+  Spring.TestUtils,
   Spring.Tests.Base,
   Spring.Tests.Collections,
   Spring.Tests.SysUtils,
@@ -52,11 +50,7 @@ uses
 procedure RegisterTestCases();
 begin
   RegisterTests('Spring.Base', [
-{$IFNDEF NEXTGEN}
     TRepeatedTest.Create(TTestNullableInteger.Suite, 3),
-{$ELSE}
-    TTestNullableInteger.Suite,
-{$ENDIF}
     TTestNullableBoolean.Suite,
     TTestGuard.Suite,
     TTestLazy.Suite,

@@ -30,16 +30,48 @@ unit Spring.TestUtils;
 interface
 
 uses
-  TestFramework,
-  SysUtils;
-
-procedure ProcessTestResult(const ATestResult: TTestResult);
+  Classes,
+  SysUtils,
+  TestFramework;
 
 type
   TExceptionCheckerTestCase = class(TTestCase)
   protected
-    procedure CheckException(aExceptionType: ExceptionClass; aCode: TProc; const aMessage: string = '');
+    procedure CheckException(AExceptionType: ExceptionClass; ACode: TProc; const AMessage: string = '');
   end;
+
+  TTestDecorator = class(TAbstractTest)
+  private
+    fTest: ITest;
+    fTests: IInterfaceList;
+  protected
+    procedure RunTest(ATestResult: TTestResult); override;
+  public
+    constructor Create(ATest: ITest; AName: string = '');
+
+    function CountEnabledTestCases: Integer; override;
+    function CountTestCases: Integer; override;
+
+    function GetName: string; override;
+    function Tests: IInterfaceList; override;
+
+    property Test: ITest read fTest;
+  end;
+
+  TRepeatedTest = class(TTestDecorator)
+  private
+    fCount: Integer;
+  protected
+    procedure RunTest(ATestResult: TTestResult); override;
+  public
+    constructor Create(ATest: ITest; ACount: Integer; AName: string = '');
+    function GetName: string; override;
+
+    function CountEnabledTestCases: Integer; override;
+    function CountTestCases: Integer; override;
+  end;
+
+procedure ProcessTestResult(const ATestResult: TTestResult);
 
 implementation
 
@@ -70,6 +102,93 @@ begin
     end;
   end;
   Check(WasException, aMessage);
+end;
+
+{ TTestDecorator }
+
+constructor TTestDecorator.Create(ATest: ITest; AName: string);
+begin
+  if AName = '' then
+    inherited Create(ATest.Name)
+  else
+    inherited Create(AName);
+  fTest := ATest;
+  fTests := TInterfaceList.Create;
+  fTests.Add(fTest);
+end;
+
+function TTestDecorator.GetName: string;
+begin
+  Result := fTest.Name;
+end;
+
+function TTestDecorator.CountEnabledTestCases: Integer;
+begin
+  if Enabled then
+    Result := fTest.CountEnabledTestCases
+  else
+    Result := 0;
+end;
+
+function TTestDecorator.CountTestCases: Integer;
+begin
+  if Enabled then
+    Result := fTest.CountTestCases
+  else
+    Result := 0;
+end;
+
+procedure TTestDecorator.RunTest(ATestResult: TTestResult);
+begin
+  fTest.RunWithFixture(ATestResult);
+end;
+
+function TTestDecorator.Tests: IInterfaceList;
+begin
+  Result := fTests;
+end;
+
+{ TRepeatedTest }
+
+constructor TRepeatedTest.Create(ATest: ITest; ACount: Integer;
+  AName: string);
+begin
+  inherited Create(ATest, AName);
+  fCount := ACount;
+end;
+
+function TRepeatedTest.CountEnabledTestCases: Integer;
+begin
+  Result := inherited CountEnabledTestCases * fCount;
+end;
+
+function TRepeatedTest.CountTestCases: Integer;
+begin
+  Result := inherited CountTestCases * fCount;
+end;
+
+function TRepeatedTest.GetName: string;
+begin
+  Result := Format('%d x %s', [fCount, Test.Name]);
+end;
+
+procedure TRepeatedTest.RunTest(ATestResult: TTestResult);
+var
+  i: Integer;
+  errorCount: Integer;
+  failureCount: integer;
+begin
+  errorCount := ATestResult.ErrorCount;
+  failureCount := ATestResult.FailureCount;
+
+  for i := 0 to fCount - 1 do
+  begin
+    if ATestResult.ShouldStop
+      or (ATestResult.ErrorCount > errorCount)
+      or (ATestResult.FailureCount > failureCount) then
+      Break;
+    inherited RunTest(ATestResult);
+  end;
 end;
 
 end.

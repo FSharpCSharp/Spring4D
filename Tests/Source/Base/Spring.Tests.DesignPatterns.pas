@@ -29,14 +29,7 @@ unit Spring.Tests.DesignPatterns;
 interface
 
 uses
-  Classes,
-  SysUtils,
   TestFramework,
-{$IFNDEF NEXTGEN}
-  TestExtensions,
-{$ENDIF}
-  Generics.Defaults,
-  Spring,
   Spring.DesignPatterns;
 
 type

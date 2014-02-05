@@ -29,10 +29,6 @@ interface
 uses
   SysUtils,
   TestFramework,
-{$IFNDEF NEXTGEN}
-  TestExtensions,
-{$ENDIF}
-  Rtti,
   Spring.Reflection.ValueConverters;
 
 type

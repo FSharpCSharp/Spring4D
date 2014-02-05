@@ -28,9 +28,8 @@ program Spring.Tests;
 
 uses
   FinalBuilder.XMLTestRunner in 'Source\FinalBuilder.XMLTestRunner.pas',
-  Spring.RunTestsUsingConsole in 'Source\Spring.RunTestsUsingConsole.pas',
-  Spring.RunTestsUsingVclGui in 'Source\Spring.RunTestsUsingVclGui.pas',
-  Spring.RunTestsUsingXmlOutput in 'Source\Spring.RunTestsUsingXmlOutput.pas',
+  Spring.TestRegistration in 'Source\Spring.TestRegistration.pas',
+  Spring.TestRunner in 'Source\Spring.TestRunner.pas',
   Spring.TestUtils in 'Source\Spring.TestUtils.pas',
   Spring.Tests.Base in 'Source\Base\Spring.Tests.Base.pas',
   Spring.Tests.Collections in 'Source\Base\Spring.Tests.Collections.pas',
@@ -44,11 +43,10 @@ uses
   Spring.Tests.Container in 'Source\Core\Spring.Tests.Container.pas',
   Spring.Tests.Pool in 'Source\Core\Spring.Tests.Pool.pas',
   Spring.Tests.Cryptography in 'Source\Extensions\Spring.Tests.Cryptography.pas',
-  Spring.Tests.Utils in 'Source\Extensions\Spring.Tests.Utils.pas',
-  Spring.TestRegistration in 'Source\Spring.TestRegistration.pas';
+  Spring.Tests.Utils in 'Source\Extensions\Spring.Tests.Utils.pas';
 
 begin
   RegisterTestCases();
   ReportMemoryLeaksOnShutdown := True;
-  RunRegisteredTestCases(); // all RunTestsUsing* units should support this method
+  RunRegisteredTests();
 end.
