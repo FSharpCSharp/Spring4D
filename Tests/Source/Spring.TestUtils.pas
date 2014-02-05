@@ -35,8 +35,8 @@ uses
   TestFramework;
 
 type
-  TExceptionCheckerTestCase = class(TTestCase)
-  protected
+  TAbstractTestHelper = class helper for TAbstractTest
+  public
     procedure CheckException(AExceptionType: ExceptionClass; ACode: TProc; const AMessage: string = '');
   end;
 
@@ -82,9 +82,9 @@ begin
 {$ENDIF}
 end;
 
-{ TExceptionCheckerTestCase }
+{ TAbstractTestHelper }
 
-procedure TExceptionCheckerTestCase.CheckException(
+procedure TAbstractTestHelper.CheckException(
   aExceptionType: ExceptionClass; aCode: TProc; const aMessage: string);
 var
   WasException: Boolean;

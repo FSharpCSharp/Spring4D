@@ -61,7 +61,7 @@ type
     procedure TestIssue55;
   end;
 
-  TTestGuard = class(TExceptionCheckerTestCase)
+  TTestGuard = class(TTestCase)
   published
     procedure TestIsNullReference;
     procedure TestCheckRange;

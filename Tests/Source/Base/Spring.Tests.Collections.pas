@@ -72,7 +72,7 @@ type
     procedure TestIsSupersetOf;
   end;
 
-  TTestIntegerList = class(TExceptionCheckerTestCase)
+  TTestIntegerList = class(TTestCase)
   private
     SUT: IList<integer>;
     procedure SimpleFillList;
@@ -98,7 +98,7 @@ type
     procedure TestListLargeDelete;
   end;
 
-  TTestEmptyStringIntegerDictionary = class(TExceptionCheckerTestCase)
+  TTestEmptyStringIntegerDictionary = class(TTestCase)
   private
     SUT: IDictionary<string, integer>;
   protected
@@ -112,7 +112,7 @@ type
     procedure TestDictionaryValuesReferenceCounting;
   end;
 
-  TTestStringIntegerDictionary = class(TExceptionCheckerTestCase)
+  TTestStringIntegerDictionary = class(TTestCase)
   private
     SUT: IDictionary<string, integer>;
   protected
@@ -127,7 +127,7 @@ type
     procedure TestDictionaryContainsKey;
   end;
 
-  TTestEmptyStackofStrings = class(TExceptionCheckerTestCase)
+  TTestEmptyStackofStrings = class(TTestCase)
   private
     SUT: IStack<string>;
   protected
@@ -138,7 +138,7 @@ type
     procedure TestEmptyPopPeek;
   end;
 
-  TTestStackOfInteger = class(TExceptionCheckerTestCase)
+  TTestStackOfInteger = class(TTestCase)
   private
     const MaxStackItems = 1000;
   private
@@ -155,7 +155,7 @@ type
     procedure TestStackPeekOrDefault;
   end;
 
-  TTestStackOfIntegerChangedEvent = class(TExceptionCheckerTestCase)
+  TTestStackOfIntegerChangedEvent = class(TTestCase)
   private
     SUT: IStack<Integer>;
     fAInvoked, fBInvoked: Boolean;
@@ -173,7 +173,7 @@ type
     procedure TestNonGenericChangedEvent;
   end;
 
-  TTestEmptyQueueOfInteger = class(TExceptionCheckerTestCase)
+  TTestEmptyQueueOfInteger = class(TTestCase)
   private
     SUT: IQueue<integer>;
   protected
@@ -186,7 +186,7 @@ type
     procedure TestDequeueRaisesException;
   end;
 
-  TTestQueueOfInteger = class(TExceptionCheckerTestCase)
+  TTestQueueOfInteger = class(TTestCase)
   private
     const MaxItems = 1000;
   private
@@ -201,7 +201,7 @@ type
     procedure TestQueuePeek;
   end;
 
-  TTestQueueOfIntegerChangedEvent = class(TExceptionCheckerTestCase)
+  TTestQueueOfIntegerChangedEvent = class(TTestCase)
   private
     SUT: IQueue<Integer>;
     fAInvoked, fBInvoked: Boolean;
@@ -219,7 +219,7 @@ type
     procedure TestNonGenericChangedEvent;
   end;
 
-  TTestListOfIntegerAsIEnumerable = class(TExceptionCheckerTestCase)
+  TTestListOfIntegerAsIEnumerable = class(TTestCase)
   private
     const MaxItems = 1000;
   private
@@ -243,7 +243,7 @@ type
     procedure TestElementAt;
   end;
 
-  TTestLinkedList = class(TExceptionCheckerTestCase)
+  TTestLinkedList = class(TTestCase)
   private
     SUT: ILinkedList<integer>;
     fItem: Integer;
