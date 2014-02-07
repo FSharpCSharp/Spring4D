@@ -326,10 +326,17 @@ begin
 end;
 
 procedure TTestEmptyContainer.TestRegisterTwoNamedDifferentServices;
+var
+  nameService: INameService;
+  ageService: IAgeService;
 begin
   fContainer.RegisterType<TNameService>.Implements<INameService>;
   fContainer.RegisterType<TNameAgeComponent>.Implements<IAgeService>;
   fContainer.Build;
+  nameService := fContainer.Resolve<INameService>;
+  CheckTrue(nameService is TNameService);
+  ageService := fContainer.Resolve<IAgeService>;
+  CheckTrue(ageService is TNameAgeComponent);
 end;
 
 procedure TTestEmptyContainer.TestRegisterTwoUnnamedServicesExplicit;
@@ -418,6 +425,7 @@ procedure TTestSimpleContainer.TestIssue13;
 begin
   fContainer.RegisterType<TNameService>.Implements<INameService>.AsSingleton;
   fContainer.Build;
+  FCheckCalled := True;
 end;
 
 procedure TTestSimpleContainer.TestAbstractClassService;

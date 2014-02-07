@@ -268,10 +268,9 @@ implementation
 procedure TCryptoTestCase.CheckEquals(const expected, actual: TBuffer;
   const msg: string);
 begin
+  FCheckCalled := True;
   if not expected.Equals(actual) then
-  begin
-    Fail(Format(msg + #13#10 + 'Expected: %S'#13#10'Actual:   %S', [expected.ToHexString('', ' '), actual.ToHexString('', ' ')]));
-  end;
+    FailNotEquals(expected.ToHexString, actual.ToHexString, msg);
 end;
 
 { TTestCRC16 }
