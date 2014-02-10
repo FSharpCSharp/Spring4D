@@ -188,6 +188,7 @@ type
 implementation
 
 uses
+  SysUtils,
   TypInfo,
   Spring.Collections.Lists,
   Spring.Container.ResourceStrings,    
@@ -574,6 +575,9 @@ end;
 
 function TRegistration.AsSingleton(refCounting: TRefCounting): TRegistration;
 begin
+  if (refCounting = TRefCounting.True) and fModel.ComponentType.IsInstance
+    and not Supports(fModel.ComponentType.AsInstance.MetaclassType, IInterface) then
+    raise ERegistrationException.CreateResFmt(@SMissingInterface, [fModel.ComponentType.Name]);
   fModel.LifetimeType := TLifetimeType.Singleton;
   fModel.RefCounting := refCounting;
   Result := Self;

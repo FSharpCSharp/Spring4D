@@ -30,6 +30,7 @@ interface
 
 resourcestring
   SMissingGuid = 'The service type "%s" is missing a guid.';
+  SMissingInterface = 'The component type "%s" does not support IInterface.';
   SIncompatibleTypes = 'The component type "%s" is incompatible with the service type "%s".';
   SUnsupportedType = 'The component type "%s" is not supported.';
   SDuplicatedName = 'Duplicated name found: "%s".';

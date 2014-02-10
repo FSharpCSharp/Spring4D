@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -278,10 +278,9 @@ implementation
 procedure TCryptoTestCase.CheckEquals(const expected, actual: TBuffer;
   const msg: string);
 begin
+  FCheckCalled := True;
   if not expected.Equals(actual) then
-  begin
-    Fail(Format(msg + #13#10 + 'Expected: %S'#13#10'Actual:   %S', [expected.ToHexString('', ' '), actual.ToHexString('', ' ')]));
-  end;
+    FailNotEquals(expected.ToHexString, actual.ToHexString, msg);
 end;
 
 { TTestCRC16 }

@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -339,11 +339,17 @@ begin
 end;
 
 procedure TTestEmptyContainer.TestRegisterTwoNamedDifferentServices;
+var
+  nameService: INameService;
+  ageService: IAgeService;
 begin
   fContainer.RegisterType<TNameService>.Implements<INameService>;
   fContainer.RegisterType<TNameAgeComponent>.Implements<IAgeService>;
   fContainer.Build;
-  CheckTrue(true);
+  nameService := fContainer.Resolve<INameService>;
+  CheckTrue(nameService is TNameService);
+  ageService := fContainer.Resolve<IAgeService>;
+  CheckTrue(ageService is TNameAgeComponent);
 end;
 
 procedure TTestEmptyContainer.TestRegisterTwoUnnamedServicesExplicit;
@@ -435,7 +441,7 @@ procedure TTestSimpleContainer.TestIssue13;
 begin
   fContainer.RegisterType<TNameService>.Implements<INameService>.AsSingleton;
   fContainer.Build;
-  Check(true, 'This must pass');
+  FCheckCalled := True;
 end;
 
 procedure TTestSimpleContainer.TestAbstractClassService;
