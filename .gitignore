@@ -7,9 +7,9 @@
 *.identcache
 *.local
 *.map
+*.o
 *.skincfg
 *.tvsconfig
 *.*~*
-__history
-dunit.ini
-Spring.Tests.exe
+__history/
+Tests/Bin/
