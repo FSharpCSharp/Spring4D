@@ -1598,14 +1598,19 @@ begin
 end;
 
 procedure TTestManyDependencies.TestResolveArrayOfLazy;
-//var
-//  services: TArray<Lazy<ICollectionItem>>;
+var
+  services: TArray<Lazy<ICollectionItem>>;
+  service: Lazy<ICollectionItem>;
 begin
-  // TODO: refactor resolvers to make this test pass without duplicating code
-//  fContainer.RegisterType<ICollectionItem, TCollectionItemD>;
-//  fContainer.Build;
-//  services := fContainer.ResolveAll<Lazy<ICollectionItem>>;
-//  CheckEquals(3, Length(services));
+  fContainer.RegisterType<ICollectionItem, TCollectionItemD>;
+  fContainer.Build;
+  services := fContainer.ResolveAll<Lazy<ICollectionItem>>;
+  CheckEquals(3, Length(services));
+  CheckIs(services[0].Value, TCollectionItemA);
+  CheckIs(services[1].Value, TCollectionItemB);
+  CheckIs(services[2].Value, TCollectionItemC);
+  service := fContainer.Resolve<Lazy<ICollectionItem>>;
+  CheckIs(service.Value, TCollectionItemD);
 end;
 
 {$ENDREGION}
