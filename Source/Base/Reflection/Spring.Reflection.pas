@@ -559,6 +559,13 @@ end;
 class function TType.FindType(const qualifiedName: string): TRttiType;
 begin
   Result := fContext.FindType(qualifiedName);
+  if not Assigned(Result) then
+  begin
+    for Result in fContext.GetTypes do
+      if SameText(Result.Name, qualifiedName) then
+        Exit;
+    Result := nil;
+  end;
 end;
 
 class function TType.IsAssignable(typeFrom, typeTo: PTypeInfo): Boolean;
