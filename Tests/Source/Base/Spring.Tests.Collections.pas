@@ -1490,7 +1490,9 @@ begin
   CheckEquals(2, list.Count);
   list.Add(TPersistent.Create);
   CheckEquals(3, list.Count);
-  for obj in list do;
+  for obj in list do
+    CheckIs(obj, TPersistent);
+  CheckTrue(list.ElementType = TPersistent.ClassInfo);
 end;
 
 end.
