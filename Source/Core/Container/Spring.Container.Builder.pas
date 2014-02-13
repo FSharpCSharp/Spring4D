@@ -487,7 +487,11 @@ begin
     services := model.ComponentType.GetInterfaces;
     for service in services do
       if Assigned(service.BaseType) and not model.HasService(service.Handle) then
-        context.ComponentRegistry.RegisterService(model, service.Handle);
+      begin
+        context.ComponentRegistry.RegisterService(model, service.Handle,
+          service.DefaultName + '@' + model.ComponentType.DefaultName);
+        context.ComponentRegistry.RegisterDefault(model, service.Handle);
+      end;
     if TType.IsDelegate(model.ComponentTypeInfo) then
       context.ComponentRegistry.RegisterService(model, model.ComponentType.Handle);
 
