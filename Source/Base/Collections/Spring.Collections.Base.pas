@@ -274,6 +274,9 @@ type
     function GetOnChanged: ICollectionChangedEvent<T>; 
     procedure SetItem(index: Integer; const value: T); virtual; abstract;
   {$ENDREGION}
+  {$REGION 'Implements IInterface'}
+    function QueryInterface(const IID: TGUID; out Obj): HResult; override; stdcall;
+  {$ENDREGION}
     procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
     function TryGetElementAt(out value: T; index: Integer): Boolean; override;
     function TryGetFirst(out value: T): Boolean; override;
@@ -1378,6 +1381,19 @@ begin
     Result := defaultValue
   else
     Result := Items[count - 1];
+end;
+
+function TListBase<T>.QueryInterface(const IID: TGUID; out Obj): HResult;
+begin
+  if IID = IObjectList then
+  begin
+    if ElementType.Kind = tkClass then
+      Result := inherited QueryInterface(IList<TObject>, Obj)
+    else
+      Result := E_NOINTERFACE;
+  end
+  else
+    Result := inherited;
 end;
 
 function TListBase<T>.LastIndexOf(const item: T): Integer;

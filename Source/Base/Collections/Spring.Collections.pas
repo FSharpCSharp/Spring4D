@@ -69,6 +69,8 @@ type
   IQueue<T> = interface;
   ISet<T> = interface;
 
+  IObjectList = interface;
+
   IGrouping<TKey, TElement> = interface;
   ILookup<TKey, TElement> = interface;
   {$ENDREGION}
@@ -1005,6 +1007,11 @@ type
 
     property Items[index: Integer]: T read GetItem write SetItem; default;
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
+  end;
+
+  IObjectList = interface(IList<TObject>)
+    ['{78A32DC5-1A5B-4191-9CA5-006CD85CF1AA}']
+    // DO NOT ADD ANY METHODS HERE!!!
   end;
 
   {$REGION 'Documentation'}

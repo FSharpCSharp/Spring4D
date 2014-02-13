@@ -29,6 +29,7 @@ unit Spring.Tests.Collections;
 interface
 
 uses
+  Classes,
   TestFramework,
   Spring.TestUtils,
   Spring,
@@ -96,6 +97,7 @@ type
     procedure TestListMove;
     procedure TestListClear;
     procedure TestListLargeDelete;
+    procedure TestQueryInterface;
   end;
 
   TTestEmptyStringIntegerDictionary = class(TExceptionCheckerTestCase)
@@ -275,10 +277,18 @@ type
     procedure TestAddLastValue_ListContainsTwoItems;
   end;
 
+  TTestObjectList = class(TTestCase)
+  private
+    SUT: IList<TPersistent>;
+  protected
+    procedure SetUp; override;
+  published
+    procedure TestQueryInterface;
+  end;
+
 implementation
 
 uses
-  Classes,
   SysUtils;
 
 { TTestEmptyHashSet }
@@ -547,6 +557,17 @@ begin
   end;
 end;
 
+procedure TTestIntegerList.TestQueryInterface;
+var
+  list: IObjectList;
+begin
+  CheckException(EIntfCastError,
+    procedure
+    begin
+      list := SUT as IObjectList;
+    end);
+end;
+
 procedure TTestIntegerList.TestListIndexOf;
 var
   i: Integer;
@@ -563,7 +584,6 @@ begin
   end;
 
   CheckEquals(-1, SUT.IndexOf(ListCountLimit + 100), 'Index of item not in list was not -1');
-
 end;
 
 procedure TTestIntegerList.TestListInsertBeginning;
@@ -1447,6 +1467,30 @@ begin
   CheckCount(3);
   CheckEvent(3, caAdded);
   CheckNode(node, 3, nil, prevNode);
+end;
+
+{ TTestObjectList }
+
+procedure TTestObjectList.SetUp;
+begin
+  SUT := TObjectList<TPersistent>.Create;
+end;
+
+procedure TTestObjectList.TestQueryInterface;
+var
+  list: IObjectList;
+  obj: TObject;
+begin
+  SUT.Add(TPersistent.Create);
+  SUT.Add(TPersistent.Create);
+  SUT.Add(TPersistent.Create);
+  list := SUT as IObjectList;
+  CheckEquals(3, list.Count);
+  list.Delete(1);
+  CheckEquals(2, list.Count);
+  list.Add(TPersistent.Create);
+  CheckEquals(3, list.Count);
+  for obj in list do;
 end;
 
 end.
