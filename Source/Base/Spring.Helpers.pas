@@ -385,6 +385,7 @@ type
     function GetMethods: IEnumerable<TRttiMethod>;
     function GetProperties: IEnumerable<TRttiProperty>;
     function GetFields: IEnumerable<TRttiField>;
+    function GetDefaultName: string;
   public
     // function GetMembers: IEnumerable<TRttiMember>;
 
@@ -458,6 +459,7 @@ type
     ///	  Gets a value indicates whether the current type is generic.
     ///	</summary>
     property IsGenericType: Boolean read GetIsGenericType;
+    property DefaultName: string read GetDefaultName;
   end;
 
   TRttiMemberHelper = class helper for TRttiMember
@@ -1006,6 +1008,14 @@ end;
 function TRttiTypeHelper.GetConstructors: IEnumerable<TRttiMethod>;
 begin
   Result := InternalGetConstructors;
+end;
+
+function TRttiTypeHelper.GetDefaultName: string;
+begin
+  if IsPublicType then
+    Result := QualifiedName
+  else
+    Result := Name;
 end;
 
 function TRttiTypeHelper.GetMethods: IEnumerable<TRttiMethod>;
