@@ -286,6 +286,17 @@ type
     procedure TestQueryInterface;
   end;
 
+  TTestCollectionList = class(TExceptionCheckerTestCase)
+  private
+    SUT: TCollection;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestElementType;
+    procedure TestAdd;
+  end;
+
 implementation
 
 uses
@@ -1493,6 +1504,61 @@ begin
   for obj in list do
     CheckIs(obj, TPersistent);
   CheckTrue(list.ElementType = TPersistent.ClassInfo);
+end;
+
+{ TTestCollectionList }
+
+type
+  TMyCollectionItem = class(TCollectionItem);
+  TMyOtherCollectionItem = class(TCollectionItem);
+
+procedure TTestCollectionList.SetUp;
+begin
+  SUT := TCollection.Create(TMyCollectionItem);
+end;
+
+procedure TTestCollectionList.TearDown;
+begin
+  SUT.Free;
+end;
+
+procedure TTestCollectionList.TestAdd;
+var
+  list: IList<TCollectionItem>;
+begin
+  list := SUT.AsList;
+  list.Add(TMyCollectionItem.Create(nil));
+  TMyCollectionItem.Create(SUT);
+  CheckEquals(2, list.Count);
+  CheckException(Exception,
+    procedure
+    var
+      item: TCollectionItem;
+    begin
+      item := TMyOtherCollectionItem.Create(nil);
+      try
+        list.Add(item);
+      except
+        item.Free;
+        raise;
+      end;
+    end);
+end;
+
+procedure TTestCollectionList.TestElementType;
+var
+  list1: IList<TCollectionItem>;
+  list2: IList<TMyCollectionItem>;
+begin
+  list1 := SUT.AsList;
+  list2 := SUT.AsList<TMyCollectionItem>;
+  CheckTrue(list1.ElementType = TMyCollectionItem.ClassInfo);
+  CheckTrue(list2.ElementType = TMyCollectionItem.ClassInfo);
+  CheckException(EArgumentException,
+    procedure
+    begin
+      SUT.AsList<TMyOtherCollectionItem>;
+    end);
 end;
 
 end.

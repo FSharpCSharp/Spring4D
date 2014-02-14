@@ -75,7 +75,8 @@ begin
     TTestQueueOfIntegerChangedEvent.Suite,
     TTestListOfIntegerAsIEnumerable.Suite,
     TTestLinkedList.Suite,
-    TTestObjectList.Suite
+    TTestObjectList.Suite,
+    TTestCollectionList.Suite
   ]);
 
   RegisterTests('Spring.Base.SysUtils', [
