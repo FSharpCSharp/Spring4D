@@ -33,6 +33,7 @@ unit Spring.Collections;
 interface
 
 uses
+  Classes,
   Generics.Collections,
   Generics.Defaults,
   SysUtils,
@@ -2113,6 +2114,12 @@ type
     class function OrdinalIgnoreCase: TStringComparer;
   end;
 
+  TCollectionHelper = class helper for TCollection
+  public
+    function AsList: IList<TCollectionItem>; overload;
+    function AsList<T: TCollectionItem>: IList<T>; overload;
+  end;
+
 implementation
 
 uses
@@ -2441,6 +2448,21 @@ end;
 //  fKey := key;
 //  fValue := value;
 //end;
+
+{$ENDREGION}
+
+
+{$REGION 'TCollectionHelper'}
+
+function TCollectionHelper.AsList: IList<TCollectionItem>;
+begin
+  Result := TCollectionList<TCollectionItem>.Create(Self);
+end;
+
+function TCollectionHelper.AsList<T>: IList<T>;
+begin
+  Result := TCollectionList<T>.Create(Self);
+end;
 
 {$ENDREGION}
 

@@ -159,10 +159,10 @@ type
   protected
   {$REGION 'Property Accessors'}
     function GetCount: Integer; override;
+    function GetElementType: PTypeInfo; override;
     function GetItem(index: Integer): T; override;
     procedure SetItem(index: Integer; const value: T); override;
   {$ENDREGION}
-
   public
     constructor Create(const collection: TCollection);
     destructor Destroy; override;
@@ -608,6 +608,9 @@ end;
 
 constructor TCollectionList<T>.Create(const collection: TCollection);
 begin
+  Guard.CheckNotNull(collection, 'collection');
+  Guard.CheckInheritsFrom(collection.ItemClass, TClass(T), 'collection.ItemClass');
+
   inherited Create;
   fCollection := collection;
 end;
@@ -698,6 +701,11 @@ end;
 function TCollectionList<T>.GetCount: Integer;
 begin
   Result := fCollection.Count;
+end;
+
+function TCollectionList<T>.GetElementType: PTypeInfo;
+begin
+  Result := fCollection.ItemClass.ClassInfo;
 end;
 
 function TCollectionList<T>.GetEnumerator: IEnumerator<T>;
