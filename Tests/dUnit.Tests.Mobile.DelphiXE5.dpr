@@ -1,10 +1,8 @@
-program Spring.Tests.Mobile.DelphiXE5;
+program dUnit.Tests.Mobile.DelphiXE5;
 
 uses
-  System.StartUpCopy,
-  FMX.Forms,
-  TestFramework,
-  FMXTestRunner in 'Source\dUnit\FMXTestRunner.pas' {FMXTestRunner};
+  FMXTestRunner in 'Source\dUnit\FMXTestRunner.pas' {FMXTestRunner},
+  TestFramework;
 
 {$R *.res}
 

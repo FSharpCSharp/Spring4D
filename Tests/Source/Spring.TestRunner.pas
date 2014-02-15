@@ -42,8 +42,12 @@ uses
   {$ENDIF}
   TextTestRunner;
 {$ELSE}
+  {$IFNDEF FMX}
   Forms,
   GUITestRunner;
+  {$ELSE}
+  FMXTestRunner;
+  {$ENDIF}
 {$ENDIF CONSOLE_TESTRUNNER}
 
 var
@@ -67,8 +71,12 @@ begin
   Readln;
   {$ENDIF}
 {$ELSE}
+  {$IFNDEF FMX}
   Application.Initialize();
   TGUITestRunner.RunRegisteredTests();
+  {$ELSE}
+  TFMXTestRunner.RunRegisteredTests();
+  {$ENDIF}
 {$ENDIF}
 end;
 

@@ -1,12 +1,13 @@
 unit FMXTestRunner;
 
 interface
-
+{$IFDEF FMX}
+//Keep the first two first at all costs, this is the firs unit to be specified
+//in DPR
 uses
-  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
-  FMX.Types, FMX.Controls, FMX.Forms, FMX.Dialogs, FMX.StdCtrls, TestFramework,
-  System.Actions, FMX.ActnList, FMX.Layouts, FMX.Memo, FMX.TabControl,
-  FMX.ListBox, FMX.TreeView, System.Rtti;
+  System.StartUpCopy, FMX.Forms, System.SysUtils, System.Types, System.UITypes,
+  System.Classes, System.Variants, FMX.Types, FMX.Controls, FMX.Dialogs, FMX.StdCtrls, TestFramework, System.Actions, FMX.ActnList,
+  FMX.Layouts, FMX.Memo, FMX.TabControl, FMX.ListBox, FMX.TreeView, System.Rtti;
 
 type
   TRunnerExitBehavior = (
@@ -545,5 +546,7 @@ procedure TTestTreeItem.SetData(const Value: TValue);
 begin
 	FData:=Value;
 end;
-
+{$ELSE ~FMX}
+implementation
+{$ENDIF ~FMX}
 end.

@@ -55,6 +55,16 @@
   // so until that happens Events cannot be supported on non-Intel architectures
 {$IFEND}
 
+//If we're running on Android or iOS, we're sure we're running using FMX
+//platform if FMX is to be used on x86/x64 FMX conditional should be defined
+//in the project settings by hand
+{$IFDEF ANDROID}
+  {$DEFINE FMX}
+{$ENDIF}
+{$IFDEF IOS}
+  {$DEFINE FMX}
+{$ENDIF}
+
 {$IFNDEF DELPHI2010_UP}
   {$MESSAGE ERROR 'This framework requires Delphi 2010 or higher.'}}
 {$ENDIF}

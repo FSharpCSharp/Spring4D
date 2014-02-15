@@ -22,11 +22,15 @@
 {                                                                           }
 {***************************************************************************}
 
-program Spring.Tests;
+program Spring.Tests.Mobile.DelphiXE5;
 
 {$I Spring.Tests.inc}
 
+//FMXTestRunner must be the first unit in the uses clause since it specifies
+//some units that need to be set in given order for FMX
 uses
+  FMXTestRunner in 'Source\dUnit\FMXTestRunner.pas' {FMXTestRunner},
+  TestFramework,
   FinalBuilder.XMLTestRunner in 'Source\FinalBuilder.XMLTestRunner.pas',
   Spring.TestRegistration in 'Source\Spring.TestRegistration.pas',
   Spring.TestRunner in 'Source\Spring.TestRunner.pas',
@@ -43,10 +47,13 @@ uses
   Spring.Tests.Container in 'Source\Core\Spring.Tests.Container.pas',
   Spring.Tests.Pool in 'Source\Core\Spring.Tests.Pool.pas',
   Spring.Tests.Cryptography in 'Source\Extensions\Spring.Tests.Cryptography.pas',
-  Spring.Tests.Utils in 'Source\Extensions\Spring.Tests.Utils.pas';
+  Spring.Tests.Utils in 'Source\Extensions\Spring.Tests.Utils.pas',
+  Spring.Container;
 
 begin
+  CleanupGlobalContainer;
   RegisterTestCases();
   ReportMemoryLeaksOnShutdown := True;
   RunRegisteredTests();
+  TestFramework.ClearRegistry;
 end.

@@ -166,10 +166,12 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
+        <DCCReference Include="Source\dUnit\FMXTestRunner.pas">
+            <Form>FMXTestRunner</Form>
+        </DCCReference>
         <DCCReference Include="Source\FinalBuilder.XMLTestRunner.pas"/>
-        <DCCReference Include="Source\Spring.RunTestsUsingConsole.pas"/>
-        <DCCReference Include="Source\Spring.RunTestsUsingVclGui.pas"/>
-        <DCCReference Include="Source\Spring.RunTestsUsingXmlOutput.pas"/>
+        <DCCReference Include="Source\Spring.TestRegistration.pas"/>
+        <DCCReference Include="Source\Spring.TestRunner.pas"/>
         <DCCReference Include="Source\Spring.TestUtils.pas"/>
         <DCCReference Include="Source\Base\Spring.Tests.Base.pas"/>
         <DCCReference Include="Source\Base\Spring.Tests.Collections.pas"/>
@@ -184,7 +186,6 @@
         <DCCReference Include="Source\Core\Spring.Tests.Pool.pas"/>
         <DCCReference Include="Source\Extensions\Spring.Tests.Cryptography.pas"/>
         <DCCReference Include="Source\Extensions\Spring.Tests.Utils.pas"/>
-        <DCCReference Include="Source\Spring.TestRegistration.pas"/>
         <None Include="Spring.Tests.inc"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
@@ -262,17 +263,17 @@
                 </Excluded_Packages>
             </Delphi.Personality>
             <Deployment>
-                <DeployFile LocalName="Bin\DelphiXE5\OSX32\Spring.Tests" Configuration="Debug" Class="ProjectOutput">
-                    <Platform Name="OSX32"/>
+                <DeployFile LocalName="Bin\DelphiXE5\OSX32\Spring.Tests.rsm" Configuration="Debug" Class="DebugSymbols">
+                    <Platform Name="OSX32">
+                        <RemoteName>Spring.Tests.rsm</RemoteName>
+                    </Platform>
                 </DeployFile>
                 <DeployFile LocalName="$(BDS)\Redist\osx32\libcgunwind.1.0.dylib" Class="DependencyModule">
                     <Platform Name="OSX32"/>
                     <Platform Name="iOSSimulator"/>
                 </DeployFile>
-                <DeployFile LocalName="Bin\DelphiXE5\OSX32\Spring.Tests.rsm" Configuration="Debug" Class="DebugSymbols">
-                    <Platform Name="OSX32">
-                        <RemoteName>Spring.Tests.rsm</RemoteName>
-                    </Platform>
+                <DeployFile LocalName="Bin\DelphiXE5\OSX32\Spring.Tests" Configuration="Debug" Class="ProjectOutput">
+                    <Platform Name="OSX32"/>
                 </DeployFile>
                 <DeployClass Required="true" Name="DependencyPackage">
                     <Platform Name="iOSDevice">
