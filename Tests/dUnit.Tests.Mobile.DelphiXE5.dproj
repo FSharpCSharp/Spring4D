@@ -643,7 +643,7 @@
             </Deployment>
             <Platforms>
                 <Platform value="Android" ActiveMobileDevice="Nexus7">True</Platform>
-                <Platform value="iOSDevice">True</Platform>
+                <Platform value="iOSDevice" ActiveMobileDevice="%iosdevice%94c73c5086006b1c89334b34c0ffb8c6822668cb">True</Platform>
                 <Platform value="iOSSimulator" ActiveMobileDevice="iPhone">True</Platform>
                 <Platform value="Win32">True</Platform>
             </Platforms>

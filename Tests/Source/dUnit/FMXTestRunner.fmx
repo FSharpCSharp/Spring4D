@@ -2,22 +2,22 @@ object FMXTestRunner: TFMXTestRunner
   Left = 0
   Top = 0
   Caption = 'TFMXTestRunner'
-  ClientHeight = 545
-  ClientWidth = 533
+  ClientHeight = 609
+  ClientWidth = 578
   FormFactor.Width = 320
   FormFactor.Height = 480
   FormFactor.Devices = [dkDesktop]
   OnShow = FormShow
   DesignerMobile = True
-  DesignerWidth = 533
-  DesignerHeight = 545
+  DesignerWidth = 578
+  DesignerHeight = 609
   DesignerDeviceName = ''
   DesignerOrientation = 0
   DesignerOSVersion = ''
   object Header: TToolBar
     Height = 48.000000000000000000
     TabOrder = 0
-    Width = 533.000000000000000000
+    Width = 578.000000000000000000
     object HeaderLabel: TLabel
       Align = alCenter
       AutoSize = True
@@ -33,27 +33,27 @@ object FMXTestRunner: TFMXTestRunner
   object TabControl1: TTabControl
     Align = alClient
     FullSize = True
-    Height = 449.000000000000000000
+    Height = 513.000000000000000000
     TabHeight = 49.000000000000000000
     TabIndex = 0
     TabOrder = 1
     TabPosition = tpNone
-    Width = 533.000000000000000000
+    Width = 578.000000000000000000
     object TabItem1: TTabItem
       WordWrap = False
       Height = 8.000000000000000000
       IsSelected = True
-      Position.X = 257.500000000000000000
-      Position.Y = 430.000000000000000000
+      Position.X = 280.000000000000000000
+      Position.Y = 494.000000000000000000
       TabOrder = 0
       Text = 'TabItem1'
       Trimming = ttCharacter
       Width = 8.000000000000000000
       object TestTree: TTreeView
         Align = alClient
-        Height = 250.000000000000000000
+        Height = 314.000000000000000000
         TabOrder = 0
-        Width = 533.000000000000000000
+        Width = 578.000000000000000000
         ShowCheckboxes = True
         object TreeViewItem1: TTreeViewItem
           IsChecked = False
@@ -73,15 +73,15 @@ object FMXTestRunner: TFMXTestRunner
       object Panel1: TPanel
         Align = alBottom
         Height = 199.000000000000000000
-        Position.Y = 250.000000000000000000
-        Width = 533.000000000000000000
+        Position.Y = 314.000000000000000000
+        Width = 578.000000000000000000
         TabOrder = 1
         object Memo: TMemo
           Touch.InteractiveGestures = [igPan, igLongTap, igDoubleTap]
           Align = alClient
           Height = 199.000000000000000000
           TabOrder = 0
-          Width = 533.000000000000000000
+          Width = 578.000000000000000000
           ReadOnly = True
           WordWrap = True
           StyledSettings = [ssFamily, ssStyle, ssFontColor]
@@ -92,8 +92,8 @@ object FMXTestRunner: TFMXTestRunner
       WordWrap = False
       Height = 8.000000000000000000
       IsSelected = False
-      Position.X = 267.500000000000000000
-      Position.Y = 430.000000000000000000
+      Position.X = 290.000000000000000000
+      Position.Y = 494.000000000000000000
       TabOrder = 1
       Text = 'TabItem2'
       Trimming = ttCharacter
@@ -105,7 +105,7 @@ object FMXTestRunner: TFMXTestRunner
         Position.Y = 16.000000000000000000
         StyleLookup = 'transparentlistboxstyle'
         TabOrder = 0
-        Width = 502.000000000000000000
+        Width = 547.000000000000000000
         DefaultItemStyles.ItemStyle = 'listboxitemnodetail'
         DefaultItemStyles.GroupHeaderStyle = ''
         DefaultItemStyles.GroupFooterStyle = ''
@@ -156,9 +156,9 @@ object FMXTestRunner: TFMXTestRunner
   object ToolBar1: TToolBar
     Align = alBottom
     Height = 48.000000000000000000
-    Position.Y = 497.000000000000000000
+    Position.Y = 561.000000000000000000
     TabOrder = 2
-    Width = 533.000000000000000000
+    Width = 578.000000000000000000
     object cmdRun: TButton
       Action = RunTests
       Align = alLeft
@@ -172,7 +172,7 @@ object FMXTestRunner: TFMXTestRunner
       Action = ChangeTab2
       Align = alRight
       Height = 48.000000000000000000
-      Position.X = 485.000000000000000000
+      Position.X = 530.000000000000000000
       StyleLookup = 'detailstoolbuttonbordered'
       TabOrder = 1
       Trimming = ttCharacter
