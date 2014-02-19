@@ -29,6 +29,7 @@ unit Spring.Tests.Collections;
 interface
 
 uses
+  Classes,
   TestFramework,
   Spring.TestUtils,
   Spring,
@@ -96,6 +97,7 @@ type
     procedure TestListMove;
     procedure TestListClear;
     procedure TestListLargeDelete;
+    procedure TestQueryInterface;
   end;
 
   TTestEmptyStringIntegerDictionary = class(TTestCase)
@@ -275,10 +277,29 @@ type
     procedure TestAddLastValue_ListContainsTwoItems;
   end;
 
+  TTestObjectList = class(TTestCase)
+  private
+    SUT: IList<TPersistent>;
+  protected
+    procedure SetUp; override;
+  published
+    procedure TestQueryInterface;
+  end;
+
+  TTestCollectionList = class(TTestCase)
+  private
+    SUT: TCollection;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestElementType;
+    procedure TestAdd;
+  end;
+
 implementation
 
 uses
-  Classes,
   SysUtils;
 
 { TTestEmptyHashSet }
@@ -547,6 +568,17 @@ begin
   end;
 end;
 
+procedure TTestIntegerList.TestQueryInterface;
+var
+  list: IObjectList;
+begin
+  CheckException(EIntfCastError,
+    procedure
+    begin
+      list := SUT as IObjectList;
+    end);
+end;
+
 procedure TTestIntegerList.TestListIndexOf;
 var
   i: Integer;
@@ -563,7 +595,6 @@ begin
   end;
 
   CheckEquals(-1, SUT.IndexOf(ListCountLimit + 100), 'Index of item not in list was not -1');
-
 end;
 
 procedure TTestIntegerList.TestListInsertBeginning;
@@ -1447,6 +1478,87 @@ begin
   CheckCount(3);
   CheckEvent(3, caAdded);
   CheckNode(node, 3, nil, prevNode);
+end;
+
+{ TTestObjectList }
+
+procedure TTestObjectList.SetUp;
+begin
+  SUT := TObjectList<TPersistent>.Create;
+end;
+
+procedure TTestObjectList.TestQueryInterface;
+var
+  list: IObjectList;
+  obj: TObject;
+begin
+  SUT.Add(TPersistent.Create);
+  SUT.Add(TPersistent.Create);
+  SUT.Add(TPersistent.Create);
+  list := SUT as IObjectList;
+  CheckEquals(3, list.Count);
+  list.Delete(1);
+  CheckEquals(2, list.Count);
+  list.Add(TPersistent.Create);
+  CheckEquals(3, list.Count);
+  for obj in list do
+    CheckIs(obj, TPersistent);
+  CheckTrue(list.ElementType = TPersistent.ClassInfo);
+end;
+
+{ TTestCollectionList }
+
+type
+  TMyCollectionItem = class(TCollectionItem);
+  TMyOtherCollectionItem = class(TCollectionItem);
+
+procedure TTestCollectionList.SetUp;
+begin
+  SUT := TCollection.Create(TMyCollectionItem);
+end;
+
+procedure TTestCollectionList.TearDown;
+begin
+  SUT.Free;
+end;
+
+procedure TTestCollectionList.TestAdd;
+var
+  list: IList<TCollectionItem>;
+begin
+  list := SUT.AsList;
+  list.Add(TMyCollectionItem.Create(nil));
+  TMyCollectionItem.Create(SUT);
+  CheckEquals(2, list.Count);
+  CheckException(Exception,
+    procedure
+    var
+      item: TCollectionItem;
+    begin
+      item := TMyOtherCollectionItem.Create(nil);
+      try
+        list.Add(item);
+      except
+        item.Free;
+        raise;
+      end;
+    end);
+end;
+
+procedure TTestCollectionList.TestElementType;
+var
+  list1: IList<TCollectionItem>;
+  list2: IList<TMyCollectionItem>;
+begin
+  list1 := SUT.AsList;
+  list2 := SUT.AsList<TMyCollectionItem>;
+  CheckTrue(list1.ElementType = TMyCollectionItem.ClassInfo);
+  CheckTrue(list2.ElementType = TMyCollectionItem.ClassInfo);
+  CheckException(EArgumentException,
+    procedure
+    begin
+      SUT.AsList<TMyOtherCollectionItem>;
+    end);
 end;
 
 end.

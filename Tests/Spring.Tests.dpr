@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-program Spring.Tests.Mobile.DelphiXE5;
+program Spring.Tests;
 
 {$I Spring.Tests.inc}
 

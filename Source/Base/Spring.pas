@@ -866,7 +866,7 @@ begin
   Result := AClass.QualifiedClassName;
 {$ELSE}
   LUnitName := AClass.UnitName;
-  if LUnitName <> '' then
+  if LUnitName = '' then
     Result := AClass.ClassName
   else
     Result := LUnitName + '.' + AClass.ClassName;

@@ -89,6 +89,8 @@ type
   protected
     function InternalResolve(const model: TComponentModel; serviceType: PTypeInfo;
       const resolver: IDependencyResolver): TValue;
+    function InternalResolveLazy(model: TComponentModel; serviceType: PTypeInfo;
+      resolver: IDependencyResolver): TValue;
   public
     function CanResolve(serviceType: PTypeInfo): Boolean; overload;
     function CanResolve(const name: string): Boolean; overload;
@@ -499,7 +501,6 @@ function TDependencyResolver.ResolveLazyDependency(dependency: TRttiType;
 var
   lazyKind: TLazyKind;
   name: string;
-  context: TRttiContext;
   modelType: TRttiType;
   valueFactoryObj: TFunc<TObject>;
   valueFactoryIntf: TFunc<IInterface>;
@@ -509,7 +510,7 @@ begin
     Exit(argument);
 
   name := TType.GetLazyTypeName(dependency.Handle);
-  modelType := context.FindType(name);
+  modelType := TType.FindType(name);
   if not Assigned(modelType) or not CanResolveDependency(modelType, argument) then
   begin
     raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
@@ -731,6 +732,60 @@ begin
   ConstructValue(serviceType, instance, Result);
 end;
 
+function TServiceResolver.InternalResolveLazy(model: TComponentModel;
+  serviceType: PTypeInfo; resolver: IDependencyResolver): TValue;
+var
+  lazyKind: TLazyKind;
+  name: string;
+  lazyType: PTypeInfo;
+  valueFactoryObj: TFunc<TObject>;
+  valueFactoryIntf: TFunc<IInterface>;
+begin
+  Guard.CheckNotNull(model, 'model');
+  Guard.CheckNotNull(serviceType, 'serviceType');
+  Guard.CheckNotNull(model.LifetimeManager, 'model.LifetimeManager');
+
+  lazyKind := TType.GetLazyKind(serviceType);
+  if lazyKind <> lkNone then
+  begin
+    name := TType.GetLazyTypeName(serviceType);
+    lazyType := TType.FindType(TType.GetLazyTypeName(serviceType)).Handle;
+  end;
+
+  case lazyType.Kind of
+    tkClass:
+    begin
+      valueFactoryObj :=
+        function: TObject
+        begin
+          Result := InternalResolve(model, lazyType, resolver).AsObject;
+        end;
+
+      case lazyKind of
+        lkFunc: Result := TValue.From<TFunc<TObject>>(valueFactoryObj);
+        lkRecord: Result := TValue.From<Lazy<TObject>>(Lazy<TObject>.Create(valueFactoryObj));
+        lkInterface: Result := TValue.From<ILazy<TObject>>(TLazy<TObject>.Create(valueFactoryObj));
+      end;
+    end;
+    tkInterface:
+    begin
+      valueFactoryIntf :=
+        function: IInterface
+        begin
+          Result := InternalResolve(model, lazyType, resolver).AsInterface;
+        end;
+
+      case lazyKind of
+        lkFunc: Result := TValue.From<TFunc<IInterface>>(valueFactoryIntf);
+        lkRecord: Result := TValue.From<Lazy<IInterface>>(Lazy<IInterface>.Create(valueFactoryIntf));
+        lkInterface: Result := TValue.From<ILazy<IInterface>>(TLazy<IInterface>.Create(valueFactoryIntf));
+      end;
+    end;
+  end;
+
+  TValueData(Result).FTypeInfo := serviceType;
+end;
+
 function TServiceResolver.Resolve(serviceType: PTypeInfo): TValue;
 begin
   Result := Resolve(serviceType, nil);
@@ -740,12 +795,17 @@ function TServiceResolver.Resolve(serviceType: PTypeInfo;
   const resolverOverride: IResolverOverride): TValue;
 var
   serviceName: string;
+  isLazy: Boolean;
+  lazyType: PTypeInfo;
   model: TComponentModel;
   resolver: IDependencyResolver;
 begin
+  isLazy := TType.IsLazy(serviceType);
+  lazyType := serviceType;
+  if isLazy then
+    serviceType := TType.FindType(TType.GetLazyTypeName(serviceType)).Handle;
+
   serviceName := GetTypeName(serviceType);
-//  if IsLazyType(serviceType) then
-//    serviceType := TType.FindType(GetLazyTypeName(serviceType)).Handle;
 
   if not Registry.HasService(serviceType) then
   begin
@@ -764,7 +824,11 @@ begin
     resolver := resolverOverride.GetResolver(Context)
   else
     resolver := Context.DependencyResolver;
-  Result := InternalResolve(model, serviceType, resolver);
+
+  if isLazy then
+    Result := InternalResolveLazy(model, lazyType, resolver)
+  else
+    Result := InternalResolve(model, serviceType, resolver);
 end;
 
 function TServiceResolver.Resolve(const name: string): TValue;
@@ -794,16 +858,26 @@ end;
 
 function TServiceResolver.ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
 var
+  isLazy: Boolean;
   models: IEnumerable<TComponentModel>;
   model: TComponentModel;
   i: Integer;
+  modelType: PTypeInfo;
 begin
-  models := Registry.FindAll(serviceType);
+  isLazy := TType.IsLazy(serviceType);
+  if isLazy then
+    modelType := TType.FindType(TType.GetLazyTypeName(serviceType)).Handle
+  else
+    modelType := serviceType;
+  models := Registry.FindAll(modelType);
   SetLength(Result, models.Count);
   i := 0;
   for model in models do
   begin
-    Result[i] := InternalResolve(model, serviceType, Context.DependencyResolver);
+    if isLazy then
+      Result[i] := InternalResolveLazy(model, serviceType, Context.DependencyResolver)
+    else
+      Result[i] := InternalResolve(model, serviceType, Context.DependencyResolver);
     Inc(i);
   end;
 end;

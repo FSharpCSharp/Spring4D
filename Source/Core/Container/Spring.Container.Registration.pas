@@ -52,7 +52,6 @@ type
     procedure CheckIsNonGuidInterface(serviceType: TRttiType);
     procedure Validate(componentType, serviceType: PTypeInfo; var serviceName: string);
     function BuildActivatorDelegate(elementTypeInfo: PTypeInfo; out componentType: TRttiType): TActivatorDelegate;
-    function GetDefaultTypeName(serviceType: TRttiType): string;
   public
     constructor Create(const context: IContainerContext);
     destructor Destroy; override;
@@ -290,7 +289,7 @@ begin
 //      raise ERegistrationException.CreateResFmt(@SDuplicatedUnnamedService, [
 //        GetTypeName(serviceType)]);
 
-    serviceName := GetDefaultTypeName(serviceTypeObject) + '@' + GetDefaultTypeName(componentTypeObject);
+    serviceName := serviceTypeObject.DefaultName + '@' + componentTypeObject.DefaultName;
   end;
   if HasService(serviceName) then
   begin
@@ -426,16 +425,6 @@ begin
   begin
     Result := TCollections.CreateList<TComponentModel>;
   end;
-end;
-
-function TComponentRegistry.GetDefaultTypeName(serviceType: TRttiType): string;
-begin
-  Guard.CheckNotNull(serviceType, 'serviceType');
-
-  if serviceType.IsPublicType then
-    Result := serviceType.QualifiedName
-  else
-    Result := serviceType.Name;
 end;
 
 function TComponentRegistry.HasService(serviceType: PTypeInfo): Boolean;

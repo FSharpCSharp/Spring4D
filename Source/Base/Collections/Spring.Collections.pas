@@ -33,6 +33,7 @@ unit Spring.Collections;
 interface
 
 uses
+  Classes,
   Generics.Collections,
   Generics.Defaults,
   SysUtils,
@@ -68,6 +69,8 @@ type
   IStack<T> = interface;
   IQueue<T> = interface;
   ISet<T> = interface;
+
+  IObjectList = interface;
 
   IGrouping<TKey, TElement> = interface;
   ILookup<TKey, TElement> = interface;
@@ -1005,6 +1008,11 @@ type
 
     property Items[index: Integer]: T read GetItem write SetItem; default;
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
+  end;
+
+  IObjectList = interface(IList<TObject>)
+    ['{78A32DC5-1A5B-4191-9CA5-006CD85CF1AA}']
+    // DO NOT ADD ANY METHODS HERE!!!
   end;
 
   {$REGION 'Documentation'}
@@ -2106,6 +2114,12 @@ type
     class function OrdinalIgnoreCase: TStringComparer;
   end;
 
+  TCollectionHelper = class helper for TCollection
+  public
+    function AsList: IList<TCollectionItem>; overload;
+    function AsList<T: TCollectionItem>: IList<T>; overload;
+  end;
+
 implementation
 
 uses
@@ -2437,6 +2451,21 @@ end;
 //  fKey := key;
 //  fValue := value;
 //end;
+
+{$ENDREGION}
+
+
+{$REGION 'TCollectionHelper'}
+
+function TCollectionHelper.AsList: IList<TCollectionItem>;
+begin
+  Result := TCollectionList<TCollectionItem>.Create(Self);
+end;
+
+function TCollectionHelper.AsList<T>: IList<T>;
+begin
+  Result := TCollectionList<T>.Create(Self);
+end;
 
 {$ENDREGION}
 

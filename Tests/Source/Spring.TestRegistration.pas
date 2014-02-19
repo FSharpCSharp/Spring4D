@@ -70,7 +70,9 @@ begin
     TTestQueueOfInteger.Suite,
     TTestQueueOfIntegerChangedEvent.Suite,
     TTestListOfIntegerAsIEnumerable.Suite,
-    TTestLinkedList.Suite
+    TTestLinkedList.Suite,
+    TTestObjectList.Suite,
+    TTestCollectionList.Suite
   ]);
 
   RegisterTests('Spring.Base.SysUtils', [
@@ -177,7 +179,6 @@ begin
 //  RegisterTests('Spring.Core.Logging', [
 //     TTestLoggingConfig.Suite
 //  ]);
-
 end;
 
 end.

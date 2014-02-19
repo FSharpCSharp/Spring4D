@@ -102,6 +102,8 @@ resourcestring
   SLinkedListEmpty = 'The LinkedList is empty.';
   SLinkedListNodeIsAttached = 'The LinkedList node already belongs to a LinkedList.';
 
+  SIncompatibleTypes = 'Incompatible types: "%s" and "%s"';
+
   {$ENDREGION}
 
 

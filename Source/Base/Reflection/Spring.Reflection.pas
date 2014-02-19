@@ -616,8 +616,24 @@ begin
 end;
 
 class function TType.FindType(const qualifiedName: string): TRttiType;
+{$IFDEF NEXTGEN}
+var AResult : TRttiType;
+{$ENDIF}
 begin
   Result := fContext.FindType(qualifiedName);
+  if not Assigned(Result) then
+  begin
+{$IFNDEF NEXTGEN}
+    for Result in fContext.GetTypes do
+      if SameText(Result.Name, qualifiedName) then
+        Exit;
+{$ELSE}
+    for AResult in fContext.GetTypes do
+      if SameText(AResult.Name, qualifiedName) then
+        Exit(AResult);
+{$ENDIF}
+    Result := nil;
+  end;
 end;
 
 class function TType.IsAssignable(typeFrom, typeTo: PTypeInfo): Boolean;
