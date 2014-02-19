@@ -161,12 +161,6 @@ begin
 end;
 
 procedure TFMXTestRunner.AfterConstruction;
-{$IF Defined(ANDROID)}
-var
-  ss : string;
-  s : TArray<string>;
-  l : Integer;
-{$ENDIF}
 begin
   inherited;
   FIniName := 'dUnit.ini';
