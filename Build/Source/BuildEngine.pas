@@ -95,6 +95,7 @@ type
     fNames: TNames;
   strict protected
     procedure EnsureOpenKey(const aKey: string; aCreateIfNotExists: Boolean = False); virtual;
+    function GetCommandlineCompilerFileName(): string; virtual;
     procedure LoadEnvironmentVariables(const aEnvironmentVariables: TStrings); virtual;
     procedure SaveEnvironmentVariables(const aEnvironmentVariables: TStrings); virtual;
     property Keys: TKeys read fKeys;
@@ -174,12 +175,38 @@ resourcestring
 
 implementation
 
+uses
+  System.TypInfo,
+  System.IOUtils;
+
+type
+  // Platform and TKnownPlatforms are spelled exactly as used in *.drpoj files for "Platform" and $(Platform) entries.
+  TKnownPlatforms = (Win32, Win64, OSX32, iOSSimulator, iOSDevice, Android); // cannot be a local type, or TypeInfo(TKnownPlatforms) fails.
+  TCommandLineCompilers = array[TKnownPlatforms] of string;
+
+const // luckily, the compiler file names have not changed over the Delphi versions.
+  CCommandLineCompilers: TCommandLineCompilers = ('dcc32.exe', 'dcc64.exe', 'dccosx.exe', 'dccios32.exe', 'dcciosarm.exe', 'dccaarm.exe');
+
 const
   SPause = ' pause';
   ConfigurationNames: array[TConfigurationType] of string = (
     'Debug',
     'Release'
   );
+
+procedure Log(const aLine: string); overload;
+begin
+{$IFDEF DEBUG}
+  OutputDebugString(PChar(aLine));
+{$ENDIF DEBUG}
+end;
+
+procedure Log(const aFormat: string; const aArguments: array of const); overload;
+begin
+{$IFDEF DEBUG}
+  Log(Format(aFormat, aArguments));
+{$ENDIF DEBUG}
+end;
 
 type
   TStringsHelper = class helper for TStrings
@@ -268,13 +295,16 @@ begin
   if fRegistry.KeyExists(Keys.EnvironmentVariables) then
   begin
     EnsureOpenKey(Keys.EnvironmentVariables);
-    fRegistry.GetValueNames(aEnvironmentVariables);
-    with aEnvironmentVariables do {TODO -o##jwp -cCleanup : Remove with}
-    for i := 0 to Count - 1 do
-    begin
-      Strings[i] := Strings[i] + NameValueSeparator + fRegistry.ReadString(Strings[i]);
+    try
+      fRegistry.GetValueNames(aEnvironmentVariables);
+      with aEnvironmentVariables do {TODO -o##jwp -cCleanup : Remove with}
+      for i := 0 to Count - 1 do
+      begin
+        Strings[i] := Strings[i] + NameValueSeparator + fRegistry.ReadString(Strings[i]);
+      end;
+    finally
+      fRegistry.CloseKey;
     end;
-    fRegistry.CloseKey;
   end;
 end;
 
@@ -283,12 +313,15 @@ var
   i: Integer;
 begin
   EnsureOpenKey(Keys.EnvironmentVariables, True);
-  with aEnvironmentVariables do {TODO -o##jwp -cCleanup : Remove with}
-  for i := 0 to Count - 1 do
-  begin
-    fRegistry.WriteString(Names[i], ValueFromIndex[i]);
+  try
+    with aEnvironmentVariables do {TODO -o##jwp -cCleanup : Remove with}
+    for i := 0 to Count - 1 do
+    begin
+      fRegistry.WriteString(Names[i], ValueFromIndex[i]);
+    end;
+  finally
+    fRegistry.CloseKey;
   end;
-  fRegistry.CloseKey;
 end;
 
 procedure TCompilerTarget.LoadOptions;
@@ -298,15 +331,21 @@ begin
   with fRegistry do {TODO -o##jwp -cCleanup : Remove with}
   begin
     EnsureOpenKey(Keys.BDS);
-    RootDir := ReadString(Names.RootDir);
-    CloseKey;
+    try
+      RootDir := ReadString(Names.RootDir);
+    finally
+      CloseKey;
+    end;
 
     EnsureOpenKey(Keys.LibraryKey);
-    lPath := ReadString(Names.LibraryPath);
-    LibraryPaths.DelimitedText := lPath;
-    lPath := ReadString(Names.BrowsingPath);
-    BrowsingPaths.DelimitedText := lPath;
-    CloseKey;
+    try
+      lPath := ReadString(Names.LibraryPath);
+      LibraryPaths.DelimitedText := lPath;
+      lPath := ReadString(Names.BrowsingPath);
+      BrowsingPaths.DelimitedText := lPath;
+    finally
+      CloseKey;
+    end;
 
     LoadEnvironmentVariables(EnvironmentVariables);
   end;
@@ -315,20 +354,31 @@ end;
 procedure TCompilerTarget.SaveOptions;
 begin
   EnsureOpenKey(Keys.LibraryKey);
-  fRegistry.WriteString(Names.LibraryPath, LibraryPaths.DelimitedText);
-  fRegistry.WriteString(Names.BrowsingPath, BrowsingPaths.DelimitedText);
-  fRegistry.CloseKey;
+  try
+    fRegistry.WriteString(Names.LibraryPath, LibraryPaths.DelimitedText);
+    fRegistry.WriteString(Names.BrowsingPath, BrowsingPaths.DelimitedText);
+  finally
+    fRegistry.CloseKey;
+  end;
 
   SaveEnvironmentVariables(EnvironmentVariables);
 
   EnsureOpenKey(Keys.Globals);
-  fRegistry.WriteString('ForceEnvOptionsUpdate', '1');
-  fRegistry.CloseKey;
+  try
+    fRegistry.WriteString('ForceEnvOptionsUpdate', '1');
+  finally
+    fRegistry.CloseKey;
+  end;
 end;
 
 procedure TCompilerTarget.Configure(const aTypeName: string; const aProperties: TStrings);
 var
-  lFileName: string;
+  lBdsDirectory: string;
+  lCommandlineCompilerFileName: string;
+  lFullCommandlineCompilerFileName: string;
+  lFullBdsFileName: string;
+  lFullCommandlineCompilerExists: Boolean;
+  lIdeExists: Boolean;
 begin
   Guard.CheckNotNull(aProperties, 'aProperties');
 
@@ -346,10 +396,40 @@ begin
   if Exists then
   begin
     EnsureOpenKey(fKeys.BDS);
-    lFileName := fRegistry.ReadString('App');
-    Exists := FileExists(lFileName);
-    fRegistry.CloseKey;
+    try
+      lFullBdsFileName := fRegistry.ReadString('App');
+      lIdeExists := FileExists(lFullBdsFileName);
+      Log('%d=Exists(%s)', [Ord(lIdeExists), lFullBdsFileName]);
+
+      lBdsDirectory := TPath.GetDirectoryName(lFullBdsFileName);
+      lCommandlineCompilerFileName := GetCommandlineCompilerFileName();
+      lFullCommandlineCompilerFileName :=  TPath.Combine(lBdsDirectory, lCommandlineCompilerFileName);
+      lFullCommandlineCompilerExists := FileExists(lFullCommandlineCompilerFileName);
+      Log('%d=Exists(%s)', [Ord(lFullCommandlineCompilerExists), lFullCommandlineCompilerFileName]);
+
+      Exists := lIdeExists and lFullCommandlineCompilerExists;
+    finally
+      fRegistry.CloseKey;
+    end;
   end;
+end;
+
+function TCompilerTarget.GetCommandlineCompilerFileName(): string;
+var
+  lKnownPlatform: TKnownPlatforms;
+  lPlatform: string;
+begin
+
+  for lKnownPlatform := Low(TKnownPlatforms) to High(TKnownPlatforms) do
+  begin
+    lPlatform := GetEnumName(TypeInfo(TKnownPlatforms), Ord(lKnownPlatform));
+    if SameText(lPlatform, Platform) then
+    begin
+      Result := CCommandLineCompilers[lKnownPlatform];
+      Exit;
+    end;
+  end;
+  Result := ''; {TODO -o##jwp -cDiscuss : Discuss with Stefan if we should throw an exception here. }
 end;
 
 {$ENDREGION}
