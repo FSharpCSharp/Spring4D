@@ -60,21 +60,18 @@ type
     function GetEnvironmentVariables(): TStrings; virtual;
     function GetLibraryPaths(): TStrings; virtual;
   public
+    constructor Create(const aDisplayName: string; aExists: Boolean; const aRootDir, aTypeName, aPlatform: string);
     destructor Destroy(); override;
     property BrowsingPaths: TStrings read GetBrowsingPaths;
-    {TODO -o##jwp -cFix : R/O}
-    property DisplayName: string read fDisplayName write fDisplayName;
+    property DisplayName: string read fDisplayName;
     property EnvironmentVariables: TStrings read GetEnvironmentVariables;
-    {TODO -o##jwp -cFix : R/O}
-    property Exists: Boolean read fExists write fExists;
+    property Exists: Boolean read fExists;
     property LibraryPaths: TStrings read GetLibraryPaths;
-    {TODO -o##jwp -cFix : R/O}
-    property Platform: string read fPlatform write fPlatform;
-    {TODO -o##jwp -cFix : R/O}
-    property RootDir: string read fRootDir write fRootDir;
-    {TODO -o##jwp -cFix : R/O}
-    property TypeName: string read fTypeName write fTypeName;
+    property Platform: string read fPlatform;
+    property RootDir: string read fRootDir;
+    property TypeName: string read fTypeName;
   end;
+
   TCompilerTarget = class(TCompilerTargetBase)
   strict private
     type
@@ -93,17 +90,18 @@ type
     fRegistry: TRegistry;
     fKeys: TKeys;
     fNames: TNames;
+  private
   strict protected
     procedure EnsureOpenKey(const aKey: string; aCreateIfNotExists: Boolean = False); virtual;
-    function GetCommandlineCompilerFileName(): string; virtual;
+    function GetCommandlineCompilerFileName(const aPlatform: string): string; virtual;
+    function GetIdeAndCommandLineCompilerExist(const aFullBdsFileName, aPlatform: string): Boolean; virtual;
     procedure LoadEnvironmentVariables(const aEnvironmentVariables: TStrings); virtual;
     procedure SaveEnvironmentVariables(const aEnvironmentVariables: TStrings); virtual;
     property Keys: TKeys read fKeys;
     property Names: TNames read fNames;
   public
-    constructor Create;
+    constructor Create(const aTypeName: string; const aProperties: TStrings); overload;
     destructor Destroy; override;
-    procedure Configure(const aTypeName: string; const aProperties: TStrings); virtual;
     procedure LoadOptions; virtual;
     procedure SaveOptions; virtual;
   end;
@@ -151,7 +149,7 @@ type
   strict private
     fSourceBaseDir: string;
   strict protected
-    procedure RemoveReleatedEntries(const aBaseDir: string; aEntries: TStrings); virtual;
+    procedure RemoveRelatedEntries(const aBaseDir: string; const aEntries: TStrings); virtual;
     procedure ExecuteCommandLine(const aApplicationName, aCommandLine: string;
       var exitCode: Cardinal; const aWorkingDirectory: string = ''); virtual;
     procedure BuildTarget(const aTask: TBuildTask); virtual;
@@ -263,17 +261,6 @@ end;
 
 {$REGION 'TCompilerTarget'}
 
-constructor TCompilerTarget.Create;
-begin
-  inherited Create();
-  fRegistry := TRegistry.Create();
-  fRegistry.RootKey := HKEY_CURRENT_USER;
-  LibraryPaths.Delimiter := ';';
-  LibraryPaths.StrictDelimiter := True;
-  BrowsingPaths.Delimiter := ';';
-  BrowsingPaths.StrictDelimiter := True;
-end;
-
 destructor TCompilerTarget.Destroy;
 begin
   fRegistry.Free();
@@ -291,16 +278,22 @@ end;
 procedure TCompilerTarget.LoadEnvironmentVariables(const aEnvironmentVariables: TStrings);
 var
   i: Integer;
+  lName: string;
+  lNameValueSeparator: Char;
+  lValue: string;
 begin
   if fRegistry.KeyExists(Keys.EnvironmentVariables) then
   begin
     EnsureOpenKey(Keys.EnvironmentVariables);
     try
       fRegistry.GetValueNames(aEnvironmentVariables);
-      with aEnvironmentVariables do {TODO -o##jwp -cCleanup : Remove with}
-      for i := 0 to Count - 1 do
+      lNameValueSeparator := aEnvironmentVariables.NameValueSeparator;
+
+      for i := 0 to aEnvironmentVariables.Count - 1 do
       begin
-        Strings[i] := Strings[i] + NameValueSeparator + fRegistry.ReadString(Strings[i]);
+        lName := aEnvironmentVariables.Strings[i];
+        lValue := fRegistry.ReadString(lName);
+        aEnvironmentVariables.Strings[i] := lName + lNameValueSeparator + lValue;
       end;
     finally
       fRegistry.CloseKey;
@@ -314,10 +307,9 @@ var
 begin
   EnsureOpenKey(Keys.EnvironmentVariables, True);
   try
-    with aEnvironmentVariables do {TODO -o##jwp -cCleanup : Remove with}
-    for i := 0 to Count - 1 do
+    for i := 0 to aEnvironmentVariables.Count - 1 do
     begin
-      fRegistry.WriteString(Names[i], ValueFromIndex[i]);
+      fRegistry.WriteString(aEnvironmentVariables.Names[i], aEnvironmentVariables.ValueFromIndex[i]);
     end;
   finally
     fRegistry.CloseKey;
@@ -328,27 +320,17 @@ procedure TCompilerTarget.LoadOptions;
 var
   lPath: string;
 begin
-  with fRegistry do {TODO -o##jwp -cCleanup : Remove with}
-  begin
-    EnsureOpenKey(Keys.BDS);
-    try
-      RootDir := ReadString(Names.RootDir);
-    finally
-      CloseKey;
-    end;
-
-    EnsureOpenKey(Keys.LibraryKey);
-    try
-      lPath := ReadString(Names.LibraryPath);
-      LibraryPaths.DelimitedText := lPath;
-      lPath := ReadString(Names.BrowsingPath);
-      BrowsingPaths.DelimitedText := lPath;
-    finally
-      CloseKey;
-    end;
-
-    LoadEnvironmentVariables(EnvironmentVariables);
+  EnsureOpenKey(Keys.LibraryKey);
+  try
+    lPath := fRegistry.ReadString(Names.LibraryPath);
+    LibraryPaths.DelimitedText := lPath;
+    lPath := fRegistry.ReadString(Names.BrowsingPath);
+    BrowsingPaths.DelimitedText := lPath;
+  finally
+    fRegistry.CloseKey;
   end;
+
+  LoadEnvironmentVariables(EnvironmentVariables);
 end;
 
 procedure TCompilerTarget.SaveOptions;
@@ -371,54 +353,70 @@ begin
   end;
 end;
 
-procedure TCompilerTarget.Configure(const aTypeName: string; const aProperties: TStrings);
+constructor TCompilerTarget.Create(const aTypeName: string; const aProperties: TStrings);
 var
-  lBdsDirectory: string;
-  lCommandlineCompilerFileName: string;
-  lFullCommandlineCompilerFileName: string;
+  lDisplayName: string;
+  lExists: Boolean;
   lFullBdsFileName: string;
-  lFullCommandlineCompilerExists: Boolean;
-  lIdeExists: Boolean;
+  lPlatform: string;
+  lRegistry: TRegistry;
+  lRootDir: string;
 begin
+  Guard.CheckTrue(aTypeName <> '', 'aTypeName');
   Guard.CheckNotNull(aProperties, 'aProperties');
 
-  TypeName := aTypeName;
-  DisplayName := aProperties.GetValueOrDefault('DisplayName', '');
-  Platform := aProperties.GetValueOrDefault('Platform', 'Win32');
-  fKeys.BDS := aProperties.GetValueOrDefault('Keys.BDS', '');
-  fKeys.LibraryKey := IncludeTrailingPathDelimiter(fKeys.BDS) + aProperties.GetValueOrDefault('Keys.Library', 'Library');
-  fKeys.Globals := IncludeTrailingPathDelimiter(fKeys.BDS) + aProperties.GetValueOrDefault('Keys.Globals', 'Globals');
-  fKeys.EnvironmentVariables := IncludeTrailingPathDelimiter(fKeys.BDS) + aProperties.GetValueOrDefault('Keys.EnvironmentVariables', 'Environment Variables');
-  fNames.LibraryPath := aProperties.GetValueOrDefault('Names.LibraryPath', 'Search Path');
-  fNames.BrowsingPath := aProperties.GetValueOrDefault('Names.BrowsingPath', 'Browsing Path');
-  fNames.RootDir := aProperties.GetValueOrDefault('Names.RootDir', 'RootDir');
-  Exists := fRegistry.KeyExists(fKeys.BDS);
-  if Exists then
-  begin
-    EnsureOpenKey(fKeys.BDS);
-    try
-      lFullBdsFileName := fRegistry.ReadString('App');
-      lIdeExists := FileExists(lFullBdsFileName);
-      Log('%d=Exists(%s)', [Ord(lIdeExists), lFullBdsFileName]);
+  lDisplayName := aProperties.GetValueOrDefault('DisplayName', '');
 
-      if lIdeExists then
-      begin
-        lBdsDirectory := TPath.GetDirectoryName(lFullBdsFileName);
-        lCommandlineCompilerFileName := GetCommandlineCompilerFileName();
-        lFullCommandlineCompilerFileName := TPath.Combine(lBdsDirectory, lCommandlineCompilerFileName);
-        lFullCommandlineCompilerExists := FileExists(lFullCommandlineCompilerFileName);
-        Log('%d=Exists(%s)', [Ord(lFullCommandlineCompilerExists), lFullCommandlineCompilerFileName]);
-        Exists := lFullCommandlineCompilerExists;
-      end
-      else
-        Exists := False;
-    finally
-      fRegistry.CloseKey;
+  lRegistry := TRegistry.Create();
+  try
+    lRegistry.RootKey := HKEY_CURRENT_USER;
+
+    LibraryPaths.Delimiter := ';';
+    LibraryPaths.StrictDelimiter := True;
+
+    BrowsingPaths.Delimiter := ';';
+    BrowsingPaths.StrictDelimiter := True;
+
+    lPlatform := aProperties.GetValueOrDefault('Platform', 'Win32');
+    fKeys.BDS := aProperties.GetValueOrDefault('Keys.BDS', '');
+    fKeys.LibraryKey := IncludeTrailingPathDelimiter(fKeys.BDS) + aProperties.GetValueOrDefault('Keys.Library', 'Library');
+    fKeys.Globals := IncludeTrailingPathDelimiter(fKeys.BDS) + aProperties.GetValueOrDefault('Keys.Globals', 'Globals');
+    fKeys.EnvironmentVariables := IncludeTrailingPathDelimiter(fKeys.BDS) + aProperties.GetValueOrDefault('Keys.EnvironmentVariables', 'Environment Variables');
+    fNames.LibraryPath := aProperties.GetValueOrDefault('Names.LibraryPath', 'Search Path');
+    fNames.BrowsingPath := aProperties.GetValueOrDefault('Names.BrowsingPath', 'Browsing Path');
+    fNames.RootDir := aProperties.GetValueOrDefault('Names.RootDir', 'RootDir');
+
+    lExists := lRegistry.KeyExists(fKeys.BDS);
+    if lExists then
+    begin
+      fRegistry := lRegistry;
+      EnsureOpenKey(fKeys.BDS);
+      try
+        lFullBdsFileName := lRegistry.ReadString('App');
+
+        lExists := GetIdeAndCommandLineCompilerExist(lFullBdsFileName, lPlatform);
+
+        if lExists then
+          lRootDir := lRegistry.ReadString(Names.RootDir)
+        else
+          lRootDir := '';
+      finally
+        lRegistry.CloseKey();
+      end;
     end;
+
+    inherited Create(lDisplayName, lExists, lRootDir, aTypeName, lPlatform);
+
+  finally
+    // also here in case inherited Create wipes out the instance for debugging purposes.
+    fRegistry := lRegistry; // so when an exception occurs in Create, Destroy will release the memory.
   end;
+
+  if Exists then
+    LoadOptions();
 end;
 
-function TCompilerTarget.GetCommandlineCompilerFileName(): string;
+function TCompilerTarget.GetCommandlineCompilerFileName(const aPlatform: string): string;
 var
   lKnownPlatform: TKnownPlatforms;
   lPlatform: string;
@@ -427,13 +425,39 @@ begin
   for lKnownPlatform := Low(TKnownPlatforms) to High(TKnownPlatforms) do
   begin
     lPlatform := GetEnumName(TypeInfo(TKnownPlatforms), Ord(lKnownPlatform));
-    if SameText(lPlatform, Platform) then
+    if SameText(lPlatform, aPlatform) then
     begin
       Result := CCommandLineCompilers[lKnownPlatform];
       Exit;
     end;
   end;
-  Result := ''; {TODO -o##jwp -cDiscuss : Discuss with Stefan if we should throw an exception here. }
+  Guard.RaiseArgumentException('aPlatform');
+end;
+
+function TCompilerTarget.GetIdeAndCommandLineCompilerExist(const aFullBdsFileName, aPlatform: string): Boolean;
+var
+  lBdsDirectory: string;
+  lCommandlineCompilerFileName: string;
+  lFullCommandlineCompilerFileName: string;
+  lFullCommandlineCompilerExists: Boolean;
+  lIdeExists: Boolean;
+begin
+  lIdeExists := FileExists(aFullBdsFileName);
+  Log('%d=Exists(%s)', [Ord(lIdeExists), aFullBdsFileName]);
+
+  if lIdeExists then
+  begin
+    lBdsDirectory := TPath.GetDirectoryName(aFullBdsFileName);
+
+    lCommandlineCompilerFileName := GetCommandlineCompilerFileName(aPlatform);
+    lFullCommandlineCompilerFileName :=  TPath.Combine(lBdsDirectory, lCommandlineCompilerFileName);
+    lFullCommandlineCompilerExists := FileExists(lFullCommandlineCompilerFileName);
+    Log('%d=Exists(%s)', [Ord(lFullCommandlineCompilerExists), lFullCommandlineCompilerFileName]);
+
+    Result := lIdeExists and lFullCommandlineCompilerExists;
+  end
+  else
+    Result := False;
 end;
 
 {$ENDREGION}
@@ -541,8 +565,8 @@ begin
   lProjectPath := ExtractFilePath(ParamStr(0));
   lConfigurationName := ConfigurationNames[ConfigurationType];
 
-  RemoveReleatedEntries(lProjectPath, lTarget.LibraryPaths);
-  RemoveReleatedEntries(lProjectPath, lTarget.BrowsingPaths);
+  RemoveRelatedEntries(lProjectPath, lTarget.LibraryPaths);
+  RemoveRelatedEntries(lProjectPath, lTarget.BrowsingPaths);
 
   lUnitOutputPath := lProjectPath + aTask.UnitOutputPath;
   lUnitOutputPath := StringReplace(lUnitOutputPath, '$(Config)', lConfigurationName, [rfIgnoreCase, rfReplaceAll]);
@@ -624,11 +648,8 @@ begin
     for lSectionName in lSections do
     begin
       lIni.ReadSectionValues(lSectionName, lProperties);
-      lTarget := TCompilerTarget.Create();
+      lTarget := TCompilerTarget.Create(lSectionName, lProperties);
       Targets.Add(lTarget);
-      lTarget.Configure(lSectionName, lProperties);
-      if lTarget.Exists then
-        lTarget.LoadOptions();
     end;
   finally
     lProperties.Free();
@@ -651,8 +672,8 @@ begin
   lIni := TIniFile.Create(aFileName);
   lSections := TStringList.Create();
   lSelectedTasks := TStringList.Create();
-  lSelectedTasks.Delimiter := ';';
   try
+    lSelectedTasks.Delimiter := ';';
     lConfig := lIni.ReadString('Globals', 'Config', 'Debug');
     if SameText(lConfig, 'Debug') then
       ConfigurationType := TConfigurationType.Debug
@@ -672,6 +693,7 @@ begin
 
     for lTarget in Targets do
     begin
+      { The sections in Build.Settings.ini and Build.Settings.Compilers.ini }
       lSectionName := lTarget.TypeName;
       if lIni.SectionExists(lSectionName) then
       begin
@@ -691,7 +713,7 @@ begin
   end;
 end;
 
-procedure TBuildEngine.RemoveReleatedEntries(const aBaseDir: string; aEntries: TStrings);
+procedure TBuildEngine.RemoveRelatedEntries(const aBaseDir: string; const aEntries: TStrings);
 var
   lEntry: string;
   i: Integer;
@@ -730,6 +752,17 @@ begin
     lIni.Free();
     lSelectedTasks.Free();
   end;
+end;
+
+constructor TCompilerTargetBase.Create(const aDisplayName: string; aExists: Boolean; const aRootDir, aTypeName,
+    aPlatform: string);
+begin
+  inherited Create();
+  fDisplayName := aDisplayName;
+  fExists := aExists;
+  fRootDir := aRootDir;
+  fTypeName := aTypeName;
+  fPlatform := aPlatform;
 end;
 
 destructor TCompilerTargetBase.Destroy();

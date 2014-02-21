@@ -69,24 +69,34 @@ and multiple sections like:
 
 #### `Globals` section
 
-- `ModifyDelphiRegistrySettings` if set to `1`, after building `Spring4D` it will modify the Delphi registry settings in these subkeys:
-    - ``
-    - ``
-    - ``
-    - ``
-    - ``
-    - ``
-    - ``
-    - ``
-    - ``
-    - ``
-    - `Globals\ForceEnvOptionsUpdate=1` to force Delphi to update `EnvOptions.proj` at the next start so the msbuild process stays in sync with the registry settings.
+##### `ModifyDelphiRegistrySettings` 
+
+if set to `1`, after building `Spring4D` it will modify the Delphi registry settings in the sub key `HKCU\Software\[Company]\BDS\[Version].0\Library\[Platform]\`.
+
+Where 
+
+- `Company` can be (depending on the Delphi version) any of:
+    - `Codegear` (Delphi 2010)
+    - `Embarcadero` (Delphi XE and higher)
+- `Platform` are from the list in [possible platforms](#possiblePlatforms).
+- `Version` is the [BDS version](http://theroadtodelphi.wordpress.com/2010/10/27/detecting-installed-delphi-versions/) (or Galileo version)
+
+In the registry sub key, these string values are updated:
+
+- `Browsing Path` (updated with the source directory paths of Spring4D)
+- `Search Path` (updated with the unit output paths of Spring4D)
+
+If those values already contain the right paths, they are not updated again.
+
+##### `Globals\ForceEnvOptionsUpdate=1` 
+
+to force Delphi to update `EnvOptions.proj` at the next start so the `msbuild` process stays in sync with the registry settings.
 
 ## <a name='possiblePlatforms'>Possible platforms</a>
 
 You can find the platforms that your Delphi version supports by looking at a key like this:
 
-    HKEY_CURRENT_USER\Software\Embarcadero\BDS\12.0\Library
+    HKEY_CURRENT_USER\Software\[Company]\BDS\[Version].0\Library
 
 This particular key is for Delphi XE5 (you can find more keys in <https://bitbucket.org/jeroenp/besharp.net/src/tip/Native/Delphi/Scripts/List-Delphi-Installed-Packages.ps1>, which supports these platform subkeys:
 
@@ -128,4 +138,3 @@ Add this section:
 - 
 - Replace `DelphiXE5` with your Delphi version.
 - Replace `OSX32` with a supported platform in your Delphi version from the list in [possible platforms](#possiblePlatforms).
-
