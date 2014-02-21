@@ -31,6 +31,7 @@ interface
 
 uses
   Classes,
+  IniFiles,
   SysUtils,
   TestFramework;
 
@@ -47,13 +48,16 @@ type
   protected
     procedure RunTest(ATestResult: TTestResult); override;
   public
-    constructor Create(ATest: ITest; AName: string = '');
+    constructor Create(const ATest: ITest; const AName: string = '');
 
     function CountEnabledTestCases: Integer; override;
     function CountTestCases: Integer; override;
 
     function GetName: string; override;
     function Tests: IInterfaceList; override;
+
+    procedure LoadConfiguration(const iniFile: TCustomIniFile; const section: string); override;
+    procedure SaveConfiguration(const iniFile: TCustomIniFile; const section: string); override;
 
     property Test: ITest read fTest;
   end;
@@ -64,7 +68,7 @@ type
   protected
     procedure RunTest(ATestResult: TTestResult); override;
   public
-    constructor Create(ATest: ITest; ACount: Integer; AName: string = '');
+    constructor Create(const ATest: ITest; ACount: Integer; const AName: string = '');
     function GetName: string; override;
 
     function CountEnabledTestCases: Integer; override;
@@ -82,10 +86,10 @@ begin
 {$ENDIF}
 end;
 
-{ TAbstractTestHelper }
+{$REGION 'TAbstractTestHelper'}
 
 procedure TAbstractTestHelper.CheckException(
-  aExceptionType: ExceptionClass; aCode: TProc; const aMessage: string);
+  AExceptionType: ExceptionClass; ACode: TProc; const AMessage: string);
 var
   WasException: Boolean;
 begin
@@ -104,9 +108,12 @@ begin
   Check(WasException, aMessage);
 end;
 
-{ TTestDecorator }
+{$ENDREGION}
 
-constructor TTestDecorator.Create(ATest: ITest; AName: string);
+
+{$REGION 'TTestDecorator'}
+
+constructor TTestDecorator.Create(const ATest: ITest; const AName: string);
 begin
   if AName = '' then
     inherited Create(ATest.Name)
@@ -148,10 +155,33 @@ begin
   Result := fTests;
 end;
 
-{ TRepeatedTest }
+procedure TTestDecorator.LoadConfiguration(const iniFile: TCustomIniFile;
+  const section: string);
+var
+  i: Integer;
+begin
+  inherited LoadConfiguration(iniFile, section);
+  for i := 0 to fTests.Count - 1 do
+    ITest(fTests[i]).LoadConfiguration(iniFile, section + '.' + Name);
+end;
 
-constructor TRepeatedTest.Create(ATest: ITest; ACount: Integer;
-  AName: string);
+procedure TTestDecorator.SaveConfiguration(const iniFile: TCustomIniFile;
+  const section: string);
+var
+  i: integer;
+begin
+  inherited SaveConfiguration(iniFile, section);
+  for i := 0 to fTests.Count - 1 do
+    ITest(fTests[i]).SaveConfiguration(iniFile, section + '.' + Name);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TRepeatedTest'}
+
+constructor TRepeatedTest.Create(const ATest: ITest; ACount: Integer;
+  const AName: string);
 begin
   inherited Create(ATest, AName);
   fCount := ACount;
@@ -190,5 +220,8 @@ begin
     inherited RunTest(ATestResult);
   end;
 end;
+
+{$ENDREGION}
+
 
 end.
