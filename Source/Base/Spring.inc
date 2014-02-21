@@ -51,13 +51,13 @@
 {$IF Defined(CPUX86) OR Defined(CPUX64)}
   {$DEFINE SPRING_HAS_GENERIC_EVENTS}
 {$ELSE}
-  // Current System.Rtti doesn't support creating implementations that we need
+  // Current System.Rtti does not support creating implementations that we need
   // so until that happens Events cannot be supported on non-Intel architectures
 {$IFEND}
 
-//If we're running on Android or iOS, we're sure we're running using FMX
-//platform if FMX is to be used on x86/x64 FMX conditional should be defined
-//in the project settings by hand
+// If we are running on Android or iOS, we are sure we are running using FMX.
+// If FMX is to be used on x86/x64 FMX conditional should be defined
+// in the project settings by hand
 {$IFDEF ANDROID}
   {$DEFINE FMX}
 {$ENDIF}
@@ -68,16 +68,6 @@
 {$IFNDEF DELPHI2010_UP}
   {$MESSAGE ERROR 'This framework requires Delphi 2010 or higher.'}}
 {$ENDIF}
-
-{$IF Defined(MSWINDOWS)}
-
-{$ELSE IF Defined(MACOS) OR Defined(IOS) or Defined(ANDROID)}
-  {$IFNDEF SPRING_NO_WARNING}
-    {$MESSAGE WARN 'This framework currently is experimental on Mac OS X, iOS, Android and has not been tested there yet.'}
-  {$ENDIF}
-{$ELSE}
-  {$MESSAGE ERROR 'This framework currently only supports Windows (tested) and Mac OS X, iOS, Android (experimental).'}
-{$IFEND}
 
 {$IFNDEF NEXTGEN}
   {$WARN UNIT_PLATFORM OFF}    // Turn off UNIT_PLATFORM warning
