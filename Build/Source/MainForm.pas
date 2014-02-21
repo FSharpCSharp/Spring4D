@@ -107,6 +107,9 @@ begin
     lbTargets.ItemEnabled[index] := task.CanBuild;
     lbTargets.Checked[index] := fBuildEngine.SelectedTasks.Contains(task);
   end;
+
+  if FileExists('Build.md') then
+    mmoDetails.Lines.LoadFromFile('Build.md');
 end;
 
 procedure TfrmMain.FormDestroy(Sender: TObject);

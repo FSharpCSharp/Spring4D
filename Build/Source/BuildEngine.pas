@@ -176,8 +176,8 @@ resourcestring
 implementation
 
 uses
-  System.TypInfo,
-  System.IOUtils;
+  TypInfo,
+  IOUtils;
 
 type
   // Platform and TKnownPlatforms are spelled exactly as used in *.drpoj files for "Platform" and $(Platform) entries.
