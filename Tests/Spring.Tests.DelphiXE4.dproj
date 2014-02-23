@@ -50,7 +50,7 @@
         <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <Manifest_File>None</Manifest_File>
         <DCC_Namespace>Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
-        <DCC_UnitSearchPath>..\Source\Base;..\Source\Base\Collections;..\Source\Base\Reflection;..\Source\Core\Container;..\Source\Core\Services;..\Source\Extensions\Utils;..\Source\Extensions\Cryptography;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>..\Source\Base;..\Source\Base\Collections;..\Source\Base\Reflection;..\Source\Core\Container;..\Source\Core\Services;..\Source\Extensions\Utils;..\Source\Extensions\Cryptography;.\Source\dUnit;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <DCC_ExeOutput>Bin\DelphiXE4\$(Platform)</DCC_ExeOutput>
         <VerInfo_Locale>2052</VerInfo_Locale>
         <DCC_K>false</DCC_K>

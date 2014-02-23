@@ -26,11 +26,10 @@ program Spring.Tests;
 
 {$I Spring.Tests.inc}
 
-//Spring.TestBootstrap be the first unit in the uses clause since it specifies
-//some units that need to be set in given order for FMX
+// Spring.TestBootstrap be the first unit in the uses clause since it specifies
+// some units that need to be set in given order for FMX
 uses
   Spring.TestBootstrap in 'Source\Spring.TestBootstrap.pas',
-  FMXTestRunner in 'Source\dUnit\FMXTestRunner.pas',
   TestFramework,
   FinalBuilder.XMLTestRunner in 'Source\FinalBuilder.XMLTestRunner.pas',
   Spring.TestRegistration in 'Source\Spring.TestRegistration.pas',

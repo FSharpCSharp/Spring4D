@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,8 +22,8 @@
 {                                                                           }
 {***************************************************************************}
 
-{ Unit specified as first in the DPR to be used to load some specific units in
- predefined order specific to platform}
+// Unit specified as first in the DPR to be used to load some specific units in
+// predefined order specific to platform}
 unit Spring.TestBootstrap;
 
 {$I Spring.inc}
@@ -31,9 +31,11 @@ unit Spring.TestBootstrap;
 interface
 
 {$IF Defined(FMX)}
-uses System.StartUpCopy, FMX.Forms;
+uses
+  System.StartUpCopy,
+  FMX.Forms,
+  FMXTestRunner;
 {$ELSE}
-
 {$IFEND}
 
 implementation
