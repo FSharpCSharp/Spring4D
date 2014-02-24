@@ -537,6 +537,8 @@ end;
 
 procedure TFMXTestRunner.SetupTree;
 begin
+  if (Suite = nil) then Exit;
+
   TestTree.BeginUpdate;
   TestTree.Clear;
   try
