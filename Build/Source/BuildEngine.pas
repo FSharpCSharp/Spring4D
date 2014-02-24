@@ -401,13 +401,17 @@ begin
       lIdeExists := FileExists(lFullBdsFileName);
       Log('%d=Exists(%s)', [Ord(lIdeExists), lFullBdsFileName]);
 
-      lBdsDirectory := TPath.GetDirectoryName(lFullBdsFileName);
-      lCommandlineCompilerFileName := GetCommandlineCompilerFileName();
-      lFullCommandlineCompilerFileName :=  TPath.Combine(lBdsDirectory, lCommandlineCompilerFileName);
-      lFullCommandlineCompilerExists := FileExists(lFullCommandlineCompilerFileName);
-      Log('%d=Exists(%s)', [Ord(lFullCommandlineCompilerExists), lFullCommandlineCompilerFileName]);
-
-      Exists := lIdeExists and lFullCommandlineCompilerExists;
+      if lIdeExists then
+      begin
+        lBdsDirectory := TPath.GetDirectoryName(lFullBdsFileName);
+        lCommandlineCompilerFileName := GetCommandlineCompilerFileName();
+        lFullCommandlineCompilerFileName := TPath.Combine(lBdsDirectory, lCommandlineCompilerFileName);
+        lFullCommandlineCompilerExists := FileExists(lFullCommandlineCompilerFileName);
+        Log('%d=Exists(%s)', [Ord(lFullCommandlineCompilerExists), lFullCommandlineCompilerFileName]);
+        Exists := lFullCommandlineCompilerExists;
+      end
+      else
+        Exists := False;
     finally
       fRegistry.CloseKey;
     end;
