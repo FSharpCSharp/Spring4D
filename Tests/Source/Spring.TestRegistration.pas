@@ -37,6 +37,7 @@ uses
   Spring.TestUtils,
   Spring.Tests.Base,
   Spring.Tests.Collections,
+  Spring.Tests.Collections.Extensions,
   Spring.Tests.SysUtils,
   Spring.Tests.DesignPatterns,
   Spring.Tests.Helpers,
@@ -73,6 +74,39 @@ begin
     TTestLinkedList.Suite,
     TTestObjectList.Suite,
     TTestCollectionList.Suite
+  ]);
+
+  RegisterTests('Spring.Base.Collections', [
+    TTestWhere.Suite,
+    TTestSelect.Suite,
+    TTestRange.Suite,
+    TTestConcat.Suite,
+    TTestSelectMany.Suite,
+    TTestAny.Suite,
+    TTestAll.Suite,
+    TTestFirst.Suite,
+    TTestSingle.Suite,
+    TTestLast.Suite,
+    TTestFirstOrDefault.Suite,
+    TTestSingleOrDefault.Suite,
+    TTestLastOrDefault.Suite,
+    TTestDefaultIfEmpty.Suite,
+    TTestDistinct.Suite,
+    TTestUnion.Suite,
+    TTestIntersect.Suite,
+    TTestExcept.Suite,
+    TTestToLookup.Suite,
+    TTestJoin.Suite,
+    TTestGroupBy.Suite,
+    TTestGroupJoin.Suite,
+    TTestTake.Suite,
+    TTestSkip.Suite,
+    TTestTakeWhile.Suite,
+    TTestSkipWhile.Suite,
+    TTestOrderBy.Suite,
+    TTestOrderByDescending.Suite,
+    TTestReverse.Suite,
+    TTestMaxBy.Suite
   ]);
 
   RegisterTests('Spring.Base.SysUtils', [
