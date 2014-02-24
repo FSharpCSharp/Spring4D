@@ -400,6 +400,7 @@ object frmMain: TfrmMain
         'RAD Studio XE2 (Win32)'
         'RAD Studio XE2 (Win64)')
       ParentFont = False
+      PopupMenu = PopupMenu1
       TabOrder = 0
     end
   end
@@ -485,5 +486,17 @@ object frmMain: TfrmMain
   object BalloonHint1: TBalloonHint
     Left = 32
     Top = 304
+  end
+  object PopupMenu1: TPopupMenu
+    Left = 112
+    Top = 304
+    object mniCheckAll: TMenuItem
+      Caption = 'Check all'
+      OnClick = mniCheckAllClick
+    end
+    object mniUncheckAll: TMenuItem
+      Caption = 'Uncheck all'
+      OnClick = mniUncheckAllClick
+    end
   end
 end

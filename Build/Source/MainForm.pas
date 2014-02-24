@@ -39,6 +39,7 @@ uses
   StdCtrls,
   ExtCtrls,
   CheckLst,
+  Menus,
   BuildEngine;
 
 type
@@ -56,6 +57,9 @@ type
     grpBuildOptions: TGroupBox;
     chkModifyDelphiRegistrySettings: TCheckBox;
     chkPauseAfterEachStep: TCheckBox;
+    PopupMenu1: TPopupMenu;
+    mniCheckAll: TMenuItem;
+    mniUncheckAll: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure btnBuildClick(Sender: TObject);
@@ -68,6 +72,8 @@ type
     procedure chkRunTestsClick(Sender: TObject);
     procedure chkModifyDelphiRegistrySettingsClick(Sender: TObject);
     procedure chkPauseAfterEachStepClick(Sender: TObject);
+    procedure mniCheckAllClick(Sender: TObject);
+    procedure mniUncheckAllClick(Sender: TObject);
   private
     fBuildEngine: TBuildEngine;
   end;
@@ -146,6 +152,12 @@ begin
   btnBuild.Enabled := not fBuildEngine.SelectedTasks.IsEmpty;
 end;
 
+procedure TfrmMain.mniUncheckAllClick(Sender: TObject);
+begin
+  lbTargets.CheckAll(cbUnchecked);
+  lbTargetsClickCheck(lbTargets);
+end;
+
 procedure TfrmMain.btnBuildClick(Sender: TObject);
 begin
   fBuildEngine.BuildAll();
@@ -159,6 +171,12 @@ end;
 procedure TfrmMain.btnCloseClick(Sender: TObject);
 begin
   Close;
+end;
+
+procedure TfrmMain.mniCheckAllClick(Sender: TObject);
+begin
+  lbTargets.CheckAll(cbChecked, False, False);
+  lbTargetsClickCheck(lbTargets);
 end;
 
 procedure TfrmMain.chkRunTestsClick(Sender: TObject);
