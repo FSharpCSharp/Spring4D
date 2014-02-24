@@ -261,7 +261,7 @@ uses
 
 procedure THashSetBase<T>.Add(const item: T);
 begin
-  fDictionary.Add(item, 0);
+  fDictionary.AddOrSetValue(item, 0);
 end;
 
 {$ENDREGION}

@@ -24,8 +24,7 @@
 
 unit Spring.Collections.Enumerable;
 
-{$WEAKLINKRTTI ON}
-{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
+{$I Spring.inc}
 
 interface
 
@@ -1876,7 +1875,7 @@ begin
 //  Guard.CheckNotNull(Assigned(source), 'source');
 //  Guard.CheckNotNull(Assigned(selector), 'selector');
 
-  Result := TSelectEnumerableIterator<TSource, TResult>.Create(source, selector);
+  Result := TSelectIterator<TSource, TResult>.Create(source, selector);
 end;
 
 function Enumerable<TSource>.Select(
@@ -1891,7 +1890,7 @@ begin
 //  Guard.CheckNotNull(Assigned(source), 'source');
 //  Guard.CheckNotNull(Assigned(selector), 'selector');
 
-  Result := TSelectIterator<TSource, TResult>.Create(source, selector);
+  Result := TSelectIndexIterator<TSource, TResult>.Create(source, selector);
 end;
 
 function Enumerable<TSource>.SelectMany<TResult>(

@@ -142,6 +142,7 @@ type
     function ElementAtOrDefault(index: Integer): T; overload;
     function ElementAtOrDefault(index: Integer; const defaultValue: T): T; overload;
 
+    function EqualsTo(const values: array of T): Boolean; overload;
     function EqualsTo(const collection: IEnumerable<T>): Boolean; overload;
     function EqualsTo(const collection: IEnumerable<T>; const comparer: IEqualityComparer<T>): Boolean; overload;
 
@@ -526,6 +527,14 @@ begin
     Result := defaultValue;
 end;
 
+function TEnumerableBase<T>.EqualsTo(const values: array of T): Boolean;
+var
+  collection: IEnumerable<T>;
+begin
+  collection := TArrayIterator<T>.Create(values);
+  Result := EqualsTo(collection);
+end;
+
 function TEnumerableBase<T>.EqualsTo(const collection: IEnumerable<T>): Boolean;
 begin
   Result := EqualsTo(collection, EqualityComparer);
@@ -877,7 +886,7 @@ begin
     end;
   until not enumerator.MoveNext;
   if not found then
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoMatchingElement);
+    Result := defaultValue;
 end;
 
 function TEnumerableBase<T>.Skip(count: Integer): IEnumerable<T>;

@@ -392,6 +392,12 @@ type
     ///	  Determines whether two sequences are equal by comparing the elements
     ///	  by using the default equality comparer for their type.
     ///	</summary>
+    function EqualsTo(const values: array of T): Boolean; overload;
+
+    ///	<summary>
+    ///	  Determines whether two sequences are equal by comparing the elements
+    ///	  by using the default equality comparer for their type.
+    ///	</summary>
     function EqualsTo(const collection: IEnumerable<T>): Boolean; overload;
 
     ///	<summary>
@@ -2091,6 +2097,8 @@ type
     class function Empty<T>: IEnumerable<T>; static;
 
     class function Query<T>(const source: TEnumerable<T>): IEnumerable<T>; static;
+
+    class function Range(start, count: Integer): IEnumerable<Integer>; static;
   end;
 
   TStringComparer = class(TCustomComparer<string>)
@@ -2312,6 +2320,11 @@ begin
   Result := TEnumerableAdapter<T>.Create(source);
 end;
 
+class function TCollections.Range(start, count: Integer): IEnumerable<Integer>;
+begin
+  Result := TRangeIterator<Integer>.Create(start, count);
+end;
+
 {$ENDREGION}
 
 
@@ -2341,8 +2354,8 @@ begin
     L := TCharacter.ToUpper(Left);
     R := TCharacter.ToUpper(Right);
 {$ELSE}
-    L := Left.ToUpper;
-    R := Right.ToUpper;
+    L := Char.ToUpper(Left);
+    R := Char.ToUpper(Right);
 {$ENDIF}
   end else
   begin
@@ -2363,8 +2376,8 @@ begin
     L := TCharacter.ToUpper(Left);
     R := TCharacter.ToUpper(Right);
 {$ELSE}
-    L := Left.ToUpper;
-    R := Right.ToUpper;
+    L := Char.ToUpper(Left);
+    R := Char.ToUpper(Right);
 {$ENDIF}
   end else
   begin
@@ -2383,7 +2396,7 @@ begin
 {$IFNDEF DELPHIXE4_UP}
     S := TCharacter.ToUpper(Value)
 {$ELSE}
-    S := Value.ToUpper
+    S := Char.ToUpper(Value)
 {$ENDIF}
   else
     S := Value;

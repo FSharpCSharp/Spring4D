@@ -84,6 +84,7 @@ type
     fIndex: Integer;
   public
     constructor Create(const values: array of T); overload;
+    constructor Create(const values: TArray<T>); overload;
     function Clone: TIterator<T>; override;
     function MoveNext: Boolean; override;
   end;
@@ -312,7 +313,7 @@ type
     function MoveNext: Boolean; override;
   end;
 
-  TSelectEnumerableIterator<TSource, TResult> = class(TIterator<TResult>)
+  TSelectIterator<TSource, TResult> = class(TIterator<TResult>)
   private
     fSource: IEnumerable<TSource>;
     fSelector: TFunc<TSource, TResult>;
@@ -324,7 +325,7 @@ type
     function MoveNext: Boolean; override;
   end;
 
-  TSelectIterator<TSource, TResult> = class(TIterator<TResult>)
+  TSelectIndexIterator<TSource, TResult> = class(TIterator<TResult>)
   private
     fSource: IEnumerable<TSource>;
     fSelector: TFunc<TSource, Integer, TResult>;
@@ -823,6 +824,11 @@ begin
   SetLength(fValues, Length(values));
   for i := 0 to High(values) do
     fValues[i] := values[i];
+end;
+
+constructor TArrayIterator<T>.Create(const values: TArray<T>);
+begin
+  fValues := values;
 end;
 
 function TArrayIterator<T>.Clone: TIterator<T>;
@@ -1660,9 +1666,9 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TSelectEnumerableIterator<TSource, TResult>'}
+{$REGION 'TSelectIterator<TSource, TResult>'}
 
-constructor TSelectEnumerableIterator<TSource, TResult>.Create(
+constructor TSelectIterator<TSource, TResult>.Create(
   const source: IEnumerable<TSource>; const selector: TFunc<TSource, TResult>);
 begin
   Guard.CheckNotNull(Assigned(source), 'source');
@@ -1673,12 +1679,12 @@ begin
   fSelector := selector;
 end;
 
-function TSelectEnumerableIterator<TSource, TResult>.Clone: TIterator<TResult>;
+function TSelectIterator<TSource, TResult>.Clone: TIterator<TResult>;
 begin
-  Result := TSelectEnumerableIterator<TSource, TResult>.Create(fSource, fSelector)
+  Result := TSelectIterator<TSource, TResult>.Create(fSource, fSelector)
 end;
 
-function TSelectEnumerableIterator<TSource, TResult>.MoveNext: Boolean;
+function TSelectIterator<TSource, TResult>.MoveNext: Boolean;
 begin
   Result := False;
 
@@ -1706,9 +1712,9 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TSelectIterator<TSource, TResult>'}
+{$REGION 'TSelectIndexIterator<TSource, TResult>'}
 
-constructor TSelectIterator<TSource, TResult>.Create(
+constructor TSelectIndexIterator<TSource, TResult>.Create(
   const source: IEnumerable<TSource>;
   const selector: TFunc<TSource, Integer, TResult>);
 begin
@@ -1720,12 +1726,12 @@ begin
   fSelector := selector;
 end;
 
-function TSelectIterator<TSource, TResult>.Clone: TIterator<TResult>;
+function TSelectIndexIterator<TSource, TResult>.Clone: TIterator<TResult>;
 begin
-  Result := TSelectIterator<TSource, TResult>.Create(fSource, fSelector);
+  Result := TSelectIndexIterator<TSource, TResult>.Create(fSource, fSelector);
 end;
 
-function TSelectIterator<TSource, TResult>.MoveNext: Boolean;
+function TSelectIndexIterator<TSource, TResult>.MoveNext: Boolean;
 var
   current: TSource;
 begin
