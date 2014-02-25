@@ -98,6 +98,7 @@ type
     procedure TestListClear;
     procedure TestListLargeDelete;
     procedure TestQueryInterface;
+    procedure TestIssue67;
   end;
 
   TTestEmptyStringIntegerDictionary = class(TExceptionCheckerTestCase)
@@ -300,6 +301,7 @@ type
 implementation
 
 uses
+  Generics.Defaults,
   SysUtils;
 
 { TTestEmptyHashSet }
@@ -459,6 +461,25 @@ end;
 
 const
   ListCountLimit = 1000;//0000;
+
+procedure TTestIntegerList.TestIssue67;
+var
+  i: Integer;
+begin
+  SUT := TCollections.CreateList<Integer>(TComparer<Integer>.Construct(
+    function(const left, right: Integer): Integer
+    begin
+      Result := right - left; // decending
+    end));
+  SUT.AddRange([1, 3, 5, 7, 9, 2, 4, 6, 8]);
+  i := SUT.Where(
+    function(const i: Integer): Boolean
+    begin
+      Result := Odd(i);
+    end)
+    .Max;
+  CheckEquals(1, i);
+end;
 
 procedure TTestIntegerList.TestLastIndexOf;
 begin
