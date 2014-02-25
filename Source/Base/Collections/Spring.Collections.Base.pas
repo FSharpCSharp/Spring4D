@@ -166,8 +166,8 @@ type
     function Min: T; overload;
     function Min(const comparer: IComparer<T>): T; overload;
 
-//    function Ordered: IEnumerable<T>; overload;
-//    function Ordered(const comparison: TComparison<T>): IEnumerable<T>; overload;
+    function Ordered: IEnumerable<T>; overload;
+    function Ordered(const comparer: IComparer<T>): IEnumerable<T>; overload;
 
     function Reversed: IEnumerable<T>; virtual;
 
@@ -773,24 +773,18 @@ begin
     raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
 end;
 
-//function TEnumerableBase<T>.Ordered: IEnumerable<T>;
-//var
-//  comparer: IComparer<T>;
-//begin
-//  comparer := TComparer<T>.Default;
-//  Result := TOrderedIterator<T>.Create(Self, comparer);
-//end;
-//
-//function TEnumerableBase<T>.Ordered(
-//  const comparison: TComparison<T>): IEnumerable<T>;
-//var
-//  comparer: IComparer<T>;
-//begin
-//  Guard.CheckNotNull(Assigned(comparison), 'comparison');
-//
-//  comparer := TComparer<T>.Construct(comparison);
-//  Result := TOrderedIterator<T>.Create(Self, comparer);
-//end;
+function TEnumerableBase<T>.Ordered: IEnumerable<T>;
+begin
+  Result := TOrderedIterator<T>.Create(Self, Comparer);
+end;
+
+function TEnumerableBase<T>.Ordered(
+  const comparer: IComparer<T>): IEnumerable<T>;
+begin
+  Guard.CheckNotNull(Assigned(comparer), 'comparer');
+
+  Result := TOrderedIterator<T>.Create(Self, comparer);
+end;
 
 function TEnumerableBase<T>.Reversed: IEnumerable<T>;
 begin

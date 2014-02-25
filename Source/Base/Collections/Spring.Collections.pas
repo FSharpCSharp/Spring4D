@@ -599,13 +599,13 @@ type
     ///	  Sorts the elements of a sequence in ascending order using the default
     ///	  comparer for their type.
     ///	</summary>
-//    function Ordered: IEnumerable<T>; overload;
+    function Ordered: IEnumerable<T>; overload;
 
     ///	<summary>
     ///	  Sorts the elements of a sequence in ascending order using the
-    ///	  specified TComparison&lt;T&gt;.
+    ///	  specified <see cref="IComparer&lt;T&gt;" />.
     ///	</summary>
-//    function Ordered(const comparison: TComparison<T>): IEnumerable<T>; overload;
+    function Ordered(const comparer: IComparer<T>): IEnumerable<T>; overload;
 
     ///	<summary>
     ///	  Inverts the order of the elements in a sequence.
