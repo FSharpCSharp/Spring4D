@@ -2099,6 +2099,8 @@ type
     class function Query<T>(const source: TEnumerable<T>): IEnumerable<T>; static;
 
     class function Range(start, count: Integer): IEnumerable<Integer>; static;
+
+    class function Repeated<T>(const element: T; count: Integer): IEnumerable<T>; static;
   end;
 
   TStringComparer = class(TCustomComparer<string>)
@@ -2323,6 +2325,12 @@ end;
 class function TCollections.Range(start, count: Integer): IEnumerable<Integer>;
 begin
   Result := TRangeIterator<Integer>.Create(start, count);
+end;
+
+class function TCollections.Repeated<T>(const element: T;
+  count: Integer): IEnumerable<T>;
+begin
+  Result := TRepeatIterator<T>.Create(element, count);
 end;
 
 {$ENDREGION}

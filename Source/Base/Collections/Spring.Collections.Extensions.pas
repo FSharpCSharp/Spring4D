@@ -264,6 +264,8 @@ type
     fStart: Integer;
     fCount: Integer;
     fIndex: Integer;
+  protected
+    function GetCount: Integer; override;
   public
     constructor Create(start, count: Integer);
     function Clone: TIterator<T>; override;
@@ -711,6 +713,19 @@ type
   public
     constructor Create(const source: IEnumerable<T>);
     function Clone: TIterator<TResult>; override;
+    function MoveNext: Boolean; override;
+  end;
+
+  TRepeatIterator<T> = class(TIterator<T>)
+  public
+    fElement: T;
+    fCount: Integer;
+    fIndex: Integer;
+  protected
+    function GetCount: Integer; override;
+  public
+    constructor Create(const element: T; count: Integer);
+    function Clone: TIterator<T>; override;
     function MoveNext: Boolean; override;
   end;
 
@@ -1456,6 +1471,11 @@ end;
 function TRangeIterator<T>.Clone: TIterator<T>;
 begin
   Result := TRangeIterator<T>.Create(fStart, fCount);
+end;
+
+function TRangeIterator<T>.GetCount: Integer;
+begin
+  Result := fCount;
 end;
 
 function TRangeIterator<T>.MoveNext: Boolean;
@@ -2910,6 +2930,50 @@ begin
       value := TValue.From<T>(current);
       if value.TryAsType<TResult>(fCurrent) then
         Exit(True);
+    end;
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TRepeatIterator<T>'}
+
+constructor TRepeatIterator<T>.Create(const element: T; count: Integer);
+begin
+  Guard.CheckRange(count >= 0, 'count');
+
+  inherited Create;
+  fElement := element;
+  fCount := count;
+end;
+
+function TRepeatIterator<T>.Clone: TIterator<T>;
+begin
+  Result := TRepeatIterator<T>.Create(fElement, fCount);
+end;
+
+function TRepeatIterator<T>.GetCount: Integer;
+begin
+  Result := fCount;
+end;
+
+function TRepeatIterator<T>.MoveNext: Boolean;
+begin
+  Result := False;
+
+  if fState = STATE_ENUMERATOR then
+  begin
+    fIndex := 0;
+  end;
+
+  if fState = STATE_RUNNING then
+  begin
+    if fIndex < fCount then
+    begin
+      Inc(fIndex);
+      fCurrent := fElement;
+      Result := True;
     end;
   end;
 end;
