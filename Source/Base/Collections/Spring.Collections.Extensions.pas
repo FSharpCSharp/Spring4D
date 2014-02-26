@@ -1060,7 +1060,7 @@ begin
   Guard.CheckNotNull(Assigned(source), 'source');
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 
-  inherited Create(source.Comparer);;
+  inherited Create(source.Comparer);
   fSource := source;
   fPredicate := predicate;
 end;
@@ -1109,7 +1109,7 @@ begin
   Guard.CheckNotNull(Assigned(source), 'source');
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 
-  inherited Create(source.Comparer);;
+  inherited Create(source.Comparer);
   fSource := source;
   fPredicate := predicate;
 end;
@@ -1159,7 +1159,7 @@ constructor TTakeIterator<T>.Create(const source: IEnumerable<T>;
 begin
   Guard.CheckNotNull(Assigned(source), 'source');
 
-  inherited Create(source.Comparer);;
+  inherited Create(source.Comparer);
   fSource := source;
   fCount := count;
 end;
@@ -1203,7 +1203,7 @@ begin
   Guard.CheckNotNull(Assigned(source), 'source');
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 
-  inherited Create(source.Comparer);;
+  inherited Create(source.Comparer);
   fSource := source;
   fPredicate := predicate;
 end;
@@ -2629,7 +2629,7 @@ end;
 
 function TOrderedIterator<T>.Clone: TIterator<T>;
 begin
-  Result := TOrderedIterator<T>.Create(fSource, comparer);
+  Result := TOrderedIterator<T>.Create(fSource, fComparer);
 end;
 
 function TOrderedIterator<T>.MoveNext: Boolean;
