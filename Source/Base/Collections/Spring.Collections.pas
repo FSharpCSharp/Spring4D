@@ -901,7 +901,7 @@ type
     function LastIndexOf(const item: TValue; index: Integer): Integer; overload;
     function LastIndexOf(const item: TValue; index, count: Integer): Integer; overload;
 
-    function AsReadOnly: IReadOnlyList;
+    function AsReadOnlyList: IReadOnlyList;
 
     property Items[index: Integer]: TValue read GetItem write SetItem; default;
     property OnChanged: IEvent read GetOnChanged;
@@ -1010,7 +1010,7 @@ type
     function LastIndexOf(const item: T; index, count: Integer): Integer; overload;
 
     function AsList: IList;
-    function AsReadOnly: IReadOnlyList<T>;
+    function AsReadOnlyList: IReadOnlyList<T>;
 
     property Items[index: Integer]: T read GetItem write SetItem; default;
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
@@ -1460,7 +1460,7 @@ type
 
     function TryGetValue(const key: TValue; out value: TValue): Boolean;
 
-    function AsReadOnly: IReadOnlyDictionary;
+    function AsReadOnlyDictionary: IReadOnlyDictionary;
 
     property OnKeyChanged: IEvent read GetOnKeyChanged;
     property OnValueChanged: IEvent read GetOnValueChanged;
@@ -1628,7 +1628,7 @@ type
     ///	</returns>
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
 
-    function AsReadOnly: IReadOnlyDictionary<TKey, TValue>;
+    function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
 
     ///	<summary>
     ///	  Gets or sets the element with the specified key.
@@ -2099,6 +2099,8 @@ type
     class function Query<T>(const source: TEnumerable<T>): IEnumerable<T>; static;
 
     class function Range(start, count: Integer): IEnumerable<Integer>; static;
+
+    class function Repeated<T>(const element: T; count: Integer): IEnumerable<T>; static;
   end;
 
   TStringComparer = class(TCustomComparer<string>)
@@ -2323,6 +2325,12 @@ end;
 class function TCollections.Range(start, count: Integer): IEnumerable<Integer>;
 begin
   Result := TRangeIterator<Integer>.Create(start, count);
+end;
+
+class function TCollections.Repeated<T>(const element: T;
+  count: Integer): IEnumerable<T>;
+begin
+  Result := TRepeatIterator<T>.Create(element, count);
 end;
 
 {$ENDREGION}

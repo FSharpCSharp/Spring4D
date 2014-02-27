@@ -94,7 +94,7 @@ type
     function LastIndexOf(const item: TValue; index: Integer): Integer; overload;
     function LastIndexOf(const item: TValue; index, count: Integer): Integer; overload;
 
-    function AsReadOnly: IReadOnlyList;
+    function AsReadOnlyList: IReadOnlyList;
   protected
     function QueryInterface(const IID: TGUID; out Obj): HResult; override;
   public
@@ -121,11 +121,12 @@ type
     function ContainsValue(const value: TValue): Boolean;
 
     function TryGetValue(const key: TValue; out value: TValue): Boolean;
+
+    function AsReadOnlyDictionary: IReadOnlyDictionary;
   protected
     function QueryInterface(const IID: TGUID; out Obj): HResult; override;
   public
     constructor Create(const source: IDictionary<TKey, T>);
-    function AsReadOnly: IReadOnlyDictionary;
   end;
 
   TStackAdapter<T> = class(TEnumerableBase<T>, IStack)
@@ -318,7 +319,7 @@ begin
   fSource := source;
 end;
 
-function TListAdapter<T>.AsReadOnly: IReadOnlyList;
+function TListAdapter<T>.AsReadOnlyList: IReadOnlyList;
 begin
   Result := Self;
 end;
@@ -480,7 +481,7 @@ begin
   fSource.AddOrSetValue(key.AsType<TKey>, value.AsType<T>);
 end;
 
-function TDictionaryAdapter<TKey, T>.AsReadOnly: IReadOnlyDictionary;
+function TDictionaryAdapter<TKey, T>.AsReadOnlyDictionary: IReadOnlyDictionary;
 begin
   Result := Self;
 end;
