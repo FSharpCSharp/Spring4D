@@ -901,7 +901,7 @@ type
     function LastIndexOf(const item: TValue; index: Integer): Integer; overload;
     function LastIndexOf(const item: TValue; index, count: Integer): Integer; overload;
 
-    function AsReadOnly: IReadOnlyList;
+    function AsReadOnlyList: IReadOnlyList;
 
     property Items[index: Integer]: TValue read GetItem write SetItem; default;
     property OnChanged: IEvent read GetOnChanged;
@@ -1010,7 +1010,7 @@ type
     function LastIndexOf(const item: T; index, count: Integer): Integer; overload;
 
     function AsList: IList;
-    function AsReadOnly: IReadOnlyList<T>;
+    function AsReadOnlyList: IReadOnlyList<T>;
 
     property Items[index: Integer]: T read GetItem write SetItem; default;
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;

@@ -94,7 +94,7 @@ type
     function LastIndexOf(const item: TValue; index: Integer): Integer; overload;
     function LastIndexOf(const item: TValue; index, count: Integer): Integer; overload;
 
-    function AsReadOnly: IReadOnlyList;
+    function AsReadOnlyList: IReadOnlyList;
   protected
     function QueryInterface(const IID: TGUID; out Obj): HResult; override;
   public
@@ -318,7 +318,7 @@ begin
   fSource := source;
 end;
 
-function TListAdapter<T>.AsReadOnly: IReadOnlyList;
+function TListAdapter<T>.AsReadOnlyList: IReadOnlyList;
 begin
   Result := Self;
 end;

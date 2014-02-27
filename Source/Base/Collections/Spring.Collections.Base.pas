@@ -266,6 +266,7 @@ type
   private
     fOnChanged: ICollectionChangedEvent<T>;
     function AsList: IList;
+    function AsReadOnlyList: IReadOnlyList<T>;
   {$HINTS OFF}
     property List: IList read AsList implements IList;
   {$HINTS ON}
@@ -327,8 +328,6 @@ type
     procedure Sort(const comparison: TComparison<T>); overload;
 
     function ToArray: TArray<T>; override;
-
-    function AsReadOnly: IReadOnlyList<T>;
 
     property Items[index: Integer]: T read GetItem write SetItem; default;
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
@@ -1260,7 +1259,7 @@ begin
   Result := TListAdapter<T>.Create(Self);
 end;
 
-function TListBase<T>.AsReadOnly: IReadOnlyList<T>;
+function TListBase<T>.AsReadOnlyList: IReadOnlyList<T>;
 begin
   Result := Self;
 end;
