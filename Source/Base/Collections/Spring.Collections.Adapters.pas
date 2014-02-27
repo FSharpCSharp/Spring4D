@@ -121,11 +121,12 @@ type
     function ContainsValue(const value: TValue): Boolean;
 
     function TryGetValue(const key: TValue; out value: TValue): Boolean;
+
+    function AsReadOnlyDictionary: IReadOnlyDictionary;
   protected
     function QueryInterface(const IID: TGUID; out Obj): HResult; override;
   public
     constructor Create(const source: IDictionary<TKey, T>);
-    function AsReadOnly: IReadOnlyDictionary;
   end;
 
   TStackAdapter<T> = class(TEnumerableBase<T>, IStack)
@@ -480,7 +481,7 @@ begin
   fSource.AddOrSetValue(key.AsType<TKey>, value.AsType<T>);
 end;
 
-function TDictionaryAdapter<TKey, T>.AsReadOnly: IReadOnlyDictionary;
+function TDictionaryAdapter<TKey, T>.AsReadOnlyDictionary: IReadOnlyDictionary;
 begin
   Result := Self;
 end;

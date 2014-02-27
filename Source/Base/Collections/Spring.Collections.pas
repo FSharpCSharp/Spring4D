@@ -1460,7 +1460,7 @@ type
 
     function TryGetValue(const key: TValue; out value: TValue): Boolean;
 
-    function AsReadOnly: IReadOnlyDictionary;
+    function AsReadOnlyDictionary: IReadOnlyDictionary;
 
     property OnKeyChanged: IEvent read GetOnKeyChanged;
     property OnValueChanged: IEvent read GetOnValueChanged;
@@ -1628,7 +1628,7 @@ type
     ///	</returns>
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
 
-    function AsReadOnly: IReadOnlyDictionary<TKey, TValue>;
+    function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
 
     ///	<summary>
     ///	  Gets or sets the element with the specified key.
