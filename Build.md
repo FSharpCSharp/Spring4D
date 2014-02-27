@@ -98,7 +98,7 @@ You can find the platforms that your Delphi version supports by looking at a key
 
     HKEY_CURRENT_USER\Software\[Company]\BDS\[Version].0\Library
 
-This particular key is for Delphi XE5 (you can find more keys in <https://bitbucket.org/jeroenp/besharp.net/src/tip/Native/Delphi/Scripts/List-Delphi-Installed-Packages.ps1>, which supports these platform subkeys:
+This particular key is for Delphi XE5. You can find more keys in <https://bitbucket.org/jeroenp/besharp.net/src/tip/Native/Delphi/Scripts/List-Delphi-Installed-Packages.ps1>, which supports these platform subkeys:
 
 - `Android32`
 - `iOSDevice`
@@ -113,7 +113,7 @@ Note that `Android32` and `iOSDevice` are for `Arm` support, but `iOSSimulator` 
 
 In this example, we add `OSX32` support for `DelphiXE5`. Replace these according to your Delphi version.
 
-1. Update `Build.Settings.ini`
+### Update `Build.Settings.ini`
 
 Add this section:
 
@@ -124,7 +124,7 @@ Add this section:
 - Replace `DelphiXE5` with your Delphi version.
 - Replace `OSX32` with a supported platform in your Delphi version from the list in [possible platforms](#possiblePlatforms).
 
-2. Update `Build.Settings.Compilers.ini`
+### Update `Build.Settings.Compilers.ini`
 
 Add this section:
 
@@ -134,7 +134,8 @@ Add this section:
     Keys.BDS=Software\Embarcadero\BDS\12.0
     Keys.Library=Library\OSX32
 
-- Replace the value of `DisplayName` with a description similar to the pattern used by other `DisplayName` values.
-- 
-- Replace `DelphiXE5` with your Delphi version.
-- Replace `OSX32` with a supported platform in your Delphi version from the list in [possible platforms](#possiblePlatforms).
+Then in this section:
+
+1. Replace the value of `DisplayName` with a description similar to the pattern used by other `DisplayName` values.
+2. Replace `DelphiXE5` with your Delphi version.
+3. Replace `OSX32` with a supported platform in your Delphi version from the list in [possible platforms](#possiblePlatforms).
