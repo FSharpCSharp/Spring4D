@@ -814,6 +814,16 @@ function GetQualifiedClassName(AClass: TClass): string; overload; {$IFDEF DELPHI
 ///	</summary>
 function IsAssignableFrom(leftType, rightType: PTypeInfo): Boolean;
 
+/// <summary>
+///   Returns the size that is needed in order to pass an argument of the given
+///   type.
+/// </summary>
+/// <remarks>
+///   While in most cases the result is equal to the actual type size for short
+///   strings it always returns SizeOf(Pointer) as short strings are always
+///   passed as pointer.
+/// </remarks>
+function GetTypeSize(typeInfo: PTypeInfo): Integer;
 {$ENDREGION}
 
 
@@ -907,6 +917,83 @@ begin
     Result := False;
 end;
 
+function GetTypeSize(typeInfo: PTypeInfo): Integer;
+var
+  typeData: PTypeData;
+const
+  COrdinalSizes: array[TOrdType] of Integer = (
+    SizeOf(ShortInt){1},
+    SizeOf(Byte){1},
+    SizeOf(SmallInt){2},
+    SizeOf(Word){2},
+    SizeOf(Integer){4},
+    SizeOf(Cardinal){4});
+  CFloatSizes: array[TFloatType] of Integer = (
+    SizeOf(Single){4},
+    SizeOf(Double){8},
+{$IFDEF MACOS}
+    16, // Fixed the Mac OS X stack corruption issue. TTestMulticastEventStackSize.TestIssue60ExtendedAssignedConst to align stack at 16-byte boundaries on OSX.
+{$ELSE}
+    SizeOf(Extended){10},
+{$ENDIF MACOS}
+    SizeOf(Comp){8},
+    SizeOf(Currency){8});
+  CSetSizes: array[TOrdType] of Integer = (
+    SizeOf(ShortInt){1},
+    SizeOf(Byte){1},
+    SizeOf(SmallInt){2},
+    SizeOf(Word){2},
+    SizeOf(Integer){4},
+    SizeOf(Cardinal){4});
+begin
+  case typeInfo.Kind of
+{$IFNDEF NEXTGEN}
+    tkChar:
+      Result := SizeOf(AnsiChar){1};
+{$ENDIF}
+    tkWChar:
+      Result := SizeOf(WideChar){2};
+    tkInteger, tkEnumeration:
+      begin
+        typeData := GetTypeData(typeInfo);
+        Result := COrdinalSizes[typeData.OrdType];
+      end;
+    tkFloat:
+      begin
+        typeData := GetTypeData(typeInfo);
+        Result := CFloatSizes[typeData.FloatType];
+      end;
+    tkString, tkLString, tkUString, tkWString, tkInterface, tkClass, tkClassRef, tkDynArray, tkPointer, tkProcedure:
+      Result := SizeOf(Pointer);
+    tkMethod:
+      Result := SizeOf(TMethod);
+    tkInt64:
+      Result := SizeOf(Int64){8};
+    tkVariant:
+      Result := 16; // http://docwiki.embarcadero.com/RADStudio/en/Variant_Types
+    tkSet:
+      begin
+        // big sets have no typeInfo for now
+        typeData := GetTypeData(typeInfo);
+        Result := CSetSizes[typeData.OrdType];
+      end;
+    tkRecord:
+      begin
+        typeData := GetTypeData(typeInfo);
+        Result := typeData.RecSize;
+      end;
+    tkArray:
+      begin
+        typeData := GetTypeData(typeInfo);
+        Result := typeData.ArrayData.Size;
+      end;
+    else
+      begin
+        Assert(False, 'Unsupported type'); { TODO -o##jwp -cEnhance : add more context to the assert }
+        Result := -1;
+      end;
+  end;
+end;
 {$ENDREGION}
 
 
