@@ -33,10 +33,12 @@ unit Spring.Tests.Base;
 interface
 
 uses
+  TypInfo,
   TestFramework,
   Spring.TestUtils,
   Spring,
-  Spring.Events;
+  Spring.Events,
+  Spring.Utils;
 
 type
   TTestNullableInteger = class(TTestCase)
@@ -164,14 +166,108 @@ type
     procedure TestIssue60Single();
     procedure TestIssue60SingleAssignedConst();
   end;
+
 {$ENDIF ~CPUARM}
+
+type
+  TTestSpringEventsMethods = class(TTestCase)
+  strict private
+    fEmptyValue: TValue;
+    fRemainingTypeKinds: TTypeKinds;
+    fTestedTypeKinds: TTypeKinds;
+    const
+      cNativePoiterSize = SizeOf(Pointer);
+  strict protected
+    procedure FailUnsupportedTypeForTypeInfo(const aTypeName: string); virtual;
+    function MatchType(const aTypeInfo: PTypeInfo; const aExpectedTypeKind: TTypeKind; const aExpectedTypeSize: Integer):
+        Integer; virtual;
+    procedure SetUp; override;
+    procedure TearDown; override;
+    property RemainingTypeKinds: TTypeKinds read fRemainingTypeKinds;
+    property TestedTypeKinds: TTypeKinds read fTestedTypeKinds;
+  published
+    /// <summary>
+    ///   Make sure this method is named so it will be run last
+    /// </summary>
+    procedure Test_EnsureAllTTypeKindsCoveredByCallsTo_Test_GetTypeSize_();
+    procedure Test_GetTypeSize_AnsiChar();
+    procedure Test_GetTypeSize_AnsiString();
+    procedure Test_GetTypeSize_Array();
+    procedure Test_GetTypeSize_Boolean();
+    procedure Test_GetTypeSize_Byte();
+    procedure Test_GetTypeSize_ByteBool();
+    procedure Test_GetTypeSize_Cardinal();
+    procedure Test_GetTypeSize_Char();
+    procedure Test_GetTypeSize_Class();
+    procedure Test_GetTypeSize_ClassRef();
+    procedure Test_GetTypeSize_Comp();
+    procedure Test_GetTypeSize_Currency();
+{
+Test_EnsureAllTTypeKindsCoveredByCallsTo_Test_GetTypeSize_: ETestFailure
+at  $00000000005D7EAF
+fRemainingTypeKinds is not empty: tkUnknown,tkMethod,tkArray,tkInterface,tkDynArray,tkClassRef,tkProcedure, expected: <True> but was: <False>
+{ System.pas: Delphi built-in types for .hpp/.obj support }
+(*
+{$NODEFINE    Extended80  } { not supported in C++ }
+*)
+
+    procedure Test_GetTypeSize_Double();
+    procedure Test_GetTypeSize_DynamicArray();
+    procedure Test_GetTypeSize_Extended();
+    procedure Test_GetTypeSize_File();
+    procedure Test_GetTypeSize_Guid();
+    procedure Test_GetTypeSize_Interface();
+    procedure Test_GetTypeSize_Int64();
+    procedure Test_GetTypeSize_Integer();
+    procedure Test_GetTypeSize_LongBool();
+    procedure Test_GetTypeSize_LongInt();
+    procedure Test_GetTypeSize_LongWord();
+    procedure Test_GetTypeSize_Method();
+    procedure Test_GetTypeSize_NativeInt();
+    procedure Test_GetTypeSize_NativeUInt();
+    procedure Test_GetTypeSize_OleVariant();
+    procedure Test_GetTypeSize_OpenString();
+    procedure Test_GetTypeSize_PAnsiChar();
+    procedure Test_GetTypeSize_PChar();
+    procedure Test_GetTypeSize_Pointer();
+    procedure Test_GetTypeSize_Proc();
+    procedure Test_GetTypeSize_Procedure();
+    procedure Test_GetTypeSize_PWideChar();
+    procedure Test_GetTypeSize_Real();
+    procedure Test_GetTypeSize_Set();
+//{$IFOPT REALCOMPATIBILITY}
+//    procedure Test_GetTypeSize_Real48();
+//{$ENDIF REALCOMPATIBILITY}
+    procedure Test_GetTypeSize_ShortInt();
+    procedure Test_GetTypeSize_ShortString();
+    procedure Test_GetTypeSize_ShortString0();
+    procedure Test_GetTypeSize_ShortString1();
+    procedure Test_GetTypeSize_ShortString2();
+    procedure Test_GetTypeSize_ShortString255();
+    procedure Test_GetTypeSize_ShortString7();
+    procedure Test_GetTypeSize_Single();
+    procedure Test_GetTypeSize_SmallInt();
+    procedure Test_GetTypeSize_string();
+    procedure Test_GetTypeSize_Text();
+    procedure Test_GetTypeSize_TextFile();
+    procedure Test_GetTypeSize_UnicodeString();
+    procedure Test_GetTypeSize_UnknownTValue();
+    procedure Test_GetTypeSize_Variant();
+    procedure Test_GetTypeSize_WideChar();
+    procedure Test_GetTypeSize_WideString();
+    procedure Test_GetTypeSize_Word();
+    procedure Test_GetTypeSize_WordBool();
+  end;
 
 implementation
 
 uses
   Classes,
   SysUtils,
-  Variants;
+  Variants,
+  Rtti,
+  StrUtils,
+  Types;
 
 {$REGION 'TTestNullableInteger'}
 
@@ -625,6 +721,7 @@ end;
 
 {$ENDREGION}
 
+
 {$REGION 'TTestMulticastEventStackSize'}
 {$IFNDEF CPUARM}
 
@@ -848,6 +945,443 @@ begin
 end;
 
 {$ENDIF CPUARM}
+{$ENDREGION}
+
+
+{$REGION 'TTestSpringEventsMethods'}
+
+type
+  TShortString0 = String[0];
+  TShortString1 = String[1];
+  TShortString2 = String[2];
+  TShortString255 = String[255];
+  TShortString7 = String[7];
+
+procedure TTestSpringEventsMethods.FailUnsupportedTypeForTypeInfo(const aTypeName: string);
+begin
+{$IFDEF FailUnsupportedTypeForTypeInfo}
+  Fail(Format('%s is unsupported for TypeInfo', [aTypeName]));
+{$ENDIF FailUnsupportedTypeForTypeInfo}
+end;
+
+function TTestSpringEventsMethods.MatchType(const aTypeInfo: PTypeInfo; const aExpectedTypeKind: TTypeKind; const
+    aExpectedTypeSize: Integer): Integer;
+var
+  lActualTypeSize: Integer;
+  lExpectedTypeKindName: string;
+  lTypeInfoKind: TTypeKind;
+  lTypeInfoKindName: string;
+begin
+  lTypeInfoKind := aTypeInfo^.Kind;
+
+  Exclude(fRemainingTypeKinds, lTypeInfoKind);
+  Include(fTestedTypeKinds, lTypeInfoKind);
+
+  lTypeInfoKindName := TEnum.GetName(lTypeInfoKind);
+  lExpectedTypeKindName := TEnum.GetName(aExpectedTypeKind);
+  CheckTrue(aExpectedTypeKind = lTypeInfoKind, Format('aExpectedTypeKind "%s" does not match actual lTypeInfoKind "%s"', [lExpectedTypeKindName, lTypeInfoKindName]));
+
+  lActualTypeSize := GetTypeSize(aTypeInfo);
+  CheckEquals(aExpectedTypeSize, lActualTypeSize, Format('aExpectedTypeSize %d does not lActualTypeSize %d', [aExpectedTypeSize, lActualTypeSize]));
+end;
+
+procedure TTestSpringEventsMethods.SetUp;
+begin
+  inherited;
+  fRemainingTypeKinds := tkAny - [tkUnknown]; // for now, skip tkUnknown until the TODO is fixed.
+  fTestedTypeKinds := [];
+end;
+
+procedure TTestSpringEventsMethods.TearDown;
+begin
+  inherited;
+end;
+
+procedure TTestSpringEventsMethods.Test_EnsureAllTTypeKindsCoveredByCallsTo_Test_GetTypeSize_();
+var
+  fRemainingTypeKindNames: TStrings;
+  fTestedTypeKindNames: TStrings;
+  lAllTypeKinds: TTypeKinds;
+  lContext: TRttiContext;
+  lMethod: TRttiMethod;
+  lMethods: TArray<TRttiMethod>;
+  lNoTypeKinds: TTypeKinds;
+  lParameters: TArray<TRttiParameter>;
+  lType: TRttiType;
+  lTypeKind: TTypeKind;
+  lTypeKindName: string;
+begin
+  lAllTypeKinds := fRemainingTypeKinds;
+  lNoTypeKinds := fTestedTypeKinds;
+
+  lContext := TRttiContext.Create();
+  try
+    lType := lContext.GetType(Self.ClassInfo);
+    lMethods := lType.GetMethods();
+
+    for lMethod in lMethods do
+    begin
+      if lMethod.Visibility = mvPublished then
+        if lMethod.MethodKind = mkProcedure then
+          if StartsText('Test_GetTypeSize_', lMethod.Name) then
+          begin
+            lParameters := lMethod.GetParameters();
+            if Length(lParameters) = 0 then
+            try
+              lMethod.Invoke(Self, []);
+            except
+              on ETestFailure do
+                ; // kill exception
+              on EAssertionFailed do
+                ; // kill exception
+            end;
+          end;
+    end;
+  finally
+    lContext.Free();
+  end;
+
+  fRemainingTypeKindNames := TStringList.Create();
+  try
+    fTestedTypeKindNames := TStringList.Create();
+    try
+      for lTypeKind := Low(TTypeKind) to High(TTypeKind) do
+      begin
+        lTypeKindName := TEnum.GetName(lTypeKind);
+        if lTypeKind in fRemainingTypeKinds then
+          fRemainingTypeKindNames.Add(lTypeKindName);
+        if lTypeKind in fTestedTypeKinds then
+          fTestedTypeKindNames.Add(lTypeKindName);
+      end;
+      CheckTrue(fRemainingTypeKinds = lNoTypeKinds, 'fRemainingTypeKinds is not empty: ' + fRemainingTypeKindNames.CommaText);
+      CheckTrue(fTestedTypeKinds = lAllTypeKinds, 'fRemainingTypeKinds should contain all TTypeKinds: ' + fTestedTypeKindNames.CommaText);
+    finally
+      fTestedTypeKindNames.Free;
+    end;
+  finally
+    fRemainingTypeKindNames.Free;
+  end;
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_Double();
+begin
+  MatchType(TypeInfo(Double), tkFloat, 8);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_Extended();
+begin
+{$IFDEF WIN32}
+  MatchType(TypeInfo(Extended), tkFloat, 10);
+{$ELSE}
+  {$IFDEF MACOS}
+    MatchType(TypeInfo(Extended), tkFloat, 16); // See TTestMulticastEventStackSize.TestIssue60ExtendedAssignedConst to align stack at 16-byte boundaries on OSX.
+  {$ELSE}
+    MatchType(TypeInfo(Extended), tkFloat, 8);
+  {$ENDIF MACOS}
+{$ENDIF WIN32}
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_Guid();
+begin
+  MatchType(TypeInfo(TGuid), tkRecord, 16);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_ShortInt();
+begin
+  MatchType(TypeInfo(ShortInt), tkInteger, 1);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_Int64();
+begin
+  MatchType(TypeInfo(Int64), tkInt64, 8);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_Integer();
+begin
+  MatchType(TypeInfo(Integer), tkInteger, 4);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_SmallInt();
+begin
+  MatchType(TypeInfo(SmallInt), tkInteger, 2);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_AnsiChar();
+begin
+  MatchType(TypeInfo(AnsiChar), tkChar, 1);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_AnsiString();
+begin
+  MatchType(TypeInfo(AnsiString), tkLString, cNativePoiterSize);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_Array();
+begin
+  MatchType(TypeInfo(TTextBuf), tkArray, 128);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_Boolean();
+begin
+  MatchType(TypeInfo(Byte), tkInteger, 1);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_Byte();
+begin
+  MatchType(TypeInfo(Byte), tkInteger, 1);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_ByteBool();
+begin
+  MatchType(TypeInfo(ByteBool), tkEnumeration, 1); // not tkInteger !!
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_Word();
+begin
+  MatchType(TypeInfo(Word), tkInteger, 2);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_Cardinal();
+begin
+  MatchType(TypeInfo(Cardinal), tkInteger, 4);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_Char();
+begin
+  MatchType(TypeInfo(Char), tkWChar, 2);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_Class();
+begin
+  MatchType(TypeInfo(TTestSpringEventsMethods), tkClass, cNativePoiterSize);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_ClassRef();
+begin
+  MatchType(TypeInfo(TClass), tkClassRef, cNativePoiterSize);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_Currency();
+begin
+  MatchType(TypeInfo(Currency), tkFloat, 8);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_Comp();
+begin
+  MatchType(TypeInfo(Comp), tkFloat, 8);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_DynamicArray();
+begin
+  MatchType(TypeInfo(TIntegerDynArray), tkDynArray, cNativePoiterSize);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_LongBool();
+begin
+  MatchType(TypeInfo(LongBool), tkEnumeration, 4); // not tkInteger !!
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_LongInt();
+begin
+  MatchType(TypeInfo(LongInt), tkInteger, 4);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_LongWord();
+begin
+  MatchType(TypeInfo(LongWord), tkInteger, 4);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_NativeInt();
+begin
+{$IFDEF WIN32}
+  MatchType(TypeInfo(NativeInt), tkInteger, 4);
+{$ELSE}
+  {$IFDEF MACOS}
+    MatchType(TypeInfo(NativeInt), tkInteger, 4);
+  {$ELSE}
+    MatchType(TypeInfo(NativeInt), tkInt64, 8);
+  {$ENDIF WIN32}
+{$ENDIF WIN32}
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_NativeUInt();
+begin
+{$IFDEF WIN32}
+  MatchType(TypeInfo(NativeUInt), tkInteger, 4);
+{$ELSE}
+  {$IFDEF MACOS}
+    MatchType(TypeInfo(NativeUInt), tkInteger, 4);
+  {$ELSE}
+    MatchType(TypeInfo(NativeUInt), tkInt64, 8);
+  {$ENDIF WIN32}
+{$ENDIF WIN32}
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_OleVariant();
+begin
+  MatchType(TypeInfo(OleVariant), tkVariant, 16);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_Pointer();
+begin
+  MatchType(TypeInfo(Pointer), tkPointer, cNativePoiterSize);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_Real();
+begin
+{$IFDEF WIN32}
+  MatchType(TypeInfo(Real), tkFloat, 8);
+{$ELSE}
+  MatchType(TypeInfo(Real), tkFloat, 8);
+{$ENDIF WIN32}
+end;
+
+//{$IFOPT REALCOMPATIBILITY}
+//procedure TTestSpringEventsMethods.Test_GetTypeSize_Real48();
+//begin
+//  MatchType(TypeInfo(Real48), tkFloat, 6);
+//end;
+//{$ENDIF REALCOMPATIBILITY}
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_Set();
+begin
+  MatchType(TypeInfo(TTypeKinds), tkSet, 4);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_Single();
+begin
+  MatchType(TypeInfo(Single), tkFloat, 4);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_ShortString();
+begin
+  MatchType(TypeInfo(ShortString), tkString, 256);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_ShortString0();
+begin
+  MatchType(TypeInfo(TShortString0), tkString, 1);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_ShortString1();
+begin
+  MatchType(TypeInfo(TShortString1), tkString, 2);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_ShortString2();
+begin
+  MatchType(TypeInfo(TShortString2), tkString, 3);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_File();
+begin
+//  MatchType(TypeInfo(File), tkFloat, 0);
+  FailUnsupportedTypeForTypeInfo('File');
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_Interface();
+begin
+  MatchType(TypeInfo(IInterface), tkInterface, cNativePoiterSize);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_Method();
+begin
+  MatchType(TypeInfo(TNotifyEvent), tkMethod, 2*cNativePoiterSize);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_OpenString();
+begin
+// http://www.codexterity.com/delphistrings.htm
+//  MatchType(TypeInfo(OpenString), tkInteger, 4);
+  FailUnsupportedTypeForTypeInfo('OpenString');
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_PAnsiChar();
+begin
+  MatchType(TypeInfo(PAnsiChar), tkPointer, cNativePoiterSize);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_PChar();
+begin
+  MatchType(TypeInfo(PChar), tkPointer, cNativePoiterSize);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_Proc();
+begin
+  MatchType(TypeInfo(TProc), tkInterface, cNativePoiterSize);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_Procedure();
+begin
+  MatchType(TypeInfo(TProcedure), tkProcedure, cNativePoiterSize);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_PWideChar();
+begin
+  MatchType(TypeInfo(PWideChar), tkPointer, cNativePoiterSize);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_ShortString255();
+begin
+  MatchType(TypeInfo(TShortString255), tkString, 256);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_ShortString7();
+begin
+  MatchType(TypeInfo(TShortString7), tkString, 8);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_string();
+begin
+  MatchType(TypeInfo(string), tkUString, cNativePoiterSize);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_Text();
+begin
+//  MatchType(TypeInfo(Text), tkFloat, 0);
+  FailUnsupportedTypeForTypeInfo('Text');
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_TextFile();
+begin
+//  MatchType(TypeInfo(TextFile), tkFloat, 0);
+  FailUnsupportedTypeForTypeInfo('TextFile');
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_UnicodeString();
+begin
+  MatchType(TypeInfo(UnicodeString), tkUString, cNativePoiterSize);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_UnknownTValue();
+//var
+//  lTypeInfo: PTypeInfo;
+begin
+{TODO -o##jwp -cEnhance : Research to see if RTTI with tkUnknown can be generated at all }
+//  lTypeInfo := fEmptyValue.TypeInfo;
+//  MatchType(lTypeInfo, tkUnknown, cNativePoiterSize);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_Variant();
+begin
+  MatchType(TypeInfo(Variant), tkVariant, 16);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_WideChar();
+begin
+  MatchType(TypeInfo(WideChar), tkWChar, 2);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_WideString();
+begin
+  MatchType(TypeInfo(WideString), tkWString, cNativePoiterSize);
+end;
+
+procedure TTestSpringEventsMethods.Test_GetTypeSize_WordBool();
+begin
+  MatchType(TypeInfo(WordBool), tkEnumeration, 2); // not tkInteger !!
+end;
+
 {$ENDREGION}
 
 end.

@@ -116,6 +116,11 @@ type
   TMulticastNotifyEvent = TEvent<TNotifyEvent>;
 {$ENDIF SPRING_HAS_GENERIC_EVENTS}
 
+{$IFDEF TESTS}
+// only expose during unit testing
+function GetTypeSize(typeInfo: PTypeInfo): Integer;
+{$ENDIF TESTS}
+
 implementation
 
 uses
@@ -159,7 +164,7 @@ const
     SizeOf(Single){4},
     SizeOf(Double){8},
 {$IFDEF MACOS}
-    16,
+    16, // Fixed the Mac OS X stack corruption issue. TTestMulticastEventStackSize.TestIssue60ExtendedAssignedConst to align stack at 16-byte boundaries on OSX.
 {$ELSE}
     SizeOf(Extended){10},
 {$ENDIF MACOS}

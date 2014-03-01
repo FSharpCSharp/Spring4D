@@ -59,6 +59,7 @@ begin
     TTestMulticastEvent.Suite, //UNSUPPORTED on ARM
     TTestMulticastEventStackSize.Suite,
 {$ENDIF}
+    TTestSpringEventsMethods.Suite,
     TTestEmptyHashSet.Suite,
     TTestNormalHashSet.Suite,
     TTestIntegerList.Suite,
