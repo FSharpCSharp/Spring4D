@@ -278,6 +278,8 @@ begin
 
   for I := 0 to typeData^.ParamCount - 1 do
   begin
+    if not Assigned(ParamInfos^[I]) then
+      raise EInvalidOperationException.CreateRes(@SNoTypeInfo);
 {$IFNDEF CPUX64}
     if PassByRef(P, ParamInfos, I) then
       Size := 4
