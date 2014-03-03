@@ -368,8 +368,11 @@ type
   public
     constructor Create(const source: IEnumerable<TSource>;
       const keySelector: TFunc<TSource, TKey>;
+      const elementSelector: TFunc<TSource, TElement>); overload;
+    constructor Create(const source: IEnumerable<TSource>;
+      const keySelector: TFunc<TSource, TKey>;
       const elementSelector: TFunc<TSource, TElement>;
-      const comparer: IEqualityComparer<TKey>);
+      const comparer: IEqualityComparer<TKey>); overload;
     function GetEnumerator: IEnumerator<IGrouping<TKey, TElement>>; override;
   end;
 
@@ -397,8 +400,12 @@ type
     constructor Create(const source: IEnumerable<TSource>;
       const keySelector: TFunc<TSource, TKey>;
       const elementSelector: TFunc<TSource, TElement>;
+      const resultSelector: TFunc<TKey, IEnumerable<TElement>, TResult>); overload;
+    constructor Create(const source: IEnumerable<TSource>;
+      const keySelector: TFunc<TSource, TKey>;
+      const elementSelector: TFunc<TSource, TElement>;
       const resultSelector: TFunc<TKey, IEnumerable<TElement>, TResult>;
-      const comparer: IEqualityComparer<TKey>);
+      const comparer: IEqualityComparer<TKey>); overload;
     function GetEnumerator: IEnumerator<TResult>; override;
   end;
 
@@ -445,7 +452,11 @@ type
   protected
     function GetCount: Integer; override;
   public
+    constructor Create; reintroduce; overload;
     constructor Create(const comparer: IEqualityComparer<TKey>); overload;
+    class function Create<TSource>(const source: IEnumerable<TSource>;
+      const keySelector: TFunc<TSource, TKey>;
+      const elementSelector: TFunc<TSource, TElement>): TLookup<TKey, TElement>; overload; static;
     class function Create<TSource>(const source: IEnumerable<TSource>;
       const keySelector: TFunc<TSource, TKey>;
       const elementSelector: TFunc<TSource, TElement>;
@@ -477,8 +488,13 @@ type
       const inner: IEnumerable<TInner>;
       const outerKeySelector: TFunc<TOuter, TKey>;
       const innerKeySelector: TFunc<TInner, TKey>;
+      const resultSelector: TFunc<TOuter, TInner, TResult>); overload;
+    constructor Create(const outer: IEnumerable<TOuter>;
+      const inner: IEnumerable<TInner>;
+      const outerKeySelector: TFunc<TOuter, TKey>;
+      const innerKeySelector: TFunc<TInner, TKey>;
       const resultSelector: TFunc<TOuter, TInner, TResult>;
-      const comparer: IEqualityComparer<TKey>);
+      const comparer: IEqualityComparer<TKey>); overload;
     destructor Destroy; override;
     function Clone: TIterator<TResult>; override;
     function MoveNext: Boolean; override;
@@ -499,8 +515,13 @@ type
       const inner: IEnumerable<TInner>;
       const outerKeySelector: TFunc<TOuter, TKey>;
       const innerKeySelector: TFunc<TInner, TKey>;
+      const resultSelector: TFunc<TOuter, IEnumerable<TInner>, TResult>); overload;
+    constructor Create(const outer: IEnumerable<TOuter>;
+      const inner: IEnumerable<TInner>;
+      const outerKeySelector: TFunc<TOuter, TKey>;
+      const innerKeySelector: TFunc<TInner, TKey>;
       const resultSelector: TFunc<TOuter, IEnumerable<TInner>, TResult>;
-      const comparer: IEqualityComparer<TKey>);
+      const comparer: IEqualityComparer<TKey>); overload;
     destructor Destroy; override;
     function Clone: TIterator<TResult>; override;
     function MoveNext: Boolean; override;
@@ -637,8 +658,10 @@ type
       const next: IEnumerableSorter<TElement>): IEnumerableSorter<TElement>; override;
   public
     constructor Create(const source: IEnumerable<TElement>;
+      const keySelector: TFunc<TElement, TKey>); overload;
+    constructor Create(const source: IEnumerable<TElement>;
       const keySelector: TFunc<TElement, TKey>; const comparer: IComparer<TKey>;
-      descending: Boolean);
+      descending: Boolean = False); overload;
   end;
 
   TOrderedIterator<T> = class(TIterator<T>)
@@ -1788,6 +1811,13 @@ end;
 
 constructor TGroupedEnumerable<TSource, TKey, TElement>.Create(
   const source: IEnumerable<TSource>; const keySelector: TFunc<TSource, TKey>;
+  const elementSelector: TFunc<TSource, TElement>);
+begin
+  Create(source, keySelector, elementSelector, TEqualityComparer<TKey>.Default);
+end;
+
+constructor TGroupedEnumerable<TSource, TKey, TElement>.Create(
+  const source: IEnumerable<TSource>; const keySelector: TFunc<TSource, TKey>;
   const elementSelector: TFunc<TSource, TElement>;
   const comparer: IEqualityComparer<TKey>);
 begin
@@ -1851,6 +1881,15 @@ end;
 constructor TGroupedEnumerable<TSource, TKey, TElement, TResult>.Create(
   const source: IEnumerable<TSource>; const keySelector: TFunc<TSource, TKey>;
   const elementSelector: TFunc<TSource, TElement>;
+  const resultSelector: TFunc<TKey, IEnumerable<TElement>, TResult>);
+begin
+  Create(source, keySelector, elementSelector, resultSelector,
+    TEqualityComparer<TKey>.Default);
+end;
+
+constructor TGroupedEnumerable<TSource, TKey, TElement, TResult>.Create(
+  const source: IEnumerable<TSource>; const keySelector: TFunc<TSource, TKey>;
+  const elementSelector: TFunc<TSource, TElement>;
   const resultSelector: TFunc<TKey, IEnumerable<TElement>, TResult>;
   const comparer: IEqualityComparer<TKey>);
 begin
@@ -1909,6 +1948,11 @@ end;
 
 {$REGION 'TLookup<TKey, TElement>'}
 
+constructor TLookup<TKey, TElement>.Create;
+begin
+  Create(TEqualityComparer<TKey>.Default);
+end;
+
 constructor TLookup<TKey, TElement>.Create(const comparer: IEqualityComparer<TKey>);
 begin
   inherited Create;
@@ -1917,6 +1961,13 @@ begin
     fComparer := TEqualityComparer<TKey>.Default;
   fGroupings := TGroupings.Create;
   fGroupingKeys := TDictionary<TKey, TGrouping>.Create(fComparer);
+end;
+
+class function TLookup<TKey, TElement>.Create<TSource>(
+  const source: IEnumerable<TSource>; const keySelector: TFunc<TSource, TKey>;
+  const elementSelector: TFunc<TSource, TElement>): TLookup<TKey, TElement>;
+begin
+  Result := Create<TSource>(source, keySelector, elementSelector, TEqualityComparer<TKey>.Default);
 end;
 
 class function TLookup<TKey, TElement>.Create<TSource>(
@@ -2077,6 +2128,16 @@ constructor TJoinIterator<TOuter, TInner, TKey, TResult>.Create(
   const outer: IEnumerable<TOuter>; const inner: IEnumerable<TInner>;
   const outerKeySelector: TFunc<TOuter, TKey>;
   const innerKeySelector: TFunc<TInner, TKey>;
+  const resultSelector: TFunc<TOuter, TInner, TResult>);
+begin
+  Create(outer, inner, outerKeySelector, innerKeySelector, resultSelector,
+    TEqualityComparer<TKey>.Default);
+end;
+
+constructor TJoinIterator<TOuter, TInner, TKey, TResult>.Create(
+  const outer: IEnumerable<TOuter>; const inner: IEnumerable<TInner>;
+  const outerKeySelector: TFunc<TOuter, TKey>;
+  const innerKeySelector: TFunc<TInner, TKey>;
   const resultSelector: TFunc<TOuter, TInner, TResult>;
   const comparer: IEqualityComparer<TKey>);
 begin
@@ -2151,6 +2212,16 @@ end;
 
 
 {$REGION 'TGroupJoinIterator<TOuter, TInner, TKey, TResult>'}
+
+constructor TGroupJoinIterator<TOuter, TInner, TKey, TResult>.Create(
+  const outer: IEnumerable<TOuter>; const inner: IEnumerable<TInner>;
+  const outerKeySelector: TFunc<TOuter, TKey>;
+  const innerKeySelector: TFunc<TInner, TKey>;
+  const resultSelector: TFunc<TOuter, IEnumerable<TInner>, TResult>);
+begin
+  Create(outer, inner, outerKeySelector, innerKeySelector, resultSelector,
+    TEqualityComparer<TKey>.Default);
+end;
 
 constructor TGroupJoinIterator<TOuter, TInner, TKey, TResult>.Create(
   const outer: IEnumerable<TOuter>; const inner: IEnumerable<TInner>;
@@ -2594,6 +2665,13 @@ end;
 
 
 {$REGION 'TOrderedEnumerable<TElement, TKey>'}
+
+constructor TOrderedEnumerable<TElement, TKey>.Create(
+  const source: IEnumerable<TElement>;
+  const keySelector: TFunc<TElement, TKey>);
+begin
+  Create(source, keySelector, TComparer<TKey>.Default);
+end;
 
 constructor TOrderedEnumerable<TElement, TKey>.Create(
   const source: IEnumerable<TElement>; const keySelector: TFunc<TElement, TKey>;
