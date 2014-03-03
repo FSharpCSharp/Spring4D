@@ -446,7 +446,7 @@ type
   private
     fComparer: IEqualityComparer<TKey>;
     fGroupings: IList<TGrouping>;
-    fGroupingKeys: IDictionary<TKey, TGrouping>;
+    fGroupingKeys: TDictionary<TKey, TGrouping>;
     function GetGrouping(const key: TKey; create: Boolean): TGrouping;
     function GetItem(const key: TKey): IEnumerable<TElement>;
   protected
@@ -464,6 +464,7 @@ type
     class function CreateForJoin(const source: IEnumerable<TElement>;
       const keySelector: TFunc<TElement, TKey>;
       const comparer: IEqualityComparer<TKey>): TLookup<TKey, TElement>; static;
+    destructor Destroy; override;
 
     function Contains(const key: TKey): Boolean;
     function GetEnumerator: IEnumerator<IGrouping<TKey, TElement>>; override;
@@ -756,7 +757,6 @@ implementation
 
 uses
   Classes,
-  Spring.Collections.Dictionaries,
   Spring.Collections.Sets,
   Spring.ResourceStrings;
 
@@ -2005,6 +2005,12 @@ begin
     FreeAndNil(Result);
     raise;
   end;
+end;
+
+destructor TLookup<TKey, TElement>.Destroy;
+begin
+  fGroupingKeys.Free;
+  inherited;
 end;
 
 function TLookup<TKey, TElement>.Contains(const key: TKey): Boolean;
