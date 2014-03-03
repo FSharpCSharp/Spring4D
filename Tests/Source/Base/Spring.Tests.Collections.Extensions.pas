@@ -25,8 +25,9 @@
 unit Spring.Tests.Collections.Extensions;
 
 {$I Spring.inc}
-
-{$ZEROBASEDSTRINGS OFF}
+{$IFDEF DELPHIXE4_UP}
+  {$ZEROBASEDSTRINGS OFF}
+{$ENDIF}
 
 interface
 
