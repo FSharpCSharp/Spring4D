@@ -36,7 +36,6 @@ uses
   Spring,
   Spring.Collections,
   Spring.Collections.Base,
-  Spring.Collections.Enumerable,
   Spring.Collections.Lists;
 
 type
@@ -3572,8 +3571,7 @@ begin
     function(x: string): string
     begin
       Result := x;
-    end,
-    nil);
+    end);
   CheckEquals(1, lookup.Count);
   source.Add('x');
   CheckEquals(1, lookup.Count);
@@ -3618,7 +3616,6 @@ begin
   CheckTrue(lookup['Cortez'].EqualsTo(['Juni', 'Carmen']));
   CheckTrue(lookup['BARTLET'].EqualsTo(['Abbey', 'Jed']));
 
-//  query := Enumerable<IGrouping<string, string>>(lookup).Select<string>(
   query := TSelectIterator<IGrouping<string, string>, string>.Create(lookup,
     function(x: IGrouping<string, string>): string
     begin
@@ -3633,12 +3630,16 @@ var
   lookup: ILookup<string,string>;
 begin
   source := TCollections.CreateList<string>(['abc', 'def', 'ABC']);
-  lookup := Enumerable<string>(source).ToLookup<string>(
-//  lookup := TLookup<string, string>.Create<string>(source,
+  lookup := TLookup<string, string>.Create<string>(source,
     function(value: string): string
     begin
       Result := value;
-    end, TStringComparer.OrdinalIgnoreCase);
+    end,
+    function(value: string): string
+    begin
+      Result := value;
+    end,
+    TStringComparer.OrdinalIgnoreCase);
   CheckTrue(lookup['abc'].EqualsTo(['abc', 'ABC']));
   CheckTrue(lookup['def'].EqualsTo(['def']));
 end;
@@ -3649,7 +3650,7 @@ var
   lookup: ILookup<Integer, Char>;
 begin
   source := TCollections.CreateList<string>(['abc', 'def', 'x', 'y', 'ghi', 'z', '00']);
-  lookup := Enumerable<string>(source).ToLookup<Integer, Char>(
+  lookup := TLookup<Integer, Char>.Create<string>(source,
     function(x: string): Integer
     begin
       Result := Length(x);
@@ -3669,11 +3670,15 @@ var
   lookup: ILookup<string,string>;
 begin
   source := TCollections.CreateList<string>(['abc', 'def', 'ABC']);
-  lookup := Enumerable<string>(source).ToLookup(
+    lookup := TLookup<string, string>.Create<string>(source,
     function(value: string): string
     begin
       Result := value;
-    end, nil);
+    end,
+    function(value: string): string
+    begin
+      Result := value;
+    end);
   CheckTrue(lookup['abc'].EqualsTo(['abc']));
   CheckTrue(lookup['ABC'].EqualsTo(['ABC']));
   CheckTrue(lookup['def'].EqualsTo(['def']));
@@ -3685,10 +3690,14 @@ var
   lookup: ILookup<Integer, string>;
 begin
   source := TCollections.CreateList<string>(['abc', 'def', 'x', 'y', 'ghi', 'z', '00']);
-  lookup := Enumerable<string>(source).ToLookup<Integer>(
+  lookup := TLookup<Integer, string>.Create<string>(source,
     function(x: string): Integer
     begin
       Result := Length(x);
+    end,
+    function(value: string): string
+    begin
+      Result := value;
     end);
   CheckTrue(lookup[3].EqualsTo(['abc', 'def', 'ghi']));
   CheckTrue(lookup[1].EqualsTo(['x', 'y', 'z']));
@@ -3706,7 +3715,11 @@ begin
   CheckException(EInvalidOperationException,
     procedure
     begin
-      Enumerable<Integer>(source).ToLookup(
+      TLookup<Integer, Integer>.Create<Integer>(source,
+        function(x: Integer): Integer
+        begin
+          Result := x;
+        end,
         function(x: Integer): Integer
         begin
           Result := x;
@@ -3724,7 +3737,7 @@ var
 begin
   outer := TCollections.CreateList<Integer>([5, 3, 7]);
   inner := TCollections.CreateList<string>(['bee', 'giraffe', 'tiger', 'badger', 'ox', 'cat', 'dog']);
-  query := Enumerable<Integer>(outer).Join<string, Integer, string>(inner,
+  query := TJoinIterator<Integer, string, Integer, string>.Create(outer, inner,
     function(outerElement: Integer): Integer
     begin
       Result := outerElement;
@@ -3744,10 +3757,11 @@ procedure TTestJoin.ExecutionIsDeferred;
 var
   outer: IEnumerable<Integer>;
   inner: IEnumerable<Integer>;
+  query: IEnumerable<Integer>;
 begin
   outer := TThrowingEnumerable.Create;
   inner := TThrowingEnumerable.Create;
-  Enumerable<Integer>(outer).Join<Integer, Integer, Integer>(inner,
+  query := TJoinIterator<Integer, Integer, Integer, Integer>.Create(outer, inner,
     function(x: Integer): Integer
     begin
       Result := x;
@@ -3771,12 +3785,12 @@ var
 begin
   outer := TCollections.CreateList<Integer>([1, 2, 3]);
   inner := TCollections.CreateList<Integer>([10, 0, 2]);
-  inner := Enumerable<Integer>(inner).Select(
+  inner := TSelectIterator<Integer, Integer>.Create(inner,
     function(x: Integer): Integer
     begin
       Result := 10 div x;
     end);
-  query := Enumerable<Integer>(outer).Join<Integer, Integer, Integer>(inner,
+  query := TJoinIterator<Integer, Integer, Integer, Integer>.Create(outer, inner,
     function(x: Integer): Integer
     begin
       Result := x;
@@ -3806,13 +3820,13 @@ var
   iterator: IEnumerator<Integer>;
 begin
   outer := TCollections.CreateList<Integer>([10, 0, 2]);
-  outer := Enumerable<Integer>(outer).Select(
+  outer := TSelectIterator<Integer, Integer>.Create(outer,
     function(x: Integer): Integer
     begin
       Result := 10 div x;
     end);
   inner := TCollections.CreateList<Integer>([1, 2, 3]);
-  query := Enumerable<Integer>(outer).Join<Integer, Integer, Integer>(inner,
+  query := TJoinIterator<Integer, Integer, Integer, Integer>.Create(outer, inner,
     function(x: Integer): Integer
     begin
       Result := x;
@@ -3844,7 +3858,7 @@ var
 begin
   outer := TCollections.CreateList<string>(['ABCxxx', 'abcyyy', 'defzzz', 'ghizzz']);
   inner := TCollections.CreateList<string>(['000abc', '111gHi', '222333']);
-  query := Enumerable<string>(outer).Join<string, string, string>(inner,
+  query := TJoinIterator<string, string, string, string>.Create(outer, inner,
     function(outerElement: string): string
     begin
       Result := Copy(outerElement, 1, 3);
@@ -3870,10 +3884,14 @@ var
   iterator: IEnumerator<IGrouping<Integer, string>>;
 begin
   source := TCollections.CreateList<string>(['a', 'b', 'c', 'def']);
-  groups := Enumerable<string>(source).GroupBy<Integer>(
+  groups := TGroupedEnumerable<string, Integer, string>.Create(source,
     function(x: string): Integer
     begin
       Result := Length(x);
+    end,
+    function(s: string): string
+    begin
+      Result := s;
     end);
   iterator := groups.GetEnumerator;
   CheckTrue(iterator.MoveNext);
@@ -3893,9 +3911,14 @@ end;
 procedure TTestGroupBy.ExecutionIsPartiallyDeferred;
 var
   source: IEnumerable<Integer>;
+  groups: IEnumerable<IGrouping<Integer, Integer>>;
 begin
   source := TThrowingEnumerable.Create;
-  Enumerable<Integer>(source).GroupBy<Integer>(
+  groups := TGroupedEnumerable<Integer, Integer, Integer>.Create(source,
+    function(x: Integer): Integer
+    begin
+      Result := x;
+    end,
     function(x: Integer): Integer
     begin
       Result := x;
@@ -3924,10 +3947,14 @@ var
   groups: IEnumerable<string>;
 begin
   source := TCollections.CreateList<string>(['abc', 'hello', 'def', 'there', 'four']);
-  groups := Enumerable<string>(source).GroupBy<Integer, string>(
+  groups := TGroupedEnumerable<string, Integer, string, string>.Create(source,
     function(x: string): Integer
     begin
       Result := Length(x);
+    end,
+    function(s: string): string
+    begin
+      Result := s;
     end,
     function(key: Integer; values: IEnumerable<string>): string
     begin
@@ -3943,7 +3970,7 @@ var
   list: IList<IGrouping<Integer, Char>>;
 begin
   source := TCollections.CreateList<string>(['abc', 'hello', 'def', 'there', 'four']);
-  groups := Enumerable<string>(source).GroupBy<Integer, Char>(
+  groups := TGroupedEnumerable<string, Integer, Char>.Create(source,
     function(x: string): Integer
     begin
       Result := Length(x);
@@ -3971,7 +3998,7 @@ var
   groups: IEnumerable<string>;
 begin
   source := TCollections.CreateList<string>(['abc', 'hello', 'def', 'there', 'four']);
-  groups := Enumerable<string>(source).GroupBy<Integer, Char, string>(
+  groups := TGroupedEnumerable<string, Integer, Char, string>.Create(source,
     function(x: string): Integer
     begin
       Result := Length(x);
@@ -3994,15 +4021,19 @@ var
   groups: IEnumerable<IGrouping<Integer, Integer>>;
 begin
   source := TCollections.CreateList<Integer>([1, 2, 3, 4, 5, 6, 7, 8, 9, 0]);
-  query := Enumerable<Integer>(source).Select(
+  query := TSelectIterator<Integer, Integer>.Create(source,
     function(x: Integer): Integer
     begin
       Result := 10 div x;
     end);
-  groups := Enumerable<Integer>(query).GroupBy<Integer>(
+  groups := TGroupedEnumerable<Integer, Integer, Integer>.Create(query,
     function(x: Integer): Integer
     begin
       Result := x;
+    end,
+    function(i: Integer): Integer
+    begin
+      Result := i;
     end);
   CheckException(EDivByZero,
     procedure
@@ -4022,10 +4053,14 @@ var
   list: IList<IGrouping<Integer, string>>;
 begin
   source := TCollections.CreateList<string>(['abc', 'hello', 'def', 'there', 'four']);
-  groups := Enumerable<string>(source).GroupBy<Integer>(
+  groups := TGroupedEnumerable<string, Integer, string>.Create(source,
     function(x: string): Integer
     begin
       Result := Length(x);
+    end,
+    function(s: string): string
+    begin
+      Result := s;
     end);
   list := TCollections.CreateList<IGrouping<Integer, string>>(groups);
   CheckEquals(3, list.Count);
@@ -4050,7 +4085,7 @@ var
 begin
   outer := TCollections.CreateList<string>(['ABCxxx', 'abcyyy', 'defzzz', 'ghizzz']);
   inner := TCollections.CreateList<string>(['000abc', '111gHi', '222333', '333AbC']);
-  query := Enumerable<string>(outer).GroupJoin<string, string, string>(inner,
+  query := TGroupJoinIterator<string, string, string, string>.Create(outer, inner,
     function(outerElement: string): string
     begin
       Result := Copy(outerElement, 1, 3);
@@ -4075,7 +4110,7 @@ var
 begin
   outer := TCollections.CreateList<Integer>([5, 3, 7, 4]);
   inner := TCollections.CreateList<string>(['bee', 'giraffe', 'tiger', 'badger', 'ox', 'cat', 'dog']);
-  query := Enumerable<Integer>(outer).GroupJoin<string, Integer, string>(inner,
+  query := TGroupJoinIterator<Integer, string, Integer, string>.Create(outer, inner,
     function(outerElement: Integer): Integer
     begin
       Result := outerElement;
@@ -4095,10 +4130,11 @@ procedure TTestGroupJoin.ExecutionIsDeferred;
 var
   outer: IEnumerable<Integer>;
   inner: IEnumerable<Integer>;
+  query: IEnumerable<Integer>;
 begin
   outer := TThrowingEnumerable.Create;
   inner := TThrowingEnumerable.Create;
-  Enumerable<Integer>(outer).GroupJoin<Integer, Integer, Integer>(inner,
+  query := TGroupJoinIterator<Integer, Integer, Integer, Integer>.Create(outer, inner,
     function(x: Integer): Integer
     begin
       Result := x;
@@ -4121,7 +4157,7 @@ var
 begin
   outer := TCollections.CreateList<string>(['first', 'second', 'third']);
   inner := TCollections.CreateList<string>(['essence', 'offer', 'eating', 'psalm']);
-  query := Enumerable<string>(outer).GroupJoin<string, Char, string>(inner,
+  query := TGroupJoinIterator<string, string, Char, string>.Create(outer, inner,
     function(outerElement: string): Char
     begin
       Result := outerElement[1];
@@ -4185,7 +4221,7 @@ var
   query: IEnumerable<Integer>;
 begin
   source := TCollections.CreateList<Integer>([1, 2, 0]);
-  query := Enumerable<Integer>(source).Select(
+  query := TSelectIterator<Integer, Integer>.Create(source,
     function(x: Integer): Integer
     begin
       Result := 10 div x;
@@ -4560,12 +4596,12 @@ begin
     TIntPair.Create(15, 1),
     TIntPair.Create(-13, 2),
     TIntPair.Create(11, 3)]);
-  source := Enumerable<TIntPair>(source).OrderBy<Integer>(
+  source := TOrderedEnumerable<TIntPair, Integer>.Create(source,
     function(x: TIntPair): Integer
     begin
       Result := x.Key;
     end, TAbsoluteValueComparer.Create);
-  query := Enumerable<TIntPair>(source).Select<Integer>(
+  query := TSelectIterator<TIntPair, Integer>.Create(source,
     function(x: TIntPair): Integer
     begin
       Result := x.Value;
@@ -4576,9 +4612,10 @@ end;
 procedure TTestOrderBy.ExecutionIsDeferred;
 var
   source: IEnumerable<Integer>;
+  query: IEnumerable<Integer>;
 begin
   source := TThrowingEnumerable.Create;
-  Enumerable<Integer>(source).OrderBy<Integer>(
+  query := TOrderedEnumerable<Integer, Integer>.Create(source,
     function(x: Integer): Integer
     begin
       Result := x;
@@ -4593,7 +4630,7 @@ var
 begin
   source := TCollections.CreateList<Integer>([1, 5, 4, 2, 3, 7, 6, 8, 9]);
   count := 0;
-  query := Enumerable<Integer>(source).OrderBy<Integer>(
+  query := TOrderedEnumerable<Integer, Integer>.Create(source,
     function(x: Integer): Integer
     begin
       Inc(count);
@@ -4612,12 +4649,12 @@ begin
     TIntPair.Create(15, 1),
     TIntPair.Create(-13, 2),
     TIntPair.Create(11, 3)]);
-  source := Enumerable<TIntPair>(source).OrderBy<Integer>(
+  source := TOrderedEnumerable<TIntPair, Integer>.Create(source,
     function(x: TIntPair): Integer
     begin
       Result := x.Key;
-    end, nil);
-  query := Enumerable<TIntPair>(source).Select<Integer>(
+    end);
+  query := TSelectIterator<TIntPair, Integer>.Create(source,
     function(x: TIntPair): Integer
     begin
       Result := x.Value;
@@ -4633,7 +4670,7 @@ begin
   CheckException(EArgumentNilException,
     procedure
     begin
-      Enumerable<Integer>(source).OrderBy<Integer>(nil);
+      TOrderedEnumerable<Integer, Integer>.Create(source, nil);
     end);
 end;
 
@@ -4645,7 +4682,7 @@ begin
   CheckException(EArgumentNilException,
     procedure
     begin
-      Enumerable<Integer>(source).OrderBy<Integer>(nil, TComparer<Integer>.Default);
+      TOrderedEnumerable<Integer, Integer>.Create(source, nil, TComparer<Integer>.Default);
     end);
 end;
 
@@ -4657,7 +4694,7 @@ begin
   CheckException(EArgumentNilException,
     procedure
     begin
-      Enumerable<Integer>(source).OrderBy<Integer>(
+      TOrderedEnumerable<Integer, Integer>.Create(source,
         function(x: Integer): Integer
         begin
           Result := x;
@@ -4673,7 +4710,7 @@ begin
   CheckException(EArgumentNilException,
     procedure
     begin
-      Enumerable<Integer>(source).OrderBy<Integer>(
+      TOrderedEnumerable<Integer, Integer>.Create(source,
         function(x: Integer): Integer
         begin
           Result := x;
@@ -4692,12 +4729,12 @@ begin
     TIntPair.Create(11, 2),
     TIntPair.Create(11, 3),
     TIntPair.Create(10, 4)]);
-  source := Enumerable<TIntPair>(source).OrderBy<Integer>(
+  source := TOrderedEnumerable<TIntPair, Integer>.Create(source,
     function(x: TIntPair): Integer
     begin
       Result := x.Key;
     end);
-  query := Enumerable<TIntPair>(source).Select<Integer>(
+  query := TSelectIterator<TIntPair, Integer>.Create(source,
     function(x: TIntPair): Integer
     begin
       Result := x.Value;
@@ -4714,12 +4751,12 @@ begin
     TIntPair.Create(10, 1),
     TIntPair.Create(12, 2),
     TIntPair.Create(11, 3)]);
-  source := Enumerable<TIntPair>(source).OrderBy<Integer>(
+  source := TOrderedEnumerable<TIntPair, Integer>.Create(source,
     function(x: TIntPair): Integer
     begin
       Result := x.Key;
     end);
-  query := Enumerable<TIntPair>(source).Select<Integer>(
+  query := TSelectIterator<TIntPair, Integer>.Create(source,
     function(x: TIntPair): Integer
     begin
       Result := x.Value;
@@ -4738,12 +4775,12 @@ begin
     TIntPair.Create(15, 1),
     TIntPair.Create(-13, 2),
     TIntPair.Create(11, 3)]);
-  source := Enumerable<TIntPair>(source).OrderByDescending<Integer>(
+  source := TOrderedEnumerable<TIntPair, Integer>.Create(source,
     function(x: TIntPair): Integer
     begin
       Result := x.Key;
-    end, TAbsoluteValueComparer.Create);
-  query := Enumerable<TIntPair>(source).Select<Integer>(
+    end, TAbsoluteValueComparer.Create, True);
+  query := TSelectIterator<TIntPair, Integer>.Create(source,
     function(x: TIntPair): Integer
     begin
       Result := x.Value;
@@ -4757,7 +4794,7 @@ var
   query: IEnumerable<Integer>;
 begin
   source := TCollections.CreateList<Integer>([1, 3, 2, 4, 8, 5, 7, 6]);
-  query := Enumerable<Integer>(source).OrderByDescending<Integer>(
+  query := TOrderedEnumerable<Integer, Integer>.Create(source,
     function(x: Integer): Integer
     begin
       Result := x;
@@ -4771,20 +4808,22 @@ begin
           Result := Low(Integer)
         else
           Result := High(Integer);
-      end));
+      end), True);
   CheckTrue(query.EqualsTo([8, 7, 6, 5, 4, 3, 2, 1]));
 end;
 
 procedure TTestOrderByDescending.ExecutionIsDeferred;
 var
   source: IEnumerable<Integer>;
+  query: IEnumerable<Integer>;
 begin
   source := TThrowingEnumerable.Create;
-  Enumerable<Integer>(source).OrderByDescending<Integer>(
+  query := TOrderedEnumerable<Integer, Integer>.Create(source,
     function(x: Integer): Integer
     begin
       Result := x;
-    end);
+    end,
+    nil, True);
 end;
 
 procedure TTestOrderByDescending.NilComparerIsDefault;
@@ -4796,12 +4835,12 @@ begin
     TIntPair.Create(15, 1),
     TIntPair.Create(-13, 2),
     TIntPair.Create(11, 3)]);
-  source := Enumerable<TIntPair>(source).OrderByDescending<Integer>(
+  source := TOrderedEnumerable<TIntPair, Integer>.Create(source,
     function(x: TIntPair): Integer
     begin
       Result := x.Key;
-    end, nil);
-  query := Enumerable<TIntPair>(source).Select<Integer>(
+    end, nil, True);
+  query := TSelectIterator<TIntPair, Integer>.Create(source,
     function(x: TIntPair): Integer
     begin
       Result := x.Value;
@@ -4817,7 +4856,7 @@ begin
   CheckException(EArgumentNilException,
     procedure
     begin
-      Enumerable<Integer>(source).OrderByDescending<Integer>(nil);
+      TOrderedEnumerable<Integer, Integer>.Create(source, nil, nil, True);
     end);
 end;
 
@@ -4829,7 +4868,7 @@ begin
   CheckException(EArgumentNilException,
     procedure
     begin
-      Enumerable<Integer>(source).OrderByDescending<Integer>(nil, TComparer<Integer>.Default);
+      TOrderedEnumerable<Integer, Integer>.Create(source, nil, TComparer<Integer>.Default, True);
     end);
 end;
 
@@ -4841,11 +4880,11 @@ begin
   CheckException(EArgumentNilException,
     procedure
     begin
-      Enumerable<Integer>(source).OrderByDescending<Integer>(
+      TOrderedEnumerable<Integer, Integer>.Create(source,
         function(x: Integer): Integer
         begin
           Result := x;
-        end);
+        end, nil, True);
     end);
 end;
 
@@ -4857,12 +4896,12 @@ begin
   CheckException(EArgumentNilException,
     procedure
     begin
-      Enumerable<Integer>(source).OrderByDescending<Integer>(
+      TOrderedEnumerable<Integer, Integer>.Create(source,
         function(x: Integer): Integer
         begin
           Result := x;
         end,
-        TComparer<Integer>.Default);
+        TComparer<Integer>.Default, True);
     end);
 end;
 
@@ -4876,12 +4915,12 @@ begin
     TIntPair.Create(11, 2),
     TIntPair.Create(11, 3),
     TIntPair.Create(10, 4)]);
-  source := Enumerable<TIntPair>(source).OrderByDescending<Integer>(
+  source := TOrderedEnumerable<TIntPair, Integer>.Create(source,
     function(x: TIntPair): Integer
     begin
       Result := x.Key;
-    end);
-  query := Enumerable<TIntPair>(source).Select<Integer>(
+    end, nil, True);
+  query := TSelectIterator<TIntPair, Integer>.Create(source,
     function(x: TIntPair): Integer
     begin
       Result := x.Value;
@@ -4898,12 +4937,12 @@ begin
     TIntPair.Create(10, 1),
     TIntPair.Create(12, 2),
     TIntPair.Create(11, 3)]);
-  source := Enumerable<TIntPair>(source).OrderByDescending<Integer>(
+  source := TOrderedEnumerable<TIntPair, Integer>.Create(source,
     function(x: TIntPair): Integer
     begin
       Result := x.Key;
-    end);
-  query := Enumerable<TIntPair>(source).Select<Integer>(
+    end, nil, True);
+  query := TSelectIterator<TIntPair, Integer>.Create(source,
     function(x: TIntPair): Integer
     begin
       Result := x.Value;
