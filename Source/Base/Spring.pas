@@ -970,7 +970,7 @@ begin
     tkInt64:
       Result := SizeOf(Int64){8};
     tkVariant:
-      Result := 16; // http://docwiki.embarcadero.com/RADStudio/en/Variant_Types
+      Result := SizeOf(Variant);
     tkSet:
       begin
         // big sets have no typeInfo for now
