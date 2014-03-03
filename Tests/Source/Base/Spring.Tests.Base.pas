@@ -1066,12 +1066,11 @@ end;
 
 procedure TTestSpringEventsMethods.Test_GetTypeSize_Extended;
 begin
-// iOS on ARM doesn't seem to align to 16B boundries
-{$IF Defined(MACOS) AND NOT Defined(CPUARM)}
+{$IFDEF ALIGN_STACK}
   MatchType(TypeInfo(Extended), tkFloat, 16);
 {$ELSE}
   MatchType(TypeInfo(Extended), tkFloat, SizeOf(Extended));
-{$IFEND}
+{$ENDIF}
 end;
 
 procedure TTestSpringEventsMethods.Test_GetTypeSize_Guid;
