@@ -22,7 +22,7 @@ uses
   FMX.TabControl,
   FMX.ListBox,
   FMX.TreeView,
-  TestFramework;
+  TestFramework, FMX.Effects, FMX.Objects;
 
 type
   TRunnerExitBehavior = (
@@ -56,14 +56,35 @@ type
     TreeViewItem1: TTreeViewItem;
     TreeViewItem2: TTreeViewItem;
     Panel1: TPanel;
+    OverflowMenu: TListBox;
+    mnuSelectAll: TListBoxItem;
+    mnuUnselectAll: TListBoxItem;
+    ShadowEffect1: TShadowEffect;
+    tmrPopup: TTimer;
+    ListBoxItem1: TListBoxItem;
+    ListBoxItem2: TListBoxItem;
     procedure RunTestsExecute(Sender: TObject);
     procedure ListBoxItemCheckInvert(Sender: TObject);
     procedure ChangeTabUpdate(Sender: TObject);
     procedure RunTestsUpdate(Sender: TObject);
     procedure ChangeTab2Update(Sender: TObject);
     procedure FormShow(Sender: TObject);
+    procedure tmrPopupTimer(Sender: TObject);
+    procedure TestTreeMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Single);
+    procedure TestTreeMouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Single);
+    procedure mnuSelectAllClick(Sender: TObject);
+    procedure mnuUnselectAllClick(Sender: TObject);
+    procedure TestTreeMouseMove(Sender: TObject; Shift: TShiftState; X,
+      Y: Single);
+  strict private
+    FMenuPos: TPointF;
   protected
     class var Suite: ITest;
+    procedure SetChecked(const Parent : TTreeViewItem; Value : Boolean;
+      Recursive : Boolean = false);
+    procedure HideOverflowMenu;
   protected
     startTime: TDateTime;
     endTime: TDateTime;
@@ -96,6 +117,8 @@ type
     procedure Warning(Test: ITest; const Msg: string);
     function Report(r: TTestResult): string;
     procedure AfterConstruction; override;
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X: Single;
+      Y: Single); override;
 
     property testResult: TTestResult read FTestResult Write FTestResult;
 
@@ -163,6 +186,12 @@ end;
 procedure TFMXTestRunner.AfterConstruction;
 begin
   inherited;
+  ListBoxItem2.Text:='dUnit FireMonkey test runner'#$D#$A +
+    'Usage:'#$D#$A +
+    '  Touch and hold any test tree item to show popup menu'#$D#$A +
+    '  Test settings is saved before any test are started after touching the start button.'#$D#$A +
+    '  Note that test settings is not persisted on iOS Device but is on Andorid or iOS Simulator';
+
   FIniName := 'dUnit.ini';
 {$IF Defined(ANDROID)}
   // Note that this requires Read/Write External Storage permissions
@@ -172,9 +201,10 @@ begin
   // reinstallation - oops this one as well
   // FIniName := TPath.Combine(TPath.GetSharedDocumentsPath, FIniName);
   // Use the global SDCard path
-  FIniName := TPath.Combine('/storage/emulated/0', FIniName);
+  FIniName := System.IOUtils.TPath.Combine('/storage/emulated/0', FIniName);
 {$ELSE IF Defined(IOS)}
-  FIniName := TPath.Combine(TPath.GetDocumentsPath, FIniName);
+  FIniName := System.IOUtils.TPath.Combine(
+    System.IOUtils.TPath.GetDocumentsPath, FIniName);
 {$ENDIF}
 end;
 
@@ -372,12 +402,45 @@ begin
   SetupTree;
 end;
 
+procedure TFMXTestRunner.HideOverflowMenu;
+begin
+  OverflowMenu.Visible := False;
+end;
+
 procedure TFMXTestRunner.ListBoxItemCheckInvert(Sender: TObject);
 var
   Item: TListBoxItem;
 begin
   Item := (Sender as TListBoxItem);
   if (Item.Enabled) then Item.Checked := not Item.Checked;
+end;
+
+procedure TFMXTestRunner.mnuSelectAllClick(Sender: TObject);
+begin
+  SetChecked(TestTree.Selected, True, True);
+  HideOverflowMenu;
+end;
+
+procedure TFMXTestRunner.mnuUnselectAllClick(Sender: TObject);
+begin
+  SetChecked(TestTree.Selected, False, True);
+  HideOverflowMenu;
+end;
+
+procedure TFMXTestRunner.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
+  Y: Single);
+var
+  Obj: IControl;
+begin
+  if (OverflowMenu.Visible) then
+  begin
+    Obj := IControl(ObjectAtPoint(ClientToScreen(PointF(X, Y))));
+    if (not Assigned(Obj)) then HideOverflowMenu
+    else if (TObject(Obj) = OverflowMenu) then // NOP
+    else HideOverflowMenu;
+  end;
+
+  inherited;
 end;
 
 function TFMXTestRunner.TruncateString(s: string; len: Integer): string;
@@ -391,6 +454,42 @@ begin
   Self.Writeln;
   Self.Writeln('DUnit / Testing ');
   startTime := now;
+end;
+
+procedure TFMXTestRunner.TestTreeMouseDown(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Single);
+begin
+  // In any case, restart the timer
+  tmrPopup.Enabled := False;
+  tmrPopup.Enabled := True;
+  HideOverflowMenu;
+  FMenuPos := PointF(X, Y + TabControl1.Position.Y);
+end;
+
+procedure TFMXTestRunner.TestTreeMouseMove(Sender: TObject; Shift: TShiftState;
+  X, Y: Single);
+var
+  d: Single;
+begin
+  if (not tmrPopup.Enabled) then Exit;
+
+  d := PointF(X, Y + TabControl1.Position.Y).Distance(FMenuPos);
+  if (d > 10) then tmrPopup.Enabled := false;
+end;
+
+procedure TFMXTestRunner.TestTreeMouseUp(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Single);
+begin
+  tmrPopup.Enabled := False;
+end;
+
+procedure TFMXTestRunner.tmrPopupTimer(Sender: TObject);
+begin
+  tmrPopup.Enabled := False;
+  if (TestTree.Selected = nil) then Exit;
+  OverflowMenu.Position.Point := FMenuPos;
+  OverflowMenu.Visible := True;
+  OverflowMenu.SetFocus;
 end;
 
 procedure TFMXTestRunner.TestingEnds(testResult: TTestResult);
@@ -519,6 +618,20 @@ end;
 procedure TFMXTestRunner.Writeln(const s: string);
 begin
   Memo.Lines.Add(s);
+end;
+
+procedure TFMXTestRunner.SetChecked(const Parent: TTreeViewItem; Value,
+  Recursive: Boolean);
+var i : Integer;
+begin
+  if (Parent = nil) then Exit;
+
+  Parent.IsChecked := Value;
+  for i := 0 to Parent.Count - 1 do
+  begin
+    if (Recursive) then SetChecked(Parent[i], Value, Recursive)
+    else Parent[i].IsChecked := Value;
+  end;
 end;
 
 procedure TFMXTestRunner.Setup;

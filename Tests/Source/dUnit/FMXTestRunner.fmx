@@ -51,9 +51,13 @@ object FMXTestRunner: TFMXTestRunner
       Width = 8.000000000000000000
       object TestTree: TTreeView
         Align = alClient
+        ClipChildren = True
         Height = 314.000000000000000000
         TabOrder = 0
         Width = 578.000000000000000000
+        OnMouseDown = TestTreeMouseDown
+        OnMouseMove = TestTreeMouseMove
+        OnMouseUp = TestTreeMouseUp
         ShowCheckboxes = True
         object TreeViewItem1: TTreeViewItem
           IsChecked = False
@@ -100,11 +104,11 @@ object FMXTestRunner: TFMXTestRunner
       Width = 8.000000000000000000
       object ListBox1: TListBox
         Anchors = [akLeft, akTop, akRight]
-        Height = 217.000000000000000000
+        Height = 233.000000000000000000
         Position.X = 16.000000000000000000
         Position.Y = 16.000000000000000000
         StyleLookup = 'transparentlistboxstyle'
-        TabOrder = 0
+        TabOrder = 1
         Width = 547.000000000000000000
         DefaultItemStyles.ItemStyle = 'listboxitemnodetail'
         DefaultItemStyles.GroupHeaderStyle = ''
@@ -114,14 +118,14 @@ object FMXTestRunner: TFMXTestRunner
           Height = 30.000000000000000000
           StyleLookup = 'listboxgroupheader'
           Text = 'Settings'
-          Width = 502.000000000000000000
+          Width = 547.000000000000000000
         end
         object chkBreakOnFailures: TListBoxItem
           Height = 44.000000000000000000
           Position.Y = 30.000000000000000000
           StyleLookup = 'listboxitemnodetail'
           Text = 'Break on failures'
-          Width = 502.000000000000000000
+          Width = 547.000000000000000000
           OnClick = ListBoxItemCheckInvert
         end
         object chkFailIfNoChecksExecuted: TListBoxItem
@@ -129,7 +133,7 @@ object FMXTestRunner: TFMXTestRunner
           Position.Y = 74.000000000000000000
           StyleLookup = 'listboxitemnodetail'
           Text = 'Fail if no checks executed'
-          Width = 502.000000000000000000
+          Width = 547.000000000000000000
           OnClick = ListBoxItemCheckInvert
         end
         object chkFailIfMemoryLeaked: TListBoxItem
@@ -138,7 +142,7 @@ object FMXTestRunner: TFMXTestRunner
           Position.Y = 118.000000000000000000
           StyleLookup = 'listboxitemnodetail'
           Text = 'Fail if memory leaked'
-          Width = 502.000000000000000000
+          Width = 547.000000000000000000
           OnClick = ListBoxItemCheckInvert
         end
         object chkIngnoreLeaksInSetupTeardown: TListBoxItem
@@ -147,8 +151,38 @@ object FMXTestRunner: TFMXTestRunner
           Position.Y = 162.000000000000000000
           StyleLookup = 'listboxitemnodetail'
           Text = 'Ingnore leaks in setup/teardown'
-          Width = 502.000000000000000000
+          Width = 547.000000000000000000
           OnClick = ListBoxItemCheckInvert
+        end
+      end
+      object ListBox2: TListBox
+        Anchors = [akLeft, akTop, akRight]
+        Height = 165.000000000000000000
+        Position.X = 16.000000000000000000
+        Position.Y = 256.000000000000000000
+        StyleLookup = 'transparentlistboxstyle'
+        TabOrder = 0
+        Width = 547.000000000000000000
+        DefaultItemStyles.ItemStyle = 'listboxitemnodetail'
+        DefaultItemStyles.GroupHeaderStyle = ''
+        DefaultItemStyles.GroupFooterStyle = ''
+        GroupingKind = gsGrouped
+        object ListBoxItem1: TListBoxItem
+          Selectable = False
+          Height = 30.000000000000000000
+          StyleLookup = 'listboxgroupheader'
+          Text = 'About'
+          Width = 547.000000000000000000
+        end
+        object ListBoxItem2: TListBoxItem
+          Selectable = False
+          StyledSettings = []
+          Height = 123.000000000000000000
+          Position.Y = 30.000000000000000000
+          StyleLookup = 'none'
+          Text = 'ListBoxItem2'
+          Width = 547.000000000000000000
+          WordWrap = True
         end
       end
     end
@@ -189,12 +223,49 @@ object FMXTestRunner: TFMXTestRunner
       Width = 48.000000000000000000
     end
   end
+  object OverflowMenu: TListBox
+    Height = 68.000000000000000000
+    Position.X = 172.000000000000000000
+    Position.Y = 180.000000000000000000
+    TabOrder = 3
+    Visible = False
+    Width = 200.000000000000000000
+    DefaultItemStyles.ItemStyle = ''
+    DefaultItemStyles.GroupHeaderStyle = ''
+    DefaultItemStyles.GroupFooterStyle = ''
+    object mnuSelectAll: TListBoxItem
+      Height = 32.000000000000000000
+      Text = 'Select All'
+      Width = 196.000000000000000000
+      OnClick = mnuSelectAllClick
+    end
+    object mnuUnselectAll: TListBoxItem
+      Height = 32.000000000000000000
+      Position.Y = 32.000000000000000000
+      Text = 'Unselect All'
+      Width = 196.000000000000000000
+      OnClick = mnuUnselectAllClick
+    end
+    object ShadowEffect1: TShadowEffect
+      Distance = 3.000000000000000000
+      Direction = 45.000000000000000000
+      Softness = 0.300000011920929000
+      Opacity = 0.600000023841857900
+      ShadowColor = claBlack
+    end
+  end
+  object tmrPopup: TTimer
+    Enabled = False
+    OnTimer = tmrPopupTimer
+    Left = 396
+    Top = 188
+  end
   object ActionList1: TActionList
     Left = 432
     Top = 440
     object RunTests: TAction
       Text = 'Run...'
-      Shortcut = 120
+      ShortCut = 120
       OnExecute = RunTestsExecute
       OnUpdate = RunTestsUpdate
     end
