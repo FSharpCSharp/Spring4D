@@ -4,13 +4,6 @@
         <ProjectFileVersion>12</ProjectFileVersion>
     </ProjectExtensions>
     <ItemGroup Condition="'$(Platform)'=='Android'">
-        <DeployFile Include="..\..\Bin\DelphiXE5\Android\AndroidManifest.xml" Condition="'$(Config)'=='Debug'">
-            <RemoteDir>Spring.Tests.Mobile\</RemoteDir>
-            <RemoteName>AndroidManifest.xml</RemoteName>
-            <Operation>1</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-        </DeployFile>
         <DeployFile Include="$(BDS)\bin\Artwork\Android\FM_LauncherIcon_36x36.png" Condition="'$(Config)'=='Debug'">
             <RemoteDir>Spring.Tests.Mobile\res\drawable-ldpi\</RemoteDir>
             <RemoteName>ic_launcher.png</RemoteName>
@@ -113,13 +106,6 @@
             <RemoteCommand/>
             <Required>True</Required>
         </DeployFile>
-        <DeployFile Include="..\..\Bin\DelphiXE5\iOSDevice\Spring.Tests.Mobile.dSYM" Condition="'$(Config)'=='Debug'">
-            <RemoteDir>$(PROJECTNAME).app.dSYM\Contents\Resources\DWARF\</RemoteDir>
-            <RemoteName>Spring.Tests.Mobile</RemoteName>
-            <Operation>1</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-        </DeployFile>
         <DeployFile Include="$(BDS)\bin\Artwork\iOS\iPad\FM_SpotlightSearchIcon_80x80.png" Condition="'$(Config)'=='Debug'">
             <RemoteDir>Spring.Tests.Mobile.app\</RemoteDir>
             <RemoteName>FM_SpotlightSearchIcon_80x80.png</RemoteName>
@@ -187,6 +173,13 @@
             <RemoteDir>Spring.Tests.Mobile.app\</RemoteDir>
             <RemoteName>FM_ApplicationIcon_60x60.png</RemoteName>
             <Operation>0</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+        </DeployFile>
+        <DeployFile Include="..\..\Bin\DelphiXE5\iOSDevice\Spring.Tests.Mobile.dSYM" Condition="'$(Config)'=='Debug'">
+            <RemoteDir>$(PROJECTNAME).app.dSYM\Contents\Resources\DWARF\</RemoteDir>
+            <RemoteName>Spring.Tests.Mobile</RemoteName>
+            <Operation>1</Operation>
             <LocalCommand/>
             <RemoteCommand/>
         </DeployFile>

@@ -256,11 +256,15 @@
         </DelphiCompile>
         <DCCReference Include="..\..\Source\Spring.TestBootstrap.pas"/>
         <DCCReference Include="..\..\Source\FinalBuilder.XMLTestRunner.pas"/>
+        <DCCReference Include="..\..\Source\dUnit\FMXTestRunner.pas">
+            <Form>FMXTestRunner</Form>
+        </DCCReference>
         <DCCReference Include="..\..\Source\Spring.TestRegistration.pas"/>
         <DCCReference Include="..\..\Source\Spring.TestRunner.pas"/>
         <DCCReference Include="..\..\Source\Spring.TestUtils.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.Tests.Base.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.Tests.Collections.pas"/>
+        <DCCReference Include="..\..\Source\Base\Spring.Tests.Collections.Extensions.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.Tests.DesignPatterns.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.Tests.Helpers.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.Tests.Reflection.ValueConverters.pas"/>
@@ -358,16 +362,8 @@
                 <DeployFile LocalName="$(BDS)\bin\Artwork\iOS\iPad\FM_ApplicationIcon_76x76.png" Configuration="Debug" Class="iPad_AppIcon76">
                     <Platform Name="iOSSimulator"/>
                 </DeployFile>
-                <DeployFile LocalName="..\..\Bin\DelphiXE5\Android\AndroidManifest.xml" Configuration="Debug" Class="ProjectAndroidManifest">
-                    <Platform Name="Android"/>
-                </DeployFile>
                 <DeployFile LocalName="..\..\Bin\DelphiXE5\iOSDevice\Spring.Tests.Mobile" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="iOSDevice"/>
-                </DeployFile>
-                <DeployFile LocalName="..\..\Bin\DelphiXE5\iOSDevice\Spring.Tests.Mobile.dSYM" Configuration="Debug" Class="ProjectiOSDeviceDebug">
-                    <Platform Name="iOSDevice">
-                        <RemoteName>Spring.Tests.Mobile</RemoteName>
-                    </Platform>
                 </DeployFile>
                 <DeployFile LocalName="$(BDS)\bin\Artwork\iOS\iPad\FM_SpotlightSearchIcon_80x80.png" Configuration="Debug" Class="iPad_SpotLight80">
                     <Platform Name="iOSDevice"/>
@@ -420,6 +416,11 @@
                 </DeployFile>
                 <DeployFile LocalName="$(BDS)\bin\Artwork\iOS\iPhone\FM_ApplicationIcon_60x60.png" Configuration="Debug" Class="iPhone_AppIcon60">
                     <Platform Name="iOSDevice"/>
+                </DeployFile>
+                <DeployFile LocalName="..\..\Bin\DelphiXE5\iOSDevice\Spring.Tests.Mobile.dSYM" Configuration="Debug" Class="ProjectiOSDeviceDebug">
+                    <Platform Name="iOSDevice">
+                        <RemoteName>Spring.Tests.Mobile</RemoteName>
+                    </Platform>
                 </DeployFile>
                 <DeployFile LocalName="$(BDS)\bin\Artwork\iOS\iPad\FM_LaunchImagePortrait_1536x2048.png" Configuration="Debug" Class="iPad_Launch1536x2048">
                     <Platform Name="iOSDevice">
@@ -548,6 +549,9 @@
                 <DeployFile LocalName="$(BDS)\bin\Artwork\iOS\iPad\FM_ApplicationIcon_76x76.png" Configuration="Debug" Class="iPad_AppIcon76">
                     <Platform Name="iOSDevice"/>
                 </DeployFile>
+                <DeployFile LocalName="..\..\Bin\DelphiXE5\Android\AndroidManifest.xml" Configuration="Debug" Class="ProjectAndroidManifest">
+                    <Platform Name="Android"/>
+                </DeployFile>
                 <DeployFile LocalName="$(BDS)\bin\Artwork\iOS\iPad\FM_SpotlightSearchIcon_40x40.png" Configuration="Debug" Class="iPad_SpotLight40">
                     <Platform Name="iOSDevice"/>
                 </DeployFile>
@@ -555,9 +559,6 @@
                     <Platform Name="iOSDevice">
                         <RemoteName>Default-Landscape~ipad.png</RemoteName>
                     </Platform>
-                </DeployFile>
-                <DeployFile LocalName="..\..\Bin\DelphiXE5\Android\AndroidManifest.xml" Configuration="Debug" Class="ProjectAndroidManifest">
-                    <Platform Name="Android"/>
                 </DeployFile>
                 <DeployFile LocalName="$(BDS)\bin\Artwork\iOS\iPad\FM_LaunchImagePortrait_1536x2048.png" Configuration="Debug" Class="iPad_Launch1536x2048">
                     <Platform Name="iOSDevice">

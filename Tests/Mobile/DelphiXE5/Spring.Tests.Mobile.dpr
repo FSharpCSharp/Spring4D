@@ -26,12 +26,15 @@ program Spring.Tests.Mobile;
 
 {$I Spring.Tests.inc}
 
+{$LEGACYIFEND ON}
+
 // Spring.TestBootstrap be the first unit in the uses clause since it specifies
 // some units that need to be set in given order for FMX
 uses
   Spring.TestBootstrap in '..\..\Source\Spring.TestBootstrap.pas',
-  TestFramework,
+  TestFramework, FMX.MobilePreview,
   FinalBuilder.XMLTestRunner in '..\..\Source\FinalBuilder.XMLTestRunner.pas',
+  FMXTestRunner in '..\..\Source\dUnit\FMXTestRunner.pas' {FMXTestRunner},
   Spring.TestRegistration in '..\..\Source\Spring.TestRegistration.pas',
   Spring.TestRunner in '..\..\Source\Spring.TestRunner.pas',
   Spring.TestUtils in '..\..\Source\Spring.TestUtils.pas',
