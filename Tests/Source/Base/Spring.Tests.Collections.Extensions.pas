@@ -26,6 +26,8 @@ unit Spring.Tests.Collections.Extensions;
 
 {$I Spring.inc}
 
+{$ZEROBASEDSTRINGS OFF}
+
 interface
 
 uses
@@ -131,8 +133,8 @@ type
 
   TTestAny = class(TTestCase)
   published
-    procedure NilSourceWithoutPredicate;
-    procedure NilSourceWithPredicate;
+//    procedure NilSourceWithoutPredicate;
+//    procedure NilSourceWithPredicate;
     procedure NilPredicate;
 
     procedure EmptySequenceWithoutPredicate;
@@ -147,7 +149,7 @@ type
 
   TTestAll = class(TTestCase)
   published
-    procedure NilSource;
+//    procedure NilSource;
     procedure NilPredicate;
 
     procedure EmptySequenceReturnsTrue;
@@ -161,8 +163,8 @@ type
 
   TTestFirst = class(TTestCase)
   published
-    procedure NilSourceWithoutPredicate;
-    procedure NilSourceWithPredicate;
+//    procedure NilSourceWithoutPredicate;
+//    procedure NilSourceWithPredicate;
     procedure NilPredicate;
 
     procedure EmptySequenceWithoutPredicate;
@@ -187,8 +189,8 @@ type
 
   TTestSingle = class(TTestCase)
   published
-    procedure NilSourceWithoutPredicate;
-    procedure NilSourceWithPredicate;
+//    procedure NilSourceWithoutPredicate;
+//    procedure NilSourceWithPredicate;
     procedure NilPredicate;
 
     procedure EmptySequenceWithoutPredicate;
@@ -213,8 +215,8 @@ type
 
   TTestLast = class(TTestCase)
   published
-    procedure NilSourceWithoutPredicate;
-    procedure NilSourceWithPredicate;
+//    procedure NilSourceWithoutPredicate;
+//    procedure NilSourceWithPredicate;
     procedure NilPredicate;
 
     procedure EmptySequenceWithoutPredicate;
@@ -233,8 +235,8 @@ type
 
   TTestFirstOrDefault = class(TTestCase)
   published
-    procedure NilSourceWithoutPredicate;
-    procedure NilSourceWithPredicate;
+//    procedure NilSourceWithoutPredicate;
+//    procedure NilSourceWithPredicate;
     procedure NilPredicate;
 
     procedure EmptySequenceWithoutPredicate;
@@ -259,8 +261,8 @@ type
 
   TTestSingleOrDefault = class(TTestCase)
   published
-    procedure NilSourceWithoutPredicate;
-    procedure NilSourceWithPredicate;
+//    procedure NilSourceWithoutPredicate;
+//    procedure NilSourceWithPredicate;
     procedure NilPredicate;
 
     procedure EmptySequenceWithoutPredicate;
@@ -285,8 +287,8 @@ type
 
   TTestLastOrDefault = class(TTestCase)
   published
-    procedure NilSourceWithoutPredicate;
-    procedure NilSourceWithPredicate;
+//    procedure NilSourceWithoutPredicate;
+//    procedure NilSourceWithPredicate;
     procedure NilPredicate;
 
     procedure EmptySequenceWithoutPredicate;
@@ -464,7 +466,7 @@ type
   published
     procedure ExecutionIsDeferred;
 
-    procedure NilSource;
+//    procedure NilSource;
 
     procedure NegativeCount;
     procedure ZeroCount;
@@ -479,7 +481,7 @@ type
   published
     procedure ExecutionIsDeferred;
 
-    procedure NilSource;
+//    procedure NilSource;
 
     procedure NegativeCount;
     procedure ZeroCount;
@@ -492,8 +494,8 @@ type
   published
     procedure ExecutionIsDeferred;
 
-    procedure NilSourceNoIndex;
-    procedure NilSourceUsingIndex;
+//    procedure NilSourceNoIndex;
+//    procedure NilSourceUsingIndex;
     procedure NilPredicateNoIndex;
     procedure NilPredicateUsingIndex;
 
@@ -509,8 +511,8 @@ type
   published
     procedure ExecutionIsDeferred;
 
-    procedure NilSourceNoIndex;
-    procedure NilSourceUsingIndex;
+//    procedure NilSourceNoIndex;
+//    procedure NilSourceUsingIndex;
     procedure NilPredicateNoIndex;
     procedure NilPredicateUsingIndex;
 
@@ -561,7 +563,7 @@ type
   published
     procedure ExecutionIsDeferred;
 
-    procedure NilSource;
+//    procedure NilSource;
     procedure InputIsBuffered;
     procedure ArraysAreBuffered;
     procedure ReversedRange;
@@ -1375,6 +1377,7 @@ begin
     end);
 end;
 
+(*
 procedure TTestAny.NilSourceWithoutPredicate;
 var
   source: IEnumerable<Integer>;
@@ -1402,6 +1405,7 @@ begin
         end);
     end);
 end;
+*)
 
 procedure TTestAny.NonEmptySequenceWithoutPredicate;
 var
@@ -1479,6 +1483,7 @@ begin
     end);
 end;
 
+(*
 procedure TTestAll.NilSource;
 var
   source: IEnumerable<Integer>;
@@ -1494,6 +1499,7 @@ begin
         end);
     end);
 end;
+*)
 
 procedure TTestAll.PredicateMatchingAllElements;
 var
@@ -1695,6 +1701,7 @@ begin
     end);
 end;
 
+(*
 procedure TTestFirst.NilSourceWithoutPredicate;
 var
   source: IEnumerable<Integer>;
@@ -1722,6 +1729,7 @@ begin
         end);
     end);
 end;
+*)
 
 procedure TTestFirst.SingleElementSequenceWithMatchingPredicate;
 var
@@ -1923,6 +1931,7 @@ begin
     end);
 end;
 
+(*
 procedure TTestSingle.NilSourceWithoutPredicate;
 var
   source: IEnumerable<Integer>;
@@ -1950,6 +1959,7 @@ begin
         end);
     end);
 end;
+*)
 
 procedure TTestSingle.SingleElementSequenceWithMatchingPredicate;
 var
@@ -2101,6 +2111,7 @@ begin
     end);
 end;
 
+(*
 procedure TTestLast.NilSourceWithoutPredicate;
 var
   source: IEnumerable<Integer>;
@@ -2128,6 +2139,7 @@ begin
         end);
     end);
 end;
+*)
 
 procedure TTestLast.SingleElementSequenceWithoutPredicate;
 var
@@ -2271,6 +2283,7 @@ begin
     end);
 end;
 
+(*
 procedure TTestFirstOrDefault.NilSourceWithoutPredicate;
 var
   source: IEnumerable<Integer>;
@@ -2298,6 +2311,7 @@ begin
         end);
     end);
 end;
+*)
 
 procedure TTestFirstOrDefault.SingleElementSequenceWithMatchingPredicate;
 var
@@ -2483,6 +2497,7 @@ begin
     end);
 end;
 
+(*
 procedure TTestSingleOrDefault.NilSourceWithoutPredicate;
 var
   source: IEnumerable<Integer>;
@@ -2510,6 +2525,7 @@ begin
         end);
     end);
 end;
+*)
 
 procedure TTestSingleOrDefault.SingleElementSequenceWithMatchingPredicate;
 var
@@ -2649,6 +2665,7 @@ begin
     end);
 end;
 
+(*
 procedure TTestLastOrDefault.NilSourceWithoutPredicate;
 var
   source: IEnumerable<Integer>;
@@ -2676,6 +2693,7 @@ begin
         end);
     end);
 end;
+*)
 
 procedure TTestLastOrDefault.SingleElementSequenceWithMatchingPredicate;
 var
@@ -4203,6 +4221,7 @@ begin
   CheckTrue(TCollections.Range(0, 5).Take(-5).EqualsTo([]));
 end;
 
+(*
 procedure TTestTake.NilSource;
 var
   source: IEnumerable<Integer>;
@@ -4214,6 +4233,7 @@ begin
       source.Take(10);
     end);
 end;
+*)
 
 procedure TTestTake.OnlyEnumerateTheGivenNumberOfElements;
 var
@@ -4264,6 +4284,7 @@ begin
   CheckTrue(TCollections.Range(0, 5).Skip(-5).EqualsTo([0, 1, 2, 3, 4]));
 end;
 
+(*
 procedure TTestSkip.NilSource;
 var
   source: IEnumerable<Integer>;
@@ -4275,6 +4296,7 @@ begin
       source.Skip(10);
     end);
 end;
+*)
 
 procedure TTestSkip.ZeroCount;
 begin
@@ -4323,6 +4345,7 @@ begin
     end);
 end;
 
+(*
 procedure TTestTakeWhile.NilSourceNoIndex;
 var
   source: IEnumerable<Integer>;
@@ -4354,6 +4377,7 @@ begin
         end);
     end);
 end;
+*)
 
 procedure TTestTakeWhile.PredicateFailingFirstElement;
 var
@@ -4469,6 +4493,7 @@ begin
     end);
 end;
 
+(*
 procedure TTestSkipWhile.NilSourceNoIndex;
 var
   source: IEnumerable<Integer>;
@@ -4500,6 +4525,7 @@ begin
         end);
     end);
 end;
+*)
 
 procedure TTestSkipWhile.PredicateFailingFirstElement;
 var
@@ -5013,6 +5039,7 @@ begin
   query := nil;
 end;
 
+(*
 procedure TTestReverse.NilSource;
 var
   source: IEnumerable<Integer>;
@@ -5024,6 +5051,7 @@ begin
       source.Reversed;
     end);
 end;
+*)
 
 procedure TTestReverse.ReversedList;
 var
