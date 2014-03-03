@@ -26,9 +26,9 @@ unit Spring.Tests.Base;
 
 {$I Spring.inc}
 
-{$IFDEF MACOS}
+{$IF Defined(MACOS) AND NOT Defined(IOS)}
   {$DEFINE LogConsole}
-{$ENDIF MACOS}
+{$IFEND MACOS}
 
 interface
 
@@ -188,8 +188,10 @@ type
     ///   Make sure this method is named so it will be run last
     /// </summary>
     procedure Test_EnsureAllTTypeKindsCoveredByCallsTo_Test_GetTypeSize_;
+{$IFNDEF NEXTGEN}
     procedure Test_GetTypeSize_AnsiChar;
     procedure Test_GetTypeSize_AnsiString;
+{$ENDIF}
     procedure Test_GetTypeSize_Array;
     procedure Test_GetTypeSize_Boolean;
     procedure Test_GetTypeSize_Byte;
@@ -214,7 +216,9 @@ type
     procedure Test_GetTypeSize_NativeInt;
     procedure Test_GetTypeSize_NativeUInt;
     procedure Test_GetTypeSize_OleVariant;
+{$IFNDEF NEXTGEN}
     procedure Test_GetTypeSize_PAnsiChar;
+{$ENDIF}
     procedure Test_GetTypeSize_PChar;
     procedure Test_GetTypeSize_Pointer;
     procedure Test_GetTypeSize_Proc;
@@ -223,12 +227,14 @@ type
     procedure Test_GetTypeSize_Real;
     procedure Test_GetTypeSize_Set;
     procedure Test_GetTypeSize_ShortInt;
+{$IFNDEF NEXTGEN}
     procedure Test_GetTypeSize_ShortString;
     procedure Test_GetTypeSize_ShortString0;
     procedure Test_GetTypeSize_ShortString1;
     procedure Test_GetTypeSize_ShortString2;
     procedure Test_GetTypeSize_ShortString255;
     procedure Test_GetTypeSize_ShortString7;
+{$ENDIF}
     procedure Test_GetTypeSize_Single;
     procedure Test_GetTypeSize_SmallInt;
     procedure Test_GetTypeSize_string;
@@ -236,7 +242,9 @@ type
 //    procedure Test_GetTypeSize_UnknownTypeKind;
     procedure Test_GetTypeSize_Variant;
     procedure Test_GetTypeSize_WideChar;
+{$IFNDEF NEXTGEN}
     procedure Test_GetTypeSize_WideString;
+{$ENDIF}
     procedure Test_GetTypeSize_Word;
     procedure Test_GetTypeSize_WordBool;
   end;
@@ -932,12 +940,14 @@ end;
 
 {$REGION 'TTestSpringEventsMethods'}
 
+{$IFNDEF NEXTGEN}
 type
   TShortString0 = String[0];
   TShortString1 = String[1];
   TShortString2 = String[2];
   TShortString255 = String[255];
   TShortString7 = String[7];
+{$ENDIF}
 
 // for reference see http://www.guidogybels.eu/asmtable3.html
 procedure TTestSpringEventsMethods.MatchType(const aTypeInfo: PTypeInfo;
@@ -966,9 +976,15 @@ begin
 end;
 
 procedure TTestSpringEventsMethods.SetUp;
+{$IFDEF NEXTGEN}
+const NextGenExcludedTypeKinds = [tkChar, tkString, tkLString, tkWString];
+{$ENDIF}
 begin
   inherited;
   fRemainingTypeKinds := tkAny - [tkUnknown]; // for now, skip tkUnknown until the TODO is fixed.
+{$IFDEF NEXTGEN}
+  fRemainingTypeKinds := fRemainingTypeKinds - NextGenExcludedTypeKinds; //NextGen do not support these types by default (unless DCU hacking is used)
+{$ENDIF}
   fTestedTypeKinds := [];
 end;
 
@@ -1050,7 +1066,8 @@ end;
 
 procedure TTestSpringEventsMethods.Test_GetTypeSize_Extended;
 begin
-{$IF Defined(MACOS)}
+// iOS on ARM doesn't seem to align to 16B boundries
+{$IF Defined(MACOS) AND NOT Defined(CPUARM)}
   MatchType(TypeInfo(Extended), tkFloat, 16);
 {$ELSE}
   MatchType(TypeInfo(Extended), tkFloat, SizeOf(Extended));
@@ -1082,6 +1099,7 @@ begin
   MatchType(TypeInfo(SmallInt), tkInteger, SizeOf(SmallInt));
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestSpringEventsMethods.Test_GetTypeSize_AnsiChar;
 begin
   MatchType(TypeInfo(AnsiChar), tkChar, SizeOf(AnsiChar));
@@ -1091,6 +1109,7 @@ procedure TTestSpringEventsMethods.Test_GetTypeSize_AnsiString;
 begin
   MatchType(TypeInfo(AnsiString), tkLString, PointerSize);
 end;
+{$ENDIF}
 
 procedure TTestSpringEventsMethods.Test_GetTypeSize_Array;
 begin
@@ -1210,6 +1229,7 @@ begin
   MatchType(TypeInfo(Single), tkFloat, SizeOf(Single));
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestSpringEventsMethods.Test_GetTypeSize_ShortString;
 begin
   MatchType(TypeInfo(ShortString), tkString, PointerSize);
@@ -1229,6 +1249,7 @@ procedure TTestSpringEventsMethods.Test_GetTypeSize_ShortString2;
 begin
   MatchType(TypeInfo(TShortString2), tkString, PointerSize);
 end;
+{$ENDIF}
 
 procedure TTestSpringEventsMethods.Test_GetTypeSize_Interface;
 begin
@@ -1240,10 +1261,12 @@ begin
   MatchType(TypeInfo(TNotifyEvent), tkMethod, PointerSize * 2);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestSpringEventsMethods.Test_GetTypeSize_PAnsiChar;
 begin
   MatchType(TypeInfo(PAnsiChar), tkPointer, PointerSize);
 end;
+{$ENDIF}
 
 procedure TTestSpringEventsMethods.Test_GetTypeSize_PChar;
 begin
@@ -1265,6 +1288,7 @@ begin
   MatchType(TypeInfo(PWideChar), tkPointer, PointerSize);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestSpringEventsMethods.Test_GetTypeSize_ShortString255;
 begin
   MatchType(TypeInfo(TShortString255), tkString, PointerSize);
@@ -1274,6 +1298,7 @@ procedure TTestSpringEventsMethods.Test_GetTypeSize_ShortString7;
 begin
   MatchType(TypeInfo(TShortString7), tkString, PointerSize);
 end;
+{$ENDIF}
 
 procedure TTestSpringEventsMethods.Test_GetTypeSize_string;
 begin
@@ -1304,10 +1329,12 @@ begin
   MatchType(TypeInfo(WideChar), tkWChar, SizeOf(WideChar));
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestSpringEventsMethods.Test_GetTypeSize_WideString;
 begin
   MatchType(TypeInfo(WideString), tkWString, PointerSize);
 end;
+{$ENDIF}
 
 procedure TTestSpringEventsMethods.Test_GetTypeSize_WordBool;
 begin

@@ -931,11 +931,11 @@ const
   CFloatSizes: array[TFloatType] of Integer = (
     SizeOf(Single){4},
     SizeOf(Double){8},
-{$IFDEF MACOS}
-    16, // Fixed the Mac OS X stack corruption issue. TTestMulticastEventStackSize.TestIssue60ExtendedAssignedConst to align stack at 16-byte boundaries on OSX.
+{$IF Defined(MACOS) AND NOT Defined(CPUARM)}
+    16, // Fixed the Mac OS X stack corruption issue. TTestMulticastEventStackSize.TestIssue60ExtendedAssignedConst to align stack at 16-byte boundaries on OSX. iOS on ARM doesn't seem to align to 16B boundries.
 {$ELSE}
     SizeOf(Extended){10},
-{$ENDIF MACOS}
+{$IFEND MACOS}
     SizeOf(Comp){8},
     SizeOf(Currency){8});
   CSetSizes: array[TOrdType] of Integer = (
