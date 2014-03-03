@@ -194,6 +194,7 @@ object FMXTestRunner: TFMXTestRunner
     Top = 440
     object RunTests: TAction
       Text = 'Run...'
+      Shortcut = 120
       OnExecute = RunTestsExecute
       OnUpdate = RunTestsUpdate
     end
