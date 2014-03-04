@@ -2,30 +2,30 @@ object FMXTestRunner: TFMXTestRunner
   Left = 0
   Top = 0
   Caption = 'TFMXTestRunner'
-  ClientHeight = 609
-  ClientWidth = 578
+  ClientHeight = 800
+  ClientWidth = 480
   FormFactor.Width = 320
   FormFactor.Height = 480
   FormFactor.Devices = [dkDesktop]
   OnShow = FormShow
   DesignerMobile = True
-  DesignerWidth = 578
-  DesignerHeight = 609
-  DesignerDeviceName = ''
+  DesignerWidth = 480
+  DesignerHeight = 800
+  DesignerDeviceName = '5.1 WVGA Android Phone'
   DesignerOrientation = 0
   DesignerOSVersion = ''
   object Header: TToolBar
     Height = 48.000000000000000000
     TabOrder = 0
-    Width = 578.000000000000000000
+    Width = 480.000000000000000000
     object HeaderLabel: TLabel
       Align = alCenter
       AutoSize = True
-      Height = 19.000000000000000000
+      Height = 26.000000000000000000
       StyleLookup = 'toollabel'
       Text = 'FMX dUnit Test Runner'
       TextAlign = taCenter
-      Width = 116.000000000000000000
+      Width = 190.000000000000000000
       WordWrap = False
       Trimming = ttCharacter
     end
@@ -33,18 +33,18 @@ object FMXTestRunner: TFMXTestRunner
   object TabControl1: TTabControl
     Align = alClient
     FullSize = True
-    Height = 513.000000000000000000
+    Height = 704.000000000000000000
     TabHeight = 49.000000000000000000
     TabIndex = 0
     TabOrder = 1
     TabPosition = tpNone
-    Width = 578.000000000000000000
+    Width = 480.000000000000000000
     object TabItem1: TTabItem
       WordWrap = False
       Height = 8.000000000000000000
       IsSelected = True
-      Position.X = 280.000000000000000000
-      Position.Y = 494.000000000000000000
+      Position.X = 231.000000000000000000
+      Position.Y = 685.000000000000000000
       TabOrder = 0
       Text = 'TabItem1'
       Trimming = ttCharacter
@@ -52,9 +52,9 @@ object FMXTestRunner: TFMXTestRunner
       object TestTree: TTreeView
         Align = alClient
         ClipChildren = True
-        Height = 314.000000000000000000
+        Height = 505.000000000000000000
         TabOrder = 0
-        Width = 578.000000000000000000
+        Width = 480.000000000000000000
         OnMouseDown = TestTreeMouseDown
         OnMouseMove = TestTreeMouseMove
         OnMouseUp = TestTreeMouseUp
@@ -77,15 +77,15 @@ object FMXTestRunner: TFMXTestRunner
       object Panel1: TPanel
         Align = alBottom
         Height = 199.000000000000000000
-        Position.Y = 314.000000000000000000
-        Width = 578.000000000000000000
+        Position.Y = 505.000000000000000000
+        Width = 480.000000000000000000
         TabOrder = 1
         object Memo: TMemo
           Touch.InteractiveGestures = [igPan, igLongTap, igDoubleTap]
           Align = alClient
           Height = 199.000000000000000000
           TabOrder = 0
-          Width = 578.000000000000000000
+          Width = 480.000000000000000000
           ReadOnly = True
           WordWrap = True
           StyledSettings = [ssFamily, ssStyle, ssFontColor]
@@ -96,8 +96,8 @@ object FMXTestRunner: TFMXTestRunner
       WordWrap = False
       Height = 8.000000000000000000
       IsSelected = False
-      Position.X = 290.000000000000000000
-      Position.Y = 494.000000000000000000
+      Position.X = 241.000000000000000000
+      Position.Y = 685.000000000000000000
       TabOrder = 1
       Text = 'TabItem2'
       Trimming = ttCharacter
@@ -109,7 +109,7 @@ object FMXTestRunner: TFMXTestRunner
         Position.Y = 16.000000000000000000
         StyleLookup = 'transparentlistboxstyle'
         TabOrder = 1
-        Width = 547.000000000000000000
+        Width = 449.000000000000000000
         DefaultItemStyles.ItemStyle = 'listboxitemnodetail'
         DefaultItemStyles.GroupHeaderStyle = ''
         DefaultItemStyles.GroupFooterStyle = ''
@@ -162,7 +162,7 @@ object FMXTestRunner: TFMXTestRunner
         Position.Y = 256.000000000000000000
         StyleLookup = 'transparentlistboxstyle'
         TabOrder = 0
-        Width = 547.000000000000000000
+        Width = 449.000000000000000000
         DefaultItemStyles.ItemStyle = 'listboxitemnodetail'
         DefaultItemStyles.GroupHeaderStyle = ''
         DefaultItemStyles.GroupFooterStyle = ''
@@ -190,9 +190,9 @@ object FMXTestRunner: TFMXTestRunner
   object ToolBar1: TToolBar
     Align = alBottom
     Height = 48.000000000000000000
-    Position.Y = 561.000000000000000000
+    Position.Y = 752.000000000000000000
     TabOrder = 2
-    Width = 578.000000000000000000
+    Width = 480.000000000000000000
     object cmdRun: TButton
       Action = RunTests
       Align = alLeft
@@ -206,7 +206,7 @@ object FMXTestRunner: TFMXTestRunner
       Action = ChangeTab2
       Align = alRight
       Height = 48.000000000000000000
-      Position.X = 530.000000000000000000
+      Position.X = 432.000000000000000000
       StyleLookup = 'detailstoolbuttonbordered'
       TabOrder = 1
       Trimming = ttCharacter
@@ -224,7 +224,7 @@ object FMXTestRunner: TFMXTestRunner
     end
   end
   object OverflowMenu: TListBox
-    Height = 68.000000000000000000
+    Height = 96.000000000000000000
     Position.X = 172.000000000000000000
     Position.Y = 180.000000000000000000
     TabOrder = 3
@@ -236,15 +236,22 @@ object FMXTestRunner: TFMXTestRunner
     object mnuSelectAll: TListBoxItem
       Height = 32.000000000000000000
       Text = 'Select All'
-      Width = 196.000000000000000000
+      Width = 200.000000000000000000
       OnClick = mnuSelectAllClick
     end
     object mnuUnselectAll: TListBoxItem
       Height = 32.000000000000000000
       Position.Y = 32.000000000000000000
       Text = 'Unselect All'
-      Width = 196.000000000000000000
+      Width = 200.000000000000000000
       OnClick = mnuUnselectAllClick
+    end
+    object mnuRunSelected: TListBoxItem
+      Height = 32.000000000000000000
+      Position.Y = 64.000000000000000000
+      Text = 'Run Selected'
+      Width = 200.000000000000000000
+      OnClick = mnuRunSelectedClick
     end
     object ShadowEffect1: TShadowEffect
       Distance = 3.000000000000000000
@@ -256,6 +263,7 @@ object FMXTestRunner: TFMXTestRunner
   end
   object tmrPopup: TTimer
     Enabled = False
+    Interval = 500
     OnTimer = tmrPopupTimer
     Left = 396
     Top = 188

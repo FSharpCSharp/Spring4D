@@ -11,6 +11,7 @@ uses
   System.Actions,
   System.Rtti,
   System.IOUtils,
+  System.IniFiles,
   FMX.Forms,
   FMX.Types,
   FMX.Controls,
@@ -22,7 +23,8 @@ uses
   FMX.TabControl,
   FMX.ListBox,
   FMX.TreeView,
-  TestFramework, FMX.Effects, FMX.Objects;
+  FMX.Effects,
+  TestFramework, DUnitConsts;
 
 type
   TRunnerExitBehavior = (
@@ -63,6 +65,7 @@ type
     tmrPopup: TTimer;
     ListBoxItem1: TListBoxItem;
     ListBoxItem2: TListBoxItem;
+    mnuRunSelected: TListBoxItem;
     procedure RunTestsExecute(Sender: TObject);
     procedure ListBoxItemCheckInvert(Sender: TObject);
     procedure ChangeTabUpdate(Sender: TObject);
@@ -78,8 +81,11 @@ type
     procedure mnuUnselectAllClick(Sender: TObject);
     procedure TestTreeMouseMove(Sender: TObject; Shift: TShiftState; X,
       Y: Single);
+    procedure mnuRunSelectedClick(Sender: TObject);
   strict private
     FMenuPos: TPointF;
+  private const
+    SIniSection = 'FMXTestRunner Config';
   protected
     class var Suite: ITest;
     procedure SetChecked(const Parent : TTreeViewItem; Value : Boolean;
@@ -95,7 +101,7 @@ type
     FFailureCount: Integer;
     FIniName: string;
 
-    procedure Setup;
+    procedure Setup(const Base : ITest);
     procedure SetupTree;
     procedure RunTheTest(aTest: ITest);
     procedure EnableUI(Enable: Boolean);
@@ -193,7 +199,9 @@ begin
     '  Note that test settings is not persisted on iOS Device but is on Andorid or iOS Simulator';
 
   FIniName := 'dUnit.ini';
-{$IF Defined(ANDROID)}
+{$IF Defined(MSWINDOWS)}
+  FIniName := ExtractFilePath(ParamStr(0)) + FIniName;
+{$ELSEIF Defined(ANDROID)}
   // Note that this requires Read/Write External Storage permissions
   // Write permissions option is enough, reading will be available as well
   //
@@ -202,7 +210,7 @@ begin
   // FIniName := TPath.Combine(TPath.GetSharedDocumentsPath, FIniName);
   // Use the global SDCard path
   FIniName := System.IOUtils.TPath.Combine('/storage/emulated/0', FIniName);
-{$ELSE IF Defined(IOS)}
+{$ELSEIF Defined(IOS)}
   FIniName := System.IOUtils.TPath.Combine(
     System.IOUtils.TPath.GetDocumentsPath, FIniName);
 {$ENDIF}
@@ -415,6 +423,19 @@ begin
   if (Item.Enabled) then Item.Checked := not Item.Checked;
 end;
 
+procedure TFMXTestRunner.mnuRunSelectedClick(Sender: TObject);
+var
+  Suite : ITest;
+begin
+  HideOverflowMenu;
+  Suite := TestTree.Selected.data.AsInterface as ITest;
+  Setup(Suite);
+  // Enable currently selected test even if it was previously disabled,
+  // if complete suite is ran, it will be set back to false during setup
+  Suite.Enabled := True;
+  RunTheTest(Suite);
+end;
+
 procedure TFMXTestRunner.mnuSelectAllClick(Sender: TObject);
 begin
   SetChecked(TestTree.Selected, True, True);
@@ -458,12 +479,29 @@ end;
 
 procedure TFMXTestRunner.TestTreeMouseDown(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Single);
+var
+  Item: TTreeViewItem;
 begin
+  if (not (Button in [TMouseButton.mbLeft, TMouseButton.mbRight])) then Exit;
+
   // In any case, restart the timer
   tmrPopup.Enabled := False;
-  tmrPopup.Enabled := True;
-  HideOverflowMenu;
   FMenuPos := PointF(X, Y + TabControl1.Position.Y);
+  if (Button = TMouseButton.mbRight) then
+  begin
+    Item := TestTree.ItemByPoint(X, Y);
+    if (Item <> nil) then
+    begin
+      TestTree.Selected := Item;
+      tmrPopupTimer(nil);
+    end
+    else HideOverflowMenu;
+  end
+  else
+  begin
+    tmrPopup.Enabled := True;
+    HideOverflowMenu;
+  end;
 end;
 
 procedure TFMXTestRunner.TestTreeMouseMove(Sender: TObject; Shift: TShiftState;
@@ -518,12 +556,30 @@ begin
 end;
 
 procedure TFMXTestRunner.RunTestsExecute(Sender: TObject);
+{$IFDEF MSWINDOWS}
+var
+  Ini: TMemIniFile;
+{$ENDIF}
 begin
   if Suite = nil then Exit;
 
-  Setup;
+  Setup(nil);
   try
+{$IFDEF MSWINDOWS}
+    Ini := TMemIniFile.Create(FIniName);
+    try
+      Ini.WriteInteger(SIniSection, 'Left', Left);
+      Ini.WriteInteger(SIniSection, 'Top', Top);
+      Ini.WriteInteger(SIniSection, 'Width', Width);
+      Ini.WriteInteger(SIniSection, 'Height', Height);
+      Suite.SaveConfiguration(Ini, sTests);
+      Ini.UpdateFile;
+    finally
+      Ini.Free;
+    end;
+{$ELSE}
     Suite.SaveConfiguration(FIniName, False, True);
+{$ENDIF}
   except
     // Consume the exception
     // Android: Write External Storage permission is not set
@@ -634,7 +690,7 @@ begin
   end;
 end;
 
-procedure TFMXTestRunner.Setup;
+procedure TFMXTestRunner.Setup(const Base : ITest);
   procedure TraverseItems(const Item: TTreeViewItem);
   var
     Test: ITest;
@@ -645,17 +701,36 @@ procedure TFMXTestRunner.Setup;
     for i := 0 to Item.Count - 1 do TraverseItems(Item[i]);
   end;
 begin
-  TraverseItems(TestTree.Items[0]);
+  if (Base <> nil) then TraverseItems(Base.GUIObject as TTreeViewItem)
+  else TraverseItems(TestTree.Items[0]);
 end;
 
 procedure TFMXTestRunner.SetupTree;
+{$IFDEF MSWINDOWS}
+var
+  Ini: TMemIniFile;
+{$ENDIF}
 begin
   if (Suite = nil) then Exit;
 
   TestTree.BeginUpdate;
   TestTree.Clear;
   try
+{$IFDEF MSWINDOWS}
+    Ini := TMemIniFile.Create(FIniName);
+    try
+      SetBounds(
+        Ini.ReadInteger(SIniSection, 'Left', Left),
+        Ini.ReadInteger(SIniSection, 'Top', Top),
+        Ini.ReadInteger(SIniSection, 'Width', Width),
+        Ini.ReadInteger(SIniSection, 'Height', Height));
+      Suite.LoadConfiguration(Ini, sTests);
+    finally
+      Ini.Free;
+    end;
+{$ELSE}
     Suite.LoadConfiguration(FIniName, False, True);
+{$ENDIF}
   except
     // Consume the exception
     // Android: Read External Storage permission is not set
