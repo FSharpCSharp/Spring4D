@@ -355,6 +355,7 @@ object frmMain: TfrmMain
     Height = 25
     Anchors = [akLeft, akTop, akRight]
     Caption = '&Build'
+    Default = True
     TabOrder = 4
     OnClick = btnBuildClick
   end

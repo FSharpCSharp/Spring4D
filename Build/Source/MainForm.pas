@@ -27,20 +27,8 @@ unit MainForm;
 interface
 
 uses
-  Windows,
-  Messages,
-  SysUtils,
-  Variants,
-  Classes,
-  Graphics,
-  Controls,
-  Forms,
-  Dialogs,
-  StdCtrls,
-  ExtCtrls,
-  CheckLst,
-  Menus,
-  BuildEngine;
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, Menus, StdCtrls, ExtCtrls, CheckLst, BuildEngine;
 
 type
   TfrmMain = class(TForm)
@@ -63,7 +51,6 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure btnBuildClick(Sender: TObject);
-    procedure btnCloseClick(Sender: TObject);
     procedure btnCleanClick(Sender: TObject);
     procedure grpConfigurationClick(Sender: TObject);
     procedure lbTargetsClickCheck(Sender: TObject);
@@ -160,17 +147,12 @@ end;
 
 procedure TfrmMain.btnBuildClick(Sender: TObject);
 begin
-  fBuildEngine.BuildAll();
+  fBuildEngine.BuildAll;
 end;
 
 procedure TfrmMain.btnCleanClick(Sender: TObject);
 begin
-  fBuildEngine.CleanUp();
-end;
-
-procedure TfrmMain.btnCloseClick(Sender: TObject);
-begin
-  Close;
+  fBuildEngine.CleanUp;
 end;
 
 procedure TfrmMain.mniCheckAllClick(Sender: TObject);
