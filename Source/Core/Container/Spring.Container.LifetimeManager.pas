@@ -220,11 +220,9 @@ procedure TTransientLifetimeManager.ReleaseInstance(const instance: TValue);
 begin
   Guard.CheckNotNull(instance, 'instance');
   DoBeforeDestruction(instance);
-{$IFNDEF NEXTGEN}
+{$IFNDEF AUTOREFCOUNT}
   if instance.IsObject then
-  begin
     instance.AsObject.Free;
-  end;
 {$ENDIF}
 end;
 

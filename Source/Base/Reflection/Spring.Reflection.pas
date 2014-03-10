@@ -616,22 +616,15 @@ begin
 end;
 
 class function TType.FindType(const qualifiedName: string): TRttiType;
-{$IFDEF NEXTGEN}
-var AResult : TRttiType;
-{$ENDIF}
+var
+  rttiType: TRttiType;
 begin
   Result := fContext.FindType(qualifiedName);
   if not Assigned(Result) then
   begin
-{$IFNDEF NEXTGEN}
-    for Result in fContext.GetTypes do
-      if SameText(Result.Name, qualifiedName) then
-        Exit;
-{$ELSE}
-    for AResult in fContext.GetTypes do
-      if SameText(AResult.Name, qualifiedName) then
-        Exit(AResult);
-{$ENDIF}
+    for rttiType in fContext.GetTypes do
+      if SameText(rttiType.Name, qualifiedName) then
+        Exit(rttiType);
     Result := nil;
   end;
 end;

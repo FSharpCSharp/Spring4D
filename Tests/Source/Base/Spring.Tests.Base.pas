@@ -81,7 +81,7 @@ type
     procedure TestByValue;
   end;
 
-{$IFNDEF CPUARM}
+{$IFDEF SUPPORTS_GENERIC_EVENTS}
   {$M+}
   TProc<T1, T2> = reference to procedure(arg1: T1; arg2: T2);
   {$M-}
@@ -125,7 +125,6 @@ type
     procedure TestIssue60;
   end;
 
-type
   TTestMulticastEventStackSize = class(TTestCase)
   strict private
     type
@@ -166,10 +165,8 @@ type
     procedure TestIssue60Single;
     procedure TestIssue60SingleAssignedConst;
   end;
+{$ENDIF SUPPORTS_GENERIC_EVENTS}
 
-{$ENDIF ~CPUARM}
-
-type
   TTestSpringEventsMethods = class(TTestCase)
   private
     fRemainingTypeKinds: TTypeKinds;
@@ -239,7 +236,6 @@ type
     procedure Test_GetTypeSize_SmallInt;
     procedure Test_GetTypeSize_string;
     procedure Test_GetTypeSize_UnicodeString;
-//    procedure Test_GetTypeSize_UnknownTypeKind;
     procedure Test_GetTypeSize_Variant;
     procedure Test_GetTypeSize_WideChar;
 {$IFNDEF NEXTGEN}
@@ -258,6 +254,7 @@ uses
   Rtti,
   StrUtils,
   Types;
+
 
 {$REGION 'TTestNullableInteger'}
 
@@ -368,8 +365,8 @@ end;
 
 
 {$REGION 'TTestMulticastEvent'}
-{$IFNDEF CPUARM}
 
+{$IFDEF SUPPORTS_GENERIC_EVENTS}
 procedure TTestMulticastEvent.SetUp;
 begin
   inherited;
@@ -554,8 +551,8 @@ begin
   fEvent.Remove(HandlerB);
   CheckEquals(0, fEvent.Count);
 end;
+{$ENDIF SUPPORTS_GENERIC_EVENTS}
 
-{$ENDIF ~CPUARM}
 {$ENDREGION}
 
 
@@ -713,8 +710,8 @@ end;
 
 
 {$REGION 'TTestMulticastEventStackSize'}
-{$IFNDEF CPUARM}
 
+{$IFDEF SUPPORTS_GENERIC_EVENTS}
 procedure TTestMulticastEventStackSize.SetUp;
 begin
   inherited;
@@ -933,8 +930,8 @@ begin
 {$ENDIF LogConsole}
   CheckEquals(expected, fHandlerInvokeCount);
 end;
+{$ENDIF SUPPORTS_GENERIC_EVENTS}
 
-{$ENDIF CPUARM}
 {$ENDREGION}
 
 
@@ -981,9 +978,10 @@ const NextGenExcludedTypeKinds = [tkChar, tkString, tkLString, tkWString];
 {$ENDIF}
 begin
   inherited;
-  fRemainingTypeKinds := tkAny - [tkUnknown]; // for now, skip tkUnknown until the TODO is fixed.
+  fRemainingTypeKinds := tkAny - [tkUnknown];
 {$IFDEF NEXTGEN}
-  fRemainingTypeKinds := fRemainingTypeKinds - NextGenExcludedTypeKinds; //NextGen do not support these types by default (unless DCU hacking is used)
+  // NextGen does not support these types by default (unless DCU hacking is used)
+  fRemainingTypeKinds := fRemainingTypeKinds - NextGenExcludedTypeKinds;
 {$ENDIF}
   fTestedTypeKinds := [];
 end;
@@ -1308,15 +1306,6 @@ procedure TTestSpringEventsMethods.Test_GetTypeSize_UnicodeString;
 begin
   MatchType(TypeInfo(UnicodeString), tkUString, PointerSize);
 end;
-
-//procedure TTestSpringEventsMethods.Test_GetTypeSize_UnknownTypeKind;
-//var
-//  lTypeInfo: PTypeInfo;
-//begin
-{TODO -o##jwp -cEnhance : Research to see if RTTI with tkUnknown can be generated at all }
-//  lTypeInfo := fEmptyValue.TypeInfo;
-//  MatchType(lTypeInfo, tkUnknown, cNativePoiterSize);
-//end;
 
 procedure TTestSpringEventsMethods.Test_GetTypeSize_Variant;
 begin

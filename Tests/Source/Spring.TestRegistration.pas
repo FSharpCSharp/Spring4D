@@ -55,8 +55,8 @@ begin
     TTestNullableBoolean.Suite,
     TTestGuard.Suite,
     TTestLazy.Suite,
-{$IFNDEF CPUARM}
-    TTestMulticastEvent.Suite, //UNSUPPORTED on ARM
+{$IFDEF SUPPORTS_GENERIC_EVENTS}
+    TTestMulticastEvent.Suite,
     TTestMulticastEventStackSize.Suite,
 {$ENDIF}
     TTestSpringEventsMethods.Suite,

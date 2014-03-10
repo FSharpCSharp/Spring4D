@@ -700,6 +700,7 @@ type
     property IsEmpty: Boolean read GetIsEmpty;
   end;
 
+{$IFDEF SUPPORTS_GENERIC_EVENTS}
   Event<T> = record
   private
     fInstance: IEvent<T>;
@@ -727,6 +728,7 @@ type
     class operator Implicit(var value: Event<T>): T;
     class operator Implicit(const value: T): Event<T>;
   end;
+{$ENDIF}
 
   {$ENDREGION}
 
@@ -1655,13 +1657,10 @@ end;
 
 {$REGION 'Event<T>'}
 
+{$IFDEF SUPPORTS_GENERIC_EVENTS}
 class function Event<T>.Create: Event<T>;
 begin
-{$IFNDEF CPUARM}
   Result := TEvent<T>.Create;
-{$ELSE}
-  raise ENotImplementedException.Create('Not implemented');
-{$ENDIF}
 end;
 
 procedure Event<T>.Add(const handler: T);
@@ -1678,12 +1677,8 @@ end;
 
 procedure Event<T>.EnsureInitialized;
 begin
-{$IFNDEF CPUARM}
   if not Assigned(fInstance) then
     fInstance := TEvent<T>.Create;
-{$ELSE}
-  raise ENotImplementedException.Create('Not implemented');
-{$ENDIF}
 end;
 
 function Event<T>.GetCount: Integer;
@@ -1749,6 +1744,7 @@ begin
   Result.Clear;
   Result.Add(value);
 end;
+{$ENDIF}
 
 {$ENDREGION}
 

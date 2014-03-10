@@ -24,6 +24,8 @@
 
 unit Spring.Events.Base;
 
+{$I Spring.inc}
+
 interface
 
 uses
@@ -74,6 +76,7 @@ type
   end;
 
 implementation
+
 
 {$REGION 'TEventBase'}
 

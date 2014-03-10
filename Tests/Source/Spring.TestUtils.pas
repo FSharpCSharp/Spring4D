@@ -24,7 +24,6 @@
 
 unit Spring.TestUtils;
 
-{$I Spring.inc}
 {$I Spring.Tests.inc}
 
 interface

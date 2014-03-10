@@ -34,6 +34,14 @@
   {$LEGACYIFEND ON}
 {$ENDIF}
 
+// JEDI does not handle CPUARM
+{$IFDEF CPUARM}
+  {$UNDEF CPU386}
+  {$UNDEF CPU32}
+  {$UNDEF CPUASM}
+  {$DEFINE PUREPASCAL}
+{$ENDIF}
+
 // JEDI will assert that at least CPU386 is defined
 {$IFDEF CPU386}
   // Keep this for older delphi compatibility (older than XE3)
@@ -42,18 +50,12 @@
   {$ENDIF}
 {$ENDIF}
 
-{$IFDEF CPUARM}
-  // Not used by default as it adds some more overhead due to closure copying
-  // and is only required in few corner cases
-  {.$DEFINE FIX_EVENT_INVOKES}
-{$ENDIF}
-
-{$IF Defined(CPUX86) OR Defined(CPUX64)}
-  {$DEFINE SPRING_HAS_GENERIC_EVENTS}
+{$IFDEF ASSEMBLER}
+  {$DEFINE SUPPORTS_GENERIC_EVENTS}
 {$ELSE}
   // Current System.Rtti does not support creating implementations that we need
   // so until that happens Events cannot be supported on non-Intel architectures
-{$IFEND}
+{$ENDIF}
 
 // If we are running on Android or iOS, we are sure we are running using FMX.
 // If FMX is to be used on x86/x64 FMX conditional should be defined
@@ -66,7 +68,7 @@
 {$ENDIF}
 
 {$IFNDEF DELPHI2010_UP}
-  {$MESSAGE ERROR 'This framework requires Delphi 2010 or higher.'}}
+  {$MESSAGE ERROR 'This framework requires Delphi 2010 or higher.'}
 {$ENDIF}
 
 {$IFNDEF NEXTGEN}
