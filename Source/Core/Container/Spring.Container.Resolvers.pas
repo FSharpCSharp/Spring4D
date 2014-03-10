@@ -268,19 +268,8 @@ begin
 end;
 
 procedure TResolver.DoResolve(var instance: TValue);
-{$IFDEF FIX_EVENT_INVOKES}
-var e : TMethod;
-{$ENDIF}
 begin
-{$IFNDEF FIX_EVENT_INVOKES}
   fOnResolve.Invoke(Self, instance);
-{$ELSE}
-  // There is some bug in Delphi compiler/RTL which corrupts the event's
-  // fInvoke getter in some situations
-  e.Code:=IEvent(fOnResolve).Invoke.Code;
-  e.Data:=IEvent(fOnResolve).Invoke.Data;
-  TResolveEvent(e)(Self, instance);
-{$ENDIF}
 end;
 
 function TResolver.GetOnResolve: IEvent<TResolveEvent>;

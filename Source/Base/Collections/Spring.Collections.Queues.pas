@@ -74,9 +74,6 @@ type
 implementation
 
 uses
-{$IFDEF FIX_EVENT_INVOKES}
-  Spring,
-{$ENDIF}
   Spring.Collections.Events,
   Spring.Collections.Extensions;
 
@@ -202,19 +199,8 @@ begin
 end;
 
 procedure TQueue<T>.Changed(const item: T; action: TCollectionChangedAction);
-{$IFDEF FIX_EVENT_INVOKES}
-var e : TMethod;
-{$ENDIF}
 begin
-{$IFNDEF FIX_EVENT_INVOKES}
   fOnChanged.Invoke(Self, item, action);
-{$ELSE}
-  // There is some bug in Delphi compiler/RTL which corrupts the event's
-  // fInvoke getter in some situations
-  e.Code:=IEvent(fOnChanged).Invoke.Code;
-  e.Data:=IEvent(fOnChanged).Invoke.Data;
-  TCollectionChangedEvent<T>(e)(Self, item, action);
-{$ENDIF}
 end;
 
 {$ENDREGION}
