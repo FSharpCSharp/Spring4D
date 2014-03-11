@@ -30,13 +30,13 @@ unit Spring.TestBootstrap;
 
 interface
 
-{$IF Defined(FMX)}
+{$IFDEF FMX}
 uses
   System.StartUpCopy,
   FMX.Forms,
   FMXTestRunner;
 {$ELSE}
-{$IFEND}
+{$ENDIF}
 
 implementation
 

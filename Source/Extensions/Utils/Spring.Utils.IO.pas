@@ -30,12 +30,12 @@ interface
 
 uses
   Classes,
-{$ifdef MSWINDOWS}
+{$IFDEF MSWINDOWS}
   Windows,
-{$endif MSWINDOWS}
+{$ENDIF MSWINDOWS}
   SysUtils,
   IOUtils,
-{$ifdef MSWINDOWS}
+{$IFDEF MSWINDOWS}
 {$IFDEF HAS_UNITSCOPE}
   System.Win.ComObj,
 {$ELSE}
@@ -43,7 +43,7 @@ uses
 {$ENDIF}
   ActiveX,
   ShellAPI,
-{$endif MSWINDOWS}
+{$ENDIF MSWINDOWS}
   Masks,
   Generics.Collections,
   Spring,
@@ -52,7 +52,7 @@ uses
   Spring.Utils;
 
 type
-{$ifdef MSWINDOWS}
+{$IFDEF MSWINDOWS}
   ///	<summary>
   ///	  Drive Type Enumeration
   ///	</summary>
@@ -207,7 +207,7 @@ type
     ///	</summary>
     property VolumeLabel: string read GetVolumeLabel write SetVolumeLabel;
   end;
-{$endif MSWINDOWS}
+{$ENDIF MSWINDOWS}
 
 
   {$REGION 'TSizeUnit, TSize'}
@@ -263,7 +263,7 @@ type
   {$ENDREGION}
 
 
-{$ifdef MSWINDOWS}
+{$IFDEF MSWINDOWS}
   {$REGION 'TFileSystemEntry'}
 
   PFileSystemEntry = ^TFileSystemEntry;
@@ -408,7 +408,7 @@ type
   IFileEnumerator = IEnumerator<TFileSystemEntry>;
 
   {$ENDREGION}
-{$endif MSWINDOWS}
+{$ENDIF MSWINDOWS}
 
 
   {$REGION 'Search Pattern Matcher'}
@@ -483,7 +483,7 @@ type
   {$ENDREGION}
 
 
-{$ifdef MSWINDOWS}
+{$IFDEF MSWINDOWS}
   // Spring.TPredicate<TFileSystemEntry>
   TFileSystemEntryPredicate = reference to function (const entry:TFileSystemEntry): Boolean;
 
@@ -851,18 +851,18 @@ type
   ///	  GetDroppedFiles
   ///	</summary>
   procedure GetDroppedFiles(dropHandle: THandle; list: TStrings); overload;
-{$endif MSWINDOWS}
+{$ENDIF MSWINDOWS}
 
 implementation
 
 uses
   Spring.ResourceStrings,
-{$ifdef MSWINDOWS}
+{$IFDEF MSWINDOWS}
   Spring.Utils.WinAPI,
-{$endif MSWINDOWS}
+{$ENDIF MSWINDOWS}
   Spring.Collections.Extensions;
 
-{$ifdef MSWINDOWS}
+{$IFDEF MSWINDOWS}
 const
   DriveTypeStrings: array[TDriveType] of string = (
     SUnknownDriveDescription,
@@ -873,9 +873,9 @@ const
     SCDRomDescription,
     SRamDescription
   );
-{$endif MSWINDOWS}
+{$ENDIF MSWINDOWS}
 
-{$ifdef MSWINDOWS}
+{$IFDEF MSWINDOWS}
 {$REGION 'Routines'}
 
 function EnumerateDirectories(const path: string): IFileEnumerable;
@@ -976,10 +976,10 @@ begin
 end;
 
 {$ENDREGION}
-{$endif MSWINDOWS}
+{$ENDIF MSWINDOWS}
 
 
-{$ifdef MSWINDOWS}
+{$IFDEF MSWINDOWS}
 {$REGION 'TDriveInfo'}
 
 constructor TDriveInfo.Create(const driveName: string);
@@ -1140,7 +1140,7 @@ begin
 end;
 
 {$ENDREGION}
-{$endif MSWINDOWS}
+{$ENDIF MSWINDOWS}
 
 
 {$REGION 'TSizeUnit'}
@@ -1281,7 +1281,7 @@ end;
 {$ENDREGION}
 
 
-{$ifdef MSWINDOWS}
+{$IFDEF MSWINDOWS}
 {$REGION 'TFileSystemEntry'}
 
 constructor TFileSystemEntry.Create(const fileName: string);
@@ -1534,7 +1534,7 @@ begin
 end;
 
 {$ENDREGION}
-{$endif MSWINDOWS}
+{$ENDIF MSWINDOWS}
 
 
 {$REGION 'TSearchPatternMatcher'}
@@ -1641,7 +1641,7 @@ end;
 {$ENDREGION}
 
 
-{$ifdef MSWINDOWS}
+{$IFDEF MSWINDOWS}
 {$REGION 'TFileEnumerable'}
 
 constructor TFileEnumerable.Create(const path, searchPattern: string;
@@ -2471,6 +2471,6 @@ begin
 end;
 
 {$ENDREGION}
-{$endif MSWINDOWS}
+{$ENDIF MSWINDOWS}
 
 end.

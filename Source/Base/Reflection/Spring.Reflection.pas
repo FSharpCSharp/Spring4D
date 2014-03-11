@@ -119,7 +119,7 @@ type
     class function GetLazyTypeName(typeInfo: PTypeInfo): string;
 
     ///	<summary>
-    ///	  Returns <c>True</c> of the type is a lazy type.
+    ///	  Returns <c>True</c> if the type is a lazy type.
     ///	</summary>
     class function IsLazy(typeInfo: PTypeInfo): Boolean;
 
@@ -267,6 +267,7 @@ type
   end;
 
   {$ENDREGION}
+
 
   {$REGION 'TFiltersBase<T: TRttiMember>'}
 
@@ -437,6 +438,7 @@ type
 
   {$ENDREGION}
 
+
   {$REGION 'TClassMethodFilter<T: TRttiMember>'}
 
   TClassMethodFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
@@ -445,6 +447,7 @@ type
   end;
 
   {$ENDREGION}
+
 
   {$REGION 'THasParameterFlagsFilter<T: TRttiMember>'}
 
@@ -459,6 +462,7 @@ type
 
   {$ENDREGION}
 
+
   {$REGION 'TMethodKindFilter<T: TRttiMember>'}
 
   TMethodKindFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
@@ -472,6 +476,7 @@ type
 
   {$ENDREGION}
 
+
   {$REGION 'TIsClassFilter>'}
 
   TIsClassFilter = class(TMemberSpecificationBase<TRttiType>)
@@ -480,6 +485,7 @@ type
   end;
 
   {$ENDREGION}
+
 
   {$REGION 'TIsInterfaceFilter>'}
 
@@ -490,8 +496,6 @@ type
 
   {$ENDREGION}
 
-
-type
 
   {$REGION 'Internal Class Helpers'}
 
@@ -906,6 +910,7 @@ end;
 
 {$ENDREGION}
 
+
 {$REGION 'TFiltersNamed<T>'}
 
 class function TFiltersNamed<T>.IsNamed(const name: string): TSpecification<T>;
@@ -920,6 +925,7 @@ begin
 end;
 
 {$ENDREGION}
+
 
 {$REGION 'TFiltersBase<T>'}
 
@@ -979,6 +985,7 @@ end;
 
 {$ENDREGION}
 
+
 {$REGION 'TTypeFilters'}
 
 class function TTypeFilters.IsClass: TSpecification<TRttiType>;
@@ -992,6 +999,7 @@ begin
 end;
 
 {$ENDREGION}
+
 
 {$REGION 'Filters'}
 

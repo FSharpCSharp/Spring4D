@@ -539,18 +539,18 @@ implementation
 
 {$I 'spring.inc'}
 
-{$define UseGenericUI} // for MACOS and other non Windows platforms
-{$ifdef MSWINDOWS}
-  {$undef UseGenericUI}
-{$endif MSWINDOWS}
+{$DEFINE UseGenericUI} // for MACOS and other non Windows platforms
+{$IFDEF MSWINDOWS}
+  {$UNDEF UseGenericUI}
+{$ENDIF MSWINDOWS}
 
 uses
-{$ifdef HAS_UNIT_SYSTEM_UITYPES}
+{$IFDEF HAS_UNIT_SYSTEM_UITYPES}
   System.UITypes,
   System.UIConsts,
-{$else}
+{$ELSE}
   Graphics,
-{$endif HAS_UNIT_SYSTEM_UITYPES}
+{$ENDIF HAS_UNIT_SYSTEM_UITYPES}
   DateUtils,
   Spring;
 
@@ -561,13 +561,13 @@ const
 // or old-style Vcl.Graphics TColor consts.
   RedString = 'clRed';
   BlueString = 'clBlue';
-{$ifdef HAS_UNIT_SYSTEM_UITYPES}
+{$IFDEF HAS_UNIT_SYSTEM_UITYPES}
   RedValue = TColors.Red;
   BlueValue = TColors.Blue;
-{$else}
+{$ELSE}
   RedValue = clRed;
   BlueValue = clBlue;
-{$endif HAS_UNIT_SYSTEM_UITYPES}
+{$ENDIF HAS_UNIT_SYSTEM_UITYPES}
 
 {$IFDEF HAS_UNIT_SYSTEM_UITYPES}
 function ColorToRGB(i : TColor) : Longint;

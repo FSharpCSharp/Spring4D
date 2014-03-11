@@ -150,10 +150,9 @@ type
     class property Default: IValueConverter read GetDefault;
   end;
 
-  {$ENDREGION}
-
-
   TConverterClass = class of TValueConverter;
+
+  {$ENDREGION}
 
 
   {$REGION 'TDefaultValueConverter'}
@@ -642,9 +641,9 @@ type
   {$ENDREGION}
 
 
-{$IFNDEF NEXTGEN}
   {$REGION 'TStringToWStringConverter'}
 
+{$IFNDEF NEXTGEN}
   ///	<summary>
   ///	  Provides conversion routine beetwen UnicodeString and WideString
   ///	</summary>
@@ -658,13 +657,14 @@ type
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
   end;
-
-  {$ENDREGION}
 {$ENDIF}
 
-{$IFNDEF NEXTGEN}
+  {$ENDREGION}
+
+
   {$REGION 'TWStringToStringConverter'}
 
+{$IFNDEF NEXTGEN}
   ///	<summary>
   ///	  Provides conversion routine beetwen UnicodeString and WideString
   ///	</summary>
@@ -674,9 +674,9 @@ type
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
   end;
+{$ENDIF}
 
   {$ENDREGION}
-{$ENDIF}
 
 
   {$REGION 'TValueConverterFactory'}
@@ -768,6 +768,7 @@ uses
         );
   end;
 
+
 {$REGION 'TValueConverter'}
 
 class constructor TValueConverter.Create;
@@ -801,10 +802,6 @@ begin
   try
     Result := DoConvertTo(value, targetTypeInfo, parameter);
   except
-    /// <summary>
-    /// In order to save nested exception, you need to raise new exceptions
-    ///  via Exception.RaiseOuterException (Delphi’s style) or Exception.ThrowOuterException (C++ Builder’s style).
-    /// </summary>
     Exception.RaiseOuterException(Exception.CreateResFmt(@SCouldNotConvertValue,
 {$IFNDEF NEXTGEN}
       [value.TypeInfo.Name, targetTypeInfo.Name]
@@ -1406,22 +1403,22 @@ end;
 {$ENDREGION}
 
 
-{$IFNDEF NEXTGEN}
 {$REGION 'TStringToWStringConverter'}
 
+{$IFNDEF NEXTGEN}
 function TStringToWStringConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
   Result := TValue.From<WideString>(value.AsString);
 end;
-
-{$ENDREGION}
 {$ENDIF}
 
+{$ENDREGION}
 
-{$IFNDEF NEXTGEN}
+
 {$REGION 'TWStringToStringConverter'}
 
+{$IFNDEF NEXTGEN}
 function TWStringToStringConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
@@ -1434,9 +1431,9 @@ begin
       Result := TValue.From<WideString>(value.AsString);
   end;
 end;
+{$ENDIF}
 
 {$ENDREGION}
-{$ENDIF}
 
 
 {$REGION 'TInterfaceToInterfaceConverter'}
@@ -1451,23 +1448,6 @@ begin
 end;
 
 {$ENDREGION}
-
-
-{ TValueConverterFactory.TConverterPackage }
-
-constructor TValueConverterFactory.TConverterPackage.Create(
-  classType: TConverterClass);
-begin
-  fConverterClass := classType;
-end;
-
-function TValueConverterFactory.TConverterPackage.GetInstance: IValueConverter;
-begin
-  if not Assigned(fConverter) then
-    fConverter := fConverterClass.Create;
-
-  Result := fConverter;
-end;
 
 
 {$REGION 'TValueConverterFactory'}
@@ -1795,5 +1775,25 @@ begin
 end;
 
 {$ENDREGION}
+
+
+{$REGION 'TValueConverterFactory.TConverterPackage'}
+
+constructor TValueConverterFactory.TConverterPackage.Create(
+  classType: TConverterClass);
+begin
+  fConverterClass := classType;
+end;
+
+function TValueConverterFactory.TConverterPackage.GetInstance: IValueConverter;
+begin
+  if not Assigned(fConverter) then
+    fConverter := fConverterClass.Create;
+
+  Result := fConverter;
+end;
+
+{$ENDREGION}
+
 
 end.
