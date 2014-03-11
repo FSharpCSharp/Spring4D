@@ -751,35 +751,28 @@ type
 
   {$REGION 'Exceptions'}
 
-  ENotSupportedException    = SysUtils.ENotSupportedException;
+  ENotSupportedException = SysUtils.ENotSupportedException;
 
 {$IFDEF DELPHIXE_UP}
-  ENotImplementedException  = SysUtils.ENotImplemented;
+  ENotImplementedException = SysUtils.ENotImplemented;
+  EInvalidOperationException = SysUtils.EInvalidOpException;
+  EArgumentNilException = SysUtils.EArgumentNilException;
 {$ELSE}
-  ENotImplementedException  = class(Exception);
+  ENotImplementedException = class(Exception);
+  EInvalidOperationException = class(Exception);
+  EArgumentNilException = class(EArgumentException);
 {$ENDIF}
 
-{$IFDEF DELPHIXE_UP}
-  EInvalidOperationException  = SysUtils.EInvalidOpException;
-{$ELSE}
-  EInvalidOperationException  = class(Exception);
-{$ENDIF}
-
-  EInvalidCastException     = SysUtils.EInvalidCast;
+  EInvalidCastException = SysUtils.EInvalidCast;
 
   EInsufficientMemoryException = EOutOfMemory;
 
-  EFormatException          = class(Exception);
+  EFormatException = class(Exception);
   EIndexOutOfRangeException = class(Exception);
 
-  EArgumentException            = SysUtils.EArgumentException;
-  EArgumentOutOfRangeException  = SysUtils.EArgumentOutOfRangeException;
-{$IFDEF DELPHIXE_UP}
-  EArgumentNilException        = SysUtils.EArgumentNilException;
-{$ELSE}
-  EArgumentNilException        = class(EArgumentException);
-{$ENDIF}
-  EArgumentNullException        = EArgumentNilException;
+  EArgumentException = SysUtils.EArgumentException;
+  EArgumentOutOfRangeException = SysUtils.EArgumentOutOfRangeException;
+  EArgumentNullException = EArgumentNilException;
   EInvalidEnumArgumentException = class(EArgumentException);
 
   ERttiException = class(Exception);
@@ -870,9 +863,7 @@ end;
 procedure CheckArgumentNotNull(value: Pointer; const argumentName: string);
 begin
   if not Assigned(value) then
-  begin
     Guard.RaiseArgumentNullException(argumentName);
-  end;
 end;
 
 function GetQualifiedClassName(AInstance: TObject): string;
@@ -1061,9 +1052,7 @@ const
   IndexArgName = 'index';
 begin
   if (index < indexBase) or (index > length + indexBase - 1) then
-  begin
     Guard.RaiseArgumentOutOfRangeException(IndexArgName);
-  end;
 end;
 
 class procedure Guard.CheckRange(length, startIndex, count, indexBase: Integer);
@@ -1076,9 +1065,7 @@ begin
     StartIndexArgName);
   Guard.CheckRange(count >= 0, CountArgName);
   if count > 0 then
-  begin
     Guard.CheckRange(count <= indexBase + length - startIndex, CountArgName);
-  end;
 end;
 
 class procedure Guard.CheckRange<T>(const buffer: array of T; index: Integer);
@@ -1086,9 +1073,7 @@ const
   IndexArgName = 'index';
 begin
   if (index < 0) or (index >= Length(buffer)) then
-  begin
     Guard.RaiseArgumentOutOfRangeException(IndexArgName);
-  end;
 end;
 
 class procedure Guard.CheckRange<T>(const buffer: array of T;
@@ -1100,17 +1085,13 @@ end;
 class procedure Guard.CheckTrue(condition: Boolean; const msg: string);
 begin
   if not condition then
-  begin
     Guard.RaiseArgumentException(msg);
-  end;
 end;
 
 class procedure Guard.CheckFalse(condition: Boolean; const msg: string);
 begin
   if condition then
-  begin
     Guard.RaiseArgumentException(msg);
-  end;
 end;
 
 class procedure Guard.CheckInheritsFrom(cls, parentClass: TClass;
@@ -1120,28 +1101,22 @@ begin
   Guard.CheckNotNull(parentClass, 'parentClass');
 
   if not cls.InheritsFrom(parentClass) then
-  begin
     raise EArgumentException.CreateResFmt(@SBadObjectInheritance, [argumentName,
       cls.ClassName, parentClass.ClassName]);
-  end;
 end;
 
 class procedure Guard.CheckInheritsFrom(obj: TObject; parentClass: TClass;
   const argumentName: string);
 begin
   if Assigned(obj) then
-  begin
     Guard.CheckInheritsFrom(obj.ClassType, parentClass, argumentName);
-  end;
 end;
 
 class procedure Guard.CheckNotNull(condition: Boolean;
   const parameterName: string);
 begin
   if not condition then
-  begin
     Guard.RaiseArgumentNullException(parameterName);
-  end;
 end;
 
 class procedure Guard.CheckNotNull(argumentValue: Pointer;
@@ -1166,9 +1141,7 @@ class procedure Guard.CheckNotNull<T>(const argumentValue: T;
   const argumentName: string);
 begin
   if Guard.IsNullReference(argumentValue, TypeInfo(T)) then
-  begin
     Guard.RaiseArgumentNullException(argumentName);
-  end;
 end;
 
 class procedure Guard.CheckEnum<T>(const argumentValue: T;
@@ -1194,19 +1167,15 @@ begin
   Guard.CheckNotNull(data, 'data');
 
   if (argumentValue < data.MinValue) or (argumentValue > data.MaxValue) then
-  begin
     raise EInvalidEnumArgumentException.CreateResFmt(@SInvalidEnumArgument, [
       argumentName, GetTypeName(typeInfo), argumentValue]);
-  end;
 end;
 
 class procedure Guard.CheckRange(condition: Boolean;
   const argumentName: string);
 begin
   if not condition then
-  begin
     Guard.RaiseArgumentOutOfRangeException(argumentName);
-  end;
 end;
 
 class procedure Guard.CheckRange(const buffer: array of Byte;
@@ -1268,10 +1237,8 @@ class procedure Guard.CheckTypeKind(typeInfo: PTypeInfo;
 begin
   Guard.CheckNotNull(typeInfo, argumentName);
   if typeInfo.Kind <> expectedTypeKind then
-  begin
     raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument,
       [typeInfo.TypeName, argumentName]);
-  end;
 end;
 
 class procedure Guard.CheckTypeKind(typeInfo: PTypeInfo;
@@ -1279,10 +1246,8 @@ class procedure Guard.CheckTypeKind(typeInfo: PTypeInfo;
 begin
   Guard.CheckNotNull(typeInfo, argumentName);
   if not (typeInfo.Kind in expectedTypeKinds) then
-  begin
     raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument,
       [typeInfo.TypeName, argumentName]);
-  end;
 end;
 
 class function Guard.IsNullReference(const value; typeInfo: PTypeInfo): Boolean;
@@ -1292,12 +1257,10 @@ const
 begin
   Result := False;
   if Assigned(typeInfo) and (typeInfo.Kind in ReferenceKinds) then
-  begin
     if typeInfo.Kind = tkMethod then
       Result := not Assigned(TMethod(value).Code) and not Assigned(TMethod(value).Data)
     else
       Result := not Assigned(PPointer(@value)^);
-  end;
 end;
 
 {$IFOPT O+}
