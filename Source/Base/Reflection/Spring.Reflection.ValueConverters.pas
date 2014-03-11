@@ -743,17 +743,18 @@ type
 implementation
 
 uses
-{$IFNDEF DelphiXE2_UP}
-  Graphics,
-{$ELSE}
+{$IFDEF HAS_UNIT_SYSTEM_UITYPES}
   System.UIConsts,
   System.UITypes,
-{$ENDIF}
+{$ELSE}
+  Graphics,
+{$ENDIF HAS_UNIT_SYSTEM_UITYPES}
+  Math,
   StrUtils,
   SysUtils,
-  Math,
   Spring.SystemUtils,
   Spring.ResourceStrings;
+
 
   function CompareTypeInfo(const left, right: PTypeInfo): Boolean;
   begin
