@@ -36,10 +36,13 @@ uses
   Spring.Events.Base,
   TypInfo;
 
-{$IFDEF SUPPORTS_GENERIC_EVENTS}
 type
   PMethod = ^TMethod;
 
+
+  {$REGION 'TMethodInvocations'}
+
+{$IFDEF SUPPORTS_GENERIC_EVENTS}
   ///	<summary>
   ///	  Internal Use.
   ///	</summary>
@@ -87,7 +90,14 @@ type
   public
     constructor Create(methodTypeData: PTypeData; methodInvokeEvent: TMethodInvokeEvent);
   end;
+{$ENDIF SUPPORTS_GENERIC_EVENTS}
 
+  {$ENDREGION}
+
+
+  {$REGION 'TEvent'}
+
+{$IFDEF SUPPORTS_GENERIC_EVENTS}
   TEvent = class(TEventBase, TProc)
   private
     fInvocations: TMethodInvocations;
@@ -99,7 +109,14 @@ type
     constructor Create(typeInfo: PTypeInfo);
     destructor Destroy; override;
   end;
+{$ENDIF SUPPORTS_GENERIC_EVENTS}
 
+  {$ENDREGION}
+
+
+  {$REGION 'TEvent<T>'}
+
+{$IFDEF SUPPORTS_GENERIC_EVENTS}
   TEvent<T> = class(TEvent, IEvent<T>)
   private
     function GetInvoke: T;
@@ -116,6 +133,9 @@ type
   TMulticastNotifyEvent = TEvent<TNotifyEvent>;
 {$ENDIF SUPPORTS_GENERIC_EVENTS}
 
+  {$ENDREGION}
+
+
 implementation
 
 uses
@@ -123,9 +143,9 @@ uses
   Spring.ResourceStrings;
 
 
-{$IFDEF SUPPORTS_GENERIC_EVENTS}
 {$REGION 'TMethodInfo'}
 
+{$IFDEF SUPPORTS_GENERIC_EVENTS}
 function AdditionalInfoOf(TypeData: PTypeData): Pointer;
 var
   P: PByte;
@@ -310,12 +330,14 @@ begin
     StackSize := 32;
 {$ENDIF}
 end;
+{$ENDIF SUPPORTS_GENERIC_EVENTS}
 
 {$ENDREGION}
 
 
 {$REGION 'TMethodInvocations'}
 
+{$IFDEF SUPPORTS_GENERIC_EVENTS}
 constructor TMethodInvocations.Create(methodTypeData: PTypeData;
   methodInvokeEvent: TMethodInvokeEvent);
 begin
@@ -423,12 +445,14 @@ asm
         ADD     RSP, $28
 end;
 {$ENDIF}
+{$ENDIF SUPPORTS_GENERIC_EVENTS}
 
 {$ENDREGION}
 
 
 {$REGION 'TEvent'}
 
+{$IFDEF SUPPORTS_GENERIC_EVENTS}
 procedure GetMethodTypeData(Method: TRttiMethod; var TypeData: PTypeData);
 
   procedure WriteByte(var Dest: PByte; b: Byte);
@@ -572,12 +596,14 @@ asm
   mov eax,[eax].fInvoke.Data
 {$ENDIF}
 end;
+{$ENDIF SUPPORTS_GENERIC_EVENTS}
 
 {$ENDREGION}
 
 
 {$REGION 'TEvent<T>'}
 
+{$IFDEF SUPPORTS_GENERIC_EVENTS}
 constructor TEvent<T>.Create;
 begin
   inherited Create(TypeInfo(T));
@@ -605,9 +631,9 @@ begin
   else
     PMethod(@Result)^ := fInvoke;
 end;
+{$ENDIF SUPPORTS_GENERIC_EVENTS}
 
 {$ENDREGION}
-{$ENDIF SUPPORTS_GENERIC_EVENTS}
 
 
 end.
