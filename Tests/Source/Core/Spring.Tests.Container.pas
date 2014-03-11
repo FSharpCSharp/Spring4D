@@ -25,11 +25,7 @@
 unit Spring.Tests.Container;
 
 {$I Spring.inc}
-{$IFDEF IOS}
-  {$IFDEF CPUX86}
-    {$DEFINE IOSSIMULATOR}
-  {$ENDIF}
-{$ENDIF}
+{$I Spring.Tests.inc}
 
 interface
 
