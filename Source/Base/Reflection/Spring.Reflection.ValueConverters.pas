@@ -759,13 +759,8 @@ uses
   begin
     Result := (left = right);
     if Assigned(left) and Assigned(right) then
-      Result := Result or ((left.Kind = right.Kind) and
-{$IFNDEF NEXTGEN}
-        (left.Name = right.Name)
-{$ELSE}
-        (left.NameFld.ToString = right.NameFld.ToString)
-{$ENDIF}
-        );
+      Result := Result or ((left.Kind = right.Kind)
+        and (left.TypeName = right.TypeName));
   end;
 
 
@@ -803,21 +798,11 @@ begin
     Result := DoConvertTo(value, targetTypeInfo, parameter);
   except
     Exception.RaiseOuterException(Exception.CreateResFmt(@SCouldNotConvertValue,
-{$IFNDEF NEXTGEN}
-      [value.TypeInfo.Name, targetTypeInfo.Name]
-{$ELSE}
-      [value.TypeInfo.NameFld.ToString, targetTypeInfo.NameFld.ToString]
-{$ENDIF}
-      ));
+      [value.TypeInfo.TypeName, targetTypeInfo.TypeName]));
   end;
   if Result.IsEmpty then
     raise Exception.CreateResFmt(@SCouldNotConvertValue,
-{$IFNDEF NEXTGEN}
-      [value.TypeInfo.Name, targetTypeInfo.Name]
-{$ELSE}
-      [value.TypeInfo.NameFld.ToString, targetTypeInfo.NameFld.ToString]
-{$ENDIF}
-      );
+      [value.TypeInfo.TypeName, targetTypeInfo.TypeName]);
 end;
 
 function TValueConverter.TryConvertTo(const value: TValue;
@@ -979,18 +964,14 @@ function TNullableToTypeConverter.DoConvertTo(const value: TValue;
 var
   underlyingValue: TValue;
 begin
-  if TryGetUnderlyingValue(value, underlyingValue) and
-{$IFNDEF NEXTGEN}
-      (underlyingValue.TypeInfo.Name <> targetTypeInfo.Name)
-{$ELSE}
-      (underlyingValue.TypeInfo.NameFld.ToString <> targetTypeInfo.NameFld.ToString)
-{$ENDIF}
-  then
+  if TryGetUnderlyingValue(value, underlyingValue)
+    and (underlyingValue.TypeInfo.TypeName <> targetTypeInfo.TypeName) then
   begin
     Result := TValueConverter.Default.ConvertTo(underlyingValue,
       targetTypeInfo, parameter)
   end
-  else Result := underlyingValue;
+  else
+    Result := underlyingValue;
 end;
 
 {$ENDREGION}
@@ -1007,11 +988,7 @@ begin
   if TryGetUnderlyingTypeInfo(targetTypeInfo, underlyingTypeInfo) then
   begin
     underlyingValue := value;
-{$IFNDEF NEXTGEN}
-    if underlyingTypeInfo.Name <> value.TypeInfo.Name then
-{$ELSE}
-    if underlyingTypeInfo.NameFld.ToString <> value.TypeInfo.NameFld.ToString then
-{$ENDIF}
+    if underlyingTypeInfo.TypeName <> value.TypeInfo.TypeName then
       Result := TValueConverter.Default.TryConvertTo(value, underlyingTypeInfo,
         underlyingValue, parameter);
 

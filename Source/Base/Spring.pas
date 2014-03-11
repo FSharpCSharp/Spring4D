@@ -787,6 +787,18 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TTypeInfoHelper}
+
+  TTypeInfoHelper = record helper for TTypeInfo
+  private
+    function GetTypeName: string; inline;
+  public
+    property TypeName: string read GetTypeName;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'Routines'}
 
 {$IFNDEF DELPHIXE2_UP}
@@ -1250,6 +1262,7 @@ begin
   Guard.DoCheckStringRange(Length(s), startIndex, count);
 end;
 {$ENDIF}
+
 class procedure Guard.CheckTypeKind(typeInfo: PTypeInfo;
   expectedTypeKind: TTypeKind; const argumentName: string);
 begin
@@ -1257,8 +1270,7 @@ begin
   if typeInfo.Kind <> expectedTypeKind then
   begin
     raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument,
-      [{$IFNDEF NEXTGEN}typeInfo.Name{$ELSE}typeInfo.NameFld.ToString{$ENDIF},
-      argumentName]);
+      [typeInfo.TypeName, argumentName]);
   end;
 end;
 
@@ -1269,8 +1281,7 @@ begin
   if not (typeInfo.Kind in expectedTypeKinds) then
   begin
     raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument,
-        [{$IFNDEF NEXTGEN}typeInfo.Name{$ELSE}typeInfo.NameFld.ToString{$ENDIF},
-        argumentName]);
+      [typeInfo.TypeName, argumentName]);
   end;
 end;
 
@@ -1749,6 +1760,18 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TTypeInfoHelper'}
+
+function TTypeInfoHelper.GetTypeName: string;
+begin
+{$IFNDEF NEXTGEN}
+  Result := UTF8ToString(Name);
+{$ELSE}
+  Result := NameFld.ToString;
+{$ENDIF}
+end;
+
+{$ENDREGION}
+
+
 end.
-
-
