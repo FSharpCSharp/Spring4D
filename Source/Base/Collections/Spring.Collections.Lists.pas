@@ -24,6 +24,8 @@
 
 unit Spring.Collections.Lists;
 
+{$I Spring.inc}
+
 interface
 
 uses
@@ -35,6 +37,20 @@ uses
   Spring.Collections.Base;
 
 type
+
+{$IFNDEF DELPHIXE3_UP}
+  TArrayManager<T> = class abstract
+    procedure Move(var AArray: array of T; FromIndex, ToIndex, Count: Integer); overload; virtual; abstract;
+    procedure Move(var FromArray, ToArray: array of T; FromIndex, ToIndex, Count: Integer); overload; virtual; abstract;
+    procedure Finalize(var AArray: array of T; Index, Count: Integer); overload; virtual; abstract;
+  end;
+
+  TMoveArrayManager<T> = class(TArrayManager<T>)
+    procedure Move(var AArray: array of T; FromIndex, ToIndex, Count: Integer); overload; override;
+    procedure Move(var FromArray, ToArray: array of T; FromIndex, ToIndex, Count: Integer); overload; override;
+    procedure Finalize(var AArray: array of T; Index, Count: Integer); override;
+  end;
+{$ENDIF}
 
   ///	<summary>
   ///	  Represents a strongly typed list of elements that can be accessed by
@@ -61,12 +77,10 @@ type
         procedure Reset; override;
       end;
   private
-  {$IFDEF WEAKREF}
-    fArrayManager: TArrayManager<T>;
-  {$ENDIF}
     fItems: array of T;
     fCount: Integer;
     fVersion: Integer;
+    fArrayManager: TArrayManager<T>;
     procedure DeleteInternal(index: Integer; notification: TCollectionChangedAction);
     procedure IncreaseVersion; inline;
   protected
@@ -80,6 +94,9 @@ type
 
     function EnsureCapacity(value: Integer): Integer;
   public
+    constructor Create; override;
+    destructor Destroy; override;
+
     function GetEnumerator: IEnumerator<T>; override;
 
     procedure Clear; override;
@@ -101,8 +118,6 @@ type
     function ToArray: TArray<T>; override;
 
     property Capacity: Integer read GetCapacity write SetCapacity;
-    procedure AfterConstruction; override;
-    destructor Destroy; override;
   end;
 
   TObjectList<T: class> = class(TList<T>, ICollectionOwnership)
@@ -192,7 +207,46 @@ uses
   Spring.ResourceStrings;
 
 
+{$REGION 'TMoveArrayManager<T>'}
+
+{$IFNDEF DELPHIXE3_UP}
+procedure TMoveArrayManager<T>.Finalize(var AArray: array of T; Index, Count: Integer);
+begin
+  System.FillChar(AArray[Index], Count * SizeOf(T), 0);
+end;
+
+procedure TMoveArrayManager<T>.Move(var AArray: array of T; FromIndex, ToIndex, Count: Integer);
+begin
+  System.Move(AArray[FromIndex], AArray[ToIndex], Count * SizeOf(T));
+end;
+
+procedure TMoveArrayManager<T>.Move(var FromArray, ToArray: array of T; FromIndex, ToIndex, Count: Integer);
+begin
+  System.Move(FromArray[FromIndex], ToArray[ToIndex], Count * SizeOf(T));
+end;
+{$ENDIF}
+
+{$ENDREGION}
+
+
 {$REGION 'TList<T>'}
+
+constructor TList<T>.Create;
+begin
+  inherited Create;
+{$IFDEF WEAKREF}
+  if HasWeakRef then
+    fArrayManager := TManualArrayManager<T>.Create
+  else
+{$ENDIF}
+    fArrayManager := TMoveArrayManager<T>.Create;
+end;
+
+destructor TList<T>.Destroy;
+begin
+  inherited Destroy;
+  fArrayManager.Free;
+end;
 
 function TList<T>.GetCount: Integer;
 begin
@@ -239,13 +293,8 @@ begin
   EnsureCapacity(fCount + 1);
   if index <> fCount then
   begin
-{$IFNDEF WEAKREF}
-    System.Move(fItems[index], fItems[index + 1], (fCount - index) * SizeOf(T));
-    System.FillChar(fItems[index], SizeOf(fItems[index]), 0);
-{$ELSE}
     fArrayManager.Move(fItems, index, index + 1, fCount - index);
     fArrayManager.Finalize(fItems, index, 1);
-{$ENDIF}
   end;
   fItems[index] := item;
   Inc(fCount);
@@ -264,13 +313,8 @@ begin
   Dec(fCount);
   if index <> fCount then
   begin
-{$IFNDEF WEAKREF}
-    System.Move(fItems[index + 1], fItems[index], (fCount - index) * SizeOf(T));
-    System.FillChar(fItems[fCount], SizeOf(T), 0);
-{$ELSE}
     fArrayManager.Move(fItems, index + 1, index, fCount - index);
     fArrayManager.Finalize(fItems, fCount, 1);
-{$ENDIF}
   end;
   IncreaseVersion;
 
@@ -290,29 +334,16 @@ begin
     Exit;
 
   SetLength(oldItems, count);
-{$IFNDEF WEAKREF}
-  System.Move(fItems[index], oldItems[0], count * SizeOf(T));
-{$ELSE}
   fArrayManager.Move(fItems, oldItems, index, 0, count);
-{$ENDIF}
 
   tailCount := fCount - (index + count);
   if tailCount > 0 then
   begin
-{$IFNDEF WEAKREF}
-    System.Move(fItems[index + count], fItems[index], tailCount * SizeOf(T));
-    System.FillChar(fItems[fCount - count], count * SizeOf(T), 0);
-{$ELSE}
     fArrayManager.Move(fItems, index + count, index, tailCount);
     fArrayManager.Finalize(fItems, fCount - count, count);
-{$ENDIF}
   end
   else
-{$IFNDEF WEAKREF}
-    System.FillChar(fItems[index], count * SizeOf(T), 0);
-{$ELSE}
     fArrayManager.Finalize(fItems, index, count);
-{$ENDIF}
 
   Dec(fCount, count);
   IncreaseVersion;
@@ -339,48 +370,15 @@ begin
   temp := fItems[currentIndex];
   fItems[currentIndex] := Default(T);
   if currentIndex < newIndex then
-{$IFNDEF WEAKREF}
-    System.Move(fItems[currentIndex + 1], fItems[currentIndex], (newIndex - currentIndex) * SizeOf(T))
-{$ELSE}
     fArrayManager.Move(fItems, currentIndex + 1, currentIndex, newIndex - currentIndex)
-{$ENDIF}
   else
-{$IFNDEF WEAKREF}
-    System.Move(fItems[newIndex], fItems[newIndex + 1], (currentIndex - newIndex) * SizeOf(T));
-{$ELSE}
     fArrayManager.Move(fItems, newIndex, newIndex + 1, currentIndex - newIndex);
-{$ENDIF}
 
-{$IFNDEF WEAKREF}
-  System.FillChar(fItems[newIndex], SizeOf(T), 0);
-{$ELSE}
   fArrayManager.Finalize(fItems, newIndex, 1);
-{$ENDIF}
   fItems[newIndex] := temp;
   IncreaseVersion;
 
   Changed(temp, caMoved);
-end;
-
-procedure TList<T>.AfterConstruction;
-begin
-  inherited;
-{$IFDEF WEAKREF}
-  if HasWeakRef then
-    fArrayManager := TManualArrayManager<T>.Create
-  else
-    fArrayManager := TMoveArrayManager<T>.Create;
-{$ENDIF}
-end;
-
-destructor TList<T>.Destroy;
-begin
-  inherited;
-{$IFDEF WEAKREF}
-{$IFNDEF AUTOREFCOUNT}
-  fArrayManager.Free;
-{$ENDIF}
-{$ENDIF}
 end;
 
 procedure TList<T>.Clear;
