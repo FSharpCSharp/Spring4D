@@ -30,7 +30,7 @@
 // (Delphi older than XE3).
 {$I jedi.inc}
 
-{$IFDEF DELPHIXE5_UP}
+{$IFDEF DELPHIXE4_UP}
   {$LEGACYIFEND ON}
 {$ENDIF}
 
