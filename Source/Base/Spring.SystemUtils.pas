@@ -160,6 +160,10 @@ function SplitString(const buffer: PChar): TStringDynArray; overload;
 function SplitNullTerminatedStrings(const buffer: PChar): TStringDynArray;
   deprecated 'Use the SplitString(PChar) function instead.';
 
+///	<summary>
+///	  Returns <c>True</c> if the type is a nullable type.
+///	</summary>
+function IsNullableType(typeInfo: PTypeInfo): Boolean;
 
 ///	<summary>
 ///	  Try getting the underlying type name of a nullable type.
