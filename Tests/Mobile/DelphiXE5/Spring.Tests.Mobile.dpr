@@ -30,7 +30,7 @@ program Spring.Tests.Mobile;
 // some units that need to be set in given order for FMX
 uses
   Spring.TestBootstrap in '..\..\Source\Spring.TestBootstrap.pas',
-  TestFramework, FMX.MobilePreview,
+  TestFramework,
   FinalBuilder.XMLTestRunner in '..\..\Source\FinalBuilder.XMLTestRunner.pas',
   FMXTestRunner in '..\..\Source\dUnit\FMXTestRunner.pas' {FMXTestRunner},
   Spring.TestRegistration in '..\..\Source\Spring.TestRegistration.pas',
