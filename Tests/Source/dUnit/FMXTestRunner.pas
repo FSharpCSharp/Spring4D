@@ -207,10 +207,15 @@ type
 
 procedure TFMXTestRunner.AddSuccess(Test: ITest);
 begin
-  SetTreeItemStyle(TestToItem(Test), SStylePass);
+  if (IsTestMethod(Test)) then
+    SetTreeItemStyle(TestToItem(Test), SStylePass);
 end;
 
 procedure TFMXTestRunner.AfterConstruction;
+{$IFDEF DESKTOP}
+var
+  LHeight : Single;
+{$ENDIF}
 begin
   inherited;
   ListBoxItem2.Text:='dUnit FireMonkey test runner'#$D#$A +
@@ -253,6 +258,14 @@ begin
     System.IOUtils.TPath.GetDocumentsPath, FIniName);
   if (TOSVersion.Check(7)) then StyleBook := StyleBookIOS7
   else StyleBook := StyleBookIOS6;
+{$ENDIF}
+{$IFDEF DESKTOP}
+  // There is some layouting differences on desktop
+  LHeight := OverflowMenu.Height;
+  // Realings content based on style
+  OverflowMenu.ApplyStyleLookup;
+  // Fix height to designed
+  OverflowMenu.Height := OverflowMenu.Height + (LHeight - OverflowMenu.ClientHeight);
 {$ENDIF}
 end;
 
