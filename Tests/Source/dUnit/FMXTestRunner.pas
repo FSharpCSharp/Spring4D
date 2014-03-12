@@ -2,6 +2,15 @@ unit FMXTestRunner;
 
 interface
 
+{$IFDEF MSWINDOWS}
+  {$DEFINE DESKTOP}
+{$ENDIF}
+{$IFDEF MACOS}
+  {$IFNDEF IOS}
+    {$DEFINE DESKTOP}
+  {$ENDIF}
+{$ENDIF}
+
 uses
   System.SysUtils,
   System.Types,
@@ -57,15 +66,21 @@ type
     TestTree: TTreeView;
     TreeViewItem1: TTreeViewItem;
     TreeViewItem2: TTreeViewItem;
+    TreeViewItem3: TTreeViewItem;
+    TreeViewItem4: TTreeViewItem;
     Panel1: TPanel;
     OverflowMenu: TListBox;
     mnuSelectAll: TListBoxItem;
     mnuUnselectAll: TListBoxItem;
-    ShadowEffect1: TShadowEffect;
+    mnuRunSelected: TListBoxItem;
     tmrPopup: TTimer;
+    ShadowEffect1: TShadowEffect;
     ListBoxItem1: TListBoxItem;
     ListBoxItem2: TListBoxItem;
-    mnuRunSelected: TListBoxItem;
+    StyleBookAndoird: TStyleBook;
+    StyleBookIOS7: TStyleBook;
+    StyleBookWindows: TStyleBook;
+    StyleBookIOS6: TStyleBook;
     procedure RunTestsExecute(Sender: TObject);
     procedure ListBoxItemCheckInvert(Sender: TObject);
     procedure ChangeTabUpdate(Sender: TObject);
@@ -86,11 +101,17 @@ type
     FMenuPos: TPointF;
   private const
     SIniSection = 'FMXTestRunner Config';
+    SStylePass = 'ItemPass';
+    SStyleFail = 'ItemFail';
+    SStyleError = 'ItemError';
   protected
     class var Suite: ITest;
     procedure SetChecked(const Parent : TTreeViewItem; Value : Boolean;
       Recursive : Boolean = false);
     procedure HideOverflowMenu;
+    function TestToItem(const Test : ITest) : TTreeViewItem; inline;
+    procedure SetTreeItemStyle(Item : TTreeViewItem;
+      const StyleName : string);
   protected
     startTime: TDateTime;
     endTime: TDateTime;
@@ -186,7 +207,7 @@ type
 
 procedure TFMXTestRunner.AddSuccess(Test: ITest);
 begin
-  // No display for successes
+  SetTreeItemStyle(TestToItem(Test), SStylePass);
 end;
 
 procedure TFMXTestRunner.AfterConstruction;
@@ -199,8 +220,24 @@ begin
     '  Note that test settings is not persisted on iOS Device but is on Andorid or iOS Simulator';
 
   FIniName := 'dUnit.ini';
+
+  // On some platforms, design items could flick before the tree is recreated
+  // items
+  TreeViewItem1 := nil;
+  TreeViewItem2 := nil;
+  TreeViewItem3 := nil;
+  TreeViewItem4 := nil;
+  TestTree.Clear;
+
 {$IF Defined(MSWINDOWS)}
   FIniName := ExtractFilePath(ParamStr(0)) + FIniName;
+  StyleBook := StyleBookWindows;
+{$ELSEIF Defined(MACOS) AND Defined(DESKTOP)}
+  // Deployment would delete our INI, rather place it under documents
+  FIniName := System.IOUtils.TPath.Combine(
+    System.IOUtils.TPath.GetDocumentsPath, FIniName);
+  // MAC OS shares the same as Windows both default styles appear to be the same
+  StyleBook := StyleBookWindows;
 {$ELSEIF Defined(ANDROID)}
   // Note that this requires Read/Write External Storage permissions
   // Write permissions option is enough, reading will be available as well
@@ -210,9 +247,12 @@ begin
   // FIniName := TPath.Combine(TPath.GetSharedDocumentsPath, FIniName);
   // Use the global SDCard path
   FIniName := System.IOUtils.TPath.Combine('/storage/emulated/0', FIniName);
+  StyleBook := StyleBookAndoird;
 {$ELSEIF Defined(IOS)}
   FIniName := System.IOUtils.TPath.Combine(
     System.IOUtils.TPath.GetDocumentsPath, FIniName);
+  if (TOSVersion.Check(7)) then StyleBook := StyleBookIOS7
+  else StyleBook := StyleBookIOS6;
 {$ENDIF}
 end;
 
@@ -255,12 +295,22 @@ begin
 end;
 
 procedure TFMXTestRunner.AddError(error: TTestFailure);
+var
+  Item : TTreeViewItem;
 begin
+  Item := TestToItem(error.FailedTest);
+  Item.StyleLookup := SStyleError;
+  SetTreeItemStyle(Item.ParentItem, SStyleError);
   Self.Write('E');
 end;
 
 procedure TFMXTestRunner.AddFailure(failure: TTestFailure);
+var
+  Item : TTreeViewItem;
 begin
+  Item := TestToItem(failure.FailedTest);
+  Item.StyleLookup := SStyleFail;
+  SetTreeItemStyle(Item.ParentItem, SStyleFail);
   Self.Write('F');
 end;
 
@@ -477,6 +527,12 @@ begin
   startTime := now;
 end;
 
+function TFMXTestRunner.TestToItem(const Test: ITest): TTreeViewItem;
+begin
+  Result := Test.GUIObject as TTreeViewItem;
+  Assert(Result <> nil);
+end;
+
 procedure TFMXTestRunner.TestTreeMouseDown(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Single);
 var
@@ -556,7 +612,7 @@ begin
 end;
 
 procedure TFMXTestRunner.RunTestsExecute(Sender: TObject);
-{$IFDEF MSWINDOWS}
+{$IFDEF DESKTOP}
 var
   Ini: TMemIniFile;
 {$ENDIF}
@@ -565,7 +621,7 @@ begin
 
   Setup(nil);
   try
-{$IFDEF MSWINDOWS}
+{$IFDEF DESKTOP}
     Ini := TMemIniFile.Create(FIniName);
     try
       Ini.WriteInteger(SIniSection, 'Left', Left);
@@ -690,6 +746,22 @@ begin
   end;
 end;
 
+procedure TFMXTestRunner.SetTreeItemStyle(Item: TTreeViewItem;
+  const StyleName: string);
+begin
+  while Item <> nil do
+  begin
+    if (Item.StyleLookup = '') then
+      Item.StyleLookup := StyleName // If style is empty, apply any style
+    else if (StyleName = SStyleError) then
+      Item.StyleLookup := SStyleError // Highest priority
+    else if ((StyleName = SStyleFail) and (Item.StyleLookup = SStylePass)) then
+      Item.StyleLookup := SStyleFail; // Fail may replace only Pass
+
+    Item := Item.ParentItem;
+  end;
+end;
+
 procedure TFMXTestRunner.Setup(const Base : ITest);
   procedure TraverseItems(const Item: TTreeViewItem);
   var
@@ -698,15 +770,16 @@ procedure TFMXTestRunner.Setup(const Base : ITest);
   begin
     Test := Item.data.AsInterface as ITest;
     Test.Enabled := Item.IsChecked;
+    Item.StyleLookup := '';
     for i := 0 to Item.Count - 1 do TraverseItems(Item[i]);
   end;
 begin
-  if (Base <> nil) then TraverseItems(Base.GUIObject as TTreeViewItem)
+  if (Base <> nil) then TraverseItems(TestToItem(Base))
   else TraverseItems(TestTree.Items[0]);
 end;
 
 procedure TFMXTestRunner.SetupTree;
-{$IFDEF MSWINDOWS}
+{$IFDEF DESKTOP}
 var
   Ini: TMemIniFile;
 {$ENDIF}
@@ -716,7 +789,7 @@ begin
   TestTree.BeginUpdate;
   TestTree.Clear;
   try
-{$IFDEF MSWINDOWS}
+{$IFDEF DESKTOP}
     Ini := TMemIniFile.Create(FIniName);
     try
       SetBounds(
