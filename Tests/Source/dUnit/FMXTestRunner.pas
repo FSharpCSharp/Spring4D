@@ -33,7 +33,8 @@ uses
   FMX.ListBox,
   FMX.TreeView,
   FMX.Effects,
-  TestFramework, DUnitConsts;
+  TestFramework,
+  DUnitConsts;
 
 type
   TRunnerExitBehavior = (
@@ -110,8 +111,7 @@ type
       Recursive : Boolean = false);
     procedure HideOverflowMenu;
     function TestToItem(const Test : ITest) : TTreeViewItem; inline;
-    procedure SetTreeItemStyle(Item : TTreeViewItem;
-      const StyleName : string);
+    procedure SetTreeItemStyle(Item : TTreeViewItem; const StyleName : string);
   protected
     startTime: TDateTime;
     endTime: TDateTime;
@@ -154,6 +154,8 @@ type
     class procedure RunRegisteredTests(
       exitBehavior : TRunnerExitBehavior = rxbContinue);
   protected
+    function AddSingularOrPlural(const SingularWithoutS: string; const Value: Integer): string; virtual;
+    procedure AddStatus(const aStatusStyle, aStatusText: string; aStatus: TTestFailure); virtual;
     function PrintErrors(r: TTestResult): string; virtual;
     function PrintFailures(r: TTestResult): string; virtual;
     function PrintHeader(r: TTestResult): string; virtual;
@@ -163,6 +165,7 @@ type
     procedure Write(const s: string);
     procedure Writeln(const s: string = '');
     procedure FillTestTree(const RootNode: TTreeViewItem; const aTest: ITest);
+    function PrintStatusItem(const print: string; const index: Integer; const status: TTestFailure): string; virtual;
   end;
 
   { : This type defines what the RunTest and RunRegisteredTests methods will do when
@@ -183,6 +186,9 @@ procedure RunRegisteredTests(
   exitBehavior : TRunnerExitBehavior = rxbContinue); overload;
 
 implementation
+
+uses
+  System.Math;
 
 {$R *.fmx}
 
@@ -256,8 +262,10 @@ begin
 {$ELSEIF Defined(IOS)}
   FIniName := System.IOUtils.TPath.Combine(
     System.IOUtils.TPath.GetDocumentsPath, FIniName);
-  if (TOSVersion.Check(7)) then StyleBook := StyleBookIOS7
-  else StyleBook := StyleBookIOS6;
+  if (TOSVersion.Check(7)) then
+    StyleBook := StyleBookIOS7
+  else
+    StyleBook := StyleBookIOS6;
 {$ENDIF}
 {$IFDEF DESKTOP}
   // There is some layouting differences on desktop
@@ -308,23 +316,13 @@ begin
 end;
 
 procedure TFMXTestRunner.AddError(error: TTestFailure);
-var
-  Item : TTreeViewItem;
 begin
-  Item := TestToItem(error.FailedTest);
-  Item.StyleLookup := SStyleError;
-  SetTreeItemStyle(Item.ParentItem, SStyleError);
-  Self.Write('E');
+  AddStatus(SStyleError, 'E', error);
 end;
 
 procedure TFMXTestRunner.AddFailure(failure: TTestFailure);
-var
-  Item : TTreeViewItem;
 begin
-  Item := TestToItem(failure.FailedTest);
-  Item.StyleLookup := SStyleFail;
-  SetTreeItemStyle(Item.ParentItem, SStyleFail);
-  Self.Write('F');
+  AddStatus(SStyleFail, 'F', failure);
 end;
 
 { : Prints failures to the standard output }
@@ -339,12 +337,7 @@ begin
   Result := '';
   if (r.errorCount <> 0) then
   begin
-    if (r.errorCount = 1) then
-        Result := Result + Format('There was %d error:', [r.errorCount]) +
-        sLineBreak
-    else Result := Result + Format('There were %d errors:', [r.errorCount]) +
-        sLineBreak;
-
+    Result := Result + AddSingularOrPlural('error', r.FailureCount) + sLineBreak;
     Result := Result + PrintErrorItems(r);
     Result := Result + sLineBreak
   end
@@ -359,26 +352,20 @@ begin
   for i := 0 to r.FailureCount - 1 do
   begin
     failure := r.Failures[i];
-    Result := Result + Format('%3d) %s: %s' + sLineBreak + '     at %s' +
-      sLineBreak + '      "%s"', [i + 1, failure.failedTest.name,
-      failure.thrownExceptionName, failure.LocationInfo,
-      failure.thrownExceptionMessage]) + sLineBreak;
+    Result := PrintStatusItem(Result, i, failure);
   end;
 end;
 
 function TFMXTestRunner.PrintErrorItems(r: TTestResult): string;
 var
   i: Integer;
-  failure: TTestFailure;
+  error: TTestFailure;
 begin
   Result := '';
   for i := 0 to r.errorCount - 1 do
   begin
-    failure := r.Errors[i];
-    Result := Result + Format('%3d) %s: %s' + sLineBreak + '     at %s' +
-      sLineBreak + '      "%s"', [i + 1, failure.failedTest.name,
-      failure.thrownExceptionName, failure.LocationInfo,
-      failure.thrownExceptionMessage]) + sLineBreak;
+    error := r.Errors[i];
+    Result := PrintStatusItem(Result, i, error);
   end;
 end;
 
@@ -388,12 +375,7 @@ begin
   Result := '';
   if (r.FailureCount <> 0) then
   begin
-    if (r.FailureCount = 1) then
-        Result := Result + Format('There was %d failure:', [r.FailureCount]) +
-        sLineBreak
-    else Result := Result + Format('There were %d failures:', [r.FailureCount])
-        + sLineBreak;
-
+    Result := Result + AddSingularOrPlural('failure', r.FailureCount) + sLineBreak;
     Result := Result + PrintFailureItems(r);
     Result := Result + sLineBreak
   end
@@ -438,7 +420,8 @@ var
   NewNode: TTreeViewItem;
   NewTest: ITest;
 begin
-  if aTest = nil then Exit;
+  if aTest = nil then
+    Exit;
 
   NewNode := TTestTreeItem.Create(Self);
   if (RootNode = nil) then
@@ -457,15 +440,18 @@ begin
   TestTests := aTest.Tests;
   if (TestTests.Count > 0) then
   begin
-    if (RootNode <> nil) then RootNode.Expand;
+    if (RootNode <> nil) then
+      RootNode.Expand;
     for i := 0 to TestTests.Count - 1 do
     begin
       NewTest := TestTests[i] as ITest;
       FillTestTree(NewNode, NewTest);
     end;
   end
-  else if (RootNode <> nil) then RootNode.Collapse;
-  if (not aTest.Enabled) then NewNode.Collapse;
+  else if (RootNode <> nil) then
+    RootNode.Collapse;
+  if (not aTest.Enabled) then
+    NewNode.Collapse;
 end;
 
 procedure TFMXTestRunner.FormShow(Sender: TObject);
@@ -483,7 +469,8 @@ var
   Item: TListBoxItem;
 begin
   Item := (Sender as TListBoxItem);
-  if (Item.Enabled) then Item.Checked := not Item.Checked;
+  if (Item.Enabled) then
+    Item.Checked := not Item.Checked;
 end;
 
 procedure TFMXTestRunner.mnuRunSelectedClick(Sender: TObject);
@@ -519,9 +506,12 @@ begin
   if (OverflowMenu.Visible) then
   begin
     Obj := IControl(ObjectAtPoint(ClientToScreen(PointF(X, Y))));
-    if (not Assigned(Obj)) then HideOverflowMenu
-    else if (TObject(Obj) = OverflowMenu) then // NOP
-    else HideOverflowMenu;
+    if (not Assigned(Obj)) then
+      HideOverflowMenu
+    else if (TObject(Obj) = OverflowMenu) then
+      // NOP
+    else
+      HideOverflowMenu;
   end;
 
   inherited;
@@ -529,8 +519,10 @@ end;
 
 function TFMXTestRunner.TruncateString(s: string; len: Integer): string;
 begin
-  if Length(s) > len then Result := copy(s, 1, len) + '...'
-  else Result := s
+  if Length(s) > len then
+    Result := copy(s, 1, Max(1, len-3)) + '...'
+  else
+    Result := s
 end;
 
 procedure TFMXTestRunner.TestingStarts;
@@ -551,7 +543,8 @@ procedure TFMXTestRunner.TestTreeMouseDown(Sender: TObject;
 var
   Item: TTreeViewItem;
 begin
-  if (not (Button in [TMouseButton.mbLeft, TMouseButton.mbRight])) then Exit;
+  if (not (Button in [TMouseButton.mbLeft, TMouseButton.mbRight])) then
+    Exit;
 
   // In any case, restart the timer
   tmrPopup.Enabled := False;
@@ -564,7 +557,8 @@ begin
       TestTree.Selected := Item;
       tmrPopupTimer(nil);
     end
-    else HideOverflowMenu;
+    else
+      HideOverflowMenu;
   end
   else
   begin
@@ -578,10 +572,12 @@ procedure TFMXTestRunner.TestTreeMouseMove(Sender: TObject; Shift: TShiftState;
 var
   d: Single;
 begin
-  if (not tmrPopup.Enabled) then Exit;
+  if (not tmrPopup.Enabled) then
+   Exit;
 
   d := PointF(X, Y + TabControl1.Position.Y).Distance(FMenuPos);
-  if (d > 10) then tmrPopup.Enabled := false;
+  if (d > 10) then
+    tmrPopup.Enabled := false;
 end;
 
 procedure TFMXTestRunner.TestTreeMouseUp(Sender: TObject; Button: TMouseButton;
@@ -593,7 +589,8 @@ end;
 procedure TFMXTestRunner.tmrPopupTimer(Sender: TObject);
 begin
   tmrPopup.Enabled := False;
-  if (TestTree.Selected = nil) then Exit;
+  if (TestTree.Selected = nil) then
+    Exit;
   OverflowMenu.Position.Point := FMenuPos;
   OverflowMenu.Visible := True;
   OverflowMenu.SetFocus;
@@ -630,7 +627,8 @@ var
   Ini: TMemIniFile;
 {$ENDIF}
 begin
-  if Suite = nil then Exit;
+  if Suite = nil then
+    Exit;
 
   Setup(nil);
   try
@@ -652,8 +650,10 @@ begin
   except
     // Consume the exception
     // Android: Write External Storage permission is not set
-    on EFileStreamError do ;
-    else raise;
+    on EFileStreamError do
+      ; // NOP
+    else
+      raise;
   end;
   RunTheTest(Suite);
 end;
@@ -666,7 +666,8 @@ end;
 
 procedure TFMXTestRunner.RunTheTest(aTest: ITest);
 begin
-  if aTest = nil then Exit;
+  if aTest = nil then
+    Exit;
   if FRunning then
   begin
     // warning: we're reentering this method if FRunning is true
@@ -724,6 +725,16 @@ begin
   TFMXTestRunner.RunRegisteredTests(exitBehavior);
 end;
 
+procedure TFMXTestRunner.AddStatus(const aStatusStyle, aStatusText: string; aStatus: TTestFailure);
+var
+  Item: TTreeViewItem;
+begin
+  Item := TestToItem(aStatus.FailedTest);
+  Item.StyleLookup := aStatusStyle;
+  SetTreeItemStyle(Item.ParentItem, aStatusStyle);
+  Self.Write(aStatusText);
+end;
+
 procedure TFMXTestRunner.Status(Test: ITest; const Msg: string);
 begin
   Self.Writeln(Format('%s: %s', [Test.name, Msg]));
@@ -736,8 +747,10 @@ end;
 
 procedure TFMXTestRunner.Write(const s: string);
 begin
-  if (Memo.Lines.Count = 0) then Writeln(s)
-  else Memo.Lines[Memo.Lines.Count - 1] := Memo.Lines[Memo.Lines.Count - 1] + s;
+  if (Memo.Lines.Count = 0) then
+    Writeln(s)
+  else
+    Memo.Lines[Memo.Lines.Count - 1] := Memo.Lines[Memo.Lines.Count - 1] + s;
 end;
 
 procedure TFMXTestRunner.Writeln(const s: string);
@@ -749,13 +762,16 @@ procedure TFMXTestRunner.SetChecked(const Parent: TTreeViewItem; Value,
   Recursive: Boolean);
 var i : Integer;
 begin
-  if (Parent = nil) then Exit;
+  if (Parent = nil) then
+    Exit;
 
   Parent.IsChecked := Value;
   for i := 0 to Parent.Count - 1 do
   begin
-    if (Recursive) then SetChecked(Parent[i], Value, Recursive)
-    else Parent[i].IsChecked := Value;
+    if (Recursive) then
+      SetChecked(Parent[i], Value, Recursive)
+    else
+      Parent[i].IsChecked := Value;
   end;
 end;
 
@@ -767,9 +783,9 @@ begin
     if (Item.StyleLookup = '') then
       Item.StyleLookup := StyleName // If style is empty, apply any style
     else if (StyleName = SStyleError) then
-      Item.StyleLookup := SStyleError // Highest priority
+      Item.StyleLookup := StyleName // Highest priority
     else if ((StyleName = SStyleFail) and (Item.StyleLookup = SStylePass)) then
-      Item.StyleLookup := SStyleFail; // Fail may replace only Pass
+      Item.StyleLookup := StyleName; // Fail may replace only Pass
 
     Item := Item.ParentItem;
   end;
@@ -787,8 +803,10 @@ procedure TFMXTestRunner.Setup(const Base : ITest);
     for i := 0 to Item.Count - 1 do TraverseItems(Item[i]);
   end;
 begin
-  if (Base <> nil) then TraverseItems(TestToItem(Base))
-  else TraverseItems(TestTree.Items[0]);
+  if (Base <> nil) then
+    TraverseItems(TestToItem(Base))
+  else
+    TraverseItems(TestTree.Items[0]);
 end;
 
 procedure TFMXTestRunner.SetupTree;
@@ -797,34 +815,40 @@ var
   Ini: TMemIniFile;
 {$ENDIF}
 begin
-  if (Suite = nil) then Exit;
+  if (Suite = nil) then
+    Exit;
 
   TestTree.BeginUpdate;
-  TestTree.Clear;
   try
-{$IFDEF DESKTOP}
-    Ini := TMemIniFile.Create(FIniName);
+    TestTree.Clear;
     try
-      SetBounds(
-        Ini.ReadInteger(SIniSection, 'Left', Left),
-        Ini.ReadInteger(SIniSection, 'Top', Top),
-        Ini.ReadInteger(SIniSection, 'Width', Width),
-        Ini.ReadInteger(SIniSection, 'Height', Height));
-      Suite.LoadConfiguration(Ini, sTests);
-    finally
-      Ini.Free;
+  {$IFDEF DESKTOP}
+      Ini := TMemIniFile.Create(FIniName);
+      try
+        SetBounds(
+          Ini.ReadInteger(SIniSection, 'Left', Left),
+          Ini.ReadInteger(SIniSection, 'Top', Top),
+          Ini.ReadInteger(SIniSection, 'Width', Width),
+          Ini.ReadInteger(SIniSection, 'Height', Height));
+        Suite.LoadConfiguration(Ini, sTests);
+      finally
+        Ini.Free;
+      end;
+  {$ELSE}
+      Suite.LoadConfiguration(FIniName, False, True);
+  {$ENDIF}
+    except
+      // Consume the exception
+      // Android: Read External Storage permission is not set
+      on EFileStreamError do
+        ; // NOP
+      else
+        raise;
     end;
-{$ELSE}
-    Suite.LoadConfiguration(FIniName, False, True);
-{$ENDIF}
-  except
-    // Consume the exception
-    // Android: Read External Storage permission is not set
-    on EFileStreamError do ;
-    else raise;
+    FillTestTree(nil, Suite);
+  finally
+    TestTree.EndUpdate;
   end;
-  FillTestTree(nil, Suite);
-  TestTree.EndUpdate;
 end;
 
 function TFMXTestRunner.ShouldRunTest(Test: ITest): Boolean;
@@ -839,6 +863,24 @@ end;
 
 procedure TFMXTestRunner.EndSuite(Suite: ITest);
 begin
+
+end;
+
+function TFMXTestRunner.PrintStatusItem(const print: string; const index: Integer; const status: TTestFailure): string;
+begin
+  Result := print + Format('%3d) %s: %s' + sLineBreak + '     at %s' +
+    sLineBreak + '      "%s"', [index + 1, status.failedTest.name,
+    status.thrownExceptionName, status.LocationInfo,
+    status.thrownExceptionMessage]) + sLineBreak;
+end;
+
+
+function TFMXTestRunner.AddSingularOrPlural(const SingularWithoutS: string; const Value: Integer): string;
+begin
+  if (Value = 1) then
+    Result := Format('There was %d %s:', [SingularWithoutS, Value])
+  else
+    Result := Format('There were %d %ss:', [SingularWithoutS, Value]);
 end;
 
 procedure TFMXTestRunner.StartSuite(Suite: ITest);
@@ -856,8 +898,9 @@ end;
 procedure TListBoxItemHelper.SetChecked(const Value: Boolean);
 begin
   if (Value) then
-      Self.ItemData.Accessory := TListBoxItemData.TAccessory.aCheckmark
-  else Self.ItemData.Accessory := TListBoxItemData.TAccessory.aNone;
+    Self.ItemData.Accessory := TListBoxItemData.TAccessory.aCheckmark
+  else
+    Self.ItemData.Accessory := TListBoxItemData.TAccessory.aNone;
 end;
 
 { TTestTreeItem }
