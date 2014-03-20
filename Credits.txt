@@ -4,11 +4,15 @@ http://www.spring4d.org
 Credits
 ===========================================
 
-Committers
+Current team members
+* Stefan Glienke (Stefan)
+* Honza Rameš (Honza)
+* Jeroen Wiert Pluimers (Jeroen)
+
+Commiters
 * Baoquan Zuo (Baoquan)
 * Leszek Gojniczek (Leo Raster)
 * Mikołaj Milewski (Virion)
-* Glienke, Stefan (Stefan)
 
 Contributors
 * Ryan Huang
@@ -21,6 +25,9 @@ Acknowledgements:
 * Alexandr Demcenko (Many classes in the Spring.Cryptography are based on his native cryptographical code implementation)
 
 Donations
+* Documentation Insight
+http://www.devjetsoftware.com
+
 * Help & Manual
 http://www.helpandmanual.com
 
