@@ -1033,7 +1033,7 @@ begin
   Result := InternalGetFields;
 end;
 
-{$IFNDEF DelphiXE_UP}
+{$IFNDEF DELPHIXE_UP}
 function SplitString(const s: string; delimiter: Char): TStringDynArray;
 var
   list: TStrings;

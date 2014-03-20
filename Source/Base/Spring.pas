@@ -196,10 +196,12 @@ type
     class procedure CheckRange<T>(const buffer: array of T; startIndex, count: Integer); overload; static;
     class procedure CheckRange(const s: string; index: Integer); overload; static; inline;
     class procedure CheckRange(const s: string; startIndex, count: Integer); overload; static; inline;
+{$IFNDEF NEXTGEN}
     class procedure CheckRange(const s: WideString; index: Integer); overload; static; inline;
     class procedure CheckRange(const s: WideString; startIndex, count: Integer); overload; static; inline;
     class procedure CheckRange(const s: RawByteString; index: Integer); overload; static; inline;
     class procedure CheckRange(const s: RawByteString; startIndex, count: Integer); overload; static; inline;
+{$ENDIF}
     class procedure CheckRange(condition: Boolean; const argumentName: string); overload; static; inline;
     class procedure CheckRange(length, startIndex, count: Integer; indexBase: Integer = 0); overload; static; inline;
 
@@ -353,7 +355,7 @@ type
   ///	  Represents a nullable unicode string.
   ///	</summary>
   TNullableString = Nullable<string>;
-
+{$IFNDEF NEXTGEN}
   ///	<summary>
   ///	  Represents a nullable ansi string.
   ///	</summary>
@@ -363,7 +365,7 @@ type
   ///	  Represents a nullable wide string.
   ///	</summary>
   TNullableWideString = Nullable<WideString>;
-
+{$ENDIF}
   ///	<summary>
   ///	  Represents a nullable integer.
   ///	</summary>
@@ -698,6 +700,7 @@ type
     property IsEmpty: Boolean read GetIsEmpty;
   end;
 
+{$IFDEF SUPPORTS_GENERIC_EVENTS}
   Event<T> = record
   private
     fInstance: IEvent<T>;
@@ -725,6 +728,7 @@ type
     class operator Implicit(var value: Event<T>): T;
     class operator Implicit(const value: T): Event<T>;
   end;
+{$ENDIF}
 
   {$ENDREGION}
 
@@ -747,38 +751,43 @@ type
 
   {$REGION 'Exceptions'}
 
-  ENotSupportedException    = SysUtils.ENotSupportedException;
+  ENotSupportedException = SysUtils.ENotSupportedException;
 
 {$IFDEF DELPHIXE_UP}
-  ENotImplementedException  = SysUtils.ENotImplemented;
+  ENotImplementedException = SysUtils.ENotImplemented;
+  EInvalidOperationException = SysUtils.EInvalidOpException;
+  EArgumentNilException = SysUtils.EArgumentNilException;
 {$ELSE}
-  ENotImplementedException  = class(Exception);
+  ENotImplementedException = class(Exception);
+  EInvalidOperationException = class(Exception);
+  EArgumentNilException = class(EArgumentException);
 {$ENDIF}
 
-{$IFDEF DELPHIXE_UP}
-  EInvalidOperationException  = SysUtils.EInvalidOpException;
-{$ELSE}
-  EInvalidOperationException  = class(Exception);
-{$ENDIF}
-
-  EInvalidCastException     = SysUtils.EInvalidCast;
+  EInvalidCastException = SysUtils.EInvalidCast;
 
   EInsufficientMemoryException = EOutOfMemory;
 
-  EFormatException          = class(Exception);
+  EFormatException = class(Exception);
   EIndexOutOfRangeException = class(Exception);
 
-  EArgumentException            = SysUtils.EArgumentException;
-  EArgumentOutOfRangeException  = SysUtils.EArgumentOutOfRangeException;
-{$IFDEF DELPHIXE_UP}
-  EArgumentNilException        = SysUtils.EArgumentNilException;
-{$ELSE}
-  EArgumentNilException        = class(EArgumentException);
-{$ENDIF}
-  EArgumentNullException        = EArgumentNilException;
+  EArgumentException = SysUtils.EArgumentException;
+  EArgumentOutOfRangeException = SysUtils.EArgumentOutOfRangeException;
+  EArgumentNullException = EArgumentNilException;
   EInvalidEnumArgumentException = class(EArgumentException);
 
   ERttiException = class(Exception);
+
+  {$ENDREGION}
+
+
+  {$REGION 'TTypeInfoHelper}
+
+  TTypeInfoHelper = record helper for TTypeInfo
+  private
+    function GetTypeName: string; inline;
+  public
+    property TypeName: string read GetTypeName;
+  end;
 
   {$ENDREGION}
 
@@ -812,6 +821,16 @@ function GetQualifiedClassName(AClass: TClass): string; overload; {$IFDEF DELPHI
 ///	</summary>
 function IsAssignableFrom(leftType, rightType: PTypeInfo): Boolean;
 
+/// <summary>
+///   Returns the size that is needed in order to pass an argument of the given
+///   type.
+/// </summary>
+/// <remarks>
+///   While in most cases the result is equal to the actual type size for short
+///   strings it always returns SizeOf(Pointer) as short strings are always
+///   passed as pointer.
+/// </remarks>
+function GetTypeSize(typeInfo: PTypeInfo): Integer;
 {$ENDREGION}
 
 
@@ -844,9 +863,7 @@ end;
 procedure CheckArgumentNotNull(value: Pointer; const argumentName: string);
 begin
   if not Assigned(value) then
-  begin
     Guard.RaiseArgumentNullException(argumentName);
-  end;
 end;
 
 function GetQualifiedClassName(AInstance: TObject): string;
@@ -905,6 +922,83 @@ begin
     Result := False;
 end;
 
+function GetTypeSize(typeInfo: PTypeInfo): Integer;
+var
+  typeData: PTypeData;
+const
+  COrdinalSizes: array[TOrdType] of Integer = (
+    SizeOf(ShortInt){1},
+    SizeOf(Byte){1},
+    SizeOf(SmallInt){2},
+    SizeOf(Word){2},
+    SizeOf(Integer){4},
+    SizeOf(Cardinal){4});
+  CFloatSizes: array[TFloatType] of Integer = (
+    SizeOf(Single){4},
+    SizeOf(Double){8},
+{$IFDEF ALIGN_STACK}
+    16,
+{$ELSE}
+    SizeOf(Extended){10},
+{$ENDIF}
+    SizeOf(Comp){8},
+    SizeOf(Currency){8});
+  CSetSizes: array[TOrdType] of Integer = (
+    SizeOf(ShortInt){1},
+    SizeOf(Byte){1},
+    SizeOf(SmallInt){2},
+    SizeOf(Word){2},
+    SizeOf(Integer){4},
+    SizeOf(Cardinal){4});
+begin
+  case typeInfo.Kind of
+{$IFNDEF NEXTGEN}
+    tkChar:
+      Result := SizeOf(AnsiChar){1};
+{$ENDIF}
+    tkWChar:
+      Result := SizeOf(WideChar){2};
+    tkInteger, tkEnumeration:
+      begin
+        typeData := GetTypeData(typeInfo);
+        Result := COrdinalSizes[typeData.OrdType];
+      end;
+    tkFloat:
+      begin
+        typeData := GetTypeData(typeInfo);
+        Result := CFloatSizes[typeData.FloatType];
+      end;
+    tkString, tkLString, tkUString, tkWString, tkInterface, tkClass, tkClassRef, tkDynArray, tkPointer, tkProcedure:
+      Result := SizeOf(Pointer);
+    tkMethod:
+      Result := SizeOf(TMethod);
+    tkInt64:
+      Result := SizeOf(Int64){8};
+    tkVariant:
+      Result := SizeOf(Variant);
+    tkSet:
+      begin
+        // big sets have no typeInfo for now
+        typeData := GetTypeData(typeInfo);
+        Result := CSetSizes[typeData.OrdType];
+      end;
+    tkRecord:
+      begin
+        typeData := GetTypeData(typeInfo);
+        Result := typeData.RecSize;
+      end;
+    tkArray:
+      begin
+        typeData := GetTypeData(typeInfo);
+        Result := typeData.ArrayData.Size;
+      end;
+    else
+      begin
+        Assert(False, 'Unsupported type'); { TODO -o##jwp -cEnhance : add more context to the assert }
+        Result := -1;
+      end;
+  end;
+end;
 {$ENDREGION}
 
 
@@ -958,9 +1052,7 @@ const
   IndexArgName = 'index';
 begin
   if (index < indexBase) or (index > length + indexBase - 1) then
-  begin
     Guard.RaiseArgumentOutOfRangeException(IndexArgName);
-  end;
 end;
 
 class procedure Guard.CheckRange(length, startIndex, count, indexBase: Integer);
@@ -973,9 +1065,7 @@ begin
     StartIndexArgName);
   Guard.CheckRange(count >= 0, CountArgName);
   if count > 0 then
-  begin
     Guard.CheckRange(count <= indexBase + length - startIndex, CountArgName);
-  end;
 end;
 
 class procedure Guard.CheckRange<T>(const buffer: array of T; index: Integer);
@@ -983,9 +1073,7 @@ const
   IndexArgName = 'index';
 begin
   if (index < 0) or (index >= Length(buffer)) then
-  begin
     Guard.RaiseArgumentOutOfRangeException(IndexArgName);
-  end;
 end;
 
 class procedure Guard.CheckRange<T>(const buffer: array of T;
@@ -997,17 +1085,13 @@ end;
 class procedure Guard.CheckTrue(condition: Boolean; const msg: string);
 begin
   if not condition then
-  begin
     Guard.RaiseArgumentException(msg);
-  end;
 end;
 
 class procedure Guard.CheckFalse(condition: Boolean; const msg: string);
 begin
   if condition then
-  begin
     Guard.RaiseArgumentException(msg);
-  end;
 end;
 
 class procedure Guard.CheckInheritsFrom(cls, parentClass: TClass;
@@ -1017,28 +1101,22 @@ begin
   Guard.CheckNotNull(parentClass, 'parentClass');
 
   if not cls.InheritsFrom(parentClass) then
-  begin
     raise EArgumentException.CreateResFmt(@SBadObjectInheritance, [argumentName,
       cls.ClassName, parentClass.ClassName]);
-  end;
 end;
 
 class procedure Guard.CheckInheritsFrom(obj: TObject; parentClass: TClass;
   const argumentName: string);
 begin
   if Assigned(obj) then
-  begin
     Guard.CheckInheritsFrom(obj.ClassType, parentClass, argumentName);
-  end;
 end;
 
 class procedure Guard.CheckNotNull(condition: Boolean;
   const parameterName: string);
 begin
   if not condition then
-  begin
     Guard.RaiseArgumentNullException(parameterName);
-  end;
 end;
 
 class procedure Guard.CheckNotNull(argumentValue: Pointer;
@@ -1063,9 +1141,7 @@ class procedure Guard.CheckNotNull<T>(const argumentValue: T;
   const argumentName: string);
 begin
   if Guard.IsNullReference(argumentValue, TypeInfo(T)) then
-  begin
     Guard.RaiseArgumentNullException(argumentName);
-  end;
 end;
 
 class procedure Guard.CheckEnum<T>(const argumentValue: T;
@@ -1091,19 +1167,15 @@ begin
   Guard.CheckNotNull(data, 'data');
 
   if (argumentValue < data.MinValue) or (argumentValue > data.MaxValue) then
-  begin
     raise EInvalidEnumArgumentException.CreateResFmt(@SInvalidEnumArgument, [
       argumentName, GetTypeName(typeInfo), argumentValue]);
-  end;
 end;
 
 class procedure Guard.CheckRange(condition: Boolean;
   const argumentName: string);
 begin
   if not condition then
-  begin
     Guard.RaiseArgumentOutOfRangeException(argumentName);
-  end;
 end;
 
 class procedure Guard.CheckRange(const buffer: array of Byte;
@@ -1138,6 +1210,7 @@ begin
   Guard.DoCheckStringRange(Length(s), startIndex, count);
 end;
 
+{$IFNDEF NEXTGEN}
 class procedure Guard.CheckRange(const s: WideString; index: Integer);
 begin
   Guard.DoCheckStringIndex(Length(s), index);
@@ -1157,16 +1230,15 @@ class procedure Guard.CheckRange(const s: RawByteString; startIndex, count: Inte
 begin
   Guard.DoCheckStringRange(Length(s), startIndex, count);
 end;
+{$ENDIF}
 
 class procedure Guard.CheckTypeKind(typeInfo: PTypeInfo;
   expectedTypeKind: TTypeKind; const argumentName: string);
 begin
   Guard.CheckNotNull(typeInfo, argumentName);
   if typeInfo.Kind <> expectedTypeKind then
-  begin
-    raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument, [
-      typeInfo.Name, argumentName]);
-  end;
+    raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument,
+      [typeInfo.TypeName, argumentName]);
 end;
 
 class procedure Guard.CheckTypeKind(typeInfo: PTypeInfo;
@@ -1174,10 +1246,8 @@ class procedure Guard.CheckTypeKind(typeInfo: PTypeInfo;
 begin
   Guard.CheckNotNull(typeInfo, argumentName);
   if not (typeInfo.Kind in expectedTypeKinds) then
-  begin
-    raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument, [
-      typeInfo.Name, argumentName]);
-  end;
+    raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument,
+      [typeInfo.TypeName, argumentName]);
 end;
 
 class function Guard.IsNullReference(const value; typeInfo: PTypeInfo): Boolean;
@@ -1187,12 +1257,10 @@ const
 begin
   Result := False;
   if Assigned(typeInfo) and (typeInfo.Kind in ReferenceKinds) then
-  begin
     if typeInfo.Kind = tkMethod then
       Result := not Assigned(TMethod(value).Code) and not Assigned(TMethod(value).Data)
     else
       Result := not Assigned(PPointer(@value)^);
-  end;
 end;
 
 {$IFOPT O+}
@@ -1542,11 +1610,18 @@ begin
   if PPointer(@target)^ = nil then
   begin
     localValue := T.Create;
+{$IFNDEF AUTOREFCOUNT}
     if TLazyInitializer.InterlockedCompareExchange(PPointer(@target)^,
       PPointer(@localValue)^, nil) <> nil then
     begin
       localValue.Free;
     end;
+{$ELSE}
+    if AtomicCmpExchange(PPointer(@target)^, Pointer(localvalue), nil) = nil then
+    begin
+      target.__ObjAddRef;
+    end;
+{$ENDIF AUTOREFCOUNT}
   end;
   Result := target;
 end;
@@ -1556,6 +1631,7 @@ end;
 
 {$REGION 'Event<T>'}
 
+{$IFDEF SUPPORTS_GENERIC_EVENTS}
 class function Event<T>.Create: Event<T>;
 begin
   Result := TEvent<T>.Create;
@@ -1642,10 +1718,23 @@ begin
   Result.Clear;
   Result.Add(value);
 end;
+{$ENDIF}
+
+{$ENDREGION}
+
+
+{$REGION 'TTypeInfoHelper'}
+
+function TTypeInfoHelper.GetTypeName: string;
+begin
+{$IFNDEF NEXTGEN}
+  Result := UTF8ToString(Name);
+{$ELSE}
+  Result := NameFld.ToString;
+{$ENDIF}
+end;
 
 {$ENDREGION}
 
 
 end.
-
-

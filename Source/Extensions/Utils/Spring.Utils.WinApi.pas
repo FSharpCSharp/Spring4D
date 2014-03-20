@@ -31,6 +31,7 @@ unit Spring.Utils.WinAPI; // platform;
 
 interface
 
+{$IFDEF MSWINDOWS}
 uses
   Windows, WinSvc;
 
@@ -333,9 +334,11 @@ function EnumServicesStatusEx(hSCManager: SC_HANDLE; InfoLevel: SC_ENUM_TYPE;
 {$IFDEF SUPPORTS_REGION}{$ENDREGION}{$ENDIF}
 
 function ConvertSidToStringSid(sid: PSID; var stringSid: LPWSTR): BOOL; stdcall;
+{$ENDIF}
 
 implementation
 
+{$IFDEF MSWINDOWS}
 const
   AWSuffix = {$IFDEF UNICODE}'W'{$ELSE}'A'{$ENDIF};
 
@@ -350,5 +353,6 @@ function EnumServicesStatusExW; external advapi32 name 'EnumServicesStatusExW';
 function EnumServicesStatusEx; external advapi32 name 'EnumServicesStatusEx' + AWSuffix;
 
 function ConvertSidToStringSid; external advapi32 name 'ConvertSidToStringSidW';
+{$ENDIF}
 
 end.

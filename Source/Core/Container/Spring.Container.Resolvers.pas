@@ -40,7 +40,7 @@ type
   private
     fContext: IContainerContext;
     fRegistry: IComponentRegistry;
-    fOnResolve: Event<TResolveEvent>;
+    fOnResolve: IEvent<TResolveEvent>;
     procedure DoResolve(var instance: TValue);
     function GetOnResolve: IEvent<TResolveEvent>;
   protected
@@ -50,6 +50,7 @@ type
     property Registry: IComponentRegistry read fRegistry;
   public
     constructor Create(const context: IContainerContext; const registry: IComponentRegistry);
+    destructor Destroy; override;
 
     property OnResolve: IEvent<TResolveEvent> read GetOnResolve;
   end;
@@ -86,17 +87,17 @@ type
 
   TServiceResolver = class(TResolver, IServiceResolver, IInterface)
   protected
-    function InternalResolve(model: TComponentModel; serviceType: PTypeInfo;
-      resolver: IDependencyResolver): TValue;
+    function InternalResolve(const model: TComponentModel; serviceType: PTypeInfo;
+      const resolver: IDependencyResolver): TValue;
     function InternalResolveLazy(model: TComponentModel; serviceType: PTypeInfo;
       resolver: IDependencyResolver): TValue;
   public
     function CanResolve(serviceType: PTypeInfo): Boolean; overload;
     function CanResolve(const name: string): Boolean; overload;
     function Resolve(serviceType: PTypeInfo): TValue; overload;
-    function Resolve(serviceType: PTypeInfo; resolverOverride: IResolverOverride): TValue; overload;
+    function Resolve(serviceType: PTypeInfo; const resolverOverride: IResolverOverride): TValue; overload;
     function Resolve(const name: string): TValue; overload;
-    function Resolve(const name: string; resolverOverride: IResolverOverride): TValue; overload;
+    function Resolve(const name: string; const resolverOverride: IResolverOverride): TValue; overload;
     function ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
   end;
 
@@ -184,8 +185,67 @@ uses
   SysUtils,
   TypInfo,
   Spring.Container.ResourceStrings,
+  Spring.Events.Base,
   Spring.Helpers,
   Spring.Reflection;
+
+
+{$REGION 'TResolveEventImpl'}
+
+type
+  TResolveEventImpl = class(TEventBase, IEvent<TResolveEvent>)
+  private
+    function GetInvoke: TResolveEvent;
+    procedure Add(handler: TResolveEvent);
+    procedure Remove(handler: TResolveEvent);
+    procedure ForEach(const action: TAction<TResolveEvent>);
+
+    procedure InternalInvoke(Sender: TObject; var instance: TValue);
+  public
+    constructor Create;
+  end;
+
+constructor TResolveEventImpl.Create;
+begin
+  inherited;
+  fInvoke.Code := @TResolveEventImpl.InternalInvoke;
+  fInvoke.Data := Self;
+end;
+
+procedure TResolveEventImpl.Add(handler: TResolveEvent);
+begin
+  inherited Add(TMethod(handler));
+end;
+
+procedure TResolveEventImpl.ForEach(const action: TAction<TResolveEvent>);
+var
+  i: Integer;
+begin
+  for i := 0 to Handlers.Count - 1 do
+    action(TResolveEvent(Handlers.Items[i]));
+end;
+
+function TResolveEventImpl.GetInvoke: TResolveEvent;
+begin
+  Result := TResolveEvent(inherited Invoke);
+end;
+
+procedure TResolveEventImpl.InternalInvoke(Sender: TObject;
+  var instance: TValue);
+var
+  i: Integer;
+begin
+  if Enabled then
+    for i := 0 to Handlers.Count - 1 do
+      TResolveEvent(Handlers.Items[i])(Sender, instance);
+end;
+
+procedure TResolveEventImpl.Remove(handler: TResolveEvent);
+begin
+  inherited Remove(TMethod(handler));
+end;
+
+{$ENDREGION}
 
 
 {$REGION 'TResolver'}
@@ -198,6 +258,13 @@ begin
   inherited Create;
   fContext := context;
   fRegistry := registry;
+  fOnResolve := TResolveEventImpl.Create;
+end;
+
+destructor TResolver.Destroy;
+begin
+  fOnResolve := nil;
+  inherited;
 end;
 
 procedure TResolver.DoResolve(var instance: TValue);
@@ -641,8 +708,8 @@ begin
   Result := Registry.HasService(name);
 end;
 
-function TServiceResolver.InternalResolve(model: TComponentModel;
-  serviceType: PTypeInfo; resolver: IDependencyResolver): TValue;
+function TServiceResolver.InternalResolve(const model: TComponentModel;
+  serviceType: PTypeInfo; const resolver: IDependencyResolver): TValue;
 var
   instance: TValue;
 begin
@@ -714,7 +781,7 @@ begin
 end;
 
 function TServiceResolver.Resolve(serviceType: PTypeInfo;
-  resolverOverride: IResolverOverride): TValue;
+  const resolverOverride: IResolverOverride): TValue;
 var
   serviceName: string;
   isLazy: Boolean;
@@ -759,7 +826,7 @@ begin
 end;
 
 function TServiceResolver.Resolve(const name: string;
-  resolverOverride: IResolverOverride): TValue;
+  const resolverOverride: IResolverOverride): TValue;
 var
   model: TComponentModel;
   serviceType: PTypeInfo;

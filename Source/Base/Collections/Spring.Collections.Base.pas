@@ -110,6 +110,9 @@ type
     function GetElementType: PTypeInfo; override;
     class function GetEqualityComparer: IEqualityComparer<T>; static;
   {$ENDREGION}
+{$IFDEF WEAKREF}
+    function HasWeakRef: Boolean;
+{$ENDIF}
     function TryGetElementAt(out value: T; index: Integer): Boolean; virtual;
     function TryGetFirst(out value: T): Boolean; overload; virtual;
     function TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean; overload;
@@ -656,6 +659,13 @@ begin
     fEqualityComparer := TEqualityComparer<T>.Default;
   Result := fEqualityComparer;
 end;
+
+{$IFDEF WEAKREF}
+function TEnumerableBase<T>.HasWeakRef: Boolean;
+begin
+  Result := System.TypInfo.HasWeakRef(TypeInfo(T));
+end;
+{$ENDIF}
 
 function TEnumerableBase<T>.Last: T;
 var

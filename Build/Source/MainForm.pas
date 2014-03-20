@@ -27,19 +27,8 @@ unit MainForm;
 interface
 
 uses
-  Windows,
-  Messages,
-  SysUtils,
-  Variants,
-  Classes,
-  Graphics,
-  Controls,
-  Forms,
-  Dialogs,
-  StdCtrls,
-  ExtCtrls,
-  CheckLst,
-  BuildEngine;
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, Menus, StdCtrls, ExtCtrls, CheckLst, BuildEngine;
 
 type
   TfrmMain = class(TForm)
@@ -52,17 +41,26 @@ type
     BalloonHint1: TBalloonHint;
     grpConfiguration: TRadioGroup;
     btnClean: TButton;
-    chkTests: TCheckBox;
+    chkRunTests: TCheckBox;
+    grpBuildOptions: TGroupBox;
+    chkModifyDelphiRegistrySettings: TCheckBox;
+    chkPauseAfterEachStep: TCheckBox;
+    PopupMenu1: TPopupMenu;
+    mniCheckAll: TMenuItem;
+    mniUncheckAll: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure btnBuildClick(Sender: TObject);
-    procedure btnCloseClick(Sender: TObject);
     procedure btnCleanClick(Sender: TObject);
     procedure grpConfigurationClick(Sender: TObject);
     procedure lbTargetsClickCheck(Sender: TObject);
     procedure lblHomepageLinkClick(Sender: TObject; const Link: string;
       LinkType: TSysLinkType);
-    procedure chkTestsClick(Sender: TObject);
+    procedure chkRunTestsClick(Sender: TObject);
+    procedure chkModifyDelphiRegistrySettingsClick(Sender: TObject);
+    procedure chkPauseAfterEachStepClick(Sender: TObject);
+    procedure mniCheckAllClick(Sender: TObject);
+    procedure mniUncheckAllClick(Sender: TObject);
   private
     fBuildEngine: TBuildEngine;
   end;
@@ -91,7 +89,9 @@ begin
   fBuildEngine.ConfigureCompilers(ApplicationPath + CCompilerSettingsFileName);
   fBuildEngine.LoadSettings(ApplicationPath + CBuildSettingsFileName);
   grpConfiguration.ItemIndex := Ord(fBuildEngine.ConfigurationType);
-  chkTests.Checked := fBuildEngine.RunTests;
+  chkPauseAfterEachStep.Checked := fBuildEngine.PauseAfterEachStep;
+  chkRunTests.Checked := fBuildEngine.RunTests;
+  chkModifyDelphiRegistrySettings.Checked := fBuildEngine.ModifyDelphiRegistrySettings;
 
   lbTargets.Clear;
   for task in fBuildEngine.Tasks do
@@ -100,6 +100,9 @@ begin
     lbTargets.ItemEnabled[index] := task.CanBuild;
     lbTargets.Checked[index] := fBuildEngine.SelectedTasks.Contains(task);
   end;
+
+  if FileExists('Build.md') then
+    mmoDetails.Lines.LoadFromFile('Build.md');
 end;
 
 procedure TfrmMain.FormDestroy(Sender: TObject);
@@ -136,6 +139,12 @@ begin
   btnBuild.Enabled := not fBuildEngine.SelectedTasks.IsEmpty;
 end;
 
+procedure TfrmMain.mniUncheckAllClick(Sender: TObject);
+begin
+  lbTargets.CheckAll(cbUnchecked);
+  lbTargetsClickCheck(lbTargets);
+end;
+
 procedure TfrmMain.btnBuildClick(Sender: TObject);
 begin
   fBuildEngine.BuildAll;
@@ -146,14 +155,25 @@ begin
   fBuildEngine.CleanUp;
 end;
 
-procedure TfrmMain.btnCloseClick(Sender: TObject);
+procedure TfrmMain.mniCheckAllClick(Sender: TObject);
 begin
-  Close;
+  lbTargets.CheckAll(cbChecked, False, False);
+  lbTargetsClickCheck(lbTargets);
 end;
 
-procedure TfrmMain.chkTestsClick(Sender: TObject);
+procedure TfrmMain.chkRunTestsClick(Sender: TObject);
 begin
-  fBuildEngine.RunTests := chkTests.Checked;
+  fBuildEngine.RunTests := chkRunTests.Checked;
+end;
+
+procedure TfrmMain.chkModifyDelphiRegistrySettingsClick(Sender: TObject);
+begin
+  fBuildEngine.ModifyDelphiRegistrySettings := chkModifyDelphiRegistrySettings.Checked;
+end;
+
+procedure TfrmMain.chkPauseAfterEachStepClick(Sender: TObject);
+begin
+  fBuildEngine.PauseAfterEachStep := chkPauseAfterEachStep.Checked;
 end;
 
 end.

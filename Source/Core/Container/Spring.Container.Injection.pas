@@ -37,6 +37,7 @@ uses
 type
   TInjectionBase = class abstract(TInterfacedObject, IInjection, IInterface)
   private
+    {$IFDEF WEAKREF}[Weak]{$ENDIF}
     fModel: TComponentModel;  // Consider remove the dependency of TComponentModel
     fTarget: TRttiMember;
     fTargetName: string;
@@ -51,8 +52,8 @@ type
     procedure DoInject(const instance: TValue; const arguments: array of TValue); virtual; abstract;
     procedure InitializeDependencies(out dependencies: TArray<TRttiType>); virtual; abstract;
   public
-    constructor Create(model: TComponentModel); overload;
-    constructor Create(model: TComponentModel; const targetName: string); overload;
+    constructor Create(const model: TComponentModel); overload;
+    constructor Create(const model: TComponentModel; const targetName: string); overload;
     procedure Initialize(target: TRttiMember); virtual;
     procedure Inject(const instance: TValue; const arguments: array of TValue);
     function GetDependencies: TArray<TRttiType>;
@@ -93,10 +94,10 @@ type
 
   TInjectionFactory = class(TInterfacedObject, IInjectionFactory)
   public
-    function CreateConstructorInjection(model: TComponentModel): IInjection;
-    function CreateMethodInjection(model: TComponentModel; const methodName: string): IInjection;
-    function CreatePropertyInjection(model: TComponentModel; const propertyName: string): IInjection;
-    function CreateFieldInjection(model: TComponentModel; const fieldName: string): IInjection;
+    function CreateConstructorInjection(const model: TComponentModel): IInjection;
+    function CreateMethodInjection(const model: TComponentModel; const methodName: string): IInjection;
+    function CreatePropertyInjection(const model: TComponentModel; const propertyName: string): IInjection;
+    function CreateFieldInjection(const model: TComponentModel; const fieldName: string): IInjection;
   end;
 
 implementation
@@ -111,12 +112,12 @@ uses
 
 {$REGION 'TInjectionBase'}
 
-constructor TInjectionBase.Create(model: TComponentModel);
+constructor TInjectionBase.Create(const model: TComponentModel);
 begin
   Create(model, '');
 end;
 
-constructor TInjectionBase.Create(model: TComponentModel;
+constructor TInjectionBase.Create(const model: TComponentModel;
   const targetName: string);
 begin
   inherited Create;
@@ -305,25 +306,25 @@ end;
 {$REGION 'TInjectionFactory'}
 
 function TInjectionFactory.CreateConstructorInjection(
-  model: TComponentModel): IInjection;
+  const model: TComponentModel): IInjection;
 begin
   Result := TConstructorInjection.Create(model);
 end;
 
 function TInjectionFactory.CreateMethodInjection(
-  model: TComponentModel; const methodName: string): IInjection;
+  const model: TComponentModel; const methodName: string): IInjection;
 begin
   Result := TMethodInjection.Create(model, methodName);
 end;
 
 function TInjectionFactory.CreatePropertyInjection(
-  model: TComponentModel; const propertyName: string): IInjection;
+  const model: TComponentModel; const propertyName: string): IInjection;
 begin
   Result := TPropertyInjection.Create(model, propertyName);
 end;
 
 function TInjectionFactory.CreateFieldInjection(
-  model: TComponentModel; const fieldName: string): IInjection;
+  const model: TComponentModel; const fieldName: string): IInjection;
 begin
   Result := TFieldInjection.Create(model, fieldName);
 end;

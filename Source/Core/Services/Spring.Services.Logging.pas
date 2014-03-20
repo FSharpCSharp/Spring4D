@@ -101,8 +101,8 @@ function DefaultLogger: ILogger;
 implementation
 
 uses
+  TypInfo, // solves [dcc32/dcc64/dccosx Hint] H2443 Inline function 'Guard.CheckNotNull' has not been expanded because unit 'System.TypInfo' is not specified in USES list
   Spring.Services;
-
 
 function LoggerFactory: ILoggerFactory;
 begin

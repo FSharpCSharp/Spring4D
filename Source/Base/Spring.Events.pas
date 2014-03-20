@@ -39,6 +39,10 @@ uses
 type
   PMethod = ^TMethod;
 
+
+  {$REGION 'TMethodInvocations'}
+
+{$IFDEF SUPPORTS_GENERIC_EVENTS}
   ///	<summary>
   ///	  Internal Use.
   ///	</summary>
@@ -86,7 +90,14 @@ type
   public
     constructor Create(methodTypeData: PTypeData; methodInvokeEvent: TMethodInvokeEvent);
   end;
+{$ENDIF SUPPORTS_GENERIC_EVENTS}
 
+  {$ENDREGION}
+
+
+  {$REGION 'TEvent'}
+
+{$IFDEF SUPPORTS_GENERIC_EVENTS}
   TEvent = class(TEventBase, TProc)
   private
     fInvocations: TMethodInvocations;
@@ -98,7 +109,14 @@ type
     constructor Create(typeInfo: PTypeInfo);
     destructor Destroy; override;
   end;
+{$ENDIF SUPPORTS_GENERIC_EVENTS}
 
+  {$ENDREGION}
+
+
+  {$REGION 'TEvent<T>'}
+
+{$IFDEF SUPPORTS_GENERIC_EVENTS}
   TEvent<T> = class(TEvent, IEvent<T>)
   private
     function GetInvoke: T;
@@ -113,6 +131,10 @@ type
   IMulticastNotifyEvent = IEvent<TNotifyEvent>;
 
   TMulticastNotifyEvent = TEvent<TNotifyEvent>;
+{$ENDIF SUPPORTS_GENERIC_EVENTS}
+
+  {$ENDREGION}
+
 
 implementation
 
@@ -123,6 +145,7 @@ uses
 
 {$REGION 'TMethodInfo'}
 
+{$IFDEF SUPPORTS_GENERIC_EVENTS}
 function AdditionalInfoOf(TypeData: PTypeData): Pointer;
 var
   P: PByte;
@@ -139,61 +162,6 @@ begin
     // Skip return type name and info
     Inc(P, P[0] + 1 + 4);
   Result := P;
-end;
-
-function GetTypeSize(typeInfo: PTypeInfo): Integer;
-var
-  typeData: PTypeData;
-const
-  COrdinalSizes: array[TOrdType] of Integer = (1, 1, 2, 2, 4, 4);
-  CFloatSizes: array[TFloatType] of Integer = (4, 8, SizeOf(Extended), 8, 8);
-  CSetSizes: array[TOrdType] of Integer = (1, 1, 2, 2, 4, 4);
-begin
-  case typeInfo^.Kind of
-    tkChar:
-      Result := 1;
-    tkWChar:
-      Result := 2;
-    tkInteger, tkEnumeration:
-      begin
-        typeData := GetTypeData(typeInfo);
-        Result := COrdinalSizes[typeData.OrdType];
-      end;
-    tkFloat:
-      begin
-        typeData := GetTypeData(typeInfo);
-        Result := CFloatSizes[typeData^.FloatType];
-      end;
-    tkString, tkLString, tkUString, tkWString, tkInterface, tkClass, tkClassRef, tkDynArray, tkPointer:
-      Result := SizeOf(Pointer);
-    tkMethod:
-      Result := SizeOf(TMethod);
-    tkInt64:
-      Result := 8;
-    tkVariant:
-      Result := 16;
-    tkSet:
-      begin
-        // big sets have no typeInfo for now
-        typeData := GetTypeData(typeInfo);
-        Result := CSetSizes[typeData^.OrdType];
-      end;
-    tkRecord:
-      begin
-        typeData := GetTypeData(typeInfo);
-        Result := typeData.RecSize;
-      end;
-    tkArray:
-      begin
-        typeData := GetTypeData(typeInfo);
-        Result := typeData.ArrayData.Size;
-      end;
-    else
-      begin
-        Assert(False, 'Unsupported type');
-        Result := -1;
-      end;
-  end;
 end;
 
 procedure InvokeMethod(const Method: TMethod;
@@ -225,6 +193,8 @@ asm
   jz @@no_stack
 
   // stack address alignment
+  {TODO -o##jwp -cOSX32/MACOS : Research 16-byte stack alignment: http://docwiki.embarcadero.com/RADStudio/XE5/en/Delphi_Considerations_for_Cross-Platform_Applications#Stack_Alignment_Issue_on_OS_X }
+  // http://docwiki.embarcadero.com/RADStudio/XE5/en/Conditional_compilation_(Delphi)
   add ecx,PointerSize-1
   and ecx,not(PointerSize-1)
   and ecx,$ffff
@@ -297,6 +267,8 @@ constructor TMethodInvocations.TMethodInfo.Create(typeData: PTypeData);
 
   function Align4(Value: Integer): Integer;
   begin
+    {TODO -o##jwp -cOSX32/MACOS : Research 16-byte stack alignment: http://docwiki.embarcadero.com/RADStudio/XE5/en/Delphi_Considerations_for_Cross-Platform_Applications#Stack_Alignment_Issue_on_OS_X }
+    // http://docwiki.embarcadero.com/RADStudio/XE5/en/Conditional_compilation_(Delphi)
     Result := (Value + 3) and not 3;
   end;
 
@@ -326,6 +298,8 @@ begin
 
   for I := 0 to typeData^.ParamCount - 1 do
   begin
+    if not Assigned(ParamInfos^[I]) then
+      raise EInvalidOperationException.CreateRes(@SNoTypeInfo);
 {$IFNDEF CPUX64}
     if PassByRef(P, ParamInfos, I) then
       Size := 4
@@ -356,12 +330,14 @@ begin
     StackSize := 32;
 {$ENDIF}
 end;
+{$ENDIF SUPPORTS_GENERIC_EVENTS}
 
 {$ENDREGION}
 
 
 {$REGION 'TMethodInvocations'}
 
+{$IFDEF SUPPORTS_GENERIC_EVENTS}
 constructor TMethodInvocations.Create(methodTypeData: PTypeData;
   methodInvokeEvent: TMethodInvokeEvent);
 begin
@@ -404,6 +380,8 @@ asm
         //JMP     ECX    // Data Exec. Prevention: Jumping into a GetMem allocated memory block
 
         // stack address alignment
+        {TODO -o##jwp -cOSX32/MACOS : Research 16-byte stack alignment: http://docwiki.embarcadero.com/RADStudio/XE5/en/Delphi_Considerations_for_Cross-Platform_Applications#Stack_Alignment_Issue_on_OS_X }
+        // http://docwiki.embarcadero.com/RADStudio/XE5/en/Conditional_compilation_(Delphi)
         // In cdecl call conversion, the caller will clear the stack
         CMP     DWORD PTR [EAX].fMethodInfo.CallConvention, ccCdecl
         JZ      @@SimpleRet
@@ -467,12 +445,14 @@ asm
         ADD     RSP, $28
 end;
 {$ENDIF}
+{$ENDIF SUPPORTS_GENERIC_EVENTS}
 
 {$ENDREGION}
 
 
 {$REGION 'TEvent'}
 
+{$IFDEF SUPPORTS_GENERIC_EVENTS}
 procedure GetMethodTypeData(Method: TRttiMethod; var TypeData: PTypeData);
 
   procedure WriteByte(var Dest: PByte; b: Byte);
@@ -482,10 +462,23 @@ procedure GetMethodTypeData(Method: TRttiMethod; var TypeData: PTypeData);
   end;
 
   procedure WritePackedShortString(var Dest: PByte; const s: string);
+{$IFNDEF NEXTGEN}
   begin
     PShortString(Dest)^ := ShortString(s);
     Inc(Dest, Dest[0] + 1);
   end;
+{$ELSE}
+  var
+    buffer: TBytes;
+  begin
+    buffer := TEncoding.ANSI.GetBytes(s);
+    if (Length(buffer) > 255) then SetLength(buffer, 255);
+    Dest^ := Length(buffer);
+    Inc(Dest);
+    Move(buffer[0], Dest^, Length(buffer));
+    Inc(Dest, Length(buffer));
+  end;
+{$ENDIF}
 
   procedure WritePointer(var Dest: PByte; p: Pointer);
   begin
@@ -537,6 +530,8 @@ var
   ctx: TRttiContext;
   method: TRttiMethod;
 begin
+  //TODO: If Embt ever adds TRttiMethodType.CreateImplementation this could be done in pure pascal way
+
   fTypeInfo := typeInfo;
   if not Assigned(typeInfo) then
     raise EInvalidOperationException.CreateRes(@SNoTypeInfo);
@@ -601,12 +596,14 @@ asm
   mov eax,[eax].fInvoke.Data
 {$ENDIF}
 end;
+{$ENDIF SUPPORTS_GENERIC_EVENTS}
 
 {$ENDREGION}
 
 
 {$REGION 'TEvent<T>'}
 
+{$IFDEF SUPPORTS_GENERIC_EVENTS}
 constructor TEvent<T>.Create;
 begin
   inherited Create(TypeInfo(T));
@@ -634,6 +631,7 @@ begin
   else
     PMethod(@Result)^ := fInvoke;
 end;
+{$ENDIF SUPPORTS_GENERIC_EVENTS}
 
 {$ENDREGION}
 

@@ -89,6 +89,7 @@ type
 ///	<seealso cref="GetByteLength(RawByteString)" />
 function GetByteLength(const s: string): Integer; overload; inline;
 
+{$IFNDEF NEXTGEN}
 ///	<summary>
 ///	  Retrieves the byte length of a WideString.
 ///	</summary>
@@ -112,6 +113,7 @@ function GetByteLength(const s: WideString): Integer; overload; inline;
 ///	<seealso cref="GetByteLength(string)" />
 ///	<seealso cref="GetByteLength(WideString)" />
 function GetByteLength(const s: RawByteString): Integer; overload; inline;
+{$ENDIF NEXTGEN}
 
 
 ///	<summary>
@@ -158,6 +160,10 @@ function SplitString(const buffer: PChar): TStringDynArray; overload;
 function SplitNullTerminatedStrings(const buffer: PChar): TStringDynArray;
   deprecated 'Use the SplitString(PChar) function instead.';
 
+///	<summary>
+///	  Returns <c>True</c> if the type is a nullable type.
+///	</summary>
+function IsNullableType(typeInfo: PTypeInfo): Boolean;
 
 ///	<summary>
 ///	  Try getting the underlying type name of a nullable type.
@@ -318,16 +324,29 @@ end;
 class function TEnum.GetNames<T>: TStringDynArray;
 var
   typeData: PTypeData;
+{$IFDEF NEXTGEN}
+  p: TTypeInfoFieldAccessor;
+{$ELSE}
   p: PShortString;
+{$ENDIF}
   i: Integer;
 begin
   typeData := TEnum.GetEnumTypeData<T>;
   SetLength(Result, typeData.MaxValue - typeData.MinValue + 1);
+{$IFDEF NEXTGEN}
+  p := typedata^.NameListFld;
+{$ELSE}
   p := @typedata.NameList;
+{$ENDIF}
   for i := 0 to High(Result) do
   begin
+{$IFDEF NEXTGEN}
+    Result[i] := p.ToString;
+    p.SetData(p.Tail);
+{$ELSE}
     Result[i] := UTF8ToString(p^);
     Inc(PByte(p), Length(p^)+1);
+{$ENDIF}
   end;
 end;
 
@@ -419,6 +438,7 @@ begin
   Result := Length(s) * SizeOf(Char);
 end;
 
+{$IFNDEF NEXTGEN}
 function GetByteLength(const s: WideString): Integer;
 begin
   Result := Length(s) * SizeOf(WideChar);
@@ -428,6 +448,7 @@ function GetByteLength(const s: RawByteString): Integer;
 begin
   Result := Length(s);
 end;
+{$ENDIF}
 
 function SplitString(const buffer: string; const separators: TSysCharSet;
   removeEmptyEntries: Boolean): TStringDynArray;

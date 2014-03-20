@@ -213,7 +213,7 @@ const
     $bcb4666d, $b8757bda, $b5365d03, $b1f740b4
   );
 
-{$IFNDEF CPUX64}
+{$IFDEF CPUX86}
   {$DEFINE USE_ASM}
 {$ENDIF}
 

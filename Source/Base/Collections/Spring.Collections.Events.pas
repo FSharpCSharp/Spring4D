@@ -48,7 +48,8 @@ type
 
 implementation
 
-{ TCollectionChangedEventImpl<T> }
+
+{$REGION 'TCollectionChangedEventImpl<T>'}
 
 constructor TCollectionChangedEventImpl<T>.Create;
 begin
@@ -92,5 +93,8 @@ procedure TCollectionChangedEventImpl<T>.Remove(
 begin
   inherited Remove(TMethod(handler));
 end;
+
+{$ENDREGION}
+
 
 end.

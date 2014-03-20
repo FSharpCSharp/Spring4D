@@ -39,6 +39,7 @@ uses
 type
   TLifetimeManagerBase = class abstract(TInterfacedObject, ILifetimeManager, IInterface)
   private
+    {$IFDEF WEAKREF}[Weak]{$ENDIF}
     fModel: TComponentModel;
     function GetActivator: IComponentActivator;
   protected
@@ -49,7 +50,7 @@ type
     property ComponentActivator: IComponentActivator read GetActivator;
     property Model: TComponentModel read fModel;
   public
-    constructor Create(model: TComponentModel);
+    constructor Create(const model: TComponentModel);
     function GetInstance(const resolver: IDependencyResolver): TValue; overload; virtual; abstract;
     procedure ReleaseInstance(const instance: TValue); virtual; abstract;
   end;
@@ -76,7 +77,7 @@ type
     procedure HandleValueChanged(sender: TObject; const item: TFunc<TValue>; action: TCollectionChangedAction);
     function CreateHolder(const instance: TValue): TFunc<TValue>; virtual;
   public
-    constructor Create(model: TComponentModel);
+    constructor Create(const model: TComponentModel);
     function GetInstance(const resolver: IDependencyResolver): TValue; override;
     procedure ReleaseInstance(const instance: TValue); override;
   end;
@@ -85,7 +86,7 @@ type
   private
     fPool: IObjectPool;
   public
-    constructor Create(model: TComponentModel);
+    constructor Create(const model: TComponentModel);
     function GetInstance(const resolver: IDependencyResolver): TValue; override;
     procedure ReleaseInstance(const instance: TValue); override;
   end;
@@ -100,7 +101,7 @@ uses
 
 {$REGION 'TLifetimeManagerBase'}
 
-constructor TLifetimeManagerBase.Create(model: TComponentModel);
+constructor TLifetimeManagerBase.Create(const model: TComponentModel);
 begin
   Guard.CheckNotNull(model, 'model');
   inherited Create;
@@ -180,6 +181,7 @@ begin
   if Assigned(fInstance) then
   begin
     DoBeforeDestruction(fInstance);
+    fInstance:=nil;
   end;
   inherited Destroy;
 end;
@@ -218,10 +220,10 @@ procedure TTransientLifetimeManager.ReleaseInstance(const instance: TValue);
 begin
   Guard.CheckNotNull(instance, 'instance');
   DoBeforeDestruction(instance);
+{$IFNDEF AUTOREFCOUNT}
   if instance.IsObject then
-  begin
     instance.AsObject.Free;
-  end;
+{$ENDIF}
 end;
 
 {$ENDREGION}
@@ -229,7 +231,7 @@ end;
 
 {$REGION 'TSingletonPerThreadLifetimeManager'}
 
-constructor TSingletonPerThreadLifetimeManager.Create(model: TComponentModel);
+constructor TSingletonPerThreadLifetimeManager.Create(const model: TComponentModel);
 begin
   inherited Create(model);
   fInstances := TCollections.CreateDictionary<TThreadID, TFunc<TValue>>;
@@ -282,7 +284,7 @@ end;
 
 {$REGION 'TPooledLifetimeManager'}
 
-constructor TPooledLifetimeManager.Create(model: TComponentModel);
+constructor TPooledLifetimeManager.Create(const model: TComponentModel);
 begin
   inherited Create(model);
   fPool := TSimpleObjectPool.Create(model.ComponentActivator, model.MinPoolsize, model.MaxPoolsize);

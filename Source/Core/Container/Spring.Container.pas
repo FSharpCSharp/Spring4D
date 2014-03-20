@@ -65,7 +65,7 @@ type
     function GetServiceResolver: IServiceResolver;
   {$ENDREGION}
     procedure CheckPoolingSupported(componentType: TRttiType);
-    function CreateLifetimeManager(model: TComponentModel): ILifetimeManager;
+    function CreateLifetimeManager(const model: TComponentModel): ILifetimeManager;
     procedure InitializeInspectors; virtual;
     property ComponentBuilder: IComponentBuilder read GetComponentBuilder;
     property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
@@ -108,9 +108,14 @@ type
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(const name: string): Boolean; overload;
 
+{$IFNDEF AUTOREFCOUNT}
     { Experimental Release Methods }
     procedure Release(instance: TObject); overload;
     procedure Release(instance: IInterface); overload;
+{$ELSE}
+    // Dangerous since the instance should be cleared by this function but
+    // passing as var is not possible here
+{$ENDIF}
 
     property Context: IContainerContext read GetContext;
   end;
@@ -121,11 +126,12 @@ type
   ///	</summary>
   TServiceLocatorAdapter = class(TInterfacedObject, IServiceLocator)
   private
+    {$IFDEF WEAKREF}[Weak]{$ENDIF}
     fContainer: TContainer;
     class var GlobalInstance: IServiceLocator;
     class constructor Create;
   public
-    constructor Create(container: TContainer);
+    constructor Create(const container: TContainer);
 
     function GetService(serviceType: PTypeInfo): TValue; overload;
     function GetService(serviceType: PTypeInfo; const name: string): TValue; overload;
@@ -150,7 +156,19 @@ type
 
 {$ENDREGION}
 
+procedure CleanupGlobalContainer;
 
+///<summary>
+///    Returns global instance of the container, calling this function in ARC
+///    environment will cause TContainer to increment the reference count for
+///    each call.
+///    Most functions will therefore decrement the reference count upon exiting,
+///    this may not be a problem for most functions but poses a problem for main
+///    function that (on mobile platofrms) may never exit thus making it
+///    impossible to release global container prior exit.
+///</summary>
+//TODO: It may be better to create a record that wraps the container in order to stop
+//ARC from incrementing/decrementing the count each time GlobalCOntainer is accessed
 function GlobalContainer: TContainer; inline;
 
 implementation
@@ -201,6 +219,18 @@ begin
   fRegistrationManager.Free;
   fBuilder.ClearInspectors;
   fRegistry.UnregisterAll;
+
+  // Since many of these object hold Self as a field, it is better (and on
+  // Android required) to release these interfaces here rather than in
+  // CleanupInstance (which on android produces a lots of AVs probably due
+  // to calling virtual __ObjRelease on almost destroyed object)
+  fExtensions:=nil;
+  fInjectionFactory:=nil;
+  fDependencyResolver:=nil;
+  fServiceResolver:=nil;
+  fBuilder:=nil;
+  fRegistry:=nil;
+
   inherited Destroy;
 end;
 
@@ -261,7 +291,7 @@ begin
 end;
 
 function TContainer.CreateLifetimeManager(
-  model: TComponentModel): ILifetimeManager;
+  const model: TComponentModel): ILifetimeManager;
 begin
   Guard.CheckNotNull(model, 'model');
   case model.LifetimeType of
@@ -443,6 +473,7 @@ begin
   Result := fServiceResolver.ResolveAll(serviceType);
 end;
 
+{$IFNDEF AUTOREFCOUNT}
 procedure TContainer.Release(instance: TObject);
 var
   model: TComponentModel;
@@ -462,6 +493,7 @@ begin
   Guard.CheckNotNull(instance, 'instance');
   {TODO -oOwner -cGeneral : Release instance of IInterface }
 end;
+{$ENDIF}
 
 {$ENDREGION}
 
@@ -478,7 +510,7 @@ begin
     end);
 end;
 
-constructor TServiceLocatorAdapter.Create(container: TContainer);
+constructor TServiceLocatorAdapter.Create(const container: TContainer);
 begin
   inherited Create;
   fContainer := container;
@@ -525,5 +557,11 @@ end;
 
 {$ENDREGION}
 
+
+procedure CleanupGlobalContainer;
+begin
+  TServiceLocatorAdapter.GlobalInstance:=nil;
+  FreeAndNil(TContainer.GlobalInstance);
+end;
 
 end.

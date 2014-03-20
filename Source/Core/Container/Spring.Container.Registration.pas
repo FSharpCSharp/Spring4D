@@ -56,9 +56,9 @@ type
     constructor Create(const context: IContainerContext);
     destructor Destroy; override;
     function RegisterComponent(componentTypeInfo: PTypeInfo): TComponentModel;
-    procedure RegisterService(model: TComponentModel; serviceType: PTypeInfo); overload;
-    procedure RegisterService(model: TComponentModel; serviceType: PTypeInfo; const name: string); overload;
-    procedure RegisterDefault(model: TComponentModel; serviceType: PTypeInfo);
+    procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo); overload;
+    procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo; const name: string); overload;
+    procedure RegisterDefault(const model: TComponentModel; serviceType: PTypeInfo);
     procedure UnregisterAll;
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(const name: string): Boolean; overload;
@@ -113,7 +113,7 @@ type
     function AsSingleton(refCounting: TRefCounting): TRegistration; overload;
     function AsSingletonPerThread: TRegistration;
     function AsTransient: TRegistration;
-    function AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration;
+    function AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration; {$IFDEF CPUARM}experimental;{$ENDIF}
 
     function AsDefault: TRegistration; overload;
     function AsDefault(serviceType: PTypeInfo): TRegistration; overload;
@@ -158,7 +158,7 @@ type
     function AsSingleton(refCounting: TRefCounting): TRegistration<T>; overload;
     function AsSingletonPerThread: TRegistration<T>;
     function AsTransient: TRegistration<T>;
-    function AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration<T>;
+    function AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration<T>; {$IFDEF CPUARM}experimental;{$ENDIF}
 
     function AsDefault: TRegistration<T>; overload;
     function AsDefault(serviceType: PTypeInfo): TRegistration<T>; overload;
@@ -305,13 +305,13 @@ begin
   fModels.Clear;
 end;
 
-procedure TComponentRegistry.RegisterService(model: TComponentModel;
+procedure TComponentRegistry.RegisterService(const model: TComponentModel;
   serviceType: PTypeInfo);
 begin
   RegisterService(model, serviceType, '');
 end;
 
-procedure TComponentRegistry.RegisterService(model: TComponentModel;
+procedure TComponentRegistry.RegisterService(const model: TComponentModel;
   serviceType: PTypeInfo; const name: string);
 var
   models: IList<TComponentModel>;
@@ -337,7 +337,7 @@ begin
   end;
 end;
 
-procedure TComponentRegistry.RegisterDefault(model: TComponentModel;
+procedure TComponentRegistry.RegisterDefault(const model: TComponentModel;
   serviceType: PTypeInfo);
 begin
   if not model.HasService(serviceType) then
@@ -742,7 +742,9 @@ end;
 
 function TRegistration<T>.AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration<T>;
 begin
+{$WARN SYMBOL_EXPERIMENTAL OFF}
   fRegistration.AsPooled(minPoolSize, maxPoolSize);
+{$WARN SYMBOL_EXPERIMENTAL ON}
   Result := Self;
 end;
 

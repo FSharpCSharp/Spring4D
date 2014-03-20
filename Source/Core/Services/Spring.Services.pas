@@ -180,7 +180,7 @@ type
     constructor Create(minPoolSize, maxPoolSize: Integer);
     property MinPoolsize: Integer read fMinPoolsize;
     property MaxPoolsize: Integer read fMaxPoolsize;
-  end;
+  end {$IFDEF CPUARM}experimental{$ENDIF};
 
   ///	<summary>
   ///	  Applies the <c>InjectAttribute</c> to injectable instance members of a
