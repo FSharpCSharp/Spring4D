@@ -8,10 +8,10 @@ implementation
 
 uses
   Spring.Container,
-  Spring.Services,
   uOrder,
   uOrderInterfaces,
-  uOrderProcessor;
+  uOrderProcessor,
+  uRegistrations;
 
 procedure DoOrderProcessing;
 var
@@ -20,18 +20,14 @@ var
   OrderValidator: IOrderValidator;
   OrderEntry: IOrderEntry;
 begin
-  GlobalContainer.Build;
+  RegisterTypes(GlobalContainer);
   Order := TOrder.Create;
   try
-    OrderValidator := ServiceLocator.GetService<IOrderValidator>;
-    OrderEntry := ServiceLocator.GetService<IOrderEntry>;
+    OrderValidator := GlobalContainer.Resolve<IOrderValidator>;
+    OrderEntry := GlobalContainer.Resolve<IOrderEntry>;
     OrderProcessor := TOrderProcessor.Create(OrderValidator, OrderEntry);
     if OrderProcessor.ProcessOrder(Order) then
-    begin
-      {$IFDEF CONSOLEAPP}
       Writeln('Order successfully processed....');
-      {$ENDIF}
-    end;
   finally
     Order.Free;
   end;

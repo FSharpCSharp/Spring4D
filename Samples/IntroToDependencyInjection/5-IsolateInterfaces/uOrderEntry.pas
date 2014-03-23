@@ -19,9 +19,7 @@ implementation
 function TOrderEntry.EnterOrderIntoDatabase(aOrder: TOrder): Boolean;
 begin
   Result := Assigned(aOrder);
-  {$IFDEF CONSOLEAPP}
-  WriteLn('Entering order into the database....');
-  {$ENDIF}
+  Writeln('Entering order into the database....');
 end;
 
 end.

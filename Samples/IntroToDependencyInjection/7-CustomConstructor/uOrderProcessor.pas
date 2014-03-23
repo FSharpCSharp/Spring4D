@@ -6,11 +6,6 @@ uses
   uOrder,
   uOrderInterfaces;
 
-implementation
-
-uses
-  Spring.Container;
-
 type
   TOrderProcessor = class(TInterfacedObject, IOrderProcessor)
   private
@@ -20,6 +15,8 @@ type
     constructor Create(aOrderValidator: IOrderValidator; aOrderEntry: IOrderEntry);
     function ProcessOrder(aOrder: TOrder): Boolean;
   end;
+
+implementation
 
 { TOrderProcessor }
 
@@ -36,16 +33,8 @@ begin
   Result := False;
   OrderIsValid := FOrderValidator.ValidateOrder(aOrder);
   if OrderIsValid then
-  begin
     Result := FOrderEntry.EnterOrderIntoDatabase(aOrder);
-  end;
-
-  {$IFDEF CONSOLEAPP}
   Writeln('Order has been processed....');
-  {$ENDIF}
 end;
-
-initialization
-  GlobalContainer.RegisterType<TOrderProcessor>;
 
 end.

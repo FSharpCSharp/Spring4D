@@ -20,9 +20,7 @@ implementation
 function TOrderEntryMock.EnterOrderIntoDatabase(aOrder: TOrder): Boolean;
 begin
   Result := True;
-  {$IFDEF CONSOLEAPP}
   Writeln('TOrderEntryMock.EnterOrderIntoDatabase called');
-  {$ENDIF}
 end;
 
 end.

@@ -14,15 +14,12 @@ type
 
 implementation
 
-uses
-  Spring.Container;
-
 { TOrderEntry }
 
 function TOrderEntry.EnterOrderIntoDatabase(aOrder: TOrder): Boolean;
 begin
   Result := Assigned(aOrder);
-  WriteLn('Entering order into the database....');
+  Writeln('Entering order into the database....');
 end;
 
 end.

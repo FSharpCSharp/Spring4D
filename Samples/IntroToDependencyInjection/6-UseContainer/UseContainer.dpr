@@ -9,7 +9,8 @@ uses
   uOrderEntry in 'uOrderEntry.pas',
   uOrderInterfaces in 'uOrderInterfaces.pas',
   uOrderProcessor in 'uOrderProcessor.pas',
-  uOrderValidator in 'uOrderValidator.pas';
+  uOrderValidator in 'uOrderValidator.pas',
+  uRegistrations in 'uRegistrations.pas';
 
 begin
   try

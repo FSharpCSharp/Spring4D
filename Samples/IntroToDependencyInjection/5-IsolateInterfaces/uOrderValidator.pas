@@ -19,9 +19,7 @@ implementation
 function TOrderValidator.ValidateOrder(aOrder: TOrder): Boolean;
 begin
   Result := Assigned(aOrder);
-  {$IFDEF CONSOLEAPP}
-  WriteLn('Validating Order....');
-  {$ENDIF}
+  Writeln('Validating Order....');
 end;
 
 end.
