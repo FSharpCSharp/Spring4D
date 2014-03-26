@@ -618,7 +618,10 @@ begin
       begin
         instance := value.GetReferenceToRawData;
         valueField.SetValue(instance, underlyingValue);
-        hasValueField.SetValue(instance, '@');
+        if underlyingValue.IsEmpty then
+          hasValueField.SetValue(instance, '')
+        else
+          hasValueField.SetValue(instance, '@');
       end;
     end;
   end;

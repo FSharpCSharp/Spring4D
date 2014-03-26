@@ -256,13 +256,11 @@ type
   ///	</typeparam>
   Nullable<T> = record
   private
-    const CHasValueFlag = '@';  // DO NOT LOCALIZE
-  strict private
     fValue: T;
     fHasValue: string;
     function GetValue: T;
     function GetHasValue: Boolean;
-  private
+
     ///	<summary>
     ///	  Internal use. Marks the current instance as null.
     ///	</summary>
@@ -1304,6 +1302,9 @@ end;
 
 
 {$REGION 'Nullable<T>'}
+
+const
+  CHasValueFlag = '@';
 
 constructor Nullable<T>.Create(const value: T);
 begin
