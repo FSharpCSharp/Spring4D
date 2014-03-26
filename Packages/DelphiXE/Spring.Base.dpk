@@ -22,6 +22,8 @@ package Spring.Base;
 {$WRITEABLECONST OFF}
 {$MINENUMSIZE 1}
 {$IMAGEBASE $400000}
+{$DESCRIPTION 'Spring4D Base package'}
+{$LIBSUFFIX '.DelphiXE'}
 {$RUNONLY}
 {$IMPLICITBUILD OFF}
 

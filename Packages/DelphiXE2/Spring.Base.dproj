@@ -70,6 +70,8 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
+			<DllSuffix>.DelphiXE2</DllSuffix>
+			<DCC_Description>Spring4D Base package</DCC_Description>
 			<DCC_OutputNeverBuildDcps>true</DCC_OutputNeverBuildDcps>
 			<DCC_UnitSearchPath>..\..\Source\Base;..\..\Source\Base\Collections;..\..\Source\Base\Reflection;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>

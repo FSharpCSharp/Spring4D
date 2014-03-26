@@ -57,6 +57,8 @@
         <Base>true</Base>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
+        <DllSuffix>.DelphiXE5</DllSuffix>
+        <DCC_Description>Spring4D Base package</DCC_Description>
         <GenPackage>true</GenPackage>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;Vcl;$(DCC_Namespace)</DCC_Namespace>
         <VerInfo_Locale>2052</VerInfo_Locale>

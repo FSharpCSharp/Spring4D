@@ -22,6 +22,8 @@ package Spring.Extensions;
 {$WRITEABLECONST OFF}
 {$MINENUMSIZE 1}
 {$IMAGEBASE $400000}
+{$DESCRIPTION 'Spring4D Extensions package'}
+{$LIBSUFFIX '.DelphiXE'}
 {$RUNONLY}
 {$IMPLICITBUILD OFF}
 
