@@ -803,7 +803,6 @@ type
     procedure Add(const item: T);
     procedure AddRange(const collection: array of T); overload;
     procedure AddRange(const collection: IEnumerable<T>); overload;
-    procedure AddRange(const collection: TEnumerable<T>); overload;
 
     ///	<summary>
     ///	  Removes all items from the ICollection&lt;T&gt;.
@@ -840,12 +839,10 @@ type
     function Remove(const item: T): Boolean;
     procedure RemoveRange(const collection: array of T); overload;
     procedure RemoveRange(const collection: IEnumerable<T>); overload;
-    procedure RemoveRange(const collection: TEnumerable<T>); overload;
 
     function Extract(const item: T): T;
     procedure ExtractRange(const collection: array of T); overload;
     procedure ExtractRange(const collection: IEnumerable<T>); overload;
-    procedure ExtractRange(const collection: TEnumerable<T>); overload;
 
     ///	<summary>
     ///	  Gets a value indicating whether the ICollection&lt;T&gt; is read-only.
@@ -964,7 +961,6 @@ type
     procedure Insert(index: Integer; const item: T);
     procedure InsertRange(index: Integer; const collection: array of T); overload;
     procedure InsertRange(index: Integer; const collection: IEnumerable<T>); overload;
-    procedure InsertRange(index: Integer; const collection: TEnumerable<T>); overload;
 
     ///	<summary>
     ///	  Removes the item at the specified index.

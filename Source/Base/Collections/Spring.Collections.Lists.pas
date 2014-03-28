@@ -134,7 +134,6 @@ type
     constructor Create(const comparer: IComparer<T>; ownsObjects: Boolean = True); overload;
     constructor Create(const collection: array of T; ownsObjects: Boolean = True); overload;
     constructor Create(const collection: IEnumerable<T>; ownsObjects: Boolean = True); overload;
-    constructor Create(const collection: TEnumerable<T>; ownsObjects: Boolean = True); overload;
 
     property OwnsObjects: Boolean read GetOwnsObjects write SetOwnsObjects;
   end;
@@ -572,13 +571,6 @@ begin
 end;
 
 constructor TObjectList<T>.Create(const collection: IEnumerable<T>;
-  ownsObjects: Boolean);
-begin
-  inherited Create(collection);
-  fOwnsObjects := ownsObjects;
-end;
-
-constructor TObjectList<T>.Create(const collection: TEnumerable<T>;
   ownsObjects: Boolean);
 begin
   inherited Create(collection);
