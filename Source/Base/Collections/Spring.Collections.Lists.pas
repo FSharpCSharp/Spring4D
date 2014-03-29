@@ -224,7 +224,7 @@ type
 implementation
 
 uses
-  SysUtils,          TypInfo,
+  SysUtils,
   Spring.ResourceStrings;
 
 
