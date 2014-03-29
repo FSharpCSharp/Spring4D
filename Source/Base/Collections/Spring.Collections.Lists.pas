@@ -574,8 +574,7 @@ end;
 
 constructor TObjectList<T>.Create;
 begin
-  inherited Create;
-  fOwnsObjects := True;
+  Create(True);
 end;
 
 constructor TObjectList<T>.Create(ownsObjects: Boolean);
