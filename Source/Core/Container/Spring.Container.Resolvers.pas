@@ -325,7 +325,7 @@ constructor TDependencyResolver.Create(const context: IContainerContext;
   const registry: IComponentRegistry);
 begin
   inherited Create(context, registry);
-  fDependencyTypes := TCollections.CreateList<TRttiType>;
+  fDependencyTypes := TCollections.CreateList<TRttiType>(False);
   fLock := TCriticalSection.Create;
 end;
 

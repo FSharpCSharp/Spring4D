@@ -325,7 +325,7 @@ begin
   model.Services[serviceName] := serviceType;
   if not fServiceTypeMappings.TryGetValue(serviceType, models) then
   begin
-    models := TCollections.CreateList<TComponentModel>;
+    models := TCollections.CreateList<TComponentModel>(False);
     fServiceTypeMappings.AddOrSetValue(serviceType, models);
   end;
   models.Add(model);
@@ -423,7 +423,7 @@ begin
   end
   else
   begin
-    Result := TCollections.CreateList<TComponentModel>;
+    Result := TCollections.CreateList<TComponentModel>(False);
   end;
 end;
 

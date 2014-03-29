@@ -71,6 +71,7 @@ type
   ISet<T> = interface;
 
   IObjectList = interface;
+  IInterfaceList = interface;
 
   IGrouping<TKey, TElement> = interface;
   ILookup<TKey, TElement> = interface;
@@ -1014,6 +1015,11 @@ type
 
   IObjectList = interface(IList<TObject>)
     ['{78A32DC5-1A5B-4191-9CA5-006CD85CF1AA}']
+    // DO NOT ADD ANY METHODS HERE!!!
+  end;
+
+  IInterfaceList = interface(IList<IInterface>)
+    ['{B6BF9A6E-797C-4982-8D0D-B935E43D917E}']
     // DO NOT ADD ANY METHODS HERE!!!
   end;
 
@@ -2052,10 +2058,15 @@ type
     class function CreateList<T>(const values: array of T): IList<T>; overload; static;
     class function CreateList<T>(const values: IEnumerable<T>): IList<T>; overload; static;
     class function CreateList<T: class>(ownsObjects: Boolean): IList<T>; overload; static;
-    class function CreateList<T: class>(ownsObjects: Boolean; const comparer: IComparer<T>): IList<T>; overload; static;
+    class function CreateList<T: class>(const comparer: IComparer<T>; ownsObjects: Boolean): IList<T>; overload; static;
     class function CreateObjectList<T: class>(ownsObjects: Boolean = True): IList<T>; overload; static;
-    class function CreateObjectList<T: class>(ownsObjects: Boolean; const comparer: IComparer<T>): IList<T>; overload; static;
+    class function CreateObjectList<T: class>(const comparer: IComparer<T>; ownsObjects: Boolean = True): IList<T>; overload; static;
     class function CreateObjectList<T: class>(const values: array of T; ownsObjects: Boolean = True): IList<T>; overload; static;
+    class function CreateObjectList<T: class>(const values: IEnumerable<T>; ownsObjects: Boolean = True): IList<T>; overload; static;
+    class function CreateInterfaceList<T: IInterface>: IList<T>; overload; static;
+    class function CreateInterfaceList<T: IInterface>(const comparer: IComparer<T>): IList<T>; overload; static;
+    class function CreateInterfaceList<T: IInterface>(const values: array of T): IList<T>; overload; static;
+    class function CreateInterfaceList<T: IInterface>(const values: IEnumerable<T>): IList<T>; overload; static;
 
     class function CreateDictionary<TKey, TValue>: IDictionary<TKey, TValue>; overload; static;
     class function CreateDictionary<TKey, TValue>(capacity: Integer): IDictionary<TKey, TValue>; overload; static;
@@ -2164,30 +2175,38 @@ end;
 
 class function TCollections.CreateList<T>(ownsObjects: Boolean): IList<T>;
 begin
-  Result := TCollections.CreateList<T>(ownsObjects, TComparer<T>.Default());
+  Result := TObjectList<T>.Create(ownsObjects) as IList<T>;
 end;
 
-class function TCollections.CreateList<T>(ownsObjects: Boolean;
-  const comparer: IComparer<T>): IList<T>;
+class function TCollections.CreateList<T>(const comparer: IComparer<T>;
+  ownsObjects: Boolean): IList<T>;
 begin
-  Result := TObjectList<T>.Create(comparer, ownsObjects);
+  Result := TObjectList<T>.Create(comparer, ownsObjects) as IList<T>;
 end;
 
 class function TCollections.CreateObjectList<T>(ownsObjects: Boolean): IList<T>;
 begin
-  Result := TObjectList<T>.Create(TComparer<T>.Default(), ownsObjects);
+  Result := TObjectList<T>.Create(ownsObjects) as IList<T>;
 end;
 
-class function TCollections.CreateObjectList<T>(ownsObjects: Boolean;
-  const comparer: IComparer<T>): IList<T>;
+class function TCollections.CreateObjectList<T>(const comparer: IComparer<T>;
+  ownsObjects: Boolean): IList<T>;
 begin
-  Result := TObjectList<T>.Create(comparer, ownsObjects);
+  Result := TObjectList<T>.Create(comparer, ownsObjects) as IList<T>;
 end;
 
 class function TCollections.CreateObjectList<T>(const values: array of T;
   ownsObjects: Boolean): IList<T>;
 begin
-  Result := TObjectList<T>.Create(values, ownsObjects);
+  Result := TObjectList<T>.Create(ownsObjects) as IList<T>;
+  Result.AddRange(values);
+end;
+
+class function TCollections.CreateObjectList<T>(const values: IEnumerable<T>;
+  ownsObjects: Boolean): IList<T>;
+begin
+  Result := TObjectList<T>.Create(ownsObjects) as IList<T>;
+  Result.AddRange(values);
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>(
@@ -2196,6 +2215,31 @@ class function TCollections.CreateDictionary<TKey, TValue>(
 begin
   Guard.CheckNotNull(dictionary, 'dictionary');
   Result := TDictionary<TKey, TValue>.Create(dictionary, ownership);
+end;
+
+class function TCollections.CreateInterfaceList<T>: IList<T>;
+begin
+  Result := TInterfaceList<T>.Create as IList<T>;
+end;
+
+class function TCollections.CreateInterfaceList<T>(
+  const comparer: IComparer<T>): IList<T>;
+begin
+  Result := TInterfaceList<T>.Create(comparer) as IList<T>;
+end;
+
+class function TCollections.CreateInterfaceList<T>(
+  const values: array of T): IList<T>;
+begin
+  Result := TInterfaceList<T>.Create as IList<T>;
+  Result.AddRange(values);
+end;
+
+class function TCollections.CreateInterfaceList<T>(
+  const values: IEnumerable<T>): IList<T>;
+begin
+  Result := TInterfaceList<T>.Create as IList<T>;
+  Result.AddRange(values);
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>: IDictionary<TKey, TValue>;

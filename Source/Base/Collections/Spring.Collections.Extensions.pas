@@ -426,10 +426,12 @@ type
         property Key: TKey read GetKey;
       end;
 
-      TGroupings = class(TList<TGrouping>)
+      TGroupings = class(TObjectList<TGrouping>)
       protected
         procedure Changed(const item: TGrouping;
           action: TCollectionChangedAction); override;
+      public
+        constructor Create; override;
       end;
 
       TEnumerator = class(TEnumeratorBase<IGrouping<TKey, TElement>>)
@@ -1959,7 +1961,7 @@ begin
   fComparer := comparer;
   if not Assigned(fComparer) then
     fComparer := TEqualityComparer<TKey>.Default;
-  fGroupings := TGroupings.Create;
+  fGroupings := TGroupings.Create as IList<TGrouping>;
   fGroupingKeys := TDictionary<TKey, TGrouping>.Create(fComparer);
 end;
 
@@ -2088,6 +2090,11 @@ end;
 
 
 {$REGION 'TLookup<TKey, TElement>.TGroupings'}
+
+constructor TLookup<TKey, TElement>.TGroupings.Create;
+begin
+  inherited Create(False);
+end;
 
 procedure TLookup<TKey, TElement>.TGroupings.Changed(const item: TGrouping;
   action: TCollectionChangedAction);

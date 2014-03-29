@@ -210,7 +210,7 @@ begin
   fDependencyResolver := TDependencyResolver.Create(Self, fRegistry);
   fInjectionFactory := TInjectionFactory.Create;
   fRegistrationManager := TRegistrationManager.Create(fRegistry);
-  fExtensions := TCollections.CreateList<IContainerExtension>;
+  fExtensions := TCollections.CreateInterfaceList<IContainerExtension>;
   InitializeInspectors;
 end;
 
