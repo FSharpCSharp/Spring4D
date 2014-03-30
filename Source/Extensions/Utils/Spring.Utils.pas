@@ -2005,6 +2005,14 @@ begin
 end;
 {$ENDIF MSWINDOWS}
 
+{$IFDEF DELPHIXE2}
+{$IFDEF POSIX}
+type
+  _PPAnsiChr    = PPAnsiChar;
+  PMarshaledAString = _PPAnsiChr; {$NODEFINE PMarshaledAString}
+{$ENDIF POSIX}
+{$ENDIF DELPHIXE2}
+
 class procedure TEnvironment.GetProcessEnvironmentVariables(list: TStrings);
 var
 {$IFDEF MSWINDOWS}
@@ -2100,14 +2108,31 @@ end;
 class procedure TEnvironment.SetEnvironmentVariable(const variable, value: string);
 {$IFDEF POSIX}
 var
+{$IFDEF DELPHIXE2}
+  variableAnsiString: AnsiString;
+  valueAnsiString: AnsiString;
+{$ELSE}
   M1, M2: TMarshaller;
-{$ENDIF}
+{$ENDIF DELPHIXE2}
+  variablePointer: Pointer;
+  valuePointer: Pointer;
+{$ENDIF POSIX}
 begin
 {$IFDEF MSWINDOWS}
   TEnvironment.SetEnvironmentVariable(variable, value, evtProcess);
 {$ENDIF MSWINDOWS}
 {$IFDEF POSIX}
-  setenv(M1.AsAnsi(variable).ToPointer, M2.AsAnsi(value).ToPointer, 1);
+{$IFDEF DELPHIXE2}
+  // first convert from Unicode to Ansi using DefaultSystemCodePage, then get the pointer to the AnsiString's chars
+  variableAnsiString := AnsiString(variable);
+  valueAnsiString := AnsiString(value);
+  variablePointer := PAnsiChar(variableAnsiString);
+  valuePointer := PAnsiChar(valueAnsiString);
+{$ELSE}
+  variablePointer := M1.AsAnsi(variable).ToPointer;
+  valuePointer := M2.AsAnsi(value).ToPointer;
+{$ENDIF DELPHIXE2}
+  setenv(variablePointer, valuePointer, 1);
 {$ENDIF POSIX}
 end;
 
@@ -2173,7 +2198,12 @@ begin
 {$ENDIF MSWINDOWS}
 {$IFDEF POSIX}
 begin
+{$IFDEF DELPHIXE2}
+  {$MESSAGE WARN 'TEnvironment.GetCurrentDirectory is not yet supported in Delphi XE2'}
+//  Result := TDirectory.GetCurrentDirectory(); // Delphi XE2 OSX: [DCC Fatal Error] F2084 Internal Error: URW1147
+{$ELSE}
   Result := TDirectory.GetCurrentDirectory();
+{$ENDIF DELPHIXE2}
 {$ENDIF POSIX}
 end;
 
