@@ -134,8 +134,7 @@ type
   protected
 {$IFDEF SUPPORTS_GENERIC_FOLDING}
     function GetElementType: PTypeInfo; override;
-    procedure Changed(const item: T; action: TCollectionChangedAction); reintroduce; overload; virtual;
-    procedure Changed(const item: TObject; action: TCollectionChangedAction); overload; override; final;
+    procedure Changed(const item: TObject; action: TCollectionChangedAction); override;
 {$ELSE}
     procedure Changed(const item: T; action: TCollectionChangedAction); override;
 {$ENDIF}
@@ -611,7 +610,11 @@ begin
   fOwnsObjects := value;
 end;
 
+{$IFDEF SUPPORTS_GENERIC_FOLDING}
+procedure TObjectList<T>.Changed(const item: TObject; action: TCollectionChangedAction);
+{$ELSE}
 procedure TObjectList<T>.Changed(const item: T; action: TCollectionChangedAction);
+{$ENDIF}
 begin
   inherited Changed(item, action);
   if OwnsObjects and (action = caRemoved) then
@@ -621,13 +624,6 @@ begin
     item.DisposeOf;
 {$ENDIF}
 end;
-
-{$IFDEF SUPPORTS_GENERIC_FOLDING}
-procedure TObjectList<T>.Changed(const item: TObject; action: TCollectionChangedAction);
-begin
-  Changed(T(item), action);
-end;
-{$ENDIF}
 
 {$ENDREGION}
 

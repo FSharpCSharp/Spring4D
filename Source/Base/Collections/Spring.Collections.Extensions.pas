@@ -428,8 +428,13 @@ type
 
       TGroupings = class(TObjectList<TGrouping>)
       protected
+{$IFDEF SUPPORTS_GENERIC_FOLDING}
+        procedure Changed(const item: TObject;
+          action: TCollectionChangedAction); override;
+{$ELSE}
         procedure Changed(const item: TGrouping;
           action: TCollectionChangedAction); override;
+{$ENDIF}
       public
         constructor Create; override;
       end;
@@ -2096,13 +2101,18 @@ begin
   inherited Create(False);
 end;
 
+{$IFDEF SUPPORTS_GENERIC_FOLDING}
+procedure TLookup<TKey, TElement>.TGroupings.Changed(const item: TObject;
+  action: TCollectionChangedAction);
+{$ELSE}
 procedure TLookup<TKey, TElement>.TGroupings.Changed(const item: TGrouping;
   action: TCollectionChangedAction);
+{$ENDIF}
 begin
   inherited;
   case action of
-    caAdded: item._AddRef;
-    caRemoved: item._Release;
+    caAdded: TGrouping(item)._AddRef;
+    caRemoved: TGrouping(item)._Release;
   end;
 end;
 
