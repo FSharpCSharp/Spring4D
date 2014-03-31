@@ -179,7 +179,8 @@ begin
   ]);
 
   RegisterTests('Spring.Extensions.Utils', [
-    TTestVersion.Suite
+    TTestVersion.Suite,
+    TTestEnvironment.Suite
   ]);
 
   RegisterTests('Spring.Extensions.Cryptography', [

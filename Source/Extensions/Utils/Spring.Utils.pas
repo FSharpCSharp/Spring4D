@@ -1951,14 +1951,38 @@ end;
 
 class function TEnvironment.GetEnvironmentVariable(
   const variable: string): string;
-begin
 {$IFDEF MSWINDOWS}
+begin
   Result := TEnvironment.GetEnvironmentVariable(variable, evtProcess);
-{$ENDIF MSWINDOWS}
-{$IFDEF MACOS}
-  Result := SysUtils.GetEnvironmentVariable(variable);
-{$ENDIF MACOS}
 end;
+{$ENDIF MSWINDOWS}
+{$IFDEF POSIX}
+var
+  variablePointer: Pointer;
+  resultPointer: Pointer;
+{$IFDEF DELPHIXE2}
+  variableAnsi: AnsiString;
+{$ELSE DELPHIXE2}
+  M: TMarshaller;
+{$ENDIF DELPHIXE2}
+begin
+{$IFDEF DELPHIXE2}
+  variableAnsi := AnsiString(variable);
+  variablePointer := PAnsiChar(variableAnsi);
+{$ELSE DELPHIXE2}
+  variablePointer := M.AsUtf8(variable).ToPointer;
+{$ENDIF DELPHIXE2}
+
+  resultPointer := getenv(variablePointer);
+
+  // See SetEnvironmentVariable for comment about encoding
+{$IFDEF DELPHIXE2}
+  Result := string(AnsiString(PAnsiChar(resultPointer)));
+{$ELSE DELPHIXE2}
+  Result := UTF8ToString(resultPointer);
+{$ENDIF DELPHIXE2}
+end;
+{$ENDIF POSIX}
 
 {$IFDEF MSWINDOWS}
 class function TEnvironment.GetEnvironmentVariable(const variable: string;
@@ -2109,8 +2133,8 @@ class procedure TEnvironment.SetEnvironmentVariable(const variable, value: strin
 {$IFDEF POSIX}
 var
 {$IFDEF DELPHIXE2}
-  variableAnsiString: AnsiString;
-  valueAnsiString: AnsiString;
+  variableAnsiString: RawByteString;
+  valueAnsiString: RawByteString;
 {$ELSE}
   M1, M2: TMarshaller;
 {$ENDIF DELPHIXE2}
@@ -2123,14 +2147,15 @@ begin
 {$ENDIF MSWINDOWS}
 {$IFDEF POSIX}
 {$IFDEF DELPHIXE2}
-  // first convert from Unicode to Ansi using DefaultSystemCodePage, then get the pointer to the AnsiString's chars
+  // first convert from Unicode to Ansi using DefaultSystemCodePage, then get the pointer to the AnsiString's chars, XE2 is using ANSI
   variableAnsiString := AnsiString(variable);
   valueAnsiString := AnsiString(value);
   variablePointer := PAnsiChar(variableAnsiString);
   valuePointer := PAnsiChar(valueAnsiString);
 {$ELSE}
-  variablePointer := M1.AsAnsi(variable).ToPointer;
-  valuePointer := M2.AsAnsi(value).ToPointer;
+  // As obsered from other libraries (FireDAC, DBXInterbase) the actual encoding isn't ANSI but UTF8 in XE3+
+  variablePointer := M1.AsUtf8(variable).ToPointer;
+  valuePointer := M2.AsUtf8(value).ToPointer;
 {$ENDIF DELPHIXE2}
   setenv(variablePointer, valuePointer, 1);
 {$ENDIF POSIX}
@@ -2417,9 +2442,9 @@ begin
 {$IFDEF MSWINDOWS}
   Win32Check(Windows.SetCurrentDirectory(PChar(value)));
 {$ENDIF MSWINDOWS}
-{$IFDEF MACOS}
+{$IFDEF POSIX}
   SysUtils.SetCurrentDir(value);
-{$ENDIF MACOS}
+{$ENDIF POSIX}
 end;
 
 {$ENDREGION}
