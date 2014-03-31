@@ -1976,6 +1976,7 @@ begin
   resultPointer := getenv(variablePointer);
 
   // See SetEnvironmentVariable for comment about encoding
+  // We cannot defer to SysUtils implementation since it doesn't support regional characters as well (QC123698)
 {$IFDEF DELPHIXE2}
   Result := string(AnsiString(PAnsiChar(resultPointer)));
 {$ELSE DELPHIXE2}
