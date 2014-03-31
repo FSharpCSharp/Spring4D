@@ -878,9 +878,9 @@ end;
 function TFMXTestRunner.AddSingularOrPlural(const SingularWithoutS: string; const Value: Integer): string;
 begin
   if (Value = 1) then
-    Result := Format('There was %d %s:', [SingularWithoutS, Value])
+	Result := Format('There was %d %s:', [Value, SingularWithoutS])
   else
-    Result := Format('There were %d %ss:', [SingularWithoutS, Value]);
+    Result := Format('There were %d %ss:', [Value, SingularWithoutS]);
 end;
 
 procedure TFMXTestRunner.StartSuite(Suite: ITest);
