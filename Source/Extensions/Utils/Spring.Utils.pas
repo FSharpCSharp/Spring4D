@@ -2200,20 +2200,14 @@ end;
 
 {$IFDEF POSIX}
   {$IFDEF DELPHIXE2}
-//    {$IFOPT INLINE} // QC123694: there is no $IFOPT INLINE to check for ON/AUTO
-      {$DEFINE Restore_QC123691_XE2_OSX32_F0284_URW1147_Inline_ON}
-      {$INLINE OFF} // Otherwise in Delphi XE2 only on OSX32: [DCC Fatal Error] F2084 Internal Error: URW1147
-//    {$IFEND INLINE}
+    {$INLINE OFF} // Otherwise in Delphi XE2 only on OSX32: [DCC Fatal Error] F2084 Internal Error: URW1147
   {$ENDIF DELPHIXE2}
 class function TEnvironment.GetCurrentDirectory: string;
 begin
   Result := TDirectory.GetCurrentDirectory(); // Delphi XE2 only on OSX32: [DCC Fatal Error] F2084 Internal Error: URW1147
 end;
   {$IFDEF DELPHIXE2}
-    {$IFDEF Restore_QC123691_XE2_OSX32_F0284_URW1147_Inline_ON}
-      {$INLINE ON} // Presume the default ON (as there is no $IFOPT to check for OFF/AUTO)
-      {$UNDEF Restore_QC123691_XE2_OSX32_F0284_URW1147_Inline_ON}
-    {$ENDIF Restore_QC123691_XE2_OSX32_F0284_URW1147_Inline_ON}
+    {$INLINE ON} // Presume the default ON (QC123694: as there is no $IFOPT to check for OFF/AUTO)
   {$ENDIF DELPHIXE2}
 {$ENDIF POSIX}
 
