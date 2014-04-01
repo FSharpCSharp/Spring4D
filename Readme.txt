@@ -7,8 +7,13 @@ Installation
 --
 Just run the Build.exe and select the Delphi versions you want to install Spring4D for.
 
+Current version
+--
+1.0 (2014-04-01)
+
 Known issues
 --
+Some warnings when compiling for mobile compilers.
 The deployment of the unit test project might fail for mobile compilers (iOS ARM and Android).
 
 Copyright (c) 2009 - 2014 Spring4D Team
