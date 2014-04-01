@@ -101,7 +101,7 @@ type
   ///	<remarks>
   ///	  <note type="tip">
   ///	    This type redefined the
-  ///	    <see cref="SysUtils|TPredicate`1">SysUtils.TPredicate&lt;T&gt;</see> 
+  ///	    <see cref="SysUtils|TPredicate`1">SysUtils.TPredicate&lt;T&gt;</see> 
   ///	    type with a const parameter.
   ///	  </note>
   ///	</remarks>
@@ -138,7 +138,7 @@ type
   {$REGION 'TInterfaceBase'}
 
   ///	<summary>
-  ///	  Provides a non-reference-counted <see cref="System|IInterface" /> 
+  ///	  Provides a non-reference-counted <see cref="System|IInterface" /> 
   ///	  implementation.
   ///	</summary>
   TInterfaceBase = class abstract(TObject, IInterface)
@@ -251,18 +251,16 @@ type
   ///	  underlying value type, plus an additional <c>Null</c> value.
   ///	</summary>
   ///	<typeparam name="T">
-  ///	  The underlying value type of the <see cref="Nullable&lt;T&gt;" /> 
+  ///	  The underlying value type of the <see cref="Nullable&lt;T&gt;" /> 
   ///	  generic type.
   ///	</typeparam>
   Nullable<T> = record
   private
-    const CHasValueFlag = '@';  // DO NOT LOCALIZE
-  strict private
     fValue: T;
     fHasValue: string;
     function GetValue: T;
     function GetHasValue: Boolean;
-  private
+
     ///	<summary>
     ///	  Internal use. Marks the current instance as null.
     ///	</summary>
@@ -1304,6 +1302,9 @@ end;
 
 
 {$REGION 'Nullable<T>'}
+
+const
+  CHasValueFlag = '@';
 
 constructor Nullable<T>.Create(const value: T);
 begin

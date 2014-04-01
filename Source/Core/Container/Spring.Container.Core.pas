@@ -557,7 +557,7 @@ function TComponentModel.GetConstructorInjections: IInjectionList;
 begin
   if not Assigned(fConstructorInjections) then
   begin
-    fConstructorInjections := TCollections.CreateList<IInjection>;
+    fConstructorInjections := TCollections.CreateInterfaceList<IInjection>;
   end;
   Result := fConstructorInjections;
 end;
@@ -566,7 +566,7 @@ function TComponentModel.GetMethodInjections: IInjectionList;
 begin
   if not Assigned(fMethodInjections) then
   begin
-    fMethodInjections := TCollections.CreateList<IInjection>;
+    fMethodInjections := TCollections.CreateInterfaceList<IInjection>;
   end;
   Result := fMethodInjections;
 end;
@@ -575,7 +575,7 @@ function TComponentModel.GetPropertyInjections: IInjectionList;
 begin
   if not Assigned(fPropertyInjections) then
   begin
-    fPropertyInjections := TCollections.CreateList<IInjection>;
+    fPropertyInjections := TCollections.CreateInterfaceList<IInjection>;
   end;
   Result := fPropertyInjections;
 end;
@@ -618,7 +618,7 @@ function TComponentModel.GetFieldInjections: IInjectionList;
 begin
   if not Assigned(fFieldInjections) then
   begin
-    fFieldInjections := TCollections.CreateList<IInjection>;
+    fFieldInjections := TCollections.CreateInterfaceList<IInjection>;
   end;
   Result := fFieldInjections;
 end;

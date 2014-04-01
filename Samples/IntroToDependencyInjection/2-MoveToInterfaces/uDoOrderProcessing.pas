@@ -19,11 +19,7 @@ begin
   OrderProcessor := TOrderProcessor.Create;
   try
     if OrderProcessor.ProcessOrder(Order) then
-    begin
-      {$IFDEF CONSOLEAPP}
       Writeln('Order successfully processed....');
-      {$ENDIF}
-    end;
   finally
     Order.Free;
   end;

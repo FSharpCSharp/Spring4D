@@ -3998,7 +3998,7 @@ begin
     begin
       Result := x[1];
     end);
-  list := TCollections.CreateList<IGrouping<Integer, Char>>(groups);
+  list := TCollections.CreateInterfaceList<IGrouping<Integer, Char>>(groups);
   CheckEquals(3, list.Count);
 
   CheckTrue(list[0].EqualsTo(['a', 'd']));
@@ -4081,7 +4081,7 @@ begin
     begin
       Result := s;
     end);
-  list := TCollections.CreateList<IGrouping<Integer, string>>(groups);
+  list := TCollections.CreateInterfaceList<IGrouping<Integer, string>>(groups);
   CheckEquals(3, list.Count);
 
   CheckTrue(list[0].EqualsTo(['abc', 'def']));

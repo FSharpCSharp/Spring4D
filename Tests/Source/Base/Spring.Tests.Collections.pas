@@ -1505,7 +1505,7 @@ end;
 
 procedure TTestObjectList.SetUp;
 begin
-  SUT := TObjectList<TPersistent>.Create;
+  SUT := TObjectList<TPersistent>.Create as IList<TPersistent>;
 end;
 
 procedure TTestObjectList.TestQueryInterface;

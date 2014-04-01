@@ -124,7 +124,7 @@ begin
   inherited Create;
   fContext := context;
   fRegistry := registry;
-  fInspectors := TCollections.CreateList<IBuilderInspector>;
+  fInspectors := TCollections.CreateInterfaceList<IBuilderInspector>;
 end;
 
 procedure TComponentBuilder.AddInspector(const inspector: IBuilderInspector);

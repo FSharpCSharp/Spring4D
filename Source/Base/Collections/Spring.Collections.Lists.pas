@@ -120,7 +120,11 @@ type
     property Capacity: Integer read GetCapacity write SetCapacity;
   end;
 
+{$IFDEF SUPPORTS_GENERIC_FOLDING}
+  TObjectList<T: class> = class(TList<TObject>, ICollectionOwnership, IObjectList)
+{$ELSE}
   TObjectList<T: class> = class(TList<T>, ICollectionOwnership)
+{$ENDIF}
   private
     fOwnsObjects: Boolean;
   {$REGION 'Property Accessors'}
@@ -128,15 +132,31 @@ type
     procedure SetOwnsObjects(const value: Boolean);
   {$ENDREGION}
   protected
+{$IFDEF SUPPORTS_GENERIC_FOLDING}
+    function GetElementType: PTypeInfo; override;
+    procedure Changed(const item: TObject; action: TCollectionChangedAction); override;
+{$ELSE}
     procedure Changed(const item: T; action: TCollectionChangedAction); override;
+{$ENDIF}
   public
-    constructor Create(ownsObjects: Boolean = True); overload;
+    constructor Create; override;
+    constructor Create(ownsObjects: Boolean); overload;
     constructor Create(const comparer: IComparer<T>; ownsObjects: Boolean = True); overload;
-    constructor Create(const collection: array of T; ownsObjects: Boolean = True); overload;
-    constructor Create(const collection: IEnumerable<T>; ownsObjects: Boolean = True); overload;
-    constructor Create(collection: TEnumerable<T>; ownsObjects: Boolean = True); overload;
 
     property OwnsObjects: Boolean read GetOwnsObjects write SetOwnsObjects;
+  end;
+
+{$IFDEF SUPPORTS_GENERIC_FOLDING}
+  TInterfaceList<T: IInterface> = class(TList<IInterface>, IInterfaceList)
+{$ELSE}
+  TInterfaceList<T: IInterface> = class(TList<T>)
+{$ENDIF}
+  protected
+{$IFDEF SUPPORTS_GENERIC_FOLDING}
+    function GetElementType: PTypeInfo; override;
+{$ENDIF}
+  public
+    constructor Create(const comparer: IComparer<T>); overload;
   end;
 
   TSortedList<T> = class(TList<T>)
@@ -551,6 +571,11 @@ end;
 
 {$REGION 'TObjectList<T>'}
 
+constructor TObjectList<T>.Create;
+begin
+  Create(True);
+end;
+
 constructor TObjectList<T>.Create(ownsObjects: Boolean);
 begin
   inherited Create;
@@ -560,30 +585,20 @@ end;
 constructor TObjectList<T>.Create(const comparer: IComparer<T>;
   ownsObjects: Boolean);
 begin
+{$IFDEF SUPPORTS_GENERIC_FOLDING}
+  inherited Create(IComparer<TObject>(comparer));
+{$ELSE}
   inherited Create(comparer);
+{$ENDIF}
   fOwnsObjects := ownsObjects;
 end;
 
-constructor TObjectList<T>.Create(const collection: array of T;
-  ownsObjects: Boolean);
+{$IFDEF SUPPORTS_GENERIC_FOLDING}
+function TObjectList<T>.GetElementType: PTypeInfo;
 begin
-  inherited Create(collection);
-  fOwnsObjects := ownsObjects;
+  Result := TypeInfo(T);
 end;
-
-constructor TObjectList<T>.Create(const collection: IEnumerable<T>;
-  ownsObjects: Boolean);
-begin
-  inherited Create(collection);
-  fOwnsObjects := ownsObjects;
-end;
-
-constructor TObjectList<T>.Create(collection: TEnumerable<T>;
-  ownsObjects: Boolean);
-begin
-  inherited Create(collection);
-  fOwnsObjects := ownsObjects;
-end;
+{$ENDIF}
 
 function TObjectList<T>.GetOwnsObjects: Boolean;
 begin
@@ -595,7 +610,11 @@ begin
   fOwnsObjects := value;
 end;
 
+{$IFDEF SUPPORTS_GENERIC_FOLDING}
+procedure TObjectList<T>.Changed(const item: TObject; action: TCollectionChangedAction);
+{$ELSE}
 procedure TObjectList<T>.Changed(const item: T; action: TCollectionChangedAction);
+{$ENDIF}
 begin
   inherited Changed(item, action);
   if OwnsObjects and (action = caRemoved) then
@@ -605,6 +624,27 @@ begin
     item.DisposeOf;
 {$ENDIF}
 end;
+
+{$ENDREGION}
+
+
+{$REGION 'TInterfaceList<T>'}
+
+constructor TInterfaceList<T>.Create(const comparer: IComparer<T>);
+begin
+{$IFDEF SUPPORTS_GENERIC_FOLDING}
+  inherited Create(IComparer<IInterface>(comparer));
+{$ELSE}
+  inherited Create(comparer);
+{$ENDIF}
+end;
+
+{$IFDEF SUPPORTS_GENERIC_FOLDING}
+function TInterfaceList<T>.GetElementType: PTypeInfo;
+begin
+  Result := TypeInfo(T);
+end;
+{$ENDIF}
 
 {$ENDREGION}
 
@@ -874,3 +914,4 @@ end;
 
 
 end.
+

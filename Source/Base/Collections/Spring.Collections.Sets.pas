@@ -72,7 +72,7 @@ type
     ///	</summary>
     ///	<param name="comparer">
     ///	  The <see cref="IEqualityComparer&lt;T&gt;" /> implementation to use
-    ///	  when comparing values in the set, or <b>nil</b> to use the default
+    ///	  when comparing values in the set, or <b>nil</b> to use the default
     ///	  <see cref="TEqualityComparer&lt;T&gt;" /> implementation for the set
     ///	  type.
     ///	</param>

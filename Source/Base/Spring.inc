@@ -57,6 +57,12 @@
   // so until that happens Events cannot be supported on non-Intel architectures
 {$ENDIF}
 
+{$IFDEF DELPHIXE_UP}
+  // This will enable using only one generic instantiation each for lists that
+  // contain objects or interfaces
+  {.$DEFINE SUPPORTS_GENERIC_FOLDING}
+{$ENDIF}
+
 // If we are running on Android or iOS, we are sure we are running using FMX.
 // If FMX is to be used on x86/x64 FMX conditional should be defined
 // in the project settings by hand
@@ -72,8 +78,10 @@
 {$ENDIF}
 
 {$IFNDEF NEXTGEN}
-  {$WARN UNIT_PLATFORM OFF}    // Turn off UNIT_PLATFORM warning
-  {$WARN SYMBOL_PLATFORM OFF}  // Turn off SYMBOL_PLATFORM warning
+  {$WARN UNIT_PLATFORM OFF}     // Turn off UNIT_PLATFORM warning
+  {$WARN SYMBOL_PLATFORM OFF}   // Turn off SYMBOL_PLATFORM warning
+{$ELSE}
+  {$WARN SYMBOL_DEPRECATED OFF} // Turn off SYMBOL_DEPRECATED warning
 {$ENDIF}
 
 {$ENDIF ~SPRING_INC}

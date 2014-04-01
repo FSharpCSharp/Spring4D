@@ -52,7 +52,7 @@ type
     ///	  The container calls this method when the extension is added.
     ///	</summary>
     ///	<param name="context">
-    ///	  An <see cref="IContainerContext" /> instance that gives the extension
+    ///	  An <see cref="IContainerContext" /> instance that gives the extension
     ///	  access to the internals of the container.
     ///	</param>
     procedure InitializeExtension(const context: IContainerContext);

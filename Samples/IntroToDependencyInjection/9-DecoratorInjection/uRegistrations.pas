@@ -2,12 +2,14 @@ unit uRegistrations;
 
 interface
 
-procedure RegisterComponents;
+uses
+  Spring.Container;
+
+procedure RegisterTypes(const container: TContainer);
 
 implementation
 
 uses
-  Spring.Container,
   Spring.Container.DecoratorExtension,
   uOrderInterfaces,
   uOrderEntry,
@@ -15,18 +17,18 @@ uses
   uOrderProcessor,
   uOrderValidator;
 
-procedure RegisterComponents;
+procedure RegisterTypes(const container: TContainer);
 begin
-  GlobalContainer.AddExtension<TDecoratorContainerExtension>;
+  container.AddExtension<TDecoratorContainerExtension>;
 
-  GlobalContainer.RegisterType<TOrderEntryTransactionDecorator>;
-  GlobalContainer.RegisterType<TOrderEntryLoggingDecorator>;
-  GlobalContainer.RegisterType<TOrderEntry>;
-  GlobalContainer.RegisterType<TOrderValidatorLoggingDecorator>;
-  GlobalContainer.RegisterType<TOrderValidator>;
-  GlobalContainer.RegisterType<TOrderProcessor>;
+  container.RegisterType<TOrderEntryTransactionDecorator>;
+  container.RegisterType<TOrderEntryLoggingDecorator>;
+  container.RegisterType<TOrderEntry>;
+  container.RegisterType<TOrderValidatorLoggingDecorator>;
+  container.RegisterType<TOrderValidator>;
+  container.RegisterType<TOrderProcessor>;
 
-  GlobalContainer.Build;
+  container.Build;
 end;
 
 end.

@@ -14,20 +14,12 @@ type
 
 implementation
 
-uses
-  Spring.Container;
-
 { TOrderValidator }
 
 function TOrderValidator.ValidateOrder(aOrder: TOrder): Boolean;
 begin
   Result := Assigned(aOrder);
-  {$IFDEF CONSOLEAPP}
   Writeln('Validating Order....');
-  {$ENDIF}
 end;
-
-initialization
-  GlobalContainer.RegisterType<TOrderValidator>;
 
 end.

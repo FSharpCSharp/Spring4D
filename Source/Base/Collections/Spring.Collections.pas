@@ -71,6 +71,7 @@ type
   ISet<T> = interface;
 
   IObjectList = interface;
+  IInterfaceList = interface;
 
   IGrouping<TKey, TElement> = interface;
   ILookup<TKey, TElement> = interface;
@@ -81,7 +82,7 @@ type
   ///	</summary>
   TCollectionChangedAction = (
     ///	<summary>
-    ///	  An item was added to the collection.
+    ///	  An item was added to the collection.
     ///	</summary>
     caAdded,
 
@@ -152,7 +153,7 @@ type
     ///	  The collection was modified after the enumerator was created.
     ///	</exception>
     ///	<exception cref="Spring|ENotSupportedException">
-    ///	  The Reset method is not supported. 
+    ///	  The Reset method is not supported. 
     ///	</exception>
     procedure Reset;
 
@@ -232,7 +233,7 @@ type
     property ElementType: PTypeInfo read GetElementType;
 
     ///	<summary>
-    ///	  Determines whether a sequence contains no elements.
+    ///	  Determines whether a sequence contains no elements.
     ///	</summary>
     ///	<value>
     ///	  <b>True</b> if the source sequence contains no elements; otherwise,
@@ -803,7 +804,6 @@ type
     procedure Add(const item: T);
     procedure AddRange(const collection: array of T); overload;
     procedure AddRange(const collection: IEnumerable<T>); overload;
-    procedure AddRange(const collection: TEnumerable<T>); overload;
 
     ///	<summary>
     ///	  Removes all items from the ICollection&lt;T&gt;.
@@ -829,7 +829,7 @@ type
     ///	  ICollection&lt;T&gt;.
     ///	</summary>
     ///	<param name="item">
-    ///	  The element to remove from the ICollection&lt;T&gt;.
+    ///	  The element to remove from the ICollection&lt;T&gt;.
     ///	</param>
     ///	<returns>
     ///	  <b>True</b> if <i>item</i> was successfully removed from the
@@ -840,12 +840,10 @@ type
     function Remove(const item: T): Boolean;
     procedure RemoveRange(const collection: array of T); overload;
     procedure RemoveRange(const collection: IEnumerable<T>); overload;
-    procedure RemoveRange(const collection: TEnumerable<T>); overload;
 
     function Extract(const item: T): T;
     procedure ExtractRange(const collection: array of T); overload;
     procedure ExtractRange(const collection: IEnumerable<T>); overload;
-    procedure ExtractRange(const collection: TEnumerable<T>); overload;
 
     ///	<summary>
     ///	  Gets a value indicating whether the ICollection&lt;T&gt; is read-only.
@@ -959,12 +957,11 @@ type
     ///	  The zero-based index at which item should be inserted.
     ///	</param>
     ///	<param name="item">
-    ///	  The element to insert into the IList&lt;T&gt;.
+    ///	  The element to insert into the IList&lt;T&gt;.
     ///	</param>
     procedure Insert(index: Integer; const item: T);
     procedure InsertRange(index: Integer; const collection: array of T); overload;
     procedure InsertRange(index: Integer; const collection: IEnumerable<T>); overload;
-    procedure InsertRange(index: Integer; const collection: TEnumerable<T>); overload;
 
     ///	<summary>
     ///	  Removes the item at the specified index.
@@ -992,13 +989,13 @@ type
     ///	  Determines the index of a specific item in the IList&lt;T&gt;.
     ///	</summary>
     ///	<param name="item">
-    ///	  The element to locate in the IList&lt;T&gt;.
+    ///	  The element to locate in the IList&lt;T&gt;.
     ///	</param>
     ///	<returns>
     ///	  The index of <i>item</i> if found in the list; otherwise, -1.
     ///	</returns>
     ///	<remarks>
-    ///	  If an element occurs multiple times in the list, the IndexOf method
+    ///	  If an element occurs multiple times in the list, the IndexOf method
     ///	  always returns the first instance found.
     ///	</remarks>
     function IndexOf(const item: T): Integer; overload;
@@ -1018,6 +1015,11 @@ type
 
   IObjectList = interface(IList<TObject>)
     ['{78A32DC5-1A5B-4191-9CA5-006CD85CF1AA}']
+    // DO NOT ADD ANY METHODS HERE!!!
+  end;
+
+  IInterfaceList = interface(IList<IInterface>)
+    ['{B6BF9A6E-797C-4982-8D0D-B935E43D917E}']
     // DO NOT ADD ANY METHODS HERE!!!
   end;
 
@@ -1565,10 +1567,10 @@ type
     ///	  IDictionary&lt;TKey, TValue&gt;.
     ///	</summary>
     ///	<param name="key">
-    ///	  The item to use as the key of the element to add.
+    ///	  The item to use as the key of the element to add.
     ///	</param>
     ///	<param name="value">
-    ///	  The item to use as the value of the element to add.
+    ///	  The item to use as the value of the element to add.
     ///	</param>
     procedure Add(const key: TKey; const value: TValue); overload;
     procedure AddOrSetValue(const key: TKey; const value: TValue);
@@ -1696,7 +1698,7 @@ type
   {$ENDREGION}
 
     ///	<summary>
-    ///	  Removes all elements from the IStack&lt;T&gt;.
+    ///	  Removes all elements from the IStack&lt;T&gt;.
     ///	</summary>
     procedure Clear;
 
@@ -1704,26 +1706,26 @@ type
     ///	  Inserts an element at the top of the IStack&lt;T&gt;.
     ///	</summary>
     ///	<param name="item">
-    ///	  The element to push onto the IStack&lt;T&gt;. The value can be 
+    ///	  The element to push onto the IStack&lt;T&gt;. The value can be 
     ///	  <b>nil</b> for reference types.
     ///	</param>
     procedure Push(const item: T);
 
     ///	<summary>
-    ///	  Removes and returns the element at the top of the
+    ///	  Removes and returns the element at the top of the
     ///	  IStack&lt;T&gt;.
     ///	</summary>
     ///	<returns>
-    ///	  The element removed from the top of the IStack&lt;T&gt;.
+    ///	  The element removed from the top of the IStack&lt;T&gt;.
     ///	</returns>
     function Pop: T;
 
     ///	<summary>
-    ///	  Returns the element at the top of the IStack&lt;T&gt; without
+    ///	  Returns the element at the top of the IStack&lt;T&gt; without
     ///	  removing it.
     ///	</summary>
     ///	<returns>
-    ///	  The element at the top of the IStack&lt;T&gt;.
+    ///	  The element at the top of the IStack&lt;T&gt;.
     ///	</returns>
     function Peek: T;
     function PeekOrDefault: T;
@@ -1765,20 +1767,20 @@ type
     procedure Clear;
 
     ///	<summary>
-    ///	  Adds an element to the end of the IQueue&lt;T&gt;. 
+    ///	  Adds an element to the end of the IQueue&lt;T&gt;. 
     ///	</summary>
     ///	<param name="item">
-    ///	  The element to add to the IQueue&lt;T&gt;. The value can be <b>nil</b>
+    ///	  The element to add to the IQueue&lt;T&gt;. The value can be <b>nil</b>
     ///	   for reference types.
     ///	</param>
     procedure Enqueue(const item: T);
 
     ///	<summary>
     ///	  Removes and returns the element at the beginning of the
-    ///	  IQueue&lt;T&gt;. 
+    ///	  IQueue&lt;T&gt;. 
     ///	</summary>
     ///	<returns>
-    ///	  The element that is removed from the beginning of the IQueue&lt;T&gt;.
+    ///	  The element that is removed from the beginning of the IQueue&lt;T&gt;.
     ///	</returns>
     function Dequeue: T;
 
@@ -1787,7 +1789,7 @@ type
     ///	  removing it.
     ///	</summary>
     ///	<returns>
-    ///	  The element at the beginning of the IQueue&lt;T&gt;.
+    ///	  The element at the beginning of the IQueue&lt;T&gt;.
     ///	</returns>
     function Peek: T;
     function PeekOrDefault: T;
@@ -1930,7 +1932,7 @@ type
   end;
 
   ///	<summary>
-  ///	  Represents a collection of elements that have a common key.
+  ///	  Represents a collection of elements that have a common key.
   ///	</summary>
   ///	<typeparam name="TKey">
   ///	  The type of the key of the IGrouping&lt;TKey, TElement&gt;.
@@ -2046,7 +2048,7 @@ type
 
   ///	<summary>
   ///	  Provides static methods to create an instance of various interfaced
-  ///	  generic collections such as <see cref="IList&lt;T&gt;" /> or
+  ///	  generic collections such as <see cref="IList&lt;T&gt;" /> or
   ///	  <see cref="IDictionary&lt;TKey, TValue&gt;" />.
   ///	</summary>
   TCollections = class
@@ -2056,10 +2058,15 @@ type
     class function CreateList<T>(const values: array of T): IList<T>; overload; static;
     class function CreateList<T>(const values: IEnumerable<T>): IList<T>; overload; static;
     class function CreateList<T: class>(ownsObjects: Boolean): IList<T>; overload; static;
-    class function CreateList<T: class>(ownsObjects: Boolean; const comparer: IComparer<T>): IList<T>; overload; static;
+    class function CreateList<T: class>(const comparer: IComparer<T>; ownsObjects: Boolean): IList<T>; overload; static;
     class function CreateObjectList<T: class>(ownsObjects: Boolean = True): IList<T>; overload; static;
-    class function CreateObjectList<T: class>(ownsObjects: Boolean; const comparer: IComparer<T>): IList<T>; overload; static;
+    class function CreateObjectList<T: class>(const comparer: IComparer<T>; ownsObjects: Boolean = True): IList<T>; overload; static;
     class function CreateObjectList<T: class>(const values: array of T; ownsObjects: Boolean = True): IList<T>; overload; static;
+    class function CreateObjectList<T: class>(const values: IEnumerable<T>; ownsObjects: Boolean = True): IList<T>; overload; static;
+    class function CreateInterfaceList<T: IInterface>: IList<T>; overload; static;
+    class function CreateInterfaceList<T: IInterface>(const comparer: IComparer<T>): IList<T>; overload; static;
+    class function CreateInterfaceList<T: IInterface>(const values: array of T): IList<T>; overload; static;
+    class function CreateInterfaceList<T: IInterface>(const values: IEnumerable<T>): IList<T>; overload; static;
 
     class function CreateDictionary<TKey, TValue>: IDictionary<TKey, TValue>; overload; static;
     class function CreateDictionary<TKey, TValue>(capacity: Integer): IDictionary<TKey, TValue>; overload; static;
@@ -2168,30 +2175,38 @@ end;
 
 class function TCollections.CreateList<T>(ownsObjects: Boolean): IList<T>;
 begin
-  Result := TCollections.CreateList<T>(ownsObjects, TComparer<T>.Default());
+  Result := TObjectList<T>.Create(ownsObjects) as IList<T>;
 end;
 
-class function TCollections.CreateList<T>(ownsObjects: Boolean;
-  const comparer: IComparer<T>): IList<T>;
+class function TCollections.CreateList<T>(const comparer: IComparer<T>;
+  ownsObjects: Boolean): IList<T>;
 begin
-  Result := TObjectList<T>.Create(comparer, ownsObjects);
+  Result := TObjectList<T>.Create(comparer, ownsObjects) as IList<T>;
 end;
 
 class function TCollections.CreateObjectList<T>(ownsObjects: Boolean): IList<T>;
 begin
-  Result := TObjectList<T>.Create(TComparer<T>.Default(), ownsObjects);
+  Result := TObjectList<T>.Create(ownsObjects) as IList<T>;
 end;
 
-class function TCollections.CreateObjectList<T>(ownsObjects: Boolean;
-  const comparer: IComparer<T>): IList<T>;
+class function TCollections.CreateObjectList<T>(const comparer: IComparer<T>;
+  ownsObjects: Boolean): IList<T>;
 begin
-  Result := TObjectList<T>.Create(comparer, ownsObjects);
+  Result := TObjectList<T>.Create(comparer, ownsObjects) as IList<T>;
 end;
 
 class function TCollections.CreateObjectList<T>(const values: array of T;
   ownsObjects: Boolean): IList<T>;
 begin
-  Result := TObjectList<T>.Create(values, ownsObjects);
+  Result := TObjectList<T>.Create(ownsObjects) as IList<T>;
+  Result.AddRange(values);
+end;
+
+class function TCollections.CreateObjectList<T>(const values: IEnumerable<T>;
+  ownsObjects: Boolean): IList<T>;
+begin
+  Result := TObjectList<T>.Create(ownsObjects) as IList<T>;
+  Result.AddRange(values);
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>(
@@ -2200,6 +2215,31 @@ class function TCollections.CreateDictionary<TKey, TValue>(
 begin
   Guard.CheckNotNull(dictionary, 'dictionary');
   Result := TDictionary<TKey, TValue>.Create(dictionary, ownership);
+end;
+
+class function TCollections.CreateInterfaceList<T>: IList<T>;
+begin
+  Result := TInterfaceList<T>.Create as IList<T>;
+end;
+
+class function TCollections.CreateInterfaceList<T>(
+  const comparer: IComparer<T>): IList<T>;
+begin
+  Result := TInterfaceList<T>.Create(comparer) as IList<T>;
+end;
+
+class function TCollections.CreateInterfaceList<T>(
+  const values: array of T): IList<T>;
+begin
+  Result := TInterfaceList<T>.Create as IList<T>;
+  Result.AddRange(values);
+end;
+
+class function TCollections.CreateInterfaceList<T>(
+  const values: IEnumerable<T>): IList<T>;
+begin
+  Result := TInterfaceList<T>.Create as IList<T>;
+  Result.AddRange(values);
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>: IDictionary<TKey, TValue>;

@@ -53,7 +53,6 @@ type
     constructor Create; overload; override;
     constructor Create(const collection: array of T); overload;
     constructor Create(const collection: IEnumerable<T>); overload;
-    constructor Create(const collection: TEnumerable<T>); overload;
     constructor Create(queue: TGenericQueue; ownership: TOwnershipType); overload;
     destructor Destroy; override;
 
@@ -100,15 +99,6 @@ begin
 end;
 
 constructor TQueue<T>.Create(const collection: IEnumerable<T>);
-var
-  item: T;
-begin
-  Create;
-  for item in collection do
-    Enqueue(item);
-end;
-
-constructor TQueue<T>.Create(const collection: TEnumerable<T>);
 var
   item: T;
 begin

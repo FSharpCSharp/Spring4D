@@ -211,24 +211,20 @@ type
   public
     constructor Create(const collection: array of T); overload;
     constructor Create(const collection: IEnumerable<T>); overload;
-    constructor Create(const collection: TEnumerable<T>); overload;
 
     procedure Add(const item: T); virtual; abstract;
     procedure AddRange(const collection: array of T); overload; virtual;
     procedure AddRange(const collection: IEnumerable<T>); overload; virtual;
-    procedure AddRange(const collection: TEnumerable<T>); overload; virtual;
 
     procedure Clear; virtual; abstract;
 
     function Remove(const item: T): Boolean; virtual; abstract;
     procedure RemoveRange(const collection: array of T); overload; virtual;
     procedure RemoveRange(const collection: IEnumerable<T>); overload; virtual;
-    procedure RemoveRange(const collection: TEnumerable<T>); overload; virtual;
 
     function Extract(const item: T): T; virtual; abstract;
     procedure ExtractRange(const collection: array of T); overload; virtual;
     procedure ExtractRange(const collection: IEnumerable<T>); overload; virtual;
-    procedure ExtractRange(const collection: TEnumerable<T>); overload; virtual;
 
     procedure CopyTo(var values: TArray<T>; index: Integer); virtual;
 
@@ -307,7 +303,6 @@ type
     procedure Insert(index: Integer; const item: T); virtual; abstract;
     procedure InsertRange(index: Integer; const collection: array of T); overload; virtual;
     procedure InsertRange(index: Integer; const collection: IEnumerable<T>); overload; virtual;
-    procedure InsertRange(index: Integer; const collection: TEnumerable<T>); overload; virtual;
 
     procedure Delete(index: Integer); virtual; abstract;
     procedure DeleteRange(startIndex, count: Integer); virtual; abstract;
@@ -1087,12 +1082,6 @@ begin
   AddRange(collection);
 end;
 
-constructor TCollectionBase<T>.Create(const collection: TEnumerable<T>);
-begin
-  Create;
-  AddRange(collection);
-end;
-
 procedure TCollectionBase<T>.AddRange(const collection: array of T);
 var
   item: T;
@@ -1102,16 +1091,6 @@ begin
 end;
 
 procedure TCollectionBase<T>.AddRange(const collection: IEnumerable<T>);
-var
-  item: T;
-begin
-  Guard.CheckNotNull(Assigned(collection), 'collection');
-
-  for item in collection do
-    Add(item);
-end;
-
-procedure TCollectionBase<T>.AddRange(const collection: TEnumerable<T>);
 var
   item: T;
 begin
@@ -1152,16 +1131,6 @@ begin
     Extract(item);
 end;
 
-procedure TCollectionBase<T>.ExtractRange(const collection: TEnumerable<T>);
-var
-  item: T;
-begin
-  Guard.CheckNotNull(Assigned(collection), 'collection');
-
-  for item in collection do
-    Extract(item);
-end;
-
 function TCollectionBase<T>.GetIsReadOnly: Boolean;
 begin
   Result := False;
@@ -1171,16 +1140,6 @@ procedure TCollectionBase<T>.RemoveRange(const collection: array of T);
 var
   item: T;
 begin
-  for item in collection do
-    Remove(item);
-end;
-
-procedure TCollectionBase<T>.RemoveRange(const collection: TEnumerable<T>);
-var
-  item: T;
-begin
-  Guard.CheckNotNull(Assigned(collection), 'collection');
-
   for item in collection do
     Remove(item);
 end;
@@ -1346,21 +1305,6 @@ end;
 
 procedure TListBase<T>.InsertRange(index: Integer;
   const collection: IEnumerable<T>);
-var
-  item: T;
-begin
-  Guard.CheckRange((index >= 0) and (index <= Count), 'index');
-  Guard.CheckNotNull(Assigned(collection), 'collection');
-
-  for item in collection do
-  begin
-    Insert(index, item);
-    Inc(index);
-  end;
-end;
-
-procedure TListBase<T>.InsertRange(index: Integer;
-  const collection: TEnumerable<T>);
 var
   item: T;
 begin

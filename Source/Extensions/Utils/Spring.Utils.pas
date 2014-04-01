@@ -1951,14 +1951,39 @@ end;
 
 class function TEnvironment.GetEnvironmentVariable(
   const variable: string): string;
-begin
 {$IFDEF MSWINDOWS}
+begin
   Result := TEnvironment.GetEnvironmentVariable(variable, evtProcess);
-{$ENDIF MSWINDOWS}
-{$IFDEF MACOS}
-  Result := SysUtils.GetEnvironmentVariable(variable);
-{$ENDIF MACOS}
 end;
+{$ENDIF MSWINDOWS}
+{$IFDEF POSIX}
+var
+  variablePointer: Pointer;
+  resultPointer: Pointer;
+{$IFDEF DELPHIXE2}
+  variableAnsi: AnsiString;
+{$ELSE DELPHIXE2}
+  M: TMarshaller;
+{$ENDIF DELPHIXE2}
+begin
+{$IFDEF DELPHIXE2}
+  variableAnsi := AnsiString(variable);
+  variablePointer := PAnsiChar(variableAnsi);
+{$ELSE DELPHIXE2}
+  variablePointer := M.AsUtf8(variable).ToPointer;
+{$ENDIF DELPHIXE2}
+
+  resultPointer := getenv(variablePointer);
+
+  // See SetEnvironmentVariable for comment about encoding
+  // We cannot defer to SysUtils implementation since it doesn't support regional characters as well (QC123698)
+{$IFDEF DELPHIXE2}
+  Result := string(AnsiString(PAnsiChar(resultPointer)));
+{$ELSE DELPHIXE2}
+  Result := UTF8ToString(resultPointer);
+{$ENDIF DELPHIXE2}
+end;
+{$ENDIF POSIX}
 
 {$IFDEF MSWINDOWS}
 class function TEnvironment.GetEnvironmentVariable(const variable: string;
@@ -2004,6 +2029,14 @@ begin
   end;
 end;
 {$ENDIF MSWINDOWS}
+
+{$IFDEF DELPHIXE2}
+{$IFDEF POSIX}
+type
+  _PPAnsiChr    = PPAnsiChar;
+  PMarshaledAString = _PPAnsiChr; {$NODEFINE PMarshaledAString}
+{$ENDIF POSIX}
+{$ENDIF DELPHIXE2}
 
 class procedure TEnvironment.GetProcessEnvironmentVariables(list: TStrings);
 var
@@ -2100,14 +2133,32 @@ end;
 class procedure TEnvironment.SetEnvironmentVariable(const variable, value: string);
 {$IFDEF POSIX}
 var
+{$IFDEF DELPHIXE2}
+  variableAnsiString: RawByteString;
+  valueAnsiString: RawByteString;
+{$ELSE}
   M1, M2: TMarshaller;
-{$ENDIF}
+{$ENDIF DELPHIXE2}
+  variablePointer: Pointer;
+  valuePointer: Pointer;
+{$ENDIF POSIX}
 begin
 {$IFDEF MSWINDOWS}
   TEnvironment.SetEnvironmentVariable(variable, value, evtProcess);
 {$ENDIF MSWINDOWS}
 {$IFDEF POSIX}
-  setenv(M1.AsAnsi(variable).ToPointer, M2.AsAnsi(value).ToPointer, 1);
+{$IFDEF DELPHIXE2}
+  // first convert from Unicode to Ansi using DefaultSystemCodePage, then get the pointer to the AnsiString's chars, XE2 is using ANSI
+  variableAnsiString := AnsiString(variable);
+  valueAnsiString := AnsiString(value);
+  variablePointer := PAnsiChar(variableAnsiString);
+  valuePointer := PAnsiChar(valueAnsiString);
+{$ELSE}
+  // As obsered from other libraries (FireDAC, DBXInterbase) the actual encoding isn't ANSI but UTF8 in XE3+
+  variablePointer := M1.AsUtf8(variable).ToPointer;
+  valuePointer := M2.AsUtf8(value).ToPointer;
+{$ENDIF DELPHIXE2}
+  setenv(variablePointer, valuePointer, 1);
 {$ENDIF POSIX}
 end;
 
@@ -2162,20 +2213,29 @@ begin
 end;
 {$ENDIF MSWINDOWS}
 
-class function TEnvironment.GetCurrentDirectory: string;
 {$IFDEF MSWINDOWS}
+class function TEnvironment.GetCurrentDirectory: string;
 var
   size: DWORD;
 begin
   size := Windows.GetCurrentDirectory(0, nil);
   SetLength(Result, size - 1);
   Windows.GetCurrentDirectory(size, PChar(Result));
-{$ENDIF MSWINDOWS}
-{$IFDEF POSIX}
-begin
-  Result := TDirectory.GetCurrentDirectory();
-{$ENDIF POSIX}
 end;
+{$ENDIF MSWINDOWS}
+
+{$IFDEF POSIX}
+  {$IFDEF DELPHIXE2}
+    {$INLINE OFF} // Otherwise in Delphi XE2 only on OSX32: [DCC Fatal Error] F2084 Internal Error: URW1147
+  {$ENDIF DELPHIXE2}
+class function TEnvironment.GetCurrentDirectory: string;
+begin
+  Result := TDirectory.GetCurrentDirectory(); // Delphi XE2 only on OSX32: [DCC Fatal Error] F2084 Internal Error: URW1147
+end;
+  {$IFDEF DELPHIXE2}
+    {$INLINE ON} // Presume the default ON (QC123694: as there is no $IFOPT to check for OFF/AUTO)
+  {$ENDIF DELPHIXE2}
+{$ENDIF POSIX}
 
 {$IFDEF MSWINDOWS}
 class function TEnvironment.GetCurrentVersionKey: string;
@@ -2383,9 +2443,9 @@ begin
 {$IFDEF MSWINDOWS}
   Win32Check(Windows.SetCurrentDirectory(PChar(value)));
 {$ENDIF MSWINDOWS}
-{$IFDEF MACOS}
+{$IFDEF POSIX}
   SysUtils.SetCurrentDir(value);
-{$ENDIF MACOS}
+{$ENDIF POSIX}
 end;
 
 {$ENDREGION}
