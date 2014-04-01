@@ -57,8 +57,8 @@ type
     /// </summary>
     procedure TestSetEnvironmentVariableProcess;
     /// <summary>
-    ///   Also test the case when we assign reginal characters to bot name and
-    ///   value, basically test that we convrat encoding correctly.
+    ///   Also test the case when we assign regional characters to both name
+    ///   and value, basically test that we convert encoding correctly.
     /// </summary>
     procedure TestSetEnvironmentVariableRegional;
   end;
@@ -178,8 +178,8 @@ end;
 
 {$ENDREGION}
 
+
 {$REGION 'TTestEnvironment'}
-{ TTestEnvironment }
 
 procedure TTestEnvironment.TestSetEnvironmentVariableProcess;
 var
@@ -187,13 +187,14 @@ var
   value,
   actual: string;
 begin
-  // Test name and value with plain ASCII in it so we can use SysUtils.GetEnvironmentVariable to test basic functionality
+  // Test name and value with plain ASCII in it so we can
+  // use SysUtils.GetEnvironmentVariable to test basic functionality
   name := 'MyVar';
   value := 'Value';
 
   TEnvironment.SetEnvironmentVariable(name, value);
 
-  actual:=SysUtils.GetEnvironmentVariable(name);
+  actual := SysUtils.GetEnvironmentVariable(name);
 
   CheckEquals(value, actual);
 end;
@@ -210,11 +211,14 @@ begin
 
   TEnvironment.SetEnvironmentVariable(name, value);
 
-  // Do not use SysUtils, it is broken for regional characters, this will actually test both GetEnvironmentVariable and SetEnvironmentVariable which makes this an integration test
-  actual:=TEnvironment.GetEnvironmentVariable(name);
+  // Do not use SysUtils, it is broken for regional characters, this will actually
+  // test both GetEnvironmentVariable and SetEnvironmentVariable which makes this an integration test
+  actual := TEnvironment.GetEnvironmentVariable(name);
 
   CheckEquals(value, actual);
 end;
+
 {$ENDREGION}
+
 
 end.
