@@ -1,15 +1,26 @@
-*.bak
+# IDE files
+*.~*
 *.cbk
-*.dcu
-*.ddp
-*.drc
 *.dsk
 *.identcache
 *.local
-*.map
 *.skincfg
 *.tvsconfig
-*.*~*
-__history
-dunit.ini
-Spring.Tests.exe
+__history/
+
+# Delphi Compiler output files
+*.dcu
+*.drc
+*.jdbg
+*.map
+*.plist
+*.rsm
+*.tds
+
+# 64bit Delphi files
+*.o
+
+# Spring4D files:
+*.bak
+*.mes
+Tests/Bin/

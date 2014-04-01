@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -89,6 +89,7 @@ type
 ///	<seealso cref="GetByteLength(RawByteString)" />
 function GetByteLength(const s: string): Integer; overload; inline;
 
+{$IFNDEF NEXTGEN}
 ///	<summary>
 ///	  Retrieves the byte length of a WideString.
 ///	</summary>
@@ -112,6 +113,7 @@ function GetByteLength(const s: WideString): Integer; overload; inline;
 ///	<seealso cref="GetByteLength(string)" />
 ///	<seealso cref="GetByteLength(WideString)" />
 function GetByteLength(const s: RawByteString): Integer; overload; inline;
+{$ENDIF NEXTGEN}
 
 
 ///	<summary>
@@ -158,6 +160,10 @@ function SplitString(const buffer: PChar): TStringDynArray; overload;
 function SplitNullTerminatedStrings(const buffer: PChar): TStringDynArray;
   deprecated 'Use the SplitString(PChar) function instead.';
 
+///	<summary>
+///	  Returns <c>True</c> if the type is a nullable type.
+///	</summary>
+function IsNullableType(typeInfo: PTypeInfo): Boolean;
 
 ///	<summary>
 ///	  Try getting the underlying type name of a nullable type.
@@ -245,47 +251,6 @@ function TryConvertStrToDateTime(const s, format: string; out value: TDateTime):
 ///	</param>
 function ConvertStrToDateTime(const s, format: string): TDateTime;
 
-type
-  ///	<summary>
-  ///	  Specifies the kind of a lazy type.
-  ///	</summary>
-  TLazyKind = (
-    ///	<summary>
-    ///	  Not a lazy type.
-    ///	</summary>
-    lkNone,
-
-    ///	<summary>
-    ///	  Type is <see cref="SysUtils|TFunc&lt;T&gt;" />.
-    ///	</summary>
-    lkFunc,
-
-    ///	<summary>
-    ///	  Type is <see cref="Spring|Lazy&lt;T&gt;" />.
-    ///	</summary>
-    lkRecord,
-
-    ///	<summary>
-    ///	  Type is <see cref="Spring|ILazy&lt;T&gt;" />.
-    ///	</summary>
-    lkInterface
-  );
-
-///	<summary>
-///	  Returns the <see cref="TLazyKind" /> of the typeInfo.
-///	</summary>
-function GetLazyKind(typeInfo: PTypeInfo): TLazyKind;
-
-///	<summary>
-///	  Returns the underlying type name of the lazy type.
-///	</summary>
-function GetLazyTypeName(typeInfo: PTypeInfo): string;
-
-///	<summary>
-///	  Returns <c>True</c> of the type is a lazy type.
-///	</summary>
-function IsLazyType(typeInfo: PTypeInfo): Boolean;
-
 implementation
 
 uses
@@ -326,7 +291,7 @@ begin
   Guard.CheckTypeKind(typeInfo, [tkEnumeration], 'T');
 
   data := GetTypeData(typeInfo);
-  Assert(data <> nil, 'data must not be nil.');
+  Guard.CheckNotNull(data, 'data');
   Result := (value >= data.MinValue) and (value <= data.MaxValue);
 end;
 
@@ -359,16 +324,29 @@ end;
 class function TEnum.GetNames<T>: TStringDynArray;
 var
   typeData: PTypeData;
+{$IFDEF NEXTGEN}
+  p: TTypeInfoFieldAccessor;
+{$ELSE}
   p: PShortString;
+{$ENDIF}
   i: Integer;
 begin
   typeData := TEnum.GetEnumTypeData<T>;
   SetLength(Result, typeData.MaxValue - typeData.MinValue + 1);
+{$IFDEF NEXTGEN}
+  p := typedata^.NameListFld;
+{$ELSE}
   p := @typedata.NameList;
+{$ENDIF}
   for i := 0 to High(Result) do
   begin
+{$IFDEF NEXTGEN}
+    Result[i] := p.ToString;
+    p.SetData(p.Tail);
+{$ELSE}
     Result[i] := UTF8ToString(p^);
     Inc(PByte(p), Length(p^)+1);
+{$ENDIF}
   end;
 end;
 
@@ -460,6 +438,7 @@ begin
   Result := Length(s) * SizeOf(Char);
 end;
 
+{$IFNDEF NEXTGEN}
 function GetByteLength(const s: WideString): Integer;
 begin
   Result := Length(s) * SizeOf(WideChar);
@@ -469,6 +448,7 @@ function GetByteLength(const s: RawByteString): Integer;
 begin
   Result := Length(s);
 end;
+{$ENDIF}
 
 function SplitString(const buffer: string; const separators: TSysCharSet;
   removeEmptyEntries: Boolean): TStringDynArray;
@@ -638,7 +618,10 @@ begin
       begin
         instance := value.GetReferenceToRawData;
         valueField.SetValue(instance, underlyingValue);
-        hasValueField.SetValue(instance, '@');
+        if underlyingValue.IsEmpty then
+          hasValueField.SetValue(instance, '')
+        else
+          hasValueField.SetValue(instance, '@');
       end;
     end;
   end;
@@ -736,46 +719,6 @@ begin
   begin
     raise EConvertError.CreateResFmt(@SInvalidDateTime, [s]);
   end;
-end;
-
-const
-  LazyPrefixStrings: array[lkFunc..High(TLazyKind)] of string = (
-    'TFunc<', 'Lazy<', 'ILazy<');
-
-function GetLazyKind(typeInfo: PTypeInfo): TLazyKind;
-var
-  name: string;
-begin
-  if Assigned(typeInfo) then
-  begin
-    name := GetTypeName(typeInfo);
-    for Result := lkFunc to High(TLazyKind) do
-    begin
-      if StartsText(LazyPrefixStrings[Result], name) then
-        Exit;
-    end;
-  end;
-  Result := lkNone;
-end;
-
-function GetLazyTypeName(typeInfo: PTypeInfo): string;
-var
-  lazyKind: TLazyKind;
-  name: string;
-  i: Integer;
-begin
-  lazyKind := GetLazyKind(typeInfo);
-  name := GetTypeName(typeInfo);
-  if lazyKind > lkNone then
-  begin
-    i := Length(LazyPrefixStrings[lazyKind]) + 1;
-    Result := Copy(name, i, Length(name) - i )
-  end;
-end;
-
-function IsLazyType(typeInfo: PTypeInfo): Boolean;
-begin
-  Result := GetLazyKind(typeInfo) <> lkNone;
 end;
 
 end.

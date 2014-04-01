@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -72,7 +72,7 @@ type
     ///	</summary>
     ///	<param name="comparer">
     ///	  The <see cref="IEqualityComparer&lt;T&gt;" /> implementation to use
-    ///	  when comparing values in the set, or <b>nil</b> to use the default
+    ///	  when comparing values in the set, or <b>nil</b> to use the default
     ///	  <see cref="TEqualityComparer&lt;T&gt;" /> implementation for the set
     ///	  type.
     ///	</param>
@@ -261,7 +261,7 @@ uses
 
 procedure THashSetBase<T>.Add(const item: T);
 begin
-  fDictionary.Add(item, 0);
+  fDictionary.AddOrSetValue(item, 0);
 end;
 
 {$ENDREGION}

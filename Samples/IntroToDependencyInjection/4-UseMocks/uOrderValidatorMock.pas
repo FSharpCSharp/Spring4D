@@ -19,9 +19,7 @@ implementation
 function TOrderValidatorMock.ValidateOrder(aOrder: TOrder): Boolean;
 begin
   Result := True;
-  {$IFDEF CONSOLEAPP}
   Writeln('TOrderValidatorMock.ValidateOrder called');
-  {$ENDIF}
 end;
 
 end.

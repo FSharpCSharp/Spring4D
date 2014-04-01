@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -45,7 +45,7 @@ type
 
   TDecoratorInspector = class(TInspectorBase)
   protected
-    procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); override;
+    procedure DoProcessModel(const context: IContainerContext; const model: TComponentModel); override;
   end;
 
   TDecoratorComponentActivator = class(TInterfacedObject, IComponentActivator)
@@ -85,7 +85,7 @@ end;
 {$REGION 'TDecoratorInspector'}
 
 procedure TDecoratorInspector.DoProcessModel(const context: IContainerContext;
-  model: TComponentModel);
+  const model: TComponentModel);
 var
   serviceType: PTypeInfo;
   componentModel: TComponentModel;
@@ -99,7 +99,11 @@ begin
     predicate := TMethodFilters.IsConstructor
       and TMethodFilters.ContainsParameterType(serviceType);
     decoratorModel := nil;
-    for componentModel in context.ComponentRegistry.FindAll(serviceType) do
+    for componentModel in context.ComponentRegistry.FindAll.Where(
+      function(const model: TComponentModel): Boolean
+      begin
+        Result := model.HasService(serviceType);
+      end) do
     begin
       if Assigned(decoratorModel) and (model = componentModel) then
       begin

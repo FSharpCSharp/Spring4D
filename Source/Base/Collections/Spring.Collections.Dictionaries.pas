@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -98,6 +98,7 @@ type
     procedure DoValueNotify(Sender: TObject; const Item: TValue; Action: TCollectionNotification);
     function GetOnKeyChanged: ICollectionChangedEvent<TKey>;
     function GetOnValueChanged: ICollectionChangedEvent<TValue>;
+    function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
   protected
   {$REGION 'Property Accessors'}
     function GetCount: Integer; override;
@@ -139,8 +140,6 @@ type
     function ContainsValue(const value: TValue): Boolean;
     function ExtractPair(const key: TKey): TGenericPair;
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
-
-    function AsReadOnly: IReadOnlyDictionary<TKey, TValue>;
 
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
     property Keys: IReadOnlyCollection<TKey> read GetKeys;
@@ -336,7 +335,7 @@ begin
   fDictionary.AddOrSetValue(key, value);
 end;
 
-function TDictionary<TKey, TValue>.AsReadOnly: IReadOnlyDictionary<TKey, TValue>;
+function TDictionary<TKey, TValue>.AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
 begin
   Result := Self;
 end;

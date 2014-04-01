@@ -1,17 +1,19 @@
-==========================================
+Spring4D
+==
+Spring4D is an open-source code library for Embarcadero Delphi 2010 and higher.
+It consists of a number of of different modules that contain a base class library (common types, interface based collection types, reflection extensions) and a dependency injection framework. It uses the Apache License 2.0.
 
-Spring Framework for Delphi 
+Installation
+--
+Just run the Build.exe and select the Delphi versions you want to install Spring4D for.
 
-Copyright (c) 2009-2013 Spring4D Team
+Current version
+--
+1.0 (2014-04-01)
 
-http://www.spring4d.org
+Known issues
+--
+Some warnings when compiling for mobile compilers.
+The deployment of the unit test project might fail for mobile compilers (iOS ARM and Android).
 
-==========================================
-
-Spring Framework for Delphi (Spring4D) is an open-source code library for Embarcadero Delphi 2010+ platforms. It consists of a number of different modules, including a Dependency Injection Framework and a Base Class Library (Common Types, Collections Framework, Reflection, Logging).
-
-To Build the framework, Run Build.exe
-
-To Browse the framework, open the corresponding project group in the Packages folder
-
-To Get the latest information, please visit http://www.spring4d.org
+Copyright (c) 2009 - 2014 Spring4D Team

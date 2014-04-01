@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -23,6 +23,8 @@
 {***************************************************************************}
 
 unit Spring.Events.Base;
+
+{$I Spring.inc}
 
 interface
 
@@ -74,6 +76,7 @@ type
   end;
 
 implementation
+
 
 {$REGION 'TEventBase'}
 

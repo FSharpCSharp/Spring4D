@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -33,6 +33,7 @@ unit Spring.Collections;
 interface
 
 uses
+  Classes,
   Generics.Collections,
   Generics.Defaults,
   SysUtils,
@@ -62,11 +63,15 @@ type
   ICollection<T> = interface;
   IReadOnlyList<T> = interface;
   IList<T> = interface;
+  ILinkedList<T> = interface;
   IReadOnlyDictionary<TKey, TValue> = interface;
   IDictionary<TKey, TValue> = interface;
   IStack<T> = interface;
   IQueue<T> = interface;
   ISet<T> = interface;
+
+  IObjectList = interface;
+  IInterfaceList = interface;
 
   IGrouping<TKey, TElement> = interface;
   ILookup<TKey, TElement> = interface;
@@ -77,7 +82,7 @@ type
   ///	</summary>
   TCollectionChangedAction = (
     ///	<summary>
-    ///	  An item was added to the collection.
+    ///	  An item was added to the collection.
     ///	</summary>
     caAdded,
 
@@ -148,7 +153,7 @@ type
     ///	  The collection was modified after the enumerator was created.
     ///	</exception>
     ///	<exception cref="Spring|ENotSupportedException">
-    ///	  The Reset method is not supported. 
+    ///	  The Reset method is not supported. 
     ///	</exception>
     procedure Reset;
 
@@ -228,7 +233,7 @@ type
     property ElementType: PTypeInfo read GetElementType;
 
     ///	<summary>
-    ///	  Determines whether a sequence contains no elements.
+    ///	  Determines whether a sequence contains no elements.
     ///	</summary>
     ///	<value>
     ///	  <b>True</b> if the source sequence contains no elements; otherwise,
@@ -383,6 +388,12 @@ type
     ///	  source sequence.
     ///	</returns>
     function ElementAtOrDefault(index: Integer; const defaultValue: T): T; overload;
+
+    ///	<summary>
+    ///	  Determines whether two sequences are equal by comparing the elements
+    ///	  by using the default equality comparer for their type.
+    ///	</summary>
+    function EqualsTo(const values: array of T): Boolean; overload;
 
     ///	<summary>
     ///	  Determines whether two sequences are equal by comparing the elements
@@ -595,13 +606,13 @@ type
     ///	  Sorts the elements of a sequence in ascending order using the default
     ///	  comparer for their type.
     ///	</summary>
-//    function Ordered: IEnumerable<T>; overload;
+    function Ordered: IEnumerable<T>; overload;
 
     ///	<summary>
     ///	  Sorts the elements of a sequence in ascending order using the
-    ///	  specified TComparison&lt;T&gt;.
+    ///	  specified <see cref="IComparer&lt;T&gt;" />.
     ///	</summary>
-//    function Ordered(const comparison: TComparison<T>): IEnumerable<T>; overload;
+    function Ordered(const comparer: IComparer<T>): IEnumerable<T>; overload;
 
     ///	<summary>
     ///	  Inverts the order of the elements in a sequence.
@@ -793,7 +804,6 @@ type
     procedure Add(const item: T);
     procedure AddRange(const collection: array of T); overload;
     procedure AddRange(const collection: IEnumerable<T>); overload;
-    procedure AddRange(const collection: TEnumerable<T>); overload;
 
     ///	<summary>
     ///	  Removes all items from the ICollection&lt;T&gt;.
@@ -819,7 +829,7 @@ type
     ///	  ICollection&lt;T&gt;.
     ///	</summary>
     ///	<param name="item">
-    ///	  The element to remove from the ICollection&lt;T&gt;.
+    ///	  The element to remove from the ICollection&lt;T&gt;.
     ///	</param>
     ///	<returns>
     ///	  <b>True</b> if <i>item</i> was successfully removed from the
@@ -830,12 +840,10 @@ type
     function Remove(const item: T): Boolean;
     procedure RemoveRange(const collection: array of T); overload;
     procedure RemoveRange(const collection: IEnumerable<T>); overload;
-    procedure RemoveRange(const collection: TEnumerable<T>); overload;
 
     function Extract(const item: T): T;
     procedure ExtractRange(const collection: array of T); overload;
     procedure ExtractRange(const collection: IEnumerable<T>); overload;
-    procedure ExtractRange(const collection: TEnumerable<T>); overload;
 
     ///	<summary>
     ///	  Gets a value indicating whether the ICollection&lt;T&gt; is read-only.
@@ -891,7 +899,7 @@ type
     function LastIndexOf(const item: TValue; index: Integer): Integer; overload;
     function LastIndexOf(const item: TValue; index, count: Integer): Integer; overload;
 
-    function AsReadOnly: IReadOnlyList;
+    function AsReadOnlyList: IReadOnlyList;
 
     property Items[index: Integer]: TValue read GetItem write SetItem; default;
     property OnChanged: IEvent read GetOnChanged;
@@ -949,12 +957,11 @@ type
     ///	  The zero-based index at which item should be inserted.
     ///	</param>
     ///	<param name="item">
-    ///	  The element to insert into the IList&lt;T&gt;.
+    ///	  The element to insert into the IList&lt;T&gt;.
     ///	</param>
     procedure Insert(index: Integer; const item: T);
     procedure InsertRange(index: Integer; const collection: array of T); overload;
     procedure InsertRange(index: Integer; const collection: IEnumerable<T>); overload;
-    procedure InsertRange(index: Integer; const collection: TEnumerable<T>); overload;
 
     ///	<summary>
     ///	  Removes the item at the specified index.
@@ -982,13 +989,13 @@ type
     ///	  Determines the index of a specific item in the IList&lt;T&gt;.
     ///	</summary>
     ///	<param name="item">
-    ///	  The element to locate in the IList&lt;T&gt;.
+    ///	  The element to locate in the IList&lt;T&gt;.
     ///	</param>
     ///	<returns>
     ///	  The index of <i>item</i> if found in the list; otherwise, -1.
     ///	</returns>
     ///	<remarks>
-    ///	  If an element occurs multiple times in the list, the IndexOf method
+    ///	  If an element occurs multiple times in the list, the IndexOf method
     ///	  always returns the first instance found.
     ///	</remarks>
     function IndexOf(const item: T): Integer; overload;
@@ -1000,11 +1007,424 @@ type
     function LastIndexOf(const item: T; index, count: Integer): Integer; overload;
 
     function AsList: IList;
-    function AsReadOnly: IReadOnlyList<T>;
+    function AsReadOnlyList: IReadOnlyList<T>;
 
     property Items[index: Integer]: T read GetItem write SetItem; default;
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
+
+  IObjectList = interface(IList<TObject>)
+    ['{78A32DC5-1A5B-4191-9CA5-006CD85CF1AA}']
+    // DO NOT ADD ANY METHODS HERE!!!
+  end;
+
+  IInterfaceList = interface(IList<IInterface>)
+    ['{B6BF9A6E-797C-4982-8D0D-B935E43D917E}']
+    // DO NOT ADD ANY METHODS HERE!!!
+  end;
+
+  {$REGION 'Documentation'}
+  /// <summary>
+  ///   Represents a node in a
+  ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />. This class
+  ///   cannot be inherited.
+  /// </summary>
+  /// <typeparam name="T">
+  ///   Specifies the element type of the linked list.
+  /// </typeparam>
+  {$ENDREGION}
+  TLinkedListNode<T> = class sealed
+  protected
+    fList: Pointer;
+    fNext: TLinkedListNode<T>;
+    fPrev: TLinkedListNode<T>;
+    fItem: T;
+    function GetList: ILinkedList<T>;
+    function GetNext: TLinkedListNode<T>;
+    function GetPrevious: TLinkedListNode<T>;
+  public
+    constructor Create(const value: T); overload;
+
+    property List: ILinkedList<T> read GetList;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Gets the next node in the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <value>
+    ///   A reference to the next node in the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />, or <b>nil</b>
+    ///   if the current node is the last element (Last) of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </value>
+    {$ENDREGION}
+    property Next: TLinkedListNode<T> read GetNext;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Gets the previous node in the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <value>
+    ///   A reference to the previous node in the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />, or null if
+    ///   the current node is the first element (First) of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </value>
+    {$ENDREGION}
+    property Previous: TLinkedListNode<T> read GetPrevious;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Gets the value contained in the node.
+    /// </summary>
+    /// <value>
+    ///   The value contained in the node.
+    /// </value>
+    {$ENDREGION}
+    property Value: T read fItem write fItem;
+  end;
+
+  {$REGION 'Documentation'}
+  /// <summary>
+  ///   Represents a doubly linked list.
+  /// </summary>
+  /// <typeparam name="T">
+  ///   Specifies the element type of the linked list.
+  /// </typeparam>
+  {$ENDREGION}
+  ILinkedList<T> = interface(ICollection<T>)
+    ['{73351AD9-15A5-4DA0-9BB7-D8FF66A3077E}']
+  {$REGION 'Property Accessors'}
+    function GetFirst: TLinkedListNode<T>;
+    function GetLast: TLinkedListNode<T>;
+    function GetOnChanged: ICollectionChangedEvent<T>;
+  {$ENDREGION}
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Adds the specified new node after the specified existing node in the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <param name="node">
+    ///   The <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" /> after
+    ///   which to insert <i>newNode</i>.
+    /// </param>
+    /// <param name="value">
+    ///   The new <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" /> to
+    ///   add to the <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </param>
+    /// <exception cref="Spring|EArgumentNullException">
+    ///   <para>
+    ///     <i>node</i> is <b>nil</b>.
+    ///   </para>
+    ///   <para>
+    ///     -or-
+    ///   </para>
+    ///   <para>
+    ///     <i>newNode</i> is <b>nil</b>.
+    ///   </para>
+    /// </exception>
+    /// <exception cref="Spring|EInvalidOperationException">
+    ///   <para>
+    ///     <i>node</i> is not in the current
+    ///     <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    ///   </para>
+    ///   <para>
+    ///     -or-
+    ///   </para>
+    ///   <para>
+    ///     <i>newNode</i> belongs to another
+    ///     <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    ///   </para>
+    /// </exception>
+    {$ENDREGION}
+    procedure AddAfter(const node: TLinkedListNode<T>; const newNode: TLinkedListNode<T>); overload;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Adds a new node containing the specified value after the specified
+    ///   existing node in the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <param name="node">
+    ///   The <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" /> after
+    ///   which to insert a new
+    ///   <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" /> containing
+    ///   <i>value</i>.
+    /// </param>
+    /// <param name="value">
+    ///   The value to add to the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </param>
+    /// <returns>
+    ///   The new <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" />
+    ///   containing <i>value</i>.
+    /// </returns>
+    /// <exception cref="Spring|EArgumentNullException">
+    ///   <i>node</i> is <b>nil</b>.
+    /// </exception>
+    /// <exception cref="Spring|EInvalidOperationException">
+    ///   <i>node</i> is not in the current
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </exception>
+    {$ENDREGION}
+    function AddAfter(const node: TLinkedListNode<T>; const value: T): TLinkedListNode<T>; overload;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Adds the specified new node before the specified existing node in the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <param name="node">
+    ///   The <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" /> before
+    ///   which to insert <i>newNode</i>.
+    /// </param>
+    /// <param name="newNode">
+    ///   The new <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" /> to
+    ///   add to the <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </param>
+    /// <exception cref="Spring|EArgumentNullException">
+    ///   <para>
+    ///     <i>node</i> is <b>nil</b>.
+    ///   </para>
+    ///   <para>
+    ///     -or-
+    ///   </para>
+    ///   <para>
+    ///     <i>newNode</i> is <b>nil</b>.
+    ///   </para>
+    /// </exception>
+    /// <exception cref="Spring|EInvalidOperationException">
+    ///   <para>
+    ///     <i>node</i> is not in the current
+    ///     <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    ///   </para>
+    ///   <para>
+    ///     -or-
+    ///   </para>
+    ///   <para>
+    ///     <i>newNode</i> belongs to another
+    ///     <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    ///   </para>
+    /// </exception>
+    {$ENDREGION}
+    procedure AddBefore(const node: TLinkedListNode<T>; const newNode: TLinkedListNode<T>); overload;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Adds a new node containing the specified value before the specified
+    ///   existing node in the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <param name="node">
+    ///   The <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" /> before
+    ///   which to insert a new
+    ///   <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" /> containing
+    ///   <i>value</i>.
+    /// </param>
+    /// <param name="value">
+    ///   The value to add to the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </param>
+    /// <returns>
+    ///   The new <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" />
+    ///   containing <i>value</i>.
+    /// </returns>
+    /// <exception cref="Spring|EArgumentNullException">
+    ///   <i>node</i> is <b>nil</b>.
+    /// </exception>
+    /// <exception cref="Spring|EInvalidOperationException">
+    ///   <i>node</i> is not in the current
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </exception>
+    {$ENDREGION}
+    function AddBefore(const node: TLinkedListNode<T>; const value: T): TLinkedListNode<T>; overload;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Adds the specified new node at the start of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <param name="node">
+    ///   The new <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" /> to
+    ///   add at the start of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </param>
+    /// <exception cref="Spring|EArgumentNullException">
+    ///   <i>node</i> is <b>nil</b>.
+    /// </exception>
+    /// <exception cref="Spring|EInvalidOperationException">
+    ///   <i>node</i> belongs to another
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </exception>
+    {$ENDREGION}
+    procedure AddFirst(const node: TLinkedListNode<T>); overload;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Adds a new node containing the specified value at the start of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <param name="value">
+    ///   The value to add at the start of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </param>
+    /// <returns>
+    ///   The new <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" />
+    ///   containing <i>value</i>.
+    /// </returns>
+    {$ENDREGION}
+    function AddFirst(const value: T): TLinkedListNode<T>; overload;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Adds the specified new node at the end of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <param name="node">
+    ///   The new <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" /> to
+    ///   add at the end of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </param>
+    /// <exception cref="Spring|EArgumentNullException">
+    ///   <i>node</i> is <b>nil</b>.
+    /// </exception>
+    /// <exception cref="Spring|EInvalidOperationException">
+    ///   <i>node</i> belongs to another
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </exception>
+    {$ENDREGION}
+    procedure AddLast(const node: TLinkedListNode<T>); overload;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Adds a new node containing the specified value at the end of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <param name="value">
+    ///   The value to add at the end of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </param>
+    /// <returns>
+    ///   The new <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" />
+    ///   containing <i>value</i>.
+    /// </returns>
+    {$ENDREGION}
+    function AddLast(const value: T): TLinkedListNode<T>; overload;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Finds the first node that contains the specified value.
+    /// </summary>
+    /// <param name="value">
+    ///   The value to locate in the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </param>
+    /// <returns>
+    ///   The first <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" />
+    ///   that contains the specified value, if found; otherwise, <b>nil</b>.
+    /// </returns>
+    {$ENDREGION}
+    function Find(const value: T): TLinkedListNode<T>;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Finds the last node that contains the specified value.
+    /// </summary>
+    /// <param name="value">
+    ///   The value to locate in the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </param>
+    /// <returns>
+    ///   The last <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" />
+    ///   that contains the specified value, if found; otherwise, <b>nil</b>.
+    /// </returns>
+    {$ENDREGION}
+    function FindLast(const value: T): TLinkedListNode<T>;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Removes the specified node from the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <param name="node">
+    ///   The <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" /> to
+    ///   remove from the <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />
+    ///    .
+    /// </param>
+    /// <exception cref="Spring|EArgumentNullException">
+    ///   <i>node</i> is <b>nil</b>.
+    /// </exception>
+    /// <exception cref="Spring|EInvalidOperationException">
+    ///   <i>node</i> is not in the current
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </exception>
+    {$ENDREGION}
+    procedure Remove(const node: TLinkedListNode<T>); overload;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Removes the node at the start of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <exception cref="Spring|EInvalidOperationException">
+    ///   The <see cref="Spring.Collections|ILinkedList&lt;T&gt;" /> is empty.
+    /// </exception>
+    {$ENDREGION}
+    procedure RemoveFirst;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Removes the node at the end of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <exception cref="Spring|EInvalidOperationException">
+    ///   The <see cref="Spring.Collections|ILinkedList&lt;T&gt;" /> is empty.
+    /// </exception>
+    {$ENDREGION}
+    procedure RemoveLast;
+
+    {$WARNINGS OFF}
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Gets the first node of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <value>
+    ///   The first <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" />
+    ///   of the <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </value>
+    {$ENDREGION}
+    property First: TLinkedListNode<T> read GetFirst;
+
+    {$REGION 'Documentation'}
+    /// <summary>
+    ///   Gets the last node of the
+    ///   <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </summary>
+    /// <value>
+    ///   The last <see cref="Spring.Collections|TLinkedListNode&lt;T&gt;" />
+    ///   of the <see cref="Spring.Collections|ILinkedList&lt;T&gt;" />.
+    /// </value>
+    {$ENDREGION}
+    property Last: TLinkedListNode<T> read GetLast;
+    {$WARNINGS ON}
+
+    property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
+  end;
+
+//  TKeyValuePair<TKey, TValue> = record
+//  private
+//    fKey: TKey;
+//    fValue: TValue;
+//  public
+//    constructor Create(const key: TKey; const value: TValue);
+//
+//    property Key: TKey read fKey;
+//    property Value: TValue read fValue;
+//  end;
 
   IReadOnlyDictionary = interface(IReadOnlyCollection)
     ['{D963ED30-C16F-488B-9BC6-1292DD57B295}']
@@ -1042,7 +1462,7 @@ type
 
     function TryGetValue(const key: TValue; out value: TValue): Boolean;
 
-    function AsReadOnly: IReadOnlyDictionary;
+    function AsReadOnlyDictionary: IReadOnlyDictionary;
 
     property OnKeyChanged: IEvent read GetOnKeyChanged;
     property OnValueChanged: IEvent read GetOnValueChanged;
@@ -1147,10 +1567,10 @@ type
     ///	  IDictionary&lt;TKey, TValue&gt;.
     ///	</summary>
     ///	<param name="key">
-    ///	  The item to use as the key of the element to add.
+    ///	  The item to use as the key of the element to add.
     ///	</param>
     ///	<param name="value">
-    ///	  The item to use as the value of the element to add.
+    ///	  The item to use as the value of the element to add.
     ///	</param>
     procedure Add(const key: TKey; const value: TValue); overload;
     procedure AddOrSetValue(const key: TKey; const value: TValue);
@@ -1210,7 +1630,7 @@ type
     ///	</returns>
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
 
-    function AsReadOnly: IReadOnlyDictionary<TKey, TValue>;
+    function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
 
     ///	<summary>
     ///	  Gets or sets the element with the specified key.
@@ -1278,7 +1698,7 @@ type
   {$ENDREGION}
 
     ///	<summary>
-    ///	  Removes all elements from the IStack&lt;T&gt;.
+    ///	  Removes all elements from the IStack&lt;T&gt;.
     ///	</summary>
     procedure Clear;
 
@@ -1286,26 +1706,26 @@ type
     ///	  Inserts an element at the top of the IStack&lt;T&gt;.
     ///	</summary>
     ///	<param name="item">
-    ///	  The element to push onto the IStack&lt;T&gt;. The value can be 
+    ///	  The element to push onto the IStack&lt;T&gt;. The value can be 
     ///	  <b>nil</b> for reference types.
     ///	</param>
     procedure Push(const item: T);
 
     ///	<summary>
-    ///	  Removes and returns the element at the top of the
+    ///	  Removes and returns the element at the top of the
     ///	  IStack&lt;T&gt;.
     ///	</summary>
     ///	<returns>
-    ///	  The element removed from the top of the IStack&lt;T&gt;.
+    ///	  The element removed from the top of the IStack&lt;T&gt;.
     ///	</returns>
     function Pop: T;
 
     ///	<summary>
-    ///	  Returns the element at the top of the IStack&lt;T&gt; without
+    ///	  Returns the element at the top of the IStack&lt;T&gt; without
     ///	  removing it.
     ///	</summary>
     ///	<returns>
-    ///	  The element at the top of the IStack&lt;T&gt;.
+    ///	  The element at the top of the IStack&lt;T&gt;.
     ///	</returns>
     function Peek: T;
     function PeekOrDefault: T;
@@ -1347,20 +1767,20 @@ type
     procedure Clear;
 
     ///	<summary>
-    ///	  Adds an element to the end of the IQueue&lt;T&gt;. 
+    ///	  Adds an element to the end of the IQueue&lt;T&gt;. 
     ///	</summary>
     ///	<param name="item">
-    ///	  The element to add to the IQueue&lt;T&gt;. The value can be <b>nil</b>
+    ///	  The element to add to the IQueue&lt;T&gt;. The value can be <b>nil</b>
     ///	   for reference types.
     ///	</param>
     procedure Enqueue(const item: T);
 
     ///	<summary>
     ///	  Removes and returns the element at the beginning of the
-    ///	  IQueue&lt;T&gt;. 
+    ///	  IQueue&lt;T&gt;. 
     ///	</summary>
     ///	<returns>
-    ///	  The element that is removed from the beginning of the IQueue&lt;T&gt;.
+    ///	  The element that is removed from the beginning of the IQueue&lt;T&gt;.
     ///	</returns>
     function Dequeue: T;
 
@@ -1369,7 +1789,7 @@ type
     ///	  removing it.
     ///	</summary>
     ///	<returns>
-    ///	  The element at the beginning of the IQueue&lt;T&gt;.
+    ///	  The element at the beginning of the IQueue&lt;T&gt;.
     ///	</returns>
     function Peek: T;
     function PeekOrDefault: T;
@@ -1512,7 +1932,7 @@ type
   end;
 
   ///	<summary>
-  ///	  Represents a collection of elements that have a common key.
+  ///	  Represents a collection of elements that have a common key.
   ///	</summary>
   ///	<typeparam name="TKey">
   ///	  The type of the key of the IGrouping&lt;TKey, TElement&gt;.
@@ -1628,7 +2048,7 @@ type
 
   ///	<summary>
   ///	  Provides static methods to create an instance of various interfaced
-  ///	  generic collections such as <see cref="IList&lt;T&gt;" /> or
+  ///	  generic collections such as <see cref="IList&lt;T&gt;" /> or
   ///	  <see cref="IDictionary&lt;TKey, TValue&gt;" />.
   ///	</summary>
   TCollections = class
@@ -1638,10 +2058,15 @@ type
     class function CreateList<T>(const values: array of T): IList<T>; overload; static;
     class function CreateList<T>(const values: IEnumerable<T>): IList<T>; overload; static;
     class function CreateList<T: class>(ownsObjects: Boolean): IList<T>; overload; static;
-    class function CreateList<T: class>(ownsObjects: Boolean; const comparer: IComparer<T>): IList<T>; overload; static;
+    class function CreateList<T: class>(const comparer: IComparer<T>; ownsObjects: Boolean): IList<T>; overload; static;
     class function CreateObjectList<T: class>(ownsObjects: Boolean = True): IList<T>; overload; static;
-    class function CreateObjectList<T: class>(ownsObjects: Boolean; const comparer: IComparer<T>): IList<T>; overload; static;
+    class function CreateObjectList<T: class>(const comparer: IComparer<T>; ownsObjects: Boolean = True): IList<T>; overload; static;
     class function CreateObjectList<T: class>(const values: array of T; ownsObjects: Boolean = True): IList<T>; overload; static;
+    class function CreateObjectList<T: class>(const values: IEnumerable<T>; ownsObjects: Boolean = True): IList<T>; overload; static;
+    class function CreateInterfaceList<T: IInterface>: IList<T>; overload; static;
+    class function CreateInterfaceList<T: IInterface>(const comparer: IComparer<T>): IList<T>; overload; static;
+    class function CreateInterfaceList<T: IInterface>(const values: array of T): IList<T>; overload; static;
+    class function CreateInterfaceList<T: IInterface>(const values: IEnumerable<T>): IList<T>; overload; static;
 
     class function CreateDictionary<TKey, TValue>: IDictionary<TKey, TValue>; overload; static;
     class function CreateDictionary<TKey, TValue>(capacity: Integer): IDictionary<TKey, TValue>; overload; static;
@@ -1677,6 +2102,12 @@ type
     ///	  <i>T</i>.
     ///	</returns>
     class function Empty<T>: IEnumerable<T>; static;
+
+    class function Query<T>(const source: TEnumerable<T>): IEnumerable<T>; static;
+
+    class function Range(start, count: Integer): IEnumerable<Integer>; static;
+
+    class function Repeated<T>(const element: T; count: Integer): IEnumerable<T>; static;
   end;
 
   TStringComparer = class(TCustomComparer<string>)
@@ -1700,6 +2131,12 @@ type
     class function OrdinalIgnoreCase: TStringComparer;
   end;
 
+  TCollectionHelper = class helper for TCollection
+  public
+    function AsList: IList<TCollectionItem>; overload;
+    function AsList<T: TCollectionItem>: IList<T>; overload;
+  end;
+
 implementation
 
 uses
@@ -1707,6 +2144,7 @@ uses
   Spring.Collections.Dictionaries,
   Spring.Collections.Extensions,
   Spring.Collections.Lists,
+  Spring.Collections.LinkedLists,
   Spring.Collections.Queues,
   Spring.Collections.Sets,
   Spring.Collections.Stacks,
@@ -1737,30 +2175,38 @@ end;
 
 class function TCollections.CreateList<T>(ownsObjects: Boolean): IList<T>;
 begin
-  Result := TCollections.CreateList<T>(ownsObjects, TComparer<T>.Default());
+  Result := TObjectList<T>.Create(ownsObjects) as IList<T>;
 end;
 
-class function TCollections.CreateList<T>(ownsObjects: Boolean;
-  const comparer: IComparer<T>): IList<T>;
+class function TCollections.CreateList<T>(const comparer: IComparer<T>;
+  ownsObjects: Boolean): IList<T>;
 begin
-  Result := TObjectList<T>.Create(comparer, ownsObjects);
+  Result := TObjectList<T>.Create(comparer, ownsObjects) as IList<T>;
 end;
 
 class function TCollections.CreateObjectList<T>(ownsObjects: Boolean): IList<T>;
 begin
-  Result := TObjectList<T>.Create(TComparer<T>.Default(), ownsObjects);
+  Result := TObjectList<T>.Create(ownsObjects) as IList<T>;
 end;
 
-class function TCollections.CreateObjectList<T>(ownsObjects: Boolean;
-  const comparer: IComparer<T>): IList<T>;
+class function TCollections.CreateObjectList<T>(const comparer: IComparer<T>;
+  ownsObjects: Boolean): IList<T>;
 begin
-  Result := TObjectList<T>.Create(comparer, ownsObjects);
+  Result := TObjectList<T>.Create(comparer, ownsObjects) as IList<T>;
 end;
 
 class function TCollections.CreateObjectList<T>(const values: array of T;
   ownsObjects: Boolean): IList<T>;
 begin
-  Result := TObjectList<T>.Create(values, ownsObjects);
+  Result := TObjectList<T>.Create(ownsObjects) as IList<T>;
+  Result.AddRange(values);
+end;
+
+class function TCollections.CreateObjectList<T>(const values: IEnumerable<T>;
+  ownsObjects: Boolean): IList<T>;
+begin
+  Result := TObjectList<T>.Create(ownsObjects) as IList<T>;
+  Result.AddRange(values);
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>(
@@ -1769,6 +2215,31 @@ class function TCollections.CreateDictionary<TKey, TValue>(
 begin
   Guard.CheckNotNull(dictionary, 'dictionary');
   Result := TDictionary<TKey, TValue>.Create(dictionary, ownership);
+end;
+
+class function TCollections.CreateInterfaceList<T>: IList<T>;
+begin
+  Result := TInterfaceList<T>.Create as IList<T>;
+end;
+
+class function TCollections.CreateInterfaceList<T>(
+  const comparer: IComparer<T>): IList<T>;
+begin
+  Result := TInterfaceList<T>.Create(comparer) as IList<T>;
+end;
+
+class function TCollections.CreateInterfaceList<T>(
+  const values: array of T): IList<T>;
+begin
+  Result := TInterfaceList<T>.Create as IList<T>;
+  Result.AddRange(values);
+end;
+
+class function TCollections.CreateInterfaceList<T>(
+  const values: IEnumerable<T>): IList<T>;
+begin
+  Result := TInterfaceList<T>.Create as IList<T>;
+  Result.AddRange(values);
 end;
 
 class function TCollections.CreateDictionary<TKey, TValue>: IDictionary<TKey, TValue>;
@@ -1885,6 +2356,23 @@ begin
   Result := TEmptyEnumerable<T>.Create;
 end;
 
+class function TCollections.Query<T>(
+  const source: TEnumerable<T>): IEnumerable<T>;
+begin
+  Result := TEnumerableAdapter<T>.Create(source);
+end;
+
+class function TCollections.Range(start, count: Integer): IEnumerable<Integer>;
+begin
+  Result := TRangeIterator<Integer>.Create(start, count);
+end;
+
+class function TCollections.Repeated<T>(const element: T;
+  count: Integer): IEnumerable<T>;
+begin
+  Result := TRepeatIterator<T>.Create(element, count);
+end;
+
 {$ENDREGION}
 
 
@@ -1914,8 +2402,8 @@ begin
     L := TCharacter.ToUpper(Left);
     R := TCharacter.ToUpper(Right);
 {$ELSE}
-    L := Left.ToUpper;
-    R := Right.ToUpper;
+    L := Char.ToUpper(Left);
+    R := Char.ToUpper(Right);
 {$ENDIF}
   end else
   begin
@@ -1936,8 +2424,8 @@ begin
     L := TCharacter.ToUpper(Left);
     R := TCharacter.ToUpper(Right);
 {$ELSE}
-    L := Left.ToUpper;
-    R := Right.ToUpper;
+    L := Char.ToUpper(Left);
+    R := Char.ToUpper(Right);
 {$ENDIF}
   end else
   begin
@@ -1956,7 +2444,7 @@ begin
 {$IFNDEF DELPHIXE4_UP}
     S := TCharacter.ToUpper(Value)
 {$ELSE}
-    S := Value.ToUpper
+    S := Char.ToUpper(Value)
 {$ENDIF}
   else
     S := Value;
@@ -1976,6 +2464,65 @@ begin
   if not Assigned(fOrdinalIgnoreCase) then
     fOrdinalIgnoreCase := TStringComparer.Create(loInvariantLocale, True);
   Result := fOrdinalIgnoreCase;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TLinkedListNode<T>'}
+
+constructor TLinkedListNode<T>.Create(const value: T);
+begin
+  inherited Create;
+  fItem := value;
+end;
+
+function TLinkedListNode<T>.GetList: ILinkedList<T>;
+begin
+  Result := TLinkedList<T>(fList);
+end;
+
+function TLinkedListNode<T>.GetNext: TLinkedListNode<T>;
+begin
+  if Assigned(fNext) and (fNext <> TLinkedList<T>(fList).fHead) then
+    Result := fNext
+  else
+    Result := nil;
+end;
+
+function TLinkedListNode<T>.GetPrevious: TLinkedListNode<T>;
+begin
+  if Assigned(fPrev) and (Self <> TLinkedList<T>(fList).fHead) then
+    Result := fPrev
+  else
+    Result := nil;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TKeyValuePair<TKey, TValue>'}
+
+//constructor TKeyValuePair<TKey, TValue>.Create(const key: TKey;
+//  const value: TValue);
+//begin
+//  fKey := key;
+//  fValue := value;
+//end;
+
+{$ENDREGION}
+
+
+{$REGION 'TCollectionHelper'}
+
+function TCollectionHelper.AsList: IList<TCollectionItem>;
+begin
+  Result := TCollectionList<TCollectionItem>.Create(Self);
+end;
+
+function TCollectionHelper.AsList<T>: IList<T>;
+begin
+  Result := TCollectionList<T>.Create(Self);
 end;
 
 {$ENDREGION}

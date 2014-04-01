@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -48,7 +48,8 @@ type
 
 implementation
 
-{ TCollectionChangedEventImpl<T> }
+
+{$REGION 'TCollectionChangedEventImpl<T>'}
 
 constructor TCollectionChangedEventImpl<T>.Create;
 begin
@@ -92,5 +93,8 @@ procedure TCollectionChangedEventImpl<T>.Remove(
 begin
   inherited Remove(TMethod(handler));
 end;
+
+{$ENDREGION}
+
 
 end.

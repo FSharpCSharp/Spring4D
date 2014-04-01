@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -30,6 +30,9 @@ unit Spring.Cryptography;
 
 {$I Spring.inc}
 {$R-}
+{$IFDEF DELPHIXE4_UP}
+  {$ZEROBASEDSTRINGS OFF}
+{$ENDIF}
 
 interface
 
@@ -151,8 +154,11 @@ type
     constructor Create(const buffer: array of Char); overload;
     constructor Create(const buffer: array of Char; startIndex, count: Integer); overload;
     constructor Create(const s: string); overload;
+{$IFNDEF NEXTGEN}
     constructor Create(const s: WideString); overload;
     constructor Create(const s: RawByteString); overload;
+{$ENDIF}
+    constructor Create(stream: TStream); overload;
 
     class function FromHexString(const s: string): TBuffer; static;
 
@@ -178,13 +184,16 @@ type
 
     function EnsureSize(size: Integer): TBuffer; overload;
     function EnsureSize(size: Integer; value: Byte): TBuffer; overload;
+{$IFNDEF NEXTGEN}
     function EnsureSize(size: Integer; value: AnsiChar): TBuffer; overload;
+{$ENDIF}
 
     function Equals(const buffer: TBuffer): Boolean; overload;
     function Equals(const buffer: array of Byte): Boolean; overload;
     function Equals(const buffer: Pointer; count: Integer): Boolean; overload;
     function Equals(const hexString: string): Boolean; overload;
 
+    procedure LoadFromStream(stream: TStream);
     procedure SaveToStream(stream: TStream);
 
     function ToBytes: TBytes;
@@ -234,8 +243,10 @@ type
     function ComputeHash(const buffer: array of Byte; startIndex, count: Integer): TBuffer; overload;
     function ComputeHash(const buffer: Pointer; count: Integer): TBuffer; overload;
     function ComputeHash(const inputString: string): TBuffer; overload;
+{$IFNDEF NEXTGEN}
     function ComputeHash(const inputString: WideString): TBuffer; overload;
     function ComputeHash(const inputString: RawByteString): TBuffer; overload;
+{$ENDIF}
     function ComputeHash(const inputStream: TStream): TBuffer; overload;  // experimental
     function ComputeHashOfFile(const fileName: string): TBuffer;  // callback?
 
@@ -298,8 +309,10 @@ type
     function  Encrypt(const buffer: array of Byte; startIndex, count: Integer): TBuffer; overload;
     function  Encrypt(const buffer: Pointer; count: Integer): TBuffer; overload;
     function  Encrypt(const inputString: string): TBuffer; overload;
+{$IFNDEF NEXTGEN}
     function  Encrypt(const inputString: WideString): TBuffer; overload;
     function  Encrypt(const inputString: RawByteString): TBuffer; overload;
+{$ENDIF}
     procedure Encrypt(inputStream, outputStream: TStream); overload;  // experimental
 
     function  Decrypt(const buffer: TBuffer): TBuffer; overload;
@@ -307,8 +320,10 @@ type
     function  Decrypt(const buffer: array of Byte; startIndex, count: Integer): TBuffer; overload;
     function  Decrypt(const buffer: Pointer; count: Integer): TBuffer; overload;
     function  Decrypt(const inputString: string): TBuffer; overload;
+{$IFNDEF NEXTGEN}
     function  Decrypt(const inputString: WideString): TBuffer; overload;
     function  Decrypt(const inputString: RawByteString): TBuffer; overload;
+{$ENDIF}
     procedure Decrypt(inputStream, outputStream: TStream); overload; // experimental
 
     ///	<summary>
@@ -578,6 +593,7 @@ begin
   Create(PByte(s), Length(s) * SizeOf(Char));
 end;
 
+{$IFNDEF NEXTGEN}
 constructor TBuffer.Create(const s: WideString);
 begin
   Create(PByte(s), Length(s) * SizeOf(Char));
@@ -587,6 +603,7 @@ constructor TBuffer.Create(const s: RawByteString);
 begin
   Create(PByte(s), Length(s));
 end;
+{$ENDIF}
 
 constructor TBuffer.Create(const buffer: array of Char);
 begin
@@ -598,6 +615,11 @@ begin
   Guard.CheckRange(buffer, startIndex, count);
 
   Create(@buffer[startIndex], count * SizeOf(Char));
+end;
+
+constructor TBuffer.Create(stream: TStream);
+begin
+  LoadFromStream(stream);
 end;
 
 class function TBuffer.BytesOf(const value: Byte; count: Integer): TBytes;
@@ -613,6 +635,14 @@ begin
   Guard.CheckRange(index >= 0, 'index');
 
   Result := PByte(@buffer)[index];
+end;
+
+procedure TBuffer.LoadFromStream(stream: TStream);
+begin
+  Guard.CheckNotNull(stream, 'stream');
+
+  SetLength(fBytes, stream.Size - stream.Position);
+  stream.ReadBuffer(fBytes[0], Length(fBytes));
 end;
 
 procedure TBuffer.SaveToStream(stream: TStream);
@@ -633,7 +663,11 @@ end;
 class function TBuffer.FromHexString(const s: string): TBuffer;
 var
   buffer: string;
+{$IFNDEF NEXTGEN}
   text: string;
+{$ELSE}
+  text: TBytes;
+{$ENDIF}
   bytes: TBytes;
   index: Integer;
   i: Integer;
@@ -648,20 +682,50 @@ begin
     if CharInSet(buffer[i], HexCharSet) then
     begin
       Inc(index);
+{$IFNDEF NEXTGEN}
       text[index] := buffer[i];
+{$ELSE}
+      text[index - 1] := Ord(buffer[i]);
+{$ENDIF}
     end;
   end;
   SetLength(bytes, index div 2);
+{$IFNDEF NEXTGEN}
   Classes.HexToBin(PChar(text), PByte(bytes), Length(bytes));
+{$ELSE}
+  Classes.HexToBin(text, 0, bytes, 0, Length(bytes));
+{$ENDIF}
   Result := TBuffer.Create(bytes);
 end;
 
 class function TBuffer.ConvertToHexString(const buffer: Pointer;
   count: Integer): string;
+{$IFNDEF NEXTGEN}
 begin
   SetLength(Result, count * 2);
   Classes.BinToHex(buffer, PChar(Result), count);
 end;
+{$ELSE}
+var
+  buff: TBytes;
+  text: TBytes;
+  i: Integer;
+begin
+  if (count = 0) then
+  begin
+    SetLength(Result, 0);
+    Exit;
+  end;
+
+  SetLength(buff, count);
+  Move(buffer^, buff[0], count);
+  SetLength(text, count * 2);
+  Classes.BinToHex(text, 0, buff, 0, count);
+  SetLength(Result, count * 2);
+  for i := 1 to Length(Result) do
+    Result[i]:=Char(text[i - 1]);
+end;
+{$ENDIF}
 
 class function TBuffer.ConvertToHexString(const buffer: Pointer; count: Integer;
   const prefix, delimiter: string): string;
@@ -775,10 +839,12 @@ begin
   Result := data;
 end;
 
+{$IFNDEF NEXTGEN}
 function TBuffer.EnsureSize(size: Integer; value: AnsiChar): TBuffer;
 begin
   Result := Self.EnsureSize(size, Byte(value));
 end;
+{$ENDIF}
 
 function TBuffer.Equals(const buffer: TBuffer): Boolean;
 begin

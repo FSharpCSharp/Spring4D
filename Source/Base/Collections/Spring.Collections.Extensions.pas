@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -84,6 +84,7 @@ type
     fIndex: Integer;
   public
     constructor Create(const values: array of T); overload;
+    constructor Create(const values: TArray<T>); overload;
     function Clone: TIterator<T>; override;
     function MoveNext: Boolean; override;
   end;
@@ -263,6 +264,8 @@ type
     fStart: Integer;
     fCount: Integer;
     fIndex: Integer;
+  protected
+    function GetCount: Integer; override;
   public
     constructor Create(start, count: Integer);
     function Clone: TIterator<T>; override;
@@ -312,7 +315,7 @@ type
     function MoveNext: Boolean; override;
   end;
 
-  TSelectEnumerableIterator<TSource, TResult> = class(TIterator<TResult>)
+  TSelectIterator<TSource, TResult> = class(TIterator<TResult>)
   private
     fSource: IEnumerable<TSource>;
     fSelector: TFunc<TSource, TResult>;
@@ -324,7 +327,7 @@ type
     function MoveNext: Boolean; override;
   end;
 
-  TSelectIterator<TSource, TResult> = class(TIterator<TResult>)
+  TSelectIndexIterator<TSource, TResult> = class(TIterator<TResult>)
   private
     fSource: IEnumerable<TSource>;
     fSelector: TFunc<TSource, Integer, TResult>;
@@ -365,8 +368,11 @@ type
   public
     constructor Create(const source: IEnumerable<TSource>;
       const keySelector: TFunc<TSource, TKey>;
+      const elementSelector: TFunc<TSource, TElement>); overload;
+    constructor Create(const source: IEnumerable<TSource>;
+      const keySelector: TFunc<TSource, TKey>;
       const elementSelector: TFunc<TSource, TElement>;
-      const comparer: IEqualityComparer<TKey>);
+      const comparer: IEqualityComparer<TKey>); overload;
     function GetEnumerator: IEnumerator<IGrouping<TKey, TElement>>; override;
   end;
 
@@ -394,8 +400,12 @@ type
     constructor Create(const source: IEnumerable<TSource>;
       const keySelector: TFunc<TSource, TKey>;
       const elementSelector: TFunc<TSource, TElement>;
+      const resultSelector: TFunc<TKey, IEnumerable<TElement>, TResult>); overload;
+    constructor Create(const source: IEnumerable<TSource>;
+      const keySelector: TFunc<TSource, TKey>;
+      const elementSelector: TFunc<TSource, TElement>;
       const resultSelector: TFunc<TKey, IEnumerable<TElement>, TResult>;
-      const comparer: IEqualityComparer<TKey>);
+      const comparer: IEqualityComparer<TKey>); overload;
     function GetEnumerator: IEnumerator<TResult>; override;
   end;
 
@@ -416,10 +426,17 @@ type
         property Key: TKey read GetKey;
       end;
 
-      TGroupings = class(TList<TGrouping>)
+      TGroupings = class(TObjectList<TGrouping>)
       protected
+{$IFDEF SUPPORTS_GENERIC_FOLDING}
+        procedure Changed(const item: TObject;
+          action: TCollectionChangedAction); override;
+{$ELSE}
         procedure Changed(const item: TGrouping;
           action: TCollectionChangedAction); override;
+{$ENDIF}
+      public
+        constructor Create; override;
       end;
 
       TEnumerator = class(TEnumeratorBase<IGrouping<TKey, TElement>>)
@@ -436,13 +453,17 @@ type
   private
     fComparer: IEqualityComparer<TKey>;
     fGroupings: IList<TGrouping>;
-    fGroupingKeys: IDictionary<TKey, TGrouping>;
+    fGroupingKeys: TDictionary<TKey, TGrouping>;
     function GetGrouping(const key: TKey; create: Boolean): TGrouping;
     function GetItem(const key: TKey): IEnumerable<TElement>;
   protected
     function GetCount: Integer; override;
   public
+    constructor Create; reintroduce; overload;
     constructor Create(const comparer: IEqualityComparer<TKey>); overload;
+    class function Create<TSource>(const source: IEnumerable<TSource>;
+      const keySelector: TFunc<TSource, TKey>;
+      const elementSelector: TFunc<TSource, TElement>): TLookup<TKey, TElement>; overload; static;
     class function Create<TSource>(const source: IEnumerable<TSource>;
       const keySelector: TFunc<TSource, TKey>;
       const elementSelector: TFunc<TSource, TElement>;
@@ -450,6 +471,7 @@ type
     class function CreateForJoin(const source: IEnumerable<TElement>;
       const keySelector: TFunc<TElement, TKey>;
       const comparer: IEqualityComparer<TKey>): TLookup<TKey, TElement>; static;
+    destructor Destroy; override;
 
     function Contains(const key: TKey): Boolean;
     function GetEnumerator: IEnumerator<IGrouping<TKey, TElement>>; override;
@@ -474,8 +496,13 @@ type
       const inner: IEnumerable<TInner>;
       const outerKeySelector: TFunc<TOuter, TKey>;
       const innerKeySelector: TFunc<TInner, TKey>;
+      const resultSelector: TFunc<TOuter, TInner, TResult>); overload;
+    constructor Create(const outer: IEnumerable<TOuter>;
+      const inner: IEnumerable<TInner>;
+      const outerKeySelector: TFunc<TOuter, TKey>;
+      const innerKeySelector: TFunc<TInner, TKey>;
       const resultSelector: TFunc<TOuter, TInner, TResult>;
-      const comparer: IEqualityComparer<TKey>);
+      const comparer: IEqualityComparer<TKey>); overload;
     destructor Destroy; override;
     function Clone: TIterator<TResult>; override;
     function MoveNext: Boolean; override;
@@ -496,8 +523,13 @@ type
       const inner: IEnumerable<TInner>;
       const outerKeySelector: TFunc<TOuter, TKey>;
       const innerKeySelector: TFunc<TInner, TKey>;
+      const resultSelector: TFunc<TOuter, IEnumerable<TInner>, TResult>); overload;
+    constructor Create(const outer: IEnumerable<TOuter>;
+      const inner: IEnumerable<TInner>;
+      const outerKeySelector: TFunc<TOuter, TKey>;
+      const innerKeySelector: TFunc<TInner, TKey>;
       const resultSelector: TFunc<TOuter, IEnumerable<TInner>, TResult>;
-      const comparer: IEqualityComparer<TKey>);
+      const comparer: IEqualityComparer<TKey>); overload;
     destructor Destroy; override;
     function Clone: TIterator<TResult>; override;
     function MoveNext: Boolean; override;
@@ -634,8 +666,10 @@ type
       const next: IEnumerableSorter<TElement>): IEnumerableSorter<TElement>; override;
   public
     constructor Create(const source: IEnumerable<TElement>;
+      const keySelector: TFunc<TElement, TKey>); overload;
+    constructor Create(const source: IEnumerable<TElement>;
       const keySelector: TFunc<TElement, TKey>; const comparer: IComparer<TKey>;
-      descending: Boolean);
+      descending: Boolean = False); overload;
   end;
 
   TOrderedIterator<T> = class(TIterator<T>)
@@ -703,11 +737,33 @@ type
     function MoveNext: Boolean; override;
   end;
 
+  TOfTypeIterator<T, TResult> = class(TIterator<TResult>)
+  private
+    fSource: IEnumerable<T>;
+    fEnumerator: IEnumerator<T>;
+  public
+    constructor Create(const source: IEnumerable<T>);
+    function Clone: TIterator<TResult>; override;
+    function MoveNext: Boolean; override;
+  end;
+
+  TRepeatIterator<T> = class(TIterator<T>)
+  public
+    fElement: T;
+    fCount: Integer;
+    fIndex: Integer;
+  protected
+    function GetCount: Integer; override;
+  public
+    constructor Create(const element: T; count: Integer);
+    function Clone: TIterator<T>; override;
+    function MoveNext: Boolean; override;
+  end;
+
 implementation
 
 uses
   Classes,
-  Spring.Collections.Dictionaries,
   Spring.Collections.Sets,
   Spring.ResourceStrings;
 
@@ -813,6 +869,11 @@ begin
   SetLength(fValues, Length(values));
   for i := 0 to High(values) do
     fValues[i] := values[i];
+end;
+
+constructor TArrayIterator<T>.Create(const values: TArray<T>);
+begin
+  fValues := values;
 end;
 
 function TArrayIterator<T>.Clone: TIterator<T>;
@@ -1044,7 +1105,7 @@ begin
   Guard.CheckNotNull(Assigned(source), 'source');
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 
-  inherited Create(source.Comparer);;
+  inherited Create(source.Comparer);
   fSource := source;
   fPredicate := predicate;
 end;
@@ -1093,7 +1154,7 @@ begin
   Guard.CheckNotNull(Assigned(source), 'source');
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 
-  inherited Create(source.Comparer);;
+  inherited Create(source.Comparer);
   fSource := source;
   fPredicate := predicate;
 end;
@@ -1143,7 +1204,7 @@ constructor TTakeIterator<T>.Create(const source: IEnumerable<T>;
 begin
   Guard.CheckNotNull(Assigned(source), 'source');
 
-  inherited Create(source.Comparer);;
+  inherited Create(source.Comparer);
   fSource := source;
   fCount := count;
 end;
@@ -1187,7 +1248,7 @@ begin
   Guard.CheckNotNull(Assigned(source), 'source');
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 
-  inherited Create(source.Comparer);;
+  inherited Create(source.Comparer);
   fSource := source;
   fPredicate := predicate;
 end;
@@ -1442,6 +1503,11 @@ begin
   Result := TRangeIterator<T>.Create(fStart, fCount);
 end;
 
+function TRangeIterator<T>.GetCount: Integer;
+begin
+  Result := fCount;
+end;
+
 function TRangeIterator<T>.MoveNext: Boolean;
 begin
   Result := False;
@@ -1650,9 +1716,9 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TSelectEnumerableIterator<TSource, TResult>'}
+{$REGION 'TSelectIterator<TSource, TResult>'}
 
-constructor TSelectEnumerableIterator<TSource, TResult>.Create(
+constructor TSelectIterator<TSource, TResult>.Create(
   const source: IEnumerable<TSource>; const selector: TFunc<TSource, TResult>);
 begin
   Guard.CheckNotNull(Assigned(source), 'source');
@@ -1663,12 +1729,12 @@ begin
   fSelector := selector;
 end;
 
-function TSelectEnumerableIterator<TSource, TResult>.Clone: TIterator<TResult>;
+function TSelectIterator<TSource, TResult>.Clone: TIterator<TResult>;
 begin
-  Result := TSelectEnumerableIterator<TSource, TResult>.Create(fSource, fSelector)
+  Result := TSelectIterator<TSource, TResult>.Create(fSource, fSelector)
 end;
 
-function TSelectEnumerableIterator<TSource, TResult>.MoveNext: Boolean;
+function TSelectIterator<TSource, TResult>.MoveNext: Boolean;
 begin
   Result := False;
 
@@ -1696,9 +1762,9 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TSelectIterator<TSource, TResult>'}
+{$REGION 'TSelectIndexIterator<TSource, TResult>'}
 
-constructor TSelectIterator<TSource, TResult>.Create(
+constructor TSelectIndexIterator<TSource, TResult>.Create(
   const source: IEnumerable<TSource>;
   const selector: TFunc<TSource, Integer, TResult>);
 begin
@@ -1710,12 +1776,12 @@ begin
   fSelector := selector;
 end;
 
-function TSelectIterator<TSource, TResult>.Clone: TIterator<TResult>;
+function TSelectIndexIterator<TSource, TResult>.Clone: TIterator<TResult>;
 begin
-  Result := TSelectIterator<TSource, TResult>.Create(fSource, fSelector);
+  Result := TSelectIndexIterator<TSource, TResult>.Create(fSource, fSelector);
 end;
 
-function TSelectIterator<TSource, TResult>.MoveNext: Boolean;
+function TSelectIndexIterator<TSource, TResult>.MoveNext: Boolean;
 var
   current: TSource;
 begin
@@ -1749,6 +1815,13 @@ end;
 
 
 {$REGION 'TGroupedEnumerable<TSource, TKey, TElement>'}
+
+constructor TGroupedEnumerable<TSource, TKey, TElement>.Create(
+  const source: IEnumerable<TSource>; const keySelector: TFunc<TSource, TKey>;
+  const elementSelector: TFunc<TSource, TElement>);
+begin
+  Create(source, keySelector, elementSelector, TEqualityComparer<TKey>.Default);
+end;
 
 constructor TGroupedEnumerable<TSource, TKey, TElement>.Create(
   const source: IEnumerable<TSource>; const keySelector: TFunc<TSource, TKey>;
@@ -1815,6 +1888,15 @@ end;
 constructor TGroupedEnumerable<TSource, TKey, TElement, TResult>.Create(
   const source: IEnumerable<TSource>; const keySelector: TFunc<TSource, TKey>;
   const elementSelector: TFunc<TSource, TElement>;
+  const resultSelector: TFunc<TKey, IEnumerable<TElement>, TResult>);
+begin
+  Create(source, keySelector, elementSelector, resultSelector,
+    TEqualityComparer<TKey>.Default);
+end;
+
+constructor TGroupedEnumerable<TSource, TKey, TElement, TResult>.Create(
+  const source: IEnumerable<TSource>; const keySelector: TFunc<TSource, TKey>;
+  const elementSelector: TFunc<TSource, TElement>;
   const resultSelector: TFunc<TKey, IEnumerable<TElement>, TResult>;
   const comparer: IEqualityComparer<TKey>);
 begin
@@ -1873,14 +1955,26 @@ end;
 
 {$REGION 'TLookup<TKey, TElement>'}
 
+constructor TLookup<TKey, TElement>.Create;
+begin
+  Create(TEqualityComparer<TKey>.Default);
+end;
+
 constructor TLookup<TKey, TElement>.Create(const comparer: IEqualityComparer<TKey>);
 begin
   inherited Create;
   fComparer := comparer;
   if not Assigned(fComparer) then
     fComparer := TEqualityComparer<TKey>.Default;
-  fGroupings := TGroupings.Create;
+  fGroupings := TGroupings.Create as IList<TGrouping>;
   fGroupingKeys := TDictionary<TKey, TGrouping>.Create(fComparer);
+end;
+
+class function TLookup<TKey, TElement>.Create<TSource>(
+  const source: IEnumerable<TSource>; const keySelector: TFunc<TSource, TKey>;
+  const elementSelector: TFunc<TSource, TElement>): TLookup<TKey, TElement>;
+begin
+  Result := Create<TSource>(source, keySelector, elementSelector, TEqualityComparer<TKey>.Default);
 end;
 
 class function TLookup<TKey, TElement>.Create<TSource>(
@@ -1918,6 +2012,12 @@ begin
     FreeAndNil(Result);
     raise;
   end;
+end;
+
+destructor TLookup<TKey, TElement>.Destroy;
+begin
+  fGroupingKeys.Free;
+  inherited;
 end;
 
 function TLookup<TKey, TElement>.Contains(const key: TKey): Boolean;
@@ -1996,13 +2096,23 @@ end;
 
 {$REGION 'TLookup<TKey, TElement>.TGroupings'}
 
+constructor TLookup<TKey, TElement>.TGroupings.Create;
+begin
+  inherited Create(False);
+end;
+
+{$IFDEF SUPPORTS_GENERIC_FOLDING}
+procedure TLookup<TKey, TElement>.TGroupings.Changed(const item: TObject;
+  action: TCollectionChangedAction);
+{$ELSE}
 procedure TLookup<TKey, TElement>.TGroupings.Changed(const item: TGrouping;
   action: TCollectionChangedAction);
+{$ENDIF}
 begin
   inherited;
   case action of
-    caAdded: item._AddRef;
-    caRemoved: item._Release;
+    caAdded: TGrouping(item)._AddRef;
+    caRemoved: TGrouping(item)._Release;
   end;
 end;
 
@@ -2036,6 +2146,16 @@ end;
 
 
 {$REGION 'TJoinIterator<TOuter, TInner, TKey, TResult>'}
+
+constructor TJoinIterator<TOuter, TInner, TKey, TResult>.Create(
+  const outer: IEnumerable<TOuter>; const inner: IEnumerable<TInner>;
+  const outerKeySelector: TFunc<TOuter, TKey>;
+  const innerKeySelector: TFunc<TInner, TKey>;
+  const resultSelector: TFunc<TOuter, TInner, TResult>);
+begin
+  Create(outer, inner, outerKeySelector, innerKeySelector, resultSelector,
+    TEqualityComparer<TKey>.Default);
+end;
 
 constructor TJoinIterator<TOuter, TInner, TKey, TResult>.Create(
   const outer: IEnumerable<TOuter>; const inner: IEnumerable<TInner>;
@@ -2115,6 +2235,16 @@ end;
 
 
 {$REGION 'TGroupJoinIterator<TOuter, TInner, TKey, TResult>'}
+
+constructor TGroupJoinIterator<TOuter, TInner, TKey, TResult>.Create(
+  const outer: IEnumerable<TOuter>; const inner: IEnumerable<TInner>;
+  const outerKeySelector: TFunc<TOuter, TKey>;
+  const innerKeySelector: TFunc<TInner, TKey>;
+  const resultSelector: TFunc<TOuter, IEnumerable<TInner>, TResult>);
+begin
+  Create(outer, inner, outerKeySelector, innerKeySelector, resultSelector,
+    TEqualityComparer<TKey>.Default);
+end;
 
 constructor TGroupJoinIterator<TOuter, TInner, TKey, TResult>.Create(
   const outer: IEnumerable<TOuter>; const inner: IEnumerable<TInner>;
@@ -2560,6 +2690,13 @@ end;
 {$REGION 'TOrderedEnumerable<TElement, TKey>'}
 
 constructor TOrderedEnumerable<TElement, TKey>.Create(
+  const source: IEnumerable<TElement>;
+  const keySelector: TFunc<TElement, TKey>);
+begin
+  Create(source, keySelector, TComparer<TKey>.Default);
+end;
+
+constructor TOrderedEnumerable<TElement, TKey>.Create(
   const source: IEnumerable<TElement>; const keySelector: TFunc<TElement, TKey>;
   const comparer: IComparer<TKey>; descending: Boolean);
 var
@@ -2613,7 +2750,7 @@ end;
 
 function TOrderedIterator<T>.Clone: TIterator<T>;
 begin
-  Result := TOrderedIterator<T>.Create(fSource, comparer);
+  Result := TOrderedIterator<T>.Create(fSource, fComparer);
 end;
 
 function TOrderedIterator<T>.MoveNext: Boolean;
@@ -2850,6 +2987,93 @@ begin
       current := fEnumerator.Current;
       value := TValue.From<T>(current);
       fCurrent := value.AsType<TResult>;
+      Result := True;
+    end;
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TOfTypeIterator<T, TResult>'}
+
+constructor TOfTypeIterator<T, TResult>.Create(const source: IEnumerable<T>);
+begin
+  Guard.CheckNotNull(Assigned(source), 'source');
+
+  inherited Create;
+  fSource := source;
+end;
+
+function TOfTypeIterator<T, TResult>.Clone: TIterator<TResult>;
+begin
+  Result := TOfTypeIterator<T, TResult>.Create(fSource);
+end;
+
+function TOfTypeIterator<T, TResult>.MoveNext: Boolean;
+var
+  current: T;
+  value: TValue;
+begin
+  Result := False;
+
+  if fState = STATE_ENUMERATOR then
+  begin
+    fEnumerator := fSource.GetEnumerator;
+    fState := STATE_RUNNING;
+  end;
+
+  if fState = STATE_RUNNING then
+  begin
+    while fEnumerator.MoveNext do
+    begin
+      current := fEnumerator.Current;
+      value := TValue.From<T>(current);
+      if value.TryAsType<TResult>(fCurrent) then
+        Exit(True);
+    end;
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TRepeatIterator<T>'}
+
+constructor TRepeatIterator<T>.Create(const element: T; count: Integer);
+begin
+  Guard.CheckRange(count >= 0, 'count');
+
+  inherited Create;
+  fElement := element;
+  fCount := count;
+end;
+
+function TRepeatIterator<T>.Clone: TIterator<T>;
+begin
+  Result := TRepeatIterator<T>.Create(fElement, fCount);
+end;
+
+function TRepeatIterator<T>.GetCount: Integer;
+begin
+  Result := fCount;
+end;
+
+function TRepeatIterator<T>.MoveNext: Boolean;
+begin
+  Result := False;
+
+  if fState = STATE_ENUMERATOR then
+  begin
+    fIndex := 0;
+  end;
+
+  if fState = STATE_RUNNING then
+  begin
+    if fIndex < fCount then
+    begin
+      Inc(fIndex);
+      fCurrent := fElement;
       Result := True;
     end;
   end;

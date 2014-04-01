@@ -46,6 +46,8 @@
         <Base>true</Base>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
+        <DllSuffix>.DelphiXE4</DllSuffix>
+        <DCC_Description>Spring4D Base package</DCC_Description>
         <GenPackage>true</GenPackage>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;Vcl;$(DCC_Namespace)</DCC_Namespace>
         <VerInfo_Locale>2052</VerInfo_Locale>
@@ -108,6 +110,7 @@
         <DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Events.pas"/>
         <DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Extensions.pas"/>
         <DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Lists.pas"/>
+        <DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.LinkedLists.pas"/>
         <DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Queues.pas"/>
         <DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Sets.pas"/>
         <DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Stacks.pas"/>

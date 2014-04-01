@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -186,7 +186,11 @@ begin
     else if Supports(item, IRefCounted, refCounted) then
       refCounted._Release
     else
+{$IFNDEF AUTOREFCOUNT}
       item.Free;
+{$ELSE}
+      item.DisposeOf;
+{$ENDIF}
   end;
 end;
 

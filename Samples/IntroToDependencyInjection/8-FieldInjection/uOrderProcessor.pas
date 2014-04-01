@@ -20,9 +20,6 @@ type
 
 implementation
 
-uses
-  Spring.Container;
-
 { TOrderProcessor }
 
 function TOrderProcessor.ProcessOrder(aOrder: TOrder): Boolean;
@@ -32,16 +29,8 @@ begin
   Result := False;
   OrderIsValid := FOrderValidator.ValidateOrder(aOrder);
   if OrderIsValid then
-  begin
     Result := FOrderEntry.EnterOrderIntoDatabase(aOrder);
-  end;
-
-  {$IFDEF CONSOLEAPP}
   Writeln('Order has been processed....');
-  {$ENDIF}
 end;
-
-initialization
-  GlobalContainer.RegisterType<TOrderProcessor>;
 
 end.

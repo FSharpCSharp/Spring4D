@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -30,6 +30,7 @@ unit Spring.Container.Resolvers;
 
 uses
   Rtti,
+  SyncObjs,
   Spring,
   Spring.Collections,
   Spring.Container.Core;
@@ -39,7 +40,7 @@ type
   private
     fContext: IContainerContext;
     fRegistry: IComponentRegistry;
-    fOnResolve: Event<TResolveEvent>;
+    fOnResolve: IEvent<TResolveEvent>;
     procedure DoResolve(var instance: TValue);
     function GetOnResolve: IEvent<TResolveEvent>;
   protected
@@ -49,18 +50,21 @@ type
     property Registry: IComponentRegistry read fRegistry;
   public
     constructor Create(const context: IContainerContext; const registry: IComponentRegistry);
+    destructor Destroy; override;
 
     property OnResolve: IEvent<TResolveEvent> read GetOnResolve;
   end;
 
   TDependencyResolver = class(TResolver, IDependencyResolver, IInterface)
   private
+    fLock: TCriticalSection;
     fDependencyTypes: IList<TRttiType>;
   protected
     procedure CheckCircularDependency(dependency: TRttiType);
     function GetEligibleModel(dependency: TRttiType; const argument: TValue): TComponentModel;
   public
     constructor Create(const context: IContainerContext; const registry: IComponentRegistry);
+    destructor Destroy; override;
 
     function CanResolveDependency(dependency: TRttiType): Boolean; overload; virtual;
     function CanResolveDependency(dependency: TRttiType; const argument: TValue): Boolean; overload; virtual;
@@ -83,15 +87,17 @@ type
 
   TServiceResolver = class(TResolver, IServiceResolver, IInterface)
   protected
-    function DoResolve(model: TComponentModel; serviceType: PTypeInfo;
+    function InternalResolve(const model: TComponentModel; serviceType: PTypeInfo;
+      const resolver: IDependencyResolver): TValue;
+    function InternalResolveLazy(model: TComponentModel; serviceType: PTypeInfo;
       resolver: IDependencyResolver): TValue;
   public
     function CanResolve(serviceType: PTypeInfo): Boolean; overload;
     function CanResolve(const name: string): Boolean; overload;
     function Resolve(serviceType: PTypeInfo): TValue; overload;
-    function Resolve(serviceType: PTypeInfo; resolverOverride: IResolverOverride): TValue; overload;
+    function Resolve(serviceType: PTypeInfo; const resolverOverride: IResolverOverride): TValue; overload;
     function Resolve(const name: string): TValue; overload;
-    function Resolve(const name: string; resolverOverride: IResolverOverride): TValue; overload;
+    function Resolve(const name: string; const resolverOverride: IResolverOverride): TValue; overload;
     function ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
   end;
 
@@ -179,9 +185,67 @@ uses
   SysUtils,
   TypInfo,
   Spring.Container.ResourceStrings,
+  Spring.Events.Base,
   Spring.Helpers,
-  Spring.Reflection,
-  Spring.SystemUtils;
+  Spring.Reflection;
+
+
+{$REGION 'TResolveEventImpl'}
+
+type
+  TResolveEventImpl = class(TEventBase, IEvent<TResolveEvent>)
+  private
+    function GetInvoke: TResolveEvent;
+    procedure Add(handler: TResolveEvent);
+    procedure Remove(handler: TResolveEvent);
+    procedure ForEach(const action: TAction<TResolveEvent>);
+
+    procedure InternalInvoke(Sender: TObject; var instance: TValue);
+  public
+    constructor Create;
+  end;
+
+constructor TResolveEventImpl.Create;
+begin
+  inherited;
+  fInvoke.Code := @TResolveEventImpl.InternalInvoke;
+  fInvoke.Data := Self;
+end;
+
+procedure TResolveEventImpl.Add(handler: TResolveEvent);
+begin
+  inherited Add(TMethod(handler));
+end;
+
+procedure TResolveEventImpl.ForEach(const action: TAction<TResolveEvent>);
+var
+  i: Integer;
+begin
+  for i := 0 to Handlers.Count - 1 do
+    action(TResolveEvent(Handlers.Items[i]));
+end;
+
+function TResolveEventImpl.GetInvoke: TResolveEvent;
+begin
+  Result := TResolveEvent(inherited Invoke);
+end;
+
+procedure TResolveEventImpl.InternalInvoke(Sender: TObject;
+  var instance: TValue);
+var
+  i: Integer;
+begin
+  if Enabled then
+    for i := 0 to Handlers.Count - 1 do
+      TResolveEvent(Handlers.Items[i])(Sender, instance);
+end;
+
+procedure TResolveEventImpl.Remove(handler: TResolveEvent);
+begin
+  inherited Remove(TMethod(handler));
+end;
+
+{$ENDREGION}
 
 
 {$REGION 'TResolver'}
@@ -194,6 +258,13 @@ begin
   inherited Create;
   fContext := context;
   fRegistry := registry;
+  fOnResolve := TResolveEventImpl.Create;
+end;
+
+destructor TResolver.Destroy;
+begin
+  fOnResolve := nil;
+  inherited;
 end;
 
 procedure TResolver.DoResolve(var instance: TValue);
@@ -211,7 +282,8 @@ procedure TResolver.ConstructValue(typeInfo: PTypeInfo; const instance: TValue;
 var
   localInterface: Pointer;
 begin
-  Assert(not instance.IsEmpty, 'instance should not be empty.');
+  Guard.CheckFalse(instance.IsEmpty, 'instance should not be empty.');
+
   case typeInfo.Kind of
     tkClass, tkRecord:
     begin
@@ -227,6 +299,7 @@ begin
       begin
         if TType.IsDelegate(typeInfo) then
         begin
+          localInterface := nil;
           IInterface(localInterface) := instance.AsInterface;
         end
         else
@@ -252,7 +325,14 @@ constructor TDependencyResolver.Create(const context: IContainerContext;
   const registry: IComponentRegistry);
 begin
   inherited Create(context, registry);
-  fDependencyTypes := TCollections.CreateList<TRttiType>;
+  fDependencyTypes := TCollections.CreateList<TRttiType>(False);
+  fLock := TCriticalSection.Create;
+end;
+
+destructor TDependencyResolver.Destroy;
+begin
+  fLock.Free;
+  inherited;
 end;
 
 function TDependencyResolver.GetEligibleModel(dependency: TRttiType;
@@ -264,7 +344,7 @@ begin
   begin
     if not Registry.HasService(dependency.Handle) then
     begin
-      if dependency.IsClassOrInterface and not IsLazyType(dependency.Handle) then
+      if dependency.IsClassOrInterface and not TType.IsLazy(dependency.Handle) then
       begin
         raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
       end;
@@ -286,13 +366,13 @@ begin
     Result := Registry.FindOne(name);
     if not Assigned(Result) then
     begin
-      if IsLazyType(dependency.Handle) then
+      if TType.IsLazy(dependency.Handle) then
         Exit;
       raise EResolveException.CreateResFmt(@SInvalidServiceName, [name]);
     end;
     if not Result.HasService(dependency.Handle) then
     begin
-      if not IsLazyType(dependency.Handle) then
+      if not TType.IsLazy(dependency.Handle) then
         raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
       Result := nil;
     end;
@@ -301,12 +381,11 @@ end;
 
 procedure TDependencyResolver.CheckCircularDependency(dependency: TRttiType);
 begin
-  Assert(Assigned(dependency), 'dependency should not be nil.');
+  Guard.CheckNotNull(dependency, 'dependency');
+
   if fDependencyTypes.Contains(dependency) then
-  begin
     raise ECircularDependencyException.CreateResFmt(
       @SCircularDependencyDetected, [dependency.Name]);
-  end;
 end;
 
 function TDependencyResolver.CanResolveDependency(
@@ -317,23 +396,41 @@ end;
 
 function TDependencyResolver.CanResolveDependency(dependency: TRttiType;
   const argument: TValue): Boolean;
+var
+  serviceName: string;
+  serviceType: PTypeInfo;
+  lazyType: TRttiType;
+  model: TComponentModel;
 begin
-  if dependency.IsClassOrInterface then
+  if dependency.IsClassOrInterface or dependency.IsRecord then
   begin
     if argument.IsEmpty then
     begin
-      Result := Registry.HasDefault(dependency.Handle) or IsLazyType(dependency.Handle);
+      Result := Registry.HasDefault(dependency.Handle) or TType.IsLazy(dependency.Handle);
     end
     else
     begin
-      Result := argument.IsType<string> and
-        Registry.HasService(argument.AsString);
+      Result := argument.IsType<string>;
+      if Result then
+      begin
+        serviceName := argument.AsString;
+        model := Registry.FindOne(serviceName);
+        Result := Assigned(model);
+        if Result then
+        begin
+          serviceType := model.Services[serviceName];
+          Result := serviceType = dependency.Handle;
+          if not Result and TType.IsLazy(dependency.Handle) then
+          begin
+            lazyType := TType.FindType(TType.GetLazyTypeName(dependency.Handle));
+            Result := Assigned(lazyType) and (serviceType = lazyType.Handle);
+          end;
+        end;
+      end;
     end;
   end
   else
-  begin
-    Result := argument.IsType(dependency.Handle);
-  end;
+    Result := argument.IsEmpty or argument.IsType(dependency.Handle);
 end;
 
 function TDependencyResolver.ResolveDependency(dependency: TRttiType): TValue;
@@ -349,7 +446,7 @@ var
 begin
   Guard.CheckNotNull(dependency, 'dependency');
 
-  if (dependency is TRttiDynamicArrayType) then
+  if dependency.IsDynamicArray then
   begin
     Result := ResolveManyDependency(dependency, argument);
     Exit;
@@ -358,9 +455,15 @@ begin
   if not (dependency.IsClassOrInterface or dependency.IsRecord)
     or (argument.Kind in [tkClass, tkInterface, tkRecord]) then
   begin
-    Exit(argument);
+    Result := argument;
+{$IFDEF DELPHI2010}
+    if Result.IsEmpty then
+      TValue.Make(nil, dependency.Handle, Result);
+{$ENDIF}
+    Exit;
   end;
-  MonitorEnter(Self);
+
+  fLock.Enter;
   try
     CheckCircularDependency(dependency);
     model := GetEligibleModel(dependency, argument);
@@ -376,8 +479,9 @@ begin
       fDependencyTypes.Remove(dependency);
     end;
   finally
-    MonitorExit(Self);
+    fLock.Leave;
   end;
+
   ConstructValue(dependency.Handle, instance, Result);
 end;
 
@@ -386,17 +490,16 @@ function TDependencyResolver.ResolveLazyDependency(dependency: TRttiType;
 var
   lazyKind: TLazyKind;
   name: string;
-  context: TRttiContext;
   modelType: TRttiType;
   valueFactoryObj: TFunc<TObject>;
   valueFactoryIntf: TFunc<IInterface>;
 begin
-  lazyKind := GetLazyKind(dependency.Handle);
+  lazyKind := TType.GetLazyKind(dependency.Handle);
   if lazyKind = lkNone then
     Exit(argument);
 
-  name := GetLazyTypeName(dependency.Handle);
-  modelType := context.FindType(name);
+  name := TType.GetLazyTypeName(dependency.Handle);
+  modelType := TType.FindType(name);
   if not Assigned(modelType) or not CanResolveDependency(modelType, argument) then
   begin
     raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
@@ -443,40 +546,33 @@ function TDependencyResolver.ResolveManyDependency(dependency: TRttiType;
   argument: TValue): TValue;
 var
   dependencyType: TRttiType;
-  isLazyType: Boolean;
+  serviceType: PTypeInfo;
   lazyTypeName: string;
-  lazyType: PTypeInfo;
-  context: TRttiContext;
   models: IEnumerable<TComponentModel>;
   values: array of TValue;
   i: Integer;
   model: TComponentModel;
 begin
-  if dependency is TRttiDynamicArrayType then
+  if not dependency.IsDynamicArray then
+    raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
+
+  dependencyType := dependency.AsDynamicArray.ElementType;
+  if TType.IsLazy(dependencyType.Handle) then
   begin
-    dependencyType := TRttiDynamicArrayType(dependency).ElementType;
-    isLazyType := Spring.SystemUtils.IsLazyType(dependencyType.Handle);
-    lazyType := nil;
-    if isLazyType then
-    begin
-      lazyTypeName := GetLazyTypeName(dependencyType.Handle);
-      lazyType := context.FindType(lazyTypeName).Handle;
-      models := fRegistry.FindAll(lazyType);
-    end
-    else
-      models := fRegistry.FindAll(dependencyType.Handle);
-    SetLength(values, models.Count);
-    i := 0;
-    for model in models do
-    begin
-      if isLazyType then
-        values[i] := ResolveLazyDependency(dependencyType, model.GetServiceName(lazyType))
-      else
-        values[i] := ResolveDependency(dependencyType, model.GetServiceName(dependencyType.Handle));
-      Inc(i);
-    end;
-    Result := TValue.FromArray(dependency.Handle, values);
+    lazyTypeName := TType.GetLazyTypeName(dependencyType.Handle);
+    serviceType := TType.FindType(lazyTypeName).Handle;
+  end
+  else
+    serviceType := dependencyType.Handle;
+  models := fRegistry.FindAll(serviceType);
+  SetLength(values, models.Count);
+  i := 0;
+  for model in models do
+  begin
+    values[i] := ResolveDependency(dependencyType, model.GetServiceName(serviceType));
+    Inc(i);
   end;
+  Result := TValue.FromArray(dependency.Handle, values);
 end;
 
 function TDependencyResolver.CanResolveDependencies(
@@ -612,19 +708,71 @@ begin
   Result := Registry.HasService(name);
 end;
 
-function TServiceResolver.DoResolve(model: TComponentModel;
-  serviceType: PTypeInfo; resolver: IDependencyResolver): TValue;
+function TServiceResolver.InternalResolve(const model: TComponentModel;
+  serviceType: PTypeInfo; const resolver: IDependencyResolver): TValue;
 var
   instance: TValue;
 begin
-  Assert(Assigned(model), 'model should not be nil.');
-  Assert(Assigned(serviceType), 'serviceType should not be nil.');
-  if not Assigned(model.LifetimeManager) then
-  begin
-    raise EResolveException.CreateRes(@SLifetimeManagerMissing);
-  end;
+  Guard.CheckNotNull(model, 'model');
+  Guard.CheckNotNull(serviceType, 'serviceType');
+  Guard.CheckNotNull(model.LifetimeManager, 'model.LifetimeManager');
+
   instance := model.LifetimeManager.GetInstance(resolver);
   ConstructValue(serviceType, instance, Result);
+end;
+
+function TServiceResolver.InternalResolveLazy(model: TComponentModel;
+  serviceType: PTypeInfo; resolver: IDependencyResolver): TValue;
+var
+  lazyKind: TLazyKind;
+  name: string;
+  lazyType: PTypeInfo;
+  valueFactoryObj: TFunc<TObject>;
+  valueFactoryIntf: TFunc<IInterface>;
+begin
+  Guard.CheckNotNull(model, 'model');
+  Guard.CheckNotNull(serviceType, 'serviceType');
+  Guard.CheckNotNull(model.LifetimeManager, 'model.LifetimeManager');
+
+  lazyKind := TType.GetLazyKind(serviceType);
+  if lazyKind <> lkNone then
+  begin
+    name := TType.GetLazyTypeName(serviceType);
+    lazyType := TType.FindType(TType.GetLazyTypeName(serviceType)).Handle;
+  end;
+
+  case lazyType.Kind of
+    tkClass:
+    begin
+      valueFactoryObj :=
+        function: TObject
+        begin
+          Result := InternalResolve(model, lazyType, resolver).AsObject;
+        end;
+
+      case lazyKind of
+        lkFunc: Result := TValue.From<TFunc<TObject>>(valueFactoryObj);
+        lkRecord: Result := TValue.From<Lazy<TObject>>(Lazy<TObject>.Create(valueFactoryObj));
+        lkInterface: Result := TValue.From<ILazy<TObject>>(TLazy<TObject>.Create(valueFactoryObj));
+      end;
+    end;
+    tkInterface:
+    begin
+      valueFactoryIntf :=
+        function: IInterface
+        begin
+          Result := InternalResolve(model, lazyType, resolver).AsInterface;
+        end;
+
+      case lazyKind of
+        lkFunc: Result := TValue.From<TFunc<IInterface>>(valueFactoryIntf);
+        lkRecord: Result := TValue.From<Lazy<IInterface>>(Lazy<IInterface>.Create(valueFactoryIntf));
+        lkInterface: Result := TValue.From<ILazy<IInterface>>(TLazy<IInterface>.Create(valueFactoryIntf));
+      end;
+    end;
+  end;
+
+  TValueData(Result).FTypeInfo := serviceType;
 end;
 
 function TServiceResolver.Resolve(serviceType: PTypeInfo): TValue;
@@ -633,13 +781,21 @@ begin
 end;
 
 function TServiceResolver.Resolve(serviceType: PTypeInfo;
-  resolverOverride: IResolverOverride): TValue;
+  const resolverOverride: IResolverOverride): TValue;
 var
   serviceName: string;
+  isLazy: Boolean;
+  lazyType: PTypeInfo;
   model: TComponentModel;
   resolver: IDependencyResolver;
 begin
+  isLazy := TType.IsLazy(serviceType);
+  lazyType := serviceType;
+  if isLazy then
+    serviceType := TType.FindType(TType.GetLazyTypeName(serviceType)).Handle;
+
   serviceName := GetTypeName(serviceType);
+
   if not Registry.HasService(serviceType) then
   begin
     raise EResolveException.CreateResFmt(@SNoComponentRegistered, [serviceName]);
@@ -657,7 +813,11 @@ begin
     resolver := resolverOverride.GetResolver(Context)
   else
     resolver := Context.DependencyResolver;
-  Result := DoResolve(model, serviceType, resolver);
+
+  if isLazy then
+    Result := InternalResolveLazy(model, lazyType, resolver)
+  else
+    Result := InternalResolve(model, serviceType, resolver);
 end;
 
 function TServiceResolver.Resolve(const name: string): TValue;
@@ -666,7 +826,7 @@ begin
 end;
 
 function TServiceResolver.Resolve(const name: string;
-  resolverOverride: IResolverOverride): TValue;
+  const resolverOverride: IResolverOverride): TValue;
 var
   model: TComponentModel;
   serviceType: PTypeInfo;
@@ -682,21 +842,31 @@ begin
     resolver := resolverOverride.GetResolver(Context)
   else
     resolver := Context.DependencyResolver;
-  Result := DoResolve(model, serviceType, resolver);
+  Result := InternalResolve(model, serviceType, resolver);
 end;
 
 function TServiceResolver.ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
 var
+  isLazy: Boolean;
   models: IEnumerable<TComponentModel>;
   model: TComponentModel;
   i: Integer;
+  modelType: PTypeInfo;
 begin
-  models := Registry.FindAll(serviceType);
+  isLazy := TType.IsLazy(serviceType);
+  if isLazy then
+    modelType := TType.FindType(TType.GetLazyTypeName(serviceType)).Handle
+  else
+    modelType := serviceType;
+  models := Registry.FindAll(modelType);
   SetLength(Result, models.Count);
   i := 0;
   for model in models do
   begin
-    Result[i] := DoResolve(model, serviceType, Context.DependencyResolver);
+    if isLazy then
+      Result[i] := InternalResolveLazy(model, serviceType, Context.DependencyResolver)
+    else
+      Result[i] := InternalResolve(model, serviceType, Context.DependencyResolver);
     Inc(i);
   end;
 end;

@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -309,7 +309,7 @@ begin
 end;
 
 function Ch256(x, y, z: LongWord): LongWord; assembler;
-{$IFNDEF CPUX64}
+{$IFDEF CPUX86}
 asm
   and   edx,eax
   not   eax
@@ -324,7 +324,7 @@ end;
 
 
 function Maj256(x, y, z: LongWord): LongWord; assembler;
-{$IFNDEF CPUX64}
+{$IFDEF CPUX86}
 asm
   push  ecx
   and   ecx,eax
@@ -372,7 +372,7 @@ begin
 end;
 
 function Kt1(t: Byte): LongWord; assembler;
-{$IFNDEF CPUX64}
+{$IFDEF CPUX86}
 asm
   cmp   al,19
   jg    @@1
@@ -394,7 +394,7 @@ asm
 end;
 {$ELSE}
 begin
-  if (t >= 0) and (t <= 19) then
+  if {(t >= 0) and} (t <= 19) then
   begin
     Result := $5A827999;
   end

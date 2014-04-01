@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -110,6 +110,9 @@ type
     function GetElementType: PTypeInfo; override;
     class function GetEqualityComparer: IEqualityComparer<T>; static;
   {$ENDREGION}
+{$IFDEF WEAKREF}
+    function HasWeakRef: Boolean;
+{$ENDIF}
     function TryGetElementAt(out value: T; index: Integer): Boolean; virtual;
     function TryGetFirst(out value: T): Boolean; overload; virtual;
     function TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean; overload;
@@ -142,6 +145,7 @@ type
     function ElementAtOrDefault(index: Integer): T; overload;
     function ElementAtOrDefault(index: Integer; const defaultValue: T): T; overload;
 
+    function EqualsTo(const values: array of T): Boolean; overload;
     function EqualsTo(const collection: IEnumerable<T>): Boolean; overload;
     function EqualsTo(const collection: IEnumerable<T>; const comparer: IEqualityComparer<T>): Boolean; overload;
 
@@ -166,8 +170,8 @@ type
     function Min: T; overload;
     function Min(const comparer: IComparer<T>): T; overload;
 
-//    function Ordered: IEnumerable<T>; overload;
-//    function Ordered(const comparison: TComparison<T>): IEnumerable<T>; overload;
+    function Ordered: IEnumerable<T>; overload;
+    function Ordered(const comparer: IComparer<T>): IEnumerable<T>; overload;
 
     function Reversed: IEnumerable<T>; virtual;
 
@@ -207,24 +211,20 @@ type
   public
     constructor Create(const collection: array of T); overload;
     constructor Create(const collection: IEnumerable<T>); overload;
-    constructor Create(const collection: TEnumerable<T>); overload;
 
     procedure Add(const item: T); virtual; abstract;
     procedure AddRange(const collection: array of T); overload; virtual;
     procedure AddRange(const collection: IEnumerable<T>); overload; virtual;
-    procedure AddRange(const collection: TEnumerable<T>); overload; virtual;
 
     procedure Clear; virtual; abstract;
 
     function Remove(const item: T): Boolean; virtual; abstract;
     procedure RemoveRange(const collection: array of T); overload; virtual;
     procedure RemoveRange(const collection: IEnumerable<T>); overload; virtual;
-    procedure RemoveRange(const collection: TEnumerable<T>); overload; virtual;
 
     function Extract(const item: T): T; virtual; abstract;
     procedure ExtractRange(const collection: array of T); overload; virtual;
     procedure ExtractRange(const collection: IEnumerable<T>); overload; virtual;
-    procedure ExtractRange(const collection: TEnumerable<T>); overload; virtual;
 
     procedure CopyTo(var values: TArray<T>; index: Integer); virtual;
 
@@ -265,6 +265,7 @@ type
   private
     fOnChanged: ICollectionChangedEvent<T>;
     function AsList: IList;
+    function AsReadOnlyList: IReadOnlyList<T>;
   {$HINTS OFF}
     property List: IList read AsList implements IList;
   {$HINTS ON}
@@ -273,6 +274,9 @@ type
     function GetItem(index: Integer): T; virtual; abstract;
     function GetOnChanged: ICollectionChangedEvent<T>; 
     procedure SetItem(index: Integer; const value: T); virtual; abstract;
+  {$ENDREGION}
+  {$REGION 'Implements IInterface'}
+    function QueryInterface(const IID: TGUID; out Obj): HResult; override; stdcall;
   {$ENDREGION}
     procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
     function TryGetElementAt(out value: T; index: Integer): Boolean; override;
@@ -299,18 +303,17 @@ type
     procedure Insert(index: Integer; const item: T); virtual; abstract;
     procedure InsertRange(index: Integer; const collection: array of T); overload; virtual;
     procedure InsertRange(index: Integer; const collection: IEnumerable<T>); overload; virtual;
-    procedure InsertRange(index: Integer; const collection: TEnumerable<T>); overload; virtual;
 
     procedure Delete(index: Integer); virtual; abstract;
     procedure DeleteRange(startIndex, count: Integer); virtual; abstract;
 
     function IndexOf(const item: T): Integer; overload;
     function IndexOf(const item: T; index: Integer): Integer; overload;
-    function IndexOf(const item: T; index, count: Integer): Integer; overload;
+    function IndexOf(const item: T; index, count: Integer): Integer; overload; virtual;
 
     function LastIndexOf(const item: T): Integer; overload;
     function LastIndexOf(const item: T; index: Integer): Integer; overload;
-    function LastIndexOf(const item: T; index, count: Integer): Integer; overload;
+    function LastIndexOf(const item: T; index, count: Integer): Integer; overload; virtual;
 
     procedure Exchange(index1, index2: Integer); virtual; abstract;
     procedure Move(currentIndex, newIndex: Integer); virtual; abstract;
@@ -323,8 +326,6 @@ type
     procedure Sort(const comparison: TComparison<T>); overload;
 
     function ToArray: TArray<T>; override;
-
-    function AsReadOnly: IReadOnlyList<T>;
 
     property Items[index: Integer]: T read GetItem write SetItem; default;
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
@@ -523,6 +524,14 @@ begin
     Result := defaultValue;
 end;
 
+function TEnumerableBase<T>.EqualsTo(const values: array of T): Boolean;
+var
+  collection: IEnumerable<T>;
+begin
+  collection := TArrayIterator<T>.Create(values);
+  Result := EqualsTo(collection);
+end;
+
 function TEnumerableBase<T>.EqualsTo(const collection: IEnumerable<T>): Boolean;
 begin
   Result := EqualsTo(collection, EqualityComparer);
@@ -645,6 +654,13 @@ begin
     fEqualityComparer := TEqualityComparer<T>.Default;
   Result := fEqualityComparer;
 end;
+
+{$IFDEF WEAKREF}
+function TEnumerableBase<T>.HasWeakRef: Boolean;
+begin
+  Result := System.TypInfo.HasWeakRef(TypeInfo(T));
+end;
+{$ENDIF}
 
 function TEnumerableBase<T>.Last: T;
 var
@@ -770,24 +786,18 @@ begin
     raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
 end;
 
-//function TEnumerableBase<T>.Ordered: IEnumerable<T>;
-//var
-//  comparer: IComparer<T>;
-//begin
-//  comparer := TComparer<T>.Default;
-//  Result := TOrderedIterator<T>.Create(Self, comparer);
-//end;
-//
-//function TEnumerableBase<T>.Ordered(
-//  const comparison: TComparison<T>): IEnumerable<T>;
-//var
-//  comparer: IComparer<T>;
-//begin
-//  Guard.CheckNotNull(Assigned(comparison), 'comparison');
-//
-//  comparer := TComparer<T>.Construct(comparison);
-//  Result := TOrderedIterator<T>.Create(Self, comparer);
-//end;
+function TEnumerableBase<T>.Ordered: IEnumerable<T>;
+begin
+  Result := TOrderedIterator<T>.Create(Self, Comparer);
+end;
+
+function TEnumerableBase<T>.Ordered(
+  const comparer: IComparer<T>): IEnumerable<T>;
+begin
+  Guard.CheckNotNull(Assigned(comparer), 'comparer');
+
+  Result := TOrderedIterator<T>.Create(Self, comparer);
+end;
 
 function TEnumerableBase<T>.Reversed: IEnumerable<T>;
 begin
@@ -880,7 +890,7 @@ begin
     end;
   until not enumerator.MoveNext;
   if not found then
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoMatchingElement);
+    Result := defaultValue;
 end;
 
 function TEnumerableBase<T>.Skip(count: Integer): IEnumerable<T>;
@@ -1072,12 +1082,6 @@ begin
   AddRange(collection);
 end;
 
-constructor TCollectionBase<T>.Create(const collection: TEnumerable<T>);
-begin
-  Create;
-  AddRange(collection);
-end;
-
 procedure TCollectionBase<T>.AddRange(const collection: array of T);
 var
   item: T;
@@ -1087,16 +1091,6 @@ begin
 end;
 
 procedure TCollectionBase<T>.AddRange(const collection: IEnumerable<T>);
-var
-  item: T;
-begin
-  Guard.CheckNotNull(Assigned(collection), 'collection');
-
-  for item in collection do
-    Add(item);
-end;
-
-procedure TCollectionBase<T>.AddRange(const collection: TEnumerable<T>);
 var
   item: T;
 begin
@@ -1137,16 +1131,6 @@ begin
     Extract(item);
 end;
 
-procedure TCollectionBase<T>.ExtractRange(const collection: TEnumerable<T>);
-var
-  item: T;
-begin
-  Guard.CheckNotNull(Assigned(collection), 'collection');
-
-  for item in collection do
-    Extract(item);
-end;
-
 function TCollectionBase<T>.GetIsReadOnly: Boolean;
 begin
   Result := False;
@@ -1156,16 +1140,6 @@ procedure TCollectionBase<T>.RemoveRange(const collection: array of T);
 var
   item: T;
 begin
-  for item in collection do
-    Remove(item);
-end;
-
-procedure TCollectionBase<T>.RemoveRange(const collection: TEnumerable<T>);
-var
-  item: T;
-begin
-  Guard.CheckNotNull(Assigned(collection), 'collection');
-
   for item in collection do
     Remove(item);
 end;
@@ -1254,7 +1228,7 @@ begin
   Result := TListAdapter<T>.Create(Self);
 end;
 
-function TListBase<T>.AsReadOnly: IReadOnlyList<T>;
+function TListBase<T>.AsReadOnlyList: IReadOnlyList<T>;
 begin
   Result := Self;
 end;
@@ -1344,21 +1318,6 @@ begin
   end;
 end;
 
-procedure TListBase<T>.InsertRange(index: Integer;
-  const collection: TEnumerable<T>);
-var
-  item: T;
-begin
-  Guard.CheckRange((index >= 0) and (index <= Count), 'index');
-  Guard.CheckNotNull(Assigned(collection), 'collection');
-
-  for item in collection do
-  begin
-    Insert(index, item);
-    Inc(index);
-  end;
-end;
-
 function TListBase<T>.Last: T;
 var
   count: Integer;
@@ -1378,6 +1337,19 @@ begin
     Result := defaultValue
   else
     Result := Items[count - 1];
+end;
+
+function TListBase<T>.QueryInterface(const IID: TGUID; out Obj): HResult;
+begin
+  if IsEqualGUID(IID, IObjectList) then
+  begin
+    if ElementType.Kind = tkClass then
+      Result := inherited QueryInterface(IList<TObject>, Obj)
+    else
+      Result := E_NOINTERFACE;
+  end
+  else
+    Result := inherited;
 end;
 
 function TListBase<T>.LastIndexOf(const item: T): Integer;

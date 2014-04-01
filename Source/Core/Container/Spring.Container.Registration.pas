@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,7 +22,6 @@
 {                                                                           }
 {***************************************************************************}
 
-{TODO -oOwner -cGeneral : Add DelegateTo(TClass)}
 unit Spring.Container.Registration;
 
 {$I Spring.inc}
@@ -50,17 +49,16 @@ type
     fServiceTypeMappings: IDictionary<PTypeInfo, IList<TComponentModel>>;
     fServiceNameMappings: IDictionary<string, TComponentModel>;
   protected
-    procedure OnComponentModelAdded(model: TComponentModel);
     procedure CheckIsNonGuidInterface(serviceType: TRttiType);
     procedure Validate(componentType, serviceType: PTypeInfo; var serviceName: string);
-    function GetDefaultTypeName(serviceType: TRttiType): string;
+    function BuildActivatorDelegate(elementTypeInfo: PTypeInfo; out componentType: TRttiType): TActivatorDelegate;
   public
     constructor Create(const context: IContainerContext);
     destructor Destroy; override;
     function RegisterComponent(componentTypeInfo: PTypeInfo): TComponentModel;
-    procedure RegisterService(model: TComponentModel; serviceType: PTypeInfo); overload;
-    procedure RegisterService(model: TComponentModel; serviceType: PTypeInfo; const name: string); overload;
-    procedure RegisterDefault(model: TComponentModel; serviceType: PTypeInfo);
+    procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo); overload;
+    procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo; const name: string); overload;
+    procedure RegisterDefault(const model: TComponentModel; serviceType: PTypeInfo);
     procedure UnregisterAll;
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(const name: string): Boolean; overload;
@@ -115,7 +113,7 @@ type
     function AsSingleton(refCounting: TRefCounting): TRegistration; overload;
     function AsSingletonPerThread: TRegistration;
     function AsTransient: TRegistration;
-    function AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration;
+    function AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration; {$IFDEF CPUARM}experimental;{$ENDIF}
 
     function AsDefault: TRegistration; overload;
     function AsDefault(serviceType: PTypeInfo): TRegistration; overload;
@@ -160,7 +158,7 @@ type
     function AsSingleton(refCounting: TRefCounting): TRegistration<T>; overload;
     function AsSingletonPerThread: TRegistration<T>;
     function AsTransient: TRegistration<T>;
-    function AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration<T>;
+    function AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration<T>; {$IFDEF CPUARM}experimental;{$ENDIF}
 
     function AsDefault: TRegistration<T>; overload;
     function AsDefault(serviceType: PTypeInfo): TRegistration<T>; overload;
@@ -189,8 +187,10 @@ type
 implementation
 
 uses
+  SysUtils,
   TypInfo,
-  Spring.Container.ResourceStrings,
+  Spring.Collections.Lists,
+  Spring.Container.ResourceStrings,    
   Spring.Helpers,
   Spring.Reflection;
 
@@ -217,9 +217,48 @@ begin
   inherited Destroy;
 end;
 
+function TComponentRegistry.BuildActivatorDelegate(elementTypeInfo: PTypeInfo;
+  out componentType: TRttiType): TActivatorDelegate;
+begin
+  case elementTypeInfo.Kind of
+    tkClass:
+    begin
+      componentType := fRttiContext.GetType(TypeInfo(TList<TObject>));
+      Result :=
+        function: TValue
+        var
+          list: TList<TObject>;
+          value: TValue;
+        begin
+          list := TList<TObject>.Create;
+          for value in fContainerContext.ServiceResolver.ResolveAll(elementTypeInfo) do
+            list.Add(value.AsObject);
+          Result := TValue.From<TList<TObject>>(list);
+        end;
+    end;
+    tkInterface:
+    begin
+      componentType := fRttiContext.GetType(TypeInfo(TList<IInterface>));
+      Result :=
+        function: TValue
+        var
+          list: TList<IInterface>;
+          value: TValue;
+        begin
+          list := TList<IInterface>.Create;
+          for value in fContainerContext.ServiceResolver.ResolveAll(elementTypeInfo) do
+            list.Add(value.AsInterface);
+          Result := TValue.From<TList<IInterface>>(list);
+        end;
+    end
+  else
+    raise ERegistrationException.CreateResFmt(@SUnsupportedType, [componentType.Name]);
+  end;
+end;
+
 procedure TComponentRegistry.CheckIsNonGuidInterface(serviceType: TRttiType);
 begin
-  if serviceType.IsInterface and not TRttiInterfaceType(serviceType).HasGuid
+  if serviceType.IsInterface and not serviceType.AsInterface.HasGuid
     and not TType.IsDelegate(serviceType.Handle) then
   begin
     if serviceType.IsPublicType then
@@ -250,7 +289,7 @@ begin
 //      raise ERegistrationException.CreateResFmt(@SDuplicatedUnnamedService, [
 //        GetTypeName(serviceType)]);
 
-    serviceName := GetDefaultTypeName(serviceTypeObject) + '@' + GetDefaultTypeName(componentTypeObject);
+    serviceName := serviceTypeObject.DefaultName + '@' + componentTypeObject.DefaultName;
   end;
   if HasService(serviceName) then
   begin
@@ -266,13 +305,13 @@ begin
   fModels.Clear;
 end;
 
-procedure TComponentRegistry.RegisterService(model: TComponentModel;
+procedure TComponentRegistry.RegisterService(const model: TComponentModel;
   serviceType: PTypeInfo);
 begin
   RegisterService(model, serviceType, '');
 end;
 
-procedure TComponentRegistry.RegisterService(model: TComponentModel;
+procedure TComponentRegistry.RegisterService(const model: TComponentModel;
   serviceType: PTypeInfo; const name: string);
 var
   models: IList<TComponentModel>;
@@ -286,7 +325,7 @@ begin
   model.Services[serviceName] := serviceType;
   if not fServiceTypeMappings.TryGetValue(serviceType, models) then
   begin
-    models := TCollections.CreateList<TComponentModel>;
+    models := TCollections.CreateList<TComponentModel>(False);
     fServiceTypeMappings.AddOrSetValue(serviceType, models);
   end;
   models.Add(model);
@@ -298,7 +337,7 @@ begin
   end;
 end;
 
-procedure TComponentRegistry.RegisterDefault(model: TComponentModel;
+procedure TComponentRegistry.RegisterDefault(const model: TComponentModel;
   serviceType: PTypeInfo);
 begin
   if not model.HasService(serviceType) then
@@ -311,13 +350,22 @@ function TComponentRegistry.RegisterComponent(
   componentTypeInfo: PTypeInfo): TComponentModel;
 var
   componentType: TRttiType;
+  elementTypeInfo: PTypeInfo;
+  activatorDelegate: TActivatorDelegate;
 begin
   Guard.CheckNotNull(componentTypeInfo, 'componentTypeInfo');
 
   componentType := fRttiContext.GetType(componentTypeInfo);
+  if componentType.IsDynamicArray then
+  begin
+    elementTypeInfo := componentType.AsDynamicArray.ElementType.Handle;
+    activatorDelegate := BuildActivatorDelegate(elementTypeInfo, componentType);
+  end;
   Result := TComponentModel.Create(fContainerContext, componentType);
+  Result.ActivatorDelegate := activatorDelegate;
+  if componentType.IsInterface then
+    RegisterService(Result, componentType.Handle);
   fModels.Add(Result);
-  OnComponentModelAdded(Result);
 end;
 
 function TComponentRegistry.FindOne(const name: string): TComponentModel;
@@ -360,30 +408,22 @@ function TComponentRegistry.FindAll(
   serviceType: PTypeInfo): IEnumerable<TComponentModel>;
 var
   models: IList<TComponentModel>;
+  defaultModel: TComponentModel;
 begin
   Guard.CheckNotNull(serviceType, 'serviceType');
 
   if fServiceTypeMappings.TryGetValue(serviceType, models) then
   begin
-    Result := models;
+    fUnnamedRegistrations.TryGetValue(serviceType, defaultModel);
+    Result := models.Where(
+      function(const model: TComponentModel): Boolean
+      begin
+        Result := model <> defaultModel;
+      end);
   end
   else
   begin
-    Result := TCollections.CreateList<TComponentModel>;
-  end;
-end;
-
-function TComponentRegistry.GetDefaultTypeName(serviceType: TRttiType): string;
-begin
-  Assert(serviceType <> nil, 'serviceType should not be nil');
-
-  if serviceType.IsPublicType then
-  begin
-    Result := serviceType.QualifiedName;
-  end
-  else
-  begin
-    Result := serviceType.Name;
+    Result := TCollections.CreateList<TComponentModel>(False);
   end;
 end;
 
@@ -417,18 +457,6 @@ begin
   Result := fDefaultRegistrations.ContainsKey(serviceType)
     or (fServiceTypeMappings.TryGetValue(serviceType, models)
     and (models.Count = 1));
-end;
-
-procedure TComponentRegistry.OnComponentModelAdded(model: TComponentModel);
-var
-  attributes: TArray<ImplementsAttribute>;
-  attribute: ImplementsAttribute;
-begin
-  attributes := model.ComponentType.GetCustomAttributes<ImplementsAttribute>;
-  for attribute in attributes do
-  begin
-    RegisterService(model, attribute.ServiceType, attribute.Name);
-  end;
 end;
 
 {$ENDREGION}
@@ -536,6 +564,9 @@ end;
 
 function TRegistration.AsSingleton(refCounting: TRefCounting): TRegistration;
 begin
+  if (refCounting = TRefCounting.True) and fModel.ComponentType.IsInstance
+    and not Supports(fModel.ComponentType.AsInstance.MetaclassType, IInterface) then
+    raise ERegistrationException.CreateResFmt(@SMissingInterface, [fModel.ComponentType.Name]);
   fModel.LifetimeType := TLifetimeType.Singleton;
   fModel.RefCounting := refCounting;
   Result := Self;
@@ -711,7 +742,9 @@ end;
 
 function TRegistration<T>.AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration<T>;
 begin
+{$WARN SYMBOL_EXPERIMENTAL OFF}
   fRegistration.AsPooled(minPoolSize, maxPoolSize);
+{$WARN SYMBOL_EXPERIMENTAL ON}
   Result := Self;
 end;
 

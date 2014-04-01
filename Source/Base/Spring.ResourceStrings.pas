@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -98,6 +98,11 @@ resourcestring
   SSequenceContainsNoMatchingElement = 'Sequence contains no matching element.';
   SSequenceContainsMoreThanOneMatchingElement = 'Sequence contains more than one matching element.';
   SSequenceContainsMoreThanOneElement = 'Sequence contains more than one element.';
+
+  SLinkedListEmpty = 'The LinkedList is empty.';
+  SLinkedListNodeIsAttached = 'The LinkedList node already belongs to a LinkedList.';
+
+  SIncompatibleTypes = 'Incompatible types: "%s" and "%s"';
 
   {$ENDREGION}
 

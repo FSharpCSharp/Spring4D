@@ -22,9 +22,7 @@ implementation
 function TOrderValidator.ValidateOrder(aOrder: TOrder): Boolean;
 begin
   Result := Assigned(aOrder);
-  {$IFDEF CONSOLEAPP}
   Writeln('Validating Order....');
-  {$ENDIF}
 end;
 
 end.

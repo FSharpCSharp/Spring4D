@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -375,6 +375,8 @@ type
     function GetIsClassOrInterface: Boolean;
     function GetAsClass: TRttiInstanceType;
     function GetIsGenericType: Boolean;
+    function GetAsDynamicArray: TRttiDynamicArrayType;
+    function GetIsDynamicArray: Boolean;
     function InternalGetConstructors(enumerateBaseType: Boolean = True): IEnumerable<TRttiMethod>;
     function InternalGetMethods(enumerateBaseType: Boolean = True): IEnumerable<TRttiMethod>;
     function InternalGetProperties(enumerateBaseType: Boolean = True): IEnumerable<TRttiProperty>;
@@ -383,6 +385,7 @@ type
     function GetMethods: IEnumerable<TRttiMethod>;
     function GetProperties: IEnumerable<TRttiProperty>;
     function GetFields: IEnumerable<TRttiField>;
+    function GetDefaultName: string;
   public
     // function GetMembers: IEnumerable<TRttiMember>;
 
@@ -446,14 +449,17 @@ type
 
     property AsClass: TRttiInstanceType read GetAsClass;
     property AsInterface: TRttiInterfaceType read GetAsInterface;
+    property AsDynamicArray: TRttiDynamicArrayType read GetAsDynamicArray;
     property IsClass: Boolean read GetIsClass;
     property IsInterface: Boolean read GetIsInterface;
     property IsClassOrInterface: Boolean read GetIsClassOrInterface;
+    property IsDynamicArray: Boolean read GetIsDynamicArray;
 
     ///	<summary>
     ///	  Gets a value indicates whether the current type is generic.
     ///	</summary>
     property IsGenericType: Boolean read GetIsGenericType;
+    property DefaultName: string read GetDefaultName;
   end;
 
   TRttiMemberHelper = class helper for TRttiMember
@@ -1004,6 +1010,14 @@ begin
   Result := InternalGetConstructors;
 end;
 
+function TRttiTypeHelper.GetDefaultName: string;
+begin
+  if IsPublicType then
+    Result := QualifiedName
+  else
+    Result := Name;
+end;
+
 function TRttiTypeHelper.GetMethods: IEnumerable<TRttiMethod>;
 begin
   Result := InternalGetMethods;
@@ -1019,7 +1033,7 @@ begin
   Result := InternalGetFields;
 end;
 
-{$IFNDEF DelphiXE_UP}
+{$IFNDEF DELPHIXE_UP}
 function SplitString(const s: string; delimiter: Char): TStringDynArray;
 var
   list: TStrings;
@@ -1067,6 +1081,11 @@ end;
 function TRttiTypeHelper.GetAsClass: TRttiInstanceType;
 begin
   Result := Self as TRttiInstanceType;
+end;
+
+function TRttiTypeHelper.GetAsDynamicArray: TRttiDynamicArrayType;
+begin
+  Result := Self as TRttiDynamicArrayType;
 end;
 
 function TRttiTypeHelper.GetAsInterface: TRttiInterfaceType;
@@ -1135,6 +1154,11 @@ end;
 function TRttiTypeHelper.GetIsClassOrInterface: Boolean;
 begin
   Result := Self.IsClass or Self.IsInterface;
+end;
+
+function TRttiTypeHelper.GetIsDynamicArray: Boolean;
+begin
+  Result := Self is TRttiDynamicArrayType;
 end;
 
 function TRttiTypeHelper.GetIsGenericType: Boolean;

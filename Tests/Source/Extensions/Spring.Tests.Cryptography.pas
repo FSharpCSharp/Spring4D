@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -48,6 +48,8 @@ type
   protected
     const
       fCData: UnicodeString = 'Delphi Spring Framework';  // fCDefaultDataString
+      fBytesAbc : array[0..2] of Byte = (Byte('a'), Byte('b'), Byte('c'));
+
   protected
     fActual: TBuffer;
     fExpected: TBuffer;
@@ -56,7 +58,11 @@ type
   TTestCRC16 = class(THashAlgorithmTestCase)
   private
     const
+{$IFNDEF NEXTGEN}
       fCData: AnsiString = '123456789';
+{$ELSE}
+      fCData = '123456789';
+{$ENDIF}
       fCExpectedHashOfEmptyBuffer = '0000';
       fCExpectedHashOfData = 'BB3D';
   private
@@ -73,7 +79,11 @@ type
   TTestCRC32 = class(THashAlgorithmTestCase)
   private
     const
+{$IFNDEF NEXTGEN}
       fCData: AnsiString = '123456789';
+{$ELSE}
+      fCData = '123456789';
+{$ENDIF}
       fCExpectedHashOfEmptyBuffer = '00000000';
       fCExpectedHashOfData = 'CBF43926';
   private
@@ -268,10 +278,9 @@ implementation
 procedure TCryptoTestCase.CheckEquals(const expected, actual: TBuffer;
   const msg: string);
 begin
+  FCheckCalled := True;
   if not expected.Equals(actual) then
-  begin
-    Fail(Format(msg + #13#10 + 'Expected: %S'#13#10'Actual:   %S', [expected.ToHexString('', ' '), actual.ToHexString('', ' ')]));
-  end;
+    FailNotEquals(expected.ToHexString, actual.ToHexString, msg);
 end;
 
 { TTestCRC16 }
@@ -297,14 +306,18 @@ end;
 
 procedure TTestCRC16.TestNonEmptyBuffer;
 begin
+{$IFNDEF NEXTGEN}
   fActual := fCRC16.ComputeHash(fCData);
+{$ELSE}
+  fActual := fCRC16.ComputeHash(TEncoding.ANSI.GetBytes(fCData));
+{$ENDIF}
   fExpected := TBuffer.FromHexString(fCExpectedHashOfData);
   CheckEquals(fExpected, fActual);
 end;
 
 procedure TTestCRC16.TestABC;
 begin
-  fActual := fCRC16.ComputeHash(AnsiString('abc'));
+  fActual := fCRC16.ComputeHash(fBytesAbc);
   fExpected := TBuffer.FromHexString('9738');
   CheckEquals(fExpected, fActual);
 end;
@@ -332,14 +345,18 @@ end;
 
 procedure TTestCRC32.TestNonEmptyBuffer;
 begin
+{$IFNDEF NEXTGEN}
   fActual := fCRC32.ComputeHash(fCData);
+{$ELSE}
+  fActual := fCRC32.ComputeHash(TEncoding.ANSI.GetBytes(fCData));
+{$ENDIF}
   fExpected := TBuffer.FromHexString(fCExpectedHashOfData);
   CheckEquals(fExpected, fActual);
 end;
 
 procedure TTestCRC32.TestABC;
 begin
-  fActual := fCRC32.ComputeHash(AnsiString('abc'));
+  fActual := fCRC32.ComputeHash(fBytesAbc);
   fExpected := TBuffer.FromHexString('352441C2');
   CheckEquals(fExpected, fActual);
 end;
@@ -557,7 +574,11 @@ end;
 
 procedure TTestDES.TestCBC;
 begin
+{$IFNDEF NEXTGEN}
   fInputBuffer := TBuffer.Create(AnsiString('Now is the time for all '));
+{$ELSE}
+  fInputBuffer := TBuffer.Create(TEncoding.ANSI.GetBytes('Now is the time for all '));
+{$ENDIF}
   fOutputBuffer := TBuffer.FromHexString('e5c7cdde872bf27c 43e934008c389c0f 683788499a7c05f6');
   fKey := TBuffer.FromHexString('0123456789abcdef');
   fDES.IV := TBuffer.FromHexString('1234567890abcdef');

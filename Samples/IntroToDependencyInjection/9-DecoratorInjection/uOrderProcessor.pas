@@ -33,10 +33,7 @@ begin
   Result := False;
   OrderIsValid := FOrderValidator.ValidateOrder(aOrder);
   if OrderIsValid then
-  begin
     Result := FOrderEntry.EnterOrderIntoDatabase(aOrder);
-  end;
-
   Writeln('Order has been processed....');
 end;
 

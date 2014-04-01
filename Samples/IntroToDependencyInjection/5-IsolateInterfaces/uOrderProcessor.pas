@@ -33,13 +33,8 @@ begin
   Result := False;
   OrderIsValid := FOrderValidator.ValidateOrder(aOrder);
   if OrderIsValid then
-  begin
     Result := FOrderEntry.EnterOrderIntoDatabase(aOrder);
-  end;
-
-  {$IFDEF CONSOLEAPP}
-  WriteLn('Order has been processed....');
-  {$ENDIF}
+  Writeln('Order has been processed....');
 end;
 
 end.

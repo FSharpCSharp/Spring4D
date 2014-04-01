@@ -21,11 +21,7 @@ begin
   OrderProcessor := TOrderProcessor.Create(TOrderValidator.Create, TOrderEntry.Create);
   try
     if OrderProcessor.ProcessOrder(Order) then
-    begin
-      {$IFDEF CONSOLEAPP}
       Writeln('Order successfully processed....');
-      {$ENDIF}
-    end;
   finally
     Order.Free;
   end;

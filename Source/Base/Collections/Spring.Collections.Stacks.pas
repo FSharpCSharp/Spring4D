@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -53,7 +53,6 @@ type
     constructor Create; overload; override;
     constructor Create(const collection: array of T); overload;
     constructor Create(const collection: IEnumerable<T>); overload;
-    constructor Create(const collection: TEnumerable<T>); overload;
     constructor Create(stack: TGenericStack; ownership: TOwnershipType); overload;
     destructor Destroy; override;
 
@@ -100,15 +99,6 @@ begin
 end;
 
 constructor TStack<T>.Create(const collection: IEnumerable<T>);
-var
-  item: T;
-begin
-  Create;
-  for item in collection do
-    Push(item);
-end;
-
-constructor TStack<T>.Create(const collection: TEnumerable<T>);
 var
   item: T;
 begin

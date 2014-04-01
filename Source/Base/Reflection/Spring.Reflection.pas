@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -40,6 +40,31 @@ uses
   Spring.DesignPatterns;
 
 type
+
+  ///	<summary>
+  ///	  Specifies the kind of a lazy type.
+  ///	</summary>
+  TLazyKind = (
+    ///	<summary>
+    ///	  Not a lazy type.
+    ///	</summary>
+    lkNone,
+
+    ///	<summary>
+    ///	  Type is <see cref="SysUtils|TFunc&lt;T&gt;" />.
+    ///	</summary>
+    lkFunc,
+
+    ///	<summary>
+    ///	  Type is <see cref="Spring|Lazy&lt;T&gt;" />.
+    ///	</summary>
+    lkRecord,
+
+    ///	<summary>
+    ///	  Type is <see cref="Spring|ILazy&lt;T&gt;" />.
+    ///	</summary>
+    lkInterface
+  );
 
   {$REGION 'TType'}
 
@@ -82,6 +107,22 @@ type
     ///	</summary>
     class function IsDelegate(typeInfo: PTypeInfo): Boolean; overload;
     class function TryGetInterfaceType(const guid: TGUID; out aType: TRttiInterfaceType): Boolean;
+
+    ///	<summary>
+    ///	  Returns the <see cref="TLazyKind" /> of the typeInfo.
+    ///	</summary>
+    class function GetLazyKind(typeInfo: PTypeInfo): TLazyKind;
+
+    ///	<summary>
+    ///	  Returns the underlying type name of the lazy type.
+    ///	</summary>
+    class function GetLazyTypeName(typeInfo: PTypeInfo): string;
+
+    ///	<summary>
+    ///	  Returns <c>True</c> if the type is a lazy type.
+    ///	</summary>
+    class function IsLazy(typeInfo: PTypeInfo): Boolean;
+
     class property Context: TRttiContext read fContext;
   end;
 
@@ -217,23 +258,36 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TFiltersNamed<T: TRttiMember>'}
+
+  TFiltersNamed<T: TRttiNamedObject> = class
+  public
+    class function IsNamed(const name: string): TSpecification<T>;
+    class function HasAttribute(attributeClass: TAttributeClass): TSpecification<T>;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'TFiltersBase<T: TRttiMember>'}
+
+  TMethodKinds = set of TMethodKind;
 
   ///	<summary>
   ///	  Provides static methods to create specifications to filter TRttiMember
   ///	  objects.
   ///	</summary>
-  TFiltersBase<T: TRttiMember> = class
+  TFiltersBase<T: TRttiMember> = class(TFiltersNamed<T>)
   public
     class function ContainsParameterType(typeInfo: PTypeInfo): TSpecification<T>;
-    class function HasAttribute(attributeClass: TAttributeClass): TSpecification<T>;
     class function HasParameterTypes(const types: array of PTypeInfo): TSpecification<T>;
     class function HasParameterFlags(const flags: TParamFlags): TSpecification<T>;
-    class function IsNamed(const name: string): TSpecification<T>;
     class function IsTypeOf<TType>: TSpecification<T>; overload;
     class function IsTypeOf(typeInfo: PTypeInfo): TSpecification<T>; overload;
     class function IsConstructor: TSpecification<T>;
     class function IsInstanceMethod: TSpecification<T>;
+    class function IsClassMethod: TSpecification<T>;
+    class function IsMethodKind(const kinds : TMethodKinds): TSpecification<T>;
     class function IsInvokable: TSpecification<T>;
   end;
 
@@ -242,17 +296,23 @@ type
 
   {$REGION 'Filters'}
 
+  TPackageFilters = class(TFiltersNamed<TRttiPackage>);
   TMemberFilters = class(TFiltersBase<TRttiMember>);
   TMethodFilters = class(TFiltersBase<TRttiMethod>);
   TPropertyFilters = class(TFiltersBase<TRttiProperty>);
   TFieldFilters = class(TFiltersBase<TRttiField>);
+  TTypeFilters = class(TFiltersNamed<TRttiType>)
+  public
+    class function IsClass : TSpecification<TRttiType>;
+    class function IsInterface : TSpecification<TRttiType>;
+  end;
 
   {$ENDREGION}
 
 
   {$REGION 'TMemberSpecificationBase<T: TRttiMember>'}
 
-  TMemberSpecificationBase<T: TRttiMember> = class abstract(TSpecificationBase<T>)
+  TMemberSpecificationBase<T: TRttiObject> = class abstract(TSpecificationBase<T>)
   protected
     function Accept(const member: T): Boolean; virtual; abstract;
   public
@@ -264,7 +324,7 @@ type
 
   {$REGION 'TNameFilter<T: TRttiMember>'}
 
-  TNameFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
+  TNameFilter<T: TRttiNamedObject> = class(TMemberSpecificationBase<T>)
   private
     fName: string;
   protected
@@ -288,7 +348,7 @@ type
 
   {$REGION 'THasAttributeFilter<T: TRttiMember>'}
 
-  THasAttributeFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
+  THasAttributeFilter<T: TRttiObject> = class(TMemberSpecificationBase<T>)
   private
     fAttributeClass: TAttributeClass;
   protected
@@ -379,6 +439,16 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TClassMethodFilter<T: TRttiMember>'}
+
+  TClassMethodFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
+  protected
+    function Accept(const member: T): Boolean; override;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'THasParameterFlagsFilter<T: TRttiMember>'}
 
   THasParameterFlagsFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
@@ -388,6 +458,40 @@ type
     function Accept(const member: T): Boolean; override;
   public
     constructor Create(const flags: TParamFlags);
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TMethodKindFilter<T: TRttiMember>'}
+
+  TMethodKindFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
+  private
+    fFlags: TMethodKinds;
+  protected
+    function Accept(const member: T): Boolean; override;
+  public
+    constructor Create(const flags: TMethodKinds);
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TIsClassFilter>'}
+
+  TIsClassFilter = class(TMemberSpecificationBase<TRttiType>)
+  protected
+    function Accept(const member: TRttiType): Boolean; override;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TIsInterfaceFilter>'}
+
+  TIsInterfaceFilter = class(TMemberSpecificationBase<TRttiType>)
+  protected
+    function Accept(const member: TRttiType): Boolean; override;
   end;
 
   {$ENDREGION}
@@ -482,9 +586,51 @@ begin
   Result := TType.GetFullName(typeInfo);
 end;
 
+const
+  LazyPrefixStrings: array[lkFunc..High(TLazyKind)] of string = (
+    'TFunc<', 'Lazy<', 'ILazy<');
+
+class function TType.GetLazyKind(typeInfo: PTypeInfo): TLazyKind;
+var
+  name: string;
+begin
+  if Assigned(typeInfo) then
+  begin
+    name := GetTypeName(typeInfo);
+    for Result := lkFunc to High(TLazyKind) do
+      if StartsText(LazyPrefixStrings[Result], name) then
+        Exit;
+  end;
+  Result := lkNone;
+end;
+
+class function TType.GetLazyTypeName(typeInfo: PTypeInfo): string;
+var
+  lazyKind: TLazyKind;
+  name: string;
+  i: Integer;
+begin
+  lazyKind := GetLazyKind(typeInfo);
+  name := GetTypeName(typeInfo);
+  if lazyKind > lkNone then
+  begin
+    i := Length(LazyPrefixStrings[lazyKind]) + 1;
+    Result := Copy(name, i, Length(name) - i )
+  end;
+end;
+
 class function TType.FindType(const qualifiedName: string): TRttiType;
+var
+  rttiType: TRttiType;
 begin
   Result := fContext.FindType(qualifiedName);
+  if not Assigned(Result) then
+  begin
+    for rttiType in fContext.GetTypes do
+      if SameText(rttiType.Name, qualifiedName) then
+        Exit(rttiType);
+    Result := nil;
+  end;
 end;
 
 class function TType.IsAssignable(typeFrom, typeTo: PTypeInfo): Boolean;
@@ -493,17 +639,26 @@ begin
 end;
 
 class function TType.IsDelegate(typeInfo: PTypeInfo): Boolean;
+const
+  DelegatePrefixStrings: array[0..2] of string = (
+    'TFunc<', 'TProc<', 'TPredicate<');
 var
   name: string;
+  i: Integer;
 begin
   Result := Assigned(typeInfo) and (typeInfo.Kind = tkInterface);
   if Result then
   begin
     name := GetTypeName(typeInfo);
-    Result := StartsText('TFunc<', name)
-      or StartsText('TProc<', name)
-      or StartsText('TPredicate<', name);
+    for i := Low(DelegatePrefixStrings) to High(DelegatePrefixStrings) do
+      if StartsText(DelegatePrefixStrings[i], name) then
+        Exit;
   end;
+end;
+
+class function TType.IsLazy(typeInfo: PTypeInfo): Boolean;
+begin
+  Result := GetLazyKind(typeInfo) <> lkNone;
 end;
 
 class function TType.TryGetInterfaceType(const guid: TGUID;
@@ -756,18 +911,28 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TFiltersNamed<T>'}
+
+class function TFiltersNamed<T>.IsNamed(const name: string): TSpecification<T>;
+begin
+  Result := TNameFilter<T>.Create(name);
+end;
+
+class function TFiltersNamed<T>.HasAttribute(
+  attributeClass: TAttributeClass): TSpecification<T>;
+begin
+  Result := THasAttributeFilter<T>.Create(attributeClass);
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TFiltersBase<T>'}
 
 class function TFiltersBase<T>.ContainsParameterType(
   typeInfo: PTypeInfo): TSpecification<T>;
 begin
   Result := TContainsParameterTypeFilter<T>.Create(typeInfo);
-end;
-
-class function TFiltersBase<T>.HasAttribute(
-  attributeClass: TAttributeClass): TSpecification<T>;
-begin
-  Result := THasAttributeFilter<T>.Create(attributeClass);
 end;
 
 class function TFiltersBase<T>.HasParameterTypes(
@@ -782,11 +947,6 @@ begin
   Result := THasParameterFlagsFilter<T>.Create(flags);
 end;
 
-class function TFiltersBase<T>.IsNamed(const name: string): TSpecification<T>;
-begin
-  Result := TNameFilter<T>.Create(name);
-end;
-
 class function TFiltersBase<T>.IsTypeOf(typeInfo: PTypeInfo): TSpecification<T>;
 begin
   Result := TTypeFilter<T>.Create(typeInfo);
@@ -795,6 +955,11 @@ end;
 class function TFiltersBase<T>.IsTypeOf<TType>: TSpecification<T>;
 begin
   Result := IsTypeOf(TypeInfo(TType));
+end;
+
+class function TFiltersBase<T>.IsClassMethod: TSpecification<T>;
+begin
+  Result := TClassMethodFilter<T>.Create;
 end;
 
 class function TFiltersBase<T>.IsConstructor: TSpecification<T>;
@@ -810,6 +975,27 @@ end;
 class function TFiltersBase<T>.IsInvokable: TSpecification<T>;
 begin
   Result := TInvokableFilter<T>.Create;
+end;
+
+class function TFiltersBase<T>.IsMethodKind(
+  const kinds: TMethodKinds): TSpecification<T>;
+begin
+  Result := TMethodKindFilter<T>.Create(kinds);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTypeFilters'}
+
+class function TTypeFilters.IsClass: TSpecification<TRttiType>;
+begin
+  Result := TIsClassFilter.Create;
+end;
+
+class function TTypeFilters.IsInterface: TSpecification<TRttiType>;
+begin
+  Result := TIsInterfaceFilter.Create;
 end;
 
 {$ENDREGION}
@@ -850,7 +1036,7 @@ end;
 
 function TNameFilter<T>.Accept(const member: T): Boolean;
 begin
-  Result := SameText(TRttiMember(member).Name, fName);
+  Result := SameText(TRttiNamedObject(member).Name, fName);
 end;
 
 { TTypeFilter<T> }
@@ -965,6 +1151,23 @@ begin
   end;
 end;
 
+{ TMethodKindFilter<T> }
+
+function TMethodKindFilter<T>.Accept(const member: T): Boolean;
+begin
+  Result := False;
+  if member.IsMethod then
+  begin
+    Result := member.AsMethod.MethodKind in fFlags;
+  end;
+end;
+
+constructor TMethodKindFilter<T>.Create(const flags: TMethodKinds);
+begin
+  inherited Create;
+  fFlags:=flags;
+end;
+
 { TInvokableFilter<T> }
 
 function TInvokableFilter<T>.Accept(const member: T): Boolean;
@@ -1008,6 +1211,27 @@ end;
 function TInstanceMethodFilter<T>.Accept(const member: T): Boolean;
 begin
   Result := member.IsMethod and not member.AsMethod.IsClassMethod;
+end;
+
+{ TClassMethodFilter<T> }
+
+function TClassMethodFilter<T>.Accept(const member: T): Boolean;
+begin
+  Result := member.IsMethod and member.AsMethod.IsClassMethod;
+end;
+
+{ TIsClassFilter }
+
+function TIsClassFilter.Accept(const member: TRttiType): Boolean;
+begin
+  Result := member.IsInstance;
+end;
+
+{ TIsInterfaceFilter }
+
+function TIsInterfaceFilter.Accept(const member: TRttiType): Boolean;
+begin
+  Result := member is TRttiInterfaceType;
 end;
 
 {$ENDREGION}

@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2013 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -45,50 +45,50 @@ type
     procedure AddInspector(const inspector: IBuilderInspector);
     procedure RemoveInspector(const inspector: IBuilderInspector);
     procedure ClearInspectors;
-    procedure Build(model: TComponentModel);
+    procedure Build(const model: TComponentModel);
     procedure BuildAll;
   end;
 
   TInspectorBase = class abstract(TInterfacedObject, IBuilderInspector)
   protected
-    procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); virtual; abstract;
+    procedure DoProcessModel(const context: IContainerContext; const model: TComponentModel); virtual; abstract;
   public
-    procedure ProcessModel(const context: IContainerContext; model: TComponentModel);
+    procedure ProcessModel(const context: IContainerContext; const model: TComponentModel);
   end;
 
   TInterfaceInspector = class(TInspectorBase)
   protected
-    procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); override;
+    procedure DoProcessModel(const context: IContainerContext; const model: TComponentModel); override;
   end;
 
   TLifetimeInspector = class(TInspectorBase)
   protected
-    procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); override;
+    procedure DoProcessModel(const context: IContainerContext; const model: TComponentModel); override;
   end;
 
   TComponentActivatorInspector = class(TInspectorBase)
   protected
-    procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); override;
+    procedure DoProcessModel(const context: IContainerContext; const model: TComponentModel); override;
   end;
 
   TConstructorInspector = class(TInspectorBase)
   protected
-    procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); override;
+    procedure DoProcessModel(const context: IContainerContext; const model: TComponentModel); override;
   end;
 
   TPropertyInspector = class(TInspectorBase)
   protected
-    procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); override;
+    procedure DoProcessModel(const context: IContainerContext; const model: TComponentModel); override;
   end;
 
   TMethodInspector = class(TInspectorBase)
   protected
-    procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); override;
+    procedure DoProcessModel(const context: IContainerContext; const model: TComponentModel); override;
   end;
 
   TFieldInspector = class(TInspectorBase)
   protected
-    procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); override;
+    procedure DoProcessModel(const context: IContainerContext; const model: TComponentModel); override;
   end;
 
   TInjectionTargetInspector = class(TInspectorBase)
@@ -97,9 +97,9 @@ type
       fHasNoTargetCondition: TPredicate<IInjection>;
     class constructor Create;
   protected
-    procedure CheckConstructorInjections(const context: IContainerContext; model: TComponentModel);
-    procedure CheckMethodInjections(const context: IContainerContext; model: TComponentModel);
-    procedure DoProcessModel(const context: IContainerContext; model: TComponentModel); override;
+    procedure CheckConstructorInjections(const context: IContainerContext; const model: TComponentModel);
+    procedure CheckMethodInjections(const context: IContainerContext; const model: TComponentModel);
+    procedure DoProcessModel(const context: IContainerContext; const model: TComponentModel); override;
   end;
 
 implementation
@@ -124,7 +124,7 @@ begin
   inherited Create;
   fContext := context;
   fRegistry := registry;
-  fInspectors := TCollections.CreateList<IBuilderInspector>;
+  fInspectors := TCollections.CreateInterfaceList<IBuilderInspector>;
 end;
 
 procedure TComponentBuilder.AddInspector(const inspector: IBuilderInspector);
@@ -144,7 +144,7 @@ begin
   fInspectors.Clear;
 end;
 
-procedure TComponentBuilder.Build(model: TComponentModel);
+procedure TComponentBuilder.Build(const model: TComponentModel);
 var
   inspector: IBuilderInspector;
 begin
@@ -170,7 +170,7 @@ end;
 {$REGION 'TInspectorBase'}
 
 procedure TInspectorBase.ProcessModel(
-  const context: IContainerContext; model: TComponentModel);
+  const context: IContainerContext; const model: TComponentModel);
 begin
   Guard.CheckNotNull(context, 'context');
   Guard.CheckNotNull(model, 'model');
@@ -183,7 +183,7 @@ end;
 {$REGION 'TLifetimeInspector'}
 
 procedure TLifetimeInspector.DoProcessModel(const context: IContainerContext;
-  model: TComponentModel);
+  const model: TComponentModel);
 var
   attribute: LifetimeAttributeBase;
 begin
@@ -197,11 +197,13 @@ begin
     if model.ComponentType.TryGetCustomAttribute<LifetimeAttributeBase>(attribute) then
     begin
       model.LifetimeType := attribute.LifetimeType;
+{$WARN SYMBOL_EXPERIMENTAL OFF}
       if attribute is PooledAttribute then
       begin
         model.MinPoolsize := PooledAttribute(attribute).MinPoolsize;
         model.MaxPoolsize := PooledAttribute(attribute).MaxPoolsize;
       end;
+{$WARN SYMBOL_EXPERIMENTAL ON}
     end
     else
     begin
@@ -217,7 +219,7 @@ end;
 {$REGION 'TConstructorInspector'}
 
 procedure TConstructorInspector.DoProcessModel(
-  const context: IContainerContext; model: TComponentModel);
+  const context: IContainerContext; const model: TComponentModel);
 var
   predicate: TPredicate<TRttiMethod>;
   injection: IInjection;
@@ -260,7 +262,7 @@ end;
 {$REGION 'TMethodInspector'}
 
 procedure TMethodInspector.DoProcessModel(const context: IContainerContext;
-  model: TComponentModel);
+  const model: TComponentModel);
 var
   condition: TPredicate<TRttiMethod>;
   method: TRttiMethod;
@@ -313,7 +315,7 @@ end;
 {$REGION 'TPropertyInspector'}
 
 procedure TPropertyInspector.DoProcessModel(const context: IContainerContext;
-  model: TComponentModel);
+  const model: TComponentModel);
 var
   condition: TPredicate<TRttiProperty>;
   propertyMember: TRttiProperty;
@@ -350,7 +352,7 @@ end;
 {$REGION 'TFieldInspector'}
 
 procedure TFieldInspector.DoProcessModel(const context: IContainerContext;
-  model: TComponentModel);
+  const model: TComponentModel);
 var
   condition: TPredicate<TRttiField>;
   field: TRttiField;
@@ -385,7 +387,7 @@ end;
 {$REGION 'TComponentActivatorInspector'}
 
 procedure TComponentActivatorInspector.DoProcessModel(
-  const context: IContainerContext; model: TComponentModel);
+  const context: IContainerContext; const model: TComponentModel);
 begin
   if model.ComponentActivator = nil then
   begin
@@ -415,14 +417,14 @@ begin
 end;
 
 procedure TInjectionTargetInspector.DoProcessModel(const context: IContainerContext;
-  model: TComponentModel);
+  const model: TComponentModel);
 begin
   CheckConstructorInjections(context, model);
   CheckMethodInjections(context, model);
 end;
 
 procedure TInjectionTargetInspector.CheckConstructorInjections(
-  const context: IContainerContext; model: TComponentModel);
+  const context: IContainerContext; const model: TComponentModel);
 var
   filter: TPredicate<TRttiMethod>;
   injection: IInjection;
@@ -442,7 +444,7 @@ begin
 end;
 
 procedure TInjectionTargetInspector.CheckMethodInjections(
-  const context: IContainerContext; model: TComponentModel);
+  const context: IContainerContext; const model: TComponentModel);
 var
   filter: TPredicate<TRttiMethod>;
   injection: IInjection;
@@ -468,30 +470,35 @@ end;
 {$REGION 'TInterfaceInspector'}
 
 procedure TInterfaceInspector.DoProcessModel(const context: IContainerContext;
-  model: TComponentModel);
+  const model: TComponentModel);
 var
+  attributes: TArray<ImplementsAttribute>;
+  attribute: ImplementsAttribute;
   services: IEnumerable<TRttiInterfaceType>;
   service: TRttiInterfaceType;
 begin
-  if not model.Services.IsEmpty and not model.ComponentType.IsInterface then Exit;
+  if not model.Services.IsEmpty then Exit;
   if model.ComponentType.IsRecord and not model.HasService(model.ComponentTypeInfo) then
-  begin
-    context.ComponentRegistry.RegisterService(model, model.ComponentTypeInfo);
-  end
+    context.ComponentRegistry.RegisterService(model, model.ComponentTypeInfo)
   else
   begin
+    attributes := model.ComponentType.GetCustomAttributes<ImplementsAttribute>;
+    for attribute in attributes do
+      context.ComponentRegistry.RegisterService(model, attribute.ServiceType, attribute.Name);
+
     services := model.ComponentType.GetInterfaces;
     for service in services do
-    begin
       if Assigned(service.BaseType) and not model.HasService(service.Handle) then
       begin
-        context.ComponentRegistry.RegisterService(model, service.Handle);
+        context.ComponentRegistry.RegisterService(model, service.Handle,
+          service.DefaultName + '@' + model.ComponentType.DefaultName);
+        context.ComponentRegistry.RegisterDefault(model, service.Handle);
       end;
-    end;
     if TType.IsDelegate(model.ComponentTypeInfo) then
-    begin
       context.ComponentRegistry.RegisterService(model, model.ComponentType.Handle);
-    end;
+
+    if model.Services.IsEmpty then
+      context.ComponentRegistry.RegisterService(model, model.ComponentType.Handle);
   end;
 end;
 
