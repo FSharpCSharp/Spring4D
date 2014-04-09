@@ -239,6 +239,7 @@ type
     procedure TestTwoServices;
     procedure TestOneServiceAsSingleton;
     procedure TestOneServiceAsSingletonPerThread;
+    procedure TestTwoRegistrations;
   end;
 
   TTestLazyDependencies = class(TContainerTestCase)
@@ -1453,8 +1454,8 @@ begin
     end).AsSingleton;
   fContainer.Build;
 
-  CheckEquals('test', fContainer.Resolve<INameService>.GetName());
-  CheckEquals('test', fContainer.Resolve<INameService>.GetName());
+  CheckEquals('test', fContainer.Resolve<INameService>.Name);
+  CheckEquals('test', fContainer.Resolve<INameService>.Name);
   CheckEquals(1, count);
 end;
 
@@ -1471,14 +1472,32 @@ begin
     end).AsSingletonPerThread;
   fContainer.Build;
 
-  CheckEquals('test', fContainer.Resolve<INameService>.GetName());
-  CheckEquals('test', fContainer.Resolve<INameService>.GetName());
+  CheckEquals('test', fContainer.Resolve<INameService>.Name);
+  CheckEquals('test', fContainer.Resolve<INameService>.Name);
   CheckEquals(1, count);
+end;
+
+procedure TTestRegisterInterfaceTypes.TestTwoRegistrations;
+begin
+  fContainer.RegisterType<INameService, INameService>('service1').DelegateTo(
+    function: INameService
+    begin
+      Result := TDynamicNameService.Create('service1');
+    end);
+  fContainer.RegisterType<INameService, INameService>('service2').DelegateTo(
+    function: INameService
+    begin
+      Result := TDynamicNameService.Create('service2');
+    end);
+  fContainer.Build;
+
+  CheckEquals('service1', fContainer.Resolve<INameService>('service1').Name);
+  CheckEquals('service2', fContainer.Resolve<INameService>('service2').Name);
 end;
 
 procedure TTestRegisterInterfaceTypes.TestTwoServices;
 begin
-  fContainer.RegisterType<INameService>.DelegateTo(
+  fContainer.RegisterType<INameService, INameService>.DelegateTo(
     function: INameService
     begin
       Result := TDynamicNameService.Create('test');

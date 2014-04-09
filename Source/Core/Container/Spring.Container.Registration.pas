@@ -45,13 +45,14 @@ type
     fRttiContext: TRttiContext;
     fModels: IList<TComponentModel>;
     fDefaultRegistrations: IDictionary<PTypeInfo, TComponentModel>;
-    fUnnamedRegistrations: IDictionary<PTypeInfo, TComponentModel>;
+    fUnnamedRegistrations: IDictionary<PTypeInfo, IList<TComponentModel>>;
     fServiceTypeMappings: IDictionary<PTypeInfo, IList<TComponentModel>>;
     fServiceNameMappings: IDictionary<string, TComponentModel>;
   protected
-    procedure CheckIsNonGuidInterface(serviceType: TRttiType);
-    procedure Validate(componentType, serviceType: PTypeInfo; var serviceName: string);
     function BuildActivatorDelegate(elementTypeInfo: PTypeInfo; out componentType: TRttiType): TActivatorDelegate;
+    procedure CheckIsNonGuidInterface(serviceType: TRttiType);
+    procedure RegisterUnnamed(const model: TComponentModel; serviceType: PTypeInfo);
+    procedure Validate(componentType, serviceType: PTypeInfo; var serviceName: string);
   public
     constructor Create(const context: IContainerContext);
     destructor Destroy; override;
@@ -189,8 +190,9 @@ implementation
 uses
   SysUtils,
   TypInfo,
+  Spring.Collections.Extensions,
   Spring.Collections.Lists,
-  Spring.Container.ResourceStrings,    
+  Spring.Container.ResourceStrings,
   Spring.Helpers,
   Spring.Reflection;
 
@@ -206,7 +208,7 @@ begin
   fRttiContext := TRttiContext.Create;
   fModels := TCollections.CreateObjectList<TComponentModel>(True);
   fDefaultRegistrations := TCollections.CreateDictionary<PTypeInfo, TComponentModel>;
-  fUnnamedRegistrations := TCollections.CreateDictionary<PTypeInfo, TComponentModel>;
+  fUnnamedRegistrations := TCollections.CreateDictionary<PTypeInfo, IList<TComponentModel>>;
   fServiceTypeMappings := TCollections.CreateDictionary<PTypeInfo, IList<TComponentModel>>;
   fServiceNameMappings := TCollections.CreateDictionary<string, TComponentModel>;
 end;
@@ -277,24 +279,14 @@ begin
   componentTypeObject := fRttiContext.GetType(componentType);
   serviceTypeObject := fRttiContext.GetType(serviceType);
   CheckIsNonGuidInterface(serviceTypeObject);
-  if not TType.IsAssignable(componentType, serviceType) 
+  if not TType.IsAssignable(componentType, serviceType)
     and not componentTypeObject.IsInterface then
-  begin
     raise ERegistrationException.CreateResFmt(@SIncompatibleTypes, [
       GetTypeName(componentType), GetTypeName(serviceType)]);
-  end;
   if serviceName = '' then
-  begin
-//    if fUnnamedRegistrations.ContainsKey(serviceType) then
-//      raise ERegistrationException.CreateResFmt(@SDuplicatedUnnamedService, [
-//        GetTypeName(serviceType)]);
-
     serviceName := serviceTypeObject.DefaultName + '@' + componentTypeObject.DefaultName;
-  end;
   if HasService(serviceName) then
-  begin
     raise ERegistrationException.CreateResFmt(@SDuplicatedName, [serviceName]);
-  end;
 end;
 
 procedure TComponentRegistry.UnregisterAll;
@@ -326,15 +318,28 @@ begin
   if not fServiceTypeMappings.TryGetValue(serviceType, models) then
   begin
     models := TCollections.CreateList<TComponentModel>(False);
-    fServiceTypeMappings.AddOrSetValue(serviceType, models);
+    fServiceTypeMappings.Add(serviceType, models);
   end;
   models.Add(model);
   fServiceNameMappings.Add(serviceName, model);
   if name = '' then
   begin
-    fUnnamedRegistrations.AddOrSetValue(serviceType, model);
     RegisterDefault(model, serviceType);
+    RegisterUnnamed(model, serviceType);
   end;
+end;
+
+procedure TComponentRegistry.RegisterUnnamed(const model: TComponentModel;
+  serviceType: PTypeInfo);
+var
+  models: IList<TComponentModel>;
+begin
+  if not fUnnamedRegistrations.TryGetValue(serviceType, models) then
+  begin
+    models := TCollections.CreateList<TComponentModel>(False);
+    fUnnamedRegistrations.Add(serviceType, models);
+  end;
+  models.Add(model);
 end;
 
 procedure TComponentRegistry.RegisterDefault(const model: TComponentModel;
@@ -363,8 +368,6 @@ begin
   end;
   Result := TComponentModel.Create(fContainerContext, componentType);
   Result.ActivatorDelegate := activatorDelegate;
-  if componentType.IsInterface then
-    RegisterService(Result, componentType.Handle);
   fModels.Add(Result);
 end;
 
@@ -408,23 +411,19 @@ function TComponentRegistry.FindAll(
   serviceType: PTypeInfo): IEnumerable<TComponentModel>;
 var
   models: IList<TComponentModel>;
-  defaultModel: TComponentModel;
+  unnamedModels: IList<TComponentModel>;
 begin
   Guard.CheckNotNull(serviceType, 'serviceType');
 
   if fServiceTypeMappings.TryGetValue(serviceType, models) then
   begin
-    fUnnamedRegistrations.TryGetValue(serviceType, defaultModel);
-    Result := models.Where(
-      function(const model: TComponentModel): Boolean
-      begin
-        Result := model <> defaultModel;
-      end);
+    if fUnnamedRegistrations.TryGetValue(serviceType, unnamedModels) then
+      Result := TExceptIterator<TComponentModel>.Create(models, unnamedModels)
+    else
+      Result := models;
   end
   else
-  begin
     Result := TCollections.CreateList<TComponentModel>(False);
-  end;
 end;
 
 function TComponentRegistry.HasService(serviceType: PTypeInfo): Boolean;

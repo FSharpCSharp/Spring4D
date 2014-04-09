@@ -224,12 +224,12 @@ begin
   // Android required) to release these interfaces here rather than in
   // CleanupInstance (which on android produces a lots of AVs probably due
   // to calling virtual __ObjRelease on almost destroyed object)
-  fExtensions:=nil;
-  fInjectionFactory:=nil;
-  fDependencyResolver:=nil;
-  fServiceResolver:=nil;
-  fBuilder:=nil;
-  fRegistry:=nil;
+  fExtensions := nil;
+  fInjectionFactory := nil;
+  fDependencyResolver := nil;
+  fServiceResolver := nil;
+  fBuilder := nil;
+  fRegistry := nil;
 
   inherited Destroy;
 end;
@@ -285,9 +285,7 @@ begin
     TFieldInspector.Create
   );
   for inspector in inspectors do
-  begin
     fBuilder.AddInspector(inspector);
-  end;
 end;
 
 function TContainer.CreateLifetimeManager(
@@ -296,17 +294,11 @@ begin
   Guard.CheckNotNull(model, 'model');
   case model.LifetimeType of
     TLifetimeType.Singleton:
-    begin
       Result := TSingletonLifetimeManager.Create(model);
-    end;
     TLifetimeType.Transient:
-    begin
       Result := TTransientLifetimeManager.Create(model);
-    end;
     TLifetimeType.SingletonPerThread:
-    begin
       Result := TSingletonPerThreadLifetimeManager.Create(model);
-    end;
     TLifetimeType.Pooled:
     begin
       CheckPoolingSupported(model.ComponentType);
@@ -482,9 +474,7 @@ begin
 
   model := fRegistry.FindOne(instance.ClassInfo);
   if model = nil then
-  begin
     raise EContainerException.CreateRes(@SComponentNotFound);
-  end;
   model.LifetimeManager.ReleaseInstance(instance);
 end;
 
@@ -560,7 +550,7 @@ end;
 
 procedure CleanupGlobalContainer;
 begin
-  TServiceLocatorAdapter.GlobalInstance:=nil;
+  TServiceLocatorAdapter.GlobalInstance := nil;
   FreeAndNil(TContainer.GlobalInstance);
 end;
 
