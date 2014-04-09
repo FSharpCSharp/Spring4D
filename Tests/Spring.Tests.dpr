@@ -40,6 +40,7 @@ uses
   Spring.Tests.Collections.Extensions in 'Source\Base\Spring.Tests.Collections.Extensions.pas',
   Spring.Tests.DesignPatterns in 'Source\Base\Spring.Tests.DesignPatterns.pas',
   Spring.Tests.Helpers in 'Source\Base\Spring.Tests.Helpers.pas',
+  Spring.Tests.Reflection in 'Source\Base\Spring.Tests.Reflection.pas',
   Spring.Tests.Reflection.ValueConverters in 'Source\Base\Spring.Tests.Reflection.ValueConverters.pas',
   Spring.Tests.SysUtils in 'Source\Base\Spring.Tests.SysUtils.pas',
   Spring.Tests.Container.Components in 'Source\Core\Spring.Tests.Container.Components.pas',
@@ -53,8 +54,8 @@ uses
 
 begin
   CleanupGlobalContainer;
-  RegisterTestCases();
+  RegisterTestCases;
   ReportMemoryLeaksOnShutdown := True;
-  RunRegisteredTests();
+  RunRegisteredTests;
   TestFramework.ClearRegistry;
 end.

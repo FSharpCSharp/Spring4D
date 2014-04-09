@@ -22,7 +22,6 @@
 {                                                                           }
 {***************************************************************************}
 
-// This namespace is experimental and may be changed in nearly future.
 unit Spring.Reflection;
 
 {$I Spring.inc}
@@ -644,16 +643,16 @@ const
     'TFunc<', 'TProc<', 'TPredicate<');
 var
   name: string;
-  i: Integer;
+  prefix: string;
 begin
-  Result := Assigned(typeInfo) and (typeInfo.Kind = tkInterface);
-  if Result then
+  if Assigned(typeInfo) and (typeInfo.Kind = tkInterface) then
   begin
     name := GetTypeName(typeInfo);
-    for i := Low(DelegatePrefixStrings) to High(DelegatePrefixStrings) do
-      if StartsText(DelegatePrefixStrings[i], name) then
-        Exit;
+    for prefix in DelegatePrefixStrings do
+      if StartsText(prefix, name) then
+        Exit(True);
   end;
+  Result := False;
 end;
 
 class function TType.IsLazy(typeInfo: PTypeInfo): Boolean;
