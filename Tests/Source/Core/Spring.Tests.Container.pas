@@ -281,6 +281,9 @@ type
     procedure TestInjectEnumerable;
     procedure TestInjectArrayOfLazy;
     procedure TestNoRecursion;
+    procedure TestNoRecursion_Issue18;
+    procedure TestNoRecursion_TwoDifferentModelsWithSameComponentType;
+    procedure TestRecursion_TwoDifferentModelsWithSameComponentType;
     procedure TestResolveArrayOfLazy;
   end;
 
@@ -1571,7 +1574,7 @@ procedure TTestLazyDependenciesDetectRecursion.PerformChecks;
 begin
   fContainer.Context.ComponentRegistry.FindOne('service').InjectField('fNameService', 'service');
 
-  ExpectedException:=ECircularDependencyException;
+  ExpectedException := ECircularDependencyException;
   inherited;
 end;
 
@@ -1675,6 +1678,44 @@ begin
   CheckIs((service as TCollectionItemD).CollectionItems[0], TCollectionItemA);
   CheckIs((service as TCollectionItemD).CollectionItems[1], TCollectionItemB);
   CheckIs((service as TCollectionItemD).CollectionItems[2], TCollectionItemC);
+end;
+
+procedure TTestManyDependencies.TestNoRecursion_Issue18;
+var
+  service: ICollectionService;
+begin
+  fContainer.RegisterType<ICollectionItem, TCollectionItemD>;
+  fContainer.RegisterType<ICollectionService, TCollectionServiceD>;
+  fContainer.Build;
+  service := fContainer.Resolve<ICollectionService>;
+end;
+
+procedure TTestManyDependencies.TestNoRecursion_TwoDifferentModelsWithSameComponentType;
+var
+  service: ICollectionItem;
+begin
+  fContainer.RegisterType<ICollectionItem, TCollectionItemD>('d')
+  .DelegateTo(
+    function: TCollectionItemD
+    begin
+      Result := TCollectionItemD.Create(nil);
+    end);
+  fContainer.RegisterType<ICollectionItem, TCollectionItemD>;
+  fContainer.Build;
+  service := fContainer.Resolve<ICollectionItem>;
+  CheckEquals(4, Length((service as TCollectionItemD).CollectionItems));
+end;
+
+procedure TTestManyDependencies.TestRecursion_TwoDifferentModelsWithSameComponentType;
+var
+  service: ICollectionItem;
+begin
+  fContainer.RegisterType<ICollectionItem, TCollectionItemD>('d');
+  fContainer.RegisterType<ICollectionItem, TCollectionItemD>;
+  fContainer.Build;
+  ExpectedException := ECircularDependencyException;
+  service := fContainer.Resolve<ICollectionItem>;
+  CheckEquals(4, Length((service as TCollectionItemD).CollectionItems));
 end;
 
 procedure TTestManyDependencies.TestResolveArrayOfLazy;

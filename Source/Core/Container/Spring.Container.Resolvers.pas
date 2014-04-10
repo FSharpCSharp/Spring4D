@@ -58,9 +58,9 @@ type
   TDependencyResolver = class(TResolver, IDependencyResolver, IInterface)
   private
     fLock: TCriticalSection;
-    fDependencyTypes: IList<TRttiType>;
+    fDependencies: IList<TComponentModel>;
   protected
-    procedure CheckCircularDependency(const dependency: TRttiType);
+    procedure CheckCircularDependency(const model: TComponentModel);
     function GetEligibleModel(const dependency: TRttiType; const argument: TValue): TComponentModel;
   public
     constructor Create(const context: IContainerContext; const registry: IComponentRegistry);
@@ -319,7 +319,7 @@ constructor TDependencyResolver.Create(const context: IContainerContext;
   const registry: IComponentRegistry);
 begin
   inherited Create(context, registry);
-  fDependencyTypes := TCollections.CreateList<TRttiType>(False);
+  fDependencies := TCollections.CreateList<TComponentModel>(False);
   fLock := TCriticalSection.Create;
 end;
 
@@ -369,13 +369,13 @@ begin
   end;
 end;
 
-procedure TDependencyResolver.CheckCircularDependency(const dependency: TRttiType);
+procedure TDependencyResolver.CheckCircularDependency(const model: TComponentModel);
 begin
-  Guard.CheckNotNull(dependency, 'dependency');
+  Guard.CheckNotNull(model, 'model');
 
-  if fDependencyTypes.Contains(dependency) then
+  if fDependencies.Contains(model) then
     raise ECircularDependencyException.CreateResFmt(
-      @SCircularDependencyDetected, [dependency.Name]);
+      @SCircularDependencyDetected, [model.ComponentType.Name]);
 end;
 
 function TDependencyResolver.CanResolveDependency(
@@ -453,18 +453,18 @@ begin
 
   fLock.Enter;
   try
-    CheckCircularDependency(dependency);
     model := GetEligibleModel(dependency, argument);
     if not Assigned(model) then
     begin
       Result := ResolveLazyDependency(dependency, argument);
       Exit;
     end;
-    fDependencyTypes.Add(dependency);
+    CheckCircularDependency(model);
+    fDependencies.Add(model);
     try
       instance := model.LifetimeManager.GetInstance(Self);
     finally
-      fDependencyTypes.Remove(dependency);
+      fDependencies.Remove(model);
     end;
   finally
     fLock.Leave;
@@ -479,6 +479,7 @@ var
   lazyKind: TLazyKind;
   name: string;
   lazyType: TRttiType;
+  model: TComponentModel;
   value: TValue;
   valueFactoryObj: TFunc<TObject>;
   valueFactoryIntf: TFunc<IInterface>;
@@ -491,7 +492,9 @@ begin
   lazyType := TType.FindType(name);
   if not Assigned(lazyType) or not CanResolveDependency(lazyType, argument) then
     raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
-  CheckCircularDependency(lazyType);
+
+  model := GetEligibleModel(lazyType, argument);
+  CheckCircularDependency(model);
 
   case lazyType.TypeKind of
     tkClass:

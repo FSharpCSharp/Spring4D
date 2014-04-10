@@ -497,6 +497,11 @@ type
     constructor Create(const collectionItems: TArray<TFunc<ICollectionItem>>);
   end;
 
+  TCollectionServiceD = class(TCollectionService)
+  public
+    constructor Create(const collectionItem: ICollectionItem);
+  end;
+
   {$ENDREGION}
 
 
@@ -921,6 +926,15 @@ begin
       fCollectionItems[i] := fCollectionItemFactories[i]();
   end;
   Result := fCollectionItems;
+end;
+
+{ TCollectionServiceD }
+
+constructor TCollectionServiceD.Create(const collectionItem: ICollectionItem);
+begin
+  inherited Create;;
+  SetLength(fCollectionItems, 1);
+  fCollectionItems[0] := collectionItem;
 end;
 
 end.
