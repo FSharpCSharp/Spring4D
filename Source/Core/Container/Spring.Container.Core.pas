@@ -191,10 +191,10 @@ type
 
   IDependencyResolver = interface(IResolver)
     ['{15ADEA1D-7C3F-48D5-8E85-84B4332AFF5F}']
-    function CanResolveDependency(dependency: TRttiType): Boolean; overload;
-    function CanResolveDependency(dependency: TRttiType; const argument: TValue): Boolean; overload;
-    function ResolveDependency(dependency: TRttiType): TValue; overload;
-    function ResolveDependency(dependency: TRttiType; const argument: TValue): TValue; overload;
+    function CanResolveDependency(const dependency: TRttiType): Boolean; overload;
+    function CanResolveDependency(const dependency: TRttiType; const argument: TValue): Boolean; overload;
+    function ResolveDependency(const dependency: TRttiType): TValue; overload;
+    function ResolveDependency(const dependency: TRttiType; const argument: TValue): TValue; overload;
 
     function CanResolveDependencies(const dependencies: TArray<TRttiType>): Boolean; overload;
     function CanResolveDependencies(const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean; overload;
@@ -212,7 +212,7 @@ type
   ///	</summary>
   IResolverOverride = interface
     ['{2DA386A3-949C-451F-BF22-017668689591}']
-    function GetResolver(context: IContainerContext): IDependencyResolver;
+    function GetResolver(const context: IContainerContext): IDependencyResolver;
   end;
 
   ///	<summary>
@@ -311,8 +311,8 @@ type
     fValue: TValue;
     fLifetimeWatcher: IInterface;
   public
-    constructor Create(value: TValue; refCounting: TRefCounting); overload;
-    constructor Create(value: TValue; const lifetimeWatcher: IInterface); overload;
+    constructor Create(const value: TValue; refCounting: TRefCounting); overload;
+    constructor Create(const value: TValue; const lifetimeWatcher: IInterface); overload;
     destructor Destroy; override;
     function Invoke: TValue;
   end;
@@ -337,8 +337,8 @@ type
     fInjection: IInjection;
     fArguments: TArray<TValue>;
   public
-    constructor Create(const context: IContainerContext; const model: TComponentModel;
-      const injection: IInjection);
+    constructor Create(const context: IContainerContext;
+      const model: TComponentModel; const injection: IInjection);
     function IsSatisfiedBy(const method: TRttiMethod): Boolean; override;
   end;
 
@@ -346,13 +346,13 @@ type
   private
     fMember: TRttiMember;
   public
-    constructor Create(member: TRttiMember);
+    constructor Create(const member: TRttiMember);
     function IsSatisfiedBy(const injection: IInjection): Boolean; override;
   end;
 
   TInjectionFilters = class
   public
-    class function ContainsMember(member: TRttiMember): TSpecification<IInjection>;
+    class function ContainsMember(const member: TRttiMember): TSpecification<IInjection>;
     class function IsInjectableMethod(const context: IContainerContext;
       const model: TComponentModel; const injection: IInjection): TSpecification<TRttiMethod>;
   end;
@@ -383,13 +383,11 @@ var
   predicate: TPredicate<TRttiMethod>;
   method: TRttiMethod;
 begin
-  predicate := TMethodFilters.IsConstructor and
-    TMethodFilters.HasParameterTypes(parameterTypes);
+  predicate := TMethodFilters.IsConstructor
+    and TMethodFilters.HasParameterTypes(parameterTypes);
   method := ComponentType.Methods.FirstOrDefault(predicate);
   if not Assigned(method) then
-  begin
     raise ERegistrationException.CreateRes(@SUnsatisfiedConstructorParameters);
-  end;
   Result := InjectionFactory.CreateConstructorInjection(Self);
   Result.Initialize(method);
   ConstructorInjections.Add(Result);
@@ -402,20 +400,14 @@ var
 begin
   method := ComponentType.GetMethod(methodName);
   if not Assigned(method) then
-  begin
     raise ERegistrationException.CreateResFmt(@SNoSuchMethod, [methodName]);
-  end;
   injectionExists := MethodInjections.TryGetFirst(Result,
     TInjectionFilters.ContainsMember(method));
   if not injectionExists then
-  begin
     Result := InjectionFactory.CreateMethodInjection(Self, methodName);
-  end;
   Result.Initialize(method);
   if not injectionExists then
-  begin
     MethodInjections.Add(Result);
-  end;
 end;
 
 function TComponentModel.InjectMethod(const methodName: string;
@@ -425,25 +417,19 @@ var
   method: TRttiMethod;
   injectionExists: Boolean;
 begin
-  predicate := TMethodFilters.IsNamed(methodName) and
-    TMethodFilters.IsInstanceMethod and
-    TMethodFilters.HasParameterTypes(parameterTypes);
+  predicate := TMethodFilters.IsNamed(methodName)
+    and TMethodFilters.IsInstanceMethod
+    and TMethodFilters.HasParameterTypes(parameterTypes);
   method := ComponentType.Methods.FirstOrDefault(predicate);
   if not Assigned(method) then
-  begin
     raise ERegistrationException.CreateResFmt(@SUnsatisfiedMethodParameterTypes, [methodName]);
-  end;
   injectionExists := MethodInjections.TryGetFirst(Result,
     TInjectionFilters.ContainsMember(method));
   if not injectionExists then
-  begin
     Result := InjectionFactory.CreateMethodInjection(Self, methodName);
-  end;
   Result.Initialize(method);
   if not injectionExists then
-  begin
     MethodInjections.Add(Result);
-  end;
 end;
 
 function TComponentModel.InjectProperty(const propertyName: string): IInjection;
@@ -453,20 +439,14 @@ var
 begin
   propertyMember := ComponentType.GetProperty(propertyName);
   if not Assigned(propertyMember) then
-  begin
     raise ERegistrationException.CreateResFmt(@SNoSuchProperty, [propertyName]);
-  end;
   injectionExists := PropertyInjections.TryGetFirst(Result,
     TInjectionFilters.ContainsMember(propertyMember));
   if not injectionExists then
-  begin
     Result := InjectionFactory.CreatePropertyInjection(Self, propertyName);
-  end;
   Result.Initialize(propertyMember);
   if not injectionExists then
-  begin
     PropertyInjections.Add(Result);
-  end;
 end;
 
 function TComponentModel.InjectField(const fieldName: string): IInjection;
@@ -476,20 +456,14 @@ var
 begin
   field := ComponentType.GetField(fieldName);
   if not Assigned(field) then
-  begin
     raise ERegistrationException.CreateResFmt(@SNoSuchField, [fieldName]);
-  end;
   injectionExists := FieldInjections.TryGetFirst(Result,
     TInjectionFilters.ContainsMember(field));
   if not injectionExists then
-  begin
     Result := InjectionFactory.CreateFieldInjection(Self, fieldName);
-  end;
   Result.Initialize(field);
   if not injectionExists then
-  begin
     FieldInjections.Add(Result);
-  end;
 end;
 
 procedure TComponentModel.UpdateInjectionArguments(const Inject: IInjection;
@@ -556,27 +530,21 @@ end;
 function TComponentModel.GetConstructorInjections: IInjectionList;
 begin
   if not Assigned(fConstructorInjections) then
-  begin
     fConstructorInjections := TCollections.CreateInterfaceList<IInjection>;
-  end;
   Result := fConstructorInjections;
 end;
 
 function TComponentModel.GetMethodInjections: IInjectionList;
 begin
   if not Assigned(fMethodInjections) then
-  begin
     fMethodInjections := TCollections.CreateInterfaceList<IInjection>;
-  end;
   Result := fMethodInjections;
 end;
 
 function TComponentModel.GetPropertyInjections: IInjectionList;
 begin
   if not Assigned(fPropertyInjections) then
-  begin
     fPropertyInjections := TCollections.CreateInterfaceList<IInjection>;
-  end;
   Result := fPropertyInjections;
 end;
 
@@ -590,14 +558,10 @@ var
   item: TPair<string, PTypeInfo>;
 begin
   Guard.CheckNotNull(serviceType, 'serviceType');
-  Result := '';
   for item in Services do
-  begin
     if item.Value = serviceType then
-    begin
       Exit(item.Key);
-    end;
-  end;
+  Result := '';
 end;
 
 function TComponentModel.GetServiceType(const name: string): PTypeInfo;
@@ -608,27 +572,21 @@ end;
 function TComponentModel.GetServices: IDictionary<string, PTypeInfo>;
 begin
   if not Assigned(fServices) then
-  begin
     fServices := TCollections.CreateDictionary<string, PTypeInfo>;
-  end;
   Result := fServices;
 end;
 
 function TComponentModel.GetFieldInjections: IInjectionList;
 begin
   if not Assigned(fFieldInjections) then
-  begin
     fFieldInjections := TCollections.CreateInterfaceList<IInjection>;
-  end;
   Result := fFieldInjections;
 end;
 
 function TComponentModel.GetInjections: IDictionary<IInjection, TArray<TValue>>;
 begin
   if not Assigned(fInjectionArguments) then
-  begin
     fInjectionArguments := TCollections.CreateDictionary<IInjection, TArray<TValue>>;
-  end;
   Result := fInjectionArguments;
 end;
 
@@ -637,7 +595,7 @@ end;
 
 {$REGION 'TValueHolder'}
 
-constructor TValueHolder.Create(value: TValue; refCounting: TRefCounting);
+constructor TValueHolder.Create(const value: TValue; refCounting: TRefCounting);
 var
   lifetimeWatcher: IInterface;
 begin
@@ -652,18 +610,14 @@ begin
   else
   begin
     if value.Kind = tkInterface then
-    begin
-      lifetimeWatcher := value.AsInterface;
-    end
+      lifetimeWatcher := value.AsInterface
     else
-    begin
       lifetimeWatcher := nil;
-    end;
   end;
   Create(value, lifetimeWatcher);
 end;
 
-constructor TValueHolder.Create(value: TValue;
+constructor TValueHolder.Create(const value: TValue;
   const lifetimeWatcher: IInterface);
 begin
   inherited Create();
@@ -675,11 +629,9 @@ destructor TValueHolder.Destroy;
 begin
 {$IFNDEF AUTOREFCOUNT}
   if not Assigned(fLifetimeWatcher) and fValue.IsObject then
-  begin
     fValue.AsObject.Free;
-  end;
 {$ELSE}
-  fValue:=nil;
+  fValue := nil;
 {$ENDIF}
   inherited Destroy;
 end;
@@ -714,9 +666,7 @@ begin
   parameters := method.GetParameters;
   SetLength(dependencies, Length(parameters));
   for i := 0 to High(dependencies) do
-  begin
     dependencies[i] := parameters[i].ParamType;
-  end;
   Result := fContext.DependencyResolver.CanResolveDependencies(dependencies, fArguments);
 end;
 
@@ -725,7 +675,7 @@ end;
 
 {$REGION 'TContainsMemberFilter'}
 
-constructor TContainsMemberFilter.Create(member: TRttiMember);
+constructor TContainsMemberFilter.Create(const member: TRttiMember);
 begin
   inherited Create;
   fMember := member;
@@ -743,7 +693,7 @@ end;
 {$REGION 'TInjectionFilters'}
 
 class function TInjectionFilters.ContainsMember(
-  member: TRttiMember): TSpecification<IInjection>;
+  const member: TRttiMember): TSpecification<IInjection>;
 begin
   Result := TContainsMemberFilter.Create(member);
 end;
