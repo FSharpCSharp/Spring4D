@@ -514,10 +514,18 @@ type
     property HasGuid: Boolean read GetHasGuid;
   end;
 
+  TValueHelper = record helper for TValue
+  private
+    function TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
+  public
+    function AsType<T>: T;
+  end;
+
 implementation
 
 uses
   StrUtils,
+  SysConst,
   TypInfo,
   Spring.ResourceStrings;
 
@@ -1301,6 +1309,46 @@ begin
     SetValue(instance.AsObject, value)
   else
     SetValue(instance.GetReferenceToRawData, value);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TValueHelper'}
+
+function TValueHelper.AsType<T>: T;
+begin
+  if not TryAsInterface(System.TypeInfo(T), Result) then
+  if not TryAsType<T>(Result) then
+    raise EInvalidCast.CreateRes(@SInvalidCast);
+end;
+
+function TValueHelper.TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
+var
+  typeData: PTypeData;
+begin
+  if Kind <> tkInterface then
+    Exit(False);
+  if typeInfo.Kind <> tkInterface then
+    Exit(False);
+  if Self.TypeInfo = typeInfo then
+    Result := True
+  else
+  begin
+    Result := False;
+    typeData := Self.TypeData;
+    while Assigned(typeData) and Assigned(typeData.IntfParent) do
+    begin
+      if typeData.IntfParent^ = typeInfo then
+      begin
+        Result := True;
+        Break;
+      end;
+      typeData := GetTypeData(typeData.IntfParent^);
+    end;
+  end;
+  if Result then
+    IInterface(Intf) := AsInterface;
 end;
 
 {$ENDREGION}

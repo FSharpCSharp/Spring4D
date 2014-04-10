@@ -206,6 +206,7 @@ type
     procedure TestTwoServices;
     procedure TestInheritedService;
     procedure TestTwoServicesWithSameName;
+    procedure TestParentInterface;
   end;
 
   TTestDefaultResolve = class(TContainerTestCase)
@@ -1258,6 +1259,16 @@ begin
   fContainer.Build;
   service := fContainer.Resolve<INameService>;
   CheckTrue(service is TNameService);
+end;
+
+procedure TTestRegisterInterfaces.TestParentInterface;
+var
+  service: INameService;
+begin
+  fContainer.RegisterType<TDynamicNameService>.Implements<IAnotherNameService>('another');
+  fContainer.Build;
+  service := fContainer.Resolve<INameService>('another');
+  CheckIs(service, TDynamicNameService);
 end;
 
 procedure TTestRegisterInterfaces.TestTwoServices;
