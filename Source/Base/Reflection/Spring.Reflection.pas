@@ -644,13 +644,19 @@ const
 var
   name: string;
   prefix: string;
+  typeData: PTypeData;
 begin
-  if Assigned(typeInfo) and (typeInfo.Kind = tkInterface) then
+  while Assigned(typeInfo) and (typeInfo.Kind = tkInterface) do
   begin
     name := GetTypeName(typeInfo);
     for prefix in DelegatePrefixStrings do
       if StartsText(prefix, name) then
         Exit(True);
+    typeData := GetTypeData(typeInfo);
+    if Assigned(typeData) and Assigned(typeData.IntfParent) then
+      typeInfo := typeData.IntfParent^
+    else
+      typeInfo := nil;
   end;
   Result := False;
 end;
