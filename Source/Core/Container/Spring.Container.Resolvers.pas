@@ -766,14 +766,14 @@ function TServiceResolver.Resolve(serviceType: PTypeInfo;
   const resolverOverride: IResolverOverride): TValue;
 var
   serviceName: string;
-  isLazy: Boolean;
+  resolveLazy: Boolean;
   lazyType: PTypeInfo;
   model: TComponentModel;
   resolver: IDependencyResolver;
 begin
-  isLazy := TType.IsLazy(serviceType);
+  resolveLazy := not Registry.HasService(serviceType) and TType.IsLazy(serviceType);
   lazyType := serviceType;
-  if isLazy then
+  if resolveLazy then
     serviceType := TType.FindType(TType.GetLazyTypeName(serviceType)).Handle;
 
   serviceName := GetTypeName(serviceType);
@@ -792,7 +792,7 @@ begin
   else
     resolver := Context.DependencyResolver;
 
-  if isLazy then
+  if resolveLazy then
     Result := InternalResolveLazy(model, lazyType, resolver)
   else
     Result := InternalResolve(model, serviceType, resolver);
