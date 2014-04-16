@@ -125,7 +125,8 @@ type
   private
     fBuildConfigs: TBuildConfigs;
     fModifyDelphiRegistrySettings: Boolean;
-    FPauseAfterEachStep: Boolean;
+    fOnlyShowInstalledVersions: Boolean;
+    fPauseAfterEachStep: Boolean;
     fRunTests: Boolean;
     fSelectedTasks: IList<TBuildTask>;
     fSourcePaths: TStrings;
@@ -138,6 +139,8 @@ type
     property BuildConfigs: TBuildConfigs read fBuildConfigs write fBuildConfigs;
     property ModifyDelphiRegistrySettings: Boolean
       read fModifyDelphiRegistrySettings write fModifyDelphiRegistrySettings;
+    property OnlyShowInstalledVersions: Boolean
+      read fOnlyShowInstalledVersions write fOnlyShowInstalledVersions;
     property PauseAfterEachStep: Boolean read FPauseAfterEachStep write FPauseAfterEachStep;
     property RunTests: Boolean read fRunTests write fRunTests;
     property SelectedTasks: IList<TBuildTask> read fSelectedTasks;
@@ -629,7 +632,10 @@ begin
   if buildConfig = TBuildConfig.Debug then
     RemoveRelatedEntries(projectPath, target.DebugDCUPaths);
 
-  unitOutputPath := projectPath + task.UnitOutputPath;
+  if TPath.IsRelativePath(task.UnitOutputPath) then
+    unitOutputPath := projectPath + task.UnitOutputPath
+  else
+    unitOutputPath := task.UnitOutputPath;
   unitOutputPath := StringReplace(unitOutputPath, '$(Config)', configName, [rfIgnoreCase, rfReplaceAll]);
   targetPlatform := target.TargetPlatform;
   unitOutputPath := StringReplace(unitOutputPath, '$(Platform)', targetPlatform, [rfIgnoreCase, rfReplaceAll]);
@@ -645,8 +651,8 @@ begin
   rsVars := IncludeTrailingPathDelimiter(target.RootDir) + 'bin\rsvars.bat';
   for projectName in task.Projects do
   begin
-    commandLine := Format('/C BuildHelper "%0:s" "%1:s" "Config=%2:s" "Platform=%3:s"', [
-      rsVars, projectName, configName, targetPlatform]);
+    commandLine := Format('/C BuildHelper "%0:s" "%1:s" "Config=%2:s" "Platform=%3:s" "DCC_DcuOutput=%4:s"', [
+      rsVars, projectName, configName, targetPlatform, unitOutputPath]);
     if fPauseAfterEachStep then
       commandLine := commandLine + SPause;
     ExecuteCommandLine(cmdFileName, commandLine, exitCode);
@@ -739,6 +745,7 @@ begin
     fPauseAfterEachStep := iniFile.ReadBool('Globals', 'PauseAfterEachStep', False);
     fRunTests := iniFile.ReadBool('Globals', 'RunTests', False);
     fModifyDelphiRegistrySettings := iniFile.ReadBool('Globals', 'ModifyDelphiRegistrySettings', False);
+    fOnlyShowInstalledVersions := iniFile.ReadBool('Globals', 'OnlyShowInstalledVersions', False);
 
     for target in Targets do
     begin
@@ -799,9 +806,9 @@ begin
     end;
     iniFile.WriteString('Globals', 'Config', config);
     iniFile.WriteString('Globals', 'SelectedTasks', selectedTasks.DelimitedText);
-    iniFile.WriteBool('Globals', 'PauseAfterEachStep', PauseAfterEachStep);
-    iniFile.WriteBool('Globals', 'RunTests', RunTests);
-    iniFile.WriteBool('Globals', 'ModifyDelphiRegistrySettings', ModifyDelphiRegistrySettings);
+    iniFile.WriteBool('Globals', 'PauseAfterEachStep', fPauseAfterEachStep);
+    iniFile.WriteBool('Globals', 'RunTests', fRunTests);
+    iniFile.WriteBool('Globals', 'ModifyDelphiRegistrySettings', fModifyDelphiRegistrySettings);
   finally
     selectedTasks.Free;
     iniFile.Free;

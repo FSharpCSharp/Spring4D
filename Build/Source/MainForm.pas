@@ -100,6 +100,8 @@ begin
   lbTargets.Clear;
   for task in fBuildEngine.Tasks do
   begin
+    if fBuildEngine.OnlyShowInstalledVersions and not task.CanBuild then
+      Continue;
     index := lbTargets.Items.AddObject(task.Name, task);
     lbTargets.ItemEnabled[index] := task.CanBuild;
     lbTargets.Checked[index] := fBuildEngine.SelectedTasks.Contains(task);
