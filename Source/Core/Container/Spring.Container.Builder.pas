@@ -494,7 +494,8 @@ begin
           service.DefaultName + '@' + model.ComponentType.DefaultName);
         context.ComponentRegistry.RegisterDefault(model, service.Handle);
       end;
-    if TType.IsDelegate(model.ComponentTypeInfo) then
+    if TType.IsDelegate(model.ComponentTypeInfo)
+      and not model.HasService(model.ComponentType.Handle) then
       context.ComponentRegistry.RegisterService(model, model.ComponentType.Handle);
 
     if model.Services.IsEmpty then
