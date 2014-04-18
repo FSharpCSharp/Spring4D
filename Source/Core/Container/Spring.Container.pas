@@ -177,6 +177,7 @@ uses
   SysUtils,
   TypInfo,
   Spring.Container.Builder,
+  Spring.Container.Common,
   Spring.Container.Injection,
   Spring.Container.LifetimeManager,
   Spring.Container.Resolvers,

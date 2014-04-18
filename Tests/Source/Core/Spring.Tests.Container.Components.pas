@@ -32,7 +32,7 @@ uses
   TestFramework,
   Spring,
   Spring.Collections,
-  Spring.Services,
+  Spring.Container.Common,
   Spring.Container.Core,
   Spring.Tests.Container.Interfaces;
 

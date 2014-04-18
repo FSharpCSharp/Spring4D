@@ -129,7 +129,7 @@ type
 implementation
 
 uses
-  Spring.Services;
+  Spring.Container.Common;
 
 { TLifetimeManagerTestCase }
 

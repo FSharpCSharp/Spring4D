@@ -33,8 +33,8 @@ uses
   SysUtils,
   Spring,
   Spring.Collections,
-  Spring.DesignPatterns,
-  Spring.Services;
+  Spring.Container.Common,
+  Spring.DesignPatterns;
 
 type
   { Forward Declarations }

@@ -35,7 +35,7 @@ uses
   TestFramework,
   Spring,
   Spring.Container,
-  Spring.Services,
+  Spring.Container.Common,
   // DO NOT CHANGE ORDER OF FOLLOWING UNITS !!!
   Spring.Tests.Container.Interfaces,
   Spring.Tests.Container.Components;

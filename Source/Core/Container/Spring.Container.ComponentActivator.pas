@@ -70,10 +70,10 @@ type
 implementation
 
 uses
+  Spring.Container.Common,
   Spring.Container.ResourceStrings,
   Spring.Helpers,
-  Spring.Reflection,
-  Spring.Services;
+  Spring.Reflection;
 
 
 {$REGION 'TComponentActivatorBase'}

@@ -96,7 +96,7 @@ implementation
 uses
   Rtti,
   TypInfo,
-  Spring.Services;
+  Spring.Container.Common;
 
 
 {$REGION 'TLifetimeManagerBase'}

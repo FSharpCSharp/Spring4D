@@ -106,12 +106,12 @@ implementation
 
 uses
   TypInfo,
+  Spring.Container.Common,
   Spring.Container.ComponentActivator,
   Spring.Container.Injection,
   Spring.Container.ResourceStrings,
   Spring.Helpers,
-  Spring.Reflection,
-  Spring.Services;
+  Spring.Reflection;
 
 
 {$REGION 'TComponentBuilder'}

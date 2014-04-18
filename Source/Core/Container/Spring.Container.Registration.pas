@@ -32,8 +32,8 @@ uses
   Rtti,
   Spring,
   Spring.Collections,
-  Spring.Container.Core,
-  Spring.Services;
+  Spring.Container.Common,
+  Spring.Container.Core;
 
 type
   ///	<summary>

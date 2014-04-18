@@ -90,7 +90,7 @@ implementation
 
 uses
   SysUtils,
-  Spring.Services;
+  Spring.Container.Common;
 
 type
   TInterfacedObjectAccess = class(TInterfacedObject);
