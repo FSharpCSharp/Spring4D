@@ -94,6 +94,9 @@ type
     procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo); overload;
     procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo; const name: string); overload;
     procedure RegisterDefault(const model: TComponentModel; serviceType: PTypeInfo);
+{$IFDEF DELPHIXE_UP}
+    procedure RegisterFactory(const model: TComponentModel);
+{$ENDIF}
     procedure UnregisterAll;
 
     function HasService(serviceType: PTypeInfo): Boolean; overload;

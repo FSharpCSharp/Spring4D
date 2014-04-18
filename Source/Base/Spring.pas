@@ -887,8 +887,14 @@ begin
 end;
 
 function IsAssignableFrom(leftType, rightType: PTypeInfo): Boolean;
+type
+  PPPTypeInfo = ^PPTypeInfo;
 var
   leftData, rightData: PTypeData;
+  intfTable: PInterfaceTable;
+  i: Integer;
+  typeInfo: PPPTypeInfo;
+  classType: TClass;
 begin
   Guard.CheckNotNull(leftType, 'leftType');
   Guard.CheckNotNull(rightType, 'rightType');
@@ -899,13 +905,30 @@ begin
   leftData := GetTypeData(leftType);
   rightData := GetTypeData(rightType);
   if (rightType.Kind = tkClass) and (leftType.Kind = tkClass) then
-  begin
-    Result := rightData.ClassType.InheritsFrom(leftData.ClassType);
-  end
+    Result := rightData.ClassType.InheritsFrom(leftData.ClassType)
   else if (rightType.Kind = tkClass) and (leftType.Kind = tkInterface) then
   begin
     Result := (ifHasGuid in leftData.IntfFlags) and
       Supports(rightData.ClassType, leftData.Guid);
+    if not Result then
+    begin
+      classType := rightData.ClassType;
+      repeat
+        intfTable := classType.GetInterfaceTable;
+        if Assigned(intfTable) then
+        begin
+          typeInfo := @intfTable.Entries[intfTable.EntryCount];
+          for i := 0 to intfTable.EntryCount - 1 do
+          begin
+            if typeInfo^^ = leftType then
+              Exit(True);
+            Inc(typeInfo);
+          end;
+        end;
+        classType := classType.ClassParent;
+      until classType = TObject;
+      Result := False;
+    end;
   end
   else if (rightType.Kind = tkInterface) and (leftType.Kind = tkInterface) then
   begin

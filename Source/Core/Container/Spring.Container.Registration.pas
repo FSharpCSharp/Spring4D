@@ -60,6 +60,9 @@ type
     procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo); overload;
     procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo; const name: string); overload;
     procedure RegisterDefault(const model: TComponentModel; serviceType: PTypeInfo);
+{$IFDEF DELPHIXE_UP}
+    procedure RegisterFactory(const model: TComponentModel);
+{$ENDIF}
     procedure UnregisterAll;
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(const name: string): Boolean; overload;
@@ -118,6 +121,10 @@ type
 
     function AsDefault: TRegistration; overload;
     function AsDefault(serviceType: PTypeInfo): TRegistration; overload;
+
+{$IFDEF DELPHIXE_UP}
+    function AsFactory: TRegistration;
+{$ENDIF}
   end;
 
   ///	<summary>
@@ -164,6 +171,10 @@ type
     function AsDefault: TRegistration<T>; overload;
     function AsDefault(serviceType: PTypeInfo): TRegistration<T>; overload;
     function AsDefault<TServiceType>: TRegistration<T>; overload;
+
+{$IFDEF DELPHIXE_UP}
+    function AsFactory: TRegistration<T>;
+{$ENDIF}
   end;
 
   ///	<summary>
@@ -192,8 +203,12 @@ uses
   TypInfo,
   Spring.Collections.Extensions,
   Spring.Collections.Lists,
+  Spring.Container.Resolvers,
   Spring.Container.ResourceStrings,
   Spring.Helpers,
+{$IFDEF DELPHIXE}
+  Spring.Reflection.Compatibility,
+{$ENDIF}
   Spring.Reflection;
 
 
@@ -350,6 +365,64 @@ begin
       [GetTypeName(serviceType)]);
   fDefaultRegistrations.AddOrSetValue(serviceType, model);
 end;
+
+{$IFDEF DELPHIXE_UP}
+type
+  TVirtualInterfaceHack = class(TInterfacedObject)
+    VTable: Pointer;
+  end;
+
+procedure TComponentRegistry.RegisterFactory(const model: TComponentModel);
+type
+{$POINTERMATH ON}
+  PVTable = ^Pointer;
+{$POINTERMATH OFF}
+var
+  methods: TArray<TRttiMethod>;
+  maxVirtualIndex: SmallInt;
+  method: TRttiMethod;
+  invokeEvent: TVirtualInterfaceInvokeEvent;
+begin
+  methods := model.ComponentType.GetMethods;
+  if not (TType.IsDelegate(model.ComponentTypeInfo) and (Length(methods) = 1)
+    and Assigned(methods[0].ReturnType)) then
+    raise ERegistrationException.CreateResFmt(@SUnsupportedFactoryType, [
+      model.ComponentType.DefaultName]);
+
+  maxVirtualIndex := 2;
+  for method in methods do
+    if maxVirtualIndex < method.VirtualIndex then
+      maxVirtualIndex := method.VirtualIndex;
+
+  invokeEvent :=
+    procedure(method: TRttiMethod; const args: TArray<TValue>; out result: TValue)
+    var
+      dependencyOverrides: TArray<TDependencyOverride>;
+      resolverOverride: IResolverOverride;
+      i: Integer;
+    begin
+      SetLength(dependencyOverrides, Length(args) - 1);
+      for i := 1 to High(args) do
+        dependencyOverrides[i - 1] := TDependencyOverride.Create(args[i].TypeInfo, args[i]);
+      resolverOverride := TDependencyOverrides.Create(dependencyOverrides);
+      fContainerContext.ServiceResolver.Resolve(method.ReturnType.Handle, resolverOverride);
+    end;
+
+  model.ActivatorDelegate :=
+    function: TValue
+    var
+      factory: TVirtualInterface;
+      intf: IInterface;
+    begin
+      factory := TVirtualInterface.Create(model.ComponentTypeInfo, invokeEvent);
+      if maxVirtualIndex > 3 then
+        PVTable(TVirtualInterfaceHack(factory).VTable)[3] :=
+          PVTable(TVirtualInterfaceHack(factory).VTable)[maxVirtualIndex];
+      factory.QueryInterface(GetTypeData(model.ComponentTypeInfo).Guid, intf);
+      TValue.Make(@intf, model.ComponentTypeInfo, Result);
+    end;
+end;
+{$ENDIF}
 
 function TComponentRegistry.RegisterComponent(
   componentTypeInfo: PTypeInfo): TComponentModel;
@@ -606,6 +679,14 @@ begin
   Result := Self;
 end;
 
+{$IFDEF DELPHIXE_UP}
+function TRegistration.AsFactory: TRegistration;
+begin
+  fRegistry.RegisterFactory(fModel);
+  Result := Self;
+end;
+{$ENDIF}
+
 {$ENDREGION}
 
 
@@ -764,6 +845,14 @@ begin
   Result := AsDefault(TypeInfo(TServiceType));
 end;
 
+{$IFDEF DELPHIXE_UP}
+function TRegistration<T>.AsFactory: TRegistration<T>;
+begin
+  fRegistration.AsFactory;
+  Result := Self;
+end;
+{$ENDIF}
+
 {$ENDREGION}
 
 
@@ -792,3 +881,4 @@ end;
 
 
 end.
+

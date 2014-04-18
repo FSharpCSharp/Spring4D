@@ -26,7 +26,7 @@ unit Spring.Container.Resolvers;
 
 {$I Spring.inc}
 
-interface
+interface
 
 uses
   Rtti,
@@ -175,6 +175,35 @@ type
       end;
   public
     constructor Create(typeInfo: PTypeInfo; const value: TValue);
+
+    function GetResolver(const context: IContainerContext): IDependencyResolver; override;
+
+    property TypeInfo: PTypeInfo read fTypeInfo;
+    property Value: TValue read fValue;
+  end;
+
+  TDependencyOverride<T> = class(TDependencyOverride)
+  public
+    constructor Create(const value: TValue);
+  end;
+
+  TDependencyOverrides = class(TResolverOverride)
+  private
+    fDependencyOverrides: IList<TDependencyOverride>;
+
+    type
+      TResolver = class(TDependencyResolver)
+      private
+        fDependencyOverrides: IList<TDependencyOverride>;
+      public
+        constructor Create(const context: IContainerContext; const registry: IComponentRegistry;
+          const dependencyOverrides: IList<TDependencyOverride>);
+
+        function CanResolveDependency(const dependency: TRttiType; const argument: TValue): Boolean; override;
+        function ResolveDependency(const dependency: TRttiType; const argument: TValue): TValue; override;
+      end;
+  public
+    constructor Create(const dependencyOverrides: array of TDependencyOverride);
 
     function GetResolver(const context: IContainerContext): IDependencyResolver; override;
   end;
@@ -1030,7 +1059,7 @@ end;
 function TDependencyOverride.GetResolver(
   const context: IContainerContext): IDependencyResolver;
 begin
-  Result := TResolver.Create(context, context.ComponentRegistry, fTypeInfo, fValue)
+  Result := TResolver.Create(context, context.ComponentRegistry, fTypeInfo, fValue);
 end;
 
 {$ENDREGION}
@@ -1062,6 +1091,72 @@ begin
     Result := fValue
   else
     Result := fContext.DependencyResolver.ResolveDependency(dependency, argument);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TDependencyOverride<T>'}
+
+constructor TDependencyOverride<T>.Create(const value: TValue);
+begin
+  inherited Create(System.TypeInfo(T), value);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TDependencyOverrides'}
+
+constructor TDependencyOverrides.Create(
+  const dependencyOverrides: array of TDependencyOverride);
+begin
+  inherited Create;
+  fDependencyOverrides := TCollections.CreateObjectList<TDependencyOverride>;
+  fDependencyOverrides.AddRange(dependencyOverrides);
+end;
+
+function TDependencyOverrides.GetResolver(
+  const context: IContainerContext): IDependencyResolver;
+begin
+  Result := TResolver.Create(context, context.ComponentRegistry, fDependencyOverrides);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TDependencyOverrides.TResolver'}
+
+constructor TDependencyOverrides.TResolver.Create(
+  const context: IContainerContext; const registry: IComponentRegistry;
+  const dependencyOverrides: IList<TDependencyOverride>);
+begin
+  inherited Create(context, registry);
+  fDependencyOverrides := dependencyOverrides;
+end;
+
+function TDependencyOverrides.TResolver.CanResolveDependency(
+  const dependency: TRttiType; const argument: TValue): Boolean;
+var
+  dependencyOverride: TDependencyOverride;
+begin
+  for dependencyOverride in fDependencyOverrides do
+    if dependencyOverride.TypeInfo = dependency.Handle then
+      Exit(True);
+
+  Result := fContext.DependencyResolver.CanResolveDependency(dependency, argument);
+end;
+
+function TDependencyOverrides.TResolver.ResolveDependency(
+  const dependency: TRttiType; const argument: TValue): TValue;
+var
+  dependencyOverride: TDependencyOverride;
+begin
+  for dependencyOverride in fDependencyOverrides do
+    if dependencyOverride.TypeInfo = dependency.Handle then
+      Exit(dependencyOverride.Value);
+
+  Result := fContext.DependencyResolver.ResolveDependency(dependency, argument);
 end;
 
 {$ENDREGION}

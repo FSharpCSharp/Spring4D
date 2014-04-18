@@ -33,6 +33,7 @@ resourcestring
   SMissingInterface = 'The component type "%s" does not support IInterface.';
   SIncompatibleTypes = 'The component type "%s" is incompatible with the service type "%s".';
   SUnsupportedType = 'The component type "%s" is not supported.';
+  SUnsupportedFactoryType = 'The type "%s" cannot be registered as factory';
   SDuplicatedName = 'Duplicated name found: "%s".';
   SDuplicatedUnnamedService = 'Cannot have more than one unnamed registration for service type "%s".';
   SMissingServiceType = 'The service type "%s" cannot be the default as it has not been registered.';
