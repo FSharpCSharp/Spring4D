@@ -69,6 +69,7 @@
 			<DCCReference Include="..\..\Source\Base\Spring.Events.Base.pas"/>
 			<DCCReference Include="..\..\Source\Base\Spring.Helpers.pas"/>
 			<DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.pas"/>
+			<DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.Compatibility.pas"/>
 			<DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.ValueConverters.pas"/>
 			<DCCReference Include="..\..\Source\Base\Spring.ResourceStrings.pas"/>
 			<DCCReference Include="..\..\Source\Base\Spring.SystemUtils.pas"/>
