@@ -85,6 +85,12 @@ begin
 {$ENDIF}
 end;
 
+{$IFNDEF DELPHIXE2_UP}
+function ReturnAddress: Pointer; inline;
+begin
+  Result := CallerAddr;
+end;
+{$ENDIF}
 
 {$REGION 'TAbstractTestHelper'}
 
@@ -100,13 +106,13 @@ begin
       if not Assigned(expected) then
         raise
       else if not E.InheritsFrom(expected) then
-        FailNotEquals(expected.ClassName, E.ClassName, msg, CallerAddr)
+        FailNotEquals(expected.ClassName, E.ClassName, msg, ReturnAddress)
       else
         expected := nil;
     end;
   end;
   if Assigned(expected) then
-    FailNotEquals(expected.ClassName, 'nothing', msg, CallerAddr);
+    FailNotEquals(expected.ClassName, 'nothing', msg, ReturnAddress);
 end;
 
 {$ENDREGION}
