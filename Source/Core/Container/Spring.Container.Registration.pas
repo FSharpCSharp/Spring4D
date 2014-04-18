@@ -32,6 +32,9 @@ uses
   Rtti,
   Spring,
   Spring.Collections,
+{$IFDEF DELPHIXE}
+  Spring.Reflection.Compatibility,
+{$ENDIF}
   Spring.Container.Common,
   Spring.Container.Core;
 
@@ -50,6 +53,9 @@ type
     fServiceNameMappings: IDictionary<string, TComponentModel>;
   protected
     function BuildActivatorDelegate(elementTypeInfo: PTypeInfo; out componentType: TRttiType): TActivatorDelegate;
+{$IFDEF DELPHIXE_UP}
+    function BuildFactoryDelegate(): TVirtualInterfaceInvokeEvent;
+{$ENDIF}
     procedure CheckIsNonGuidInterface(serviceType: TRttiType);
     procedure RegisterUnnamed(const model: TComponentModel; serviceType: PTypeInfo);
     procedure Validate(componentType, serviceType: PTypeInfo; var serviceName: string);
@@ -206,9 +212,6 @@ uses
   Spring.Container.Resolvers,
   Spring.Container.ResourceStrings,
   Spring.Helpers,
-{$IFDEF DELPHIXE}
-  Spring.Reflection.Compatibility,
-{$ENDIF}
   Spring.Reflection;
 
 
@@ -272,6 +275,25 @@ begin
     raise ERegistrationException.CreateResFmt(@SUnsupportedType, [componentType.Name]);
   end;
 end;
+
+{$IFDEF DELPHIXE_UP}
+function TComponentRegistry.BuildFactoryDelegate: TVirtualInterfaceInvokeEvent;
+begin
+  Result :=
+    procedure(method: TRttiMethod; const args: TArray<TValue>; out result: TValue)
+    var
+      dependencyOverrides: TArray<TDependencyOverride>;
+      resolverOverride: IResolverOverride;
+      i: Integer;
+    begin
+      SetLength(dependencyOverrides, Length(args) - 1);
+      for i := 1 to High(args) do
+        dependencyOverrides[i - 1] := TDependencyOverride.Create(args[i].TypeInfo, args[i]);
+      resolverOverride := TDependencyOverrides.Create(dependencyOverrides);
+      fContainerContext.ServiceResolver.Resolve(method.ReturnType.Handle, resolverOverride);
+    end;
+end;
+{$ENDIF}
 
 procedure TComponentRegistry.CheckIsNonGuidInterface(serviceType: TRttiType);
 begin
@@ -394,19 +416,7 @@ begin
     if maxVirtualIndex < method.VirtualIndex then
       maxVirtualIndex := method.VirtualIndex;
 
-  invokeEvent :=
-    procedure(method: TRttiMethod; const args: TArray<TValue>; out result: TValue)
-    var
-      dependencyOverrides: TArray<TDependencyOverride>;
-      resolverOverride: IResolverOverride;
-      i: Integer;
-    begin
-      SetLength(dependencyOverrides, Length(args) - 1);
-      for i := 1 to High(args) do
-        dependencyOverrides[i - 1] := TDependencyOverride.Create(args[i].TypeInfo, args[i]);
-      resolverOverride := TDependencyOverrides.Create(dependencyOverrides);
-      fContainerContext.ServiceResolver.Resolve(method.ReturnType.Handle, resolverOverride);
-    end;
+  invokeEvent := BuildFactoryDelegate();
 
   model.ActivatorDelegate :=
     function: TValue
