@@ -17,8 +17,9 @@ type
 implementation
 
 uses
+  Spring.Services,
   Spring.Container,
-  Spring.Services;
+  Spring.Container.Common;
 
 type
   TPetNoiseProvider = class(TInterfacedObject, IPetNoiseMaker)

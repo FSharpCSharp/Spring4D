@@ -24,9 +24,8 @@ type
 implementation
 
 uses
-     Spring.Container
-   , Spring.Services
-   ;
+  Spring.Container,
+  Spring.Container.Common;
 
 type
   TSimpleClass = class(TInterfacedObject, ISimpleInterface)

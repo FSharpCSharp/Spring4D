@@ -5,7 +5,7 @@ interface
 uses
   uOrder,
   uOrderInterfaces,
-  Spring.Services;
+  Spring.Container.Common;
 
 type
   TOrderProcessor = class(TInterfacedObject, IOrderProcessor)

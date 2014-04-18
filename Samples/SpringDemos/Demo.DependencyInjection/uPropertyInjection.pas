@@ -20,9 +20,9 @@ type
 implementation
 
 uses
-      Spring.Container
-    , Spring.Services
-    ;
+  Spring.Services,
+  Spring.Container,
+  Spring.Container.Common;
 
 type
   TCar = class(TInterfacedObject, ICar)

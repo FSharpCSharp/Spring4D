@@ -2,7 +2,6 @@ unit uFieldInjectionDemo;
 
 interface
 
-
 type
   ISomeClass = interface
   ['{BD80C4AC-42E1-4260-9532-F0C9E831FB09}']
@@ -17,10 +16,9 @@ type
 implementation
 
 uses
-      Spring  // needed to get the attributes to work.
-    , Spring.Container
-    , Spring.Services
-    ;
+  Spring.Services,
+  Spring.Container,
+  Spring.Container.Common;
 
 type
   TSomeClass = class(TInterfacedObject, ISomeClass)
