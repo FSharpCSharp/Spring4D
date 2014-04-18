@@ -796,6 +796,7 @@ function TServiceResolver.Resolve(serviceType: PTypeInfo;
 var
   serviceName: string;
   resolveLazy: Boolean;
+  rttiType: TRttiType;
   lazyType: PTypeInfo;
   model: TComponentModel;
   resolver: IDependencyResolver;
@@ -803,7 +804,11 @@ begin
   resolveLazy := not Registry.HasService(serviceType) and TType.IsLazy(serviceType);
   lazyType := serviceType;
   if resolveLazy then
-    serviceType := TType.FindType(TType.GetLazyTypeName(serviceType)).Handle;
+  begin
+    rttiType := TType.FindType(TType.GetLazyTypeName(serviceType));
+    if Assigned(rttiType) then
+      serviceType := rttiType.Handle;
+  end;
 
   serviceName := GetTypeName(serviceType);
 

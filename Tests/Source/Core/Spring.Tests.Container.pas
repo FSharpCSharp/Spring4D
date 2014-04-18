@@ -85,6 +85,8 @@ type
 
     procedure TestIssue49;
     procedure TestIssue50;
+
+    procedure TestResolveFuncWithTwoTypes;
   end;
 
   // Same Service, Different Implementations
@@ -294,7 +296,8 @@ implementation
 uses
   Spring.Collections,
   Spring.Container.DecoratorExtension,
-  Spring.Container.Resolvers;
+  Spring.Container.Resolvers,
+  Spring.TestUtils;
 
 
 {$REGION 'TContainerTestCase'}
@@ -702,6 +705,18 @@ begin
   service1 := fContainer.Resolve<IAnotherService>; // pool has no available and collects all unused
   CheckFalse(instance.IsInitialized, 'IsInitialized');
   CheckTrue(instance.IsRecycled, 'IsRecycled');
+end;
+
+procedure TTestSimpleContainer.TestResolveFuncWithTwoTypes;
+begin
+  fContainer.RegisterType<TNameService>;
+  fContainer.Build;
+
+  CheckException(EResolveException,
+    procedure
+    begin
+      fContainer.Resolve<TFunc<IAgeService, INameService>>;
+    end);
 end;
 
 procedure TTestSimpleContainer.TestInitializable;
