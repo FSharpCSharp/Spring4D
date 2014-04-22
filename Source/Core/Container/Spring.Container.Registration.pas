@@ -290,7 +290,7 @@ begin
       for i := 1 to High(args) do
         dependencyOverrides[i - 1] := TDependencyOverride.Create(args[i].TypeInfo, args[i]);
       resolverOverride := TDependencyOverrides.Create(dependencyOverrides);
-      fContainerContext.ServiceResolver.Resolve(method.ReturnType.Handle, resolverOverride);
+      result := fContainerContext.ServiceResolver.Resolve(method.ReturnType.Handle, resolverOverride);
     end;
 end;
 {$ENDIF}
