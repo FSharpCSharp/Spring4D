@@ -53,10 +53,11 @@ type
     fServiceNameMappings: IDictionary<string, TComponentModel>;
   protected
     function BuildActivatorDelegate(elementTypeInfo: PTypeInfo; out componentType: TRttiType): TActivatorDelegate;
-{$IFDEF DELPHIXE_UP}
-    function BuildFactoryDelegate(): TVirtualInterfaceInvokeEvent;
-{$ENDIF}
     procedure CheckIsNonGuidInterface(serviceType: TRttiType);
+{$IFDEF DELPHIXE_UP}
+    procedure InternalRegisterFactory(const model: TComponentModel;
+      const invokeEvent: TVirtualInterfaceInvokeEvent);
+{$ENDIF}
     procedure RegisterUnnamed(const model: TComponentModel; serviceType: PTypeInfo);
     procedure Validate(componentType, serviceType: PTypeInfo; var serviceName: string);
   public
@@ -67,7 +68,8 @@ type
     procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo; const name: string); overload;
     procedure RegisterDefault(const model: TComponentModel; serviceType: PTypeInfo);
 {$IFDEF DELPHIXE_UP}
-    procedure RegisterFactory(const model: TComponentModel);
+    procedure RegisterFactory(const model: TComponentModel); overload;
+    procedure RegisterFactory(const model: TComponentModel; const name: string); overload;
 {$ENDIF}
     procedure UnregisterAll;
     function HasService(serviceType: PTypeInfo): Boolean; overload;
@@ -129,7 +131,8 @@ type
     function AsDefault(serviceType: PTypeInfo): TRegistration; overload;
 
 {$IFDEF DELPHIXE_UP}
-    function AsFactory: TRegistration;
+    function AsFactory: TRegistration; overload;
+    function AsFactory(const name: string): TRegistration; overload;
 {$ENDIF}
   end;
 
@@ -179,7 +182,8 @@ type
     function AsDefault<TServiceType>: TRegistration<T>; overload;
 
 {$IFDEF DELPHIXE_UP}
-    function AsFactory: TRegistration<T>;
+    function AsFactory: TRegistration<T>; overload;
+    function AsFactory(const name: string): TRegistration<T>; overload;
 {$ENDIF}
   end;
 
@@ -275,25 +279,6 @@ begin
     raise ERegistrationException.CreateResFmt(@SUnsupportedType, [componentType.Name]);
   end;
 end;
-
-{$IFDEF DELPHIXE_UP}
-function TComponentRegistry.BuildFactoryDelegate: TVirtualInterfaceInvokeEvent;
-begin
-  Result :=
-    procedure(method: TRttiMethod; const args: TArray<TValue>; out result: TValue)
-    var
-      dependencyOverrides: TArray<TDependencyOverride>;
-      resolverOverride: IResolverOverride;
-      i: Integer;
-    begin
-      SetLength(dependencyOverrides, Length(args) - 1);
-      for i := 1 to High(args) do
-        dependencyOverrides[i - 1] := TDependencyOverride.Create(args[i].TypeInfo, args[i]);
-      resolverOverride := TDependencyOverrides.Create(dependencyOverrides);
-      result := fContainerContext.ServiceResolver.Resolve(method.ReturnType.Handle, resolverOverride);
-    end;
-end;
-{$ENDIF}
 
 procedure TComponentRegistry.CheckIsNonGuidInterface(serviceType: TRttiType);
 begin
@@ -391,19 +376,20 @@ end;
 {$IFDEF DELPHIXE_UP}
 type
   TVirtualInterfaceHack = class(TInterfacedObject)
-    VTable: Pointer;
+  private
+    type
+    {$POINTERMATH ON}
+      PVTable = ^Pointer;
+    {$POINTERMATH OFF}
+    var VTable: PVTable;
   end;
 
-procedure TComponentRegistry.RegisterFactory(const model: TComponentModel);
-type
-{$POINTERMATH ON}
-  PVTable = ^Pointer;
-{$POINTERMATH OFF}
+procedure TComponentRegistry.InternalRegisterFactory(
+  const model: TComponentModel; const invokeEvent: TVirtualInterfaceInvokeEvent);
 var
   methods: TArray<TRttiMethod>;
   maxVirtualIndex: SmallInt;
   method: TRttiMethod;
-  invokeEvent: TVirtualInterfaceInvokeEvent;
 begin
   methods := model.ComponentType.GetMethods;
   if not (TType.IsDelegate(model.ComponentTypeInfo) and (Length(methods) = 1)
@@ -416,8 +402,6 @@ begin
     if maxVirtualIndex < method.VirtualIndex then
       maxVirtualIndex := method.VirtualIndex;
 
-  invokeEvent := BuildFactoryDelegate();
-
   model.ActivatorDelegate :=
     function: TValue
     var
@@ -426,11 +410,54 @@ begin
     begin
       factory := TVirtualInterface.Create(model.ComponentTypeInfo, invokeEvent);
       if maxVirtualIndex > 3 then
-        PVTable(TVirtualInterfaceHack(factory).VTable)[3] :=
-          PVTable(TVirtualInterfaceHack(factory).VTable)[maxVirtualIndex];
+        TVirtualInterfaceHack(factory).VTable[3] :=
+          TVirtualInterfaceHack(factory).VTable[maxVirtualIndex];
       factory.QueryInterface(GetTypeData(model.ComponentTypeInfo).Guid, intf);
       TValue.Make(@intf, model.ComponentTypeInfo, Result);
     end;
+end;
+
+procedure TComponentRegistry.RegisterFactory(const model: TComponentModel);
+var
+  invokeEvent: TVirtualInterfaceInvokeEvent;
+begin
+  invokeEvent :=
+    procedure(method: TRttiMethod; const args: TArray<TValue>; out result: TValue)
+    var
+      dependencyOverrides: TArray<TDependencyOverride>;
+      resolverOverride: IResolverOverride;
+      i: Integer;
+    begin
+      SetLength(dependencyOverrides, Length(args) - 1);
+      for i := 1 to High(args) do
+        dependencyOverrides[i - 1] := TDependencyOverride.Create(args[i].TypeInfo, args[i]);
+      resolverOverride := TDependencyOverrides.Create(dependencyOverrides);
+      result := fContainerContext.ServiceResolver.Resolve(method.ReturnType.Handle, resolverOverride)
+    end;
+
+  InternalRegisterFactory(model, invokeEvent);
+end;
+
+procedure TComponentRegistry.RegisterFactory(const model: TComponentModel;
+  const name: string);
+var
+  invokeEvent: TVirtualInterfaceInvokeEvent;
+begin
+  invokeEvent :=
+    procedure(method: TRttiMethod; const args: TArray<TValue>; out result: TValue)
+    var
+      dependencyOverrides: TArray<TDependencyOverride>;
+      resolverOverride: IResolverOverride;
+      i: Integer;
+    begin
+      SetLength(dependencyOverrides, Length(args) - 1);
+      for i := 1 to High(args) do
+        dependencyOverrides[i - 1] := TDependencyOverride.Create(args[i].TypeInfo, args[i]);
+      resolverOverride := TDependencyOverrides.Create(dependencyOverrides);
+      result := fContainerContext.ServiceResolver.Resolve(name, resolverOverride);
+    end;
+
+  InternalRegisterFactory(model, invokeEvent);
 end;
 {$ENDIF}
 
@@ -695,6 +722,12 @@ begin
   fRegistry.RegisterFactory(fModel);
   Result := Self;
 end;
+
+function TRegistration.AsFactory(const name: string): TRegistration;
+begin
+  fRegistry.RegisterFactory(fModel, name);
+  Result := Self;
+end;
 {$ENDIF}
 
 {$ENDREGION}
@@ -859,6 +892,12 @@ end;
 function TRegistration<T>.AsFactory: TRegistration<T>;
 begin
   fRegistration.AsFactory;
+  Result := Self;
+end;
+
+function TRegistration<T>.AsFactory(const name: string): TRegistration<T>;
+begin
+  fRegistration.AsFactory(name);
   Result := Self;
 end;
 {$ENDIF}
