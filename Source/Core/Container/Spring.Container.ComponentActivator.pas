@@ -52,9 +52,9 @@ type
   ///	  Activates an instance by reflection.
   ///	</summary>
   TReflectionComponentActivator = class(TComponentActivatorBase)
-  private
+  protected
     function GetEligibleConstructor(const model: TComponentModel;
-      const resolver: IDependencyResolver): IInjection;
+      const resolver: IDependencyResolver): IInjection; virtual;
   public
     function CreateInstance(const resolver: IDependencyResolver): TValue; override;
   end;
@@ -110,9 +110,7 @@ var
 begin
   constructorInjection := GetEligibleConstructor(fModel, resolver);
   if constructorInjection = nil then
-  begin
     raise EActivatorException.CreateRes(@SUnsatisfiedConstructor);
-  end;
   constructorArguments := resolver.ResolveDependencies(constructorInjection);
   Result := TActivator.CreateInstance(
     fModel.ComponentType.AsInstance,
@@ -173,9 +171,7 @@ function TDelegateComponentActivator.CreateInstance(
   const resolver: IDependencyResolver): TValue;
 begin
   if not Assigned(fModel.ActivatorDelegate) then
-  begin
     raise EActivatorException.CreateRes(@SActivatorDelegateExpected);
-  end;
   Result := fModel.ActivatorDelegate.Invoke;
   try
     ExecuteInjections(Result, fModel.FieldInjections, resolver);
