@@ -139,10 +139,12 @@ type
 
   IReflection = interface
     ['{E3B66C0B-4827-44C4-BDD9-27F1A856FDDD}']
-    {$REGION 'Property Accessors'}
-      function GetTypes: IEnumerable<TRttiType>;
-//      function GetPackages: IEnumerable<TRttiPackage>;
-    {$ENDREGION}
+  {$REGION 'Property Accessors'}
+    function GetClasses: IEnumerable<TRttiInstanceType>;
+    function GetInterfaces: IEnumerable<TRttiInterfaceType>;
+    function GetTypes: IEnumerable<TRttiType>;
+//    function GetPackages: IEnumerable<TRttiPackage>;
+  {$ENDREGION}
 
     function GetType(const typeInfo: PTypeInfo): TRttiType; overload;
     function GetType(const classType: TClass): TRttiType; overload;
@@ -156,6 +158,8 @@ type
 
 //    function FindAllWhere(): IEnumerable<TRttiType>;
 
+    property Classes: IEnumerable<TRttiInstanceType> read GetClasses;
+    property Interfaces: IEnumerable<TRttiInterfaceType> read GetInterfaces;
     property Types: IEnumerable<TRttiType> read GetTypes;
 //    property Packages: IEnumerable<TRttiPackage> read GetPackages;
   end;
@@ -163,7 +167,11 @@ type
   TReflection = class(TInterfacedObject, IReflection)
   private
     fContext: TRttiContext;
+    fClasses: IEnumerable<TRttiInstanceType>;
+    fInterfaces: IEnumerable<TRttiInterfaceType>;
     fTypes: IEnumerable<TRttiType>;
+    function GetClasses: IEnumerable<TRttiInstanceType>;
+    function GetInterfaces: IEnumerable<TRttiInterfaceType>;
     function GetTypes: IEnumerable<TRttiType>;
 //    function GetPackages: IEnumerable<TRttiPackage>;
   public
@@ -1248,11 +1256,18 @@ constructor TReflection.Create;
 begin
   fContext := TRttiContext.Create;
   fTypes := TRttiTypeEnumerable.Create;
+  IEnumerable<TRttiType>(fClasses) := fTypes.Where(TTypeFilters.IsClass());
+  IEnumerable<TRttiType>(fInterfaces) := fTypes.Where(TTypeFilters.IsInterface());
 end;
 
 function TReflection.FindType(const qualifiedName: string): TRttiType;
 begin
   Result := fContext.FindType(qualifiedName);
+end;
+
+function TReflection.GetClasses: IEnumerable<TRttiInstanceType>;
+begin
+  Result := fClasses;
 end;
 
 function TReflection.GetFullName(const typeInfo: PTypeInfo): string;
@@ -1266,6 +1281,11 @@ begin
     Result := t.QualifiedName
   else
     Result := t.Name;
+end;
+
+function TReflection.GetInterfaces: IEnumerable<TRttiInterfaceType>;
+begin
+  Result := fInterfaces;
 end;
 
 function TReflection.GetType(const typeInfo: PTypeInfo): TRttiType;
