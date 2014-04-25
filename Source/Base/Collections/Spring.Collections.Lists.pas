@@ -77,7 +77,7 @@ type
         procedure Reset; override;
       end;
   private
-    fItems: array of T;
+    fItems: TArray<T>;
     fCount: Integer;
     fVersion: Integer;
     fArrayManager: TArrayManager<T>;
@@ -512,7 +512,7 @@ end;
 
 function TList<T>.ToArray: TArray<T>;
 begin
-  Result := TArray<T>(fItems);
+  Result := fItems;
   SetLength(Result, fCount);
 end;
 
