@@ -2103,7 +2103,8 @@ type
     ///	</returns>
     class function Empty<T>: IEnumerable<T>; static;
 
-    class function Query<T>(const source: TEnumerable<T>): IEnumerable<T>; static;
+    class function Query<T>(const source: TArray<T>): IEnumerable<T>; overload; static;
+    class function Query<T>(const source: TEnumerable<T>): IEnumerable<T>; overload; static;
 
     class function Range(start, count: Integer): IEnumerable<Integer>; static;
 
@@ -2354,6 +2355,11 @@ end;
 class function TCollections.Empty<T>: IEnumerable<T>;
 begin
   Result := TEmptyEnumerable<T>.Create;
+end;
+
+class function TCollections.Query<T>(const source: TArray<T>): IEnumerable<T>;
+begin
+  Result := TArrayIterator<T>.Create(source);
 end;
 
 class function TCollections.Query<T>(
