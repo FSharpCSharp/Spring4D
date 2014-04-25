@@ -114,10 +114,12 @@
         <DCCReference Include="..\..\Source\Core\Services\Spring.Services.pas"/>
         <DCCReference Include="..\..\Source\Core\Services\Spring.Services.Logging.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.pas"/>
+        <DCCReference Include="..\..\Source\Core\Container\Spring.Container.ActivatorExtension.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.Builder.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.Common.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.ComponentActivator.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.Core.pas"/>
+        <DCCReference Include="..\..\Source\Core\Container\Spring.Container.DecoratorExtension.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.Extensions.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.Injection.pas"/>
         <DCCReference Include="..\..\Source\Core\Container\Spring.Container.LifetimeManager.pas"/>
