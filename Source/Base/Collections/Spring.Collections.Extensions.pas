@@ -46,7 +46,7 @@ type
     items: TArray<T>;
     count: Integer;
   public
-    constructor Create(source: IEnumerable<T>);
+    constructor Create(const source: IEnumerable<T>);
   end;
 
   TIteratorBase<T> = class(TEnumerableBase<T>, IEnumerator)
@@ -104,7 +104,7 @@ type
   protected
     function GetCurrent: T; override;
   public
-    constructor Create(source: TGenericEnumerable);
+    constructor Create(const source: TGenericEnumerable);
     destructor Destroy; override;
     function MoveNext: Boolean; override;
     property Current: T read GetCurrent;
@@ -121,7 +121,7 @@ type
   private
     fSource: TGenericEnumerable;
   public
-    constructor Create(source: TGenericEnumerable);
+    constructor Create(const source: TGenericEnumerable);
     function GetEnumerator: IEnumerator<T>; override;
   end;
 
@@ -770,7 +770,7 @@ uses
 
 {$REGION 'TBuffer<T>'}
 
-constructor TBuffer<T>.Create(source: IEnumerable<T>);
+constructor TBuffer<T>.Create(const source: IEnumerable<T>);
 var
   item: T;
   collection: ICollection<T>;
@@ -907,7 +907,7 @@ end;
 
 {$REGION 'TEnumeratorAdapter<T>'}
 
-constructor TEnumeratorAdapter<T>.Create(source: TGenericEnumerable);
+constructor TEnumeratorAdapter<T>.Create(const source: TGenericEnumerable);
 begin
   Guard.CheckNotNull(Assigned(source), 'source');
 
@@ -938,7 +938,7 @@ end;
 
 {$REGION 'TEnumerableAdapter<T>'}
 
-constructor TEnumerableAdapter<T>.Create(source: TGenericEnumerable);
+constructor TEnumerableAdapter<T>.Create(const source: TGenericEnumerable);
 begin
   Guard.CheckNotNull(Assigned(source), 'source');
 
