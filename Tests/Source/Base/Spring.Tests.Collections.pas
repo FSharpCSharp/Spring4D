@@ -99,6 +99,7 @@ type
     procedure TestListLargeDelete;
     procedure TestQueryInterface;
     procedure TestIssue67;
+    procedure TestCopyTo;
   end;
 
   TTestEmptyStringIntegerDictionary = class(TTestCase)
@@ -191,8 +192,6 @@ type
 
   TTestQueueOfInteger = class(TTestCase)
   private
-    const MaxItems = 1000;
-  private
     SUT: IQueue<integer>;
     procedure FillQueue;  // Will test Enqueue method
   protected
@@ -224,8 +223,6 @@ type
 
   TTestListOfIntegerAsIEnumerable = class(TTestCase)
   private
-    const MaxItems = 1000;
-  private
     InternalList: IList<integer>;
     SUT: IEnumerable<integer>;
     procedure FillList;
@@ -244,6 +241,7 @@ type
     procedure TestCheckSingleRaisedExceptionWhenHasMultipleItems;
     procedure TestCheckSingleRaisedExceptionWhenEmpty;
     procedure TestElementAt;
+    procedure TestToArray;
   end;
 
   TTestLinkedList = class(TTestCase)
@@ -298,11 +296,24 @@ type
     procedure TestAdd;
   end;
 
+  TTestEnumerable = class(TTestCase)
+  private
+    SUT: IEnumerable<Integer>;
+  protected
+    procedure SetUp; override;
+  published
+    procedure TestToArray;
+  end;
+
 implementation
 
 uses
   Generics.Defaults,
   SysUtils;
+
+const
+  MaxItems = 1000;
+  ListCountLimit = 1000;//0000;
 
 { TTestEmptyHashSet }
 
@@ -459,8 +470,21 @@ begin
   SUT := nil;
 end;
 
-const
-  ListCountLimit = 1000;//0000;
+procedure TTestIntegerList.TestCopyTo;
+var
+  values: TArray<Integer>;
+  i: Integer;
+begin
+  for i := 0 to MaxItems - 1 do
+    SUT.Add(i);
+  SetLength(values, MaxItems);
+  SUT.CopyTo(values, 0);
+  CheckEquals(MaxItems, Length(values));
+  CheckEquals(SUT.First, values[0]);
+  CheckEquals(SUT.Last, values[MaxItems-1]);
+  SUT[0] := MaxItems;
+  CheckNotEquals(SUT.First, values[0]);
+end;
 
 procedure TTestIntegerList.TestIssue67;
 var
@@ -1309,6 +1333,19 @@ begin
   CheckEquals(ExpectedResult, ActualResult);
 end;
 
+procedure TTestListOfIntegerAsIEnumerable.TestToArray;
+var
+  values: TArray<Integer>;
+begin
+  FillList;
+  values := SUT.ToArray;
+  CheckEquals(MaxItems, Length(values));
+  CheckEquals(InternalList.First, values[0]);
+  CheckEquals(InternalList.Last, values[MaxItems-1]);
+  InternalList[0] := MaxItems;
+  CheckNotEquals(InternalList.First, values[0]);
+end;
+
 procedure TTestListOfIntegerAsIEnumerable.TestCheckSingleRaisedExceptionWhenEmpty;
 begin
   CheckException(EInvalidOperationException, procedure begin SUT.Single(function(const i: Integer): Boolean begin Result := i = 2 end) end,
@@ -1580,6 +1617,24 @@ begin
     begin
       SUT.AsList<TMyOtherCollectionItem>;
     end);
+end;
+
+{ TTestEnumerable }
+
+procedure TTestEnumerable.SetUp;
+begin
+  SUT := TCollections.Range(0, MaxItems);
+end;
+
+procedure TTestEnumerable.TestToArray;
+var
+  values: TArray<Integer>;
+  i: Integer;
+begin
+  values := SUT.ToArray;
+  CheckEquals(MaxItems, Length(values));
+  for i in SUT do
+    CheckEquals(i, values[i]);
 end;
 
 end.

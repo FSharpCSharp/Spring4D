@@ -78,7 +78,8 @@ begin
     TTestListOfIntegerAsIEnumerable.Suite,
     TTestLinkedList.Suite,
     TTestObjectList.Suite,
-    TTestCollectionList.Suite
+    TTestCollectionList.Suite,
+    TTestEnumerable.Suite
   ]);
 
   RegisterTests('Spring.Base.Collections.Extensions', [
