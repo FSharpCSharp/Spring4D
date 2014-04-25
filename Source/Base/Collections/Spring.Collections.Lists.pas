@@ -76,6 +76,7 @@ type
         function MoveNext: Boolean; override;
         procedure Reset; override;
       end;
+      TArrayOfT = array of T; // Delphi 2010 compatibility
   private
     fItems: TArray<T>;
     fCount: Integer;
@@ -500,14 +501,10 @@ begin
 end;
 
 procedure TList<T>.CopyTo(var values: TArray<T>; index: Integer);
-var
-  i: Integer;
 begin
   Guard.CheckRange(Length(values), index, fCount);
-  Guard.CheckRange(Length(fItems), 0, fCount);
 
-  for i := 0 to fCount - 1 do
-    values[i + index] := fItems[i];
+  fArrayManager.Move(fItems, TArrayOfT(values), 0, index, fCount);
 end;
 
 function TList<T>.ToArray: TArray<T>;
