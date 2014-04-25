@@ -41,14 +41,6 @@ uses
 type
   TEmptyEnumerable<T> = class(TEnumerableBase<T>);
 
-  TBuffer<T> = record
-  private
-    items: TArray<T>;
-    count: Integer;
-  public
-    constructor Create(const source: IEnumerable<T>);
-  end;
-
   TIteratorBase<T> = class(TEnumerableBase<T>, IEnumerator)
   protected
     function GetCurrentNonGeneric: TValue; virtual; abstract;
@@ -239,7 +231,7 @@ type
   TReversedIterator<T> = class(TIterator<T>)
   private
     fSource: IEnumerable<T>;
-    fBuffer: TBuffer<T>;
+    fBuffer: TArray<T>;
     fIndex: Integer;
   public
     constructor Create(const source: IEnumerable<T>);
@@ -635,7 +627,7 @@ type
     type
       TEnumerator = class(TEnumeratorBase<T>)
       private
-        fBuffer: TBuffer<T>;
+        fBuffer: TArray<T>;
         fMap: TIntegerDynArray;
         fIndex: Integer;
       protected
@@ -766,43 +758,6 @@ uses
   Classes,
   Spring.Collections.Sets,
   Spring.ResourceStrings;
-
-
-{$REGION 'TBuffer<T>'}
-
-constructor TBuffer<T>.Create(const source: IEnumerable<T>);
-var
-  item: T;
-  collection: ICollection<T>;
-begin
-  Guard.CheckNotNull(Assigned(source), 'source');
-
-  items := nil;
-  count := 0;
-  if Supports(source, ICollection<T>, collection) then
-  begin
-    count := collection.Count;
-    if count > 0 then
-    begin
-      SetLength(items, count);
-      collection.CopyTo(items, 0);
-    end;
-  end
-  else
-  begin
-    for item in source do
-    begin
-      if items = nil then
-        SetLength(items, 4)
-      else if Length(items) = count then
-        SetLength(items, count * 2);
-      items[count] := item;
-      Inc(count);
-    end;
-  end;
-end;
-
-{$ENDREGION}
 
 
 {$REGION 'TIteratorBase<T>' }
@@ -1418,16 +1373,16 @@ begin
 
   if fState = STATE_ENUMERATOR then
   begin
-    fBuffer := TBuffer<T>.Create(fSource);
-    fIndex := fBuffer.count - 1;
+    fBuffer := fSource.ToArray;
+    fIndex := Length(fBuffer) - 1;
     fState := STATE_RUNNING;
   end;
 
   if fState = STATE_RUNNING then
   begin
-    if (fIndex >= 0) and (fIndex <= fBuffer.count) then
+    if (fIndex >= 0) and (fIndex <= Length(fBuffer)) then
     begin
-      fCurrent := fBuffer.items[fIndex];
+      fCurrent := fBuffer[fIndex];
       Dec(fIndex);
       Result := True;
     end;
@@ -2667,19 +2622,19 @@ begin
   Guard.CheckNotNull(Assigned(sorter), 'sorter');
 
   inherited Create;
-  fBuffer := TBuffer<T>.Create(source);
-  fMap := sorter.Sort(fBuffer.items, fBuffer.count);
+  fBuffer := source.ToArray;
+  fMap := sorter.Sort(fBuffer, Length(fBuffer));
   fIndex := -1;
 end;
 
 function TOrderedEnumerable<T>.TEnumerator.GetCurrent: T;
 begin
-  Result := fBuffer.items[fMap[fIndex]];
+  Result := fBuffer[fMap[fIndex]];
 end;
 
 function TOrderedEnumerable<T>.TEnumerator.MoveNext: Boolean;
 begin
-  Result := fIndex < fBuffer.count - 1;
+  Result := fIndex < Length(fBuffer) - 1;
   if Result then
     Inc(fIndex);
 end;
