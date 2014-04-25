@@ -100,6 +100,7 @@ type
     procedure TestQueryInterface;
     procedure TestIssue67;
     procedure TestCopyTo;
+    procedure TestArrayAccess;
   end;
 
   TTestEmptyStringIntegerDictionary = class(TTestCase)
@@ -468,6 +469,23 @@ procedure TTestIntegerList.TearDown;
 begin
   inherited;
   SUT := nil;
+end;
+
+procedure TTestIntegerList.TestArrayAccess;
+var
+  arrayAccess: IArrayAccess<Integer>;
+  values: TArray<Integer>;
+begin
+  SimpleFillList;
+  arrayAccess := SUT as IArrayAccess<Integer>;
+  values := arrayAccess.Items;
+  CheckEquals(4, Length(values));
+  CheckEquals(3, arrayAccess.Count);
+  CheckEquals(SUT[0], values[0]);
+  CheckEquals(SUT[1], values[1]);
+  CheckEquals(SUT[2], values[2]);
+  values[1] := 4;
+  CheckEquals(SUT[1], values[1]);
 end;
 
 procedure TTestIntegerList.TestCopyTo;

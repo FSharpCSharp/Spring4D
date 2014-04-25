@@ -59,7 +59,7 @@ type
   ///	<typeparam name="T">
   ///	  The type of elements in the list.
   ///	</typeparam>
-  TList<T> = class(TListBase<T>)
+  TList<T> = class(TListBase<T>, IArrayAccess<T>)
   private
     type
       TEnumerator = class(TEnumeratorBase<T>)
@@ -89,6 +89,7 @@ type
     function GetCapacity: Integer;
     function GetCount: Integer; override;
     function GetItem(index: Integer): T; override;
+    function GetItems: TArray<T>;
     procedure SetCapacity(value: Integer);
     procedure SetItem(index: Integer; const value: T); override;
   {$ENDREGION}
@@ -284,6 +285,11 @@ begin
   Guard.CheckRange((index >= 0) and (index < fCount), 'index');
 
   Result := fItems[index];
+end;
+
+function TList<T>.GetItems: TArray<T>;
+begin
+  Result := fItems;
 end;
 
 {$IFOPT Q+}{$DEFINE OVERFLOW_CHECKS_ON}{$Q-}{$ENDIF}

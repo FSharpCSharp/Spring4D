@@ -2036,6 +2036,18 @@ type
     property OwnsObjects: Boolean read GetOwnsObjects write SetOwnsObjects;
   end;
 
+  /// <summary>
+  ///   Provides direct access to an array that is used for internal storage.
+  /// </summary>
+  IArrayAccess<T> = interface(ICountable)
+    ['{0C6C22BE-DBFD-4EBE-9E32-6E4BBA8AC382}']
+  {$REGION 'Property Accessors'}
+     function GetItems: TArray<T>;
+  {$ENDREGION}
+
+    property Items: TArray<T> read GetItems;
+  end;
+
   ///	<summary>
   ///	  Defines the ownership style of an instance.
   ///	</summary>
