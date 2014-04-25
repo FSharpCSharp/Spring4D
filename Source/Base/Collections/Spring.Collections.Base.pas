@@ -937,15 +937,32 @@ end;
 
 function TEnumerableBase<T>.ToArray: TArray<T>;
 var
-  enumerator: IEnumerator<T>;
-  i: Integer;
+  collection: ICollection<T>;
+  count: Integer;
+  item: T;
 begin
-  SetLength(Result, Count);
-  enumerator := GetEnumerator;
-  for i := 0 to Length(Result) - 1 do
+  if Supports(Self, ICollection<T>, collection) then
   begin
-    enumerator.MoveNext;
-    Result[i] := enumerator.Current;
+    count := collection.Count;
+    if count > 0 then
+    begin
+      SetLength(Result, count);
+      collection.CopyTo(Result, 0);
+    end;
+  end
+  else
+  begin
+    count := 0;
+    for item in Self do
+    begin
+      if Result = nil then
+        SetLength(Result, 4)
+      else if Length(Result) = count then
+        SetLength(Result, count * 2);
+      Result[count] := item;
+      Inc(count);
+    end;
+    SetLength(Result, count);
   end;
 end;
 
