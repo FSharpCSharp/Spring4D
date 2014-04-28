@@ -203,7 +203,7 @@ type
   ///	  The Add/Remove/Extract/Clear methods are abstract. IsReadOnly returns
   ///	  <c>False</c> by default.
   ///	</remarks>
-  TCollectionBase<T> = class abstract(TEnumerableBase<T>, ICollection<T>)
+  TCollectionBase<T> = class abstract(TEnumerableBase<T>, ICollection<T>, IReadOnlyCollection<T>)
   protected
   {$REGION 'Property Accessors'}
     function GetIsReadOnly: Boolean; virtual;
