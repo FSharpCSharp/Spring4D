@@ -670,7 +670,7 @@ var
   arguments: TArray<TValue>;
 begin
   Guard.CheckNotNull(Inject, 'Inject');
-  arguments := Inject.Model.GetInjectionArguments(Inject);
+  arguments := Inject.Arguments;
   Result := CanResolveDependencies(Inject, arguments);
 end;
 
@@ -690,7 +690,7 @@ var
   dependencyArguments: TArray<TValue>;
 begin
   Guard.CheckNotNull(Inject, 'Inject');
-  dependencyArguments := Inject.Model.GetInjectionArguments(Inject);
+  dependencyArguments := Inject.Arguments;
   Result := ResolveDependencies(Inject, dependencyArguments);
 end;
 

@@ -159,17 +159,18 @@ type
     function GetTarget: TRttiMember;
     function GetTargetName: string;
     function GetHasTarget: Boolean;
-    function GetModel: TComponentModel;
+    function GetArguments: TArray<TValue>;
   {$ENDREGION}
 
     procedure Initialize(target: TRttiMember);
     procedure Inject(const instance: TValue; const arguments: array of TValue);
     function GetDependencies: TArray<TRttiType>;
+    procedure UpdateArguments(const arguments: array of TValue);
     property DependencyCount: Integer read GetDependencyCount;
     property Target: TRttiMember read GetTarget;
     property TargetName: string read GetTargetName;
     property HasTarget: Boolean read GetHasTarget;
-    property Model: TComponentModel read GetModel;
+    property Arguments: TArray<TValue> read GetArguments;
   end;
 
   IInjectionList = IList<IInjection>;
@@ -179,10 +180,10 @@ type
   ///	</summary>
   IInjectionFactory = interface
     ['{EA75E648-C3EB-4CE7-912A-AB82B12BBD87}']
-    function CreateConstructorInjection(const model: TComponentModel): IInjection;
-    function CreateMethodInjection(const model: TComponentModel; const methodName: string): IInjection;
-    function CreatePropertyInjection(const model: TComponentModel; const propertyName: string): IInjection;
-    function CreateFieldInjection(const model: TComponentModel; const fieldName: string): IInjection;
+    function CreateConstructorInjection: IInjection;
+    function CreateMethodInjection(const methodName: string): IInjection;
+    function CreatePropertyInjection(const propertyName: string): IInjection;
+    function CreateFieldInjection(const fieldName: string): IInjection;
   end;
 
   TResolveEvent = procedure(Sender: TObject; var instance: TValue) of object;
@@ -252,7 +253,6 @@ type
     fMethodInjections: IInjectionList;
     fPropertyInjections: IInjectionList;
     fFieldInjections: IInjectionList;
-    fInjectionArguments: IDictionary<IInjection, TArray<TValue>>;
     function GetComponentTypeInfo: PTypeInfo;
     function GetInjectionFactory: IInjectionFactory;
   protected
@@ -261,8 +261,6 @@ type
     function GetMethodInjections: IInjectionList;
     function GetPropertyInjections: IInjectionList;
     function GetFieldInjections: IInjectionList;
-    function GetInjections: IDictionary<IInjection, TArray<TValue>>;
-    property Injections: IDictionary<IInjection, TArray<TValue>> read GetInjections;
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
   public
     constructor Create(const context: IContainerContext; componentType: TRttiType);
@@ -289,8 +287,6 @@ type
     function HasService(serviceType: PTypeInfo): Boolean;
     function GetServiceName(serviceType: PTypeInfo): string;
     function GetServiceType(const name: string): PTypeInfo;
-    function GetInjectionArguments(const Inject: IInjection): TArray<TValue>;
-    procedure UpdateInjectionArguments(const Inject: IInjection; const arguments: array of TValue);
 
     property ComponentType: TRttiType read fComponentType;
     property ComponentTypeInfo: PTypeInfo read GetComponentTypeInfo;
@@ -392,7 +388,7 @@ begin
   method := ComponentType.Methods.FirstOrDefault(predicate);
   if not Assigned(method) then
     raise ERegistrationException.CreateRes(@SUnsatisfiedConstructorParameters);
-  Result := InjectionFactory.CreateConstructorInjection(Self);
+  Result := InjectionFactory.CreateConstructorInjection;
   Result.Initialize(method);
   ConstructorInjections.Add(Result);
 end;
@@ -408,7 +404,7 @@ begin
   injectionExists := MethodInjections.TryGetFirst(Result,
     TInjectionFilters.ContainsMember(method));
   if not injectionExists then
-    Result := InjectionFactory.CreateMethodInjection(Self, methodName);
+    Result := InjectionFactory.CreateMethodInjection(methodName);
   Result.Initialize(method);
   if not injectionExists then
     MethodInjections.Add(Result);
@@ -430,7 +426,7 @@ begin
   injectionExists := MethodInjections.TryGetFirst(Result,
     TInjectionFilters.ContainsMember(method));
   if not injectionExists then
-    Result := InjectionFactory.CreateMethodInjection(Self, methodName);
+    Result := InjectionFactory.CreateMethodInjection(methodName);
   Result.Initialize(method);
   if not injectionExists then
     MethodInjections.Add(Result);
@@ -447,7 +443,7 @@ begin
   injectionExists := PropertyInjections.TryGetFirst(Result,
     TInjectionFilters.ContainsMember(propertyMember));
   if not injectionExists then
-    Result := InjectionFactory.CreatePropertyInjection(Self, propertyName);
+    Result := InjectionFactory.CreatePropertyInjection(propertyName);
   Result.Initialize(propertyMember);
   if not injectionExists then
     PropertyInjections.Add(Result);
@@ -464,26 +460,19 @@ begin
   injectionExists := FieldInjections.TryGetFirst(Result,
     TInjectionFilters.ContainsMember(field));
   if not injectionExists then
-    Result := InjectionFactory.CreateFieldInjection(Self, fieldName);
+    Result := InjectionFactory.CreateFieldInjection(fieldName);
   Result.Initialize(field);
   if not injectionExists then
     FieldInjections.Add(Result);
-end;
-
-procedure TComponentModel.UpdateInjectionArguments(const Inject: IInjection;
-  const arguments: array of TValue);
-begin
-  Guard.CheckNotNull(Inject, 'Inject');
-  Injections.AddOrSetValue(Inject, TArray.CreateArray<TValue>(arguments));
 end;
 
 procedure TComponentModel.InjectConstructor(const arguments: array of TValue);
 var
   Inject: IInjection;
 begin
-  Inject := InjectionFactory.CreateConstructorInjection(Self);
+  Inject := InjectionFactory.CreateConstructorInjection;
   ConstructorInjections.Add(Inject);
-  UpdateInjectionArguments(Inject, arguments);
+  Inject.UpdateArguments(arguments);
 end;
 
 procedure TComponentModel.InjectMethod(const methodName: string;
@@ -491,9 +480,9 @@ procedure TComponentModel.InjectMethod(const methodName: string;
 var
   Inject: IInjection;
 begin
-  Inject := InjectionFactory.CreateMethodInjection(Self, methodName);
+  Inject := InjectionFactory.CreateMethodInjection(methodName);
   MethodInjections.Add(Inject);
-  UpdateInjectionArguments(Inject, arguments);
+  Inject.UpdateArguments(arguments);
 end;
 
 procedure TComponentModel.InjectProperty(const propertyName: string;
@@ -502,7 +491,7 @@ var
   Inject: IInjection;
 begin
   Inject := InjectProperty(propertyName);
-  UpdateInjectionArguments(Inject, value);
+  Inject.UpdateArguments(value);
 end;
 
 procedure TComponentModel.InjectField(const fieldName: string;
@@ -511,14 +500,7 @@ var
   Inject: IInjection;
 begin
   Inject := InjectField(fieldName);
-  UpdateInjectionArguments(Inject, value);
-end;
-
-function TComponentModel.GetInjectionArguments(
-  const Inject: IInjection): TArray<TValue>;
-begin
-  Guard.CheckNotNull(Inject, 'Inject');
-  Injections.TryGetValue(Inject, Result);
+  Inject.UpdateArguments(value);
 end;
 
 function TComponentModel.GetComponentTypeInfo: PTypeInfo;
@@ -587,13 +569,6 @@ begin
   Result := fFieldInjections;
 end;
 
-function TComponentModel.GetInjections: IDictionary<IInjection, TArray<TValue>>;
-begin
-  if not Assigned(fInjectionArguments) then
-    fInjectionArguments := TCollections.CreateDictionary<IInjection, TArray<TValue>>;
-  Result := fInjectionArguments;
-end;
-
 {$ENDREGION}
 
 
@@ -657,7 +632,7 @@ begin
   fContext := context;
   fModel := model;
   fInjection := injection;
-  fArguments := model.GetInjectionArguments(fInjection);
+  fArguments := fInjection.Arguments;
 end;
 
 function TInjectableMethodFilter.IsSatisfiedBy(

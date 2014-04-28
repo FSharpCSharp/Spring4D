@@ -2057,6 +2057,7 @@ type
   );
 
   TDictionaryOwnerships = Generics.Collections.TDictionaryOwnerships;
+  TArray = Generics.Collections.TArray;
 
   ///	<summary>
   ///	  Provides static methods to create an instance of various interfaced

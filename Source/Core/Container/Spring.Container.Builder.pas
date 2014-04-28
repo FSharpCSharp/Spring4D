@@ -235,7 +235,7 @@ begin
     not TMethodFilters.HasParameterFlags([pfVar, pfOut]);
   for method in model.ComponentType.Methods.Where(predicate) do
   begin
-    injection := context.InjectionFactory.CreateConstructorInjection(model);
+    injection := context.InjectionFactory.CreateConstructorInjection;
     injection.Initialize(method);
     parameters := method.GetParameters;
     SetLength(arguments, Length(parameters));
@@ -251,7 +251,7 @@ begin
         arguments[i] := TValue.Empty;
       end;
     end;
-    model.UpdateInjectionArguments(injection, arguments);
+    injection.UpdateArguments(arguments);
     model.ConstructorInjections.Add(injection);
   end;
 end;
@@ -284,7 +284,7 @@ begin
       TInjectionFilters.ContainsMember(method));
     if not injectionExists then
     begin
-      injection := context.InjectionFactory.CreateMethodInjection(model, method.Name);
+      injection := context.InjectionFactory.CreateMethodInjection(method.Name);
     end;
     injection.Initialize(method);
     parameters := method.GetParameters;
@@ -301,7 +301,7 @@ begin
         arguments[i] := TValue.Empty;
       end;
     end;
-    model.UpdateInjectionArguments(injection, arguments);
+    injection.UpdateArguments(arguments);
     if not injectionExists then
     begin
       model.MethodInjections.Add(injection);
@@ -331,13 +331,13 @@ begin
       TInjectionFilters.ContainsMember(propertyMember));
     if not injectionExists then
     begin
-      injection := context.InjectionFactory.CreatePropertyInjection(model, propertyMember.Name);
+      injection := context.InjectionFactory.CreatePropertyInjection(propertyMember.Name);
     end;
     injection.Initialize(propertyMember);
     if propertyMember.TryGetCustomAttribute<InjectAttribute>(attribute) and
       attribute.HasValue then
     begin
-      model.UpdateInjectionArguments(injection, [attribute.Value]);
+      injection.UpdateArguments([attribute.Value]);
     end;
     if not injectionExists then
     begin
@@ -367,12 +367,12 @@ begin
       TInjectionFilters.ContainsMember(field));
     if not injectionExists then
     begin
-      injection := context.InjectionFactory.CreateFieldInjection(model, field.Name);
+      injection := context.InjectionFactory.CreateFieldInjection(field.Name);
     end;
     injection.Initialize(field);
     if field.TryGetCustomAttribute<InjectAttribute>(attribute) and attribute.HasValue then
     begin
-      model.UpdateInjectionArguments(injection, [attribute.Value]);
+      injection.UpdateArguments([attribute.Value]);
     end;
     if not injectionExists then
     begin
@@ -487,13 +487,14 @@ begin
       context.ComponentRegistry.RegisterService(model, attribute.ServiceType, attribute.Name);
 
     services := model.ComponentType.GetInterfaces;
-    for service in services do
-      if Assigned(service.BaseType) and not model.HasService(service.Handle) then
-      begin
-        context.ComponentRegistry.RegisterService(model, service.Handle,
-          service.DefaultName + '@' + model.ComponentType.DefaultName);
-        context.ComponentRegistry.RegisterDefault(model, service.Handle);
-      end;
+    if Assigned(services) then
+      for service in services do
+        if Assigned(service.BaseType) and not model.HasService(service.Handle) then
+        begin
+          context.ComponentRegistry.RegisterService(model, service.Handle,
+            service.DefaultName + '@' + model.ComponentType.DefaultName);
+          context.ComponentRegistry.RegisterDefault(model, service.Handle);
+        end;
     if TType.IsDelegate(model.ComponentTypeInfo)
       and not model.HasService(model.ComponentType.Handle) then
       context.ComponentRegistry.RegisterService(model, model.ComponentType.Handle);
