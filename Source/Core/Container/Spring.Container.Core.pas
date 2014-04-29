@@ -164,8 +164,8 @@ type
   {$ENDREGION}
 
     procedure Initialize(target: TRttiMember);
+    procedure InitializeArguments(const arguments: array of TValue);
     procedure Inject(const instance: TValue; const arguments: array of TValue);
-    procedure UpdateArguments(const arguments: array of TValue);
 
     property DependencyCount: Integer read GetDependencyCount;
     property Target: TRttiMember read GetTarget;
@@ -467,7 +467,7 @@ var
 begin
   Inject := InjectionFactory.CreateConstructorInjection;
   ConstructorInjections.Add(Inject);
-  Inject.UpdateArguments(arguments);
+  Inject.InitializeArguments(arguments);
 end;
 
 procedure TComponentModel.InjectMethod(const methodName: string;
@@ -477,7 +477,7 @@ var
 begin
   Inject := InjectionFactory.CreateMethodInjection(methodName);
   MethodInjections.Add(Inject);
-  Inject.UpdateArguments(arguments);
+  Inject.InitializeArguments(arguments);
 end;
 
 procedure TComponentModel.InjectProperty(const propertyName: string;
@@ -486,7 +486,7 @@ var
   Inject: IInjection;
 begin
   Inject := InjectProperty(propertyName);
-  Inject.UpdateArguments(value);
+  Inject.InitializeArguments(value);
 end;
 
 procedure TComponentModel.InjectField(const fieldName: string;
@@ -495,7 +495,7 @@ var
   Inject: IInjection;
 begin
   Inject := InjectField(fieldName);
-  Inject.UpdateArguments(value);
+  Inject.InitializeArguments(value);
 end;
 
 function TComponentModel.GetComponentTypeInfo: PTypeInfo;

@@ -159,9 +159,7 @@ var
   model: TComponentModel;
 begin
   for model in fRegistry.FindAll do
-  begin
     Build(model);
-  end;
 end;
 
 {$ENDREGION}
@@ -187,7 +185,7 @@ procedure TLifetimeInspector.DoProcessModel(const context: IContainerContext;
 var
   attribute: LifetimeAttributeBase;
 begin
-  if model.LifetimeManager <> nil then
+  if Assigned(model.LifetimeManager) then
   begin
     model.LifetimeType := TLifetimeType.Custom;
     Exit;
@@ -206,9 +204,7 @@ begin
 {$WARN SYMBOL_EXPERIMENTAL ON}
     end
     else
-    begin
       model.LifetimeType := TLifetimeType.Transient;
-    end;
   end;
   model.LifetimeManager := context.CreateLifetimeManager(model);
 end;
@@ -243,15 +239,11 @@ begin
     begin
       parameter := parameters[i];
       if parameter.TryGetCustomAttribute<InjectAttribute>(attribute) and attribute.HasValue then
-      begin
-        arguments[i] := attribute.Value;
-      end
+        arguments[i] := attribute.Value
       else
-      begin
         arguments[i] := TValue.Empty;
-      end;
     end;
-    injection.UpdateArguments(arguments);
+    injection.InitializeArguments(arguments);
     model.ConstructorInjections.Add(injection);
   end;
 end;
@@ -283,9 +275,7 @@ begin
     injectionExists := model.MethodInjections.TryGetFirst(injection,
       TInjectionFilters.ContainsMember(method));
     if not injectionExists then
-    begin
       injection := context.InjectionFactory.CreateMethodInjection(method.Name);
-    end;
     injection.Initialize(method);
     parameters := method.GetParameters;
     SetLength(arguments, Length(parameters));
@@ -293,19 +283,13 @@ begin
     begin
       parameter := parameters[i];
       if parameter.TryGetCustomAttribute<InjectAttribute>(attribute) and attribute.HasValue then
-      begin
-        arguments[i] := attribute.Value;
-      end
+        arguments[i] := attribute.Value
       else
-      begin
         arguments[i] := TValue.Empty;
-      end;
     end;
-    injection.UpdateArguments(arguments);
+    injection.InitializeArguments(arguments);
     if not injectionExists then
-    begin
       model.MethodInjections.Add(injection);
-    end;
   end;
 end;
 
@@ -330,19 +314,13 @@ begin
     injectionExists := model.PropertyInjections.TryGetFirst(injection,
       TInjectionFilters.ContainsMember(propertyMember));
     if not injectionExists then
-    begin
       injection := context.InjectionFactory.CreatePropertyInjection(propertyMember.Name);
-    end;
     injection.Initialize(propertyMember);
-    if propertyMember.TryGetCustomAttribute<InjectAttribute>(attribute) and
-      attribute.HasValue then
-    begin
-      injection.UpdateArguments([attribute.Value]);
-    end;
+    if propertyMember.TryGetCustomAttribute<InjectAttribute>(attribute)
+      and attribute.HasValue then
+      injection.InitializeArguments([attribute.Value]);
     if not injectionExists then
-    begin
       model.PropertyInjections.Add(injection);
-    end;
   end;
 end;
 
@@ -366,18 +344,12 @@ begin
     injectionExists := model.FieldInjections.TryGetFirst(injection,
       TInjectionFilters.ContainsMember(field));
     if not injectionExists then
-    begin
       injection := context.InjectionFactory.CreateFieldInjection(field.Name);
-    end;
     injection.Initialize(field);
     if field.TryGetCustomAttribute<InjectAttribute>(attribute) and attribute.HasValue then
-    begin
-      injection.UpdateArguments([attribute.Value]);
-    end;
+      injection.InitializeArguments([attribute.Value]);
     if not injectionExists then
-    begin
       model.FieldInjections.Add(injection);
-    end;
   end;
 end;
 
@@ -389,17 +361,11 @@ end;
 procedure TComponentActivatorInspector.DoProcessModel(
   const context: IContainerContext; const model: TComponentModel);
 begin
-  if model.ComponentActivator = nil then
-  begin
+  if not Assigned(model.ComponentActivator) then
     if not Assigned(model.ActivatorDelegate) then
-    begin
-      model.ComponentActivator := TReflectionComponentActivator.Create(model);
-    end
+      model.ComponentActivator := TReflectionComponentActivator.Create(model)
     else
-    begin
       model.ComponentActivator := TDelegateComponentActivator.Create(model);
-    end;
-  end;
 end;
 
 {$ENDREGION}
@@ -435,10 +401,8 @@ begin
     filter := TMethodFilters.IsConstructor and
       TInjectionFilters.IsInjectableMethod(context, model, injection);
     method := model.ComponentType.Methods.FirstOrDefault(filter);
-    if method = nil then
-    begin
+    if not Assigned(method) then
       raise EBuilderException.CreateRes(@SUnresovableInjection);
-    end;
     injection.Initialize(method);
   end;
 end;
@@ -456,10 +420,8 @@ begin
       TMethodFilters.IsNamed(injection.TargetName) and
       TInjectionFilters.IsInjectableMethod(context, model, injection);
     method := model.ComponentType.Methods.FirstOrDefault(filter);
-    if method = nil then
-    begin
+    if not Assigned(method) then
       raise EBuilderException.CreateRes(@SUnresovableInjection);
-    end;
     injection.Initialize(method);
   end;
 end;
