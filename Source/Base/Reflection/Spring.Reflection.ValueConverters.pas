@@ -786,7 +786,7 @@ end;
 function TValueConverter.ConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo): TValue;
 begin
-  Result := ConvertTo(value, targetTypeInfo, TValue.Empty);
+  Result := ConvertTo(value, targetTypeInfo, nil);
 end;
 
 function TValueConverter.ConvertTo(const value: TValue;
@@ -809,7 +809,7 @@ end;
 function TValueConverter.TryConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; out targetValue: TValue): Boolean;
 begin
-  Result := TryConvertTo(value, targetTypeInfo, targetValue, TValue.Empty);
+  Result := TryConvertTo(value, targetTypeInfo, targetValue, nil);
 end;
 
 function TValueConverter.TryConvertTo(const value: TValue;

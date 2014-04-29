@@ -326,7 +326,7 @@ begin
       TValue.MakeWithoutCopy(@localInterface, typeInfo, value);
     end;
   else
-    value := TValue.Empty;
+    value := nil;
   end;
 
   DoResolve(value);
@@ -597,7 +597,7 @@ begin
   else if Length(arguments) = 0 then
   begin
     for dependency in dependencies do
-      if not CanResolveDependency(dependency, TValue.Empty) then
+      if not CanResolveDependency(dependency, nil) then
         Exit(False);
   end
   else
@@ -628,7 +628,7 @@ begin
     for i := 0 to High(dependencies) do
     begin
       dependency := dependencies[i];
-      Result[i] := ResolveDependency(dependency, TValue.Empty);
+      Result[i] := ResolveDependency(dependency, nil);
     end;
   end;
 end;
@@ -919,7 +919,7 @@ begin
   else if Length(arguments) = 0 then
   begin
     for dependency in dependencies do
-      if not CanResolveDependency(dependency, TValue.Empty) then
+      if not CanResolveDependency(dependency, nil) then
         Exit(False);
   end
   else
@@ -958,7 +958,7 @@ begin
     for i := 0 to High(dependencies) do
     begin
       dependency := dependencies[i];
-      Result[i] := ResolveDependency(dependency, TValue.Empty);
+      Result[i] := ResolveDependency(dependency, nil);
     end;
   end;
 end;

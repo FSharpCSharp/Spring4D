@@ -379,7 +379,7 @@ end;
 constructor InjectAttribute.Create;
 begin
   inherited Create;
-  fValue := TValue.Empty;
+  fValue := nil;
 end;
 
 constructor InjectAttribute.Create(const value: string);

@@ -29,7 +29,6 @@ unit Spring.Container.LifetimeManager;
 interface
 
 uses
-  Classes,
   SysUtils,
   Spring,
   Spring.Collections,
@@ -94,7 +93,7 @@ type
 implementation
 
 uses
-  Rtti,
+  Classes,
   TypInfo,
   Spring.Container.Common;
 
@@ -178,11 +177,7 @@ end;
 
 destructor TSingletonLifetimeManager.Destroy;
 begin
-  if Assigned(fInstance) then
-  begin
-    DoBeforeDestruction(fInstance);
-    fInstance:=nil;
-  end;
+  ReleaseInstance(nil);
   inherited Destroy;
 end;
 
@@ -202,6 +197,11 @@ end;
 
 procedure TSingletonLifetimeManager.ReleaseInstance(const instance: TValue);
 begin
+  if Assigned(fInstance) then
+  begin
+    DoBeforeDestruction(fInstance);
+    fInstance := nil;
+  end;
 end;
 
 {$ENDREGION}

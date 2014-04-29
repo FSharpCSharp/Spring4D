@@ -791,7 +791,7 @@ begin
   end
   else
   begin
-    Result := TValue.Empty;
+    Result := nil;
   end;
 end;
 
@@ -809,7 +809,7 @@ begin
   end
   else
   begin
-    Result := TValue.Empty;
+    Result := nil;
   end;
 end;
 
@@ -828,7 +828,7 @@ begin
       Exit;
     end;
   end;
-  Result := TValue.Empty;
+  Result := nil;
 end;
 
 {$ENDREGION}

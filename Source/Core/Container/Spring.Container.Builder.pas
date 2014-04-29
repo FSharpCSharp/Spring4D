@@ -29,7 +29,6 @@ unit Spring.Container.Builder;
 interface
 
 uses
-  Rtti,
   Spring,
   Spring.Collections,
   Spring.Container.Core;
@@ -105,6 +104,7 @@ type
 implementation
 
 uses
+  Rtti,
   TypInfo,
   Spring.Container.Common,
   Spring.Container.ComponentActivator,
@@ -241,7 +241,7 @@ begin
       if parameter.TryGetCustomAttribute<InjectAttribute>(attribute) and attribute.HasValue then
         arguments[i] := attribute.Value
       else
-        arguments[i] := TValue.Empty;
+        arguments[i] := nil;
     end;
     injection.InitializeArguments(arguments);
     model.ConstructorInjections.Add(injection);
@@ -285,7 +285,7 @@ begin
       if parameter.TryGetCustomAttribute<InjectAttribute>(attribute) and attribute.HasValue then
         arguments[i] := attribute.Value
       else
-        arguments[i] := TValue.Empty;
+        arguments[i] := nil;
     end;
     injection.InitializeArguments(arguments);
     if not injectionExists then

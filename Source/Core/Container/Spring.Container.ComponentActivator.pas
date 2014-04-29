@@ -130,7 +130,7 @@ begin
 {$IFNDEF AUTOREFCOUNT}
       Result.AsObject.Free;
 {$ENDIF}
-      Result := TValue.Empty;
+      Result := nil;
     end;
     raise;
   end;
@@ -187,7 +187,7 @@ begin
 {$IFNDEF AUTOREFCOUNT}
       Result.AsObject.Free;
 {$ENDIF}
-      Result := TValue.Empty;
+      Result := nil;
     end;
     raise;
   end;
