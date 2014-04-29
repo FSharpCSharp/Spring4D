@@ -116,7 +116,8 @@ begin
     end;
   end;
   Result := winner;
-  if Assigned(Result) and not resolver.CanResolveDependencies(Result) then
+  if Assigned(Result) and not resolver.CanResolveDependencies(
+    Result.Dependencies, Result.Arguments, Result.Target) then
     raise EResolveException.CreateRes(@SUnsatisfiedConstructorParameters);
 end;
 

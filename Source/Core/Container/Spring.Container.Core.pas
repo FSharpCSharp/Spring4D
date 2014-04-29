@@ -160,17 +160,19 @@ type
     function GetTargetName: string;
     function GetHasTarget: Boolean;
     function GetArguments: TArray<TValue>;
+    function GetDependencies: TArray<TRttiType>;
   {$ENDREGION}
 
     procedure Initialize(target: TRttiMember);
     procedure Inject(const instance: TValue; const arguments: array of TValue);
-    function GetDependencies: TArray<TRttiType>;
     procedure UpdateArguments(const arguments: array of TValue);
+
     property DependencyCount: Integer read GetDependencyCount;
     property Target: TRttiMember read GetTarget;
     property TargetName: string read GetTargetName;
     property HasTarget: Boolean read GetHasTarget;
     property Arguments: TArray<TValue> read GetArguments;
+    property Dependencies: TArray<TRttiType> read GetDependencies;
   end;
 
   IInjectionList = IList<IInjection>;
@@ -199,13 +201,10 @@ type
     function CanResolveDependency(const dependency: TRttiType; const argument: TValue): Boolean;
     function ResolveDependency(const dependency: TRttiType; const argument: TValue): TValue;
 
-    function CanResolveDependencies(const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean; overload;
-    function ResolveDependencies(const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): TArray<TValue>; overload;
-
-    function CanResolveDependencies(const Inject: IInjection): Boolean; overload;
-    function CanResolveDependencies(const Inject: IInjection; const arguments: TArray<TValue>): Boolean; overload;
-    function ResolveDependencies(const Inject: IInjection): TArray<TValue>; overload;
-    function ResolveDependencies(const Inject: IInjection; const arguments: TArray<TValue>): TArray<TValue>; overload;
+    function CanResolveDependencies(const dependencies: TArray<TRttiType>;
+      const arguments: TArray<TValue>; const target: TRttiMember): Boolean;
+    function ResolveDependencies(const dependencies: TArray<TRttiType>;
+      const arguments: TArray<TValue>; const target: TRttiMember): TArray<TValue>;
   end;
 
   ///	<summary>
@@ -642,7 +641,8 @@ begin
   SetLength(dependencies, Length(parameters));
   for i := 0 to High(dependencies) do
     dependencies[i] := parameters[i].ParamType;
-  Result := fContext.DependencyResolver.CanResolveDependencies(dependencies, fArguments);
+  Result := fContext.DependencyResolver.CanResolveDependencies(
+    dependencies, fArguments, method);
 end;
 
 {$ENDREGION}

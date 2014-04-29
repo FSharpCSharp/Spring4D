@@ -47,6 +47,7 @@ type
     function GetHasTarget: Boolean;
     function GetTargetName: string;
     function GetArguments: TArray<TValue>;
+    function GetDependencies: TArray<TRttiType>;
   protected
     procedure Validate(target: TRttiMember); virtual;
     procedure DoInject(const instance: TValue; const arguments: array of TValue); virtual; abstract;
@@ -56,11 +57,13 @@ type
     constructor Create(const targetName: string = '');
     procedure Initialize(target: TRttiMember); virtual;
     procedure Inject(const instance: TValue; const arguments: array of TValue);
-    function GetDependencies: TArray<TRttiType>;
+
+    property DependencyCount: Integer read GetDependencyCount;
     property Target: TRttiMember read GetTarget;
     property TargetName: string read GetTargetName;
     property HasTarget: Boolean read GetHasTarget;
-    property DependencyCount: Integer read GetDependencyCount;
+    property Arguments: TArray<TValue> read GetArguments;
+    property Dependencies: TArray<TRttiType> read GetDependencies;
   end;
 
   TConstructorInjection = class(TInjectionBase)

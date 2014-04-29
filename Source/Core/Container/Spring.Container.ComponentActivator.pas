@@ -92,7 +92,8 @@ var
 begin
   for injection in injections do
   begin
-    arguments := resolver.ResolveDependencies(injection);
+    arguments := resolver.ResolveDependencies(
+      injection.Dependencies, injection.Arguments, injection.Target);
     injection.Inject(instance, arguments);
   end;
 end;
@@ -111,12 +112,14 @@ begin
   constructorInjection := GetEligibleConstructor(fModel, resolver);
   if constructorInjection = nil then
     raise EActivatorException.CreateRes(@SUnsatisfiedConstructor);
-  constructorArguments := resolver.ResolveDependencies(constructorInjection);
+  constructorArguments := resolver.ResolveDependencies(
+    constructorInjection.Dependencies,
+    constructorInjection.Arguments,
+    constructorInjection.Target);
   Result := TActivator.CreateInstance(
     fModel.ComponentType.AsInstance,
     constructorInjection.Target.AsMethod,
-    constructorArguments
-  );
+    constructorArguments);
   try
     ExecuteInjections(Result, fModel.FieldInjections, resolver);
     ExecuteInjections(Result, fModel.PropertyInjections, resolver);
@@ -150,7 +153,8 @@ begin
       winner := candidate;
       Break;
     end;
-    if resolver.CanResolveDependencies(candidate) then
+    if resolver.CanResolveDependencies(
+      candidate.Dependencies, candidate.Arguments, candidate.Target) then
     begin
       if candidate.DependencyCount > maxCount then
       begin
