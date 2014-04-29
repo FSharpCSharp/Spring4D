@@ -196,14 +196,10 @@ type
 
   IDependencyResolver = interface(IResolver)
     ['{15ADEA1D-7C3F-48D5-8E85-84B4332AFF5F}']
-    function CanResolveDependency(const dependency: TRttiType): Boolean; overload;
-    function CanResolveDependency(const dependency: TRttiType; const argument: TValue): Boolean; overload;
-    function ResolveDependency(const dependency: TRttiType): TValue; overload;
-    function ResolveDependency(const dependency: TRttiType; const argument: TValue): TValue; overload;
+    function CanResolveDependency(const dependency: TRttiType; const argument: TValue): Boolean;
+    function ResolveDependency(const dependency: TRttiType; const argument: TValue): TValue;
 
-    function CanResolveDependencies(const dependencies: TArray<TRttiType>): Boolean; overload;
     function CanResolveDependencies(const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean; overload;
-    function ResolveDependencies(const dependencies: TArray<TRttiType>): TArray<TValue>; overload;
     function ResolveDependencies(const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): TArray<TValue>; overload;
 
     function CanResolveDependencies(const Inject: IInjection): Boolean; overload;

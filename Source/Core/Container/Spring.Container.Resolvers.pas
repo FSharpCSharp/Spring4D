@@ -55,7 +55,7 @@ type
     property OnResolve: IEvent<TResolveEvent> read GetOnResolve;
   end;
 
-  TDependencyResolver = class(TResolver, IDependencyResolver, IInterface)
+  TDependencyResolver = class(TResolver, IDependencyResolver)
   private
     fLock: TCriticalSection;
     fDependencies: IList<TComponentModel>;
@@ -66,17 +66,13 @@ type
     constructor Create(const context: IContainerContext; const registry: IComponentRegistry);
     destructor Destroy; override;
 
-    function CanResolveDependency(const dependency: TRttiType): Boolean; overload; virtual;
-    function CanResolveDependency(const dependency: TRttiType; const argument: TValue): Boolean; overload; virtual;
-    function ResolveDependency(const dependency: TRttiType): TValue; overload; virtual;
-    function ResolveDependency(const dependency: TRttiType; const argument: TValue): TValue; overload; virtual;
+    function CanResolveDependency(const dependency: TRttiType; const argument: TValue): Boolean; virtual;
+    function ResolveDependency(const dependency: TRttiType; const argument: TValue): TValue; virtual;
 
     function ResolveLazyDependency(const dependency: TRttiType; const argument: TValue): TValue;
     function ResolveManyDependency(const dependency: TRttiType; const argument: TValue): TValue;
 
-    function CanResolveDependencies(const dependencies: TArray<TRttiType>): Boolean; overload; virtual;
     function CanResolveDependencies(const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean; overload; virtual;
-    function ResolveDependencies(const dependencies: TArray<TRttiType>): TArray<TValue>; overload; virtual;
     function ResolveDependencies(const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): TArray<TValue>; overload; virtual;
 
     function CanResolveDependencies(const Inject: IInjection): Boolean; overload; virtual;
@@ -85,7 +81,7 @@ type
     function ResolveDependencies(const Inject: IInjection; const arguments: TArray<TValue>): TArray<TValue>; overload; virtual;
   end;
 
-  TServiceResolver = class(TResolver, IServiceResolver, IInterface)
+  TServiceResolver = class(TResolver, IServiceResolver)
   protected
     function InternalResolve(const model: TComponentModel; serviceType: PTypeInfo;
       const resolver: IDependencyResolver): TValue;
@@ -407,12 +403,6 @@ begin
       @SCircularDependencyDetected, [model.ComponentType.Name]);
 end;
 
-function TDependencyResolver.CanResolveDependency(
-  const dependency: TRttiType): Boolean;
-begin
-  Result := CanResolveDependency(dependency, TValue.Empty);
-end;
-
 function TDependencyResolver.CanResolveDependency(const dependency: TRttiType;
   const argument: TValue): Boolean;
 var
@@ -448,11 +438,6 @@ begin
   end
   else
     Result := argument.IsEmpty or argument.IsType(dependency.Handle);
-end;
-
-function TDependencyResolver.ResolveDependency(const dependency: TRttiType): TValue;
-begin
-  Result := ResolveDependency(dependency, TValue.Empty);
 end;
 
 function TDependencyResolver.ResolveDependency(const dependency: TRttiType;
@@ -597,12 +582,6 @@ begin
 end;
 
 function TDependencyResolver.CanResolveDependencies(
-  const dependencies: TArray<TRttiType>): Boolean;
-begin
-  Result := CanResolveDependencies(dependencies, nil);
-end;
-
-function TDependencyResolver.CanResolveDependencies(
   const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>): Boolean;
 var
   dependency: TRttiType;
@@ -626,12 +605,6 @@ begin
   end
   else
     Exit(False);
-end;
-
-function TDependencyResolver.ResolveDependencies(
-  const dependencies: TArray<TRttiType>): TArray<TValue>;
-begin
-  Result := ResolveDependencies(dependencies, nil);
 end;
 
 function TDependencyResolver.ResolveDependencies(
