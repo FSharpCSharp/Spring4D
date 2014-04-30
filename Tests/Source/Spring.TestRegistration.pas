@@ -160,6 +160,9 @@ begin
 //  ]);
 
   RegisterTests('Spring.Core.Container', [
+{$IFDEF AUTOREFCOUNT}
+    TTestGlobalContainer.Suite,
+{$ENDIF}
     TTestEmptyContainer.Suite,
     TTestSimpleContainer.Suite,
     TTestDifferentServiceImplementations.Suite,

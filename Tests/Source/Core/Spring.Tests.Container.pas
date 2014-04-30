@@ -34,6 +34,7 @@ uses
   SysUtils,
   TestFramework,
   Spring,
+  Spring.Services,
   Spring.Container,
   Spring.Container.Common,
   // DO NOT CHANGE ORDER OF FOLLOWING UNITS !!!
@@ -48,6 +49,16 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   end;
+
+{$IFDEF AUTOREFCOUNT}
+  TTestGlobalContainer = class(TTestCase)
+  published
+    procedure TestGlobalContainerDirectUse;
+    procedure TestGlobalContainerAssignToVariable;
+    procedure TestServiceLocatorDirectUse;
+    procedure TestServiceLocatorAssignToVariable;
+  end;
+{$ENDIF}
 
   TTestEmptyContainer = class(TContainerTestCase)
   published
@@ -299,6 +310,9 @@ uses
   Spring.Container.Resolvers,
   Spring.TestUtils;
 
+type
+  TObjectAccess = class(TObject);
+
 
 {$REGION 'TContainerTestCase'}
 
@@ -321,6 +335,35 @@ end;
 
 {$ENDREGION}
 
+{$REGION 'TTestGlobalContainer'}
+{$IFDEF AUTOREFCOUNT}
+
+procedure TTestGlobalContainer.TestGlobalContainerAssignToVariable;
+var AContainer: TContainer;
+begin
+  AContainer := GlobalContainer;
+  CheckEquals(2, TObjectAccess(AContainer).FRefCount);
+end;
+
+procedure TTestGlobalContainer.TestGlobalContainerDirectUse;
+begin
+  CheckEquals(1, TObjectAccess(GlobalContainer).FRefCount);
+end;
+
+procedure TTestGlobalContainer.TestServiceLocatorAssignToVariable;
+var ALocator: TServiceLocator;
+begin
+  ALocator := ServiceLocator;
+  CheckEquals(2, TObjectAccess(ALocator).FRefCount);
+end;
+
+procedure TTestGlobalContainer.TestServiceLocatorDirectUse;
+begin
+  CheckEquals(1, TObjectAccess(ServiceLocator).FRefCount);
+end;
+
+{$ENDIF}
+{$ENDREGION}
 
 {$REGION 'TTestEmptyContainer'}
 
@@ -1761,6 +1804,5 @@ begin
 end;
 
 {$ENDREGION}
-
 
 end.
