@@ -462,7 +462,7 @@ begin
 {$IFNDEF AUTOREFCOUNT}
     fContainer.Release(service);
 {$ELSE}
-    service:=nil;
+    service := nil;
 {$ENDIF}
   end;
 end;

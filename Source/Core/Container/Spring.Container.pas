@@ -158,18 +158,11 @@ type
 
 procedure CleanupGlobalContainer;
 
-///<summary>
-///    Returns global instance of the container, calling this function in ARC
-///    environment will cause TContainer to increment the reference count for
-///    each call.
-///    Most functions will therefore decrement the reference count upon exiting,
-///    this may not be a problem for most functions but poses a problem for main
-///    function that (on mobile platofrms) may never exit thus making it
-///    impossible to release global container prior exit.
-///</summary>
-//TODO: It may be better to create a record that wraps the container in order to stop
-//ARC from incrementing/decrementing the count each time GlobalCOntainer is accessed
-function GlobalContainer: TContainer; inline;
+/// <summary>
+///   Returns global instance of the container.
+/// </summary>
+{$IFDEF AUTOREFCOUNT}[Result: Unsafe]{$ENDIF}
+function GlobalContainer: TContainer; {$IFNDEF AUTOREFCOUNT}inline;{$ENDIF}
 
 implementation
 
