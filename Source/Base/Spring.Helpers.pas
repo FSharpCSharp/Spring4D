@@ -22,32 +22,32 @@
 {                                                                           }
 {***************************************************************************}
 
-///	<summary>
-///	  Provides many easy to use class helpers &amp; record helpers that extend
-///	  some common classes in the VCL framework.
-///	</summary>
-///	<remarks>
-///	  <para>
-///	    Classes helpers and record helpers have been introduced since Delphi
-///	    2007. The initial purpose is to allow developers to extend a class
-///	    without change the original structure.
-///	  </para>
-///	  <note type="note">
-///	    A class helper type may not declare instance data, but class fields are
-///	    allowed.
-///	  </note>
-///	  <note type="warning">
-///	    Class helpers and record helpers are not intended to be a design tool
-///	    in Delphi. It is some kind of "patching" technology.
-///	  </note>
-///	  <para>
-///	    If you want to use these helpers, just uses the <b>Spring.Helpers</b>nam
-///	    espace in the target unit.
-///	  </para>
-///	</remarks>
-///	<example>
-///	  See examples in the <see cref="TGuidHelper" />.
-///	</example>
+/// <summary>
+///   Provides many easy to use class helpers &amp; record helpers that extend
+///   some common classes in the RTL.
+/// </summary>
+/// <remarks>
+///   <para>
+///     Classes helpers and record helpers have been introduced since Delphi
+///     2007. The initial purpose is to allow developers to extend a class
+///     without change the original structure.
+///   </para>
+///   <note type="note">
+///     A class helper type may not declare instance data, but class fields
+///     are allowed.
+///   </note>
+///   <note type="warning">
+///     Class helpers and record helpers are not intended to be a design tool
+///     in Delphi. It is some kind of "patching" technology.
+///   </note>
+///   <para>
+///     If you want to use these helpers, just uses the <b>Spring.Helpers</b>
+///     namespace in the target unit.
+///   </para>
+/// </remarks>
+/// <example>
+///   See examples in the <see cref="TGuidHelper" />.
+/// </example>
 unit Spring.Helpers;
 
 {$I Spring.inc}
@@ -56,7 +56,6 @@ interface
 
 uses
   Classes,
-  Generics.Collections,
   Rtti,
   SysUtils,
   Spring,
@@ -64,96 +63,95 @@ uses
   Spring.Reflection;
 
 type
-  ///	<summary>
-  ///	  Represents a record helper for the <c>System.TGuid</c> structure to
-  ///	  make it easy to use.
-  ///	</summary>
-  ///	<remarks>
-  ///	  <note type="tip">
-  ///	    You can use the equal ("=") or not equal ("&lt;&gt;") operator
-  ///	    loading in latest Delphi XE.
-  ///	  </note>
-  ///	</remarks>
-  ///	<example>
-  ///	  The following code demonstrates how to create a new guid and use it in
-  ///	  OO-style:
-  ///	  <code lang="Delphi">
-  ///	procedure TestGuidHelper;
-  ///	var
-  ///	  guid: TGuid;
-  ///	begin
-  ///	  // generates a new guid.
-  ///	  guid := TGuid.NewGuid;
-  ///	  // this guid must not be empty.
-  ///	  Assert(not guid.IsEmpty);
-  ///	  // print the string representation
-  ///	  Writeln(guid.ToString);
-  ///	  // print the quoted string
-  ///	  Writeln(guid.ToQuotedString);
-  ///	  // This guid must equal to itself.
-  ///	  Assert(guid.Equals(guid));
-  ///	end;</code>
-  ///	</example>
+  /// <summary>
+  ///   Represents a record helper for the <c>System.TGuid</c> structure to
+  ///   make it easy to use.
+  /// </summary>
+  /// <remarks>
+  ///   <note type="tip">
+  ///     You can use the equal ("=") or not equal ("&lt;&gt;") operator
+  ///     loading in latest Delphi XE.
+  ///   </note>
+  /// </remarks>
+  /// <example>
+  ///   The following code demonstrates how to create a new guid and use it in
+  ///   OO-style:
+  ///   <code lang="Delphi">procedure TestGuidHelper;
+  /// var
+  ///   guid: TGuid;
+  /// begin
+  ///   // generates a new guid.
+  ///   guid := TGuid.NewGuid;
+  ///   // this guid must not be empty.
+  ///   Assert(not guid.IsEmpty);
+  ///   // print the string representation
+  ///   Writeln(guid.ToString);
+  ///   // print the quoted string
+  ///   Writeln(guid.ToQuotedString);
+  ///   // This guid must equal to itself.
+  ///   Assert(guid.Equals(guid));
+  /// end;</code>
+  /// </example>
   TGuidHelper = record helper for TGuid
   private
     class function GetEmpty: TGuid; static;
     function GetIsEmpty: Boolean;
   public
-    ///	<summary>
-    ///	  Creates a guid structure from the specified guid string.
-    ///	</summary>
-    ///	<param name="guidString">
-    ///	  the guid string.
-    ///	</param>
+    /// <summary>
+    ///   Creates a guid structure from the specified guid string.
+    /// </summary>
+    /// <param name="guidString">
+    ///   the guid string.
+    /// </param>
     class function Create(const guidString: string): TGuid; overload; static;
     class function Create(const bytes: TBytes): TGuid; overload; static;
     class function Create(a: Integer; b: SmallInt; c: SmallInt; const d: TBytes): TGuid; overload; static;
     class function Create(a: Integer; b: SmallInt; c: SmallInt; d, e, f, g, h, i, j, k: Byte): TGuid; overload; static;
     class function Create(a: Cardinal; b: Word; c: Word; d, e, f, g, h, i, j, k: Byte): TGuid; overload; static;
 
-    ///	<summary>
-    ///	  Generates a new <c>TGuid</c> instance.
-    ///	</summary>
+    /// <summary>
+    ///   Generates a new <c>TGuid</c> instance.
+    /// </summary>
     class function NewGuid: TGuid; static;
 
     function ToBytes: TBytes;
 
     function ToByteArray: TBytes;
 
-    ///	<summary>
-    ///	  Returns a string representation of the guid.
-    ///	</summary>
+    /// <summary>
+    ///   Returns a string representation of the guid.
+    /// </summary>
     function ToString: string;
 
-    ///	<summary>
-    ///	  Determines whether the guid equals to another TGuid structure.
-    ///	</summary>
+    /// <summary>
+    ///   Determines whether the guid equals to another TGuid structure.
+    /// </summary>
     function Equals(const guid: TGuid): Boolean;
 
-    ///	<summary>
-    ///	  Returns the quoted string representation of the guid.
-    ///	</summary>
+    /// <summary>
+    ///   Returns the quoted string representation of the guid.
+    /// </summary>
     function ToQuotedString: string;
 
-    ///	<summary>
-    ///	  Gets a value which indicates whether the guid is empty (all zero).
-    ///	</summary>
+    /// <summary>
+    ///   Gets a value which indicates whether the guid is empty (all zero).
+    /// </summary>
     property IsEmpty: Boolean read GetIsEmpty;
 
-    ///	<summary>
-    ///	  Gets the shared empty guid.
-    ///	</summary>
-    ///	<value>
-    ///	  The value of the empty guid is
-    ///	  <c>{00000000-0000-0000-0000-000000000000}</c>
-    ///	</value>
+    /// <summary>
+    ///   Gets the shared empty guid.
+    /// </summary>
+    /// <value>
+    ///   The value of the empty guid is <c>
+    ///   {00000000-0000-0000-0000-000000000000}</c>
+    /// </value>
     class property Empty: TGuid read GetEmpty;
   end;
 
-  ///	<summary>
-  ///	  Provides a static method to create a TMethod structure with an instance
-  ///	  and a methodaddress.
-  ///	</summary>
+  /// <summary>
+  ///   Provides a static method to create a TMethod structure with an instance
+  ///   and a methodaddress.
+  /// </summary>
   TMethodHelper = record helper for TMethod
   public
     class function Create(const instance, methodAddress: Pointer): TMethod; static;
@@ -161,43 +159,42 @@ type
 
   TStreamHelper = class helper for TStream
   public
-    ///	<summary>
-    ///	  Reads a value of a value type, which could be an Integer, record,
-    ///	  etc., from the stream.
-    ///	</summary>
-    ///	<remarks>
-    ///	  <note type="tip">
-    ///	    The generic argument could be omitted if the compiler can
-    ///	    automatically inreference the type.
-    ///	  </note>
-    ///	</remarks>
-    ///	<example>
-    ///	  <para>
-    ///	    The following example demonstrates how to use the generic
-    ///	    <c>ReadBuffer&lt;T&gt;</c> and <c>WriteBuffer&lt;T&gt;</c>methods.
-    ///	  </para>
-    ///	  <code lang="Delphi">
-    ///	procedure TestStreamHelper;
-    ///	var
-    ///	  stream: TStream;
-    ///	  value: Integer;
-    ///	begin
-    ///	  stream := TMemoryStream.Create;
-    ///	  try
-    ///	    value := 2;
-    ///	    stream.WriteBuffer(value);
-    ///	    stream.Position := 0;
-    ///	    stream.ReadBuffer&lt;Integer&gt;(value);
-    ///	  finally
-    ///	    stream.Free;
-    ///	  end;
-    ///	end;</code>
-    ///	</example>
+    /// <summary>
+    ///   Reads a value of a value type, which could be an Integer, record,
+    ///   etc., from the stream.
+    /// </summary>
+    /// <remarks>
+    ///   <note type="tip">
+    ///     The generic argument could be omitted if the compiler can
+    ///     automatically inreference the type.
+    ///   </note>
+    /// </remarks>
+    /// <example>
+    ///   <para>
+    ///     The following example demonstrates how to use the generic <c>
+    ///     ReadBuffer&lt;T&gt;</c> and <c>WriteBuffer&lt;T&gt;</c>methods.
+    ///   </para>
+    ///   <code lang="Delphi">procedure TestStreamHelper;
+    /// var
+    ///   stream: TStream;
+    ///   value: Integer;
+    /// begin
+    ///   stream := TMemoryStream.Create;
+    ///   try
+    ///     value := 2;
+    ///     stream.WriteBuffer(value);
+    ///     stream.Position := 0;
+    ///     stream.ReadBuffer&lt;Integer&gt;(value);
+    ///   finally
+    ///     stream.Free;
+    ///   end;
+    /// end;</code>
+    /// </example>
     procedure ReadBuffer<T: record>(var value: T); overload;
 
-    ///	<summary>
-    ///	  Writes a value of a value type to the stream.
-    ///	</summary>
+    /// <summary>
+    ///   Writes a value of a value type to the stream.
+    /// </summary>
     procedure WriteBuffer<T: record>(const value: T); overload;
   end;
 
@@ -205,133 +202,139 @@ type
   private
     function GetIsEmpty: Boolean;
   public
-    ///	<summary>
-    ///	  Add an array of string to the list.
-    ///	</summary>
+    /// <summary>
+    ///   Add an array of string to the list.
+    /// </summary>
     procedure AddStrings(const strings: array of string); overload;
 
-    ///	<summary>
-    ///	  Adds or updates a name-value pair.
-    ///	</summary>
-    ///	<remarks>
-    ///	  <note type="warning">
-    ///	    There is a <c>Values[name: string]</c>property in the TStrings
-    ///	    class, but the entry will be removed if the value is empty.
-    ///	  </note>
-    ///	</remarks>
+    /// <summary>
+    ///   Adds or updates a name-value pair.
+    /// </summary>
+    /// <remarks>
+    ///   <note type="warning">
+    ///     There is a <c>Values[name: string]</c>property in the TStrings
+    ///     class, but the entry will be removed if the value is empty.
+    ///   </note>
+    /// </remarks>
     procedure AddOrUpdate(const name, value: string);
 
 //    procedure Remove(const s: string);
 
-    ///	<summary>
-    ///	  Executes a procedure during batch updating of the list.
-    ///	</summary>
-    ///	<exception cref="Spring|EArgumentNullException">
-    ///	  Raised if the<paramref name="strings" /> is nil or the
-    ///	  <paramref name="proc" /> is not assigned.
-    ///	</exception>
-    procedure ExecuteUpdate(proc: TProc);
+    /// <summary>
+    ///   Executes a procedure during batch updating of the list.
+    /// </summary>
+    /// <exception cref="Spring|EArgumentNullException">
+    ///   Raised if the<paramref name="strings" /> is nil or the <paramref name="proc" />
+    ///    is not assigned.
+    /// </exception>
+    procedure ExecuteUpdate(const proc: TProc);
 
-    ///	<summary>
-    ///	  Extract all name entries and add them to the
-    ///	  <paramref name="strings" /> list.
-    ///	</summary>
-    ///	<exception cref="Spring|EArgumentNullException">
-    ///	  Raised if the <paramref name="strings" /> is nil.
-    ///	</exception>
-    ///	<seealso cref="ExtractValues(TStrings)">
-    ///	  ExtractValues
-    ///	</seealso>
-    procedure ExtractNames(strings: TStrings);
+    /// <summary>
+    ///   Extract all name entries and add them to the <paramref name="strings" />
+    ///    list.
+    /// </summary>
+    /// <exception cref="Spring|EArgumentNullException">
+    ///   Raised if the <paramref name="strings" /> is nil.
+    /// </exception>
+    /// <seealso cref="ExtractValues(TStrings)">
+    ///   ExtractValues
+    /// </seealso>
+    procedure ExtractNames(const strings: TStrings);
 
-    ///	<summary>
-    ///	  Extract all value entries and add them to the
-    ///	  <paramref name="strings" /> list.
-    ///	</summary>
-    ///	<exception cref="Spring|EArgumentNullException">
-    ///	  Raised if the <paramref name="strings" /> is nil.
-    ///	</exception>
-    ///	<seealso cref="ExtractNames(TStrings)" />
-    procedure ExtractValues(strings: TStrings);
+    /// <summary>
+    ///   Extract all value entries and add them to the <paramref name="strings" />
+    ///    list.
+    /// </summary>
+    /// <exception cref="Spring|EArgumentNullException">
+    ///   Raised if the <paramref name="strings" /> is nil.
+    /// </exception>
+    /// <seealso cref="ExtractNames(TStrings)" />
+    procedure ExtractValues(const strings: TStrings);
 
-    ///	<summary>
-    ///	  Returns a string array that contains all the <b>name</b>entries in
-    ///	  the string list.
-    ///	</summary>
+    /// <summary>
+    ///   Returns a string array that contains all the <b>name</b>entries in
+    ///   the string list.
+    /// </summary>
     function GetNames: TStringDynArray;
 
-    ///	<summary>
-    ///	  Returns a string array that contains all the <b>value</b>entries in
-    ///	  the string list.
-    ///	</summary>
+    /// <summary>
+    ///   Returns a string array that contains all the <b>value</b>entries in
+    ///   the string list.
+    /// </summary>
     function GetValues: TStringDynArray;
 
 //    function GetValue(const name: string): string; overload;
 //    function GetValue(const index: Integer): string; overload;
 
-    ///	<summary>
-    ///	  Gets the corresponding value of the name entry if there is such an
-    ///	  entry and the value is not empty, otherwise, returns the default
-    ///	  value specified by the <paramref name="default" />param.
-    ///	</summary>
+    /// <summary>
+    ///   Gets the corresponding value of the name entry if there is such an
+    ///   entry and the value is not empty, otherwise, returns the default
+    ///   value specified by the <paramref name="default" />param.
+    /// </summary>
     function GetValueOrDefault<T>(const name: string; const default: T): T; experimental;
 
-    ///	<summary>
-    ///	  Try finding a name entry in the list.
-    ///	</summary>
+    /// <summary>
+    ///   Try finding a name entry in the list.
+    /// </summary>
     function TryFindName(const name: string; var index: Integer): Boolean;
 
-    ///	<summary>
-    ///	  Try finding a value entry in the list.
-    ///	</summary>
+    /// <summary>
+    ///   Try finding a value entry in the list.
+    /// </summary>
     function TryFindValue(const value: string; var index: Integer): Boolean;
 
-    ///	<summary>
-    ///	  Try finding an object in the list.
-    ///	</summary>
-    function TryFindObject(obj: TObject; var index: Integer): Boolean;
+    /// <summary>
+    ///   Try finding an object in the list.
+    /// </summary>
+    function TryFindObject(const obj: TObject; var index: Integer): Boolean;
 
-    ///	<summary>
-    ///	  Determines whether the list contains the specified name entry.
-    ///	</summary>
+    /// <summary>
+    ///   Determines whether the list contains the specified name entry.
+    /// </summary>
     function ContainsName(const name: string): Boolean;
 
-    ///	<summary>
-    ///	  Determines whether the list contains the specified value entry.
-    ///	</summary>
+    /// <summary>
+    ///   Determines whether the list contains the specified value entry.
+    /// </summary>
     function ContainsValue(const value: string): Boolean;
 
-    ///	<summary>
-    ///	  Determines whether the list contains the specified object.
-    ///	</summary>
-    function ContainsObject(obj: TObject): Boolean;
+    /// <summary>
+    ///   Determines whether the list contains the specified object.
+    /// </summary>
+    function ContainsObject(const obj: TObject): Boolean;
 
-    ///	<summary>
-    ///	  Converts the string list to a dynamic string array.
-    ///	</summary>
+    /// <summary>
+    ///   Converts the string list to a dynamic string array.
+    /// </summary>
     function ToArray: TStringDynArray;
 
-    ///	<summary>
-    ///	  Gets a value indicates whether the strings is empty.
-    ///	</summary>
-    ///	<value>
-    ///	  Returns true if the count of the list is zero, otherwise, returns
-    ///	  false.
-    ///	</value>
+    /// <summary>
+    ///   Gets a value indicates whether the strings is empty.
+    /// </summary>
+    /// <value>
+    ///   Returns true if the count of the list is zero, otherwise, returns
+    ///   false.
+    /// </value>
     property IsEmpty: Boolean read GetIsEmpty;
   end;
 
   TCollectionHelper = class helper for TCollection
   public
-    ///	<param name="proc">
-    ///	  the anonymous method that will be executed within the batch update.
-    ///	</param>
-    procedure ExecuteUpdate(proc: TProc);
+    /// <param name="proc">
+    ///   the anonymous method that will be executed within the batch update.
+    /// </param>
+    procedure ExecuteUpdate(const proc: TProc);
   end;
 
   TArrayHelper = class helper for TArray
   public
-    class function CreateArray<T>(const values: array of T): TArray<T>;
+    class function CreateArray<T>(const values: array of T): TArray<T>; static;
+
+    /// <summary>
+    ///   Determines whether the specified item exists as an element in an
+    ///   array.
+    /// </summary>
+    class function Contains<T>(const values: array of T; const item: T): Boolean; static;
   end;
 
   // TPointHelper, TSizeHelper, TRectHelper
@@ -340,33 +343,33 @@ type
 
   TRttiObjectHelper = class helper for TRttiObject
   public
-    ///	<summary>
-    ///	  Gets an array which contains all custom attribute types which the
-    ///	  type applies.
-    ///	</summary>
+    /// <summary>
+    ///   Gets an array which contains all custom attribute types which the
+    ///   type applies.
+    /// </summary>
     function GetCustomAttributes<T: TCustomAttribute>: TArray<T>;
 
-    ///	<summary>
-    ///	  Enumerates all applied custom attributes and returns the first one
-    ///	  which is/inherits the specified type.
-    ///	</summary>
+    /// <summary>
+    ///   Enumerates all applied custom attributes and returns the first one
+    ///   which is/inherits the specified type.
+    /// </summary>
     function GetCustomAttribute<T: TCustomAttribute>: T;
 
-    ///	<summary>
-    ///	  Try getting a custom attribute class which is applied by the type.
-    ///	</summary>
+    /// <summary>
+    ///   Try getting a custom attribute class which is applied by the type.
+    /// </summary>
     function TryGetCustomAttribute<T: TCustomAttribute>(out attribute: T): Boolean;
 
-    ///	<summary>
-    ///	  Determines whether the type applies the specified custom attribute
-    ///	  class.
-    ///	</summary>
+    /// <summary>
+    ///   Determines whether the type applies the specified custom attribute
+    ///   class.
+    /// </summary>
     function HasCustomAttribute<T: TCustomAttribute>: Boolean;
   end;
 
   TRttiClassType = TRttiInstanceType;
 
-  ///	<preliminary />
+  /// <preliminary />
   TRttiTypeHelper =  class helper for TRttiType
   private
     function GetAsInterface: TRttiInterfaceType;
@@ -389,62 +392,71 @@ type
   public
     // function GetMembers: IEnumerable<TRttiMember>;
 
-    ///	<summary>
-    ///	  Returns an enumerable collection which contains all the interface
-    ///	  Rtti types that the target type implements.
-    ///	  <note type="note">
-    ///	    Only Guid interfaces will be enumerated.
-    ///	  </note>
-    ///	</summary>
-    ///	<seealso cref="Spring.Collections|IEnumerable&lt;T&gt;" />
+    /// <summary>
+    ///   Returns an enumerable collection which contains all the interface
+    ///   Rtti types that the target type implements.
+    ///   <note type="note">
+    ///     Only Guid interfaces will be enumerated.
+    ///   </note>
+    /// </summary>
+    /// <seealso cref="Spring.Collections|IEnumerable&lt;T&gt;" />
     function GetInterfaces: IEnumerable<TRttiInterfaceType>;
 
-    ///	<summary>
-    ///	  Gets an array of types which contains all generic arguments.
-    ///	</summary>
-    ///	<remarks>
-    ///	  This method extracts generic arguments from the name of the generic
-    ///	  type. e.g. Invoking the method on the type
-    ///	  <b><c>TDictionary&lt;Integer, string&gt;,</c></b> it will return an
-    ///	  array?which contains two types: <c>System.Integer</c> and
-    ///	  <c>System.String</c>.
-    ///	</remarks>
+    /// <summary>
+    ///   Gets an array of types which contains all generic arguments.
+    /// </summary>
+    /// <remarks>
+    ///   This method extracts generic arguments from the name of the generic
+    ///   type. Invoking the method on the type <c>
+    ///   TDictionary&lt;Integer,string&gt;</c> for example will return an
+    ///   array which contains two types: <c>System.Integer</c> and <c>
+    ///   System.string</c>.
+    /// </remarks>
     function GetGenericArguments: TArray<TRttiType>;
 
-    ///	<summary>
-    ///	  Gets an enumerable collection which contains all constructor methods
-    ///	  of the type, including inherited.
-    ///	</summary>
-    ///	<seealso cref="Methods" />
-    ///	<seealso cref="Propoerties" />
-    ///	<seealso cref="Fields" />
+    /// <summary>
+    ///   Determines whether an instance of the current TRttiType can be
+    ///   assigned from an instance of the specified TRttiType.
+    /// </summary>
+    /// <param name="rttiType">
+    ///   The type to compare with the current type.
+    /// </param>
+    function IsAssignableFrom(const rttiType: TRttiType): Boolean;
+
+    /// <summary>
+    ///   Gets an enumerable collection which contains all constructor methods
+    ///   of the type, including inherited.
+    /// </summary>
+    /// <seealso cref="Methods" />
+    /// <seealso cref="Propoerties" />
+    /// <seealso cref="Fields" />
     property Constructors: IEnumerable<TRttiMethod> read GetConstructors;
 
-    ///	<summary>
-    ///	  Gets a enumerable collection which contains all methods that the type
-    ///	  contains, including inherited.
-    ///	</summary>
-    ///	<seealso cref="Constructors" />
-    ///	<seealso cref="Propoerties" />
-    ///	<seealso cref="Fields" />
+    /// <summary>
+    ///   Gets a enumerable collection which contains all methods that the type
+    ///   contains, including inherited.
+    /// </summary>
+    /// <seealso cref="Constructors" />
+    /// <seealso cref="Propoerties" />
+    /// <seealso cref="Fields" />
     property Methods: IEnumerable<TRttiMethod> read GetMethods;
 
-    ///	<summary>
-    ///	  Gets a enumerable collection which contains all properties that the
-    ///	  type contains, including inherited.
-    ///	</summary>
-    ///	<seealso cref="Constructors" />
-    ///	<seealso cref="Methods" />
-    ///	<seealso cref="Fields" />
+    /// <summary>
+    ///   Gets a enumerable collection which contains all properties that the
+    ///   type contains, including inherited.
+    /// </summary>
+    /// <seealso cref="Constructors" />
+    /// <seealso cref="Methods" />
+    /// <seealso cref="Fields" />
     property Properties: IEnumerable<TRttiProperty> read GetProperties;
 
-    ///	<summary>
-    ///	  Gets a enumerable collection which contains all fields that the type
-    ///	  contains, including inherited.
-    ///	</summary>
-    ///	<seealso cref="Constructors" />
-    ///	<seealso cref="Methods" />
-    ///	<seealso cref="Propoerties" />
+    /// <summary>
+    ///   Gets a enumerable collection which contains all fields that the type
+    ///   contains, including inherited.
+    /// </summary>
+    /// <seealso cref="Constructors" />
+    /// <seealso cref="Methods" />
+    /// <seealso cref="Propoerties" />
     property Fields: IEnumerable<TRttiField> read GetFields;
 
     property AsClass: TRttiInstanceType read GetAsClass;
@@ -455,9 +467,9 @@ type
     property IsClassOrInterface: Boolean read GetIsClassOrInterface;
     property IsDynamicArray: Boolean read GetIsDynamicArray;
 
-    ///	<summary>
-    ///	  Gets a value indicates whether the current type is generic.
-    ///	</summary>
+    /// <summary>
+    ///   Gets a value indicates whether the current type is generic.
+    /// </summary>
     property IsGenericType: Boolean read GetIsGenericType;
     property DefaultName: string read GetDefaultName;
   end;
@@ -508,9 +520,9 @@ type
   private
     function GetHasGuid: Boolean;
   public
-    ///	<summary>
-    ///	  Gets a value indicates whether this interface type has a guid.
-    ///	</summary>
+    /// <summary>
+    ///   Gets a value indicates whether this interface type has a guid.
+    /// </summary>
     property HasGuid: Boolean read GetHasGuid;
   end;
 
@@ -524,6 +536,7 @@ type
 implementation
 
 uses
+  Generics.Defaults,
   StrUtils,
   SysConst,
   TypInfo,
@@ -657,9 +670,7 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'Classes Helpers'}
-
-{ TStreamHelper }
+{$REGION 'TStreamHelper'}
 
 procedure TStreamHelper.ReadBuffer<T>(var value: T);
 begin
@@ -671,7 +682,10 @@ begin
   WriteBuffer(value, SizeOf(T));
 end;
 
-{ TStringsHelper }
+{$ENDREGION}
+
+
+{$REGION 'TStringsHelper'}
 
 procedure TStringsHelper.AddStrings(const strings: array of string);
 var
@@ -694,29 +708,25 @@ var
 begin
   index := IndexOfName(name);
   if index <> -1 then
-  begin
-    Strings[index] := name + NameValueSeparator + value;
-  end
+    Strings[index] := name + NameValueSeparator + value
   else
-  begin
     Add(name + NameValueSeparator + value);
-  end;
 end;
 
-procedure TStringsHelper.ExecuteUpdate(proc: TProc);
+procedure TStringsHelper.ExecuteUpdate(const proc: TProc);
 begin
   Guard.CheckNotNull(Assigned(proc), 'proc');
 
   BeginUpdate;
   try
     Clear;
-    proc();
+    proc;
   finally
     EndUpdate;
   end;
 end;
 
-procedure TStringsHelper.ExtractNames(strings: TStrings);
+procedure TStringsHelper.ExtractNames(const strings: TStrings);
 var
   i: Integer;
 begin
@@ -725,15 +735,13 @@ begin
   strings.BeginUpdate;
   try
     for i := 0 to Count - 1 do
-    begin
       strings.Add(Self.Names[i]);
-    end;
   finally
     strings.EndUpdate;
   end;
 end;
 
-procedure TStringsHelper.ExtractValues(strings: TStrings);
+procedure TStringsHelper.ExtractValues(const strings: TStrings);
 var
   i: Integer;
 begin
@@ -742,9 +750,7 @@ begin
   strings.BeginUpdate;
   try
     for i := 0 to Count - 1 do
-    begin
       strings.Add(Self.ValueFromIndex[i]);
-    end;
   finally
     strings.EndUpdate;
   end;
@@ -776,7 +782,7 @@ begin
   end;
 end;
 
-function TStringsHelper.TryFindObject(obj: TObject;
+function TStringsHelper.TryFindObject(const obj: TObject;
   var index: Integer): Boolean;
 begin
   index := IndexOfObject(obj);
@@ -795,7 +801,7 @@ begin
   Result := TryFindValue(value, index);
 end;
 
-function TStringsHelper.ContainsObject(obj: TObject): Boolean;
+function TStringsHelper.ContainsObject(const obj: TObject): Boolean;
 begin
   Result := IndexOfObject(obj) > -1;
 end;
@@ -808,17 +814,11 @@ var
 begin
   index := IndexOfName(name);
   if index > -1 then
-  begin
     value := ValueFromIndex[index];
-  end;
   if value <> '' then
-  begin
-    Result := TValue.From<string>(value).AsType<T>;  // TODO: Fix this ASAP because TValue.AsType<T> sucks...
-  end
+    Result := TValue.From<string>(value).AsType<T>  // TODO: Fix this ASAP because TValue.AsType<T> sucks...
   else
-  begin
     Result := default;
-  end;
 end;
 
 function TStringsHelper.GetNames: TStringDynArray;
@@ -827,9 +827,7 @@ var
 begin
   SetLength(Result, Count);
   for i := 0 to Count - 1 do
-  begin
     Result[i] := Names[i];
-  end;
 end;
 
 function TStringsHelper.GetValues: TStringDynArray;
@@ -838,9 +836,7 @@ var
 begin
   SetLength(Result, Count);
   for i := 0 to Count - 1 do
-  begin
     Result[i] := ValueFromIndex[i];
-  end;
 end;
 
 function TStringsHelper.ToArray: TStringDynArray;
@@ -849,9 +845,7 @@ var
 begin
   SetLength(Result, Count);
   for i := 0 to Count - 1 do
-  begin
     Result[i] := Strings[i];
-  end;
 end;
 
 function TStringsHelper.GetIsEmpty: Boolean;
@@ -859,16 +853,19 @@ begin
   Result := Count = 0;
 end;
 
-{ TCollectionHelper }
+{$ENDREGION}
 
-procedure TCollectionHelper.ExecuteUpdate(proc: TProc);
+
+{$REGION 'TCollectionHelper'}
+
+procedure TCollectionHelper.ExecuteUpdate(const proc: TProc);
 begin
   Guard.CheckNotNull(Assigned(proc), 'proc');
 
   BeginUpdate;
   try
     Clear;
-    proc();
+    proc;
   finally
     EndUpdate;
   end;
@@ -879,28 +876,37 @@ end;
 
 {$REGION 'TArray Helper'}
 
+class function TArrayHelper.Contains<T>(const values: array of T;
+  const item: T): Boolean;
+var
+  comparer: IEqualityComparer<T>;
+  i: Integer;
+begin
+  comparer := TEqualityComparer<T>.Default;
+  for i := 0 to High(Values) do
+    if comparer.Equals(values[i], item) then
+      Exit(True);
+  Result := False;
+end;
+
 class function TArrayHelper.CreateArray<T>(const values: array of T): TArray<T>;
 var
   i: Integer;
 begin
   SetLength(Result, Length(values));
   for i := 0 to High(values) do
-  begin
     Result[i] := values[i];
-  end;
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'RTTI Class Helpers'}
-
-{ TRttiObjectHelper }
+{$REGION 'TRttiObjectHelper'}
 
 function TRttiObjectHelper.TryGetCustomAttribute<T>(out attribute: T): Boolean;
 begin
   attribute := GetCustomAttribute<T>;
-  Result := attribute <> nil;
+  Result := Assigned(attribute);
 end;
 
 function TRttiObjectHelper.GetCustomAttribute<T>: T;
@@ -909,13 +915,11 @@ var
 begin
   Result := Default(T);
   for attribute in GetAttributes do
-  begin
     if attribute.InheritsFrom(T) then
     begin
       Result := T(attribute);
       Break;
     end;
-  end;
 end;
 
 function TRttiObjectHelper.GetCustomAttributes<T>: TArray<T>;
@@ -923,13 +927,11 @@ var
   attribute: TCustomAttribute;
 begin
   for attribute in GetAttributes do
-  begin
     if attribute.InheritsFrom(T) then
     begin
       SetLength(Result, Length(Result)+1);
       Result[Length(Result)-1] := T(attribute);
     end;
-  end;
 end;
 
 function TRttiObjectHelper.HasCustomAttribute<T>: Boolean;
@@ -939,7 +941,10 @@ begin
   Result := TryGetCustomAttribute<T>(attribute);
 end;
 
-{ TRttiTypeHelper }
+{$ENDREGION}
+
+
+{$REGION 'TRttiTypeHelper'}
 
 function TRttiTypeHelper.InternalGetConstructors(
   enumerateBaseType: Boolean): IEnumerable<TRttiMethod>;
@@ -952,11 +957,7 @@ begin
       Result := targetType.GetDeclaredMethods;
     end;
   Result := TRttiMemberEnumerable<TRttiMethod>.Create(
-    Self,
-    func,
-    enumerateBaseType,
-    TMethodFilters.IsConstructor()
-  );
+    Self, func, enumerateBaseType, TMethodFilters.IsConstructor());
 end;
 
 function TRttiTypeHelper.InternalGetMethods(
@@ -970,11 +971,7 @@ begin
       Result := targetType.GetDeclaredMethods;
     end;
   Result := TRttiMemberEnumerable<TRttiMethod>.Create(
-    Self,
-    func,
-    enumerateBaseType,
-    nil
-  );
+    Self, func, enumerateBaseType, nil);
 end;
 
 function TRttiTypeHelper.InternalGetProperties(
@@ -988,11 +985,12 @@ begin
       Result := targetType.GetDeclaredProperties;
     end;
   Result := TRttiMemberEnumerable<TRttiProperty>.Create(
-    Self,
-    func,
-    enumerateBaseType,
-    nil
-  );
+    Self, func, enumerateBaseType, nil);
+end;
+
+function TRttiTypeHelper.IsAssignableFrom(const rttiType: TRttiType): Boolean;
+begin
+  Result := Spring.IsAssignableFrom(Self.Handle, rttiType.Handle);
 end;
 
 function TRttiTypeHelper.InternalGetFields(
@@ -1006,11 +1004,7 @@ begin
       Result := targetType.GetDeclaredFields;
     end;
   Result := TRttiMemberEnumerable<TRttiField>.Create(
-    Self,
-    func,
-    enumerateBaseType,
-    nil
-  );
+    Self, func, enumerateBaseType, nil);
 end;
 
 function TRttiTypeHelper.GetConstructors: IEnumerable<TRttiMethod>;
@@ -1074,16 +1068,12 @@ begin
   p1 := Pos('<', Name);
   p2 := Pos('>', Name);
   if (p1 = 0) or (p2 = 0) or (p1 > p2) then
-  begin
     Exit(nil);
-  end;
   args := MidStr(Name, p1+1, p2-p1-1);
   elements := SplitString(args, ',');
   SetLength(Result, Length(elements));
   for i := 0 to High(elements) do
-  begin
     Result[i] := TType.FindType(elements[i]);
-  end;
 end;
 
 function TRttiTypeHelper.GetAsClass: TRttiInstanceType;
@@ -1179,45 +1169,39 @@ begin
   Result := Self is TRttiInterfaceType;
 end;
 
-{ TRttiInterfaceTypeHelper }
+{$ENDREGION}
+
+
+{$REGION 'TRttiInterfaceTypeHelper'}
 
 function TRttiInterfaceTypeHelper.GetHasGuid: Boolean;
 begin
   Result := ifHasGuid in Self.IntfFlags;
 end;
 
-{ TRttiMemberHelper }
+{$ENDREGION}
+
+
+{$REGION 'TRttiMemberHelper'}
 
 function TRttiMemberHelper.GetValue(const instance: TValue): TValue;
 begin
   if IsProperty then
-  begin
-    Result := AsProperty.GetValue(instance);
-  end
+    Result := AsProperty.GetValue(instance)
   else if IsField then
-  begin
-    Result := AsField.GetValue(instance);
-  end
+    Result := AsField.GetValue(instance)
   else
-  begin
     raise EInvalidOperationException.CreateRes(@SInvalidOperation_GetValue);
-  end;
 end;
 
 procedure TRttiMemberHelper.SetValue(const instance, value: TValue);
 begin
   if IsProperty then
-  begin
-    AsProperty.SetValue(instance, value);
-  end
+    AsProperty.SetValue(instance, value)
   else if IsField then
-  begin
-    AsField.SetValue(instance, value);
-  end
+    AsField.SetValue(instance, value)
   else
-  begin
     raise EInvalidOperationException.CreateRes(@SInvalidOperation_SetValue);
-  end;
 end;
 
 function TRttiMemberHelper.GetIsPrivate: Boolean;
@@ -1275,7 +1259,10 @@ begin
   Result := Self as TRttiField;
 end;
 
-{ TRttiPropertyHelper }
+{$ENDREGION}
+
+
+{$REGION 'TRttiPropertyHelper'}
 
 function TRttiPropertyHelper.GetValue(const instance: TValue): TValue;
 begin
@@ -1293,7 +1280,10 @@ begin
     SetValue(instance.GetReferenceToRawData, value);
 end;
 
-{ TRttiFieldHelper }
+{$ENDREGION}
+
+
+{$REGION 'TRttiFieldHelper'}
 
 function TRttiFieldHelper.GetValue(const instance: TValue): TValue;
 begin
