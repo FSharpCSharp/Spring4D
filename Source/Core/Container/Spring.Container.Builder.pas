@@ -382,9 +382,9 @@ procedure TComponentActivatorInspector.DoProcessModel(
 begin
   if not Assigned(model.ComponentActivator) then
     if not Assigned(model.ActivatorDelegate) then
-      model.ComponentActivator := TReflectionComponentActivator.Create(model)
+      model.ComponentActivator := TReflectionComponentActivator.Create(context, model)
     else
-      model.ComponentActivator := TDelegateComponentActivator.Create(model);
+      model.ComponentActivator := TDelegateComponentActivator.Create(context, model);
 end;
 
 {$ENDREGION}

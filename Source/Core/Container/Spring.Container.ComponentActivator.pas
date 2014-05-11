@@ -39,12 +39,13 @@ type
   ///	</summary>
   TComponentActivatorBase = class abstract(TInterfacedObject, IComponentActivator, IInterface)
   protected
+    fContext: IContainerContext;
     {$IFDEF WEAKREF}[Weak]{$ENDIF}
     fModel: TComponentModel;
     procedure ExecuteInjections(const instance: TValue;
       const injections: IList<IInjection>; const resolver: IDependencyResolver);
   public
-    constructor Create(const model: TComponentModel);
+    constructor Create(const context: IContainerContext; const model: TComponentModel); virtual;
     function CreateInstance(const resolver: IDependencyResolver): TValue; overload; virtual; abstract;
   end;
 
@@ -78,9 +79,11 @@ uses
 
 {$REGION 'TComponentActivatorBase'}
 
-constructor TComponentActivatorBase.Create(const model: TComponentModel);
+constructor TComponentActivatorBase.Create(const context: IContainerContext;
+  const model: TComponentModel);
 begin
   inherited Create;
+  fContext := context;
   fModel := model;
 end;
 
@@ -92,8 +95,8 @@ var
 begin
   for injection in injections do
   begin
-    arguments := resolver.Resolve(
-      injection.Dependencies, injection.Arguments, injection.Target);
+    arguments := resolver.Resolve(fContext, injection.Dependencies,
+      injection.Arguments, injection.Target);
     injection.Inject(instance, arguments);
   end;
 end;
@@ -113,6 +116,7 @@ begin
   if constructorInjection = nil then
     raise EActivatorException.CreateRes(@SUnsatisfiedConstructor);
   constructorArguments := resolver.Resolve(
+    fContext,
     constructorInjection.Dependencies,
     constructorInjection.Arguments,
     constructorInjection.Target);
@@ -153,8 +157,8 @@ begin
       winner := candidate;
       Break;
     end;
-    if resolver.CanResolve(
-      candidate.Dependencies, candidate.Arguments, candidate.Target) then
+    if resolver.CanResolve(fContext, candidate.Dependencies,
+      candidate.Arguments, candidate.Target) then
     begin
       if candidate.DependencyCount > maxCount then
       begin

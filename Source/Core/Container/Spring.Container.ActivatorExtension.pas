@@ -81,7 +81,7 @@ procedure TActivatorInspector.DoProcessModel(const context: IContainerContext;
   const model: TComponentModel);
 begin
   if not Assigned(model.ActivatorDelegate) then
-    model.ComponentActivator := TReflectionComponentActivator2.Create(model);
+    model.ComponentActivator := TReflectionComponentActivator2.Create(context, model);
 end;
 
 {$ENDREGION}
@@ -117,7 +117,7 @@ begin
   end;
   Result := winner;
   if Assigned(Result) and not resolver.CanResolve(
-    Result.Dependencies, Result.Arguments, Result.Target) then
+    fContext, Result.Dependencies, Result.Arguments, Result.Target) then
     raise EResolveException.CreateRes(@SUnsatisfiedConstructorParameters);
 end;
 

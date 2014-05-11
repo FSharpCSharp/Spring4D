@@ -193,15 +193,19 @@ type
 
   ISubDependencyResolver = interface
     ['{E360FFAD-2235-49D1-9A4F-50945877E337}']
-    function CanResolve(const dependency: TRttiType; const argument: TValue): Boolean; overload;
-    function Resolve(const dependency: TRttiType; const argument: TValue): TValue; overload;
+    function CanResolve(const context: IContainerContext;
+      const dependency: TRttiType; const argument: TValue): Boolean; overload;
+    function Resolve(const context: IContainerContext;
+      const dependency: TRttiType; const argument: TValue): TValue; overload;
   end;
 
   IDependencyResolver = interface(ISubDependencyResolver)
     ['{15ADEA1D-7C3F-48D5-8E85-84B4332AFF5F}']
-    function CanResolve(const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
+    function CanResolve(const context: IContainerContext;
+      const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
       const target: TRttiMember): Boolean; overload;
-    function Resolve(const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
+    function Resolve(const context: IContainerContext;
+      const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
       const target: TRttiMember): TArray<TValue>; overload;
 
     procedure AddSubResolver(const subResolver: ISubDependencyResolver);
@@ -643,7 +647,7 @@ begin
   for i := 0 to High(dependencies) do
     dependencies[i] := parameters[i].ParamType;
   Result := fContext.DependencyResolver.CanResolve(
-    dependencies, fArguments, method);
+    fContext, dependencies, fArguments, method);
 end;
 
 {$ENDREGION}

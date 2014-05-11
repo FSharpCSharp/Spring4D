@@ -36,53 +36,52 @@ uses
   Spring.Container.Core;
 
 type
-  TResolver = class(TInterfacedObject)
-  private
-    fContext: IContainerContext;
-    fRegistry: IComponentRegistry;
-  protected
-    procedure ConstructValue(typeInfo: PTypeInfo; const instance: TValue; out value: TValue);
-
-    property Context: IContainerContext read fContext;
-    property Registry: IComponentRegistry read fRegistry;
-  public
-    constructor Create(const context: IContainerContext; const registry: IComponentRegistry);
-  end;
-
-  TDependencyResolver = class(TResolver, IDependencyResolver)
+  TDependencyResolver = class(TInterfacedObject, IDependencyResolver)
   private
     fLock: TCriticalSection;
     fDependencies: IList<TComponentModel>;
     fSubResolvers: IList<ISubDependencyResolver>;
   protected
     procedure CheckCircularDependency(const model: TComponentModel);
-    function GetEligibleModel(const dependency: TRttiType; const argument: TValue): TComponentModel;
+    function GetEligibleModel(const context: IContainerContext;
+      const dependency: TRttiType; const argument: TValue): TComponentModel;
 
-    function ResolveLazyDependency(const dependency: TRttiType; const argument: TValue): TValue;
-    function ResolveManyDependency(const dependency: TRttiType; const argument: TValue): TValue;
+    function ResolveLazyDependency(const context: IContainerContext;
+      const dependency: TRttiType; const argument: TValue): TValue;
+    function ResolveManyDependency(const context: IContainerContext;
+      const dependency: TRttiType; const argument: TValue): TValue;
   public
-    constructor Create(const context: IContainerContext; const registry: IComponentRegistry);
+    constructor Create;
     destructor Destroy; override;
 
-    function CanResolve(const dependency: TRttiType; const argument: TValue): Boolean; overload; virtual;
-    function CanResolve(const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
+    function CanResolve(const context: IContainerContext;
+      const dependency: TRttiType; const argument: TValue): Boolean; overload; virtual;
+    function CanResolve(const context: IContainerContext;
+      const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
       const target: TRttiMember): Boolean; overload; virtual;
 
-    function Resolve(const dependency: TRttiType; const argument: TValue): TValue; overload; virtual;
-    function Resolve(const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
+    function Resolve(const context: IContainerContext;
+      const dependency: TRttiType; const argument: TValue): TValue; overload; virtual;
+    function Resolve(const context: IContainerContext;
+      const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
       const target: TRttiMember): TArray<TValue>; overload; virtual;
 
     procedure AddSubResolver(const subResolver: ISubDependencyResolver);
     procedure RemoveSubResolver(const subResolver: ISubDependencyResolver);
   end;
 
-  TServiceResolver = class(TResolver, IServiceResolver)
+  TServiceResolver = class(TInterfacedObject, IServiceResolver)
+  private
+    fContext: IContainerContext;
+    fRegistry: IComponentRegistry;
   protected
     function InternalResolve(const model: TComponentModel; serviceType: PTypeInfo;
       const resolver: IDependencyResolver): TValue;
     function InternalResolveLazy(const model: TComponentModel; serviceType: PTypeInfo;
       const resolver: IDependencyResolver): TValue;
   public
+    constructor Create(const context: IContainerContext);
+
     function CanResolve(serviceType: PTypeInfo): Boolean; overload;
     function CanResolve(const name: string): Boolean; overload;
     function Resolve(serviceType: PTypeInfo): TValue; overload;
@@ -111,10 +110,12 @@ type
         constructor Create(const context: IContainerContext; const registry: IComponentRegistry;
           const name: string; const value: TValue);
 
-        function CanResolve(const dependencies: TArray<TRttiType>;
-          const arguments: TArray<TValue>; const target: TRttiMember): Boolean; override;
-        function Resolve(const dependencies: TArray<TRttiType>;
-          const arguments: TArray<TValue>; const target: TRttiMember): TArray<TValue>; override;
+        function CanResolve(const context: IContainerContext;
+          const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
+          const target: TRttiMember): Boolean; override;
+        function Resolve(const context: IContainerContext;
+          const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
+          const target: TRttiMember): TArray<TValue>; override;
       end;
   public
     constructor Create(const name: string; const value: TValue);
@@ -131,15 +132,17 @@ type
       private
         fArguments: TArray<TValue>;
       public
-        constructor Create(const context: IContainerContext;
-          const registry: IComponentRegistry; const arguments: TArray<TValue>);
+        constructor Create(const arguments: TArray<TValue>);
 
-        function CanResolve(const dependency: TRttiType; const argument: TValue): Boolean; override;
+        function CanResolve(const context: IContainerContext;
+          const dependency: TRttiType; const argument: TValue): Boolean; override;
 
-        function CanResolve(const dependencies: TArray<TRttiType>;
-          const arguments: TArray<TValue>; const target: TRttiMember): Boolean; override;
-        function Resolve(const dependencies: TArray<TRttiType>;
-          const arguments: TArray<TValue>; const target: TRttiMember): TArray<TValue>; override;
+        function CanResolve(const context: IContainerContext;
+          const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
+          const target: TRttiMember): Boolean; override;
+        function Resolve(const context: IContainerContext;
+          const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
+          const target: TRttiMember): TArray<TValue>; override;
       end;
   public
     constructor Create(const arguments: array of TValue);
@@ -158,11 +161,12 @@ type
         fTypeInfo: PTypeInfo;
         fValue: TValue;
       public
-        constructor Create(const context: IContainerContext; const registry: IComponentRegistry;
-          typeInfo: PTypeInfo; const value: TValue);
+        constructor Create(typeInfo: PTypeInfo; const value: TValue);
 
-        function CanResolve(const dependency: TRttiType; const argument: TValue): Boolean; override;
-        function Resolve(const dependency: TRttiType; const argument: TValue): TValue; override;
+        function CanResolve(const context: IContainerContext;
+          const dependency: TRttiType; const argument: TValue): Boolean; override;
+        function Resolve(const context: IContainerContext;
+          const dependency: TRttiType; const argument: TValue): TValue; override;
       end;
   public
     constructor Create(typeInfo: PTypeInfo; const value: TValue);
@@ -187,11 +191,12 @@ type
       private
         fDependencyOverrides: IList<TDependencyOverride>;
       public
-        constructor Create(const context: IContainerContext; const registry: IComponentRegistry;
-          const dependencyOverrides: IList<TDependencyOverride>);
+        constructor Create(const dependencyOverrides: IList<TDependencyOverride>);
 
-        function CanResolve(const dependency: TRttiType; const argument: TValue): Boolean; override;
-        function Resolve(const dependency: TRttiType; const argument: TValue): TValue; override;
+        function CanResolve(const context: IContainerContext;
+          const dependency: TRttiType; const argument: TValue): Boolean; override;
+        function Resolve(const context: IContainerContext;
+          const dependency: TRttiType; const argument: TValue): TValue; override;
       end;
   public
     constructor Create(const dependencyOverrides: array of TDependencyOverride);
@@ -209,20 +214,7 @@ uses
   Spring.Reflection;
 
 
-{$REGION 'TResolver'}
-
-constructor TResolver.Create(const context: IContainerContext;
-  const registry: IComponentRegistry);
-begin
-  Guard.CheckNotNull(context, 'context');
-  Guard.CheckNotNull(registry, 'registry');
-  inherited Create;
-  fContext := context;
-  fRegistry := registry;
-end;
-
-procedure TResolver.ConstructValue(typeInfo: PTypeInfo; const instance: TValue;
-  out value: TValue);
+function ResolveValue(typeInfo: PTypeInfo; const instance: TValue): TValue;
 var
   localInterface: Pointer;
 begin
@@ -230,7 +222,7 @@ begin
 
   case typeInfo.Kind of
     tkClass, tkRecord:
-      value := instance;
+      Result := instance;
     tkInterface:
     begin
       if instance.IsObject then
@@ -245,22 +237,19 @@ begin
         else
           instance.AsInterface.QueryInterface(GetTypeData(typeInfo).Guid, localInterface);
       end;
-      TValue.MakeWithoutCopy(@localInterface, typeInfo, value);
+      TValue.MakeWithoutCopy(@localInterface, typeInfo, Result);
     end;
   else
-    value := nil;
+    Result := nil;
   end;
 end;
-
-{$ENDREGION}
 
 
 {$REGION 'TDependencyResolver'}
 
-constructor TDependencyResolver.Create(const context: IContainerContext;
-  const registry: IComponentRegistry);
+constructor TDependencyResolver.Create;
 begin
-  inherited Create(context, registry);
+  inherited Create;//(context, registry);
   fDependencies := TCollections.CreateList<TComponentModel>(False);
   fLock := TCriticalSection.Create;
   fSubResolvers := TCollections.CreateInterfaceList<ISubDependencyResolver>;
@@ -282,14 +271,14 @@ begin
   fSubResolvers.Remove(subResolver);
 end;
 
-function TDependencyResolver.GetEligibleModel(const dependency: TRttiType;
-  const argument: TValue): TComponentModel;
+function TDependencyResolver.GetEligibleModel(const context: IContainerContext;
+  const dependency: TRttiType; const argument: TValue): TComponentModel;
 var
   name: string;
 begin
   if argument.IsEmpty then
   begin
-    if not Registry.HasService(dependency.Handle) then
+    if not context.ComponentRegistry.HasService(dependency.Handle) then
     begin
       if dependency.IsClassOrInterface and not TType.IsLazy(dependency.Handle) then
         raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
@@ -297,7 +286,7 @@ begin
     end
     else
     begin
-      Result := Registry.FindDefault(dependency.Handle);
+      Result := context.ComponentRegistry.FindDefault(dependency.Handle);
       if not Assigned(Result) then
         raise EUnsatisfiedDependencyException.CreateResFmt(
           @SUnsatisfiedDependency, [dependency.Name]);
@@ -306,7 +295,7 @@ begin
   else
   begin
     name := argument.AsString;
-    Result := Registry.FindOne(name);
+    Result := context.ComponentRegistry.FindOne(name);
     if not Assigned(Result) then
     begin
       if TType.IsLazy(dependency.Handle) then
@@ -331,8 +320,8 @@ begin
       @SCircularDependencyDetected, [model.ComponentType.Name]);
 end;
 
-function TDependencyResolver.CanResolve(const dependency: TRttiType;
-  const argument: TValue): Boolean;
+function TDependencyResolver.CanResolve(const context: IContainerContext;
+  const dependency: TRttiType; const argument: TValue): Boolean;
 var
   serviceName: string;
   serviceType: PTypeInfo;
@@ -342,14 +331,15 @@ begin
   if dependency.IsClassOrInterface or dependency.IsRecord then
   begin
     if argument.IsEmpty then
-      Result := Registry.HasDefault(dependency.Handle) or TType.IsLazy(dependency.Handle)
+      Result := context.ComponentRegistry.HasDefault(dependency.Handle)
+        or TType.IsLazy(dependency.Handle)
     else
     begin
       Result := argument.IsType<string>;
       if Result then
       begin
         serviceName := argument.AsString;
-        model := Registry.FindOne(serviceName);
+        model := context.ComponentRegistry.FindOne(serviceName);
         Result := Assigned(model);
         if Result then
         begin
@@ -368,8 +358,8 @@ begin
     Result := argument.IsEmpty or argument.IsType(dependency.Handle);
 end;
 
-function TDependencyResolver.Resolve(const dependency: TRttiType;
-  const argument: TValue): TValue;
+function TDependencyResolver.Resolve(const context: IContainerContext;
+  const dependency: TRttiType; const argument: TValue): TValue;
 var
   model: TComponentModel;
   instance: TValue;
@@ -378,7 +368,7 @@ begin
 
   if dependency.IsDynamicArray then
   begin
-    Result := ResolveManyDependency(dependency, argument);
+    Result := ResolveManyDependency(context, dependency, argument);
     Exit;
   end;
 
@@ -395,10 +385,10 @@ begin
 
   fLock.Enter;
   try
-    model := GetEligibleModel(dependency, argument);
+    model := GetEligibleModel(context, dependency, argument);
     if not Assigned(model) then
     begin
-      Result := ResolveLazyDependency(dependency, argument);
+      Result := ResolveLazyDependency(context, dependency, argument);
       Exit;
     end;
     CheckCircularDependency(model);
@@ -412,10 +402,11 @@ begin
     fLock.Leave;
   end;
 
-  ConstructValue(dependency.Handle, instance, Result);
+  Result := ResolveValue(dependency.Handle, instance);
 end;
 
-function TDependencyResolver.ResolveLazyDependency(const dependency: TRttiType;
+function TDependencyResolver.ResolveLazyDependency(
+  const context: IContainerContext; const dependency: TRttiType;
   const argument: TValue): TValue;
 var
   lazyKind: TLazyKind;
@@ -432,10 +423,10 @@ begin
 
   name := TType.GetLazyTypeName(dependency.Handle);
   lazyType := TType.FindType(name);
-  if not Assigned(lazyType) or not CanResolve(lazyType, argument) then
+  if not Assigned(lazyType) or not CanResolve(context, lazyType, argument) then
     raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
 
-  model := GetEligibleModel(lazyType, argument);
+  model := GetEligibleModel(context, lazyType, argument);
   CheckCircularDependency(model);
 
   case lazyType.TypeKind of
@@ -445,7 +436,7 @@ begin
       valueFactoryObj :=
         function: TObject
         begin
-          Result := Resolve(lazyType, value).AsObject;
+          Result := Resolve(context, lazyType, value).AsObject;
         end;
 
       case lazyKind of
@@ -460,7 +451,7 @@ begin
       valueFactoryIntf :=
         function: IInterface
         begin
-          Result := Resolve(lazyType, value).AsInterface;
+          Result := Resolve(context, lazyType, value).AsInterface;
         end;
 
       case lazyKind of
@@ -476,7 +467,8 @@ begin
   TValueData(Result).FTypeInfo := dependency.Handle;
 end;
 
-function TDependencyResolver.ResolveManyDependency(const dependency: TRttiType;
+function TDependencyResolver.ResolveManyDependency(
+  const context: IContainerContext; const dependency: TRttiType;
   const argument: TValue): TValue;
 var
   dependencyType: TRttiType;
@@ -498,19 +490,20 @@ begin
   end
   else
     serviceType := dependencyType.Handle;
-  models := fRegistry.FindAll(serviceType);
+  models := context.ComponentRegistry.FindAll(serviceType);
   SetLength(values, models.Count);
   i := 0;
   for model in models do
   begin
-    values[i] := Resolve(dependencyType, model.GetServiceName(serviceType));
+    values[i] := Resolve(context, dependencyType, model.GetServiceName(serviceType));
     Inc(i);
   end;
   Result := TValue.FromArray(dependency.Handle, values);
 end;
 
-function TDependencyResolver.CanResolve(const dependencies: TArray<TRttiType>;
-  const arguments: TArray<TValue>; const target: TRttiMember): Boolean;
+function TDependencyResolver.CanResolve(const context: IContainerContext;
+  const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
+  const target: TRttiMember): Boolean;
 var
   dependency: TRttiType;
   i: Integer;
@@ -521,22 +514,23 @@ begin
     for i := 0 to High(dependencies) do
     begin
       dependency := dependencies[i];
-      if not CanResolve(dependency, arguments[i]) then
+      if not CanResolve(context, dependency, arguments[i]) then
         Exit(False);
     end;
   end
   else if Length(arguments) = 0 then
   begin
     for dependency in dependencies do
-      if not CanResolve(dependency, nil) then
+      if not CanResolve(context, dependency, nil) then
         Exit(False);
   end
   else
     Exit(False);
 end;
 
-function TDependencyResolver.Resolve(const dependencies: TArray<TRttiType>;
-  const arguments: TArray<TValue>; const target: TRttiMember): TArray<TValue>;
+function TDependencyResolver.Resolve(const context: IContainerContext;
+  const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
+  const target: TRttiMember): TArray<TValue>;
 var
   dependency: TRttiType;
   hasArgument: Boolean;
@@ -551,7 +545,7 @@ begin
     for i := 0 to High(dependencies) do
     begin
       dependency := dependencies[i];
-      Result[i] := Resolve(dependency, arguments[i]);
+      Result[i] := Resolve(context, dependency, arguments[i]);
     end;
   end
   else
@@ -559,7 +553,7 @@ begin
     for i := 0 to High(dependencies) do
     begin
       dependency := dependencies[i];
-      Result[i] := Resolve(dependency, nil);
+      Result[i] := Resolve(context, dependency, nil);
     end;
   end;
 end;
@@ -569,14 +563,21 @@ end;
 
 {$REGION 'TServiceResolver'}
 
+constructor TServiceResolver.Create(const context: IContainerContext);
+begin
+  inherited Create;
+  fContext := context;
+  fRegistry := context.ComponentRegistry;
+end;
+
 function TServiceResolver.CanResolve(serviceType: PTypeInfo): Boolean;
 begin
-  Result := Registry.HasService(serviceType);
+  Result := fRegistry.HasService(serviceType);
 end;
 
 function TServiceResolver.CanResolve(const name: string): Boolean;
 begin
-  Result := Registry.HasService(name);
+  Result := fRegistry.HasService(name);
 end;
 
 function TServiceResolver.InternalResolve(const model: TComponentModel;
@@ -589,7 +590,7 @@ begin
   Guard.CheckNotNull(model.LifetimeManager, 'model.LifetimeManager');
 
   instance := model.LifetimeManager.GetInstance(resolver);
-  ConstructValue(serviceType, instance, Result);
+  Result := ResolveValue(serviceType, instance);
 end;
 
 function TServiceResolver.InternalResolveLazy(const model: TComponentModel;
@@ -661,7 +662,7 @@ var
   model: TComponentModel;
   resolver: IDependencyResolver;
 begin
-  resolveLazy := not Registry.HasService(serviceType) and TType.IsLazy(serviceType);
+  resolveLazy := not fRegistry.HasService(serviceType) and TType.IsLazy(serviceType);
   lazyType := serviceType;
   if resolveLazy then
   begin
@@ -672,19 +673,19 @@ begin
 
   serviceName := GetTypeName(serviceType);
 
-  if not Registry.HasService(serviceType) then
+  if not fRegistry.HasService(serviceType) then
     raise EResolveException.CreateResFmt(@SNoComponentRegistered, [serviceName])
   else
   begin
-    model := Registry.FindDefault(serviceType);
+    model := fRegistry.FindDefault(serviceType);
     if not Assigned(model) then
       raise EUnsatisfiedDependencyException.CreateResFmt(
         @SUnsatisfiedDependency, [serviceName]);
   end;
   if Assigned(resolverOverride) then
-    resolver := resolverOverride.GetResolver(Context)
+    resolver := resolverOverride.GetResolver(fContext)
   else
-    resolver := Context.DependencyResolver;
+    resolver := fContext.DependencyResolver;
 
   if resolveLazy then
     Result := InternalResolveLazy(model, lazyType, resolver)
@@ -704,14 +705,14 @@ var
   serviceType: PTypeInfo;
   resolver: IDependencyResolver;
 begin
-  model := Registry.FindOne(name);
+  model := fRegistry.FindOne(name);
   if not Assigned(model) then
     raise EResolveException.CreateResFmt(@SInvalidServiceName, [name]);
   serviceType := model.GetServiceType(name);
   if Assigned(resolverOverride) then
-    resolver := resolverOverride.GetResolver(Context)
+    resolver := resolverOverride.GetResolver(fContext)
   else
-    resolver := Context.DependencyResolver;
+    resolver := fContext.DependencyResolver;
   Result := InternalResolve(model, serviceType, resolver);
 end;
 
@@ -728,15 +729,15 @@ begin
     modelType := TType.FindType(TType.GetLazyTypeName(serviceType)).Handle
   else
     modelType := serviceType;
-  models := Registry.FindAll(modelType);
+  models := fRegistry.FindAll(modelType);
   SetLength(Result, models.Count);
   i := 0;
   for model in models do
   begin
     if isLazy then
-      Result[i] := InternalResolveLazy(model, serviceType, Context.DependencyResolver)
+      Result[i] := InternalResolveLazy(model, serviceType, fContext.DependencyResolver)
     else
-      Result[i] := InternalResolve(model, serviceType, Context.DependencyResolver);
+      Result[i] := InternalResolve(model, serviceType, fContext.DependencyResolver);
     Inc(i);
   end;
 end;
@@ -757,7 +758,7 @@ end;
 
 function TOrderedParametersOverride.GetResolver(const context: IContainerContext): IDependencyResolver;
 begin
-  Result := TResolver.Create(context, context.ComponentRegistry, fArguments);
+  Result := TResolver.Create(fArguments);
 end;
 
 {$ENDREGION}
@@ -765,34 +766,36 @@ end;
 
 {$REGION 'TOrderedParametersOverride.TResolver'}
 
-constructor TOrderedParametersOverride.TResolver.Create(const context: IContainerContext;
-  const registry: IComponentRegistry; const arguments: TArray<TValue>);
+constructor TOrderedParametersOverride.TResolver.Create(
+  const arguments: TArray<TValue>);
 begin
-  inherited Create(context, registry);
+  inherited Create;
   fArguments := arguments;
 end;
 
 function TOrderedParametersOverride.TResolver.CanResolve(
-  const dependency: TRttiType; const argument: TValue): Boolean;
+  const context: IContainerContext; const dependency: TRttiType;
+  const argument: TValue): Boolean;
 begin
   Result := argument.IsType(dependency.Handle);
 end;
 
 function TOrderedParametersOverride.TResolver.CanResolve(
-  const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
-  const target: TRttiMember): Boolean;
+  const context: IContainerContext; const dependencies: TArray<TRttiType>;
+  const arguments: TArray<TValue>; const target: TRttiMember): Boolean;
 begin
-  Result := inherited CanResolve(dependencies, fArguments, target);
+  Result := inherited CanResolve(context, dependencies, fArguments, target);
 end;
 
 function TOrderedParametersOverride.TResolver.Resolve(
-  const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
-  const target: TRttiMember): TArray<TValue>;
+  const context: IContainerContext; const dependencies: TArray<TRttiType>;
+  const arguments: TArray<TValue>; const target: TRttiMember): TArray<TValue>;
 begin
   if target.IsConstructor then
     Result := fArguments
   else
-    Result := fContext.DependencyResolver.Resolve(dependencies, arguments, target);
+    Result := context.DependencyResolver.Resolve(
+      context, dependencies, arguments, target);
 end;
 
 {$ENDREGION}
@@ -821,14 +824,14 @@ constructor TParameterOverride.TResolver.Create(
   const context: IContainerContext; const registry: IComponentRegistry;
   const name: string; const value: TValue);
 begin
-  inherited Create(context, registry);
+  inherited Create;
   fName := name;
   fValue := value;
 end;
 
 function TParameterOverride.TResolver.CanResolve(
-  const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
-  const target: TRttiMember): Boolean;
+  const context: IContainerContext; const dependencies: TArray<TRttiType>;
+  const arguments: TArray<TValue>; const target: TRttiMember): Boolean;
 var
   dependency: TRttiType;
   i: Integer;
@@ -843,14 +846,14 @@ begin
       dependency := dependencies[i];
       if SameText(parameters[i].Name, fName) then
         Continue;
-      if not CanResolve(dependency, arguments[i]) then
+      if not CanResolve(context, dependency, arguments[i]) then
         Exit(False);
     end;
   end
   else if Length(arguments) = 0 then
   begin
     for dependency in dependencies do
-      if not CanResolve(dependency, nil) then
+      if not CanResolve(context, dependency, nil) then
         Exit(False);
   end
   else
@@ -858,8 +861,8 @@ begin
 end;
 
 function TParameterOverride.TResolver.Resolve(
-  const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
-  const target: TRttiMember): TArray<TValue>;
+  const context: IContainerContext; const dependencies: TArray<TRttiType>;
+  const arguments: TArray<TValue>; const target: TRttiMember): TArray<TValue>;
 var
   dependency: TRttiType;
   hasArgument: Boolean;
@@ -880,7 +883,7 @@ begin
       else
       begin
         dependency := dependencies[i];
-        Result[i] := Resolve(dependency, arguments[i]);
+        Result[i] := Resolve(context, dependency, arguments[i]);
       end;
     end;
   end
@@ -889,7 +892,7 @@ begin
     for i := 0 to High(dependencies) do
     begin
       dependency := dependencies[i];
-      Result[i] := Resolve(dependency, nil);
+      Result[i] := Resolve(context, dependency, nil);
     end;
   end;
 end;
@@ -909,7 +912,7 @@ end;
 function TDependencyOverride.GetResolver(
   const context: IContainerContext): IDependencyResolver;
 begin
-  Result := TResolver.Create(context, context.ComponentRegistry, fTypeInfo, fValue);
+  Result := TResolver.Create(fTypeInfo, fValue);
 end;
 
 {$ENDREGION}
@@ -917,30 +920,30 @@ end;
 
 {$REGION 'TDependencyOverride.TResolver'}
 
-constructor TDependencyOverride.TResolver.Create(
-  const context: IContainerContext; const registry: IComponentRegistry;
-  typeInfo: PTypeInfo; const value: TValue);
+constructor TDependencyOverride.TResolver.Create(typeInfo: PTypeInfo;
+  const value: TValue);
 begin
-  inherited Create(context, registry);
+  inherited Create;
   fTypeInfo := typeInfo;
   fValue := value;
 end;
 
 function TDependencyOverride.TResolver.CanResolve(
-  const dependency: TRttiType; const argument: TValue): Boolean;
+  const context: IContainerContext; const dependency: TRttiType;
+  const argument: TValue): Boolean;
 begin
   Result := dependency.Handle = fTypeInfo;
   if not Result then
-    Result := fContext.DependencyResolver.CanResolve(dependency, argument);
+    Result := context.DependencyResolver.CanResolve(context, dependency, argument);
 end;
 
-function TDependencyOverride.TResolver.Resolve(
+function TDependencyOverride.TResolver.Resolve(const context: IContainerContext;
   const dependency: TRttiType; const argument: TValue): TValue;
 begin
   if dependency.Handle = fTypeInfo then
     Result := fValue
   else
-    Result := fContext.DependencyResolver.Resolve(dependency, argument);
+    Result := context.DependencyResolver.Resolve(context, dependency, argument);
 end;
 
 {$ENDREGION}
@@ -969,7 +972,7 @@ end;
 function TDependencyOverrides.GetResolver(
   const context: IContainerContext): IDependencyResolver;
 begin
-  Result := TResolver.Create(context, context.ComponentRegistry, fDependencyOverrides);
+  Result := TResolver.Create(fDependencyOverrides);
 end;
 
 {$ENDREGION}
@@ -978,15 +981,15 @@ end;
 {$REGION 'TDependencyOverrides.TResolver'}
 
 constructor TDependencyOverrides.TResolver.Create(
-  const context: IContainerContext; const registry: IComponentRegistry;
   const dependencyOverrides: IList<TDependencyOverride>);
 begin
-  inherited Create(context, registry);
+  inherited Create;
   fDependencyOverrides := dependencyOverrides;
 end;
 
 function TDependencyOverrides.TResolver.CanResolve(
-  const dependency: TRttiType; const argument: TValue): Boolean;
+  const context: IContainerContext; const dependency: TRttiType;
+  const argument: TValue): Boolean;
 var
   dependencyOverride: TDependencyOverride;
 begin
@@ -994,11 +997,12 @@ begin
     if dependencyOverride.TypeInfo = dependency.Handle then
       Exit(True);
 
-  Result := fContext.DependencyResolver.CanResolve(dependency, argument);
+  Result := context.DependencyResolver.CanResolve(context, dependency, argument);
 end;
 
 function TDependencyOverrides.TResolver.Resolve(
-  const dependency: TRttiType; const argument: TValue): TValue;
+  const context: IContainerContext; const dependency: TRttiType;
+  const argument: TValue): TValue;
 var
   dependencyOverride: TDependencyOverride;
 begin
@@ -1006,7 +1010,7 @@ begin
     if dependencyOverride.TypeInfo = dependency.Handle then
       Exit(dependencyOverride.Value);
 
-  Result := fContext.DependencyResolver.Resolve(dependency, argument);
+  Result := context.DependencyResolver.Resolve(context, dependency, argument);
 end;
 
 {$ENDREGION}

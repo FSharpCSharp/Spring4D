@@ -198,8 +198,8 @@ begin
   inherited Create;
   fRegistry := TComponentRegistry.Create(Self);
   fBuilder := TComponentBuilder.Create(Self, fRegistry);
-  fServiceResolver := TServiceResolver.Create(Self, fRegistry);
-  fDependencyResolver := TDependencyResolver.Create(Self, fRegistry);
+  fServiceResolver := TServiceResolver.Create(Self);
+  fDependencyResolver := TDependencyResolver.Create;
   fInjectionFactory := TInjectionFactory.Create;
   fRegistrationManager := TRegistrationManager.Create(fRegistry);
   fExtensions := TCollections.CreateInterfaceList<IContainerExtension>;
