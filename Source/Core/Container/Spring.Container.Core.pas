@@ -191,13 +191,7 @@ type
 
   TResolveEvent = procedure(Sender: TObject; var instance: TValue) of object;
 
-  IResolver = interface
-    ['{EA0ABA0F-BED0-4897-9E50-133184E105B7}']
-    function GetOnResolve: IEvent<TResolveEvent>;
-    property OnResolve: IEvent<TResolveEvent> read GetOnResolve;
-  end;
-
-  ISubDependencyResolver = interface(IResolver)
+  ISubDependencyResolver = interface
     ['{E360FFAD-2235-49D1-9A4F-50945877E337}']
     function CanResolve(const dependency: TRttiType; const argument: TValue): Boolean; overload;
     function Resolve(const dependency: TRttiType; const argument: TValue): TValue; overload;
@@ -225,7 +219,7 @@ type
   ///	<summary>
   ///	  Resolves services.
   ///	</summary>
-  IServiceResolver = interface(IResolver)
+  IServiceResolver = interface
     ['{14669EBA-4E57-4DF4-919D-377D8E90144C}']
     function CanResolve(serviceType: PTypeInfo): Boolean; overload;
     function CanResolve(const name: string): Boolean; overload;

@@ -36,13 +36,10 @@ uses
   Spring.Container.Core;
 
 type
-  TResolver = class(TInterfacedObject, IResolver)
+  TResolver = class(TInterfacedObject)
   private
     fContext: IContainerContext;
     fRegistry: IComponentRegistry;
-    fOnResolve: IEvent<TResolveEvent>;
-    procedure DoResolve(var instance: TValue);
-    function GetOnResolve: IEvent<TResolveEvent>;
   protected
     procedure ConstructValue(typeInfo: PTypeInfo; const instance: TValue; out value: TValue);
 
@@ -50,9 +47,6 @@ type
     property Registry: IComponentRegistry read fRegistry;
   public
     constructor Create(const context: IContainerContext; const registry: IComponentRegistry);
-    destructor Destroy; override;
-
-    property OnResolve: IEvent<TResolveEvent> read GetOnResolve;
   end;
 
   TDependencyResolver = class(TResolver, IDependencyResolver)
@@ -211,67 +205,8 @@ uses
   SysUtils,
   TypInfo,
   Spring.Container.ResourceStrings,
-  Spring.Events.Base,
   Spring.Helpers,
   Spring.Reflection;
-
-
-{$REGION 'TResolveEventImpl'}
-
-type
-  TResolveEventImpl = class(TEventBase, IEvent<TResolveEvent>)
-  private
-    function GetInvoke: TResolveEvent;
-    procedure Add(handler: TResolveEvent);
-    procedure Remove(handler: TResolveEvent);
-    procedure ForEach(const action: TAction<TResolveEvent>);
-
-    procedure InternalInvoke(Sender: TObject; var instance: TValue);
-  public
-    constructor Create;
-  end;
-
-constructor TResolveEventImpl.Create;
-begin
-  inherited;
-  fInvoke.Code := @TResolveEventImpl.InternalInvoke;
-  fInvoke.Data := Self;
-end;
-
-procedure TResolveEventImpl.Add(handler: TResolveEvent);
-begin
-  inherited Add(TMethod(handler));
-end;
-
-procedure TResolveEventImpl.ForEach(const action: TAction<TResolveEvent>);
-var
-  i: Integer;
-begin
-  for i := 0 to Handlers.Count - 1 do
-    action(TResolveEvent(Handlers.Items[i]));
-end;
-
-function TResolveEventImpl.GetInvoke: TResolveEvent;
-begin
-  Result := TResolveEvent(inherited Invoke);
-end;
-
-procedure TResolveEventImpl.InternalInvoke(Sender: TObject;
-  var instance: TValue);
-var
-  i: Integer;
-begin
-  if Enabled then
-    for i := 0 to Handlers.Count - 1 do
-      TResolveEvent(Handlers.Items[i])(Sender, instance);
-end;
-
-procedure TResolveEventImpl.Remove(handler: TResolveEvent);
-begin
-  inherited Remove(TMethod(handler));
-end;
-
-{$ENDREGION}
 
 
 {$REGION 'TResolver'}
@@ -284,23 +219,6 @@ begin
   inherited Create;
   fContext := context;
   fRegistry := registry;
-  fOnResolve := TResolveEventImpl.Create;
-end;
-
-destructor TResolver.Destroy;
-begin
-  fOnResolve := nil;
-  inherited;
-end;
-
-procedure TResolver.DoResolve(var instance: TValue);
-begin
-  fOnResolve.Invoke(Self, instance);
-end;
-
-function TResolver.GetOnResolve: IEvent<TResolveEvent>;
-begin
-  Result := fOnResolve;
 end;
 
 procedure TResolver.ConstructValue(typeInfo: PTypeInfo; const instance: TValue;
@@ -332,8 +250,6 @@ begin
   else
     value := nil;
   end;
-
-  DoResolve(value);
 end;
 
 {$ENDREGION}
