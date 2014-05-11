@@ -109,6 +109,7 @@ uses
   Spring.Container.Common,
   Spring.Container.ComponentActivator,
   Spring.Container.Injection,
+  Spring.Container.LifetimeManager,
   Spring.Container.ResourceStrings,
   Spring.Helpers,
   Spring.Reflection;
@@ -182,6 +183,24 @@ end;
 
 procedure TLifetimeInspector.DoProcessModel(const context: IContainerContext;
   const model: TComponentModel);
+
+  function CreateLifetimeManager(const model: TComponentModel): ILifetimeManager;
+  const
+    LifetimeManagerClasses: array[TLifetimeType] of TLifetimeManagerClass = (
+      nil,
+      TSingletonLifetimeManager,
+      TTransientLifetimeManager,
+      TSingletonPerThreadLifetimeManager,
+      TPooledLifetimeManager,
+      nil
+    );
+  begin
+    if Assigned(LifetimeManagerClasses[model.LifetimeType]) then
+      Result := LifetimeManagerClasses[model.LifetimeType].Create(model)
+    else
+      raise ERegistrationException.CreateRes(@SUnexpectedLifetimeType);
+  end;
+
 var
   attribute: LifetimeAttributeBase;
 begin
@@ -206,7 +225,7 @@ begin
     else
       model.LifetimeType := TLifetimeType.Transient;
   end;
-  model.LifetimeManager := context.CreateLifetimeManager(model);
+  model.LifetimeManager := CreateLifetimeManager(model);
 end;
 
 {$ENDREGION}

@@ -67,14 +67,14 @@ type
   {$ENDREGION}
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(const name: string): Boolean; overload;
-    function CreateLifetimeManager(const model: TComponentModel): ILifetimeManager;
+
     procedure AddExtension(const extension: IContainerExtension);
+
     property ComponentBuilder: IComponentBuilder read GetComponentBuilder;
     property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
     property DependencyResolver: IDependencyResolver read GetDependencyResolver;
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
     property ServiceResolver: IServiceResolver read GetServiceResolver;
-    property ComponentBuilder: IComponentBuilder read GetComponentBuilder;
   end;
 
   ///	<summary>

@@ -49,10 +49,12 @@ type
     property ComponentActivator: IComponentActivator read GetActivator;
     property Model: TComponentModel read fModel;
   public
-    constructor Create(const model: TComponentModel);
+    constructor Create(const model: TComponentModel); virtual;
     function GetInstance(const resolver: IDependencyResolver): TValue; overload; virtual; abstract;
     procedure ReleaseInstance(const instance: TValue); virtual; abstract;
   end;
+
+  TLifetimeManagerClass = class of TLifetimeManagerBase;
 
   TSingletonLifetimeManager = class(TLifetimeManagerBase)
   private
@@ -76,7 +78,7 @@ type
     procedure HandleValueChanged(sender: TObject; const item: TFunc<TValue>; action: TCollectionChangedAction);
     function CreateHolder(const instance: TValue): TFunc<TValue>; virtual;
   public
-    constructor Create(const model: TComponentModel);
+    constructor Create(const model: TComponentModel); override;
     function GetInstance(const resolver: IDependencyResolver): TValue; override;
     procedure ReleaseInstance(const instance: TValue); override;
   end;
@@ -85,7 +87,7 @@ type
   private
     fPool: IObjectPool;
   public
-    constructor Create(const model: TComponentModel);
+    constructor Create(const model: TComponentModel); override;
     function GetInstance(const resolver: IDependencyResolver): TValue; override;
     procedure ReleaseInstance(const instance: TValue); override;
   end;
@@ -94,8 +96,11 @@ implementation
 
 uses
   Classes,
+  Rtti,
   TypInfo,
-  Spring.Container.Common;
+  Spring.Container.Common,
+  Spring.Container.ResourceStrings,
+  Spring.Helpers;
 
 
 {$REGION 'TLifetimeManagerBase'}
@@ -285,7 +290,18 @@ end;
 {$REGION 'TPooledLifetimeManager'}
 
 constructor TPooledLifetimeManager.Create(const model: TComponentModel);
+
+  procedure CheckPoolingSupported(const componentType: TRttiType);
+  begin
+    if not (componentType.IsInstance
+      and (componentType.AsInstance.MetaclassType.InheritsFrom(TInterfacedObject)
+      or Supports(componentType.AsInstance.MetaclassType, IRefCounted))) then
+      raise ERegistrationException.CreateResFmt(@SPoolingNotSupported, [
+        componentType.DefaultName]);
+  end;
+
 begin
+  CheckPoolingSupported(model.ComponentType);
   inherited Create(model);
   fPool := TSimpleObjectPool.Create(model.ComponentActivator, model.MinPoolsize, model.MaxPoolsize);
 end;

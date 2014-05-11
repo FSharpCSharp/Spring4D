@@ -64,8 +64,6 @@ type
     function GetInjectionFactory: IInjectionFactory;
     function GetServiceResolver: IServiceResolver;
   {$ENDREGION}
-    procedure CheckPoolingSupported(componentType: TRttiType);
-    function CreateLifetimeManager(const model: TComponentModel): ILifetimeManager;
     procedure InitializeInspectors; virtual;
     property ComponentBuilder: IComponentBuilder read GetComponentBuilder;
     property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
@@ -248,21 +246,6 @@ begin
   fBuilder.BuildAll;
 end;
 
-procedure TContainer.CheckPoolingSupported(componentType: TRttiType);
-begin
-  if not (componentType.IsInstance
-    and (componentType.AsInstance.MetaclassType.InheritsFrom(TInterfacedObject)
-    or Supports(componentType.AsInstance.MetaclassType, IRefCounted))) then
-  begin
-    if componentType.IsPublicType then
-      raise ERegistrationException.CreateResFmt(@SPoolingNotSupported, [
-        componentType.QualifiedName])
-    else
-      raise ERegistrationException.CreateResFmt(@SPoolingNotSupported, [
-        componentType.Name]);
-  end;
-end;
-
 procedure TContainer.InitializeInspectors;
 var
   inspectors: TArray<IBuilderInspector>;
@@ -280,27 +263,6 @@ begin
   );
   for inspector in inspectors do
     fBuilder.AddInspector(inspector);
-end;
-
-function TContainer.CreateLifetimeManager(
-  const model: TComponentModel): ILifetimeManager;
-begin
-  Guard.CheckNotNull(model, 'model');
-  case model.LifetimeType of
-    TLifetimeType.Singleton:
-      Result := TSingletonLifetimeManager.Create(model);
-    TLifetimeType.Transient:
-      Result := TTransientLifetimeManager.Create(model);
-    TLifetimeType.SingletonPerThread:
-      Result := TSingletonPerThreadLifetimeManager.Create(model);
-    TLifetimeType.Pooled:
-    begin
-      CheckPoolingSupported(model.ComponentType);
-      Result := TPooledLifetimeManager.Create(model);
-    end;
-  else
-    raise ERegistrationException.CreateRes(@SUnexpectedLifetimeType);
-  end;
 end;
 
 function TContainer.GetComponentBuilder: IComponentBuilder;
