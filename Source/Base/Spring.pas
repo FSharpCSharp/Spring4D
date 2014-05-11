@@ -162,13 +162,6 @@ type
   ///	  be checked.
   ///	</remarks>
   Guard = record
-  strict private
-    class procedure DoCheckIndex(length, index, indexBase: Integer); overload; static; inline;
-  private
-    class procedure DoCheckArrayIndex(length, index: Integer); static; inline;
-    class procedure DoCheckArrayRange(length, startIndex, count: Integer); static; inline;
-    class procedure DoCheckStringIndex(length, index: Integer); static; inline;
-    class procedure DoCheckStringRange(length, startIndex, count: Integer); static; inline;
   public
     class procedure CheckTrue(condition: Boolean; const msg: string = ''); static; inline;
     class procedure CheckFalse(condition: Boolean; const msg: string = ''); static; inline;
@@ -185,25 +178,27 @@ type
     class procedure CheckEnum<T{:enum}>(const argumentValue: T; const argumentName: string); overload; static; inline;
     class procedure CheckEnum<T{:enum}>(argumentValue: Integer; const argumentName: string); overload; static; inline;
 
+    class procedure CheckIndex(length, index: Integer; indexBase: Integer = 0); static; inline;
+
     ///	<exception cref="Spring|EArgumentOutOfRangeException">
     ///	  Raised if the <paramref name="index" /> is out of range.
     ///	</exception>
     class procedure CheckRange(const buffer: array of Byte; index: Integer); overload; static;
-    class procedure CheckRange(const buffer: array of Byte; startIndex, count: Integer); overload; static;
+    class procedure CheckRange(const buffer: array of Byte; index, count: Integer); overload; static;
     class procedure CheckRange(const buffer: array of Char; index: Integer); overload; static;
-    class procedure CheckRange(const buffer: array of Char; startIndex, count: Integer); overload; static;
+    class procedure CheckRange(const buffer: array of Char; index, count: Integer); overload; static;
     class procedure CheckRange<T>(const buffer: array of T; index: Integer); overload; static;
-    class procedure CheckRange<T>(const buffer: array of T; startIndex, count: Integer); overload; static;
+    class procedure CheckRange<T>(const buffer: array of T; index, count: Integer); overload; static;
     class procedure CheckRange(const s: string; index: Integer); overload; static; inline;
-    class procedure CheckRange(const s: string; startIndex, count: Integer); overload; static; inline;
+    class procedure CheckRange(const s: string; index, count: Integer); overload; static; inline;
 {$IFNDEF NEXTGEN}
     class procedure CheckRange(const s: WideString; index: Integer); overload; static; inline;
-    class procedure CheckRange(const s: WideString; startIndex, count: Integer); overload; static; inline;
+    class procedure CheckRange(const s: WideString; index, count: Integer); overload; static; inline;
     class procedure CheckRange(const s: RawByteString; index: Integer); overload; static; inline;
-    class procedure CheckRange(const s: RawByteString; startIndex, count: Integer); overload; static; inline;
+    class procedure CheckRange(const s: RawByteString; index, count: Integer); overload; static; inline;
 {$ENDIF}
     class procedure CheckRange(condition: Boolean; const argumentName: string); overload; static; inline;
-    class procedure CheckRange(length, startIndex, count: Integer; indexBase: Integer = 0); overload; static; inline;
+    class procedure CheckRange(length, index, count: Integer; indexBase: Integer = 0); overload; static; inline;
 
     class procedure CheckTypeKind(typeInfo: PTypeInfo; expectedTypeKind: TTypeKind; const argumentName: string); overload; static;
     class procedure CheckTypeKind(typeInfo: PTypeInfo; expectedTypeKinds: TTypeKinds; const argumentName: string); overload; static;
@@ -1048,59 +1043,32 @@ end;
 
 {$REGION 'Guard'}
 
-class procedure Guard.DoCheckArrayIndex(length, index: Integer);
-begin
-  Guard.DoCheckIndex(length, index, 0);
-end;
-
-class procedure Guard.DoCheckArrayRange(length, startIndex, count: Integer);
-begin
-  Guard.CheckRange(length, startIndex, count, 0);
-end;
-
-class procedure Guard.DoCheckStringIndex(length, index: Integer);
-begin
-  Guard.DoCheckIndex(length, index, 1);
-end;
-
-class procedure Guard.DoCheckStringRange(length, startIndex, count: Integer);
-begin
-  Guard.CheckRange(length, startIndex, count, 1);
-end;
-
-class procedure Guard.DoCheckIndex(length, index, indexBase: Integer);
+class procedure Guard.CheckIndex(length, index, indexBase: Integer);
 const
   IndexArgName = 'index';
 begin
-  if (index < indexBase) or (index > length + indexBase - 1) then
+  if (index < indexBase) or (index >= indexBase + length) then
     Guard.RaiseArgumentOutOfRangeException(IndexArgName);
 end;
 
-class procedure Guard.CheckRange(length, startIndex, count, indexBase: Integer);
+class procedure Guard.CheckRange(length, index, count, indexBase: Integer);
 const
-  StartIndexArgName = 'startIndex';
   CountArgName = 'count';
 begin
-  Guard.CheckRange(
-    (startIndex >= indexBase) and (startIndex < indexBase + length),
-    StartIndexArgName);
-  Guard.CheckRange(count >= 0, CountArgName);
-  if count > 0 then
-    Guard.CheckRange(count <= indexBase + length - startIndex, CountArgName);
+  Guard.CheckIndex(length, index, indexBase);
+  if (count < 0) or (index + count > indexBase + length) then
+    Guard.RaiseArgumentOutOfRangeException(CountArgName);
 end;
 
 class procedure Guard.CheckRange<T>(const buffer: array of T; index: Integer);
-const
-  IndexArgName = 'index';
 begin
-  if (index < 0) or (index >= Length(buffer)) then
-    Guard.RaiseArgumentOutOfRangeException(IndexArgName);
+  Guard.CheckIndex(Length(buffer), index);
 end;
 
 class procedure Guard.CheckRange<T>(const buffer: array of T;
-  startIndex, count: Integer);
+  index, count: Integer);
 begin
-  Guard.DoCheckArrayRange(Length(buffer), startIndex, count);
+  Guard.CheckRange(Length(buffer), index, count);
 end;
 
 class procedure Guard.CheckTrue(condition: Boolean; const msg: string);
@@ -1200,56 +1168,56 @@ begin
 end;
 
 class procedure Guard.CheckRange(const buffer: array of Byte;
-  startIndex, count: Integer);
+  index, count: Integer);
 begin
-  Guard.DoCheckArrayRange(Length(buffer), startIndex, count);
+  Guard.CheckRange(Length(buffer), index, count);
 end;
 
 class procedure Guard.CheckRange(const buffer: array of Char;
-  startIndex, count: Integer);
+  index, count: Integer);
 begin
-  Guard.DoCheckArrayRange(Length(buffer), startIndex, count);
+  Guard.CheckRange(Length(buffer), index, count);
 end;
 
 class procedure Guard.CheckRange(const buffer: array of Byte; index: Integer);
 begin
-  Guard.DoCheckArrayIndex(Length(buffer), index);
+  Guard.CheckIndex(Length(buffer), index);
 end;
 
 class procedure Guard.CheckRange(const buffer: array of Char; index: Integer);
 begin
-  Guard.DoCheckArrayIndex(Length(buffer), index);
+  Guard.CheckIndex(Length(buffer), index);
 end;
 
 class procedure Guard.CheckRange(const s: string; index: Integer);
 begin
-  Guard.DoCheckStringIndex(Length(s), index);
+  Guard.CheckIndex(Length(s), index, 1);
 end;
 
-class procedure Guard.CheckRange(const s: string; startIndex, count: Integer);
+class procedure Guard.CheckRange(const s: string; index, count: Integer);
 begin
-  Guard.DoCheckStringRange(Length(s), startIndex, count);
+  Guard.CheckRange(Length(s), index, count, 1);
 end;
 
 {$IFNDEF NEXTGEN}
 class procedure Guard.CheckRange(const s: WideString; index: Integer);
 begin
-  Guard.DoCheckStringIndex(Length(s), index);
+  Guard.CheckIndex(Length(s), index, 1);
 end;
 
-class procedure Guard.CheckRange(const s: WideString; startIndex, count: Integer);
+class procedure Guard.CheckRange(const s: WideString; index, count: Integer);
 begin
-  Guard.DoCheckStringRange(Length(s), startIndex, count);
+  Guard.CheckRange(Length(s), index, count, 1);
 end;
 
 class procedure Guard.CheckRange(const s: RawByteString; index: Integer);
 begin
-  Guard.DoCheckStringIndex(Length(s), index);
+  Guard.CheckIndex(Length(s), index, 1);
 end;
 
-class procedure Guard.CheckRange(const s: RawByteString; startIndex, count: Integer);
+class procedure Guard.CheckRange(const s: RawByteString; index, count: Integer);
 begin
-  Guard.DoCheckStringRange(Length(s), startIndex, count);
+  Guard.CheckRange(Length(s), index, count, 1);
 end;
 {$ENDIF}
 
