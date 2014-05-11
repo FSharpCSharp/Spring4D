@@ -43,6 +43,7 @@ type
   IComponentRegistry = interface;
   IBuilderInspector = interface;
   IServiceResolver = interface;
+  ISubDependencyResolver = interface;
   IDependencyResolver = interface;
   IInjection = interface;
   IInjectionFactory = interface;
@@ -196,15 +197,21 @@ type
     property OnResolve: IEvent<TResolveEvent> read GetOnResolve;
   end;
 
-  IDependencyResolver = interface(IResolver)
-    ['{15ADEA1D-7C3F-48D5-8E85-84B4332AFF5F}']
-    function CanResolveDependency(const dependency: TRttiType; const argument: TValue): Boolean;
-    function ResolveDependency(const dependency: TRttiType; const argument: TValue): TValue;
+  ISubDependencyResolver = interface(IResolver)
+    ['{E360FFAD-2235-49D1-9A4F-50945877E337}']
+    function CanResolve(const dependency: TRttiType; const argument: TValue): Boolean; overload;
+    function Resolve(const dependency: TRttiType; const argument: TValue): TValue; overload;
+  end;
 
-    function CanResolveDependencies(const dependencies: TArray<TRttiType>;
-      const arguments: TArray<TValue>; const target: TRttiMember): Boolean;
-    function ResolveDependencies(const dependencies: TArray<TRttiType>;
-      const arguments: TArray<TValue>; const target: TRttiMember): TArray<TValue>;
+  IDependencyResolver = interface(ISubDependencyResolver)
+    ['{15ADEA1D-7C3F-48D5-8E85-84B4332AFF5F}']
+    function CanResolve(const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
+      const target: TRttiMember): Boolean; overload;
+    function Resolve(const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
+      const target: TRttiMember): TArray<TValue>; overload;
+
+    procedure AddSubResolver(const subResolver: ISubDependencyResolver);
+    procedure RemoveSubResolver(const subResolver: ISubDependencyResolver);
   end;
 
   ///	<summary>
@@ -641,7 +648,7 @@ begin
   SetLength(dependencies, Length(parameters));
   for i := 0 to High(dependencies) do
     dependencies[i] := parameters[i].ParamType;
-  Result := fContext.DependencyResolver.CanResolveDependencies(
+  Result := fContext.DependencyResolver.CanResolve(
     dependencies, fArguments, method);
 end;
 
