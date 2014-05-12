@@ -100,7 +100,7 @@ var
 begin
   for injection in injections do
   begin
-    arguments := resolver.Resolve(fKernel, injection.Dependencies,
+    arguments := resolver.Resolve(injection.Dependencies,
       injection.Arguments, injection.Target);
     injection.Inject(instance, arguments);
   end;
@@ -121,7 +121,6 @@ begin
   if constructorInjection = nil then
     raise EActivatorException.CreateRes(@SUnsatisfiedConstructor);
   constructorArguments := resolver.Resolve(
-    Kernel,
     constructorInjection.Dependencies,
     constructorInjection.Arguments,
     constructorInjection.Target);
@@ -162,7 +161,7 @@ begin
       winner := candidate;
       Break;
     end;
-    if resolver.CanResolve(Kernel, candidate.Dependencies,
+    if resolver.CanResolve(candidate.Dependencies,
       candidate.Arguments, candidate.Target) then
     begin
       if candidate.DependencyCount > maxCount then

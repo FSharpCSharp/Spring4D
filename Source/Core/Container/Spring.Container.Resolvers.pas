@@ -38,31 +38,33 @@ uses
 type
   TDependencyResolver = class(TInterfacedObject, IDependencyResolver)
   private
+    fKernel: IKernel;
     fLock: TCriticalSection;
     fDependencies: IList<TComponentModel>;
     fSubResolvers: IList<ISubDependencyResolver>;
   protected
     procedure CheckCircularDependency(const model: TComponentModel);
-    function GetEligibleModel(const kernel: IKernel;
+    function GetEligibleModel(
       const dependency: TRttiType; const argument: TValue): TComponentModel;
 
-    function ResolveLazyDependency(const kernel: IKernel;
+    function ResolveLazyDependency(
       const dependency: TRttiType; const argument: TValue): TValue;
-    function ResolveManyDependency(const kernel: IKernel;
+    function ResolveManyDependency(
       const dependency: TRttiType; const argument: TValue): TValue;
+    property Kernel: IKernel read fKernel;
   public
-    constructor Create;
+    constructor Create(const kernel: IKernel);
     destructor Destroy; override;
 
-    function CanResolve(const kernel: IKernel;
+    function CanResolve(
       const dependency: TRttiType; const argument: TValue): Boolean; overload; virtual;
-    function CanResolve(const kernel: IKernel;
+    function CanResolve(
       const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
       const target: TRttiMember): Boolean; overload; virtual;
 
-    function Resolve(const kernel: IKernel;
+    function Resolve(
       const dependency: TRttiType; const argument: TValue): TValue; overload; virtual;
-    function Resolve(const kernel: IKernel;
+    function Resolve(
       const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
       const target: TRttiMember): TArray<TValue>; overload; virtual;
 
@@ -107,13 +109,13 @@ type
         fName: string;
         fValue: TValue;
       public
-        constructor Create(const kernel: IKernel; const registry: IComponentRegistry;
+        constructor Create(const kernel: IKernel;
           const name: string; const value: TValue);
 
-        function CanResolve(const kernel: IKernel;
+        function CanResolve(
           const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
           const target: TRttiMember): Boolean; override;
-        function Resolve(const kernel: IKernel;
+        function Resolve(
           const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
           const target: TRttiMember): TArray<TValue>; override;
       end;
@@ -132,15 +134,15 @@ type
       private
         fArguments: TArray<TValue>;
       public
-        constructor Create(const arguments: TArray<TValue>);
+        constructor Create(const kernel: IKernel; const arguments: TArray<TValue>);
 
-        function CanResolve(const kernel: IKernel;
+        function CanResolve(
           const dependency: TRttiType; const argument: TValue): Boolean; override;
 
-        function CanResolve(const kernel: IKernel;
+        function CanResolve(
           const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
           const target: TRttiMember): Boolean; override;
-        function Resolve(const kernel: IKernel;
+        function Resolve(
           const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
           const target: TRttiMember): TArray<TValue>; override;
       end;
@@ -161,11 +163,12 @@ type
         fTypeInfo: PTypeInfo;
         fValue: TValue;
       public
-        constructor Create(typeInfo: PTypeInfo; const value: TValue);
+        constructor Create(const kernel: IKernel;
+          typeInfo: PTypeInfo; const value: TValue);
 
-        function CanResolve(const kernel: IKernel;
+        function CanResolve(
           const dependency: TRttiType; const argument: TValue): Boolean; override;
-        function Resolve(const kernel: IKernel;
+        function Resolve(
           const dependency: TRttiType; const argument: TValue): TValue; override;
       end;
   public
@@ -191,11 +194,12 @@ type
       private
         fDependencyOverrides: IList<TDependencyOverride>;
       public
-        constructor Create(const dependencyOverrides: IList<TDependencyOverride>);
+        constructor Create(const kernel: IKernel;
+          const dependencyOverrides: IList<TDependencyOverride>);
 
-        function CanResolve(const kernel: IKernel;
+        function CanResolve(
           const dependency: TRttiType; const argument: TValue): Boolean; override;
-        function Resolve(const kernel: IKernel;
+        function Resolve(
           const dependency: TRttiType; const argument: TValue): TValue; override;
       end;
   public
@@ -247,9 +251,11 @@ end;
 
 {$REGION 'TDependencyResolver'}
 
-constructor TDependencyResolver.Create;
+constructor TDependencyResolver.Create(const kernel: IKernel);
 begin
+  Guard.CheckNotNull(kernel, 'kernel');
   inherited Create;
+  fKernel := kernel;
   fDependencies := TCollections.CreateList<TComponentModel>(False);
   fLock := TCriticalSection.Create;
   fSubResolvers := TCollections.CreateInterfaceList<ISubDependencyResolver>;
@@ -271,14 +277,14 @@ begin
   fSubResolvers.Remove(subResolver);
 end;
 
-function TDependencyResolver.GetEligibleModel(const kernel: IKernel;
+function TDependencyResolver.GetEligibleModel(
   const dependency: TRttiType; const argument: TValue): TComponentModel;
 var
   name: string;
 begin
   if argument.IsEmpty then
   begin
-    if not kernel.ComponentRegistry.HasService(dependency.Handle) then
+    if not Kernel.ComponentRegistry.HasService(dependency.Handle) then
     begin
       if dependency.IsClassOrInterface and not TType.IsLazy(dependency.Handle) then
         raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
@@ -286,7 +292,7 @@ begin
     end
     else
     begin
-      Result := kernel.ComponentRegistry.FindDefault(dependency.Handle);
+      Result := Kernel.ComponentRegistry.FindDefault(dependency.Handle);
       if not Assigned(Result) then
         raise EUnsatisfiedDependencyException.CreateResFmt(
           @SUnsatisfiedDependency, [dependency.Name]);
@@ -295,7 +301,7 @@ begin
   else
   begin
     name := argument.AsString;
-    Result := kernel.ComponentRegistry.FindOne(name);
+    Result := Kernel.ComponentRegistry.FindOne(name);
     if not Assigned(Result) then
     begin
       if TType.IsLazy(dependency.Handle) then
@@ -320,7 +326,7 @@ begin
       @SCircularDependencyDetected, [model.ComponentType.Name]);
 end;
 
-function TDependencyResolver.CanResolve(const kernel: IKernel;
+function TDependencyResolver.CanResolve(
   const dependency: TRttiType; const argument: TValue): Boolean;
 var
   serviceName: string;
@@ -331,7 +337,7 @@ begin
   if dependency.IsClassOrInterface or dependency.IsRecord then
   begin
     if argument.IsEmpty then
-      Result := kernel.ComponentRegistry.HasDefault(dependency.Handle)
+      Result := Kernel.ComponentRegistry.HasDefault(dependency.Handle)
         or TType.IsLazy(dependency.Handle)
     else
     begin
@@ -339,7 +345,7 @@ begin
       if Result then
       begin
         serviceName := argument.AsString;
-        model := kernel.ComponentRegistry.FindOne(serviceName);
+        model := Kernel.ComponentRegistry.FindOne(serviceName);
         Result := Assigned(model);
         if Result then
         begin
@@ -358,7 +364,7 @@ begin
     Result := argument.IsEmpty or argument.IsType(dependency.Handle);
 end;
 
-function TDependencyResolver.Resolve(const kernel: IKernel;
+function TDependencyResolver.Resolve(
   const dependency: TRttiType; const argument: TValue): TValue;
 var
   model: TComponentModel;
@@ -368,7 +374,7 @@ begin
 
   if dependency.IsDynamicArray then
   begin
-    Result := ResolveManyDependency(kernel, dependency, argument);
+    Result := ResolveManyDependency(dependency, argument);
     Exit;
   end;
 
@@ -385,10 +391,10 @@ begin
 
   fLock.Enter;
   try
-    model := GetEligibleModel(kernel, dependency, argument);
+    model := GetEligibleModel(dependency, argument);
     if not Assigned(model) then
     begin
-      Result := ResolveLazyDependency(kernel, dependency, argument);
+      Result := ResolveLazyDependency(dependency, argument);
       Exit;
     end;
     CheckCircularDependency(model);
@@ -406,8 +412,7 @@ begin
 end;
 
 function TDependencyResolver.ResolveLazyDependency(
-  const kernel: IKernel; const dependency: TRttiType;
-  const argument: TValue): TValue;
+  const dependency: TRttiType; const argument: TValue): TValue;
 var
   lazyKind: TLazyKind;
   name: string;
@@ -423,10 +428,10 @@ begin
 
   name := TType.GetLazyTypeName(dependency.Handle);
   lazyType := TType.FindType(name);
-  if not Assigned(lazyType) or not CanResolve(kernel, lazyType, argument) then
+  if not Assigned(lazyType) or not CanResolve(lazyType, argument) then
     raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
 
-  model := GetEligibleModel(kernel, lazyType, argument);
+  model := GetEligibleModel(lazyType, argument);
   CheckCircularDependency(model);
 
   case lazyType.TypeKind of
@@ -436,7 +441,7 @@ begin
       valueFactoryObj :=
         function: TObject
         begin
-          Result := Resolve(kernel, lazyType, value).AsObject;
+          Result := Resolve(lazyType, value).AsObject;
         end;
 
       case lazyKind of
@@ -451,7 +456,7 @@ begin
       valueFactoryIntf :=
         function: IInterface
         begin
-          Result := Resolve(kernel, lazyType, value).AsInterface;
+          Result := Resolve(lazyType, value).AsInterface;
         end;
 
       case lazyKind of
@@ -468,8 +473,7 @@ begin
 end;
 
 function TDependencyResolver.ResolveManyDependency(
-  const kernel: IKernel; const dependency: TRttiType;
-  const argument: TValue): TValue;
+  const dependency: TRttiType; const argument: TValue): TValue;
 var
   dependencyType: TRttiType;
   serviceType: PTypeInfo;
@@ -490,18 +494,18 @@ begin
   end
   else
     serviceType := dependencyType.Handle;
-  models := kernel.ComponentRegistry.FindAll(serviceType);
+  models := Kernel.ComponentRegistry.FindAll(serviceType);
   SetLength(values, models.Count);
   i := 0;
   for model in models do
   begin
-    values[i] := Resolve(kernel, dependencyType, model.GetServiceName(serviceType));
+    values[i] := Resolve(dependencyType, model.GetServiceName(serviceType));
     Inc(i);
   end;
   Result := TValue.FromArray(dependency.Handle, values);
 end;
 
-function TDependencyResolver.CanResolve(const kernel: IKernel;
+function TDependencyResolver.CanResolve(
   const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
   const target: TRttiMember): Boolean;
 var
@@ -514,21 +518,21 @@ begin
     for i := 0 to High(dependencies) do
     begin
       dependency := dependencies[i];
-      if not CanResolve(kernel, dependency, arguments[i]) then
+      if not CanResolve(dependency, arguments[i]) then
         Exit(False);
     end;
   end
   else if Length(arguments) = 0 then
   begin
     for dependency in dependencies do
-      if not CanResolve(kernel, dependency, nil) then
+      if not CanResolve(dependency, nil) then
         Exit(False);
   end
   else
     Exit(False);
 end;
 
-function TDependencyResolver.Resolve(const kernel: IKernel;
+function TDependencyResolver.Resolve(
   const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
   const target: TRttiMember): TArray<TValue>;
 var
@@ -545,7 +549,7 @@ begin
     for i := 0 to High(dependencies) do
     begin
       dependency := dependencies[i];
-      Result[i] := Resolve(kernel, dependency, arguments[i]);
+      Result[i] := Resolve(dependency, arguments[i]);
     end;
   end
   else
@@ -553,7 +557,7 @@ begin
     for i := 0 to High(dependencies) do
     begin
       dependency := dependencies[i];
-      Result[i] := Resolve(kernel, dependency, nil);
+      Result[i] := Resolve(dependency, nil);
     end;
   end;
 end;
@@ -752,6 +756,7 @@ constructor TOrderedParametersOverride.Create(const arguments: array of TValue);
 var
   i: Integer;
 begin
+  inherited Create;
   SetLength(fArguments, Length(arguments));
   for i := Low(arguments) to High(arguments) do
     fArguments[i] := arguments[i];
@@ -759,7 +764,7 @@ end;
 
 function TOrderedParametersOverride.GetResolver(const kernel: IKernel): IDependencyResolver;
 begin
-  Result := TResolver.Create(fArguments);
+  Result := TResolver.Create(kernel, fArguments);
 end;
 
 {$ENDREGION}
@@ -767,36 +772,35 @@ end;
 
 {$REGION 'TOrderedParametersOverride.TResolver'}
 
-constructor TOrderedParametersOverride.TResolver.Create(
+constructor TOrderedParametersOverride.TResolver.Create(const kernel: IKernel;
   const arguments: TArray<TValue>);
 begin
-  inherited Create;
+  inherited Create(kernel);
   fArguments := arguments;
 end;
 
 function TOrderedParametersOverride.TResolver.CanResolve(
-  const kernel: IKernel; const dependency: TRttiType;
-  const argument: TValue): Boolean;
+  const dependency: TRttiType; const argument: TValue): Boolean;
 begin
   Result := argument.IsType(dependency.Handle);
 end;
 
 function TOrderedParametersOverride.TResolver.CanResolve(
-  const kernel: IKernel; const dependencies: TArray<TRttiType>;
-  const arguments: TArray<TValue>; const target: TRttiMember): Boolean;
+  const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
+  const target: TRttiMember): Boolean;
 begin
-  Result := inherited CanResolve(kernel, dependencies, fArguments, target);
+  Result := inherited CanResolve(dependencies, fArguments, target);
 end;
 
 function TOrderedParametersOverride.TResolver.Resolve(
-  const kernel: IKernel; const dependencies: TArray<TRttiType>;
-  const arguments: TArray<TValue>; const target: TRttiMember): TArray<TValue>;
+  const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
+  const target: TRttiMember): TArray<TValue>;
 begin
   if target.IsConstructor then
     Result := fArguments
   else
-    Result := kernel.DependencyResolver.Resolve(
-      kernel, dependencies, arguments, target);
+    Result := Kernel.DependencyResolver.Resolve(
+      dependencies, arguments, target);
 end;
 
 {$ENDREGION}
@@ -806,6 +810,7 @@ end;
 
 constructor TParameterOverride.Create(const name: string; const value: TValue);
 begin
+  inherited Create;
   fName := name;
   fValue := value;
 end;
@@ -813,7 +818,7 @@ end;
 function TParameterOverride.GetResolver(
   const kernel: IKernel): IDependencyResolver;
 begin
-  Result := TResolver.Create(kernel, kernel.ComponentRegistry, fName, fValue);
+  Result := TResolver.Create(kernel, fName, fValue);
 end;
 
 {$ENDREGION}
@@ -821,18 +826,17 @@ end;
 
 {$REGION 'TParameterOverride.TResolver'}
 
-constructor TParameterOverride.TResolver.Create(
-  const kernel: IKernel; const registry: IComponentRegistry;
+constructor TParameterOverride.TResolver.Create(const kernel: IKernel;
   const name: string; const value: TValue);
 begin
-  inherited Create;
+  inherited Create(kernel);
   fName := name;
   fValue := value;
 end;
 
 function TParameterOverride.TResolver.CanResolve(
-  const kernel: IKernel; const dependencies: TArray<TRttiType>;
-  const arguments: TArray<TValue>; const target: TRttiMember): Boolean;
+  const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
+  const target: TRttiMember): Boolean;
 var
   dependency: TRttiType;
   i: Integer;
@@ -847,14 +851,14 @@ begin
       dependency := dependencies[i];
       if SameText(parameters[i].Name, fName) then
         Continue;
-      if not CanResolve(kernel, dependency, arguments[i]) then
+      if not CanResolve(dependency, arguments[i]) then
         Exit(False);
     end;
   end
   else if Length(arguments) = 0 then
   begin
     for dependency in dependencies do
-      if not CanResolve(kernel, dependency, nil) then
+      if not CanResolve(dependency, nil) then
         Exit(False);
   end
   else
@@ -862,8 +866,8 @@ begin
 end;
 
 function TParameterOverride.TResolver.Resolve(
-  const kernel: IKernel; const dependencies: TArray<TRttiType>;
-  const arguments: TArray<TValue>; const target: TRttiMember): TArray<TValue>;
+  const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
+  const target: TRttiMember): TArray<TValue>;
 var
   dependency: TRttiType;
   hasArgument: Boolean;
@@ -884,7 +888,7 @@ begin
       else
       begin
         dependency := dependencies[i];
-        Result[i] := Resolve(kernel, dependency, arguments[i]);
+        Result[i] := Resolve(dependency, arguments[i]);
       end;
     end;
   end
@@ -893,7 +897,7 @@ begin
     for i := 0 to High(dependencies) do
     begin
       dependency := dependencies[i];
-      Result[i] := Resolve(kernel, dependency, nil);
+      Result[i] := Resolve(dependency, nil);
     end;
   end;
 end;
@@ -906,6 +910,7 @@ end;
 constructor TDependencyOverride.Create(typeInfo: PTypeInfo;
   const value: TValue);
 begin
+  inherited Create;
   fTypeInfo := typeInfo;
   fValue := value;
 end;
@@ -913,7 +918,7 @@ end;
 function TDependencyOverride.GetResolver(
   const kernel: IKernel): IDependencyResolver;
 begin
-  Result := TResolver.Create(fTypeInfo, fValue);
+  Result := TResolver.Create(kernel, fTypeInfo, fValue);
 end;
 
 {$ENDREGION}
@@ -921,30 +926,29 @@ end;
 
 {$REGION 'TDependencyOverride.TResolver'}
 
-constructor TDependencyOverride.TResolver.Create(typeInfo: PTypeInfo;
-  const value: TValue);
+constructor TDependencyOverride.TResolver.Create(const kernel: IKernel;
+  typeInfo: PTypeInfo; const value: TValue);
 begin
-  inherited Create;
+  inherited Create(kernel);
   fTypeInfo := typeInfo;
   fValue := value;
 end;
 
 function TDependencyOverride.TResolver.CanResolve(
-  const kernel: IKernel; const dependency: TRttiType;
-  const argument: TValue): Boolean;
+  const dependency: TRttiType; const argument: TValue): Boolean;
 begin
   Result := dependency.Handle = fTypeInfo;
   if not Result then
-    Result := kernel.DependencyResolver.CanResolve(kernel, dependency, argument);
+    Result := Kernel.DependencyResolver.CanResolve(dependency, argument);
 end;
 
-function TDependencyOverride.TResolver.Resolve(const kernel: IKernel;
+function TDependencyOverride.TResolver.Resolve(
   const dependency: TRttiType; const argument: TValue): TValue;
 begin
   if dependency.Handle = fTypeInfo then
     Result := fValue
   else
-    Result := kernel.DependencyResolver.Resolve(kernel, dependency, argument);
+    Result := Kernel.DependencyResolver.Resolve(dependency, argument);
 end;
 
 {$ENDREGION}
@@ -973,7 +977,7 @@ end;
 function TDependencyOverrides.GetResolver(
   const kernel: IKernel): IDependencyResolver;
 begin
-  Result := TResolver.Create(fDependencyOverrides);
+  Result := TResolver.Create(kernel, fDependencyOverrides);
 end;
 
 {$ENDREGION}
@@ -981,16 +985,15 @@ end;
 
 {$REGION 'TDependencyOverrides.TResolver'}
 
-constructor TDependencyOverrides.TResolver.Create(
+constructor TDependencyOverrides.TResolver.Create(const kernel: IKernel;
   const dependencyOverrides: IList<TDependencyOverride>);
 begin
-  inherited Create;
+  inherited Create(kernel);
   fDependencyOverrides := dependencyOverrides;
 end;
 
 function TDependencyOverrides.TResolver.CanResolve(
-  const kernel: IKernel; const dependency: TRttiType;
-  const argument: TValue): Boolean;
+  const dependency: TRttiType; const argument: TValue): Boolean;
 var
   dependencyOverride: TDependencyOverride;
 begin
@@ -998,12 +1001,11 @@ begin
     if dependencyOverride.TypeInfo = dependency.Handle then
       Exit(True);
 
-  Result := kernel.DependencyResolver.CanResolve(kernel, dependency, argument);
+  Result := Kernel.DependencyResolver.CanResolve(dependency, argument);
 end;
 
 function TDependencyOverrides.TResolver.Resolve(
-  const kernel: IKernel; const dependency: TRttiType;
-  const argument: TValue): TValue;
+  const dependency: TRttiType; const argument: TValue): TValue;
 var
   dependencyOverride: TDependencyOverride;
 begin
@@ -1011,7 +1013,7 @@ begin
     if dependencyOverride.TypeInfo = dependency.Handle then
       Exit(dependencyOverride.Value);
 
-  Result := kernel.DependencyResolver.Resolve(kernel, dependency, argument);
+  Result := Kernel.DependencyResolver.Resolve(dependency, argument);
 end;
 
 {$ENDREGION}

@@ -199,7 +199,7 @@ begin
   fRegistry := TComponentRegistry.Create(Self);
   fBuilder := TComponentBuilder.Create(Self);
   fServiceResolver := TServiceResolver.Create(Self);
-  fDependencyResolver := TDependencyResolver.Create;
+  fDependencyResolver := TDependencyResolver.Create(Self);
   fInjectionFactory := TInjectionFactory.Create;
   fRegistrationManager := TRegistrationManager.Create(fRegistry);
   fExtensions := TCollections.CreateInterfaceList<IContainerExtension>;
