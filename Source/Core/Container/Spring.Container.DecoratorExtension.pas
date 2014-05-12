@@ -45,17 +45,17 @@ type
 
   TDecoratorInspector = class(TInspectorBase)
   protected
-    procedure DoProcessModel(const context: IContainerContext; const model: TComponentModel); override;
+    procedure DoProcessModel(const kernel: IKernel; const model: TComponentModel); override;
   end;
 
   TDecoratorComponentActivator = class(TInterfacedObject, IComponentActivator)
   private
-    fContext: IContainerContext;
+    fKernel: IKernel;
     fComponentActivator: IComponentActivator;
     fDecoratorActivator: IComponentActivator;
     fServiceType: PTypeInfo;
   public
-    constructor Create(const context: IContainerContext;
+    constructor Create(const kernel: IKernel;
       const componentActivator: IComponentActivator;
       const decoratorActivator: IComponentActivator; serviceType: PTypeInfo);
 
@@ -76,7 +76,7 @@ uses
 
 procedure TDecoratorContainerExtension.Initialize;
 begin
-  Context.ComponentBuilder.AddInspector(TDecoratorInspector.Create);
+  Kernel.ComponentBuilder.AddInspector(TDecoratorInspector.Create);
 end;
 
 {$ENDREGION}
@@ -84,7 +84,7 @@ end;
 
 {$REGION 'TDecoratorInspector'}
 
-procedure TDecoratorInspector.DoProcessModel(const context: IContainerContext;
+procedure TDecoratorInspector.DoProcessModel(const kernel: IKernel;
   const model: TComponentModel);
 var
   serviceType: PTypeInfo;
@@ -99,7 +99,7 @@ begin
     predicate := TMethodFilters.IsConstructor
       and TMethodFilters.ContainsParameterType(serviceType);
     decoratorModel := nil;
-    for componentModel in context.ComponentRegistry.FindAll.Where(
+    for componentModel in kernel.ComponentRegistry.FindAll.Where(
       function(const model: TComponentModel): Boolean
       begin
         Result := model.HasService(serviceType);
@@ -107,7 +107,7 @@ begin
     begin
       if Assigned(decoratorModel) and (model = componentModel) then
       begin
-        model.ComponentActivator := TDecoratorComponentActivator.Create(context,
+        model.ComponentActivator := TDecoratorComponentActivator.Create(kernel,
           model.ComponentActivator, decoratorModel.ComponentActivator, serviceType);
       end
       else
@@ -122,12 +122,12 @@ end;
 
 {$REGION 'TComponentActivatorDecorator'}
 
-constructor TDecoratorComponentActivator.Create(const context: IContainerContext;
+constructor TDecoratorComponentActivator.Create(const kernel: IKernel;
   const componentActivator: IComponentActivator;
   const decoratorActivator: IComponentActivator; serviceType: PTypeInfo);
 begin
   inherited Create;
-  fContext := context;
+  fKernel := kernel;
   fComponentActivator := componentActivator;
   fDecoratorActivator := decoratorActivator;
   fServiceType := serviceType;
@@ -155,7 +155,7 @@ begin
     Result := ConvClass2Inf(Result.AsObject, fServiceType);
 {$ENDIF}
   dependencyOverride := TDependencyOverride.Create(fServiceType, Result);
-  Result := fDecoratorActivator.CreateInstance(dependencyOverride.GetResolver(fContext));
+  Result := fDecoratorActivator.CreateInstance(dependencyOverride.GetResolver(fKernel));
 end;
 
 {$ENDREGION}

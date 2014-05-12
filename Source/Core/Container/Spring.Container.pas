@@ -41,7 +41,7 @@ type
   ///	<summary>
   ///	  Represents a Dependency Injection Container.
   ///	</summary>
-  TContainer = class(TInterfaceBase, IContainerContext, IInterface)
+  TContainer = class(TInterfaceBase, IKernel)
   private
     fRegistry: IComponentRegistry;
     fBuilder: IComponentBuilder;
@@ -51,7 +51,7 @@ type
     fRegistrationManager: TRegistrationManager;
     fExtensions: IList<IContainerExtension>;
     class var GlobalInstance: TContainer;
-    function GetContext: IContainerContext;
+    function GetKernel: IKernel;
     type
       TValueArray = array of TValue;
   protected
@@ -115,7 +115,7 @@ type
     // passing as var is not possible here
 {$ENDIF}
 
-    property Context: IContainerContext read GetContext;
+    property Kernel: IKernel read GetKernel;
   end;
 
   ///	<summary>
@@ -197,7 +197,7 @@ constructor TContainer.Create;
 begin
   inherited Create;
   fRegistry := TComponentRegistry.Create(Self);
-  fBuilder := TComponentBuilder.Create(Self, fRegistry);
+  fBuilder := TComponentBuilder.Create(Self);
   fServiceResolver := TServiceResolver.Create(Self);
   fDependencyResolver := TDependencyResolver.Create;
   fInjectionFactory := TInjectionFactory.Create;
@@ -275,7 +275,7 @@ begin
   Result := fRegistry;
 end;
 
-function TContainer.GetContext: IContainerContext;
+function TContainer.GetKernel: IKernel;
 begin
   Result := Self;
 end;

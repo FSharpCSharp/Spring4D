@@ -42,9 +42,9 @@ type
   ///	<summary>
   ///	  TComponentRegistry
   ///	</summary>
-  TComponentRegistry = class(TInterfacedObject, IComponentRegistry, IInterface)
+  TComponentRegistry = class(TInterfacedObject, IComponentRegistry)
   private
-    fContainerContext: IContainerContext;
+    fKernel: IKernel;
     fRttiContext: TRttiContext;
     fModels: IList<TComponentModel>;
     fDefaultRegistrations: IDictionary<PTypeInfo, TComponentModel>;
@@ -61,7 +61,7 @@ type
     procedure RegisterUnnamed(const model: TComponentModel; serviceType: PTypeInfo);
     procedure Validate(componentType, serviceType: PTypeInfo; var serviceName: string);
   public
-    constructor Create(const context: IContainerContext);
+    constructor Create(const kernel: IKernel);
     destructor Destroy; override;
     function RegisterComponent(componentTypeInfo: PTypeInfo): TComponentModel;
     procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo); overload;
@@ -221,12 +221,11 @@ uses
 
 {$REGION 'TComponentRegistry'}
 
-constructor TComponentRegistry.Create(const context: IContainerContext);
+constructor TComponentRegistry.Create(const kernel: IKernel);
 begin
-  Guard.CheckNotNull(context, 'context');
-
+  Guard.CheckNotNull(kernel, 'kernel');
   inherited Create;
-  fContainerContext := context;
+  fKernel := kernel;
   fRttiContext := TRttiContext.Create;
   fModels := TCollections.CreateObjectList<TComponentModel>(True);
   fDefaultRegistrations := TCollections.CreateDictionary<PTypeInfo, TComponentModel>;
@@ -255,7 +254,7 @@ begin
           value: TValue;
         begin
           list := TList<TObject>.Create;
-          for value in fContainerContext.ServiceResolver.ResolveAll(elementTypeInfo) do
+          for value in fKernel.ServiceResolver.ResolveAll(elementTypeInfo) do
             list.Add(value.AsObject);
           Result := TValue.From<TList<TObject>>(list);
         end;
@@ -270,7 +269,7 @@ begin
           value: TValue;
         begin
           list := TList<IInterface>.Create;
-          for value in fContainerContext.ServiceResolver.ResolveAll(elementTypeInfo) do
+          for value in fKernel.ServiceResolver.ResolveAll(elementTypeInfo) do
             list.Add(value.AsInterface);
           Result := TValue.From<TList<IInterface>>(list);
         end;
@@ -432,7 +431,7 @@ begin
       for i := 1 to High(args) do
         dependencyOverrides[i - 1] := TDependencyOverride.Create(args[i].TypeInfo, args[i]);
       resolverOverride := TDependencyOverrides.Create(dependencyOverrides);
-      result := fContainerContext.ServiceResolver.Resolve(method.ReturnType.Handle, resolverOverride)
+      result := fKernel.ServiceResolver.Resolve(method.ReturnType.Handle, resolverOverride)
     end;
 
   InternalRegisterFactory(model, invokeEvent);
@@ -454,7 +453,7 @@ begin
       for i := 1 to High(args) do
         dependencyOverrides[i - 1] := TDependencyOverride.Create(args[i].TypeInfo, args[i]);
       resolverOverride := TDependencyOverrides.Create(dependencyOverrides);
-      result := fContainerContext.ServiceResolver.Resolve(name, resolverOverride);
+      result := fKernel.ServiceResolver.Resolve(name, resolverOverride);
     end;
 
   InternalRegisterFactory(model, invokeEvent);
@@ -476,7 +475,7 @@ begin
     elementTypeInfo := componentType.AsDynamicArray.ElementType.Handle;
     activatorDelegate := BuildActivatorDelegate(elementTypeInfo, componentType);
   end;
-  Result := TComponentModel.Create(fContainerContext, componentType);
+  Result := TComponentModel.Create(fKernel, componentType);
   Result.ActivatorDelegate := activatorDelegate;
   fModels.Add(Result);
 end;

@@ -37,15 +37,18 @@ type
   ///	<summary>
   ///	  Abstract ComponentActivator
   ///	</summary>
-  TComponentActivatorBase = class abstract(TInterfacedObject, IComponentActivator, IInterface)
-  protected
-    fContext: IContainerContext;
+  TComponentActivatorBase = class abstract(TInterfacedObject, IComponentActivator)
+  private
+    fKernel: IKernel;
     {$IFDEF WEAKREF}[Weak]{$ENDIF}
     fModel: TComponentModel;
+  protected
     procedure ExecuteInjections(const instance: TValue;
       const injections: IList<IInjection>; const resolver: IDependencyResolver);
+    property Kernel: IKernel read fKernel;
+    property Model: TComponentModel read fModel;
   public
-    constructor Create(const context: IContainerContext; const model: TComponentModel); virtual;
+    constructor Create(const kernel: IKernel; const model: TComponentModel); virtual;
     function CreateInstance(const resolver: IDependencyResolver): TValue; overload; virtual; abstract;
   end;
 
@@ -79,11 +82,13 @@ uses
 
 {$REGION 'TComponentActivatorBase'}
 
-constructor TComponentActivatorBase.Create(const context: IContainerContext;
+constructor TComponentActivatorBase.Create(const kernel: IKernel;
   const model: TComponentModel);
 begin
+  Guard.CheckNotNull(kernel, 'kernel');
+  Guard.CheckNotNull(model, 'model');
   inherited Create;
-  fContext := context;
+  fKernel := kernel;
   fModel := model;
 end;
 
@@ -95,7 +100,7 @@ var
 begin
   for injection in injections do
   begin
-    arguments := resolver.Resolve(fContext, injection.Dependencies,
+    arguments := resolver.Resolve(fKernel, injection.Dependencies,
       injection.Arguments, injection.Target);
     injection.Inject(instance, arguments);
   end;
@@ -112,22 +117,22 @@ var
   constructorInjection: IInjection;
   constructorArguments: TArray<TValue>;
 begin
-  constructorInjection := GetEligibleConstructor(fModel, resolver);
+  constructorInjection := GetEligibleConstructor(Model, resolver);
   if constructorInjection = nil then
     raise EActivatorException.CreateRes(@SUnsatisfiedConstructor);
   constructorArguments := resolver.Resolve(
-    fContext,
+    Kernel,
     constructorInjection.Dependencies,
     constructorInjection.Arguments,
     constructorInjection.Target);
   Result := TActivator.CreateInstance(
-    fModel.ComponentType.AsInstance,
+    Model.ComponentType.AsInstance,
     constructorInjection.Target.AsMethod,
     constructorArguments);
   try
-    ExecuteInjections(Result, fModel.FieldInjections, resolver);
-    ExecuteInjections(Result, fModel.PropertyInjections, resolver);
-    ExecuteInjections(Result, fModel.MethodInjections, resolver);
+    ExecuteInjections(Result, Model.FieldInjections, resolver);
+    ExecuteInjections(Result, Model.PropertyInjections, resolver);
+    ExecuteInjections(Result, Model.MethodInjections, resolver);
   except
     if not Result.IsEmpty and Result.IsObject then
     begin
@@ -157,7 +162,7 @@ begin
       winner := candidate;
       Break;
     end;
-    if resolver.CanResolve(fContext, candidate.Dependencies,
+    if resolver.CanResolve(Kernel, candidate.Dependencies,
       candidate.Arguments, candidate.Target) then
     begin
       if candidate.DependencyCount > maxCount then
@@ -178,13 +183,13 @@ end;
 function TDelegateComponentActivator.CreateInstance(
   const resolver: IDependencyResolver): TValue;
 begin
-  if not Assigned(fModel.ActivatorDelegate) then
+  if not Assigned(Model.ActivatorDelegate) then
     raise EActivatorException.CreateRes(@SActivatorDelegateExpected);
-  Result := fModel.ActivatorDelegate.Invoke;
+  Result := Model.ActivatorDelegate.Invoke;
   try
-    ExecuteInjections(Result, fModel.FieldInjections, resolver);
-    ExecuteInjections(Result, fModel.PropertyInjections, resolver);
-    ExecuteInjections(Result, fModel.MethodInjections, resolver);
+    ExecuteInjections(Result, Model.FieldInjections, resolver);
+    ExecuteInjections(Result, Model.PropertyInjections, resolver);
+    ExecuteInjections(Result, Model.MethodInjections, resolver);
   except
     if not Result.IsEmpty and Result.IsObject then
     begin

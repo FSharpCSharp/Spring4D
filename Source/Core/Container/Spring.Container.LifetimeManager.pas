@@ -36,7 +36,7 @@ uses
   Spring.Container.Pool;
 
 type
-  TLifetimeManagerBase = class abstract(TInterfacedObject, ILifetimeManager, IInterface)
+  TLifetimeManagerBase = class abstract(TInterfacedObject, ILifetimeManager)
   private
     {$IFDEF WEAKREF}[Weak]{$ENDIF}
     fModel: TComponentModel;

@@ -43,7 +43,7 @@ type
 
   TActivatorInspector = class(TInspectorBase)
   protected
-    procedure DoProcessModel(const context: IContainerContext;
+    procedure DoProcessModel(const kernel: IKernel;
       const model: TComponentModel); override;
   end;
 
@@ -69,7 +69,7 @@ uses
 
 procedure TActivatorContainerExtension.Initialize;
 begin
-  Context.ComponentBuilder.AddInspector(TActivatorInspector.Create);
+  Kernel.ComponentBuilder.AddInspector(TActivatorInspector.Create);
 end;
 
 {$ENDREGION}
@@ -77,11 +77,11 @@ end;
 
 {$REGION 'TActivatorInspector'}
 
-procedure TActivatorInspector.DoProcessModel(const context: IContainerContext;
+procedure TActivatorInspector.DoProcessModel(const kernel: IKernel;
   const model: TComponentModel);
 begin
   if not Assigned(model.ActivatorDelegate) then
-    model.ComponentActivator := TReflectionComponentActivator2.Create(context, model);
+    model.ComponentActivator := TReflectionComponentActivator2.Create(kernel, model);
 end;
 
 {$ENDREGION}
@@ -117,7 +117,7 @@ begin
   end;
   Result := winner;
   if Assigned(Result) and not resolver.CanResolve(
-    fContext, Result.Dependencies, Result.Arguments, Result.Target) then
+    Kernel, Result.Dependencies, Result.Arguments, Result.Target) then
     raise EResolveException.CreateRes(@SUnsatisfiedConstructorParameters);
 end;
 

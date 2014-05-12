@@ -53,10 +53,11 @@ type
   TActivatorDelegate = reference to function: TValue;
   TActivatorDelegate<T> = reference to function: T;
 
-  ///	<summary>
-  ///	  IContainerContext
-  ///	</summary>
-  IContainerContext = interface
+  /// <summary>
+  ///   The <c>IKernel</c> interface exposes all the functionality the
+  ///   container implements.
+  /// </summary>
+  IKernel = interface
     ['{9E90EADB-A720-4394-A5E0-5DF0550C1E92}']
   {$REGION 'Property Accessors'}
     function GetComponentBuilder: IComponentBuilder;
@@ -77,18 +78,18 @@ type
     property ServiceResolver: IServiceResolver read GetServiceResolver;
   end;
 
-  ///	<summary>
-  ///	  Extends the container
-  ///	</summary>
+  /// <summary>
+  ///   Extends the container.
+  /// </summary>
   IContainerExtension = interface
     ['{E78748FB-D75C-447C-B984-9782A8F26C20}']
     procedure Initialize;
-    procedure InitializeExtension(const context: IContainerContext);
+    procedure InitializeExtension(const kernel: IKernel);
   end;
 
-  ///	<summary>
-  ///	  Manages the registration of components. (IComponentBuilder)
-  ///	</summary>
+  /// <summary>
+  ///   Manages the registration of components.
+  /// </summary>
   IComponentRegistry = interface
     ['{CBCA1D0F-1244-4AB4-AB07-091053932166}']
     function RegisterComponent(componentType: PTypeInfo): TComponentModel;
@@ -113,6 +114,9 @@ type
     function FindAll(serviceType: PTypeInfo): IEnumerable<TComponentModel>; overload;
   end;
 
+  /// <summary>
+  ///   Component Builder
+  /// </summary>
   IComponentBuilder = interface
     ['{8309EBC7-9699-47CF-B177-4BC9B787EBE0}']
     // Inspectors (Policies)
@@ -124,35 +128,35 @@ type
     procedure BuildAll;
   end;
 
-  ///	<summary>
-  ///	  IBuilderInspector (IBuilderPolicy)
-  ///	</summary>
+  /// <summary>
+  ///   Builder Inspector
+  /// </summary>
   IBuilderInspector = interface
     ['{3E2F36D1-2C0D-4D6A-91B3-49B09BD31318}']
-    procedure ProcessModel(const context: IContainerContext; const model: TComponentModel);
+    procedure ProcessModel(const kernel: IKernel; const model: TComponentModel);
   end;
 
-  ///	<summary>
-  ///	  ILifetimeManager
-  ///	</summary>
+  /// <summary>
+  ///   Lifetime Manager
+  /// </summary>
   ILifetimeManager = interface
     ['{7DF9A902-B07A-468B-B201-B4561A921CF5}']
     function GetInstance(const resolver: IDependencyResolver): TValue;
     procedure ReleaseInstance(const instance: TValue);
   end;
 
-  ///	<summary>
-  ///	  Component Activator
-  ///	</summary>
+  /// <summary>
+  ///   Component Activator
+  /// </summary>
   IComponentActivator = interface
     ['{18E6DF78-C947-484F-A0A8-D9A5B0BEC887}']
     function CreateInstance(const resolver: IDependencyResolver): TValue;
   end;
 
-  ///	<summary>
-  ///	  Represents an Inject of a member. e.g. constructor, method, property
-  ///	  and even field Inject.
-  ///	</summary>
+  /// <summary>
+  ///   Represents an injection of a member. e.g. constructor, method, property
+  ///   and even field.
+  /// </summary>
   IInjection = interface
     ['{864AAA38-4F93-4BB9-AD8A-B796FCD2EFE0}']
   {$REGION 'Property Accessors'}
@@ -178,9 +182,9 @@ type
 
   IInjectionList = IList<IInjection>;
 
-  ///	<summary>
-  ///	  Inject Factory
-  ///	</summary>
+  /// <summary>
+  ///   Injection Factory
+  /// </summary>
   IInjectionFactory = interface
     ['{EA75E648-C3EB-4CE7-912A-AB82B12BBD87}']
     function CreateConstructorInjection: IInjection;
@@ -193,18 +197,18 @@ type
 
   ISubDependencyResolver = interface
     ['{E360FFAD-2235-49D1-9A4F-50945877E337}']
-    function CanResolve(const context: IContainerContext;
+    function CanResolve(const kernel: IKernel;
       const dependency: TRttiType; const argument: TValue): Boolean; overload;
-    function Resolve(const context: IContainerContext;
+    function Resolve(const kernel: IKernel;
       const dependency: TRttiType; const argument: TValue): TValue; overload;
   end;
 
   IDependencyResolver = interface(ISubDependencyResolver)
     ['{15ADEA1D-7C3F-48D5-8E85-84B4332AFF5F}']
-    function CanResolve(const context: IContainerContext;
+    function CanResolve(const kernel: IKernel;
       const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
       const target: TRttiMember): Boolean; overload;
-    function Resolve(const context: IContainerContext;
+    function Resolve(const kernel: IKernel;
       const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
       const target: TRttiMember): TArray<TValue>; overload;
 
@@ -212,17 +216,17 @@ type
     procedure RemoveSubResolver(const subResolver: ISubDependencyResolver);
   end;
 
-  ///	<summary>
-  ///	  Overrides the resolver.
-  ///	</summary>
+  /// <summary>
+  ///   Overrides the resolver.
+  /// </summary>
   IResolverOverride = interface
     ['{2DA386A3-949C-451F-BF22-017668689591}']
-    function GetResolver(const context: IContainerContext): IDependencyResolver;
+    function GetResolver(const kernel: IKernel): IDependencyResolver;
   end;
 
-  ///	<summary>
-  ///	  Resolves services.
-  ///	</summary>
+  /// <summary>
+  ///   Resolves services.
+  /// </summary>
   IServiceResolver = interface
     ['{14669EBA-4E57-4DF4-919D-377D8E90144C}']
     function CanResolve(serviceType: PTypeInfo): Boolean; overload;
@@ -234,12 +238,12 @@ type
     function ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
   end;
 
-  ///	<summary>
-  ///	  TComponentModel
-  ///	</summary>
+  /// <summary>
+  ///   TComponentModel
+  /// </summary>
   TComponentModel = class
   private
-    fContext: IContainerContext;
+    fKernel: IKernel;
     fComponentType: TRttiType;
     fLifetimeType: TLifetimeType;
     fLifetimeManager: ILifetimeManager;
@@ -263,7 +267,7 @@ type
     function GetFieldInjections: IInjectionList;
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
   public
-    constructor Create(const context: IContainerContext; componentType: TRttiType);
+    constructor Create(const kernel: IKernel; componentType: TRttiType);
 
     {$REGION 'Typed Injections'}
 
@@ -331,14 +335,14 @@ type
 
   TInjectableMethodFilter = class(TSpecificationBase<TRttiMethod>)
   private
-    fContext: IContainerContext;
+    fKernel: IKernel;
     {$IFDEF WEAKREF}[Weak]{$ENDIF}
     fModel: TComponentModel;
     fInjection: IInjection;
     fArguments: TArray<TValue>;
   public
-    constructor Create(const context: IContainerContext;
-      const model: TComponentModel; const injection: IInjection);
+    constructor Create(const kernel: IKernel; const model: TComponentModel;
+      const injection: IInjection);
     function IsSatisfiedBy(const method: TRttiMethod): Boolean; override;
   end;
 
@@ -353,7 +357,7 @@ type
   TInjectionFilters = class
   public
     class function ContainsMember(const member: TRttiMember): TSpecification<IInjection>;
-    class function IsInjectableMethod(const context: IContainerContext;
+    class function IsInjectableMethod(const kernel: IKernel;
       const model: TComponentModel; const injection: IInjection): TSpecification<TRttiMethod>;
   end;
 
@@ -369,11 +373,11 @@ uses
 
 {$REGION 'TComponentModel'}
 
-constructor TComponentModel.Create(const context: IContainerContext;
+constructor TComponentModel.Create(const kernel: IKernel;
   componentType: TRttiType);
 begin
   inherited Create;
-  fContext := context;
+  fKernel := kernel;
   fComponentType := componentType;
 end;
 
@@ -468,39 +472,39 @@ end;
 
 procedure TComponentModel.InjectConstructor(const arguments: array of TValue);
 var
-  Inject: IInjection;
+  injection: IInjection;
 begin
-  Inject := InjectionFactory.CreateConstructorInjection;
-  ConstructorInjections.Add(Inject);
-  Inject.InitializeArguments(arguments);
+  injection := InjectionFactory.CreateConstructorInjection;
+  ConstructorInjections.Add(injection);
+  injection.InitializeArguments(arguments);
 end;
 
 procedure TComponentModel.InjectMethod(const methodName: string;
   const arguments: array of TValue);
 var
-  Inject: IInjection;
+  injection: IInjection;
 begin
-  Inject := InjectionFactory.CreateMethodInjection(methodName);
-  MethodInjections.Add(Inject);
-  Inject.InitializeArguments(arguments);
+  injection := InjectionFactory.CreateMethodInjection(methodName);
+  MethodInjections.Add(injection);
+  injection.InitializeArguments(arguments);
 end;
 
 procedure TComponentModel.InjectProperty(const propertyName: string;
   const value: TValue);
 var
-  Inject: IInjection;
+  injection: IInjection;
 begin
-  Inject := InjectProperty(propertyName);
-  Inject.InitializeArguments(value);
+  injection := InjectProperty(propertyName);
+  injection.InitializeArguments(value);
 end;
 
 procedure TComponentModel.InjectField(const fieldName: string;
   const value: TValue);
 var
-  Inject: IInjection;
+  injection: IInjection;
 begin
-  Inject := InjectField(fieldName);
-  Inject.InitializeArguments(value);
+  injection := InjectField(fieldName);
+  injection.InitializeArguments(value);
 end;
 
 function TComponentModel.GetComponentTypeInfo: PTypeInfo;
@@ -510,7 +514,7 @@ end;
 
 function TComponentModel.GetInjectionFactory: IInjectionFactory;
 begin
-  Result := fContext.InjectionFactory;
+  Result := fKernel.InjectionFactory;
 end;
 
 function TComponentModel.GetConstructorInjections: IInjectionList;
@@ -625,11 +629,11 @@ end;
 
 {$REGION 'TInjectableMethodFilter'}
 
-constructor TInjectableMethodFilter.Create(const context: IContainerContext;
+constructor TInjectableMethodFilter.Create(const kernel: IKernel;
   const model: TComponentModel; const injection: IInjection);
 begin
   inherited Create;
-  fContext := context;
+  fKernel := kernel;
   fModel := model;
   fInjection := injection;
   fArguments := fInjection.Arguments;
@@ -646,8 +650,8 @@ begin
   SetLength(dependencies, Length(parameters));
   for i := 0 to High(dependencies) do
     dependencies[i] := parameters[i].ParamType;
-  Result := fContext.DependencyResolver.CanResolve(
-    fContext, dependencies, fArguments, method);
+  Result := fKernel.DependencyResolver.CanResolve(
+    fKernel, dependencies, fArguments, method);
 end;
 
 {$ENDREGION}
@@ -679,10 +683,10 @@ begin
 end;
 
 class function TInjectionFilters.IsInjectableMethod(
-  const context: IContainerContext; const model: TComponentModel;
+  const kernel: IKernel; const model: TComponentModel;
   const injection: IInjection): TSpecification<TRttiMethod>;
 begin
-  Result := TInjectableMethodFilter.Create(context, model, injection);
+  Result := TInjectableMethodFilter.Create(kernel, model, injection);
 end;
 
 {$ENDREGION}

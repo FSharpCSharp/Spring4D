@@ -49,7 +49,7 @@ type
     ['{C39760F7-C5E6-48BC-A890-FB0103E4AD39}']
   end;
 
-  TNameService = class(TInterfacedObject, INameService, IInterface)
+  TNameService = class(TInterfacedObject, INameService)
   private
     fName: string;
     function GetName: string;
@@ -64,7 +64,7 @@ type
     Spring.Tests.Container.Interfaces.INameService)
   end;
 
-  TAnotherNameService = class(TInterfacedObject, INameService, IInterface)
+  TAnotherNameService = class(TInterfacedObject, INameService)
   private
     fName: string;
     function GetName: string;
@@ -245,7 +245,7 @@ type
     property StringArg: string read GetStringArg;
   end;
 
-  TPrimitiveComponent = class(TInterfacedObject, IPrimitive, IInterface)
+  TPrimitiveComponent = class(TInterfacedObject, IPrimitive)
   private
     fNameService: INameService;
     fIntegerArg: Integer;
@@ -368,7 +368,7 @@ type
   INonGuid<T> = interface
   end;
 
-  TNonGuid<T> = class(TInterfacedObject, INonGuid<T>, IInterface)
+  TNonGuid<T> = class(TInterfacedObject, INonGuid<T>)
   end;
 
   {$ENDREGION}

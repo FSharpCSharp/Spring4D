@@ -37,7 +37,7 @@ uses
   Spring.Container.LifetimeManager;
 
 type
-  TMockContext = class(TInterfacedObject, IContainerContext)
+  TMockContext = class(TInterfacedObject, IKernel)
   public
     function GetComponentBuilder: IComponentBuilder;
     function GetComponentRegistry: IComponentRegistry;
@@ -56,7 +56,7 @@ type
     property ServiceResolver: IServiceResolver read GetServiceResolver;
   end;
 
-  TMockActivator = class(TInterfaceBase, IComponentActivator, IInterface)
+  TMockActivator = class(TInterfaceBase, IComponentActivator)
   private
     fModel: TComponentModel;
   public
@@ -84,7 +84,7 @@ type
 //  [Ignore]
   TLifetimeManagerTestCase = class abstract(TTestCase)
   protected
-    fContainerContext: IContainerContext;
+    fKernel: IKernel;
     fContext: TRttiContext;
     fLifetimeManager: ILifetimeManager;
     fModel: TComponentModel;
@@ -103,7 +103,7 @@ type
 
   TTestRefCounting = class(TTestCase)
   protected
-    fContainerContext: IContainerContext;
+    fKernel: IKernel;
     fContext: TRttiContext;
     fLifetimeManager: ILifetimeManager;
     fModel: TComponentModel;
@@ -136,9 +136,9 @@ uses
 procedure TLifetimeManagerTestCase.SetUp;
 begin
   inherited;
-  fContainerContext := TMockContext.Create;
+  fKernel := TMockContext.Create;
   fContext := TRttiContext.Create;
-  fModel := TComponentModel.Create(fContainerContext, fContext.GetType(TMockObject).AsInstance);
+  fModel := TComponentModel.Create(fKernel, fContext.GetType(TMockObject).AsInstance);
   fActivator := TMockActivator.Create(fModel);
   fModel.ComponentActivator := fActivator;
 end;
@@ -148,7 +148,7 @@ begin
   fModel.Free;
   fActivator.Free;
   fContext.Free;
-  fContainerContext := nil;
+  fKernel := nil;
   inherited;
 end;
 
@@ -312,9 +312,9 @@ end;
 procedure TTestRefCounting.SetUp;
 begin
   inherited;
-  fContainerContext := TMockContext.Create;
+  fKernel := TMockContext.Create;
   fContext := TRttiContext.Create;
-  fModel := TComponentModel.Create(fContainerContext, fContext.GetType(TMockComponent).AsInstance);
+  fModel := TComponentModel.Create(fKernel, fContext.GetType(TMockComponent).AsInstance);
   fModel.RefCounting := TRefCounting.True;
   fActivator := TMockActivator.Create(fModel);
   fModel.ComponentActivator := fActivator;
@@ -327,7 +327,7 @@ begin
   fModel.Free;
   fActivator.Free;
   fContext.Free;
-  fContainerContext := nil;
+  fKernel := nil;
   inherited;
 end;
 
