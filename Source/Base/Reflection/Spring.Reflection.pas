@@ -627,15 +627,13 @@ begin
 end;
 
 class function TType.FindType(const qualifiedName: string): TRttiType;
-var
-  rttiType: TRttiType;
 begin
   Result := fContext.FindType(qualifiedName);
   if not Assigned(Result) then
   begin
-    for rttiType in fContext.GetTypes do
-      if SameText(rttiType.Name, qualifiedName) then
-        Exit(rttiType);
+    for Result in fContext.GetTypes do
+      if SameText(Result.Name, qualifiedName) then
+        Exit;
     Result := nil;
   end;
 end;
@@ -888,7 +886,7 @@ end;
 
 function TRttiMemberEnumerable<T>.TEnumerator.MoveNext: Boolean;
 begin
-  Result := fIndex < Length(fMembers) - 1;
+  Result := fIndex < High(fMembers);
   if Result then
   begin
     Inc(fIndex);
@@ -1098,7 +1096,7 @@ begin
   parameters := member.AsMethod.GetParameters;
   Result := Length(parameters) = Length(fTypes);
   if Result then
-  for i := 0 to Length(parameters) - 1 do
+  for i := 0 to High(parameters) do
   begin
     if parameters[i].ParamType.Handle <> fTypes[i] then  // IsAssignableFrom
     begin
@@ -1345,7 +1343,7 @@ end;
 
 function TRttiTypeEnumerable.TEnumerator.MoveNext: Boolean;
 begin
-  Result := fIndex < Length(fTypes) - 1;
+  Result := fIndex < High(fTypes);
   if Result then
     Inc(fIndex);
 end;

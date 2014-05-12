@@ -948,44 +948,32 @@ end;
 
 function TRttiTypeHelper.InternalGetConstructors(
   enumerateBaseType: Boolean): IEnumerable<TRttiMethod>;
-var
-  func: TGetRttiMembersFunc<TRttiMethod>;
 begin
-  func :=
+  Result := TRttiMemberEnumerable<TRttiMethod>.Create(Self,
     function(targetType: TRttiType): TArray<TRttiMethod>
     begin
       Result := targetType.GetDeclaredMethods;
-    end;
-  Result := TRttiMemberEnumerable<TRttiMethod>.Create(
-    Self, func, enumerateBaseType, TMethodFilters.IsConstructor());
+    end, enumerateBaseType, TMethodFilters.IsConstructor());
 end;
 
 function TRttiTypeHelper.InternalGetMethods(
   enumerateBaseType: Boolean): IEnumerable<TRttiMethod>;
-var
-  func: TGetRttiMembersFunc<TRttiMethod>;
 begin
-  func :=
+  Result := TRttiMemberEnumerable<TRttiMethod>.Create(Self,
     function(targetType: TRttiType): TArray<TRttiMethod>
     begin
       Result := targetType.GetDeclaredMethods;
-    end;
-  Result := TRttiMemberEnumerable<TRttiMethod>.Create(
-    Self, func, enumerateBaseType, nil);
+    end, enumerateBaseType);
 end;
 
 function TRttiTypeHelper.InternalGetProperties(
   enumerateBaseType: Boolean): IEnumerable<TRttiProperty>;
-var
-  func: TGetRttiMembersFunc<TRttiProperty>;
 begin
-  func :=
+  Result := TRttiMemberEnumerable<TRttiProperty>.Create(Self,
     function(targetType: TRttiType): TArray<TRttiProperty>
     begin
       Result := targetType.GetDeclaredProperties;
-    end;
-  Result := TRttiMemberEnumerable<TRttiProperty>.Create(
-    Self, func, enumerateBaseType, nil);
+    end, enumerateBaseType);
 end;
 
 function TRttiTypeHelper.IsAssignableFrom(const rttiType: TRttiType): Boolean;
@@ -995,16 +983,12 @@ end;
 
 function TRttiTypeHelper.InternalGetFields(
   enumerateBaseType: Boolean): IEnumerable<TRttiField>;
-var
-  func: TGetRttiMembersFunc<TRttiField>;
 begin
-  func :=
+  Result := TRttiMemberEnumerable<TRttiField>.Create(Self,
     function(targetType: TRttiType): TArray<TRttiField>
     begin
       Result := targetType.GetDeclaredFields;
-    end;
-  Result := TRttiMemberEnumerable<TRttiField>.Create(
-    Self, func, enumerateBaseType, nil);
+    end, enumerateBaseType);
 end;
 
 function TRttiTypeHelper.GetConstructors: IEnumerable<TRttiMethod>;
@@ -1058,22 +1042,55 @@ end;
 // Nullable<TDateTime>
 // TDictionary<string, TObject>
 // TDictionary<string, IDictionary<string, TObject>>
-function TRttiTypeHelper.GetGenericArguments: TArray<TRttiType>; // TEMP
+function TRttiTypeHelper.GetGenericArguments: TArray<TRttiType>;
+
+  function ScanChar(const s: string; var index: Integer): Boolean;
+  var
+    level: Integer;
+  begin
+    Result := False;
+    level := 0;
+    while index <= Length(s) do
+    begin
+      case s[index] of
+        ',': if level = 0 then Exit(True);
+        '<': Inc(level);
+        '>': Dec(level);
+      end;
+      Inc(index);
+      Result := level = 0;
+    end;
+  end;
+
+  function SplitTypes(const s: string): TStringDynArray;
+  var
+    startPos, index: Integer;
+  begin
+    startPos := 1;
+    index := 1;
+    while ScanChar(s, index) do
+    begin
+      SetLength(Result, Length(Result) + 1);
+      Result[High(Result)] := Copy(s, startPos, index - startPos);
+      Inc(index);
+      startPos := index;
+    end;
+  end;
+
 var
-  p1, p2: Integer;
-  args: string;
-  elements: TStringDynArray;
   i: Integer;
+  s: string;
+  names: TStringDynArray;
 begin
-  p1 := Pos('<', Name);
-  p2 := Pos('>', Name);
-  if (p1 = 0) or (p2 = 0) or (p1 > p2) then
+  s := Name;
+  i := Pos('<', s);
+  if i = 0 then
     Exit(nil);
-  args := MidStr(Name, p1+1, p2-p1-1);
-  elements := SplitString(args, ',');
-  SetLength(Result, Length(elements));
-  for i := 0 to High(elements) do
-    Result[i] := TType.FindType(elements[i]);
+  s := Copy(s, i + 1, Length(s) - i - 1);
+  names := SplitTypes(s);
+  SetLength(Result, Length(names));
+  for i := 0 to High(names) do
+    Result[i] := TType.FindType(names[i]);
 end;
 
 function TRttiTypeHelper.GetAsClass: TRttiInstanceType;

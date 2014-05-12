@@ -120,7 +120,8 @@ begin
   ]);
 
   RegisterTests('Spring.Base.Helpers', [
-    TTestGuidHelper.Suite
+    TTestGuidHelper.Suite,
+    TTestRttiTypeHelper.Suite
   ]);
 
   RegisterTests('Spring.Base.Reflection', [
