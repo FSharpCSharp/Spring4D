@@ -325,7 +325,9 @@ procedure THashSet<T>.ExceptWith(const other: IEnumerable<T>);
 var
   item: T;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
+{$ENDIF}
 
   for item in other do
     fDictionary.Remove(item);
@@ -336,7 +338,9 @@ var
   item: T;
   list: IList<T>;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
+{$ENDIF}
 
   list := TList<T>.Create;
   for item in Self do
@@ -351,7 +355,9 @@ function THashSet<T>.IsSubsetOf(const other: IEnumerable<T>): Boolean;
 var
   item: T;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
+{$ENDIF}
 
   for item in Self do
     if not other.Contains(item) then
@@ -364,7 +370,9 @@ function THashSet<T>.IsSupersetOf(const other: IEnumerable<T>): Boolean;
 var
   item: T;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
+{$ENDIF}
 
   for item in other do
     if not Contains(item) then
@@ -377,7 +385,9 @@ procedure THashSet<T>.UnionWith(const other: IEnumerable<T>);
 var
   item: T;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
+{$ENDIF}
 
   for item in other do
     Add(item);
@@ -387,7 +397,9 @@ function THashSet<T>.Overlaps(const other: IEnumerable<T>): Boolean;
 var
   item: T;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
+{$ENDIF}
 
   for item in other do
     if Contains(item) then
@@ -401,7 +413,9 @@ var
   item: T;
   localSet: ISet<T>;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
+{$ENDIF}
 
   localSet := THashSet<T>.Create;
 

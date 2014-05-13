@@ -462,14 +462,20 @@ end;
 
 procedure TLinkedList<T>.ValidateNewNode(const node: TLinkedListNode<T>);
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(node), 'node');
+{$ENDIF}
+
   if Assigned(node.fList) then
     raise EInvalidOperationException.CreateRes(@SLinkedListNodeIsAttached);
 end;
 
 procedure TLinkedList<T>.ValidateNode(const node: TLinkedListNode<T>);
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(node), 'node');
+{$ENDIF}
+
   if node.fList <> Pointer(Self) then
     raise EInvalidOperationException.CreateRes(@SLinkedListNodeIsAttached);
 end;

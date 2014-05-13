@@ -448,7 +448,9 @@ function TEnumerableBase<T>.All(const predicate: TPredicate<T>): Boolean;
 var
   item: T;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
+{$ENDIF}
 
   Result := True;
   for item in Self do
@@ -468,7 +470,9 @@ function TEnumerableBase<T>.Any(const predicate: TPredicate<T>): Boolean;
 var
   item: T;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
+{$ENDIF}
 
   Result := False;
   for item in Self do
@@ -479,14 +483,16 @@ end;
 function TEnumerableBase<T>.Concat(
   const second: IEnumerable<T>): IEnumerable<T>;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(second), 'second');
+{$ENDIF}
 
   Result := TConcatIterator<T>.Create(Self, second);
 end;
 
 function TEnumerableBase<T>.Contains(const value: T): Boolean;
 begin
-  Result := Contains(value, nil);
+  Result := Contains(value, EqualityComparer);
 end;
 
 function TEnumerableBase<T>.Contains(const value: T;
@@ -494,10 +500,10 @@ function TEnumerableBase<T>.Contains(const value: T;
 var
   item: T;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull<T>(value, 'value');
-
-  if not Assigned(comparer) then
-    comparer := EqualityComparer;
+  Guard.CheckNotNull(Assigned(comparer), 'comparer');
+{$ENDIF}
 
   for item in Self do
     if comparer.Equals(value, item) then
@@ -543,8 +549,10 @@ var
   e1, e2: IEnumerator<T>;
   hasNext: Boolean;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(collection), 'collection');
   Guard.CheckNotNull(Assigned(comparer), 'comparer');
+{$ENDIF}
 
   e1 := GetEnumerator;
   e2 := collection.GetEnumerator;
@@ -576,7 +584,9 @@ function TEnumerableBase<T>.First(const predicate: TPredicate<T>): T;
 var
   item: T;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
+{$ENDIF}
 
   for item in Self do
     if predicate(item) then
@@ -610,7 +620,9 @@ function TEnumerableBase<T>.FirstOrDefault(const predicate: TPredicate<T>;
 var
   item: T;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
+{$ENDIF}
 
   for item in Self do
     if predicate(item) then
@@ -622,7 +634,9 @@ procedure TEnumerableBase<T>.ForEach(const action: TAction<T>);
 var
   item: T;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(action), 'action');
+{$ENDIF}
 
   for item in Self do
     action(item);
@@ -679,7 +693,9 @@ var
   item: T;
   found: Boolean;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
+{$ENDIF}
 
   found := False;
   for item in Self do
@@ -718,7 +734,9 @@ function TEnumerableBase<T>.LastOrDefault(const predicate: TPredicate<T>;
 var
   item: T;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
+{$ENDIF}
 
   Result := defaultValue;
   for item in Self do
@@ -736,7 +754,9 @@ var
   flag: Boolean;
   item: T;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(comparer), 'comparer');
+{$ENDIF}
 
   flag := False;
   for item in Self do
@@ -766,7 +786,9 @@ var
   flag: Boolean;
   item: T;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(comparer), 'comparer');
+{$ENDIF}
 
   flag := False;
   for item in Self do
@@ -794,7 +816,9 @@ end;
 function TEnumerableBase<T>.Ordered(
   const comparer: IComparer<T>): IEnumerable<T>;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(comparer), 'comparer');
+{$ENDIF}
 
   Result := TOrderedIterator<T>.Create(Self, comparer);
 end;
@@ -822,7 +846,9 @@ var
   item: T;
   found: Boolean;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
+{$ENDIF}
 
   enumerator := GetEnumerator;
   if not enumerator.MoveNext then
@@ -873,7 +899,9 @@ var
   item: T;
   found: Boolean;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
+{$ENDIF}
 
   enumerator := GetEnumerator;
   if not enumerator.MoveNext then
@@ -901,7 +929,9 @@ end;
 function TEnumerableBase<T>.SkipWhile(
   const predicate: TPredicate<T>): IEnumerable<T>;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
+{$ENDIF}
 
   Result := TSkipWhileIterator<T>.Create(Self, predicate);
 end;
@@ -909,7 +939,9 @@ end;
 function TEnumerableBase<T>.SkipWhile(
   const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
+{$ENDIF}
 
   Result := TSkipWhileIndexIterator<T>.Create(Self, predicate);
 end;
@@ -922,7 +954,9 @@ end;
 function TEnumerableBase<T>.TakeWhile(
   const predicate: TPredicate<T>): IEnumerable<T>;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
+{$ENDIF}
 
   Result := TTakeWhileIterator<T>.Create(Self, predicate);
 end;
@@ -930,7 +964,9 @@ end;
 function TEnumerableBase<T>.TakeWhile(
   const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
+{$ENDIF}
 
   Result := TTakeWhileIndexIterator<T>.Create(Self, predicate);
 end;
@@ -1077,7 +1113,9 @@ end;
 function TEnumerableBase<T>.Where(
   const predicate: TPredicate<T>): IEnumerable<T>;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
+{$ENDIF}
 
   Result := TWhereIterator<T>.Create(Self, predicate);
 end;
@@ -1111,7 +1149,9 @@ procedure TCollectionBase<T>.AddRange(const collection: IEnumerable<T>);
 var
   item: T;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(collection), 'collection');
+{$ENDIF}
 
   for item in collection do
     Add(item);
@@ -1121,7 +1161,9 @@ procedure TCollectionBase<T>.CopyTo(var values: TArray<T>; index: Integer);
 var
   item: T;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckRange(Length(values), index, Count);
+{$ENDIF}
 
   for item in Self do
   begin
@@ -1142,7 +1184,9 @@ procedure TCollectionBase<T>.ExtractRange(const collection: IEnumerable<T>);
 var
   item: T;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(collection), 'collection');
+{$ENDIF}
 
   for item in collection do
     Extract(item);
@@ -1165,7 +1209,9 @@ procedure TCollectionBase<T>.RemoveRange(const collection: IEnumerable<T>);
 var
   item: T;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckNotNull(Assigned(collection), 'collection');
+{$ENDIF}
 
   for item in collection do
     Remove(item);
@@ -1297,8 +1343,10 @@ var
   comparer: IEqualityComparer<T>;
   i: Integer;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= Self.Count), 'index');
   Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
+{$ENDIF}
 
   comparer := EqualityComparer;
   for i := index to index + count - 1 do
@@ -1311,7 +1359,9 @@ procedure TListBase<T>.InsertRange(index: Integer; const collection: array of T)
 var
   item: T;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= Count), 'index');
+{$ENDIF}
 
   for item in collection do
   begin
@@ -1325,8 +1375,10 @@ procedure TListBase<T>.InsertRange(index: Integer;
 var
   item: T;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= Count), 'index');
   Guard.CheckNotNull(Assigned(collection), 'collection');
+{$ENDIF}
 
   for item in collection do
   begin
@@ -1385,8 +1437,10 @@ var
   comparer: IEqualityComparer<T>;
   i: Integer;
 begin
+{$IFNDEF DISABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
   Guard.CheckRange((count >= 0) and (count <= index + 1), 'count');
+{$ENDIF}
 
   comparer := EqualityComparer;
   for i := index downto index - count + 1 do
