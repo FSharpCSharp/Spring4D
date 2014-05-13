@@ -103,6 +103,8 @@ type
 
     procedure Clear; override;
 
+    function Contains(const value: T; comparer: IEqualityComparer<T>): Boolean; override;
+
     procedure Insert(index: Integer; const item: T); override;
 
     procedure Delete(index: Integer); override;
@@ -520,6 +522,16 @@ begin
     Result := fItems[index];
     DeleteInternal(index, caExtracted);
   end;
+end;
+
+function TList<T>.Contains(const value: T;
+  comparer: IEqualityComparer<T>): Boolean;
+var
+  index: Integer;
+begin
+  for index := 0 to fCount - 1 do
+    if comparer.Equals(value, fItems[index]) then
+      Exit(True);
 end;
 
 procedure TList<T>.CopyTo(var values: TArray<T>; index: Integer);
