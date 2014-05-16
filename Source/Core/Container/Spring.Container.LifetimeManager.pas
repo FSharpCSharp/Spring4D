@@ -94,6 +94,7 @@ implementation
 
 uses
   Classes,
+  Rtti,
   TypInfo,
   Spring.Container.Common;
 

@@ -53,10 +53,6 @@ type
       const resolver: IDependencyResolver): IInjection; override;
   end;
 
-resourcestring
-  SAmbiguousConstructor = 'Ambiguous constructor.';
-
-
 implementation
 
 uses
@@ -107,8 +103,9 @@ begin
       winner := candidate;
       Break;
     end;
-    if candidate.DependencyCount = maxCount then
-      raise EResolveException.CreateRes(@SAmbiguousConstructor);
+    if (maxCount > 0) and (candidate.DependencyCount = maxCount) then
+      raise EResolveException.CreateResFmt(
+        @SAmbiguousConstructor, [model.ComponentType.Name]);
     if candidate.DependencyCount > maxCount then
     begin
       winner := candidate;
@@ -118,7 +115,8 @@ begin
   Result := winner;
   if Assigned(Result) and not resolver.CanResolveDependencies(
     Result.Dependencies, Result.Arguments, Result.Target) then
-    raise EResolveException.CreateRes(@SUnsatisfiedConstructorParameters);
+    raise EResolveException.CreateResFmt(
+      @SUnsatisfiedConstructorParameters, [model.ComponentType.Name]);
 end;
 
 {$ENDREGION}

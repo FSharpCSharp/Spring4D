@@ -382,7 +382,8 @@ begin
     and TMethodFilters.HasParameterTypes(parameterTypes);
   method := ComponentType.Methods.FirstOrDefault(predicate);
   if not Assigned(method) then
-    raise ERegistrationException.CreateRes(@SUnsatisfiedConstructorParameters);
+    raise ERegistrationException.CreateResFmt(
+      @SUnsatisfiedConstructorParameters, [ComponentType.Name]);
   Result := InjectionFactory.CreateConstructorInjection;
   Result.Initialize(method);
   ConstructorInjections.Add(Result);
