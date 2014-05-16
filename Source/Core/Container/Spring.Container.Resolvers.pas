@@ -326,7 +326,7 @@ begin
       TValue.MakeWithoutCopy(@localInterface, typeInfo, value);
     end;
   else
-    value := nil;
+    value := instance;
   end;
 
   DoResolve(value);
@@ -434,7 +434,8 @@ begin
     end;
   end
   else
-    Result := argument.IsEmpty or argument.IsType(dependency.Handle);
+    Result := argument.IsEmpty or argument.IsType(dependency.Handle)
+      or fRegistry.HasService(dependency.Handle);
 end;
 
 function TDependencyResolver.ResolveDependency(const dependency: TRttiType;
@@ -451,8 +452,9 @@ begin
     Exit;
   end;
 
-  if not (dependency.IsClassOrInterface or dependency.IsRecord)
-    or (argument.Kind in [tkClass, tkInterface, tkRecord]) then
+  if (not (dependency.IsClassOrInterface or dependency.IsRecord)
+    or (argument.Kind in [tkClass, tkInterface, tkRecord]))
+    and not fRegistry.HasService(dependency.Handle) then
   begin
     Result := argument;
 {$IFDEF DELPHI2010}
