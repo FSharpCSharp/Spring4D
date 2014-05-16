@@ -231,7 +231,7 @@ type
   TGetRttiMembersFunc<T: TRttiMember> = reference to function(targetType: TRttiType): TArray<T>;
 
 
-  {$REGION 'TRttiMemberEnumerable<T: TRttiMember>'}
+  {$REGION 'TRttiMemberEnumerable<T>'}
 
   TRttiMemberEnumerable<T: TRttiMember> = class(TEnumerableBase<T>)
   private
@@ -265,7 +265,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TFiltersNamed<T: TRttiMember>'}
+  {$REGION 'TFiltersNamed<T>'}
 
   TFiltersNamed<T: TRttiNamedObject> = class
   public
@@ -276,7 +276,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TFiltersBase<T: TRttiMember>'}
+  {$REGION 'TFiltersBase<T>'}
 
   TMethodKinds = set of TMethodKind;
 
@@ -317,25 +317,13 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TMemberSpecificationBase<T: TRttiMember>'}
+  {$REGION 'TNameFilter<T>'}
 
-  TMemberSpecificationBase<T: TRttiObject> = class abstract(TSpecificationBase<T>)
-  protected
-    function Accept(const member: T): Boolean; virtual; abstract;
-  public
-    function IsSatisfiedBy(const member: T): Boolean; override;
-  end;
-
-  {$ENDREGION}
-
-
-  {$REGION 'TNameFilter<T: TRttiMember>'}
-
-  TNameFilter<T: TRttiNamedObject> = class(TMemberSpecificationBase<T>)
+  TNameFilter<T: TRttiNamedObject> = class(TSpecificationBase<T>)
   private
     fName: string;
   protected
-    function Accept(const member: T): Boolean; override;
+    function IsSatisfiedBy(const member: T): Boolean; override;
   public
     constructor Create(const name: string);
   end;
@@ -343,23 +331,23 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TInvokableFilter<T: TRttiMember>'}
+  {$REGION 'TInvokableFilter<T>'}
 
-  TInvokableFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
+  TInvokableFilter<T: TRttiMember> = class(TSpecificationBase<T>)
   protected
-    function Accept(const member: T): Boolean; override;
+    function IsSatisfiedBy(const member: T): Boolean; override;
   end;
 
   {$ENDREGION}
 
 
-  {$REGION 'THasAttributeFilter<T: TRttiMember>'}
+  {$REGION 'THasAttributeFilter<T>'}
 
-  THasAttributeFilter<T: TRttiObject> = class(TMemberSpecificationBase<T>)
+  THasAttributeFilter<T: TRttiObject> = class(TSpecificationBase<T>)
   private
     fAttributeClass: TAttributeClass;
   protected
-    function Accept(const member: T): Boolean; override;
+    function IsSatisfiedBy(const member: T): Boolean; override;
   public
     constructor Create(attributeClass: TAttributeClass);
   end;
@@ -367,13 +355,13 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TTypeFilter<T: TRttiMember>'}
+  {$REGION 'TTypeFilter<T>'}
 
-  TTypeFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
+  TTypeFilter<T: TRttiMember> = class(TSpecificationBase<T>)
   private
     fTypeInfo: PTypeInfo;
   protected
-    function Accept(const member: T): Boolean; override;
+    function IsSatisfiedBy(const member: T): Boolean; override;
   public
     constructor Create(const typeInfo: PTypeInfo);
   end;
@@ -381,13 +369,13 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'THasParameterTypesFilter<T: TRttiMember>'}
+  {$REGION 'THasParameterTypesFilter<T>'}
 
-  THasParameterTypesFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
+  THasParameterTypesFilter<T: TRttiMember> = class(TSpecificationBase<T>)
   private
     fTypes: TArray<PTypeInfo>;
   protected
-    function Accept(const member: T): Boolean; override;
+    function IsSatisfiedBy(const member: T): Boolean; override;
   public
     constructor Create(const types: array of PTypeInfo);
   end;
@@ -395,13 +383,13 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TContainsParameterTypeFilter<T: TRttiMember>'}
+  {$REGION 'TContainsParameterTypeFilter<T>'}
 
-  TContainsParameterTypeFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
+  TContainsParameterTypeFilter<T: TRttiMember> = class(TSpecificationBase<T>)
   private
     fTypeInfo: PTypeInfo;
   protected
-    function Accept(const member: T): Boolean; override;
+    function IsSatisfiedBy(const member: T): Boolean; override;
   public
     constructor Create(const typeInfo: PTypeInfo);
   end;
@@ -412,13 +400,13 @@ type
   TRttiMemberClass = class of TRttiMember;
 
 
-  {$REGION 'TMemberTypeFilter<T: TRttiMember>'}
+  {$REGION 'TMemberTypeFilter<T>'}
 
-  TMemberTypeFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
+  TMemberTypeFilter<T: TRttiMember> = class(TSpecificationBase<T>)
   private
     fMemberClass: TRttiMemberClass;
   protected
-    function Accept(const member: T): Boolean; override;
+    function IsSatisfiedBy(const member: T): Boolean; override;
   public
     constructor Create(memberClass: TRttiMemberClass);
   end;
@@ -426,43 +414,43 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TConstructorFilter<T: TRttiMember>'}
+  {$REGION 'TConstructorFilter<T>'}
 
-  TConstructorFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
+  TConstructorFilter<T: TRttiMember> = class(TSpecificationBase<T>)
   protected
-    function Accept(const member: T): Boolean; override;
+    function IsSatisfiedBy(const member: T): Boolean; override;
   end;
 
   {$ENDREGION}
 
 
-  {$REGION 'TInstanceMethodFilter<T: TRttiMember>'}
+  {$REGION 'TInstanceMethodFilter<T>'}
 
-  TInstanceMethodFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
+  TInstanceMethodFilter<T: TRttiMember> = class(TSpecificationBase<T>)
   protected
-    function Accept(const member: T): Boolean; override;
+    function IsSatisfiedBy(const member: T): Boolean; override;
   end;
 
   {$ENDREGION}
 
 
-  {$REGION 'TClassMethodFilter<T: TRttiMember>'}
+  {$REGION 'TClassMethodFilter<T>'}
 
-  TClassMethodFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
+  TClassMethodFilter<T: TRttiMember> = class(TSpecificationBase<T>)
   protected
-    function Accept(const member: T): Boolean; override;
+    function IsSatisfiedBy(const member: T): Boolean; override;
   end;
 
   {$ENDREGION}
 
 
-  {$REGION 'THasParameterFlagsFilter<T: TRttiMember>'}
+  {$REGION 'THasParameterFlagsFilter<T>'}
 
-  THasParameterFlagsFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
+  THasParameterFlagsFilter<T: TRttiMember> = class(TSpecificationBase<T>)
   private
     fFlags: TParamFlags;
   protected
-    function Accept(const member: T): Boolean; override;
+    function IsSatisfiedBy(const member: T): Boolean; override;
   public
     constructor Create(const flags: TParamFlags);
   end;
@@ -470,13 +458,13 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'TMethodKindFilter<T: TRttiMember>'}
+  {$REGION 'TMethodKindFilter<T>'}
 
-  TMethodKindFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
+  TMethodKindFilter<T: TRttiMember> = class(TSpecificationBase<T>)
   private
     fFlags: TMethodKinds;
   protected
-    function Accept(const member: T): Boolean; override;
+    function IsSatisfiedBy(const member: T): Boolean; override;
   public
     constructor Create(const flags: TMethodKinds);
   end;
@@ -486,9 +474,9 @@ type
 
   {$REGION 'TIsClassFilter>'}
 
-  TIsClassFilter = class(TMemberSpecificationBase<TRttiType>)
+  TIsClassFilter = class(TSpecificationBase<TRttiType>)
   protected
-    function Accept(const member: TRttiType): Boolean; override;
+    function IsSatisfiedBy(const member: TRttiType): Boolean; override;
   end;
 
   {$ENDREGION}
@@ -496,9 +484,9 @@ type
 
   {$REGION 'TIsInterfaceFilter>'}
 
-  TIsInterfaceFilter = class(TMemberSpecificationBase<TRttiType>)
+  TIsInterfaceFilter = class(TSpecificationBase<TRttiType>)
   protected
-    function Accept(const member: TRttiType): Boolean; override;
+    function IsSatisfiedBy(const member: TRttiType): Boolean; override;
   end;
 
   {$ENDREGION}
@@ -910,18 +898,6 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TMemberSpecificationBase<T>'}
-
-function TMemberSpecificationBase<T>.IsSatisfiedBy(
-  const member: T): Boolean;
-begin
-//  Guard.CheckNotNull<T>(member, 'member');
-  Result := Accept(member);
-end;
-
-{$ENDREGION}
-
-
 {$REGION 'TFiltersNamed<T>'}
 
 class function TFiltersNamed<T>.IsNamed(const name: string): TSpecification<T>;
@@ -1022,7 +998,7 @@ begin
   fAttributeClass := attributeClass;
 end;
 
-function THasAttributeFilter<T>.Accept(const member: T): Boolean;
+function THasAttributeFilter<T>.IsSatisfiedBy(const member: T): Boolean;
 var
   attribute: TCustomAttribute;
 begin
@@ -1045,7 +1021,7 @@ begin
   fName := name;
 end;
 
-function TNameFilter<T>.Accept(const member: T): Boolean;
+function TNameFilter<T>.IsSatisfiedBy(const member: T): Boolean;
 begin
   Result := SameText(TRttiNamedObject(member).Name, fName);
 end;
@@ -1058,7 +1034,7 @@ begin
   fTypeInfo := typeInfo;
 end;
 
-function TTypeFilter<T>.Accept(const member: T): Boolean;
+function TTypeFilter<T>.IsSatisfiedBy(const member: T): Boolean;
 begin
   if member.IsProperty then
   begin
@@ -1088,7 +1064,7 @@ begin
   end;
 end;
 
-function THasParameterTypesFilter<T>.Accept(const member: T): Boolean;
+function THasParameterTypesFilter<T>.IsSatisfiedBy(const member: T): Boolean;
 var
   parameters: TArray<TRttiParameter>;
   i: Integer;
@@ -1114,7 +1090,7 @@ begin
   fTypeInfo := typeInfo;
 end;
 
-function TContainsParameterTypeFilter<T>.Accept(const member: T): Boolean;
+function TContainsParameterTypeFilter<T>.IsSatisfiedBy(const member: T): Boolean;
 var
   parameters: TArray<TRttiParameter>;
   parameter: TRttiParameter;
@@ -1142,7 +1118,7 @@ begin
   fFlags := flags;
 end;
 
-function THasParameterFlagsFilter<T>.Accept(const member: T): Boolean;
+function THasParameterFlagsFilter<T>.IsSatisfiedBy(const member: T): Boolean;
 var
   parameters: TArray<TRttiParameter>;
   parameter: TRttiParameter;
@@ -1164,7 +1140,13 @@ end;
 
 { TMethodKindFilter<T> }
 
-function TMethodKindFilter<T>.Accept(const member: T): Boolean;
+constructor TMethodKindFilter<T>.Create(const flags: TMethodKinds);
+begin
+  inherited Create;
+  fFlags:=flags;
+end;
+
+function TMethodKindFilter<T>.IsSatisfiedBy(const member: T): Boolean;
 begin
   Result := False;
   if member.IsMethod then
@@ -1173,15 +1155,9 @@ begin
   end;
 end;
 
-constructor TMethodKindFilter<T>.Create(const flags: TMethodKinds);
-begin
-  inherited Create;
-  fFlags:=flags;
-end;
-
 { TInvokableFilter<T> }
 
-function TInvokableFilter<T>.Accept(const member: T): Boolean;
+function TInvokableFilter<T>.IsSatisfiedBy(const member: T): Boolean;
 begin
   if member.IsProperty then
   begin
@@ -1205,42 +1181,42 @@ begin
   fMemberClass := memberClass;
 end;
 
-function TMemberTypeFilter<T>.Accept(const member: T): Boolean;
+function TMemberTypeFilter<T>.IsSatisfiedBy(const member: T): Boolean;
 begin
   Result := member.InheritsFrom(fMemberClass);
 end;
 
 { TConstructorFilter<T> }
 
-function TConstructorFilter<T>.Accept(const member: T): Boolean;
+function TConstructorFilter<T>.IsSatisfiedBy(const member: T): Boolean;
 begin
   Result := member.IsConstructor;
 end;
 
 { TInstanceMethodFilter<T> }
 
-function TInstanceMethodFilter<T>.Accept(const member: T): Boolean;
+function TInstanceMethodFilter<T>.IsSatisfiedBy(const member: T): Boolean;
 begin
   Result := member.IsMethod and not member.AsMethod.IsClassMethod;
 end;
 
 { TClassMethodFilter<T> }
 
-function TClassMethodFilter<T>.Accept(const member: T): Boolean;
+function TClassMethodFilter<T>.IsSatisfiedBy(const member: T): Boolean;
 begin
   Result := member.IsMethod and member.AsMethod.IsClassMethod;
 end;
 
 { TIsClassFilter }
 
-function TIsClassFilter.Accept(const member: TRttiType): Boolean;
+function TIsClassFilter.IsSatisfiedBy(const member: TRttiType): Boolean;
 begin
   Result := member.IsInstance;
 end;
 
 { TIsInterfaceFilter }
 
-function TIsInterfaceFilter.Accept(const member: TRttiType): Boolean;
+function TIsInterfaceFilter.IsSatisfiedBy(const member: TRttiType): Boolean;
 begin
   Result := member is TRttiInterfaceType;
 end;
