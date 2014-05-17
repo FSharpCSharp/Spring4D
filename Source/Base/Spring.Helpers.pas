@@ -949,7 +949,7 @@ end;
 function TRttiTypeHelper.InternalGetConstructors(
   enumerateBaseType: Boolean): IEnumerable<TRttiMethod>;
 begin
-  Result := TRttiMemberEnumerable<TRttiMethod>.Create(Self,
+  Result := TRttiMemberIterator<TRttiMethod>.Create(Self,
     function(targetType: TRttiType): TArray<TRttiMethod>
     begin
       Result := targetType.GetDeclaredMethods;
@@ -959,7 +959,7 @@ end;
 function TRttiTypeHelper.InternalGetMethods(
   enumerateBaseType: Boolean): IEnumerable<TRttiMethod>;
 begin
-  Result := TRttiMemberEnumerable<TRttiMethod>.Create(Self,
+  Result := TRttiMemberIterator<TRttiMethod>.Create(Self,
     function(targetType: TRttiType): TArray<TRttiMethod>
     begin
       Result := targetType.GetDeclaredMethods;
@@ -969,7 +969,7 @@ end;
 function TRttiTypeHelper.InternalGetProperties(
   enumerateBaseType: Boolean): IEnumerable<TRttiProperty>;
 begin
-  Result := TRttiMemberEnumerable<TRttiProperty>.Create(Self,
+  Result := TRttiMemberIterator<TRttiProperty>.Create(Self,
     function(targetType: TRttiType): TArray<TRttiProperty>
     begin
       Result := targetType.GetDeclaredProperties;
@@ -984,7 +984,7 @@ end;
 function TRttiTypeHelper.InternalGetFields(
   enumerateBaseType: Boolean): IEnumerable<TRttiField>;
 begin
-  Result := TRttiMemberEnumerable<TRttiField>.Create(Self,
+  Result := TRttiMemberIterator<TRttiField>.Create(Self,
     function(targetType: TRttiType): TArray<TRttiField>
     begin
       Result := targetType.GetDeclaredFields;

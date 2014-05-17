@@ -35,7 +35,7 @@ uses
   TypInfo,
   Spring,
   Spring.Collections,
-  Spring.Collections.Base,
+  Spring.Collections.Extensions,
   Spring.DesignPatterns;
 
 type
@@ -165,18 +165,17 @@ type
   end;
 
   TReflection = class(TInterfacedObject, IReflection)
-  private
-    fContext: TRttiContext;
-    fClasses: IEnumerable<TRttiInstanceType>;
-    fInterfaces: IEnumerable<TRttiInterfaceType>;
-    fTypes: IEnumerable<TRttiType>;
+  strict private
+    class var fContext: TRttiContext;
     function GetClasses: IEnumerable<TRttiInstanceType>;
     function GetInterfaces: IEnumerable<TRttiInterfaceType>;
     function GetTypes: IEnumerable<TRttiType>;
 //    function GetPackages: IEnumerable<TRttiPackage>;
+    class constructor Create;
+  {$HINTS OFF}
+    class destructor Destroy;
+  {$HINTS ON}
   public
-    constructor Create;
-
     function GetType(const typeInfo: PTypeInfo): TRttiType; overload;
     function GetType(const classType: TClass): TRttiType; overload;
     function GetType(const instance: TObject): TRttiType; overload;
@@ -184,26 +183,21 @@ type
 
     function GetFullName(const typeInfo: PTypeInfo): string; overload;
     function FindType(const qualifiedName: string): TRttiType;
+
+    property Classes: IEnumerable<TRttiInstanceType> read GetClasses;
+    property Interfaces: IEnumerable<TRttiInterfaceType> read GetInterfaces;
     property Types: IEnumerable<TRttiType> read GetTypes;
 //    property Packages: IEnumerable<TRttiPackage> read GetPackages;
   end;
 
-  TRttiTypeEnumerable = class(TEnumerableBase<TRttiType>)
+  TRttiTypeIterator<T: TRttiType> = class(TIterator<T>)
   private
-    type
-      TEnumerator = class(TEnumeratorBase<TRttiType>)
-      private
-        fContext: TRttiContext;
-        fIndex: Integer;
-        fTypes: TArray<TRttiType>;
-      protected
-        function GetCurrent: TRttiType; override;
-      public
-        constructor Create;
-        function MoveNext: Boolean; override;
-      end;
+    fContext: TRttiContext;
+    fIndex: Integer;
+    fTypes: TArray<TRttiType>;
   public
-    function GetEnumerator: IEnumerator<TRttiType>; override;
+    function Clone: TIterator<T>; override;
+    function MoveNext: Boolean; override;
   end;
 
   {$ENDREGION}
@@ -228,38 +222,29 @@ type
   {$ENDREGION}
 
 
-  TGetRttiMembersFunc<T: TRttiMember> = reference to function(targetType: TRttiType): TArray<T>;
+  {$REGION 'TRttiMemberIterator<T>'}
 
-
-  {$REGION 'TRttiMemberEnumerable<T>'}
-
-  TRttiMemberEnumerable<T: TRttiMember> = class(TEnumerableBase<T>)
-  private
-    type
-      TEnumerator = class(TEnumeratorBase<T>)
-      private
-        fCollection: TRttiMemberEnumerable<T>;
-        fTargetType: TRttiType;
-        fMembers: TArray<T>;
-        fIndex: Integer;
-      protected
-        procedure Initialize(targetType: TRttiType);
-        function GetCurrent: T; override;
-      public
-        constructor Create(collection: TRttiMemberEnumerable<T>);
-        function MoveNext: Boolean; override;
-      end;
+  TRttiMemberIterator<T: TRttiMember> = class(TIterator<T>)
   private
     fParentType: TRttiType;
-    fGetMembersFunc: TGetRttiMembersFunc<T>;
+    fSelector: TFunc<TRttiType,TArray<T>>;
     fEnumerateBaseType: Boolean;
     fPredicate: TPredicate<T>;
+    fTargetType: TRttiType;
+    fMembers: TArray<T>;
+    fIndex: Integer;
+    procedure Initialize(const targetType: TRttiType);
   public
-    constructor Create(parentType: TRttiType; const func: TGetRttiMembersFunc<T>;
+    constructor Create(const parentType: TRttiType;
+      const selector: TFunc<TRttiType,TArray<T>>;
       enumerateBaseType: Boolean); overload;
-    constructor Create(parentType: TRttiType; const func: TGetRttiMembersFunc<T>;
-      enumerateBaseType: Boolean; const predicate: TPredicate<T>); overload;
-    function GetEnumerator: IEnumerator<T>; override;
+    constructor Create(const parentType: TRttiType;
+      const selector: TFunc<TRttiType,TArray<T>>;
+      enumerateBaseType: Boolean;
+      const predicate: TPredicate<T>); overload;
+
+    function Clone: TIterator<T>; override;
+    function MoveNext: Boolean; override;
   end;
 
   {$ENDREGION}
@@ -494,33 +479,24 @@ type
 
   {$REGION 'Internal Class Helpers'}
 
-  ///	<summary>
-  ///	  The _InternalRttiMemberHelper class was copied from Spring.Helpers, as
-  ///	  An URW1111 internal error will occured when the Spring.Helpers
-  ///	  namespace was used by this unit.
-  ///	</summary>
+  /// <summary>
+  ///   This helper was copied from Spring.Helpers.pas because URW1111 internal
+  ///   error will occur when Spring.Helpers.pas is used by this unit.
+  /// </summary>
   _InternalRttiMemberHelper = class helper for TRttiMember
   private
-    function GetIsPrivate: Boolean;
-    function GetIsProtected: Boolean;
-    function GetIsPublic: Boolean;
-    function GetIsPublished: Boolean;
-    function GetIsConstructor: Boolean;
-    function GetIsProperty: Boolean;
-    function GetIsMethod: Boolean;
-    function GetIsField: Boolean;
+    function GetIsConstructor: Boolean; inline;
+    function GetIsProperty: Boolean; inline;
+    function GetIsMethod: Boolean; inline;
+    function GetIsField: Boolean; inline;
   public
-    function AsProperty: TRttiProperty;
-    function AsMethod: TRttiMethod;
-    function AsField: TRttiField;
+    function AsProperty: TRttiProperty; inline;
+    function AsMethod: TRttiMethod; inline;
+    function AsField: TRttiField; inline;
     property IsConstructor: Boolean read GetIsConstructor;
     property IsProperty: Boolean read GetIsProperty;
     property IsMethod: Boolean read GetIsMethod;
     property IsField: Boolean read GetIsField;
-    property IsPrivate: Boolean read GetIsPrivate;
-    property IsProtected: Boolean read GetIsProtected;
-    property IsPublic: Boolean read GetIsPublic;
-    property IsPublished: Boolean read GetIsPublished;
   end;
 
   {$ENDREGION}
@@ -692,9 +668,7 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'Internal Class Helpers
-
-{ TInternalRttiMemberHelper }
+{$REGION 'Internal Class Helpers'}
 
 function _InternalRttiMemberHelper.AsProperty: TRttiProperty;
 begin
@@ -730,27 +704,6 @@ function _InternalRttiMemberHelper.GetIsField: Boolean;
 begin
   Result := Self is TRttiField;
 end;
-
-function _InternalRttiMemberHelper.GetIsPrivate: Boolean;
-begin
-  Result := Visibility = mvPrivate;
-end;
-
-function _InternalRttiMemberHelper.GetIsProtected: Boolean;
-begin
-  Result := Visibility = mvProtected;
-end;
-
-function _InternalRttiMemberHelper.GetIsPublic: Boolean;
-begin
-  Result := Visibility = mvPublic;
-end;
-
-function _InternalRttiMemberHelper.GetIsPublished: Boolean;
-begin
-  Result := Visibility = mvPublished;
-end;
-
 
 {$ENDREGION}
 
@@ -820,79 +773,70 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TRttiMemberEnumerable<T>'}
+{$REGION 'TRttiMemberIterator<T>'}
 
-constructor TRttiMemberEnumerable<T>.Create(parentType: TRttiType;
-  const func: TGetRttiMembersFunc<T>; enumerateBaseType: Boolean);
+constructor TRttiMemberIterator<T>.Create(const parentType: TRttiType;
+  const selector: TFunc<TRttiType,TArray<T>>; enumerateBaseType: Boolean);
 begin
-  Create(parentType, func, enumerateBaseType, nil);
+  Create(parentType, selector, enumerateBaseType, nil);
 end;
 
-constructor TRttiMemberEnumerable<T>.Create(parentType: TRttiType;
-  const func: TGetRttiMembersFunc<T>; enumerateBaseType: Boolean;
+constructor TRttiMemberIterator<T>.Create(const parentType: TRttiType;
+  const selector: TFunc<TRttiType, TArray<T>>; enumerateBaseType: Boolean;
   const predicate: TPredicate<T>);
 begin
   inherited Create;
   fParentType := parentType;
-  fGetMembersFunc := func;
+  fSelector := selector;
   fEnumerateBaseType := enumerateBaseType;
   fPredicate := predicate;
 end;
 
-function TRttiMemberEnumerable<T>.GetEnumerator: IEnumerator<T>;
+function TRttiMemberIterator<T>.Clone: TIterator<T>;
 begin
-  Result := TEnumerator.Create(Self);
+  Result := TRttiMemberIterator<T>.Create(
+    fParentType, fSelector, fEnumerateBaseType, fPredicate);
 end;
 
-{$ENDREGION}
-
-
-{$REGION 'TRttiMemberEnumerable<T>.TEnumerator'}
-
-constructor TRttiMemberEnumerable<T>.TEnumerator.Create(
-  collection: TRttiMemberEnumerable<T>);
+procedure TRttiMemberIterator<T>.Initialize(const targetType: TRttiType);
 begin
-  inherited Create;
-  fCollection := collection;
-  Initialize(fCollection.fParentType);
-end;
-
-procedure TRttiMemberEnumerable<T>.TEnumerator.Initialize(
-  targetType: TRttiType);
-begin
+  fIndex := -1;
   fTargetType := targetType;
   if Assigned(fTargetType) then
-  begin
-    fMembers := fCollection.fGetMembersFunc(fTargetType);
-  end
+    fMembers := fSelector(fTargetType)
   else
-  begin
     SetLength(fMembers, 0);
-  end;
-  fIndex := -1;
 end;
 
-function TRttiMemberEnumerable<T>.TEnumerator.MoveNext: Boolean;
+function TRttiMemberIterator<T>.MoveNext: Boolean;
 begin
-  Result := fIndex < High(fMembers);
-  if Result then
-  begin
-    Inc(fIndex);
-    if Assigned(fCollection.fPredicate) and not fCollection.fPredicate(Current) then
-    begin
-      Result := MoveNext;
-    end;
-  end
-  else if fCollection.fEnumerateBaseType and (fTargetType <> nil) then
-  begin
-    Initialize(fTargetType.BaseType);
-    Exit(MoveNext);
-  end;
-end;
+  Result := False;
 
-function TRttiMemberEnumerable<T>.TEnumerator.GetCurrent: T;
-begin
-  Result := fMembers[fIndex];
+  if fState = STATE_ENUMERATOR then
+  begin
+    Initialize(fParentType);
+    fState := STATE_RUNNING;
+  end;
+
+  if fState = STATE_RUNNING then
+  begin
+    repeat
+      while fIndex < High(fMembers) do
+      begin
+        Inc(fIndex);
+        if Assigned(fPredicate) and not fPredicate(fMembers[fIndex]) then
+          Continue;
+        fCurrent := fMembers[fIndex];
+        Exit(True);
+      end;
+      if fEnumerateBaseType then
+        Initialize(fTargetType.BaseType)
+      else
+        Initialize(nil);
+    until not Assigned(fTargetType);
+    fCurrent := Default(T);
+    fState := STATE_FINISHED;
+  end;
 end;
 
 {$ENDREGION}
@@ -1002,15 +946,10 @@ function THasAttributeFilter<T>.IsSatisfiedBy(const member: T): Boolean;
 var
   attribute: TCustomAttribute;
 begin
-  Result := False;
   for attribute in member.GetAttributes do
-  begin
     if attribute.InheritsFrom(fAttributeClass) then
-    begin
-      Result := True;
-      Break;
-    end;
-  end;
+      Exit(True);
+  Result := False;
 end;
 
 { TNameFilter<T> }
@@ -1037,17 +976,11 @@ end;
 function TTypeFilter<T>.IsSatisfiedBy(const member: T): Boolean;
 begin
   if member.IsProperty then
-  begin
-    Result := member.AsProperty.PropertyType.Handle = fTypeInfo;
-  end
+    Result := member.AsProperty.PropertyType.Handle = fTypeInfo
   else if member.IsField then
-  begin
-    Result := member.AsField.FieldType.Handle = fTypeInfo;
-  end
+    Result := member.AsField.FieldType.Handle = fTypeInfo
   else
-  begin
     Result := False;
-  end;
 end;
 
 { THasParameterTypesFilter<T> }
@@ -1059,9 +992,7 @@ begin
   inherited Create;
   SetLength(fTypes, Length(types));
   for i := 0 to High(types) do
-  begin
     fTypes[i] := types[i];
-  end;
 end;
 
 function THasParameterTypesFilter<T>.IsSatisfiedBy(const member: T): Boolean;
@@ -1072,14 +1003,9 @@ begin
   parameters := member.AsMethod.GetParameters;
   Result := Length(parameters) = Length(fTypes);
   if Result then
-  for i := 0 to High(parameters) do
-  begin
-    if parameters[i].ParamType.Handle <> fTypes[i] then  // IsAssignableFrom
-    begin
-      Result := False;
-      Break;
-    end;
-  end;
+    for i := 0 to High(parameters) do
+      if parameters[i].ParamType.Handle <> fTypes[i] then  // IsAssignableFrom
+        Exit(False);
 end;
 
 { TContainsParameterTypeFilter<T> }
@@ -1100,13 +1026,8 @@ begin
   begin
     parameters := member.AsMethod.GetParameters;
     for parameter in parameters do
-    begin
       if parameter.ParamType.Handle = fTypeInfo then
-      begin
-        Result := True;
-        Break;
-      end;
-    end;
+        Exit(True);
   end;
 end;
 
@@ -1128,13 +1049,8 @@ begin
   begin
     parameters := member.AsMethod.GetParameters;
     for parameter in parameters do
-    begin
       if parameter.Flags * fFlags <> [] then
-      begin
-        Result := True;
-        Break;
-      end;
-    end;
+        Exit(True);
   end;
 end;
 
@@ -1148,11 +1064,7 @@ end;
 
 function TMethodKindFilter<T>.IsSatisfiedBy(const member: T): Boolean;
 begin
-  Result := False;
-  if member.IsMethod then
-  begin
-    Result := member.AsMethod.MethodKind in fFlags;
-  end;
+  Result := member.IsMethod and (member.AsMethod.MethodKind in fFlags);
 end;
 
 { TInvokableFilter<T> }
@@ -1160,17 +1072,11 @@ end;
 function TInvokableFilter<T>.IsSatisfiedBy(const member: T): Boolean;
 begin
   if member.IsProperty then
-  begin
-    Result := member.AsProperty.IsWritable;
-  end
+    Result := member.AsProperty.IsWritable
   else if member.IsMethod then
-  begin
-    Result := not (member.AsMethod.MethodKind in [mkClassConstructor, mkClassDestructor]);
-  end
+    Result := not (member.AsMethod.MethodKind in [mkClassConstructor, mkClassDestructor])
   else
-  begin
     Result := True;
-  end;
 end;
 
 { TMemberTypeFilter<T> }
@@ -1226,12 +1132,14 @@ end;
 
 {$REGION 'TReflection'}
 
-constructor TReflection.Create;
+class constructor TReflection.Create;
 begin
   fContext := TRttiContext.Create;
-  fTypes := TRttiTypeEnumerable.Create;
-  IEnumerable<TRttiType>(fClasses) := fTypes.Where(TTypeFilters.IsClass());
-  IEnumerable<TRttiType>(fInterfaces) := fTypes.Where(TTypeFilters.IsInterface());
+end;
+
+class destructor TReflection.Destroy;
+begin
+  fContext.Free;
 end;
 
 function TReflection.FindType(const qualifiedName: string): TRttiType;
@@ -1241,7 +1149,7 @@ end;
 
 function TReflection.GetClasses: IEnumerable<TRttiInstanceType>;
 begin
-  Result := fClasses;
+  Result := TRttiTypeIterator<TRttiInstanceType>.Create;
 end;
 
 function TReflection.GetFullName(const typeInfo: PTypeInfo): string;
@@ -1259,7 +1167,7 @@ end;
 
 function TReflection.GetInterfaces: IEnumerable<TRttiInterfaceType>;
 begin
-  Result := fInterfaces;
+  Result := TRttiTypeIterator<TRttiInterfaceType>.Create;
 end;
 
 function TReflection.GetType(const typeInfo: PTypeInfo): TRttiType;
@@ -1287,41 +1195,41 @@ end;
 
 function TReflection.GetTypes: IEnumerable<TRttiType>;
 begin
-  Result := fTypes;
+  Result := TRttiTypeIterator<TRttiType>.Create;
 end;
 
 {$ENDREGION}
 
 
-{$REGION 'TRttiTypeEnumerable'}
+{$REGION 'TRttiTypeIterator<T>'}
 
-function TRttiTypeEnumerable.GetEnumerator: IEnumerator<TRttiType>;
+function TRttiTypeIterator<T>.Clone: TIterator<T>;
 begin
-  Result := TEnumerator.Create;
+  Result := TRttiTypeIterator<T>.Create;
 end;
 
-{$ENDREGION}
-
-
-{$REGION 'TRttiTypeEnumerable.TEnumerator'}
-
-constructor TRttiTypeEnumerable.TEnumerator.Create;
+function TRttiTypeIterator<T>.MoveNext: Boolean;
 begin
-  fContext := TRttiContext.Create;
-  fTypes := fContext.GetTypes;
-  fIndex := -1;
-end;
+  Result := False;
 
-function TRttiTypeEnumerable.TEnumerator.GetCurrent: TRttiType;
-begin
-  Result := fTypes[fIndex];
-end;
+  if fState = STATE_ENUMERATOR then
+  begin
+    fIndex := -1;
+    fTypes := fContext.GetTypes;
+    fState := STATE_RUNNING;
+  end;
 
-function TRttiTypeEnumerable.TEnumerator.MoveNext: Boolean;
-begin
-  Result := fIndex < High(fTypes);
-  if Result then
-    Inc(fIndex);
+  if fState = STATE_RUNNING then
+  begin
+    while fIndex < High(fTypes) do
+    begin
+      Inc(fIndex);
+      if not (fTypes[fIndex].InheritsFrom(T)) then
+        Continue;
+      fCurrent := T(fTypes[fIndex]);
+      Exit(True);
+    end;
+  end;
 end;
 
 {$ENDREGION}
