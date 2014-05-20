@@ -267,7 +267,7 @@ type
     function GetFieldInjections: IInjectionList;
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
   public
-    constructor Create(const kernel: IKernel; componentType: TRttiType);
+    constructor Create(const kernel: IKernel; const componentType: TRttiType);
 
     {$REGION 'Typed Injections'}
 
@@ -336,13 +336,9 @@ type
   TInjectableMethodFilter = class(TSpecificationBase<TRttiMethod>)
   private
     fKernel: IKernel;
-    {$IFDEF WEAKREF}[Weak]{$ENDIF}
-    fModel: TComponentModel;
-    fInjection: IInjection;
     fArguments: TArray<TValue>;
   public
-    constructor Create(const kernel: IKernel; const model: TComponentModel;
-      const injection: IInjection);
+    constructor Create(const kernel: IKernel; const arguments: TArray<TValue>);
     function IsSatisfiedBy(const method: TRttiMethod): Boolean; override;
   end;
 
@@ -358,7 +354,7 @@ type
   public
     class function ContainsMember(const member: TRttiMember): TSpecification<IInjection>;
     class function IsInjectableMethod(const kernel: IKernel;
-      const model: TComponentModel; const injection: IInjection): TSpecification<TRttiMethod>;
+      const arguments: TArray<TValue>): TSpecification<TRttiMethod>;
   end;
 
 implementation
@@ -374,7 +370,7 @@ uses
 {$REGION 'TComponentModel'}
 
 constructor TComponentModel.Create(const kernel: IKernel;
-  componentType: TRttiType);
+  const componentType: TRttiType);
 begin
   inherited Create;
   fKernel := kernel;
@@ -630,13 +626,11 @@ end;
 {$REGION 'TInjectableMethodFilter'}
 
 constructor TInjectableMethodFilter.Create(const kernel: IKernel;
-  const model: TComponentModel; const injection: IInjection);
+  const arguments: TArray<TValue>);
 begin
   inherited Create;
   fKernel := kernel;
-  fModel := model;
-  fInjection := injection;
-  fArguments := fInjection.Arguments;
+  fArguments := arguments;
 end;
 
 function TInjectableMethodFilter.IsSatisfiedBy(
@@ -668,7 +662,7 @@ end;
 function TContainsMemberFilter.IsSatisfiedBy(
   const injection: IInjection): Boolean;
 begin
-  Result := injection.Target = fmember;
+  Result := injection.Target = fMember;
 end;
 
 {$ENDREGION}
@@ -682,11 +676,10 @@ begin
   Result := TContainsMemberFilter.Create(member);
 end;
 
-class function TInjectionFilters.IsInjectableMethod(
-  const kernel: IKernel; const model: TComponentModel;
-  const injection: IInjection): TSpecification<TRttiMethod>;
+class function TInjectionFilters.IsInjectableMethod(const kernel: IKernel;
+  const arguments: TArray<TValue>): TSpecification<TRttiMethod>;
 begin
-  Result := TInjectableMethodFilter.Create(kernel, model, injection);
+  Result := TInjectableMethodFilter.Create(kernel, arguments);
 end;
 
 {$ENDREGION}

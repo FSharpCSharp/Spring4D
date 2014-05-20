@@ -40,6 +40,7 @@ type
     fInspectors: IList<IBuilderInspector>;
   public
     constructor Create(const kernel: IKernel);
+
     procedure AddInspector(const inspector: IBuilderInspector);
     procedure RemoveInspector(const inspector: IBuilderInspector);
     procedure ClearInspectors;
@@ -240,8 +241,8 @@ var
   i: Integer;
 begin
   if not model.ConstructorInjections.IsEmpty then Exit;  // TEMP
-  predicate := TMethodFilters.IsConstructor and
-    not TMethodFilters.HasParameterFlags([pfVar, pfOut]);
+  predicate := TMethodFilters.IsConstructor
+    and not TMethodFilters.HasParameterFlags([pfVar, pfOut]);
   for method in model.ComponentType.Methods.Where(predicate) do
   begin
     injection := kernel.InjectionFactory.CreateConstructorInjection;
@@ -279,10 +280,10 @@ var
   attribute: InjectAttribute;
   i: Integer;
 begin
-  condition := TMethodFilters.IsInstanceMethod and
-    TMethodFilters.HasAttribute(InjectAttribute) and
-    not TMethodFilters.HasParameterFlags([pfOut, pfVar]) and
-    not TMethodFilters.IsConstructor;
+  condition := TMethodFilters.IsInstanceMethod
+    and TMethodFilters.HasAttribute(InjectAttribute)
+    and not TMethodFilters.HasParameterFlags([pfOut, pfVar])
+    and not TMethodFilters.IsConstructor;
   for method in model.ComponentType.Methods.Where(condition) do
   begin
     injectionExists := model.MethodInjections.TryGetFirst(injection,
@@ -320,8 +321,8 @@ var
   injectionExists: Boolean;
   attribute: InjectAttribute;
 begin
-  condition := TPropertyFilters.IsInvokable and
-    TPropertyFilters.HasAttribute(InjectAttribute);
+  condition := TPropertyFilters.IsInvokable
+    and TPropertyFilters.HasAttribute(InjectAttribute);
   for propertyMember in model.ComponentType.Properties.Where(condition) do
   begin
     injectionExists := model.PropertyInjections.TryGetFirst(injection,
@@ -411,8 +412,8 @@ var
 begin
   for injection in model.ConstructorInjections.Where(fHasNoTargetCondition) do
   begin
-    filter := TMethodFilters.IsConstructor and
-      TInjectionFilters.IsInjectableMethod(kernel, model, injection);
+    filter := TMethodFilters.IsConstructor
+      and TInjectionFilters.IsInjectableMethod(kernel, injection.Arguments);
     method := model.ComponentType.Methods.FirstOrDefault(filter);
     if not Assigned(method) then
       raise EBuilderException.CreateRes(@SUnresovableInjection);
@@ -429,9 +430,9 @@ var
 begin
   for injection in model.MethodInjections.Where(fHasNoTargetCondition) do
   begin
-    filter := TMethodFilters.IsInstanceMethod and
-      TMethodFilters.IsNamed(injection.TargetName) and
-      TInjectionFilters.IsInjectableMethod(kernel, model, injection);
+    filter := TMethodFilters.IsInstanceMethod
+      and TMethodFilters.IsNamed(injection.TargetName)
+      and TInjectionFilters.IsInjectableMethod(kernel, injection.Arguments);
     method := model.ComponentType.Methods.FirstOrDefault(filter);
     if not Assigned(method) then
       raise EBuilderException.CreateRes(@SUnresovableInjection);
