@@ -48,7 +48,9 @@ type
   IInjection = interface;
   IInjectionFactory = interface;
   ILifetimeManager = interface;
+  IComponentActivator = interface;
   IContainerExtension = interface;
+  ICreationContext = interface;
 
   TActivatorDelegate = reference to function: TValue;
   TActivatorDelegate<T> = reference to function: T;
@@ -202,6 +204,23 @@ type
       const dependency: TRttiType; const argument: TValue): Boolean; overload;
     function Resolve(
       const dependency: TRttiType; const argument: TValue): TValue; overload;
+  end;
+
+  /// <summary>
+  ///   Used during a component request, passed along to the whole process.
+  ///   This will allow some data to be passed along the process, which is used
+  ///   to detect cycled dependency graphs and also being used to provide
+  ///   arguments to components.
+  /// </summary>
+  ICreationContext = interface//(ISubDependencyResolver)
+    ['{0E788A94-AD9B-4951-85C1-40F877BB8A24}']
+    procedure EnterResolution(const model: TComponentModel);
+    procedure LeaveResolution(const model: TComponentModel);
+    function IsInResolution(const model: TComponentModel): Boolean;
+
+    procedure AddArgument(const argument: TValue);
+    function CheckConstructorCandidate(const injection: IInjection): Boolean;
+    function CreateConstructorArguments(const injection: IInjection): TArray<TValue>;
   end;
 
   IDependencyResolver = interface(ISubDependencyResolver)
