@@ -400,7 +400,7 @@ begin
     CheckCircularDependency(model);
     fDependencies.Add(model);
     try
-      instance := model.LifetimeManager.GetInstance(Self);
+      instance := model.LifetimeManager.Resolve(Self);
     finally
       fDependencies.Remove(model);
     end;
@@ -594,7 +594,7 @@ begin
   Guard.CheckNotNull(serviceType, 'serviceType');
   Guard.CheckNotNull(model.LifetimeManager, 'model.LifetimeManager');
 
-  instance := model.LifetimeManager.GetInstance(resolver);
+  instance := model.LifetimeManager.Resolve(resolver);
   Result := ResolveValue(serviceType, instance);
 end;
 

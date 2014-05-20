@@ -170,16 +170,16 @@ procedure TTestSingletonLifetimeManager.TestReferences;
 var
   obj1, obj2: TObject;
 begin
-  obj1 := fLifetimeManager.GetInstance(nil).AsObject;
-  obj2 := fLifetimeManager.GetInstance(nil).AsObject;
+  obj1 := fLifetimeManager.Resolve(nil).AsObject;
+  obj2 := fLifetimeManager.Resolve(nil).AsObject;
   try
     CheckIs(obj1, TMockObject, 'obj1');
     CheckIs(obj2, TMockObject, 'obj2');
     CheckSame(obj1, obj2);
     CheckSame(fActivator.Model, fModel);
   finally
-    fLifetimeManager.ReleaseInstance(obj1);
-    fLifetimeManager.ReleaseInstance(obj2);
+    fLifetimeManager.Release(obj1);
+    fLifetimeManager.Release(obj2);
   end;
 end;
 
@@ -201,16 +201,16 @@ procedure TTestTransientLifetimeManager.TestReferences;
 var
   obj1, obj2: TObject;
 begin
-  obj1 := fLifetimeManager.GetInstance(nil).AsObject;
-  obj2 := fLifetimeManager.GetInstance(nil).AsObject;
+  obj1 := fLifetimeManager.Resolve(nil).AsObject;
+  obj2 := fLifetimeManager.Resolve(nil).AsObject;
   try
     CheckIs(obj1, TMockObject, 'obj1');
     CheckIs(obj2, TMockObject, 'obj2');
     CheckTrue(obj1 <> obj2);
     CheckSame(fActivator.Model, fModel);
   finally
-    fLifetimeManager.ReleaseInstance(obj1);
-    fLifetimeManager.ReleaseInstance(obj2);
+    fLifetimeManager.Release(obj1);
+    fLifetimeManager.Release(obj2);
   end;
 end;
 
@@ -341,7 +341,7 @@ begin
 {$IFNDEF AUTOREFCOUNT}
   TMockComponent.fFreed := false;
 {$ENDIF}
-  val := fLifetimeManager.GetInstance(nil);
+  val := fLifetimeManager.Resolve(nil);
   obj := val.AsObject;
 {$IFDEF AUTOREFCOUNT}
   val := val.Empty; //Clear the TValue so that it doesn't keep holding reference count to obj

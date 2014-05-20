@@ -431,7 +431,7 @@ begin
   model := fRegistry.FindOne(instance.ClassInfo);
   if model = nil then
     raise EContainerException.CreateRes(@SComponentNotFound);
-  model.LifetimeManager.ReleaseInstance(instance);
+  model.LifetimeManager.Release(instance);
 end;
 
 procedure TContainer.Release(instance: IInterface);

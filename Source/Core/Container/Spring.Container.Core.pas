@@ -141,8 +141,8 @@ type
   /// </summary>
   ILifetimeManager = interface
     ['{7DF9A902-B07A-468B-B201-B4561A921CF5}']
-    function GetInstance(const resolver: IDependencyResolver): TValue;
-    procedure ReleaseInstance(const instance: TValue);
+    function Resolve(const resolver: IDependencyResolver): TValue;
+    procedure Release(const instance: TValue);
   end;
 
   /// <summary>
