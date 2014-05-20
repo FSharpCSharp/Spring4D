@@ -424,15 +424,13 @@ begin
   invokeEvent :=
     procedure(method: TRttiMethod; const args: TArray<TValue>; out result: TValue)
     var
-      dependencyOverrides: TArray<TDependencyOverride>;
-      resolverOverride: IResolverOverride;
+      arguments: TArray<TValue>;
       i: Integer;
     begin
-      SetLength(dependencyOverrides, Length(args) - 1);
+      SetLength(arguments, Length(args) - 1);
       for i := 1 to High(args) do
-        dependencyOverrides[i - 1] := TDependencyOverride.Create(args[i].TypeInfo, args[i]);
-      resolverOverride := TDependencyOverrides.Create(dependencyOverrides);
-      result := fKernel.ServiceResolver.Resolve(method.ReturnType.Handle, resolverOverride)
+        arguments[i - 1] := TTypedValue.Create(args[i].TypeInfo, args[i]);
+      result := fKernel.ServiceResolver.Resolve(method.ReturnType.Handle, arguments);
     end;
 
   InternalRegisterFactory(model, invokeEvent);
@@ -446,15 +444,13 @@ begin
   invokeEvent :=
     procedure(method: TRttiMethod; const args: TArray<TValue>; out result: TValue)
     var
-      dependencyOverrides: TArray<TDependencyOverride>;
-      resolverOverride: IResolverOverride;
+      arguments: TArray<TValue>;
       i: Integer;
     begin
-      SetLength(dependencyOverrides, Length(args) - 1);
+      SetLength(arguments, Length(args) - 1);
       for i := 1 to High(args) do
-        dependencyOverrides[i - 1] := TDependencyOverride.Create(args[i].TypeInfo, args[i]);
-      resolverOverride := TDependencyOverrides.Create(dependencyOverrides);
-      result := fKernel.ServiceResolver.Resolve(name, resolverOverride);
+        arguments[i - 1] := TTypedValue.Create(args[i].TypeInfo, args[i]);
+      result := fKernel.ServiceResolver.Resolve(name, arguments);
     end;
 
   InternalRegisterFactory(model, invokeEvent);
@@ -506,7 +502,7 @@ begin
   begin
     if not HasService(serviceType) then
     begin
-      if (serviceType.Kind in [tkClass, tkInterface]) and not TType.IsLazy(serviceType) then
+      if serviceType.Kind in [tkClass, tkInterface] then
         raise EResolveException.CreateResFmt(
           @SCannotResolveDependency, [serviceType.TypeName]);
       Result := nil;
@@ -524,16 +520,10 @@ begin
     name := argument.AsString;
     Result := FindOne(name);
     if not Assigned(Result) then
-      if TType.IsLazy(serviceType) then
-        Exit
-      else
-        raise EResolveException.CreateResFmt(@SInvalidServiceName, [name]);
+      raise EResolveException.CreateResFmt(@SInvalidServiceName, [name]);
     if not Result.HasService(serviceType) then
-      if not TType.IsLazy(serviceType) then
-        raise EResolveException.CreateResFmt(
-          @SCannotResolveDependency, [serviceType.TypeName])
-      else
-        Result := nil;
+      raise EResolveException.CreateResFmt(
+        @SCannotResolveDependency, [serviceType.TypeName]);
   end;
 end;
 

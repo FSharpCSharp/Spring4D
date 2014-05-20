@@ -144,7 +144,7 @@ type
   /// </summary>
   ILifetimeManager = interface
     ['{7DF9A902-B07A-468B-B201-B4561A921CF5}']
-    function Resolve(const resolver: IDependencyResolver): TValue;
+    function Resolve(const context: ICreationContext): TValue;
     procedure Release(const instance: TValue);
   end;
 
@@ -153,7 +153,7 @@ type
   /// </summary>
   IComponentActivator = interface
     ['{18E6DF78-C947-484F-A0A8-D9A5B0BEC887}']
-    function CreateInstance(const resolver: IDependencyResolver): TValue;
+    function CreateInstance(const context: ICreationContext): TValue;
   end;
 
   /// <summary>
@@ -200,10 +200,10 @@ type
 
   ISubDependencyResolver = interface
     ['{E360FFAD-2235-49D1-9A4F-50945877E337}']
-    function CanResolve(
-      const dependency: TRttiType; const argument: TValue): Boolean; overload;
-    function Resolve(
-      const dependency: TRttiType; const argument: TValue): TValue; overload;
+    function CanResolve(const context: ICreationContext;
+      const dependency: TRttiType; const argument: TValue): Boolean;
+    function Resolve(const context: ICreationContext;
+      const dependency: TRttiType; const argument: TValue): TValue;
   end;
 
   /// <summary>
@@ -212,7 +212,7 @@ type
   ///   to detect cycled dependency graphs and also being used to provide
   ///   arguments to components.
   /// </summary>
-  ICreationContext = interface//(ISubDependencyResolver)
+  ICreationContext = interface(ISubDependencyResolver)
     ['{0E788A94-AD9B-4951-85C1-40F877BB8A24}']
     procedure EnterResolution(const model: TComponentModel);
     procedure LeaveResolution(const model: TComponentModel);
@@ -225,23 +225,15 @@ type
 
   IDependencyResolver = interface(ISubDependencyResolver)
     ['{15ADEA1D-7C3F-48D5-8E85-84B4332AFF5F}']
-    function CanResolve(
-      const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
-      const target: TRttiMember): Boolean; overload;
-    function Resolve(
-      const dependencies: TArray<TRttiType>; const arguments: TArray<TValue>;
-      const target: TRttiMember): TArray<TValue>; overload;
+    function CanResolve(const context: ICreationContext;
+      const dependencies: TArray<TRttiType>;
+      const arguments: TArray<TValue>): Boolean; overload;
+    function Resolve(const context: ICreationContext;
+      const dependencies: TArray<TRttiType>;
+      const arguments: TArray<TValue>): TArray<TValue>; overload;
 
     procedure AddSubResolver(const subResolver: ISubDependencyResolver);
     procedure RemoveSubResolver(const subResolver: ISubDependencyResolver);
-  end;
-
-  /// <summary>
-  ///   Overrides the resolver.
-  /// </summary>
-  IResolverOverride = interface
-    ['{2DA386A3-949C-451F-BF22-017668689591}']
-    function GetResolver(const kernel: IKernel): IDependencyResolver;
   end;
 
   /// <summary>
@@ -252,9 +244,11 @@ type
     function CanResolve(serviceType: PTypeInfo): Boolean; overload;
     function CanResolve(const name: string): Boolean; overload;
     function Resolve(serviceType: PTypeInfo): TValue; overload;
-    function Resolve(serviceType: PTypeInfo; const resolverOverride: IResolverOverride): TValue; overload;
+    function Resolve(serviceType: PTypeInfo;
+      const arguments: array of TValue): TValue; overload;
     function Resolve(const name: string): TValue; overload;
-    function Resolve(const name: string; const resolverOverride: IResolverOverride): TValue; overload;
+    function Resolve(const name: string;
+      const arguments: array of TValue): TValue; overload;
     function ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
   end;
 
@@ -665,7 +659,7 @@ begin
   for i := 0 to High(dependencies) do
     dependencies[i] := parameters[i].ParamType;
   Result := fKernel.DependencyResolver.CanResolve(
-    dependencies, fArguments, method);
+    nil, dependencies, fArguments);
 end;
 
 {$ENDREGION}

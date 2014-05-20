@@ -1442,14 +1442,11 @@ begin
   fContainer.RegisterType<TDynamicNameService>.Implements<INameService>('dynamic');
   fContainer.Build;
 
-  CheckEquals('test', fContainer.Resolve<INameService>(
-    TOrderedParametersOverride.Create(['test'])).Name);
+  CheckEquals('test', fContainer.Resolve<INameService>(['test']).Name);
 
-  CheckEquals('test', fContainer.Resolve<INameService>('dynamic',
-    TOrderedParametersOverride.Create(['test'])).Name);
+  CheckEquals('test', fContainer.Resolve<INameService>('dynamic', ['test']).Name);
 
-  CheckEquals('test', fContainer.Resolve<INameService>(
-    TParameterOverride.Create('name', 'test')).Name);
+  CheckEquals('test', fContainer.Resolve<INameService>([TNamedValue.From('name', 'test')]).Name);
 end;
 
 procedure TTestResolverOverride.TestResolveWithClass;
@@ -1457,11 +1454,9 @@ begin
   fContainer.RegisterType<TDynamicNameService>.Implements<INameService>('dynamic');
   fContainer.Build;
 
-  CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>(
-    TOrderedParametersOverride.Create([fDummy])).Name);
+  CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>([fDummy]).Name);
 
-  CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>(
-    TParameterOverride.Create('obj', fDummy)).Name);
+  CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>([TNamedValue.From('obj', fDummy)]).Name);
 end;
 
 procedure TTestResolverOverride.TestResolveWithDependency;
@@ -1473,13 +1468,11 @@ begin
   fContainer.RegisterType<TNameAgeComponent>.Implements<IAgeService>;
   fContainer.Build;
 
-  service := fContainer.Resolve<INameService>(
-    TOrderedParametersOverride.Create([fDummy]));
+  service := fContainer.Resolve<INameService>([fDummy]);
   CheckEquals(fdummy.ClassName, service.Name);
   CheckNotNull((service as TDynamicNameService).AgeService);
 
-  service := fContainer.Resolve<INameService>(
-    TParameterOverride.Create('obj', fDummy));
+  service := fContainer.Resolve<INameService>([TNamedValue.From('obj', fDummy)]);
   CheckEquals(fdummy.ClassName, service.Name);
   CheckNotNull((service as TDynamicNameService).AgeService);
 end;
@@ -1489,11 +1482,9 @@ begin
   fContainer.RegisterType<TDynamicNameService>.Implements<INameService>('dynamic');
   fContainer.Build;
 
-  CheckEquals('test' + fdummy.ClassName, fContainer.Resolve<INameService>(
-    TOrderedParametersOverride.Create(['test', fDummy])).Name);
+  CheckEquals('test' + fDummy.ClassName, fContainer.Resolve<INameService>(['test', fDummy]).Name);
 
-  CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>(
-    TParameterOverride.Create('obj', fDummy)).Name);
+  CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>([TNamedValue.From('obj', fDummy)]).Name);
 end;
 
 {$ENDREGION}
@@ -1657,12 +1648,13 @@ var
   service: IAgeService;
 begin
   fContainer.AddExtension<TDecoratorContainerExtension>;
+  fContainer.RegisterType<TAgeServiceDecorator2>;
   fContainer.RegisterType<TAgeServiceDecorator>;
   fContainer.RegisterType<TNameAgeComponent>;
   fContainer.Build;
 
   service := fContainer.Resolve<IAgeService>;
-  CheckTrue(service is TAgeServiceDecorator);
+  CheckTrue(service is TAgeServiceDecorator2);
 end;
 
 procedure TTestDecoratorExtension.TestResolveWithResolverOverride;
@@ -1674,8 +1666,7 @@ begin
   fContainer.RegisterType<TNameAgeComponent>;
   fContainer.Build;
 
-  service := fContainer.Resolve<IAgeService>(
-    TParameterOverride.Create('age', 21));
+  service := fContainer.Resolve<IAgeService>([TNamedValue.From('age', 21)]);
   CheckTrue(service is TAgeServiceDecorator);
   CheckEquals(21, service.Age);
 end;

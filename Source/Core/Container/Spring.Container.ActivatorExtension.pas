@@ -49,8 +49,8 @@ type
 
   TReflectionComponentActivator2 = class(TReflectionComponentActivator)
   protected
-    function GetEligibleConstructor(const model: TComponentModel;
-      const resolver: IDependencyResolver): IInjection; override;
+    function SelectEligibleConstructor(
+      const context: ICreationContext): IInjection; override;
   end;
 
 resourcestring
@@ -89,9 +89,8 @@ end;
 
 {$REGION 'TReflectionComponentActivator2'}
 
-function TReflectionComponentActivator2.GetEligibleConstructor(
-  const model: TComponentModel;
-  const resolver: IDependencyResolver): IInjection;
+function TReflectionComponentActivator2.SelectEligibleConstructor(
+  const context: ICreationContext): IInjection;
 var
   candidate: IInjection;
   winner: IInjection;
@@ -100,7 +99,7 @@ begin
   winner := nil;
   maxCount := -1;
 
-  for candidate in model.ConstructorInjections do
+  for candidate in Model.ConstructorInjections do
   begin
     if candidate.Target.HasCustomAttribute<InjectAttribute> then
     begin
@@ -116,8 +115,8 @@ begin
     end;
   end;
   Result := winner;
-  if Assigned(Result) and not resolver.CanResolve(
-    Result.Dependencies, Result.Arguments, Result.Target) then
+  if Assigned(Result) and not Kernel.DependencyResolver.CanResolve(
+    context, Result.Dependencies, Result.Arguments) then
     raise EResolveException.CreateRes(@SUnsatisfiedConstructorParameters);
 end;
 

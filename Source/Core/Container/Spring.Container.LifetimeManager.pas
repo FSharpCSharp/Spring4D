@@ -50,7 +50,7 @@ type
     property Model: TComponentModel read fModel;
   public
     constructor Create(const model: TComponentModel); virtual;
-    function Resolve(const resolver: IDependencyResolver): TValue; overload; virtual; abstract;
+    function Resolve(const context: ICreationContext): TValue; overload; virtual; abstract;
     procedure Release(const instance: TValue); virtual; abstract;
   end;
 
@@ -61,13 +61,13 @@ type
     fInstance: TFunc<TValue>;
   public
     destructor Destroy; override;
-    function Resolve(const resolver: IDependencyResolver): TValue; override;
+    function Resolve(const context: ICreationContext): TValue; override;
     procedure Release(const instance: TValue); override;
   end;
 
   TTransientLifetimeManager = class(TLifetimeManagerBase)
   public
-    function Resolve(const resolver: IDependencyResolver): TValue; override;
+    function Resolve(const context: ICreationContext): TValue; override;
     procedure Release(const instance: TValue); override;
   end;
 
@@ -75,11 +75,12 @@ type
   private
     fInstances: IDictionary<TThreadID, TFunc<TValue>>;
   protected
-    procedure HandleValueChanged(sender: TObject; const item: TFunc<TValue>; action: TCollectionChangedAction);
+    procedure HandleValueChanged(sender: TObject; const item: TFunc<TValue>;
+      action: TCollectionChangedAction);
     function CreateHolder(const instance: TValue): TFunc<TValue>; virtual;
   public
     constructor Create(const model: TComponentModel); override;
-    function Resolve(const resolver: IDependencyResolver): TValue; override;
+    function Resolve(const context: ICreationContext): TValue; override;
     procedure Release(const instance: TValue); override;
   end;
 
@@ -88,7 +89,7 @@ type
     fPool: IObjectPool;
   public
     constructor Create(const model: TComponentModel); override;
-    function Resolve(const resolver: IDependencyResolver): TValue; override;
+    function Resolve(const context: ICreationContext): TValue; override;
     procedure Release(const instance: TValue); override;
   end;
 
@@ -187,13 +188,13 @@ begin
 end;
 
 function TSingletonLifetimeManager.Resolve(
-  const resolver: IDependencyResolver): TValue;
+  const context: ICreationContext): TValue;
 var
   newInstance: TValue;
 begin
   if not Assigned(fInstance) then
   begin
-    newInstance := ComponentActivator.CreateInstance(resolver);
+    newInstance := ComponentActivator.CreateInstance(context);
     fInstance := TValueHolder.Create(newInstance, Model.RefCounting);
     DoAfterConstruction(fInstance);
   end;
@@ -215,9 +216,9 @@ end;
 {$REGION 'TTransientLifetimeManager'}
 
 function TTransientLifetimeManager.Resolve(
-  const resolver: IDependencyResolver): TValue;
+  const context: ICreationContext): TValue;
 begin
-  Result := ComponentActivator.CreateInstance(resolver);
+  Result := ComponentActivator.CreateInstance(context);
   DoAfterConstruction(Result);
 end;
 
@@ -243,7 +244,8 @@ begin
   fInstances.OnValueChanged.Add(HandleValueChanged);
 end;
 
-function TSingletonPerThreadLifetimeManager.CreateHolder(const instance: TValue): TFunc<TValue>;
+function TSingletonPerThreadLifetimeManager.CreateHolder(
+  const instance: TValue): TFunc<TValue>;
 begin
   Result := TValueHolder.Create(instance, Model.RefCounting);
 end;
@@ -258,7 +260,7 @@ begin
 end;
 
 function TSingletonPerThreadLifetimeManager.Resolve(
-  const resolver: IDependencyResolver): TValue;
+  const context: ICreationContext): TValue;
 var
   threadID: THandle;
   instance: TValue;
@@ -269,7 +271,7 @@ begin
   try
     if not fInstances.TryGetValue(threadID, holder) then
     begin
-      instance := ComponentActivator.CreateInstance(resolver);
+      instance := ComponentActivator.CreateInstance(context);
       holder := CreateHolder(instance);
       fInstances.AddOrSetValue(threadID, holder);
       DoAfterConstruction(holder);
@@ -303,12 +305,14 @@ constructor TPooledLifetimeManager.Create(const model: TComponentModel);
 begin
   CheckPoolingSupported(model.ComponentType);
   inherited Create(model);
-  fPool := TSimpleObjectPool.Create(model.ComponentActivator, model.MinPoolsize, model.MaxPoolsize);
+  fPool := TSimpleObjectPool.Create(
+    model.ComponentActivator, model.MinPoolsize, model.MaxPoolsize);
 end;
 
-function TPooledLifetimeManager.Resolve(const resolver: IDependencyResolver): TValue;
+function TPooledLifetimeManager.Resolve(
+  const context: ICreationContext): TValue;
 begin
-  Result := fPool.GetInstance(resolver);
+  Result := fPool.GetInstance(context);
   DoAfterConstruction(Result);
 end;
 
@@ -320,5 +324,6 @@ begin
 end;
 
 {$ENDREGION}
+
 
 end.

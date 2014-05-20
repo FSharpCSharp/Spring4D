@@ -92,13 +92,16 @@ type
     procedure Build;
 
     function Resolve<T>: T; overload;
-    function Resolve<T>(resolverOverride: IResolverOverride): T; overload;
+    function Resolve<T>(const arguments: array of TValue): T; overload;
     function Resolve<T>(const name: string): T; overload;
-    function Resolve<T>(const name: string; resolverOverride: IResolverOverride): T; overload;
+    function Resolve<T>(const name: string;
+      const arguments: array of TValue): T; overload;
     function Resolve(typeInfo: PTypeInfo): TValue; overload;
-    function Resolve(typeInfo: PTypeInfo; resolverOverride: IResolverOverride): TValue; overload;
+    function Resolve(typeInfo: PTypeInfo;
+      const arguments: array of TValue): TValue; overload;
     function Resolve(const name: string): TValue; overload;
-    function Resolve(const name: string; resolverOverride: IResolverOverride): TValue; overload;
+    function Resolve(const name: string;
+      const arguments: array of TValue): TValue; overload;
 
     function ResolveAll<TServiceType>: TArray<TServiceType>; overload;
     function ResolveAll(serviceType: PTypeInfo): TArray<TValue>; overload;
@@ -204,6 +207,9 @@ begin
   fRegistrationManager := TRegistrationManager.Create(fRegistry);
   fExtensions := TCollections.CreateInterfaceList<IContainerExtension>;
   InitializeInspectors;
+
+  fDependencyResolver.AddSubResolver(TLazyResolver.Create(Self));
+  fDependencyResolver.AddSubResolver(TDynamicArrayResolver.Create(Self));
 end;
 
 destructor TContainer.Destroy;
@@ -358,11 +364,11 @@ begin
   Result := value.AsType<T>;
 end;
 
-function TContainer.Resolve<T>(resolverOverride: IResolverOverride): T;
+function TContainer.Resolve<T>(const arguments: array of TValue): T;
 var
   value: TValue;
 begin
-  value := Resolve(TypeInfo(T), resolverOverride);
+  value := Resolve(TypeInfo(T), arguments);
   Result := value.AsType<T>;
 end;
 
@@ -375,11 +381,11 @@ begin
 end;
 
 function TContainer.Resolve<T>(const name: string;
-  resolverOverride: IResolverOverride): T;
+  const arguments: array of TValue): T;
 var
   value: TValue;
 begin
-  value := Resolve(name, resolverOverride);
+  value := Resolve(name, arguments);
   Result := value.AsType<T>;
 end;
 
@@ -389,9 +395,9 @@ begin
 end;
 
 function TContainer.Resolve(typeInfo: PTypeInfo;
-  resolverOverride: IResolverOverride): TValue;
+  const arguments: array of TValue): TValue;
 begin
-  Result := fServiceResolver.Resolve(typeInfo, resolverOverride);
+  Result := fServiceResolver.Resolve(typeInfo, arguments);
 end;
 
 function TContainer.Resolve(const name: string): TValue;
@@ -400,9 +406,9 @@ begin
 end;
 
 function TContainer.Resolve(const name: string;
-  resolverOverride: IResolverOverride): TValue;
+  const arguments: array of TValue): TValue;
 begin
-  Result := fServiceResolver.Resolve(name, resolverOverride);
+  Result := fServiceResolver.Resolve(name, arguments);
 end;
 
 function TContainer.ResolveAll<TServiceType>: TArray<TServiceType>;
@@ -475,15 +481,13 @@ end;
 function TServiceLocatorAdapter.GetService(serviceType: PTypeInfo;
   const args: array of TValue): TValue;
 begin
-  Result := fContainer.Resolve(serviceType,
-    TOrderedParametersOverride.Create(args));
+  Result := fContainer.Resolve(serviceType, args);
 end;
 
 function TServiceLocatorAdapter.GetService(serviceType: PTypeInfo;
   const name: string; const args: array of TValue): TValue;
 begin
-  Result := fContainer.Resolve({serviceType, }name,
-    TOrderedParametersOverride.Create(args));
+  Result := fContainer.Resolve({serviceType, }name, args);
 end;
 
 function TServiceLocatorAdapter.GetAllServices(serviceType: PTypeInfo): TArray<TValue>;

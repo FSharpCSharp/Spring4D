@@ -62,7 +62,7 @@ type
   public
     constructor Create(model: TComponentModel);
     function CreateInstance: TValue; overload;
-    function CreateInstance(const resolver: IDependencyResolver): TValue; overload;
+    function CreateInstance(const context: ICreationContext): TValue; overload;
     property Model: TComponentModel read fModel;
   end;
 
@@ -229,7 +229,7 @@ begin
 end;
 
 function TMockActivator.CreateInstance(
-  const resolver: IDependencyResolver): TValue;
+  const context: ICreationContext): TValue;
 begin
   Result := CreateInstance;
 end;

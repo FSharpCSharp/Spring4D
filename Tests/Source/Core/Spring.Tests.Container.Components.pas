@@ -167,6 +167,14 @@ type
     function GetAge: Integer;
   end;
 
+  TAgeServiceDecorator2 = class(TInterfacedObject, IAgeService)
+  private
+    fAgeServive: IAgeService;
+  public
+    constructor Create(const ageService: IAgeService);
+    function GetAge: Integer;
+  end;
+
   {$ENDREGION}
 
 
@@ -872,6 +880,18 @@ begin
 end;
 
 function TAgeServiceDecorator.GetAge: Integer;
+begin
+  Result := fAgeServive.Age;
+end;
+
+{ TAgeServiceDecorator2 }
+
+constructor TAgeServiceDecorator2.Create(const ageService: IAgeService);
+begin
+  fAgeServive := ageService;
+end;
+
+function TAgeServiceDecorator2.GetAge: Integer;
 begin
   Result := fAgeServive.Age;
 end;

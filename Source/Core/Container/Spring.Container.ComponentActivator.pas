@@ -44,12 +44,12 @@ type
     fModel: TComponentModel;
   protected
     procedure ExecuteInjections(const instance: TValue;
-      const injections: IList<IInjection>; const resolver: IDependencyResolver);
+      const injections: IList<IInjection>; const context: ICreationContext);
     property Kernel: IKernel read fKernel;
     property Model: TComponentModel read fModel;
   public
-    constructor Create(const kernel: IKernel; const model: TComponentModel); virtual;
-    function CreateInstance(const resolver: IDependencyResolver): TValue; overload; virtual; abstract;
+    constructor Create(const kernel: IKernel; const model: TComponentModel);
+    function CreateInstance(const context: ICreationContext): TValue; overload; virtual; abstract;
   end;
 
   ///	<summary>
@@ -57,10 +57,14 @@ type
   ///	</summary>
   TReflectionComponentActivator = class(TComponentActivatorBase)
   protected
-    function GetEligibleConstructor(const model: TComponentModel;
-      const resolver: IDependencyResolver): IInjection; virtual;
+    function CheckConstructorCandidate(const candidate: IInjection;
+      const context: ICreationContext): Boolean; virtual;
+    function CreateConstructorArguments(const injection: IInjection;
+      const context: ICreationContext): TArray<TValue>; virtual;
+    function SelectEligibleConstructor(
+      const context: ICreationContext): IInjection; virtual;
   public
-    function CreateInstance(const resolver: IDependencyResolver): TValue; override;
+    function CreateInstance(const context: ICreationContext): TValue; override;
   end;
 
   ///	<summary>
@@ -68,12 +72,14 @@ type
   ///	</summary>
   TDelegateComponentActivator = class(TComponentActivatorBase)
   public
-    function CreateInstance(const resolver: IDependencyResolver): TValue; override;
+    function CreateInstance(const context: ICreationContext): TValue; override;
   end;
 
 implementation
 
 uses
+  Rtti,
+  SysUtils,
   Spring.Container.Common,
   Spring.Container.ResourceStrings,
   Spring.Helpers,
@@ -93,15 +99,15 @@ begin
 end;
 
 procedure TComponentActivatorBase.ExecuteInjections(const instance: TValue;
-  const injections: IList<IInjection>; const resolver: IDependencyResolver);
+  const injections: IList<IInjection>; const context: ICreationContext);
 var
   injection: IInjection;
   arguments: TArray<TValue>;
 begin
   for injection in injections do
   begin
-    arguments := resolver.Resolve(injection.Dependencies,
-      injection.Arguments, injection.Target);
+    arguments := Kernel.DependencyResolver.Resolve(
+      context, injection.Dependencies, injection.Arguments);
     injection.Inject(instance, arguments);
   end;
 end;
@@ -111,27 +117,46 @@ end;
 
 {$REGION 'TReflectionComponentActivator'}
 
-function TReflectionComponentActivator.CreateInstance(
-  const resolver: IDependencyResolver): TValue;
+function TReflectionComponentActivator.CheckConstructorCandidate(
+  const candidate: IInjection; const context: ICreationContext): Boolean;
 var
-  constructorInjection: IInjection;
-  constructorArguments: TArray<TValue>;
+  arguments: TArray<TValue>;
 begin
-  constructorInjection := GetEligibleConstructor(Model, resolver);
-  if constructorInjection = nil then
+  Result := context.CheckConstructorCandidate(candidate);
+  if Result then
+  begin
+    arguments := context.CreateConstructorArguments(candidate);
+    Result := Kernel.DependencyResolver.CanResolve(
+      context, candidate.Dependencies, arguments);
+  end;
+end;
+
+function TReflectionComponentActivator.CreateConstructorArguments(
+  const injection: IInjection; const context: ICreationContext): TArray<TValue>;
+var
+  arguments: TArray<TValue>;
+begin
+  arguments := context.CreateConstructorArguments(injection);
+  Result := Kernel.DependencyResolver.Resolve(
+    context, injection.Dependencies, arguments);
+end;
+
+function TReflectionComponentActivator.CreateInstance(
+  const context: ICreationContext): TValue;
+var
+  injection: IInjection;
+  arguments: TArray<TValue>;
+begin
+  injection := SelectEligibleConstructor(context);
+  if injection = nil then
     raise EActivatorException.CreateRes(@SUnsatisfiedConstructor);
-  constructorArguments := resolver.Resolve(
-    constructorInjection.Dependencies,
-    constructorInjection.Arguments,
-    constructorInjection.Target);
+  arguments := CreateConstructorArguments(injection, context);
   Result := TActivator.CreateInstance(
-    Model.ComponentType.AsInstance,
-    constructorInjection.Target.AsMethod,
-    constructorArguments);
+    Model.ComponentType.AsInstance, injection.Target.AsMethod, arguments);
   try
-    ExecuteInjections(Result, Model.FieldInjections, resolver);
-    ExecuteInjections(Result, Model.PropertyInjections, resolver);
-    ExecuteInjections(Result, Model.MethodInjections, resolver);
+    ExecuteInjections(Result, Model.FieldInjections, context);
+    ExecuteInjections(Result, Model.PropertyInjections, context);
+    ExecuteInjections(Result, Model.MethodInjections, context);
   except
     if not Result.IsEmpty and Result.IsObject then
     begin
@@ -144,8 +169,8 @@ begin
   end;
 end;
 
-function TReflectionComponentActivator.GetEligibleConstructor(
-  const model: TComponentModel; const resolver: IDependencyResolver): IInjection;
+function TReflectionComponentActivator.SelectEligibleConstructor(
+  const context: ICreationContext): IInjection;
 var
   candidate: IInjection;
   winner: IInjection;
@@ -154,22 +179,19 @@ begin
   winner := nil;
   maxCount := -1;
 
-  for candidate in model.ConstructorInjections do
+  for candidate in Model.ConstructorInjections do
   begin
     if candidate.Target.HasCustomAttribute<InjectAttribute> then
     begin
       winner := candidate;
       Break;
     end;
-    if resolver.CanResolve(candidate.Dependencies,
-      candidate.Arguments, candidate.Target) then
-    begin
-      if candidate.DependencyCount > maxCount then
+    if candidate.DependencyCount > maxCount then
+      if CheckConstructorCandidate(candidate, context) then
       begin
         winner := candidate;
         maxCount := candidate.DependencyCount;
       end;
-    end;
   end;
   Result := winner;
 end;
@@ -180,15 +202,15 @@ end;
 {$REGION 'TDelegateComponentActivator'}
 
 function TDelegateComponentActivator.CreateInstance(
-  const resolver: IDependencyResolver): TValue;
+  const context: ICreationContext): TValue;
 begin
   if not Assigned(Model.ActivatorDelegate) then
     raise EActivatorException.CreateRes(@SActivatorDelegateExpected);
   Result := Model.ActivatorDelegate.Invoke;
   try
-    ExecuteInjections(Result, Model.FieldInjections, resolver);
-    ExecuteInjections(Result, Model.PropertyInjections, resolver);
-    ExecuteInjections(Result, Model.MethodInjections, resolver);
+    ExecuteInjections(Result, Model.FieldInjections, context);
+    ExecuteInjections(Result, Model.PropertyInjections, context);
+    ExecuteInjections(Result, Model.MethodInjections, context);
   except
     if not Result.IsEmpty and Result.IsObject then
     begin
