@@ -109,6 +109,7 @@ type
 
     function FindOne(componentType: PTypeInfo): TComponentModel; overload;
     function FindOne(const name: string): TComponentModel; overload;
+    function FindOne(serviceType: PTypeInfo; const argument: TValue): TComponentModel; overload;
     function FindDefault(serviceType: PTypeInfo): TComponentModel;
     function FindAll: IEnumerable<TComponentModel>; overload;
     function FindAll(serviceType: PTypeInfo): IEnumerable<TComponentModel>; overload;

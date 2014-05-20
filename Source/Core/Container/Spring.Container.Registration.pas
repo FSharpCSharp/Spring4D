@@ -78,6 +78,7 @@ type
     function HasDefault(serviceType: PTypeInfo): Boolean;
     function FindOne(componentType: PTypeInfo): TComponentModel; overload;
     function FindOne(const name: string): TComponentModel; overload;
+    function FindOne(serviceType: PTypeInfo; const argument: TValue): TComponentModel; overload;
     function FindDefault(serviceType: PTypeInfo): TComponentModel;
     function FindAll: IEnumerable<TComponentModel>; overload;
     function FindAll(serviceType: PTypeInfo): IEnumerable<TComponentModel>; overload;
@@ -494,6 +495,46 @@ begin
     begin
       Result := model.ComponentTypeInfo = componentType;
     end);
+end;
+
+function TComponentRegistry.FindOne(serviceType: PTypeInfo;
+  const argument: TValue): TComponentModel;
+var
+  name: string;
+begin
+  if argument.IsEmpty then
+  begin
+    if not HasService(serviceType) then
+    begin
+      if (serviceType.Kind in [tkClass, tkInterface]) and not TType.IsLazy(serviceType) then
+        raise EResolveException.CreateResFmt(
+          @SCannotResolveDependency, [serviceType.TypeName]);
+      Result := nil;
+    end
+    else
+    begin
+      Result := FindDefault(serviceType);
+      if not Assigned(Result) then
+        raise EUnsatisfiedDependencyException.CreateResFmt(
+          @SUnsatisfiedDependency, [serviceType.TypeName]);
+    end;
+  end
+  else
+  begin
+    name := argument.AsString;
+    Result := FindOne(name);
+    if not Assigned(Result) then
+      if TType.IsLazy(serviceType) then
+        Exit
+      else
+        raise EResolveException.CreateResFmt(@SInvalidServiceName, [name]);
+    if not Result.HasService(serviceType) then
+      if not TType.IsLazy(serviceType) then
+        raise EResolveException.CreateResFmt(
+          @SCannotResolveDependency, [serviceType.TypeName])
+      else
+        Result := nil;
+  end;
 end;
 
 function TComponentRegistry.FindDefault(

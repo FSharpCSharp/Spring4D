@@ -44,8 +44,6 @@ type
     fSubResolvers: IList<ISubDependencyResolver>;
   protected
     procedure CheckCircularDependency(const model: TComponentModel);
-    function GetEligibleModel(
-      const dependency: TRttiType; const argument: TValue): TComponentModel;
 
     function ResolveLazyDependency(
       const dependency: TRttiType; const argument: TValue): TValue;
@@ -277,46 +275,6 @@ begin
   fSubResolvers.Remove(subResolver);
 end;
 
-function TDependencyResolver.GetEligibleModel(
-  const dependency: TRttiType; const argument: TValue): TComponentModel;
-var
-  name: string;
-begin
-  if argument.IsEmpty then
-  begin
-    if not Kernel.ComponentRegistry.HasService(dependency.Handle) then
-    begin
-      if dependency.IsClassOrInterface and not TType.IsLazy(dependency.Handle) then
-        raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
-      Result := nil;
-    end
-    else
-    begin
-      Result := Kernel.ComponentRegistry.FindDefault(dependency.Handle);
-      if not Assigned(Result) then
-        raise EUnsatisfiedDependencyException.CreateResFmt(
-          @SUnsatisfiedDependency, [dependency.Name]);
-    end;
-  end
-  else
-  begin
-    name := argument.AsString;
-    Result := Kernel.ComponentRegistry.FindOne(name);
-    if not Assigned(Result) then
-    begin
-      if TType.IsLazy(dependency.Handle) then
-        Exit;
-      raise EResolveException.CreateResFmt(@SInvalidServiceName, [name]);
-    end;
-    if not Result.HasService(dependency.Handle) then
-    begin
-      if not TType.IsLazy(dependency.Handle) then
-        raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
-      Result := nil;
-    end;
-  end;
-end;
-
 procedure TDependencyResolver.CheckCircularDependency(const model: TComponentModel);
 begin
   Guard.CheckNotNull(model, 'model');
@@ -391,7 +349,7 @@ begin
 
   fLock.Enter;
   try
-    model := GetEligibleModel(dependency, argument);
+    model := fKernel.ComponentRegistry.FindOne(dependency.Handle, argument);
     if not Assigned(model) then
     begin
       Result := ResolveLazyDependency(dependency, argument);
@@ -431,7 +389,7 @@ begin
   if not Assigned(lazyType) or not CanResolve(lazyType, argument) then
     raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
 
-  model := GetEligibleModel(lazyType, argument);
+  model := fKernel.ComponentRegistry.FindOne(lazyType.Handle, argument);
   CheckCircularDependency(model);
 
   case lazyType.TypeKind of
