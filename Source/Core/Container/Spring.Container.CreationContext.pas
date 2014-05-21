@@ -114,7 +114,7 @@ var
   parameters: TArray<TRttiParameter>;
   value: TNamedValue;
 begin
-  if injection.Target.Parent <> fModel.ComponentType then
+  if not fModel.ConstructorInjections.Contains(injection) then
     Exit(True);
 
   parameters := injection.Target.AsMethod.GetParameters;
@@ -154,7 +154,7 @@ var
   value: TNamedValue;
 begin
   Result := Copy(injection.Arguments);
-  if injection.Target.Parent <> fModel.ComponentType then
+  if not fModel.ConstructorInjections.Contains(injection) then
     Exit;
 
   parameters := injection.Target.AsMethod.GetParameters;
