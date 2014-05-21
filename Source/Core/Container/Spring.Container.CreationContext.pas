@@ -152,6 +152,7 @@ var
   i: Integer;
   parameters: TArray<TRttiParameter>;
   value: TNamedValue;
+  handled: Boolean;
 begin
   Result := Copy(injection.Arguments);
   if not fModel.ConstructorInjections.Contains(injection) then
@@ -164,20 +165,26 @@ begin
       if fArguments[i].IsType(parameters[i].ParamType.Handle) then
         Result[i] := fArguments[i]
       else
-        raise EResolveException.CreateRes(@SUnsatisfiedResolutionArgumentCount);
+        raise EResolveException.CreateRes(@SUnsatisfiedConstructorParameters);
   end
   else if not fArguments.IsEmpty then
-    raise EResolveException.CreateRes(@SUnsatisfiedResolutionArgumentCount);
+    raise EResolveException.CreateRes(@SUnsatisfiedConstructorParameters);
   for value in fNamedArguments do
+  begin
+    handled := False;
     for i := 0 to High(parameters) do
     begin
       if SameText(parameters[i].Name, value.Name)
         and value.Value.IsType(parameters[i].ParamType.Handle) then
       begin
         Result[i] := value.Value;
+        handled := True;
         Break;
       end;
     end;
+    if not handled then
+      raise EResolveException.CreateRes(@SUnsatisfiedConstructorParameters);
+  end;
 end;
 
 procedure TCreationContext.EnterResolution(const model: TComponentModel);

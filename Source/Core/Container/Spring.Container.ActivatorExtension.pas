@@ -53,15 +53,15 @@ type
       const context: ICreationContext): IInjection; override;
   end;
 
-resourcestring
-  SAmbiguousConstructor = 'Ambiguous constructor.';
-
-
 implementation
 
 uses
+  Generics.Defaults,
+  Rtti,
+  Spring.Collections,
   Spring.Container.Common,
   Spring.Container.ResourceStrings,
+  Spring.Reflection,
   Spring.Helpers;
 
 
@@ -92,32 +92,48 @@ end;
 function TReflectionComponentActivator2.SelectEligibleConstructor(
   const context: ICreationContext): IInjection;
 var
-  candidate: IInjection;
-  winner: IInjection;
   maxCount: Integer;
+  targetType: TRttiType;
+  candidates: IEnumerable<IInjection>;
+  candidate: IInjection;
 begin
-  winner := nil;
-  maxCount := -1;
+  Result := Model.ConstructorInjections.FirstOrDefault(
+    function(const injection: IInjection): Boolean
+    begin
+      Result := injection.Target.AsMethod.HasCustomAttribute(InjectAttribute);
+    end);
+  if Assigned(Result) then
+    Exit;
 
-  for candidate in Model.ConstructorInjections do
-  begin
-    if candidate.Target.HasCustomAttribute<InjectAttribute> then
+  maxCount := -1;
+  targetType := nil;
+
+  candidates := Model.ConstructorInjections.Ordered(
+    TComparer<IInjection>.Construct(
+    function(const left, right: IInjection): Integer
     begin
-      winner := candidate;
-      Break;
-    end;
-    if candidate.DependencyCount = maxCount then
-      raise EResolveException.CreateRes(@SAmbiguousConstructor);
-    if candidate.DependencyCount > maxCount then
+      Result := right.Target.Parent.AncestorCount - left.Target.Parent.AncestorCount;
+      if Result = 0 then
+        Result := right.DependencyCount - left.DependencyCount;
+    end)).TakeWhile(
+    function(const injection: IInjection): Boolean
     begin
-      winner := candidate;
-      maxCount := candidate.DependencyCount;
-    end;
-  end;
-  Result := winner;
-  if Assigned(Result) and not Kernel.DependencyResolver.CanResolve(
-    context, Result.Dependencies, Result.Arguments) then
-    raise EResolveException.CreateRes(@SUnsatisfiedConstructorParameters);
+      if maxCount = -1 then
+        maxCount := injection.DependencyCount;
+      if targetType = nil then
+        targetType := injection.Target.Parent;
+      Result := (injection.DependencyCount = maxCount)
+        and (targetType = injection.Target.Parent);
+    end).Where(
+    function(const injection: IInjection): Boolean
+    begin
+      Result := CheckConstructorCandidate(injection, context);
+    end);
+  for candidate in candidates do
+    if not Assigned(Result) then
+      Result := candidate
+    else
+      raise EResolveException.CreateResFmt(@SAmbiguousConstructor, [targetType.DefaultName]);
 end;
 
 {$ENDREGION}
