@@ -70,6 +70,7 @@ type
 implementation
 
 uses
+  Rtti,
   Spring.Container.Common,
   Spring.Container.ResourceStrings,
   Spring.Helpers,
