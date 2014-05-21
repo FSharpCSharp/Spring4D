@@ -2227,7 +2227,7 @@ class function TCollections.CreateDictionary<TKey, TValue>(
   dictionary: Generics.Collections.TDictionary<TKey, TValue>;
   ownership: TOwnershipType): IDictionary<TKey, TValue>;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(dictionary, 'dictionary');
 {$ENDIF}
 
@@ -2280,7 +2280,7 @@ class function TCollections.CreateDictionary<TKey, TValue>(capacity: Integer;
 var
   dictionary: Generics.Collections.TDictionary<TKey,TValue>;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange(capacity >= 0, 'capacity');
 {$ENDIF}
 

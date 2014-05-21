@@ -284,7 +284,7 @@ end;
 
 function TList<T>.GetItem(index: Integer): T;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < fCount), 'index');
 {$ENDIF}
 
@@ -307,7 +307,7 @@ procedure TList<T>.SetItem(index: Integer; const value: T);
 var
   oldItem: T;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < fCount), 'index');
 {$ENDIF}
 
@@ -321,7 +321,7 @@ end;
 
 procedure TList<T>.Insert(index: Integer; const item: T);
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= fCount), 'index');
 {$ENDIF}
 
@@ -362,7 +362,7 @@ var
   tailCount,
   i: Integer;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < fCount), 'index');
   Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
 {$ENDIF}
@@ -401,7 +401,7 @@ procedure TList<T>.Move(currentIndex, newIndex: Integer);
 var
   temp: T;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((currentIndex >= 0) and (currentIndex < fCount), 'currentIndex');
   Guard.CheckRange((newIndex >= 0) and (newIndex < fCount), 'newIndex');
 {$ENDIF}
@@ -450,7 +450,7 @@ procedure TList<T>.Exchange(index1, index2: Integer);
 var
   temp: T;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index1 >= 0) and (index1 < fCount), 'index1');
   Guard.CheckRange((index2 >= 0) and (index2 < fCount), 'index2');
 {$ENDIF}
@@ -474,7 +474,7 @@ var
   temp: T;
   index1, index2: Integer;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < fCount), 'index');
   Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
 {$ENDIF}
@@ -503,7 +503,7 @@ end;
 
 procedure TList<T>.Delete(index: Integer);
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < fCount), 'index');
 {$ENDIF}
 
@@ -536,7 +536,7 @@ end;
 
 procedure TList<T>.CopyTo(var values: TArray<T>; index: Integer);
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange(Length(values), index, fCount);
 {$ENDIF}
 
@@ -706,7 +706,7 @@ end;
 
 function TSortedList<T>.IndexOf(const item: T; index, count: Integer): Integer;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= Self.Count), 'index');
   Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
 {$ENDIF}
@@ -722,7 +722,7 @@ end;
 function TSortedList<T>.LastIndexOf(const item: T; index,
   count: Integer): Integer;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
   Guard.CheckRange((count >= 0) and (count <= index + 1), 'count');
 {$ENDIF}
@@ -749,7 +749,7 @@ end;
 
 constructor TCollectionList<T>.Create(const collection: TCollection);
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(collection, 'collection');
   Guard.CheckInheritsFrom(collection.ItemClass, TClass(T), 'collection.ItemClass');
 {$ENDIF}
@@ -760,7 +760,7 @@ end;
 
 procedure TCollectionList<T>.Delete(index: Integer);
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < Count), 'index');
 {$ENDIF}
 
@@ -786,7 +786,7 @@ var
   oldItems: array of T;
   i: Integer;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
   Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
 {$ENDIF}
@@ -819,7 +819,7 @@ procedure TCollectionList<T>.Exchange(index1, index2: Integer);
 var
   temp: T;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index1 >= 0) and (index1 < Count), 'index1');
   Guard.CheckRange((index2 >= 0) and (index2 < Count), 'index2');
 {$ENDIF}
@@ -864,7 +864,7 @@ end;
 
 function TCollectionList<T>.GetItem(index: Integer): T;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < Count), 'index');
 {$ENDIF}
 
@@ -880,7 +880,7 @@ end;
 
 procedure TCollectionList<T>.Insert(index: Integer; const item: T);
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= Count), 'index');
 {$ENDIF}
 
@@ -893,7 +893,7 @@ end;
 
 procedure TCollectionList<T>.Move(currentIndex, newIndex: Integer);
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((currentIndex >= 0) and (currentIndex < Count), 'currentIndex');
   Guard.CheckRange((newIndex >= 0) and (newIndex < Count), 'newIndex');
 {$ENDIF}
@@ -906,7 +906,7 @@ end;
 
 procedure TCollectionList<T>.SetItem(index: Integer; const value: T);
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < Count), 'index');
 {$ENDIF}
 

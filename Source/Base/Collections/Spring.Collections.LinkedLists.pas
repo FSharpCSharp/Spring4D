@@ -462,7 +462,7 @@ end;
 
 procedure TLinkedList<T>.ValidateNewNode(const node: TLinkedListNode<T>);
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(node), 'node');
 {$ENDIF}
 
@@ -472,7 +472,7 @@ end;
 
 procedure TLinkedList<T>.ValidateNode(const node: TLinkedListNode<T>);
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(node), 'node');
 {$ENDIF}
 

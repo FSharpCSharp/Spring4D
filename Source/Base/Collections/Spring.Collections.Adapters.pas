@@ -375,7 +375,7 @@ procedure TListAdapter<T>.InsertRange(index: Integer;
 var
   item: TValue;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= Count), 'index');
 {$ENDIF}
 
@@ -391,7 +391,7 @@ procedure TListAdapter<T>.InsertRange(index: Integer;
 var
   item: TValue;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= Count), 'index');
 {$ENDIF}
 

@@ -63,9 +63,16 @@
   {.$DEFINE SUPPORTS_GENERIC_FOLDING}
 {$ENDIF}
 
-{$IFDEF RELEASE}
-  // This will disable the execution of guard code
-  {$DEFINE DISABLE_GUARD}
+// This will disable the execution of guard code when assertions are turned off
+{$IFNDEF ASSERTIONS_ON}
+  {$IFNDEF SPRING_ENABLE_GUARD}
+    {$DEFINE SPRING_DISABLE_GUARD}
+  {$ENDIF}
+{$ENDIF}
+{$IFNDEF RELEASE}
+  {$IFNDEF SPRING_DISABLE_GUARD}
+    {$DEFINE SPRING_ENABLE_GUARD}
+  {$ENDIF}
 {$ENDIF}
 
 // If we are running on Android or iOS, we are sure we are running using FMX.

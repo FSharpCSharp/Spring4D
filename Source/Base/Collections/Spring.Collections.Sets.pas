@@ -325,7 +325,7 @@ procedure THashSet<T>.ExceptWith(const other: IEnumerable<T>);
 var
   item: T;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
 {$ENDIF}
 
@@ -338,7 +338,7 @@ var
   item: T;
   list: IList<T>;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
 {$ENDIF}
 
@@ -355,7 +355,7 @@ function THashSet<T>.IsSubsetOf(const other: IEnumerable<T>): Boolean;
 var
   item: T;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
 {$ENDIF}
 
@@ -370,7 +370,7 @@ function THashSet<T>.IsSupersetOf(const other: IEnumerable<T>): Boolean;
 var
   item: T;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
 {$ENDIF}
 
@@ -385,7 +385,7 @@ procedure THashSet<T>.UnionWith(const other: IEnumerable<T>);
 var
   item: T;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
 {$ENDIF}
 
@@ -397,7 +397,7 @@ function THashSet<T>.Overlaps(const other: IEnumerable<T>): Boolean;
 var
   item: T;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
 {$ENDIF}
 
@@ -413,7 +413,7 @@ var
   item: T;
   localSet: ISet<T>;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
 {$ENDIF}
 

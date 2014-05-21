@@ -448,7 +448,7 @@ function TEnumerableBase<T>.All(const predicate: TPredicate<T>): Boolean;
 var
   item: T;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
@@ -470,7 +470,7 @@ function TEnumerableBase<T>.Any(const predicate: TPredicate<T>): Boolean;
 var
   item: T;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
@@ -483,7 +483,7 @@ end;
 function TEnumerableBase<T>.Concat(
   const second: IEnumerable<T>): IEnumerable<T>;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(second), 'second');
 {$ENDIF}
 
@@ -500,7 +500,7 @@ function TEnumerableBase<T>.Contains(const value: T;
 var
   item: T;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull<T>(value, 'value');
   Guard.CheckNotNull(Assigned(comparer), 'comparer');
 {$ENDIF}
@@ -549,7 +549,7 @@ var
   e1, e2: IEnumerator<T>;
   hasNext: Boolean;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(collection), 'collection');
   Guard.CheckNotNull(Assigned(comparer), 'comparer');
 {$ENDIF}
@@ -584,7 +584,7 @@ function TEnumerableBase<T>.First(const predicate: TPredicate<T>): T;
 var
   item: T;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
@@ -620,7 +620,7 @@ function TEnumerableBase<T>.FirstOrDefault(const predicate: TPredicate<T>;
 var
   item: T;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
@@ -634,7 +634,7 @@ procedure TEnumerableBase<T>.ForEach(const action: TAction<T>);
 var
   item: T;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(action), 'action');
 {$ENDIF}
 
@@ -693,7 +693,7 @@ var
   item: T;
   found: Boolean;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
@@ -734,7 +734,7 @@ function TEnumerableBase<T>.LastOrDefault(const predicate: TPredicate<T>;
 var
   item: T;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
@@ -754,7 +754,7 @@ var
   flag: Boolean;
   item: T;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(comparer), 'comparer');
 {$ENDIF}
 
@@ -786,7 +786,7 @@ var
   flag: Boolean;
   item: T;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(comparer), 'comparer');
 {$ENDIF}
 
@@ -816,7 +816,7 @@ end;
 function TEnumerableBase<T>.Ordered(
   const comparer: IComparer<T>): IEnumerable<T>;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(comparer), 'comparer');
 {$ENDIF}
 
@@ -846,7 +846,7 @@ var
   item: T;
   found: Boolean;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
@@ -899,7 +899,7 @@ var
   item: T;
   found: Boolean;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
@@ -929,7 +929,7 @@ end;
 function TEnumerableBase<T>.SkipWhile(
   const predicate: TPredicate<T>): IEnumerable<T>;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
@@ -939,7 +939,7 @@ end;
 function TEnumerableBase<T>.SkipWhile(
   const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
@@ -954,7 +954,7 @@ end;
 function TEnumerableBase<T>.TakeWhile(
   const predicate: TPredicate<T>): IEnumerable<T>;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
@@ -964,7 +964,7 @@ end;
 function TEnumerableBase<T>.TakeWhile(
   const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
@@ -1113,7 +1113,7 @@ end;
 function TEnumerableBase<T>.Where(
   const predicate: TPredicate<T>): IEnumerable<T>;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(predicate), 'predicate');
 {$ENDIF}
 
@@ -1149,7 +1149,7 @@ procedure TCollectionBase<T>.AddRange(const collection: IEnumerable<T>);
 var
   item: T;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(collection), 'collection');
 {$ENDIF}
 
@@ -1161,7 +1161,7 @@ procedure TCollectionBase<T>.CopyTo(var values: TArray<T>; index: Integer);
 var
   item: T;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange(Length(values), index, Count);
 {$ENDIF}
 
@@ -1184,7 +1184,7 @@ procedure TCollectionBase<T>.ExtractRange(const collection: IEnumerable<T>);
 var
   item: T;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(collection), 'collection');
 {$ENDIF}
 
@@ -1209,7 +1209,7 @@ procedure TCollectionBase<T>.RemoveRange(const collection: IEnumerable<T>);
 var
   item: T;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(collection), 'collection');
 {$ENDIF}
 
@@ -1343,7 +1343,7 @@ var
   comparer: IEqualityComparer<T>;
   i: Integer;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= Self.Count), 'index');
   Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
 {$ENDIF}
@@ -1359,7 +1359,7 @@ procedure TListBase<T>.InsertRange(index: Integer; const collection: array of T)
 var
   item: T;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= Count), 'index');
 {$ENDIF}
 
@@ -1375,7 +1375,7 @@ procedure TListBase<T>.InsertRange(index: Integer;
 var
   item: T;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= Count), 'index');
   Guard.CheckNotNull(Assigned(collection), 'collection');
 {$ENDIF}
@@ -1437,7 +1437,7 @@ var
   comparer: IEqualityComparer<T>;
   i: Integer;
 begin
-{$IFNDEF DISABLE_GUARD}
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
   Guard.CheckRange((count >= 0) and (count <= index + 1), 'count');
 {$ENDIF}
