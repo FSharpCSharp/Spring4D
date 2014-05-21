@@ -2155,6 +2155,7 @@ implementation
 
 uses
   Character,
+  SyncObjs,
   Spring.Collections.Dictionaries,
   Spring.Collections.Extensions,
   Spring.Collections.Lists,
@@ -2478,16 +2479,28 @@ begin
 end;
 
 class function TStringComparer.Ordinal: TStringComparer;
+var
+  comparer: TStringComparer;
 begin
   if not Assigned(fOrdinal) then
-    fOrdinal := TStringComparer.Create(loInvariantLocale, False);
+  begin
+    comparer := TStringComparer.Create(loInvariantLocale, False);
+    if TInterlocked.Exchange(TObject(fOrdinal), TObject(comparer)) <> nil then
+      comparer.Free;
+  end;
   Result := fOrdinal;
 end;
 
 class function TStringComparer.OrdinalIgnoreCase: TStringComparer;
+var
+  comparer: TStringComparer;
 begin
   if not Assigned(fOrdinalIgnoreCase) then
-    fOrdinalIgnoreCase := TStringComparer.Create(loInvariantLocale, True);
+  begin
+    comparer := TStringComparer.Create(loInvariantLocale, True);
+    if TInterlocked.Exchange(TObject(fOrdinalIgnoreCase), TObject(comparer)) <> nil then
+      comparer.Free;
+  end;
   Result := fOrdinalIgnoreCase;
 end;
 

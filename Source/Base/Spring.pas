@@ -785,6 +785,20 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TInterlocked'}
+
+{$IFDEF DELPHI2010}
+  TInterlocked = class sealed
+    class function Exchange(var Target: TObject; Value: TObject): TObject; overload; static; inline;
+    class function Exchange(var Target: Pointer; Value: Pointer): Pointer; overload; static;
+  end;
+{$ELSE}
+  TInterlocked = SyncObjs.TInterlocked;
+{$ENDIF}
+
+  {$ENDREGION}
+
+
   {$REGION 'Routines'}
 
 {$IFNDEF DELPHIXE2_UP}
@@ -1725,6 +1739,25 @@ begin
   Result := NameFld.ToString;
 {$ENDIF}
 end;
+
+{$ENDREGION}
+
+
+{$REGION 'TInterlocked'}
+
+{$IFDEF DELPHI2010}
+class function TInterlocked.Exchange(var Target: TObject;
+  Value: TObject): TObject;
+begin
+  Result := TObject(Exchange(Pointer(Target), Pointer(Value)));
+end;
+
+class function TInterlocked.Exchange(var Target: Pointer; Value: Pointer): Pointer;
+asm
+  lock xchg [eax],edx
+  mov eax,edx
+end;
+{$ENDIF}
 
 {$ENDREGION}
 
