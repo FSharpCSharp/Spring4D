@@ -336,32 +336,39 @@ type
 
   // TPointHelper, TSizeHelper, TRectHelper
 
-  {TODO -oPaul -cGeneral : Add some non-generic implementation}
-
   TRttiObjectHelper = class helper for TRttiObject
   public
+    function GetCustomAttributes(attributeClass: TAttributeClass): TArray<TCustomAttribute>; overload;
+
     ///	<summary>
     ///	  Gets an array which contains all custom attribute types which the
     ///	  type applies.
     ///	</summary>
-    function GetCustomAttributes<T: TCustomAttribute>: TArray<T>;
+    function GetCustomAttributes<T: TCustomAttribute>: TArray<T>; overload;
+
+    function GetCustomAttribute(attributeClass: TAttributeClass): TCustomAttribute; overload;
 
     ///	<summary>
     ///	  Enumerates all applied custom attributes and returns the first one
     ///	  which is/inherits the specified type.
     ///	</summary>
-    function GetCustomAttribute<T: TCustomAttribute>: T;
+    function GetCustomAttribute<T: TCustomAttribute>: T; overload;
+
+    function TryGetCustomAttribute(attributeClass: TAttributeClass;
+      out attribute: TCustomAttribute): Boolean; overload;
 
     ///	<summary>
     ///	  Try getting a custom attribute class which is applied by the type.
     ///	</summary>
-    function TryGetCustomAttribute<T: TCustomAttribute>(out attribute: T): Boolean;
+    function TryGetCustomAttribute<T: TCustomAttribute>(out attribute: T): Boolean; overload;
+
+    function HasCustomAttribute(attributeClass: TAttributeClass): Boolean; overload;
 
     ///	<summary>
     ///	  Determines whether the type applies the specified custom attribute
     ///	  class.
     ///	</summary>
-    function HasCustomAttribute<T: TCustomAttribute>: Boolean;
+    function HasCustomAttribute<T: TCustomAttribute>: Boolean; overload;
   end;
 
   TRttiClassType = TRttiInstanceType;
@@ -386,6 +393,7 @@ type
     function GetProperties: IEnumerable<TRttiProperty>;
     function GetFields: IEnumerable<TRttiField>;
     function GetDefaultName: string;
+    function GetAncestorCount: Integer;
   public
     // function GetMembers: IEnumerable<TRttiMember>;
 
@@ -460,6 +468,7 @@ type
     ///	</summary>
     property IsGenericType: Boolean read GetIsGenericType;
     property DefaultName: string read GetDefaultName;
+    property AncestorCount: Integer read GetAncestorCount;
   end;
 
   TRttiMemberHelper = class helper for TRttiMember
@@ -897,46 +906,67 @@ end;
 
 { TRttiObjectHelper }
 
+function TRttiObjectHelper.TryGetCustomAttribute(
+  attributeClass: TAttributeClass; out attribute: TCustomAttribute): Boolean;
+begin
+  attribute := GetCustomAttribute(attributeClass);
+  Result := Assigned(attribute);
+end;
+
 function TRttiObjectHelper.TryGetCustomAttribute<T>(out attribute: T): Boolean;
 begin
   attribute := GetCustomAttribute<T>;
-  Result := attribute <> nil;
+  Result := Assigned(attribute);
+end;
+
+function TRttiObjectHelper.GetCustomAttribute(
+  attributeClass: TAttributeClass): TCustomAttribute;
+var
+  attribute: TCustomAttribute;
+begin
+  for attribute in GetAttributes do
+    if attribute.InheritsFrom(attributeClass) then
+      Exit(attribute);
+  Result := nil;
 end;
 
 function TRttiObjectHelper.GetCustomAttribute<T>: T;
+begin
+  Result := T(GetCustomAttribute(TAttributeClass(T)));
+end;
+
+function TRttiObjectHelper.GetCustomAttributes(
+  attributeClass: TAttributeClass): TArray<TCustomAttribute>;
 var
   attribute: TCustomAttribute;
 begin
-  Result := Default(T);
   for attribute in GetAttributes do
-  begin
-    if attribute.InheritsFrom(T) then
+    if attribute.InheritsFrom(attributeClass) then
     begin
-      Result := T(attribute);
-      Break;
+      SetLength(Result, Length(Result) + 1);
+      Result[High(Result)] := attribute;
     end;
-  end;
 end;
 
 function TRttiObjectHelper.GetCustomAttributes<T>: TArray<T>;
+begin
+  TArray<TCustomAttribute>(Result) := GetCustomAttributes(TAttributeClass(T));
+end;
+
+function TRttiObjectHelper.HasCustomAttribute(
+  attributeClass: TAttributeClass): Boolean;
 var
   attribute: TCustomAttribute;
 begin
   for attribute in GetAttributes do
-  begin
-    if attribute.InheritsFrom(T) then
-    begin
-      SetLength(Result, Length(Result)+1);
-      Result[Length(Result)-1] := T(attribute);
-    end;
-  end;
+    if attribute.InheritsFrom(attributeClass) then
+      Exit(True);
+  Result := False;
 end;
 
 function TRttiObjectHelper.HasCustomAttribute<T>: Boolean;
-var
-  attribute: T;
 begin
-  Result := TryGetCustomAttribute<T>(attribute);
+  Result := HasCustomAttribute(TAttributeClass(T));
 end;
 
 { TRttiTypeHelper }
@@ -1083,6 +1113,19 @@ begin
   for i := 0 to High(elements) do
   begin
     Result[i] := TType.FindType(elements[i]);
+  end;
+end;
+
+function TRttiTypeHelper.GetAncestorCount: Integer;
+var
+  baseType: TRttiType;
+begin
+  Result := 0;
+  baseType := Self;
+  while Assigned(baseType.BaseType) do
+  begin
+    Inc(Result);
+    baseType := baseType.BaseType;
   end;
 end;
 
