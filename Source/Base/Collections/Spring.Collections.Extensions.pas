@@ -828,6 +828,7 @@ end;
 
 constructor TArrayIterator<T>.Create(const values: TArray<T>);
 begin
+  inherited Create;
   fValues := values;
 end;
 
@@ -852,8 +853,9 @@ begin
     begin
       Inc(fIndex);
       fCurrent := fValues[fIndex];
-      Result := True;
+      Exit(True);
     end;
+    fState := STATE_FINISHED;
   end;
 end;
 
@@ -1054,8 +1056,10 @@ begin
     if fEnumerator.MoveNext then
     begin
       fCurrent := fEnumerator.Current;
-      Result := True;
+      Exit(True);
     end;
+    fState := STATE_FINISHED;
+    fEnumerator := nil;
   end;
 end;
 
@@ -1107,6 +1111,8 @@ begin
         Exit(True);
       end;
     end;
+    fState := STATE_FINISHED;
+    fEnumerator := nil;
   end;
 end;
 
@@ -1160,6 +1166,8 @@ begin
         Exit(True);
       end;
     end;
+    fState := STATE_FINISHED;
+    fEnumerator := nil;
   end;
 end;
 
@@ -1204,6 +1212,7 @@ begin
       Inc(fIndex);
       Exit(True);
     end;
+    fState := STATE_FINISHED;
     fEnumerator := nil;
   end;
 end;
@@ -1256,6 +1265,8 @@ begin
       else
         fStopped := True;
     end;
+    fState := STATE_FINISHED;
+    fEnumerator := nil;
   end;
 end;
 
@@ -1351,7 +1362,7 @@ begin
       if fEnumerator.MoveNext then
       begin
         fCurrent := fEnumerator.Current;
-        Result := True;
+        Exit(True);
       end
       else
       begin
@@ -1408,8 +1419,10 @@ begin
     begin
       fCurrent := fBuffer[fIndex];
       Dec(fIndex);
-      Result := True;
+      Exit(True);
     end;
+    fState := STATE_FINISHED;
+    fBuffer := nil;
   end;
 end;
 
@@ -1461,6 +1474,7 @@ begin
     end;
     fState := STATE_FINISHED;
     fEnumerator := nil;
+    fSet := nil;
   end;
 end;
 
@@ -1507,8 +1521,9 @@ begin
     begin
       PInteger(@fCurrent)^ := fStart + fIndex;
       Inc(fIndex);
-      Result := True;
+      Exit(True);
     end;
+    fState := STATE_FINISHED;
   end;
 end;
 
@@ -1568,6 +1583,7 @@ begin
     end;
     fState := STATE_FINISHED;
     fEnumerator := nil;
+    fSet := nil;
   end;
 end;
 
@@ -1627,6 +1643,7 @@ begin
     end;
     fState := STATE_FINISHED;
     fEnumerator := nil;
+    fSet := nil;
   end;
 end;
 
@@ -1695,6 +1712,7 @@ begin
         begin
           fState := STATE_FINISHED;
           fEnumerator := nil;
+          fSet := nil;
           Break;
         end;
       end;
@@ -1740,13 +1758,10 @@ begin
     if fEnumerator.MoveNext then
     begin
       fCurrent := fSelector(fEnumerator.Current);
-      Result := True;
-    end
-    else
-    begin
-      fState := STATE_FINISHED;
-      fEnumerator := nil;
+      Exit(True);
     end;
+    fState := STATE_FINISHED;
+    fEnumerator := nil;
   end;
 end;
 
@@ -1794,13 +1809,10 @@ begin
       current := fEnumerator.Current;
       Inc(fIndex);
       fCurrent := fSelector(current, fIndex);
-      Result := True;
-    end
-    else
-    begin
-      fState := STATE_FINISHED;
-      fEnumerator := nil;
+      Exit(True);
     end;
+    fState := STATE_FINISHED;
+    fEnumerator := nil;
   end;
 end;
 
@@ -2227,6 +2239,9 @@ begin
       else
         fFlag := True;
     end;
+    fState := STATE_FINISHED;
+    fEnumerator := nil;
+    FreeAndNil(fLookup);
   end;
 end;
 
@@ -2300,8 +2315,11 @@ begin
     begin
       current := fEnumerator.Current;
       fCurrent := fResultSelector(current, fLookup[fOuterKeySelector(current)]);
-      Result := True;
+      Exit(True);
     end;
+    fState := STATE_FINISHED;
+    fEnumerator := nil;
+    FreeAndNil(fLookup);
   end;
 end;
 
@@ -2787,8 +2805,10 @@ begin
     begin
       Inc(fIndex);
       fCurrent := fValues[fIndex];
-      Result := True;
+      Exit(True);
     end;
+    fState := STATE_FINISHED;
+    fValues := nil;
   end;
 end;
 
@@ -2834,8 +2854,11 @@ begin
     if fEnumerator1.MoveNext and fEnumerator2.MoveNext then
     begin
       fCurrent := fResultSelector(fEnumerator1.Current, fEnumerator2.Current);
-      Result := True;
+      Exit(True);
     end;
+    fState := STATE_FINISHED;
+    fEnumerator2 := nil;
+    fEnumerator1 := nil;
   end;
 end;
 
@@ -2967,8 +2990,11 @@ begin
     if fEnumerator.MoveNext then
     begin
       fCurrent := fEnumerator.Current;
-      Result := True;
+      Exit(True);
     end;
+    fState := STATE_FINISHED;
+    fEnumerator := nil;
+    fResult := nil;
   end;
 end;
 
@@ -3012,8 +3038,10 @@ begin
       current := fEnumerator.Current;
       value := TValue.From<T>(current);
       fCurrent := value.AsType<TResult>;
-      Result := True;
+      Exit(True);
     end;
+    fState := STATE_FINISHED;
+    fEnumerator := nil;
   end;
 end;
 
@@ -3059,6 +3087,8 @@ begin
       if value.TryAsType<TResult>(fCurrent) then
         Exit(True);
     end;
+    fState := STATE_FINISHED;
+    fEnumerator := nil;
   end;
 end;
 
