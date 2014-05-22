@@ -2057,7 +2057,42 @@ type
   );
 
   TDictionaryOwnerships = Generics.Collections.TDictionaryOwnerships;
-  TArray = Generics.Collections.TArray;
+
+  TArray = class(Generics.Collections.TArray)
+  public
+    /// <summary>
+    ///   Determines whether the specified item exists as an element in an
+    ///   array.
+    /// </summary>
+    class function Contains<T>(const values: array of T; const item: T): Boolean; static;
+
+    /// <summary>
+    ///   Copies an open array to a dynamic array.
+    /// </summary>
+    class function Copy<T>(const values: array of T): TArray<T>; static;
+
+    /// <summary>
+    ///   Searches for the specified object and returns the index of the first
+    ///   occurrence within the entire array.
+    /// </summary>
+    class function IndexOf<T>(const values: array of T; const item: T): Integer; overload; static;
+
+    /// <summary>
+    ///   Searches for the specified object and returns the index of the first
+    ///   occurrence within the range of elements in the array that extends
+    ///   from the specified index to the last element.
+    /// </summary>
+    class function IndexOf<T>(const values: array of T; const item: T;
+      index: Integer): Integer; overload; static;
+
+    /// <summary>
+    ///   Searches for the specified object and returns the index of the first
+    ///   occurrence within the range of elements in the array that starts at
+    ///   the specified index and contains the specified number of elements.
+    /// </summary>
+    class function IndexOf<T>(const values: array of T; const item: T;
+      index, count: Integer): Integer; overload; static;
+  end;
 
   ///	<summary>
   ///	  Provides static methods to create an instance of various interfaced
@@ -2164,6 +2199,63 @@ uses
   Spring.Collections.Sets,
   Spring.Collections.Stacks,
   Spring.ResourceStrings;
+
+
+{$REGION 'TArray'}
+
+class function TArray.Contains<T>(const values: array of T;
+  const item: T): Boolean;
+var
+  comparer: IEqualityComparer<T>;
+  i: Integer;
+begin
+  comparer := TEqualityComparer<T>.Default;
+  for i := 0 to High(Values) do
+    if comparer.Equals(values[i], item) then
+      Exit(True);
+  Result := False;
+end;
+
+class function TArray.Copy<T>(const values: array of T): TArray<T>;
+var
+  i: Integer;
+begin
+  SetLength(Result, Length(values));
+  for i := 0 to High(values) do
+    Result[i] := values[i];
+end;
+
+class function TArray.IndexOf<T>(const values: array of T;
+  const item: T): Integer;
+begin
+  Result := IndexOf<T>(values, item, 0, Length(values));
+end;
+
+class function TArray.IndexOf<T>(const values: array of T; const item: T;
+  index: Integer): Integer;
+begin
+  Result := IndexOf<T>(values, item, index, Length(values) - index);
+end;
+
+class function TArray.IndexOf<T>(const values: array of T; const item: T; index,
+  count: Integer): Integer;
+var
+  comparer: IEqualityComparer<T>;
+  i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index <= Length(values)), 'index');
+  Guard.CheckRange((count >= 0) and (count <= Length(values) - index), 'count');
+{$ENDIF}
+
+  comparer := TEqualityComparer<T>.Default;
+  for i := index to index + count - 1 do
+    if comparer.Equals(values[i], item) then
+      Exit(i);
+  Result := -1;
+end;
+
+{$ENDREGION}
 
 
 {$REGION 'TCollections'}

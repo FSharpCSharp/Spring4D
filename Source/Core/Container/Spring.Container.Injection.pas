@@ -143,7 +143,7 @@ end;
 
 procedure TInjectionBase.InitializeArguments(const arguments: array of TValue);
 begin
-  fArguments := TArray.CreateArray<TValue>(arguments);
+  fArguments := TArray.Copy<TValue>(arguments);
 end;
 
 function TInjectionBase.GetArguments: TArray<TValue>;

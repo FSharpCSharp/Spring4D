@@ -326,17 +326,6 @@ type
     procedure ExecuteUpdate(const proc: TProc);
   end;
 
-  TArrayHelper = class helper for TArray
-  public
-    class function CreateArray<T>(const values: array of T): TArray<T>; static;
-
-    /// <summary>
-    ///   Determines whether the specified item exists as an element in an
-    ///   array.
-    /// </summary>
-    class function Contains<T>(const values: array of T; const item: T): Boolean; static;
-  end;
-
   // TPointHelper, TSizeHelper, TRectHelper
 
   {TODO -oPaul -cGeneral : Add some non-generic implementation}
@@ -869,33 +858,6 @@ begin
   finally
     EndUpdate;
   end;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TArray Helper'}
-
-class function TArrayHelper.Contains<T>(const values: array of T;
-  const item: T): Boolean;
-var
-  comparer: IEqualityComparer<T>;
-  i: Integer;
-begin
-  comparer := TEqualityComparer<T>.Default;
-  for i := 0 to High(Values) do
-    if comparer.Equals(values[i], item) then
-      Exit(True);
-  Result := False;
-end;
-
-class function TArrayHelper.CreateArray<T>(const values: array of T): TArray<T>;
-var
-  i: Integer;
-begin
-  SetLength(Result, Length(values));
-  for i := 0 to High(values) do
-    Result[i] := values[i];
 end;
 
 {$ENDREGION}
