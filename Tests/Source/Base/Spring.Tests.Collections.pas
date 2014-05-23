@@ -71,6 +71,8 @@ type
     procedure TestSetEqualsList;
     procedure TestIsSubsetOf;
     procedure TestIsSupersetOf;
+    procedure TestOverlaps;
+    procedure TestExtract;
   end;
 
   TTestIntegerList = class(TTestCase)
@@ -404,6 +406,15 @@ begin
   CheckSet(fSet1, [2]);
 end;
 
+procedure TTestNormalHashSet.TestExtract;
+begin
+  CheckEquals(3, fSet1.Extract(3));
+  CheckEquals(0, fSet1.Extract(6));
+  fSet2.Clear;
+  fSet2.AddRange([1, 2]);
+  CheckTrue(fSet1.SetEquals(fSet2));
+end;
+
 procedure TTestNormalHashSet.TestIntersectWith;
 begin
   fSet1.IntersectWith(fSet2);
@@ -432,6 +443,15 @@ begin
   CheckFalse(fSet2.IsSupersetOf(fSet1));
   fSet2.Add(2);
   CheckTrue(fSet2.IsSupersetOf(fSet1));
+end;
+
+procedure TTestNormalHashSet.TestOverlaps;
+begin
+  CheckTrue(fSet1.Overlaps(fSet2));
+  fSet2.Clear;
+  CheckFalse(fSet1.Overlaps(fSet2));
+  fSet2.AddRange([4, 5]);
+  CheckFalse(fSet1.Overlaps(fSet2));
 end;
 
 procedure TTestNormalHashSet.TestUnionWith;
