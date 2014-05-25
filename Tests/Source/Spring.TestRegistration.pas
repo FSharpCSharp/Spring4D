@@ -79,7 +79,8 @@ begin
     TTestLinkedList.Suite,
     TTestObjectList.Suite,
     TTestCollectionList.Suite,
-    TTestEnumerable.Suite
+    TTestEnumerable.Suite,
+    TTestListAdapter.Suite
   ]);
 
   RegisterTests('Spring.Base.Collections.Extensions', [
