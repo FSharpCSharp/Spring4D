@@ -30,6 +30,7 @@ interface
 
 uses
   Classes,
+  Generics.Collections,
   TestFramework,
   Spring.TestUtils,
   Spring,
@@ -155,11 +156,15 @@ type
     procedure TearDown; override;
     procedure FillStack;
   published
+    procedure TestStackCreate;
+    procedure TestStackCreate2;
     procedure TestStackInitializesEmpty;
     procedure TestStackPopPushBalances;
     procedure TestStackClear;
     procedure TestStackPeek;
     procedure TestStackPeekOrDefault;
+    procedure TestStackTryPeek;
+    procedure TestStackTrimExcess;
   end;
 
   TTestStackOfIntegerChangedEvent = class(TTestCase)
@@ -201,9 +206,14 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   published
+    procedure TestQueueCreate;
+    procedure TestQueueCreate2;
     procedure TestQueueClear;
     procedure TestQueueDequeue;
     procedure TestQueuePeek;
+    procedure TestQueuePeekOrDefault;
+    procedure TestQueueTryPeek;
+    procedure TestQueueTrimExcess;
   end;
 
   TTestQueueOfIntegerChangedEvent = class(TTestCase)
@@ -312,6 +322,8 @@ implementation
 
 uses
   Generics.Defaults,
+  Spring.Collections.Queues,
+  Spring.Collections.Stacks,
   SysUtils;
 
 const
@@ -938,6 +950,29 @@ begin
   CheckEquals(0, SUT.Count, 'Stack failed to empty after call to Clear');
 end;
 
+procedure TTestStackOfInteger.TestStackCreate;
+const
+  values: array[0..9] of Integer = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+begin
+  SUT := TStack<Integer>.Create(values);
+  CheckTrue(SUT.EqualsTo(values));
+  SUT := TStack<Integer>.Create(TCollections.Range(0, 10));
+  CheckTrue(SUT.EqualsTo(values));
+end;
+
+procedure TTestStackOfInteger.TestStackCreate2;
+var
+  stack: Generics.Collections.TStack<Integer>;
+begin
+  stack := Generics.Collections.TStack<Integer>.Create;
+  try
+    SUT := TStack<Integer>.Create(stack, otReference);
+  finally
+    SUT := nil;
+    stack.Free;
+  end;
+end;
+
 procedure TTestStackOfInteger.TestStackInitializesEmpty;
 begin
   CheckEquals(0, SUT.Count);
@@ -983,6 +1018,32 @@ begin
 
   // Should be empty
   CheckEquals(0, SUT.Count);
+end;
+
+procedure TTestStackOfInteger.TestStackTrimExcess;
+var
+  stack: TStack<Integer>;
+begin
+  stack := SUT as TStack<Integer>;
+  CheckEquals(0, stack.Capacity);
+  stack.Capacity := MaxItems;
+  CheckEquals(MaxItems, stack.Capacity);
+  stack.TrimExcess;
+  CheckEquals(0, stack.Capacity);
+end;
+
+procedure TTestStackOfInteger.TestStackTryPeek;
+var
+  Expected: Integer;
+  Actual: Integer;
+begin
+  CheckFalse(SUT.TryPeek(Actual));
+  Expected := 0;
+  CheckEquals(Expected, Actual);
+  SUT.Push(MaxItems);
+  CheckTrue(SUT.TryPeek(Actual));
+  Expected := MaxItems;
+  CheckEquals(Expected, Actual);
 end;
 
 { TTestStackOfIntegerChangedEvent }
@@ -1146,9 +1207,7 @@ var
 begin
   Check(SUT <> nil);
   for i := 0 to MaxItems - 1  do
-  begin
     SUT.Enqueue(i);
-  end;
   CheckEquals(MaxItems, SUT.Count, 'Call to FillQueue did not properly fill the queue');
 end;
 
@@ -1171,15 +1230,36 @@ begin
   CheckEquals(0, SUT.Count, 'Clear call failed to empty the queue');
 end;
 
+procedure TTestQueueOfInteger.TestQueueCreate;
+const
+  values: array[0..9] of Integer = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+begin
+  SUT := TQueue<Integer>.Create(values);
+  CheckTrue(SUT.EqualsTo(values));
+  SUT := TQueue<Integer>.Create(TCollections.Range(0, 10));
+  CheckTrue(SUT.EqualsTo(values));
+end;
+
+procedure TTestQueueOfInteger.TestQueueCreate2;
+var
+  queue: Generics.Collections.TQueue<Integer>;
+begin
+  queue := Generics.Collections.TQueue<Integer>.Create;
+  try
+    SUT := TQueue<Integer>.Create(queue, otReference);
+  finally
+    SUT := nil;
+    queue.Free;
+  end;
+end;
+
 procedure TTestQueueOfInteger.TestQueueDequeue;
 var
   i: Integer;
 begin
   FillQueue;
   for i := 1 to MaxItems do
-  begin
     SUT.Dequeue;
-  end;
 
   CheckEquals(0, SUT.Count, 'Dequeue did not remove all the items');
 end;
@@ -1192,6 +1272,50 @@ begin
   FillQueue;
   Expected := 0;
   Actual := SUT.Peek;
+  CheckEquals(Expected, Actual);
+  ExpectedException := EListError;
+  SUT.Clear;
+  SUT.Peek;
+  ExpectedException := nil;
+end;
+
+procedure TTestQueueOfInteger.TestQueuePeekOrDefault;
+var
+  Expected: Integer;
+  Actual: Integer;
+begin
+  Actual := SUT.PeekOrDefault;
+  Expected := 0;
+  CheckEquals(Expected, Actual);
+  SUT.Enqueue(MaxItems);
+  Actual := SUT.PeekOrDefault;
+  Expected := MaxItems;
+  CheckEquals(Expected, Actual);
+end;
+
+procedure TTestQueueOfInteger.TestQueueTrimExcess;
+var
+  queue: TQueue<Integer>;
+begin
+  queue := SUT as TQueue<Integer>;
+  CheckEquals(0, queue.Capacity);
+  queue.Capacity := MaxItems;
+  CheckEquals(MaxItems, queue.Capacity);
+  queue.TrimExcess;
+  CheckEquals(0, queue.Capacity);
+end;
+
+procedure TTestQueueOfInteger.TestQueueTryPeek;
+var
+  Expected: Integer;
+  Actual: Integer;
+begin
+  CheckFalse(SUT.TryPeek(Actual));
+  Expected := 0;
+  CheckEquals(Expected, Actual);
+  SUT.Enqueue(MaxItems);
+  CheckTrue(SUT.TryPeek(Actual));
+  Expected := MaxItems;
   CheckEquals(Expected, Actual);
 end;
 
