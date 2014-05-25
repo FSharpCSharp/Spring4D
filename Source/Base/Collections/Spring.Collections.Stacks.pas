@@ -45,7 +45,9 @@ type
     fOnNotify: TCollectionNotifyEvent<T>;
     procedure DoNotify(Sender: TObject; const Item: T;
       Action: TCollectionNotification);
+    function GetCapacity: Integer;
     function GetOnChanged: ICollectionChangedEvent<T>;
+    procedure SetCapacity(const value: Integer);
   protected
     function GetCount: Integer; override;
     procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
@@ -67,6 +69,7 @@ type
 
     procedure TrimExcess;
 
+    property Capacity: Integer read GetCapacity write SetCapacity;
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
@@ -136,6 +139,11 @@ begin
   Result := TEnumeratorAdapter<T>.Create(fStack);
 end;
 
+function TStack<T>.GetCapacity: Integer;
+begin
+  Result := fStack.Capacity;
+end;
+
 function TStack<T>.GetCount: Integer;
 begin
   Result := fStack.Count;
@@ -154,6 +162,11 @@ end;
 procedure TStack<T>.Push(const item: T);
 begin
   fStack.Push(item);
+end;
+
+procedure TStack<T>.SetCapacity(const value: Integer);
+begin
+  fStack.Capacity := value;
 end;
 
 function TStack<T>.Pop: T;
