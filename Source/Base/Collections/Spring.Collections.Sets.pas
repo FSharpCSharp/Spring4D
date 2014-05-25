@@ -299,7 +299,14 @@ end;
 function THashSet<T>.Extract(const item: T): T;
 begin
   if fDictionary.ContainsKey(item) then
+{$IFDEF DELPHIXE2_UP}
     Result := fDictionary.ExtractPair(item).Key
+{$ELSE}
+  begin
+    Result := item;
+    fDictionary.ExtractPair(item);
+  end
+{$ENDIF}
   else
     Result := Default(T);
 end;

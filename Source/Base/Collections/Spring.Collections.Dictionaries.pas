@@ -290,7 +290,14 @@ begin
     comparer := TEqualityComparer<TValue>.Default;
     found := comparer.Equals(value, item.Value);
     if found then
+{$IFDEF DELPHIXE2_UP}
       Result := fDictionary.ExtractPair(item.Key);
+{$ELSE}
+    begin
+      Result := item;
+      fDictionary.ExtractPair(item.Key);
+    end;
+{$ENDIF}
   end;
   if not found then
   begin
@@ -354,7 +361,17 @@ end;
 function TDictionary<TKey, TValue>.ExtractPair(
   const key: TKey): TGenericPair;
 begin
+{$IFDEF DELPHIXE2_UP}
   Result := fDictionary.ExtractPair(key);
+{$ELSE}
+  if fDictionary.TryGetValue(key, Result.Value) then
+  begin
+    Result.Key := key;
+    fDictionary.ExtractPair(key);
+  end
+  else
+    Result := fDictionary.ExtractPair(key);
+{$ENDIF}
 end;
 
 function TDictionary<TKey, TValue>.TryGetValue(const key: TKey;
