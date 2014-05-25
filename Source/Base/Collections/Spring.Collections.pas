@@ -2127,14 +2127,17 @@ type
 
     class function CreateStack<T>: IStack<T>; overload; static;
     class function CreateStack<T: class>(ownsObjects: Boolean): IStack<T>; overload; static;
+    class function CreateStack<T>(const values: array of T): IStack<T>; overload; static;
     class function CreateStack<T>(const values: IEnumerable<T>): IStack<T>; overload; static;
 
     class function CreateQueue<T>: IQueue<T>; overload; static;
     class function CreateQueue<T: class>(ownsObjects: Boolean): IQueue<T>; overload; static;
+    class function CreateQueue<T>(const values: array of T): IQueue<T>; overload; static;
     class function CreateQueue<T>(const values: IEnumerable<T>): IQueue<T>; overload; static;
 
     class function CreateSet<T>: ISet<T>; overload; static;
     class function CreateSet<T>(const comparer: IEqualityComparer<T>): ISet<T>; overload; static;
+    class function CreateSet<T>(const values: array of T): ISet<T>; overload; static;
     class function CreateSet<T>(const values: IEnumerable<T>): ISet<T>; overload; static;
 
     ///	<summary>
@@ -2405,19 +2408,21 @@ begin
 end;
 
 class function TCollections.CreateStack<T>: IStack<T>;
-var
-  stack: Generics.Collections.TStack<T>;
 begin
-  stack := Generics.Collections.TStack<T>.Create;
-  Result := TStack<T>.Create(stack, otOwned);
+  Result := TStack<T>.Create;
 end;
 
 class function TCollections.CreateStack<T>(ownsObjects: Boolean): IStack<T>;
 var
   stack: Generics.Collections.TObjectStack<T>;
 begin
-  stack := TObjectStack<T>.Create(ownsObjects);
+  stack := Generics.Collections.TObjectStack<T>.Create(ownsObjects);
   Result := TStack<T>.Create(stack, otOwned);
+end;
+
+class function TCollections.CreateStack<T>(const values: array of T): IStack<T>;
+begin
+  Result := TStack<T>.Create(values);
 end;
 
 class function TCollections.CreateStack<T>(
@@ -2427,11 +2432,8 @@ begin
 end;
 
 class function TCollections.CreateQueue<T>: IQueue<T>;
-var
-  queue: Generics.Collections.TQueue<T>;
 begin
-  queue := Generics.Collections.TQueue<T>.Create;
-  Result := TQueue<T>.Create(queue, otOwned);
+  Result := TQueue<T>.Create;
 end;
 
 class function TCollections.CreateQueue<T>(ownsObjects: Boolean): IQueue<T>;
@@ -2440,6 +2442,11 @@ var
 begin
   queue := Generics.Collections.TObjectQueue<T>.Create(ownsObjects);
   Result := TQueue<T>.Create(queue, otOwned);
+end;
+
+class function TCollections.CreateQueue<T>(const values: array of T): IQueue<T>;
+begin
+  Result := TQueue<T>.Create(values);
 end;
 
 class function TCollections.CreateQueue<T>(
@@ -2457,6 +2464,11 @@ class function TCollections.CreateSet<T>(
   const comparer: IEqualityComparer<T>): ISet<T>;
 begin
   Result := THashSet<T>.Create(comparer);
+end;
+
+class function TCollections.CreateSet<T>(const values: array of T): ISet<T>;
+begin
+  Result := THashSet<T>.Create(values);
 end;
 
 class function TCollections.CreateSet<T>(const values: IEnumerable<T>): ISet<T>;
