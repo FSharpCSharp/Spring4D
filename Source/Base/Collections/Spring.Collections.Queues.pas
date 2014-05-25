@@ -45,9 +45,11 @@ type
     fOnNotify: TCollectionNotifyEvent<T>;
     procedure DoNotify(Sender: TObject; const Item: T;
       Action: TCollectionNotification);
-    function GetCapacity: Integer;
     function GetOnChanged: ICollectionChangedEvent<T>;
+{$IFDEF DELPHIXE_UP}
+    function GetCapacity: Integer;
     procedure SetCapacity(const value: Integer);
+{$ENDIF}
   protected
     function GetCount: Integer; override;
     procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
@@ -69,7 +71,9 @@ type
 
     procedure TrimExcess;
 
+{$IFDEF DELPHIXE_UP}
     property Capacity: Integer read GetCapacity write SetCapacity;
+{$ENDIF}
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
@@ -167,10 +171,12 @@ begin
     Result := Default(T);
 end;
 
+{$IFDEF DELPHIXE_UP}
 procedure TQueue<T>.SetCapacity(const value: Integer);
 begin
   fQueue.Capacity := value;
 end;
+{$ENDIF}
 
 procedure TQueue<T>.TrimExcess;
 begin
@@ -186,10 +192,12 @@ begin
     item := Default(T);
 end;
 
+{$IFDEF DELPHIXE_UP}
 function TQueue<T>.GetCapacity: Integer;
 begin
   Result := fQueue.Capacity;
 end;
+{$ENDIF}
 
 function TQueue<T>.GetCount: Integer;
 begin

@@ -164,7 +164,9 @@ type
     procedure TestStackPeek;
     procedure TestStackPeekOrDefault;
     procedure TestStackTryPeek;
+{$IFDEF DELPHIXE_UP}
     procedure TestStackTrimExcess;
+{$ENDIF}
   end;
 
   TTestStackOfIntegerChangedEvent = class(TTestCase)
@@ -213,7 +215,9 @@ type
     procedure TestQueuePeek;
     procedure TestQueuePeekOrDefault;
     procedure TestQueueTryPeek;
+{$IFDEF DELPHIXE_UP}
     procedure TestQueueTrimExcess;
+{$ENDIF}
   end;
 
   TTestQueueOfIntegerChangedEvent = class(TTestCase)
@@ -1055,6 +1059,7 @@ begin
   CheckEquals(0, SUT.Count);
 end;
 
+{$IFDEF DELPHIXE_UP}
 procedure TTestStackOfInteger.TestStackTrimExcess;
 var
   stack: TStack<Integer>;
@@ -1066,6 +1071,7 @@ begin
   stack.TrimExcess;
   CheckEquals(0, stack.Capacity);
 end;
+{$ENDIF}
 
 procedure TTestStackOfInteger.TestStackTryPeek;
 var
@@ -1329,6 +1335,7 @@ begin
   CheckEquals(Expected, Actual);
 end;
 
+{$IFDEF DELPHIXE_UP}
 procedure TTestQueueOfInteger.TestQueueTrimExcess;
 var
   queue: TQueue<Integer>;
@@ -1340,6 +1347,7 @@ begin
   queue.TrimExcess;
   CheckEquals(0, queue.Capacity);
 end;
+{$ENDIF}
 
 procedure TTestQueueOfInteger.TestQueueTryPeek;
 var
