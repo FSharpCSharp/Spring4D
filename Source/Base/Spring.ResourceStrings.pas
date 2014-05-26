@@ -128,7 +128,7 @@ resourcestring
   SInvalidExpressionPath          = 'Invalid expression path %s.';
   SUnexpectedToken                = 'Unexpected expression part %s.';
   SInvalidExpressionSyntax        = 'Invalid expression syntax %s.';
-  SCouldNotFindPath               = 'Coould not find expression path %s.';
+  SCouldNotFindPath               = 'Could not find expression path %s.';
 
   {$ENDREGION}
 
