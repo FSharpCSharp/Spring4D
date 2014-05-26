@@ -2583,27 +2583,23 @@ begin
 end;
 
 class function TStringComparer.Ordinal: TStringComparer;
-var
-  comparer: TStringComparer;
 begin
   if not Assigned(fOrdinal) then
   begin
-    comparer := TStringComparer.Create(loInvariantLocale, False);
-    if TInterlocked.Exchange(TObject(fOrdinal), TObject(comparer)) <> nil then
-      comparer.Free;
+    Result := TStringComparer.Create(loInvariantLocale, False);
+    if TInterlocked.CompareExchange<TStringComparer>(fOrdinal, Result, nil) <> nil then
+      Result.Free;
   end;
   Result := fOrdinal;
 end;
 
 class function TStringComparer.OrdinalIgnoreCase: TStringComparer;
-var
-  comparer: TStringComparer;
 begin
   if not Assigned(fOrdinalIgnoreCase) then
   begin
-    comparer := TStringComparer.Create(loInvariantLocale, True);
-    if TInterlocked.Exchange(TObject(fOrdinalIgnoreCase), TObject(comparer)) <> nil then
-      comparer.Free;
+    Result := TStringComparer.Create(loInvariantLocale, True);
+    if TInterlocked.CompareExchange<TStringComparer>(fOrdinalIgnoreCase, Result, nil) <> nil then
+      Result.Free;
   end;
   Result := fOrdinalIgnoreCase;
 end;

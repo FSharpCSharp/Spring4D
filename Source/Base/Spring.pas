@@ -789,8 +789,9 @@ type
 
 {$IFDEF DELPHI2010}
   TInterlocked = class sealed
-    class function Exchange(var Target: TObject; Value: TObject): TObject; overload; static; inline;
-    class function Exchange(var Target: Pointer; Value: Pointer): Pointer; overload; static;
+    class function CompareExchange(var Target: Pointer; Value: Pointer; Comparand: Pointer): Pointer; overload; static;
+    class function CompareExchange(var Target: TObject; Value: TObject; Comparand: TObject): TObject; overload; static; inline;
+    class function CompareExchange<T: class>(var Target: T; Value: T; Comparand: T): T; overload; static; inline;
   end;
 {$ELSE}
   TInterlocked = SyncObjs.TInterlocked;
@@ -1746,16 +1747,21 @@ end;
 {$REGION 'TInterlocked'}
 
 {$IFDEF DELPHI2010}
-class function TInterlocked.Exchange(var Target: TObject;
-  Value: TObject): TObject;
-begin
-  Result := TObject(Exchange(Pointer(Target), Pointer(Value)));
+class function TInterlocked.CompareExchange(var Target: Pointer; Value: Pointer; Comparand: Pointer): Pointer;
+asm
+  XCHG EAX,EDX
+  XCHG EAX,ECX
+  LOCK CMPXCHG [EDX],ECX
 end;
 
-class function TInterlocked.Exchange(var Target: Pointer; Value: Pointer): Pointer;
-asm
-  lock xchg [eax],edx
-  mov eax,edx
+class function TInterlocked.CompareExchange(var Target: TObject; Value, Comparand: TObject): TObject;
+begin
+  Result := TObject(CompareExchange(Pointer(Target), Pointer(Value), Pointer(Comparand)));
+end;
+
+class function TInterlocked.CompareExchange<T>(var Target: T; Value, Comparand: T): T;
+begin
+  TObject(Pointer(@Result)^) := CompareExchange(TObject(Pointer(@Target)^), TObject(Pointer(@Value)^), TObject(Pointer(@Comparand)^));
 end;
 {$ENDIF}
 
