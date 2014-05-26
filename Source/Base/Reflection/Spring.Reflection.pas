@@ -212,11 +212,11 @@ type
 
   TActivator = record
   public
-    class function CreateInstance(instanceType: TRttiInstanceType): TValue; overload; static;
-    class function CreateInstance(const typeName: string): TValue; overload; static;
+    class function CreateInstance(const classType: TRttiInstanceType): TValue; overload; static;
+    class function CreateInstance(const classType: TRttiInstanceType;
+      const constructorMethod: TRttiMethod; const arguments: array of TValue): TValue; overload; static;
     class function CreateInstance(const typeInfo: PTypeInfo): TValue; overload; static;
-    class function CreateInstance(instanceType: TRttiInstanceType;
-      constructorMethod: TRttiMethod; const arguments: array of TValue): TValue; overload; static;
+    class function CreateInstance(const typeName: string): TValue; overload; static;
   end;
 
   {$ENDREGION}
@@ -545,7 +545,10 @@ end;
 
 class function TType.GetFullName(typeInfo: PTypeInfo): string;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(typeInfo, 'typeInfo');
+{$ENDIF}
+
   Result := fContext.GetType(typeInfo).QualifiedName;
 end;
 
@@ -709,64 +712,56 @@ end;
 
 {$REGION 'TActivator'}
 
-class function TActivator.CreateInstance(instanceType: TRttiInstanceType;
-  constructorMethod: TRttiMethod; const arguments: array of TValue): TValue;
+class function TActivator.CreateInstance(
+  const classType: TRttiInstanceType): TValue;
+var
+  method: TRttiMethod;
 begin
-  Guard.CheckNotNull(instanceType, 'instanceType');
-  Guard.CheckNotNull(constructorMethod, 'constructorMethod');
-  Result := constructorMethod.Invoke(instanceType.MetaclassType, arguments);
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(classType, 'classType');
+{$ENDIF}
+
+  for method in classType.GetMethods do
+    if method.IsConstructor and (Length(method.GetParameters) = 0) then
+      Exit(method.Invoke(classType.MetaclassType, []));
+  Result := nil;
 end;
 
-class function TActivator.CreateInstance(const typeName: string): TValue;
-var
-  context: TRttiContext;
-  typeObj: TRttiType;
+class function TActivator.CreateInstance(const classType: TRttiInstanceType;
+  const constructorMethod: TRttiMethod; const arguments: array of TValue): TValue;
 begin
-  typeObj := context.FindType(typeName);
-  if typeObj is TRttiInstanceType then
-  begin
-    Result := TActivator.CreateInstance(TRttiInstanceType(typeObj));
-  end
-  else
-  begin
-    Result := nil;
-  end;
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(classType, 'classType');
+  Guard.CheckNotNull(constructorMethod, 'constructorMethod');
+{$ENDIF}
+
+  Result := constructorMethod.Invoke(classType.MetaclassType, arguments);
 end;
 
 class function TActivator.CreateInstance(const typeInfo: PTypeInfo): TValue;
 var
-  context: TRttiContext;
-  typeObj: TRttiType;
+  rttiType: TRttiType;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(typeInfo, 'typeInfo');
+{$ENDIF}
 
-  typeObj := context.GetType(typeInfo);
-  if typeObj is TRttiInstanceType then
-  begin
-    Result := TActivator.CreateInstance(TRttiInstanceType(typeObj));
-  end
+  rttiType := TType.GetType(typeInfo);
+  if rttiType is TRttiInstanceType then
+    Result := TActivator.CreateInstance(TRttiInstanceType(rttiType))
   else
-  begin
     Result := nil;
-  end;
 end;
 
-class function TActivator.CreateInstance(
-  instanceType: TRttiInstanceType): TValue;
+class function TActivator.CreateInstance(const typeName: string): TValue;
 var
-  method: TRttiMethod;
+  rttiType: TRttiType;
 begin
-  Guard.CheckNotNull(instanceType, 'instanceType');
-
-  for method in instanceType.GetMethods do
-  begin
-    if method.IsConstructor and (Length(method.GetParameters) = 0) then
-    begin
-      Result := method.Invoke(instanceType.MetaclassType, []);
-      Exit;
-    end;
-  end;
-  Result := nil;
+  rttiType := TType.FindType(typeName);
+  if rttiType is TRttiInstanceType then
+    Result := TActivator.CreateInstance(TRttiInstanceType(rttiType))
+  else
+    Result := nil;
 end;
 
 {$ENDREGION}
@@ -1171,19 +1166,28 @@ end;
 
 function TReflection.GetType(const typeInfo: PTypeInfo): TRttiType;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(typeInfo, 'typeInfo');
+{$ENDIF}
+
   Result := fContext.GetType(typeInfo);
 end;
 
 function TReflection.GetType(const classType: TClass): TRttiType;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(classType, 'classType');
+{$ENDIF}
+
   Result := fContext.GetType(classType.ClassInfo);
 end;
 
 function TReflection.GetType(const instance: TObject): TRttiType;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(instance, 'instance');
+{$ENDIF}
+
   Result := fContext.GetType(instance.ClassInfo);
 end;
 
