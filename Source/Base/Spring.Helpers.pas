@@ -528,6 +528,7 @@ type
     function TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
   public
     function AsType<T>: T;
+    function Cast(typeInfo: PTypeInfo): TValue;
   end;
 
 implementation
@@ -1329,11 +1330,14 @@ begin
 end;
 
 procedure TRttiPropertyHelper.SetValue(const instance, value: TValue);
+var
+  temp: TValue;
 begin
+  temp := value.Cast(PropertyType.Handle);
   if instance.IsObject then
-    SetValue(instance.AsObject, value)
+    SetValue(instance.AsObject, temp)
   else
-    SetValue(instance.GetReferenceToRawData, value);
+    SetValue(instance.GetReferenceToRawData, temp);
 end;
 
 { TRttiFieldHelper }
@@ -1347,11 +1351,14 @@ begin
 end;
 
 procedure TRttiFieldHelper.SetValue(const instance, value: TValue);
+var
+  temp: TValue;
 begin
+  temp := value.Cast(FieldType.Handle);
   if instance.IsObject then
-    SetValue(instance.AsObject, value)
+    SetValue(instance.AsObject, temp)
   else
-    SetValue(instance.GetReferenceToRawData, value);
+    SetValue(instance.GetReferenceToRawData, temp);
 end;
 
 {$ENDREGION}
@@ -1363,6 +1370,19 @@ function TValueHelper.AsType<T>: T;
 begin
   if not TryAsInterface(System.TypeInfo(T), Result) then
   if not TryAsType<T>(Result) then
+    raise EInvalidCast.CreateRes(@SInvalidCast);
+end;
+
+function TValueHelper.Cast(typeInfo: PTypeInfo): TValue;
+var
+  intf: IInterface;
+begin
+  if TryAsInterface(typeInfo, intf) then
+  begin
+    Result := Self;
+    TValueData(Result).FTypeInfo := typeInfo;
+  end else
+  if not TryCast(typeInfo, Result) then
     raise EInvalidCast.CreateRes(@SInvalidCast);
 end;
 
