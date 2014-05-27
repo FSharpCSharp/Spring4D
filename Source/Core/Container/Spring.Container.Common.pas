@@ -214,6 +214,7 @@ type
   ///	<seealso cref="ImplementsAttribute" />
   InjectAttribute = class(TCustomAttribute)
   private
+    fServiceType: PTypeInfo;
     fValue: TValue;
     function GetHasValue: Boolean;
   public
@@ -223,6 +224,9 @@ type
     constructor Create(value: Extended); overload;
     constructor Create(value: Int64); overload;
     constructor Create(value: Boolean); overload;
+    constructor Create(serviceType: PTypeInfo); overload;
+    constructor Create(serviceType: PTypeInfo; const name: string); overload;
+    property ServiceType: PTypeInfo read fServiceType;
     property Value: TValue read fValue;
     property HasValue: Boolean read GetHasValue;
   end;
@@ -380,6 +384,19 @@ constructor InjectAttribute.Create;
 begin
   inherited Create;
   fValue := nil;
+end;
+
+constructor InjectAttribute.Create(serviceType: PTypeInfo);
+begin
+  inherited Create;
+  fServiceType := serviceType;
+end;
+
+constructor InjectAttribute.Create(serviceType: PTypeInfo; const name: string);
+begin
+  inherited Create;
+  fServiceType := serviceType;
+  fValue := name;
 end;
 
 constructor InjectAttribute.Create(const value: string);

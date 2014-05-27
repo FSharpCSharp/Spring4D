@@ -302,23 +302,30 @@ procedure TPropertyInspector.DoProcessModel(const context: IContainerContext;
   const model: TComponentModel);
 var
   condition: TPredicate<TRttiProperty>;
-  propertyMember: TRttiProperty;
+  prop: TRttiProperty;
   injection: IInjection;
   injectionExists: Boolean;
   attribute: InjectAttribute;
 begin
   condition := TPropertyFilters.IsInvokable and
     TPropertyFilters.HasAttribute(InjectAttribute);
-  for propertyMember in model.ComponentType.Properties.Where(condition) do
+  for prop in model.ComponentType.Properties.Where(condition) do
   begin
     injectionExists := model.PropertyInjections.TryGetFirst(injection,
-      TInjectionFilters.ContainsMember(propertyMember));
+      TInjectionFilters.ContainsMember(prop));
     if not injectionExists then
-      injection := context.InjectionFactory.CreatePropertyInjection(propertyMember.Name);
-    injection.Initialize(propertyMember);
-    if propertyMember.TryGetCustomAttribute<InjectAttribute>(attribute)
-      and attribute.HasValue then
-      injection.InitializeArguments([attribute.Value]);
+      injection := context.InjectionFactory.CreatePropertyInjection(prop.Name);
+    injection.Initialize(prop);
+    if prop.TryGetCustomAttribute<InjectAttribute>(attribute) then
+    begin
+      if attribute.HasValue then
+        injection.InitializeArguments([attribute.Value]);
+      if attribute.ServiceType <> nil then
+        if TType.IsAssignable(attribute.ServiceType, prop.PropertyType.Handle) then
+          injection.Dependencies[0] := TType.GetType(attribute.ServiceType)
+        else
+          raise EBuilderException.CreateRes(@SUnresovableInjection);
+    end;
     if not injectionExists then
       model.PropertyInjections.Add(injection);
   end;
@@ -346,8 +353,16 @@ begin
     if not injectionExists then
       injection := context.InjectionFactory.CreateFieldInjection(field.Name);
     injection.Initialize(field);
-    if field.TryGetCustomAttribute<InjectAttribute>(attribute) and attribute.HasValue then
-      injection.InitializeArguments([attribute.Value]);
+    if field.TryGetCustomAttribute<InjectAttribute>(attribute) then
+    begin
+      if attribute.HasValue then
+        injection.InitializeArguments([attribute.Value]);
+      if attribute.ServiceType <> nil then
+        if TType.IsAssignable(attribute.ServiceType, field.FieldType.Handle) then
+          injection.Dependencies[0] := TType.GetType(attribute.ServiceType)
+        else
+          raise EBuilderException.CreateRes(@SUnresovableInjection);
+    end;
     if not injectionExists then
       model.FieldInjections.Add(injection);
   end;
