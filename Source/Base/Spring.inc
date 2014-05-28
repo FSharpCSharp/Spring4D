@@ -85,6 +85,10 @@
   {$DEFINE FMX}
 {$ENDIF}
 
+// This option is needed to enable code browsing (aka Ctrl+Click)
+// It does not affect the binary size or generated code
+{$DEFINITIONINFO ON}
+
 {$IFNDEF DELPHI2010_UP}
   {$MESSAGE ERROR 'This framework requires Delphi 2010 or higher.'}
 {$ENDIF}
