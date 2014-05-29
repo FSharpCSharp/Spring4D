@@ -57,12 +57,10 @@ type
   ///	</summary>
   TReflectionComponentActivator = class(TComponentActivatorBase)
   protected
-    function CheckConstructorCandidate(const candidate: IInjection;
-      const context: ICreationContext): Boolean; virtual;
-    function CreateConstructorArguments(const injection: IInjection;
-      const context: ICreationContext): TArray<TValue>; virtual;
     function SelectEligibleConstructor(
       const context: ICreationContext): IInjection; virtual;
+    function TryHandle(const context: ICreationContext;
+      const candidate: IInjection; var winner: IInjection): Boolean; virtual;
   public
     function CreateInstance(const context: ICreationContext): TValue; override;
   end;
@@ -117,30 +115,6 @@ end;
 
 {$REGION 'TReflectionComponentActivator'}
 
-function TReflectionComponentActivator.CheckConstructorCandidate(
-  const candidate: IInjection; const context: ICreationContext): Boolean;
-var
-  arguments: TArray<TValue>;
-begin
-  Result := context.CheckConstructorCandidate(candidate);
-  if Result then
-  begin
-    arguments := context.CreateConstructorArguments(candidate);
-    Result := Kernel.DependencyResolver.CanResolve(
-      context, candidate.Dependencies, arguments);
-  end;
-end;
-
-function TReflectionComponentActivator.CreateConstructorArguments(
-  const injection: IInjection; const context: ICreationContext): TArray<TValue>;
-var
-  arguments: TArray<TValue>;
-begin
-  arguments := context.CreateConstructorArguments(injection);
-  Result := Kernel.DependencyResolver.Resolve(
-    context, injection.Dependencies, arguments);
-end;
-
 function TReflectionComponentActivator.CreateInstance(
   const context: ICreationContext): TValue;
 var
@@ -150,7 +124,8 @@ begin
   injection := SelectEligibleConstructor(context);
   if injection = nil then
     raise EActivatorException.CreateRes(@SUnsatisfiedConstructor);
-  arguments := CreateConstructorArguments(injection, context);
+  arguments := Kernel.DependencyResolver.Resolve(
+    context, injection.Dependencies, injection.Arguments);
   Result := TActivator.CreateInstance(
     Model.ComponentType.AsInstance, injection.Target.AsMethod, arguments);
   try
@@ -172,8 +147,7 @@ end;
 function TReflectionComponentActivator.SelectEligibleConstructor(
   const context: ICreationContext): IInjection;
 var
-  candidate: IInjection;
-  winner: IInjection;
+  candidate, winner: IInjection;
   maxCount: Integer;
 begin
   winner := nil;
@@ -187,13 +161,22 @@ begin
       Break;
     end;
     if candidate.DependencyCount > maxCount then
-      if CheckConstructorCandidate(candidate, context) then
-      begin
-        winner := candidate;
-        maxCount := candidate.DependencyCount;
-      end;
+      if TryHandle(context, candidate, winner) then
+        maxCount := winner.DependencyCount;
   end;
   Result := winner;
+end;
+
+function TReflectionComponentActivator.TryHandle(const context: ICreationContext;
+  const candidate: IInjection; var winner: IInjection): Boolean;
+var
+  injection: IInjection;
+begin
+  Result := context.TryHandle(candidate, injection)
+    and Kernel.DependencyResolver.CanResolve(
+      context, injection.Dependencies, injection.Arguments);
+  if Result then
+    winner := injection;
 end;
 
 {$ENDREGION}

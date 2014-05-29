@@ -56,14 +56,15 @@ type
     function IsInResolution(const model: TComponentModel): Boolean;
 
     procedure AddArgument(const argument: TValue);
-    function CheckConstructorCandidate(const injection: IInjection): Boolean;
-    function CreateConstructorArguments(const injection: IInjection): TArray<TValue>;
+    function TryHandle(const injection: IInjection;
+      out handled: IInjection): Boolean;
   end;
 
 implementation
 
 uses
   SysUtils,
+  Spring.Container.Injection,
   Spring.Container.ResourceStrings,
   Spring.Helpers;
 
@@ -106,23 +107,29 @@ begin
   Result := False;
 end;
 
-// TODO clean up this mess of an implementation
-function TCreationContext.CheckConstructorCandidate(
-  const injection: IInjection): Boolean;
+function TCreationContext.TryHandle(const injection: IInjection;
+  out handled: IInjection): Boolean;
 var
+  arguments: TArray<TValue>;
   i: Integer;
   parameters: TArray<TRttiParameter>;
   value: TNamedValue;
 begin
+  arguments := Copy(injection.Arguments);
   if not fModel.ConstructorInjections.Contains(injection) then
+  begin
+    handled := injection;
     Exit(True);
+  end;
 
   parameters := injection.Target.AsMethod.GetParameters;
   if Length(parameters) = fArguments.Count then
   begin
     // arguments for ctor are provided and count is correct
     for i := 0 to High(parameters) do // check all parameters
-      if not fArguments[i].IsType(parameters[i].ParamType.Handle) then
+      if fArguments[i].IsType(parameters[i].ParamType.Handle) then
+        arguments[i] := fArguments[i]
+      else
         Exit(False); // argument and parameter types did not match
   end
   else if not fArguments.IsEmpty then
@@ -135,6 +142,7 @@ begin
       if SameText(parameters[i].Name, value.Name)
         and value.Value.IsType(parameters[i].ParamType.Handle) then
       begin
+        arguments[i] := value.Value;
         Result := True;
         Break;
       end;
@@ -143,48 +151,10 @@ begin
       Exit;
   end;
 
-  Result := True;
-end;
-
-function TCreationContext.CreateConstructorArguments(
-  const injection: IInjection): TArray<TValue>;
-var
-  i: Integer;
-  parameters: TArray<TRttiParameter>;
-  value: TNamedValue;
-  handled: Boolean;
-begin
-  Result := Copy(injection.Arguments);
-  if not fModel.ConstructorInjections.Contains(injection) then
-    Exit;
-
-  parameters := injection.Target.AsMethod.GetParameters;
-  if Length(parameters) = fArguments.Count then
-  begin
-    for i := 0 to High(parameters) do
-      if fArguments[i].IsType(parameters[i].ParamType.Handle) then
-        Result[i] := fArguments[i]
-      else
-        raise EResolveException.CreateRes(@SUnsatisfiedConstructorParameters);
-  end
-  else if not fArguments.IsEmpty then
-    raise EResolveException.CreateRes(@SUnsatisfiedConstructorParameters);
-  for value in fNamedArguments do
-  begin
-    handled := False;
-    for i := 0 to High(parameters) do
-    begin
-      if SameText(parameters[i].Name, value.Name)
-        and value.Value.IsType(parameters[i].ParamType.Handle) then
-      begin
-        Result[i] := value.Value;
-        handled := True;
-        Break;
-      end;
-    end;
-    if not handled then
-      raise EResolveException.CreateRes(@SUnsatisfiedConstructorParameters);
-  end;
+  Result := True; // all parameters are handled - create new injection
+  handled := TConstructorInjection.Create;
+  handled.Initialize(injection.Target);
+  handled.InitializeArguments(arguments);
 end;
 
 procedure TCreationContext.EnterResolution(const model: TComponentModel);

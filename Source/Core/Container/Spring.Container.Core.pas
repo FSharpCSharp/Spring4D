@@ -219,8 +219,8 @@ type
     function IsInResolution(const model: TComponentModel): Boolean;
 
     procedure AddArgument(const argument: TValue);
-    function CheckConstructorCandidate(const injection: IInjection): Boolean;
-    function CreateConstructorArguments(const injection: IInjection): TArray<TValue>;
+    function TryHandle(const injection: IInjection;
+      out handled: IInjection): Boolean;
   end;
 
   IDependencyResolver = interface(ISubDependencyResolver)

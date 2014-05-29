@@ -127,13 +127,11 @@ begin
     end).Where(
     function(const injection: IInjection): Boolean
     begin
-      Result := CheckConstructorCandidate(injection, context);
+      Result := TryHandle(context, injection, candidate);
     end);
-  for candidate in candidates do
-    if not Assigned(Result) then
-      Result := candidate
-    else
-      raise EResolveException.CreateResFmt(@SAmbiguousConstructor, [targetType.DefaultName]);
+  if candidates.Count > 1 then
+    raise EResolveException.CreateResFmt(@SAmbiguousConstructor, [targetType.DefaultName]);
+  Result := candidate;
 end;
 
 {$ENDREGION}
