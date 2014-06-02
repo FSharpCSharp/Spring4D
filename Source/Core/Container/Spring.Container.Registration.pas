@@ -202,8 +202,8 @@ type
     fRegistry: IComponentRegistry;
   public
     constructor Create(const registry: IComponentRegistry);
-    function RegisterComponent<TComponentType>: TRegistration<TComponentType>; overload;
-    function RegisterComponent(componentType: PTypeInfo): TRegistration; overload;
+    function RegisterType<TComponentType>: TRegistration<TComponentType>; overload;
+    function RegisterType(componentType: PTypeInfo): TRegistration; overload;
   end;
 
 
@@ -944,14 +944,14 @@ begin
   fRegistry := registry;
 end;
 
-function TRegistrationManager.RegisterComponent(
+function TRegistrationManager.RegisterType(
   componentType: PTypeInfo): TRegistration;
 begin
   Guard.CheckNotNull(componentType, 'componentType');
   Result := TRegistration.Create(fRegistry, componentType);
 end;
 
-function TRegistrationManager.RegisterComponent<TComponentType>: TRegistration<TComponentType>;
+function TRegistrationManager.RegisterType<TComponentType>: TRegistration<TComponentType>;
 begin
   Result := TRegistration<TComponentType>.Create(fRegistry);
 end;

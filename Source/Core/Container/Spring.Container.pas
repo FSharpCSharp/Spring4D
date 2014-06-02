@@ -86,9 +86,6 @@ type
     function RegisterType(serviceType, componentType: PTypeInfo;
       const name: string = ''): TRegistration; overload;
 
-    function RegisterComponent<TComponentType>: TRegistration<TComponentType>; overload; deprecated 'Use RegisterType';
-    function RegisterComponent(componentType: PTypeInfo): TRegistration; overload; deprecated 'Use RegisterType';
-
     procedure Build;
 
     function Resolve<T>: T; overload;
@@ -301,20 +298,10 @@ begin
   Result := fServiceResolver;
 end;
 
-function TContainer.RegisterComponent(componentType: PTypeInfo): TRegistration;
-begin
-  Result := fRegistrationManager.RegisterComponent(componentType);
-end;
-
-function TContainer.RegisterComponent<TComponentType>: TRegistration<TComponentType>;
-begin
-  Result := fRegistrationManager.RegisterComponent<TComponentType>;
-end;
-
 function TContainer.RegisterInstance<TServiceType>(
   const instance: TServiceType): TRegistration<TServiceType>;
 begin
-  Result := fRegistrationManager.RegisterComponent<TServiceType>;
+  Result := fRegistrationManager.RegisterType<TServiceType>;
   Result := Result.DelegateTo(
     function: TServiceType
     begin
@@ -324,25 +311,25 @@ end;
 
 function TContainer.RegisterType<TComponentType>: TRegistration<TComponentType>;
 begin
-  Result := fRegistrationManager.RegisterComponent<TComponentType>;
+  Result := fRegistrationManager.RegisterType<TComponentType>;
 end;
 
 function TContainer.RegisterType<TServiceType, TComponentType>(
   const name: string): TRegistration<TComponentType>;
 begin
-  Result := fRegistrationManager.RegisterComponent<TComponentType>;
+  Result := fRegistrationManager.RegisterType<TComponentType>;
   Result := Result.Implements<TServiceType>(name);
 end;
 
 function TContainer.RegisterType(componentType: PTypeInfo): TRegistration;
 begin
-  Result := fRegistrationManager.RegisterComponent(componentType);
+  Result := fRegistrationManager.RegisterType(componentType);
 end;
 
 function TContainer.RegisterType(serviceType, componentType: PTypeInfo;
   const name: string): TRegistration;
 begin
-  Result := fRegistrationManager.RegisterComponent(componentType);
+  Result := fRegistrationManager.RegisterType(componentType);
   Result := Result.Implements(serviceType, name);
 end;
 
