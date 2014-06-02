@@ -7,6 +7,7 @@ uses
   ,Generics.Collections
   ,Rtti
   ,Core.Interfaces
+  ,Core.Session
   ;
 
 type
@@ -30,8 +31,7 @@ type
 implementation
 
 uses
-  Core.Session
-  ,Core.Exceptions
+  Core.Exceptions
   ,Mapping.RttiExplorer
   ,SQL.Commands.Delete
   ,SQL.Commands.Factory

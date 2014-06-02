@@ -1,4 +1,4 @@
-(*
+﻿(*
 * Copyright (c) 2012, Linas Naginionis
 * Contacts: lnaginionis@gmail.com or support@soundvibe.net
 * All rights reserved.
@@ -45,6 +45,7 @@ type
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
     function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
     function GetSQLDataTypeName(AField: TSQLCreateField): string; override;
+    function GetEscapeFieldnameChar(): Char; override;
   end;
 
 implementation
@@ -70,6 +71,13 @@ end;
 function TMySQLGenerator.GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;
 begin
   Result := '';
+end;
+
+// Pü 2014-06-01:
+// MySQL has the backtick as FieldEscape unless MySQL is set to Ansi mode
+function TMySQLGenerator.GetEscapeFieldnameChar: Char;
+begin
+  Result:='`';
 end;
 
 function TMySQLGenerator.GetQueryLanguage: TQueryLanguage;

@@ -6,6 +6,7 @@ uses
   Core.Interfaces
   ,Rtti
   ,SQL.Types
+  ,Core.Criteria.Restrictions
   ;
 
 type
@@ -77,8 +78,7 @@ type
 implementation
 
 uses
-  Core.Criteria.Restrictions
-  ,Core.Criteria.Order
+  Core.Criteria.Order
   ,Core.Criteria.Criterion.PropertyExpression
   ,Core.Exceptions
   ;

@@ -194,7 +194,10 @@ type
     function Lookup(const KeyFields: string; const KeyValues: Variant;
       const ResultFields: string): Variant; override;
     function GetActiveRecBuf(var RecBuf: TRecordBuffer): Boolean; virtual;
-    {$IF CompilerVersion >= 24}
+    {$IF CompilerVersion >= 25}
+    function GetFieldData(Field: TField; var Buffer: TValueBuffer): Boolean; override;
+    function GetFieldData(Field: TField; var Buffer: TValueBuffer; NativeFormat: Boolean): Boolean; override;
+    {$ELSEIF CompilerVersion >= 24}
     function GetFieldData(Field: TField; Buffer: TValueBuffer): Boolean; override;
     function GetFieldData(Field: TField; Buffer: TValueBuffer; NativeFormat: Boolean): Boolean; override;
     {$ELSE}
@@ -503,22 +506,26 @@ end;
 
 function TAbstractObjectDataset.GetActiveRecBuf(var RecBuf: TRecordBuffer): Boolean;
 begin
+// 2014-06-01, Pue:
+// this Pointer hardcast is needed for XE4 and above and should be no harm below...
+// XE4 and above change the Buffers from TRecordBuffer (PByte) to TRecBuf (NativeInt)
+
   RecBuf := nil;
   case State of
     dsBlockRead, dsBrowse:
       if IsEmpty then
         RecBuf := nil
       else
-        RecBuf := ActiveBuffer;
+        RecBuf := Pointer(ActiveBuffer);
 
     dsNewValue, dsInsert, dsEdit:
-      RecBuf := ActiveBuffer;
+      RecBuf := Pointer(ActiveBuffer);
 
     dsCalcFields, dsInternalCalc:
-      RecBuf := CalcBuffer;
+      RecBuf := Pointer(CalcBuffer);
 
     dsFilter:
-      RecBuf := FFilterBuffer;
+      RecBuf := Pointer(FFilterBuffer);
   end;
   Result := RecBuf <> nil;
 end;
@@ -555,7 +562,10 @@ begin
   Result := inherited GetFieldClass(FieldDef);
 end;
 
-{$IF CompilerVersion >= 24}
+{$IF CompilerVersion >= 25}
+function TAbstractObjectDataset.GetFieldData(Field: TField; var Buffer: TValueBuffer;
+  NativeFormat: Boolean): Boolean;
+{$ELSEIF CompilerVersion >= 24}
 function TAbstractObjectDataset.GetFieldData(Field: TField; Buffer: TValueBuffer;
   NativeFormat: Boolean): Boolean;
 {$ELSE}
@@ -610,7 +620,9 @@ begin
     VariantToBuffer(Field, LData, Buffer, NativeFormat);
 end;
 
-{$IF CompilerVersion >= 24}
+{$IF CompilerVersion >= 25}
+function TAbstractObjectDataset.GetFieldData(Field: TField; var Buffer: TValueBuffer): Boolean;
+{$ELSEIF CompilerVersion >= 24}
 function TAbstractObjectDataset.GetFieldData(Field: TField; Buffer: TValueBuffer): Boolean;
 {$ELSE}
 function TAbstractObjectDataset.GetFieldData(Field: TField; Buffer: Pointer): Boolean;
