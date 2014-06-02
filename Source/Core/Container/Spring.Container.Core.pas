@@ -42,7 +42,6 @@ type
   IComponentBuilder = interface;
   IComponentRegistry = interface;
   IBuilderInspector = interface;
-  IServiceResolver = interface;
   ISubDependencyResolver = interface;
   IDependencyResolver = interface;
   IInjection = interface;
@@ -66,7 +65,6 @@ type
     function GetComponentRegistry: IComponentRegistry;
     function GetDependencyResolver: IDependencyResolver;
     function GetInjectionFactory: IInjectionFactory;
-    function GetServiceResolver: IServiceResolver;
   {$ENDREGION}
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(const name: string): Boolean; overload;
@@ -77,7 +75,20 @@ type
     property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
     property DependencyResolver: IDependencyResolver read GetDependencyResolver;
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
-    property ServiceResolver: IServiceResolver read GetServiceResolver;
+  end;
+
+  IKernelInternal = interface
+    ['{14669EBA-4E57-4DF4-919D-377D8E90144C}']
+    function HasService(serviceType: PTypeInfo): Boolean; overload;
+    function HasService(const name: string): Boolean; overload;
+
+    function Resolve(serviceType: PTypeInfo): TValue; overload;
+    function Resolve(serviceType: PTypeInfo;
+      const arguments: array of TValue): TValue; overload;
+    function Resolve(const name: string): TValue; overload;
+    function Resolve(const name: string;
+      const arguments: array of TValue): TValue; overload;
+    function ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
   end;
 
   /// <summary>
@@ -234,22 +245,6 @@ type
 
     procedure AddSubResolver(const subResolver: ISubDependencyResolver);
     procedure RemoveSubResolver(const subResolver: ISubDependencyResolver);
-  end;
-
-  /// <summary>
-  ///   Resolves services.
-  /// </summary>
-  IServiceResolver = interface
-    ['{14669EBA-4E57-4DF4-919D-377D8E90144C}']
-    function CanResolve(serviceType: PTypeInfo): Boolean; overload;
-    function CanResolve(const name: string): Boolean; overload;
-    function Resolve(serviceType: PTypeInfo): TValue; overload;
-    function Resolve(serviceType: PTypeInfo;
-      const arguments: array of TValue): TValue; overload;
-    function Resolve(const name: string): TValue; overload;
-    function Resolve(const name: string;
-      const arguments: array of TValue): TValue; overload;
-    function ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
   end;
 
   /// <summary>

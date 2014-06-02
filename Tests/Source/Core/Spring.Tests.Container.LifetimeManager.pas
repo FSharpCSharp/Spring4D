@@ -43,7 +43,6 @@ type
     function GetComponentRegistry: IComponentRegistry;
     function GetDependencyResolver: IDependencyResolver;
     function GetInjectionFactory: IInjectionFactory;
-    function GetServiceResolver: IServiceResolver;
   public
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(const name: string): Boolean; overload;
@@ -53,7 +52,6 @@ type
     property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
     property DependencyResolver: IDependencyResolver read GetDependencyResolver;
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
-    property ServiceResolver: IServiceResolver read GetServiceResolver;
   end;
 
   TMockActivator = class(TInterfaceBase, IComponentActivator)
@@ -264,11 +262,6 @@ end;
 function TMockContext.GetInjectionFactory: IInjectionFactory;
 begin
   raise Exception.Create('GetInjectionFactory');
-end;
-
-function TMockContext.GetServiceResolver: IServiceResolver;
-begin
-  raise Exception.Create('GetServiceResolver');
 end;
 
 function TMockContext.HasService(const name: string): Boolean;

@@ -255,7 +255,7 @@ begin
           value: TValue;
         begin
           list := TList<TObject>.Create;
-          for value in fKernel.ServiceResolver.ResolveAll(elementTypeInfo) do
+          for value in (fKernel as IKernelInternal).ResolveAll(elementTypeInfo) do
             list.Add(value.AsObject);
           Result := TValue.From<TList<TObject>>(list);
         end;
@@ -270,7 +270,7 @@ begin
           value: TValue;
         begin
           list := TList<IInterface>.Create;
-          for value in fKernel.ServiceResolver.ResolveAll(elementTypeInfo) do
+          for value in (fKernel as IKernelInternal).ResolveAll(elementTypeInfo) do
             list.Add(value.AsInterface);
           Result := TValue.From<TList<IInterface>>(list);
         end;
@@ -430,7 +430,7 @@ begin
       SetLength(arguments, Length(args) - 1);
       for i := 1 to High(args) do
         arguments[i - 1] := TTypedValue.Create(args[i].TypeInfo, args[i]);
-      result := fKernel.ServiceResolver.Resolve(method.ReturnType.Handle, arguments);
+      result := (fKernel as IKernelInternal).Resolve(method.ReturnType.Handle, arguments);
     end;
 
   InternalRegisterFactory(model, invokeEvent);
@@ -450,7 +450,7 @@ begin
       SetLength(arguments, Length(args) - 1);
       for i := 1 to High(args) do
         arguments[i - 1] := TTypedValue.Create(args[i].TypeInfo, args[i]);
-      result := fKernel.ServiceResolver.Resolve(name, arguments);
+      result := (fKernel as IKernelInternal).Resolve(name, arguments);
     end;
 
   InternalRegisterFactory(model, invokeEvent);

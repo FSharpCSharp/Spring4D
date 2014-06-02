@@ -41,11 +41,10 @@ type
   ///	<summary>
   ///	  Represents a Dependency Injection Container.
   ///	</summary>
-  TContainer = class(TInterfaceBase, IKernel)
+  TContainer = class(TInterfaceBase, IKernel, IKernelInternal)
   private
     fRegistry: IComponentRegistry;
     fBuilder: IComponentBuilder;
-    fServiceResolver: IServiceResolver;
     fDependencyResolver: IDependencyResolver;
     fInjectionFactory: IInjectionFactory;
     fRegistrationManager: TRegistrationManager;
@@ -57,19 +56,17 @@ type
   protected
     class constructor Create;
     class destructor Destroy;
-  {$REGION 'Implements IContainerContext'}
+  {$REGION 'Implements IKernel'}
     function GetComponentBuilder: IComponentBuilder;
     function GetComponentRegistry: IComponentRegistry;
     function GetDependencyResolver: IDependencyResolver;
     function GetInjectionFactory: IInjectionFactory;
-    function GetServiceResolver: IServiceResolver;
   {$ENDREGION}
     procedure InitializeInspectors; virtual;
     property ComponentBuilder: IComponentBuilder read GetComponentBuilder;
     property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
     property DependencyResolver: IDependencyResolver read GetDependencyResolver;
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
-    property ServiceResolver: IServiceResolver read GetServiceResolver;
   public
     constructor Create;
     destructor Destroy; override;
@@ -93,8 +90,8 @@ type
     function Resolve<T>(const name: string): T; overload;
     function Resolve<T>(const name: string;
       const arguments: array of TValue): T; overload;
-    function Resolve(typeInfo: PTypeInfo): TValue; overload;
-    function Resolve(typeInfo: PTypeInfo;
+    function Resolve(serviceType: PTypeInfo): TValue; overload;
+    function Resolve(serviceType: PTypeInfo;
       const arguments: array of TValue): TValue; overload;
     function Resolve(const name: string): TValue; overload;
     function Resolve(const name: string;
@@ -168,12 +165,15 @@ uses
   SysUtils,
   TypInfo,
   Spring.Container.Builder,
+  Spring.Container.CreationContext,
   Spring.Container.Common,
   Spring.Container.Injection,
   Spring.Container.LifetimeManager,
   Spring.Container.Resolvers,
   Spring.Container.ResourceStrings,
-  Spring.Helpers;
+  Spring.Helpers,
+  Spring.Reflection;
+
 
 function GlobalContainer: TContainer;
 begin
@@ -198,7 +198,6 @@ begin
   inherited Create;
   fRegistry := TComponentRegistry.Create(Self);
   fBuilder := TComponentBuilder.Create(Self);
-  fServiceResolver := TServiceResolver.Create(Self);
   fDependencyResolver := TDependencyResolver.Create(Self);
   fInjectionFactory := TInjectionFactory.Create;
   fRegistrationManager := TRegistrationManager.Create(fRegistry);
@@ -222,7 +221,6 @@ begin
   fExtensions := nil;
   fInjectionFactory := nil;
   fDependencyResolver := nil;
-  fServiceResolver := nil;
   fBuilder := nil;
   fRegistry := nil;
 
@@ -291,11 +289,6 @@ end;
 function TContainer.GetInjectionFactory: IInjectionFactory;
 begin
   Result := fInjectionFactory;
-end;
-
-function TContainer.GetServiceResolver: IServiceResolver;
-begin
-  Result := fServiceResolver;
 end;
 
 function TContainer.RegisterInstance<TServiceType>(
@@ -376,26 +369,45 @@ begin
   Result := value.AsType<T>;
 end;
 
-function TContainer.Resolve(typeInfo: PTypeInfo): TValue;
+function TContainer.Resolve(serviceType: PTypeInfo): TValue;
 begin
-  Result := fServiceResolver.Resolve(typeInfo);
+  Result := Resolve(serviceType, []);
 end;
 
-function TContainer.Resolve(typeInfo: PTypeInfo;
+function TContainer.Resolve(serviceType: PTypeInfo;
   const arguments: array of TValue): TValue;
+var
+  model: TComponentModel;
+  context: ICreationContext;
+  dependency: TRttiType;
 begin
-  Result := fServiceResolver.Resolve(typeInfo, arguments);
+  model := fRegistry.FindDefault(serviceType);
+  context := TCreationContext.Create(model, arguments);
+  dependency := TType.GetType(serviceType);
+  Result := fDependencyResolver.Resolve(context, dependency, nil);
 end;
 
 function TContainer.Resolve(const name: string): TValue;
 begin
-  Result := fServiceResolver.Resolve(name);
+  Result := Resolve(name, []);
 end;
 
 function TContainer.Resolve(const name: string;
   const arguments: array of TValue): TValue;
+var
+  model: TComponentModel;
+  serviceType: PTypeInfo;
+  dependency: TRttiType;
+  context: ICreationContext;
 begin
-  Result := fServiceResolver.Resolve(name, arguments);
+  model := fRegistry.FindOne(name);
+  if not Assigned(model) then
+    raise EResolveException.CreateResFmt(@SInvalidServiceName, [name]);
+  serviceType := model.GetServiceType(name);
+
+  dependency := TType.GetType(serviceType);
+  context := TCreationContext.Create(model, arguments);
+  Result := fDependencyResolver.Resolve(context, dependency, name);
 end;
 
 function TContainer.ResolveAll<TServiceType>: TArray<TServiceType>;
@@ -403,15 +415,37 @@ var
   values: TArray<TValue>;
   i: Integer;
 begin
-  values := fServiceResolver.ResolveAll(TypeInfo(TServiceType));
+  values := ResolveAll(TypeInfo(TServiceType));
   SetLength(Result, Length(values));
   for i := Low(values) to High(values) do
     Result[i] := TValueArray(values)[i].AsType<TServiceType>;
 end;
 
 function TContainer.ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
+var
+  context: ICreationContext;
+  dependency: TRttiType;
+  modelType: PTypeInfo;
+  models: IEnumerable<TComponentModel>;
+  i: Integer;
+  model: TComponentModel;
 begin
-  Result := fServiceResolver.ResolveAll(serviceType);
+  dependency := TType.GetType(serviceType);
+  // TODO: remove dependency on lazy type
+  if TType.IsLazy(serviceType) then
+    modelType := dependency.GetGenericArguments[0].Handle
+  else
+    modelType := serviceType;
+  models := fRegistry.FindAll(modelType);
+  SetLength(Result, models.Count);
+  i := 0;
+  for model in models do
+  begin
+    context := TCreationContext.Create(model, []);
+    Result[i] := fDependencyResolver.Resolve(
+      context, dependency, model.GetServiceName(modelType));
+    Inc(i);
+  end;
 end;
 
 {$IFNDEF AUTOREFCOUNT}

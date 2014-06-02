@@ -46,6 +46,8 @@ type
       const dependency: TRttiType; const argument: TValue): Boolean;
     function CanResolveFromSubResolvers(const context: ICreationContext;
       const dependency: TRttiType; const argument: TValue): Boolean;
+    function InternalResolveValue(typeInfo: PTypeInfo;
+      const instance: TValue): TValue;
   public
     constructor Create(const kernel: IKernel);
 
@@ -65,24 +67,6 @@ type
 
     procedure AddSubResolver(const subResolver: ISubDependencyResolver);
     procedure RemoveSubResolver(const subResolver: ISubDependencyResolver);
-  end;
-
-  TServiceResolver = class(TInterfacedObject, IServiceResolver)
-  private
-    fKernel: IKernel;
-    fRegistry: IComponentRegistry;
-  public
-    constructor Create(const kernel: IKernel);
-
-    function CanResolve(serviceType: PTypeInfo): Boolean; overload;
-    function CanResolve(const name: string): Boolean; overload;
-    function Resolve(serviceType: PTypeInfo): TValue; overload;
-    function Resolve(serviceType: PTypeInfo;
-      const arguments: array of TValue): TValue; overload;
-    function Resolve(const name: string): TValue; overload;
-    function Resolve(const name: string;
-      const arguments: array of TValue): TValue; overload;
-    function ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
   end;
 
   TLazyResolver = class(TInterfacedObject, ISubDependencyResolver)
@@ -128,49 +112,6 @@ uses
   Spring.Container.ResourceStrings,
   Spring.Helpers;
 
-// TODO: move these routines to appropriate classes/interfaces
-procedure CheckCircularDependency(const context: ICreationContext;
-  const model: TComponentModel);
-begin
-  Guard.CheckNotNull(context, 'context');
-  Guard.CheckNotNull(model, 'model');
-
-  if context.IsInResolution(model) then
-    raise ECircularDependencyException.CreateResFmt(
-      @SCircularDependencyDetected, [model.ComponentType.Name]);
-end;
-
-function ResolveValue(typeInfo: PTypeInfo; const instance: TValue): TValue;
-var
-  localInterface: Pointer;
-begin
-  Guard.CheckNotNull(typeInfo, 'typeInfo');
-  Guard.CheckNotNull(not instance.IsEmpty, 'instance');
-
-  case typeInfo.Kind of
-    tkClass, tkRecord:
-      Result := instance;
-    tkInterface:
-    begin
-      if instance.IsObject then
-        instance.AsObject.GetInterface(GetTypeData(typeInfo).Guid, localInterface)
-      else
-      begin
-        if TType.IsDelegate(typeInfo) then
-        begin
-          localInterface := nil;
-          IInterface(localInterface) := instance.AsInterface;
-        end
-        else
-          instance.AsInterface.QueryInterface(GetTypeData(typeInfo).Guid, localInterface);
-      end;
-      TValue.MakeWithoutCopy(@localInterface, typeInfo, Result);
-    end;
-  else
-    Result := nil;
-  end;
-end;
-
 
 {$REGION 'TDependencyResolver'}
 
@@ -182,14 +123,44 @@ begin
   fSubResolvers := TCollections.CreateInterfaceList<ISubDependencyResolver>;
 end;
 
-procedure TDependencyResolver.AddSubResolver(const subResolver: ISubDependencyResolver);
+procedure TDependencyResolver.AddSubResolver(
+  const subResolver: ISubDependencyResolver);
 begin
   fSubResolvers.Add(subResolver);
 end;
 
-procedure TDependencyResolver.RemoveSubResolver(const subResolver: ISubDependencyResolver);
+procedure TDependencyResolver.RemoveSubResolver(
+  const subResolver: ISubDependencyResolver);
 begin
   fSubResolvers.Remove(subResolver);
+end;
+
+function TDependencyResolver.InternalResolveValue(
+  typeInfo: PTypeInfo; const instance: TValue): TValue;
+var
+  intf: Pointer;
+begin
+  Guard.CheckNotNull(typeInfo, 'typeInfo');
+  Guard.CheckNotNull(not instance.IsEmpty, 'instance');
+
+  if typeInfo.Kind = tkInterface then
+  begin
+    if instance.IsObject then
+      instance.AsObject.GetInterface(GetTypeData(typeInfo).Guid, intf)
+    else
+    begin
+      if TType.IsDelegate(typeInfo) then
+      begin
+        intf := nil;
+        IInterface(intf) := instance.AsInterface;
+      end
+      else
+        instance.AsInterface.QueryInterface(GetTypeData(typeInfo).Guid, intf);
+    end;
+    TValue.MakeWithoutCopy(@intf, typeInfo, Result);
+  end
+  else
+    Result := instance;
 end;
 
 function TDependencyResolver.CanResolve(const context: ICreationContext;
@@ -272,7 +243,7 @@ begin
     context.LeaveResolution(model);
   end;
 
-  Result := ResolveValue(dependency.Handle, instance);
+  Result := InternalResolveValue(dependency.Handle, instance);
 end;
 
 function TDependencyResolver.CanResolve(const context: ICreationContext;
@@ -350,97 +321,6 @@ begin
   begin
     for i := 0 to High(dependencies) do
       Result[i] := Resolve(context, dependencies[i], nil);
-  end;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TServiceResolver'}
-
-constructor TServiceResolver.Create(const kernel: IKernel);
-begin
-  Guard.CheckNotNull(kernel, 'kernel');
-  inherited Create;
-  fKernel := kernel;
-  fRegistry := fkernel.ComponentRegistry;
-end;
-
-function TServiceResolver.CanResolve(serviceType: PTypeInfo): Boolean;
-begin
-  Result := fRegistry.HasService(serviceType);
-end;
-
-function TServiceResolver.CanResolve(const name: string): Boolean;
-begin
-  Result := fRegistry.HasService(name);
-end;
-
-function TServiceResolver.Resolve(serviceType: PTypeInfo): TValue;
-begin
-  Result := Resolve(serviceType, []);
-end;
-
-function TServiceResolver.Resolve(serviceType: PTypeInfo;
-  const arguments: array of TValue): TValue;
-var
-  model: TComponentModel;
-  context: ICreationContext;
-  dependency: TRttiType;
-begin
-  model := fRegistry.FindDefault(serviceType);
-  context := TCreationContext.Create(model, arguments);
-  dependency := TType.GetType(serviceType);
-  Result := fKernel.DependencyResolver.Resolve(context, dependency, nil);
-end;
-
-function TServiceResolver.Resolve(const name: string): TValue;
-begin
-  Result := Resolve(name, []);
-end;
-
-function TServiceResolver.Resolve(const name: string;
-  const arguments: array of TValue): TValue;
-var
-  model: TComponentModel;
-  serviceType: PTypeInfo;
-  dependency: TRttiType;
-  context: ICreationContext;
-begin
-  model := fRegistry.FindOne(name);
-  if not Assigned(model) then
-    raise EResolveException.CreateResFmt(@SInvalidServiceName, [name]);
-  serviceType := model.GetServiceType(name);
-
-  dependency := TType.GetType(serviceType);
-  context := TCreationContext.Create(model, arguments);
-  Result := fKernel.DependencyResolver.Resolve(context, dependency, name);
-end;
-
-function TServiceResolver.ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
-var
-  context: ICreationContext;
-  dependency: TRttiType;
-  modelType: PTypeInfo;
-  models: IEnumerable<TComponentModel>;
-  i: Integer;
-  model: TComponentModel;
-begin
-  dependency := TType.GetType(serviceType);
-  // TODO: remove dependency on lazy type
-  if TType.IsLazy(serviceType) then
-    modelType := dependency.GetGenericArguments[0].Handle
-  else
-    modelType := serviceType;
-  models := fRegistry.FindAll(modelType);
-  SetLength(Result, models.Count);
-  i := 0;
-  for model in models do
-  begin
-    context := TCreationContext.Create(model, []);
-    Result[i] := fKernel.DependencyResolver.Resolve(
-      context, dependency, model.GetServiceName(modelType));
-    Inc(i);
   end;
 end;
 
