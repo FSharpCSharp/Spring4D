@@ -342,7 +342,7 @@ end;
 function TLazyResolver.CanResolve(const context: ICreationContext;
   const dependency: TRttiType; const argument: TValue): Boolean;
 begin
-  Result := TType.IsLazy(dependency.Handle) and fKernel.DependencyResolver.CanResolve(
+  Result := TType.IsLazy(dependency.Handle) and fKernel.Resolver.CanResolve(
     context, dependency.GetGenericArguments[0], argument);
 end;
 
@@ -356,7 +356,7 @@ begin
   factory :=
     function: TObject
     begin
-      Result := fKernel.DependencyResolver.Resolve(context, dependency, value).AsObject;
+      Result := fKernel.Resolver.Resolve(context, dependency, value).AsObject;
     end;
 
   case lazyKind of
@@ -376,7 +376,7 @@ begin
   factory :=
     function: IInterface
     begin
-      Result := fKernel.DependencyResolver.Resolve(context, dependency, value).AsInterface;
+      Result := fKernel.Resolver.Resolve(context, dependency, value).AsInterface;
     end;
 
   case lazyKind of
@@ -434,7 +434,7 @@ end;
 function TDynamicArrayResolver.CanResolve(const context: ICreationContext;
   const dependency: TRttiType; const argument: TValue): Boolean;
 begin
-  Result := dependency.IsDynamicArray and fKernel.DependencyResolver.CanResolve(
+  Result := dependency.IsDynamicArray and fKernel.Resolver.CanResolve(
     context, dependency.AsDynamicArray.ElementType, Low(Integer));
 end;
 
@@ -462,7 +462,7 @@ begin
   i := 0;
   for model in models do
   begin
-    values[i] := fKernel.DependencyResolver.Resolve(
+    values[i] := fKernel.Resolver.Resolve(
       context, dependencyType, model.GetServiceName(modelType.Handle));
     Inc(i);
   end;

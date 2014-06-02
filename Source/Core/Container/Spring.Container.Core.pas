@@ -63,8 +63,8 @@ type
   {$REGION 'Property Accessors'}
     function GetComponentBuilder: IComponentBuilder;
     function GetComponentRegistry: IComponentRegistry;
-    function GetDependencyResolver: IDependencyResolver;
     function GetInjectionFactory: IInjectionFactory;
+    function GetResolver: IDependencyResolver;
   {$ENDREGION}
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(const name: string): Boolean; overload;
@@ -73,8 +73,8 @@ type
 
     property ComponentBuilder: IComponentBuilder read GetComponentBuilder;
     property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
-    property DependencyResolver: IDependencyResolver read GetDependencyResolver;
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
+    property Resolver: IDependencyResolver read GetResolver;
   end;
 
   IKernelInternal = interface
@@ -653,8 +653,7 @@ begin
   SetLength(dependencies, Length(parameters));
   for i := 0 to High(dependencies) do
     dependencies[i] := parameters[i].ParamType;
-  Result := fKernel.DependencyResolver.CanResolve(
-    nil, dependencies, fArguments);
+  Result := fKernel.Resolver.CanResolve(nil, dependencies, fArguments);
 end;
 
 {$ENDREGION}

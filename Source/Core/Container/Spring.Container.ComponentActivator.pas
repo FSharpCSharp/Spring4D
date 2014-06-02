@@ -104,7 +104,7 @@ var
 begin
   for injection in injections do
   begin
-    arguments := Kernel.DependencyResolver.Resolve(
+    arguments := Kernel.Resolver.Resolve(
       context, injection.Dependencies, injection.Arguments);
     injection.Inject(instance, arguments);
   end;
@@ -124,7 +124,7 @@ begin
   injection := SelectEligibleConstructor(context);
   if injection = nil then
     raise EActivatorException.CreateRes(@SUnsatisfiedConstructor);
-  arguments := Kernel.DependencyResolver.Resolve(
+  arguments := Kernel.Resolver.Resolve(
     context, injection.Dependencies, injection.Arguments);
   Result := TActivator.CreateInstance(
     Model.ComponentType.AsInstance, injection.Target.AsMethod, arguments);
@@ -173,7 +173,7 @@ var
   injection: IInjection;
 begin
   Result := context.TryHandle(candidate, injection)
-    and Kernel.DependencyResolver.CanResolve(
+    and Kernel.Resolver.CanResolve(
       context, injection.Dependencies, injection.Arguments);
   if Result then
     winner := injection;

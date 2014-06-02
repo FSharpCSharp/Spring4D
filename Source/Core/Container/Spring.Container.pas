@@ -45,9 +45,9 @@ type
   private
     fRegistry: IComponentRegistry;
     fBuilder: IComponentBuilder;
-    fDependencyResolver: IDependencyResolver;
     fInjectionFactory: IInjectionFactory;
     fRegistrationManager: TRegistrationManager;
+    fResolver: IDependencyResolver;
     fExtensions: IList<IContainerExtension>;
     class var GlobalInstance: TContainer;
     function GetKernel: IKernel;
@@ -59,14 +59,14 @@ type
   {$REGION 'Implements IKernel'}
     function GetComponentBuilder: IComponentBuilder;
     function GetComponentRegistry: IComponentRegistry;
-    function GetDependencyResolver: IDependencyResolver;
     function GetInjectionFactory: IInjectionFactory;
+    function GetResolver: IDependencyResolver;
   {$ENDREGION}
     procedure InitializeInspectors; virtual;
     property ComponentBuilder: IComponentBuilder read GetComponentBuilder;
     property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
-    property DependencyResolver: IDependencyResolver read GetDependencyResolver;
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
+    property Resolver: IDependencyResolver read GetResolver;
   public
     constructor Create;
     destructor Destroy; override;
@@ -198,14 +198,14 @@ begin
   inherited Create;
   fRegistry := TComponentRegistry.Create(Self);
   fBuilder := TComponentBuilder.Create(Self);
-  fDependencyResolver := TDependencyResolver.Create(Self);
   fInjectionFactory := TInjectionFactory.Create;
   fRegistrationManager := TRegistrationManager.Create(fRegistry);
+  fResolver := TDependencyResolver.Create(Self);
   fExtensions := TCollections.CreateInterfaceList<IContainerExtension>;
   InitializeInspectors;
 
-  fDependencyResolver.AddSubResolver(TLazyResolver.Create(Self));
-  fDependencyResolver.AddSubResolver(TDynamicArrayResolver.Create(Self));
+  fResolver.AddSubResolver(TLazyResolver.Create(Self));
+  fResolver.AddSubResolver(TDynamicArrayResolver.Create(Self));
 end;
 
 destructor TContainer.Destroy;
@@ -219,8 +219,8 @@ begin
   // CleanupInstance (which on android produces a lots of AVs probably due
   // to calling virtual __ObjRelease on almost destroyed object)
   fExtensions := nil;
+  fResolver := nil;
   fInjectionFactory := nil;
-  fDependencyResolver := nil;
   fBuilder := nil;
   fRegistry := nil;
 
@@ -281,14 +281,14 @@ begin
   Result := Self;
 end;
 
-function TContainer.GetDependencyResolver: IDependencyResolver;
-begin
-  Result := fDependencyResolver;
-end;
-
 function TContainer.GetInjectionFactory: IInjectionFactory;
 begin
   Result := fInjectionFactory;
+end;
+
+function TContainer.GetResolver: IDependencyResolver;
+begin
+  Result := fResolver;
 end;
 
 function TContainer.RegisterInstance<TServiceType>(
@@ -384,7 +384,7 @@ begin
   model := fRegistry.FindDefault(serviceType);
   context := TCreationContext.Create(model, arguments);
   dependency := TType.GetType(serviceType);
-  Result := fDependencyResolver.Resolve(context, dependency, nil);
+  Result := fResolver.Resolve(context, dependency, nil);
 end;
 
 function TContainer.Resolve(const name: string): TValue;
@@ -407,7 +407,7 @@ begin
 
   dependency := TType.GetType(serviceType);
   context := TCreationContext.Create(model, arguments);
-  Result := fDependencyResolver.Resolve(context, dependency, name);
+  Result := fResolver.Resolve(context, dependency, name);
 end;
 
 function TContainer.ResolveAll<TServiceType>: TArray<TServiceType>;
@@ -442,7 +442,7 @@ begin
   for model in models do
   begin
     context := TCreationContext.Create(model, []);
-    Result[i] := fDependencyResolver.Resolve(
+    Result[i] := fResolver.Resolve(
       context, dependency, model.GetServiceName(modelType));
     Inc(i);
   end;
