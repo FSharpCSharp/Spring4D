@@ -419,6 +419,11 @@ type
     ///	</remarks>
     function GetGenericArguments: TArray<TRttiType>;
 
+    /// <summary>
+    ///   Returns a string that represents a generic type definition.
+    /// </summary>
+    function GetGenericTypeDefinition: string;
+
     ///	<summary>
     ///	  Gets an enumerable collection which contains all constructor methods
     ///	  of the type, including inherited.
@@ -1115,6 +1120,18 @@ begin
   begin
     Result[i] := TType.FindType(elements[i]);
   end;
+end;
+
+function TRttiTypeHelper.GetGenericTypeDefinition: string;
+var
+  s: string;
+  i: Integer;
+begin
+  s := Name;
+  i := Pos('<', s);
+  if i = 0 then
+    raise EInvalidOperationException.CreateResFmt(@SNotGenericType, [Name]);
+  Result := Copy(s, 0, i) + '>';
 end;
 
 function TRttiTypeHelper.GetAncestorCount: Integer;
