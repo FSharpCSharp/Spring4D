@@ -52,7 +52,6 @@ type
     fServiceTypeMappings: IDictionary<PTypeInfo, IList<TComponentModel>>;
     fServiceNameMappings: IDictionary<string, TComponentModel>;
   protected
-    function BuildActivatorDelegate(elementTypeInfo: PTypeInfo; out componentType: TRttiType): TActivatorDelegate;
     procedure CheckIsNonGuidInterface(serviceType: TRttiType);
 {$IFDEF DELPHIXE_UP}
     procedure InternalRegisterFactory(const model: TComponentModel;
@@ -241,45 +240,6 @@ begin
   inherited Destroy;
 end;
 
-function TComponentRegistry.BuildActivatorDelegate(elementTypeInfo: PTypeInfo;
-  out componentType: TRttiType): TActivatorDelegate;
-begin
-  case elementTypeInfo.Kind of
-    tkClass:
-    begin
-      componentType := fRttiContext.GetType(TypeInfo(TList<TObject>));
-      Result :=
-        function: TValue
-        var
-          list: TList<TObject>;
-          value: TValue;
-        begin
-          list := TList<TObject>.Create;
-          for value in (fKernel as IKernelInternal).ResolveAll(elementTypeInfo) do
-            list.Add(value.AsObject);
-          Result := TValue.From<TList<TObject>>(list);
-        end;
-    end;
-    tkInterface:
-    begin
-      componentType := fRttiContext.GetType(TypeInfo(TList<IInterface>));
-      Result :=
-        function: TValue
-        var
-          list: TList<IInterface>;
-          value: TValue;
-        begin
-          list := TList<IInterface>.Create;
-          for value in (fKernel as IKernelInternal).ResolveAll(elementTypeInfo) do
-            list.Add(value.AsInterface);
-          Result := TValue.From<TList<IInterface>>(list);
-        end;
-    end
-  else
-    raise ERegistrationException.CreateResFmt(@SUnsupportedType, [componentType.Name]);
-  end;
-end;
-
 procedure TComponentRegistry.CheckIsNonGuidInterface(serviceType: TRttiType);
 begin
   if serviceType.IsInterface and not serviceType.AsInterface.HasGuid
@@ -461,19 +421,11 @@ function TComponentRegistry.RegisterComponent(
   componentTypeInfo: PTypeInfo): TComponentModel;
 var
   componentType: TRttiType;
-  elementTypeInfo: PTypeInfo;
-  activatorDelegate: TActivatorDelegate;
 begin
   Guard.CheckNotNull(componentTypeInfo, 'componentTypeInfo');
 
   componentType := fRttiContext.GetType(componentTypeInfo);
-  if componentType.IsDynamicArray then
-  begin
-    elementTypeInfo := componentType.AsDynamicArray.ElementType.Handle;
-    activatorDelegate := BuildActivatorDelegate(elementTypeInfo, componentType);
-  end;
   Result := TComponentModel.Create(fKernel, componentType);
-  Result.ActivatorDelegate := activatorDelegate;
   fModels.Add(Result);
 end;
 

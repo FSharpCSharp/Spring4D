@@ -103,11 +103,27 @@ type
       const argument: TValue): TValue;
   end;
 
+  TListResolver = class(TInterfacedObject, ISubDependencyResolver)
+  private
+    fKernel: IKernel;
+  public
+    constructor Create(const kernel: IKernel);
+
+    function CanResolve(const context: ICreationContext;
+      const dependency: TRttiType;
+      const argument: TValue): Boolean;
+    function Resolve(const context: ICreationContext;
+      const dependency: TRttiType;
+      const argument: TValue): TValue;
+  end;
+
 implementation
 
 uses
+  StrUtils,
   SysUtils,
   TypInfo,
+  Spring.Collections.Lists,
   Spring.Container.CreationContext,
   Spring.Container.ResourceStrings,
   Spring.Helpers;
@@ -471,5 +487,48 @@ end;
 
 {$ENDREGION}
 
+
+{$REGION 'TListResolver'}
+
+constructor TListResolver.Create(const kernel: IKernel);
+begin
+  inherited Create;
+  fKernel := kernel;
+end;
+
+function TListResolver.CanResolve(const context: ICreationContext;
+  const dependency: TRttiType; const argument: TValue): Boolean;
+const
+  SupportedTypes: array[0..2] of string = (
+    'IList<>', 'ICollection<>', 'IEnumerable<>');
+begin
+  Result := dependency.IsGenericType
+    and MatchText(dependency.GetGenericTypeDefinition, SupportedTypes)
+    and (dependency.GetGenericArguments[0].TypeKind in [tkClass, tkInterface]);
+end;
+
+function TListResolver.Resolve(const context: ICreationContext;
+  const dependency: TRttiType; const argument: TValue): TValue;
+var
+  itemType: TRttiType;
+  arrayType: TRttiType;
+  values: TValue;
+begin
+  itemType := dependency.GetGenericArguments[0];
+  arrayType := TType.FindType('TArray<' + itemType.DefaultName + '>');
+  values := (fKernel as IKernelInternal).Resolve(arrayType.Handle);
+  case itemType.TypeKind of
+    tkClass:
+    begin
+      TValueData(values).FTypeInfo := TypeInfo(TArray<TObject>);
+      Result := TValue.From(TList<TObject>.Create(values.AsType<TArray<TObject>>())).Cast(dependency.Handle);
+    end;
+    tkInterface:
+    begin
+      TValueData(values).FTypeInfo := TypeInfo(TArray<IInterface>);
+      Result := TValue.From(TList<IInterface>.Create(values.AsType<TArray<IInterface>>())).Cast(dependency.Handle);
+    end;
+  end;
+end;
 
 end.

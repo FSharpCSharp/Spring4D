@@ -206,6 +206,7 @@ begin
 
   fResolver.AddSubResolver(TLazyResolver.Create(Self));
   fResolver.AddSubResolver(TDynamicArrayResolver.Create(Self));
+  fResolver.AddSubResolver(TListResolver.Create(Self));
 end;
 
 destructor TContainer.Destroy;

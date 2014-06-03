@@ -1716,7 +1716,6 @@ var
 begin
   fContainer.RegisterType<ICollectionService, TCollectionServiceB>;
   fContainer.RegisterType<IInterface, TCollectionServiceB>;
-  fContainer.RegisterType<IEnumerable<ICollectionItem>, TArray<ICollectionItem>>;
 
   fContainer.Build;
   service := fContainer.Resolve<ICollectionService>;
