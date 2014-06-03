@@ -1403,6 +1403,7 @@ end;
 function TValueHelper.TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
 var
   typeData: PTypeData;
+  obj: TObject;
 begin
   if not (Kind in [tkClass, tkInterface]) then
     Exit(False);
@@ -1414,7 +1415,14 @@ begin
   begin
     typeData := GetTypeData(typeInfo);
     if Kind = tkClass then
-      Exit(Self.FData.FAsObject.GetInterface(typeData.Guid, Intf));
+    begin
+{$IFDEF AUTOREFCOUNT}
+      Self.FData.FValueData.ExtractRawData(@obj);
+{$ELSE}
+      obj := TObject(Self.FData.FAsObject);
+{$ENDIF}
+      Exit(obj.GetInterface(typeData.Guid, Intf));
+    end;
     Result := False;
     typeData := Self.TypeData;
     while Assigned(typeData) and Assigned(typeData.IntfParent) do
