@@ -195,6 +195,8 @@ begin
     if model.ComponentType.TryGetCustomAttribute<LifetimeAttributeBase>(attribute) then
     begin
       model.LifetimeType := attribute.LifetimeType;
+      if attribute is SingletonAttributeBase then
+        model.RefCounting := SingletonAttributeBase(attribute).RefCounting;
 {$WARN SYMBOL_EXPERIMENTAL OFF}
       if attribute is PooledAttribute then
       begin

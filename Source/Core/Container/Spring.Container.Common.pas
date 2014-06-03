@@ -134,6 +134,14 @@ type
     property LifetimeType: TLifetimeType read fLifetimeType;
   end;
 
+  SingletonAttributeBase = class abstract(LifetimeAttributeBase)
+  private
+    fRefCounting: TRefCounting;
+  public
+    constructor Create(lifetimeType: TLifetimeType; refCounting: TRefCounting);
+    property RefCounting: TRefCounting read fRefCounting;
+  end;
+
   ///	<summary>
   ///	  Applies this attribute when a component shares the single instance.
   ///	</summary>
@@ -153,9 +161,9 @@ type
   ///	<seealso cref="SingletonPerThreadAttribute" />
   ///	<seealso cref="PooledAttribute" />
   ///	<seealso cref="TLifetimeType" />
-  SingletonAttribute = class(LifetimeAttributeBase)
+  SingletonAttribute = class(SingletonAttributeBase)
   public
-    constructor Create;
+    constructor Create(refCounting: TRefCounting = TRefCounting.Unknown);
   end;
 
   ///	<summary>
@@ -184,9 +192,9 @@ type
   ///	<seealso cref="TransientAttribute" />
   ///	<seealso cref="PooledAttribute" />
   ///	<seealso cref="TLifetimeType" />
-  SingletonPerThreadAttribute = class(LifetimeAttributeBase)
+  SingletonPerThreadAttribute = class(SingletonAttributeBase)
   public
-    constructor Create;
+    constructor Create(refCounting: TRefCounting = TRefCounting.Unknown);
   end;
 
   ///	<summary>
@@ -348,11 +356,20 @@ begin
   fLifetimeType := lifetimeType;
 end;
 
+{ SingletonAttributeBase }
+
+constructor SingletonAttributeBase.Create(lifetimeType: TLifetimeType;
+  refCounting: TRefCounting);
+begin
+  inherited Create(lifetimeType);
+  fRefCounting := refCounting;
+end;
+
 { SingletonAttribute }
 
-constructor SingletonAttribute.Create;
+constructor SingletonAttribute.Create(refCounting: TRefCounting);
 begin
-  inherited Create(TLifetimeType.Singleton);
+  inherited Create(TLifetimeType.Singleton, refCounting);
 end;
 
 { TransientAttribute }
@@ -364,9 +381,9 @@ end;
 
 { SingletonPerThreadAttribute }
 
-constructor SingletonPerThreadAttribute.Create;
+constructor SingletonPerThreadAttribute.Create(refCounting: TRefCounting);
 begin
-  inherited Create(TLifetimeType.SingletonPerThread);
+  inherited Create(TLifetimeType.SingletonPerThread, refCounting);
 end;
 
 { PooledAttribute }
