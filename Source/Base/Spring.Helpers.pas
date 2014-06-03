@@ -1378,11 +1378,8 @@ var
   intf: IInterface;
 begin
   if TryAsInterface(typeInfo, intf) then
-  begin
-    Result := Self;
-    TValueData(Result).FTypeInfo := typeInfo;
-  end else
-  if not TryCast(typeInfo, Result) then
+    TValue.Make(@intf, typeInfo, Result)
+  else if not TryCast(typeInfo, Result) then
     raise EInvalidCast.CreateRes(@SInvalidCast);
 end;
 
@@ -1390,7 +1387,7 @@ function TValueHelper.TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
 var
   typeData: PTypeData;
 begin
-  if Kind <> tkInterface then
+  if not (Kind in [tkClass, tkInterface]) then
     Exit(False);
   if typeInfo.Kind <> tkInterface then
     Exit(False);
@@ -1398,6 +1395,9 @@ begin
     Result := True
   else
   begin
+    typeData := GetTypeData(typeInfo);
+    if Kind = tkClass then
+      Exit(Self.FData.FAsObject.GetInterface(typeData.Guid, Intf));
     Result := False;
     typeData := Self.TypeData;
     while Assigned(typeData) and Assigned(typeData.IntfParent) do
