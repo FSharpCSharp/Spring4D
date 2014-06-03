@@ -121,9 +121,8 @@ type
 
     {$ENDREGION}
 
-    function AsSingleton: TRegistration; overload;
-    function AsSingleton(refCounting: TRefCounting): TRegistration; overload;
-    function AsSingletonPerThread: TRegistration;
+    function AsSingleton(refCounting: TRefCounting = TRefCounting.Unknown): TRegistration;
+    function AsSingletonPerThread(refCounting: TRefCounting = TRefCounting.Unknown): TRegistration;
     function AsTransient: TRegistration;
     function AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration; {$IFDEF CPUARM}experimental;{$ENDIF}
 
@@ -171,9 +170,8 @@ type
 
   {$ENDREGION}
 
-    function AsSingleton: TRegistration<T>; overload;
-    function AsSingleton(refCounting: TRefCounting): TRegistration<T>; overload;
-    function AsSingletonPerThread: TRegistration<T>;
+    function AsSingleton(refCounting: TRefCounting = TRefCounting.Unknown): TRegistration<T>;
+    function AsSingletonPerThread(refCounting: TRefCounting = TRefCounting.Unknown): TRegistration<T>;
     function AsTransient: TRegistration<T>;
     function AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration<T>; {$IFDEF CPUARM}experimental;{$ENDIF}
 
@@ -666,24 +664,17 @@ begin
   Result := Self;
 end;
 
-function TRegistration.AsSingleton: TRegistration;
-begin
-  Result := AsSingleton(TRefCounting.Unknown);
-end;
-
 function TRegistration.AsSingleton(refCounting: TRefCounting): TRegistration;
 begin
-  if (refCounting = TRefCounting.True) and fModel.ComponentType.IsInstance
-    and not Supports(fModel.ComponentType.AsInstance.MetaclassType, IInterface) then
-    raise ERegistrationException.CreateResFmt(@SMissingInterface, [fModel.ComponentType.Name]);
   fModel.LifetimeType := TLifetimeType.Singleton;
   fModel.RefCounting := refCounting;
   Result := Self;
 end;
 
-function TRegistration.AsSingletonPerThread: TRegistration;
+function TRegistration.AsSingletonPerThread(refCounting: TRefCounting): TRegistration;
 begin
   fModel.LifetimeType := TLifetimeType.SingletonPerThread;
+  fModel.RefCounting := refCounting;
   Result := Self;
 end;
 
@@ -839,21 +830,15 @@ begin
   Result := Self;
 end;
 
-function TRegistration<T>.AsSingleton: TRegistration<T>;
-begin
-  fRegistration.AsSingleton;
-  Result := Self;
-end;
-
 function TRegistration<T>.AsSingleton(refCounting: TRefCounting): TRegistration<T>;
 begin
   fRegistration.AsSingleton(refCounting);
   Result := Self;
 end;
 
-function TRegistration<T>.AsSingletonPerThread: TRegistration<T>;
+function TRegistration<T>.AsSingletonPerThread(refCounting: TRefCounting): TRegistration<T>;
 begin
-  fRegistration.AsSingletonPerThread;
+  fRegistration.AsSingletonPerThread(refCounting);
   Result := Self;
 end;
 

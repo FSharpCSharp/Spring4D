@@ -250,6 +250,7 @@ type
     fFieldInjections: IInjectionList;
     function GetComponentTypeInfo: PTypeInfo;
     function GetInjectionFactory: IInjectionFactory;
+    procedure SetRefCounting(const value: TRefCounting);
   protected
     function GetServices: IDictionary<string, PTypeInfo>;
     function GetConstructorInjections: IInjectionList;
@@ -288,7 +289,7 @@ type
     property Services: IDictionary<string, PTypeInfo> read GetServices;
     property MinPoolsize: Integer read fMinPoolsize write fMinPoolsize;
     property MaxPoolsize: Integer read fMaxPoolsize write fMaxPoolsize;
-    property RefCounting: TRefCounting read fRefCounting write fRefCounting;
+    property RefCounting: TRefCounting read fRefCounting write SetRefCounting;
 
     property LifetimeType: TLifetimeType read fLifetimeType write fLifetimeType;
     property LifetimeManager: ILifetimeManager read fLifetimeManager write fLifetimeManager;
@@ -488,6 +489,14 @@ var
 begin
   Inject := InjectProperty(propertyName);
   Inject.InitializeArguments(value);
+end;
+
+procedure TComponentModel.SetRefCounting(const value: TRefCounting);
+begin
+  if (value = TRefCounting.True) and fComponentType.IsInstance
+    and not Supports(fComponentType.AsInstance.MetaclassType, IInterface) then
+    raise ERegistrationException.CreateResFmt(@SMissingInterface, [fComponentType.DefaultName]);
+  fRefCounting := Value;
 end;
 
 procedure TComponentModel.InjectField(const fieldName: string;
