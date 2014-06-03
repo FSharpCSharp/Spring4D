@@ -44,6 +44,8 @@ type
     class var FSerializerFormat: TSvSerializeFormat;
   protected
     class constructor Create;
+
+    function GetPrefix(ATable: TSQLTable): string; virtual;
   public
     function GetQueryLanguage(): TQueryLanguage; override;
     function GenerateSelect(ASelectCommand: TSelectCommand): string; override;
@@ -73,6 +75,7 @@ uses
   Core.Exceptions
   ,Core.Utils
   ,SvSerializerSuperJson
+  ,SysUtils
   ;
 
 
@@ -100,12 +103,12 @@ end;
 
 function TNoSQLGenerator.GenerateDelete(ADeleteCommand: TDeleteCommand): string;
 begin
-  Result := '';
+  Result := 'D' + GetPrefix(ADeleteCommand.Table) +'{"_id": #$}';
 end;
 
 function TNoSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
 begin
-  Result := '_id';
+  Result := '';
 end;
 
 function TNoSQLGenerator.GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;
@@ -115,13 +118,15 @@ end;
 
 function TNoSQLGenerator.GenerateGetQueryCount(const ASql: string): string;
 begin
-  Result := '';
+  Result := 'count' + Copy(ASql, 2, Length(ASql));
 end;
 
 function TNoSQLGenerator.GenerateInsert(AInsertCommand: TInsertCommand): string;
 begin
-  Assert(Assigned(AInsertCommand.Entity));
+  if (AInsertCommand.Entity = nil) then
+    Exit('');
   TSvSerializer.SerializeObject(AInsertCommand.Entity, Result, FSerializerFormat);
+  Result := 'I' + GetPrefix(AInsertCommand.Table) + Result;
 end;
 
 function TNoSQLGenerator.GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string;
@@ -130,19 +135,40 @@ begin
 end;
 
 function TNoSQLGenerator.GenerateSelect(ASelectCommand: TSelectCommand): string;
+var
+  LField: TSQLField;
+  i: Integer;
 begin
   Result := '';
+  i := 0;
+
+  for LField in ASelectCommand.WhereFields do
+  begin
+    if i <> 0 then
+      Result := Result + ',';
+
+    Inc(i);
+    Result := Result + AnsiQuotedStr(LField.Fieldname, '"') + ' : ' + '#$';
+  end;
+  Result := 'S' + GetPrefix(ASelectCommand.Table) + '{' +  Result + '}';
 end;
 
 function TNoSQLGenerator.GenerateUpdate(AUpdateCommand: TUpdateCommand): string;
 begin
-  Assert(Assigned(AUpdateCommand.Entity));
+  if (AUpdateCommand.Entity = nil) then
+    Exit('');
   TSvSerializer.SerializeObject(AUpdateCommand.Entity, Result, FSerializerFormat);
+  Result := 'U' + GetPrefix(AUpdateCommand.Table) + Result;
 end;
 
 function TNoSQLGenerator.GetEscapeFieldnameChar: Char;
 begin
   Result := '"';
+end;
+
+function TNoSQLGenerator.GetPrefix(ATable: TSQLTable): string;
+begin
+  Result := '[' + ATable.Name + ']';
 end;
 
 function TNoSQLGenerator.GetQueryLanguage: TQueryLanguage;
@@ -162,7 +188,7 @@ end;
 
 function TNoSQLGenerator.GetSQLTableCount(const ATablename: string): string;
 begin
-  Result := '';
+  Result := 'count' + '[' + ATablename + ']';
 end;
 
 function TNoSQLGenerator.GetSQLTableExists(const ATablename: string): string;

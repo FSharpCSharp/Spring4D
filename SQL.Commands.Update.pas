@@ -93,6 +93,7 @@ begin
   end;
 
   FCommand.SetTable(FColumns);
+  FCommand.Entity := AEntity;
 
   SQL := Generator.GenerateUpdate(FCommand);
 

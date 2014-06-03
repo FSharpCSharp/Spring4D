@@ -66,6 +66,15 @@ type
       Index:IBSONDocument;
       Options:IBSONDocument=nil
     );
+
+    function RunCommand(
+      CmdObj: IBSONDocument
+    ):IBSONDocument;
+    function Count(const Collection: WideString): integer;
+    function Distinct(const Collection, Key: WideString;
+      Query: IBSONDocument=nil): OleVariant;
+    function Eval(const Collection, JSFn: WideString;
+      const Args: array of Variant; NoLock: boolean=false):OleVariant;
   end;
 
   TMongoWireQuery=class(TBSONDocumentsEnumerator)
@@ -98,6 +107,7 @@ type
   EMongoNotConnected=class(EMongoException);
   EMongoTransferError=class(EMongoException);
   EMongoQueryError=class(EMongoException);
+  EMongoCommandError=class(EMongoException);
 
 const
   mongoWire_QueryFlag_TailableCursor  = $0002;
@@ -162,6 +172,15 @@ begin
   FWriteLock.Free;
   FReadLock.Free;
   inherited;
+end;
+
+function TMongoWire.Distinct(const Collection, Key: WideString; Query: IBSONDocument): OleVariant;
+var
+  d:IBSONDocument;
+begin
+  d:=BSON(['distinct',Collection,'key',Key]);
+  if Query<>nil then d['query']:=Query;
+  Result:=RunCommand(d)['values'];
 end;
 
 procedure TMongoWire.Open(const ServerName: string; Port: integer);
@@ -256,6 +275,11 @@ begin
   Result:=r;
 end;
 
+function TMongoWire.Count(const Collection: WideString): integer;
+begin
+  Result:=RunCommand(BSON(['count',Collection]))['n'];
+end;
+
 procedure TMongoWire.ReadMsg(RequestID:integer);
 const
   dSize=$10000;
@@ -336,6 +360,26 @@ begin
   finally
     FReadLock.Leave;
   end;
+end;
+
+function TMongoWire.RunCommand(CmdObj: IBSONDocument): IBSONDocument;
+begin
+  Result:=Get('$cmd',CmdObj);
+  if Result['ok']<>1 then
+    try
+      if VarIsNull(Result['errmsg']) then
+        raise EMongoCommandError.Create('Unspecified error with "'+
+          VarToStr(CmdObj.ToVarArray[0,0])+'"')
+      else
+        raise EMongoCommandError.Create('Command "'+
+          VarToStr(CmdObj.ToVarArray[0,0])+'" failed: '+
+          VarToStr(Result['errmsg']));
+    except
+      on EMongoCommandError do
+        raise;
+      on Exception do
+        raise EMongoCommandError.Create('Command failed');
+    end;
 end;
 
 function TMongoWire.Get(const Collection: WideString; QryObj,
@@ -533,6 +577,12 @@ begin
   end;
 
   Insert(Database + '.' + mongoWire_Db_SystemIndexCollection, Document);
+end;
+
+function TMongoWire.Eval(const Collection, JSFn: WideString; const Args: array of Variant; NoLock: boolean): OleVariant;
+begin
+  Result:=RunCommand(BSON(['eval',bsonJavaScriptCodePrefix+
+    JSFn,'args',VarArrayOf(Args)]))['retval'];
 end;
 
 { TMongoWireQuery }

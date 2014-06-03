@@ -89,7 +89,7 @@ type
 
   EMongoDBStatementAdapterException = Exception;
 
-  TMongoStatementType = (mstInsert, mstUpdate, mstDelete, mstSelect);
+  TMongoStatementType = (mstInsert, mstUpdate, mstDelete, mstSelect, mstSelectCount);
 
   {$REGION 'Documentation'}
   ///	<summary>
@@ -100,8 +100,10 @@ type
   private
     FStmtText: string;
     FStmtType: TMongoStatementType;
+    FFullCollectionName: string;
   protected
     function GetStatementType(var AStatementText: string): TMongoStatementType; virtual;
+    function GetFullCollectionName(): string; virtual;
   public
     constructor Create(const AStatement: TMongoDBQuery); override;
     destructor Destroy; override;
@@ -154,12 +156,13 @@ uses
   ,Core.ConnectionFactory
   ,bsonUtils
   ,Variants
+  ,TypInfo
   ;
 const
   NAME_COLLECTION = 'UnitTests.MongoAdapter';
 
 var
-  MONGO_STATEMENT_TYPES: array[TMongoStatementType] of string = ('I', 'U', 'D', 'S');
+  MONGO_STATEMENT_TYPES: array[TMongoStatementType] of string = ('I', 'U', 'D', 'S', 'count');
 
 { TMongoDBConnection }
 
@@ -260,12 +263,12 @@ var
 begin
   inherited;
   LDoc := JsonToBson(FStmtText);
-  {TODO -oLinas -cMongoDB : get table name, update selectors, etc.}
   case FStmtType of
-    mstInsert: Statement.Owner.Insert(NAME_COLLECTION, LDoc);
-    mstUpdate: Statement.Owner.Update(NAME_COLLECTION, LDoc, LDoc);
-    mstDelete: Statement.Owner.Delete(NAME_COLLECTION, LDoc);
-    mstSelect: Statement.Query(NAME_COLLECTION, LDoc);
+    mstInsert: Statement.Owner.Insert(GetFullCollectionName(), LDoc);
+    mstUpdate: Statement.Owner.Update(GetFullCollectionName(), nil, LDoc);
+    mstDelete: Statement.Owner.Delete(GetFullCollectionName(), LDoc);
+    mstSelect: Statement.Query(GetFullCollectionName(), LDoc);
+   // mstSelectCount: Statement.Owner.RunCommand(BSON(['count',GetFullCollectionName]))[LDoc];
   end;
   Result := 1;
 end;
@@ -279,14 +282,23 @@ begin
   LQuery := TMongoDBQuery.Create(Statement.Owner);
   LResultset := TMongoResultSetAdapter.Create(LQuery);
   LResultset.Document := JsonToBson(FStmtText);
-  LQuery.Query(NAME_COLLECTION, LResultset.Document);
+  LQuery.Query(GetFullCollectionName(), LResultset.Document);
   Result := LResultset;
+end;
+
+function TMongoStatementAdapter.GetFullCollectionName: string;
+begin
+  Result := FFullCollectionName;
 end;
 
 function TMongoStatementAdapter.GetStatementType(var AStatementText: string): TMongoStatementType;
 var
   LIdentifier: string;
+  LStartIndex, LEndIndex: Integer;
 begin
+  if Length(AStatementText) = 0 then
+    AStatementText := 'S';
+
   LIdentifier := AStatementText[1];
   if LIdentifier = 'I' then
     Result := mstInsert
@@ -294,15 +306,35 @@ begin
     Result := mstUpdate
   else if LIdentifier = 'D' then
     Result := mstDelete
+  else if (StartsStr('count', AStatementText)) then
+  begin
+    LIdentifier := 'count';
+    Result := mstSelectCount;
+  end
   else
     Result := mstSelect;
 
-  AStatementText := Copy(AStatementText, 2, Length(AStatementText));
+  LStartIndex := PosEx('[', AStatementText);
+  LEndIndex := PosEx(']', AStatementText);
+  FFullCollectionName := Copy(AStatementText, LStartIndex+1, LEndIndex - LStartIndex-1);
+
+  AStatementText := Copy(AStatementText, Length(FFullCollectionName) + 2 + Length(LIdentifier) + 1, Length(AStatementText));
 end;
 
 procedure TMongoStatementAdapter.SetParams(Params: TObjectList<TDBParam>);
+var
+  LParam: TDBParam;
+  LValue: string;
 begin
   inherited;
+  for LParam in Params do
+  begin
+    LValue := LParam.Value;
+    case VarType(LParam.Value) of
+      varString, varUString, varStrArg, varOleStr: LValue := AnsiQuotedStr(LValue, '"');
+    end;
+    FStmtText := StringReplace(FStmtText, '#$', LValue, []);
+  end;
 end;
 
 procedure TMongoStatementAdapter.SetSQLCommand(const ACommandText: string);
@@ -418,5 +450,8 @@ function TMongoDBQuery.GetConnection: TMongoDBConnection;
 begin
   Result := FConnection;
 end;
+
+initialization
+  TConnectionFactory.RegisterConnection<TMongoConnectionAdapter>(dtMongo);
 
 end.

@@ -12,10 +12,27 @@ unit TestAdapterMongoDB;
 interface
 
 uses
-  TestFramework, Core.Interfaces, bsonDoc, Generics.Collections, mongoWire, Core.Base,
-  SysUtils, Mapping.Attributes, SQL.Params, Adapters.MongoDB, mongoId;
+  TestFramework, Core.Interfaces, bsonDoc, Generics.Collections, mongoWire, Core.Base, SvSerializer,
+  SysUtils, Mapping.Attributes, SQL.Params, Adapters.MongoDB, mongoId, Core.Session, SQL.Interfaces;
 
 type
+
+  [Table('MongoTest', 'UnitTests')]
+  TMongoAdapter = class
+  private
+    [Column('_id', [cpNotNull, cpPrimaryKey])]
+    FId: Int64;
+
+    FKey: Int64;
+  public
+    [Column('KEY')]
+    [SvSerialize('KEY')]
+    property Key: Int64 read FKey write FKey;
+
+    [SvSerialize('_id')]
+    property Id: Int64 read FId write FId;
+  end;
+
   // Test methods for class TMongoResultSetAdapter
   TBaseMongoTest = class(TTestCase)
   private
@@ -88,6 +105,22 @@ type
     procedure TestGetDriverName;
   end;
 
+  TestMongoSession = class(TTestCase)
+  private
+    FConnection: IDBConnection;
+    FMongoConnection: TMongoDBConnection;
+    FManager: TSession;
+  public
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure First();
+    procedure FindAll();
+    procedure Save_Update_Delete();
+    procedure Page();
+    procedure Performance();
+  end;
+
 implementation
 
 uses
@@ -95,23 +128,28 @@ uses
   ,ShellAPI
   ,Forms
   ,Messages
+  ,Core.ConnectionFactory
+  ,SQL.Generator.MongoDB
+  ,Variants
+  ,Diagnostics
+  ,SPring.Collections
   ;
 
 const
   CT_KEY = 'KEY';
-  NAME_COLLECTION = 'UnitTests.MongoAdapter';
+  NAME_COLLECTION = 'UnitTests.MongoTest';
 
 
 
 
 procedure InsertObject(AConnection: TMongoDBConnection; const AValue: Variant);
 begin
-  AConnection.Insert(NAME_COLLECTION, BSON([CT_KEY, AValue]));
+  AConnection.Insert(NAME_COLLECTION, BSON([CT_KEY, AValue, '_id', 1]));
 end;
 
 procedure RemoveObject(AConnection: TMongoDBConnection; const AValue: Variant);
 begin
-  AConnection.Delete(NAME_COLLECTION, BSON([CT_KEY, AValue]));
+  AConnection.Delete(NAME_COLLECTION, BSON(['_id', 1]));
 end;
 
 procedure TestTMongoResultSetAdapter.FetchValue(const AValue: Variant);
@@ -240,7 +278,7 @@ var
   LJson: string;
   LResult: Variant;
 begin
-  LJson := 'I{"KEY": 1}';
+  LJson := 'I[UnitTests.MongoTest]{"KEY": 1}';
   FMongoStatementAdapter.SetSQLCommand(LJson);
   FMongoStatementAdapter.Execute;
 
@@ -260,7 +298,7 @@ var
   LJson: string;
   LResult: Variant;
 begin
-  LJson := 'I{"KEY": 1}';
+  LJson := 'I[UnitTests.MongoTest]{"KEY": 1}';
   FMongoStatementAdapter.SetSQLCommand(LJson);
   FMongoStatementAdapter.Execute;
 
@@ -274,7 +312,7 @@ var
   LResult: Variant;
   LResultset: IDBResultset;
 begin
-  LJson := 'I{"KEY": 1}';
+  LJson := 'I[UnitTests.MongoTest]{"KEY": 1}';
   FMongoStatementAdapter.SetSQLCommand(LJson);
   LResultset := FMongoStatementAdapter.ExecuteQuery;
   LResult := LResultset.GetFieldValue(0);
@@ -381,6 +419,168 @@ begin
   inherited;
 end;
 
+{ TestMongoSession }
+
+procedure TestMongoSession.FindAll;
+var
+  LKey: TMongoAdapter;
+  LKeys: IList<TMongoAdapter>;
+begin
+  LKey := TMongoAdapter.Create;
+  try
+    LKey.Id := 1;
+    LKey.Key := 100;
+
+    FManager.Save(LKey);
+
+    LKey.Id := 2;
+    LKey.Key := 900;
+
+    FManager.Save(LKey);
+
+    LKeys := FManager.FindAll<TMongoAdapter>();
+    CheckEquals(2, LKeys.Count);
+
+    FManager.Delete(LKey);
+    LKey.Id := 1;
+    FManager.Delete(LKey);
+  finally
+    LKey.Free;
+  end;
+end;
+
+procedure TestMongoSession.First;
+var
+  LKey: TMongoAdapter;
+begin
+  InsertObject(FMongoConnection, 100);
+  LKey := nil;
+  try
+    LKey := FManager.FindOne<TMongoAdapter>(1);
+    CheckEquals(100, LKey.Key);
+  finally
+    RemoveObject(FMongoConnection, 100);
+    LKey.Free;
+  end;
+end;
+
+procedure TestMongoSession.Page;
+var
+  LPage: IDBPage<TMongoAdapter>;
+  LKey: TMongoAdapter;
+begin
+  // TODO: implement paging
+  LKey := TMongoAdapter.Create;
+  try
+    LKey.Id := 1;
+    LKey.Key := 100;
+
+    FManager.Save(LKey);
+
+    LKey.Id := 2;
+    LKey.Key := 900;
+
+    FManager.Save(LKey);
+
+    LPage := FManager.Page<TMongoAdapter>(1, 10);
+    CheckEquals(2, LPage.Items.Count);
+  finally
+    FManager.Delete(LKey);
+    LKey.Id := 1;
+    FManager.Delete(LKey);
+    LKey.Free;
+  end;
+end;
+
+procedure TestMongoSession.Performance;
+var
+  LKey: TMongoAdapter;
+  i, iCount: Integer;
+  sw : TStopwatch;
+begin
+  iCount := 10000;
+  sw := TStopwatch.StartNew;
+  for i := 1 to iCount do
+  begin
+    LKey := TMongoAdapter.Create;
+    try
+      LKey.FId := i;
+      LKey.Key := i + 1;
+      FManager.Save(LKey);
+    finally
+      LKey.Free;
+    end;
+  end;
+  sw.Stop;
+  Status(Format('Saved %D simple entities in %D ms', [iCount, sw.ElapsedMilliseconds]));
+  FManager.Execute('D[UnitTests.MongoTest]{}', []); //delete all
+end;
+
+procedure TestMongoSession.Save_Update_Delete;
+var
+  LKey: TMongoAdapter;
+begin
+  LKey := TMongoAdapter.Create();
+  try
+    LKey.FId := 2;
+    LKey.Key := 100;
+
+    FManager.Save(LKey);
+    LKey.Free;
+
+    LKey := FManager.FindOne<TMongoAdapter>(2);
+    CheckEquals(100, LKey.Key);
+
+    LKey.Key := 999;
+    FManager.Save(LKey);
+    LKey.Free;
+
+    LKey := FManager.FindOne<TMongoAdapter>(2);
+    CheckEquals(999, LKey.Key);
+
+
+    FManager.Delete(LKey);
+  finally
+    LKey.Free;
+  end;
+  LKey := FManager.FindOne<TMongoAdapter>(2);
+  CheckNull(LKey);
+end;
+
+procedure TestMongoSession.SetUp;
+begin
+  inherited;
+  FMongoConnection := TMongoDBConnection.Create;
+  FMongoConnection.Open();
+  FConnection := TConnectionFactory.GetInstance(dtMongo, FMongoConnection);
+  FConnection.AutoFreeConnection := True;
+  FConnection.SetQueryLanguage(qlMongoDB);
+  FManager := TSession.Create(FConnection);
+  FManager.Execute('D[UnitTests.MongoTest]{}', []); //delete all
+  if DebugHook <> 0 then
+  begin
+    FConnection.AddExecutionListener(
+    procedure(const ACommand: string; const AParams: TObjectList<TDBParam>)
+    var
+      i: Integer;
+    begin
+      Status(ACommand);
+      for i := 0 to AParams.Count - 1 do
+      begin
+        Status(Format('%2:D Param %0:S = %1:S', [AParams[i].Name, VarToStrDef(AParams[i].Value, 'NULL'), i]));
+      end;
+      Status('-----');
+    end);
+  end;
+end;
+
+procedure TestMongoSession.TearDown;
+begin
+  inherited;
+  FManager.Free;
+  FConnection := nil;
+end;
+
 initialization
   if DirectoryExists(TestTMongoConnectionAdapter.DirMongoDB) then
   begin
@@ -397,6 +597,7 @@ initialization
       RegisterTest(TestTMongoResultSetAdapter.Suite);
       RegisterTest(TestTMongoStatementAdapter.Suite);
       RegisterTest(TestTMongoConnectionAdapter.Suite);
+      RegisterTest(TestMongoSession.Suite);
     end;
   end;
 
