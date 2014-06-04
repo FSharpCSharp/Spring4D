@@ -199,7 +199,7 @@ begin
   try
     LStmt.SetParams(SQLParameters);
 
-    if (SQL = '') then
+    if (Trim(SQL) = '') then
     begin
       SQL := Generator.GenerateInsert(FCommand);
       LStmt.SetSQLCommand(SQL);

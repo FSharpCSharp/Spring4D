@@ -34,6 +34,11 @@ uses
   , Mapping.Attributes, bsonDoc, Generics.Collections;
 
 type
+  TPageInfo = record
+    Limit: Integer;
+    Offset: Integer;
+  end;
+
   {TODO -oLinas -cGeneral : finish implementing proper mongo db connection adapter}
   {$REGION 'Documentation'}
   ///	<summary>
@@ -47,6 +52,8 @@ type
     procedure SetConnected(const Value: Boolean);
   public
     property Connected: Boolean read GetConnected write SetConnected;
+
+    function CountQuery(const Collection: WideString; const AQuery: IBSONDocument): IBSONDocument;
   end;
 
   {$REGION 'Documentation'}
@@ -72,6 +79,7 @@ type
   TMongoResultSetAdapter = class(TDriverResultSetAdapter<TMongoDBQuery>)
   private
     FDoc: IBSONDocument;
+    FIsInjected: Boolean;
   public
     constructor Create(const ADataset: TMongoDBQuery); override;
     destructor Destroy; override;
@@ -85,11 +93,12 @@ type
     function FieldnameExists(const AFieldName: string): Boolean; override;
 
     property Document: IBSONDocument read FDoc write FDoc;
+    property IsInjected: Boolean read FIsInjected write FIsInjected;
   end;
 
   EMongoDBStatementAdapterException = Exception;
 
-  TMongoStatementType = (mstInsert, mstUpdate, mstDelete, mstSelect, mstSelectCount);
+  TMongoStatementType = (mstInsert, mstUpdate, mstDelete, mstSelect, mstSelectCount, mtPage);
 
   {$REGION 'Documentation'}
   ///	<summary>
@@ -104,6 +113,7 @@ type
   protected
     function GetStatementType(var AStatementText: string): TMongoStatementType; virtual;
     function GetFullCollectionName(): string; virtual;
+    function GetStatementPageInfo(const AStatement: string; out APageInfo: TPageInfo): string; virtual;
   public
     constructor Create(const AStatement: TMongoDBQuery); override;
     destructor Destroy; override;
@@ -162,9 +172,22 @@ const
   NAME_COLLECTION = 'UnitTests.MongoAdapter';
 
 var
-  MONGO_STATEMENT_TYPES: array[TMongoStatementType] of string = ('I', 'U', 'D', 'S', 'count');
+  MONGO_STATEMENT_TYPES: array[TMongoStatementType] of string = ('I', 'U', 'D', 'S', 'count', 'page');
 
 { TMongoDBConnection }
+
+function TMongoDBConnection.CountQuery(const Collection: WideString; const AQuery: IBSONDocument): IBSONDocument;
+var
+  LDoc: IBSONDocument;
+begin
+  LDoc := BSON(['count', GetCollectionFromFullName(Collection)]);
+
+  if AQuery.GetFieldCount > 0 then
+    LDoc['query'] := AQuery;
+
+
+  Result:=RunCommand(GetNamespaceFromFullName(Collection), LDoc); //['n'];
+end;
 
 function TMongoDBConnection.GetConnected: Boolean;
 begin
@@ -234,7 +257,7 @@ end;
 
 function TMongoResultSetAdapter.IsEmpty: Boolean;
 begin
-  Result := not Dataset.Next(FDoc);
+  Result := not IsInjected and not Dataset.Next(FDoc);
 end;
 
 function TMongoResultSetAdapter.Next: Boolean;
@@ -264,11 +287,11 @@ begin
   inherited;
   LDoc := JsonToBson(FStmtText);
   case FStmtType of
-    mstInsert: Statement.Owner.Insert(GetFullCollectionName(), LDoc);
-    mstUpdate: Statement.Owner.Update(GetFullCollectionName(), nil, LDoc);
-    mstDelete: Statement.Owner.Delete(GetFullCollectionName(), LDoc);
+    mstInsert: Statement.Connection.Insert(GetFullCollectionName(), LDoc);
+    mstUpdate: Statement.Connection.Update(GetFullCollectionName(), nil, LDoc);
+    mstDelete: Statement.Connection.Delete(GetFullCollectionName(), LDoc);
     mstSelect: Statement.Query(GetFullCollectionName(), LDoc);
-   // mstSelectCount: Statement.Owner.RunCommand(BSON(['count',GetFullCollectionName]))[LDoc];
+    mstSelectCount: Statement.Connection.CountQuery(GetFullCollectionName(), LDoc);
   end;
   Result := 1;
 end;
@@ -277,12 +300,33 @@ function TMongoStatementAdapter.ExecuteQuery(AServerSideCursor: Boolean): IDBRes
 var
   LQuery: TMongoDBQuery;
   LResultset: TMongoResultSetAdapter;
+  LPageInfo: TPageInfo;
 begin
   inherited;
   LQuery := TMongoDBQuery.Create(Statement.Owner);
+
+  if FStmtType = mtPage then
+  begin
+    FStmtText := GetStatementPageInfo(FStmtText, LPageInfo);
+    LQuery.NumberToReturn := LPageInfo.Limit;
+    LQuery.NumberToSkip := LPageInfo.Offset;
+  end;
+
   LResultset := TMongoResultSetAdapter.Create(LQuery);
   LResultset.Document := JsonToBson(FStmtText);
-  LQuery.Query(GetFullCollectionName(), LResultset.Document);
+  case FStmtType of
+    mstInsert:
+    begin
+      Statement.Connection.Insert(GetFullCollectionName(), LResultset.Document);
+      LResultset.IsInjected := True;
+    end;
+    mstSelect, mtPage: LQuery.Query(GetFullCollectionName(), LResultset.Document);
+    mstSelectCount:
+    begin
+      LResultset.Document := Statement.Connection.CountQuery(GetFullCollectionName(), LResultset.Document);
+      LResultset.IsInjected := True;
+    end;
+  end;
   Result := LResultset;
 end;
 
@@ -291,13 +335,31 @@ begin
   Result := FFullCollectionName;
 end;
 
+function TMongoStatementAdapter.GetStatementPageInfo(const AStatement: string; out APageInfo: TPageInfo): string;
+var
+  iStart, iEnd: Integer;
+begin
+  //ex. page1_10_[Collection]{}
+  iStart := PosEx('_', AStatement);
+  APageInfo.Limit := StrToInt(Copy(AStatement, 5, iStart - 5) );
+  iEnd := PosEx('_', AStatement, iStart+1);
+  APageInfo.Offset := StrToInt( Copy(AStatement, (iEnd - iStart) + 1 + 5, iEnd - ((iEnd - iStart) + 1 + 5)) );
+  iEnd := PosEx(']', AStatement, iEnd);
+  Result := Copy(AStatement, iEnd+1, Length(AStatement));
+end;
+
 function TMongoStatementAdapter.GetStatementType(var AStatementText: string): TMongoStatementType;
 var
   LIdentifier: string;
   LStartIndex, LEndIndex: Integer;
 begin
+  AStatementText := Trim(AStatementText);
   if Length(AStatementText) = 0 then
     AStatementText := 'S';
+
+  LStartIndex := PosEx('[', AStatementText);
+  LEndIndex := PosEx(']', AStatementText);
+  FFullCollectionName := Copy(AStatementText, LStartIndex+1, LEndIndex - LStartIndex-1);
 
   LIdentifier := AStatementText[1];
   if LIdentifier = 'I' then
@@ -311,12 +373,14 @@ begin
     LIdentifier := 'count';
     Result := mstSelectCount;
   end
+  else if (StartsStr('page', AStatementText)) then
+  begin
+    LIdentifier := 'page';
+    Result := mtPage;
+    Exit;
+  end
   else
     Result := mstSelect;
-
-  LStartIndex := PosEx('[', AStatementText);
-  LEndIndex := PosEx(']', AStatementText);
-  FFullCollectionName := Copy(AStatementText, LStartIndex+1, LEndIndex - LStartIndex-1);
 
   AStatementText := Copy(AStatementText, Length(FFullCollectionName) + 2 + Length(LIdentifier) + 1, Length(AStatementText));
 end;

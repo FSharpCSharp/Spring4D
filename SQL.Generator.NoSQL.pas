@@ -108,7 +108,7 @@ end;
 
 function TNoSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
 begin
-  Result := '';
+  Result := ' ';
 end;
 
 function TNoSQLGenerator.GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;
@@ -131,7 +131,7 @@ end;
 
 function TNoSQLGenerator.GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string;
 begin
-  Result := '';
+  Result := Format('page%d_%d_%s', [ALimit, AOffset, Copy(ASql, 2, Length(ASql))]);
 end;
 
 function TNoSQLGenerator.GenerateSelect(ASelectCommand: TSelectCommand): string;

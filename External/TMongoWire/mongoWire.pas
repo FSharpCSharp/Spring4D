@@ -25,6 +25,9 @@ type
     function CloseMsg(Data:TStreamAdapter=nil):integer;//RequestID
     procedure ReadMsg(RequestID:integer);
   public
+    class function GetCollectionFromFullName(const AFullConnectionName: Widestring): WideString; virtual;
+    class function GetNamespaceFromFullName(const AFullConnectionName: WideString): WideString; virtual;
+  public
     constructor Create;
     destructor Destroy; override;
 
@@ -62,12 +65,12 @@ type
     );
     function Ping: Boolean;
     procedure EnsureIndex(
-      const Database,Collection:WideString;
+      const Collection, Namespace:WideString;
       Index:IBSONDocument;
       Options:IBSONDocument=nil
     );
 
-    function RunCommand(
+    function RunCommand(const ANamespace: WideString;
       CmdObj: IBSONDocument
     ):IBSONDocument;
     function Count(const Collection: WideString): integer;
@@ -121,7 +124,7 @@ const
 
 implementation
 
-uses ActiveX, Variants, WinSock;
+uses ActiveX, Variants, WinSock, StrUtils;
 
 const
   OP_REPLY        = 1;
@@ -178,9 +181,9 @@ function TMongoWire.Distinct(const Collection, Key: WideString; Query: IBSONDocu
 var
   d:IBSONDocument;
 begin
-  d:=BSON(['distinct',Collection,'key',Key]);
+  d:=BSON(['distinct',GetCollectionFromFullName(Collection),'key',Key]);
   if Query<>nil then d['query']:=Query;
-  Result:=RunCommand(d)['values'];
+  Result:=RunCommand(GetNamespaceFromFullName(Collection), d)['values'];
 end;
 
 procedure TMongoWire.Open(const ServerName: string; Port: integer);
@@ -277,7 +280,7 @@ end;
 
 function TMongoWire.Count(const Collection: WideString): integer;
 begin
-  Result:=RunCommand(BSON(['count',Collection]))['n'];
+  Result:=RunCommand(GetNamespaceFromFullName(Collection), BSON(['count',GetCollectionFromFullName(Collection)]))['n'];
 end;
 
 procedure TMongoWire.ReadMsg(RequestID:integer);
@@ -362,9 +365,9 @@ begin
   end;
 end;
 
-function TMongoWire.RunCommand(CmdObj: IBSONDocument): IBSONDocument;
+function TMongoWire.RunCommand(const ANamespace: WideString;CmdObj: IBSONDocument): IBSONDocument;
 begin
-  Result:=Get('$cmd',CmdObj);
+  Result:=Get(ANamespace + '.$cmd',CmdObj);
   if Result['ok']<>1 then
     try
       if VarIsNull(Result['errmsg']) then
@@ -421,10 +424,34 @@ begin
     (Result as IPersistStream).Load(FData);
 
     if (p.Flags and $0002)<>0 then
-      raise EMongoQueryError.Create('MongoWire.Get: '+VarToStr(Result.Item['$err']));
+      raise EMongoQueryError.Create('MongoWire.Get: '+VarToStr(Result.Item['$err']) + '. Code: ' + VarToStr(Result.Item['code']));
 
   finally
     FWriteLock.Leave;
+  end;
+end;
+
+class function TMongoWire.GetCollectionFromFullName(const AFullConnectionName: Widestring): WideString;
+var
+  i: Integer;
+begin
+  Result := AFullConnectionName;
+  i := PosEx('.', Result);
+  if (i > 0) then
+  begin
+    Result := Copy(Result, i + 1, Length(Result));
+  end;
+end;
+
+class function TMongoWire.GetNamespaceFromFullName(const AFullConnectionName: WideString): WideString;
+var
+  i: Integer;
+begin
+  Result := AFullConnectionName;
+  i := PosEx('.', Result);
+  if (i > 0) then
+  begin
+    Result := Copy(Result, 1, Length(Result) - i);
   end;
 end;
 
@@ -537,7 +564,7 @@ begin
   end;
 end;
 
-procedure TMongoWire.EnsureIndex(const Database,Collection:WideString;
+procedure TMongoWire.EnsureIndex(const Collection, Namespace:WideString;
   Index:IBSONDocument;Options:IBSONDocument=nil);
 var
   Document: IBSONDocument;
@@ -546,7 +573,7 @@ var
   IndexArray: Variant;
 begin
   Document := BSON([
-    'ns', Database + '.' + Collection,
+    'ns', Namespace + '.' + Collection,
     'key', Index
   ]);
   
@@ -556,7 +583,7 @@ begin
     for I := VarArrayLowBound(IndexArray, 1) to VarArrayHighBound(IndexArray, 1) do
       Name := Name + VarToStr(VarArrayGet(IndexArray, [I, 0])) + '_' + VarToStr(VarArrayGet(IndexArray, [I, 1]));
 
-    if Length(Database + '.' + Collection + '.' + Name) > 128 then
+    if Length(Namespace + '.' + Collection + '.' + Name) > 128 then
       raise Exception.Create('Index name too long, please specify a custom name using the name option.');
 
     Document['name'] := Name;
@@ -576,12 +603,12 @@ begin
       Document['v'] := Options['v'];
   end;
 
-  Insert(Database + '.' + mongoWire_Db_SystemIndexCollection, Document);
+  Insert(Namespace + '.' + mongoWire_Db_SystemIndexCollection, Document);
 end;
 
 function TMongoWire.Eval(const Collection, JSFn: WideString; const Args: array of Variant; NoLock: boolean): OleVariant;
 begin
-  Result:=RunCommand(BSON(['eval',bsonJavaScriptCodePrefix+
+  Result:=RunCommand(GetNamespaceFromFullName(Collection),BSON(['eval',bsonJavaScriptCodePrefix+
     JSFn,'args',VarArrayOf(Args)]))['retval'];
 end;
 
@@ -668,6 +695,7 @@ var
 begin
   if Doc=nil then
     raise EMongoException.Create('MongoWireQuery.Next: Doc required');
+
 
   if FPageIndex=FNumberReturned then
    begin
