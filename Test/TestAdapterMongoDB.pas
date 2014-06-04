@@ -132,6 +132,7 @@ type
     procedure Save_Update_Delete();
     procedure Page();
     procedure AutogenerateId();
+    procedure RawQuery();
     procedure Performance();
   end;
 
@@ -156,9 +157,9 @@ const
 
 
 
-procedure InsertObject(AConnection: TMongoDBConnection; const AValue: Variant);
+procedure InsertObject(AConnection: TMongoDBConnection; const AValue: Variant; AID: Integer = 1);
 begin
-  AConnection.Insert(NAME_COLLECTION, BSON([CT_KEY, AValue, '_id', 1]));
+  AConnection.Insert(NAME_COLLECTION, BSON([CT_KEY, AValue, '_id', AID]));
 end;
 
 procedure RemoveObject(AConnection: TMongoDBConnection; const AValue: Variant);
@@ -542,6 +543,21 @@ begin
   end;
   sw.Stop;
   Status(Format('Saved %D simple entities in %D ms', [iCount, sw.ElapsedMilliseconds]));
+end;
+
+procedure TestMongoSession.RawQuery;
+var
+  LKeys: IList<TMongoAdapter>;
+begin
+  InsertObject(FMongoConnection, 123, 1);
+  //FirstLetter - Operation (S - select, U - update, I - insert, D - delete)
+  //[Namespace.Collection]
+  //{json query}
+  LKeys := FManager.GetList<TMongoAdapter>('S[UnitTests.MongoTest]{"KEY": 123}', []);
+  CheckEquals(123, LKeys[0].Key);
+  InsertObject(FMongoConnection, 124, 2);
+  LKeys := FManager.GetList<TMongoAdapter>('S[UnitTests.MongoTest]{"KEY": {"$gt": 122} }', []);
+  CheckEquals(2, LKeys.Count);
 end;
 
 procedure TestMongoSession.Save_Update_Delete;
