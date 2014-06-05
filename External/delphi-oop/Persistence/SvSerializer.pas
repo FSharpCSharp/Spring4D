@@ -51,11 +51,11 @@ type
   ///	  name.
   ///	</summary>
   {$ENDREGION}
-  SvSerialize = class(TCustomAttribute)
+  SvSerializeAttribute = class(TCustomAttribute)
   private
     FName: string;
   public
-    constructor Create(const AName: string = ''); overload;
+    constructor Create(const AName: string = ''); virtual;
     property Name: string read FName;
   end;
 
@@ -69,7 +69,7 @@ type
 
   ESvSerializeException = class(Exception);
 
-  TSvSerializeFormat = (sstJson = 0, sstSuperJson, sstNativeXML);
+  TSvSerializeFormat = (sstJson = 0, sstSuperJson, sstNativeXML, sstCSV);
 
   ISerializer = interface(IInvokable)
     ['{6E0A63A4-0101-4239-A4A9-E74BC4A97C1C}']
@@ -156,6 +156,11 @@ type
     FObjs: TDictionary<string, TPair<TValue,TStringDynArray>>;
     FSerializeFormat: TSvSerializeFormat;
     FErrors: TList<string>;
+    FCsvDelimiter: Char;
+    FCsvQuoteChar: Char;
+    FCsvFirstLineColumns: Boolean;
+    FCsvWriterUseQuotes: Boolean;
+    FFmtSettings: TFormatSettings;
 
     procedure SetSerializeFormat(const Value: TSvSerializeFormat);
     function GetObject(const AName: string): TObject;
@@ -229,8 +234,8 @@ type
     property Count: Integer read GetCount;
     property Objects[const AName: string]: TObject read GetObject; default;
 
-    class function GetAttribute(AProp: TRttiProperty): SvSerialize;
-    class function TryGetAttribute(AProp: TRttiProperty; out AAtribute: SvSerialize): Boolean;
+    class function GetAttribute(AProp: TRttiProperty): SvSerializeAttribute;
+    class function TryGetAttribute(AProp: TRttiProperty; out AAtribute: SvSerializeAttribute): Boolean;
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -387,6 +392,12 @@ type
 
     property ErrorCount: Integer read GetErrorCount;
     property SerializeFormat: TSvSerializeFormat read FSerializeFormat write SetSerializeFormat;
+
+    property FmtSettings: TFormatSettings read FFmtSettings write FFmtSettings;
+    property CsvDelimiter: Char read FCsvDelimiter write FCsvDelimiter;
+    property CsvQuoteChar: Char read FCsvQuoteChar write FCsvQuoteChar;
+    property CsvFirstLineColumns: Boolean read FCsvFirstLineColumns write FCsvFirstLineColumns;
+    property CsvWriterUseQuotes: Boolean read FCsvWriterUseQuotes write FCsvWriterUseQuotes;
   end;
 
   {$IFDEF SV_HELPERS}
@@ -426,7 +437,7 @@ uses
 
 { SvSerialize }
 
-constructor SvSerialize.Create(const  AName: string);
+constructor SvSerializeAttribute.Create(const  AName: string);
 begin
   inherited Create();
   FName := AName;
@@ -514,6 +525,11 @@ begin
   FSerializeFormat := AFormat;
   FObjs := TDictionary<string, TPair<TValue,TStringDynArray>>.Create();
   FErrors := TList<string>.Create();
+  FFmtSettings := TFormatSettings.Create();
+  FFmtSettings.DecimalSeparator := '.';
+  FFmtSettings.ShortDateFormat := 'yyyy-mm-dd';
+  FFmtSettings.LongDateFormat := 'yyyy-mm-dd hh:mm:ss';
+  FFmtSettings.DateSeparator := '-';
 end;
 
 function TSvSerializer.CreateConcreateSerializer(): ISerializer;
@@ -633,15 +649,15 @@ begin
   end;
 end;
 
-class function TSvSerializer.GetAttribute(AProp: TRttiProperty): SvSerialize;
+class function TSvSerializer.GetAttribute(AProp: TRttiProperty): SvSerializeAttribute;
 var
   LAttr: TCustomAttribute;
 begin
   for LAttr in AProp.GetAttributes do
   begin
-    if LAttr is SvSerialize then
+    if LAttr is SvSerializeAttribute then
     begin
-      Exit(SvSerialize(LAttr));
+      Exit(SvSerializeAttribute(LAttr));
     end;
   end;
   Result := nil;
@@ -830,10 +846,10 @@ begin
 end;
 
 class function TSvSerializer.TryGetAttribute(AProp: TRttiProperty;
-  out AAtribute: SvSerialize): Boolean;
+  out AAtribute: SvSerializeAttribute): Boolean;
 begin
   AAtribute := GetAttribute(AProp);
-  Result := Assigned(AAtribute);
+  Result := Assigned(AAtribute) and (AAtribute.Name <> '');
 end;
 
 function TSvSerializer.UnMarshall<T>(const AFromString: string;

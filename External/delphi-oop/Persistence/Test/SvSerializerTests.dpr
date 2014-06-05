@@ -30,7 +30,11 @@ uses
   SvSerializerAbstract in '..\SvSerializerAbstract.pas',
   SvSerializerFactory in '..\SvSerializerFactory.pas',
   SvSerializerRtti in '..\SvSerializerRtti.pas',
-  SvTesting.DUnit in '..\..\Core\SvTesting.DUnit.pas';
+  SvTesting.DUnit in '..\..\Core\SvTesting.DUnit.pas',
+  TestSvCsvSerializer in 'TestSvCsvSerializer.pas',
+  SvCsvSerializer in '..\SvCsvSerializer.pas',
+  SvCsvParser in '..\SvCsvParser.pas',
+  SvSerializerCsv in '..\SvSerializerCsv.pas';
 
 {$R *.RES}
 

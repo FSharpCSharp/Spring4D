@@ -112,8 +112,8 @@ type
     FFullCollectionName: string;
   protected
     function GetStatementType(var AStatementText: string): TMongoStatementType; virtual;
-    function GetFullCollectionName(): string; virtual;
     function GetStatementPageInfo(const AStatement: string; out APageInfo: TPageInfo): string; virtual;
+    function IsObjectId(const AValue: string): Boolean; virtual;
   public
     constructor Create(const AStatement: TMongoDBQuery); override;
     destructor Destroy; override;
@@ -121,6 +121,8 @@ type
     procedure SetParams(Params: TObjectList<TDBParam>); overload; override;
     function Execute(): NativeUInt; override;
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
+    function GetQueryText(): string;
+    function GetFullCollectionName(): string; virtual;
   end;
 
   {$REGION 'Documentation'}
@@ -139,6 +141,8 @@ type
     function BeginTransaction: IDBTransaction; override;
     function GetDriverName: string; override;
   end;
+
+
 
   {$REGION 'Documentation'}
   ///	<summary>
@@ -335,6 +339,11 @@ begin
   Result := FFullCollectionName;
 end;
 
+function TMongoStatementAdapter.GetQueryText: string;
+begin
+  Result := FStmtText;
+end;
+
 function TMongoStatementAdapter.GetStatementPageInfo(const AStatement: string; out APageInfo: TPageInfo): string;
 var
   iStart, iEnd: Integer;
@@ -385,6 +394,11 @@ begin
   AStatementText := Copy(AStatementText, Length(FFullCollectionName) + 2 + Length(LIdentifier) + 1, Length(AStatementText));
 end;
 
+function TMongoStatementAdapter.IsObjectId(const AValue: string): Boolean;
+begin
+  Result := StartsText('ObjectID("', AValue);
+end;
+
 procedure TMongoStatementAdapter.SetParams(Params: TObjectList<TDBParam>);
 var
   LParam: TDBParam;
@@ -395,7 +409,16 @@ begin
   begin
     LValue := LParam.Value;
     case VarType(LParam.Value) of
-      varString, varUString, varStrArg, varOleStr: LValue := AnsiQuotedStr(LValue, '"');
+      varString, varUString, varStrArg, varOleStr:
+      begin
+        if IsObjectId(LValue) then   //ObjectID("sdsd457845")
+        begin
+          LValue := ReplaceStr(LValue, '"', '\"');
+          LValue := Format('"%S"', [LValue]);
+        end
+        else
+          LValue := AnsiQuotedStr(LValue, '"');
+      end;
     end;
     FStmtText := StringReplace(FStmtText, '#$', LValue, []);
   end;

@@ -99,4 +99,18 @@
   {$define D15UP}
 {$endif}
 
+// Delphi XE4 / 18
+{$ifdef VER250}
+  {$define D7UP}
+  {$define D10UP}
+  {$define D15UP}
+{$endif}
+
+// Delphi XE5 / 18
+{$ifdef VER260}
+  {$define D7UP}
+  {$define D10UP}
+  {$define D15UP}
+{$endif}
+
 

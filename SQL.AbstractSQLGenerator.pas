@@ -56,8 +56,21 @@ type
     function GetTableColumns(const ATableName: string): string; virtual; abstract;
     function GetSQLTableExists(const ATablename: string): string; virtual; abstract;
     function GetEscapeFieldnameChar(): Char; virtual; abstract;
+    function GenerateUniqueId(): Variant; virtual;
   end;
 
 implementation
+
+uses
+  SysUtils
+  ,Variants
+  ;
+
+{ TAbstractSQLGenerator }
+
+function TAbstractSQLGenerator.GenerateUniqueId: Variant;
+begin
+  Result := Null;
+end;
 
 end.

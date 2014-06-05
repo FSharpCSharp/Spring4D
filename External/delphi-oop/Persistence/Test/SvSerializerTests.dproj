@@ -1,7 +1,7 @@
 ﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 		<PropertyGroup>
 			<ProjectGuid>{02350FD4-4415-41B3-8C9B-644DA5EDA8A4}</ProjectGuid>
-			<ProjectVersion>14.3</ProjectVersion>
+			<ProjectVersion>14.6</ProjectVersion>
 			<MainSource>SvSerializerTests.dpr</MainSource>
 			<Base>True</Base>
 			<Config Condition="'$(Config)'==''">Debug</Config>
@@ -20,12 +20,6 @@
 			<CfgParent>Base</CfgParent>
 			<Base>true</Base>
 		</PropertyGroup>
-		<PropertyGroup Condition="'$(Platform)'=='Win32' and '$(Cfg_1)'=='true' or '$(Cfg_1_Win32)'!=''">
-			<Cfg_1_Win32>true</Cfg_1_Win32>
-			<CfgParent>Cfg_1</CfgParent>
-			<Cfg_1>true</Cfg_1>
-			<Base>true</Base>
-		</PropertyGroup>
 		<PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_2)'!=''">
 			<Cfg_2>true</Cfg_2>
 			<CfgParent>Base</CfgParent>
@@ -39,8 +33,8 @@
 			<VerInfo_MajorVer>0</VerInfo_MajorVer>
 			<VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=0.0.0.1;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
 			<VerInfo_Locale>1063</VerInfo_Locale>
-			<DCC_UnitSearchPath>$(BDS)\Source\DUnit\src;..\..\Core;..\Externals\superobject;..\Externals\NativeXml\nativexml;..\Externals\NativeXml\general;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
-			<DCC_Define>_CONSOLE_TESTRUNNER;NEED_FORMATSETTINGS;$(DCC_Define)</DCC_Define>
+			<DCC_UnitSearchPath>$(BDS)\Source\DUnit\src;..\..\Core;..\;..\Externals\NativeXml\nativexml;..\Externals\NativeXml\general;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_Define>_CONSOLE_TESTRUNNER;NEED_FORMATSETTINGS;SV_HELPERS;$(DCC_Define)</DCC_Define>
 			<DCC_UsePackage>vcl;vclx;VclSmp;rtl;vclimg;svnui;svn;bdertl;TeeUI;TeeDB;Tee;vclactnband;vcldb;dbrtl;vcldbx;vcltouch;xmlrtl;dsnap;dsnapcon;vclib;ibxpress;adortl;IndyCore;IndySystem;IndyProtocols;inet;intrawebdb_110_150;Intraweb_110_150;vclie;websnap;webdsnap;inetdb;inetdbbde;inetdbxpress;soaprtl;vclribbon;dbexpress;DbxCommonDriver;DataSnapIndy10ServerTransport;DataSnapProviderClient;DbxClientDriver;DataSnapClient;dbxcds;DataSnapServer;AzureCloud;DBXInterBaseDriver;DBXMySQLDriver;DBXFirebirdDriver;DBXSybaseASEDriver;DBXSybaseASADriver;DBXOracleDriver;DBXMSSQLDriver;DBXInformixDriver;DBXDb2Driver;CodeSiteExpressVcl;$(DCC_UsePackage)</DCC_UsePackage>
 			<DCC_ImageBase>00400000</DCC_ImageBase>
 			<DCC_DcuOutput>.\$(Config)\$(Platform)\DCU</DCC_DcuOutput>
@@ -51,9 +45,6 @@
 			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
 			<DCC_Optimize>false</DCC_Optimize>
 			<DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>
-		</PropertyGroup>
-		<PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
-			<DCC_Define>SV_HELPERS;$(DCC_Define)</DCC_Define>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2)'!=''">
 			<DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
@@ -77,6 +68,10 @@
 			<DCCReference Include="..\SvSerializerFactory.pas"/>
 			<DCCReference Include="..\SvSerializerRtti.pas"/>
 			<DCCReference Include="..\..\Core\SvTesting.DUnit.pas"/>
+			<DCCReference Include="TestSvCsvSerializer.pas"/>
+			<DCCReference Include="..\SvCsvSerializer.pas"/>
+			<DCCReference Include="..\SvCsvParser.pas"/>
+			<DCCReference Include="..\SvSerializerCsv.pas"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>

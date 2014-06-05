@@ -84,7 +84,8 @@ type
   ///	  Specifies the primary key property or field of an entity.
   ///	</summary>
   {$ENDREGION}
-  Id = class(TORMAttribute);
+  Id = class(TORMAttribute)end;
+
 
   {$REGION 'Documentation'}
   ///	<summary>

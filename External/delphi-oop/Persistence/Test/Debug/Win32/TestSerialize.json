@@ -5,7 +5,7 @@
    "Pitch": "fpDefault",
    "OnChange": null,
    "OwnerCriticalSection": null,
-   "Handle": 1158300211,
+   "Handle": 1393179182,
    "Orientation": 0,
    "FontAdapter": null,
    "Quality": "fqDefault",
@@ -24,57 +24,57 @@
     "DOUBLE": "15865874.1569854",
     "ID": "1",
     "NAME": "Some unicode Portugu\u00eas \" \u0420\u0443\u0441\u0441\u043a\u0438\u0439\/ \u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac",
-    "DATETIME": "2013-08-14"
+    "DATETIME": "2013-10-01"
    },{
     "DOUBLE": "15865874.1569854",
     "ID": "2",
     "NAME": "Some unicode Portugu\u00eas \" \u0420\u0443\u0441\u0441\u043a\u0438\u0439\/ \u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac",
-    "DATETIME": "2013-08-14"
+    "DATETIME": "2013-10-01"
    },{
     "DOUBLE": "15865874.1569854",
     "ID": "3",
     "NAME": "Some unicode Portugu\u00eas \" \u0420\u0443\u0441\u0441\u043a\u0438\u0439\/ \u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac",
-    "DATETIME": "2013-08-14"
+    "DATETIME": "2013-10-01"
    },{
     "DOUBLE": "15865874.1569854",
     "ID": "4",
     "NAME": "Some unicode Portugu\u00eas \" \u0420\u0443\u0441\u0441\u043a\u0438\u0439\/ \u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac",
-    "DATETIME": "2013-08-14"
+    "DATETIME": "2013-10-01"
    },{
     "DOUBLE": "15865874.1569854",
     "ID": "5",
     "NAME": "Some unicode Portugu\u00eas \" \u0420\u0443\u0441\u0441\u043a\u0438\u0439\/ \u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac",
-    "DATETIME": "2013-08-14"
+    "DATETIME": "2013-10-01"
    },{
     "DOUBLE": "15865874.1569854",
     "ID": "6",
     "NAME": "Some unicode Portugu\u00eas \" \u0420\u0443\u0441\u0441\u043a\u0438\u0439\/ \u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac",
-    "DATETIME": "2013-08-14"
+    "DATETIME": "2013-10-01"
    },{
     "DOUBLE": "15865874.1569854",
     "ID": "7",
     "NAME": "Some unicode Portugu\u00eas \" \u0420\u0443\u0441\u0441\u043a\u0438\u0439\/ \u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac",
-    "DATETIME": "2013-08-14"
+    "DATETIME": "2013-10-01"
    },{
     "DOUBLE": "15865874.1569854",
     "ID": "8",
     "NAME": "Some unicode Portugu\u00eas \" \u0420\u0443\u0441\u0441\u043a\u0438\u0439\/ \u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac",
-    "DATETIME": "2013-08-14"
+    "DATETIME": "2013-10-01"
    },{
     "DOUBLE": "15865874.1569854",
     "ID": "9",
     "NAME": "Some unicode Portugu\u00eas \" \u0420\u0443\u0441\u0441\u043a\u0438\u0439\/ \u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac",
-    "DATETIME": "2013-08-14"
+    "DATETIME": "2013-10-01"
    },{
     "DOUBLE": "15865874.1569854",
     "ID": "10",
     "NAME": "Some unicode Portugu\u00eas \" \u0420\u0443\u0441\u0441\u043a\u0438\u0439\/ \u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac",
-    "DATETIME": "2013-08-14"
+    "DATETIME": "2013-10-01"
    }],
   "Enumas": "deThree",
   "MyRec": {
    "FString": "Some unicode Portugu\u00eas \" \u0420\u0443\u0441\u0441\u043a\u0438\u0439\/ \u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac",
-   "FDouble": 0.,
+   "FDouble": 0,
    "FInt": 2147483647
   },
   "RefCount": 0,
@@ -82,21 +82,21 @@
    1,2,3],
   "IsValid": true,
   "DoubleVal": 15865874.1569854,
-  "Value": "15865874.1569854",
+  "Value": "15865874,1569854",
   "Name": "Some unicode Portugu\u00eas \" \u0420\u0443\u0441\u0441\u043a\u0438\u0439\/ \u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac",
   "Meth": null,
   "Mas2": [
    {
     "FString": "1",
-    "FDouble": 0.,
+    "FDouble": 0,
     "FInt": 111
    },{
     "FString": "2",
-    "FDouble": 0.,
+    "FDouble": 0,
     "FInt": 222
    },{
     "FString": "3",
-    "FDouble": 0.,
+    "FDouble": 0,
     "FInt": 333
    }],
   "List": [
@@ -106,18 +106,18 @@
     "Key": "1",
     "Value": {
      "FString": "2",
-     "FDouble": 0.,
+     "FDouble": 0,
      "FInt": 222
     }
    },{
     "Key": "Some unicode Portugu\u00eas \" \u0420\u0443\u0441\u0441\u043a\u0438\u0439\/ \u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac",
     "Value": {
      "FString": "1",
-     "FDouble": 0.,
+     "FDouble": 0,
      "FInt": 111
     }
    }],
-  "Date": "2013-08-14",
+  "Date": "2013-10-01",
   "ASet": "[deTwo,deThree]",
   "SvString": {
    "FValue": "Some unicode Portugu\u00eas \" \u0420\u0443\u0441\u0441\u043a\u0438\u0439\/ \u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac"

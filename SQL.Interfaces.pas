@@ -54,11 +54,13 @@ type
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string;
     function GenerateGetQueryCount(const ASql: string): string;
+    function GenerateUniqueId(): Variant;
     function GetSQLTableCount(const ATablename: string): string;
     function GetSQLSequenceCount(const ASequenceName: string): string;
     function GetTableColumns(const ATableName: string): string;
     function GetSQLTableExists(const ATablename: string): string;
     function GetEscapeFieldnameChar(): Char;
+
   end;
 
 implementation

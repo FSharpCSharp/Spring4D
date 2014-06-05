@@ -137,7 +137,11 @@ uses
   Core.Comparers in '..\Core.Comparers.pas',
   Core.Criteria.Criterion.Junction in '..\Core.Criteria.Criterion.Junction.pas',
   Core.Criteria.Criterion.Disjunction in '..\Core.Criteria.Criterion.Disjunction.pas',
-  Core.Criteria.Criterion.Conjunction in '..\Core.Criteria.Criterion.Conjunction.pas';
+  Core.Criteria.Criterion.Conjunction in '..\Core.Criteria.Criterion.Conjunction.pas',
+  Core.Repository.Simple in '..\Core.Repository.Simple.pas',
+  TestSimpleRepository in 'TestSimpleRepository.pas',
+  Core.Session.MongoDB in '..\Core.Session.MongoDB.pas',
+  SQL.Commands.BulkInsert.MongoDB in '..\SQL.Commands.BulkInsert.MongoDB.pas';
 
 {$R *.RES}
 

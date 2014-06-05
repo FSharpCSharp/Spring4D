@@ -65,14 +65,25 @@ type
 
   TNumbers = set of TDemoEnum;
 
+  TDummyRecord = record
+    [SvSerialize('totalcount')]
+    RecordCount: Integer;
+    [SvTransient]
+    Caption: string;
+  end;
+
   TDummy = class
   private
     FDummy: string;
+    FDummyRec: TDummyRecord;
   public
     constructor Create(); overload;
     constructor Create(const ADummyName: string); overload;
 
+    [SvSerialize('DummyValue')]
     property Dummy: string read FDummy write FDummy;
+
+    property DummyRec: TDummyRecord read FDummyRec write FDummyRec;
   end;
 
   TBeanSuperSuper = class
@@ -401,6 +412,8 @@ type
     procedure TestNewPropertyAdded();
     procedure SerializeListOnly();
     procedure DateSupportTest();
+    procedure Serialize_Performance_Test();
+    procedure Serialize_PropertyName_From_Attribute();
   end;
 
   TestTSvSuperJsonSerializer = class(TestTSvJsonSerializerFactory)
@@ -533,6 +546,84 @@ begin
     Serializer.DeSerializeObject(LBean, LOutputString, Serializer.SerializeFormat);
     CheckTrue(SameDate(Today, LBean.CurrentDate));
     CheckTrue(SameDateTime(LNow, LBean.CurrentDateTime) );
+  finally
+    LBean.Free;
+  end;
+end;
+
+procedure TestTSvJsonSerializerFactory.Serialize_Performance_Test;
+var
+  LBean: TBean;
+  i, LCount: Integer;
+  LOutput: string;
+  LElapsed: Cardinal;
+begin
+  LCount := 1000;
+  for i := 1 to LCount do
+  begin
+    LBean := TBean.Create;
+    try
+      LBean.FirstName := 'Foo';
+      LBean.BeanSuper := TBeanSuper.Create;
+      LBean.BeanSuper.LastName := 'Bar';
+      LBean.BeanSuper.Bean := TBeanSuperSuper.Create;
+      LBean.BeanSuper.Bean.Password := 'password';
+      LBean.BeanSuper.Bean.Name := 'Super';
+      LBean.BeanSuper.Bean.Items := TList<Integer>.Create();
+      LBean.BeanSuper.Bean.Items.AddRange([1,2,3,4,5]);
+      TSvSerializer.SerializeObject(LBean, LOutput, Serializer.SerializeFormat);
+    finally
+      LBean.Free;
+    end;
+  end;
+  LElapsed := ElapsedTestTime;
+  Status(Format('Serialized %D objects in %D ms', [LCount, LElapsed]));
+
+  for i := 1 to LCount do
+  begin
+    LBean := TBean.Create;
+    try
+      TSvSerializer.DeSerializeObject(LBean, LOutput, Serializer.SerializeFormat);
+    finally
+      LBean.Free;
+    end;
+  end;
+  Status(Format('Deserialized %D objects in %D ms', [LCount, ElapsedTestTime - LElapsed]));
+end;
+
+procedure TestTSvJsonSerializerFactory.Serialize_PropertyName_From_Attribute;
+var
+  LBean: TBeanSuperSuper;
+  LDummy: TDummy;
+  LOutput: string;
+  LRecord: TDummyRecord;
+begin
+  LBean := TBeanSuperSuper.Create;
+  try
+    LBean.Dummies := TMyObjectList<TDummy>.Create;
+    LDummy := TDummy.Create;
+    LDummy.Dummy := 'abcdefgh';
+
+    LRecord.RecordCount := 100;
+    LRecord.Caption := 'No Value';
+    LDummy.DummyRec := LRecord;
+
+    LBean.Dummies.Add(LDummy);
+    TSvSerializer.SerializeObject(LBean, LOutput, Serializer.SerializeFormat);
+
+    CheckTrue(Pos('DummyValue', LOutput) > 0);
+    CheckFalse(Pos('Caption', LOutput) > 0);
+    CheckTrue(Pos('totalcount', LOutput) > 0);
+  finally
+    LBean.Free;
+  end;
+
+  LBean := TBeanSuperSuper.Create;
+  try
+    TSvSerializer.DeSerializeObject(LBean, LOutput, Serializer.SerializeFormat);
+    CheckEquals('abcdefgh', LBean.Dummies[0].Dummy);
+    CheckEquals(100, LBean.Dummies.First.DummyRec.RecordCount);
+    CheckNotEquals('No Value', LBean.Dummies.First.DummyRec.Caption);
   finally
     LBean.Free;
   end;

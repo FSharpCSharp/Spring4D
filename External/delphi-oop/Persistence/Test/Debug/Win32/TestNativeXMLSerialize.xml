@@ -4,7 +4,7 @@
 		<Name type="string">Some unicode Português &quot; Русский/ Ελληνικά</Name>
 		<Tag type="number">2147483647</Tag>
 		<DoubleVal type="number">15865874.1569854</DoubleVal>
-		<Date type="string">2013-08-14</Date>
+		<Date type="string">2013-10-01</Date>
 		<Enumas type="string">deThree</Enumas>
 		<Mas type="array">
 			<1 type="string">1</1>
@@ -28,7 +28,7 @@
 				<FDouble type="number">0</FDouble>
 			</3>
 		</Mas2>
-		<Value type="string">15865874.1569854</Value>
+		<Value type="string">15865874,1569854</Value>
 		<IsValid type="boolean">true</IsValid>
 		<List type="array">
 			<1 type="string">1</1>
@@ -48,7 +48,7 @@
 		<Color type="number">255</Color>
 		<MyFont>
 			<FontAdapter/>
-			<Handle type="number">1057636915</Handle>
+			<Handle type="number">1275739072</Handle>
 			<PixelsPerInch type="number">96</PixelsPerInch>
 			<Charset type="number">1</Charset>
 			<Color type="number">-16777208</Color>
@@ -89,61 +89,61 @@
 				<NAME type="string">Some unicode Português &quot; Русский/ Ελληνικά</NAME>
 				<ID type="string">1</ID>
 				<DOUBLE type="string">15865874.1569854</DOUBLE>
-				<DATETIME type="string">2013-08-14</DATETIME>
+				<DATETIME type="string">2013-10-01</DATETIME>
 			</1>
 			<2>
 				<NAME type="string">Some unicode Português &quot; Русский/ Ελληνικά</NAME>
 				<ID type="string">2</ID>
 				<DOUBLE type="string">15865874.1569854</DOUBLE>
-				<DATETIME type="string">2013-08-14</DATETIME>
+				<DATETIME type="string">2013-10-01</DATETIME>
 			</2>
 			<3>
 				<NAME type="string">Some unicode Português &quot; Русский/ Ελληνικά</NAME>
 				<ID type="string">3</ID>
 				<DOUBLE type="string">15865874.1569854</DOUBLE>
-				<DATETIME type="string">2013-08-14</DATETIME>
+				<DATETIME type="string">2013-10-01</DATETIME>
 			</3>
 			<4>
 				<NAME type="string">Some unicode Português &quot; Русский/ Ελληνικά</NAME>
 				<ID type="string">4</ID>
 				<DOUBLE type="string">15865874.1569854</DOUBLE>
-				<DATETIME type="string">2013-08-14</DATETIME>
+				<DATETIME type="string">2013-10-01</DATETIME>
 			</4>
 			<5>
 				<NAME type="string">Some unicode Português &quot; Русский/ Ελληνικά</NAME>
 				<ID type="string">5</ID>
 				<DOUBLE type="string">15865874.1569854</DOUBLE>
-				<DATETIME type="string">2013-08-14</DATETIME>
+				<DATETIME type="string">2013-10-01</DATETIME>
 			</5>
 			<6>
 				<NAME type="string">Some unicode Português &quot; Русский/ Ελληνικά</NAME>
 				<ID type="string">6</ID>
 				<DOUBLE type="string">15865874.1569854</DOUBLE>
-				<DATETIME type="string">2013-08-14</DATETIME>
+				<DATETIME type="string">2013-10-01</DATETIME>
 			</6>
 			<7>
 				<NAME type="string">Some unicode Português &quot; Русский/ Ελληνικά</NAME>
 				<ID type="string">7</ID>
 				<DOUBLE type="string">15865874.1569854</DOUBLE>
-				<DATETIME type="string">2013-08-14</DATETIME>
+				<DATETIME type="string">2013-10-01</DATETIME>
 			</7>
 			<8>
 				<NAME type="string">Some unicode Português &quot; Русский/ Ελληνικά</NAME>
 				<ID type="string">8</ID>
 				<DOUBLE type="string">15865874.1569854</DOUBLE>
-				<DATETIME type="string">2013-08-14</DATETIME>
+				<DATETIME type="string">2013-10-01</DATETIME>
 			</8>
 			<9>
 				<NAME type="string">Some unicode Português &quot; Русский/ Ελληνικά</NAME>
 				<ID type="string">9</ID>
 				<DOUBLE type="string">15865874.1569854</DOUBLE>
-				<DATETIME type="string">2013-08-14</DATETIME>
+				<DATETIME type="string">2013-10-01</DATETIME>
 			</9>
 			<10>
 				<NAME type="string">Some unicode Português &quot; Русский/ Ελληνικά</NAME>
 				<ID type="string">10</ID>
 				<DOUBLE type="string">15865874.1569854</DOUBLE>
-				<DATETIME type="string">2013-08-14</DATETIME>
+				<DATETIME type="string">2013-10-01</DATETIME>
 			</10>
 		</Dataset>
 		<SimpleObj>

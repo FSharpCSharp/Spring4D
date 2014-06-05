@@ -15,16 +15,23 @@ type
   TMongoDBGenerator = class(TNoSQLGenerator)
   public
     function GetQueryLanguage(): TQueryLanguage; override;
+    function GenerateUniqueId(): Variant; override;
   end;
 
 implementation
 
 uses
   SQL.Register
+  ,mongoID
   ;
 
 
 { TMongoDBGenerator }
+
+function TMongoDBGenerator.GenerateUniqueId: Variant;
+begin
+  Result := mongoObjectId();
+end;
 
 function TMongoDBGenerator.GetQueryLanguage: TQueryLanguage;
 begin
