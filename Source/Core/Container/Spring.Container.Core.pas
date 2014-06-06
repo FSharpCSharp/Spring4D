@@ -349,9 +349,7 @@ implementation
 
 uses
   Generics.Collections,
-  TypInfo,
-  Spring.Container.ResourceStrings,
-  Spring.Helpers;
+  TypInfo;
 
 
 {$REGION 'TComponentModel'}
@@ -403,19 +401,14 @@ var
 begin
   Guard.CheckNotNull(not value.IsEmpty, 'value');
 
-  if ((refCounting = TRefCounting.Unknown) and value.IsObject
-    and value.AsObject.InheritsFrom(TInterfacedObject))
+  if ((refCounting = TRefCounting.Unknown) and value.IsType<TInterfacedObject>)
     or (refCounting = TRefCounting.True) then
-  begin
-    value.AsObject.GetInterface(IInterface, lifetimeWatcher);
-  end
+    value.AsObject.GetInterface(IInterface, lifetimeWatcher)
   else
-  begin
     if value.Kind = tkInterface then
       lifetimeWatcher := value.AsInterface
     else
       lifetimeWatcher := nil;
-  end;
   Create(value, lifetimeWatcher);
 end;
 
