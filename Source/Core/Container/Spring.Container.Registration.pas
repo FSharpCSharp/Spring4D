@@ -89,13 +89,9 @@ type
   ///	</summary>
   TRegistration = record
   private
-{$IFNDEF DELPHIXE_UP}
-    fRegistry: TComponentRegistry;
-{$ELSE}
-    fRegistry: IComponentRegistry;
-{$ENDIF}
+    fKernel: IKernel;
     fModel: TComponentModel;
-    constructor Create(const registry: IComponentRegistry; componentType: PTypeInfo);
+    constructor Create(const kernel: IKernel; componentType: PTypeInfo);
   public
     function Implements(serviceType: PTypeInfo): TRegistration; overload;
     function Implements(serviceType: PTypeInfo; const name: string): TRegistration; overload;
@@ -143,7 +139,7 @@ type
   TRegistration<T> = record
   private
     fRegistration: TRegistration;
-    constructor Create(const registry: IComponentRegistry);
+    constructor Create(const kernel: IKernel);
   public
     function Implements(serviceType: PTypeInfo): TRegistration<T>; overload;
     function Implements(serviceType: PTypeInfo; const name: string): TRegistration<T>; overload;
@@ -198,9 +194,9 @@ type
   ///	</remarks>
   TRegistrationManager = class
   private
-    fRegistry: IComponentRegistry;
+    fKernel: IKernel;
   public
-    constructor Create(const registry: IComponentRegistry);
+    constructor Create(const kernel: IKernel);
     function RegisterType<TComponentType>: TRegistration<TComponentType>; overload;
     function RegisterType(componentType: PTypeInfo): TRegistration; overload;
   end;
@@ -425,7 +421,7 @@ begin
   Guard.CheckNotNull(componentTypeInfo, 'componentTypeInfo');
 
   componentType := fRttiContext.GetType(componentTypeInfo);
-  Result := TComponentModel.Create(fKernel, componentType);
+  Result := TComponentModel.Create(componentType);
   fModels.Add(Result);
 end;
 
@@ -555,29 +551,25 @@ end;
 
 {$REGION 'TRegistration'}
 
-constructor TRegistration.Create(const registry: IComponentRegistry;
+constructor TRegistration.Create(const kernel: IKernel;
   componentType: PTypeInfo);
 begin
-  Guard.CheckNotNull(registry, 'registry');
+  Guard.CheckNotNull(kernel, 'kernel');
   Guard.CheckNotNull(componentType, 'componentType');
-{$IFNDEF DELPHIXE_UP}
-  fRegistry := registry as TComponentRegistry;
-{$ELSE}
-  fRegistry := registry;
-{$ENDIF}
-  fModel := fRegistry.RegisterComponent(componentType);
+  fKernel := kernel;
+  fModel := fKernel.ComponentRegistry.RegisterComponent(componentType);
 end;
 
 function TRegistration.Implements(serviceType: PTypeInfo): TRegistration;
 begin
-  fRegistry.RegisterService(fModel, serviceType);
+  fKernel.ComponentRegistry.RegisterService(fModel, serviceType);
   Result := Self;
 end;
 
 function TRegistration.Implements(serviceType: PTypeInfo;
   const name: string): TRegistration;
 begin
-  fRegistry.RegisterService(fModel, serviceType, name);
+  fKernel.ComponentRegistry.RegisterService(fModel, serviceType, name);
   Result := Self;
 end;
 
@@ -590,61 +582,61 @@ end;
 function TRegistration.InjectConstructor(
   const parameterTypes: array of PTypeInfo): TRegistration;
 begin
-  fModel.InjectConstructor(parameterTypes);
+  fKernel.Injector.InjectConstructor(fModel, parameterTypes);
   Result := Self;
 end;
 
 function TRegistration.InjectProperty(
   const propertyName: string): TRegistration;
 begin
-  fModel.InjectProperty(propertyName);
+  fKernel.Injector.InjectProperty(fModel, propertyName);
   Result := Self;
 end;
 
 function TRegistration.InjectMethod(const methodName: string;
   const parameterTypes: array of PTypeInfo): TRegistration;
 begin
-  fModel.InjectMethod(methodName, parameterTypes);
+  fKernel.Injector.InjectMethod(fModel, methodName, parameterTypes);
   Result := Self;
 end;
 
 function TRegistration.InjectMethod(const methodName: string): TRegistration;
 begin
-  fModel.InjectMethod(methodName);
+  fKernel.Injector.InjectMethod(fModel, methodName);
   Result := Self;
 end;
 
 function TRegistration.InjectField(const fieldName: string): TRegistration;
 begin
-  fModel.InjectField(fieldName);
+  fKernel.Injector.InjectField(fModel, fieldName);
   Result := Self;
 end;
 
 function TRegistration.InjectConstructor(
   const arguments: array of TValue): TRegistration;
 begin
-  fModel.InjectConstructor(arguments);
+  fKernel.Injector.InjectConstructor(fModel, arguments);
   Result := Self;
 end;
 
 function TRegistration.InjectProperty(const propertyName: string;
   const value: TValue): TRegistration;
 begin
-  fModel.InjectProperty(propertyName, value);
+  fKernel.Injector.InjectProperty(fModel, propertyName, value);
   Result := Self;
 end;
 
 function TRegistration.InjectMethod(const methodName: string;
   const arguments: array of TValue): TRegistration;
 begin
-  fModel.InjectMethod(methodName, arguments);
+  fKernel.Injector.InjectMethod(fModel, methodName, arguments);
   Result := Self;
 end;
 
 function TRegistration.InjectField(const fieldName: string;
   const value: TValue): TRegistration;
 begin
-  fModel.InjectField(fieldName, value);
+  fKernel.Injector.InjectField(fModel, fieldName, value);
   Result := Self;
 end;
 
@@ -688,26 +680,26 @@ var
   serviceType: PTypeInfo;
 begin
   for serviceType in fModel.Services.Values do
-    fRegistry.RegisterDefault(fModel, serviceType);
+    fKernel.ComponentRegistry.RegisterDefault(fModel, serviceType);
   Result := Self;
 end;
 
 function TRegistration.AsDefault(serviceType: PTypeInfo): TRegistration;
 begin
-  fRegistry.RegisterDefault(fModel, serviceType);
+  fKernel.ComponentRegistry.RegisterDefault(fModel, serviceType);
   Result := Self;
 end;
 
 {$IFDEF DELPHIXE_UP}
 function TRegistration.AsFactory: TRegistration;
 begin
-  fRegistry.RegisterFactory(fModel);
+  fKernel.ComponentRegistry.RegisterFactory(fModel);
   Result := Self;
 end;
 
 function TRegistration.AsFactory(const name: string): TRegistration;
 begin
-  fRegistry.RegisterFactory(fModel, name);
+  fKernel.ComponentRegistry.RegisterFactory(fModel, name);
   Result := Self;
 end;
 {$ENDIF}
@@ -717,10 +709,9 @@ end;
 
 {$REGION 'TRegistration<T>'}
 
-constructor TRegistration<T>.Create(
-  const registry: IComponentRegistry);
+constructor TRegistration<T>.Create(const kernel: IKernel);
 begin
-  fRegistration := TRegistration.Create(registry, TypeInfo(T));
+  fRegistration := TRegistration.Create(kernel, TypeInfo(T));
 end;
 
 function TRegistration<T>.Implements(serviceType: PTypeInfo): TRegistration<T>;
@@ -889,23 +880,22 @@ end;
 
 {$REGION 'TRegistrationManager'}
 
-constructor TRegistrationManager.Create(
-  const registry: IComponentRegistry);
+constructor TRegistrationManager.Create(const kernel: IKernel);
 begin
   inherited Create;
-  fRegistry := registry;
+  fKernel := kernel;
 end;
 
 function TRegistrationManager.RegisterType(
   componentType: PTypeInfo): TRegistration;
 begin
   Guard.CheckNotNull(componentType, 'componentType');
-  Result := TRegistration.Create(fRegistry, componentType);
+  Result := TRegistration.Create(fKernel, componentType);
 end;
 
 function TRegistrationManager.RegisterType<TComponentType>: TRegistration<TComponentType>;
 begin
-  Result := TRegistration<TComponentType>.Create(fRegistry);
+  Result := TRegistration<TComponentType>.Create(fKernel);
 end;
 
 {$ENDREGION}

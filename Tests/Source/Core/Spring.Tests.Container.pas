@@ -306,6 +306,7 @@ implementation
 
 uses
   Spring.Collections,
+  Spring.Container.Core,
   Spring.Container.DecoratorExtension,
   Spring.Container.Resolvers,
   Spring.TestUtils;
@@ -1631,8 +1632,11 @@ end;
 {$REGION 'TTestResolveLazyRecursive'}
 
 procedure TTestLazyDependenciesDetectRecursion.PerformChecks;
+var
+  model: TComponentModel;
 begin
-  fContainer.Kernel.ComponentRegistry.FindOne('service').InjectField('fNameService', 'service');
+  model := fContainer.Kernel.ComponentRegistry.FindOne('service');
+  fContainer.Kernel.Injector.InjectField(model, 'fNameService', 'service');
 
   ExpectedException := ECircularDependencyException;
   inherited;

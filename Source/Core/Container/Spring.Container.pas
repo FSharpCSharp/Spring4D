@@ -45,7 +45,7 @@ type
   private
     fRegistry: IComponentRegistry;
     fBuilder: IComponentBuilder;
-    fInjectionFactory: IInjectionFactory;
+    fInjector: IInjector;
     fRegistrationManager: TRegistrationManager;
     fResolver: IDependencyResolver;
     fExtensions: IList<IContainerExtension>;
@@ -59,13 +59,13 @@ type
   {$REGION 'Implements IKernel'}
     function GetComponentBuilder: IComponentBuilder;
     function GetComponentRegistry: IComponentRegistry;
-    function GetInjectionFactory: IInjectionFactory;
+    function GetInjector: IInjector;
     function GetResolver: IDependencyResolver;
   {$ENDREGION}
     procedure InitializeInspectors; virtual;
     property ComponentBuilder: IComponentBuilder read GetComponentBuilder;
     property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
-    property InjectionFactory: IInjectionFactory read GetInjectionFactory;
+    property Injector: IInjector read GetInjector;
     property Resolver: IDependencyResolver read GetResolver;
   public
     constructor Create;
@@ -198,8 +198,8 @@ begin
   inherited Create;
   fRegistry := TComponentRegistry.Create(Self);
   fBuilder := TComponentBuilder.Create(Self);
-  fInjectionFactory := TInjectionFactory.Create;
-  fRegistrationManager := TRegistrationManager.Create(fRegistry);
+  fInjector := TInjector.Create;
+  fRegistrationManager := TRegistrationManager.Create(Self);
   fResolver := TDependencyResolver.Create(Self);
   fExtensions := TCollections.CreateInterfaceList<IContainerExtension>;
   InitializeInspectors;
@@ -221,7 +221,7 @@ begin
   // to calling virtual __ObjRelease on almost destroyed object)
   fExtensions := nil;
   fResolver := nil;
-  fInjectionFactory := nil;
+  fInjector := nil;
   fBuilder := nil;
   fRegistry := nil;
 
@@ -277,14 +277,14 @@ begin
   Result := fRegistry;
 end;
 
+function TContainer.GetInjector: IInjector;
+begin
+  Result := fInjector;
+end;
+
 function TContainer.GetKernel: IKernel;
 begin
   Result := Self;
-end;
-
-function TContainer.GetInjectionFactory: IInjectionFactory;
-begin
-  Result := fInjectionFactory;
 end;
 
 function TContainer.GetResolver: IDependencyResolver;

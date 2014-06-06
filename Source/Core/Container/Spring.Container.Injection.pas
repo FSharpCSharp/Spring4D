@@ -30,6 +30,7 @@ interface
 
 uses
   Rtti,
+  SysUtils,
   Spring,
   Spring.Collections,
   Spring.Container.Core;
@@ -94,21 +95,39 @@ type
     procedure DoInject(const instance: TValue; const arguments: array of TValue); override;
   end;
 
-  TInjectionFactory = class(TInterfacedObject, IInjectionFactory)
-  public
-    function CreateConstructorInjection: IInjection;
-    function CreateMethodInjection(const methodName: string): IInjection;
-    function CreatePropertyInjection(const propertyName: string): IInjection;
-    function CreateFieldInjection(const fieldName: string): IInjection;
+  TInjector = class(TInterfacedObject, IInjector)
+  {$REGION 'Typed Injections'}
+    function InjectConstructor(const model: TComponentModel;
+      const parameterTypes: array of PTypeInfo): IInjection; overload;
+    function InjectMethod(const model: TComponentModel;
+      const methodName: string): IInjection; overload;
+    function InjectMethod(const model: TComponentModel; const methodName: string;
+      const parameterTypes: array of PTypeInfo): IInjection; overload;
+    function InjectProperty(const model: TComponentModel;
+      const propertyName: string): IInjection; overload;
+    function InjectField(const model: TComponentModel;
+      const fieldName: string): IInjection; overload;
+  {$ENDREGION}
+
+  {$REGION 'Named/Valued Injections'}
+    function  InjectConstructor(const model: TComponentModel;
+      const arguments: array of TValue): IInjection; overload;
+    function  InjectMethod(const model: TComponentModel; const methodName: string;
+      const arguments: array of TValue): IInjection; overload;
+    function  InjectProperty(const model: TComponentModel;
+      const propertyName: string; const value: TValue): IInjection; overload;
+    function  InjectField(const model: TComponentModel;
+      const fieldName: string; const value: TValue): IInjection; overload;
+  {$ENDREGION}
   end;
 
 implementation
 
 uses
-  SysUtils,
   TypInfo,
   Spring.Container.ResourceStrings,
   Spring.Helpers,
+  Spring.Reflection,
   Spring.ResourceStrings;
 
 
@@ -289,26 +308,128 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TInjectionFactory'}
+{$REGION 'TInjector'}
 
-function TInjectionFactory.CreateConstructorInjection: IInjection;
+function TInjector.InjectConstructor(const model: TComponentModel;
+  const parameterTypes: array of PTypeInfo): IInjection;
+var
+  predicate: TPredicate<TRttiMethod>;
+  method: TRttiMethod;
+begin
+  predicate := TMethodFilters.IsConstructor
+    and TMethodFilters.HasParameterTypes(parameterTypes);
+  method := model.ComponentType.Methods.FirstOrDefault(predicate);
+  if not Assigned(method) then
+    raise ERegistrationException.CreateRes(@SUnsatisfiedConstructorParameters);
+  Result := TConstructorInjection.Create;
+  Result.Initialize(method);
+  model.ConstructorInjections.Add(Result);
+end;
+
+function TInjector.InjectMethod(const model: TComponentModel;
+  const methodName: string): IInjection;
+var
+  method: TRttiMethod;
+  injectionExists: Boolean;
+begin
+  method := model.ComponentType.GetMethod(methodName);
+  if not Assigned(method) then
+    raise ERegistrationException.CreateResFmt(@SNoSuchMethod, [methodName]);
+  injectionExists := model.MethodInjections.TryGetFirst(Result,
+    TInjectionFilters.ContainsMember(method));
+  if not injectionExists then
+    Result := TMethodInjection.Create(methodName);
+  Result.Initialize(method);
+  if not injectionExists then
+    model.MethodInjections.Add(Result);
+end;
+
+function TInjector.InjectMethod(const model: TComponentModel;
+  const methodName: string; const parameterTypes: array of PTypeInfo): IInjection;
+var
+  predicate: TPredicate<TRttiMethod>;
+  method: TRttiMethod;
+  injectionExists: Boolean;
+begin
+  predicate := TMethodFilters.IsNamed(methodName)
+    and TMethodFilters.IsInstanceMethod
+    and TMethodFilters.HasParameterTypes(parameterTypes);
+  method := model.ComponentType.Methods.FirstOrDefault(predicate);
+  if not Assigned(method) then
+    raise ERegistrationException.CreateResFmt(@SUnsatisfiedMethodParameterTypes, [methodName]);
+  injectionExists := model.MethodInjections.TryGetFirst(Result,
+    TInjectionFilters.ContainsMember(method));
+  if not injectionExists then
+    Result := TMethodInjection.Create(methodName);
+  Result.Initialize(method);
+  if not injectionExists then
+    model.MethodInjections.Add(Result);
+end;
+
+function TInjector.InjectProperty(const model: TComponentModel;
+  const propertyName: string): IInjection;
+var
+  propertyMember: TRttiProperty;
+  injectionExists: Boolean;
+begin
+  propertyMember := model.ComponentType.GetProperty(propertyName);
+  if not Assigned(propertyMember) then
+    raise ERegistrationException.CreateResFmt(@SNoSuchProperty, [propertyName]);
+  injectionExists := model.PropertyInjections.TryGetFirst(Result,
+    TInjectionFilters.ContainsMember(propertyMember));
+  if not injectionExists then
+    Result := TPropertyInjection.Create(propertyName);
+  Result.Initialize(propertyMember);
+  if not injectionExists then
+    model.PropertyInjections.Add(Result);
+end;
+
+function TInjector.InjectField(const model: TComponentModel;
+  const fieldName: string): IInjection;
+var
+  field: TRttiField;
+  injectionExists: Boolean;
+begin
+  field := model.ComponentType.GetField(fieldName);
+  if not Assigned(field) then
+    raise ERegistrationException.CreateResFmt(@SNoSuchField, [fieldName]);
+  injectionExists := model.FieldInjections.TryGetFirst(Result,
+    TInjectionFilters.ContainsMember(field));
+  if not injectionExists then
+    Result := TFieldInjection.Create(fieldName);
+  Result.Initialize(field);
+  if not injectionExists then
+    model.FieldInjections.Add(Result);
+end;
+
+function TInjector.InjectConstructor(const model: TComponentModel;
+  const arguments: array of TValue): IInjection;
 begin
   Result := TConstructorInjection.Create;
+  model.ConstructorInjections.Add(Result);
+  Result.InitializeArguments(arguments);
 end;
 
-function TInjectionFactory.CreateMethodInjection(const methodName: string): IInjection;
+function TInjector.InjectMethod(const model: TComponentModel;
+  const methodName: string; const arguments: array of TValue): IInjection;
 begin
   Result := TMethodInjection.Create(methodName);
+  model.MethodInjections.Add(Result);
+  Result.InitializeArguments(arguments);
 end;
 
-function TInjectionFactory.CreatePropertyInjection(const propertyName: string): IInjection;
+function TInjector.InjectProperty(const model: TComponentModel;
+  const propertyName: string; const value: TValue): IInjection;
 begin
-  Result := TPropertyInjection.Create(propertyName);
+  Result := InjectProperty(model, propertyName);
+  Result.InitializeArguments(value);
 end;
 
-function TInjectionFactory.CreateFieldInjection(const fieldName: string): IInjection;
+function TInjector.InjectField(const model: TComponentModel;
+  const fieldName: string; const value: TValue): IInjection;
 begin
-  Result := TFieldInjection.Create(fieldName);
+  Result := InjectField(model, fieldName);
+  Result.InitializeArguments(value);
 end;
 
 {$ENDREGION}

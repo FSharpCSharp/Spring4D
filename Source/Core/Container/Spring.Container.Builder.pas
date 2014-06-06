@@ -245,8 +245,6 @@ begin
     and not TMethodFilters.HasParameterFlags([pfVar, pfOut]);
   for method in model.ComponentType.Methods.Where(predicate) do
   begin
-    injection := kernel.InjectionFactory.CreateConstructorInjection;
-    injection.Initialize(method);
     parameters := method.GetParameters;
     SetLength(arguments, Length(parameters));
     for i := 0 to High(parameters) do
@@ -257,8 +255,8 @@ begin
       else
         arguments[i] := nil;
     end;
-    injection.InitializeArguments(arguments);
-    model.ConstructorInjections.Add(injection);
+    injection := kernel.Injector.InjectConstructor(model, arguments);
+    injection.Initialize(method);
   end;
 end;
 
@@ -273,9 +271,7 @@ var
   condition: TPredicate<TRttiMethod>;
   method: TRttiMethod;
   injection: IInjection;
-  injectionExists: Boolean;
   parameters: TArray<TRttiParameter>;
-  parameter: TRttiParameter;
   arguments: TArray<TValue>;
   attribute: InjectAttribute;
   i: Integer;
@@ -286,24 +282,18 @@ begin
     and not TMethodFilters.IsConstructor;
   for method in model.ComponentType.Methods.Where(condition) do
   begin
-    injectionExists := model.MethodInjections.TryGetFirst(injection,
-      TInjectionFilters.ContainsMember(method));
-    if not injectionExists then
-      injection := kernel.InjectionFactory.CreateMethodInjection(method.Name);
+    if not model.MethodInjections.TryGetFirst(injection,
+      TInjectionFilters.ContainsMember(method)) then
+      injection := kernel.Injector.InjectMethod(model, method.Name);
     injection.Initialize(method);
     parameters := method.GetParameters;
     SetLength(arguments, Length(parameters));
     for i := 0 to High(parameters) do
-    begin
-      parameter := parameters[i];
-      if parameter.TryGetCustomAttribute<InjectAttribute>(attribute) and attribute.HasValue then
+      if parameters[i].TryGetCustomAttribute<InjectAttribute>(attribute) and attribute.HasValue then
         arguments[i] := attribute.Value
       else
         arguments[i] := nil;
-    end;
     injection.InitializeArguments(arguments);
-    if not injectionExists then
-      model.MethodInjections.Add(injection);
   end;
 end;
 
@@ -316,25 +306,20 @@ procedure TPropertyInspector.DoProcessModel(const kernel: IKernel;
   const model: TComponentModel);
 var
   condition: TPredicate<TRttiProperty>;
-  propertyMember: TRttiProperty;
+  prop: TRttiProperty;
   injection: IInjection;
-  injectionExists: Boolean;
   attribute: InjectAttribute;
 begin
   condition := TPropertyFilters.IsInvokable
     and TPropertyFilters.HasAttribute(InjectAttribute);
-  for propertyMember in model.ComponentType.Properties.Where(condition) do
+  for prop in model.ComponentType.Properties.Where(condition) do
   begin
-    injectionExists := model.PropertyInjections.TryGetFirst(injection,
-      TInjectionFilters.ContainsMember(propertyMember));
-    if not injectionExists then
-      injection := kernel.InjectionFactory.CreatePropertyInjection(propertyMember.Name);
-    injection.Initialize(propertyMember);
-    if propertyMember.TryGetCustomAttribute<InjectAttribute>(attribute)
-      and attribute.HasValue then
-      injection.InitializeArguments([attribute.Value]);
-    if not injectionExists then
-      model.PropertyInjections.Add(injection);
+    if not model.PropertyInjections.TryGetFirst(injection,
+      TInjectionFilters.ContainsMember(prop)) then
+      injection := kernel.Injector.InjectProperty(model, prop.Name);
+    injection.Initialize(prop);
+    attribute := prop.GetCustomAttribute<InjectAttribute>;
+    injection.InitializeArguments([attribute.Value]);
   end;
 end;
 
@@ -349,21 +334,17 @@ var
   condition: TPredicate<TRttiField>;
   field: TRttiField;
   injection: IInjection;
-  injectionExists: Boolean;
   attribute: InjectAttribute;
 begin
   condition := TFieldFilters.HasAttribute(InjectAttribute);
   for field in model.ComponentType.Fields.Where(condition) do
   begin
-    injectionExists := model.FieldInjections.TryGetFirst(injection,
-      TInjectionFilters.ContainsMember(field));
-    if not injectionExists then
-      injection := kernel.InjectionFactory.CreateFieldInjection(field.Name);
+    if not model.FieldInjections.TryGetFirst(injection,
+      TInjectionFilters.ContainsMember(field)) then
+      injection := kernel.Injector.InjectField(model, field.Name);
     injection.Initialize(field);
-    if field.TryGetCustomAttribute<InjectAttribute>(attribute) and attribute.HasValue then
-      injection.InitializeArguments([attribute.Value]);
-    if not injectionExists then
-      model.FieldInjections.Add(injection);
+    attribute := field.GetCustomAttribute<InjectAttribute>;
+    injection.InitializeArguments([attribute.Value])
   end;
 end;
 

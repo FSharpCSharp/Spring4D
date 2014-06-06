@@ -37,23 +37,6 @@ uses
   Spring.Container.LifetimeManager;
 
 type
-  TMockContext = class(TInterfacedObject, IKernel)
-  public
-    function GetComponentBuilder: IComponentBuilder;
-    function GetComponentRegistry: IComponentRegistry;
-    function GetInjectionFactory: IInjectionFactory;
-    function GetResolver: IDependencyResolver;
-  public
-    function HasService(serviceType: PTypeInfo): Boolean; overload;
-    function HasService(const name: string): Boolean; overload;
-    function CreateLifetimeManager(const model: TComponentModel): ILifetimeManager;
-    procedure AddExtension(const extension: IContainerExtension);
-    property ComponentBuilder: IComponentBuilder read GetComponentBuilder;
-    property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
-    property InjectionFactory: IInjectionFactory read GetInjectionFactory;
-    property Resolver: IDependencyResolver read GetResolver;
-  end;
-
   TMockActivator = class(TInterfaceBase, IComponentActivator)
   private
     fModel: TComponentModel;
@@ -82,7 +65,6 @@ type
 //  [Ignore]
   TLifetimeManagerTestCase = class abstract(TTestCase)
   protected
-    fKernel: IKernel;
     fContext: TRttiContext;
     fLifetimeManager: ILifetimeManager;
     fModel: TComponentModel;
@@ -101,7 +83,6 @@ type
 
   TTestRefCounting = class(TTestCase)
   protected
-    fKernel: IKernel;
     fContext: TRttiContext;
     fLifetimeManager: ILifetimeManager;
     fModel: TComponentModel;
@@ -134,9 +115,8 @@ uses
 procedure TLifetimeManagerTestCase.SetUp;
 begin
   inherited;
-  fKernel := TMockContext.Create;
   fContext := TRttiContext.Create;
-  fModel := TComponentModel.Create(fKernel, fContext.GetType(TMockObject).AsInstance);
+  fModel := TComponentModel.Create(fContext.GetType(TMockObject).AsInstance);
   fActivator := TMockActivator.Create(fModel);
   fModel.ComponentActivator := fActivator;
 end;
@@ -146,7 +126,6 @@ begin
   fModel.Free;
   fActivator.Free;
   fContext.Free;
-  fKernel := nil;
   inherited;
 end;
 
@@ -232,48 +211,6 @@ begin
   Result := CreateInstance;
 end;
 
-{ TMockContext }
-
-procedure TMockContext.AddExtension(const extension: IContainerExtension);
-begin
-  raise Exception.Create('AddExtension');
-end;
-
-function TMockContext.CreateLifetimeManager(const model: TComponentModel): ILifetimeManager;
-begin
-  raise Exception.Create('CreateLifetimeManager');
-end;
-
-function TMockContext.GetComponentBuilder: IComponentBuilder;
-begin
-  raise Exception.Create('GetComponentBuilder');
-end;
-
-function TMockContext.GetComponentRegistry: IComponentRegistry;
-begin
-  raise Exception.Create('GetComponentRegistry');
-end;
-
-function TMockContext.GetInjectionFactory: IInjectionFactory;
-begin
-  raise Exception.Create('GetInjectionFactory');
-end;
-
-function TMockContext.GetResolver: IDependencyResolver;
-begin
-  raise Exception.Create('GetResolver');
-end;
-
-function TMockContext.HasService(const name: string): Boolean;
-begin
-  raise Exception.Create('HasService');
-end;
-
-function TMockContext.HasService(serviceType: PTypeInfo): Boolean;
-begin
-  raise Exception.Create('HasService');
-end;
-
 { TMockComponent }
 
 function TMockComponent._AddRef: Integer;
@@ -305,9 +242,8 @@ end;
 procedure TTestRefCounting.SetUp;
 begin
   inherited;
-  fKernel := TMockContext.Create;
   fContext := TRttiContext.Create;
-  fModel := TComponentModel.Create(fKernel, fContext.GetType(TMockComponent).AsInstance);
+  fModel := TComponentModel.Create(fContext.GetType(TMockComponent).AsInstance);
   fModel.RefCounting := TRefCounting.True;
   fActivator := TMockActivator.Create(fModel);
   fModel.ComponentActivator := fActivator;
@@ -320,7 +256,6 @@ begin
   fModel.Free;
   fActivator.Free;
   fContext.Free;
-  fKernel := nil;
   inherited;
 end;
 

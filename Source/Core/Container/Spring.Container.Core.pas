@@ -45,7 +45,7 @@ type
   ISubDependencyResolver = interface;
   IDependencyResolver = interface;
   IInjection = interface;
-  IInjectionFactory = interface;
+  IInjector = interface;
   ILifetimeManager = interface;
   IComponentActivator = interface;
   IContainerExtension = interface;
@@ -63,7 +63,7 @@ type
   {$REGION 'Property Accessors'}
     function GetComponentBuilder: IComponentBuilder;
     function GetComponentRegistry: IComponentRegistry;
-    function GetInjectionFactory: IInjectionFactory;
+    function GetInjector: IInjector;
     function GetResolver: IDependencyResolver;
   {$ENDREGION}
     function HasService(serviceType: PTypeInfo): Boolean; overload;
@@ -73,15 +73,12 @@ type
 
     property ComponentBuilder: IComponentBuilder read GetComponentBuilder;
     property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
-    property InjectionFactory: IInjectionFactory read GetInjectionFactory;
+    property Injector: IInjector read GetInjector;
     property Resolver: IDependencyResolver read GetResolver;
   end;
 
   IKernelInternal = interface
     ['{14669EBA-4E57-4DF4-919D-377D8E90144C}']
-    function HasService(serviceType: PTypeInfo): Boolean; overload;
-    function HasService(const name: string): Boolean; overload;
-
     function Resolve(serviceType: PTypeInfo): TValue; overload;
     function Resolve(serviceType: PTypeInfo;
       const arguments: array of TValue): TValue; overload;
@@ -196,15 +193,31 @@ type
 
   IInjectionList = IList<IInjection>;
 
-  /// <summary>
-  ///   Injection Factory
-  /// </summary>
-  IInjectionFactory = interface
-    ['{EA75E648-C3EB-4CE7-912A-AB82B12BBD87}']
-    function CreateConstructorInjection: IInjection;
-    function CreateMethodInjection(const methodName: string): IInjection;
-    function CreatePropertyInjection(const propertyName: string): IInjection;
-    function CreateFieldInjection(const fieldName: string): IInjection;
+  IInjector = interface
+    ['{4627FFB4-F8D9-4A70-A281-8D323FAAA4CB}']
+  {$REGION 'Typed Injections'}
+    function InjectConstructor(const model: TComponentModel;
+      const parameterTypes: array of PTypeInfo): IInjection; overload;
+    function InjectMethod(const model: TComponentModel;
+      const methodName: string): IInjection; overload;
+    function InjectMethod(const model: TComponentModel; const methodName: string;
+      const parameterTypes: array of PTypeInfo): IInjection; overload;
+    function InjectProperty(const model: TComponentModel;
+      const propertyName: string): IInjection; overload;
+    function InjectField(const model: TComponentModel;
+      const fieldName: string): IInjection; overload;
+  {$ENDREGION}
+
+  {$REGION 'Named/Valued Injections'}
+    function InjectConstructor(const model: TComponentModel;
+      const arguments: array of TValue): IInjection; overload;
+    function InjectMethod(const model: TComponentModel; const methodName: string;
+      const arguments: array of TValue): IInjection; overload;
+    function InjectProperty(const model: TComponentModel;
+      const propertyName: string; const value: TValue): IInjection; overload;
+    function InjectField(const model: TComponentModel;
+      const fieldName: string; const value: TValue): IInjection; overload;
+  {$ENDREGION}
   end;
 
   TResolveEvent = procedure(Sender: TObject; var instance: TValue) of object;
@@ -252,7 +265,6 @@ type
   /// </summary>
   TComponentModel = class
   private
-    fKernel: IKernel;
     fComponentType: TRttiType;
     fLifetimeType: TLifetimeType;
     fLifetimeManager: ILifetimeManager;
@@ -267,35 +279,8 @@ type
     fPropertyInjections: IInjectionList;
     fFieldInjections: IInjectionList;
     function GetComponentTypeInfo: PTypeInfo;
-    function GetInjectionFactory: IInjectionFactory;
-  protected
-    function GetServices: IDictionary<string, PTypeInfo>;
-    function GetConstructorInjections: IInjectionList;
-    function GetMethodInjections: IInjectionList;
-    function GetPropertyInjections: IInjectionList;
-    function GetFieldInjections: IInjectionList;
-    property InjectionFactory: IInjectionFactory read GetInjectionFactory;
   public
-    constructor Create(const kernel: IKernel; const componentType: TRttiType);
-
-    {$REGION 'Typed Injections'}
-
-    function InjectConstructor(const parameterTypes: array of PTypeInfo): IInjection; overload;
-    function InjectMethod(const methodName: string): IInjection; overload;
-    function InjectMethod(const methodName: string; const parameterTypes: array of PTypeInfo): IInjection; overload;
-    function InjectProperty(const propertyName: string): IInjection; overload;
-    function InjectField(const fieldName: string): IInjection; overload;
-
-    {$ENDREGION}
-
-    {$REGION 'Named/Valued Injections'}
-
-    procedure InjectConstructor(const arguments: array of TValue); overload;
-    procedure InjectMethod(const methodName: string; const arguments: array of TValue); overload;
-    procedure InjectProperty(const propertyName: string; const value: TValue); overload;
-    procedure InjectField(const fieldName: string; const value: TValue); overload;
-
-    {$ENDREGION}
+    constructor Create(const componentType: TRttiType);
 
     function HasService(serviceType: PTypeInfo): Boolean;
     function GetServiceName(serviceType: PTypeInfo): string;
@@ -303,7 +288,7 @@ type
 
     property ComponentType: TRttiType read fComponentType;
     property ComponentTypeInfo: PTypeInfo read GetComponentTypeInfo;
-    property Services: IDictionary<string, PTypeInfo> read GetServices;
+    property Services: IDictionary<string, PTypeInfo> read fServices;
     property MinPoolsize: Integer read fMinPoolsize write fMinPoolsize;
     property MaxPoolsize: Integer read fMaxPoolsize write fMaxPoolsize;
     property RefCounting: TRefCounting read fRefCounting write fRefCounting;
@@ -313,10 +298,10 @@ type
     property ComponentActivator: IComponentActivator read fComponentActivator write fComponentActivator;
     property ActivatorDelegate: TActivatorDelegate read fActivatorDelegate write fActivatorDelegate;
 
-    property ConstructorInjections: IInjectionList read GetConstructorInjections;
-    property MethodInjections: IInjectionList read GetMethodInjections;
-    property PropertyInjections: IInjectionList read GetPropertyInjections;
-    property FieldInjections: IInjectionList read GetFieldInjections;
+    property ConstructorInjections: IInjectionList read fConstructorInjections;
+    property MethodInjections: IInjectionList read fMethodInjections;
+    property PropertyInjections: IInjectionList read fPropertyInjections;
+    property FieldInjections: IInjectionList read fFieldInjections;
   end;
 
   TValueHolder = class(TInterfacedObject, TFunc<TValue>)
@@ -372,191 +357,35 @@ uses
   Generics.Collections,
   TypInfo,
   Spring.Container.ResourceStrings,
-  Spring.Helpers,
-  Spring.Reflection;
+  Spring.Helpers;
 
 
 {$REGION 'TComponentModel'}
 
-constructor TComponentModel.Create(const kernel: IKernel;
-  const componentType: TRttiType);
+constructor TComponentModel.Create(const componentType: TRttiType);
 begin
   inherited Create;
-  fKernel := kernel;
   fComponentType := componentType;
-end;
-
-function TComponentModel.InjectConstructor(
-  const parameterTypes: array of PTypeInfo): IInjection;
-var
-  predicate: TPredicate<TRttiMethod>;
-  method: TRttiMethod;
-begin
-  predicate := TMethodFilters.IsConstructor
-    and TMethodFilters.HasParameterTypes(parameterTypes);
-  method := ComponentType.Methods.FirstOrDefault(predicate);
-  if not Assigned(method) then
-    raise ERegistrationException.CreateRes(@SUnsatisfiedConstructorParameters);
-  Result := InjectionFactory.CreateConstructorInjection;
-  Result.Initialize(method);
-  ConstructorInjections.Add(Result);
-end;
-
-function TComponentModel.InjectMethod(const methodName: string): IInjection;
-var
-  method: TRttiMethod;
-  injectionExists: Boolean;
-begin
-  method := ComponentType.GetMethod(methodName);
-  if not Assigned(method) then
-    raise ERegistrationException.CreateResFmt(@SNoSuchMethod, [methodName]);
-  injectionExists := MethodInjections.TryGetFirst(Result,
-    TInjectionFilters.ContainsMember(method));
-  if not injectionExists then
-    Result := InjectionFactory.CreateMethodInjection(methodName);
-  Result.Initialize(method);
-  if not injectionExists then
-    MethodInjections.Add(Result);
-end;
-
-function TComponentModel.InjectMethod(const methodName: string;
-  const parameterTypes: array of PTypeInfo): IInjection;
-var
-  predicate: TPredicate<TRttiMethod>;
-  method: TRttiMethod;
-  injectionExists: Boolean;
-begin
-  predicate := TMethodFilters.IsNamed(methodName)
-    and TMethodFilters.IsInstanceMethod
-    and TMethodFilters.HasParameterTypes(parameterTypes);
-  method := ComponentType.Methods.FirstOrDefault(predicate);
-  if not Assigned(method) then
-    raise ERegistrationException.CreateResFmt(@SUnsatisfiedMethodParameterTypes, [methodName]);
-  injectionExists := MethodInjections.TryGetFirst(Result,
-    TInjectionFilters.ContainsMember(method));
-  if not injectionExists then
-    Result := InjectionFactory.CreateMethodInjection(methodName);
-  Result.Initialize(method);
-  if not injectionExists then
-    MethodInjections.Add(Result);
-end;
-
-function TComponentModel.InjectProperty(const propertyName: string): IInjection;
-var
-  propertyMember: TRttiProperty;
-  injectionExists: Boolean;
-begin
-  propertyMember := ComponentType.GetProperty(propertyName);
-  if not Assigned(propertyMember) then
-    raise ERegistrationException.CreateResFmt(@SNoSuchProperty, [propertyName]);
-  injectionExists := PropertyInjections.TryGetFirst(Result,
-    TInjectionFilters.ContainsMember(propertyMember));
-  if not injectionExists then
-    Result := InjectionFactory.CreatePropertyInjection(propertyName);
-  Result.Initialize(propertyMember);
-  if not injectionExists then
-    PropertyInjections.Add(Result);
-end;
-
-function TComponentModel.InjectField(const fieldName: string): IInjection;
-var
-  field: TRttiField;
-  injectionExists: Boolean;
-begin
-  field := ComponentType.GetField(fieldName);
-  if not Assigned(field) then
-    raise ERegistrationException.CreateResFmt(@SNoSuchField, [fieldName]);
-  injectionExists := FieldInjections.TryGetFirst(Result,
-    TInjectionFilters.ContainsMember(field));
-  if not injectionExists then
-    Result := InjectionFactory.CreateFieldInjection(fieldName);
-  Result.Initialize(field);
-  if not injectionExists then
-    FieldInjections.Add(Result);
-end;
-
-procedure TComponentModel.InjectConstructor(const arguments: array of TValue);
-var
-  injection: IInjection;
-begin
-  injection := InjectionFactory.CreateConstructorInjection;
-  ConstructorInjections.Add(injection);
-  injection.InitializeArguments(arguments);
-end;
-
-procedure TComponentModel.InjectMethod(const methodName: string;
-  const arguments: array of TValue);
-var
-  injection: IInjection;
-begin
-  injection := InjectionFactory.CreateMethodInjection(methodName);
-  MethodInjections.Add(injection);
-  injection.InitializeArguments(arguments);
-end;
-
-procedure TComponentModel.InjectProperty(const propertyName: string;
-  const value: TValue);
-var
-  injection: IInjection;
-begin
-  injection := InjectProperty(propertyName);
-  injection.InitializeArguments(value);
-end;
-
-procedure TComponentModel.InjectField(const fieldName: string;
-  const value: TValue);
-var
-  injection: IInjection;
-begin
-  injection := InjectField(fieldName);
-  injection.InitializeArguments(value);
+  fServices := TCollections.CreateDictionary<string, PTypeInfo>;
+  fConstructorInjections := TCollections.CreateInterfaceList<IInjection>;
+  fMethodInjections := TCollections.CreateInterfaceList<IInjection>;
+  fPropertyInjections := TCollections.CreateInterfaceList<IInjection>;
+  fFieldInjections := TCollections.CreateInterfaceList<IInjection>;
 end;
 
 function TComponentModel.GetComponentTypeInfo: PTypeInfo;
 begin
-  Result := ComponentType.Handle;
-end;
-
-function TComponentModel.GetInjectionFactory: IInjectionFactory;
-begin
-  Result := fKernel.InjectionFactory;
-end;
-
-function TComponentModel.GetConstructorInjections: IInjectionList;
-begin
-  if not Assigned(fConstructorInjections) then
-    fConstructorInjections := TCollections.CreateInterfaceList<IInjection>;
-  Result := fConstructorInjections;
-end;
-
-function TComponentModel.GetMethodInjections: IInjectionList;
-begin
-  if not Assigned(fMethodInjections) then
-    fMethodInjections := TCollections.CreateInterfaceList<IInjection>;
-  Result := fMethodInjections;
-end;
-
-function TComponentModel.GetPropertyInjections: IInjectionList;
-begin
-  if not Assigned(fPropertyInjections) then
-    fPropertyInjections := TCollections.CreateInterfaceList<IInjection>;
-  Result := fPropertyInjections;
-end;
-
-function TComponentModel.HasService(serviceType: PTypeInfo): Boolean;
-begin
-  Result := Assigned(fServices) and fServices.Values.Contains(serviceType);
+  Result := fComponentType.Handle;
 end;
 
 function TComponentModel.GetServiceName(serviceType: PTypeInfo): string;
-var
-  item: TPair<string, PTypeInfo>;
 begin
   Guard.CheckNotNull(serviceType, 'serviceType');
-  for item in Services do
-    if item.Value = serviceType then
-      Exit(item.Key);
-  Result := '';
+  Result := fServices.FirstOrDefault(
+    function(const item: TPair<string, PTypeInfo>): Boolean
+    begin
+      Result := item.Value = serviceType;
+    end).Key;
 end;
 
 function TComponentModel.GetServiceType(const name: string): PTypeInfo;
@@ -564,18 +393,9 @@ begin
   Result := fServices[name];
 end;
 
-function TComponentModel.GetServices: IDictionary<string, PTypeInfo>;
+function TComponentModel.HasService(serviceType: PTypeInfo): Boolean;
 begin
-  if not Assigned(fServices) then
-    fServices := TCollections.CreateDictionary<string, PTypeInfo>;
-  Result := fServices;
-end;
-
-function TComponentModel.GetFieldInjections: IInjectionList;
-begin
-  if not Assigned(fFieldInjections) then
-    fFieldInjections := TCollections.CreateInterfaceList<IInjection>;
-  Result := fFieldInjections;
+  Result := fServices.ContainsValue(serviceType);
 end;
 
 {$ENDREGION}
