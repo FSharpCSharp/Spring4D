@@ -45,7 +45,7 @@ type
   private
     fRegistry: IComponentRegistry;
     fBuilder: IComponentBuilder;
-    fInjector: IInjector;
+    fInjector: IDependencyInjector;
     fRegistrationManager: TRegistrationManager;
     fResolver: IDependencyResolver;
     fExtensions: IList<IContainerExtension>;
@@ -58,13 +58,13 @@ type
     class destructor Destroy;
   {$REGION 'Implements IKernel'}
     function GetBuilder: IComponentBuilder;
-    function GetInjector: IInjector;
+    function GetInjector: IDependencyInjector;
     function GetRegistry: IComponentRegistry;
     function GetResolver: IDependencyResolver;
   {$ENDREGION}
     procedure InitializeInspectors; virtual;
     property Builder: IComponentBuilder read GetBuilder;
-    property Injector: IInjector read GetInjector;
+    property Injector: IDependencyInjector read GetInjector;
     property Registry: IComponentRegistry read GetRegistry;
     property Resolver: IDependencyResolver read GetResolver;
   public
@@ -198,7 +198,7 @@ begin
   inherited Create;
   fRegistry := TComponentRegistry.Create(Self);
   fBuilder := TComponentBuilder.Create(Self);
-  fInjector := TInjector.Create;
+  fInjector := TDependencyInjector.Create;
   fRegistrationManager := TRegistrationManager.Create(Self);
   fResolver := TDependencyResolver.Create(Self);
   fExtensions := TCollections.CreateInterfaceList<IContainerExtension>;
@@ -277,7 +277,7 @@ begin
   Result := fRegistry;
 end;
 
-function TContainer.GetInjector: IInjector;
+function TContainer.GetInjector: IDependencyInjector;
 begin
   Result := fInjector;
 end;

@@ -45,7 +45,7 @@ type
   ISubDependencyResolver = interface;
   IDependencyResolver = interface;
   IInjection = interface;
-  IInjector = interface;
+  IDependencyInjector = interface;
   ILifetimeManager = interface;
   IComponentActivator = interface;
   IContainerExtension = interface;
@@ -62,7 +62,7 @@ type
     ['{9E90EADB-A720-4394-A5E0-5DF0550C1E92}']
   {$REGION 'Property Accessors'}
     function GetBuilder: IComponentBuilder;
-    function GetInjector: IInjector;
+    function GetInjector: IDependencyInjector;
     function GetRegistry: IComponentRegistry;
     function GetResolver: IDependencyResolver;
   {$ENDREGION}
@@ -72,7 +72,7 @@ type
     procedure AddExtension(const extension: IContainerExtension);
 
     property Builder: IComponentBuilder read GetBuilder;
-    property Injector: IInjector read GetInjector;
+    property Injector: IDependencyInjector read GetInjector;
     property Registry: IComponentRegistry read GetRegistry;
     property Resolver: IDependencyResolver read GetResolver;
   end;
@@ -193,9 +193,8 @@ type
 
   IInjectionList = IList<IInjection>;
 
-  IInjector = interface
+  IDependencyInjector = interface
     ['{4627FFB4-F8D9-4A70-A281-8D323FAAA4CB}']
-  {$REGION 'Typed Injections'}
     function InjectConstructor(const model: TComponentModel;
       const parameterTypes: array of PTypeInfo): IInjection; overload;
     function InjectMethod(const model: TComponentModel;
@@ -206,9 +205,7 @@ type
       const propertyName: string): IInjection; overload;
     function InjectField(const model: TComponentModel;
       const fieldName: string): IInjection; overload;
-  {$ENDREGION}
 
-  {$REGION 'Named/Valued Injections'}
     function InjectConstructor(const model: TComponentModel;
       const arguments: array of TValue): IInjection; overload;
     function InjectMethod(const model: TComponentModel; const methodName: string;
@@ -217,10 +214,7 @@ type
       const propertyName: string; const value: TValue): IInjection; overload;
     function InjectField(const model: TComponentModel;
       const fieldName: string; const value: TValue): IInjection; overload;
-  {$ENDREGION}
   end;
-
-  TResolveEvent = procedure(Sender: TObject; var instance: TValue) of object;
 
   ISubDependencyResolver = interface
     ['{E360FFAD-2235-49D1-9A4F-50945877E337}']
