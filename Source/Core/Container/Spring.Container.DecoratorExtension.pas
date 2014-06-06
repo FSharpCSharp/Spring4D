@@ -76,7 +76,7 @@ uses
 
 procedure TDecoratorContainerExtension.Initialize;
 begin
-  Kernel.ComponentBuilder.AddInspector(TDecoratorInspector.Create);
+  Kernel.Builder.AddInspector(TDecoratorInspector.Create);
 end;
 
 {$ENDREGION}
@@ -99,7 +99,7 @@ begin
     predicate := TMethodFilters.IsConstructor
       and TMethodFilters.ContainsParameterType(serviceType);
     decoratorModel := nil;
-    for componentModel in kernel.ComponentRegistry.FindAll.Where(
+    for componentModel in kernel.Registry.FindAll.Where(
       function(const model: TComponentModel): Boolean
       begin
         Result := model.HasService(serviceType);

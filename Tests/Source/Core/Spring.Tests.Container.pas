@@ -1635,7 +1635,7 @@ procedure TTestLazyDependenciesDetectRecursion.PerformChecks;
 var
   model: TComponentModel;
 begin
-  model := fContainer.Kernel.ComponentRegistry.FindOne('service');
+  model := fContainer.Kernel.Registry.FindOne('service');
   fContainer.Kernel.Injector.InjectField(model, 'fNameService', 'service');
 
   ExpectedException := ECircularDependencyException;

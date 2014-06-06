@@ -154,7 +154,7 @@ procedure TComponentBuilder.BuildAll;
 var
   model: TComponentModel;
 begin
-  for model in fKernel.ComponentRegistry.FindAll do
+  for model in fKernel.Registry.FindAll do
     Build(model);
 end;
 
@@ -436,28 +436,28 @@ var
 begin
   if not model.Services.IsEmpty then Exit;
   if model.ComponentType.IsRecord and not model.HasService(model.ComponentTypeInfo) then
-    kernel.ComponentRegistry.RegisterService(model, model.ComponentTypeInfo)
+    kernel.Registry.RegisterService(model, model.ComponentTypeInfo)
   else
   begin
     attributes := model.ComponentType.GetCustomAttributes<ImplementsAttribute>;
     for attribute in attributes do
-      kernel.ComponentRegistry.RegisterService(model, attribute.ServiceType, attribute.Name);
+      kernel.Registry.RegisterService(model, attribute.ServiceType, attribute.Name);
 
     services := model.ComponentType.GetInterfaces;
     if Assigned(services) then
       for service in services do
         if Assigned(service.BaseType) and not model.HasService(service.Handle) then
         begin
-          kernel.ComponentRegistry.RegisterService(model, service.Handle,
+          kernel.Registry.RegisterService(model, service.Handle,
             service.DefaultName + '@' + model.ComponentType.DefaultName);
-          kernel.ComponentRegistry.RegisterDefault(model, service.Handle);
+          kernel.Registry.RegisterDefault(model, service.Handle);
         end;
     if TType.IsDelegate(model.ComponentTypeInfo)
       and not model.HasService(model.ComponentType.Handle) then
-      kernel.ComponentRegistry.RegisterService(model, model.ComponentType.Handle);
+      kernel.Registry.RegisterService(model, model.ComponentType.Handle);
 
     if model.Services.IsEmpty then
-      kernel.ComponentRegistry.RegisterService(model, model.ComponentType.Handle);
+      kernel.Registry.RegisterService(model, model.ComponentType.Handle);
   end;
 end;
 

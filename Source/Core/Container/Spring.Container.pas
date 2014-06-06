@@ -57,15 +57,15 @@ type
     class constructor Create;
     class destructor Destroy;
   {$REGION 'Implements IKernel'}
-    function GetComponentBuilder: IComponentBuilder;
-    function GetComponentRegistry: IComponentRegistry;
+    function GetBuilder: IComponentBuilder;
     function GetInjector: IInjector;
+    function GetRegistry: IComponentRegistry;
     function GetResolver: IDependencyResolver;
   {$ENDREGION}
     procedure InitializeInspectors; virtual;
-    property ComponentBuilder: IComponentBuilder read GetComponentBuilder;
-    property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
+    property Builder: IComponentBuilder read GetBuilder;
     property Injector: IInjector read GetInjector;
+    property Registry: IComponentRegistry read GetRegistry;
     property Resolver: IDependencyResolver read GetResolver;
   public
     constructor Create;
@@ -267,12 +267,12 @@ begin
     fBuilder.AddInspector(inspector);
 end;
 
-function TContainer.GetComponentBuilder: IComponentBuilder;
+function TContainer.GetBuilder: IComponentBuilder;
 begin
   Result := fBuilder;
 end;
 
-function TContainer.GetComponentRegistry: IComponentRegistry;
+function TContainer.GetRegistry: IComponentRegistry;
 begin
   Result := fRegistry;
 end;

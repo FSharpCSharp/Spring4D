@@ -69,7 +69,7 @@ uses
 
 procedure TActivatorContainerExtension.Initialize;
 begin
-  Kernel.ComponentBuilder.AddInspector(TActivatorInspector.Create);
+  Kernel.Builder.AddInspector(TActivatorInspector.Create);
 end;
 
 {$ENDREGION}

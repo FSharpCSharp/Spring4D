@@ -61,9 +61,9 @@ type
   IKernel = interface
     ['{9E90EADB-A720-4394-A5E0-5DF0550C1E92}']
   {$REGION 'Property Accessors'}
-    function GetComponentBuilder: IComponentBuilder;
-    function GetComponentRegistry: IComponentRegistry;
+    function GetBuilder: IComponentBuilder;
     function GetInjector: IInjector;
+    function GetRegistry: IComponentRegistry;
     function GetResolver: IDependencyResolver;
   {$ENDREGION}
     function HasService(serviceType: PTypeInfo): Boolean; overload;
@@ -71,9 +71,9 @@ type
 
     procedure AddExtension(const extension: IContainerExtension);
 
-    property ComponentBuilder: IComponentBuilder read GetComponentBuilder;
-    property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
+    property Builder: IComponentBuilder read GetBuilder;
     property Injector: IInjector read GetInjector;
+    property Registry: IComponentRegistry read GetRegistry;
     property Resolver: IDependencyResolver read GetResolver;
   end;
 

@@ -195,16 +195,16 @@ begin
   if dependency.TypeKind in [tkClass, tkInterface, tkRecord] then
   begin
     if argument.IsEmpty then
-      Result := fKernel.ComponentRegistry.HasDefault(dependency.Handle)
+      Result := fKernel.Registry.HasDefault(dependency.Handle)
     else if argument.IsOrdinal and (argument.AsInteger = Low(Integer)) then
-      Result := fKernel.ComponentRegistry.HasService(dependency.Handle)
+      Result := fKernel.Registry.HasService(dependency.Handle)
     else
     begin
       Result := argument.IsType<string>;
       if Result then
       begin
         serviceName := argument.AsString;
-        model := fKernel.ComponentRegistry.FindOne(serviceName);
+        model := fKernel.Registry.FindOne(serviceName);
         Result := Assigned(model);
         if Result then
         begin
@@ -245,7 +245,7 @@ begin
     Exit;
   end;
 
-  model := fKernel.ComponentRegistry.FindOne(dependency.Handle, argument);
+  model := fKernel.Registry.FindOne(dependency.Handle, argument);
   if not Assigned(model) then
     raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
   if context.IsInResolution(model) then
@@ -415,7 +415,7 @@ begin
   lazyKind := TType.GetLazyKind(dependency.Handle);
   dependencyType := dependency.GetGenericArguments[0];
 
-  model := fKernel.ComponentRegistry.FindOne(dependencyType.Handle, argument);
+  model := fKernel.Registry.FindOne(dependencyType.Handle, argument);
   if not Assigned(model) then
     raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
   if context.IsInResolution(model) then
@@ -473,7 +473,7 @@ begin
     modelType := dependencyType.GetGenericArguments[0]
   else
     modelType := dependencyType;
-  models := fKernel.ComponentRegistry.FindAll(modelType.Handle);
+  models := fKernel.Registry.FindAll(modelType.Handle);
   SetLength(values, models.Count);
   i := 0;
   for model in models do

@@ -557,19 +557,19 @@ begin
   Guard.CheckNotNull(kernel, 'kernel');
   Guard.CheckNotNull(componentType, 'componentType');
   fKernel := kernel;
-  fModel := fKernel.ComponentRegistry.RegisterComponent(componentType);
+  fModel := fKernel.Registry.RegisterComponent(componentType);
 end;
 
 function TRegistration.Implements(serviceType: PTypeInfo): TRegistration;
 begin
-  fKernel.ComponentRegistry.RegisterService(fModel, serviceType);
+  fKernel.Registry.RegisterService(fModel, serviceType);
   Result := Self;
 end;
 
 function TRegistration.Implements(serviceType: PTypeInfo;
   const name: string): TRegistration;
 begin
-  fKernel.ComponentRegistry.RegisterService(fModel, serviceType, name);
+  fKernel.Registry.RegisterService(fModel, serviceType, name);
   Result := Self;
 end;
 
@@ -680,26 +680,26 @@ var
   serviceType: PTypeInfo;
 begin
   for serviceType in fModel.Services.Values do
-    fKernel.ComponentRegistry.RegisterDefault(fModel, serviceType);
+    fKernel.Registry.RegisterDefault(fModel, serviceType);
   Result := Self;
 end;
 
 function TRegistration.AsDefault(serviceType: PTypeInfo): TRegistration;
 begin
-  fKernel.ComponentRegistry.RegisterDefault(fModel, serviceType);
+  fKernel.Registry.RegisterDefault(fModel, serviceType);
   Result := Self;
 end;
 
 {$IFDEF DELPHIXE_UP}
 function TRegistration.AsFactory: TRegistration;
 begin
-  fKernel.ComponentRegistry.RegisterFactory(fModel);
+  fKernel.Registry.RegisterFactory(fModel);
   Result := Self;
 end;
 
 function TRegistration.AsFactory(const name: string): TRegistration;
 begin
-  fKernel.ComponentRegistry.RegisterFactory(fModel, name);
+  fKernel.Registry.RegisterFactory(fModel, name);
   Result := Self;
 end;
 {$ENDIF}
