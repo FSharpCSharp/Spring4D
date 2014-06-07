@@ -50,8 +50,9 @@ begin
       Command.Entity := LEntity;
       LQuery := Generator.GenerateInsert(GetInsertCommand);
       LStatement.SetSQLCommand(LQuery);
+      if (LCollection = '') then
+        LCollection := LStatement.GetFullCollectionName;
       LDocs[i] := JsonToBson(LStatement.GetQueryText);
-      inherited Execute(LEntity);
       Inc(i);
     end;
 
