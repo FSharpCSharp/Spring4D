@@ -72,8 +72,6 @@ uses
   TestAdaptersASA in 'TestAdaptersASA.pas',
   SQL.Generator.Oracle in '..\SQL.Generator.Oracle.pas',
   Adapters.DBX in '..\Adapters.DBX.pas',
-  Adapters.UIB in '..\Adapters.UIB.pas',
-  TestAdapterUIB in 'TestAdapterUIB.pas',
   SQL.Generator.Firebird in '..\SQL.Generator.Firebird.pas',
   TestConnectionFactory in 'TestConnectionFactory.pas',
   SQL.Generator.MSSQL in '..\SQL.Generator.MSSQL.pas',
@@ -102,9 +100,6 @@ uses
   TestPersistence in 'TestPersistence.pas',
   TestConsts in 'TestConsts.pas',
   SQL.Generator.NoSQL in '..\SQL.Generator.NoSQL.pas',
-  Adapters.MongoDB in '..\Adapters.MongoDB.pas',
-  mongoWire in '..\External\TMongoWire\mongoWire.pas',
-  TestAdapterMongoDB in 'TestAdapterMongoDB.pas',
   SQL.Generator.MongoDB in '..\SQL.Generator.MongoDB.pas',
   Core.Criteria.Criterion.LogicalExpression in '..\Core.Criteria.Criterion.LogicalExpression.pas',
   SvTesting.DUnit in '..\External\delphi-oop\Core\SvTesting.DUnit.pas',
@@ -139,9 +134,7 @@ uses
   Core.Criteria.Criterion.Disjunction in '..\Core.Criteria.Criterion.Disjunction.pas',
   Core.Criteria.Criterion.Conjunction in '..\Core.Criteria.Criterion.Conjunction.pas',
   Core.Repository.Simple in '..\Core.Repository.Simple.pas',
-  TestSimpleRepository in 'TestSimpleRepository.pas',
-  Core.Session.MongoDB in '..\Core.Session.MongoDB.pas',
-  SQL.Commands.BulkInsert.MongoDB in '..\SQL.Commands.BulkInsert.MongoDB.pas';
+  TestSimpleRepository in 'TestSimpleRepository.pas';
 
 {$R *.RES}
 

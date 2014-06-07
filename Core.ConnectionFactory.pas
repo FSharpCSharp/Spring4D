@@ -33,7 +33,11 @@ uses
   Core.Interfaces
   ,Generics.Collections
   ,SysUtils
+  {$IF CompilerVersion >=27}
+  ,JSON
+  {$ELSE}
   ,DBXJSON
+  {$ENDIF}
   ,Rtti
   ;
 
