@@ -776,6 +776,11 @@ begin
   fCollection := collection;
 end;
 
+destructor TCollectionList<T>.Destroy;
+begin
+  // not calling inherited because we don't want to call Clear
+end;
+
 procedure TCollectionList<T>.Delete(index: Integer);
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
@@ -826,11 +831,6 @@ begin
     Changed(oldItems[i], caRemoved);
     oldItems[i].Free;
   end;
-end;
-
-destructor TCollectionList<T>.Destroy;
-begin
-
 end;
 
 procedure TCollectionList<T>.Exchange(index1, index2: Integer);

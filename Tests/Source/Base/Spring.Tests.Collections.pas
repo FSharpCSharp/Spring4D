@@ -104,6 +104,15 @@ type
     procedure TestIssue67;
     procedure TestCopyTo;
     procedure TestArrayAccess;
+
+    procedure GetCapacity;
+    procedure SetCapacity;
+
+    procedure TestExtract_ItemNotInList;
+
+    procedure TestEnumeratorMoveNext_VersionMismatch;
+    procedure TestEnumeratorReset;
+    procedure TestEnumeratorReset_VersionMismatch;
   end;
 
   TTestEmptyStringIntegerDictionary = class(TTestCase)
@@ -300,17 +309,45 @@ type
     procedure SetUp; override;
   published
     procedure TestQueryInterface;
+    procedure TestObjectListCreate;
+    procedure TestSetOwnsObjects;
+    procedure TestGetElementType;
   end;
+
+  TTestInterfaceList = class(TTestCase)
+  private
+    SUT: IList<IInvokable>;
+  protected
+    procedure SetUp; override;
+  published
+    procedure TestInterfaceListCreate;
+    procedure TestGetElementType;
+  end;
+
+  TMyCollectionItem = class(TCollectionItem);
+  TMyOtherCollectionItem = class(TCollectionItem);
 
   TTestCollectionList = class(TTestCase)
   private
-    SUT: TCollection;
+    SUT: IList<TCollectionItem>;
+    Coll: TCollection;
   protected
     procedure SetUp; override;
     procedure TearDown; override;
   published
     procedure TestElementType;
     procedure TestAdd;
+    procedure TestDelete;
+    procedure TestDeleteRange;
+    procedure TestExtract;
+    procedure TestExtract_ItemNotInList;
+
+    procedure TestExchange;
+    procedure TestMove;
+
+    procedure TestEnumeratorMoveNext_VersionMismatch;
+    procedure TestEnumeratorReset;
+    procedure TestEnumeratorReset_VersionMismatch;
   end;
 
   TTestEnumerable = class(TTestCase)
@@ -341,6 +378,7 @@ type
 
     procedure TestListDelete;
     procedure TestListDeleteRange;
+    procedure TestListDeleteRange2;
 
     procedure TestListExchange;
 
@@ -550,6 +588,19 @@ end;
 
 { TTestIntegerList }
 
+procedure TTestIntegerList.GetCapacity;
+begin
+  SimpleFillList;
+  CheckEquals(4, TList<Integer>(SUT).Capacity);
+end;
+
+procedure TTestIntegerList.SetCapacity;
+begin
+  SimpleFillList;
+  TList<Integer>(SUT).Capacity := 2;
+  CheckTrue(SUT.EqualsTo([1, 2]));
+end;
+
 procedure TTestIntegerList.SetUp;
 begin
   inherited;
@@ -593,6 +644,49 @@ begin
   CheckEquals(SUT.Last, values[MaxItems-1]);
   SUT[0] := MaxItems;
   CheckNotEquals(SUT.First, values[0]);
+end;
+
+procedure TTestIntegerList.TestEnumeratorMoveNext_VersionMismatch;
+var
+  e: IEnumerator<Integer>;
+begin
+  SimpleFillList;
+  ExpectedException := EInvalidOperationException;
+  e := SUT.GetEnumerator;
+  while e.MoveNext do
+    SUT.Add(4);
+  ExpectedException := nil;
+end;
+
+procedure TTestIntegerList.TestEnumeratorReset;
+var
+  e: IEnumerator<Integer>;
+begin
+  SimpleFillList;
+  e := SUT.GetEnumerator;
+  while e.MoveNext do;
+  e.Reset;
+  CheckTrue(e.MoveNext);
+  CheckEquals(1, e.Current);
+end;
+
+procedure TTestIntegerList.TestEnumeratorReset_VersionMismatch;
+var
+  e: IEnumerator<Integer>;
+begin
+  SimpleFillList;
+  e := SUT.GetEnumerator;
+  while e.MoveNext do;
+  SUT.Add(4);
+  ExpectedException := EInvalidOperationException;
+  e.Reset;
+  ExpectedException := nil;
+end;
+
+procedure TTestIntegerList.TestExtract_ItemNotInList;
+begin
+  SimpleFillList;
+  CheckEquals(0, SUT.Extract(4));
 end;
 
 procedure TTestIntegerList.TestIssue67;
@@ -1747,6 +1841,17 @@ begin
   SUT := TObjectList<TPersistent>.Create as IList<TPersistent>;
 end;
 
+procedure TTestObjectList.TestGetElementType;
+begin
+  Check(TypeInfo(TPersistent) = SUT.ElementType);
+end;
+
+procedure TTestObjectList.TestObjectListCreate;
+begin
+  SUT := TObjectList<TPersistent>.Create(nil);
+  CheckNotNull(SUT.Comparer);
+end;
+
 procedure TTestObjectList.TestQueryInterface;
 var
   list: IObjectList;
@@ -1766,30 +1871,50 @@ begin
   CheckTrue(list.ElementType = TPersistent.ClassInfo);
 end;
 
-{ TTestCollectionList }
+procedure TTestObjectList.TestSetOwnsObjects;
+begin
+  CheckTrue(TObjectList<TPersistent>(SUT).OwnsObjects);
+  TObjectList<TPersistent>(SUT).OwnsObjects := False;
+  CheckFalse(TObjectList<TPersistent>(SUT).OwnsObjects);
+end;
 
-type
-  TMyCollectionItem = class(TCollectionItem);
-  TMyOtherCollectionItem = class(TCollectionItem);
+{ TTestInterfaceList }
+
+procedure TTestInterfaceList.SetUp;
+begin
+  SUT := TInterfaceList<IInvokable>.Create as IList<IInvokable>;
+end;
+
+procedure TTestInterfaceList.TestGetElementType;
+begin
+  Check(TypeInfo(IInvokable) = SUT.ElementType);
+end;
+
+procedure TTestInterfaceList.TestInterfaceListCreate;
+begin
+  SUT := TInterfaceList<IInvokable>.Create(nil);
+  CheckNotNull(SUT.Comparer);
+end;
+
+{ TTestCollectionList }
 
 procedure TTestCollectionList.SetUp;
 begin
-  SUT := TCollection.Create(TMyCollectionItem);
+  Coll := TCollection.Create(TMyCollectionItem);
+  SUT := Coll.AsList;
 end;
 
 procedure TTestCollectionList.TearDown;
 begin
-  SUT.Free;
+  SUT := nil;
+  Coll.Free;
 end;
 
 procedure TTestCollectionList.TestAdd;
-var
-  list: IList<TCollectionItem>;
 begin
-  list := SUT.AsList;
-  list.Add(TMyCollectionItem.Create(nil));
-  TMyCollectionItem.Create(SUT);
-  CheckEquals(2, list.Count);
+  SUT.Add(TMyCollectionItem.Create(nil));
+  TMyCollectionItem.Create(Coll);
+  CheckEquals(2, SUT.Count);
   CheckException(Exception,
     procedure
     var
@@ -1797,7 +1922,7 @@ begin
     begin
       item := TMyOtherCollectionItem.Create(nil);
       try
-        list.Add(item);
+        SUT.Add(item);
       except
         item.Free;
         raise;
@@ -1805,20 +1930,136 @@ begin
     end);
 end;
 
+procedure TTestCollectionList.TestDelete;
+var
+  item: TMyCollectionItem;
+begin
+  TMyCollectionItem.Create(Coll);
+  item := TMyCollectionItem.Create(Coll);
+  CheckEquals(2, SUT.Count);
+  SUT.Delete(0);
+  CheckEquals(1, SUT.Count);
+  CheckSame(item, SUT[0]);
+end;
+
+procedure TTestCollectionList.TestDeleteRange;
+var
+  item: TMyCollectionItem;
+begin
+  item := TMyCollectionItem.Create(Coll);
+  TMyCollectionItem.Create(Coll);
+  TMyCollectionItem.Create(Coll);
+  CheckEquals(3, SUT.Count);
+  SUT.DeleteRange(1, 2);
+  CheckEquals(1, SUT.Count);
+  CheckSame(item, SUT[0]);
+end;
+
 procedure TTestCollectionList.TestElementType;
 var
-  list1: IList<TCollectionItem>;
-  list2: IList<TMyCollectionItem>;
+  list: IList<TMyCollectionItem>;
 begin
-  list1 := SUT.AsList;
-  list2 := SUT.AsList<TMyCollectionItem>;
-  CheckTrue(list1.ElementType = TMyCollectionItem.ClassInfo);
-  CheckTrue(list2.ElementType = TMyCollectionItem.ClassInfo);
+  list := Coll.AsList<TMyCollectionItem>;
+  CheckTrue(SUT.ElementType = TMyCollectionItem.ClassInfo);
+  CheckTrue(list.ElementType = TMyCollectionItem.ClassInfo);
   CheckException(EArgumentException,
     procedure
     begin
-      SUT.AsList<TMyOtherCollectionItem>;
+      Coll.AsList<TMyOtherCollectionItem>;
     end);
+end;
+
+procedure TTestCollectionList.TestEnumeratorMoveNext_VersionMismatch;
+var
+  e: IEnumerator<TCollectionItem>;
+begin
+  TMyCollectionItem.Create(Coll);
+  TMyCollectionItem.Create(Coll);
+  TMyCollectionItem.Create(Coll);
+  ExpectedException := EInvalidOperationException;
+  e := SUT.GetEnumerator;
+  while e.MoveNext do
+    SUT.Add(TMyCollectionItem.Create(nil));
+  ExpectedException := nil;
+end;
+
+procedure TTestCollectionList.TestEnumeratorReset;
+var
+  item: TCollectionItem;
+  e: IEnumerator<TCollectionItem>;
+begin
+  item := TMyCollectionItem.Create(Coll);
+  TMyCollectionItem.Create(Coll);
+  TMyCollectionItem.Create(Coll);
+  e := SUT.GetEnumerator;
+  while e.MoveNext do;
+  e.Reset;
+  CheckTrue(e.MoveNext);
+  CheckSame(item, e.Current);
+end;
+
+procedure TTestCollectionList.TestEnumeratorReset_VersionMismatch;
+var
+  e: IEnumerator<TCollectionItem>;
+begin
+  TMyCollectionItem.Create(Coll);
+  TMyCollectionItem.Create(Coll);
+  TMyCollectionItem.Create(Coll);
+  e := SUT.GetEnumerator;
+  while e.MoveNext do;
+  SUT.Add(TMyCollectionItem.Create(nil));
+  ExpectedException := EInvalidOperationException;
+  e.Reset;
+  ExpectedException := nil;
+end;
+
+procedure TTestCollectionList.TestExchange;
+var
+  item1, item2: TMyCollectionItem;
+begin
+  item1 := TMyCollectionItem.Create(Coll);
+  TMyCollectionItem.Create(Coll);
+  item2 := TMyCollectionItem.Create(Coll);
+  SUT.Exchange(0, 2);
+  CheckSame(item1, SUT[2]);
+  CheckSame(item2, SUT[0]);
+end;
+
+procedure TTestCollectionList.TestExtract;
+var
+  item: TMyCollectionItem;
+begin
+  TMyCollectionItem.Create(Coll);
+  item := TMyCollectionItem.Create(Coll);
+  CheckEquals(2, SUT.Count);
+  SUT.Extract(item);
+  CheckEquals(1, SUT.Count);
+  CheckNull(item.Collection);
+  item.Free;
+end;
+
+procedure TTestCollectionList.TestExtract_ItemNotInList;
+var
+  item1: TMyCollectionItem;
+  item2: TCollectionItem;
+begin
+  item1 := TMyCollectionItem.Create(nil);
+  item2 := SUT.Extract(item1);
+  CheckNull(item2);
+  item1.Free;
+end;
+
+procedure TTestCollectionList.TestMove;
+var
+  item1, item2, item3: TMyCollectionItem;
+begin
+  item1 := TMyCollectionItem.Create(Coll);
+  item2 := TMyCollectionItem.Create(Coll);
+  item3 := TMyCollectionItem.Create(Coll);
+  SUT.Move(0, 2);
+  CheckSame(item1, SUT[2]);
+  CheckSame(item2, SUT[0]);
+  CheckSame(item3, SUT[1]);
 end;
 
 { TTestEnumerable }
@@ -1897,6 +2138,12 @@ procedure TTestListAdapter.TestListDeleteRange;
 begin
   SUT.DeleteRange(1, 2);
   CheckTrue(InternalList.EqualsTo([1]));
+end;
+
+procedure TTestListAdapter.TestListDeleteRange2;
+begin
+  SUT.DeleteRange(0, 2);
+  CheckTrue(InternalList.EqualsTo([3]));
 end;
 
 procedure TTestListAdapter.TestListExchange;

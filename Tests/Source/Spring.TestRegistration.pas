@@ -78,6 +78,7 @@ begin
     TTestListOfIntegerAsIEnumerable.Suite,
     TTestLinkedList.Suite,
     TTestObjectList.Suite,
+    TTestInterfaceList.Suite,
     TTestCollectionList.Suite,
     TTestEnumerable.Suite,
     TTestListAdapter.Suite
