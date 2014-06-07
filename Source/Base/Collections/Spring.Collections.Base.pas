@@ -204,11 +204,16 @@ type
   ///	  <c>False</c> by default.
   ///	</remarks>
   TCollectionBase<T> = class abstract(TEnumerableBase<T>, ICollection<T>, IReadOnlyCollection<T>)
+  private
+    fOnChanged: ICollectionChangedEvent<T>;
   protected
   {$REGION 'Property Accessors'}
     function GetIsReadOnly: Boolean; virtual;
+    function GetOnChanged: ICollectionChangedEvent<T>;
   {$ENDREGION}
+    procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
   public
+    constructor Create; override;
     constructor Create(const collection: array of T); overload;
     constructor Create(const collection: IEnumerable<T>); overload;
 
@@ -229,6 +234,7 @@ type
     procedure CopyTo(var values: TArray<T>; index: Integer); virtual;
 
     property IsReadOnly: Boolean read GetIsReadOnly;
+    property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
   TContainedCollectionBase<T> = class(TCollectionBase<T>)
@@ -263,7 +269,6 @@ type
   ///	</summary>
   TListBase<T> = class abstract(TCollectionBase<T>, IList<T>, IReadOnlyList<T>, IList)
   private
-    fOnChanged: ICollectionChangedEvent<T>;
     function AsList: IList;
     function AsReadOnlyList: IReadOnlyList<T>;
   {$HINTS OFF}
@@ -272,19 +277,16 @@ type
   protected
   {$REGION 'Property Accessors'}
     function GetItem(index: Integer): T; virtual; abstract;
-    function GetOnChanged: ICollectionChangedEvent<T>; 
     procedure SetItem(index: Integer; const value: T); virtual; abstract;
   {$ENDREGION}
   {$REGION 'Implements IInterface'}
     function QueryInterface(const IID: TGUID; out Obj): HResult; override; stdcall;
   {$ENDREGION}
-    procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
     function TryGetElementAt(out value: T; index: Integer): Boolean; override;
     function TryGetFirst(out value: T): Boolean; override;
     function TryGetLast(out value: T): Boolean; override;
     function TryGetSingle(out value: T): Boolean; override;
   public
-    constructor Create; overload; override;
     destructor Destroy; override;
 
     procedure Add(const item: T); override;
@@ -328,7 +330,6 @@ type
     function ToArray: TArray<T>; override;
 
     property Items[index: Integer]: T read GetItem write SetItem; default;
-    property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
 implementation
@@ -1125,6 +1126,12 @@ end;
 
 {$REGION 'TCollectionBase<T>'}
 
+constructor TCollectionBase<T>.Create;
+begin
+  inherited Create;
+  fOnChanged := TCollectionChangedEventImpl<T>.Create;
+end;
+
 constructor TCollectionBase<T>.Create(const collection: array of T);
 begin
   Create;
@@ -1155,6 +1162,11 @@ begin
 
   for item in collection do
     Add(item);
+end;
+
+procedure TCollectionBase<T>.Changed(const item: T; action: TCollectionChangedAction);
+begin
+  fOnChanged.Invoke(Self, item, action);
 end;
 
 procedure TCollectionBase<T>.CopyTo(var values: TArray<T>; index: Integer);
@@ -1195,6 +1207,11 @@ end;
 function TCollectionBase<T>.GetIsReadOnly: Boolean;
 begin
   Result := False;
+end;
+
+function TCollectionBase<T>.GetOnChanged: ICollectionChangedEvent<T>;
+begin
+  Result := fOnChanged;
 end;
 
 procedure TCollectionBase<T>.RemoveRange(const collection: array of T);
@@ -1269,12 +1286,6 @@ end;
 
 {$REGION 'TListBase<T>'}
 
-constructor TListBase<T>.Create;
-begin
-  inherited Create;
-  fOnChanged := TCollectionChangedEventImpl<T>.Create;
-end;
-
 destructor TListBase<T>.Destroy;
 begin
   Clear;
@@ -1294,11 +1305,6 @@ end;
 function TListBase<T>.AsReadOnlyList: IReadOnlyList<T>;
 begin
   Result := Self;
-end;
-
-procedure TListBase<T>.Changed(const item: T; action: TCollectionChangedAction);
-begin
-  fOnChanged.Invoke(Self, item, action);
 end;
 
 procedure TListBase<T>.Clear;
@@ -1321,11 +1327,6 @@ begin
     Result := Items[0]
   else
     Result := defaultValue;
-end;
-
-function TListBase<T>.GetOnChanged: ICollectionChangedEvent<T>;
-begin
-  Result := fOnChanged;
 end;
 
 function TListBase<T>.IndexOf(const item: T): Integer;

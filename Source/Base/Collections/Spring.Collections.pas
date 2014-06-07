@@ -757,6 +757,7 @@ type
     ['{AC8A0302-C530-46A0-83FC-D88302ECCE3D}']
   {$REGION 'Property Accessors'}
     function GetIsReadOnly: Boolean;
+    function GetOnChanged: IEvent;
   {$ENDREGION}
 
     procedure Add(const item: TValue);
@@ -774,6 +775,7 @@ type
     procedure ExtractRange(const collection: IEnumerable); overload;
 
     property IsReadOnly: Boolean read GetIsReadOnly;
+    property OnChanged: IEvent read GetOnChanged;
   end;
 
   ///	<summary>
@@ -793,6 +795,7 @@ type
     ['{9BFD9B06-45CD-4C80-B145-01B09D432CF0}']
   {$REGION 'Property Accessors'}
     function GetIsReadOnly: Boolean;
+    function GetOnChanged: ICollectionChangedEvent<T>;
   {$ENDREGION}
 
     ///	<summary>
@@ -857,6 +860,7 @@ type
     ///	  or modification of elements after the collection is created.
     ///	</remarks>
     property IsReadOnly: Boolean read GetIsReadOnly;
+    property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
   IReadOnlyList = interface(IReadOnlyCollection)
@@ -872,7 +876,6 @@ type
     ['{43FF6143-3B87-4298-B48C-2ABB9353BF68}']
   {$REGION 'Property Accessors'}
     function GetItem(index: Integer): TValue;
-    function GetOnChanged: IEvent;
     procedure SetItem(index: Integer; const item: TValue);
   {$ENDREGION}
 
@@ -902,7 +905,6 @@ type
     function AsReadOnlyList: IReadOnlyList;
 
     property Items[index: Integer]: TValue read GetItem write SetItem; default;
-    property OnChanged: IEvent read GetOnChanged;
   end;
 
   ///	<summary>
@@ -946,7 +948,6 @@ type
     ['{B6B4E1E1-0D29-40E1-854C-A93DEA8D1AA5}']
   {$REGION 'Property Accessors'}
     function GetItem(index: Integer): T;
-    function GetOnChanged: ICollectionChangedEvent<T>;
     procedure SetItem(index: Integer; const item: T);
   {$ENDREGION}
 
@@ -1010,7 +1011,6 @@ type
     function AsReadOnlyList: IReadOnlyList<T>;
 
     property Items[index: Integer]: T read GetItem write SetItem; default;
-    property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
   IObjectList = interface(IList<TObject>)
@@ -1587,6 +1587,7 @@ type
     ///	  element with the key; otherwise, <b>False</b>.
     ///	</returns>
     function ContainsKey(const key: TKey): Boolean;
+
     ///	<summary>
     ///	  Determines whether the IDictionary&lt;TKey, TValue&gt; contains an
     ///	  element with the specified value.

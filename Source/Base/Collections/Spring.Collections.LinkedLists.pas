@@ -60,7 +60,6 @@ type
         procedure Reset; override;
       end;
   private
-    fOnChanged: ICollectionChangedEvent<T>;
     fFirstFree: TLinkedListNode<T>;
     fCount: Integer;
     fVersion: Integer;
@@ -81,9 +80,7 @@ type
     function GetLast: TLinkedListNode<T>;
     function GetOnChanged: ICollectionChangedEvent<T>;
   {$ENDREGION}
-    procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
   public
-    constructor Create; override;
     destructor Destroy; override;
 
     function GetEnumerator: IEnumerator<T>; override;
@@ -123,12 +120,6 @@ uses
 
 
 {$REGION 'TLinkedList<T>'}
-
-constructor TLinkedList<T>.Create;
-begin
-  inherited Create;
-  fOnChanged := TCollectionChangedEventImpl<T>.Create;
-end;
 
 destructor TLinkedList<T>.Destroy;
 begin
@@ -215,12 +206,6 @@ begin
     InternalInsertNodeToEmptyList(Result)
   else
     InternalInsertNodeBefore(fHead, Result);
-end;
-
-procedure TLinkedList<T>.Changed(const item: T;
-  action: TCollectionChangedAction);
-begin
-  fOnChanged.Invoke(Self, item, action);
 end;
 
 procedure TLinkedList<T>.Clear;
