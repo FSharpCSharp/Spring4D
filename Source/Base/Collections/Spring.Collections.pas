@@ -2171,12 +2171,11 @@ type
       fOrdinalIgnoreCase: TStringComparer;
   protected
     function Compare(const Left, Right: string): Integer; override;
-    function Equals(const Left, Right: string): Boolean;
-      reintroduce; overload; override;
-    function GetHashCode(const Value: string): Integer;
-      reintroduce; overload; override;
+    function Equals(const Left, Right: string): Boolean; override;
+    function GetHashCode(const Value: string): Integer; override;
   public
     constructor Create(localeOptions: TLocaleOptions; ignoreCase: Boolean);
+    class constructor Create;
     class destructor Destroy;
 
     class function Ordinal: TStringComparer;
@@ -2516,6 +2515,12 @@ begin
   fIgnoreCase := ignoreCase;
 end;
 
+class constructor TStringComparer.Create;
+begin
+  fOrdinal := TStringComparer.Create(loInvariantLocale, False);
+  fOrdinalIgnoreCase := TStringComparer.Create(loInvariantLocale, True);
+end;
+
 class destructor TStringComparer.Destroy;
 begin
   FreeAndNil(fOrdinal);
@@ -2584,23 +2589,11 @@ end;
 
 class function TStringComparer.Ordinal: TStringComparer;
 begin
-  if not Assigned(fOrdinal) then
-  begin
-    Result := TStringComparer.Create(loInvariantLocale, False);
-    if TInterlocked.CompareExchange<TStringComparer>(fOrdinal, Result, nil) <> nil then
-      Result.Free;
-  end;
   Result := fOrdinal;
 end;
 
 class function TStringComparer.OrdinalIgnoreCase: TStringComparer;
 begin
-  if not Assigned(fOrdinalIgnoreCase) then
-  begin
-    Result := TStringComparer.Create(loInvariantLocale, True);
-    if TInterlocked.CompareExchange<TStringComparer>(fOrdinalIgnoreCase, Result, nil) <> nil then
-      Result.Free;
-  end;
   Result := fOrdinalIgnoreCase;
 end;
 
