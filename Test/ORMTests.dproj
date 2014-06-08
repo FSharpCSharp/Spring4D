@@ -189,6 +189,7 @@
         <DCCReference Include="..\Core.Session.MongoDB.pas"/>
         <DCCReference Include="..\SQL.Commands.BulkInsert.MongoDB.pas"/>
         <DCCReference Include="TestAdapterMongoDB.pas"/>
+        <DCCReference Include="..\Core.Repository.MongoDB.pas"/>
         <None Include="Profiling\AQtimeModule1.aqt"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>

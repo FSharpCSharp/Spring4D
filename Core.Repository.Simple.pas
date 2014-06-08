@@ -86,8 +86,12 @@ begin
 end;
 
 procedure TSimpleRepository<T, TID>.DeleteList(ACollection: ICollection<T>);
+var
+  LTransaction: IDBTransaction;
 begin
+  LTransaction := FSession.BeginTransaction;
   FSession.DeleteList<T>(ACollection);
+  LTransaction.Commit;
 end;
 
 function TSimpleRepository<T, TID>.Execute(const ASql: string; const AParams: array of const): NativeUInt;
@@ -116,8 +120,12 @@ begin
 end;
 
 procedure TSimpleRepository<T, TID>.InsertList(ACollection: ICollection<T>);
+var
+  LTransaction: IDBTransaction;
 begin
+  LTransaction := FSession.BeginTransaction;
   FSession.InsertList<T>(ACollection);
+  LTransaction.Commit;
 end;
 
 function TSimpleRepository<T, TID>.IsNew(AEntity: T): Boolean;
@@ -136,13 +144,21 @@ begin
 end;
 
 procedure TSimpleRepository<T, TID>.SaveAll(AEntity: T);
+var
+  LTransaction: IDBTransaction;
 begin
+  LTransaction := FSession.BeginTransaction;
   FSession.SaveAll(AEntity);
+  LTransaction.Commit;
 end;
 
 procedure TSimpleRepository<T, TID>.SaveList(ACollection: ICollection<T>);
+var
+  LTransaction: IDBTransaction;
 begin
+  LTransaction := FSession.BeginTransaction;
   FSession.SaveList<T>(ACollection);
+  LTransaction.Commit;
 end;
 
 procedure TSimpleRepository<T, TID>.Update(AEntity: T);
@@ -151,8 +167,12 @@ begin
 end;
 
 procedure TSimpleRepository<T, TID>.UpdateList(ACollection: ICollection<T>);
+var
+  LTransaction: IDBTransaction;
 begin
+  LTransaction := FSession.BeginTransaction;
   FSession.UpdateList<T>(ACollection);
+  LTransaction.Commit;
 end;
 
 end.

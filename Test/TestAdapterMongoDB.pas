@@ -14,7 +14,7 @@ interface
 uses
   TestFramework, Core.Interfaces, bsonDoc, Generics.Collections, MongoDB, Core.Base, SvSerializer,
   SysUtils, Mapping.Attributes, SQL.Params, Adapters.MongoDB, mongoId, Core.Session.MongoDB
-  , SQL.Interfaces, MongoBson;
+  , SQL.Interfaces, MongoBson, Core.Repository.MongoDB;
 
 type
 
@@ -134,6 +134,19 @@ type
     procedure Performance();
   end;
 
+  TestMongoRepository = class(TTestCase)
+  private
+    FConnection: IDBConnection;
+    FMongoConnection: TMongoDBConnection;
+    FSession: TMongoDBSession;
+    FRepository: IRepository<TMongoAdapter, Integer>;
+  public
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure InsertList();
+  end;
+
 implementation
 
 uses
@@ -187,6 +200,7 @@ procedure TestTMongoResultSetAdapter.TearDown;
 begin
   FMongoResultSetAdapter.Free;
   FMongoResultSetAdapter := nil;
+  FConnection := nil;
   inherited;
 end;
 
@@ -340,6 +354,7 @@ end;
 
 procedure TestTMongoConnectionAdapter.SetUp;
 begin
+  inherited;
   FConnection := TMongoDBConnection.Create('localhost');
   FConnection.checkConnection;
   FMongoConnectionAdapter := TMongoConnectionAdapter.Create(FConnection);
@@ -350,6 +365,7 @@ begin
   FMongoConnectionAdapter.Free;
   FMongoConnectionAdapter := nil;
   FConnection.Free;
+  inherited;
 end;
 
 procedure TestTMongoConnectionAdapter.TestConnect;
@@ -659,6 +675,50 @@ begin
   FConnection := nil;
 end;
 
+{ TestMongoRepository }
+
+procedure TestMongoRepository.InsertList;
+var
+  LKeys: IList<TMongoAdapter>;
+  LKey: TMongoAdapter;
+  i, iSize: Integer;
+begin
+  LKeys := TCollections.CreateList<TMongoAdapter>(True);
+  iSize := 100;
+  for i := 1 to iSize do
+  begin
+    LKey := TMongoAdapter.Create;
+    LKey.Id := i;
+    LKey.Key := 1234;
+    LKeys.Add(LKey);
+  end;
+  FRepository.InsertList(LKeys);
+  CheckEquals(iSize, FRepository.FindAll.Count);
+end;
+
+procedure TestMongoRepository.SetUp;
+begin
+  inherited;
+  FMongoConnection := TMongoDBConnection.Create;
+  FMongoConnection.checkConnection();
+  FConnection := TConnectionFactory.GetInstance(dtMongo, FMongoConnection);
+  FConnection.AutoFreeConnection := True;
+  FConnection.SetQueryLanguage(qlMongoDB);
+  FSession := TMongoDBSession.Create(FConnection);
+  FSession.Execute('D[UnitTests.MongoTest]{}', []); //delete all
+  FSession.Execute('D[UnitTests.AutoId]{}', []); //delete all
+  FRepository := TMongoDBRepository<TMongoAdapter, Integer>.Create(FSession);
+end;
+
+procedure TestMongoRepository.TearDown;
+begin
+  FSession.Execute('D[UnitTests.MongoTest]{}', []); //delete all
+  FSession.Execute('D[UnitTests.AutoId]{}', []); //delete all
+  FSession.Free;
+  FConnection := nil;
+  inherited;
+end;
+
 initialization
   if DirectoryExists(TestTMongoConnectionAdapter.DirMongoDB) then
   begin
@@ -676,6 +736,7 @@ initialization
       RegisterTest(TestTMongoStatementAdapter.Suite);
       RegisterTest(TestTMongoConnectionAdapter.Suite);
       RegisterTest(TestMongoSession.Suite);
+      RegisterTest(TestMongoRepository.Suite);
     end;
   end;
 
