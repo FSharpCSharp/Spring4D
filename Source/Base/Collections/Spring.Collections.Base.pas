@@ -1119,13 +1119,18 @@ end;
 function TEnumerableBase<T>.TryGetSingle(out value: T): Boolean;
 var
   enumerator: IEnumerator<T>;
+  item: T;
 begin
   Result := False;
   enumerator := GetEnumerator;
   if enumerator.MoveNext then
   begin
-    value := enumerator.Current;
-    Result := not enumerator.MoveNext;
+    item := enumerator.Current;
+    if not enumerator.MoveNext then
+    begin
+      value := item;
+      Result := True;
+    end;
   end;
 end;
 
