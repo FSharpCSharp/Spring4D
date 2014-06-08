@@ -2,17 +2,6 @@
 // JCL_DEBUG_EXPERT_INSERTJDBG OFF
 // JCL_DEBUG_EXPERT_DELETEMAPFILE OFF
 program ORMTests;
-{
-
-  Delphi DUnit Test Project
-  -------------------------
-  This project contains the DUnit test framework and the GUI/Console test runners.
-  Add "CONSOLE_TESTRUNNER" to the conditional defines entry in the project options
-  to use the console test runner.  Otherwise the GUI test runner will be used by
-  default.
-
-}
-
 {$IFDEF CONSOLE_TESTRUNNER}
 {$APPTYPE CONSOLE}
 {$ENDIF}
@@ -134,7 +123,11 @@ uses
   Core.Criteria.Criterion.Disjunction in '..\Core.Criteria.Criterion.Disjunction.pas',
   Core.Criteria.Criterion.Conjunction in '..\Core.Criteria.Criterion.Conjunction.pas',
   Core.Repository.Simple in '..\Core.Repository.Simple.pas',
-  TestSimpleRepository in 'TestSimpleRepository.pas';
+  TestSimpleRepository in 'TestSimpleRepository.pas',
+  Adapters.MongoDB in '..\Adapters.MongoDB.pas',
+  Core.Session.MongoDB in '..\Core.Session.MongoDB.pas',
+  SQL.Commands.BulkInsert.MongoDB in '..\SQL.Commands.BulkInsert.MongoDB.pas',
+  TestAdapterMongoDB in 'TestAdapterMongoDB.pas';
 
 {$R *.RES}
 

@@ -30,8 +30,8 @@ unit Adapters.MongoDB;
 interface
 
 uses
-  mongoWire, Core.Interfaces, Core.Base, SQL.Params, SysUtils
-  , Mapping.Attributes, bsonDoc, Generics.Collections;
+  MongoDB, MongoBson, Core.Interfaces, Core.Base, SQL.Params, SysUtils
+  , Mapping.Attributes, Generics.Collections;
 
 type
   TPageInfo = record
@@ -45,15 +45,15 @@ type
   ///	  Represents MongoDB connection.
   ///	</summary>
   {$ENDREGION}
-  TMongoDBConnection = class(TMongoWire)
+  TMongoDBConnection = class(TMongo)
   private
     FConnected: Boolean;
     function GetConnected: Boolean;
     procedure SetConnected(const Value: Boolean);
   public
+    function GetCollectionFromFullName(const AFullConnectionName: string): string; virtual;
+  public
     property Connected: Boolean read GetConnected write SetConnected;
-
-    function CountQuery(const Collection: WideString; const AQuery: IBSONDocument): IBSONDocument;
   end;
 
   {$REGION 'Documentation'}
@@ -61,7 +61,7 @@ type
   ///	  Represents MongoDB query.
   ///	</summary>
   {$ENDREGION}
-  TMongoDBQuery = class(TMongoWireQuery)
+  TMongoDBQuery = class(TMongoCursor)
   private
     FConnection: TMongoDBConnection;
     function GetConnection: TMongoDBConnection;
@@ -168,7 +168,6 @@ implementation
 uses
   StrUtils
   ,Core.ConnectionFactory
-  ,bsonUtils
   ,Variants
   ,TypInfo
   ;
@@ -180,6 +179,7 @@ var
 
 { TMongoDBConnection }
 
+{
 function TMongoDBConnection.CountQuery(const Collection: WideString; const AQuery: IBSONDocument): IBSONDocument;
 var
   LDoc: IBSONDocument;
@@ -191,19 +191,36 @@ begin
 
 
   Result:=RunCommand(GetNamespaceFromFullName(Collection), LDoc); //['n'];
+end;      }
+
+function TMongoDBConnection.GetCollectionFromFullName(const AFullConnectionName: string): string;
+var
+  i: Integer;
+begin
+  Result := AFullConnectionName;
+  i := PosEx('.', Result);
+  if (i > 0) then
+  begin
+    Result := Copy(Result, i + 1, Length(Result));
+  end;
 end;
 
 function TMongoDBConnection.GetConnected: Boolean;
 begin
-  Result := FConnected;
+  Result := isConnected();
 end;
 
 procedure TMongoDBConnection.SetConnected(const Value: Boolean);
 begin
-  if not Value and Connected then
-    Close
-  else if Value and not Connected then
-    Open();
+  FConnected := checkConnection();
+  if not Value and FConnected then
+  begin
+    disconnect();
+    FConnected := False;
+    Exit;
+  end
+  else if Value and not FConnected then
+    FConnected := reconnect();
 
   FConnected := Value;
 end;
@@ -213,7 +230,7 @@ end;
 constructor TMongoResultSetAdapter.Create(const ADataset: TMongoDBQuery);
 begin
   inherited Create(ADataset);
-  FDoc := BSON;
+  FDoc := nil;
 end;
 
 destructor TMongoResultSetAdapter.Destroy;
@@ -224,44 +241,75 @@ begin
 end;
 
 function TMongoResultSetAdapter.FieldnameExists(const AFieldName: string): Boolean;
+var
+  LIter: TBsonIterator;
 begin
   Result := False;
   if Assigned(FDoc) then
   begin
-    Result := FDoc.GetKeyIndex(AFieldName);
+    LIter := FDoc.find(AFieldName);
+    if Assigned(LIter) then
+    begin
+      Result := True;
+      LIter.Free;
+    end;
   end;
 end;
 
 function TMongoResultSetAdapter.GetFieldCount: Integer;
+var
+  LIter: TBsonIterator;
+  i: Integer;
 begin
   if Assigned(FDoc) then
-    Result := FDoc.GetFieldCount
+  begin
+    LIter := FDoc.iterator;
+    i := 0;
+    while LIter.next do
+    begin
+      Inc(i);
+    end;
+    Result := i;
+  end
   else
     Result := 0;
 end;
 
 function TMongoResultSetAdapter.GetFieldName(AIndex: Integer): string;
+var
+  LIter: TBsonIterator;
+  i: Integer;
 begin
   Assert(Assigned(FDoc), 'Document not assigned');
-
-  Result := FDoc.GetItemKey(AIndex);
+  LIter := FDoc.iterator;
+  i := 0;
+  while LIter.next do
+  begin
+    if AIndex = i then
+      Exit(LIter.key);
+    Inc(i);
+  end;
 end;
 
 function TMongoResultSetAdapter.GetFieldValue(const AFieldname: string): Variant;
 begin
   Assert(Assigned(FDoc), 'Document not assigned');
-  Result := FDoc[AFieldname];
+  Result := FDoc.value(AFieldname);
 end;
 
 function TMongoResultSetAdapter.GetFieldValue(AIndex: Integer): Variant;
 begin
   Assert(Assigned(FDoc), 'Document not assigned');
-  Result := FDoc.GetItem(AIndex);
+  Result := FDoc.value( GetFieldname(AIndex) );
 end;
 
 function TMongoResultSetAdapter.IsEmpty: Boolean;
 begin
-  Result := not IsInjected and not Dataset.Next(FDoc);
+  Result := not IsInjected and not Dataset.next;
+  if not Result and not IsInjected then
+  begin
+    FDoc := Dataset.value;
+  end;
 end;
 
 function TMongoResultSetAdapter.Next: Boolean;
@@ -291,11 +339,11 @@ begin
   inherited;
   LDoc := JsonToBson(FStmtText);
   case FStmtType of
-    mstInsert: Statement.Connection.Insert(GetFullCollectionName(), LDoc);
-    mstUpdate: Statement.Connection.Update(GetFullCollectionName(), nil, LDoc);
-    mstDelete: Statement.Connection.Delete(GetFullCollectionName(), LDoc);
-    mstSelect: Statement.Query(GetFullCollectionName(), LDoc);
-    mstSelectCount: Statement.Connection.CountQuery(GetFullCollectionName(), LDoc);
+    mstInsert: Statement.Connection.insert(GetFullCollectionName(), LDoc);
+    mstUpdate: Statement.Connection.Update(GetFullCollectionName(), bsonEmpty, LDoc);
+    mstDelete: Statement.Connection.remove(GetFullCollectionName(), LDoc);
+    mstSelect: Statement.Connection.findOne(GetFullCollectionName(), LDoc);
+    mstSelectCount: Statement.Connection.Count(GetFullCollectionName(), LDoc);
   end;
   Result := 1;
 end;
@@ -305,15 +353,16 @@ var
   LQuery: TMongoDBQuery;
   LResultset: TMongoResultSetAdapter;
   LPageInfo: TPageInfo;
+  LCount: Double;
 begin
   inherited;
-  LQuery := TMongoDBQuery.Create(Statement.Owner);
+  LQuery := TMongoDBQuery.Create(Statement.Connection);
 
   if FStmtType = mtPage then
   begin
     FStmtText := GetStatementPageInfo(FStmtText, LPageInfo);
-    LQuery.NumberToReturn := LPageInfo.Limit;
-    LQuery.NumberToSkip := LPageInfo.Offset;
+    LQuery.limit := LPageInfo.Limit;
+    LQuery.skip := LPageInfo.Offset;
   end;
 
   LResultset := TMongoResultSetAdapter.Create(LQuery);
@@ -324,10 +373,18 @@ begin
       Statement.Connection.Insert(GetFullCollectionName(), LResultset.Document);
       LResultset.IsInjected := True;
     end;
-    mstSelect, mtPage: LQuery.Query(GetFullCollectionName(), LResultset.Document);
+    mstSelect, mtPage:
+    begin
+      LQuery.query := LResultset.Document;
+      if Statement.Connection.find(GetFullCollectionName(), LQuery) then
+      begin
+        LResultset.Document := nil;
+      end;
+    end;
     mstSelectCount:
     begin
-      LResultset.Document := Statement.Connection.CountQuery(GetFullCollectionName(), LResultset.Document);
+      LCount := Statement.Connection.count(GetFullCollectionName(), LResultset.Document);
+      LResultset.Document := BSON(['n', LCount]);
       LResultset.IsInjected := True;
     end;
   end;
@@ -529,7 +586,7 @@ end;
 
 constructor TMongoDBQuery.Create(AConnection: TMongoDBConnection);
 begin
-  inherited Create(AConnection);
+  inherited Create();
   FConnection := AConnection;
 end;
 
