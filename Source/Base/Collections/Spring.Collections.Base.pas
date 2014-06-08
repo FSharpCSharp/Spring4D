@@ -263,6 +263,42 @@ type
     constructor Create(const controller: IInterface);
   end;
 
+  TMapBase<TKey, T> = class(TCollectionBase<TPair<TKey, T>>, IMap<TKey, T>)
+  private
+    fOnKeyChanged: ICollectionChangedEvent<TKey>;
+    fOnValueChanged: ICollectionChangedEvent<T>;
+    function GetOnKeyChanged: ICollectionChangedEvent<TKey>;
+    function GetOnValueChanged: ICollectionChangedEvent<T>;
+  protected
+  {$REGION 'Property Accessors'}
+    function GetKeys: IReadOnlyCollection<TKey>; virtual; abstract;
+    function GetKeyType: PTypeInfo; virtual;
+    function GetValues: IReadOnlyCollection<T>; virtual; abstract;
+    function GetValueType: PTypeInfo; virtual;
+  {$ENDREGION}
+    procedure DoKeyChanged(Sender: TObject; const Item: TKey;
+      Action: TCollectionChangedAction); virtual;
+    procedure DoValueChanged(Sender: TObject; const Item: T;
+      Action: TCollectionChangedAction); virtual;
+  public
+    constructor Create; override;
+
+    procedure Add(const key: TKey; const value: T); reintroduce; overload; virtual; abstract;
+
+    function Remove(const key: TKey): Boolean; reintroduce; overload; virtual; abstract;
+    function Remove(const key: TKey; const value: T): Boolean; reintroduce; overload; virtual; abstract;
+
+    function ContainsKey(const key: TKey): Boolean; virtual; abstract;
+    function ContainsValue(const value: T): Boolean; virtual; abstract;
+
+    property Keys: IReadOnlyCollection<TKey> read GetKeys;
+    property KeyType: PTypeInfo read GetKeyType;
+    property OnKeyChanged: ICollectionChangedEvent<TKey> read GetOnKeyChanged;
+    property OnValueChanged: ICollectionChangedEvent<T> read GetOnValueChanged;
+    property Values: IReadOnlyCollection<T> read GetValues;
+    property ValueType: PTypeInfo read GetValueType;
+  end;
+
   ///	<summary>
   ///	  Provides an abstract implementation for the
   ///	  <see cref="Spring.Collections|IList&lt;T&gt;" /> interface.
@@ -1279,6 +1315,50 @@ end;
 function TContainedReadOnlyCollection<T>._Release: Integer;
 begin
   Result := IInterface(fController)._Release;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TMapBase<TKey, T>'}
+
+constructor TMapBase<TKey, T>.Create;
+begin
+  inherited;
+  fOnKeyChanged := TCollectionChangedEventImpl<TKey>.Create;
+  fOnValueChanged := TCollectionChangedEventImpl<T>.Create;
+end;
+
+procedure TMapBase<TKey, T>.DoKeyChanged(Sender: TObject; const Item: TKey;
+  Action: TCollectionChangedAction);
+begin
+  fOnKeyChanged.Invoke(Sender, Item, Action)
+end;
+
+procedure TMapBase<TKey, T>.DoValueChanged(Sender: TObject;
+  const Item: T; Action: TCollectionChangedAction);
+begin
+  fOnValueChanged.Invoke(Sender, Item, Action)
+end;
+
+function TMapBase<TKey, T>.GetKeyType: PTypeInfo;
+begin
+  Result := TypeInfo(TKey);
+end;
+
+function TMapBase<TKey, T>.GetOnKeyChanged: ICollectionChangedEvent<TKey>;
+begin
+  Result := fOnKeyChanged;
+end;
+
+function TMapBase<TKey, T>.GetOnValueChanged: ICollectionChangedEvent<T>;
+begin
+  Result := fOnValueChanged;
+end;
+
+function TMapBase<TKey, T>.GetValueType: PTypeInfo;
+begin
+  Result := TypeInfo(T);
 end;
 
 {$ENDREGION}

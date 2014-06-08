@@ -1544,62 +1544,35 @@ type
   ///	  Represents a generic collection of key/value pairs.
   ///	</summary>
   ///	<typeparam name="TKey">
-  ///	  The type of keys in the dictionary.
+  ///	  The type of keys in the map.
   ///	</typeparam>
   ///	<typeparam name="TValue">
-  ///	  The type of values in the dictionary.
+  ///	  The type of values in the map.
   ///	</typeparam>
-  IDictionary<TKey, TValue> = interface(ICollection<TPair<TKey, TValue>>)
-    ['{7F0D544F-6A59-4FA0-9C96-DB09029CC835}']
+  IMap<TKey, TValue> = interface(ICollection<TPair<TKey, TValue>>)
+    ['{94262688-16E4-4092-926B-7B17FEF94A86}']
   {$REGION 'Property Accessors'}
-    function GetItem(const key: TKey): TValue;
     function GetKeys: IReadOnlyCollection<TKey>;
     function GetKeyType: PTypeInfo;
-    function GetOnKeyChanged: ICollectionChangedEvent<TKey>;
-    function GetOnValueChanged: ICollectionChangedEvent<TValue>;
     function GetValues: IReadOnlyCollection<TValue>;
     function GetValueType: PTypeInfo;
-    procedure SetItem(const key: TKey; const value: TValue);
   {$ENDREGION}
 
-    ///	<summary>
-    ///	  Adds an element with the provided key and value to the
-    ///	  IDictionary&lt;TKey, TValue&gt;.
-    ///	</summary>
-    ///	<param name="key">
-    ///	  The item to use as the key of the element to add.
-    ///	</param>
-    ///	<param name="value">
-    ///	  The item to use as the value of the element to add.
-    ///	</param>
+    /// <summary>
+    ///   Adds an element with the provided key and value to the
+    ///   IMap&lt;TKey,TValue&gt;.
+    /// </summary>
+    /// <param name="key">
+    ///   The value to use as the key of the element to add.
+    /// </param>
+    /// <param name="value">
+    ///   The value to use as the value of the element to add.
+    /// </param>
     procedure Add(const key: TKey; const value: TValue); overload;
-    procedure AddOrSetValue(const key: TKey; const value: TValue);
-
-    ///	<summary>
-    ///	  Determines whether the IDictionary&lt;TKey, TValue&gt; contains an
-    ///	  element with the specified key.
-    ///	</summary>
-    ///	<param name="key">
-    ///	  The key to locate in the IDictionary&lt;TKey, TValue&gt;.
-    ///	</param>
-    ///	<returns>
-    ///	  <b>True</b> if the IDictionary&lt;TKey, TValue&gt; contains an
-    ///	  element with the key; otherwise, <b>False</b>.
-    ///	</returns>
-    function ContainsKey(const key: TKey): Boolean;
-
-    ///	<summary>
-    ///	  Determines whether the IDictionary&lt;TKey, TValue&gt; contains an
-    ///	  element with the specified value.
-    ///	</summary>
-    ///	<param name="value">
-    ///	  The value to locate in the IDictionary&lt;TKey, TValue&gt;.
-    ///	</param>
-    function ContainsValue(const value: TValue): Boolean;
 
     ///	<summary>
     ///	  Removes the element with the specified key from the
-    ///	  IDictionary&lt;TKey, TValue&gt;.
+    ///	  IMap&lt;TKey, TValue&gt;.
     ///	</summary>
     ///	<param name="key">
     ///	  The key of the element to remove.
@@ -1607,9 +1580,88 @@ type
     ///	<returns>
     ///	  <b>True</b> if the element is successfully removed; otherwise,
     ///	  <b>False</b>. This method also returns <b>False</b> if <i>key</i> was
-    ///	  not found in the original IDictionary&lt;TKey, TValue&gt;.
+    ///	  not found in the original IMap&lt;TKey, TValue&gt;.
     ///	</returns>
-    function Remove(const key: TKey): Boolean;
+    function Remove(const key: TKey): Boolean; overload;
+
+    function Remove(const key: TKey; const value: TValue): Boolean; overload;
+
+    ///	<summary>
+    ///	  Determines whether the IMap&lt;TKey, TValue&gt; contains an
+    ///	  element with the specified key.
+    ///	</summary>
+    ///	<param name="key">
+    ///	  The key to locate in the IMap&lt;TKey, TValue&gt;.
+    ///	</param>
+    ///	<returns>
+    ///	  <b>True</b> if the IMap&lt;TKey, TValue&gt; contains an
+    ///	  element with the key; otherwise, <b>False</b>.
+    ///	</returns>
+    function ContainsKey(const key: TKey): Boolean;
+
+    ///	<summary>
+    ///	  Determines whether the IMap&lt;TKey, TValue&gt; contains an
+    ///	  element with the specified value.
+    ///	</summary>
+    ///	<param name="value">
+    ///	  The value to locate in the IMap&lt;TKey, TValue&gt;.
+    ///	</param>
+    function ContainsValue(const value: TValue): Boolean;
+
+    ///	<summary>
+    ///	  Gets an <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the
+    ///	  keys of the IMap&lt;TKey, TValue&gt;.
+    ///	</summary>
+    ///	<value>
+    ///	  An <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the keys of
+    ///	  the object that implements IDictionary&lt;TKey, TValue&gt;.
+    ///	</value>
+    property Keys: IReadOnlyCollection<TKey> read GetKeys;
+
+    ///	<summary>
+    ///	  Gets an <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the
+    ///	  values in the IMap&lt;TKey, TValue&gt;.
+    ///	</summary>
+    ///	<value>
+    ///	  An <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the values
+    ///	  in the object that implements IMap&lt;TKey, TValue&gt;.
+    ///	</value>
+    property Values: IReadOnlyCollection<TValue> read GetValues;
+
+    property KeyType: PTypeInfo read GetKeyType;
+    property ValueType: PTypeInfo read GetValueType;
+  end;
+
+  ///	<summary>
+  ///	  Represents a generic collection of key/value pairs.
+  ///	</summary>
+  ///	<typeparam name="TKey">
+  ///	  The type of keys in the dictionary.
+  ///	</typeparam>
+  ///	<typeparam name="TValue">
+  ///	  The type of values in the dictionary.
+  ///	</typeparam>
+  IDictionary<TKey, TValue> = interface(IMap<TKey, TValue>)
+    ['{7F0D544F-6A59-4FA0-9C96-DB09029CC835}']
+  {$REGION 'Property Accessors'}
+    function GetItem(const key: TKey): TValue;
+    function GetOnKeyChanged: ICollectionChangedEvent<TKey>;
+    function GetOnValueChanged: ICollectionChangedEvent<TValue>;
+    procedure SetItem(const key: TKey; const value: TValue);
+  {$ENDREGION}
+
+    /// <summary>
+    ///   Adds an element with the provided key and value to the
+    ///   IDictionary&lt;TKey,TValue&gt;. If it already exists in the
+    ///   dictionary the provided value for the specified key is set.
+    /// </summary>
+    /// <param name="key">
+    ///   The value to use as the key of the element to add or set.
+    /// </param>
+    /// <param name="value">
+    ///   The value to use as the value of the element to add or set.
+    /// </param>
+    procedure AddOrSetValue(const key: TKey; const value: TValue);
 
     function ExtractPair(const key: TKey): TPair<TKey, TValue>;
 
@@ -1644,30 +1696,19 @@ type
     ///	</value>
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
 
-    ///	<summary>
-    ///	  Gets an <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the
-    ///	  keys of the IDictionary&lt;TKey, TValue&gt;.
-    ///	</summary>
-    ///	<value>
-    ///	  An <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the keys of
-    ///	  the object that implements IDictionary&lt;TKey, TValue&gt;.
-    ///	</value>
-    property Keys: IReadOnlyCollection<TKey> read GetKeys;
-
-    ///	<summary>
-    ///	  Gets an <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the
-    ///	  values in the IDictionary&lt;TKey, TValue&gt;.
-    ///	</summary>
-    ///	<value>
-    ///	  An <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the values
-    ///	  in the object that implements IDictionary&lt;TKey, TValue&gt;.
-    ///	</value>
-    property Values: IReadOnlyCollection<TValue> read GetValues;
-
     property OnKeyChanged: ICollectionChangedEvent<TKey> read GetOnKeyChanged;
     property OnValueChanged: ICollectionChangedEvent<TValue> read GetOnValueChanged;
-    property KeyType: PTypeInfo read GetKeyType;
-    property ValueType: PTypeInfo read GetValueType;
+  end;
+
+  IMultiMap<TKey, TValue> = interface(IMap<TKey, TValue>)
+    ['{8598095E-92A7-4FCC-9F78-8EE7653B8B49}']
+  {$REGION 'Property Accessors'}
+    function GetItems(const key: TKey): IReadOnlyCollection<TValue>;
+  {$ENDREGION}
+
+    function ExtractValues(const key: TKey): IReadOnlyCollection<TKey>;
+    function TryGetValues(const key: TKey; out values: IReadOnlyCollection<TValue>): Boolean;
+    property Items[const key: TKey]: IReadOnlyCollection<TValue> read GetItems; default;
   end;
 
   IStack = interface(IEnumerable)
@@ -2126,6 +2167,9 @@ type
     class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships; capacity: Integer; const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TValue>; overload; static;
     class function CreateDictionary<TKey, TValue>(dictionary: Generics.Collections.TDictionary<TKey, TValue>; ownership: TOwnershipType): IDictionary<TKey, TValue>; overload; static;
 
+    class function CreateMultiMap<TKey, TValue>: IMultiMap<TKey, TValue>; overload; static;
+    class function CreateMultiMap<TKey, TValue>(ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>; overload; static;
+
     class function CreateStack<T>: IStack<T>; overload; static;
     class function CreateStack<T: class>(ownsObjects: Boolean): IStack<T>; overload; static;
     class function CreateStack<T>(const values: array of T): IStack<T>; overload; static;
@@ -2198,6 +2242,7 @@ uses
   Spring.Collections.Extensions,
   Spring.Collections.Lists,
   Spring.Collections.LinkedLists,
+  Spring.Collections.MultiMaps,
   Spring.Collections.Queues,
   Spring.Collections.Sets,
   Spring.Collections.Stacks,
@@ -2405,6 +2450,17 @@ var
 begin
   dictionary := TObjectDictionary<TKey, TValue>.Create(ownerships, capacity, comparer);
   Result := TDictionary<TKey, TValue>.Create(dictionary, otOwned);
+end;
+
+class function TCollections.CreateMultiMap<TKey, TValue>: IMultiMap<TKey, TValue>;
+begin
+  Result := TMultiMap<TKey, TValue>.Create;
+end;
+
+class function TCollections.CreateMultiMap<TKey, TValue>(
+  ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
+begin
+  Result := TObjectMultiMap<TKey, TValue>.Create(ownerships);
 end;
 
 class function TCollections.CreateStack<T>: IStack<T>;
