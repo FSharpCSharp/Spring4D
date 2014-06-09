@@ -20,6 +20,7 @@ type
     procedure TearDown; override;
   published
     procedure FindOne();
+    procedure Count();
   end;
 
 
@@ -44,6 +45,13 @@ uses
 
 
 { TestAbstractRepository }
+
+procedure TSimpleRepositoryTests.Count;
+begin
+  InsertCustomer();
+  InsertCustomer();
+  CheckEquals(2, FRepository.Count);
+end;
 
 procedure TSimpleRepositoryTests.FindOne;
 var
