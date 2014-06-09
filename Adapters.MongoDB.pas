@@ -235,7 +235,7 @@ end;
 
 destructor TMongoResultSetAdapter.Destroy;
 begin
-  FDoc := nil;
+  //FDoc := nil;
   Dataset.Free;
   inherited Destroy;
 end;
@@ -409,7 +409,7 @@ begin
   iStart := PosEx('_', AStatement);
   APageInfo.Limit := StrToInt(Copy(AStatement, 5, iStart - 5) );
   iEnd := PosEx('_', AStatement, iStart+1);
-  APageInfo.Offset := StrToInt( Copy(AStatement, (iEnd - iStart) + 1 + 5, iEnd - ((iEnd - iStart) + 1 + 5)) );
+  APageInfo.Offset := StrToInt( Copy(AStatement, iStart + 1, iEnd - iStart - 1) );
   iEnd := PosEx(']', AStatement, iEnd);
   Result := Copy(AStatement, iEnd+1, Length(AStatement));
 end;

@@ -199,8 +199,6 @@ end;
 procedure TestTMongoResultSetAdapter.TearDown;
 begin
   FMongoResultSetAdapter.Free;
-  FMongoResultSetAdapter := nil;
-  FConnection := nil;
   inherited;
 end;
 
@@ -439,7 +437,6 @@ procedure TBaseMongoTest.SetUp;
 begin
   inherited;
   FConnection := TMongoDBConnection.Create('localhost');
-  FConnection.checkConnection;
   FQuery := TMongoDBQuery.Create(FConnection);
   FConnection.drop(NAME_COLLECTION); //delete all
 end;
@@ -693,7 +690,7 @@ begin
     LKeys.Add(LKey);
   end;
   FRepository.Insert(LKeys);
-  CheckEquals(iSize, FRepository.FindAll.Count);
+  CheckEquals(iSize, FRepository.Count);
 end;
 
 procedure TestMongoRepository.SetUp;
