@@ -637,10 +637,8 @@ type
 
   TLazyInitializer = record
   public
-    class function InterlockedCompareExchange(var target: Pointer; value, comparand: Pointer): Pointer; static;
-
-    class function EnsureInitialized<T>(var target: T; const factoryMethod: TFunc<T>): T; overload; static;
     class function EnsureInitialized<T: class, constructor>(var target: T): T; overload; static;
+    class function EnsureInitialized<T>(var target: T; const factoryMethod: TFunc<T>): T; overload; static;
   end;
 
   {$ENDREGION}
@@ -821,6 +819,21 @@ type
   public
     property TypeName: string read GetTypeName;
   end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TInterlocked'}
+
+{$IFDEF DELPHI2010}
+  TInterlocked = class sealed
+    class function CompareExchange(var Target: Pointer; Value: Pointer; Comparand: Pointer): Pointer; overload; static;
+    class function CompareExchange(var Target: TObject; Value: TObject; Comparand: TObject): TObject; overload; static; inline;
+    class function CompareExchange<T: class>(var Target: T; Value: T; Comparand: T): T; overload; static; inline;
+  end;
+{$ELSE}
+  TInterlocked = SyncObjs.TInterlocked;
+{$ENDIF}
 
   {$ENDREGION}
 
@@ -1653,63 +1666,35 @@ end;
 
 {$REGION 'TLazyInitializer'}
 
-class function TLazyInitializer.InterlockedCompareExchange(var target: Pointer;
-  value, comparand: Pointer): Pointer;
-{$IFNDEF DELPHIXE_UP}
-asm
-  XCHG EAX, EDX
-  XCHG EAX, ECX
-  LOCK CMPXCHG [EDX], ECX
-end;
-{$ELSE}
-begin
-  Result := TInterlocked.CompareExchange(target, value, comparand);
-end;
-{$ENDIF}
-
-class function TLazyInitializer.EnsureInitialized<T>(var target: T;
-  const factoryMethod: TFunc<T>): T;
+class function TLazyInitializer.EnsureInitialized<T>(var target: T): T;
 var
-  localValue: T;
+  value: T;
 begin
-  if PPointer(@target)^ = nil then
+  if target = nil then
   begin
-    localValue := factoryMethod();
-    if TLazyInitializer.InterlockedCompareExchange(PPointer(@target)^,
-      PPointer(@localValue)^, nil) <> nil then
-    begin
-      if PTypeInfo(TypeInfo(T)).Kind = tkClass then
-      begin
-        PObject(@localValue)^.Free;
-      end;
-    end
-    else if PTypeInfo(TypeInfo(T)).Kind = tkInterface then
-    begin
-      PPointer(@localValue)^ := nil;
-    end;
+    value := T.Create;
+    if TInterlocked.CompareExchange<T>(target, value, nil) <> nil then
+      value.Free;
   end;
   Result := target;
 end;
 
-class function TLazyInitializer.EnsureInitialized<T>(var target: T): T;
+class function TLazyInitializer.EnsureInitialized<T>(var target: T;
+  const factoryMethod: TFunc<T>): T;
 var
-  localValue: T;
+  value: T;
 begin
   if PPointer(@target)^ = nil then
   begin
-    localValue := T.Create;
-{$IFNDEF AUTOREFCOUNT}
-    if TLazyInitializer.InterlockedCompareExchange(PPointer(@target)^,
-      PPointer(@localValue)^, nil) <> nil then
-    begin
-      localValue.Free;
+    value := factoryMethod;
+    case PTypeInfo(TypeInfo(T)).Kind of
+      tkClass:
+        if TInterlocked.CompareExchange(PObject(@target)^, PObject(@value)^, TObject(nil)) <> nil then
+          PObject(@value)^.Free;
+      tkInterface:
+        if TInterlocked.CompareExchange(PPointer(@target)^, PPointer(@value)^, nil) = nil then
+          PPointer(@value)^ := nil;
     end;
-{$ELSE}
-    if AtomicCmpExchange(PPointer(@target)^, Pointer(localvalue), nil) = nil then
-    begin
-      target.__ObjAddRef;
-    end;
-{$ENDIF AUTOREFCOUNT}
   end;
   Result := target;
 end;
@@ -1821,6 +1806,30 @@ begin
   Result := NameFld.ToString;
 {$ENDIF}
 end;
+
+{$ENDREGION}
+
+
+{$REGION 'TInterlocked'}
+
+{$IFDEF DELPHI2010}
+class function TInterlocked.CompareExchange(var Target: Pointer; Value: Pointer; Comparand: Pointer): Pointer;
+asm
+  XCHG EAX,EDX
+  XCHG EAX,ECX
+  LOCK CMPXCHG [EDX],ECX
+end;
+
+class function TInterlocked.CompareExchange(var Target: TObject; Value, Comparand: TObject): TObject;
+begin
+  Result := TObject(CompareExchange(Pointer(Target), Pointer(Value), Pointer(Comparand)));
+end;
+
+class function TInterlocked.CompareExchange<T>(var Target: T; Value, Comparand: T): T;
+begin
+  TObject(Pointer(@Result)^) := CompareExchange(TObject(Pointer(@Target)^), TObject(Pointer(@Value)^), TObject(Pointer(@Comparand)^));
+end;
+{$ENDIF}
 
 {$ENDREGION}
 

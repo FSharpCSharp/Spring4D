@@ -34,6 +34,7 @@ resourcestring
   SNotImplementedException     = '%s is not implemented.';
   SNotSupportedOperation       = 'Not supported operation.';
   SNoDelegateAssigned          = 'No delegate has been assigned.';
+  SNotClassType                = '"%s" is not a class type.';
 
   SArgumentOutOfRangeException = 'Specified argument was out of the range of valid values: %s';
   SArgumentNullException       = 'Specified argument cannot be nil: %s';
@@ -130,7 +131,7 @@ resourcestring
   SInvalidExpressionPath          = 'Invalid expression path %s.';
   SUnexpectedToken                = 'Unexpected expression part %s.';
   SInvalidExpressionSyntax        = 'Invalid expression syntax %s.';
-  SCouldNotFindPath               = 'Coould not find expression path %s.';
+  SCouldNotFindPath               = 'Could not find expression path %s.';
 
   {$ENDREGION}
 

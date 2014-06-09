@@ -1751,6 +1751,7 @@ begin
   fContainer.RegisterType<ICollectionService, TCollectionServiceD>;
   fContainer.Build;
   service := fContainer.Resolve<ICollectionService>;
+  FCheckCalled := True;
 end;
 
 procedure TTestManyDependencies.TestNoRecursion_TwoDifferentModelsWithSameComponentType;

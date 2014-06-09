@@ -78,8 +78,10 @@ begin
     TTestListOfIntegerAsIEnumerable.Suite,
     TTestLinkedList.Suite,
     TTestObjectList.Suite,
+    TTestInterfaceList.Suite,
     TTestCollectionList.Suite,
-    TTestEnumerable.Suite
+    TTestEnumerable.Suite,
+    TTestListAdapter.Suite
   ]);
 
   RegisterTests('Spring.Base.Collections.Extensions', [
@@ -120,7 +122,8 @@ begin
   ]);
 
   RegisterTests('Spring.Base.Helpers', [
-    TTestGuidHelper.Suite
+    TTestGuidHelper.Suite,
+    TTestRttiTypeHelper.Suite
   ]);
 
   RegisterTests('Spring.Base.Reflection', [

@@ -1156,6 +1156,7 @@ begin
   TCollections.Range(MaxInt, 1);
   TCollections.Range(1, MaxInt);
   TCollections.Range(MaxInt div 2, (MaxInt div 2) + 2);
+  FCheckCalled := True;
 end;
 
 procedure TTestRange.NegativeCount;
@@ -3391,6 +3392,7 @@ begin
   second := TThrowingEnumerable.Create;
   query := TIntersectIterator<Integer>.Create(first, second);
   iterator := query.GetEnumerator;
+  FCheckCalled := True;
 end;
 
 procedure TTestIntersect.SecondSequenceReadFullyOnFirstResultIteration;
@@ -3548,6 +3550,7 @@ begin
   second := TThrowingEnumerable.Create;
   query := TExceptIterator<Integer>.Create(first, second);
   iterator := query.GetEnumerator;
+  FCheckCalled := True;
 end;
 
 procedure TTestExcept.SecondSequenceReadFullyOnFirstResultIteration;
@@ -3793,6 +3796,7 @@ begin
     begin
       Result := x + y;
     end);
+  FCheckCalled := True;
 end;
 
 procedure TTestJoin.InnerSequenceIsBuffered;
@@ -3942,6 +3946,7 @@ begin
     begin
       Result := x;
     end);
+  FCheckCalled := True;
 end;
 
 function Join(const separator: string; const values: IEnumerable): string;
@@ -4166,6 +4171,7 @@ begin
     begin
       Result := x + y.Count;
     end);
+  FCheckCalled := True;
 end;
 
 procedure TTestGroupJoin.SimpleGroupJoin;
@@ -4210,11 +4216,12 @@ begin
 end;
 
 procedure TTestTake.ExecutionIsDeferred;
-var
-  source: IEnumerable<Integer>;
 begin
-  source := TThrowingEnumerable.Create;
-  source.Take(10);
+  CheckExceptionDeferred(
+    function(source: IEnumerable<Integer>): IEnumerable<Integer>
+    begin
+      Result := source.Take(10);
+    end);
 end;
 
 procedure TTestTake.NegativeCount;
@@ -4273,11 +4280,12 @@ begin
 end;
 
 procedure TTestSkip.ExecutionIsDeferred;
-var
-  source: IEnumerable<Integer>;
 begin
-  source := TThrowingEnumerable.Create;
-  source.Skip(10);
+  CheckExceptionDeferred(
+    function(source: IEnumerable<Integer>): IEnumerable<Integer>
+    begin
+      Result := source.Skip(10);
+    end);
 end;
 
 procedure TTestSkip.NegativeCount;
@@ -4307,14 +4315,15 @@ end;
 { TTestTakeWhile }
 
 procedure TTestTakeWhile.ExecutionIsDeferred;
-var
-  source: IEnumerable<Integer>;
 begin
-  source := TThrowingEnumerable.Create;
-  source.TakeWhile(
-    function(const x: Integer): Boolean
+  CheckExceptionDeferred(
+    function(source: IEnumerable<Integer>): IEnumerable<Integer>
     begin
-      Result := x > 10;
+      Result := source.TakeWhile(
+        function(const x: Integer): Boolean
+        begin
+          Result := x > 10;
+        end);
     end);
 end;
 
@@ -4455,14 +4464,15 @@ end;
 { TTestSkipWhile }
 
 procedure TTestSkipWhile.ExecutionIsDeferred;
-var
-  source: IEnumerable<Integer>;
 begin
-  source := TThrowingEnumerable.Create;
-  source.SkipWhile(
-    function(const x: Integer): Boolean
+  CheckExceptionDeferred(
+    function(source: IEnumerable<Integer>): IEnumerable<Integer>
     begin
-      Result := x > 10;
+      Result := source.SkipWhile(
+        function(const x: Integer): Boolean
+        begin
+          Result := x > 10;
+        end);
     end);
 end;
 
@@ -4647,6 +4657,7 @@ begin
     begin
       Result := x;
     end);
+  FCheckCalled := True;
 end;
 
 procedure TTestOrderBy.KeySelectorIsCalledExactlyOncePerElement;
@@ -4851,6 +4862,7 @@ begin
       Result := x;
     end,
     nil, True);
+  FCheckCalled := True;
 end;
 
 procedure TTestOrderByDescending.NilComparerIsDefault;
@@ -5010,11 +5022,12 @@ begin
 end;
 
 procedure TTestReverse.ExecutionIsDeferred;
-var
-  source: IEnumerable<Integer>;
 begin
-  source := TThrowingEnumerable.Create;
-  source.Reversed;
+  CheckExceptionDeferred(
+    function(source: IEnumerable<Integer>): IEnumerable<Integer>
+    begin
+      Result := source.Reversed;
+    end);
 end;
 
 procedure TTestReverse.InputIsBuffered;

@@ -74,7 +74,8 @@ type
     procedure AddExtension(const extension: IContainerExtension); overload;
     procedure AddExtension<T: IContainerExtension, constructor>; overload;
 
-    function RegisterInstance<TServiceType>(const instance: TServiceType): TRegistration<TServiceType>; overload;
+    function RegisterInstance<TServiceType>(const instance: TServiceType;
+      const name: string = ''): TRegistration<TServiceType>; overload;
 
     function RegisterType<TComponentType>: TRegistration<TComponentType>; overload;
     function RegisterType(componentType: PTypeInfo): TRegistration; overload;
@@ -292,8 +293,8 @@ begin
   Result := fResolver;
 end;
 
-function TContainer.RegisterInstance<TServiceType>(
-  const instance: TServiceType): TRegistration<TServiceType>;
+function TContainer.RegisterInstance<TServiceType>(const instance: TServiceType;
+  const name: string): TRegistration<TServiceType>;
 begin
   Result := fRegistrationManager.RegisterType<TServiceType>;
   Result := Result.DelegateTo(
@@ -301,6 +302,7 @@ begin
     begin
       Result := instance;
     end);
+  Result := Result.Implements<TServiceType>(name);
 end;
 
 function TContainer.RegisterType<TComponentType>: TRegistration<TComponentType>;

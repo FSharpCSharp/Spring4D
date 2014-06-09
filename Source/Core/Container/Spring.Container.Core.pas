@@ -156,9 +156,9 @@ type
     procedure Release(const instance: TValue);
   end;
 
-  /// <summary>
-  ///   Component Activator
-  /// </summary>
+  ///	<summary>
+  ///	  Component Activator
+  ///	</summary>
   IComponentActivator = interface
     ['{18E6DF78-C947-484F-A0A8-D9A5B0BEC887}']
     function CreateInstance(const context: ICreationContext): TValue;
@@ -254,9 +254,9 @@ type
     procedure RemoveSubResolver(const subResolver: ISubDependencyResolver);
   end;
 
-  /// <summary>
-  ///   TComponentModel
-  /// </summary>
+  ///	<summary>
+  ///	  TComponentModel
+  ///	</summary>
   TComponentModel = class
   private
     fComponentType: TRttiType;
@@ -273,6 +273,7 @@ type
     fPropertyInjections: IInjectionList;
     fFieldInjections: IInjectionList;
     function GetComponentTypeInfo: PTypeInfo;
+    procedure SetRefCounting(const value: TRefCounting);
   public
     constructor Create(const componentType: TRttiType);
 
@@ -285,7 +286,7 @@ type
     property Services: IDictionary<string, PTypeInfo> read fServices;
     property MinPoolsize: Integer read fMinPoolsize write fMinPoolsize;
     property MaxPoolsize: Integer read fMaxPoolsize write fMaxPoolsize;
-    property RefCounting: TRefCounting read fRefCounting write fRefCounting;
+    property RefCounting: TRefCounting read fRefCounting write SetRefCounting;
 
     property LifetimeType: TLifetimeType read fLifetimeType write fLifetimeType;
     property LifetimeManager: ILifetimeManager read fLifetimeManager write fLifetimeManager;
@@ -349,7 +350,9 @@ implementation
 
 uses
   Generics.Collections,
-  TypInfo;
+  TypInfo,
+  Spring.Container.ResourceStrings,
+  Spring.Helpers;
 
 
 {$REGION 'TComponentModel'}
@@ -388,6 +391,14 @@ end;
 function TComponentModel.HasService(serviceType: PTypeInfo): Boolean;
 begin
   Result := fServices.ContainsValue(serviceType);
+end;
+
+procedure TComponentModel.SetRefCounting(const value: TRefCounting);
+begin
+  if (value = TRefCounting.True) and fComponentType.IsInstance
+    and not Supports(fComponentType.AsInstance.MetaclassType, IInterface) then
+    raise ERegistrationException.CreateResFmt(@SMissingInterface, [fComponentType.DefaultName]);
+  fRefCounting := Value;
 end;
 
 {$ENDREGION}
@@ -477,7 +488,7 @@ end;
 function TContainsMemberFilter.IsSatisfiedBy(
   const injection: IInjection): Boolean;
 begin
-  Result := injection.Target = fMember;
+  Result := injection.Target = fmember;
 end;
 
 {$ENDREGION}

@@ -103,6 +103,9 @@ type
 
     procedure Clear; override;
 
+    function Contains(const value: T; comparer: IEqualityComparer<T>): Boolean; override;
+    function IndexOf(const item: T; index, count: Integer): Integer; override;
+
     procedure Insert(index: Integer; const item: T); override;
 
     procedure Delete(index: Integer); override;
@@ -282,7 +285,9 @@ end;
 
 function TList<T>.GetItem(index: Integer): T;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < fCount), 'index');
+{$ENDIF}
 
   Result := fItems[index];
 end;
@@ -299,11 +304,30 @@ begin
 end;
 {$IFDEF OVERFLOW_CHECKS_ON}{$Q+}{$ENDIF}
 
+function TList<T>.IndexOf(const item: T; index, count: Integer): Integer;
+var
+  comparer: IEqualityComparer<T>;
+  i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index <= Self.Count), 'index');
+  Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
+{$ENDIF}
+
+  comparer := EqualityComparer;
+  for i := index to index + count - 1 do
+    if comparer.Equals(fItems[i], item) then
+      Exit(i);
+  Result := -1;
+end;
+
 procedure TList<T>.SetItem(index: Integer; const value: T);
 var
   oldItem: T;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < fCount), 'index');
+{$ENDIF}
 
   oldItem := fItems[index];
   fItems[index] := value;
@@ -315,7 +339,9 @@ end;
 
 procedure TList<T>.Insert(index: Integer; const item: T);
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= fCount), 'index');
+{$ENDIF}
 
   EnsureCapacity(fCount + 1);
   if index <> fCount then
@@ -354,8 +380,10 @@ var
   tailCount,
   i: Integer;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < fCount), 'index');
   Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
+{$ENDIF}
 
   if count = 0 then
     Exit;
@@ -391,8 +419,10 @@ procedure TList<T>.Move(currentIndex, newIndex: Integer);
 var
   temp: T;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((currentIndex >= 0) and (currentIndex < fCount), 'currentIndex');
   Guard.CheckRange((newIndex >= 0) and (newIndex < fCount), 'newIndex');
+{$ENDIF}
 
   temp := fItems[currentIndex];
   fItems[currentIndex] := Default(T);
@@ -438,8 +468,10 @@ procedure TList<T>.Exchange(index1, index2: Integer);
 var
   temp: T;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index1 >= 0) and (index1 < fCount), 'index1');
   Guard.CheckRange((index2 >= 0) and (index2 < fCount), 'index2');
+{$ENDIF}
 
   temp := fItems[index1];
   fItems[index1] := fItems[index2];
@@ -460,8 +492,10 @@ var
   temp: T;
   index1, index2: Integer;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < fCount), 'index');
   Guard.CheckRange((count >= 0) and (count <= fCount - index), 'count');
+{$ENDIF}
 
   index1 := index;
   index2 := index + count - 1;
@@ -487,7 +521,9 @@ end;
 
 procedure TList<T>.Delete(index: Integer);
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < fCount), 'index');
+{$ENDIF}
 
   DeleteInternal(index, caRemoved);
 end;
@@ -506,9 +542,21 @@ begin
   end;
 end;
 
+function TList<T>.Contains(const value: T;
+  comparer: IEqualityComparer<T>): Boolean;
+var
+  index: Integer;
+begin
+  for index := 0 to fCount - 1 do
+    if comparer.Equals(value, fItems[index]) then
+      Exit(True);
+end;
+
 procedure TList<T>.CopyTo(var values: TArray<T>; index: Integer);
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange(Length(values), index, fCount);
+{$ENDIF}
 
   fArrayManager.Move(fItems, TArrayOfT(values), 0, index, fCount);
 end;
@@ -676,8 +724,10 @@ end;
 
 function TSortedList<T>.IndexOf(const item: T; index, count: Integer): Integer;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= Self.Count), 'index');
   Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
+{$ENDIF}
 
   TArray.BinarySearch<T>(fItems, item, Result, Comparer, index, count);
 end;
@@ -690,8 +740,10 @@ end;
 function TSortedList<T>.LastIndexOf(const item: T; index,
   count: Integer): Integer;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
   Guard.CheckRange((count >= 0) and (count <= index + 1), 'count');
+{$ENDIF}
 
   inherited;
 //  TArray.BinarySearch<T>(fItems, item, Result, fComparer, index - count + 1, count);
@@ -715,16 +767,25 @@ end;
 
 constructor TCollectionList<T>.Create(const collection: TCollection);
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(collection, 'collection');
   Guard.CheckInheritsFrom(collection.ItemClass, TClass(T), 'collection.ItemClass');
+{$ENDIF}
 
   inherited Create;
   fCollection := collection;
 end;
 
+destructor TCollectionList<T>.Destroy;
+begin
+  // not calling inherited because we don't want to call Clear
+end;
+
 procedure TCollectionList<T>.Delete(index: Integer);
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < Count), 'index');
+{$ENDIF}
 
   DeleteInternal(index, caRemoved);
 end;
@@ -748,8 +809,10 @@ var
   oldItems: array of T;
   i: Integer;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
   Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
+{$ENDIF}
 
   if count = 0 then
     Exit;
@@ -770,17 +833,14 @@ begin
   end;
 end;
 
-destructor TCollectionList<T>.Destroy;
-begin
-
-end;
-
 procedure TCollectionList<T>.Exchange(index1, index2: Integer);
 var
   temp: T;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index1 >= 0) and (index1 < Count), 'index1');
   Guard.CheckRange((index2 >= 0) and (index2 < Count), 'index2');
+{$ENDIF}
 
   temp := T(fCollection.Items[index1]);
   fCollection.Items[index2].Index := index1;
@@ -822,7 +882,9 @@ end;
 
 function TCollectionList<T>.GetItem(index: Integer): T;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < Count), 'index');
+{$ENDIF}
 
   Result := T(fCollection.Items[index]);
 end;
@@ -836,7 +898,9 @@ end;
 
 procedure TCollectionList<T>.Insert(index: Integer; const item: T);
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= Count), 'index');
+{$ENDIF}
 
   item.Collection := fCollection;
   item.Index := index;
@@ -847,8 +911,10 @@ end;
 
 procedure TCollectionList<T>.Move(currentIndex, newIndex: Integer);
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((currentIndex >= 0) and (currentIndex < Count), 'currentIndex');
   Guard.CheckRange((newIndex >= 0) and (newIndex < Count), 'newIndex');
+{$ENDIF}
 
   fCollection.Items[currentIndex].Index := newIndex;
   IncreaseVersion;
@@ -858,7 +924,9 @@ end;
 
 procedure TCollectionList<T>.SetItem(index: Integer; const value: T);
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index < Count), 'index');
+{$ENDIF}
 
   fCollection.Items[index] := value;
 end;

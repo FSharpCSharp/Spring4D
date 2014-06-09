@@ -40,6 +40,7 @@ type
     fSource: ICollection<T>;
 
     function GetIsReadOnly: Boolean;
+    function GetOnChanged: IEvent;
 
     procedure Add(const item: TValue);
     procedure AddRange(const collection: array of TValue); overload;
@@ -68,7 +69,6 @@ type
     fSource: IList<T>;
 
     function GetItem(index: Integer): TValue;
-    function GetOnChanged: IEvent;
     procedure SetItem(index: Integer; const item: TValue);
 
     procedure Insert(index: Integer; const item: TValue);
@@ -274,6 +274,11 @@ begin
   Result := fSource.IsReadOnly;
 end;
 
+function TCollectionAdapter<T>.GetOnChanged: IEvent;
+begin
+  Result := fSource.OnChanged;
+end;
+
 function TCollectionAdapter<T>.QueryInterface(const IID: TGUID;
   out Obj): HResult;
 begin
@@ -344,11 +349,6 @@ begin
   Result := TValue.From<T>(fSource[index]);
 end;
 
-function TListAdapter<T>.GetOnChanged: IEvent;
-begin
-  Result := fSource.OnChanged;
-end;
-
 function TListAdapter<T>.IndexOf(const item: TValue): Integer;
 begin
   Result := fSource.IndexOf(item.AsType<T>);
@@ -375,7 +375,9 @@ procedure TListAdapter<T>.InsertRange(index: Integer;
 var
   item: TValue;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= Count), 'index');
+{$ENDIF}
 
   for item in collection do
   begin
@@ -389,7 +391,9 @@ procedure TListAdapter<T>.InsertRange(index: Integer;
 var
   item: TValue;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= Count), 'index');
+{$ENDIF}
 
   for item in collection do
   begin

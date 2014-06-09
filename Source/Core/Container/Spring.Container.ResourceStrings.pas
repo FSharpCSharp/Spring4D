@@ -42,7 +42,7 @@ resourcestring
   SUnexpectedDependencyParameterType = 'Unexpected dependency parameter type.';
   SNoComponentRegistered = 'No component was registered for the service type: %s.';
   SInvalidServiceName = 'Invalid service name: "%s".';
-  SUnsatisfiedConstructorParameters = 'Unsatisfied parameters for constructor.';
+  SUnsatisfiedConstructorParameters = 'Unsatisfied parameters for constructor of type %s.';
   SAmbiguousConstructor = 'Ambiguous constructor on class: %s.';
   SUnsatisfiedMethodParameterTypes = 'Unsatisfied parameter types for the method: %s.';
   SUnsatisfiedDependency = 'Unsatisfied dependency for the service type "%0:s".';

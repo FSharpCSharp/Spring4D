@@ -159,7 +159,7 @@ end;
 
 procedure TInjectionBase.InitializeArguments(const arguments: array of TValue);
 begin
-  fArguments := TArray.CreateArray<TValue>(arguments);
+  fArguments := TArray.Copy<TValue>(arguments);
 end;
 
 function TInjectionBase.GetArguments: TArray<TValue>;
@@ -317,7 +317,8 @@ begin
     and TMethodFilters.HasParameterTypes(parameterTypes);
   method := model.ComponentType.Methods.FirstOrDefault(predicate);
   if not Assigned(method) then
-    raise ERegistrationException.CreateRes(@SUnsatisfiedConstructorParameters);
+    raise ERegistrationException.CreateResFmt(
+      @SUnsatisfiedConstructorParameters, [model.ComponentType.DefaultName]);
   Result := TConstructorInjection.Create;
   Result.Initialize(method);
   model.ConstructorInjections.Add(Result);

@@ -757,6 +757,7 @@ type
     ['{AC8A0302-C530-46A0-83FC-D88302ECCE3D}']
   {$REGION 'Property Accessors'}
     function GetIsReadOnly: Boolean;
+    function GetOnChanged: IEvent;
   {$ENDREGION}
 
     procedure Add(const item: TValue);
@@ -774,6 +775,7 @@ type
     procedure ExtractRange(const collection: IEnumerable); overload;
 
     property IsReadOnly: Boolean read GetIsReadOnly;
+    property OnChanged: IEvent read GetOnChanged;
   end;
 
   ///	<summary>
@@ -793,6 +795,7 @@ type
     ['{9BFD9B06-45CD-4C80-B145-01B09D432CF0}']
   {$REGION 'Property Accessors'}
     function GetIsReadOnly: Boolean;
+    function GetOnChanged: ICollectionChangedEvent<T>;
   {$ENDREGION}
 
     ///	<summary>
@@ -857,6 +860,7 @@ type
     ///	  or modification of elements after the collection is created.
     ///	</remarks>
     property IsReadOnly: Boolean read GetIsReadOnly;
+    property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
   IReadOnlyList = interface(IReadOnlyCollection)
@@ -872,7 +876,6 @@ type
     ['{43FF6143-3B87-4298-B48C-2ABB9353BF68}']
   {$REGION 'Property Accessors'}
     function GetItem(index: Integer): TValue;
-    function GetOnChanged: IEvent;
     procedure SetItem(index: Integer; const item: TValue);
   {$ENDREGION}
 
@@ -902,7 +905,6 @@ type
     function AsReadOnlyList: IReadOnlyList;
 
     property Items[index: Integer]: TValue read GetItem write SetItem; default;
-    property OnChanged: IEvent read GetOnChanged;
   end;
 
   ///	<summary>
@@ -946,7 +948,6 @@ type
     ['{B6B4E1E1-0D29-40E1-854C-A93DEA8D1AA5}']
   {$REGION 'Property Accessors'}
     function GetItem(index: Integer): T;
-    function GetOnChanged: ICollectionChangedEvent<T>;
     procedure SetItem(index: Integer; const item: T);
   {$ENDREGION}
 
@@ -1010,7 +1011,6 @@ type
     function AsReadOnlyList: IReadOnlyList<T>;
 
     property Items[index: Integer]: T read GetItem write SetItem; default;
-    property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
   IObjectList = interface(IList<TObject>)
@@ -1544,61 +1544,35 @@ type
   ///	  Represents a generic collection of key/value pairs.
   ///	</summary>
   ///	<typeparam name="TKey">
-  ///	  The type of keys in the dictionary.
+  ///	  The type of keys in the map.
   ///	</typeparam>
   ///	<typeparam name="TValue">
-  ///	  The type of values in the dictionary.
+  ///	  The type of values in the map.
   ///	</typeparam>
-  IDictionary<TKey, TValue> = interface(ICollection<TPair<TKey, TValue>>)
-    ['{7F0D544F-6A59-4FA0-9C96-DB09029CC835}']
+  IMap<TKey, TValue> = interface(ICollection<TPair<TKey, TValue>>)
+    ['{94262688-16E4-4092-926B-7B17FEF94A86}']
   {$REGION 'Property Accessors'}
-    function GetItem(const key: TKey): TValue;
     function GetKeys: IReadOnlyCollection<TKey>;
     function GetKeyType: PTypeInfo;
-    function GetOnKeyChanged: ICollectionChangedEvent<TKey>;
-    function GetOnValueChanged: ICollectionChangedEvent<TValue>;
     function GetValues: IReadOnlyCollection<TValue>;
     function GetValueType: PTypeInfo;
-    procedure SetItem(const key: TKey; const value: TValue);
   {$ENDREGION}
 
-    ///	<summary>
-    ///	  Adds an element with the provided key and value to the
-    ///	  IDictionary&lt;TKey, TValue&gt;.
-    ///	</summary>
-    ///	<param name="key">
-    ///	  The item to use as the key of the element to add.
-    ///	</param>
-    ///	<param name="value">
-    ///	  The item to use as the value of the element to add.
-    ///	</param>
+    /// <summary>
+    ///   Adds an element with the provided key and value to the
+    ///   IMap&lt;TKey,TValue&gt;.
+    /// </summary>
+    /// <param name="key">
+    ///   The value to use as the key of the element to add.
+    /// </param>
+    /// <param name="value">
+    ///   The value to use as the value of the element to add.
+    /// </param>
     procedure Add(const key: TKey; const value: TValue); overload;
-    procedure AddOrSetValue(const key: TKey; const value: TValue);
-
-    ///	<summary>
-    ///	  Determines whether the IDictionary&lt;TKey, TValue&gt; contains an
-    ///	  element with the specified key.
-    ///	</summary>
-    ///	<param name="key">
-    ///	  The key to locate in the IDictionary&lt;TKey, TValue&gt;.
-    ///	</param>
-    ///	<returns>
-    ///	  <b>True</b> if the IDictionary&lt;TKey, TValue&gt; contains an
-    ///	  element with the key; otherwise, <b>False</b>.
-    ///	</returns>
-    function ContainsKey(const key: TKey): Boolean;
-    ///	<summary>
-    ///	  Determines whether the IDictionary&lt;TKey, TValue&gt; contains an
-    ///	  element with the specified value.
-    ///	</summary>
-    ///	<param name="value">
-    ///	  The value to locate in the IDictionary&lt;TKey, TValue&gt;.
-    ///	</param>
-    function ContainsValue(const value: TValue): Boolean;
 
     ///	<summary>
     ///	  Removes the element with the specified key from the
-    ///	  IDictionary&lt;TKey, TValue&gt;.
+    ///	  IMap&lt;TKey, TValue&gt;.
     ///	</summary>
     ///	<param name="key">
     ///	  The key of the element to remove.
@@ -1606,9 +1580,88 @@ type
     ///	<returns>
     ///	  <b>True</b> if the element is successfully removed; otherwise,
     ///	  <b>False</b>. This method also returns <b>False</b> if <i>key</i> was
-    ///	  not found in the original IDictionary&lt;TKey, TValue&gt;.
+    ///	  not found in the original IMap&lt;TKey, TValue&gt;.
     ///	</returns>
-    function Remove(const key: TKey): Boolean;
+    function Remove(const key: TKey): Boolean; overload;
+
+    function Remove(const key: TKey; const value: TValue): Boolean; overload;
+
+    ///	<summary>
+    ///	  Determines whether the IMap&lt;TKey, TValue&gt; contains an
+    ///	  element with the specified key.
+    ///	</summary>
+    ///	<param name="key">
+    ///	  The key to locate in the IMap&lt;TKey, TValue&gt;.
+    ///	</param>
+    ///	<returns>
+    ///	  <b>True</b> if the IMap&lt;TKey, TValue&gt; contains an
+    ///	  element with the key; otherwise, <b>False</b>.
+    ///	</returns>
+    function ContainsKey(const key: TKey): Boolean;
+
+    ///	<summary>
+    ///	  Determines whether the IMap&lt;TKey, TValue&gt; contains an
+    ///	  element with the specified value.
+    ///	</summary>
+    ///	<param name="value">
+    ///	  The value to locate in the IMap&lt;TKey, TValue&gt;.
+    ///	</param>
+    function ContainsValue(const value: TValue): Boolean;
+
+    ///	<summary>
+    ///	  Gets an <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the
+    ///	  keys of the IMap&lt;TKey, TValue&gt;.
+    ///	</summary>
+    ///	<value>
+    ///	  An <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the keys of
+    ///	  the object that implements IDictionary&lt;TKey, TValue&gt;.
+    ///	</value>
+    property Keys: IReadOnlyCollection<TKey> read GetKeys;
+
+    ///	<summary>
+    ///	  Gets an <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the
+    ///	  values in the IMap&lt;TKey, TValue&gt;.
+    ///	</summary>
+    ///	<value>
+    ///	  An <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the values
+    ///	  in the object that implements IMap&lt;TKey, TValue&gt;.
+    ///	</value>
+    property Values: IReadOnlyCollection<TValue> read GetValues;
+
+    property KeyType: PTypeInfo read GetKeyType;
+    property ValueType: PTypeInfo read GetValueType;
+  end;
+
+  ///	<summary>
+  ///	  Represents a generic collection of key/value pairs.
+  ///	</summary>
+  ///	<typeparam name="TKey">
+  ///	  The type of keys in the dictionary.
+  ///	</typeparam>
+  ///	<typeparam name="TValue">
+  ///	  The type of values in the dictionary.
+  ///	</typeparam>
+  IDictionary<TKey, TValue> = interface(IMap<TKey, TValue>)
+    ['{7F0D544F-6A59-4FA0-9C96-DB09029CC835}']
+  {$REGION 'Property Accessors'}
+    function GetItem(const key: TKey): TValue;
+    function GetOnKeyChanged: ICollectionChangedEvent<TKey>;
+    function GetOnValueChanged: ICollectionChangedEvent<TValue>;
+    procedure SetItem(const key: TKey; const value: TValue);
+  {$ENDREGION}
+
+    /// <summary>
+    ///   Adds an element with the provided key and value to the
+    ///   IDictionary&lt;TKey,TValue&gt;. If it already exists in the
+    ///   dictionary the provided value for the specified key is set.
+    /// </summary>
+    /// <param name="key">
+    ///   The value to use as the key of the element to add or set.
+    /// </param>
+    /// <param name="value">
+    ///   The value to use as the value of the element to add or set.
+    /// </param>
+    procedure AddOrSetValue(const key: TKey; const value: TValue);
 
     function ExtractPair(const key: TKey): TPair<TKey, TValue>;
 
@@ -1643,30 +1696,19 @@ type
     ///	</value>
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
 
-    ///	<summary>
-    ///	  Gets an <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the
-    ///	  keys of the IDictionary&lt;TKey, TValue&gt;.
-    ///	</summary>
-    ///	<value>
-    ///	  An <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the keys of
-    ///	  the object that implements IDictionary&lt;TKey, TValue&gt;.
-    ///	</value>
-    property Keys: IReadOnlyCollection<TKey> read GetKeys;
-
-    ///	<summary>
-    ///	  Gets an <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the
-    ///	  values in the IDictionary&lt;TKey, TValue&gt;.
-    ///	</summary>
-    ///	<value>
-    ///	  An <see cref="IReadOnlyCollection&lt;T&gt;" /> containing the values
-    ///	  in the object that implements IDictionary&lt;TKey, TValue&gt;.
-    ///	</value>
-    property Values: IReadOnlyCollection<TValue> read GetValues;
-
     property OnKeyChanged: ICollectionChangedEvent<TKey> read GetOnKeyChanged;
     property OnValueChanged: ICollectionChangedEvent<TValue> read GetOnValueChanged;
-    property KeyType: PTypeInfo read GetKeyType;
-    property ValueType: PTypeInfo read GetValueType;
+  end;
+
+  IMultiMap<TKey, TValue> = interface(IMap<TKey, TValue>)
+    ['{8598095E-92A7-4FCC-9F78-8EE7653B8B49}']
+  {$REGION 'Property Accessors'}
+    function GetItems(const key: TKey): IReadOnlyCollection<TValue>;
+  {$ENDREGION}
+
+    function ExtractValues(const key: TKey): IReadOnlyCollection<TKey>;
+    function TryGetValues(const key: TKey; out values: IReadOnlyCollection<TValue>): Boolean;
+    property Items[const key: TKey]: IReadOnlyCollection<TValue> read GetItems; default;
   end;
 
   IStack = interface(IEnumerable)
@@ -2057,7 +2099,42 @@ type
   );
 
   TDictionaryOwnerships = Generics.Collections.TDictionaryOwnerships;
-  TArray = Generics.Collections.TArray;
+
+  TArray = class(Generics.Collections.TArray)
+  public
+    /// <summary>
+    ///   Determines whether the specified item exists as an element in an
+    ///   array.
+    /// </summary>
+    class function Contains<T>(const values: array of T; const item: T): Boolean; static;
+
+    /// <summary>
+    ///   Copies an open array to a dynamic array.
+    /// </summary>
+    class function Copy<T>(const values: array of T): TArray<T>; static;
+
+    /// <summary>
+    ///   Searches for the specified object and returns the index of the first
+    ///   occurrence within the entire array.
+    /// </summary>
+    class function IndexOf<T>(const values: array of T; const item: T): Integer; overload; static;
+
+    /// <summary>
+    ///   Searches for the specified object and returns the index of the first
+    ///   occurrence within the range of elements in the array that extends
+    ///   from the specified index to the last element.
+    /// </summary>
+    class function IndexOf<T>(const values: array of T; const item: T;
+      index: Integer): Integer; overload; static;
+
+    /// <summary>
+    ///   Searches for the specified object and returns the index of the first
+    ///   occurrence within the range of elements in the array that starts at
+    ///   the specified index and contains the specified number of elements.
+    /// </summary>
+    class function IndexOf<T>(const values: array of T; const item: T;
+      index, count: Integer): Integer; overload; static;
+  end;
 
   ///	<summary>
   ///	  Provides static methods to create an instance of various interfaced
@@ -2090,16 +2167,22 @@ type
     class function CreateDictionary<TKey, TValue>(ownerships: TDictionaryOwnerships; capacity: Integer; const comparer: IEqualityComparer<TKey>): IDictionary<TKey, TValue>; overload; static;
     class function CreateDictionary<TKey, TValue>(dictionary: Generics.Collections.TDictionary<TKey, TValue>; ownership: TOwnershipType): IDictionary<TKey, TValue>; overload; static;
 
+    class function CreateMultiMap<TKey, TValue>: IMultiMap<TKey, TValue>; overload; static;
+    class function CreateMultiMap<TKey, TValue>(ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>; overload; static;
+
     class function CreateStack<T>: IStack<T>; overload; static;
     class function CreateStack<T: class>(ownsObjects: Boolean): IStack<T>; overload; static;
+    class function CreateStack<T>(const values: array of T): IStack<T>; overload; static;
     class function CreateStack<T>(const values: IEnumerable<T>): IStack<T>; overload; static;
 
     class function CreateQueue<T>: IQueue<T>; overload; static;
     class function CreateQueue<T: class>(ownsObjects: Boolean): IQueue<T>; overload; static;
+    class function CreateQueue<T>(const values: array of T): IQueue<T>; overload; static;
     class function CreateQueue<T>(const values: IEnumerable<T>): IQueue<T>; overload; static;
 
     class function CreateSet<T>: ISet<T>; overload; static;
     class function CreateSet<T>(const comparer: IEqualityComparer<T>): ISet<T>; overload; static;
+    class function CreateSet<T>(const values: array of T): ISet<T>; overload; static;
     class function CreateSet<T>(const values: IEnumerable<T>): ISet<T>; overload; static;
 
     ///	<summary>
@@ -2136,12 +2219,11 @@ type
       fOrdinalIgnoreCase: TStringComparer;
   protected
     function Compare(const Left, Right: string): Integer; override;
-    function Equals(const Left, Right: string): Boolean;
-      reintroduce; overload; override;
-    function GetHashCode(const Value: string): Integer;
-      reintroduce; overload; override;
+    function Equals(const Left, Right: string): Boolean; override;
+    function GetHashCode(const Value: string): Integer; override;
   public
     constructor Create(localeOptions: TLocaleOptions; ignoreCase: Boolean);
+    class constructor Create;
     class destructor Destroy;
 
     class function Ordinal: TStringComparer;
@@ -2158,14 +2240,73 @@ implementation
 
 uses
   Character,
+  SyncObjs,
   Spring.Collections.Dictionaries,
   Spring.Collections.Extensions,
   Spring.Collections.Lists,
   Spring.Collections.LinkedLists,
+  Spring.Collections.MultiMaps,
   Spring.Collections.Queues,
   Spring.Collections.Sets,
   Spring.Collections.Stacks,
   Spring.ResourceStrings;
+
+
+{$REGION 'TArray'}
+
+class function TArray.Contains<T>(const values: array of T;
+  const item: T): Boolean;
+var
+  comparer: IEqualityComparer<T>;
+  i: Integer;
+begin
+  comparer := TEqualityComparer<T>.Default;
+  for i := 0 to High(Values) do
+    if comparer.Equals(values[i], item) then
+      Exit(True);
+  Result := False;
+end;
+
+class function TArray.Copy<T>(const values: array of T): TArray<T>;
+var
+  i: Integer;
+begin
+  SetLength(Result, Length(values));
+  for i := 0 to High(values) do
+    Result[i] := values[i];
+end;
+
+class function TArray.IndexOf<T>(const values: array of T;
+  const item: T): Integer;
+begin
+  Result := IndexOf<T>(values, item, 0, Length(values));
+end;
+
+class function TArray.IndexOf<T>(const values: array of T; const item: T;
+  index: Integer): Integer;
+begin
+  Result := IndexOf<T>(values, item, index, Length(values) - index);
+end;
+
+class function TArray.IndexOf<T>(const values: array of T; const item: T; index,
+  count: Integer): Integer;
+var
+  comparer: IEqualityComparer<T>;
+  i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index <= Length(values)), 'index');
+  Guard.CheckRange((count >= 0) and (count <= Length(values) - index), 'count');
+{$ENDIF}
+
+  comparer := TEqualityComparer<T>.Default;
+  for i := index to index + count - 1 do
+    if comparer.Equals(values[i], item) then
+      Exit(i);
+  Result := -1;
+end;
+
+{$ENDREGION}
 
 
 {$REGION 'TCollections'}
@@ -2230,7 +2371,10 @@ class function TCollections.CreateDictionary<TKey, TValue>(
   dictionary: Generics.Collections.TDictionary<TKey, TValue>;
   ownership: TOwnershipType): IDictionary<TKey, TValue>;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(dictionary, 'dictionary');
+{$ENDIF}
+
   Result := TDictionary<TKey, TValue>.Create(dictionary, ownership);
 end;
 
@@ -2280,7 +2424,10 @@ class function TCollections.CreateDictionary<TKey, TValue>(capacity: Integer;
 var
   dictionary: Generics.Collections.TDictionary<TKey,TValue>;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange(capacity >= 0, 'capacity');
+{$ENDIF}
+
   dictionary := Generics.Collections.TDictionary<TKey,TValue>.Create(capacity, comparer);
   Result := TDictionary<TKey, TValue>.Create(dictionary, otOwned);
 end;
@@ -2308,20 +2455,33 @@ begin
   Result := TDictionary<TKey, TValue>.Create(dictionary, otOwned);
 end;
 
-class function TCollections.CreateStack<T>: IStack<T>;
-var
-  stack: Generics.Collections.TStack<T>;
+class function TCollections.CreateMultiMap<TKey, TValue>: IMultiMap<TKey, TValue>;
 begin
-  stack := Generics.Collections.TStack<T>.Create;
-  Result := TStack<T>.Create(stack, otOwned);
+  Result := TMultiMap<TKey, TValue>.Create;
+end;
+
+class function TCollections.CreateMultiMap<TKey, TValue>(
+  ownerships: TDictionaryOwnerships): IMultiMap<TKey, TValue>;
+begin
+  Result := TObjectMultiMap<TKey, TValue>.Create(ownerships);
+end;
+
+class function TCollections.CreateStack<T>: IStack<T>;
+begin
+  Result := TStack<T>.Create;
 end;
 
 class function TCollections.CreateStack<T>(ownsObjects: Boolean): IStack<T>;
 var
   stack: Generics.Collections.TObjectStack<T>;
 begin
-  stack := TObjectStack<T>.Create(ownsObjects);
+  stack := Generics.Collections.TObjectStack<T>.Create(ownsObjects);
   Result := TStack<T>.Create(stack, otOwned);
+end;
+
+class function TCollections.CreateStack<T>(const values: array of T): IStack<T>;
+begin
+  Result := TStack<T>.Create(values);
 end;
 
 class function TCollections.CreateStack<T>(
@@ -2331,11 +2491,8 @@ begin
 end;
 
 class function TCollections.CreateQueue<T>: IQueue<T>;
-var
-  queue: Generics.Collections.TQueue<T>;
 begin
-  queue := Generics.Collections.TQueue<T>.Create;
-  Result := TQueue<T>.Create(queue, otOwned);
+  Result := TQueue<T>.Create;
 end;
 
 class function TCollections.CreateQueue<T>(ownsObjects: Boolean): IQueue<T>;
@@ -2344,6 +2501,11 @@ var
 begin
   queue := Generics.Collections.TObjectQueue<T>.Create(ownsObjects);
   Result := TQueue<T>.Create(queue, otOwned);
+end;
+
+class function TCollections.CreateQueue<T>(const values: array of T): IQueue<T>;
+begin
+  Result := TQueue<T>.Create(values);
 end;
 
 class function TCollections.CreateQueue<T>(
@@ -2361,6 +2523,11 @@ class function TCollections.CreateSet<T>(
   const comparer: IEqualityComparer<T>): ISet<T>;
 begin
   Result := THashSet<T>.Create(comparer);
+end;
+
+class function TCollections.CreateSet<T>(const values: array of T): ISet<T>;
+begin
+  Result := THashSet<T>.Create(values);
 end;
 
 class function TCollections.CreateSet<T>(const values: IEnumerable<T>): ISet<T>;
@@ -2412,6 +2579,12 @@ begin
   inherited Create;
   fLocaleOptions := localeOptions;
   fIgnoreCase := ignoreCase;
+end;
+
+class constructor TStringComparer.Create;
+begin
+  fOrdinal := TStringComparer.Create(loInvariantLocale, False);
+  fOrdinalIgnoreCase := TStringComparer.Create(loInvariantLocale, True);
 end;
 
 class destructor TStringComparer.Destroy;
@@ -2482,15 +2655,11 @@ end;
 
 class function TStringComparer.Ordinal: TStringComparer;
 begin
-  if not Assigned(fOrdinal) then
-    fOrdinal := TStringComparer.Create(loInvariantLocale, False);
   Result := fOrdinal;
 end;
 
 class function TStringComparer.OrdinalIgnoreCase: TStringComparer;
 begin
-  if not Assigned(fOrdinalIgnoreCase) then
-    fOrdinalIgnoreCase := TStringComparer.Create(loInvariantLocale, True);
   Result := fOrdinalIgnoreCase;
 end;
 

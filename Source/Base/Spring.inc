@@ -63,6 +63,18 @@
   {.$DEFINE SUPPORTS_GENERIC_FOLDING}
 {$ENDIF}
 
+// This will disable the execution of guard code when assertions are turned off
+{$IFNDEF ASSERTIONS_ON}
+  {$IFNDEF SPRING_ENABLE_GUARD}
+    {$DEFINE SPRING_DISABLE_GUARD}
+  {$ENDIF}
+{$ENDIF}
+{$IFNDEF RELEASE}
+  {$IFNDEF SPRING_DISABLE_GUARD}
+    {$DEFINE SPRING_ENABLE_GUARD}
+  {$ENDIF}
+{$ENDIF}
+
 // If we are running on Android or iOS, we are sure we are running using FMX.
 // If FMX is to be used on x86/x64 FMX conditional should be defined
 // in the project settings by hand
@@ -72,6 +84,10 @@
 {$IFDEF IOS}
   {$DEFINE FMX}
 {$ENDIF}
+
+// This option is needed to enable code browsing (aka Ctrl+Click)
+// It does not affect the binary size or generated code
+{$DEFINITIONINFO ON}
 
 {$IFNDEF DELPHI2010_UP}
   {$MESSAGE ERROR 'This framework requires Delphi 2010 or higher.'}

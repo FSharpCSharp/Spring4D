@@ -45,7 +45,7 @@ type
   ///	<typeparam name="TValue">
   ///	  The type of the values in the dictionary.
   ///	</typeparam>
-  TDictionary<TKey, TValue> = class(TCollectionBase<TPair<TKey, TValue>>,
+  TDictionary<TKey, TValue> = class(TMapBase<TKey, TValue>,
     IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>)
   protected
     type
@@ -60,7 +60,8 @@ type
         function GetCount: Integer; override;
       {$ENDREGION}
       public
-        constructor Create(const controller: IInterface; dictionary: TGenericDictionary);
+        constructor Create(const controller: IInterface;
+          const dictionary: TGenericDictionary);
 
       {$REGION 'Implements IEnumerable<TKey>'}
         function GetEnumerator: IEnumerator<TKey>; override;
@@ -77,7 +78,8 @@ type
         function GetCount: Integer; override;
       {$ENDREGION}
       public
-        constructor Create(const controller: IInterface; dictionary: TGenericDictionary);
+        constructor Create(const controller: IInterface;
+          const dictionary: TGenericDictionary);
 
       {$REGION 'Implements IEnumerable<TValue>'}
         function GetEnumerator: IEnumerator<TValue>; override;
@@ -90,23 +92,17 @@ type
     fOwnership: TOwnershipType;
     fKeys: TKeyCollection;
     fValues: TValueCollection;
-    fOnKeyChanged: ICollectionChangedEvent<TKey>;
-    fOnValueChanged: ICollectionChangedEvent<TValue>;
     fOnKeyNotify: TCollectionNotifyEvent<TKey>;
     fOnValueNotify: TCollectionNotifyEvent<TValue>;
     procedure DoKeyNotify(Sender: TObject; const Item: TKey; Action: TCollectionNotification);
     procedure DoValueNotify(Sender: TObject; const Item: TValue; Action: TCollectionNotification);
-    function GetOnKeyChanged: ICollectionChangedEvent<TKey>;
-    function GetOnValueChanged: ICollectionChangedEvent<TValue>;
     function AsReadOnlyDictionary: IReadOnlyDictionary<TKey, TValue>;
   protected
   {$REGION 'Property Accessors'}
     function GetCount: Integer; override;
     function GetItem(const key: TKey): TValue; virtual;
-    function GetKeys: IReadOnlyCollection<TKey>;
-    function GetKeyType: PTypeInfo;
-    function GetValues: IReadOnlyCollection<TValue>;
-    function GetValueType: PTypeInfo;
+    function GetKeys: IReadOnlyCollection<TKey>; override;
+    function GetValues: IReadOnlyCollection<TValue>; override;
     procedure SetItem(const key: TKey; const value: TValue); virtual;
   {$ENDREGION}
   public
@@ -132,27 +128,28 @@ type
     function Extract(const item: TGenericPair): TGenericPair; override;
   {$ENDREGION}
 
-  {$REGION 'Implements IDictionary<TKey, TValue>'}
+  {$REGION 'Implements IMap<TKey, TValue>'}
     procedure Add(const key: TKey; const value: TValue); reintroduce; overload;
-    procedure AddOrSetValue(const key: TKey; const value: TValue);
     function Remove(const key: TKey): Boolean; reintroduce; overload;
-    function ContainsKey(const key: TKey): Boolean;
-    function ContainsValue(const value: TValue): Boolean;
+    function Remove(const key: TKey; const value: TValue): Boolean; reintroduce; overload;
+    function ContainsKey(const key: TKey): Boolean; override;
+    function ContainsValue(const value: TValue): Boolean; override;
+    property Keys: IReadOnlyCollection<TKey> read GetKeys;
+    property Values: IReadOnlyCollection<TValue> read GetValues;
+  {$ENDREGION}
+
+  {$REGION 'Implements IDictionary<TKey, TValue>'}
+    procedure AddOrSetValue(const key: TKey; const value: TValue);
     function ExtractPair(const key: TKey): TGenericPair;
     function TryGetValue(const key: TKey; out value: TValue): Boolean;
 
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
-    property Keys: IReadOnlyCollection<TKey> read GetKeys;
-    property Values: IReadOnlyCollection<TValue> read GetValues;
-    property OnKeyChanged: ICollectionChangedEvent<TKey> read GetOnKeyChanged;
-    property OnValueChanged: ICollectionChangedEvent<TValue> read GetOnValueChanged;
   {$ENDREGION}
   end;
 
 implementation
 
 uses
-  Spring.Collections.Events,
   Spring.Collections.Extensions;
 
 
@@ -163,13 +160,13 @@ constructor TDictionary<TKey, TValue>.Create(dictionary: TGenericDictionary;
 begin
   inherited Create;
   fDictionary := dictionary;
+  fKeys := TKeyCollection.Create(Self, fDictionary);
+  fValues := TValueCollection.Create(Self, fDictionary);
   fOwnership := ownership;
   fOnKeyNotify := fDictionary.OnKeyNotify;
   fOnValueNotify := fDictionary.OnValueNotify;
   fDictionary.OnKeyNotify := DoKeyNotify;
   fDictionary.OnValueNotify := DoValueNotify;
-  fOnKeyChanged := TCollectionChangedEventImpl<TKey>.Create;
-  fOnValueChanged := TCollectionChangedEventImpl<TValue>.Create;
 end;
 
 constructor TDictionary<TKey, TValue>.Create;
@@ -224,13 +221,13 @@ end;
 procedure TDictionary<TKey, TValue>.DoKeyNotify(Sender: TObject;
   const Item: TKey; Action: TCollectionNotification);
 begin
-  fOnKeyChanged.Invoke(Self, item, TCollectionChangedAction(action));
+  inherited DoKeyChanged(Sender, Item, TCollectionChangedAction(action));
 end;
 
 procedure TDictionary<TKey, TValue>.DoValueNotify(Sender: TObject;
   const Item: TValue; Action: TCollectionNotification);
 begin
-  fOnValueChanged.Invoke(Self, item, TCollectionChangedAction(action));
+  inherited DoValueChanged(Sender, Item, TCollectionChangedAction(Action));
 end;
 
 function TDictionary<TKey, TValue>.GetEnumerator: IEnumerator<TGenericPair>;
@@ -261,20 +258,9 @@ begin
     Result := comparer.Equals(TGenericPair.Create(value.Key, item), value);
 end;
 
-function TDictionary<TKey, TValue>.Remove(
-  const item: TGenericPair): Boolean;
-var
-  value: TValue;
-  comparer: IEqualityComparer<TValue>;
+function TDictionary<TKey, TValue>.Remove(const item: TGenericPair): Boolean;
 begin
-  Result := fDictionary.TryGetValue(item.Key, value);
-  if Result then
-  begin
-    comparer := TEqualityComparer<TValue>.Default;
-    Result := comparer.Equals(value, item.Value);
-    if Result then
-      fDictionary.Remove(item.Key);
-  end;
+  Result := Remove(item.Key, item.Value);
 end;
 
 function TDictionary<TKey, TValue>.Extract(
@@ -290,7 +276,14 @@ begin
     comparer := TEqualityComparer<TValue>.Default;
     found := comparer.Equals(value, item.Value);
     if found then
+{$IFDEF DELPHIXE2_UP}
       Result := fDictionary.ExtractPair(item.Key);
+{$ELSE}
+    begin
+      Result := item;
+      fDictionary.ExtractPair(item.Key);
+    end;
+{$ENDIF}
   end;
   if not found then
   begin
@@ -354,7 +347,17 @@ end;
 function TDictionary<TKey, TValue>.ExtractPair(
   const key: TKey): TGenericPair;
 begin
+{$IFDEF DELPHIXE2_UP}
   Result := fDictionary.ExtractPair(key);
+{$ELSE}
+  if fDictionary.TryGetValue(key, Result.Value) then
+  begin
+    Result.Key := key;
+    fDictionary.ExtractPair(key);
+  end
+  else
+    Result := fDictionary.ExtractPair(key);
+{$ENDIF}
 end;
 
 function TDictionary<TKey, TValue>.TryGetValue(const key: TKey;
@@ -370,38 +373,29 @@ begin
     fDictionary.Remove(key);
 end;
 
+function TDictionary<TKey, TValue>.Remove(const key: TKey;
+  const value: TValue): Boolean;
+var
+  comparer: IEqualityComparer<TValue>;
+begin
+  Result := fDictionary.ContainsKey(key);
+  if Result then
+  begin
+    comparer := TEqualityComparer<TValue>.Default;
+    Result := comparer.Equals(fDictionary[key], value);
+    if Result then
+      fDictionary.Remove(key);
+  end;
+end;
+
 function TDictionary<TKey, TValue>.GetKeys: IReadOnlyCollection<TKey>;
 begin
-  if not Assigned(fKeys) then
-    fKeys := TKeyCollection.Create(Self, fDictionary);
   Result := fKeys;
-end;
-
-function TDictionary<TKey, TValue>.GetKeyType: PTypeInfo;
-begin
-  Result := TypeInfo(TKey);
-end;
-
-function TDictionary<TKey, TValue>.GetOnKeyChanged: ICollectionChangedEvent<TKey>;
-begin
-  Result := fOnKeyChanged;
-end;
-
-function TDictionary<TKey, TValue>.GetOnValueChanged: ICollectionChangedEvent<TValue>;
-begin
-  Result := fOnValueChanged;
 end;
 
 function TDictionary<TKey, TValue>.GetValues: IReadOnlyCollection<TValue>;
 begin
-  if not Assigned(fValues) then
-    fValues := TValueCollection.Create(Self, fDictionary);
   Result := fValues;
-end;
-
-function TDictionary<TKey, TValue>.GetValueType: PTypeInfo;
-begin
-  Result := TypeInfo(TValue);
 end;
 
 function TDictionary<TKey, TValue>.GetItem(const key: TKey): TValue;
@@ -421,7 +415,7 @@ end;
 {$REGION 'TDictionary<TKey, TValue>.TKeyCollection'}
 
 constructor TDictionary<TKey, TValue>.TKeyCollection.Create(
-  const controller: IInterface; dictionary: TGenericDictionary);
+  const controller: IInterface; const dictionary: TGenericDictionary);
 begin
   inherited Create(controller);
   fDictionary := dictionary;
@@ -463,7 +457,7 @@ end;
 {$REGION 'TDictionary<TKey, TValue>.TValueCollection'}
 
 constructor TDictionary<TKey, TValue>.TValueCollection.Create(
-  const controller: IInterface; dictionary: TGenericDictionary);
+  const controller: IInterface; const dictionary: TGenericDictionary);
 begin
   inherited Create(controller);
   fDictionary := dictionary;

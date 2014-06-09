@@ -48,8 +48,8 @@ type
     fRttiContext: TRttiContext;
     fModels: IList<TComponentModel>;
     fDefaultRegistrations: IDictionary<PTypeInfo, TComponentModel>;
-    fUnnamedRegistrations: IDictionary<PTypeInfo, IList<TComponentModel>>;
-    fServiceTypeMappings: IDictionary<PTypeInfo, IList<TComponentModel>>;
+    fUnnamedRegistrations: IMultiMap<PTypeInfo, TComponentModel>;
+    fServiceTypeMappings: IMultiMap<PTypeInfo, TComponentModel>;
     fServiceNameMappings: IDictionary<string, TComponentModel>;
   protected
     procedure CheckIsNonGuidInterface(serviceType: TRttiType);
@@ -117,9 +117,8 @@ type
 
     {$ENDREGION}
 
-    function AsSingleton: TRegistration; overload;
-    function AsSingleton(refCounting: TRefCounting): TRegistration; overload;
-    function AsSingletonPerThread: TRegistration;
+    function AsSingleton(refCounting: TRefCounting = TRefCounting.Unknown): TRegistration;
+    function AsSingletonPerThread(refCounting: TRefCounting = TRefCounting.Unknown): TRegistration;
     function AsTransient: TRegistration;
     function AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration; {$IFDEF CPUARM}experimental;{$ENDIF}
 
@@ -167,9 +166,8 @@ type
 
   {$ENDREGION}
 
-    function AsSingleton: TRegistration<T>; overload;
-    function AsSingleton(refCounting: TRefCounting): TRegistration<T>; overload;
-    function AsSingletonPerThread: TRegistration<T>;
+    function AsSingleton(refCounting: TRefCounting = TRefCounting.Unknown): TRegistration<T>;
+    function AsSingletonPerThread(refCounting: TRefCounting = TRefCounting.Unknown): TRegistration<T>;
     function AsTransient: TRegistration<T>;
     function AsPooled(minPoolSize, maxPoolSize: Integer): TRegistration<T>; {$IFDEF CPUARM}experimental;{$ENDIF}
 
@@ -225,8 +223,8 @@ begin
   fRttiContext := TRttiContext.Create;
   fModels := TCollections.CreateObjectList<TComponentModel>(True);
   fDefaultRegistrations := TCollections.CreateDictionary<PTypeInfo, TComponentModel>;
-  fUnnamedRegistrations := TCollections.CreateDictionary<PTypeInfo, IList<TComponentModel>>;
-  fServiceTypeMappings := TCollections.CreateDictionary<PTypeInfo, IList<TComponentModel>>;
+  fUnnamedRegistrations := TCollections.CreateMultiMap<PTypeInfo, TComponentModel>;
+  fServiceTypeMappings := TCollections.CreateMultiMap<PTypeInfo, TComponentModel>;
   fServiceNameMappings := TCollections.CreateDictionary<string, TComponentModel>;
 end;
 
@@ -284,7 +282,6 @@ end;
 procedure TComponentRegistry.RegisterService(const model: TComponentModel;
   serviceType: PTypeInfo; const name: string);
 var
-  models: IList<TComponentModel>;
   serviceName: string;
 begin
   Guard.CheckNotNull(model, 'model');
@@ -293,12 +290,7 @@ begin
   serviceName := name;
   Validate(model.ComponentTypeInfo, serviceType, serviceName);
   model.Services[serviceName] := serviceType;
-  if not fServiceTypeMappings.TryGetValue(serviceType, models) then
-  begin
-    models := TCollections.CreateList<TComponentModel>(False);
-    fServiceTypeMappings.Add(serviceType, models);
-  end;
-  models.Add(model);
+  fServiceTypeMappings.Add(serviceType, model);
   fServiceNameMappings.Add(serviceName, model);
   if name = '' then
   begin
@@ -309,15 +301,8 @@ end;
 
 procedure TComponentRegistry.RegisterUnnamed(const model: TComponentModel;
   serviceType: PTypeInfo);
-var
-  models: IList<TComponentModel>;
 begin
-  if not fUnnamedRegistrations.TryGetValue(serviceType, models) then
-  begin
-    models := TCollections.CreateList<TComponentModel>(False);
-    fUnnamedRegistrations.Add(serviceType, models);
-  end;
-  models.Add(model);
+  fUnnamedRegistrations.Add(serviceType, model);
 end;
 
 procedure TComponentRegistry.RegisterDefault(const model: TComponentModel;
@@ -477,17 +462,11 @@ end;
 
 function TComponentRegistry.FindDefault(
   serviceType: PTypeInfo): TComponentModel;
-var
-  models: IList<TComponentModel>;
 begin
   Guard.CheckNotNull(serviceType, 'serviceType');
 
-  if not fDefaultRegistrations.TryGetValue(serviceType, Result)
-    and fServiceTypeMappings.TryGetValue(serviceType, models)
-    and (models.Count = 1) then
-  begin
-    Result := models[0];
-  end;
+  if not fDefaultRegistrations.TryGetValue(serviceType, Result) then
+    fServiceTypeMappings[serviceType].TryGetSingle(Result);
 end;
 
 function TComponentRegistry.FindAll: IEnumerable<TComponentModel>;
@@ -498,20 +477,20 @@ end;
 function TComponentRegistry.FindAll(
   serviceType: PTypeInfo): IEnumerable<TComponentModel>;
 var
-  models: IList<TComponentModel>;
-  unnamedModels: IList<TComponentModel>;
+  models: IReadOnlyCollection<TComponentModel>;
+  unnamedModels: IReadOnlyCollection<TComponentModel>;
 begin
   Guard.CheckNotNull(serviceType, 'serviceType');
 
-  if fServiceTypeMappings.TryGetValue(serviceType, models) then
+  if fServiceTypeMappings.TryGetValues(serviceType, models) then
   begin
-    if fUnnamedRegistrations.TryGetValue(serviceType, unnamedModels) then
+    if fUnnamedRegistrations.TryGetValues(serviceType, unnamedModels) then
       Result := TExceptIterator<TComponentModel>.Create(models, unnamedModels)
     else
       Result := models;
   end
   else
-    Result := TCollections.CreateList<TComponentModel>(False);
+    Result := TCollections.Empty<TComponentModel>;
 end;
 
 function TComponentRegistry.HasService(serviceType: PTypeInfo): Boolean;
@@ -538,12 +517,9 @@ begin
 end;
 
 function TComponentRegistry.HasDefault(serviceType: PTypeInfo): Boolean;
-var
-  models: IList<TComponentModel>;
 begin
   Result := fDefaultRegistrations.ContainsKey(serviceType)
-    or (fServiceTypeMappings.TryGetValue(serviceType, models)
-    and (models.Count = 1));
+    or (fServiceTypeMappings[serviceType].Count = 1);
 end;
 
 {$ENDREGION}
@@ -640,24 +616,17 @@ begin
   Result := Self;
 end;
 
-function TRegistration.AsSingleton: TRegistration;
-begin
-  Result := AsSingleton(TRefCounting.Unknown);
-end;
-
 function TRegistration.AsSingleton(refCounting: TRefCounting): TRegistration;
 begin
-  if (refCounting = TRefCounting.True) and fModel.ComponentType.IsInstance
-    and not Supports(fModel.ComponentType.AsInstance.MetaclassType, IInterface) then
-    raise ERegistrationException.CreateResFmt(@SMissingInterface, [fModel.ComponentType.Name]);
   fModel.LifetimeType := TLifetimeType.Singleton;
   fModel.RefCounting := refCounting;
   Result := Self;
 end;
 
-function TRegistration.AsSingletonPerThread: TRegistration;
+function TRegistration.AsSingletonPerThread(refCounting: TRefCounting): TRegistration;
 begin
   fModel.LifetimeType := TLifetimeType.SingletonPerThread;
+  fModel.RefCounting := refCounting;
   Result := Self;
 end;
 
@@ -812,21 +781,15 @@ begin
   Result := Self;
 end;
 
-function TRegistration<T>.AsSingleton: TRegistration<T>;
-begin
-  fRegistration.AsSingleton;
-  Result := Self;
-end;
-
 function TRegistration<T>.AsSingleton(refCounting: TRefCounting): TRegistration<T>;
 begin
   fRegistration.AsSingleton(refCounting);
   Result := Self;
 end;
 
-function TRegistration<T>.AsSingletonPerThread: TRegistration<T>;
+function TRegistration<T>.AsSingletonPerThread(refCounting: TRefCounting): TRegistration<T>;
 begin
-  fRegistration.AsSingletonPerThread;
+  fRegistration.AsSingletonPerThread(refCounting);
   Result := Self;
 end;
 

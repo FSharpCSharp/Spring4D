@@ -209,6 +209,8 @@ begin
     if model.ComponentType.TryGetCustomAttribute<LifetimeAttributeBase>(attribute) then
     begin
       model.LifetimeType := attribute.LifetimeType;
+      if attribute is SingletonAttributeBase then
+        model.RefCounting := SingletonAttributeBase(attribute).RefCounting;
 {$WARN SYMBOL_EXPERIMENTAL OFF}
       if attribute is PooledAttribute then
       begin
@@ -319,7 +321,13 @@ begin
       injection := kernel.Injector.InjectProperty(model, prop.Name);
     injection.Initialize(prop);
     attribute := prop.GetCustomAttribute<InjectAttribute>;
-    injection.InitializeArguments([attribute.Value]);
+    if attribute.HasValue then
+      injection.InitializeArguments([attribute.Value]);
+    if attribute.ServiceType <> nil then
+      if TType.IsAssignable(attribute.ServiceType, prop.PropertyType.Handle) then
+        injection.Dependencies[0] := TType.GetType(attribute.ServiceType)
+      else
+        raise EBuilderException.CreateRes(@SUnresovableInjection);
   end;
 end;
 
@@ -344,7 +352,13 @@ begin
       injection := kernel.Injector.InjectField(model, field.Name);
     injection.Initialize(field);
     attribute := field.GetCustomAttribute<InjectAttribute>;
-    injection.InitializeArguments([attribute.Value])
+    if attribute.HasValue then
+      injection.InitializeArguments([attribute.Value]);
+    if attribute.ServiceType <> nil then
+      if TType.IsAssignable(attribute.ServiceType, field.FieldType.Handle) then
+        injection.Dependencies[0] := TType.GetType(attribute.ServiceType)
+      else
+        raise EBuilderException.CreateRes(@SUnresovableInjection);
   end;
 end;
 

@@ -153,7 +153,7 @@ begin
   winner := nil;
   maxCount := -1;
 
-  for candidate in Model.ConstructorInjections do
+  for candidate in model.ConstructorInjections do
   begin
     if candidate.Target.HasCustomAttribute<InjectAttribute> then
     begin
