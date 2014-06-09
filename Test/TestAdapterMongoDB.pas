@@ -139,7 +139,7 @@ type
     FConnection: IDBConnection;
     FMongoConnection: TMongoDBConnection;
     FSession: TMongoDBSession;
-    FRepository: IRepository<TMongoAdapter, Integer>;
+    FRepository: IPagedRepository<TMongoAdapter, Integer>;
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -692,7 +692,7 @@ begin
     LKey.Key := 1234;
     LKeys.Add(LKey);
   end;
-  FRepository.InsertList(LKeys);
+  FRepository.Insert(LKeys);
   CheckEquals(iSize, FRepository.FindAll.Count);
 end;
 

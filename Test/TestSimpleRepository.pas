@@ -14,12 +14,11 @@ type
   private
     FConnection: IDBConnection;
     FSession: TSession;
-    FRepository: IRepository<TCustomer,Integer>;
+    FRepository: IPagedRepository<TCustomer,Integer>;
   public
     procedure SetUp; override;
     procedure TearDown; override;
   published
-    procedure BeginListSession;
     procedure FindOne();
   end;
 
@@ -45,16 +44,6 @@ uses
 
 
 { TestAbstractRepository }
-
-procedure TSimpleRepositoryTests.BeginListSession;
-var
-  LCustomers: IList<TCustomer>;
-  ListSession: IListSession<TCustomer>;
-begin
-  LCustomers := TCollections.CreateObjectList<TCustomer>;
-  ListSession := FRepository.BeginListSession(LCustomers);
-  CheckNotNull(ListSession);
-end;
 
 procedure TSimpleRepositoryTests.FindOne;
 var

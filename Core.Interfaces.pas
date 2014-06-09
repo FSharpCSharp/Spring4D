@@ -320,39 +320,25 @@ type
   {$IFDEF USE_SPRING}
   IRepository<T: class, constructor; TID> = interface(IInvokable)
     ['{849C6AB6-04F0-4C0F-B139-A08A3396525D}']
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Starts a new List Session. ListSession monitors changes in the specified list and can commit or rollback these changes to the database
-    ///	</summary>
-    ///	<remarks>
-    ///	  Can return newly started list transaction interface which controls how changes will be reflected in the database.
-    ///	</remarks>
-    {$ENDREGION}
-    function BeginListSession(AList: IList<T>): IListSession<T>;
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Create a new ICriteria&lt;T&gt; instance, for the given entity class,
-    ///	  or a superclass of an entity class.
-    ///	</summary>
-    {$ENDREGION}
-    function CreateCriteria(): ICriteria<T>;
-
     {$REGION 'Documentation'}
     ///	<summary>
     ///	  Executes sql statement which does not return resultset.
     ///	</summary>
     {$ENDREGION}
-    function Execute(const ASql: string; const AParams: array of const): NativeUInt;
+    function Execute(const AQuery: string; const AParams: array of const): NativeUInt;
 
     {$REGION 'Documentation'}
     ///	<summary>
     ///	  Retrieves multiple models from the sql statement.
     ///	</summary>
     {$ENDREGION}
-    function GetList(const ASql: string;
+    function GetList(const AQuery: string;
       const AParams: array of const): IList<T>;
+  end;
+
+  ICrudRepository<T: class, constructor; TID> = interface(IRepository<T, TID>)
+    ['{E490DD59-5466-4036-8CA5-852D8F7EF527}']
+    function Count(): Int64;
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -374,57 +360,14 @@ type
     ///	  Inserts model to the database .
     ///	</summary>
     {$ENDREGION}
-    procedure Insert(AEntity: T);
+    procedure Insert(AEntity: T); overload;
 
     {$REGION 'Documentation'}
     ///	<summary>
     ///	  Inserts models to the database.
     ///	</summary>
     {$ENDREGION}
-    procedure InsertList(ACollection: ICollection<T>);
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Checks if given entity is newly created (does not exist in the
-    ///	  database yet).
-    ///	</summary>
-    {$ENDREGION}
-    function IsNew(AEntity: T): Boolean;
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Updates model in a database.
-    ///	</summary>
-    {$ENDREGION}
-    procedure Update(AEntity: T);
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Updates multiple models in a database.
-    ///	</summary>
-    {$ENDREGION}
-    procedure UpdateList(ACollection: ICollection<T>);
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Removes model from the database.
-    ///	</summary>
-    {$ENDREGION}
-    procedure Delete(AEntity: T);
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Removes models from the database.
-    ///	</summary>
-    {$ENDREGION}
-    procedure DeleteList(ACollection: ICollection<T>);
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Fetches data in pages. Pages are 1-indexed.
-    ///	</summary>
-    {$ENDREGION}
-    function Page(APage: Integer; AItemsPerPage: Integer): IDBPage<T>;
+    procedure Insert(AEntities: ICollection<T>); overload;
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -432,7 +375,15 @@ type
     ///	  based on the entity state.
     ///	</summary>
     {$ENDREGION}
-    procedure Save(AEntity: T);
+    function Save(AEntity: T): T; overload;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Saves entities to the database. It will do update or the insert based
+    ///	  on the entity state.
+    ///	</summary>
+    {$ENDREGION}
+    function Save(AEntities: ICollection<T>): ICollection<T>; overload;
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -455,12 +406,29 @@ type
 
     {$REGION 'Documentation'}
     ///	<summary>
-    ///	  Saves entities to the database. It will do update or the insert based
-    ///	  on the entity state.
+    ///	  Removes model from the database.
     ///	</summary>
     {$ENDREGION}
-    procedure SaveList(ACollection: ICollection<T>);
+    procedure Delete(AEntity: T); overload;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Removes models from the database.
+    ///	</summary>
+    {$ENDREGION}
+    procedure Delete(AEntities: ICollection<T>); overload;
   end;
+
+  IPagedRepository<T: class, constructor; TID> = interface(ICrudRepository<T, TID>)
+    ['{46A40512-604A-4013-B0F0-693D81CAF5DF}']
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Fetches data in pages. Pages are 1-indexed.
+    ///	</summary>
+    {$ENDREGION}
+    function Page(APage: Integer; AItemsPerPage: Integer): IDBPage<T>;
+  end;
+
   {$ENDIF}
 
   IEntitySerializer = interface

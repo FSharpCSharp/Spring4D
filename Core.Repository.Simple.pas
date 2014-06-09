@@ -12,42 +12,34 @@ uses
 
 
 type
-  TSimpleRepository<T: class, constructor; TID> = class(TInterfacedObject, IRepository<T, TID>)
+  TSimpleRepository<T: class, constructor; TID> = class(TInterfacedObject, IPagedRepository<T, TID>)
   private
     FSession: TSession;
   protected
-    function BeginListSession(AList: IList<T>): IListSession<T>; virtual;
-
-    function CreateCriteria(): ICriteria<T>; virtual;
-
     function Execute(const ASql: string; const AParams: array of const): NativeUInt; virtual;
 
     function GetList(const ASql: string;
       const AParams: array of const): IList<T>; virtual;
 
+    function Count(): Int64; virtual;
+
     function FindOne(const AID: TID): T; virtual;
 
     function FindAll(): IList<T>; virtual;
 
-    procedure Save(AEntity: T); virtual;
+    function Save(AEntity: T): T; overload; virtual;
 
     procedure SaveAll(AEntity: T); virtual;
 
-    procedure SaveList(ACollection: ICollection<T>); virtual;
+    function Save(AEntities: ICollection<T>): ICollection<T>; overload; virtual;
 
-    procedure Insert(AEntity: T); virtual;
+    procedure Insert(AEntity: T); overload; virtual;
 
-    procedure InsertList(ACollection: ICollection<T>); virtual;
+    procedure Insert(AEntities: ICollection<T>); overload; virtual;
 
-    function IsNew(AEntity: T): Boolean; virtual;
+    procedure Delete(AEntity: T); overload; virtual;
 
-    procedure Update(AEntity: T); virtual;
-
-    procedure UpdateList(ACollection: ICollection<T>); virtual;
-
-    procedure Delete(AEntity: T); virtual;
-
-    procedure DeleteList(ACollection: ICollection<T>); virtual;
+    procedure Delete(AEntities: ICollection<T>); overload; virtual;
 
     function Page(APage: Integer; AItemsPerPage: Integer): IDBPage<T>; virtual;
 
@@ -64,9 +56,9 @@ uses
 
 { TSimpleRepository<T, TID> }
 
-function TSimpleRepository<T, TID>.BeginListSession(AList: IList<T>): IListSession<T>;
+function TSimpleRepository<T, TID>.Count: Int64;
 begin
-  Result := FSession.BeginListSession<T>(AList);
+  Result := FSession.Page<T>(1,1).GetTotalItems;
 end;
 
 constructor TSimpleRepository<T, TID>.Create(ASession: TSession);
@@ -75,22 +67,17 @@ begin
   FSession := ASession;
 end;
 
-function TSimpleRepository<T, TID>.CreateCriteria: ICriteria<T>;
-begin
-  Result := FSession.CreateCriteria<T>();
-end;
-
 procedure TSimpleRepository<T, TID>.Delete(AEntity: T);
 begin
   FSession.Delete(AEntity);
 end;
 
-procedure TSimpleRepository<T, TID>.DeleteList(ACollection: ICollection<T>);
+procedure TSimpleRepository<T, TID>.Delete(AEntities: ICollection<T>);
 var
   LTransaction: IDBTransaction;
 begin
   LTransaction := FSession.BeginTransaction;
-  FSession.DeleteList<T>(ACollection);
+  FSession.DeleteList<T>(AEntities);
   LTransaction.Commit;
 end;
 
@@ -119,18 +106,13 @@ begin
   FSession.Insert(AEntity);
 end;
 
-procedure TSimpleRepository<T, TID>.InsertList(ACollection: ICollection<T>);
+procedure TSimpleRepository<T, TID>.Insert(AEntities: ICollection<T>);
 var
   LTransaction: IDBTransaction;
 begin
   LTransaction := FSession.BeginTransaction;
-  FSession.InsertList<T>(ACollection);
+  FSession.InsertList<T>(AEntities);
   LTransaction.Commit;
-end;
-
-function TSimpleRepository<T, TID>.IsNew(AEntity: T): Boolean;
-begin
-  Result := FSession.IsNew(AEntity);
 end;
 
 function TSimpleRepository<T, TID>.Page(APage, AItemsPerPage: Integer): IDBPage<T>;
@@ -138,9 +120,10 @@ begin
   Result := FSession.Page<T>(APage, AItemsPerPage);
 end;
 
-procedure TSimpleRepository<T, TID>.Save(AEntity: T);
+function TSimpleRepository<T, TID>.Save(AEntity: T): T;
 begin
   FSession.Save(AEntity);
+  Result := AEntity;
 end;
 
 procedure TSimpleRepository<T, TID>.SaveAll(AEntity: T);
@@ -152,26 +135,13 @@ begin
   LTransaction.Commit;
 end;
 
-procedure TSimpleRepository<T, TID>.SaveList(ACollection: ICollection<T>);
+function TSimpleRepository<T, TID>.Save(AEntities: ICollection<T>): ICollection<T>;
 var
   LTransaction: IDBTransaction;
 begin
   LTransaction := FSession.BeginTransaction;
-  FSession.SaveList<T>(ACollection);
-  LTransaction.Commit;
-end;
-
-procedure TSimpleRepository<T, TID>.Update(AEntity: T);
-begin
-  FSession.Update(AEntity);
-end;
-
-procedure TSimpleRepository<T, TID>.UpdateList(ACollection: ICollection<T>);
-var
-  LTransaction: IDBTransaction;
-begin
-  LTransaction := FSession.BeginTransaction;
-  FSession.UpdateList<T>(ACollection);
+  FSession.SaveList<T>(AEntities);
+  Result := AEntities;
   LTransaction.Commit;
 end;
 
