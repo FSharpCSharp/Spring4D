@@ -464,7 +464,7 @@ begin
   inherited;
   for LParam in Params do
   begin
-    LValue := LParam.Value;
+    LValue := VarToStrDef(LParam.Value, '');
     case VarType(LParam.Value) of
       varString, varUString, varStrArg, varOleStr:
       begin

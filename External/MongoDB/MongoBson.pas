@@ -624,6 +624,7 @@ begin
       Result := string(UTF8ToWideString(bson_iterator_string(handle)));
     bsonINT: Result := bson_iterator_int(handle);
     bsonBOOL: Result := bson_iterator_bool(handle);
+    bsonOBJECT: Result := subiterator.value;
     bsonDATE:
       begin
         d := Int64toDouble(bson_iterator_date(handle)) / (1000 * 24 * 60 * 60) + 25569;

@@ -382,6 +382,8 @@ var
   LType: TRttiType;
   LValueTo, LValueFrom: TValue;
 begin
+  if not Assigned(AEntityFrom) then
+    Exit;
   Assert(AEntityFrom.ClassType = AEntityTo.ClassType);
   Assert(Assigned(AEntityFrom) and Assigned(AEntityTo));
 

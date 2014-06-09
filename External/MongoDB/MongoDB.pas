@@ -723,8 +723,11 @@ implementation
 
   destructor TMongoCursor.Destroy();
   begin
-    mongo_cursor_destroy(handle);
-    mongo_cursor_dispose(handle);
+    if Assigned(handle) then
+    begin
+      mongo_cursor_destroy(handle);
+     // mongo_cursor_dispose(handle);
+    end;
   end;
 
   procedure TMongoCursor.DisposeCursor;
