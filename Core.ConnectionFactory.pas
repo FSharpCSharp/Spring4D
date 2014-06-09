@@ -37,7 +37,7 @@ uses
   ,JSON
   {$ELSE}
   ,DBXJSON
-  {$ENDIF}
+  {$IFEND}
   ,Rtti
   ;
 
