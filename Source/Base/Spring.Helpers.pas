@@ -509,6 +509,15 @@ type
     property IsPublished: Boolean read GetIsPublished;
   end;
 
+  TRttiMethodHelper = class helper for TRttiMethod
+  private
+    procedure DispatchValue(const value: TValue; typeInfo: PTypeInfo);
+  public
+    function Invoke(Instance: TObject; const Args: array of TValue): TValue; overload;
+    function Invoke(Instance: TClass; const Args: array of TValue): TValue; overload;
+    function Invoke(Instance: TValue; const Args: array of TValue): TValue; overload;
+  end;
+
   TRttiPropertyHelper = class helper for TRttiProperty
   public
     function GetValue(const instance: TValue): TValue; overload;
@@ -543,10 +552,14 @@ implementation
 
 uses
   Generics.Defaults,
+  RTLConsts,
   StrUtils,
   SysConst,
   TypInfo,
   Spring.ResourceStrings;
+
+type
+  PValueData = ^TValueData;
 
 
 {$REGION 'TGuidHelper'}
@@ -1303,6 +1316,62 @@ end;
 function TRttiMemberHelper.GetAsField: TRttiField;
 begin
   Result := Self as TRttiField;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TRttiMethodHelper'}
+
+procedure TRttiMethodHelper.DispatchValue(const value: TValue;
+  typeInfo: PTypeInfo);
+begin
+  if (value.TypeInfo <> typeInfo) and (value.Kind = tkInterface)
+    and (typeInfo.Kind = tkInterface)
+    and IsAssignableFrom(typeInfo, value.TypeInfo) then
+    PValueData(@value).FTypeInfo := typeInfo;
+end;
+
+function TRttiMethodHelper.Invoke(Instance: TObject;
+  const Args: array of TValue): TValue;
+var
+  parameters: TArray<TRttiParameter>;
+  i: Integer;
+begin
+  parameters := GetParameters;
+  if Length(Args) <> Length(parameters) then
+    raise EInvocationError.CreateRes(@SParameterCountMismatch);
+  for i := 0 to High(Args) do
+    DispatchValue(Args[i], parameters[i].ParamType.Handle);
+  Result := Self.DispatchInvoke(Instance, Args);
+end;
+
+function TRttiMethodHelper.Invoke(Instance: TClass;
+  const Args: array of TValue): TValue;
+var
+  parameters: TArray<TRttiParameter>;
+  i: Integer;
+begin
+  parameters := GetParameters;
+  if Length(Args) <> Length(parameters) then
+    raise EInvocationError.CreateRes(@SParameterCountMismatch);
+  for i := 0 to High(Args) do
+    DispatchValue(Args[i], parameters[i].ParamType.Handle);
+  Result := Self.DispatchInvoke(Instance, Args);
+end;
+
+function TRttiMethodHelper.Invoke(Instance: TValue;
+  const Args: array of TValue): TValue;
+var
+  parameters: TArray<TRttiParameter>;
+  i: Integer;
+begin
+  parameters := GetParameters;
+  if Length(Args) <> Length(parameters) then
+    raise EInvocationError.CreateRes(@SParameterCountMismatch);
+  for i := 0 to High(Args) do
+    DispatchValue(Args[i], parameters[i].ParamType.Handle);
+  Result := Self.DispatchInvoke(Instance, Args);
 end;
 
 {$ENDREGION}
