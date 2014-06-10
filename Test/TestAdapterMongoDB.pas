@@ -386,7 +386,7 @@ procedure TestTMongoConnectionAdapter.SetUp;
 begin
   inherited;
   FConnection := TMongoDBConnection.Create('localhost');
-  FConnection.checkConnection;
+  FConnection.Connected := True;
   FMongoConnectionAdapter := TMongoConnectionAdapter.Create(FConnection);
 end;
 
@@ -469,6 +469,7 @@ procedure TBaseMongoTest.SetUp;
 begin
   inherited;
   FConnection := TMongoDBConnection.Create('localhost');
+  FConnection.Connected := True;
   FQuery := TMongoDBQuery.Create(FConnection);
   FConnection.drop(NAME_COLLECTION); //delete all
 end;
@@ -710,13 +711,15 @@ end;
 procedure TestMongoSession.SetUp;
 begin
   inherited;
-  FMongoConnection := TMongoDBConnection.Create;
+  FMongoConnection := TMongoDBConnection.Create();
+  FMongoConnection.Connected := True;
   FConnection := TConnectionFactory.GetInstance(dtMongo, FMongoConnection);
   FConnection.AutoFreeConnection := True;
   FConnection.SetQueryLanguage(qlMongoDB);
   FManager := TMongoDBSession.Create(FConnection);
   FManager.Execute('D[UnitTests.MongoTest]{}', []); //delete all
   FManager.Execute('D[UnitTests.AutoId]{}', []); //delete all
+  {$WARNINGS OFF}
   if DebugHook <> 0 then
   begin
     FConnection.AddExecutionListener(
@@ -735,6 +738,7 @@ begin
       Status('-----');
     end);
   end;
+  {$WARNINGS ON}
 end;
 
 
@@ -773,6 +777,7 @@ procedure TestMongoRepository.SetUp;
 begin
   inherited;
   FMongoConnection := TMongoDBConnection.Create;
+  FMongoConnection.Connected := True;
   FConnection := TConnectionFactory.GetInstance(dtMongo, FMongoConnection);
   FConnection.AutoFreeConnection := True;
   FConnection.SetQueryLanguage(qlMongoDB);

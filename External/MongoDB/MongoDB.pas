@@ -58,6 +58,8 @@ interface
       public
 
        handle : Pointer;
+       host: string;
+       port: Integer;
       { Create a TMongo connection object.  A connection is attempted on the
         MongoDB server running on the localhost '127.0.0.1:27017'.
         Check isConnected() to see if it was successful. }
@@ -69,6 +71,8 @@ interface
       constructor Create(host : string); overload;
       { Determine whether this TMongo is currently connected to a MongoDB server.
         Returns True if connected; False, if not. }
+
+      function Connect() : Boolean; virtual;
       function isConnected() : Boolean;
       { Check the connection.  This returns True if isConnected() and the server
         responded to a 'ping'; otherwise, False. }
@@ -287,11 +291,13 @@ interface
     { TMongoReplset is a superclass of the TMongo connection class that implements
       a different constructor and several functions for connecting to a replset. }
     TMongoReplset = class(TMongo)
+    private
+      FSeedsAdded: Boolean;
       { Create a TMongoReplset object given the replset name.  Unlike the constructor
         for TMongo, this does not yet establish the connection.  Call addSeed() for each
         of the seed hosts and then call Connect to connect to the replset. }
       public
-      constructor Create(name : string);
+      constructor Create(name : string; seeds: array of string); overload;
       { Add a seed to the replset.  The host string should be in the form 'host[:port]'.
         port defaults to 27017 if not given/
         After constructing a TMongoReplset, call this for each seed and then call
@@ -301,7 +307,7 @@ interface
         if they belong to the replset name given to the constructor.  Their hosts
         are then polled to determine the master to connect to.
         Returns True if it successfully connected; otherwise, False. }
-      function Connect() : Boolean;
+      function Connect() : Boolean; override;
       { Get the number of hosts reported by the seeds }
       function getHostCount() : Integer;
       { Get the Ith host as a 'host:port' string. }
@@ -451,18 +457,18 @@ implementation
 
   constructor TMongo.Create();
   begin
+    inherited;
     handle := mongo_create();
-    mongo_client(handle, '127.0.0.1', 27017);
+    host := '127.0.0.1';
+    port := 27017;
+    //mongo_client(handle, '127.0.0.1', 27017);
   end;
 
+
   constructor TMongo.Create(host : string);
-  var
-    hosturl : string;
-    port : Integer;
   begin
-    handle := mongo_create();
-    parseHost(host, hosturl, port);
-    mongo_client(handle, PAnsiChar(System.UTF8Encode(hosturl)), port);
+    Create;
+    parseHost(host, host, port);
   end;
 
   destructor TMongo.Destroy();
@@ -471,10 +477,16 @@ implementation
     mongo_dispose(handle);
   end;
 
-  constructor TMongoReplset.Create(name: string);
+  constructor TMongoReplset.Create(name: string; seeds: array of string);
+  var
+    i: Integer;
   begin
-    handle := mongo_create();
+    inherited Create();
     mongo_replica_set_init(handle, PAnsiChar(System.UTF8Encode(name)));
+    for i := Low(seeds) to High(seeds) do
+    begin
+      addSeed(seeds[i]);
+    end;
   end;
 
   procedure TMongoReplset.addSeed(host : string);
@@ -484,11 +496,15 @@ implementation
   begin
     parseHost(host, hosturl, port);
     mongo_replica_set_add_seed(handle, PAnsiChar(System.UTF8Encode(hosturl)), port);
+    FSeedsAdded := True;
   end;
 
   function TMongoReplset.Connect() : Boolean;
   begin
-    Result := (mongo_replica_set_client(handle) = 0);
+    if FSeedsAdded then
+      Result := (mongo_replica_set_client(handle) = 0)
+    else
+      Result := inherited Connect();
   end;
 
   function TMongo.isConnected() : Boolean;
@@ -895,7 +911,12 @@ function TMongo.find(ns : string; cursor : TMongoCursor) : Boolean;
     Result := command(db, BSON([cmdstr, arg]));
   end;
 
-  function TMongo.getLastErr(db : string) : IBsonDocument;
+function TMongo.Connect: Boolean;
+begin
+  Result := mongo_client(handle, PAnsiChar(System.UTF8Encode(host)), port) = 0;;
+end;
+
+function TMongo.getLastErr(db : string) : IBsonDocument;
   var
     res : IBsonDocument;
   begin

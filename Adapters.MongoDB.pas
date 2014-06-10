@@ -39,17 +39,15 @@ type
     Offset: Integer;
   end;
 
-  {TODO -oLinas -cGeneral : finish implementing proper mongo db connection adapter}
   {$REGION 'Documentation'}
   ///	<summary>
   ///	  Represents MongoDB connection.
   ///	</summary>
   {$ENDREGION}
-  TMongoDBConnection = class(TMongo)
-  private
-    FConnected: Boolean;
-    function GetConnected: Boolean;
-    procedure SetConnected(const Value: Boolean);
+  TMongoDBConnection = class(TMongoReplset)
+  protected
+    function GetConnected: Boolean; virtual;
+    procedure SetConnected(const Value: Boolean); virtual;
   public
     function GetCollectionFromFullName(const AFullConnectionName: string): string; virtual;
   public
@@ -207,22 +205,22 @@ end;
 
 function TMongoDBConnection.GetConnected: Boolean;
 begin
-  Result := isConnected();
+  Result := checkConnection();
 end;
 
 procedure TMongoDBConnection.SetConnected(const Value: Boolean);
+var
+  LIsConnected: Boolean;
 begin
-  FConnected := checkConnection();
-  if not Value and FConnected then
+  LIsConnected := GetConnected;
+  if Value and not LIsConnected then
   begin
-    disconnect();
-    FConnected := False;
-    Exit;
+    Connect;
   end
-  else if Value and not FConnected then
-    FConnected := reconnect();
-
-  FConnected := Value;
+  else if LIsConnected then
+  begin
+    disconnect;
+  end;
 end;
 
 { TMongoResultSetAdapter }
