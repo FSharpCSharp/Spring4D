@@ -198,6 +198,10 @@ type
     function appendArray(name: string; value: array of Boolean): Boolean; overload;
     { Append an array of strings }
     function appendArray(name: string; value: array of string): Boolean; overload;
+
+    function appendArray(name: string; value: array of IBsonDocument): Boolean; overload;
+
+    function appendArray(name: string; value: array of Variant): Boolean; overload;
     { Append a NULL field to the buffer }
     function appendNull(name: string): Boolean;
     { Append an UNDEFINED field to the buffer }
@@ -318,6 +322,9 @@ type
        { Pointer to externally managed data. }
        //var
     handle: Pointer;
+  protected
+    function GetValueFromIteratorObject(AIterator: TBsonIterator = nil): Variant; virtual;
+    function GetValueFromIteratorArray(AIterator: TBsonIterator = nil): Variant; virtual;
   public
     { Return the TBsonType of the field pointed to by this iterator. }
     function kind(): TBsonType;
@@ -402,8 +409,10 @@ cdecl; external 'mongoc.dll' name 'bson_int64_to_double';
 
 implementation
 
-uses SysUtils,
+uses
+  SysUtils,
   Variants,
+  DateUtils,
   bsonUtils,
   uInt64OleVariant
   ,superobject
@@ -613,23 +622,80 @@ begin
   Result := string(UTF8ToWideString(bson_iterator_key(handle)));
 end;
 
-function GetValueFromIteratorObject(AIterator: TBsonIterator): Variant;
+function TBsonIterator.GetValueFromIteratorArray(AIterator: TBsonIterator): Variant;
 var
-  LEmbeddedInterfaceEntity: IEmbeddedEntity;
-  LEntity: TEmbeddedObjectEntity;
+  LEmbeddedInterfaceEntity: IDBResultset;
+  LEntity: TEmbeddedArrayEntity;
+  LIter: TBsonIterator;
 begin
-  LEntity := TEmbeddedObjectEntity.Create;
-  
-  
+  LEntity := TEmbeddedArrayEntity.Create;
+  if AIterator = nil then
+    LIter := subiterator()
+  else
+    LIter := AIterator;
+
+  try
+    while LIter.next do
+    begin
+      case LIter.kind of
+        bsonOBJECT:
+        begin
+          LEntity.AddValue(LIter.key, GetValueFromIteratorObject(LIter.subiterator));
+        end;
+        bsonARRAY: LEntity.AddValue(LIter.key, GetValueFromIteratorArray(LIter.subiterator));
+        else
+        begin
+          //add simple value
+          LEntity.AddValue(LIter.key, LIter.value());
+        end;
+      end;
+    end;
+  finally
+    LIter.Free;
+  end;    
   LEmbeddedInterfaceEntity := LEntity;
   Result := LEmbeddedInterfaceEntity;
+end;
+
+function TBsonIterator.GetValueFromIteratorObject(AIterator: TBsonIterator): Variant;
+var
+  LEmbeddedInterfaceEntity: IDBResultset;
+  LEntity: TEmbeddedObjectEntity;
+  LIter: TBsonIterator;
+begin
+  LEntity := TEmbeddedObjectEntity.Create;
+  if AIterator = nil then
+    LIter := subiterator()
+  else
+    LIter := AIterator;
+  try
+    while LIter.next do
+    begin
+      case LIter.kind of
+        bsonOBJECT:
+        begin
+          LEntity.AddValue(LIter.key, GetValueFromIteratorObject(LIter.subiterator));
+        end;
+        bsonARRAY: LEntity.AddValue(LIter.key, GetValueFromIteratorArray(LIter.subiterator));
+        else
+        begin
+          //add simple value
+          LEntity.AddValue(LIter.key, LIter.value());
+        end;  
+      end;
+    end;
+
+    LEmbeddedInterfaceEntity := LEntity;
+    Result := LEmbeddedInterfaceEntity;
+  finally
+    LIter.Free;
+  end;
 end;
 
 function TBsonIterator.value(): Variant;
 var
   k: TBsonType;
   d: TDateTime;
-  LIter: TBsonIterator;
 begin
   k := kind();
   case k of
@@ -641,15 +707,9 @@ begin
     bsonBOOL: Result := bson_iterator_bool(handle);
     bsonOBJECT:
     begin
-      LIter := subiterator;
-      try
-        Result := GetValueFromIteratorObject(LIter);
-      finally
-        LIter.Free;
-      end;
+      Result := GetValueFromIteratorObject();
     end;
-    // TODO: bsonArray
-    
+    bsonARRAY: Result := GetValueFromIteratorArray();
     bsonDATE:
       begin
         d := Int64toDouble(bson_iterator_date(handle)) / (1000 * 24 * 60 * 60) + 25569;
@@ -765,7 +825,7 @@ begin
   SetLength(Result, count);
   while i.next() do
   begin
-    Result[j] := UTF8ToWideString(i.value());
+    Result[j] := string( i.value());
     inc(j);
   end;
 end;
@@ -1056,6 +1116,98 @@ begin
   if success then
     success := (bson_append_finish_object(handle) = 0);
   Result := success;
+end;
+
+function TBsonBuffer.appendArray(name: string;
+  value: array of IBsonDocument): Boolean;
+var
+  success: Boolean;
+  i, len: Integer;
+begin
+  success := (bson_append_start_array(handle, PAnsiChar(System.UTF8Encode(name))) = 0);
+  len := Length(value);
+  i := 0;
+  while success and (i < len) do
+  begin
+    success := (bson_append_bson(handle, PAnsiChar(AnsiString(IntToStr(i))), value[i].getHandle)
+      = 0);
+    inc(i);
+  end;
+  if success then
+    success := (bson_append_finish_object(handle) = 0);
+  Result := success;
+end;
+
+function TBsonBuffer.appendArray(name: string;
+  value: array of Variant): Boolean;
+var
+  i: Integer;
+  isObject: Boolean;
+  success: Boolean;
+  len: Integer;
+
+
+  function GetBsonArray(): TArray<IBsonDocument>;
+  var
+    LIntf: IInterface;
+    i: Integer;
+  begin
+    SetLength(Result, Length(value));
+    for i := Low(value) to High(value) do
+    begin
+      LIntf := value[i];
+      Result[i] := LIntf as IBsonDocument;
+    end;
+  end;
+
+
+begin
+  isObject := False;
+  for i := Low(value) to High(value) do
+  begin
+    if (VarType( value[i]) = varUnknown) then
+    begin
+      isObject := True;
+      Break;
+    end;
+  end;
+
+  if isObject then
+  begin
+    Result := appendArray(name, GetBsonArray());
+  end
+  else
+  begin
+    success := (bson_append_start_array(handle, PAnsiChar(System.UTF8Encode(name))) = 0);
+    len := Length(value);
+    i := 0;
+    while success and (i < len) do
+    begin
+      case VarType(value[i]) of
+        varString, varUString, varStrArg, varUStrArg, varOleStr:
+          success := (bson_append_string(handle, PAnsiChar(AnsiString(IntToStr(i))), PAnsiChar(System.UTF8Encode(value[i])))
+            = 0);
+        varInteger, varLongWord, varWord, varByte, varShortInt, varSmallint:
+          success := (bson_append_int(handle, PAnsiChar(AnsiString(IntToStr(i))), value[i]) = 0);
+        varInt64, varUInt64:
+          success := (bson_append_long(handle, PAnsiChar(AnsiString(IntToStr(i))), value[i]) = 0);
+        varDouble, varSingle, varCurrency:
+          success := (bson_append_double(handle, PAnsiChar(AnsiString(IntToStr(i))), value[i]) = 0);
+        varNull:
+          success := (bson_append_null(handle, PAnsiChar(AnsiString(IntToStr(i)))) = 0);
+        varBoolean:
+          success := (bson_append_bool(handle, PAnsiChar(AnsiString(IntToStr(i))), value[i]) = 0);
+        varDate:
+          success := (bson_append_date(handle, PAnsiChar(AnsiString(IntToStr(i))), DateTimeToUnix(value[i])) = 0);
+        else
+          success := (bson_append_undefined(handle, PAnsiChar(AnsiString(IntToStr(i)))) = 0);
+      end;
+      inc(i);
+    end;
+    if success then
+      success := (bson_append_finish_object(handle) = 0);
+    Result := success;
+  end;
 end;
 
 function TBsonBuffer.startObject(name: string): Boolean;
@@ -1373,34 +1525,58 @@ var
   LSuperObject: ISuperObject;
   LBuff: TBsonBuffer;
   LSuperTable: TSuperTableString;
+  LSuperArray: TSuperArray;
   LIter: TSuperAvlEntry;
+  i: Integer;
+  LArrayValues: array of Variant;
+  LType: TSuperType;
 begin
   Result := bsonEmpty;
   LBuff := TBsonBuffer.Create;
   try
     LSuperObject := SO(AJson);
-    LSuperTable := LSuperObject.AsObject;
-   
-    for LIter in LSuperTable do
-    begin          
-      case LIter.Value.DataType of
-        stNull: LBuff.appendNull(LIter.Name);
-        stBoolean: LBuff.append(LIter.Name, LIter.Value.AsBoolean);
-        stDouble: LBuff.appendDouble( LIter.Name, LIter.Value.AsDouble) ;
-        stCurrency: LBuff.append( LIter.Name, LIter.Value.AsCurrency);
-        stInt: LBuff.append( LIter.Name, LIter.Value.AsInteger);
-        stObject, stArray: 
-        begin
-          LBuff.append( LIter.Name, JsonToBson(LIter.Value.AsJSon()));
-        end;                               
-      //  stArray: LBuff.appendArray( LIter.Name, LIter.Value.AsArray.);
-        stString: LBuff.append(LIter.Name, AnsiString(UTF8Encode(LIter.Value.AsString)));
-        //stMethod: LBuff.appendCode(LIter.Name, LIter.Value.AsString);
+
+    if LSuperObject.IsType(stObject) then
+    begin
+      LSuperTable := LSuperObject.AsObject;
+      for LIter in LSuperTable do
+      begin
+        case LIter.Value.DataType of
+          stNull: LBuff.appendNull(LIter.Name);
+          stBoolean: LBuff.append(LIter.Name, LIter.Value.AsBoolean);
+          stDouble: LBuff.appendDouble( LIter.Name, LIter.Value.AsDouble) ;
+          stCurrency: LBuff.append( LIter.Name, LIter.Value.AsCurrency);
+          stInt: LBuff.append( LIter.Name, LIter.Value.AsInteger);
+          stObject:
+          begin
+            LBuff.append( LIter.Name, JsonToBson(LIter.Value.AsJSon()));
+          end;
+          stArray:
+          begin
+            LSuperArray := LIter.Value.AsArray;
+            SetLength(LArrayValues, LSuperArray.Length);
+
+            for i := 0 to LSuperArray.Length - 1 do
+            begin
+              LType := LSuperArray.O[i].DataType;
+              case LType of
+                stNull: LArrayValues[i] := Null;
+                stBoolean: LArrayValues[i] := LSuperArray.O[i].AsBoolean;
+                stDouble: LArrayValues[i] := LSuperArray.O[i].AsDouble;
+                stCurrency: LArrayValues[i] := LSuperArray.O[i].AsCurrency;
+                stInt: LArrayValues[i] := LSuperArray.O[i].AsInteger;
+                stObject, stArray: LArrayValues[i] := JsonToBson(LSuperArray.O[i].AsJSon());
+                stString, stMethod: LArrayValues[i] := LSuperArray.O[i].AsString;
+              end;
+            end;
+            LBuff.appendArray(LIter.Name, LArrayValues);
+          end;
+          stString: LBuff.append(LIter.Name, AnsiString(UTF8Encode(LIter.Value.AsString)));
+          //stMethod: LBuff.appendCode(LIter.Name, LIter.Value.AsString);
+        end;
       end;
     end;
-
     Result := LBuff.finish;
-    
   finally
     LBuff.Free;
   end; 
@@ -1410,6 +1586,10 @@ procedure err_handler(msg: PAnsiChar);
 begin
   raise Exception.Create(string(msg));
 end;
+
+
+
+
 initialization
 //  bsonEmpty := BSON([]);
   set_bson_err_handler(Addr(err_handler));

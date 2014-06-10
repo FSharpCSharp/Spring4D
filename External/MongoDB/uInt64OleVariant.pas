@@ -30,15 +30,16 @@ end;
 //将olevariant转换到64位整数
 function  OleVarToInt64( value:OleVariant ): Int64 ;
 begin
+  Result := 0;
   if TvarData(value).VType = VT_I8 then
   result := TVardata(value).VInt64;
 end;
 
 function OleVarToDouble(value:OleVariant):Double;
 begin
+  Result := 0;
  if TvarData(value).VType = VT_R8 then
   result := TVardata(value).VDouble;
-
 end;
 
 function DoubleToOleVar(value:Double):OleVariant;

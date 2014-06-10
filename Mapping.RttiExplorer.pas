@@ -902,7 +902,7 @@ begin
   begin
     if LCurrType.IsInstance then
     begin
-      if (TEntityCache.Get(LCurrType.AsInstance.MetaclassType).EntityTable <> nil) then
+      if (TEntityCache.Get(LCurrType.AsInstance.MetaclassType) <> nil) then
         Exit(LCurrType);
     end;
   end;
@@ -1250,7 +1250,6 @@ end;
 class procedure TRttiExplorer.SetMemberValue(AManager: TObject; AEntity: TObject; const AMemberName: string; const AValue: TValue);
 var
   LValue: TValue;
-  LObject: TObject;
   LNamedObject: TRttiNamedObject;
 begin
   LValue := TValue.Empty;
@@ -1262,20 +1261,6 @@ begin
     begin
       SetValue(AEntity, LNamedObject, LValue);
     end;
-  end;
-
-  if LValue.IsObject then
-  begin
-    LObject := LValue.AsObject;
-    if Assigned(LObject) then
-      LObject.Free;
-  end;
-
-  if AValue.IsObject then
-  begin
-    LObject := AValue.AsObject;
-    if Assigned(LObject) then
-      LObject.Free;
   end;
 end;
 

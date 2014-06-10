@@ -462,8 +462,12 @@ var
   LValue: string;
 begin
   inherited;
+  if (FStmtText = '') then
+    Exit;
   for LParam in Params do
   begin
+    if (VarType(LParam.Value) = varUnknown) then
+      Continue;
     LValue := VarToStrDef(LParam.Value, '');
     case VarType(LParam.Value) of
       varString, varUString, varStrArg, varOleStr:
