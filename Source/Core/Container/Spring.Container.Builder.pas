@@ -237,7 +237,6 @@ var
   injection: IInjection;
   method: TRttiMethod;
   parameters: TArray<TRttiParameter>;
-  parameter: TRttiParameter;
   arguments: TArray<TValue>;
   attribute: InjectAttribute;
   i: Integer;
@@ -247,18 +246,22 @@ begin
     and not TMethodFilters.HasParameterFlags([pfVar, pfOut]);
   for method in model.ComponentType.Methods.Where(predicate) do
   begin
+    injection := kernel.Injector.InjectConstructor(model);
+    injection.Initialize(method);
     parameters := method.GetParameters;
     SetLength(arguments, Length(parameters));
     for i := 0 to High(parameters) do
-    begin
-      parameter := parameters[i];
-      if parameter.TryGetCustomAttribute<InjectAttribute>(attribute) and attribute.HasValue then
-        arguments[i] := attribute.Value
-      else
-        arguments[i] := nil;
-    end;
-    injection := kernel.Injector.InjectConstructor(model, arguments);
-    injection.Initialize(method);
+      if parameters[i].TryGetCustomAttribute<InjectAttribute>(attribute) then
+      begin
+        if attribute.HasValue then
+          arguments[i] := attribute.Value;
+        if attribute.ServiceType <> nil then
+          if TType.IsAssignable(attribute.ServiceType, parameters[i].ParamType.Handle) then
+            injection.Dependencies[0] := TType.GetType(attribute.ServiceType)
+          else
+            raise EBuilderException.CreateRes(@SUnresovableInjection);
+      end;
+    injection.InitializeArguments(arguments);
   end;
 end;
 
@@ -291,10 +294,16 @@ begin
     parameters := method.GetParameters;
     SetLength(arguments, Length(parameters));
     for i := 0 to High(parameters) do
-      if parameters[i].TryGetCustomAttribute<InjectAttribute>(attribute) and attribute.HasValue then
-        arguments[i] := attribute.Value
-      else
-        arguments[i] := nil;
+      if parameters[i].TryGetCustomAttribute<InjectAttribute>(attribute) then
+      begin
+        if attribute.HasValue then
+          arguments[i] := attribute.Value;
+        if attribute.ServiceType <> nil then
+          if TType.IsAssignable(attribute.ServiceType, parameters[i].ParamType.Handle) then
+            injection.Dependencies[0] := TType.GetType(attribute.ServiceType)
+          else
+            raise EBuilderException.CreateRes(@SUnresovableInjection);
+      end;
     injection.InitializeArguments(arguments);
   end;
 end;

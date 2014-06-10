@@ -206,6 +206,7 @@ type
     function InjectField(const model: TComponentModel;
       const fieldName: string): IInjection; overload;
 
+    function InjectConstructor(const model: TComponentModel): IInjection; overload;
     function InjectConstructor(const model: TComponentModel;
       const arguments: array of TValue): IInjection; overload;
     function InjectMethod(const model: TComponentModel; const methodName: string;

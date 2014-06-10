@@ -155,6 +155,8 @@ begin
   handled := TConstructorInjection.Create;
   handled.Initialize(injection.Target);
   handled.InitializeArguments(arguments);
+  for i := 0 to injection.DependencyCount - 1 do
+    handled.Dependencies[i] := injection.Dependencies[i];
 end;
 
 procedure TCreationContext.EnterResolution(const model: TComponentModel);

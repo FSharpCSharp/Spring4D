@@ -108,13 +108,14 @@ type
     function InjectField(const model: TComponentModel;
       const fieldName: string): IInjection; overload;
 
-    function  InjectConstructor(const model: TComponentModel;
+    function InjectConstructor(const model: TComponentModel): IInjection; overload;
+    function InjectConstructor(const model: TComponentModel;
       const arguments: array of TValue): IInjection; overload;
-    function  InjectMethod(const model: TComponentModel; const methodName: string;
+    function InjectMethod(const model: TComponentModel; const methodName: string;
       const arguments: array of TValue): IInjection; overload;
-    function  InjectProperty(const model: TComponentModel;
+    function InjectProperty(const model: TComponentModel;
       const propertyName: string; const value: TValue): IInjection; overload;
-    function  InjectField(const model: TComponentModel;
+    function InjectField(const model: TComponentModel;
       const fieldName: string; const value: TValue): IInjection; overload;
   end;
 
@@ -398,6 +399,13 @@ begin
   Result.Initialize(field);
   if not injectionExists then
     model.FieldInjections.Add(Result);
+end;
+
+function TDependencyInjector.InjectConstructor(
+  const model: TComponentModel): IInjection;
+begin
+  Result := TConstructorInjection.Create;
+  model.ConstructorInjections.Add(Result);
 end;
 
 function TDependencyInjector.InjectConstructor(const model: TComponentModel;
