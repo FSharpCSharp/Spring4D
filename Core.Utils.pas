@@ -40,6 +40,7 @@ type
 
     class function AsVariant(const AValue: TValue): Variant;
     class function FromVariant(const AValue: Variant): TValue;
+    class function ColumnFromVariant(const AValue: Variant; const AColumn: TColumnData): TValue;
 
     class function TryConvert(const AFrom: TValue; AManager: TObject; ARttiMember: TRttiNamedObject; AEntity: TObject; var AResult: TValue): Boolean;
 
@@ -71,6 +72,7 @@ uses
   ,Core.Exceptions
   ,Core.Session
   ,Core.Types
+  ,Core.Interfaces
   ,Mapping.RttiExplorer
   ,Core.EntityCache
   ,jpeg
@@ -175,6 +177,26 @@ begin
   end;
 end;
 
+class function TUtils.ColumnFromVariant(const AValue: Variant;
+  const AColumn: TColumnData): TValue;
+var
+  LEmbeddedEntity: IEmbeddedEntity;
+  LIntf: IInterface;
+begin
+  case VarType(AValue) of
+    varUnknown:
+    begin
+      LIntf := AValue;
+      LEmbeddedEntity := LIntf as IEmbeddedEntity;
+
+    end
+    else
+    begin
+      Result := FromVariant(AValue);
+    end;
+  end;
+end;
+
 class function TUtils.TryGetLazyTypeValue(const ALazy: TValue; out AValue: TValue): Boolean;
 var
   LRttiType: TRttiType;
@@ -251,6 +273,8 @@ class function TUtils.IsEnumerable(AObject: TObject; out AEnumeratorMethod: TRtt
 begin
   Result := IsEnumerable(AObject.ClassInfo, AEnumeratorMethod);
 end;
+
+
 
 class function TUtils.InitLazyRecord(const AFrom: TValue; ATo: PTypeInfo;
   ARttiMember: TRttiNamedObject; AEntity: TObject): TValue;

@@ -128,7 +128,8 @@ uses
   Core.Session.MongoDB in '..\Core.Session.MongoDB.pas',
   SQL.Commands.BulkInsert.MongoDB in '..\SQL.Commands.BulkInsert.MongoDB.pas',
   TestAdapterMongoDB in 'TestAdapterMongoDB.pas',
-  Core.Repository.MongoDB in '..\Core.Repository.MongoDB.pas';
+  Core.Repository.MongoDB in '..\Core.Repository.MongoDB.pas',
+  Core.EmbeddedEntity in '..\Core.EmbeddedEntity.pas';
 
 {$R *.RES}
 

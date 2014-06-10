@@ -190,6 +190,7 @@
         <DCCReference Include="..\SQL.Commands.BulkInsert.MongoDB.pas"/>
         <DCCReference Include="TestAdapterMongoDB.pas"/>
         <DCCReference Include="..\Core.Repository.MongoDB.pas"/>
+        <DCCReference Include="..\Core.EmbeddedEntity.pas"/>
         <None Include="Profiling\AQtimeModule1.aqt"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
@@ -254,7 +255,6 @@
                 <DeployFile LocalName="Debug\Win32\ORMTests.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win32">
                         <RemoteName>ORMTests.exe</RemoteName>
-                        <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
                 <DeployClass Required="true" Name="DependencyPackage">

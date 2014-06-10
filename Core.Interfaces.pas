@@ -431,6 +431,13 @@ type
 
   {$ENDIF}
 
+  IEmbeddedEntity = interface(IInvokable)
+    ['{49A1BF38-F54D-4888-8189-02CA34B01D04}']
+    function IsObject(): Boolean;
+    function IsArray(): Boolean;
+    function GetValue(const AFieldName: string): Variant;
+  end;
+
   IEntitySerializer = interface
     ['{BF7320F9-2B57-4B8C-997D-2F157D626D0D}']
 

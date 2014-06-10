@@ -1194,7 +1194,7 @@ begin
       except
         raise EORMColumnNotFound.CreateFmt(EXCEPTION_COLUMN_NOTFOUND, [LCol.Name]);
       end;
-      LValue := TUtils.FromVariant(LVal);
+      LValue := TUtils.ColumnFromVariant(LVal, LCol);
     end;
 
     TRttiExplorer.SetMemberValue(Self, AEntity, LCol.ClassMemberName, LValue);

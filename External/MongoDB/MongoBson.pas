@@ -407,6 +407,8 @@ uses SysUtils,
   bsonUtils,
   uInt64OleVariant
   ,superobject
+  ,Core.EmbeddedEntity
+  ,Core.Interfaces
   ;
 {$IF not declared(UTF8ToWideString)}
 
@@ -611,10 +613,23 @@ begin
   Result := string(UTF8ToWideString(bson_iterator_key(handle)));
 end;
 
+function GetValueFromIteratorObject(AIterator: TBsonIterator): Variant;
+var
+  LEmbeddedInterfaceEntity: IEmbeddedEntity;
+  LEntity: TEmbeddedObjectEntity;
+begin
+  LEntity := TEmbeddedObjectEntity.Create;
+  
+  
+  LEmbeddedInterfaceEntity := LEntity;
+  Result := LEmbeddedInterfaceEntity;
+end;
+
 function TBsonIterator.value(): Variant;
 var
   k: TBsonType;
   d: TDateTime;
+  LIter: TBsonIterator;
 begin
   k := kind();
   case k of
@@ -624,7 +639,17 @@ begin
       Result := string(UTF8ToWideString(bson_iterator_string(handle)));
     bsonINT: Result := bson_iterator_int(handle);
     bsonBOOL: Result := bson_iterator_bool(handle);
-    bsonOBJECT: Result := subiterator.value;
+    bsonOBJECT:
+    begin
+      LIter := subiterator;
+      try
+        Result := GetValueFromIteratorObject(LIter);
+      finally
+        LIter.Free;
+      end;
+    end;
+    // TODO: bsonArray
+    
     bsonDATE:
       begin
         d := Int64toDouble(bson_iterator_date(handle)) / (1000 * 24 * 60 * 60) + 25569;
