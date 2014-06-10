@@ -77,7 +77,9 @@ type
     function GetOne<T: class, constructor>(AResultset: IDBResultset; AEntity: TObject): T; overload;
     function GetOne(AResultset: IDBResultset; AClass: TClass): TObject; overload;
     function GetObjectList<T: class, constructor>(AResultset: IDBResultset): T;
-    procedure SetInterfaceList<T>(var AValue: T; AResultset: IDBResultset);
+    procedure SetInterfaceList<T>(var AValue: T; AResultset: IDBResultset); overload;
+    procedure SetInterfaceList(var AValue: IInterface; AResultset: IDBResultset; AClassInfo: PTypeInfo); overload;
+    procedure SetSimpleInterfaceList(var AValue: IInterface; AResultset: IDBResultset; AClassInfo: PTypeInfo);
     procedure SetOne<T>(var AValue: T; AResultset: IDBResultset; AEntity: TObject);
     function DoGetLazy<T>(const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute; out AIsEnumerable: Boolean): IDBResultset;
 
@@ -751,6 +753,66 @@ begin
     Result := System.Default(T);
 end;
 
+procedure TSession.SetSimpleInterfaceList(var AValue: IInterface; AResultset: IDBResultset; AClassInfo: PTypeInfo);
+var
+  LAddMethod: TRttiMethod;
+  LValue, LCurrent: TValue;
+  LIndex: Integer;
+begin
+  if not TRttiExplorer.TryGetBasicMethod(METHODNAME_CONTAINER_ADD, AClassInfo, LAddMethod) then
+    raise EORMContainerDoesNotHaveAddMethod.Create(EXCEPTION_CONTAINER_DOESNOTHAVE_ADD);
+
+  LValue := TValue.From(AValue);
+  LIndex := 0;
+  while not AResultset.IsEmpty do
+  begin
+    LCurrent := TUtils.FromVariant( AResultset.GetFieldValue(LIndex) );
+    LAddMethod.Invoke(LValue, [LCurrent]);
+    AResultset.Next;
+    Inc(LIndex);
+  end;
+end;
+
+procedure TSession.SetInterfaceList(var AValue: IInterface; AResultset: IDBResultset; AClassInfo: PTypeInfo);
+var
+  LCurrent: TObject;
+  LEntityClass: TClass;
+  LAddMethod: TRttiMethod;
+  LAddParameters: TArray<TRttiParameter>;
+  LValue: TValue;
+begin
+  if not (AClassInfo.Kind = tkInterface) then
+    raise EORMUnsupportedType.Create(EXCEPTION_UNSUPPORTED_CONTAINER_TYPE);
+
+  if not TRttiExplorer.TryGetEntityClass(AClassInfo, LEntityClass) then
+    raise EORMUnsupportedType.Create(EXCEPTION_UNSUPPORTED_CONTAINER_TYPE);
+
+  if not TRttiExplorer.TryGetBasicMethod(METHODNAME_CONTAINER_ADD, AClassInfo, LAddMethod) then
+    raise EORMContainerDoesNotHaveAddMethod.Create(EXCEPTION_CONTAINER_DOESNOTHAVE_ADD);
+
+
+  LAddParameters := LAddMethod.GetParameters;
+  if (Length(LAddParameters) <> 1) then
+    raise EORMContainerAddMustHaveOneParameter.Create(EXCEPTION_CONTAINER_ADD_ONE_PARAM);
+
+  case LAddParameters[0].ParamType.TypeKind of
+    tkClass, tkClassRef, tkInterface, tkPointer, tkRecord:
+    else
+      raise EORMContainerItemTypeNotSupported.Create(EXCEPTION_CONTAINER_ITEM_TYPE_NOTSUPPORTED);
+  end;
+
+  LValue := TValue.From(AValue);
+
+  while not AResultset.IsEmpty do
+  begin
+    LCurrent := GetOne(AResultset, LEntityClass);
+
+    LAddMethod.Invoke(LValue, [LCurrent]);
+
+    AResultset.Next;
+  end;
+end;
+
 procedure TSession.SetInterfaceList<T>(var AValue: T; AResultset: IDBResultset);
 var
   LCurrent: TObject;
@@ -1194,7 +1256,7 @@ begin
       except
         raise EORMColumnNotFound.CreateFmt(EXCEPTION_COLUMN_NOTFOUND, [LCol.Name]);
       end;
-      LValue := TUtils.FromVariant(LVal);
+      LValue := TUtils.ColumnFromVariant(LVal, LCol, Self, AEntity);
     end;
 
     TRttiExplorer.SetMemberValue(Self, AEntity, LCol.ClassMemberName, LValue);

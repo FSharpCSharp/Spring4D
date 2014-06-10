@@ -16,7 +16,7 @@ type
   private
     FSession: TMongoDBSession;
   protected
-    procedure InsertList(ACollection: ICollection<T>); override;
+    procedure Insert(AEntities: ICollection<T>); overload; override;
   public
     constructor Create(ASession: TSession); override;
   end;
@@ -31,9 +31,9 @@ begin
   FSession := ASession as TMongoDBSession;
 end;
 
-procedure TMongoDBRepository<T, TID>.InsertList(ACollection: ICollection<T>);
+procedure TMongoDBRepository<T, TID>.Insert(AEntities: ICollection<T>);
 begin
-  FSession.BulkInsert<T>(ACollection);
+  FSession.BulkInsert<T>(AEntities);
 end;
 
 end.

@@ -33,7 +33,6 @@ var
 begin
   LInserter := TMongoDBBulkInsertExecutor.Create();
   try
-
     LInserter.EntityClass := T;
     LInserter.Connection := Connection;
     LInserter.Build(T);

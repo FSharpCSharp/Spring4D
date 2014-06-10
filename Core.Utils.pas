@@ -31,7 +31,7 @@ interface
 
 uses
   Rtti, TypInfo, DB, Graphics, Classes, SysUtils, Mapping.Attributes
-  ,Generics.Collections;
+  ,Generics.Collections, Core.Interfaces;
 
 type
   TUtils = class sealed
@@ -40,6 +40,9 @@ type
 
     class function AsVariant(const AValue: TValue): Variant;
     class function FromVariant(const AValue: Variant): TValue;
+    class function ColumnFromVariant(const AValue: Variant; const AColumn: TColumnData; ASession: TObject; AEntity: TObject): TValue;
+
+    class function GetResultsetFromVariant(const AValue: Variant): IDBResultset;
 
     class function TryConvert(const AFrom: TValue; AManager: TObject; ARttiMember: TRttiNamedObject; AEntity: TObject; var AResult: TValue): Boolean;
 
@@ -71,6 +74,7 @@ uses
   ,Core.Exceptions
   ,Core.Session
   ,Core.Types
+  ,Spring.Collections
   ,Mapping.RttiExplorer
   ,Core.EntityCache
   ,jpeg
@@ -79,6 +83,10 @@ uses
   ,Variants
   ,StrUtils
   ;
+
+
+type
+  THackedSession = class(TSession);
 
 { TUtils }
 
@@ -175,6 +183,54 @@ begin
   end;
 end;
 
+class function TUtils.GetResultsetFromVariant(
+  const AValue: Variant): IDBResultset;
+var
+  LIntf: IInterface;
+begin
+  LIntf := AValue;
+  Result := LIntf as IDBResultset;
+end;
+
+class function TUtils.ColumnFromVariant(const AValue: Variant;
+  const AColumn: TColumnData; ASession: TObject; AEntity: TObject): TValue;
+var
+  LEmbeddedEntityResultset: IDBResultset;
+  LIntf: IInterface;
+  LNewEntity: TObject;
+  LSession: THackedSession;
+  LEnumMethod: TRttiMethod;
+  LList: TValue;
+begin
+  case VarType(AValue) of
+    varUnknown:
+    begin
+      LEmbeddedEntityResultset := GetResultsetFromVariant(AValue);
+      LSession := THackedSession(ASession);
+      if IsEnumerable(AColumn.ColTypeInfo, LEnumMethod) then
+      begin
+        LList := TRttiExplorer.GetMemberValueDeep(AEntity, AColumn.ClassMemberName);
+        LIntf := LList.AsInterface;
+        if TRttiExplorer.GetLastGenericArgumentType(AColumn.ColTypeInfo).IsInstance then
+          LSession.SetInterfaceList(LIntf, LEmbeddedEntityResultset, AColumn.ColTypeInfo)
+        else
+          LSession.SetSimpleInterfaceList(LIntf, LEmbeddedEntityResultset, AColumn.ColTypeInfo);
+        Result := TValue.From(LIntf);
+      end
+      else
+      begin
+        LNewEntity := TRttiExplorer.CreateType(AColumn.ColTypeInfo);
+        LSession.DoSetEntity(LNewEntity, LEmbeddedEntityResultset, nil);
+        Result := TValue.From(LNewEntity, LNewEntity.ClassType);
+      end;
+    end
+    else
+    begin
+      Result := FromVariant(AValue);
+    end;
+  end;
+end;
+
 class function TUtils.TryGetLazyTypeValue(const ALazy: TValue; out AValue: TValue): Boolean;
 var
   LRttiType: TRttiType;
@@ -251,6 +307,8 @@ class function TUtils.IsEnumerable(AObject: TObject; out AEnumeratorMethod: TRtt
 begin
   Result := IsEnumerable(AObject.ClassInfo, AEnumeratorMethod);
 end;
+
+
 
 class function TUtils.InitLazyRecord(const AFrom: TValue; ATo: PTypeInfo;
   ARttiMember: TRttiNamedObject; AEntity: TObject): TValue;
