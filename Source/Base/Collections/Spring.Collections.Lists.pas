@@ -550,6 +550,7 @@ begin
   for index := 0 to fCount - 1 do
     if comparer.Equals(value, fItems[index]) then
       Exit(True);
+  Result := False;
 end;
 
 procedure TList<T>.CopyTo(var values: TArray<T>; index: Integer);

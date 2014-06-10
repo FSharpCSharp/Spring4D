@@ -51,6 +51,9 @@
 unit Spring.Helpers;
 
 {$I Spring.inc}
+{$IFDEF DELPHIXE4_UP}
+  {$ZEROBASEDSTRINGS OFF}
+{$ENDIF}
 
 interface
 
