@@ -380,6 +380,7 @@ type
     function GetIsLazyType: Boolean;
     function GetAsDynamicArray: TRttiDynamicArrayType;
     function GetIsDynamicArray: Boolean;
+    function GetIsString: Boolean;
     function InternalGetConstructors(enumerateBaseType: Boolean = True): IEnumerable<TRttiMethod>;
     function InternalGetMethods(enumerateBaseType: Boolean = True): IEnumerable<TRttiMethod>;
     function InternalGetProperties(enumerateBaseType: Boolean = True): IEnumerable<TRttiProperty>;
@@ -471,6 +472,7 @@ type
     property IsInterface: Boolean read GetIsInterface;
     property IsClassOrInterface: Boolean read GetIsClassOrInterface;
     property IsDynamicArray: Boolean read GetIsDynamicArray;
+    property IsString: Boolean read GetIsString;
 
     ///	<summary>
     ///	  Gets a value indicates whether the current type is generic.
@@ -549,6 +551,7 @@ type
   public
     function AsType<T>: T;
     function Cast(typeInfo: PTypeInfo): TValue;
+    function IsString: Boolean;
   end;
 
 implementation
@@ -1236,6 +1239,11 @@ begin
   Result := TType.IsLazy(Handle);
 end;
 
+function TRttiTypeHelper.GetIsString: Boolean;
+begin
+  Result := TypeKind in [tkString, tkLString, tkWString, tkUString, tkChar, tkWChar];
+end;
+
 {$ENDREGION}
 
 
@@ -1450,6 +1458,11 @@ begin
     TValue.Make(@intf, typeInfo, Result)
   else if not TryCast(typeInfo, Result) then
     raise EInvalidCast.CreateRes(@SInvalidCast);
+end;
+
+function TValueHelper.IsString: Boolean;
+begin
+  Result := Kind in [tkString, tkLString, tkWString, tkUString, tkChar, tkWChar];
 end;
 
 function TValueHelper.TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
