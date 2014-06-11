@@ -483,12 +483,19 @@ end;
 function TListResolver.CanResolve(const context: ICreationContext;
   const dependency: TRttiType; const argument: TValue): Boolean;
 const
-  SupportedTypes: array[0..2] of string = (
-    'IList<>', 'ICollection<>', 'IEnumerable<>');
+  SupportedTypes: array[0..3] of string = (
+    'IList<>', 'IReadOnlyList<>', 'ICollection<>', 'IEnumerable<>');
+var
+  itemType: TRttiType;
 begin
   Result := dependency.IsGenericType
-    and MatchText(dependency.GetGenericTypeDefinition, SupportedTypes)
-    and (dependency.GetGenericArguments[0].TypeKind in [tkClass, tkInterface]);
+    and MatchText(dependency.GetGenericTypeDefinition, SupportedTypes);
+  if Result then
+  begin
+    itemType := dependency.GetGenericArguments[0];
+    Result := itemType.IsClassOrInterface
+      and Kernel.Resolver.CanResolve(context, itemType, TValue.From(tkDynArray));
+  end;
 end;
 
 function TListResolver.Resolve(const context: ICreationContext;
@@ -499,7 +506,7 @@ var
   values: TValue;
 begin
   itemType := dependency.GetGenericArguments[0];
-  arrayType := TType.FindType('TArray<' + itemType.DefaultName + '>');
+  arrayType := dependency.GetMethod('ToArray').ReturnType;
   values := (Kernel as IKernelInternal).Resolve(arrayType.Handle);
   case itemType.TypeKind of
     tkClass:
