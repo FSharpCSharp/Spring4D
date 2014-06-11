@@ -333,17 +333,21 @@ end;
 function TMongoStatementAdapter.Execute: NativeUInt;
 var
   LDoc: IBSONDocument;
+  LOk: Boolean;
 begin
   inherited;
+  Result := 0;
   LDoc := JsonToBson(FStmtText);
+  LOk := False;
   case FStmtType of
-    mstInsert: Statement.Connection.insert(GetFullCollectionName(), LDoc);
-    mstUpdate: Statement.Connection.Update(GetFullCollectionName(), bsonEmpty, LDoc);
-    mstDelete: Statement.Connection.remove(GetFullCollectionName(), LDoc);
-    mstSelect: Statement.Connection.findOne(GetFullCollectionName(), LDoc);
-    mstSelectCount: Statement.Connection.Count(GetFullCollectionName(), LDoc);
+    mstInsert: LOk := Statement.Connection.insert(GetFullCollectionName(), LDoc);
+    mstUpdate: LOk := Statement.Connection.Update(GetFullCollectionName(), bsonEmpty, LDoc);
+    mstDelete: LOk := Statement.Connection.remove(GetFullCollectionName(), LDoc);
+    mstSelect: LOk := Statement.Connection.findOne(GetFullCollectionName(), LDoc) <> nil;
+    mstSelectCount: Exit(Trunc(Statement.Connection.Count(GetFullCollectionName(), LDoc)));
   end;
-  Result := 1;
+  if LOk then
+    Result := 1;
 end;
 
 function TMongoStatementAdapter.ExecuteQuery(AServerSideCursor: Boolean): IDBResultSet;

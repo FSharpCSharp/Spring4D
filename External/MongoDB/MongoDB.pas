@@ -186,6 +186,13 @@ interface
           end;
         #) }
       function find(ns : string; cursor : TMongoCursor) : Boolean;
+      {
+        The findAndModify command modifies and returns a single document.
+        By default, the returned document does not include the modifications made on the update.
+        To return the document with the modifications made on the update, use the new option.
+      }
+      function findAndModify(ns: string; query: IBsonDocument; fields: IBsonDocument
+        ; update: IBsonDocument; upsert: Boolean = false): IBsonDocument;
       { Return the count of all documents in the given namespace.
         The collection namespace (ns) is in the form 'database.collection'. }
       function count(ns : string) : Double; overload;
@@ -283,6 +290,8 @@ interface
       { Get the server error string.  As a convenience, this is saved here after calling
         getLastErr() or getPrevErr(). }
       function getServerErrString() : string;
+
+      procedure parseNamespace(const ns: string; out ADatabase: string; out ACollection: string);
       { Destroy this TMongo object.  Severs the connection to the server and releases
         external resources. }
       destructor Destroy(); override;
@@ -522,7 +531,16 @@ implementation
     Result := mongo_cmd_ismaster(handle, nil);
   end;
 
-  procedure TMongo.disconnect();
+  procedure TMongo.parseNamespace(const ns: string; out ADatabase, ACollection: string);
+  var
+    LDotPos: Integer;
+  begin
+    LDotPos := PosEx('.', ns);
+    ADatabase := Copy(ns, 1, LDotPos - 1);
+    ACollection := Copy(ns, LDotPos + 1, Length(ns));
+  end;
+
+procedure TMongo.disconnect();
   begin
     mongo_disconnect(handle);
   end;
@@ -783,7 +801,34 @@ function TMongo.find(ns : string; cursor : TMongoCursor) : Boolean;
   end;
 
 
-  function TMongoCursor.next() : Boolean;
+  function TMongo.findAndModify(ns: string; query, fields, update: IBsonDocument;
+    upsert: Boolean): IBsonDocument;
+  var
+    LDatabase, LCollection: string;
+    LCmdBson: IBsonDocument;
+  begin
+    parseNamespace(ns, LDatabase, LCollection);
+    if upsert then
+      LCmdBson := BSON([
+      'findAndModify', LCollection,
+      'upsert', upsert,
+      'query', query,
+      'update', update,
+      'fields', fields,
+      'new', true
+      ])
+    else
+      LCmdBson := BSON([
+      'findAndModify', LCollection,
+      'query', query,
+      'update', update,
+      'fields', fields,
+      'new', true
+      ]);
+    Result := command(LDatabase, LCmdBson);
+  end;
+
+function TMongoCursor.next() : Boolean;
   begin
     Result := Assigned(handle) and (mongo_cursor_next(handle) = 0);
   end;
@@ -873,14 +918,9 @@ function TMongo.find(ns : string; cursor : TMongoCursor) : Boolean;
   end;
 
   function TMongo.command(db : string; command : IBsonDocument) : IBsonDocument;
-  var
-    res : IBsonDocument;
   begin
-    res := TBson.Create();
-    if mongo_run_command(handle, PAnsiChar(System.UTF8Encode(db)), command.getHandle, res.getHandle) = 0 then begin
-      Result := res;
-    end
-    else
+    Result := TBson.Create();
+    if mongo_run_command(handle, PAnsiChar(System.UTF8Encode(db)), command.getHandle, Result.getHandle) <> 0 then
       Result := nil;
   end;
 

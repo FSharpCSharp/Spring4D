@@ -999,6 +999,7 @@ end;
 function TBsonBuffer.append(name: string; value: OleVariant): Boolean;
 var
   d: double;
+  LIntf: IInterface;
 begin
   case VarType(value) of
     varNull: Result := appendNull(name);
@@ -1012,6 +1013,11 @@ begin
     varInt64: Result := append(name, OleVarToInt64(value)); //BUG ²»ÄÜ³¬¹ý 2^52-1
     varBoolean: Result := append(name, Boolean(value));
     varOleStr: Result := append(name, PAnsiChar(System.UTF8Encode(value)));
+    varUnknown:
+    begin
+      LIntf := value;
+      Result := append(name, LIntf as IBsonDocument);
+    end;
   else
     raise Exception.Create('TBson.append(variant): type not supported (' + IntToStr(VarType(value)) + ')');
   end;
@@ -1501,14 +1507,21 @@ begin
         inc(i);
         if i = Len then
           raise Exception.Create('BSON(): expected value for ' + key);
-        value := VarToStr(x[i]);
-        if value = '{' then
+        if (VarType(x[i]) = varUnknown) then
         begin
-          bb.startObject(key);
-          inc(depth);
+          bb.append(key, x[i]);
         end
         else
-          bb.append(key, x[i]);
+        begin
+          value := VarToStr(x[i]);
+          if value = '{' then
+          begin
+            bb.startObject(key);
+            inc(depth);
+          end
+          else
+            bb.append(key, x[i]);
+        end;
       end;
       inc(i);
     end;
