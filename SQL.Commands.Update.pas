@@ -31,7 +31,7 @@ interface
 
 uses
   SQL.AbstractCommandExecutor, SQL.Types, SQL.Commands, SQL.Params, Generics.Collections
-  , Mapping.Attributes, Core.EntityMap, Classes, Core.Interfaces;
+  , Mapping.Attributes, Core.EntityMap, Classes, Core.Interfaces, Core.EntityCache;
 
 type
   {$REGION 'Documentation'}
@@ -45,9 +45,11 @@ type
     FCommand: TUpdateCommand;
     FColumns: TList<ColumnAttribute>;
     FEntityMap: TEntityMap;
+    FEntityCache: TEntityData;
     FMapped: Boolean;
   protected
     function GetCommand: TDMLCommand; override;
+    function TryIncrementVersionFor(AEntity: TObject): Boolean; virtual;
   public
     constructor Create(); override;
     destructor Destroy; override;
@@ -65,12 +67,12 @@ implementation
 
 uses
   Core.Exceptions
-  ,Core.EntityCache
   ,Core.Utils
   ,Mapping.RttiExplorer
   ,SysUtils
   ,Rtti
   ,Core.Reflection
+  ,Variants
   ;
 
 { TUpdateCommand }
@@ -82,6 +84,11 @@ var
 begin
   Assert(Assigned(AEntity));
 
+  if FEntityCache.HasVersionColumn and not TryIncrementVersionFor(AEntity) then
+  begin
+    raise EORMOptimisticLockException.Create(AEntity);
+  end;
+
   LStmt := Connection.CreateStatement;
 
   FMapped := FEntityMap.IsMapped(AEntity);
@@ -90,6 +97,8 @@ begin
     LDirtyObject := FEntityMap.Get(AEntity);
     FColumns.Clear;
     TRttiExplorer.GetChangedMembers(AEntity, LDirtyObject, FColumns);
+    if (FColumns.Count = 1) and (FColumns.First.IsVersionColumn) then
+      Exit;
   end;
 
   FCommand.SetTable(FColumns);
@@ -119,23 +128,48 @@ begin
   Result := FCommand;
 end;
 
+function TUpdateExecutor.TryIncrementVersionFor(AEntity: TObject): Boolean;
+var
+  LStatement: IDBStatement;
+  LVersionValue, LPKValue: TValue;
+  LQuery: Variant;
+  LQueryMetadata: TQueryMetadata;
+begin
+  LStatement := Connection.CreateStatement;
+  LVersionValue := TRttiExplorer.GetMemberValue(AEntity, FEntityCache.VersionColumn.ClassMemberName);
+  LPKValue := TRttiExplorer.GetMemberValue(AEntity, FEntityCache.PrimaryKeyColumn.ClassMemberName);
+  LQuery := Generator.GetUpdateVersionFieldQuery(FCommand, FEntityCache.VersionColumn
+    , TUtils.AsVariant(LVersionValue), TUtils.AsVariant(LPKValue));
+  LQueryMetadata.QueryType := ctUpdateVersion;
+  case VarType(LQuery) of
+    varUString, varString, varStrArg, varUStrArg, varOleStr: LStatement.SetSQLCommand(LQuery)
+    else
+    begin
+      LStatement.SetSQLCommand(Format('S[%S]{}', [FCommand.Table.Name]));
+      LStatement.SetQuery(LQueryMetadata, LQuery);
+    end;
+  end;
+  Result := (LStatement.Execute > 0);
+  if Result then
+    TRttiExplorer.SetMemberValueSimple(AEntity, FEntityCache.VersionColumn.ClassMemberName, LVersionValue.AsInteger + 1);
+end;
+
 procedure TUpdateExecutor.Build(AClass: TClass);
 var
   LAtrTable: TableAttribute;
-  LCache: TEntityData;
 begin
   EntityClass := AClass;
-  LCache := TEntityCache.Get(EntityClass);
-  LAtrTable := LCache.EntityTable;
+  FEntityCache := TEntityCache.Get(EntityClass);
+  LAtrTable := FEntityCache.EntityTable;
 
   if not Assigned(LAtrTable) then
     raise ETableNotSpecified.CreateFmt('Table not specified for class "%S"', [AClass.ClassName]);
 
   FTable.SetFromAttribute(LAtrTable);
   FColumns.Clear;
-  FColumns.AddRange(LCache.Columns);
+  FColumns.AddRange(FEntityCache.Columns);
 
-  FCommand.PrimaryKeyColumn := LCache.PrimaryKeyColumn;
+  FCommand.PrimaryKeyColumn := FEntityCache.PrimaryKeyColumn;
    //add fields to tsqltable
 //  FCommand.SetTable(FColumns);
 

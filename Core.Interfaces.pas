@@ -242,6 +242,10 @@ type
     function GetFieldName(AIndex: Integer): string;
   end;
 
+  TQueryMetadata = record
+    QueryType: TDMLCommandType;
+  end;
+
   {$REGION 'Documentation'}
   ///	<summary>
   ///	  Represents the executable database statement.
@@ -250,6 +254,7 @@ type
   IDBStatement = interface(IInvokable)
     ['{DA905CAA-0FC2-4570-9788-1DC206600171}']
     procedure SetSQLCommand(const ACommandText: string);
+    procedure SetQuery(const AMetadata: TQueryMetadata; AQuery: Variant);
     procedure SetParams(AParams: TObjectList<TDBParam>); overload;
     procedure SetParams(const AParams: array of const); overload;
     function Execute(): NativeUInt;

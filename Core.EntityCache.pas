@@ -89,8 +89,9 @@ type
     FSequence: SequenceAttribute;
     FHasInstanceField: Boolean;
     FEntityClass: TClass;
+    FVersionColumn: VersionAttribute;
   protected
-     procedure AssignTo(Dest: TPersistent); override;
+    procedure AssignTo(Dest: TPersistent); override;
     procedure SetEntityData(AClass: TClass); virtual;
     procedure SetColumnsData(); virtual;
   public
@@ -103,6 +104,7 @@ type
     function HasInstanceField: Boolean;
     function HasSequence(): Boolean;
     function HasManyToOneRelations(): Boolean;
+    function HasVersionColumn(): Boolean;
 
     property Columns: TList<ColumnAttribute> read FColumns;
     property ColumnsData: TColumnDataList read FColumnsData write FColumnsData;
@@ -112,6 +114,7 @@ type
     property PrimaryKeyColumn: ColumnAttribute read FPrimaryKeyColumn;
     property Sequence: SequenceAttribute read FSequence write FSequence;
 
+    property VersionColumn: VersionAttribute read FVersionColumn;
     property EntityClass: TClass read FEntityClass;
     property EntityTable: TableAttribute read FTable;
   end;
@@ -215,6 +218,7 @@ begin
   FPrimaryKeyColumn := nil;
   FTable := nil;
   FSequence := nil;
+  FVersionColumn := nil;
   FForeignKeyColumns := TList<ForeignJoinColumnAttribute>.Create;
   FOneToManyColumns := TList<OneToManyAttribute>.Create;
   FManyToOneColumns := TList<ManyToOneAttribute>.Create;
@@ -250,6 +254,11 @@ begin
   Result := Assigned(FSequence);
 end;
 
+function TEntityData.HasVersionColumn: Boolean;
+begin
+  Result := Assigned(FVersionColumn);
+end;
+
 function TEntityData.IsTableEntity: Boolean;
 begin
   Result := Assigned(FTable);
@@ -273,6 +282,11 @@ begin
     if LCol.IsPrimaryKey then
     begin
       FColumnsData.PrimaryKeyColumn := LColData;
+    end;
+
+    if LCol.IsVersionColumn then
+    begin
+      FVersionColumn := LCol as VersionAttribute;
     end;
 
     FColumnsData.Add(LColData);

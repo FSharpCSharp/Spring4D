@@ -57,6 +57,7 @@ type
     function GetSQLTableExists(const ATablename: string): string; virtual; abstract;
     function GetEscapeFieldnameChar(): Char; virtual; abstract;
     function GenerateUniqueId(): Variant; virtual;
+    function GetUpdateVersionFieldQuery(AUpdateCommand: TUpdateCommand; AVersionColumn: VersionAttribute; AVersionValue,APKValue: Variant): Variant; virtual; abstract;
   end;
 
 implementation

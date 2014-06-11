@@ -233,8 +233,10 @@ type
     FScale: Integer;
     FDescription: string;
     FIsIdentity: Boolean;
-    function GetName: string;
-    function GetIsPrimaryKey: Boolean;
+  protected
+    function GetName: string; virtual;
+    function GetIsPrimaryKey: Boolean; virtual;
+    function GetIsVersionColumn: Boolean; virtual;
   public
     constructor Create(); overload;
     constructor Create(AProperties: TColumnProperties); overload;
@@ -256,12 +258,25 @@ type
 
     property IsIdentity: Boolean read FIsIdentity write FIsIdentity;
     property IsPrimaryKey: Boolean read GetIsPrimaryKey;
+    property IsVersionColumn: Boolean read GetIsVersionColumn;
     property Name: string read GetName;
     property Properties: TColumnProperties read FProperties;
     property Length: Integer read FLength;
     property Precision: Integer read FPrecision;
     property Scale: Integer read FScale;
     property Description: string read FDescription;
+  end;
+
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Is used to implement optimistic locking
+  ///	</summary>
+  {$ENDREGION}
+  VersionAttribute = class(ColumnAttribute)
+  protected
+    function GetIsVersionColumn: Boolean; override;
+  public
+    constructor Create();
   end;
 
   TColumnData = record
@@ -465,6 +480,11 @@ begin
   Result := (cpPrimaryKey in Properties);
 end;
 
+function ColumnAttribute.GetIsVersionColumn: Boolean;
+begin
+  Result := False;
+end;
+
 function ColumnAttribute.GetName: string;
 begin
   Result := FName;
@@ -597,5 +617,17 @@ end;
 
 
 
+
+{ VersionAttribute }
+
+constructor VersionAttribute.Create;
+begin
+  inherited Create('_version');
+end;
+
+function VersionAttribute.GetIsVersionColumn: Boolean;
+begin
+  Result := True;
+end;
 
 end.

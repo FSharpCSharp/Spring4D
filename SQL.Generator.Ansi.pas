@@ -63,6 +63,7 @@ type
     function GetSplitStatementSymbol(): string; virtual;
     procedure ParseFullTablename(const AFullTablename: string; out ATablename, ASchemaName: string); virtual;
     function GetEscapeFieldnameChar(): Char; override;
+    function GetUpdateVersionFieldQuery(AUpdateCommand: TUpdateCommand; AVersionColumn: VersionAttribute; AVersionValue, APKValue: Variant): Variant; override;
   public
     function GetQueryLanguage(): TQueryLanguage; override;
     function GenerateSelect(ASelectCommand: TSelectCommand): string; override;
@@ -101,6 +102,7 @@ uses
   ,Core.Utils
   ,Mapping.RttiExplorer
   ,StrUtils
+  ,Variants
   ;
 
 { TAnsiSQLGenerator }
@@ -690,6 +692,19 @@ end;
 function TAnsiSQLGenerator.GetTempTableName: string;
 begin
   Result := TBL_TEMP;
+end;
+
+function TAnsiSQLGenerator.GetUpdateVersionFieldQuery(
+  AUpdateCommand: TUpdateCommand; AVersionColumn: VersionAttribute;
+  AVersionValue, APKValue: Variant): Variant;
+var
+  LSQL: string;
+begin
+  LSQL := Format('UPDATE %0:S SET %1:S = coalesce(%1:S,0) + 1 WHERE (%2:S = %3:S) AND (coalesce(%1:S,0) = %4:S)'
+    , [AUpdateCommand.Table.Name, AVersionColumn.Name,
+      AUpdateCommand.PrimaryKeyColumn.Name, VarToStr(APKValue),
+      VarToStr(AVersionValue)]);
+  Result := LSQL;
 end;
 
 function TAnsiSQLGenerator.GetWhereAsString(const AWhereFields: TList<TSQLWhereField>): string;

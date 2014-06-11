@@ -33,7 +33,7 @@ uses
   SQL.Types, Generics.Collections, Mapping.Attributes;
 
 type
-  TDMLCommandType = (ctSelect, ctInsert, ctUpdate, ctDelete);
+  TDMLCommandType = (ctSelect, ctInsert, ctUpdate, ctDelete, ctUpdateVersion);
 
   {$REGION 'Documentation'}
   ///	<summary>

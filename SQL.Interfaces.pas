@@ -60,7 +60,7 @@ type
     function GetTableColumns(const ATableName: string): string;
     function GetSQLTableExists(const ATablename: string): string;
     function GetEscapeFieldnameChar(): Char;
-
+    function GetUpdateVersionFieldQuery(AUpdateCommand: TUpdateCommand; AVersionColumn: VersionAttribute; AVersionValue, APKValue: Variant): Variant;
   end;
 
 implementation

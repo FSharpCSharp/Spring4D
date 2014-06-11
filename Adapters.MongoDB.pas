@@ -168,6 +168,7 @@ uses
   ,Core.ConnectionFactory
   ,Variants
   ,TypInfo
+  ,SQL.Commands
   ;
 const
   NAME_COLLECTION = 'UnitTests.MongoAdapter';
@@ -217,7 +218,7 @@ begin
   begin
     Connect;
   end
-  else if LIsConnected then
+  else if LIsConnected and not Value then
   begin
     disconnect;
   end;
@@ -332,13 +333,33 @@ end;
 
 function TMongoStatementAdapter.Execute: NativeUInt;
 var
-  LDoc: IBSONDocument;
+  LDoc, LResultDoc: IBSONDocument;
+  LIntf: IInterface;
   LOk: Boolean;
+  LValue: Variant;
 begin
   inherited;
   Result := 0;
-  LDoc := JsonToBson(FStmtText);
   LOk := False;
+
+  if NativeQueryPresent then
+  begin
+    case QueryMetadata.QueryType of
+      ctUpdateVersion:
+      begin
+        LIntf := Query;
+        LDoc := LIntf as IBsonDocument;
+        LResultDoc := Statement.Connection.findAndModify(GetFullCollectionName(), LDoc
+          , bsonEmpty, BSON(['$inc', BSON(['_version', 1])]));
+        LValue := LResultDoc['value'];
+        if not (VarIsNull(LValue)) then
+          Result := 1;
+        Exit;
+      end;
+    end;
+  end;
+
+  LDoc := JsonToBson(FStmtText);
   case FStmtType of
     mstInsert: LOk := Statement.Connection.insert(GetFullCollectionName(), LDoc);
     mstUpdate: LOk := Statement.Connection.Update(GetFullCollectionName(), bsonEmpty, LDoc);

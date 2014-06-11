@@ -115,19 +115,26 @@ type
     FExecutionListeners: TList<TExecutionListenerProc>;
     FParams: TObjectList<TDBParam>;
     FSQL: string;
+    FQuery: Variant;
+    FQueryMetadata: TQueryMetadata;
   protected
     procedure NotifyListeners(); virtual;
   public
     constructor Create(const AStatement: T); virtual;
     destructor Destroy; override;
     procedure SetSQLCommand(const ACommandText: string); virtual;
+    procedure SetQuery(const AMetadata: TQueryMetadata; AQuery: Variant); virtual;
     procedure SetParams(Params: TObjectList<TDBParam>); overload; virtual;
     procedure SetParams(const AParams: array of const); overload;
     function Execute(): NativeUInt; virtual;
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; virtual;
 
+    function NativeQueryPresent(): Boolean; virtual;
+
     property ExecutionListeners: TList<TExecutionListenerProc> read FExecutionListeners write FExecutionListeners;
     property Statement: T read FStmt;
+    property Query: Variant read FQuery write FQuery;
+    property QueryMetadata: TQueryMetadata read FQueryMetadata write FQueryMetadata;
   end;
 
   {$REGION 'Documentation'}
@@ -212,6 +219,7 @@ uses
   ,Core.Consts
   ,SyncObjs
   ,SysUtils
+  ,Variants
   ;
 
 { TDriverResultSetAdapter<T> }
@@ -341,6 +349,7 @@ begin
   FStmt := AStatement;
   FParams := nil;
   FExecutionListeners := nil;
+  FQuery := Null;
 end;
 
 destructor TDriverStatementAdapter<T>.Destroy;
@@ -356,6 +365,11 @@ end;
 function TDriverStatementAdapter<T>.ExecuteQuery(AServerSideCursor: Boolean): IDBResultSet;
 begin
   NotifyListeners();
+end;
+
+function TDriverStatementAdapter<T>.NativeQueryPresent: Boolean;
+begin
+  Result := not VarIsNull(FQuery);
 end;
 
 procedure TDriverStatementAdapter<T>.NotifyListeners;
@@ -404,6 +418,16 @@ begin
     finally
       LParams.Free;
     end;
+  end;
+end;
+
+procedure TDriverStatementAdapter<T>.SetQuery(const AMetadata: TQueryMetadata;
+  AQuery: Variant);
+begin
+  FQuery := AQuery;
+  FQueryMetadata := AMetadata;
+  case VarType(AQuery) of
+    varUString, varString: FSQL := AQuery;
   end;
 end;
 

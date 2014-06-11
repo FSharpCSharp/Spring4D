@@ -63,6 +63,8 @@ type
     FStream: LazyObject<TMemoryStream>;
  //   [Column('AVATARLAZY', [], 50, 0, 0, 'Customers avatar')]
     FAvatarNullable: Lazy<Nullable<TPicture>>;
+    [Version]
+    FVersion: Integer;
   public
     FName: string;
     FAge: Integer;
@@ -117,6 +119,8 @@ type
     property OrdersIntf: IList<TCustomer_Orders> read GetOrdersIntf write SetOrdersIntf;
     [SvTransient]
     property CustStream: TMemoryStream read GetCustStream write SetCustStream;
+
+    property Version: Integer read FVersion write FVersion;
   end;
 
   TForeignCustomer = class(TCustomer)

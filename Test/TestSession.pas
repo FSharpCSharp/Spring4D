@@ -64,6 +64,7 @@ type
     procedure Transactions_Nested();
     procedure GetOne();
     procedure FetchCollection();
+    procedure Versioning();
     {$IFDEF USE_SPRING}
     procedure ListSession_Begin_Commit();
     {$ENDIF}
@@ -99,6 +100,7 @@ uses
   ,Core.Reflection
   ,TestConsts
   ,Core.Criteria.Properties
+  ,Core.Exceptions
   ,Diagnostics
   ;
 
@@ -139,7 +141,7 @@ begin
 
   LConn.ExecSQL('CREATE TABLE IF NOT EXISTS '+ TBL_PEOPLE + ' ([CUSTID] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, [CUSTAGE] INTEGER NULL,'+
     '[CUSTNAME] VARCHAR (255), [CUSTHEIGHT] FLOAT, [LastEdited] DATETIME, [EMAIL] TEXT, [MIDDLENAME] TEXT, [AVATAR] BLOB, [AVATARLAZY] BLOB NULL'+
-    ',[CUSTTYPE] INTEGER, [CUSTSTREAM] BLOB, [COUNTRY] TEXT );');
+    ',[CUSTTYPE] INTEGER, [CUSTSTREAM] BLOB, [COUNTRY] TEXT, [_version] INTEGER );');
 
   LConn.ExecSQL('CREATE TABLE IF NOT EXISTS '+ TBL_ORDERS + ' ('+
     '"ORDER_ID" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,'+
@@ -1184,7 +1186,17 @@ begin
     //change values of subentities
     LCustomer.OrdersIntf.First.Order_Status_Code := 99;
     LCustomer.OrdersIntf.Last.Order_Status_Code := 111;
-    FManager.SaveAll(LCustomer);
+    try
+      LCustomer.OrdersIntf.First.Customer.Version := LCustomer.Version;
+      LCustomer.OrdersIntf.Last.Customer.Version := LCustomer.Version;
+      FManager.SaveAll(LCustomer);
+      CheckTrue(False);
+    except
+      on E: EORMOptimisticLockException do
+      begin
+        CheckTrue(True);
+      end;
+    end;
 
     CheckEquals(1, GetTableRecordCount(TBL_PEOPLE));
     CheckEquals(2, GetTableRecordCount(TBL_ORDERS));
@@ -1416,6 +1428,42 @@ begin
     LCustomer.Free;
     LDBCustomer.Free;
   end;
+end;
+
+procedure TestTSession.Versioning;
+var
+  LModel, LModelOld, LModelLoaded: TCustomer;
+  bOk: Boolean;
+begin
+  LModel := TCustomer.Create;
+  LModel.Name := 'Initial version';
+  FManager.Save(LModel);
+
+  LModelLoaded := FManager.FindOne<TCustomer>(TValue.FromVariant(LModel.Id));
+  CheckEquals(0, LModelLoaded.Version);
+  LModelLoaded.Name := 'Updated version No. 1';
+
+  LModelOld := FManager.FindOne<TCustomer>(TValue.FromVariant(LModel.Id));
+  CheckEquals(0, LModelOld.Version);
+  LModelOld.Name := 'Updated version No. 2';
+
+  FManager.Save(LModelLoaded);
+  CheckEquals(1, LModelLoaded.Version);
+
+  try
+    FManager.Save(LModelOld);
+    bOk := False;
+  except
+    on E:EORMOptimisticLockException do
+    begin
+      bOk := True;
+    end;
+  end;
+  CheckTrue(bOk, 'This should fail because version already changed to the same entity');
+
+  LModel.Free;
+  LModelLoaded.Free;
+  LModelOld.Free;
 end;
 
 type

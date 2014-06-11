@@ -125,6 +125,8 @@ type
     class procedure SetMemberValueSimple(AEntity: TObject; const AMemberName: string; const AValue: TValue);
     class procedure SetValue(AInstance: Pointer; ANamedObject: TRttiNamedObject; const AValue: TValue);
 
+    class function InheritsFrom(AObjectInfo: TClass; AFromObjectInfo: PTypeInfo): Boolean;
+
     class property RttiCache: TRttiCache read FRttiCache;
   end;
 
@@ -689,7 +691,7 @@ begin
   begin
     for LAttr in LField.GetAttributes do
     begin
-      if (LTypeInfo = LAttr.ClassInfo) then
+      if (LTypeInfo = LAttr.ClassInfo) or (InheritsFrom(LAttr.ClassType, LTypeInfo)) then
       begin
         TORMAttribute(LAttr).MemberType := mtField;
         TORMAttribute(LAttr).ClassMemberName := LField.Name;
@@ -703,7 +705,7 @@ begin
   begin
     for LAttr in LProp.GetAttributes do
     begin
-      if (LTypeInfo = LAttr.ClassInfo) then
+      if (LTypeInfo = LAttr.ClassInfo) or (InheritsFrom(LAttr.ClassType, LTypeInfo)) then
       begin
         TORMAttribute(LAttr).MemberType := mtProperty;
         TORMAttribute(LAttr).ClassMemberName := LProp.Name;
@@ -1238,6 +1240,28 @@ end;
 class function TRttiExplorer.HasSequence(AClass: TClass): Boolean;
 begin
   Result := (GetSequence(AClass) <> System.Default(SequenceAttribute) );
+end;
+
+class function TRttiExplorer.InheritsFrom(AObjectInfo: TClass;
+  AFromObjectInfo: PTypeInfo): Boolean;
+var
+  LClass: TClass;
+begin
+  Result := False;
+  if Assigned(AObjectInfo) then
+  begin
+    Result := AObjectInfo.ClassInfo = AFromObjectInfo;
+  end
+  else
+  begin
+    Exit(False);
+  end;
+  if not Result then
+  begin
+    LClass := AObjectInfo.ClassParent;
+    if Assigned(LClass) then
+      Result := InheritsFrom(LClass, AFromObjectInfo);
+  end;
 end;
 
 class procedure TRttiExplorer.SetMemberValue(AManager: TObject; AEntity: TObject; const AMemberColumn: ColumnAttribute;

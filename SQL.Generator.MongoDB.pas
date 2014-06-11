@@ -3,7 +3,7 @@ unit SQL.Generator.MongoDB;
 interface
 
 uses
-  SQL.Generator.NoSQL, SQL.Interfaces
+  SQL.Generator.NoSQL, SQL.Interfaces, SQL.Commands, Mapping.Attributes
   ;
 
 type
@@ -16,6 +16,7 @@ type
   public
     function GetQueryLanguage(): TQueryLanguage; override;
     function GenerateUniqueId(): Variant; override;
+    function GetUpdateVersionFieldQuery(AUpdateCommand: TUpdateCommand; AVersionColumn: VersionAttribute; AVersionValue, APKValue: Variant): Variant; override;
   end;
 
 implementation
@@ -23,6 +24,8 @@ implementation
 uses
   SQL.Register
   ,mongoID
+  ,MongoBson
+  ,Variants
   ;
 
 
@@ -36,6 +39,13 @@ end;
 function TMongoDBGenerator.GetQueryLanguage: TQueryLanguage;
 begin
   Result := qlMongoDB;
+end;
+
+function TMongoDBGenerator.GetUpdateVersionFieldQuery(
+  AUpdateCommand: TUpdateCommand; AVersionColumn: VersionAttribute;
+  AVersionValue, APKValue: Variant): Variant;
+begin
+  Result := BSON([AUpdateCommand.PrimaryKeyColumn.Name, APKValue, AVersionColumn.Name, AVersionValue]);
 end;
 
 initialization
