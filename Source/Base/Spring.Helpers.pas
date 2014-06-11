@@ -377,6 +377,7 @@ type
     function GetIsClassOrInterface: Boolean;
     function GetAsClass: TRttiInstanceType;
     function GetIsGenericType: Boolean;
+    function GetIsLazyType: Boolean;
     function GetAsDynamicArray: TRttiDynamicArrayType;
     function GetIsDynamicArray: Boolean;
     function InternalGetConstructors(enumerateBaseType: Boolean = True): IEnumerable<TRttiMethod>;
@@ -475,6 +476,8 @@ type
     ///	  Gets a value indicates whether the current type is generic.
     ///	</summary>
     property IsGenericType: Boolean read GetIsGenericType;
+
+    property IsLazyType: Boolean read GetIsLazyType;
     property DefaultName: string read GetDefaultName;
     property AncestorCount: Integer read GetAncestorCount;
   end;
@@ -1226,6 +1229,11 @@ end;
 function TRttiTypeHelper.GetIsInterface: Boolean;
 begin
   Result := Self is TRttiInterfaceType;
+end;
+
+function TRttiTypeHelper.GetIsLazyType: Boolean;
+begin
+  Result := TType.IsLazy(Handle);
 end;
 
 {$ENDREGION}
