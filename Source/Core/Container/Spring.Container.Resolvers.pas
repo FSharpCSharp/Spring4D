@@ -37,9 +37,22 @@ uses
   Spring.Reflection;
 
 type
-  TDependencyResolver = class(TInterfacedObject, IDependencyResolver)
+  TSubDependencyResolverBase = class abstract(TInterfacedObject, ISubDependencyResolver)
   private
     fKernel: IKernel;
+  protected
+    property Kernel: IKernel read fKernel;
+  public
+    constructor Create(const kernel: IKernel);
+
+    function CanResolve(const context: ICreationContext;
+      const dependency: TRttiType; const argument: TValue): Boolean; virtual; abstract;
+    function Resolve(const context: ICreationContext;
+      const dependency: TRttiType; const argument: TValue): TValue; virtual; abstract;
+  end;
+
+  TDependencyResolver = class(TSubDependencyResolverBase, IDependencyResolver)
+  private
     fSubResolvers: IList<ISubDependencyResolver>;
   protected
     function CanResolveFromContext(const context: ICreationContext;
@@ -53,37 +66,23 @@ type
 
     function CanResolve(const context: ICreationContext;
       const dependency: TRttiType;
-      const argument: TValue): Boolean; overload; virtual;
+      const argument: TValue): Boolean; overload; override;
     function CanResolve(const context: ICreationContext;
       const dependencies: TArray<TRttiType>;
-      const arguments: TArray<TValue>): Boolean; overload; virtual;
+      const arguments: TArray<TValue>): Boolean; reintroduce; overload; virtual;
 
     function Resolve(const context: ICreationContext;
       const dependency: TRttiType;
-      const argument: TValue): TValue; overload; virtual;
+      const argument: TValue): TValue; overload; override;
     function Resolve(const context: ICreationContext;
       const dependencies: TArray<TRttiType>;
-      const arguments: TArray<TValue>): TArray<TValue>; overload; virtual;
+      const arguments: TArray<TValue>): TArray<TValue>; reintroduce; overload; virtual;
 
     procedure AddSubResolver(const subResolver: ISubDependencyResolver);
     procedure RemoveSubResolver(const subResolver: ISubDependencyResolver);
   end;
 
-  TSubDependencyResolver = class abstract(TInterfacedObject, ISubDependencyResolver)
-  strict private
-    fKernel: IKernel;
-  protected
-    property Kernel: IKernel read fKernel;
-  public
-    constructor Create(const kernel: IKernel);
-
-    function CanResolve(const context: ICreationContext;
-      const dependency: TRttiType; const argument: TValue): Boolean; virtual; abstract;
-    function Resolve(const context: ICreationContext;
-      const dependency: TRttiType; const argument: TValue): TValue; virtual; abstract;
-  end;
-
-  TLazyResolver = class(TSubDependencyResolver)
+  TLazyResolver = class(TSubDependencyResolverBase)
   private
     function InternalResolveClass(const context: ICreationContext;
       const dependency: TRttiType; const argument: TValue;
@@ -98,7 +97,7 @@ type
       const dependency: TRttiType; const argument: TValue): TValue; override;
   end;
 
-  TDynamicArrayResolver = class(TSubDependencyResolver)
+  TDynamicArrayResolver = class(TSubDependencyResolverBase)
   public
     function CanResolve(const context: ICreationContext;
       const dependency: TRttiType; const argument: TValue): Boolean; override;
@@ -106,7 +105,7 @@ type
       const dependency: TRttiType; const argument: TValue): TValue; override;
   end;
 
-  TListResolver = class(TSubDependencyResolver)
+  TListResolver = class(TSubDependencyResolverBase)
   public
     function CanResolve(const context: ICreationContext;
       const dependency: TRttiType; const argument: TValue): Boolean; override;
@@ -114,7 +113,7 @@ type
       const dependency: TRttiType; const argument: TValue): TValue; override;
   end;
 
-  TPrimitivesResolver = class(TSubDependencyResolver)
+  TPrimitivesResolver = class(TSubDependencyResolverBase)
   public
     function CanResolve(const context: ICreationContext;
       const dependency: TRttiType; const argument: TValue): Boolean; override;
@@ -134,13 +133,26 @@ uses
   Spring.Helpers;
 
 
+{$REGION 'TSubDependencyResolver'}
+
+constructor TSubDependencyResolverBase.Create(const kernel: IKernel);
+begin
+{$IFNDEF DISABLE_GUARD}
+  Guard.CheckNotNull(kernel, 'kernel');
+{$ENDIF}
+
+  inherited Create;
+  fKernel := kernel;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TDependencyResolver'}
 
 constructor TDependencyResolver.Create(const kernel: IKernel);
 begin
-  Guard.CheckNotNull(kernel, 'kernel');
-  inherited Create;
-  fKernel := kernel;
+  inherited Create(kernel);
   fSubResolvers := TCollections.CreateInterfaceList<ISubDependencyResolver>;
 end;
 
@@ -201,16 +213,16 @@ begin
   if dependency.TypeKind in [tkClass, tkInterface, tkRecord] then
   begin
     if argument.IsEmpty then
-      Result := fKernel.Registry.HasDefault(dependency.Handle)
+      Result := Kernel.Registry.HasDefault(dependency.Handle)
     else if argument.TryAsType<TTypeKind>(Kind) and (kind = tkDynArray) then
-      Result := fKernel.Registry.HasService(dependency.Handle)
+      Result := Kernel.Registry.HasService(dependency.Handle)
     else
     begin
       Result := argument.IsType<string>;
       if Result then
       begin
         serviceName := argument.AsString;
-        model := fKernel.Registry.FindOne(serviceName);
+        model := Kernel.Registry.FindOne(serviceName);
         Result := Assigned(model);
         if Result then
         begin
@@ -240,7 +252,7 @@ begin
     if subResolver.CanResolve(context, dependency, argument) then
       Exit(subResolver.Resolve(context, dependency, argument));
 
-  model := fKernel.Registry.FindOne(dependency.Handle, argument);
+  model := Kernel.Registry.FindOne(dependency.Handle, argument);
   if not Assigned(model) then
     raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
   if context.IsInResolution(model) then
@@ -333,21 +345,6 @@ begin
     for i := 0 to High(dependencies) do
       Result[i] := Resolve(context, dependencies[i], nil);
   end;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TSubDependencyResolver'}
-
-constructor TSubDependencyResolver.Create(const kernel: IKernel);
-begin
-{$IFNDEF DISABLE_GUARD}
-  Guard.CheckNotNull(kernel, 'kernel');
-{$ENDIF}
-
-  inherited Create;
-  fKernel := kernel;
 end;
 
 {$ENDREGION}
