@@ -319,7 +319,7 @@ begin
   method := model.ComponentType.Methods.FirstOrDefault(predicate);
   if not Assigned(method) then
     raise ERegistrationException.CreateResFmt(
-      @SUnsatisfiedConstructorParameters, [model.ComponentType.DefaultName]);
+      @SUnsatisfiedConstructorParameters, [model.ComponentTypeName]);
   Result := TConstructorInjection.Create;
   Result.Initialize(method);
   model.ConstructorInjections.Add(Result);

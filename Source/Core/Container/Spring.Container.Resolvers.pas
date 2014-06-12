@@ -245,7 +245,7 @@ begin
     raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
   if context.IsInResolution(model) then
     raise ECircularDependencyException.CreateResFmt(
-      @SCircularDependencyDetected, [model.ComponentType.Name]);
+      @SCircularDependencyDetected, [model.ComponentTypeName]);
 
   context.EnterResolution(model);
   try
@@ -420,7 +420,7 @@ begin
     raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
   if context.IsInResolution(model) then
     raise ECircularDependencyException.CreateResFmt(
-      @SCircularDependencyDetected, [model.ComponentType.Name]);
+      @SCircularDependencyDetected, [model.ComponentTypeName]);
 
   case dependencyType.TypeKind of
     tkClass: Result := InternalResolveClass(context, dependencyType, argument, lazyKind);

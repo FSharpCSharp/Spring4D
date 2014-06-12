@@ -336,7 +336,7 @@ begin
   if not (TType.IsDelegate(model.ComponentTypeInfo) and (Length(methods) = 1)
     and Assigned(methods[0].ReturnType)) then
     raise ERegistrationException.CreateResFmt(@SUnsupportedFactoryType, [
-      model.ComponentType.DefaultName]);
+      model.ComponentTypeName]);
 
   maxVirtualIndex := 2;
   for method in methods do

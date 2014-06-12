@@ -472,15 +472,15 @@ begin
         if Assigned(service.BaseType) and not model.HasService(service.Handle) then
         begin
           kernel.Registry.RegisterService(model, service.Handle,
-            service.DefaultName + '@' + model.ComponentType.DefaultName);
+            service.DefaultName + '@' + model.ComponentTypeName);
           kernel.Registry.RegisterDefault(model, service.Handle);
         end;
     if TType.IsDelegate(model.ComponentTypeInfo)
-      and not model.HasService(model.ComponentType.Handle) then
-      kernel.Registry.RegisterService(model, model.ComponentType.Handle);
+      and not model.HasService(model.ComponentTypeInfo) then
+      kernel.Registry.RegisterService(model, model.ComponentTypeInfo);
 
     if model.Services.IsEmpty then
-      kernel.Registry.RegisterService(model, model.ComponentType.Handle);
+      kernel.Registry.RegisterService(model, model.ComponentTypeInfo);
   end;
 end;
 
