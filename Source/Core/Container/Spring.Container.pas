@@ -205,10 +205,10 @@ begin
   fExtensions := TCollections.CreateInterfaceList<IContainerExtension>;
   InitializeInspectors;
 
+  fResolver.AddSubResolver(TPrimitivesResolver.Create(Self)); // TODO: consider removal
   fResolver.AddSubResolver(TLazyResolver.Create(Self));
   fResolver.AddSubResolver(TDynamicArrayResolver.Create(Self));
   fResolver.AddSubResolver(TListResolver.Create(Self));
-  fResolver.AddSubResolver(TPrimitivesResolver.Create(Self));
 end;
 
 destructor TContainer.Destroy;
@@ -381,14 +381,14 @@ end;
 function TContainer.Resolve(serviceType: PTypeInfo;
   const arguments: array of TValue): TValue;
 var
-  model: TComponentModel;
+  componentModel: TComponentModel;
   context: ICreationContext;
-  dependency: TRttiType;
+  targetType: TRttiType;
 begin
-  model := fRegistry.FindDefault(serviceType);
-  context := TCreationContext.Create(model, arguments);
-  dependency := TType.GetType(serviceType);
-  Result := fResolver.Resolve(context, dependency, nil);
+  componentModel := fRegistry.FindDefault(serviceType);
+  context := TCreationContext.Create(componentModel, arguments);
+  targetType := TType.GetType(serviceType);
+  Result := fResolver.Resolve(context, targetType, nil);
 end;
 
 function TContainer.Resolve(const name: string): TValue;
@@ -399,19 +399,18 @@ end;
 function TContainer.Resolve(const name: string;
   const arguments: array of TValue): TValue;
 var
-  model: TComponentModel;
+  componentModel: TComponentModel;
   serviceType: PTypeInfo;
-  dependency: TRttiType;
+  targetType: TRttiType;
   context: ICreationContext;
 begin
-  model := fRegistry.FindOne(name);
-  if not Assigned(model) then
+  componentModel := fRegistry.FindOne(name);
+  if not Assigned(componentModel) then
     raise EResolveException.CreateResFmt(@SInvalidServiceName, [name]);
-  serviceType := model.GetServiceType(name);
-
-  dependency := TType.GetType(serviceType);
-  context := TCreationContext.Create(model, arguments);
-  Result := fResolver.Resolve(context, dependency, name);
+  serviceType := componentModel.GetServiceType(name);
+  targetType := TType.GetType(serviceType);
+  context := TCreationContext.Create(componentModel, arguments);
+  Result := fResolver.Resolve(context, targetType, name);
 end;
 
 function TContainer.ResolveAll<TServiceType>: TArray<TServiceType>;
@@ -427,28 +426,23 @@ end;
 
 function TContainer.ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
 var
-  context: ICreationContext;
-  dependency: TRttiType;
-  modelType: PTypeInfo;
-  models: IEnumerable<TComponentModel>;
+  targetType: TRttiType;
+  models: TArray<TComponentModel>;
   i: Integer;
-  model: TComponentModel;
+  context: ICreationContext;
+  serviceName: string;
 begin
-  dependency := TType.GetType(serviceType);
+  targetType := TType.GetType(serviceType);
   // TODO: remove dependency on lazy type
   if TType.IsLazy(serviceType) then
-    modelType := dependency.GetGenericArguments[0].Handle
-  else
-    modelType := serviceType;
-  models := fRegistry.FindAll(modelType);
-  SetLength(Result, models.Count);
-  i := 0;
-  for model in models do
+    serviceType := targetType.GetGenericArguments[0].Handle;
+  models := fRegistry.FindAll(serviceType).ToArray;
+  SetLength(Result, Length(models));
+  for i := 0 to High(models) do
   begin
-    context := TCreationContext.Create(model, []);
-    Result[i] := fResolver.Resolve(
-      context, dependency, model.GetServiceName(modelType));
-    Inc(i);
+    context := TCreationContext.Create(models[i], []);
+    serviceName := models[i].GetServiceName(serviceType);
+    Result[i] := fResolver.Resolve(context, targetType, serviceName);
   end;
 end;
 

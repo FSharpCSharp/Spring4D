@@ -133,7 +133,7 @@ uses
   Spring.Helpers;
 
 
-{$REGION 'TSubDependencyResolver'}
+{$REGION 'TSubDependencyResolverBase'}
 
 constructor TSubDependencyResolverBase.Create(const kernel: IKernel);
 begin
@@ -202,7 +202,7 @@ var
   kind: TTypeKind;
   serviceName: string;
   serviceType: PTypeInfo;
-  model: TComponentModel;
+  componentModel: TComponentModel;
 begin
   if CanResolveFromContext(context, dependency, argument) then
     Exit(True);
@@ -210,37 +210,32 @@ begin
   if CanResolveFromSubResolvers(context, dependency, argument) then
     Exit(True);
 
-  if dependency.TypeKind in [tkClass, tkInterface, tkRecord] then
+  if argument.IsEmpty then
+    Result := Kernel.Registry.HasDefault(dependency.Handle)
+  else if argument.TryAsType<TTypeKind>(Kind) and (kind = tkDynArray) then
+    Result := Kernel.Registry.HasService(dependency.Handle)
+  else
   begin
-    if argument.IsEmpty then
-      Result := Kernel.Registry.HasDefault(dependency.Handle)
-    else if argument.TryAsType<TTypeKind>(Kind) and (kind = tkDynArray) then
-      Result := Kernel.Registry.HasService(dependency.Handle)
-    else
+    Result := argument.IsString;
+    if Result then
     begin
-      Result := argument.IsType<string>;
+      serviceName := argument.AsString;
+      componentModel := Kernel.Registry.FindOne(serviceName);
+      Result := Assigned(componentModel);
       if Result then
       begin
-        serviceName := argument.AsString;
-        model := Kernel.Registry.FindOne(serviceName);
-        Result := Assigned(model);
-        if Result then
-        begin
-          serviceType := model.Services[serviceName];
-          Result := serviceType = dependency.Handle;
-        end;
+        serviceType := componentModel.Services[serviceName];
+        Result := TType.IsAssignable(dependency.Handle, serviceType);
       end;
     end;
-  end
-  else
-    Result := argument.IsEmpty or argument.IsType(dependency.Handle);
+  end;
 end;
 
 function TDependencyResolver.Resolve(const context: ICreationContext;
   const dependency: TRttiType; const argument: TValue): TValue;
 var
-  subResolver: ISubDependencyResolver;
-  model: TComponentModel;
+  i: Integer;
+  componentModel: TComponentModel;
   instance: TValue;
 begin
   Guard.CheckNotNull(dependency, 'dependency');
@@ -248,22 +243,22 @@ begin
   if CanResolveFromContext(context, dependency, argument) then
     Exit(context.Resolve(context, dependency, argument));
 
-  for subResolver in fSubResolvers do
-    if subResolver.CanResolve(context, dependency, argument) then
-      Exit(subResolver.Resolve(context, dependency, argument));
+  for i := fSubResolvers.Count - 1 downto 0 do
+    if fSubResolvers[i].CanResolve(context, dependency, argument) then
+      Exit(fSubResolvers[i].Resolve(context, dependency, argument));
 
-  model := Kernel.Registry.FindOne(dependency.Handle, argument);
-  if not Assigned(model) then
+  componentModel := Kernel.Registry.FindOne(dependency.Handle, argument);
+  if not Assigned(componentModel) then
     raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
-  if context.IsInResolution(model) then
+  if context.IsInResolution(componentModel) then
     raise ECircularDependencyException.CreateResFmt(
-      @SCircularDependencyDetected, [model.ComponentTypeName]);
+      @SCircularDependencyDetected, [componentModel.ComponentTypeName]);
 
-  context.EnterResolution(model);
+  context.EnterResolution(componentModel);
   try
-    instance := model.LifetimeManager.Resolve(context);
+    instance := componentModel.LifetimeManager.Resolve(context);
   finally
-    context.LeaveResolution(model);
+    context.LeaveResolution(componentModel);
   end;
 
   Result := InternalResolveValue(dependency.Handle, instance);
@@ -273,36 +268,34 @@ function TDependencyResolver.CanResolve(const context: ICreationContext;
   const dependencies: TArray<TRttiType>;
   const arguments: TArray<TValue>): Boolean;
 var
-  dependency: TRttiType;
   i: Integer;
 begin
-  Result := True;
   if Length(dependencies) = Length(arguments) then
   begin
     for i := 0 to High(dependencies) do
     begin
-      dependency := dependencies[i];
-      if not arguments[i].IsEmpty and arguments[i].IsType(dependency.Handle) then
+      if not arguments[i].IsEmpty and arguments[i].IsType(dependencies[i].Handle) then
         Continue;
-      if not CanResolve(context, dependency, arguments[i]) then
+      if not CanResolve(context, dependencies[i], arguments[i]) then
         Exit(False);
     end;
   end
   else if Length(arguments) = 0 then
   begin
-    for dependency in dependencies do
-      if not CanResolve(context, dependency, nil) then
+    for i := 0 to High(dependencies) do
+      if not CanResolve(context, dependencies[i], nil) then
         Exit(False);
   end
   else
     Exit(False);
+  Result := True;
 end;
 
 function TDependencyResolver.CanResolveFromContext(
   const context: ICreationContext; const dependency: TRttiType;
   const argument: TValue): Boolean;
 begin
-  Result := Assigned(context) and context.CanResolve(context, dependency, argument)
+  Result := Assigned(context) and context.CanResolve(context, dependency, argument);
 end;
 
 function TDependencyResolver.CanResolveFromSubResolvers(
@@ -311,7 +304,7 @@ function TDependencyResolver.CanResolveFromSubResolvers(
 var
   i: Integer;
 begin
-  for i := 0 to fSubResolvers.Count - 1 do
+  for i := fSubResolvers.Count - 1 downto 0 do
     if fSubResolvers[i].CanResolve(context, dependency, argument) then
       Exit(True);
   Result := False;
@@ -404,7 +397,7 @@ function TLazyResolver.Resolve(const context: ICreationContext;
 var
   lazyKind: TLazyKind;
   dependencyType: TRttiType;
-  model: TComponentModel;
+  componentModel: TComponentModel;
 begin
   if not TType.IsLazy(dependency.Handle) then
     raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
@@ -412,12 +405,12 @@ begin
   lazyKind := TType.GetLazyKind(dependency.Handle);
   dependencyType := dependency.GetGenericArguments[0];
 
-  model := Kernel.Registry.FindOne(dependencyType.Handle, argument);
-  if not Assigned(model) then
+  componentModel := Kernel.Registry.FindOne(dependencyType.Handle, argument);
+  if not Assigned(componentModel) then
     raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
-  if context.IsInResolution(model) then
+  if context.IsInResolution(componentModel) then
     raise ECircularDependencyException.CreateResFmt(
-      @SCircularDependencyDetected, [model.ComponentTypeName]);
+      @SCircularDependencyDetected, [componentModel.ComponentTypeName]);
 
   case dependencyType.TypeKind of
     tkClass: Result := InternalResolveClass(context, dependencyType, argument, lazyKind);
@@ -444,30 +437,27 @@ end;
 function TDynamicArrayResolver.Resolve(const context: ICreationContext;
   const dependency: TRttiType; const argument: TValue): TValue;
 var
-  dependencyType: TRttiType;
-  modelType: PTypeInfo;
-  models: IEnumerable<TComponentModel>;
+  targetType: TRttiType;
+  serviceType: PTypeInfo;
+  models: TArray<TComponentModel>;
   values: TArray<TValue>;
   i: Integer;
-  model: TComponentModel;
+  serviceName: string;
 begin
   if not dependency.IsDynamicArray then
     raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
-
-  dependencyType := dependency.AsDynamicArray.ElementType;
+  targetType := dependency.AsDynamicArray.ElementType;
   // TODO: remove dependency on lazy type
-  if TType.IsLazy(dependencyType.Handle) then
-    modelType := dependencyType.GetGenericArguments[0].Handle
+  if TType.IsLazy(targetType.Handle) then
+    serviceType := targetType.GetGenericArguments[0].Handle
   else
-    modelType := dependencyType.Handle;
-  models := Kernel.Registry.FindAll(modelType);
-  SetLength(values, models.Count);
-  i := 0;
-  for model in models do
+    serviceType := targetType.Handle;
+  models := Kernel.Registry.FindAll(serviceType).ToArray;
+  SetLength(values, Length(models));
+  for i := 0 to High(models) do
   begin
-    values[i] := Kernel.Resolver.Resolve(
-      context, dependencyType, model.GetServiceName(modelType));
-    Inc(i);
+    serviceName := models[i].GetServiceName(serviceType);
+    values[i] := Kernel.Resolver.Resolve(context, targetType, serviceName);
   end;
   Result := TValue.FromArray(dependency.Handle, values);
 end;
