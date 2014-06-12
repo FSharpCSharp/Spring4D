@@ -178,20 +178,6 @@ var
 
 { TMongoDBConnection }
 
-{
-function TMongoDBConnection.CountQuery(const Collection: WideString; const AQuery: IBSONDocument): IBSONDocument;
-var
-  LDoc: IBSONDocument;
-begin
-  LDoc := BSON(['count', GetCollectionFromFullName(Collection)]);
-
-  if AQuery.GetFieldCount > 0 then
-    LDoc['query'] := AQuery;
-
-
-  Result:=RunCommand(GetNamespaceFromFullName(Collection), LDoc); //['n'];
-end;      }
-
 function TMongoDBConnection.GetCollectionFromFullName(const AFullConnectionName: string): string;
 var
   i: Integer;

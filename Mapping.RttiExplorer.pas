@@ -126,6 +126,7 @@ type
     class procedure SetValue(AInstance: Pointer; ANamedObject: TRttiNamedObject; const AValue: TValue);
 
     class function InheritsFrom(AObjectInfo: TClass; AFromObjectInfo: PTypeInfo): Boolean;
+    class function GetNamedObject(AClass: TClass; const APropertyName: string): TRttiNamedObject;
 
     class property RttiCache: TRttiCache read FRttiCache;
   end;
@@ -1144,6 +1145,17 @@ begin
   Result := AList[ix];
 end;
 
+class function TRttiExplorer.GetNamedObject(AClass: TClass;
+  const APropertyName: string): TRttiNamedObject;
+var
+  LType: TRttiType;
+begin
+  LType := FCtx.GetType(AClass);
+  Result := LType.GetField(APropertyName);
+  if not Assigned(Result) then
+    Result := LType.GetProperty(APropertyName);
+end;
+
 class function TRttiExplorer.HasInstanceField(AClass: TClass): Boolean;
 var
   LField: TRttiField;
@@ -1347,6 +1359,10 @@ begin
   Result := GetField(AClass, APropertyName);
   if Result = nil then
     Result := GetProperty(AClass, APropertyName);
+  if not Assigned(Result) then
+  begin
+    Result := TRttiExplorer.GetNamedObject(AClass, APropertyName);
+  end;
 end;
 
 function TRttiCache.GetProperty(AClass: TClass; const APropertyName: string): TRttiProperty;

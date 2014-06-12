@@ -7,9 +7,8 @@ uses
   Dialogs, ActnList, Menus, ComCtrls
   ,Core.Session, Core.Interfaces
   ,Spring.Collections
-  ,ProductModel
-  {$IF CompilerVersion > 23}
-  , System.Actions
+  ,ProductModel, SQLiteTable3
+  {$IF CompilerVersion > 23}, System.Actions
   {$IFEND}
   ;
 
@@ -49,6 +48,7 @@ type
     procedure lvProductsDblClick(Sender: TObject);
   private
     { Private declarations }
+    FDatabase: TSQLiteDatabase;
     FConnection: IDBConnection;
     FProducts: IList<TProduct>;
     FSession: TSession;
@@ -76,6 +76,7 @@ uses
   Core.DatabaseManager
   ,Core.ConnectionFactory
   ,ViewEditProduct
+  ,Adapters.SQLite
   ;
 
 {$R *.dfm}
@@ -212,12 +213,11 @@ begin
 end;
 
 procedure TfrmMain.FormCreate(Sender: TObject);
-var
-  LConnJson: string;
 begin
-  LConnJson := IncludeTrailingPathDelimiter( ExpandFileName(IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0))) + '..\..\') )
-    + 'Config\Conn_Sqlite.json';
-  FConnection := TConnectionFactory.GetInstanceFromFilename(dtSQLite, LConnJson);
+  FDatabase := TSQLiteDatabase.Create();
+  FDatabase.Filename := 'products.db3';
+  FConnection := TSQLiteConnectionAdapter.Create(FDatabase);
+  FConnection.Connect;
   FSession := TSession.Create(FConnection);
   FProducts := TCollections.CreateObjectList<TProduct>(True);
   DoCheckEntities();

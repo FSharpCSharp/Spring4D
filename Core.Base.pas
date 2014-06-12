@@ -334,6 +334,8 @@ begin
     AQueryLanguage := qlFirebird
   else if ContainsText(sDriverName, DRIVER_POSTGRESQL) then
     AQueryLanguage := qlPostgreSQL
+  else if ContainsText(sDriverName, DRIVER_MONGODB) then
+    AQueryLanguage := qlMongoDB
   else
   begin
     Result := False;

@@ -40,6 +40,7 @@ const
   DRIVER_MYSQL = 'MySQL';  //not used yet
   DRIVER_FIREBIRD = 'Firebird';  //not used yet
   DRIVER_POSTGRESQL = 'PostgreSQL';   //not used yet
+  DRIVER_MONGODB = 'MongoDB';
   DRIVER_ADO = 'ADO';
   DRIVER_DBX = 'DBX';
   DRIVER_UIB = 'UIB';
