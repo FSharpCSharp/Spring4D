@@ -1190,7 +1190,7 @@ begin
     while success and (i < len) do
     begin
       case VarType(value[i]) of
-        varString, varUString, varStrArg, varUStrArg, varOleStr:
+        varString, varUString, varStrArg, varOleStr:
           success := (bson_append_string(handle, PAnsiChar(AnsiString(IntToStr(i))), PAnsiChar(System.UTF8Encode(value[i])))
             = 0);
         varInteger, varLongWord, varWord, varByte, varShortInt, varSmallint:

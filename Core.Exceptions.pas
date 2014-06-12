@@ -116,7 +116,7 @@ begin
     Exit('null');
   LBuilder := TStringBuilder.Create;
   try
-    LBuilder.AppendFormat('ClassName: %S', [AEntity.QualifiedClassName]).AppendLine;
+    LBuilder.AppendFormat('ClassName: %S', [AEntity.ClassName]).AppendLine;
     LColumns := TRttiExplorer.GetColumns(AEntity.ClassType);
     try
       for LColumn in LColumns do

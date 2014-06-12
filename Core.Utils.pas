@@ -145,7 +145,8 @@ begin
           end;
         end;
       end;
-    end
+    end;
+    tkInterface: ;//
     else
     begin
       Result := AValue.AsVariant;

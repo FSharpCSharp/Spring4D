@@ -142,7 +142,7 @@ begin
     , TUtils.AsVariant(LVersionValue), TUtils.AsVariant(LPKValue));
   LQueryMetadata.QueryType := ctUpdateVersion;
   case VarType(LQuery) of
-    varUString, varString, varStrArg, varUStrArg, varOleStr: LStatement.SetSQLCommand(LQuery)
+    varUString, varString, varStrArg, varOleStr: LStatement.SetSQLCommand(LQuery)
     else
     begin
       LStatement.SetSQLCommand(Format('S[%S]{}', [FCommand.Table.Name]));
