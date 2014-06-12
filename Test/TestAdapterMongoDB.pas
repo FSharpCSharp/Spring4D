@@ -183,6 +183,7 @@ type
     procedure TearDown; override;
   published
     procedure InsertList();
+    procedure Query();
   end;
 
 implementation
@@ -852,6 +853,17 @@ begin
   end;
   FRepository.Insert(LKeys);
   CheckEquals(iSize, FRepository.Count);
+end;
+
+procedure TestMongoRepository.Query;
+var
+  LKeys: IList<TMongoAdapter>;
+begin
+  InsertObject(FMongoConnection, 100, 1);
+  InsertObject(FMongoConnection, 999, 2);
+
+  LKeys := FRepository.Query('{_id: { $in: [1, 2] } }', []);
+  CheckEquals(2, LKeys.Count);
 end;
 
 procedure TestMongoRepository.SetUp;

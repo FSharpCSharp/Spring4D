@@ -17,11 +17,17 @@ type
     FSession: TMongoDBSession;
   protected
     procedure Insert(AEntities: ICollection<T>); overload; override;
+    function Query(const AQuery: string;
+      const AParams: array of const): IList<T>; override;
   public
     constructor Create(ASession: TSession); override;
   end;
 
 implementation
+
+uses
+  SysUtils
+  ;
 
 { TMongoDBRepository<T, TID> }
 
@@ -34,6 +40,15 @@ end;
 procedure TMongoDBRepository<T, TID>.Insert(AEntities: ICollection<T>);
 begin
   FSession.BulkInsert<T>(AEntities);
+end;
+
+function TMongoDBRepository<T, TID>.Query(const AQuery: string;
+  const AParams: array of const): IList<T>;
+var
+  LQuery: string;
+begin
+  LQuery := Format('S[%S]%S', [Namespace, AQuery]);
+  Result := inherited Query(LQuery, AParams);
 end;
 
 end.

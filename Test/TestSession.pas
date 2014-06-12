@@ -141,7 +141,7 @@ begin
 
   LConn.ExecSQL('CREATE TABLE IF NOT EXISTS '+ TBL_PEOPLE + ' ([CUSTID] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, [CUSTAGE] INTEGER NULL,'+
     '[CUSTNAME] VARCHAR (255), [CUSTHEIGHT] FLOAT, [LastEdited] DATETIME, [EMAIL] TEXT, [MIDDLENAME] TEXT, [AVATAR] BLOB, [AVATARLAZY] BLOB NULL'+
-    ',[CUSTTYPE] INTEGER, [CUSTSTREAM] BLOB, [COUNTRY] TEXT, [_version] INTEGER );');
+    ',[CUSTTYPE] INTEGER, [CUSTSTREAM] BLOB, [COUNTRY] TEXT );');
 
   LConn.ExecSQL('CREATE TABLE IF NOT EXISTS '+ TBL_ORDERS + ' ('+
     '"ORDER_ID" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,'+
@@ -153,7 +153,7 @@ begin
     ';');
 
   LConn.ExecSQL('CREATE TABLE IF NOT EXISTS '+ TBL_PRODUCTS + ' ([PRODID] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, '+
-    '[PRODNAME] VARCHAR (255), [PRODPRICE] FLOAT );');
+    '[PRODNAME] VARCHAR (255), [PRODPRICE] FLOAT, [_version] INTEGER );');
 
   if not LConn.TableExists(TBL_PEOPLE) then
     raise Exception.Create('Table CUSTOMERS does not exist');
@@ -1186,17 +1186,8 @@ begin
     //change values of subentities
     LCustomer.OrdersIntf.First.Order_Status_Code := 99;
     LCustomer.OrdersIntf.Last.Order_Status_Code := 111;
-    try
-      LCustomer.OrdersIntf.First.Customer.Version := LCustomer.Version;
-      LCustomer.OrdersIntf.Last.Customer.Version := LCustomer.Version;
-      FManager.SaveAll(LCustomer);
-      CheckTrue(False);
-    except
-      on E: EORMOptimisticLockException do
-      begin
-        CheckTrue(True);
-      end;
-    end;
+
+    FManager.SaveAll(LCustomer);
 
     CheckEquals(1, GetTableRecordCount(TBL_PEOPLE));
     CheckEquals(2, GetTableRecordCount(TBL_ORDERS));
@@ -1432,18 +1423,18 @@ end;
 
 procedure TestTSession.Versioning;
 var
-  LModel, LModelOld, LModelLoaded: TCustomer;
+  LModel, LModelOld, LModelLoaded: TProduct;
   bOk: Boolean;
 begin
-  LModel := TCustomer.Create;
+  LModel := TProduct.Create;
   LModel.Name := 'Initial version';
   FManager.Save(LModel);
 
-  LModelLoaded := FManager.FindOne<TCustomer>(TValue.FromVariant(LModel.Id));
+  LModelLoaded := FManager.FindOne<TProduct>(TValue.FromVariant(LModel.Id));
   CheckEquals(0, LModelLoaded.Version);
   LModelLoaded.Name := 'Updated version No. 1';
 
-  LModelOld := FManager.FindOne<TCustomer>(TValue.FromVariant(LModel.Id));
+  LModelOld := FManager.FindOne<TProduct>(TValue.FromVariant(LModel.Id));
   CheckEquals(0, LModelOld.Version);
   LModelOld.Name := 'Updated version No. 2';
 

@@ -15,10 +15,13 @@ type
   TSimpleRepository<T: class, constructor; TID> = class(TInterfacedObject, IPagedRepository<T, TID>)
   private
     FSession: TSession;
+    FNamespace: string;
   protected
-    function Execute(const ASql: string; const AParams: array of const): NativeUInt; virtual;
+    function GetNamespaceFromType(): string; virtual;
 
-    function GetList(const ASql: string;
+    function Execute(const AQuery: string; const AParams: array of const): NativeUInt; virtual;
+
+    function Query(const AQuery: string;
       const AParams: array of const): IList<T>; virtual;
 
     function Count(): Int64; virtual;
@@ -29,7 +32,7 @@ type
 
     function Save(AEntity: T): T; overload; virtual;
 
-    procedure SaveAll(AEntity: T); virtual;
+    procedure SaveCascade(AEntity: T); virtual;
 
     function Save(AEntities: ICollection<T>): ICollection<T>; overload; virtual;
 
@@ -41,10 +44,14 @@ type
 
     procedure Delete(AEntities: ICollection<T>); overload; virtual;
 
+    procedure DeleteAll();
+
     function Page(APage: Integer; AItemsPerPage: Integer): IDBPage<T>; virtual;
 
   public
     constructor Create(ASession: TSession); virtual;
+
+    property Namespace: string read FNamespace;
   end;
 
 
@@ -52,6 +59,8 @@ implementation
 
 uses
   Rtti
+  ,Core.EntityCache
+  ,Mapping.Attributes
   ;
 
 { TSimpleRepository<T, TID> }
@@ -65,6 +74,7 @@ constructor TSimpleRepository<T, TID>.Create(ASession: TSession);
 begin
   inherited Create;
   FSession := ASession;
+  FNamespace := GetNamespaceFromType;
 end;
 
 procedure TSimpleRepository<T, TID>.Delete(AEntity: T);
@@ -81,9 +91,14 @@ begin
   LTransaction.Commit;
 end;
 
-function TSimpleRepository<T, TID>.Execute(const ASql: string; const AParams: array of const): NativeUInt;
+procedure TSimpleRepository<T, TID>.DeleteAll;
 begin
-  Result := FSession.Execute(ASql, AParams);
+  Delete(FindAll);
+end;
+
+function TSimpleRepository<T, TID>.Execute(const AQuery: string; const AParams: array of const): NativeUInt;
+begin
+  Result := FSession.Execute(AQuery, AParams);
 end;
 
 function TSimpleRepository<T, TID>.FindAll: IList<T>;
@@ -96,9 +111,21 @@ begin
   Result := FSession.FindOne<T>(TValue.From<TID>(AID));
 end;
 
-function TSimpleRepository<T, TID>.GetList(const ASql: string; const AParams: array of const): IList<T>;
+function TSimpleRepository<T, TID>.GetNamespaceFromType: string;
+var
+  LTable: TableAttribute;
 begin
-  Result := FSession.GetList<T>(ASql, AParams);
+  Result := '';
+  LTable := TEntityCache.Get(T).EntityTable;
+  if Assigned(LTable) then
+  begin
+    Result := LTable.GetNamespace;
+  end;
+end;
+
+function TSimpleRepository<T, TID>.Query(const AQuery: string; const AParams: array of const): IList<T>;
+begin
+  Result := FSession.GetList<T>(AQuery, AParams);
 end;
 
 procedure TSimpleRepository<T, TID>.Insert(AEntity: T);
@@ -126,7 +153,7 @@ begin
   Result := AEntity;
 end;
 
-procedure TSimpleRepository<T, TID>.SaveAll(AEntity: T);
+procedure TSimpleRepository<T, TID>.SaveCascade(AEntity: T);
 var
   LTransaction: IDBTransaction;
 begin

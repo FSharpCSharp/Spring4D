@@ -3,103 +3,34 @@ unit TestPersistence;
 interface
 
 uses
-  TestFramework, Core.Interfaces, Core.Types, uModels, SvSerializer;
+  TestFramework, Core.Interfaces, Core.Types, uModels;
 
 type
   PersistenceTests = class(TTestCase)
-  private
-    FSerializer: TSvSerializer;
   public
     procedure SetUp; override;
     procedure TearDown; override;
   published
-    procedure Serialize_Nullable();
-    procedure Serialize_ObjectList();
     procedure TestInterface_Rtti();
   end;
 
 implementation
 
 uses
-  SvSerializerSuperJson
-  ,SysUtils
+  SysUtils
   ,Rtti
   ,TypInfo
   ;
 
 { PersistenceTests }
 
-procedure PersistenceTests.Serialize_Nullable;
-var
-  LCustomer: TCustomer;
-  LOutput: string;
-begin
-  LCustomer := TCustomer.Create;
-  try
-    LCustomer.MiddleName := 'Nullable';
-    FSerializer.AddObject('', LCustomer);
-    FSerializer.Serialize(LOutput, TEncoding.UTF8);
-
-    LCustomer.Free;
-    FSerializer.ClearObjects;
-    LCustomer := TCustomer.Create;
-    FSerializer.AddObject('', LCustomer);
-    FSerializer.DeSerialize(LOutput, TEncoding.UTF8);
-
-    CheckTrue(LCustomer.MiddleName.HasValue);
-    CheckEquals('Nullable', LCustomer.MiddleName.Value);
-    CheckTrue(LCustomer.AvatarLazy.IsNull);
-  finally
-    LCustomer.Free;
-  end;
-end;
-
-procedure PersistenceTests.Serialize_ObjectList;
-var
-  LCustomer: TCustomer;
-  LProduct: TProduct;
-  LOrder: TCustomer_Orders;
-  LOutput: string;
-begin
-  LCustomer := TCustomer.Create;
-  try
-    LProduct := TProduct.Create;
-    LProduct.Name := 'Sofa';
-    LCustomer.Products.Add(LProduct);
-
-    LOrder := TCustomer_Orders.Create;
-    LOrder.ORDER_ID := 25;
-    LCustomer.OrdersIntf.Add(LOrder);
-
-    FSerializer.AddObject('', LCustomer);
-    FSerializer.Serialize(LOutput, TEncoding.UTF8);
-
-    LCustomer.Free;
-    FSerializer.ClearObjects;
-    LCustomer := TCustomer.Create;
-    FSerializer.AddObject('', LCustomer);
-    FSerializer.DeSerialize(LOutput, TEncoding.UTF8);
-
-    CheckEquals(0, FSerializer.ErrorCount);
-
-    CheckEquals(1, LCustomer.Products.Count);
-    CheckEquals('Sofa', LCustomer.Products[0].Name);
-    CheckEquals(1, LCustomer.OrdersIntf.Count);
-    CheckEquals(25, LCustomer.OrdersIntf[0].ORDER_ID);
-  finally
-    LCustomer.Free;
-  end;
-end;
-
 procedure PersistenceTests.SetUp;
 begin
   inherited;
-  FSerializer := TSvSerializer.Create(sstSuperJson);
 end;
 
 procedure PersistenceTests.TearDown;
 begin
-  FSerializer.Free;
   inherited;
 end;
 

@@ -1005,7 +1005,7 @@ begin
 
   FDataset.SetDataList<TCustomer>(LCustomers);
   FDataset.Open;
-  FDataset.Filter := '(LastEdited = ''2013-01-01'')';
+  FDataset.Filter := Format('(LastEdited = %S)', [QuotedStr(DateToStr(LDate))]);
   FDataset.Filtered := True;
   CheckEquals(1, FDataset.RecordCount);
 end;

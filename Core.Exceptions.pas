@@ -34,6 +34,8 @@ uses
 
 type
   EBaseORMException = class(Exception)
+  protected
+    function EntityToString(AEntity: TObject): string; virtual;
   public
     constructor Create(AEntity: TObject); reintroduce; overload;
   end;
@@ -89,11 +91,46 @@ type
 
 implementation
 
+uses
+  Mapping.RttiExplorer
+  ,Mapping.Attributes
+  ,Generics.Collections
+  ,Rtti
+  ;
+
 { EBaseORMException }
 
 constructor EBaseORMException.Create(AEntity: TObject);
 begin
-  inherited Create(AEntity.ClassName);
+  inherited Create(EntityToString(AEntity));
+end;
+
+function EBaseORMException.EntityToString(AEntity: TObject): string;
+var
+  LBuilder: TStringBuilder;
+  LColumns: TList<ColumnAttribute>;
+  LColumn: ColumnAttribute;
+  LValue: TValue;
+begin
+  if not Assigned(AEntity) then
+    Exit('null');
+  LBuilder := TStringBuilder.Create;
+  try
+    LBuilder.AppendFormat('ClassName: %S', [AEntity.QualifiedClassName]).AppendLine;
+    LColumns := TRttiExplorer.GetColumns(AEntity.ClassType);
+    try
+      for LColumn in LColumns do
+      begin
+        LValue := TRttiExplorer.GetMemberValue(AEntity, LColumn.ClassMemberName);
+        LBuilder.AppendFormat('[%S] : %S', [LColumn.Name, LValue.ToString]).AppendLine;
+      end;
+    finally
+      LColumns.Free;
+    end;
+    Result := LBuilder.ToString;
+  finally
+    LBuilder.Free;
+  end;
 end;
 
 end.

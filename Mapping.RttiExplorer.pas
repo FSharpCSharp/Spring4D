@@ -1247,7 +1247,6 @@ class function TRttiExplorer.InheritsFrom(AObjectInfo: TClass;
 var
   LClass: TClass;
 begin
-  Result := False;
   if Assigned(AObjectInfo) then
   begin
     Result := AObjectInfo.ClassInfo = AFromObjectInfo;

@@ -337,7 +337,7 @@ type
     ///	  Retrieves multiple models from the sql statement.
     ///	</summary>
     {$ENDREGION}
-    function GetList(const AQuery: string;
+    function Query(const AQuery: string;
       const AParams: array of const): IList<T>;
   end;
 
@@ -407,7 +407,7 @@ type
     ///	  </para>
     ///	</remarks>
     {$ENDREGION}
-    procedure SaveAll(AEntity: T);
+    procedure SaveCascade(AEntity: T);
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -418,10 +418,17 @@ type
 
     {$REGION 'Documentation'}
     ///	<summary>
-    ///	  Removes models from the database.
+    ///	  Removes entities from the database.
     ///	</summary>
     {$ENDREGION}
     procedure Delete(AEntities: ICollection<T>); overload;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Deletes all entities managed by the repository.
+    ///	</summary>
+    {$ENDREGION}
+    procedure DeleteAll();
   end;
 
   IPagedRepository<T: class, constructor; TID> = interface(ICrudRepository<T, TID>)

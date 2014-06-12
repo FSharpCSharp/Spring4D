@@ -104,7 +104,7 @@ begin
 
   LColumns := TRttiExplorer.GetClassMembers<ColumnAttribute>(AClassInfo);
   try
-    CheckEquals(3, LColumns.Count);
+    CheckEquals(4, LColumns.Count);
 
   finally
     LColumns.Free;
@@ -149,7 +149,7 @@ begin
   AClass := FCustomer.ClassType;
   ReturnValue := TRttiExplorer.GetAssociations(AClass);
   try
-    CheckEquals(0, ReturnValue.Count);
+    CheckEquals(2, ReturnValue.Count);
   finally
     ReturnValue.Free;
   end;

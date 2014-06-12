@@ -101,6 +101,8 @@ type
     constructor Create(); overload;
     constructor Create(const ATablename: string; const ASchema: string = ''); overload;
 
+    function GetNamespace(): string;
+
     property TableName: string read GetTableName;
     property Schema: string read FSchema;
   end;
@@ -361,6 +363,15 @@ begin
   Create;
   FTable := ATablename;
   FSchema := ASchema;
+end;
+
+function TableAttribute.GetNamespace: string;
+begin
+  Result := '';
+  if Schema <> '' then
+    Result := Schema + '.';
+
+  Result := Result + TableName;
 end;
 
 function TableAttribute.GetTableName: string;
