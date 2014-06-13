@@ -28,6 +28,7 @@ type
   private
     FConnection: IDBConnection;
     FManager: TMockSession;
+    FSession: TMockSession;
   protected
     function GenericCreate<T: class, constructor>: T;
     function SimpleCreate(AClass: TClass): TObject;
@@ -36,6 +37,8 @@ type
     procedure TearDown; override;
 
     procedure GetLazyNullable();
+
+    property Session: TMockSession read FSession write FSession;
   published
     procedure First();
     procedure Fetch();

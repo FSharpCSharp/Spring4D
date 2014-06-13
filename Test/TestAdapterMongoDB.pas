@@ -169,6 +169,7 @@ type
     procedure BulkInsert();
     procedure FindAndModify();
     procedure Versioning();
+    procedure SimpleCriteria_Eq();
     procedure Performance();
   end;
 
@@ -195,6 +196,7 @@ uses
   ,Messages
   ,Core.ConnectionFactory
   ,Core.Exceptions
+  ,Core.Criteria.Properties
   ,SQL.Generator.MongoDB
   ,Variants
   ,Diagnostics
@@ -788,6 +790,31 @@ begin
 end;
 
 
+
+procedure TestMongoSession.SimpleCriteria_Eq;
+var
+  LCriteria: ICriteria<TMongoAdapter>;
+  Key: IProperty;
+  LKeys: IList<TMongoAdapter>;
+begin
+  InsertObject(FMongoConnection, 100, 1);
+  LCriteria := FManager.CreateCriteria<TMongoAdapter>;
+  Key := TProperty<TMongoAdapter>.ForName('KEY');
+  LKeys := LCriteria.Add(Key.Eq(100)).List();
+  CheckEquals(1, LKeys.Count, 'Eq');
+
+  LCriteria.Clear;
+  LKeys := LCriteria.Add(Key.NotEq(100)).List();
+  CheckEquals(0, LKeys.Count, 'Not Eq');
+
+  LCriteria.Clear;
+  LKeys := LCriteria.Add(Key.GEq(101)).List();
+  CheckEquals(0, LKeys.Count, 'Greater Eq');
+
+  LCriteria.Clear;
+  LKeys := LCriteria.Add(Key.Gt(100)).List();
+  CheckEquals(0, LKeys.Count, 'Greater Than');
+end;
 
 procedure TestMongoSession.TearDown;
 begin

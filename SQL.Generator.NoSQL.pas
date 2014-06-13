@@ -45,6 +45,7 @@ type
   protected
     class constructor Create;
 
+    function GetExpressionFromWhereField(AField: TSQLWhereField): string; virtual;
     function GetPrefix(ATable: TSQLTable): string; virtual;
   public
     function GetQueryLanguage(): TQueryLanguage; override;
@@ -78,6 +79,9 @@ uses
   ,SysUtils
   ;
 
+const
+  PARAM_ID = '#$';
+
 
 { TNoSQLGenerator }
 
@@ -103,7 +107,7 @@ end;
 
 function TNoSQLGenerator.GenerateDelete(ADeleteCommand: TDeleteCommand): string;
 begin
-  Result := 'D' + GetPrefix(ADeleteCommand.Table) +'{"_id": #$}';
+  Result := 'D' + GetPrefix(ADeleteCommand.Table) +'{"_id": '+ PARAM_ID + '}';
 end;
 
 function TNoSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
@@ -136,7 +140,7 @@ end;
 
 function TNoSQLGenerator.GenerateSelect(ASelectCommand: TSelectCommand): string;
 var
-  LField: TSQLField;
+  LField: TSQLWhereField;
   i: Integer;
 begin
   Result := '';
@@ -148,7 +152,7 @@ begin
       Result := Result + ',';
 
     Inc(i);
-    Result := Result + AnsiQuotedStr(LField.Fieldname, '"') + ' : ' + '#$';
+    Result := Result + GetExpressionFromWhereField(LField);
   end;
   Result := 'S' + GetPrefix(ASelectCommand.Table) + '{' +  Result + '}';
 end;
@@ -164,6 +168,18 @@ end;
 function TNoSQLGenerator.GetEscapeFieldnameChar: Char;
 begin
   Result := '"';
+end;
+
+function TNoSQLGenerator.GetExpressionFromWhereField(AField: TSQLWhereField): string;
+begin
+  case AField.WhereOperator of
+    woEqual: Result := AnsiQuotedStr(AField.Fieldname, '"') + ' : ' + PARAM_ID;
+    woNotEqual: Result := Format('%S: { $ne: %S}', [AnsiQuotedStr(AField.Fieldname, '"'), PARAM_ID]);
+    woMoreOrEqual: Result := Format('%S: { $gte: %S}', [AnsiQuotedStr(AField.Fieldname, '"'), PARAM_ID]);
+    woMore: Result := Format('%S: { $gt: %S}', [AnsiQuotedStr(AField.Fieldname, '"'), PARAM_ID]);
+    woLess: Result := Format('%S: { $lt: %S}', [AnsiQuotedStr(AField.Fieldname, '"'), PARAM_ID]);
+    woLessOrEqual: Result := Format('%S: { $lte: %S}', [AnsiQuotedStr(AField.Fieldname, '"'), PARAM_ID]);
+  end;
 end;
 
 function TNoSQLGenerator.GetPrefix(ATable: TSQLTable): string;
