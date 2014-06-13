@@ -102,7 +102,11 @@ type
     // Abstract overrides
     function AllocRecordBuffer: TRecordBuffer; override;
     procedure FreeRecordBuffer(var Buffer: TRecordBuffer); override;
-    procedure GetBookmarkData(Buffer: TRecordBuffer; Data: Pointer); override;
+    {$IFNDEF NEXTGEN}
+    procedure GetBookmarkData(Buffer: TRecBuf; Data: TBookmark); overload; override;
+    {$ENDIF}
+    procedure GetBookmarkData(Buffer: TRecordBuffer; Data: Pointer); overload; override;
+
     function GetBookmarkFlag(Buffer: TRecordBuffer): TBookmarkFlag; override;
     function GetRecord(Buffer: TRecordBuffer; GetMode: TGetMode;
       DoCheck: Boolean): TGetResult; override;
@@ -535,6 +539,13 @@ function TAbstractObjectDataset.GetBlobFieldData(FieldNo: Integer;
 begin
   Result := inherited GetBlobFieldData(FieldNo, Buffer);
 end;
+
+{$IFNDEF NEXTGEN}
+procedure TAbstractObjectDataset.GetBookmarkData(Buffer: TRecBuf; Data: TBookmark);
+begin
+  PObject(Data)^ := IndexList.GetModel(PArrayRecInfo(Buffer)^.Index).AsObject;
+end;
+{$ENDIF}
 
 procedure TAbstractObjectDataset.GetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);
 begin
