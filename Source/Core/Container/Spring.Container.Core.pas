@@ -65,9 +65,9 @@ type
       const target: TRttiNamedObject);
 
     property TargetType: TRttiType read fTargetType;
-    property TargetTypeInfo: PTypeInfo read GetTargetTypeInfo;
-    property TargetTypeName: string read GetTargetTypeName;
     property Target: TRttiNamedObject read fTarget;
+    property Name: string read GetTargetTypeName;
+    property TypeInfo: PTypeInfo read GetTargetTypeInfo;
   end;
 
   /// <summary>

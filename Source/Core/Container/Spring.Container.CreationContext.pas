@@ -64,6 +64,7 @@ implementation
 
 uses
   SysUtils,
+  TypInfo,
   Spring.Container.Injection,
   Spring.Container.ResourceStrings,
   Spring.Helpers;
@@ -102,7 +103,7 @@ var
   i: Integer;
 begin
   for i := fTypedArguments.Count - 1 downto 0 do // check most recently added first
-    if fTypedArguments[i].TypeInfo = dependency.TargetTypeInfo then
+    if fTypedArguments[i].TypeInfo = dependency.TypeInfo then
       Exit(True);
   Result := False;
 end;
@@ -182,9 +183,9 @@ var
   i: Integer;
 begin
   for i := fTypedArguments.Count - 1 downto 0 do
-    if fTypedArguments[i].TypeInfo = dependency.TargetTypeInfo then
+    if fTypedArguments[i].TypeInfo = dependency.TypeInfo then
       Exit(fTypedArguments[i].Value);
-  raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.TargetTypeName]);
+  raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
 end;
 
 {$ENDREGION}
