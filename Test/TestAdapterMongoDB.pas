@@ -170,6 +170,7 @@ type
     procedure FindAndModify();
     procedure Versioning();
     procedure SimpleCriteria_Eq();
+    procedure SimpleCriteria_In();
     procedure Performance();
   end;
 
@@ -814,6 +815,31 @@ begin
   LCriteria.Clear;
   LKeys := LCriteria.Add(Key.Gt(100)).List();
   CheckEquals(0, LKeys.Count, 'Greater Than');
+
+  LCriteria.Clear;
+  LKeys := LCriteria.Add(Key.Lt(100)).List();
+  CheckEquals(0, LKeys.Count, 'Less Than');
+
+  LCriteria.Clear;
+  LKeys := LCriteria.Add(Key.LEq(100)).List();
+  CheckEquals(1, LKeys.Count, 'Less Than or equals');
+end;
+
+procedure TestMongoSession.SimpleCriteria_In;
+var
+  LCriteria: ICriteria<TMongoAdapter>;
+  Key: IProperty;
+  LKeys: IList<TMongoAdapter>;
+begin
+  InsertObject(FMongoConnection, 100, 1);
+  LCriteria := FManager.CreateCriteria<TMongoAdapter>;
+  Key := TProperty<TMongoAdapter>.ForName('KEY');
+  LKeys := LCriteria.Add(Key.InInt(TArray<Integer>.Create(100,1,2))).List();
+  CheckEquals(1, LKeys.Count, 'In');
+
+  LCriteria.Clear;
+  LKeys := LCriteria.Add(Key.NotInInt(TArray<Integer>.Create(0,1,2))).List();
+  CheckEquals(1, LKeys.Count, 'Not In');
 end;
 
 procedure TestMongoSession.TearDown;

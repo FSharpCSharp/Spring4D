@@ -46,6 +46,7 @@ type
     class constructor Create;
 
     function GetExpressionFromWhereField(AField: TSQLWhereField): string; virtual;
+    function ResolveFieldAndExpression(const AFieldname: string; out AField: string; out AExpression: string): Boolean;
     function GetPrefix(ATable: TSQLTable): string; virtual;
   public
     function GetQueryLanguage(): TQueryLanguage; override;
@@ -77,6 +78,7 @@ uses
   ,Core.Utils
   ,SvSerializerSuperJson
   ,SysUtils
+  ,StrUtils
   ;
 
 const
@@ -170,15 +172,27 @@ begin
   Result := '"';
 end;
 
+const
+  WhereOpNames: array[TWhereOperator] of string = (
+    {woEqual =} '=', {woNotEqual =} '$ne', {woMore = }'$gt', {woLess = }'$lt', {woLike = }'LIKE', {woNotLike = }'NOT LIKE',
+    {woMoreOrEqual = }'$gte', {woLessOrEqual = }'$lte', {woIn = }'$in', {woNotIn = }'$nin', {woIsNull} 'IS NULL', {woIsNotNull} 'IS NOT NULL'
+    ,{woOr}'OR', {woOrEnd}'', {woAnd} 'AND', {woAndEnd}'', {woNot}'NOT', {woNotEnd}'',{woBetween}'BETWEEN', {woJunction} ''
+    );
+
 function TNoSQLGenerator.GetExpressionFromWhereField(AField: TSQLWhereField): string;
+var
+  LField, LExpression: string;
 begin
   case AField.WhereOperator of
     woEqual: Result := AnsiQuotedStr(AField.Fieldname, '"') + ' : ' + PARAM_ID;
-    woNotEqual: Result := Format('%S: { $ne: %S}', [AnsiQuotedStr(AField.Fieldname, '"'), PARAM_ID]);
-    woMoreOrEqual: Result := Format('%S: { $gte: %S}', [AnsiQuotedStr(AField.Fieldname, '"'), PARAM_ID]);
-    woMore: Result := Format('%S: { $gt: %S}', [AnsiQuotedStr(AField.Fieldname, '"'), PARAM_ID]);
-    woLess: Result := Format('%S: { $lt: %S}', [AnsiQuotedStr(AField.Fieldname, '"'), PARAM_ID]);
-    woLessOrEqual: Result := Format('%S: { $lte: %S}', [AnsiQuotedStr(AField.Fieldname, '"'), PARAM_ID]);
+    woNotEqual, woMoreOrEqual, woMore, woLess, woLessOrEqual :
+      Result := Format('%S: { %S: %S}', [AnsiQuotedStr(AField.Fieldname, '"'), WhereOpNames[AField.WhereOperator], PARAM_ID]);
+    woIn, woNotIn:
+    begin
+      Result := AField.Fieldname;
+       if ResolveFieldAndExpression(AField.Fieldname, LField, LExpression) then
+         Result := Format('%S: { %S: [%S] }', [AnsiQuotedStr(LField, '"'), WhereOpNames[AField.WhereOperator], LExpression]);
+    end;
   end;
 end;
 
@@ -215,6 +229,23 @@ end;
 function TNoSQLGenerator.GetTableColumns(const ATableName: string): string;
 begin
   Result := '';
+end;
+
+function TNoSQLGenerator.ResolveFieldAndExpression(const AFieldname: string;
+  out AField, AExpression: string): Boolean;
+var
+  LPos, LPos2: Integer;
+begin
+  //Field NOT IN (1,2,3)
+  LPos := PosEx(' ', AFieldname);
+  AField := Copy(AFieldname, 1, LPos - 1);
+  LPos := PosEx(' ', AFieldname, LPos + 1);
+  LPos2 := PosEx(' ', AFieldname, LPos + 1);
+  if LPos2 > 0 then
+    LPos := LPos2;
+
+  AExpression := Copy(AFieldname, LPos + 2, Length(AFieldname) - LPos - 2);
+  Result := True;
 end;
 
 end.
