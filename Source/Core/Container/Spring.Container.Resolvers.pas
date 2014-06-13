@@ -327,15 +327,7 @@ begin
   if hasArgument then
   begin
     for i := 0 to High(dependencies) do
-    begin
-      if not arguments[i].IsEmpty
-        and arguments[i].IsType(dependencies[i].TypeInfo) then
-      begin
-        Result[i] := arguments[i];
-        Continue;
-      end;
       Result[i] := Resolve(context, dependencies[i], arguments[i]);
-    end;
   end
   else
   begin

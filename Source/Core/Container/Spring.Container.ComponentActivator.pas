@@ -43,8 +43,9 @@ type
     {$IFDEF WEAKREF}[Weak]{$ENDIF}
     fModel: TComponentModel;
   protected
+    procedure ExecuteInjections(var instance: TValue; context: ICreationContext); overload;
     procedure ExecuteInjections(const instance: TValue;
-      const injections: IList<IInjection>; const context: ICreationContext);
+      const injections: IList<IInjection>; const context: ICreationContext); overload;
     property Kernel: IKernel read fKernel;
     property Model: TComponentModel read fModel;
   public
@@ -96,6 +97,32 @@ begin
   fModel := model;
 end;
 
+procedure TComponentActivatorBase.ExecuteInjections(var instance: TValue;
+  context: ICreationContext);
+begin
+  try
+    ExecuteInjections(instance, Model.FieldInjections, context);
+    ExecuteInjections(instance, Model.PropertyInjections, context);
+    ExecuteInjections(instance, Model.MethodInjections, context);
+  except
+    on E: Exception do
+    begin
+      if not instance.IsEmpty and instance.IsObject then
+      begin
+{$IFNDEF AUTOREFCOUNT}
+        instance.AsObject.Free;
+{$ENDIF}
+        instance := nil;
+      end;
+      if E is EContainerException then
+        raise
+      else
+        Exception.RaiseOuterException(EResolveException.CreateResFmt(
+          @SCannotResolveDependency, [Model.ComponentTypeName]));
+    end;
+  end;
+end;
+
 procedure TComponentActivatorBase.ExecuteInjections(const instance: TValue;
   const injections: IList<IInjection>; const context: ICreationContext);
 var
@@ -128,20 +155,7 @@ begin
     context, injection.Dependencies, injection.Arguments);
   Result := TActivator.CreateInstance(
     Model.ComponentType.AsInstance, injection.Target.AsMethod, arguments);
-  try
-    ExecuteInjections(Result, Model.FieldInjections, context);
-    ExecuteInjections(Result, Model.PropertyInjections, context);
-    ExecuteInjections(Result, Model.MethodInjections, context);
-  except
-    if not Result.IsEmpty and Result.IsObject then
-    begin
-{$IFNDEF AUTOREFCOUNT}
-      Result.AsObject.Free;
-{$ENDIF}
-      Result := nil;
-    end;
-    raise;
-  end;
+  ExecuteInjections(Result, context);
 end;
 
 function TReflectionComponentActivator.SelectEligibleConstructor(
@@ -174,7 +188,7 @@ var
 begin
   Result := context.TryHandle(candidate, injection)
     and Kernel.Resolver.CanResolve(
-      context, injection.Dependencies, injection.Arguments);
+    context, injection.Dependencies, injection.Arguments);
   if Result then
     winner := injection;
 end;
@@ -190,20 +204,7 @@ begin
   if not Assigned(Model.ActivatorDelegate) then
     raise EActivatorException.CreateRes(@SActivatorDelegateExpected);
   Result := Model.ActivatorDelegate.Invoke;
-  try
-    ExecuteInjections(Result, Model.FieldInjections, context);
-    ExecuteInjections(Result, Model.PropertyInjections, context);
-    ExecuteInjections(Result, Model.MethodInjections, context);
-  except
-    if not Result.IsEmpty and Result.IsObject then
-    begin
-{$IFNDEF AUTOREFCOUNT}
-      Result.AsObject.Free;
-{$ENDIF}
-      Result := nil;
-    end;
-    raise;
-  end;
+  ExecuteInjections(Result, context);
 end;
 
 {$ENDREGION}
