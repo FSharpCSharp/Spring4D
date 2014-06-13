@@ -29,6 +29,7 @@ unit Spring.Container.Builder;
 interface
 
 uses
+  Rtti,
   Spring,
   Spring.Collections,
   Spring.Container.Core;
@@ -70,22 +71,28 @@ type
     procedure DoProcessModel(const kernel: IKernel; const model: TComponentModel); override;
   end;
 
-  TConstructorInspector = class(TInspectorBase)
+  TMemberInspector = class(TInspectorBase)
+  protected
+    procedure HandleInjectAttribute(const target: TRttiNamedObject;
+      var dependency: TDependencyModel; var argument: TValue);
+  end;
+
+  TConstructorInspector = class(TMemberInspector)
   protected
     procedure DoProcessModel(const kernel: IKernel; const model: TComponentModel); override;
   end;
 
-  TPropertyInspector = class(TInspectorBase)
+  TPropertyInspector = class(TMemberInspector)
   protected
     procedure DoProcessModel(const kernel: IKernel; const model: TComponentModel); override;
   end;
 
-  TMethodInspector = class(TInspectorBase)
+  TMethodInspector = class(TMemberInspector)
   protected
     procedure DoProcessModel(const kernel: IKernel; const model: TComponentModel); override;
   end;
 
-  TFieldInspector = class(TInspectorBase)
+  TFieldInspector = class(TMemberInspector)
   protected
     procedure DoProcessModel(const kernel: IKernel; const model: TComponentModel); override;
   end;
@@ -104,7 +111,6 @@ type
 implementation
 
 uses
-  Rtti,
   TypInfo,
   Spring.Container.Common,
   Spring.Container.ComponentActivator,
@@ -228,6 +234,43 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TMemberInspector'}
+
+procedure TMemberInspector.HandleInjectAttribute(const target: TRttiNamedObject;
+  var dependency: TDependencyModel; var argument: TValue);
+var
+  attribute: InjectAttribute;
+  targetType: TRttiType;
+begin
+  if target.TryGetCustomAttribute<InjectAttribute>(attribute) then
+  begin
+    if attribute.HasValue then
+      argument := attribute.Value;
+    if attribute.ServiceType <> nil then
+    begin
+      if target is TRttiProperty then
+        targetType := TRttiProperty(target).PropertyType
+      else if target is TRttiField then
+        targetType := TRttiField(target).FieldType
+      else if target is TRttiParameter then
+        targetType := TRttiParameter(target).ParamType
+      else
+        raise EBuilderException.CreateRes(@SUnresovableInjection);
+      if TType.IsAssignable(attribute.ServiceType, targetType.Handle) then
+      begin
+        if attribute.ServiceType <> targetType.Handle then
+          targetType := TType.GetType(attribute.ServiceType);
+        dependency := TDependencyModel.Create(targetType, target);
+      end
+      else
+        raise EBuilderException.CreateRes(@SUnresovableInjection);
+    end;
+  end;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TConstructorInspector'}
 
 procedure TConstructorInspector.DoProcessModel(
@@ -238,9 +281,7 @@ var
   method: TRttiMethod;
   parameters: TArray<TRttiParameter>;
   arguments: TArray<TValue>;
-  attribute: InjectAttribute;
   i: Integer;
-  targetType: TRttiType;
 begin
   if not model.ConstructorInjections.IsEmpty then Exit;  // TEMP
   predicate := TMethodFilters.IsConstructor
@@ -252,19 +293,7 @@ begin
     parameters := method.GetParameters;
     SetLength(arguments, Length(parameters));
     for i := 0 to High(parameters) do
-      if parameters[i].TryGetCustomAttribute<InjectAttribute>(attribute) then
-      begin
-        if attribute.HasValue then
-          arguments[i] := attribute.Value;
-        if attribute.ServiceType <> nil then
-          if TType.IsAssignable(attribute.ServiceType, parameters[i].ParamType.Handle) then
-          begin
-            targetType := TType.GetType(attribute.ServiceType);
-            injection.Dependencies[i] := TDependencyModel.Create(targetType, parameters[i]);
-          end
-          else
-            raise EBuilderException.CreateRes(@SUnresovableInjection);
-      end;
+      HandleInjectAttribute(parameters[i], injection.Dependencies[i], arguments[i]);
     injection.InitializeArguments(arguments);
   end;
 end;
@@ -282,9 +311,7 @@ var
   injection: IInjection;
   parameters: TArray<TRttiParameter>;
   arguments: TArray<TValue>;
-  attribute: InjectAttribute;
   i: Integer;
-  targetType: TRttiType;
 begin
   condition := TMethodFilters.IsInstanceMethod
     and TMethodFilters.HasAttribute(InjectAttribute)
@@ -299,19 +326,7 @@ begin
     parameters := method.GetParameters;
     SetLength(arguments, Length(parameters));
     for i := 0 to High(parameters) do
-      if parameters[i].TryGetCustomAttribute<InjectAttribute>(attribute) then
-      begin
-        if attribute.HasValue then
-          arguments[i] := attribute.Value;
-        if attribute.ServiceType <> nil then
-          if TType.IsAssignable(attribute.ServiceType, parameters[i].ParamType.Handle) then
-          begin
-            targetType := TType.GetType(attribute.ServiceType);
-            injection.Dependencies[i] := TDependencyModel.Create(targetType, parameters[i]);
-          end
-          else
-            raise EBuilderException.CreateRes(@SUnresovableInjection);
-      end;
+      HandleInjectAttribute(parameters[i], injection.Dependencies[i], arguments[i]);
     injection.InitializeArguments(arguments);
   end;
 end;
@@ -327,8 +342,7 @@ var
   condition: TPredicate<TRttiProperty>;
   prop: TRttiProperty;
   injection: IInjection;
-  attribute: InjectAttribute;
-  targetType: TRttiType;
+  argument: TValue;
 begin
   condition := TPropertyFilters.IsInvokable
     and TPropertyFilters.HasAttribute(InjectAttribute);
@@ -338,17 +352,8 @@ begin
       TInjectionFilters.ContainsMember(prop)) then
       injection := kernel.Injector.InjectProperty(model, prop.Name);
     injection.Initialize(prop);
-    attribute := prop.GetCustomAttribute<InjectAttribute>;
-    if attribute.HasValue then
-      injection.InitializeArguments([attribute.Value]);
-    if attribute.ServiceType <> nil then
-      if TType.IsAssignable(attribute.ServiceType, prop.PropertyType.Handle) then
-      begin
-        targetType := TType.GetType(attribute.ServiceType);
-        injection.Dependencies[0] := TDependencyModel.Create(targetType, prop);
-      end
-      else
-        raise EBuilderException.CreateRes(@SUnresovableInjection);
+    HandleInjectAttribute(prop, injection.Dependencies[0], argument);
+    injection.InitializeArguments([argument]);
   end;
 end;
 
@@ -363,8 +368,7 @@ var
   condition: TPredicate<TRttiField>;
   field: TRttiField;
   injection: IInjection;
-  attribute: InjectAttribute;
-  targetType: TRttiType;
+  argument: TValue;
 begin
   condition := TFieldFilters.HasAttribute(InjectAttribute);
   for field in model.ComponentType.Fields.Where(condition) do
@@ -373,17 +377,8 @@ begin
       TInjectionFilters.ContainsMember(field)) then
       injection := kernel.Injector.InjectField(model, field.Name);
     injection.Initialize(field);
-    attribute := field.GetCustomAttribute<InjectAttribute>;
-    if attribute.HasValue then
-      injection.InitializeArguments([attribute.Value]);
-    if attribute.ServiceType <> nil then
-      if TType.IsAssignable(attribute.ServiceType, field.FieldType.Handle) then
-      begin
-        targetType := TType.GetType(attribute.ServiceType);
-        injection.Dependencies[0] := TDependencyModel.Create(targetType, field);
-      end
-      else
-        raise EBuilderException.CreateRes(@SUnresovableInjection);
+    HandleInjectAttribute(field, injection.Dependencies[0], argument);
+    injection.InitializeArguments([argument]);
   end;
 end;
 
