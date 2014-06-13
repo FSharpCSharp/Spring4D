@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2012 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -22,36 +22,32 @@
 {                                                                           }
 {***************************************************************************}
 
-///	<preliminary />
-unit Spring.Container.Pool;  // experimental;
+unit Spring.Container.Pool;
 
 {$I Spring.inc}
 
 interface
 
 uses
-//  Classes,
-  SysUtils,
-  Types,
-  TypInfo,
-  Rtti,
+  SyncObjs,
   Spring,
   Spring.Collections,
-  Spring.Reflection;
+  Spring.Container.Core;
 
 type
   IObjectPool = interface
     ['{E5842280-3750-46C0-8C91-0888EFFB0ED5}']
-    function GetInstance: TObject;
+    procedure Initialize(const resolver: IDependencyResolver);
+    function GetInstance(const resolver: IDependencyResolver): TObject;
     procedure ReleaseInstance(instance: TObject);
   end;
 
   IObjectPool<T> = interface(IObjectPool)
-    function GetInstance: T;
+    function GetInstance(const resolver: IDependencyResolver): T;
     procedure ReleaseInstance(instance: T);
   end;
 
-  IPoolableObjectFactory = interface(IObjectActivator)
+  IPoolableObjectFactory = interface(IComponentActivator)
     ['{56F9E805-A115-4E3A-8583-8D0B5462D98A}']
     function Validate(instance: TObject): Boolean;
     procedure Activate(instance: TObject);
@@ -66,30 +62,43 @@ type
 
   TSimpleObjectPool = class(TInterfacedObject, IObjectPool)
   private
-    fActivator: IObjectActivator;
+    fLock: TCriticalSection;
+    fActivator: IComponentActivator;
     fMinPoolsize: Nullable<Integer>;
     fMaxPoolsize: Nullable<Integer>;
     fAvailableList: IQueue<TObject>;
     fActiveList: IList<TObject>;
     fInstances: IList<TObject>;
+    fInitialized: Boolean;
   protected
-    procedure InitializePool; virtual;
-    function AddNewInstance: TObject;
+    function AddNewInstance(const resolver: IDependencyResolver): TObject;
+    procedure CollectInactiveInstances;
     function GetAvailableObject: TObject;
+    procedure InstancesChanged(Sender: TObject; const item: TObject;
+      action: TCollectionChangedAction);
     property MinPoolsize: Nullable<Integer> read fMinPoolsize;
     property MaxPoolsize: Nullable<Integer> read fMaxPoolsize;
   public
-    constructor Create(const activator: IObjectActivator; minPoolSize, maxPoolSize: Integer);
+    constructor Create(const activator: IComponentActivator; minPoolSize, maxPoolSize: Integer);
     destructor Destroy; override;
-    function GetInstance: TObject; virtual;
+    procedure Initialize(const resolver: IDependencyResolver); virtual;
+    function GetInstance(const resolver: IDependencyResolver): TObject; virtual;
     procedure ReleaseInstance(instance: TObject); virtual;
   end;
 
 implementation
 
-{ TSimpleObjectPool }
+uses
+  SysUtils,
+  Spring.Services;
 
-constructor TSimpleObjectPool.Create(const activator: IObjectActivator;
+type
+  TInterfacedObjectAccess = class(TInterfacedObject);
+
+
+{$REGION 'TSimpleObjectPool'}
+
+constructor TSimpleObjectPool.Create(const activator: IComponentActivator;
   minPoolSize, maxPoolSize: Integer);
 begin
   inherited Create;
@@ -102,43 +111,86 @@ begin
   begin
     fMaxPoolsize := maxPoolSize;
   end;
-  fInstances := TCollections.CreateObjectList<TObject>;
+  fInstances := TCollections.CreateList<TObject>;
+  fInstances.OnChanged.Add(InstancesChanged);
   fAvailableList := TCollections.CreateQueue<TObject>;
   fActiveList := TCollections.CreateList<TObject>;
-  InitializePool;
+  fLock := TCriticalSection.Create;
 end;
 
 destructor TSimpleObjectPool.Destroy;
 begin
-//  fAvailableList.Free;
-//  fInstances.Free;
-  inherited Destroy;
+  fLock.Free;
+  inherited;
 end;
 
-function TSimpleObjectPool.AddNewInstance: TObject;
+function TSimpleObjectPool.AddNewInstance(const resolver: IDependencyResolver): TObject;
+var
+  refCounted: IRefCounted;
 begin
-  Result := fActivator.CreateInstance;
-  MonitorEnter(TObject(fInstances));
-  try
-    fInstances.Add(Result);
-  finally
-    MonitorExit(TObject(fInstances));
-  end;
+  Result := fActivator.CreateInstance(resolver).AsObject;
+  if Result.InheritsFrom(TInterfacedObject) then
+    TInterfacedObjectAccess(Result)._AddRef
+  else if Supports(Result, IRefCounted, refCounted) then
+    refCounted._AddRef;
+  fInstances.Add(Result);
 end;
 
-procedure TSimpleObjectPool.InitializePool;
+procedure TSimpleObjectPool.CollectInactiveInstances;
 var
   instance: TObject;
+  refCounted: IRefCounted;
+begin
+  for instance in fInstances.ToArray do
+  begin
+    if instance.InheritsFrom(TInterfacedObject)
+      and (TInterfacedObject(instance).RefCount = 1)
+      and fActiveList.Contains(instance) then
+    begin
+      ReleaseInstance(instance);
+    end else
+    if Supports(instance, IRefCounted, refCounted)
+      and (refCounted.RefCount = 2)
+      and fActiveList.Contains(instance) then
+    begin
+      refCounted := nil;
+      ReleaseInstance(instance);
+    end;
+  end;
+end;
+
+procedure TSimpleObjectPool.Initialize(const resolver: IDependencyResolver);
+var
   i: Integer;
+  instance: TObject;
 begin
   if not fMinPoolsize.HasValue then
-  begin
     Exit;
-  end;
   for i := 0 to fMinPoolsize.Value - 1 do
   begin
-    instance := AddNewInstance;
+    instance := AddNewInstance(resolver);
     fAvailableList.Enqueue(instance);
+  end;
+  fInitialized := True;
+end;
+
+procedure TSimpleObjectPool.InstancesChanged(Sender: TObject;
+  const item: TObject; action: TCollectionChangedAction);
+var
+  refCounted: IRefCounted;
+begin
+  if action = caRemoved then
+  begin
+    if item.InheritsFrom(TInterfacedObject) then
+      TInterfacedObjectAccess(item)._Release
+    else if Supports(item, IRefCounted, refCounted) then
+      refCounted._Release
+    else
+{$IFNDEF AUTOREFCOUNT}
+      item.Free;
+{$ELSE}
+      item.DisposeOf;
+{$ENDIF}
   end;
 end;
 
@@ -147,55 +199,50 @@ begin
   Result := fAvailableList.Dequeue;
 end;
 
-function TSimpleObjectPool.GetInstance: TObject;
-var
-  instance: TObject;
+function TSimpleObjectPool.GetInstance(const resolver: IDependencyResolver): TObject;
 begin
-  MonitorEnter(TObject(fAvailableList));
+  fLock.Acquire;
   try
-    if fAvailableList.Count > 0 then
-    begin
-      instance := GetAvailableObject;
-    end
+    if not fInitialized then
+      Initialize(resolver);
+
+    if fAvailableList.IsEmpty then
+      CollectInactiveInstances;
+
+    if not fAvailableList.IsEmpty then
+      Result := GetAvailableObject
     else
-    begin
-      instance := AddNewInstance;
-    end;
-  finally
-    MonitorExit(TObject(fAvailableList));
-  end;
+      Result := AddNewInstance(resolver);
 
-  MonitorEnter(TObject(fActiveList));
-  try
-    fActiveList.Add(instance);
+    fActiveList.Add(Result);
   finally
-    MonitorExit(TObject(fActiveList));
+    fLock.Release;
   end;
-
-  Result := instance;
 end;
 
 procedure TSimpleObjectPool.ReleaseInstance(instance: TObject);
+var
+  recyclable: IRecyclable;
 begin
-  TArgument.CheckNotNull(instance, 'instance');
+  Guard.CheckNotNull(instance, 'instance');
 
-
-  MonitorEnter(TObject(fActiveList));
+  fLock.Acquire;
   try
     fActiveList.Remove(instance);
-  finally
-    MonitorExit(TObject(fActiveList));
-  end;
 
-  MonitorEnter(TObject(fAvailableList));
-  try
+    if Supports(instance, IRecyclable, recyclable) then
+      recyclable.Recycle;
+
     if not fMaxPoolsize.HasValue or (fAvailableList.Count < fMaxPoolsize.Value) then
-    begin
-      fAvailableList.Enqueue(instance);
-    end;
+      fAvailableList.Enqueue(instance)
+    else
+      fInstances.Remove(instance);
   finally
-    MonitorExit(TObject(fAvailableList));
+    fLock.Release;
   end;
 end;
+
+{$ENDREGION}
+
 
 end.

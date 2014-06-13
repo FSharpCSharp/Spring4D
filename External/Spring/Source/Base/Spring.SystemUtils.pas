@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2012 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -32,12 +32,10 @@ unit Spring.SystemUtils;
 interface
 
 uses
-  SysUtils,
-  Classes,
-  TypInfo,
-  Types,
   Rtti,
-  Spring;
+  SysUtils,
+  Types,
+  TypInfo;
 
 type
   ///	<summary>
@@ -91,6 +89,7 @@ type
 ///	<seealso cref="GetByteLength(RawByteString)" />
 function GetByteLength(const s: string): Integer; overload; inline;
 
+{$IFNDEF NEXTGEN}
 ///	<summary>
 ///	  Retrieves the byte length of a WideString.
 ///	</summary>
@@ -114,6 +113,7 @@ function GetByteLength(const s: WideString): Integer; overload; inline;
 ///	<seealso cref="GetByteLength(string)" />
 ///	<seealso cref="GetByteLength(WideString)" />
 function GetByteLength(const s: RawByteString): Integer; overload; inline;
+{$ENDIF NEXTGEN}
 
 
 ///	<summary>
@@ -158,8 +158,12 @@ function SplitString(const buffer: PChar): TStringDynArray; overload;
 ///	  are delimited by null char (#0) and ends with an additional null char.
 ///	</summary>
 function SplitNullTerminatedStrings(const buffer: PChar): TStringDynArray;
-  deprecated 'Use the SpitString(PChar) function instead.';
+  deprecated 'Use the SplitString(PChar) function instead.';
 
+///	<summary>
+///	  Returns <c>True</c> if the type is a nullable type.
+///	</summary>
+function IsNullableType(typeInfo: PTypeInfo): Boolean;
 
 ///	<summary>
 ///	  Try getting the underlying type name of a nullable type.
@@ -188,6 +192,20 @@ function TryGetUnderlyingTypeInfo(typeInfo: PTypeInfo; out underlyingTypeInfo: P
 ///	  Returns True if the value is a <c>Nullable&lt;T&gt;</c> and it has value.
 ///	</returns>
 function TryGetUnderlyingValue(const value: TValue; out underlyingValue: TValue): Boolean;
+
+///	<summary>
+///	  Try setting the underlying value of a nullable type.
+///	</summary>
+///	<param name="value">
+///	  the value
+///	</param>
+///	<param name="underlyingValue">
+///	  the underlying value.
+///	</param>
+///	<returns>
+///	  Returns True if the value is a <c>Nullable&lt;T&gt;</c> and it has value.
+///	</returns>
+function TrySetUnderlyingValue(const value: TValue; const underlyingValue: TValue): Boolean;
 
 ///	<summary>
 ///	  Uses this function to get an interface instance from a TValue.
@@ -236,9 +254,10 @@ function ConvertStrToDateTime(const s, format: string): TDateTime;
 implementation
 
 uses
-  Variants,
   DateUtils,
   StrUtils,
+  Variants,
+  Spring,
   Spring.ResourceStrings;
 
 {$REGION 'TEnum'}
@@ -246,7 +265,7 @@ uses
 class function TEnum.GetEnumTypeInfo<T>: PTypeInfo;
 begin
   Result := TypeInfo(T);
-  TArgument.CheckTypeKind(Result, tkEnumeration, 'T');
+  Guard.CheckTypeKind(Result, tkEnumeration, 'T');
 end;
 
 class function TEnum.GetEnumTypeData<T>: PTypeData;
@@ -269,10 +288,10 @@ var
   data: PTypeData;
 begin
   typeInfo := System.TypeInfo(T);
-  TArgument.CheckTypeKind(typeInfo, [tkEnumeration], 'T');
+  Guard.CheckTypeKind(typeInfo, [tkEnumeration], 'T');
 
   data := GetTypeData(typeInfo);
-  Assert(data <> nil, 'data must not be nil.');
+  Guard.CheckNotNull(data, 'data');
   Result := (value >= data.MinValue) and (value <= data.MaxValue);
 end;
 
@@ -288,7 +307,7 @@ class function TEnum.GetName<T>(const value: Integer): string;
 var
   typeInfo: PTypeInfo;
 begin
-  TArgument.CheckEnum<T>(value, 'value');
+  Guard.CheckEnum<T>(value, 'value');
 
   typeInfo := GetEnumTypeInfo<T>;
   Result := GetEnumName(typeInfo, value);
@@ -305,22 +324,35 @@ end;
 class function TEnum.GetNames<T>: TStringDynArray;
 var
   typeData: PTypeData;
+{$IFDEF NEXTGEN}
+  p: TTypeInfoFieldAccessor;
+{$ELSE}
   p: PShortString;
+{$ENDIF}
   i: Integer;
 begin
   typeData := TEnum.GetEnumTypeData<T>;
   SetLength(Result, typeData.MaxValue - typeData.MinValue + 1);
+{$IFDEF NEXTGEN}
+  p := typedata^.NameListFld;
+{$ELSE}
   p := @typedata.NameList;
+{$ENDIF}
   for i := 0 to High(Result) do
   begin
+{$IFDEF NEXTGEN}
+    Result[i] := p.ToString;
+    p.SetData(p.Tail);
+{$ELSE}
     Result[i] := UTF8ToString(p^);
     Inc(PByte(p), Length(p^)+1);
+{$ENDIF}
   end;
 end;
 
 class function TEnum.GetValue<T>(const value: T): Integer;
 begin
-  TArgument.CheckEnum<T>(value, 'value');
+  Guard.CheckEnum<T>(value, 'value');
 
   Result := TEnum.ConvertToInteger<T>(value);
 end;
@@ -406,6 +438,7 @@ begin
   Result := Length(s) * SizeOf(Char);
 end;
 
+{$IFNDEF NEXTGEN}
 function GetByteLength(const s: WideString): Integer;
 begin
   Result := Length(s) * SizeOf(WideChar);
@@ -415,6 +448,7 @@ function GetByteLength(const s: RawByteString): Integer;
 begin
   Result := Length(s);
 end;
+{$ENDIF}
 
 function SplitString(const buffer: string; const separators: TSysCharSet;
   removeEmptyEntries: Boolean): TStringDynArray;
@@ -447,7 +481,7 @@ var
     end;
   end;
 begin
-  TArgument.CheckRange(len >= 0, 'len');
+  Guard.CheckRange(len >= 0, 'len');
 
   if (buffer = nil) or (len = 0) then Exit;
   head := buffer;
@@ -489,6 +523,14 @@ begin
   Result := SplitString(buffer);
 end;
 
+function IsNullableType(typeInfo: PTypeInfo): Boolean;
+const
+  PrefixString = 'Nullable<';    // DO NOT LOCALIZE
+begin
+  Result := Assigned(typeInfo) and (typeInfo.Kind = tkRecord)
+    and StartsText(PrefixString, GetTypeName(typeInfo));
+end;
+
 function TryGetUnderlyingTypeName(typeInfo: PTypeInfo; out underlyingTypeName: string): Boolean;
 const
   PrefixString = 'Nullable<';    // DO NOT LOCALIZE
@@ -496,58 +538,93 @@ const
 var
   typeName: string;
 begin
-  if (typeInfo = nil) or (typeInfo.Kind <> tkRecord) then
+  Result := IsNullableType(typeInfo);
+  if Result then
   begin
-    Exit(False);
+    typeName := GetTypeName(typeInfo);
+    underlyingTypeName := Copy(typeName, PrefixStringLength + 1,
+      Length(typeName) - PrefixStringLength - 1);
   end;
-  typeName := TypInfo.GetTypeName(typeInfo);
-  if (Length(typeName) < PrefixStringLength) or
-    not SameText(LeftStr(typeName, PrefixStringLength), PrefixString) then
-  begin
-    Exit(False);
-  end;
-  Result := True;
-  underlyingTypeName := Copy(typeName, PrefixStringLength + 1,
-    Length(typeName) - PrefixStringLength - 1);
 end;
 
 function TryGetUnderlyingTypeInfo(typeInfo: PTypeInfo; out underlyingTypeInfo: PTypeInfo): Boolean;
 var
-  underlyingTypeName: string;
-  rttiType: TRttiType;
   context: TRttiContext;
+  rttiType: TRttiType;
+  valueField: TRttiField;
 begin
-  Result := TryGetUnderlyingTypeName(typeInfo, underlyingTypeName);
+  Result := IsNullableType(typeInfo);
   if Result then
   begin
-    context := TRttiContext.Create;
-    rttiType := context.FindType(underlyingTypeName);
-    if rttiType <> nil then
-      underlyingTypeInfo := rttiType.Handle
+    rttiType := context.GetType(typeInfo);
+    valueField := rttiType.GetField('fValue');
+    Result := Assigned(valueField);
+    if Result then
+      underlyingTypeInfo := valueField.FieldType.Handle
     else
       underlyingTypeInfo := nil;
-    Result := underlyingTypeInfo <> nil;
   end;
 end;
 
 function TryGetUnderlyingValue(const value: TValue; out underlyingValue: TValue): Boolean;
 var
-  underlyingTypeInfo: PTypeInfo;
-  hasValueString: string;
-  p: Pointer;
+  typeInfo: PTypeInfo;
+  context: TRttiContext;
+  rttiType: TRttiType;
+  hasValueField: TRttiField;
+  instance: Pointer;
+  valueField: TRttiField;
 begin
-  Result := TryGetUnderlyingTypeInfo(value.TypeInfo, underlyingTypeInfo);
-  if not Result then
+  typeInfo := value.TypeInfo;
+  Result := IsNullableType(typeInfo);
+  if Result then
   begin
-    Exit;
+    rttiType := context.GetType(typeInfo);
+    hasValueField := rttiType.GetField('fHasValue');
+    if Assigned(hasValueField) then
+    begin
+      instance := value.GetReferenceToRawData;
+      Result := hasValueField.GetValue(instance).AsString <> '';
+      if Result then
+      begin
+        valueField := rttiType.GetField('fValue');
+        Result := Assigned(valueField);
+        if Result then
+          underlyingValue := valueField.GetValue(instance);
+      end;
+    end;
   end;
-  p := value.GetReferenceToRawData;
-  hasValueString := PString(PByte(p) + (value.DataSize - SizeOf(string)))^;
-  if hasValueString = '' then
+end;
+
+function TrySetUnderlyingValue(const value: TValue; const underlyingValue: TValue): Boolean;
+var
+  typeInfo: PTypeInfo;
+  context: TRttiContext;
+  rttiType: TRttiType;
+  hasValueField: TRttiField;
+  instance: Pointer;
+  valueField: TRttiField;
+begin
+  typeInfo := value.TypeInfo;
+  Result := IsNullableType(typeInfo);
+  if Result then
   begin
-    Exit(False);
+    rttiType := context.GetType(typeInfo);
+    valueField := rttiType.GetField('fValue');
+    if Assigned(valueField) then
+    begin
+      hasValueField := rttiType.GetField('fHasValue');
+      if Assigned(hasValueField) then
+      begin
+        instance := value.GetReferenceToRawData;
+        valueField.SetValue(instance, underlyingValue);
+        if underlyingValue.IsEmpty then
+          hasValueField.SetValue(instance, '')
+        else
+          hasValueField.SetValue(instance, '@');
+      end;
+    end;
   end;
-  TValue.Make(p, underlyingTypeInfo, underlyingValue);
 end;
 
 function TryGetInterface(const instance: TValue; const guid: TGuid; out intf): Boolean;
@@ -621,7 +698,7 @@ begin
       year := ExtractElementDef('YY', 1899);
       if year < 1899 then
       begin
-        Inc(year, (DateUtils.YearOf(Today) div 100) * 100);
+        Inc(year, (YearOf(Today) div 100) * 100);
       end;
     end;
     month := ExtractElementDef('MM', 12);

@@ -113,28 +113,20 @@ begin
   CheckTrue(FDatabaseManager.EntityExists(TCustomer));
 end;
 
-const
-  FILE_DB = 'dbupdate.db3';
 
 procedure TestTDatabaseManager.TestUpdateDatabase;
 var
   LUpdateManager: TDatabaseManager;
   LConn: IDBConnection;
-  sFile: string;
 begin
-  sFile := IncludeTrailingPathDelimiter(ExtractFileDir(PictureFilename)) + FILE_DB;
-  LConn := TConnectionFactory.GetInstance(dtSQLite, TSQLiteDatabase.Create(sFile));
+  LConn := TConnectionFactory.GetInstance(dtSQLite, TSQLiteDatabase.Create(':memory:'));
   LConn.AutoFreeConnection := True;
   LUpdateManager := TDatabaseManager.Create(LConn);
   try
     LUpdateManager.BuildDatabase;
-
-
   finally
     LUpdateManager.Free;
-   // DeleteFile(sFile);
   end;
-
 end;
 
 initialization

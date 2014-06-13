@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2012 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -29,28 +29,23 @@ unit Spring.Container.ComponentActivator;
 interface
 
 uses
-  Classes,
-  SysUtils,
-  Rtti,
   Spring,
   Spring.Collections,
-  Spring.Reflection,
-  Spring.Container.Core,
-  Spring.Services;
+  Spring.Container.Core;
 
 type
   ///	<summary>
   ///	  Abstract ComponentActivator
   ///	</summary>
   TComponentActivatorBase = class abstract(TInterfacedObject, IComponentActivator, IInterface)
-  private
-    fModel: TComponentModel;
   protected
-    property Model: TComponentModel read fModel;
+    {$IFDEF WEAKREF}[Weak]{$ENDIF}
+    fModel: TComponentModel;
+    procedure ExecuteInjections(const instance: TValue;
+      const injections: IList<IInjection>; const resolver: IDependencyResolver);
   public
-    constructor Create(model: TComponentModel);
-    function CreateInstance: TObject; overload;
-    function CreateInstance(resolver: IDependencyResolver): TObject; overload; virtual; abstract;
+    constructor Create(const model: TComponentModel);
+    function CreateInstance(const resolver: IDependencyResolver): TValue; overload; virtual; abstract;
   end;
 
   ///	<summary>
@@ -58,12 +53,10 @@ type
   ///	</summary>
   TReflectionComponentActivator = class(TComponentActivatorBase)
   private
-    fResolver: IDependencyResolver;
-    function GetEligibleConstructor(model: TComponentModel; resolver: IDependencyResolver): IInjection; virtual;
-    procedure ExecuteInjections(instance: TObject; const injections: IList<IInjection>);
+    function GetEligibleConstructor(const model: TComponentModel;
+      const resolver: IDependencyResolver): IInjection;
   public
-    constructor Create(model: TComponentModel; const resolver: IDependencyResolver);
-    function CreateInstance(resolver: IDependencyResolver): TObject; override;
+    function CreateInstance(const resolver: IDependencyResolver): TValue; override;
   end;
 
   ///	<summary>
@@ -71,27 +64,37 @@ type
   ///	</summary>
   TDelegateComponentActivator = class(TComponentActivatorBase)
   public
-    function CreateInstance(resolver: IDependencyResolver): TObject; override;
+    function CreateInstance(const resolver: IDependencyResolver): TValue; override;
   end;
 
 implementation
 
 uses
+  Spring.Container.ResourceStrings,
   Spring.Helpers,
-  Spring.Container.ResourceStrings;
+  Spring.Reflection,
+  Spring.Services;
 
 
 {$REGION 'TComponentActivatorBase'}
 
-constructor TComponentActivatorBase.Create(model: TComponentModel);
+constructor TComponentActivatorBase.Create(const model: TComponentModel);
 begin
   inherited Create;
   fModel := model;
 end;
 
-function TComponentActivatorBase.CreateInstance: TObject;
+procedure TComponentActivatorBase.ExecuteInjections(const instance: TValue;
+  const injections: IList<IInjection>; const resolver: IDependencyResolver);
+var
+  injection: IInjection;
+  arguments: TArray<TValue>;
 begin
-  Result := CreateInstance(nil);
+  for injection in injections do
+  begin
+    arguments := resolver.ResolveDependencies(injection);
+    injection.Inject(instance, arguments);
+  end;
 end;
 
 {$ENDREGION}
@@ -99,15 +102,8 @@ end;
 
 {$REGION 'TReflectionComponentActivator'}
 
-constructor TReflectionComponentActivator.Create(model: TComponentModel;
-  const resolver: IDependencyResolver);
-begin
-  inherited Create(model);
-  fResolver := resolver;
-end;
-
 function TReflectionComponentActivator.CreateInstance(
-  resolver: IDependencyResolver): TObject;
+  const resolver: IDependencyResolver): TValue;
 var
   constructorInjection: IInjection;
   constructorArguments: TArray<TValue>;
@@ -117,35 +113,30 @@ begin
   begin
     raise EActivatorException.CreateRes(@SUnsatisfiedConstructor);
   end;
-  if Assigned(resolver) then
-    constructorArguments := resolver.ResolveDependencies(constructorInjection)
-  else
-    constructorArguments := fResolver.ResolveDependencies(constructorInjection);
+  constructorArguments := resolver.ResolveDependencies(constructorInjection);
   Result := TActivator.CreateInstance(
-    fModel.ComponentType,
+    fModel.ComponentType.AsInstance,
     constructorInjection.Target.AsMethod,
     constructorArguments
   );
-  ExecuteInjections(Result, fModel.FieldInjections);
-  ExecuteInjections(Result, fModel.PropertyInjections);
-  ExecuteInjections(Result, fModel.MethodInjections);
-end;
-
-procedure TReflectionComponentActivator.ExecuteInjections(instance: TObject;
-  const injections: IList<IInjection>);
-var
-  injection: IInjection;
-  arguments: TArray<TValue>;
-begin
-  for injection in injections do
-  begin
-    arguments := fResolver.ResolveDependencies(injection);
-    injection.Inject(instance, arguments);
+  try
+    ExecuteInjections(Result, fModel.FieldInjections, resolver);
+    ExecuteInjections(Result, fModel.PropertyInjections, resolver);
+    ExecuteInjections(Result, fModel.MethodInjections, resolver);
+  except
+    if not Result.IsEmpty and Result.IsObject then
+    begin
+{$IFNDEF AUTOREFCOUNT}
+      Result.AsObject.Free;
+{$ENDIF}
+      Result := TValue.Empty;
+    end;
+    raise;
   end;
 end;
 
 function TReflectionComponentActivator.GetEligibleConstructor(
-  model: TComponentModel; resolver: IDependencyResolver): IInjection;
+  const model: TComponentModel; const resolver: IDependencyResolver): IInjection;
 var
   candidate: IInjection;
   winner: IInjection;
@@ -153,9 +144,6 @@ var
 begin
   winner := nil;
   maxCount := -1;
-
-  if not Assigned(resolver) then
-    resolver := fResolver;
 
   for candidate in model.ConstructorInjections do
   begin
@@ -182,13 +170,27 @@ end;
 {$REGION 'TDelegateComponentActivator'}
 
 function TDelegateComponentActivator.CreateInstance(
-  resolver: IDependencyResolver): TObject;
+  const resolver: IDependencyResolver): TValue;
 begin
   if not Assigned(fModel.ActivatorDelegate) then
   begin
     raise EActivatorException.CreateRes(@SActivatorDelegateExpected);
   end;
   Result := fModel.ActivatorDelegate.Invoke;
+  try
+    ExecuteInjections(Result, fModel.FieldInjections, resolver);
+    ExecuteInjections(Result, fModel.PropertyInjections, resolver);
+    ExecuteInjections(Result, fModel.MethodInjections, resolver);
+  except
+    if not Result.IsEmpty and Result.IsObject then
+    begin
+{$IFNDEF AUTOREFCOUNT}
+      Result.AsObject.Free;
+{$ENDIF}
+      Result := TValue.Empty;
+    end;
+    raise;
+  end;
 end;
 
 {$ENDREGION}

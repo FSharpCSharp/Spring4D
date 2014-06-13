@@ -7,7 +7,8 @@ procedure DoOrderProcessing;
 implementation
 
 uses
-   uOrder, uOrderValidator, uOrderEntry, uOrderProcessor;
+  uOrder,
+  uOrderProcessor;
 
 procedure DoOrderProcessing;
 var
@@ -18,9 +19,7 @@ begin
   OrderProcessor := TOrderProcessor.Create;
   try
     if OrderProcessor.ProcessOrder(Order) then
-    begin
-      WriteLn('Order successfully processed....');
-    end;
+      Writeln('Order successfully processed....');
   finally
     Order.Free;
   end;

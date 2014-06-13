@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2012 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -30,9 +30,12 @@ interface
 
 uses
   Classes,
+{$IFDEF MSWINDOWS}
   Windows,
+{$ENDIF MSWINDOWS}
   SysUtils,
   IOUtils,
+{$IFDEF MSWINDOWS}
 {$IFDEF HAS_UNITSCOPE}
   System.Win.ComObj,
 {$ELSE}
@@ -40,6 +43,7 @@ uses
 {$ENDIF}
   ActiveX,
   ShellAPI,
+{$ENDIF MSWINDOWS}
   Masks,
   Generics.Collections,
   Spring,
@@ -48,6 +52,7 @@ uses
   Spring.Utils;
 
 type
+{$IFDEF MSWINDOWS}
   ///	<summary>
   ///	  Drive Type Enumeration
   ///	</summary>
@@ -202,6 +207,7 @@ type
     ///	</summary>
     property VolumeLabel: string read GetVolumeLabel write SetVolumeLabel;
   end;
+{$ENDIF MSWINDOWS}
 
 
   {$REGION 'TSizeUnit, TSize'}
@@ -257,6 +263,7 @@ type
   {$ENDREGION}
 
 
+{$IFDEF MSWINDOWS}
   {$REGION 'TFileSystemEntry'}
 
   PFileSystemEntry = ^TFileSystemEntry;
@@ -401,6 +408,7 @@ type
   IFileEnumerator = IEnumerator<TFileSystemEntry>;
 
   {$ENDREGION}
+{$ENDIF MSWINDOWS}
 
 
   {$REGION 'Search Pattern Matcher'}
@@ -475,6 +483,7 @@ type
   {$ENDREGION}
 
 
+{$IFDEF MSWINDOWS}
   // Spring.TPredicate<TFileSystemEntry>
   TFileSystemEntryPredicate = reference to function (const entry:TFileSystemEntry): Boolean;
 
@@ -842,14 +851,18 @@ type
   ///	  GetDroppedFiles
   ///	</summary>
   procedure GetDroppedFiles(dropHandle: THandle; list: TStrings); overload;
+{$ENDIF MSWINDOWS}
 
 implementation
 
 uses
   Spring.ResourceStrings,
+{$IFDEF MSWINDOWS}
   Spring.Utils.WinAPI,
+{$ENDIF MSWINDOWS}
   Spring.Collections.Extensions;
 
+{$IFDEF MSWINDOWS}
 const
   DriveTypeStrings: array[TDriveType] of string = (
     SUnknownDriveDescription,
@@ -860,7 +873,9 @@ const
     SCDRomDescription,
     SRamDescription
   );
+{$ENDIF MSWINDOWS}
 
+{$IFDEF MSWINDOWS}
 {$REGION 'Routines'}
 
 function EnumerateDirectories(const path: string): IFileEnumerable;
@@ -925,7 +940,7 @@ const
     tymed: LongInt($FFFFFFFF)
   );
 begin
-  TArgument.CheckNotNull(dataObject, 'dataObject');
+  Guard.CheckNotNull(dataObject, 'dataObject');
 
   OleCheck(dataObject.GetData(f, medium));
   handle := medium.hGlobal;
@@ -945,7 +960,7 @@ const
     tymed: LongInt($FFFFFFFF)
   );
 begin
-  TArgument.CheckNotNull(list, 'list');
+  Guard.CheckNotNull(list, 'list');
 
   count := DragQueryFile(dropHandle, $FFFFFFFF, nil, 0);
   try
@@ -961,8 +976,10 @@ begin
 end;
 
 {$ENDREGION}
+{$ENDIF MSWINDOWS}
 
 
+{$IFDEF MSWINDOWS}
 {$REGION 'TDriveInfo'}
 
 constructor TDriveInfo.Create(const driveName: string);
@@ -1123,6 +1140,7 @@ begin
 end;
 
 {$ENDREGION}
+{$ENDIF MSWINDOWS}
 
 
 {$REGION 'TSizeUnit'}
@@ -1263,6 +1281,7 @@ end;
 {$ENDREGION}
 
 
+{$IFDEF MSWINDOWS}
 {$REGION 'TFileSystemEntry'}
 
 constructor TFileSystemEntry.Create(const fileName: string);
@@ -1327,7 +1346,7 @@ begin
   end
   else
   begin
-    Result := TNullEnumerable<TFileSystemEntry>.Create;
+    Result := TEmptyEnumerable<TFileSystemEntry>.Create;
   end;
 end;
 
@@ -1515,6 +1534,7 @@ begin
 end;
 
 {$ENDREGION}
+{$ENDIF MSWINDOWS}
 
 
 {$REGION 'TSearchPatternMatcher'}
@@ -1621,6 +1641,7 @@ end;
 {$ENDREGION}
 
 
+{$IFDEF MSWINDOWS}
 {$REGION 'TFileEnumerable'}
 
 constructor TFileEnumerable.Create(const path, searchPattern: string;
@@ -1949,7 +1970,7 @@ end;
 
 procedure TFileSearchWorker.Initialize(const collections: IEnumerable<IFileEnumerable>);
 begin
-//  TArgument.CheckNotNull(collections, 'collections');
+//  Guard.CheckNotNull(collections, 'collections');
   fCollections := collections;
 end;
 
@@ -2450,5 +2471,6 @@ begin
 end;
 
 {$ENDREGION}
+{$ENDIF MSWINDOWS}
 
 end.

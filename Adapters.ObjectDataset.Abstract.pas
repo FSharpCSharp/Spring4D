@@ -97,7 +97,7 @@ type
     procedure SetRecBufSize(); virtual;
     procedure RebuildFieldCache();
     function DataListCount(): Integer; virtual;
-    function GetCurrentDataList(): IList; virtual; abstract;
+    function GetCurrentDataList(): IObjectList; virtual; abstract;
 
     // Abstract overrides
     function AllocRecordBuffer: TRecordBuffer; override;

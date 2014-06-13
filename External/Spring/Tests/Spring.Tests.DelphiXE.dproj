@@ -5,8 +5,8 @@
 			<Base>True</Base>
 			<Config Condition="'$(Config)'==''">Debug</Config>
 			<Platform>Win32</Platform>
-			<AppType>Application</AppType>
-			<FrameworkType>VCL</FrameworkType>
+			<AppType>Console</AppType>
+			<FrameworkType>None</FrameworkType>
 			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
 			<ProjectVersion>12.3</ProjectVersion>
 		</PropertyGroup>
@@ -50,14 +50,20 @@
 			<DelphiCompile Include="Spring.Tests.dpr">
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
+			<DCCReference Include="Source\Spring.TestBootstrap.pas"/>
 			<DCCReference Include="Source\FinalBuilder.XMLTestRunner.pas"/>
+			<DCCReference Include="Source\Spring.TestRegistration.pas"/>
+			<DCCReference Include="Source\Spring.TestRunner.pas"/>
+			<DCCReference Include="Source\Spring.TestUtils.pas"/>
 			<DCCReference Include="Source\Base\Spring.Tests.Base.pas"/>
 			<DCCReference Include="Source\Base\Spring.Tests.Collections.pas"/>
+			<DCCReference Include="Source\Base\Spring.Tests.Collections.Extensions.pas"/>
 			<DCCReference Include="Source\Base\Spring.Tests.DesignPatterns.pas"/>
 			<DCCReference Include="Source\Base\Spring.Tests.Helpers.pas"/>
 			<DCCReference Include="Source\Base\Spring.Tests.Reflection.ValueConverters.pas"/>
 			<DCCReference Include="Source\Base\Spring.Tests.SysUtils.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.Container.Components.pas"/>
+			<DCCReference Include="Source\Core\Spring.Tests.Container.Interfaces.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.Container.LifetimeManager.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.Container.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.Pool.pas"/>
@@ -75,8 +81,8 @@
 				<CfgParent>Base</CfgParent>
 			</BuildConfiguration>
 		</ItemGroup>
-		<Import Project="$(BDS)\Bin\CodeGear.Delphi.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')"/>
-		<Import Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj" Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')"/>
+		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')" Project="$(BDS)\Bin\CodeGear.Delphi.Targets"/>
+		<Import Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')" Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj"/>
 		<ProjectExtensions>
 			<Borland.Personality>Delphi.Personality.12</Borland.Personality>
 			<Borland.ProjectType>VCLApplication</Borland.ProjectType>

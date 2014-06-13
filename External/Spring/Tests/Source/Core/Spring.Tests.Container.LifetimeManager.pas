@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2012 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -39,16 +39,21 @@ uses
 type
   TMockContext = class(TInterfacedObject, IContainerContext)
   public
+    function GetComponentBuilder: IComponentBuilder;
+    function GetComponentRegistry: IComponentRegistry;
     function GetDependencyResolver: IDependencyResolver;
     function GetInjectionFactory: IInjectionFactory;
-    function GetComponentRegistry: IComponentRegistry;
+    function GetServiceResolver: IServiceResolver;
   public
     function HasService(serviceType: PTypeInfo): Boolean; overload;
     function HasService(const name: string): Boolean; overload;
-    function CreateLifetimeManager(model: TComponentModel): ILifetimeManager;
+    function CreateLifetimeManager(const model: TComponentModel): ILifetimeManager;
+    procedure AddExtension(const extension: IContainerExtension);
+    property ComponentBuilder: IComponentBuilder read GetComponentBuilder;
     property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
     property DependencyResolver: IDependencyResolver read GetDependencyResolver;
     property InjectionFactory: IInjectionFactory read GetInjectionFactory;
+    property ServiceResolver: IServiceResolver read GetServiceResolver;
   end;
 
   TMockActivator = class(TInterfaceBase, IComponentActivator, IInterface)
@@ -56,8 +61,8 @@ type
     fModel: TComponentModel;
   public
     constructor Create(model: TComponentModel);
-    function CreateInstance: TObject; overload;
-    function CreateInstance(resolver: IDependencyResolver): TObject; overload;
+    function CreateInstance: TValue; overload;
+    function CreateInstance(const resolver: IDependencyResolver): TValue; overload;
     property Model: TComponentModel read fModel;
   end;
 
@@ -65,6 +70,10 @@ type
   end;
 
   TMockComponent = class(TComponent, IInterface)
+{$IFNDEF AUTOREFCOUNT}
+  private class var
+    fFreed : Boolean;
+{$ENDIF}
   private
     fRefCount: Integer;
   protected
@@ -136,8 +145,8 @@ end;
 
 procedure TLifetimeManagerTestCase.TearDown;
 begin
-  fActivator.Free;
   fModel.Free;
+  fActivator.Free;
   fContext.Free;
   fContainerContext := nil;
   inherited;
@@ -161,8 +170,8 @@ procedure TTestSingletonLifetimeManager.TestReferences;
 var
   obj1, obj2: TObject;
 begin
-  obj1 := fLifetimeManager.GetInstance;
-  obj2 := fLifetimeManager.GetInstance;
+  obj1 := fLifetimeManager.GetInstance(nil).AsObject;
+  obj2 := fLifetimeManager.GetInstance(nil).AsObject;
   try
     CheckIs(obj1, TMockObject, 'obj1');
     CheckIs(obj2, TMockObject, 'obj2');
@@ -192,8 +201,8 @@ procedure TTestTransientLifetimeManager.TestReferences;
 var
   obj1, obj2: TObject;
 begin
-  obj1 := fLifetimeManager.GetInstance;
-  obj2 := fLifetimeManager.GetInstance;
+  obj1 := fLifetimeManager.GetInstance(nil).AsObject;
+  obj2 := fLifetimeManager.GetInstance(nil).AsObject;
   try
     CheckIs(obj1, TMockObject, 'obj1');
     CheckIs(obj2, TMockObject, 'obj2');
@@ -214,23 +223,32 @@ begin
   fModel := model;
 end;
 
-function TMockActivator.CreateInstance: TObject;
+function TMockActivator.CreateInstance: TValue;
 begin
-  Result := fModel.ComponentType.MetaclassType.Create;
+  Result := fModel.ComponentType.AsInstance.MetaclassType.Create;
 end;
 
 function TMockActivator.CreateInstance(
-  resolver: IDependencyResolver): TObject;
+  const resolver: IDependencyResolver): TValue;
 begin
   Result := CreateInstance;
 end;
 
 { TMockContext }
 
-function TMockContext.CreateLifetimeManager(
-  model: TComponentModel): ILifetimeManager;
+procedure TMockContext.AddExtension(const extension: IContainerExtension);
+begin
+  raise Exception.Create('AddExtension');
+end;
+
+function TMockContext.CreateLifetimeManager(const model: TComponentModel): ILifetimeManager;
 begin
   raise Exception.Create('CreateLifetimeManager');
+end;
+
+function TMockContext.GetComponentBuilder: IComponentBuilder;
+begin
+  raise Exception.Create('GetComponentBuilder');
 end;
 
 function TMockContext.GetComponentRegistry: IComponentRegistry;
@@ -248,6 +266,11 @@ begin
   raise Exception.Create('GetInjectionFactory');
 end;
 
+function TMockContext.GetServiceResolver: IServiceResolver;
+begin
+  raise Exception.Create('GetServiceResolver');
+end;
+
 function TMockContext.HasService(const name: string): Boolean;
 begin
   raise Exception.Create('HasService');
@@ -263,15 +286,25 @@ end;
 function TMockComponent._AddRef: Integer;
 begin
   Inc(fRefCount);
+{$IFNDEF AUTOREFCOUNT}
   Result := fRefCount;
+{$ELSE}
+  Result := inherited __ObjAddRef;
+{$ENDIF}
 end;
 
 function TMockComponent._Release: Integer;
 begin
   Dec(fRefCount);
+{$IFNDEF AUTOREFCOUNT}
   Result := fRefCount;
-  if Result = 0 then
+  if Result = 0 then begin
+    fFreed := true;
     Destroy;
+  end;
+{$ELSE}
+  Result := inherited __ObjRelease;
+{$ENDIF}
 end;
 
 { TTestRefCounting }
@@ -285,12 +318,14 @@ begin
   fModel.RefCounting := TRefCounting.True;
   fActivator := TMockActivator.Create(fModel);
   fModel.ComponentActivator := fActivator;
+  fLifetimeManager := TSingletonLifetimeManager.Create(fModel);
 end;
 
 procedure TTestRefCounting.TearDown;
 begin
-  fActivator.Free;
+  fLifetimeManager := nil;
   fModel.Free;
+  fActivator.Free;
   fContext.Free;
   fContainerContext := nil;
   inherited;
@@ -300,12 +335,34 @@ procedure TTestRefCounting.TestReferences;
 var
   obj: TObject;
   intf: IInterface;
+  val: TValue;
 begin
   fLifetimeManager := TSingletonLifetimeManager.Create(fModel);
-  obj := fLifetimeManager.GetInstance;
+{$IFNDEF AUTOREFCOUNT}
+  TMockComponent.fFreed := false;
+{$ENDIF}
+  val := fLifetimeManager.GetInstance(nil);
+  obj := val.AsObject;
+{$IFDEF AUTOREFCOUNT}
+  val := val.Empty; //Clear the TValue so that it doesn't keep holding reference count to obj
+{$ENDIF}
+  CheckNotNull(obj, 'returned object must not be nil');
   CheckTrue(Supports(obj, IInterface, intf), 'interface not supported');
+  CheckIs(obj, TMockComponent, 'invalid object returned: ' + obj.ClassName);
+  CheckEquals(2, TMockComponent(obj).fRefCount, 'invalid reference count');
   intf := nil;
+  CheckEquals(1, TMockComponent(obj).fRefCount, 'invalid reference count');
   fLifetimeManager := nil;
+{$IFNDEF AUTOREFCOUNT}
+  //Check that reference count reached zero
+  CheckTrue(TMockComponent.fFreed, 'invalid reference count');
+{$ELSE}
+  //Since automatic reference countin is in place, the object isn't destroyed
+  //and we can safely test our own reference count
+  CheckEquals(0, TMockComponent(obj).fRefCount, 'invalid reference count');
+  CheckEquals(1, obj.RefCount, 'invalid reference count');
+  obj := nil;
+{$ENDIF}
 end;
 
 end.

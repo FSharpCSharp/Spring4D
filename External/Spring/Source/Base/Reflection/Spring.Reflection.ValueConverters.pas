@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2012 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -150,10 +150,9 @@ type
     class property Default: IValueConverter read GetDefault;
   end;
 
-  {$ENDREGION}
-
-
   TConverterClass = class of TValueConverter;
+
+  {$ENDREGION}
 
 
   {$REGION 'TDefaultValueConverter'}
@@ -644,6 +643,7 @@ type
 
   {$REGION 'TStringToWStringConverter'}
 
+{$IFNDEF NEXTGEN}
   ///	<summary>
   ///	  Provides conversion routine beetwen UnicodeString and WideString
   ///	</summary>
@@ -657,12 +657,14 @@ type
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
   end;
+{$ENDIF}
 
   {$ENDREGION}
 
 
   {$REGION 'TWStringToStringConverter'}
 
+{$IFNDEF NEXTGEN}
   ///	<summary>
   ///	  Provides conversion routine beetwen UnicodeString and WideString
   ///	</summary>
@@ -672,6 +674,7 @@ type
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
   end;
+{$ENDIF}
 
   {$ENDREGION}
 
@@ -740,24 +743,27 @@ type
 implementation
 
 uses
-{$IFNDEF DelphiXE2_UP}
-  Graphics,
-{$ELSE}
+{$IFDEF HAS_UNIT_SYSTEM_UITYPES}
   System.UIConsts,
   System.UITypes,
-{$ENDIF}
+{$ELSE}
+  Graphics,
+{$ENDIF HAS_UNIT_SYSTEM_UITYPES}
+  Math,
   StrUtils,
   SysUtils,
-  Math,
   Spring.SystemUtils,
   Spring.ResourceStrings;
+
 
   function CompareTypeInfo(const left, right: PTypeInfo): Boolean;
   begin
     Result := (left = right);
     if Assigned(left) and Assigned(right) then
-      Result := Result or ((left.Kind = right.Kind) and (left.Name = right.Name))
+      Result := Result or ((left.Kind = right.Kind)
+        and (left.TypeName = right.TypeName));
   end;
+
 
 {$REGION 'TValueConverter'}
 
@@ -787,21 +793,17 @@ function TValueConverter.ConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo;
   const parameter: TValue): TValue;
 begin
-  TArgument.CheckNotNull(value.TypeInfo, 'value.TypeInfo');
-  TArgument.CheckNotNull(targetTypeInfo, 'targetTypeInfo');
+  Guard.CheckNotNull(value.TypeInfo, 'value.TypeInfo');
+  Guard.CheckNotNull(targetTypeInfo, 'targetTypeInfo');
   try
     Result := DoConvertTo(value, targetTypeInfo, parameter);
   except
-    /// <summary>
-    /// In order to save nested exception, you need to raise new exceptions
-    ///  via Exception.RaiseOuterException (Delphi’s style) or Exception.ThrowOuterException (C++ Builder’s style).
-    /// </summary>
     Exception.RaiseOuterException(Exception.CreateResFmt(@SCouldNotConvertValue,
-      [value.TypeInfo.Name, targetTypeInfo.Name]));
+      [value.TypeInfo.TypeName, targetTypeInfo.TypeName]));
   end;
   if Result.IsEmpty then
     raise Exception.CreateResFmt(@SCouldNotConvertValue,
-      [value.TypeInfo.Name, targetTypeInfo.Name]);
+      [value.TypeInfo.TypeName, targetTypeInfo.TypeName]);
 end;
 
 function TValueConverter.TryConvertTo(const value: TValue;
@@ -850,10 +852,12 @@ begin
   case targetTypeInfo.Kind of
     tkString, tkUString:
       Result := TValue.From<string>(IntToStr(value.AsInteger));
+{$IFNDEF NEXTGEN}
     tkLString:
       Result := TValue.From<AnsiString>(AnsiString(IntToStr(value.AsInteger)));
     tkWString:
       Result := TValue.From<WideString>(IntToStr(value.AsInteger));
+{$ENDIF}
   end;
 end;
 
@@ -894,10 +898,12 @@ begin
   case targetTypeInfo.Kind of
     tkString, tkUString:
       Result := TValue.From<string>(BoolToStr(value.AsBoolean, True));
+{$IFNDEF NEXTGEN}
     tkLString:
       Result := TValue.From<AnsiString>(AnsiString(BoolToStr(value.AsBoolean, True)));
     tkWString:
       Result := TValue.From<WideString>(BoolToStr(value.AsBoolean, True));
+{$ENDIF}
   end;
 end;
 
@@ -959,13 +965,14 @@ function TNullableToTypeConverter.DoConvertTo(const value: TValue;
 var
   underlyingValue: TValue;
 begin
-  if TryGetUnderlyingValue(value, underlyingValue) and
-      (underlyingValue.TypeInfo.Name <> targetTypeInfo.Name) then
+  if TryGetUnderlyingValue(value, underlyingValue)
+    and (underlyingValue.TypeInfo.TypeName <> targetTypeInfo.TypeName) then
   begin
     Result := TValueConverter.Default.ConvertTo(underlyingValue,
       targetTypeInfo, parameter)
   end
-  else Result := underlyingValue;
+  else
+    Result := underlyingValue;
 end;
 
 {$ENDREGION}
@@ -978,46 +985,16 @@ function TTypeToNullableConverter.DoConvertTo(const value: TValue;
 var
   underlyingTypeInfo: PTypeInfo;
   underlyingValue: TValue;
-  valueBuffer: TBytes;
-  hasValueFlag: string;
-  p: Pointer;
-  us: UnicodeString;
-  ws: WideString;
 begin
   if TryGetUnderlyingTypeInfo(targetTypeInfo, underlyingTypeInfo) then
   begin
     underlyingValue := value;
-    if underlyingTypeInfo.Name <> value.TypeInfo.Name then
+    if underlyingTypeInfo.TypeName <> value.TypeInfo.TypeName then
       Result := TValueConverter.Default.TryConvertTo(value, underlyingTypeInfo,
         underlyingValue, parameter);
 
-    p := underlyingValue.GetReferenceToRawData;
-    SetLength(valueBuffer, GetTypeData(targetTypeInfo).RecSize);
-    FillChar(PByte(valueBuffer)^, Length(valueBuffer), 0);
-    if not IsManaged(underlyingTypeInfo) then
-    begin
-      Move(PByte(p)^, PByte(valueBuffer)^, Length(valueBuffer) - SizeOf(string));
-    end
-    else
-      case underlyingTypeInfo.Kind of
-        tkUString, tkLString:
-        begin
-          us := PString(p)^;
-          PPointer(@valueBuffer[0])^ := Pointer(us);
-        end;
-        tkWString:
-        begin
-          ws := PWideString(p)^;
-          PPointer(@valueBuffer[0])^ := Pointer(ws);
-        end;
-      end;
-    if value.GetReferenceToRawData <> nil then
-    begin
-      hasValueFlag := '@';
-      PPointer(PByte(valueBuffer) + Length(valueBuffer) - SizeOf(string))^ := Pointer(hasValueFlag);
-    end;
-    p := PByte(valueBuffer);
-    TValue.Make(p, targetTypeInfo, Result);
+    TValue.Make(nil, targetTypeInfo, Result);
+    TrySetUnderlyingValue(Result, underlyingValue);
   end;
 end;
 
@@ -1037,10 +1014,12 @@ begin
   case targetTypeInfo.Kind of
     tkString, tkUString:
       Result := TValue.From<string>(enumName);
+{$IFNDEF NEXTGEN}
     tkLString:
       Result := TValue.From<AnsiString>(AnsiString(enumName));
     tkWString:
       Result := TValue.From<WideString>(enumName);
+{$ENDIF}
   end;
 end;
 
@@ -1073,10 +1052,12 @@ begin
   case targetTypeInfo.Kind of
     tkString, tkUString:
       Result := TValue.From<string>(setAsString);
+{$IFNDEF NEXTGEN}
     tkLString:
       Result := TValue.From<AnsiString>(AnsiString(setAsString));
     tkWString:
       Result := TValue.From<WideString>(setAsString);
+{$ENDIF}
   end;
 end;
 
@@ -1133,20 +1114,24 @@ begin
     case targetTypeInfo.Kind of
       tkString, tkUString:
         Result := TValue.From<string>(FormatFloat(format, value.AsExtended));
+{$IFNDEF NEXTGEN}
       tkLString:
         Result := TValue.From<AnsiString>(AnsiString(FormatFloat(format, value.AsExtended)));
       tkWString:
         Result := TValue.From<WideString>(FormatFloat(format, value.AsExtended));
+{$ENDIF}
     end;
   end
   else
     case targetTypeInfo.Kind of
       tkString, tkUString:
         Result := TValue.From<string>(FloatToStr(value.AsExtended));
+{$IFNDEF NEXTGEN}
       tkLString:
         Result := TValue.From<AnsiString>(AnsiString(FloatToStr(value.AsExtended)));
       tkWString:
         Result := TValue.From<WideString>(FloatToStr(value.AsExtended));
+{$ENDIF}
     end;
 end;
 
@@ -1211,10 +1196,12 @@ begin
   case targetTypeInfo.Kind of
     tkString, tkUString:
       Result := TValue.From<string>(ColorToString(value.AsType<TColor>));
+{$IFNDEF NEXTGEN}
     tkLString:
       Result := TValue.From<AnsiString>(AnsiString(ColorToString(value.AsType<TColor>)));
     tkWString:
       Result := TValue.From<WideString>(ColorToString(value.AsType<TColor>));
+{$ENDIF}
   end;
 end;
 
@@ -1245,20 +1232,24 @@ begin
     case targetTypeInfo.Kind of
       tkString, tkUString:
         Result := TValue.From<string>(FormatCurr(format, value.AsType<Currency>));
+{$IFNDEF NEXTGEN}
       tkLString:
         Result := TValue.From<AnsiString>(AnsiString(FormatCurr(format, value.AsType<Currency>)));
       tkWString:
         Result := TValue.From<WideString>(FormatCurr(format, value.AsType<Currency>));
+{$ENDIF}
     end;
   end
   else
     case targetTypeInfo.Kind of
       tkString, tkUString:
         Result := TValue.From<string>(CurrToStr(value.AsType<Currency>));
+{$IFNDEF NEXTGEN}
       tkLString:
         Result := TValue.From<AnsiString>(AnsiString(CurrToStr(value.AsType<Currency>)));
       tkWString:
         Result := TValue.From<WideString>(CurrToStr(value.AsType<Currency>));
+{$ENDIF}
     end;
 end;
 
@@ -1289,20 +1280,24 @@ begin
     case targetTypeInfo.Kind of
       tkString, tkUString:
         Result := TValue.From<string>(FormatDateTime(format, value.AsExtended));
+{$IFNDEF NEXTGEN}
       tkLString:
         Result := TValue.From<AnsiString>(AnsiString(FormatDateTime(format, value.AsExtended)));
       tkWString:
         Result := TValue.From<WideString>(FormatDateTime(format, value.AsExtended));
+{$ENDIF}
     end;
   end
   else
     case targetTypeInfo.Kind of
       tkString, tkUString:
         Result := TValue.From<string>(DateTimeToStr(value.AsExtended));
+{$IFNDEF NEXTGEN}
       tkLString:
         Result := TValue.From<AnsiString>(AnsiString(DateTimeToStr(value.AsExtended)));
       tkWString:
         Result := TValue.From<WideString>(DateTimeToStr(value.AsExtended));
+{$ENDIF}
     end;
 end;
 
@@ -1336,10 +1331,12 @@ begin
   case targetTypeInfo.Kind of
     tkString, tkUString:
       Result := TValue.From<string>(value.AsObject.ToString);
+{$IFNDEF NEXTGEN}
     tkLString:
       Result := TValue.From<AnsiString>(AnsiString(value.AsObject.ToString));
     tkWString:
       Result := TValue.From<WideString>(value.AsObject.ToString);
+{$ENDIF}
   end;
 end;
 
@@ -1386,17 +1383,20 @@ end;
 
 {$REGION 'TStringToWStringConverter'}
 
+{$IFNDEF NEXTGEN}
 function TStringToWStringConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
   Result := TValue.From<WideString>(value.AsString);
 end;
+{$ENDIF}
 
 {$ENDREGION}
 
 
 {$REGION 'TWStringToStringConverter'}
 
+{$IFNDEF NEXTGEN}
 function TWStringToStringConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
@@ -1409,6 +1409,7 @@ begin
       Result := TValue.From<WideString>(value.AsString);
   end;
 end;
+{$ENDIF}
 
 {$ENDREGION}
 
@@ -1425,23 +1426,6 @@ begin
 end;
 
 {$ENDREGION}
-
-
-{ TValueConverterFactory.TConverterPackage }
-
-constructor TValueConverterFactory.TConverterPackage.Create(
-  classType: TConverterClass);
-begin
-  fConverterClass := classType;
-end;
-
-function TValueConverterFactory.TConverterPackage.GetInstance: IValueConverter;
-begin
-  if not Assigned(fConverter) then
-    fConverter := fConverterClass.Create;
-
-  Result := fConverter;
-end;
 
 
 {$REGION 'TValueConverterFactory'}
@@ -1473,10 +1457,12 @@ begin
     TypeInfo(Nullable<System.Byte>), TTypeToNullableConverter);
   RegisterConverter([tkInteger, tkInt64, tkFloat, tkEnumeration, tkClass, tkString, tkUString, tkLString, tkWString],
     TypeInfo(Nullable<System.string>), TTypeToNullableConverter);
+{$IFNDEF NEXTGEN}
   RegisterConverter([tkInteger, tkInt64, tkFloat, tkEnumeration, tkClass, tkString, tkUString, tkLString, tkWString],
     TypeInfo(Nullable<System.AnsiString>), TTypeToNullableConverter);
   RegisterConverter([tkInteger, tkInt64, tkFloat, tkEnumeration, tkClass, tkString, tkUString, tkLString, tkWString],
     TypeInfo(Nullable<System.WideString>), TTypeToNullableConverter);
+{$ENDIF}
   RegisterConverter([tkInteger, tkInt64, tkString, tkUString, tkLString, tkWString],
     TypeInfo(Nullable<System.Boolean>), TTypeToNullableConverter);
   RegisterConverter([tkInteger, tkInt64, tkFloat, tkString, tkUString, tkLString, tkWString],
@@ -1543,6 +1529,7 @@ begin
     [tkInteger, tkInt64, tkFloat, tkString, tkUString, tkLString, tkWString],
     TNullableToTypeConverter);
 
+{$IFNDEF NEXTGEN}
   RegisterConverter(TypeInfo(Nullable<System.AnsiString>),
     [tkInteger, tkInt64, tkFloat, tkString, tkUString, tkLString, tkWString],
     TNullableToTypeConverter);
@@ -1550,6 +1537,7 @@ begin
   RegisterConverter(TypeInfo(Nullable<System.WideString>),
     [tkInteger, tkInt64, tkFloat, tkString, tkUString, tkLString, tkWString],
     TNullableToTypeConverter);
+{$ENDIF}
 
   RegisterConverter(TypeInfo(Nullable<System.Single>),
     [tkInteger, tkInt64, tkFloat, tkString, tkUString, tkLString, tkWString],
@@ -1597,8 +1585,10 @@ begin
   RegisterConverter([tkString, tkUString, tkLString, tkWString], [tkEnumeration], TStringToEnumConverter);
   RegisterConverter([tkString, tkUString, tkLString, tkWString], [tkSet], TStringToSetConverter);
 
+{$IFNDEF NEXTGEN}
   RegisterConverter([tkString, tkUString, tkLString], [tkWString], TStringToWStringConverter);
   RegisterConverter([tkWString], [tkString, tkUString, tkLString], TWStringToStringConverter);
+{$ENDIF}
 
   RegisterConverter([tkInterface], [tkInterface], TInterfaceToInterfaceConverter);
   RegisterConverter([tkInterface], [tkClass], TInterfaceToObjectConverter);
@@ -1689,8 +1679,8 @@ class procedure TValueConverterFactory.RegisterConverter(const sourceTypeInfo,
 var
   key: TConvertedTypeInfo;
 begin
-  TArgument.CheckNotNull(sourceTypeInfo, 'sourceTypeInfo');
-  TArgument.CheckNotNull(targetTypeInfo, 'targetTypeInfo');
+  Guard.CheckNotNull(sourceTypeInfo, 'sourceTypeInfo');
+  Guard.CheckNotNull(targetTypeInfo, 'targetTypeInfo');
 
   System.MonitorEnter(fTypeInfoToTypeInfoRegistry);
   try
@@ -1709,8 +1699,8 @@ class procedure TValueConverterFactory.RegisterConverter(
 var
   key: TConvertedTypeInfo;
 begin
-  TArgument.CheckFalse(SizeOf(targetTypeKinds) = 0, SEmptySourceTypeKind);
-  TArgument.CheckNotNull(sourceTypeInfo, 'targetTypeInfo');
+  Guard.CheckFalse(SizeOf(targetTypeKinds) = 0, SEmptySourceTypeKind);
+  Guard.CheckNotNull(sourceTypeInfo, 'targetTypeInfo');
 
   System.MonitorEnter(fTypeInfoToTypeKindsRegistry);
   try
@@ -1729,8 +1719,8 @@ class procedure TValueConverterFactory.RegisterConverter(
 var
   key: TConvertedTypeInfo;
 begin
-  TArgument.CheckFalse(SizeOf(sourceTypeKinds) = 0, SEmptySourceTypeKind);
-  TArgument.CheckNotNull(targetTypeInfo, 'targetTypeInfo');
+  Guard.CheckFalse(SizeOf(sourceTypeKinds) = 0, SEmptySourceTypeKind);
+  Guard.CheckNotNull(targetTypeInfo, 'targetTypeInfo');
 
   System.MonitorEnter(fTypeKindsToTypeInfoRegistry);
   try
@@ -1748,8 +1738,8 @@ class procedure TValueConverterFactory.RegisterConverter(const sourceTypeKinds,
 var
   key: TConvertedTypeInfo;
 begin
-  TArgument.CheckFalse(SizeOf(sourceTypeKinds) = 0, SEmptySourceTypeKind);
-  TArgument.CheckFalse(SizeOf(targetTypeKinds) = 0, SEmptyTargetTypeKind);
+  Guard.CheckFalse(SizeOf(sourceTypeKinds) = 0, SEmptySourceTypeKind);
+  Guard.CheckFalse(SizeOf(targetTypeKinds) = 0, SEmptyTargetTypeKind);
 
   System.MonitorEnter(fTypeKindsToTypeKindsRegistry);
   try
@@ -1763,5 +1753,25 @@ begin
 end;
 
 {$ENDREGION}
+
+
+{$REGION 'TValueConverterFactory.TConverterPackage'}
+
+constructor TValueConverterFactory.TConverterPackage.Create(
+  classType: TConverterClass);
+begin
+  fConverterClass := classType;
+end;
+
+function TValueConverterFactory.TConverterPackage.GetInstance: IValueConverter;
+begin
+  if not Assigned(fConverter) then
+    fConverter := fConverterClass.Create;
+
+  Result := fConverter;
+end;
+
+{$ENDREGION}
+
 
 end.

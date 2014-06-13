@@ -7,11 +7,11 @@ procedure DoOrderProcessing;
 implementation
 
 uses
-     uOrder
-     , uOrderInterfaces
-     , uOrderValidator
-     , uOrderEntry
-     , uOrderProcessor;
+  uOrder,
+  uOrderInterfaces,
+  uOrderProcessor,
+  uOrderValidator,
+  uOrderEntry;
 
 procedure DoOrderProcessing;
 var
@@ -19,16 +19,10 @@ var
   OrderProcessor: IOrderProcessor;
 begin
   Order := TOrder.Create;
-//  try
-    OrderProcessor := TOrderProcessor.Create(TOrderValidator.Create, TOrderEntry.Create);
-    try
-      if OrderProcessor.ProcessOrder(Order) then
-      begin
-        WriteLn('Order successfully processed....');
-      end;
-//    finally
-//      OrderProcessor.Free;
-//    end;
+  OrderProcessor := TOrderProcessor.Create(TOrderValidator.Create, TOrderEntry.Create);
+  try
+    if OrderProcessor.ProcessOrder(Order) then
+      Writeln('Order successfully processed....');
   finally
     Order.Free;
   end;

@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2012 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -29,10 +29,7 @@ unit Spring.Container.Injection;
 interface
 
 uses
-  Classes,
-  SysUtils,
   Rtti,
-  TypInfo,
   Spring,
   Spring.Collections,
   Spring.Container.Core;
@@ -40,6 +37,7 @@ uses
 type
   TInjectionBase = class abstract(TInterfacedObject, IInjection, IInterface)
   private
+    {$IFDEF WEAKREF}[Weak]{$ENDIF}
     fModel: TComponentModel;  // Consider remove the dependency of TComponentModel
     fTarget: TRttiMember;
     fTargetName: string;
@@ -51,13 +49,13 @@ type
     function GetTargetName: string;
   protected
     procedure Validate(target: TRttiMember); virtual;
-    procedure DoInject(instance: TObject; const arguments: array of TValue); virtual; abstract;
+    procedure DoInject(const instance: TValue; const arguments: array of TValue); virtual; abstract;
     procedure InitializeDependencies(out dependencies: TArray<TRttiType>); virtual; abstract;
   public
-    constructor Create(model: TComponentModel); overload;
-    constructor Create(model: TComponentModel; const targetName: string); overload;
+    constructor Create(const model: TComponentModel); overload;
+    constructor Create(const model: TComponentModel; const targetName: string); overload;
     procedure Initialize(target: TRttiMember); virtual;
-    procedure Inject(instance: TObject; const arguments: array of TValue);
+    procedure Inject(const instance: TValue; const arguments: array of TValue);
     function GetDependencies: TArray<TRttiType>;
     property Target: TRttiMember read GetTarget;
     property TargetName: string read GetTargetName;
@@ -66,63 +64,60 @@ type
     property Model: TComponentModel read GetModel;
   end;
 
-  TMemberInjectionBase = class abstract(TInjectionBase)
-  protected
-//    function GetMember: TRttiMember;
-  end;
-
-  TConstructorInjection = class(TMemberInjectionBase)
+  TConstructorInjection = class(TInjectionBase)
   protected
     procedure Validate(target: TRttiMember); override;
     procedure InitializeDependencies(out dependencies: TArray<TRttiType>); override;
-    procedure DoInject(instance: TObject; const arguments: array of TValue); override;
+    procedure DoInject(const instance: TValue; const arguments: array of TValue); override;
   end;
 
-  TPropertyInjection = class(TMemberInjectionBase)
+  TPropertyInjection = class(TInjectionBase)
   protected
     procedure Validate(target: TRttiMember); override;
     procedure InitializeDependencies(out dependencies: TArray<TRttiType>); override;
-    procedure DoInject(instance: TObject; const arguments: array of TValue); override;
+    procedure DoInject(const instance: TValue; const arguments: array of TValue); override;
   end;
 
-  TMethodInjection = class(TMemberInjectionBase)
+  TMethodInjection = class(TInjectionBase)
   protected
     procedure Validate(target: TRttiMember); override;
     procedure InitializeDependencies(out dependencies: TArray<TRttiType>); override;
-    procedure DoInject(instance: TObject; const arguments: array of TValue); override;
+    procedure DoInject(const instance: TValue; const arguments: array of TValue); override;
   end;
 
-  TFieldInjection = class(TMemberInjectionBase)
+  TFieldInjection = class(TInjectionBase)
   protected
     procedure Validate(target: TRttiMember); override;
     procedure InitializeDependencies(out dependencies: TArray<TRttiType>); override;
-    procedure DoInject(instance: TObject; const arguments: array of TValue); override;
+    procedure DoInject(const instance: TValue; const arguments: array of TValue); override;
   end;
 
   TInjectionFactory = class(TInterfacedObject, IInjectionFactory)
   public
-    function CreateConstructorInjection(model: TComponentModel): IInjection;
-    function CreateMethodInjection(model: TComponentModel; const methodName: string): IInjection;
-    function CreatePropertyInjection(model: TComponentModel; const propertyName: string): IInjection;
-    function CreateFieldInjection(model: TComponentModel; const fieldName: string): IInjection;
+    function CreateConstructorInjection(const model: TComponentModel): IInjection;
+    function CreateMethodInjection(const model: TComponentModel; const methodName: string): IInjection;
+    function CreatePropertyInjection(const model: TComponentModel; const propertyName: string): IInjection;
+    function CreateFieldInjection(const model: TComponentModel; const fieldName: string): IInjection;
   end;
 
 implementation
 
 uses
-  Spring.ResourceStrings,
+  SysUtils,
+  TypInfo,
   Spring.Container.ResourceStrings,
-  Spring.Helpers;
+  Spring.Helpers,
+  Spring.ResourceStrings;
 
 
 {$REGION 'TInjectionBase'}
 
-constructor TInjectionBase.Create(model: TComponentModel);
+constructor TInjectionBase.Create(const model: TComponentModel);
 begin
   Create(model, '');
 end;
 
-constructor TInjectionBase.Create(model: TComponentModel;
+constructor TInjectionBase.Create(const model: TComponentModel;
   const targetName: string);
 begin
   inherited Create;
@@ -132,7 +127,7 @@ end;
 
 procedure TInjectionBase.Initialize(target: TRttiMember);
 begin
-  TArgument.CheckNotNull(target, 'target');
+  Guard.CheckNotNull(target, 'target');
   Validate(target);
   fTarget := target;
   InitializeDependencies(fDependencies);
@@ -142,10 +137,10 @@ procedure TInjectionBase.Validate(target: TRttiMember);
 begin
 end;
 
-procedure TInjectionBase.Inject(instance: TObject;
+procedure TInjectionBase.Inject(const instance: TValue;
   const arguments: array of TValue);
 begin
-  TArgument.CheckNotNull(instance, 'instance');
+  Guard.CheckNotNull(instance, 'instance');
   if fTarget = nil then
   begin
     raise EInjectionException.CreateRes(@SInjectionTargetNeeded);
@@ -211,7 +206,7 @@ begin
   end;
 end;
 
-procedure TConstructorInjection.DoInject(instance: TObject;
+procedure TConstructorInjection.DoInject(const instance: TValue;
   const arguments: array of TValue);
 begin
   Target.AsMethod.Invoke(instance, arguments);
@@ -237,10 +232,10 @@ begin
   dependencies := TArray<TRttiType>.Create(Target.AsProperty.PropertyType);
 end;
 
-procedure TPropertyInjection.DoInject(instance: TObject;
+procedure TPropertyInjection.DoInject(const instance: TValue;
   const arguments: array of TValue);
 begin
-  TArgument.CheckTrue(Length(arguments) = 1, SUnexpectedArgumentLength);
+  Guard.CheckTrue(Length(arguments) = 1, SUnexpectedArgumentLength);
   Target.AsProperty.SetValue(instance, arguments[0]);
 end;
 
@@ -272,7 +267,7 @@ begin
   end;
 end;
 
-procedure TMethodInjection.DoInject(instance: TObject;
+procedure TMethodInjection.DoInject(const instance: TValue;
   const arguments: array of TValue);
 begin
   Target.AsMethod.Invoke(instance, arguments);
@@ -298,10 +293,10 @@ begin
   dependencies := TArray<TRttiType>.Create(Target.AsField.FieldType);
 end;
 
-procedure TFieldInjection.DoInject(instance: TObject;
+procedure TFieldInjection.DoInject(const instance: TValue;
   const arguments: array of TValue);
 begin
-  TArgument.CheckTrue(Length(arguments) = 1, SUnexpectedArgumentLength);
+  Guard.CheckTrue(Length(arguments) = 1, SUnexpectedArgumentLength);
   Target.AsField.SetValue(instance, arguments[0]);
 end;
 
@@ -311,29 +306,30 @@ end;
 {$REGION 'TInjectionFactory'}
 
 function TInjectionFactory.CreateConstructorInjection(
-  model: TComponentModel): IInjection;
+  const model: TComponentModel): IInjection;
 begin
   Result := TConstructorInjection.Create(model);
 end;
 
 function TInjectionFactory.CreateMethodInjection(
-  model: TComponentModel; const methodName: string): IInjection;
+  const model: TComponentModel; const methodName: string): IInjection;
 begin
   Result := TMethodInjection.Create(model, methodName);
 end;
 
 function TInjectionFactory.CreatePropertyInjection(
-  model: TComponentModel; const propertyName: string): IInjection;
+  const model: TComponentModel; const propertyName: string): IInjection;
 begin
   Result := TPropertyInjection.Create(model, propertyName);
 end;
 
 function TInjectionFactory.CreateFieldInjection(
-  model: TComponentModel; const fieldName: string): IInjection;
+  const model: TComponentModel; const fieldName: string): IInjection;
 begin
   Result := TFieldInjection.Create(model, fieldName);
 end;
 
 {$ENDREGION}
+
 
 end.

@@ -7,25 +7,22 @@ procedure DoOrderProcessing;
 implementation
 
 uses
-        uOrder
-      , Spring.Container
-      , Spring.Services
-      , uOrderInterfaces
-      ;
+  Spring.Container,
+  uOrder,
+  uOrderInterfaces,
+  uRegistrations;
 
 procedure DoOrderProcessing;
 var
   Order: TOrder;
   OrderProcessor: IOrderProcessor;
 begin
-  GlobalContainer.Build;
+  RegisterTypes(GlobalContainer);
   Order := TOrder.Create;
   try
-    OrderProcessor := ServiceLocator.GetService<IOrderProcessor>;
+    OrderProcessor := GlobalContainer.Resolve<IOrderProcessor>;
     if OrderProcessor.ProcessOrder(Order) then
-    begin
-      WriteLn('Order successfully processed....');
-    end;
+      Writeln('Order successfully processed....');
   finally
     Order.Free;
   end;

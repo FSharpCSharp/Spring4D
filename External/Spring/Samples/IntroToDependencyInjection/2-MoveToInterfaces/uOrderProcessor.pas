@@ -3,10 +3,11 @@ unit uOrderProcessor;
 interface
 
 uses
-     uOrder, uOrderEntry, uOrderValidator;
+   uOrder,
+   uOrderEntry,
+   uOrderValidator;
 
 type
-
   IOrderProcessor = interface
     function ProcessOrder(aOrder: TOrder): Boolean;
   end;
@@ -37,13 +38,8 @@ begin
   Result := False;
   OrderIsValid := FOrderValidator.ValidateOrder(aOrder);
   if OrderIsValid then
-  begin
     Result := FOrderEntry.EnterOrderIntoDatabase(aOrder);
-  end;
-
-  {$IFDEF CONSOLEAPP}
-    WriteLn('Order has been processed....');
-  {$ENDIF}
+  Writeln('Order has been processed....');
 end;
 
 end.

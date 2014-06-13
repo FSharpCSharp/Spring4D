@@ -1,18 +1,41 @@
+{***************************************************************************}
+{                                                                           }
+{           Spring Framework for Delphi                                     }
+{                                                                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
+{                                                                           }
+{           http://www.spring4d.org                                         }
+{                                                                           }
+{***************************************************************************}
+{                                                                           }
+{  Licensed under the Apache License, Version 2.0 (the "License");          }
+{  you may not use this file except in compliance with the License.         }
+{  You may obtain a copy of the License at                                  }
+{                                                                           }
+{      http://www.apache.org/licenses/LICENSE-2.0                           }
+{                                                                           }
+{  Unless required by applicable law or agreed to in writing, software      }
+{  distributed under the License is distributed on an "AS IS" BASIS,        }
+{  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. }
+{  See the License for the specific language governing permissions and      }
+{  limitations under the License.                                           }
+{                                                                           }
+{***************************************************************************}
+
 unit Spring.Tests.Collections;
+
+{$I Spring.inc}
 
 interface
 
 uses
-  TestFramework,
   Classes,
-  SysUtils,
+  TestFramework,
+  Spring.TestUtils,
   Spring,
-  Spring.Collections;
-
-type
-  TTestCode = reference to procedure;
-  TClassOfException = class of Exception;
-  ESpringTestsException = class(Exception);
+  Spring.Collections,
+  Spring.Collections.LinkedLists,
+  Spring.Collections.Lists;
 
 type
   TTestEmptyHashSet = class(TTestCase)
@@ -26,7 +49,7 @@ type
     procedure TestEmpty;
     procedure TestAddDuplications;
     procedure TestExceptWith;
-    procedure TestIntesectWith;
+    procedure TestIntersectWith;
     procedure TestUnionWith;
     procedure TestSetEquals;
   end;
@@ -41,19 +64,16 @@ type
     procedure CheckSet(const collection: ISet<Integer>; const values: array of Integer);
   published
     procedure TestExceptWith;
-    procedure TestIntesectWith;
+    procedure TestIntersectWith;
+    procedure TestIntersectWithList;
     procedure TestUnionWith;
     procedure TestSetEquals;
+    procedure TestSetEqualsList;
+    procedure TestIsSubsetOf;
+    procedure TestIsSupersetOf;
   end;
 
-  TExceptionCheckerTestCase = class(TTestCase)
-  protected
-    procedure CheckException(aExceptionType: TClassOfException; aCode: TTestCode; const aMessage: String);
-    procedure CheckExceptionNotRaised(aExceptionType: TClassOfException; aCode: TTestCode; const aMessage: String);
-
-  end;
-
-  TTestIntegerList = class(TExceptionCheckerTestCase)
+  TTestIntegerList = class(TTestCase)
   private
     SUT: IList<integer>;
     procedure SimpleFillList;
@@ -70,16 +90,18 @@ type
     procedure TestListSimpleDelete;
     procedure TestListMultipleDelete;
     procedure TestListSimpleExchange;
-    procedure TesListtReverse;
+    procedure TestListReverse;
     procedure TestListSort;
     procedure TestListIndexOf;
     procedure TestLastIndexOf;
     procedure TestListMove;
     procedure TestListClear;
     procedure TestListLargeDelete;
+    procedure TestQueryInterface;
+    procedure TestIssue67;
   end;
 
-  TTestEmptyStringIntegerDictionary = class(TExceptionCheckerTestCase)
+  TTestEmptyStringIntegerDictionary = class(TTestCase)
   private
     SUT: IDictionary<string, integer>;
   protected
@@ -90,9 +112,10 @@ type
     procedure TestDictionaryKeysAreEmpty;
     procedure TestDictionaryValuesAreEmpty;
     procedure TestDictionaryContainsReturnsFalse;
+    procedure TestDictionaryValuesReferenceCounting;
   end;
 
-  TTestStringIntegerDictionary = class(TExceptionCheckerTestCase)
+  TTestStringIntegerDictionary = class(TTestCase)
   private
     SUT: IDictionary<string, integer>;
   protected
@@ -107,7 +130,7 @@ type
     procedure TestDictionaryContainsKey;
   end;
 
-  TTestEmptyStackofStrings = class(TExceptionCheckerTestCase)
+  TTestEmptyStackofStrings = class(TTestCase)
   private
     SUT: IStack<string>;
   protected
@@ -118,7 +141,7 @@ type
     procedure TestEmptyPopPeek;
   end;
 
-  TTestStackOfInteger = class(TExceptionCheckerTestCase)
+  TTestStackOfInteger = class(TTestCase)
   private
     const MaxStackItems = 1000;
   private
@@ -135,14 +158,14 @@ type
     procedure TestStackPeekOrDefault;
   end;
 
-  TTestStackOfIntegerNotifyEvent = class(TExceptionCheckerTestCase)
+  TTestStackOfIntegerChangedEvent = class(TTestCase)
   private
     SUT: IStack<Integer>;
     fAInvoked, fBInvoked: Boolean;
     fAItem, fBItem: Integer;
-    fAAction, fBAction: TCollectionNotification;
-    procedure HandlerA(Sender: TObject; const Item: Integer; Action: TCollectionNotification);
-    procedure HandlerB(Sender: TObject; const Item: Integer; Action: TCollectionNotification);
+    fAAction, fBAction: TCollectionChangedAction;
+    procedure HandlerA(Sender: TObject; const Item: Integer; Action: TCollectionChangedAction);
+    procedure HandlerB(Sender: TObject; const Item: Integer; Action: TCollectionChangedAction);
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -150,10 +173,10 @@ type
     procedure TestEmpty;
     procedure TestOneHandler;
     procedure TestTwoHandlers;
-    procedure TestNonGenericNotifyEvent;
+    procedure TestNonGenericChangedEvent;
   end;
 
-  TTestEmptyQueueofInteger = class(TExceptionCheckerTestCase)
+  TTestEmptyQueueOfInteger = class(TTestCase)
   private
     SUT: IQueue<integer>;
   protected
@@ -166,12 +189,12 @@ type
     procedure TestDequeueRaisesException;
   end;
 
-  TTestQueueOfInteger = class(TExceptionCheckerTestCase)
+  TTestQueueOfInteger = class(TTestCase)
   private
     const MaxItems = 1000;
   private
     SUT: IQueue<integer>;
-    procedure FillQueue;  // Will test Engueue method
+    procedure FillQueue;  // Will test Enqueue method
   protected
     procedure SetUp; override;
     procedure TearDown; override;
@@ -181,14 +204,14 @@ type
     procedure TestQueuePeek;
   end;
 
-  TTestQueueOfIntegerNotifyEvent = class(TExceptionCheckerTestCase)
+  TTestQueueOfIntegerChangedEvent = class(TTestCase)
   private
     SUT: IQueue<Integer>;
     fAInvoked, fBInvoked: Boolean;
     fAItem, fBItem: Integer;
-    fAAction, fBAction: TCollectionNotification;
-    procedure HandlerA(Sender: TObject; const Item: Integer; Action: TCollectionNotification);
-    procedure HandlerB(Sender: TObject; const Item: Integer; Action: TCollectionNotification);
+    fAAction, fBAction: TCollectionChangedAction;
+    procedure HandlerA(Sender: TObject; const Item: Integer; Action: TCollectionChangedAction);
+    procedure HandlerB(Sender: TObject; const Item: Integer; Action: TCollectionChangedAction);
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -196,10 +219,10 @@ type
     procedure TestEmpty;
     procedure TestOneHandler;
     procedure TestTwoHandlers;
-    procedure TestNonGenericNotifyEvent;
+    procedure TestNonGenericChangedEvent;
   end;
 
-  TTestListOfIntegerAsIEnumerable = class(TExceptionCheckerTestCase)
+  TTestListOfIntegerAsIEnumerable = class(TTestCase)
   private
     const MaxItems = 1000;
   private
@@ -219,11 +242,67 @@ type
     procedure TestMax;
     procedure TestContains;
     procedure TestCheckSingleRaisedExceptionWhenHasMultipleItems;
+    procedure TestCheckSingleRaisedExceptionWhenEmpty;
     procedure TestElementAt;
   end;
 
+  TTestLinkedList = class(TTestCase)
+  private
+    SUT: ILinkedList<integer>;
+    fItem: Integer;
+    fAction: TCollectionChangedAction;
+  protected
+    procedure ListChanged(Sender: TObject; const Item: Integer;
+      Action: TCollectionChangedAction);
+    procedure SetUp; override;
+    procedure TearDown; override;
+
+    procedure CheckCount(expectedCount: Integer);
+    procedure CheckEvent(expectedItem: Integer;
+      expectedAction: TCollectionChangedAction);
+    procedure CheckNode(node: TLinkedListNode<Integer>;
+      expectedValue: Integer;
+      expectedNext: TLinkedListNode<Integer>;
+      expectedPrevious: TLinkedListNode<Integer>);
+  published
+    procedure TestAddFirstNode_EmptyList;
+    procedure TestAddFirstValue_EmptyList;
+
+    procedure TestAddFirstNode_ListContainsTwoItems;
+    procedure TestAddFirstValue_ListContainsTwoItems;
+
+    procedure TestAddLastNode_EmptyList;
+    procedure TestAddLastValue_EmptyList;
+
+    procedure TestAddLastNode_ListContainsTwoItems;
+    procedure TestAddLastValue_ListContainsTwoItems;
+  end;
+
+  TTestObjectList = class(TTestCase)
+  private
+    SUT: IList<TPersistent>;
+  protected
+    procedure SetUp; override;
+  published
+    procedure TestQueryInterface;
+  end;
+
+  TTestCollectionList = class(TTestCase)
+  private
+    SUT: TCollection;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestElementType;
+    procedure TestAdd;
+  end;
 
 implementation
+
+uses
+  Generics.Defaults,
+  SysUtils;
 
 { TTestEmptyHashSet }
 
@@ -252,7 +331,7 @@ begin
   CheckEquals(0, fSet.Count);
 end;
 
-procedure TTestEmptyHashSet.TestIntesectWith;
+procedure TTestEmptyHashSet.TestIntersectWith;
 begin
   fSet.IntersectWith(fEmpty);
   CheckEquals(0, fSet.Count);
@@ -266,10 +345,10 @@ end;
 
 procedure TTestEmptyHashSet.TestAddDuplications;
 begin
-  fSet.Add(2);
+  CheckTrue(fSet.Add(2));
   CheckEquals(1, fSet.Count);
 
-  fSet.Add(2);
+  CheckFalse(fSet.Add(2));
   CheckEquals(1, fSet.Count);
 end;
 
@@ -313,16 +392,40 @@ begin
   CheckSet(fSet1, [2]);
 end;
 
-procedure TTestNormalHashSet.TestIntesectWith;
+procedure TTestNormalHashSet.TestIntersectWith;
 begin
   fSet1.IntersectWith(fSet2);
   CheckSet(fSet1, [1, 3]);
 end;
 
+procedure TTestNormalHashSet.TestIntersectWithList;
+var
+  list: IList<Integer>;
+begin
+  list := TCollections.CreateList<Integer>;
+  list.AddRange([3, 1, 4, 5]);
+  fSet1.IntersectWith(list);
+  CheckSet(fSet1, [1, 3]);
+end;
+
+procedure TTestNormalHashSet.TestIsSubsetOf;
+begin
+  CheckFalse(fSet1.IsSubsetOf(fSet2));
+  fSet2.Add(2);
+  CheckTrue(fSet1.IsSubsetOf(fSet2));
+end;
+
+procedure TTestNormalHashSet.TestIsSupersetOf;
+begin
+  CheckFalse(fSet2.IsSupersetOf(fSet1));
+  fSet2.Add(2);
+  CheckTrue(fSet2.IsSupersetOf(fSet1));
+end;
+
 procedure TTestNormalHashSet.TestUnionWith;
 begin
   fSet1.UnionWith(fSet2);
-  CheckSet(fSet1, [1,2,3,4,5]);
+  CheckSet(fSet1, [1, 2, 3, 4, 5]);
 end;
 
 procedure TTestNormalHashSet.TestSetEquals;
@@ -330,6 +433,16 @@ begin
   CheckFalse(fSet1.SetEquals(fSet2));
   CheckTrue(fSet1.SetEquals(fSet1));
   CheckTrue(fSet2.SetEquals(fSet2));
+end;
+
+procedure TTestNormalHashSet.TestSetEqualsList;
+var
+  list: IList<Integer>;
+begin
+  list := TCollections.CreateList<Integer>;
+  list.AddRange([3, 2, 1]);
+  CheckTrue(fSet1.SetEquals(list));
+  CheckFalse(fSet2.SetEquals(list));
 end;
 
 { TTestIntegerList }
@@ -347,7 +460,26 @@ begin
 end;
 
 const
-  ListCountLimit = 1000;
+  ListCountLimit = 1000;//0000;
+
+procedure TTestIntegerList.TestIssue67;
+var
+  i: Integer;
+begin
+  SUT := TCollections.CreateList<Integer>(TComparer<Integer>.Construct(
+    function(const left, right: Integer): Integer
+    begin
+      Result := right - left; // decending
+    end));
+  SUT.AddRange([1, 3, 5, 7, 9, 2, 4, 6, 8]);
+  i := SUT.Where(
+    function(const i: Integer): Boolean
+    begin
+      Result := Odd(i);
+    end)
+    .Max;
+  CheckEquals(1, i);
+end;
 
 procedure TTestIntegerList.TestLastIndexOf;
 begin
@@ -358,7 +490,6 @@ begin
   SUT.Add(3);
 
   CheckEquals(2, SUT.LastIndexOf(1));
-
 end;
 
 procedure TTestIntegerList.TestListClear;
@@ -380,13 +511,13 @@ procedure TTestIntegerList.TestListCountWithAdd;
 var
   i: Integer;
 begin
+  (SUT as TList<Integer>).Capacity := ListCountLimit;
   for i := 1 to ListCountLimit do
   begin
     SUT.Add(i);
     CheckEquals(i, SUT.Count);
   end;
 end;
-
 
 procedure TTestIntegerList.TestListCountWithInsert;
 var
@@ -407,22 +538,22 @@ begin
   CheckEquals(0, SUT.Count);
 end;
 
-procedure TTestIntegerList.TesListtReverse;
+procedure TTestIntegerList.TestListReverse;
 var
   i: Integer;
 begin
- for i := 0 to ListCountLimit do
- begin
-   SUT.Add(i);
- end;
- CheckEquals(ListCountLimit + 1, SUT.Count, 'TestReverse: List count incorrect after initial adds');
+  for i := 0 to ListCountLimit do
+  begin
+    SUT.Add(i);
+  end;
+  CheckEquals(ListCountLimit + 1, SUT.Count, 'TestReverse: List count incorrect after initial adds');
 
- SUT.Reverse;
+  SUT.Reverse;
 
- for i := ListCountLimit downto 0 do
- begin
-   CheckEquals(i, SUT[ListCountLimit - i]);
- end;
+  for i := ListCountLimit downto 0 do
+  begin
+    CheckEquals(i, SUT[ListCountLimit - i]);
+  end;
 end;
 
 procedure TTestIntegerList.TestListSimpleExchange;
@@ -458,6 +589,17 @@ begin
   end;
 end;
 
+procedure TTestIntegerList.TestQueryInterface;
+var
+  list: IObjectList;
+begin
+  CheckException(EIntfCastError,
+    procedure
+    begin
+      list := SUT as IObjectList;
+    end);
+end;
+
 procedure TTestIntegerList.TestListIndexOf;
 var
   i: Integer;
@@ -474,7 +616,6 @@ begin
   end;
 
   CheckEquals(-1, SUT.IndexOf(ListCountLimit + 100), 'Index of item not in list was not -1');
-
 end;
 
 procedure TTestIntegerList.TestListInsertBeginning;
@@ -554,13 +695,12 @@ end;
 
 procedure TTestIntegerList.SimpleFillList;
 begin
-  if SUT = nil then
-    raise ESpringTestsException.Create('SUT is nil');
+  CheckNotNull(SUT, 'SUT is nil');
   SUT.Add(1);
   SUT.Add(2);
   SUT.Add(3);
 end;
-//
+
 { TTestStringIntegerDictionary }
 
 procedure TTestStringIntegerDictionary.SetUp;
@@ -580,16 +720,13 @@ end;
 
 procedure TTestStringIntegerDictionary.TestDictionaryContainsKey;
 begin
-
   CheckTrue(SUT.ContainsKey('one'), '"one" not found by ContainsKey');
   CheckTrue(SUT.ContainsKey('two'), '"two" not found by ContainsKey');
   CheckTrue(SUT.ContainsKey('three'), '"three" not found by ContainsKey');
-
 end;
 
 procedure TTestStringIntegerDictionary.TestDictionaryContainsValue;
 begin
-
   CheckTrue(SUT.ContainsValue(1), '1 not found by ContainsValue');
   CheckTrue(SUT.ContainsValue(2), '2 not found by ContainsValue');
   CheckTrue(SUT.ContainsValue(3), '3 not found by ContainsValue');
@@ -598,21 +735,18 @@ end;
 procedure TTestStringIntegerDictionary.TestDictionaryCountWithAdd;
 begin
   CheckEquals(3, SUT.Count, 'TestDictionaryCountWithAdd: Count is not correct');
-
 end;
 
 procedure TTestStringIntegerDictionary.TestDictionaryKeys;
 var
-  Result: ICollection<string>;
+  Result: IReadOnlyCollection<string>;
 begin
-
   Result := SUT.Keys;
   CheckEquals(3, Result.Count, 'TestDictionaryKeys: Keys call returns wrong count');
 
   CheckTrue(Result.Contains('one'), 'TestDictionaryKeys: Keys doesn''t contain "one"');
   CheckTrue(Result.Contains('two'), 'TestDictionaryKeys: Keys doesn''t contain "two"');
   CheckTrue(Result.Contains('three'), 'TestDictionaryKeys: Keys doesn''t contain "three"');
-
 end;
 
 procedure TTestStringIntegerDictionary.TestDictionarySimpleValues;
@@ -626,16 +760,14 @@ end;
 
 procedure TTestStringIntegerDictionary.TestDictionaryValues;
 var
-  Result: ICollection<integer>;
+  Result: IReadOnlyCollection<Integer>;
 begin
-
   Result := SUT.Values;
   CheckEquals(3, Result.Count, 'TestDictionaryKeys: Values call returns wrong count');
 
   CheckTrue(Result.Contains(1), 'TestDictionaryKeys: Values doesn''t contain "one"');
   CheckTrue(Result.Contains(2), 'TestDictionaryKeys: Values doesn''t contain "two"');
   CheckTrue(Result.Contains(3), 'TestDictionaryKeys: Values doesn''t contain "three"');
-
 end;
 
 { TTestEmptyStringIntegerDictionary }
@@ -654,8 +786,8 @@ end;
 
 procedure TTestEmptyStringIntegerDictionary.TestDictionaryContainsReturnsFalse;
 begin
-   CheckFalse(SUT.ContainsKey('blah'));
-   CheckFalse(SUT.ContainsValue(42));
+  CheckFalse(SUT.ContainsKey('blah'));
+  CheckFalse(SUT.ContainsValue(42));
 end;
 
 procedure TTestEmptyStringIntegerDictionary.TestDictionaryIsInitializedEmpty;
@@ -665,7 +797,7 @@ end;
 
 procedure TTestEmptyStringIntegerDictionary.TestDictionaryKeysAreEmpty;
 var
-  Result: ICollection<string>;
+  Result: IReadOnlyCollection<string>;
 begin
   Result := SUT.Keys;
   CheckEquals(0, Result.Count);
@@ -673,10 +805,18 @@ end;
 
 procedure TTestEmptyStringIntegerDictionary.TestDictionaryValuesAreEmpty;
 var
-  Result: ICollection<integer>;
+  Result: IReadOnlyCollection<Integer>;
 begin
   Result := SUT.Values;
   CheckEquals(0, Result.Count);
+end;
+
+procedure TTestEmptyStringIntegerDictionary.TestDictionaryValuesReferenceCounting;
+var
+  query: IEnumerable<Integer>;
+begin
+  query := SUT.Values.Skip(1);
+  CheckNotNull(query);
 end;
 
 { TTestEmptyStackofStrings }
@@ -702,46 +842,6 @@ end;
 procedure TTestEmptyStackofStrings.TestStackInitializesEmpty;
 begin
   CheckEquals(0, SUT.Count);
-end;
-
-{ TExceptionCheckerTestCase }
-
-procedure TExceptionCheckerTestCase.CheckException(aExceptionType: TClassOfException; aCode: TTestCode; const aMessage: String);
-var
-  WasException: Boolean;
-begin
-  WasException := False;
-  try
-    aCode;
-  except
-    on E: Exception do
-    begin
-      if E is aExceptionType then
-      begin
-        WasException := True;
-      end;
-    end;
-  end;
-  Check(WasException, aMessage);
-end;
-
-procedure TExceptionCheckerTestCase.CheckExceptionNotRaised(aExceptionType: TClassOfException; aCode: TTestCode; const aMessage: String);
-var
-  WasException: Boolean;
-begin
-  WasException := False;
-  try
-    aCode;
-  except
-    on E: Exception do
-    begin
-      if E is aExceptionType then
-      begin
-        WasException := True;
-      end;
-    end;
-  end;
-  Check(WasException, aMessage);
 end;
 
 { TTestStackOfInteger }
@@ -812,7 +912,6 @@ procedure TTestStackOfInteger.TestStackPopPushBalances;
 var
   i: Integer;
 begin
-
   FillStack;
 
   for i := 0 to MaxStackItems do
@@ -822,18 +921,17 @@ begin
 
   // Should be empty
   CheckEquals(0, SUT.Count);
-
 end;
 
-{ TTestStackOfIntegerNotifyEvent }
+{ TTestStackOfIntegerChangedEvent }
 
-procedure TTestStackOfIntegerNotifyEvent.SetUp;
+procedure TTestStackOfIntegerChangedEvent.SetUp;
 begin
   inherited;
   SUT := TCollections.CreateStack<Integer>;
 end;
 
-procedure TTestStackOfIntegerNotifyEvent.TearDown;
+procedure TTestStackOfIntegerChangedEvent.TearDown;
 begin
   inherited;
   SUT := nil;
@@ -841,26 +939,26 @@ begin
   fBInvoked := False;
 end;
 
-procedure TTestStackOfIntegerNotifyEvent.HandlerA(Sender: TObject;
-  const Item: Integer; Action: TCollectionNotification);
+procedure TTestStackOfIntegerChangedEvent.HandlerA(Sender: TObject;
+  const Item: Integer; Action: TCollectionChangedAction);
 begin
   fAItem := Item;
   fAAction := Action;
   fAInvoked := True;
 end;
 
-procedure TTestStackOfIntegerNotifyEvent.HandlerB(Sender: TObject;
-  const Item: Integer; Action: TCollectionNotification);
+procedure TTestStackOfIntegerChangedEvent.HandlerB(Sender: TObject;
+  const Item: Integer; Action: TCollectionChangedAction);
 begin
   fBitem := Item;
   fBAction := Action;
   fBInvoked := True;
 end;
 
-procedure TTestStackOfIntegerNotifyEvent.TestEmpty;
+procedure TTestStackOfIntegerChangedEvent.TestEmpty;
 begin
-  CheckEquals(0, SUT.OnNotify.Count);
-  CheckTrue(SUT.OnNotify.IsEmpty);
+  CheckEquals(0, SUT.OnChanged.Count);
+  CheckTrue(SUT.OnChanged.IsEmpty);
 
   SUT.Push(0);
 
@@ -868,111 +966,112 @@ begin
   CheckFalse(fBInvoked);
 end;
 
-procedure TTestStackOfIntegerNotifyEvent.TestOneHandler;
+procedure TTestStackOfIntegerChangedEvent.TestOneHandler;
 begin
-  SUT.OnNotify.Add(HandlerA);
+  SUT.OnChanged.Add(HandlerA);
 
   SUT.Push(0);
 
   CheckTrue(fAInvoked, 'handler A not invoked');
-  CheckTrue(fAAction = cnAdded, 'handler A: different collection notifications');
+  CheckTrue(fAAction = caAdded, 'handler A: different collection notifications');
   CheckEquals(0, fAItem, 'handler A: different item');
 
   CheckFalse(fBInvoked, 'handler B not registered as callback');
 
   SUT.Pop;
 
-  CheckTrue(fAAction = cnRemoved, 'different collection notifications');
+  CheckTrue(fAAction = caRemoved, 'different collection notifications');
 
-  SUT.OnNotify.Remove(HandlerA);
-  CheckEquals(0, SUT.OnNotify.Count);
-  CheckTrue(SUT.OnNotify.IsEmpty);
+  SUT.OnChanged.Remove(HandlerA);
+  CheckEquals(0, SUT.OnChanged.Count);
+  CheckTrue(SUT.OnChanged.IsEmpty);
 end;
 
-procedure TTestStackOfIntegerNotifyEvent.TestTwoHandlers;
+procedure TTestStackOfIntegerChangedEvent.TestTwoHandlers;
 begin
-  SUT.OnNotify.Add(HandlerA);
-  SUT.OnNotify.Add(HandlerB);
+  SUT.OnChanged.Add(HandlerA);
+  SUT.OnChanged.Add(HandlerB);
 
   SUT.Push(0);
 
   CheckTrue(fAInvoked, 'handler A not invoked');
-  CheckTrue(fAAction = cnAdded, 'handler A: different collection notifications');
+  CheckTrue(fAAction = caAdded, 'handler A: different collection notifications');
   CheckEquals(0, fAItem, 'handler A: different item');
   CheckTrue(fBInvoked, 'handler B not invoked');
-  CheckTrue(fBAction = cnAdded, 'handler B: different collection notifications');
+  CheckTrue(fBAction = caAdded, 'handler B: different collection notifications');
   CheckEquals(0, fBItem, 'handler B: different item');
 
   SUT.Pop;
 
-  CheckTrue(fAAction = cnRemoved, 'handler A: different collection notifications');
+  CheckTrue(fAAction = caRemoved, 'handler A: different collection notifications');
   CheckEquals(0, fAItem, 'handler A: different item');
-  CheckTrue(fBAction = cnRemoved, 'handler B: different collection notifications');
+  CheckTrue(fBAction = caRemoved, 'handler B: different collection notifications');
   CheckEquals(0, fBItem, 'handler B: different item');
 
-  SUT.OnNotify.Remove(HandlerA);
-  CheckEquals(1, SUT.OnNotify.Count);
-  CheckFalse(SUT.OnNotify.IsEmpty);
-  SUT.OnNotify.Remove(HandlerB);
-  CheckTrue(SUT.OnNotify.IsEmpty);
+  SUT.OnChanged.Remove(HandlerA);
+  CheckEquals(1, SUT.OnChanged.Count);
+  CheckFalse(SUT.OnChanged.IsEmpty);
+  SUT.OnChanged.Remove(HandlerB);
+  CheckTrue(SUT.OnChanged.IsEmpty);
 end;
 
-procedure TTestStackOfIntegerNotifyEvent.TestNonGenericNotifyEvent;
+procedure TTestStackOfIntegerChangedEvent.TestNonGenericChangedEvent;
 var
-  stack: IStack;
+  event: IEvent;
   method: TMethod;
 begin
-  stack := SUT.AsStack;
+  event := SUT.OnChanged;
 
-  CheckTrue(stack.IsEmpty);
-  CheckTrue(stack.OnNotify.Enabled);
+  CheckTrue(event.IsEmpty);
+  CheckTrue(event.Enabled);
 
-  method.Code := @TTestStackOfIntegerNotifyEvent.HandlerA;
+  method.Code := @TTestStackOfIntegerChangedEvent.HandlerA;
   method.Data := Pointer(Self);
 
-  stack.OnNotify.Add(method);
+  event.Add(method);
 
-  CheckEquals(1, stack.OnNotify.Count);
+  CheckEquals(1, event.Count);
+  CheckEquals(1, SUT.OnChanged.Count);
 
-  stack.Push(0);
+  SUT.Push(0);
 
   CheckTrue(fAInvoked, 'handler A not invoked');
-  CheckTrue(fAAction = cnAdded, 'handler A: different collection notifications');
+  CheckTrue(fAAction = caAdded, 'handler A: different collection notifications');
   CheckEquals(0, fAItem, 'handler A: different item');
 end;
 
 { TTestEmptyQueueofTObject }
 
-procedure TTestEmptyQueueofInteger.SetUp;
+procedure TTestEmptyQueueOfInteger.SetUp;
 begin
   inherited;
   SUT := TCollections.CreateQueue<integer>
 end;
 
-procedure TTestEmptyQueueofInteger.TearDown;
+procedure TTestEmptyQueueOfInteger.TearDown;
 begin
   inherited;
   SUT := nil;
 end;
 
-procedure TTestEmptyQueueofInteger.TestClearOnEmptyQueue;
+procedure TTestEmptyQueueOfInteger.TestClearOnEmptyQueue;
 begin
   CheckEquals(0, SUT.Count, 'Queue not empty before call to clear');
   SUT.Clear;
   CheckEquals(0, SUT.Count, 'Queue not empty after call to clear');
 end;
 
-procedure TTestEmptyQueueofInteger.TestEmptyQueueIsEmpty;
+procedure TTestEmptyQueueOfInteger.TestEmptyQueueIsEmpty;
 begin
   CheckEquals(0, SUT.Count);
 end;
 
-procedure TTestEmptyQueueofInteger.TestPeekRaisesException;
+procedure TTestEmptyQueueOfInteger.TestPeekRaisesException;
 begin
   CheckException(EListError, procedure() begin SUT.Peek end, 'EListError was not raised on Peek call with empty Queue');
 end;
 
-procedure TTestEmptyQueueofInteger.TestDequeueRaisesException;
+procedure TTestEmptyQueueOfInteger.TestDequeueRaisesException;
 begin
   CheckException(EListError, procedure() begin SUT.Dequeue end, 'EListError was not raised on Peek call with empty Queue');
 end;
@@ -1034,15 +1133,15 @@ begin
   CheckEquals(Expected, Actual);
 end;
 
-{ TTestQueueOfIntegerNotifyEvent }
+{ TTestQueueOfIntegerChangedEvent }
 
-procedure TTestQueueOfIntegerNotifyEvent.SetUp;
+procedure TTestQueueOfIntegerChangedEvent.SetUp;
 begin
   inherited;
   SUT := TCollections.CreateQueue<Integer>;
 end;
 
-procedure TTestQueueOfIntegerNotifyEvent.TearDown;
+procedure TTestQueueOfIntegerChangedEvent.TearDown;
 begin
   inherited;
   SUT := nil;
@@ -1050,26 +1149,26 @@ begin
   fBInvoked := False;
 end;
 
-procedure TTestQueueOfIntegerNotifyEvent.HandlerA(Sender: TObject;
-  const Item: Integer; Action: TCollectionNotification);
+procedure TTestQueueOfIntegerChangedEvent.HandlerA(Sender: TObject;
+  const Item: Integer; Action: TCollectionChangedAction);
 begin
   fAItem := Item;
   fAAction := Action;
   fAInvoked := True;
 end;
 
-procedure TTestQueueOfIntegerNotifyEvent.HandlerB(Sender: TObject;
-  const Item: Integer; Action: TCollectionNotification);
+procedure TTestQueueOfIntegerChangedEvent.HandlerB(Sender: TObject;
+  const Item: Integer; Action: TCollectionChangedAction);
 begin
   fBitem := Item;
   fBAction := Action;
   fBInvoked := True;
 end;
 
-procedure TTestQueueOfIntegerNotifyEvent.TestEmpty;
+procedure TTestQueueOfIntegerChangedEvent.TestEmpty;
 begin
-  CheckEquals(0, SUT.OnNotify.Count);
-  CheckTrue(SUT.OnNotify.IsEmpty);
+  CheckEquals(0, SUT.OnChanged.Count);
+  CheckTrue(SUT.OnChanged.IsEmpty);
 
   SUT.Enqueue(0);
 
@@ -1077,76 +1176,77 @@ begin
   CheckFalse(fBInvoked);
 end;
 
-procedure TTestQueueOfIntegerNotifyEvent.TestOneHandler;
+procedure TTestQueueOfIntegerChangedEvent.TestOneHandler;
 begin
-  SUT.OnNotify.Add(HandlerA);
+  SUT.OnChanged.Add(HandlerA);
 
   SUT.Enqueue(0);
 
   CheckTrue(fAInvoked, 'handler A not invoked');
-  CheckTrue(fAAction = cnAdded, 'handler A: different collection notifications');
+  CheckTrue(fAAction = caAdded, 'handler A: different collection notifications');
   CheckEquals(0, fAItem, 'handler A: different item');
 
   CheckFalse(fBInvoked, 'handler B not registered as callback');
 
   SUT.Dequeue;
 
-  CheckTrue(fAAction = cnRemoved, 'different collection notifications');
+  CheckTrue(fAAction = caRemoved, 'different collection notifications');
 
-  SUT.OnNotify.Remove(HandlerA);
-  CheckEquals(0, SUT.OnNotify.Count);
-  CheckTrue(SUT.OnNotify.IsEmpty);
+  SUT.OnChanged.Remove(HandlerA);
+  CheckEquals(0, SUT.OnChanged.Count);
+  CheckTrue(SUT.OnChanged.IsEmpty);
 end;
 
-procedure TTestQueueOfIntegerNotifyEvent.TestTwoHandlers;
+procedure TTestQueueOfIntegerChangedEvent.TestTwoHandlers;
 begin
-  SUT.OnNotify.Add(HandlerA);
-  SUT.OnNotify.Add(HandlerB);
+  SUT.OnChanged.Add(HandlerA);
+  SUT.OnChanged.Add(HandlerB);
 
   SUT.Enqueue(0);
 
   CheckTrue(fAInvoked, 'handler A not invoked');
-  CheckTrue(fAAction = cnAdded, 'handler A: different collection notifications');
+  CheckTrue(fAAction = caAdded, 'handler A: different collection notifications');
   CheckEquals(0, fAItem, 'handler A: different item');
   CheckTrue(fBInvoked, 'handler B not invoked');
-  CheckTrue(fBAction = cnAdded, 'handler B: different collection notifications');
+  CheckTrue(fBAction = caAdded, 'handler B: different collection notifications');
   CheckEquals(0, fBItem, 'handler B: different item');
 
   SUT.Dequeue;
 
-  CheckTrue(fAAction = cnRemoved, 'handler A: different collection notifications');
+  CheckTrue(fAAction = caRemoved, 'handler A: different collection notifications');
   CheckEquals(0, fAItem, 'handler A: different item');
-  CheckTrue(fBAction = cnRemoved, 'handler B: different collection notifications');
+  CheckTrue(fBAction = caRemoved, 'handler B: different collection notifications');
   CheckEquals(0, fBItem, 'handler B: different item');
 
-  SUT.OnNotify.Remove(HandlerA);
-  CheckEquals(1, SUT.OnNotify.Count);
-  CheckFalse(SUT.OnNotify.IsEmpty);
-  SUT.OnNotify.Remove(HandlerB);
-  CheckTrue(SUT.OnNotify.IsEmpty);
+  SUT.OnChanged.Remove(HandlerA);
+  CheckEquals(1, SUT.OnChanged.Count);
+  CheckFalse(SUT.OnChanged.IsEmpty);
+  SUT.OnChanged.Remove(HandlerB);
+  CheckTrue(SUT.OnChanged.IsEmpty);
 end;
 
-procedure TTestQueueOfIntegerNotifyEvent.TestNonGenericNotifyEvent;
+procedure TTestQueueOfIntegerChangedEvent.TestNonGenericChangedEvent;
 var
-  queue: IQueue;
+  event: IEvent;
   method: TMethod;
 begin
-  queue := SUT.AsQueue;
+  event := SUT.OnChanged;
 
-  CheckTrue(queue.IsEmpty);
-  CheckTrue(queue.OnNotify.Enabled);
+  CheckTrue(event.IsEmpty);
+  CheckTrue(event.Enabled);
 
-  method.Code := @TTestStackOfIntegerNotifyEvent.HandlerA;
+  method.Code := @TTestStackOfIntegerChangedEvent.HandlerA;
   method.Data := Pointer(Self);
 
-  queue.OnNotify.Add(method);
+  event.Add(method);
 
-  CheckEquals(1, queue.OnNotify.Count);
+  CheckEquals(1, event.Count);
+  CheckEquals(1, SUT.OnChanged.Count);
 
-  queue.Enqueue(0);
+  SUT.Enqueue(0);
 
   CheckTrue(fAInvoked, 'handler A not invoked');
-  CheckTrue(fAAction = cnAdded, 'handler A: different collection notifications');
+  CheckTrue(fAAction = caAdded, 'handler A: different collection notifications');
   CheckEquals(0, fAItem, 'handler A: different item');
 end;
 
@@ -1209,13 +1309,17 @@ begin
   CheckEquals(ExpectedResult, ActualResult);
 end;
 
+procedure TTestListOfIntegerAsIEnumerable.TestCheckSingleRaisedExceptionWhenEmpty;
+begin
+  CheckException(EInvalidOperationException, procedure begin SUT.Single(function(const i: Integer): Boolean begin Result := i = 2 end) end,
+    'SUT is empty, but failed to raise the EInvalidOperationException when the Single method was called');
+end;
+
 procedure TTestListOfIntegerAsIEnumerable.TestCheckSingleRaisedExceptionWhenHasMultipleItems;
-var
-  TempCode: TTestCode;
 begin
   FillList;
-  TempCode := procedure begin SUT.Single end;
-  CheckException(EInvalidOperationException, TempCode, 'SUT has more thann one item, but failed to raise the EInvalidOperationException when the Single method was called.');
+  CheckException(EInvalidOperationException, procedure begin SUT.Single end,
+    'SUT has more thann one item, but failed to raise the EInvalidOperationException when the Single method was called.');
 end;
 
 procedure TTestListOfIntegerAsIEnumerable.TestContains;
@@ -1246,6 +1350,236 @@ procedure TTestListOfIntegerAsIEnumerable.TestEnumerableHasCorrectCountAfterFill
 begin
   FillList;
   CheckEquals(MaxItems, SUT.Count);
+end;
+
+{ TTestLinkedList }
+
+procedure TTestLinkedList.CheckEvent(expectedItem: Integer;
+  expectedAction: TCollectionChangedAction);
+begin
+  CheckEquals(expectedItem, fItem, 'expectedItem');
+  CheckTrue(expectedAction = fAction, 'expectedAction');
+end;
+
+procedure TTestLinkedList.CheckCount(expectedCount: Integer);
+begin
+  CheckEquals(expectedCount, SUT.Count, 'expectedCount');
+end;
+
+procedure TTestLinkedList.CheckNode(node: TLinkedListNode<Integer>;
+  expectedValue: Integer; expectedNext,
+  expectedPrevious: TLinkedListNode<Integer>);
+begin
+  CheckNotNull(node, 'node');
+  CheckEquals(expectedValue, node.Value, 'node.Value');
+  CheckSame(SUT, node.List, 'node.List');
+  CheckSame(expectedNext, node.Next, 'node.Next');
+  CheckSame(expectedPrevious, node.Previous, 'node.Previous');
+end;
+
+procedure TTestLinkedList.ListChanged(Sender: TObject; const Item: Integer;
+  Action: TCollectionChangedAction);
+begin
+  fItem := Item;
+  fAction := Action;
+end;
+
+procedure TTestLinkedList.SetUp;
+begin
+  SUT := TLinkedList<Integer>.Create;
+  SUT.OnChanged.Add(ListChanged);
+  fItem := 0;
+  fAction := caChanged;
+end;
+
+procedure TTestLinkedList.TearDown;
+begin
+  SUT := nil;
+end;
+
+procedure TTestLinkedList.TestAddFirstNode_EmptyList;
+var
+  node: TLinkedListNode<Integer>;
+begin
+  node := TLinkedListNode<Integer>.Create(1);
+  SUT.AddFirst(node);
+
+  CheckCount(1);
+  CheckEvent(1, caAdded);
+  CheckNode(node, 1, nil, nil);
+end;
+
+procedure TTestLinkedList.TestAddFirstNode_ListContainsTwoItems;
+var
+  node, nextNode: TLinkedListNode<Integer>;
+begin
+  nextNode := SUT.AddFirst(1);
+  SUT.Add(2);
+
+  node := TLinkedListNode<Integer>.Create(3);
+  SUT.AddFirst(node);
+
+  CheckCount(3);
+  CheckEvent(3, caAdded);
+  CheckNode(node, 3, nextNode, nil);
+end;
+
+procedure TTestLinkedList.TestAddFirstValue_EmptyList;
+var
+  node: TLinkedListNode<Integer>;
+begin
+  node := SUT.AddFirst(1);
+
+  CheckCount(1);
+  CheckEvent(1, caAdded);
+  CheckNode(node, 1, nil, nil);
+end;
+
+procedure TTestLinkedList.TestAddFirstValue_ListContainsTwoItems;
+var
+  node, nextNode: TLinkedListNode<Integer>;
+begin
+  nextNode := SUT.AddFirst(1);
+  SUT.Add(2);
+
+  node := SUT.AddFirst(3);
+
+  CheckCount(3);
+  CheckEvent(3, caAdded);
+  CheckNode(node, 3, nextNode, nil);
+end;
+
+procedure TTestLinkedList.TestAddLastNode_EmptyList;
+var
+  node: TLinkedListNode<Integer>;
+begin
+  node := TLinkedListNode<Integer>.Create(1);
+  SUT.AddLast(node);
+
+  CheckCount(1);
+  CheckEvent(1, caAdded);
+  CheckNode(node, 1, nil, nil);
+end;
+
+procedure TTestLinkedList.TestAddLastNode_ListContainsTwoItems;
+var
+  node, prevNode: TLinkedListNode<Integer>;
+begin
+  SUT.Add(1);
+  prevNode := SUT.AddLast(2);
+
+  node := TLinkedListNode<Integer>.Create(3);
+  SUT.AddLast(node);
+
+  CheckCount(3);
+  CheckEvent(3, caAdded);
+  CheckNode(node, 3, nil, prevNode);
+end;
+
+procedure TTestLinkedList.TestAddLastValue_EmptyList;
+var
+  node: TLinkedListNode<Integer>;
+begin
+  node := SUT.AddLast(1);
+
+  CheckCount(1);
+  CheckEvent(1, caAdded);
+  CheckNode(node, 1, nil, nil);
+end;
+
+procedure TTestLinkedList.TestAddLastValue_ListContainsTwoItems;
+var
+  node, prevNode: TLinkedListNode<Integer>;
+begin
+  SUT.Add(1);
+  prevNode := SUT.AddLast(2);
+
+  node := SUT.AddLast(3);
+
+  CheckCount(3);
+  CheckEvent(3, caAdded);
+  CheckNode(node, 3, nil, prevNode);
+end;
+
+{ TTestObjectList }
+
+procedure TTestObjectList.SetUp;
+begin
+  SUT := TObjectList<TPersistent>.Create as IList<TPersistent>;
+end;
+
+procedure TTestObjectList.TestQueryInterface;
+var
+  list: IObjectList;
+  obj: TObject;
+begin
+  SUT.Add(TPersistent.Create);
+  SUT.Add(TPersistent.Create);
+  SUT.Add(TPersistent.Create);
+  list := SUT as IObjectList;
+  CheckEquals(3, list.Count);
+  list.Delete(1);
+  CheckEquals(2, list.Count);
+  list.Add(TPersistent.Create);
+  CheckEquals(3, list.Count);
+  for obj in list do
+    CheckIs(obj, TPersistent);
+  CheckTrue(list.ElementType = TPersistent.ClassInfo);
+end;
+
+{ TTestCollectionList }
+
+type
+  TMyCollectionItem = class(TCollectionItem);
+  TMyOtherCollectionItem = class(TCollectionItem);
+
+procedure TTestCollectionList.SetUp;
+begin
+  SUT := TCollection.Create(TMyCollectionItem);
+end;
+
+procedure TTestCollectionList.TearDown;
+begin
+  SUT.Free;
+end;
+
+procedure TTestCollectionList.TestAdd;
+var
+  list: IList<TCollectionItem>;
+begin
+  list := SUT.AsList;
+  list.Add(TMyCollectionItem.Create(nil));
+  TMyCollectionItem.Create(SUT);
+  CheckEquals(2, list.Count);
+  CheckException(Exception,
+    procedure
+    var
+      item: TCollectionItem;
+    begin
+      item := TMyOtherCollectionItem.Create(nil);
+      try
+        list.Add(item);
+      except
+        item.Free;
+        raise;
+      end;
+    end);
+end;
+
+procedure TTestCollectionList.TestElementType;
+var
+  list1: IList<TCollectionItem>;
+  list2: IList<TMyCollectionItem>;
+begin
+  list1 := SUT.AsList;
+  list2 := SUT.AsList<TMyCollectionItem>;
+  CheckTrue(list1.ElementType = TMyCollectionItem.ClassInfo);
+  CheckTrue(list2.ElementType = TMyCollectionItem.ClassInfo);
+  CheckException(EArgumentException,
+    procedure
+    begin
+      SUT.AsList<TMyOtherCollectionItem>;
+    end);
 end;
 
 end.

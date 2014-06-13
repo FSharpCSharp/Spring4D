@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2012 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -25,6 +25,7 @@
 unit Spring.Tests.Container;
 
 {$I Spring.inc}
+{$I Spring.Tests.inc}
 
 interface
 
@@ -35,13 +36,15 @@ uses
   Spring,
   Spring.Container,
   Spring.Services,
+  // DO NOT CHANGE ORDER OF FOLLOWING UNITS !!!
+  Spring.Tests.Container.Interfaces,
   Spring.Tests.Container.Components;
 
 type
-//  [Ignore]
   TContainerTestCase = class abstract(TTestCase)
   protected
     fContainer: TContainer;
+    procedure CheckIs(AInterface: IInterface; AClass: TClass; msg: string = ''); overload;
     procedure SetUp; override;
     procedure TearDown; override;
   end;
@@ -53,6 +56,10 @@ type
     procedure TestRegisterNonGuidInterfaceService;
     procedure TestRegisterGenericInterfaceService;
     procedure TestRegisterUnassignableService;
+    procedure TestRegisterTwoUnnamedServicesImplicit;
+    procedure TestRegisterTwoUnnamedServicesExplicit;
+    procedure TestRegisterTwoNamedDifferentServices;
+    procedure TestResolveReturnsUnnamedService;
     procedure TestResolveAll;
     procedure TestResolveAllNonGeneric;
   end;
@@ -67,11 +74,17 @@ type
     procedure TestSingleton;
     procedure TestTransient;
     procedure TestPerThread;
+    procedure TestPooled;
+    procedure TestPooledRefCountedInterface;
     procedure TestInitializable;
+    procedure TestRecyclable;
 
     procedure TestIssue41_DifferentName;
     procedure TestIssue41_DifferentService;
     procedure TestIssue41_DifferentLifetimes;
+
+    procedure TestIssue49;
+    procedure TestIssue50;
   end;
 
   // Same Service, Different Implementations
@@ -119,7 +132,6 @@ type
     procedure TestStringArgument;
   end;
 
-//  [Ignore]
   TTypedInjectionTestCase = class abstract(TContainerTestCase)
   private
     fNameService: INameService;
@@ -145,7 +157,6 @@ type
     procedure DoRegisterComponents; override;
   end;
 
-//  [Ignore]
   TNamedInjectionsTestCase = class(TContainerTestCase)
   private
     fExplorer: IInjectionExplorer;
@@ -192,13 +203,16 @@ type
   TTestRegisterInterfaces = class(TContainerTestCase)
   published
     procedure TestOneService;
-    procedure TestOneServices;
+    procedure TestTwoServices;
     procedure TestInheritedService;
+    procedure TestTwoServicesWithSameName;
   end;
 
   TTestDefaultResolve = class(TContainerTestCase)
   published
     procedure TestResolve;
+    procedure TestResolveDependency;
+    procedure TestRegisterDefault;
   end;
 
   TTestInjectionByValue = class(TContainerTestCase)
@@ -216,15 +230,74 @@ type
     procedure TestResolve;
     procedure TestResolveWithClass;
     procedure TestResolveWithMultipleParams;
+    procedure TestResolveWithDependency;
   end;
+
+  TTestRegisterInterfaceTypes = class(TContainerTestCase)
+  published
+    procedure TestOneService;
+    procedure TestTwoServices;
+    procedure TestOneServiceAsSingleton;
+    procedure TestOneServiceAsSingletonPerThread;
+  end;
+
+  TTestLazyDependencies = class(TContainerTestCase)
+  private
+    fCalled: Boolean;
+  protected
+    procedure SetUp; override;
+    procedure PerformChecks; virtual;
+  published
+    procedure TestDependencyTypeIsFunc;
+{$IFNDEF IOSSIMULATOR}
+    procedure TestDependencyTypeIsRecord;
+    procedure TestDependencyTypeIsInterface;
+{$ELSE}
+    {$MESSAGE WARN 'Test me again later'}
+    // These tests fail due to some compiler/RTL problem, the circular
+    // dependency excpetion is raised but during re-raise in some finally block
+    // AV is raised instead. This is rare corner case not considered to be a
+    // major issue.
+{$ENDIF}
+  end;
+
+  TTestLazyDependenciesDetectRecursion = class(TTestLazyDependencies)
+  protected
+    procedure PerformChecks; override;
+  end;
+
+  TTestDecoratorExtension = class(TContainerTestCase)
+  published
+    procedure TestResolveReturnsDecorator;
+    procedure TestResolveWithResolverOverride;
+  end;
+
+  TTestManyDependencies = class(TContainerTestCase)
+  protected
+    procedure SetUp; override;
+  published
+    procedure TestInjectArray;
+    procedure TestInjectEnumerable;
+    procedure TestInjectArrayOfLazy;
+    procedure TestNoRecursion;
+    procedure TestResolveArrayOfLazy;
+  end;
+
 
 implementation
 
 uses
+  Spring.Collections,
+  Spring.Container.DecoratorExtension,
   Spring.Container.Resolvers;
 
 
 {$REGION 'TContainerTestCase'}
+
+procedure TContainerTestCase.CheckIs(AInterface: IInterface; AClass: TClass; msg: string);
+begin
+  CheckIs(AInterface as TObject, AClass, msg);
+end;
 
 procedure TContainerTestCase.SetUp;
 begin
@@ -261,6 +334,42 @@ begin
   fContainer.RegisterType<TNonGuid>.Implements<INonGuid>;
 end;
 
+procedure TTestEmptyContainer.TestRegisterTwoNamedDifferentServices;
+var
+  nameService: INameService;
+  ageService: IAgeService;
+begin
+  fContainer.RegisterType<TNameService>.Implements<INameService>;
+  fContainer.RegisterType<TNameAgeComponent>.Implements<IAgeService>;
+  fContainer.Build;
+  nameService := fContainer.Resolve<INameService>;
+  CheckTrue(nameService is TNameService);
+  ageService := fContainer.Resolve<IAgeService>;
+  CheckTrue(ageService is TNameAgeComponent);
+end;
+
+procedure TTestEmptyContainer.TestRegisterTwoUnnamedServicesExplicit;
+var
+  service: INameService;
+begin
+  fContainer.RegisterType<TNameService>.Implements<INameService>;
+  fContainer.RegisterType<TAnotherNameService>.Implements<INameService>;
+  fContainer.Build;
+  service := fContainer.Resolve<INameService>;
+  CheckTrue(service is TAnotherNameService);
+end;
+
+procedure TTestEmptyContainer.TestRegisterTwoUnnamedServicesImplicit;
+var
+  service: INameService;
+begin
+  fContainer.RegisterType<TNameService>;
+  fContainer.RegisterType<TAnotherNameService>;
+  fContainer.Build;
+  service := fContainer.Resolve<INameService>;
+  CheckTrue(service is TAnotherNameService);
+end;
+
 procedure TTestEmptyContainer.TestRegisterGenericInterfaceService;
 begin
   ExpectedException := ERegistrationException;
@@ -289,6 +398,17 @@ begin
   CheckEquals(0, Length(services));
 end;
 
+procedure TTestEmptyContainer.TestResolveReturnsUnnamedService;
+var
+  service: INameService;
+begin
+  fContainer.RegisterType<TNameService>.Implements<INameService>;
+  fContainer.RegisterType<TAnotherNameService>.Implements<INameService>('some');
+  fContainer.Build;
+  service := fContainer.Resolve<INameService>;
+  CheckTrue(service is TNameService, 'service should be a TNameService instance.');
+end;
+
 {$ENDREGION}
 
 
@@ -306,7 +426,10 @@ begin
     CheckTrue(service is TNameService, 'service should be a TNameService instance.');
     CheckEquals(TNameService.NameString, service.Name);
   finally
+{$IFNDEF AUTOREFCOUNT}
     fContainer.Release(service);
+{$ENDIF}
+    service := nil;
   end;
 end;
 
@@ -314,6 +437,7 @@ procedure TTestSimpleContainer.TestIssue13;
 begin
   fContainer.RegisterType<TNameService>.Implements<INameService>.AsSingleton;
   fContainer.Build;
+  FCheckCalled := True;
 end;
 
 procedure TTestSimpleContainer.TestAbstractClassService;
@@ -327,22 +451,30 @@ begin
     CheckIs(service, TAgeServiceImpl, 'service should be a TNameService instance.');
     CheckEquals(TAgeServiceImpl.DefaultAge, service.Age);
   finally
+{$IFNDEF AUTOREFCOUNT}
     fContainer.Release(service);
+{$ELSE}
+    service:=nil;
+{$ENDIF}
   end;
 end;
 
 procedure TTestSimpleContainer.TestServiceSameAsComponent;
 var
-  service: TNameService;
+  service: TAgeServiceBase;
 begin
-  fContainer.RegisterType<TNameService>; //.Implements<TNameService>;
+  fContainer.RegisterType<TAgeServiceImpl>;
   fContainer.Build;
-  service := fContainer.Resolve<TNameService>;
+  service := fContainer.Resolve<TAgeServiceImpl>;
   try
     CheckNotNull(service, 'service should not be null.');
-    CheckEquals(TNameService.NameString, service.Name);
+    CheckEquals(TAgeServiceImpl.DefaultAge, service.Age);
   finally
+{$IFNDEF AUTOREFCOUNT}
     fContainer.Release(service);
+{$ELSE}
+    service := nil;
+{$ENDIF}
   end;
 end;
 
@@ -362,7 +494,11 @@ begin
     CheckNotNull(component.AgeService, 'AgeService');
     CheckEquals(TAgeServiceImpl.DefaultAge, component.AgeService.Age);
   finally
+{$IFNDEF AUTOREFCOUNT}
     fContainer.Release(component);
+{$ELSE}
+    component := nil;
+{$ENDIF}
   end;
 end;
 
@@ -381,8 +517,13 @@ begin
     CheckNotNull(obj2, 'obj2 should not be nil');
     CheckSame(obj1, obj2, 'obj1 should be the same as obj2.');
   finally
+{$IFNDEF AUTOREFCOUNT}
     fContainer.Release(obj1);
     fContainer.Release(obj2);
+{$ELSE}
+    obj1 := nil;
+    obj2 := nil;
+{$ENDIF}
   end;
 end;
 
@@ -400,8 +541,13 @@ begin
     CheckNotNull(obj2, 'obj2 should not be nil');
     CheckTrue(obj1 <> obj2, 'obj1 should not be the same as obj2.');
   finally
+{$IFNDEF AUTOREFCOUNT}
     fContainer.Release(obj1);
     fContainer.Release(obj2);
+{$ELSE}
+    obj1 := nil;
+    obj2 := nil;
+{$ENDIF}
   end;
 end;
 
@@ -456,6 +602,103 @@ begin
   end;
 end;
 
+procedure TTestSimpleContainer.TestPooled;
+var
+  service1, service2, service3: INameService;
+  count: Integer;
+begin
+{$IFDEF NEXTGEN}
+  {$MESSAGE WARN 'Fix me'}
+  Exit;  //Fails on nextgen, probably object is nil
+{$ENDIF}
+  count := 0;
+  fContainer.RegisterType<TNameService>
+    .Implements<INameService>
+    .DelegateTo(
+      function: TNameService
+      begin
+        Result := TNameService.Create;
+        Inc(count);
+      end)
+    .AsPooled(2, 2);
+  fContainer.Build;
+  CheckEquals(0, count); // pool did not create any instances yet
+  service1 := fContainer.Resolve<INameService>;
+  CheckEquals(2, count); // pool created the minimum number of instances upon first request
+  service2 := fContainer.Resolve<INameService>;
+  service3 := fContainer.Resolve<INameService>;
+  CheckEquals(3, count); // pool created one additional instance
+  service3 := nil;
+  service2 := nil;
+  service1 := nil;
+  service1 := fContainer.Resolve<INameService>; // pool collects unused instances up to maximum count
+  service2 := fContainer.Resolve<INameService>;
+  CheckEquals(3, count);
+  service3 := fContainer.Resolve<INameService>; // pool creates a new instance again
+  CheckEquals(4, count);
+end;
+
+procedure TTestSimpleContainer.TestPooledRefCountedInterface;
+var
+  service1, service2, service3: INameService;
+  count: Integer;
+begin
+{$IFDEF NEXTGEN}
+  {$MESSAGE WARN 'Fix me'}
+  Exit; //Fails on nextgen, probably object is nil
+{$ENDIF}
+  count := 0;
+  fContainer.RegisterType<TCustomNameService>
+    .Implements<INameService>
+    .DelegateTo(
+      function: TCustomNameService
+      begin
+        Result := TCustomNameService.Create;
+        Inc(count);
+      end)
+    .AsPooled(2, 2);
+  fContainer.Build;
+  CheckEquals(0, count); // pool did not create any instances yet
+  service1 := fContainer.Resolve<INameService>;
+  CheckEquals(2, count); // pool created the minimum number of instances upon first request
+  service2 := fContainer.Resolve<INameService>;
+  service3 := fContainer.Resolve<INameService>;
+  CheckEquals(3, count); // pool created one additional instance
+  service3 := nil;
+  service2 := nil;
+  service1 := nil;
+  service1 := fContainer.Resolve<INameService>; // pool collects unused instances up to maximum count
+  service2 := fContainer.Resolve<INameService>;
+  CheckEquals(3, count);
+  service3 := fContainer.Resolve<INameService>; // pool creates a new instance again
+  CheckEquals(4, count);
+end;
+
+procedure TTestSimpleContainer.TestRecyclable;
+var
+  service1, service2: IAnotherService;
+  instance: TRecyclableComponent;
+begin
+{$IFDEF NEXTGEN}
+  {$MESSAGE WARN 'Fix me'}
+  //Fails on nextgen
+  Exit;
+{$ENDIF}
+  fContainer.RegisterType<TRecyclableComponent>.AsPooled(2, 2);
+  fContainer.Build;
+  service1 := fContainer.Resolve<IAnotherService>;
+  service2 := fContainer.Resolve<IAnotherService>;
+  CheckTrue(service2 is TRecyclableComponent, 'Unknown component');
+  instance := TRecyclableComponent(service2); // remember second because the first will be returned again later
+  CheckTrue(instance.IsInitialized, 'IsInitialized');
+  CheckFalse(instance.IsRecycled, 'IsRecycled');
+  service1 := nil;
+  service2 := nil;
+  service1 := fContainer.Resolve<IAnotherService>; // pool has no available and collects all unused
+  CheckFalse(instance.IsInitialized, 'IsInitialized');
+  CheckTrue(instance.IsRecycled, 'IsRecycled');
+end;
+
 procedure TTestSimpleContainer.TestInitializable;
 var
   service: IAnotherService;
@@ -464,7 +707,7 @@ begin
   fContainer.Build;
   service := fContainer.Resolve<IAnotherService>;
   CheckTrue(service is TInitializableComponent, 'Unknown component.');
-  CheckTrue(TInitializableComponent(service).IsInitialized, 'IsInitialized should be true.');
+  CheckTrue(TInitializableComponent(service).IsInitialized, 'IsInitialized');
 end;
 
 procedure TTestSimpleContainer.TestIssue41_DifferentLifetimes;
@@ -532,6 +775,54 @@ begin
   CheckEquals('first', service.Name, 'resolving of service "first" failed');
 end;
 
+procedure TTestSimpleContainer.TestIssue49;
+var
+  count: Integer;
+  obj: TNameServiceWithAggregation;
+begin
+  fContainer.RegisterType<TNameServiceWithAggregation>.Implements<INameService>
+    .InjectField('fAgeService').InjectField('fAgeService')
+    .InjectProperty('AgeService').InjectProperty('AgeService')
+    .InjectMethod('Init').InjectMethod('Init');
+  fContainer.RegisterType<TNameAgeComponent>.Implements<IAgeService>.DelegateTo(
+    function: TNameAgeComponent
+    begin
+      Result := TNameAgeComponent.Create;
+      Inc(count);
+    end);
+  fContainer.Build;
+  fContainer.Build;
+
+  count := 0;
+  obj := fContainer.Resolve<INameService> as TNameServiceWithAggregation;
+  CheckEquals(2, count); // field and property
+  CheckEquals(1, obj.MethodCallCount);
+end;
+
+procedure TTestSimpleContainer.TestIssue50;
+var
+  count: Integer;
+  obj: TNameServiceWithAggregation;
+begin
+  fContainer.RegisterType<TNameServiceWithAggregation>.Implements<INameService>.DelegateTo(
+    function: TNameServiceWithAggregation
+    begin
+      Result := TNameServiceWithAggregation.Create;
+    end);
+  fContainer.RegisterType<TNameAgeComponent>.Implements<IAgeService>.DelegateTo(
+    function: TNameAgeComponent
+    begin
+      Result := TNameAgeComponent.Create;
+      Inc(count);
+    end);
+  fContainer.Build;
+
+  count := 0;
+  obj := fContainer.Resolve<INameService> as TNameServiceWithAggregation;
+  CheckEquals(2, count); // field and property
+  CheckEquals(1, obj.MethodCallCount);
+end;
+
 {$ENDREGION}
 
 
@@ -554,8 +845,16 @@ end;
 
 procedure TTestDifferentServiceImplementations.TearDown;
 begin
+{$IFNDEF AUTOREFCOUNT}
   fContainer.Release(fAnotherNameService);
+{$ENDIF}
+  fAnotherNameService := nil;
+
+{$IFNDEF AUTOREFCOUNT}
   fContainer.Release(fNameService);
+{$ENDIF}
+  fNameService := nil;
+
   inherited TearDown;
 end;
 
@@ -630,8 +929,8 @@ begin
     );
   fContainer.Build;
   fPrimitive := fContainer.Resolve<IPrimitive>;
-  Assert(fPrimitive <> nil, 'fPrimitive should not be nil.');
-  Assert(fPrimitive.NameService <> nil, 'fPrimitive.NameService should not be nil.');
+  CheckNotNull(fPrimitive, 'fPrimitive should not be nil.');
+  CheckNotNull(fPrimitive.NameService, 'fPrimitive.NameService should not be nil.');
 end;
 
 procedure TTestActivatorDelegate.TestNameService;
@@ -662,15 +961,19 @@ begin
   DoRegisterComponents;
   fContainer.Build;
   fNameService := fContainer.Resolve<INameService>;
-  Assert(fNameService is TNameService, 'fNameService should be TNameService.');
-  Assert(fNameService.Name = TNameService.NameString, 'fNameService.Name is wrong.');
+  CheckIs(fNameService, TNameService, 'fNameService should be TNameService.');
+  CheckEquals(TNameService.NameString, fNameService.Name, 'fNameService.Name is wrong.');
   fInjectionExplorer := fContainer.Resolve<IInjectionExplorer>;
 end;
 
 procedure TTypedInjectionTestCase.TearDown;
 begin
+{$IFNDEF AUTOREFCOUNT}
   fContainer.Release(fInjectionExplorer);
   fContainer.Release(fNameService);
+{$ENDIF}
+  fInjectionExplorer := nil;
+  fNameService := nil;
   inherited TearDown;
 end;
 
@@ -744,6 +1047,7 @@ var
 begin
   ExpectedException := ECircularDependencyException;
   chicken := fContainer.Resolve<IChicken>;
+  Check(true, 'This must pass');
 end;
 
 {$ENDREGION}
@@ -868,14 +1172,18 @@ begin
   fContainer.Build;
   fNameService := fContainer.Resolve<INameService>('default');
   fAgeService := fContainer.Resolve<IAgeService>;
-  Assert(fNameService <> nil, 'fNameService should not be nil.');
-  Assert(fAgeService <> nil, 'fAgeService should not be nil.');
+  CheckNotNull(fNameService, 'fNameService should not be nil.');
+  CheckNotNull(fAgeService, 'fAgeService should not be nil.');
 end;
 
 procedure TTestImplementsDifferentServices.TearDown;
 begin
+{$IFNDEF AUTOREFCOUNT}
   fContainer.Release(fAgeService);
   fContainer.Release(fNameService);
+{$ENDIF}
+  fAgeService := nil;
+  fNameService := nil;
   inherited TearDown;
 end;
 
@@ -894,6 +1202,8 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TTestImplementsAttribute'}
+
 type
   IS1 = interface
     ['{E6DE68D5-988C-4817-880E-58903EE8B78C}']
@@ -911,8 +1221,6 @@ type
   TS2 = class(TInterfacedObject, IS1, IS2)
   end;
 
-{ TTestImplementsAttribute }
-
 procedure TTestImplementsAttribute.TestImplements;
 var
   s1: IS1;
@@ -929,11 +1237,14 @@ begin
   CheckTrue(s2 is TS2, 's2');
 end;
 
+{$ENDREGION}
+
+
+{$REGION 'TTestRegisterInterfaces'}
+
 type
   TComplex = class(TNameAgeComponent, IAnotherService)
   end;
-
-{ TTestRegisterInterfaces }
 
 procedure TTestRegisterInterfaces.TestOneService;
 var
@@ -945,7 +1256,7 @@ begin
   CheckTrue(service is TNameService);
 end;
 
-procedure TTestRegisterInterfaces.TestOneServices;
+procedure TTestRegisterInterfaces.TestTwoServices;
 var
   s1: INameService;
   s2: IAgeService;
@@ -958,13 +1269,26 @@ begin
   CheckTrue(s2 is TNameAgeComponent, 's2');
 end;
 
+procedure TTestRegisterInterfaces.TestTwoServicesWithSameName;
+var
+  s1: INameService;
+  s2: Spring.Tests.Container.Interfaces.INameService;
+begin
+  fContainer.RegisterType<TNameServiceWithTwoInterfaces>;
+  fContainer.Build;
+  s1 := fContainer.Resolve<INameService>;
+  s2 := fContainer.Resolve<Spring.Tests.Container.Interfaces.INameService>;
+  CheckTrue(s1 is TNameServiceWithTwoInterfaces, 's1');
+  CheckTrue(s2 is TNameServiceWithTwoInterfaces, 's2');
+end;
+
 procedure TTestRegisterInterfaces.TestInheritedService;
 var
   s1: INameService;
   s2: IAgeService;
   s3: IAnotherService;
 begin
-  Assert(TypeInfo(IAnotherService) <> nil);
+  CheckTrue(Assigned(TypeInfo(IAnotherService)));
   fContainer.RegisterType<TComplex>;
   fContainer.Build;
   s1 := fContainer.Resolve<INameService>;
@@ -975,16 +1299,45 @@ begin
   CheckTrue(s3 is TComplex, 's3');
 end;
 
-{ TTestDefaultResolve }
+{$ENDREGION}
 
-procedure TTestDefaultResolve.TestResolve;
+
+{$REGION 'TTestDefaultResolve'}
+
+procedure TTestDefaultResolve.TestRegisterDefault;
 begin
-  fContainer.RegisterType<TNameService>.Implements<INameService>('default').AsDefault<INameService>;
-  fContainer.RegisterType<TAnotherNameService>.Implements<INameService>('another');
-  fContainer.Build;
+  StartExpectingException(ERegistrationException);
+  fContainer.RegisterType<INameService, TNameService>.AsDefault<IAgeService>;
+  StopExpectingException;
 end;
 
-{ TTestInjectionByValue }
+procedure TTestDefaultResolve.TestResolve;
+var
+  service: INameService;
+begin
+  fContainer.RegisterType<TNameService>.Implements<INameService>;
+  fContainer.RegisterType<TAnotherNameService>.Implements<INameService>('another');
+  fContainer.Build;
+  service := fContainer.Resolve<INameService>;
+  CheckEquals('Name', service.Name);
+end;
+
+procedure TTestDefaultResolve.TestResolveDependency;
+var
+  component: TBootstrapComponent;
+begin
+  fContainer.RegisterType<TNameService>.Implements<INameService>;
+  fContainer.RegisterType<TAnotherNameService>.Implements<INameService>('another');
+  fContainer.RegisterType<TBootstrapComponent>.AsSingleton;
+  fContainer.Build;
+  component := fContainer.Resolve<TBootstrapComponent>;
+  CheckEquals('Name', component.NameService.Name);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestInjectionByValue'}
 
 procedure TTestInjectionByValue.TestInjectField;
 begin
@@ -994,7 +1347,10 @@ begin
   CheckTrue(fContainer.Resolve<IPrimitive>.NameService <> nil)
 end;
 
-{ TTestResolverOverride }
+{$ENDREGION}
+
+
+{$REGION 'TTestResolverOverride'}
 
 procedure TTestResolverOverride.SetUp;
 begin
@@ -1035,6 +1391,26 @@ begin
     TParameterOverride.Create('obj', fDummy)).Name);
 end;
 
+procedure TTestResolverOverride.TestResolveWithDependency;
+var
+  service: INameService;
+begin
+  fContainer.RegisterType<TDynamicNameService>.Implements<INameService>('dynamic')
+    .InjectField('fAgeService');
+  fContainer.RegisterType<TNameAgeComponent>.Implements<IAgeService>;
+  fContainer.Build;
+
+  service := fContainer.Resolve<INameService>(
+    TOrderedParametersOverride.Create([fDummy]));
+  CheckEquals(fdummy.ClassName, service.Name);
+  CheckNotNull((service as TDynamicNameService).AgeService);
+
+  service := fContainer.Resolve<INameService>(
+    TParameterOverride.Create('obj', fDummy));
+  CheckEquals(fdummy.ClassName, service.Name);
+  CheckNotNull((service as TDynamicNameService).AgeService);
+end;
+
 procedure TTestResolverOverride.TestResolveWithMultipleParams;
 begin
   fContainer.RegisterType<TDynamicNameService>.Implements<INameService>('dynamic');
@@ -1046,5 +1422,259 @@ begin
   CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>(
     TParameterOverride.Create('obj', fDummy)).Name);
 end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestRegisterFactory'}
+
+procedure TTestRegisterInterfaceTypes.TestOneService;
+begin
+  fContainer.RegisterType<INameService>.DelegateTo(
+    function: INameService
+    begin
+      Result := TDynamicNameService.Create('test');
+    end);
+  fContainer.Build;
+
+  CheckEquals('test', fContainer.Resolve<INameService>.Name);
+end;
+
+procedure TTestRegisterInterfaceTypes.TestOneServiceAsSingleton;
+var
+  count: Integer;
+begin
+  count := 0;
+  fContainer.RegisterType<INameService>.DelegateTo(
+    function: INameService
+    begin
+      Result := TDynamicNameService.Create('test');
+      Inc(count);
+    end).AsSingleton;
+  fContainer.Build;
+
+  CheckEquals('test', fContainer.Resolve<INameService>.GetName());
+  CheckEquals('test', fContainer.Resolve<INameService>.GetName());
+  CheckEquals(1, count);
+end;
+
+procedure TTestRegisterInterfaceTypes.TestOneServiceAsSingletonPerThread;
+var
+  count: Integer;
+begin
+  count := 0;
+  fContainer.RegisterType<INameService>.DelegateTo(
+    function: INameService
+    begin
+      Result := TDynamicNameService.Create('test');
+      Inc(count);
+    end).AsSingletonPerThread;
+  fContainer.Build;
+
+  CheckEquals('test', fContainer.Resolve<INameService>.GetName());
+  CheckEquals('test', fContainer.Resolve<INameService>.GetName());
+  CheckEquals(1, count);
+end;
+
+procedure TTestRegisterInterfaceTypes.TestTwoServices;
+begin
+  fContainer.RegisterType<INameService>.DelegateTo(
+    function: INameService
+    begin
+      Result := TDynamicNameService.Create('test');
+    end).Implements<IAnotherNameService>('another');
+  fContainer.Build;
+
+  CheckEquals('test', fContainer.Resolve<INameService>.Name);
+  CheckEquals('test', fContainer.Resolve<IAnotherNameService>.Name);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestResolveLazy'}
+
+procedure TTestLazyDependencies.PerformChecks;
+var
+  nameService: INameService;
+begin
+  fCalled := False;
+  nameService := fContainer.Resolve<INameService>('service');
+  CheckFalse(fCalled);
+  CheckEquals(TNameService.NameString, nameService.Name);
+  CheckTrue(fCalled);
+end;
+
+procedure TTestLazyDependencies.SetUp;
+begin
+  inherited;
+
+  fContainer.RegisterType<INameService>.Implements<INameService>('lazy').DelegateTo(
+    function: INameService
+    begin
+      Result := TNameService.Create;
+      fCalled := True;
+    end);
+end;
+
+procedure TTestLazyDependencies.TestDependencyTypeIsFunc;
+begin
+  fContainer.RegisterType<TNameServiceLazyWithFunc>.Implements<INameService>('service');
+  fContainer.Build;
+
+  PerformChecks;
+end;
+
+{$IFNDEF IOSSIMULATOR}
+procedure TTestLazyDependencies.TestDependencyTypeIsInterface;
+begin
+  fContainer.RegisterType<TNameServiceLazyWithInterface>.Implements<INameService>('service');
+  fContainer.Build;
+
+  PerformChecks;
+end;
+
+procedure TTestLazyDependencies.TestDependencyTypeIsRecord;
+begin
+  fContainer.RegisterType<TNameServiceLazyWithRecord>.Implements<INameService>('service');
+  fContainer.Build;
+
+  PerformChecks;
+end;
+{$ENDIF}
+
+{$ENDREGION}
+
+
+{$REGION 'TTestResolveLazyRecursive'}
+
+procedure TTestLazyDependenciesDetectRecursion.PerformChecks;
+begin
+  fContainer.Context.ComponentRegistry.FindOne('service').InjectField('fNameService', 'service');
+
+  ExpectedException:=ECircularDependencyException;
+  inherited;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestDecoratorExtension'}
+
+procedure TTestDecoratorExtension.TestResolveReturnsDecorator;
+var
+  service: IAgeService;
+begin
+  fContainer.AddExtension<TDecoratorContainerExtension>;
+  fContainer.RegisterType<TAgeServiceDecorator>;
+  fContainer.RegisterType<TNameAgeComponent>;
+  fContainer.Build;
+
+  service := fContainer.Resolve<IAgeService>;
+  CheckTrue(service is TAgeServiceDecorator);
+end;
+
+procedure TTestDecoratorExtension.TestResolveWithResolverOverride;
+var
+  service: IAgeService;
+begin
+  fContainer.AddExtension<TDecoratorContainerExtension>;
+  fContainer.RegisterType<TAgeServiceDecorator>;
+  fContainer.RegisterType<TNameAgeComponent>;
+  fContainer.Build;
+
+  service := fContainer.Resolve<IAgeService>(
+    TParameterOverride.Create('age', 21));
+  CheckTrue(service is TAgeServiceDecorator);
+  CheckEquals(21, service.Age);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTestManyDependencies'}
+
+procedure TTestManyDependencies.SetUp;
+begin
+  inherited;
+  fContainer.RegisterType<ICollectionItem, TCollectionItemA>('a');
+  fContainer.RegisterType<ICollectionItem, TCollectionItemB>('b');
+  fContainer.RegisterType<ICollectionItem, TCollectionItemC>('c');
+end;
+
+procedure TTestManyDependencies.TestInjectArray;
+var
+  service: ICollectionService;
+begin
+  fContainer.RegisterType<ICollectionService, TCollectionServiceA>;
+  fContainer.Build;
+  service := fContainer.Resolve<ICollectionService>;
+  CheckEquals(3, Length(service.CollectionItems));
+  CheckIs(service.CollectionItems[0], TCollectionItemA);
+  CheckIs(service.CollectionItems[1], TCollectionItemB);
+  CheckIs(service.CollectionItems[2], TCollectionItemC);
+end;
+
+procedure TTestManyDependencies.TestInjectArrayOfLazy;
+var
+  service: ICollectionService;
+begin
+  fContainer.RegisterType<ICollectionService, TCollectionServiceC>;
+  fContainer.Build;
+  service := fContainer.Resolve<ICollectionService>;
+  CheckEquals(3, Length(service.CollectionItems));
+  CheckIs(service.CollectionItems[0], TCollectionItemA);
+  CheckIs(service.CollectionItems[1], TCollectionItemB);
+  CheckIs(service.CollectionItems[2], TCollectionItemC);
+end;
+
+procedure TTestManyDependencies.TestInjectEnumerable;
+var
+  service: ICollectionService;
+begin
+  fContainer.RegisterType<ICollectionService, TCollectionServiceB>;
+  fContainer.RegisterType<IInterface, TCollectionServiceB>;
+  fContainer.RegisterType<IEnumerable<ICollectionItem>, TArray<ICollectionItem>>;
+
+  fContainer.Build;
+  service := fContainer.Resolve<ICollectionService>;
+  CheckEquals(3, Length(service.CollectionItems));
+  CheckIs(service.CollectionItems[0], TCollectionItemA);
+  CheckIs(service.CollectionItems[1], TCollectionItemB);
+  CheckIs(service.CollectionItems[2], TCollectionItemC);
+end;
+
+procedure TTestManyDependencies.TestNoRecursion;
+var
+  service: ICollectionItem;
+begin
+  fContainer.RegisterType<ICollectionItem, TCollectionItemD>;
+  fContainer.Build;
+  service := fContainer.Resolve<ICollectionItem>;
+  CheckIs(service, TCollectionItemD);
+  CheckEquals(3, Length((service as TCollectionItemD).CollectionItems));
+  CheckIs((service as TCollectionItemD).CollectionItems[0], TCollectionItemA);
+  CheckIs((service as TCollectionItemD).CollectionItems[1], TCollectionItemB);
+  CheckIs((service as TCollectionItemD).CollectionItems[2], TCollectionItemC);
+end;
+
+procedure TTestManyDependencies.TestResolveArrayOfLazy;
+var
+  services: TArray<Lazy<ICollectionItem>>;
+  service: Lazy<ICollectionItem>;
+begin
+  fContainer.RegisterType<ICollectionItem, TCollectionItemD>;
+  fContainer.Build;
+  services := fContainer.ResolveAll<Lazy<ICollectionItem>>;
+  CheckEquals(3, Length(services));
+  CheckIs(services[0].Value, TCollectionItemA);
+  CheckIs(services[1].Value, TCollectionItemB);
+  CheckIs(services[2].Value, TCollectionItemC);
+  service := fContainer.Resolve<Lazy<ICollectionItem>>;
+  CheckIs(service.Value, TCollectionItemD);
+end;
+
+{$ENDREGION}
+
 
 end.

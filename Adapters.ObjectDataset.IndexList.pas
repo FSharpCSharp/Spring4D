@@ -16,9 +16,9 @@ type
 
   TODIndexList = class
   private
-    FDataList: IList;
+    FDataList: IObjectList;
     FList: TList<TIndexItem>;
-    procedure SetDataList(const Value: IList);
+    procedure SetDataList(const Value: IObjectList);
     function GetItem(Index: Integer): TIndexItem;
     procedure SetItem(Index: Integer; const Value: TIndexItem);
     function GetCount: Integer;
@@ -47,7 +47,7 @@ type
     procedure Clear();
 
     property Count: Integer read GetCount;
-    property DataList: IList read FDataList write SetDataList;
+    property DataList: IObjectList read FDataList write SetDataList;
   end;
 
 implementation
@@ -66,7 +66,7 @@ end;
 
 function TODIndexList.AddModel(const AModel: TValue): Integer;
 begin
-  FDataList.Add(AModel);
+  FDataList.Add(AModel.AsObject);
   Result := Add(FDataList.Count - 1, AModel);
 end;
 
@@ -165,7 +165,7 @@ end;
 
 procedure TODIndexList.InsertModel(const AModel: TValue; AIndex: Integer);
 begin
-  FDataList.Add(AModel);
+  FDataList.Add(AModel.AsObject);
   Insert(AIndex, FDataList.Count - 1, AModel);
 end;
 
@@ -183,7 +183,7 @@ begin
   end;
 end;
 
-procedure TODIndexList.SetDataList(const Value: IList);
+procedure TODIndexList.SetDataList(const Value: IObjectList);
 begin
   FDataList := Value;
   Rebuild();

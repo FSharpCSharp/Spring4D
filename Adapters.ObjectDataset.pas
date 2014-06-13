@@ -16,7 +16,7 @@ uses
 type
   TObjectDataset = class(TAbstractObjectDataset)
   private
-    FDataList: IList;
+    FDataList: IObjectList;
     FDefaultStringFieldLength: Integer;
     FFilterIndex: Integer;
     FFilterParser: TExprParser;
@@ -43,7 +43,7 @@ type
     procedure RebuildPropertiesCache(); override;
 
     function DataListCount(): Integer; override;
-    function GetCurrentDataList(): IList; override;
+    function GetCurrentDataList(): IObjectList; override;
     function GetRecordCount: Integer; override;
     function RecordConformsFilter: Boolean; override;
     procedure UpdateFilter(); override;
@@ -135,7 +135,7 @@ type
     {$ENDREGION}
     property Sort: string read GetSort write SetSort;
 
-    property DataList: IList read FDataList;
+    property DataList: IObjectList read FDataList;
   published
     {$REGION 'Documentation'}
     ///	<summary>
@@ -490,7 +490,7 @@ begin
     Result := Result + ' ';
 end;
 
-function TObjectDataset.GetCurrentDataList: IList;
+function TObjectDataset.GetCurrentDataList: IObjectList;
 begin
   Result := DataList;
 end;
@@ -598,9 +598,9 @@ end;
 procedure TObjectDataset.InternalSetSort(const AValue: string; AIndex: Integer);
 var
   Pos: Integer;
-  LDataList: IList;
-  LOldValue: Boolean;
-  LOwnsObjectsProp: TRttiProperty;
+  LDataList: IObjectList;
+  LOwnedDatalist: ICollectionOwnership;
+  LOwnsObjectsProp: Boolean;
   LChanged: Boolean;
 begin
   if IsEmpty then
@@ -613,13 +613,11 @@ begin
 
   Pos := Current;
   LDataList := FDataList;
-  LOldValue := True;
-  LOwnsObjectsProp := FCtx.GetType(LDataList.AsObject.ClassType).GetProperty('OwnsObjects');
+  LOwnsObjectsProp := Supports(LDataList, ICollectionOwnership, LOwnedDatalist);
   try
-    if Assigned(LOwnsObjectsProp) then
+    if LOwnsObjectsProp then
     begin
-      LOldValue := LOwnsObjectsProp.GetValue(LDataList.AsObject).AsBoolean;
-      LOwnsObjectsProp.SetValue(LDataList.AsObject, False);
+      LOwnedDatalist.OwnsObjects := False;
     end;
     if LChanged then
       TMergeSort.Sort(IndexList, CompareRecords, FIndexFieldList)
@@ -630,8 +628,9 @@ begin
     FSort := AValue;
 
   finally
-    if Assigned(LOwnsObjectsProp) then
-      LOwnsObjectsProp.SetValue(LDataList.AsObject, LOldValue);
+    if LOwnsObjectsProp then
+      LOwnedDatalist.OwnsObjects := True;
+
     SetCurrent(Pos);
   end;
   DoOnAfterSort();
@@ -974,7 +973,7 @@ end;
 procedure TObjectDataset.SetDataList<T>(ADataList: IList<T>);
 begin
   FItemTypeInfo := TypeInfo(T);
-  FDataList := ADataList.AsList;
+  FDataList := ADataList as IObjectList;
   IndexList.DataList := FDataList;
 end;
 

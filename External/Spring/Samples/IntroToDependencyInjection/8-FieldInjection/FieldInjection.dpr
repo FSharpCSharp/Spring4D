@@ -2,15 +2,15 @@ program FieldInjection;
 
 {$APPTYPE CONSOLE}
 
-{$R *.res}
-
 uses
   SysUtils,
   uDoOrderProcessing in 'uDoOrderProcessing.pas',
+  uOrder in 'uOrder.pas',
   uOrderEntry in 'uOrderEntry.pas',
   uOrderInterfaces in 'uOrderInterfaces.pas',
   uOrderProcessor in 'uOrderProcessor.pas',
-  uOrderValidator in 'uOrderValidator.pas';
+  uOrderValidator in 'uOrderValidator.pas',
+  uRegistrations in 'uRegistrations.pas';
 
 begin
   try
@@ -19,5 +19,5 @@ begin
     on E: Exception do
       Writeln(E.ClassName, ': ', E.Message);
   end;
-  ReadLn;
+  Readln;
 end.

@@ -6,12 +6,12 @@ uses
   uOrder;
 
 type
-
   IOrderValidator = interface
     function ValidateOrder(aOrder: TOrder): Boolean;
   end;
 
   TOrderValidator = class(TInterfacedObject, IOrderValidator)
+  public
     function ValidateOrder(aOrder: TOrder): Boolean;
   end;
 
@@ -21,10 +21,8 @@ implementation
 
 function TOrderValidator.ValidateOrder(aOrder: TOrder): Boolean;
 begin
-  Result := aOrder <> nil;
-  {$IFDEF CONSOLEAPP}
-    WriteLn('Validating Order....');
-  {$ENDIF}
+  Result := Assigned(aOrder);
+  Writeln('Validating Order....');
 end;
 
 end.

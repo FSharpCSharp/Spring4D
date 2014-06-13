@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2012 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -27,6 +27,7 @@ unit Spring.Cryptography.Base;
 interface
 
 {$I Spring.inc}
+{$R-}
 
 uses
   Classes,
@@ -53,8 +54,10 @@ type
     function ComputeHash(const buffer: array of Byte; startIndex, count: Integer): TBuffer; overload;
     function ComputeHash(const buffer: Pointer; count: Integer): TBuffer; overload;
     function ComputeHash(const inputString: string): TBuffer; overload;
+{$IFNDEF NEXTGEN}
     function ComputeHash(const inputString: WideString): TBuffer; overload;
     function ComputeHash(const inputString: RawByteString): TBuffer; overload;
+{$ENDIF}
     function ComputeHash(const inputStream: TStream): TBuffer; overload; virtual;
     function ComputeHashOfFile(const fileName: string): TBuffer; virtual;
     property HashSize: Integer read GetHashSize;
@@ -115,16 +118,20 @@ type
     function Encrypt(const buffer: array of Byte): TBuffer; overload;
     function Encrypt(const buffer: array of Byte; startIndex, count: Integer): TBuffer; overload;
     function Encrypt(const inputString: string): TBuffer; overload;
+{$IFNDEF NEXTGEN}
     function Encrypt(const inputString: WideString): TBuffer; overload;
     function Encrypt(const inputString: RawByteString): TBuffer; overload;
+{$ENDIF}
     procedure Encrypt(inputStream, outputStream: TStream); overload;
     function Decrypt(const buffer: Pointer; count: Integer): TBuffer; overload;
     function Decrypt(const buffer: TBuffer): TBuffer; overload;
     function Decrypt(const buffer: array of Byte): TBuffer; overload;
     function Decrypt(const buffer: array of Byte; startIndex, count: Integer): TBuffer; overload;
     function Decrypt(const inputString: string): TBuffer; overload;
+{$IFNDEF NEXTGEN}
     function Decrypt(const inputString: WideString): TBuffer; overload;
     function Decrypt(const inputString: RawByteString): TBuffer; overload;
+{$ENDIF}
     procedure Decrypt(inputStream, outputStream: TStream); overload;
     property CipherMode: TCipherMode read GetCipherMode write SetCipherMode;
     property PaddingMode: TPaddingMode read GetPaddingMode write SetPaddingMode;
@@ -151,7 +158,9 @@ implementation
 
 uses
   Math,
+{$IFNDEF NEXTGEN}
   Spring.Utils,
+{$ENDIF}
   Spring.ResourceStrings;
 
 {$REGION 'THashAlgorithmBase'}
@@ -173,7 +182,7 @@ end;
 function THashAlgorithmBase.ComputeHash(const buffer: array of Byte; startIndex,
   count: Integer): TBuffer;
 begin
-  TArgument.CheckRange(buffer, startIndex, count);
+  Guard.CheckRange(buffer, startIndex, count);
   Result := ComputeHash(@buffer[startIndex], count);
 end;
 
@@ -182,9 +191,10 @@ begin
   Result := ComputeHash(PByte(inputString), Length(inputString) * SizeOf(Char));
 end;
 
+{$IFNDEF NEXTGEN}
 function THashAlgorithmBase.ComputeHash(const inputString: WideString): TBuffer;
 begin
-  Result := ComputeHash(PByte(inputString), Length(inputString) * SizeOf(Char));
+  Result := ComputeHash(PByte(inputString), Length(inputString) * SizeOf(WideChar));
 end;
 
 function THashAlgorithmBase.ComputeHash(
@@ -192,13 +202,14 @@ function THashAlgorithmBase.ComputeHash(
 begin
   Result := ComputeHash(PByte(inputString), Length(inputString));
 end;
+{$ENDIF}
 
 function THashAlgorithmBase.ComputeHash(const inputStream: TStream): TBuffer;
 var
   buffer: array[0..512-1] of Byte;
   count: Integer;
 begin
-  TArgument.CheckNotNull(inputStream, 'inputStream');
+  Guard.CheckNotNull(inputStream, 'inputStream');
   HashInit;
   count := inputStream.Read(buffer[0], Length(buffer));
   while count > 0 do
@@ -258,7 +269,7 @@ end;
 function TSymmetricAlgorithmBase.Encrypt(const buffer: array of Byte;
   startIndex, count: Integer): TBuffer;
 begin
-  TArgument.CheckRange(buffer, startIndex, count);
+  Guard.CheckRange(buffer, startIndex, count);
   Result := Encrypt(@buffer[startIndex], count);
 end;
 
@@ -273,6 +284,7 @@ begin
   Result := Encrypt(PByte(inputString), Length(inputString) * SizeOf(Char));
 end;
 
+{$IFNDEF NEXTGEN}
 function TSymmetricAlgorithmBase.Encrypt(
   const inputString: WideString): TBuffer;
 begin
@@ -284,6 +296,7 @@ function TSymmetricAlgorithmBase.Encrypt(
 begin
   Result := Encrypt(PByte(inputString), Length(inputString));
 end;
+{$ENDIF}
 
 procedure TSymmetricAlgorithmBase.Encrypt(inputStream, outputStream: TStream);
 var
@@ -291,8 +304,8 @@ var
   outputBuffer: TBuffer;
   bytes: Integer;
 begin
-  TArgument.CheckNotNull(inputStream, 'inputStream');
-  TArgument.CheckNotNull(outputStream, 'outputStream');
+  Guard.CheckNotNull(inputStream, 'inputStream');
+  Guard.CheckNotNull(outputStream, 'outputStream');
   inputBuffer.Size := BlockSizeInBytes;
   outputBuffer.Size := BlockSizeInBytes;
   bytes := inputStream.Read(inputBuffer.Memory^, inputBuffer.Size);
@@ -314,7 +327,7 @@ var
   startIndex: Integer;
   firstBlock: Boolean;
 begin
-  TArgument.CheckRange(count >= 0, 'count');
+  Guard.CheckRange(count >= 0, 'count');
   if count = 0 then
   begin
     Exit(TBuffer.Empty);
@@ -368,7 +381,7 @@ var
   p: PByte;
   firstBlock: Boolean;
 begin
-  TArgument.CheckRange(count >= 0, 'count');
+  Guard.CheckRange(count >= 0, 'count');
 
   firstBlock := True;
   Result := TBuffer.Empty;
@@ -416,7 +429,7 @@ procedure TSymmetricAlgorithmBase.AddPadding(var buffer: TBuffer; startIndex,
 var
   i: Integer;
 begin
-  TArgument.CheckRange(buffer.Size, startIndex, count);
+  Guard.CheckRange(buffer.Size, startIndex, count);
   case PaddingMode of
     TPaddingMode.None: ;
     TPaddingMode.PKCS7:
@@ -512,7 +525,7 @@ end;
 function TSymmetricAlgorithmBase.Decrypt(const buffer: array of Byte;
   startIndex, count: Integer): TBuffer;
 begin
-  TArgument.CheckRange(buffer, startIndex, count);
+  Guard.CheckRange(buffer, startIndex, count);
   Result := Decrypt(@buffer[startIndex], count);
 end;
 
@@ -521,6 +534,7 @@ begin
   Result := Decrypt(PByte(inputString), Length(inputString) * SizeOf(Char));
 end;
 
+{$IFNDEF NEXTGEN}
 function TSymmetricAlgorithmBase.Decrypt(
   const inputString: WideString): TBuffer;
 begin
@@ -532,6 +546,7 @@ function TSymmetricAlgorithmBase.Decrypt(
 begin
   Result := Decrypt(PByte(inputString), Length(inputString));
 end;
+{$ENDIF}
 
 procedure TSymmetricAlgorithmBase.Decrypt(inputStream, outputStream: TStream);
 var
@@ -539,8 +554,8 @@ var
   count: Integer;
   outputBuffer: TBuffer;
 begin
-  TArgument.CheckNotNull(inputStream, 'inputStream');
-  TArgument.CheckNotNull(outputStream, 'outputStream');
+  Guard.CheckNotNull(inputStream, 'inputStream');
+  Guard.CheckNotNull(outputStream, 'outputStream');
   SetLength(buffer, BlockSizeInBytes);
   count := inputStream.Read(buffer[0], Length(buffer));
   while count >= BlockSizeInBytes do

@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2012 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -35,11 +35,12 @@ resourcestring
   SNotSupportedOperation       = 'Not supported operation.';
   SNoDelegateAssigned          = 'No delegate has been assigned.';
 
-  SArgumentOutOfRangeException = 'EArgumentOutOfRangeException: %s';
-  SArgumentNullException       = 'EArgumentNullException: %s';
+  SArgumentOutOfRangeException = 'Specified argument was out of the range of valid values: %s';
+  SArgumentNullException       = 'Specified argument cannot be nil: %s';
   SInvalidEnumArgument         = 'Invalid enum argument: %s';
   SUnexpectedTypeKindArgument  = 'Unexpected type kind %s for the argument %s.';
   SInvalidOperationBufferSizeShouldBeSame = 'Buffer size should be the same.';
+  SInvalidArgumentFormat = 'Invalid format for argument "%s".';
 
   SCannotAccessRegistryKey     = 'Cannot access the registry key: %s.';
 
@@ -59,7 +60,8 @@ resourcestring
   SServiceLocatorNotInitialized = 'The global ServiceLocator has not been initialized.';
 
   SNoTypeInfo          = 'No type information found.';
-  STypeParameterShouldBeMethod = 'The type parameter T should be instance method.';
+  STypeParameterShouldBeMethod = 'The type parameter "%s" should be an event or anonymous method type.';
+  STypeParameterContainsNoRtti = 'The type parameter "%s" contains no RTTI. Please check for {$M+}.';
   SUnexpectedTypeKind  = 'Unexpected type kind: %s.';
   SNotEnumeratedType   = 'Type "%s" is not enumerated type.';
   SIncorrectFormat     = 'Unable to convert %s.';
@@ -90,11 +92,17 @@ resourcestring
   SEnumNotStarted = 'Enum not started.';
   SEnumEnded = 'Enum ended.';
   SEnumEmpty = 'Invalid Operation. The enumeration is empty.';
+  SEnumFailedVersion = 'Collection was modified; enumeration operation may not execute.';
 
-  SSequenceIsEmpty = 'This sequence is empty.';
-  SNoElementSatisfiesCondition = 'No element satisfies the condition in predicate.';
-  SMoreThanOneElementSatisfied = 'More than one element satisfies the condition in predicate.';
-  SSequenceContainsMoreThanOneElement = 'This sequence contains more than one element.';
+  SSequenceContainsNoElements = 'Sequence contains no elements.';
+  SSequenceContainsNoMatchingElement = 'Sequence contains no matching element.';
+  SSequenceContainsMoreThanOneMatchingElement = 'Sequence contains more than one matching element.';
+  SSequenceContainsMoreThanOneElement = 'Sequence contains more than one element.';
+
+  SLinkedListEmpty = 'The LinkedList is empty.';
+  SLinkedListNodeIsAttached = 'The LinkedList node already belongs to a LinkedList.';
+
+  SIncompatibleTypes = 'Incompatible types: "%s" and "%s"';
 
   {$ENDREGION}
 
@@ -103,7 +111,7 @@ resourcestring
 
   SInvalidOperation_GetValue = 'The GetValue method works only for properties/fields.';
   SInvalidOperation_SetValue = 'The SetValue method works only for properties/fields.';
-  SInvalidGuidArray = 'Byte array for GUID must be exactly %s bytes long';
+  SInvalidGuidArray = 'Byte array for GUID must be exactly %d bytes long';
 
   {$ENDREGION}
 
@@ -137,13 +145,6 @@ resourcestring
   {$ENDREGION}
 
 
-  {$REGION 'Spring.Numerics'}
-
-  SInvalidArgumentFormat = 'Invalid format for argument "%s".';
-
-  {$ENDREGION}
-
-
   {$REGION 'Spring.Utils'}
 
   SDriveNotReady              = 'Drive "%S" is not ready.';
@@ -156,18 +157,23 @@ resourcestring
   SCDRomDescription           = 'CD-Rom Drive';
   SRamDescription             = 'Ram Drive';
 
-  SUnknownOSDescription      = 'Unknown Operating System';
-  SWin95Description          = 'Microsoft Windows 95';
-  SWin98Description          = 'Microsoft Windows 98';
-  SWinMEDescription          = 'Microsoft Windows ME';
-  SWinNT351Description       = 'Microsoft Windows NT 3.51';
-  SWinNT40Description        = 'Microsoft Windows NT 4';
-  SWinServer2000Description  = 'Microsoft Windows Server 2000';
-  SWinXPDescription          = 'Microsoft Windows XP';
-  SWinServer2003Description  = 'Microsoft Windows Server 2003';
-  SWinVistaDescription       = 'Microsoft Windows Vista';
-  SWinServer2008Description  = 'Microsoft Windows Server 2008';
-  SWin7Description           = 'Microsoft Windows 7';
+  SUnknownOSDescription       = 'Unknown Operating System';
+  SWin95Description           = 'Microsoft Windows 95';
+  SWin98Description           = 'Microsoft Windows 98';
+  SWinMEDescription           = 'Microsoft Windows ME';
+  SWinNT351Description        = 'Microsoft Windows NT 3.51';
+  SWinNT40Description         = 'Microsoft Windows NT 4';
+  SWinServer2000Description   = 'Microsoft Windows Server 2000';
+  SWinXPDescription           = 'Microsoft Windows XP';
+  SWinServer2003Description   = 'Microsoft Windows Server 2003';
+  SWinVistaDescription        = 'Microsoft Windows Vista';
+  SWinServer2008Description   = 'Microsoft Windows Server 2008';
+  SWin7Description            = 'Microsoft Windows 7';
+  SWinServer2008R2Description = 'Microsoft Windows Server 2008 R2';
+  SWin8Description            = 'Microsoft Windows 8';
+  SWinServer2012Description   = 'Microsoft Windows Server 2012';
+  SWin81Description           = 'Microsoft Windows 8.1';
+  SWinServer2012R2Description = 'Microsoft Windows Server 2012 R2';
 
 
   SFileVersionInfoFormat =
@@ -192,6 +198,7 @@ resourcestring
   SInvalidOperationCurrent = 'Invalid operation. The enumerable collection is empty.';
 
   {$ENDREGION}
+
 
 implementation
 

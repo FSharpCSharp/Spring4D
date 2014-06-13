@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2012 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -48,7 +48,6 @@ interface
 
 uses
   Classes,
-  Contnrs,
   SysUtils,
   SyncObjs,
   TypInfo,
@@ -85,7 +84,7 @@ type
       ///	  Tracks all instances of the singleton objects and free them in
       ///	  reversed order.
       ///	</summary>
-      fInstances: TObjectList;
+      fInstances: IList<TObject>;
 
       fCriticalSection: TCriticalSection;
 
@@ -318,14 +317,13 @@ uses
 class constructor TSingleton.Create;
 begin
   fMappings :=  TCollections.CreateDictionary<TClass, TObject>(4);
-  fInstances := TObjectList.Create(True);
+  fInstances := TCollections.CreateObjectList<TObject>(True);
   fCriticalSection := TCriticalSection.Create;
 end;
 
 class destructor TSingleton.Destroy;
 begin
   fCriticalSection.Free;
-  fInstances.Free;
 end;
 
 class function TSingleton.GetInstance<T>: T;
@@ -409,7 +407,7 @@ procedure TObservable<T>.NotifyListeners(callback: TProc<T>);
 var
   listener: T;
 begin
-  TArgument.CheckNotNull(Assigned(callback), 'callback');
+  Guard.CheckNotNull(Assigned(callback), 'callback');
 
   for listener in Listeners do
   begin
@@ -518,7 +516,7 @@ begin
   internalSpecification := specification;
   if internalSpecification is TSpecificationBase<T> then
   begin
-    Result := TSpecificationBase<T>(internalSpecification);
+    Result := internalSpecification as TSpecificationBase<T>;
   end
   else if internalSpecification <> nil then
   begin
@@ -721,7 +719,7 @@ end;
 
 function TClassTypeRegistry<TValue>.TryGetValue(classType: TClass; out value: TValue): Boolean;
 begin
-  TArgument.CheckNotNull(classType, 'classType');
+  Guard.CheckNotNull(classType, 'classType');
 
   Result := fLookup.TryGetValue(classType, value);
   while not Result and (classType.ClassParent <> nil) do

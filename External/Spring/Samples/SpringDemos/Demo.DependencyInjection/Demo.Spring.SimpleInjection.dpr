@@ -9,11 +9,10 @@ uses
   uSimpleInjection in 'uSimpleInjection.pas';
 
 var
-    Pet: IPetNoiseMaker;
-
+  Pet: IPetNoiseMaker;
 begin
   try
- //   GlobalContainer.Build;
+    GlobalContainer.Build;
 
     Pet := ServiceLocator.GetService<IPetNoiseMaker>;
     Pet.MakePetNoises;

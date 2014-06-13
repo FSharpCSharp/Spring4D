@@ -2,21 +2,22 @@ program UseMocks;
 
 {$APPTYPE CONSOLE}
 
-{$R *.res}
-
 uses
   SysUtils,
   uDoOrderProcessing in 'uDoOrderProcessing.pas',
+  uOrder in 'uOrder.pas',
   uOrderEntry in 'uOrderEntry.pas',
+  uOrderEntryMock in 'uOrderEntryMock.pas',
   uOrderProcessor in 'uOrderProcessor.pas',
-  uOrderValidator in 'uOrderValidator.pas';
+  uOrderValidator in 'uOrderValidator.pas',
+  uOrderValidatorMock in 'uOrderValidatorMock.pas';
 
 begin
   try
     DoOrderProcessing;
-    ReadLn;
   except
     on E: Exception do
       Writeln(E.ClassName, ': ', E.Message);
   end;
+  Readln;
 end.

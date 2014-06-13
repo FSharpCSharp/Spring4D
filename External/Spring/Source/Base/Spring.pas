@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2012 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -33,19 +33,22 @@ unit Spring;
 interface
 
 uses
-  SysUtils,
   Classes,
-  TypInfo,
-  Types,
-  SyncObjs,
-  Generics.Defaults,
-  Generics.Collections,
   Diagnostics,
-  TimeSpan,
+  Generics.Collections,
+  Generics.Defaults,
   Rtti,
+  SyncObjs,
+  SysUtils,
+  TimeSpan,
+  Types,
+  TypInfo,
   Variants;
 
 type
+
+  {$REGION 'Type redefinitions'}
+
   ///	<summary>
   ///	  Represents a dynamic array of Byte.
   ///	</summary>
@@ -80,6 +83,11 @@ type
   TThreadID = LongWord;
 {$ENDIF}
 
+  {$ENDREGION}
+
+
+  {$REGION 'Procedure types'}
+
   ///	<summary>
   ///	  Represents a logical predicate.
   ///	</summary>
@@ -93,39 +101,45 @@ type
   ///	<remarks>
   ///	  <note type="tip">
   ///	    This type redefined the
-  ///	    <see cref="SysUtils|TPredicate`1">SysUtils.TPredicate&lt;T&gt;</see>ty
-  ///	     pe with a const parameter.
+  ///	    <see cref="SysUtils|TPredicate`1">SysUtils.TPredicate&lt;T&gt;</see> 
+  ///	    type with a const parameter.
   ///	  </note>
   ///	</remarks>
-  ///	<seealso cref="Spring.DesignPatterns|ISpecification{T}" />
+  ///	<seealso cref="Spring.DesignPatterns|ISpecification&lt;T&gt;" />
   TPredicate<T> = reference to function(const value: T): Boolean;
 
   ///	<summary>
   ///	  Represents an anonymous method that has a single parameter and does not
   ///	  return a value.
   ///	</summary>
-  ///	<seealso cref="TActionProc{T}" />
-  ///	<seealso cref="TActionMethod{T}" />
+  ///	<seealso cref="TActionProc&lt;T&gt;" />
+  ///	<seealso cref="TActionMethod&lt;T&gt;" />
   TAction<T> = reference to procedure(const obj: T);
 
   ///	<summary>
   ///	  Represents a procedure that has a single parameter and does not return
   ///	  a value.
   ///	</summary>
-  ///	<seealso cref="TAction{T}" />
-  ///	<seealso cref="TActionMethod{T}" />
+  ///	<seealso cref="TAction&lt;T&gt;" />
+  ///	<seealso cref="TActionMethod&lt;T&gt;" />
   TActionProc<T> = procedure(const obj: T);
 
   ///	<summary>
   ///	  Represents a instance method that has a single parameter and does not
   ///	  return a value.
   ///	</summary>
-  ///	<seealso cref="TAction{T}" />
-  ///	<seealso cref="TActionProc{T}" />
+  ///	<seealso cref="TAction&lt;T&gt;" />
+  ///	<seealso cref="TActionProc&lt;T&gt;" />
   TActionMethod<T> = procedure(const obj: T) of object;
 
+  {$ENDREGION}
+
+
+  {$REGION 'TInterfaceBase'}
+
   ///	<summary>
-  ///	  Provides a non-reference-counted <see cref="System|IInterface" /> implementation.
+  ///	  Provides a non-reference-counted <see cref="System|IInterface" /> 
+  ///	  implementation.
   ///	</summary>
   TInterfaceBase = class abstract(TObject, IInterface)
   protected
@@ -133,6 +147,11 @@ type
     function _AddRef: Integer; stdcall;
     function _Release: Integer; stdcall;
   end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'Guard'}
 
   ///	<summary>
   ///	  Provides static methods to check arguments and raise argument
@@ -142,50 +161,52 @@ type
   ///	  It's recommended that all arguments of public types and members should
   ///	  be checked.
   ///	</remarks>
-  TArgument = class
+  Guard = record
   strict private
-    class procedure DoCheckIndex(const length, index, indexBase: Integer); overload; static; inline;
+    class procedure DoCheckIndex(length, index, indexBase: Integer); overload; static; inline;
   private
-    class procedure DoCheckArrayIndex(const length, index: Integer); static; inline;
-    class procedure DoCheckArrayRange(const length, startIndex, count: Integer); static; inline;
-    class procedure DoCheckStringIndex(const length, index: Integer); static; inline;
-    class procedure DoCheckStringRange(const length, startIndex, count: Integer); static; inline;
+    class procedure DoCheckArrayIndex(length, index: Integer); static; inline;
+    class procedure DoCheckArrayRange(length, startIndex, count: Integer); static; inline;
+    class procedure DoCheckStringIndex(length, index: Integer); static; inline;
+    class procedure DoCheckStringRange(length, startIndex, count: Integer); static; inline;
   public
-    class procedure CheckTrue(condition: Boolean; const msg: string); static; inline;
-    class procedure CheckFalse(condition: Boolean; const msg: string); static; inline;
+    class procedure CheckTrue(condition: Boolean; const msg: string = ''); static; inline;
+    class procedure CheckFalse(condition: Boolean; const msg: string = ''); static; inline;
 
-    class procedure CheckInheritsFrom(obj: TObject; const clazz: TClass; const parameterName: string); overload; static; inline;
-    class procedure CheckInheritsFrom(const checkclazz, clazz: TClass; const parameterName: string); overload; static; inline;
+    class procedure CheckInheritsFrom(obj: TObject; parentClass: TClass; const argumentName: string); overload; static; inline;
+    class procedure CheckInheritsFrom(cls, parentClass: TClass; const argumentName: string); overload; static; inline;
 
-    class procedure CheckNotNull(obj: TObject; const argumentName: string); overload; static; inline;
-    class procedure CheckNotNull(p: Pointer; const argumentName: string); overload; static; inline;
-    class procedure CheckNotNull(const intf: IInterface; const argumentName: string); overload; static; inline;
+    class procedure CheckNotNull(argumentValue: TObject; const argumentName: string); overload; static; inline;
+    class procedure CheckNotNull(argumentValue: Pointer; const argumentName: string); overload; static; inline;
+    class procedure CheckNotNull(const argumentValue: IInterface; const argumentName: string); overload; static; inline;
     class procedure CheckNotNull(condition: Boolean; const parameterName: string); overload; static; inline;
-    class procedure CheckNotNull<T>(const value: T; const argumentName: string); overload; static; inline;
+    class procedure CheckNotNull<T>(const argumentValue: T; const argumentName: string); overload; static; inline;
 
-    class procedure CheckEnum<T{:enum}>(const value: T; const argumentName: string); overload; static; inline;
-    class procedure CheckEnum<T{:enum}>(const value: Integer; const argumentName: string); overload; static; inline;
+    class procedure CheckEnum<T{:enum}>(const argumentValue: T; const argumentName: string); overload; static; inline;
+    class procedure CheckEnum<T{:enum}>(argumentValue: Integer; const argumentName: string); overload; static; inline;
 
     ///	<exception cref="Spring|EArgumentOutOfRangeException">
     ///	  Raised if the <paramref name="index" /> is out of range.
     ///	</exception>
-    class procedure CheckRange(const buffer: array of Byte; const index: Integer); overload; static;
-    class procedure CheckRange(const buffer: array of Byte; const startIndex, count: Integer); overload; static;
-    class procedure CheckRange(const buffer: array of Char; const index: Integer); overload; static;
-    class procedure CheckRange(const buffer: array of Char; const startIndex, count: Integer); overload; static;
-    class procedure CheckRange<T>(const buffer: array of T; const index: Integer); overload; static;
-    class procedure CheckRange<T>(const buffer: array of T; const startIndex, count: Integer); overload; static;
-    class procedure CheckRange(const s: string; const index: Integer); overload; static; inline;
-    class procedure CheckRange(const s: string; const startIndex, count: Integer); overload; static; inline;
-    class procedure CheckRange(const s: WideString; const index: Integer); overload; static; inline;
-    class procedure CheckRange(const s: WideString; const startIndex, count: Integer); overload; static; inline;
-    class procedure CheckRange(const s: RawByteString; const index: Integer); overload; static; inline;
-    class procedure CheckRange(const s: RawByteString; const startIndex, count: Integer); overload; static; inline;
+    class procedure CheckRange(const buffer: array of Byte; index: Integer); overload; static;
+    class procedure CheckRange(const buffer: array of Byte; startIndex, count: Integer); overload; static;
+    class procedure CheckRange(const buffer: array of Char; index: Integer); overload; static;
+    class procedure CheckRange(const buffer: array of Char; startIndex, count: Integer); overload; static;
+    class procedure CheckRange<T>(const buffer: array of T; index: Integer); overload; static;
+    class procedure CheckRange<T>(const buffer: array of T; startIndex, count: Integer); overload; static;
+    class procedure CheckRange(const s: string; index: Integer); overload; static; inline;
+    class procedure CheckRange(const s: string; startIndex, count: Integer); overload; static; inline;
+{$IFNDEF NEXTGEN}
+    class procedure CheckRange(const s: WideString; index: Integer); overload; static; inline;
+    class procedure CheckRange(const s: WideString; startIndex, count: Integer); overload; static; inline;
+    class procedure CheckRange(const s: RawByteString; index: Integer); overload; static; inline;
+    class procedure CheckRange(const s: RawByteString; startIndex, count: Integer); overload; static; inline;
+{$ENDIF}
     class procedure CheckRange(condition: Boolean; const argumentName: string); overload; static; inline;
-    class procedure CheckRange(const length, startIndex, count: Integer; const indexBase: Integer = 0); overload; static; inline;
+    class procedure CheckRange(length, startIndex, count: Integer; indexBase: Integer = 0); overload; static; inline;
 
-    class procedure CheckTypeKind(typeInfo: PTypeInfo; const expectedTypeKind: TTypeKind; const argumentName: string); overload; static;
-    class procedure CheckTypeKind(typeInfo: PTypeInfo; const expectedTypeKinds: TTypeKinds; const argumentName: string); overload; static;
+    class procedure CheckTypeKind(typeInfo: PTypeInfo; expectedTypeKind: TTypeKind; const argumentName: string); overload; static;
+    class procedure CheckTypeKind(typeInfo: PTypeInfo; expectedTypeKinds: TTypeKinds; const argumentName: string); overload; static;
 
     class function IsNullReference(const value; typeInfo: PTypeInfo): Boolean; static;
 
@@ -198,7 +219,7 @@ type
     class procedure RaiseArgumentException(const msg: string); overload; static; inline;
 
     ///	<summary>
-    ///	  Raises an EArgumentException exception.
+    ///	  Raises an <see cref="EFormatException" /> exception.
     ///	</summary>
     class procedure RaiseArgumentFormatException(const argumentName: string); overload; static; inline;
 
@@ -218,6 +239,10 @@ type
     class procedure RaiseInvalidEnumArgumentException(const argumentName: string); overload; static; inline;
   end;
 
+  TArgument = Guard deprecated 'Use Guard instead';
+
+  {$ENDREGION}
+
 
   {$REGION 'Nullable Types'}
 
@@ -226,24 +251,22 @@ type
   ///	  underlying value type, plus an additional <c>Null</c> value.
   ///	</summary>
   ///	<typeparam name="T">
-  ///	  The underlying value type of the <see cref="Nullable&lt;T&gt;" />generic
-  ///	   type.
+  ///	  The underlying value type of the <see cref="Nullable&lt;T&gt;" /> 
+  ///	  generic type.
   ///	</typeparam>
-  Nullable<T> = packed record
+  Nullable<T> = record
   private
-    const CHasValueFlag = '@';  // DO NOT LOCALIZE
-  strict private
     fValue: T;
     fHasValue: string;
     function GetValue: T;
     function GetHasValue: Boolean;
-  private
+
     ///	<summary>
     ///	  Internal use. Marks the current instance as null.
     ///	</summary>
     ///	<remarks>
-    ///	  The Nullable{T} type is immutable so that this method must be
-    ///	  private.
+    ///	  The <see cref="Nullable&lt;T&gt;" /> type is immutable so that this
+    ///	  method must be private.
     ///	</remarks>
     procedure Clear;
 
@@ -253,30 +276,30 @@ type
     class function VarIsNullOrEmpty(const value: Variant): Boolean; static;
   public
     ///	<summary>
-    ///	  Initializes a new instance of the <c>Nullable{T}</c> structure to the
-    ///	  specified value.
+    ///	  Initializes a new instance of the <see cref="Nullable&lt;T&gt;" /> 
+    ///	  structure to the specified value.
     ///	</summary>
     constructor Create(const value: T); overload;
 
     ///	<summary>
-    ///	  Initializes a new instance of the <c>Nullable{T}</c> structure to the
-    ///	  specified value.
+    ///	  Initializes a new instance of the <see cref="Nullable&lt;T&gt;" /> 
+    ///	  structure to the specified value.
     ///	</summary>
     constructor Create(const value: Variant); overload;
 
     ///	<summary>
-    ///	  Retrieves the value of the current <c>Nullable{T}</c> object, or the
-    ///	  object's default value.
+    ///	  Retrieves the value of the current <see cref="Nullable&lt;T&gt;" /> 
+    ///	  object, or the object's default value.
     ///	</summary>
     function GetValueOrDefault: T; overload;
 
     ///	<summary>
-    ///	  Retrieves the value of the current <c>Nullable{T}</c> object, or the
-    ///	  specified default value.
+    ///	  Retrieves the value of the current <see cref="Nullable&lt;T&gt;" /> 
+    ///	  object, or the specified default value.
     ///	</summary>
     ///	<param name="defaultValue">
     ///	  A value to return if the <see cref="HasValue" /> property is
-    ///	  <c>false</c>.
+    ///	  <c>False</c>.
     ///	</param>
     ///	<returns>
     ///	  The value of the <see cref="Value" /> property if the
@@ -301,13 +324,13 @@ type
     function Equals(const other: Nullable<T>): Boolean;
 
     ///	<summary>
-    ///	  Gets a value indicating whether the current <c>Nullable{T}</c>structure
-    ///	  has a value.
+    ///	  Gets a value indicating whether the current
+    ///	  <see cref="Nullable&lt;T&gt;" /> structure has a value.
     ///	</summary>
     property HasValue: Boolean read GetHasValue;
 
     ///	<summary>
-    ///	  Gets the value of the current <c>Nullable&lt;T&gt;</c> value.
+    ///	  Gets the value of the current <see cref="Nullable&lt;T&gt;" /> value.
     ///	</summary>
     ///	<exception cref="Spring|EInvalidOperationException">
     ///	  Raised if the value is null.
@@ -330,7 +353,7 @@ type
   ///	  Represents a nullable unicode string.
   ///	</summary>
   TNullableString = Nullable<string>;
-
+{$IFNDEF NEXTGEN}
   ///	<summary>
   ///	  Represents a nullable ansi string.
   ///	</summary>
@@ -340,7 +363,7 @@ type
   ///	  Represents a nullable wide string.
   ///	</summary>
   TNullableWideString = Nullable<WideString>;
-
+{$ENDIF}
   ///	<summary>
   ///	  Represents a nullable integer.
   ///	</summary>
@@ -389,88 +412,192 @@ type
   ///	<summary>
   ///	  Provides support for lazy initialization.
   ///	</summary>
-  ///	<preliminary />
   ILazy = interface
     ['{40223BA9-0C66-49E7-AA33-BDAEF9F506D6}']
-    function GetValue: TValue;
+  {$REGION 'Property Accessors'}
     function GetIsValueCreated: Boolean;
-
-    ///	<summary>
-    ///	  Gets the lazily initialized value of the current <c>ILazy</c> instance.
-    ///	</summary>
-    property Value: TValue read GetValue;
+    function GetValue: TValue;
+  {$ENDREGION}
 
     ///	<summary>
     ///	  Gets a value that indicates whether a value has been created for this
-    ///	  <c>ILazy</c> instance.
+    ///	  <see cref="ILazy" /> instance.
     ///	</summary>
+    ///	<value>
+    ///	  <b>True</b> if a value has been created for this
+    ///	  <see cref="ILazy" /> instance; otherwise, <b>False</b>.
+    ///	</value>
+    property IsValueCreated: Boolean read GetIsValueCreated;
+
+    ///	<summary>
+    ///	  Gets the lazily initialized value of the current
+    ///	  <see cref="ILazy" /> instance.
+    ///	</summary>
+    ///	<value>
+    ///	  The lazily initialized value of the current
+    ///	  <see cref="ILazy" /> instance.
+    ///	</value>
+    property Value: TValue read GetValue;
+  end;
+
+  ///	<summary>
+  ///	  Provides support for lazy initialization.
+  ///	</summary>
+  ILazy<T> = interface(ILazy)
+  {$REGION 'Property Accessors'}
+    function GetValue: T;
+  {$ENDREGION}
+
+    ///	<summary>
+    ///	  Gets the lazily initialized value of the current
+    ///	  <see cref="ILazy&lt;T&gt;" /> instance.
+    ///	</summary>
+    ///	<value>
+    ///	  The lazily initialized value of the current
+    ///	  <see cref="ILazy&lt;T&gt;" /> instance.
+    ///	</value>
+    property Value: T read GetValue;
+  end;
+
+  TLazy = class(TInterfacedObject, ILazy)
+  private
+    fLock: TCriticalSection;
+    fIsValueCreated: Boolean;
+  {$REGION 'Property Accessors'}
+    function GetIsValueCreated: Boolean;
+    function GetValueNonGeneric: TValue; virtual; abstract;
+    function ILazy.GetValue = GetValueNonGeneric;
+  {$ENDREGION}
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    ///	<summary>
+    ///	  Gets a value that indicates whether a value has been created for this
+    ///	  <see cref="TLazy&lt;T&gt;" /> instance.
+    ///	</summary>
+    ///	<value>
+    ///	  <b>True</b> if a value has been created for this
+    ///	  <see cref="TLazy&lt;T&gt;" /> instance; otherwise, <b>False</b>.
+    ///	</value>
     property IsValueCreated: Boolean read GetIsValueCreated;
   end;
 
   ///	<summary>
-  ///	  Provides support for lazy initialization by generic.
+  ///	  Provides support for lazy initialization.
   ///	</summary>
-  ILazy<T> = interface(ILazy)
-    function GetValue: T;
-    property Value: T read GetValue;
-  end;
-
-  TLazy<T> = class(TInterfacedObject, ILazy<T>, ILazy, TFunc<T>)
-  protected
+  ///	<typeparam name="T">
+  ///	  The type of object that is being lazily initialized.
+  ///	</typeparam>
+  TLazy<T> = class(TLazy, ILazy<T>, TFunc<T>)
+  private
     fValueFactory: TFunc<T>;
     fValue: T;
-    fIsValueCreated: Boolean;
-  protected
     procedure EnsureInitialized; inline;
-    function GetGenericValue: T;
-    function GetValue: TValue;
-    function GetIsValueCreated: Boolean;
-    function ILazy<T>.GetValue = GetGenericValue;
-    function TFunc<T>.Invoke = GetGenericValue;
+  {$REGION 'Property Accessors'}
+    function GetValue: T;
+    function GetValueNonGeneric: TValue; override; final;
+    function TFunc<T>.Invoke = GetValue;
+  {$ENDREGION}
   public
     ///	<summary>
-    ///	  Initializes a new instance of <see cref="TLazy{T}" /> with a
-    ///	  delegate.
+    ///	  Initializes a new instance of the <see cref="TLazy&lt;T&gt;" />
+    ///	  class. When lazy initialization occurs, the specified initialization
+    ///	  function is used.
     ///	</summary>
     ///	<param name="valueFactory">
     ///	  The delegate that is invoked to produce the lazily initialized value
     ///	  when it is needed.
     ///	</param>
     ///	<exception cref="EArgumentNullException">
-    ///	  Raised if the <paramref name="valueFactory" /> is null.
+    ///	  <i>valueFactory</i> is <b>nil</b>.
     ///	</exception>
     constructor Create(const valueFactory: TFunc<T>);
 
     ///	<summary>
-    ///	  Initializes a new instance of <see cref="TLazy{T}" /> with a
+    ///	  Initializes a new instance of <see cref="TLazy&lt;T&gt;" /> with the
     ///	  specified value.
     ///	</summary>
     ///	<param name="value">
     ///	  The initialized value.
     ///	</param>
     constructor CreateFrom(const value: T);
-    property Value: T read GetGenericValue;
-    property IsValueCreated: Boolean read GetIsValueCreated;
+
+    ///	<summary>
+    ///	  Gets the lazily initialized value of the current
+    ///	  <see cref="TLazy&lt;T&gt;" /> instance.
+    ///	</summary>
+    ///	<value>
+    ///	  The lazily initialized value of the current
+    ///	  <see cref="TLazy&lt;T&gt;" /> instance.
+    ///	</value>
+    property Value: T read GetValue;
   end;
 
+  ///	<summary>
+  ///	  Provides support for lazy initialization.
+  ///	</summary>
+  ///	<typeparam name="T">
+  ///	  The type of object that is being lazily initialized.
+  ///	</typeparam>
   Lazy<T> = record
   private
     fLazy: ILazy<T>;
-    function GetValue: T;
-    function GetIsValueCreated: Boolean;
     function GetIsAssigned: Boolean;
+    function GetIsValueCreated: Boolean;
+    function GetValue: T;
   public
+    ///	<summary>
+    ///	  Initializes a new instance of the <see cref="Lazy&lt;T&gt;" />
+    ///	  record. When lazy initialization occurs, the specified initialization
+    ///	  function is used.
+    ///	</summary>
+    ///	<param name="valueFactory">
+    ///	  The delegate that is invoked to produce the lazily initialized value
+    ///	  when it is needed.
+    ///	</param>
+    ///	<exception cref="EArgumentNullException">
+    ///	  <i>valueFactory</i> is <b>nil</b>.
+    ///	</exception>
     constructor Create(const valueFactory: TFunc<T>);
+
+    ///	<summary>
+    ///	  Initializes a new instance of <see cref="Lazy&lt;T&gt;" /> with the
+    ///	  specified value.
+    ///	</summary>
+    ///	<param name="value">
+    ///	  The initialized value.
+    ///	</param>
     constructor CreateFrom(const value: T);
 
-    property AsLazy: ILazy<T> read fLazy;
-    property Value: T read GetValue;
-    property IsValueCreated: Boolean read GetIsValueCreated;
+    class operator Implicit(const value: Lazy<T>): ILazy<T>;
+    class operator Implicit(const value: Lazy<T>): T;
+    class operator Implicit(const value: T): Lazy<T>;
+    class operator Implicit(const value: TLazy<T>): Lazy<T>;
+
     property IsAssigned: Boolean read GetIsAssigned;
 
-    class operator Implicit(const lazy: Lazy<T>): T;
-    class operator Implicit(const value: T): Lazy<T>;
-    class operator Implicit(const value: Lazy<T>): ILazy<T>;
+    ///	<summary>
+    ///	  Gets a value that indicates whether a value has been created for this
+    ///	  <see cref="Lazy&lt;T&gt;" /> instance.
+    ///	</summary>
+    ///	<value>
+    ///	  <b>True</b> if a value has been created for this
+    ///	  <see cref="Lazy&lt;T&gt;" /> instance; otherwise, <b>False</b>.
+    ///	</value>
+    property IsValueCreated: Boolean read GetIsValueCreated;
+
+    ///	<summary>
+    ///	  Gets the lazily initialized value of the current
+    ///	  <see cref="Lazy&lt;T&gt;" /> instance.
+    ///	</summary>
+    ///	<value>
+    ///	  The lazily initialized value of the current
+    ///	  <see cref="Lazy&lt;T&gt;" /> instance.
+    ///	</value>
+    ///	<exception cref="Spring|EInvalidOperationException">
+    ///	</exception>
+    property Value: T read GetValue;
   end;
 
   TLazyInitializer = record
@@ -547,7 +674,7 @@ type
     ///	  Iterates all event handlers and perform the specified action on each
     ///	  one.
     ///	</summary>
-    procedure ForEach(action: TAction<T>);
+    procedure ForEach(const action: TAction<T>);
 
     ///	<summary>
     ///	  Invokes all event handlers.
@@ -563,7 +690,7 @@ type
     ///	  Gets the value indicates whether the multicast event is enabled, or
     ///	  sets the value to enable or disable the event.
     ///	</summary>
-    property Enabled: Boolean read GetEnabled write SetEnabled;  // experimental
+    property Enabled: Boolean read GetEnabled write SetEnabled;
 
     ///	<summary>
     ///	  Gets a value indicates whether there is not any event handler.
@@ -571,116 +698,16 @@ type
     property IsEmpty: Boolean read GetIsEmpty;
   end;
 
-  PMethod = ^TMethod;
-
-  ///	<summary>
-  ///	  Internal Use.
-  ///	</summary>
-  TMethodInvocations = class
-  private
-    const
-      paEAX = Word(0);
-      paEDX = Word(1);
-      paECX = Word(2);
-      paStack = Word(3);
-
-    type
-      PParameterInfos = ^TParameterInfos;
-      TParameterInfos = array[0..255] of ^PTypeInfo;
-
-      PParameters = ^TParameters;
-      TParameters = packed record
-      public
-{$IFNDEF CPUX64}
-        Registers: array[paEDX..paECX] of Cardinal;
-{$ENDIF}
-        Stack: array[0..1023] of Byte;
-      end;
-
-      PMethodInfo = ^TMethodInfo;
-      TMethodInfo = record
-        TypeData: PTypeData;
-        ParamInfos: PParameterInfos;
-        StackSize: Integer;
-        CallConvention: TCallConv;
-{$IFDEF CPUX64}
-        RegisterFlag: Word;
-{$ENDIF CPUX64}
-        constructor Create(typeInfo: PTypeInfo);
-      end;
-  private
-    fMethodType: PTypeInfo;
-    fMethodInfo: TMethodInfo;
-    fMethods: TList<TMethod>;
-    function GetCount: Integer;
-    function GetIsEmpty: Boolean;
-  protected
-    procedure InternalInvokeHandlers(Params: PParameters);
-    procedure InvokeEventHandlerStub;
-  public
-    constructor Create(methodTypeInfo: PTypeInfo);
-    destructor Destroy; override;
-    procedure Add(const method: TMethod);
-    procedure Remove(const method: TMethod);
-    procedure RemoveAll(instance: Pointer);
-    function  IndexOf(const method: TMethod): Integer;
-    procedure Clear;
-    procedure ForEach(const action: TAction<TMethod>);
-    property Count: Integer read GetCount;
-    property IsEmpty: Boolean read GetIsEmpty;
-  end;
-
-  TEvent = class(TInterfacedObject, IEvent)
-  private
-    
-    fInvocations: TMethodInvocations;
-    fInvoke: TMethod;
-    fEnabled: Boolean;
-    fTypeInfo: PTypeInfo;
-    function GetInvoke: TMethod;
-    function GetCount: Integer;
-    function GetEnabled: Boolean;
-    
-    function GetIsEmpty: Boolean;
-    procedure SetEnabled(const value: Boolean);
-  protected
-    procedure InvocationsNeeded; inline;
-    property Invocations: TMethodInvocations read fInvocations;
-  public
-    constructor Create(typeInfo: PTypeInfo);
-    destructor Destroy; override;
-
-    procedure Add(const handler: TMethod);
-    procedure Remove(const handler: TMethod); overload;
-    procedure RemoveAll(instance: Pointer);
-    procedure Clear;
-    procedure ForEach(const action: TAction<TMethod>);
-
-    property Invoke: TMethod read GetInvoke;
-    property Count: Integer read GetCount;
-    property Enabled: Boolean read GetEnabled write SetEnabled;
-    property IsEmpty: Boolean read GetIsEmpty;
-  end;
-
-  TEvent<T> = class(TEvent, IEvent<T>)
-  private
-    function GetInvoke: T;
-  public
-    constructor Create;
-
-    procedure Add(handler: T); overload;
-    procedure Remove(handler: T); overload;
-    procedure ForEach(action: TAction<T>);
-
-    property Invoke: T read GetInvoke;
-  end;
-
+{$IFDEF SUPPORTS_GENERIC_EVENTS}
   Event<T> = record
   private
     fInstance: IEvent<T>;
-    function GetInvoke: T;
     function GetCount: Integer;
+    function GetEnabled: Boolean;
+    function GetInvoke: T;
     function GetIsEmpty: Boolean;
+    procedure SetEnabled(const value: Boolean);
+    procedure EnsureInitialized;
   public
     class function Create: Event<T>; static;
 
@@ -689,89 +716,141 @@ type
     procedure RemoveAll(instance: Pointer);
     procedure Clear;
 
-    function EnsureInitialized: Event<T>; inline;
-    function GetInstance: IEvent<T>; inline; deprecated 'Use EnsureInitialized instead.';
-
-    property Invoke: T read GetInvoke;
     property Count: Integer read GetCount;
+    property Enabled: Boolean read GetEnabled write SetEnabled;
+    property Invoke: T read GetInvoke;
     property IsEmpty: Boolean read GetIsEmpty;
 
-    class operator Implicit(const e: IEvent<T>): Event<T>;
-    class operator Implicit(const e: Event<T>): IEvent<T>;
-    class operator Implicit(const e: Event<T>): T;
-    class operator Implicit(const eventHandler: T): Event<T>;
+    class operator Implicit(const value: IEvent<T>): Event<T>;
+    class operator Implicit(var value: Event<T>): IEvent<T>;
+    class operator Implicit(var value: Event<T>): T;
+    class operator Implicit(const value: T): Event<T>;
   end;
+{$ENDIF}
 
-  IMulticastNotifyEvent = IEvent<TNotifyEvent>;
+  {$ENDREGION}
 
-  TMulticastNotifyEvent = TEvent<TNotifyEvent>;
+
+  {$REGION 'Property change notification'}
+
+  TPropertyChangedEvent = procedure(Sender: TObject;
+    const PropertyName: string) of object;
+
+  IPropertyChangedEvent = IEvent<TPropertyChangedEvent>;
+
+  INotifyPropertyChanged = interface
+    ['{A517EC98-C651-466B-8290-F7EE96877E03}']
+    function GetOnPropertyChanged: IPropertyChangedEvent;
+    property OnPropertyChanged: IPropertyChangedEvent read GetOnPropertyChanged;
+  end;
 
   {$ENDREGION}
 
 
   {$REGION 'Exceptions'}
 
-  ENotSupportedException    = SysUtils.ENotSupportedException;
+  ENotSupportedException = SysUtils.ENotSupportedException;
 
 {$IFDEF DELPHIXE_UP}
-  ENotImplementedException  = SysUtils.ENotImplemented;
+  ENotImplementedException = SysUtils.ENotImplemented;
+  EInvalidOperationException = SysUtils.EInvalidOpException;
+  EArgumentNilException = SysUtils.EArgumentNilException;
 {$ELSE}
-  ENotImplementedException  = class(Exception);
+  ENotImplementedException = class(Exception);
+  EInvalidOperationException = class(Exception);
+  EArgumentNilException = class(EArgumentException);
 {$ENDIF}
 
-{$IFDEF DELPHIXE_UP}
-  EInvalidOperationException  = SysUtils.EInvalidOpException;
-{$ELSE}
-  EInvalidOperationException  = class(Exception);
-{$ENDIF}
-
-  EInvalidCastException     = SysUtils.EInvalidCast;
+  EInvalidCastException = SysUtils.EInvalidCast;
 
   EInsufficientMemoryException = EOutOfMemory;
 
-  EFormatException          = class(Exception);
+  EFormatException = class(Exception);
   EIndexOutOfRangeException = class(Exception);
 
-  EArgumentException            = SysUtils.EArgumentException;
-  EArgumentOutOfRangeException  = SysUtils.EArgumentOutOfRangeException;
-{$IFDEF DELPHIXE_UP}
-  EArgumentNilException        = SysUtils.EArgumentNilException;
-{$ELSE}
-  EArgumentNilException        = class(EArgumentException);
-{$ENDIF}
-  EArgumentNullException        = EArgumentNilException;
+  EArgumentException = SysUtils.EArgumentException;
+  EArgumentOutOfRangeException = SysUtils.EArgumentOutOfRangeException;
+  EArgumentNullException = EArgumentNilException;
   EInvalidEnumArgumentException = class(EArgumentException);
 
   ERttiException = class(Exception);
 
   {$ENDREGION}
 
+
+  {$REGION 'TTypeInfoHelper}
+
+  TTypeInfoHelper = record helper for TTypeInfo
+  private
+    function GetTypeName: string; inline;
+  public
+    property TypeName: string read GetTypeName;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'Routines'}
+
+{$IFNDEF DELPHIXE2_UP}
+function ReturnAddress: Pointer;
+{$ENDIF}
+
 procedure PlatformNotImplemented;
 
 ///	<summary>
 ///	  Raises an <see cref="Spring|EArgumentNullException" /> if the
 ///	  <paramref name="value" /> is nil.
 ///	</summary>
-procedure CheckArgumentNotNull(const value: IInterface; const argumentName: string); overload;
+procedure CheckArgumentNotNull(const value: IInterface; const argumentName: string); overload; deprecated 'Use Guard.CheckNotNull instead';
 
 ///	<summary>
 ///	  Raises an <see cref="Spring|EArgumentNullException" /> if the
 ///	  <paramref name="value" /> is nil.
 ///	</summary>
-procedure CheckArgumentNotNull(value: Pointer; const argumentName: string); overload;
+procedure CheckArgumentNotNull(value: Pointer; const argumentName: string); overload; deprecated 'Use Guard.CheckNotNull instead';
+
+function GetQualifiedClassName(AInstance: TObject): string; overload; inline;
+function GetQualifiedClassName(AClass: TClass): string; overload; {$IFDEF DELPHIXE2_UP}inline;{$ENDIF}
+
+///	<summary>
+///	  Determines whether an instance of <c>leftType</c> can be assigned from an
+///	  instance of <c>rightType</c>.
+///	</summary>
+function IsAssignableFrom(leftType, rightType: PTypeInfo): Boolean;
+
+/// <summary>
+///   Returns the size that is needed in order to pass an argument of the given
+///   type.
+/// </summary>
+/// <remarks>
+///   While in most cases the result is equal to the actual type size for short
+///   strings it always returns SizeOf(Pointer) as short strings are always
+///   passed as pointer.
+/// </remarks>
+function GetTypeSize(typeInfo: PTypeInfo): Integer;
+{$ENDREGION}
 
 
 implementation
 
 uses
-  StrUtils,
+  Spring.Events,
   Spring.ResourceStrings;
+
 
 {$REGION 'Routines'}
 
+{$IFNDEF DELPHIXE2_UP}
+function ReturnAddress: Pointer;
+asm
+  mov eax,[ebp+4]
+end;
+{$ENDIF}
+
 procedure PlatformNotImplemented;
 begin
-  raise ENotImplementedException.Create('Not implemented in present platform.');
+  raise ENotImplementedException.Create('Not implemented in present platform.') at ReturnAddress;
 end;
 
 procedure CheckArgumentNotNull(const value: IInterface; const argumentName: string);
@@ -781,12 +860,143 @@ end;
 
 procedure CheckArgumentNotNull(value: Pointer; const argumentName: string);
 begin
-  if value = nil then
-  begin
-    TArgument.RaiseArgumentNullException(argumentName);
-  end;
+  if not Assigned(value) then
+    Guard.RaiseArgumentNullException(argumentName);
 end;
 
+function GetQualifiedClassName(AInstance: TObject): string;
+begin
+  Result := GetQualifiedClassName(AInstance.ClassType);
+end;
+
+function GetQualifiedClassName(AClass: TClass): string;
+{$IFNDEF DELPHIXE2_UP}
+var
+  LUnitName: string;
+{$ENDIF}
+begin
+{$IFDEF DELPHIXE2_UP}
+  Result := AClass.QualifiedClassName;
+{$ELSE}
+  LUnitName := AClass.UnitName;
+  if LUnitName = '' then
+    Result := AClass.ClassName
+  else
+    Result := LUnitName + '.' + AClass.ClassName;
+{$ENDIF}
+end;
+
+function IsAssignableFrom(leftType, rightType: PTypeInfo): Boolean;
+var
+  leftData, rightData: PTypeData;
+begin
+  Guard.CheckNotNull(leftType, 'leftType');
+  Guard.CheckNotNull(rightType, 'rightType');
+
+  if leftType = rightType then
+    Exit(True);
+
+  leftData := GetTypeData(leftType);
+  rightData := GetTypeData(rightType);
+  if (rightType.Kind = tkClass) and (leftType.Kind = tkClass) then
+  begin
+    Result := rightData.ClassType.InheritsFrom(leftData.ClassType);
+  end
+  else if (rightType.Kind = tkClass) and (leftType.Kind = tkInterface) then
+  begin
+    Result := (ifHasGuid in leftData.IntfFlags) and
+      Supports(rightData.ClassType, leftData.Guid);
+  end
+  else if (rightType.Kind = tkInterface) and (leftType.Kind = tkInterface) then
+  begin
+    Result := Assigned(rightData.IntfParent) and (rightData.IntfParent^ = leftType);
+    while not Result and Assigned(rightData.IntfParent) do
+    begin
+      Result := rightData.IntfParent^ = leftType;
+      rightData := GetTypeData(rightData.IntfParent^);
+    end;
+  end
+  else
+    Result := False;
+end;
+
+function GetTypeSize(typeInfo: PTypeInfo): Integer;
+var
+  typeData: PTypeData;
+const
+  COrdinalSizes: array[TOrdType] of Integer = (
+    SizeOf(ShortInt){1},
+    SizeOf(Byte){1},
+    SizeOf(SmallInt){2},
+    SizeOf(Word){2},
+    SizeOf(Integer){4},
+    SizeOf(Cardinal){4});
+  CFloatSizes: array[TFloatType] of Integer = (
+    SizeOf(Single){4},
+    SizeOf(Double){8},
+{$IFDEF ALIGN_STACK}
+    16,
+{$ELSE}
+    SizeOf(Extended){10},
+{$ENDIF}
+    SizeOf(Comp){8},
+    SizeOf(Currency){8});
+  CSetSizes: array[TOrdType] of Integer = (
+    SizeOf(ShortInt){1},
+    SizeOf(Byte){1},
+    SizeOf(SmallInt){2},
+    SizeOf(Word){2},
+    SizeOf(Integer){4},
+    SizeOf(Cardinal){4});
+begin
+  case typeInfo.Kind of
+{$IFNDEF NEXTGEN}
+    tkChar:
+      Result := SizeOf(AnsiChar){1};
+{$ENDIF}
+    tkWChar:
+      Result := SizeOf(WideChar){2};
+    tkInteger, tkEnumeration:
+      begin
+        typeData := GetTypeData(typeInfo);
+        Result := COrdinalSizes[typeData.OrdType];
+      end;
+    tkFloat:
+      begin
+        typeData := GetTypeData(typeInfo);
+        Result := CFloatSizes[typeData.FloatType];
+      end;
+    tkString, tkLString, tkUString, tkWString, tkInterface, tkClass, tkClassRef, tkDynArray, tkPointer, tkProcedure:
+      Result := SizeOf(Pointer);
+    tkMethod:
+      Result := SizeOf(TMethod);
+    tkInt64:
+      Result := SizeOf(Int64){8};
+    tkVariant:
+      Result := SizeOf(Variant);
+    tkSet:
+      begin
+        // big sets have no typeInfo for now
+        typeData := GetTypeData(typeInfo);
+        Result := CSetSizes[typeData.OrdType];
+      end;
+    tkRecord:
+      begin
+        typeData := GetTypeData(typeInfo);
+        Result := typeData.RecSize;
+      end;
+    tkArray:
+      begin
+        typeData := GetTypeData(typeInfo);
+        Result := typeData.ArrayData.Size;
+      end;
+    else
+      begin
+        Assert(False, 'Unsupported type'); { TODO -o##jwp -cEnhance : add more context to the assert }
+        Result := -1;
+      end;
+  end;
+end;
 {$ENDREGION}
 
 
@@ -813,312 +1023,288 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TArgument'}
+{$REGION 'Guard'}
 
-class procedure TArgument.DoCheckArrayIndex(const length, index: Integer);
+class procedure Guard.DoCheckArrayIndex(length, index: Integer);
 begin
-  DoCheckIndex(length, index, 0);
+  Guard.DoCheckIndex(length, index, 0);
 end;
 
-class procedure TArgument.DoCheckArrayRange(const length, startIndex,
-  count: Integer);
+class procedure Guard.DoCheckArrayRange(length, startIndex, count: Integer);
 begin
-  TArgument.CheckRange(length, startIndex, count, 0);
+  Guard.CheckRange(length, startIndex, count, 0);
 end;
 
-class procedure TArgument.DoCheckStringIndex(const length, index: Integer);
+class procedure Guard.DoCheckStringIndex(length, index: Integer);
 begin
-  DoCheckIndex(length, index, 1);
+  Guard.DoCheckIndex(length, index, 1);
 end;
 
-class procedure TArgument.DoCheckStringRange(const length, startIndex,
-  count: Integer);
+class procedure Guard.DoCheckStringRange(length, startIndex, count: Integer);
 begin
-  TArgument.CheckRange(length, startIndex, count, 1);
+  Guard.CheckRange(length, startIndex, count, 1);
 end;
 
-class procedure TArgument.DoCheckIndex(const length, index, indexBase: Integer);
+class procedure Guard.DoCheckIndex(length, index, indexBase: Integer);
 const
   IndexArgName = 'index';
 begin
-  if (index < indexBase) or (index > length - indexBase - 1) then
-  begin
-    TArgument.RaiseArgumentOutOfRangeException(IndexArgName);
-  end;
+  if (index < indexBase) or (index > length + indexBase - 1) then
+    Guard.RaiseArgumentOutOfRangeException(IndexArgName);
 end;
 
-class procedure TArgument.CheckRange(const length, startIndex,
-  count, indexBase: Integer);
+class procedure Guard.CheckRange(length, startIndex, count, indexBase: Integer);
 const
   StartIndexArgName = 'startIndex';
   CountArgName = 'count';
 begin
-  TArgument.CheckRange(
-    (startIndex >= indexBase) and (startIndex <= indexBase + length - 1),
-    StartIndexArgName
-  );
-  TArgument.CheckRange(count >= 0, CountArgName);
+  Guard.CheckRange(
+    (startIndex >= indexBase) and (startIndex < indexBase + length),
+    StartIndexArgName);
+  Guard.CheckRange(count >= 0, CountArgName);
   if count > 0 then
-  begin
-    TArgument.CheckRange(startIndex + count <= indexBase + length, CountArgName);
-  end;
+    Guard.CheckRange(count <= indexBase + length - startIndex, CountArgName);
 end;
 
-class procedure TArgument.CheckRange<T>(const buffer: array of T;
-  const index: Integer);
+class procedure Guard.CheckRange<T>(const buffer: array of T; index: Integer);
+const
+  IndexArgName = 'index';
 begin
   if (index < 0) or (index >= Length(buffer)) then
-  begin
-    RaiseArgumentOutOfRangeException('index');
-  end;
+    Guard.RaiseArgumentOutOfRangeException(IndexArgName);
 end;
 
-class procedure TArgument.CheckRange<T>(const buffer: array of T;
-  const startIndex, count: Integer);
+class procedure Guard.CheckRange<T>(const buffer: array of T;
+  startIndex, count: Integer);
 begin
-  DoCheckArrayRange(Length(buffer), startIndex, count);
+  Guard.DoCheckArrayRange(Length(buffer), startIndex, count);
 end;
 
-class procedure TArgument.CheckTrue(condition: Boolean;
-  const msg: string);
+class procedure Guard.CheckTrue(condition: Boolean; const msg: string);
 begin
   if not condition then
-  begin
-    raise EArgumentException.Create(msg);
-  end;
+    Guard.RaiseArgumentException(msg);
 end;
 
-class procedure TArgument.CheckFalse(condition: Boolean;
-  const msg: string);
+class procedure Guard.CheckFalse(condition: Boolean; const msg: string);
 begin
   if condition then
-  begin
-    raise EArgumentException.Create(msg);
-  end;
+    Guard.RaiseArgumentException(msg);
 end;
 
-class procedure TArgument.CheckInheritsFrom(const checkclazz, clazz: TClass;
-  const parameterName: string);
+class procedure Guard.CheckInheritsFrom(cls, parentClass: TClass;
+  const argumentName: string);
 begin
-  ASSERT(Assigned(checkclazz));
-  ASSERT(Assigned(clazz));
+  Guard.CheckNotNull(cls, 'cls');
+  Guard.CheckNotNull(parentClass, 'parentClass');
 
-  if (not checkclazz.InheritsFrom(clazz)) then
-    raise EArgumentException.CreateResFmt(@SBadObjectInheritance, [parameterName, checkclazz.ClassName, clazz.ClassName]);
+  if not cls.InheritsFrom(parentClass) then
+    raise EArgumentException.CreateResFmt(@SBadObjectInheritance, [argumentName,
+      cls.ClassName, parentClass.ClassName]);
 end;
 
-class procedure TArgument.CheckInheritsFrom(obj: TObject; const clazz: TClass;
-  const parameterName: string);
+class procedure Guard.CheckInheritsFrom(obj: TObject; parentClass: TClass;
+  const argumentName: string);
 begin
   if Assigned(obj) then
-    CheckInheritsFrom(obj.ClassType, clazz, parameterName);
+    Guard.CheckInheritsFrom(obj.ClassType, parentClass, argumentName);
 end;
 
-class procedure TArgument.CheckNotNull(condition: Boolean;
+class procedure Guard.CheckNotNull(condition: Boolean;
   const parameterName: string);
 begin
   if not condition then
-  begin
-    TArgument.RaiseArgumentNullException(parameterName);
-  end;
+    Guard.RaiseArgumentNullException(parameterName);
 end;
 
-class procedure TArgument.CheckNotNull(p: Pointer; const argumentName: string);
-begin
-  TArgument.CheckNotNull(p <> nil, argumentName);
-end;
-
-class procedure TArgument.CheckNotNull(const intf: IInterface;
+class procedure Guard.CheckNotNull(argumentValue: Pointer;
   const argumentName: string);
 begin
-  TArgument.CheckNotNull(intf <> nil, argumentName);
+  Guard.CheckNotNull(Assigned(argumentValue), argumentName);
 end;
 
-class procedure TArgument.CheckNotNull(obj: TObject;
+class procedure Guard.CheckNotNull(const argumentValue: IInterface;
   const argumentName: string);
 begin
-  TArgument.CheckNotNull(obj <> nil, argumentName);
+  Guard.CheckNotNull(Assigned(argumentValue), argumentName);
 end;
 
-class procedure TArgument.CheckNotNull<T>(const value: T; const argumentName: string);
+class procedure Guard.CheckNotNull(argumentValue: TObject;
+  const argumentName: string);
 begin
-  if IsNullReference(value, TypeInfo(T)) then
-  begin
-    TArgument.RaiseArgumentNullException(argumentName);
-  end;
+  Guard.CheckNotNull(Assigned(argumentValue), argumentName);
 end;
 
-class procedure TArgument.CheckEnum<T>(const value: T;
+class procedure Guard.CheckNotNull<T>(const argumentValue: T;
+  const argumentName: string);
+begin
+  if Guard.IsNullReference(argumentValue, TypeInfo(T)) then
+    Guard.RaiseArgumentNullException(argumentName);
+end;
+
+class procedure Guard.CheckEnum<T>(const argumentValue: T;
   const argumentName: string);
 var
   intValue: Integer;
 begin
   intValue := 0;
-  Move(value, intValue, SizeOf(T));
-  TArgument.CheckEnum<T>(intValue, argumentName);
+  Move(argumentValue, intValue, SizeOf(T));
+  Guard.CheckEnum<T>(intValue, argumentName);
 end;
 
-class procedure TArgument.CheckEnum<T>(const value: Integer;
+class procedure Guard.CheckEnum<T>(argumentValue: Integer;
   const argumentName: string);
 var
   typeInfo: PTypeInfo;
   data: PTypeData;
-  msg: string;
 begin
   typeInfo := System.TypeInfo(T);
-  TArgument.CheckTypeKind(typeInfo, [tkEnumeration], 'T');
+  Guard.CheckTypeKind(typeInfo, [tkEnumeration], 'T');
 
   data := GetTypeData(typeInfo);
-  Assert(data <> nil, 'data must not be nil.');
+  Guard.CheckNotNull(data, 'data');
 
-  if (value < data.MinValue) or (value > data.MaxValue) then
-  begin
-    msg := Format(
-      SInvalidEnumArgument,
-      [argumentName, GetTypeName(typeInfo), value]
-    );
-    raise EInvalidEnumArgumentException.Create(msg);
-  end;
+  if (argumentValue < data.MinValue) or (argumentValue > data.MaxValue) then
+    raise EInvalidEnumArgumentException.CreateResFmt(@SInvalidEnumArgument, [
+      argumentName, GetTypeName(typeInfo), argumentValue]);
 end;
 
-class procedure TArgument.CheckRange(condition: Boolean;
+class procedure Guard.CheckRange(condition: Boolean;
   const argumentName: string);
 begin
   if not condition then
-  begin
-    TArgument.RaiseArgumentOutOfRangeException(argumentName);
-  end;
+    Guard.RaiseArgumentOutOfRangeException(argumentName);
 end;
 
-class procedure TArgument.CheckRange(const buffer: array of Byte;
-  const startIndex, count: Integer);
+class procedure Guard.CheckRange(const buffer: array of Byte;
+  startIndex, count: Integer);
 begin
-  TArgument.DoCheckArrayRange(Length(buffer), startIndex, count);
+  Guard.DoCheckArrayRange(Length(buffer), startIndex, count);
 end;
 
-class procedure TArgument.CheckRange(const buffer: array of Char;
-  const startIndex, count: Integer);
+class procedure Guard.CheckRange(const buffer: array of Char;
+  startIndex, count: Integer);
 begin
-  TArgument.DoCheckArrayRange(Length(buffer), startIndex, count);
+  Guard.DoCheckArrayRange(Length(buffer), startIndex, count);
 end;
 
-class procedure TArgument.CheckRange(const buffer: array of Byte;
-  const index: Integer);
+class procedure Guard.CheckRange(const buffer: array of Byte; index: Integer);
 begin
-  TArgument.DoCheckArrayIndex(Length(buffer), index);
+  Guard.DoCheckArrayIndex(Length(buffer), index);
 end;
 
-class procedure TArgument.CheckRange(const buffer: array of Char;
-  const index: Integer);
+class procedure Guard.CheckRange(const buffer: array of Char; index: Integer);
 begin
-  TArgument.DoCheckArrayIndex(Length(buffer), index);
+  Guard.DoCheckArrayIndex(Length(buffer), index);
 end;
 
-class procedure TArgument.CheckRange(const s: string; const index: Integer);
+class procedure Guard.CheckRange(const s: string; index: Integer);
 begin
-  TArgument.DoCheckStringIndex(Length(s), index);
+  Guard.DoCheckStringIndex(Length(s), index);
 end;
 
-class procedure TArgument.CheckRange(const s: string; const startIndex,
-  count: Integer);
+class procedure Guard.CheckRange(const s: string; startIndex, count: Integer);
 begin
-  TArgument.DoCheckStringRange(Length(s), startIndex, count);
+  Guard.DoCheckStringRange(Length(s), startIndex, count);
 end;
 
-class procedure TArgument.CheckRange(const s: WideString; const index: Integer);
+{$IFNDEF NEXTGEN}
+class procedure Guard.CheckRange(const s: WideString; index: Integer);
 begin
-  TArgument.DoCheckStringIndex(Length(s), index);
+  Guard.DoCheckStringIndex(Length(s), index);
 end;
 
-class procedure TArgument.CheckRange(const s: WideString; const startIndex,
-  count: Integer);
+class procedure Guard.CheckRange(const s: WideString; startIndex, count: Integer);
 begin
-  TArgument.DoCheckStringRange(Length(s), startIndex, count);
+  Guard.DoCheckStringRange(Length(s), startIndex, count);
 end;
 
-class procedure TArgument.CheckRange(const s: RawByteString;
-  const index: Integer);
+class procedure Guard.CheckRange(const s: RawByteString; index: Integer);
 begin
-  TArgument.DoCheckStringIndex(Length(s), index);
+  Guard.DoCheckStringIndex(Length(s), index);
 end;
 
-class procedure TArgument.CheckRange(const s: RawByteString; const startIndex,
-  count: Integer);
+class procedure Guard.CheckRange(const s: RawByteString; startIndex, count: Integer);
 begin
-  TArgument.DoCheckStringRange(Length(s), startIndex, count);
+  Guard.DoCheckStringRange(Length(s), startIndex, count);
 end;
+{$ENDIF}
 
-class procedure TArgument.CheckTypeKind(typeInfo: PTypeInfo;
-  const expectedTypeKind: TTypeKind; const argumentName: string);
+class procedure Guard.CheckTypeKind(typeInfo: PTypeInfo;
+  expectedTypeKind: TTypeKind; const argumentName: string);
 begin
-  TArgument.CheckNotNull(typeInfo, argumentName);
+  Guard.CheckNotNull(typeInfo, argumentName);
   if typeInfo.Kind <> expectedTypeKind then
-  begin
-    raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument, [typeInfo.Name, argumentName]);
-  end;
+    raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument,
+      [typeInfo.TypeName, argumentName]);
 end;
 
-class procedure TArgument.CheckTypeKind(typeInfo: PTypeInfo;
-  const expectedTypeKinds: TTypeKinds; const argumentName: string);
+class procedure Guard.CheckTypeKind(typeInfo: PTypeInfo;
+  expectedTypeKinds: TTypeKinds; const argumentName: string);
 begin
-  TArgument.CheckNotNull(typeInfo, argumentName);
+  Guard.CheckNotNull(typeInfo, argumentName);
   if not (typeInfo.Kind in expectedTypeKinds) then
-  begin
-    raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument, [typeInfo.Name, argumentName]);
-  end;
+    raise EArgumentException.CreateResFmt(@SUnexpectedTypeKindArgument,
+      [typeInfo.TypeName, argumentName]);
 end;
 
-//  TTypeKind = (tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
-//    tkString, tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString,
-//    tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray, tkUString,
-//    tkClassRef, tkPointer, tkProcedure);
-class function TArgument.IsNullReference(const value; typeInfo: PTypeInfo): Boolean;
+class function Guard.IsNullReference(const value; typeInfo: PTypeInfo): Boolean;
+const
+  ReferenceKinds = [
+    tkClass, tkMethod, tkInterface, tkClassRef, tkPointer, tkProcedure];
 begin
-  Result := (typeInfo <> nil) and
-    (typeInfo.Kind in [tkPointer, tkClass, tkClassRef, tkInterface, tkProcedure, tkMethod]);
-  Result := Result and not Assigned(@value);
+  Result := False;
+  if Assigned(typeInfo) and (typeInfo.Kind in ReferenceKinds) then
+    if typeInfo.Kind = tkMethod then
+      Result := not Assigned(TMethod(value).Code) and not Assigned(TMethod(value).Data)
+    else
+      Result := not Assigned(PPointer(@value)^);
 end;
 
-//class function TArgument.IsNullReference<T>(const value: T): Boolean;
-//var
-//  localTypeInfo: PTypeInfo;
-//begin
-//  localTypeInfo := TypeInfo(T);
-//  Result := TArgument.IsNullReference(value, localTypeInfo);
-//end;
-
-class procedure TArgument.RaiseArgumentException(const msg: string);
+{$IFOPT O+}
+  {$DEFINE OPTIMIZATIONS_ON}
+  {$O-}
+{$ENDIF}
+class procedure Guard.RaiseArgumentException(const msg: string);
 begin
-  raise EArgumentException.Create(msg);
+  raise EArgumentException.Create(msg) at ReturnAddress;
 end;
 
-class procedure TArgument.RaiseArgumentNullException(
-  const argumentName: string);
+class procedure Guard.RaiseArgumentNullException(const argumentName: string);
 begin
-  raise EArgumentNullException.CreateResFmt(@SArgumentNullException, [argumentName]);
+  raise EArgumentNullException.CreateResFmt(
+    @SArgumentNullException, [argumentName]) at ReturnAddress;
 end;
 
-class procedure TArgument.RaiseArgumentOutOfRangeException(
-  const argumentName: string);
+class procedure Guard.RaiseArgumentOutOfRangeException(const argumentName: string);
 begin
-  raise EArgumentOutOfRangeException.CreateResFmt(@SArgumentOutOfRangeException, [argumentName]);
+  raise EArgumentOutOfRangeException.CreateResFmt(
+    @SArgumentOutOfRangeException, [argumentName]) at ReturnAddress;
 end;
 
-class procedure TArgument.RaiseArgumentFormatException(const argumentName: string);
+class procedure Guard.RaiseArgumentFormatException(const argumentName: string);
 begin
-  raise EConvertError.CreateResFmt(@SInvalidArgumentFormat, [argumentName]);
+  raise EFormatException.CreateResFmt(
+    @SInvalidArgumentFormat, [argumentName]) at ReturnAddress;
 end;
 
-class procedure TArgument.RaiseInvalidEnumArgumentException(
-  const argumentName: string);
+class procedure Guard.RaiseInvalidEnumArgumentException(const argumentName: string);
 begin
-  raise EInvalidEnumArgumentException.CreateResFmt(@SInvalidEnumArgument, [argumentName]);
+  raise EInvalidEnumArgumentException.CreateResFmt(
+    @SInvalidEnumArgument, [argumentName]) at ReturnAddress;
 end;
+{$IFDEF OPTIMIZATIONS_ON}
+  {$UNDEF OPTIMIZATIONS_ON}
+  {$O+}
+{$ENDIF}
 
 {$ENDREGION}
 
 
 {$REGION 'Nullable<T>'}
+
+const
+  CHasValueFlag = '@';
 
 constructor Nullable<T>.Create(const value: T);
 begin
@@ -1137,9 +1323,7 @@ begin
     fHasValue := CHasValueFlag;
   end
   else
-  begin
     Clear;
-  end;
 end;
 
 procedure Nullable<T>.Clear;
@@ -1161,9 +1345,7 @@ end;
 function Nullable<T>.GetValue: T;
 begin
   if not HasValue then
-  begin
     raise EInvalidOperationException.CreateRes(@SNullableTypeHasNoValue);
-  end;
   Result := fValue;
 end;
 
@@ -1208,12 +1390,13 @@ begin
   if value.HasValue then
   begin
     v := TValue.From<T>(value.Value);
-    Result := v.AsVariant;
+    if v.IsType<Boolean> then
+      Result := v.AsBoolean
+    else
+      Result := v.AsVariant;
   end
   else
-  begin
     Result := Null;
-  end;
 end;
 
 class operator Nullable<T>.Implicit(const value: Variant): Nullable<T>;
@@ -1226,21 +1409,15 @@ begin
     Result := Nullable<T>.Create(v.AsType<T>);
   end
   else
-  begin
     Result.Clear;
-  end;
 end;
 
 class operator Nullable<T>.Implicit(value: Pointer): Nullable<T>;
 begin
-  if value = nil then
-  begin
-    Result.Clear;
-  end
+  if not Assigned(value) then
+    Result.Clear
   else
-  begin
     raise EInvalidOperationException.CreateRes(@SCannotAssignPointerToNullable);
-  end;
 end;
 
 class operator Nullable<T>.Explicit(const value: Nullable<T>): T;
@@ -1261,15 +1438,36 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TLazy'}
+
+constructor TLazy.Create;
+begin
+  inherited;
+  fLock := TCriticalSection.Create;
+end;
+
+destructor TLazy.Destroy;
+begin
+  fLock.Free;
+  inherited;
+end;
+
+function TLazy.GetIsValueCreated: Boolean;
+begin
+  Result := fIsValueCreated;
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TLazy<T>'}
 
 constructor TLazy<T>.Create(const valueFactory: TFunc<T>);
 begin
-  CheckArgumentNotNull(PPointer(@valueFactory)^, 'valueFactory');
+  Guard.CheckNotNull(Assigned(valueFactory), 'valueFactory');
 
   inherited Create;
   fValueFactory := valueFactory;
-  fIsValueCreated := False;
 end;
 
 constructor TLazy<T>.CreateFrom(const value: T);
@@ -1281,27 +1479,33 @@ end;
 
 procedure TLazy<T>.EnsureInitialized;
 begin
-  if IsValueCreated then
+  if fIsValueCreated then
     Exit;
 
-  fValue := fValueFactory();
-  fIsValueCreated := True;
+  fLock.Enter;
+  try
+    if fIsValueCreated then
+      Exit;
+
+    if not Assigned(fValueFactory) then
+      raise EInvalidOperationException.CreateRes(@SNoDelegateAssigned);
+
+    fValue := fValueFactory();
+    fIsValueCreated := True;
+  finally
+    fLock.Leave;
+  end;
 end;
 
-function TLazy<T>.GetGenericValue: T;
+function TLazy<T>.GetValue: T;
 begin
   EnsureInitialized;
   Result := fValue;
 end;
 
-function TLazy<T>.GetValue: TValue;
+function TLazy<T>.GetValueNonGeneric: TValue;
 begin
-  Result := TValue.From<T>(GetGenericValue);
-end;
-
-function TLazy<T>.GetIsValueCreated: Boolean;
-begin
-  Result := fIsValueCreated;
+  Result := TValue.From<T>(Value);
 end;
 
 {$ENDREGION}
@@ -1323,6 +1527,7 @@ function Lazy<T>.GetValue: T;
 begin
   if not Assigned(fLazy) then
     raise EInvalidOperationException.CreateRes(@SNoDelegateAssigned);
+
   Result := fLazy.Value;
 end;
 
@@ -1336,9 +1541,14 @@ begin
   Result := Assigned(fLazy);
 end;
 
-class operator Lazy<T>.Implicit(const lazy: Lazy<T>): T;
+class operator Lazy<T>.Implicit(const value: Lazy<T>): ILazy<T>;
 begin
-  Result := lazy.Value;
+  Result := value.fLazy;
+end;
+
+class operator Lazy<T>.Implicit(const value: Lazy<T>): T;
+begin
+  Result := value.Value;
 end;
 
 class operator Lazy<T>.Implicit(const value: T): Lazy<T>;
@@ -1346,9 +1556,9 @@ begin
   Result.fLazy := TLazy<T>.CreateFrom(value);
 end;
 
-class operator Lazy<T>.Implicit(const value: Lazy<T>): ILazy<T>;
+class operator Lazy<T>.Implicit(const value: TLazy<T>): Lazy<T>;
 begin
-  Result := value.fLazy;
+  Result.fLazy := value;
 end;
 
 {$ENDREGION}
@@ -1356,7 +1566,8 @@ end;
 
 {$REGION 'TLazyInitializer'}
 
-class function TLazyInitializer.InterlockedCompareExchange(var target: Pointer; value, comparand: Pointer): Pointer;
+class function TLazyInitializer.InterlockedCompareExchange(var target: Pointer;
+  value, comparand: Pointer): Pointer;
 {$IFNDEF DELPHIXE_UP}
 asm
   XCHG EAX, EDX
@@ -1369,14 +1580,16 @@ begin
 end;
 {$ENDIF}
 
-class function TLazyInitializer.EnsureInitialized<T>(var target: T; const factoryMethod: TFunc<T>): T;
+class function TLazyInitializer.EnsureInitialized<T>(var target: T;
+  const factoryMethod: TFunc<T>): T;
 var
   localValue: T;
 begin
   if PPointer(@target)^ = nil then
   begin
     localValue := factoryMethod();
-    if TLazyInitializer.InterlockedCompareExchange(PPointer(@target)^, PPointer(@localValue)^, nil) <> nil then
+    if TLazyInitializer.InterlockedCompareExchange(PPointer(@target)^,
+      PPointer(@localValue)^, nil) <> nil then
     begin
       if PTypeInfo(TypeInfo(T)).Kind = tkClass then
       begin
@@ -1398,8 +1611,18 @@ begin
   if PPointer(@target)^ = nil then
   begin
     localValue := T.Create;
-    if TLazyInitializer.InterlockedCompareExchange(PPointer(@target)^, PPointer(@localValue)^, nil) <> nil then
+{$IFNDEF AUTOREFCOUNT}
+    if TLazyInitializer.InterlockedCompareExchange(PPointer(@target)^,
+      PPointer(@localValue)^, nil) <> nil then
+    begin
       localValue.Free;
+    end;
+{$ELSE}
+    if AtomicCmpExchange(PPointer(@target)^, Pointer(localvalue), nil) = nil then
+    begin
+      target.__ObjAddRef;
+    end;
+{$ENDIF AUTOREFCOUNT}
   end;
   Result := target;
 end;
@@ -1407,533 +1630,12 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TMethodInfo'}
-
-function AdditionalInfoOf(TypeData: PTypeData): Pointer;
-var
-  P: PByte;
-  I: Integer;
-begin
-  P := @TypeData^.ParamList;
-  // Skip parameter names and types
-  for I := 1 to TypeData^.ParamCount do
-  begin
-    Inc(P, 1 + P[1] + 1);
-    Inc(P, P[0] + 1 );
-  end;
-  if TypeData^.MethodKind = mkFunction then
-    // Skip return type name and info
-    Inc(P, P[0] + 1 + 4);
-  Result := P;
-end;
-
-//  TTypeKind = (tkUnknown, tkInteger, tkChar, tkEnumeration, tkFloat,
-//    tkString, tkSet, tkClass, tkMethod, tkWChar, tkLString, tkWString,
-//    tkVariant, tkArray, tkRecord, tkInterface, tkInt64, tkDynArray, tkUString,
-//    tkClassRef, tkPointer, tkProcedure);
-
-function GetTypeSize(typeInfo: PTypeInfo): Integer;
-var
-  typeData: PTypeData;
-const
-  COrdinalSizes: array[TOrdType] of Integer = (1, 1, 2, 2, 4, 4);
-  CFloatSizes: array[TFloatType] of Integer = (4, 8, SizeOf(Extended), 8, 8);
-  CSetSizes: array[TOrdType] of Integer = (1, 1, 2, 2, 4, 4);
-begin
-  case typeInfo^.Kind of
-    tkChar:
-      Result := 1;
-    tkWChar:
-      Result := 2;
-    tkInteger, tkEnumeration:
-      begin
-        typeData := GetTypeData(typeInfo);
-        Result := COrdinalSizes[typeData.OrdType];
-      end;
-    tkFloat:
-      begin
-        typeData := GetTypeData(typeInfo);
-        Result := CFloatSizes[typeData^.FloatType];
-      end;
-    // TODO: Validate tkString
-    tkString, tkLString, tkUString, tkWString, tkInterface, tkClass, tkClassRef, tkDynArray:
-      Result := SizeOf(Pointer);
-    tkMethod:
-      Result := SizeOf(TMethod);
-    tkInt64:
-      Result := 8;
-    tkVariant:
-      Result := 16;
-    tkSet:
-      begin
-        // big sets have no typeInfo for now
-        typeData := GetTypeData(typeInfo);
-        Result := CSetSizes[typeData^.OrdType];
-      end;
-    tkRecord:
-      begin
-        typeData := GetTypeData(typeInfo);
-        Result := typeData.RecSize;
-      end;
-    tkArray:
-      begin
-        typeData := GetTypeData(typeInfo);
-        Result := typeData.ArrayData.Size;
-      end;
-    else
-      begin
-        Assert(False, 'Unsupported type');
-        Result := -1;
-      end;
-  end;
-end;
-
-constructor TMethodInvocations.TMethodInfo.Create(typeInfo: PTypeInfo);
-var
-  typeData: PTypeData;
-  P: PByte;
-  curReg: Integer;
-  I: Integer;
-{$IFNDEF CPUX64}
-  Size: Integer;
-{$ENDIF}
-begin
-  typeData := GetTypeData(typeInfo);
-  Self.TypeData := typeData;
-  P := AdditionalInfoOf(typeData);
-  CallConvention := TCallConv(PByte(p)^);
-  ParamInfos := PParameterInfos(Cardinal(P) + 1);
-
-{$IFNDEF CPUX64}
-  if CallConvention = ccReg then
-  begin
-    curReg := paEDX;
-    StackSize := 0;
-  end else
-{$ENDIF}
-  begin
-    curReg := paStack;
-    StackSize := SizeOf(Pointer); // Self in stack
-  end;
-
-  P := @typeData^.ParamList;
-
-  for I := 0 to typeData^.ParamCount - 1 do
-  begin
-{$IFNDEF CPUX64}
-    if TParamFlags(P[0]) * [pfVar, pfConst, pfAddress, pfReference, pfOut] <> [] then
-      Size := 4
-    else
-      Size := GetTypeSize(ParamInfos^[I]^);
-    if (Size <= 4) and (curReg <= paECX) then
-      Inc(curReg)
-    else
-    begin
-      if Size < 4 then
-        Size := 4;
-      Inc(StackSize, Size);
-    end;
-{$ELSE}
-    if I < 3 then
-    begin
-      if (TParamFlags(P[0]) * [pfVar, pfConst, pfAddress, pfReference, pfOut] = [])
-        and (ParamInfos^[I]^.Kind = tkFloat) then
-        RegisterFlag := RegisterFlag or (1 shl (I + 1));
-    end;
-    Inc(StackSize, 8);
-{$ENDIF}
-    Inc(P, 1 + P[1] + 1);
-    Inc(P, P[0] + 1);
-  end;
-
-{$IFDEF CPUX64}
-  if StackSize < 32 then
-    StackSize := 32;
-{$ENDIF}
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TMethodInvocations'}
-
-constructor TMethodInvocations.Create(methodTypeInfo: PTypeInfo);
-begin
-  inherited Create;
-  fMethodType := methodTypeInfo;
-  fMethodInfo := TMethodInfo.Create(fMethodType);
-  fMethods := TList<TMethod>.Create;
-end;
-
-destructor TMethodInvocations.Destroy;
-begin
-  fMethods.Free;
-  inherited;
-end;
-
-procedure TMethodInvocations.ForEach(const action: TAction<TMethod>);
-var
-  method: TMethod;
-begin
-  for method in fMethods do
-  begin
-    action(method);
-  end;
-end;
-
-procedure TMethodInvocations.Add(const method: TMethod);
-begin
-  fMethods.Add(method);
-end;
-
-procedure TMethodInvocations.Remove(const method: TMethod);
-begin
-  fMethods.Remove(method);
-end;
-
-procedure TMethodInvocations.RemoveAll(instance: Pointer);
-var
-  i: Integer;
-begin
-  for i := Count - 1 downto 0 do
-  begin
-    if fMethods[i].Data = instance then
-      fMethods.Delete(i);
-  end;
-end;
-
-procedure TMethodInvocations.Clear;
-begin
-  fMethods.Clear;
-end;
-
-function TMethodInvocations.IndexOf(const method: TMethod): Integer;
-begin
-  Result := fMethods.IndexOf(method);
-end;
-
-function TMethodInvocations.GetCount: Integer;
-begin
-  Result := fMethods.Count;
-end;
-
-function TMethodInvocations.GetIsEmpty: Boolean;
-begin
-  Result := Count = 0;
-end;
-
-procedure TMethodInvocations.InternalInvokeHandlers(Params: PParameters);
-{$IFNDEF CPUX64}
-var
-  method: TMethod;
-  stackSize: Integer;
-  callConvention: TCallConv;
-  i: Integer;
-begin
-  stackSize := fMethodInfo.stackSize;
-  callConvention := fMethodInfo.CallConvention;
-  for i := 0 to fMethods.Count - 1 do
-  begin
-    method := fMethods[i];
-    // Check to see if there is anything on the stack.
-    if StackSize > 0 then
-    asm
-      // if there are items on the stack, allocate the space there and
-      // move that data over.
-      MOV ECX,StackSize
-      SUB ESP,ECX
-      MOV EDX,ESP
-      MOV EAX,Params
-      LEA EAX,[EAX].TParameters.Stack[8]
-      CALL System.Move
-    end;
-    asm
-      // Now we need to load up the registers. EDX and ECX may have some data
-      // so load them on up.
-      MOV EAX,Params
-      MOV EDX,[EAX].TParameters.Registers.DWORD[0]
-      MOV ECX,[EAX].TParameters.Registers.DWORD[4]
-      // EAX is always "Self" and it changes on a per method pointer instance, so
-      // grab it out of the method data.
-      MOV EAX, method.Data
-      CMP callConvention, ccReg
-      JZ @BeginCall
-      Mov [ESP], EAX // eax -> Self, put it into internal stack
-    @BeginCall:
-      // Now we call the method. This depends on the fact that the called method
-      // will clean up the stack if we did any manipulations above.
-      CALL method.Code
-    end;
-  end;
-end;
-{$ELSE}
-var
-  method: TMethod;
-  args: TArray<TValue>;
-  p: PByte;
-  i: Integer;
-begin
-  if fMethods.Count > 0 then
-  begin
-    SetLength(args, fMethodInfo.TypeData.ParamCount + 1);
-    p := @fMethodInfo.TypeData.ParamList;
-
-    for i := 1 to fMethodInfo.TypeData.ParamCount do
-    begin
-      if TParamFlags(p[0]) * [pfVar, pfConst, pfOut] <> [] then
-      begin
-        args[i] := TValue.From<Pointer>(PPointer(@Params.Stack[i * 8])^);
-      end
-      else
-      begin
-        TValue.Make(Pointer(@Params.Stack[i * 8]), fMethodInfo.ParamInfos[i - 1]^, args[i]);
-      end;
-      Inc(p, 1 + p[1] + 1);
-      Inc(p, p[0] + 1);
-    end;
-
-    for i := 0 to fMethods.Count - 1 do
-    begin
-      method := fMethods[i];
-      args[0] := TValue.From<TObject>(method.Data);
-      // workaround for incorrect type guess in Rtti.pas
-      TValueData(args[0]).FTypeInfo := TypeInfo(TObject);
-      Rtti.Invoke(method.Code, args, fMethodInfo.CallConvention, nil);
-    end;
-  end;
-end;
-{$ENDIF}
-
-procedure TMethodInvocations.InvokeEventHandlerStub;
-{$IFNDEF CPUX64}
-const
-  PtrSize = SizeOf(Pointer);
-asm
-        // is register conversion call ?
-        CMP     BYTE PTR Self.fMethodInfo.CallConvention, ccReg
-        JZ      @Begin
-        Mov     EAX, [esp + 4]
-@Begin:
-        PUSH    EAX
-        PUSH    ECX
-        PUSH    EDX
-        MOV     EDX,ESP
-        CALL    InternalInvokeHandlers
-        // Pop EDX and ECX off the stack while preserving all registers.
-        MOV     [ESP+4],EAX
-        POP     EAX
-        POP     EAX
-        POP     ECX		// Self
-        Mov     EAX, ECX
-        MOV     ECX,[ECX].fMethodInfo.StackSize
-        TEST    ECX,ECX
-        JZ      @@SimpleRet
-        // Jump to the actual return instruction since it is most likely not just a RET
-        //JMP     ECX    // Data Exec. Prevention: Jumping into a GetMem allocated memory block
-
-        // stack address alignment
-        // In cdecl call conversion, the caller will clear the stack
-        CMP     DWORD PTR [EAX].fMethodInfo.CallConvention, ccCdecl
-        JZ      @@SimpleRet
-        ADD     ECX, PtrSize - 1
-        AND     ECX, NOT (PtrSize - 1)
-        AND     ECX, $FFFF
-
-        // clean up the stack
-        PUSH    EAX                         // we need this register, so save it
-        MOV     EAX,[ESP + 4]               // Load the return address
-        MOV     [ESP + ECX + 4], EAX        // Just blast it over the first param on the stack
-        POP     EAX
-        ADD     ESP,ECX                     // This will move the stack back to where the moved
-                                            // return address is now located. The next RET
-                                            // instruction will do the final stack cleanup
-@@SimpleRet:
-end;
-{$ELSE}
-asm
-        MOV     AX, WORD PTR [RCX].TMethodInvocations.TMethodInfo.RegisterFlag
-@@FIRST:
-        TEST    AX, $01
-        JZ      @@SAVE_RCX
-@@SAVE_XMM0:
-        MOVSD   QWORD PTR [RSP+$08], XMM0
-        JMP     @@SECOND
-@@SAVE_RCX:
-        MOV     QWORD PTR [RSP+$08], RCX
-
-@@SECOND:
-        TEST    AX, $02
-        JZ      @@SAVE_RDX
-@@SAVE_XMM1:
-        MOVSD   QWORD PTR [RSP+$10], XMM1
-        JMP     @@THIRD
-@@SAVE_RDX:
-        MOV     QWORD PTR [RSP+$10], RDX
-
-@@THIRD:
-        TEST    AX, $04
-        JZ      @@SAVE_R8
-@@SAVE_XMM2:
-        MOVSD   QWORD PTR [RSP+$18], XMM2
-        JMP     @@FORTH
-@@SAVE_R8:
-        MOV     QWORD PTR [RSP+$18], R8
-
-@@FORTH:
-        TEST    AX, $08
-        JZ      @@SAVE_R9
-@@SAVE_XMM3:
-        MOVSD   QWORD PTR [RSP+$20], XMM3
-        JMP     @@1
-@@SAVE_R9:
-        MOV     QWORD PTR [RSP+$20], R9
-
-@@1:    LEA     RDX, QWORD PTR [RSP+$08]
-        MOV     RAX, RCX
-        SUB     RSP, $28
-        CALL    InternalInvokeHandlers
-        ADD     RSP, $28
-end;
-{$ENDIF}
-
-{$ENDREGION}
-
-
-{$REGION 'TEvent'}
-
-constructor TEvent.Create(typeInfo: PTypeInfo);
-begin
-  if not Assigned(typeInfo) then
-    raise EInvalidOperationException.CreateRes(@SNoTypeInfo);
-  if typeInfo.Kind <> tkMethod then
-    raise EInvalidOperationException.CreateRes(@STypeParameterShouldBeMethod);
-  inherited Create;
-  fEnabled := True;
-  fTypeInfo := typeInfo;
-end;
-
-destructor TEvent.Destroy;
-begin
-  fInvocations.Free;
-  inherited Destroy;
-end;
-
-procedure TEvent.Add(const handler: TMethod);
-begin
-  InvocationsNeeded;
-  fInvocations.Add(handler);
-end;
-
-procedure TEvent.Clear;
-begin
-  if Assigned(fInvocations) then
-    fInvocations.Clear;
-end;
-
-procedure TEvent.ForEach(const action: TAction<TMethod>);
-begin
-  InvocationsNeeded;
-  fInvocations.ForEach(action);
-end;
-
-function TEvent.GetCount: Integer;
-begin
-  if Assigned(fInvocations) then
-    Result := fInvocations.Count
-  else
-    Result := 0;
-end;
-
-function TEvent.GetEnabled: Boolean;
-begin
-  Result := fEnabled;
-end;
-
-function TEvent.GetInvoke: TMethod;
-begin
-  InvocationsNeeded;
-  Result := fInvoke;
-end;
-
-function TEvent.GetIsEmpty: Boolean;
-begin
-  Result := Count = 0;
-end;
-
-procedure TEvent.InvocationsNeeded;
-begin
-  if fInvocations = nil then
-  begin
-    fInvocations := TMethodInvocations.Create(fTypeInfo);
-    PMethod(@fInvoke)^.Data := fInvocations;
-    PMethod(@fInvoke)^.Code := @TMethodInvocations.InvokeEventHandlerStub;
-  end;
-end;
-
-procedure TEvent.Remove(const handler: TMethod);
-begin
-  InvocationsNeeded;
-  fInvocations.Remove(PMethod(@handler)^);
-end;
-
-procedure TEvent.RemoveAll(instance: Pointer);
-begin
-  InvocationsNeeded;
-  fInvocations.RemoveAll(instance);
-end;
-
-procedure TEvent.SetEnabled(const value: Boolean);
-begin
-  fEnabled := value;
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TEvent<T>'}
-
-constructor TEvent<T>.Create;
-begin
-  inherited Create(TypeInfo(T));
-end;
-
-procedure TEvent<T>.ForEach(action: TAction<T>);
-begin
-  inherited ForEach(TAction<TMethod>(action));
-end;
-
-procedure TEvent<T>.Add(handler: T);
-begin
-  inherited Add(PMethod(@handler)^);
-end;
-
-procedure TEvent<T>.Remove(handler: T);
-begin
-  inherited Remove(PMethod(@handler)^);
-end;
-
-function TEvent<T>.GetInvoke: T;
-begin
-  PMethod(@Result)^ := inherited Invoke;
-end;
-
-{$ENDREGION}
-
-
 {$REGION 'Event<T>'}
 
+{$IFDEF SUPPORTS_GENERIC_EVENTS}
 class function Event<T>.Create: Event<T>;
 begin
   Result := TEvent<T>.Create;
-end;
-
-function Event<T>.EnsureInitialized: Event<T>;
-begin
-  if not Assigned(fInstance) then
-  begin
-    fInstance := TEvent<T>.Create;
-  end;
-  Result.fInstance := fInstance;
 end;
 
 procedure Event<T>.Add(const handler: T);
@@ -1942,36 +1644,29 @@ begin
   fInstance.Add(handler);
 end;
 
-procedure Event<T>.Remove(const handler: T);
-begin
-  EnsureInitialized;
-  fInstance.Remove(handler);
-end;
-
-procedure Event<T>.RemoveAll(instance: Pointer);
-begin
-  if Assigned(fInstance) then
-    fInstance.RemoveAll(instance);
-end;
-
 procedure Event<T>.Clear;
 begin
   if Assigned(fInstance) then
     fInstance.Clear;
 end;
 
+procedure Event<T>.EnsureInitialized;
+begin
+  if not Assigned(fInstance) then
+    fInstance := TEvent<T>.Create;
+end;
+
 function Event<T>.GetCount: Integer;
 begin
   if Assigned(fInstance) then
-    Exit(fInstance.Count)
+    Result := fInstance.Count
   else
-    Exit(0);
+    Result := 0;
 end;
 
-function Event<T>.GetInstance: IEvent<T>;
+function Event<T>.GetEnabled: Boolean;
 begin
-  EnsureInitialized;
-  Result := fInstance;
+  Result := not Assigned(fInstance) or fInstance.Enabled;
 end;
 
 function Event<T>.GetInvoke: T;
@@ -1985,27 +1680,62 @@ begin
   Result := not Assigned(fInstance) or fInstance.IsEmpty;
 end;
 
-class operator Event<T>.Implicit(const eventHandler: T): Event<T>;
+procedure Event<T>.Remove(const handler: T);
+begin
+  if Assigned(fInstance) then
+    fInstance.Remove(handler);
+end;
+
+procedure Event<T>.RemoveAll(instance: Pointer);
+begin
+  if Assigned(fInstance) then
+    fInstance.RemoveAll(instance);
+end;
+
+procedure Event<T>.SetEnabled(const value: Boolean);
+begin
+  EnsureInitialized;
+  fInstance.Enabled := value;
+end;
+
+class operator Event<T>.Implicit(const value: IEvent<T>): Event<T>;
+begin
+  Result.fInstance := value;
+end;
+
+class operator Event<T>.Implicit(var value: Event<T>): IEvent<T>;
+begin
+  value.EnsureInitialized;
+  Result := value.fInstance;
+end;
+
+class operator Event<T>.Implicit(var value: Event<T>): T;
+begin
+  Result := value.Invoke;
+end;
+
+class operator Event<T>.Implicit(const value: T): Event<T>;
 begin
   Result.Clear;
-  Result.Add(eventHandler);
+  Result.Add(value);
 end;
+{$ENDIF}
 
-class operator Event<T>.Implicit(const e: IEvent<T>): Event<T>;
-begin
-  Result.fInstance := e;
-end;
+{$ENDREGION}
 
-class operator Event<T>.Implicit(const e: Event<T>): IEvent<T>;
-begin
-  Result := e.EnsureInitialized;
-end;
 
-class operator Event<T>.Implicit(const e: Event<T>): T;
+{$REGION 'TTypeInfoHelper'}
+
+function TTypeInfoHelper.GetTypeName: string;
 begin
-  Result := e.EnsureInitialized.GetInvoke;
+{$IFNDEF NEXTGEN}
+  Result := UTF8ToString(Name);
+{$ELSE}
+  Result := NameFld.ToString;
+{$ENDIF}
 end;
 
 {$ENDREGION}
+
 
 end.

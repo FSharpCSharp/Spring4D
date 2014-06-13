@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2012 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -29,9 +29,13 @@ unit Spring.Container.ResourceStrings;
 interface
 
 resourcestring
-  SNonGuidInterfaceServicesAreNotSupported = 'Non-Guid Interface Services are not supported.';
+  SMissingGuid = 'The service type "%s" is missing a guid.';
+  SMissingInterface = 'The component type "%s" does not support IInterface.';
   SIncompatibleTypes = 'The component type "%s" is incompatible with the service type "%s".';
+  SUnsupportedType = 'The component type "%s" is not supported.';
   SDuplicatedName = 'Duplicated name found: "%s".';
+  SDuplicatedUnnamedService = 'Cannot have more than one unnamed registration for service type "%s".';
+  SMissingServiceType = 'The service type "%s" cannot be the default as it has not been registered.';
   SCircularDependencyDetected = 'A circle was detected when trying to resolve the dependency: %s.';
   SCannotResolveDependency = 'Cannot resolve the dependency: %s.';
   SUnexpectedDependencyParameterType = 'Unexpected dependency parameter type.';
@@ -54,8 +58,8 @@ resourcestring
   SUnsatisfiedTarget = 'Unsatisfied target: "%s".';
   SComponentNotFound = 'Cannot found the component registered.';
   SUnexpectedLifetimeType = 'Unexpected lifetimeType.';
-
   SActivatorDelegateExpected = 'An activator delegate was expected.';
+  SPoolingNotSupported = 'Pooling not supported for type: "%s".';
 
 implementation
 

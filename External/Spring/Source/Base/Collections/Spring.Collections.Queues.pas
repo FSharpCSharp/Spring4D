@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2012 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -24,63 +24,56 @@
 
 unit Spring.Collections.Queues;
 
+{$I Spring.inc}
+
 interface
 
 uses
   Generics.Collections,
-  Spring,
   Spring.Collections,
   Spring.Collections.Base;
 
 type
-  TQueue<T> = class(TEnumerableBase<T>, IQueue<T>, IQueue)
+  TQueue<T> = class(TEnumerableBase<T>, IQueue<T>)
   private
     type
       TGenericQueue = Generics.Collections.TQueue<T>;
   private
     fQueue: TGenericQueue;
     fOwnership: TOwnershipType;
-    fOnNotify: ICollectionNotifyDelegate<T>;
-    function GetOnNotify: ICollectionNotifyDelegate<T>;
-    function NonGenericGetOnNotify: IEvent;
-    function IQueue.GetOnNotify = NonGenericGetOnNotify;
+    fOnChanged: ICollectionChangedEvent<T>;
+    fOnNotify: TCollectionNotifyEvent<T>;
+    procedure DoNotify(Sender: TObject; const Item: T;
+      Action: TCollectionNotification);
+    function GetOnChanged: ICollectionChangedEvent<T>;
   protected
     function GetCount: Integer; override;
-
-    procedure NonGenericEnqueue(const item: TValue);
-    function NonGenericDequeue: TValue;
-    function NonGenericPeek: TValue;
-    function NonGenericPeekOrDefault: TValue;
-    function NonGenericTryPeek(out item: TValue): Boolean;
-
-    procedure Notify(const item: T; action: TCollectionNotification); virtual;
-
-    procedure IQueue.Enqueue = NonGenericEnqueue;
-    function IQueue.Dequeue = NonGenericDequeue;
-    function IQueue.Peek = NonGenericPeek;
-    function IQueue.PeekOrDefault = NonGenericPeekOrDefault;
-    function IQueue.TryPeek = NonGenericTryPeek;
+    procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
   public
-    constructor Create; overload;
+    constructor Create; overload; override;
+    constructor Create(const collection: array of T); overload;
     constructor Create(const collection: IEnumerable<T>); overload;
-    constructor Create(const collection: TEnumerable<T>); overload;
     constructor Create(queue: TGenericQueue; ownership: TOwnershipType); overload;
     destructor Destroy; override;
+
     function GetEnumerator: IEnumerator<T>; override;
+
+    procedure Clear;
     procedure Enqueue(const item: T);
     function Dequeue: T;
     function Peek: T;
     function PeekOrDefault: T;
     function TryPeek(out item: T): Boolean;
-    procedure Clear;
+
     procedure TrimExcess;
-    function AsQueue: IQueue;
-    property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
+
+    property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
 implementation
 
 uses
+  Spring.Collections.Events,
   Spring.Collections.Extensions;
 
 
@@ -88,8 +81,21 @@ uses
 
 constructor TQueue<T>.Create(queue: TGenericQueue; ownership: TOwnershipType);
 begin
+  inherited Create;
   fQueue := queue;
+  fOnNotify := fQueue.OnNotify;
+  fQueue.OnNotify := DoNotify;
   fOwnership := ownership;
+  fOnChanged := TCollectionChangedEventImpl<T>.Create;
+end;
+
+constructor TQueue<T>.Create(const collection: array of T);
+var
+  item: T;
+begin
+  Create;
+  for item in collection do
+    Enqueue(item);
 end;
 
 constructor TQueue<T>.Create(const collection: IEnumerable<T>);
@@ -98,20 +104,7 @@ var
 begin
   Create;
   for item in collection do
-  begin
     Enqueue(item);
-  end;
-end;
-
-constructor TQueue<T>.Create(const collection: TEnumerable<T>);
-var
-  item: T;
-begin
-  Create;
-  for item in collection do
-  begin
-    Enqueue(item);
-  end;
 end;
 
 constructor TQueue<T>.Create;
@@ -125,11 +118,17 @@ end;
 destructor TQueue<T>.Destroy;
 begin
   if fOwnership = otOwned then
-  begin
-    Clear;
-    fQueue.Free;
-  end;
+    fQueue.Free
+  else
+    fQueue.OnNotify := fOnNotify;
+
   inherited Destroy;
+end;
+
+procedure TQueue<T>.DoNotify(Sender: TObject; const Item: T;
+  Action: TCollectionNotification);
+begin
+  Changed(Item, TCollectionChangedAction(Action));
 end;
 
 function TQueue<T>.GetEnumerator: IEnumerator<T>;
@@ -140,27 +139,16 @@ end;
 procedure TQueue<T>.Enqueue(const item: T);
 begin
   fQueue.Enqueue(item);
-
-  Notify(item, cnAdded);
 end;
 
 function TQueue<T>.Dequeue: T;
 begin
   Result := fQueue.Dequeue;
-
-  Notify(Result, cnRemoved);
-end;
-
-function TQueue<T>.AsQueue: IQueue;
-begin
-  Result := Self;
 end;
 
 procedure TQueue<T>.Clear;
 begin
-  while Count > 0 do
-    Dequeue;
-  TrimExcess;
+  fQueue.Clear;
 end;
 
 function TQueue<T>.Peek: T;
@@ -195,57 +183,17 @@ begin
   Result := fQueue.Count;
 end;
 
-function TQueue<T>.GetOnNotify: ICollectionNotifyDelegate<T>;
+function TQueue<T>.GetOnChanged: ICollectionChangedEvent<T>;
 begin
-  if fOnNotify = nil then
-  begin
-    fOnNotify := TCollectionNotifyDelegate<T>.Create;
-  end;
-  Result := fOnNotify;
+  Result := fOnChanged;
 end;
 
-function TQueue<T>.NonGenericDequeue: TValue;
+procedure TQueue<T>.Changed(const item: T; action: TCollectionChangedAction);
 begin
-  Result := TValue.From<T>(Dequeue);
-end;
-
-procedure TQueue<T>.NonGenericEnqueue(const item: TValue);
-begin
-  Enqueue(item.AsType<T>);
-end;
-
-function TQueue<T>.NonGenericGetOnNotify: IEvent;
-begin
-  Result := GetOnNotify;
-end;
-
-function TQueue<T>.NonGenericPeek: TValue;
-begin
-  Result := TValue.From<T>(Peek);
-end;
-
-function TQueue<T>.NonGenericPeekOrDefault: TValue;
-begin
-  Result := TValue.From<T>(PeekOrDefault);
-end;
-
-function TQueue<T>.NonGenericTryPeek(out item: TValue): Boolean;
-var
-  value: T;
-begin
-  Result := TryPeek(value);
-  if Result then
-    item := TValue.From<T>(value);
-end;
-
-procedure TQueue<T>.Notify(const item: T; action: TCollectionNotification);
-begin
-  if (fOnNotify <> nil) and not fOnNotify.IsEmpty and fOnNotify.Enabled then
-  begin
-    fOnNotify.Invoke(Self, item, action);
-  end;
+  fOnChanged.Invoke(Self, item, action);
 end;
 
 {$ENDREGION}
+
 
 end.

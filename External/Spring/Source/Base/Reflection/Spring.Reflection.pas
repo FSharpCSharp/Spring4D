@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2012 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -30,18 +30,41 @@ unit Spring.Reflection;
 interface
 
 uses
-  Classes,
-  SysUtils,
-  Types,
-  TypInfo,
-  SyncObjs,
   Rtti,
+  SyncObjs,
+  SysUtils,
+  TypInfo,
   Spring,
   Spring.Collections,
   Spring.Collections.Base,
   Spring.DesignPatterns;
 
 type
+
+  ///	<summary>
+  ///	  Specifies the kind of a lazy type.
+  ///	</summary>
+  TLazyKind = (
+    ///	<summary>
+    ///	  Not a lazy type.
+    ///	</summary>
+    lkNone,
+
+    ///	<summary>
+    ///	  Type is <see cref="SysUtils|TFunc&lt;T&gt;" />.
+    ///	</summary>
+    lkFunc,
+
+    ///	<summary>
+    ///	  Type is <see cref="Spring|Lazy&lt;T&gt;" />.
+    ///	</summary>
+    lkRecord,
+
+    ///	<summary>
+    ///	  Type is <see cref="Spring|ILazy&lt;T&gt;" />.
+    ///	</summary>
+    lkInterface
+  );
 
   {$REGION 'TType'}
 
@@ -77,8 +100,29 @@ type
     ///	<summary>
     ///	  Returns true if the typeFrom is assignable to the typeTo.
     ///	</summary>
-    class function IsAssignable(typeFrom, typeTo: PTypeInfo): Boolean; overload;
+    class function IsAssignable(typeFrom, typeTo: PTypeInfo): Boolean; inline;
+
+    ///	<summary>
+    ///	  Returns <c>True</c> if the typeInfo is a delegate type.
+    ///	</summary>
+    class function IsDelegate(typeInfo: PTypeInfo): Boolean; overload;
     class function TryGetInterfaceType(const guid: TGUID; out aType: TRttiInterfaceType): Boolean;
+
+    ///	<summary>
+    ///	  Returns the <see cref="TLazyKind" /> of the typeInfo.
+    ///	</summary>
+    class function GetLazyKind(typeInfo: PTypeInfo): TLazyKind;
+
+    ///	<summary>
+    ///	  Returns the underlying type name of the lazy type.
+    ///	</summary>
+    class function GetLazyTypeName(typeInfo: PTypeInfo): string;
+
+    ///	<summary>
+    ///	  Returns <c>True</c> if the type is a lazy type.
+    ///	</summary>
+    class function IsLazy(typeInfo: PTypeInfo): Boolean;
+
     class property Context: TRttiContext read fContext;
   end;
 
@@ -138,20 +182,21 @@ type
   end;
 
   TRttiTypeEnumerable = class(TEnumerableBase<TRttiType>)
+  private
+    type
+      TEnumerator = class(TEnumeratorBase<TRttiType>)
+      private
+        fContext: TRttiContext;
+        fIndex: Integer;
+        fTypes: TArray<TRttiType>;
+      protected
+        function GetCurrent: TRttiType; override;
+      public
+        constructor Create;
+        function MoveNext: Boolean; override;
+      end;
   public
     function GetEnumerator: IEnumerator<TRttiType>; override;
-  end;
-
-  TRttiTypeEnumerator = class(TEnumeratorBase<TRttiType>)
-  private
-    fContext: TRttiContext;
-    fTypes: TArray<TRttiType>;
-    fIndex: Integer;
-  protected
-    function GetCurrent: TRttiType; override;
-  public
-    constructor Create;
-    function MoveNext: Boolean; override;
   end;
 
   {$ENDREGION}
@@ -161,22 +206,22 @@ type
 
   IObjectActivator = interface
     ['{CE05FB89-3467-449E-81EA-A5AEECAB7BB8}']
-    function CreateInstance: TObject;
+    function CreateInstance: TValue;
   end;
 
   TActivator = record
   public
-    class function CreateInstance(instanceType: TRttiInstanceType): TObject; overload; static;
-    class function CreateInstance(const typeName: string): TObject; overload; static;
-    class function CreateInstance(const typeInfo: PTypeInfo): TObject; overload; static;
+    class function CreateInstance(instanceType: TRttiInstanceType): TValue; overload; static;
+    class function CreateInstance(const typeName: string): TValue; overload; static;
+    class function CreateInstance(const typeInfo: PTypeInfo): TValue; overload; static;
     class function CreateInstance(instanceType: TRttiInstanceType;
-      constructorMethod: TRttiMethod; const arguments: array of TValue): TObject; overload; static;
+      constructorMethod: TRttiMethod; const arguments: array of TValue): TValue; overload; static;
   end;
 
   {$ENDREGION}
 
 
-  TGetRttiMembersFunc<T> = reference to function(targetType: TRttiType): TArray<T>;
+  TGetRttiMembersFunc<T: TRttiMember> = reference to function(targetType: TRttiType): TArray<T>;
 
 
   {$REGION 'TRttiMemberEnumerable<T: TRttiMember>'}
@@ -207,8 +252,18 @@ type
       enumerateBaseType: Boolean); overload;
     constructor Create(parentType: TRttiType; const func: TGetRttiMembersFunc<T>;
       enumerateBaseType: Boolean; const predicate: TPredicate<T>); overload;
-    function Where(const predicate: TPredicate<T>): IEnumerable<T>; override;
     function GetEnumerator: IEnumerator<T>; override;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TFiltersNamed<T: TRttiMember>'}
+
+  TFiltersNamed<T: TRttiNamedObject> = class
+  public
+    class function IsNamed(const name: string): TSpecification<T>;
+    class function HasAttribute(attributeClass: TAttributeClass): TSpecification<T>;
   end;
 
   {$ENDREGION}
@@ -216,20 +271,23 @@ type
 
   {$REGION 'TFiltersBase<T: TRttiMember>'}
 
+  TMethodKinds = set of TMethodKind;
+
   ///	<summary>
   ///	  Provides static methods to create specifications to filter TRttiMember
   ///	  objects.
   ///	</summary>
-  TFiltersBase<T: TRttiMember> = class
+  TFiltersBase<T: TRttiMember> = class(TFiltersNamed<T>)
   public
-    class function HasAttribute(attributeClass: TAttributeClass): TSpecification<T>;
+    class function ContainsParameterType(typeInfo: PTypeInfo): TSpecification<T>;
     class function HasParameterTypes(const types: array of PTypeInfo): TSpecification<T>;
     class function HasParameterFlags(const flags: TParamFlags): TSpecification<T>;
-    class function IsNamed(const name: string): TSpecification<T>;
     class function IsTypeOf<TType>: TSpecification<T>; overload;
     class function IsTypeOf(typeInfo: PTypeInfo): TSpecification<T>; overload;
     class function IsConstructor: TSpecification<T>;
     class function IsInstanceMethod: TSpecification<T>;
+    class function IsClassMethod: TSpecification<T>;
+    class function IsMethodKind(const kinds : TMethodKinds): TSpecification<T>;
     class function IsInvokable: TSpecification<T>;
   end;
 
@@ -238,17 +296,23 @@ type
 
   {$REGION 'Filters'}
 
+  TPackageFilters = class(TFiltersNamed<TRttiPackage>);
   TMemberFilters = class(TFiltersBase<TRttiMember>);
   TMethodFilters = class(TFiltersBase<TRttiMethod>);
   TPropertyFilters = class(TFiltersBase<TRttiProperty>);
   TFieldFilters = class(TFiltersBase<TRttiField>);
+  TTypeFilters = class(TFiltersNamed<TRttiType>)
+  public
+    class function IsClass : TSpecification<TRttiType>;
+    class function IsInterface : TSpecification<TRttiType>;
+  end;
 
   {$ENDREGION}
 
 
   {$REGION 'TMemberSpecificationBase<T: TRttiMember>'}
 
-  TMemberSpecificationBase<T: TRttiMember> = class abstract(TSpecificationBase<T>)
+  TMemberSpecificationBase<T: TRttiObject> = class abstract(TSpecificationBase<T>)
   protected
     function Accept(const member: T): Boolean; virtual; abstract;
   public
@@ -260,7 +324,7 @@ type
 
   {$REGION 'TNameFilter<T: TRttiMember>'}
 
-  TNameFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
+  TNameFilter<T: TRttiNamedObject> = class(TMemberSpecificationBase<T>)
   private
     fName: string;
   protected
@@ -284,7 +348,7 @@ type
 
   {$REGION 'THasAttributeFilter<T: TRttiMember>'}
 
-  THasAttributeFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
+  THasAttributeFilter<T: TRttiObject> = class(TMemberSpecificationBase<T>)
   private
     fAttributeClass: TAttributeClass;
   protected
@@ -319,6 +383,20 @@ type
     function Accept(const member: T): Boolean; override;
   public
     constructor Create(const types: array of PTypeInfo);
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TContainsParameterTypeFilter<T: TRttiMember>'}
+
+  TContainsParameterTypeFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
+  private
+    fTypeInfo: PTypeInfo;
+  protected
+    function Accept(const member: T): Boolean; override;
+  public
+    constructor Create(const typeInfo: PTypeInfo);
   end;
 
   {$ENDREGION}
@@ -361,6 +439,16 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'TClassMethodFilter<T: TRttiMember>'}
+
+  TClassMethodFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
+  protected
+    function Accept(const member: T): Boolean; override;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'THasParameterFlagsFilter<T: TRttiMember>'}
 
   THasParameterFlagsFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
@@ -375,7 +463,39 @@ type
   {$ENDREGION}
 
 
-type
+  {$REGION 'TMethodKindFilter<T: TRttiMember>'}
+
+  TMethodKindFilter<T: TRttiMember> = class(TMemberSpecificationBase<T>)
+  private
+    fFlags: TMethodKinds;
+  protected
+    function Accept(const member: T): Boolean; override;
+  public
+    constructor Create(const flags: TMethodKinds);
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TIsClassFilter>'}
+
+  TIsClassFilter = class(TMemberSpecificationBase<TRttiType>)
+  protected
+    function Accept(const member: TRttiType): Boolean; override;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TIsInterfaceFilter>'}
+
+  TIsInterfaceFilter = class(TMemberSpecificationBase<TRttiType>)
+  protected
+    function Accept(const member: TRttiType): Boolean; override;
+  end;
+
+  {$ENDREGION}
+
 
   {$REGION 'Internal Class Helpers'}
 
@@ -414,7 +534,6 @@ type
 implementation
 
 uses
-  //Spring.Helpers,  // Internal Error
   StrUtils,
   Spring.ResourceStrings;
 
@@ -455,7 +574,7 @@ end;
 
 class function TType.GetFullName(typeInfo: PTypeInfo): string;
 begin
-  TArgument.CheckNotNull(typeInfo, 'typeInfo');
+  Guard.CheckNotNull(typeInfo, 'typeInfo');
   Result := fContext.GetType(typeInfo).QualifiedName;
 end;
 
@@ -467,45 +586,79 @@ begin
   Result := TType.GetFullName(typeInfo);
 end;
 
+const
+  LazyPrefixStrings: array[lkFunc..High(TLazyKind)] of string = (
+    'TFunc<', 'Lazy<', 'ILazy<');
+
+class function TType.GetLazyKind(typeInfo: PTypeInfo): TLazyKind;
+var
+  name: string;
+begin
+  if Assigned(typeInfo) then
+  begin
+    name := GetTypeName(typeInfo);
+    for Result := lkFunc to High(TLazyKind) do
+      if StartsText(LazyPrefixStrings[Result], name) then
+        Exit;
+  end;
+  Result := lkNone;
+end;
+
+class function TType.GetLazyTypeName(typeInfo: PTypeInfo): string;
+var
+  lazyKind: TLazyKind;
+  name: string;
+  i: Integer;
+begin
+  lazyKind := GetLazyKind(typeInfo);
+  name := GetTypeName(typeInfo);
+  if lazyKind > lkNone then
+  begin
+    i := Length(LazyPrefixStrings[lazyKind]) + 1;
+    Result := Copy(name, i, Length(name) - i )
+  end;
+end;
+
 class function TType.FindType(const qualifiedName: string): TRttiType;
+var
+  rttiType: TRttiType;
 begin
   Result := fContext.FindType(qualifiedName);
+  if not Assigned(Result) then
+  begin
+    for rttiType in fContext.GetTypes do
+      if SameText(rttiType.Name, qualifiedName) then
+        Exit(rttiType);
+    Result := nil;
+  end;
 end;
 
 class function TType.IsAssignable(typeFrom, typeTo: PTypeInfo): Boolean;
-var
-  dataFrom, dataTo: PTypeData;
 begin
-  TArgument.CheckNotNull(typeFrom, 'typeFrom');
-  TArgument.CheckNotNull(typeTo, 'typeTo');
-  if typeFrom = typeTo then
+  Result := IsAssignableFrom(typeTo, typeFrom);
+end;
+
+class function TType.IsDelegate(typeInfo: PTypeInfo): Boolean;
+const
+  DelegatePrefixStrings: array[0..2] of string = (
+    'TFunc<', 'TProc<', 'TPredicate<');
+var
+  name: string;
+  i: Integer;
+begin
+  Result := Assigned(typeInfo) and (typeInfo.Kind = tkInterface);
+  if Result then
   begin
-    Exit(True);
+    name := GetTypeName(typeInfo);
+    for i := Low(DelegatePrefixStrings) to High(DelegatePrefixStrings) do
+      if StartsText(DelegatePrefixStrings[i], name) then
+        Exit;
   end;
-  dataFrom := TypInfo.GetTypeData(typeFrom);
-  dataTo := TypInfo.GetTypeData(typeTo);
-  if (typeFrom.Kind = tkClass) and (typeTo.Kind = tkClass) then
-  begin
-    Result := dataFrom.ClassType.InheritsFrom(dataTo.ClassType);
-  end
-  else if (typeFrom.Kind = tkClass) and (typeTo.Kind = tkInterface) then
-  begin
-    Result := (ifHasGuid in dataTo.IntfFlags) and
-      Supports(dataFrom.ClassType, dataTo.Guid);
-  end
-  else if (typeFrom.Kind = tkInterface) and (typeTo.Kind = tkInterface) then
-  begin
-    Result := Assigned(dataFrom.IntfParent) and (dataFrom.IntfParent^ = typeTo);
-    while not Result and Assigned(dataFrom.IntfParent) do
-    begin
-      Result := dataFrom.IntfParent^ = typeTo;
-      dataFrom := TypInfo.GetTypeData(dataFrom.IntfParent^);
-    end;
-  end
-  else
-  begin
-    Result := False;
-  end;
+end;
+
+class function TType.IsLazy(typeInfo: PTypeInfo): Boolean;
+begin
+  Result := GetLazyKind(typeInfo) <> lkNone;
 end;
 
 class function TType.TryGetInterfaceType(const guid: TGUID;
@@ -523,12 +676,10 @@ begin
         fInterfaceTypes := TCollections.CreateDictionary<TGuid, TRttiInterfaceType>;
         for item in fContext.GetTypes do
         begin
-          if (item is TRttiInterfaceType) and (ifHasGuid in TRttiInterfaceType(item).IntfFlags) then
+          if (item is TRttiInterfaceType) and (ifHasGuid in TRttiInterfaceType(item).IntfFlags)
+            and not fInterfaceTypes.ContainsKey(TRttiInterfaceType(item).GUID) then
           begin
-            if not fInterfaceTypes.ContainsKey(TRttiInterfaceType(item).GUID) then  // TEMP
-            begin
-              fInterfaceTypes.Add(TRttiInterfaceType(item).GUID, TRttiInterfaceType(item));
-            end;
+            fInterfaceTypes.Add(TRttiInterfaceType(item).GUID, TRttiInterfaceType(item));
           end;
         end;
       end;
@@ -608,69 +759,63 @@ end;
 {$REGION 'TActivator'}
 
 class function TActivator.CreateInstance(instanceType: TRttiInstanceType;
-  constructorMethod: TRttiMethod; const arguments: array of TValue): TObject;
+  constructorMethod: TRttiMethod; const arguments: array of TValue): TValue;
 begin
-  TArgument.CheckNotNull(instanceType, 'instanceType');
-  TArgument.CheckNotNull(constructorMethod, 'constructorMethod');
-  Result := constructorMethod.Invoke(instanceType.MetaclassType, arguments).AsObject;
+  Guard.CheckNotNull(instanceType, 'instanceType');
+  Guard.CheckNotNull(constructorMethod, 'constructorMethod');
+  Result := constructorMethod.Invoke(instanceType.MetaclassType, arguments);
 end;
 
-class function TActivator.CreateInstance(const typeName: string): TObject;
+class function TActivator.CreateInstance(const typeName: string): TValue;
 var
   context: TRttiContext;
   typeObj: TRttiType;
 begin
-  Result := nil;
-  context := TRttiContext.Create;
-  try
-    typeObj := context.FindType(typeName);
-    if not (typeObj is TRttiInstanceType) then
-    begin
-      Exit;
-    end;
+  typeObj := context.FindType(typeName);
+  if typeObj is TRttiInstanceType then
+  begin
     Result := TActivator.CreateInstance(TRttiInstanceType(typeObj));
-  finally
-    context.Free;
+  end
+  else
+  begin
+    Result := TValue.Empty;
   end;
 end;
 
-class function TActivator.CreateInstance(const typeInfo: PTypeInfo): TObject;
+class function TActivator.CreateInstance(const typeInfo: PTypeInfo): TValue;
 var
   context: TRttiContext;
   typeObj: TRttiType;
 begin
-  TArgument.CheckNotNull(typeInfo, 'typeInfo');
+  Guard.CheckNotNull(typeInfo, 'typeInfo');
 
-  Result := nil;
-  context := TRttiContext.Create;
-  try
-    typeObj := context.GetType(typeInfo);
-    if not (typeObj is TRttiInstanceType) then
-    begin
-      Exit;
-    end;
+  typeObj := context.GetType(typeInfo);
+  if typeObj is TRttiInstanceType then
+  begin
     Result := TActivator.CreateInstance(TRttiInstanceType(typeObj));
-  finally
-    context.Free;
+  end
+  else
+  begin
+    Result := TValue.Empty;
   end;
 end;
 
 class function TActivator.CreateInstance(
-  instanceType: TRttiInstanceType): TObject;
+  instanceType: TRttiInstanceType): TValue;
 var
   method: TRttiMethod;
 begin
-  TArgument.CheckNotNull(instanceType, 'instanceType');
+  Guard.CheckNotNull(instanceType, 'instanceType');
 
-  Result := nil;
   for method in instanceType.GetMethods do
   begin
     if method.IsConstructor and (Length(method.GetParameters) = 0) then
     begin
-      Result := method.Invoke(instanceType.MetaclassType, []).AsObject;
-      Break;
+      Result := method.Invoke(instanceType.MetaclassType, []);
+      Exit;
     end;
   end;
+  Result := TValue.Empty;
 end;
 
 {$ENDREGION}
@@ -700,28 +845,10 @@ begin
   Result := TEnumerator.Create(Self);
 end;
 
-function TRttiMemberEnumerable<T>.Where(
-  const predicate: TPredicate<T>): IEnumerable<T>;
-var
-  finalPredicate: TPredicate<T>;
-begin
-  if not Assigned(fPredicate) then
-  begin
-    finalPredicate := predicate;
-  end
-  else
-  begin
-    finalPredicate :=
-      function(const value: T): Boolean
-      begin
-        Result := fPredicate(value) and predicate(value);
-      end;
-  end;
-  Result := TRttiMemberEnumerable<T>.Create(fParentType, fGetMembersFunc,
-    fEnumerateBaseType, finalPredicate);
-end;
+{$ENDREGION}
 
-{ TRttiMemberEnumerableEx<T>.TEnumerator }
+
+{$REGION 'TRttiMemberEnumerable<T>.TEnumerator'}
 
 constructor TRttiMemberEnumerable<T>.TEnumerator.Create(
   collection: TRttiMemberEnumerable<T>);
@@ -777,8 +904,24 @@ end;
 function TMemberSpecificationBase<T>.IsSatisfiedBy(
   const member: T): Boolean;
 begin
-//  TArgument.CheckNotNull<T>(member, 'member');
+//  Guard.CheckNotNull<T>(member, 'member');
   Result := Accept(member);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TFiltersNamed<T>'}
+
+class function TFiltersNamed<T>.IsNamed(const name: string): TSpecification<T>;
+begin
+  Result := TNameFilter<T>.Create(name);
+end;
+
+class function TFiltersNamed<T>.HasAttribute(
+  attributeClass: TAttributeClass): TSpecification<T>;
+begin
+  Result := THasAttributeFilter<T>.Create(attributeClass);
 end;
 
 {$ENDREGION}
@@ -786,10 +929,10 @@ end;
 
 {$REGION 'TFiltersBase<T>'}
 
-class function TFiltersBase<T>.HasAttribute(
-  attributeClass: TAttributeClass): TSpecification<T>;
+class function TFiltersBase<T>.ContainsParameterType(
+  typeInfo: PTypeInfo): TSpecification<T>;
 begin
-  Result := THasAttributeFilter<T>.Create(attributeClass);
+  Result := TContainsParameterTypeFilter<T>.Create(typeInfo);
 end;
 
 class function TFiltersBase<T>.HasParameterTypes(
@@ -804,11 +947,6 @@ begin
   Result := THasParameterFlagsFilter<T>.Create(flags);
 end;
 
-class function TFiltersBase<T>.IsNamed(const name: string): TSpecification<T>;
-begin
-  Result := TNameFilter<T>.Create(name);
-end;
-
 class function TFiltersBase<T>.IsTypeOf(typeInfo: PTypeInfo): TSpecification<T>;
 begin
   Result := TTypeFilter<T>.Create(typeInfo);
@@ -817,6 +955,11 @@ end;
 class function TFiltersBase<T>.IsTypeOf<TType>: TSpecification<T>;
 begin
   Result := IsTypeOf(TypeInfo(TType));
+end;
+
+class function TFiltersBase<T>.IsClassMethod: TSpecification<T>;
+begin
+  Result := TClassMethodFilter<T>.Create;
 end;
 
 class function TFiltersBase<T>.IsConstructor: TSpecification<T>;
@@ -834,12 +977,33 @@ begin
   Result := TInvokableFilter<T>.Create;
 end;
 
+class function TFiltersBase<T>.IsMethodKind(
+  const kinds: TMethodKinds): TSpecification<T>;
+begin
+  Result := TMethodKindFilter<T>.Create(kinds);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TTypeFilters'}
+
+class function TTypeFilters.IsClass: TSpecification<TRttiType>;
+begin
+  Result := TIsClassFilter.Create;
+end;
+
+class function TTypeFilters.IsInterface: TSpecification<TRttiType>;
+begin
+  Result := TIsInterfaceFilter.Create;
+end;
+
 {$ENDREGION}
 
 
 {$REGION 'Filters'}
 
-{ THasAttributeFilter }
+{ THasAttributeFilter<T> }
 
 constructor THasAttributeFilter<T>.Create(attributeClass: TAttributeClass);
 begin
@@ -872,7 +1036,7 @@ end;
 
 function TNameFilter<T>.Accept(const member: T): Boolean;
 begin
-  Result := SameText(TRttiMember(member).Name, fName);
+  Result := SameText(TRttiNamedObject(member).Name, fName);
 end;
 
 { TTypeFilter<T> }
@@ -931,7 +1095,35 @@ begin
   end;
 end;
 
-{ THasParameterFlagsFilter }
+{ TContainsParameterTypeFilter<T> }
+
+constructor TContainsParameterTypeFilter<T>.Create(const typeInfo: PTypeInfo);
+begin
+  inherited Create;
+  fTypeInfo := typeInfo;
+end;
+
+function TContainsParameterTypeFilter<T>.Accept(const member: T): Boolean;
+var
+  parameters: TArray<TRttiParameter>;
+  parameter: TRttiParameter;
+begin
+  Result := False;
+  if member.IsMethod then
+  begin
+    parameters := member.AsMethod.GetParameters;
+    for parameter in parameters do
+    begin
+      if parameter.ParamType.Handle = fTypeInfo then
+      begin
+        Result := True;
+        Break;
+      end;
+    end;
+  end;
+end;
+
+{ THasParameterFlagsFilter<T> }
 
 constructor THasParameterFlagsFilter<T>.Create(const flags: TParamFlags);
 begin
@@ -957,6 +1149,23 @@ begin
       end;
     end;
   end;
+end;
+
+{ TMethodKindFilter<T> }
+
+function TMethodKindFilter<T>.Accept(const member: T): Boolean;
+begin
+  Result := False;
+  if member.IsMethod then
+  begin
+    Result := member.AsMethod.MethodKind in fFlags;
+  end;
+end;
+
+constructor TMethodKindFilter<T>.Create(const flags: TMethodKinds);
+begin
+  inherited Create;
+  fFlags:=flags;
 end;
 
 { TInvokableFilter<T> }
@@ -990,18 +1199,39 @@ begin
   Result := member.InheritsFrom(fMemberClass);
 end;
 
-{ TConstructorFilter }
+{ TConstructorFilter<T> }
 
 function TConstructorFilter<T>.Accept(const member: T): Boolean;
 begin
   Result := member.IsConstructor;
 end;
 
-{ TInstanceMethodFilter }
+{ TInstanceMethodFilter<T> }
 
 function TInstanceMethodFilter<T>.Accept(const member: T): Boolean;
 begin
   Result := member.IsMethod and not member.AsMethod.IsClassMethod;
+end;
+
+{ TClassMethodFilter<T> }
+
+function TClassMethodFilter<T>.Accept(const member: T): Boolean;
+begin
+  Result := member.IsMethod and member.AsMethod.IsClassMethod;
+end;
+
+{ TIsClassFilter }
+
+function TIsClassFilter.Accept(const member: TRttiType): Boolean;
+begin
+  Result := member.IsInstance;
+end;
+
+{ TIsInterfaceFilter }
+
+function TIsInterfaceFilter.Accept(const member: TRttiType): Boolean;
+begin
+  Result := member is TRttiInterfaceType;
 end;
 
 {$ENDREGION}
@@ -1035,19 +1265,19 @@ end;
 
 function TReflection.GetType(const typeInfo: PTypeInfo): TRttiType;
 begin
-  TArgument.CheckNotNull(typeInfo, 'typeInfo');
+  Guard.CheckNotNull(typeInfo, 'typeInfo');
   Result := fContext.GetType(typeInfo);
 end;
 
 function TReflection.GetType(const classType: TClass): TRttiType;
 begin
-  TArgument.CheckNotNull(classType, 'classType');
+  Guard.CheckNotNull(classType, 'classType');
   Result := fContext.GetType(classType.ClassInfo);
 end;
 
 function TReflection.GetType(const instance: TObject): TRttiType;
 begin
-  TArgument.CheckNotNull(instance, 'instance');
+  Guard.CheckNotNull(instance, 'instance');
   Result := fContext.GetType(instance.ClassInfo);
 end;
 
@@ -1064,36 +1294,38 @@ end;
 {$ENDREGION}
 
 
-{ TRttiTypeEnumerable }
+{$REGION 'TRttiTypeEnumerable'}
 
 function TRttiTypeEnumerable.GetEnumerator: IEnumerator<TRttiType>;
 begin
-  Result := TRttiTypeEnumerator.Create;
+  Result := TEnumerator.Create;
 end;
 
+{$ENDREGION}
 
-{ TRttiTypeEnumerator<T> }
 
-constructor TRttiTypeEnumerator.Create;
+{$REGION 'TRttiTypeEnumerable.TEnumerator'}
+
+constructor TRttiTypeEnumerable.TEnumerator.Create;
 begin
   fContext := TRttiContext.Create;
   fTypes := fContext.GetTypes;
   fIndex := -1;
 end;
 
-function TRttiTypeEnumerator.GetCurrent: TRttiType;
+function TRttiTypeEnumerable.TEnumerator.GetCurrent: TRttiType;
 begin
   Result := fTypes[fIndex];
 end;
 
-function TRttiTypeEnumerator.MoveNext: Boolean;
+function TRttiTypeEnumerable.TEnumerator.MoveNext: Boolean;
 begin
   Result := fIndex < Length(fTypes) - 1;
   if Result then
     Inc(fIndex);
 end;
 
+{$ENDREGION}
+
+
 end.
-
-
-

@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2012 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -34,14 +34,17 @@ interface
 
 uses
   Classes,
+{$IFDEF MSWINDOWS}
   Windows,
   Messages,
+{$ENDIF MSWINDOWS}
   SysUtils,
   DateUtils,
   StrUtils,
   Variants,
   TypInfo,
   Types,
+{$IFDEF MSWINDOWS}
   ShlObj,
   ShellAPI,
   ActiveX,
@@ -52,15 +55,21 @@ uses
   ComObj,
   Registry,
 {$ENDIF}
+{$ENDIF MSWINDOWS}
   Rtti,
   Generics.Collections,
+{$IFDEF MSWINDOWS}
+  Spring.Utils.WinAPI,
+{$ENDIF MSWINDOWS}
   Spring,
   Spring.SystemUtils,
-  Spring.Collections,
-  Spring.Utils.WinAPI;
+  Spring.Collections;
 
 type
   TEnum = Spring.SystemUtils.TEnum;
+
+
+  {$REGION 'TVersion'}
 
   ///	<summary>
   ///	  Represents a version number in the format of
@@ -105,6 +114,8 @@ type
     class operator LessThanOrEqual(const left, right: TVersion): Boolean;
   end;
 
+  {$ENDREGION}
+
 
   {$REGION 'TFileVersionInfo'}
 
@@ -135,6 +146,7 @@ type
   ///	    "VERSIONINFO Resource" in the Platform SDK.
   ///	  </para>
   ///	</remarks>
+{$IFDEF MSWINDOWS}
   TFileVersionInfo = record
   private
     type
@@ -216,12 +228,14 @@ type
     property IsSpecialBuild: Boolean read GetIsSpecialBuild;
     property IsPrivateBuild: Boolean read GetIsPrivateBuild;
   end;
+{$ENDIF MSWINDOWS}
 
   {$ENDREGION}
 
 
   {$REGION 'TOperatingSystem'}
 
+{$IFDEF MSWINDOWS}
   TOSPlatformType = (
     ptUnknown,
     ptWin3x,
@@ -241,7 +255,12 @@ type
     vtWinServer2003,
     vtWinVista,
     vtWinServer2008,
-    vtWin7
+    vtWin7,
+    vtWinServer2008R2,
+    vtWin8,
+    vtWinServer2012,
+    vtWin81,
+    vtWinServer2012R2
   );
 
   TOSProductType = (
@@ -293,6 +312,7 @@ type
     property VersionString: string read GetVersionString;
     property VersionType: TOSVersionType read fVersionType;
   end;
+{$ENDIF MSWINDOWS}
 
   {$ENDREGION}
 
@@ -326,6 +346,7 @@ type
   ///	    alues topic.
   ///	  </para>
   ///	</remarks>
+{$IFDEF MSWINDOWS}
   TSpecialFolder = (
     sfDesktop,                // <desktop>
     sfInternet,               // Internet Explorer (icon on desktop)
@@ -391,12 +412,14 @@ type
     sfCDBurnArea,             // USERPROFILE\Local Settings\Application Data\Microsoft\CD Burning
     sfComputersNearMe         // Computers Near Me (computered from Workgroup membership)
   );
+{$ENDIF MSWINDOWS}
 
   {$ENDREGION}
 
 
   {$REGION 'TEnvironment'}
 
+{$IFDEF MSWINDOWS}
   ///	<summary>
   ///	  Specifies the location where an environment variable is stored or
   ///	  retrieved in a set or get operation.
@@ -422,7 +445,9 @@ type
     ///	</summary>
     evtMachine
   );
+{$ENDIF MSWINDOWS}
 
+{$IFDEF MSWINDOWS}
   ///	<summary>
   ///	  Identifies the processor and bits-per-word of the platform targeted by
   ///	  an executable.
@@ -448,6 +473,7 @@ type
     ///	</summary>
     paAmd64
   );
+{$ENDIF MSWINDOWS}
 
   ///	<summary>
   ///	  Provides information about, and means to manipulate, the current
@@ -458,37 +484,51 @@ type
   ///	  command-line arguments, environment variable settings.
   ///	</remarks>
   TEnvironment = record
-  private
+  strict private
     class var
+{$IFDEF MSWINDOWS}
       fOperatingSystem: TOperatingSystem;
+{$ENDIF MSWINDOWS}
       fApplicationPath: string;
+{$IFDEF MSWINDOWS}
       fApplicationVersionInfo: TFileVersionInfo;
       fApplicationVersion: TVersion;
       fApplicationVersionString: string;
+{$ENDIF MSWINDOWS}
       class constructor Create;
+{$IFDEF MSWINDOWS}
       {$HINTS OFF}
       class destructor Destroy;
       {$HINTS ON}
-  private
+{$ENDIF MSWINDOWS}
+  strict private
     class function GetCurrentDirectory: string; static;
+{$IFDEF MSWINDOWS}
     class function GetMachineName: string; static;
     class function GetIsAdmin: Boolean; static;
     class function GetUserDomainName: string; static;
-    class function GetUserName: string; static;
+    class function GetUserName: string; static;{TODO -o##jwp -cMACOS : Resolve using getpwuid. }
     class function GetTickCount: Cardinal; static;
+{$ENDIF MSWINDOWS}
     class function GetNewLine: string; static;
+{$IFDEF MSWINDOWS}
     class function GetUserInteractive: Boolean; static;
-    class function GetCommandLine: string; static;
+    class function GetCommandLine: string; static; {TODO -o##jwp -cEnhance : Implement this in a cross platform way. }
     class function GetSystemDirectory: string; static;
     class function GetProcessorCount: Integer; static;
     class function GetProcessorArchitecture: TProcessorArchitecture; static;
     class function GetRegisteredOrganization: string; static;
     class function GetRegisteredOwner: string; static;
+{$ENDIF MSWINDOWS}
     class procedure SetCurrentDirectory(const value: string); static;
-  private
+  strict private
+{$IFDEF MSWINDOWS}
     class procedure OpenEnvironmentVariableKey(registry: TRegistry;
       target: TEnvironmentVariableTarget; keyAccess: Cardinal); static;
+{$ENDIF MSWINDOWS}
+{$IFDEF MSWINDOWS}
     class function GetCurrentVersionKey: string; static;
+{$ENDIF MSWINDOWS}
     class procedure GetProcessEnvironmentVariables(list: TStrings); static;
   public
     ///	<summary>
@@ -506,6 +546,7 @@ type
     ///	</summary>
     class procedure GetCommandLineArgs(list: TStrings); overload; static;
 
+{$IFDEF MSWINDOWS}
     ///	<summary>
     ///	  Returns an array of string containing the names of the logical drives
     ///	  on the current computer.
@@ -513,12 +554,15 @@ type
     class function  GetLogicalDrives: TStringDynArray; overload; static;
 
     class procedure GetLogicalDrives(list: TStrings); overload; static;
+{$ENDIF MSWINDOWS}
 
+{$IFDEF MSWINDOWS}
     ///	<summary>
     ///	  Gets the path to the system special folder that is identified by the
     ///	  specified enumeration.
     ///	</summary>
     class function  GetFolderPath(const folder: TSpecialFolder): string; static;
+{$ENDIF MSWINDOWS}
 
     ///	<summary>
     ///	  Retrieves the value of an environment variable from the current
@@ -526,12 +570,14 @@ type
     ///	</summary>
     class function  GetEnvironmentVariable(const variable: string): string; overload; static;
 
+{$IFDEF MSWINDOWS}
     ///	<summary>
     ///	  Retrieves the value of an environment variable from the current
     ///	  process or from the Windows operating system registry key for the
     ///	  current user or local machine.
     ///	</summary>
     class function  GetEnvironmentVariable(const variable: string; target: TEnvironmentVariableTarget): string; overload; static;
+{$ENDIF MSWINDOWS}
 
     ///	<summary>
     ///	  Retrieves all environment variable names and their values from the
@@ -539,12 +585,14 @@ type
     ///	</summary>
     class procedure GetEnvironmentVariables(list: TStrings); overload; static;
 
+{$IFDEF MSWINDOWS}
     ///	<summary>
     ///	  Retrieves the value of an environment variable from the current
     ///	  process or from the Windows operating system registry key for the
     ///	  current user or local machine.
     ///	</summary>
     class procedure GetEnvironmentVariables(list: TStrings; target: TEnvironmentVariableTarget); overload; static;
+{$ENDIF MSWINDOWS}
 
     ///	<summary>
     ///	  Creates, modifies, or deletes an environment variable stored in the
@@ -552,32 +600,40 @@ type
     ///	</summary>
     class procedure SetEnvironmentVariable(const variable, value: string); overload; static;
 
+{$IFDEF MSWINDOWS}
     ///	<summary>
     ///	  Creates, modifies, or deletes an environment variable stored in the
     ///	  current process or in the Windows operating system registry key
     ///	  reserved for the current user or local machine.
     ///	</summary>
     class procedure SetEnvironmentVariable(const variable, value: string; target: TEnvironmentVariableTarget); overload; static;
+{$ENDIF MSWINDOWS}
 
+{$IFDEF MSWINDOWS}
     ///	<summary>
     ///	  Replaces the name of each environment variable embedded in the
     ///	  specified string with the string equivalent of the value of the
     ///	  variable, then returns the resulting string.
     ///	</summary>
-    class function ExpandEnvironmentVariables(const variable: string): string; static;
+    class function ExpandEnvironmentVariables(const variable: string): string; static; {TODO -o##jwp -cEnhance : Implement this in a cross platform way. }
+{$ENDIF MSWINDOWS}
 
     class property ApplicationPath: string read fApplicationPath;
 
+{$IFDEF MSWINDOWS}
     class property ApplicationVersion: TVersion read fApplicationVersion;
 
     class property ApplicationVersionInfo: TFileVersionInfo read fApplicationVersionInfo;
 
     class property ApplicationVersionString: string read fApplicationVersionString;
+{$ENDIF MSWINDOWS}
 
+{$IFDEF MSWINDOWS}
     ///	<summary>
     ///	  Gets the command line for this process.
     ///	</summary>
     class property CommandLine: string read GetCommandLine;
+{$ENDIF MSWINDOWS}
 
     ///	<summary>
     ///	  Gets or sets the fully qualified path of the current working
@@ -585,24 +641,31 @@ type
     ///	</summary>
     class property CurrentDirectory: string read GetCurrentDirectory write SetCurrentDirectory;
 
+{$IFDEF MSWINDOWS}
     class property IsAdmin: Boolean read GetIsAdmin; { experimental }
+{$ENDIF MSWINDOWS}
 
+{$IFDEF MSWINDOWS}
     ///	<summary>
     ///	  Gets the NetBIOS name of this local computer.
     ///	</summary>
     class property MachineName: string read GetMachineName;
+{$ENDIF MSWINDOWS}
 
     ///	<summary>
     ///	  Gets the newline string defined for this environment.
     ///	</summary>
     class property NewLine: string read GetNewLine;
 
+{$IFDEF MSWINDOWS}
     ///	<summary>
     ///	  Gets a <see cref="TOperatingSystem" /> object that contains the
     ///	  current platform identifier and version number.
     ///	</summary>
     class property OperatingSystem: TOperatingSystem read fOperatingSystem;
+{$ENDIF MSWINDOWS}
 
+{$IFDEF MSWINDOWS}
     ///	<summary>
     ///	  Gets the number of processors on the current machine.
     ///	</summary>
@@ -640,6 +703,7 @@ type
     ///	  user interactive mode.
     ///	</summary>
     class property UserInteractive: Boolean read GetUserInteractive;
+{$ENDIF MSWINDOWS}
   end;
 
   ///	<summary>
@@ -648,6 +712,9 @@ type
   Environment = TEnvironment;
 
   {$ENDREGION}
+
+
+  {$REGION 'TStringMatchers'}
 
   ///	<summary>
   ///	  Provides static methods to create various string predicates.
@@ -662,6 +729,8 @@ type
     class function InArray(const collection: array of string): TPredicate<string>;
     class function InCollection(const collection: IEnumerable<string>): TPredicate<string>; overload;
   end;
+
+  {$ENDREGION}
 
 
   {$REGION 'Callback'}
@@ -722,6 +791,7 @@ type
   ///	</summary>
   function ApplicationPath: string;
 
+{$IFDEF MSWINDOWS}
   ///	<summary>
   ///	  Returns the version number of the application.
   ///	</summary>
@@ -731,6 +801,7 @@ type
   ///	  Returns the version information of the application.
   ///	</summary>
   function ApplicationVersionString: string;
+{$ENDIF MSWINDOWS}
 
   ///	<summary>
   ///	  Returns the last system error message.
@@ -749,12 +820,17 @@ type
   ///	</param>
   function CreateCallback(obj: TObject; methodAddress: Pointer): TCallbackFunc;
 
+{$IFDEF MSWINDOWS}
   ///	<summary>
-  ///	  Converts a windows TFiletime value to a delphi TDatetime value.
+  ///	  Converts a Delphi TDatetime value to a Windows TFiletime value.
   ///	</summary>
-  function ConvertFileTimeToDateTime(const fileTime: TFileTime; useLocalTimeZone: Boolean): TDateTime; overload;
+  function ConvertDateTimeToFileTime(const datetime: TDateTime; const useLocalTimeZone: Boolean): TFileTime; overload;
 
-  function ConvertDateTimeToFileTime(const datetime: TDateTime; useLocalTimeZone: Boolean): TFileTime; overload;
+  ///	<summary>
+  ///	  Converts a Windows TFiletime value to a Delphi TDatetime value.  Not implemented on Mac as the Delphi POSIX version is time_t based, but only contains a date portion.
+  ///	</summary>
+  function ConvertFileTimeToDateTime(const fileTime: TFileTime; const useLocalTimeZone: Boolean): TDateTime; overload;
+{$ENDIF MSWINDOWS}
 
   ///	<summary>
   ///	  Executes a method call within the main thread.
@@ -825,6 +901,7 @@ type
   ///	</exception>
   procedure UpdateStrings(strings: TStrings; proc: TProc); // inline;
 
+{$IFDEF MSWINDOWS}
   ///	<summary>
   ///	  Returns True if the Control key is pressed, otherwise false.
   ///	</summary>
@@ -839,6 +916,7 @@ type
   ///	  Returns True if the Alt key is pressed, otherwise false.
   ///	</summary>
   function IsAltPressed: Boolean;
+{$ENDIF MSWINDOWS}
 
   {$REGION 'XML Documentation'}
   {$ENDREGION}
@@ -916,6 +994,7 @@ const
   ///	</summary>
   OneTB: Int64 = 1099511627776 deprecated 'Use COneTB instead.';
 
+{$IFDEF MSWINDOWS}
   const
     SpecialFolderCSIDLs: array[TSpecialFolder] of Integer = (
       CSIDL_DESKTOP,                  // <desktop>
@@ -976,15 +1055,22 @@ const
       CSIDL_CDBURN_AREA,              // USERPROFILE\Local Settings\Application Data\Microsoft\CD Burning
       CSIDL_COMPUTERSNEARME           // Computers Near Me (computered from Workgroup membership)
     );
-
+{$ENDIF MSWINDOWS}
   {$ENDREGION}
 
 implementation
 
 uses
+{$IFDEF POSIX}
+  Posix.Stdlib,
+  Posix.Unistd,
+  Posix.Dlfcn,
+  System.IOUtils,
+{$ENDIF POSIX}
   Math,
   Spring.ResourceStrings;
 
+{$IFDEF MSWINDOWS}
 const
   OSVersionTypeStrings: array[TOSVersionType] of string = (
     SUnknownOSDescription,
@@ -998,8 +1084,14 @@ const
     SWinServer2003Description,
     SWinVistaDescription,
     SWinServer2008Description,
-    SWin7Description
+    SWin7Description,
+    SWinServer2008R2Description,
+    SWin8Description,
+    SWinServer2012Description,
+    SWin81Description,
+    SWinServer2012R2Description
   );
+{$ENDIF MSWINDOWS}
 
 
 {$REGION 'Routines'}
@@ -1009,6 +1101,7 @@ begin
   Result := TEnvironment.ApplicationPath;
 end;
 
+{$IFDEF MSWINDOWS}
 function ApplicationVersion: TVersion;
 begin
   Result := TEnvironment.ApplicationVersion;
@@ -1018,6 +1111,7 @@ function ApplicationVersionString: string;
 begin
   Result := TEnvironment.ApplicationVersionString;
 end;
+{$ENDIF MSWINDOWS}
 
 function GetLastErrorMessage: string;
 begin
@@ -1026,12 +1120,35 @@ end;
 
 function CreateCallback(obj: TObject; methodAddress: Pointer): TCallbackFunc;
 begin
-  TArgument.CheckNotNull(obj, 'obj');
-  TArgument.CheckNotNull(methodAddress, 'methodAddress');
+  Guard.CheckNotNull(obj, 'obj');
+  Guard.CheckNotNull(methodAddress, 'methodAddress');
   Result := TCallback.Create(obj, methodAddress);
 end;
 
-function ConvertFileTimeToDateTime(const fileTime: TFileTime; useLocalTimeZone: Boolean): TDateTime;
+{$IFDEF MSWINDOWS}
+function ConvertDateTimeToFileTime(const datetime: TDateTime;
+  const useLocalTimeZone: Boolean): TFileTime;
+var
+  systemTime: TSystemTime;
+  fileTime: TFileTime;
+begin
+  Result.dwLowDateTime := 0;
+  Result.dwHighDateTime := 0;
+  DateTimeToSystemTime(datetime, systemTime);
+  if SystemTimeToFileTime(systemTime, fileTime) then
+  begin
+    if useLocalTimeZone then
+    begin
+      LocalFileTimeToFileTime(fileTime, Result);
+    end
+    else
+    begin
+      Result := fileTime;
+    end;
+  end;
+end;
+
+function ConvertFileTimeToDateTime(const fileTime: TFileTime; const useLocalTimeZone: Boolean): TDateTime;
 var
   localFileTime: TFileTime;
   systemTime: TSystemTime;
@@ -1053,45 +1170,24 @@ begin
     Result := 0;
   end;
 end;
-
-function ConvertDateTimeToFileTime(const datetime: TDateTime;
-  useLocalTimeZone: Boolean): TFileTime;
-var
-  systemTime: TSystemTime;
-  fileTime: TFileTime;
-begin
-  Result.dwLowDateTime := 0;
-  Result.dwHighDateTime := 0;
-  DateTimeToSystemTime(datetime, systemTime);
-  if SystemTimeToFileTime(systemTime, fileTime) then
-  begin
-    if useLocalTimeZone then
-    begin
-      LocalFileTimeToFileTime(fileTime, Result);
-    end
-    else
-    begin
-      Result := fileTime;
-    end;
-  end;
-end;
+{$ENDIF MSWINDOWS}
 
 procedure Synchronize(threadProc: TThreadProcedure);
 begin
-  TArgument.CheckNotNull(Assigned(threadProc), 'threadProc');
+  Guard.CheckNotNull(Assigned(threadProc), 'threadProc');
   TThread.Synchronize(TThread.CurrentThread, threadProc);
 end;
 
 procedure Queue(threadProc: TThreadProcedure);
 begin
-  TArgument.CheckNotNull(Assigned(threadProc), 'threadProc');
+  Guard.CheckNotNull(Assigned(threadProc), 'threadProc');
   TThread.Queue(TThread.CurrentThread, threadProc);
 end;
 
 function TryGetPropInfo(instance: TObject; const propertyName: string;
   out propInfo: PPropInfo): Boolean;
 begin
-  TArgument.CheckNotNull(instance, 'instance');
+  Guard.CheckNotNull(instance, 'instance');
   propInfo := GetPropInfo(instance, propertyName);
   Result := propInfo <> nil;
 end;
@@ -1108,8 +1204,8 @@ end;
 
 procedure Lock(obj: TObject; const proc: TProc);
 begin
-  TArgument.CheckNotNull(obj, 'obj');
-  TArgument.CheckNotNull(Assigned(proc), 'proc');
+  Guard.CheckNotNull(obj, 'obj');
+  Guard.CheckNotNull(Assigned(proc), 'proc');
 
   System.MonitorEnter(obj);
   try
@@ -1123,15 +1219,15 @@ procedure Lock(const intf: IInterface; const proc: TProc);
 var
   obj: TObject;
 begin
-  TArgument.CheckNotNull(intf, 'intf');
+  Guard.CheckNotNull(intf, 'intf');
   obj := TObject(intf);
   Lock(obj, proc);
 end;
 
 procedure UpdateStrings(strings: TStrings; proc: TProc);
 begin
-  TArgument.CheckNotNull(strings, 'strings');
-  TArgument.CheckNotNull(Assigned(proc), 'proc');
+  Guard.CheckNotNull(strings, 'strings');
+  Guard.CheckNotNull(Assigned(proc), 'proc');
 
   strings.BeginUpdate;
   try
@@ -1142,6 +1238,7 @@ begin
   end;
 end;
 
+{$IFDEF MSWINDOWS}
 function IsCtrlPressed: Boolean;
 begin
   Result := GetKeyState(VK_CONTROL) < 0;
@@ -1159,6 +1256,7 @@ function IsAltPressed: Boolean;
 begin
   Result := GetKeyState(VK_MENU) < 0;
 end;
+{$ENDIF MSWINDOWS}
 
 procedure CheckFileExists(const fileName: string);
 begin
@@ -1237,8 +1335,8 @@ end;
 constructor TVersion.InternalCreate(defined, major, minor, build, reversion: Integer);
 begin
   Assert(defined in [2, 3, 4], '"defined" should be in [2, 3, 4].');
-  TArgument.CheckRange(IsDefined(major), 'major');
-  TArgument.CheckRange(IsDefined(minor), 'minor');
+  Guard.CheckRange(IsDefined(major), 'major');
+  Guard.CheckRange(IsDefined(minor), 'minor');
   fMajor := major;
   fMinor := minor;
   case defined of
@@ -1249,14 +1347,14 @@ begin
     end;
     3:
     begin
-      TArgument.CheckRange(IsDefined(build), 'build');
+      Guard.CheckRange(IsDefined(build), 'build');
       fBuild := build;
       fReversion := fCUndefined;
     end;
     4:
     begin
-      TArgument.CheckRange(IsDefined(build), 'build');
-      TArgument.CheckRange(IsDefined(reversion), 'reversion');
+      Guard.CheckRange(IsDefined(build), 'build');
+      Guard.CheckRange(IsDefined(reversion), 'reversion');
       fBuild := build;
       fReversion := reversion;
     end;
@@ -1322,19 +1420,19 @@ end;
 
 function TVersion.ToString(fieldCount: Integer): string;
 begin
-  TArgument.CheckRange(fieldCount in [0..4], 'fieldCount');
+  Guard.CheckRange(fieldCount in [0..4], 'fieldCount');
   case fieldCount of
     0: Result := '';
     1: Result := Format('%d', [major]);
     2: Result := Format('%d.%d', [major, minor]);
     3:
     begin
-      TArgument.CheckTrue(IsDefined(build), SIllegalFieldCount);
+      Guard.CheckTrue(IsDefined(build), SIllegalFieldCount);
       Result := Format('%d.%d.%d', [major, minor, build]);
     end;
     4:
     begin
-      TArgument.CheckTrue(IsDefined(build) and IsDefined(reversion), SIllegalFieldCount);
+      Guard.CheckTrue(IsDefined(build) and IsDefined(reversion), SIllegalFieldCount);
       Result := Format('%d.%d.%d.%d', [major, minor, build, reversion]);
     end;
   end;
@@ -1386,6 +1484,7 @@ end;
 
 {$REGION 'TFileVersionInfo'}
 
+{$IFDEF MSWINDOWS}
 constructor TFileVersionInfo.Create(const fileName: string);
 var
   block: Pointer;
@@ -1554,12 +1653,14 @@ begin
   VerQueryValue(fBlock, PChar(subBlock), Pointer(data), len);
   Result := data;
 end;
+{$ENDIF MSWINDOWS}
 
 {$ENDREGION}
 
 
 {$REGION 'TOperatingSystem'}
 
+{$IFDEF MSWINDOWS}
 constructor TOperatingSystem.Create;
 var
   versionInfo: TOSVersionInfoEx;
@@ -1638,7 +1739,21 @@ begin
           if productType = ptWorkstation then
             Result := vtWin7
           else
-            Result := vtWinServer2008;   { TODO: WinServer2008 R2 }
+            Result := vtWinServer2008R2;
+        end;
+        2:
+        begin
+          if productType = ptWorkstation then
+            Result := vtWin8
+          else
+            Result := vtWinServer2012;
+        end;
+        3:
+        begin
+          if productType = ptWorkstation then
+            Result := vtWin81
+          else
+            Result := vtWinServer2012R2;
         end;
       end;
     end;
@@ -1675,6 +1790,7 @@ function TOperatingSystem.GetVersionString: string;
 begin
   Result := ToString;
 end;
+{$ENDIF MSWINDOWS}
 
 {$ENDREGION}
 
@@ -1684,22 +1800,27 @@ end;
 class constructor TEnvironment.Create;
 begin
   fApplicationPath := ExtractFilePath(ParamStr(0));
+{$IFDEF MSWINDOWS}
   fApplicationVersionInfo := TFileVersionInfo.GetVersionInfo(ParamStr(0));
   fApplicationVersion := fApplicationVersionInfo.FileVersionNumber;
   fApplicationVersionString := fApplicationVersionInfo.FileVersion;
   fOperatingSystem := TOperatingSystem.Create;
+{$ENDIF MSWINDOWS}
 end;
 
+{$IFDEF MSWINDOWS}
 class destructor TEnvironment.Destroy;
 begin
   fOperatingSystem.Free;
 end;
+{$ENDIF MSWINDOWS}
 
 class function TEnvironment.GetCommandLineArgs: TStringDynArray;
 var
-  pArgs: PPWideChar;
-  count: Integer;
   i: Integer;
+  count: Integer;
+{$IFDEF MSWINDOWS}
+  pArgs: PPWideChar;
 begin
   pArgs := ShellAPI.CommandLineToArgvW(PWideChar(Windows.GetCommandLineW), count);
   if pArgs <> nil then
@@ -1713,6 +1834,13 @@ begin
   finally
     Windows.LocalFree(HLocal(pArgs));
   end;
+{$ELSE}
+begin
+  count := ParamCount;
+  SetLength(Result, count+1);
+  for i := 0 to count do
+    Result[i] := ParamStr(i);
+{$ENDIF MSWINDOWS}
 end;
 
 class procedure TEnvironment.GetCommandLineArgs(list: TStrings);
@@ -1733,6 +1861,7 @@ begin
   );
 end;
 
+{$IFDEF MSWINDOWS}
 class function TEnvironment.GetLogicalDrives: TStringDynArray;
 var
   len: Cardinal;
@@ -1761,7 +1890,9 @@ begin
     end
   );
 end;
+{$ENDIF MSWINDOWS}
 
+{$IFDEF MSWINDOWS}
 function TryGetAccessToken(out hToken: THandle): Boolean;
 begin
   Result := Windows.OpenThreadToken(GetCurrentThread, TOKEN_QUERY, TRUE, hToken);
@@ -1770,7 +1901,9 @@ begin
     Result := Windows.OpenProcessToken(GetCurrentProcess, TOKEN_QUERY, hToken);
   end;
 end;
+{$ENDIF MSWINDOWS}
 
+{$IFDEF MSWINDOWS}
 class function TEnvironment.GetFolderPath(const folder: TSpecialFolder): string;
 var
   pidl : PItemIDList;
@@ -1788,7 +1921,9 @@ begin
     CloseHandle(hToken);
   end;
 end;
+{$ENDIF MSWINDOWS}
 
+{$IFDEF MSWINDOWS}
 class procedure TEnvironment.OpenEnvironmentVariableKey(registry: TRegistry;
   target: TEnvironmentVariableTarget; keyAccess: Cardinal);
 var
@@ -1812,13 +1947,45 @@ begin
     raise EOSError.CreateResFmt(@SCannotAccessRegistryKey, [key]);
   end;
 end;
+{$ENDIF MSWINDOWS}
 
 class function TEnvironment.GetEnvironmentVariable(
   const variable: string): string;
+{$IFDEF MSWINDOWS}
 begin
   Result := TEnvironment.GetEnvironmentVariable(variable, evtProcess);
 end;
+{$ENDIF MSWINDOWS}
+{$IFDEF POSIX}
+var
+  variablePointer: Pointer;
+  resultPointer: Pointer;
+{$IFDEF DELPHIXE2}
+  variableAnsi: AnsiString;
+{$ELSE DELPHIXE2}
+  M: TMarshaller;
+{$ENDIF DELPHIXE2}
+begin
+{$IFDEF DELPHIXE2}
+  variableAnsi := AnsiString(variable);
+  variablePointer := PAnsiChar(variableAnsi);
+{$ELSE DELPHIXE2}
+  variablePointer := M.AsUtf8(variable).ToPointer;
+{$ENDIF DELPHIXE2}
 
+  resultPointer := getenv(variablePointer);
+
+  // See SetEnvironmentVariable for comment about encoding
+  // We cannot defer to SysUtils implementation since it doesn't support regional characters as well (QC123698)
+{$IFDEF DELPHIXE2}
+  Result := string(AnsiString(PAnsiChar(resultPointer)));
+{$ELSE DELPHIXE2}
+  Result := UTF8ToString(resultPointer);
+{$ENDIF DELPHIXE2}
+end;
+{$ENDIF POSIX}
+
+{$IFDEF MSWINDOWS}
 class function TEnvironment.GetEnvironmentVariable(const variable: string;
   target: TEnvironmentVariableTarget): string;
 var
@@ -1840,7 +2007,7 @@ var
     end;
   end;
 begin
-  TArgument.CheckEnum<TEnvironmentVariableTarget>(target, 'target');
+  Guard.CheckEnum<TEnvironmentVariableTarget>(target, 'target');
   if target = evtProcess then
   begin
     Result := GetProcessEnvironmentVariable;
@@ -1861,13 +2028,29 @@ begin
     registry.Free;
   end;
 end;
+{$ENDIF MSWINDOWS}
+
+{$IFDEF DELPHIXE2}
+{$IFDEF POSIX}
+type
+  _PPAnsiChr    = PPAnsiChar;
+  PMarshaledAString = _PPAnsiChr; {$NODEFINE PMarshaledAString}
+{$ENDIF POSIX}
+{$ENDIF DELPHIXE2}
 
 class procedure TEnvironment.GetProcessEnvironmentVariables(list: TStrings);
 var
+{$IFDEF MSWINDOWS}
   p: PChar;
   strings: TStringDynArray;
+{$ENDIF MSWINDOWS}
+{$IFDEF POSIX}
+  pEnviron: PMarshaledAString;
+  current: string;
+{$ENDIF POSIX}
 begin
   Assert(list <> nil, 'list should not be nil.');
+{$IFDEF MSWINDOWS}
   p := Windows.GetEnvironmentStrings;
   try
     strings := SplitString(p);
@@ -1888,13 +2071,36 @@ begin
   finally
     Win32Check(Windows.FreeEnvironmentStrings(p));
   end;
+{$ENDIF MSWINDOWS}
+{$IFDEF POSIX}
+  pEnviron := environ; {TODO -o##jwp -cTest : Test this code; it is based on http://stackoverflow.com/questions/2085302/printing-all-environment-variables-in-c-c/12059006#12059006 }
+  if pEnviron <> nil then
+  begin
+    list.BeginUpdate();
+    try
+      while Assigned(pEnviron) do
+      begin
+        current := string(pEnviron^);
+        list.Add(current);
+      end;
+    finally
+      list.EndUpdate();
+    end;
+  end;
+{$ENDIF POSIX}
 end;
 
 class procedure TEnvironment.GetEnvironmentVariables(list: TStrings);
 begin
+{$IFDEF MSWINDOWS}
   TEnvironment.GetEnvironmentVariables(list, evtProcess);
+{$ENDIF MSWINDOWS}
+{$IFDEF POSIX}
+  TEnvironment.GetProcessEnvironmentVariables(list);
+{$ENDIF POSIX}
 end;
 
+{$IFDEF MSWINDOWS}
 class procedure TEnvironment.GetEnvironmentVariables(list: TStrings;
   target: TEnvironmentVariableTarget);
 var
@@ -1902,8 +2108,8 @@ var
   value: string;
   i: Integer;
 begin
-  TArgument.CheckNotNull(list, 'list');
-  TArgument.CheckEnum<TEnvironmentVariableTarget>(target, 'target');
+  Guard.CheckNotNull(list, 'list');
+  Guard.CheckEnum<TEnvironmentVariableTarget>(target, 'target');
   if target = evtProcess then
   begin
     GetProcessEnvironmentVariables(list);
@@ -1922,18 +2128,47 @@ begin
     registry.Free;
   end;
 end;
+{$ENDIF MSWINDOWS}
 
 class procedure TEnvironment.SetEnvironmentVariable(const variable, value: string);
+{$IFDEF POSIX}
+var
+{$IFDEF DELPHIXE2}
+  variableAnsiString: RawByteString;
+  valueAnsiString: RawByteString;
+{$ELSE}
+  M1, M2: TMarshaller;
+{$ENDIF DELPHIXE2}
+  variablePointer: Pointer;
+  valuePointer: Pointer;
+{$ENDIF POSIX}
 begin
+{$IFDEF MSWINDOWS}
   TEnvironment.SetEnvironmentVariable(variable, value, evtProcess);
+{$ENDIF MSWINDOWS}
+{$IFDEF POSIX}
+{$IFDEF DELPHIXE2}
+  // first convert from Unicode to Ansi using DefaultSystemCodePage, then get the pointer to the AnsiString's chars, XE2 is using ANSI
+  variableAnsiString := AnsiString(variable);
+  valueAnsiString := AnsiString(value);
+  variablePointer := PAnsiChar(variableAnsiString);
+  valuePointer := PAnsiChar(valueAnsiString);
+{$ELSE}
+  // As obsered from other libraries (FireDAC, DBXInterbase) the actual encoding isn't ANSI but UTF8 in XE3+
+  variablePointer := M1.AsUtf8(variable).ToPointer;
+  valuePointer := M2.AsUtf8(value).ToPointer;
+{$ENDIF DELPHIXE2}
+  setenv(variablePointer, valuePointer, 1);
+{$ENDIF POSIX}
 end;
 
+{$IFDEF MSWINDOWS}
 class procedure TEnvironment.SetEnvironmentVariable(const variable,
   value: string; target: TEnvironmentVariableTarget);
 var
   registry: TRegistry;
 begin
-  TArgument.CheckEnum<TEnvironmentVariableTarget>(target, 'target');
+  Guard.CheckEnum<TEnvironmentVariableTarget>(target, 'target');
   if target = evtProcess then
   begin
     Win32Check(Windows.SetEnvironmentVariable(PChar(variable), PChar(value)));
@@ -1955,7 +2190,9 @@ begin
     registry.Free;
   end;
 end;
+{$ENDIF MSWINDOWS}
 
+{$IFDEF MSWINDOWS}
 class function TEnvironment.ExpandEnvironmentVariables(
   const variable: string): string;
 var
@@ -1967,12 +2204,16 @@ begin
   Win32Check(len > 0);
   SetLength(Result, len - 1);
 end;
+{$ENDIF MSWINDOWS}
 
+{$IFDEF MSWINDOWS}
 class function TEnvironment.GetCommandLine: string;
 begin
   Result := Windows.GetCommandLine;
 end;
+{$ENDIF MSWINDOWS}
 
+{$IFDEF MSWINDOWS}
 class function TEnvironment.GetCurrentDirectory: string;
 var
   size: DWORD;
@@ -1981,7 +2222,22 @@ begin
   SetLength(Result, size - 1);
   Windows.GetCurrentDirectory(size, PChar(Result));
 end;
+{$ENDIF MSWINDOWS}
 
+{$IFDEF POSIX}
+  {$IFDEF DELPHIXE2}
+    {$INLINE OFF} // Otherwise in Delphi XE2 only on OSX32: [DCC Fatal Error] F2084 Internal Error: URW1147
+  {$ENDIF DELPHIXE2}
+class function TEnvironment.GetCurrentDirectory: string;
+begin
+  Result := TDirectory.GetCurrentDirectory(); // Delphi XE2 only on OSX32: [DCC Fatal Error] F2084 Internal Error: URW1147
+end;
+  {$IFDEF DELPHIXE2}
+    {$INLINE ON} // Presume the default ON (QC123694: as there is no $IFOPT to check for OFF/AUTO)
+  {$ENDIF DELPHIXE2}
+{$ENDIF POSIX}
+
+{$IFDEF MSWINDOWS}
 class function TEnvironment.GetCurrentVersionKey: string;
 const
   HKLM_CURRENT_VERSION_NT      = 'SOFTWARE\Microsoft\Windows NT\CurrentVersion';
@@ -1992,7 +2248,9 @@ begin
   else
     Result := HKLM_CURRENT_VERSION_WINDOWS;
 end;
+{$ENDIF MSWINDOWS}
 
+{$IFDEF MSWINDOWS}
 class function TEnvironment.GetMachineName: string;
 var
   size: Cardinal;
@@ -2003,13 +2261,15 @@ begin
   begin
     SetLength(Result, size);
   end;
-end;
+end; {TODO -o##jwp -cMACOS : Replace with gethostname call. }
+{$ENDIF MSWINDOWS}
 
 class function TEnvironment.GetNewLine: string;
 begin
   Result := System.sLineBreak;
 end;
 
+{$IFDEF MSWINDOWS}
 class function TEnvironment.GetProcessorArchitecture: TProcessorArchitecture;
 var
   systemInfo: TSystemInfo;
@@ -2176,10 +2436,16 @@ class function TEnvironment.GetTickCount: Cardinal;
 begin
   Result := Windows.GetTickCount;
 end;
+{$ENDIF MSWINDOWS}
 
 class procedure TEnvironment.SetCurrentDirectory(const value: string);
 begin
+{$IFDEF MSWINDOWS}
   Win32Check(Windows.SetCurrentDirectory(PChar(value)));
+{$ENDIF MSWINDOWS}
+{$IFDEF POSIX}
+  SysUtils.SetCurrentDir(value);
+{$ENDIF POSIX}
 end;
 
 {$ENDREGION}
@@ -2337,5 +2603,8 @@ begin
       Result := collection.Contains(value);
     end;
 end;
+
+{$ENDREGION}
+
 
 end.

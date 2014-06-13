@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2012 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -29,17 +29,15 @@ interface
 uses
   SysUtils,
   TestFramework,
-  TestExtensions,
-  Rtti,
   Spring.Reflection.ValueConverters;
 
 type
   TEnumeration = (teFirst, teSecond, teLast);
 
   TTestFromString = class(TTestCase)
-  private
+  strict private
     fConverter: IValueConverter;
-  protected
+  strict protected
     procedure SetUp; override;
   published
     procedure TestStringToInt64;
@@ -57,11 +55,15 @@ type
     procedure TestStringToCurrency;
     procedure TestStringToDateTime;
     procedure TestStringToDateTimeF;
+{$IFNDEF NEXTGEN}
     procedure TestStringToWideString;
     procedure TestStringToAnsiString;
+{$ENDIF}
     procedure TestStringToNullableString;
+{$IFNDEF NEXTGEN}
     procedure TestStringToNullableAnsiString;
     procedure TestStringToNullableWideString;
+{$ENDIF}
     procedure TestStringToNullableInteger;
     procedure TestStringToNullableCardinal;
     procedure TestStringToNullableInt64;
@@ -77,10 +79,11 @@ type
     procedure TestStringToNullableDateTime;
   end;
 
+{$IFNDEF NEXTGEN}
   TTestFromWideString = class(TTestCase)
-  private
+  strict private
     fConverter: IValueConverter;
-  protected
+  strict protected
     procedure SetUp; override;
   published
     procedure TestWStringToInteger;
@@ -113,16 +116,19 @@ type
     procedure TestWStringToNullableCurrency;
     procedure TestWStringToNullableDateTime;
   end;
+{$ENDIF}
 
   TTestFromInteger = class(TTestCase)
-  private
+  strict private
     fConverter: IValueConverter;
-  protected
+  strict protected
     procedure SetUp; override;
   published
     procedure TestIntegerToString;
+{$IFNDEF NEXTGEN}
     procedure TestIntegerToWideString;
     procedure TestIntegerToAnsiString;
+{$ENDIF}
     procedure TestIntegerToEnum;
     procedure TestIntegerToBoolean;
     procedure TestIntegerToFloat;
@@ -135,21 +141,25 @@ type
     procedure TestIntegerToNullableSmallInt;
     procedure TestIntegerToNullableShortInt;
     procedure TestIntegerToNullableString;
+{$IFNDEF NEXTGEN}
     procedure TestIntegerToNullableAnsiString;
     procedure TestIntegerToNullableWideString;
+{$ENDIF}
     procedure TestIntegerToNullableBoolean;
     procedure TestIntegerToNullableFloat;
   end;
 
   TTestFromCardinal = class(TTestCase)
-  private
+  strict private
     fConverter: IValueConverter;
-  protected
+  strict protected
     procedure SetUp; override;
   published
     procedure TestCardinalToString;
+{$IFNDEF NEXTGEN}
     procedure TestCardinalToWideString;
     procedure TestCardinalToAnsiString;
+{$ENDIF}
     procedure TestCardinalToEnum;
     procedure TestCardinalToBoolean;
     procedure TestCardinalToFloat;
@@ -162,21 +172,25 @@ type
     procedure TestCardinalToNullableSmallInt;
     procedure TestCardinalToNullableShortInt;
     procedure TestCardinalToNullableString;
+{$IFNDEF NEXTGEN}
     procedure TestCardinalToNullableAnsiString;
     procedure TestCardinalToNullableWideString;
+{$ENDIF}
     procedure TestCardinalToNullableBoolean;
     procedure TestCardinalToNullableFloat;
   end;
 
   TTestFromSmallInt = class(TTestCase)
-  private
+  strict private
     fConverter: IValueConverter;
-  protected
+  strict protected
     procedure SetUp; override;
   published
     procedure TestSmallIntToString;
+{$IFNDEF NEXTGEN}
     procedure TestSmallIntToWideString;
     procedure TestSmallIntToAnsiString;
+{$ENDIF}
     procedure TestSmallIntToEnum;
     procedure TestSmallIntToBoolean;
     procedure TestSmallIntToFloat;
@@ -185,21 +199,25 @@ type
     procedure TestSmallIntToNullableSmallInt;
     procedure TestSmallIntToNullableShortInt;
     procedure TestSmallIntToNullableString;
+{$IFNDEF NEXTGEN}
     procedure TestSmallIntToNullableAnsiString;
     procedure TestSmallIntToNullableWideString;
+{$ENDIF}
     procedure TestSmallIntToNullableBoolean;
     procedure TestSmallIntToNullableFloat;
   end;
 
   TTestFromShortInt = class(TTestCase)
-  private
+  strict private
     fConverter: IValueConverter;
-  protected
+  strict protected
     procedure SetUp; override;
   published
     procedure TestShortIntToString;
+{$IFNDEF NEXTGEN}
     procedure TestShortIntToWideString;
     procedure TestShortIntToAnsiString;
+{$ENDIF}
     procedure TestShortIntToEnum;
     procedure TestShortIntToBoolean;
     procedure TestShortIntToFloat;
@@ -208,16 +226,18 @@ type
     procedure TestShortIntToNullableSmallInt;
     procedure TestShortIntToNullableShortInt;
     procedure TestShortIntToNullableString;
+{$IFNDEF NEXTGEN}
     procedure TestShortIntToNullableAnsiString;
     procedure TestShortIntToNullableWideString;
+{$ENDIF}
     procedure TestShortIntToNullableBoolean;
     procedure TestShortIntToNullableFloat;
   end;
 
   TTestFromBoolean = class(TTestCase)
-  private
+  strict private
     fConverter: IValueConverter;
-  protected
+  strict protected
     procedure SetUp; override;
   published
     procedure TestBooleanToInteger;
@@ -225,22 +245,26 @@ type
     procedure TestBooleanToSmallInt;
     procedure TestBooleanToShortInt;
     procedure TestBooleanToString;
+{$IFNDEF NEXTGEN}
     procedure TestBooleanToWideString;
     procedure TestBooleanToAnsiString;
+{$ENDIF}
     procedure TestBooleanToNullableBoolean;
     procedure TestBooleanToNullableInteger;
     procedure TestBooleanToNullableCardinal;
     procedure TestBooleanToNullableSmallInt;
     procedure TestBooleanToNullableShortInt;
     procedure TestBooleanToNullableString;
+{$IFNDEF NEXTGEN}
     procedure TestBooleanToNullableAnsiString;
     procedure TestBooleanToNullableWideString;
+{$ENDIF}
   end;
 
   TTestFromEnum = class(TTestCase)
-  private
+  strict private
     fConverter: IValueConverter;
-  protected
+  strict protected
     procedure SetUp; override;
   published
     procedure TestEnumToInteger;
@@ -248,21 +272,25 @@ type
     procedure TestEnumToSmallInt;
     procedure TestEnumToShortInt;
     procedure TestEnumToString;
+{$IFNDEF NEXTGEN}
     procedure TestEnumToAnsiString;
     procedure TestEnumToWideString;
+{$ENDIF}
     procedure TestEnumToNullableInteger;
     procedure TestEnumToNullableCardinal;
     procedure TestEnumToNullableSmallInt;
     procedure TestEnumToNullableShortInt;
     procedure TestEnumToNullableString;
+{$IFNDEF NEXTGEN}
     procedure TestEnumToNullableAnsiString;
     procedure TestEnumToNullableWideString;
+{$ENDIF}
   end;
 
   TTestFromFloat = class(TTestCase)
-  private
+  strict private
     fConverter: IValueConverter;
-  protected
+  strict protected
     procedure SetUp; override;
   published
     procedure TestFloatToInteger;
@@ -270,8 +298,10 @@ type
     procedure TestFloatToSmallInt;
     procedure TestFloatToShortInt;
     procedure TestFloatToString;
+{$IFNDEF NEXTGEN}
     procedure TestFloatToAnsiString;
     procedure TestFloatToWideString;
+{$ENDIF}
     procedure TestFloatToStringF;
     procedure TestFloatToNullableInteger;
     procedure TestFloatToNullableCardinal;
@@ -279,63 +309,77 @@ type
     procedure TestFloatToNullableShortInt;
     procedure TestFloatToNullableFloat;
     procedure TestFloatToNullableString;
+{$IFNDEF NEXTGEN}
     procedure TestFloatToNullableAnsiString;
     procedure TestFloatToNullableWideString;
+{$ENDIF}
   end;
 
   TTestFromColor = class(TTestCase)
-  private
+  strict private
     fConverter: IValueConverter;
-  protected
+  strict protected
     procedure SetUp; override;
   published
     procedure TestColorToInteger;
     procedure TestColorToCardinal;
     procedure TestColorToSmallInt;
     procedure TestColorToString;
+{$IFNDEF NEXTGEN}
     procedure TestColorToAnsiString;
     procedure TestColorToWideString;
+{$ENDIF}
     procedure TestColorToNullableColor;
     procedure TestColorToNullableInteger;
     procedure TestColorToNullableCardinal;
     procedure TestColorToNullableSmallInt;
     procedure TestColorToNullableString;
+{$IFNDEF NEXTGEN}
     procedure TestColorToNullableAnsiString;
     procedure TestColorToNullableWideString;
+{$ENDIF}
   end;
 
   TTestFromCurrency = class(TTestCase)
-  private
+  strict private
     fConverter: IValueConverter;
-  protected
+  strict protected
     procedure SetUp; override;
   published
     procedure TestCurrencyToString;
+{$IFNDEF NEXTGEN}
     procedure TestCurrencyToAnsiString;
     procedure TestCurrencyToWideString;
+{$ENDIF}
     procedure TestCurrencyToStringF;
     procedure TestCurrencyToNullableString;
+{$IFNDEF NEXTGEN}
     procedure TestCurrencyToNullableAnsiString;
     procedure TestCurrencyToNullableWideString;
+{$ENDIF}
   end;
 
   TTestFromDateTime = class(TTestCase)
-  private
+  strict private
     fConverter: IValueConverter;
-  protected
+  strict protected
     procedure SetUp; override;
   published
     procedure TestDateTimeToString;
+{$IFNDEF NEXTGEN}
     procedure TestDateTimeToAnsiString;
     procedure TestDateTimeToWideString;
+{$ENDIF}
     procedure TestDateTimeToStringF;
     procedure TestDateTimeToNullableString;
+{$IFNDEF NEXTGEN}
     procedure TestDateTimeToNullableAnsiString;
     procedure TestDateTimeToNullableWideString;
+{$ENDIF}
   end;
 
   TTestFromObject = class(TTestCase)
-  private
+  strict private
     fConverter: IValueConverter;
 
     type
@@ -345,26 +389,30 @@ type
       end;
 
       TTestObject = class(TInterfacedObject, ITestInterface)
-      protected
+      strict protected
         procedure Test;
       public
         function ToString: string; override;
       end;
-  protected
+  strict protected
     procedure SetUp; override;
   published
     procedure TestObjectToString;
+{$IFNDEF NEXTGEN}
     procedure TestObjectToAnsiString;
     procedure TestObjectToWideString;
+{$ENDIF}
     procedure TestObjectToInterface;
     procedure TestObjectToClass;
     procedure TestObjectToNullableString;
+{$IFNDEF NEXTGEN}
     procedure TestObjectToNullableAnsiString;
     procedure TestObjectToNullableWideString;
+{$ENDIF}
   end;
 
   TTestFromInterface = class(TTestCase)
-  private
+  strict private
     fConverter: IValueConverter;
 
     type
@@ -377,16 +425,16 @@ type
       public
         function ToString: string; override;
       end;
-  protected
+  strict protected
     procedure SetUp; override;
   published
     procedure TestInterfaceToObject;
   end;
 
   TTestFromNullable = class(TTestCase)
-  private
+  strict private
     fConverter: IValueConverter;
-  protected
+  strict protected
     procedure SetUp; override;
   published
     procedure TestNullableIntegerToInteger;
@@ -395,46 +443,59 @@ type
     procedure TestNullableIntegerToShortInt;
     procedure TestNullableIntegerToFloat;
     procedure TestNullableIntegerToString;
+{$IFNDEF NEXTGEN}
     procedure TestNullableIntegerToWideString;
     procedure TestNullableIntegerToAnsiString;
+{$ENDIF}
     procedure TestNullableCardinalToInteger;
     procedure TestNullableCardinalToCardinal;
     procedure TestNullableCardinalToSmallInt;
     procedure TestNullableCardinalToShortInt;
     procedure TestNullableCardinalToFloat;
     procedure TestNullableCardinalToString;
+{$IFNDEF NEXTGEN}
     procedure TestNullableCardinalToWideString;
     procedure TestNullableCardinalToAnsiString;
+{$ENDIF}
     procedure TestNullableSmallIntToInteger;
     procedure TestNullableSmallIntToCardinal;
     procedure TestNullableSmallIntToSmallInt;
     procedure TestNullableSmallIntToShortInt;
     procedure TestNullableSmallIntToFloat;
     procedure TestNullableSmallIntToString;
+{$IFNDEF NEXTGEN}
     procedure TestNullableSmallIntToWideString;
     procedure TestNullableSmallIntToAnsiString;
+{$ENDIF}
     procedure TestNullableShortIntToInteger;
     procedure TestNullableShortIntToCardinal;
     procedure TestNullableShortIntToSmallInt;
     procedure TestNullableShortIntToShortInt;
     procedure TestNullableShortIntToFloat;
     procedure TestNullableShortIntToString;
+{$IFNDEF NEXTGEN}
     procedure TestNullableShortIntToWideString;
     procedure TestNullableShortIntToAnsiString;
+{$ENDIF}
     procedure TestNullableFloatToInteger;
     procedure TestNullableFloatToCardinal;
     procedure TestNullableFloatToSmallInt;
     procedure TestNullableFloatToShortInt;
     procedure TestNullableFloatToString;
+{$IFNDEF NEXTGEN}
     procedure TestNullableFloatToAnsiString;
     procedure TestNullableFloatToWideString;
+{$ENDIF}
     procedure TestNullableStringToString;
+{$IFNDEF NEXTGEN}
     procedure TestNullableAnsiStringToString;
     procedure TestNullableWideStringToWideString;
+{$ENDIF}
     procedure TestNullableStringToInteger;
     procedure TestNullableStringToCardinal;
     procedure TestNullableStringToSmallInt;
     procedure TestNullableStringToShortInt;
+{$IFNDEF NEXTGEN}
     procedure TestNullableAnsiStringToInteger;
     procedure TestNullableAnsiStringToCardinal;
     procedure TestNullableAnsiStringToSmallInt;
@@ -443,21 +504,28 @@ type
     procedure TestNullableWideStringToCardinal;
     procedure TestNullableWideStringToSmallInt;
     procedure TestNullableWideStringToShortInt;
+{$ENDIF}
     procedure TestNullableStringToFloat;
+{$IFNDEF NEXTGEN}
     procedure TestNullableAnsiStringToFloat;
     procedure TestNullableWideStringToFloat;
+{$ENDIF}
     procedure TestNullableDateTimeToString;
+{$IFNDEF NEXTGEN}
     procedure TestNullableDateTimeToAnsiString;
     procedure TestNullableDateTimeToWideString;
+{$ENDIF}
     procedure TestNullableColorToString;
+{$IFNDEF NEXTGEN}
     procedure TestNullableColorToAnsiString;
     procedure TestNullableColorToWideString;
+{$ENDIF}
   end;
 
   TTestCustomTypes = class(TTestCase)
-  private
+  strict private
     fConverter: IValueConverter;
-  protected
+  strict protected
     procedure SetUp; override;
   published
     procedure TestCustomFloatToString;
@@ -469,10 +537,46 @@ type
 
 implementation
 
+{$I 'spring.inc'}
+
+{$DEFINE UseGenericUI} // for MACOS and other non Windows platforms
+{$IFDEF MSWINDOWS}
+  {$UNDEF UseGenericUI}
+{$ENDIF MSWINDOWS}
+
 uses
+{$IFDEF HAS_UNIT_SYSTEM_UITYPES}
+  System.UITypes,
+  System.UIConsts,
+{$ELSE}
   Graphics,
+{$ENDIF HAS_UNIT_SYSTEM_UITYPES}
   DateUtils,
   Spring;
+
+const
+// both UseGenericUI and non-UseGenericUI internally use
+// function System.UIConsts.ColorToString(Color: TColor): string;
+// which maps old style VCL color names to new-style System.UITypes.TColors consts,
+// or old-style Vcl.Graphics TColor consts.
+  RedString = 'clRed';
+  BlueString = 'clBlue';
+{$IFDEF HAS_UNIT_SYSTEM_UITYPES}
+  RedValue = TColors.Red;
+  BlueValue = TColors.Blue;
+{$ELSE}
+  RedValue = clRed;
+  BlueValue = clBlue;
+{$ENDIF HAS_UNIT_SYSTEM_UITYPES}
+
+{$IFDEF HAS_UNIT_SYSTEM_UITYPES}
+function ColorToRGB(i : TColor) : Longint;
+begin
+  if (Assigned(TColors.ColorToRGB)) then
+    Result := TColors.ColorToRGB(i)
+  else Result := i;
+end;
+{$ENDIF}
 
 
 {$REGION 'TTestFromString'}
@@ -492,19 +596,19 @@ begin
     TypeInfo(Int64));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Int64>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 
   outValue := fConverter.ConvertTo(TValue.From<string>('9223372036854775807'),
     TypeInfo(Int64));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Int64>(outInt));
-  CheckEquals(outInt, 9223372036854775807);
+  CheckEquals(9223372036854775807, outInt);
 
   outValue := fConverter.ConvertTo(TValue.From<string>('-9223372036854775808'),
     TypeInfo(Int64));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Int64>(outInt));
-  CheckEquals(outInt, -9223372036854775808);
+  CheckEquals(-9223372036854775808, outInt);
 end;
 
 procedure TTestFromString.TestStringToUInt64;
@@ -516,7 +620,7 @@ begin
     TypeInfo(UInt64));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<UInt64>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 
   {outValue := fConverter.ConvertTo(TValue.From<string>('18446744073709551615'),
     TypeInfo(UInt64));
@@ -534,19 +638,19 @@ begin
     TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Integer>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 
   outValue := fConverter.ConvertTo(TValue.From<string>('2147483647'),
     TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Integer>(outInt));
-  CheckEquals(outInt, 2147483647);
+  CheckEquals(2147483647, outInt);
 
   outValue := fConverter.ConvertTo(TValue.From<string>('-2147483648'),
     TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Integer>(outInt));
-  CheckEquals(outInt, -2147483648);
+  CheckEquals(-2147483648, outInt);
 end;
 
 procedure TTestFromString.TestStringToCardinal;
@@ -558,13 +662,13 @@ begin
     TypeInfo(Cardinal));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Cardinal>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 
   outValue := fConverter.ConvertTo(TValue.From<string>('4294967295'),
     TypeInfo(Cardinal));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Cardinal>(outInt));
-  CheckEquals(outInt, 4294967295);
+  CheckEquals(4294967295, outInt);
 end;
 
 procedure TTestFromString.TestStringToSmallInt;
@@ -576,19 +680,19 @@ begin
     TypeInfo(SmallInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<SmallInt>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 
   outValue := fConverter.ConvertTo(TValue.From<string>('32767'),
     TypeInfo(SmallInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<SmallInt>(outInt));
-  CheckEquals(outInt, 32767);
+  CheckEquals(32767, outInt);
 
   outValue := fConverter.ConvertTo(TValue.From<string>('-32768'),
     TypeInfo(SmallInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<SmallInt>(outInt));
-  CheckEquals(outInt, -32768);
+  CheckEquals(-32768, outInt);
 end;
 
 procedure TTestFromString.TestStringToWord;
@@ -600,13 +704,13 @@ begin
     TypeInfo(Word));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Word>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 
   outValue := fConverter.ConvertTo(TValue.From<string>('65535'),
     TypeInfo(Word));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Word>(outInt));
-  CheckEquals(outInt, 65535);
+  CheckEquals(65535, outInt);
 end;
 
 procedure TTestFromString.TestStringToShortInt;
@@ -618,19 +722,19 @@ begin
     TypeInfo(ShortInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<ShortInt>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 
   outValue := fConverter.ConvertTo(TValue.From<string>('127'),
     TypeInfo(ShortInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<ShortInt>(outInt));
-  CheckEquals(outInt, 127);
+  CheckEquals(127, outInt);
 
   outValue := fConverter.ConvertTo(TValue.From<string>('-128'),
     TypeInfo(ShortInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<ShortInt>(outInt));
-  CheckEquals(outInt, -128);
+  CheckEquals(-128, outInt);
 end;
 
 procedure TTestFromString.TestStringToByte;
@@ -642,13 +746,13 @@ begin
     TypeInfo(Byte));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Byte>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 
   outValue := fConverter.ConvertTo(TValue.From<string>('255'),
     TypeInfo(Byte));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Byte>(outInt));
-  CheckEquals(outInt, 255);
+  CheckEquals(255, outInt);
 end;
 
 procedure TTestFromString.TestStringToFloat;
@@ -660,7 +764,7 @@ begin
     TypeInfo(Extended));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Extended>(outFloat));
-  CheckEquals(outFloat, 1.11);
+  CheckEquals(1.11, outFloat);
 end;
 
 procedure TTestFromString.TestStringToEnum;
@@ -684,7 +788,7 @@ begin
     TypeInfo(Boolean));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Boolean>(outBool));
-  CheckEquals(outBool, True);
+  CheckEquals(True, outBool);
 end;
 
 procedure TTestFromString.TestStringToColor;
@@ -692,11 +796,11 @@ var
   outValue: TValue;
   outColor: TColor;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<string>('clBlue'),
+  outValue := fConverter.ConvertTo(TValue.From<string>(BlueString),
     TypeInfo(TColor));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TColor>(outColor));
-  CheckEquals(outColor, clBlue);
+  CheckEquals(BlueValue, outColor);
 end;
 
 procedure TTestFromString.TestStringToCurrency;
@@ -708,7 +812,7 @@ begin
     TypeInfo(Currency));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Currency>(outCurrency));
-  CheckEquals(outCurrency, 1.11);
+  CheckEquals(1.11, outCurrency);
 end;
 
 procedure TTestFromString.TestStringToDateTime;
@@ -722,7 +826,7 @@ begin
     TypeInfo(TDateTime));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TDateTime>(outStamp));
-  CheckEqualsString(DateTimeToStr(outStamp), DateTimeToStr(stamp));
+  CheckEqualsString(DateTimeToStr(stamp), DateTimeToStr(outStamp));
 end;
 
 procedure TTestFromString.TestStringToDateTimeF;
@@ -734,9 +838,10 @@ begin
     TypeInfo(TDateTime), TValue.From<string>('dd.mm.yyyy'));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TDateTime>(outStamp));
-  CheckEqualsString(FormatDateTime('dd.mm.yyyy', outStamp), '10.10.2010');
+  CheckEqualsString('10.10.2010', FormatDateTime('dd.mm.yyyy', outStamp));
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromString.TestStringToAnsiString;
 var
   outValue: TValue;
@@ -746,7 +851,7 @@ begin
     TypeInfo(AnsiString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
-  CheckEqualsString(string(outAStr), 'Test AnsiString');
+  CheckEqualsString('Test AnsiString', string(outAStr));
 end;
 
 procedure TTestFromString.TestStringToWideString;
@@ -758,8 +863,9 @@ begin
     TypeInfo(WideString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<WideString>(outWStr));
-  CheckEquals(outWStr, 'Test WideString');
+  CheckEquals(WideString('Test WideString'), outWStr);
 end;
+{$ENDIF NEXTGEN}
 
 procedure TTestFromString.TestStringToNullableString;
 var
@@ -771,9 +877,10 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<string>>(outNullable));
   CheckTrue(outNullable.HasValue);
-  CheckEquals(outNullable.Value, 'Test');
+  CheckEquals('Test', outNullable.Value);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromString.TestStringToNullableAnsiString;
 var
   outValue: TValue;
@@ -784,7 +891,7 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<AnsiString>>(outNullable));
   CheckTrue(outNullable.HasValue);
-  CheckEquals(outNullable.Value, AnsiString('Test'));
+  CheckEquals(AnsiString('Test'), outNullable.Value);
 end;
 
 procedure TTestFromString.TestStringToNullableWideString;
@@ -797,8 +904,9 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<WideString>>(outNullable));
   CheckTrue(outNullable.HasValue);
-  CheckEquals(outNullable.Value, 'Test');
+  CheckEquals(WideString('Test'), outNullable.Value);
 end;
+{$ENDIF}
 
 procedure TTestFromString.TestStringToNullableInteger;
 var
@@ -810,7 +918,7 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Integer>>(outNullable));
   CheckTrue(outNullable.HasValue);
-  CheckEquals(outNullable.Value, 15);
+  CheckEquals(15, outNullable.Value);
 end;
 
 procedure TTestFromString.TestStringToNullableCardinal;
@@ -823,7 +931,7 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Cardinal>>(outNullable));
   CheckTrue(outNullable.HasValue);
-  CheckEquals(outNullable.Value, 15);
+  CheckEquals(15, outNullable.Value);
 end;
 
 procedure TTestFromString.TestStringToNullableInt64;
@@ -836,7 +944,7 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Int64>>(outNullable));
   CheckTrue(outNullable.HasValue);
-  CheckEquals(outNullable.Value, 15);
+  CheckEquals(15, outNullable.Value);
 end;
 
 procedure TTestFromString.TestStringToNullableUInt64;
@@ -849,7 +957,7 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<UInt64>>(outNullable));
   CheckTrue(outNullable.HasValue);
-  CheckEquals(outNullable.Value, 15);
+  CheckEquals(15, outNullable.Value);
 end;
 
 procedure TTestFromString.TestStringToNullableSmallInt;
@@ -862,7 +970,7 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<SmallInt>>(outNullable));
   CheckTrue(outNullable.HasValue);
-  CheckEquals(outNullable.Value, 15);
+  CheckEquals(15, outNullable.Value);
 end;
 
 procedure TTestFromString.TestStringToNullableWord;
@@ -875,7 +983,7 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Word>>(outNullable));
   CheckTrue(outNullable.HasValue);
-  CheckEquals(outNullable.Value, 15);
+  CheckEquals(15, outNullable.Value);
 end;
 
 procedure TTestFromString.TestStringToNullableShortInt;
@@ -888,7 +996,7 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<ShortInt>>(outNullable));
   CheckTrue(outNullable.HasValue);
-  CheckEquals(outNullable.Value, 15);
+  CheckEquals(15, outNullable.Value);
 end;
 
 procedure TTestFromString.TestStringToNullableByte;
@@ -901,7 +1009,7 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Byte>>(outNullable));
   CheckTrue(outNullable.HasValue);
-  CheckEquals(outNullable.Value, 15);
+  CheckEquals(15, outNullable.Value);
 end;
 
 procedure TTestFromString.TestStringToNullableFloat;
@@ -913,7 +1021,7 @@ begin
     TypeInfo(Nullable<Extended>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Extended>>(outNullable));
-  CheckEquals(outNullable.Value, 1.11);
+  CheckEquals(1.11, outNullable.Value);
 end;
 
 procedure TTestFromString.TestStringToNullableBoolean;
@@ -925,7 +1033,7 @@ begin
     TypeInfo(Nullable<Boolean>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Boolean>>(outNullable));
-  CheckEquals(outNullable.Value, True);
+  CheckEquals(True, outNullable.Value);
 end;
 
 procedure TTestFromString.TestStringToNullableColor;
@@ -933,11 +1041,11 @@ var
   outValue: TValue;
   outNullable: Nullable<TColor>;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<string>(ColorToString(clRed)),
+  outValue := fConverter.ConvertTo(TValue.From<string>(ColorToString(RedValue)),
     TypeInfo(Nullable<TColor>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<TColor>>(outNullable));
-  CheckEquals(ColorToString(outNullable.Value), 'clRed');
+  CheckEquals(RedString, ColorToString(outNullable.Value));
 end;
 
 procedure TTestFromString.TestStringToNullableCurrency;
@@ -949,7 +1057,7 @@ begin
     TypeInfo(Nullable<Currency>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Currency>>(outNullable));
-  CheckEquals(outNullable.Value, 1.11);
+  CheckEquals(1.11, outNullable.Value);
 end;
 
 procedure TTestFromString.TestStringToNullableDateTime;
@@ -963,7 +1071,7 @@ begin
     TypeInfo(Nullable<TDateTime>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<TDateTime>>(outNullable));
-  CheckEqualsString(DateTimeToStr(outNullable.Value), DateTimeToStr(stamp));
+  CheckEqualsString(DateTimeToStr(stamp), DateTimeToStr(outNullable.Value));
 end;
 
 {$ENDREGION}
@@ -986,7 +1094,7 @@ begin
     TypeInfo(Boolean));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Boolean>(outBool));
-  CheckEquals(outBool, True);
+  CheckEquals(True, outBool);
 end;
 
 procedure TTestFromInteger.TestIntegerToEnum;
@@ -1010,7 +1118,7 @@ begin
     TypeInfo(Extended));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Extended>(outFloat));
-  CheckEquals(outValue.AsExtended, 1.0);
+  CheckEquals(1.0, outValue.AsExtended);
 end;
 
 procedure TTestFromInteger.TestIntegerToString;
@@ -1022,9 +1130,10 @@ begin
     TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEquals(outStr, '1');
+  CheckEquals('1', outStr);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromInteger.TestIntegerToAnsiString;
 var
   outValue: TValue;
@@ -1034,7 +1143,7 @@ begin
     TypeInfo(AnsiString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
-  CheckEquals(outAStr, AnsiString('1'));
+  CheckEquals(AnsiString('1'), outAStr);
 end;
 
 procedure TTestFromInteger.TestIntegerToWideString;
@@ -1046,8 +1155,9 @@ begin
     TypeInfo(WideString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<WideString>(outWStr));
-  CheckEquals(outWStr, '1');
+  CheckEquals('1', outWStr);
 end;
+{$ENDIF}
 
 procedure TTestFromInteger.TestIntegerToNullableInt64;
 var
@@ -1058,19 +1168,19 @@ begin
     TypeInfo(Nullable<Int64>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Int64>>(outNullable));
-  CheckEquals(outNullable.Value, 1);
+  CheckEquals(1, outNullable.Value);
 
   outValue := fConverter.ConvertTo(TValue.From<Integer>(2147483647),
     TypeInfo(Nullable<Int64>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Int64>>(outNullable));
-  CheckEquals(outNullable.Value, 2147483647);
+  CheckEquals(2147483647, outNullable.Value);
 
   outValue := fConverter.ConvertTo(TValue.From<Integer>(-2147483647),
     TypeInfo(Nullable<Int64>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Int64>>(outNullable));
-  CheckEquals(outNullable.Value, -2147483647);
+  CheckEquals(-2147483647, outNullable.Value);
 end;
 
 procedure TTestFromInteger.TestIntegerToNullableInteger;
@@ -1082,7 +1192,7 @@ begin
     TypeInfo(Nullable<Integer>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Integer>>(outNullable));
-  CheckEquals(outNullable.Value, 1);
+  CheckEquals(1, outNullable.Value);
 end;
 
 procedure TTestFromInteger.TestIntegerToNullableCardinal;
@@ -1094,7 +1204,7 @@ begin
     TypeInfo(Nullable<Cardinal>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Cardinal>>(outNullable));
-  CheckEquals(outNullable.Value, 1);
+  CheckEquals(1, outNullable.Value);
 end;
 
 procedure TTestFromInteger.TestIntegerToNullableSmallInt;
@@ -1106,7 +1216,7 @@ begin
     TypeInfo(Nullable<SmallInt>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<SmallInt>>(outNullable));
-  CheckEquals(outNullable.Value, 1);
+  CheckEquals(1, outNullable.Value);
 end;
 
 procedure TTestFromInteger.TestIntegerToNullableShortInt;
@@ -1118,7 +1228,7 @@ begin
     TypeInfo(Nullable<ShortInt>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<ShortInt>>(outNullable));
-  CheckEquals(outNullable.Value, 1);
+  CheckEquals(1, outNullable.Value);
 end;
 
 procedure TTestFromInteger.TestIntegerToNullableString;
@@ -1130,7 +1240,7 @@ begin
     TypeInfo(Nullable<string>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<string>>(outNullable));
-  CheckEqualsString(outNullable.Value, '1');
+  CheckEqualsString('1', outNullable.Value);
 end;
 
 procedure TTestFromInteger.TestIntegerToNullableUInt64;
@@ -1142,15 +1252,16 @@ begin
     TypeInfo(Nullable<UInt64>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<UInt64>>(outNullable));
-  CheckEquals(outNullable.Value, 1);
+  CheckEquals(1, outNullable.Value);
 
   outValue := fConverter.ConvertTo(TValue.From<Integer>(2147483647),
     TypeInfo(Nullable<UInt64>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<UInt64>>(outNullable));
-  CheckEquals(outNullable.Value, 2147483647);
+  CheckEquals(2147483647, outNullable.Value);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromInteger.TestIntegerToNullableAnsiString;
 var
   outValue: TValue;
@@ -1160,7 +1271,7 @@ begin
     TypeInfo(Nullable<AnsiString>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<AnsiString>>(outNullable));
-  CheckEquals(outNullable.Value, AnsiString('1'));
+  CheckEquals(AnsiString('1'), outNullable.Value);
 end;
 
 procedure TTestFromInteger.TestIntegerToNullableWideString;
@@ -1172,8 +1283,9 @@ begin
     TypeInfo(Nullable<WideString>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<WideString>>(outNullable));
-  CheckEquals(outNullable.Value, '1');
+  CheckEquals('1', outNullable.Value);
 end;
+{$ENDIF}
 
 procedure TTestFromInteger.TestIntegerToNullableWord;
 var
@@ -1184,13 +1296,13 @@ begin
     TypeInfo(Nullable<Word>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Word>>(outInt));
-  CheckEquals(outInt.Value, 1);
+  CheckEquals(1, outInt.Value);
 
   outValue := fConverter.ConvertTo(TValue.From<Integer>(65535),
     TypeInfo(Nullable<Word>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Word>>(outInt));
-  CheckEquals(outInt.Value, 65535);
+  CheckEquals(65535, outInt.Value);
 end;
 
 procedure TTestFromInteger.TestIntegerToNullableBoolean;
@@ -1214,13 +1326,13 @@ begin
     TypeInfo(Nullable<Byte>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Byte>>(outInt));
-  CheckEquals(outInt.Value, 1);
+  CheckEquals(1, outInt.Value);
 
   outValue := fConverter.ConvertTo(TValue.From<Integer>(255),
     TypeInfo(Nullable<Byte>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Byte>>(outInt));
-  CheckEquals(outInt.Value, 255);
+  CheckEquals(255, outInt.Value);
 end;
 
 procedure TTestFromInteger.TestIntegerToNullableFloat;
@@ -1232,7 +1344,7 @@ begin
     TypeInfo(Nullable<Extended>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Extended>>(outNullable));
-  CheckEquals(outNullable.Value, 0.0);
+  CheckEquals(0.0, outNullable.Value);
 end;
 
 {$ENDREGION}
@@ -1255,7 +1367,7 @@ begin
     TypeInfo(Boolean));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Boolean>(outBool));
-  CheckEquals(outBool, True);
+  CheckEquals(True, outBool);
 end;
 
 procedure TTestFromCardinal.TestCardinalToEnum;
@@ -1279,7 +1391,7 @@ begin
     TypeInfo(Extended));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Extended>(outFloat));
-  CheckEquals(outValue.AsExtended, 1.0);
+  CheckEquals(1.0, outValue.AsExtended);
 end;
 
 procedure TTestFromCardinal.TestCardinalToString;
@@ -1291,9 +1403,10 @@ begin
     TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEquals(outStr, '1');
+  CheckEquals('1', outStr);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromCardinal.TestCardinalToAnsiString;
 var
   outValue: TValue;
@@ -1303,7 +1416,7 @@ begin
     TypeInfo(AnsiString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
-  CheckEquals(outAStr, AnsiString('1'));
+  CheckEquals(AnsiString('1'), outAStr);
 end;
 
 procedure TTestFromCardinal.TestCardinalToWideString;
@@ -1315,8 +1428,9 @@ begin
     TypeInfo(WideString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<WideString>(outWStr));
-  CheckEquals(outWStr, '1');
+  CheckEquals('1', outWStr);
 end;
+{$ENDIF}
 
 procedure TTestFromCardinal.TestCardinalToNullableInt64;
 var
@@ -1327,13 +1441,13 @@ begin
     TypeInfo(Nullable<Int64>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Int64>>(outNullable));
-  CheckEquals(outNullable.Value, 1);
+  CheckEquals(1, outNullable.Value);
 
   outValue := fConverter.ConvertTo(TValue.From<Cardinal>(2147483647),
     TypeInfo(Nullable<Int64>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Int64>>(outNullable));
-  CheckEquals(outNullable.Value, 2147483647);
+  CheckEquals(2147483647, outNullable.Value);
 end;
 
 procedure TTestFromCardinal.TestCardinalToNullableInteger;
@@ -1345,7 +1459,7 @@ begin
     TypeInfo(Nullable<Integer>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Integer>>(outNullable));
-  CheckEquals(outNullable.Value, 1);
+  CheckEquals(1, outNullable.Value);
 end;
 
 procedure TTestFromCardinal.TestCardinalToNullableCardinal;
@@ -1357,7 +1471,7 @@ begin
     TypeInfo(Nullable<Cardinal>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Cardinal>>(outNullable));
-  CheckEquals(outNullable.Value, 1);
+  CheckEquals(1, outNullable.Value);
 end;
 
 procedure TTestFromCardinal.TestCardinalToNullableSmallInt;
@@ -1369,7 +1483,7 @@ begin
     TypeInfo(Nullable<SmallInt>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<SmallInt>>(outNullable));
-  CheckEquals(outNullable.Value, 1);
+  CheckEquals(1, outNullable.Value);
 end;
 
 procedure TTestFromCardinal.TestCardinalToNullableShortInt;
@@ -1381,7 +1495,7 @@ begin
     TypeInfo(Nullable<ShortInt>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<ShortInt>>(outNullable));
-  CheckEquals(outNullable.Value, 1);
+  CheckEquals(1, outNullable.Value);
 end;
 
 procedure TTestFromCardinal.TestCardinalToNullableString;
@@ -1393,7 +1507,7 @@ begin
     TypeInfo(Nullable<string>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<string>>(outNullable));
-  CheckEqualsString(outNullable.Value, '1');
+  CheckEqualsString('1', outNullable.Value);
 end;
 
 procedure TTestFromCardinal.TestCardinalToNullableUInt64;
@@ -1405,15 +1519,16 @@ begin
     TypeInfo(Nullable<UInt64>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<UInt64>>(outNullable));
-  CheckEquals(outNullable.Value, 1);
+  CheckEquals(1, outNullable.Value);
 
   outValue := fConverter.ConvertTo(TValue.From<Cardinal>(2147483647),
     TypeInfo(Nullable<UInt64>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<UInt64>>(outNullable));
-  CheckEquals(outNullable.Value, 2147483647);
+  CheckEquals(2147483647, outNullable.Value);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromCardinal.TestCardinalToNullableAnsiString;
 var
   outValue: TValue;
@@ -1423,7 +1538,7 @@ begin
     TypeInfo(Nullable<AnsiString>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<AnsiString>>(outNullable));
-  CheckEquals(outNullable.Value, AnsiString('1'));
+  CheckEquals(AnsiString('1'), outNullable.Value);
 end;
 
 procedure TTestFromCardinal.TestCardinalToNullableWideString;
@@ -1435,8 +1550,9 @@ begin
     TypeInfo(Nullable<WideString>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<WideString>>(outNullable));
-  CheckEquals(outNullable.Value, '1');
+  CheckEquals('1', outNullable.Value);
 end;
+{$ENDIF}
 
 procedure TTestFromCardinal.TestCardinalToNullableWord;
 var
@@ -1447,13 +1563,13 @@ begin
     TypeInfo(Nullable<Word>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Word>>(outInt));
-  CheckEquals(outInt.Value, 1);
+  CheckEquals(1, outInt.Value);
 
   outValue := fConverter.ConvertTo(TValue.From<Cardinal>(65535),
     TypeInfo(Nullable<Word>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Word>>(outInt));
-  CheckEquals(outInt.Value, 65535);
+  CheckEquals(65535, outInt.Value);
 end;
 
 procedure TTestFromCardinal.TestCardinalToNullableBoolean;
@@ -1477,13 +1593,13 @@ begin
     TypeInfo(Nullable<Byte>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Byte>>(outInt));
-  CheckEquals(outInt.Value, 1);
+  CheckEquals(1, outInt.Value);
 
   outValue := fConverter.ConvertTo(TValue.From<Cardinal>(255),
     TypeInfo(Nullable<Byte>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Byte>>(outInt));
-  CheckEquals(outInt.Value, 255);
+  CheckEquals(255, outInt.Value);
 end;
 
 procedure TTestFromCardinal.TestCardinalToNullableFloat;
@@ -1495,7 +1611,7 @@ begin
     TypeInfo(Nullable<Extended>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Extended>>(outNullable));
-  CheckEquals(outNullable.Value, 0.0);
+  CheckEquals(0.0, outNullable.Value);
 end;
 
 {$ENDREGION}
@@ -1518,7 +1634,7 @@ begin
     TypeInfo(Boolean));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Boolean>(outBool));
-  CheckEquals(outBool, True);
+  CheckEquals(True, outBool);
 end;
 
 procedure TTestFromSmallInt.TestSmallIntToEnum;
@@ -1542,7 +1658,7 @@ begin
     TypeInfo(Extended));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Extended>(outFloat));
-  CheckEquals(outValue.AsExtended, 1.0);
+  CheckEquals(1.0, outValue.AsExtended);
 end;
 
 procedure TTestFromSmallInt.TestSmallIntToString;
@@ -1554,9 +1670,10 @@ begin
     TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEquals(outStr, '1');
+  CheckEquals('1', outStr);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromSmallInt.TestSmallIntToAnsiString;
 var
   outValue: TValue;
@@ -1566,7 +1683,7 @@ begin
     TypeInfo(AnsiString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
-  CheckEquals(outAStr, AnsiString('1'));
+  CheckEquals(AnsiString('1'), outAStr);
 end;
 
 procedure TTestFromSmallInt.TestSmallIntToWideString;
@@ -1578,8 +1695,9 @@ begin
     TypeInfo(WideString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<WideString>(outWStr));
-  CheckEquals(outWStr, '1');
+  CheckEquals('1', outWStr);
 end;
+{$ENDIF}
 
 procedure TTestFromSmallInt.TestSmallIntToNullableInteger;
 var
@@ -1590,7 +1708,7 @@ begin
     TypeInfo(Nullable<Integer>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Integer>>(outNullable));
-  CheckEquals(outNullable.Value, 1);
+  CheckEquals(1, outNullable.Value);
 end;
 
 procedure TTestFromSmallInt.TestSmallIntToNullableCardinal;
@@ -1602,7 +1720,7 @@ begin
     TypeInfo(Nullable<Cardinal>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Cardinal>>(outNullable));
-  CheckEquals(outNullable.Value, 1);
+  CheckEquals(1, outNullable.Value);
 end;
 
 procedure TTestFromSmallInt.TestSmallIntToNullableSmallInt;
@@ -1614,7 +1732,7 @@ begin
     TypeInfo(Nullable<SmallInt>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<SmallInt>>(outNullable));
-  CheckEquals(outNullable.Value, 1);
+  CheckEquals(1, outNullable.Value);
 end;
 
 procedure TTestFromSmallInt.TestSmallIntToNullableShortInt;
@@ -1626,7 +1744,7 @@ begin
     TypeInfo(Nullable<ShortInt>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<ShortInt>>(outNullable));
-  CheckEquals(outNullable.Value, 1);
+  CheckEquals(1, outNullable.Value);
 end;
 
 procedure TTestFromSmallInt.TestSmallIntToNullableString;
@@ -1638,9 +1756,10 @@ begin
     TypeInfo(Nullable<string>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<string>>(outNullable));
-  CheckEqualsString(outNullable.Value, '1');
+  CheckEqualsString('1', outNullable.Value);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromSmallInt.TestSmallIntToNullableAnsiString;
 var
   outValue: TValue;
@@ -1650,7 +1769,7 @@ begin
     TypeInfo(Nullable<AnsiString>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<AnsiString>>(outNullable));
-  CheckEquals(outNullable.Value, AnsiString('1'));
+  CheckEquals(AnsiString('1'), outNullable.Value);
 end;
 
 procedure TTestFromSmallInt.TestSmallIntToNullableWideString;
@@ -1662,8 +1781,9 @@ begin
     TypeInfo(Nullable<WideString>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<WideString>>(outNullable));
-  CheckEquals(outNullable.Value, '1');
+  CheckEquals('1', outNullable.Value);
 end;
+{$ENDIF}
 
 procedure TTestFromSmallInt.TestSmallIntToNullableBoolean;
 var
@@ -1686,7 +1806,7 @@ begin
     TypeInfo(Nullable<Extended>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Extended>>(outNullable));
-  CheckEquals(outNullable.Value, 0.0);
+  CheckEquals(0.0, outNullable.Value);
 end;
 
 {$ENDREGION}
@@ -1709,7 +1829,7 @@ begin
     TypeInfo(Boolean));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Boolean>(outBool));
-  CheckEquals(outBool, True);
+  CheckEquals(True, outBool);
 end;
 
 procedure TTestFromShortInt.TestShortIntToEnum;
@@ -1733,7 +1853,7 @@ begin
     TypeInfo(Extended));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Extended>(outFloat));
-  CheckEquals(outValue.AsExtended, 1.0);
+  CheckEquals(1.0, outValue.AsExtended);
 end;
 
 procedure TTestFromShortInt.TestShortIntToString;
@@ -1745,9 +1865,10 @@ begin
     TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEquals(outStr, '1');
+  CheckEquals('1', outStr);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromShortInt.TestShortIntToAnsiString;
 var
   outValue: TValue;
@@ -1757,7 +1878,7 @@ begin
     TypeInfo(AnsiString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
-  CheckEquals(outAStr, AnsiString('1'));
+  CheckEquals(AnsiString('1'), outAStr);
 end;
 
 procedure TTestFromShortInt.TestShortIntToWideString;
@@ -1769,8 +1890,9 @@ begin
     TypeInfo(WideString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<WideString>(outWStr));
-  CheckEquals(outWStr, '1');
+  CheckEquals('1', outWStr);
 end;
+{$ENDIF}
 
 procedure TTestFromShortInt.TestShortIntToNullableInteger;
 var
@@ -1781,7 +1903,7 @@ begin
     TypeInfo(Nullable<Integer>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Integer>>(outNullable));
-  CheckEquals(outNullable.Value, 1);
+  CheckEquals(1, outNullable.Value);
 end;
 
 procedure TTestFromShortInt.TestShortIntToNullableCardinal;
@@ -1793,7 +1915,7 @@ begin
     TypeInfo(Nullable<Cardinal>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Cardinal>>(outNullable));
-  CheckEquals(outNullable.Value, 1);
+  CheckEquals(1, outNullable.Value);
 end;
 
 procedure TTestFromShortInt.TestShortIntToNullableSmallInt;
@@ -1805,7 +1927,7 @@ begin
     TypeInfo(Nullable<SmallInt>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<SmallInt>>(outNullable));
-  CheckEquals(outNullable.Value, 1);
+  CheckEquals(1, outNullable.Value);
 end;
 
 procedure TTestFromShortInt.TestShortIntToNullableShortInt;
@@ -1817,7 +1939,7 @@ begin
     TypeInfo(Nullable<ShortInt>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<ShortInt>>(outNullable));
-  CheckEquals(outNullable.Value, 1);
+  CheckEquals(1, outNullable.Value);
 end;
 
 procedure TTestFromShortInt.TestShortIntToNullableString;
@@ -1829,9 +1951,10 @@ begin
     TypeInfo(Nullable<string>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<string>>(outNullable));
-  CheckEqualsString(outNullable.Value, '1');
+  CheckEqualsString('1', outNullable.Value);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromShortInt.TestShortIntToNullableAnsiString;
 var
   outValue: TValue;
@@ -1841,7 +1964,7 @@ begin
     TypeInfo(Nullable<AnsiString>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<AnsiString>>(outNullable));
-  CheckEquals(outNullable.Value, AnsiString('1'));
+  CheckEquals(AnsiString('1'), outNullable.Value);
 end;
 
 procedure TTestFromShortInt.TestShortIntToNullableWideString;
@@ -1853,8 +1976,9 @@ begin
     TypeInfo(Nullable<WideString>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<WideString>>(outNullable));
-  CheckEquals(outNullable.Value, '1');
+  CheckEquals('1', outNullable.Value);
 end;
+{$ENDIF}
 
 procedure TTestFromShortInt.TestShortIntToNullableBoolean;
 var
@@ -1877,7 +2001,7 @@ begin
     TypeInfo(Nullable<Extended>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Extended>>(outNullable));
-  CheckEquals(outNullable.Value, 0.0);
+  CheckEquals(0.0, outNullable.Value);
 end;
 
 {$ENDREGION}
@@ -1900,7 +2024,7 @@ begin
     TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Integer>(outInt));
-  CheckEquals(outInt, 0);
+  CheckEquals(0, outInt);
 end;
 
 procedure TTestFromBoolean.TestBooleanToCardinal;
@@ -1912,7 +2036,7 @@ begin
     TypeInfo(Cardinal));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Cardinal>(outInt));
-  CheckEquals(outInt, 0);
+  CheckEquals(0, outInt);
 end;
 
 procedure TTestFromBoolean.TestBooleanToSmallInt;
@@ -1924,7 +2048,7 @@ begin
     TypeInfo(SmallInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<SmallInt>(outInt));
-  CheckEquals(outInt, 0);
+  CheckEquals(0, outInt);
 end;
 
 procedure TTestFromBoolean.TestBooleanToShortInt;
@@ -1936,7 +2060,7 @@ begin
     TypeInfo(ShortInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<ShortInt>(outInt));
-  CheckEquals(outInt, 0);
+  CheckEquals(0, outInt);
 end;
 
 procedure TTestFromBoolean.TestBooleanToString;
@@ -1948,9 +2072,10 @@ begin
     TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEqualsString(outStr, 'False');
+  CheckEqualsString('False', outStr);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromBoolean.TestBooleanToAnsiString;
 var
   outValue: TValue;
@@ -1960,7 +2085,7 @@ begin
     TypeInfo(AnsiString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
-  CheckEquals(outAStr, AnsiString('False'));
+  CheckEquals(AnsiString('False'), outAStr);
 end;
 
 procedure TTestFromBoolean.TestBooleanToWideString;
@@ -1972,8 +2097,9 @@ begin
     TypeInfo(WideString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<WideString>(outWStr));
-  CheckEquals(outWStr, 'False');
+  CheckEquals(WideString('False'), outWStr);
 end;
+{$ENDIF}
 
 procedure TTestFromBoolean.TestBooleanToNullableBoolean;
 var
@@ -1996,7 +2122,7 @@ begin
     TypeInfo(Nullable<Integer>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Integer>>(outNullable));
-  CheckEquals(outNullable.Value, 0);
+  CheckEquals(0, outNullable.Value);
 end;
 
 procedure TTestFromBoolean.TestBooleanToNullableCardinal;
@@ -2008,7 +2134,7 @@ begin
     TypeInfo(Nullable<Cardinal>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Cardinal>>(outNullable));
-  CheckEquals(outNullable.Value, 0);
+  CheckEquals(0, outNullable.Value);
 end;
 
 procedure TTestFromBoolean.TestBooleanToNullableSmallInt;
@@ -2020,7 +2146,7 @@ begin
     TypeInfo(Nullable<SmallInt>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<SmallInt>>(outNullable));
-  CheckEquals(outNullable.Value, 0);
+  CheckEquals(0, outNullable.Value);
 end;
 
 procedure TTestFromBoolean.TestBooleanToNullableShortInt;
@@ -2032,7 +2158,7 @@ begin
     TypeInfo(Nullable<ShortInt>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<ShortInt>>(outNullable));
-  CheckEquals(outNullable.Value, 0);
+  CheckEquals(0, outNullable.Value);
 end;
 
 procedure TTestFromBoolean.TestBooleanToNullableString;
@@ -2044,9 +2170,10 @@ begin
     TypeInfo(Nullable<string>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<string>>(outNullable));
-  CheckEqualsString(outNullable.Value, 'False');
+  CheckEqualsString('False', outNullable.Value);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromBoolean.TestBooleanToNullableAnsiString;
 var
   outValue: TValue;
@@ -2056,7 +2183,7 @@ begin
     TypeInfo(Nullable<AnsiString>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<AnsiString>>(outNullable));
-  CheckEquals(outNullable.Value, AnsiString('False'));
+  CheckEquals(AnsiString('False'), outNullable.Value);
 end;
 
 procedure TTestFromBoolean.TestBooleanToNullableWideString;
@@ -2068,8 +2195,9 @@ begin
     TypeInfo(Nullable<WideString>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<WideString>>(outNullable));
-  CheckEqualsString(outNullable.Value, 'False');
+  CheckEqualsString('False', outNullable.Value);
 end;
+{$ENDIF}
 
 {$ENDREGION}
 
@@ -2091,9 +2219,10 @@ begin
     TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEquals(outStr, 'teFirst');
+  CheckEquals('teFirst', outStr);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromEnum.TestEnumToAnsiString;
 var
   outValue: TValue;
@@ -2103,7 +2232,7 @@ begin
     TypeInfo(AnsiString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
-  CheckEquals(outAStr, AnsiString('teFirst'));
+  CheckEquals(AnsiString('teFirst'), outAStr);
 end;
 
 procedure TTestFromEnum.TestEnumToWideString;
@@ -2115,8 +2244,9 @@ begin
     TypeInfo(WideString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<WideString>(outWStr));
-  CheckEquals(outWStr, 'teFirst');
+  CheckEquals(WideString('teFirst'), outWStr);
 end;
+{$ENDIF}
 
 procedure TTestFromEnum.TestEnumToInteger;
 var
@@ -2127,7 +2257,7 @@ begin
     TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Integer>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromEnum.TestEnumToCardinal;
@@ -2139,7 +2269,7 @@ begin
     TypeInfo(Cardinal));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Cardinal>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromEnum.TestEnumToSmallInt;
@@ -2151,7 +2281,7 @@ begin
     TypeInfo(SmallInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<SmallInt>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromEnum.TestEnumToShortInt;
@@ -2163,7 +2293,7 @@ begin
     TypeInfo(ShortInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<ShortInt>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromEnum.TestEnumToNullableString;
@@ -2175,9 +2305,10 @@ begin
     TypeInfo(Nullable<string>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<string>>(outNullable));
-  CheckEqualsString(outNullable.Value, 'teFirst');
+  CheckEqualsString('teFirst', outNullable.Value);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromEnum.TestEnumToNullableAnsiString;
 var
   outValue: TValue;
@@ -2187,7 +2318,7 @@ begin
     TypeInfo(Nullable<AnsiString>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<AnsiString>>(outNullable));
-  CheckEquals(outNullable.Value, AnsiString('teFirst'));
+  CheckEquals(AnsiString('teFirst'), outNullable.Value);
 end;
 
 procedure TTestFromEnum.TestEnumToNullableWideString;
@@ -2199,8 +2330,9 @@ begin
     TypeInfo(Nullable<WideString>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<WideString>>(outNullable));
-  CheckEquals(outNullable.Value, 'teFirst');
+  CheckEquals(WideString('teFirst'), outNullable.Value);
 end;
+{$ENDIF}
 
 procedure TTestFromEnum.TestEnumToNullableInteger;
 var
@@ -2211,7 +2343,7 @@ begin
     TypeInfo(Nullable<Integer>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Integer>>(outNullable));
-  CheckEquals(outNullable.Value, 2);
+  CheckEquals(2, outNullable.Value);
 end;
 
 procedure TTestFromEnum.TestEnumToNullableCardinal;
@@ -2223,7 +2355,7 @@ begin
     TypeInfo(Nullable<Cardinal>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Cardinal>>(outNullable));
-  CheckEquals(outNullable.Value, 2);
+  CheckEquals(2, outNullable.Value);
 end;
 
 procedure TTestFromEnum.TestEnumToNullableSmallInt;
@@ -2235,7 +2367,7 @@ begin
     TypeInfo(Nullable<SmallInt>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<SmallInt>>(outNullable));
-  CheckEquals(outNullable.Value, 2);
+  CheckEquals(2, outNullable.Value);
 end;
 
 procedure TTestFromEnum.TestEnumToNullableShortInt;
@@ -2247,7 +2379,7 @@ begin
     TypeInfo(Nullable<ShortInt>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<ShortInt>>(outNullable));
-  CheckEquals(outNullable.Value, 2);
+  CheckEquals(2, outNullable.Value);
 end;
 
 {$ENDREGION}
@@ -2270,7 +2402,7 @@ begin
     TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Integer>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromFloat.TestFloatToCardinal;
@@ -2282,7 +2414,7 @@ begin
     TypeInfo(Cardinal));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Cardinal>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromFloat.TestFloatToSmallInt;
@@ -2294,7 +2426,7 @@ begin
     TypeInfo(SmallInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<SmallInt>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromFloat.TestFloatToShortInt;
@@ -2306,7 +2438,7 @@ begin
     TypeInfo(ShortInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<ShortInt>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromFloat.TestFloatToString;
@@ -2318,9 +2450,10 @@ begin
     TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEquals(outStr, FloatToStr(1.11));
+  CheckEquals(FloatToStr(1.11), outStr);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromFloat.TestFloatToAnsiString;
 var
   outValue: TValue;
@@ -2330,7 +2463,7 @@ begin
     TypeInfo(AnsiString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
-  CheckEquals(outAStr, AnsiString(FloatToStr(1.11)));
+  CheckEquals(AnsiString(FloatToStr(1.11)), outAStr);
 end;
 
 procedure TTestFromFloat.TestFloatToWideString;
@@ -2342,8 +2475,9 @@ begin
     TypeInfo(WideString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<WideString>(outWStr));
-  CheckEquals(outWStr, FloatToStr(1.11));
+  CheckEquals(WideString(FloatToStr(1.11)), outWStr);
 end;
+{$ENDIF}
 
 procedure TTestFromFloat.TestFloatToStringF;
 var
@@ -2354,7 +2488,7 @@ begin
     TypeInfo(string), TValue.From<string>('#.000'));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEquals(outStr, FormatFloat('#.000', 1.11));
+  CheckEquals(FormatFloat('#.000', 1.11), outStr);
 end;
 
 procedure TTestFromFloat.TestFloatToNullableFloat;
@@ -2366,7 +2500,7 @@ begin
     TypeInfo(Nullable<Extended>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Extended>>(outNullable));
-  CheckEquals(outNullable.Value, 1.11);
+  CheckEquals(1.11, outNullable.Value);
 end;
 
 procedure TTestFromFloat.TestFloatToNullableString;
@@ -2378,9 +2512,10 @@ begin
     TypeInfo(Nullable<string>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<string>>(outNullable));
-  CheckEqualsString(outNullable.Value, FloatToStr(1.11));
+  CheckEqualsString(FloatToStr(1.11), outNullable.Value);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromFloat.TestFloatToNullableAnsiString;
 var
   outValue: TValue;
@@ -2390,7 +2525,7 @@ begin
     TypeInfo(Nullable<AnsiString>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<AnsiString>>(outNullable));
-  CheckEquals(outNullable.Value, AnsiString(FloatToStr(1.11)));
+  CheckEquals(AnsiString(FloatToStr(1.11)), outNullable.Value);
 end;
 
 procedure TTestFromFloat.TestFloatToNullableWideString;
@@ -2402,8 +2537,9 @@ begin
     TypeInfo(Nullable<WideString>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<WideString>>(outNullable));
-  CheckEquals(outNullable.Value, FloatToStr(1.11));
+  CheckEquals(WideString(FloatToStr(1.11)), outNullable.Value);
 end;
+{$ENDIF}
 
 procedure TTestFromFloat.TestFloatToNullableInteger;
 var
@@ -2414,7 +2550,7 @@ begin
     TypeInfo(Nullable<Integer>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Integer>>(outNullable));
-  CheckEquals(outNullable.Value, 1);
+  CheckEquals(1, outNullable.Value);
 end;
 
 procedure TTestFromFloat.TestFloatToNullableCardinal;
@@ -2426,7 +2562,7 @@ begin
     TypeInfo(Nullable<Cardinal>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Cardinal>>(outNullable));
-  CheckEquals(outNullable.Value, 1);
+  CheckEquals(1, outNullable.Value);
 end;
 
 procedure TTestFromFloat.TestFloatToNullableSmallInt;
@@ -2438,7 +2574,7 @@ begin
     TypeInfo(Nullable<SmallInt>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<SmallInt>>(outNullable));
-  CheckEquals(outNullable.Value, 1);
+  CheckEquals(1, outNullable.Value);
 end;
 
 procedure TTestFromFloat.TestFloatToNullableShortInt;
@@ -2450,7 +2586,7 @@ begin
     TypeInfo(Nullable<ShortInt>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<ShortInt>>(outNullable));
-  CheckEquals(outNullable.Value, 1);
+  CheckEquals(1, outNullable.Value);
 end;
 
 {$ENDREGION}
@@ -2469,23 +2605,24 @@ var
   outValue: TValue;
   outStr: string;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<TColor>(clRed),
+  outValue := fConverter.ConvertTo(TValue.From<TColor>(RedValue),
     TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEqualsString(outStr, 'clRed');
+  CheckEqualsString(RedString, outStr);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromColor.TestColorToAnsiString;
 var
   outValue: TValue;
   outAStr: AnsiString;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<TColor>(clRed),
+  outValue := fConverter.ConvertTo(TValue.From<TColor>(RedValue),
     TypeInfo(AnsiString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
-  CheckEquals(outAStr, AnsiString('clRed'));
+  CheckEquals(AnsiString(RedString), outAStr);
 end;
 
 procedure TTestFromColor.TestColorToWideString;
@@ -2493,23 +2630,24 @@ var
   outValue: TValue;
   outWStr: WideString;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<TColor>(clRed),
+  outValue := fConverter.ConvertTo(TValue.From<TColor>(RedValue),
     TypeInfo(WideString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<WideString>(outWStr));
-  CheckEqualsString(outWStr, 'clRed');
+  CheckEqualsString(RedString, outWStr);
 end;
+{$ENDIF}
 
 procedure TTestFromColor.TestColorToCardinal;
 var
   outValue: TValue;
   outInt: Cardinal;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<TColor>(clRed),
+  outValue := fConverter.ConvertTo(TValue.From<TColor>(RedValue),
     TypeInfo(Cardinal));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Cardinal>(outInt));
-  CheckEquals(outInt, ColorToRGB(clRed));
+  CheckEquals(ColorToRGB(RedValue), outInt);
 end;
 
 procedure TTestFromColor.TestColorToInteger;
@@ -2517,11 +2655,11 @@ var
   outValue: TValue;
   outInt: Integer;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<TColor>(clRed),
+  outValue := fConverter.ConvertTo(TValue.From<TColor>(RedValue),
     TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Integer>(outInt));
-  CheckEquals(outInt, ColorToRGB(clRed));
+  CheckEquals(ColorToRGB(RedValue), outInt);
 end;
 
 procedure TTestFromColor.TestColorToSmallInt;
@@ -2529,11 +2667,11 @@ var
   outValue: TValue;
   outInt: SmallInt;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<TColor>(clRed),
+  outValue := fConverter.ConvertTo(TValue.From<TColor>(RedValue),
     TypeInfo(SmallInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<SmallInt>(outInt));
-  CheckEquals(outInt, ColorToRGB(clRed));
+  CheckEquals(ColorToRGB(RedValue), outInt);
 end;
 
 procedure TTestFromColor.TestColorToNullableColor;
@@ -2541,11 +2679,11 @@ var
   outValue: TValue;
   outNullable: Nullable<TColor>;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<TColor>(clRed),
+  outValue := fConverter.ConvertTo(TValue.From<TColor>(RedValue),
     TypeInfo(Nullable<TColor>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<TColor>>(outNullable));
-  CheckEquals(outNullable.Value, clRed);
+  CheckEquals(RedValue, outNullable.Value);
 end;
 
 procedure TTestFromColor.TestColorToNullableString;
@@ -2553,23 +2691,24 @@ var
   outValue: TValue;
   outNullable: Nullable<string>;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<TColor>(clRed),
+  outValue := fConverter.ConvertTo(TValue.From<TColor>(RedValue),
     TypeInfo(Nullable<string>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<string>>(outNullable));
-  CheckEqualsString(outNullable.Value, 'clRed');
+  CheckEqualsString(RedString, outNullable.Value);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromColor.TestColorToNullableAnsiString;
 var
   outValue: TValue;
   outNullable: Nullable<AnsiString>;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<TColor>(clRed),
+  outValue := fConverter.ConvertTo(TValue.From<TColor>(RedValue),
     TypeInfo(Nullable<AnsiString>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<AnsiString>>(outNullable));
-  CheckEquals(outNullable.Value, AnsiString('clRed'));
+  CheckEquals(AnsiString(RedString), outNullable.Value);
 end;
 
 procedure TTestFromColor.TestColorToNullableWideString;
@@ -2577,23 +2716,24 @@ var
   outValue: TValue;
   outNullable: Nullable<WideString>;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<TColor>(clRed),
+  outValue := fConverter.ConvertTo(TValue.From<TColor>(RedValue),
     TypeInfo(Nullable<WideString>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<WideString>>(outNullable));
-  CheckEqualsString(outNullable.Value, 'clRed');
+  CheckEqualsString(RedString, outNullable.Value);
 end;
+{$ENDIF}
 
 procedure TTestFromColor.TestColorToNullableInteger;
 var
   outValue: TValue;
   outNullable: Nullable<Integer>;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<TColor>(clRed),
+  outValue := fConverter.ConvertTo(TValue.From<TColor>(RedValue),
     TypeInfo(Nullable<Integer>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Integer>>(outNullable));
-  CheckEquals(outNullable.Value, ColorToRGB(clRed));
+  CheckEquals(ColorToRGB(RedValue), outNullable.Value);
 end;
 
 procedure TTestFromColor.TestColorToNullableCardinal;
@@ -2601,11 +2741,11 @@ var
   outValue: TValue;
   outNullable: Nullable<Cardinal>;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<TColor>(clRed),
+  outValue := fConverter.ConvertTo(TValue.From<TColor>(RedValue),
     TypeInfo(Nullable<Cardinal>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Cardinal>>(outNullable));
-  CheckEquals(outNullable.Value, ColorToRGB(clRed));
+  CheckEquals(ColorToRGB(RedValue), outNullable.Value);
 end;
 
 procedure TTestFromColor.TestColorToNullableSmallInt;
@@ -2613,11 +2753,11 @@ var
   outValue: TValue;
   outNullable: Nullable<SmallInt>;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<TColor>(clRed),
+  outValue := fConverter.ConvertTo(TValue.From<TColor>(RedValue),
     TypeInfo(Nullable<SmallInt>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<SmallInt>>(outNullable));
-  CheckEquals(outNullable.Value, ColorToRGB(clRed));
+  CheckEquals(ColorToRGB(RedValue), outNullable.Value);
 end;
 
 {$ENDREGION}
@@ -2640,7 +2780,7 @@ begin
     TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEqualsString(outStr, FloatToStr(1.11));
+  CheckEqualsString(FloatToStr(1.11), outStr);
 end;
 
 procedure TTestFromCurrency.TestCurrencyToStringF;
@@ -2652,9 +2792,10 @@ begin
     TypeInfo(string), TValue.From<string>('#.00 $'));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEqualsString(outStr, FormatCurr('#.00 $', 1.11));
+  CheckEqualsString(FormatCurr('#.00 $', 1.11), outStr);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromCurrency.TestCurrencyToAnsiString;
 var
   outValue: TValue;
@@ -2664,7 +2805,7 @@ begin
     TypeInfo(AnsiString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
-  CheckEquals(outAStr, AnsiString(FloatToStr(1.11)));
+  CheckEquals(AnsiString(FloatToStr(1.11)), outAStr);
 end;
 
 procedure TTestFromCurrency.TestCurrencyToWideString;
@@ -2676,8 +2817,9 @@ begin
     TypeInfo(WideString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<WideString>(outWStr));
-  CheckEqualsString(outWStr, FloatToStr(1.11));
+  CheckEqualsString(FloatToStr(1.11), outWStr);
 end;
+{$ENDIF}
 
 procedure TTestFromCurrency.TestCurrencyToNullableString;
 var
@@ -2688,9 +2830,10 @@ begin
     TypeInfo(Nullable<string>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<string>>(outNullable));
-  CheckEqualsString(outNullable.Value, CurrToStr(1.11));
+  CheckEqualsString(CurrToStr(1.11), outNullable.Value);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromCurrency.TestCurrencyToNullableAnsiString;
 var
   outValue: TValue;
@@ -2712,8 +2855,9 @@ begin
     TypeInfo(Nullable<WideString>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<WideString>>(outNullable));
-  CheckEqualsString(outNullable.Value, CurrToStr(1.11));
+  CheckEqualsString(CurrToStr(1.11), outNullable.Value);
 end;
+{$ENDIF}
 
 {$ENDREGION}
 
@@ -2737,7 +2881,7 @@ begin
     TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEqualsString(outStr, DateTimeToStr(stamp));
+  CheckEqualsString(DateTimeToStr(stamp), outStr);
 end;
 
 procedure TTestFromDateTime.TestDateTimeToStringF;
@@ -2751,9 +2895,10 @@ begin
     TypeInfo(string), TValue.From<string>('dd-mm-yyyy'));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEqualsString(outStr, FormatDateTime('dd-mm-yyyy', stamp));
+  CheckEqualsString(FormatDateTime('dd-mm-yyyy', stamp), outStr);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromDateTime.TestDateTimeToAnsiString;
 var
   outValue: TValue;
@@ -2765,7 +2910,7 @@ begin
     TypeInfo(AnsiString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
-  CheckEquals(outAStr, AnsiString(DateTimeToStr(stamp)));
+  CheckEquals(AnsiString(DateTimeToStr(stamp)), outAStr);
 end;
 
 procedure TTestFromDateTime.TestDateTimeToWideString;
@@ -2779,8 +2924,9 @@ begin
     TypeInfo(WideString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<WideString>(outWStr));
-  CheckEqualsString(outWStr, DateTimeToStr(stamp));
+  CheckEqualsString(DateTimeToStr(stamp), outWStr);
 end;
+{$ENDIF}
 
 procedure TTestFromDateTime.TestDateTimeToNullableString;
 var
@@ -2793,9 +2939,10 @@ begin
     TypeInfo(Nullable<string>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<string>>(outNullable));
-  CheckEqualsString(outNullable.Value, DateTimeToStr(stamp));
+  CheckEqualsString(DateTimeToStr(stamp), outNullable.Value);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromDateTime.TestDateTimeToNullableAnsiString;
 var
   outValue: TValue;
@@ -2807,7 +2954,7 @@ begin
     TypeInfo(Nullable<AnsiString>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<AnsiString>>(outNullable));
-  CheckEquals(outNullable.Value, AnsiString(DateTimeToStr(stamp)));
+  CheckEquals(AnsiString(DateTimeToStr(stamp)), outNullable.Value);
 end;
 
 procedure TTestFromDateTime.TestDateTimeToNullableWideString;
@@ -2821,8 +2968,9 @@ begin
     TypeInfo(Nullable<WideString>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<WideString>>(outNullable));
-  CheckEqualsString(outNullable.Value, DateTimeToStr(stamp));
+  CheckEqualsString(DateTimeToStr(stamp), outNullable.Value);
 end;
+{$ENDIF}
 
 {$ENDREGION}
 
@@ -2861,10 +3009,11 @@ begin
     TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEqualsString(outStr, obj.ToString);
+  CheckEqualsString(obj.ToString, outStr);
   obj.Free;
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromObject.TestObjectToAnsiString;
 var
   outValue: TValue;
@@ -2876,7 +3025,7 @@ begin
     TypeInfo(AnsiString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
-  CheckEquals(outAStr, AnsiString(obj.ToString));
+  CheckEquals(AnsiString(obj.ToString), outAStr);
   obj.Free;
 end;
 
@@ -2891,9 +3040,10 @@ begin
     TypeInfo(WideString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<WideString>(outWStr));
-  CheckEquals(outWStr, obj.ToString);
+  CheckEquals(WideString(obj.ToString), outWStr);
   obj.Free;
 end;
+{$ENDIF}
 
 procedure TTestFromObject.TestObjectToClass;
 var
@@ -2936,10 +3086,11 @@ begin
     TypeInfo(Nullable<string>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<string>>(outNullable));
-  CheckEqualsString(outNullable.Value, obj.ToString);
+  CheckEqualsString(obj.ToString, outNullable.Value);
   obj.Free;
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromObject.TestObjectToNullableWideString;
 var
   outValue: TValue;
@@ -2951,7 +3102,7 @@ begin
     TypeInfo(Nullable<WideString>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<WideString>>(outNullable));
-  CheckEquals(outNullable.Value, obj.ToString);
+  CheckEquals(WideString(obj.ToString), outNullable.Value);
   obj.Free;
 end;
 
@@ -2966,9 +3117,10 @@ begin
     TypeInfo(Nullable<AnsiString>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<AnsiString>>(outNullable));
-  CheckEquals(outNullable.Value, AnsiString(obj.ToString));
+  CheckEquals(AnsiString(obj.ToString), outNullable.Value);
   obj.Free;
 end;
+{$ENDIF}
 
 {$ENDREGION}
 
@@ -3002,7 +3154,7 @@ begin
     TypeInfo(Cardinal));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Cardinal>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableIntegerToSmallInt;
@@ -3014,7 +3166,7 @@ begin
     TypeInfo(SmallInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<SmallInt>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableIntegerToShortInt;
@@ -3026,7 +3178,7 @@ begin
     TypeInfo(ShortInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<ShortInt>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableIntegerToFloat;
@@ -3038,7 +3190,7 @@ begin
     TypeInfo(Extended));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Extended>(outFloat));
-  CheckEquals(outFloat, 1.00, 1);
+  CheckEquals(1.00, 1, outFloat);
 end;
 
 procedure TTestFromNullable.TestNullableIntegerToString;
@@ -3050,9 +3202,10 @@ begin
     TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEquals(outStr, '1');
+  CheckEquals('1', outStr);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromNullable.TestNullableIntegerToAnsiString;
 var
   outValue: TValue;
@@ -3062,7 +3215,7 @@ begin
     TypeInfo(AnsiString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
-  CheckEquals(outAStr, AnsiString('1'));
+  CheckEquals(AnsiString('1'), outAStr);
 end;
 
 procedure TTestFromNullable.TestNullableIntegerToWideString;
@@ -3074,8 +3227,9 @@ begin
     TypeInfo(WideString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<WideString>(outWStr));
-  CheckEquals(outWStr, '1');
+  CheckEquals('1', outWStr);
 end;
+{$ENDIF}
 
 procedure TTestFromNullable.TestNullableFloatToString;
 var
@@ -3086,7 +3240,7 @@ begin
     TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEquals(outStr, FloatToStr(1.11));
+  CheckEquals(FloatToStr(1.11), outStr);
 end;
 
 procedure TTestFromNullable.TestNullableFloatToInteger;
@@ -3098,7 +3252,7 @@ begin
     TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Integer>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableFloatToCardinal;
@@ -3110,7 +3264,7 @@ begin
     TypeInfo(Cardinal));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Cardinal>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableFloatToSmallInt;
@@ -3122,7 +3276,7 @@ begin
     TypeInfo(SmallInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<SmallInt>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableFloatToShortInt;
@@ -3134,9 +3288,10 @@ begin
     TypeInfo(ShortInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<ShortInt>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromNullable.TestNullableFloatToAnsiString;
 var
   outValue: TValue;
@@ -3146,7 +3301,7 @@ begin
     TypeInfo(AnsiString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
-  CheckEquals(outAStr, AnsiString(FloatToStr(1.11)));
+  CheckEquals(AnsiString(FloatToStr(1.11)), outAStr);
 end;
 
 procedure TTestFromNullable.TestNullableFloatToWideString;
@@ -3158,7 +3313,7 @@ begin
     TypeInfo(WideString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<WideString>(outWStr));
-  CheckEquals(outWStr, FloatToStr(1.11));
+  CheckEquals(WideString(FloatToStr(1.11)), outWStr);
 end;
 
 procedure TTestFromNullable.TestNullableSmallIntToAnsiString;
@@ -3170,8 +3325,9 @@ begin
     TypeInfo(AnsiString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
-  CheckEquals(outAStr, AnsiString('1'));
+  CheckEquals(AnsiString('1'), outAStr);
 end;
+{$ENDIF}
 
 procedure TTestFromNullable.TestNullableSmallIntToFloat;
 var
@@ -3182,7 +3338,7 @@ begin
     TypeInfo(Extended));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Extended>(outFloat));
-  CheckEquals(outFloat, 1.00, 1);
+  CheckEquals(1.00, 1, outFloat);
 end;
 
 procedure TTestFromNullable.TestNullableSmallIntToInteger;
@@ -3194,7 +3350,7 @@ begin
     TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Integer>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableSmallIntToCardinal;
@@ -3206,7 +3362,7 @@ begin
     TypeInfo(Cardinal));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Cardinal>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableSmallIntToShortInt;
@@ -3218,7 +3374,7 @@ begin
     TypeInfo(ShortInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<ShortInt>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableSmallIntToSmallInt;
@@ -3230,7 +3386,7 @@ begin
     TypeInfo(SmallInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<SmallInt>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableSmallIntToString;
@@ -3242,9 +3398,10 @@ begin
     TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEquals(outStr, '1');
+  CheckEquals('1', outStr);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromNullable.TestNullableSmallIntToWideString;
 var
   outValue: TValue;
@@ -3254,7 +3411,7 @@ begin
     TypeInfo(WideString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<WideString>(outWStr));
-  CheckEquals(outWStr, '1');
+  CheckEquals('1', outWStr);
 end;
 
 procedure TTestFromNullable.TestNullableShortIntToAnsiString;
@@ -3266,8 +3423,9 @@ begin
     TypeInfo(AnsiString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
-  CheckEquals(outAStr, AnsiString('1'));
+  CheckEquals(AnsiString('1'), outAStr);
 end;
+{$ENDIF}
 
 procedure TTestFromNullable.TestNullableShortIntToFloat;
 var
@@ -3278,7 +3436,7 @@ begin
     TypeInfo(Extended));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Extended>(outFloat));
-  CheckEquals(outFloat, 1.00, 1);
+  CheckEquals(1.00, 1, outFloat);
 end;
 
 procedure TTestFromNullable.TestNullableShortIntToInteger;
@@ -3290,7 +3448,7 @@ begin
     TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Integer>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableShortIntToCardinal;
@@ -3302,7 +3460,7 @@ begin
     TypeInfo(Cardinal));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Cardinal>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableShortIntToSmallInt;
@@ -3314,7 +3472,7 @@ begin
     TypeInfo(ShortInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<ShortInt>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableShortIntToShortInt;
@@ -3326,7 +3484,7 @@ begin
     TypeInfo(ShortInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<ShortInt>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableShortIntToString;
@@ -3338,9 +3496,10 @@ begin
     TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEquals(outStr, '1');
+  CheckEquals('1', outStr);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromNullable.TestNullableShortIntToWideString;
 var
   outValue: TValue;
@@ -3350,7 +3509,7 @@ begin
     TypeInfo(WideString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<WideString>(outWStr));
-  CheckEquals(outWStr, '1');
+  CheckEquals('1', outWStr);
 end;
 
 procedure TTestFromNullable.TestNullableCardinalToAnsiString;
@@ -3362,8 +3521,9 @@ begin
     TypeInfo(AnsiString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
-  CheckEquals(outAStr, AnsiString('1'));
+  CheckEquals(AnsiString('1'), outAStr);
 end;
+{$ENDIF}
 
 procedure TTestFromNullable.TestNullableCardinalToFloat;
 var
@@ -3374,7 +3534,7 @@ begin
     TypeInfo(Extended));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Extended>(outFloat));
-  CheckEquals(outFloat, 1.00, 1);
+  CheckEquals(1.00, 1, outFloat);
 end;
 
 procedure TTestFromNullable.TestNullableCardinalToInteger;
@@ -3386,7 +3546,7 @@ begin
     TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Integer>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableCardinalToCardinal;
@@ -3398,7 +3558,7 @@ begin
     TypeInfo(Cardinal));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Cardinal>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableCardinalToSmallInt;
@@ -3410,7 +3570,7 @@ begin
     TypeInfo(Cardinal));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Cardinal>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableCardinalToShortInt;
@@ -3422,7 +3582,7 @@ begin
     TypeInfo(Cardinal));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Cardinal>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableCardinalToString;
@@ -3434,9 +3594,10 @@ begin
     TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEquals(outStr, '1');
+  CheckEquals('1', outStr);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromNullable.TestNullableCardinalToWideString;
 var
   outValue: TValue;
@@ -3446,8 +3607,9 @@ begin
     TypeInfo(WideString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<WideString>(outWStr));
-  CheckEquals(outWStr, '1');
+  CheckEquals('1', outWStr);
 end;
+{$ENDIF}
 
 procedure TTestFromNullable.TestNullableStringToFloat;
 var
@@ -3458,7 +3620,7 @@ begin
     TypeInfo(Extended));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Extended>(outFloat));
-  CheckEquals(outFloat, 1.11);
+  CheckEquals(1.11, outFloat);
 end;
 
 procedure TTestFromNullable.TestNullableStringToInteger;
@@ -3470,7 +3632,7 @@ begin
     TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Integer>(outInt));
-  CheckEquals(outInt, 2);
+  CheckEquals(2, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableStringToCardinal;
@@ -3482,7 +3644,7 @@ begin
     TypeInfo(Cardinal));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Cardinal>(outInt));
-  CheckEquals(outInt, 2);
+  CheckEquals(2, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableStringToShortInt;
@@ -3494,7 +3656,7 @@ begin
     TypeInfo(ShortInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<ShortInt>(outInt));
-  CheckEquals(outInt, 2);
+  CheckEquals(2, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableStringToSmallInt;
@@ -3506,7 +3668,7 @@ begin
     TypeInfo(SmallInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<SmallInt>(outInt));
-  CheckEquals(outInt, 2);
+  CheckEquals(2, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableStringToString;
@@ -3518,9 +3680,10 @@ begin
     TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEquals(outStr, 'Test');
+  CheckEquals('Test', outStr);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromNullable.TestNullableAnsiStringToShortInt;
 var
   outValue: TValue;
@@ -3530,7 +3693,7 @@ begin
     TypeInfo(ShortInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<ShortInt>(outInt));
-  CheckEquals(outInt, 2);
+  CheckEquals(2, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableAnsiStringToSmallInt;
@@ -3542,7 +3705,7 @@ begin
     TypeInfo(SmallInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<SmallInt>(outInt));
-  CheckEquals(outInt, 2);
+  CheckEquals(2, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableAnsiStringToString;
@@ -3554,7 +3717,7 @@ begin
     TypeInfo(AnsiString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
-  CheckEquals(outAStr, AnsiString('Test'));
+  CheckEquals(AnsiString('Test'), outAStr);
 end;
 
 procedure TTestFromNullable.TestNullableWideStringToWideString;
@@ -3566,7 +3729,7 @@ begin
     TypeInfo(WideString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<WideString>(outWStr));
-  CheckEquals(outWStr, 'Test');
+  CheckEquals(WideString('Test'), outWStr);
 end;
 
 procedure TTestFromNullable.TestNullableAnsiStringToFloat;
@@ -3578,7 +3741,7 @@ begin
     TypeInfo(Extended));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Extended>(outFloat));
-  CheckEquals(outFloat, 1.11);
+  CheckEquals(1.11, outFloat);
 end;
 
 procedure TTestFromNullable.TestNullableAnsiStringToInteger;
@@ -3590,7 +3753,7 @@ begin
     TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Integer>(outInt));
-  CheckEquals(outInt, 2);
+  CheckEquals(2, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableAnsiStringToCardinal;
@@ -3602,7 +3765,7 @@ begin
     TypeInfo(Cardinal));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Cardinal>(outInt));
-  CheckEquals(outInt, 2);
+  CheckEquals(2, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableWideStringToFloat;
@@ -3614,7 +3777,7 @@ begin
     TypeInfo(Extended));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Extended>(outFloat));
-  CheckEquals(outFloat, 1.11);
+  CheckEquals(1.11, outFloat);
 end;
 
 procedure TTestFromNullable.TestNullableWideStringToInteger;
@@ -3626,7 +3789,7 @@ begin
     TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Integer>(outInt));
-  CheckEquals(outInt, 2);
+  CheckEquals(2, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableWideStringToCardinal;
@@ -3638,7 +3801,7 @@ begin
     TypeInfo(Cardinal));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Cardinal>(outInt));
-  CheckEquals(outInt, 2);
+  CheckEquals(2, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableWideStringToShortInt;
@@ -3650,7 +3813,7 @@ begin
     TypeInfo(ShortInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<ShortInt>(outInt));
-  CheckEquals(outInt, 2);
+  CheckEquals(2, outInt);
 end;
 
 procedure TTestFromNullable.TestNullableWideStringToSmallInt;
@@ -3662,8 +3825,10 @@ begin
     TypeInfo(SmallInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<SmallInt>(outInt));
-  CheckEquals(outInt, 2);
+  CheckEquals(2, outInt);
 end;
+{$ENDIF !NEXTGEN}
+
 
 procedure TTestFromNullable.TestNullableDateTimeToString;
 var
@@ -3676,9 +3841,10 @@ begin
     TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEquals(outStr, DateTimeToStr(stamp));
+  CheckEquals(DateTimeToStr(stamp), outStr);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromNullable.TestNullableDateTimeToAnsiString;
 var
   outValue: TValue;
@@ -3690,7 +3856,7 @@ begin
     TypeInfo(AnsiString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
-  CheckEquals(outAStr, AnsiString(DateTimeToStr(stamp)));
+  CheckEquals(AnsiString(DateTimeToStr(stamp)), outAStr);
 end;
 
 procedure TTestFromNullable.TestNullableDateTimeToWideString;
@@ -3704,31 +3870,33 @@ begin
     TypeInfo(WideString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<WideString>(outWStr));
-  CheckEquals(outWStr, DateTimeToStr(stamp));
+  CheckEquals(WideString(DateTimeToStr(stamp)), outWStr);
 end;
+{$ENDIF}
 
 procedure TTestFromNullable.TestNullableColorToString;
 var
   outValue: TValue;
   outStr: string;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<Nullable<TColor>>(Nullable<TColor>.Create(clRed)),
+  outValue := fConverter.ConvertTo(TValue.From<Nullable<TColor>>(Nullable<TColor>.Create(RedValue)),
     TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEquals(outStr, 'clRed');
+  CheckEquals(RedString, outStr);
 end;
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromNullable.TestNullableColorToAnsiString;
 var
   outValue: TValue;
   outAStr: AnsiString;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<Nullable<TColor>>(Nullable<TColor>.Create(clRed)),
+  outValue := fConverter.ConvertTo(TValue.From<Nullable<TColor>>(Nullable<TColor>.Create(RedValue)),
     TypeInfo(AnsiString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
-  CheckEquals(outAStr, AnsiString('clRed'));
+  CheckEquals(AnsiString(RedString), outAStr);
 end;
 
 procedure TTestFromNullable.TestNullableColorToWideString;
@@ -3736,16 +3904,18 @@ var
   outValue: TValue;
   outWStr: WideString;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<Nullable<TColor>>(Nullable<TColor>.Create(clRed)),
+  outValue := fConverter.ConvertTo(TValue.From<Nullable<TColor>>(Nullable<TColor>.Create(RedValue)),
     TypeInfo(WideString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<WideString>(outWStr));
-  CheckEquals(outWStr, 'clRed');
+  CheckEquals(WideString('clRed'), outWStr);
 end;
+{$ENDIF}
 
 {$ENDREGION}
 
 
+{$IFNDEF NEXTGEN}
 {$REGION 'TTestFromWideString'}
 
 procedure TTestFromWideString.SetUp;
@@ -3763,7 +3933,7 @@ begin
     TypeInfo(AnsiString));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<AnsiString>(outAStr));
-  CheckEquals(outAStr, AnsiString('Test WideString'));
+  CheckEquals(AnsiString('Test WideString'), outAStr);
 end;
 
 procedure TTestFromWideString.TestWStringToBoolean;
@@ -3775,7 +3945,7 @@ begin
     TypeInfo(Boolean));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Boolean>(outBool));
-  CheckEquals(outBool, True);
+  CheckEquals(True, outBool);
 end;
 
 procedure TTestFromWideString.TestWStringToColor;
@@ -3783,11 +3953,11 @@ var
   outValue: TValue;
   outColor: TColor;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<WideString>('clBlue'),
+  outValue := fConverter.ConvertTo(TValue.From<WideString>(BlueString),
     TypeInfo(TColor));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TColor>(outColor));
-  CheckEquals(outColor, clBlue);
+  CheckEquals(BlueValue, outColor);
 end;
 
 procedure TTestFromWideString.TestWStringToCurrency;
@@ -3799,7 +3969,7 @@ begin
     TypeInfo(Currency));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Currency>(outCurrency));
-  CheckEquals(outCurrency, 1.11);
+  CheckEquals(1.11, outCurrency);
 end;
 
 procedure TTestFromWideString.TestWStringToDateTime;
@@ -3813,7 +3983,7 @@ begin
     TypeInfo(TDateTime));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TDateTime>(outStamp));
-  CheckEqualsString(DateTimeToStr(outStamp), DateTimeToStr(stamp));
+  CheckEqualsString(DateTimeToStr(stamp), DateTimeToStr(outStamp));
 end;
 
 procedure TTestFromWideString.TestWStringToDateTimeF;
@@ -3825,7 +3995,7 @@ begin
     TypeInfo(TDateTime), TValue.From<string>('dd.mm.yyyy'));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TDateTime>(outStamp));
-  CheckEqualsString(FormatDateTime('dd.mm.yyyy', outStamp), '10.10.2010');
+  CheckEqualsString('10.10.2010', FormatDateTime('dd.mm.yyyy', outStamp));
 end;
 
 procedure TTestFromWideString.TestWStringToEnum;
@@ -3849,7 +4019,7 @@ begin
     TypeInfo(Extended));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Extended>(outFloat));
-  CheckEquals(outFloat, 1.11);
+  CheckEquals(1.11, outFloat);
 end;
 
 procedure TTestFromWideString.TestWStringToInteger;
@@ -3861,7 +4031,7 @@ begin
     TypeInfo(Integer));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Integer>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromWideString.TestWStringToCardinal;
@@ -3873,7 +4043,7 @@ begin
     TypeInfo(Cardinal));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Cardinal>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromWideString.TestWStringToSmallInt;
@@ -3885,7 +4055,7 @@ begin
     TypeInfo(SmallInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<SmallInt>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromWideString.TestWStringToShortInt;
@@ -3897,7 +4067,7 @@ begin
     TypeInfo(ShortInt));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<ShortInt>(outInt));
-  CheckEquals(outInt, 1);
+  CheckEquals(1, outInt);
 end;
 
 procedure TTestFromWideString.TestWStringToNullableAnsiString;
@@ -3910,7 +4080,7 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<AnsiString>>(outNullable));
   CheckTrue(outNullable.HasValue);
-  CheckEquals(outNullable.Value, AnsiString('Test'));
+  CheckEquals(AnsiString('Test'), outNullable.Value);
 end;
 
 procedure TTestFromWideString.TestWStringToNullableBoolean;
@@ -3922,7 +4092,7 @@ begin
     TypeInfo(Nullable<Boolean>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Boolean>>(outNullable));
-  CheckEquals(outNullable.Value, True);
+  CheckEquals(True, outNullable.Value);
 end;
 
 procedure TTestFromWideString.TestWStringToNullableByte;
@@ -3934,13 +4104,13 @@ begin
     TypeInfo(Nullable<Byte>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Byte>>(outInt));
-  CheckEquals(outInt.Value, 1);
+  CheckEquals(1, outInt.Value);
 
   outValue := fConverter.ConvertTo(TValue.From<WideString>('255'),
     TypeInfo(Nullable<Byte>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Byte>>(outInt));
-  CheckEquals(outInt.Value, 255);
+  CheckEquals(255, outInt.Value);
 end;
 
 procedure TTestFromWideString.TestWStringToNullableColor;
@@ -3948,11 +4118,11 @@ var
   outValue: TValue;
   outNullable: Nullable<TColor>;
 begin
-  outValue := fConverter.ConvertTo(TValue.From<WideString>(ColorToString(clRed)),
+  outValue := fConverter.ConvertTo(TValue.From<WideString>(ColorToString(RedValue)),
     TypeInfo(Nullable<TColor>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<TColor>>(outNullable));
-  CheckEquals(ColorToString(outNullable.Value), 'clRed');
+  CheckEquals(RedString, ColorToString(outNullable.Value));
 end;
 
 procedure TTestFromWideString.TestWStringToNullableCurrency;
@@ -3964,7 +4134,7 @@ begin
     TypeInfo(Nullable<Currency>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Currency>>(outNullable));
-  CheckEquals(outNullable.Value, 1.11);
+  CheckEquals(1.11, outNullable.Value);
 end;
 
 procedure TTestFromWideString.TestWStringToNullableDateTime;
@@ -3978,7 +4148,7 @@ begin
     TypeInfo(Nullable<TDateTime>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<TDateTime>>(outNullable));
-  CheckEqualsString(DateTimeToStr(outNullable.Value), DateTimeToStr(stamp));
+  CheckEqualsString(DateTimeToStr(stamp), DateTimeToStr(outNullable.Value));
 end;
 
 procedure TTestFromWideString.TestWStringToNullableFloat;
@@ -3990,7 +4160,7 @@ begin
     TypeInfo(Nullable<Extended>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Extended>>(outNullable));
-  CheckEquals(outNullable.Value, 1.11);
+  CheckEquals(1.11, outNullable.Value);
 end;
 
 procedure TTestFromWideString.TestWStringToNullableInt64;
@@ -4002,19 +4172,19 @@ begin
     TypeInfo(Nullable<Int64>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Int64>>(outNullable));
-  CheckEquals(outNullable.Value, 1);
+  CheckEquals(1, outNullable.Value);
 
   outValue := fConverter.ConvertTo(TValue.From<WideString>('2147483647'),
     TypeInfo(Nullable<Int64>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Int64>>(outNullable));
-  CheckEquals(outNullable.Value, 2147483647);
+  CheckEquals(2147483647, outNullable.Value);
 
   outValue := fConverter.ConvertTo(TValue.From<WideString>('-2147483647'),
     TypeInfo(Nullable<Int64>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Int64>>(outNullable));
-  CheckEquals(outNullable.Value, -2147483647);
+  CheckEquals(-2147483647, outNullable.Value);
 end;
 
 procedure TTestFromWideString.TestWStringToNullableInteger;
@@ -4027,7 +4197,7 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Integer>>(outNullable));
   CheckTrue(outNullable.HasValue);
-  CheckEquals(outNullable.Value, 15);
+  CheckEquals(15, outNullable.Value);
 end;
 
 procedure TTestFromWideString.TestWStringToNullableCardinal;
@@ -4040,7 +4210,7 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Cardinal>>(outNullable));
   CheckTrue(outNullable.HasValue);
-  CheckEquals(outNullable.Value, 15);
+  CheckEquals(15, outNullable.Value);
 end;
 
 procedure TTestFromWideString.TestWStringToNullableSmallInt;
@@ -4053,7 +4223,7 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<SmallInt>>(outNullable));
   CheckTrue(outNullable.HasValue);
-  CheckEquals(outNullable.Value, 15);
+  CheckEquals(15, outNullable.Value);
 end;
 
 procedure TTestFromWideString.TestWStringToNullableShortInt;
@@ -4066,7 +4236,7 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<ShortInt>>(outNullable));
   CheckTrue(outNullable.HasValue);
-  CheckEquals(outNullable.Value, 15);
+  CheckEquals(15, outNullable.Value);
 end;
 
 procedure TTestFromWideString.TestWStringToNullableString;
@@ -4079,7 +4249,7 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<string>>(outNullable));
   CheckTrue(outNullable.HasValue);
-  CheckEquals(outNullable.Value, 'Test');
+  CheckEquals('Test', outNullable.Value);
 end;
 
 procedure TTestFromWideString.TestWStringToNullableUInt64;
@@ -4091,13 +4261,13 @@ begin
     TypeInfo(Nullable<UInt64>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<UInt64>>(outNullable));
-  CheckEquals(outNullable.Value, 1);
+  CheckEquals(1, outNullable.Value);
 
   outValue := fConverter.ConvertTo(TValue.From<WideString>('2147483647'),
     TypeInfo(Nullable<UInt64>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<UInt64>>(outNullable));
-  CheckEquals(outNullable.Value, 2147483647);
+  CheckEquals(2147483647, outNullable.Value);
 end;
 
 procedure TTestFromWideString.TestWStringToNullableWideString;
@@ -4110,7 +4280,7 @@ begin
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<WideString>>(outNullable));
   CheckTrue(outNullable.HasValue);
-  CheckEquals(outNullable.Value, 'Test');
+  CheckEquals(WideString('Test'), outNullable.Value);
 end;
 
 procedure TTestFromWideString.TestWStringToNullableWord;
@@ -4122,13 +4292,13 @@ begin
     TypeInfo(Nullable<Word>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Word>>(outInt));
-  CheckEquals(outInt.Value, 1);
+  CheckEquals(1, outInt.Value);
 
   outValue := fConverter.ConvertTo(TValue.From<WideString>('65535'),
     TypeInfo(Nullable<Word>));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<Nullable<Word>>(outInt));
-  CheckEquals(outInt.Value, 65535);
+  CheckEquals(65535, outInt.Value);
 end;
 
 procedure TTestFromWideString.TestWStringToString;
@@ -4140,10 +4310,11 @@ begin
     TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEquals(outStr, 'Test WideString');
+  CheckEquals('Test WideString', outStr);
 end;
 
 {$ENDREGION}
+{$ENDIF}
 
 
 {$REGION 'TTestFromInterface'}
@@ -4176,7 +4347,7 @@ begin
 
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<TTestObject>(obj));
-  CheckEqualsString(intf.ToString, obj.ToString);
+  CheckEqualsString(obj.ToString, intf.ToString);
 end;
 
 {$ENDREGION}
@@ -4199,7 +4370,7 @@ begin
     TypeInfo(string));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<string>(outStr));
-  CheckEquals(outStr, FloatToStr(1.11));
+  CheckEquals(FloatToStr(1.11), outStr);
 end;
 
 procedure TTestCustomTypes.TestStringToCustomFloat;
@@ -4211,7 +4382,7 @@ begin
     TypeInfo(CustomFloat));
   CheckFalse(outValue.IsEmpty);
   CheckTrue(outValue.TryAsType<CustomFloat>(outFloat));
-  CheckEquals(outFloat, 1.11);
+  CheckEquals(1.11, outFloat);
 end;
 
 {$ENDREGION}

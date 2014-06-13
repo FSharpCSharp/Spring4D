@@ -126,7 +126,7 @@ begin
   Clear;
   Predicate := function(const Pair: TIntegerStringPair): Boolean
                begin
-                 Result :=  Pair.Key > 5;
+                 Result :=  Pair.Key < 5;
                end;
 
   // Same as TSkipWhileEnumerable<TIntegerStringPair>.Create(List, Predicate);
@@ -279,7 +279,7 @@ var
 begin
   Clear;
   // Note that the order is changed
-  for Pair in List.ToSet.ToList do
+  for Pair in TCollections.CreateSet<TIntegerStringPair>(List) do
   begin
     AddToMemo(Pair.Value);
   end;

@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2012 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -32,14 +32,12 @@ unit Spring.Services;
 interface
 
 uses
-  TypInfo,
-  Rtti,
-  SysUtils,
   Spring;
 
 {$SCOPEDENUMS ON}
 
 type
+
   {$REGION 'Lifetime Type & Attributes'}
 
   ///	<summary>
@@ -182,7 +180,7 @@ type
     constructor Create(minPoolSize, maxPoolSize: Integer);
     property MinPoolsize: Integer read fMinPoolsize;
     property MaxPoolsize: Integer read fMaxPoolsize;
-  end;
+  end {$IFDEF CPUARM}experimental{$ENDIF};
 
   ///	<summary>
   ///	  Applies the <c>InjectAttribute</c> to injectable instance members of a
@@ -299,7 +297,20 @@ type
     procedure Dispose;
   end;
 
+  ///	<summary>
+  ///	  Lifecycle interface. Implement this interface on a class that does not
+  ///	  inherit from TInterfacedObject to make it compatible with pooling.
+  ///	</summary>
+  IRefCounted = interface
+    ['{8779F9E7-2311-44AB-94A6-6BADE93551FF}']
+    function GetRefCount: Integer;
+    property RefCount: Integer read GetRefCount;
+  end;
+
   {$ENDREGION}
+
+
+  {$REGION 'Service locator'}
 
   ///	<summary>
   ///	  Defines an abstract interface to locate services.
@@ -308,6 +319,8 @@ type
     ['{E8C39055-6634-4428-B343-2FB0E75527BC}']
     function GetService(serviceType: PTypeInfo): TValue; overload;
     function GetService(serviceType: PTypeInfo; const name: string): TValue; overload;
+    function GetService(serviceType: PTypeInfo; const args: array of TValue): TValue; overload;
+    function GetService(serviceType: PTypeInfo; const name: string; const args: array of TValue): TValue; overload;
 
     function GetAllServices(serviceType: PTypeInfo): TArray<TValue>; overload;
 
@@ -324,30 +337,31 @@ type
   ///	</summary>
   ///	<remarks>
   ///	  You should use ServiceLocator to query a service insteading of directly
-  ///	  using Spring.DI namespace in your library. The namespace is supposed to
-  ///	  be used to register components in your bootstrap code.
+  ///	  using Spring.Container namespace in your library. The namespace is
+  ///	  supposed to be used to register components in your bootstrap code.
   ///	</remarks>
-  TServiceLocator = class sealed
-  strict private
-    class var fInstance: TServiceLocator;
-    var fServiceLocatorProvider: TServiceLocatorDelegate;
+  TServiceLocator = class sealed(TInterfaceBase, IServiceLocator)
+  private
+    fServiceLocatorProvider: TServiceLocatorDelegate;
+    class var GlobalInstance: TServiceLocator;
     function GetServiceLocator: IServiceLocator;
-  strict protected
+    procedure RaiseNotInitialized;
+    type
+      TValueArray = array of TValue;
+  protected
     class constructor Create;
     class destructor Destroy;
-{$IFDEF DELPHI2010}
-    type // in Delphi 2010 using TArray<TValue> causes an internal error URW1111 (see QC #77575)
-      TValueArray = array of TValue;
-    function InternalGetAllServices(serviceType: PTypeInfo): TValueArray;
-{$ENDIF}
   public
     procedure Initialize(const provider: TServiceLocatorDelegate);
-    class property Instance: TServiceLocator read fInstance;
 
     function GetService<T>: T; overload;
     function GetService<T>(const name: string): T; overload;
+    function GetService<T>(const args: array of TValue): T; overload;
+    function GetService<T>(const name: string; const args: array of TValue): T; overload;
     function GetService(serviceType: PTypeInfo): TValue; overload;
     function GetService(serviceType: PTypeInfo; const name: string): TValue; overload;
+    function GetService(serviceType: PTypeInfo; const args: array of TValue): TValue; overload;
+    function GetService(serviceType: PTypeInfo; const name: string; const args: array of TValue): TValue; overload;
 
     function GetAllServices<TServiceType>: TArray<TServiceType>; overload;
     function GetAllServices(serviceType: PTypeInfo): TArray<TValue>; overload;
@@ -359,7 +373,10 @@ type
     function TryGetService<T>(const name: string; out service: T): Boolean; overload;
   end;
 
-{$REGION 'Deprecated LifetimeType constants'}
+  {$ENDREGION}
+
+
+  {$REGION 'Deprecated LifetimeType constants'}
 
 const
   ltUnknown = TLifetimeType.Unknown deprecated;
@@ -369,25 +386,27 @@ const
   ltPooled = TLifetimeType.Pooled deprecated;
   ltCustom = TLifetimeType.Custom deprecated;
 
-{$ENDREGION}
+  {$ENDREGION}
+
 
 ///	<summary>
 ///	  Gets the shared instance of <see cref="TServiceLocator" /> class.
 ///	</summary>
 ///	<remarks>
 ///	  Since Delphi doesn't support generic methods for interfaces, the result
-///	  type is TServiceLocator insteading of IServiceLocator.
+///	  type is TServiceLocator instead of IServiceLocator.
 ///	</remarks>
-function ServiceLocator: TServiceLocator;
+function ServiceLocator: TServiceLocator; inline;
 
 implementation
 
 uses
+  SysUtils,
   Spring.ResourceStrings;
 
 function ServiceLocator: TServiceLocator;
 begin
-  Result := TServiceLocator.Instance;
+  Result := TServiceLocator.GlobalInstance;
 end;
 
 
@@ -496,12 +515,12 @@ end;
 
 class constructor TServiceLocator.Create;
 begin
-  fInstance := TServiceLocator.Create;
+  GlobalInstance := TServiceLocator.Create;
 end;
 
 class destructor TServiceLocator.Destroy;
 begin
-  FreeAndNil(fInstance);
+  FreeAndNil(GlobalInstance);
 end;
 
 procedure TServiceLocator.Initialize(const provider: TServiceLocatorDelegate);
@@ -509,22 +528,17 @@ begin
   fServiceLocatorProvider := provider;
 end;
 
-{$IFDEF DELPHI2010}
-function TServiceLocator.InternalGetAllServices(
-  serviceType: PTypeInfo): TValueArray;
-var
-  services: TArray<TValue> absolute Result;
+procedure TServiceLocator.RaiseNotInitialized;
 begin
-  services := GetServiceLocator.GetAllServices(serviceType);
+  raise EInvalidOperationException.Create(SServiceLocatorNotInitialized);
 end;
-{$ENDIF}
 
 function TServiceLocator.GetServiceLocator: IServiceLocator;
 begin
-  if not Assigned(fServiceLocatorProvider) or (fServiceLocatorProvider() = nil) then
-    raise EInvalidOperationException.Create(SServiceLocatorNotInitialized);
-
-  Result := fServiceLocatorProvider();
+  if Assigned(fServiceLocatorProvider) then
+    Result := fServiceLocatorProvider();
+  if not Assigned(Result) then
+    RaiseNotInitialized;
 end;
 
 function TServiceLocator.GetService(serviceType: PTypeInfo): TValue;
@@ -537,11 +551,23 @@ begin
   Result := GetServiceLocator.GetService(serviceType, name);
 end;
 
+function TServiceLocator.GetService(serviceType: PTypeInfo;
+  const args: array of TValue): TValue;
+begin
+  Result := GetServiceLocator.GetService(serviceType, args);
+end;
+
+function TServiceLocator.GetService(serviceType: PTypeInfo; const name: string;
+  const args: array of TValue): TValue;
+begin
+  Result := GetServiceLocator.GetService(serviceType, name, args);
+end;
+
 function TServiceLocator.GetService<T>: T;
 var
   value: TValue;
 begin
-  value := GetService(TypeInfo(T));
+  value := GetServiceLocator.GetService(TypeInfo(T));
   Result := value.AsType<T>;
 end;
 
@@ -549,7 +575,24 @@ function TServiceLocator.GetService<T>(const name: string): T;
 var
   value: TValue;
 begin
-  value := GetService(TypeInfo(T), name);
+  value := GetServiceLocator.GetService(TypeInfo(T), name);
+  Result := value.AsType<T>;
+end;
+
+function TServiceLocator.GetService<T>(const args: array of TValue): T;
+var
+  value: TValue;
+begin
+  value := GetServiceLocator.GetService(TypeInfo(T), args);
+  Result := value.AsType<T>;
+end;
+
+function TServiceLocator.GetService<T>(const name: string;
+  const args: array of TValue): T;
+var
+  value: TValue;
+begin
+  value := GetServiceLocator.GetService(TypeInfo(T), name, args);
   Result := value.AsType<T>;
 end;
 
@@ -560,14 +603,16 @@ end;
 
 function TServiceLocator.GetAllServices<TServiceType>: TArray<TServiceType>;
 var
-  services: {$IFDEF DELPHI2010}TValueArray{$ELSE}TArray<TValue>{$ENDIF};
+  services: TArray<TValue>;
   i: Integer;
 begin
-  services := {$IFDEF DELPHI2010}InternalGetAllServices{$ELSE}GetAllServices{$ENDIF}(TypeInfo(TServiceType));
+  services := GetServiceLocator.GetAllServices(TypeInfo(TServiceType));
   SetLength(Result, Length(services));
   for i := 0 to High(Result) do
   begin
-    Result[i] := services[i].AsType<TServiceType>;
+    // accessing TArray<TValue> directly causes an internal error URW1111 in Delphi 2010 (see QC #77575)
+    // the hardcast prevents it but does not cause any differences in compiled code
+    Result[i] := TValueArray(services)[i].AsType<TServiceType>;
   end;
 end;
 
@@ -600,5 +645,6 @@ begin
 end;
 
 {$ENDREGION}
+
 
 end.

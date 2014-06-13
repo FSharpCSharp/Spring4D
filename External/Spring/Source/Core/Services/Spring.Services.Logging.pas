@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2012 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -32,11 +32,8 @@ unit Spring.Services.Logging;
 interface
 
 uses
-  Classes,
   SysUtils,
-  TypInfo,
-  Spring,
-  Spring.Services;
+  Spring;
 
 type
   ILogger = interface
@@ -103,6 +100,10 @@ function DefaultLogger: ILogger;
 
 implementation
 
+uses
+  TypInfo, // solves [dcc32/dcc64/dccosx Hint] H2443 Inline function 'Guard.CheckNotNull' has not been expanded because unit 'System.TypInfo' is not specified in USES list
+  Spring.Services;
+
 function LoggerFactory: ILoggerFactory;
 begin
   Result := ServiceLocator.GetService<ILoggerFactory>;
@@ -117,7 +118,7 @@ function GetLogger(classType: TClass): ILogger; overload;
 var
   typeInfo: PTypeInfo;
 begin
-  CheckArgumentNotNull(classType, 'classType');
+  Guard.CheckNotNull(classType, 'classType');
 
   typeInfo := classType.ClassInfo;
   Result := LoggerFactory.GetLogger(typeInfo);

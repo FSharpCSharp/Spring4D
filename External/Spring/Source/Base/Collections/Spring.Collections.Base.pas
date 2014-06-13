@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2012 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -24,221 +24,210 @@
 
 unit Spring.Collections.Base;
 
+{$I Spring.inc}
+
 interface
 
 uses
-  SysUtils,
-  TypInfo,
   Generics.Collections,
   Generics.Defaults,
-  Rtti,
+  SysUtils,
   Spring,
   Spring.Collections;
 
 type
   ///	<summary>
   ///	  Provides an abstract implementation for the
-  ///	  <see cref="IEnumerator">IEnumerator</see> interface.
+  ///	  <see cref="Spring.Collections|IEnumerator" /> interface.
   ///	</summary>
   TEnumeratorBase = class abstract(TInterfacedObject, IEnumerator)
-  protected
-    function NonGenericGetCurrent: TValue; virtual; abstract;
-    function IEnumerator.GetCurrent = NonGenericGetCurrent;
+  private
+    function GetCurrentNonGeneric: TValue; virtual; abstract;
+    function IEnumerator.GetCurrent = GetCurrentNonGeneric;
   public
     function MoveNext: Boolean; virtual;
     procedure Reset; virtual;
-    property Current: TValue read NonGenericGetCurrent;
+
+    property Current: TValue read GetCurrentNonGeneric;
   end;
 
   ///	<summary>
-  ///	  Provides an abstract implementation for the
-  ///	  <see cref="IEnumerator{T}">IEnumerator&lt;T&gt;</see> interface.
+  ///	  Provides a default implementation for the
+  ///	  <see cref="Spring.Collections|IEnumerator&lt;T&gt;" /> interface.
   ///	</summary>
   TEnumeratorBase<T> = class abstract(TEnumeratorBase, IEnumerator<T>)
+  private
+    function GetCurrentNonGeneric: TValue; override; final;
   protected
-    function NonGenericGetCurrent: TValue; override; final;
-    function GetCurrent: T; virtual; abstract;
+    function GetCurrent: T; virtual;
   public
     property Current: T read GetCurrent;
   end;
 
   ///	<summary>
   ///	  Provides an abstract implementation for the
-  ///	  <see cref="IEnumerable">IEnumerable</see> interface.
+  ///	  <see cref="Spring.Collections|IEnumerable" /> interface.
   ///	</summary>
-  TEnumerableBase = class abstract(TInterfacedObject, IEnumerable)
+  TEnumerableBase = class abstract(TInterfacedObject, IInterface,
+    IElementType, ICountable, IEnumerable)
+  private
+    function GetEnumeratorNonGeneric: IEnumerator; virtual; abstract;
+    function IEnumerable.GetEnumerator = GetEnumeratorNonGeneric;
   protected
-    function NonGenericGetEnumerator: IEnumerator; virtual; abstract;
-
-    function NonGenericTryGetFirst(out value: TValue): Boolean; virtual; abstract;
-    function NonGenericTryGetLast(out value: TValue): Boolean; virtual; abstract;
-    function NonGenericFirst: TValue; virtual; abstract;
-    function NonGenericFirstOrDefault: TValue; virtual; abstract;
-    function NonGenericLast: TValue; virtual; abstract;
-    function NonGenericLastOrDefault: TValue; virtual; abstract;
-    function NonGenericSingle: TValue; virtual; abstract;
-    function NonGenericSingleOrDefault: TValue; virtual; abstract;
-    function NonGenericElementAt(index: Integer): TValue; virtual; abstract;
-    function NonGenericElementAtOrDefault(index: Integer): TValue; virtual; abstract;
-    function NonGenericContains(const item: TValue): Boolean; virtual; abstract;
-    function NonGenericMin: TValue; virtual; abstract;
-    function NonGenericMax: TValue; virtual; abstract;
-    function NonGenericSkip(count: Integer): IEnumerable; virtual; abstract;
-    function NonGenericTake(count: Integer): IEnumerable; virtual; abstract;
-    function NonGenericConcat(const collection: IEnumerable): IEnumerable; virtual; abstract;
-    function NonGenericReversed: IEnumerable; virtual; abstract;
-    function NonGenericEqualsTo(const collection: IEnumerable): Boolean; virtual; abstract;
-    function NonGenericToList: IList; virtual; abstract;
-    function NonGenericToSet: ISet; virtual; abstract;
-
-    function IEnumerable.GetEnumerator = NonGenericGetEnumerator;
-    function IEnumerable.TryGetFirst = NonGenericTryGetFirst;
-    function IEnumerable.TryGetLast = NonGenericTryGetLast;
-    function IEnumerable.First = NonGenericFirst;
-    function IEnumerable.FirstOrDefault = NonGenericFirstOrDefault;
-    function IEnumerable.Last = NonGenericLast;
-    function IEnumerable.LastOrDefault = NonGenericLastOrDefault;
-    function IEnumerable.Single = NonGenericSingle;
-    function IEnumerable.SingleOrDefault = NonGenericSingleOrDefault;
-    function IEnumerable.ElementAt = NonGenericElementAt;
-    function IEnumerable.ElementAtOrDefault = NonGenericElementAtOrDefault;
-    function IEnumerable.Contains = NonGenericContains;
-    function IEnumerable.Min = NonGenericMin;
-    function IEnumerable.Max = NonGenericMax;
-    function IEnumerable.Skip = NonGenericSkip;
-    function IEnumerable.Take = NonGenericTake;
-    function IEnumerable.Concat = NonGenericConcat;
-    function IEnumerable.Reversed = NonGenericReversed;
-    function IEnumerable.EqualsTo = NonGenericEqualsTo;
-    function IEnumerable.ToList = NonGenericToList;
-    function IEnumerable.ToSet = NonGenericToSet;
-
+  {$REGION 'Property Accessors'}
     function GetCount: Integer; virtual;
     function GetElementType: PTypeInfo; virtual; abstract;
     function GetIsEmpty: Boolean; virtual;
+  {$ENDREGION}
+  protected
+  {$REGION 'Implements IInterface'}
+    function QueryInterface(const IID: TGUID; out Obj): HResult; virtual; stdcall;
+    function _AddRef: Integer; virtual; stdcall;
+    function _Release: Integer; virtual; stdcall;
+  {$ENDREGION}
   public
     function AsObject: TObject;
 
+    function GetEnumerator: IEnumerator;
+
     property Count: Integer read GetCount;
+    property ElementType: PTypeInfo read GetElementType;
     property IsEmpty: Boolean read GetIsEmpty;
   end;
 
   ///	<summary>
-  ///	  Provides a default implementation for <c>IEnumerable(T)</c> (Extension
-  ///	  Methods).
+  ///	  Provides a default implementation for the
+  ///	  <see cref="Spring.Collections|IEnumerable&lt;T&gt;" /> interface.
   ///	</summary>
-  TEnumerableBase<T> = class abstract(TEnumerableBase, IEnumerable<T>, IElementType)
+  TEnumerableBase<T> = class abstract(TEnumerableBase, IEnumerable<T>)
+  private
+    fComparer: IComparer<T>;
+    class var fEqualityComparer: IEqualityComparer<T>;
+    function GetEnumeratorNonGeneric: IEnumerator; override; final;
   protected
-    function NonGenericGetEnumerator: IEnumerator; override; final;
-    function NonGenericTryGetFirst(out value: TValue): Boolean; override; final;
-    function NonGenericTryGetLast(out value: TValue): Boolean; override; final;
-    function NonGenericFirst: TValue; override; final;
-    function NonGenericFirstOrDefault: TValue; override; final;
-    function NonGenericLast: TValue; override; final;
-    function NonGenericLastOrDefault: TValue; override; final;
-    function NonGenericSingle: TValue; override; final;
-    function NonGenericSingleOrDefault: TValue; override; final;
-    function NonGenericElementAt(index: Integer): TValue; override; final;
-    function NonGenericElementAtOrDefault(index: Integer): TValue; override; final;
-    function NonGenericContains(const item: TValue): Boolean; override; final;
-    function NonGenericMin: TValue; override; final;
-    function NonGenericMax: TValue; override; final;
-    function NonGenericSkip(count: Integer): IEnumerable; override; final;
-    function NonGenericTake(count: Integer): IEnumerable; override; final;
-    function NonGenericConcat(const collection: IEnumerable): IEnumerable; override; final;
-    function NonGenericReversed: IEnumerable; override; final;
-    function NonGenericEqualsTo(const collection: IEnumerable): Boolean; override; final;
-    function NonGenericToList: IList; override; final;
-    function NonGenericToSet: ISet; override; final;
-
-  {$REGION 'Implements IElementType'}
+  {$REGION 'Property Accessors'}
+    function GetComparer: IComparer<T>;
     function GetElementType: PTypeInfo; override;
+    class function GetEqualityComparer: IEqualityComparer<T>; static;
   {$ENDREGION}
+{$IFDEF WEAKREF}
+    function HasWeakRef: Boolean;
+{$ENDIF}
+    function TryGetElementAt(out value: T; index: Integer): Boolean; virtual;
+    function TryGetFirst(out value: T): Boolean; overload; virtual;
+    function TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean; overload;
+    function TryGetLast(out value: T): Boolean; overload; virtual;
+    function TryGetLast(out value: T; const predicate: TPredicate<T>): Boolean; overload;
+    function TryGetSingle(out value: T): Boolean; overload; virtual;
+    function TryGetSingle(out value: T; const predicate: TPredicate<T>): Boolean; overload;
 
-    function GetComparer: IComparer<T>; virtual;    
+    property Comparer: IComparer<T> read GetComparer;
+    class property EqualityComparer: IEqualityComparer<T> read GetEqualityComparer;
   public
-    function GetEnumerator: IEnumerator<T>; virtual; abstract;
-    function TryGetFirst(out value: T): Boolean; virtual;
-    function TryGetLast(out value: T): Boolean; virtual;
+    constructor Create; overload; virtual;
+    constructor Create(const comparer: IComparer<T>); overload;
+    constructor Create(const comparer: TComparison<T>); overload;
+
+    class destructor Destroy;
+
+    function GetEnumerator: IEnumerator<T>; virtual;
+
+    function All(const predicate: TPredicate<T>): Boolean;
+    function Any: Boolean; overload;
+    function Any(const predicate: TPredicate<T>): Boolean; overload;
+
+    function Concat(const second: IEnumerable<T>): IEnumerable<T>;
+
+    function Contains(const value: T): Boolean; overload; virtual;
+    function Contains(const value: T; comparer: IEqualityComparer<T>): Boolean; overload; virtual;
+
+    function ElementAt(index: Integer): T;
+    function ElementAtOrDefault(index: Integer): T; overload;
+    function ElementAtOrDefault(index: Integer; const defaultValue: T): T; overload;
+
+    function EqualsTo(const values: array of T): Boolean; overload;
+    function EqualsTo(const collection: IEnumerable<T>): Boolean; overload;
+    function EqualsTo(const collection: IEnumerable<T>; const comparer: IEqualityComparer<T>): Boolean; overload;
+
     function First: T; overload; virtual;
-    function First(const predicate: TPredicate<T>): T; overload; virtual;
-    function FirstOrDefault: T; overload; virtual;
-    function FirstOrDefault(const defaultValue: T): T; overload;
-    function FirstOrDefault(const predicate: TPredicate<T>): T; overload; virtual;
+    function First(const predicate: TPredicate<T>): T; overload;
+    function FirstOrDefault: T; overload;
+    function FirstOrDefault(const defaultValue: T): T; overload; virtual;
+    function FirstOrDefault(const predicate: TPredicate<T>): T; overload;
+    function FirstOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
+
+    procedure ForEach(const action: TAction<T>); overload;
+
     function Last: T; overload; virtual;
-    function Last(const predicate: TPredicate<T>): T; overload; virtual;
-    function LastOrDefault: T; overload; virtual;
-    function LastOrDefault(const defaultValue: T): T; overload;
-    function LastOrDefault(const predicate: TPredicate<T>): T; overload; virtual;
-    function Single: T; overload;
+    function Last(const predicate: TPredicate<T>): T; overload;
+    function LastOrDefault: T; overload;
+    function LastOrDefault(const defaultValue: T): T; overload; virtual;
+    function LastOrDefault(const predicate: TPredicate<T>): T; overload;
+    function LastOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
+
+    function Max: T; overload;
+    function Max(const comparer: IComparer<T>): T; overload;
+    function Min: T; overload;
+    function Min(const comparer: IComparer<T>): T; overload;
+
+    function Ordered: IEnumerable<T>; overload;
+    function Ordered(const comparer: IComparer<T>): IEnumerable<T>; overload;
+
+    function Reversed: IEnumerable<T>; virtual;
+
+    function Single: T; overload; virtual;
     function Single(const predicate: TPredicate<T>): T; overload;
     function SingleOrDefault: T; overload;
+    function SingleOrDefault(const defaultValue: T): T; overload; virtual;
     function SingleOrDefault(const predicate: TPredicate<T>): T; overload;
-    function ElementAt(index: Integer): T;
-    function ElementAtOrDefault(index: Integer): T;
-    function Min: T;
-    function Max: T;
-    function Contains(const item: T): Boolean; overload; virtual;
-    function Contains(const item: T; const comparer: IEqualityComparer<T>): Boolean; overload; virtual;
-    function All(const predicate: TPredicate<T>): Boolean;
-    function Any(const predicate: TPredicate<T>): Boolean;
-    function Where(const predicate: TPredicate<T>): IEnumerable<T>; virtual;
+    function SingleOrDefault(const predicate: TPredicate<T>; const defaultValue: T): T; overload;
+
     function Skip(count: Integer): IEnumerable<T>;
     function SkipWhile(const predicate: TPredicate<T>): IEnumerable<T>; overload;
     function SkipWhile(const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>; overload;
+
     function Take(count: Integer): IEnumerable<T>;
     function TakeWhile(const predicate: TPredicate<T>): IEnumerable<T>; overload;
     function TakeWhile(const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>; overload;
-    function Concat(const collection: IEnumerable<T>): IEnumerable<T>;
-    function Reversed: IEnumerable<T>; virtual;
-    procedure ForEach(const action: TAction<T>); overload;
-    procedure ForEach(const action: TActionProc<T>); overload;
-    procedure ForEach(const action: TActionMethod<T>); overload;
-    function EqualsTo(const collection: IEnumerable<T>): Boolean; overload;
-    function EqualsTo(const collection: IEnumerable<T>; const comparer: IEqualityComparer<T>): Boolean; overload;
+
+    function Where(const predicate: TPredicate<T>): IEnumerable<T>; virtual;
+
     function ToArray: TArray<T>; virtual;
-    function ToList: IList<T>; virtual;
-    function ToSet: ISet<T>; virtual;
   end;
 
   ///	<summary>
-  ///	  Provides an abstract class base for <c>ICollection{T}</c>.
+  ///	  Provides an abstract implementation for the
+  ///	  <see cref="Spring.Collections|ICollection&lt;T&gt;" /> interface.
   ///	</summary>
   ///	<remarks>
-  ///	  Notes: The Add/Remove/Clear methods are abstract. IsReadOnly returns
-  ///	  False by default.
+  ///	  The Add/Remove/Extract/Clear methods are abstract. IsReadOnly returns
+  ///	  <c>False</c> by default.
   ///	</remarks>
-  TCollectionBase<T> = class abstract(TEnumerableBase<T>, ICollection<T>, ICollection)
+  TCollectionBase<T> = class abstract(TEnumerableBase<T>, ICollection<T>)
   protected
+  {$REGION 'Property Accessors'}
     function GetIsReadOnly: Boolean; virtual;
-
-    procedure NonGenericAdd(const item: TValue);
-    procedure ICollection.Add = NonGenericAdd;
-    procedure NonGenericAddRange(const collection: IEnumerable);
-    procedure ICollection.AddRange = NonGenericAddRange;
-
-    function NonGenericRemove(const item: TValue): Boolean;
-    function ICollection.Remove = NonGenericRemove;
-    procedure NonGenericRemoveRange(const collection: IEnumerable);
-    procedure ICollection.RemoveRange = NonGenericRemoveRange;
+  {$ENDREGION}
   public
+    constructor Create(const collection: array of T); overload;
+    constructor Create(const collection: IEnumerable<T>); overload;
+
     procedure Add(const item: T); virtual; abstract;
     procedure AddRange(const collection: array of T); overload; virtual;
     procedure AddRange(const collection: IEnumerable<T>); overload; virtual;
-    procedure AddRange(const collection: TEnumerable<T>); overload; virtual;
+
+    procedure Clear; virtual; abstract;
 
     function Remove(const item: T): Boolean; virtual; abstract;
     procedure RemoveRange(const collection: array of T); overload; virtual;
     procedure RemoveRange(const collection: IEnumerable<T>); overload; virtual;
-    procedure RemoveRange(const collection: TEnumerable<T>); overload; virtual;
 
-    procedure Clear; virtual; abstract;
+    function Extract(const item: T): T; virtual; abstract;
+    procedure ExtractRange(const collection: array of T); overload; virtual;
+    procedure ExtractRange(const collection: IEnumerable<T>); overload; virtual;
 
-    function AsCollection: ICollection;
+    procedure CopyTo(var values: TArray<T>; index: Integer); virtual;
 
-    ///	<value>
-    ///	  Returns false, by default.
-    ///	</value>
     property IsReadOnly: Boolean read GetIsReadOnly;
   end;
 
@@ -247,113 +236,110 @@ type
     fController: Pointer;
     function GetController: IInterface;
   protected
-
   {$REGION 'Implements IInterface'}
-    function _AddRef: Integer; stdcall;
-    function _Release: Integer; stdcall;
+    function _AddRef: Integer; override;
+    function _Release: Integer; override;
   {$ENDREGION}
   public
     constructor Create(const controller: IInterface);
     property Controller: IInterface read GetController;
   end;
 
-  TListBase<T> = class abstract(TCollectionBase<T>, IList<T>, IList)
-  protected
-    type
-      TEnumerator = class(TEnumeratorBase<T>)
-      private
-        fList: TListBase<T>;
-        fIndex: Integer;
-      protected
-        function GetCurrent: T; override;
-      public
-        constructor Create(const list: TListBase<T>);
-        function MoveNext: Boolean; override;
-      end;
+  TContainedReadOnlyCollection<T> = class(TEnumerableBase<T>, IReadOnlyCollection<T>)
   private
-    fComparer: IComparer<T>;
-    fOnChanged: ICollectionChangedDelegate<T>;
-    fOnNotify: ICollectionNotifyDelegate<T>;
-    function GetOnChanged: ICollectionChangedDelegate<T>;
-    function GetOnNotify: ICollectionNotifyDelegate<T>;
-    function NonGenericGetOnChanged: IEvent;
-    function NonGenericGetOnNotify: IEvent;
-    function IList.GetOnChanged = NonGenericGetOnChanged;
-    function IList.GetOnNotify = NonGenericGetOnNotify;
+    fController: Pointer;
   protected
-    function GetComparer: IComparer<T>; override;
-    procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
-    procedure Notify(const item: T; action: TCollectionNotification); virtual;
-    procedure DoSort(const comparer: IComparer<T>); virtual;
-    procedure DoInsert(index: Integer; const item: T); virtual; abstract;
-    procedure DoDelete(index: Integer; notification: TCollectionNotification); virtual; abstract;
-    procedure DoDeleteRange(index, count: Integer; notification: TCollectionNotification); virtual; abstract;
-    function GetItem(index: Integer): T; virtual; abstract;
-    procedure SetItem(index: Integer; const value: T); virtual; abstract;
-
-    function NonGenericGetItem(index: Integer): TValue;
-    procedure NonGenericSetItem(index: Integer; const value: TValue);
-    procedure NonGenericInsert(index: Integer; const item: TValue);
-    procedure NonGenericInsertRange(index: Integer; const collection: IEnumerable);
-    function NonGenericIndexOf(const item: TValue): Integer;
-    function NonGenericLastIndexOf(const item: TValue): Integer;
-
-    function IList.GetItem = NonGenericGetItem;
-    procedure IList.SetItem = NonGenericSetItem;
-    procedure IList.Insert = NonGenericInsert;
-    procedure IList.InsertRange = NonGenericInsertRange;
-    function IList.IndexOf = NonGenericIndexOf;
-    function IList.LastIndexOf = NonGenericLastIndexOf;
+  {$REGION 'Implements IInterface'}
+    function _AddRef: Integer; override;
+    function _Release: Integer; override;
+  {$ENDREGION}
   public
-    constructor Create; overload;
-    constructor Create(const comparer: IComparer<T>); overload;
-    constructor Create(const collection: array of T); overload;
-    constructor Create(const collection: IEnumerable<T>); overload;
-    constructor Create(const collection: TEnumerable<T>); overload;
-    destructor Destroy; override;
+    constructor Create(const controller: IInterface);
+  end;
 
+  ///	<summary>
+  ///	  Provides an abstract implementation for the
+  ///	  <see cref="Spring.Collections|IList&lt;T&gt;" /> interface.
+  ///	</summary>
+  TListBase<T> = class abstract(TCollectionBase<T>, IList<T>, IReadOnlyList<T>, IList)
+  private
+    fOnChanged: ICollectionChangedEvent<T>;
+    function AsList: IList;
+    function AsReadOnlyList: IReadOnlyList<T>;
+  {$HINTS OFF}
+    property List: IList read AsList implements IList;
+  {$HINTS ON}
+  protected
+  {$REGION 'Property Accessors'}
+    function GetItem(index: Integer): T; virtual; abstract;
+    function GetOnChanged: ICollectionChangedEvent<T>; 
+    procedure SetItem(index: Integer; const value: T); virtual; abstract;
+  {$ENDREGION}
+  {$REGION 'Implements IInterface'}
+    function QueryInterface(const IID: TGUID; out Obj): HResult; override; stdcall;
+  {$ENDREGION}
+    procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
+    function TryGetElementAt(out value: T; index: Integer): Boolean; override;
     function TryGetFirst(out value: T): Boolean; override;
     function TryGetLast(out value: T): Boolean; override;
-    function Contains(const item: T): Boolean; override;
-    function ToArray: TArray<T>; override;
-    function Reversed: IEnumerable<T>; override;
-
-    function GetEnumerator: IEnumerator<T>; override;
+    function TryGetSingle(out value: T): Boolean; override;
+  public
+    constructor Create; overload; override;
+    destructor Destroy; override;
 
     procedure Add(const item: T); override;
-    function  Remove(const item: T): Boolean; override;
+    function Remove(const item: T): Boolean; override;
     procedure Clear; override;
 
-    procedure Insert(index: Integer; const item: T); virtual;
+    function First: T; overload; override;
+    function FirstOrDefault(const defaultValue: T): T; overload; override;
+
+    function Last: T; overload; override;
+    function LastOrDefault(const defaultValue: T): T; overload; override;
+
+    function Single: T; overload; override;
+    function SingleOrDefault(const defaultValue: T): T; overload; override;
+
+    procedure Insert(index: Integer; const item: T); virtual; abstract;
     procedure InsertRange(index: Integer; const collection: array of T); overload; virtual;
     procedure InsertRange(index: Integer; const collection: IEnumerable<T>); overload; virtual;
-    procedure InsertRange(index: Integer; const collection: TEnumerable<T>); overload; virtual;
-    procedure Delete(index: Integer);
-    procedure DeleteRange(startIndex, count: Integer);
-    function Extract(const item: T): T;
-    function IndexOf(const item: T): Integer;
-    function LastIndexOf(const item: T): Integer;
+
+    procedure Delete(index: Integer); virtual; abstract;
+    procedure DeleteRange(startIndex, count: Integer); virtual; abstract;
+
+    function IndexOf(const item: T): Integer; overload;
+    function IndexOf(const item: T; index: Integer): Integer; overload;
+    function IndexOf(const item: T; index, count: Integer): Integer; overload; virtual;
+
+    function LastIndexOf(const item: T): Integer; overload;
+    function LastIndexOf(const item: T; index: Integer): Integer; overload;
+    function LastIndexOf(const item: T; index, count: Integer): Integer; overload; virtual;
+
     procedure Exchange(index1, index2: Integer); virtual; abstract;
     procedure Move(currentIndex, newIndex: Integer); virtual; abstract;
-    procedure Sort; overload;
-    procedure Sort(const comparer: IComparer<T>); overload;
-    procedure Sort(const comparison: TComparison<T>); overload;
-    procedure Reverse; virtual; abstract;
 
-    function AsList: IList;
+    procedure Reverse; overload;
+    procedure Reverse(index, count: Integer); overload; virtual; abstract;
+
+    procedure Sort; overload;
+    procedure Sort(const comparer: IComparer<T>); overload; virtual; abstract;
+    procedure Sort(const comparison: TComparison<T>); overload;
+
+    function ToArray: TArray<T>; override;
 
     property Items[index: Integer]: T read GetItem write SetItem; default;
-    property OnChanged: ICollectionChangedDelegate<T> read GetOnChanged;
-    property OnNotify: ICollectionNotifyDelegate<T> read GetOnNotify;
+    property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
   end;
 
 implementation
 
 uses
-  Spring.Collections.Sets,
-  Spring.Collections.Lists,
+  TypInfo,
+  Spring.Collections.Adapters,
+  Spring.Collections.Events,
   Spring.Collections.Extensions,
   Spring.ResourceStrings;
+
 
 {$REGION 'TEnumeratorBase'}
 
@@ -372,7 +358,12 @@ end;
 
 {$REGION 'TEnumeratorBase<T>'}
 
-function TEnumeratorBase<T>.NonGenericGetCurrent: TValue;
+function TEnumeratorBase<T>.GetCurrent: T;
+begin
+  raise EInvalidOperationException.CreateRes(@SEnumEmpty);
+end;
+
+function TEnumeratorBase<T>.GetCurrentNonGeneric: TValue;
 begin
   Result := TValue.From<T>(GetCurrent);
 end;
@@ -392,16 +383,37 @@ var
   enumerator: IEnumerator;
 begin
   Result := 0;
-  enumerator := NonGenericGetEnumerator;
+  enumerator := GetEnumerator;
   while enumerator.MoveNext do
-  begin
     Inc(Result);
-  end;
+end;
+
+function TEnumerableBase.GetEnumerator: IEnumerator;
+begin
+  Result := GetEnumeratorNonGeneric;
 end;
 
 function TEnumerableBase.GetIsEmpty: Boolean;
+var
+  enumerator: IEnumerator;
 begin
-  Result := Count = 0;
+  enumerator := GetEnumerator;
+  Result := not enumerator.MoveNext;
+end;
+
+function TEnumerableBase.QueryInterface(const IID: TGUID; out Obj): HResult;
+begin
+  Result := inherited QueryInterface(IID, Obj);
+end;
+
+function TEnumerableBase._AddRef: Integer;
+begin
+  Result := inherited _AddRef;
+end;
+
+function TEnumerableBase._Release: Integer;
+begin
+  Result := inherited _Release;
 end;
 
 {$ENDREGION}
@@ -409,113 +421,120 @@ end;
 
 {$REGION 'TEnumerableBase<T>'}
 
-function TEnumerableBase<T>.Contains(const item: T): Boolean;
-var
-  comparer: IEqualityComparer<T>;
+constructor TEnumerableBase<T>.Create;
 begin
-  TArgument.CheckNotNull<T>(item, 'item');
+  inherited Create;
+  fComparer := TComparer<T>.Default;
+end;
 
-  comparer := TEqualityComparer<T>.Default;
-  Result := Contains(item, comparer);
+constructor TEnumerableBase<T>.Create(const comparer: IComparer<T>);
+begin
+  Create;
+  if Assigned(comparer) then
+    fComparer := comparer;
+end;
+
+constructor TEnumerableBase<T>.Create(const comparer: TComparison<T>);
+begin
+  Create(TComparer<T>.Construct(comparer));
+end;
+
+class destructor TEnumerableBase<T>.Destroy;
+begin
+  fEqualityComparer := nil;
 end;
 
 function TEnumerableBase<T>.All(const predicate: TPredicate<T>): Boolean;
 var
   item: T;
 begin
-  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
 
   Result := True;
   for item in Self do
-  begin
     if not predicate(item) then
       Exit(False);
-  end;
+end;
+
+function TEnumerableBase<T>.Any: Boolean;
+var
+  enumerator: IEnumerator;
+begin
+  enumerator := GetEnumerator;
+  Result := enumerator.MoveNext;
 end;
 
 function TEnumerableBase<T>.Any(const predicate: TPredicate<T>): Boolean;
 var
   item: T;
 begin
-  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
 
   Result := False;
   for item in Self do
-  begin
     if predicate(item) then
       Exit(True);
-  end;
 end;
 
 function TEnumerableBase<T>.Concat(
-  const collection: IEnumerable<T>): IEnumerable<T>;
+  const second: IEnumerable<T>): IEnumerable<T>;
 begin
-  TArgument.CheckNotNull(Assigned(collection), 'collection');
+  Guard.CheckNotNull(Assigned(second), 'second');
 
-  Result := TConcatEnumerable<T>.Create(Self, collection);
+  Result := TConcatIterator<T>.Create(Self, second);
 end;
 
-function TEnumerableBase<T>.Contains(const item: T;
-  const comparer: IEqualityComparer<T>): Boolean;
-var
-  enumerator: IEnumerator<T>;
+function TEnumerableBase<T>.Contains(const value: T): Boolean;
 begin
-  TArgument.CheckNotNull<T>(item, 'item');
+  Result := Contains(value, nil);
+end;
 
-  enumerator := GetEnumerator;
-  Result := False;
-  while enumerator.MoveNext do
-  begin
-    if comparer.Equals(enumerator.Current, item) then
-    begin
+function TEnumerableBase<T>.Contains(const value: T;
+  comparer: IEqualityComparer<T>): Boolean;
+var
+  item: T;
+begin
+  Guard.CheckNotNull<T>(value, 'value');
+
+  if not Assigned(comparer) then
+    comparer := EqualityComparer;
+
+  for item in Self do
+    if comparer.Equals(value, item) then
       Exit(True);
-    end;
-  end;
+  Result := False;
 end;
 
 function TEnumerableBase<T>.ElementAt(index: Integer): T;
-var
-  enumerator: IEnumerator<T>;
-  localIndex: Integer;
 begin
-  TArgument.CheckRange(index >= 0, 'index');
-
-  enumerator := GetEnumerator;
-  localIndex := 0;
-  while enumerator.MoveNext do
-  begin
-    if localIndex = index then
-    begin
-      Exit(enumerator.Current);
-    end;
-    Inc(localIndex);
-  end;
-  TArgument.RaiseArgumentOutOfRangeException('index');
+  if not TryGetElementAt(Result, index) then
+    raise EArgumentOutOfRangeException.Create('index');
 end;
 
 function TEnumerableBase<T>.ElementAtOrDefault(index: Integer): T;
-var
-  enumerator: IEnumerator<T>;
-  localIndex: Integer;
 begin
-  TArgument.CheckRange(index >= 0, 'index');
+  if not TryGetElementAt(Result, index) then
+    Result := Default(T);
+end;
 
-  enumerator := GetEnumerator;
-  localIndex := 0;
-  while enumerator.MoveNext do
-  begin
-    if localIndex = index then
-    begin
-      Exit(enumerator.Current);
-    end;
-    Inc(localIndex);
-  end;
-  Result := Default(T);
+function TEnumerableBase<T>.ElementAtOrDefault(index: Integer;
+  const defaultValue: T): T;
+begin
+  if not TryGetElementAt(Result, index) then
+    Result := defaultValue;
+end;
+
+function TEnumerableBase<T>.EqualsTo(const values: array of T): Boolean;
+var
+  collection: IEnumerable<T>;
+begin
+  collection := TArrayIterator<T>.Create(values);
+  Result := EqualsTo(collection);
 end;
 
 function TEnumerableBase<T>.EqualsTo(const collection: IEnumerable<T>): Boolean;
 begin
-  Result := EqualsTo(collection, TEqualityComparer<T>.Default);
+  Result := EqualsTo(collection, EqualityComparer);
 end;
 
 function TEnumerableBase<T>.EqualsTo(const collection: IEnumerable<T>;
@@ -524,8 +543,8 @@ var
   e1, e2: IEnumerator<T>;
   hasNext: Boolean;
 begin
-  TArgument.CheckNotNull(Assigned(collection), 'collection');
-  TArgument.CheckNotNull(Assigned(comparer), 'comparer');
+  Guard.CheckNotNull(Assigned(collection), 'collection');
+  Guard.CheckNotNull(Assigned(comparer), 'comparer');
 
   e1 := GetEnumerator;
   e2 := collection.GetEnumerator;
@@ -538,505 +557,80 @@ begin
     else if not hasNext then
       Exit(True);
     if hasNext and not comparer.Equals(e1.Current, e2.Current) then
-    begin
       Exit(False);
-    end;
-  end;
-end;
-
-function TEnumerableBase<T>.TryGetFirst(out value: T): Boolean;
-var
-  enumerator: IEnumerator<T>;
-begin
-  enumerator := GetEnumerator;
-  Result := enumerator.MoveNext;
-  if Result then
-  begin
-    value := enumerator.Current;
-  end
-end;
-
-function TEnumerableBase<T>.TryGetLast(out value: T): Boolean;
-var
-  enumerator: IEnumerator<T>;
-  hasNext: Boolean;
-begin
-  enumerator := GetEnumerator;
-  Result := enumerator.MoveNext;
-  hasNext := Result;
-  while hasNext do
-  begin
-    value := enumerator.Current;
-    hasNext := enumerator.MoveNext;
   end;
 end;
 
 function TEnumerableBase<T>.First: T;
+var
+  enumerator: IEnumerator<T>;
 begin
-  if not TryGetFirst(Result) then
-  begin
-    raise EInvalidOperationException.Create('First');  // TEMP
-  end;
+  enumerator := GetEnumerator;
+  if enumerator.MoveNext then
+    Result := enumerator.Current
+  else
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
 end;
 
 function TEnumerableBase<T>.First(const predicate: TPredicate<T>): T;
+var
+  item: T;
 begin
-  Result := Where(predicate).First; // TEMP
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
+
+  for item in Self do
+    if predicate(item) then
+      Exit(item);
+  raise EInvalidOperationException.CreateRes(@SSequenceContainsNoMatchingElement);
 end;
 
 function TEnumerableBase<T>.FirstOrDefault: T;
 begin
-  if not TryGetFirst(Result) then
-  begin
-    Result := Default(T);
-  end;
+  Result := FirstOrDefault(Default(T));
 end;
 
 function TEnumerableBase<T>.FirstOrDefault(const defaultValue: T): T;
+var
+  enumerator: IEnumerator<T>;
 begin
-  if not TryGetFirst(Result) then
-  begin
+  enumerator := GetEnumerator;
+  if enumerator.MoveNext then
+    Result := enumerator.Current
+  else
     Result := defaultValue;
-  end;
 end;
 
 function TEnumerableBase<T>.FirstOrDefault(const predicate: TPredicate<T>): T;
 begin
-  Result := Where(predicate).FirstOrDefault; // TEMP
+  Result := FirstOrDefault(predicate, Default(T));
+end;
+
+function TEnumerableBase<T>.FirstOrDefault(const predicate: TPredicate<T>;
+  const defaultValue: T): T;
+var
+  item: T;
+begin
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
+
+  for item in Self do
+    if predicate(item) then
+      Exit(item);
+  Result := defaultValue;
 end;
 
 procedure TEnumerableBase<T>.ForEach(const action: TAction<T>);
 var
   item: T;
 begin
-  TArgument.CheckNotNull(Assigned(action), 'action');
+  Guard.CheckNotNull(Assigned(action), 'action');
 
   for item in Self do
-  begin
     action(item);
-  end;
-end;
-
-procedure TEnumerableBase<T>.ForEach(const action: TActionProc<T>);
-var
-  item: T;
-begin
-  TArgument.CheckNotNull(Assigned(action), 'action');
-
-  for item in Self do
-  begin
-    action(item);
-  end;
-end;
-
-procedure TEnumerableBase<T>.ForEach(const action: TActionMethod<T>);
-var
-  item: T;
-begin
-  TArgument.CheckNotNull(Assigned(action), 'action');
-
-  for item in Self do
-  begin
-    action(item);
-  end;
-end;
-
-function TEnumerableBase<T>.Last: T;
-begin
-  if not TryGetLast(Result) then
-  begin
-    raise EInvalidOperationException.Create('Last');  // TEMP
-  end;
-end;
-
-function TEnumerableBase<T>.Last(const predicate: TPredicate<T>): T;
-begin
-  Result := Where(predicate).Last;
-end;
-
-function TEnumerableBase<T>.LastOrDefault(const defaultValue: T): T;
-begin
-  if not TryGetLast(Result) then
-  begin
-    Result := defaultValue;
-  end;
-end;
-
-function TEnumerableBase<T>.LastOrDefault: T;
-begin
-  if not TryGetLast(Result) then
-  begin
-    Result := Default(T);
-  end;
-end;
-
-function TEnumerableBase<T>.LastOrDefault(const predicate: TPredicate<T>): T;
-begin
-  Result := Where(predicate).LastOrDefault;
-end;
-
-function TEnumerableBase<T>.Max: T;
-var
-  comparer: IComparer<T>;
-  hasElement: Boolean;
-  item: T;
-begin
-  comparer := GetComparer;
-  hasElement := False;
-  for item in Self do
-  begin
-    if hasElement then
-    begin
-      if comparer.Compare(item, Result) > 0 then
-      begin
-        Result := item;
-      end;
-    end
-    else
-    begin
-      hasElement := True;
-      Result := item;
-    end;
-  end;
-  if not hasElement then
-  begin
-    raise EInvalidOperationException.CreateRes(@SSequenceIsEmpty);
-  end;
-end;
-
-function TEnumerableBase<T>.Min: T;
-var
-  comparer: IComparer<T>;
-  hasElement: Boolean;
-  item: T;
-begin
-  comparer := GetComparer;
-  hasElement := False;
-  for item in Self do
-  begin
-    if hasElement then
-    begin
-      if comparer.Compare(item, Result) < 0 then
-      begin
-        Result := item;
-      end;
-    end
-    else
-    begin
-      hasElement := True;
-      Result := item;
-    end;
-  end;
-  if not hasElement then
-  begin
-    raise EInvalidOperationException.CreateRes(@SSequenceIsEmpty);
-  end;
-end;
-
-function TEnumerableBase<T>.NonGenericConcat(
-  const collection: IEnumerable): IEnumerable;
-begin
-  Result := Concat(collection as TEnumerableBase<T>);
-end;
-
-function TEnumerableBase<T>.NonGenericContains(const item: TValue): Boolean;
-begin
-  Result := Contains(item.AsType<T>);
-end;
-
-function TEnumerableBase<T>.NonGenericElementAt(index: Integer): TValue;
-begin
-  Result := TValue.From<T>(ElementAt(index));
-end;
-
-function TEnumerableBase<T>.NonGenericElementAtOrDefault(
-  index: Integer): TValue;
-begin
-  Result := TValue.From<T>(ElementAtOrDefault(index));
-end;
-
-function TEnumerableBase<T>.NonGenericEqualsTo(
-  const collection: IEnumerable): Boolean;
-begin
-  Result := EqualsTo(collection as TEnumerableBase<T>);
-end;
-
-function TEnumerableBase<T>.NonGenericFirst: TValue;
-begin
-  Result := TValue.From<T>(First);
-end;
-
-function TEnumerableBase<T>.NonGenericFirstOrDefault: TValue;
-begin
-  Result := TValue.From<T>(FirstOrDefault);
-end;
-
-function TEnumerableBase<T>.NonGenericGetEnumerator: IEnumerator;
-begin
-  Result := GetEnumerator;
-end;
-
-function TEnumerableBase<T>.NonGenericLast: TValue;
-begin
-  Result := TValue.From<T>(Last);
-end;
-
-function TEnumerableBase<T>.NonGenericLastOrDefault: TValue;
-begin
-  Result := TValue.From<T>(LastOrDefault);
-end;
-
-function TEnumerableBase<T>.NonGenericMax: TValue;
-begin
-  Result := TValue.From<T>(Max);
-end;
-
-function TEnumerableBase<T>.NonGenericMin: TValue;
-begin
-  Result := TValue.From<T>(Min);
-end;
-
-function TEnumerableBase<T>.NonGenericReversed: IEnumerable;
-begin
-  Result := Reversed;
-end;
-
-function TEnumerableBase<T>.NonGenericSingle: TValue;
-begin
-  Result := TValue.From<T>(Single);
-end;
-
-function TEnumerableBase<T>.NonGenericSingleOrDefault: TValue;
-begin
-  Result := TValue.From<T>(SingleOrDefault);
-end;
-
-function TEnumerableBase<T>.NonGenericSkip(count: Integer): IEnumerable;
-begin
-  Result := Skip(count);
-end;
-
-function TEnumerableBase<T>.NonGenericTake(count: Integer): IEnumerable;
-begin
-  Result := Take(count);
-end;
-
-function TEnumerableBase<T>.NonGenericToList: IList;
-begin
-  Supports(ToList, IList, Result);
-
-  TArgument.CheckNotNull(Result, 'Result');
-end;
-
-function TEnumerableBase<T>.NonGenericToSet: ISet;
-begin
-  Supports(ToSet, ISet, Result);
-
-  TArgument.CheckNotNull(Result, 'Result');
-end;
-
-function TEnumerableBase<T>.NonGenericTryGetFirst(out value: TValue): Boolean;
-var
-  item: T;
-begin  
-  Result := TryGetFirst(item);
-  if Result then
-    value := TValue.From<T>(item);
-end;
-
-function TEnumerableBase<T>.NonGenericTryGetLast(out value: TValue): Boolean;
-var
-  item: T;
-begin  
-  Result := TryGetLast(item);
-  if Result then
-    value := TValue.From<T>(item);
-end;
-
-function TEnumerableBase<T>.Reversed: IEnumerable<T>;
-var
-  list: IList<T>;
-begin
-  list := ToList;
-  Result := TReversedEnumerable<T>.Create(list);
-end;
-
-function TEnumerableBase<T>.Single: T;
-var
-  enumerator: IEnumerator<T>;
-  item: T;
-begin
-  enumerator := GetEnumerator;
-  if not enumerator.MoveNext then
-  begin
-    raise EInvalidOperationException.CreateRes(@SSequenceIsEmpty);
-  end;
-  Result := enumerator.Current;
-  if enumerator.MoveNext then
-  begin
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement);
-  end;
-end;
-
-function TEnumerableBase<T>.Single(const predicate: TPredicate<T>): T;
-var
-  enumerator: IEnumerator<T>;
-  item: T;
-  isSatisfied: Boolean;
-begin
-  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
-
-  enumerator := GetEnumerator;
-
-  if not enumerator.MoveNext then
-  begin
-    raise EInvalidOperationException.CreateRes(@SSequenceIsEmpty);
-  end;
-
-  Result := enumerator.Current;
-  isSatisfied := predicate(Result);
-
-  while enumerator.MoveNext do
-  begin
-    Result := enumerator.Current;
-    if predicate(Result) then
-    begin
-      if isSatisfied then
-      begin
-        raise EInvalidOperationException.CreateRes(@SMoreThanOneElementSatisfied);
-      end;
-      isSatisfied := True;
-    end;
-  end;
-  if not isSatisfied then
-  begin
-    raise EInvalidOperationException.CreateRes(@SNoElementSatisfiesCondition);
-  end;
-end;
-
-function TEnumerableBase<T>.SingleOrDefault: T;
-var
-  enumerator: IEnumerator<T>;
-  item: T;
-begin
-  enumerator := GetEnumerator;
-  if not enumerator.MoveNext then
-  begin
-    Exit(Default(T));
-  end;
-  Result := enumerator.Current;
-  if enumerator.MoveNext then
-  begin
-    raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement);
-  end;
-end;
-
-function TEnumerableBase<T>.SingleOrDefault(const predicate: TPredicate<T>): T;
-var
-  enumerator: IEnumerator<T>;
-  item: T;
-  isSatisfied: Boolean;
-begin
-  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
-
-  enumerator := GetEnumerator;
-  if not enumerator.MoveNext then
-  begin
-    Exit(Default(T));
-  end;
-
-  Result := enumerator.Current;
-  isSatisfied := predicate(Result);
-
-  while enumerator.MoveNext do
-  begin
-    Result := enumerator.Current;
-    if predicate(Result) then
-    begin
-      if isSatisfied then
-      begin
-        raise EInvalidOperationException.CreateRes(@SMoreThanOneElementSatisfied);
-      end;
-      isSatisfied := True;
-    end;
-  end;
-
-  if not isSatisfied then
-  begin
-    Result := Default(T);
-  end;
-end;
-
-function TEnumerableBase<T>.Where(
-  const predicate: TPredicate<T>): IEnumerable<T>;
-begin
-  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
-
-  Result := TWhereEnumerable<T>.Create(Self, predicate);
-end;
-
-function TEnumerableBase<T>.Skip(count: Integer): IEnumerable<T>;
-begin
-  Result := TSkipEnumerable<T>.Create(Self, count);
-end;
-
-function TEnumerableBase<T>.SkipWhile(
-  const predicate: TPredicate<T>): IEnumerable<T>;
-begin
-  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
-
-  Result := TSkipWhileEnumerable<T>.Create(Self, predicate);
-end;
-
-function TEnumerableBase<T>.SkipWhile(
-  const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>;
-begin
-  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
-
-  Result := TSkipWhileIndexEnumerable<T>.Create(Self, predicate);
-end;
-
-function TEnumerableBase<T>.Take(count: Integer): IEnumerable<T>;
-begin
-  Result := TTakeEnumerable<T>.Create(Self, count);
-end;
-
-function TEnumerableBase<T>.TakeWhile(
-  const predicate: TPredicate<T>): IEnumerable<T>;
-begin
-  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
-
-  Result := TTakeWhileEnumerable<T>.Create(Self, predicate);
-end;
-
-function TEnumerableBase<T>.TakeWhile(
-  const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>;
-begin
-  TArgument.CheckNotNull(Assigned(predicate), 'predicate');
-
-  Result := TTakeWhileIndexEnumerable<T>.Create(Self, predicate);
-end;
-
-function TEnumerableBase<T>.ToArray: TArray<T>;
-begin
-  Result := ToList.ToArray;
-end;
-
-function TEnumerableBase<T>.ToList: IList<T>;
-begin
-  Result := TList<T>.Create;
-  Result.AddRange(Self);
-end;
-
-function TEnumerableBase<T>.ToSet: ISet<T>;
-begin
-  Result := THashSet<T>.Create;
-  Result.AddRange(Self);
 end;
 
 function TEnumerableBase<T>.GetComparer: IComparer<T>;
 begin
-  Result := TComparer<T>.Default;
+  Result := fComparer;
 end;
 
 function TEnumerableBase<T>.GetElementType: PTypeInfo;
@@ -1044,74 +638,497 @@ begin
   Result := TypeInfo(T);
 end;
 
+function TEnumerableBase<T>.GetEnumerator: IEnumerator<T>;
+begin
+  Result := TEnumeratorBase<T>.Create;
+end;
+
+function TEnumerableBase<T>.GetEnumeratorNonGeneric: IEnumerator;
+begin
+  Result := GetEnumerator;
+end;
+
+class function TEnumerableBase<T>.GetEqualityComparer: IEqualityComparer<T>;
+begin
+  if not Assigned(fEqualityComparer) then
+    fEqualityComparer := TEqualityComparer<T>.Default;
+  Result := fEqualityComparer;
+end;
+
+{$IFDEF WEAKREF}
+function TEnumerableBase<T>.HasWeakRef: Boolean;
+begin
+  Result := System.TypInfo.HasWeakRef(TypeInfo(T));
+end;
+{$ENDIF}
+
+function TEnumerableBase<T>.Last: T;
+var
+  enumerator: IEnumerator<T>;
+begin
+  enumerator := GetEnumerator;
+  if not enumerator.MoveNext then
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+  repeat
+    Result := enumerator.Current;
+  until not enumerator.MoveNext;
+end;
+
+function TEnumerableBase<T>.Last(const predicate: TPredicate<T>): T;
+var
+  item: T;
+  found: Boolean;
+begin
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
+
+  found := False;
+  for item in Self do
+  begin
+    if predicate(item) then
+    begin
+      found := True;
+      Result := item;
+    end;
+  end;
+  if not found then
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoMatchingElement);
+end;
+
+function TEnumerableBase<T>.LastOrDefault: T;
+begin
+  Result := LastOrDefault(Default(T));
+end;
+
+function TEnumerableBase<T>.LastOrDefault(const defaultValue: T): T;
+var
+  item: T;
+begin
+  Result := defaultValue;
+  for item in Self do
+    Result := item;
+end;
+
+function TEnumerableBase<T>.LastOrDefault(const predicate: TPredicate<T>): T;
+begin
+  Result := LastOrDefault(predicate, Default(T));
+end;
+
+function TEnumerableBase<T>.LastOrDefault(const predicate: TPredicate<T>;
+  const defaultValue: T): T;
+var
+  item: T;
+begin
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
+
+  Result := defaultValue;
+  for item in Self do
+    if predicate(item) then
+      Result := item;
+end;
+
+function TEnumerableBase<T>.Max: T;
+begin
+  Result := Max(Comparer);
+end;
+
+function TEnumerableBase<T>.Max(const comparer: IComparer<T>): T;
+var
+  flag: Boolean;
+  item: T;
+begin
+  Guard.CheckNotNull(Assigned(comparer), 'comparer');
+
+  flag := False;
+  for item in Self do
+  begin
+    if flag then
+    begin
+      if comparer.Compare(item, Result) > 0 then
+        Result := item;
+    end
+    else
+    begin
+      flag := True;
+      Result := item;
+    end;
+  end;
+  if not flag then
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+end;
+
+function TEnumerableBase<T>.Min: T;
+begin
+  Result := Min(Comparer);
+end;
+
+function TEnumerableBase<T>.Min(const comparer: IComparer<T>): T;
+var
+  flag: Boolean;
+  item: T;
+begin
+  Guard.CheckNotNull(Assigned(comparer), 'comparer');
+
+  flag := False;
+  for item in Self do
+  begin
+    if flag then
+    begin
+      if fComparer.Compare(item, Result) < 0 then
+        Result := item;
+    end
+    else
+    begin
+      flag := True;
+      Result := item;
+    end;
+  end;
+  if not flag then
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+end;
+
+function TEnumerableBase<T>.Ordered: IEnumerable<T>;
+begin
+  Result := TOrderedIterator<T>.Create(Self, Comparer);
+end;
+
+function TEnumerableBase<T>.Ordered(
+  const comparer: IComparer<T>): IEnumerable<T>;
+begin
+  Guard.CheckNotNull(Assigned(comparer), 'comparer');
+
+  Result := TOrderedIterator<T>.Create(Self, comparer);
+end;
+
+function TEnumerableBase<T>.Reversed: IEnumerable<T>;
+begin
+  Result := TReversedIterator<T>.Create(Self);
+end;
+
+function TEnumerableBase<T>.Single: T;
+var
+  enumerator: IEnumerator<T>;
+begin
+  enumerator := GetEnumerator;
+  if not enumerator.MoveNext then
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+  Result := enumerator.Current;
+  if enumerator.MoveNext then
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement);
+end;
+
+function TEnumerableBase<T>.Single(const predicate: TPredicate<T>): T;
+var
+  enumerator: IEnumerator<T>;
+  item: T;
+  found: Boolean;
+begin
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
+
+  enumerator := GetEnumerator;
+  if not enumerator.MoveNext then
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+  found := False;
+  repeat
+    item := enumerator.Current;
+    if predicate(item) then
+    begin
+      if found then
+        raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneMatchingElement);
+      found := True;
+      Result := item;
+    end;
+  until not enumerator.MoveNext;
+  if not found then
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoMatchingElement);
+end;
+
+function TEnumerableBase<T>.SingleOrDefault: T;
+begin
+  Result := SingleOrDefault(Default(T));
+end;
+
+function TEnumerableBase<T>.SingleOrDefault(const defaultValue: T): T;
+var
+  enumerator: IEnumerator<T>;
+begin
+  Result := defaultValue;
+  enumerator := GetEnumerator;
+  if enumerator.MoveNext then
+  begin
+    Result := enumerator.Current;
+    if enumerator.MoveNext then
+      raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement);
+  end;
+end;
+
+function TEnumerableBase<T>.SingleOrDefault(const predicate: TPredicate<T>): T;
+begin
+  Result := SingleOrDefault(predicate, Default(T));
+end;
+
+function TEnumerableBase<T>.SingleOrDefault(const predicate: TPredicate<T>;
+  const defaultValue: T): T;
+var
+  enumerator: IEnumerator<T>;
+  item: T;
+  found: Boolean;
+begin
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
+
+  enumerator := GetEnumerator;
+  if not enumerator.MoveNext then
+    Exit(Default(T));
+  found := False;
+  repeat
+    item := enumerator.Current;
+    if predicate(item) then
+    begin
+      if found then
+        raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneMatchingElement);
+      found := True;
+      Result := item;
+    end;
+  until not enumerator.MoveNext;
+  if not found then
+    Result := defaultValue;
+end;
+
+function TEnumerableBase<T>.Skip(count: Integer): IEnumerable<T>;
+begin
+  Result := TSkipIterator<T>.Create(Self, count);
+end;
+
+function TEnumerableBase<T>.SkipWhile(
+  const predicate: TPredicate<T>): IEnumerable<T>;
+begin
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
+
+  Result := TSkipWhileIterator<T>.Create(Self, predicate);
+end;
+
+function TEnumerableBase<T>.SkipWhile(
+  const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>;
+begin
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
+
+  Result := TSkipWhileIndexIterator<T>.Create(Self, predicate);
+end;
+
+function TEnumerableBase<T>.Take(count: Integer): IEnumerable<T>;
+begin
+  Result := TTakeIterator<T>.Create(Self, count);
+end;
+
+function TEnumerableBase<T>.TakeWhile(
+  const predicate: TPredicate<T>): IEnumerable<T>;
+begin
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
+
+  Result := TTakeWhileIterator<T>.Create(Self, predicate);
+end;
+
+function TEnumerableBase<T>.TakeWhile(
+  const predicate: TFunc<T, Integer, Boolean>): IEnumerable<T>;
+begin
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
+
+  Result := TTakeWhileIndexIterator<T>.Create(Self, predicate);
+end;
+
+function TEnumerableBase<T>.ToArray: TArray<T>;
+var
+  enumerator: IEnumerator<T>;
+  i: Integer;
+begin
+  SetLength(Result, Count);
+  enumerator := GetEnumerator;
+  for i := 0 to Length(Result) - 1 do
+  begin
+    enumerator.MoveNext;
+    Result[i] := enumerator.Current;
+  end;
+end;
+
+function TEnumerableBase<T>.TryGetElementAt(out value: T;
+  index: Integer): Boolean;
+var
+  item: T;
+begin
+  if index < 0 then
+    Exit(False);
+  for item in Self do
+  begin
+    if index = 0 then
+    begin
+      value := item;
+      Exit(True);
+    end;
+    Dec(index);
+  end;
+  Result := False;
+end;
+
+function TEnumerableBase<T>.TryGetFirst(out value: T): Boolean;
+var
+  enumerator: IEnumerator<T>;
+begin
+  Result := False;
+  enumerator := GetEnumerator;
+  if enumerator.MoveNext then
+  begin
+    value := enumerator.Current;
+    Result := True;
+  end;
+end;
+
+function TEnumerableBase<T>.TryGetFirst(out value: T; const predicate: TPredicate<T>): Boolean;
+var
+  item: T;
+begin
+  Result := False;
+  for item in Self do
+  begin
+    if predicate(item) then
+    begin
+      value := item;
+      Exit(True);
+    end;
+  end;
+end;
+
+function TEnumerableBase<T>.TryGetLast(out value: T): Boolean;
+var
+  enumerator: IEnumerator<T>;
+begin
+  Result := False;
+  enumerator := GetEnumerator;
+  if enumerator.MoveNext then
+  begin
+    repeat
+      value := enumerator.Current;
+    until not enumerator.MoveNext;
+    Result := True;
+  end;
+end;
+
+function TEnumerableBase<T>.TryGetLast(out value: T; const predicate: TPredicate<T>): Boolean;
+var
+  item: T;
+begin
+  Result := False;
+  for item in Self do
+  begin
+    if predicate(item) then
+    begin
+      value := item;
+      Result := True;
+    end;
+  end;
+end;
+
+function TEnumerableBase<T>.TryGetSingle(out value: T): Boolean;
+var
+  enumerator: IEnumerator<T>;
+begin
+  Result := False;
+  enumerator := GetEnumerator;
+  if enumerator.MoveNext then
+  begin
+    value := enumerator.Current;
+    Result := not enumerator.MoveNext;
+  end;
+end;
+
+function TEnumerableBase<T>.TryGetSingle(out value: T;
+  const predicate: TPredicate<T>): Boolean;
+var
+  item: T;
+begin
+  Result := False;
+  for item in Self do
+  begin
+    if predicate(item) then
+    begin
+      if Result then
+        Exit(False);
+      value := item;
+      Result := True;
+    end;
+  end;
+end;
+
+function TEnumerableBase<T>.Where(
+  const predicate: TPredicate<T>): IEnumerable<T>;
+begin
+  Guard.CheckNotNull(Assigned(predicate), 'predicate');
+
+  Result := TWhereIterator<T>.Create(Self, predicate);
+end;
+
 {$ENDREGION}
 
 
 {$REGION 'TCollectionBase<T>'}
+
+constructor TCollectionBase<T>.Create(const collection: array of T);
+begin
+  Create;
+  AddRange(collection);
+end;
+
+constructor TCollectionBase<T>.Create(const collection: IEnumerable<T>);
+begin
+  Create;
+  AddRange(collection);
+end;
 
 procedure TCollectionBase<T>.AddRange(const collection: array of T);
 var
   item: T;
 begin
   for item in collection do
-  begin
     Add(item);
-  end;
 end;
 
 procedure TCollectionBase<T>.AddRange(const collection: IEnumerable<T>);
 var
   item: T;
 begin
+  Guard.CheckNotNull(Assigned(collection), 'collection');
+
   for item in collection do
-  begin
     Add(item);
+end;
+
+procedure TCollectionBase<T>.CopyTo(var values: TArray<T>; index: Integer);
+var
+  item: T;
+begin
+  Guard.CheckRange(Length(values), index, Count);
+
+  for item in Self do
+  begin
+    values[index] := item;
+    Inc(index);
   end;
 end;
 
-procedure TCollectionBase<T>.AddRange(const collection: TEnumerable<T>);
+procedure TCollectionBase<T>.ExtractRange(const collection: array of T);
 var
   item: T;
 begin
   for item in collection do
-  begin
-    Add(item);
-  end;
+    Extract(item);
 end;
 
-function TCollectionBase<T>.AsCollection: ICollection;
-begin
-  Result := Self;
-end;
-
-procedure TCollectionBase<T>.RemoveRange(const collection: array of T);
+procedure TCollectionBase<T>.ExtractRange(const collection: IEnumerable<T>);
 var
   item: T;
 begin
-  for item in collection do
-  begin
-    Remove(item);
-  end;
-end;
+  Guard.CheckNotNull(Assigned(collection), 'collection');
 
-procedure TCollectionBase<T>.RemoveRange(const collection: TEnumerable<T>);
-var
-  item: T;
-begin
   for item in collection do
-  begin
-    Remove(item);
-  end;
-end;
-
-procedure TCollectionBase<T>.RemoveRange(const collection: IEnumerable<T>);
-var
-  item: T;
-begin
-  for item in collection do
-  begin
-    Remove(item);
-  end;
+    Extract(item);
 end;
 
 function TCollectionBase<T>.GetIsReadOnly: Boolean;
@@ -1119,35 +1136,22 @@ begin
   Result := False;
 end;
 
-procedure TCollectionBase<T>.NonGenericAdd(const item: TValue);
-begin
-  Add(item.AsType<T>);
-end;
-
-procedure TCollectionBase<T>.NonGenericAddRange(const collection: IEnumerable);
+procedure TCollectionBase<T>.RemoveRange(const collection: array of T);
 var
-  item: TValue;
+  item: T;
 begin
   for item in collection do
-  begin
-    Add(item.AsType<T>);
-  end;
+    Remove(item);
 end;
 
-function TCollectionBase<T>.NonGenericRemove(const item: TValue): Boolean;
-begin
-  Result := Remove(item.AsType<T>);
-end;
-
-procedure TCollectionBase<T>.NonGenericRemoveRange(
-  const collection: IEnumerable);
+procedure TCollectionBase<T>.RemoveRange(const collection: IEnumerable<T>);
 var
-  item: TValue;
+  item: T;
 begin
+  Guard.CheckNotNull(Assigned(collection), 'collection');
+
   for item in collection do
-  begin
-    Remove(item.AsType<T>);
-  end;
+    Remove(item);
 end;
 
 {$ENDREGION}
@@ -1168,12 +1172,33 @@ end;
 
 function TContainedCollectionBase<T>._AddRef: Integer;
 begin
-  Result := Controller._AddRef;
+  Result := IInterface(FController)._AddRef;
 end;
 
 function TContainedCollectionBase<T>._Release: Integer;
 begin
-  Result := Controller._Release;
+  Result := IInterface(FController)._Release;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TContainedReadOnlyCollection<T>'}
+
+constructor TContainedReadOnlyCollection<T>.Create(const controller: IInterface);
+begin
+  inherited Create;
+  fController := Pointer(controller);
+end;
+
+function TContainedReadOnlyCollection<T>._AddRef: Integer;
+begin
+  Result := IInterface(fController)._AddRef;
+end;
+
+function TContainedReadOnlyCollection<T>._Release: Integer;
+begin
+  Result := IInterface(fController)._Release;
 end;
 
 {$ENDREGION}
@@ -1183,95 +1208,14 @@ end;
 
 constructor TListBase<T>.Create;
 begin
-  Create(TComparer<T>.Default);
-end;
-
-constructor TListBase<T>.Create(const comparer: IComparer<T>);
-begin
   inherited Create;
-  fComparer := comparer;
-  if fComparer = nil then
-    fComparer := TComparer<T>.Default;
-end;
-
-constructor TListBase<T>.Create(const collection: array of T);
-begin
-  Create;
-  AddRange(collection);
-end;
-
-constructor TListBase<T>.Create(const collection: IEnumerable<T>);
-begin
-  Create;
-  AddRange(collection);
-end;
-
-constructor TListBase<T>.Create(const collection: TEnumerable<T>);
-begin
-  Create;
-  AddRange(collection);
+  fOnChanged := TCollectionChangedEventImpl<T>.Create;
 end;
 
 destructor TListBase<T>.Destroy;
 begin
   Clear;
   inherited Destroy;
-end;
-
-function TListBase<T>.Remove(const item: T): Boolean;
-var
-  index: Integer;
-begin
-  index := IndexOf(item);
-  Result := index > -1;
-  if Result then
-  begin
-    DoDelete(index, cnRemoved);
-  end;
-end;
-
-procedure TListBase<T>.DoSort(const comparer: IComparer<T>);
-begin
-end;
-
-function TListBase<T>.Reversed: IEnumerable<T>;
-begin
-  Result := TReversedEnumerable<T>.Create(Self);
-end;
-
-function TListBase<T>.Extract(const item: T): T;
-var
-  index: Integer;
-begin
-  index := IndexOf(item);
-  if index < 0 then
-    Result := Default(T)
-  else
-  begin
-    Result := Items[index];
-    DoDelete(index, cnExtracted);
-  end;
-end;
-
-procedure TListBase<T>.Delete(index: Integer);
-begin
-  TArgument.CheckRange((index >= 0) and (index < Count), 'index');
-
-  DoDelete(index, cnRemoved);
-end;
-
-procedure TListBase<T>.DeleteRange(startIndex, count: Integer);
-begin
-  if (startIndex < 0) or
-    (count < 0) or
-    (startIndex + count > Self.Count) or
-    (startIndex + count < 0) then
-    raise EArgumentOutOfRangeException.CreateRes(@SArgumentOutOfRangeException);
-
-  if count = 0 then
-    Exit;
-
-  DoDeleteRange(startIndex, count, cnRemoved);
 end;
 
 procedure TListBase<T>.Add(const item: T);
@@ -1281,42 +1225,68 @@ end;
 
 function TListBase<T>.AsList: IList;
 begin
+  Result := TListAdapter<T>.Create(Self);
+end;
+
+function TListBase<T>.AsReadOnlyList: IReadOnlyList<T>;
+begin
   Result := Self;
 end;
 
 procedure TListBase<T>.Changed(const item: T; action: TCollectionChangedAction);
 begin
-  if (fOnChanged <> nil) and not fOnChanged.IsEmpty and fOnChanged.Enabled then
-  begin
-    fOnChanged.Invoke(Self, item, action);
-  end;
+  fOnChanged.Invoke(Self, item, action);
 end;
 
 procedure TListBase<T>.Clear;
 begin
   if Count > 0 then
-  begin
     DeleteRange(0, Count);
-  end;
 end;
 
-function TListBase<T>.Contains(const item: T): Boolean;
-var
-  index: Integer;
+function TListBase<T>.First: T;
 begin
-  index := IndexOf(item);
-  Result := index > -1;
+  if Count > 0 then
+    Result := Items[0]
+  else
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+end;
+
+function TListBase<T>.FirstOrDefault(const defaultValue: T): T;
+begin
+  if Count > 0 then
+    Result := Items[0]
+  else
+    Result := defaultValue;
+end;
+
+function TListBase<T>.GetOnChanged: ICollectionChangedEvent<T>;
+begin
+  Result := fOnChanged;
 end;
 
 function TListBase<T>.IndexOf(const item: T): Integer;
+begin
+  Result := IndexOf(item, 0, Count);
+end;
+
+function TListBase<T>.IndexOf(const item: T; index: Integer): Integer;
+begin
+  Result := IndexOf(item, index, Count - index);
+end;
+
+function TListBase<T>.IndexOf(const item: T; index, count: Integer): Integer;
 var
+  comparer: IEqualityComparer<T>;
   i: Integer;
 begin
-  for i := 0 to Count - 1 do
-  begin
-    if fComparer.Compare(Items[i], item) = 0 then
+  Guard.CheckRange((index >= 0) and (index <= Self.Count), 'index');
+  Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
+
+  comparer := EqualityComparer;
+  for i := index to index + count - 1 do
+    if comparer.Equals(Items[i], item) then
       Exit(i);
-  end;
   Result := -1;
 end;
 
@@ -1324,7 +1294,7 @@ procedure TListBase<T>.InsertRange(index: Integer; const collection: array of T)
 var
   item: T;
 begin
-  TArgument.CheckRange((index >= 0) and (index <= Count), 'index');
+  Guard.CheckRange((index >= 0) and (index <= Count), 'index');
 
   for item in collection do
   begin
@@ -1338,7 +1308,8 @@ procedure TListBase<T>.InsertRange(index: Integer;
 var
   item: T;
 begin
-  TArgument.CheckRange((index >= 0) and (index <= Count), 'index');
+  Guard.CheckRange((index >= 0) and (index <= Count), 'index');
+  Guard.CheckNotNull(Assigned(collection), 'collection');
 
   for item in collection do
   begin
@@ -1347,99 +1318,112 @@ begin
   end;
 end;
 
-procedure TListBase<T>.InsertRange(index: Integer;
-  const collection: TEnumerable<T>);
+function TListBase<T>.Last: T;
 var
-  item: T;
+  count: Integer;
 begin
-  TArgument.CheckRange((index >= 0) and (index <= Count), 'index');
-
-  for item in collection do
-  begin
-    Insert(index, item);
-    Inc(index);
-  end;
+  count := Self.Count;
+  if count = 0 then
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+  Result := Items[count - 1];
 end;
 
-procedure TListBase<T>.Insert(index: Integer; const item: T);
+function TListBase<T>.LastOrDefault(const defaultValue: T): T;
+var
+  count: Integer;
 begin
-  TArgument.CheckRange((index >= 0) and (index <= Count), 'index');
+  count := Self.Count;
+  if count = 0 then
+    Result := defaultValue
+  else
+    Result := Items[count - 1];
+end;
 
-  DoInsert(index, item);
+function TListBase<T>.QueryInterface(const IID: TGUID; out Obj): HResult;
+begin
+  if IsEqualGUID(IID, IObjectList) then
+  begin
+    if ElementType.Kind = tkClass then
+      Result := inherited QueryInterface(IList<TObject>, Obj)
+    else
+      Result := E_NOINTERFACE;
+  end
+  else
+    Result := inherited;
 end;
 
 function TListBase<T>.LastIndexOf(const item: T): Integer;
+begin
+  Result := LastIndexOf(item, Count - 1, Count);
+end;
+
+function TListBase<T>.LastIndexOf(const item: T; index: Integer): Integer;
+begin
+  Result := LastIndexOf(item, index, index + 1);
+end;
+
+function TListBase<T>.LastIndexOf(const item: T; index,
+  count: Integer): Integer;
 var
+  comparer: IEqualityComparer<T>;
   i: Integer;
 begin
-  for i := Count - 1 downto 0 do
-  begin
-    if fComparer.Compare(Items[i], item) = 0 then
+  Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
+  Guard.CheckRange((count >= 0) and (count <= index + 1), 'count');
+
+  comparer := EqualityComparer;
+  for i := index downto index - count + 1 do
+    if comparer.Equals(Items[i], item) then
       Exit(i);
-  end;
   Result := -1;
 end;
 
-function TListBase<T>.NonGenericGetItem(index: Integer): TValue;
-begin
-  Result := TValue.From<T>(GetItem(index));
-end;
-
-function TListBase<T>.NonGenericGetOnChanged: IEvent;
-begin
-  Result := GetOnChanged;
-end;
-
-function TListBase<T>.NonGenericGetOnNotify: IEvent;
-begin
-  Result := GetOnNotify;
-end;
-
-function TListBase<T>.NonGenericIndexOf(const item: TValue): Integer;
-begin
-  Result := IndexOf(item.AsType<T>);
-end;
-
-procedure TListBase<T>.NonGenericInsert(index: Integer; const item: TValue);
-begin
-  Insert(index, item.AsType<T>);
-end;
-
-procedure TListBase<T>.NonGenericInsertRange(index: Integer;
-  const collection: IEnumerable);
+function TListBase<T>.Remove(const item: T): Boolean;
 var
-  item: TValue;
+  index: Integer;
 begin
-  TArgument.CheckRange((index >= 0) and (index <= Count), 'index');
+  index := IndexOf(item);
+  Result := index > -1;
+  if Result then
+    Delete(index);
+end;
 
-  for item in collection do
-  begin
-    Insert(index, item.AsType<T>);
-    Inc(index);
+procedure TListBase<T>.Reverse;
+begin
+  Reverse(0, Count);
+end;
+
+function TListBase<T>.Single: T;
+begin
+  case Count of
+    0: raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
+    1: Result := Items[0];
+  else
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement);
   end;
 end;
 
-function TListBase<T>.NonGenericLastIndexOf(const item: TValue): Integer;
+function TListBase<T>.SingleOrDefault(const defaultValue: T): T;
 begin
-  Result := LastIndexOf(item.AsType<T>);
+  case Count of
+    0: Result := defaultValue;
+    1: Result := Items[0];
+  else
+    raise EInvalidOperationException.CreateRes(@SSequenceContainsMoreThanOneElement);
+  end;
 end;
 
-procedure TListBase<T>.NonGenericSetItem(index: Integer; const value: TValue);
+procedure TListBase<T>.Sort;
 begin
-  SetItem(index, value.AsType<T>);
+  Sort(Comparer);
 end;
 
-procedure TListBase<T>.Notify(const item: T; action: TCollectionNotification);
+procedure TListBase<T>.Sort(const comparison: TComparison<T>);
+var
+  comparer: IComparer<T>;
 begin
-  case action of
-    cnAdded: Changed(item, caAdded);
-    cnRemoved: Changed(item, caRemoved);
-  end;
-
-  if (fOnNotify <> nil) and not fOnNotify.IsEmpty and fOnNotify.Enabled then
-  begin
-    fOnNotify.Invoke(Self, item, action);
-  end;
+  comparer := TComparer<T>.Construct(comparison);
+  Sort(comparer);
 end;
 
 function TListBase<T>.ToArray: TArray<T>;
@@ -1448,19 +1432,14 @@ var
 begin
   SetLength(Result, Count);
   for i := 0 to Length(Result) - 1 do
-  begin
     Result[i] := Items[i];
-  end;
 end;
 
-function TListBase<T>.GetEnumerator: IEnumerator<T>;
+function TListBase<T>.TryGetElementAt(out value: T; index: Integer): Boolean;
 begin
-  Result := TEnumerator.Create(Self);
-end;
-
-function TListBase<T>.GetComparer: IComparer<T>;
-begin
-  Result := fComparer;
+  Result := (index >= 0) and (index < Count);
+  if Result then
+    value := Items[index];
 end;
 
 function TListBase<T>.TryGetFirst(out value: T): Boolean;
@@ -1477,66 +1456,14 @@ begin
     value := Items[Count - 1];
 end;
 
-function TListBase<T>.GetOnChanged: ICollectionChangedDelegate<T>;
+function TListBase<T>.TryGetSingle(out value: T): Boolean;
 begin
-  if fOnChanged = nil then
-  begin
-    fOnChanged := TCollectionChangedDelegate<T>.Create;
-  end;
-  Result := fOnChanged;
-end;
-
-function TListBase<T>.GetOnNotify: ICollectionNotifyDelegate<T>;
-begin
-  if fOnNotify = nil then
-  begin
-    fOnNotify := TCollectionNotifyDelegate<T>.Create;
-  end;
-  Result := fOnNotify;
-end;
-
-procedure TListBase<T>.Sort;
-begin
-  DoSort(fComparer);
-end;
-
-procedure TListBase<T>.Sort(const comparer: IComparer<T>);
-begin
-  DoSort(comparer);
-end;
-
-procedure TListBase<T>.Sort(const comparison: TComparison<T>);
-var
-  comparer: IComparer<T>;
-begin
-  comparer := TComparer<T>.Construct(comparison);
-  DoSort(comparer);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TListBase<T>.TEnumerator'}
-
-constructor TListBase<T>.TEnumerator.Create(const list: TListBase<T>);
-begin
-  inherited Create;
-  fList := list;
-  fIndex := -1;
-end;
-
-function TListBase<T>.TEnumerator.MoveNext: Boolean;
-begin
-  Result := fIndex < fList.Count - 1;
+  Result := Count = 1;
   if Result then
-    Inc(fIndex);
-end;
-
-function TListBase<T>.TEnumerator.GetCurrent: T;
-begin
-  Result := fList[fIndex];
+    value := Items[0];
 end;
 
 {$ENDREGION}
+
 
 end.

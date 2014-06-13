@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2012 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -41,7 +41,7 @@ function Ror64(x: Int64; y: Byte): Int64;
 implementation
 
 function Endian(x: LongWord): LongWord;
-{$IFNDEF CPUX64}
+{$IFDEF CPUX86}
 asm
   bswap eax
 end;
@@ -65,7 +65,7 @@ begin
 end;
 
 function Rol(x: LongWord; y: Byte): LongWord;
-{$IFNDEF CPUX64}
+{$IFDEF CPUX86}
 asm
   mov   cl,dl
   Rol   eax,cl
@@ -77,7 +77,7 @@ end;
 {$ENDIF}
 
 function Ror(x: LongWord; y: Byte): LongWord;
-{$IFNDEF CPUX64}
+{$IFDEF CPUX86}
 asm
   mov   cl,dl
   Ror   eax,cl

@@ -3,7 +3,7 @@ unit uOrderInterfaces;
 interface
 
 uses
-     uOrder;
+  uOrder;
 
 type
   IOrderValidator = interface

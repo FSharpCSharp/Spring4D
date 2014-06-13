@@ -690,6 +690,7 @@ var
   i, iCount: Integer;
   sw : TStopwatch;
 begin
+  FConnection.ClearExecutionListeners;
   iCount := 10000;
   sw := TStopwatch.StartNew;
   for i := 1 to iCount do

@@ -2,7 +2,7 @@
 {                                                                           }
 {           Spring Framework for Delphi                                     }
 {                                                                           }
-{           Copyright (c) 2009-2012 Spring4D Team                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
 {                                                                           }
 {           http://www.spring4d.org                                         }
 {                                                                           }
@@ -27,11 +27,14 @@ unit Spring.Tests.Container.Components;
 interface
 
 uses
+  Classes,
   SysUtils,
   TestFramework,
   Spring,
+  Spring.Collections,
   Spring.Services,
-  Spring.Container.Core;
+  Spring.Container.Core,
+  Spring.Tests.Container.Interfaces;
 
 type
   {$REGION 'INameService, TNameService and TAnotherNameService'}
@@ -57,6 +60,10 @@ type
     const NameString: string = 'Name';
   end;
 
+  TNameServiceWithTwoInterfaces = class(TNameService,
+    Spring.Tests.Container.Interfaces.INameService)
+  end;
+
   TAnotherNameService = class(TInterfacedObject, INameService, IInterface)
   private
     fName: string;
@@ -68,11 +75,42 @@ type
     const NameString: string = 'Another Name';
   end;
 
+  IAgeService = interface;
+
   TDynamicNameService = class(TNameService, IAnotherNameService)
+  private
+    fAgeService: IAgeService;
   public
     constructor Create(const name: string); overload;
     constructor Create(obj: TObject); overload;
     constructor Create(const name: string; obj: TObject); overload;
+
+    property AgeService: IAgeService read fAgeService;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TRefCounted and TCustomNameService'}
+
+  TRefCounted = class(TObject, IRefCounted)
+  private
+    fRefCount: Integer;
+    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
+    function _AddRef: Integer; stdcall;
+    function _Release: Integer; stdcall;
+    function GetRefCount: Integer;
+  end;
+
+  TCustomNameService = class(TRefCounted, INameService)
+  private
+    fName: string;
+    function GetName: string;
+  public
+    constructor Create;
+    property Name: string read GetName;
+  public
+    const NameString: string = 'Custom Name';
   end;
 
   {$ENDREGION}
@@ -100,6 +138,8 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'IAgeService and TNameAgeComponent'}
+
   IAgeService = interface
     ['{E859410D-9980-47A9-8EA7-120C35F6BDCC}']
     function GetAge: Integer;
@@ -108,14 +148,48 @@ type
 
   TNameAgeComponent = class(TInterfacedObject, INameService, IAgeService)
   private
+    fAge: Integer;
     function GetName: string;
     function GetAge: Integer;
   public
+    constructor Create(age: Integer); overload;
     property Name: string read GetName;
     property Age: Integer read GetAge;
     const NameString: string = 'Complex';
     const DefaultAge: Integer = 100;
   end;
+
+  TAgeServiceDecorator = class(TInterfacedObject, IAgeService)
+  private
+    fAgeServive: IAgeService;
+  public
+    constructor Create(const ageService: IAgeService);
+    function GetAge: Integer;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'TNameServiceWithAggregation'}
+
+  TNameServiceWithAggregation = class(TNameService)
+  private
+    fMethodCallCount: Integer;
+  protected
+    [Inject]
+    fAgeService: IAgeService;
+  public
+    [Inject]
+    procedure Init;
+    [Inject]
+    property AgeService: IAgeService read fAgeService write fAgeService;
+    property MethodCallCount: Integer read fMethodCallCount;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'IAnotherService, TInitializableComponent and TRecyclableComponent'}
 
   IAnotherService = interface
     ['{6BE967C9-C4EE-40FD-805D-B48320A0F510}']
@@ -128,6 +202,19 @@ type
     procedure Initialize;
     property IsInitialized: Boolean read fIsInitialized;
   end;
+
+  TRecyclableComponent = class(TInterfacedObject, IInitializable, IRecyclable, IAnotherService)
+  private
+    fIsInitialized: Boolean;
+    fIsRecycled: Boolean;
+  public
+    procedure Initialize;
+    procedure Recycle;
+    property IsInitialized: Boolean read fIsInitialized;
+    property IsRecycled: Boolean read fIsRecycled;
+  end;
+
+  {$ENDREGION}
 
 
   {$REGION 'TBootstrapComponent'}
@@ -323,6 +410,96 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'Lazy dependencies'}
+
+  TNameServiceLazyWithFunc = class(TInterfacedObject, INameService)
+  private
+    [Inject('lazy')]
+    fNameService: TFunc<INameService>;
+  public
+    function GetName: string;
+  end;
+
+  TNameServiceLazyWithRecord = class(TInterfacedObject, INameService)
+  private
+    [Inject('lazy')]
+    fNameService: Lazy<INameService>;
+  public
+    function GetName: string;
+  end;
+
+  TNameServiceLazyWithInterface = class(TInterfacedObject, INameService)
+  private
+    [Inject('lazy')]
+    fNameService: ILazy<INameService>;
+  public
+    function GetName: string;
+  end;
+
+  {$ENDREGION}
+
+
+  {$REGION 'Many dependencies'}
+
+  ICollectionItem = interface
+    ['{9B5C78C1-8077-4866-A854-14A20D632342}']
+  end;
+
+  TCollectionItemA = class(TInterfacedObject, ICollectionItem)
+  end;
+
+  TCollectionItemB = class(TInterfacedObject, ICollectionItem)
+  end;
+
+  TCollectionItemC = class(TInterfacedObject, ICollectionItem)
+  end;
+
+  TCollectionItemD = class(TInterfacedObject, ICollectionItem)
+  private
+    fCollectionItems: TArray<ICollectionItem>;
+  public
+    constructor Create(const collectionItems: TArray<ICollectionItem>);
+    property CollectionItems: TArray<ICollectionItem> read fCollectionItems;
+  end;
+
+  ICollectionService = interface
+    ['{31D36D13-CC5A-4FFB-A285-3146EDBAECAB}']
+    function GetCollectionItems: TArray<ICollectionItem>;
+    property CollectionItems: TArray<ICollectionItem> read GetCollectionItems;
+  end;
+
+  TCollectionService = class abstract(TInterfacedObject, ICollectionService)
+  protected
+    fCollectionItems: TArray<ICollectionItem>;
+    function GetCollectionItems: TArray<ICollectionItem>; virtual;
+  public
+    property CollectionItems: TArray<ICollectionItem> read GetCollectionItems;
+  end;
+
+  TCollectionServiceA = class(TCollectionService)
+  public
+    [Inject]
+    constructor Create(const collectionItems: TArray<ICollectionItem>);
+  end;
+
+  TCollectionServiceB = class(TCollectionService)
+  public
+    [Inject]
+    constructor Create(const collectionItems: IEnumerable<ICollectionItem>);
+  end;
+
+  TCollectionServiceC = class(TCollectionService)
+  protected
+    fCollectionItemFactories: TArray<TFunc<ICollectionItem>>;
+    function GetCollectionItems: TArray<ICollectionItem>; override;
+  public
+    [Inject]
+    constructor Create(const collectionItems: TArray<TFunc<ICollectionItem>>);
+  end;
+
+  {$ENDREGION}
+
+
 implementation
 
 { TNameService }
@@ -388,7 +565,7 @@ end;
 
 constructor TBootstrapComponent.Create(const nameService: INameService);
 begin
-  TArgument.CheckNotNull(nameService, 'nameService');
+  Guard.CheckNotNull(nameService, 'nameService');
   inherited Create;
   fNameService := nameService;
 end;
@@ -396,8 +573,8 @@ end;
 constructor TBootstrapComponent.Create(const nameService: INameService;
   ageService: TAgeServiceBase);
 begin
-  TArgument.CheckNotNull(nameService, 'nameService');
-  TArgument.CheckNotNull(ageService, 'ageService');
+  Guard.CheckNotNull(nameService, 'nameService');
+  Guard.CheckNotNull(ageService, 'ageService');
   inherited Create;
   fNameService := nameService;
   fAgeService := ageService;
@@ -408,7 +585,7 @@ end;
 constructor TPrimitiveComponent.Create(const nameService: INameService;
   integerArg: Integer; const stringArg: string);
 begin
-  TArgument.CheckNotNull(nameService, 'nameService');
+  Guard.CheckNotNull(nameService, 'nameService');
   inherited Create;
   fNameService := nameService;
   fIntegerArg := integerArg;
@@ -473,7 +650,7 @@ end;
 
 constructor TInjectionExplorerComponent.Create(const service: INameService);
 begin
-  Assert(fConstructorInjection = nil, 'This constructor should only called once.');
+  Guard.CheckTrue(fConstructorInjection = nil, 'This constructor should only called once.');
   inherited Create;
   fConstructorInjection := service;
 end;
@@ -535,14 +712,21 @@ end;
 
 { TNameAgeComponent }
 
+constructor TNameAgeComponent.Create(age: Integer);
+begin
+  fAge := age;
+end;
+
 function TNameAgeComponent.GetAge: Integer;
 begin
   Result := TNameAgeComponent.DefaultAge;
+  if fAge > 0 then
+    Result := fAge;
 end;
 
 function TNameAgeComponent.GetName: string;
 begin
-  Result := TNameAgeComponent.NameString;
+  Result := TNameAgeComponent.NameString
 end;
 
 { TInjectionComponent }
@@ -591,5 +775,152 @@ begin
   fIsInitialized := True;
 end;
 
-end.
+{ TNameServiceWithAggregation }
 
+procedure TNameServiceWithAggregation.Init;
+begin
+  Inc(fMethodCallCount);
+end;
+
+{ TNameServiceLazyWithFunc }
+
+function TNameServiceLazyWithFunc.GetName: string;
+begin
+  Result := fNameService.Name;
+end;
+
+{ TNameServiceLazyWithRecord }
+
+function TNameServiceLazyWithRecord.GetName: string;
+begin
+  Result := fNameService.Value.Name;
+end;
+
+{ TNameServiceLazyWithInterface }
+
+function TNameServiceLazyWithInterface.GetName: string;
+begin
+  Result := fNameService.Value.Name;
+end;
+
+{ TRefCounted }
+
+function TRefCounted.GetRefCount: Integer;
+begin
+  Result := fRefCount;
+end;
+
+function TRefCounted.QueryInterface(const IID: TGUID; out Obj): HResult;
+begin
+  if GetInterface(IID, Obj) then
+    Result := 0
+  else
+    Result := E_NOINTERFACE;
+end;
+
+function TRefCounted._AddRef: Integer;
+begin
+  Inc(fRefCount);
+  Result := fRefCount;
+end;
+
+function TRefCounted._Release: Integer;
+begin
+  Dec(fRefCount);
+  Result := fRefCount;
+  if Result = 0 then
+    Destroy;
+end;
+
+{ TCustomNameService }
+
+constructor TCustomNameService.Create;
+begin
+  inherited Create;
+  fName := NameString;
+end;
+
+function TCustomNameService.GetName: string;
+begin
+  Result := fName;
+end;
+
+{ TRecyclableComponent }
+
+procedure TRecyclableComponent.Initialize;
+begin
+  fIsInitialized := True;
+  fIsRecycled := False;
+end;
+
+procedure TRecyclableComponent.Recycle;
+begin
+  fIsInitialized := False;
+  fIsRecycled := True;
+end;
+
+{ TAgeServiceDecorator }
+
+constructor TAgeServiceDecorator.Create(const ageService: IAgeService);
+begin
+  fAgeServive := ageService;
+end;
+
+function TAgeServiceDecorator.GetAge: Integer;
+begin
+  Result := fAgeServive.Age;
+end;
+
+{ TCollectionService }
+
+function TCollectionService.GetCollectionItems: TArray<ICollectionItem>;
+begin
+  Result := fCollectionItems;
+end;
+
+{ TCollectionServiceA }
+
+constructor TCollectionServiceA.Create(
+  const collectionItems: TArray<ICollectionItem>);
+begin
+  fCollectionItems := collectionItems;
+end;
+
+{ TCollectionServiceB }
+
+constructor TCollectionServiceB.Create(
+  const collectionItems: IEnumerable<ICollectionItem>);
+begin
+  fCollectionItems := collectionItems.ToArray;
+end;
+
+{ TCollectionItemD }
+
+constructor TCollectionItemD.Create(
+  const collectionItems: TArray<ICollectionItem>);
+begin
+  fCollectionItems := collectionItems;
+end;
+
+{ TCollectionServiceC }
+
+constructor TCollectionServiceC.Create(
+  const collectionItems: TArray<TFunc<ICollectionItem>>);
+begin
+  fCollectionItemFactories := collectionItems;
+end;
+
+function TCollectionServiceC.GetCollectionItems: TArray<ICollectionItem>;
+var
+  i: Integer;
+begin
+  if not Assigned(fCollectionItems) then
+  begin
+    SetLength(fCollectionItems, Length(fCollectionItemFactories));
+    for i := Low(fCollectionItemFactories) to High(fCollectionItemFactories) do
+      fCollectionItems[i] := fCollectionItemFactories[i]();
+  end;
+  Result := fCollectionItems;
+end;
+
+end.

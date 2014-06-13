@@ -70,6 +70,8 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
+			<DllSuffix>.DelphiXE2</DllSuffix>
+			<DCC_Description>Spring4D Base package</DCC_Description>
 			<DCC_OutputNeverBuildDcps>true</DCC_OutputNeverBuildDcps>
 			<DCC_UnitSearchPath>..\..\Source\Base;..\..\Source\Base\Collections;..\..\Source\Base\Reflection;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
@@ -127,20 +129,25 @@
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
 			<DCCReference Include="rtl.dcp"/>
-			<DCCReference Include="..\..\Source\Base\Spring.DesignPatterns.pas"/>
-			<DCCReference Include="..\..\Source\Base\Spring.Helpers.pas"/>
 			<DCCReference Include="..\..\Source\Base\Spring.pas"/>
-			<DCCReference Include="..\..\Source\Base\Spring.ResourceStrings.pas"/>
-			<DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.pas"/>
-			<DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.ValueConverters.pas"/>
+			<DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.pas"/>
+			<DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Adapters.pas"/>
 			<DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Base.pas"/>
 			<DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Dictionaries.pas"/>
+			<DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Events.pas"/>
 			<DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Extensions.pas"/>
 			<DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Lists.pas"/>
-			<DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.pas"/>
+			<DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.LinkedLists.pas"/>
 			<DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Queues.pas"/>
 			<DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Sets.pas"/>
 			<DCCReference Include="..\..\Source\Base\Collections\Spring.Collections.Stacks.pas"/>
+			<DCCReference Include="..\..\Source\Base\Spring.DesignPatterns.pas"/>
+			<DCCReference Include="..\..\Source\Base\Spring.Events.pas"/>
+			<DCCReference Include="..\..\Source\Base\Spring.Events.Base.pas"/>
+			<DCCReference Include="..\..\Source\Base\Spring.Helpers.pas"/>
+			<DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.pas"/>
+			<DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.ValueConverters.pas"/>
+			<DCCReference Include="..\..\Source\Base\Spring.ResourceStrings.pas"/>
 			<DCCReference Include="..\..\Source\Base\Spring.SystemUtils.pas"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
