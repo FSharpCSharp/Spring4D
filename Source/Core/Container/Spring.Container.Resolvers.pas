@@ -68,14 +68,14 @@ type
       const dependency: TRttiType;
       const argument: TValue): Boolean; overload; override;
     function CanResolve(const context: ICreationContext;
-      const dependencies: TArray<TRttiType>;
+      const dependencies: TArray<TDependencyModel>;
       const arguments: TArray<TValue>): Boolean; reintroduce; overload; virtual;
 
     function Resolve(const context: ICreationContext;
       const dependency: TRttiType;
       const argument: TValue): TValue; overload; override;
     function Resolve(const context: ICreationContext;
-      const dependencies: TArray<TRttiType>;
+      const dependencies: TArray<TDependencyModel>;
       const arguments: TArray<TValue>): TArray<TValue>; reintroduce; overload; virtual;
 
     procedure AddSubResolver(const subResolver: ISubDependencyResolver);
@@ -265,7 +265,7 @@ begin
 end;
 
 function TDependencyResolver.CanResolve(const context: ICreationContext;
-  const dependencies: TArray<TRttiType>;
+  const dependencies: TArray<TDependencyModel>;
   const arguments: TArray<TValue>): Boolean;
 var
   i: Integer;
@@ -274,16 +274,17 @@ begin
   begin
     for i := 0 to High(dependencies) do
     begin
-      if not arguments[i].IsEmpty and arguments[i].IsType(dependencies[i].Handle) then
+      if not arguments[i].IsEmpty
+        and arguments[i].IsType(dependencies[i].TargetTypeInfo) then
         Continue;
-      if not CanResolve(context, dependencies[i], arguments[i]) then
+      if not CanResolve(context, dependencies[i].TargetType, arguments[i]) then
         Exit(False);
     end;
   end
   else if Length(arguments) = 0 then
   begin
     for i := 0 to High(dependencies) do
-      if not CanResolve(context, dependencies[i], nil) then
+      if not CanResolve(context, dependencies[i].TargetType, nil) then
         Exit(False);
   end
   else
@@ -311,7 +312,7 @@ begin
 end;
 
 function TDependencyResolver.Resolve(const context: ICreationContext;
-  const dependencies: TArray<TRttiType>;
+  const dependencies: TArray<TDependencyModel>;
   const arguments: TArray<TValue>): TArray<TValue>;
 var
   hasArgument: Boolean;
@@ -325,18 +326,19 @@ begin
   begin
     for i := 0 to High(dependencies) do
     begin
-      if not arguments[i].IsEmpty and arguments[i].IsType(dependencies[i].Handle) then
+      if not arguments[i].IsEmpty
+        and arguments[i].IsType(dependencies[i].TargetTypeInfo) then
       begin
         Result[i] := arguments[i];
         Continue;
       end;
-      Result[i] := Resolve(context, dependencies[i], arguments[i]);
+      Result[i] := Resolve(context, dependencies[i].TargetType, arguments[i]);
     end;
   end
   else
   begin
     for i := 0 to High(dependencies) do
-      Result[i] := Resolve(context, dependencies[i], nil);
+      Result[i] := Resolve(context, dependencies[i].TargetType, nil);
   end;
 end;
 

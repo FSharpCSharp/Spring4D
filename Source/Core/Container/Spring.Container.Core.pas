@@ -263,10 +263,10 @@ type
   IDependencyResolver = interface(ISubDependencyResolver)
     ['{15ADEA1D-7C3F-48D5-8E85-84B4332AFF5F}']
     function CanResolve(const context: ICreationContext;
-      const dependencies: TArray<TRttiType>;
+      const dependencies: TArray<TDependencyModel>;
       const arguments: TArray<TValue>): Boolean; overload;
     function Resolve(const context: ICreationContext;
-      const dependencies: TArray<TRttiType>;
+      const dependencies: TArray<TDependencyModel>;
       const arguments: TArray<TValue>): TArray<TValue>; overload;
 
     procedure AddSubResolver(const subResolver: ISubDependencyResolver);
@@ -511,14 +511,14 @@ end;
 function TInjectableMethodFilter.IsSatisfiedBy(
   const method: TRttiMethod): Boolean;
 var
-  dependencies: TArray<TRttiType>;
-  parameters: TArray<TRttiParameter>;
+  params: TArray<TRttiParameter>;
+  dependencies: TArray<TDependencyModel>;
   i: Integer;
 begin
-  parameters := method.GetParameters;
-  SetLength(dependencies, Length(parameters));
+  params := method.GetParameters;
+  SetLength(dependencies, Length(params));
   for i := 0 to High(dependencies) do
-    dependencies[i] := parameters[i].ParamType;
+    dependencies[i] := TDependencyModel.Create(params[i].ParamType, params[i]);
   Result := fKernel.Resolver.CanResolve(nil, dependencies, fArguments);
 end;
 

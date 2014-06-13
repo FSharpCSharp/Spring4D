@@ -203,7 +203,7 @@ end;
 
 function TInjectionBase.GetDependencyModels: TArray<TDependencyModel>;
 begin
-
+  Result := fDependencyModels;
 end;
 
 {$ENDREGION}
