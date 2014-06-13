@@ -47,9 +47,9 @@ type
       const arguments: array of TValue);
 
     function CanResolve(const context: ICreationContext;
-      const dependency: TRttiType; const argument: TValue): Boolean;
+      const dependency: TDependencyModel; const argument: TValue): Boolean;
     function Resolve(const context: ICreationContext;
-      const dependency: TRttiType; const argument: TValue): TValue;
+      const dependency: TDependencyModel; const argument: TValue): TValue;
 
     procedure EnterResolution(const model: TComponentModel);
     procedure LeaveResolution(const model: TComponentModel);
@@ -97,12 +97,12 @@ begin
 end;
 
 function TCreationContext.CanResolve(const context: ICreationContext;
-  const dependency: TRttiType; const argument: TValue): Boolean;
+  const dependency: TDependencyModel; const argument: TValue): Boolean;
 var
   i: Integer;
 begin
   for i := fTypedArguments.Count - 1 downto 0 do // check most recently added first
-    if fTypedArguments[i].TypeInfo = dependency.Handle then
+    if fTypedArguments[i].TypeInfo = dependency.TargetTypeInfo then
       Exit(True);
   Result := False;
 end;
@@ -177,14 +177,14 @@ begin
 end;
 
 function TCreationContext.Resolve(const context: ICreationContext;
-  const dependency: TRttiType; const argument: TValue): TValue;
+  const dependency: TDependencyModel; const argument: TValue): TValue;
 var
   i: Integer;
 begin
   for i := fTypedArguments.Count - 1 downto 0 do
-    if fTypedArguments[i].TypeInfo = dependency.Handle then
+    if fTypedArguments[i].TypeInfo = dependency.TargetTypeInfo then
       Exit(fTypedArguments[i].Value);
-  raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
+  raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.TargetTypeName]);
 end;
 
 {$ENDREGION}

@@ -236,9 +236,9 @@ type
   ISubDependencyResolver = interface
     ['{E360FFAD-2235-49D1-9A4F-50945877E337}']
     function CanResolve(const context: ICreationContext;
-      const dependency: TRttiType; const argument: TValue): Boolean;
+      const dependency: TDependencyModel; const argument: TValue): Boolean;
     function Resolve(const context: ICreationContext;
-      const dependency: TRttiType; const argument: TValue): TValue;
+      const dependency: TDependencyModel; const argument: TValue): TValue;
   end;
 
   /// <summary>
