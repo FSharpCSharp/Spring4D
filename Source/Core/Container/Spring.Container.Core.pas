@@ -58,8 +58,8 @@ type
   private
     fTargetType: TRttiType;
     fTarget: TRttiNamedObject;
-    function GetTargetTypeInfo: PTypeInfo;
-    function GetTargetTypeName: string;
+    function GetTargetTypeInfo: PTypeInfo; inline;
+    function GetTargetTypeName: string; inline;
   public
     constructor Create(const targetType: TRttiType;
       const target: TRttiNamedObject);
@@ -192,8 +192,7 @@ type
     function GetTargetName: string;
     function GetHasTarget: Boolean;
     function GetArguments: TArray<TValue>;
-    function GetDependencies: TArray<TRttiType>;
-    function GetDependencyModels: TArray<TDependencyModel>;
+    function GetDependencies: TArray<TDependencyModel>;
   {$ENDREGION}
 
     procedure Initialize(const target: TRttiMember);
@@ -205,8 +204,7 @@ type
     property TargetName: string read GetTargetName;
     property HasTarget: Boolean read GetHasTarget;
     property Arguments: TArray<TValue> read GetArguments;
-    property Dependencies: TArray<TRttiType> read GetDependencies;
-    property DependencyModels: TArray<TDependencyModel> read GetDependencyModels;
+    property Dependencies: TArray<TDependencyModel> read GetDependencies;
   end;
 
   IInjectionList = IList<IInjection>;

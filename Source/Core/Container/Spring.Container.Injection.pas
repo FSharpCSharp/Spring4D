@@ -41,16 +41,14 @@ type
     {$IFDEF WEAKREF}[Weak]{$ENDIF}
     fTarget: TRttiMember;
     fTargetName: string;
-    fDependencies: TArray<TRttiType>;
-    fDependencyModels: TArray<TDependencyModel>;
+    fDependencies: TArray<TDependencyModel>;
     fArguments: TArray<TValue>;
     function GetDependencyCount: Integer;
     function GetTarget: TRttiMember;
     function GetHasTarget: Boolean;
     function GetTargetName: string;
     function GetArguments: TArray<TValue>;
-    function GetDependencies: TArray<TRttiType>;
-    function GetDependencyModels: TArray<TDependencyModel>;
+    function GetDependencies: TArray<TDependencyModel>;
   protected
     procedure Validate(const target: TRttiMember); virtual;
     procedure DoInject(const instance: TValue; const arguments: array of TValue); virtual; abstract;
@@ -66,8 +64,7 @@ type
     property TargetName: string read GetTargetName;
     property HasTarget: Boolean read GetHasTarget;
     property Arguments: TArray<TValue> read GetArguments;
-    property Dependencies: TArray<TRttiType> read GetDependencies;
-    property DependencyModels: TArray<TDependencyModel> read GetDependencyModels;
+    property Dependencies: TArray<TDependencyModel> read GetDependencies;
   end;
 
   TConstructorInjection = class(TInjectionBase)
@@ -141,16 +138,11 @@ begin
 end;
 
 procedure TInjectionBase.Initialize(const target: TRttiMember);
-var
-  i: Integer;
 begin
   Guard.CheckNotNull(target, 'target');
   Validate(target);
   fTarget := target;
-  InitializeDependencies(fDependencyModels);
-  SetLength(fDependencies, Length(fDependencyModels));
-  for i := 0 to High(fDependencies) do
-    fDependencies[i] := fDependencyModels[i].TargetType;
+  InitializeDependencies(fDependencies);
 end;
 
 procedure TInjectionBase.Validate(const target: TRttiMember);
@@ -176,7 +168,7 @@ begin
   Result := fArguments;
 end;
 
-function TInjectionBase.GetDependencies: TArray<TRttiType>;
+function TInjectionBase.GetDependencies: TArray<TDependencyModel>;
 begin
   Result := fDependencies;
 end;
@@ -199,11 +191,6 @@ end;
 function TInjectionBase.GetDependencyCount: Integer;
 begin
   Result := Length(fDependencies);
-end;
-
-function TInjectionBase.GetDependencyModels: TArray<TDependencyModel>;
-begin
-  Result := fDependencyModels;
 end;
 
 {$ENDREGION}

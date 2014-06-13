@@ -240,6 +240,7 @@ var
   arguments: TArray<TValue>;
   attribute: InjectAttribute;
   i: Integer;
+  targetType: TRttiType;
 begin
   if not model.ConstructorInjections.IsEmpty then Exit;  // TEMP
   predicate := TMethodFilters.IsConstructor
@@ -257,7 +258,10 @@ begin
           arguments[i] := attribute.Value;
         if attribute.ServiceType <> nil then
           if TType.IsAssignable(attribute.ServiceType, parameters[i].ParamType.Handle) then
-            injection.Dependencies[0] := TType.GetType(attribute.ServiceType)
+          begin
+            targetType := TType.GetType(attribute.ServiceType);
+            injection.Dependencies[i] := TDependencyModel.Create(targetType, parameters[i]);
+          end
           else
             raise EBuilderException.CreateRes(@SUnresovableInjection);
       end;
@@ -280,6 +284,7 @@ var
   arguments: TArray<TValue>;
   attribute: InjectAttribute;
   i: Integer;
+  targetType: TRttiType;
 begin
   condition := TMethodFilters.IsInstanceMethod
     and TMethodFilters.HasAttribute(InjectAttribute)
@@ -300,7 +305,10 @@ begin
           arguments[i] := attribute.Value;
         if attribute.ServiceType <> nil then
           if TType.IsAssignable(attribute.ServiceType, parameters[i].ParamType.Handle) then
-            injection.Dependencies[0] := TType.GetType(attribute.ServiceType)
+          begin
+            targetType := TType.GetType(attribute.ServiceType);
+            injection.Dependencies[i] := TDependencyModel.Create(targetType, parameters[i]);
+          end
           else
             raise EBuilderException.CreateRes(@SUnresovableInjection);
       end;
@@ -320,6 +328,7 @@ var
   prop: TRttiProperty;
   injection: IInjection;
   attribute: InjectAttribute;
+  targetType: TRttiType;
 begin
   condition := TPropertyFilters.IsInvokable
     and TPropertyFilters.HasAttribute(InjectAttribute);
@@ -334,7 +343,10 @@ begin
       injection.InitializeArguments([attribute.Value]);
     if attribute.ServiceType <> nil then
       if TType.IsAssignable(attribute.ServiceType, prop.PropertyType.Handle) then
-        injection.Dependencies[0] := TType.GetType(attribute.ServiceType)
+      begin
+        targetType := TType.GetType(attribute.ServiceType);
+        injection.Dependencies[0] := TDependencyModel.Create(targetType, prop);
+      end
       else
         raise EBuilderException.CreateRes(@SUnresovableInjection);
   end;
@@ -352,6 +364,7 @@ var
   field: TRttiField;
   injection: IInjection;
   attribute: InjectAttribute;
+  targetType: TRttiType;
 begin
   condition := TFieldFilters.HasAttribute(InjectAttribute);
   for field in model.ComponentType.Fields.Where(condition) do
@@ -365,7 +378,10 @@ begin
       injection.InitializeArguments([attribute.Value]);
     if attribute.ServiceType <> nil then
       if TType.IsAssignable(attribute.ServiceType, field.FieldType.Handle) then
-        injection.Dependencies[0] := TType.GetType(attribute.ServiceType)
+      begin
+        targetType := TType.GetType(attribute.ServiceType);
+        injection.Dependencies[0] := TDependencyModel.Create(targetType, field);
+      end
       else
         raise EBuilderException.CreateRes(@SUnresovableInjection);
   end;
