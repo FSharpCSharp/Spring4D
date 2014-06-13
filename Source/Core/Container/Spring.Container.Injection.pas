@@ -42,6 +42,7 @@ type
     fTarget: TRttiMember;
     fTargetName: string;
     fDependencies: TArray<TRttiType>;
+    fDependencyModels: TArray<TDependencyModel>;
     fArguments: TArray<TValue>;
     function GetDependencyCount: Integer;
     function GetTarget: TRttiMember;
@@ -49,14 +50,15 @@ type
     function GetTargetName: string;
     function GetArguments: TArray<TValue>;
     function GetDependencies: TArray<TRttiType>;
+    function GetDependencyModels: TArray<TDependencyModel>;
   protected
-    procedure Validate(target: TRttiMember); virtual;
+    procedure Validate(const target: TRttiMember); virtual;
     procedure DoInject(const instance: TValue; const arguments: array of TValue); virtual; abstract;
     procedure InitializeArguments(const arguments: array of TValue);
-    procedure InitializeDependencies(out dependencies: TArray<TRttiType>); virtual; abstract;
+    procedure InitializeDependencies(out dependencies: TArray<TDependencyModel>); virtual; abstract;
   public
     constructor Create(const targetName: string = '');
-    procedure Initialize(target: TRttiMember); virtual;
+    procedure Initialize(const target: TRttiMember);
     procedure Inject(const instance: TValue; const arguments: array of TValue);
 
     property DependencyCount: Integer read GetDependencyCount;
@@ -65,33 +67,34 @@ type
     property HasTarget: Boolean read GetHasTarget;
     property Arguments: TArray<TValue> read GetArguments;
     property Dependencies: TArray<TRttiType> read GetDependencies;
+    property DependencyModels: TArray<TDependencyModel> read GetDependencyModels;
   end;
 
   TConstructorInjection = class(TInjectionBase)
   protected
-    procedure Validate(target: TRttiMember); override;
-    procedure InitializeDependencies(out dependencies: TArray<TRttiType>); override;
+    procedure Validate(const target: TRttiMember); override;
+    procedure InitializeDependencies(out dependencies: TArray<TDependencyModel>); override;
     procedure DoInject(const instance: TValue; const arguments: array of TValue); override;
   end;
 
   TPropertyInjection = class(TInjectionBase)
   protected
-    procedure Validate(target: TRttiMember); override;
-    procedure InitializeDependencies(out dependencies: TArray<TRttiType>); override;
+    procedure Validate(const target: TRttiMember); override;
+    procedure InitializeDependencies(out dependencies: TArray<TDependencyModel>); override;
     procedure DoInject(const instance: TValue; const arguments: array of TValue); override;
   end;
 
   TMethodInjection = class(TInjectionBase)
   protected
-    procedure Validate(target: TRttiMember); override;
-    procedure InitializeDependencies(out dependencies: TArray<TRttiType>); override;
+    procedure Validate(const target: TRttiMember); override;
+    procedure InitializeDependencies(out dependencies: TArray<TDependencyModel>); override;
     procedure DoInject(const instance: TValue; const arguments: array of TValue); override;
   end;
 
   TFieldInjection = class(TInjectionBase)
   protected
-    procedure Validate(target: TRttiMember); override;
-    procedure InitializeDependencies(out dependencies: TArray<TRttiType>); override;
+    procedure Validate(const target: TRttiMember); override;
+    procedure InitializeDependencies(out dependencies: TArray<TDependencyModel>); override;
     procedure DoInject(const instance: TValue; const arguments: array of TValue); override;
   end;
 
@@ -137,15 +140,20 @@ begin
   fTargetName := targetName;
 end;
 
-procedure TInjectionBase.Initialize(target: TRttiMember);
+procedure TInjectionBase.Initialize(const target: TRttiMember);
+var
+  i: Integer;
 begin
   Guard.CheckNotNull(target, 'target');
   Validate(target);
   fTarget := target;
-  InitializeDependencies(fDependencies);
+  InitializeDependencies(fDependencyModels);
+  SetLength(fDependencies, Length(fDependencyModels));
+  for i := 0 to High(fDependencies) do
+    fDependencies[i] := fDependencyModels[i].TargetType;
 end;
 
-procedure TInjectionBase.Validate(target: TRttiMember);
+procedure TInjectionBase.Validate(const target: TRttiMember);
 begin
 end;
 
@@ -193,12 +201,17 @@ begin
   Result := Length(fDependencies);
 end;
 
+function TInjectionBase.GetDependencyModels: TArray<TDependencyModel>;
+begin
+
+end;
+
 {$ENDREGION}
 
 
 {$REGION 'TConstructorInjection'}
 
-procedure TConstructorInjection.Validate(target: TRttiMember);
+procedure TConstructorInjection.Validate(const target: TRttiMember);
 begin
   inherited Validate(Target);
   if not target.IsConstructor then
@@ -206,15 +219,15 @@ begin
 end;
 
 procedure TConstructorInjection.InitializeDependencies(
-  out dependencies: TArray<TRttiType>);
+  out dependencies: TArray<TDependencyModel>);
 var
-  parameters: TArray<TRttiParameter>;
+  params: TArray<TRttiParameter>;
   i: Integer;
 begin
-  parameters := Target.AsMethod.GetParameters;
-  SetLength(dependencies, Length(parameters));
-  for i := 0 to High(parameters) do
-    dependencies[i] := parameters[i].ParamType;
+  params := Target.AsMethod.GetParameters;
+  SetLength(dependencies, Length(params));
+  for i := 0 to High(params) do
+    dependencies[i] := TDependencyModel.Create(params[i].ParamType, params[i]);
 end;
 
 procedure TConstructorInjection.DoInject(const instance: TValue;
@@ -228,7 +241,7 @@ end;
 
 {$REGION 'TPropertyInjection'}
 
-procedure TPropertyInjection.Validate(target: TRttiMember);
+procedure TPropertyInjection.Validate(const target: TRttiMember);
 begin
   inherited Validate(target);
   if not target.IsProperty then
@@ -236,9 +249,10 @@ begin
 end;
 
 procedure TPropertyInjection.InitializeDependencies(
-  out dependencies: TArray<TRttiType>);
+  out dependencies: TArray<TDependencyModel>);
 begin
-  dependencies := TArray<TRttiType>.Create(Target.AsProperty.PropertyType);
+  SetLength(dependencies, 1);
+  dependencies[0] := TDependencyModel.Create(Target.AsProperty.PropertyType, Target);
 end;
 
 procedure TPropertyInjection.DoInject(const instance: TValue;
@@ -253,7 +267,7 @@ end;
 
 {$REGION 'TMethodInjection'}
 
-procedure TMethodInjection.Validate(target: TRttiMember);
+procedure TMethodInjection.Validate(const target: TRttiMember);
 begin
   inherited Validate(Target);
   if not target.IsMethod then
@@ -261,15 +275,15 @@ begin
 end;
 
 procedure TMethodInjection.InitializeDependencies(
-  out dependencies: TArray<TRttiType>);
+  out dependencies: TArray<TDependencyModel>);
 var
-  parameters: TArray<TRttiParameter>;
+  params: TArray<TRttiParameter>;
   i: Integer;
 begin
-  parameters := Target.AsMethod.GetParameters;
-  SetLength(dependencies, Length(parameters));
-  for i := 0 to High(parameters) do
-    dependencies[i] := parameters[i].ParamType;
+  params := Target.AsMethod.GetParameters;
+  SetLength(dependencies, Length(params));
+  for i := 0 to High(params) do
+    dependencies[i] := TDependencyModel.Create(params[i].ParamType, params[i]);
 end;
 
 procedure TMethodInjection.DoInject(const instance: TValue;
@@ -283,7 +297,7 @@ end;
 
 {$REGION 'TFieldInjection'}
 
-procedure TFieldInjection.Validate(target: TRttiMember);
+procedure TFieldInjection.Validate(const target: TRttiMember);
 begin
   inherited Validate(Target);
   if not target.IsField then
@@ -291,9 +305,10 @@ begin
 end;
 
 procedure TFieldInjection.InitializeDependencies(
-  out dependencies: TArray<TRttiType>);
+  out dependencies: TArray<TDependencyModel>);
 begin
-  dependencies := TArray<TRttiType>.Create(Target.AsField.FieldType);
+  SetLength(dependencies, 1);
+  dependencies[0] := TDependencyModel.Create(Target.AsField.FieldType, Target);
 end;
 
 procedure TFieldInjection.DoInject(const instance: TValue;

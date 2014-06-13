@@ -54,6 +54,22 @@ type
   TActivatorDelegate = reference to function: TValue;
   TActivatorDelegate<T> = reference to function: T;
 
+  TDependencyModel = record
+  private
+    fTargetType: TRttiType;
+    fTarget: TRttiNamedObject;
+    function GetTargetTypeInfo: PTypeInfo;
+    function GetTargetTypeName: string;
+  public
+    constructor Create(const targetType: TRttiType;
+      const target: TRttiNamedObject);
+
+    property TargetType: TRttiType read fTargetType;
+    property TargetTypeInfo: PTypeInfo read GetTargetTypeInfo;
+    property TargetTypeName: string read GetTargetTypeName;
+    property Target: TRttiNamedObject read fTarget;
+  end;
+
   /// <summary>
   ///   The <c>IKernel</c> interface exposes all the functionality the
   ///   container implements.
@@ -177,9 +193,10 @@ type
     function GetHasTarget: Boolean;
     function GetArguments: TArray<TValue>;
     function GetDependencies: TArray<TRttiType>;
+    function GetDependencyModels: TArray<TDependencyModel>;
   {$ENDREGION}
 
-    procedure Initialize(target: TRttiMember);
+    procedure Initialize(const target: TRttiMember);
     procedure InitializeArguments(const arguments: array of TValue);
     procedure Inject(const instance: TValue; const arguments: array of TValue);
 
@@ -189,6 +206,7 @@ type
     property HasTarget: Boolean read GetHasTarget;
     property Arguments: TArray<TValue> read GetArguments;
     property Dependencies: TArray<TRttiType> read GetDependencies;
+    property DependencyModels: TArray<TDependencyModel> read GetDependencyModels;
   end;
 
   IInjectionList = IList<IInjection>;
@@ -356,6 +374,28 @@ uses
   TypInfo,
   Spring.Container.ResourceStrings,
   Spring.Helpers;
+
+
+{$REGION 'TDependencyModel'}
+
+constructor TDependencyModel.Create(const targetType: TRttiType;
+  const target: TRttiNamedObject);
+begin
+  fTargetType := targetType;
+  fTarget := target;
+end;
+
+function TDependencyModel.GetTargetTypeInfo: PTypeInfo;
+begin
+  Result := fTargetType.Handle;
+end;
+
+function TDependencyModel.GetTargetTypeName: string;
+begin
+  Result := fTargetType.DefaultName;
+end;
+
+{$ENDREGION'}
 
 
 {$REGION 'TComponentModel'}
