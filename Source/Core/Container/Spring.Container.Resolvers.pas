@@ -262,7 +262,7 @@ begin
     Exit(argument);
   componentModel := Kernel.Registry.FindOne(dependency.TypeInfo, argument);
   if not Assigned(componentModel) then
-    raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
+    raise EResolveException.CreateResFmt(@SCannotResolveType, [dependency.Name]);
 
   context.EnterResolution(componentModel);
   try
@@ -285,8 +285,8 @@ begin
     for i := 0 to High(dependencies) do
       if not CanResolve(context, dependencies[i], arguments[i]) then
         Exit(False);
-  end else
-  if Length(arguments) = 0 then
+  end
+  else if Length(arguments) = 0 then
   begin
     for i := 0 to High(dependencies) do
       if not CanResolve(context, dependencies[i], nil) then
@@ -409,7 +409,7 @@ var
   componentModel: TComponentModel;
 begin
   if not TType.IsLazy(dependency.TypeInfo) then
-    raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
+    raise EResolveException.CreateResFmt(@SCannotResolveType, [dependency.Name]);
 
   lazyKind := TType.GetLazyKind(dependency.TypeInfo);
   targetType := dependency.TargetType.GetGenericArguments[0];
@@ -417,7 +417,7 @@ begin
 
   componentModel := Kernel.Registry.FindOne(targetType.Handle, argument);
   if not Assigned(componentModel) then
-    raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
+    raise EResolveException.CreateResFmt(@SCannotResolveType, [dependency.Name]);
 
   context.EnterResolution(componentModel);
   try
@@ -425,7 +425,7 @@ begin
       tkClass: Result := InternalResolveClass(context, dependencyModel, argument, lazyKind);
       tkInterface: Result := InternalResolveInterface(context, dependencyModel, argument, lazyKind);
     else
-      raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
+      raise EResolveException.CreateResFmt(@SCannotResolveType, [dependency.Name]);
     end;
     TValueData(Result).FTypeInfo := dependency.TypeInfo;
   finally
@@ -468,7 +468,7 @@ var
 begin
   targetType := dependency.TargetType;
   if not targetType.IsDynamicArray then
-    raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
+    raise EResolveException.CreateResFmt(@SCannotResolveType, [dependency.Name]);
   targetType := targetType.AsDynamicArray.ElementType;
   dependencyModel := TDependencyModel.Create(targetType, dependency.Target);
 
@@ -539,7 +539,7 @@ begin
         values.AsType<TArray<IInterface>>()));
     end;
   else
-    raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
+    raise EResolveException.CreateResFmt(@SCannotResolveType, [dependency.Name]);
   end;
   Result := Result.Cast(dependency.TypeInfo);
 end;

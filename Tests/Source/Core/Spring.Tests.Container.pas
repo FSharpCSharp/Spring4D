@@ -116,7 +116,6 @@ type
     procedure TestResolveAll;
     procedure TestResolveAllNonGeneric;
     procedure TestUnsatisfiedDependency;
-//    procedure TestUnsatisfiedDependencyOfBootstrap;
   end;
 
   // Same Component, Different Services
@@ -227,6 +226,7 @@ type
     procedure TestResolve;
     procedure TestResolveDependency;
     procedure TestRegisterDefault;
+    procedure TestNoDefault;
   end;
 
   TTestInjectionByValue = class(TContainerTestCase)
@@ -950,21 +950,11 @@ begin
   CheckTrue((fServiceValues[1].AsType<INameService>) is TAnotherNameService);
 end;
 
-/// <remarks>
-/// An EUnsatisfiedDependencyException will be raised when resolving a service type
-//  with an ambiguous name.
-/// </remarks>
 procedure TTestDifferentServiceImplementations.TestUnsatisfiedDependency;
 begin
-  ExpectedException := EUnsatisfiedDependencyException;
+  ExpectedException := EResolveException;
   fContainer.Resolve<INameService>;
 end;
-
-//procedure TTestDifferentServiceImplementations.TestUnsatisfiedDependencyOfBootstrap;
-//begin
-//  ExpectedException := EUnsatisfiedDependencyException;
-//  fContainer.Resolve<TBootstrapComponent>;
-//end;
 
 {$ENDREGION}
 
@@ -1377,6 +1367,13 @@ end;
 
 
 {$REGION 'TTestDefaultResolve'}
+
+procedure TTestDefaultResolve.TestNoDefault;
+begin
+  StartExpectingException(EResolveException);
+  fContainer.Resolve<INameService>;
+  StopExpectingException;
+end;
 
 procedure TTestDefaultResolve.TestRegisterDefault;
 begin

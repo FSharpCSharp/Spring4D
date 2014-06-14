@@ -335,7 +335,7 @@ var
 begin
   method := model.ComponentType.GetMethod(methodName);
   if not Assigned(method) then
-    raise ERegistrationException.CreateResFmt(@SNoSuchMethod, [methodName]);
+    raise ERegistrationException.CreateResFmt(@SMethodNotFound, [methodName]);
   injectionExists := model.MethodInjections.TryGetFirst(Result,
     TInjectionFilters.ContainsMember(method));
   if not injectionExists then
@@ -375,7 +375,7 @@ var
 begin
   propertyMember := model.ComponentType.GetProperty(propertyName);
   if not Assigned(propertyMember) then
-    raise ERegistrationException.CreateResFmt(@SNoSuchProperty, [propertyName]);
+    raise ERegistrationException.CreateResFmt(@SPropertyNotFound, [propertyName]);
   injectionExists := model.PropertyInjections.TryGetFirst(Result,
     TInjectionFilters.ContainsMember(propertyMember));
   if not injectionExists then
@@ -393,7 +393,7 @@ var
 begin
   field := model.ComponentType.GetField(fieldName);
   if not Assigned(field) then
-    raise ERegistrationException.CreateResFmt(@SNoSuchField, [fieldName]);
+    raise ERegistrationException.CreateResFmt(@SFieldNotFound, [fieldName]);
   injectionExists := model.FieldInjections.TryGetFirst(Result,
     TInjectionFilters.ContainsMember(field));
   if not injectionExists then

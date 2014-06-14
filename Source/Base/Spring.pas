@@ -1266,7 +1266,7 @@ begin
 
   if (argumentValue < data.MinValue) or (argumentValue > data.MaxValue) then
     raise EInvalidEnumArgumentException.CreateResFmt(@SInvalidEnumArgument, [
-      argumentName, GetTypeName(typeInfo), argumentValue]);
+      argumentName, typeInfo.TypeName, argumentValue]);
 end;
 
 class procedure Guard.CheckRange(condition: Boolean;

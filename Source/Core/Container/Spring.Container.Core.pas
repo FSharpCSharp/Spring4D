@@ -336,7 +336,6 @@ type
 
   EResolveException = class(EContainerException);
   ECircularDependencyException = class(EResolveException);
-  EUnsatisfiedDependencyException = class(EResolveException);
 
   EActivatorException = class(EContainerException);
 

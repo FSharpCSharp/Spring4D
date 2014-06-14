@@ -255,7 +255,8 @@ begin
       else if target is TRttiParameter then
         targetType := TRttiParameter(target).ParamType
       else
-        raise EBuilderException.CreateRes(@SUnresovableInjection);
+        raise EBuilderException.CreateResFmt(@SUnresovableInjection, [
+          dependency.Name]);
       if TType.IsAssignable(attribute.ServiceType, targetType.Handle) then
       begin
         if attribute.ServiceType <> targetType.Handle then
@@ -263,7 +264,8 @@ begin
         dependency := TDependencyModel.Create(targetType, target);
       end
       else
-        raise EBuilderException.CreateRes(@SUnresovableInjection);
+        raise EBuilderException.CreateResFmt(@SUnresovableInjection, [
+          dependency.Name]);
     end;
   end;
 end;
@@ -431,7 +433,8 @@ begin
       and TInjectionFilters.IsInjectableMethod(kernel, injection.Arguments);
     method := model.ComponentType.Methods.FirstOrDefault(filter);
     if not Assigned(method) then
-      raise EBuilderException.CreateRes(@SUnresovableInjection);
+      raise EBuilderException.CreateResFmt(@SUnresovableInjection, [
+        model.ComponentTypeName]);
     injection.Initialize(method);
   end;
 end;
@@ -450,7 +453,8 @@ begin
       and TInjectionFilters.IsInjectableMethod(kernel, injection.Arguments);
     method := model.ComponentType.Methods.FirstOrDefault(filter);
     if not Assigned(method) then
-      raise EBuilderException.CreateRes(@SUnresovableInjection);
+      raise EBuilderException.CreateResFmt(@SUnresovableInjection, [
+        model.ComponentTypeName]);
     injection.Initialize(method);
   end;
 end;

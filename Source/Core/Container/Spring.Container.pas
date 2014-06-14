@@ -146,7 +146,6 @@ type
   EContainerException = Spring.Container.Core.EContainerException;
   ERegistrationException = Spring.Container.Core.ERegistrationException;
   EResolveException = Spring.Container.Core.EResolveException;
-  EUnsatisfiedDependencyException = Spring.Container.Core.EUnsatisfiedDependencyException;
   ECircularDependencyException = Spring.Container.Core.ECircularDependencyException;
   EActivatorException = Spring.Container.Core.EActivatorException;
 
@@ -344,7 +343,7 @@ function TContainer.Resolve<T>: T;
 var
   value: TValue;
 begin
-  value := Resolve(TypeInfo(T));
+  value := Resolve(TypeInfo(T), []);
   Result := value.AsType<T>;
 end;
 
@@ -360,7 +359,7 @@ function TContainer.Resolve<T>(const name: string): T;
 var
   value: TValue;
 begin
-  value := Resolve(name);
+  value := Resolve(name, []);
   Result := value.AsType<T>;
 end;
 
@@ -400,16 +399,16 @@ function TContainer.Resolve(const name: string;
   const arguments: array of TValue): TValue;
 var
   componentModel: TComponentModel;
+  context: ICreationContext;
   serviceType: PTypeInfo;
   targetType: TRttiType;
-  context: ICreationContext;
 begin
   componentModel := fRegistry.FindOne(name);
   if not Assigned(componentModel) then
-    raise EResolveException.CreateResFmt(@SInvalidServiceName, [name]);
+    raise EResolveException.CreateResFmt(@SServiceNotFound, [name]);
+  context := TCreationContext.Create(componentModel, arguments);
   serviceType := componentModel.GetServiceType(name);
   targetType := TType.GetType(serviceType);
-  context := TCreationContext.Create(componentModel, arguments);
   Result := fResolver.Resolve(context, TDependencyModel.Create(targetType, nil), name);
 end;
 
@@ -455,7 +454,7 @@ begin
 
   model := fRegistry.FindOne(instance.ClassInfo);
   if model = nil then
-    raise EContainerException.CreateRes(@SComponentNotFound);
+    raise EContainerException.CreateResFmt(@STypeNotFound, [instance.ClassName]);
   model.LifetimeManager.Release(instance);
 end;
 

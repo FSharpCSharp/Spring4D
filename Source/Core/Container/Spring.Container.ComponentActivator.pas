@@ -118,7 +118,7 @@ begin
         raise
       else
         Exception.RaiseOuterException(EResolveException.CreateResFmt(
-          @SCannotResolveDependency, [Model.ComponentTypeName]));
+          @SCannotResolveType, [Model.ComponentTypeName]));
     end;
   end;
 end;
@@ -150,7 +150,7 @@ var
 begin
   injection := SelectEligibleConstructor(context);
   if injection = nil then
-    raise EActivatorException.CreateRes(@SUnsatisfiedConstructor);
+    raise EActivatorException.CreateResFmt(@SUnsatisfiedConstructor, [Model.ComponentTypeName]);
   arguments := Kernel.Resolver.Resolve(
     context, injection.Dependencies, injection.Arguments);
   Result := TActivator.CreateInstance(

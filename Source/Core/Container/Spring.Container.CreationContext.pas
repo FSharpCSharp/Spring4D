@@ -181,7 +181,7 @@ begin
   for i := fTypedArguments.Count - 1 downto 0 do
     if fTypedArguments[i].TypeInfo = dependency.TypeInfo then
       Exit(fTypedArguments[i].Value);
-  raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
+  raise EResolveException.CreateResFmt(@SCannotResolveType, [dependency.Name]);
 end;
 
 {$ENDREGION}

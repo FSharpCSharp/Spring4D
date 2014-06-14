@@ -539,9 +539,9 @@ type
   private
     function GetHasGuid: Boolean;
   public
-    ///	<summary>
-    ///	  Gets a value indicates whether this interface type has a guid.
-    ///	</summary>
+    /// <summary>
+    ///   Determines whether this interface type has a guid.
+    /// </summary>
     property HasGuid: Boolean read GetHasGuid;
   end;
 
