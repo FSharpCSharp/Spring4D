@@ -251,7 +251,6 @@ type
     ['{0E788A94-AD9B-4951-85C1-40F877BB8A24}']
     procedure EnterResolution(const model: TComponentModel);
     procedure LeaveResolution(const model: TComponentModel);
-    function IsInResolution(const model: TComponentModel): Boolean;
 
     procedure AddArgument(const argument: TValue);
     function TryHandle(const injection: IInjection;

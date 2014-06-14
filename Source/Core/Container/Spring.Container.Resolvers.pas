@@ -175,8 +175,10 @@ function TDependencyResolver.InternalResolveValue(
 var
   intf: Pointer;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(typeInfo, 'typeInfo');
   Guard.CheckNotNull(not instance.IsEmpty, 'instance');
+{$ENDIF}
 
   if typeInfo.Kind = tkInterface then
   begin
@@ -240,8 +242,6 @@ var
   componentModel: TComponentModel;
   instance: TValue;
 begin
-  Guard.CheckNotNull(dependency, 'dependency');
-
   if CanResolveFromContext(context, dependency, argument) then
     Exit(context.Resolve(context, dependency, argument));
 
@@ -252,9 +252,6 @@ begin
   componentModel := Kernel.Registry.FindOne(dependency.TypeInfo, argument);
   if not Assigned(componentModel) then
     raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
-  if context.IsInResolution(componentModel) then
-    raise ECircularDependencyException.CreateResFmt(
-      @SCircularDependencyDetected, [componentModel.ComponentTypeName]);
 
   context.EnterResolution(componentModel);
   try
@@ -275,15 +272,10 @@ begin
   if Length(dependencies) = Length(arguments) then
   begin
     for i := 0 to High(dependencies) do
-    begin
-      if not arguments[i].IsEmpty
-        and arguments[i].IsType(dependencies[i].TypeInfo) then
-        Continue;
       if not CanResolve(context, dependencies[i], arguments[i]) then
         Exit(False);
-    end;
-  end
-  else if Length(arguments) = 0 then
+  end else
+  if Length(arguments) = 0 then
   begin
     for i := 0 to High(dependencies) do
       if not CanResolve(context, dependencies[i], nil) then
@@ -325,15 +317,11 @@ begin
     raise EResolveException.CreateRes(@SUnsatisfiedResolutionArgumentCount);
   SetLength(Result, Length(dependencies));
   if hasArgument then
-  begin
     for i := 0 to High(dependencies) do
-      Result[i] := Resolve(context, dependencies[i], arguments[i]);
-  end
+      Result[i] := Resolve(context, dependencies[i], arguments[i])
   else
-  begin
     for i := 0 to High(dependencies) do
       Result[i] := Resolve(context, dependencies[i], nil);
-  end;
 end;
 
 {$ENDREGION}
@@ -418,18 +406,19 @@ begin
   componentModel := Kernel.Registry.FindOne(targetType.Handle, argument);
   if not Assigned(componentModel) then
     raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
-  if context.IsInResolution(componentModel) then
-    raise ECircularDependencyException.CreateResFmt(
-      @SCircularDependencyDetected, [componentModel.ComponentTypeName]);
 
-  case targetType.TypeKind of
-    tkClass: Result := InternalResolveClass(context, dependencyModel, argument, lazyKind);
-    tkInterface: Result := InternalResolveInterface(context, dependencyModel, argument, lazyKind);
-  else
-    raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
+  context.EnterResolution(componentModel);
+  try
+    case targetType.TypeKind of
+      tkClass: Result := InternalResolveClass(context, dependencyModel, argument, lazyKind);
+      tkInterface: Result := InternalResolveInterface(context, dependencyModel, argument, lazyKind);
+    else
+      raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
+    end;
+    TValueData(Result).FTypeInfo := dependency.TypeInfo;
+  finally
+    context.LeaveResolution(componentModel);
   end;
-
-  TValueData(Result).FTypeInfo := dependency.TypeInfo;
 end;
 
 {$ENDREGION}
@@ -550,8 +539,8 @@ function TPrimitivesResolver.CanResolve(const context: ICreationContext;
   const dependency: TDependencyModel; const argument: TValue): Boolean;
 begin
   Result := not Kernel.HasService(dependency.TypeInfo)
-    and (not (dependency.TargetType.TypeKind in [tkClass, tkInterface, tkRecord])
-    or (argument.Kind in [tkClass, tkInterface, tkRecord]));
+    and not (dependency.TargetType.TypeKind in [tkClass, tkInterface, tkRecord])
+    and not (argument.Kind in [tkClass, tkInterface, tkRecord]);
 end;
 
 function TPrimitivesResolver.Resolve(const context: ICreationContext;

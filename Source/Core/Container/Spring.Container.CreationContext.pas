@@ -53,7 +53,6 @@ type
 
     procedure EnterResolution(const model: TComponentModel);
     procedure LeaveResolution(const model: TComponentModel);
-    function IsInResolution(const model: TComponentModel): Boolean;
 
     procedure AddArgument(const argument: TValue);
     function TryHandle(const injection: IInjection;
@@ -163,12 +162,10 @@ procedure TCreationContext.EnterResolution(const model: TComponentModel);
 begin
   if not Assigned(fModel) then // set the model if we don't know it yet
     fModel := model;
+  if fResolutionStack.Contains(model) then
+    raise ECircularDependencyException.CreateResFmt(
+      @SCircularDependencyDetected, [model.ComponentTypeName]);
   fResolutionStack.Push(model);
-end;
-
-function TCreationContext.IsInResolution(const model: TComponentModel): Boolean;
-begin
-  Result := fResolutionStack.Contains(model);
 end;
 
 procedure TCreationContext.LeaveResolution(const model: TComponentModel);
