@@ -47,7 +47,7 @@ type
 
     function CanResolve(const context: ICreationContext;
       const dependency: TDependencyModel;
-      const argument: TValue): Boolean; virtual; abstract;
+      const argument: TValue): Boolean; virtual;
     function Resolve(const context: ICreationContext;
       const dependency: TDependencyModel;
       const argument: TValue): TValue; virtual; abstract;
@@ -147,6 +147,13 @@ begin
   fKernel := kernel;
 end;
 
+function TSubDependencyResolverBase.CanResolve(const context: ICreationContext;
+  const dependency: TDependencyModel; const argument: TValue): Boolean;
+begin
+  Result := not Kernel.HasService(dependency.TypeInfo)
+    and (dependency.TypeInfo <> argument.TypeInfo);
+end;
+
 {$ENDREGION}
 
 
@@ -216,6 +223,8 @@ begin
 
   if argument.IsEmpty then
     Result := Kernel.Registry.HasDefault(dependency.TypeInfo)
+  else if argument.TypeInfo = dependency.TypeInfo then
+    Result := True
   else if argument.TryAsType<TTypeKind>(Kind) and (kind = tkDynArray) then
     Result := Kernel.Registry.HasService(dependency.TypeInfo)
   else
@@ -249,6 +258,8 @@ begin
     if fSubResolvers[i].CanResolve(context, dependency, argument) then
       Exit(fSubResolvers[i].Resolve(context, dependency, argument));
 
+  if argument.TypeInfo = dependency.TypeInfo then
+    Exit(argument);
   componentModel := Kernel.Registry.FindOne(dependency.TypeInfo, argument);
   if not Assigned(componentModel) then
     raise EResolveException.CreateResFmt(@SCannotResolveDependency, [dependency.Name]);
@@ -335,7 +346,8 @@ var
   targetType: TRttiType;
   dependencyModel: TDependencyModel;
 begin
-  Result := TType.IsLazy(dependency.TypeInfo);
+  Result := inherited CanResolve(context, dependency, argument)
+    and TType.IsLazy(dependency.TypeInfo);
   if Result then
   begin
     targetType := dependency.TargetType.GetGenericArguments[0];
@@ -433,7 +445,8 @@ var
   dependencyModel: TDependencyModel;
 begin
   targetType := dependency.TargetType;
-  Result := targetType.IsDynamicArray;
+  Result := inherited CanResolve(context, dependency, argument)
+    and targetType.IsDynamicArray;
   if Result then
   begin
     targetType := targetType.AsDynamicArray.ElementType;
@@ -490,7 +503,8 @@ var
   dependencyModel: TDependencyModel;
 begin
   targetType := dependency.TargetType;
-  Result := targetType.IsGenericType
+  Result := inherited CanResolve(context, dependency, argument)
+    and targetType.IsGenericType
     and MatchText(targetType.GetGenericTypeDefinition, SupportedTypes);
   if Result then
   begin
@@ -538,9 +552,8 @@ end;
 function TPrimitivesResolver.CanResolve(const context: ICreationContext;
   const dependency: TDependencyModel; const argument: TValue): Boolean;
 begin
-  Result := not Kernel.HasService(dependency.TypeInfo)
-    and not (dependency.TargetType.TypeKind in [tkClass, tkInterface, tkRecord])
-    and not (argument.Kind in [tkClass, tkInterface, tkRecord]);
+  Result := inherited CanResolve(context, dependency, argument)
+    and not (dependency.TargetType.TypeKind in [tkClass, tkInterface, tkRecord]);
 end;
 
 function TPrimitivesResolver.Resolve(const context: ICreationContext;
