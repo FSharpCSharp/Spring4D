@@ -171,6 +171,8 @@ type
     procedure Versioning();
     procedure SimpleCriteria_Eq();
     procedure SimpleCriteria_In();
+    procedure SimpleCriteria_Null();
+    procedure SimpleCriteria_Between;
     procedure Performance();
   end;
 
@@ -792,6 +794,25 @@ end;
 
 
 
+procedure TestMongoSession.SimpleCriteria_Between;
+var
+  LCriteria: ICriteria<TMongoAdapter>;
+  Key: IProperty;
+  LKeys: IList<TMongoAdapter>;
+begin
+  InsertObject(FMongoConnection, 100, 1);
+  LCriteria := FManager.CreateCriteria<TMongoAdapter>;
+  Key := TProperty<TMongoAdapter>.ForName('KEY');
+
+  LKeys := LCriteria.Add(Key.Between(1, 2)).List();
+  CheckEquals(0, LKeys.Count, 'Between 0');
+
+  LCriteria.Clear;
+
+  LKeys := LCriteria.Add(Key.Between(99, 100)).List();
+  CheckEquals(1, LKeys.Count, 'Between 1');
+end;
+
 procedure TestMongoSession.SimpleCriteria_Eq;
 var
   LCriteria: ICriteria<TMongoAdapter>;
@@ -840,6 +861,23 @@ begin
   LCriteria.Clear;
   LKeys := LCriteria.Add(Key.NotInInt(TArray<Integer>.Create(0,1,2))).List();
   CheckEquals(1, LKeys.Count, 'Not In');
+end;
+
+procedure TestMongoSession.SimpleCriteria_Null;
+var
+  LCriteria: ICriteria<TMongoAdapter>;
+  Key: IProperty;
+  LKeys: IList<TMongoAdapter>;
+begin
+  InsertObject(FMongoConnection, Null, 1);
+  LCriteria := FManager.CreateCriteria<TMongoAdapter>;
+  Key := TProperty<TMongoAdapter>.ForName('KEY');
+  LKeys := LCriteria.Add(Key.IsNotNull).List();
+  CheckEquals(0, LKeys.Count, 'Not Null');
+
+  LCriteria.Clear;
+  LKeys := LCriteria.Add(Key.IsNull).List();
+  CheckEquals(1, LKeys.Count, 'Is Null');
 end;
 
 procedure TestMongoSession.TearDown;

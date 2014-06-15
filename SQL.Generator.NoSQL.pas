@@ -187,6 +187,10 @@ begin
     woEqual: Result := AnsiQuotedStr(AField.Fieldname, '"') + ' : ' + PARAM_ID;
     woNotEqual, woMoreOrEqual, woMore, woLess, woLessOrEqual :
       Result := Format('%S: { %S: %S}', [AnsiQuotedStr(AField.Fieldname, '"'), WhereOpNames[AField.WhereOperator], PARAM_ID]);
+    woIsNotNull: Result := Format('%S: { $ne: null }', [AnsiQuotedStr(AField.Fieldname, '"')]);
+    woIsNull: Result := Format('%S: null', [AnsiQuotedStr(AField.Fieldname, '"')]);
+    woBetween: Result := Format('$and: [ { %0:S: { $gte: %1:S} }, { %0:S: { $lte: %1:S} } ]'
+      , [AnsiQuotedStr(AField.Fieldname, '"'), PARAM_ID]);
     woIn, woNotIn:
     begin
       Result := AField.Fieldname;
