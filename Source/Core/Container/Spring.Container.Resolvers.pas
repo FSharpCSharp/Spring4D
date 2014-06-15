@@ -261,8 +261,6 @@ begin
   if argument.TypeInfo = dependency.TypeInfo then
     Exit(argument);
   componentModel := Kernel.Registry.FindOne(dependency.TypeInfo, argument);
-  if not Assigned(componentModel) then
-    raise EResolveException.CreateResFmt(@SCannotResolveType, [dependency.Name]);
 
   context.EnterResolution(componentModel);
   try
@@ -416,8 +414,6 @@ begin
   dependencyModel := TDependencyModel.Create(targetType, dependency.Target);
 
   componentModel := Kernel.Registry.FindOne(targetType.Handle, argument);
-  if not Assigned(componentModel) then
-    raise EResolveException.CreateResFmt(@SCannotResolveType, [dependency.Name]);
 
   context.EnterResolution(componentModel);
   try

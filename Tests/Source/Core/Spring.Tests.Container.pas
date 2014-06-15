@@ -336,6 +336,7 @@ end;
 
 {$ENDREGION}
 
+
 {$REGION 'TTestGlobalContainer'}
 {$IFDEF AUTOREFCOUNT}
 
@@ -365,6 +366,7 @@ end;
 
 {$ENDIF}
 {$ENDREGION}
+
 
 {$REGION 'TTestEmptyContainer'}
 
@@ -1796,5 +1798,6 @@ begin
 end;
 
 {$ENDREGION}
+
 
 end.

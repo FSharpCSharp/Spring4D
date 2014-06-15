@@ -435,16 +435,19 @@ begin
           serviceType.TypeName]);
     end;
   end
-  else
+  else if argument.IsString then
   begin
     name := argument.AsString;
     Result := FindOne(name);
     if not Assigned(Result) then
       raise EResolveException.CreateResFmt(@SServiceNotFound, [name]);
     if not Result.HasService(serviceType) then
-      raise EResolveException.CreateResFmt(
-        @SCannotResolveType, [serviceType.TypeName]);
-  end;
+      raise EResolveException.CreateResFmt(@SCannotResolveType, [
+        serviceType.TypeName]);
+  end
+  else
+    raise EResolveException.CreateResFmt(@SCannotResolveType, [
+      serviceType.TypeName]);
 end;
 
 function TComponentRegistry.FindDefault(
