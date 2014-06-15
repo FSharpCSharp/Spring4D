@@ -101,9 +101,6 @@ type
     function ResolveAll<TServiceType>: TArray<TServiceType>; overload;
     function ResolveAll(serviceType: PTypeInfo): TArray<TValue>; overload;
 
-    function HasService(serviceType: PTypeInfo): Boolean; overload;
-    function HasService(const name: string): Boolean; overload;
-
 {$IFNDEF AUTOREFCOUNT}
     { Experimental Release Methods }
     procedure Release(instance: TObject); overload;
@@ -328,16 +325,6 @@ begin
   Result := Result.Implements(serviceType, name);
 end;
 
-function TContainer.HasService(serviceType: PTypeInfo): Boolean;
-begin
-  Result := fRegistry.HasService(serviceType);
-end;
-
-function TContainer.HasService(const name: string): Boolean;
-begin
-  Result := fRegistry.HasService(name);
-end;
-
 function TContainer.Resolve<T>: T;
 var
   value: TValue;
@@ -514,12 +501,12 @@ end;
 
 function TServiceLocatorAdapter.HasService(serviceType: PTypeInfo): Boolean;
 begin
-  Result := fContainer.HasService(serviceType);
+  Result := fContainer.Registry.HasService(serviceType);
 end;
 
 function TServiceLocatorAdapter.HasService(serviceType: PTypeInfo; const name: string): Boolean;
 begin
-  Result := fContainer.HasService({serviceType, }name);
+  Result := fContainer.Registry.HasService(serviceType, name);
 end;
 
 {$ENDREGION}

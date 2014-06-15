@@ -82,9 +82,6 @@ type
     function GetRegistry: IComponentRegistry;
     function GetResolver: IDependencyResolver;
   {$ENDREGION}
-    function HasService(serviceType: PTypeInfo): Boolean; overload;
-    function HasService(const name: string): Boolean; overload;
-
     procedure AddExtension(const extension: IContainerExtension);
 
     property Builder: IComponentBuilder read GetBuilder;

@@ -144,7 +144,7 @@ end;
 function TSubDependencyResolverBase.CanResolve(const context: ICreationContext;
   const dependency: TDependencyModel; const argument: TValue): Boolean;
 begin
-  Result := not Kernel.HasService(dependency.TypeInfo)
+  Result := not Kernel.Registry.HasService(dependency.TypeInfo)
     and (dependency.TypeInfo <> argument.TypeInfo);
 end;
 
