@@ -549,9 +549,16 @@ type
   private
     function TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
   public
+{$IFDEF DELPHI2010}
+    function AsString: string;
+{$ENDIF}
     function AsType<T>: T;
     function Cast(typeInfo: PTypeInfo): TValue;
     function IsString: Boolean;
+{$IFDEF DELPHI2010}
+    function IsType<T>: Boolean; overload;
+    function IsType(ATypeInfo: PTypeInfo): Boolean; overload;
+{$ENDIF}
   end;
 
 implementation
@@ -1443,8 +1450,19 @@ end;
 
 {$REGION 'TValueHelper'}
 
+{$IFDEF DELPHI2010}
+function TValueHelper.AsString: string;
+begin
+  Result := AsType<string>;
+end;
+{$ENDIF}
+
 function TValueHelper.AsType<T>: T;
 begin
+{$IFDEF DELPHI2010}
+  if IsEmpty then
+    Exit(Default(T));
+{$ENDIF}
   if not TryAsInterface(System.TypeInfo(T), Result) then
   if not TryAsType<T>(Result) then
     raise EInvalidCast.CreateRes(@SInvalidCast);
@@ -1461,9 +1479,25 @@ begin
 end;
 
 function TValueHelper.IsString: Boolean;
+const
+  StringKinds = [tkString, tkLString, tkWString, tkUString, tkChar, tkWChar];
 begin
-  Result := Kind in [tkString, tkLString, tkWString, tkUString, tkChar, tkWChar];
+  Result := IsEmpty or (Kind in StringKinds);
 end;
+
+{$IFDEF DELPHI2010}
+function TValueHelper.IsType(ATypeInfo: PTypeInfo): Boolean;
+var
+  unused: TValue;
+begin
+  Result := IsEmpty or TryCast(ATypeInfo, unused);
+end;
+
+function TValueHelper.IsType<T>: Boolean;
+begin
+  Result := IsType(System.TypeInfo(T));
+end;
+{$ENDIF}
 
 function TValueHelper.TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
 var
