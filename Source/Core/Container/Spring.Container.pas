@@ -204,7 +204,6 @@ begin
   fExtensions := TCollections.CreateInterfaceList<IContainerExtension>;
   InitializeInspectors;
 
-  fResolver.AddSubResolver(TPrimitivesResolver.Create(Self)); // TODO: consider removal
   fResolver.AddSubResolver(TLazyResolver.Create(Self));
   fResolver.AddSubResolver(TDynamicArrayResolver.Create(Self));
   fResolver.AddSubResolver(TListResolver.Create(Self));

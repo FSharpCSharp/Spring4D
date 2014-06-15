@@ -510,8 +510,8 @@ begin
   Guard.CheckNotNull(serviceType, 'serviceType');
 {$ENDIF}
 
-  Result := fServiceNameMappings.TryGetValue(name, model) and
-    model.HasService(serviceType);
+  Result := fServiceNameMappings.TryGetValue(name, model)
+    and model.HasService(serviceType);
 end;
 
 function TComponentRegistry.HasDefault(serviceType: PTypeInfo): Boolean;

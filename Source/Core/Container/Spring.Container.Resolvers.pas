@@ -57,6 +57,8 @@ type
   private
     fSubResolvers: IList<ISubDependencyResolver>;
   protected
+    function CanResolveFromArgument(const context: ICreationContext;
+      const dependency: TDependencyModel; const argument: TValue): Boolean;
     function CanResolveFromContext(const context: ICreationContext;
       const dependency: TDependencyModel; const argument: TValue): Boolean;
     function CanResolveFromSubResolvers(const context: ICreationContext;
@@ -108,14 +110,6 @@ type
   end;
 
   TListResolver = class(TSubDependencyResolverBase)
-  public
-    function CanResolve(const context: ICreationContext;
-      const dependency: TDependencyModel; const argument: TValue): Boolean; override;
-    function Resolve(const context: ICreationContext;
-      const dependency: TDependencyModel; const argument: TValue): TValue; override;
-  end;
-
-  TPrimitivesResolver = class(TSubDependencyResolverBase)
   public
     function CanResolve(const context: ICreationContext;
       const dependency: TDependencyModel; const argument: TValue): Boolean; override;
@@ -223,7 +217,7 @@ begin
 
   if argument.IsEmpty then
     Result := Kernel.Registry.HasDefault(dependency.TypeInfo)
-  else if argument.TypeInfo = dependency.TypeInfo then
+  else if CanResolveFromArgument(context, dependency, argument) then
     Result := True
   else if argument.TryAsType<TTypeKind>(Kind) and (kind = tkDynArray) then
     Result := Kernel.Registry.HasService(dependency.TypeInfo)
@@ -258,8 +252,9 @@ begin
     if fSubResolvers[i].CanResolve(context, dependency, argument) then
       Exit(fSubResolvers[i].Resolve(context, dependency, argument));
 
-  if argument.TypeInfo = dependency.TypeInfo then
+  if CanResolveFromArgument(context, dependency, argument) then
     Exit(argument);
+
   componentModel := Kernel.Registry.FindOne(dependency.TypeInfo, argument);
 
   context.EnterResolution(componentModel);
@@ -268,7 +263,6 @@ begin
   finally
     context.LeaveResolution(componentModel);
   end;
-
   Result := InternalResolveValue(dependency.TypeInfo, instance);
 end;
 
@@ -293,6 +287,17 @@ begin
   else
     Exit(False);
   Result := True;
+end;
+
+function TDependencyResolver.CanResolveFromArgument(
+  const context: ICreationContext; const dependency: TDependencyModel;
+  const argument: TValue): Boolean;
+begin
+  Result := argument.TypeInfo = dependency.TypeInfo;
+  if not Result and (argument.Kind in [tkInteger, tkFloat, tkInt64]) then
+    Result := argument.Kind = dependency.TypeInfo.Kind;
+  if Result and argument.IsString then
+    Result := not Kernel.Registry.HasService(dependency.TypeInfo, argument.AsString);
 end;
 
 function TDependencyResolver.CanResolveFromContext(
@@ -412,7 +417,6 @@ begin
   lazyKind := TType.GetLazyKind(dependency.TypeInfo);
   targetType := dependency.TargetType.GetGenericArguments[0];
   dependencyModel := TDependencyModel.Create(targetType, dependency.Target);
-
   componentModel := Kernel.Registry.FindOne(targetType.Handle, argument);
 
   context.EnterResolution(componentModel);
@@ -538,28 +542,6 @@ begin
     raise EResolveException.CreateResFmt(@SCannotResolveType, [dependency.Name]);
   end;
   Result := Result.Cast(dependency.TypeInfo);
-end;
-
-{$ENDREGION}
-
-
-{$REGION 'TPrimitivesResolver'}
-
-function TPrimitivesResolver.CanResolve(const context: ICreationContext;
-  const dependency: TDependencyModel; const argument: TValue): Boolean;
-begin
-  Result := inherited CanResolve(context, dependency, argument)
-    and not (dependency.TargetType.TypeKind in [tkClass, tkInterface, tkRecord]);
-end;
-
-function TPrimitivesResolver.Resolve(const context: ICreationContext;
-  const dependency: TDependencyModel; const argument: TValue): TValue;
-begin
-  Result := argument;
-{$IFDEF DELPHI2010}
-  if Result.IsEmpty then
-    TValue.Make(nil, dependency.TypeInfo, Result);
-{$ENDIF}
 end;
 
 {$ENDREGION}
