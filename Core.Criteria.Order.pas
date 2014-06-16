@@ -69,7 +69,7 @@ end;
 
 function TOrder.GetPropertyName: string;
 begin
-  Result := UpperCase(FPropertyName);
+  Result := FPropertyName;
 end;
 
 procedure TOrder.SetEntityClass(AClass: TClass);

@@ -96,7 +96,7 @@ type
 
   EMongoDBStatementAdapterException = Exception;
 
-  TMongoStatementType = (mstInsert, mstUpdate, mstDelete, mstSelect, mstSelectCount, mtPage);
+  TMongoStatementType = (mstInsert, mstUpdate, mstDelete, mstSelect, mstSelectCount, mstSelectOrder, mtPage);
 
   {$REGION 'Documentation'}
   ///	<summary>
@@ -112,6 +112,7 @@ type
     function GetStatementType(var AStatementText: string): TMongoStatementType; virtual;
     function GetStatementPageInfo(const AStatement: string; out APageInfo: TPageInfo): string; virtual;
     function IsObjectId(const AValue: string): Boolean; virtual;
+    function GetOrderFromStatementText(): string; virtual;
   public
     constructor Create(const AStatement: TMongoDBQuery); override;
     destructor Destroy; override;
@@ -174,7 +175,7 @@ const
   NAME_COLLECTION = 'UnitTests.MongoAdapter';
 
 var
-  MONGO_STATEMENT_TYPES: array[TMongoStatementType] of string = ('I', 'U', 'D', 'S', 'count', 'page');
+  MONGO_STATEMENT_TYPES: array[TMongoStatementType] of string = ('I', 'U', 'D', 'S', 'count', 'SO','page');
 
 { TMongoDBConnection }
 
@@ -374,6 +375,11 @@ begin
     LQuery.skip := LPageInfo.Offset;
   end;
 
+  if FStmtType = mstSelectOrder then
+  begin
+    LQuery.sort := JsonToBson(GetOrderFromStatementText());
+  end;
+
   LResultset := TMongoResultSetAdapter.Create(LQuery);
   LResultset.Document := JsonToBson(FStmtText);
   case FStmtType of
@@ -382,7 +388,7 @@ begin
       Statement.Connection.Insert(GetFullCollectionName(), LResultset.Document);
       LResultset.IsInjected := True;
     end;
-    mstSelect, mtPage:
+    mstSelect, mtPage, mstSelectOrder:
     begin
       LQuery.query := LResultset.Document;
       if Statement.Connection.find(GetFullCollectionName(), LQuery) then
@@ -403,6 +409,20 @@ end;
 function TMongoStatementAdapter.GetFullCollectionName: string;
 begin
   Result := FFullCollectionName;
+end;
+
+function TMongoStatementAdapter.GetOrderFromStatementText: string;
+var
+  iPos, iLength: Integer;
+begin
+  //read length
+  iPos := PosEx('_', FStmtText);
+  if iPos < 0 then
+    Exit('{}');
+  iLength := StrToInt(Copy(FStmtText, 3, iPos - 3));
+  Result := Copy(FStmtText, iPos + 1, iLength);
+  iPos := PosEx(']', FStmtText);
+  FStmtText := Copy(FStmtText, iPos + 1, Length(FStmtText));
 end;
 
 function TMongoStatementAdapter.GetQueryText: string;
@@ -452,6 +472,12 @@ begin
   begin
     LIdentifier := 'page';
     Result := mtPage;
+    Exit;
+  end
+  else if StartsStr('SO', AStatementText) then
+  begin
+    LIdentifier := 'SO';
+    Result := mstSelectOrder;
     Exit;
   end
   else
@@ -510,13 +536,6 @@ function TMongoConnectionAdapter.BeginTransaction: IDBTransaction;
 begin
   if Connection = nil then
     Exit(nil);
-
- { Connection.Connected := True;
-
-  if not Connection.InTransaction then
-  begin
-    Connection.BeginTrans;
-  end;  }
 
   Result := TMongoTransactionAdapter.Create(Connection);
 end;

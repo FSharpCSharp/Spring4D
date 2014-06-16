@@ -174,6 +174,7 @@ type
     procedure SimpleCriteria_Null();
     procedure SimpleCriteria_Between;
     procedure SimpleCriteria_Or();
+    procedure SimpleCriteria_OrderBy();
     procedure Performance();
   end;
 
@@ -895,6 +896,23 @@ begin
 
   LKeys := LCriteria.Add(TRestrictions.Or(Key.NotEq(999), Id.NotEq(1)) ).List();
   CheckEquals(0, LKeys.Count, 'Simple Or');
+end;
+
+procedure TestMongoSession.SimpleCriteria_OrderBy;
+var
+  LCriteria: ICriteria<TMongoAdapter>;
+  Key: IProperty;
+  LKeys: IList<TMongoAdapter>;
+begin
+  InsertObject(FMongoConnection, 999, 1);
+  InsertObject(FMongoConnection, 1000, 2);
+  LCriteria := FManager.CreateCriteria<TMongoAdapter>;
+  Key := TProperty<TMongoAdapter>.ForName('KEY');
+
+  LKeys := LCriteria.AddOrder(Key.Desc).List();
+  CheckEquals(2, LKeys.Count);
+  CheckEquals(1000, LKeys.First.Key);
+  CheckEquals(999, LKeys.Last.Key);
 end;
 
 procedure TestMongoSession.TearDown;

@@ -48,6 +48,8 @@ type
     function GetExpressionFromWhereField(AField: TSQLWhereField): string; virtual;
     function ResolveFieldAndExpression(const AFieldname: string; out AField: string; out AExpression: string; const ADelta: Integer = 1): Boolean;
     function GetPrefix(ATable: TSQLTable): string; virtual;
+    function GetOrderType(AOrderType: TOrderType): string; virtual;
+    function WrapResult(const AResult: string): string; virtual;
   public
     function GetQueryLanguage(): TQueryLanguage; override;
     function GenerateSelect(ASelectCommand: TSelectCommand): string; override;
@@ -145,8 +147,10 @@ function TNoSQLGenerator.GenerateSelect(ASelectCommand: TSelectCommand): string;
 var
   LField, LPrevField: TSQLWhereField;
   i: Integer;
+  LStmtType: string;
 begin
   Result := '';
+  LStmtType := 'S';
   for i := 0 to ASelectCommand.WhereFields.Count - 1 do
   begin
     LField := ASelectCommand.WhereFields[i];
@@ -160,9 +164,26 @@ begin
 
     Result := Result + GetExpressionFromWhereField(LField);
   end;
-  if Result = '' then
-    Result := '{}';
-  Result := 'S' + GetPrefix(ASelectCommand.Table) + Result;
+
+  for i := 0 to ASelectCommand.OrderByFields.Count - 1 do
+  begin
+    if i<>0 then
+      LStmtType := LStmtType + ','
+    else
+    begin
+      LStmtType := 'SO';
+    end;
+
+    LStmtType := LStmtType + '{' + AnsiQuotedStr(ASelectCommand.OrderByFields[i].Fieldname, '"') + ': ' +
+      GetOrderType(ASelectCommand.OrderByFields[i].OrderType) + '}';
+  end;
+  if Length(LStmtType) > 1 then
+  begin
+    Insert(IntToStr(Length(LStmtType)-2) + '_', LStmtType, 3); //insert length
+  end;
+
+  Result := WrapResult(Result);
+  Result := LStmtType + GetPrefix(ASelectCommand.Table) + Result;
 end;
 
 function TNoSQLGenerator.GenerateUpdate(AUpdateCommand: TUpdateCommand): string;
@@ -197,17 +218,26 @@ begin
     woIsNull: Result := Format('{%S: null}', [AnsiQuotedStr(AField.Fieldname, '"')]);
     woBetween: Result := Format('{$and: [ { %0:S: { $gte: %1:S} }, { %0:S: { $lte: %1:S} } ] }'
       , [AnsiQuotedStr(AField.Fieldname, '"'), PARAM_ID]);
-    woOr:
+    woOr, woAnd:
     begin
-        Result := '{$or: [';
+        Result := Format('{%S: [', [WhereOpNames[AField.WhereOperator]]);
     end;
-    woOrEnd: Result := ']}';
+    woOrEnd, woAndEnd: Result := ']}';
     woIn, woNotIn:
     begin
       Result := AField.Fieldname;
        if ResolveFieldAndExpression(AField.Fieldname, LField, LExpression) then
          Result := Format('{%S: { %S: [%S] } }', [AnsiQuotedStr(LField, '"'), WhereOpNames[AField.WhereOperator], LExpression]);
     end;
+  end;
+end;
+
+function TNoSQLGenerator.GetOrderType(AOrderType: TOrderType): string;
+begin
+  Result := '1';
+  case AOrderType of
+    otAscending: Result := '1';
+    otDescending: Result := '-1';
   end;
 end;
 
@@ -261,6 +291,20 @@ begin
 
   AExpression := Copy(AFieldname, LPos + 1 + ADelta, Length(AFieldname) - LPos - 1 - ADelta);
   Result := True;
+end;
+
+function TNoSQLGenerator.WrapResult(const AResult: string): string;
+begin
+  Result := AResult;
+  if Length(Result) = 0 then
+    Result := '{}'
+  else
+  begin
+    if not StartsStr('{', Result) then
+    begin
+      Result := '{' + Result + '}';
+    end;
+  end;
 end;
 
 end.
