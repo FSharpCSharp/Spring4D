@@ -459,6 +459,17 @@ object frmMain: TfrmMain
       TabOrder = 2
       OnClick = chkPauseAfterEachStepClick
     end
+    object chkRunTestsAsConsole: TCheckBox
+      Left = 80
+      Top = 21
+      Width = 57
+      Height = 17
+      Hint = 'Compile unit tests as console application'
+      Caption = 'Console'
+      Enabled = False
+      TabOrder = 3
+      OnClick = chkRunTestsAsConsoleClick
+    end
   end
   object btnClean: TButton
     Left = 359

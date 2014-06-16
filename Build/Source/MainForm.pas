@@ -50,6 +50,7 @@ type
     grpBuildConfigurations: TGroupBox;
     chkDebug: TCheckBox;
     chkRelease: TCheckBox;
+    chkRunTestsAsConsole: TCheckBox;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure btnBuildClick(Sender: TObject);
@@ -64,6 +65,7 @@ type
     procedure mniUncheckAllClick(Sender: TObject);
     procedure chkDebugClick(Sender: TObject);
     procedure chkReleaseClick(Sender: TObject);
+    procedure chkRunTestsAsConsoleClick(Sender: TObject);
   private
     fBuildEngine: TBuildEngine;
   end;
@@ -95,6 +97,7 @@ begin
   chkRelease.Checked := TBuildConfig.Release in fBuildEngine.BuildConfigs;
   chkPauseAfterEachStep.Checked := fBuildEngine.PauseAfterEachStep;
   chkRunTests.Checked := fBuildEngine.RunTests;
+  chkRunTestsAsConsole.Checked := fBuildEngine.RunTestsAsConsole;
   chkModifyDelphiRegistrySettings.Checked := fBuildEngine.ModifyDelphiRegistrySettings;
 
   lbTargets.Clear;
@@ -170,9 +173,15 @@ begin
     fBuildEngine.BuildConfigs := fBuildEngine.BuildConfigs - [TBuildConfig.Release];
 end;
 
+procedure TfrmMain.chkRunTestsAsConsoleClick(Sender: TObject);
+begin
+  fBuildEngine.RunTestsAsConsole := chkRunTestsAsConsole.Checked;
+end;
+
 procedure TfrmMain.chkRunTestsClick(Sender: TObject);
 begin
   fBuildEngine.RunTests := chkRunTests.Checked;
+  chkRunTestsAsConsole.Enabled := chkRunTests.Checked;
 end;
 
 procedure TfrmMain.chkDebugClick(Sender: TObject);
