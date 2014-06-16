@@ -182,6 +182,8 @@ type
 
   TStartOperators = set of TWhereOperator;
 
+  TEndOperators = set of TWhereOperator;
+
 const
   WhereOpNames: array[TWhereOperator] of string = (
     {woEqual =} '=', {woNotEqual =} '<>', {woMore = }'>', {woLess = }'<', {woLike = }'LIKE', {woNotLike = }'NOT LIKE',
@@ -190,6 +192,8 @@ const
     );
 
   StartOperators: TStartOperators = [woOr, woAnd, woNot];
+
+  EndOperators: TEndOperators = [woOrEnd, woAndEnd, woNotEnd];
 
 type
   {$REGION 'Documentation'}

@@ -708,33 +708,6 @@ begin
 end;
 
 function TAnsiSQLGenerator.GetWhereAsString(const AWhereFields: TList<TSQLWhereField>): string;
-
-  function FindEnd(AStartIndex: Integer; AStartToken, AEndToken: TWhereOperator): Integer;
-  var
-    LCount: Integer;
-  begin
-    LCount := 0;
-    for Result := AStartIndex to AWhereFields.Count - 1 do
-    begin
-      if (AWhereFields[Result].WhereOperator = AStartToken) then
-      begin
-        Inc(LCount);
-        Continue;
-      end;
-
-      if (AWhereFields[Result].WhereOperator = AEndToken) then
-      begin
-        Dec(LCount);
-
-        if LCount = 0 then
-        begin
-          Exit;
-        end;
-      end;
-    end;
-    Result := AStartIndex;
-  end;
-
 var
   i, ix: Integer;
   LField: TSQLWhereField;
@@ -756,7 +729,7 @@ begin
 
     if LField.WhereOperator in StartOperators then
     begin
-      ix := FindEnd(i, LField.WhereOperator, GetEndOperator(LField.WhereOperator));
+      ix := FindEnd(AWhereFields, i, LField.WhereOperator, GetEndOperator(LField.WhereOperator));
     end;
 
     Result := Result + LField.ToSQLString(GetEscapeFieldnameChar);

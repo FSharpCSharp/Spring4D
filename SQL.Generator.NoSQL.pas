@@ -46,7 +46,7 @@ type
     class constructor Create;
 
     function GetExpressionFromWhereField(AField: TSQLWhereField): string; virtual;
-    function ResolveFieldAndExpression(const AFieldname: string; out AField: string; out AExpression: string): Boolean;
+    function ResolveFieldAndExpression(const AFieldname: string; out AField: string; out AExpression: string; const ADelta: Integer = 1): Boolean;
     function GetPrefix(ATable: TSQLTable): string; virtual;
   public
     function GetQueryLanguage(): TQueryLanguage; override;
@@ -79,6 +79,7 @@ uses
   ,SvSerializerSuperJson
   ,SysUtils
   ,StrUtils
+  ,Math
   ;
 
 const
@@ -142,21 +143,26 @@ end;
 
 function TNoSQLGenerator.GenerateSelect(ASelectCommand: TSelectCommand): string;
 var
-  LField: TSQLWhereField;
+  LField, LPrevField: TSQLWhereField;
   i: Integer;
 begin
   Result := '';
-  i := 0;
-
-  for LField in ASelectCommand.WhereFields do
+  for i := 0 to ASelectCommand.WhereFields.Count - 1 do
   begin
-    if i <> 0 then
-      Result := Result + ',';
+    LField := ASelectCommand.WhereFields[i];
+    LPrevField := ASelectCommand.WhereFields[Max(0, i - 1)];
 
-    Inc(i);
+    if not (LPrevField.WhereOperator in StartOperators) and not (LField.WhereOperator in EndOperators)  then
+    begin
+      if i <> 0 then
+        Result := Result + ',';
+    end;
+
     Result := Result + GetExpressionFromWhereField(LField);
   end;
-  Result := 'S' + GetPrefix(ASelectCommand.Table) + '{' +  Result + '}';
+  if Result = '' then
+    Result := '{}';
+  Result := 'S' + GetPrefix(ASelectCommand.Table) + Result;
 end;
 
 function TNoSQLGenerator.GenerateUpdate(AUpdateCommand: TUpdateCommand): string;
@@ -175,7 +181,7 @@ end;
 const
   WhereOpNames: array[TWhereOperator] of string = (
     {woEqual =} '=', {woNotEqual =} '$ne', {woMore = }'$gt', {woLess = }'$lt', {woLike = }'$regex', {woNotLike = }'NOT LIKE',
-    {woMoreOrEqual = }'$gte', {woLessOrEqual = }'$lte', {woIn = }'$in', {woNotIn = }'$nin', {woIsNull} 'IS NULL', {woIsNotNull} 'IS NOT NULL'
+    {woMoreOrEqual = }'$gte', {woLessOrEqual = }'$lte', {woIn = }'$in', {woNotIn = }'$nin', {woIsNull} '', {woIsNotNull} ''
     ,{woOr}'$or', {woOrEnd}'', {woAnd} '$and', {woAndEnd}'', {woNot}'$not', {woNotEnd}'',{woBetween}'BETWEEN', {woJunction} ''
     );
 
@@ -184,18 +190,23 @@ var
   LField, LExpression: string;
 begin
   case AField.WhereOperator of
-    woEqual: Result := AnsiQuotedStr(AField.Fieldname, '"') + ' : ' + PARAM_ID;
+    woEqual: Result := '{' + AnsiQuotedStr(AField.Fieldname, '"') + ' : ' + PARAM_ID + '}';
     woNotEqual, woMoreOrEqual, woMore, woLess, woLessOrEqual :
-      Result := Format('%S: { %S: %S}', [AnsiQuotedStr(AField.Fieldname, '"'), WhereOpNames[AField.WhereOperator], PARAM_ID]);
-    woIsNotNull: Result := Format('%S: { $ne: null }', [AnsiQuotedStr(AField.Fieldname, '"')]);
-    woIsNull: Result := Format('%S: null', [AnsiQuotedStr(AField.Fieldname, '"')]);
-    woBetween: Result := Format('$and: [ { %0:S: { $gte: %1:S} }, { %0:S: { $lte: %1:S} } ]'
+      Result := Format('{%S: { %S: %S}}', [AnsiQuotedStr(AField.Fieldname, '"'), WhereOpNames[AField.WhereOperator], PARAM_ID]);
+    woIsNotNull: Result := Format('{%S: { $ne: null }}', [AnsiQuotedStr(AField.Fieldname, '"')]);
+    woIsNull: Result := Format('{%S: null}', [AnsiQuotedStr(AField.Fieldname, '"')]);
+    woBetween: Result := Format('{$and: [ { %0:S: { $gte: %1:S} }, { %0:S: { $lte: %1:S} } ] }'
       , [AnsiQuotedStr(AField.Fieldname, '"'), PARAM_ID]);
+    woOr:
+    begin
+        Result := '{$or: [';
+    end;
+    woOrEnd: Result := ']}';
     woIn, woNotIn:
     begin
       Result := AField.Fieldname;
        if ResolveFieldAndExpression(AField.Fieldname, LField, LExpression) then
-         Result := Format('%S: { %S: [%S] }', [AnsiQuotedStr(LField, '"'), WhereOpNames[AField.WhereOperator], LExpression]);
+         Result := Format('{%S: { %S: [%S] } }', [AnsiQuotedStr(LField, '"'), WhereOpNames[AField.WhereOperator], LExpression]);
     end;
   end;
 end;
@@ -236,7 +247,7 @@ begin
 end;
 
 function TNoSQLGenerator.ResolveFieldAndExpression(const AFieldname: string;
-  out AField, AExpression: string): Boolean;
+  out AField, AExpression: string; const ADelta: Integer): Boolean;
 var
   LPos, LPos2: Integer;
 begin
@@ -248,7 +259,7 @@ begin
   if LPos2 > 0 then
     LPos := LPos2;
 
-  AExpression := Copy(AFieldname, LPos + 2, Length(AFieldname) - LPos - 2);
+  AExpression := Copy(AFieldname, LPos + 1 + ADelta, Length(AFieldname) - LPos - 1 - ADelta);
   Result := True;
 end;
 

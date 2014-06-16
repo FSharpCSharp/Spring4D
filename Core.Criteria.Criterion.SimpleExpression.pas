@@ -62,7 +62,7 @@ begin
   inherited;
   LParamName := ACommand.GetAndIncParameterName(FPropertyName);
 
-  LWhere := TSQLWhereField.Create(UpperCase(FPropertyName), GetCriterionTable(ACommand) {ACommand.Table});
+  LWhere := TSQLWhereField.Create(FPropertyName, GetCriterionTable(ACommand) {ACommand.Table});
   LWhere.MatchMode := GetMatchMode;
   LWhere.WhereOperator := GetWhereOperator;
   LWhere.ParamName := LParamName;

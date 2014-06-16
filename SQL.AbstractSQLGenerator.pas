@@ -58,6 +58,7 @@ type
     function GetEscapeFieldnameChar(): Char; virtual; abstract;
     function GenerateUniqueId(): Variant; virtual;
     function GetUpdateVersionFieldQuery(AUpdateCommand: TUpdateCommand; AVersionColumn: VersionAttribute; AVersionValue,APKValue: Variant): Variant; virtual; abstract;
+    function FindEnd(const AWhereFields: TList<TSQLWhereField>; AStartIndex: Integer; AStartToken, AEndToken: TWhereOperator): Integer; virtual;
   end;
 
 implementation
@@ -68,6 +69,34 @@ uses
   ;
 
 { TAbstractSQLGenerator }
+
+function TAbstractSQLGenerator.FindEnd(
+  const AWhereFields: TList<TSQLWhereField>; AStartIndex: Integer; AStartToken,
+  AEndToken: TWhereOperator): Integer;
+var
+    LCount: Integer;
+  begin
+    LCount := 0;
+    for Result := AStartIndex to AWhereFields.Count - 1 do
+    begin
+      if (AWhereFields[Result].WhereOperator = AStartToken) then
+      begin
+        Inc(LCount);
+        Continue;
+      end;
+
+      if (AWhereFields[Result].WhereOperator = AEndToken) then
+      begin
+        Dec(LCount);
+
+        if LCount = 0 then
+        begin
+          Exit;
+        end;
+      end;
+    end;
+    Result := AStartIndex;
+end;
 
 function TAbstractSQLGenerator.GenerateUniqueId: Variant;
 begin

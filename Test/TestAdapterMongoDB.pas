@@ -173,6 +173,7 @@ type
     procedure SimpleCriteria_In();
     procedure SimpleCriteria_Null();
     procedure SimpleCriteria_Between;
+    procedure SimpleCriteria_Or();
     procedure Performance();
   end;
 
@@ -200,6 +201,7 @@ uses
   ,Core.ConnectionFactory
   ,Core.Exceptions
   ,Core.Criteria.Properties
+  ,Core.Criteria.Restrictions
   ,SQL.Generator.MongoDB
   ,Variants
   ,Diagnostics
@@ -878,6 +880,21 @@ begin
   LCriteria.Clear;
   LKeys := LCriteria.Add(Key.IsNull).List();
   CheckEquals(1, LKeys.Count, 'Is Null');
+end;
+
+procedure TestMongoSession.SimpleCriteria_Or;
+var
+  LCriteria: ICriteria<TMongoAdapter>;
+  Key, Id: IProperty;
+  LKeys: IList<TMongoAdapter>;
+begin
+  InsertObject(FMongoConnection, 999, 1);
+  LCriteria := FManager.CreateCriteria<TMongoAdapter>;
+  Key := TProperty<TMongoAdapter>.ForName('KEY');
+  Id := TProperty<TMongoAdapter>.ForName('_id');
+
+  LKeys := LCriteria.Add(TRestrictions.Or(Key.NotEq(999), Id.NotEq(1)) ).List();
+  CheckEquals(0, LKeys.Count, 'Simple Or');
 end;
 
 procedure TestMongoSession.TearDown;
