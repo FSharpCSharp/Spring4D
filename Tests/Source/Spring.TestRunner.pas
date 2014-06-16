@@ -67,8 +67,11 @@ begin
   {$ENDIF}
 
   {$IFDEF DEBUG}
-  Write('Press <Enter>');
-  Readln;
+  if DebugHook <> 0 then
+  begin
+    Write('Press <Enter>');
+    Readln;
+  end;
   {$ENDIF}
 {$ELSE}
   {$IFNDEF FMX}
@@ -77,6 +80,7 @@ begin
   {$ELSE}
   TFMXTestRunner.RunRegisteredTests();
   {$ENDIF}
+  ReportMemoryLeaksOnShutdown := True;
 {$ENDIF}
 end;
 

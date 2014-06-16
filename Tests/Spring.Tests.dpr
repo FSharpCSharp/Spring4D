@@ -55,7 +55,6 @@ uses
 begin
   CleanupGlobalContainer;
   RegisterTestCases;
-  ReportMemoryLeaksOnShutdown := True;
   RunRegisteredTests;
   TestFramework.ClearRegistry;
 end.

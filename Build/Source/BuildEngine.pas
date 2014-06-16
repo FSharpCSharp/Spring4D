@@ -666,7 +666,7 @@ begin
     begin
       commandLine := Format('%0:s\Tests\Bin\%1:s\Spring.Tests.exe', [
         ExcludeTrailingPathDelimiter(projectPath),
-        StringReplace(task.Compiler.TypeName, '.', '\', [])]);
+        StringReplace(TPath.Combine(task.Compiler.TypeName, configName), '.', '\', [])]);
       ExecuteCommandLine(commandLine, '', exitCode, ExtractFileDir(commandLine));
     end;
   end;
