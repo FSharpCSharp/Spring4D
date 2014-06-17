@@ -495,7 +495,7 @@ begin
   params := Method.GetParameters;
   TypeData.ParamCount := Length(params);
   p := @TypeData.ParamList;
-  for i := Low(params) to High(params) do
+  for i := 0 to High(params) do
   begin
     WriteByte(p, Byte(params[i].Flags));
     WritePackedShortString(p, params[i].Name);
@@ -507,7 +507,7 @@ begin
     WritePointer(p, method.ReturnType.Handle);
   end;
   WriteByte(p, Byte(method.CallingConvention));
-  for i := Low(params) to High(params) do
+  for i := 0 to High(params) do
   begin
     WritePointer(p, Pointer(NativeInt(params[i].ParamType.Handle) - SizeOf(Pointer)));
   end;

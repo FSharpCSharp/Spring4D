@@ -942,7 +942,7 @@ begin
   if not Assigned(fCollectionItems) then
   begin
     SetLength(fCollectionItems, Length(fCollectionItemFactories));
-    for i := Low(fCollectionItemFactories) to High(fCollectionItemFactories) do
+    for i := 0 to High(fCollectionItemFactories) do
       fCollectionItems[i] := fCollectionItemFactories[i]();
   end;
   Result := fCollectionItems;

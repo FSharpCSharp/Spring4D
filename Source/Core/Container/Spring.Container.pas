@@ -405,7 +405,7 @@ var
 begin
   values := ResolveAll(TypeInfo(TServiceType));
   SetLength(Result, Length(values));
-  for i := Low(values) to High(values) do
+  for i := 0 to High(values) do
     Result[i] := TValueArray(values)[i].AsType<TServiceType>;
 end;
 
