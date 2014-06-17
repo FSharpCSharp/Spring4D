@@ -33,8 +33,7 @@ interface
 
 uses
   Core.Interfaces
-  {$IFDEF USE_SPRING},Spring.Collections{$ENDIF}
-  ,Generics.Collections
+  ,Spring.Collections
   ,Core.Session
   ,SQL.Params
   ,Rtti
@@ -49,14 +48,14 @@ type
   TAbstractCriteria<T: class, constructor> = class(TInterfacedObject, ICriteria<T>)
   private
     FEntityClass: TClass;
-    FCriterions: TList<ICriterion>;
-    FOrders: TList<IOrder>;
+    FCriterions: IList<ICriterion>;
+    FOrders: IList<IOrder>;
     FSession: TSession;
   protected
     constructor Create(AEntityClass: TClass; ASession: TSession); virtual;
 
-    function GenerateSqlStatement(AParams: TObjectList<TDBParam>): string;
-    function CreateList(): {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF}; virtual;
+    function GenerateSqlStatement(AParams: IList<TDBParam>): string;
+    function CreateList(): IList<T>; virtual;
     procedure DoFetch(const ACollection: TValue); virtual;
     function Page(APage: Integer; AItemsPerPage: Integer): IDBPage<T>; virtual;
   public
@@ -67,10 +66,10 @@ type
 
     procedure Clear(); virtual;
     function Count(): Integer; virtual;
-    function List(): {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF};
+    function List(): IList<T>;
     procedure Fetch(const ACollection: TValue);
 
-    property Criterions: TList<ICriterion> read FCriterions;
+    property Criterions: IList<ICriterion> read FCriterions;
     property EntityClass: TClass read FEntityClass;
     property Session: TSession read FSession;
   end;
@@ -116,40 +115,30 @@ begin
   inherited Create;
   FEntityClass := AEntityClass;
   FSession := ASession;
-  FCriterions := TList<ICriterion>.Create();
-  FOrders := TList<IOrder>.Create();
+  FCriterions := TCollections.CreateList<ICriterion>();
+  FOrders := TCollections.CreateList<IOrder>();
 end;
 
 destructor TAbstractCriteria<T>.Destroy;
 begin
-  FCriterions.Free;
-  FOrders.Free;
   inherited Destroy;
 end;
 
 procedure TAbstractCriteria<T>.DoFetch(const ACollection: TValue);
 var
-  LParams: TObjectList<TDBParam>;
+  LParams: IList<TDBParam>;
   LSql: string;
   LResults: IDBResultset;
 begin
-  LParams := TObjectList<TDBParam>.Create(True);
-  try
-    LSql := GenerateSqlStatement(LParams);
-    LResults := Session.GetResultset(LSql, LParams);
-    Session.Fetch<T>(LResults, ACollection);
-  finally
-    LParams.Free;
-  end;
+  LParams := TCollections.CreateObjectList<TDBParam>(True);
+  LSql := GenerateSqlStatement(LParams);
+  LResults := Session.GetResultset(LSql, LParams);
+  Session.Fetch<T>(LResults, ACollection);
 end;
 
-function TAbstractCriteria<T>.CreateList: {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF};
+function TAbstractCriteria<T>.CreateList: IList<T>;
 begin
-  {$IFDEF USE_SPRING}
   Result := TCollections.CreateList<T>(True);
-  {$ELSE}
-  Result := TObjectList<T>.Create(True);
-  {$ENDIF}
 end;
 
 procedure TAbstractCriteria<T>.Fetch(const ACollection: TValue);
@@ -157,7 +146,7 @@ begin
   DoFetch(ACollection);
 end;
 
-function TAbstractCriteria<T>.GenerateSqlStatement(AParams: TObjectList<TDBParam>): string;
+function TAbstractCriteria<T>.GenerateSqlStatement(AParams: IList<TDBParam>): string;
 var
   LCriterion: ICriterion;
   LExecutor: TSelectExecutor;
@@ -188,27 +177,23 @@ begin
   end;
 end;
 
-function TAbstractCriteria<T>.List: {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF};
+function TAbstractCriteria<T>.List: IList<T>;
 var
   LCollection: TValue;
 begin
   Result := CreateList();
-  LCollection := TValue.From<{$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF}>(Result);
+  LCollection := TValue.From<IList<T>>(Result);
   DoFetch(LCollection);
 end;
 
 function TAbstractCriteria<T>.Page(APage, AItemsPerPage: Integer): IDBPage<T>;
 var
   LSql: string;
-  LParams: TObjectList<TDBParam>;
+  LParams: IList<TDBParam>;
 begin
-  LParams := TObjectList<TDBParam>.Create();
-  try
-    LSql := GenerateSqlStatement(LParams);
-    Result := FSession.Page<T>(APage, AItemsPerPage, LSql, LParams);
-  finally
-    LParams.Free;
-  end;
+  LParams := TCollections.CreateObjectList<TDBParam>();
+  LSql := GenerateSqlStatement(LParams);
+  Result := FSession.Page<T>(APage, AItemsPerPage, LSql, LParams);
 end;
 
 end.

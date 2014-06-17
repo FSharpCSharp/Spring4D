@@ -30,14 +30,14 @@ unit Core.EntityMap;
 interface
 
 uses
-  Generics.Collections, Rtti;
+  Spring.Collections, Rtti;
 
 type
   TEntityMapKey = string;
 
   TEntityMap = class
   private
-    FMap: TObjectDictionary<TEntityMapKey,TObject>;
+    FMap: IDictionary<TEntityMapKey,TObject>;
   protected
     function GetObjectKey(AObject: TObject): TEntityMapKey; virtual;
   public
@@ -53,7 +53,6 @@ type
     procedure Remove(AObject: TObject);
     procedure Replace(AObject: TObject);
     procedure Clear(AAll: Boolean);
-    function GetList(): TList<TObject>;
     function HasIdValue(AObject: TObject): Boolean;
 
   end;
@@ -109,12 +108,11 @@ begin
   else
     LOwnerships := [];
 
-  FMap := TObjectDictionary<TEntityMapKey,TObject>.Create(LOwnerships);
+  FMap := TCollections.CreateDictionary<TEntityMapKey,TObject>(LOwnerships);
 end;
 
 destructor TEntityMap.Destroy;
 begin
-  FMap.Free;
   inherited Destroy;
 end;
 
@@ -124,11 +122,6 @@ var
 begin
   LKey := GetObjectKey(AObject);
   Result := FMap[LKey];
-end;
-
-function TEntityMap.GetList: TList<TObject>;
-begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
 end;
 
 function TEntityMap.GetObjectKey(AObject: TObject): TEntityMapKey;

@@ -94,7 +94,7 @@ implementation
 uses
   Mapping.RttiExplorer
   ,Mapping.Attributes
-  ,Generics.Collections
+  ,Spring.Collections
   ,Rtti
   ;
 
@@ -108,7 +108,7 @@ end;
 function EBaseORMException.EntityToString(AEntity: TObject): string;
 var
   LBuilder: TStringBuilder;
-  LColumns: TList<ColumnAttribute>;
+  LColumns: IList<ColumnAttribute>;
   LColumn: ColumnAttribute;
   LValue: TValue;
 begin
@@ -118,14 +118,10 @@ begin
   try
     LBuilder.AppendFormat('ClassName: %S', [AEntity.ClassName]).AppendLine;
     LColumns := TRttiExplorer.GetColumns(AEntity.ClassType);
-    try
-      for LColumn in LColumns do
-      begin
-        LValue := TRttiExplorer.GetMemberValue(AEntity, LColumn.ClassMemberName);
-        LBuilder.AppendFormat('[%S] : %S', [LColumn.Name, LValue.ToString]).AppendLine;
-      end;
-    finally
-      LColumns.Free;
+    for LColumn in LColumns do
+    begin
+      LValue := TRttiExplorer.GetMemberValue(AEntity, LColumn.ClassMemberName);
+      LBuilder.AppendFormat('[%S] : %S', [LColumn.Name, LValue.ToString]).AppendLine;
     end;
     Result := LBuilder.ToString;
   finally

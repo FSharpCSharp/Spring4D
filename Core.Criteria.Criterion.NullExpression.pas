@@ -11,7 +11,7 @@ uses
   ,SQL.Params
   ,SQl.Commands
   ,SQL.Interfaces
-  ,Generics.Collections
+  ,Spring.Collections
   ;
 
 type
@@ -22,7 +22,7 @@ type
   public
     constructor Create(const APropertyName: string; const AOperator: TWhereOperator); virtual;
   public
-    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; override;
+    function ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; override;
     function GetWhereOperator(): TWhereOperator; override;
   end;
 
@@ -46,7 +46,7 @@ begin
   Result := FOperator;
 end;
 
-function TNullExpression.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
+function TNullExpression.ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
 var
   LWhere: TSQLWhereField;
 begin

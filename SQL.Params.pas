@@ -30,7 +30,7 @@ unit SQL.Params;
 interface
 
 uses
-  DB, TypInfo, Generics.Collections, Rtti;
+  DB, TypInfo, Spring.Collections, Rtti;
 
 type
   {$REGION 'Documentation'}
@@ -62,7 +62,7 @@ type
   end;
 
   procedure ConvertParam(const AFrom: TVarRec; out ATo: TDBParam);
-  procedure ConvertParams(const AFrom: array of const; ATo: TObjectList<TDBParam>);
+  procedure ConvertParams(const AFrom: array of const; ATo: IList<TDBParam>);
   function FromTValueTypeToFieldType(const AValue: TValue): TFieldType;
   function FromTypeInfoToFieldType(ATypeInfo: PTypeInfo): TFieldType;
 
@@ -135,7 +135,7 @@ begin
   end;
 end;
 
-procedure ConvertParams(const AFrom: array of const; ATo: TObjectList<TDBParam>);
+procedure ConvertParams(const AFrom: array of const; ATo: IList<TDBParam>);
 var
   i: Integer;
   LParam: TDBParam;

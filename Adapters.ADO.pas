@@ -32,7 +32,7 @@ interface
 {$IFDEF MSWINDOWS}
 
 uses
-  Generics.Collections, Core.Interfaces, ADODB, Core.Base, SQL.Params, SysUtils
+  Spring.Collections, Core.Interfaces, ADODB, Core.Base, SQL.Params, SysUtils
   , SQL.Generator.Ansi, DB, Mapping.Attributes;
 
 
@@ -44,7 +44,7 @@ type
   {$ENDREGION}
   TADOResultSetAdapter = class(TDriverResultSetAdapter<TADODataSet>)
   private
-    FFieldCache: TDictionary<string,TField>;
+    FFieldCache: IDictionary<string,TField>;
   protected
     procedure BuildFieldCache();
   public
@@ -73,7 +73,7 @@ type
     destructor Destroy; override;
     procedure SetSQLCommand(const ACommandText: string); override;
     procedure SetParam(ADBParam: TDBParam); virtual;
-    procedure SetParams(Params: TObjectList<TDBParam>); overload; override;
+    procedure SetParams(Params: IList<TDBParam>); overload; override;
     function Execute(): NativeUInt; override;
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
   end;
@@ -160,13 +160,12 @@ begin
   Dataset.DisableControls;
 //  Dataset.CursorLocation := clUseServer;
 //  Dataset.CursorType := ctOpenForwardOnly;
-  FFieldCache := TDictionary<string,TField>.Create(Dataset.FieldCount * 2);
+  FFieldCache := TCollections.CreateDictionary<string,TField>(Dataset.FieldCount * 2);
   BuildFieldCache();
 end;
 
 destructor TADOResultSetAdapter.Destroy;
 begin
-  FFieldCache.Free;
   Dataset.Free;
   inherited Destroy;
 end;
@@ -266,7 +265,7 @@ begin
   Statement.Parameters.ParamValues[sParamName] := ADBParam.Value;
 end;
 
-procedure TADOStatementAdapter.SetParams(Params: TObjectList<TDBParam>);
+procedure TADOStatementAdapter.SetParams(Params: IList<TDBParam>);
 var
   LParam: TDBParam;
 begin

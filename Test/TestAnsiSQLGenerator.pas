@@ -12,7 +12,8 @@ unit TestAnsiSQLGenerator;
 interface
 
 uses
-  TestFramework, SQL.AbstractSQLGenerator, SQL.Generator.Ansi, SQL.Commands, SQL.Types;
+  TestFramework, SQL.AbstractSQLGenerator, SQL.Generator.Ansi, SQL.Commands, SQL.Types
+  ,Spring.Collections;
 
 type
   // Test methods for class TAnsiSQLGenerator
@@ -329,25 +330,19 @@ end;
 
 procedure TestTAnsiSQLGenerator.TestGenerateCreateTable;
 var
-  ReturnValue: TList<string>;
+  ReturnValue: IList<string>;
   LCommand: TCreateTableCommand;
   LTable: TSQLTable;
-  LCols: TList<ColumnAttribute>;
+  LCols: IList<ColumnAttribute>;
 begin
   LTable := CreateTestTable;
   LCommand := TCreateTableCommand.Create(LTable);
   try
     LCols := TRttiExplorer.GetColumns(TCustomer);
-    ReturnValue := nil;
-    try
-      LCommand.SetTable(LCols);
+    LCommand.SetTable(LCols);
 
-      ReturnValue := FAnsiSQLGenerator.GenerateCreateTable(LCommand);
-      CheckTrue(ReturnValue.Count > 0);
-    finally
-      LCols.Free;
-      ReturnValue.Free;
-    end;
+    ReturnValue := FAnsiSQLGenerator.GenerateCreateTable(LCommand);
+    CheckTrue(ReturnValue.Count > 0);
   finally
     LTable.Free;
     LCommand.Free;
@@ -356,29 +351,23 @@ end;
 
 procedure TestTAnsiSQLGenerator.TestGenerateCreateFK;
 var
-  LSQL: TList<string>;
+  LSQL: IList<string>;
   LCommand: TCreateFKCommand;
   LTable: TSQLTable;
-  LCols: TList<ColumnAttribute>;
+  LCols: IList<ColumnAttribute>;
 begin
   LTable := CreateTestTable;
   LCommand := TCreateFKCommand.Create(LTable);
   try
     LCols := TRttiExplorer.GetColumns(TCustomer);
-    LSQL := nil;
-    try
-      LCommand.SetTable(LCols);
-      LCommand.ForeignKeys.Add(
-        TSQLForeignKeyField.Create('FKColumn', LTable, 'RefColumn', 'RefTable', [fsOnDeleteCascade, fsOnUpdateCascade]
-        )
-      );
+    LCommand.SetTable(LCols);
+    LCommand.ForeignKeys.Add(
+      TSQLForeignKeyField.Create('FKColumn', LTable, 'RefColumn', 'RefTable', [fsOnDeleteCascade, fsOnUpdateCascade]
+      )
+    );
 
-      LSQL := FAnsiSQLGenerator.GenerateCreateFK(LCommand);
-      CheckTrue(LSQL.Count > 0);
-    finally
-      LCols.Free;
-      LSQL.Free;
-    end;
+    LSQL := FAnsiSQLGenerator.GenerateCreateFK(LCommand);
+    CheckTrue(LSQL.Count > 0);
   finally
     LTable.Free;
     LCommand.Free;

@@ -30,7 +30,7 @@ unit SQL.AbstractSQLGenerator;
 interface
 
 uses
-  SQL.Interfaces, SQL.Commands, Mapping.Attributes, SQL.Types, Generics.Collections;
+  SQL.Interfaces, SQL.Commands, Mapping.Attributes, SQL.Types, Spring.Collections;
 
 const
   TBL_TEMP = 'ORM_TEMP';
@@ -43,8 +43,8 @@ type
     function GenerateInsert(AInsertCommand: TInsertCommand): string; virtual; abstract;
     function GenerateUpdate(AUpdateCommand: TUpdateCommand): string; virtual; abstract;
     function GenerateDelete(ADeleteCommand: TDeleteCommand): string; virtual; abstract;
-    function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): TList<string>; virtual; abstract;
-    function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): TList<string>; virtual; abstract;
+    function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): IList<string>; virtual; abstract;
+    function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): IList<string>; virtual; abstract;
     function GenerateCreateSequence(ASequence: TCreateSequenceCommand): string; virtual; abstract;
     function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; virtual; abstract;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; virtual; abstract;
@@ -58,7 +58,7 @@ type
     function GetEscapeFieldnameChar(): Char; virtual; abstract;
     function GenerateUniqueId(): Variant; virtual;
     function GetUpdateVersionFieldQuery(AUpdateCommand: TUpdateCommand; AVersionColumn: VersionAttribute; AVersionValue,APKValue: Variant): Variant; virtual; abstract;
-    function FindEnd(const AWhereFields: TList<TSQLWhereField>; AStartIndex: Integer; AStartToken, AEndToken: TWhereOperator): Integer; virtual;
+    function FindEnd(const AWhereFields: IList<TSQLWhereField>; AStartIndex: Integer; AStartToken, AEndToken: TWhereOperator): Integer; virtual;
   end;
 
 implementation
@@ -71,7 +71,7 @@ uses
 { TAbstractSQLGenerator }
 
 function TAbstractSQLGenerator.FindEnd(
-  const AWhereFields: TList<TSQLWhereField>; AStartIndex: Integer; AStartToken,
+  const AWhereFields: IList<TSQLWhereField>; AStartIndex: Integer; AStartToken,
   AEndToken: TWhereOperator): Integer;
 var
     LCount: Integer;

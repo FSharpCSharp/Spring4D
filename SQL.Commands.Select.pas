@@ -33,10 +33,7 @@ interface
 
 uses
   SQL.AbstractCommandExecutor, Rtti, SQL.Commands, SQL.Types, Mapping.Attributes, Core.Interfaces
-  {$IFDEF USE_SPRING}
   ,Spring.Collections
-  {$ENDIF}
-  , Generics.Collections
   ;
 
 type
@@ -52,7 +49,7 @@ type
   private
     FTable: TSQLTable;
     FCommand: TSelectCommand;
-    FColumns: TList<ColumnAttribute>;
+    FColumns: IList<ColumnAttribute>;
     FSelectType: TSelectType;
     FID: TValue;
     FLazyColumn: ColumnAttribute;
@@ -139,7 +136,7 @@ constructor TSelectExecutor.Create();
 begin
   inherited Create();
   FTable := TSQLTable.Create();
-  FColumns := TList<ColumnAttribute>.Create;
+  FColumns := TCollections.CreateList<ColumnAttribute>;
   FCommand := TSelectCommand.Create(FTable);
   FLazyColumn := nil;
 end;
@@ -148,13 +145,12 @@ destructor TSelectExecutor.Destroy;
 begin
   FTable.Free;
   FCommand.Free;
-  FColumns.Free;
   inherited Destroy;
 end;
 
 procedure TSelectExecutor.DoExecute(AEntity: TObject);
 var
-  LSelects: TList<TSQLSelectField>;
+  LSelects: IList<TSQLSelectField>;
 begin
   //add where fields if needed
   FCommand.WhereFields.Clear;
@@ -173,19 +169,15 @@ begin
 
   if Assigned(FLazyColumn) then
   begin
-    LSelects := TList<TSQLSelectField>.Create();
-    try
-      LSelects.AddRange(FCommand.SelectFields);
-      FCommand.SelectFields.OwnsObjects := False;
-      FCommand.SelectFields.Clear;
-      FCommand.SelectFields.Add(TSQLSelectField.Create(FLazyColumn.Name, FTable));
-      SQL := Generator.GenerateSelect(FCommand);
-      FCommand.SelectFields.OwnsObjects := True;
-      FCommand.SelectFields.Clear;
-      FCommand.SelectFields.AddRange(LSelects);
-    finally
-      LSelects.Free;
-    end;
+    LSelects := TCollections.CreateList<TSQLSelectField>();
+    LSelects.AddRange(FCommand.SelectFields);
+    (FCommand.SelectFields as ICollectionOwnership).OwnsObjects := False;
+    FCommand.SelectFields.Clear;
+    FCommand.SelectFields.Add(TSQLSelectField.Create(FLazyColumn.Name, FTable));
+    SQL := Generator.GenerateSelect(FCommand);
+    (FCommand.SelectFields as ICollectionOwnership).OwnsObjects := True;
+    FCommand.SelectFields.Clear;
+    FCommand.SelectFields.AddRange(LSelects);
   end
   else
     SQL := Generator.GenerateSelect(FCommand);

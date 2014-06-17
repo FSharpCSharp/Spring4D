@@ -12,7 +12,7 @@ unit TestSQLiteAdapter;
 interface
 
 uses
-  TestFramework, Core.Interfaces, Generics.Collections, Adapters.SQLite, Core.Base,
+  TestFramework, Core.Interfaces, Spring.Collections, Adapters.SQLite, Core.Base,
   SysUtils, SQL.Params, SQLiteTable3;
 
 type
@@ -254,22 +254,18 @@ end;
 
 procedure TestTSQLiteStatementAdapter.TestSetParams;
 var
-  Params: TObjectList<TDBParam>;
+  Params: IList<TDBParam>;
   LParam: TDBParam;
 begin
-  Params := TObjectList<TDBParam>.Create;
-  try
-    LParam := TDBParam.Create;
-    LParam.Name := ':NAME';
-    LParam.Value := 'Test';
-    LParam.ParamType := ftString;
+  Params := TCollections.CreateObjectList<TDBParam>;
+  LParam := TDBParam.Create;
+  LParam.Name := ':NAME';
+  LParam.Value := 'Test';
+  LParam.ParamType := ftString;
 
-    Params.Add(LParam);
+  Params.Add(LParam);
 
-    FSQLiteStatementAdapter.SetParams(Params);
-  finally
-    Params.Free;
-  end;
+  FSQLiteStatementAdapter.SetParams(Params);
 end;
 
 procedure TestTSQLiteStatementAdapter.TestExecute;

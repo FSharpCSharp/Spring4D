@@ -30,7 +30,7 @@ unit SQL.AbstractCommandExecutor;
 interface
 
 uses
-  Core.Interfaces, SQL.Interfaces, Generics.Collections, SQL.Params, Mapping.Attributes, SQL.Types
+  Core.Interfaces, SQL.Interfaces, Spring.Collections, SQL.Params, Mapping.Attributes, SQL.Types
   ,SQL.Commands
   ;
 
@@ -41,7 +41,7 @@ type
     FGenerator: ISQLGenerator;
     FClass: TClass;
     FSQL: string;
-    FParams: TObjectList<TDBParam>;
+    FParams: IList<TDBParam>;
     procedure SetConnection(const Value: IDBConnection);
   protected
     function DoCreateParam(AColumn: ColumnAttribute; AValue: Variant): TDBParam; virtual;
@@ -54,7 +54,7 @@ type
     destructor Destroy; override;
 
     function TableExists(const ATablename: string): Boolean; virtual;
-    procedure FillDbTableColumns(const ATablename: string; AColumns: TList<string>); virtual;
+    procedure FillDbTableColumns(const ATablename: string; AColumns: IList<string>); virtual;
 
     procedure Execute(AEntity: TObject); virtual;
     procedure Build(AClass: TClass); virtual; abstract;
@@ -64,7 +64,7 @@ type
     property Connection: IDBConnection read FConnection write SetConnection;
     property Generator: ISQLGenerator read FGenerator;
     property EntityClass: TClass read FClass write FClass;
-    property SQLParameters: TObjectList<TDBParam> read FParams;
+    property SQLParameters: IList<TDBParam> read FParams;
     property SQL: string read FSQL write FSQL;
   end;
 
@@ -98,7 +98,7 @@ constructor TAbstractCommandExecutor.Create();
 begin
   inherited Create;
   FGenerator := nil; //TSQLGeneratorRegister.GetCurrentGenerator();
-  FParams := TObjectList<TDBParam>.Create();
+  FParams := TCollections.CreateObjectList<TDBParam>();
 end;
 
 function TAbstractCommandExecutor.CreateParam(AEntity: TObject;
@@ -166,7 +166,6 @@ end;
 destructor TAbstractCommandExecutor.Destroy;
 begin
  // FExecutionListeners.Free;
-  FParams.Free;
   FConnection := nil;
   FGenerator := nil;
   inherited Destroy;
@@ -184,7 +183,7 @@ begin
   //
 end;
 
-procedure TAbstractCommandExecutor.FillDbTableColumns(const ATablename: string; AColumns: TList<string>);
+procedure TAbstractCommandExecutor.FillDbTableColumns(const ATablename: string; AColumns: IList<string>);
 var
   LSqlTableCount: string;
   LStmt: IDBStatement;

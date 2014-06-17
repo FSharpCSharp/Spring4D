@@ -348,19 +348,15 @@ end;
 procedure TestTADOStatementAdapter.InternalSetParams;
 var
   LParam: TDBParam;
-  Params: TObjectList<TDBParam>;
+  Params: IList<TDBParam>;
 begin
-  Params := TObjectList<TDBParam>.Create;
-  try
-    LParam := TDBParam.Create;
-    LParam.Name := ':IMONE';
-    LParam.Value := 1;
-    LParam.ParamType := ftInteger;
-    Params.Add(LParam);
-    FADOStatementAdapter.SetParams(Params);
-  finally
-    Params.Free;
-  end;
+  Params := TCollections.CreateObjectList<TDBParam>;
+  LParam := TDBParam.Create;
+  LParam.Name := ':IMONE';
+  LParam.Value := 1;
+  LParam.ParamType := ftInteger;
+  Params.Add(LParam);
+  FADOStatementAdapter.SetParams(Params);
 end;
 
 procedure TestTADOConnectionAdapter.SetUp;

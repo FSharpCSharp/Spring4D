@@ -8,16 +8,16 @@ uses
   ,SQL.Params
   ,SQL.Commands
   ,SQL.Interfaces
-  ,Generics.Collections
+  ,Spring.Collections
   ;
 
 type
   TJunction = class(TInterfacedObject, ICriterion)
   private
-    FCriterions: TList<ICriterion>;
+    FCriterions: IList<ICriterion>;
     FEntityClass: TClass;
   protected
-    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; virtual;
+    function ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; virtual;
     procedure SetEntityClass(const Value: TClass); virtual;
     function GetEntityClass: TClass; virtual;
     function GetMatchMode(): TMatchMode; virtual;
@@ -28,7 +28,7 @@ type
 
     function Add(ACriterion: ICriterion): TJunction;
 
-    property Criterions: TList<ICriterion> read FCriterions;
+    property Criterions: IList<ICriterion> read FCriterions;
   end;
 
 implementation
@@ -44,12 +44,11 @@ end;
 constructor TJunction.Create;
 begin
   inherited Create;
-  FCriterions := TList<ICriterion>.Create;
+  FCriterions := TCollections.CreateList<ICriterion>;
 end;
 
 destructor TJunction.Destroy;
 begin
-  FCriterions.Free;
   inherited Destroy;
 end;
 
@@ -68,7 +67,7 @@ begin
   FEntityClass := Value;
 end;
 
-function TJunction.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand;
+function TJunction.ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand;
   AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
 var
   LCriterion: ICriterion;

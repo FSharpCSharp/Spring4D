@@ -30,8 +30,8 @@ unit SQL.Generator.Ansi;
 interface
 
 uses
-  SQL.AbstractSQLGenerator, SQL.Commands, SQL.Types, Generics.Collections, Mapping.Attributes
-  , SQL.Interfaces, TypInfo, SysUtils;
+  SQL.AbstractSQLGenerator, SQL.Commands, SQL.Types, Spring.Collections, Mapping.Attributes
+  , SQL.Interfaces, TypInfo, SysUtils, Generics.Collections;
 
 type
   {$REGION 'Documentation'}
@@ -46,18 +46,18 @@ type
   protected
     function DoGenerateBackupTable(const ATableName: string): TArray<string>; virtual;
     function DoGenerateRestoreTable(const ATablename: string;
-      ACreateColumns: TObjectList<TSQLCreateField>; ADbColumns: TList<string>): TArray<string>; virtual;
-    function DoGenerateCreateTable(const ATableName: string; AColumns: TObjectList<TSQLCreateField>): string; virtual;
+      ACreateColumns: IList<TSQLCreateField>; ADbColumns: IList<string>): TArray<string>; virtual;
+    function DoGenerateCreateTable(const ATableName: string; AColumns: IList<TSQLCreateField>): string; virtual;
 
-    function GetGroupByAsString(const AGroupFields: TEnumerable<TSQLGroupByField>): string; virtual;
+    function GetGroupByAsString(const AGroupFields: IList<TSQLGroupByField>): string; virtual;
     function GetJoinAsString(const AJoin: TSQLJoin): string; virtual;
-    function GetJoinsAsString(const AJoinFields: TEnumerable<TSQLJoin>): string; virtual;
-    function GetOrderAsString(const AOrderFields: TEnumerable<TSQLOrderField>): string; virtual;
-    function GetWhereAsString(const AWhereFields: TList<TSQLWhereField>): string; virtual;
-    function GetSelectFieldsAsString(const ASelectFields: TEnumerable<TSQLSelectField>): string; virtual;
-    function GetCreateFieldsAsString(const ACreateFields: TEnumerable<TSQLCreateField>): string; overload; virtual;
-    function GetCreateFieldsAsString(const ACreateFields: TList<string>): string; overload; virtual;
-    function GetCopyFieldsAsString(const ACreateFields: TEnumerable<TSQLCreateField>; const ACopyFields: TList<string>): string; virtual;
+    function GetJoinsAsString(const AJoinFields: IList<TSQLJoin>): string; virtual;
+    function GetOrderAsString(const AOrderFields: IList<TSQLOrderField>): string; virtual;
+    function GetWhereAsString(const AWhereFields: IList<TSQLWhereField>): string; virtual;
+    function GetSelectFieldsAsString(const ASelectFields: IList<TSQLSelectField>): string; virtual;
+    function GetCreateFieldsAsString(const ACreateFields: IList<TSQLCreateField>): string; overload; virtual;
+    function GetCreateFieldsAsString(const ACreateFields: IList<string>): string; overload; virtual;
+    function GetCopyFieldsAsString(const ACreateFields: IList<TSQLCreateField>; const ACopyFields: IList<string>): string; virtual;
     function GetTempTableName(): string; virtual;
     function GetPrimaryKeyDefinition(AField: TSQLCreateField): string; virtual;
     function GetSplitStatementSymbol(): string; virtual;
@@ -70,8 +70,8 @@ type
     function GenerateInsert(AInsertCommand: TInsertCommand): string; override;
     function GenerateUpdate(AUpdateCommand: TUpdateCommand): string; override;
     function GenerateDelete(ADeleteCommand: TDeleteCommand): string; override;
-    function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand):  TList<string>; override;
-    function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): TList<string>; override;
+    function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand):  IList<string>; override;
+    function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): IList<string>; override;
     /// <summary>
     /// First drop sequence and then create it
     /// </summary>
@@ -118,7 +118,7 @@ begin
 end;
 
 function TAnsiSQLGenerator.DoGenerateCreateTable(const ATableName: string;
-  AColumns: TObjectList<TSQLCreateField>): string;
+  AColumns: IList<TSQLCreateField>): string;
 var
   LSqlBuilder: TStringBuilder;
   i: Integer;
@@ -155,7 +155,7 @@ begin
 end;
 
 function TAnsiSQLGenerator.DoGenerateRestoreTable(const ATablename: string;
-  ACreateColumns: TObjectList<TSQLCreateField>; ADbColumns: TList<string>): TArray<string>;
+  ACreateColumns: IList<TSQLCreateField>; ADbColumns: IList<string>): TArray<string>;
 begin
   SetLength(Result, 2);
 
@@ -167,13 +167,13 @@ begin
   Result[1] := Format('DROP TABLE %0:S', [GetTempTableName]);
 end;
 
-function TAnsiSQLGenerator.GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): TList<string>;
+function TAnsiSQLGenerator.GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): IList<string>;
 var
   LSqlBuilder: TStringBuilder;
   i: Integer;
   LField: TSQLForeignKeyField;
 begin
-  Result := TList<string>.Create;
+  Result := TCollections.CreateList<string>;
   LSqlBuilder := TStringBuilder.Create();
   try
     for i := 0 to ACreateFKCommand.ForeignKeys.Count - 1 do
@@ -202,12 +202,12 @@ begin
   Result := '';
 end;
 
-function TAnsiSQLGenerator.GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): TList<string>;
+function TAnsiSQLGenerator.GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): IList<string>;
 var
   LResult: TArray<string>;
 begin
   Assert(Assigned(ACreateTableCommand));
-  Result := TList<string>.Create;
+  Result := TCollections.CreateList<string>;
 
   if ACreateTableCommand.TableExists then
   begin
@@ -414,7 +414,7 @@ begin
 end;
 
 function TAnsiSQLGenerator.GetCreateFieldsAsString(
-  const ACreateFields: TEnumerable<TSQLCreateField>): string;
+  const ACreateFields: IList<TSQLCreateField>): string;
 var
   i: Integer;
   LField: TSQLCreateField;
@@ -432,8 +432,8 @@ begin
   end;
 end;
 
-function TAnsiSQLGenerator.GetCopyFieldsAsString(const ACreateFields: TEnumerable<TSQLCreateField>;
-  const ACopyFields: TList<string>): string;
+function TAnsiSQLGenerator.GetCopyFieldsAsString(const ACreateFields: IList<TSQLCreateField>;
+  const ACopyFields: IList<string>): string;
 var
   LField: TSQLCreateField;
   i: Integer;
@@ -454,7 +454,7 @@ begin
   end;
 end;
 
-function TAnsiSQLGenerator.GetCreateFieldsAsString(const ACreateFields: TList<string>): string;
+function TAnsiSQLGenerator.GetCreateFieldsAsString(const ACreateFields: IList<string>): string;
 var
   i: Integer;
 begin
@@ -474,7 +474,7 @@ begin
 end;
 
 function TAnsiSQLGenerator.GetGroupByAsString(
-  const AGroupFields: TEnumerable<TSQLGroupByField>): string;
+  const AGroupFields: IList<TSQLGroupByField>): string;
 var
   LField: TSQLGroupByField;
   i: Integer;
@@ -515,7 +515,7 @@ begin
   end;
 end;
 
-function TAnsiSQLGenerator.GetJoinsAsString(const AJoinFields: TEnumerable<TSQLJoin>): string;
+function TAnsiSQLGenerator.GetJoinsAsString(const AJoinFields: IList<TSQLJoin>): string;
 var
   LField: TSQLJoin;
 begin
@@ -527,7 +527,7 @@ begin
 end;
 
 function TAnsiSQLGenerator.GetOrderAsString(
-  const AOrderFields: TEnumerable<TSQLOrderField>): string;
+  const AOrderFields: IList<TSQLOrderField>): string;
 var
   i: Integer;
   LField: TSQLOrderField;
@@ -573,7 +573,7 @@ begin
 end;
 
 function TAnsiSQLGenerator.GetSelectFieldsAsString(
-  const ASelectFields: TEnumerable<TSQLSelectField>): string;
+  const ASelectFields: IList<TSQLSelectField>): string;
 var
   i: Integer;
   LField: TSQLSelectField;
@@ -707,7 +707,7 @@ begin
   Result := LSQL;
 end;
 
-function TAnsiSQLGenerator.GetWhereAsString(const AWhereFields: TList<TSQLWhereField>): string;
+function TAnsiSQLGenerator.GetWhereAsString(const AWhereFields: IList<TSQLWhereField>): string;
 var
   i, ix: Integer;
   LField: TSQLWhereField;

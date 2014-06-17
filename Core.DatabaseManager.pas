@@ -30,7 +30,7 @@ unit Core.DatabaseManager;
 interface
 
 uses
-  Core.AbstractManager, Core.Interfaces, SysUtils, Generics.Collections;
+  Core.AbstractManager, Core.Interfaces, SysUtils, Spring.Collections;
 
 type
   {$REGION 'Documentation'}
@@ -40,11 +40,11 @@ type
   {$ENDREGION}
   TDatabaseManager = class(TAbstractManager)
   private
-    FEntities: TList<TClass>;
+    FEntities: IList<TClass>;
   protected
-    procedure BuildTables(AEntities: TList<TClass>); virtual;
-    procedure BuildForeignKeys(AEntities: TList<TClass>); virtual;
-    procedure BuildSequences(AEntities: TList<TClass>); virtual;
+    procedure BuildTables(AEntities: IList<TClass>); virtual;
+    procedure BuildForeignKeys(AEntities: IList<TClass>); virtual;
+    procedure BuildSequences(AEntities: IList<TClass>); virtual;
   public
     constructor Create(AConnection: IDBConnection); override;
     destructor Destroy; override;
@@ -134,7 +134,7 @@ begin
   LTran.Commit;
 end;
 
-procedure TDatabaseManager.BuildForeignKeys(AEntities: TList<TClass>);
+procedure TDatabaseManager.BuildForeignKeys(AEntities: IList<TClass>);
 var
   LFkCreator: TForeignKeyCreateExecutor;
   LEntityClass: TClass;
@@ -151,7 +151,7 @@ begin
   end;
 end;
 
-procedure TDatabaseManager.BuildSequences(AEntities: TList<TClass>);
+procedure TDatabaseManager.BuildSequences(AEntities: IList<TClass>);
 var
   LSequenceCreator: TSequenceCreateExecutor;
   LEntityClass: TClass;
@@ -168,7 +168,7 @@ begin
   end;
 end;
 
-procedure TDatabaseManager.BuildTables(AEntities: TList<TClass>);
+procedure TDatabaseManager.BuildTables(AEntities: IList<TClass>);
 var
   LTableCreator: TTableCreateExecutor;
   LEntityClass: TClass;
@@ -198,7 +198,6 @@ end;
 
 destructor TDatabaseManager.Destroy;
 begin
-  FEntities.Free;
   inherited Destroy;
 end;
 

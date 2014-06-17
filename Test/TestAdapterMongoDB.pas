@@ -189,7 +189,7 @@ type
     FConnection: IDBConnection;
     FMongoConnection: TMongoDBConnection;
     FSession: TMongoDBSession;
-    FRepository: TMongoDBRepository<TMongoAdapter, Integer>;
+    FRepository: IPagedRepository<TMongoAdapter, Integer>;
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -783,7 +783,7 @@ begin
   if DebugHook <> 0 then
   begin
     FConnection.AddExecutionListener(
-    procedure(const ACommand: string; const AParams: TObjectList<TDBParam>)
+    procedure(const ACommand: string; const AParams: IList<TDBParam>)
     var
       i: Integer;
     begin

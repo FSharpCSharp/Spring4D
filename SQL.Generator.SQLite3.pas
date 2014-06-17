@@ -30,7 +30,8 @@ unit SQL.Generator.SQLite3;
 interface
 
 uses
-  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces, SQL.Commands, SQL.Types, Generics.Collections, SysUtils;
+  SQL.Generator.Ansi, Mapping.Attributes, SQL.Interfaces, SQL.Commands, SQL.Types, Generics.Collections, SysUtils
+  ,Spring.Collections;
 
 type
   {$REGION 'Documentation'}
@@ -42,11 +43,11 @@ type
   protected
     function DoGenerateBackupTable(const ATableName: string): TArray<string>; override;
     function DoGenerateRestoreTable(const ATablename: string;
-      ACreateColumns: TObjectList<TSQLCreateField>; ADbColumns: TList<string>): TArray<string>; override;
-    function DoGenerateCreateTable(const ATableName: string; AColumns: TObjectList<TSQLCreateField>): string; override;
+      ACreateColumns: IList<TSQLCreateField>; ADbColumns: IList<string>): TArray<string>; override;
+    function DoGenerateCreateTable(const ATableName: string; AColumns: IList<TSQLCreateField>): string; override;
   public
     function GetQueryLanguage(): TQueryLanguage; override;
-    function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): TList<string>; override;
+    function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): IList<string>; override;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
     function GetSQLDataTypeName(AField: TSQLCreateField): string; override;
     function GetSQLTableExists(const ATablename: string): string; override;
@@ -76,7 +77,7 @@ begin
   Result[2] := Format(' DROP TABLE IF EXISTS %0:S ', [ATableName]);
 end;
 
-function TSQLiteSQLGenerator.DoGenerateCreateTable(const ATableName: string; AColumns: TObjectList<TSQLCreateField>): string;
+function TSQLiteSQLGenerator.DoGenerateCreateTable(const ATableName: string; AColumns: IList<TSQLCreateField>): string;
 var
   LSqlBuilder: TStringBuilder;
   i: Integer;
@@ -114,7 +115,7 @@ begin
 end;
 
 function TSQLiteSQLGenerator.DoGenerateRestoreTable(const ATablename: string;
-  ACreateColumns: TObjectList<TSQLCreateField>; ADbColumns: TList<string>): TArray<string>;
+  ACreateColumns: IList<TSQLCreateField>; ADbColumns: IList<string>): TArray<string>;
 begin
   SetLength(Result, 2);
   Result[0] := Format(' INSERT INTO %0:S (%2:S) SELECT %3:S FROM %1:S',
@@ -125,7 +126,7 @@ begin
   Result[1] := Format(' DROP TABLE IF EXISTS %0:S', [TBL_TEMP]);
 end;
 
-function TSQLiteSQLGenerator.GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): TList<string>;
+function TSQLiteSQLGenerator.GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): IList<string>;
 var
   LSqlBuilder: TStringBuilder;
   LCreateTableString: string;
@@ -134,7 +135,7 @@ var
   LRes: TArray<string>;
 begin
   Assert(Assigned(ACreateFKCommand));
-  Result := TList<string>.Create;
+  Result := TCollections.CreateList<string>;
 
   if ACreateFKCommand.ForeignKeys.Count < 1 then
     Exit;

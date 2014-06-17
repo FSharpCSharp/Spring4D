@@ -89,26 +89,16 @@ end;
 
 procedure TestTRttiExplorer.TestGetClassMembers;
 var
-  ReturnValue: TList<EntityAttribute>;
-  LColumns: TList<ColumnAttribute>;
+  ReturnValue: IList<EntityAttribute>;
+  LColumns: IList<ColumnAttribute>;
   AClassInfo: Pointer;
 begin
   AClassInfo := FProduct.ClassType;
   ReturnValue := TRttiExplorer.GetClassMembers<EntityAttribute>(AClassInfo);
-  try
-    CheckEquals(0, ReturnValue.Count);
-
-  finally
-    ReturnValue.Free;
-  end;
+  CheckEquals(0, ReturnValue.Count);
 
   LColumns := TRttiExplorer.GetClassMembers<ColumnAttribute>(AClassInfo);
-  try
-    CheckEquals(4, LColumns.Count);
-
-  finally
-    LColumns.Free;
-  end;
+  CheckEquals(4, LColumns.Count);
 end;
 
 procedure TestTRttiExplorer.TestGetTable;
@@ -127,59 +117,43 @@ end;
 
 procedure TestTRttiExplorer.TestGetUniqueConstraints;
 var
-  ReturnValue: TList<UniqueConstraint>;
+  ReturnValue: IList<UniqueConstraint>;
   AClass: TClass;
 begin
   AClass := FCustomer.ClassType;
 
   ReturnValue := TRttiExplorer.GetUniqueConstraints(AClass);
-  try
-    CheckEquals(1, ReturnValue.Count);
-    CheckEqualsString('FId', ReturnValue.First.ClassMemberName);
-  finally
-    ReturnValue.Free;
-  end;
+  CheckEquals(1, ReturnValue.Count);
+  CheckEqualsString('FId', ReturnValue.First.ClassMemberName);
 end;
 
 procedure TestTRttiExplorer.TestGetAssociations;
 var
-  ReturnValue: TList<Association>;
+  ReturnValue: IList<Association>;
   AClass: TClass;
 begin
   AClass := FCustomer.ClassType;
   ReturnValue := TRttiExplorer.GetAssociations(AClass);
-  try
-    CheckEquals(2, ReturnValue.Count);
-  finally
-    ReturnValue.Free;
-  end;
+  CheckEquals(2, ReturnValue.Count);
 end;
 
 procedure TestTRttiExplorer.TestGetColumns;
 var
-  ReturnValue: TList<ColumnAttribute>;
+  ReturnValue: IList<ColumnAttribute>;
   AClass: TClass;
 begin
   AClass := FCustomer.ClassType;
 
   ReturnValue := TRttiExplorer.GetColumns(AClass);
-  try
-    CheckEquals(CustomerColumnCount, ReturnValue.Count);
-  finally
-    ReturnValue.Free;
-  end;
+  CheckEquals(CustomerColumnCount, ReturnValue.Count);
 end;
 
 procedure TestTRttiExplorer.TestGetEntities;
 var
-  LEntities: TList<TClass>;
+  LEntities: IList<TClass>;
 begin
   LEntities := TRttiExplorer.GetEntities;
-  try
-    CheckEquals(3, LEntities.Count);
-  finally
-    LEntities.Free;
-  end;
+  CheckEquals(3, LEntities.Count);
 end;
 
 procedure TestTRttiExplorer.TestGetSequence;
@@ -307,7 +281,7 @@ end;
 
 procedure TestTRttiExplorer.TestGetChangedMembers;
 var
-  ReturnValue: TList<ColumnAttribute>;
+  ReturnValue: IList<ColumnAttribute>;
   ADirtyObj: TCustomer;
   AOriginalObj: TCustomer;
 begin
@@ -315,22 +289,14 @@ begin
   AOriginalObj := TCustomer.Create;
   try
     ReturnValue := TRttiExplorer.GetChangedMembers(AOriginalObj, ADirtyObj);
-    try
-      CheckTrue(ReturnValue.Count = 0);
-    finally
-      ReturnValue.Free;
-    end;
+    CheckTrue(ReturnValue.Count = 0);
 
     ADirtyObj.Name := 'Changed';
     ADirtyObj.Age := 1111;
     ADirtyObj.Height := 15.56;
     ReturnValue := TRttiExplorer.GetChangedMembers(AOriginalObj, ADirtyObj);
-    try
-      CheckTrue(ReturnValue.Count = 3);
-    finally
-      ReturnValue.Free;
-    end;
 
+    CheckTrue(ReturnValue.Count = 3);
   finally
     ADirtyObj.Free;
     AOriginalObj.Free;

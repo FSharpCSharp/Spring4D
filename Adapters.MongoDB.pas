@@ -31,7 +31,7 @@ interface
 
 uses
   MongoDB, MongoBson, Core.Interfaces, Core.Base, SQL.Params, SysUtils
-  , Mapping.Attributes, Generics.Collections;
+  , Mapping.Attributes, Spring.Collections;
 
 type
   TPageInfo = record
@@ -117,7 +117,7 @@ type
     constructor Create(const AStatement: TMongoDBQuery); override;
     destructor Destroy; override;
     procedure SetSQLCommand(const ACommandText: string); override;
-    procedure SetParams(Params: TObjectList<TDBParam>); overload; override;
+    procedure SetParams(Params: IList<TDBParam>); overload; override;
     function Execute(): NativeUInt; override;
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
     function GetQueryText(): string;
@@ -491,7 +491,7 @@ begin
   Result := StartsText('ObjectID("', AValue);
 end;
 
-procedure TMongoStatementAdapter.SetParams(Params: TObjectList<TDBParam>);
+procedure TMongoStatementAdapter.SetParams(Params: IList<TDBParam>);
 var
   LParam: TDBParam;
   LValue: string;

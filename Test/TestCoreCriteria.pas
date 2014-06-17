@@ -76,7 +76,7 @@ begin
 
 
   FSession.Connection.AddExecutionListener(
-    procedure(const ACommand: string; const AParams: TObjectList<TDBParam>)
+    procedure(const ACommand: string; const AParams: IList<TDBParam>)
     var
       i: Integer;
     begin

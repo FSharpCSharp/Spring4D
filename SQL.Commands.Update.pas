@@ -30,7 +30,7 @@ unit SQL.Commands.Update;
 interface
 
 uses
-  SQL.AbstractCommandExecutor, SQL.Types, SQL.Commands, SQL.Params, Generics.Collections
+  SQL.AbstractCommandExecutor, SQL.Types, SQL.Commands, SQL.Params, Spring.Collections
   , Mapping.Attributes, Core.EntityMap, Classes, Core.Interfaces, Core.EntityCache;
 
 type
@@ -43,7 +43,7 @@ type
   private
     FTable: TSQLTable;
     FCommand: TUpdateCommand;
-    FColumns: TList<ColumnAttribute>;
+    FColumns: IList<ColumnAttribute>;
     FEntityMap: TEntityMap;
     FEntityCache: TEntityData;
     FMapped: Boolean;
@@ -203,7 +203,7 @@ constructor TUpdateExecutor.Create();
 begin
   inherited Create();
   FTable := TSQLTable.Create;
-  FColumns := TList<ColumnAttribute>.Create;
+  FColumns := TCollections.CreateList<ColumnAttribute>;
   FCommand := TUpdateCommand.Create(FTable);
 end;
 
@@ -211,7 +211,6 @@ destructor TUpdateExecutor.Destroy;
 begin
   FTable.Free;
   FCommand.Free;
-  FColumns.Free;
   inherited Destroy;
 end;
 
