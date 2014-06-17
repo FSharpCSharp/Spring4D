@@ -30,14 +30,14 @@ unit Mapping.RttiExplorer;
 interface
 
 uses
-  Rtti, Generics.Collections, Mapping.Attributes, TypInfo, Core.Interfaces, Spring.Collections;
+  Rtti, Mapping.Attributes, TypInfo, Core.Interfaces, Spring.Collections;
 
 type
   TRttiCache = class
   private
-    FFields: TDictionary<string, TRttiField>;
-    FProperties: TDictionary<string,TRttiProperty>;
-    FTypes: TDictionary<PTypeInfo, TRttiType>;
+    FFields: IDictionary<string, TRttiField>;
+    FProperties: IDictionary<string,TRttiProperty>;
+    FTypes: IDictionary<PTypeInfo, TRttiType>;
     FCtx: TRttiContext;
   protected
     function GetKey(AClass: TClass; const AName: string): string;
@@ -113,7 +113,7 @@ type
     class function TryGetColumnByMemberName(AClass: TClass; const AClassMemberName: string; out AColumn: ColumnAttribute): Boolean;
     class function TryGetEntityClass(ATypeInfo: PTypeInfo; out AClass: TClass): Boolean; overload;
     class function TryGetEntityClass<T>(out AClass: TClass): Boolean; overload;
-    class function TryGetPrimaryKeyValue(AColumns: TList<ColumnAttribute>; AResultset: IDBResultset; out AValue: TValue; out AColumn: ColumnAttribute): Boolean;
+    class function TryGetPrimaryKeyValue(AColumns: IList<ColumnAttribute>; AResultset: IDBResultset; out AValue: TValue; out AColumn: ColumnAttribute): Boolean;
     class function TryGetMethod(ATypeInfo: PTypeInfo; const AMethodName: string; out AAddMethod: TRttiMethod; AParamCount: Integer = 1): Boolean;
     class procedure CopyFieldValues(AEntityFrom, AEntityTo: TObject);
     class procedure DestroyClass<T>(var AObject: T);
@@ -842,7 +842,7 @@ begin
   Result := TryGetEntityClass(TypeInfo(T), AClass);
 end;
 
-class function TRttiExplorer.TryGetPrimaryKeyValue(AColumns: TList<ColumnAttribute>;
+class function TRttiExplorer.TryGetPrimaryKeyValue(AColumns: IList<ColumnAttribute>;
   AResultset: IDBResultset; out AValue: TValue; out AColumn: ColumnAttribute): Boolean;
 var
   LCol: ColumnAttribute;
@@ -1302,16 +1302,13 @@ end;
 constructor TRttiCache.Create;
 begin
   inherited Create;
-  FFields := TDictionary<string, TRttiField>.Create();
-  FProperties := TDictionary<string,TRttiProperty>.Create();
-  FTypes := TDictionary<PTypeInfo, TRttiType>.Create();
+  FFields := TCollections.CreateDictionary<string, TRttiField>();
+  FProperties := TCollections.CreateDictionary<string,TRttiProperty>();
+  FTypes := TCollections.CreateDictionary<PTypeInfo, TRttiType>();
 end;
 
 destructor TRttiCache.Destroy;
 begin
-  FFields.Free;
-  FProperties.Free;
-  FTypes.Free;
   inherited Destroy;
 end;
 

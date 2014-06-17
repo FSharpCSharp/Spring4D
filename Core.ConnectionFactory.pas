@@ -95,7 +95,6 @@ var
   LArgs: array of TValue;
   i: Integer;
 begin
-  Result := nil;
   LType := TRttiContext.Create.GetType(AClass);
   LConstructors := TCollections.CreateList<TRttiMethod>;
   TRttiExplorer.GetDeclaredConstructors(AClass, LConstructors);

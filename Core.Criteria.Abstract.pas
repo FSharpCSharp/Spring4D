@@ -66,7 +66,7 @@ type
 
     procedure Clear(); virtual;
     function Count(): Integer; virtual;
-    function List(): IList<T>;
+    function ToList(): IList<T>;
     procedure Fetch(const ACollection: TValue);
 
     property Criterions: IList<ICriterion> read FCriterions;
@@ -177,7 +177,7 @@ begin
   end;
 end;
 
-function TAbstractCriteria<T>.List: IList<T>;
+function TAbstractCriteria<T>.ToList: IList<T>;
 var
   LCollection: TValue;
 begin

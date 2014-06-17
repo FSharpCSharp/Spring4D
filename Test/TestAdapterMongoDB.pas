@@ -813,12 +813,12 @@ begin
   LCriteria := FManager.CreateCriteria<TMongoAdapter>;
   Key := TProperty<TMongoAdapter>.ForName('KEY');
 
-  LKeys := LCriteria.Add(Key.Between(1, 2)).List();
+  LKeys := LCriteria.Add(Key.Between(1, 2)).ToList();
   CheckEquals(0, LKeys.Count, 'Between 0');
 
   LCriteria.Clear;
 
-  LKeys := LCriteria.Add(Key.Between(99, 100)).List();
+  LKeys := LCriteria.Add(Key.Between(99, 100)).ToList();
   CheckEquals(1, LKeys.Count, 'Between 1');
 end;
 
@@ -831,27 +831,27 @@ begin
   InsertObject(FMongoConnection, 100, 1);
   LCriteria := FManager.CreateCriteria<TMongoAdapter>;
   Key := TProperty<TMongoAdapter>.ForName('KEY');
-  LKeys := LCriteria.Add(Key.Eq(100)).List();
+  LKeys := LCriteria.Add(Key.Eq(100)).ToList();
   CheckEquals(1, LKeys.Count, 'Eq');
 
   LCriteria.Clear;
-  LKeys := LCriteria.Add(Key.NotEq(100)).List();
+  LKeys := LCriteria.Add(Key.NotEq(100)).ToList();
   CheckEquals(0, LKeys.Count, 'Not Eq');
 
   LCriteria.Clear;
-  LKeys := LCriteria.Add(Key.GEq(101)).List();
+  LKeys := LCriteria.Add(Key.GEq(101)).ToList();
   CheckEquals(0, LKeys.Count, 'Greater Eq');
 
   LCriteria.Clear;
-  LKeys := LCriteria.Add(Key.Gt(100)).List();
+  LKeys := LCriteria.Add(Key.Gt(100)).ToList();
   CheckEquals(0, LKeys.Count, 'Greater Than');
 
   LCriteria.Clear;
-  LKeys := LCriteria.Add(Key.Lt(100)).List();
+  LKeys := LCriteria.Add(Key.Lt(100)).ToList();
   CheckEquals(0, LKeys.Count, 'Less Than');
 
   LCriteria.Clear;
-  LKeys := LCriteria.Add(Key.LEq(100)).List();
+  LKeys := LCriteria.Add(Key.LEq(100)).ToList();
   CheckEquals(1, LKeys.Count, 'Less Than or equals');
 end;
 
@@ -864,11 +864,11 @@ begin
   InsertObject(FMongoConnection, 100, 1);
   LCriteria := FManager.CreateCriteria<TMongoAdapter>;
   Key := TProperty<TMongoAdapter>.ForName('KEY');
-  LKeys := LCriteria.Add(Key.InInt(TArray<Integer>.Create(100,1,2))).List();
+  LKeys := LCriteria.Add(Key.InInt(TArray<Integer>.Create(100,1,2))).ToList();
   CheckEquals(1, LKeys.Count, 'In');
 
   LCriteria.Clear;
-  LKeys := LCriteria.Add(Key.NotInInt(TArray<Integer>.Create(0,1,2))).List();
+  LKeys := LCriteria.Add(Key.NotInInt(TArray<Integer>.Create(0,1,2))).ToList();
   CheckEquals(1, LKeys.Count, 'Not In');
 end;
 
@@ -882,11 +882,11 @@ begin
   LCriteria := FManager.CreateCriteria<TMongoAdapter>;
   Name := TProperty<TMongoAdapter>.ForName('Name');
 
-  LKeys := LCriteria.Add(Name.NotLike('bar')).List();
+  LKeys := LCriteria.Add(Name.NotLike('bar')).ToList();
   CheckEquals(0, LKeys.Count, 'Not Like');
 
   LCriteria.Clear;
-  LKeys := LCriteria.Add(Name.Like('bar')).List();
+  LKeys := LCriteria.Add(Name.Like('bar')).ToList();
   CheckEquals(1, LKeys.Count, 'Like');
 end;
 
@@ -900,7 +900,7 @@ begin
   LCriteria := FManager.CreateCriteria<TMongoAdapter>;
   Key := TProperty<TMongoAdapter>.ForName('KEY');
 
-  LKeys := LCriteria.Add(TRestrictions.&Not( Key.Eq(100))).List();
+  LKeys := LCriteria.Add(TRestrictions.&Not( Key.Eq(100))).ToList();
   CheckEquals(0, LKeys.Count, 'Not');
 end;
 
@@ -913,11 +913,11 @@ begin
   InsertObject(FMongoConnection, Null, 1);
   LCriteria := FManager.CreateCriteria<TMongoAdapter>;
   Key := TProperty<TMongoAdapter>.ForName('KEY');
-  LKeys := LCriteria.Add(Key.IsNotNull).List();
+  LKeys := LCriteria.Add(Key.IsNotNull).ToList();
   CheckEquals(0, LKeys.Count, 'Not Null');
 
   LCriteria.Clear;
-  LKeys := LCriteria.Add(Key.IsNull).List();
+  LKeys := LCriteria.Add(Key.IsNull).ToList();
   CheckEquals(1, LKeys.Count, 'Is Null');
 end;
 
@@ -932,7 +932,7 @@ begin
   Key := TProperty<TMongoAdapter>.ForName('KEY');
   Id := TProperty<TMongoAdapter>.ForName('_id');
 
-  LKeys := LCriteria.Add(TRestrictions.Or(Key.NotEq(999), Id.NotEq(1)) ).List();
+  LKeys := LCriteria.Add(TRestrictions.Or(Key.NotEq(999), Id.NotEq(1)) ).ToList();
   CheckEquals(0, LKeys.Count, 'Simple Or');
 end;
 
@@ -947,7 +947,7 @@ begin
   LCriteria := FManager.CreateCriteria<TMongoAdapter>;
   Key := TProperty<TMongoAdapter>.ForName('KEY');
 
-  LKeys := LCriteria.AddOrder(Key.Desc).List();
+  LKeys := LCriteria.AddOrder(Key.Desc).ToList();
   CheckEquals(2, LKeys.Count);
   CheckEquals(1000, LKeys.First.Key);
   CheckEquals(999, LKeys.Last.Key);

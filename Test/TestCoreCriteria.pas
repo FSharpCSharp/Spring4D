@@ -122,20 +122,20 @@ begin
     InsertCustomerOrder(LCustId, i + 10, -1, i + 100);
   end;
 
-  LOrders := LCriteria.Add( Age.Eq(1) ).List();
+  LOrders := LCriteria.Add( Age.Eq(1) ).ToList();
   CheckEquals(1, LOrders.Count);
   CheckEquals(1, LOrders.First.Customer.Age);
 
   LCriteria.Clear;
 
-  LOrders := LCriteria.Add( Age.GEq(1) ).List();
+  LOrders := LCriteria.Add( Age.GEq(1) ).ToList();
   CheckEquals(10, LOrders.Count);
   CheckEquals(1, LOrders.First.Customer.Age);
 
   LCriteria.Clear;
   LOrders := LCriteria.Add( Age.InInt(TArray<Integer>.Create(1,2,3)) )
     .AddOrder( Age.Desc )
-    .List();
+    .ToList();
   CheckEquals(3, LOrders.Count);
   CheckEquals(3, LOrders.First.Customer.Age);
 end;
@@ -156,7 +156,7 @@ begin
         .Add(Age.Eq(42))
         .Add(Name.Eq('Foo')))
     .AddOrder(Age.Desc)
-    .List;
+    .ToList;
   CheckEquals(1, LCustomers.Count);
   CheckEquals(42, LCustomers[0].Age);
   CheckEquals('Foo', LCustomers[0].Name);
@@ -179,7 +179,7 @@ begin
         .Add(Name.Eq('Foo'))
         .Add(Age.Eq(50)))
     .AddOrder(Age.Desc)
-    .List;
+    .ToList;
   CheckEquals(2, LCustomers.Count);
   CheckEquals(50, LCustomers[0].Age);
   CheckEquals(42, LCustomers[1].Age);
@@ -211,7 +211,7 @@ begin
   InsertCustomer(110, 'foo');
   FCriteria.Add(TRestrictions.Eq(CUSTNAME, 'foo'))
     .AddOrder(TOrder.Desc(CUSTAGE));
-  LCustomers := FCriteria.List();
+  LCustomers := FCriteria.ToList();
   CheckEquals(110, LCustomers[0].Age);
   CheckEquals(42, LCustomers[1].Age);
 end;
@@ -229,7 +229,7 @@ begin
   LCustomers := FCriteria.Add(TRestrictions.And(Age.Eq(42), Name.Eq('Foo')))
     .Add(Age.GEq(10))
     .AddOrder(Age.Desc)
-    .List;
+    .ToList;
   CheckEquals(1, LCustomers.Count);
   CheckEquals(42, LCustomers[0].Age);
 end;
@@ -244,7 +244,7 @@ begin
   InsertCustomer(50, 'Bar');
 
   LCustomers := FCriteria.Add(TRestrictions.Between(CUSTAGE, 42, 50))
-    .List;
+    .ToList;
 
   CheckEquals(2, LCustomers.Count);
   CheckEquals(42, LCustomers[0].Age);
@@ -252,7 +252,7 @@ begin
 
   FCriteria.Clear;
   LCustomers := FCriteria.Add(Age.Between(43, 50))
-    .List;
+    .ToList;
   CheckEquals(1, LCustomers.Count);
   CheckEquals(50, LCustomers[0].Age);
 end;
@@ -269,14 +269,14 @@ begin
   ID := TProperty<TCustomer>.ForName(CUSTID);
 
   LCustomers := FCriteria.Add(TRestrictions.NeProperty(CUSTAGE, CUSTID))
-    .List;
+    .ToList;
   CheckEquals(2, LCustomers.Count);
   CheckEquals(42, LCustomers[0].Age);
   CheckEquals(50, LCustomers[1].Age);
 
   FCriteria.Clear;
   LCustomers := FCriteria.Add(Age.NeProperty(ID))
-    .List;
+    .ToList;
   CheckEquals(2, LCustomers.Count);
   CheckEquals(42, LCustomers[0].Age);
   CheckEquals(50, LCustomers[1].Age);
@@ -285,7 +285,7 @@ begin
   Age := TProperty.ForName(CUSTAGE);
   ID := TProperty.ForName(CUSTID);
   LCustomers := FCriteria.Add(Age.NeProperty(ID)).Add(Age.NeProperty(TProperty.ForName(CUSTNAME)))
-    .List;
+    .ToList;
   CheckEquals(2, LCustomers.Count);
   CheckEquals(42, LCustomers[0].Age);
   CheckEquals(50, LCustomers[1].Age);
@@ -296,17 +296,17 @@ var
   LCustomers: IList<TCustomer>;
 begin
   LCustomers := FCriteria.Add(TRestrictions.Eq(CUSTNAME, 'Foo'))
-    .Add(TRestrictions.Eq(CUSTAGE, 42)).Add(TRestrictions.IsNull(CUSTAVATAR)).List;
+    .Add(TRestrictions.Eq(CUSTAGE, 42)).Add(TRestrictions.IsNull(CUSTAVATAR)).ToList;
   CheckTrue(Assigned(LCustomers));
   CheckEquals(0, LCustomers.Count);
   InsertCustomer(42, 'Foo');
-  LCustomers := FCriteria.List;
+  LCustomers := FCriteria.ToList;
   CheckEquals(1, LCustomers.Count);
   CheckEquals(42, LCustomers[0].Age);
   CheckEquals('Foo', LCustomers[0].Name);
   CheckEquals(0, LCustomers[0].Orders.Count);
   InsertCustomerOrder(LCustomers[0].ID, 1, 100, 100.59);
-  LCustomers := FCriteria.List;
+  LCustomers := FCriteria.ToList;
   CheckEquals(1, LCustomers.Count);
   CheckEquals(1, LCustomers[0].Orders.Count);
   CheckEquals(100, LCustomers[0].Orders[0].Order_Status_Code);
@@ -320,14 +320,14 @@ begin
   InsertCustomer(50, 'Bar');
 
   LCustomers := FCriteria.Add(TRestrictions.GEq(CUSTAGE, 42))
-    .List;
+    .ToList;
   CheckEquals(2, LCustomers.Count);
   CheckEquals(42, LCustomers[0].Age);
   CheckEquals(50, LCustomers[1].Age);
 
   FCriteria.Clear;
   LCustomers := FCriteria.Add(TRestrictions.Gt(CUSTAGE, 42))
-    .List;
+    .ToList;
   CheckEquals(1, LCustomers.Count);
   CheckEquals(50, LCustomers[0].Age);
 end;
@@ -344,28 +344,28 @@ begin
 
   LAges := TArray<Integer>.Create(10, 50);
   LCustomers := FCriteria.Add(TRestrictions.In<Integer>(CUSTAGE, LAges))
-    .List;
+    .ToList;
   CheckEquals(2, LCustomers.Count);
   CheckEquals(50, LCustomers[0].Age);
   CheckEquals(10, LCustomers[1].Age);
 
   FCriteria.Clear;
   LCustomers := FCriteria.Add(TRestrictions.NotIn<Integer>(CUSTAGE, LAges))
-    .List;
+    .ToList;
   CheckEquals(2, LCustomers.Count);
   CheckEquals(42, LCustomers[0].Age);
   CheckEquals(68, LCustomers[1].Age);
 
   FCriteria.Clear;
   LCustomers := FCriteria.Add(TRestrictions.In<string>(CUSTNAME, TArray<string>.Create('Bar', 'Fbar')))
-    .List;
+    .ToList;
   CheckEquals(2, LCustomers.Count);
   CheckEquals('Bar', LCustomers[0].Name);
   CheckEquals('Fbar', LCustomers[1].Name);
 
   FCriteria.Clear;
   LCustomers := FCriteria.Add(TRestrictions.NotIn<string>(CUSTNAME, TArray<string>.Create('Bar', 'Fbar')))
-    .List;
+    .ToList;
   CheckEquals(2, LCustomers.Count);
   CheckEquals('Foo', LCustomers[0].Name);
   CheckEquals('FooBar', LCustomers[1].Name);
@@ -379,14 +379,14 @@ begin
   InsertCustomer(50, 'Bar');
 
   LCustomers := FCriteria.Add(TRestrictions.LEq(CUSTAGE, 50))
-    .List;
+    .ToList;
   CheckEquals(2, LCustomers.Count);
   CheckEquals(42, LCustomers[0].Age);
   CheckEquals(50, LCustomers[1].Age);
 
   FCriteria.Clear;
   LCustomers := FCriteria.Add(TRestrictions.Lt(CUSTAGE, 50))
-    .List;
+    .ToList;
   CheckEquals(1, LCustomers.Count);
   CheckEquals(42, LCustomers[0].Age);
 end;
@@ -397,21 +397,21 @@ var
 begin
   InsertCustomer(42, 'FooBar');
   LCustomers := FCriteria.Add(TRestrictions.Like(CUSTNAME, 'Foo'))
-    .List;
+    .ToList;
   CheckEquals(0, LCustomers.Count);
   FCriteria.Clear;
   FCriteria.Add(TRestrictions.Like(CUSTNAME, 'Foo', mmAnywhere));
-  LCustomers := FCriteria.List;
+  LCustomers := FCriteria.ToList;
   CheckEquals(1, LCustomers.Count);
 
   FCriteria.Clear;
   FCriteria.Add(TRestrictions.Like(CUSTNAME, 'Foo', mmStart));
-  LCustomers := FCriteria.List;
+  LCustomers := FCriteria.ToList;
   CheckEquals(1, LCustomers.Count);
 
   FCriteria.Clear;
   FCriteria.Add(TRestrictions.Like(CUSTNAME, 'Bar', mmEnd));
-  LCustomers := FCriteria.List;
+  LCustomers := FCriteria.ToList;
   CheckEquals(1, LCustomers.Count);
 end;
 
@@ -427,7 +427,7 @@ begin
   LCustomers := FCriteria.Add(TRestrictions.Not(Age.Eq(42)))
     .Add(Age.GEq(10))
     .AddOrder(Age.Desc)
-    .List;
+    .ToList;
   CheckEquals(1, LCustomers.Count);
   CheckEquals(50, LCustomers[0].Age);
 end;
@@ -444,7 +444,7 @@ begin
   LCustomers := FCriteria.Add(TRestrictions.Or(Age.Eq(42), age.Eq(50)))
     .Add(Age.GEq(10))
     .AddOrder(Age.Desc)
-    .List;
+    .ToList;
   CheckEquals(2, LCustomers.Count);
   CheckEquals(50, LCustomers[0].Age);
   CheckEquals(42, LCustomers[1].Age);
@@ -462,7 +462,7 @@ begin
   //ORDER BY A.CUSTAGE DESC
   LCustomers := FCriteria.Add(TRestrictions.Or(TRestrictions.Or(Age.Eq(42), Age.Eq(50)), Age.GEq(10)))
     .AddOrder(Age.Desc)
-    .List;
+    .ToList;
   CheckEquals(2, LCustomers.Count);
   CheckEquals(50, LCustomers[0].Age);
   CheckEquals(42, LCustomers[1].Age);
@@ -479,7 +479,7 @@ begin
 
   LCustomers := FCriteria.Add(Age.Eq(42))
     .AddOrder(Age.Desc)
-    .List;
+    .ToList;
   CheckEquals(1, LCustomers.Count);
   CheckEquals(42, LCustomers[0].Age);
 end;

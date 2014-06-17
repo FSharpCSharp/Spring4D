@@ -939,7 +939,7 @@ begin
 
  // LCustomers := FManager.FindAll<TCustomer>;
   LProp := TProperty<TCustomer>.ForName('CUSTAGE');
-  LCustomers := FManager.CreateCriteria<TCustomer>.AddOrder(LProp.Asc).List;
+  LCustomers := FManager.CreateCriteria<TCustomer>.AddOrder(LProp.Asc).ToList;
   CheckEquals(3, LCustomers.Count);
   CheckEquals(1, LCustomers.First.Age);
   CheckEquals(9, LCustomers[1].Age);

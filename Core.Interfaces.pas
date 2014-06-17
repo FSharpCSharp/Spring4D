@@ -153,7 +153,7 @@ type
     ///	  Get the results.
     ///	</summary>
     {$ENDREGION}
-    function List(): IList<T>;
+    function ToList(): IList<T>;
 
     {$REGION 'Documentation'}
     ///	<summary>
