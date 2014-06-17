@@ -31,7 +31,7 @@ interface
 
 uses
   SQL.AbstractSQLGenerator, SQL.Commands, SQL.Types, Spring.Collections, Mapping.Attributes
-  , SQL.Interfaces, TypInfo, SysUtils, Generics.Collections;
+  , SQL.Interfaces, TypInfo, SysUtils;
 
 type
   {$REGION 'Documentation'}

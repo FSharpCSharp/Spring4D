@@ -31,7 +31,7 @@ unit Core.Session;
 interface
 
 uses
-  Core.AbstractManager, Core.EntityMap, Core.Interfaces, Generics.Collections, Rtti, TypInfo
+  Core.AbstractManager, Core.EntityMap, Core.Interfaces, Rtti, TypInfo
   ,Core.EntityCache
   ,Spring.Collections
   ,SQL.Params
@@ -64,7 +64,7 @@ type
     function GetPager(APage, AItemsInPage: Integer): TObject;
   protected
     procedure SetEntityColumns(AEntity: TObject; AColumns: TColumnDataList; AResultset: IDBResultset); overload; virtual;
-    procedure SetEntityColumns(AEntity: TObject; AColumns: TList<ManyValuedAssociation>; AResultset: IDBResultset); overload; virtual;
+    procedure SetEntityColumns(AEntity: TObject; AColumns: IList<ManyValuedAssociation>; AResultset: IDBResultset); overload; virtual;
     procedure SetLazyColumns(AEntity: TObject; AEntityData: TEntityData);
     procedure SetAssociations(AEntity: TObject; AResultset: IDBResultset; AEntityData: TEntityData); virtual;
 
@@ -1102,19 +1102,15 @@ end;
 
 procedure TSession.SaveAll(AEntity: TObject);
 var
-  LRelations: TList<TObject>;
+  LRelations: IList<TObject>;
   i: Integer;
 begin
   LRelations := TRttiExplorer.GetRelationsOf(AEntity);
-  try
-    for i := 0 to LRelations.Count - 1 do
-    begin
-      SaveAll(LRelations[i]);
-    end;
-    Save(AEntity);
-  finally
-    LRelations.Free;
+  for i := 0 to LRelations.Count - 1 do
+  begin
+    SaveAll(LRelations[i]);
   end;
+  Save(AEntity);
 end;
 
 procedure TSession.SaveList<T>(ACollection: ICollection<T>);
@@ -1147,7 +1143,7 @@ begin
   end;
 end;
 
-procedure TSession.SetEntityColumns(AEntity: TObject; AColumns: TList<ManyValuedAssociation>;
+procedure TSession.SetEntityColumns(AEntity: TObject; AColumns: IList<ManyValuedAssociation>;
   AResultset: IDBResultset);
 var
   LCol: ManyValuedAssociation;

@@ -98,7 +98,7 @@ uses
   ,SQL.Params
   ,SvDesignPatterns
   ,SvRttiUtils
-  {$IFDEF USE_SPRING} ,Spring.Collections {$ENDIF}
+  ,Spring.Collections
   ,Generics.Collections
   ,Core.Reflection
   ,TestConsts

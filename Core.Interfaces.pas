@@ -34,7 +34,6 @@ interface
 uses
   SQL.Params
   ,Spring.Collections
-  ,Generics.Collections
   ,SQL.Interfaces
   ,SQL.Types
   ,SQL.Commands

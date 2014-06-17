@@ -79,14 +79,14 @@ type
     class function GetClassMembers<T: TORMAttribute>(AClass: TClass): IList<T>; overload;
     class function GetColumns(AClass: TClass): IList<ColumnAttribute>; overload;
     class function GetColumnIsIdentity(AClass: TClass; AColumn: ColumnAttribute): Boolean;
-    class procedure GetDeclaredConstructors(AClass: TClass; AList: TList<TRttiMethod>);
-    class function GetMethodWithLessParameters(AList: TList<TRttiMethod>): TRttiMethod;
+    class procedure GetDeclaredConstructors(AClass: TClass; AList: IList<TRttiMethod>);
+    class function GetMethodWithLessParameters(AList: IList<TRttiMethod>): TRttiMethod;
     class function GetEntities(): IList<TClass>;
     class function GetEntityRttiType(ATypeInfo: PTypeInfo): TRttiType; overload;
     class function GetEntityRttiType<T>(): TRttiType; overload;
     class function HasInstanceField(AClass: TClass): Boolean;
-    class function GetSubEntityFromMemberDeep(AEntity: TObject; ARttiMember: TRttiNamedObject): TList<TObject>;
-    class function GetRelationsOf(AEntity: TObject): TList<TObject>;
+    class function GetSubEntityFromMemberDeep(AEntity: TObject; ARttiMember: TRttiNamedObject): IList<TObject>;
+    class function GetRelationsOf(AEntity: TObject): IList<TObject>;
     class function GetLastGenericArgumentType(ATypeInfo: PTypeInfo): TRttiType;
     class function GetForeignKeyColumn(AClass: TClass; const ABaseTablePrimaryKeyColumn: ColumnAttribute): ForeignJoinColumnAttribute;
     class function GetMemberValue(AEntity: TObject; const AMember: TRttiNamedObject): TValue; overload;
@@ -721,7 +721,7 @@ begin
   GetClassMembers<ColumnAttribute>(AClass, AColumns);
 end;
 
-class procedure TRttiExplorer.GetDeclaredConstructors(AClass: TClass; AList: TList<TRttiMethod>);
+class procedure TRttiExplorer.GetDeclaredConstructors(AClass: TClass; AList: IList<TRttiMethod>);
 var
   LType: TRttiType;
   LMethod: TRttiMethod;
@@ -993,14 +993,14 @@ begin
     Result := AInstance.GetReferenceToRawData;
 end;
 
-class function TRttiExplorer.GetRelationsOf(AEntity: TObject): TList<TObject>;
+class function TRttiExplorer.GetRelationsOf(AEntity: TObject): IList<TObject>;
 var
   LType: TRttiType;
   LField: TRttiField;
   LProperty: TRttiProperty;
-  LEntities: TList<TObject>;
+  LEntities: IList<TObject>;
 begin
-  Result := TList<TObject>.Create;
+  Result := TCollections.CreateList<TObject>;
   //look for OneToMany or ManyToOne attributes
   LType := FRttiCache.GetType(AEntity.ClassType);
   for LField in LType.GetFields do
@@ -1008,12 +1008,8 @@ begin
     if (LField.HasAttributeOfType<ManyValuedAssociation>) then
     begin
       LEntities := GetSubEntityFromMemberDeep(AEntity, LField);
-      try
-        if LEntities.Count > 0 then
-          Result.AddRange(LEntities);
-      finally
-        LEntities.Free;
-      end;          
+      if LEntities.Count > 0 then
+        Result.AddRange(LEntities);
     end;
   end;
 
@@ -1022,12 +1018,8 @@ begin
     if (LProperty.HasAttributeOfType<ManyValuedAssociation>) then
     begin
       LEntities := GetSubEntityFromMemberDeep(AEntity, LProperty);
-      try
-        if LEntities.Count > 0 then
-          Result.AddRange(LEntities);
-      finally
-        LEntities.Free;
-      end;  
+      if LEntities.Count > 0 then
+        Result.AddRange(LEntities);
     end;
   end;
 end;
@@ -1109,7 +1101,7 @@ begin
   Result := GetMemberValueDeep(Result, LMember.GetType);
 end;
 
-class function TRttiExplorer.GetMethodWithLessParameters(AList: TList<TRttiMethod>): TRttiMethod;
+class function TRttiExplorer.GetMethodWithLessParameters(AList: IList<TRttiMethod>): TRttiMethod;
 var
   i, iParams, iParamsOld, ix: Integer;
 begin
@@ -1170,7 +1162,7 @@ begin
   Result := GetClassAttribute<SequenceAttribute>(AClass, True);
 end;
 
-class function TRttiExplorer.GetSubEntityFromMemberDeep(AEntity: TObject; ARttiMember: TRttiNamedObject): TList<TObject>;
+class function TRttiExplorer.GetSubEntityFromMemberDeep(AEntity: TObject; ARttiMember: TRttiNamedObject): IList<TObject>;
 var
   LMemberValue: TValue;
   LDeepValue: TValue;
@@ -1178,7 +1170,7 @@ var
   LCollectionAdapter: ICollectionAdapter<TObject>;
   LCurrent: TObject;
 begin
-  Result := TList<TObject>.Create;
+  Result := TCollections.CreateList<TObject>;
 
   LMemberValue := GetMemberValue(AEntity, ARttiMember);
   if LMemberValue.IsEmpty then

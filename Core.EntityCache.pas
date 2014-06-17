@@ -32,22 +32,24 @@ interface
 uses
   Mapping.Attributes
   ,Spring.Collections
-  ,Generics.Collections
   ,Classes
   ;
 
 type
   TColumnDataList = class;
 
-  TColumnDataListEnumerator = class(TEnumerator<TColumnData>)
+  TColumnDataListEnumerator = class
   private
     FList: TColumnDataList;
     FIndex: Integer;
   protected
-    function DoGetCurrent: TColumnData; override;
-    function DoMoveNext: Boolean; override;
+    function DoGetCurrent: TColumnData; virtual;
+    function DoMoveNext: Boolean; virtual;
   public
     constructor Create(AList: TColumnDataList); virtual;
+
+    property Current: TColumnData read DoGetCurrent;
+    function MoveNext: Boolean;
   end;
 
   TColumnDataList = class
@@ -148,6 +150,7 @@ uses
   ,Core.Exceptions
   ,Core.Comparers
   ,Generics.Defaults
+  ,Generics.Collections
   ,SysUtils
   ;
 
@@ -436,6 +439,11 @@ begin
     Exit(False);
   Inc(FIndex);
   Result := FIndex < FList.Count;
+end;
+
+function TColumnDataListEnumerator.MoveNext: Boolean;
+begin
+  Result := DoMoveNext;
 end;
 
 end.

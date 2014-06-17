@@ -30,7 +30,7 @@ unit SQL.Commands;
 interface
 
 uses
-  SQL.Types, Generics.Collections, Mapping.Attributes, Spring.Collections;
+  SQL.Types, Mapping.Attributes, Spring.Collections;
 
 type
   TDMLCommandType = (ctSelect, ctInsert, ctUpdate, ctDelete, ctUpdateVersion);
@@ -383,7 +383,7 @@ end;
 constructor TInsertCommand.Create(ATable: TSQLTable);
 begin
   inherited Create(ATable);
-  FInsertFields := TCollections.CreateList<TSQLField>;
+  FInsertFields := TCollections.CreateObjectList<TSQLField>;
   FSequence := nil;
 end;
 

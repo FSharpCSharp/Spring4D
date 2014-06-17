@@ -31,7 +31,7 @@ interface
 
 uses
   Rtti, TypInfo, DB, Graphics, Classes, SysUtils, Mapping.Attributes
-  ,Generics.Collections, Core.Interfaces;
+  , Core.Interfaces, Spring.Collections;
 
 type
   TUtils = class sealed
@@ -48,7 +48,7 @@ type
 
     class function TryGetNullableTypeValue(const ANullable: TValue; out AValue: TValue): Boolean;
     class function TryGetLazyTypeValue(const ALazy: TValue; out AValue: TValue): Boolean;
-    class function TryGetPrimaryKeyColumn(AColumns: TList<TColumnData>; out AColumn: TColumnData): Boolean;
+    class function TryGetPrimaryKeyColumn(AColumns: IList<TColumnData>; out AColumn: TColumnData): Boolean;
     class function TryLoadFromStreamToPictureValue(AStream: TStream; out APictureValue: TValue): Boolean;
     class function TryLoadFromBlobField(AField: TField; AToPicture: TPicture): Boolean;
     class function TryLoadFromStreamSmart(AStream: TStream; AToPicture: TPicture): Boolean;
@@ -74,7 +74,6 @@ uses
   ,Core.Exceptions
   ,Core.Session
   ,Core.Types
-  ,Spring.Collections
   ,Mapping.RttiExplorer
   ,Core.EntityCache
   ,jpeg
@@ -288,7 +287,7 @@ begin
   end;
 end;
 
-class function TUtils.TryGetPrimaryKeyColumn(AColumns: TList<TColumnData>;
+class function TUtils.TryGetPrimaryKeyColumn(AColumns: IList<TColumnData>;
   out AColumn: TColumnData): Boolean;
 var
   LCol: TColumnData;
