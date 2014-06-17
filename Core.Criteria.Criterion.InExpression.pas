@@ -48,7 +48,7 @@ begin
   Assert(ACommand is TWhereCommand);
 
   Result := Format('%S %S (%S)',
-    [UpperCase(PropertyName), WhereOpNames[GetWhereOperator], ValuesToSeparatedString()]);
+    [PropertyName, WhereOpNames[GetWhereOperator], ValuesToSeparatedString()]);
 
   LWhere := TSQLWhereField.Create(Result, GetCriterionTable(ACommand));
   LWhere.MatchMode := GetMatchMode;

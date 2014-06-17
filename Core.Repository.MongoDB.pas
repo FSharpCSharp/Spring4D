@@ -15,7 +15,7 @@ type
   TMongoDBRepository<T:class, constructor; TID> = class(TSimpleRepository<T,TID>)
   private
     FSession: TMongoDBSession;
-  protected
+  public
     procedure Insert(AEntities: ICollection<T>); overload; override;
     function Query(const AQuery: string;
       const AParams: array of const): IList<T>; override;

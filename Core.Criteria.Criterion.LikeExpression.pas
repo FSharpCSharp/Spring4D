@@ -43,7 +43,7 @@ var
 begin
   Assert(ACommand is TWhereCommand);
 
-  Result := Format('%S %S %S', [UpperCase(PropertyName), WhereOpNames[GetWhereOperator], GetMatchModeString(FMatchMode, Value.AsString)]);
+  Result := Format('%S %S %S', [PropertyName, WhereOpNames[GetWhereOperator], GetMatchModeString(FMatchMode, Value.AsString)]);
 
   LWhere := TSQLWhereField.Create(Result, GetCriterionTable(ACommand) );
   LWhere.MatchMode := GetMatchMode;

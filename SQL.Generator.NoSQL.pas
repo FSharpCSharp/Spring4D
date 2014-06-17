@@ -201,9 +201,9 @@ end;
 
 const
   WhereOpNames: array[TWhereOperator] of string = (
-    {woEqual =} '=', {woNotEqual =} '$ne', {woMore = }'$gt', {woLess = }'$lt', {woLike = }'$regex', {woNotLike = }'NOT LIKE',
+    {woEqual =} '=', {woNotEqual =} '$ne', {woMore = }'$gt', {woLess = }'$lt', {woLike = }'$regex', {woNotLike = }'',
     {woMoreOrEqual = }'$gte', {woLessOrEqual = }'$lte', {woIn = }'$in', {woNotIn = }'$nin', {woIsNull} '', {woIsNotNull} ''
-    ,{woOr}'$or', {woOrEnd}'', {woAnd} '$and', {woAndEnd}'', {woNot}'$not', {woNotEnd}'',{woBetween}'BETWEEN', {woJunction} ''
+    ,{woOr}'$or', {woOrEnd}'', {woAnd} '$and', {woAndEnd}'', {woNot}'$not', {woNotEnd}'',{woBetween}'', {woJunction} ''
     );
 
 function TNoSQLGenerator.GetExpressionFromWhereField(AField: TSQLWhereField): string;
@@ -222,12 +222,26 @@ begin
     begin
         Result := Format('{%S: [', [WhereOpNames[AField.WhereOperator]]);
     end;
+    woNot: Result := Format('%S: ', [WhereOpNames[AField.WhereOperator]]);
+    woNotEnd: Result := '';
     woOrEnd, woAndEnd: Result := ']}';
+    woLike:
+    begin
+      Result := AField.Fieldname;
+      if ResolveFieldAndExpression(AField.Fieldname, LField, LExpression) then
+        Result := Format('{ %S: { $regex: ''.*%S.*'', $options: ''i''}}', [AnsiQuotedStr(LField, '"'), LExpression]);
+    end;
+    woNotLike:
+    begin
+      Result := AField.Fieldname;
+      if ResolveFieldAndExpression(AField.Fieldname, LField, LExpression) then
+        Result := Format('{ %S: { $not: "/.*%S.*/i"}}', [AnsiQuotedStr(LField, '"'), LExpression]);
+    end;
     woIn, woNotIn:
     begin
       Result := AField.Fieldname;
-       if ResolveFieldAndExpression(AField.Fieldname, LField, LExpression) then
-         Result := Format('{%S: { %S: [%S] } }', [AnsiQuotedStr(LField, '"'), WhereOpNames[AField.WhereOperator], LExpression]);
+      if ResolveFieldAndExpression(AField.Fieldname, LField, LExpression) then
+        Result := Format('{%S: { %S: [%S] } }', [AnsiQuotedStr(LField, '"'), WhereOpNames[AField.WhereOperator], LExpression]);
     end;
   end;
 end;

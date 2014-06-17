@@ -1,11 +1,11 @@
-unit TestAdapterMongoDB;
+﻿unit TestAdapterMongoDB;
 
 interface
 
 uses
   TestFramework, Core.Interfaces, bsonDoc, Generics.Collections, MongoDB, Core.Base, SvSerializer,
   SysUtils, Mapping.Attributes, SQL.Params, Adapters.MongoDB, mongoId, Core.Session.MongoDB
-  , SQL.Interfaces, MongoBson, Core.Repository.MongoDB, Spring.Collections;
+  , SQL.Interfaces, MongoBson, Core.Repository.MongoDB, Spring.Collections, Rtti;
 
 type
 
@@ -14,12 +14,16 @@ type
   private
     FId: Int64;
     FKey: Int64;
+    FName: string;
   public
     [Column('KEY')]
     property Key: Int64 read FKey write FKey;
 
     [Column('_id', [cpNotNull, cpPrimaryKey])]
     property Id: Int64 read FId write FId;
+
+    [Column]
+    property Name: string read FName write FName;
   end;
 
   [Table('AutoId', 'UnitTests')]
@@ -175,6 +179,8 @@ type
     procedure SimpleCriteria_Between;
     procedure SimpleCriteria_Or();
     procedure SimpleCriteria_OrderBy();
+    procedure SimpleCriteria_Like();
+    procedure SimpleCriteria_Not();
     procedure Performance();
   end;
 
@@ -183,7 +189,7 @@ type
     FConnection: IDBConnection;
     FMongoConnection: TMongoDBConnection;
     FSession: TMongoDBSession;
-    FRepository: IPagedRepository<TMongoAdapter, Integer>;
+    FRepository: TMongoDBRepository<TMongoAdapter, Integer>;
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -203,10 +209,10 @@ uses
   ,Core.Exceptions
   ,Core.Criteria.Properties
   ,Core.Criteria.Restrictions
+  ,Core.Session
   ,SQL.Generator.MongoDB
   ,Variants
   ,Diagnostics
-  ,Rtti
   ;
 
 const
@@ -216,9 +222,9 @@ const
 
 
 
-procedure InsertObject(AConnection: TMongoDBConnection; const AValue: Variant; AID: Integer = 1);
+procedure InsertObject(AConnection: TMongoDBConnection; const AValue: Variant; AID: Integer = 1; AName: string = '');
 begin
-  AConnection.Insert(NAME_COLLECTION, BSON([CT_KEY, AValue, '_id', AID]));
+  AConnection.Insert(NAME_COLLECTION, BSON([CT_KEY, AValue, '_id', AID, 'Name', AName]));
 end;
 
 procedure RemoveObject(AConnection: TMongoDBConnection; const AValue: Variant);
@@ -864,6 +870,38 @@ begin
   LCriteria.Clear;
   LKeys := LCriteria.Add(Key.NotInInt(TArray<Integer>.Create(0,1,2))).List();
   CheckEquals(1, LKeys.Count, 'Not In');
+end;
+
+procedure TestMongoSession.SimpleCriteria_Like;
+var
+  LCriteria: ICriteria<TMongoAdapter>;
+  Name: IProperty;
+  LKeys: IList<TMongoAdapter>;
+begin
+  InsertObject(FMongoConnection, 100, 1, 'Foobar');
+  LCriteria := FManager.CreateCriteria<TMongoAdapter>;
+  Name := TProperty<TMongoAdapter>.ForName('Name');
+
+  LKeys := LCriteria.Add(Name.NotLike('bar')).List();
+  CheckEquals(0, LKeys.Count, 'Not Like');
+
+  LCriteria.Clear;
+  LKeys := LCriteria.Add(Name.Like('bar')).List();
+  CheckEquals(1, LKeys.Count, 'Like');
+end;
+
+procedure TestMongoSession.SimpleCriteria_Not;
+var
+  LCriteria: ICriteria<TMongoAdapter>;
+  Key: IProperty;
+  LKeys: IList<TMongoAdapter>;
+begin
+  InsertObject(FMongoConnection, 100, 1);
+  LCriteria := FManager.CreateCriteria<TMongoAdapter>;
+  Key := TProperty<TMongoAdapter>.ForName('KEY');
+
+  LKeys := LCriteria.Add(TRestrictions.&Not( Key.Eq(100))).List();
+  CheckEquals(0, LKeys.Count, 'Not');
 end;
 
 procedure TestMongoSession.SimpleCriteria_Null;
