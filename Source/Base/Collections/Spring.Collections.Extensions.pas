@@ -849,7 +849,7 @@ begin
 
   if fState = STATE_RUNNING then
   begin
-    if fIndex < Length(fValues) - 1 then
+    if fIndex < High(fValues) then
     begin
       Inc(fIndex);
       fCurrent := fValues[fIndex];
@@ -1409,7 +1409,7 @@ begin
   if fState = STATE_ENUMERATOR then
   begin
     fBuffer := fSource.ToArray;
-    fIndex := Length(fBuffer) - 1;
+    fIndex := High(fBuffer);
     fState := STATE_RUNNING;
   end;
 
@@ -2710,7 +2710,7 @@ end;
 
 function TOrderedEnumerable<T>.TEnumerator.MoveNext: Boolean;
 begin
-  Result := fIndex < Length(fBuffer) - 1;
+  Result := fIndex < High(fBuffer);
   if Result then
     Inc(fIndex);
 end;
@@ -2801,7 +2801,7 @@ begin
 
   if fState = STATE_RUNNING then
   begin
-    if fIndex < Length(fValues) - 1 then
+    if fIndex < High(fValues) then
     begin
       Inc(fIndex);
       fCurrent := fValues[fIndex];

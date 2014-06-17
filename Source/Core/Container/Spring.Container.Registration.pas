@@ -355,7 +355,7 @@ begin
       arguments: TArray<TValue>;
       i: Integer;
     begin
-      SetLength(arguments, Length(args) - 1);
+      SetLength(arguments, High(args));
       for i := 1 to High(args) do
         arguments[i - 1] := TTypedValue.Create(args[i].TypeInfo, args[i]);
       result := (fKernel as IKernelInternal).Resolve(method.ReturnType.Handle, arguments);
@@ -375,7 +375,7 @@ begin
       arguments: TArray<TValue>;
       i: Integer;
     begin
-      SetLength(arguments, Length(args) - 1);
+      SetLength(arguments, High(args));
       for i := 1 to High(args) do
         arguments[i - 1] := TTypedValue.Create(args[i].TypeInfo, args[i]);
       result := (fKernel as IKernelInternal).Resolve(name, arguments);

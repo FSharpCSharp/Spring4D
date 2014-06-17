@@ -477,7 +477,7 @@ var
     if not removeEmptyEntries or (entry <> '') then
     begin
       SetLength(strings, Length(strings) + 1);
-      strings[Length(strings) - 1] := entry;
+      strings[High(strings)] := entry;
     end;
   end;
 begin
@@ -513,7 +513,7 @@ begin
   begin
     entry := p;
     SetLength(Result, Length(Result) + 1);
-    Result[Length(Result)-1] := entry;
+    Result[High(Result)] := entry;
     Inc(p, Length(entry) + 1);  // Jump to the next entry
   end;
 end;
