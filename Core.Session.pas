@@ -31,11 +31,9 @@ unit Core.Session;
 interface
 
 uses
-  Core.AbstractManager, Core.EntityMap, Core.Interfaces, Generics.Collections, Rtti, TypInfo
+  Core.AbstractManager, Core.EntityMap, Core.Interfaces, Rtti, TypInfo
   ,Core.EntityCache
-  {$IFDEF USE_SPRING}
   ,Spring.Collections
-  {$ENDIF}
   ,SQL.Params
   ,Mapping.Attributes;
 
@@ -66,7 +64,7 @@ type
     function GetPager(APage, AItemsInPage: Integer): TObject;
   protected
     procedure SetEntityColumns(AEntity: TObject; AColumns: TColumnDataList; AResultset: IDBResultset); overload; virtual;
-    procedure SetEntityColumns(AEntity: TObject; AColumns: TList<ManyValuedAssociation>; AResultset: IDBResultset); overload; virtual;
+    procedure SetEntityColumns(AEntity: TObject; AColumns: IList<ManyValuedAssociation>; AResultset: IDBResultset); overload; virtual;
     procedure SetLazyColumns(AEntity: TObject; AEntityData: TEntityData);
     procedure SetAssociations(AEntity: TObject; AResultset: IDBResultset; AEntityData: TEntityData); virtual;
 
@@ -87,7 +85,7 @@ type
 
     function GetQueryCountSql(const ASql: string): string;
     function GetQueryCount(const ASql: string; const AParams: array of const): Int64; overload;
-    function GetQueryCount(const ASql: string; AParams:TObjectList<TDBParam>): Int64; overload;
+    function GetQueryCount(const ASql: string; AParams:IList<TDBParam>): Int64; overload;
   public
     constructor Create(AConnection: IDBConnection); override;
     destructor Destroy; override;
@@ -107,9 +105,8 @@ type
     ///	  Gets the <c>Resultset</c> from SQL statement.
     ///	</summary>
     {$ENDREGION}
-    function GetResultset(const ASql: string; AParams: TObjectList<TDBParam>): IDBResultset; overload;
+    function GetResultset(const ASql: string; AParams: IList<TDBParam>): IDBResultset; overload;
 
-    {$IFDEF USE_SPRING}
     {$REGION 'Documentation'}
     ///	<summary>
     ///	  Starts a new List Session. ListSession monitors changes in the specified list and can commit or rollback these changes to the database
@@ -119,7 +116,6 @@ type
     ///	</remarks>
     {$ENDREGION}
     function BeginListSession<T: class, constructor>(AList: IList<T>): IListSession<T>;
-    {$ENDIF}
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -242,8 +238,7 @@ type
     ///	</summary>
     {$ENDREGION}
     procedure Fetch<T: class, constructor>(const ASql: string;
-      const AParams: array of const; ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
-                                                  {$ELSE} TObjectList<T> {$ENDIF} ); overload;
+      const AParams: array of const; ACollection: ICollection<T>); overload;
     {$REGION 'Documentation'}
     ///	<summary>
     ///	  Retrieves multiple models from the <c>Resultset</c> into the
@@ -251,8 +246,7 @@ type
     ///	  <c>ICollection&lt;T&gt;).</c>
     ///	</summary>
     {$ENDREGION}
-    procedure Fetch<T: class, constructor>(AResultset: IDBResultset; ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
-                                                  {$ELSE} TObjectList<T> {$ENDIF}); overload;
+    procedure Fetch<T: class, constructor>(AResultset: IDBResultset; ACollection: ICollection<T>); overload;
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -268,8 +262,7 @@ type
     ///	  Retrieves multiple models from the <c>resultset</c>.
     ///	</summary>
     {$ENDREGION}
-    function GetList<T: class, constructor>(AResultset: IDBResultset): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
-                                                  {$ELSE} TObjectList<T> {$ENDIF}; overload;
+    function GetList<T: class, constructor>(AResultset: IDBResultset): IList<T>; overload;
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -277,8 +270,7 @@ type
     ///	</summary>
     {$ENDREGION}
     function GetList<T: class, constructor>(const ASql: string;
-      const AParams: array of const): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
-                                                  {$ELSE} TObjectList<T> {$ENDIF}; overload;
+      const AParams: array of const): IList<T>; overload;
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -293,8 +285,7 @@ type
     ///	  Retrieves all models from PODO database table.
     ///	</summary>
     {$ENDREGION}
-    function FindAll<T: class, constructor>(): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
-                                                  {$ELSE} TObjectList<T> {$ENDIF};
+    function FindAll<T: class, constructor>(): IList<T>;
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -308,8 +299,7 @@ type
     ///	  Inserts models to the database.
     ///	</summary>
     {$ENDREGION}
-    procedure InsertList<T: class, constructor>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
-      {$ELSE} TObjectList<T> {$ENDIF}); overload;
+    procedure InsertList<T: class, constructor>(ACollection: ICollection<T>); overload;
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -331,8 +321,7 @@ type
     ///	  Updates multiple models in a database.
     ///	</summary>
     {$ENDREGION}
-    procedure UpdateList<T: class, constructor>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
-      {$ELSE} TObjectList<T> {$ENDIF}); overload;
+    procedure UpdateList<T: class, constructor>(ACollection: ICollection<T>); overload;
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -346,8 +335,7 @@ type
     ///	  Removes models from the database.
     ///	</summary>
     {$ENDREGION}
-    procedure DeleteList<T: class, constructor>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
-      {$ELSE} TObjectList<T> {$ENDIF}); overload;
+    procedure DeleteList<T: class, constructor>(ACollection: ICollection<T>); overload;
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -374,7 +362,7 @@ type
     ///	</summary>
     {$ENDREGION}
     function Page<T: class, constructor>(APage: Integer; AItemsPerPage: Integer;
-      const ASql: string; AParams: TObjectList<TDBParam>): IDBPage<T>; overload;
+      const ASql: string; AParams: IList<TDBParam>): IDBPage<T>; overload;
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -409,8 +397,7 @@ type
     ///	  on the entity state.
     ///	</summary>
     {$ENDREGION}
-    procedure SaveList<T: class, constructor>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
-      {$ELSE} TObjectList<T> {$ENDIF}); overload;
+    procedure SaveList<T: class, constructor>(ACollection: ICollection<T>); overload;
 
     property OldStateEntities: TEntityMap read FOldStateEntities;
   end;
@@ -437,28 +424,21 @@ uses
   ,Core.Consts
   ,Core.Criteria
   ,Core.Collections
-  {$IFDEF USE_SPRING}
   ,Core.ListSession
-  {$ENDIF}
   ;
 
 { TEntityManager }
 
-{$IFDEF USE_SPRING}
 function TSession.BeginListSession<T>(AList: IList<T>): IListSession<T>;
 begin
   Result := TListSession<T>.Create(Self, AList);
 end;
-
-{$ENDIF}
 
 function TSession.BeginTransaction: IDBTransaction;
 begin
   Result := Connection.BeginTransaction;
   FStartedTransaction := Result;
 end;
-
-
 
 procedure TSession.CommitTransaction;
 begin
@@ -495,8 +475,7 @@ begin
   FOldStateEntities.Remove(AEntity);
 end;
 
-procedure TSession.DeleteList<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
-      {$ELSE} TObjectList<T> {$ENDIF});
+procedure TSession.DeleteList<T>(ACollection: ICollection<T>);
 var
   LEntity: T;
 begin
@@ -643,7 +622,7 @@ begin
 end;
 
 procedure TSession.Fetch<T>(const ASql: string; const AParams: array of const;
-  ACollection: {$IFDEF USE_SPRING} ICollection<T> {$ELSE} TObjectList<T> {$ENDIF});
+  ACollection: ICollection<T>);
 var
   LResults: IDBResultset;
 begin
@@ -652,35 +631,23 @@ begin
   Fetch<T>(LResults, ACollection);
 end;
 
-function TSession.GetList<T>(const ASql: string; const AParams: array of const): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
-  {$ELSE} TObjectList<T> {$ENDIF};
+function TSession.GetList<T>(const ASql: string; const AParams: array of const): IList<T>;
 begin
-  {$IFDEF USE_SPRING}
   Result := TCollections.CreateList<T>(True);
-  {$ELSE}
-  Result := TObjectList<T>.Create(True);
-  {$ENDIF}
   Fetch<T>(ASql, AParams, Result);
 end;
 
-procedure TSession.Fetch<T>(AResultset: IDBResultset; ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
-  {$ELSE} TObjectList<T> {$ENDIF});
+procedure TSession.Fetch<T>(AResultset: IDBResultset; ACollection: ICollection<T>);
 var
   LCollection: TValue;
 begin
   LCollection := TValue.From(ACollection);
-
   DoFetch<T>(AResultset, LCollection);
 end;
 
-function TSession.GetList<T>(AResultset: IDBResultset): {$IFDEF USE_SPRING} Spring.Collections.IList<T>
-  {$ELSE} TObjectList<T> {$ENDIF};
+function TSession.GetList<T>(AResultset: IDBResultset): IList<T>;
 begin
-  {$IFDEF USE_SPRING}
   Result := TCollections.CreateList<T>(True);
-  {$ELSE}
-  Result := TObjectList<T>.Create(True);
-  {$ENDIF}
   Fetch<T>(AResultset, Result);
 end;
 
@@ -689,8 +656,7 @@ begin
   DoFetch<T>(AResultset, ACollection);
 end;
 
-function TSession.FindAll<T>: {$IFDEF USE_SPRING} Spring.Collections.IList<T>
-  {$ELSE} TObjectList<T> {$ENDIF};
+function TSession.FindAll<T>: IList<T>;
 var
   LEntityClass: TClass;
   LSelecter: TSelectExecutor;
@@ -990,7 +956,7 @@ begin
   end;
 end;
 
-function TSession.GetQueryCount(const ASql: string; AParams:TObjectList<TDBParam>): Int64;
+function TSession.GetQueryCount(const ASql: string; AParams:IList<TDBParam>): Int64;
 var
   LSQL: string;
   LResults: IDBResultset;
@@ -1015,22 +981,18 @@ end;
 function TSession.GetResultset(const ASql: string;
   const AParams: array of const): IDBResultset;
 var
-  LParams: TObjectList<TDBParam>;
+  LParams: IList<TDBParam>;
 begin
-  LParams := TObjectList<TDBParam>.Create();
-  try
-    if (Length(AParams) > 0) then
-    begin
-      ConvertParams(AParams, LParams);
-    end;
-    Result := GetResultset(ASql, LParams);
-  finally
-    LParams.Free;
+  LParams := TCollections.CreateObjectList<TDBParam>();
+  if (Length(AParams) > 0) then
+  begin
+    ConvertParams(AParams, LParams);
   end;
+  Result := GetResultset(ASql, LParams);
 end;
 
 function TSession.GetResultset(const ASql: string;
-  AParams: TObjectList<TDBParam>): IDBResultset;
+  AParams: IList<TDBParam>): IDBResultset;
 var
   LStmt: IDBStatement;
 begin
@@ -1066,8 +1028,7 @@ begin
   end;
 end;
 
-procedure TSession.InsertList<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
-      {$ELSE} TObjectList<T> {$ENDIF});
+procedure TSession.InsertList<T>(ACollection: ICollection<T>);
 var
   LEntity: T;
 begin
@@ -1088,7 +1049,7 @@ begin
 end;
 
 function TSession.Page<T>(APage, AItemsPerPage: Integer; const ASql: string;
-  AParams: TObjectList<TDBParam>): IDBPage<T>;
+  AParams: IList<TDBParam>): IDBPage<T>;
 var
   LPager: TPager;
   LSQL: string;
@@ -1141,23 +1102,18 @@ end;
 
 procedure TSession.SaveAll(AEntity: TObject);
 var
-  LRelations: TList<TObject>;
+  LRelations: IList<TObject>;
   i: Integer;
 begin
   LRelations := TRttiExplorer.GetRelationsOf(AEntity);
-  try
-    for i := 0 to LRelations.Count - 1 do
-    begin
-      SaveAll(LRelations[i]);
-    end;
-    Save(AEntity);
-  finally
-    LRelations.Free;
+  for i := 0 to LRelations.Count - 1 do
+  begin
+    SaveAll(LRelations[i]);
   end;
+  Save(AEntity);
 end;
 
-procedure TSession.SaveList<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
-      {$ELSE} TObjectList<T> {$ENDIF});
+procedure TSession.SaveList<T>(ACollection: ICollection<T>);
 var
   LEntity: T;
 begin
@@ -1187,7 +1143,7 @@ begin
   end;
 end;
 
-procedure TSession.SetEntityColumns(AEntity: TObject; AColumns: TList<ManyValuedAssociation>;
+procedure TSession.SetEntityColumns(AEntity: TObject; AColumns: IList<ManyValuedAssociation>;
   AResultset: IDBResultset);
 var
   LCol: ManyValuedAssociation;
@@ -1206,7 +1162,7 @@ procedure TSession.SetLazyColumns(AEntity: TObject; AEntityData: TEntityData);
 var
   LCol: ManyValuedAssociation;
   LValue: TValue;
-  LColumns: TList<OneToManyAttribute>;
+  LColumns: IList<OneToManyAttribute>;
 begin
   LColumns := AEntityData.OneToManyColumns;
   if LColumns.Count < 1 then
@@ -1300,8 +1256,7 @@ begin
   end;
 end;
 
-procedure TSession.UpdateList<T>(ACollection: {$IFDEF USE_SPRING} Spring.Collections.ICollection<T>
-      {$ELSE} TObjectList<T> {$ENDIF});
+procedure TSession.UpdateList<T>(ACollection: ICollection<T>);
 var
   LEntity: T;
 begin

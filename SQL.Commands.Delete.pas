@@ -31,7 +31,7 @@ interface
 
 uses
   SQL.AbstractCommandExecutor, SQL.Types, SQL.Commands, SQL.Params, Mapping.Attributes
-  ,Generics.Collections, Core.Interfaces, Rtti;
+  , Core.Interfaces, Rtti;
 
 type
   {$REGION 'Documentation'}

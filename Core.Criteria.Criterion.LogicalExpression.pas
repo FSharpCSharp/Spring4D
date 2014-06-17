@@ -12,7 +12,7 @@ uses
   ,SQL.Params
   ,SQL.Commands
   ,SQL.Interfaces
-  ,Generics.Collections
+  ,Spring.Collections
   ;
 
 type
@@ -25,7 +25,7 @@ type
     constructor Create(ALeft, ARight: ICriterion; const AOperator: TWhereOperator); virtual;
   public
     function GetWhereOperator(): TWhereOperator; override;
-    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; override;
+    function ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; override;
   end;
 
 implementation
@@ -49,7 +49,7 @@ begin
   Result := FOperator;
 end;
 
-function TLogicalExpression.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
+function TLogicalExpression.ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
 var
   LWhere, LEndOp: TSQLWhereField;
 begin

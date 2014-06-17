@@ -33,8 +33,7 @@ interface
 
 uses
   SQL.Params
-  {$IFDEF USE_SPRING},Spring.Collections{$ENDIF}
-  ,Generics.Collections
+  ,Spring.Collections
   ,SQL.Interfaces
   ,SQL.Types
   ,SQL.Commands
@@ -44,7 +43,7 @@ uses
 type
   TDBDriverType = (dtSQLite = 0 {$IFDEF MSWINDOWS}, dtADO, dtMSSQL, dtASA, dtOracle{$ENDIF}, dtDBX, dtUIB, dtZeos, dtMongo);
 
-  TExecutionListenerProc = reference to procedure(const ACommand: string; const AParams: TObjectList<TDBParam>);
+  TExecutionListenerProc = reference to procedure(const ACommand: string; const AParams: IList<TDBParam>);
 
   {$REGION 'Documentation'}
   ///	<summary>
@@ -60,9 +59,9 @@ type
     function GetItemsPerPage(): Integer;
     function GetTotalPages(): Integer;
     function GetTotalItems(): Int64;
-    function GetItems(): {$IFDEF USE_SPRING} Spring.Collections.IList<T> {$ELSE}TObjectList<T> {$ENDIF};
+    function GetItems(): IList<T>;
 
-    property Items: {$IFDEF USE_SPRING} Spring.Collections.IList<T> {$ELSE}TObjectList<T> {$ENDIF} read GetItems;
+    property Items: IList<T> read GetItems;
   end;
 
 
@@ -90,7 +89,7 @@ type
   {$ENDREGION}
   ICriterion = interface(IInvokable)
     ['{E22DFB1C-0E0E-45F4-9740-9469164B4557}']
-    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
+    function ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
     procedure SetEntityClass(const Value: TClass);
     function GetEntityClass: TClass;
     function GetMatchMode(): TMatchMode;
@@ -154,7 +153,7 @@ type
     ///	  Get the results.
     ///	</summary>
     {$ENDREGION}
-    function List(): {$IFDEF USE_SPRING}IList<T>{$ELSE}TObjectList<T>{$ENDIF};
+    function ToList(): IList<T>;
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -255,7 +254,7 @@ type
     ['{DA905CAA-0FC2-4570-9788-1DC206600171}']
     procedure SetSQLCommand(const ACommandText: string);
     procedure SetQuery(const AMetadata: TQueryMetadata; AQuery: Variant);
-    procedure SetParams(AParams: TObjectList<TDBParam>); overload;
+    procedure SetParams(AParams: IList<TDBParam>); overload;
     procedure SetParams(const AParams: array of const); overload;
     function Execute(): NativeUInt;
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultset;
@@ -297,8 +296,8 @@ type
 
     procedure AddExecutionListener(const AListenerProc: TExecutionListenerProc);
     procedure ClearExecutionListeners();
-    function GetExecutionListeners: TList<TExecutionListenerProc>;
-    property ExecutionListeners: TList<TExecutionListenerProc> read GetExecutionListeners;
+    function GetExecutionListeners: IList<TExecutionListenerProc>;
+    property ExecutionListeners: IList<TExecutionListenerProc> read GetExecutionListeners;
     function GetAutoFreeConnection: Boolean;
     procedure SetAutoFreeConnection(const Value: Boolean);
     property AutoFreeConnection: Boolean read GetAutoFreeConnection write SetAutoFreeConnection;

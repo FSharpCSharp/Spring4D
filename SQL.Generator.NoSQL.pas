@@ -30,8 +30,8 @@ unit SQL.Generator.NoSQL;
 interface
 
 uses
-  SQL.AbstractSQLGenerator, SQL.Commands, SQL.Types, Generics.Collections, Mapping.Attributes
-  , SQL.Interfaces;
+  SQL.AbstractSQLGenerator, SQL.Commands, SQL.Types, Mapping.Attributes
+  , SQL.Interfaces, Spring.Collections;
 
 type
   {$REGION 'Documentation'}
@@ -43,8 +43,8 @@ type
   public
     function GetQueryLanguage(): TQueryLanguage; override;
 
-    function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): TList<string>; override;
-    function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): TList<string>; override;
+    function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): IList<string>; override;
+    function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): IList<string>; override;
     function GenerateCreateSequence(ASequence: TCreateSequenceCommand): string; override;
     function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string; override;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string; override;
@@ -61,9 +61,9 @@ implementation
 
 { TNoSQLGenerator }
 
-function TNoSQLGenerator.GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): TList<string>;
+function TNoSQLGenerator.GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): IList<string>;
 begin
-  Result := TList<string>.Create;
+  Result := TCollections.CreateList<string>;
 end;
 
 function TNoSQLGenerator.GenerateCreateSequence(ASequence: TCreateSequenceCommand): string;
@@ -71,9 +71,9 @@ begin
   Result := '';
 end;
 
-function TNoSQLGenerator.GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): TList<string>;
+function TNoSQLGenerator.GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): IList<string>;
 begin
-  Result := TList<string>.Create;
+  Result := TCollections.CreateList<string>;
 end;
 
 function TNoSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;

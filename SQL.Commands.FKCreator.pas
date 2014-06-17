@@ -30,7 +30,7 @@ unit SQL.Commands.FKCreator;
 interface
 
 uses
-  SQL.AbstractCommandExecutor, SQL.Commands, SQL.Types, Generics.Collections;
+  SQL.AbstractCommandExecutor, SQL.Commands, SQL.Types, Spring.Collections;
 
 type
   {$REGION 'Documentation'}
@@ -43,7 +43,7 @@ type
   private
     FCommand: TCreateFKCommand;
     FTable: TSQLTable;
-    FSQLs: TList<string>;
+    FSQLs: IList<string>;
   protected
     function GetCommand: TDMLCommand; override;
   public
@@ -108,7 +108,6 @@ destructor TForeignKeyCreateExecutor.Destroy;
 begin
   FTable.Free;
   FCommand.Free;
-  FSQLs.Free;
   inherited Destroy;
 end;
 

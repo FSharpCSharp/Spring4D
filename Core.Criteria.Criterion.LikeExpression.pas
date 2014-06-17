@@ -10,7 +10,7 @@ uses
   ,SQL.Params
   ,SQL.Commands
   ,SQL.Interfaces
-  ,Generics.Collections
+  ,Spring.Collections
   ;
 
 type
@@ -20,7 +20,7 @@ type
   public
     constructor Create(const APropertyName: string; const AValue: TValue; AOperator: TWhereOperator; const AMatchMode: TMatchMode); reintroduce; overload;
 
-    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; override;
+    function ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; override;
   end;
 
 implementation
@@ -37,7 +37,7 @@ begin
   FMatchMode := AMatchMode;
 end;
 
-function TLikeExpression.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
+function TLikeExpression.ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
 var
   LWhere: TSQLWhereField;
 begin

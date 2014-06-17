@@ -52,11 +52,6 @@ type
 
 implementation
 
-uses
-  SQL.Params
-  ,Generics.Collections
-  ;
-
 { TCriteria }
 
 constructor TCriteria<T>.Create(ASession: TSession);

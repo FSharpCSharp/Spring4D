@@ -37,7 +37,7 @@ uses
   ,SQL.Params
   ,SQL.Commands
   ,SQL.Interfaces
-  ,Generics.Collections
+  ,Spring.Collections
   ;
 
 type
@@ -53,7 +53,7 @@ type
   public
     destructor Destroy; override;
 
-    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; virtual;
+    function ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; virtual;
     function GetMatchMode(): TMatchMode; virtual;
     function GetWhereOperator(): TWhereOperator; virtual;
 
@@ -116,7 +116,7 @@ begin
   FEntityClass := Value;
 end;
 
-function TAbstractCriterion.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand;
+function TAbstractCriterion.ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand;
   AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
 begin
   FGenerator := AGenerator;

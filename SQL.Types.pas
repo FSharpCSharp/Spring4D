@@ -30,7 +30,7 @@ unit SQL.Types;
 interface
 
 uses
-  Generics.Collections, Mapping.Attributes, TypInfo;
+  Spring.Collections, Mapping.Attributes, TypInfo;
 
 const
   CRLF = #13#10;
@@ -300,7 +300,7 @@ type
   TSQLJoin = class
   private
     FJoinType: TSQLJoinType;
-    FSegments: TObjectList<TSQLJoinSegment>;
+    FSegments: IList<TSQLJoinSegment>;
   public
     constructor Create(const AJoinType: TSQLJoinType); virtual;
     destructor Destroy; override;
@@ -308,7 +308,7 @@ type
     class function GetJoinTypeAsString(const AJoinType: TSQLJoinType): string;
 
     property JoinType: TSQLJoinType read FJoinType write FJoinType;
-    property Segments: TObjectList<TSQLJoinSegment> read FSegments write FSegments;
+    property Segments: IList<TSQLJoinSegment> read FSegments write FSegments;
   end;
 
   {$REGION 'Documentation'}
@@ -318,7 +318,7 @@ type
   {$ENDREGION}
   TSQLAliasGenerator = class
   private
-    class var FAliases: TDictionary<string,string>;
+    class var FAliases: IDictionary<string,string>;
     class var FCharIndex: Byte;
   public
     class constructor Create();
@@ -501,12 +501,11 @@ constructor TSQLJoin.Create(const AJoinType: TSQLJoinType);
 begin
   inherited Create;
   FJoinType := AJoinType;
-  FSegments := TObjectList<TSQLJoinSegment>.Create;
+  FSegments := TCollections.CreateObjectList<TSQLJoinSegment>;
 end;
 
 destructor TSQLJoin.Destroy;
 begin
-  FSegments.Free;
   inherited Destroy;
 end;
 
@@ -539,13 +538,13 @@ end;
 
 class constructor TSQLAliasGenerator.Create;
 begin
-  FAliases := TDictionary<string,string>.Create(100);
+  FAliases := TCollections.CreateDictionary<string,string>(100);
   FCharIndex := 65;
 end;
 
 class destructor TSQLAliasGenerator.Destroy;
 begin
-  FAliases.Free;
+  FAliases := nil;
   inherited;
 end;
 

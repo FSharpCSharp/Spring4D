@@ -4,7 +4,6 @@ interface
 
 uses
   Spring.Collections
-  ,Generics.Collections
   ,Rtti
   ,Core.Interfaces
   ,Core.Session
@@ -35,6 +34,7 @@ uses
   ,Mapping.RttiExplorer
   ,SQL.Commands.Delete
   ,SQL.Commands.Factory
+  ,Generics.Collections
   ;
 
 { TListSession }

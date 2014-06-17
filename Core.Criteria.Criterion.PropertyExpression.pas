@@ -12,7 +12,7 @@ uses
   ,SQL.Params
   ,SQL.Commands
   ,SQL.Interfaces
-  ,Generics.Collections
+  ,Spring.Collections
   ;
 
 type
@@ -29,7 +29,7 @@ type
     destructor Destroy; override;
   public
     function GetWhereOperator(): TWhereOperator; override;
-    function ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; override;
+    function ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string; override;
 
   end;
 
@@ -65,7 +65,7 @@ begin
   Result := FOperator;
 end;
 
-function TPropertyExpression.ToSqlString(AParams: TObjectList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
+function TPropertyExpression.ToSqlString(AParams: IList<TDBParam>; ACommand: TDMLCommand; AGenerator: ISQLGenerator; AAddToCommand: Boolean): string;
 var
   LWhere: TSQLWherePropertyField;
   LTable, LOtherTable: TSQLTable;

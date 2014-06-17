@@ -587,7 +587,7 @@ implementation
 
 uses
   Classes,
-  Generics.Collections,
+  Spring.Collections,
   Math,
   StrUtils,
   SysUtils
@@ -604,7 +604,7 @@ type
 
 var
   Context: TRttiContext;
-  Enumerations: TDictionary<PTypeInfo, TStrings>;
+  Enumerations: IDictionary<PTypeInfo, TStrings>;
 
 {$REGION 'Conversion functions'}
 type
@@ -2719,9 +2719,9 @@ begin
 end;
 
 initialization
-  Enumerations := TObjectDictionary<PTypeInfo, TStrings>.Create([doOwnsValues]);
+  Enumerations := TCollections.CreateDictionary<PTypeInfo, TStrings>([doOwnsValues]);
 
 finalization
-  Enumerations.Free;
+  Enumerations := nil;
 
 end.

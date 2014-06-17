@@ -30,7 +30,7 @@ unit Adapters.SQLite;
 interface
 
 uses
-  Generics.Collections, Core.Interfaces, SQLiteTable3, Core.Base, SQL.Params, SysUtils
+  Spring.Collections, Core.Interfaces, SQLiteTable3, Core.Base, SQL.Params, SysUtils
   , Mapping.Attributes;
 
 type
@@ -62,7 +62,7 @@ type
     constructor Create(const AStatement: ISQLitePreparedStatement); override;
     destructor Destroy; override;
     procedure SetSQLCommand(const ACommandText: string); override;
-    procedure SetParams(Params: TObjectList<TDBParam>); overload; override;
+    procedure SetParams(Params: IList<TDBParam>); overload; override;
     function Execute(): NativeUInt; override;
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
   end;
@@ -185,7 +185,7 @@ begin
   Result := nil;
 end;
 
-procedure TSQLiteStatementAdapter.SetParams(Params: TObjectList<TDBParam>);
+procedure TSQLiteStatementAdapter.SetParams(Params: IList<TDBParam>);
 var
   P: TDBParam;
 begin

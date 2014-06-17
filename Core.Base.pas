@@ -32,9 +32,7 @@ interface
 {$I sv.inc}
 
 uses
-  Core.Interfaces, SQL.Params, SQL.Interfaces
-  {$IFDEF USE_SPRING},Spring.Collections{$ENDIF}
-  , Generics.Collections
+  Core.Interfaces, SQL.Params, SQL.Interfaces, Spring.Collections
   , SQL.Commands.Page
   ;
 
@@ -70,13 +68,13 @@ type
   TDriverConnectionAdapter<T> = class(TInterfacedObject, IDBConnection)
   private
     FConnection: T;
-    FExecutionListeners: TList<TExecutionListenerProc>;
+    FExecutionListeners: IList<TExecutionListenerProc>;
     FQueryLanguage: TQueryLanguage;
     FAutoFreeConnection: Boolean;
     FTranID: Integer;
 
     procedure SetQueryLanguage(AQueryLanguage: TQueryLanguage);
-    function GetExecutionListeners: TList<TExecutionListenerProc>;
+    function GetExecutionListeners: IList<TExecutionListenerProc>;
     function GetAutoFreeConnection: Boolean;
     procedure SetAutoFreeConnection(const Value: Boolean);
   protected
@@ -99,7 +97,7 @@ type
 
     property AutoFreeConnection: Boolean read GetAutoFreeConnection write SetAutoFreeConnection;
     property Connection: T read FConnection;
-    property ExecutionListeners: TList<TExecutionListenerProc> read GetExecutionListeners;
+    property ExecutionListeners: IList<TExecutionListenerProc> read GetExecutionListeners;
     property QueryLanguage: TQueryLanguage read GetQueryLanguage write SetQueryLanguage;
     property TranId: Integer read FTranID;
   end;
@@ -112,8 +110,8 @@ type
   TDriverStatementAdapter<T> = class(TInterfacedObject, IDBStatement)
   private
     FStmt: T;
-    FExecutionListeners: TList<TExecutionListenerProc>;
-    FParams: TObjectList<TDBParam>;
+    FExecutionListeners: IList<TExecutionListenerProc>;
+    FParams: IList<TDBParam>;
     FSQL: string;
     FQuery: Variant;
     FQueryMetadata: TQueryMetadata;
@@ -124,14 +122,14 @@ type
     destructor Destroy; override;
     procedure SetSQLCommand(const ACommandText: string); virtual;
     procedure SetQuery(const AMetadata: TQueryMetadata; AQuery: Variant); virtual;
-    procedure SetParams(Params: TObjectList<TDBParam>); overload; virtual;
+    procedure SetParams(Params: IList<TDBParam>); overload; virtual;
     procedure SetParams(const AParams: array of const); overload;
     function Execute(): NativeUInt; virtual;
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; virtual;
 
     function NativeQueryPresent(): Boolean; virtual;
 
-    property ExecutionListeners: TList<TExecutionListenerProc> read FExecutionListeners write FExecutionListeners;
+    property ExecutionListeners: IList<TExecutionListenerProc> read FExecutionListeners write FExecutionListeners;
     property Statement: T read FStmt;
     property Query: Variant read FQuery write FQuery;
     property QueryMetadata: TQueryMetadata read FQueryMetadata write FQueryMetadata;
@@ -257,7 +255,7 @@ constructor TDriverConnectionAdapter<T>.Create(const AConnection: T);
 begin
   inherited Create;
   FConnection := AConnection;
-  FExecutionListeners := TList<TExecutionListenerProc>.Create;
+  FExecutionListeners := TCollections.CreateList<TExecutionListenerProc>;
   FQueryLanguage := qlAnsiSQL;
   FTranID := 0;
   TryResolveQueryLanguage(FQueryLanguage);
@@ -265,7 +263,6 @@ end;
 
 destructor TDriverConnectionAdapter<T>.Destroy;
 begin
-  FExecutionListeners.Free;
   if AutoFreeConnection then
     TRttiExplorer.DestroyClass<T>(FConnection);
   inherited Destroy;
@@ -282,7 +279,7 @@ begin
   Result := FAutoFreeConnection;
 end;
 
-function TDriverConnectionAdapter<T>.GetExecutionListeners: TList<TExecutionListenerProc>;
+function TDriverConnectionAdapter<T>.GetExecutionListeners: IList<TExecutionListenerProc>;
 begin
   Result := FExecutionListeners;
 end;
@@ -377,49 +374,37 @@ end;
 procedure TDriverStatementAdapter<T>.NotifyListeners;
 var
   LListener: TExecutionListenerProc;
-  LParams: TObjectList<TDBParam>;
-  LParamsCreated: Boolean;
+  LParams: IList<TDBParam>;
 begin
   if Assigned(FExecutionListeners) and (FSQL <> '') then
   begin
     LParams := FParams;
-    LParamsCreated := False;
     if not Assigned(LParams) then
     begin
-      LParamsCreated := True;
-      LParams := TObjectList<TDBParam>.Create(True);
+      LParams := TCollections.CreateObjectList<TDBParam>(True);
     end;
 
-    try     
-      for LListener in FExecutionListeners do
-      begin
-        LListener(FSQL, LParams);
-      end;
-    finally
-      if LParamsCreated then
-        LParams.Free;
+    for LListener in FExecutionListeners do
+    begin
+      LListener(FSQL, LParams);
     end;
   end;
 end;
 
-procedure TDriverStatementAdapter<T>.SetParams(Params: TObjectList<TDBParam>);
+procedure TDriverStatementAdapter<T>.SetParams(Params: IList<TDBParam>);
 begin
   FParams := Params;
 end;
 
 procedure TDriverStatementAdapter<T>.SetParams(const AParams: array of const);
 var
-  LParams: TObjectList<TDBParam>;
+  LParams: IList<TDBParam>;
 begin
   if Length(AParams) > 0 then
   begin
-    LParams := TObjectList<TDBParam>.Create;
-    try
-      ConvertParams(AParams, LParams);
-      SetParams(LParams);
-    finally
-      LParams.Free;
-    end;
+    LParams := TCollections.CreateObjectList<TDBParam>;
+    ConvertParams(AParams, LParams);
+    SetParams(LParams);
   end;
 end;
 

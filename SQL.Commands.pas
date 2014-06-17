@@ -30,7 +30,7 @@ unit SQL.Commands;
 interface
 
 uses
-  SQL.Types, Generics.Collections, Mapping.Attributes;
+  SQL.Types, Mapping.Attributes, Spring.Collections;
 
 type
   TDMLCommandType = (ctSelect, ctInsert, ctUpdate, ctDelete, ctUpdateVersion);
@@ -44,9 +44,9 @@ type
   private
     FTable: TSQLTable;
     FEntity: TObject;
-    FParameterNames: TDictionary<string,Integer>;
+    FParameterNames: IDictionary<string,Integer>;
   protected
-    procedure SetTable(AColumns: TList<ColumnAttribute>); virtual; abstract;
+    procedure SetTable(AColumns: IList<ColumnAttribute>); virtual; abstract;
   public
     constructor Create(ATable: TSQLTable); virtual;
     destructor Destroy; override;
@@ -60,12 +60,12 @@ type
 
   TWhereCommand = class(TDMLCommand)
   private
-    FWhereFields: TObjectList<TSQLWhereField>;
+    FWhereFields: IList<TSQLWhereField>;
   public
     constructor Create(ATable: TSQLTable); override;
     destructor Destroy; override;
 
-    property WhereFields: TObjectList<TSQLWhereField> read FWhereFields;
+    property WhereFields: IList<TSQLWhereField> read FWhereFields;
   end;
 
   {$REGION 'Documentation'}
@@ -75,13 +75,13 @@ type
   {$ENDREGION}
   TSelectCommand = class(TWhereCommand)
   private
-    FSelectFields: TObjectList<TSQLSelectField>;
-    FJoins: TObjectList<TSQLJoin>;
-    FGroupByFields: TObjectList<TSQLGroupByField>;
-    FOrderByFields: TObjectList<TSQLOrderField>;
+    FSelectFields: IList<TSQLSelectField>;
+    FJoins: IList<TSQLJoin>;
+    FGroupByFields: IList<TSQLGroupByField>;
+    FOrderByFields: IList<TSQLOrderField>;
     FPrimaryKeyColumn: ColumnAttribute;
     FForeignColumn: ForeignJoinColumnAttribute;
-    FTables: TObjectList<TSQLTable>;
+    FTables: IList<TSQLTable>;
   public
     constructor Create(ATable: TSQLTable); override;
     destructor Destroy; override;
@@ -90,18 +90,18 @@ type
     function FindCorrespondingTable(ATable: TSQLTable): TSQLTable;
 
     procedure SetAssociations(AEntityClass: TClass); virtual;
-    procedure SetTable(AColumns: TList<ColumnAttribute>); override;
+    procedure SetTable(AColumns: IList<ColumnAttribute>); override;
     procedure SetFromPrimaryColumn();
     procedure SetFromForeignColumn(ABaseTableClass, AForeignTableClass: TClass);
 
-    property SelectFields: TObjectList<TSQLSelectField> read FSelectFields;
-    property Joins: TObjectList<TSQLJoin> read FJoins;
-    property GroupByFields: TObjectList<TSQLGroupByField> read FGroupByFields;
-    property OrderByFields: TObjectList<TSQLOrderField> read FOrderByFields;
+    property SelectFields: IList<TSQLSelectField> read FSelectFields;
+    property Joins: IList<TSQLJoin> read FJoins;
+    property GroupByFields: IList<TSQLGroupByField> read FGroupByFields;
+    property OrderByFields: IList<TSQLOrderField> read FOrderByFields;
 
     property ForeignColumn: ForeignJoinColumnAttribute read FForeignColumn write FForeignColumn;
     property PrimaryKeyColumn: ColumnAttribute read FPrimaryKeyColumn write FPrimaryKeyColumn;
-    property Tables: TObjectList<TSQLTable> read FTables;
+    property Tables: IList<TSQLTable> read FTables;
   end;
 
   {$REGION 'Documentation'}
@@ -111,15 +111,15 @@ type
   {$ENDREGION}
   TInsertCommand = class(TDMLCommand)
   private
-    FInsertFields: TObjectList<TSQLField>;
+    FInsertFields: IList<TSQLField>;
     FSequence: SequenceAttribute;
   public
     constructor Create(ATable: TSQLTable); override;
     destructor Destroy; override;
 
-    procedure SetTable(AColumns: TList<ColumnAttribute>); override;
+    procedure SetTable(AColumns: IList<ColumnAttribute>); override;
 
-    property InsertFields: TObjectList<TSQLField> read FInsertFields;
+    property InsertFields: IList<TSQLField> read FInsertFields;
     property Sequence: SequenceAttribute read FSequence write FSequence;
   end;
 
@@ -130,16 +130,16 @@ type
   {$ENDREGION}
   TUpdateCommand = class(TWhereCommand)
   private
-    FUpdateFields: TObjectList<TSQLField>;
+    FUpdateFields: IList<TSQLField>;
     FPrimaryKeyColumn: ColumnAttribute;
   public
     constructor Create(ATable: TSQLTable); override;
     destructor Destroy; override;
 
-    procedure SetTable(AColumns: TList<ColumnAttribute>); override;
+    procedure SetTable(AColumns: IList<ColumnAttribute>); override;
 
     property PrimaryKeyColumn: ColumnAttribute read FPrimaryKeyColumn write FPrimaryKeyColumn;
-    property UpdateFields: TObjectList<TSQLField> read FUpdateFields;
+    property UpdateFields: IList<TSQLField> read FUpdateFields;
   end;
 
   {$REGION 'Documentation'}
@@ -154,7 +154,7 @@ type
     constructor Create(ATable: TSQLTable); override;
     destructor Destroy; override;
 
-    procedure SetTable(AColumns: TList<ColumnAttribute>); override;
+    procedure SetTable(AColumns: IList<ColumnAttribute>); override;
 
     property PrimaryKeyColumnName: string read FPrimaryKeyColumnName write FPrimaryKeyColumnName;
   end;
@@ -166,18 +166,18 @@ type
   {$ENDREGION}
   TCreateTableCommand = class(TDMLCommand)
   private
-    FColumns: TObjectList<TSQLCreateField>;
-    FDbColumns: TList<string>;
+    FColumns: IList<TSQLCreateField>;
+    FDbColumns: IList<string>;
     FTableExists: Boolean;
   public
     constructor Create(ATable: TSQLTable); override;
     destructor Destroy; override;
 
-    procedure SetTable(AColumns: TList<ColumnAttribute>); override;
+    procedure SetTable(AColumns: IList<ColumnAttribute>); override;
 
     property TableExists: Boolean read FTableExists write FTableExists;
-    property DbColumns: TList<string> read FDbColumns;
-    property Columns: TObjectList<TSQLCreateField> read FColumns;
+    property DbColumns: IList<string> read FDbColumns;
+    property Columns: IList<TSQLCreateField> read FColumns;
   end;
 
   {$REGION 'Documentation'}
@@ -187,15 +187,14 @@ type
   {$ENDREGION}
   TCreateFKCommand = class(TCreateTableCommand)
   private
-    FForeigns: TObjectList<TSQLForeignKeyField>;
+    FForeigns: IList<TSQLForeignKeyField>;
   public
     constructor Create(ATable: TSQLTable); override;
     destructor Destroy; override;
 
-    procedure SetTable(AColumns: TList<ColumnAttribute>); override;
+    procedure SetTable(AColumns: IList<ColumnAttribute>); override;
 
-
-    property ForeignKeys: TObjectList<TSQLForeignKeyField> read FForeigns;
+    property ForeignKeys: IList<TSQLForeignKeyField> read FForeigns;
   end;
 
   {$REGION 'Documentation'}
@@ -230,21 +229,16 @@ uses
 constructor TSelectCommand.Create(ATable: TSQLTable);
 begin
   inherited Create(ATable);
-  FSelectFields := TObjectList<TSQLSelectField>.Create;
-  FJoins := TObjectList<TSQLJoin>.Create;
-  FGroupByFields := TObjectList<TSQLGroupByField>.Create;
-  FOrderByFields := TObjectList<TSQLOrderField>.Create;
-  FTables := TObjectList<TSQLTable>.Create(True);
+  FSelectFields := TCollections.CreateObjectList<TSQLSelectField>;
+  FJoins := TCollections.CreateObjectList<TSQLJoin>;
+  FGroupByFields := TCollections.CreateObjectList<TSQLGroupByField>;
+  FOrderByFields := TCollections.CreateObjectList<TSQLOrderField>;
+  FTables := TCollections.CreateObjectList<TSQLTable>(True);
   FForeignColumn := nil;
 end;
 
 destructor TSelectCommand.Destroy;
 begin
-  FSelectFields.Free;
-  FJoins.Free;
-  FGroupByFields.Free;
-  FOrderByFields.Free;
-  FTables.Free;
   inherited Destroy;
 end;
 
@@ -364,7 +358,7 @@ begin
   end;
 end;
 
-procedure TSelectCommand.SetTable(AColumns: TList<ColumnAttribute>);
+procedure TSelectCommand.SetTable(AColumns: IList<ColumnAttribute>);
 var
   LColumn: ColumnAttribute;
   LSelectField: TSQLSelectField;
@@ -389,17 +383,16 @@ end;
 constructor TInsertCommand.Create(ATable: TSQLTable);
 begin
   inherited Create(ATable);
-  FInsertFields := TObjectList<TSQLField>.Create;
+  FInsertFields := TCollections.CreateObjectList<TSQLField>;
   FSequence := nil;
 end;
 
 destructor TInsertCommand.Destroy;
 begin
-  FInsertFields.Free;
   inherited Destroy;
 end;
 
-procedure TInsertCommand.SetTable(AColumns: TList<ColumnAttribute>);
+procedure TInsertCommand.SetTable(AColumns: IList<ColumnAttribute>);
 var
   LField: TSQLField;
   LColumn: ColumnAttribute;
@@ -423,17 +416,16 @@ end;
 constructor TUpdateCommand.Create(ATable: TSQLTable);
 begin
   inherited Create(ATable);
-  FUpdateFields := TObjectList<TSQLField>.Create;
+  FUpdateFields := TCollections.CreateObjectList<TSQLField>;
   FPrimaryKeyColumn := nil;
 end;
 
 destructor TUpdateCommand.Destroy;
 begin
-  FUpdateFields.Free;
   inherited Destroy;
 end;
 
-procedure TUpdateCommand.SetTable(AColumns: TList<ColumnAttribute>);
+procedure TUpdateCommand.SetTable(AColumns: IList<ColumnAttribute>);
 var
   LField: TSQLField;
   LWhereField: TSQLWhereField;
@@ -476,7 +468,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TDeleteCommand.SetTable(AColumns: TList<ColumnAttribute>);
+procedure TDeleteCommand.SetTable(AColumns: IList<ColumnAttribute>);
 var
   LWhereField: TSQLWhereField;
 begin
@@ -495,12 +487,11 @@ constructor TDMLCommand.Create(ATable: TSQLTable);
 begin
   inherited Create;
   FTable := ATable;
-  FParameterNames := TDictionary<string,Integer>.Create();
+  FParameterNames := TCollections.CreateDictionary<string,Integer>();
 end;
 
 destructor TDMLCommand.Destroy;
 begin
-  FParameterNames.Free;
   inherited Destroy;
 end;
 
@@ -542,24 +533,22 @@ var
   LCaseInsensitiveComparer: IComparer<string>;
 begin
   inherited Create(ATable);
-  FColumns := TObjectList<TSQLCreateField>.Create(True);
+  FColumns := TCollections.CreateObjectList<TSQLCreateField>(True);
   LCaseInsensitiveComparer := TComparer<string>.Construct(
     function(const Left, Right: string): Integer
     begin
       Result := CompareText(Left, Right);
     end);
 
-  FDbColumns := TList<string>.Create(LCaseInsensitiveComparer);
+  FDbColumns := TCollections.CreateList<string>(LCaseInsensitiveComparer);
 end;
 
 destructor TCreateTableCommand.Destroy;
 begin
-  FColumns.Free;
-  FDBColumns.Free;
   inherited Destroy;
 end;
 
-procedure TCreateTableCommand.SetTable(AColumns: TList<ColumnAttribute>);
+procedure TCreateTableCommand.SetTable(AColumns: IList<ColumnAttribute>);
 var
   LCol: ColumnAttribute;
   LField: TSQLCreateField;
@@ -580,16 +569,15 @@ end;
 constructor TCreateFKCommand.Create(ATable: TSQLTable);
 begin
   inherited Create(ATable);
-  FForeigns := TObjectList<TSQLForeignKeyField>.Create(True);
+  FForeigns := TCollections.CreateObjectList<TSQLForeignKeyField>(True);
 end;
 
 destructor TCreateFKCommand.Destroy;
 begin
-  FForeigns.Free;
   inherited Destroy;
 end;
 
-procedure TCreateFKCommand.SetTable(AColumns: TList<ColumnAttribute>);
+procedure TCreateFKCommand.SetTable(AColumns: IList<ColumnAttribute>);
 var
   LCol: ColumnAttribute;
   LForeignKeyColumn: ForeignJoinColumnAttribute;
@@ -623,12 +611,11 @@ end;
 constructor TWhereCommand.Create(ATable: TSQLTable);
 begin
   inherited Create(ATable);
-  FWhereFields := TObjectList<TSQLWhereField>.Create();
+  FWhereFields := TCollections.CreateObjectList<TSQLWhereField>();
 end;
 
 destructor TWhereCommand.Destroy;
 begin
-  FWhereFields.Free;
   inherited Destroy;
 end;
 

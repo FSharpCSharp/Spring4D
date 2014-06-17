@@ -4,7 +4,7 @@ interface
 
 uses
   SQL.Generator.NoSQL, SQL.Interfaces, SQL.Commands, Mapping.Attributes
-  ,SQL.AbstractSQLGenerator, SQL.Types, Generics.Collections, SvSerializer;
+  ,SQL.AbstractSQLGenerator, SQL.Types, SvSerializer;
 
 type
   {$REGION 'Documentation'}

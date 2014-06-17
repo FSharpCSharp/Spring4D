@@ -30,7 +30,7 @@ unit Mapping.Attributes;
 interface
 
 uses
-  Generics.Collections, Rtti, TypInfo;
+  Rtti, TypInfo;
 
 type
   TFetchType = (ftEager, ftLazy);

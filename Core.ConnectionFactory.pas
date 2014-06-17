@@ -31,7 +31,7 @@ interface
 
 uses
   Core.Interfaces
-  ,Generics.Collections
+  ,Spring.Collections
   ,SysUtils
   {$IF CompilerVersion >=27}
   ,JSON
@@ -53,7 +53,7 @@ type
   {$ENDREGION}
   TConnectionFactory = class sealed
   private
-    class var FRegistered: TDictionary<TDBDriverType, TClass>;
+    class var FRegistered: IDictionary<TDBDriverType, TClass>;
   protected
     class function ConcreteCreate(AClass: TClass; AConcreteConnection: TObject): IDBConnection; overload;
     class function ConcreteCreate(AClass: TClass): TObject; overload;
@@ -89,37 +89,31 @@ uses
 class function TConnectionFactory.ConcreteCreate(AClass: TClass): TObject;
 var
   LType: TRttiType;
-  LConstructors: TList<TRttiMethod>;
+  LConstructors: IList<TRttiMethod>;
   LMethod: TRttiMethod;
   LParams: TArray<TRttiParameter>;
   LArgs: array of TValue;
   i: Integer;
 begin
-  Result := nil;
   LType := TRttiContext.Create.GetType(AClass);
-  LConstructors := TList<TRttiMethod>.Create;
-  try
-    TRttiExplorer.GetDeclaredConstructors(AClass, LConstructors);
+  LConstructors := TCollections.CreateList<TRttiMethod>;
+  TRttiExplorer.GetDeclaredConstructors(AClass, LConstructors);
 
-    if LConstructors.Count < 1 then
-      raise EORMConstructorNotFound.CreateFmt('Constructor for class %S not found', [AClass.ClassName]);
+  if LConstructors.Count < 1 then
+    raise EORMConstructorNotFound.CreateFmt('Constructor for class %S not found', [AClass.ClassName]);
 
-    LMethod := TRttiExplorer.GetMethodWithLessParameters(LConstructors);
-    LParams := LMethod.GetParameters;
-    SetLength(LArgs, Length(LParams));
-    for i := Low(LArgs) to High(LArgs) do
-    begin
-      LArgs[i] := TValue.Empty;
-    end;
-
-    Result := LMethod.Invoke(LType.AsInstance.MetaclassType, LArgs).AsObject;
-
-    if not Assigned(Result) then
-      raise EORMConnectionFactoryException.Create('Could not create connection');
-
-  finally
-    LConstructors.Free;
+  LMethod := TRttiExplorer.GetMethodWithLessParameters(LConstructors);
+  LParams := LMethod.GetParameters;
+  SetLength(LArgs, Length(LParams));
+  for i := Low(LArgs) to High(LArgs) do
+  begin
+    LArgs[i] := TValue.Empty;
   end;
+
+  Result := LMethod.Invoke(LType.AsInstance.MetaclassType, LArgs).AsObject;
+
+  if not Assigned(Result) then
+    raise EORMConnectionFactoryException.Create('Could not create connection');
 end;
 
 class function TConnectionFactory.ConcreteCreate(AClass: TClass; AConcreteConnection: TObject): IDBConnection;
@@ -144,12 +138,12 @@ end;
 
 class constructor TConnectionFactory.Create;
 begin
-  FRegistered := TDictionary<TDBDriverType, TClass>.Create(100);
+  FRegistered := TCollections.CreateDictionary<TDBDriverType, TClass>(100);
 end;
 
 class destructor TConnectionFactory.Destroy;
 begin
-  FRegistered.Free;
+  FRegistered := nil;
 end;
 
 class function TConnectionFactory.GetInstance(AKey: TDBDriverType; const AJsonString: string): IDBConnection;

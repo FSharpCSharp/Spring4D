@@ -30,7 +30,7 @@ unit Core.Relation.ManyToOne;
 interface
 
 uses
-  Core.Relation.Abstract, Core.Interfaces, Mapping.Attributes, Generics.Collections
+  Core.Relation.Abstract, Core.Interfaces, Mapping.Attributes
   ,Core.EntityCache
   ;
 

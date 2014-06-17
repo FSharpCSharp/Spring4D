@@ -31,27 +31,30 @@ interface
 
 uses
   Mapping.Attributes
-  ,Generics.Collections
+  ,Spring.Collections
   ,Classes
   ;
 
 type
   TColumnDataList = class;
 
-  TColumnDataListEnumerator = class(TEnumerator<TColumnData>)
+  TColumnDataListEnumerator = class
   private
     FList: TColumnDataList;
     FIndex: Integer;
   protected
-    function DoGetCurrent: TColumnData; override;
-    function DoMoveNext: Boolean; override;
+    function DoGetCurrent: TColumnData; virtual;
+    function DoMoveNext: Boolean; virtual;
   public
     constructor Create(AList: TColumnDataList); virtual;
+
+    property Current: TColumnData read DoGetCurrent;
+    function MoveNext: Boolean;
   end;
 
   TColumnDataList = class
   private
-    FList: TList<TColumnData>;
+    FList: IList<TColumnData>;
     FPrimaryKeyColumn: TColumnData;
     FPrimaryKeyExists: Boolean;
     function GetItem(Index: Integer): TColumnData;
@@ -73,19 +76,19 @@ type
 
     property Items[Index: Integer]: TColumnData read GetItem write SetItem; default;
     property PrimaryKeyColumn: TColumnData read FPrimaryKeyColumn write SetPrimaryKeyColumn;
-    property List: TList<TColumnData> read FList;
+    property List: IList<TColumnData> read FList;
   end;
 
   TEntityData = class(TPersistent)
   private
-    FColumns: TList<ColumnAttribute>;
-    FColumnMembernameIndex: TDictionary<string, ColumnAttribute>;
+    FColumns: IList<ColumnAttribute>;
+    FColumnMembernameIndex: IDictionary<string, ColumnAttribute>;
     FColumnsData: TColumnDataList;
-    FForeignKeyColumns: TList<ForeignJoinColumnAttribute>;
+    FForeignKeyColumns: IList<ForeignJoinColumnAttribute>;
     FPrimaryKeyColumn: ColumnAttribute;
     FTable: TableAttribute;
-    FOneToManyColumns: TList<OneToManyAttribute>;
-    FManyToOneColumns: TList<ManyToOneAttribute>;
+    FOneToManyColumns: IList<OneToManyAttribute>;
+    FManyToOneColumns: IList<ManyToOneAttribute>;
     FSequence: SequenceAttribute;
     FHasInstanceField: Boolean;
     FEntityClass: TClass;
@@ -106,11 +109,11 @@ type
     function HasManyToOneRelations(): Boolean;
     function HasVersionColumn(): Boolean;
 
-    property Columns: TList<ColumnAttribute> read FColumns;
+    property Columns: IList<ColumnAttribute> read FColumns;
     property ColumnsData: TColumnDataList read FColumnsData write FColumnsData;
-    property ForeignColumns: TList<ForeignJoinColumnAttribute> read FForeignKeyColumns;
-    property OneToManyColumns: TList<OneToManyAttribute> read FOneToManyColumns;
-    property ManyToOneColumns: TList<ManyToOneAttribute> read FManyToOneColumns;
+    property ForeignColumns: IList<ForeignJoinColumnAttribute> read FForeignKeyColumns;
+    property OneToManyColumns: IList<OneToManyAttribute> read FOneToManyColumns;
+    property ManyToOneColumns: IList<ManyToOneAttribute> read FManyToOneColumns;
     property PrimaryKeyColumn: ColumnAttribute read FPrimaryKeyColumn;
     property Sequence: SequenceAttribute read FSequence write FSequence;
 
@@ -126,18 +129,17 @@ type
   {$ENDREGION}
   TEntityCache = class
   private
-    class var FEntities: TObjectDictionary<string,TEntityData>;
+    class var FEntities: IDictionary<string,TEntityData>;
   public
     class constructor Create;
-    class destructor Destroy;
 
     class function Get(AClass: TClass): TEntityData;
     class function TryGet(AClass: TClass; out AEntityData: TEntityData): Boolean;
-    class function GetColumns(AClass: TClass): TList<ColumnAttribute>;
+    class function GetColumns(AClass: TClass): IList<ColumnAttribute>;
     class function GetColumnsData(AClass: TClass): TColumnDataList;
     class function CreateColumnsData(AClass: TClass): TColumnDataList;
 
-    class property Entities: TObjectDictionary<string, TEntityData> read FEntities;
+    class property Entities: IDictionary<string, TEntityData> read FEntities;
   end;
 
 
@@ -148,6 +150,7 @@ uses
   ,Core.Exceptions
   ,Core.Comparers
   ,Generics.Defaults
+  ,Generics.Collections
   ,SysUtils
   ;
 
@@ -213,28 +216,23 @@ var
   LCaseInsensitiveComparer: IEqualityComparer<string>;
 begin
   inherited Create;
-  FColumns := TList<ColumnAttribute>.Create;
+  FColumns := TCollections.CreateList<ColumnAttribute>;
   FColumnsData := TColumnDataList.Create;
   FPrimaryKeyColumn := nil;
   FTable := nil;
   FSequence := nil;
   FVersionColumn := nil;
-  FForeignKeyColumns := TList<ForeignJoinColumnAttribute>.Create;
-  FOneToManyColumns := TList<OneToManyAttribute>.Create;
-  FManyToOneColumns := TList<ManyToOneAttribute>.Create;
+  FForeignKeyColumns := TCollections.CreateList<ForeignJoinColumnAttribute>;
+  FOneToManyColumns := TCollections.CreateList<OneToManyAttribute>;
+  FManyToOneColumns := TCollections.CreateList<ManyToOneAttribute>;
 
   LCaseInsensitiveComparer := TStringCaseInsensitiveComparer.Create;
-  FColumnMembernameIndex := TDictionary<string, ColumnAttribute>.Create(LCaseInsensitiveComparer);
+  FColumnMembernameIndex := TCollections.CreateDictionary<string, ColumnAttribute>(LCaseInsensitiveComparer);
 end;
 
 destructor TEntityData.Destroy;
 begin
-  FColumns.Free;
   FColumnsData.Free;
-  FForeignKeyColumns.Free;
-  FOneToManyColumns.Free;
-  FManyToOneColumns.Free;
-  FColumnMembernameIndex.Free;
   inherited Destroy;
 end;
 
@@ -314,7 +312,7 @@ end;
 
 class constructor TEntityCache.Create;
 begin
-  FEntities := TObjectDictionary<string,TEntityData>.Create([doOwnsValues], 100);
+  FEntities := TCollections.CreateDictionary<string,TEntityData>([doOwnsValues], 100);
 end;
 
 class function TEntityCache.CreateColumnsData(AClass: TClass): TColumnDataList;
@@ -328,12 +326,6 @@ begin
   Result.PrimaryKeyColumn := LEntityData.ColumnsData.PrimaryKeyColumn;
 end;
 
-class destructor TEntityCache.Destroy;
-begin
-  FEntities.Free;
-end;
-
-
 
 class function TEntityCache.Get(AClass: TClass): TEntityData;
 begin
@@ -345,7 +337,7 @@ begin
   end;
 end;
 
-class function TEntityCache.GetColumns(AClass: TClass): TList<ColumnAttribute>;
+class function TEntityCache.GetColumns(AClass: TClass): IList<ColumnAttribute>;
 begin
   Result := Get(AClass).Columns;
 end;
@@ -368,7 +360,8 @@ end;
 
 function TColumnDataList.Add(const AColumnData: TColumnData): Integer;
 begin
-  Result := FList.Add(AColumnData);
+  FList.Add(AColumnData);
+  Result := FList.Count - 1;
 end;
 
 function TColumnDataList.Count: Integer;
@@ -380,7 +373,7 @@ constructor TColumnDataList.Create;
 begin
   inherited Create;
   FPrimaryKeyExists := False;
-  FList := TList<TColumnData>.Create;
+  FList := Tcollections.CreateList<TColumnData>;
 end;
 
 procedure TColumnDataList.Delete(AIndex: Integer);
@@ -390,7 +383,6 @@ end;
 
 destructor TColumnDataList.Destroy;
 begin
-  FList.Free;
   inherited Destroy;
 end;
 
@@ -447,6 +439,11 @@ begin
     Exit(False);
   Inc(FIndex);
   Result := FIndex < FList.Count;
+end;
+
+function TColumnDataListEnumerator.MoveNext: Boolean;
+begin
+  Result := DoMoveNext;
 end;
 
 end.

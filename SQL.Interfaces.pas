@@ -30,12 +30,12 @@ unit SQL.Interfaces;
 interface
 
 uses
-  Classes, SQL.Commands, SQL.Types, Mapping.Attributes, Generics.Collections;
+  Classes, SQL.Commands, SQL.Types, Mapping.Attributes, Spring.Collections;
 
 type
   ICommandExecutionListener = interface
     ['{590E86C8-0B05-4BFE-9B26-3A9A4D0510BF}']
-    procedure ExecutingCommand(const ACmd: string; AList: TList);
+    procedure ExecutingCommand(const ACmd: string; AList: IList);
   end;
 
   TQueryLanguage = (qlAnsiSQL = 0, qlSQLite, qlMSSQL, qlASA, qlOracle, qlFirebird, qlPostgreSQL, qlMySQL, qlNoSQL, qlMongoDB);
@@ -47,8 +47,8 @@ type
     function GenerateInsert(AInsertCommand: TInsertCommand): string;
     function GenerateUpdate(AUpdateCommand: TUpdateCommand): string;
     function GenerateDelete(ADeleteCommand: TDeleteCommand): string;
-    function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): TList<string>;
-    function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): TList<string>;
+    function GenerateCreateTable(ACreateTableCommand: TCreateTableCommand): IList<string>;
+    function GenerateCreateFK(ACreateFKCommand: TCreateFKCommand): IList<string>;
     function GenerateCreateSequence(ASequence: TCreateSequenceCommand): string;
     function GenerateGetNextSequenceValue(ASequence: SequenceAttribute): string;
     function GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;

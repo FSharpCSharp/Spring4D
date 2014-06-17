@@ -30,7 +30,7 @@ unit SQL.Commands.Factory;
 interface
 
 uses
-  Generics.Collections, SQL.Commands, Rtti, SQL.AbstractCommandExecutor, Core.Interfaces;
+  SQL.Commands, Rtti, SQL.AbstractCommandExecutor, Core.Interfaces;
 
 type
 {

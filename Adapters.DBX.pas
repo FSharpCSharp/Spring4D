@@ -30,7 +30,7 @@ unit Adapters.DBX;
 interface
 
 uses
-  SqlExpr, DB, Generics.Collections, Core.Interfaces, Core.Base, SQL.Params, SysUtils
+  SqlExpr, DB, Spring.Collections, Core.Interfaces, Core.Base, SQL.Params, SysUtils
   , SQL.Generator.Ansi, DBXCommon
   ;
 
@@ -42,7 +42,7 @@ type
   {$ENDREGION}
   TDBXResultSetAdapter = class(TDriverResultSetAdapter<TSQLQuery>)
   private
-    FFieldCache: TDictionary<string,TField>;
+    FFieldCache: IDictionary<string,TField>;
   protected
     procedure BuildFieldCache();
   public
@@ -70,7 +70,7 @@ type
     constructor Create(const AStatement: TSQLQuery); override;
     destructor Destroy; override;
     procedure SetSQLCommand(const ACommandText: string); override;
-    procedure SetParams(Params: TObjectList<TDBParam>); overload; override;
+    procedure SetParams(Params: IList<TDBParam>); overload; override;
     function Execute(): NativeUInt; override;
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
   end;
@@ -139,13 +139,12 @@ begin
   Dataset.DisableControls;
  // Dataset.CursorLocation := clUseServer;
  // Dataset.CursorType := ctOpenForwardOnly;
-  FFieldCache := TDictionary<string,TField>.Create(Dataset.FieldCount * 2);
+  FFieldCache := TCollections.CreateDictionary<string,TField>(Dataset.FieldCount * 2);
   BuildFieldCache();
 end;
 
 destructor TDBXResultSetAdapter.Destroy;
 begin
-  FFieldCache.Free;
   Dataset.Free;
   inherited Destroy;
 end;
@@ -227,7 +226,7 @@ begin
   end;
 end;
 
-procedure TDBXStatementAdapter.SetParams(Params: TObjectList<TDBParam>);
+procedure TDBXStatementAdapter.SetParams(Params: IList<TDBParam>);
 var
   LParam: TDBParam;
   sParamName: string;

@@ -98,7 +98,7 @@ uses
   ,SQL.Params
   ,SvDesignPatterns
   ,SvRttiUtils
-  {$IFDEF USE_SPRING} ,Spring.Collections {$ENDIF}
+  ,Spring.Collections
   ,Generics.Collections
   ,Core.Reflection
   ,TestConsts
@@ -348,14 +348,14 @@ begin
   sLog := '';
   sLog2 := '';
   FConnection.AddExecutionListener(
-    procedure(const ACommand: string; const AParams: TObjectList<TDBParam>)
+    procedure(const ACommand: string; const AParams: IList<TDBParam>)
     begin
       sLog := ACommand;
       iParamCount1 := AParams.Count;
     end);
 
   FConnection.AddExecutionListener(
-    procedure(const ACommand: string; const AParams: TObjectList<TDBParam>)
+    procedure(const ACommand: string; const AParams: IList<TDBParam>)
     begin
       sLog2 := ACommand;
       iParamCount2 := AParams.Count;
@@ -414,15 +414,12 @@ end;
 
 procedure TestTSession.Fetch;
 var
-  LCollection: {$IFDEF USE_SPRING} Spring.Collections.IList<TCustomer> {$ELSE} TObjectList<TCustomer> {$ENDIF} ;
+  LCollection: IList<TCustomer>;
   sSql: string;
 begin
   sSql := 'SELECT * FROM ' + TBL_PEOPLE;
-  {$IFDEF USE_SPRING}
   LCollection := TCollections.CreateList<TCustomer>(True);
-  {$ELSE}
-  LCollection := TObjectList<TCustomer>.Create(True);
-  {$ENDIF}
+
 
   FManager.Fetch<TCustomer>(sSql, [], LCollection);
   CheckEquals(0, LCollection.Count);
@@ -440,9 +437,6 @@ begin
   FManager.Fetch<TCustomer>(sSql, [], LCollection);
   CheckEquals(2, LCollection.Count);
   CheckEquals(15, LCollection[1].Age);
-  {$IFNDEF USE_SPRING}
-  LCollection.Free;
-  {$ENDIF}
 end;
 
 procedure TestTSession.FetchCollection;
@@ -457,7 +451,7 @@ end;
 
 procedure TestTSession.FindAll;
 var
-  LCollection: {$IFDEF USE_SPRING} Spring.Collections.IList<TCustomer> {$ELSE} TObjectList<TCustomer> {$ENDIF} ;
+  LCollection: IList<TCustomer>;
   i: Integer;
 begin
   LCollection := FManager.FindAll<TCustomer>;
@@ -468,16 +462,9 @@ begin
     InsertCustomer(i);
   end;
   TestDB.Commit;
-  {$IFNDEF USE_SPRING}
-  LCollection.Free;
-  {$ENDIF}
 
   LCollection := FManager.FindAll<TCustomer>;
   CheckEquals(10, LCollection.Count);
-
-  {$IFNDEF USE_SPRING}
-  LCollection.Free;
-  {$ENDIF}
 end;
 
 procedure TestTSession.FindOne;
@@ -952,7 +939,7 @@ begin
 
  // LCustomers := FManager.FindAll<TCustomer>;
   LProp := TProperty<TCustomer>.ForName('CUSTAGE');
-  LCustomers := FManager.CreateCriteria<TCustomer>.AddOrder(LProp.Asc).List;
+  LCustomers := FManager.CreateCriteria<TCustomer>.AddOrder(LProp.Asc).ToList;
   CheckEquals(3, LCustomers.Count);
   CheckEquals(1, LCustomers.First.Age);
   CheckEquals(9, LCustomers[1].Age);
@@ -1217,7 +1204,7 @@ begin
   FConnection := TConnectionFactory.GetInstance(dtSQLite, TestDB);
   FManager := TMockSession.Create(FConnection);
   FConnection.AddExecutionListener(
-    procedure(const ACommand: string; const AParams: TObjectList<TDBParam>)
+    procedure(const ACommand: string; const AParams: IList<TDBParam>)
     var
       i: Integer;
     begin

@@ -30,7 +30,7 @@ unit SQL.Register;
 interface
 
 uses
-  SQL.Interfaces, SysUtils, Generics.Collections;
+  SQL.Interfaces, SysUtils, Spring.Collections;
 
 type
   {$REGION 'Documentation'}
@@ -41,7 +41,7 @@ type
   {$ENDREGION}
   TSQLGeneratorRegister = class
   strict private
-    class var FGenerators: TDictionary<TQueryLanguage,ISQLGenerator>;
+    class var FGenerators: IDictionary<TQueryLanguage,ISQLGenerator>;
   private
     class constructor Create;
     class destructor Destroy;
@@ -62,14 +62,14 @@ class constructor TSQLGeneratorRegister.Create;
 var
   LGenerator: ISQLGenerator;
 begin
-  FGenerators := TDictionary<TQueryLanguage,ISQLGenerator>.Create();
+  FGenerators := TCollections.CreateDictionary<TQueryLanguage,ISQLGenerator>();
   LGenerator := TAnsiSQLGenerator.Create;
   RegisterGenerator(LGenerator);
 end;
 
 class destructor TSQLGeneratorRegister.Destroy;
 begin
-  FGenerators.Free;
+  FGenerators := nil;
 end;
 
 class function TSQLGeneratorRegister.GetGenerator(const AQueryLanguage: TQueryLanguage): ISQLGenerator;
