@@ -799,7 +799,9 @@ procedure TFMXTestRunner.Setup(const Base : ITest);
   begin
     Test := Item.data.AsInterface as ITest;
     Test.Enabled := Item.IsChecked;
-    Item.StyleLookup := '';
+    // There is no equality check in the setter and really slows down the seutp
+    if (Item.StyleLookup <> '') then
+      Item.StyleLookup := '';
     for i := 0 to Item.Count - 1 do TraverseItems(Item[i]);
   end;
 begin
