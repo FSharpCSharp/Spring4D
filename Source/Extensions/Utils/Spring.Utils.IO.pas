@@ -1029,7 +1029,7 @@ var
 begin
   drives := Environment.GetLogicalDrives;
   SetLength(Result, Length(drives));
-  for i := 0 to High(drives) do
+  for i := Low(drives) to High(drives) do
   begin
     Result[i] := TDriveInfo.Create(drives[i]);
   end;

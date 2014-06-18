@@ -1119,7 +1119,7 @@ begin
   s := Copy(s, i + 1, Length(s) - i - 1);
   names := SplitTypes(s);
   SetLength(Result, Length(names));
-  for i := 0 to High(names) do
+  for i := Low(names) to High(names) do
     Result[i] := TType.FindType(names[i]);
 end;
 
@@ -1364,7 +1364,7 @@ begin
   parameters := GetParameters;
   if Length(Args) <> Length(parameters) then
     raise EInvocationError.CreateRes(@SParameterCountMismatch);
-  for i := 0 to High(Args) do
+  for i := Low(Args) to High(Args) do
     DispatchValue(Args[i], parameters[i].ParamType.Handle);
   Result := Self.DispatchInvoke(Instance, Args);
 end;
@@ -1378,7 +1378,7 @@ begin
   parameters := GetParameters;
   if Length(Args) <> Length(parameters) then
     raise EInvocationError.CreateRes(@SParameterCountMismatch);
-  for i := 0 to High(Args) do
+  for i := Low(Args) to High(Args) do
     DispatchValue(Args[i], parameters[i].ParamType.Handle);
   Result := Self.DispatchInvoke(Instance, Args);
 end;
@@ -1392,7 +1392,7 @@ begin
   parameters := GetParameters;
   if Length(Args) <> Length(parameters) then
     raise EInvocationError.CreateRes(@SParameterCountMismatch);
-  for i := 0 to High(Args) do
+  for i := Low(Args) to High(Args) do
     DispatchValue(Args[i], parameters[i].ParamType.Handle);
   Result := Self.DispatchInvoke(Instance, Args);
 end;

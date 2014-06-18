@@ -338,7 +338,7 @@ begin
 {$ELSE}
   p := @typedata.NameList;
 {$ENDIF}
-  for i := 0 to High(Result) do
+  for i := Low(Result) to High(Result) do
   begin
 {$IFDEF NEXTGEN}
     Result[i] := p.ToString;
@@ -372,7 +372,7 @@ var
 begin
   typeData := TEnum.GetEnumTypeData<T>;
   SetLength(Result, typeData.MaxValue - typeData.MinValue + 1);
-  for i := 0 to High(Result) do
+  for i := Low(Result) to High(Result) do
   begin
     Result[i] := i;
   end;
@@ -385,7 +385,7 @@ var
 begin
   typeData := TEnum.GetEnumTypeData<T>;
   SetLength(Result, typeData.MaxValue - typeData.MinValue + 1);
-  for i := 0 to High(Result) do
+  for i := Low(Result) to High(Result) do
   begin
     Result[i] := IntToStr(i);
   end;

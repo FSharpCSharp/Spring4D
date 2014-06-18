@@ -403,7 +403,7 @@ begin
   Dec(fCount, count);
   IncreaseVersion;
 
-  for i := 0 to High(oldItems) do
+  for i := Low(oldItems) to High(oldItems) do
     Changed(oldItems[i], caRemoved);
 end;
 
@@ -827,7 +827,7 @@ begin
   end;
   IncreaseVersion;
 
-  for i := 0 to High(oldItems) do
+  for i := Low(oldItems) to High(oldItems) do
   begin
     Changed(oldItems[i], caRemoved);
     oldItems[i].Free;

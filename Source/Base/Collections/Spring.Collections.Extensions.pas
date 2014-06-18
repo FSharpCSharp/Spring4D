@@ -822,7 +822,7 @@ var
 begin
   inherited Create;
   SetLength(fValues, Length(values));
-  for i := 0 to High(values) do
+  for i := Low(values) to High(values) do
     fValues[i] := values[i];
 end;
 

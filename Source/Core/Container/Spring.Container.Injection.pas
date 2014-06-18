@@ -213,7 +213,7 @@ var
 begin
   params := Target.AsMethod.GetParameters;
   SetLength(dependencies, Length(params));
-  for i := 0 to High(params) do
+  for i := Low(params) to High(params) do
     dependencies[i] := TDependencyModel.Create(params[i].ParamType, params[i]);
 end;
 
@@ -269,7 +269,7 @@ var
 begin
   params := Target.AsMethod.GetParameters;
   SetLength(dependencies, Length(params));
-  for i := 0 to High(params) do
+  for i := Low(params) to High(params) do
     dependencies[i] := TDependencyModel.Create(params[i].ParamType, params[i]);
 end;
 

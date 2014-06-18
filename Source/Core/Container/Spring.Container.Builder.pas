@@ -294,7 +294,7 @@ begin
     injection.Initialize(method);
     parameters := method.GetParameters;
     SetLength(arguments, Length(parameters));
-    for i := 0 to High(parameters) do
+    for i := Low(parameters) to High(parameters) do
       HandleInjectAttribute(parameters[i], injection.Dependencies[i], arguments[i]);
     injection.InitializeArguments(arguments);
   end;
@@ -327,7 +327,7 @@ begin
     injection.Initialize(method);
     parameters := method.GetParameters;
     SetLength(arguments, Length(parameters));
-    for i := 0 to High(parameters) do
+    for i := Low(parameters) to High(parameters) do
       HandleInjectAttribute(parameters[i], injection.Dependencies[i], arguments[i]);
     injection.InitializeArguments(arguments);
   end;

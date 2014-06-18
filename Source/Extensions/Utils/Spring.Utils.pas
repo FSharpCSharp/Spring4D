@@ -1853,7 +1853,7 @@ begin
     var
       i: Integer;
     begin
-      for i := 0 to High(args) do
+      for i := Low(args) to High(args) do
       begin
         list.Add(args[i]);
       end;
@@ -2567,7 +2567,7 @@ var
   i: Integer;
 begin
   SetLength(localArray, Length(collection));
-  for i := 0 to High(collection) do
+  for i := Low(collection) to High(collection) do
     localArray[i] := collection[i];
 
   Result :=

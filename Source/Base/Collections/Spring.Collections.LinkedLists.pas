@@ -238,7 +238,7 @@ begin
   end;
   IncreaseVersion;
 
-  for i := 0 to High(oldItems) do
+  for i := Low(oldItems) to High(oldItems) do
     Changed(oldItems[i], caRemoved);
 end;
 

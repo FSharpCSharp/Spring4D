@@ -405,7 +405,7 @@ var
 begin
   values := ResolveAll(TypeInfo(TServiceType));
   SetLength(Result, Length(values));
-  for i := 0 to High(values) do
+  for i := Low(values) to High(values) do
     Result[i] := TValueArray(values)[i].AsType<TServiceType>;
 end;
 
@@ -423,7 +423,7 @@ begin
     serviceType := targetType.GetGenericArguments[0].Handle;
   models := fRegistry.FindAll(serviceType).ToArray;
   SetLength(Result, Length(models));
-  for i := 0 to High(models) do
+  for i := Low(models) to High(models) do
   begin
     context := TCreationContext.Create(models[i], []);
     serviceName := models[i].GetServiceName(serviceType);

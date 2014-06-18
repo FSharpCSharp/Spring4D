@@ -2261,7 +2261,7 @@ var
   i: Integer;
 begin
   comparer := TEqualityComparer<T>.Default;
-  for i := 0 to High(Values) do
+  for i := Low(Values) to High(Values) do
     if comparer.Equals(values[i], item) then
       Exit(True);
   Result := False;
@@ -2272,7 +2272,7 @@ var
   i: Integer;
 begin
   SetLength(Result, Length(values));
-  for i := 0 to High(values) do
+  for i := Low(values) to High(values) do
     Result[i] := values[i];
 end;
 

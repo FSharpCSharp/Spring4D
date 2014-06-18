@@ -274,13 +274,13 @@ var
 begin
   if Length(dependencies) = Length(arguments) then
   begin
-    for i := 0 to High(dependencies) do
+    for i := Low(dependencies) to High(dependencies) do
       if not CanResolve(context, dependencies[i], arguments[i]) then
         Exit(False);
   end
   else if Length(arguments) = 0 then
   begin
-    for i := 0 to High(dependencies) do
+    for i := Low(dependencies) to High(dependencies) do
       if not CanResolve(context, dependencies[i], nil) then
         Exit(False);
   end
@@ -331,10 +331,10 @@ begin
     raise EResolveException.CreateRes(@SUnsatisfiedResolutionArgumentCount);
   SetLength(Result, Length(dependencies));
   if hasArgument then
-    for i := 0 to High(dependencies) do
+    for i := Low(dependencies) to High(dependencies) do
       Result[i] := Resolve(context, dependencies[i], arguments[i])
   else
-    for i := 0 to High(dependencies) do
+    for i := Low(dependencies) to High(dependencies) do
       Result[i] := Resolve(context, dependencies[i], nil);
 end;
 
@@ -480,7 +480,7 @@ begin
   models := Kernel.Registry.FindAll(serviceType).ToArray;
 
   SetLength(values, Length(models));
-  for i := 0 to High(models) do
+  for i := Low(models) to High(models) do
   begin
     serviceName := models[i].GetServiceName(serviceType);
     values[i] := Kernel.Resolver.Resolve(context, dependencyModel, serviceName);

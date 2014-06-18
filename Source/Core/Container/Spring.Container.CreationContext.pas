@@ -81,7 +81,7 @@ begin
   fArguments := TCollections.CreateList<TValue>;
   fNamedArguments := TCollections.CreateList<TNamedValue>;
   fTypedArguments := TCollections.CreateList<TTypedValue>;
-  for i := 0 to High(arguments) do
+  for i := Low(arguments) to High(arguments) do
     AddArgument(arguments[i]);
 end;
 
@@ -125,7 +125,7 @@ begin
   if Length(parameters) = fArguments.Count then
   begin
     // arguments for ctor are provided and count is correct
-    for i := 0 to High(parameters) do // check all parameters
+    for i := Low(parameters) to High(parameters) do // check all parameters
       if fArguments[i].IsType(parameters[i].ParamType.Handle) then
         arguments[i] := fArguments[i]
       else
@@ -136,7 +136,7 @@ begin
   for value in fNamedArguments do // check all named arguments
   begin
     Result := False;
-    for i := 0 to High(parameters) do
+    for i := Low(parameters) to High(parameters) do
     begin // look for parameter that matches the name and type
       if SameText(parameters[i].Name, value.Name)
         and value.Value.IsType(parameters[i].ParamType.Handle) then

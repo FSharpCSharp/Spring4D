@@ -909,7 +909,7 @@ var
 begin
   inherited Create;
   SetLength(fTypes, Length(types));
-  for i := 0 to High(types) do
+  for i := Low(types) to High(types) do
     fTypes[i] := types[i];
 end;
 
@@ -921,7 +921,7 @@ begin
   parameters := member.AsMethod.GetParameters;
   Result := Length(parameters) = Length(fTypes);
   if Result then
-    for i := 0 to High(parameters) do
+    for i := Low(parameters) to High(parameters) do
       if parameters[i].ParamType.Handle <> fTypes[i] then  // IsAssignableFrom
         Exit(False);
 end;
