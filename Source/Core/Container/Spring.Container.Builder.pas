@@ -74,7 +74,7 @@ type
   TMemberInspector = class(TInspectorBase)
   protected
     procedure HandleInjectAttribute(const target: TRttiNamedObject;
-      var dependency: TDependencyModel; var argument: TValue);
+      var dependency: TDependencyModel; out argument: TValue);
   end;
 
   TConstructorInspector = class(TMemberInspector)
@@ -237,15 +237,14 @@ end;
 {$REGION 'TMemberInspector'}
 
 procedure TMemberInspector.HandleInjectAttribute(const target: TRttiNamedObject;
-  var dependency: TDependencyModel; var argument: TValue);
+  var dependency: TDependencyModel; out argument: TValue);
 var
   attribute: InjectAttribute;
   targetType: TRttiType;
 begin
   if target.TryGetCustomAttribute<InjectAttribute>(attribute) then
   begin
-    if attribute.HasValue then
-      argument := attribute.Value;
+    argument := attribute.Value;
     if attribute.ServiceType <> nil then
     begin
       if target is TRttiProperty then
@@ -267,7 +266,9 @@ begin
         raise EBuilderException.CreateResFmt(@SUnresovableInjection, [
           dependency.Name]);
     end;
-  end;
+  end
+  else
+    argument := TValue.Empty;
 end;
 
 {$ENDREGION}
