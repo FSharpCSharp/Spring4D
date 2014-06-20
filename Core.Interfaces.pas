@@ -360,6 +360,13 @@ type
 
     {$REGION 'Documentation'}
     ///	<summary>
+    ///	  Checks if entity exists in the repository.
+    ///	</summary>
+    {$ENDREGION}
+    function Exists(const AId: TID): Boolean;
+
+    {$REGION 'Documentation'}
+    ///	<summary>
     ///	  Inserts model to the database .
     ///	</summary>
     {$ENDREGION}

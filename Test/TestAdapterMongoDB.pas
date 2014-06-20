@@ -5,7 +5,12 @@ interface
 uses
   TestFramework, Core.Interfaces, bsonDoc, Generics.Collections, MongoDB, Core.Base, SvSerializer,
   SysUtils, Mapping.Attributes, SQL.Params, Adapters.MongoDB, mongoId, Core.Session.MongoDB
-  , SQL.Interfaces, MongoBson, Core.Repository.MongoDB, Spring.Collections, Rtti;
+  , SQL.Interfaces, MongoBson, Core.Repository.MongoDB, Spring.Collections, Rtti
+  {$IF CompilerVersion > 21}
+  ,Core.Repository.Proxy
+  {$IFEND}
+
+  ;
 
 type
 
@@ -196,6 +201,43 @@ type
   published
     procedure InsertList();
     procedure Query();
+  end;
+
+  ICustomerRepository = interface(IPagedRepository<TMongoAdapter, Integer>)
+    ['{DE23725D-8E4D-45FB-92C0-1FE4A8531C1C}']
+
+    [Query('{"_id": 1}')]
+    function CustomQuery(): IList<TMongoAdapter>;
+
+    [Query('{"_id": 1}')]
+    function CustomQueryReturnObject(): TMongoAdapter;
+  end;
+
+  TestMongoProxyRepository = class(TBaseMongoTest)
+  private
+    FDBConnection: IDBConnection;
+    FSession: TMongoDBSession;
+    FProxyRepository: ICustomerRepository;
+  public
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure DefaultMethod_Count();
+    procedure DefaultMethod_Page();
+    procedure DefaultMethod_FindOne();
+    procedure DefaultMethod_FindAll();
+    procedure DefaultMethod_Exists();
+    procedure DefaultMethod_Insert();
+    procedure DefaultMethod_InsertList();
+    procedure DefaultMethod_Save();
+    procedure DefaultMethod_SaveList();
+    procedure DefaultMethod_SaveCascade();
+    procedure DefaultMethod_Delete();
+    procedure DefaultMethod_DeleteList();
+    procedure DefaultMethod_Query();
+    procedure DefaultMethod_Execute();
+    procedure CustomMethod();
+    procedure CustomMethod_ReturnObject();
   end;
 
 implementation
@@ -1097,6 +1139,194 @@ begin
   FAges := TCollections.CreateList<Integer>;
 end;
 
+{ TestMongoProxyRepository }
+
+procedure TestMongoProxyRepository.CustomMethod;
+var
+  LKeys: IList<TMongoAdapter>;
+begin
+  InsertObject(FConnection, 100, 1);
+
+  LKeys := FProxyRepository.CustomQuery();
+  CheckEquals(1, LKeys.Count);
+end;
+
+procedure TestMongoProxyRepository.CustomMethod_ReturnObject;
+var
+  LModel: TMongoAdapter;
+begin
+  InsertObject(FConnection, 100, 1);
+
+  LModel := FProxyRepository.CustomQueryReturnObject();
+  CheckEquals(100, LModel.Key);
+  LModel.Free;
+end;
+
+procedure TestMongoProxyRepository.DefaultMethod_Count;
+begin
+  InsertObject(FConnection, 100, 1);
+
+  CheckEquals(1, FProxyRepository.Count);
+end;
+
+procedure TestMongoProxyRepository.DefaultMethod_Delete;
+var
+  LModel: TMongoAdapter;
+begin
+  InsertObject(FConnection, 100, 1);
+  LModel := TMongoAdapter.Create();
+  LModel.Id := 1;
+  LModel.Key := 100;
+  FProxyRepository.Delete(LModel);
+  CheckFalse(FProxyRepository.Exists(1));
+  LModel.Free;
+end;
+
+procedure TestMongoProxyRepository.DefaultMethod_DeleteList;
+var
+  LModel: TMongoAdapter;
+  LKeys: IList<TMongoAdapter>;
+begin
+  InsertObject(FConnection, 100, 1);
+  LKeys := TCollections.CreateObjectList<TMongoAdapter>();
+  LModel := TMongoAdapter.Create();
+  LModel.Id := 1;
+  LModel.Key := 100;
+  LKeys.Add(LModel);
+  FProxyRepository.Delete(LKeys);
+  CheckFalse(FProxyRepository.Exists(1));
+  InsertObject(FConnection, 100, 1);
+  FProxyRepository.DeleteAll;
+  CheckFalse(FProxyRepository.Exists(1));
+end;
+
+procedure TestMongoProxyRepository.DefaultMethod_Execute;
+var
+  LRes: NativeUInt;
+begin
+  LRes := FProxyRepository.Execute('I[UnitTests.MongoTest]{"KEY": 1}', []);
+  CheckEquals(1, LRes);
+end;
+
+procedure TestMongoProxyRepository.DefaultMethod_Exists;
+begin
+  InsertObject(FConnection, 100, 1);
+  CheckTrue(FProxyRepository.Exists(1));
+end;
+
+procedure TestMongoProxyRepository.DefaultMethod_FindAll;
+begin
+  InsertObject(FConnection, 100, 1);
+  CheckEquals(1, FProxyRepository.FindAll.Count);
+end;
+
+procedure TestMongoProxyRepository.DefaultMethod_FindOne;
+var
+  LModel: TMongoAdapter;
+begin
+  InsertObject(FConnection, 100, 1);
+  LModel := FProxyRepository.FindOne(1);
+  CheckEquals(100, LModel.Key);
+  LModel.Free;
+end;
+
+procedure TestMongoProxyRepository.DefaultMethod_Insert;
+var
+  LModel: TMongoAdapter;
+begin
+  LModel := TMongoAdapter.Create();
+  LModel.Id := 1;
+  LModel.Key := 100;
+  FProxyRepository.Insert(LModel);
+  CheckTrue(FProxyRepository.Exists(1));
+  LModel.Free;
+end;
+
+procedure TestMongoProxyRepository.DefaultMethod_InsertList;
+var
+  LModel: TMongoAdapter;
+  LKeys: IList<TMongoAdapter>;
+begin
+  CheckFalse(FProxyRepository.Exists(1));
+  LKeys := TCollections.CreateObjectList<TMongoAdapter>();
+  LModel := TMongoAdapter.Create();
+  LModel.Id := 1;
+  LModel.Key := 100;
+  LKeys.Add(LModel);
+
+  FProxyRepository.Insert(LKeys);
+  CheckTrue(FProxyRepository.Exists(1));
+end;
+
+procedure TestMongoProxyRepository.DefaultMethod_Page;
+begin
+  InsertObject(FConnection, 100, 1);
+  CheckEquals(1, FProxyRepository.Page(1, 10).GetTotalItems);
+end;
+
+procedure TestMongoProxyRepository.DefaultMethod_Query;
+var
+  LKeys: IList<TMongoAdapter>;
+begin
+  LKeys := FProxyRepository.Query('{}', []);
+  CheckEquals(0, LKeys.Count);
+end;
+
+procedure TestMongoProxyRepository.DefaultMethod_Save;
+var
+  LModel: TMongoAdapter;
+begin
+  LModel := TMongoAdapter.Create();
+  LModel.Id := 1;
+  LModel.Key := 100;
+  LModel := FProxyRepository.Save(LModel);
+  CheckTrue(FProxyRepository.Exists(1));
+  LModel.Free;
+end;
+
+procedure TestMongoProxyRepository.DefaultMethod_SaveCascade;
+var
+  LModel: TMongoAdapter;
+begin
+  LModel := TMongoAdapter.Create();
+  LModel.Id := 1;
+  LModel.Key := 100;
+  FProxyRepository.SaveCascade(LModel);
+  CheckTrue(FProxyRepository.Exists(1));
+  LModel.Free;
+end;
+
+procedure TestMongoProxyRepository.DefaultMethod_SaveList;
+var
+  LKeys: IList<TMongoAdapter>;
+  LSavedKeys: ICollection<TMongoAdapter>;
+  LModel: TMongoAdapter;
+begin
+  LKeys := TCollections.CreateObjectList<TMongoAdapter>();
+  LModel := TMongoAdapter.Create();
+  LModel.Id := 1;
+  LModel.Key := 100;
+  LKeys.Add(LModel);
+  LSavedKeys := FProxyRepository.Save(LKeys);
+  CheckTrue(FProxyRepository.Exists(1));
+end;
+
+procedure TestMongoProxyRepository.SetUp;
+begin
+  inherited;
+  FDBConnection := TConnectionFactory.GetInstance(dtMongo, Connection);
+  FDBConnection.SetQueryLanguage(qlMongoDB);
+  FSession := TMongoDBSession.Create(FDBConnection);
+  FProxyRepository := TProxyRepository<TMongoAdapter, Integer>.Create(FSession, TypeInfo(ICustomerRepository)
+    , TMongoDBRepository<TMongoAdapter, Integer>) as ICustomerRepository;
+end;
+
+procedure TestMongoProxyRepository.TearDown;
+begin
+  FSession.Free;
+  inherited;
+end;
+
 initialization
   if DirectoryExists(TestTMongoConnectionAdapter.DirMongoDB) then
   begin
@@ -1115,6 +1345,9 @@ initialization
       RegisterTest(TestTMongoConnectionAdapter.Suite);
       RegisterTest(TestMongoSession.Suite);
       RegisterTest(TestMongoRepository.Suite);
+      {$IF CompilerVersion > 21}
+      RegisterTest(TestMongoProxyRepository.Suite);
+      {$IFEND}
     end;
   end;
 

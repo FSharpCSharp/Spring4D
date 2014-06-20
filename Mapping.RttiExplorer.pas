@@ -69,6 +69,7 @@ type
     class function CreateNewInterface<TInterfaceType, TClassType>: TInterfaceType; overload;
     class function CreateType(AClass: TClass): TObject; overload;
     class function CreateType(ATypeInfo: PTypeInfo): TObject; overload;
+    class function CreateExternalType(AClass: TClass; const Args: array of TValue): TObject;
     class function EntityChanged(AEntity1, AEntity2: TObject): Boolean;
     class function GetAttributeOfClass(ARttiObject: TRttiObject; AClass: TClass): TCustomAttribute;
     class function GetAsRecord(ARttiObject: TRttiNamedObject): TRttiRecordType;
@@ -128,6 +129,9 @@ type
     class function InheritsFrom(AObjectInfo: TClass; AFromObjectInfo: PTypeInfo): Boolean;
     class function GetNamedObject(AClass: TClass; const APropertyName: string): TRttiNamedObject;
 
+    class function GetQueryTextFromMethod(AMethod: TRttiMethod): string;
+    class function GetMethodSignature(AMethod: TRttiMethod): string;
+
     class property RttiCache: TRttiCache read FRttiCache;
   end;
 
@@ -142,6 +146,7 @@ uses
   ,SysUtils
   ,Math
   ,Classes
+  ,StrUtils
   ;
 
 
@@ -416,6 +421,23 @@ class constructor TRttiExplorer.Create;
 begin
   FRttiCache := TRttiCache.Create;
   FRttiCache.RebuildCache;
+end;
+
+class function TRttiExplorer.CreateExternalType(AClass: TClass;
+  const Args: array of TValue): TObject;
+var
+  LMethod: TRttiMethod;
+  LType: TRttiType;
+begin
+  LType := TRttiContext.Create.GetType(AClass);
+  for LMethod in LType.GetMethods do
+  begin
+    if (LMethod.IsConstructor) and (Length(LMethod.GetParameters) = Length(Args)) then
+    begin
+      Result := LMethod.Invoke(LType.AsInstance.MetaclassType, Args).AsObject;
+      Break;
+    end;
+  end;
 end;
 
 class function TRttiExplorer.CreateNewClass<T>: T;
@@ -985,6 +1007,24 @@ begin
   Result := GetMemberValue(AEntity, GetPrimaryKeyColumnMemberName(AEntity.ClassType));
 end;
 
+class function TRttiExplorer.GetQueryTextFromMethod(
+  AMethod: TRttiMethod): string;
+var
+  LAttr: TCustomAttribute;
+  LQueryAttribute: QueryAttribute;
+begin
+  Result := '';
+  for LAttr in AMethod.GetAttributes do
+  begin
+    if LAttr is QueryAttribute then
+    begin
+      LQueryAttribute := QueryAttribute(LAttr);
+      Result := LQueryAttribute.QueryText;
+      Exit;
+    end;
+  end;
+end;
+
 class function TRttiExplorer.GetRawPointer(const AInstance: TValue): Pointer;
 begin
   if AInstance.IsObject then
@@ -1099,6 +1139,11 @@ begin
     Exit;
 
   Result := GetMemberValueDeep(Result, LMember.GetType);
+end;
+
+class function TRttiExplorer.GetMethodSignature(AMethod: TRttiMethod): string;
+begin
+  Result := AMethod.ToString;
 end;
 
 class function TRttiExplorer.GetMethodWithLessParameters(AList: IList<TRttiMethod>): TRttiMethod;
