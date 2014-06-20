@@ -211,6 +211,12 @@ type
 
     [Query('{"_id": 1}')]
     function CustomQueryReturnObject(): TMongoAdapter;
+
+    [Query('{"_id": #$}')]
+    function CustomQueryWithArgumentReturnObject(AId: Integer): TMongoAdapter;
+
+    [Query('{"Name": #$}')]
+    function CustomQueryWithStringArgumentReturnObject(AKey: string): TMongoAdapter;
   end;
 
   TestMongoProxyRepository = class(TBaseMongoTest)
@@ -238,6 +244,8 @@ type
     procedure DefaultMethod_Execute();
     procedure CustomMethod();
     procedure CustomMethod_ReturnObject();
+    procedure CustomMethodWithArgument_ReturnObject();
+    procedure CustomMethodWithStringArgument_ReturnObject();
   end;
 
 implementation
@@ -1151,6 +1159,27 @@ begin
   CheckEquals(1, LKeys.Count);
 end;
 
+procedure TestMongoProxyRepository.CustomMethodWithArgument_ReturnObject;
+var
+  LModel: TMongoAdapter;
+begin
+  InsertObject(FConnection, 100, 1);
+  LModel := FProxyRepository.CustomQueryWithArgumentReturnObject(1);
+  CheckEquals(100, LModel.Key);
+  LModel.Free;
+end;
+
+procedure TestMongoProxyRepository.CustomMethodWithStringArgument_ReturnObject;
+var
+  LModel: TMongoAdapter;
+begin
+  InsertObject(FConnection, 100, 1, 'Foo');
+  LModel := FProxyRepository.CustomQueryWithStringArgumentReturnObject('Foo');
+  CheckEquals(100, LModel.Key);
+  CheckEquals('Foo', LModel.Name);
+  LModel.Free;
+end;
+
 procedure TestMongoProxyRepository.CustomMethod_ReturnObject;
 var
   LModel: TMongoAdapter;
@@ -1204,7 +1233,7 @@ procedure TestMongoProxyRepository.DefaultMethod_Execute;
 var
   LRes: NativeUInt;
 begin
-  LRes := FProxyRepository.Execute('I[UnitTests.MongoTest]{"KEY": 1}', []);
+  LRes := FProxyRepository.Execute('I[UnitTests.MongoTest]{"KEY": #$}', [1]);
   CheckEquals(1, LRes);
 end;
 

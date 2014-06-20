@@ -16,6 +16,8 @@ uses
 type
   TMethodReference = reference to function(const Args: TArray<TValue>): TValue;
 
+  TConstArray = array of TVarRec;
+
   TProxyRepository<T: class, constructor; TID> = class(TVirtualInterface)
   private
     FSimpleRepository: IPagedRepository<T,TID>;
@@ -29,8 +31,12 @@ type
   public
     constructor Create(ASession: TSession; AInterfaceTypeInfo: PTypeInfo; ARepositoryClass: TClass = nil); reintroduce;
     destructor Destroy; override;
-
   end;
+
+  function FromArgsToConstArray(const Args: TArray<TValue>): TConstArray;
+  function RemoveItemFromArgs(AIndex: Integer; const Args: TArray<TValue>): TArray<TValue>;
+  procedure FinalizeVarRec(var Item: TVarRec);
+  procedure FinalizeVarRecArray(var Arr: TConstArray);
 
 implementation
 
@@ -39,9 +45,104 @@ uses
   ,Core.Exceptions
   ,Mapping.RttiExplorer
   ,SysUtils
+  ,Math
+  ,Variants
   ;
 
+function FromArgsToConstArray(const Args: TArray<TValue>): TConstArray;
+var
+  i: Integer;
+  LItem: TVarRec;
+  LValue: TValue;
+begin
+  SetLength(Result, Max(0, Length(Args) - 1));
+  for i := Low(Args)+1 to High(Args) do
+  begin
+    LValue := Args[i];
+    FillChar(LItem, SizeOf(LItem), 0);
+    case LValue.Kind of
+      tkInteger:
+      begin
+        LItem.VInteger := LValue.AsInteger;
+        LItem.VType := vtInteger;
+      end;
+      tkEnumeration:
+      begin
+        LItem.VBoolean := LValue.AsBoolean;
+        LItem.VType := vtBoolean;
+      end;
+      tkString, tkUString, tkLString, tkWString:
+      begin
+        LItem.VUnicodeString := nil;
+        string(LItem.VUnicodeString) := LValue.AsString;
+        LItem.VType := vtUnicodeString;
+      end;
+      tkFloat:
+      begin
+        New(LItem.VExtended);
+        LItem.VExtended^ := LValue.AsExtended;
+        LItem.VType := vtExtended;
+      end;
+      tkRecord:
+      begin
+        //empty TVarRec
+      end;
+      tkInt64:
+      begin
+        New(LItem.VInt64);
+        LItem.VInt64^ := LValue.AsInt64;
+        LItem.VType := vtInt64;
+      end
+      else
+      begin
+        raise EORMUnsupportedType.CreateFmt('Unknown open argument type (%S)', [LValue.ToString]);
+      end;
+    end;
+    Result[i-1] := LItem;
+  end;
+end;
 
+function RemoveItemFromArgs(AIndex: Integer; const Args: TArray<TValue>): TArray<TValue>;
+var
+  i, ix: Integer;
+begin
+  ix := 0;
+  SetLength(Result, Length(Args)-1);
+  for i := Low(Args) to High(Args) do
+  begin
+    if i = AIndex then
+      Continue;
+
+    Result[ix] := Args[i];
+    Inc(ix);
+  end;
+end;
+
+procedure FinalizeVarRec(var Item: TVarRec);
+begin
+  case Item.VType of
+    vtExtended: Dispose(Item.VExtended);
+    vtString: Dispose(Item.VString);
+    vtPWideChar: FreeMem(Item.VPWideChar);
+    vtAnsiString: string(Item.VAnsiString) := '';
+    vtCurrency: Dispose(Item.VCurrency);
+    vtVariant: Dispose(Item.VVariant);
+    vtInterface: IInterface(Item.VInterface) := nil;
+    vtWideString: WideString(Item.VWideString) := '';
+    vtUnicodeString: String(Item.VUnicodeString) := '';
+    vtInt64: Dispose(Item.VInt64);
+  end;
+  Item.VInteger := 0;
+end;
+
+procedure FinalizeVarRecArray(var Arr: TConstArray);
+var
+  I: Integer;
+begin
+  for I := Low(Arr) to High(Arr) do
+    FinalizeVarRec(Arr[I]);
+  Arr := nil;
+end;
 
 { TProxyRepository<T, TID> }
 
@@ -76,6 +177,7 @@ var
   LMethodRef: TMethodReference;
   LMethodSignature: string;
   LItems: IList<T>;
+  LConstArray: TConstArray;
 begin
   LMethodSignature := TRttiExplorer.GetMethodSignature(Method);
   if FDefaultMethods.TryGetValue(LMethodSignature, LMethodRef) then
@@ -88,12 +190,25 @@ begin
       tkInteger, tkInt64: Result := FSimpleRepository.Count();
       tkClass, tkClassRef, tkPointer:
       begin
-        {TODO -oOwner -cGeneral : set args}
-        LItems := FSimpleRepository.Query(TRttiExplorer.GetQueryTextFromMethod(Method), []);
-        (LItems as ICollectionOwnership).OwnsObjects := False;
-        Result := LItems.FirstOrDefault;
+        LConstArray := FromArgsToConstArray(Args);
+        try
+          LItems := FSimpleRepository.Query(TRttiExplorer.GetQueryTextFromMethod(Method), LConstArray);
+          (LItems as ICollectionOwnership).OwnsObjects := False;
+          Result := LItems.FirstOrDefault;
+        finally
+          FinalizeVarRecArray(LConstArray);
+        end;
       end;
-      tkInterface: Result := TValue.From( FSimpleRepository.Query(TRttiExplorer.GetQueryTextFromMethod(Method), []) )
+      tkInterface:
+      begin
+        LConstArray := FromArgsToConstArray(Args);
+        try
+          Result := TValue.From( FSimpleRepository.Query(TRttiExplorer.GetQueryTextFromMethod(Method), LConstArray) );
+        finally
+          FinalizeVarRecArray(LConstArray);
+        end;
+      end
+
       else
       begin
         raise EORMUnsupportedType.CreateFmt('Unknown Method (%S) return type: %S', [Method.ToString, Method.ReturnType.ToString]);
@@ -170,13 +285,27 @@ begin
     end);
   RegisterMethod(Format('function Query(const AQuery: string; const AParams: TVarRec): IList<%S>', [FQualifiedTypeName])
   , function(const Args: TArray<TValue>): TValue
+    var
+      LConstArray: TConstArray;
     begin
-      Result := TValue.From( FSimpleRepository.Query(Args[1].AsString, [])); {TODO -oOwner -cGeneral : set array of const from args}
+      LConstArray := FromArgsToConstArray(RemoveItemFromArgs(1, Args));
+      try
+        Result := TValue.From( FSimpleRepository.Query(Args[1].AsString, LConstArray));
+      finally
+        FinalizeVarRecArray(LConstArray);
+      end;
     end);
   RegisterMethod('function Execute(const AQuery: string; const AParams: TVarRec): NativeUInt'
   , function(const Args: TArray<TValue>): TValue
+    var
+      LConstArray: TConstArray;
     begin
-      Result := FSimpleRepository.Execute(Args[1].AsString, []); {TODO -oOwner -cGeneral : set array of const from args}
+      LConstArray := FromArgsToConstArray(RemoveItemFromArgs(1, Args));
+      try
+        Result := FSimpleRepository.Execute(Args[1].AsString, LConstArray);
+      finally
+        FinalizeVarRecArray(LConstArray);
+      end;
     end);
 end;
 
