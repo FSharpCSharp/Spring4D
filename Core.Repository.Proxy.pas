@@ -4,7 +4,7 @@ unit Core.Repository.Proxy;
 
 interface
 
-{$IF CompilerVersion < 22}
+{$IF CompilerVersion < 23}
 {$Message Fatal 'Proxy repository supports XE2 or higher'}
 {$IFEND}
 

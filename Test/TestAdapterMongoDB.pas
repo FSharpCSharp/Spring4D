@@ -212,10 +212,10 @@ type
     [Query('{"_id": 1}')]
     function CustomQueryReturnObject(): TMongoAdapter;
 
-    [Query('{"_id": #$}')]
+    [Query('{"_id": ?$}')]
     function CustomQueryWithArgumentReturnObject(AId: Integer): TMongoAdapter;
 
-    [Query('{"Name": #$}')]
+    [Query('{"Name": ?$}')]
     function CustomQueryWithStringArgumentReturnObject(AKey: string): TMongoAdapter;
   end;
 
@@ -1233,7 +1233,7 @@ procedure TestMongoProxyRepository.DefaultMethod_Execute;
 var
   LRes: NativeUInt;
 begin
-  LRes := FProxyRepository.Execute('I[UnitTests.MongoTest]{"KEY": #$}', [1]);
+  LRes := FProxyRepository.Execute('I[UnitTests.MongoTest]{"KEY": ?$}', [1]);
   CheckEquals(1, LRes);
 end;
 

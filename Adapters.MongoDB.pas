@@ -171,9 +171,10 @@ uses
   ,TypInfo
   ,SQL.Commands
   ;
+
 const
   NAME_COLLECTION = 'UnitTests.MongoAdapter';
-  PARAM_IDENTIFIER = '#$';
+  PARAM_IDENTIFIER = '?$';
 
 var
   MONGO_STATEMENT_TYPES: array[TMongoStatementType] of string = ('I', 'U', 'D', 'S', 'count', 'SO','page');

@@ -429,6 +429,7 @@ var
   LMethod: TRttiMethod;
   LType: TRttiType;
 begin
+  Result := nil;
   LType := TRttiContext.Create.GetType(AClass);
   for LMethod in LType.GetMethods do
   begin
