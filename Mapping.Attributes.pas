@@ -54,6 +54,20 @@ type
 
   TMemberType = (mtField, mtProperty, mtClass);
 
+  {$REGION 'Documentation'}
+  ///	<summary>
+  ///	  Represents query which should be used for given repository method.
+  ///	</summary>
+  {$ENDREGION}
+  QueryAttribute = class(TCustomAttribute)
+  private
+    FQueryText: string;
+  public
+    constructor Create(const AQueryText: string); virtual;
+
+    property QueryText: string read FQueryText;
+  end;
+
   TORMAttribute = class(TCustomAttribute)
   private
     FMemberType: TMemberType;
@@ -639,6 +653,14 @@ end;
 function VersionAttribute.GetIsVersionColumn: Boolean;
 begin
   Result := True;
+end;
+
+{ QueryAttribute }
+
+constructor QueryAttribute.Create(const AQueryText: string);
+begin
+  inherited Create;
+  FQueryText := AQueryText;
 end;
 
 end.

@@ -171,8 +171,10 @@ uses
   ,TypInfo
   ,SQL.Commands
   ;
+
 const
   NAME_COLLECTION = 'UnitTests.MongoAdapter';
+  PARAM_IDENTIFIER = '?$';
 
 var
   MONGO_STATEMENT_TYPES: array[TMongoStatementType] of string = ('I', 'U', 'D', 'S', 'count', 'SO','page');
@@ -516,7 +518,7 @@ begin
           LValue := AnsiQuotedStr(LValue, '"');
       end;
     end;
-    FStmtText := StringReplace(FStmtText, '#$', LValue, []);
+    FStmtText := StringReplace(FStmtText, PARAM_IDENTIFIER, LValue, []);
   end;
 end;
 

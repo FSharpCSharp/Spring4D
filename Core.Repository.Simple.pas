@@ -48,6 +48,8 @@ type
 
     function Page(APage: Integer; AItemsPerPage: Integer): IDBPage<T>; virtual;
 
+    function Exists(const AId: TID): Boolean; virtual;
+
   public
     constructor Create(ASession: TSession); virtual;
 
@@ -99,6 +101,18 @@ end;
 function TSimpleRepository<T, TID>.Execute(const AQuery: string; const AParams: array of const): NativeUInt;
 begin
   Result := FSession.Execute(AQuery, AParams);
+end;
+
+function TSimpleRepository<T, TID>.Exists(const AId: TID): Boolean;
+var
+  LEntity: T;
+begin
+  LEntity := FindOne(AId);
+  try
+    Result := Assigned(LEntity);
+  finally
+    LEntity.Free;
+  end;
 end;
 
 function TSimpleRepository<T, TID>.FindAll: IList<T>;

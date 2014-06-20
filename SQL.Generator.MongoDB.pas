@@ -56,7 +56,7 @@ uses
   ;
 
 const
-  PARAM_ID = '#$';
+  PARAM_ID = '?$';
 
 { TMongoDBGenerator }
 
