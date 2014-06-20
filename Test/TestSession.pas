@@ -68,9 +68,7 @@ type
     procedure GetOne();
     procedure FetchCollection();
     procedure Versioning();
-    {$IFDEF USE_SPRING}
     procedure ListSession_Begin_Commit();
-    {$ENDIF}
   end;
 
   TInsertData = record
@@ -867,43 +865,32 @@ end;
 
 procedure TestTSession.InsertFromCollection;
 var
-  LCollection: {$IFDEF USE_SPRING} Spring.Collections.IList<TCustomer> {$ELSE} TObjectList<TCustomer> {$ENDIF} ;
+  LCollection: IList<TCustomer>;
   LCustomer: TCustomer;
   i: Integer;
   LTran: IDBTransaction;
   LCount: Integer;
 begin
-  {$IFDEF USE_SPRING}
   LCollection := TCollections.CreateList<TCustomer>(True);
-  {$ELSE}
-  LCollection := TObjectList<TCustomer>.Create(True);
-  {$ENDIF}
-  try
-    for i := 1 to 100 do
-    begin
-      LCustomer := TCustomer.Create;
-      LCustomer.Name := IntToStr(i);
-      LCustomer.Age := i;
-      LCustomer.LastEdited := EncodeDate(2009, 1, 12);
-      LCollection.Add(LCustomer);
-    end;
-
-    CheckEquals(100, LCollection.Count);
-
-    //wrap in the transaction
-    LTran := FManager.Connection.BeginTransaction;
-    FManager.InsertList<TCustomer>(LCollection);
-    LTran.Commit;
-    LCount := TestDB.GetUniTableIntf('select count(*) from ' + TBL_PEOPLE).Fields[0].AsInteger;
-    CheckEquals(LCollection.Count, LCount);
-  finally
-    {$IFNDEF USE_SPRING}
-    LCollection.Free;
-    {$ENDIF}
+  for i := 1 to 100 do
+  begin
+    LCustomer := TCustomer.Create;
+    LCustomer.Name := IntToStr(i);
+    LCustomer.Age := i;
+    LCustomer.LastEdited := EncodeDate(2009, 1, 12);
+    LCollection.Add(LCustomer);
   end;
+
+  CheckEquals(100, LCollection.Count);
+
+  //wrap in the transaction
+  LTran := FManager.Connection.BeginTransaction;
+  FManager.InsertList<TCustomer>(LCollection);
+  LTran.Commit;
+  LCount := TestDB.GetUniTableIntf('select count(*) from ' + TBL_PEOPLE).Fields[0].AsInteger;
+  CheckEquals(LCollection.Count, LCount);
 end;
 
-{$IFDEF USE_SPRING}
 procedure TestTSession.ListSession_Begin_Commit;
 var
   LCustomers: IList<TCustomer>;
@@ -946,7 +933,6 @@ begin
   CheckEquals(10, LCustomers[2].Age);
   CheckEquals('Edited Foo', LCustomers[2].Name);
 end;
-{$ENDIF}
 
 const
   SQL_MANY_TO_ONE: string = 'SELECT O.*, C.CUSTID CUSTOMERS_Customer_ID_CUSTID '+

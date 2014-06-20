@@ -192,16 +192,16 @@ type
   {$ENDREGION}
   TDriverPageAdapter<T: class> = class(TInterfacedObject, IDBPage<T>)
   private
-    FItems: {$IFDEF USE_SPRING} Spring.Collections.IList<T> {$ELSE}TObjectList<T> {$ENDIF};
+    FItems: IList<T>;
     FPager: TPager;
   protected
     function GetCurrentPage(): Integer;
     function GetItemsPerPage(): Integer;
     function GetTotalPages(): Integer;
     function GetTotalItems(): Int64;
-    function GetItems(): {$IFDEF USE_SPRING} Spring.Collections.IList<T> {$ELSE}TObjectList<T> {$ENDIF};
+    function GetItems(): IList<T>;
 
-    property Items: {$IFDEF USE_SPRING} Spring.Collections.IList<T> {$ELSE}TObjectList<T> {$ENDIF} read GetItems;
+    property Items: IList<T> read GetItems;
   public
     constructor Create(const APager: TPager); virtual;
     destructor Destroy; override;
@@ -429,20 +429,11 @@ constructor TDriverPageAdapter<T>.Create(const APager: TPager);
 begin
   inherited Create;
   FPager := APager;
-  {$IFDEF USE_SPRING}
   FItems := TCollections.CreateObjectList<T>(True);
-  {$ELSE}
-  FItems := TObjectList<T>.Create(True);
-  {$ENDIF}
 end;
 
 destructor TDriverPageAdapter<T>.Destroy;
 begin
-  {$IFNDEF USE_SPRING}
-  FItems.Free;
-  {$ELSE}
-  FItems := nil;
-  {$ENDIF}
   FPager.Free;
   inherited Destroy;
 end;
@@ -452,7 +443,7 @@ begin
   Result := FPager.Page;
 end;
 
-function TDriverPageAdapter<T>.GetItems: {$IFDEF USE_SPRING} Spring.Collections.IList<T> {$ELSE}TObjectList<T> {$ENDIF};
+function TDriverPageAdapter<T>.GetItems: IList<T>;
 begin
   Result := FItems;
 end;

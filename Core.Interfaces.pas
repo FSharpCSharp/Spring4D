@@ -321,7 +321,6 @@ type
     procedure RollbackListSession();
   end;
 
-  {$IFDEF USE_SPRING}
   IRepository<T: class, constructor; TID> = interface(IInvokable)
     ['{849C6AB6-04F0-4C0F-B139-A08A3396525D}']
     {$REGION 'Documentation'}
@@ -439,8 +438,6 @@ type
     {$ENDREGION}
     function Page(APage: Integer; AItemsPerPage: Integer): IDBPage<T>;
   end;
-
-  {$ENDIF}
 
   IEmbeddedEntity = interface(IInvokable)
     ['{49A1BF38-F54D-4888-8189-02CA34B01D04}']
