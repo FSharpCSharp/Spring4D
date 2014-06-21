@@ -529,7 +529,6 @@ begin
     LSelecter.LazyColumn := AColumn;
 
     AIsEnumerable := TUtils.IsEnumerable(TypeInfo(T), LEnumMethod);
-
     if AIsEnumerable then
       LSelecter.SelectType := stObjectList
     else

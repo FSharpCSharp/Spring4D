@@ -1374,7 +1374,7 @@ initialization
       RegisterTest(TestTMongoConnectionAdapter.Suite);
       RegisterTest(TestMongoSession.Suite);
       RegisterTest(TestMongoRepository.Suite);
-      {$IF CompilerVersion > 21}
+      {$IF CompilerVersion > 22}
       RegisterTest(TestMongoProxyRepository.Suite);
       {$IFEND}
     end;
