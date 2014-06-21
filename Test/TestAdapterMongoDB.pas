@@ -212,10 +212,10 @@ type
     [Query('{"_id": 1}')]
     function CustomQueryReturnObject(): TMongoAdapter;
 
-    [Query('{"_id": ?$}')]
+    [Query('{"_id": ?0}')]
     function CustomQueryWithArgumentReturnObject(AId: Integer): TMongoAdapter;
 
-    [Query('{"Name": ?$}')]
+    [Query('{"Name": ?0}')]
     function CustomQueryWithStringArgumentReturnObject(AKey: string): TMongoAdapter;
   end;
 

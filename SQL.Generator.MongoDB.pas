@@ -18,7 +18,7 @@ type
 
     class constructor Create;
   protected
-    function GetExpressionFromWhereField(AField: TSQLWhereField): string; virtual;
+    function GetExpressionFromWhereField(AField: TSQLWhereField; AFieldIndex: Integer): string; virtual;
     function ResolveFieldAndExpression(const AFieldname: string; out AField: string; out AExpression: string; const ADelta: Integer = 1): Boolean;
     function GetPrefix(ATable: TSQLTable): string; virtual;
     function GetOrderType(AOrderType: TOrderType): string; virtual;
@@ -36,6 +36,8 @@ type
     function GeneratePagedQuery(const ASql: string; const ALimit, AOffset: Integer): string; override;
     function GenerateGetQueryCount(const ASql: string): string; override;
     function GetSQLTableCount(const ATablename: string): string; override;
+
+    class function GetParamName(AIndex: Integer): string;
 
     class property SerializerFormat: TSvSerializeFormat read FSerializerFormat write FSerializerFormat;
   end;
@@ -55,9 +57,6 @@ uses
   ,Variants
   ;
 
-const
-  PARAM_ID = '?$';
-
 { TMongoDBGenerator }
 
 class constructor TMongoDBGenerator.Create;
@@ -68,7 +67,7 @@ end;
 function TMongoDBGenerator.GenerateDelete(
   ADeleteCommand: TDeleteCommand): string;
 begin
-  Result := 'D' + GetPrefix(ADeleteCommand.Table) +'{"_id": '+ PARAM_ID + '}';
+  Result := 'D' + GetPrefix(ADeleteCommand.Table) +'{"_id": '+ GetParamName(0) + '}';
 end;
 
 function TMongoDBGenerator.GenerateGetQueryCount(const ASql: string): string;
@@ -95,11 +94,12 @@ function TMongoDBGenerator.GenerateSelect(
   ASelectCommand: TSelectCommand): string;
 var
   LField, LPrevField: TSQLWhereField;
-  i: Integer;
+  i, LFieldIndex: Integer;
   LStmtType: string;
 begin
   Result := '';
   LStmtType := 'S';
+  LFieldIndex := 0;
   for i := 0 to ASelectCommand.WhereFields.Count - 1 do
   begin
     LField := ASelectCommand.WhereFields[i];
@@ -111,7 +111,13 @@ begin
         Result := Result + ',';
     end;
 
-    Result := Result + GetExpressionFromWhereField(LField);
+    if (LField.WhereOperator in StartEndOperators) then
+    begin
+      Dec(LFieldIndex);
+    end;
+
+    Result := Result + GetExpressionFromWhereField(LField, LFieldIndex);
+    Inc(LFieldIndex);
   end;
 
   for i := 0 to ASelectCommand.OrderByFields.Count - 1 do
@@ -157,18 +163,18 @@ const
     );
 
 function TMongoDBGenerator.GetExpressionFromWhereField(
-  AField: TSQLWhereField): string;
+  AField: TSQLWhereField; AFieldIndex: Integer): string;
 var
   LField, LExpression: string;
 begin
   case AField.WhereOperator of
-    woEqual: Result := '{' + AnsiQuotedStr(AField.Fieldname, '"') + ' : ' + PARAM_ID + '}';
+    woEqual: Result := '{' + AnsiQuotedStr(AField.Fieldname, '"') + ' : ' + GetParamName(AFieldIndex) + '}';
     woNotEqual, woMoreOrEqual, woMore, woLess, woLessOrEqual :
-      Result := Format('{%S: { %S: %S}}', [AnsiQuotedStr(AField.Fieldname, '"'), WhereOpNames[AField.WhereOperator], PARAM_ID]);
+      Result := Format('{%S: { %S: %S}}', [AnsiQuotedStr(AField.Fieldname, '"'), WhereOpNames[AField.WhereOperator], GetParamName(AFieldIndex)]);
     woIsNotNull: Result := Format('{%S: { $ne: null }}', [AnsiQuotedStr(AField.Fieldname, '"')]);
     woIsNull: Result := Format('{%S: null}', [AnsiQuotedStr(AField.Fieldname, '"')]);
-    woBetween: Result := Format('{$and: [ { %0:S: { $gte: %1:S} }, { %0:S: { $lte: %1:S} } ] }'
-      , [AnsiQuotedStr(AField.Fieldname, '"'), PARAM_ID]);
+    woBetween: Result := Format('{$and: [ { %0:S: { $gte: %1:S} }, { %0:S: { $lte: %2:S} } ] }'
+      , [AnsiQuotedStr(AField.Fieldname, '"'), GetParamName(AFieldIndex), GetParamName(AFieldIndex + 1)]);
     woOr, woAnd:
     begin
         Result := Format('{%S: [', [WhereOpNames[AField.WhereOperator]]);
@@ -204,6 +210,11 @@ begin
     otAscending: Result := '1';
     otDescending: Result := '-1';
   end;
+end;
+
+class function TMongoDBGenerator.GetParamName(AIndex: Integer): string;
+begin
+  Result := '?' + IntToStr(AIndex);
 end;
 
 function TMongoDBGenerator.GetPrefix(ATable: TSQLTable): string;

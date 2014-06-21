@@ -167,6 +167,7 @@ implementation
 uses
   StrUtils
   ,Core.ConnectionFactory
+  ,SQL.Generator.MongoDB
   ,Variants
   ,TypInfo
   ,SQL.Commands
@@ -174,7 +175,6 @@ uses
 
 const
   NAME_COLLECTION = 'UnitTests.MongoAdapter';
-  PARAM_IDENTIFIER = '?$';
 
 var
   MONGO_STATEMENT_TYPES: array[TMongoStatementType] of string = ('I', 'U', 'D', 'S', 'count', 'SO','page');
@@ -497,10 +497,13 @@ procedure TMongoStatementAdapter.SetParams(Params: IList<TDBParam>);
 var
   LParam: TDBParam;
   LValue: string;
+  LParamIndex: Integer;
 begin
   inherited;
   if (FStmtText = '') then
     Exit;
+
+  LParamIndex := 0;
   for LParam in Params do
   begin
     if (VarType(LParam.Value) = varUnknown) then
@@ -518,7 +521,9 @@ begin
           LValue := AnsiQuotedStr(LValue, '"');
       end;
     end;
-    FStmtText := StringReplace(FStmtText, PARAM_IDENTIFIER, LValue, []);
+
+    FStmtText := StringReplace(FStmtText, TMongoDBGenerator.GetParamName(LParamIndex), LValue, [rfReplaceAll]);
+    Inc(LParamIndex);
   end;
 end;
 

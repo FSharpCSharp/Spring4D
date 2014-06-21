@@ -195,6 +195,8 @@ const
 
   EndOperators: TEndOperators = [woOrEnd, woAndEnd, woNotEnd];
 
+  StartEndOperators = [woOr, woOrEnd, woAnd, woAndEnd, woNot, woNotEnd];
+
 type
   {$REGION 'Documentation'}
   ///	<summary>
