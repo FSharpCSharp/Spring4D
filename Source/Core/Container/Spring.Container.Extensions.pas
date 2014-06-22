@@ -37,31 +37,31 @@ type
   ///	</summary>
   TContainerExtension = class(TInterfacedObject, IContainerExtension)
   private
-    fContext: IContainerContext;
+    fKernel: IKernel;
   protected
     ///	<summary>
     ///	  Initial the container with this extension's functionality.
     ///	</summary>
     ///	<remarks>
     ///	  When overridden in a derived class, this method will modify the given
-    ///	  Context to install its functions into the container.
+    ///	  Kernel to install its functions into the container.
     ///	</remarks>
     procedure Initialize; virtual; abstract;
 
     ///	<summary>
     ///	  The container calls this method when the extension is added.
     ///	</summary>
-    ///	<param name="context">
-    ///	  An <see cref="IContainerContext" /> instance that gives the extension
+    ///	<param name="kernel">
+    ///	  An <see cref="IKernel" /> instance that gives the extension
     ///	  access to the internals of the container.
     ///	</param>
-    procedure InitializeExtension(const context: IContainerContext);
+    procedure InitializeExtension(const kernel: IKernel);
 
-    ///	<summary>
-    ///	  The IContainerContext instance used to manipulate the inner state of
-    ///	  the container.
-    ///	</summary>
-    property Context: IContainerContext read fContext;
+    /// <summary>
+    ///   The IKernel instance used to manipulate the inner state of the
+    ///   container.
+    /// </summary>
+    property Kernel: IKernel read fKernel;
   end;
 
 implementation
@@ -70,9 +70,9 @@ implementation
 {$REGION 'TContainerExtension'}
 
 procedure TContainerExtension.InitializeExtension(
-  const context: IContainerContext);
+  const kernel: IKernel);
 begin
-  fContext := context;
+  fKernel := kernel;
 end;
 
 {$ENDREGION}

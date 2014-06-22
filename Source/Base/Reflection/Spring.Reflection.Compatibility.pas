@@ -150,7 +150,7 @@ begin
   PVTable(fVirtualMethodTable)[1] := @TVirtualInterface.Virtual_AddRef;
   PVTable(fVirtualMethodTable)[2] := @TVirtualInterface.Virtual_Release;
 
-  for i := 0 to Pred(fMethodIntercepts.Count) do
+  for i := 0 to fMethodIntercepts.Count - 1 do
     PVTable(fVirtualMethodTable)[fMethodIntercepts[i].VirtualIndex] := fMethodIntercepts[i].CodeAddress;
 
   for i := 3 to maxVirtualIndex do

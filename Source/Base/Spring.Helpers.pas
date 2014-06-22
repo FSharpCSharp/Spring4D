@@ -51,6 +51,9 @@
 unit Spring.Helpers;
 
 {$I Spring.inc}
+{$IFDEF DELPHIXE4_UP}
+  {$ZEROBASEDSTRINGS OFF}
+{$ENDIF}
 
 interface
 
@@ -97,45 +100,45 @@ type
     class function GetEmpty: TGuid; static;
     function GetIsEmpty: Boolean;
   public
-    /// <summary>
-    ///   Creates a guid structure from the specified guid string.
-    /// </summary>
-    /// <param name="guidString">
-    ///   the guid string.
-    /// </param>
+    ///	<summary>
+    ///	  Creates a guid structure from the specified guid string.
+    ///	</summary>
+    ///	<param name="guidString">
+    ///	  the guid string.
+    ///	</param>
     class function Create(const guidString: string): TGuid; overload; static;
     class function Create(const bytes: TBytes): TGuid; overload; static;
     class function Create(a: Integer; b: SmallInt; c: SmallInt; const d: TBytes): TGuid; overload; static;
     class function Create(a: Integer; b: SmallInt; c: SmallInt; d, e, f, g, h, i, j, k: Byte): TGuid; overload; static;
     class function Create(a: Cardinal; b: Word; c: Word; d, e, f, g, h, i, j, k: Byte): TGuid; overload; static;
 
-    /// <summary>
-    ///   Generates a new <c>TGuid</c> instance.
-    /// </summary>
+    ///	<summary>
+    ///	  Generates a new <c>TGuid</c> instance.
+    ///	</summary>
     class function NewGuid: TGuid; static;
 
     function ToBytes: TBytes;
 
     function ToByteArray: TBytes;
 
-    /// <summary>
-    ///   Returns a string representation of the guid.
-    /// </summary>
+    ///	<summary>
+    ///	  Returns a string representation of the guid.
+    ///	</summary>
     function ToString: string;
 
-    /// <summary>
-    ///   Determines whether the guid equals to another TGuid structure.
-    /// </summary>
+    ///	<summary>
+    ///	  Determines whether the guid equals to another TGuid structure.
+    ///	</summary>
     function Equals(const guid: TGuid): Boolean;
 
-    /// <summary>
-    ///   Returns the quoted string representation of the guid.
-    /// </summary>
+    ///	<summary>
+    ///	  Returns the quoted string representation of the guid.
+    ///	</summary>
     function ToQuotedString: string;
 
-    /// <summary>
-    ///   Gets a value which indicates whether the guid is empty (all zero).
-    /// </summary>
+    ///	<summary>
+    ///	  Gets a value which indicates whether the guid is empty (all zero).
+    ///	</summary>
     property IsEmpty: Boolean read GetIsEmpty;
 
     /// <summary>
@@ -148,10 +151,10 @@ type
     class property Empty: TGuid read GetEmpty;
   end;
 
-  /// <summary>
-  ///   Provides a static method to create a TMethod structure with an instance
-  ///   and a methodaddress.
-  /// </summary>
+  ///	<summary>
+  ///	  Provides a static method to create a TMethod structure with an instance
+  ///	  and a methodaddress.
+  ///	</summary>
   TMethodHelper = record helper for TMethod
   public
     class function Create(const instance, methodAddress: Pointer): TMethod; static;
@@ -192,9 +195,9 @@ type
     /// </example>
     procedure ReadBuffer<T: record>(var value: T); overload;
 
-    /// <summary>
-    ///   Writes a value of a value type to the stream.
-    /// </summary>
+    ///	<summary>
+    ///	  Writes a value of a value type to the stream.
+    ///	</summary>
     procedure WriteBuffer<T: record>(const value: T); overload;
   end;
 
@@ -202,20 +205,20 @@ type
   private
     function GetIsEmpty: Boolean;
   public
-    /// <summary>
-    ///   Add an array of string to the list.
-    /// </summary>
+    ///	<summary>
+    ///	  Add an array of string to the list.
+    ///	</summary>
     procedure AddStrings(const strings: array of string); overload;
 
-    /// <summary>
-    ///   Adds or updates a name-value pair.
-    /// </summary>
-    /// <remarks>
-    ///   <note type="warning">
-    ///     There is a <c>Values[name: string]</c>property in the TStrings
-    ///     class, but the entry will be removed if the value is empty.
-    ///   </note>
-    /// </remarks>
+    ///	<summary>
+    ///	  Adds or updates a name-value pair.
+    ///	</summary>
+    ///	<remarks>
+    ///	  <note type="warning">
+    ///	    There is a <c>Values[name: string]</c>property in the TStrings
+    ///	    class, but the entry will be removed if the value is empty.
+    ///	  </note>
+    ///	</remarks>
     procedure AddOrUpdate(const name, value: string);
 
 //    procedure Remove(const s: string);
@@ -251,36 +254,36 @@ type
     /// <seealso cref="ExtractNames(TStrings)" />
     procedure ExtractValues(const strings: TStrings);
 
-    /// <summary>
-    ///   Returns a string array that contains all the <b>name</b>entries in
-    ///   the string list.
-    /// </summary>
+    ///	<summary>
+    ///	  Returns a string array that contains all the <b>name</b>entries in
+    ///	  the string list.
+    ///	</summary>
     function GetNames: TStringDynArray;
 
-    /// <summary>
-    ///   Returns a string array that contains all the <b>value</b>entries in
-    ///   the string list.
-    /// </summary>
+    ///	<summary>
+    ///	  Returns a string array that contains all the <b>value</b>entries in
+    ///	  the string list.
+    ///	</summary>
     function GetValues: TStringDynArray;
 
 //    function GetValue(const name: string): string; overload;
 //    function GetValue(const index: Integer): string; overload;
 
-    /// <summary>
-    ///   Gets the corresponding value of the name entry if there is such an
-    ///   entry and the value is not empty, otherwise, returns the default
-    ///   value specified by the <paramref name="default" />param.
-    /// </summary>
+    ///	<summary>
+    ///	  Gets the corresponding value of the name entry if there is such an
+    ///	  entry and the value is not empty, otherwise, returns the default
+    ///	  value specified by the <paramref name="default" />param.
+    ///	</summary>
     function GetValueOrDefault<T>(const name: string; const default: T): T; experimental;
 
-    /// <summary>
-    ///   Try finding a name entry in the list.
-    /// </summary>
+    ///	<summary>
+    ///	  Try finding a name entry in the list.
+    ///	</summary>
     function TryFindName(const name: string; var index: Integer): Boolean;
 
-    /// <summary>
-    ///   Try finding a value entry in the list.
-    /// </summary>
+    ///	<summary>
+    ///	  Try finding a value entry in the list.
+    ///	</summary>
     function TryFindValue(const value: string; var index: Integer): Boolean;
 
     /// <summary>
@@ -288,14 +291,14 @@ type
     /// </summary>
     function TryFindObject(const obj: TObject; var index: Integer): Boolean;
 
-    /// <summary>
-    ///   Determines whether the list contains the specified name entry.
-    /// </summary>
+    ///	<summary>
+    ///	  Determines whether the list contains the specified name entry.
+    ///	</summary>
     function ContainsName(const name: string): Boolean;
 
-    /// <summary>
-    ///   Determines whether the list contains the specified value entry.
-    /// </summary>
+    ///	<summary>
+    ///	  Determines whether the list contains the specified value entry.
+    ///	</summary>
     function ContainsValue(const value: string): Boolean;
 
     /// <summary>
@@ -303,18 +306,18 @@ type
     /// </summary>
     function ContainsObject(const obj: TObject): Boolean;
 
-    /// <summary>
-    ///   Converts the string list to a dynamic string array.
-    /// </summary>
+    ///	<summary>
+    ///	  Converts the string list to a dynamic string array.
+    ///	</summary>
     function ToArray: TStringDynArray;
 
-    /// <summary>
-    ///   Gets a value indicates whether the strings is empty.
-    /// </summary>
-    /// <value>
-    ///   Returns true if the count of the list is zero, otherwise, returns
-    ///   false.
-    /// </value>
+    ///	<summary>
+    ///	  Gets a value indicates whether the strings is empty.
+    ///	</summary>
+    ///	<value>
+    ///	  Returns true if the count of the list is zero, otherwise, returns
+    ///	  false.
+    ///	</value>
     property IsEmpty: Boolean read GetIsEmpty;
   end;
 
@@ -328,37 +331,44 @@ type
 
   // TPointHelper, TSizeHelper, TRectHelper
 
-  {TODO -oPaul -cGeneral : Add some non-generic implementation}
-
   TRttiObjectHelper = class helper for TRttiObject
   public
-    /// <summary>
-    ///   Gets an array which contains all custom attribute types which the
-    ///   type applies.
-    /// </summary>
-    function GetCustomAttributes<T: TCustomAttribute>: TArray<T>;
+    function GetCustomAttributes(attributeClass: TAttributeClass): TArray<TCustomAttribute>; overload;
 
-    /// <summary>
-    ///   Enumerates all applied custom attributes and returns the first one
-    ///   which is/inherits the specified type.
-    /// </summary>
-    function GetCustomAttribute<T: TCustomAttribute>: T;
+    ///	<summary>
+    ///	  Gets an array which contains all custom attribute types which the
+    ///	  type applies.
+    ///	</summary>
+    function GetCustomAttributes<T: TCustomAttribute>: TArray<T>; overload;
 
-    /// <summary>
-    ///   Try getting a custom attribute class which is applied by the type.
-    /// </summary>
-    function TryGetCustomAttribute<T: TCustomAttribute>(out attribute: T): Boolean;
+    function GetCustomAttribute(attributeClass: TAttributeClass): TCustomAttribute; overload;
 
-    /// <summary>
-    ///   Determines whether the type applies the specified custom attribute
-    ///   class.
-    /// </summary>
-    function HasCustomAttribute<T: TCustomAttribute>: Boolean;
+    ///	<summary>
+    ///	  Enumerates all applied custom attributes and returns the first one
+    ///	  which is/inherits the specified type.
+    ///	</summary>
+    function GetCustomAttribute<T: TCustomAttribute>: T; overload;
+
+    function TryGetCustomAttribute(attributeClass: TAttributeClass;
+      out attribute: TCustomAttribute): Boolean; overload;
+
+    ///	<summary>
+    ///	  Try getting a custom attribute class which is applied by the type.
+    ///	</summary>
+    function TryGetCustomAttribute<T: TCustomAttribute>(out attribute: T): Boolean; overload;
+
+    function HasCustomAttribute(attributeClass: TAttributeClass): Boolean; overload;
+
+    ///	<summary>
+    ///	  Determines whether the type applies the specified custom attribute
+    ///	  class.
+    ///	</summary>
+    function HasCustomAttribute<T: TCustomAttribute>: Boolean; overload;
   end;
 
   TRttiClassType = TRttiInstanceType;
 
-  /// <preliminary />
+  ///	<preliminary />
   TRttiTypeHelper =  class helper for TRttiType
   private
     function GetAsInterface: TRttiInterfaceType;
@@ -367,8 +377,10 @@ type
     function GetIsClassOrInterface: Boolean;
     function GetAsClass: TRttiInstanceType;
     function GetIsGenericType: Boolean;
+    function GetIsLazyType: Boolean;
     function GetAsDynamicArray: TRttiDynamicArrayType;
     function GetIsDynamicArray: Boolean;
+    function GetIsString: Boolean;
     function InternalGetConstructors(enumerateBaseType: Boolean = True): IEnumerable<TRttiMethod>;
     function InternalGetMethods(enumerateBaseType: Boolean = True): IEnumerable<TRttiMethod>;
     function InternalGetProperties(enumerateBaseType: Boolean = True): IEnumerable<TRttiProperty>;
@@ -378,17 +390,18 @@ type
     function GetProperties: IEnumerable<TRttiProperty>;
     function GetFields: IEnumerable<TRttiField>;
     function GetDefaultName: string;
+    function GetAncestorCount: Integer;
   public
     // function GetMembers: IEnumerable<TRttiMember>;
 
-    /// <summary>
-    ///   Returns an enumerable collection which contains all the interface
-    ///   Rtti types that the target type implements.
-    ///   <note type="note">
-    ///     Only Guid interfaces will be enumerated.
-    ///   </note>
-    /// </summary>
-    /// <seealso cref="Spring.Collections|IEnumerable&lt;T&gt;" />
+    ///	<summary>
+    ///	  Returns an enumerable collection which contains all the interface
+    ///	  Rtti types that the target type implements.
+    ///	  <note type="note">
+    ///	    Only Guid interfaces will be enumerated.
+    ///	  </note>
+    ///	</summary>
+    ///	<seealso cref="Spring.Collections|IEnumerable&lt;T&gt;" />
     function GetInterfaces: IEnumerable<TRttiInterfaceType>;
 
     /// <summary>
@@ -404,6 +417,11 @@ type
     function GetGenericArguments: TArray<TRttiType>;
 
     /// <summary>
+    ///   Returns a string that represents a generic type definition.
+    /// </summary>
+    function GetGenericTypeDefinition: string;
+
+    /// <summary>
     ///   Determines whether an instance of the current TRttiType can be
     ///   assigned from an instance of the specified TRttiType.
     /// </summary>
@@ -412,40 +430,40 @@ type
     /// </param>
     function IsAssignableFrom(const rttiType: TRttiType): Boolean;
 
-    /// <summary>
-    ///   Gets an enumerable collection which contains all constructor methods
-    ///   of the type, including inherited.
-    /// </summary>
-    /// <seealso cref="Methods" />
-    /// <seealso cref="Propoerties" />
-    /// <seealso cref="Fields" />
+    ///	<summary>
+    ///	  Gets an enumerable collection which contains all constructor methods
+    ///	  of the type, including inherited.
+    ///	</summary>
+    ///	<seealso cref="Methods" />
+    ///	<seealso cref="Propoerties" />
+    ///	<seealso cref="Fields" />
     property Constructors: IEnumerable<TRttiMethod> read GetConstructors;
 
-    /// <summary>
-    ///   Gets a enumerable collection which contains all methods that the type
-    ///   contains, including inherited.
-    /// </summary>
-    /// <seealso cref="Constructors" />
-    /// <seealso cref="Propoerties" />
-    /// <seealso cref="Fields" />
+    ///	<summary>
+    ///	  Gets a enumerable collection which contains all methods that the type
+    ///	  contains, including inherited.
+    ///	</summary>
+    ///	<seealso cref="Constructors" />
+    ///	<seealso cref="Propoerties" />
+    ///	<seealso cref="Fields" />
     property Methods: IEnumerable<TRttiMethod> read GetMethods;
 
-    /// <summary>
-    ///   Gets a enumerable collection which contains all properties that the
-    ///   type contains, including inherited.
-    /// </summary>
-    /// <seealso cref="Constructors" />
-    /// <seealso cref="Methods" />
-    /// <seealso cref="Fields" />
+    ///	<summary>
+    ///	  Gets a enumerable collection which contains all properties that the
+    ///	  type contains, including inherited.
+    ///	</summary>
+    ///	<seealso cref="Constructors" />
+    ///	<seealso cref="Methods" />
+    ///	<seealso cref="Fields" />
     property Properties: IEnumerable<TRttiProperty> read GetProperties;
 
-    /// <summary>
-    ///   Gets a enumerable collection which contains all fields that the type
-    ///   contains, including inherited.
-    /// </summary>
-    /// <seealso cref="Constructors" />
-    /// <seealso cref="Methods" />
-    /// <seealso cref="Propoerties" />
+    ///	<summary>
+    ///	  Gets a enumerable collection which contains all fields that the type
+    ///	  contains, including inherited.
+    ///	</summary>
+    ///	<seealso cref="Constructors" />
+    ///	<seealso cref="Methods" />
+    ///	<seealso cref="Propoerties" />
     property Fields: IEnumerable<TRttiField> read GetFields;
 
     property AsClass: TRttiInstanceType read GetAsClass;
@@ -455,12 +473,16 @@ type
     property IsInterface: Boolean read GetIsInterface;
     property IsClassOrInterface: Boolean read GetIsClassOrInterface;
     property IsDynamicArray: Boolean read GetIsDynamicArray;
+    property IsString: Boolean read GetIsString;
 
-    /// <summary>
-    ///   Gets a value indicates whether the current type is generic.
-    /// </summary>
+    ///	<summary>
+    ///	  Gets a value indicates whether the current type is generic.
+    ///	</summary>
     property IsGenericType: Boolean read GetIsGenericType;
+
+    property IsLazyType: Boolean read GetIsLazyType;
     property DefaultName: string read GetDefaultName;
+    property AncestorCount: Integer read GetAncestorCount;
   end;
 
   TRttiMemberHelper = class helper for TRttiMember
@@ -493,6 +515,15 @@ type
     property IsPublished: Boolean read GetIsPublished;
   end;
 
+  TRttiMethodHelper = class helper for TRttiMethod
+  private
+    procedure DispatchValue(const value: TValue; typeInfo: PTypeInfo);
+  public
+    function Invoke(Instance: TObject; const Args: array of TValue): TValue; overload;
+    function Invoke(Instance: TClass; const Args: array of TValue): TValue; overload;
+    function Invoke(Instance: TValue; const Args: array of TValue): TValue; overload;
+  end;
+
   TRttiPropertyHelper = class helper for TRttiProperty
   public
     function GetValue(const instance: TValue): TValue; overload;
@@ -510,7 +541,7 @@ type
     function GetHasGuid: Boolean;
   public
     /// <summary>
-    ///   Gets a value indicates whether this interface type has a guid.
+    ///   Determines whether this interface type has a guid.
     /// </summary>
     property HasGuid: Boolean read GetHasGuid;
   end;
@@ -519,18 +550,30 @@ type
   private
     function TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
   public
+{$IFDEF DELPHI2010}
+    function AsString: string;
+{$ENDIF}
     function AsType<T>: T;
     function Cast(typeInfo: PTypeInfo): TValue;
+    function IsString: Boolean;
+{$IFDEF DELPHI2010}
+    function IsType<T>: Boolean; overload;
+    function IsType(ATypeInfo: PTypeInfo): Boolean; overload;
+{$ENDIF}
   end;
 
 implementation
 
 uses
   Generics.Defaults,
+  RTLConsts,
   StrUtils,
   SysConst,
   TypInfo,
   Spring.ResourceStrings;
+
+type
+  PValueData = ^TValueData;
 
 
 {$REGION 'TGuidHelper'}
@@ -866,42 +909,67 @@ end;
 
 {$REGION 'TRttiObjectHelper'}
 
+function TRttiObjectHelper.TryGetCustomAttribute(
+  attributeClass: TAttributeClass; out attribute: TCustomAttribute): Boolean;
+begin
+  attribute := GetCustomAttribute(attributeClass);
+  Result := Assigned(attribute);
+end;
+
 function TRttiObjectHelper.TryGetCustomAttribute<T>(out attribute: T): Boolean;
 begin
   attribute := GetCustomAttribute<T>;
   Result := Assigned(attribute);
 end;
 
-function TRttiObjectHelper.GetCustomAttribute<T>: T;
+function TRttiObjectHelper.GetCustomAttribute(
+  attributeClass: TAttributeClass): TCustomAttribute;
 var
   attribute: TCustomAttribute;
 begin
-  Result := Default(T);
   for attribute in GetAttributes do
-    if attribute.InheritsFrom(T) then
+    if attribute.InheritsFrom(attributeClass) then
+      Exit(attribute);
+  Result := nil;
+end;
+
+function TRttiObjectHelper.GetCustomAttribute<T>: T;
+begin
+  Result := T(GetCustomAttribute(TAttributeClass(T)));
+end;
+
+function TRttiObjectHelper.GetCustomAttributes(
+  attributeClass: TAttributeClass): TArray<TCustomAttribute>;
+var
+  attribute: TCustomAttribute;
+begin
+  for attribute in GetAttributes do
+    if attribute.InheritsFrom(attributeClass) then
     begin
-      Result := T(attribute);
-      Break;
+      SetLength(Result, Length(Result) + 1);
+      Result[High(Result)] := attribute;
     end;
 end;
 
 function TRttiObjectHelper.GetCustomAttributes<T>: TArray<T>;
+begin
+  TArray<TCustomAttribute>(Result) := GetCustomAttributes(TAttributeClass(T));
+end;
+
+function TRttiObjectHelper.HasCustomAttribute(
+  attributeClass: TAttributeClass): Boolean;
 var
   attribute: TCustomAttribute;
 begin
   for attribute in GetAttributes do
-    if attribute.InheritsFrom(T) then
-    begin
-      SetLength(Result, Length(Result)+1);
-      Result[Length(Result)-1] := T(attribute);
-    end;
+    if attribute.InheritsFrom(attributeClass) then
+      Exit(True);
+  Result := False;
 end;
 
 function TRttiObjectHelper.HasCustomAttribute<T>: Boolean;
-var
-  attribute: T;
 begin
-  Result := TryGetCustomAttribute<T>(attribute);
+  Result := HasCustomAttribute(TAttributeClass(T));
 end;
 
 {$ENDREGION}
@@ -1052,8 +1120,33 @@ begin
   s := Copy(s, i + 1, Length(s) - i - 1);
   names := SplitTypes(s);
   SetLength(Result, Length(names));
-  for i := 0 to High(names) do
+  for i := Low(names) to High(names) do
     Result[i] := TType.FindType(names[i]);
+end;
+
+function TRttiTypeHelper.GetGenericTypeDefinition: string;
+var
+  s: string;
+  i: Integer;
+begin
+  s := Name;
+  i := Pos('<', s);
+  if i = 0 then
+    raise EInvalidOperationException.CreateResFmt(@SNotGenericType, [Name]);
+  Result := Copy(s, 0, i) + '>';
+end;
+
+function TRttiTypeHelper.GetAncestorCount: Integer;
+var
+  baseType: TRttiType;
+begin
+  Result := 0;
+  baseType := Self;
+  while Assigned(baseType.BaseType) do
+  begin
+    Inc(Result);
+    baseType := baseType.BaseType;
+  end;
 end;
 
 function TRttiTypeHelper.GetAsClass: TRttiInstanceType;
@@ -1149,6 +1242,16 @@ begin
   Result := Self is TRttiInterfaceType;
 end;
 
+function TRttiTypeHelper.GetIsLazyType: Boolean;
+begin
+  Result := TType.IsLazy(Handle);
+end;
+
+function TRttiTypeHelper.GetIsString: Boolean;
+begin
+  Result := TypeKind in [tkString, tkLString, tkWString, tkUString, tkChar, tkWChar];
+end;
+
 {$ENDREGION}
 
 
@@ -1242,6 +1345,62 @@ end;
 {$ENDREGION}
 
 
+{$REGION 'TRttiMethodHelper'}
+
+procedure TRttiMethodHelper.DispatchValue(const value: TValue;
+  typeInfo: PTypeInfo);
+begin
+  if (value.TypeInfo <> typeInfo) and (value.Kind = tkInterface)
+    and (typeInfo.Kind = tkInterface)
+    and IsAssignableFrom(typeInfo, value.TypeInfo) then
+    PValueData(@value).FTypeInfo := typeInfo;
+end;
+
+function TRttiMethodHelper.Invoke(Instance: TObject;
+  const Args: array of TValue): TValue;
+var
+  parameters: TArray<TRttiParameter>;
+  i: Integer;
+begin
+  parameters := GetParameters;
+  if Length(Args) <> Length(parameters) then
+    raise EInvocationError.CreateRes(@SParameterCountMismatch);
+  for i := Low(Args) to High(Args) do
+    DispatchValue(Args[i], parameters[i].ParamType.Handle);
+  Result := Self.DispatchInvoke(Instance, Args);
+end;
+
+function TRttiMethodHelper.Invoke(Instance: TClass;
+  const Args: array of TValue): TValue;
+var
+  parameters: TArray<TRttiParameter>;
+  i: Integer;
+begin
+  parameters := GetParameters;
+  if Length(Args) <> Length(parameters) then
+    raise EInvocationError.CreateRes(@SParameterCountMismatch);
+  for i := Low(Args) to High(Args) do
+    DispatchValue(Args[i], parameters[i].ParamType.Handle);
+  Result := Self.DispatchInvoke(Instance, Args);
+end;
+
+function TRttiMethodHelper.Invoke(Instance: TValue;
+  const Args: array of TValue): TValue;
+var
+  parameters: TArray<TRttiParameter>;
+  i: Integer;
+begin
+  parameters := GetParameters;
+  if Length(Args) <> Length(parameters) then
+    raise EInvocationError.CreateRes(@SParameterCountMismatch);
+  for i := Low(Args) to High(Args) do
+    DispatchValue(Args[i], parameters[i].ParamType.Handle);
+  Result := Self.DispatchInvoke(Instance, Args);
+end;
+
+{$ENDREGION}
+
+
 {$REGION 'TRttiPropertyHelper'}
 
 function TRttiPropertyHelper.GetValue(const instance: TValue): TValue;
@@ -1292,8 +1451,19 @@ end;
 
 {$REGION 'TValueHelper'}
 
+{$IFDEF DELPHI2010}
+function TValueHelper.AsString: string;
+begin
+  Result := AsType<string>;
+end;
+{$ENDIF}
+
 function TValueHelper.AsType<T>: T;
 begin
+{$IFDEF DELPHI2010}
+  if IsEmpty then
+    Exit(Default(T));
+{$ENDIF}
   if not TryAsInterface(System.TypeInfo(T), Result) then
   if not TryAsType<T>(Result) then
     raise EInvalidCast.CreateRes(@SInvalidCast);
@@ -1304,19 +1474,38 @@ var
   intf: IInterface;
 begin
   if TryAsInterface(typeInfo, intf) then
-  begin
-    Result := Self;
-    TValueData(Result).FTypeInfo := typeInfo;
-  end else
-  if not TryCast(typeInfo, Result) then
+    TValue.Make(@intf, typeInfo, Result)
+  else if not TryCast(typeInfo, Result) then
     raise EInvalidCast.CreateRes(@SInvalidCast);
 end;
+
+function TValueHelper.IsString: Boolean;
+const
+  StringKinds = [tkString, tkLString, tkWString, tkUString, tkChar, tkWChar];
+begin
+  Result := IsEmpty or (Kind in StringKinds);
+end;
+
+{$IFDEF DELPHI2010}
+function TValueHelper.IsType(ATypeInfo: PTypeInfo): Boolean;
+var
+  unused: TValue;
+begin
+  Result := IsEmpty or TryCast(ATypeInfo, unused);
+end;
+
+function TValueHelper.IsType<T>: Boolean;
+begin
+  Result := IsType(System.TypeInfo(T));
+end;
+{$ENDIF}
 
 function TValueHelper.TryAsInterface(typeInfo: PTypeInfo; out Intf): Boolean;
 var
   typeData: PTypeData;
+  obj: TObject;
 begin
-  if Kind <> tkInterface then
+  if not (Kind in [tkClass, tkInterface]) then
     Exit(False);
   if typeInfo.Kind <> tkInterface then
     Exit(False);
@@ -1324,6 +1513,16 @@ begin
     Result := True
   else
   begin
+    typeData := GetTypeData(typeInfo);
+    if Kind = tkClass then
+    begin
+{$IFDEF AUTOREFCOUNT}
+      Self.FData.FValueData.ExtractRawData(@obj);
+{$ELSE}
+      obj := TObject(Self.FData.FAsObject);
+{$ENDIF}
+      Exit(obj.GetInterface(typeData.Guid, Intf));
+    end;
     Result := False;
     typeData := Self.TypeData;
     while Assigned(typeData) and Assigned(typeData.IntfParent) do

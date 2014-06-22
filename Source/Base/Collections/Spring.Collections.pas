@@ -2205,6 +2205,9 @@ type
     class function Range(start, count: Integer): IEnumerable<Integer>; static;
 
     class function Repeated<T>(const element: T; count: Integer): IEnumerable<T>; static;
+
+    class function Select<T, TResult>(const source: IEnumerable<T>;
+      const selector: TFunc<T, TResult>): IEnumerable<TResult>; overload; static;
   end;
 
   TStringComparer = class(TCustomComparer<string>)
@@ -2258,7 +2261,7 @@ var
   i: Integer;
 begin
   comparer := TEqualityComparer<T>.Default;
-  for i := 0 to High(Values) do
+  for i := Low(Values) to High(Values) do
     if comparer.Equals(values[i], item) then
       Exit(True);
   Result := False;
@@ -2269,7 +2272,7 @@ var
   i: Integer;
 begin
   SetLength(Result, Length(values));
-  for i := 0 to High(values) do
+  for i := Low(values) to High(values) do
     Result[i] := values[i];
 end;
 
@@ -2557,6 +2560,12 @@ class function TCollections.Repeated<T>(const element: T;
   count: Integer): IEnumerable<T>;
 begin
   Result := TRepeatIterator<T>.Create(element, count);
+end;
+
+class function TCollections.Select<T, TResult>(const source: IEnumerable<T>;
+  const selector: TFunc<T, TResult>): IEnumerable<TResult>;
+begin
+  Result := TSelectIterator<T, TResult>.Create(source, selector);
 end;
 
 {$ENDREGION}

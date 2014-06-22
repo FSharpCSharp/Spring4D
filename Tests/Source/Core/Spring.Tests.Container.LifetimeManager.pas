@@ -37,32 +37,13 @@ uses
   Spring.Container.LifetimeManager;
 
 type
-  TMockContext = class(TInterfacedObject, IContainerContext)
-  public
-    function GetComponentBuilder: IComponentBuilder;
-    function GetComponentRegistry: IComponentRegistry;
-    function GetDependencyResolver: IDependencyResolver;
-    function GetInjectionFactory: IInjectionFactory;
-    function GetServiceResolver: IServiceResolver;
-  public
-    function HasService(serviceType: PTypeInfo): Boolean; overload;
-    function HasService(const name: string): Boolean; overload;
-    function CreateLifetimeManager(const model: TComponentModel): ILifetimeManager;
-    procedure AddExtension(const extension: IContainerExtension);
-    property ComponentBuilder: IComponentBuilder read GetComponentBuilder;
-    property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
-    property DependencyResolver: IDependencyResolver read GetDependencyResolver;
-    property InjectionFactory: IInjectionFactory read GetInjectionFactory;
-    property ServiceResolver: IServiceResolver read GetServiceResolver;
-  end;
-
-  TMockActivator = class(TInterfaceBase, IComponentActivator, IInterface)
+  TMockActivator = class(TInterfaceBase, IComponentActivator)
   private
     fModel: TComponentModel;
   public
     constructor Create(model: TComponentModel);
     function CreateInstance: TValue; overload;
-    function CreateInstance(const resolver: IDependencyResolver): TValue; overload;
+    function CreateInstance(const context: ICreationContext): TValue; overload;
     property Model: TComponentModel read fModel;
   end;
 
@@ -84,7 +65,6 @@ type
 //  [Ignore]
   TLifetimeManagerTestCase = class abstract(TTestCase)
   protected
-    fContainerContext: IContainerContext;
     fContext: TRttiContext;
     fLifetimeManager: ILifetimeManager;
     fModel: TComponentModel;
@@ -103,7 +83,6 @@ type
 
   TTestRefCounting = class(TTestCase)
   protected
-    fContainerContext: IContainerContext;
     fContext: TRttiContext;
     fLifetimeManager: ILifetimeManager;
     fModel: TComponentModel;
@@ -136,9 +115,8 @@ uses
 procedure TLifetimeManagerTestCase.SetUp;
 begin
   inherited;
-  fContainerContext := TMockContext.Create;
   fContext := TRttiContext.Create;
-  fModel := TComponentModel.Create(fContainerContext, fContext.GetType(TMockObject).AsInstance);
+  fModel := TComponentModel.Create(fContext.GetType(TMockObject).AsInstance);
   fActivator := TMockActivator.Create(fModel);
   fModel.ComponentActivator := fActivator;
 end;
@@ -148,7 +126,6 @@ begin
   fModel.Free;
   fActivator.Free;
   fContext.Free;
-  fContainerContext := nil;
   inherited;
 end;
 
@@ -170,16 +147,16 @@ procedure TTestSingletonLifetimeManager.TestReferences;
 var
   obj1, obj2: TObject;
 begin
-  obj1 := fLifetimeManager.GetInstance(nil).AsObject;
-  obj2 := fLifetimeManager.GetInstance(nil).AsObject;
+  obj1 := fLifetimeManager.Resolve(nil).AsObject;
+  obj2 := fLifetimeManager.Resolve(nil).AsObject;
   try
     CheckIs(obj1, TMockObject, 'obj1');
     CheckIs(obj2, TMockObject, 'obj2');
     CheckSame(obj1, obj2);
     CheckSame(fActivator.Model, fModel);
   finally
-    fLifetimeManager.ReleaseInstance(obj1);
-    fLifetimeManager.ReleaseInstance(obj2);
+    fLifetimeManager.Release(obj1);
+    fLifetimeManager.Release(obj2);
   end;
 end;
 
@@ -201,16 +178,16 @@ procedure TTestTransientLifetimeManager.TestReferences;
 var
   obj1, obj2: TObject;
 begin
-  obj1 := fLifetimeManager.GetInstance(nil).AsObject;
-  obj2 := fLifetimeManager.GetInstance(nil).AsObject;
+  obj1 := fLifetimeManager.Resolve(nil).AsObject;
+  obj2 := fLifetimeManager.Resolve(nil).AsObject;
   try
     CheckIs(obj1, TMockObject, 'obj1');
     CheckIs(obj2, TMockObject, 'obj2');
     CheckTrue(obj1 <> obj2);
     CheckSame(fActivator.Model, fModel);
   finally
-    fLifetimeManager.ReleaseInstance(obj1);
-    fLifetimeManager.ReleaseInstance(obj2);
+    fLifetimeManager.Release(obj1);
+    fLifetimeManager.Release(obj2);
   end;
 end;
 
@@ -229,56 +206,9 @@ begin
 end;
 
 function TMockActivator.CreateInstance(
-  const resolver: IDependencyResolver): TValue;
+  const context: ICreationContext): TValue;
 begin
   Result := CreateInstance;
-end;
-
-{ TMockContext }
-
-procedure TMockContext.AddExtension(const extension: IContainerExtension);
-begin
-  raise Exception.Create('AddExtension');
-end;
-
-function TMockContext.CreateLifetimeManager(const model: TComponentModel): ILifetimeManager;
-begin
-  raise Exception.Create('CreateLifetimeManager');
-end;
-
-function TMockContext.GetComponentBuilder: IComponentBuilder;
-begin
-  raise Exception.Create('GetComponentBuilder');
-end;
-
-function TMockContext.GetComponentRegistry: IComponentRegistry;
-begin
-  raise Exception.Create('GetComponentRegistry');
-end;
-
-function TMockContext.GetDependencyResolver: IDependencyResolver;
-begin
-  raise Exception.Create('GetDependencyResolver');
-end;
-
-function TMockContext.GetInjectionFactory: IInjectionFactory;
-begin
-  raise Exception.Create('GetInjectionFactory');
-end;
-
-function TMockContext.GetServiceResolver: IServiceResolver;
-begin
-  raise Exception.Create('GetServiceResolver');
-end;
-
-function TMockContext.HasService(const name: string): Boolean;
-begin
-  raise Exception.Create('HasService');
-end;
-
-function TMockContext.HasService(serviceType: PTypeInfo): Boolean;
-begin
-  raise Exception.Create('HasService');
 end;
 
 { TMockComponent }
@@ -312,9 +242,8 @@ end;
 procedure TTestRefCounting.SetUp;
 begin
   inherited;
-  fContainerContext := TMockContext.Create;
   fContext := TRttiContext.Create;
-  fModel := TComponentModel.Create(fContainerContext, fContext.GetType(TMockComponent).AsInstance);
+  fModel := TComponentModel.Create(fContext.GetType(TMockComponent).AsInstance);
   fModel.RefCounting := TRefCounting.True;
   fActivator := TMockActivator.Create(fModel);
   fModel.ComponentActivator := fActivator;
@@ -327,7 +256,6 @@ begin
   fModel.Free;
   fActivator.Free;
   fContext.Free;
-  fContainerContext := nil;
   inherited;
 end;
 
@@ -341,7 +269,7 @@ begin
 {$IFNDEF AUTOREFCOUNT}
   TMockComponent.fFreed := false;
 {$ENDIF}
-  val := fLifetimeManager.GetInstance(nil);
+  val := fLifetimeManager.Resolve(nil);
   obj := val.AsObject;
 {$IFDEF AUTOREFCOUNT}
   val := val.Empty; //Clear the TValue so that it doesn't keep holding reference count to obj

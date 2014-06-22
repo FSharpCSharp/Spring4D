@@ -275,7 +275,7 @@ var
 begin
   services := GetServiceLocator.GetAllServices(TypeInfo(TServiceType));
   SetLength(Result, Length(services));
-  for i := 0 to High(Result) do
+  for i := Low(Result) to High(Result) do
   begin
     // accessing TArray<TValue> directly causes an internal error URW1111 in Delphi 2010 (see QC #77575)
     // the hardcast prevents it but does not cause any differences in compiled code

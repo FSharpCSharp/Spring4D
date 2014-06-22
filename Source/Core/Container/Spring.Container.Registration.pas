@@ -42,27 +42,25 @@ type
   ///	<summary>
   ///	  TComponentRegistry
   ///	</summary>
-  TComponentRegistry = class(TInterfacedObject, IComponentRegistry, IInterface)
+  TComponentRegistry = class(TInterfacedObject, IComponentRegistry)
   private
-    fContainerContext: IContainerContext;
-    fRttiContext: TRttiContext;
+    fKernel: IKernel;
     fModels: IList<TComponentModel>;
     fDefaultRegistrations: IDictionary<PTypeInfo, TComponentModel>;
     fUnnamedRegistrations: IMultiMap<PTypeInfo, TComponentModel>;
     fServiceTypeMappings: IMultiMap<PTypeInfo, TComponentModel>;
     fServiceNameMappings: IDictionary<string, TComponentModel>;
   protected
-    function BuildActivatorDelegate(elementTypeInfo: PTypeInfo; out componentType: TRttiType): TActivatorDelegate;
-    procedure CheckIsNonGuidInterface(serviceType: TRttiType);
+    procedure CheckIsNonGuidInterface(const serviceType: TRttiType);
 {$IFDEF DELPHIXE_UP}
     procedure InternalRegisterFactory(const model: TComponentModel;
       const invokeEvent: TVirtualInterfaceInvokeEvent);
 {$ENDIF}
     procedure RegisterUnnamed(const model: TComponentModel; serviceType: PTypeInfo);
-    procedure Validate(componentType, serviceType: PTypeInfo; var serviceName: string);
+    procedure Validate(const componentType, serviceType: TRttiType; var serviceName: string);
   public
-    constructor Create(const context: IContainerContext);
-    destructor Destroy; override;
+    constructor Create(const kernel: IKernel);
+
     function RegisterComponent(componentTypeInfo: PTypeInfo): TComponentModel;
     procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo); overload;
     procedure RegisterService(const model: TComponentModel; serviceType: PTypeInfo; const name: string); overload;
@@ -78,6 +76,7 @@ type
     function HasDefault(serviceType: PTypeInfo): Boolean;
     function FindOne(componentType: PTypeInfo): TComponentModel; overload;
     function FindOne(const name: string): TComponentModel; overload;
+    function FindOne(serviceType: PTypeInfo; const argument: TValue): TComponentModel; overload;
     function FindDefault(serviceType: PTypeInfo): TComponentModel;
     function FindAll: IEnumerable<TComponentModel>; overload;
     function FindAll(serviceType: PTypeInfo): IEnumerable<TComponentModel>; overload;
@@ -89,13 +88,9 @@ type
   ///	</summary>
   TRegistration = record
   private
-{$IFNDEF DELPHIXE_UP}
-    fRegistry: TComponentRegistry;
-{$ELSE}
-    fRegistry: IComponentRegistry;
-{$ENDIF}
+    fKernel: IKernel;
     fModel: TComponentModel;
-    constructor Create(const registry: IComponentRegistry; componentType: PTypeInfo);
+    constructor Create(const kernel: IKernel; componentType: PTypeInfo);
   public
     function Implements(serviceType: PTypeInfo): TRegistration; overload;
     function Implements(serviceType: PTypeInfo; const name: string): TRegistration; overload;
@@ -142,7 +137,7 @@ type
   TRegistration<T> = record
   private
     fRegistration: TRegistration;
-    constructor Create(const registry: IComponentRegistry);
+    constructor Create(const kernel: IKernel);
   public
     function Implements(serviceType: PTypeInfo): TRegistration<T>; overload;
     function Implements(serviceType: PTypeInfo; const name: string): TRegistration<T>; overload;
@@ -196,11 +191,11 @@ type
   ///	</remarks>
   TRegistrationManager = class
   private
-    fRegistry: IComponentRegistry;
+    fKernel: IKernel;
   public
-    constructor Create(const registry: IComponentRegistry);
-    function RegisterComponent<TComponentType>: TRegistration<TComponentType>; overload;
-    function RegisterComponent(componentType: PTypeInfo): TRegistration; overload;
+    constructor Create(const kernel: IKernel);
+    function RegisterType<TComponentType>: TRegistration<TComponentType>; overload;
+    function RegisterType(componentType: PTypeInfo): TRegistration; overload;
   end;
 
 
@@ -219,13 +214,14 @@ uses
 
 {$REGION 'TComponentRegistry'}
 
-constructor TComponentRegistry.Create(const context: IContainerContext);
+constructor TComponentRegistry.Create(const kernel: IKernel);
 begin
-  Guard.CheckNotNull(context, 'context');
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(kernel, 'kernel');
+{$ENDIF}
 
   inherited Create;
-  fContainerContext := context;
-  fRttiContext := TRttiContext.Create;
+  fKernel := kernel;
   fModels := TCollections.CreateObjectList<TComponentModel>(True);
   fDefaultRegistrations := TCollections.CreateDictionary<PTypeInfo, TComponentModel>;
   fUnnamedRegistrations := TCollections.CreateMultiMap<PTypeInfo, TComponentModel>;
@@ -233,80 +229,25 @@ begin
   fServiceNameMappings := TCollections.CreateDictionary<string, TComponentModel>;
 end;
 
-destructor TComponentRegistry.Destroy;
-begin
-  fRttiContext.Free;
-  inherited Destroy;
-end;
-
-function TComponentRegistry.BuildActivatorDelegate(elementTypeInfo: PTypeInfo;
-  out componentType: TRttiType): TActivatorDelegate;
-begin
-  case elementTypeInfo.Kind of
-    tkClass:
-    begin
-      componentType := fRttiContext.GetType(TypeInfo(TList<TObject>));
-      Result :=
-        function: TValue
-        var
-          list: TList<TObject>;
-          value: TValue;
-        begin
-          list := TList<TObject>.Create;
-          for value in fContainerContext.ServiceResolver.ResolveAll(elementTypeInfo) do
-            list.Add(value.AsObject);
-          Result := TValue.From<TList<TObject>>(list);
-        end;
-    end;
-    tkInterface:
-    begin
-      componentType := fRttiContext.GetType(TypeInfo(TList<IInterface>));
-      Result :=
-        function: TValue
-        var
-          list: TList<IInterface>;
-          value: TValue;
-        begin
-          list := TList<IInterface>.Create;
-          for value in fContainerContext.ServiceResolver.ResolveAll(elementTypeInfo) do
-            list.Add(value.AsInterface);
-          Result := TValue.From<TList<IInterface>>(list);
-        end;
-    end
-  else
-    raise ERegistrationException.CreateResFmt(@SUnsupportedType, [componentType.Name]);
-  end;
-end;
-
-procedure TComponentRegistry.CheckIsNonGuidInterface(serviceType: TRttiType);
+procedure TComponentRegistry.CheckIsNonGuidInterface(const serviceType: TRttiType);
 begin
   if serviceType.IsInterface and not serviceType.AsInterface.HasGuid
     and not TType.IsDelegate(serviceType.Handle) then
-  begin
-    if serviceType.IsPublicType then
-      raise ERegistrationException.CreateResFmt(@SMissingGuid, [serviceType.QualifiedName])
-    else
-      raise ERegistrationException.CreateResFmt(@SMissingGuid, [serviceType.Name]);
-  end;
+    raise ERegistrationException.CreateResFmt(@SMissingGuid, [serviceType.DefaultName]);
 end;
 
-procedure TComponentRegistry.Validate(componentType, serviceType: PTypeInfo;
+procedure TComponentRegistry.Validate(const componentType, serviceType: TRttiType;
   var serviceName: string);
-var
-  componentTypeObject: TRttiType;
-  serviceTypeObject: TRttiType;
 begin
-  componentTypeObject := fRttiContext.GetType(componentType);
-  serviceTypeObject := fRttiContext.GetType(serviceType);
-  CheckIsNonGuidInterface(serviceTypeObject);
-  if not TType.IsAssignable(componentType, serviceType)
-    and not componentTypeObject.IsInterface then
+  CheckIsNonGuidInterface(serviceType);
+  if not serviceType.IsAssignableFrom(componentType)
+    and not componentType.IsInterface then
     raise ERegistrationException.CreateResFmt(@SIncompatibleTypes, [
-      GetTypeName(componentType), GetTypeName(serviceType)]);
+      componentType.DefaultName, serviceType.DefaultName]);
   if serviceName = '' then
-    serviceName := serviceTypeObject.DefaultName + '@' + componentTypeObject.DefaultName;
+    serviceName := serviceType.DefaultName + '@' + componentType.DefaultName;
   if HasService(serviceName) then
-    raise ERegistrationException.CreateResFmt(@SDuplicatedName, [serviceName]);
+    raise ERegistrationException.CreateResFmt(@SDuplicateServiceName, [serviceName]);
 end;
 
 procedure TComponentRegistry.UnregisterAll;
@@ -328,11 +269,13 @@ procedure TComponentRegistry.RegisterService(const model: TComponentModel;
 var
   serviceName: string;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(model, 'model');
   Guard.CheckNotNull(serviceType, 'serviceType');
+{$ENDIF}
 
   serviceName := name;
-  Validate(model.ComponentTypeInfo, serviceType, serviceName);
+  Validate(model.ComponentType, TType.GetType(serviceType), serviceName);
   model.Services[serviceName] := serviceType;
   fServiceTypeMappings.Add(serviceType, model);
   fServiceNameMappings.Add(serviceName, model);
@@ -353,8 +296,8 @@ procedure TComponentRegistry.RegisterDefault(const model: TComponentModel;
   serviceType: PTypeInfo);
 begin
   if not model.HasService(serviceType) then
-    raise ERegistrationException.CreateResFmt(@SMissingServiceType,
-      [GetTypeName(serviceType)]);
+    raise ERegistrationException.CreateResFmt(@SServiceNotFound, [
+      serviceType.TypeName]);
   fDefaultRegistrations.AddOrSetValue(serviceType, model);
 end;
 
@@ -380,7 +323,7 @@ begin
   if not (TType.IsDelegate(model.ComponentTypeInfo) and (Length(methods) = 1)
     and Assigned(methods[0].ReturnType)) then
     raise ERegistrationException.CreateResFmt(@SUnsupportedFactoryType, [
-      model.ComponentType.DefaultName]);
+      model.ComponentTypeName]);
 
   maxVirtualIndex := 2;
   for method in methods do
@@ -409,15 +352,13 @@ begin
   invokeEvent :=
     procedure(method: TRttiMethod; const args: TArray<TValue>; out result: TValue)
     var
-      dependencyOverrides: TArray<TDependencyOverride>;
-      resolverOverride: IResolverOverride;
+      arguments: TArray<TValue>;
       i: Integer;
     begin
-      SetLength(dependencyOverrides, Length(args) - 1);
+      SetLength(arguments, High(args));
       for i := 1 to High(args) do
-        dependencyOverrides[i - 1] := TDependencyOverride.Create(args[i].TypeInfo, args[i]);
-      resolverOverride := TDependencyOverrides.Create(dependencyOverrides);
-      result := fContainerContext.ServiceResolver.Resolve(method.ReturnType.Handle, resolverOverride)
+        arguments[i - 1] := TTypedValue.Create(args[i].TypeInfo, args[i]);
+      result := (fKernel as IKernelInternal).Resolve(method.ReturnType.Handle, arguments);
     end;
 
   InternalRegisterFactory(model, invokeEvent);
@@ -431,15 +372,13 @@ begin
   invokeEvent :=
     procedure(method: TRttiMethod; const args: TArray<TValue>; out result: TValue)
     var
-      dependencyOverrides: TArray<TDependencyOverride>;
-      resolverOverride: IResolverOverride;
+      arguments: TArray<TValue>;
       i: Integer;
     begin
-      SetLength(dependencyOverrides, Length(args) - 1);
+      SetLength(arguments, High(args));
       for i := 1 to High(args) do
-        dependencyOverrides[i - 1] := TDependencyOverride.Create(args[i].TypeInfo, args[i]);
-      resolverOverride := TDependencyOverrides.Create(dependencyOverrides);
-      result := fContainerContext.ServiceResolver.Resolve(name, resolverOverride);
+        arguments[i - 1] := TTypedValue.Create(args[i].TypeInfo, args[i]);
+      result := (fKernel as IKernelInternal).Resolve(name, arguments);
     end;
 
   InternalRegisterFactory(model, invokeEvent);
@@ -450,19 +389,13 @@ function TComponentRegistry.RegisterComponent(
   componentTypeInfo: PTypeInfo): TComponentModel;
 var
   componentType: TRttiType;
-  elementTypeInfo: PTypeInfo;
-  activatorDelegate: TActivatorDelegate;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(componentTypeInfo, 'componentTypeInfo');
+{$ENDIF}
 
-  componentType := fRttiContext.GetType(componentTypeInfo);
-  if componentType.IsDynamicArray then
-  begin
-    elementTypeInfo := componentType.AsDynamicArray.ElementType.Handle;
-    activatorDelegate := BuildActivatorDelegate(elementTypeInfo, componentType);
-  end;
-  Result := TComponentModel.Create(fContainerContext, componentType);
-  Result.ActivatorDelegate := activatorDelegate;
+  componentType := TType.GetType(componentTypeInfo);
+  Result := TComponentModel.Create(componentType);
   fModels.Add(Result);
 end;
 
@@ -473,7 +406,9 @@ end;
 
 function TComponentRegistry.FindOne(componentType: PTypeInfo): TComponentModel;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(componentType, 'componentType');
+{$ENDIF}
 
   Result := fModels.FirstOrDefault(
     function(const model: TComponentModel): Boolean
@@ -482,10 +417,45 @@ begin
     end);
 end;
 
+function TComponentRegistry.FindOne(serviceType: PTypeInfo;
+  const argument: TValue): TComponentModel;
+var
+  name: string;
+begin
+  if argument.IsEmpty then
+  begin
+    if not HasService(serviceType) then
+      raise EResolveException.CreateResFmt(@SCannotResolveType, [
+        serviceType.TypeName])
+    else
+    begin
+      Result := FindDefault(serviceType);
+      if not Assigned(Result) then
+        raise EResolveException.CreateResFmt(@SNoDefaultFound, [
+          serviceType.TypeName]);
+    end;
+  end
+  else if argument.IsString then
+  begin
+    name := argument.AsString;
+    Result := FindOne(name);
+    if not Assigned(Result) then
+      raise EResolveException.CreateResFmt(@SServiceNotFound, [name]);
+    if not Result.HasService(serviceType) then
+      raise EResolveException.CreateResFmt(@SCannotResolveType, [
+        serviceType.TypeName]);
+  end
+  else
+    raise EResolveException.CreateResFmt(@SCannotResolveType, [
+      serviceType.TypeName]);
+end;
+
 function TComponentRegistry.FindDefault(
   serviceType: PTypeInfo): TComponentModel;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(serviceType, 'serviceType');
+{$ENDIF}
 
   if not fDefaultRegistrations.TryGetValue(serviceType, Result) then
     fServiceTypeMappings[serviceType].TryGetSingle(Result);
@@ -502,7 +472,9 @@ var
   models: IReadOnlyCollection<TComponentModel>;
   unnamedModels: IReadOnlyCollection<TComponentModel>;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(serviceType, 'serviceType');
+{$ENDIF}
 
   if fServiceTypeMappings.TryGetValues(serviceType, models) then
   begin
@@ -517,7 +489,9 @@ end;
 
 function TComponentRegistry.HasService(serviceType: PTypeInfo): Boolean;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(serviceType, 'serviceType');
+{$ENDIF}
 
   Result := fServiceTypeMappings.ContainsKey(serviceType);
 end;
@@ -532,10 +506,12 @@ function TComponentRegistry.HasService(serviceType: PTypeInfo;
 var
   model: TComponentModel;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(serviceType, 'serviceType');
+{$ENDIF}
 
-  Result := fServiceNameMappings.TryGetValue(name, model) and
-    model.HasService(serviceType);
+  Result := fServiceNameMappings.TryGetValue(name, model)
+    and model.HasService(serviceType);
 end;
 
 function TComponentRegistry.HasDefault(serviceType: PTypeInfo): Boolean;
@@ -549,29 +525,28 @@ end;
 
 {$REGION 'TRegistration'}
 
-constructor TRegistration.Create(const registry: IComponentRegistry;
+constructor TRegistration.Create(const kernel: IKernel;
   componentType: PTypeInfo);
 begin
-  Guard.CheckNotNull(registry, 'registry');
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(kernel, 'kernel');
   Guard.CheckNotNull(componentType, 'componentType');
-{$IFNDEF DELPHIXE_UP}
-  fRegistry := registry as TComponentRegistry;
-{$ELSE}
-  fRegistry := registry;
 {$ENDIF}
-  fModel := fRegistry.RegisterComponent(componentType);
+
+  fKernel := kernel;
+  fModel := fKernel.Registry.RegisterComponent(componentType);
 end;
 
 function TRegistration.Implements(serviceType: PTypeInfo): TRegistration;
 begin
-  fRegistry.RegisterService(fModel, serviceType);
+  fKernel.Registry.RegisterService(fModel, serviceType);
   Result := Self;
 end;
 
 function TRegistration.Implements(serviceType: PTypeInfo;
   const name: string): TRegistration;
 begin
-  fRegistry.RegisterService(fModel, serviceType, name);
+  fKernel.Registry.RegisterService(fModel, serviceType, name);
   Result := Self;
 end;
 
@@ -584,61 +559,61 @@ end;
 function TRegistration.InjectConstructor(
   const parameterTypes: array of PTypeInfo): TRegistration;
 begin
-  fModel.InjectConstructor(parameterTypes);
+  fKernel.Injector.InjectConstructor(fModel, parameterTypes);
   Result := Self;
 end;
 
 function TRegistration.InjectProperty(
   const propertyName: string): TRegistration;
 begin
-  fModel.InjectProperty(propertyName);
+  fKernel.Injector.InjectProperty(fModel, propertyName);
   Result := Self;
 end;
 
 function TRegistration.InjectMethod(const methodName: string;
   const parameterTypes: array of PTypeInfo): TRegistration;
 begin
-  fModel.InjectMethod(methodName, parameterTypes);
+  fKernel.Injector.InjectMethod(fModel, methodName, parameterTypes);
   Result := Self;
 end;
 
 function TRegistration.InjectMethod(const methodName: string): TRegistration;
 begin
-  fModel.InjectMethod(methodName);
+  fKernel.Injector.InjectMethod(fModel, methodName);
   Result := Self;
 end;
 
 function TRegistration.InjectField(const fieldName: string): TRegistration;
 begin
-  fModel.InjectField(fieldName);
+  fKernel.Injector.InjectField(fModel, fieldName);
   Result := Self;
 end;
 
 function TRegistration.InjectConstructor(
   const arguments: array of TValue): TRegistration;
 begin
-  fModel.InjectConstructor(arguments);
+  fKernel.Injector.InjectConstructor(fModel, arguments);
   Result := Self;
 end;
 
 function TRegistration.InjectProperty(const propertyName: string;
   const value: TValue): TRegistration;
 begin
-  fModel.InjectProperty(propertyName, value);
+  fKernel.Injector.InjectProperty(fModel, propertyName, value);
   Result := Self;
 end;
 
 function TRegistration.InjectMethod(const methodName: string;
   const arguments: array of TValue): TRegistration;
 begin
-  fModel.InjectMethod(methodName, arguments);
+  fKernel.Injector.InjectMethod(fModel, methodName, arguments);
   Result := Self;
 end;
 
 function TRegistration.InjectField(const fieldName: string;
   const value: TValue): TRegistration;
 begin
-  fModel.InjectField(fieldName, value);
+  fKernel.Injector.InjectField(fModel, fieldName, value);
   Result := Self;
 end;
 
@@ -675,26 +650,26 @@ var
   serviceType: PTypeInfo;
 begin
   for serviceType in fModel.Services.Values do
-    fRegistry.RegisterDefault(fModel, serviceType);
+    fKernel.Registry.RegisterDefault(fModel, serviceType);
   Result := Self;
 end;
 
 function TRegistration.AsDefault(serviceType: PTypeInfo): TRegistration;
 begin
-  fRegistry.RegisterDefault(fModel, serviceType);
+  fKernel.Registry.RegisterDefault(fModel, serviceType);
   Result := Self;
 end;
 
 {$IFDEF DELPHIXE_UP}
 function TRegistration.AsFactory: TRegistration;
 begin
-  fRegistry.RegisterFactory(fModel);
+  fKernel.Registry.RegisterFactory(fModel);
   Result := Self;
 end;
 
 function TRegistration.AsFactory(const name: string): TRegistration;
 begin
-  fRegistry.RegisterFactory(fModel, name);
+  fKernel.Registry.RegisterFactory(fModel, name);
   Result := Self;
 end;
 {$ENDIF}
@@ -704,10 +679,9 @@ end;
 
 {$REGION 'TRegistration<T>'}
 
-constructor TRegistration<T>.Create(
-  const registry: IComponentRegistry);
+constructor TRegistration<T>.Create(const kernel: IKernel);
 begin
-  fRegistration := TRegistration.Create(registry, TypeInfo(T));
+  fRegistration := TRegistration.Create(kernel, TypeInfo(T));
 end;
 
 function TRegistration<T>.Implements(serviceType: PTypeInfo): TRegistration<T>;
@@ -870,23 +844,25 @@ end;
 
 {$REGION 'TRegistrationManager'}
 
-constructor TRegistrationManager.Create(
-  const registry: IComponentRegistry);
+constructor TRegistrationManager.Create(const kernel: IKernel);
 begin
   inherited Create;
-  fRegistry := registry;
+  fKernel := kernel;
 end;
 
-function TRegistrationManager.RegisterComponent(
+function TRegistrationManager.RegisterType(
   componentType: PTypeInfo): TRegistration;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(componentType, 'componentType');
-  Result := TRegistration.Create(fRegistry, componentType);
+{$ENDIF}
+
+  Result := TRegistration.Create(fKernel, componentType);
 end;
 
-function TRegistrationManager.RegisterComponent<TComponentType>: TRegistration<TComponentType>;
+function TRegistrationManager.RegisterType<TComponentType>: TRegistration<TComponentType>;
 begin
-  Result := TRegistration<TComponentType>.Create(fRegistry);
+  Result := TRegistration<TComponentType>.Create(fKernel);
 end;
 
 {$ENDREGION}

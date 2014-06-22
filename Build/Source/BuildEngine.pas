@@ -128,6 +128,7 @@ type
     fOnlyShowInstalledVersions: Boolean;
     fPauseAfterEachStep: Boolean;
     fRunTests: Boolean;
+    fRunTestsAsConsole: Boolean;
     fSelectedTasks: IList<TBuildTask>;
     fSourcePaths: TStrings;
     fTargets: IList<TCompilerTarget>;
@@ -143,6 +144,7 @@ type
       read fOnlyShowInstalledVersions write fOnlyShowInstalledVersions;
     property PauseAfterEachStep: Boolean read FPauseAfterEachStep write FPauseAfterEachStep;
     property RunTests: Boolean read fRunTests write fRunTests;
+    property RunTestsAsConsole: Boolean read fRunTestsAsConsole write fRunTestsAsConsole;
     property SelectedTasks: IList<TBuildTask> read fSelectedTasks;
     property SourcePaths: TStrings read fSourcePaths;
     property Targets: IList<TCompilerTarget> read fTargets;
@@ -614,6 +616,7 @@ var
   configName: string;
   projectName: string;
   cmdFileName: string;
+  defines: string;
   commandLine: string;
   exitCode: Cardinal;
   targetPlatform: string;
@@ -651,8 +654,10 @@ begin
   rsVars := IncludeTrailingPathDelimiter(target.RootDir) + 'bin\rsvars.bat';
   for projectName in task.Projects do
   begin
-    commandLine := Format('/C BuildHelper "%0:s" "%1:s" "Config=%2:s" "Platform=%3:s" "DCC_DcuOutput=%4:s"', [
-      rsVars, projectName, configName, targetPlatform, unitOutputPath]);
+    if fRunTestsAsConsole then
+      defines := 'CONSOLE_TESTRUNNER';
+    commandLine := Format('/C BuildHelper "%0:s" "%1:s" "Config=%2:s" "Platform=%3:s" "DCC_DcuOutput=%4:s" "DCC_Define=%5:s"', [
+      rsVars, projectName, configName, targetPlatform, unitOutputPath, defines]);
     if fPauseAfterEachStep then
       commandLine := commandLine + SPause;
     ExecuteCommandLine(cmdFileName, commandLine, exitCode);
@@ -666,7 +671,7 @@ begin
     begin
       commandLine := Format('%0:s\Tests\Bin\%1:s\Spring.Tests.exe', [
         ExcludeTrailingPathDelimiter(projectPath),
-        StringReplace(task.Compiler.TypeName, '.', '\', [])]);
+        StringReplace(TPath.Combine(task.Compiler.TypeName, configName), '.', '\', [])]);
       ExecuteCommandLine(commandLine, '', exitCode, ExtractFileDir(commandLine));
     end;
   end;
@@ -744,6 +749,7 @@ begin
     selectedTasks.DelimitedText := iniFile.ReadString('Globals', 'SelectedTasks', '');
     fPauseAfterEachStep := iniFile.ReadBool('Globals', 'PauseAfterEachStep', False);
     fRunTests := iniFile.ReadBool('Globals', 'RunTests', False);
+    fRunTestsAsConsole := iniFile.ReadBool('Globals', 'RunTestsAsConsole', False);
     fModifyDelphiRegistrySettings := iniFile.ReadBool('Globals', 'ModifyDelphiRegistrySettings', False);
     fOnlyShowInstalledVersions := iniFile.ReadBool('Globals', 'OnlyShowInstalledVersions', False);
 
@@ -808,6 +814,7 @@ begin
     iniFile.WriteString('Globals', 'SelectedTasks', selectedTasks.DelimitedText);
     iniFile.WriteBool('Globals', 'PauseAfterEachStep', fPauseAfterEachStep);
     iniFile.WriteBool('Globals', 'RunTests', fRunTests);
+    iniFile.WriteBool('Globals', 'RunTestsAsConsole', fRunTestsAsConsole);
     iniFile.WriteBool('Globals', 'ModifyDelphiRegistrySettings', fModifyDelphiRegistrySettings);
   finally
     selectedTasks.Free;

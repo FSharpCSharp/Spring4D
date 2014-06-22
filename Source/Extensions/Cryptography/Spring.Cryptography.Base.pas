@@ -707,7 +707,7 @@ var
   i: Integer;
 begin
   Randomize;
-  for i := 0 to High(data) do
+  for i := Low(data) to High(data) do
   begin
     data[i] := RandomRange(0, $FF + 1);
   end;
@@ -718,7 +718,7 @@ var
   i: Integer;
 begin
   Randomize;
-  for i := 0 to High(data) do
+  for i := Low(data) to High(data) do
   begin
     data[i] := RandomRange(1, $FF + 1);
   end;

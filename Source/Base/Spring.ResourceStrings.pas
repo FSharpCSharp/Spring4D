@@ -110,6 +110,8 @@ resourcestring
 
   {$REGION 'Spring.Helpers'}
 
+  SNotGenericType = 'Type "%s" is not a generic type.';
+
   SInvalidOperation_GetValue = 'The GetValue method works only for properties/fields.';
   SInvalidOperation_SetValue = 'The SetValue method works only for properties/fields.';
   SInvalidGuidArray = 'Byte array for GUID must be exactly %d bytes long';

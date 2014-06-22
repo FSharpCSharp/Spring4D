@@ -45,10 +45,11 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
+			<DCC_Define>SPRING_ENABLE_GUARD;$(DCC_Define)</DCC_Define>
 			<VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
 			<Manifest_File>None</Manifest_File>
 			<DCC_UnitSearchPath>..\Source\Base;..\Source\Base\Collections;..\Source\Base\Reflection;..\Source\Core\Container;..\Source\Core\Services;..\Source\Extensions\Utils;..\Source\Extensions\Cryptography;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
-			<DCC_ExeOutput>Bin\DelphiXE2\$(Platform)</DCC_ExeOutput>
+			<DCC_ExeOutput>Bin\DelphiXE2\$(Platform)\$(Config)</DCC_ExeOutput>
 			<DCC_DcuOutput>Lib\DelphiXE2\$(Platform)\$(Config)</DCC_DcuOutput>
 			<VerInfo_Locale>1033</VerInfo_Locale>
 			<DCC_S>false</DCC_S>

@@ -43,21 +43,25 @@ type
 
   TActivatorInspector = class(TInspectorBase)
   protected
-    procedure DoProcessModel(const context: IContainerContext;
+    procedure DoProcessModel(const kernel: IKernel;
       const model: TComponentModel); override;
   end;
 
   TReflectionComponentActivator2 = class(TReflectionComponentActivator)
   protected
-    function GetEligibleConstructor(const model: TComponentModel;
-      const resolver: IDependencyResolver): IInjection; override;
+    function SelectEligibleConstructor(
+      const context: ICreationContext): IInjection; override;
   end;
 
 implementation
 
 uses
+  Generics.Defaults,
+  Rtti,
+  Spring.Collections,
   Spring.Container.Common,
   Spring.Container.ResourceStrings,
+  Spring.Reflection,
   Spring.Helpers;
 
 
@@ -65,7 +69,7 @@ uses
 
 procedure TActivatorContainerExtension.Initialize;
 begin
-  Context.ComponentBuilder.AddInspector(TActivatorInspector.Create);
+  Kernel.Builder.AddInspector(TActivatorInspector.Create);
 end;
 
 {$ENDREGION}
@@ -73,11 +77,11 @@ end;
 
 {$REGION 'TActivatorInspector'}
 
-procedure TActivatorInspector.DoProcessModel(const context: IContainerContext;
+procedure TActivatorInspector.DoProcessModel(const kernel: IKernel;
   const model: TComponentModel);
 begin
   if not Assigned(model.ActivatorDelegate) then
-    model.ComponentActivator := TReflectionComponentActivator2.Create(model);
+    model.ComponentActivator := TReflectionComponentActivator2.Create(kernel, model);
 end;
 
 {$ENDREGION}
@@ -85,38 +89,49 @@ end;
 
 {$REGION 'TReflectionComponentActivator2'}
 
-function TReflectionComponentActivator2.GetEligibleConstructor(
-  const model: TComponentModel;
-  const resolver: IDependencyResolver): IInjection;
+function TReflectionComponentActivator2.SelectEligibleConstructor(
+  const context: ICreationContext): IInjection;
 var
-  candidate: IInjection;
-  winner: IInjection;
   maxCount: Integer;
+  targetType: TRttiType;
+  candidates: IEnumerable<IInjection>;
+  candidate: IInjection;
 begin
-  winner := nil;
-  maxCount := -1;
+  Result := Model.ConstructorInjections.FirstOrDefault(
+    function(const injection: IInjection): Boolean
+    begin
+      Result := injection.Target.AsMethod.HasCustomAttribute(InjectAttribute);
+    end);
+  if Assigned(Result) then
+    Exit;
 
-  for candidate in model.ConstructorInjections do
-  begin
-    if candidate.Target.HasCustomAttribute<InjectAttribute> then
+  maxCount := -1;
+  targetType := nil;
+
+  candidates := Model.ConstructorInjections.Ordered(
+    TComparer<IInjection>.Construct(
+    function(const left, right: IInjection): Integer
     begin
-      winner := candidate;
-      Break;
-    end;
-    if (maxCount > 0) and (candidate.DependencyCount = maxCount) then
-      raise EResolveException.CreateResFmt(
-        @SAmbiguousConstructor, [model.ComponentType.Name]);
-    if candidate.DependencyCount > maxCount then
+      Result := right.Target.Parent.AncestorCount - left.Target.Parent.AncestorCount;
+      if Result = 0 then
+        Result := right.DependencyCount - left.DependencyCount;
+    end)).TakeWhile(
+    function(const injection: IInjection): Boolean
     begin
-      winner := candidate;
-      maxCount := candidate.DependencyCount;
-    end;
-  end;
-  Result := winner;
-  if Assigned(Result) and not resolver.CanResolveDependencies(
-    Result.Dependencies, Result.Arguments, Result.Target) then
-    raise EResolveException.CreateResFmt(
-      @SUnsatisfiedConstructorParameters, [model.ComponentType.Name]);
+      if maxCount = -1 then
+        maxCount := injection.DependencyCount;
+      if targetType = nil then
+        targetType := injection.Target.Parent;
+      Result := (injection.DependencyCount = maxCount)
+        and (targetType = injection.Target.Parent);
+    end).Where(
+    function(const injection: IInjection): Boolean
+    begin
+      Result := TryHandle(context, injection, candidate);
+    end);
+  if candidates.Count > 1 then
+    raise EResolveException.CreateResFmt(@SAmbiguousConstructor, [targetType.DefaultName]);
+  Result := candidate;
 end;
 
 {$ENDREGION}

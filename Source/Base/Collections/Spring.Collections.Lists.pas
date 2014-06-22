@@ -403,7 +403,7 @@ begin
   Dec(fCount, count);
   IncreaseVersion;
 
-  for i := 0 to Length(oldItems) - 1 do
+  for i := Low(oldItems) to High(oldItems) do
     Changed(oldItems[i], caRemoved);
 end;
 
@@ -550,6 +550,7 @@ begin
   for index := 0 to fCount - 1 do
     if comparer.Equals(value, fItems[index]) then
       Exit(True);
+  Result := False;
 end;
 
 procedure TList<T>.CopyTo(var values: TArray<T>; index: Integer);
@@ -826,7 +827,7 @@ begin
   end;
   IncreaseVersion;
 
-  for i := 0 to Length(oldItems) - 1 do
+  for i := Low(oldItems) to High(oldItems) do
   begin
     Changed(oldItems[i], caRemoved);
     oldItems[i].Free;

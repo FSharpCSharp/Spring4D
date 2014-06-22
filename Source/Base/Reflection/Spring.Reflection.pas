@@ -203,25 +203,6 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'Activator'}
-
-  IObjectActivator = interface
-    ['{CE05FB89-3467-449E-81EA-A5AEECAB7BB8}']
-    function CreateInstance: TValue;
-  end;
-
-  TActivator = record
-  public
-    class function CreateInstance(const classType: TRttiInstanceType): TValue; overload; static;
-    class function CreateInstance(const classType: TRttiInstanceType;
-      const constructorMethod: TRttiMethod; const arguments: array of TValue): TValue; overload; static;
-    class function CreateInstance(const typeInfo: PTypeInfo): TValue; overload; static;
-    class function CreateInstance(const typeName: string): TValue; overload; static;
-  end;
-
-  {$ENDREGION}
-
-
   {$REGION 'TRttiMemberIterator<T>'}
 
   TRttiMemberIterator<T: TRttiMember> = class(TIterator<T>)
@@ -710,63 +691,6 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TActivator'}
-
-class function TActivator.CreateInstance(
-  const classType: TRttiInstanceType): TValue;
-var
-  method: TRttiMethod;
-begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(classType, 'classType');
-{$ENDIF}
-
-  for method in classType.GetMethods do
-    if method.IsConstructor and (Length(method.GetParameters) = 0) then
-      Exit(method.Invoke(classType.MetaclassType, []));
-  Result := nil;
-end;
-
-class function TActivator.CreateInstance(const classType: TRttiInstanceType;
-  const constructorMethod: TRttiMethod; const arguments: array of TValue): TValue;
-begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(classType, 'classType');
-  Guard.CheckNotNull(constructorMethod, 'constructorMethod');
-{$ENDIF}
-
-  Result := constructorMethod.Invoke(classType.MetaclassType, arguments);
-end;
-
-class function TActivator.CreateInstance(const typeInfo: PTypeInfo): TValue;
-var
-  rttiType: TRttiType;
-begin
-{$IFDEF SPRING_ENABLE_GUARD}
-  Guard.CheckNotNull(typeInfo, 'typeInfo');
-{$ENDIF}
-
-  rttiType := TType.GetType(typeInfo);
-  if rttiType is TRttiInstanceType then
-    Result := TActivator.CreateInstance(TRttiInstanceType(rttiType))
-  else
-    Result := nil;
-end;
-
-class function TActivator.CreateInstance(const typeName: string): TValue;
-var
-  rttiType: TRttiType;
-begin
-  rttiType := TType.FindType(typeName);
-  if rttiType is TRttiInstanceType then
-    Result := TActivator.CreateInstance(TRttiInstanceType(rttiType))
-  else
-    Result := nil;
-end;
-
-{$ENDREGION}
-
-
 {$REGION 'TRttiMemberIterator<T>'}
 
 constructor TRttiMemberIterator<T>.Create(const parentType: TRttiType;
@@ -985,7 +909,7 @@ var
 begin
   inherited Create;
   SetLength(fTypes, Length(types));
-  for i := 0 to High(types) do
+  for i := Low(types) to High(types) do
     fTypes[i] := types[i];
 end;
 
@@ -997,7 +921,7 @@ begin
   parameters := member.AsMethod.GetParameters;
   Result := Length(parameters) = Length(fTypes);
   if Result then
-    for i := 0 to High(parameters) do
+    for i := Low(parameters) to High(parameters) do
       if parameters[i].ParamType.Handle <> fTypes[i] then  // IsAssignableFrom
         Exit(False);
 end;

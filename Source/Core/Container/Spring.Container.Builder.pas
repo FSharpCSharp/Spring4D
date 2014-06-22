@@ -29,6 +29,7 @@ unit Spring.Container.Builder;
 interface
 
 uses
+  Rtti,
   Spring,
   Spring.Collections,
   Spring.Container.Core;
@@ -36,11 +37,11 @@ uses
 type
   TComponentBuilder = class(TInterfacedObject, IComponentBuilder)
   private
-    fContext: IContainerContext;
-    fRegistry: IComponentRegistry;
+    fKernel: IKernel;
     fInspectors: IList<IBuilderInspector>;
   public
-    constructor Create(const context: IContainerContext; const registry: IComponentRegistry);
+    constructor Create(const kernel: IKernel);
+
     procedure AddInspector(const inspector: IBuilderInspector);
     procedure RemoveInspector(const inspector: IBuilderInspector);
     procedure ClearInspectors;
@@ -50,44 +51,50 @@ type
 
   TInspectorBase = class abstract(TInterfacedObject, IBuilderInspector)
   protected
-    procedure DoProcessModel(const context: IContainerContext; const model: TComponentModel); virtual; abstract;
+    procedure DoProcessModel(const kernel: IKernel; const model: TComponentModel); virtual; abstract;
   public
-    procedure ProcessModel(const context: IContainerContext; const model: TComponentModel);
+    procedure ProcessModel(const kernel: IKernel; const model: TComponentModel);
   end;
 
   TInterfaceInspector = class(TInspectorBase)
   protected
-    procedure DoProcessModel(const context: IContainerContext; const model: TComponentModel); override;
+    procedure DoProcessModel(const kernel: IKernel; const model: TComponentModel); override;
   end;
 
   TLifetimeInspector = class(TInspectorBase)
   protected
-    procedure DoProcessModel(const context: IContainerContext; const model: TComponentModel); override;
+    procedure DoProcessModel(const kernel: IKernel; const model: TComponentModel); override;
   end;
 
   TComponentActivatorInspector = class(TInspectorBase)
   protected
-    procedure DoProcessModel(const context: IContainerContext; const model: TComponentModel); override;
+    procedure DoProcessModel(const kernel: IKernel; const model: TComponentModel); override;
   end;
 
-  TConstructorInspector = class(TInspectorBase)
+  TMemberInspector = class(TInspectorBase)
   protected
-    procedure DoProcessModel(const context: IContainerContext; const model: TComponentModel); override;
+    procedure HandleInjectAttribute(const target: TRttiNamedObject;
+      var dependency: TDependencyModel; out argument: TValue);
   end;
 
-  TPropertyInspector = class(TInspectorBase)
+  TConstructorInspector = class(TMemberInspector)
   protected
-    procedure DoProcessModel(const context: IContainerContext; const model: TComponentModel); override;
+    procedure DoProcessModel(const kernel: IKernel; const model: TComponentModel); override;
   end;
 
-  TMethodInspector = class(TInspectorBase)
+  TPropertyInspector = class(TMemberInspector)
   protected
-    procedure DoProcessModel(const context: IContainerContext; const model: TComponentModel); override;
+    procedure DoProcessModel(const kernel: IKernel; const model: TComponentModel); override;
   end;
 
-  TFieldInspector = class(TInspectorBase)
+  TMethodInspector = class(TMemberInspector)
   protected
-    procedure DoProcessModel(const context: IContainerContext; const model: TComponentModel); override;
+    procedure DoProcessModel(const kernel: IKernel; const model: TComponentModel); override;
+  end;
+
+  TFieldInspector = class(TMemberInspector)
+  protected
+    procedure DoProcessModel(const kernel: IKernel; const model: TComponentModel); override;
   end;
 
   TInjectionTargetInspector = class(TInspectorBase)
@@ -96,19 +103,19 @@ type
       fHasNoTargetCondition: TPredicate<IInjection>;
     class constructor Create;
   protected
-    procedure CheckConstructorInjections(const context: IContainerContext; const model: TComponentModel);
-    procedure CheckMethodInjections(const context: IContainerContext; const model: TComponentModel);
-    procedure DoProcessModel(const context: IContainerContext; const model: TComponentModel); override;
+    procedure CheckConstructorInjections(const kernel: IKernel; const model: TComponentModel);
+    procedure CheckMethodInjections(const kernel: IKernel; const model: TComponentModel);
+    procedure DoProcessModel(const kernel: IKernel; const model: TComponentModel); override;
   end;
 
 implementation
 
 uses
-  Rtti,
   TypInfo,
   Spring.Container.Common,
   Spring.Container.ComponentActivator,
   Spring.Container.Injection,
+  Spring.Container.LifetimeManager,
   Spring.Container.ResourceStrings,
   Spring.Helpers,
   Spring.Reflection;
@@ -116,14 +123,11 @@ uses
 
 {$REGION 'TComponentBuilder'}
 
-constructor TComponentBuilder.Create(const context: IContainerContext;
-  const registry: IComponentRegistry);
+constructor TComponentBuilder.Create(const kernel: IKernel);
 begin
-  Guard.CheckNotNull(context, 'context');
-  Guard.CheckNotNull(registry, 'registry');
+  Guard.CheckNotNull(kernel, 'kernel');
   inherited Create;
-  fContext := context;
-  fRegistry := registry;
+  fKernel := kernel;
   fInspectors := TCollections.CreateInterfaceList<IBuilderInspector>;
 end;
 
@@ -149,16 +153,14 @@ var
   inspector: IBuilderInspector;
 begin
   for inspector in fInspectors do
-  begin
-    inspector.ProcessModel(fContext, model);
-  end;
+    inspector.ProcessModel(fKernel, model);
 end;
 
 procedure TComponentBuilder.BuildAll;
 var
   model: TComponentModel;
 begin
-  for model in fRegistry.FindAll do
+  for model in fKernel.Registry.FindAll do
     Build(model);
 end;
 
@@ -168,11 +170,11 @@ end;
 {$REGION 'TInspectorBase'}
 
 procedure TInspectorBase.ProcessModel(
-  const context: IContainerContext; const model: TComponentModel);
+  const kernel: IKernel; const model: TComponentModel);
 begin
-  Guard.CheckNotNull(context, 'context');
+  Guard.CheckNotNull(kernel, 'kernel');
   Guard.CheckNotNull(model, 'model');
-  DoProcessModel(context, model);
+  DoProcessModel(kernel, model);
 end;
 
 {$ENDREGION}
@@ -180,8 +182,26 @@ end;
 
 {$REGION 'TLifetimeInspector'}
 
-procedure TLifetimeInspector.DoProcessModel(const context: IContainerContext;
+procedure TLifetimeInspector.DoProcessModel(const kernel: IKernel;
   const model: TComponentModel);
+
+  function CreateLifetimeManager(const model: TComponentModel): ILifetimeManager;
+  const
+    LifetimeManagerClasses: array[TLifetimeType] of TLifetimeManagerClass = (
+      nil,
+      TSingletonLifetimeManager,
+      TTransientLifetimeManager,
+      TSingletonPerThreadLifetimeManager,
+      TPooledLifetimeManager,
+      nil
+    );
+  begin
+    if Assigned(LifetimeManagerClasses[model.LifetimeType]) then
+      Result := LifetimeManagerClasses[model.LifetimeType].Create(model)
+    else
+      raise ERegistrationException.CreateRes(@SUnexpectedLifetimeType);
+  end;
+
 var
   attribute: LifetimeAttributeBase;
 begin
@@ -208,7 +228,47 @@ begin
     else
       model.LifetimeType := TLifetimeType.Transient;
   end;
-  model.LifetimeManager := context.CreateLifetimeManager(model);
+  model.LifetimeManager := CreateLifetimeManager(model);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TMemberInspector'}
+
+procedure TMemberInspector.HandleInjectAttribute(const target: TRttiNamedObject;
+  var dependency: TDependencyModel; out argument: TValue);
+var
+  attribute: InjectAttribute;
+  targetType: TRttiType;
+begin
+  if target.TryGetCustomAttribute<InjectAttribute>(attribute) then
+  begin
+    argument := attribute.Value;
+    if attribute.ServiceType <> nil then
+    begin
+      if target is TRttiProperty then
+        targetType := TRttiProperty(target).PropertyType
+      else if target is TRttiField then
+        targetType := TRttiField(target).FieldType
+      else if target is TRttiParameter then
+        targetType := TRttiParameter(target).ParamType
+      else
+        raise EBuilderException.CreateResFmt(@SUnresovableInjection, [
+          dependency.Name]);
+      if TType.IsAssignable(attribute.ServiceType, targetType.Handle) then
+      begin
+        if attribute.ServiceType <> targetType.Handle then
+          targetType := TType.GetType(attribute.ServiceType);
+        dependency := TDependencyModel.Create(targetType, target);
+      end
+      else
+        raise EBuilderException.CreateResFmt(@SUnresovableInjection, [
+          dependency.Name]);
+    end;
+  end
+  else
+    argument := TValue.Empty;
 end;
 
 {$ENDREGION}
@@ -217,36 +277,27 @@ end;
 {$REGION 'TConstructorInspector'}
 
 procedure TConstructorInspector.DoProcessModel(
-  const context: IContainerContext; const model: TComponentModel);
+  const kernel: IKernel; const model: TComponentModel);
 var
   predicate: TPredicate<TRttiMethod>;
   injection: IInjection;
   method: TRttiMethod;
   parameters: TArray<TRttiParameter>;
-  parameter: TRttiParameter;
   arguments: TArray<TValue>;
-  attribute: InjectAttribute;
   i: Integer;
 begin
   if not model.ConstructorInjections.IsEmpty then Exit;  // TEMP
-  predicate := TMethodFilters.IsConstructor and
-    not TMethodFilters.HasParameterFlags([pfVar, pfOut]);
+  predicate := TMethodFilters.IsConstructor
+    and not TMethodFilters.HasParameterFlags([pfVar, pfOut]);
   for method in model.ComponentType.Methods.Where(predicate) do
   begin
-    injection := context.InjectionFactory.CreateConstructorInjection;
+    injection := kernel.Injector.InjectConstructor(model);
     injection.Initialize(method);
     parameters := method.GetParameters;
     SetLength(arguments, Length(parameters));
-    for i := 0 to High(parameters) do
-    begin
-      parameter := parameters[i];
-      if parameter.TryGetCustomAttribute<InjectAttribute>(attribute) and attribute.HasValue then
-        arguments[i] := attribute.Value
-      else
-        arguments[i] := nil;
-    end;
+    for i := Low(parameters) to High(parameters) do
+      HandleInjectAttribute(parameters[i], injection.Dependencies[i], arguments[i]);
     injection.InitializeArguments(arguments);
-    model.ConstructorInjections.Add(injection);
   end;
 end;
 
@@ -255,43 +306,31 @@ end;
 
 {$REGION 'TMethodInspector'}
 
-procedure TMethodInspector.DoProcessModel(const context: IContainerContext;
+procedure TMethodInspector.DoProcessModel(const kernel: IKernel;
   const model: TComponentModel);
 var
   condition: TPredicate<TRttiMethod>;
   method: TRttiMethod;
   injection: IInjection;
-  injectionExists: Boolean;
   parameters: TArray<TRttiParameter>;
-  parameter: TRttiParameter;
   arguments: TArray<TValue>;
-  attribute: InjectAttribute;
   i: Integer;
 begin
-  condition := TMethodFilters.IsInstanceMethod and
-    TMethodFilters.HasAttribute(InjectAttribute) and
-    not TMethodFilters.HasParameterFlags([pfOut, pfVar]) and
-    not TMethodFilters.IsConstructor;
+  condition := TMethodFilters.IsInstanceMethod
+    and TMethodFilters.HasAttribute(InjectAttribute)
+    and not TMethodFilters.HasParameterFlags([pfOut, pfVar])
+    and not TMethodFilters.IsConstructor;
   for method in model.ComponentType.Methods.Where(condition) do
   begin
-    injectionExists := model.MethodInjections.TryGetFirst(injection,
-      TInjectionFilters.ContainsMember(method));
-    if not injectionExists then
-      injection := context.InjectionFactory.CreateMethodInjection(method.Name);
+    if not model.MethodInjections.TryGetFirst(injection,
+      TInjectionFilters.ContainsMember(method)) then
+      injection := kernel.Injector.InjectMethod(model, method.Name);
     injection.Initialize(method);
     parameters := method.GetParameters;
     SetLength(arguments, Length(parameters));
-    for i := 0 to High(parameters) do
-    begin
-      parameter := parameters[i];
-      if parameter.TryGetCustomAttribute<InjectAttribute>(attribute) and attribute.HasValue then
-        arguments[i] := attribute.Value
-      else
-        arguments[i] := nil;
-    end;
+    for i := Low(parameters) to High(parameters) do
+      HandleInjectAttribute(parameters[i], injection.Dependencies[i], arguments[i]);
     injection.InitializeArguments(arguments);
-    if not injectionExists then
-      model.MethodInjections.Add(injection);
   end;
 end;
 
@@ -300,36 +339,24 @@ end;
 
 {$REGION 'TPropertyInspector'}
 
-procedure TPropertyInspector.DoProcessModel(const context: IContainerContext;
+procedure TPropertyInspector.DoProcessModel(const kernel: IKernel;
   const model: TComponentModel);
 var
   condition: TPredicate<TRttiProperty>;
   prop: TRttiProperty;
   injection: IInjection;
-  injectionExists: Boolean;
-  attribute: InjectAttribute;
+  argument: TValue;
 begin
-  condition := TPropertyFilters.IsInvokable and
-    TPropertyFilters.HasAttribute(InjectAttribute);
+  condition := TPropertyFilters.IsInvokable
+    and TPropertyFilters.HasAttribute(InjectAttribute);
   for prop in model.ComponentType.Properties.Where(condition) do
   begin
-    injectionExists := model.PropertyInjections.TryGetFirst(injection,
-      TInjectionFilters.ContainsMember(prop));
-    if not injectionExists then
-      injection := context.InjectionFactory.CreatePropertyInjection(prop.Name);
+    if not model.PropertyInjections.TryGetFirst(injection,
+      TInjectionFilters.ContainsMember(prop)) then
+      injection := kernel.Injector.InjectProperty(model, prop.Name);
     injection.Initialize(prop);
-    if prop.TryGetCustomAttribute<InjectAttribute>(attribute) then
-    begin
-      if attribute.HasValue then
-        injection.InitializeArguments([attribute.Value]);
-      if attribute.ServiceType <> nil then
-        if TType.IsAssignable(attribute.ServiceType, prop.PropertyType.Handle) then
-          injection.Dependencies[0] := TType.GetType(attribute.ServiceType)
-        else
-          raise EBuilderException.CreateRes(@SUnresovableInjection);
-    end;
-    if not injectionExists then
-      model.PropertyInjections.Add(injection);
+    HandleInjectAttribute(prop, injection.Dependencies[0], argument);
+    injection.InitializeArguments([argument]);
   end;
 end;
 
@@ -338,35 +365,23 @@ end;
 
 {$REGION 'TFieldInspector'}
 
-procedure TFieldInspector.DoProcessModel(const context: IContainerContext;
+procedure TFieldInspector.DoProcessModel(const kernel: IKernel;
   const model: TComponentModel);
 var
   condition: TPredicate<TRttiField>;
   field: TRttiField;
   injection: IInjection;
-  injectionExists: Boolean;
-  attribute: InjectAttribute;
+  argument: TValue;
 begin
   condition := TFieldFilters.HasAttribute(InjectAttribute);
   for field in model.ComponentType.Fields.Where(condition) do
   begin
-    injectionExists := model.FieldInjections.TryGetFirst(injection,
-      TInjectionFilters.ContainsMember(field));
-    if not injectionExists then
-      injection := context.InjectionFactory.CreateFieldInjection(field.Name);
+    if not model.FieldInjections.TryGetFirst(injection,
+      TInjectionFilters.ContainsMember(field)) then
+      injection := kernel.Injector.InjectField(model, field.Name);
     injection.Initialize(field);
-    if field.TryGetCustomAttribute<InjectAttribute>(attribute) then
-    begin
-      if attribute.HasValue then
-        injection.InitializeArguments([attribute.Value]);
-      if attribute.ServiceType <> nil then
-        if TType.IsAssignable(attribute.ServiceType, field.FieldType.Handle) then
-          injection.Dependencies[0] := TType.GetType(attribute.ServiceType)
-        else
-          raise EBuilderException.CreateRes(@SUnresovableInjection);
-    end;
-    if not injectionExists then
-      model.FieldInjections.Add(injection);
+    HandleInjectAttribute(field, injection.Dependencies[0], argument);
+    injection.InitializeArguments([argument]);
   end;
 end;
 
@@ -376,13 +391,13 @@ end;
 {$REGION 'TComponentActivatorInspector'}
 
 procedure TComponentActivatorInspector.DoProcessModel(
-  const context: IContainerContext; const model: TComponentModel);
+  const kernel: IKernel; const model: TComponentModel);
 begin
   if not Assigned(model.ComponentActivator) then
     if not Assigned(model.ActivatorDelegate) then
-      model.ComponentActivator := TReflectionComponentActivator.Create(model)
+      model.ComponentActivator := TReflectionComponentActivator.Create(kernel, model)
     else
-      model.ComponentActivator := TDelegateComponentActivator.Create(model);
+      model.ComponentActivator := TDelegateComponentActivator.Create(kernel, model);
 end;
 
 {$ENDREGION}
@@ -399,15 +414,15 @@ begin
     end;
 end;
 
-procedure TInjectionTargetInspector.DoProcessModel(const context: IContainerContext;
+procedure TInjectionTargetInspector.DoProcessModel(const kernel: IKernel;
   const model: TComponentModel);
 begin
-  CheckConstructorInjections(context, model);
-  CheckMethodInjections(context, model);
+  CheckConstructorInjections(kernel, model);
+  CheckMethodInjections(kernel, model);
 end;
 
 procedure TInjectionTargetInspector.CheckConstructorInjections(
-  const context: IContainerContext; const model: TComponentModel);
+  const kernel: IKernel; const model: TComponentModel);
 var
   filter: TPredicate<TRttiMethod>;
   injection: IInjection;
@@ -415,17 +430,18 @@ var
 begin
   for injection in model.ConstructorInjections.Where(fHasNoTargetCondition) do
   begin
-    filter := TMethodFilters.IsConstructor and
-      TInjectionFilters.IsInjectableMethod(context, model, injection);
+    filter := TMethodFilters.IsConstructor
+      and TInjectionFilters.IsInjectableMethod(kernel, injection.Arguments);
     method := model.ComponentType.Methods.FirstOrDefault(filter);
     if not Assigned(method) then
-      raise EBuilderException.CreateRes(@SUnresovableInjection);
+      raise EBuilderException.CreateResFmt(@SUnresovableInjection, [
+        model.ComponentTypeName]);
     injection.Initialize(method);
   end;
 end;
 
 procedure TInjectionTargetInspector.CheckMethodInjections(
-  const context: IContainerContext; const model: TComponentModel);
+  const kernel: IKernel; const model: TComponentModel);
 var
   filter: TPredicate<TRttiMethod>;
   injection: IInjection;
@@ -433,12 +449,13 @@ var
 begin
   for injection in model.MethodInjections.Where(fHasNoTargetCondition) do
   begin
-    filter := TMethodFilters.IsInstanceMethod and
-      TMethodFilters.IsNamed(injection.TargetName) and
-      TInjectionFilters.IsInjectableMethod(context, model, injection);
+    filter := TMethodFilters.IsInstanceMethod
+      and TMethodFilters.IsNamed(injection.TargetName)
+      and TInjectionFilters.IsInjectableMethod(kernel, injection.Arguments);
     method := model.ComponentType.Methods.FirstOrDefault(filter);
     if not Assigned(method) then
-      raise EBuilderException.CreateRes(@SUnresovableInjection);
+      raise EBuilderException.CreateResFmt(@SUnresovableInjection, [
+        model.ComponentTypeName]);
     injection.Initialize(method);
   end;
 end;
@@ -448,7 +465,7 @@ end;
 
 {$REGION 'TInterfaceInspector'}
 
-procedure TInterfaceInspector.DoProcessModel(const context: IContainerContext;
+procedure TInterfaceInspector.DoProcessModel(const kernel: IKernel;
   const model: TComponentModel);
 var
   attributes: TArray<ImplementsAttribute>;
@@ -458,28 +475,28 @@ var
 begin
   if not model.Services.IsEmpty then Exit;
   if model.ComponentType.IsRecord and not model.HasService(model.ComponentTypeInfo) then
-    context.ComponentRegistry.RegisterService(model, model.ComponentTypeInfo)
+    kernel.Registry.RegisterService(model, model.ComponentTypeInfo)
   else
   begin
     attributes := model.ComponentType.GetCustomAttributes<ImplementsAttribute>;
     for attribute in attributes do
-      context.ComponentRegistry.RegisterService(model, attribute.ServiceType, attribute.Name);
+      kernel.Registry.RegisterService(model, attribute.ServiceType, attribute.Name);
 
     services := model.ComponentType.GetInterfaces;
     if Assigned(services) then
       for service in services do
         if Assigned(service.BaseType) and not model.HasService(service.Handle) then
         begin
-          context.ComponentRegistry.RegisterService(model, service.Handle,
-            service.DefaultName + '@' + model.ComponentType.DefaultName);
-          context.ComponentRegistry.RegisterDefault(model, service.Handle);
+          kernel.Registry.RegisterService(model, service.Handle,
+            service.DefaultName + '@' + model.ComponentTypeName);
+          kernel.Registry.RegisterDefault(model, service.Handle);
         end;
     if TType.IsDelegate(model.ComponentTypeInfo)
-      and not model.HasService(model.ComponentType.Handle) then
-      context.ComponentRegistry.RegisterService(model, model.ComponentType.Handle);
+      and not model.HasService(model.ComponentTypeInfo) then
+      kernel.Registry.RegisterService(model, model.ComponentTypeInfo);
 
     if model.Services.IsEmpty then
-      context.ComponentRegistry.RegisterService(model, model.ComponentType.Handle);
+      kernel.Registry.RegisterService(model, model.ComponentTypeInfo);
   end;
 end;
 

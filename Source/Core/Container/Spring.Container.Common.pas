@@ -224,7 +224,6 @@ type
   private
     fServiceType: PTypeInfo;
     fValue: TValue;
-    function GetHasValue: Boolean;
   public
     constructor Create; overload;
     constructor Create(const value: string); overload;
@@ -236,7 +235,6 @@ type
     constructor Create(serviceType: PTypeInfo; const name: string); overload;
     property ServiceType: PTypeInfo read fServiceType;
     property Value: TValue read fValue;
-    property HasValue: Boolean read GetHasValue;
   end;
 
   ///	<summary>
@@ -444,11 +442,6 @@ constructor InjectAttribute.Create(value: Boolean);
 begin
   inherited Create;
   fValue := value;
-end;
-
-function InjectAttribute.GetHasValue: Boolean;
-begin
-  Result := not fValue.IsEmpty;
 end;
 
 { ImplementsAttribute }

@@ -29,39 +29,30 @@ unit Spring.Container.ResourceStrings;
 interface
 
 resourcestring
-  SMissingGuid = 'The service type "%s" is missing a guid.';
-  SMissingInterface = 'The component type "%s" does not support IInterface.';
-  SIncompatibleTypes = 'The component type "%s" is incompatible with the service type "%s".';
-  SUnsupportedType = 'The component type "%s" is not supported.';
-  SUnsupportedFactoryType = 'The type "%s" cannot be registered as factory';
-  SDuplicatedName = 'Duplicated name found: "%s".';
-  SDuplicatedUnnamedService = 'Cannot have more than one unnamed registration for service type "%s".';
-  SMissingServiceType = 'The service type "%s" cannot be the default as it has not been registered.';
-  SCircularDependencyDetected = 'A circle was detected when trying to resolve the dependency: %s.';
-  SCannotResolveDependency = 'Cannot resolve the dependency: %s.';
-  SUnexpectedDependencyParameterType = 'Unexpected dependency parameter type.';
-  SNoComponentRegistered = 'No component was registered for the service type: %s.';
-  SInvalidServiceName = 'Invalid service name: "%s".';
-  SUnsatisfiedConstructorParameters = 'Unsatisfied parameters for constructor of type %s.';
-  SUnsatisfiedMethodParameterTypes = 'Unsatisfied parameter types for the method: %s.';
-  SUnsatisfiedDependency = 'Unsatisfied dependency for the service type "%0:s".';
+  SMissingGuid = 'Type is missing a guid: %s';
+  SMissingInterface = 'Type does not support IInterface: %s';
+  SIncompatibleTypes = 'Component type "%s" incompatible with service type "%s".';
+  SUnsupportedFactoryType = 'Type cannot be registered as factory: %s';
+  SDuplicateServiceName = 'Duplicate service name found: %s';
+  SServiceNotFound = 'Service not found: %s';
+  SCircularDependencyDetected = 'Circular dependency detected on type: %s';
+  SCannotResolveType = 'Cannot resolve type: %s';
+  SNoDefaultFound = 'No default found for type: %s';
+  SUnsatisfiedConstructorParameters = 'Unsatisfied parameters for constructor of type: %s';
+  SAmbiguousConstructor = 'Ambiguous constructor on class: %s';
+  SUnsatisfiedMethodParameterTypes = 'Unsatisfied parameter types for the method: %s';
   SUnsatisfiedResolutionArgumentCount = 'Unsatisfied resolution argument count.';
-  SAmbiguousConstructor = 'Ambiguous constructor of type %s.';
-  SLifetimeManagerMissing = 'LifetimeTypeManager was expected.';
-  SUnresovableInjection = 'Unresovable Inject.';
-  SMemberHasNoTarget = 'The member Inject "%s" has no target.';
-  SUnsatisfiedConstructor = 'Unsatisfied constructor.';
-  SMethodMustBeConstructor = 'The constructorMethod should be a constructor method.';
-  SNoSuchMember = 'No such member: "%s".';
-  SNoSuchMethod = 'No such method: "%s".';
-  SNoSuchProperty = 'No such property: "%s".';
-  SNoSuchField = 'No such field: "%s".';
-  SInjectionTargetNeeded = 'Inject target needed.';
-  SUnsatisfiedTarget = 'Unsatisfied target: "%s".';
-  SComponentNotFound = 'Cannot found the component registered.';
+  SUnresovableInjection = 'Unresovable injection on type: %s';
+  SUnsatisfiedConstructor = 'Unsatisfied constructor on type: %s';
+  SMethodNotFound = 'Method not found: %s';
+  SPropertyNotFound = 'Method not found: %s';
+  SFieldNotFound = 'Field not found: %s';
+  SInjectionTargetNeeded = 'Injection target needed.';
+  SUnsatisfiedTarget = 'Unsatisfied target: %s';
+  STypeNotFound = 'Type not found: %s';
   SUnexpectedLifetimeType = 'Unexpected lifetimeType.';
-  SActivatorDelegateExpected = 'An activator delegate was expected.';
-  SPoolingNotSupported = 'Pooling not supported for type: "%s".';
+  SActivatorDelegateExpected = 'Activator delegate was expected.';
+  SPoolingNotSupported = 'Pooling not supported for type: %s';
 
 implementation
 

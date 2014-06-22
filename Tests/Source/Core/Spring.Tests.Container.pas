@@ -116,7 +116,6 @@ type
     procedure TestResolveAll;
     procedure TestResolveAllNonGeneric;
     procedure TestUnsatisfiedDependency;
-//    procedure TestUnsatisfiedDependencyOfBootstrap;
   end;
 
   // Same Component, Different Services
@@ -227,6 +226,7 @@ type
     procedure TestResolve;
     procedure TestResolveDependency;
     procedure TestRegisterDefault;
+    procedure TestNoDefault;
   end;
 
   TTestInjectionByValue = class(TContainerTestCase)
@@ -306,6 +306,7 @@ implementation
 
 uses
   Spring.Collections,
+  Spring.Container.Core,
   Spring.Container.DecoratorExtension,
   Spring.Container.Resolvers,
   Spring.TestUtils;
@@ -334,6 +335,7 @@ begin
 end;
 
 {$ENDREGION}
+
 
 {$REGION 'TTestGlobalContainer'}
 {$IFDEF AUTOREFCOUNT}
@@ -364,6 +366,7 @@ end;
 
 {$ENDIF}
 {$ENDREGION}
+
 
 {$REGION 'TTestEmptyContainer'}
 
@@ -949,21 +952,11 @@ begin
   CheckTrue((fServiceValues[1].AsType<INameService>) is TAnotherNameService);
 end;
 
-/// <remarks>
-/// An EUnsatisfiedDependencyException will be raised when resolving a service type
-//  with an ambiguous name.
-/// </remarks>
 procedure TTestDifferentServiceImplementations.TestUnsatisfiedDependency;
 begin
-  ExpectedException := EUnsatisfiedDependencyException;
+  ExpectedException := EResolveException;
   fContainer.Resolve<INameService>;
 end;
-
-//procedure TTestDifferentServiceImplementations.TestUnsatisfiedDependencyOfBootstrap;
-//begin
-//  ExpectedException := EUnsatisfiedDependencyException;
-//  fContainer.Resolve<TBootstrapComponent>;
-//end;
 
 {$ENDREGION}
 
@@ -1377,6 +1370,13 @@ end;
 
 {$REGION 'TTestDefaultResolve'}
 
+procedure TTestDefaultResolve.TestNoDefault;
+begin
+  StartExpectingException(EResolveException);
+  fContainer.Resolve<INameService>;
+  StopExpectingException;
+end;
+
 procedure TTestDefaultResolve.TestRegisterDefault;
 begin
   StartExpectingException(ERegistrationException);
@@ -1442,14 +1442,11 @@ begin
   fContainer.RegisterType<TDynamicNameService>.Implements<INameService>('dynamic');
   fContainer.Build;
 
-  CheckEquals('test', fContainer.Resolve<INameService>(
-    TOrderedParametersOverride.Create(['test'])).Name);
+  CheckEquals('test', fContainer.Resolve<INameService>(['test']).Name);
 
-  CheckEquals('test', fContainer.Resolve<INameService>('dynamic',
-    TOrderedParametersOverride.Create(['test'])).Name);
+  CheckEquals('test', fContainer.Resolve<INameService>('dynamic', ['test']).Name);
 
-  CheckEquals('test', fContainer.Resolve<INameService>(
-    TParameterOverride.Create('name', 'test')).Name);
+  CheckEquals('test', fContainer.Resolve<INameService>([TNamedValue.From('name', 'test')]).Name);
 end;
 
 procedure TTestResolverOverride.TestResolveWithClass;
@@ -1457,11 +1454,9 @@ begin
   fContainer.RegisterType<TDynamicNameService>.Implements<INameService>('dynamic');
   fContainer.Build;
 
-  CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>(
-    TOrderedParametersOverride.Create([fDummy])).Name);
+  CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>([fDummy]).Name);
 
-  CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>(
-    TParameterOverride.Create('obj', fDummy)).Name);
+  CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>([TNamedValue.From('obj', fDummy)]).Name);
 end;
 
 procedure TTestResolverOverride.TestResolveWithDependency;
@@ -1473,13 +1468,11 @@ begin
   fContainer.RegisterType<TNameAgeComponent>.Implements<IAgeService>;
   fContainer.Build;
 
-  service := fContainer.Resolve<INameService>(
-    TOrderedParametersOverride.Create([fDummy]));
+  service := fContainer.Resolve<INameService>([fDummy]);
   CheckEquals(fdummy.ClassName, service.Name);
   CheckNotNull((service as TDynamicNameService).AgeService);
 
-  service := fContainer.Resolve<INameService>(
-    TParameterOverride.Create('obj', fDummy));
+  service := fContainer.Resolve<INameService>([TNamedValue.From('obj', fDummy)]);
   CheckEquals(fdummy.ClassName, service.Name);
   CheckNotNull((service as TDynamicNameService).AgeService);
 end;
@@ -1489,11 +1482,9 @@ begin
   fContainer.RegisterType<TDynamicNameService>.Implements<INameService>('dynamic');
   fContainer.Build;
 
-  CheckEquals('test' + fdummy.ClassName, fContainer.Resolve<INameService>(
-    TOrderedParametersOverride.Create(['test', fDummy])).Name);
+  CheckEquals('test' + fDummy.ClassName, fContainer.Resolve<INameService>(['test', fDummy]).Name);
 
-  CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>(
-    TParameterOverride.Create('obj', fDummy)).Name);
+  CheckEquals(fdummy.ClassName, fContainer.Resolve<INameService>([TNamedValue.From('obj', fDummy)]).Name);
 end;
 
 {$ENDREGION}
@@ -1640,8 +1631,11 @@ end;
 {$REGION 'TTestResolveLazyRecursive'}
 
 procedure TTestLazyDependenciesDetectRecursion.PerformChecks;
+var
+  model: TComponentModel;
 begin
-  fContainer.Context.ComponentRegistry.FindOne('service').InjectField('fNameService', 'service');
+  model := fContainer.Kernel.Registry.FindOne('service');
+  fContainer.Kernel.Injector.InjectField(model, 'fNameService', 'service');
 
   ExpectedException := ECircularDependencyException;
   inherited;
@@ -1657,12 +1651,13 @@ var
   service: IAgeService;
 begin
   fContainer.AddExtension<TDecoratorContainerExtension>;
+  fContainer.RegisterType<TAgeServiceDecorator2>;
   fContainer.RegisterType<TAgeServiceDecorator>;
   fContainer.RegisterType<TNameAgeComponent>;
   fContainer.Build;
 
   service := fContainer.Resolve<IAgeService>;
-  CheckTrue(service is TAgeServiceDecorator);
+  CheckTrue(service is TAgeServiceDecorator2);
 end;
 
 procedure TTestDecoratorExtension.TestResolveWithResolverOverride;
@@ -1674,8 +1669,7 @@ begin
   fContainer.RegisterType<TNameAgeComponent>;
   fContainer.Build;
 
-  service := fContainer.Resolve<IAgeService>(
-    TParameterOverride.Create('age', 21));
+  service := fContainer.Resolve<IAgeService>([TNamedValue.From('age', 21)]);
   CheckTrue(service is TAgeServiceDecorator);
   CheckEquals(21, service.Age);
 end;
@@ -1725,7 +1719,6 @@ var
 begin
   fContainer.RegisterType<ICollectionService, TCollectionServiceB>;
   fContainer.RegisterType<IInterface, TCollectionServiceB>;
-  fContainer.RegisterType<IEnumerable<ICollectionItem>, TArray<ICollectionItem>>;
 
   fContainer.Build;
   service := fContainer.Resolve<ICollectionService>;
@@ -1805,5 +1798,6 @@ begin
 end;
 
 {$ENDREGION}
+
 
 end.
