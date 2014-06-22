@@ -644,6 +644,84 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'Weak Reference'}
+
+  IWeakReference<T> = interface
+  {$REGION 'Property Accessors'}
+    function GetIsAlive: Boolean;
+    function GetTarget: T;
+    procedure SetTarget(const value: T);
+  {$ENDREGION}
+    function TryGetTarget(out target: T): Boolean;
+    property IsAlive: Boolean read GetIsAlive;
+    property Target: T read GetTarget write SetTarget;
+  end;
+
+  TWeakReferences = class
+  private
+    fLock: TCriticalSection;
+    fWeakReferences: TDictionary<Pointer, TList>;
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    procedure RegisterWeakRef(address: Pointer; instance: Pointer);
+    procedure UnregisterWeakRef(address: Pointer; instance: Pointer); overload;
+    procedure UnregisterWeakRef(instance: Pointer); overload;
+  end;
+
+  TWeakReference = class abstract(TInterfacedObject)
+  private
+    fTarget: Pointer;
+  protected
+    function GetIsAlive: Boolean;
+    procedure RegisterWeakRef(address: Pointer; instance: Pointer);
+    procedure UnregisterWeakRef(address: Pointer; instance: Pointer);
+  public
+    class constructor Create;
+    class destructor Destroy;
+
+    property IsAlive: Boolean read GetIsAlive;
+  end;
+
+  TWeakReference<T> = class(TWeakReference, IWeakReference<T>)
+  private
+    function GetTarget: T;
+    procedure SetTarget(const value: T);
+  public
+    constructor Create(const target: T);
+    destructor Destroy; override;
+
+    function TryGetTarget(out target: T): Boolean;
+    property Target: T read GetTarget write SetTarget;
+  end;
+
+  WeakReference<T> = record
+  private
+    fReference: IWeakReference<T>;
+    function GetIsAlive: Boolean; inline;
+    function GetTarget: T; inline;
+    procedure SetTarget(const value: T); inline;
+  public
+    constructor Create(const target: T);
+
+    class operator Implicit(const value: T): WeakReference<T>; overload; inline;
+    class operator Implicit(const value: TWeakReference<T>): WeakReference<T>; overload; inline;
+    class operator Implicit(const value: WeakReference<T>): T; overload; inline;
+    class operator Implicit(const value: IWeakReference<T>): WeakReference<T>; overload; inline;
+    class operator Implicit(const value: WeakReference<T>): IWeakReference<T>; overload; inline;
+
+    class operator Equal(const left: WeakReference<T>; const right: T): Boolean; overload; inline;
+    class operator NotEqual(const left: WeakReference<T>; const right: T): Boolean; overload; inline;
+
+    function TryGetTarget(out target: T): Boolean;
+    property Target: T read GetTarget write SetTarget;
+    property IsAlive: Boolean read GetIsAlive;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'Multicast Event'}
 
   IEvent = interface
@@ -884,7 +962,12 @@ implementation
 
 uses
   Spring.Events,
+  Spring.Reflection.Core,
   Spring.ResourceStrings;
+
+var
+  VirtualClasses: TVirtualClasses;
+  WeakReferences: TWeakReferences;
 
 
 {$REGION 'Routines'}
@@ -1697,6 +1780,259 @@ begin
     end;
   end;
   Result := target;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TWeakReferences'}
+
+procedure WeakRefFreeInstance(Self: TObject);
+var
+  freeInstance: TFreeInstance;
+begin
+  freeInstance := GetClassData(Self.ClassParent).FreeInstance;
+  WeakReferences.UnregisterWeakRef(Self);
+
+  freeInstance(Self);
+end;
+
+constructor TWeakReferences.Create;
+begin
+  fLock := TCriticalSection.Create;
+  fWeakReferences := TObjectDictionary<Pointer, TList>.Create([doOwnsValues]);
+end;
+
+destructor TWeakReferences.Destroy;
+begin
+  fWeakReferences.Free;
+  fLock.Free;
+  inherited;
+end;
+
+procedure TWeakReferences.RegisterWeakRef(address, instance: Pointer);
+var
+  addresses: TList;
+begin
+  fLock.Enter;
+  try
+    if not fWeakReferences.TryGetValue(instance, addresses) then
+    begin
+      addresses := TList.Create;
+      fWeakReferences.Add(instance, addresses);
+    end;
+    addresses.Add(address);
+  finally
+    fLock.Leave;
+  end;
+end;
+
+procedure TWeakReferences.UnregisterWeakRef(instance: Pointer);
+var
+  addresses: TList;
+  address: Pointer;
+begin
+  fLock.Enter;
+  try
+    if fWeakReferences.TryGetValue(instance, addresses) then
+    begin
+      for address in addresses do
+        PPointer(address)^ := nil;
+      fWeakReferences.Remove(instance);
+    end;
+  finally
+    fLock.Leave;
+  end;
+end;
+
+procedure TWeakReferences.UnregisterWeakRef(address, instance: Pointer);
+var
+  addresses: TList;
+begin
+  fLock.Enter;
+  try
+    if fWeakReferences.TryGetValue(instance, addresses) then
+    begin
+      begin
+        PPointer(address)^ := nil;
+        addresses.Remove(address);
+      end;
+      if addresses.Count = 0 then
+        fWeakReferences.Remove(instance);
+    end;
+  finally
+    fLock.Leave;
+  end;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TWeakReference'}
+
+class constructor TWeakReference.Create;
+begin
+  VirtualClasses := TVirtualClasses.Create;
+  WeakReferences := TWeakReferences.Create;
+end;
+
+class destructor TWeakReference.Destroy;
+begin
+  WeakReferences.Free;
+  VirtualClasses.Free;
+end;
+
+function TWeakReference.GetIsAlive: Boolean;
+begin
+  Result := Assigned(fTarget);
+end;
+
+procedure TWeakReference.RegisterWeakRef(address, instance: Pointer);
+begin
+  VirtualClasses.Proxify(instance);
+  GetClassData(TObject(instance).ClassType).FreeInstance := WeakRefFreeInstance;
+  WeakReferences.RegisterWeakRef(@fTarget, instance);
+end;
+
+procedure TWeakReference.UnregisterWeakRef(address, instance: Pointer);
+begin
+  WeakReferences.UnregisterWeakRef(address, instance);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TWeakReference<T>'}
+
+constructor TWeakReference<T>.Create(const target: T);
+var
+  instance: TObject;
+begin
+  inherited Create;
+  SetTarget(target);
+end;
+
+destructor TWeakReference<T>.Destroy;
+begin
+  SetTarget(Default(T));
+  inherited;
+end;
+
+function TWeakReference<T>.GetTarget: T;
+begin
+  if IsAlive then
+    case PTypeInfo(TypeInfo(T)).Kind of
+      tkClass: TObject(Result) := TObject(fTarget);
+      tkInterface: IInterface(Result) := IInterface(fTarget)
+    end
+  else
+    Result := Default(T);
+end;
+
+procedure TWeakReference<T>.SetTarget(const value: T);
+var
+  typeInfo: PTypeInfo;
+begin
+  typeInfo := System.TypeInfo(T);
+  if Assigned(fTarget) then
+    case typeInfo.Kind of
+      tkClass: UnregisterWeakRef(@fTarget, fTarget);
+      tkInterface: UnregisterWeakRef(@fTarget, IInterface(fTarget) as TObject);
+    end;
+  fTarget := PPointer(@value)^;
+  if Assigned(fTarget) then
+    case typeInfo.Kind of
+      tkClass: RegisterWeakRef(@fTarget, fTarget);
+      tkInterface: RegisterWeakRef(@fTarget, IInterface(target) as TObject);
+    end;
+end;
+
+function TWeakReference<T>.TryGetTarget(out target: T): Boolean;
+begin
+  target := GetTarget;
+  Result := IsAlive;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'WeakReference<T>'}
+
+constructor WeakReference<T>.Create(const target: T);
+begin
+  fReference := TWeakReference<T>.Create(target);
+end;
+
+function WeakReference<T>.GetIsAlive: Boolean;
+begin
+  Result := Assigned(fReference) and fReference.IsAlive;
+end;
+
+function WeakReference<T>.GetTarget: T;
+begin
+  if Assigned(fReference) then
+    Result := fReference.Target
+  else
+    Result := Default(T);
+end;
+
+procedure WeakReference<T>.SetTarget(const value: T);
+begin
+  if Assigned(fReference) then
+    fReference.Target := value
+  else
+    fReference := TWeakReference<T>.Create(value);
+end;
+
+function WeakReference<T>.TryGetTarget(out target: T): Boolean;
+begin
+  Result := Assigned(fReference) and fReference.TryGetTarget(target);
+end;
+
+class operator WeakReference<T>.Implicit(const value: T): WeakReference<T>;
+begin
+  Result.Target := value;
+end;
+
+class operator WeakReference<T>.Implicit(
+  const value: TWeakReference<T>): WeakReference<T>;
+begin
+  Result.fReference := value;
+end;
+
+class operator WeakReference<T>.Implicit(const value: WeakReference<T>): T;
+begin
+  Result := value.Target;
+end;
+
+class operator WeakReference<T>.Implicit(
+  const value: IWeakReference<T>): WeakReference<T>;
+begin
+  Result.fReference := value;
+end;
+
+class operator WeakReference<T>.Implicit(
+  const value: WeakReference<T>): IWeakReference<T>;
+begin
+  Result := value.fReference;
+end;
+
+class operator WeakReference<T>.Equal(const left: WeakReference<T>;
+  const right: T): Boolean;
+begin
+  if Assigned(left.fReference) then
+    Result := PPointer(@right)^ = (left.fReference as TWeakReference).fTarget
+  else
+    Result := PPointer(@right)^ = nil;
+end;
+
+class operator WeakReference<T>.NotEqual(const left: WeakReference<T>;
+  const right: T): Boolean;
+begin
+  if Assigned(left.fReference) then
+    Result := PPointer(@right)^ <> (left.fReference as TWeakReference).fTarget
+  else
+    Result := PPointer(@right)^ <> nil;
 end;
 
 {$ENDREGION}
