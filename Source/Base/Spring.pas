@@ -666,8 +666,7 @@ type
     destructor Destroy; override;
 
     procedure RegisterWeakRef(address: Pointer; instance: Pointer);
-    procedure UnregisterWeakRef(address: Pointer; instance: Pointer); overload;
-    procedure UnregisterWeakRef(instance: Pointer); overload;
+    procedure UnregisterWeakRef(address: Pointer; instance: Pointer);
   end;
 
   TWeakReference = class abstract(TInterfacedObject)
@@ -1787,16 +1786,6 @@ end;
 
 {$REGION 'TWeakReferences'}
 
-procedure WeakRefFreeInstance(Self: TObject);
-var
-  freeInstance: TFreeInstance;
-begin
-  freeInstance := GetClassData(Self.ClassParent).FreeInstance;
-  WeakReferences.UnregisterWeakRef(Self);
-
-  freeInstance(Self);
-end;
-
 constructor TWeakReferences.Create;
 begin
   fLock := TCriticalSection.Create;
@@ -1827,24 +1816,6 @@ begin
   end;
 end;
 
-procedure TWeakReferences.UnregisterWeakRef(instance: Pointer);
-var
-  addresses: TList;
-  address: Pointer;
-begin
-  fLock.Enter;
-  try
-    if fWeakReferences.TryGetValue(instance, addresses) then
-    begin
-      for address in addresses do
-        PPointer(address)^ := nil;
-      fWeakReferences.Remove(instance);
-    end;
-  finally
-    fLock.Leave;
-  end;
-end;
-
 procedure TWeakReferences.UnregisterWeakRef(address, instance: Pointer);
 var
   addresses: TList;
@@ -1853,12 +1824,19 @@ begin
   try
     if fWeakReferences.TryGetValue(instance, addresses) then
     begin
+      if Assigned(address) then
       begin
         PPointer(address)^ := nil;
         addresses.Remove(address);
-      end;
-      if addresses.Count = 0 then
+        if addresses.Count = 0 then
+          fWeakReferences.Remove(instance);
+      end
+      else
+      begin
+        for address in addresses do
+          PPointer(address)^ := nil;
         fWeakReferences.Remove(instance);
+      end;
     end;
   finally
     fLock.Leave;
@@ -1885,6 +1863,16 @@ end;
 function TWeakReference.GetIsAlive: Boolean;
 begin
   Result := Assigned(fTarget);
+end;
+
+procedure WeakRefFreeInstance(Self: TObject);
+var
+  freeInstance: TFreeInstance;
+begin
+  freeInstance := GetClassData(Self.ClassParent).FreeInstance;
+  WeakReferences.UnregisterWeakRef(nil, Self);
+
+  freeInstance(Self);
 end;
 
 procedure TWeakReference.RegisterWeakRef(address, instance: Pointer);

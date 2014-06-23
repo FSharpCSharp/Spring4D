@@ -30,12 +30,15 @@ interface
 
 uses
   Classes,
+  SyncObjs,
   TypInfo;
 
 type
   TVirtualClasses = class
   private
     fClasses: TList;
+    fLock: TCriticalSection;
+    function GetVirtualClass(classType: TClass): TClass;
   public
     constructor Create;
     destructor Destroy; override;
@@ -231,46 +234,56 @@ begin
   Result := method <> GetVirtualMethodAddress(classType, virtualMethodIndex);
 end;
 
-{ TVirtualClassesHash }
+{ TVirtualClasses }
 
 constructor TVirtualClasses.Create;
 begin
   inherited Create;
   fClasses := TList.Create;
+  fLock := TCriticalSection.Create;
 end;
 
 destructor TVirtualClasses.Destroy;
 var
-  cls: Pointer;
+  classType: Pointer;
 begin
-  for cls in fClasses do
-    DestroyVirtualClass(cls);
+  for classType in fClasses do
+    DestroyVirtualClass(classType);
+  fLock.Free;
   fClasses.Free;
   inherited;
 end;
 
-procedure TVirtualClasses.Proxify(const instance: TObject);
+function TVirtualClasses.GetVirtualClass(classType: TClass): TClass;
 var
-  cls: TClass;
+  i: Integer;
 begin
-  cls := instance.ClassType;
-  if fClasses.IndexOf(cls) = -1 then
-  begin
-    cls := CreateVirtualClass(cls);
-    PPointer(instance)^ := cls;
-    fClasses.Add(cls);
+  fLock.Enter;
+  try
+    if fClasses.IndexOf(classType) > -1 then
+      Exit(classType);
+    for i := 0 to fClasses.Count - 1 do
+      if TClass(fClasses[i]).ClassParent = classType then
+        Exit(fClasses[i]);
+    Result := CreateVirtualClass(classType);
+    fClasses.Add(Result);
+  finally
+    fLock.Release;
   end;
+end;
+
+procedure TVirtualClasses.Proxify(const instance: TObject);
+begin
+  PPointer(instance)^ := GetVirtualClass(instance.ClassType);
 end;
 
 procedure TVirtualClasses.Unproxify(const instance: TObject);
 var
-  cls: TClass;
+  classType: TClass;
 begin
-  cls := instance.ClassType;
-  if fClasses.IndexOf(cls) > -1 then
-  begin
-    PPointer(instance)^ := cls.ClassParent;
-  end;
+  classType := instance.ClassType;
+  if fClasses.IndexOf(classType) > -1 then
+    PPointer(instance)^ := classType.ClassParent;
 end;
 
 end.
