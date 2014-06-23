@@ -429,6 +429,7 @@ type
     ///   The type to compare with the current type.
     /// </param>
     function IsAssignableFrom(const rttiType: TRttiType): Boolean;
+
     ///	<summary>
     ///	  Gets an enumerable collection which contains all constructor methods
     ///	  of the type, including inherited.
