@@ -38,11 +38,11 @@ type
   private
     fClasses: TList;
     fLock: TCriticalSection;
-    function GetVirtualClass(classType: TClass): TClass;
   public
     constructor Create;
     destructor Destroy; override;
 
+    function GetVirtualClass(classType: TClass): TClass;
     procedure Proxify(const instance: TObject);
     procedure Unproxify(const instance: TObject);
   end;
