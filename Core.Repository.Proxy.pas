@@ -21,6 +21,7 @@ type
   TProxyRepository<T: class, constructor; TID> = class(TVirtualInterface)
   private
     FSimpleRepository: IPagedRepository<T,TID>;
+    FSession: TSession;
     FDefaultMethods: IDictionary<string,TMethodReference>;
     FTypeName, FQualifiedTypeName: string;
     FIdTypeName, FQualifiedIdTypeName: string;
@@ -37,12 +38,14 @@ type
   function RemoveItemFromArgs(AIndex: Integer; const Args: TArray<TValue>): TArray<TValue>;
   procedure FinalizeVarRec(var Item: TVarRec);
   procedure FinalizeVarRecArray(var Arr: TConstArray);
+  function GetPageArgs(const Args: TArray<TValue>; out APage: Integer; out APageSize: Integer): TArray<TValue>;
 
 implementation
 
 uses
   Core.Comparers
   ,Core.Exceptions
+  ,Core.Utils
   ,Mapping.RttiExplorer
   ,SysUtils
   ,Math
@@ -144,12 +147,30 @@ begin
   Arr := nil;
 end;
 
+function GetPageArgs(const Args: TArray<TValue>; out APage: Integer; out APageSize: Integer): TArray<TValue>;
+var
+  i: Integer;
+begin
+  try
+    APageSize := Args[High(Args)].AsInteger;
+    APage := Args[High(Args)-1].AsInteger;
+  except
+    raise EORMInvalidArguments.Create('Last 2 arguments for Paged requests should be Page(Integer) and PageSize(Integer).');
+  end;
+  SetLength(Result, Length(Args)-2);
+  for i := Low(Result) to High(Result) do
+  begin
+    Result[i] := Args[i];
+  end;
+end;
+
 { TProxyRepository<T, TID> }
 
 constructor TProxyRepository<T, TID>.Create(ASession: TSession;
   AInterfaceTypeInfo: PTypeInfo; ARepositoryClass: TClass);
 begin
   inherited Create(AInterfaceTypeInfo);
+  FSession := ASession;
   FDefaultMethods := TCollections.CreateDictionary<string, TMethodReference>(TStringCaseInsensitiveComparer.Create());
   if not Assigned(ARepositoryClass) then
     FSimpleRepository := TSimpleRepository<T,TID>.Create(ASession)
@@ -178,6 +199,8 @@ var
   LMethodSignature: string;
   LItems: IList<T>;
   LConstArray: TConstArray;
+  LArgs: TArray<TValue>;
+  LPage, LPageSize: Integer;
 begin
   LMethodSignature := TRttiExplorer.GetMethodSignature(Method);
   if FDefaultMethods.TryGetValue(LMethodSignature, LMethodRef) then
@@ -201,14 +224,27 @@ begin
       end;
       tkInterface:
       begin
-        LConstArray := FromArgsToConstArray(Args);
-        try
-          Result := TValue.From( FSimpleRepository.Query(TRttiExplorer.GetQueryTextFromMethod(Method), LConstArray) );
-        finally
-          FinalizeVarRecArray(LConstArray);
+        if TUtils.IsPageType(Method.ReturnType.Handle) then
+        begin
+          //last two arguments should be page and pagesize
+          LArgs := GetPageArgs(Args, LPage, LPageSize);
+          LConstArray := FromArgsToConstArray(LArgs);
+          try
+            Result := TValue.From( FSession.Page<T>(LPage, LPageSize, TRttiExplorer.GetQueryTextFromMethod(Method), LConstArray) );
+          finally
+            FinalizeVarRecArray(LConstArray);
+          end;
+        end
+        else
+        begin
+          LConstArray := FromArgsToConstArray(Args);
+          try
+            Result := TValue.From( FSimpleRepository.Query(TRttiExplorer.GetQueryTextFromMethod(Method), LConstArray) );
+          finally
+            FinalizeVarRecArray(LConstArray);
+          end;
         end;
       end
-
       else
       begin
         raise EORMUnsupportedType.CreateFmt('Unknown Method (%S) return type: %S', [Method.ToString, Method.ReturnType.ToString]);

@@ -57,6 +57,7 @@ type
     class function IsEnumerable(ATypeInfo: PTypeInfo; out AEnumeratorMethod: TRttiMethod): Boolean; overload;
     class function IsNullableType(ATypeInfo: PTypeInfo): Boolean;
     class function IsLazyType(ATypeInfo: PTypeInfo): Boolean;
+    class function IsPageType(ATypeInfo: PTypeInfo): Boolean;
 
     class function SameObject(ALeft, ARight: TObject): Boolean;
     class function SameStream(ALeft, ARight: TStream): Boolean;
@@ -333,6 +334,11 @@ end;
 class function TUtils.IsNullableType(ATypeInfo: PTypeInfo): Boolean;
 begin
   Result := ( PosEx('Nullable', string(ATypeInfo.Name)) = 1 ) and (ATypeInfo.Kind = tkRecord);
+end;
+
+class function TUtils.IsPageType(ATypeInfo: PTypeInfo): Boolean;
+begin
+  Result := (ATypeInfo.Kind = tkInterface) and ( PosEx('IDBPage<', string(ATypeInfo.Name)) = 1 );
 end;
 
 class function TUtils.LoadFromStreamToVariant(AStream: TStream): OleVariant;

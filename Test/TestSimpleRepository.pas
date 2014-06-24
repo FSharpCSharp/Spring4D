@@ -15,6 +15,9 @@ type
 
     [Query('SELECT * FROM CUSTOMERS WHERE CUSTNAME = :0')]
     function FindByName(const AName: string): TCustomer;
+
+    [Query('SELECT * FROM CUSTOMERS WHERE CUSTNAME = :0')]
+    function FindByNamePaged(const AName: string; APage: Integer; AItemsPerPage: Integer): IDBPage<TCustomer>;
   end;
 
   TSimpleRepositoryTests = class(TTestCase)
@@ -44,6 +47,7 @@ type
     procedure TearDown; override;
   published
     procedure FindByName();
+    procedure FindByName_Paged();
   end;
 
 
@@ -133,6 +137,17 @@ begin
   LCustomer := FCustomerRepository.FindByName('Foo');
   CheckEquals('Foo', LCustomer.Name);
   LCustomer.Free;
+end;
+
+procedure TCustomRepositoryTests.FindByName_Paged;
+var
+  LCustomerPage: IDBPage<TCustomer>;
+begin
+  InsertCustomer(10, 'Foo', 1);
+  InsertCustomer(15, 'Bar', 2);
+  LCustomerPage := FCustomerRepository.FindByNamePaged('Foo', 0, 10);
+  CheckEquals(1, LCustomerPage.GetTotalItems);
+  CheckEquals('Foo', LCustomerPage.Items.First.Name);
 end;
 
 procedure TCustomRepositoryTests.SetUp;

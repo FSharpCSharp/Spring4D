@@ -87,6 +87,8 @@ type
 
   EORMCannotConvertValue = class(Exception);
 
+  EORMInvalidArguments = class(Exception);
+
   EORMOptimisticLockException = class(EBaseORMException);
 
 implementation
