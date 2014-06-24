@@ -31,7 +31,7 @@ interface
 
 uses
   DB, Generics.Collections, Core.Interfaces, Core.Base, SQL.Params, SysUtils
-  , SQL.Generator.Ansi, UIB, uibdataset, uiblib;
+  , SQL.Generator.Ansi, UIB, uibdataset, uiblib, Adapters.FieldCache;
 
 type
   {$REGION 'Documentation'}
@@ -41,10 +41,8 @@ type
   {$ENDREGION}
   TUIBResultSetAdapter = class(TDriverResultSetAdapter<TUIBDataSet>)
   private
-    FFieldCache: TDictionary<string,TField>;
+    FFieldCache: IFieldCache;
     FIsNewTransaction: Boolean;
-  protected
-    procedure BuildFieldCache();
   public
     constructor Create(const ADataset: TUIBDataSet); override;
     destructor Destroy; override;
@@ -129,30 +127,15 @@ type
 
 { TUIBResultSetAdapter }
 
-procedure TUIBResultSetAdapter.BuildFieldCache;
-var
-  i: Integer;
-begin
-  if FFieldCache.Count = 0 then
-  begin
-    for i := 0 to Dataset.FieldCount - 1 do
-    begin
-      FFieldCache.Add(UpperCase(Dataset.Fields[i].FieldName), Dataset.Fields[i]);
-    end;
-  end;
-end;
-
 constructor TUIBResultSetAdapter.Create(const ADataset: TUIBDataSet);
 begin
   inherited Create(ADataset);
   Dataset.OnClose := etmStayIn;
-  FFieldCache := TDictionary<string,TField>.Create(Dataset.FieldCount * 2);
-  BuildFieldCache();
+  FFieldCache := TFieldCache.Create(ADataset);
 end;
 
 destructor TUIBResultSetAdapter.Destroy;
 begin
-  FFieldCache.Free;
   if FIsNewTransaction then
     Dataset.Transaction.Free;
   Dataset.Free;
@@ -161,7 +144,7 @@ end;
 
 function TUIBResultSetAdapter.FieldnameExists(const AFieldName: string): Boolean;
 begin
-  Result := FFieldCache.ContainsKey(UpperCase(AFieldName));
+  Result := FFieldCache.FieldnameExists(AFieldName);
 end;
 
 function TUIBResultSetAdapter.GetFieldCount: Integer;
@@ -181,7 +164,7 @@ end;
 
 function TUIBResultSetAdapter.GetFieldValue(const AFieldname: string): Variant;
 begin
-  Result := FFieldCache[UpperCase(AFieldname)].Value;
+  Result := FFieldCache.GetFieldValue(AFieldname);
 end;
 
 function TUIBResultSetAdapter.IsEmpty: Boolean;

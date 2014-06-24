@@ -527,13 +527,7 @@ begin
    // LSelecter.Connection := Connection;
     LSelecter.ID := AID;
     LSelecter.LazyColumn := AColumn;
-
     AIsEnumerable := TUtils.IsEnumerable(TypeInfo(T), LEnumMethod);
-    if AIsEnumerable then
-      LSelecter.SelectType := stObjectList
-    else
-      LSelecter.SelectType := stOne;
-
     Result := LSelecter.Select(AEntity, LBaseEntityClass);
   finally
     LSelecter.Free;

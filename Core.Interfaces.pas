@@ -41,7 +41,7 @@ uses
   ;
 
 type
-  TDBDriverType = (dtSQLite = 0 {$IFDEF MSWINDOWS}, dtADO, dtMSSQL, dtASA, dtOracle{$ENDIF}, dtDBX, dtUIB, dtZeos, dtMongo);
+  TDBDriverType = (dtSQLite = 0 {$IFDEF MSWINDOWS}, dtADO, dtMSSQL, dtASA, dtOracle{$ENDIF}, dtDBX, dtUIB, dtZeos, dtMongo, dtFireDAC);
 
   TExecutionListenerProc = reference to procedure(const ACommand: string; const AParams: IList<TDBParam>);
 

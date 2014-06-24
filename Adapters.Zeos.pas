@@ -18,15 +18,14 @@ uses
   , Core.Interfaces
   , SQL.Params
   , ZAbstractConnection
+  , Adapters.FieldCache
   ;
 
 type
 
   TZeosResultSetAdapter = class(TDriverResultSetAdapter<TZAbstractDataset>)
   private
-    FFieldCache: TDictionary<string,TField>;
-  protected
-    procedure BuildFieldCache();
+    FFieldCache: IFieldCache;
   public
     constructor Create(const ADataset: TZAbstractDataset); override;
     destructor Destroy; override;
@@ -87,30 +86,15 @@ EZeosAdapterException = class(Exception);
 
 { TZeosResultSetAdapter }
 
-procedure TZeosResultSetAdapter.BuildFieldCache;
-var
-  i: Integer;
-begin
-  if FFieldCache.Count = 0 then
-  begin
-    for i := 0 to Dataset.FieldCount - 1 do
-    begin
-      FFieldCache.Add(UpperCase(Dataset.Fields[i].FieldName), Dataset.Fields[i]);
-    end;
-  end;
-end;
-
 constructor TZeosResultSetAdapter.Create(const ADataset: TZAbstractDataset);
 begin
   inherited Create(ADataset);
   Dataset.DisableControls;
-  FFieldCache := TDictionary<string,TField>.Create(Dataset.FieldCount * 2);
-  BuildFieldCache();
+  FFieldCache := TFieldCache.Create(ADataset);
 end;
 
 destructor TZeosResultSetAdapter.Destroy;
 begin
-  FFieldCache.Free;
   Dataset.Free;
   inherited;
 end;
@@ -118,7 +102,7 @@ end;
 function TZeosResultSetAdapter.FieldnameExists(
   const AFieldName: string): Boolean;
 begin
-  Result := FFieldCache.ContainsKey(UpperCase(AFieldName));
+  Result := FFieldCache.FieldnameExists(AFieldName);
 end;
 
 function TZeosResultSetAdapter.GetFieldCount: Integer;
@@ -138,7 +122,7 @@ end;
 
 function TZeosResultSetAdapter.GetFieldValue(const AFieldname: string): Variant;
 begin
-  Result := FFieldCache[UpperCase(AFieldname)].Value
+  Result := FFieldCache.GetFieldValue(AFieldname);
 end;
 
 function TZeosResultSetAdapter.IsEmpty: Boolean;

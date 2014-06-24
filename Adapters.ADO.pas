@@ -32,8 +32,10 @@ interface
 {$IFDEF MSWINDOWS}
 
 uses
-  Spring.Collections, Core.Interfaces, ADODB, Core.Base, SQL.Params, SysUtils
-  , SQL.Generator.Ansi, DB, Mapping.Attributes;
+  Core.Interfaces, ADODB, Core.Base, SQL.Params, SysUtils
+  , SQL.Generator.Ansi, DB, Mapping.Attributes, Adapters.FieldCache
+  ,Spring.Collections
+  ;
 
 
 type
@@ -44,9 +46,7 @@ type
   {$ENDREGION}
   TADOResultSetAdapter = class(TDriverResultSetAdapter<TADODataSet>)
   private
-    FFieldCache: IDictionary<string,TField>;
-  protected
-    procedure BuildFieldCache();
+    FFieldCache: IFieldCache;
   public
     constructor Create(const ADataset: TADODataSet); override;
     destructor Destroy; override;
@@ -141,27 +141,13 @@ type
 
 { TADOResultSetAdapter }
 
-procedure TADOResultSetAdapter.BuildFieldCache;
-var
-  i: Integer;
-begin
-  if FFieldCache.Count = 0 then
-  begin
-    for i := 0 to Dataset.FieldCount - 1 do
-    begin
-      FFieldCache.Add(UpperCase(Dataset.Fields[i].FieldName), Dataset.Fields[i]);
-    end;
-  end;
-end;
-
 constructor TADOResultSetAdapter.Create(const ADataset: TADODataSet);
 begin
   inherited Create(ADataset);
   Dataset.DisableControls;
 //  Dataset.CursorLocation := clUseServer;
 //  Dataset.CursorType := ctOpenForwardOnly;
-  FFieldCache := TCollections.CreateDictionary<string,TField>(Dataset.FieldCount * 2);
-  BuildFieldCache();
+  FFieldCache := TFieldCache.Create(ADataset);
 end;
 
 destructor TADOResultSetAdapter.Destroy;
@@ -172,7 +158,7 @@ end;
 
 function TADOResultSetAdapter.FieldnameExists(const AFieldName: string): Boolean;
 begin
-  Result := FFieldCache.ContainsKey(UpperCase(AFieldName));
+  Result := FFieldCache.FieldnameExists(AFieldName);
 end;
 
 function TADOResultSetAdapter.GetFieldCount: Integer;
@@ -192,7 +178,7 @@ end;
 
 function TADOResultSetAdapter.GetFieldValue(const AFieldname: string): Variant;
 begin
-  Result := FFieldCache[UpperCase(AFieldname)].Value
+  Result := FFieldCache.GetFieldValue(AFieldname);
 end;
 
 function TADOResultSetAdapter.IsEmpty: Boolean;

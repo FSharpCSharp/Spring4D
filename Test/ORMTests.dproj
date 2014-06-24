@@ -211,6 +211,8 @@
         <DCCReference Include="..\Core.Repository.MongoDB.pas"/>
         <DCCReference Include="..\Core.EmbeddedEntity.pas"/>
         <DCCReference Include="..\Core.Repository.Proxy.pas"/>
+        <DCCReference Include="..\Adapters.FieldCache.pas"/>
+        <DCCReference Include="..\Adapters.FireDAC.pas"/>
         <None Include="Profiling\AQtimeModule1.aqt"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>

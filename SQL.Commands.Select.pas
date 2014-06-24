@@ -50,7 +50,6 @@ type
     FTable: TSQLTable;
     FCommand: TSelectCommand;
     FColumns: IList<ColumnAttribute>;
-    FSelectType: TSelectType;
     FID: TValue;
     FLazyColumn: ColumnAttribute;
     FSelectEntityClassType: TClass;
@@ -67,13 +66,9 @@ type
     function Select(AEntity: TObject; AEntityClassType: TClass): IDBResultset;
     function SelectAll(AEntity: TObject; AEntityClassType: TClass): IDBResultset;
 
-    procedure SelectList(AList: TObject) ;
-    procedure SelectObjectList(AList: TObject; AEnumMethod: TRttiMethod);
-
     property Command: TSelectCommand read FCommand;
     property ID: TValue read FID write FID;
     property LazyColumn: ColumnAttribute read FLazyColumn write FLazyColumn;
-    property SelectType: TSelectType read FSelectType write FSelectType;
   end;
 
 
@@ -188,11 +183,6 @@ begin
   Result := FCommand;
 end;
 
-procedure TSelectExecutor.SelectObjectList(AList: TObject; AEnumMethod: TRttiMethod);
-begin
-  FSelectType := stObjectList;
-end;
-
 function TSelectExecutor.Select(AEntity: TObject; AEntityClassType: TClass): IDBResultset;
 var
   LStmt: IDBStatement;
@@ -229,11 +219,6 @@ begin
   Execute(AEntity);
 
   Result := LStmt.ExecuteQuery();
-end;
-
-procedure TSelectExecutor.SelectList(AList: TObject);
-begin
-  FSelectType := stList;
 end;
 
 end.

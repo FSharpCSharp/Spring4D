@@ -130,7 +130,9 @@ uses
   TestAdapterMongoDB in 'TestAdapterMongoDB.pas',
   Core.Repository.MongoDB in '..\Core.Repository.MongoDB.pas',
   Core.EmbeddedEntity in '..\Core.EmbeddedEntity.pas',
-  Core.Repository.Proxy in '..\Core.Repository.Proxy.pas';
+  Core.Repository.Proxy in '..\Core.Repository.Proxy.pas',
+  Adapters.FieldCache in '..\Adapters.FieldCache.pas',
+  Adapters.FireDAC in '..\Adapters.FireDAC.pas';
 
 {$R *.RES}
 

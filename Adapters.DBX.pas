@@ -31,7 +31,7 @@ interface
 
 uses
   SqlExpr, DB, Spring.Collections, Core.Interfaces, Core.Base, SQL.Params, SysUtils
-  , SQL.Generator.Ansi, DBXCommon
+  , SQL.Generator.Ansi, DBXCommon, Adapters.FieldCache
   ;
 
 type
@@ -42,9 +42,7 @@ type
   {$ENDREGION}
   TDBXResultSetAdapter = class(TDriverResultSetAdapter<TSQLQuery>)
   private
-    FFieldCache: IDictionary<string,TField>;
-  protected
-    procedure BuildFieldCache();
+    FFieldCache: IFieldCache;
   public
     constructor Create(const ADataset: TSQLQuery); override;
     destructor Destroy; override;
@@ -120,27 +118,13 @@ type
 
 { TDBXResultSetAdapter }
 
-procedure TDBXResultSetAdapter.BuildFieldCache;
-var
-  i: Integer;
-begin
-  if FFieldCache.Count = 0 then
-  begin
-    for i := 0 to Dataset.FieldCount - 1 do
-    begin
-      FFieldCache.Add(UpperCase(Dataset.Fields[i].FieldName), Dataset.Fields[i]);
-    end;
-  end;
-end;
-
 constructor TDBXResultSetAdapter.Create(const ADataset: TSQLQuery);
 begin
   inherited Create(ADataset);
   Dataset.DisableControls;
  // Dataset.CursorLocation := clUseServer;
  // Dataset.CursorType := ctOpenForwardOnly;
-  FFieldCache := TCollections.CreateDictionary<string,TField>(Dataset.FieldCount * 2);
-  BuildFieldCache();
+  FFieldCache := TFieldCache.Create(ADataset);
 end;
 
 destructor TDBXResultSetAdapter.Destroy;
@@ -151,7 +135,7 @@ end;
 
 function TDBXResultSetAdapter.FieldnameExists(const AFieldName: string): Boolean;
 begin
-  Result := FFieldCache.ContainsKey(UpperCase(AFieldName));
+  Result := FFieldCache.FieldnameExists(AFieldName);
 end;
 
 function TDBXResultSetAdapter.GetFieldCount: Integer;
@@ -171,7 +155,7 @@ end;
 
 function TDBXResultSetAdapter.GetFieldValue(const AFieldname: string): Variant;
 begin
-  Result := FFieldCache[UpperCase(AFieldname)].Value
+  Result := FFieldCache.GetFieldValue(AFieldname);
 end;
 
 function TDBXResultSetAdapter.IsEmpty: Boolean;
