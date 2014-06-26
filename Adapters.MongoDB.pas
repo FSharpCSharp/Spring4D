@@ -117,6 +117,7 @@ type
     constructor Create(const AStatement: TMongoDBQuery); override;
     destructor Destroy; override;
     procedure SetSQLCommand(const ACommandText: string); override;
+    procedure SetQuery(const AMetadata: TQueryMetadata; AQuery: Variant); override;
     procedure SetParams(Params: IList<TDBParam>); overload; override;
     function Execute(): NativeUInt; override;
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
@@ -525,6 +526,13 @@ begin
     FStmtText := StringReplace(FStmtText, TMongoDBGenerator.GetParamName(LParamIndex), LValue, [rfReplaceAll]);
     Inc(LParamIndex);
   end;
+end;
+
+procedure TMongoStatementAdapter.SetQuery(const AMetadata: TQueryMetadata;
+  AQuery: Variant);
+begin
+  inherited;
+  FFullCollectionName := AMetadata.TableName;
 end;
 
 procedure TMongoStatementAdapter.SetSQLCommand(const ACommandText: string);

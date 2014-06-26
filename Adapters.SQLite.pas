@@ -289,3 +289,4 @@ initialization
   TConnectionFactory.RegisterConnection<TSQLiteConnectionAdapter>(dtSQLite);
 
 end.
+

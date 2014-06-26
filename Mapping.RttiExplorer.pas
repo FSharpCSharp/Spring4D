@@ -38,6 +38,7 @@ type
     FFields: IDictionary<string, TRttiField>;
     FProperties: IDictionary<string,TRttiProperty>;
     FTypes: IDictionary<PTypeInfo, TRttiType>;
+    FTypeFields: IDictionary<PTypeInfo,IList<TRttiField>>;
     FCtx: TRttiContext;
   protected
     function GetKey(AClass: TClass; const AName: string): string;
@@ -53,6 +54,7 @@ type
     function GetNamedObject(AClass: TClass; const APropertyName: string): TRttiNamedObject;
     function GetType(ATypeInfo: PTypeInfo): TRttiType; overload;
     function GetType(AClass: TClass): TRttiType; overload;
+    function GetFieldsOfType(ATypeInfo: PTypeInfo): IList<TRttiField>;
   end;
 
   TRttiExplorer = class
@@ -386,35 +388,40 @@ end;
 
 class procedure TRttiExplorer.CopyFieldValues(AEntityFrom, AEntityTo: TObject);
 var
+  i: Integer;
   LField: TRttiField;
-  LType: TRttiType;
-  LValueTo, LValueFrom: TValue;
+  LFields: IList<TRttiField>;
+ // LType: TRttiType;
+  LValueTo: TValue;
+  LValueFrom: TObject;
 begin
-  if not Assigned(AEntityFrom) then
+  if (AEntityFrom = nil) then
     Exit;
   Assert(AEntityFrom.ClassType = AEntityTo.ClassType);
   Assert(Assigned(AEntityFrom) and Assigned(AEntityTo));
-
-  LType := FRttiCache.GetType(AEntityFrom.ClassInfo);
-  for LField in LType.GetFields do
+  
+ // LType := FRttiCache.GetType(AEntityFrom.ClassInfo);
+  LFields := FRttiCache.GetFieldsOfType(AEntityFrom.ClassInfo);
+  for i := 0 to LFields.Count - 1 do
   begin
+    LField := LFields[i];
     if LField.FieldType.IsInstance then
     begin
-      LValueTo := TRttiExplorer.CreateType(LField.FieldType.AsInstance.MetaclassType);
-      LValueFrom := LField.GetValue(AEntityFrom);
+      //LValueTo := TRttiExplorer.CreateType(LField.FieldType.AsInstance.MetaclassType);
+      LValueTo := LField.FieldType.AsInstance.MetaclassType.Create;
+      LValueFrom := LField.GetValue(AEntityFrom).AsObject;
       if LValueTo.AsObject is TPersistent then
       begin
-        TPersistent(LValueTo.AsObject).Assign(LValueFrom.AsObject as TPersistent);
+        TPersistent(LValueTo.AsObject).Assign(LValueFrom as TPersistent);
       end
       else
-        CopyFieldValues(LValueFrom.AsObject, LValueTo.AsObject);
+        CopyFieldValues(LValueFrom, LValueTo.AsObject);
     end
     else
       LValueTo := LField.GetValue(AEntityFrom);
-
+  
     LField.SetValue(AEntityTo, LValueTo);
   end;
-  {TODO -oLinas -cGeneral : what to do with properties? Should we need to write them too?}
 end;
 
 class constructor TRttiExplorer.Create;
@@ -1329,11 +1336,40 @@ begin
 end;
 
 class procedure TRttiExplorer.SetValue(AInstance: Pointer; ANamedObject: TRttiNamedObject; const AValue: TValue);
+
+  procedure SetInternalValue();
+  begin
+    if ANamedObject.isField then
+      ANamedObject.AsField.SetValue(AInstance, AValue)
+    else
+    begin
+      ANamedObject.AsProperty.SetValue(AInstance, AValue);
+    end;
+  end;
+
 begin
-  if ANamedObject.isField then
-    ANamedObject.AsField.SetValue(AInstance, AValue)
+  if ANamedObject is TRttiInstanceProperty then
+  begin
+    case AValue.Kind of
+      tkInteger : SetOrdProp(TObject(AInstance), TRttiInstanceProperty(ANamedObject).PropInfo, AValue.AsInteger);
+      tkFloat: SetFloatProp(TObject(AInstance), TRttiInstanceProperty(ANamedObject).PropInfo, AValue.AsExtended);
+      tkString, tkLString: SetAnsiStrProp(TObject(AInstance), TRttiInstanceProperty(ANamedObject).PropInfo, AValue.AsType<AnsiString>);
+      tkClass: SetObjectProp(TObject(AInstance), TRttiInstanceProperty(ANamedObject).PropInfo, AValue.AsObject) ;
+      tkVariant: SetVariantProp(TObject(AInstance), TRttiInstanceProperty(ANamedObject).PropInfo, AValue.AsVariant);
+      tkInterface: SetInterfaceProp(TObject(AInstance), TRttiInstanceProperty(ANamedObject).PropInfo, AValue.AsInterface);
+      tkInt64: SetInt64Prop(TObject(AInstance), TRttiInstanceProperty(ANamedObject).PropInfo, AValue.AsInt64);
+      tkDynArray: SetDynArrayProp(TObject(AInstance), TRttiInstanceProperty(ANamedObject).PropInfo, AValue.GetReferenceToRawData);
+      tkUString, tkWString: SetStrProp(TObject(AInstance), TRttiInstanceProperty(ANamedObject).PropInfo, AValue.AsString)
+      else
+      begin
+        SetInternalValue();
+      end;
+    end;
+  end
   else
-    ANamedObject.AsProperty.SetValue(AInstance, AValue);
+  begin
+    SetInternalValue();
+  end;
 end;
 
 { TRttiCache }
@@ -1343,6 +1379,7 @@ begin
   FFields.Clear;
   FProperties.Clear;
   FTypes.Clear;
+  FTypeFields.Clear;
 end;
 
 constructor TRttiCache.Create;
@@ -1351,6 +1388,7 @@ begin
   FFields := TCollections.CreateDictionary<string, TRttiField>();
   FProperties := TCollections.CreateDictionary<string,TRttiProperty>();
   FTypes := TCollections.CreateDictionary<PTypeInfo, TRttiType>();
+  FTypeFields := TCollections.CreateDictionary<PTypeInfo,IList<TRttiField>>;
 end;
 
 destructor TRttiCache.Destroy;
@@ -1362,6 +1400,12 @@ function TRttiCache.GetField(AClass: TClass; const AFieldName: string): TRttiFie
 begin
   if not FFields.TryGetValue(GetKey(AClass, AFieldName), Result) then
     Result := nil;
+end;
+
+function TRttiCache.GetFieldsOfType(ATypeInfo: PTypeInfo): IList<TRttiField>;
+begin
+  if not FTypeFields.TryGetValue(ATypeInfo, Result) then
+    Result := TCollections.CreateList<TRttiField>;
 end;
 
 function TRttiCache.GetKey(AClass: TClass; const AName: string): string;
@@ -1411,6 +1455,7 @@ var
   LClass: TClass;
   LProp: TRttiProperty;
   LField: TRttiField;
+  LFields: IList<TRttiField>;
 begin
   Clear;
 
@@ -1424,10 +1469,13 @@ begin
 
       if TRttiExplorer.HasColumns(LClass) then
       begin
+        LFields := TCollections.CreateList<TRttiField>;
         for LField in LType.GetFields do
         begin
           FFields.Add(GetKey(LClass, LField.Name), LField);
+          LFields.Add(LField);
         end;
+        FTypeFields.Add(LType.Handle, LFields);
 
         for LProp in LType.GetProperties do
         begin

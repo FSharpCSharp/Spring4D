@@ -10,7 +10,7 @@ uses
   FireDAC.Stan.Error, FireDAC.UI.Intf, FireDAC.Phys.Intf, FireDAC.Stan.Def,
   FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys, FireDAC.Stan.Param,
   FireDAC.DatS, FireDAC.DApt.Intf, FireDAC.DApt, FireDAC.Comp.DataSet,
-  FireDAC.Comp.Client
+  FireDAC.Comp.Client, FireDAC.VCLUI.Wait
   ;
 
 type
@@ -160,6 +160,8 @@ begin
   LStmt.SQL.Text := Statement.SQL.Text;
   LStmt.Params.AssignValues(Statement.Params);
   LStmt.DisableControls;
+  if AServerSideCursor then
+    LStmt.FetchOptions.CursorKind := ckForwardOnly;
   try
     LStmt.Open();
     Result := TFireDACResultSetAdapter.Create(LStmt);
@@ -175,8 +177,16 @@ end;
 
 
 procedure TFireDACStatementAdapter.SetParam(ADBParam: TDBParam);
+var
+  sParamName: string;
 begin
-  Statement.Params.ParamValues[ADBParam.Name] := ADBParam.Value;
+  sParamName := ADBParam.Name;
+  //strip leading : in param name because FireDAC does not like them
+  if (ADBParam.Name <> '') and (StartsStr(':', ADBParam.Name)) then
+  begin
+    sParamName := Copy(ADBParam.Name, 2, Length(ADBParam.Name));
+  end;
+  Statement.Params.ParamValues[sParamName] := ADBParam.Value;
 end;
 
 procedure TFireDACStatementAdapter.SetParams(Params: IList<TDBParam>);

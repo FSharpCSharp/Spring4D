@@ -109,6 +109,7 @@ uses
 const
   SQL_GET_ALL_CUSTOMERS = 'SELECT * FROM ' + TBL_PEOPLE + ';';
 
+
 function GetPictureSize(APicture: TPicture): Int64;
 var
   LStream: TMemoryStream;
@@ -673,8 +674,11 @@ var
   i: Integer;
   LVal, LVal2: Variant;
   LProduct: TProduct;
+  LCustomers: IList<TCustomer>;
 begin
   iCount := 50000;
+
+  FConnection.ClearExecutionListeners;
 
   //insert customers
   TestDB.BeginTransaction;
@@ -712,7 +716,15 @@ begin
   sw.Stop;
   Status(Format('SimpleCreate %D objects in %D ms.',
     [iCount, sw.ElapsedMilliseconds]));
-
+  sw := TStopwatch.StartNew;
+  LCustomers := TCollections.CreateObjectList<TCustomer>();
+  for i := 1 to iCount do
+  begin
+    LCustomers.Add(TCustomer.Create);
+  end;
+  sw.Stop;
+  Status(Format('Add %D objects in %D ms.',
+    [iCount, sw.ElapsedMilliseconds]));
   //get customers
   LResultset := FManager.GetResultset('SELECT * FROM ' + TBL_PEOPLE, []);
   i := 0;
@@ -768,8 +780,8 @@ begin
     LResultset.Next;
   end;
   sw.Stop;
-  Status(Format('Resultset %D objects in %D ms.',
-    [iCount, sw.ElapsedMilliseconds]));
+  Status(Format('Resultset %D objects in %D ms. %S',
+    [iCount, sw.ElapsedMilliseconds, LVal2]));
 end;
 
 procedure TestTSession.Inheritance_Simple_Customer;

@@ -569,6 +569,7 @@ procedure TSession.DoSetEntityValues(var AEntityToCreate: TObject; AResultset: I
   AColumns: TColumnDataList; AEntityData: TEntityData);
 var
   LEntityData: TEntityData;
+  LClonedObject: TObject;
 begin
   SetEntityColumns(AEntityToCreate, AColumns, AResultset);
   //we need to set internal values for the lazy type field
@@ -577,8 +578,11 @@ begin
     LEntityData := TEntityCache.Get(AEntityToCreate.ClassType);
 
   SetLazyColumns(AEntityToCreate, LEntityData);
+
   SetAssociations(AEntityToCreate, AResultset, LEntityData);
-  FOldStateEntities.AddOrReplace(TRttiExplorer.Clone(AEntityToCreate));
+
+  LClonedObject := TRttiExplorer.Clone(AEntityToCreate);
+  FOldStateEntities.AddOrReplace(LClonedObject);
 end;
 
 function TSession.Execute(const ASql: string; const AParams: array of const): NativeUInt;
@@ -1157,10 +1161,9 @@ var
   LValue: TValue;
   LColumns: IList<OneToManyAttribute>;
 begin
-  LColumns := AEntityData.OneToManyColumns;
-  if LColumns.Count < 1 then
+  if not AEntityData.HasOneToManyRelations then
     Exit;
-
+  LColumns := AEntityData.OneToManyColumns;
   for LCol in LColumns do
   begin
     LValue := TRttiExplorer.GetMemberValue(AEntity, LCol.MappedBy); //get foreign key value
@@ -1174,6 +1177,7 @@ var
   LVal: Variant;
   LValue, LPrimaryKey: TValue;
   LTypeInfo: PTypeInfo;
+  i: Integer;
 begin
   if AColumns.TryGetPrimaryKeyColumn(LCol) then
   begin
@@ -1186,8 +1190,9 @@ begin
     TRttiExplorer.SetMemberValue(Self, AEntity, LCol.ClassMemberName, LPrimaryKey);
   end;
 
-  for LCol in AColumns do
+  for i := 0 to AColumns.Count - 1 do
   begin
+    LCol := AColumns[i];
     if LCol.IsPrimaryKey then
     begin
       Continue;

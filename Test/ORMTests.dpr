@@ -132,7 +132,8 @@ uses
   Core.EmbeddedEntity in '..\Core.EmbeddedEntity.pas',
   Core.Repository.Proxy in '..\Core.Repository.Proxy.pas',
   Adapters.FieldCache in '..\Adapters.FieldCache.pas',
-  Adapters.FireDAC in '..\Adapters.FireDAC.pas';
+  Adapters.FireDAC in '..\Adapters.FireDAC.pas',
+  TestFireDACAdapter in 'TestFireDACAdapter.pas';
 
 {$R *.RES}
 

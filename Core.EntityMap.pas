@@ -137,7 +137,7 @@ begin
   else
     LId := TValue.Empty;
 
-  Result := AObject.ClassName + '_' + VarToStrDef(TUtils.AsVariant(LId), '-1');
+  Result := AObject.ClassName + '_' + LId.ToString;
 end;
 
 function TEntityMap.HasIdValue(AObject: TObject): Boolean;

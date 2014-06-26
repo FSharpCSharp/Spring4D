@@ -145,7 +145,7 @@ begin
     varUString, varString, varStrArg, varOleStr: LStatement.SetSQLCommand(LQuery)
     else
     begin
-      LStatement.SetSQLCommand(Format('S[%S]{}', [FCommand.Table.Name]));
+      LQueryMetadata.TableName := FCommand.Table.Name;
       LStatement.SetQuery(LQueryMetadata, LQuery);
     end;
   end;

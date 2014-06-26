@@ -243,6 +243,7 @@ type
 
   TQueryMetadata = record
     QueryType: TDMLCommandType;
+    TableName: string;
   end;
 
   {$REGION 'Documentation'}

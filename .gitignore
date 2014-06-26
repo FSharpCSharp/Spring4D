@@ -45,3 +45,6 @@ DCU
 /Demos/GettingStarted/Debug/Win32/*.db3
 /Test/Debug/Win32/SvDUnit.prop
 Test/Debug/Win64/ORMTests.rsm
+*.spp
+Test/Debug/Win32/dunit.ini
+Test/Release/

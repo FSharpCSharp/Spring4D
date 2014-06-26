@@ -107,6 +107,7 @@ type
     function HasInstanceField: Boolean;
     function HasSequence(): Boolean;
     function HasManyToOneRelations(): Boolean;
+    function HasOneToManyRelations(): Boolean;
     function HasVersionColumn(): Boolean;
 
     property Columns: IList<ColumnAttribute> read FColumns;
@@ -129,7 +130,7 @@ type
   {$ENDREGION}
   TEntityCache = class
   private
-    class var FEntities: IDictionary<string,TEntityData>;
+    class var FEntities: IDictionary<TClass,TEntityData>;
   public
     class constructor Create;
 
@@ -139,7 +140,7 @@ type
     class function GetColumnsData(AClass: TClass): TColumnDataList;
     class function CreateColumnsData(AClass: TClass): TColumnDataList;
 
-    class property Entities: IDictionary<string, TEntityData> read FEntities;
+    class property Entities: IDictionary<TClass, TEntityData> read FEntities;
   end;
 
 
@@ -247,6 +248,11 @@ begin
   Result := FManyToOneColumns.Count > 0;
 end;
 
+function TEntityData.HasOneToManyRelations: Boolean;
+begin
+  Result := not FOneToManyColumns.IsEmpty;
+end;
+
 function TEntityData.HasSequence: Boolean;
 begin
   Result := Assigned(FSequence);
@@ -312,7 +318,7 @@ end;
 
 class constructor TEntityCache.Create;
 begin
-  FEntities := TCollections.CreateDictionary<string,TEntityData>([doOwnsValues], 100);
+  FEntities := TCollections.CreateDictionary<TClass,TEntityData>([doOwnsValues], 100);
 end;
 
 class function TEntityCache.CreateColumnsData(AClass: TClass): TColumnDataList;
@@ -333,7 +339,7 @@ begin
   begin
     Result := TEntityData.Create;
     Result.SetEntityData(AClass);
-    FEntities.Add(AClass.ClassName, Result);
+    FEntities.Add(AClass, Result);
   end;
 end;
 
@@ -353,7 +359,7 @@ end;
 
 class function TEntityCache.TryGet(AClass: TClass; out AEntityData: TEntityData): Boolean;
 begin
-  Result := FEntities.TryGetValue(AClass.ClassName, AEntityData);
+  Result := FEntities.TryGetValue(AClass, AEntityData);
 end;
 
 { TColumnDataList }
