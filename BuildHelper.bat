@@ -11,8 +11,8 @@ setlocal
   set DprojDirectory=%~dp2
   set DprojDirectory=%DprojDirectory:~0,-1%
   for %%f in (%DprojDirectory%) do set DprojDelphi=%%~nf
-  if not exist logs\ mkdir logs
-  for /f "tokens=2,4" %%c in ('echo %~4 %~3') do set buildlog="logs\%DprojDelphi%.%%c.%%d.MSBuildLog.txt"
+  if not exist Logs\ mkdir Logs
+  for /f "tokens=2,4" %%c in ('echo %~4 %~3') do set buildlog="Logs\%DprojDelphi%.%%c.%%d.MSBuildLog.txt"
   echo   build log:   %buildlog%
   %FrameworkDir%\msbuild.exe /nologo %2 /target:build /p:DCC_BuildAllUnits=true /p:%3 /p:%4 /p:%5 /p:%6 /l:FileLogger,Microsoft.Build.Engine;logfile=%buildlog%
 endlocal
