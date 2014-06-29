@@ -1,0 +1,1 @@
+this dir contains test projects for different delphi versions
