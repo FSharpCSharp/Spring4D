@@ -102,13 +102,14 @@ type
     ExEntry: array[0..0] of TVmtMethodExEntry;
   end;
 
-function CreateVirtualClass(source: TClass): TClass;
+function CreateVirtualClass(classType: TClass): TClass;
 procedure DestroyVirtualClass(classType: TClass);
 
-function GetClassData(classType: TClass): PClassData; inline;
+function GetClassData(classType: TClass): PClassData; //inline;
 
 function GetVirtualMethodExTable(classType: TClass): PVmtMethodExTable;
 function GetVirtualMethodAddress(classType: TClass; virtualIndex: SmallInt): Pointer;
+function GetVirtualMethodCount(classType: TClass): Integer;
 function GetVirtualMethodIndex(classType: TClass; method: Pointer): SmallInt;
 function IsVirtualMethodOverride(baseClass, classType: TClass; method: Pointer): Boolean;
 
@@ -117,30 +118,19 @@ implementation
 uses
   Rtti;
 
-function CreateVirtualClass(source: TClass): TClass;
+function CreateVirtualClass(classType: TClass): TClass;
 var
-  context: TRttiContext;
-  rttiType: TRttiType;
-  method: TRttiMethod;
   virtualMethodCount: Integer;
   size: Integer;
   classData: PClassData;
 begin
-  rttiType := context.GetType(source);
-  virtualMethodCount := 0;
-  for method in rttiType.GetMethods do
-  begin
-    if method.DispatchKind <> dkVtable then
-      Continue;
-    if method.VirtualIndex >= virtualMethodCount then
-      virtualMethodCount := method.VirtualIndex + 1;
-  end;
+  virtualMethodCount := GetVirtualMethodCount(classType);
   size := virtualMethodCount * SizeOf(Pointer) - vmtSelfPtr;
   classData := AllocMem(size);
   Result := TClass(PByte(classData) - vmtSelfPtr);
-  Move((PByte(source) + vmtSelfPtr)^, classData^, size);
+  Move((PByte(classType) + vmtSelfPtr)^, classData^, size);
   classData.SelfPtr := Result;
-  Pointer(classData.Parent) := GetClassData(source);
+  Pointer(classData.Parent) := GetClassData(classType);
 end;
 
 procedure DestroyVirtualClass(classType: TClass);
@@ -207,6 +197,23 @@ begin
     classType := classType.ClassParent;
   end;
   Result := -1;
+end;
+
+function GetVirtualMethodCount(classType: TClass): Integer;
+var
+  context: TRttiContext;
+  rttiType: TRttiType;
+  method: TRttiMethod;
+begin
+  rttiType := context.GetType(classType);
+  Result := 0;
+  for method in rttiType.GetMethods do
+  begin
+    if method.DispatchKind <> dkVtable then
+      Continue;
+    if method.VirtualIndex >= Result then
+      Result := method.VirtualIndex + 1;
+  end;
 end;
 
 function GetVirtualMethodAddress(classType: TClass; virtualIndex: SmallInt): Pointer;
