@@ -276,10 +276,8 @@ type
     function GetValues: IReadOnlyCollection<T>; virtual; abstract;
     function GetValueType: PTypeInfo; virtual;
   {$ENDREGION}
-    procedure DoKeyChanged(Sender: TObject; const Item: TKey;
-      Action: TCollectionChangedAction); virtual;
-    procedure DoValueChanged(Sender: TObject; const Item: T;
-      Action: TCollectionChangedAction); virtual;
+    procedure KeyChanged(const Item: TKey; Action: TCollectionChangedAction); virtual;
+    procedure ValueChanged(const Item: T; Action: TCollectionChangedAction); virtual;
   public
     constructor Create; override;
 
@@ -1334,18 +1332,6 @@ begin
   fOnValueChanged := TCollectionChangedEventImpl<T>.Create;
 end;
 
-procedure TMapBase<TKey, T>.DoKeyChanged(Sender: TObject; const Item: TKey;
-  Action: TCollectionChangedAction);
-begin
-  fOnKeyChanged.Invoke(Sender, Item, Action)
-end;
-
-procedure TMapBase<TKey, T>.DoValueChanged(Sender: TObject;
-  const Item: T; Action: TCollectionChangedAction);
-begin
-  fOnValueChanged.Invoke(Sender, Item, Action)
-end;
-
 function TMapBase<TKey, T>.GetKeyType: PTypeInfo;
 begin
   Result := TypeInfo(TKey);
@@ -1364,6 +1350,18 @@ end;
 function TMapBase<TKey, T>.GetValueType: PTypeInfo;
 begin
   Result := TypeInfo(T);
+end;
+
+procedure TMapBase<TKey, T>.KeyChanged(const Item: TKey;
+  Action: TCollectionChangedAction);
+begin
+  fOnKeyChanged.Invoke(Self, Item, Action)
+end;
+
+procedure TMapBase<TKey, T>.ValueChanged(const Item: T;
+  Action: TCollectionChangedAction);
+begin
+  fOnValueChanged.Invoke(Self, Item, Action)
 end;
 
 {$ENDREGION}

@@ -1554,6 +1554,8 @@ type
   {$REGION 'Property Accessors'}
     function GetKeys: IReadOnlyCollection<TKey>;
     function GetKeyType: PTypeInfo;
+    function GetOnKeyChanged: ICollectionChangedEvent<TKey>;
+    function GetOnValueChanged: ICollectionChangedEvent<TValue>;
     function GetValues: IReadOnlyCollection<TValue>;
     function GetValueType: PTypeInfo;
   {$ENDREGION}
@@ -1629,6 +1631,8 @@ type
     property Values: IReadOnlyCollection<TValue> read GetValues;
 
     property KeyType: PTypeInfo read GetKeyType;
+    property OnKeyChanged: ICollectionChangedEvent<TKey> read GetOnKeyChanged;
+    property OnValueChanged: ICollectionChangedEvent<TValue> read GetOnValueChanged;
     property ValueType: PTypeInfo read GetValueType;
   end;
 
@@ -1645,8 +1649,6 @@ type
     ['{7F0D544F-6A59-4FA0-9C96-DB09029CC835}']
   {$REGION 'Property Accessors'}
     function GetItem(const key: TKey): TValue;
-    function GetOnKeyChanged: ICollectionChangedEvent<TKey>;
-    function GetOnValueChanged: ICollectionChangedEvent<TValue>;
     procedure SetItem(const key: TKey; const value: TValue);
   {$ENDREGION}
 
@@ -1695,9 +1697,6 @@ type
     ///	  The element with the specified key.
     ///	</value>
     property Items[const key: TKey]: TValue read GetItem write SetItem; default;
-
-    property OnKeyChanged: ICollectionChangedEvent<TKey> read GetOnKeyChanged;
-    property OnValueChanged: ICollectionChangedEvent<TValue> read GetOnValueChanged;
   end;
 
   IMultiMap<TKey, TValue> = interface(IMap<TKey, TValue>)

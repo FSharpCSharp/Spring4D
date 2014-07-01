@@ -128,6 +128,11 @@ type
   end;
 
   TMultiMap<TKey, TValue> = class(TMultiMapBase<TKey, TValue>)
+  private
+    procedure DoKeyChanged(Sender: TObject; const Item: TKey;
+      Action: TCollectionChangedAction);
+    procedure DoValueChanged(Sender: TObject; const Item: TValue;
+      Action: TCollectionChangedAction);
   protected
     function CreateCollection: ICollection<TValue>; override;
     function CreateDictionary: IDictionary<TKey, ICollection<TValue>>; override;
@@ -137,10 +142,8 @@ type
   private
     fOwnerships: TDictionaryOwnerships;
   protected
-    procedure DoKeyChanged(Sender: TObject; const Item: TKey;
-      Action: TCollectionChangedAction); override;
-    procedure DoValueChanged(Sender: TObject; const Item: TValue;
-      Action: TCollectionChangedAction); override;
+    procedure KeyChanged(const item: TKey; action: TCollectionChangedAction); override;
+    procedure ValueChanged(const item: TValue; action: TCollectionChangedAction); override;
   public
     constructor Create(ownerships: TDictionaryOwnerships);
   end;
@@ -186,7 +189,6 @@ begin
 
   list.Add(value);
   Inc(fCount);
-  // notify
 end;
 
 procedure TMultiMapBase<TKey, TValue>.Add(const item: TGenericPair);
@@ -198,7 +200,6 @@ procedure TMultiMapBase<TKey, TValue>.Clear;
 begin
   fDictionary.Clear;
   fCount := 0;
-  // notify
 end;
 
 function TMultiMapBase<TKey, TValue>.Contains(const value: TGenericPair;
@@ -252,8 +253,6 @@ begin
   Dec(fCount, list.Count);
   fDictionary.Remove(key);
   Result := list as IReadOnlyCollection<TKey>;
-
-  // notify
 end;
 
 function TMultiMapBase<TKey, TValue>.GetCount: Integer;
@@ -297,8 +296,6 @@ begin
     Dec(fCount);
     if list.IsEmpty then
       fDictionary.Remove(key)
-
-    // notify
   end;
 end;
 
@@ -316,8 +313,6 @@ begin
   begin
     Dec(fCount, list.Count);
     fDictionary.Remove(key);
-
-    // notify
   end;
 end;
 
@@ -457,6 +452,18 @@ begin
   Result.OnKeyChanged.Add(DoKeyChanged);
 end;
 
+procedure TMultiMap<TKey, TValue>.DoKeyChanged(Sender: TObject;
+  const Item: TKey; Action: TCollectionChangedAction);
+begin
+  KeyChanged(Item, Action);
+end;
+
+procedure TMultiMap<TKey, TValue>.DoValueChanged(Sender: TObject;
+  const Item: TValue; Action: TCollectionChangedAction);
+begin
+  ValueChanged(Item, Action);
+end;
+
 {$ENDREGION}
 
 
@@ -473,27 +480,27 @@ begin
   fOwnerships := ownerships;
 end;
 
-procedure TObjectMultiMap<TKey, TValue>.DoKeyChanged(Sender: TObject;
-  const Item: TKey; Action: TCollectionChangedAction);
+procedure TObjectMultiMap<TKey, TValue>.KeyChanged(const item: TKey;
+  action: TCollectionChangedAction);
 begin
   inherited;
-  if (Action = caRemoved) and (doOwnsKeys in fOwnerships) then
+  if (action = caRemoved) and (doOwnsKeys in fOwnerships) then
 {$IFNDEF AUTOREFCOUNT}
-    PObject(@Item).Free;
+    PObject(@item).Free;
 {$ELSE}
-    PObject(@Item).DisposeOf;
+    PObject(@item).DisposeOf;
 {$ENDIF}
 end;
 
-procedure TObjectMultiMap<TKey, TValue>.DoValueChanged(Sender: TObject;
-  const Item: TValue; Action: TCollectionChangedAction);
+procedure TObjectMultiMap<TKey, TValue>.ValueChanged(const item: TValue;
+  action: TCollectionChangedAction);
 begin
   inherited;
-  if (Action = caRemoved) and (doOwnsValues in fOwnerships) then
+  if (action = caRemoved) and (doOwnsValues in fOwnerships) then
 {$IFNDEF AUTOREFCOUNT}
-    PObject(@Item).Free;
+    PObject(@item).Free;
 {$ELSE}
-    PObject(@Item).DisposeOf;
+    PObject(@item).DisposeOf;
 {$ENDIF}
 end;
 

@@ -221,13 +221,13 @@ end;
 procedure TDictionary<TKey, TValue>.DoKeyNotify(Sender: TObject;
   const Item: TKey; Action: TCollectionNotification);
 begin
-  inherited DoKeyChanged(Sender, Item, TCollectionChangedAction(action));
+  inherited KeyChanged(Item, TCollectionChangedAction(action));
 end;
 
 procedure TDictionary<TKey, TValue>.DoValueNotify(Sender: TObject;
   const Item: TValue; Action: TCollectionNotification);
 begin
-  inherited DoValueChanged(Sender, Item, TCollectionChangedAction(Action));
+  inherited ValueChanged(Item, TCollectionChangedAction(Action));
 end;
 
 function TDictionary<TKey, TValue>.GetEnumerator: IEnumerator<TGenericPair>;
