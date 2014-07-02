@@ -961,8 +961,10 @@ type
     ['{B6B4E1E1-0D29-40E1-854C-A93DEA8D1AA5}']
   {$REGION 'Property Accessors'}
     function GetCapacity: Integer;
+    function GetCount: Integer;
     function GetItem(index: Integer): T;
     procedure SetCapacity(value: Integer);
+    procedure SetCount(value: Integer);
     procedure SetItem(index: Integer; const item: T);
   {$ENDREGION}
 
@@ -1029,6 +1031,7 @@ type
     procedure TrimExcess;
 
     property Capacity: Integer read GetCapacity write SetCapacity;
+    property Count: Integer read GetCount write SetCount;
     property Items[index: Integer]: T read GetItem write SetItem; default;
   end;
 

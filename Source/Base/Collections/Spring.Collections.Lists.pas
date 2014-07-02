@@ -91,6 +91,7 @@ type
     function GetItem(index: Integer): T; override;
     function GetItems: TArray<T>;
     procedure SetCapacity(value: Integer); override;
+    procedure SetCount(value: Integer); override;
     procedure SetItem(index: Integer; const value: T); override;
   {$ENDREGION}
 
@@ -517,6 +518,19 @@ begin
   if value < Count then
     DeleteRange(Count - value + 1, Count - value);
   SetLength(fItems, value);
+end;
+
+procedure TList<T>.SetCount(value: Integer);
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange(count >= 0, 'count');
+{$ENDIF}
+
+  if value > Capacity then
+    SetCapacity(value);
+  if value < fCount then
+    DeleteRange(value, fCount - value);
+  fCount := value;
 end;
 
 procedure TList<T>.Delete(index: Integer);
