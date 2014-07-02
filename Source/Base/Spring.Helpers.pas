@@ -518,10 +518,13 @@ type
   TRttiMethodHelper = class helper for TRttiMethod
   private
     procedure DispatchValue(const value: TValue; typeInfo: PTypeInfo);
+    function GetReturnTypeHandle: PTypeInfo;
   public
     function Invoke(Instance: TObject; const Args: array of TValue): TValue; overload;
     function Invoke(Instance: TClass; const Args: array of TValue): TValue; overload;
     function Invoke(Instance: TValue; const Args: array of TValue): TValue; overload;
+
+    property ReturnTypeHandle: PTypeInfo read GetReturnTypeHandle;
   end;
 
   TRttiPropertyHelper = class helper for TRttiProperty
@@ -1354,6 +1357,17 @@ begin
     and (typeInfo.Kind = tkInterface)
     and IsAssignableFrom(typeInfo, value.TypeInfo) then
     PValueData(@value).FTypeInfo := typeInfo;
+end;
+
+function TRttiMethodHelper.GetReturnTypeHandle: PTypeInfo;
+var
+  returnType: TRttiType;
+begin
+  returnType := Self.ReturnType;
+  if Assigned(returnType) then
+    Result := returnType.Handle
+  else
+    Result := nil;
 end;
 
 function TRttiMethodHelper.Invoke(Instance: TObject;
