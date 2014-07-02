@@ -947,7 +947,9 @@ type
   IList<T> = interface(ICollection<T>)
     ['{B6B4E1E1-0D29-40E1-854C-A93DEA8D1AA5}']
   {$REGION 'Property Accessors'}
+    function GetCount: Integer;
     function GetItem(index: Integer): T;
+    procedure SetCount(value: Integer);
     procedure SetItem(index: Integer; const item: T);
   {$ENDREGION}
 
@@ -1010,6 +1012,7 @@ type
     function AsList: IList;
     function AsReadOnlyList: IReadOnlyList<T>;
 
+    property Count: Integer read GetCount write SetCount;
     property Items[index: Integer]: T read GetItem write SetItem; default;
   end;
 

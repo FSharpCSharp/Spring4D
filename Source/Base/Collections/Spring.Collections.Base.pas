@@ -312,7 +312,9 @@ type
   {$HINTS ON}
   protected
   {$REGION 'Property Accessors'}
+    function GetCount: Integer; override;
     function GetItem(index: Integer): T; virtual; abstract;
+    procedure SetCount(count: Integer); virtual;
     procedure SetItem(index: Integer; const value: T); virtual; abstract;
   {$ENDREGION}
   {$REGION 'Implements IInterface'}
@@ -365,6 +367,7 @@ type
 
     function ToArray: TArray<T>; override;
 
+    property Count: Integer read GetCount write SetCount;
     property Items[index: Integer]: T read GetItem write SetItem; default;
   end;
 
@@ -1414,6 +1417,11 @@ begin
     Result := defaultValue;
 end;
 
+function TListBase<T>.GetCount: Integer;
+begin
+  Result := inherited;
+end;
+
 function TListBase<T>.IndexOf(const item: T): Integer;
 begin
   Result := IndexOf(item, 0, Count);
@@ -1548,6 +1556,11 @@ end;
 procedure TListBase<T>.Reverse;
 begin
   Reverse(0, Count);
+end;
+
+procedure TListBase<T>.SetCount(count: Integer);
+begin
+  raise ENotSupportedException.Create('SetCount');
 end;
 
 function TListBase<T>.Single: T;
