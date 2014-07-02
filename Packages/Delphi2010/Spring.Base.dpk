@@ -51,6 +51,7 @@ contains
   Spring.Helpers in '..\..\Source\Base\Spring.Helpers.pas',
   Spring.Reflection in '..\..\Source\Base\Reflection\Spring.Reflection.pas',
   Spring.Reflection.Activator in '..\..\Source\Base\Reflection\Spring.Reflection.Activator.pas',
+  Spring.Reflection.Core in '..\..\Source\Base\Reflection\Spring.Reflection.Core.pas',
   Spring.Reflection.ValueConverters in '..\..\Source\Base\Reflection\Spring.Reflection.ValueConverters.pas',
   Spring.ResourceStrings in '..\..\Source\Base\Spring.ResourceStrings.pas',
   Spring.SystemUtils in '..\..\Source\Base\Spring.SystemUtils.pas';
