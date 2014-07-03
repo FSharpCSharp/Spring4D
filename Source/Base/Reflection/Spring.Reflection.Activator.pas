@@ -41,6 +41,9 @@ type
 
   TActivator = record
   public
+    class function CreateInstance(const classType: TClass): TValue; overload; static;
+    class function CreateInstance(const classType: TClass;
+      const arguments: array of TValue): TValue; overload; static;
     class function CreateInstance(const classType: TRttiInstanceType): TValue; overload; static;
     class function CreateInstance(const classType: TRttiInstanceType;
       const constructorMethod: TRttiMethod; const arguments: array of TValue): TValue; overload; static;
@@ -59,6 +62,36 @@ uses
 
 
 {$REGION 'TActivator'}
+
+class function TActivator.CreateInstance(const classType: TClass): TValue;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(classType, 'classType');
+{$ENDIF}
+
+  Result := CreateInstance(TType.GetType(classType).AsInstance);
+end;
+
+class function TActivator.CreateInstance(const classType: TClass;
+  const arguments: array of TValue): TValue;
+var
+  paramTypes: TArray<PTypeInfo>;
+  i: Integer;
+  method: TRttiMethod;
+  rttiType: TRttiInstanceType;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(classType, 'classType');
+{$ENDIF}
+
+  SetLength(paramTypes, Length(arguments));
+  for i := Low(arguments) to High(arguments) do
+    paramTypes[i] := arguments[i].TypeInfo;
+  rttiType := TType.GetType(classType).AsInstance;
+  method := rttiType.Methods.Where(TMethodFilters.IsConstructor
+    and TMethodFilters.HasParameterTypes(paramTypes)).FirstOrDefault;
+  Result := CreateInstance(rttiType, method, arguments);
+end;
 
 class function TActivator.CreateInstance(
   const classType: TRttiInstanceType): TValue;
