@@ -518,12 +518,16 @@ type
   TRttiMethodHelper = class helper for TRttiMethod
   private
     procedure DispatchValue(const value: TValue; typeInfo: PTypeInfo);
+    function GetIsGetter: Boolean;
+    function GetIsSetter: Boolean;
     function GetReturnTypeHandle: PTypeInfo;
   public
     function Invoke(Instance: TObject; const Args: array of TValue): TValue; overload;
     function Invoke(Instance: TClass; const Args: array of TValue): TValue; overload;
     function Invoke(Instance: TValue; const Args: array of TValue): TValue; overload;
 
+    property IsGetter: Boolean read GetIsGetter;
+    property IsSetter: Boolean read GetIsSetter;
     property ReturnTypeHandle: PTypeInfo read GetReturnTypeHandle;
   end;
 
@@ -1357,6 +1361,48 @@ begin
     and (typeInfo.Kind = tkInterface)
     and IsAssignableFrom(typeInfo, value.TypeInfo) then
     PValueData(@value).FTypeInfo := typeInfo;
+end;
+
+function GetCodeAddress(const classType: TClass; const proc: Pointer): Pointer;
+begin
+  if (Integer(proc) and $FF000000) = $FF000000 then
+    Exit(nil);
+  if (Integer(proc) and $FF000000) = $FE000000 then
+    Result := PPointer(Integer(classType) + SmallInt(proc))^
+  else
+    Result := proc;
+end;
+
+function TRttiMethodHelper.GetIsGetter: Boolean;
+var
+  prop: TRttiProperty;
+  code: Pointer;
+begin
+  for prop in Parent.GetProperties do
+    if prop is TRttiInstanceProperty then
+    begin
+      code := GetCodeAddress(prop.Parent.AsInstance.MetaclassType,
+        TRttiInstanceProperty(prop).PropInfo.GetProc);
+      if code = CodeAddress then
+        Exit(True);
+    end;
+  Result := False;
+end;
+
+function TRttiMethodHelper.GetIsSetter: Boolean;
+var
+  prop: TRttiProperty;
+  code: Pointer;
+begin
+  for prop in Parent.GetProperties do
+    if prop is TRttiInstanceProperty then
+    begin
+      code := GetCodeAddress(prop.Parent.AsInstance.MetaclassType,
+        TRttiInstanceProperty(prop).PropInfo.SetProc);
+      if code = CodeAddress then
+        Exit(True);
+    end;
+  Result := False;
 end;
 
 function TRttiMethodHelper.GetReturnTypeHandle: PTypeInfo;

@@ -105,7 +105,7 @@ type
 function CreateVirtualClass(classType: TClass): TClass;
 procedure DestroyVirtualClass(classType: TClass);
 
-function GetClassData(classType: TClass): PClassData; //inline;
+function GetClassData(classType: TClass): PClassData; inline;
 
 function GetVirtualMethodExTable(classType: TClass): PVmtMethodExTable;
 function GetVirtualMethodAddress(classType: TClass; virtualIndex: SmallInt): Pointer;
@@ -140,7 +140,7 @@ end;
 
 function GetClassData(classType: TClass): PClassData;
 begin
-  Result := PClassData(PByte(classType) + vmtSelfPtr);
+  Result := Pointer(NativeInt(classType) + vmtSelfPtr);
 end;
 
 function GetVirtualMethodExTable(classType: TClass): PVmtMethodExTable;
