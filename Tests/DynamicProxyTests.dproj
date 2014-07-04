@@ -32,10 +32,10 @@
 			<DCC_ImageBase>00400000</DCC_ImageBase>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_1)'!=''">
-			<DCC_DebugDCUs>true</DCC_DebugDCUs>
-			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
 			<DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>
 			<DCC_Optimize>false</DCC_Optimize>
+			<DCC_DebugDCUs>true</DCC_DebugDCUs>
+			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2)'!=''">
 			<DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
@@ -54,6 +54,11 @@
 			<DCCReference Include="..\Source\Base\Patches\Spring.Patches.QC98671.pas"/>
 			<DCCReference Include="Source\CallLoggingInterceptor.pas"/>
 			<DCCReference Include="Source\HasCount.pas"/>
+			<DCCReference Include="Source\Interfaces.pas"/>
+			<DCCReference Include="Source\DelegateWrapper.pas"/>
+			<DCCReference Include="MethodInterceptor.pas"/>
+			<DCCReference Include="Source\ProxyTests.pas"/>
+			<DCCReference Include="DelegateSelector.pas"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>

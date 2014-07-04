@@ -6,6 +6,7 @@ uses
   Classes,
   Rtti,
   SysUtils,
+  TypInfo,
   Spring,
   Spring.Collections,
   Spring.Reflection.Compatibility,
@@ -53,10 +54,19 @@ type
 
   TProxyGenerationOptions = record
   private
+    type
+      TDefaultInterceptorSelector = class(TInterfacedObject, IInterceptorSelector)
+      public
+        function SelectInterceptors(const method: TRttiMethod;
+          const interceptors: IEnumerable<IInterceptor>): IEnumerable<IInterceptor>;
+      end;
+  private
     fHook: IProxyGenerationHook;
     fSelector: IInterceptorSelector;
+    class var fDefaultSelector: IInterceptorSelector;
   public
     constructor Create(const hook: IProxyGenerationHook);
+    class constructor Create;
     class function Default: TProxyGenerationOptions; static;
     property Hook: IProxyGenerationHook read fHook write fHook;
     property Selector: IInterceptorSelector read fSelector write fSelector;
@@ -110,11 +120,13 @@ type
   TVirtualClass = class
   private
     fClassProxy: TClass;
+    function GetClassProxyData: PClassData; inline;
   public
     constructor Create(classType: TClass);
     destructor Destroy; override;
 
     property ClassProxy: TClass read fClassProxy;
+    property ClassProxyData: PClassData read GetClassProxyData;
   end;
 
   TProxyTargetAccessor = class(TInterfacedObject, IProxyTargetAccessor)
@@ -139,6 +151,7 @@ type
     fIntercepts: IList<TMethodIntercept>;
     fInterceptors: IList<IInterceptor>;
     fInterceptorSelector: IInterceptorSelector;
+    class function GetProxyTargetAccessor(Self: TObject): IProxyTargetAccessor; static;
   protected
     function CollectInterceptableMethods(
       const hook: IProxyGenerationHook): IEnumerable<TRttiMethod>;
@@ -162,6 +175,7 @@ type
       end;
   private
     fInterceptors: IList<IInterceptor>;
+    fInterceptorSelector: IInterceptorSelector;
     fTarget: TValue;
     function GetInterceptors: IEnumerable<IInterceptor>;
     function GetTarget: TValue;
@@ -169,7 +183,9 @@ type
     procedure HandleInvoke(Method: TRttiMethod; const Args: TArray<TValue>;
       out Result: TValue); virtual;
   public
-    constructor Create(proxyType: PTypeInfo; const target: IInterface;
+    constructor Create(proxyType: PTypeInfo;
+      const options: TProxyGenerationOptions;
+      const target: IInterface;
       const interceptors: array of IInterceptor);
   end;
 
@@ -216,13 +232,31 @@ type
     function CreateInterfaceProxyWithTarget(proxyType: PTypeInfo;
       const target: IInterface;
       const interceptors: array of IInterceptor): TObject; overload;
+
+    function CreateInterfaceProxyWithoutTarget(proxyType: PTypeInfo;
+      const interceptor: IInterceptor): TObject; overload;
+    function CreateInterfaceProxyWithoutTarget(proxyType: PTypeInfo;
+      const interceptors: array of IInterceptor): TObject; overload;
+//    function CreateInterfaceProxyWithoutTarget(proxyType: PTypeInfo;
+//      const additionalInterfaces: array of PTypeInfo;
+//      const interceptors: array of IInterceptor): TObject; overload;
+    function CreateInterfaceProxyWithoutTarget(proxyType: PTypeInfo;
+      const options: TProxyGenerationOptions;
+      const interceptors: array of IInterceptor): TObject; overload;
+    function CreateInterfaceProxyWithoutTarget(proxyType: PTypeInfo;
+      const additionalInterfaces: array of PTypeInfo;
+      const options: TProxyGenerationOptions;
+      const interceptors: array of IInterceptor): TObject; overload;
   end;
+
+function PassByRef(TypeInfo: PTypeInfo; CC: TCallConv; IsConst: Boolean = False): Boolean;
+procedure PassArg(Par: TRttiParameter; const ArgSrc: TValue;
+  var ArgDest: TValue; CC: TCallConv);
 
 implementation
 
 uses
   RTLConsts,
-  TypInfo,
   Spring.Helpers,
   Spring.Reflection;
 
@@ -340,6 +374,12 @@ begin
   DestroyVirtualClass(fClassProxy);
   inherited;
 end;
+
+function TVirtualClass.GetClassProxyData: PClassData;
+begin
+  Result := GetClassData(fClassProxy);
+end;
+
 {$ENDREGION}
 
 
@@ -382,7 +422,7 @@ end;
 
 destructor TClassProxy.Destroy;
 begin
-  FreeMem(GetClassData(fClassProxy).IntfTable);
+  FreeMem(ClassProxyData.IntfTable);
   inherited;
 end;
 
@@ -427,6 +467,7 @@ begin
   finally
     for i := 1 to High(Args) do
       Args[i] := arguments[i - 1];
+    Result := invocation.Result;
   end;
 end;
 
@@ -447,11 +488,6 @@ begin
   end;
 end;
 
-function GetProxyTargetAccessor(Self: TObject): IProxyTargetAccessor;
-begin
-  Result := TProxyTargetAccessor.Create(Self, TProxyGenerator.fProxies[Self].fInterceptors);
-end;
-
 procedure TClassProxy.GenerateInterfaces;
 const
   EntryCount = 1;
@@ -465,7 +501,14 @@ begin
   table.Entries[0].VTable := nil;
   table.Entries[0].IOffset := 0;
   table.Entries[0].ImplGetter := NativeUInt(@GetProxyTargetAccessor);
-  GetClassData(fClassProxy).IntfTable := table;
+  ClassProxyData.IntfTable := table;
+end;
+
+class function TClassProxy.GetProxyTargetAccessor(
+  Self: TObject): IProxyTargetAccessor;
+begin
+  Result := TProxyTargetAccessor.Create(
+    Self, TProxyGenerator.fProxies[Self].fInterceptors);
 end;
 
 {$ENDREGION}
@@ -497,10 +540,12 @@ end;
 {$REGION 'TInterfaceProxy'}
 
 constructor TInterfaceProxy.Create(proxyType: PTypeInfo;
-   const target: IInterface; const interceptors: array of IInterceptor);
+  const options: TProxyGenerationOptions; const target: IInterface;
+  const interceptors: array of IInterceptor);
 begin
   inherited Create(proxyType, HandleInvoke);
   fInterceptors := TCollections.CreateInterfaceList<IInterceptor>(interceptors);
+  fInterceptorSelector := options.Selector;
   fTarget := TValue.From(target);
 end;
 
@@ -518,16 +563,19 @@ procedure TInterfaceProxy.HandleInvoke(Method: TRttiMethod;
   const Args: TArray<TValue>; out Result: TValue);
 var
   arguments: TArray<TValue>;
+  interceptors: TArray<IInterceptor>;
   invocation: IInvocation;
   i: Integer;
 begin
   arguments := Copy(Args, 1);
-  invocation := TInvocation.Create(fTarget, fInterceptors.ToArray, Method, arguments);
+  interceptors := fInterceptorSelector.SelectInterceptors(method, fInterceptors).ToArray;
+  invocation := TInvocation.Create(fTarget, interceptors, Method, arguments);
   try
     invocation.Proceed;
   finally
     for i := 1 to High(Args) do
       Args[i] := arguments[i - 1];
+    Result := invocation.Result;
   end;
 end;
 
@@ -611,19 +659,49 @@ begin
   proxy := TClassProxy.Create(classType, options, interceptors);
   Result := proxy.ClassProxy.Create;
   fProxies.Add(Result, proxy);
-  GetClassData(proxy.ClassProxy).FreeInstance := ProxyFreeInstance;
+  proxy.ClassProxyData.FreeInstance := ProxyFreeInstance;
 end;
 
 function TProxyGenerator.CreateInterfaceProxyWithTarget(proxyType: PTypeInfo;
   const target: IInterface): TObject;
 begin
-  Result := TInterfaceProxy.Create(proxyType, target, []);
+  Result := CreateInterfaceProxyWithTarget(proxyType, target, []);
 end;
 
 function TProxyGenerator.CreateInterfaceProxyWithTarget(proxyType: PTypeInfo;
   const target: IInterface; const interceptors: array of IInterceptor): TObject;
 begin
-  Result := TInterfaceProxy.Create(proxyType, target, interceptors);
+  Result := TInterfaceProxy.Create(proxyType,
+    TProxyGenerationOptions.Default, target, interceptors);
+end;
+
+function TProxyGenerator.CreateInterfaceProxyWithoutTarget(proxyType: PTypeInfo;
+  const interceptor: IInterceptor): TObject;
+begin
+  Result := CreateInterfaceProxyWithoutTarget(proxyType, [],
+    TProxyGenerationOptions.Default, [interceptor]);
+end;
+
+function TProxyGenerator.CreateInterfaceProxyWithoutTarget(proxyType: PTypeInfo;
+  const interceptors: array of IInterceptor): TObject;
+begin
+  Result := CreateInterfaceProxyWithoutTarget(proxyType, [],
+    TProxyGenerationOptions.Default, interceptors);
+end;
+
+function TProxyGenerator.CreateInterfaceProxyWithoutTarget(proxyType: PTypeInfo;
+  const options: TProxyGenerationOptions;
+  const interceptors: array of IInterceptor): TObject;
+begin
+  Result := CreateInterfaceProxyWithoutTarget(proxyType, [], options, interceptors);
+end;
+
+function TProxyGenerator.CreateInterfaceProxyWithoutTarget(proxyType: PTypeInfo;
+  const additionalInterfaces: array of PTypeInfo;
+  const options: TProxyGenerationOptions;
+  const interceptors: array of IInterceptor): TObject;
+begin
+  Result := TInterfaceProxy.Create(proxyType, options, nil, interceptors);
 end;
 
 {$ENDREGION}
@@ -693,14 +771,32 @@ end;
 
 {$REGION 'TProxyGenerationOptions'}
 
+class constructor TProxyGenerationOptions.Create;
+begin
+  fDefaultSelector := TDefaultInterceptorSelector.Create;
+end;
+
 class function TProxyGenerationOptions.Default: TProxyGenerationOptions;
 begin
+  Result.fSelector := fDefaultSelector;
 end;
 
 constructor TProxyGenerationOptions.Create(
   const hook: IProxyGenerationHook);
 begin
   fHook := hook;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TProxyGenerationOptions.TDefaultInterceptorSelector'}
+
+function TProxyGenerationOptions.TDefaultInterceptorSelector.SelectInterceptors(
+  const method: TRttiMethod;
+  const interceptors: IEnumerable<IInterceptor>): IEnumerable<IInterceptor>;
+begin
+  Result := interceptors;
 end;
 
 {$ENDREGION}

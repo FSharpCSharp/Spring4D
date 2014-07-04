@@ -72,6 +72,8 @@ type
 
   PTypeInfo = TypInfo.PTypeInfo;
 
+  PInterface = ^IInterface;
+
   TValue = Rtti.TValue;
 
   ///	<summary>
