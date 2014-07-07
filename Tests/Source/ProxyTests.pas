@@ -66,9 +66,9 @@ begin
       Result := Length(s);
     end;
 
-//  Interfaces.IEqualityComparer<string>(comparer) :=
-//    TDelegateWrapper.WrapAs<Interfaces.IEqualityComparer<string>>([@compare, @getHashCode]);
-  comparer := TDelegateWrapper.WrapAs<IEqualityComparer<string>>([@compare, @getHashCode]);
+  Interfaces.IEqualityComparer<string>(comparer) :=
+    TDelegateWrapper.WrapAs<Interfaces.IEqualityComparer<string>>([@compare, @getHashCode]);
+//  comparer := TDelegateWrapper.WrapAs<IEqualityComparer<string>>([@compare, @getHashCode]);
   stringByLength := TCollections.CreateDictionary<string, string>(comparer);
   stringByLength.Add('four', 'some string');
   stringByLength.Add('five!', 'some other string');

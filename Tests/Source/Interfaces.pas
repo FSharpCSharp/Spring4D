@@ -24,6 +24,11 @@ type
   end;
   {$M-}
 
+  IStorage = interface(IInvokable)
+    ['{674F4FE4-EBD1-4D16-AFDE-B43D51104A34}']
+    procedure Save(const data: string);
+  end;
+
 implementation
 
 end.

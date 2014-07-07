@@ -18,7 +18,11 @@ uses
   DelegateWrapper in 'Source\DelegateWrapper.pas',
   MethodInterceptor in 'MethodInterceptor.pas',
   ProxyTests in 'Source\ProxyTests.pas',
-  DelegateSelector in 'DelegateSelector.pas';
+  DelegateSelector in 'DelegateSelector.pas',
+  StorageTests in 'Source\StorageTests.pas',
+  Storage in 'Source\Storage.pas',
+  StorageFactory in 'Source\StorageFactory.pas',
+  StorageInterceptor in 'StorageInterceptor.pas';
 
 begin
   RunRegisteredTests;
