@@ -80,6 +80,7 @@ var
   msg1, msg2, msg3: string;
   primary, secondary: IList<string>;
 begin
+  storage := fSUT.GetStorage;
   msg1 := 'message1';
   msg2 := 'message2';
   msg3 := 'message3';
