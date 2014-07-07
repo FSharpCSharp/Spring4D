@@ -10,6 +10,17 @@ type
   published
     procedure Should_be_able_to_wrap_interface_with_one_method;
     procedure Should_be_able_to_write_interface_with_two_methods;
+
+    procedure ClassProxy_should_implement_additional_interfaces;
+//    procedure ClassProxy_for_class_already_implementing_additional_interfaces;
+  end;
+
+  TEnsurePartnerStatusRule = class(TInterfacedObject)
+  end;
+
+  ISupportsInvalidation = interface(IInvokable)
+    ['{45A48AD9-4F7E-4A8D-8FA2-EA46BEAC3A9A}']
+    procedure Invalidate;
   end;
 
 implementation
@@ -18,6 +29,7 @@ uses
   Rtti,
   SysUtils,
   Spring.Collections,
+  Spring.Interception,
   DelegateWrapper,
   Interfaces,
   Generics.Defaults;
@@ -75,6 +87,35 @@ begin
   CheckEquals(2, stringByLength.Count);
   atFive := stringByLength['12345'];
   CheckEquals('some other string', atFive);
+end;
+
+type
+  TInvalidationInterceptor = class(TInterfacedObject, IInterceptor)
+    procedure Intercept(const invocation: IInvocation);
+  end;
+
+procedure TInvalidationInterceptor.Intercept(const invocation: IInvocation);
+begin
+end;
+
+procedure TProxyTest.ClassProxy_should_implement_additional_interfaces;
+var
+  generator: TProxyGenerator;
+  proxy: TObject;
+  supportsInvalidation: ISupportsInvalidation;
+begin
+  generator := TProxyGenerator.Create;
+  try
+    proxy := generator.CreateClassProxy(
+      TEnsurePartnerStatusRule,
+      [TypeInfo(ISupportsInvalidation)],
+      [TInvalidationInterceptor.Create]);
+    CheckTrue(Supports(proxy, ISupportsInvalidation, supportsInvalidation));
+    supportsInvalidation.Invalidate;
+  finally
+    proxy.Free;
+    generator.Free;
+  end;
 end;
 
 initialization
