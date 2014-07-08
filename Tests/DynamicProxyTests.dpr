@@ -5,7 +5,6 @@ program DynamicProxyTests;
 {$ENDIF}
 
 uses
-  Windows,
   DUnitTestRunner,
   Freezable in 'Source\Freezable.pas',
   FreezableTests in 'Source\FreezableTests.pas',
