@@ -163,8 +163,8 @@ type
     fInterceptors: IList<IInterceptor>;
     fInterceptorSelector: IInterceptorSelector;
     fAdditionalInterfaces: TArray<IInterface>;
-    class function GetProxyTargetAccessor(Self: TObject): IProxyTargetAccessor; static;
-    class function GetAdditionalInterface(Self: TObject): IInterface; static;
+    class procedure GetProxyTargetAccessor(Self: TObject; var Result: IProxyTargetAccessor); static;
+    class procedure GetAdditionalInterface(Self: TObject; var Result: IInterface); static;
   protected
     function CollectInterceptableMethods(
       const hook: IProxyGenerationHook): IEnumerable<TRttiMethod>;
@@ -535,21 +535,25 @@ var
   entryCount, size: Integer;
   table: PInterfaceTable;
   i: Integer;
+  offset: Integer;
 begin
   entryCount := Length(additionalInterfaces) + 1;
-  size := SizeOf(Integer){$IFDEF CPUX64} + SizeOf(LongWord){$ENDIF} +
-    SizeOf(TInterfaceEntry) * EntryCount;
-  GetMem(table, size);
+  size := SizeOf(Integer) + SizeOf(TInterfaceEntry) * EntryCount;
+{$IFDEF CPUX64}
+  Inc(size, SizeOf(LongWord));
+{$ENDIF}
+  table := AllocMem(size);
   table.EntryCount := EntryCount;
   ClassProxyData.IntfTable := table;
 
   // add IProxyTargetAccessor
   table.Entries[0].IID := IProxyTargetAccessor;
-  table.Entries[0].VTable := nil;
-  table.Entries[0].IOffset := 0;
   table.Entries[0].ImplGetter := NativeUInt(@GetProxyTargetAccessor);
 
   SetLength(fAdditionalInterfaces, Length(additionalInterfaces));
+
+  offset := ClassProxyData.InstanceSize - hfFieldSize;
+  Inc(ClassProxyData.InstanceSize, Length(additionalInterfaces) * SizeOf(Pointer));
 
   // add other interfaces
   for i := 1 to Length(additionalInterfaces) do
@@ -558,19 +562,20 @@ begin
       fInterceptors.ToArray).QueryInterface(
       GetTypeData(additionalInterfaces[i - 1]).Guid, fAdditionalInterfaces[i - 1]);
     table.Entries[i].IID := GetTypeData(additionalInterfaces[i - 1]).Guid;
-    table.Entries[i].VTable := nil;
-    table.Entries[i].IOffset := 0;
-    table.Entries[i].ImplGetter := NativeUInt(@GetAdditionalInterface);
+    table.Entries[i].VTable := PPointer(fAdditionalInterfaces[i - 1])^;
+    table.Entries[i].IOffset := offset;
+    Inc(offset, SizeOf(Pointer));
   end;
 end;
 
-class function TClassProxy.GetAdditionalInterface(Self: TObject): IInterface;
+class procedure TClassProxy.GetAdditionalInterface(Self: TObject;
+  var Result: IInterface);
 begin
   Result := TProxyGenerator.fProxies[Self].fAdditionalInterfaces[0];
 end;
 
-class function TClassProxy.GetProxyTargetAccessor(
-  Self: TObject): IProxyTargetAccessor;
+class procedure TClassProxy.GetProxyTargetAccessor(Self: TObject;
+  var Result: IProxyTargetAccessor);
 begin
   Result := TProxyTargetAccessor.Create(
     Self, TProxyGenerator.fProxies[Self].fInterceptors);

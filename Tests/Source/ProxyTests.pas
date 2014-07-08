@@ -15,12 +15,12 @@ type
 //    procedure ClassProxy_for_class_already_implementing_additional_interfaces;
   end;
 
-  TEnsurePartnerStatusRule = class(TInterfacedObject)
-  end;
-
   ISupportsInvalidation = interface(IInvokable)
     ['{45A48AD9-4F7E-4A8D-8FA2-EA46BEAC3A9A}']
     procedure Invalidate;
+  end;
+
+  TEnsurePartnerStatusRule = class
   end;
 
 implementation
@@ -112,6 +112,7 @@ begin
       [TInvalidationInterceptor.Create]);
     CheckTrue(Supports(proxy, ISupportsInvalidation, supportsInvalidation));
     supportsInvalidation.Invalidate;
+    supportsInvalidation := nil;
   finally
     proxy.Free;
     generator.Free;
