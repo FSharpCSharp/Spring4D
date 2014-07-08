@@ -1,6 +1,32 @@
+{***************************************************************************}
+{                                                                           }
+{           Spring Framework for Delphi                                     }
+{                                                                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
+{                                                                           }
+{           http://www.spring4d.org                                         }
+{                                                                           }
+{***************************************************************************}
+{                                                                           }
+{  Licensed under the Apache License, Version 2.0 (the "License");          }
+{  you may not use this file except in compliance with the License.         }
+{  You may obtain a copy of the License at                                  }
+{                                                                           }
+{      http://www.apache.org/licenses/LICENSE-2.0                           }
+{                                                                           }
+{  Unless required by applicable law or agreed to in writing, software      }
+{  distributed under the License is distributed on an "AS IS" BASIS,        }
+{  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. }
+{  See the License for the specific language governing permissions and      }
+{  limitations under the License.                                           }
+{                                                                           }
+{***************************************************************************}
+
 unit Spring.Interception;
 
 interface
+
+//{$I Spring.inc}
 
 uses
   Classes,
@@ -9,7 +35,9 @@ uses
   TypInfo,
   Spring,
   Spring.Collections,
+{$IF Compilerversion = 22}
   Spring.Reflection.Compatibility,
+{$IFEND}
   Spring.Reflection.Core;
 
 type
@@ -158,13 +186,14 @@ type
       protected
         procedure InvokeMethodOnTarget; override;
       end;
+    class var fProxies: IDictionary<TObject, TClassProxy>;
   private
     fIntercepts: IList<TMethodIntercept>;
     fInterceptors: IList<IInterceptor>;
     fInterceptorSelector: IInterceptorSelector;
     fAdditionalInterfaces: TArray<IInterface>;
     class procedure GetProxyTargetAccessor(Self: TObject; var Result: IProxyTargetAccessor); static;
-    class procedure GetAdditionalInterface(Self: TObject; var Result: IInterface); static;
+    class procedure ProxyFreeInstance(Self: TObject); static;
   protected
     function CollectInterceptableMethods(
       const hook: IProxyGenerationHook): IEnumerable<TRttiMethod>;
@@ -179,6 +208,9 @@ type
       const options: TProxyGenerationOptions;
       const interceptors: array of IInterceptor);
     destructor Destroy; override;
+    class constructor Create;
+
+    function CreateInstance: TObject;
   end;
 
   TInterfaceProxy = class(TVirtualInterface, IProxyTargetAccessor)
@@ -206,12 +238,7 @@ type
   end;
 
   TProxyGenerator = class
-  private
-    class var fProxies: IDictionary<TObject, TClassProxy>;
-    class procedure ProxyFreeInstance(Self: TObject); static;
   public
-    class constructor Create;
-
     function CreateClassProxy<T: class>(
       const interceptors: array of IInterceptor): T; overload;
     function CreateClassProxy<T: class>(
@@ -453,6 +480,7 @@ constructor TClassProxy.Create(proxyType: TClass;
   const interceptors: array of IInterceptor);
 begin
   inherited Create(proxyType);
+  ClassProxyData.FreeInstance := ProxyFreeInstance;
   fIntercepts := TCollections.CreateObjectList<TMethodIntercept>;
   fInterceptors := TCollections.CreateInterfaceList<IInterceptor>(interceptors);
   fInterceptorSelector := options.Selector;
@@ -464,6 +492,25 @@ destructor TClassProxy.Destroy;
 begin
   FreeMem(ClassProxyData.IntfTable);
   inherited;
+end;
+
+class constructor TClassProxy.Create;
+begin
+  fProxies := TCollections.CreateDictionary<TObject, TClassProxy>([doOwnsValues]);
+end;
+
+function TClassProxy.CreateInstance: TObject;
+var
+  table: PInterfaceTable;
+  i: Integer;
+begin
+  Result := ClassProxy.Create;
+  fProxies.Add(Result, Self);
+
+  table := ClassProxyData.IntfTable;
+  for i := 1 to table.EntryCount - 1 do
+    PPointer(@PByte(Result)[table.Entries[i].ImplGetter and $00FFFFFF])^ :=
+      Pointer(fAdditionalInterfaces[i - 1]);
 end;
 
 function TClassProxy.CollectInterceptableMethods(
@@ -535,19 +582,22 @@ var
   entryCount, size: Integer;
   table: PInterfaceTable;
   i: Integer;
-  offset: Integer;
+  offset: NativeUInt;
 begin
   entryCount := Length(additionalInterfaces) + 1;
   size := SizeOf(Integer) + SizeOf(TInterfaceEntry) * EntryCount;
 {$IFDEF CPUX64}
   Inc(size, SizeOf(LongWord));
 {$ENDIF}
-  table := AllocMem(size);
+  GetMem(table, size);
+//  table := AllocMem(size);
   table.EntryCount := EntryCount;
   ClassProxyData.IntfTable := table;
 
   // add IProxyTargetAccessor
   table.Entries[0].IID := IProxyTargetAccessor;
+  table.Entries[0].VTable := nil;
+  table.Entries[0].IOffset := 0;
   table.Entries[0].ImplGetter := NativeUInt(@GetProxyTargetAccessor);
 
   SetLength(fAdditionalInterfaces, Length(additionalInterfaces));
@@ -562,23 +612,29 @@ begin
       fInterceptors.ToArray).QueryInterface(
       GetTypeData(additionalInterfaces[i - 1]).Guid, fAdditionalInterfaces[i - 1]);
     table.Entries[i].IID := GetTypeData(additionalInterfaces[i - 1]).Guid;
-    table.Entries[i].VTable := PPointer(fAdditionalInterfaces[i - 1])^;
-    table.Entries[i].IOffset := offset;
+    table.Entries[i].VTable := nil;
+    table.Entries[i].IOffset := 0;
+{$IFDEF CPUX64}
+    table.Entries[i].ImplGetter := offset or $FF00000000000000;
+{$ELSE}
+    table.Entries[i].ImplGetter := offset or $FF000000;
+{$ENDIF}
     Inc(offset, SizeOf(Pointer));
   end;
-end;
-
-class procedure TClassProxy.GetAdditionalInterface(Self: TObject;
-  var Result: IInterface);
-begin
-  Result := TProxyGenerator.fProxies[Self].fAdditionalInterfaces[0];
 end;
 
 class procedure TClassProxy.GetProxyTargetAccessor(Self: TObject;
   var Result: IProxyTargetAccessor);
 begin
   Result := TProxyTargetAccessor.Create(
-    Self, TProxyGenerator.fProxies[Self].fInterceptors);
+    Self, fProxies[Self].fInterceptors);
+end;
+
+class procedure TClassProxy.ProxyFreeInstance(Self: TObject);
+begin
+  GetClassData(Self.ClassParent).FreeInstance(Self); // inherited
+  PPointer(Self)^ := Self.ClassParent;
+  fProxies.Remove(Self);
 end;
 
 {$ENDREGION}
@@ -670,18 +726,6 @@ end;
 
 {$REGION 'TProxyGenerator'}
 
-class constructor TProxyGenerator.Create;
-begin
-  fProxies := TCollections.CreateDictionary<TObject, TClassProxy>([doOwnsValues]);
-end;
-
-class procedure TProxyGenerator.ProxyFreeInstance(Self: TObject);
-begin
-  GetClassData(Self.ClassParent).FreeInstance(Self); // inherited
-  PPointer(Self)^ := Self.ClassParent;
-  fProxies.Remove(Self);
-end;
-
 function TProxyGenerator.CreateClassProxy<T>(
   const interceptors: array of IInterceptor): T;
 begin
@@ -754,9 +798,7 @@ var
 begin
   proxy := TClassProxy.Create(
     classType, additionalInterfaces, options, interceptors);
-  Result := proxy.ClassProxy.Create;
-  fProxies.Add(Result, proxy);
-  proxy.ClassProxyData.FreeInstance := ProxyFreeInstance;
+  Result := proxy.CreateInstance;
 end;
 
 function TProxyGenerator.CreateInterfaceProxyWithTarget<T>(const target: T;

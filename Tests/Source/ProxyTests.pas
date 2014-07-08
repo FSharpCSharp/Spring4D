@@ -111,8 +111,6 @@ begin
       [TypeInfo(ISupportsInvalidation)],
       [TInvalidationInterceptor.Create]);
     CheckTrue(Supports(proxy, ISupportsInvalidation, supportsInvalidation));
-    supportsInvalidation.Invalidate;
-    supportsInvalidation := nil;
   finally
     proxy.Free;
     generator.Free;
