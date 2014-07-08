@@ -57,6 +57,7 @@
         <Base>true</Base>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
+        <SanitizedProjectName>Spring_Base</SanitizedProjectName>
         <DCC_Define>SPRING_NO_WARNING;$(DCC_Define)</DCC_Define>
         <GenPackage>true</GenPackage>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;Vcl;$(DCC_Namespace)</DCC_Namespace>
@@ -139,6 +140,7 @@
         <DCCReference Include="..\..\Source\Base\Spring.Helpers.pas"/>
         <DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.pas"/>
         <DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.Activator.pas"/>
+        <DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.Core.pas"/>
         <DCCReference Include="..\..\Source\Base\Reflection\Spring.Reflection.ValueConverters.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.ResourceStrings.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.SystemUtils.pas"/>
