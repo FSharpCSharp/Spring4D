@@ -2,10 +2,9 @@ unit Spring.Patches.QC98671;
 
 interface
 
-procedure ApplyPatch;
-
 implementation
 
+{$IF CompilerVersion = 22}
 uses
   PatchUtils,
   Rtti,
@@ -51,7 +50,6 @@ var
   offset: Integer;
   n: UINT_PTR;
 begin
-{$IF CompilerVersion = 22}
   // Get the code pointer of the TMethodImplementation.TInvokeInfo.GetParamLocs method for which
   // extended RTTI is available to find the private types TInvokeInfo private method SaveArguments.
   p := ctx.GetType(TMethodImplementation).GetField('FInvokeInfo').FieldType.GetMethod('GetParamLocs').CodeAddress;
@@ -66,10 +64,10 @@ begin
     if not WriteProcessMemory(GetCurrentProcess, p + 19, @offset, SizeOf(offset), n) then
       RaiseLastOSError;
   end;
-{$IFEND}
 end;
 
 initialization
   ApplyPatch;
+{$IFEND}
 
 end.
