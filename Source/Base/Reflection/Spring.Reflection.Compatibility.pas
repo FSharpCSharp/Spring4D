@@ -61,13 +61,10 @@ type
     fContext: TRttiContext;
     fMethodIntercepts: TMethodIntercepts;
     fOnInvoke: TVirtualInterfaceInvokeEvent;
-    function Virtual_AddRef: Integer; stdcall;
-    function Virtual_Release: Integer; stdcall;
-    function VirtualQueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
+    function Virtual_AddRef: Integer;
+    function Virtual_Release: Integer;
+    function VirtualQueryInterface(const IID: TGUID; out Obj): HResult;
   protected
-    function _AddRef: Integer; stdcall;
-    function _Release: Integer; stdcall;
-
     procedure DoInvoke(UserData: Pointer;
       const Args: TArray<TValue>; out Result: TValue);
     procedure ErrorProc;
@@ -78,7 +75,6 @@ type
     destructor Destroy; override;
 
     function QueryInterface(const IID: TGUID; out Obj): HResult; virtual; stdcall;
-
     property OnInvoke: TVirtualInterfaceInvokeEvent read fOnInvoke write fOnInvoke;
   end;
 
@@ -198,31 +194,21 @@ begin
 end;
 
 function TVirtualInterface.VirtualQueryInterface(const IID: TGUID; out Obj): HResult;
-begin
-  Result := TVirtualInterface(PByte(Self) -
-    (PByte(@Self.fVirtualMethodTable) - PByte(Self))).QueryInterface(IID, Obj);
+asm
+  add dword ptr [esp+$04],-$0C
+  jmp TVirtualInterface.QueryInterface
 end;
 
 function TVirtualInterface.Virtual_AddRef: Integer;
-begin
-  Result := TVirtualInterface(PByte(Self) -
-    (PByte(@Self.fVirtualMethodTable) - PByte(Self)))._AddRef();
+asm
+  add dword ptr [esp+$04],-$0C
+  jmp TVirtualInterface._AddRef
 end;
 
 function TVirtualInterface.Virtual_Release: Integer;
-begin
-  Result := TVirtualInterface(PByte(Self) -
-    (PByte(@Self.fVirtualMethodTable) - PByte(Self)))._Release();
-end;
-
-function TVirtualInterface._AddRef: Integer;
-begin
-  Result := inherited;
-end;
-
-function TVirtualInterface._Release: Integer;
-begin
-  Result := inherited;
+asm
+  add dword ptr [esp+$04],-$0C
+  jmp TVirtualInterface._Release
 end;
 
 {$ENDREGION}
