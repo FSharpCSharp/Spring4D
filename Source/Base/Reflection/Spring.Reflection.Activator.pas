@@ -57,6 +57,7 @@ type
 implementation
 
 uses
+  TypInfo,
   Spring.Helpers,
   Spring.Reflection;
 
