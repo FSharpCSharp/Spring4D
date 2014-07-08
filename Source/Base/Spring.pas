@@ -1912,8 +1912,8 @@ function TWeakReference<T>.GetTarget: T;
 begin
   if IsAlive then
     case PTypeInfo(TypeInfo(T)).Kind of
-      tkClass: TObject(Result) := TObject(fTarget);
-      tkInterface: IInterface(Result) := IInterface(fTarget)
+      tkClass: PObject(@Result)^ := TObject(fTarget);
+      tkInterface: PInterface(@Result)^ := IInterface(fTarget)
     end
   else
     Result := Default(T);
@@ -1933,7 +1933,7 @@ begin
   if Assigned(fTarget) then
     case typeInfo.Kind of
       tkClass: RegisterWeakRef(@fTarget, fTarget);
-      tkInterface: RegisterWeakRef(@fTarget, IInterface(target) as TObject);
+      tkInterface: RegisterWeakRef(@fTarget, IInterface(fTarget) as TObject);
     end;
 end;
 
