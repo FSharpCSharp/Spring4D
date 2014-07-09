@@ -7,7 +7,13 @@ uses
   Spring;
 
 type
+  TPerson = class
+  end;
+
+type
   TProxyTest = class(TTestCase)
+  private
+    procedure UseSomewhereElse(const person: TPerson);
   published
     procedure Should_be_able_to_wrap_interface_with_one_method;
     procedure Should_be_able_to_write_interface_with_two_methods;
@@ -15,6 +21,8 @@ type
     procedure ClassProxy_should_implement_additional_interfaces;
     procedure ClassProxy_for_class_already_implementing_additional_interfaces;
     procedure InterfaceProxy_should_implement_additional_interfaces;
+
+    procedure Mixin;
   end;
 
   ISupportsInvalidation = interface(IInvokable)
@@ -167,6 +175,38 @@ begin
     intf.Invalidate;
   finally
 //    proxy.Free;
+    generator.Free;
+  end;
+end;
+
+procedure TProxyTest.UseSomewhereElse(const person: TPerson);
+var
+  dictionary: IDictionary<string, TDateTime>;
+  date: TDateTime;
+begin
+  Supports(person, IDictionary<string, TDateTime>, dictionary);
+  date := dictionary['Next Leave'];
+  Status(Format('Next leave date is %s', [DateToStr(date)]));
+end;
+
+procedure TProxyTest.Mixin;
+var
+  generator: TProxyGenerator;
+  options: TProxyGenerationOptions;
+  person: TPerson;
+  dictionary: IDictionary<string, TDateTime>;
+begin
+  generator := TProxyGenerator.Create;
+  try
+    options := TProxyGenerationOptions.Default;
+    options.AddMixinInstance(TCollections.CreateDictionary<string, TDateTime> as TObject);
+    person := generator.CreateClassProxy(TPerson, options, []) as TPerson;
+
+    CheckTrue(Supports(person, IDictionary<string, TDateTime>, dictionary));
+    dictionary.Add('Next Leave', IncMonth(Now, 4));
+    UseSomewhereElse(person);
+  finally
+    person.Free;
     generator.Free;
   end;
 end;

@@ -102,11 +102,14 @@ type
   private
     fHook: IProxyGenerationHook;
     fSelector: IInterceptorSelector;
+    fMixins: IList<TObject>;
     class var fDefault: TProxyGenerationOptions;
+    property Mixins: IList<TObject> read fMixins;
   public
     constructor Create(const hook: IProxyGenerationHook);
     class constructor Create;
     class property Default: TProxyGenerationOptions read fDefault;
+    procedure AddMixinInstance(const instance: TObject);
     property Hook: IProxyGenerationHook read fHook write fHook;
     property Selector: IInterceptorSelector read fSelector write fSelector;
   end;
@@ -587,17 +590,21 @@ procedure TClassProxy.GenerateInterfaces(
 var
   entryCount, size: Integer;
   table: PInterfaceTable;
-  i: Integer;
+  i, index: Integer;
   offset: NativeUInt;
+
+  interfaces: IEnumerable<TRttiInterfaceType>;
+  intf: TRttiInterfaceType;
 begin
-  entryCount := Length(additionalInterfaces) + 1;
+  entryCount := 1 + Length(additionalInterfaces);
+  for i := 0 to options.Mixins.Count - 1 do
+    Inc(entryCount, TType.GetType(options.Mixins[i].ClassType).GetInterfaces.Count);
   size := SizeOf(Integer) + SizeOf(TInterfaceEntry) * EntryCount;
 {$IFDEF CPUX64}
   Inc(size, SizeOf(LongWord));
 {$ENDIF}
   GetMem(table, size);
-//  table := AllocMem(size);
-  table.EntryCount := EntryCount;
+  table.EntryCount := entryCount;
   ClassProxyData.IntfTable := table;
 
   // add IProxyTargetAccessor
@@ -606,10 +613,10 @@ begin
   table.Entries[0].IOffset := 0;
   table.Entries[0].ImplGetter := NativeUInt(@GetProxyTargetAccessor);
 
-  SetLength(fAdditionalInterfaces, Length(additionalInterfaces));
+  SetLength(fAdditionalInterfaces, entryCount);
 
   offset := ClassProxyData.InstanceSize - hfFieldSize;
-  Inc(ClassProxyData.InstanceSize, Length(additionalInterfaces) * SizeOf(Pointer));
+  Inc(ClassProxyData.InstanceSize, (entryCount - 1) * SizeOf(Pointer));
 
   // add other interfaces
   for i := 1 to Length(additionalInterfaces) do
@@ -626,6 +633,28 @@ begin
     table.Entries[i].ImplGetter := offset or $FF000000;
 {$ENDIF}
     Inc(offset, SizeOf(Pointer));
+  end;
+
+  index := Length(additionalInterfaces) + 1;
+  for i := 0 to options.Mixins.Count - 1 do
+  begin
+    interfaces := TType.GetType(options.Mixins[i].ClassType).GetInterfaces;
+    for intf in interfaces do
+    begin
+      Supports(options.Mixins[i], intf.Guid, fAdditionalInterfaces[index]);
+
+      table.Entries[index].IID := intf.GUID;
+      table.Entries[index].VTable := nil;
+      table.Entries[index].IOffset := 0;
+{$IFDEF CPUX64}
+      table.Entries[index].ImplGetter := offset or $FF00000000000000;
+{$ELSE}
+      table.Entries[index].ImplGetter := offset or $FF000000;
+{$ENDIF}
+
+      Inc(offset, SizeOf(Pointer));
+      Inc(index);
+    end;
   end;
 end;
 
@@ -1032,6 +1061,13 @@ constructor TProxyGenerationOptions.Create(
   const hook: IProxyGenerationHook);
 begin
   fHook := hook;
+  fMixins := TCollections.CreateObjectList<TObject>(False);
+end;
+
+procedure TProxyGenerationOptions.AddMixinInstance(const instance: TObject);
+begin
+  Guard.CheckNotNull(instance, 'instance');
+  fMixins.Add(instance);
 end;
 
 {$ENDREGION}
