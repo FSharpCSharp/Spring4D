@@ -143,7 +143,7 @@ begin
       TApplyDiscountRule,
       [TypeInfo(ISupportsInvalidation)], []);
     CheckTrue(Supports(proxy, ISupportsInvalidation, intf));
-    ExpectedException := EAccessViolation; // TODO: fix that behavior
+    ExpectedException := ENotImplementedException;
     intf.Invalidate;
   finally
 //    proxy.Free;

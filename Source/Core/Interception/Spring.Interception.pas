@@ -759,7 +759,10 @@ end;
 
 procedure TInterfaceProxy.TInvocation.InvokeMethodOnTarget;
 begin
-  fResult := fMethod.Invoke(fTarget, fArguments);
+  if not fTarget.IsEmpty then
+    fResult := fMethod.Invoke(fTarget, fArguments)
+  else
+    raise ENotImplementedException.Create(fMethod.Parent.DefaultName + '.' + fMethod.Name);
 end;
 
 {$ENDREGION}
