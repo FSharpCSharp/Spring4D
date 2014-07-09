@@ -224,17 +224,23 @@ type
   private
     fInterceptors: IList<IInterceptor>;
     fInterceptorSelector: IInterceptorSelector;
+    fAdditionalInterfaces: TArray<IInterface>;
     fTarget: TValue;
     function GetInterceptors: IEnumerable<IInterceptor>;
     function GetTarget: TValue;
   protected
+    procedure GenerateInterfaces(const additionalInterfaces: array of PTypeInfo;
+      const options: TProxyGenerationOptions);
     procedure HandleInvoke(Method: TRttiMethod; const Args: TArray<TValue>;
       out Result: TValue); virtual;
   public
     constructor Create(proxyType: PTypeInfo;
+      const additionalInterfaces: array of PTypeInfo;
       const options: TProxyGenerationOptions;
       const target: IInterface;
       const interceptors: array of IInterceptor);
+
+    function QueryInterface(const IID: TGUID; out Obj): HResult; override;
   end;
 
   TProxyGenerator = class
@@ -282,10 +288,10 @@ type
     function CreateInterfaceProxyWithTarget(proxyType: PTypeInfo;
       const target: IInterface; const options: TProxyGenerationOptions;
       const interceptors: array of IInterceptor): TObject; overload;
-//    function CreateInterfaceProxyWithTarget(proxyType: PTypeInfo;
-//      const additionalInterfaces: array of PTypeInfo;
-//      const target: IInterface;
-//      const interceptors: array of IInterceptor): TObject; overload;
+    function CreateInterfaceProxyWithTarget(proxyType: PTypeInfo;
+      const additionalInterfaces: array of PTypeInfo;
+      const target: IInterface;
+      const interceptors: array of IInterceptor): TObject; overload;
     function CreateInterfaceProxyWithTarget(proxyType: PTypeInfo;
       const additionalInterfaces: array of PTypeInfo;
       const target: IInterface; const options: TProxyGenerationOptions;
@@ -303,9 +309,9 @@ type
       const interceptor: IInterceptor): TObject; overload;
     function CreateInterfaceProxyWithoutTarget(proxyType: PTypeInfo;
       const interceptors: array of IInterceptor): TObject; overload;
-//    function CreateInterfaceProxyWithoutTarget(proxyType: PTypeInfo;
-//      const additionalInterfaces: array of PTypeInfo;
-//      const interceptors: array of IInterceptor): TObject; overload;
+    function CreateInterfaceProxyWithoutTarget(proxyType: PTypeInfo;
+      const additionalInterfaces: array of PTypeInfo;
+      const interceptors: array of IInterceptor): TObject; overload;
     function CreateInterfaceProxyWithoutTarget(proxyType: PTypeInfo;
       const options: TProxyGenerationOptions;
       const interceptors: array of IInterceptor): TObject; overload;
@@ -608,7 +614,7 @@ begin
   // add other interfaces
   for i := 1 to Length(additionalInterfaces) do
   begin
-    TInterfaceProxy.Create(additionalInterfaces[i - 1], options, nil,
+    TInterfaceProxy.Create(additionalInterfaces[i - 1], [], options, nil,
       fInterceptors.ToArray).QueryInterface(
       GetTypeData(additionalInterfaces[i - 1]).Guid, fAdditionalInterfaces[i - 1]);
     table.Entries[i].IID := GetTypeData(additionalInterfaces[i - 1]).Guid;
@@ -666,6 +672,7 @@ end;
 {$REGION 'TInterfaceProxy'}
 
 constructor TInterfaceProxy.Create(proxyType: PTypeInfo;
+  const additionalInterfaces: array of PTypeInfo;
   const options: TProxyGenerationOptions; const target: IInterface;
   const interceptors: array of IInterceptor);
 begin
@@ -673,6 +680,22 @@ begin
   fInterceptors := TCollections.CreateInterfaceList<IInterceptor>(interceptors);
   fInterceptorSelector := options.Selector;
   fTarget := TValue.From(target);
+  GenerateInterfaces(additionalInterfaces, options);
+end;
+
+procedure TInterfaceProxy.GenerateInterfaces(
+  const additionalInterfaces: array of PTypeInfo;
+  const options: TProxyGenerationOptions);
+var
+  i: Integer;
+begin
+  SetLength(fAdditionalInterfaces, Length(additionalInterfaces));
+  for i := Low(additionalInterfaces) to High(additionalInterfaces) do
+  begin
+    TInterfaceProxy.Create(additionalInterfaces[i], [], options, nil,
+      fInterceptors.ToArray).QueryInterface(
+      GetTypeData(additionalInterfaces[i]).Guid, fAdditionalInterfaces[i]);
+  end;
 end;
 
 function TInterfaceProxy.GetInterceptors: IEnumerable<IInterceptor>;
@@ -703,6 +726,24 @@ begin
       Args[i] := arguments[i - 1];
     Result := invocation.Result;
   end;
+end;
+
+function TInterfaceProxy.QueryInterface(const IID: TGUID; out Obj): HResult;
+var
+  i: Integer;
+begin
+  Result := inherited;
+  if Result = S_OK then
+    Exit;
+  if not fTarget.IsEmpty then
+  begin
+    Result := fTarget.AsInterface.QueryInterface(IID, Obj);
+    if Result = S_OK then
+      Exit;
+  end;
+  for i := Low(fAdditionalInterfaces) to High(fAdditionalInterfaces) do
+    if fAdditionalInterfaces[i].QueryInterface(IID, obj) = S_OK then
+      Exit(S_OK);
 end;
 
 {$ENDREGION}
@@ -835,10 +876,19 @@ end;
 
 function TProxyGenerator.CreateInterfaceProxyWithTarget(proxyType: PTypeInfo;
   const additionalInterfaces: array of PTypeInfo; const target: IInterface;
+  const interceptors: array of IInterceptor): TObject;
+begin
+  Result := CreateInterfaceProxyWithTarget(
+    proxyType, additionalInterfaces, target, TProxyGenerationOptions.Default, interceptors);
+end;
+
+function TProxyGenerator.CreateInterfaceProxyWithTarget(proxyType: PTypeInfo;
+  const additionalInterfaces: array of PTypeInfo; const target: IInterface;
   const options: TProxyGenerationOptions;
   const interceptors: array of IInterceptor): TObject;
 begin
-  Result := TInterfaceProxy.Create(proxyType, options, target, interceptors);
+  Result := TInterfaceProxy.Create(
+    proxyType, additionalInterfaces, options, target, interceptors);
 end;
 
 function TProxyGenerator.CreateInterfaceProxyWithoutTarget<T>(
@@ -878,6 +928,14 @@ begin
 end;
 
 function TProxyGenerator.CreateInterfaceProxyWithoutTarget(proxyType: PTypeInfo;
+  const additionalInterfaces: array of PTypeInfo;
+  const interceptors: array of IInterceptor): TObject;
+begin
+  Result := CreateInterfaceProxyWithoutTarget(
+    proxyType, additionalInterfaces, TProxyGenerationOptions.Default, interceptors);
+end;
+
+function TProxyGenerator.CreateInterfaceProxyWithoutTarget(proxyType: PTypeInfo;
   const options: TProxyGenerationOptions;
   const interceptors: array of IInterceptor): TObject;
 begin
@@ -890,7 +948,8 @@ function TProxyGenerator.CreateInterfaceProxyWithoutTarget(proxyType: PTypeInfo;
   const options: TProxyGenerationOptions;
   const interceptors: array of IInterceptor): TObject;
 begin
-  Result := TInterfaceProxy.Create(proxyType, options, nil, interceptors);
+  Result := TInterfaceProxy.Create(
+    proxyType, additionalInterfaces, options, nil, interceptors);
 end;
 
 {$ENDREGION}

@@ -3,7 +3,8 @@ unit ProxyTests;
 interface
 
 uses
-  TestFramework;
+  TestFramework,
+  Spring;
 
 type
   TProxyTest = class(TTestCase)
@@ -12,7 +13,8 @@ type
     procedure Should_be_able_to_write_interface_with_two_methods;
 
     procedure ClassProxy_should_implement_additional_interfaces;
-//    procedure ClassProxy_for_class_already_implementing_additional_interfaces;
+    procedure ClassProxy_for_class_already_implementing_additional_interfaces;
+    procedure InterfaceProxy_should_implement_additional_interfaces;
   end;
 
   ISupportsInvalidation = interface(IInvokable)
@@ -21,6 +23,14 @@ type
   end;
 
   TEnsurePartnerStatusRule = class
+  end;
+
+  IClientRule = interface(IInvokable)
+    ['{ED28AB18-DE4C-4B11-90EA-768A4DCC38C5}']
+  end;
+
+  TApplyDiscountRule = class(TInterfacedObject, ISupportsInvalidation, IClientRule)
+    procedure Invalidate;
   end;
 
 implementation
@@ -33,6 +43,11 @@ uses
   DelegateWrapper,
   Interfaces,
   Generics.Defaults;
+
+
+procedure TApplyDiscountRule.Invalidate;
+begin
+end;
 
 { TProxyTest }
 
@@ -102,7 +117,6 @@ procedure TProxyTest.ClassProxy_should_implement_additional_interfaces;
 var
   generator: TProxyGenerator;
   proxy: TObject;
-  supportsInvalidation: ISupportsInvalidation;
 begin
   generator := TProxyGenerator.Create;
   try
@@ -110,9 +124,49 @@ begin
       TEnsurePartnerStatusRule,
       [TypeInfo(ISupportsInvalidation)],
       [TInvalidationInterceptor.Create]);
-    CheckTrue(Supports(proxy, ISupportsInvalidation, supportsInvalidation));
+    CheckTrue(Supports(proxy, ISupportsInvalidation));
   finally
     proxy.Free;
+    generator.Free;
+  end;
+end;
+
+procedure TProxyTest.ClassProxy_for_class_already_implementing_additional_interfaces;
+var
+  generator: TProxyGenerator;
+  proxy: TObject;
+  intf: ISupportsInvalidation;
+begin
+  generator := TProxyGenerator.Create;
+  try
+    proxy := generator.CreateClassProxy(
+      TApplyDiscountRule,
+      [TypeInfo(ISupportsInvalidation)], []);
+    CheckTrue(Supports(proxy, ISupportsInvalidation, intf));
+    ExpectedException := EAccessViolation; // TODO: fix that behavior
+    intf.Invalidate;
+  finally
+//    proxy.Free;
+    generator.Free;
+  end;
+end;
+
+procedure TProxyTest.InterfaceProxy_should_implement_additional_interfaces;
+var
+  generator: TProxyGenerator;
+  proxy: TObject;
+  intf: ISupportsInvalidation;
+begin
+  generator := TProxyGenerator.Create;
+  try
+    proxy := generator.CreateInterfaceProxyWithTarget(
+      TypeInfo(IClientRule),
+      [TypeInfo(ISupportsInvalidation)],
+      TApplyDiscountRule.Create, []);
+    CheckTrue(Supports(proxy, ISupportsInvalidation, intf));
+    intf.Invalidate;
+  finally
+//    proxy.Free;
     generator.Free;
   end;
 end;
