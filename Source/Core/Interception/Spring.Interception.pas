@@ -103,12 +103,10 @@ type
     fHook: IProxyGenerationHook;
     fSelector: IInterceptorSelector;
     fMixins: IList<TObject>;
-    class var fDefault: TProxyGenerationOptions;
     property Mixins: IList<TObject> read fMixins;
   public
     constructor Create(const hook: IProxyGenerationHook);
-    class constructor Create;
-    class property Default: TProxyGenerationOptions read fDefault;
+    class function Default: TProxyGenerationOptions; static;
     procedure AddMixinInstance(const instance: TObject);
     property Hook: IProxyGenerationHook read fHook write fHook;
     property Selector: IInterceptorSelector read fSelector write fSelector;
@@ -116,8 +114,8 @@ type
 
   TMethodIntercept = class
   private
-    FImplementation: TMethodImplementation;
-    FMethod: TRttiMethod;
+    fImplementation: TMethodImplementation;
+    fMethod: TRttiMethod;
     function GetCodeAddress: Pointer;
     function GetVirtualIndex: SmallInt;
   public
@@ -125,7 +123,7 @@ type
       const Callback: TMethodImplementationCallback);
     destructor Destroy; override;
     property CodeAddress: Pointer read GetCodeAddress;
-    property Method: TRttiMethod read FMethod;
+    property Method: TRttiMethod read fMethod;
     property VirtualIndex: SmallInt read GetVirtualIndex;
   end;
 
@@ -413,24 +411,24 @@ end;
 constructor TMethodIntercept.Create(const Method: TRttiMethod;
   const Callback: TMethodImplementationCallback);
 begin
-  FImplementation := Method.CreateImplementation(Self, Callback);
-  FMethod := Method;
+  fImplementation := Method.CreateImplementation(Self, Callback);
+  fMethod := Method;
 end;
 
 destructor TMethodIntercept.Destroy;
 begin
-  FImplementation.Free;
+  fImplementation.Free;
   inherited;
 end;
 
 function TMethodIntercept.GetCodeAddress: Pointer;
 begin
-  Result := FImplementation.CodeAddress;
+  Result := fImplementation.CodeAddress;
 end;
 
 function TMethodIntercept.GetVirtualIndex: SmallInt;
 begin
-  Result := FMethod.VirtualIndex;
+  Result := fMethod.VirtualIndex;
 end;
 
 {$ENDREGION}
@@ -1051,17 +1049,17 @@ end;
 
 {$REGION 'TProxyGenerationOptions'}
 
-class constructor TProxyGenerationOptions.Create;
-begin
-  fDefault := TProxyGenerationOptions.Create(TAllMethodsHook.Create);
-  fDefault.Selector := TAllInterceptorsSelector.Create;
-end;
-
 constructor TProxyGenerationOptions.Create(
   const hook: IProxyGenerationHook);
 begin
   fHook := hook;
   fMixins := TCollections.CreateObjectList<TObject>(False);
+end;
+
+class function TProxyGenerationOptions.Default: TProxyGenerationOptions;
+begin
+  Result := TProxyGenerationOptions.Create(TAllMethodsHook.Create);
+  Result.Selector := TAllInterceptorsSelector.Create;
 end;
 
 procedure TProxyGenerationOptions.AddMixinInstance(const instance: TObject);
