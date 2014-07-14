@@ -32,9 +32,6 @@ uses
   TypInfo;
 
 type
-  TMethodInvokeEvent = reference to procedure(Method: TRttiMethod;
-    const Args: TArray<TValue>; out Result: TValue);
-
   TMethodIntercept = class
   private
     fImplementation: TMethodImplementation;
@@ -50,20 +47,19 @@ type
     property VirtualIndex: SmallInt read GetVirtualIndex;
   end;
 
-  TMethodIntercepts = TObjectList<TMethodIntercept>;
-
-  TVirtualInterfaceInvokeEvent = TMethodInvokeEvent;
+  TVirtualInterfaceInvokeEvent = reference to procedure(Method: TRttiMethod;
+    const Args: TArray<TValue>; out Result: TValue);
 
   TVirtualInterface = class(TInterfacedObject, IInterface)
   private
-    fVirtualMethodTable: Pointer;
+    fMethodTable: Pointer;
     fInterfaceID: TGUID;
     fContext: TRttiContext;
-    fMethodIntercepts: TMethodIntercepts;
+    fIntercepts: TObjectList<TMethodIntercept>;
     fOnInvoke: TVirtualInterfaceInvokeEvent;
-    function Virtual_AddRef: Integer;
-    function Virtual_Release: Integer;
-    function VirtualQueryInterface(const IID: TGUID; out Obj): HResult;
+    function QueryInterfaceFromIntf(const IID: TGUID; out Obj): HResult;
+    function _AddRefFromIntf: Integer;
+    function _ReleaseFromIntf: Integer;
   protected
     procedure DoInvoke(UserData: Pointer;
       const Args: TArray<TValue>; out Result: TValue);
@@ -126,7 +122,7 @@ var
   method: TRttiMethod;
   rttiType: TRttiType;
 begin
-  fMethodIntercepts := TObjectList<TMethodIntercept>.Create();
+  fIntercepts := TObjectList<TMethodIntercept>.Create();
   rttiType := fContext.GetType(typeInfo);
   fInterfaceID := TRttiInterfaceType(rttiType).GUID;
 
@@ -137,25 +133,25 @@ begin
   begin
     if maxVirtualIndex < method.VirtualIndex then
       maxVirtualIndex := method.VirtualIndex;
-    fMethodIntercepts.Add(TMethodIntercept.Create(method, DoInvoke));
+    fIntercepts.Add(TMethodIntercept.Create(method, DoInvoke));
   end;
 
-  fVirtualMethodTable := AllocMem(SizeOf(Pointer) * (maxVirtualIndex + 1));
+  fMethodTable := AllocMem(SizeOf(Pointer) * (maxVirtualIndex + 1));
 
-  PVTable(fVirtualMethodTable)[0] := @TVirtualInterface.VirtualQueryInterface;
-  PVTable(fVirtualMethodTable)[1] := @TVirtualInterface.Virtual_AddRef;
-  PVTable(fVirtualMethodTable)[2] := @TVirtualInterface.Virtual_Release;
+  PVTable(fMethodTable)[0] := @TVirtualInterface.QueryInterfaceFromIntf;
+  PVTable(fMethodTable)[1] := @TVirtualInterface._AddRefFromIntf;
+  PVTable(fMethodTable)[2] := @TVirtualInterface._ReleaseFromIntf;
 
-  for i := 0 to fMethodIntercepts.Count - 1 do
-    PVTable(fVirtualMethodTable)[fMethodIntercepts[i].VirtualIndex] := fMethodIntercepts[i].CodeAddress;
+  for i := 0 to fIntercepts.Count - 1 do
+    PVTable(fMethodTable)[fIntercepts[i].VirtualIndex] := fIntercepts[i].CodeAddress;
 
   for i := 3 to maxVirtualIndex do
-    if not Assigned(PVTable(fVirtualMethodTable)[i]) then
-      PVTable(fVirtualMethodTable)[i] := @TVirtualInterface.ErrorProc;
+    if not Assigned(PVTable(fMethodTable)[i]) then
+      PVTable(fMethodTable)[i] := @TVirtualInterface.ErrorProc;
 end;
 
 constructor TVirtualInterface.Create(TypeInfo: PTypeInfo;
-  InvokeEvent: TMethodInvokeEvent);
+  InvokeEvent: TVirtualInterfaceInvokeEvent);
 begin
   Create(TypeInfo);
   fOnInvoke := InvokeEvent;
@@ -163,9 +159,9 @@ end;
 
 destructor TVirtualInterface.Destroy;
 begin
-  if Assigned(fVirtualMethodTable) then
-    FreeMem(fVirtualMethodTable);
-  fMethodIntercepts.Free;
+  if Assigned(fMethodTable) then
+    FreeMem(fMethodTable);
+  fIntercepts.Free;
   inherited;
 end;
 
@@ -186,26 +182,27 @@ begin
   if IID = fInterfaceID then
   begin
     _AddRef();
-    Pointer(Obj) := @fVirtualMethodTable;
+    Pointer(Obj) := @fMethodTable;
     Result := S_OK;
   end
   else
     Result := inherited;
 end;
 
-function TVirtualInterface.VirtualQueryInterface(const IID: TGUID; out Obj): HResult;
+function TVirtualInterface.QueryInterfaceFromIntf(
+  const IID: TGUID; out Obj): HResult;
 asm
   add dword ptr [esp+$04],-$0C
   jmp TVirtualInterface.QueryInterface
 end;
 
-function TVirtualInterface.Virtual_AddRef: Integer;
+function TVirtualInterface._AddRefFromIntf: Integer;
 asm
   add dword ptr [esp+$04],-$0C
   jmp TVirtualInterface._AddRef
 end;
 
-function TVirtualInterface.Virtual_Release: Integer;
+function TVirtualInterface._ReleaseFromIntf: Integer;
 asm
   add dword ptr [esp+$04],-$0C
   jmp TVirtualInterface._Release
