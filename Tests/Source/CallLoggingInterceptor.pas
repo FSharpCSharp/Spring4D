@@ -3,7 +3,6 @@ unit CallLoggingInterceptor;
 interface
 
 uses
-  DSharp.Logging,
   HasCount,
   Spring.Services.Logging,
   Spring.Interception;
@@ -11,12 +10,12 @@ uses
 type
   TCallLoggingInterceptor = class(TInterfacedObject, IInterceptor, IHasCount)
   private
-    fLogger: ILog;
+    fLogger: ILogger;
     fCount: Integer;
     function GetCount: Integer;
   public
     constructor Create; overload;
-    constructor Create(const logger: ILog); overload;
+    constructor Create(const logger: ILogger); overload;
     procedure Intercept(const invocation: IInvocation);
     property Count: Integer read GetCount;
   end;
@@ -31,10 +30,10 @@ uses
 
 constructor TCallLoggingInterceptor.Create;
 begin
-  fLogger := Logging;
+//  fLogger := DefaultLogger;
 end;
 
-constructor TCallLoggingInterceptor.Create(const logger: ILog);
+constructor TCallLoggingInterceptor.Create(const logger: ILogger);
 begin
   fLogger := logger;
 end;
@@ -46,7 +45,7 @@ end;
 
 procedure TCallLoggingInterceptor.Intercept(const invocation: IInvocation);
 begin
-  fLogger.EnterMethod(invocation.Target, invocation.Method.Name);
+//  fLogger.EnterMethod(invocation.Target, invocation.Method.Name);
   try
     try
       Inc(fCount);
@@ -54,12 +53,12 @@ begin
     except
       on E: Exception do
       begin
-        fLogger.LogException(E);
+//        fLogger.LogException(E);
         raise;
       end;
     end;
   finally
-    fLogger.LeaveMethod(invocation.Target, invocation.Method.Name);
+//    fLogger.LeaveMethod(invocation.Target, invocation.Method.Name);
   end;
 end;
 
