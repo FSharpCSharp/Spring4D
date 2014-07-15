@@ -22,6 +22,8 @@ type
     procedure ClassProxy_for_class_already_implementing_additional_interfaces;
     procedure InterfaceProxy_should_implement_additional_interfaces;
 
+    procedure InterfaceProxy_with_additional_interfaces_handles_refcount;
+
     procedure Mixin;
   end;
 
@@ -175,6 +177,27 @@ begin
     intf.Invalidate;
   finally
 //    proxy.Free;
+    generator.Free;
+  end;
+end;
+
+procedure TProxyTest.InterfaceProxy_with_additional_interfaces_handles_refcount;
+var
+  generator: TProxyGenerator;
+  proxy: TObject;
+  clientRule: IClientRule;
+  invalidation: ISupportsInvalidation;
+begin
+  generator := TProxyGenerator.Create;
+  try
+    proxy := generator.CreateInterfaceProxyWithoutTarget(
+      TypeInfo(IClientRule), [TypeInfo(ISupportsInvalidation)], []);
+    CheckTrue(Supports(proxy, IClientRule, clientRule));
+    CheckTrue(Supports(clientRule, ISupportsInvalidation, invalidation));
+    CheckTrue(Supports(invalidation, IClientRule, clientRule));
+    clientrule := nil;
+    invalidation := nil;
+  finally
     generator.Free;
   end;
 end;

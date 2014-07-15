@@ -102,10 +102,6 @@ end;
 procedure TFreezableTest.Frozen_object_should_not_throw_when_trying_to_read_it;
 var
   pet: TPet;
-  age: Integer;
-  name: string;
-  deceased: Boolean;
-  s: string;
 begin
   pet := TFreezable.MakeFreezable<TPet>;
   try
@@ -113,10 +109,10 @@ begin
 
     TFreezable.Freeze(pet);
 
-    age := pet.Age;
-    name := pet.Name;
-    deceased := pet.Deceased;
-    s := pet.ToString;
+    CheckEquals(3, pet.Age);
+    CheckEquals('', pet.Name);
+    CheckEquals(False, pet.Deceased);
+    pet.ToString;
   finally
     pet.Free;
   end;
@@ -138,13 +134,12 @@ end;
 procedure TFreezableTest.Freezable_should_not_intercept_property_getters;
 var
   pet: TPet;
-  notUsed: Integer;
   interceptedMethodsCount: Integer;
 begin
   pet := TFreezable.MakeFreezable<TPet>;
   try
     TFreezable.Freeze(pet);
-    notUsed := pet.Age;
+    CheckEquals(0, pet.Age);
     interceptedMethodsCount := GetInterceptedMethodsCountFor<TFreezableInterceptor>(pet);
     CheckEquals(0, interceptedMethodsCount);
   finally
@@ -201,13 +196,12 @@ end;
 procedure TFreezableTest.Freezable_should_log_getters_and_setters;
 var
   pet: TPet;
-  age: Integer;
   logsCount, freezeCount: Integer;
 begin
   pet := TFreezable.MakeFreezable<TPet>;
   try
     pet.Age := 4;
-    age := pet.Age;
+    CheckEquals(4, pet.Age);
     logsCount := GetInterceptedMethodsCountFor<TCallLoggingInterceptor>(pet);
     freezeCount := GetInterceptedMethodsCountFor<TFreezableInterceptor>(pet);
     CheckEquals(2, logsCount);

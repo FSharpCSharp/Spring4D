@@ -97,6 +97,7 @@ end;
 
 function TPetWithNonVirtualSetter.GetNonVirtualProperty: Integer;
 begin
+  Result := 0;
 end;
 
 procedure TPetWithNonVirtualSetter.SetNonVirtualProperty(
