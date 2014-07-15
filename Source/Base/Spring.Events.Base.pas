@@ -39,8 +39,15 @@ type
   ///	</summary>
   TEventBase = class(TInterfacedObject, IEvent)
   private
+    type
+      TMethodList = class(TList<TMethod>)
+      {$IFDEF DELPHI2010}
+        function ToArray: TArray<TMethod>;
+      {$ENDIF}
+      end;
+  private
     fEnabled: Boolean;
-    fHandlers: TList<TMethod>;
+    fHandlers: TMethodList;
     fOnChanged: TNotifyEvent;
 
     {$REGION 'Property Accessors'}
@@ -56,7 +63,7 @@ type
     fInvoke: TMethod;
     procedure Notify(Sender: TObject; const Item: TMethod;
       Action: TCollectionNotification); virtual;
-    property Handlers: TList<TMethod> read fHandlers;
+    property Handlers: TMethodList read fHandlers;
   public
     constructor Create;
     destructor Destroy; override;
@@ -84,7 +91,7 @@ constructor TEventBase.Create;
 begin
   inherited Create;
   fEnabled := True;
-  fHandlers := TList<TMethod>.Create;
+  fHandlers := TMethodList.Create;
   fHandlers.OnNotify := Notify;
 end;
 
@@ -106,10 +113,10 @@ end;
 
 procedure TEventBase.ForEach(const action: TAction<TMethod>);
 var
-  i: Integer;
+  handler: TMethod;
 begin
-  for i := 0 to fHandlers.Count - 1 do
-    action(fHandlers[i]);
+  for handler in fHandlers.ToArray do
+    action(handler);
 end;
 
 function TEventBase.GetCount: Integer;
@@ -155,7 +162,7 @@ var
 begin
   for i := fHandlers.Count - 1 downto 0 do
     if fHandlers[i].Data = instance then
-      fHandlers.Delete(i)
+      fHandlers.Delete(i);
 end;
 
 procedure TEventBase.SetEnabled(const value: Boolean);
@@ -167,6 +174,22 @@ procedure TEventBase.SetOnChanged(const value: TNotifyEvent);
 begin
   fOnChanged := value;
 end;
+
+{$ENDREGION}
+
+
+{$REGION 'TEventBase.TMethodList'}
+
+{$IFDEF DELPHI2010}
+function TEventBase.TMethodList.ToArray: TArray<TMethod>;
+var
+  i: Integer;
+begin
+  SetLength(Result, Count);
+  for i := 0 to Count - 1 do
+    Result[i] := Items[i];
+end;
+{$ENDIF}
 
 {$ENDREGION}
 

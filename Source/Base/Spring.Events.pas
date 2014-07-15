@@ -579,11 +579,11 @@ end;
 
 procedure TEvent.InternalInvoke(Params: Pointer; StackSize: Integer);
 var
-  i: Integer;
+  handler: TMethod;
 begin
   if Enabled then
-    for i := 0 to Handlers.Count - 1 do
-      InvokeMethod(Handlers[i], Params, StackSize);
+    for handler in Handlers.ToArray do
+      InvokeMethod(handler, Params, StackSize);
 end;
 
 procedure TEvent.Invoke;
