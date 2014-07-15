@@ -193,7 +193,9 @@ function TVirtualInterface.QueryInterfaceFromIntf(
   const IID: TGUID; out Obj): HResult;
 asm
   add dword ptr [esp+$04],-$0C
-  jmp TVirtualInterface.QueryInterface
+  mov eax,[esp+$04]
+  mov eax,[eax]
+  jmp dword ptr [eax]
 end;
 
 function TVirtualInterface._AddRefFromIntf: Integer;
