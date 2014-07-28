@@ -30,7 +30,8 @@ interface
 
 uses
   SysUtils,
-  Spring;
+  TypInfo,
+  Rtti;
 
 
 {$SCOPEDENUMS ON}
