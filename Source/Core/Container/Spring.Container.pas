@@ -33,6 +33,7 @@ uses
   Rtti,
   Spring,
   Spring.Collections,
+  Spring.Container.Common,
   Spring.Container.Core,
   Spring.Container.Registration,
   Spring.Services;
@@ -41,7 +42,7 @@ type
   ///	<summary>
   ///	  Represents a Dependency Injection Container.
   ///	</summary>
-  TContainer = class(TInterfaceBase, IKernel, IKernelInternal)
+  TContainer = class(TInterfaceBase, IKernel, IKernelInternal, IContainer)
   private
     fRegistry: IComponentRegistry;
     fBuilder: IComponentBuilder;
@@ -78,11 +79,11 @@ type
       const name: string = ''): TRegistration<TServiceType>; overload;
 
     function RegisterType<TComponentType>: TRegistration<TComponentType>; overload;
-    function RegisterType(componentType: PTypeInfo): TRegistration; overload;
+    function RegisterType(componentType: PTypeInfo): IRegistration; overload;
     function RegisterType<TServiceType, TComponentType>(
       const name: string = ''): TRegistration<TComponentType>; overload;
     function RegisterType(serviceType, componentType: PTypeInfo;
-      const name: string = ''): TRegistration; overload;
+      const name: string = ''): IRegistration; overload;
 
     procedure Build;
 
@@ -163,7 +164,6 @@ uses
   TypInfo,
   Spring.Container.Builder,
   Spring.Container.CreationContext,
-  Spring.Container.Common,
   Spring.Container.Injection,
   Spring.Container.LifetimeManager,
   Spring.Container.Resolvers,
@@ -313,13 +313,13 @@ begin
   Result := Result.Implements<TServiceType>(name);
 end;
 
-function TContainer.RegisterType(componentType: PTypeInfo): TRegistration;
+function TContainer.RegisterType(componentType: PTypeInfo): IRegistration;
 begin
   Result := fRegistrationManager.RegisterType(componentType);
 end;
 
 function TContainer.RegisterType(serviceType, componentType: PTypeInfo;
-  const name: string): TRegistration;
+  const name: string): IRegistration;
 begin
   Result := fRegistrationManager.RegisterType(componentType);
   Result := Result.Implements(serviceType, name);
