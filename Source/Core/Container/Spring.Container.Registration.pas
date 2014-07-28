@@ -82,46 +82,6 @@ type
     function FindAll(serviceType: PTypeInfo): IEnumerable<TComponentModel>; overload;
   end;
 
-  IRegistration = interface
-    ['{94A80249-3C3D-4769-832A-274B1833DA70}']
-    function Implements(serviceType: PTypeInfo): IRegistration; overload;
-    function Implements(serviceType: PTypeInfo; const name: string): IRegistration; overload;
-
-    function DelegateTo(const delegate: TActivatorDelegate): IRegistration; overload;
-
-    {$REGION 'Typed Injections'}
-
-    function InjectConstructor(const parameterTypes: array of PTypeInfo): IRegistration; overload;
-    function InjectProperty(const propertyName: string): IRegistration; overload;
-    function InjectMethod(const methodName: string): IRegistration; overload;
-    function InjectMethod(const methodName: string; const parameterTypes: array of PTypeInfo): IRegistration; overload;
-    function InjectField(const fieldName: string): IRegistration; overload;
-
-    {$ENDREGION}
-
-    {$REGION 'Named/Valued Injections'}
-
-    function InjectConstructor(const arguments: array of TValue): IRegistration; overload;
-    function InjectProperty(const propertyName: string; const value: TValue): IRegistration; overload;
-    function InjectMethod(const methodName: string; const arguments: array of TValue): IRegistration; overload;
-    function InjectField(const fieldName: string; const value: TValue): IRegistration; overload;
-
-    {$ENDREGION}
-
-    function AsSingleton(refCounting: TRefCounting = TRefCounting.Unknown): IRegistration;
-    function AsSingletonPerThread(refCounting: TRefCounting = TRefCounting.Unknown): IRegistration;
-    function AsTransient: IRegistration;
-    function AsPooled(minPoolSize, maxPoolSize: Integer): IRegistration; {$IFDEF CPUARM}experimental;{$ENDIF}
-
-    function AsDefault: IRegistration; overload;
-    function AsDefault(serviceType: PTypeInfo): IRegistration; overload;
-
-{$IFDEF DELPHIXE_UP}
-    function AsFactory: IRegistration; overload;
-    function AsFactory(const name: string): IRegistration; overload;
-{$ENDIF}
-  end;
-
   ///	<summary>
   ///	  Internal helper class for non-generic fluent style registration of a
   ///	  component.

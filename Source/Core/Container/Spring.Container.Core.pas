@@ -51,7 +51,6 @@ type
   IContainerExtension = interface;
   ICreationContext = interface;
 
-  TActivatorDelegate = reference to function: TValue;
   TActivatorDelegate<T> = reference to function: T;
 
   TDependencyModel = record
