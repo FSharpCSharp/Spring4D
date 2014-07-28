@@ -1,4 +1,4 @@
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{775AAF6B-8B94-4A2C-A423-1BCF2F2A525A}</ProjectGuid>
         <MainSource>DelphiPackage.dpk</MainSource>
@@ -157,7 +157,6 @@
         <DCCReference Include="rtl.dcp"/>
         <DCCReference Include="fmx.dcp"/>
         <DCCReference Include="DelphiUnit.pas"/>
-        <DCCReference Include="Spring.Container.CppWrapper.pas"/>
         <DCCReference Include="Services.pas"/>
         <DCCReference Include="MainFrm.pas">
             <Form>MainForm</Form>

@@ -3,21 +3,20 @@ unit DelphiUnit;
 interface
 
 uses
-  Spring.Container.CppWrapper;
+  Spring.Container.Common;
 
-function InitApp : TContainer;
+function InitApp : IContainer;
 procedure RunApp;
 
 implementation
 
 uses
   Spring.Container,
-  Spring.Container.Common,
   Fmx.Forms,
   Services,
   MainFrm;
 
-var Container : Spring.Container.CppWrapper.TContainer;
+var Container : TContainer;
 
 type
   TDelphiImpl2WithCppDep = class(TInterfacedObject, IService2)
@@ -28,11 +27,10 @@ type
     procedure Bar;
   end;
 
-function InitApp : Spring.Container.CppWrapper.TContainer;
+function InitApp : IContainer;
 begin
   Assert(Container = nil);
-  Container := Spring.Container.CppWrapper.TContainer.Create(
-    Spring.Container.TContainer.Create);
+  Container := TContainer.Create;
   Result := Container;
 end;
 

@@ -33,7 +33,6 @@ requires
 
 contains
   DelphiUnit,
-  Spring.Container.CppWrapper,
   Services,
   MainFrm {MainForm};
 

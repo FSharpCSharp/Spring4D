@@ -45,7 +45,7 @@ namespace CppUnit
 	};
 	#pragma pop explicit_rtti
 
-	void Register(TContainer& container)
+	void Register(IContainer& container)
 	{
 #ifdef _DEBUG
 		bool i = false;
@@ -57,11 +57,11 @@ namespace CppUnit
 #endif
 
 		container.RegisterType(__delphirtti(TCppImpl1))
-			.AsDefault()
-			.AsSingleton();
+			->AsDefault()
+			->AsSingleton();
 
 		container.RegisterType(__delphirtti(TCppImpl1WithDelphiDep))
-			.Implements(__delphirtti(IService1), "cppdep")
-			.InjectField("m_dep");
+			->Implements(__delphirtti(IService1), "cppdep")
+			->InjectField("m_dep");
 	}
 }
