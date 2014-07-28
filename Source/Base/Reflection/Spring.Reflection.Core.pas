@@ -75,7 +75,11 @@ type
     FieldTable: Pointer;
     MethodTable: Pointer;
     DynamicTable: Pointer;
+{$IFNDEF NEXTGEN}
     ClassName: PShortString;
+{$ELSE}
+    ClassName: TTypeInfoFieldAccessor;
+{$ENDIF}
     InstanceSize: Integer;
     Parent: PClass;
 
