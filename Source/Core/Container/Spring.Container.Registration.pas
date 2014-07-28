@@ -82,11 +82,10 @@ type
     function FindAll(serviceType: PTypeInfo): IEnumerable<TComponentModel>; overload;
   end;
 
-  ///	<summary>
-  ///	  Internal helper class for non-generic fluent style registration of a
-  ///	  component.
-  ///	</summary>
-  TRegistration = class(TInterfacedObject, IRegistration)
+  /// <summary>
+  ///   Internal helper for non-generic fluent style registration of a type.
+  /// </summary>
+  TRegistration = class sealed(TInterfacedObject, IRegistration)
   private
     fKernel: IKernel;
     fModel: TComponentModel;
@@ -130,10 +129,9 @@ type
 {$ENDIF}
   end;
 
-  ///	<summary>
-  ///	  Internal helper class for generic fluent style registration of a
-  ///	  component.
-  ///	</summary>
+  /// <summary>
+  ///   Internal helper for generic fluent style registration of a type.
+  /// </summary>
   TRegistration<T> = record
   private
     fRegistration: IRegistration;
@@ -180,22 +178,23 @@ type
 {$ENDIF}
   end;
 
-  ///	<summary>
-  ///	  Provides both generic and non-generic fluent-style registration
-  ///	  methods.
-  ///	</summary>
-  ///	<remarks>
-  ///	  Why both TRegistration and TRegistration(T) are defined as record and
-  ///	  their constructors are private, is to provide generic and non-generic
-  ///	  fluent-style registration with only necessary methods.
-  ///	</remarks>
+  /// <summary>
+  ///   Provides both generic and non-generic fluent-style registration
+  ///   methods.
+  /// </summary>
+  /// <remarks>
+  ///   TRegistration(T) is defined as record and the constructors of
+  ///   TRegistration and TRegistration(T) are private because they serve as
+  ///   helpers to provide generic and non-generic fluent-style registration
+  ///   with only necessary methods.
+  /// </remarks>
   TRegistrationManager = class
   private
     fKernel: IKernel;
   public
     constructor Create(const kernel: IKernel);
     function RegisterType<TComponentType>: TRegistration<TComponentType>; overload;
-    function RegisterType(componentType: PTypeInfo): TRegistration; overload;
+    function RegisterType(componentType: PTypeInfo): IRegistration; overload;
   end;
 
 
@@ -851,7 +850,7 @@ begin
 end;
 
 function TRegistrationManager.RegisterType(
-  componentType: PTypeInfo): TRegistration;
+  componentType: PTypeInfo): IRegistration;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(componentType, 'componentType');
