@@ -122,6 +122,12 @@
         <DCCReference Include="..\..\Source\Extensions\Utils\Spring.Utils.IO.pas"/>
         <DCCReference Include="..\..\Source\Extensions\Utils\Spring.Utils.WinApi.pas"/>
         <DCCReference Include="..\..\Source\Extensions\Utils\Spring.Utils.pas"/>
+        <DCCReference Include="..\..\Source\Extensions\Logging\Spring.Extensions.Logging.pas"/>
+        <DCCReference Include="..\..\Source\Extensions\Logging\Spring.Extensions.Logging.Configuration.pas"/>
+        <DCCReference Include="..\..\Source\Extensions\Logging\Spring.Extensions.Logging.Controller.pas"/>
+        <DCCReference Include="..\..\Source\Extensions\Logging\Spring.Extensions.Logging.Appenders.pas"/>
+        <DCCReference Include="..\..\Source\Extensions\Logging\Spring.Extensions.Logging.Loggers.pas"/>
+        <DCCReference Include="..\..\Source\Extensions\Logging\Spring.Extensions.Logging.Container.pas"/>
         <BuildConfiguration Include="Debug">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

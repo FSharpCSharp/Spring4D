@@ -47,7 +47,8 @@ uses
   Spring.Tests.Container.LifetimeManager,
   Spring.Tests.Pool,
   Spring.Tests.Utils,
-  Spring.Tests.Cryptography;
+  Spring.Tests.Cryptography,
+  Spring.Tests.Logging;
 
 procedure RegisterTestCases();
 begin
@@ -216,6 +217,14 @@ begin
     TTestPaddingModeIsISO10126.Suite,
     TTestDES.Suite,
     TTestTripleDES.Suite
+  ]);
+
+  RegisterTests('Spring.Extensions.Logging', [
+    TTestLoggerController.Suite,
+    TTestLogger.Suite,
+    TTestStreamLogAppender.Suite,
+    TTestLogInsideContainer.Suite,
+    TTestLogSubResolverAndConfiguration.Suite
   ]);
 
 // Stefan Glienke - 2011/11/20:

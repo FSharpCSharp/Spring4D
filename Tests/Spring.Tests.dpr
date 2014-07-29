@@ -50,6 +50,7 @@ uses
   Spring.Tests.Pool in 'Source\Core\Spring.Tests.Pool.pas',
   Spring.Tests.Cryptography in 'Source\Extensions\Spring.Tests.Cryptography.pas',
   Spring.Tests.Utils in 'Source\Extensions\Spring.Tests.Utils.pas',
+  Spring.Tests.Logging in 'Source\Extensions\Spring.Tests.Logging.pas',
   Spring.Container;
 
 begin

@@ -43,9 +43,13 @@ contains
   Spring.Cryptography.SHA in '..\..\Source\Extensions\Cryptography\Spring.Cryptography.SHA.pas',
   Spring.Cryptography.Utils in '..\..\Source\Extensions\Cryptography\Spring.Cryptography.Utils.pas',
   Spring.Utils.IO in '..\..\Source\Extensions\Utils\Spring.Utils.IO.pas',
-{$ifdef MSWINDOWS}
   Spring.Utils.WinApi in '..\..\Source\Extensions\Utils\Spring.Utils.WinApi.pas',
-{$endif MSWINDOWS}
-  Spring.Utils in '..\..\Source\Extensions\Utils\Spring.Utils.pas';
+  Spring.Utils in '..\..\Source\Extensions\Utils\Spring.Utils.pas',
+  Spring.Extensions.Logging in '..\..\Source\Extensions\Logging\Spring.Extensions.Logging.pas',
+  Spring.Extensions.Logging.Configuration in '..\..\Source\Extensions\Logging\Spring.Extensions.Logging.Configuration.pas',
+  Spring.Extensions.Logging.Controller in '..\..\Source\Extensions\Logging\Spring.Extensions.Logging.Controller.pas',
+  Spring.Extensions.Logging.Appenders in '..\..\Source\Extensions\Logging\Spring.Extensions.Logging.Appenders.pas',
+  Spring.Extensions.Logging.Loggers in '..\..\Source\Extensions\Logging\Spring.Extensions.Logging.Loggers.pas',
+  Spring.Extensions.Logging.Container in '..\..\Source\Extensions\Logging\Spring.Extensions.Logging.Container.pas';
 
 end.
