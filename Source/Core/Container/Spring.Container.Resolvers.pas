@@ -46,10 +46,10 @@ type
     constructor Create(const kernel: IKernel);
 
     function CanResolve(const context: ICreationContext;
-      const dependency: TDependencyModel;
+      const model: TComponentModel; const dependency: TDependencyModel;
       const argument: TValue): Boolean; virtual;
     function Resolve(const context: ICreationContext;
-      const dependency: TDependencyModel;
+      const model: TComponentModel; const dependency: TDependencyModel;
       const argument: TValue): TValue; virtual; abstract;
   end;
 
@@ -60,26 +60,28 @@ type
     function CanResolveFromArgument(const context: ICreationContext;
       const dependency: TDependencyModel; const argument: TValue): Boolean;
     function CanResolveFromContext(const context: ICreationContext;
-      const dependency: TDependencyModel; const argument: TValue): Boolean;
+      const model: TComponentModel; const dependency: TDependencyModel;
+      const argument: TValue): Boolean;
     function CanResolveFromSubResolvers(const context: ICreationContext;
-      const dependency: TDependencyModel; const argument: TValue): Boolean;
+      const model: TComponentModel; const dependency: TDependencyModel;
+      const argument: TValue): Boolean;
     function InternalResolveValue(typeInfo: PTypeInfo;
       const instance: TValue): TValue;
   public
     constructor Create(const kernel: IKernel);
 
     function CanResolve(const context: ICreationContext;
-      const dependency: TDependencyModel;
+      const model: TComponentModel; const dependency: TDependencyModel;
       const argument: TValue): Boolean; overload; override;
     function CanResolve(const context: ICreationContext;
-      const dependencies: TArray<TDependencyModel>;
+      const model: TComponentModel; const dependencies: TArray<TDependencyModel>;
       const arguments: TArray<TValue>): Boolean; reintroduce; overload; virtual;
 
     function Resolve(const context: ICreationContext;
-      const dependency: TDependencyModel;
+      const model: TComponentModel; const dependency: TDependencyModel;
       const argument: TValue): TValue; overload; override;
     function Resolve(const context: ICreationContext;
-      const dependencies: TArray<TDependencyModel>;
+      const model: TComponentModel; const dependencies: TArray<TDependencyModel>;
       const arguments: TArray<TValue>): TArray<TValue>; reintroduce; overload; virtual;
 
     procedure AddSubResolver(const subResolver: ISubDependencyResolver);
@@ -89,32 +91,38 @@ type
   TLazyResolver = class(TSubDependencyResolverBase)
   private
     function InternalResolveClass(const context: ICreationContext;
-      const dependency: TDependencyModel; const argument: TValue;
-      lazyKind: TLazyKind): TValue;
+      const model: TComponentModel; const dependency: TDependencyModel;
+      const argument: TValue; lazyKind: TLazyKind): TValue;
     function InternalResolveInterface(const context: ICreationContext;
-      const dependency: TDependencyModel; const argument: TValue;
-      lazyKind: TLazyKind): TValue;
+      const model: TComponentModel; const dependency: TDependencyModel;
+      const argument: TValue; lazyKind: TLazyKind): TValue;
   public
     function CanResolve(const context: ICreationContext;
-      const dependency: TDependencyModel; const argument: TValue): Boolean; override;
+      const model: TComponentModel; const dependency: TDependencyModel;
+      const argument: TValue): Boolean; override;
     function Resolve(const context: ICreationContext;
-      const dependency: TDependencyModel; const argument: TValue): TValue; override;
+      const model: TComponentModel; const dependency: TDependencyModel;
+      const argument: TValue): TValue; override;
   end;
 
   TDynamicArrayResolver = class(TSubDependencyResolverBase)
   public
     function CanResolve(const context: ICreationContext;
-      const dependency: TDependencyModel; const argument: TValue): Boolean; override;
+      const model: TComponentModel; const dependency: TDependencyModel;
+      const argument: TValue): Boolean; override;
     function Resolve(const context: ICreationContext;
-      const dependency: TDependencyModel; const argument: TValue): TValue; override;
+      const model: TComponentModel; const dependency: TDependencyModel;
+      const argument: TValue): TValue; override;
   end;
 
   TListResolver = class(TSubDependencyResolverBase)
   public
     function CanResolve(const context: ICreationContext;
-      const dependency: TDependencyModel; const argument: TValue): Boolean; override;
+      const model: TComponentModel; const dependency: TDependencyModel;
+      const argument: TValue): Boolean; override;
     function Resolve(const context: ICreationContext;
-      const dependency: TDependencyModel; const argument: TValue): TValue; override;
+      const model: TComponentModel; const dependency: TDependencyModel;
+      const argument: TValue): TValue; override;
   end;
 
 implementation
@@ -142,7 +150,8 @@ begin
 end;
 
 function TSubDependencyResolverBase.CanResolve(const context: ICreationContext;
-  const dependency: TDependencyModel; const argument: TValue): Boolean;
+  const model: TComponentModel; const dependency: TDependencyModel;
+  const argument: TValue): Boolean;
 begin
   Result := not Kernel.Registry.HasService(dependency.TypeInfo)
     and (dependency.TypeInfo <> argument.TypeInfo);
@@ -202,17 +211,18 @@ begin
 end;
 
 function TDependencyResolver.CanResolve(const context: ICreationContext;
-  const dependency: TDependencyModel; const argument: TValue): Boolean;
+  const model: TComponentModel; const dependency: TDependencyModel;
+  const argument: TValue): Boolean;
 var
   kind: TTypeKind;
   serviceName: string;
   serviceType: PTypeInfo;
   componentModel: TComponentModel;
 begin
-  if CanResolveFromContext(context, dependency, argument) then
+  if CanResolveFromContext(context, model, dependency, argument) then
     Exit(True);
 
-  if CanResolveFromSubResolvers(context, dependency, argument) then
+  if CanResolveFromSubResolvers(context, model, dependency, argument) then
     Exit(True);
 
   if argument.IsEmpty then
@@ -239,18 +249,19 @@ begin
 end;
 
 function TDependencyResolver.Resolve(const context: ICreationContext;
-  const dependency: TDependencyModel; const argument: TValue): TValue;
+  const model: TComponentModel; const dependency: TDependencyModel;
+  const argument: TValue): TValue;
 var
   i: Integer;
   componentModel: TComponentModel;
   instance: TValue;
 begin
-  if CanResolveFromContext(context, dependency, argument) then
-    Exit(context.Resolve(context, dependency, argument));
+  if CanResolveFromContext(context, model, dependency, argument) then
+    Exit(context.Resolve(context, model, dependency, argument));
 
   for i := fSubResolvers.Count - 1 downto 0 do
-    if fSubResolvers[i].CanResolve(context, dependency, argument) then
-      Exit(fSubResolvers[i].Resolve(context, dependency, argument));
+    if fSubResolvers[i].CanResolve(context, model, dependency, argument) then
+      Exit(fSubResolvers[i].Resolve(context, model, dependency, argument));
 
   if CanResolveFromArgument(context, dependency, argument) then
     Exit(argument);
@@ -267,7 +278,7 @@ begin
 end;
 
 function TDependencyResolver.CanResolve(const context: ICreationContext;
-  const dependencies: TArray<TDependencyModel>;
+  const model: TComponentModel; const dependencies: TArray<TDependencyModel>;
   const arguments: TArray<TValue>): Boolean;
 var
   i: Integer;
@@ -275,13 +286,13 @@ begin
   if Length(dependencies) = Length(arguments) then
   begin
     for i := Low(dependencies) to High(dependencies) do
-      if not CanResolve(context, dependencies[i], arguments[i]) then
+      if not CanResolve(context, model, dependencies[i], arguments[i]) then
         Exit(False);
   end
   else if Length(arguments) = 0 then
   begin
     for i := Low(dependencies) to High(dependencies) do
-      if not CanResolve(context, dependencies[i], nil) then
+      if not CanResolve(context, model, dependencies[i], nil) then
         Exit(False);
   end
   else
@@ -301,26 +312,27 @@ begin
 end;
 
 function TDependencyResolver.CanResolveFromContext(
-  const context: ICreationContext; const dependency: TDependencyModel;
-  const argument: TValue): Boolean;
+  const context: ICreationContext; const model: TComponentModel;
+  const dependency: TDependencyModel; const argument: TValue): Boolean;
 begin
-  Result := Assigned(context) and context.CanResolve(context, dependency, argument);
+  Result := Assigned(context)
+    and context.CanResolve(context, model, dependency, argument);
 end;
 
 function TDependencyResolver.CanResolveFromSubResolvers(
-  const context: ICreationContext; const dependency: TDependencyModel;
-  const argument: TValue): Boolean;
+  const context: ICreationContext; const model: TComponentModel;
+  const dependency: TDependencyModel; const argument: TValue): Boolean;
 var
   i: Integer;
 begin
   for i := fSubResolvers.Count - 1 downto 0 do
-    if fSubResolvers[i].CanResolve(context, dependency, argument) then
+    if fSubResolvers[i].CanResolve(context, model, dependency, argument) then
       Exit(True);
   Result := False;
 end;
 
 function TDependencyResolver.Resolve(const context: ICreationContext;
-  const dependencies: TArray<TDependencyModel>;
+  const model: TComponentModel; const dependencies: TArray<TDependencyModel>;
   const arguments: TArray<TValue>): TArray<TValue>;
 var
   hasArgument: Boolean;
@@ -332,10 +344,10 @@ begin
   SetLength(Result, Length(dependencies));
   if hasArgument then
     for i := Low(dependencies) to High(dependencies) do
-      Result[i] := Resolve(context, dependencies[i], arguments[i])
+      Result[i] := Resolve(context, model, dependencies[i], arguments[i])
   else
     for i := Low(dependencies) to High(dependencies) do
-      Result[i] := Resolve(context, dependencies[i], nil);
+      Result[i] := Resolve(context, model, dependencies[i], nil);
 end;
 
 {$ENDREGION}
@@ -344,34 +356,36 @@ end;
 {$REGION 'TLazyResolver'}
 
 function TLazyResolver.CanResolve(const context: ICreationContext;
-  const dependency: TDependencyModel; const argument: TValue): Boolean;
+  const model: TComponentModel; const dependency: TDependencyModel;
+  const argument: TValue): Boolean;
 var
   targetType: TRttiType;
   dependencyModel: TDependencyModel;
 begin
-  Result := inherited CanResolve(context, dependency, argument)
+  Result := inherited CanResolve(context, model, dependency, argument)
     and TType.IsLazy(dependency.TypeInfo);
   if Result then
   begin
     targetType := dependency.TargetType.GetGenericArguments[0];
     dependencyModel := TDependencyModel.Create(targetType, dependency.Target);
-    Result := Kernel.Resolver.CanResolve(context, dependencyModel, argument);
+    Result := Kernel.Resolver.CanResolve(context, model, dependencyModel, argument);
   end;
 end;
 
 function TLazyResolver.InternalResolveClass(const context: ICreationContext;
-  const dependency: TDependencyModel; const argument: TValue; lazyKind: TLazyKind): TValue;
+  const model: TComponentModel; const dependency: TDependencyModel;
+  const argument: TValue; lazyKind: TLazyKind): TValue;
 var
-  model: TDependencyModel;
+  dependencyModel: TDependencyModel;
   value: TValue;
   factory: TFunc<TObject>;
 begin
-  model := dependency;
+  dependencyModel := dependency;
   value := argument;
   factory :=
     function: TObject
     begin
-      Result := Kernel.Resolver.Resolve(context, model, value).AsObject;
+      Result := Kernel.Resolver.Resolve(context, model, dependencyModel, value).AsObject;
     end;
 
   case lazyKind of
@@ -382,18 +396,19 @@ begin
 end;
 
 function TLazyResolver.InternalResolveInterface(const context: ICreationContext;
-  const dependency: TDependencyModel; const argument: TValue; lazyKind: TLazyKind): TValue;
+  const model: TComponentModel; const dependency: TDependencyModel;
+  const argument: TValue; lazyKind: TLazyKind): TValue;
 var
-  model: TDependencyModel;
+  dependencyModel: TDependencyModel;
   value: TValue;
   factory: TFunc<IInterface>;
 begin
-  model := dependency;
+  dependencyModel := dependency;
   value := argument;
   factory :=
     function: IInterface
     begin
-      Result := Kernel.Resolver.Resolve(context, model, value).AsInterface;
+      Result := Kernel.Resolver.Resolve(context, model, dependencyModel, value).AsInterface;
     end;
 
   case lazyKind of
@@ -404,7 +419,8 @@ begin
 end;
 
 function TLazyResolver.Resolve(const context: ICreationContext;
-  const dependency: TDependencyModel; const argument: TValue): TValue;
+  const model: TComponentModel; const dependency: TDependencyModel;
+  const argument: TValue): TValue;
 var
   lazyKind: TLazyKind;
   targetType: TRttiType;
@@ -422,8 +438,10 @@ begin
   context.EnterResolution(componentModel);
   try
     case targetType.TypeKind of
-      tkClass: Result := InternalResolveClass(context, dependencyModel, argument, lazyKind);
-      tkInterface: Result := InternalResolveInterface(context, dependencyModel, argument, lazyKind);
+      tkClass: Result := InternalResolveClass(
+        context, model, dependencyModel, argument, lazyKind);
+      tkInterface: Result := InternalResolveInterface(
+        context, model, dependencyModel, argument, lazyKind);
     else
       raise EResolveException.CreateResFmt(@SCannotResolveType, [dependency.Name]);
     end;
@@ -439,24 +457,26 @@ end;
 {$REGION 'TDynamicArrayResolver'}
 
 function TDynamicArrayResolver.CanResolve(const context: ICreationContext;
-  const dependency: TDependencyModel; const argument: TValue): Boolean;
+  const model: TComponentModel; const dependency: TDependencyModel;
+  const argument: TValue): Boolean;
 var
   targetType: TRttiType;
   dependencyModel: TDependencyModel;
 begin
   targetType := dependency.TargetType;
-  Result := inherited CanResolve(context, dependency, argument)
+  Result := inherited CanResolve(context, model, dependency, argument)
     and targetType.IsDynamicArray;
   if Result then
   begin
     targetType := targetType.AsDynamicArray.ElementType;
     dependencyModel := TDependencyModel.Create(targetType, dependency.Target);
-    Result := Kernel.Resolver.CanResolve(context, dependencyModel, TValue.From(tkDynArray));
+    Result := Kernel.Resolver.CanResolve(context, model, dependencyModel, TValue.From(tkDynArray));
   end;
 end;
 
 function TDynamicArrayResolver.Resolve(const context: ICreationContext;
-  const dependency: TDependencyModel; const argument: TValue): TValue;
+  const model: TComponentModel; const dependency: TDependencyModel;
+  const argument: TValue): TValue;
 var
   targetType: TRttiType;
   dependencyModel: TDependencyModel;
@@ -483,7 +503,7 @@ begin
   for i := Low(models) to High(models) do
   begin
     serviceName := models[i].GetServiceName(serviceType);
-    values[i] := Kernel.Resolver.Resolve(context, dependencyModel, serviceName);
+    values[i] := Kernel.Resolver.Resolve(context, model, dependencyModel, serviceName);
   end;
   Result := TValue.FromArray(dependency.TypeInfo, values);
 end;
@@ -494,7 +514,8 @@ end;
 {$REGION 'TListResolver'}
 
 function TListResolver.CanResolve(const context: ICreationContext;
-  const dependency: TDependencyModel; const argument: TValue): Boolean;
+  const model: TComponentModel; const dependency: TDependencyModel;
+  const argument: TValue): Boolean;
 const
   SupportedTypes: array[0..3] of string = (
     'IList<>', 'IReadOnlyList<>', 'ICollection<>', 'IEnumerable<>');
@@ -503,7 +524,7 @@ var
   dependencyModel: TDependencyModel;
 begin
   targetType := dependency.TargetType;
-  Result := inherited CanResolve(context, dependency, argument)
+  Result := inherited CanResolve(context, model, dependency, argument)
     and targetType.IsGenericType
     and MatchText(targetType.GetGenericTypeDefinition, SupportedTypes);
   if Result then
@@ -511,12 +532,13 @@ begin
     targetType := targetType.GetGenericArguments[0];
     dependencyModel := TDependencyModel.Create(targetType, dependency.Target);
     Result := targetType.IsClassOrInterface
-      and Kernel.Resolver.CanResolve(context, dependencyModel, TValue.From(tkDynArray));
+      and Kernel.Resolver.CanResolve(context, model, dependencyModel, TValue.From(tkDynArray));
   end;
 end;
 
 function TListResolver.Resolve(const context: ICreationContext;
-  const dependency: TDependencyModel; const argument: TValue): TValue;
+  const model: TComponentModel; const dependency: TDependencyModel;
+  const argument: TValue): TValue;
 var
   itemType: TRttiType;
   arrayType: TRttiType;

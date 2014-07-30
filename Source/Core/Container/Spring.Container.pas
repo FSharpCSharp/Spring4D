@@ -373,7 +373,8 @@ begin
   componentModel := fRegistry.FindDefault(serviceType);
   context := TCreationContext.Create(componentModel, arguments);
   targetType := TType.GetType(serviceType);
-  Result := fResolver.Resolve(context, TDependencyModel.Create(targetType, nil), nil);
+  Result := fResolver.Resolve(
+    context, componentModel, TDependencyModel.Create(targetType, nil), nil);
 end;
 
 function TContainer.Resolve(const name: string): TValue;
@@ -395,7 +396,8 @@ begin
   context := TCreationContext.Create(componentModel, arguments);
   serviceType := componentModel.GetServiceType(name);
   targetType := TType.GetType(serviceType);
-  Result := fResolver.Resolve(context, TDependencyModel.Create(targetType, nil), name);
+  Result := fResolver.Resolve(
+    context, componentModel, TDependencyModel.Create(targetType, nil), name);
 end;
 
 function TContainer.ResolveAll<TServiceType>: TArray<TServiceType>;
@@ -427,7 +429,8 @@ begin
   begin
     context := TCreationContext.Create(models[i], []);
     serviceName := models[i].GetServiceName(serviceType);
-    Result[i] := fResolver.Resolve(context, TDependencyModel.Create(targetType, nil), serviceName);
+    Result[i] := fResolver.Resolve(
+      context, models[i], TDependencyModel.Create(targetType, nil), serviceName);
   end;
 end;
 

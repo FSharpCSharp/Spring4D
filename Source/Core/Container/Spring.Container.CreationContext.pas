@@ -47,9 +47,11 @@ type
       const arguments: array of TValue);
 
     function CanResolve(const context: ICreationContext;
-      const dependency: TDependencyModel; const argument: TValue): Boolean;
+      const model: TComponentModel; const dependency: TDependencyModel;
+      const argument: TValue): Boolean;
     function Resolve(const context: ICreationContext;
-      const dependency: TDependencyModel; const argument: TValue): TValue;
+      const model: TComponentModel; const dependency: TDependencyModel;
+      const argument: TValue): TValue;
 
     procedure EnterResolution(const model: TComponentModel);
     procedure LeaveResolution(const model: TComponentModel);
@@ -96,7 +98,8 @@ begin
 end;
 
 function TCreationContext.CanResolve(const context: ICreationContext;
-  const dependency: TDependencyModel; const argument: TValue): Boolean;
+  const model: TComponentModel; const dependency: TDependencyModel;
+  const argument: TValue): Boolean;
 var
   i: Integer;
 begin
@@ -174,7 +177,8 @@ begin
 end;
 
 function TCreationContext.Resolve(const context: ICreationContext;
-  const dependency: TDependencyModel; const argument: TValue): TValue;
+  const model: TComponentModel; const dependency: TDependencyModel;
+  const argument: TValue): TValue;
 var
   i: Integer;
 begin

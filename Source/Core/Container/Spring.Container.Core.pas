@@ -233,9 +233,11 @@ type
   ISubDependencyResolver = interface
     ['{E360FFAD-2235-49D1-9A4F-50945877E337}']
     function CanResolve(const context: ICreationContext;
-      const dependency: TDependencyModel; const argument: TValue): Boolean;
+      const model: TComponentModel; const dependency: TDependencyModel;
+      const argument: TValue): Boolean;
     function Resolve(const context: ICreationContext;
-      const dependency: TDependencyModel; const argument: TValue): TValue;
+      const model: TComponentModel; const dependency: TDependencyModel;
+      const argument: TValue): TValue;
   end;
 
   /// <summary>
@@ -257,10 +259,10 @@ type
   IDependencyResolver = interface(ISubDependencyResolver)
     ['{15ADEA1D-7C3F-48D5-8E85-84B4332AFF5F}']
     function CanResolve(const context: ICreationContext;
-      const dependencies: TArray<TDependencyModel>;
+      const model: TComponentModel; const dependencies: TArray<TDependencyModel>;
       const arguments: TArray<TValue>): Boolean; overload;
     function Resolve(const context: ICreationContext;
-      const dependencies: TArray<TDependencyModel>;
+      const model: TComponentModel; const dependencies: TArray<TDependencyModel>;
       const arguments: TArray<TValue>): TArray<TValue>; overload;
 
     procedure AddSubResolver(const subResolver: ISubDependencyResolver);
@@ -339,9 +341,11 @@ type
   TInjectableMethodFilter = class(TSpecificationBase<TRttiMethod>)
   private
     fKernel: IKernel;
+    fModel: TComponentModel;
     fArguments: TArray<TValue>;
   public
-    constructor Create(const kernel: IKernel; const arguments: TArray<TValue>);
+    constructor Create(const kernel: IKernel; const model: TComponentModel;
+      const arguments: TArray<TValue>);
     function IsSatisfiedBy(const method: TRttiMethod): Boolean; override;
   end;
 
@@ -357,6 +361,7 @@ type
   public
     class function ContainsMember(const member: TRttiMember): TSpecification<IInjection>;
     class function IsInjectableMethod(const kernel: IKernel;
+      const model: TComponentModel;
       const arguments: TArray<TValue>): TSpecification<TRttiMethod>;
   end;
 
@@ -494,10 +499,11 @@ end;
 {$REGION 'TInjectableMethodFilter'}
 
 constructor TInjectableMethodFilter.Create(const kernel: IKernel;
-  const arguments: TArray<TValue>);
+  const model: TComponentModel; const arguments: TArray<TValue>);
 begin
   inherited Create;
   fKernel := kernel;
+  fModel := model;
   fArguments := arguments;
 end;
 
@@ -512,7 +518,7 @@ begin
   SetLength(dependencies, Length(params));
   for i := Low(dependencies) to High(dependencies) do
     dependencies[i] := TDependencyModel.Create(params[i].ParamType, params[i]);
-  Result := fKernel.Resolver.CanResolve(nil, dependencies, fArguments);
+  Result := fKernel.Resolver.CanResolve(nil, fModel, dependencies, fArguments);
 end;
 
 {$ENDREGION}
@@ -544,9 +550,10 @@ begin
 end;
 
 class function TInjectionFilters.IsInjectableMethod(const kernel: IKernel;
+  const model: TComponentModel;
   const arguments: TArray<TValue>): TSpecification<TRttiMethod>;
 begin
-  Result := TInjectableMethodFilter.Create(kernel, arguments);
+  Result := TInjectableMethodFilter.Create(kernel, model, arguments);
 end;
 
 {$ENDREGION}
