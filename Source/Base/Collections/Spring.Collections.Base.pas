@@ -310,7 +310,9 @@ type
   {$HINTS ON}
   protected
   {$REGION 'Property Accessors'}
+    function GetCapacity: Integer; virtual; abstract;
     function GetItem(index: Integer): T; virtual; abstract;
+    procedure SetCapacity(value: Integer); virtual; abstract;
     procedure SetItem(index: Integer; const value: T); virtual; abstract;
   {$ENDREGION}
   {$REGION 'Implements IInterface'}
@@ -362,7 +364,9 @@ type
     procedure Sort(const comparison: TComparison<T>); overload;
 
     function ToArray: TArray<T>; override;
+    procedure TrimExcess;
 
+    property Capacity: Integer read GetCapacity write SetCapacity;
     property Items[index: Integer]: T read GetItem write SetItem; default;
   end;
 
@@ -1588,6 +1592,11 @@ begin
   SetLength(Result, Count);
   for i := 0 to Length(Result) - 1 do
     Result[i] := Items[i];
+end;
+
+procedure TListBase<T>.TrimExcess;
+begin
+  Capacity := Count;
 end;
 
 function TListBase<T>.TryGetElementAt(out value: T; index: Integer): Boolean;

@@ -68,7 +68,9 @@ type
   private
     fSource: IList<T>;
 
+    function GetCapacity: Integer;
     function GetItem(index: Integer): TValue;
+    procedure SetCapacity(value: Integer);
     procedure SetItem(index: Integer; const item: TValue);
 
     procedure Insert(index: Integer; const item: TValue);
@@ -95,6 +97,7 @@ type
     function LastIndexOf(const item: TValue; index, count: Integer): Integer; overload;
 
     function AsReadOnlyList: IReadOnlyList;
+    procedure TrimExcess;
   protected
     function QueryInterface(const IID: TGUID; out Obj): HResult; override;
   public
@@ -344,6 +347,11 @@ begin
   fSource.Exchange(index1, index2);
 end;
 
+function TListAdapter<T>.GetCapacity: Integer;
+begin
+  Result := fSource.Capacity;
+end;
+
 function TListAdapter<T>.GetItem(index: Integer): TValue;
 begin
   Result := TValue.From<T>(fSource[index]);
@@ -444,6 +452,11 @@ begin
   fSource.Reverse(index, count);
 end;
 
+procedure TListAdapter<T>.SetCapacity(value: Integer);
+begin
+  fSource.Capacity := value;
+end;
+
 procedure TListAdapter<T>.SetItem(index: Integer; const item: TValue);
 begin
   fSource[index] := item.AsType<T>;
@@ -452,6 +465,11 @@ end;
 procedure TListAdapter<T>.Sort;
 begin
   fSource.Sort;
+end;
+
+procedure TListAdapter<T>.TrimExcess;
+begin
+  fSource.TrimExcess;
 end;
 
 {$ENDREGION}

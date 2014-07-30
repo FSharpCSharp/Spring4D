@@ -875,7 +875,9 @@ type
   IList = interface(ICollection)
     ['{43FF6143-3B87-4298-B48C-2ABB9353BF68}']
   {$REGION 'Property Accessors'}
+    function GetCapacity: Integer;
     function GetItem(index: Integer): TValue;
+    procedure SetCapacity(value: Integer);
     procedure SetItem(index: Integer; const item: TValue);
   {$ENDREGION}
 
@@ -903,7 +905,9 @@ type
     function LastIndexOf(const item: TValue; index, count: Integer): Integer; overload;
 
     function AsReadOnlyList: IReadOnlyList;
+    procedure TrimExcess;
 
+    property Capacity: Integer read GetCapacity write SetCapacity;
     property Items[index: Integer]: TValue read GetItem write SetItem; default;
   end;
 
@@ -947,7 +951,9 @@ type
   IList<T> = interface(ICollection<T>)
     ['{B6B4E1E1-0D29-40E1-854C-A93DEA8D1AA5}']
   {$REGION 'Property Accessors'}
+    function GetCapacity: Integer;
     function GetItem(index: Integer): T;
+    procedure SetCapacity(value: Integer);
     procedure SetItem(index: Integer; const item: T);
   {$ENDREGION}
 
@@ -1009,7 +1015,9 @@ type
 
     function AsList: IList;
     function AsReadOnlyList: IReadOnlyList<T>;
+    procedure TrimExcess;
 
+    property Capacity: Integer read GetCapacity write SetCapacity;
     property Items[index: Integer]: T read GetItem write SetItem; default;
   end;
 

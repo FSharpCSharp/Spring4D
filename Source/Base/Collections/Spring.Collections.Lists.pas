@@ -86,11 +86,11 @@ type
     procedure IncreaseVersion; inline;
   protected
   {$REGION 'Property Accessors'}
-    function GetCapacity: Integer;
+    function GetCapacity: Integer; override;
     function GetCount: Integer; override;
     function GetItem(index: Integer): T; override;
     function GetItems: TArray<T>;
-    procedure SetCapacity(value: Integer);
+    procedure SetCapacity(value: Integer); override;
     procedure SetItem(index: Integer; const value: T); override;
   {$ENDREGION}
 
@@ -121,8 +121,6 @@ type
 
     procedure CopyTo(var values: TArray<T>; index: Integer); override;
     function ToArray: TArray<T>; override;
-
-    property Capacity: Integer read GetCapacity write SetCapacity;
   end;
 
 {$IFDEF SUPPORTS_GENERIC_FOLDING}
@@ -203,9 +201,11 @@ type
     procedure IncreaseVersion; inline;
   protected
   {$REGION 'Property Accessors'}
+    function GetCapacity: Integer; override;
     function GetCount: Integer; override;
     function GetElementType: PTypeInfo; override;
     function GetItem(index: Integer): T; override;
+    procedure SetCapacity(value: Integer); override;
     procedure SetItem(index: Integer; const value: T); override;
   {$ENDREGION}
   public
@@ -866,6 +866,11 @@ begin
   end;
 end;
 
+function TCollectionList<T>.GetCapacity: Integer;
+begin
+  Result := fCollection.Capacity;
+end;
+
 function TCollectionList<T>.GetCount: Integer;
 begin
   Result := fCollection.Count;
@@ -921,6 +926,11 @@ begin
   IncreaseVersion;
 
   Changed(fCollection.Items[newIndex], caMoved);
+end;
+
+procedure TCollectionList<T>.SetCapacity(value: Integer);
+begin
+  fCollection.Capacity := value;
 end;
 
 procedure TCollectionList<T>.SetItem(index: Integer; const value: T);
