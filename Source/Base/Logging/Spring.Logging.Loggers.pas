@@ -28,6 +28,7 @@ interface
 
 uses
   SysUtils,
+  Rtti,
   Spring.Container.Common,
   Spring.Logging;
 
@@ -98,6 +99,19 @@ type
     procedure Verbose(const fmt : string; const args : array of const); overload;
     procedure Verbose(const fmt : string; const args : array of const;
       const exc: Exception); overload;
+
+    procedure Entering(level: TLogLevel; const classType: TClass;
+      const methodName: string); overload;
+    procedure Entering(level: TLogLevel; const classType: TClass;
+      const methodName: string; const arguments: array of TValue); overload;
+
+    procedure Leaving(level: TLogLevel; const classType: TClass;
+      const methodName: string); overload;
+
+    function Track(level: TLogLevel; const classType: TClass;
+      const methodName: string): IInterface; overload;
+    function Track(level: TLogLevel; const classType: TClass;
+      const methodName: string; const arguments: array of TValue): IInterface; overload;
   end;
   {$ENDREGION}
 
@@ -115,6 +129,13 @@ type
     procedure SetEnabled(value: Boolean);
   protected
     procedure DoLog(const entry: TLogEntry); virtual; abstract;
+
+    class function FormatMethodName(const classType: TClass;
+      const methodName: string): string; static; inline;
+    class function FormatEntering(const classType: TClass;
+      const methodName: string): string; static; inline;
+    class function FormatLeaving(const classType: TClass;
+      const methodName: string): string; static; inline;
 
     procedure ILogAppender.Send = Log;
   public
@@ -181,6 +202,19 @@ type
     procedure Verbose(const fmt : string; const args : array of const;
       const exc: Exception); overload;
 
+    procedure Entering(level: TLogLevel; const classType: TClass;
+      const methodName: string); overload;
+    procedure Entering(level: TLogLevel; const classType: TClass;
+      const methodName: string; const arguments: array of TValue); overload;
+
+    procedure Leaving(level: TLogLevel; const classType: TClass;
+      const methodName: string); overload;
+
+    function Track(level: TLogLevel; const classType: TClass;
+      const methodName: string): IInterface; overload;
+    function Track(level: TLogLevel; const classType: TClass;
+      const methodName: string; const arguments: array of TValue): IInterface; overload;
+
     property Enabled: Boolean read fEnabled write fEnabled;
     property Levels: TLogLevels read fLevels write fLevels;
   end;
@@ -200,7 +234,23 @@ type
 implementation
 
 uses
-  Spring;
+  Spring,
+  Spring.Collections,
+  Spring.Logging.ResourceStrings;
+
+type
+  TTrackingImpl = class(TInterfacedObject, IInterface)
+  private
+    fLogger: ILogger;
+    fLevel: TLogLevel;
+    fClassType: TClass;
+    fMethodName: string;
+  public
+    constructor Create(const logger: ILogger; level: TLogLevel;
+      const classType: TClass; const methodName: string);
+
+    destructor Destroy; override;
+  end;
 
 {$REGION 'TNullLogger'}
 { TNullLogger }
@@ -249,6 +299,18 @@ begin
 end;
 
 procedure TNullLogger.Error(const fmt: string; const args: array of const);
+begin
+
+end;
+
+procedure TNullLogger.Entering(level: TLogLevel; const classType: TClass;
+  const methodName: string);
+begin
+
+end;
+
+procedure TNullLogger.Entering(level: TLogLevel; const classType: TClass;
+  const methodName: string; const arguments: array of TValue);
 begin
 
 end;
@@ -351,6 +413,12 @@ begin
 
 end;
 
+procedure TNullLogger.Leaving(level: TLogLevel; const classType: TClass;
+  const methodName: string);
+begin
+
+end;
+
 procedure TNullLogger.Log(level: TLogLevel; const fmt: string;
   const args: array of const; const exc: Exception);
 begin
@@ -366,6 +434,18 @@ procedure TNullLogger.Text(const fmt: string; const args: array of const;
   const exc: Exception);
 begin
 
+end;
+
+function TNullLogger.Track(level: TLogLevel; const classType: TClass;
+  const methodName: string): IInterface;
+begin
+  Result := nil;
+end;
+
+function TNullLogger.Track(level: TLogLevel; const classType: TClass;
+  const methodName: string; const arguments: array of TValue): IInterface;
+begin
+  Result := nil;
 end;
 
 procedure TNullLogger.Text(const msg: string);
@@ -463,6 +543,22 @@ begin
     DoLog(TLogEntry.Create(TLogLevel.Error, Format(fmt, args)));
 end;
 
+procedure TLoggerBase.Entering(level: TLogLevel; const classType: TClass;
+  const methodName: string);
+begin
+  if (IsEnabled(level)) then
+    DoLog(TLogEntry.Create(level, FormatEntering(classType, methodName),
+      classType));
+end;
+
+procedure TLoggerBase.Entering(level: TLogLevel; const classType: TClass;
+  const methodName: string; const arguments: array of TValue);
+begin
+  if (IsEnabled(level)) then
+    DoLog(TLogEntry.Create(level, FormatEntering(classType, methodName),
+      classType, TValue.From<TArray<TValue>>(TArray.Copy(arguments))));
+end;
+
 procedure TLoggerBase.Error(const fmt: string; const args: array of const;
   const exc: Exception);
 begin
@@ -493,6 +589,26 @@ procedure TLoggerBase.Fatal(const fmt: string; const args: array of const;
 begin
   if (IsEnabled(TLogLevel.Fatal)) then
     DoLog(TLogEntry.Create(TLogLevel.Fatal, Format(fmt, args), exc));
+end;
+
+class function TLoggerBase.FormatEntering(const classType: TClass;
+  const methodName: string): string;
+begin
+  Result := SLogEntering + FormatMethodName(classType, methodName);
+end;
+
+class function TLoggerBase.FormatLeaving(const classType: TClass;
+  const methodName: string): string;
+begin
+  Result := SLogLeaving + FormatMethodName(classType, methodName);
+end;
+
+class function TLoggerBase.FormatMethodName(const classType: TClass;
+  const methodName: string): string;
+begin
+  if (classType <> nil) then
+    Result := classType.QualifiedClassName + '.' + methodName
+  else Result := methodName;
 end;
 
 function TLoggerBase.GetEnabled: Boolean;
@@ -608,6 +724,14 @@ begin
     DoLog(TLogEntry.Create(level, Format(fmt, args)));
 end;
 
+procedure TLoggerBase.Leaving(level: TLogLevel; const classType: TClass;
+  const methodName: string);
+begin
+  if (IsEnabled(level)) then
+    DoLog(TLogEntry.Create(level, FormatLeaving(classType, methodName),
+      classType));
+end;
+
 procedure TLoggerBase.Log(level: TLogLevel; const fmt: string;
   const args: array of const; const exc: Exception);
 begin
@@ -636,6 +760,28 @@ procedure TLoggerBase.Text(const fmt: string; const args: array of const;
 begin
   if (IsEnabled(TLogLevel.Text)) then
     DoLog(TLogEntry.Create(TLogLevel.Text, Format(fmt, args), exc));
+end;
+
+function TLoggerBase.Track(level: TLogLevel; const classType: TClass;
+  const methodName: string): IInterface;
+begin
+  if (IsEnabled(level)) then
+  begin
+    Entering(level, classType, methodName);
+    Result := TTrackingImpl.Create(Self, level, classType, methodName);
+  end
+  else Result := nil;
+end;
+
+function TLoggerBase.Track(level: TLogLevel; const classType: TClass;
+  const methodName: string; const arguments: array of TValue): IInterface;
+begin
+  if (IsEnabled(level)) then
+  begin
+    Entering(level, classType, methodName, arguments);
+    Result := TTrackingImpl.Create(Self, level, classType, methodName);
+  end
+  else Result := nil;
 end;
 
 procedure TLoggerBase.Text(const msg: string);
@@ -717,5 +863,23 @@ begin
   fController.Send(entry);
 end;
 {$ENDREGION}
+
+{ TTrackingImpl }
+
+constructor TTrackingImpl.Create(const logger: ILogger; level: TLogLevel;
+  const classType: TClass; const methodName: string);
+begin
+  inherited Create;
+  fLogger := logger;
+  fLevel := level;
+  fClassType := classType;
+  fMethodName := methodName;
+end;
+
+destructor TTrackingImpl.Destroy;
+begin
+  fLogger.Leaving(fLevel, fClassType, fMethodName);
+  inherited;
+end;
 
 end.

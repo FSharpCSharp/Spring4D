@@ -126,6 +126,7 @@ type
     /// </summary>
     fFontStyle: TFontStyles;
 {$ENDIF}
+    fClassType: TClass;
     fAddStack: Boolean;
     /// <summary>
     ///   An arbitrary data that the logger may output to the appenders
@@ -136,17 +137,22 @@ type
     /// </summary>
     fTag: NativeInt;
   public
-    constructor Create(level : TLogLevel; const msg : string); overload;
-    constructor Create(level : TLogLevel; const msg : string;
+    constructor Create(level: TLogLevel; const msg: string); overload;
+    constructor Create(level: TLogLevel; const msg: string;
       const exc: Exception); overload;
+    constructor Create(level: TLogLevel; const msg: string;
+      const classType: TClass); overload;
+    constructor Create(level: TLogLevel; const msg: string;
+      const classType: TClass; const data: TValue); overload;
     {constructor Create(level : TLogLevel; const msg : string;
       color : TColor = clDefault; fontStyle : TFontStyles = []; )}
 
-    function SetException(const exc: Exception) : TLogEntry;
+    function SetException(const exc: Exception): TLogEntry;
 {$IFDEF LOG_EXTENDED_FROMAT}
     function SetColor(color: TColor): TLogEntry;
-    function SetFontStyle(fontStyle: TFontStyles) : TLogEntry;
+    function SetFontStyle(fontStyle: TFontStyles): TLogEntry;
 {$ENDIF}
+    function SetClassType(const classType: TClass): TLogEntry;
     function AddStack: TLogEntry;
     function SetData(const Data: TValue): TLogEntry;
     function SetTag(tag: NativeInt): TLogEntry;
@@ -159,6 +165,7 @@ type
     property Color: TColor read fColor;
     property FontStyle: TFontStyles read fFontStyle;
 {$ENDIF}
+    property ClassType: TClass read FClassType;
     property AddStackValue: Boolean read fAddStack;
     property Data: TValue read fData;
     property Tag: NativeInt read fTag;
@@ -219,6 +226,27 @@ type
     procedure Verbose(const fmt : string; const args : array of const); overload;
     procedure Verbose(const fmt : string; const args : array of const;
       const exc: Exception); overload;
+
+    procedure Entering(level: TLogLevel; const classType: TClass;
+      const methodName: string); overload;
+    procedure Entering(level: TLogLevel; const classType: TClass;
+      const methodName: string; const arguments: array of TValue); overload;
+
+    procedure Leaving(level: TLogLevel; const classType: TClass;
+      const methodName: string); overload;
+
+    /// <summary>
+    ///   Will log entering and return an interface, when this interface gets
+    ///   out of scope, it will log leaving.
+    /// </summary>
+    function Track(level: TLogLevel; const classType: TClass;
+      const methodName: string): IInterface; overload;
+    /// <summary>
+    ///   Will log entering and return an interface, when this interface gets
+    ///   out of scope, it will log leaving.
+    /// </summary>
+    function Track(level: TLogLevel; const classType: TClass;
+      const methodName: string; const arguments: array of TValue): IInterface; overload;
 
     function IsEnabled(level: TLogLevel): Boolean;
     function IsFatalEnabled: Boolean;
@@ -302,6 +330,20 @@ begin
   fExc := exc;
 end;
 
+constructor TLogEntry.Create(level: TLogLevel; const msg: string;
+  const classType: TClass);
+begin
+  Create(level, msg);
+  fClassType := classType;
+end;
+
+constructor TLogEntry.Create(level: TLogLevel; const msg: string;
+  const classType: TClass; const data: TValue);
+begin
+  Create(level, msg, classType);
+  fData := data;
+end;
+
 {$IFDEF LOG_EXTENDED_FROMAT}
 function TLogEntry.SetColor(color: TColor): TLogEntry;
 begin
@@ -309,6 +351,12 @@ begin
   Result.fColor := color;
 end;
 {$ENDIF}
+
+function TLogEntry.SetClassType(const classType: TClass): TLogEntry;
+begin
+  Result := Self;
+  Result.fClassType := classType;
+end;
 
 function TLogEntry.SetData(const Data: TValue): TLogEntry;
 begin

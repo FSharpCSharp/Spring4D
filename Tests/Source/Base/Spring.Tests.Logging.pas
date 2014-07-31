@@ -105,6 +105,12 @@ type
     procedure TestText; overload;
     procedure TestDebug; overload;
     procedure TestVerbose; overload;
+
+    procedure TestFormatMethodName;
+
+    procedure TestEntering;
+    procedure TestLeaving;
+    procedure TestTrack;
   end;
   {$ENDREGION}
 
@@ -358,6 +364,38 @@ begin
   CheckTrue(Logger.Enabled);
 end;
 
+procedure TTestLogger.TestEntering;
+begin
+  Controller.Reset;
+
+  Logger.Enabled := false;
+  fLogger.Entering(TLogLevel.Info, nil, '');
+  CheckTrue(TLogLevel.Unknown = Controller.fLastEntry.Level);
+
+  Logger.Enabled := true;
+  Logger.Levels := [TLogLevel.Warning];
+  fLogger.Entering(TLogLevel.Info, nil, '');
+  CheckTrue(TLogLevel.Unknown = Controller.fLastEntry.Level);
+
+  fLogger.Entering(TLogLevel.Warning, nil, '');
+  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.fLastEntry.Level));
+
+  Controller.Reset;
+
+  Logger.Enabled := false;
+  fLogger.Entering(TLogLevel.Info, nil, '', [TValue.Empty]);
+  CheckTrue(TLogLevel.Unknown = Controller.fLastEntry.Level);
+
+  Logger.Enabled := true;
+  Logger.Levels := [TLogLevel.Warning];
+  fLogger.Entering(TLogLevel.Info, nil, '', [TValue.Empty]);
+  CheckTrue(TLogLevel.Unknown = Controller.fLastEntry.Level);
+
+  fLogger.Entering(TLogLevel.Warning, nil, '', ['value']);
+  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.fLastEntry.Level));
+  CheckEquals('value', Controller.fLastEntry.Data.AsType<TArray<TValue>>[0].AsString);
+end;
+
 procedure TTestLogger.TestError(enabled: Boolean);
 begin
   Controller.Reset;
@@ -410,6 +448,17 @@ begin
   TestFatal(true);
   Logger.Levels := [];
   TestFatal(false);
+end;
+
+procedure TTestLogger.TestFormatMethodName;
+var
+  result: string;
+begin
+    result := TLoggerAccess.FormatMethodName(nil, 'MethodName');
+    CheckEquals('MethodName', result);
+
+    result := TLoggerAccess.FormatMethodName(ClassType, 'MethodName');
+    CheckEquals('Spring.Tests.Logging.TTestLogger.MethodName', result);
 end;
 
 procedure TTestLogger.TestInfo(enabled: Boolean);
@@ -533,6 +582,23 @@ begin
   CheckFalse(fLogger.IsWarnEnabled);
 end;
 
+procedure TTestLogger.TestLeaving;
+begin
+  Controller.Reset;
+
+  Logger.Enabled := false;
+  fLogger.Leaving(TLogLevel.Info, nil, '');
+  CheckTrue(TLogLevel.Unknown = Controller.fLastEntry.Level);
+
+  Logger.Enabled := true;
+  Logger.Levels := [TLogLevel.Warning];
+  fLogger.Leaving(TLogLevel.Info, nil, '');
+  CheckTrue(TLogLevel.Unknown = Controller.fLastEntry.Level);
+
+  fLogger.Leaving(TLogLevel.Warning, nil, '');
+  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.fLastEntry.Level));
+end;
+
 procedure TTestLogger.TestLevels;
 begin
   Logger.Levels := [];
@@ -598,6 +664,52 @@ begin
   TestText(true);
   Logger.Levels := [];
   TestText(false);
+end;
+
+procedure TTestLogger.TestTrack;
+var
+  result: IInterface;
+begin
+  Controller.Reset;
+
+  Logger.Enabled := false;
+  result := fLogger.Track(TLogLevel.Info, nil, '');
+  CheckNull(result);
+  CheckTrue(TLogLevel.Unknown = Controller.fLastEntry.Level);
+
+  Logger.Enabled := true;
+  Logger.Levels := [TLogLevel.Warning];
+  result := fLogger.Track(TLogLevel.Info, nil, '');
+  CheckNull(result);
+  CheckTrue(TLogLevel.Unknown = Controller.fLastEntry.Level);
+
+  result := fLogger.Track(TLogLevel.Warning, nil, '');
+  CheckNotNull(result);
+  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.fLastEntry.Level));
+  Controller.Reset;
+  result := nil;
+  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.fLastEntry.Level));
+
+  Controller.Reset;
+
+  Logger.Enabled := false;
+  result := fLogger.Track(TLogLevel.Info, nil, '', [TValue.Empty]);
+  CheckNull(result);
+  CheckTrue(TLogLevel.Unknown = Controller.fLastEntry.Level);
+
+  Logger.Enabled := true;
+  Logger.Levels := [TLogLevel.Warning];
+  result := fLogger.Track(TLogLevel.Info, nil, '', [TValue.Empty]);
+  CheckNull(result);
+  CheckTrue(TLogLevel.Unknown = Controller.fLastEntry.Level);
+
+  result := fLogger.Track(TLogLevel.Warning, nil, '', ['value']);
+  CheckNotNull(result);
+  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.fLastEntry.Level));
+  CheckEquals('value', Controller.fLastEntry.Data.AsType<TArray<TValue>>[0].AsString);
+  Controller.Reset;
+  result := nil;
+  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.fLastEntry.Level));
 end;
 
 procedure TTestLogger.TestText(enabled: Boolean);
