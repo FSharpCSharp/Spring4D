@@ -653,7 +653,9 @@ type
     function GetCount: Integer;
     function GetEnabled: Boolean;
     function GetIsEmpty: Boolean;
+    function GetOnChanged: TNotifyEvent;
     procedure SetEnabled(const value: Boolean);
+    procedure SetOnChanged(const value: TNotifyEvent);
   {$ENDREGION}
 
     procedure Add(const handler: TMethod);
@@ -665,6 +667,7 @@ type
     property Enabled: Boolean read GetEnabled write SetEnabled;
     property IsEmpty: Boolean read GetIsEmpty;
     property Invoke: TMethod read GetInvoke;
+    property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
   end;
 
   ///	<summary>
@@ -739,7 +742,9 @@ type
     function GetEnabled: Boolean;
     function GetInvoke: T;
     function GetIsEmpty: Boolean;
+    function GetOnChanged: TNotifyEvent;
     procedure SetEnabled(const value: Boolean);
+    procedure SetOnChanged(const value: TNotifyEvent);
     procedure EnsureInitialized;
   public
     class function Create: Event<T>; static;
@@ -753,6 +758,7 @@ type
     property Enabled: Boolean read GetEnabled write SetEnabled;
     property Invoke: T read GetInvoke;
     property IsEmpty: Boolean read GetIsEmpty;
+    property OnChanged: TNotifyEvent read GetOnChanged write SetOnChanged;
 
     class operator Implicit(const value: IEvent<T>): Event<T>;
     class operator Implicit(var value: Event<T>): IEvent<T>;
@@ -786,9 +792,14 @@ type
     fPropertyName: string;
     function GetPropertyName: string;
   public
-    constructor Create(const propertyName: string); overload;
+    constructor Create(const propertyName: string);
     property PropertyName: string read GetPropertyName;
   end;
+
+  {$M+}
+  TEventHandler<T: IEventArgs> = reference to procedure(Sender: TObject;
+    const EventArgs: T);
+  {$M-}
 
   TPropertyChangedEvent = procedure(Sender: TObject;
     const EventArgs: IPropertyChangedEventArgs) of object;
@@ -1776,6 +1787,12 @@ begin
   Result := not Assigned(fInstance) or fInstance.IsEmpty;
 end;
 
+function Event<T>.GetOnChanged: TNotifyEvent;
+begin
+  EnsureInitialized;
+  Result := fInstance.OnChanged;
+end;
+
 procedure Event<T>.Remove(const handler: T);
 begin
   if Assigned(fInstance) then
@@ -1792,6 +1809,12 @@ procedure Event<T>.SetEnabled(const value: Boolean);
 begin
   EnsureInitialized;
   fInstance.Enabled := value;
+end;
+
+procedure Event<T>.SetOnChanged(const value: TNotifyEvent);
+begin
+  EnsureInitialized;
+  fInstance.OnChanged := value;
 end;
 
 class operator Event<T>.Implicit(const value: IEvent<T>): Event<T>;
@@ -1864,7 +1887,7 @@ constructor TEventArgs.Create;
 begin
 end;
 
-{$REGION}
+{$ENDREGION}
 
 
 {$REGION 'TPropertyChangedEventArgs'}
