@@ -474,6 +474,7 @@ type
 
   {$REGION 'TColorToStringConverter'}
 
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
   ///	<summary>
   ///	  Provides conversion routine beetwen TColor and string
   ///	</summary>
@@ -483,12 +484,14 @@ type
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
   end;
+{$ENDIF}
 
   {$ENDREGION}
 
 
   {$REGION 'TStringToColorConverter'}
 
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
   ///	<summary>
   ///	  Provides conversion routine beetwen string and TColor
   ///	</summary>
@@ -498,6 +501,7 @@ type
       const targetTypeInfo: PTypeInfo;
       const parameter: TValue): TValue; override;
   end;
+{$ENDIF}
 
   {$ENDREGION}
 
@@ -743,12 +747,14 @@ type
 implementation
 
 uses
-{$IFDEF HAS_UNIT_SYSTEM_UITYPES}
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
+  {$IFDEF HAS_UNIT_SYSTEM_UITYPES}
   System.UIConsts,
   System.UITypes,
-{$ELSE}
+  {$ELSE}
   Graphics,
-{$ENDIF HAS_UNIT_SYSTEM_UITYPES}
+  {$ENDIF HAS_UNIT_SYSTEM_UITYPES}
+{$ENDIF SPRING_DISABLE_GRAPHICS}
   Math,
   StrUtils,
   SysUtils,
@@ -756,13 +762,13 @@ uses
   Spring.ResourceStrings;
 
 
-  function CompareTypeInfo(const left, right: PTypeInfo): Boolean;
-  begin
-    Result := (left = right);
-    if Assigned(left) and Assigned(right) then
-      Result := Result or ((left.Kind = right.Kind)
-        and (left.TypeName = right.TypeName));
-  end;
+function CompareTypeInfo(const left, right: PTypeInfo): Boolean;
+begin
+  Result := (left = right);
+  if Assigned(left) and Assigned(right) then
+    Result := Result or ((left.Kind = right.Kind)
+      and (left.TypeName = right.TypeName));
+end;
 
 
 {$REGION 'TValueConverter'}
@@ -1190,6 +1196,7 @@ end;
 
 {$REGION 'TColorToStringConverter'}
 
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
 function TColorToStringConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
@@ -1204,17 +1211,20 @@ begin
 {$ENDIF}
   end;
 end;
+{$ENDIF}
 
 {$ENDREGION}
 
 
 {$REGION 'TStringToColorConverter'}
 
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
 function TStringToColorConverter.DoConvertTo(const value: TValue;
   const targetTypeInfo: PTypeInfo; const parameter: TValue): TValue;
 begin
   Result := TValue.From<TColor>(StringToColor(value.AsString));
 end;
+{$ENDIF}
 
 {$ENDREGION}
 
@@ -1478,8 +1488,10 @@ begin
   RegisterConverter([tkFloat], [tkString, tkUString, tkLString, tkWString], TFloatToStringConverter);
   RegisterConverter([tkFloat], [tkInteger, tkInt64], TFloatToIntegerConverter);
 
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
   RegisterConverter(TypeInfo(TColor), TypeInfo(Nullable<TColor>), TTypeToNullableConverter);
   RegisterConverter(TypeInfo(TColor), [tkString, tkUString, tkLString, tkWString], TColorToStringConverter);
+{$ENDIF}
 
   RegisterConverter(TypeInfo(Currency), [tkString, tkUString, tkLString, tkWString], TCurrencyToStringConverter);
 
@@ -1555,8 +1567,10 @@ begin
   RegisterConverter(TypeInfo(Nullable<System.Boolean>), [tkInteger, tkInt64], TNullableToTypeConverter);
   RegisterConverter(TypeInfo(Nullable<System.Boolean>), [tkString, tkUString, tkLString, tkWString], TNullableToTypeConverter);
 
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
   RegisterConverter(TypeInfo(Nullable<TColor>), [tkInteger, tkInt64], TNullableToTypeConverter);
   RegisterConverter(TypeInfo(Nullable<TColor>), [tkString, tkUString, tkLString, tkWString], TNullableToTypeConverter);
+{$ENDIF}
 
   RegisterConverter(TypeInfo(Nullable<System.TDateTime>), TypeInfo(TDate), TNullableToTypeConverter);
   RegisterConverter(TypeInfo(Nullable<System.TDateTime>), TypeInfo(TDateTime), TNullableToTypeConverter);
@@ -1572,12 +1586,16 @@ begin
   RegisterConverter([tkClass], [tkClassRef], TObjectToClassConverter);
 
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Boolean), TStringToBooleanConverter);
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TColor), TStringToColorConverter);
+{$ENDIF}
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Currency), TStringToCurrencyConverter);
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(TDateTime), TStringToDateTimeConverter);
 
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<System.Currency>), TTypeToNullableConverter);
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<TColor>), TTypeToNullableConverter);
+{$ENDIF}
   RegisterConverter([tkString, tkUString, tkLString, tkWString], TypeInfo(Nullable<System.TDateTime>), TTypeToNullableConverter);
 
   RegisterConverter([tkString, tkUString, tkLString, tkWString], [tkInteger, tkInt64], TStringToIntegerConverter);

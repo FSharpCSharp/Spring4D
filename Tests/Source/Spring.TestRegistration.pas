@@ -143,7 +143,9 @@ begin
     TTestFromBoolean.Suite,
     TTestFromEnum.Suite,
     TTestFromFloat.Suite,
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
     TTestFromColor.Suite,
+{$ENDIF}
     TTestFromCurrency.Suite,
     TTestFromDateTime.Suite,
     TTestFromObject.Suite,
