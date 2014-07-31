@@ -173,7 +173,11 @@ end;
 
 procedure TCreationContext.LeaveResolution(const model: TComponentModel);
 begin
+{$IFOPT C+}
   Assert(fResolutionStack.Pop = model);
+{$ELSE}
+  fResolutionStack.Pop;
+{$ENDIF}
 end;
 
 function TCreationContext.Resolve(const context: ICreationContext;
