@@ -211,13 +211,14 @@ type
     function GetIsReadOnly: Boolean; virtual;
     function GetOnChanged: ICollectionChangedEvent<T>;
   {$ENDREGION}
+    procedure AddInternal(const item: T); virtual; abstract;
     procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
   public
     constructor Create; override;
     constructor Create(const collection: array of T); overload;
     constructor Create(const collection: IEnumerable<T>); overload;
 
-    procedure Add(const item: T); virtual; abstract;
+    procedure Add(const item: T);
     procedure AddRange(const collection: array of T); overload; virtual;
     procedure AddRange(const collection: IEnumerable<T>); overload; virtual;
 
@@ -318,6 +319,7 @@ type
   {$REGION 'Implements IInterface'}
     function QueryInterface(const IID: TGUID; out Obj): HResult; override; stdcall;
   {$ENDREGION}
+    procedure AddInternal(const item: T); override;
     function TryGetElementAt(out value: T; index: Integer): Boolean; override;
     function TryGetFirst(out value: T): Boolean; override;
     function TryGetLast(out value: T): Boolean; override;
@@ -325,7 +327,7 @@ type
   public
     destructor Destroy; override;
 
-    procedure Add(const item: T); override;
+    function Add(const item: T): Integer; reintroduce; virtual;
     function Remove(const item: T): Boolean; override;
     procedure Clear; override;
 
@@ -1187,6 +1189,11 @@ begin
   AddRange(collection);
 end;
 
+procedure TCollectionBase<T>.Add(const item: T);
+begin
+  AddInternal(item);
+end;
+
 procedure TCollectionBase<T>.AddRange(const collection: array of T);
 var
   item: T;
@@ -1379,9 +1386,15 @@ begin
   inherited Destroy;
 end;
 
-procedure TListBase<T>.Add(const item: T);
+function TListBase<T>.Add(const item: T): Integer;
 begin
-  Insert(Count, item);
+  Result := Count;
+  Insert(Result, item);
+end;
+
+procedure TListBase<T>.AddInternal(const item: T);
+begin
+  Add(item);
 end;
 
 function TListBase<T>.AsList: IList;

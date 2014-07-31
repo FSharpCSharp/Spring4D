@@ -91,6 +91,7 @@ type
     function GetKeys: IReadOnlyCollection<TKey>; override;
     function GetValues: IReadOnlyCollection<TValue>; override;
   {$ENDREGION}
+    procedure AddInternal(const item: TGenericPair); overload; override;
     function CreateCollection: ICollection<TValue>; virtual; abstract;
     function CreateDictionary: IDictionary<TKey, ICollection<TValue>>; virtual; abstract;
   public
@@ -104,7 +105,6 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
-    procedure Add(const item: TGenericPair); overload; override;
     procedure Clear; override;
     function Remove(const item: TGenericPair): Boolean; overload; override;
     function Extract(const item: TGenericPair): TGenericPair; override;
@@ -191,7 +191,7 @@ begin
   Inc(fCount);
 end;
 
-procedure TMultiMapBase<TKey, TValue>.Add(const item: TGenericPair);
+procedure TMultiMapBase<TKey, TValue>.AddInternal(const item: TGenericPair);
 begin
   Add(item.Key, item.Value);
 end;

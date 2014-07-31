@@ -166,7 +166,7 @@ type
   protected
     procedure SetItem(index: Integer; const value: T); override;
   public
-    procedure Add(const item: T); override;
+    function Add(const item: T): Integer; override;
     procedure Insert(index: Integer; const item: T); override;
 
     function Contains(const value: T): Boolean; override;
@@ -703,12 +703,10 @@ end;
 
 {$REGION 'TSortedList<T>'}
 
-procedure TSortedList<T>.Add(const item: T);
-var
-  index: Integer;
+function TSortedList<T>.Add(const item: T): Integer;
 begin
-  TArray.BinarySearch<T>(fItems, item, index, Comparer, 0, Count);
-  inherited Insert(index, item);
+  TArray.BinarySearch<T>(fItems, item, Result, Comparer, 0, Count);
+  inherited Insert(Result, item);
 end;
 
 function TSortedList<T>.Contains(const value: T): Boolean;

@@ -881,6 +881,8 @@ type
     procedure SetItem(index: Integer; const item: TValue);
   {$ENDREGION}
 
+    function Add(const item: TValue): Integer;
+
     procedure Insert(index: Integer; const item: TValue);
     procedure InsertRange(index: Integer; const collection: array of TValue); overload;
     procedure InsertRange(index: Integer; const collection: IEnumerable); overload;
@@ -956,6 +958,8 @@ type
     procedure SetCapacity(value: Integer);
     procedure SetItem(index: Integer; const item: T);
   {$ENDREGION}
+
+    function Add(const item: T): Integer;
 
     ///	<summary>
     ///	  Inserts an item to the IList&lt;T&gt; at the specified index.

@@ -105,6 +105,7 @@ type
     function GetValues: IReadOnlyCollection<TValue>; override;
     procedure SetItem(const key: TKey; const value: TValue); virtual;
   {$ENDREGION}
+    procedure AddInternal(const item: TGenericPair); override;
   public
     constructor Create; overload; override;
     constructor Create(capacity: Integer); overload;
@@ -122,7 +123,6 @@ type
   {$ENDREGION}
 
   {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
-    procedure Add(const item: TGenericPair); overload; override;
     procedure Clear; override;
     function Remove(const item: TGenericPair): Boolean; overload; override;
     function Extract(const item: TGenericPair): TGenericPair; override;
@@ -238,7 +238,7 @@ begin
   Result := TEnumeratorAdapter<TGenericPair>.Create(dictionary);
 end;
 
-procedure TDictionary<TKey, TValue>.Add(const item: TGenericPair);
+procedure TDictionary<TKey, TValue>.AddInternal(const item: TGenericPair);
 begin
   fDictionary.Add(item.Key, item.Value);
 end;
