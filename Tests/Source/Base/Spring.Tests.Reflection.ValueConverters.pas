@@ -26,6 +26,8 @@ unit Spring.Tests.Reflection.ValueConverters;
 
 interface
 
+{$I Spring.Tests.inc}
+
 uses
   SysUtils,
   TestFramework,
@@ -51,7 +53,9 @@ type
     procedure TestStringToFloat;
     procedure TestStringToEnum;
     procedure TestStringToBoolean;
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
     procedure TestStringToColor;
+{$ENDIF}
     procedure TestStringToCurrency;
     procedure TestStringToDateTime;
     procedure TestStringToDateTimeF;
@@ -74,7 +78,9 @@ type
     procedure TestStringToNullableByte;
     procedure TestStringToNullableFloat;
     procedure TestStringToNullableBoolean;
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
     procedure TestStringToNullableColor;
+{$ENDIF}
     procedure TestStringToNullableCurrency;
     procedure TestStringToNullableDateTime;
   end;
@@ -93,7 +99,9 @@ type
     procedure TestWStringToFloat;
     procedure TestWStringToEnum;
     procedure TestWStringToBoolean;
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
     procedure TestWStringToColor;
+{$ENDIF}
     procedure TestWStringToCurrency;
     procedure TestWStringToDateTime;
     procedure TestWStringToDateTimeF;
@@ -112,7 +120,9 @@ type
     procedure TestWStringToNullableShortInt;
     procedure TestWStringToNullableFloat;
     procedure TestWStringToNullableBoolean;
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
     procedure TestWStringToNullableColor;
+{$ENDIF}
     procedure TestWStringToNullableCurrency;
     procedure TestWStringToNullableDateTime;
   end;
@@ -315,6 +325,7 @@ type
 {$ENDIF}
   end;
 
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
   TTestFromColor = class(TTestCase)
   strict private
     fConverter: IValueConverter;
@@ -339,6 +350,7 @@ type
     procedure TestColorToNullableWideString;
 {$ENDIF}
   end;
+{$ENDIF}
 
   TTestFromCurrency = class(TTestCase)
   strict private
@@ -515,10 +527,12 @@ type
     procedure TestNullableDateTimeToAnsiString;
     procedure TestNullableDateTimeToWideString;
 {$ENDIF}
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
     procedure TestNullableColorToString;
 {$IFNDEF NEXTGEN}
     procedure TestNullableColorToAnsiString;
     procedure TestNullableColorToWideString;
+{$ENDIF}
 {$ENDIF}
   end;
 
@@ -536,8 +550,6 @@ type
   CustomFloat = type Extended;
 
 implementation
-
-{$I 'spring.inc'}
 
 {$DEFINE UseGenericUI} // for MACOS and other non Windows platforms
 {$IFDEF MSWINDOWS}
@@ -791,6 +803,7 @@ begin
   CheckEquals(True, outBool);
 end;
 
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
 procedure TTestFromString.TestStringToColor;
 var
   outValue: TValue;
@@ -802,6 +815,7 @@ begin
   CheckTrue(outValue.TryAsType<TColor>(outColor));
   CheckEquals(BlueValue, outColor);
 end;
+{$ENDIF}
 
 procedure TTestFromString.TestStringToCurrency;
 var
@@ -1036,6 +1050,7 @@ begin
   CheckEquals(True, outNullable.Value);
 end;
 
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
 procedure TTestFromString.TestStringToNullableColor;
 var
   outValue: TValue;
@@ -1047,6 +1062,7 @@ begin
   CheckTrue(outValue.TryAsType<Nullable<TColor>>(outNullable));
   CheckEquals(RedString, ColorToString(outNullable.Value));
 end;
+{$ENDIF}
 
 procedure TTestFromString.TestStringToNullableCurrency;
 var
@@ -2594,6 +2610,7 @@ end;
 
 {$REGION 'TTestFromColor'}
 
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
 procedure TTestFromColor.SetUp;
 begin
   inherited;
@@ -2759,6 +2776,7 @@ begin
   CheckTrue(outValue.TryAsType<Nullable<SmallInt>>(outNullable));
   CheckEquals(ColorToRGB(RedValue), outNullable.Value);
 end;
+{$ENDIF}
 
 {$ENDREGION}
 
@@ -3874,6 +3892,7 @@ begin
 end;
 {$ENDIF}
 
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
 procedure TTestFromNullable.TestNullableColorToString;
 var
   outValue: TValue;
@@ -3911,13 +3930,14 @@ begin
   CheckEquals(WideString('clRed'), outWStr);
 end;
 {$ENDIF}
+{$ENDIF}
 
 {$ENDREGION}
 
 
-{$IFNDEF NEXTGEN}
 {$REGION 'TTestFromWideString'}
 
+{$IFNDEF NEXTGEN}
 procedure TTestFromWideString.SetUp;
 begin
   inherited;
@@ -3948,6 +3968,7 @@ begin
   CheckEquals(True, outBool);
 end;
 
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
 procedure TTestFromWideString.TestWStringToColor;
 var
   outValue: TValue;
@@ -3959,6 +3980,7 @@ begin
   CheckTrue(outValue.TryAsType<TColor>(outColor));
   CheckEquals(BlueValue, outColor);
 end;
+{$ENDIF}
 
 procedure TTestFromWideString.TestWStringToCurrency;
 var
@@ -4113,6 +4135,7 @@ begin
   CheckEquals(255, outInt.Value);
 end;
 
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
 procedure TTestFromWideString.TestWStringToNullableColor;
 var
   outValue: TValue;
@@ -4124,6 +4147,7 @@ begin
   CheckTrue(outValue.TryAsType<Nullable<TColor>>(outNullable));
   CheckEquals(RedString, ColorToString(outNullable.Value));
 end;
+{$ENDIF}
 
 procedure TTestFromWideString.TestWStringToNullableCurrency;
 var
@@ -4312,9 +4336,9 @@ begin
   CheckTrue(outValue.TryAsType<string>(outStr));
   CheckEquals('Test WideString', outStr);
 end;
+{$ENDIF}
 
 {$ENDREGION}
-{$ENDIF}
 
 
 {$REGION 'TTestFromInterface'}
@@ -4386,5 +4410,6 @@ begin
 end;
 
 {$ENDREGION}
+
 
 end.
