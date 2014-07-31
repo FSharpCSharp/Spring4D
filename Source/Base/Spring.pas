@@ -766,8 +766,32 @@ type
 
   {$REGION 'Property change notification'}
 
+  IEventArgs = interface
+    ['{162CDCDF-F8FC-4E5A-9CE8-55EABAE42EC3}']
+  end;
+
+  IPropertyChangedEventArgs = interface(IEventArgs)
+    ['{DC7B4497-FA42-46D1-BE50-C764C4808197}']
+    function GetPropertyName: string;
+    property PropertyName: string read GetPropertyName;
+  end;
+
+  TEventArgs = class(TInterfacedObject, IEventArgs)
+  strict protected
+    constructor Create;
+  end;
+
+  TPropertyChangedEventArgs = class(TEventArgs, IPropertyChangedEventArgs)
+  private
+    fPropertyName: string;
+    function GetPropertyName: string;
+  public
+    constructor Create(const propertyName: string); overload;
+    property PropertyName: string read GetPropertyName;
+  end;
+
   TPropertyChangedEvent = procedure(Sender: TObject;
-    const PropertyName: string) of object;
+    const EventArgs: IPropertyChangedEventArgs) of object;
 
   IPropertyChangedEvent = IEvent<TPropertyChangedEvent>;
 
@@ -1830,6 +1854,31 @@ begin
   TObject(Pointer(@Result)^) := CompareExchange(TObject(Pointer(@Target)^), TObject(Pointer(@Value)^), TObject(Pointer(@Comparand)^));
 end;
 {$ENDIF}
+
+{$ENDREGION}
+
+
+{$REGION 'TEventArgs'}
+
+constructor TEventArgs.Create;
+begin
+end;
+
+{$REGION}
+
+
+{$REGION 'TPropertyChangedEventArgs'}
+
+constructor TPropertyChangedEventArgs.Create(const propertyName: string);
+begin
+  inherited Create;
+  fPropertyName := propertyName;
+end;
+
+function TPropertyChangedEventArgs.GetPropertyName: string;
+begin
+  Result := fPropertyName;
+end;
 
 {$ENDREGION}
 
