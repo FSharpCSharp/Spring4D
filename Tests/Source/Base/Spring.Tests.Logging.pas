@@ -85,6 +85,16 @@ type
     procedure TestEnabled;
     procedure TestIsEnabled;
 
+    procedure TestIsFatalEnabled;
+    procedure TestIsErrorEnabled;
+    procedure TestIsWarnEnabled;
+    procedure TestIsInfoEnabled;
+    procedure TestIsTextEnabled;
+    procedure TestIsDebugEnabled;
+    procedure TestIsVerboseEnabled;
+
+    procedure TestLoggerProperties;
+
     procedure TestLogEntry; overload;
 
     procedure TestLog; overload;
@@ -153,7 +163,7 @@ type
   public
     writeCalled: Boolean;
     fEntry: TLogEntry;
-    procedure Write(const entry: TLogEntry);
+    procedure Send(const entry: TLogEntry);
   end;
 
   TLoggerControllerMock = class(TInterfacedObject, ILoggerController)
@@ -177,7 +187,7 @@ type
 
 { TAppenderMock }
 
-procedure TAppenderMock.Write(const entry: TLogEntry);
+procedure TAppenderMock.Send(const entry: TLogEntry);
 begin
   writeCalled := true;
   fEntry := entry;
@@ -429,14 +439,98 @@ begin
   TestInfo(false);
 end;
 
+procedure TTestLogger.TestIsDebugEnabled;
+begin
+  Logger.Levels := LOG_ALL_LEVELS - [TLogLevel.Debug];
+  CheckFalse(fLogger.IsDebugEnabled);
+
+  Logger.Levels := [TLogLevel.Debug];
+  CheckTrue(fLogger.IsDebugEnabled);
+
+  Logger.Enabled := false;
+  CheckFalse(fLogger.IsDebugEnabled);
+end;
+
 procedure TTestLogger.TestIsEnabled;
 var l: TLogLevel;
 begin
   for l in LOG_ALL_LEVELS do
-    CheckEquals(l in Logger.Levels, TLoggerAccess(Logger).IsEnabled(l));
+    CheckEquals(l in Logger.Levels, Logger.IsEnabled(l));
   Logger.Enabled := false;
   for l in LOG_ALL_LEVELS do
-    CheckFalse(TLoggerAccess(Logger).IsEnabled(l));
+    CheckFalse(Logger.IsEnabled(l));
+end;
+
+procedure TTestLogger.TestIsErrorEnabled;
+begin
+  Logger.Levels := LOG_ALL_LEVELS - [TLogLevel.Error];
+  CheckFalse(fLogger.IsErrorEnabled);
+
+  Logger.Levels := [TLogLevel.Error];
+  CheckTrue(fLogger.IsErrorEnabled);
+
+  Logger.Enabled := false;
+  CheckFalse(fLogger.IsErrorEnabled);
+end;
+
+procedure TTestLogger.TestIsFatalEnabled;
+begin
+  Logger.Levels := LOG_ALL_LEVELS - [TLogLevel.Fatal];
+  CheckFalse(fLogger.IsFatalEnabled);
+
+  Logger.Levels := [TLogLevel.Fatal];
+  CheckTrue(fLogger.IsFatalEnabled);
+
+  Logger.Enabled := false;
+  CheckFalse(fLogger.IsFatalEnabled);
+end;
+
+procedure TTestLogger.TestIsInfoEnabled;
+begin
+  Logger.Levels := LOG_ALL_LEVELS - [TLogLevel.Info];
+  CheckFalse(fLogger.IsInfoEnabled);
+
+  Logger.Levels := [TLogLevel.Info];
+  CheckTrue(fLogger.IsInfoEnabled);
+
+  Logger.Enabled := false;
+  CheckFalse(fLogger.IsInfoEnabled);
+end;
+
+procedure TTestLogger.TestIsTextEnabled;
+begin
+  Logger.Levels := LOG_ALL_LEVELS - [TLogLevel.Text];
+  CheckFalse(fLogger.IsTextEnabled);
+
+  Logger.Levels := [TLogLevel.Text];
+  CheckTrue(fLogger.IsTextEnabled);
+
+  Logger.Enabled := false;
+  CheckFalse(fLogger.IsTextEnabled);
+end;
+
+procedure TTestLogger.TestIsVerboseEnabled;
+begin
+  Logger.Levels := LOG_ALL_LEVELS - [TLogLevel.Verbose];
+  CheckFalse(fLogger.IsVerboseEnabled);
+
+  Logger.Levels := [TLogLevel.Verbose];
+  CheckTrue(fLogger.IsVerboseEnabled);
+
+  Logger.Enabled := false;
+  CheckFalse(fLogger.IsVerboseEnabled);
+end;
+
+procedure TTestLogger.TestIsWarnEnabled;
+begin
+  Logger.Levels := LOG_ALL_LEVELS - [TLogLevel.Warning];
+  CheckFalse(fLogger.IsWarnEnabled);
+
+  Logger.Levels := [TLogLevel.Warning];
+  CheckTrue(fLogger.IsWarnEnabled);
+
+  Logger.Enabled := false;
+  CheckFalse(fLogger.IsWarnEnabled);
 end;
 
 procedure TTestLogger.TestLevels;
@@ -465,6 +559,37 @@ begin
   TestLogEntry(true);
   Logger.Levels := [];
   TestLogEntry(false);
+end;
+
+procedure TTestLogger.TestLoggerProperties;
+var
+  props: ILoggerProperties;
+begin
+  props := Logger as ILoggerProperties;
+
+  Logger.Enabled := false;
+  CheckFalse(props.Enabled);
+
+  Logger.Enabled := true;
+  CheckTrue(props.Enabled);
+
+  props.Enabled := false;
+  CheckFalse(Logger.Enabled);
+
+  props.Enabled := true;
+  CheckTrue(Logger.Enabled);
+
+  Logger.Levels := [];
+  Check([] = props.Levels, 'Levels');
+
+  Logger.Levels := LOG_ALL_LEVELS;
+  Check(LOG_ALL_LEVELS = props.Levels, 'Levels');
+
+  props.Levels := [];
+  Check([] = Logger.Levels, 'Levels');
+
+  props.Levels := LOG_ALL_LEVELS;
+  Check(LOG_ALL_LEVELS = Logger.Levels, 'Levels');
 end;
 
 procedure TTestLogger.TestText;

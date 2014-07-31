@@ -33,56 +33,10 @@ uses
 {$IFDEF FMX}
   FMX.Platform,
 {$ENDIF}
-  Spring.Logging;
+  Spring.Logging,
+  Spring.Logging.Appenders.Base;
 
 type
-  {$REGION 'TLogAppenderBase'}
-  TLogAppenderBase = class(TInterfacedObject, ILogAppender)
-  private
-    fEnabled: Boolean;
-    fLevels: TLogLevels;
-  protected const
-    {$REGION 'Helper constants and functions'}
-    //May or may not be used by descendants, its here just for convenience
-    LEVEL : array[TLogLevel] of string = (
-      '[UNKNOWN]',
-      '[VERBOSE]',
-      '', //CallStack
-      '', //SerializedData
-      '[DEBUG]',
-      '[TEXT]',
-      '[INFO]',
-      '[WARN]',
-      '[ERROR]',
-      '[FATAL]'
-    );
-    LEVEL_FIXED : array[TLogLevel] of string = (
-      '[UNK  ]',
-      '[VERB ]',
-      '', //CallStack
-      '', //SerializedData
-      '[DEBUG]',
-      '[TEXT ]',
-      '[INFO ]',
-      '[WARN ]',
-      '[ERROR]',
-      '[FATAL]'
-    );
-    class function FormatMsg(const entry: TLogEntry): string; static; inline;
-    {$ENDREGION}
-  protected
-    function IsEnabled(level: TLogLevel): Boolean; inline;
-    procedure DoWrite(const entry: TLogEntry); virtual; abstract;
-  public
-    constructor Create;
-
-    procedure Write(const entry: TLogEntry);
-
-    property Enabled: Boolean read fEnabled write fEnabled;
-    property Levels: TLogLevels read fLevels write fLevels;
-  end;
-  {$ENDREGION}
-
   {$REGION 'TLogAppenderWithTimeStampFormat'}
   TLogAppenderWithTimeStampFormat = class abstract(TLogAppenderBase)
   private
@@ -106,7 +60,7 @@ type
     PTextFile = ^TextFile;
   protected
     fFile: PTextFile;
-    procedure DoWrite(const entry: TLogEntry); override;
+    procedure DoSend(const entry: TLogEntry); override;
   public
     /// <summary>
     ///   Make sure that the pointer doesn;t get out of scope!
@@ -129,7 +83,7 @@ type
     fEncoding: TEncoding;
     fLock: TCriticalSection;
   protected
-    procedure DoWrite(const entry: TLogEntry); override;
+    procedure DoSend(const entry: TLogEntry); override;
   public
     constructor Create(const stream: TStream; ownsStream: Boolean = true;
       const encoding: TEncoding = nil);
@@ -141,7 +95,7 @@ type
 {$IFDEF MSWINDOWS}
   TTraceLogAppender = class(TLogAppenderWithTimeStampFormat)
   protected
-    procedure DoWrite(const entry: TLogEntry); override;
+    procedure DoSend(const entry: TLogEntry); override;
   end;
 {$ENDIF}
  {$ENDREGION}
@@ -152,7 +106,7 @@ type
   private
     fService: IFMXLoggingService;
   protected
-    procedure DoWrite(const entry: TLogEntry); override;
+    procedure DoSend(const entry: TLogEntry); override;
   public
     constructor Create;
   end;
@@ -163,10 +117,10 @@ type
 {$IFDEF ANDROID}
   TAndroidLogAppender = class(TLogAppenderWithTimeStampFormat)
   private
-  	fTagMarshaller: TMarshaller;
-	  fTag: MarshaledAString; //fTag is valid as long as marshaller is referenced
+    fTagMarshaller: TMarshaller;
+    fTag: MarshaledAString; //fTag is valid as long as marshaller is referenced
   protected
-    procedure DoWrite(const entry: TLogEntry); override;
+    procedure DoSend(const entry: TLogEntry); override;
   public
     /// <summary>
     ///   Creates Android logcat log appender, the tag can be used to
@@ -182,17 +136,17 @@ type
  {$IFDEF CONSOLE}
   TDefaultLogAppender = TConsoleLogAppender;
  {$ELSE !CONSOLE}
-	TDefaultLogAppender = TTraceLogAppender;
+    TDefaultLogAppender = TTraceLogAppender;
  {$ENDIF CONSOLE}
 {$ELSE !MSWINDOWS}
  {$IFDEF FMX}
   {$IFDEF ANDROID}
-	TDefaultLogAppender = TAndroidLogAppender;
+    TDefaultLogAppender = TAndroidLogAppender;
   {$ELSE !ANDROID}
-	TDefaultLogAppender = TFMXLogAppender
+    TDefaultLogAppender = TFMXLogAppender
   {$ENDIF ANDROID}
  {$ELSE !FMX}
-	TDefaultLogAppender = TConsoleLogAppender;
+    TDefaultLogAppender = TConsoleLogAppender;
  {$ENDIF FMX}
 {$ENDIF MSWINDOWS}
   {$ENDREGION}
@@ -208,43 +162,6 @@ uses
   ,Androidapi.Log
 {$ENDIF}
   ;
-
-
-{$REGION 'TLogAppenderBase'}
-{ TLogAppenderBase }
-
-constructor TLogAppenderBase.Create;
-begin
-  inherited;
-  fEnabled := true;
-  fLevels := LOG_BASIC_LEVELS;
-end;
-
-class function TLogAppenderBase.FormatMsg(const entry: TLogEntry): string;
-begin
-  if (entry.Exc = nil) then
-    Result := entry.Msg
-  else
-  begin
-    if (entry.Msg <> '') then
-      Result := entry.Msg + ', ' + entry.Exc.ClassName
-    else Result := entry.Exc.ClassName;
-    if (entry.Exc.Message <> '') then
-      Result := Result + ': ' + entry.Exc.Message;
-  end;
-end;
-
-function TLogAppenderBase.IsEnabled(level: TLogLevel): Boolean;
-begin
-  Result:=fEnabled and (level in fLevels);
-end;
-
-procedure TLogAppenderBase.Write(const entry: TLogEntry);
-begin
-  if (IsEnabled(entry.Level)) then
-    DoWrite(entry);
-end;
-{$ENDREGION}
 
 {$REGION 'TLogAppenderWithTimeStampFormat'}
 { TLogAppenderWithTimeStampFormat }
@@ -276,7 +193,7 @@ begin
   Create(@ErrOutput);
 end;
 
-procedure TTextLogAppender.DoWrite(const entry: TLogEntry);
+procedure TTextLogAppender.DoSend(const entry: TLogEntry);
 begin
   Writeln(fFile^, FormatTimeStamp(entry.TimeStamp), ': ',
     LEVEL_FIXED[entry.Level], ' ', FormatMsg(entry));
@@ -313,7 +230,7 @@ begin
   inherited;
 end;
 
-procedure TStreamLogAppender.DoWrite(const entry: TLogEntry);
+procedure TStreamLogAppender.DoSend(const entry: TLogEntry);
 var
   buff: TBytes;
 begin
@@ -332,7 +249,7 @@ end;
 { TTraceLogAppender }
 
 {$IFDEF MSWINDOWS}
-procedure TTraceLogAppender.DoWrite(const entry: TLogEntry);
+procedure TTraceLogAppender.DoSend(const entry: TLogEntry);
 var buff: string;
 begin
   buff := FormatTimeStamp(entry.TimeStamp) + ': ' + LEVEL[entry.Level] + ' ' +
@@ -351,7 +268,7 @@ begin
   fService:=TPlatformServices.Current.GetPlatformService(IFMXLoggingService) as IFMXLoggingService;
 end;
 
-procedure TFMXLogAppender.DoWrite(const entry: TLogEntry);
+procedure TFMXLogAppender.DoSend(const entry: TLogEntry);
 begin
   fService.Log(FormatTimeStamp(entry.TimeStamp) + ': ' + LEVEL[entry.Level] + ' ' +
     FormatMsg(entry), []);
@@ -369,7 +286,7 @@ begin
   fTag := FTagMarshaller.AsAnsi(Tag).ToPointer;
 end;
 
-procedure TAndroidLogAppender.DoWrite(const entry: TLogEntry);
+procedure TAndroidLogAppender.DoSend(const entry: TLogEntry);
 const
   LEVEL : array[TLogLevel] of android_LogPriority = (
     ANDROID_LOG_UNKNOWN,
@@ -388,7 +305,7 @@ var
   buff: string;
 begin
   buff:=FormatTimeStamp(entry.TimeStamp) + ': ' + FormatMsg(entry);
-	__android_log_write(LEVEL[entry.Level], fTag, M.AsAnsi(buff).ToPointer);
+  __android_log_write(LEVEL[entry.Level], fTag, M.AsAnsi(buff).ToPointer);
 end;
 {$ENDIF}
 {$ENDREGION}

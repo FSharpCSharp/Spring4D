@@ -38,6 +38,15 @@ type
   /// </summary>
   TNullLogger = class(TInterfacedObject, ILogger)
   public
+    function IsEnabled(level: TLogLevel): Boolean; inline;
+    function IsFatalEnabled: Boolean;
+    function IsErrorEnabled: Boolean;
+    function IsWarnEnabled: Boolean;
+    function IsInfoEnabled: Boolean;
+    function IsTextEnabled: Boolean;
+    function IsDebugEnabled: Boolean;
+    function IsVerboseEnabled: Boolean;
+
     procedure Log(const entry: TLogEntry); overload;
 
     procedure Log(level: TLogLevel; const msg : string); overload;
@@ -93,15 +102,32 @@ type
   {$ENDREGION}
 
   {$REGION 'TLoggerBase'}
-  TLoggerBase = class abstract(TInterfacedObject, ILogger)
+  TLoggerBase = class abstract(TInterfacedObject, ILogger, ILogAppender,
+    ILoggerProperties)
   private
     fEnabled: Boolean;
     fLevels: TLogLevels;
+
+    function GetLevels: TLogLevels;
+    function GetEnabled: Boolean;
+
+    procedure SetLevels(value: TLogLevels);
+    procedure SetEnabled(value: Boolean);
   protected
-    function IsEnabled(level: TLogLevel): Boolean; inline;
     procedure DoLog(const entry: TLogEntry); virtual; abstract;
+
+    procedure ILogAppender.Send = Log;
   public
     constructor Create;
+
+    function IsEnabled(level: TLogLevel): Boolean; inline;
+    function IsFatalEnabled: Boolean;
+    function IsErrorEnabled: Boolean;
+    function IsWarnEnabled: Boolean;
+    function IsInfoEnabled: Boolean;
+    function IsTextEnabled: Boolean;
+    function IsDebugEnabled: Boolean;
+    function IsVerboseEnabled: Boolean;
 
     procedure Log(const entry: TLogEntry); overload;
 
@@ -280,6 +306,46 @@ begin
 
 end;
 
+function TNullLogger.IsDebugEnabled: Boolean;
+begin
+  Result := false;
+end;
+
+function TNullLogger.IsEnabled(level: TLogLevel): Boolean;
+begin
+  Result := false;
+end;
+
+function TNullLogger.IsErrorEnabled: Boolean;
+begin
+  Result := false;
+end;
+
+function TNullLogger.IsFatalEnabled: Boolean;
+begin
+  Result := false;
+end;
+
+function TNullLogger.IsInfoEnabled: Boolean;
+begin
+  Result := false;
+end;
+
+function TNullLogger.IsTextEnabled: Boolean;
+begin
+  Result := false;
+end;
+
+function TNullLogger.IsVerboseEnabled: Boolean;
+begin
+  Result := false;
+end;
+
+function TNullLogger.IsWarnEnabled: Boolean;
+begin
+  Result := false;
+end;
+
 procedure TNullLogger.Info(const fmt: string; const args: array of const);
 begin
 
@@ -429,6 +495,16 @@ begin
     DoLog(TLogEntry.Create(TLogLevel.Fatal, Format(fmt, args), exc));
 end;
 
+function TLoggerBase.GetEnabled: Boolean;
+begin
+  Result := Enabled;
+end;
+
+function TLoggerBase.GetLevels: TLogLevels;
+begin
+  Result := Levels;
+end;
+
 procedure TLoggerBase.Fatal(const msg: string);
 begin
   if (IsEnabled(TLogLevel.Fatal)) then
@@ -466,9 +542,44 @@ begin
     DoLog(TLogEntry.Create(TLogLevel.Info, Format(fmt, args)));
 end;
 
+function TLoggerBase.IsDebugEnabled: Boolean;
+begin
+  Result := IsEnabled(TLogLevel.Debug);
+end;
+
 function TLoggerBase.IsEnabled(level: TLogLevel): Boolean;
 begin
   Result:=fEnabled and (level in fLevels);
+end;
+
+function TLoggerBase.IsErrorEnabled: Boolean;
+begin
+  Result := IsEnabled(TLogLevel.Error);
+end;
+
+function TLoggerBase.IsFatalEnabled: Boolean;
+begin
+  Result := IsEnabled(TLogLevel.Fatal);
+end;
+
+function TLoggerBase.IsInfoEnabled: Boolean;
+begin
+  Result := IsEnabled(TLogLevel.Info);
+end;
+
+function TLoggerBase.IsTextEnabled: Boolean;
+begin
+  Result := IsEnabled(TLogLevel.Text);
+end;
+
+function TLoggerBase.IsVerboseEnabled: Boolean;
+begin
+  Result := IsEnabled(TLogLevel.Verbose);
+end;
+
+function TLoggerBase.IsWarnEnabled: Boolean;
+begin
+  Result := IsEnabled(TLogLevel.Warning);
 end;
 
 procedure TLoggerBase.Log(const entry: TLogEntry);
@@ -502,6 +613,16 @@ procedure TLoggerBase.Log(level: TLogLevel; const fmt: string;
 begin
   if (IsEnabled(level)) then
     DoLog(TLogEntry.Create(level, Format(fmt, args), exc));
+end;
+
+procedure TLoggerBase.SetEnabled(value: Boolean);
+begin
+  Enabled := value;
+end;
+
+procedure TLoggerBase.SetLevels(value: TLogLevels);
+begin
+  Levels := value;
 end;
 
 procedure TLoggerBase.Text(const fmt: string; const args: array of const);

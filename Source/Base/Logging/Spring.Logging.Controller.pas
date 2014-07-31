@@ -28,20 +28,22 @@ interface
 
 uses
   Spring.Collections,
-  Spring.Logging;
+  Spring.Logging,
+  Spring.Logging.Appenders.Base;
 
 type
   {$REGION 'TLoggerController'}
-  TLoggerController = class(TInterfacedObject, ILoggerController)
+  TLoggerController = class(TLogAppenderBase, ILoggerController)
   private
     //fSerializers: IDictionary<TTypeKind, ITypeSerializer>;
     //fStackTraceCollector: IStackTraceCollector;
     //fStackTraceFromatter: IStackTraceFormatter;
     fAppenders: IList<ILogAppender>;
+  protected
+    procedure DoSend(const entry: TLogEntry); override;
   public
     constructor Create;
 
-    procedure Send(const entry: TLogEntry);
     procedure AddAppender(const appender: ILogAppender);
   end;
   {$ENDREGION}
@@ -67,7 +69,7 @@ begin
   fAppenders := TCollections.CreateInterfaceList<ILogAppender>;
 end;
 
-procedure TLoggerController.Send(const entry: TLogEntry);
+procedure TLoggerController.DoSend(const entry: TLogEntry);
 var appender: ILogAppender;
 begin
   //After serialization or stack logging is added, and if such action is required
@@ -76,7 +78,7 @@ begin
   //and get their level and enabled state to check if there is something to
   //do in the first place
   for appender in fAppenders do
-    appender.Write(entry);
+    appender.Send(entry);
 end;
 {$ENDREGION}
 
