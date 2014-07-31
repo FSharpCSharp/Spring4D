@@ -556,7 +556,7 @@ procedure TLoggerBase.Entering(level: TLogLevel; const classType: TClass;
 begin
   if (IsEnabled(level)) then
     DoLog(TLogEntry.Create(level, FormatEntering(classType, methodName),
-      classType, TValue.From<TArray<TValue>>(TArray.Copy(arguments))));
+      classType, TValue.From<TArray<TValue>>(TArray.Copy<TValue>(arguments))));
 end;
 
 procedure TLoggerBase.Error(const fmt: string; const args: array of const;
