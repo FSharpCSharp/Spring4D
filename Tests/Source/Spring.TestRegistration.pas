@@ -159,6 +159,14 @@ begin
     TTestEnum.Suite
   ]);
 
+  RegisterTests('Spring.Base.Logging', [
+    TTestLoggerController.Suite,
+    TTestLogger.Suite,
+    TTestStreamLogAppender.Suite,
+    TTestLogInsideContainer.Suite,
+    TTestLogSubResolverAndConfiguration.Suite
+  ]);
+
 //  RegisterTests('Spring.Base.Reflection.ValueExpression', [
 //    TTestValueExpression.Suite
 //  ]);
@@ -217,14 +225,6 @@ begin
     TTestPaddingModeIsISO10126.Suite,
     TTestDES.Suite,
     TTestTripleDES.Suite
-  ]);
-
-  RegisterTests('Spring.Extensions.Logging', [
-    TTestLoggerController.Suite,
-    TTestLogger.Suite,
-    TTestStreamLogAppender.Suite,
-    TTestLogInsideContainer.Suite,
-    TTestLogSubResolverAndConfiguration.Suite
   ]);
 
 // Stefan Glienke - 2011/11/20:

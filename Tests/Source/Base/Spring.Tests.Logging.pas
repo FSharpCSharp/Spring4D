@@ -36,12 +36,12 @@ uses
   Spring.Reflection,
   Spring.Collections,
   Spring.Container.Common,
-  Spring.Extensions.Logging,
-  Spring.Extensions.Logging.Controller,
-  Spring.Extensions.Logging.Appenders,
-  Spring.Extensions.Logging.Loggers,
-  Spring.Extensions.Logging.Container,
-  Spring.Extensions.Logging.Configuration,
+  Spring.Logging,
+  Spring.Logging.Controller,
+  Spring.Logging.Appenders,
+  Spring.Logging.Loggers,
+  Spring.Logging.Container,
+  Spring.Logging.Configuration,
   Spring.Tests.Container;
 
 type

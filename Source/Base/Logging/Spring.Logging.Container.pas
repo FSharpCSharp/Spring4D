@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Extensions.Logging.Container;
+unit Spring.Logging.Container;
 
 interface
 
@@ -32,8 +32,8 @@ uses
   Spring.Container,
   Spring.Container.Core,
   Spring.Container.Resolvers,
-  Spring.Extensions.Logging,
-  Spring.Extensions.Logging.Configuration;
+  Spring.Logging,
+  Spring.Logging.Configuration;
 
 type
   {$REGION 'TLoggingContainerHelper'}
@@ -73,7 +73,7 @@ type
 implementation
 
 uses
-  Spring.Extensions.Logging.Controller;
+  Spring.Logging.Controller;
 
 {$REGION 'TLoggingContainerHelper'}
 { TLoggingContainerHelper }

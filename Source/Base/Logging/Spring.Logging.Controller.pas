@@ -22,53 +22,62 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Extensions.Logging.Configuration;
+unit Spring.Logging.Controller;
 
 interface
 
 uses
-  TypInfo,
-  Spring,
-  Spring.Collections;
+  Spring.Collections,
+  Spring.Logging;
 
 type
-  TLoggingConfiguration = class
+  {$REGION 'TLoggerController'}
+  TLoggerController = class(TInterfacedObject, ILoggerController)
   private
-    fTypes: IDictionary<PTypeInfo, string>;
+    //fSerializers: IDictionary<TTypeKind, ITypeSerializer>;
+    //fStackTraceCollector: IStackTraceCollector;
+    //fStackTraceFromatter: IStackTraceFormatter;
+    fAppenders: IList<ILogAppender>;
   public
     constructor Create;
 
-    procedure RegisterLogger<T>(const name: string);
-
-    function HasLogger(typeInfo: PTypeInfo): Boolean;
-    function GetLogger(typeInfo: PTypeInfo): string;
+    procedure Send(const entry: TLogEntry);
+    procedure AddAppender(const appender: ILogAppender);
   end;
+  {$ENDREGION}
 
 implementation
 
-{ TLoggingConfiguration }
+uses
+  Spring;
 
-constructor TLoggingConfiguration.Create;
+{$REGION 'TLoggerController'}
+{ TLoggerController }
+
+procedure TLoggerController.AddAppender(const appender: ILogAppender);
+begin
+  Guard.CheckNotNull(appender, 'appender');
+  fAppenders.Add(appender);
+end;
+
+constructor TLoggerController.Create;
 begin
   inherited;
-  fTypes := TCollections.CreateDictionary<PTypeInfo, string>;
+
+  fAppenders := TCollections.CreateInterfaceList<ILogAppender>;
 end;
 
-function TLoggingConfiguration.GetLogger(typeInfo: PTypeInfo): string;
+procedure TLoggerController.Send(const entry: TLogEntry);
+var appender: ILogAppender;
 begin
-  Result := fTypes[typeInfo];
+  //After serialization or stack logging is added, and if such action is required
+  //(we have a serializer capable of serializing given data or AddStack and
+  //StackCollector) log the message first then go though all appenders first
+  //and get their level and enabled state to check if there is something to
+  //do in the first place
+  for appender in fAppenders do
+    appender.Write(entry);
 end;
-
-function TLoggingConfiguration.HasLogger(typeInfo: PTypeInfo): Boolean;
-begin
-  Result := fTypes.ContainsKey(typeInfo);
-end;
-
-procedure TLoggingConfiguration.RegisterLogger<T>(const name: string);
-begin
-  Guard.CheckNotNull(name <> '', 'name');
-  Guard.CheckTypeKind(TypeInfo(T), [tkClass, tkRecord], 'T');
-  fTypes.Add(TypeInfo(T), name);
-end;
+{$ENDREGION}
 
 end.

@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Extensions.Logging;
+unit Spring.Logging;
 
 {$I Spring.inc}
 

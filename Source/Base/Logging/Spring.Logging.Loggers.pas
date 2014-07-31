@@ -22,14 +22,14 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Extensions.Logging.Loggers;
+unit Spring.Logging.Loggers;
 
 interface
 
 uses
   SysUtils,
   Spring.Container.Common,
-  Spring.Extensions.Logging;
+  Spring.Logging;
 
 type
   {$REGION 'TNullLogger'}

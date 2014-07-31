@@ -22,7 +22,7 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Extensions.Logging.Appenders;
+unit Spring.Logging.Appenders;
 
 interface
 
@@ -33,7 +33,7 @@ uses
 {$IFDEF FMX}
   FMX.Platform,
 {$ENDIF}
-  Spring.Extensions.Logging;
+  Spring.Logging;
 
 type
   {$REGION 'TLogAppenderBase'}
