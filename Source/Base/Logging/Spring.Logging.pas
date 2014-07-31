@@ -31,7 +31,7 @@ interface
 uses
   SysUtils,
   Rtti
-{$IFDEF LOG_EXTENDED_FROMAT}
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
 {$IFDEF DELPHIXE2_UP}
   ,System.UITypes //Has minimum dependencies
 {$ELSE}
@@ -41,7 +41,7 @@ uses
   ;
 
 {$REGION 'Shadowed Delphi types'}
-{$IFDEF LOG_EXTENDED_FROMAT}
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
 {$IFDEF DELPHIXE2_UP}
 type
   TColor = System.UITypes.TColor;
@@ -114,7 +114,7 @@ type
     fMsg: string;
     fTimeStamp: TDateTime;
     fExc: Exception;
-{$IFDEF LOG_EXTENDED_FROMAT}
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
     /// <summary>
     ///   Leave as default to instruct the appender/viewer to choose the default
     ///   color based on the level or entry contents or prescribe the color of
@@ -148,7 +148,7 @@ type
       color : TColor = clDefault; fontStyle : TFontStyles = []; )}
 
     function SetException(const exc: Exception): TLogEntry;
-{$IFDEF LOG_EXTENDED_FROMAT}
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
     function SetColor(color: TColor): TLogEntry;
     function SetFontStyle(fontStyle: TFontStyles): TLogEntry;
 {$ENDIF}
@@ -161,7 +161,7 @@ type
     property Msg: string read fMsg;
     property TimeStamp: TDateTime read fTimeStamp;
     property Exc: Exception read fExc;
-{$IFDEF LOG_EXTENDED_FROMAT}
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
     property Color: TColor read fColor;
     property FontStyle: TFontStyles read fFontStyle;
 {$ENDIF}
@@ -309,7 +309,7 @@ begin
   fLevel := level;
   fMsg := msg;
 
-{$IFDEF LOG_EXTENDED_FROMAT}
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
   //Set default values
   fColor := clDefault;
   fFontStyle := [];
@@ -344,7 +344,7 @@ begin
   fData := data;
 end;
 
-{$IFDEF LOG_EXTENDED_FROMAT}
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
 function TLogEntry.SetColor(color: TColor): TLogEntry;
 begin
   Result := Self;
@@ -370,7 +370,7 @@ begin
   Result.fExc := exc;
 end;
 
-{$IFDEF LOG_EXTENDED_FROMAT}
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
 function TLogEntry.SetFontStyle(fontStyle: TFontStyles): TLogEntry;
 begin
   Result := Self;
