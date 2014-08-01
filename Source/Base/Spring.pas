@@ -132,6 +132,12 @@ type
   ///	<seealso cref="TActionProc&lt;T&gt;" />
   TActionMethod<T> = procedure(const obj: T) of object;
 
+  /// <summary>
+  ///   Represents a anonymous method that has the same signature as
+  ///   TNotifyEvent.
+  /// </summary>
+  TNotifyProc = reference to procedure(Sender: TObject);
+
   {$ENDREGION}
 
 
