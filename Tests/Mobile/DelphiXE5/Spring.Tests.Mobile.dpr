@@ -44,6 +44,8 @@ uses
   Spring.Tests.Reflection in '..\..\Source\Base\Spring.Tests.Reflection.pas',
   Spring.Tests.Reflection.ValueConverters in '..\..\Source\Base\Spring.Tests.Reflection.ValueConverters.pas',
   Spring.Tests.SystemUtils in '..\..\Source\Base\Spring.Tests.SystemUtils.pas',
+  Spring.Tests.Logging in '..\..\Source\Base\Spring.Tests.Logging.pas',
+  Spring.Tests.Logging.Types in '..\..\Source\Base\Spring.Tests.Logging.Types.pas',
   Spring.Tests.Container.Components in '..\..\Source\Core\Spring.Tests.Container.Components.pas',
   Spring.Tests.Container.Interfaces in '..\..\Source\Core\Spring.Tests.Container.Interfaces.pas',
   Spring.Tests.Container.LifetimeManager in '..\..\Source\Core\Spring.Tests.Container.LifetimeManager.pas',
@@ -51,8 +53,7 @@ uses
   Spring.Tests.Pool in '..\..\Source\Core\Spring.Tests.Pool.pas',
   Spring.Tests.Cryptography in '..\..\Source\Extensions\Spring.Tests.Cryptography.pas',
   Spring.Tests.Utils in '..\..\Source\Extensions\Spring.Tests.Utils.pas',
-  Spring.Container,
-  Spring.Tests.Logging in '..\..\Source\Base\Spring.Tests.Logging.pas';
+  Spring.Container;
 
 begin
   RegisterTestCases();

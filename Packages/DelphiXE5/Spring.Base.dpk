@@ -57,11 +57,9 @@ contains
   Spring.ResourceStrings in '..\..\Source\Base\Spring.ResourceStrings.pas',
   Spring.SystemUtils in '..\..\Source\Base\Spring.SystemUtils.pas',
   Spring.Logging in '..\..\Source\Base\Logging\Spring.Logging.pas',
+  Spring.Logging.Controller in '..\..\Source\Base\Logging\Spring.Logging.Controller.pas',
   Spring.Logging.Appenders.Base in '..\..\Source\Base\Logging\Spring.Logging.Appenders.Base.pas',
   Spring.Logging.Appenders in '..\..\Source\Base\Logging\Spring.Logging.Appenders.pas',
-  Spring.Logging.Configuration in '..\..\Source\Base\Logging\Spring.Logging.Configuration.pas',
-  Spring.Logging.Container in '..\..\Source\Base\Logging\Spring.Logging.Container.pas',
-  Spring.Logging.Controller in '..\..\Source\Base\Logging\Spring.Logging.Controller.pas',
   Spring.Logging.Loggers in '..\..\Source\Base\Logging\Spring.Logging.Loggers.pas',
   Spring.Logging.ResourceStrings in '..\..\Source\Base\Logging\Spring.Logging.ResourceStrings.pas';
 

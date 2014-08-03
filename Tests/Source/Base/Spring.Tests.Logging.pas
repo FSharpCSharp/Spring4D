@@ -29,12 +29,14 @@ interface
 uses
   SysUtils,
   StrUtils,
+  TypInfo,
   Classes,
   Rtti,
   TestFramework,
   Spring,
   Spring.Reflection,
   Spring.Collections,
+  Spring.Container,
   Spring.Container.Common,
   Spring.Logging,
   Spring.Logging.Controller,
@@ -42,7 +44,8 @@ uses
   Spring.Logging.Loggers,
   Spring.Logging.Container,
   Spring.Logging.Configuration,
-  Spring.Tests.Container;
+  Spring.Tests.Container,
+  Spring.Tests.Logging.Types;
 
 type
   {$REGION 'TTestLoggerController'}
@@ -142,6 +145,7 @@ type
   TTestLogInsideContainer = class(TContainerTestCase)
   published
     procedure TestLog;
+    procedure TestChainedControllers;
   end;
   {$ENDREGION}
 
@@ -161,25 +165,42 @@ type
   end;
   {$ENDREGION}
 
+  TTestLoggingConfiguration = class(TContainerTestCase)
+  private
+    fStrings: TStrings;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestInjectMultipleAppendersToSingleController;
+    procedure TestLeak;
+    procedure TestMultipleConfiguration;
+    procedure TestDuplicateDefault;
+    procedure TestUnknownClass;
+    procedure TestUnknownProperty;
+    procedure TestUnknownPropertyKind;
+    procedure TestNonInstanceType;
+
+    procedure TestReadProperties;
+    procedure TestReadAppenders;
+    procedure TestDefaultController;
+    procedure TestReadController;
+    procedure TestReadSingleControllerAsDefault;
+    procedure TestDefaultLogger;
+    procedure TestReadLogger;
+
+    procedure TestAddAppendersToControllers;
+    procedure TestAddChainedController;
+    procedure TestAddLoggerAssignments;
+
+    procedure TestSimpleConfiguration;
+    procedure TestComplexConfiguration;
+  end;
+
 implementation
 
 {$REGION 'Internal test classes and helpers'}
 type
-  TAppenderMock = class(TInterfacedObject, ILogAppender)
-  public
-    writeCalled: Boolean;
-    fEntry: TLogEntry;
-    procedure Send(const entry: TLogEntry);
-  end;
-
-  TLoggerControllerMock = class(TInterfacedObject, ILoggerController)
-  public
-    fLastEntry: TLogEntry;
-    procedure AddAppender(const appedner: ILogAppender);
-    procedure Send(const entry: TLogEntry);
-    procedure Reset;
-  end;
-
   TTestLoggerHelper = class helper for TTestLogger
   private
     function GetController: TLoggerControllerMock;
@@ -189,32 +210,11 @@ type
     property Logger: TLogger read GetLogger;
   end;
 
+  TStringsHelper = class helper for TStrings
+    function Add(const s: string): TStrings;
+  end;
+
   TLoggerAccess = class(TLogger);
-
-{ TAppenderMock }
-
-procedure TAppenderMock.Send(const entry: TLogEntry);
-begin
-  writeCalled := true;
-  fEntry := entry;
-end;
-
-{ TLoggerControllerMock }
-
-procedure TLoggerControllerMock.AddAppender(const appedner: ILogAppender);
-begin
-  raise ETestError.Create('Should be inaccessible');
-end;
-
-procedure TLoggerControllerMock.Reset;
-begin
-  fLastEntry := TLogEntry.Create(TLogLevel.Unknown, '');
-end;
-
-procedure TLoggerControllerMock.Send(const entry: TLogEntry);
-begin
-  fLastEntry := entry;
-end;
 
 { TTestLoggerHelper }
 
@@ -226,6 +226,14 @@ end;
 function TTestLoggerHelper.GetLogger: TLogger;
 begin
   Result := TObject(fLogger) as TLogger;
+end;
+
+{ TStringsHelper }
+
+function TStringsHelper.Add(const s: string): TStrings;
+begin
+  TStringList(Self).Add(s);
+  Result := Self;
 end;
 {$ENDREGION}
 
@@ -276,9 +284,9 @@ begin
   fController.AddAppender(intf);
   fController.Send(TLogEntry.Create(TLogLevel.Fatal, MSG));
 
-  CheckTrue(appender.writeCalled);
-  CheckEquals(Ord(TLogLevel.Fatal), Ord(appender.fEntry.Level));
-  CheckEquals(MSG, appender.fEntry.Msg);
+  CheckTrue(appender.WriteCalled);
+  CheckEquals(Ord(TLogLevel.Fatal), Ord(appender.Entry.Level));
+  CheckEquals(MSG, appender.Entry.Msg);
 end;
 {$ENDREGION}
 
@@ -288,13 +296,13 @@ end;
 procedure TTestLogger.CheckEvent(enabled: Boolean; level: TLogLevel;
   const msg: string; const exc: Exception = nil);
 begin
-  CheckEquals(enabled, Controller.fLastEntry.Level <> TLogLevel.Unknown);
+  CheckEquals(enabled, Controller.LastEntry.Level <> TLogLevel.Unknown);
   if (not enabled) then
     Exit;
 
-  CheckEquals(Ord(level), Ord(Controller.fLastEntry.Level));
-  CheckEquals(msg, Controller.fLastEntry.Msg);
-  CheckSame(exc, Controller.fLastEntry.Exc);
+  CheckEquals(Ord(level), Ord(Controller.LastEntry.Level));
+  CheckEquals(msg, Controller.LastEntry.Msg);
+  CheckSame(exc, Controller.LastEntry.Exc);
 end;
 
 procedure TTestLogger.SetUp;
@@ -370,30 +378,30 @@ begin
 
   Logger.Enabled := false;
   fLogger.Entering(TLogLevel.Info, nil, '');
-  CheckTrue(TLogLevel.Unknown = Controller.fLastEntry.Level);
+  CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
   Logger.Enabled := true;
   Logger.Levels := [TLogLevel.Warning];
   fLogger.Entering(TLogLevel.Info, nil, '');
-  CheckTrue(TLogLevel.Unknown = Controller.fLastEntry.Level);
+  CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
   fLogger.Entering(TLogLevel.Warning, nil, '');
-  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.fLastEntry.Level));
+  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.LastEntry.Level));
 
   Controller.Reset;
 
   Logger.Enabled := false;
   fLogger.Entering(TLogLevel.Info, nil, '', [TValue.Empty]);
-  CheckTrue(TLogLevel.Unknown = Controller.fLastEntry.Level);
+  CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
   Logger.Enabled := true;
   Logger.Levels := [TLogLevel.Warning];
   fLogger.Entering(TLogLevel.Info, nil, '', [TValue.Empty]);
-  CheckTrue(TLogLevel.Unknown = Controller.fLastEntry.Level);
+  CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
   fLogger.Entering(TLogLevel.Warning, nil, '', ['value']);
-  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.fLastEntry.Level));
-  CheckEquals('value', Controller.fLastEntry.Data.AsType<TArray<TValue>>[0].AsString);
+  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.LastEntry.Level));
+  CheckEquals('value', Controller.LastEntry.Data.AsType<TArray<TValue>>[0].AsString);
 end;
 
 procedure TTestLogger.TestError(enabled: Boolean);
@@ -588,15 +596,15 @@ begin
 
   Logger.Enabled := false;
   fLogger.Leaving(TLogLevel.Info, nil, '');
-  CheckTrue(TLogLevel.Unknown = Controller.fLastEntry.Level);
+  CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
   Logger.Enabled := true;
   Logger.Levels := [TLogLevel.Warning];
   fLogger.Leaving(TLogLevel.Info, nil, '');
-  CheckTrue(TLogLevel.Unknown = Controller.fLastEntry.Level);
+  CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
   fLogger.Leaving(TLogLevel.Warning, nil, '');
-  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.fLastEntry.Level));
+  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.LastEntry.Level));
 end;
 
 procedure TTestLogger.TestLevels;
@@ -675,41 +683,41 @@ begin
   Logger.Enabled := false;
   result := fLogger.Track(TLogLevel.Info, nil, '');
   CheckNull(result);
-  CheckTrue(TLogLevel.Unknown = Controller.fLastEntry.Level);
+  CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
   Logger.Enabled := true;
   Logger.Levels := [TLogLevel.Warning];
   result := fLogger.Track(TLogLevel.Info, nil, '');
   CheckNull(result);
-  CheckTrue(TLogLevel.Unknown = Controller.fLastEntry.Level);
+  CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
   result := fLogger.Track(TLogLevel.Warning, nil, '');
   CheckNotNull(result);
-  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.fLastEntry.Level));
+  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.LastEntry.Level));
   Controller.Reset;
   result := nil;
-  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.fLastEntry.Level));
+  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.LastEntry.Level));
 
   Controller.Reset;
 
   Logger.Enabled := false;
   result := fLogger.Track(TLogLevel.Info, nil, '', [TValue.Empty]);
   CheckNull(result);
-  CheckTrue(TLogLevel.Unknown = Controller.fLastEntry.Level);
+  CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
   Logger.Enabled := true;
   Logger.Levels := [TLogLevel.Warning];
   result := fLogger.Track(TLogLevel.Info, nil, '', [TValue.Empty]);
   CheckNull(result);
-  CheckTrue(TLogLevel.Unknown = Controller.fLastEntry.Level);
+  CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
   result := fLogger.Track(TLogLevel.Warning, nil, '', ['value']);
   CheckNotNull(result);
-  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.fLastEntry.Level));
-  CheckEquals('value', Controller.fLastEntry.Data.AsType<TArray<TValue>>[0].AsString);
+  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.LastEntry.Level));
+  CheckEquals('value', Controller.LastEntry.Data.AsType<TArray<TValue>>[0].AsString);
   Controller.Reset;
   result := nil;
-  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.fLastEntry.Level));
+  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.LastEntry.Level));
 end;
 
 procedure TTestLogger.TestText(enabled: Boolean);
@@ -859,6 +867,25 @@ end;
 {$REGION 'TTestLogInsideContainer'}
 { TTestLogInsideContainer }
 
+procedure TTestLogInsideContainer.TestChainedControllers;
+begin
+  fContainer.RegisterType<TLogger>.AsSingleton.AsDefault;
+  fContainer.RegisterType<TLogger>.AsSingleton
+    .Implements<ILogger>('l2').InjectField('fController', 'c2.ctl');
+  fContainer.RegisterType<TLoggerController>.AsSingleton
+    .InjectMethod('AddAppender', ['c2']);
+  //Acts as appender and controller together
+  fContainer.RegisterType<TLoggerController>.AsSingleton
+    .Implements<ILogAppender>('c2').Implements<ILoggerController>('c2.ctl');
+
+  fContainer.Build;
+
+  fContainer.Resolve<Ilogger>;
+  fContainer.Resolve<Ilogger>('l2');
+
+  Check(true); //If there are any errors this won't get called
+end;
+
 procedure TTestLogInsideContainer.TestLog;
 var
   stream: TStringStream;
@@ -876,61 +903,6 @@ end;
 {$ENDREGION}
 
 {$REGION 'TTestLogSubResolverAndConfiguration'}
-{$REGION 'Test subtypes'}
-type
-  TLoggerDefault = class(TLogger);
-  TLogger1 = class(TLogger);
-  TLogger2 = class(TLogger);
-
-  IService = interface
-    ['{DFFC820C-120B-4828-8D22-21DDC60E4398}']
-  end;
-
-  TImpl = class(TInterfacedObject, IService)
-  private
-    [Inject]
-    fLogger1: ILogger;
-    [Inject('second')]
-    fLogger2: ILogger;
-  end;
-
-  TObjProc = class
-  private
-    fLogger: ILogger;
-  public
-    [Inject]
-    procedure SetLoggger(const logger: ILogger);
-  end;
-
-  TObjCtor = class
-  private
-    fLogger: ILogger;
-  public
-    constructor Create(const logger: ILogger);
-  end;
-
-  TObjLazy = class
-  private
-    [Inject]
-    fLogger1: Lazy<ILogger>;
-    [Inject('second')]
-    fLogger2: Lazy<ILogger>;
-  end;
-
-{ TObjProc }
-
-procedure TObjProc.SetLoggger(const logger: ILogger);
-begin
-  fLogger := logger;
-end;
-
-{ TObjCtor }
-
-constructor TObjCtor.Create(const logger: ILogger);
-begin
-  fLogger := logger;
-end;
-{$ENDREGION}
 
 { TTestLogSubResolverAndConfiguration }
 
@@ -945,8 +917,8 @@ begin
 
   //And register some loggers that we may use
   fContainer.RegisterType<TLoggerDefault>.AsSingleton.AsDefault;
-  fContainer.RegisterType<TLogger1>.AsSingleton.Implements<ILogger>('first');
-  fContainer.RegisterType<TLogger2>.AsSingleton.Implements<ILogger>('second');
+  fContainer.RegisterType<TLogger1>.AsSingleton.Implements<ILogger>('logging.logger1');
+  fContainer.RegisterType<TLogger2>.AsSingleton.Implements<ILogger>('logging.logger2');
 end;
 
 procedure TTestLogSubResolverAndConfiguration.TestBaseClass;
@@ -955,12 +927,12 @@ var
 begin
   fContainer.RegisterType<TImpl>.Implements<TImpl>.AsSingleton;
   fContainer.Build;
-  fContainer.Resolve<TLoggingConfiguration>.RegisterLogger<TObject>('first');
+  fContainer.Resolve<TLoggingConfiguration>.RegisterLogger<TObject>('logging.logger1');
 
   obj := fContainer.Resolve<TImpl>;
 
-  CheckIs(obj.fLogger1, TLogger1);
-  CheckIs(obj.fLogger2, TLogger2);
+  CheckIs(obj.Logger1, TLogger1);
+  CheckIs(obj.Logger2, TLogger2);
 end;
 
 procedure TTestLogSubResolverAndConfiguration.TestClass;
@@ -969,12 +941,12 @@ var
 begin
   fContainer.RegisterType<TImpl>.Implements<TImpl>.AsSingleton;
   fContainer.Build;
-  fContainer.Resolve<TLoggingConfiguration>.RegisterLogger<TImpl>('first');
+  fContainer.Resolve<TLoggingConfiguration>.RegisterLogger<TImpl>('logging.logger1');
 
   obj := fContainer.Resolve<TImpl>;
 
-  CheckIs(obj.fLogger1, TLogger1);
-  CheckIs(obj.fLogger2, TLogger2);
+  CheckIs(obj.Logger1, TLogger1);
+  CheckIs(obj.Logger2, TLogger2);
 end;
 
 procedure TTestLogSubResolverAndConfiguration.TestConstructor;
@@ -983,11 +955,11 @@ var
 begin
   fContainer.RegisterType<TObjCtor>.Implements<TObjCtor>.AsSingleton;
   fContainer.Build;
-  fContainer.Resolve<TLoggingConfiguration>.RegisterLogger<TObjCtor>('first');
+  fContainer.Resolve<TLoggingConfiguration>.RegisterLogger<TObjCtor>('logging.logger1');
 
   obj := fContainer.Resolve<TObjCtor>;
 
-  CheckIs(obj.fLogger, TLogger1);
+  CheckIs(obj.Logger, TLogger1);
 end;
 
 procedure TTestLogSubResolverAndConfiguration.TestInterface;
@@ -997,13 +969,13 @@ var
 begin
   fContainer.RegisterType<TImpl>.Implements<TImpl>.AsSingleton;
   fContainer.Build;
-  fContainer.Resolve<TLoggingConfiguration>.RegisterLogger<TImpl>('first');
+  fContainer.Resolve<TLoggingConfiguration>.RegisterLogger<TImpl>('logging.logger1');
 
   intf := fContainer.Resolve<TImpl>;
   obj := TObject(intf) as TImpl;
 
-  CheckIs(obj.fLogger1, TLogger1);
-  CheckIs(obj.fLogger2, TLogger2);
+  CheckIs(obj.Logger1, TLogger1);
+  CheckIs(obj.Logger2, TLogger2);
 end;
 
 procedure TTestLogSubResolverAndConfiguration.TestLazy;
@@ -1012,12 +984,12 @@ var
 begin
   fContainer.RegisterType<TObjLazy>.Implements<TObjLazy>.AsSingleton;
   fContainer.Build;
-  fContainer.Resolve<TLoggingConfiguration>.RegisterLogger<TObjLazy>('first');
+  fContainer.Resolve<TLoggingConfiguration>.RegisterLogger<TObjLazy>('logging.logger1');
 
   obj := fContainer.Resolve<TObjLazy>;
 
-  CheckIs(obj.fLogger1.Value, TLogger1);
-  CheckIs(obj.fLogger2.Value, TLogger2);
+  CheckIs(obj.Logger1.Value, TLogger1);
+  CheckIs(obj.Logger2.Value, TLogger2);
 end;
 
 procedure TTestLogSubResolverAndConfiguration.TestMethod;
@@ -1026,11 +998,11 @@ var
 begin
   fContainer.RegisterType<TObjProc>.Implements<TObjProc>.AsSingleton;
   fContainer.Build;
-  fContainer.Resolve<TLoggingConfiguration>.RegisterLogger<TObjProc>('first');
+  fContainer.Resolve<TLoggingConfiguration>.RegisterLogger<TObjProc>('logging.logger1');
 
   obj := fContainer.Resolve<TObjProc>;
 
-  CheckIs(obj.fLogger, TLogger1);
+  CheckIs(obj.Logger, TLogger1);
 end;
 
 procedure TTestLogSubResolverAndConfiguration.TestNoInject;
@@ -1042,10 +1014,438 @@ begin
 
   obj := fContainer.Resolve<TImpl>;
 
-  CheckIs(obj.fLogger1, TLoggerDefault);
-  CheckIs(obj.fLogger2, TLogger2);
+  CheckIs(obj.Logger1, TLoggerDefault);
+  CheckIs(obj.Logger2, TLogger2);
 end;
 {$ENDREGION}
+
+{ TTestLoggingConfiguration }
+
+procedure TTestLoggingConfiguration.SetUp;
+begin
+  inherited;
+  fStrings := TStringList.Create;
+end;
+
+procedure TTestLoggingConfiguration.TearDown;
+begin
+  fStrings.Free;
+  inherited;
+end;
+
+procedure TTestLoggingConfiguration.TestLeak;
+begin
+  //If done incorrectly this test will create a leak
+  TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
+  Check(true);
+end;
+
+procedure TTestLoggingConfiguration.TestMultipleConfiguration;
+begin
+  fContainer.RegisterType<TLoggingConfiguration>
+    .Implements<TLoggingConfiguration>;
+  ExpectedException := ERegistrationException;
+  TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
+end;
+
+procedure TTestLoggingConfiguration.TestNonInstanceType;
+var
+  rec: TSomeRecord; //Reference the type
+begin
+  fStrings
+    .Add('[appenders\appender1]')
+    .Add('class = Spring.Tests.Logging.Types.TSomeRecord');
+  ExpectedException := EClassNotFound;
+  TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
+
+  rec := Default(TSomeRecord);
+end;
+
+procedure TTestLoggingConfiguration.TestReadAppenders;
+var
+  i: ILogAppender;
+begin
+  fStrings
+    .Add('[appenders\appender1]')
+    .Add('class = Spring.Tests.Logging.Types.TAppenderMock');
+  fStrings
+    .Add('[appenders\default]')
+    .Add('class = TAppenderMock2'); //Tets non-fully qualified name
+  TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
+
+  fContainer.Build;
+
+  i := fContainer.Resolve<ILogAppender>('logging.appender1.appender');
+  CheckIs(TObject(i), TAppenderMock);
+  i := fContainer.Resolve<ILogAppender>;
+  CheckIs(TObject(i), TAppenderMock2);
+end;
+
+procedure TTestLoggingConfiguration.TestReadController;
+var
+  i: ILoggerController;
+  a: ILogAppender;
+begin
+  fStrings
+    .Add('[controllers\ctl1]')
+    .Add('class = Spring.Tests.Logging.Types.TLoggerControllerMock');
+  fStrings
+    .Add('[controllers\default]');
+  TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
+
+  fContainer.Build;
+
+  i := fContainer.Resolve<ILoggerController>('logging.ctl1.controller');
+  CheckIs(TObject(i), TLoggerControllerMock);
+  a := fContainer.Resolve<ILogAppender>('logging.ctl1.appender');
+  CheckSame(TObject(i), TObject(a));
+  i := fContainer.Resolve<ILoggerController>;
+  CheckIs(TObject(i), TLoggerController);
+end;
+
+procedure TTestLoggingConfiguration.TestReadLogger;
+var
+  i: ILogger;
+begin
+  fStrings
+    .Add('[loggers\log1]')
+    .Add('class = Spring.Tests.Logging.Types.TLogger1');
+  fStrings
+    .Add('[loggers\default]');
+  TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
+
+  fContainer.Build;
+
+  i := fContainer.Resolve<ILogger>('logging.log1');
+  CheckIs(TObject(i), TLogger1);
+  i := fContainer.Resolve<ILogger>;
+  CheckIs(TObject(i), TLogger);
+end;
+
+procedure TTestLoggingConfiguration.TestReadProperties;
+var
+  i: ILogAppender;
+  appender: TAppenderMock;
+begin
+  fStrings
+    .Add('[appenders\appender1]')
+    .Add('class = Spring.Tests.Logging.Types.TAppenderMock')
+    .Add('enabled = false')
+    .Add('someInt = 1')
+    .Add('someString = test')
+    .Add('someEnum = Warning')
+    .Add('levels = Error, Info');
+  TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
+
+  fContainer.Build;
+  i := fContainer.Resolve<ILogAppender>;
+
+  CheckIs(TObject(i), TAppenderMock);
+  appender := TAppenderMock(i);
+  CheckFalse(appender.Enabled);
+  CheckEquals(1, appender.SomeInt);
+  CheckEquals('test', appender.SomeString);
+  CheckEquals(Ord(TLogLevel.Warning), Ord(appender.SomeEnum));
+  Check([TLogLevel.Error, TLogLevel.Info] = appender.Levels);
+end;
+
+procedure TTestLoggingConfiguration.TestReadSingleControllerAsDefault;
+var
+  i: ILoggerController;
+begin
+  fStrings
+    .Add('[controllers\ctl1]')
+    .Add('class = Spring.Tests.Logging.Types.TLoggerControllerMock');
+  TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
+
+  fContainer.Build;
+
+  i := fContainer.Resolve<ILoggerController>;
+  CheckIs(TObject(i), TLoggerControllerMock);
+end;
+
+procedure TTestLoggingConfiguration.TestSimpleConfiguration;
+var
+  appender: TAppenderMock;
+  o: TObjCtor;
+begin
+  fStrings
+    .Add('[appenders\1]')
+    .Add('class = Spring.Tests.Logging.Types.TAppenderMock');
+  TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
+  fContainer.RegisterType<TObjCtor>.Implements<TObjCtor>.AsSingleton;
+
+  fContainer.Build;
+
+  o := fContainer.Resolve<TObjCtor>;
+  o.Logger.Fatal('test');
+
+  appender := TObject(fContainer.Resolve<ILogAppender>) as TAppenderMock;
+  CheckTrue(appender.WriteCalled);
+  CheckEquals('test', appender.Entry.Msg);
+end;
+
+procedure TTestLoggingConfiguration.TestUnknownClass;
+begin
+  fStrings
+    .Add('[appenders\default]')
+    .Add('class = NotExistent');
+  ExpectedException := EClassNotFound;
+  TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
+end;
+
+procedure TTestLoggingConfiguration.TestUnknownProperty;
+begin
+  fStrings
+    .Add('[appenders\appender1]')
+    .Add('class = Spring.Tests.Logging.Types.TAppenderMock')
+    .Add('notExistent = false');
+  ExpectedException := EPropertyError;
+  TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
+end;
+
+procedure TTestLoggingConfiguration.TestUnknownPropertyKind;
+begin
+  fStrings
+    .Add('[appenders\appender1]')
+    .Add('class = Spring.Tests.Logging.Types.TAppenderMock')
+    .Add('someFloat = 0');
+  ExpectedException := EPropertyConvertError;
+  TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
+end;
+
+procedure TTestLoggingConfiguration.TestAddAppendersToControllers;
+var
+  controller: ILoggerController;
+  f: TRttiField;
+  appenders: IList<ILogAppender>;
+begin
+  fStrings
+    .Add('[appenders\appender1]')
+    .Add('class = Spring.Tests.Logging.Types.TAppenderMock');
+  fStrings
+    .Add('[appenders\appender2]')
+    .Add('class = Spring.Tests.Logging.Types.TAppenderMock2');
+  fStrings
+    .Add('[controllers\controller1]')
+    .Add('appender = appender2');
+
+   TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
+  fContainer.Build;
+
+  controller := fContainer.Resolve<ILoggerController>;
+
+  f := TType.GetType<TLoggerController>.GetField('fAppenders');
+  appenders := f.GetValue(TObject(controller)).AsType<IList<ILogAppender>>;
+
+  CheckEquals(1, appenders.Count);
+  CheckSame(fContainer.Resolve<ILogAppender>('logging.appender2.appender'),
+    appenders[0]);
+end;
+
+procedure TTestLoggingConfiguration.TestAddChainedController;
+var
+  controller: ILoggerController;
+  f: TRttiField;
+  appenders: IList<ILogAppender>;
+begin
+  fStrings
+    .Add('[controllers\default]')
+    .Add('appender = chained');
+  fStrings
+    .Add('[controllers\chained]');
+
+   TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
+  fContainer.Build;
+
+  controller := fContainer.Resolve<ILoggerController>;
+
+  f := TType.GetType<TLoggerController>.GetField('fAppenders');
+  appenders := f.GetValue(TObject(controller)).AsType<IList<ILogAppender>>;
+
+  CheckEquals(1, appenders.Count);
+  CheckSame(fContainer.Resolve<ILogAppender>('logging.chained.appender'),
+    appenders[0]);
+end;
+
+procedure TTestLoggingConfiguration.TestAddLoggerAssignments;
+var
+  objCtor: TObjCtor;
+  objProc: TObjProc;
+  objImpl: TImpl;
+begin
+  fStrings
+    .Add('[loggers\default]');
+  fStrings
+    .Add('[loggers\logger2]')
+    .Add('assign = TObjCtor');
+  fStrings
+    .Add('[loggers\logger3]')
+    .Add('assign = TObjProc');
+  fStrings
+    .Add('[loggers\logger4]')
+    .Add('assign = TObject');
+
+  TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
+  fContainer.RegisterType<TObjCtor>.Implements<TObjCtor>.AsSingleton;
+  fContainer.RegisterType<TObjProc>.Implements<TObjProc>.AsSingleton;
+  fContainer.RegisterType<TImpl>.Implements<TImpl>.AsSingleton;
+  fContainer.Build;
+
+  objCtor := fContainer.Resolve<TObjCtor>;
+  objProc := fContainer.Resolve<TObjProc>;
+  objImpl := fContainer.Resolve<TImpl>;
+
+  CheckSame(fContainer.Resolve<ILogger>('logging.logger2'), objCtor.Logger);
+  CheckSame(fContainer.Resolve<ILogger>('logging.logger3'), objProc.Logger);
+  CheckSame(fContainer.Resolve<ILogger>('logging.logger4'), objImpl.Logger1);
+  CheckSame(fContainer.Resolve<ILogger>('logging.logger2'), objImpl.Logger2);
+end;
+
+procedure TTestLoggingConfiguration.TestComplexConfiguration;
+var
+  logger1,
+  logger2: ILogger;
+  controller1,
+  controller2: ILoggerController;
+  appender1,
+  appender2,
+  appenderCtl: ILogAppender;
+  f: TRttiField;
+  appenders: IList<ILogAppender>;
+begin
+  fStrings
+    .Add('[appenders\appender1]')
+    .Add('class = Spring.Tests.Logging.Types.TAppenderMock');
+  fStrings
+    .Add('[appenders\appender2]')
+    .Add('class = Spring.Tests.Logging.Types.TAppenderMock2')
+    .Add('levels = Fatal, Error, Warning');
+
+  fStrings
+    .Add('[controllers\default]')
+    .Add('appender = appender1')
+    .Add('appender = controller2');
+  fStrings
+    .Add('[controllers\controller2]')
+    .Add('class = Spring.Tests.Logging.Types.TLoggerController2')
+    .Add('appender = appender2')
+    .Add('levels = Fatal, Error');
+
+  fStrings
+    .Add('[loggers\default]');
+  fStrings
+    .Add('[loggers\logger2]')
+    .Add('class = Spring.Tests.Logging.Types.TLogger2')
+    .Add('controller = controller2')
+    .Add('levels = Fatal');
+
+   TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
+  fContainer.Build;
+
+  logger1 := fContainer.Resolve<ILogger>;
+  logger2 := fContainer.Resolve<ILogger>('logging.logger2');
+  controller1 := fContainer.Resolve<ILoggerController>;
+  controller2 := fContainer.Resolve<ILoggerController>('logging.controller2.controller');
+  appender1 := fContainer.Resolve<ILogAppender>('logging.appender1.appender');
+  appender2 := fContainer.Resolve<ILogAppender>('logging.appender2.appender');
+  appenderCtl := fContainer.Resolve<ILogAppender>('logging.controller2.appender');
+
+  f := TType.GetType<TLogger>.GetField('fController');
+  CheckSame(controller1, f.GetValue(TObject(logger1)).AsType<ILoggerController>);
+  CheckSame(controller2, f.GetValue(TObject(logger2)).AsType<ILoggerController>);
+
+  f := TType.GetType<TLoggerController2>.GetField('fAppenders');
+  appenders := f.GetValue(TObject(controller1)).AsType<IList<ILogAppender>>;
+
+  CheckEquals(2, appenders.Count);
+  CheckSame(appender1, appenders[0]);
+  CheckSame(appenderCtl, appenders[1]);
+
+  appenders := f.GetValue(TObject(controller2)).AsType<IList<ILogAppender>>;
+  CheckEquals(1, appenders.Count);
+  CheckSame(appender2, appenders[0]);
+end;
+
+procedure TTestLoggingConfiguration.TestDefaultController;
+var
+  controller: ILoggerController;
+  f: TRttiField;
+  appenders: IList<ILogAppender>;
+begin
+  fStrings
+    .Add('[appenders\appender1]')
+    .Add('class = Spring.Tests.Logging.Types.TAppenderMock');
+  fStrings
+    .Add('[appenders\default]')
+    .Add('class = TAppenderMock2'); //Tets non-fully qualified name
+  TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
+
+  fContainer.Build;
+
+  controller := fContainer.Resolve<ILoggerController>;
+  CheckIs(TObject(controller), TLoggerController);
+
+  f := TType.GetType<TLoggerController>.GetField('fAppenders');
+  appenders := f.GetValue(TObject(controller)).AsType<IList<ILogAppender>>;
+
+  CheckEquals(appenders.Count, 2);
+  CheckSame(fContainer.Resolve<ILogAppender>('logging.appender1.appender'), appenders[0]);
+  CheckSame(fContainer.Resolve<ILogAppender>, appenders[1]);
+end;
+
+procedure TTestLoggingConfiguration.TestDefaultLogger;
+var
+  logger: ILogger;
+begin
+  TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
+  fContainer.Build;
+
+  logger := fContainer.Resolve<ILogger>;
+  CheckIs(TObject(logger), TLogger);
+end;
+
+procedure TTestLoggingConfiguration.TestDuplicateDefault;
+begin
+  fStrings
+    .Add('[appenders\default]')
+    .Add('class = TAppenderMock');
+  fStrings
+    .Add('[appenders\default]')
+    .Add('class = TAppenderMock');
+  ExpectedException := ERegistrationException;
+  TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
+end;
+
+procedure TTestLoggingConfiguration.TestInjectMultipleAppendersToSingleController;
+var
+  controller: ILoggerController;
+  f: TRttiField;
+  appenders: IList<ILogAppender>;
+begin
+  //Check that current configuration implementation will work with the container
+  fContainer.RegisterType<TAppenderMock>.AsDefault.AsSingleton;
+  fContainer.RegisterType<TAppenderMock>.Implements<ILogAppender>('appender1')
+    .AsSingleton;
+  fContainer.RegisterType<TAppenderMock>.Implements<ILogAppender>('appender2')
+    .AsSingleton;
+  fContainer.RegisterType<TLoggerController>.AsSingleton.Implements<ILoggerController>
+    .InjectMethod('AddAppender', ['appender2'])
+    .InjectMethod('AddAppender', ['appender1'])
+    .InjectMethod('AddAppender'); //Creates circular dependency, not if it is registered with implements
+
+  fContainer.Build;
+
+  controller := fContainer.Resolve<ILoggerController>;
+
+  f := TType.GetType<TLoggerController>.GetField('fAppenders');
+  appenders := f.GetValue(TObject(controller)).AsType<IList<ILogAppender>>;
+
+  CheckEquals(3, appenders.Count);
+  CheckSame(fContainer.Resolve<ILogAppender>('appender2'), appenders[0]);
+  CheckSame(fContainer.Resolve<ILogAppender>('appender1'), appenders[1]);
+  CheckSame(fContainer.Resolve<ILogAppender>, appenders[2]);
+end;
 
 end.
 

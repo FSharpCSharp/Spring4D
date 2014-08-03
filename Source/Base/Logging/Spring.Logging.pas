@@ -31,40 +31,38 @@ interface
 uses
   SysUtils,
   Rtti
-{$IFNDEF SPRING_DISABLE_GRAPHICS}
-{$IFDEF DELPHIXE2_UP}
+{$IF Defined(DELPHIXE2_UP)}
   ,System.UITypes //Has minimum dependencies
-{$ELSE}
+{$ELSEIF NOT Defined(SPRING_DISABLE_GRAPHICS)}
   ,Graphics //Has (unfortunately) VCL dependencies
-{$ENDIF}
-{$ENDIF}
+{$IFEND}
   ;
 
 {$REGION 'Shadowed Delphi types'}
-{$IFNDEF SPRING_DISABLE_GRAPHICS}
-{$IFDEF DELPHIXE2_UP}
+{$IF Defined(DELPHIXE2_UP)}
 type
   TColor = System.UITypes.TColor;
   TColors = System.UITypes.TColors;
-  TFontStyle = System.UITypes.TFontStyle;
-  TFontStyles = System.UITypes.TFontStyles;
 
 const
   clDefault = TColors.SysDefault;
-{$ELSE}
+{$ELSEIF NOT Defined(SPRING_DISABLE_GRAPHICS)}
 type
   TColor = Graphics.TColor;
-  TFontStyle = Graphics.TFontStyle;
-  TFontStyles = Graphics.TFontStyles;
 
- const
+const
   clDefault = Graphics.clDefault;
-{$ENDIF}
-{$ENDIF}
+{$ELSE}
+type
+  TColor = LongInt;
+
+const
+  clDefault = $20000000;
+{$IFEND}
 {$ENDREGION}
 
 {$SCOPEDENUMS ON}
-{$REGION 'Log Level definitions and constants'}
+{$REGION 'Log Level and formating definitions and constants'}
 type
   TLogLevel = (
     /// <summary>
@@ -104,7 +102,25 @@ const
     TLogLevel.Error,
     TLogLevel.Fatal
   ];
-  {$ENDREGION}
+
+type
+  TLogStyle = (
+    Bold,
+    Italic,
+    Underline,
+    /// <summary>
+    ///   Text should be printed in monospace font
+    /// </summary>
+    Monospace,
+    /// <summary>
+    ///   No escaping should be done on the text of the message by the appenders
+    ///   in cases when they need to do so in order to not break the output
+    ///   format.
+    /// </summary>
+    NoEscape
+  );
+  TLogStyles = set of TLogStyle;
+{$ENDREGION}
 
 type
   {$REGION 'TLogEntry'}
@@ -114,7 +130,6 @@ type
     fMsg: string;
     fTimeStamp: TDateTime;
     fExc: Exception;
-{$IFNDEF SPRING_DISABLE_GRAPHICS}
     /// <summary>
     ///   Leave as default to instruct the appender/viewer to choose the default
     ///   color based on the level or entry contents or prescribe the color of
@@ -122,10 +137,9 @@ type
     /// </summary>
     fColor: TColor;
     /// <summary>
-    ///   Similar to Color but defines a font style.
+    ///   Similar to Color but defines a text style.
     /// </summary>
-    fFontStyle: TFontStyles;
-{$ENDIF}
+    fStyle: TLogStyles;
     fClassType: TClass;
     fAddStack: Boolean;
     /// <summary>
@@ -148,10 +162,8 @@ type
       color : TColor = clDefault; fontStyle : TFontStyles = []; )}
 
     function SetException(const exc: Exception): TLogEntry;
-{$IFNDEF SPRING_DISABLE_GRAPHICS}
     function SetColor(color: TColor): TLogEntry;
-    function SetFontStyle(fontStyle: TFontStyles): TLogEntry;
-{$ENDIF}
+    function SetStyle(style: TLogStyles): TLogEntry;
     function SetClassType(const classType: TClass): TLogEntry;
     function AddStack: TLogEntry;
     function SetData(const Data: TValue): TLogEntry;
@@ -161,10 +173,8 @@ type
     property Msg: string read fMsg;
     property TimeStamp: TDateTime read fTimeStamp;
     property Exc: Exception read fExc;
-{$IFNDEF SPRING_DISABLE_GRAPHICS}
     property Color: TColor read fColor;
-    property FontStyle: TFontStyles read fFontStyle;
-{$ENDIF}
+    property Style: TLogStyles read fStyle;
     property ClassType: TClass read FClassType;
     property AddStackValue: Boolean read fAddStack;
     property Data: TValue read fData;
@@ -309,11 +319,9 @@ begin
   fLevel := level;
   fMsg := msg;
 
-{$IFNDEF SPRING_DISABLE_GRAPHICS}
   //Set default values
   fColor := clDefault;
-  fFontStyle := [];
-{$ENDIF}
+  fStyle := [];
 
   //Reset non-managed fields
   fExc := nil;
@@ -344,13 +352,11 @@ begin
   fData := data;
 end;
 
-{$IFNDEF SPRING_DISABLE_GRAPHICS}
 function TLogEntry.SetColor(color: TColor): TLogEntry;
 begin
   Result := Self;
   Result.fColor := color;
 end;
-{$ENDIF}
 
 function TLogEntry.SetClassType(const classType: TClass): TLogEntry;
 begin
@@ -370,13 +376,11 @@ begin
   Result.fExc := exc;
 end;
 
-{$IFNDEF SPRING_DISABLE_GRAPHICS}
-function TLogEntry.SetFontStyle(fontStyle: TFontStyles): TLogEntry;
+function TLogEntry.SetStyle(style: TLogStyles): TLogEntry;
 begin
   Result := Self;
-  Result.fFontStyle := fontStyle;
+  Result.fStyle := style;
 end;
-{$ENDIF}
 
 function TLogEntry.SetTag(tag: NativeInt): TLogEntry;
 begin

@@ -29,7 +29,6 @@ interface
 uses
   SysUtils,
   Rtti,
-  Spring.Container.Common,
   Spring.Logging;
 
 type
@@ -227,7 +226,7 @@ type
   protected
     procedure DoLog(const entry: TLogEntry); override;
   public
-    constructor Create([Inject] const controller: ILoggerController);
+    constructor Create(const controller: ILoggerController);
   end;
   {$ENDREGION}
 

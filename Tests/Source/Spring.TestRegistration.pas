@@ -166,7 +166,8 @@ begin
     TTestLogger.Suite,
     TTestStreamLogAppender.Suite,
     TTestLogInsideContainer.Suite,
-    TTestLogSubResolverAndConfiguration.Suite
+    TTestLogSubResolverAndConfiguration.Suite,
+    TTestLoggingConfiguration.Suite
   ]);
 
 //  RegisterTests('Spring.Base.Reflection.ValueExpression', [
