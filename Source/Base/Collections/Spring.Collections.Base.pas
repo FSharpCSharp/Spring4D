@@ -167,11 +167,14 @@ type
 
     function Max: T; overload;
     function Max(const comparer: IComparer<T>): T; overload;
+    function Max(const comparer: TComparison<T>): T; overload;
     function Min: T; overload;
     function Min(const comparer: IComparer<T>): T; overload;
+    function Min(const comparer: TComparison<T>): T; overload;
 
     function Ordered: IEnumerable<T>; overload;
     function Ordered(const comparer: IComparer<T>): IEnumerable<T>; overload;
+    function Ordered(const comparer: TComparison<T>): IEnumerable<T>; overload;
 
     function Reversed: IEnumerable<T>; virtual;
 
@@ -817,6 +820,11 @@ begin
     raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
 end;
 
+function TEnumerableBase<T>.Max(const comparer: TComparison<T>): T;
+begin
+  Result := Max(TComparer<T>.Construct(comparer));
+end;
+
 function TEnumerableBase<T>.Min: T;
 begin
   Result := Min(Comparer);
@@ -849,6 +857,11 @@ begin
     raise EInvalidOperationException.CreateRes(@SSequenceContainsNoElements);
 end;
 
+function TEnumerableBase<T>.Min(const comparer: TComparison<T>): T;
+begin
+  Result := Min(TComparer<T>.Construct(comparer));
+end;
+
 function TEnumerableBase<T>.Ordered: IEnumerable<T>;
 begin
   Result := TOrderedIterator<T>.Create(Self, Comparer);
@@ -862,6 +875,12 @@ begin
 {$ENDIF}
 
   Result := TOrderedIterator<T>.Create(Self, comparer);
+end;
+
+function TEnumerableBase<T>.Ordered(
+  const comparer: TComparison<T>): IEnumerable<T>;
+begin
+  Result := Ordered(TComparer<T>.Construct(comparer));
 end;
 
 function TEnumerableBase<T>.Reversed: IEnumerable<T>;
