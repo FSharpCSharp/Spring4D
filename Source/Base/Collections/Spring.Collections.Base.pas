@@ -468,7 +468,10 @@ end;
 constructor TEnumerableBase<T>.Create;
 begin
   inherited Create;
-  fComparer := TComparer<T>.Default;
+  if GetTypeKind(TypeInfo(T)) = tkClass then
+    fComparer := TInstanceComparer<T>.Default
+  else
+    fComparer := TComparer<T>.Default;
 end;
 
 constructor TEnumerableBase<T>.Create(const comparer: IComparer<T>);

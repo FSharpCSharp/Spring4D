@@ -2248,11 +2248,18 @@ type
     class function OrdinalIgnoreCase: TStringComparer;
   end;
 
+  TInstanceComparer<T> = class
+  public
+    class function Default: IComparer<T>;
+  end;
+
   TCollectionHelper = class helper for TCollection
   public
     function AsList: IList<TCollectionItem>; overload;
     function AsList<T: TCollectionItem>: IList<T>; overload;
   end;
+
+function GetInstanceComparer: Pointer;
 
 implementation
 
@@ -2268,6 +2275,54 @@ uses
   Spring.Collections.Sets,
   Spring.Collections.Stacks,
   Spring.ResourceStrings;
+
+
+{$REGION 'Instance comparer'}
+function NopAddref(inst: Pointer): Integer; stdcall;
+begin
+  Result := -1;
+end;
+
+function NopRelease(inst: Pointer): Integer; stdcall;
+begin
+  Result := -1;
+end;
+
+function NopQueryInterface(inst: Pointer; const IID: TGUID; out Obj): HResult; stdcall;
+begin
+  Result := E_NOINTERFACE;
+end;
+
+function Compare_Instance(Inst: Pointer; const Left, Right: TObject): Integer;
+var
+  comparable: IComparable;
+begin
+  if Supports(Left, IComparable, comparable) then
+    Result := comparable.CompareTo(Right)
+  else
+    if NativeUInt(Left) < NativeUInt(Right) then
+      Result := -1
+    else if NativeUInt(Left) > NativeUInt(Right) then
+      Result := 1
+    else
+      Result := 0;
+end;
+
+const
+  InstanceComparer_VTable: array[0..3] of Pointer =
+  (
+    @NopQueryInterface,
+    @NopAddref,
+    @NopRelease,
+    @Compare_Instance
+  );
+  InstanceComparer: Pointer = @InstanceComparer_VTable;
+
+function GetInstanceComparer: Pointer;
+begin
+  Result := @InstanceComparer;
+end;
+{$ENDREGION}
 
 
 {$REGION 'TArray'}
@@ -2710,6 +2765,16 @@ end;
 class function TStringComparer.OrdinalIgnoreCase: TStringComparer;
 begin
   Result := fOrdinalIgnoreCase;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TInstanceComparer<T>'}
+
+class function TInstanceComparer<T>.Default: IComparer<T>;
+begin
+  Result := IComparer<T>(GetInstanceComparer);
 end;
 
 {$ENDREGION}

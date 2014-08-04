@@ -2779,7 +2779,7 @@ begin
   fSource := source;
   fComparer := comparer;
   if not Assigned(fComparer) then
-    fComparer := TComparer<T>.Default;
+    fComparer := fSource.Comparer;
   fIndex := -1;
 end;
 

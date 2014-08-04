@@ -86,6 +86,14 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'Interfaces'}
+  IComparable = interface(IInvokable)
+    ['{7F0E25C8-50D7-4CF0-AB74-1913EBD3EE42}']
+    function CompareTo(const obj: TObject): Integer;
+  end;
+  {$ENDREGION}
+
+
   {$REGION 'Procedure types'}
 
   ///	<summary>
@@ -918,6 +926,8 @@ function IsAssignableFrom(leftType, rightType: PTypeInfo): Boolean;
 ///   passed as pointer.
 /// </remarks>
 function GetTypeSize(typeInfo: PTypeInfo): Integer;
+
+function GetTypeKind(typeInfo: PTypeInfo): TTypeKind; inline;
 {$ENDREGION}
 
 
@@ -1108,6 +1118,11 @@ begin
         Result := -1;
       end;
   end;
+end;
+
+function GetTypeKind(typeInfo: PTypeInfo): TTypeKind;
+begin
+  Result := typeInfo.Kind;
 end;
 {$ENDREGION}
 
