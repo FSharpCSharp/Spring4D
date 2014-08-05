@@ -830,6 +830,8 @@ type
     ///	</param>
     procedure CopyTo(var values: TArray<T>; index: Integer);
 
+    procedure MoveTo(const collection: ICollection<T>);
+
     ///	<summary>
     ///	  Removes the first occurrence of a specific element from the
     ///	  ICollection&lt;T&gt;.

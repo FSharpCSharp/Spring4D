@@ -236,6 +236,7 @@ type
     procedure ExtractRange(const collection: IEnumerable<T>); overload; virtual;
 
     procedure CopyTo(var values: TArray<T>; index: Integer); virtual;
+    procedure MoveTo(const collection: ICollection<T>); virtual;
 
     property IsReadOnly: Boolean read GetIsReadOnly;
     property OnChanged: ICollectionChangedEvent<T> read GetOnChanged;
@@ -1284,6 +1285,21 @@ end;
 function TCollectionBase<T>.GetOnChanged: ICollectionChangedEvent<T>;
 begin
   Result := fOnChanged;
+end;
+
+procedure TCollectionBase<T>.MoveTo(const collection: ICollection<T>);
+var
+  item: T;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(Assigned(collection), 'collection');
+{$ENDIF}
+
+  for item in ToArray do
+  begin
+    Extract(item);
+    collection.Add(item);
+  end;
 end;
 
 procedure TCollectionBase<T>.RemoveRange(const collection: array of T);
