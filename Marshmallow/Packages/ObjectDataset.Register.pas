@@ -3,9 +3,8 @@ unit ObjectDataset.Register;
 interface
 
 uses
-  Adapters.ObjectDataset
-  ,Classes
-  ;
+  Adapters.ObjectDataset,
+  Classes;
 
   procedure Register;
 
@@ -15,12 +14,7 @@ implementation
 
 procedure Register;
 begin
-  RegisterComponents('MarshmallowORM',
-    [
-      TObjectDataset
-    ]
-  );
-
+  RegisterComponents('Spring Persistence', [TObjectDataset]);
 end;
 
 end.

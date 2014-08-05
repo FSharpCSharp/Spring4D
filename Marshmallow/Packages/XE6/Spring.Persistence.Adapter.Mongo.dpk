@@ -1,0 +1,47 @@
+package Spring.Persistence.Adapter.Mongo;
+
+{$R *.res}
+{$IFDEF IMPLICITBUILDING This IFDEF should not be used by users}
+{$ALIGN 8}
+{$ASSERTIONS ON}
+{$BOOLEVAL OFF}
+{$DEBUGINFO OFF}
+{$EXTENDEDSYNTAX ON}
+{$IMPORTEDDATA ON}
+{$IOCHECKS ON}
+{$LOCALSYMBOLS ON}
+{$LONGSTRINGS ON}
+{$OPENSTRINGS ON}
+{$OPTIMIZATION OFF}
+{$OVERFLOWCHECKS OFF}
+{$RANGECHECKS OFF}
+{$REFERENCEINFO ON}
+{$SAFEDIVIDE OFF}
+{$STACKFRAMES ON}
+{$TYPEDADDRESS OFF}
+{$VARSTRINGCHECKS ON}
+{$WRITEABLECONST OFF}
+{$MINENUMSIZE 1}
+{$IMAGEBASE $400000}
+{$DEFINE DEBUG}
+{$ENDIF IMPLICITBUILDING}
+{$DESCRIPTION 'Spring Persistence - MongoDB Adapter'}
+{$LIBSUFFIX '.DelphiXE6'}
+{$RUNONLY}
+{$IMPLICITBUILD ON}
+
+requires
+  rtl,
+  vcl,
+  vclimg,
+  dbrtl,
+  Spring.Persistence.Core;
+
+contains
+  SQL.Generator.MongoDB in '..\..\SQL.Generator.MongoDB.pas',
+  Adapters.MongoDB in '..\..\Adapters.MongoDB.pas',
+  Core.Repository.MongoDB in '..\..\Core.Repository.MongoDB.pas',
+  Core.Session.MongoDB in '..\..\Core.Session.MongoDB.pas',
+  SQL.Commands.BulkInsert.MongoDB in '..\..\SQL.Commands.BulkInsert.MongoDB.pas';
+
+end.

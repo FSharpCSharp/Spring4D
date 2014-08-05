@@ -1,0 +1,108 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{4D53B520-A821-431E-829E-98561EDA9839}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="Spring.Persistence.Core.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Spring.Persistence.ObjectDataSet.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Spring.Persistence.Adapter.DBX.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Spring.Persistence.Adapter.Firedac.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Spring.Persistence.Adapter.Mongo.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Spring.Persistence.Adapter.SQLite.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Spring.Persistence.Adapter.UIB.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="Spring_Persistence_Core">
+        <MSBuild Projects="Spring.Persistence.Core.dproj"/>
+    </Target>
+    <Target Name="Spring_Persistence_Core:Clean">
+        <MSBuild Projects="Spring.Persistence.Core.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Spring_Persistence_Core:Make">
+        <MSBuild Projects="Spring.Persistence.Core.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Spring_Persistence_ObjectDataSet">
+        <MSBuild Projects="Spring.Persistence.ObjectDataSet.dproj"/>
+    </Target>
+    <Target Name="Spring_Persistence_ObjectDataSet:Clean">
+        <MSBuild Projects="Spring.Persistence.ObjectDataSet.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Spring_Persistence_ObjectDataSet:Make">
+        <MSBuild Projects="Spring.Persistence.ObjectDataSet.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Spring_Persistence_Adapter_DBX">
+        <MSBuild Projects="Spring.Persistence.Adapter.DBX.dproj"/>
+    </Target>
+    <Target Name="Spring_Persistence_Adapter_DBX:Clean">
+        <MSBuild Projects="Spring.Persistence.Adapter.DBX.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Spring_Persistence_Adapter_DBX:Make">
+        <MSBuild Projects="Spring.Persistence.Adapter.DBX.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Spring_Persistence_Adapter_Firedac">
+        <MSBuild Projects="Spring.Persistence.Adapter.Firedac.dproj"/>
+    </Target>
+    <Target Name="Spring_Persistence_Adapter_Firedac:Clean">
+        <MSBuild Projects="Spring.Persistence.Adapter.Firedac.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Spring_Persistence_Adapter_Firedac:Make">
+        <MSBuild Projects="Spring.Persistence.Adapter.Firedac.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Spring_Persistence_Adapter_Mongo">
+        <MSBuild Projects="Spring.Persistence.Adapter.Mongo.dproj"/>
+    </Target>
+    <Target Name="Spring_Persistence_Adapter_Mongo:Clean">
+        <MSBuild Projects="Spring.Persistence.Adapter.Mongo.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Spring_Persistence_Adapter_Mongo:Make">
+        <MSBuild Projects="Spring.Persistence.Adapter.Mongo.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Spring_Persistence_Adapter_SQLite">
+        <MSBuild Projects="Spring.Persistence.Adapter.SQLite.dproj"/>
+    </Target>
+    <Target Name="Spring_Persistence_Adapter_SQLite:Clean">
+        <MSBuild Projects="Spring.Persistence.Adapter.SQLite.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Spring_Persistence_Adapter_SQLite:Make">
+        <MSBuild Projects="Spring.Persistence.Adapter.SQLite.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Spring_Persistence_Adapter_UIB">
+        <MSBuild Projects="Spring.Persistence.Adapter.UIB.dproj"/>
+    </Target>
+    <Target Name="Spring_Persistence_Adapter_UIB:Clean">
+        <MSBuild Projects="Spring.Persistence.Adapter.UIB.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Spring_Persistence_Adapter_UIB:Make">
+        <MSBuild Projects="Spring.Persistence.Adapter.UIB.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="Spring_Persistence_Core;Spring_Persistence_ObjectDataSet;Spring_Persistence_Adapter_DBX;Spring_Persistence_Adapter_Firedac;Spring_Persistence_Adapter_Mongo;Spring_Persistence_Adapter_SQLite;Spring_Persistence_Adapter_UIB"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="Spring_Persistence_Core:Clean;Spring_Persistence_ObjectDataSet:Clean;Spring_Persistence_Adapter_DBX:Clean;Spring_Persistence_Adapter_Firedac:Clean;Spring_Persistence_Adapter_Mongo:Clean;Spring_Persistence_Adapter_SQLite:Clean;Spring_Persistence_Adapter_UIB:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="Spring_Persistence_Core:Make;Spring_Persistence_ObjectDataSet:Make;Spring_Persistence_Adapter_DBX:Make;Spring_Persistence_Adapter_Firedac:Make;Spring_Persistence_Adapter_Mongo:Make;Spring_Persistence_Adapter_SQLite:Make;Spring_Persistence_Adapter_UIB:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>
