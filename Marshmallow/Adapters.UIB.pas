@@ -72,7 +72,7 @@ type
     constructor Create(const AStatement: TUIBStatement); override;
     destructor Destroy; override;
     procedure SetSQLCommand(const ACommandText: string); override;
-    procedure SetParams(Params: TObjectList<TDBParam>); overload; override;
+    procedure SetParams(Params: TObjectList<TDBParam>); {overload; override;}
     function Execute(): NativeUInt; override;
     function ExecuteQuery(AServerSideCursor: Boolean = True): IDBResultSet; override;
   end;
@@ -256,7 +256,7 @@ var
   LParam: TDBParam;
   sParamName: string;
 begin
-  inherited;
+//  inherited;
   for LParam in Params do
   begin
     sParamName := LParam.Name;

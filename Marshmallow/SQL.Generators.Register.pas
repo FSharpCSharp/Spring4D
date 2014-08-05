@@ -5,8 +5,9 @@ interface
   //register all implemented generators
 
 uses
-  SQL.Generator.SQLite3
-  ,SQL.Generator.PostgreSQL
+// TODO -oCesar : Check how to register in the package Spring.Persitence.Adapter.SQLite
+//  SQL.Generator.SQLite3,
+  SQL.Generator.PostgreSQL
   ,SQL.Generator.Oracle
   ,SQL.Generator.MSSQL
   ,SQL.Generator.MySQL
