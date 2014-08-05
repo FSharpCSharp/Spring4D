@@ -270,15 +270,16 @@
         <DCCReference Include="..\..\Source\Base\Spring.Tests.Reflection.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.Tests.Reflection.ValueConverters.pas"/>
         <DCCReference Include="..\..\Source\Base\Spring.Tests.SystemUtils.pas"/>
+        <DCCReference Include="..\..\Source\Base\Spring.Tests.Logging.pas"/>
+        <DCCReference Include="..\..\Source\Base\Spring.Tests.Logging.Types.pas"/>
         <DCCReference Include="..\..\Source\Core\Spring.Tests.Container.Components.pas"/>
         <DCCReference Include="..\..\Source\Core\Spring.Tests.Container.Interfaces.pas"/>
         <DCCReference Include="..\..\Source\Core\Spring.Tests.Container.LifetimeManager.pas"/>
         <DCCReference Include="..\..\Source\Core\Spring.Tests.Container.pas"/>
+        <DCCReference Include="..\..\Source\Core\Spring.Tests.Container.Logging.pas"/>
         <DCCReference Include="..\..\Source\Core\Spring.Tests.Pool.pas"/>
         <DCCReference Include="..\..\Source\Extensions\Spring.Tests.Cryptography.pas"/>
         <DCCReference Include="..\..\Source\Extensions\Spring.Tests.Utils.pas"/>
-        <DCCReference Include="..\..\Source\Base\Spring.Tests.Logging.pas"/>
-        <DCCReference Include="..\..\Source\Base\Spring.Tests.Logging.Types.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
@@ -388,9 +389,6 @@
                         <RemoteName>ic_launcher.png</RemoteName>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="$(BDS)\bin\Artwork\iOS\iPad\FM_SettingIcon_29x29.png" Configuration="Debug" Class="iPad_Setting29">
-                    <Platform Name="iOSDevice"/>
-                </DeployFile>
                 <DeployFile LocalName="$(BDS)\bin\Artwork\iOS\iPad\FM_ApplicationIcon_152x152.png" Configuration="Debug" Class="iPad_AppIcon152">
                     <Platform Name="iOSSimulator"/>
                 </DeployFile>
@@ -398,6 +396,9 @@
                     <Platform Name="Android">
                         <RemoteName>ic_launcher.png</RemoteName>
                     </Platform>
+                </DeployFile>
+                <DeployFile LocalName="$(BDS)\bin\Artwork\iOS\iPad\FM_SettingIcon_29x29.png" Configuration="Debug" Class="iPad_Setting29">
+                    <Platform Name="iOSDevice"/>
                 </DeployFile>
                 <DeployFile LocalName="$(BDS)\bin\Artwork\iOS\iPad\FM_LaunchImageLandscape_1024x748.png" Configuration="Debug" Class="iPad_Launch1024">
                     <Platform Name="iOSDevice">

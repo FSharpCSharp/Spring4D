@@ -277,6 +277,7 @@
         <DCCReference Include="..\..\Source\Core\Spring.Tests.Container.Interfaces.pas"/>
         <DCCReference Include="..\..\Source\Core\Spring.Tests.Container.LifetimeManager.pas"/>
         <DCCReference Include="..\..\Source\Core\Spring.Tests.Container.pas"/>
+        <DCCReference Include="..\..\Source\Core\Spring.Tests.Container.Logging.pas"/>
         <DCCReference Include="..\..\Source\Core\Spring.Tests.Pool.pas"/>
         <DCCReference Include="..\..\Source\Extensions\Spring.Tests.Cryptography.pas"/>
         <DCCReference Include="..\..\Source\Extensions\Spring.Tests.Utils.pas"/>

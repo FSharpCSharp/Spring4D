@@ -45,6 +45,7 @@ uses
   Spring.Tests.Reflection.ValueConverters,
   Spring.Tests.Container,
   Spring.Tests.Container.LifetimeManager,
+  Spring.Tests.Container.Logging,
   Spring.Tests.Pool,
   Spring.Tests.Utils,
   Spring.Tests.Cryptography,
@@ -164,11 +165,7 @@ begin
   RegisterTests('Spring.Base.Logging', [
     TTestLoggerController.Suite,
     TTestLogger.Suite,
-    TTestStreamLogAppender.Suite,
-    TTestLogInsideContainer.Suite,
-    TTestLogSubResolverAndConfiguration.Suite,
-    TTestLoggingConfiguration.Suite,
-    TTestLoggingConfigurationBuilder.Suite
+    TTestStreamLogAppender.Suite
   ]);
 
 //  RegisterTests('Spring.Base.Reflection.ValueExpression', [
@@ -205,6 +202,14 @@ begin
     TTestDecoratorExtension.Suite,
     TTestManyDependencies.Suite
   ]);
+
+  RegisterTests('Spring.Core.Logging', [
+    TTestLogInsideContainer.Suite,
+    TTestLogSubResolverAndConfiguration.Suite,
+    TTestLoggingConfiguration.Suite,
+    TTestLoggingConfigurationBuilder.Suite
+  ]);
+
 
   RegisterTests('Spring.Extensions.Utils', [
     TTestVersion.Suite,
