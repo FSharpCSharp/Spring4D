@@ -24,6 +24,8 @@
 
 unit Spring.Logging.Appenders;
 
+{$I Spring.inc}
+
 interface
 
 uses

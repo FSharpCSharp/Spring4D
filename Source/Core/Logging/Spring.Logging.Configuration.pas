@@ -24,6 +24,8 @@
 
 unit Spring.Logging.Configuration;
 
+{$I Spring.inc}
+
 interface
 
 uses

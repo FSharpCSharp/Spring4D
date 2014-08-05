@@ -24,6 +24,8 @@
 
 unit Spring.Logging.Container;
 
+{$I Spring.inc}
+
 interface
 
 uses

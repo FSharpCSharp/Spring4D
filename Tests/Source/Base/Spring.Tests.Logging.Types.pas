@@ -24,6 +24,8 @@
 
 unit Spring.Tests.Logging.Types;
 
+{$I Spring.inc}
+
 interface
 
 uses
