@@ -47,6 +47,7 @@ uses
   Spring.Logging.Loggers,
   Spring.Logging.Container,
   Spring.Logging.Configuration,
+  Spring.Logging.Configuration.Builder,
   Spring.Tests.Container,
   Spring.Tests.Logging.Types;
 
@@ -197,6 +198,21 @@ type
     procedure TestAddLoggerAssignments;
 
     procedure TestSimpleConfiguration;
+    procedure TestComplexConfiguration;
+  end;
+
+  TTestLoggingConfigurationBuilder = class(TContainerTestCase)
+  private const
+    NL = #$D#$A;
+  protected
+    procedure SetUp; override;
+  published
+    procedure TestEmpty;
+
+    procedure TestAppender;
+    procedure TestController;
+    procedure TestLogger;
+
     procedure TestComplexConfiguration;
   end;
 
@@ -1316,6 +1332,7 @@ var
   appenderCtl: ILogAppender;
   f: TRttiField;
   appenders: IList<ILogAppender>;
+  impl: TImpl;
 begin
   fStrings
     .Add('[appenders\appender1]')
@@ -1341,9 +1358,11 @@ begin
     .Add('[loggers\logger2]')
     .Add('class = Spring.Tests.Logging.Types.TLogger2')
     .Add('controller = controller2')
-    .Add('levels = Fatal');
+    .Add('levels = Fatal')
+    .Add('assign = Spring.Tests.Logging.Types.TImpl');
 
-   TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
+  TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
+  fContainer.RegisterType<TImpl>.Implements<TImpl>.AsSingleton;
   fContainer.Build;
 
   logger1 := fContainer.Resolve<ILogger>;
@@ -1353,6 +1372,7 @@ begin
   appender1 := fContainer.Resolve<ILogAppender>('logging.appender1.appender');
   appender2 := fContainer.Resolve<ILogAppender>('logging.appender2.appender');
   appenderCtl := fContainer.Resolve<ILogAppender>('logging.controller2.appender');
+  impl := fContainer.Resolve<TImpl>;
 
   f := TType.GetType<TLogger>.GetField('fController');
   CheckSame(controller1, f.GetValue(TObject(logger1)).AsType<ILoggerController>);
@@ -1368,6 +1388,9 @@ begin
   appenders := f.GetValue(TObject(controller2)).AsType<IList<ILogAppender>>;
   CheckEquals(1, appenders.Count);
   CheckSame(appender2, appenders[0]);
+
+  CheckSame(logger2, impl.Logger1);
+  CheckSame(logger2, impl.Logger2);
 end;
 
 procedure TTestLoggingConfiguration.TestDefaultController;
@@ -1448,6 +1471,200 @@ begin
   CheckSame(fContainer.Resolve<ILogAppender>('appender2'), appenders[0]);
   CheckSame(fContainer.Resolve<ILogAppender>('appender1'), appenders[1]);
   CheckSame(fContainer.Resolve<ILogAppender>, appenders[2]);
+end;
+
+{ TTestLoggingConfigurationBuilder }
+
+procedure TTestLoggingConfigurationBuilder.SetUp;
+begin
+  inherited;
+end;
+
+procedure TTestLoggingConfigurationBuilder.TestAppender;
+var
+  builder: TLoggingConfigurationBuilder;
+begin
+  builder := TLoggingConfigurationBuilder.Create
+    .BeginAppender('app1', TAppenderMock)
+      .Enabled(false)
+      .Levels([TLogLevel.Warning])
+      .Prop('someProp', true)
+    .EndAppender
+
+    .BeginAppender('app2', 'TSomeAppender')
+    .EndAppender;
+
+  CheckEquals(
+    '[appenders\app1]' + NL +
+    'class = Spring.Tests.Logging.Types.TAppenderMock' + NL +
+    'enabled = False' + NL +
+    'levels = [Warning]' + NL +
+    'someProp = True' + NL +
+    NL +
+    '[appenders\app2]' + NL +
+    'class = TSomeAppender' + NL +
+    NL, builder.ToString);
+end;
+
+procedure TTestLoggingConfigurationBuilder.TestComplexConfiguration;
+var
+  config: string;
+  logger1,
+  logger2: ILogger;
+  controller1,
+  controller2: ILoggerController;
+  appender1,
+  appender2,
+  appenderCtl: ILogAppender;
+  f: TRttiField;
+  appenders: IList<ILogAppender>;
+  impl: TImpl;
+begin
+  //This is the same whatever TTestLoggingConfiguration.TestComplexConfiguration
+  //does with few adjustments
+  config := TLoggingConfigurationBuilder.Create
+    .BeginAppender('appender1', TAppenderMock)
+    .EndAppender
+
+    .BeginAppender('appender2', 'TAppenderMock2')
+      .Levels([TLogLevel.Warning, TLogLevel.Fatal, TLogLevel.Error])
+    .EndAppender
+
+    .BeginController
+      .AddAppender('appender1')
+      .AddAppender('controller2')
+    .EndController
+
+    .BeginController('controller2', TLoggerController2)
+      .AddAppender('appender2')
+      .Levels([TLogLevel.Fatal, TLogLevel.Error])
+    .EndController
+
+    .BeginLogger
+    .EndLogger
+
+    .BeginLogger('logger2', TLogger2)
+      .Controller('controller2')
+      .Levels([TLogLevel.Fatal])
+      .Assign(TImpl)
+    .EndLogger
+
+    .ToString;
+
+  TLoggingConfiguration.LoadFromString(fContainer, config);
+  fContainer.RegisterType<TImpl>.Implements<TImpl>.AsSingleton;
+  fContainer.Build;
+
+  logger1 := fContainer.Resolve<ILogger>;
+  logger2 := fContainer.Resolve<ILogger>('logging.logger2');
+  controller1 := fContainer.Resolve<ILoggerController>;
+  controller2 := fContainer.Resolve<ILoggerController>('logging.controller2.controller');
+  appender1 := fContainer.Resolve<ILogAppender>('logging.appender1.appender');
+  appender2 := fContainer.Resolve<ILogAppender>('logging.appender2.appender');
+  appenderCtl := fContainer.Resolve<ILogAppender>('logging.controller2.appender');
+  impl := fContainer.Resolve<TImpl>;
+
+  f := TType.GetType<TLogger>.GetField('fController');
+  CheckSame(controller1, f.GetValue(TObject(logger1)).AsType<ILoggerController>);
+  CheckSame(controller2, f.GetValue(TObject(logger2)).AsType<ILoggerController>);
+
+  f := TType.GetType<TLoggerController2>.GetField('fAppenders');
+  appenders := f.GetValue(TObject(controller1)).AsType<IList<ILogAppender>>;
+
+  CheckEquals(2, appenders.Count);
+  CheckSame(appender1, appenders[0]);
+  CheckSame(appenderCtl, appenders[1]);
+
+  appenders := f.GetValue(TObject(controller2)).AsType<IList<ILogAppender>>;
+  CheckEquals(1, appenders.Count);
+  CheckSame(appender2, appenders[0]);
+
+  CheckSame(logger2, impl.Logger1);
+  CheckSame(logger2, impl.Logger2);
+end;
+
+procedure TTestLoggingConfigurationBuilder.TestController;
+var
+  builder: TLoggingConfigurationBuilder;
+begin
+  builder := TLoggingConfigurationBuilder.Create
+    .BeginController
+      .Enabled(true)
+      .Levels([TLogLevel.Fatal, TLogLevel.Error])
+      .AddAppender('app1')
+      .Prop('test', 0)
+    .EndController
+
+    .BeginController('ctl2', 'TSomeController')
+      .AddAppender('ctl1')
+    .EndController
+
+    .BeginController('ctl3', TLoggerControllerMock)
+      .AddAppender('ctl1')
+    .EndController;
+
+  CheckEquals(
+    '[controllers\default]' + NL +
+    'enabled = True' + NL +
+    'levels = [Error,Fatal]' + NL +
+    'appender = app1' + NL +
+    'test = 0' + NL +
+    NL +
+    '[controllers\ctl2]' + NL +
+    'class = TSomeController' + NL +
+    'appender = ctl1' + NL +
+    NL +
+    '[controllers\ctl3]' + NL +
+    'class = Spring.Tests.Logging.Types.TLoggerControllerMock' + NL +
+    'appender = ctl1' + NL +
+    NL, builder.ToString);
+
+end;
+
+procedure TTestLoggingConfigurationBuilder.TestEmpty;
+begin
+  CheckEquals('', TLoggingConfigurationBuilder.Create.ToString);
+end;
+
+procedure TTestLoggingConfigurationBuilder.TestLogger;
+var
+  builder: TLoggingConfigurationBuilder;
+begin
+  builder := TLoggingConfigurationBuilder.Create
+    .BeginLogger
+      .Enabled(true)
+      .Levels([TLogLevel.Error, TLogLevel.Debug])
+      .Controller('ctl1')
+      .Prop('test', TLogLevel.Verbose)
+    .EndLogger
+
+    .BeginLogger('log2', 'TSomeLogger')
+      .Controller('ctl2')
+    .EndLogger
+
+    .BeginLogger('log3', TLogger1)
+      .Controller('ctl3')
+      .Assign(TImpl)
+      .Assign('TSomeClass')
+    .EndLogger;
+
+  CheckEquals(
+    '[loggers\default]' + NL +
+    'enabled = True' + NL +
+    'levels = [Debug,Error]' + NL +
+    'controller = ctl1' + NL +
+    'test = Verbose' + NL +
+    NL +
+    '[loggers\log2]' + NL +
+    'class = TSomeLogger' + NL +
+    'controller = ctl2' + NL +
+    NL +
+    '[loggers\log3]' + NL +
+    'class = Spring.Tests.Logging.Types.TLogger1' + NL +
+    'controller = ctl3' + NL +
+    'assign = Spring.Tests.Logging.Types.TImpl' + NL +
+    'assign = TSomeClass' + NL +
+    NL, builder.ToString);
 end;
 
 end.

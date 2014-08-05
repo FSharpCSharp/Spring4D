@@ -52,6 +52,8 @@ type
 
     class procedure LoadFromStrings(const container: TContainer;
       const strings: TStrings);
+    class procedure LoadFromString(const container: TContainer;
+      const str: string);
     class procedure LoadFromStream(const container: TContainer;
       const stream: TStream; const encoding: TEncoding = nil);
     class procedure LoadFromFile(const container: TContainer;
@@ -182,6 +184,22 @@ begin
   strings := TStringList.Create;
   try
     strings.LoadFromStream(stream, encoding);
+    LoadFromStrings(container, strings);
+  finally
+    strings.Free;
+  end;
+end;
+
+class procedure TLoggingConfiguration.LoadFromString(
+  const container: TContainer; const str: string);
+var
+  strings: TStrings;
+begin
+  Guard.CheckNotNull(container, 'container');
+
+  strings := TStringList.Create;
+  try
+    strings.Text := str;
     LoadFromStrings(container, strings);
   finally
     strings.Free;

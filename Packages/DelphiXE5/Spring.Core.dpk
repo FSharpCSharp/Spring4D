@@ -52,6 +52,7 @@ contains
   Spring.Container.Resolvers in '..\..\Source\Core\Container\Spring.Container.Resolvers.pas',
   Spring.Container.ResourceStrings in '..\..\Source\Core\Container\Spring.Container.ResourceStrings.pas',
   Spring.Logging.Configuration in '..\..\Source\Core\Logging\Spring.Logging.Configuration.pas',
-  Spring.Logging.Container in '..\..\Source\Core\Logging\Spring.Logging.Container.pas';
+  Spring.Logging.Container in '..\..\Source\Core\Logging\Spring.Logging.Container.pas',
+  Spring.Logging.Configuration.Builder in '..\..\Source\Core\Logging\Spring.Logging.Configuration.Builder.pas';
 
 end.
