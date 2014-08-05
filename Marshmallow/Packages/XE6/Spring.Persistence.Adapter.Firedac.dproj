@@ -1,7 +1,7 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{8F406FC8-9FAB-4A78-BBF9-849125F349F0}</ProjectGuid>
-        <MainSource>Spring.Persistence.Adapter.Firedac.dpk</MainSource>
+        <MainSource>Spring.Persistence.Adapter.FireDAC.dpk</MainSource>
         <ProjectVersion>15.4</ProjectVersion>
         <FrameworkType>None</FrameworkType>
         <Base>True</Base>
@@ -36,7 +36,7 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
         <RuntimeOnlyPackage>true</RuntimeOnlyPackage>
-        <DCC_Description>Spring Persistence - Firedac Adapter</DCC_Description>
+        <DCC_Description>Spring Persistence - FireDAC Adapter</DCC_Description>
         <DCC_UnitSearchPath>..\..\;..\..\External\delphi-oop\Persistence;..\..\\External\uib\source;..\..\..\Source\Base;..\..\..\Source\Base\Collections;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <DCC_CBuilderOutput>All</DCC_CBuilderOutput>
         <GenPackage>true</GenPackage>
@@ -92,7 +92,7 @@
         <DCCReference Include="FireDAC.dcp"/>
         <DCCReference Include="FireDACCommonDriver.dcp"/>
         <DCCReference Include="vclFireDAC.dcp"/>
-        <DCCReference Include="..\..\Adapters.Firedac.pas"/>
+        <DCCReference Include="..\..\Adapters.FireDAC.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
@@ -111,7 +111,7 @@
         <BorlandProject>
             <Delphi.Personality>
                 <Source>
-                    <Source Name="MainSource">Spring.Persistence.Adapter.Firedac.dpk</Source>
+                    <Source Name="MainSource">Spring.Persistence.Adapter.FireDAC.dpk</Source>
                 </Source>
             </Delphi.Personality>
             <Deployment/>
