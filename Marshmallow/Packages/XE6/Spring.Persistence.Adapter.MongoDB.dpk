@@ -1,4 +1,4 @@
-package Spring.Persistence.Adapter.Mongo;
+package Spring.Persistence.Adapter.MongoDB;
 
 {$R *.res}
 {$IFDEF IMPLICITBUILDING This IFDEF should not be used by users}

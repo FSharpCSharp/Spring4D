@@ -1,7 +1,7 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{8C1FF373-CB7F-4DF0-9576-2E17BB190667}</ProjectGuid>
-        <MainSource>Spring.Persistence.Adapter.Mongo.dpk</MainSource>
+        <MainSource>Spring.Persistence.Adapter.MongoDB.dpk</MainSource>
         <ProjectVersion>15.4</ProjectVersion>
         <FrameworkType>None</FrameworkType>
         <Base>True</Base>
@@ -43,7 +43,7 @@
         <DllSuffix>.DelphiXE6</DllSuffix>
         <VerInfo_Locale>1046</VerInfo_Locale>
         <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
-        <SanitizedProjectName>Spring_Persistence_Adapter_Mongo</SanitizedProjectName>
+        <SanitizedProjectName>Spring_Persistence_Adapter_MongoDB</SanitizedProjectName>
         <DCC_DcuOutput>..\..\Library\DelphiXE6\$(Platform)\$(Config)</DCC_DcuOutput>
         <DCC_ExeOutput>.\$(Platform)\$(Config)</DCC_ExeOutput>
         <DCC_E>false</DCC_E>
@@ -109,7 +109,7 @@
         <BorlandProject>
             <Delphi.Personality>
                 <Source>
-                    <Source Name="MainSource">Spring.Persistence.Adapter.Mongo.dpk</Source>
+                    <Source Name="MainSource">Spring.Persistence.Adapter.MongoDB.dpk</Source>
                 </Source>
             </Delphi.Personality>
             <Deployment/>
