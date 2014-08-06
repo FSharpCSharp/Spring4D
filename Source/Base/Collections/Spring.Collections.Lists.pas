@@ -103,7 +103,7 @@ type
 
     procedure Clear; override;
 
-    function Contains(const value: T; comparer: IEqualityComparer<T>): Boolean; override;
+    function Contains(const value: T; const comparer: IEqualityComparer<T>): Boolean; override;
     function IndexOf(const item: T; index, count: Integer): Integer; override;
 
     procedure Insert(index: Integer; const item: T); override;
@@ -543,7 +543,7 @@ begin
 end;
 
 function TList<T>.Contains(const value: T;
-  comparer: IEqualityComparer<T>): Boolean;
+  const comparer: IEqualityComparer<T>): Boolean;
 var
   index: Integer;
 begin

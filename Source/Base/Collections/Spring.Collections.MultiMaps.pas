@@ -75,7 +75,8 @@ type
 
       {$REGION 'Implements IEnumerable<TValue>'}
         function GetEnumerator: IEnumerator<TValue>; override;
-        function Contains(const value: TValue; comparer: IEqualityComparer<TValue>): Boolean; override;
+        function Contains(const value: TValue;
+          const comparer: IEqualityComparer<TValue>): Boolean; override;
         function ToArray: TArray<TValue>; override;
       {$ENDREGION}
       end;
@@ -101,7 +102,7 @@ type
   {$REGION 'Implements IEnumerable<TPair<TKey, TValue>>'}
     function GetEnumerator: IEnumerator<TGenericPair>; override;
     function Contains(const value: TGenericPair;
-      comparer: IEqualityComparer<TGenericPair>): Boolean; override;
+      const comparer: IEqualityComparer<TGenericPair>): Boolean; override;
   {$ENDREGION}
 
   {$REGION 'Implements ICollection<TPair<TKey, TValue>>'}
@@ -203,7 +204,7 @@ begin
 end;
 
 function TMultiMapBase<TKey, TValue>.Contains(const value: TGenericPair;
-  comparer: IEqualityComparer<TGenericPair>): Boolean;
+  const comparer: IEqualityComparer<TGenericPair>): Boolean;
 var
   list: ICollection<TValue>;
 begin
@@ -403,7 +404,7 @@ begin
 end;
 
 function TMultiMapBase<TKey, TValue>.TValueCollection.Contains(const value: TValue;
-  comparer: IEqualityComparer<TValue>): Boolean;
+  const comparer: IEqualityComparer<TValue>): Boolean;
 begin
   Result := fOwner.ContainsValue(value);
 end;

@@ -139,7 +139,8 @@ type
     function Concat(const second: IEnumerable<T>): IEnumerable<T>;
 
     function Contains(const value: T): Boolean; overload; virtual;
-    function Contains(const value: T; comparer: IEqualityComparer<T>): Boolean; overload; virtual;
+    function Contains(const value: T; const comparer: IEqualityComparer<T>): Boolean; overload; virtual;
+    function Contains(const value: T; const comparer: TEqualityComparison<T>): Boolean; overload;
 
     function ElementAt(index: Integer): T;
     function ElementAtOrDefault(index: Integer): T; overload;
@@ -544,7 +545,7 @@ begin
 end;
 
 function TEnumerableBase<T>.Contains(const value: T;
-  comparer: IEqualityComparer<T>): Boolean;
+  const comparer: IEqualityComparer<T>): Boolean;
 var
   item: T;
 begin
@@ -557,6 +558,12 @@ begin
     if comparer.Equals(value, item) then
       Exit(True);
   Result := False;
+end;
+
+function TEnumerableBase<T>.Contains(const value: T;
+  const comparer: TEqualityComparison<T>): Boolean;
+begin
+  Result := Contains(value, TEqualityComparer<T>.Construct(comparer, nil));
 end;
 
 function TEnumerableBase<T>.ElementAt(index: Integer): T;

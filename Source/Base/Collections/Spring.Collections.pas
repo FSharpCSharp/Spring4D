@@ -345,7 +345,9 @@ type
     ///	  <b>True</b> if the source sequence contains an element that has the
     ///	  specified value; otherwise, <b>False</b>.
     ///	</returns>
-    function Contains(const value: T; comparer: IEqualityComparer<T>): Boolean; overload;
+    function Contains(const value: T; const comparer: IEqualityComparer<T>): Boolean; overload;
+
+    function Contains(const value: T; const comparer: TEqualityComparison<T>): Boolean; overload;
 
     ///	<summary>
     ///	  Returns the element at a specified index in a sequence.
