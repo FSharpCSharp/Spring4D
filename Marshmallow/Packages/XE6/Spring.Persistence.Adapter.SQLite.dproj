@@ -88,7 +88,6 @@
         <DCCReference Include="vclimg.dcp"/>
         <DCCReference Include="dbrtl.dcp"/>
         <DCCReference Include="Spring.Persistence.Core.dcp"/>
-        <DCCReference Include="..\..\SQL.Generator.SQLite3.pas"/>
         <DCCReference Include="..\..\Adapters.SQLite.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
