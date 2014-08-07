@@ -70,7 +70,14 @@ type
       '[ERROR]',
       '[FATAL]'
     );
+    class function FormatText(const entry: TLogEntry): string; static; inline;
     class function FormatMsg(const entry: TLogEntry): string; static; inline;
+    class function FormatMethodName(const classType: TClass;
+      const methodName: string): string; static; inline;
+    class function FormatEntering(const classType: TClass;
+      const methodName: string): string; static; inline;
+    class function FormatLeaving(const classType: TClass;
+      const methodName: string): string; static; inline;
     {$ENDREGION}
   protected
     function IsEnabled(level: TLogLevel): Boolean; inline;
@@ -86,6 +93,9 @@ type
   {$ENDREGION}
 implementation
 
+uses
+  Spring.Logging.ResourceStrings;
+
 {$REGION 'TLogAppenderBase'}
 { TLogAppenderBase }
 
@@ -96,17 +106,51 @@ begin
   fLevels := LOG_BASIC_LEVELS;
 end;
 
+class function TLogAppenderBase.FormatEntering(const classType: TClass;
+  const methodName: string): string;
+begin
+  Result := SLogEntering + FormatMethodName(classType, methodName);
+end;
+
+class function TLogAppenderBase.FormatLeaving(const classType: TClass;
+  const methodName: string): string;
+begin
+  Result := SLogLeaving + FormatMethodName(classType, methodName);
+end;
+
+class function TLogAppenderBase.FormatMethodName(const classType: TClass;
+  const methodName: string): string;
+begin
+  if (classType <> nil) then
+    Result := classType.QualifiedClassName + '.' + methodName
+  else Result := methodName;
+end;
+
 class function TLogAppenderBase.FormatMsg(const entry: TLogEntry): string;
 begin
   if (entry.Exc = nil) then
-    Result := entry.Msg
+    Result := FormatText(entry)
   else
   begin
     if (entry.Msg <> '') then
-      Result := entry.Msg + ', ' + entry.Exc.ClassName
+      Result := FormatText(entry) + ', ' + entry.Exc.ClassName
     else Result := entry.Exc.ClassName;
     if (entry.Exc.Message <> '') then
       Result := Result + ': ' + entry.Exc.Message;
+  end;
+end;
+
+class function TLogAppenderBase.FormatText(const entry: TLogEntry): string;
+begin
+  case entry.EntryType of
+    TLogEntryType.Text:
+      Result := entry.Msg;
+
+    TLogEntryType.Entering:
+      Result := FormatEntering(entry.ClassType, entry.Msg);
+
+    TLogEntryType.Leaving:
+      Result := FormatLeaving(entry.ClassType, entry.Msg);
   end;
 end;
 

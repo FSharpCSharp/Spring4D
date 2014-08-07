@@ -134,13 +134,6 @@ type
   protected
     procedure DoLog(const entry: TLogEntry); virtual; abstract;
 
-    class function FormatMethodName(const classType: TClass;
-      const methodName: string): string; static; inline;
-    class function FormatEntering(const classType: TClass;
-      const methodName: string): string; static; inline;
-    class function FormatLeaving(const classType: TClass;
-      const methodName: string): string; static; inline;
-
     procedure ILogAppender.Send = Log;
   public
     constructor Create;
@@ -239,8 +232,7 @@ implementation
 
 uses
   Spring,
-  Spring.Collections,
-  Spring.Logging.ResourceStrings;
+  Spring.Collections;
 
 type
   TTrackingImpl = class(TInterfacedObject, IInterface)
@@ -561,7 +553,7 @@ procedure TLoggerBase.Entering(level: TLogLevel; const classType: TClass;
   const methodName: string);
 begin
   if (IsEnabled(level)) then
-    DoLog(TLogEntry.Create(level, FormatEntering(classType, methodName),
+    DoLog(TLogEntry.Create(level, TLogEntryType.Entering, methodName,
       classType));
 end;
 
@@ -569,7 +561,7 @@ procedure TLoggerBase.Entering(level: TLogLevel; const classType: TClass;
   const methodName: string; const arguments: array of TValue);
 begin
   if (IsEnabled(level)) then
-    DoLog(TLogEntry.Create(level, FormatEntering(classType, methodName),
+    DoLog(TLogEntry.Create(level, TLogEntryType.Entering, methodName,
       classType, TValue.From<TArray<TValue>>(TArray.Copy<TValue>(arguments))));
 end;
 
@@ -603,26 +595,6 @@ procedure TLoggerBase.Fatal(const fmt: string; const args: array of const;
 begin
   if (IsEnabled(TLogLevel.Fatal)) then
     DoLog(TLogEntry.Create(TLogLevel.Fatal, Format(fmt, args), exc));
-end;
-
-class function TLoggerBase.FormatEntering(const classType: TClass;
-  const methodName: string): string;
-begin
-  Result := SLogEntering + FormatMethodName(classType, methodName);
-end;
-
-class function TLoggerBase.FormatLeaving(const classType: TClass;
-  const methodName: string): string;
-begin
-  Result := SLogLeaving + FormatMethodName(classType, methodName);
-end;
-
-class function TLoggerBase.FormatMethodName(const classType: TClass;
-  const methodName: string): string;
-begin
-  if (classType <> nil) then
-    Result := classType.QualifiedClassName + '.' + methodName
-  else Result := methodName;
 end;
 
 function TLoggerBase.GetEnabled: Boolean;
@@ -742,7 +714,7 @@ procedure TLoggerBase.Leaving(level: TLogLevel; const classType: TClass;
   const methodName: string);
 begin
   if (IsEnabled(level)) then
-    DoLog(TLogEntry.Create(level, FormatLeaving(classType, methodName),
+    DoLog(TLogEntry.Create(level, TLogEntryType.Leaving, methodName,
       classType));
 end;
 

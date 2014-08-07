@@ -112,8 +112,6 @@ type
     procedure TestDebug; overload;
     procedure TestVerbose; overload;
 
-    procedure TestFormatMethodName;
-
     procedure TestEntering;
     procedure TestLeaving;
     procedure TestTrack;
@@ -129,6 +127,13 @@ type
   protected
     procedure SetUp; override;
     procedure TearDown; override;
+  end;
+  {$ENDREGION}
+
+  {$REGION 'TTestLogAppenderBase'}
+  TTestLogAppenderBase = class(TTestCase)
+  published
+    procedure TestFormatMethodName;
   end;
   {$ENDREGION}
 
@@ -157,7 +162,7 @@ type
     property Logger: TLogger read GetLogger;
   end;
 
-  TLoggerAccess = class(TLogger);
+  TAppenderAccess = class(TLogAppenderWithTimeStampFormat);
 
 { TTestLoggerHelper }
 
@@ -299,7 +304,8 @@ begin
   //Check that we only output the message and not the data if the appender
   //does not habe SerializedData level
   appender.Levels := [TLogLevel.Fatal];
-  fController.Send(TLogEntry.Create(TLogLevel.Fatal, 'test', nil, -1));
+  fController.Send(TLogEntry.Create(TLogLevel.Fatal, TLogEntryType.Text, 'test',
+    nil, -1));
   CheckEquals(1, appender.WriteCount);
   CheckEquals(0, serializer.HandlesTypeCount);
   CheckEquals(Ord(TLogLevel.Fatal), Ord(appender.Entry.Level));
@@ -307,13 +313,15 @@ begin
   //... or is disabled
   appender.Enabled := false;
   appender.Levels := [TLogLevel.Fatal, TLogLevel.SerializedData];
-  fController.Send(TLogEntry.Create(TLogLevel.Fatal, 'test', nil, -1));
+  fController.Send(TLogEntry.Create(TLogLevel.Fatal, TLogEntryType.Text, 'test',
+    nil, -1));
   CheckEquals(1, appender.WriteCount);
   CheckEquals(0, serializer.HandlesTypeCount);
 
   //Finally test that we dispatch the call and both messages are logged
   appender.Enabled := true;
-  fController.Send(TLogEntry.Create(TLogLevel.Fatal, 'test', nil, -1));
+  fController.Send(TLogEntry.Create(TLogLevel.Fatal, TLogEntryType.Text, 'test',
+    nil, -1));
   CheckEquals(3, appender.WriteCount);
   CheckEquals(1, serializer.HandlesTypeCount);
   CheckEquals(Ord(TLogLevel.SerializedData), Ord(appender.Entry.Level));
@@ -332,6 +340,7 @@ begin
     Exit;
 
   CheckEquals(Ord(level), Ord(Controller.LastEntry.Level));
+  CheckEquals(Ord(TLogEntryType.Text), Ord(Controller.LastEntry.EntryType));
   CheckEquals(msg, Controller.LastEntry.Msg);
   CheckSame(exc, Controller.LastEntry.Exc);
 end;
@@ -418,6 +427,7 @@ begin
 
   fLogger.Entering(TLogLevel.Warning, nil, '');
   CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.LastEntry.Level));
+  CheckEquals(Ord(TLogEntryType.Entering),  Ord(Controller.LastEntry.EntryType));
 
   Controller.Reset;
 
@@ -432,6 +442,7 @@ begin
 
   fLogger.Entering(TLogLevel.Warning, nil, '', ['value']);
   CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.LastEntry.Level));
+  CheckEquals(Ord(TLogEntryType.Entering),  Ord(Controller.LastEntry.EntryType));
   CheckEquals('value', Controller.LastEntry.Data.AsType<TArray<TValue>>[0].AsString);
 end;
 
@@ -487,17 +498,6 @@ begin
   TestFatal(true);
   Logger.Levels := [];
   TestFatal(false);
-end;
-
-procedure TTestLogger.TestFormatMethodName;
-var
-  result: string;
-begin
-    result := TLoggerAccess.FormatMethodName(nil, 'MethodName');
-    CheckEquals('MethodName', result);
-
-    result := TLoggerAccess.FormatMethodName(ClassType, 'MethodName');
-    CheckEquals('Spring.Tests.Logging.TTestLogger.MethodName', result);
 end;
 
 procedure TTestLogger.TestInfo(enabled: Boolean);
@@ -636,6 +636,7 @@ begin
 
   fLogger.Leaving(TLogLevel.Warning, nil, '');
   CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.LastEntry.Level));
+  CheckEquals(Ord(TLogEntryType.Leaving),  Ord(Controller.LastEntry.EntryType));
 end;
 
 procedure TTestLogger.TestLevels;
@@ -725,9 +726,11 @@ begin
   result := fLogger.Track(TLogLevel.Warning, nil, '');
   CheckNotNull(result);
   CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.LastEntry.Level));
+  CheckEquals(Ord(TLogEntryType.Entering),  Ord(Controller.LastEntry.EntryType));
   Controller.Reset;
   result := nil;
   CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.LastEntry.Level));
+  CheckEquals(Ord(TLogEntryType.Leaving),  Ord(Controller.LastEntry.EntryType));
 
   Controller.Reset;
 
@@ -745,10 +748,12 @@ begin
   result := fLogger.Track(TLogLevel.Warning, nil, '', ['value']);
   CheckNotNull(result);
   CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.LastEntry.Level));
+  CheckEquals(Ord(TLogEntryType.Entering),  Ord(Controller.LastEntry.EntryType));
   CheckEquals('value', Controller.LastEntry.Data.AsType<TArray<TValue>>[0].AsString);
   Controller.Reset;
   result := nil;
   CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.LastEntry.Level));
+  CheckEquals(Ord(TLogEntryType.Leaving),  Ord(Controller.LastEntry.EntryType));
 end;
 
 procedure TTestLogger.TestText(enabled: Boolean);
@@ -868,6 +873,21 @@ begin
   fLogger := nil;
   fController := nil;
   fAppender := nil;
+end;
+{$ENDREGION}
+
+{$REGION 'TTestLogAppenderBase'}
+{ TTestLogAppenderBase }
+
+procedure TTestLogAppenderBase.TestFormatMethodName;
+var
+  result: string;
+begin
+    result := TAppenderAccess.FormatMethodName(nil, 'MethodName');
+    CheckEquals('MethodName', result);
+
+    result := TAppenderAccess.FormatMethodName(ClassType, 'MethodName');
+    CheckEquals('Spring.Tests.Logging.TTestLogAppenderBase.MethodName', result);
 end;
 {$ENDREGION}
 

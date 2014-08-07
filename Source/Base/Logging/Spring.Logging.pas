@@ -104,6 +104,12 @@ const
   ];
 
 type
+  TLogEntryType = (
+    Text,
+    Entering,
+    Leaving
+  );
+
   TLogStyle = (
     Bold,
     Italic,
@@ -127,6 +133,7 @@ type
   TLogEntry = record
   private
     fLevel: TLogLevel;
+    fEntryType: TLogEntryType;
     fMsg: string;
     fTimeStamp: TDateTime;
     fExc: Exception;
@@ -154,10 +161,10 @@ type
     constructor Create(level: TLogLevel; const msg: string); overload;
     constructor Create(level: TLogLevel; const msg: string;
       const exc: Exception); overload;
-    constructor Create(level: TLogLevel; const msg: string;
-      const classType: TClass); overload;
-    constructor Create(level: TLogLevel; const msg: string;
-      const classType: TClass; const data: TValue); overload;
+    constructor Create(level: TLogLevel; entryType: TLogEntryType;
+      const msg: string; const classType: TClass); overload;
+    constructor Create(level: TLogLevel; entryType: TLogEntryType;
+      const msg: string; const classType: TClass; const data: TValue); overload;
     {constructor Create(level : TLogLevel; const msg : string;
       color : TColor = clDefault; fontStyle : TFontStyles = []; )}
 
@@ -170,6 +177,7 @@ type
     function SetTag(tag: NativeInt): TLogEntry;
 
     property Level: TLogLevel read fLevel;
+    property EntryType: TLogEntryType read fEntryType;
     property Msg: string read fMsg;
     property TimeStamp: TDateTime read fTimeStamp;
     property Exc: Exception read fExc;
@@ -327,6 +335,7 @@ constructor TLogEntry.Create(level: TLogLevel; const msg: string);
 begin
   fTimeStamp:=Now; //Do this ASAP
   fLevel := level;
+  fEntryType := TLogEntryType.Text;
   fMsg := msg;
 
   //Set default values
@@ -348,17 +357,18 @@ begin
   fExc := exc;
 end;
 
-constructor TLogEntry.Create(level: TLogLevel; const msg: string;
-  const classType: TClass);
+constructor TLogEntry.Create(level: TLogLevel; entryType: TLogEntryType;
+  const msg: string; const classType: TClass);
 begin
   Create(level, msg);
   fClassType := classType;
+  fEntryType := entryType;
 end;
 
-constructor TLogEntry.Create(level: TLogLevel; const msg: string;
-  const classType: TClass; const data: TValue);
+constructor TLogEntry.Create(level: TLogLevel; entryType: TLogEntryType;
+  const msg: string; const classType: TClass; const data: TValue);
 begin
-  Create(level, msg, classType);
+  Create(level, entryType, msg, classType);
   fData := data;
 end;
 

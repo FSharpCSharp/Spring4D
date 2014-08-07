@@ -166,6 +166,7 @@ begin
   RegisterTests('Spring.Base.Logging', [
     TTestLoggerController.Suite,
     TTestLogger.Suite,
+    TTestLogAppenderBase.Suite,
     TTestStreamLogAppender.Suite
   ]);
 
