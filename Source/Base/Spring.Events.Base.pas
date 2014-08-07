@@ -165,16 +165,9 @@ end;
 
 procedure TEventBase.HandleNotification(Component: TComponent;
   Operation: TOperation);
-var
-  i: Integer;
 begin
-  inherited;
   if Operation = opRemove then
-  begin
-    for i := fHandlers.Count - 1 downto 0 do
-      if fHandlers[i].Data = Component then
-        fHandlers.Delete(i);
-  end;
+    RemoveAll(Component);
 end;
 
 procedure TEventBase.Notify(Sender: TObject; const Item: TMethod;
