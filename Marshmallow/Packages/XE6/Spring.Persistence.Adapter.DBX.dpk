@@ -35,7 +35,9 @@ requires
   vcl,
   vclimg,
   dbrtl,
-  Spring.Persistence.Core;
+  Spring.Persistence.Core,
+  DbxCommonDriver,
+  dbexpress;
 
 contains
   Adapters.DBX in '..\..\Adapters.DBX.pas';

@@ -31,21 +31,13 @@ package Spring.Persistence.Core;
 {$IMPLICITBUILD OFF}
 
 requires
-  rtl,
   vcl,
   vclimg,
   inet,
-  dsnap,
   dbrtl,
-  adortl,
-  dbexpress,
-  DbxCommonDriver,
   Spring.Base;
 
 contains
-  Adapters.ADO in '..\..\Adapters.ADO.pas',
-  Adapters.ASA in '..\..\Adapters.ASA.pas',
-  Adapters.MSSQL in '..\..\Adapters.MSSQL.pas',
   Adapters.ObjectDataset in '..\..\Adapters.ObjectDataset.pas',
   Core.ConnectionFactory in '..\..\Core.ConnectionFactory.pas',
   Core.Criteria.Criterion.BetweenExpression in '..\..\Core.Criteria.Criterion.BetweenExpression.pas',

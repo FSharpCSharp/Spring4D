@@ -88,6 +88,8 @@
         <DCCReference Include="vclimg.dcp"/>
         <DCCReference Include="dbrtl.dcp"/>
         <DCCReference Include="Spring.Persistence.Core.dcp"/>
+        <DCCReference Include="DbxCommonDriver.dcp"/>
+        <DCCReference Include="dbexpress.dcp"/>
         <DCCReference Include="..\..\Adapters.DBX.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
