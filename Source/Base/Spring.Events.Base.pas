@@ -49,6 +49,7 @@ type
     fEnabled: Boolean;
     fHandlers: TMethodList;
     fOnChanged: TNotifyEvent;
+    fNotificationHandler: TNotificationHandler;
 
     {$REGION 'Property Accessors'}
     function GetCount: Integer;
@@ -61,6 +62,8 @@ type
     {$ENDREGION}
   protected
     fInvoke: TMethod;
+    procedure HandleNotification(Component: TComponent;
+      Operation: TOperation);
     procedure Notify(Sender: TObject; const Item: TMethod;
       Action: TCollectionNotification); virtual;
     property Handlers: TMethodList read fHandlers;
@@ -84,6 +87,21 @@ type
 
 implementation
 
+function IsValid(AObject: TObject): Boolean;
+{$IFDEF DELPHI2010}
+type
+  PNativeInt = ^NativeInt;
+{$ENDIF}
+begin
+  Result := False;
+  if Assigned(AObject) then
+  try
+    if PNativeInt(AObject)^ > $FFFF then
+      Result := PNativeInt(AObject)^ = PNativeInt(PNativeInt(AObject)^ + vmtSelfPtr)^;
+  except
+  end;
+end;
+
 
 {$REGION 'TEventBase'}
 
@@ -97,6 +115,7 @@ end;
 
 destructor TEventBase.Destroy;
 begin
+  fNotificationHandler.Free;
   fHandlers.Free;
   inherited;
 end;
@@ -144,9 +163,46 @@ begin
   Result := fOnChanged;
 end;
 
+procedure TEventBase.HandleNotification(Component: TComponent;
+  Operation: TOperation);
+var
+  i: Integer;
+begin
+  inherited;
+  if Operation = opRemove then
+  begin
+    for i := fHandlers.Count - 1 downto 0 do
+      if fHandlers[i].Data = Component then
+        fHandlers.Delete(i);
+  end;
+end;
+
 procedure TEventBase.Notify(Sender: TObject; const Item: TMethod;
   Action: TCollectionNotification);
 begin
+  case Action of
+    cnAdded:
+    begin
+      if IsValid(Item.Data) and (TObject(Item.Data) is TComponent) then
+      begin
+        if fNotificationHandler = nil then
+        begin
+          fNotificationHandler := TNotificationHandler.Create(nil);
+          fNotificationHandler.OnNotification := HandleNotification;
+        end;
+        fNotificationHandler.FreeNotification(TComponent(Item.Data));
+      end;
+    end;
+    cnRemoved:
+    begin
+      if IsValid(Item.Data) and (TObject(Item.Data) is TComponent) then
+      begin
+        if fNotificationHandler <> nil then
+          fNotificationHandler.RemoveFreeNotification(TComponent(Item.Data));
+      end;
+    end;
+  end;
+
   if Assigned(fOnChanged) then
     fOnChanged(Self);
 end;

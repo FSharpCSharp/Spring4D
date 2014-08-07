@@ -829,6 +829,25 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'Notification handler'}
+
+  TNotificationEvent = procedure(Component: TComponent;
+    Operation: TOperation) of object;
+
+  TNotificationHandler = class(TComponent)
+  private
+    fOnNotification: TNotificationEvent;
+  protected
+    procedure Notification(Component: TComponent;
+      Operation: TOperation); override;
+  public
+    property OnNotification: TNotificationEvent
+      read fOnNotification write fOnNotification;
+  end;
+
+  {$ENDREGION}
+
+
   {$REGION 'Exceptions'}
 
   ENotSupportedException = SysUtils.ENotSupportedException;
@@ -1922,6 +1941,19 @@ end;
 function TPropertyChangedEventArgs.GetPropertyName: string;
 begin
   Result := fPropertyName;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TNotificationHandler'}
+
+procedure TNotificationHandler.Notification(Component: TComponent;
+  Operation: TOperation);
+begin
+  inherited;
+  if Assigned(fOnNotification) then
+    fOnNotification(Component, Operation);
 end;
 
 {$ENDREGION}
