@@ -32,8 +32,6 @@ package Spring.Persistence.Adapter.ADO;
 
 requires
   rtl,
-  vcl,
-  vclimg,
   dbrtl,
   Spring.Persistence.Core,
   adortl;

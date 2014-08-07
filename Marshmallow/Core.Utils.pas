@@ -30,8 +30,16 @@ unit Core.Utils;
 interface
 
 uses
-  Rtti, TypInfo, DB, Graphics, Classes, SysUtils, Mapping.Attributes
-  , Core.Interfaces, Spring.Collections;
+  Classes,
+  DB,
+  Graphics,
+  Rtti,
+  SysUtils,
+  TypInfo,
+
+  Core.Interfaces,
+  Mapping.Attributes,
+  Spring.Collections;
 
 type
   TUtils = class sealed
@@ -71,19 +79,18 @@ type
 implementation
 
 uses
-  Core.Reflection
-  ,Core.Exceptions
-  ,Core.Session
-  ,Core.Types
-  ,Mapping.RttiExplorer
-  ,Core.EntityCache
-  ,jpeg
-  ,pngimage
-  ,GIFImg
-  ,Variants
-  ,StrUtils
-  ;
+  GIFImg,
+  jpeg,
+  pngimage,
+  StrUtils,
+  Variants,
 
+  Core.EntityCache,
+  Core.Exceptions,
+  Core.Reflection,
+  Core.Session,
+  Core.Types,
+  Mapping.RttiExplorer;
 
 type
   THackedSession = class(TSession);

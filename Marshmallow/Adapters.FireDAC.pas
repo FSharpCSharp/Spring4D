@@ -3,18 +3,34 @@ unit Adapters.FireDAC;
 interface
 
 uses
-  Core.Interfaces, Core.Base, SQL.Params, SysUtils
-  , SQL.Generator.Ansi, DB, Mapping.Attributes, Adapters.FieldCache
-  ,Spring.Collections
-  ,FireDAC.Stan.Intf, FireDAC.Stan.Option,
-  FireDAC.Stan.Error, FireDAC.UI.Intf, FireDAC.Phys.Intf, FireDAC.Stan.Def,
-  FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys, FireDAC.Stan.Param,
-  FireDAC.DatS, FireDAC.DApt.Intf, FireDAC.DApt, FireDAC.Comp.DataSet,
-  FireDAC.Comp.Client, FireDAC.VCLUI.Wait
-  ;
+  Core.Base,
+  Core.Interfaces,
+  DB,
+  SysUtils,
+
+  FireDAC.Comp.Client,
+  FireDAC.Comp.DataSet,
+  FireDAC.DApt,
+  FireDAC.DApt.Intf,
+  FireDAC.DatS,
+  FireDAC.Phys,
+  FireDAC.Phys.Intf,
+  FireDAC.Stan.Async,
+  FireDAC.Stan.Def,
+  FireDAC.Stan.Error,
+  FireDAC.Stan.Intf,
+  FireDAC.Stan.Option,
+  FireDAC.Stan.Param,
+  FireDAC.Stan.Pool,
+  FireDAC.UI.Intf,
+
+  Adapters.FieldCache,
+  Mapping.Attributes,
+  Spring.Collections,
+  SQL.Generator.Ansi,
+  SQL.Params;
 
 type
-
   TFireDACResultSetAdapter = class(TDriverResultSetAdapter<TFDQuery>)
   private
     FFieldCache: IFieldCache;

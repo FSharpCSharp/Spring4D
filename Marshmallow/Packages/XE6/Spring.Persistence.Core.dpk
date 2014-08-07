@@ -31,11 +31,11 @@ package Spring.Persistence.Core;
 {$IMPLICITBUILD OFF}
 
 requires
-  vcl,
-  vclimg,
   inet,
   dbrtl,
-  Spring.Base;
+  Spring.Base,
+  vcl,
+  vclimg;
 
 contains
   Adapters.ObjectDataset in '..\..\Adapters.ObjectDataset.pas',

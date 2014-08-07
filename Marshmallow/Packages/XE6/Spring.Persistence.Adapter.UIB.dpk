@@ -32,8 +32,6 @@ package Spring.Persistence.Adapter.UIB;
 
 requires
   rtl,
-  vcl,
-  vclimg,
   dbrtl,
   Spring.Persistence.Core;
 

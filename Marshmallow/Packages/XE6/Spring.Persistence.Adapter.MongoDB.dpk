@@ -32,8 +32,6 @@ package Spring.Persistence.Adapter.MongoDB;
 
 requires
   rtl,
-  vcl,
-  vclimg,
   dbrtl,
   Spring.Persistence.Core;
 

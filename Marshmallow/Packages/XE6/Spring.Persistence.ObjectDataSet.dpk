@@ -34,8 +34,6 @@ package Spring.Persistence.ObjectDataSet;
 
 requires
   rtl,
-  vcl,
-  vclimg,
   dbrtl,
   Spring.Persistence.Core;
 

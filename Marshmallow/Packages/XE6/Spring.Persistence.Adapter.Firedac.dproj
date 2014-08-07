@@ -84,14 +84,11 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="rtl.dcp"/>
-        <DCCReference Include="vcl.dcp"/>
-        <DCCReference Include="vclimg.dcp"/>
         <DCCReference Include="dbrtl.dcp"/>
         <DCCReference Include="Spring.Persistence.Core.dcp"/>
         <DCCReference Include="FireDACCommon.dcp"/>
         <DCCReference Include="FireDAC.dcp"/>
         <DCCReference Include="FireDACCommonDriver.dcp"/>
-        <DCCReference Include="vclFireDAC.dcp"/>
         <DCCReference Include="..\..\Adapters.FireDAC.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>

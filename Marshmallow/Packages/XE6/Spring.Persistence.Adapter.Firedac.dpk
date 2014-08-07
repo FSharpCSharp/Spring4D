@@ -32,14 +32,11 @@ package Spring.Persistence.Adapter.FireDAC;
 
 requires
   rtl,
-  vcl,
-  vclimg,
   dbrtl,
   Spring.Persistence.Core,
   FireDACCommon,
   FireDAC,
-  FireDACCommonDriver,
-  vclFireDAC;
+  FireDACCommonDriver;
 
 contains
   Adapters.FireDAC in '..\..\Adapters.FireDAC.pas';
