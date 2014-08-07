@@ -29,10 +29,13 @@ unit Spring.Tests.Logging.Types;
 interface
 
 uses
+  TypInfo,
   Classes,
+  Rtti,
   TestFramework,
   Spring,
   Spring.Logging,
+  Spring.Logging.Extensions,
   Spring.Logging.Appenders.Base,
   Spring.Logging.Controller,
   Spring.Logging.Loggers,
@@ -41,17 +44,19 @@ uses
 type
   TAppenderMock = class(TLogAppenderBase)
   private
-    fWriteCalled: Boolean;
+    fWriteCount: Integer;
     fEntry: TLogEntry;
     fSomeFloat: Extended;
     fSomeInt: Integer;
     fSomeEnum: TLogLevel;
     fSomeString: string;
+    function GetWriteCalled: Boolean;
   protected
     procedure DoSend(const entry: TLogEntry); override;
   public
     property Entry: TLogEntry read fEntry;
-    property WriteCalled: Boolean read fWriteCalled;
+    property WriteCalled: Boolean read GetWriteCalled;
+    property WriteCount: Integer read fWriteCount;
     property SomeFloat: Extended read fSomeFloat write fSomeFloat;
     property SomeInt: Integer read fSomeInt write fSomeInt;
     property SomeEnum: TLogLevel read fSomeEnum write fSomeEnum;
@@ -67,9 +72,12 @@ type
   private
     fLastEntry: TLogEntry;
   public
+
     procedure AddAppender(const appedner: ILogAppender);
     procedure Send(const entry: TLogEntry);
     procedure Reset;
+    function GetEnabled: Boolean;
+    function GetLevels: TLogLevels;
     property LastEntry: TLogEntry read FLastEntry;
   end;
 
@@ -126,14 +134,51 @@ type
 
   end;
 
+  TTypeSerializerMock = class(TInterfacedObject, ITypeSerializer)
+  private
+    fHandlesTypeCount: Integer;
+  public
+    function HandlesType(typeInfo: PTypeInfo): Boolean;
+    function Serialize(const controller: ISerializerController;
+      const value: TValue; nestingLevel: Integer = 0): string;
+
+    property HandlesTypeCount: Integer read fHandlesTypeCount;
+  end;
+
+  TTypeSerializerMock2 = class(TTypeSerializerMock);
+
+  TSampleObject = class(TInterfacedObject, IInterface)
+  private
+    FROProp: Boolean;
+  public
+    [Weak] fObject: TObject;
+    fString: string;
+    property PObject: TObject read fObject;
+    property PString: string read fString write fString;
+    property ROProp: Boolean write fROProp;
+  end;
+
+  TSampleRecord = record
+  public
+    fObject: TObject;
+    fString: string;
+    property PObject: TObject read fObject write fObject;
+    property PString: string read fString;
+  end;
+
 implementation
 
 { TAppenderMock }
 
 procedure TAppenderMock.DoSend(const entry: TLogEntry);
 begin
-  fWriteCalled := true;
+  Inc(fWriteCount);
   fEntry := entry;
+end;
+
+function TAppenderMock.GetWriteCalled: Boolean;
+begin
+  Result := fWriteCount > 0;
 end;
 
 { TObjProc }
@@ -157,6 +202,16 @@ begin
   raise ETestError.Create('Should be inaccessible');
 end;
 
+function TLoggerControllerMock.GetEnabled: Boolean;
+begin
+  Result := true;
+end;
+
+function TLoggerControllerMock.GetLevels: TLogLevels;
+begin
+  Result := LOG_ALL_LEVELS;
+end;
+
 procedure TLoggerControllerMock.Reset;
 begin
   fLastEntry := TLogEntry.Create(TLogLevel.Unknown, '');
@@ -172,6 +227,20 @@ end;
 procedure TAppenderMock2.DoSend(const entry: TLogEntry);
 begin
 
+end;
+
+{ TTypeSerializerMock }
+
+function TTypeSerializerMock.HandlesType(typeInfo: PTypeInfo): Boolean;
+begin
+  Inc(fHandlesTypeCount);
+  Result := typeInfo^.Kind = tkInteger;
+end;
+
+function TTypeSerializerMock.Serialize(const controller: ISerializerController;
+  const value: TValue; nestingLevel: Integer): string;
+begin
+  Result := '';
 end;
 
 end.

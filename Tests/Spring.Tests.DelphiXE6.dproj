@@ -6,7 +6,7 @@
         <MainSource>Spring.Tests.dpr</MainSource>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Debug</Config>
-        <Platform Condition="'$(Platform)'==''">Win32</Platform>
+        <Platform Condition="'$(Platform)'==''">Win64</Platform>
         <TargetedPlatforms>7</TargetedPlatforms>
         <AppType>Console</AppType>
     </PropertyGroup>
@@ -180,11 +180,13 @@
         <DCCReference Include="Source\Base\Spring.Tests.Reflection.ValueConverters.pas"/>
         <DCCReference Include="Source\Base\Spring.Tests.SystemUtils.pas"/>
         <DCCReference Include="Source\Base\Spring.Tests.Logging.pas"/>
+        <DCCReference Include="Source\Base\Spring.Tests.Logging.Serializers.pas"/>
         <DCCReference Include="Source\Base\Spring.Tests.Logging.Types.pas"/>
         <DCCReference Include="Source\Core\Spring.Tests.Container.Components.pas"/>
         <DCCReference Include="Source\Core\Spring.Tests.Container.Interfaces.pas"/>
         <DCCReference Include="Source\Core\Spring.Tests.Container.LifetimeManager.pas"/>
         <DCCReference Include="Source\Core\Spring.Tests.Container.pas"/>
+        <DCCReference Include="Source\Core\Spring.Tests.Container.Logging.pas"/>
         <DCCReference Include="Source\Core\Spring.Tests.Pool.pas"/>
         <DCCReference Include="Source\Extensions\Spring.Tests.Cryptography.pas"/>
         <DCCReference Include="Source\Extensions\Spring.Tests.Utils.pas"/>

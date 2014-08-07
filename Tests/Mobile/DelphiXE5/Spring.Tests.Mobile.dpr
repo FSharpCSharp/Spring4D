@@ -45,6 +45,7 @@ uses
   Spring.Tests.Reflection.ValueConverters in '..\..\Source\Base\Spring.Tests.Reflection.ValueConverters.pas',
   Spring.Tests.SystemUtils in '..\..\Source\Base\Spring.Tests.SystemUtils.pas',
   Spring.Tests.Logging in '..\..\Source\Base\Spring.Tests.Logging.pas',
+  Spring.Tests.Logging.Serializers in '..\..\Source\Base\Spring.Tests.Logging.Serializers.pas',
   Spring.Tests.Logging.Types in '..\..\Source\Base\Spring.Tests.Logging.Types.pas',
   Spring.Tests.Container.Components in '..\..\Source\Core\Spring.Tests.Container.Components.pas',
   Spring.Tests.Container.Interfaces in '..\..\Source\Core\Spring.Tests.Container.Interfaces.pas',

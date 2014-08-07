@@ -40,6 +40,9 @@ type
   /// </summary>
   TNullLogger = class(TInterfacedObject, ILogger)
   public
+    function GetEnabled: Boolean;
+    function GetLevels: TLogLevels;
+
     function IsEnabled(level: TLogLevel): Boolean; inline;
     function IsFatalEnabled: Boolean;
     function IsErrorEnabled: Boolean;
@@ -341,6 +344,16 @@ procedure TNullLogger.Fatal(const fmt: string; const args: array of const;
   const exc: Exception);
 begin
 
+end;
+
+function TNullLogger.GetEnabled: Boolean;
+begin
+  Result := false;
+end;
+
+function TNullLogger.GetLevels: TLogLevels;
+begin
+  Result := [];
 end;
 
 procedure TNullLogger.Fatal(const msg: string);

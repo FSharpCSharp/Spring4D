@@ -40,6 +40,7 @@ uses
   Spring.Reflection,
   Spring.Collections,
   Spring.Logging,
+  Spring.Logging.Extensions,
   Spring.Logging.Appenders,
   Spring.Logging.Controller,
   Spring.Logging.Loggers,
@@ -56,6 +57,10 @@ type
   published
     procedure TestAddAppender;
     procedure TestSend;
+    procedure TestSendDisabled;
+    procedure TestAddSerializer;
+    procedure TestFindSerializer;
+    procedure TestSendWithSerializer;
   end;
   {$ENDREGION}
 
@@ -201,6 +206,40 @@ begin
   CheckSame(intf, appenders[0]);
 end;
 
+procedure TTestLoggerController.TestAddSerializer;
+var
+  serializer: TTypeSerializerMock;
+  intf: ITypeSerializer;
+  f: TRttiField;
+  serializers: IList<ITypeSerializer>;
+begin
+  serializer := TTypeSerializerMock.Create;
+  intf := serializer;
+
+  (fController as ISerializerController).AddSerializer(intf);
+
+  f := TType.GetType<TLoggerController>.GetField('fSerializers');
+  serializers := f.GetValue(TObject(fController)).AsType<IList<ITypeSerializer>>;
+
+  CheckEquals(1, serializers.Count);
+  CheckSame(intf, serializers[0]);
+end;
+
+procedure TTestLoggerController.TestFindSerializer;
+var
+  serializer: TTypeSerializerMock;
+  intf: ITypeSerializer;
+  controller: ISerializerController;
+begin
+  serializer := TTypeSerializerMock.Create;
+  intf := serializer;
+  controller := (fController as ISerializerController);
+  controller.AddSerializer(intf);
+
+  CheckSame(intf, controller.FindSerializer(TypeInfo(Integer)));
+  CheckNull(controller.FindSerializer(TypeInfo(Double)));
+end;
+
 procedure TTestLoggerController.TestSend;
 const
   MSG = 'test';
@@ -218,6 +257,68 @@ begin
   CheckEquals(Ord(TLogLevel.Fatal), Ord(appender.Entry.Level));
   CheckEquals(MSG, appender.Entry.Msg);
 end;
+
+procedure TTestLoggerController.TestSendDisabled;
+const
+  MSG = 'test';
+var
+  appender: TAppenderMock;
+  intf: ILogAppender;
+begin
+  appender := TAppenderMock.Create;
+  intf := appender;
+  fController.AddAppender(intf);
+
+  TLoggerController(fController).Enabled := false;
+  fController.Send(TLogEntry.Create(TLogLevel.Fatal, MSG));
+  CheckFalse(appender.WriteCalled);
+
+  TLoggerController(fController).Enabled := true;
+  TLoggerController(fController).Levels := [];
+  fController.Send(TLogEntry.Create(TLogLevel.Fatal, MSG));
+  CheckFalse(appender.WriteCalled);
+
+  TLoggerController(fController).Levels := LOG_ALL_LEVELS - [TLogLevel.Fatal];
+  fController.Send(TLogEntry.Create(TLogLevel.Fatal, MSG));
+  CheckFalse(appender.WriteCalled);
+end;
+
+procedure TTestLoggerController.TestSendWithSerializer;
+var
+  appender: TAppenderMock;
+  intf: ILogAppender;
+  serializer: TTypeSerializerMock;
+begin
+  serializer := TTypeSerializerMock.Create;
+  appender := TAppenderMock.Create;
+  intf := appender;
+
+  fController.AddAppender(intf);
+  (fController as ISerializerController).AddSerializer(serializer);
+
+  //Check that we only output the message and not the data if the appender
+  //does not habe SerializedData level
+  appender.Levels := [TLogLevel.Fatal];
+  fController.Send(TLogEntry.Create(TLogLevel.Fatal, 'test', nil, -1));
+  CheckEquals(1, appender.WriteCount);
+  CheckEquals(0, serializer.HandlesTypeCount);
+  CheckEquals(Ord(TLogLevel.Fatal), Ord(appender.Entry.Level));
+
+  //... or is disabled
+  appender.Enabled := false;
+  appender.Levels := [TLogLevel.Fatal, TLogLevel.SerializedData];
+  fController.Send(TLogEntry.Create(TLogLevel.Fatal, 'test', nil, -1));
+  CheckEquals(1, appender.WriteCount);
+  CheckEquals(0, serializer.HandlesTypeCount);
+
+  //Finally test that we dispatch the call and both messages are logged
+  appender.Enabled := true;
+  fController.Send(TLogEntry.Create(TLogLevel.Fatal, 'test', nil, -1));
+  CheckEquals(3, appender.WriteCount);
+  CheckEquals(1, serializer.HandlesTypeCount);
+  CheckEquals(Ord(TLogLevel.SerializedData), Ord(appender.Entry.Level));
+end;
+
 {$ENDREGION}
 
 {$REGION 'TTestLogger'}

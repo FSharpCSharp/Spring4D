@@ -38,6 +38,7 @@ uses
   Spring.Container;
 
 type
+  {$REGION 'TLoggingConfiguration'}
   TLoggingConfiguration = class
   private
     fTypes: IDictionary<PTypeInfo, string>;
@@ -59,6 +60,7 @@ type
     class procedure LoadFromFile(const container: TContainer;
       const fileName: string; const encoding: TEncoding = nil);
   end;
+  {$ENDREGION}
 
 implementation
 
@@ -68,6 +70,7 @@ uses
   Spring.Reflection,
   Spring.Container.Registration,
   Spring.Logging,
+  Spring.Logging.Extensions,
   Spring.Logging.Controller,
   Spring.Logging.Appenders,
   Spring.Logging.Loggers,
@@ -82,11 +85,13 @@ type
   TPropertiesReadProc = reference to procedure (const reg: TRegistration;
     const ctx: Boolean);
 
+  {$REGION 'TConfigurationReader'}
   TConfigurationReader = class
   private const //Do not localize
     SAppenders = 'appenders';
     SControllers = 'controllers';
     SAppender = 'appender';
+    SSerializer = 'serializer';
     SController = 'controller';
     SAssign = 'assign';
     SLoggers = 'loggers';
@@ -108,14 +113,20 @@ type
     /// </summary>
     SAppenderSuffix = '.appender';
     SAddAppenderProc = 'AddAppender';
+    SAddSerializerProc = 'AddSerializer';
     SControllerField = 'fController';
   private
     fContainer: TContainer;
     fIni: TCustomIniFile;
     fAppenders: IList<string>;
 
-    function GetType(const className: string; needInstance: Boolean = true): TRttiType;
+    function GetType(const className: string; needInstance: Boolean): TRttiType;
     function AsValue(const valueType: TRttiType; const value: string): TValue;
+    /// <summary>
+    ///   Registers new serializer and returns its service name or just return
+    ///   the name if this serializer was already registered before.
+    /// </summary>
+    function RegisterSerializer(const typeName: string): string;
 
     /// <summary>
     ///   Reads all subsections of sectionName and calls registerProc on each
@@ -139,7 +150,9 @@ type
 
     procedure Read(const configuration: TLoggingConfiguration);
   end;
+  {$ENDREGION}
 
+{$REGION 'TLoggingConfiguration'}
 { TLoggingConfiguration }
 
 constructor TLoggingConfiguration.Create;
@@ -254,7 +267,9 @@ procedure TLoggingConfiguration.RegisterLogger<T>(const name: string);
 begin
   RegisterLogger(TypeInfo(T), name);
 end;
+{$ENDREGION}
 
+{$REGION 'TConfigurationReader'}
 { TConfigurationReader }
 
 function TConfigurationReader.AsValue(const valueType: TRttiType;
@@ -266,7 +281,7 @@ begin
     tkInteger:
       Result := StrToInt(value);
     tkEnumeration:
-      if (valueType.Handle = TypeInfo(Boolean)) then
+      if valueType.Handle = TypeInfo(Boolean) then
         Result := StrToBool(value)
       else TValue.Make(GetEnumValue(valueType.Handle, value), valueType.Handle,
         Result);
@@ -286,7 +301,7 @@ begin
 end;
 
 function TConfigurationReader.GetType(const className: string;
-  needInstance: Boolean = true): TRttiType;
+  needInstance: Boolean): TRttiType;
 begin
   Guard.CheckNotNull(className <> '', SClass);
   //Both fully qualified and just class name supported
@@ -307,7 +322,7 @@ begin
   ReadSection(SAppenders, nil,
     procedure (const reg: TRegistration; const name: string)
     begin
-      if (fAppenders = nil) then
+      if fAppenders = nil then
         fAppenders := TCollections.CreateList<string>;
 
       reg.Implements(TypeInfo(ILogAppender), SPrefix + name + SAppenderSuffix);
@@ -331,16 +346,24 @@ begin
     function (const reg: TRegistration; const serviceName, name, value: string;
       var ctx: Boolean): Boolean
     begin
-      Result := SameText(SAppender, name);
-      if (Result) then
+      if SameText(SAppender, name) then
+      begin
+        Result := true;
         reg.InjectMethod(SAddAppenderProc, [SPrefix + value + SAppenderSuffix]);
+      end
+      else if SameText(SSerializer, name) then
+      begin
+        Result := true;
+        reg.InjectMethod(SAddSerializerProc, [RegisterSerializer(value)]);
+      end
+      else Result := false;
     end);
 
-  if (not result) then
+  if not result then
   begin
     reg := fContainer.RegisterType<TLoggerController>;
     reg.Implements<ILoggerController>.AsDefault;
-    if (fAppenders <> nil) then
+    if fAppenders <> nil then
     begin
       for s in fAppenders do
         reg.InjectMethod(SAddAppenderProc, [SPrefix + s + SAppenderSuffix])
@@ -362,13 +385,13 @@ begin
     function (const reg: TRegistration; const serviceName, name, value: string;
       var ctx: Boolean): Boolean
     begin
-      if (SameText(SController, name)) then
+      if SameText(SController, name) then
       begin
         Result := true;
         ctx := true;
         reg.InjectField(SControllerField, SPrefix + value + SControllerSuffix);
       end
-      else if (SameText(SAssign, name)) then
+      else if SameText(SAssign, name) then
       begin
         Result := true;
         configuration.RegisterLogger(GetType(value, false).Handle,
@@ -380,11 +403,11 @@ begin
     procedure (const reg: TRegistration; const ctx: Boolean)
     begin
       //If controller was not seen inject the default one
-      if (not ctx) then
+      if not ctx then
         reg.InjectField(SControllerField);
     end);
 
-  if (not result) then
+  if not result then
   begin
     fContainer.RegisterType<TLogger>.Implements<ILogger>.AsDefault
       .InjectField(SControllerField);
@@ -417,14 +440,14 @@ begin
     begin
       section := sectionName + '\' + name;
       s := fIni.ReadString(section, SClass, '');
-      if ((s = '') and (defaultType <> nil)) then
+      if (s = '') and (defaultType <> nil) then
         classType := defaultType
-      else classType := GetType(s); //Will raise an exception for empty string
+      else classType := GetType(s, true); //Will raise an exception for empty string
 
       reg := fContainer.RegisterType(classType.Handle);
       registerProc(reg, name);
       reg.AsSingleton;
-      if (SameText(SDefault, name)) then
+      if SameText(SDefault, name) then
         reg.AsDefault;
 
       values := TStringList.Create;
@@ -434,25 +457,25 @@ begin
         for i := 0 to values.Count - 1 do
         begin
           s := values.Names[i];
-          if (SameText(SClass, s)) then
+          if SameText(SClass, s) then
             Continue;
 
           value := values.ValueFromIndex[i];
-          if (Assigned(propertyFunc)) then
+          if Assigned(propertyFunc) then
           begin
-            if (propertyFunc(reg, name, s, value, ctx)) then
+            if propertyFunc(reg, name, s, value, ctx) then
               Continue;
           end;
 
           prop := classType.GetProperty(s);
-          if (prop = nil) then
+          if prop = nil then
             raise EPropertyError.CreateResFmt(@SUnknownProperty,
               [classType.Name + '.' + s]);
 
           reg.InjectProperty(s, AsValue(prop.PropertyType, value));
         end;
 
-        if (Assigned(propertiesRead)) then
+        if Assigned(propertiesRead) then
           propertiesRead(reg, ctx);
 
       finally
@@ -463,6 +486,20 @@ begin
     str.Free;
   end;
 end;
+
+function TConfigurationReader.RegisterSerializer(
+  const typeName: string): string;
+var
+  classType: TRttiType;
+begin
+  classType := GetType(typeName, true);
+  Result := classType.QualifiedName;
+
+  if fContainer.Kernel.Registry.FindOne(classType.Handle) = nil then
+    fContainer.RegisterType(classType.Handle).AsSingleton
+      .Implements(TypeInfo(ITypeSerializer), Result);
+end;
+{$ENDREGION}
 
 procedure DummyRegister(const classes: array of TClass);
 begin

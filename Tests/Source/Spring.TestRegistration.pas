@@ -43,13 +43,14 @@ uses
   Spring.Tests.Helpers,
   Spring.Tests.Reflection,
   Spring.Tests.Reflection.ValueConverters,
+  Spring.Tests.Logging,
+  Spring.Tests.Logging.Serializers,
   Spring.Tests.Container,
   Spring.Tests.Container.LifetimeManager,
   Spring.Tests.Container.Logging,
   Spring.Tests.Pool,
   Spring.Tests.Utils,
-  Spring.Tests.Cryptography,
-  Spring.Tests.Logging;
+  Spring.Tests.Cryptography;
 
 procedure RegisterTestCases();
 begin
@@ -166,6 +167,13 @@ begin
     TTestLoggerController.Suite,
     TTestLogger.Suite,
     TTestStreamLogAppender.Suite
+  ]);
+
+  RegisterTests('Spring.Base.Logging.Serializers', [
+    TTestSimpleTypeSerializer.Suite,
+    TTestReflectionTypeSerializer.Suite,
+    TTestInterfaceSerializer.Suite,
+    TTestArrayOfValueSerializer.Suite
   ]);
 
 //  RegisterTests('Spring.Base.Reflection.ValueExpression', [

@@ -36,8 +36,10 @@ uses
   Spring.Logging;
 
 type
+  {$REGION 'TLoggingConfigurationBuilder'}
   TLoggingConfigurationBuilder = record
   private type
+    {$REGION 'IBuilder'}
     IBuilder = interface
       procedure BeginAppender(const name: string; const className: string);
       procedure EndAppender;
@@ -52,7 +54,9 @@ type
 
       function ToString: string;
     end;
+    {$ENDREGION}
   public type
+    {$REGION 'TAppenderBuilder'}
     TAppenderBuilder = record
     private
       fBuilder: IBuilder;
@@ -64,7 +68,9 @@ type
       function Prop(const name: string; const value: TValue): TAppenderBuilder; overload;
       function Prop<E>(const name: string; const value: E): TAppenderBuilder; overload;
     end;
+    {$ENDREGION}
 
+    {$REGION 'TControllerBuilder'}
     TControllerBuilder = record
     private
       fBuilder: IBuilder;
@@ -74,10 +80,14 @@ type
       function Enabled(value: Boolean): TControllerBuilder;
       function Levels(value: TLogLevels): TControllerBuilder;
       function AddAppender(const name: string): TControllerBuilder;
+      function AddSerializer(const className: string): TControllerBuilder; overload;
+      function AddSerializer(const classType: TClass): TControllerBuilder; overload;
       function Prop(const name: string; const value: TValue): TControllerBuilder; overload;
       function Prop<E>(const name: string; const value: E): TControllerBuilder; overload;
     end;
+    {$ENDREGION}
 
+    {$REGION 'TLoggerBuilder'}
     TLoggerBuilder = record
     private
       fBuilder: IBuilder;
@@ -92,6 +102,7 @@ type
       function Prop(const name: string; const value: TValue): TLoggerBuilder; overload;
       function Prop<E>(const name: string; const value: E): TLoggerBuilder; overload;
     end;
+    {$ENDREGION}
   private
     fBuilder: IBuilder;
   public
@@ -114,6 +125,7 @@ type
 
     function ToString: string;
   end;
+  {$ENDREGION}
 
 implementation
 
@@ -123,12 +135,14 @@ const
   SLevels = 'levels';
   SAppender = 'appender';
   SController = 'controller';
+  SSerializer = 'serializer';
   SAssign = 'assign';
   SDefault = 'default';
 type
   TBuilderState = (bsRoot, bsAppender, bsController, bsLogger, bsDone);
   TBuilderStates = set of TBuilderState;
 
+{$REGION 'TBuilder'}
   TBuilder = class(TInterfacedObject, TLoggingConfigurationBuilder.IBuilder)
   private
     fString: TStringBuilder;
@@ -234,7 +248,9 @@ begin
   Result := fString.ToString;
   FreeAndNil(fString);
 end;
+{$ENDREGION}
 
+{$REGION 'TLoggingConfigurationBuilder'}
 { TLoggingConfigurationBuilder }
 
 function TLoggingConfigurationBuilder.BeginAppender(const name,
@@ -295,7 +311,9 @@ function TLoggingConfigurationBuilder.ToString: string;
 begin
   Result := fBuilder.ToString;
 end;
+{$ENDREGION}
 
+{$REGION 'TLoggingConfigurationBuilder.TAppenderBuilder'}
 { TLoggingConfigurationBuilder.TAppenderBuilder }
 
 function TLoggingConfigurationBuilder.TAppenderBuilder.Enabled(
@@ -331,13 +349,31 @@ begin
   fBuilder.Prop(name, TValue.From<E>(value));
   Result := Self;
 end;
+{$ENDREGION}
 
+{$REGION 'TLoggingConfigurationBuilder.TControllerBuilder'}
 { TLoggingConfigurationBuilder.TControllerBuilder }
 
 function TLoggingConfigurationBuilder.TControllerBuilder.AddAppender(
   const name: string): TControllerBuilder;
 begin
   fBuilder.Prop(SAppender, name);
+  Result := Self;
+end;
+
+function TLoggingConfigurationBuilder.TControllerBuilder.AddSerializer(
+  const className: string): TControllerBuilder;
+begin
+  Guard.checkNotNull(className <> '', 'className');
+  fBuilder.Prop(SSerializer, className);
+  Result := Self;
+end;
+
+function TLoggingConfigurationBuilder.TControllerBuilder.AddSerializer(
+  const classType: TClass): TControllerBuilder;
+begin
+  Guard.checkNotNull(classType, 'classType');
+  fBuilder.Prop(SSerializer, classType.QualifiedClassName);
   Result := Self;
 end;
 
@@ -374,7 +410,9 @@ begin
   fBuilder.Prop(name, TValue.From<E>(value));
   Result := Self;
 end;
+{$ENDREGION}
 
+{$REGION 'TLoggingConfigurationBuilder.TLoggerBuilder'}
 { TLoggingConfigurationBuilder.TLoggerBuilder }
 
 function TLoggingConfigurationBuilder.TLoggerBuilder.Assign(
@@ -433,5 +471,6 @@ begin
   fBuilder.Prop(name, TValue.From<E>(value));
   Result := Self;
 end;
+{$ENDREGION}
 
 end.

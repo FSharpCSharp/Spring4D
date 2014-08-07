@@ -182,8 +182,18 @@ type
   end;
   {$ENDREGION}
 
+  {$REGION 'ILoggerBase'}
+  ILoggerBase = interface
+    function GetLevels: TLogLevels;
+    function GetEnabled: Boolean;
+
+    property Levels: TLogLevels read GetLevels;
+    property Enabled: Boolean read GetEnabled;
+  end;
+  {$ENDREGION}
+
   {$REGION 'ILogger'}
-  ILogger = interface
+  ILogger = interface(ILoggerBase)
     ['{8655E906-C12D-4EB3-8291-30CEAB769B26}']
     procedure Log(const entry: TLogEntry); overload;
 
@@ -270,7 +280,7 @@ type
   {$ENDREGION}
 
   {$REGION 'ILogAppender'}
-  ILogAppender = interface
+  ILogAppender = interface(ILoggerBase)
     ['{70DDEB60-3D01-48FB-92CF-A738A8C4BC85}']
     procedure Send(const entry: TLogEntry);
   end;

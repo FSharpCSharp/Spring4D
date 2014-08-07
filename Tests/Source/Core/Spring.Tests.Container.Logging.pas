@@ -40,6 +40,7 @@ uses
   Spring.Container,
   Spring.Container.Common,
   Spring.Logging,
+  Spring.Logging.Extensions,
   Spring.Logging.Appenders,
   Spring.Logging.Controller,
   Spring.Logging.Loggers,
@@ -101,6 +102,7 @@ type
 
     procedure TestAddAppendersToControllers;
     procedure TestAddChainedController;
+    procedure TestAddSerializersToControllers;
     procedure TestAddLoggerAssignments;
 
     procedure TestSimpleConfiguration;
@@ -111,7 +113,7 @@ type
   {$REGION 'TTestLoggingConfigurationBuilder'}
   TTestLoggingConfigurationBuilder = class(TContainerTestCase)
   private const
-    NL = #$D#$A;
+    NL = sLineBreak;
   protected
     procedure SetUp; override;
   published
@@ -580,6 +582,46 @@ begin
   CheckSame(fContainer.Resolve<ILogger>('logging.logger2'), objImpl.Logger2);
 end;
 
+procedure TTestLoggingConfiguration.TestAddSerializersToControllers;
+var
+  controller1,
+  controller2: ILoggerController;
+  serializer1,
+  serializer2: ITypeSerializer;
+  f: TRttiField;
+  serializers: IList<ITypeSerializer>;
+begin
+  fStrings
+    .Add('[controllers\controller1]')
+    .Add('serializer = TTypeSerializerMock');
+  fStrings
+    .Add('[controllers\controller2]')
+    .Add('serializer = TTypeSerializerMock2')
+    .Add('serializer = TTypeSerializerMock');
+
+  TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
+  fContainer.Build;
+
+  controller1 := fContainer.Resolve<ILoggerController>('logging.controller1.controller');
+  controller2 := fContainer.Resolve<ILoggerController>('logging.controller2.controller');
+
+  serializer1 := fContainer.Resolve<ITypeSerializer>(
+    TTypeSerializerMock.QualifiedClassName);
+  serializer2 := fContainer.Resolve<ITypeSerializer>(
+    TTypeSerializerMock2.QualifiedClassName);
+
+  f := TType.GetType<TLoggerController>.GetField('fSerializers');
+
+  serializers := f.GetValue(TObject(controller1)).AsType<IList<ITypeSerializer>>;
+  CheckEquals(1, serializers.Count);
+  CheckSame(serializer1, serializers[0]);
+
+  serializers := f.GetValue(TObject(controller2)).AsType<IList<ITypeSerializer>>;
+  CheckEquals(2, serializers.Count);
+  CheckSame(serializer2, serializers[0]);
+  CheckSame(serializer1, serializers[1]);
+end;
+
 procedure TTestLoggingConfiguration.TestComplexConfiguration;
 var
   logger1,
@@ -858,10 +900,12 @@ begin
 
     .BeginController('ctl2', 'TSomeController')
       .AddAppender('ctl1')
+      .AddSerializer('TSomeSerializer')
     .EndController
 
     .BeginController('ctl3', TLoggerControllerMock)
       .AddAppender('ctl1')
+      .AddSerializer(TTypeSerializerMock)
     .EndController;
 
   CheckEquals(
@@ -874,10 +918,12 @@ begin
     '[controllers\ctl2]' + NL +
     'class = TSomeController' + NL +
     'appender = ctl1' + NL +
+    'serializer = TSomeSerializer' + NL +
     NL +
     '[controllers\ctl3]' + NL +
     'class = Spring.Tests.Logging.Types.TLoggerControllerMock' + NL +
     'appender = ctl1' + NL +
+    'serializer = Spring.Tests.Logging.Types.TTypeSerializerMock' + NL +
     NL, builder.ToString);
 
 end;
