@@ -41,6 +41,7 @@ uses
   Spring.Collections,
   Spring.Logging,
   Spring.Logging.Extensions,
+  Spring.Logging.Appenders.Base,
   Spring.Logging.Appenders,
   Spring.Logging.Controller,
   Spring.Logging.Loggers,
@@ -134,6 +135,8 @@ type
   TTestLogAppenderBase = class(TTestCase)
   published
     procedure TestFormatMethodName;
+    procedure TestFormatText;
+    procedure TestFormatMsg;
   end;
   {$ENDREGION}
 
@@ -146,6 +149,7 @@ type
     procedure TearDown; override;
   published
     procedure TestWrite;
+    procedure TestException;
   end;
   {$ENDREGION}
 
@@ -161,8 +165,6 @@ type
     property Controller: TLoggerControllerMock read GetController;
     property Logger: TLogger read GetLogger;
   end;
-
-  TAppenderAccess = class(TLogAppenderWithTimeStampFormat);
 
 { TTestLoggerHelper }
 
@@ -883,15 +885,63 @@ procedure TTestLogAppenderBase.TestFormatMethodName;
 var
   result: string;
 begin
-    result := TAppenderAccess.FormatMethodName(nil, 'MethodName');
+    result := TLogAppenderBase.FormatMethodName(nil, 'MethodName');
     CheckEquals('MethodName', result);
 
-    result := TAppenderAccess.FormatMethodName(ClassType, 'MethodName');
+    result := TLogAppenderBase.FormatMethodName(ClassType, 'MethodName');
     CheckEquals('Spring.Tests.Logging.TTestLogAppenderBase.MethodName', result);
 end;
 {$ENDREGION}
 
 {$REGION 'TTestStreamLogAppender'}
+procedure TTestLogAppenderBase.TestFormatMsg;
+{$IF sizeof(Pointer) = 4}
+const ZEROS = '00000000';
+{$ELSEIF sizeof(Pointer) = 8}
+const ZEROS = '0000000000000000';
+{$IFEND}
+var
+  result: string;
+  e: Exception;
+begin
+  result := TLogAppenderBase.FormatMsg(TLogEntry.Create(TLogLevel.Unknown,
+    'message'));
+  CheckEquals('message', result);
+
+  e := Exception.Create('exception');
+  try
+    result := TLogAppenderBase.FormatMsg(TLogEntry.Create(TLogLevel.Unknown,
+      'message', e));
+    CheckEquals('message: Exception Exception in module ' +
+{$IFDEF ANDROID}
+      '<unknown>'
+{$ELSE}
+      ExtractFileName(ParamStr(0))
+{$ENDIF}
+       + ' at ' + ZEROS + '.' + sLineBreak +
+      'exception.' + sLineBreak, result);
+  finally
+    e.Free;
+  end;
+end;
+
+procedure TTestLogAppenderBase.TestFormatText;
+var
+  result: string;
+begin
+  result := TLogAppenderBase.FormatText(TLogEntry.Create(TLogLevel.Unknown,
+    'message'));
+  CheckEquals('message', result);
+
+  result := TLogAppenderBase.FormatText(TLogEntry.Create(TLogLevel.Unknown,
+    TLogEntryType.Entering, 'message', nil));
+  CheckEquals('Entering: message', result);
+
+  result := TLogAppenderBase.FormatText(TLogEntry.Create(TLogLevel.Unknown,
+    TLogEntryType.Leaving, 'message', nil));
+  CheckEquals('Leaving: message', result);
+end;
+
 { TTestStreamLogAppender }
 
 procedure TTestStreamLogAppender.SetUp;
@@ -906,6 +956,24 @@ procedure TTestStreamLogAppender.TearDown;
 begin
   inherited;
   fStream := nil;
+end;
+
+procedure TTestStreamLogAppender.TestException;
+begin
+  try
+    Abort;
+  except
+    on e: EAbort do
+    begin
+      fLogger.Error('', e);
+      CheckEquals('[ERROR] Exception EAbort in module',
+        Copy(fStream.DataString, 15, 34));
+      fStream.Clear;
+      fLogger.Error('With message', e);
+      CheckEquals('[ERROR] With message: Exception EAbort in module',
+        Copy(fStream.DataString, 15, 48));
+    end;
+  end;
 end;
 
 procedure TTestStreamLogAppender.TestWrite;

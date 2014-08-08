@@ -25,10 +25,14 @@
 unit Spring.Logging.Appenders.Base;
 
 {$I Spring.inc}
+{$IFDEF DELPHIXE4_UP}
+  {$ZEROBASEDSTRINGS OFF}
+{$ENDIF}
 
 interface
 
 uses
+  SysUtils,
   Spring.Logging;
 
 type
@@ -43,8 +47,8 @@ type
 
     procedure SetLevels(value: TLogLevels);
     procedure SetEnabled(value: Boolean);
+  {$REGION 'Helper constants and functions'}
   protected const
-    {$REGION 'Helper constants and functions'}
     //May or may not be used by descendants, its here just for convenience
     LEVEL : array[TLogLevel] of string = (
       '[UNKNOWN]',
@@ -70,15 +74,17 @@ type
       '[ERROR]',
       '[FATAL]'
     );
+  public
     class function FormatText(const entry: TLogEntry): string; static; inline;
     class function FormatMsg(const entry: TLogEntry): string; static; inline;
+    class function FormatException(const ext: Exception): string; static; //noinline
     class function FormatMethodName(const classType: TClass;
       const methodName: string): string; static; inline;
     class function FormatEntering(const classType: TClass;
       const methodName: string): string; static; inline;
     class function FormatLeaving(const classType: TClass;
       const methodName: string): string; static; inline;
-    {$ENDREGION}
+  {$ENDREGION}
   protected
     function IsEnabled(level: TLogLevel): Boolean; inline;
     procedure DoSend(const entry: TLogEntry); virtual; abstract;
@@ -112,6 +118,15 @@ begin
   Result := SLogEntering + FormatMethodName(classType, methodName);
 end;
 
+class function TLogAppenderBase.FormatException(const ext: Exception): string;
+var
+  len: Integer;
+begin
+  SetLength(Result, 1024);
+  len := ExceptionErrorMessage(ext, ExceptAddr, @Result[1], Length(Result));
+  SetLength(Result, len);
+end;
+
 class function TLogAppenderBase.FormatLeaving(const classType: TClass;
   const methodName: string): string;
 begin
@@ -133,10 +148,8 @@ begin
   else
   begin
     if (entry.Msg <> '') then
-      Result := FormatText(entry) + ', ' + entry.Exc.ClassName
-    else Result := entry.Exc.ClassName;
-    if (entry.Exc.Message <> '') then
-      Result := Result + ': ' + entry.Exc.Message;
+      Result := FormatText(entry) + ': ' + FormatException(entry.Exc)
+    else Result := FormatException(entry.Exc);
   end;
 end;
 
