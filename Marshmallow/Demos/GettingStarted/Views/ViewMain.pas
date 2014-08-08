@@ -214,9 +214,12 @@ end;
 
 procedure TfrmMain.FormCreate(Sender: TObject);
 begin
-  FDatabase := TSQLiteDatabase.Create();
+  FDatabase := TSQLiteDatabase.Create(Self);
   FDatabase.Filename := 'products.db3';
   FConnection := TSQLiteConnectionAdapter.Create(FDatabase);
+
+  // Why isnt Default AutoFreeConnection := True???
+  FConnection.AutoFreeConnection := True;
   FConnection.Connect;
   FSession := TSession.Create(FConnection);
   FProducts := TCollections.CreateObjectList<TProduct>(True);
