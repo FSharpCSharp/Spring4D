@@ -30,6 +30,7 @@ unit Core.Utils;
 interface
 
 uses
+  {$IFDEF UNICODE}AnsiStrings,{$ENDIF}
   Classes,
   DB,
   Graphics,
@@ -523,7 +524,7 @@ begin
       GraphicClass := TMetafile
     else if (LongWords[0] = 1) and (LongWords[10] = $464D4520) then
       GraphicClass := TMetafile
-    else if StrLComp(PAnsiChar(@Buffer), 'GIF', 3) = 0 then
+    else if {$IFDEF UNICODE}AnsiStrings.{$ENDIF}StrLComp(PAnsiChar(@Buffer), 'GIF', 3) = 0 then
       GraphicClass := TGIFImage
     else if Words[1] = 1 then
       GraphicClass := TIcon;
