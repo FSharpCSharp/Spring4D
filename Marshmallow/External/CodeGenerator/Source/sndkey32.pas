@@ -468,7 +468,7 @@ var
 begin
   {Can't test GetWindowText's return value since some windows don't have a title}
   GetWindowTextA(WHandle,WindowName,MAX_PATH);
-  Result := (StrLIComp(WindowName,PAnsiChar(lParam), StrLen(PAnsiChar(lParam))) <> 0);
+  Result := ({$IFDEF UNICODE}AnsiStrings.{$ENDIF}StrLIComp(WindowName,PAnsiChar(lParam), {$IFDEF UNICODE}AnsiStrings.{$ENDIF}StrLen(PAnsiChar(lParam))) <> 0);
   If (not Result) then WindowHandle:=WHandle;
 end;
 
