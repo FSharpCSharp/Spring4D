@@ -2,6 +2,11 @@ unit MainView;
 
 interface
 
+{$IFDEF MSWINDOWS}
+  {$WARN SYMBOL_PLATFORM OFF}
+  {$WARN UNIT_PLATFORM OFF}
+{$ENDIF}
+
 uses
   Windows, Messages, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, fs_synmemo, ExtCtrls, VirtualTrees, ToolWin, ComCtrls, ImgList, StdCtrls
@@ -271,8 +276,10 @@ begin
     end
   end
   else
-    SelectDirectory('Select Directory', ExtractFileDrive(ADirectory), ADirectory,
+    SelectDirectory('Select Directory', ExtractFileDrive(ADirectory), ADirectory, 
       [sdNewUI, sdNewFolder]);
+
+  Result := ADirectory <> '';
 end;
 
 procedure TViewMain.SaveToFile(AIndex: Integer; const AUnitText: string);

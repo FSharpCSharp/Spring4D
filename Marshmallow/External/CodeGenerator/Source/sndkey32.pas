@@ -98,7 +98,7 @@ unit sndkey32;
 
 interface
 
-Uses SysUtils, Windows, Messages;
+Uses {$IFDEF UNICODE}AnsiStrings,{$ENDIF} SysUtils, Windows, Messages;
 
 Function SendKeys(SendKeysString : PAnsiChar; Wait : Boolean) : Boolean;
 function AppActivate(WindowName : PAnsiChar) : boolean; overload;
@@ -353,7 +353,7 @@ begin
   ControlDown:=false;
   AltDown:=false;
   I:=0;
-  L:=StrLen(SendKeysString);
+  L:={$IFDEF UNICODE}AnsiStrings.{$ENDIF}StrLen(SendKeysString);
   If (L>AllocationSize) then L:=AllocationSize;
   If (L=0) then Exit;
 
