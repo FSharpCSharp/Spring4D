@@ -258,6 +258,7 @@ begin
   FExecutionListeners := TCollections.CreateList<TExecutionListenerProc>;
   FQueryLanguage := qlAnsiSQL;
   FTranID := 0;
+  FAutoFreeConnection := True;
   TryResolveQueryLanguage(FQueryLanguage);
 end;
 
