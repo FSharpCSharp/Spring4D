@@ -3,120 +3,136 @@ unit ViewMain;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, ActnList, Menus, ComCtrls
-  ,Core.Session, Core.Interfaces
-  ,Spring.Collections
-  ,ProductModel, SQLiteTable3
-  {$IF CompilerVersion > 23}, System.Actions
-  {$IFEND}
-  ;
+  ActnList,
+  Classes,
+  ComCtrls,
+  Controls,
+  Dialogs,
+  Forms,
+  Graphics,
+  Menus,
+  Messages,
+  SysUtils,
+  Variants,
+  Windows,
+
+{$IF CompilerVersion > 23}
+  System.Actions,
+{$IFEND}
+
+  Spring.Collections,
+  SQLiteTable3,
+
+  Core.Interfaces,
+  Core.Session,
+
+  ProductModel;
+
 
 type
-  TfrmMain = class(TForm)
-    mmView: TMainMenu;
-    alMain: TActionList;
-    aBuildDatabase: TAction;
-    Database1: TMenuItem;
-    RebuildDatabase1: TMenuItem;
-    lvProducts: TListView;
-    aAddProduct: TAction;
-    aRemoveProduct: TAction;
-    aEditProduct: TAction;
-    Products1: TMenuItem;
-    AddNewProduct1: TMenuItem;
-    EditProduct1: TMenuItem;
-    N1: TMenuItem;
-    RemoveProduct1: TMenuItem;
-    N2: TMenuItem;
-    aReLoadProducts: TAction;
-    RefreshProducts1: TMenuItem;
-    sbView: TStatusBar;
-    aCommit: TAction;
-    N3: TMenuItem;
-    CommitChanges1: TMenuItem;
-    procedure aBuildDatabaseExecute(Sender: TObject);
+  TMainForm = class(TForm)
+    CommitAction: TAction;
+    CommitChangesMenuItem: TMenuItem;
+    DatabaseMenuItem: TMenuItem;
+    MainActionList: TActionList;
+    N1MenuItem: TMenuItem;
+    N2MenuItem: TMenuItem;
+    N3MenuItem: TMenuItem;
+    ProductAddAction: TAction;
+    ProductAddMenuItem: TMenuItem;
+    ProductEditAction: TAction;
+    ProductEditMenuItem: TMenuItem;
+    ProductRemoveAction: TAction;
+    ProductRemoveMenuItem: TMenuItem;
+    ProductsListView: TListView;
+    ProductsMenuItem: TMenuItem;
+    ProductsRefreshAction: TAction;
+    ProductsRefreshMenuItem: TMenuItem;
+    RebuildDatabaseAction: TAction;
+    RebuildDatabaseMenuItem: TMenuItem;
+    ViewMainMenu: TMainMenu;
+    ViewStatusBar: TStatusBar;
+    procedure CommitActionExecute(Sender: TObject);
     procedure FormCreate(Sender: TObject);
-    procedure aAddProductExecute(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
-    procedure aEditProductUpdate(Sender: TObject);
-    procedure aEditProductExecute(Sender: TObject);
-    procedure aReLoadProductsExecute(Sender: TObject);
-    procedure aRemoveProductExecute(Sender: TObject);
-    procedure aCommitExecute(Sender: TObject);
-    procedure lvProductsData(Sender: TObject; Item: TListItem);
-    procedure lvProductsDblClick(Sender: TObject);
+    procedure FormShow(Sender: TObject);
+    procedure ProductAddActionExecute(Sender: TObject);
+    procedure ProductEditActionExecute(Sender: TObject);
+    procedure ProductEditActionUpdate(Sender: TObject);
+    procedure ProductRemoveActionExecute(Sender: TObject);
+    procedure ProductsListViewData(Sender: TObject; Item: TListItem);
+    procedure ProductsListViewDblClick(Sender: TObject);
+    procedure ProductsRefreshActionExecute(Sender: TObject);
+    procedure RebuildDatabaseActionExecute(Sender: TObject);
   private
-    { Private declarations }
-    FDatabase: TSQLiteDatabase;
     FConnection: IDBConnection;
+    FDatabase: TSQLiteDatabase;
     FProducts: IList<TProduct>;
     FSession: TSession;
   protected
-    procedure DoBuildDatabase();
-    procedure DoAddNewProduct();
-    procedure DoEditProduct();
-    procedure DoRemoveProduct();
-    procedure DoRepaint();
-    procedure DoReLoadProducts();
-    procedure DoCommitChanges();
-    procedure DoCheckEntities();
+    procedure DoAddNewProduct;
+    procedure DoBuildDatabase;
+    procedure DoCheckEntities;
+    procedure DoCommitChanges;
+    procedure DoEditProduct;
+    procedure DoReLoadProducts;
+    procedure DoRemoveProduct;
+    procedure DoRepaint;
   public
-    { Public declarations }
     property Connection: IDBConnection read FConnection;
     property Session: TSession read FSession;
   end;
 
 var
-  frmMain: TfrmMain;
+  MainForm: TMainForm;
 
 implementation
 
 uses
-  Core.DatabaseManager
-  ,Core.ConnectionFactory
-  ,ViewEditProduct
-  ,Adapters.SQLite
-  ;
+  Core.DatabaseManager,
+  Core.ConnectionFactory,
+  Adapters.SQLite,
+
+  ViewEditProduct;
 
 {$R *.dfm}
 
-procedure TfrmMain.aAddProductExecute(Sender: TObject);
+procedure TMainForm.ProductAddActionExecute(Sender: TObject);
 begin
-  DoAddNewProduct();
+  DoAddNewProduct;
 end;
 
-procedure TfrmMain.aBuildDatabaseExecute(Sender: TObject);
+procedure TMainForm.RebuildDatabaseActionExecute(Sender: TObject);
 begin
-  DoBuildDatabase();
+  DoBuildDatabase;
 end;
 
-procedure TfrmMain.aCommitExecute(Sender: TObject);
+procedure TMainForm.CommitActionExecute(Sender: TObject);
 begin
-  DoCommitChanges();
+  DoCommitChanges;
 end;
 
-procedure TfrmMain.aEditProductExecute(Sender: TObject);
+procedure TMainForm.ProductEditActionExecute(Sender: TObject);
 begin
-  DoEditProduct();
+  DoEditProduct;
 end;
 
-procedure TfrmMain.aEditProductUpdate(Sender: TObject);
+procedure TMainForm.ProductEditActionUpdate(Sender: TObject);
 begin
-  TAction(Sender).Enabled := Assigned(lvProducts.Selected);
+  TAction(Sender).Enabled := Assigned(ProductsListView.Selected);
 end;
 
-procedure TfrmMain.aReLoadProductsExecute(Sender: TObject);
+procedure TMainForm.ProductsRefreshActionExecute(Sender: TObject);
 begin
   DoReLoadProducts;
 end;
 
-procedure TfrmMain.aRemoveProductExecute(Sender: TObject);
+procedure TMainForm.ProductRemoveActionExecute(Sender: TObject);
 begin
-  DoRemoveProduct();
+  DoRemoveProduct;
 end;
 
-procedure TfrmMain.DoAddNewProduct;
+procedure TMainForm.DoAddNewProduct;
 var
   LProduct: TProduct;
   LConfirmed: Boolean;
@@ -124,11 +140,11 @@ begin
   LConfirmed := False;
   LProduct := TProduct.Create;
   try
-    LConfirmed := TfrmEditProduct.Edit(LProduct);
-    if LConfirmed  then
+    LConfirmed := TProductEditForm.Edit(LProduct);
+    if LConfirmed then
     begin
       FProducts.Add(LProduct);
-      DoRepaint();
+      DoRepaint;
     end;
   finally
     if not LConfirmed then
@@ -136,35 +152,35 @@ begin
   end;
 end;
 
-procedure TfrmMain.DoBuildDatabase;
+procedure TMainForm.DoBuildDatabase;
 var
-  LDbManager: TDatabaseManager;
+  LDBManager: TDatabaseManager;
 begin
-  LDbManager := TDatabaseManager.Create(FConnection);
+  LDBManager := TDatabaseManager.Create(FConnection);
   try
-    LDbManager.BuildDatabase;
+    LDBManager.BuildDatabase;
   finally
-    LDbManager.Free;
+    LDBManager.Free;
   end;
 end;
 
-procedure TfrmMain.DoCheckEntities;
+procedure TMainForm.DoCheckEntities;
 var
-  LDbManager: TDatabaseManager;
+  LDBManager: TDatabaseManager;
 begin
-  LDbManager := TDatabaseManager.Create(FConnection);
+  LDBManager := TDatabaseManager.Create(FConnection);
   try
-    if not LDbManager.EntityExists(TProduct) then
+    if not LDBManager.EntityExists(TProduct) then
     begin
-      LDbManager.BuildDatabase;
+      LDBManager.BuildDatabase;
       DoReLoadProducts;
     end;
   finally
-    LDbManager.Free;
+    LDBManager.Free;
   end;
 end;
 
-procedure TfrmMain.DoCommitChanges;
+procedure TMainForm.DoCommitChanges;
 var
   LTran: IDBTransaction;
 begin
@@ -173,67 +189,75 @@ begin
   LTran.Commit;
 end;
 
-procedure TfrmMain.DoEditProduct;
+procedure TMainForm.DoEditProduct;
 var
   LProduct: TProduct;
 begin
-  LProduct := FProducts[lvProducts.Selected.Index];
-  if TfrmEditProduct.Edit(LProduct) then
+  LProduct := FProducts[ProductsListView.Selected.Index];
+  if TProductEditForm.Edit(LProduct) then
   begin
     DoRepaint;
   end;
 end;
 
-procedure TfrmMain.DoRepaint;
+procedure TMainForm.DoRepaint;
 begin
-  lvProducts.Items.Count := FProducts.Count;
-  lvProducts.Invalidate;
-  sbView.Panels[0].Text := Format('Total: %D', [FProducts.Count]);
+  ProductsListView.Items.Count := FProducts.Count;
+  ProductsListView.Invalidate;
+  ViewStatusBar.Panels[0].Text := Format('Total: %D', [FProducts.Count]);
 end;
 
-procedure TfrmMain.DoReLoadProducts;
+procedure TMainForm.DoReLoadProducts;
 begin
-  lvProducts.Items.BeginUpdate;
+  ProductsListView.Items.BeginUpdate;
   try
-    FProducts := FSession.FindAll<TProduct>();
-    DoRepaint();
+    FProducts := FSession.FindAll<TProduct>;
+    DoRepaint;
   finally
-    lvProducts.Items.EndUpdate;
+    ProductsListView.Items.EndUpdate;
   end;
 end;
 
-procedure TfrmMain.DoRemoveProduct;
+procedure TMainForm.DoRemoveProduct;
 var
   LProduct: TProduct;
 begin
-  LProduct := FProducts[lvProducts.Selected.Index];
+  LProduct := FProducts[ProductsListView.Selected.Index];
   FSession.Delete(LProduct);
   FProducts.Remove(LProduct);
-  DoRepaint();
+  DoRepaint;
 end;
 
-procedure TfrmMain.FormCreate(Sender: TObject);
+procedure TMainForm.FormCreate(Sender: TObject);
 begin
   FDatabase := TSQLiteDatabase.Create(Self);
   FDatabase.Filename := 'products.db3';
   FConnection := TSQLiteConnectionAdapter.Create(FDatabase);
 
-  // Why isnt Default AutoFreeConnection := True???
   FConnection.AutoFreeConnection := True;
   FConnection.Connect;
   FSession := TSession.Create(FConnection);
   FProducts := TCollections.CreateObjectList<TProduct>(True);
-  DoCheckEntities();
-  DoRepaint();
+
+  DoCheckEntities;
+  DoRepaint;
 end;
 
-procedure TfrmMain.FormDestroy(Sender: TObject);
+procedure TMainForm.FormDestroy(Sender: TObject);
 begin
   FProducts := nil;
   FSession.Free;
 end;
 
-procedure TfrmMain.lvProductsData(Sender: TObject; Item: TListItem);
+procedure TMainForm.FormShow(Sender: TObject);
+begin
+  if FConnection.IsConnected then
+  begin
+    DoReLoadProducts;
+  end;
+end;
+
+procedure TMainForm.ProductsListViewData(Sender: TObject; Item: TListItem);
 var
   LProduct: TProduct;
 begin
@@ -243,14 +267,14 @@ begin
   Item.SubItems.Add(IntToStr(LProduct.Quantity));
 end;
 
-procedure TfrmMain.lvProductsDblClick(Sender: TObject);
+procedure TMainForm.ProductsListViewDblClick(Sender: TObject);
 var
   LSelected: TListItem;
 begin
-  LSelected := lvProducts.Selected;
+  LSelected := ProductsListView.Selected;
   if Assigned(LSelected) then
   begin
-    DoEditProduct();
+    DoEditProduct;
   end;
 end;
 

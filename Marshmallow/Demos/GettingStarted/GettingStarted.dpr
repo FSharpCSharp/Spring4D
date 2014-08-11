@@ -2,20 +2,19 @@ program GettingStarted;
 
 uses
   Forms,
-  ViewMain in 'Views\ViewMain.pas' {frmMain},
+  Adapters.SQLite in '..\..\Adapters.SQLite.pas',
   ProductModel in 'Source\ProductModel.pas',
-  ViewEditProduct in 'Views\ViewEditProduct.pas' {frmEditProduct},
-  Adapters.SQLite in '..\..\Adapters.SQLite.pas'
-  ;
+  ViewEditProduct in 'Views\ViewEditProduct.pas' {ProductEditForm},
+  ViewMain in 'Views\ViewMain.pas' {MainForm};
 
 {$R *.res}
 
 begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
-  Application.CreateForm(TfrmMain, frmMain);
-  {$WARNINGS OFF}
+  Application.CreateForm(TMainForm, MainForm);
+{$WARNINGS OFF}
   ReportMemoryLeaksOnShutdown := DebugHook <> 0;
-  {$WARNINGS ON}
+{$WARNINGS ON}
   Application.Run;
 end.

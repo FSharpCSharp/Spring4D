@@ -1,4 +1,4 @@
-object frmEditProduct: TfrmEditProduct
+object ProductEditForm: TProductEditForm
   Left = 0
   Top = 0
   Caption = 'Enter Product Details'
@@ -16,28 +16,28 @@ object frmEditProduct: TfrmEditProduct
     132)
   PixelsPerInch = 96
   TextHeight = 13
-  object lblQuantity: TLabel
+  object QuantityLabel: TLabel
     Left = 8
     Top = 65
     Width = 46
     Height = 13
     Caption = 'Quantity:'
   end
-  object lblName: TLabel
+  object NameLabel: TLabel
     Left = 8
     Top = 11
     Width = 31
     Height = 13
     Caption = 'Name:'
   end
-  object lblPrice: TLabel
+  object PriceLabel: TLabel
     Left = 8
     Top = 38
     Width = 27
     Height = 13
     Caption = 'Price:'
   end
-  object edName: TEdit
+  object NameEdit: TEdit
     Left = 72
     Top = 8
     Width = 309
@@ -46,16 +46,17 @@ object frmEditProduct: TfrmEditProduct
     TabOrder = 0
     TextHint = 'Name'
   end
-  object medtPrice: TMaskEdit
+  object PriceMaskEdit: TMaskEdit
     Left = 72
     Top = 35
     Width = 309
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     TabOrder = 1
+    Text = ''
     TextHint = 'Price'
   end
-  object seQuantity: TSpinEdit
+  object QuantitySpinEdit: TSpinEdit
     Left = 72
     Top = 62
     Width = 309
@@ -66,7 +67,7 @@ object frmEditProduct: TfrmEditProduct
     TabOrder = 2
     Value = 1
   end
-  object btnOK: TButton
+  object OkButton: TButton
     Left = 216
     Top = 103
     Width = 75
@@ -76,9 +77,9 @@ object frmEditProduct: TfrmEditProduct
     Default = True
     ModalResult = 1
     TabOrder = 3
-    OnClick = btnOKClick
+    OnClick = OkButtonClick
   end
-  object btnCancel: TButton
+  object CancelButton: TButton
     Left = 306
     Top = 103
     Width = 75

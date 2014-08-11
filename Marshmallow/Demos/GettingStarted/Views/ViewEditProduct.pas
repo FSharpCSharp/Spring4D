@@ -3,38 +3,44 @@ unit ViewEditProduct;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, Spin, Mask
-  ,ProductModel
-  ;
+  Classes,
+  Controls,
+  Dialogs,
+  Forms,
+  Graphics,
+  Mask,
+  Messages,
+  Spin,
+  StdCtrls,
+  SysUtils,
+  Variants,
+  Windows,
+  ProductModel;
 
 type
-  TfrmEditProduct = class(TForm)
-    edName: TEdit;
-    medtPrice: TMaskEdit;
-    seQuantity: TSpinEdit;
-    lblQuantity: TLabel;
-    btnOK: TButton;
-    btnCancel: TButton;
-    lblName: TLabel;
-    lblPrice: TLabel;
-    procedure btnOKClick(Sender: TObject);
+  TProductEditForm = class(TForm)
+    CancelButton: TButton;
+    NameEdit: TEdit;
+    NameLabel: TLabel;
+    OkButton: TButton;
+    PriceLabel: TLabel;
+    PriceMaskEdit: TMaskEdit;
+    QuantityLabel: TLabel;
+    QuantitySpinEdit: TSpinEdit;
+    procedure OkButtonClick(Sender: TObject);
   private
-    { Private declarations }
     FProduct: TProduct;
     procedure SetProduct(const Value: TProduct);
   protected
-    procedure DoGetProductProperties(); virtual;
-    procedure DoSetProductProperties(); virtual;
+    procedure DoGetProductProperties; virtual;
+    procedure DoSetProductProperties; virtual;
   public
-    { Public declarations }
-    property Product: TProduct read FProduct write SetProduct;
-
     class function Edit(AProduct: TProduct): Boolean;
+    property Product: TProduct read FProduct write SetProduct;
   end;
 
 var
-  frmEditProduct: TfrmEditProduct;
+  ProductEditForm: TProductEditForm;
 
 implementation
 
@@ -42,30 +48,30 @@ implementation
 
 { TfrmEditProduct }
 
-procedure TfrmEditProduct.btnOKClick(Sender: TObject);
+procedure TProductEditForm.OkButtonClick(Sender: TObject);
 begin
-  DoSetProductProperties();
+  DoSetProductProperties;
 end;
 
-procedure TfrmEditProduct.DoGetProductProperties;
+procedure TProductEditForm.DoGetProductProperties;
 begin
-  edName.Text := FProduct.Name;
-  medtPrice.Text := CurrToStr(FProduct.Price);
-  seQuantity.Value := FProduct.Quantity;
+  NameEdit.Text := FProduct.Name;
+  PriceMaskEdit.Text := CurrToStr(FProduct.Price);
+  QuantitySpinEdit.Value := FProduct.Quantity;
 end;
 
-procedure TfrmEditProduct.DoSetProductProperties;
+procedure TProductEditForm.DoSetProductProperties;
 begin
-  FProduct.Name := edName.Text;
-  FProduct.Price := StrToCurr(medtPrice.Text);
-  FProduct.Quantity := seQuantity.Value;
+  FProduct.Name := NameEdit.Text;
+  FProduct.Price := StrToCurr(PriceMaskEdit.Text);
+  FProduct.Quantity := QuantitySpinEdit.Value;
 end;
 
-class function TfrmEditProduct.Edit(AProduct: TProduct): Boolean;
+class function TProductEditForm.Edit(AProduct: TProduct): Boolean;
 var
-  LForm: TfrmEditProduct;
+  LForm: TProductEditForm;
 begin
-  LForm := TfrmEditProduct.Create(Application);
+  LForm := TProductEditForm.Create(Application);
   try
     LForm.Product := AProduct;
     Result := (LForm.ShowModal = mrOk);
@@ -74,10 +80,10 @@ begin
   end;
 end;
 
-procedure TfrmEditProduct.SetProduct(const Value: TProduct);
+procedure TProductEditForm.SetProduct(const Value: TProduct);
 begin
   FProduct := Value;
-  DoGetProductProperties();
+  DoGetProductProperties;
 end;
 
 end.

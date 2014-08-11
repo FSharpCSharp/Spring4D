@@ -1,4 +1,4 @@
-object frmMain: TfrmMain
+object MainForm: TMainForm
   Left = 0
   Top = 0
   Caption = 'Getting Started'
@@ -10,13 +10,15 @@ object frmMain: TfrmMain
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
-  Menu = mmView
+  Menu = ViewMainMenu
   OldCreateOrder = False
+  Position = poScreenCenter
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
-  object lvProducts: TListView
+  object ProductsListView: TListView
     AlignWithMargins = True
     Left = 3
     Top = 3
@@ -43,10 +45,10 @@ object frmMain: TfrmMain
     RowSelect = True
     TabOrder = 0
     ViewStyle = vsReport
-    OnData = lvProductsData
-    OnDblClick = lvProductsDblClick
+    OnData = ProductsListViewData
+    OnDblClick = ProductsListViewDblClick
   end
-  object sbView: TStatusBar
+  object ViewStatusBar: TStatusBar
     Left = 0
     Top = 376
     Width = 549
@@ -59,82 +61,82 @@ object frmMain: TfrmMain
         Width = 50
       end>
   end
-  object mmView: TMainMenu
-    Left = 472
+  object ViewMainMenu: TMainMenu
+    Left = 480
     Top = 272
-    object Database1: TMenuItem
+    object DatabaseMenuItem: TMenuItem
       Caption = 'Database'
-      object RebuildDatabase1: TMenuItem
-        Action = aBuildDatabase
+      object RebuildDatabaseMenuItem: TMenuItem
+        Action = RebuildDatabaseAction
       end
-      object N3: TMenuItem
+      object N1MenuItem: TMenuItem
         Caption = '-'
       end
-      object CommitChanges1: TMenuItem
-        Action = aCommit
+      object CommitChangesMenuItem: TMenuItem
+        Action = CommitAction
       end
     end
-    object Products1: TMenuItem
+    object ProductsMenuItem: TMenuItem
       Caption = 'Products'
-      object AddNewProduct1: TMenuItem
-        Action = aAddProduct
+      object ProductAddMenuItem: TMenuItem
+        Action = ProductAddAction
         ShortCut = 16462
       end
-      object EditProduct1: TMenuItem
-        Action = aEditProduct
+      object ProductEditMenuItem: TMenuItem
+        Action = ProductEditAction
         ShortCut = 16453
       end
-      object N1: TMenuItem
+      object N2MenuItem: TMenuItem
         Caption = '-'
       end
-      object RemoveProduct1: TMenuItem
-        Action = aRemoveProduct
+      object ProductRemoveMenuItem: TMenuItem
+        Action = ProductRemoveAction
         ShortCut = 16430
       end
-      object N2: TMenuItem
+      object N3MenuItem: TMenuItem
         Caption = '-'
       end
-      object RefreshProducts1: TMenuItem
-        Action = aReLoadProducts
+      object ProductsRefreshMenuItem: TMenuItem
+        Action = ProductsRefreshAction
         ShortCut = 116
       end
     end
   end
-  object alMain: TActionList
-    Left = 424
+  object MainActionList: TActionList
+    Left = 384
     Top = 272
-    object aBuildDatabase: TAction
+    object RebuildDatabaseAction: TAction
       Category = 'Database'
       Caption = 'Rebuild Database'
-      OnExecute = aBuildDatabaseExecute
+      OnExecute = RebuildDatabaseActionExecute
     end
-    object aAddProduct: TAction
+    object ProductAddAction: TAction
       Category = 'Products'
       Caption = 'Add New Product'
-      OnExecute = aAddProductExecute
+      OnExecute = ProductAddActionExecute
     end
-    object aRemoveProduct: TAction
+    object ProductRemoveAction: TAction
       Category = 'Products'
       Caption = 'Remove Product'
-      OnExecute = aRemoveProductExecute
-      OnUpdate = aEditProductUpdate
+      OnExecute = ProductRemoveActionExecute
+      OnUpdate = ProductEditActionUpdate
     end
-    object aEditProduct: TAction
+    object ProductEditAction: TAction
       Category = 'Products'
       Caption = 'Edit Product'
-      OnExecute = aEditProductExecute
-      OnUpdate = aEditProductUpdate
+      OnExecute = ProductEditActionExecute
+      OnUpdate = ProductEditActionUpdate
     end
-    object aReLoadProducts: TAction
+    object ProductsRefreshAction: TAction
       Category = 'Products'
       Caption = 'Load Products'
-      OnExecute = aReLoadProductsExecute
+      OnExecute = ProductsRefreshActionExecute
     end
-    object aCommit: TAction
+    object CommitAction: TAction
       Category = 'Database'
       Caption = 'Commit Changes'
       ShortCut = 16467
-      OnExecute = aCommitExecute
+      OnExecute = CommitActionExecute
     end
   end
 end
