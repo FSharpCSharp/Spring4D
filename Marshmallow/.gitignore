@@ -36,6 +36,8 @@ DCU
 *.db3 
 
 !sqlite3.dll
+!bson.dll
+!mongoc.dll
 !/Packages/Marshmallow.res
 !/Packages/ObjectDataset.res
 !/Packages/ObjectDataset_Design_XE.res

@@ -12,6 +12,7 @@ uses
   TestFramework,
   GUITestRunner,
   TextTestRunner,
+  FireDAC.VCLUI.Wait,
   TestSession in 'TestSession.pas',
   Core.AbstractManager in '..\Core.AbstractManager.pas',
   Core.Interfaces in '..\Core.Interfaces.pas',
