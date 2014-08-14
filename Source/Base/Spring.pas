@@ -144,7 +144,9 @@ type
   ///   Represents a anonymous method that has the same signature as
   ///   TNotifyEvent.
   /// </summary>
+  {$M+}
   TNotifyProc = reference to procedure(Sender: TObject);
+  {$M-}
 
   {$ENDREGION}
 
