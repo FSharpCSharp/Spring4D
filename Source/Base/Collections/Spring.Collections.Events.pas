@@ -67,10 +67,10 @@ end;
 procedure TCollectionChangedEventImpl<T>.ForEach(
   const action: TAction<TCollectionChangedEvent<T>>);
 var
-  i: Integer;
+  handler: TMethod;
 begin
-  for i := 0 to Handlers.Count - 1 do
-    action(TCollectionChangedEvent<T>(Handlers.Items[i]));
+  for handler in Handlers do
+    action(TCollectionChangedEvent<T>(handler));
 end;
 
 function TCollectionChangedEventImpl<T>.GetInvoke: TCollectionChangedEvent<T>;
@@ -81,11 +81,11 @@ end;
 procedure TCollectionChangedEventImpl<T>.InternalInvoke(Sender: TObject;
   const Item: T; Action: TCollectionChangedAction);
 var
-  i: Integer;
+  handler: TMethod;
 begin
   if Enabled then
-    for i := 0 to Handlers.Count - 1 do
-      TCollectionChangedEvent<T>(Handlers.Items[i])(Sender, Item, Action);
+    for handler in Handlers do
+      TCollectionChangedEvent<T>(handler)(Sender, Item, Action);
 end;
 
 procedure TCollectionChangedEventImpl<T>.Remove(

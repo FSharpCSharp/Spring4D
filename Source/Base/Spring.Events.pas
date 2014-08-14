@@ -582,7 +582,7 @@ var
   handler: TMethod;
 begin
   if Enabled then
-    for handler in Handlers.ToArray do
+    for handler in Handlers do
       InvokeMethod(handler, Params, StackSize);
 end;
 

@@ -31,6 +31,7 @@ interface
 uses
   Classes,
   Generics.Collections,
+  SyncObjs,
   Spring;
 
 type
@@ -39,21 +40,16 @@ type
   ///	</summary>
   TEventBase = class(TInterfacedObject, IEvent)
   private
-    type
-      TMethodList = class(TList<TMethod>)
-      {$IFDEF DELPHI2010}
-        function ToArray: TArray<TMethod>;
-      {$ENDIF}
-      end;
-  private
     fEnabled: Boolean;
-    fHandlers: TMethodList;
+    fHandlers: TList<TMethod>;
+    fLock: TCriticalSection;
     fOnChanged: TNotifyEvent;
     fNotificationHandler: TNotificationHandler;
 
     {$REGION 'Property Accessors'}
     function GetCount: Integer;
     function GetEnabled: Boolean;
+    function GetHandlers: TArray<TMethod>;
     function GetInvoke: TMethod;
     function GetIsEmpty: Boolean;
     function GetOnChanged: TNotifyEvent;
@@ -66,7 +62,7 @@ type
       Operation: TOperation);
     procedure Notify(Sender: TObject; const Item: TMethod;
       Action: TCollectionNotification); virtual;
-    property Handlers: TMethodList read fHandlers;
+    property Handlers: TArray<TMethod> read GetHandlers;
   public
     constructor Create;
     destructor Destroy; override;
@@ -109,32 +105,44 @@ constructor TEventBase.Create;
 begin
   inherited Create;
   fEnabled := True;
-  fHandlers := TMethodList.Create;
+  fHandlers := TList<TMethod>.Create;
   fHandlers.OnNotify := Notify;
+  fLock := TCriticalSection.Create;
 end;
 
 destructor TEventBase.Destroy;
 begin
   fNotificationHandler.Free;
   fHandlers.Free;
+  fLock.Free;
   inherited;
 end;
 
 procedure TEventBase.Add(const handler: TMethod);
 begin
-  fHandlers.Add(handler);
+  fLock.Enter;
+  try
+    fHandlers.Add(handler);
+  finally
+    fLock.Leave;
+  end;
 end;
 
 procedure TEventBase.Clear;
 begin
-  fHandlers.Clear;
+  fLock.Enter;
+  try
+    fHandlers.Clear;
+  finally
+    fLock.Leave;
+  end;
 end;
 
 procedure TEventBase.ForEach(const action: TAction<TMethod>);
 var
   handler: TMethod;
 begin
-  for handler in fHandlers.ToArray do
+  for handler in Handlers do
     action(handler);
 end;
 
@@ -146,6 +154,20 @@ end;
 function TEventBase.GetEnabled: Boolean;
 begin
   Result := fEnabled;
+end;
+
+function TEventBase.GetHandlers: TArray<TMethod>;
+var
+  i: Integer;
+begin
+  fLock.Enter;
+  try
+    SetLength(Result, fHandlers.Count);
+    for i := 0 to fHandlers.Count - 1 do
+      Result[i] := fHandlers[i];
+  finally
+    fLock.Leave;
+  end;
 end;
 
 function TEventBase.GetInvoke: TMethod;
@@ -202,16 +224,26 @@ end;
 
 procedure TEventBase.Remove(const handler: TMethod);
 begin
-  fHandlers.Remove(handler);
+  fLock.Enter;
+  try
+    fHandlers.Remove(handler);
+  finally
+    fLock.Leave;
+  end;
 end;
 
 procedure TEventBase.RemoveAll(instance: Pointer);
 var
   i: Integer;
 begin
-  for i := fHandlers.Count - 1 downto 0 do
-    if fHandlers[i].Data = instance then
-      fHandlers.Delete(i);
+  fLock.Enter;
+  try
+    for i := fHandlers.Count - 1 downto 0 do
+      if fHandlers[i].Data = instance then
+        fHandlers.Delete(i);
+  finally
+    fLock.Leave;
+  end;
 end;
 
 procedure TEventBase.SetEnabled(const value: Boolean);
@@ -223,22 +255,6 @@ procedure TEventBase.SetOnChanged(const value: TNotifyEvent);
 begin
   fOnChanged := value;
 end;
-
-{$ENDREGION}
-
-
-{$REGION 'TEventBase.TMethodList'}
-
-{$IFDEF DELPHI2010}
-function TEventBase.TMethodList.ToArray: TArray<TMethod>;
-var
-  i: Integer;
-begin
-  SetLength(Result, Count);
-  for i := 0 to Count - 1 do
-    Result[i] := Items[i];
-end;
-{$ENDIF}
 
 {$ENDREGION}
 
