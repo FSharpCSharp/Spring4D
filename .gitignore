@@ -25,3 +25,5 @@ __history/
 *.mes
 Samples/**/*.exe
 Tests/Bin/
+.hg/
+.hgignore
