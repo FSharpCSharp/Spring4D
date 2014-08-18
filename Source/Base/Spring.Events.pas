@@ -105,6 +105,9 @@ type
     function Cast(const handler): TMethod;
     procedure InternalInvoke(Params: Pointer; StackSize: Integer);
     procedure Invoke;
+  protected
+    procedure Notify(Sender: TObject; const Item: TMethod;
+      Action: TCollectionNotification); override;
   public
     constructor Create(typeInfo: PTypeInfo);
     destructor Destroy; override;
@@ -595,6 +598,19 @@ asm
   push [eax].fInvoke.Code
   mov eax,[eax].fInvoke.Data
 {$ENDIF}
+end;
+
+procedure TEvent.Notify(Sender: TObject; const Item: TMethod;
+  Action: TCollectionNotification);
+begin
+  inherited;
+  if fTypeInfo.Kind = tkInterface then
+  begin
+    case Action of
+      cnAdded: IInterface(Item.Data)._AddRef;
+      cnRemoved: IInterface(Item.Data)._Release;
+    end;
+  end;
 end;
 {$ENDIF SUPPORTS_GENERIC_EVENTS}
 
