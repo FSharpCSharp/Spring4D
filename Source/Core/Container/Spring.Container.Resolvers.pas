@@ -304,7 +304,7 @@ function TDependencyResolver.CanResolveFromArgument(
   const context: ICreationContext; const dependency: TDependencyModel;
   const argument: TValue): Boolean;
 begin
-  Result := argument.TypeInfo = dependency.TypeInfo;
+  Result := Assigned(argument.TypeInfo) and argument.IsType(dependency.TypeInfo);
   if not Result and (argument.Kind in [tkInteger, tkFloat, tkInt64]) then
     Result := argument.Kind = dependency.TypeInfo.Kind;
   if Result and argument.IsString then
