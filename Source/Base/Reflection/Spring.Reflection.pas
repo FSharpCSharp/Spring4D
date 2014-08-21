@@ -483,11 +483,91 @@ type
   {$ENDREGION}
 
 
+  {$REGION 'Routines'}
+
+function PassByRef(TypeInfo: PTypeInfo; CC: TCallConv;
+  IsConst: Boolean = False): Boolean;
+procedure PassArg(Par: TRttiParameter; const ArgSrc: TValue;
+  var ArgDest: TValue; CC: TCallConv);
+
+  {$ENDREGION}
+
+
 implementation
 
 uses
+  RTLConsts,
   StrUtils,
   Spring.ResourceStrings;
+
+
+{$REGION 'Routines'}
+
+function PassByRef(TypeInfo: PTypeInfo; CC: TCallConv; IsConst: Boolean = False): Boolean;
+begin
+  if TypeInfo = nil then
+    Exit(False);
+  case TypeInfo^.Kind of
+    tkArray:
+      Result := GetTypeData(TypeInfo)^.ArrayData.Size > SizeOf(Pointer);
+{$IF Defined(CPUX86)}
+    tkRecord:
+      if (CC in [ccCdecl, ccStdCall, ccSafeCall]) and not IsConst then
+        Result := False
+      else
+        Result := GetTypeData(TypeInfo)^.RecSize > SizeOf(Pointer);
+    tkVariant: // like tkRecord, but hard-coded size
+      Result := IsConst or not (CC in [ccCdecl, ccStdCall, ccSafeCall]);
+{$ELSEIF Defined(CPUX64)}
+    tkRecord:
+      Result := not (GetTypeData(TypeInfo)^.RecSize in [1,2,4,8]);
+    tkMethod,
+    tkVariant:
+      Result := True;
+{$ELSEIF Defined(CPUARM)}
+    tkRecord:
+      Result := (CC = ccReg) or (CC = ccPascal);
+    tkMethod,
+    tkVariant:
+      Result := True;
+{$IFEND}
+{$IF DEFINED(NEXTGEN)}
+    tkString:
+      Result := GetTypeData(TypeInfo)^.MaxLength > SizeOf(Pointer);
+{$IFEND}
+  else
+    Result := False;
+  end;
+end;
+
+procedure PassArg(Par: TRttiParameter; const ArgSrc: TValue;
+  var ArgDest: TValue; CC: TCallConv);
+begin
+  if Par.ParamType = nil then
+    ArgDest := TValue.From<Pointer>(ArgSrc.GetReferenceToRawData) // untyped var or const
+  else if Par.Flags * [pfVar, pfOut] <> [] then
+  begin
+    if Par.ParamType.Handle <> ArgSrc.TypeInfo then
+      raise EInvalidCast.CreateRes(@SByRefArgMismatch);
+    ArgDest := TValue.From<Pointer>(ArgSrc.GetReferenceToRawData);
+  end
+  else if (pfConst in Par.Flags) and
+    PassByRef(Par.ParamType.Handle, CC, True) then
+  begin
+    if TypeInfo(TValue) = Par.ParamType.Handle then
+      ArgDest := TValue.From(ArgSrc)
+    else
+    begin
+      if Par.ParamType.Handle <> ArgSrc.TypeInfo then
+        raise EInvalidCast.CreateRes(@SByRefArgMismatch);
+      ArgDest := TValue.From(ArgSrc.GetReferenceToRawData);
+    end
+  end
+  else
+    ArgDest := ArgSrc.Cast(Par.ParamType.Handle);
+end;
+
+{$ENDREGION}
 
 
 {$REGION 'TType'}

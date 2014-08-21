@@ -32,11 +32,9 @@ uses
   Rtti,
   Spring,
   Spring.Collections,
-{$IFDEF DELPHIXE}
-  Spring.Reflection.Compatibility,
-{$ENDIF}
   Spring.Container.Common,
-  Spring.Container.Core;
+  Spring.Container.Core,
+  Spring.Interception.VirtualInterface;
 
 type
   ///	<summary>

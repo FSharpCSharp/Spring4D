@@ -45,6 +45,7 @@ uses
   Spring.Tests.Reflection.ValueConverters,
   Spring.Tests.Container,
   Spring.Tests.Container.LifetimeManager,
+  Spring.Tests.Interception,
   Spring.Tests.Pool,
   Spring.Tests.Utils,
   Spring.Tests.Cryptography;
@@ -191,6 +192,12 @@ begin
     TTestLazyDependenciesDetectRecursion.Suite,
     TTestDecoratorExtension.Suite,
     TTestManyDependencies.Suite
+  ]);
+
+  RegisterTests('Spring.Interception', [
+    TFreezableTest.Suite,
+    TProxyTest.Suite,
+    TStorageTests.Suite
   ]);
 
   RegisterTests('Spring.Extensions.Utils', [

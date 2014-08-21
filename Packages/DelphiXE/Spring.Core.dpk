@@ -48,6 +48,13 @@ contains
   Spring.Container.Pool in '..\..\Source\Core\Container\Spring.Container.Pool.pas',
   Spring.Container.Registration in '..\..\Source\Core\Container\Spring.Container.Registration.pas',
   Spring.Container.Resolvers in '..\..\Source\Core\Container\Spring.Container.Resolvers.pas',
-  Spring.Container.ResourceStrings in '..\..\Source\Core\Container\Spring.Container.ResourceStrings.pas';
+  Spring.Container.ResourceStrings in '..\..\Source\Core\Container\Spring.Container.ResourceStrings.pas',
+  Spring.Interception.AbstractInvocation in '..\..\Source\Core\Interception\Spring.Interception.AbstractInvocation.pas',
+  Spring.Interception.ClassProxy in '..\..\Source\Core\Interception\Spring.Interception.ClassProxy.pas',
+  Spring.Interception.InterfaceProxy in '..\..\Source\Core\Interception\Spring.Interception.InterfaceProxy.pas',
+  Spring.Interception.MethodIntercept in '..\..\Source\Core\Interception\Spring.Interception.MethodIntercept.pas',
+  Spring.Interception in '..\..\Source\Core\Interception\Spring.Interception.pas',
+  Spring.Interception.ResourceStrings in '..\..\Source\Core\Interception\Spring.Interception.ResourceStrings.pas',
+  Spring.Interception.VirtualInterface in '..\..\Source\Core\Interception\Spring.Interception.VirtualInterface.pas';
 
 end.

@@ -71,6 +71,13 @@
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Registration.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.Resolvers.pas"/>
 			<DCCReference Include="..\..\Source\Core\Container\Spring.Container.ResourceStrings.pas"/>
+			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.AbstractInvocation.pas"/>
+			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.ClassProxy.pas"/>
+			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.InterfaceProxy.pas"/>
+			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.MethodIntercept.pas"/>
+			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.pas"/>
+			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.ResourceStrings.pas"/>
+			<DCCReference Include="..\..\Source\Core\Interception\Spring.Interception.VirtualInterface.pas"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>

@@ -24,6 +24,8 @@
 
 unit Spring.Reflection.Core;
 
+{$I Spring.inc}
+
 interface
 
 {$RANGECHECKS OFF}
@@ -106,6 +108,18 @@ type
     ExEntry: array[0..0] of TVmtMethodExEntry;
   end;
 
+  TVirtualClass = class
+  private
+    fClassProxy: TClass;
+    function GetClassProxyData: PClassData; inline;
+  public
+    constructor Create(classType: TClass);
+    destructor Destroy; override;
+
+    property ClassProxy: TClass read fClassProxy;
+    property ClassProxyData: PClassData read GetClassProxyData;
+  end;
+
 function CreateVirtualClass(classType: TClass): TClass;
 procedure DestroyVirtualClass(classType: TClass);
 
@@ -121,6 +135,9 @@ implementation
 
 uses
   Rtti;
+
+
+{$REGION 'Routines'}
 
 function CreateVirtualClass(classType: TClass): TClass;
 var
@@ -245,7 +262,10 @@ begin
   Result := method <> GetVirtualMethodAddress(classType, virtualMethodIndex);
 end;
 
-{ TVirtualClasses }
+{$ENDREGION}
+
+
+{$REGION 'TVirtualClasses'}
 
 constructor TVirtualClasses.Create;
 begin
@@ -296,5 +316,30 @@ begin
   if fClasses.IndexOf(classType) > -1 then
     PPointer(instance)^ := classType.ClassParent;
 end;
+
+{$ENDREGION}
+
+
+{$REGION 'TVirtualClass'}
+
+constructor TVirtualClass.Create(classType: TClass);
+begin
+  inherited Create;
+  fClassProxy := CreateVirtualClass(classType);
+end;
+
+destructor TVirtualClass.Destroy;
+begin
+  DestroyVirtualClass(fClassProxy);
+  inherited;
+end;
+
+function TVirtualClass.GetClassProxyData: PClassData;
+begin
+  Result := GetClassData(fClassProxy);
+end;
+
+{$ENDREGION}
+
 
 end.

@@ -48,7 +48,7 @@
 			<DCC_Define>SPRING_ENABLE_GUARD;$(DCC_Define)</DCC_Define>
 			<VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
 			<Manifest_File>None</Manifest_File>
-			<DCC_UnitSearchPath>..\Source\Base;..\Source\Base\Collections;..\Source\Base\Reflection;..\Source\Core\Container;..\Source\Core\Services;..\Source\Extensions\Utils;..\Source\Extensions\Cryptography;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UnitSearchPath>..\Source\Base;..\Source\Base\Collections;..\Source\Base\Reflection;..\Source\Core\Container;..\Source\Core\Interception;..\Source\Core\Services;..\Source\Extensions\Utils;..\Source\Extensions\Cryptography;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DCC_ExeOutput>Bin\DelphiXE2\$(Platform)\$(Config)</DCC_ExeOutput>
 			<DCC_DcuOutput>Lib\DelphiXE2\$(Platform)\$(Config)</DCC_DcuOutput>
 			<VerInfo_Locale>1033</VerInfo_Locale>
@@ -109,6 +109,8 @@
 			<DCCReference Include="Source\Core\Spring.Tests.Container.Interfaces.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.Container.LifetimeManager.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.Container.pas"/>
+			<DCCReference Include="Source\Core\Spring.Tests.Interception.pas"/>
+			<DCCReference Include="Source\Core\Spring.Tests.Interception.Types.pas"/>
 			<DCCReference Include="Source\Core\Spring.Tests.Pool.pas"/>
 			<DCCReference Include="Source\Extensions\Spring.Tests.Cryptography.pas"/>
 			<DCCReference Include="Source\Extensions\Spring.Tests.Utils.pas"/>

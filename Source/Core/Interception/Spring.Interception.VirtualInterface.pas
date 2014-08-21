@@ -22,34 +22,29 @@
 {                                                                           }
 {***************************************************************************}
 
-unit Spring.Reflection.Compatibility;
+unit Spring.Interception.VirtualInterface;
+
+{$I Spring.inc}
 
 interface
 
 uses
   Generics.Collections,
   Rtti,
-  TypInfo;
+  TypInfo,
+  Spring.Interception.MethodIntercept;
 
 type
-  TMethodIntercept = class
-  private
-    fImplementation: TMethodImplementation;
-    fMethod: TRttiMethod;
-    function GetCodeAddress: Pointer;
-    function GetVirtualIndex: SmallInt;
-  public
-    constructor Create(const method: TRttiMethod;
-      const callback: TMethodImplementationCallback);
-    destructor Destroy; override;
-    property CodeAddress: Pointer read GetCodeAddress;
-    property Method: TRttiMethod read fMethod;
-    property VirtualIndex: SmallInt read GetVirtualIndex;
-  end;
-
+{$IFDEF DELPHIXE2_UP}
+  TVirtualInterfaceInvokeEvent = Rtti.TVirtualInterfaceInvokeEvent;
+{$ELSE}
   TVirtualInterfaceInvokeEvent = reference to procedure(Method: TRttiMethod;
     const Args: TArray<TValue>; out Result: TValue);
+{$ENDIF}
 
+{$IFDEF DELPHIXE2_UP}
+  TVirtualInterface = Rtti.TVirtualInterface;
+{$ELSE}
   TVirtualInterface = class(TInterfacedObject, IInterface)
   private
     fMethodTable: Pointer;
@@ -75,43 +70,20 @@ type
     function QueryInterface(const IID: TGUID; out Obj): HResult; virtual; stdcall;
     property OnInvoke: TVirtualInterfaceInvokeEvent read fOnInvoke write fOnInvoke;
   end;
+{$ENDIF}
 
 implementation
 
 uses
+{$IFDEF DELPHIXE}
+  Spring.Patches.QC98671,
+{$ENDIF}
   RTLConsts;
-
-
-{$REGION 'TMethodIntercept'}
-
-constructor TMethodIntercept.Create(const method: TRttiMethod;
-  const callback: TMethodImplementationCallback);
-begin
-  fImplementation := method.CreateImplementation(Self, callback);
-  fMethod := method;
-end;
-
-destructor TMethodIntercept.Destroy;
-begin
-  fImplementation.Free;
-  inherited;
-end;
-
-function TMethodIntercept.GetCodeAddress: Pointer;
-begin
-  Result := fImplementation.CodeAddress;
-end;
-
-function TMethodIntercept.GetVirtualIndex: SmallInt;
-begin
-  Result := fMethod.VirtualIndex;
-end;
-
-{$ENDREGION}
 
 
 {$REGION 'TVirtualInterface'}
 
+{$IFNDEF DELPHIXE2_UP}
 constructor TVirtualInterface.Create(typeInfo: PTypeInfo);
 type
 {$POINTERMATH ON}
@@ -225,6 +197,7 @@ asm
   mov eax,[eax]
   jmp dword ptr [eax+$04]
 end;
+{$ENDIF}
 
 {$ENDREGION}
 
