@@ -21,7 +21,9 @@ uses
   StorageTests in 'Source\StorageTests.pas',
   Storage in 'Source\Storage.pas',
   StorageFactory in 'Source\StorageFactory.pas',
-  StorageInterceptor in 'StorageInterceptor.pas';
+  StorageInterceptor in 'StorageInterceptor.pas',
+  Spring.Reflection.Compatibility in '..\Source\Base\Reflection\Spring.Reflection.Compatibility.pas',
+  Spring.Reflection.Core in '..\Source\Base\Reflection\Spring.Reflection.Core.pas';
 
 begin
   RunRegisteredTests;

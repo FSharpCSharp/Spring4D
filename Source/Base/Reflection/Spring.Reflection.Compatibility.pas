@@ -64,6 +64,8 @@ type
     procedure DoInvoke(UserData: Pointer;
       const Args: TArray<TValue>; out Result: TValue);
     procedure ErrorProc;
+    function _AddRef: Integer; virtual; stdcall;
+    function _Release: Integer; virtual; stdcall;
   public
     constructor Create(typeInfo: PTypeInfo); overload;
     constructor Create(typeInfo: PTypeInfo;
@@ -195,19 +197,33 @@ asm
   add dword ptr [esp+$04],-$0C
   mov eax,[esp+$04]
   mov eax,[eax]
-  jmp dword ptr [eax]
+  jmp dword ptr [eax+$08]
+end;
+
+function TVirtualInterface._AddRef: Integer;
+begin
+  Result := inherited;
 end;
 
 function TVirtualInterface._AddRefFromIntf: Integer;
 asm
-  add dword ptr [esp+$04],-$0C
-  jmp TVirtualInterface._AddRef
+  add dword ptr [esp+$04],-$0c
+  mov eax,[esp+$04]
+  mov eax,[eax]
+  jmp dword ptr [eax]
+end;
+
+function TVirtualInterface._Release: Integer;
+begin
+  Result := inherited;
 end;
 
 function TVirtualInterface._ReleaseFromIntf: Integer;
 asm
   add dword ptr [esp+$04],-$0C
-  jmp TVirtualInterface._Release
+  mov eax,[esp+$04]
+  mov eax,[eax]
+  jmp dword ptr [eax+$04]
 end;
 
 {$ENDREGION}

@@ -225,7 +225,7 @@ type
   private
     fInterceptors: IList<IInterceptor>;
     fInterceptorSelector: IInterceptorSelector;
-    fAdditionalInterfaces: TArray<IInterface>;
+    fAdditionalInterfaces: IList<TInterfaceProxy>;
     fTarget: TValue;
     function GetInterceptors: IEnumerable<IInterceptor>;
     function GetTarget: TValue;
@@ -240,6 +240,23 @@ type
       const options: TProxyGenerationOptions;
       const target: IInterface;
       const interceptors: array of IInterceptor);
+
+    function QueryInterface(const IID: TGUID; out Obj): HResult; override;
+  end;
+
+  TAggregatedInterfaceProxy = class(TInterfaceProxy)
+  private
+    fController: Pointer;
+  protected
+    function _AddRef: Integer; override;
+    function _Release: Integer; override;
+  public
+    constructor Create(proxyType: PTypeInfo;
+      const additionalInterfaces: array of PTypeInfo;
+      const options: TProxyGenerationOptions;
+      const target: IInterface;
+      const interceptors: array of IInterceptor;
+      const controller: IInterface);
 
     function QueryInterface(const IID: TGUID; out Obj): HResult; override;
   end;
@@ -707,6 +724,7 @@ begin
   fInterceptors := TCollections.CreateInterfaceList<IInterceptor>(interceptors);
   fInterceptorSelector := options.Selector;
   fTarget := TValue.From(target);
+  fAdditionalInterfaces := TCollections.CreateObjectList<TInterfaceProxy>;
   GenerateInterfaces(additionalInterfaces, options);
 end;
 
@@ -716,13 +734,9 @@ procedure TInterfaceProxy.GenerateInterfaces(
 var
   i: Integer;
 begin
-  SetLength(fAdditionalInterfaces, Length(additionalInterfaces));
   for i := Low(additionalInterfaces) to High(additionalInterfaces) do
-  begin
-    TInterfaceProxy.Create(additionalInterfaces[i], [], options, nil,
-      fInterceptors.ToArray).QueryInterface(
-      GetTypeData(additionalInterfaces[i]).Guid, fAdditionalInterfaces[i]);
-  end;
+    fAdditionalInterfaces.Add(TAggregatedInterfaceProxy.Create(
+      additionalInterfaces[i], [], options, nil, fInterceptors.ToArray, Self));
 end;
 
 function TInterfaceProxy.GetInterceptors: IEnumerable<IInterceptor>;
@@ -768,7 +782,7 @@ begin
     if Result = S_OK then
       Exit;
   end;
-  for i := Low(fAdditionalInterfaces) to High(fAdditionalInterfaces) do
+  for i := 0 to fAdditionalInterfaces.Count - 1 do
     if fAdditionalInterfaces[i].QueryInterface(IID, obj) = S_OK then
       Exit(S_OK);
 end;
@@ -790,6 +804,38 @@ begin
     fResult := fMethod.Invoke(fTarget, fArguments)
   else
     raise ENotImplementedException.Create(fMethod.Parent.DefaultName + '.' + fMethod.Name);
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TAggregatedInterfaceProxy'}
+
+constructor TAggregatedInterfaceProxy.Create(proxyType: PTypeInfo;
+  const additionalInterfaces: array of PTypeInfo;
+  const options: TProxyGenerationOptions; const target: IInterface;
+  const interceptors: array of IInterceptor; const controller: IInterface);
+begin
+  inherited Create(proxyType, additionalInterfaces, options, target, interceptors);
+  fController := Pointer(controller);
+end;
+
+function TAggregatedInterfaceProxy.QueryInterface(const IID: TGUID;
+  out Obj): HResult;
+begin
+  Result := inherited;
+  if Result <> S_OK then
+    Result := IInterface(FController).QueryInterface(IID, Obj);
+end;
+
+function TAggregatedInterfaceProxy._AddRef: Integer;
+begin
+  Result := IInterface(FController)._AddRef;
+end;
+
+function TAggregatedInterfaceProxy._Release: Integer;
+begin
+  Result := IInterface(FController)._Release;
 end;
 
 {$ENDREGION}
