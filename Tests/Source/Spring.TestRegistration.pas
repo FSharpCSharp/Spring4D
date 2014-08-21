@@ -45,7 +45,9 @@ uses
   Spring.Tests.Reflection.ValueConverters,
   Spring.Tests.Container,
   Spring.Tests.Container.LifetimeManager,
+{$IFDEF DELPHIXE_UP}
   Spring.Tests.Interception,
+{$ENDIF}
   Spring.Tests.Pool,
   Spring.Tests.Utils,
   Spring.Tests.Cryptography;
@@ -194,11 +196,13 @@ begin
     TTestManyDependencies.Suite
   ]);
 
+{$IFDEF DELPHIXE_UP}
   RegisterTests('Spring.Interception', [
     TFreezableTest.Suite,
     TProxyTest.Suite,
     TStorageTests.Suite
   ]);
+{$ENDIF}
 
   RegisterTests('Spring.Extensions.Utils', [
     TTestVersion.Suite,

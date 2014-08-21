@@ -516,7 +516,7 @@ begin
         Result := False
       else
         Result := GetTypeData(TypeInfo)^.RecSize > SizeOf(Pointer);
-    tkVariant: // like tkRecord, but hard-coded size
+    tkVariant:
       Result := IsConst or not (CC in [ccCdecl, ccStdCall, ccSafeCall]);
 {$ELSEIF Defined(CPUX64)}
     tkRecord:
@@ -531,10 +531,10 @@ begin
     tkVariant:
       Result := True;
 {$IFEND}
-{$IF DEFINED(NEXTGEN)}
+{$IFNDEF NEXTGEN}
     tkString:
       Result := GetTypeData(TypeInfo)^.MaxLength > SizeOf(Pointer);
-{$IFEND}
+{$ENDIF}
   else
     Result := False;
   end;

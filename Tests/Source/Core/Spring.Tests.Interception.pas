@@ -409,9 +409,12 @@ begin
       TEnsurePartnerStatusRule,
       [TypeInfo(ISupportsInvalidation)],
       [TInvalidationInterceptor.Create]);
-    CheckTrue(Supports(proxy, ISupportsInvalidation));
+    try
+      CheckTrue(Supports(proxy, ISupportsInvalidation));
+    finally
+      proxy.Free;
+    end;
   finally
-    proxy.Free;
     generator.Free;
   end;
 end;
@@ -499,12 +502,14 @@ begin
     options := TProxyGenerationOptions.Default;
     options.AddMixinInstance(TCollections.CreateDictionary<string, TDateTime> as TObject);
     person := generator.CreateClassProxy(TPerson, options, []) as TPerson;
-
-    CheckTrue(Supports(person, IDictionary<string, TDateTime>, dictionary));
-    dictionary.Add('Next Leave', IncMonth(Now, 4));
-    UseSomewhereElse(person);
+    try
+      CheckTrue(Supports(person, IDictionary<string, TDateTime>, dictionary));
+      dictionary.Add('Next Leave', IncMonth(Now, 4));
+      UseSomewhereElse(person);
+    finally
+      person.Free;
+    end;
   finally
-    person.Free;
     generator.Free;
   end;
 end;
