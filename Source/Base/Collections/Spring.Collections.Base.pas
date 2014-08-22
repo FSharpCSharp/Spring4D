@@ -350,7 +350,7 @@ type
     procedure InsertRange(index: Integer; const collection: IEnumerable<T>); overload; virtual;
 
     procedure Delete(index: Integer); virtual; abstract;
-    procedure DeleteRange(startIndex, count: Integer); virtual; abstract;
+    procedure DeleteRange(index, count: Integer); virtual;
 
     function IndexOf(const item: T): Integer; overload;
     function IndexOf(const item: T; index: Integer): Integer; overload;
@@ -1456,6 +1456,19 @@ procedure TListBase<T>.Clear;
 begin
   if Count > 0 then
     DeleteRange(0, Count);
+end;
+
+procedure TListBase<T>.DeleteRange(index, count: Integer);
+var
+  i: Integer;
+begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckRange((index >= 0) and (index < Self.Count), 'index');
+  Guard.CheckRange((count >= 0) and (count <= Self.Count - index), 'count');
+{$ENDIF}
+
+  for i := 1 to count do
+    Delete(index);
 end;
 
 function TListBase<T>.First: T;
