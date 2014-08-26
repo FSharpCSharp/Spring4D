@@ -29,12 +29,13 @@ unit Spring.Logging.Serializers;
 interface
 
 uses
-  SysUtils,
-  StrUtils,
-  TypInfo,
   Rtti,
-  Spring.Reflection,
-  Spring.Logging.Extensions;
+  StrUtils,
+  SysUtils,
+  TypInfo,
+  Spring,
+  Spring.Logging.Extensions,
+  Spring.Reflection;
 
 type
   {$REGION 'TSerializerBase'}
@@ -43,6 +44,7 @@ type
     class function ValueToStr(const value: TValue): string; inline; static;
   end;
   {$ENDREGION}
+
 
   {$REGION 'TSimpleTypeSerializer'}
   TSimpleTypeSerializer = class(TSerializerBase, ITypeSerializer)
@@ -57,6 +59,7 @@ type
   end;
   {$ENDREGION}
 
+
   {$REGION 'TNestingTypeSerializer'}
   TNestingTypeSerializer = class abstract(TSerializerBase)
   private
@@ -64,10 +67,11 @@ type
   protected
     property UseNested: Boolean read fUseNested;
   public
-    constructor Create(useNested: Boolean); overload;
     constructor Create; overload;
+    constructor Create(useNested: Boolean); overload;
   end;
   {$ENDREGION}
+
 
   {$REGION 'TReflectionTypeSerializer'}
   TReflectionTypeSerializer = class(TNestingTypeSerializer, ITypeSerializer)
@@ -91,6 +95,7 @@ type
   end;
   {$ENDREGION}
 
+
   {$REGION 'TInterfaceSerializer'}
   TInterfaceSerializer = class(TSerializerBase, ITypeSerializer)
   public
@@ -99,6 +104,7 @@ type
       const value: TValue; nestingLevel: Integer): string;
   end;
   {$ENDREGION}
+
 
   {$REGION 'TArrayOfValueSerializer'}
   TArrayOfValueSerializer = class(TNestingTypeSerializer, ITypeSerializer)
@@ -113,24 +119,26 @@ type
   end;
   {$ENDREGION}
 
+
 implementation
 
+
 {$REGION 'TSerializerBase'}
-{ TSerializerBase }
 
 class function TSerializerBase.ValueToStr(const value: TValue): string;
 begin
   case value.Kind of
     tkInterface,
     tkRecord:
-      Result := '(' + value.TypeInfo^.NameFld.ToString + ')';
-    else Result := value.ToString;
+      Result := '(' + value.TypeInfo.TypeName + ')';
+  else
+    Result := value.ToString;
   end;
 end;
 {$ENDREGION}
 
+
 {$REGION 'TSimpleTypeSerializer'}
-{ TSimpleTypeSerializer }
 
 function TSimpleTypeSerializer.HandlesType(typeInfo: PTypeInfo): Boolean;
 begin
@@ -146,8 +154,13 @@ begin
 end;
 {$ENDREGION}
 
+
 {$REGION 'TNestingTypeSerializer'}
-{ TNestingTypeSerializer }
+
+constructor TNestingTypeSerializer.Create;
+begin
+  Create(False);
+end;
 
 constructor TNestingTypeSerializer.Create(useNested: Boolean);
 begin
@@ -155,14 +168,10 @@ begin
   fUseNested := useNested;
 end;
 
-constructor TNestingTypeSerializer.Create;
-begin
-  Create(false);
-end;
 {$ENDREGION}
 
+
 {$REGION 'TReflectionTypeSerializer'}
-{ TReflectionTypeSerializer }
 
 constructor TReflectionTypeSerializer.Create(visibility: TMemberVisibilities;
   useNested: Boolean);
@@ -173,7 +182,7 @@ end;
 
 constructor TReflectionTypeSerializer.Create;
 begin
-  Create([mvPublished, mvPublic], false);
+  Create([mvPublished, mvPublic], False);
 end;
 
 function TReflectionTypeSerializer.HandlesType(typeInfo: PTypeInfo): Boolean;
@@ -197,9 +206,10 @@ begin
   if value.Kind = tkClass then
   begin
     instance := value.AsObject;
-    if instance <> nil then
+    if Assigned(instance) then
       valueType := TType.GetType(TObject(instance).ClassInfo)
-    else valueType := nil;
+    else
+      valueType := nil;
   end
   else
   begin
@@ -221,7 +231,8 @@ begin
         v := field.GetValue(instance);
         if UseNested then
           Result := Result + SerializeNested(controller, v, nestingLevel + 1)
-        else Result := Result + ValueToStr(v);
+        else
+          Result := Result + ValueToStr(v);
       end;
     end;
 
@@ -233,7 +244,8 @@ begin
         v := prop.GetValue(instance);
         if UseNested then
           Result := Result + SerializeNested(controller, v, nestingLevel + 1)
-        else Result := Result + ValueToStr(v);
+        else
+          Result := Result + ValueToStr(v);
       end;
     end;
   end;
@@ -247,19 +259,21 @@ function TReflectionTypeSerializer.SerializeNested(
 var
   serializer: ITypeSerializer;
 begin
-  if (nestingLevel >= NESTING_LIMIT) then
+  if nestingLevel >= NESTING_LIMIT then
     Exit('(nesting)');
 
   Assert(controller <> nil);
   serializer := controller.FindSerializer(value.TypeInfo);
   if serializer <> nil then
     Result := serializer.Serialize(controller, value, nestingLevel)
-  else Result := ValueToStr(value);
+  else
+    Result := ValueToStr(value);
 end;
+
 {$ENDREGION}
 
+
 {$REGION 'TInterfaceSerializer'}
-{ TInterfaceSerializer }
 
 function TInterfaceSerializer.HandlesType(typeInfo: PTypeInfo): Boolean;
 begin
@@ -273,24 +287,24 @@ var
   objectSerializer: ITypeSerializer;
 begin
   Assert(value.TypeInfo^.Kind = tkInterface);
-  Assert(controller <> nil);
+  Assert(Assigned(controller));
 
   Result := ValueToStr(value);
 
   objectSerializer := controller.FindSerializer(TypeInfo(TObject));
-  if (objectSerializer <> nil) then
+  if Assigned(objectSerializer) then
   begin
     intf := value.AsInterface;
     if intf is TObject then
       Result := Result + ': ' + objectSerializer.Serialize(controller,
         TObject(intf), nestingLevel);
   end;
-
 end;
+
 {$ENDREGION}
 
+
 {$REGION 'TArrayOfValueSerializer'}
-{ TArrayOfValueSerializer }
 
 function TArrayOfValueSerializer.HandlesType(typeInfo: PTypeInfo): Boolean;
 begin
@@ -301,9 +315,10 @@ function TArrayOfValueSerializer.Serialize(
   const controller: ISerializerController; const value: TValue;
   nestingLevel: Integer): string;
 begin
-  if (UseNested) then
+  if UseNested then
     Result := SerializeNested(controller, value, nestingLevel)
-  else Result := SerializeSimple(value);
+  else
+    Result := SerializeSimple(value);
 end;
 
 function TArrayOfValueSerializer.SerializeNested(
@@ -313,14 +328,15 @@ var
   serializer: ITypeSerializer;
   v: TValue;
 begin
-  Assert(controller <> nil);
+  Assert(Assigned(controller));
   Result := '[';
   for v in value.AsType<TArray<TValue>> do
   begin
     serializer := controller.FindSerializer(v.TypeInfo);
     if serializer <> nil then
       Result := Result + serializer.Serialize(controller, v, nestingLevel) + ', '
-    else Result := Result + ValueToStr(v) + ', ';
+    else
+      Result := Result + ValueToStr(v) + ', ';
   end;
   if Length(Result) > 1 then
     SetLength(Result, Length(Result) - 2);
@@ -338,7 +354,9 @@ begin
     SetLength(Result, Length(Result) - 2);
   Result := Result + ']';
 end;
+
 {$ENDREGION}
+
 
 end.
 

@@ -29,14 +29,13 @@ unit Spring.Logging;
 interface
 
 uses
-  SysUtils,
-  Rtti
+  Rtti,
 {$IF Defined(DELPHIXE2_UP)}
-  ,System.UITypes //Has minimum dependencies
+  System.UITypes, // Has minimum dependencies
 {$ELSEIF NOT Defined(SPRING_DISABLE_GRAPHICS)}
-  ,Graphics //Has (unfortunately) VCL dependencies
+  Graphics, // Has (unfortunately) VCL dependencies
 {$IFEND}
-  ;
+  SysUtils;
 
 {$REGION 'Shadowed Delphi types'}
 {$IF Defined(DELPHIXE2_UP)}
@@ -62,8 +61,8 @@ const
 {$ENDREGION}
 
 {$SCOPEDENUMS ON}
-{$REGION 'Log Level and formating definitions and constants'}
 type
+  {$REGION 'Log Level and formating definitions and constants'}
   TLogLevel = (
     /// <summary>
     ///   Excluded from all states and should never be used!
@@ -128,7 +127,7 @@ type
   TLogStyles = set of TLogStyle;
 {$ENDREGION}
 
-type
+
   {$REGION 'TLogEntry'}
   TLogEntry = record
   private
@@ -136,7 +135,7 @@ type
     fEntryType: TLogEntryType;
     fMsg: string;
     fTimeStamp: TDateTime;
-    fExc: Exception;
+    fException: Exception;
     /// <summary>
     ///   Leave as default to instruct the appender/viewer to choose the default
     ///   color based on the level or entry contents or prescribe the color of
@@ -160,7 +159,7 @@ type
   public
     constructor Create(level: TLogLevel; const msg: string); overload;
     constructor Create(level: TLogLevel; const msg: string;
-      const exc: Exception); overload;
+      const e: Exception); overload;
     constructor Create(level: TLogLevel; entryType: TLogEntryType;
       const msg: string; const classType: TClass); overload;
     constructor Create(level: TLogLevel; entryType: TLogEntryType;
@@ -168,7 +167,7 @@ type
     {constructor Create(level : TLogLevel; const msg : string;
       color : TColor = clDefault; fontStyle : TFontStyles = []; )}
 
-    function SetException(const exc: Exception): TLogEntry;
+    function SetException(const e: Exception): TLogEntry;
     function SetColor(color: TColor): TLogEntry;
     function SetStyle(style: TLogStyles): TLogEntry;
     function SetClassType(const classType: TClass): TLogEntry;
@@ -180,7 +179,7 @@ type
     property EntryType: TLogEntryType read fEntryType;
     property Msg: string read fMsg;
     property TimeStamp: TDateTime read fTimeStamp;
-    property Exc: Exception read fExc;
+    property Exception: Exception read fException;
     property Color: TColor read fColor;
     property Style: TLogStyles read fStyle;
     property ClassType: TClass read FClassType;
@@ -189,6 +188,7 @@ type
     property Tag: NativeInt read fTag;
   end;
   {$ENDREGION}
+
 
   {$REGION 'ILoggerBase'}
   ILoggerBase = interface
@@ -200,6 +200,7 @@ type
   end;
   {$ENDREGION}
 
+
   {$REGION 'ILogger'}
   ILogger = interface(ILoggerBase)
     ['{8655E906-C12D-4EB3-8291-30CEAB769B26}']
@@ -207,53 +208,53 @@ type
 
     procedure Log(level: TLogLevel; const msg : string); overload;
     procedure Log(level: TLogLevel; const msg : string;
-      const exc: Exception); overload;
+      const e: Exception); overload;
     procedure Log(level: TLogLevel; const fmt : string;
       const args : array of const); overload;
     procedure Log(level: TLogLevel; const fmt : string;
-      const args : array of const; const exc: Exception); overload;
+      const args : array of const; const e: Exception); overload;
 
     procedure Fatal(const msg : string); overload;
-    procedure Fatal(const msg : string; const exc: Exception); overload;
+    procedure Fatal(const msg : string; const e: Exception); overload;
     procedure Fatal(const fmt : string; const args : array of const); overload;
     procedure Fatal(const fmt : string; const args : array of const;
-      const exc: Exception); overload;
+      const e: Exception); overload;
 
     procedure Error(const msg : string); overload;
-    procedure Error(const msg : string; const exc: Exception); overload;
+    procedure Error(const msg : string; const e: Exception); overload;
     procedure Error(const fmt : string; const args : array of const); overload;
     procedure Error(const fmt : string; const args : array of const;
-      const exc: Exception); overload;
+      const e: Exception); overload;
 
     procedure Warn(const msg : string); overload;
-    procedure Warn(const msg : string; const exc: Exception); overload;
+    procedure Warn(const msg : string; const e: Exception); overload;
     procedure Warn(const fmt : string; const args : array of const); overload;
     procedure Warn(const fmt : string; const args : array of const;
-      const exc: Exception); overload;
+      const e: Exception); overload;
 
     procedure Info(const msg : string); overload;
-    procedure Info(const msg : string; const exc: Exception); overload;
+    procedure Info(const msg : string; const e: Exception); overload;
     procedure Info(const fmt : string; const args : array of const); overload;
     procedure Info(const fmt : string; const args : array of const;
-      const exc: Exception); overload;
+      const e: Exception); overload;
 
     procedure Text(const msg : string); overload;
-    procedure Text(const msg : string; const exc: Exception); overload;
+    procedure Text(const msg : string; const e: Exception); overload;
     procedure Text(const fmt : string; const args : array of const); overload;
     procedure Text(const fmt : string; const args : array of const;
-      const exc: Exception); overload;
+      const e: Exception); overload;
 
     procedure Debug(const msg : string); overload;
-    procedure Debug(const msg : string; const exc: Exception); overload;
+    procedure Debug(const msg : string; const e: Exception); overload;
     procedure Debug(const fmt : string; const args : array of const); overload;
     procedure Debug(const fmt : string; const args : array of const;
-      const exc: Exception); overload;
+      const e: Exception); overload;
 
     procedure Verbose(const msg : string); overload;
-    procedure Verbose(const msg : string; const exc: Exception); overload;
+    procedure Verbose(const msg : string; const e: Exception); overload;
     procedure Verbose(const fmt : string; const args : array of const); overload;
     procedure Verbose(const fmt : string; const args : array of const;
-      const exc: Exception); overload;
+      const e: Exception); overload;
 
     procedure Entering(level: TLogLevel; const classType: TClass;
       const methodName: string); overload;
@@ -287,6 +288,7 @@ type
   end;
   {$ENDREGION}
 
+
   {$REGION 'ILogAppender'}
   ILogAppender = interface(ILoggerBase)
     ['{70DDEB60-3D01-48FB-92CF-A738A8C4BC85}']
@@ -294,12 +296,14 @@ type
   end;
   {$ENDREGION}
 
+
   {$REGION 'ILoggerController'}
   ILoggerController = interface(ILogAppender)
     ['{6556A795-6F1B-4392-92FC-8E3391E3CB07}']
     procedure AddAppender(const appedner: ILogAppender);
   end;
   {$ENDREGION}
+
 
   {$REGION 'ILoggerProperties'}
   /// <summary>
@@ -320,41 +324,36 @@ type
   end;
   {$ENDREGION}
 
+
 implementation
 
-{$REGION 'TLogEntry'}
-{ TLogEntry }
 
-function TLogEntry.AddStack: TLogEntry;
-begin
-  Result := Self;
-  Result.fAddStack := true;
-end;
+{$REGION 'TLogEntry'}
 
 constructor TLogEntry.Create(level: TLogLevel; const msg: string);
 begin
-  fTimeStamp:=Now; //Do this ASAP
+  fTimeStamp := Now; // Do this ASAP
   fLevel := level;
   fEntryType := TLogEntryType.Text;
   fMsg := msg;
 
-  //Set default values
+  // Set default values
   fColor := clDefault;
   fStyle := [];
 
-  //Reset non-managed fields
-  fExc := nil;
-  fAddStack := false;
+  // Reset non-managed fields
+  fException := nil;
+  fAddStack := False;
   fTag := 0;
 
   Assert(fData.IsEmpty);
 end;
 
 constructor TLogEntry.Create(level: TLogLevel; const msg: string;
-  const exc: Exception);
+  const e: Exception);
 begin
   Create(level, msg);
-  fExc := exc;
+  fException := e;
 end;
 
 constructor TLogEntry.Create(level: TLogLevel; entryType: TLogEntryType;
@@ -378,6 +377,12 @@ begin
   Result.fColor := color;
 end;
 
+function TLogEntry.AddStack: TLogEntry;
+begin
+  Result := Self;
+  Result.fAddStack := True;
+end;
+
 function TLogEntry.SetClassType(const classType: TClass): TLogEntry;
 begin
   Result := Self;
@@ -390,10 +395,10 @@ begin
   Result.fData := Data;
 end;
 
-function TLogEntry.SetException(const exc: Exception): TLogEntry;
+function TLogEntry.SetException(const e: Exception): TLogEntry;
 begin
   Result := Self;
-  Result.fExc := exc;
+  Result.fException := e;
 end;
 
 function TLogEntry.SetStyle(style: TLogStyles): TLogEntry;
@@ -407,6 +412,8 @@ begin
   Result := Self;
   Result.fTag := tag;
 end;
+
 {$ENDREGION}
+
 
 end.

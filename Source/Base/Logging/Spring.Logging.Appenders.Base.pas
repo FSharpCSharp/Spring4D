@@ -33,6 +33,7 @@ interface
 
 uses
   SysUtils,
+  Spring,
   Spring.Logging;
 
 type
@@ -50,7 +51,7 @@ type
   {$REGION 'Helper constants and functions'}
   protected const
     //May or may not be used by descendants, its here just for convenience
-    LEVEL : array[TLogLevel] of string = (
+    LEVEL: array[TLogLevel] of string = (
       '[UNKNOWN]',
       '[VERBOSE]',
       '', //CallStack
@@ -62,7 +63,7 @@ type
       '[ERROR]',
       '[FATAL]'
     );
-    LEVEL_FIXED : array[TLogLevel] of string = (
+    LEVEL_FIXED: array[TLogLevel] of string = (
       '[UNK  ]',
       '[VERB ]',
       '', //CallStack
@@ -77,12 +78,12 @@ type
   public
     class function FormatText(const entry: TLogEntry): string; static; inline;
     class function FormatMsg(const entry: TLogEntry): string; static; inline;
-    class function FormatException(const ext: Exception): string; static; //noinline
-    class function FormatMethodName(const classType: TClass;
+    class function FormatException(const e: Exception): string; static; //noinline
+    class function FormatMethodName(classType: TClass;
       const methodName: string): string; static; inline;
-    class function FormatEntering(const classType: TClass;
+    class function FormatEntering(classType: TClass;
       const methodName: string): string; static; inline;
-    class function FormatLeaving(const classType: TClass;
+    class function FormatLeaving(classType: TClass;
       const methodName: string): string; static; inline;
   {$ENDREGION}
   protected
@@ -97,60 +98,62 @@ type
     property Levels: TLogLevels read fLevels write fLevels;
   end;
   {$ENDREGION}
+
+
 implementation
 
 uses
   Spring.Logging.ResourceStrings;
 
+
 {$REGION 'TLogAppenderBase'}
-{ TLogAppenderBase }
 
 constructor TLogAppenderBase.Create;
 begin
   inherited;
-  fEnabled := true;
+  fEnabled := True;
   fLevels := LOG_BASIC_LEVELS;
 end;
 
-class function TLogAppenderBase.FormatEntering(const classType: TClass;
+class function TLogAppenderBase.FormatEntering(classType: TClass;
   const methodName: string): string;
 begin
   Result := SLogEntering + FormatMethodName(classType, methodName);
 end;
 
-class function TLogAppenderBase.FormatException(const ext: Exception): string;
+class function TLogAppenderBase.FormatException(const e: Exception): string;
 var
   len: Integer;
 begin
   SetLength(Result, 1024);
-  len := ExceptionErrorMessage(ext, ExceptAddr, @Result[1], Length(Result));
+  len := ExceptionErrorMessage(e, ExceptAddr, @Result[1], Length(Result));
   SetLength(Result, len);
 end;
 
-class function TLogAppenderBase.FormatLeaving(const classType: TClass;
+class function TLogAppenderBase.FormatLeaving(classType: TClass;
   const methodName: string): string;
 begin
   Result := SLogLeaving + FormatMethodName(classType, methodName);
 end;
 
-class function TLogAppenderBase.FormatMethodName(const classType: TClass;
+class function TLogAppenderBase.FormatMethodName(classType: TClass;
   const methodName: string): string;
 begin
-  if (classType <> nil) then
-    Result := classType.QualifiedClassName + '.' + methodName
-  else Result := methodName;
+  if Assigned(classType) then
+    Result := GetQualifiedClassName(classType) + '.' + methodName
+  else
+    Result := methodName;
 end;
 
 class function TLogAppenderBase.FormatMsg(const entry: TLogEntry): string;
 begin
-  if (entry.Exc = nil) then
+  if entry.Exception = nil then
     Result := FormatText(entry)
   else
-  begin
-    if (entry.Msg <> '') then
-      Result := FormatText(entry) + ': ' + FormatException(entry.Exc)
-    else Result := FormatException(entry.Exc);
-  end;
+    if entry.Msg <> '' then
+      Result := FormatText(entry) + ': ' + FormatException(entry.Exception)
+    else
+      Result := FormatException(entry.Exception);
 end;
 
 class function TLogAppenderBase.FormatText(const entry: TLogEntry): string;
@@ -169,33 +172,36 @@ end;
 
 function TLogAppenderBase.GetEnabled: Boolean;
 begin
-  Result := Enabled;
+  Result := fEnabled;
 end;
 
 function TLogAppenderBase.GetLevels: TLogLevels;
 begin
-  Result := Levels;
+  Result := fLevels;
 end;
 
 function TLogAppenderBase.IsEnabled(level: TLogLevel): Boolean;
 begin
-  Result:=fEnabled and (level in fLevels);
+  Result := fEnabled and (level in fLevels);
 end;
 
 procedure TLogAppenderBase.Send(const entry: TLogEntry);
 begin
-  if (IsEnabled(entry.Level)) then
+  if IsEnabled(entry.Level) then
     DoSend(entry);
 end;
+
 procedure TLogAppenderBase.SetEnabled(value: Boolean);
 begin
-  Enabled := value;
+  fEnabled := value;
 end;
 
 procedure TLogAppenderBase.SetLevels(value: TLogLevels);
 begin
-  Levels := value;
+  fLevels := value;
 end;
+
 {$ENDREGION}
+
 
 end.

@@ -29,10 +29,9 @@ unit Spring.Logging.Extensions;
 interface
 
 uses
+  Rtti,
   SysUtils,
-  Types,
-  TypInfo,
-  Rtti;
+  TypInfo;
 
 type
   ISerializerController = interface;
@@ -64,7 +63,7 @@ type
 
   IStackTraceFormatter = interface
     ['{515E564E-5EB4-4B6D-B74E-4080AB0E5D8C}']
-    function Format(const stack: TArray<Pointer>): TStringDynArray;
+    function Format(const stack: TArray<Pointer>): TArray<string>;
   end;
 
 implementation

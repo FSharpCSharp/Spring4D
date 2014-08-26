@@ -28,6 +28,7 @@ type
 implementation
 
 uses
+  SysUtils,
   Spring.Logging.Appenders.Base,
   CodeSiteLogging;
 
@@ -60,32 +61,31 @@ begin
 
   case entry.EntryType of
     TLogEntryType.Text:
-    begin
-      if entry.Exc <> nil then
-        CodeSite.SendException(TLogAppenderBase.FormatMsg(entry), entry.Exc)
-      else case entry.Level of
-        TLogLevel.Unknown: ;
+      if Assigned(entry.Exception) then
+        CodeSite.SendException(TLogAppenderBase.FormatMsg(entry), entry.Exception)
+      else
+        case entry.Level of
+          TLogLevel.Unknown: ;
 
-        TLogLevel.Verbose:
-          CodeSite.SendNote(entry.Msg);
+          TLogLevel.Verbose:
+            CodeSite.SendNote(entry.Msg);
 
-        TLogLevel.Debug,
-        TLogLevel.CallStack,
-        TLogLevel.SerializedData,
-        TLogLevel.Text:
-          CodeSite.SendMsg(entry.Msg);
+          TLogLevel.Debug,
+          TLogLevel.CallStack,
+          TLogLevel.SerializedData,
+          TLogLevel.Text:
+            CodeSite.SendMsg(entry.Msg);
 
-        TLogLevel.Info:
-          CodeSite.SendReminder(entry.Msg);
+          TLogLevel.Info:
+            CodeSite.SendReminder(entry.Msg);
 
-        TLogLevel.Warning:
-          CodeSite.SendWarning(entry.Msg);
+          TLogLevel.Warning:
+            CodeSite.SendWarning(entry.Msg);
 
-        TLogLevel.Error,
-        TLogLevel.Fatal:
-          CodeSite.SendError(entry.Msg);
-      end;
-    end;
+          TLogLevel.Error,
+          TLogLevel.Fatal:
+            CodeSite.SendError(entry.Msg);
+        end;
 
     TLogEntryType.Entering:
       CodeSite.EnterMethod(TLogAppenderBase.FormatMethodName(entry.ClassType,

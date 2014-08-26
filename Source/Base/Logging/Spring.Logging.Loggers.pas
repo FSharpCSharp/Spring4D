@@ -54,55 +54,55 @@ type
 
     procedure Log(const entry: TLogEntry); overload;
 
-    procedure Log(level: TLogLevel; const msg : string); overload;
-    procedure Log(level: TLogLevel; const msg : string;
-      const exc: Exception); overload;
-    procedure Log(level: TLogLevel; const fmt : string;
-      const args : array of const); overload;
-    procedure Log(level: TLogLevel; const fmt : string;
-      const args : array of const; const exc: Exception); overload;
+    procedure Log(level: TLogLevel; const msg: string); overload;
+    procedure Log(level: TLogLevel; const msg: string;
+      const e: Exception); overload;
+    procedure Log(level: TLogLevel; const fmt: string;
+      const args: array of const); overload;
+    procedure Log(level: TLogLevel; const fmt: string;
+      const args: array of const; const e: Exception); overload;
 
-    procedure Fatal(const msg : string); overload;
-    procedure Fatal(const msg : string; const exc: Exception); overload;
-    procedure Fatal(const fmt : string; const args : array of const); overload;
-    procedure Fatal(const fmt : string; const args : array of const;
-      const exc: Exception); overload;
+    procedure Fatal(const msg: string); overload;
+    procedure Fatal(const msg: string; const e: Exception); overload;
+    procedure Fatal(const fmt: string; const args: array of const); overload;
+    procedure Fatal(const fmt: string; const args: array of const;
+      const e: Exception); overload;
 
-    procedure Error(const msg : string); overload;
-    procedure Error(const msg : string; const exc: Exception); overload;
-    procedure Error(const fmt : string; const args : array of const); overload;
-    procedure Error(const fmt : string; const args : array of const;
-      const exc: Exception); overload;
+    procedure Error(const msg: string); overload;
+    procedure Error(const msg: string; const e: Exception); overload;
+    procedure Error(const fmt: string; const args: array of const); overload;
+    procedure Error(const fmt: string; const args: array of const;
+      const e: Exception); overload;
 
-    procedure Warn(const msg : string); overload;
-    procedure Warn(const msg : string; const exc: Exception); overload;
-    procedure Warn(const fmt : string; const args : array of const); overload;
-    procedure Warn(const fmt : string; const args : array of const;
-      const exc: Exception); overload;
+    procedure Warn(const msg: string); overload;
+    procedure Warn(const msg: string; const e: Exception); overload;
+    procedure Warn(const fmt: string; const args: array of const); overload;
+    procedure Warn(const fmt: string; const args: array of const;
+      const e: Exception); overload;
 
-    procedure Info(const msg : string); overload;
-    procedure Info(const msg : string; const exc: Exception); overload;
-    procedure Info(const fmt : string; const args : array of const); overload;
-    procedure Info(const fmt : string; const args : array of const;
-      const exc: Exception); overload;
+    procedure Info(const msg: string); overload;
+    procedure Info(const msg: string; const e: Exception); overload;
+    procedure Info(const fmt: string; const args: array of const); overload;
+    procedure Info(const fmt: string; const args: array of const;
+      const e: Exception); overload;
 
-    procedure Text(const msg : string); overload;
-    procedure Text(const msg : string; const exc: Exception); overload;
-    procedure Text(const fmt : string; const args : array of const); overload;
-    procedure Text(const fmt : string; const args : array of const;
-      const exc: Exception); overload;
+    procedure Text(const msg: string); overload;
+    procedure Text(const msg: string; const e: Exception); overload;
+    procedure Text(const fmt: string; const args: array of const); overload;
+    procedure Text(const fmt: string; const args: array of const;
+      const e: Exception); overload;
 
-    procedure Debug(const msg : string); overload;
-    procedure Debug(const msg : string; const exc: Exception); overload;
-    procedure Debug(const fmt : string; const args : array of const); overload;
-    procedure Debug(const fmt : string; const args : array of const;
-      const exc: Exception); overload;
+    procedure Debug(const msg: string); overload;
+    procedure Debug(const msg: string; const e: Exception); overload;
+    procedure Debug(const fmt: string; const args: array of const); overload;
+    procedure Debug(const fmt: string; const args: array of const;
+      const e: Exception); overload;
 
-    procedure Verbose(const msg : string); overload;
-    procedure Verbose(const msg : string; const exc: Exception); overload;
-    procedure Verbose(const fmt : string; const args : array of const); overload;
-    procedure Verbose(const fmt : string; const args : array of const;
-      const exc: Exception); overload;
+    procedure Verbose(const msg: string); overload;
+    procedure Verbose(const msg: string; const e: Exception); overload;
+    procedure Verbose(const fmt: string; const args: array of const); overload;
+    procedure Verbose(const fmt: string; const args: array of const;
+      const e: Exception); overload;
 
     procedure Entering(level: TLogLevel; const classType: TClass;
       const methodName: string); overload;
@@ -119,9 +119,24 @@ type
   end;
   {$ENDREGION}
 
+
   {$REGION 'TLoggerBase'}
   TLoggerBase = class abstract(TInterfacedObject, ILogger, ILogAppender,
     ILoggerProperties)
+  private
+    type
+      TLogTracking = class(TInterfacedObject, IInterface)
+      private
+        fLogger: ILogger;
+        fLevel: TLogLevel;
+        fClassType: TClass;
+        fMethodName: string;
+      public
+        constructor Create(const logger: ILogger; level: TLogLevel;
+          const classType: TClass; const methodName: string;
+          const arguments: array of TValue);
+        destructor Destroy; override;
+      end;
   private
     fEnabled: Boolean;
     fLevels: TLogLevels;
@@ -151,53 +166,53 @@ type
 
     procedure Log(level: TLogLevel; const msg : string); overload;
     procedure Log(level: TLogLevel; const msg : string;
-      const exc: Exception); overload;
+      const e: Exception); overload;
     procedure Log(level: TLogLevel; const fmt : string;
       const args : array of const); overload;
     procedure Log(level: TLogLevel; const fmt : string;
-      const args : array of const; const exc: Exception); overload;
+      const args : array of const; const e: Exception); overload;
 
     procedure Fatal(const msg : string); overload;
-    procedure Fatal(const msg : string; const exc: Exception); overload;
+    procedure Fatal(const msg : string; const e: Exception); overload;
     procedure Fatal(const fmt : string; const args : array of const); overload;
     procedure Fatal(const fmt : string; const args : array of const;
-      const exc: Exception); overload;
+      const e: Exception); overload;
 
     procedure Error(const msg : string); overload;
-    procedure Error(const msg : string; const exc: Exception); overload;
+    procedure Error(const msg : string; const e: Exception); overload;
     procedure Error(const fmt : string; const args : array of const); overload;
     procedure Error(const fmt : string; const args : array of const;
-      const exc: Exception); overload;
+      const e: Exception); overload;
 
     procedure Warn(const msg : string); overload;
-    procedure Warn(const msg : string; const exc: Exception); overload;
+    procedure Warn(const msg : string; const e: Exception); overload;
     procedure Warn(const fmt : string; const args : array of const); overload;
     procedure Warn(const fmt : string; const args : array of const;
-      const exc: Exception); overload;
+      const e: Exception); overload;
 
     procedure Info(const msg : string); overload;
-    procedure Info(const msg : string; const exc: Exception); overload;
+    procedure Info(const msg : string; const e: Exception); overload;
     procedure Info(const fmt : string; const args : array of const); overload;
     procedure Info(const fmt : string; const args : array of const;
-      const exc: Exception); overload;
+      const e: Exception); overload;
 
     procedure Text(const msg : string); overload;
-    procedure Text(const msg : string; const exc: Exception); overload;
+    procedure Text(const msg : string; const e: Exception); overload;
     procedure Text(const fmt : string; const args : array of const); overload;
     procedure Text(const fmt : string; const args : array of const;
-      const exc: Exception); overload;
+      const e: Exception); overload;
 
     procedure Debug(const msg : string); overload;
-    procedure Debug(const msg : string; const exc: Exception); overload;
+    procedure Debug(const msg : string; const e: Exception); overload;
     procedure Debug(const fmt : string; const args : array of const); overload;
     procedure Debug(const fmt : string; const args : array of const;
-      const exc: Exception); overload;
+      const e: Exception); overload;
 
     procedure Verbose(const msg : string); overload;
-    procedure Verbose(const msg : string; const exc: Exception); overload;
+    procedure Verbose(const msg : string; const e: Exception); overload;
     procedure Verbose(const fmt : string; const args : array of const); overload;
     procedure Verbose(const fmt : string; const args : array of const;
-      const exc: Exception); overload;
+      const e: Exception); overload;
 
     procedure Entering(level: TLogLevel; const classType: TClass;
       const methodName: string); overload;
@@ -217,6 +232,7 @@ type
   end;
   {$ENDREGION}
 
+
   {$REGION 'TLogger'}
   TLogger = class(TLoggerBase)
   private
@@ -228,119 +244,90 @@ type
   end;
   {$ENDREGION}
 
+
 implementation
 
 uses
   Spring,
   Spring.Collections;
 
-type
-  TTrackingImpl = class(TInterfacedObject, IInterface)
-  private
-    fLogger: ILogger;
-    fLevel: TLogLevel;
-    fClassType: TClass;
-    fMethodName: string;
-  public
-    constructor Create(const logger: ILogger; level: TLogLevel;
-      const classType: TClass; const methodName: string);
-
-    destructor Destroy; override;
-  end;
 
 {$REGION 'TNullLogger'}
-{ TNullLogger }
 
 procedure TNullLogger.Log(const entry: TLogEntry);
 begin
-
 end;
 
 procedure TNullLogger.Log(level: TLogLevel; const msg: string);
 begin
-
 end;
 
 procedure TNullLogger.Log(level: TLogLevel; const fmt: string;
   const args: array of const);
 begin
-
 end;
 
 procedure TNullLogger.Log(level: TLogLevel; const msg: string;
-  const exc: Exception);
+  const e: Exception);
 begin
-
 end;
 
 procedure TNullLogger.Debug(const fmt: string; const args: array of const);
 begin
-
 end;
 
 procedure TNullLogger.Debug(const fmt: string; const args: array of const;
-  const exc: Exception);
+  const e: Exception);
 begin
-
 end;
 
 procedure TNullLogger.Debug(const msg: string);
 begin
-
 end;
 
-procedure TNullLogger.Debug(const msg: string; const exc: Exception);
+procedure TNullLogger.Debug(const msg: string; const e: Exception);
 begin
-
 end;
 
 procedure TNullLogger.Error(const fmt: string; const args: array of const);
 begin
-
 end;
 
 procedure TNullLogger.Entering(level: TLogLevel; const classType: TClass;
   const methodName: string);
 begin
-
 end;
 
 procedure TNullLogger.Entering(level: TLogLevel; const classType: TClass;
   const methodName: string; const arguments: array of TValue);
 begin
-
 end;
 
 procedure TNullLogger.Error(const fmt: string; const args: array of const;
-  const exc: Exception);
+  const e: Exception);
 begin
-
 end;
 
 procedure TNullLogger.Error(const msg: string);
 begin
-
 end;
 
-procedure TNullLogger.Error(const msg: string; const exc: Exception);
+procedure TNullLogger.Error(const msg: string; const e: Exception);
 begin
-
 end;
 
 procedure TNullLogger.Fatal(const fmt: string; const args: array of const);
 begin
-
 end;
 
 procedure TNullLogger.Fatal(const fmt: string; const args: array of const;
-  const exc: Exception);
+  const e: Exception);
 begin
-
 end;
 
 function TNullLogger.GetEnabled: Boolean;
 begin
-  Result := false;
+  Result := False;
 end;
 
 function TNullLogger.GetLevels: TLogLevels;
@@ -350,96 +337,87 @@ end;
 
 procedure TNullLogger.Fatal(const msg: string);
 begin
-
 end;
 
-procedure TNullLogger.Fatal(const msg: string; const exc: Exception);
+procedure TNullLogger.Fatal(const msg: string; const e: Exception);
 begin
-
 end;
 
-procedure TNullLogger.Info(const msg: string; const exc: Exception);
+procedure TNullLogger.Info(const msg: string; const e: Exception);
 begin
-
 end;
 
 procedure TNullLogger.Info(const msg: string);
 begin
-
 end;
 
 procedure TNullLogger.Info(const fmt: string; const args: array of const;
-  const exc: Exception);
+  const e: Exception);
 begin
-
 end;
 
 function TNullLogger.IsDebugEnabled: Boolean;
 begin
-  Result := false;
+  Result := False;
 end;
 
 function TNullLogger.IsEnabled(level: TLogLevel): Boolean;
 begin
-  Result := false;
+  Result := False;
 end;
 
 function TNullLogger.IsErrorEnabled: Boolean;
 begin
-  Result := false;
+  Result := False;
 end;
 
 function TNullLogger.IsFatalEnabled: Boolean;
 begin
-  Result := false;
+  Result := False;
 end;
 
 function TNullLogger.IsInfoEnabled: Boolean;
 begin
-  Result := false;
+  Result := False;
 end;
 
 function TNullLogger.IsTextEnabled: Boolean;
 begin
-  Result := false;
+  Result := False;
 end;
 
 function TNullLogger.IsVerboseEnabled: Boolean;
 begin
-  Result := false;
+  Result := False;
 end;
 
 function TNullLogger.IsWarnEnabled: Boolean;
 begin
-  Result := false;
+  Result := False;
 end;
 
 procedure TNullLogger.Info(const fmt: string; const args: array of const);
 begin
-
 end;
 
 procedure TNullLogger.Leaving(level: TLogLevel; const classType: TClass;
   const methodName: string);
 begin
-
 end;
 
 procedure TNullLogger.Log(level: TLogLevel; const fmt: string;
-  const args: array of const; const exc: Exception);
+  const args: array of const; const e: Exception);
 begin
 
 end;
 
 procedure TNullLogger.Text(const fmt: string; const args: array of const);
 begin
-
 end;
 
 procedure TNullLogger.Text(const fmt: string; const args: array of const;
-  const exc: Exception);
+  const e: Exception);
 begin
-
 end;
 
 function TNullLogger.Track(level: TLogLevel; const classType: TClass;
@@ -456,191 +434,181 @@ end;
 
 procedure TNullLogger.Text(const msg: string);
 begin
-
 end;
 
-procedure TNullLogger.Text(const msg: string; const exc: Exception);
+procedure TNullLogger.Text(const msg: string; const e: Exception);
 begin
-
 end;
 
 procedure TNullLogger.Verbose(const fmt: string; const args: array of const);
 begin
-
 end;
 
 procedure TNullLogger.Verbose(const fmt: string; const args: array of const;
-  const exc: Exception);
+  const e: Exception);
 begin
-
 end;
 
 procedure TNullLogger.Verbose(const msg: string);
 begin
-
 end;
 
-procedure TNullLogger.Verbose(const msg: string; const exc: Exception);
+procedure TNullLogger.Verbose(const msg: string; const e: Exception);
 begin
-
 end;
 
 procedure TNullLogger.Warn(const fmt: string; const args: array of const);
 begin
-
 end;
 
 procedure TNullLogger.Warn(const fmt: string; const args: array of const;
-  const exc: Exception);
+  const e: Exception);
 begin
-
 end;
 
 procedure TNullLogger.Warn(const msg: string);
 begin
-
 end;
 
-procedure TNullLogger.Warn(const msg: string; const exc: Exception);
+procedure TNullLogger.Warn(const msg: string; const e: Exception);
 begin
-
 end;
+
 {$ENDREGION}
 
+
 {$REGION 'TLoggerBase'}
-{ TLoggerBase }
 
 constructor TLoggerBase.Create;
 begin
   inherited;
 
-  fEnabled := true;
+  fEnabled := True;
   fLevels := LOG_BASIC_LEVELS;
 end;
 
 procedure TLoggerBase.Debug(const fmt: string; const args: array of const);
 begin
-  if (IsEnabled(TLogLevel.Debug)) then
+  if IsEnabled(TLogLevel.Debug) then
     DoLog(TLogEntry.Create(TLogLevel.Debug, Format(fmt, args)));
 end;
 
 procedure TLoggerBase.Debug(const fmt: string; const args: array of const;
-  const exc: Exception);
+  const e: Exception);
 begin
-  if (IsEnabled(TLogLevel.Debug)) then
-    DoLog(TLogEntry.Create(TLogLevel.Debug, Format(fmt, args), exc));
+  if IsEnabled(TLogLevel.Debug) then
+    DoLog(TLogEntry.Create(TLogLevel.Debug, Format(fmt, args), e));
 end;
 
 procedure TLoggerBase.Debug(const msg: string);
 begin
-  if (IsEnabled(TLogLevel.Debug)) then
+  if IsEnabled(TLogLevel.Debug) then
     DoLog(TLogEntry.Create(TLogLevel.Debug, msg));
 end;
 
-procedure TLoggerBase.Debug(const msg: string; const exc: Exception);
+procedure TLoggerBase.Debug(const msg: string; const e: Exception);
 begin
-  if (IsEnabled(TLogLevel.Debug)) then
-    DoLog(TLogEntry.Create(TLogLevel.Debug, msg, exc));
+  if IsEnabled(TLogLevel.Debug) then
+    DoLog(TLogEntry.Create(TLogLevel.Debug, msg, e));
 end;
 
 procedure TLoggerBase.Error(const fmt: string; const args: array of const);
 begin
-  if (IsEnabled(TLogLevel.Error)) then
+  if IsEnabled(TLogLevel.Error) then
     DoLog(TLogEntry.Create(TLogLevel.Error, Format(fmt, args)));
 end;
 
 procedure TLoggerBase.Entering(level: TLogLevel; const classType: TClass;
   const methodName: string);
 begin
-  if (IsEnabled(level)) then
-    DoLog(TLogEntry.Create(level, TLogEntryType.Entering, methodName,
-      classType));
+  if IsEnabled(level) then
+    DoLog(TLogEntry.Create(level, TLogEntryType.Entering, methodName, classType));
 end;
 
 procedure TLoggerBase.Entering(level: TLogLevel; const classType: TClass;
   const methodName: string; const arguments: array of TValue);
 begin
-  if (IsEnabled(level)) then
+  if IsEnabled(level) then
     DoLog(TLogEntry.Create(level, TLogEntryType.Entering, methodName,
       classType, TValue.From<TArray<TValue>>(TArray.Copy<TValue>(arguments))));
 end;
 
 procedure TLoggerBase.Error(const fmt: string; const args: array of const;
-  const exc: Exception);
+  const e: Exception);
 begin
-  if (IsEnabled(TLogLevel.Error)) then
-    DoLog(TLogEntry.Create(TLogLevel.Error, Format(fmt, args), exc));
+  if IsEnabled(TLogLevel.Error) then
+    DoLog(TLogEntry.Create(TLogLevel.Error, Format(fmt, args), e));
 end;
 
 procedure TLoggerBase.Error(const msg: string);
 begin
-  if (IsEnabled(TLogLevel.Error)) then
+  if IsEnabled(TLogLevel.Error) then
     DoLog(TLogEntry.Create(TLogLevel.Error, msg));
 end;
 
-procedure TLoggerBase.Error(const msg: string; const exc: Exception);
+procedure TLoggerBase.Error(const msg: string; const e: Exception);
 begin
-  if (IsEnabled(TLogLevel.Error)) then
-    DoLog(TLogEntry.Create(TLogLevel.Error, msg, exc));
+  if IsEnabled(TLogLevel.Error) then
+    DoLog(TLogEntry.Create(TLogLevel.Error, msg, e));
 end;
 
 procedure TLoggerBase.Fatal(const fmt: string; const args: array of const);
 begin
-  if (IsEnabled(TLogLevel.Fatal)) then
+  if IsEnabled(TLogLevel.Fatal) then
     DoLog(TLogEntry.Create(TLogLevel.Fatal, Format(fmt, args)));
 end;
 
 procedure TLoggerBase.Fatal(const fmt: string; const args: array of const;
-  const exc: Exception);
+  const e: Exception);
 begin
-  if (IsEnabled(TLogLevel.Fatal)) then
-    DoLog(TLogEntry.Create(TLogLevel.Fatal, Format(fmt, args), exc));
+  if IsEnabled(TLogLevel.Fatal) then
+    DoLog(TLogEntry.Create(TLogLevel.Fatal, Format(fmt, args), e));
 end;
 
 function TLoggerBase.GetEnabled: Boolean;
 begin
-  Result := Enabled;
+  Result := fEnabled;
 end;
 
 function TLoggerBase.GetLevels: TLogLevels;
 begin
-  Result := Levels;
+  Result := fLevels;
 end;
 
 procedure TLoggerBase.Fatal(const msg: string);
 begin
-  if (IsEnabled(TLogLevel.Fatal)) then
+  if IsEnabled(TLogLevel.Fatal) then
     DoLog(TLogEntry.Create(TLogLevel.Fatal, msg));
 end;
 
-procedure TLoggerBase.Fatal(const msg: string; const exc: Exception);
+procedure TLoggerBase.Fatal(const msg: string; const e: Exception);
 begin
-  if (IsEnabled(TLogLevel.Fatal)) then
-    DoLog(TLogEntry.Create(TLogLevel.Fatal, msg, exc));
+  if IsEnabled(TLogLevel.Fatal) then
+    DoLog(TLogEntry.Create(TLogLevel.Fatal, msg, e));
 end;
 
-procedure TLoggerBase.Info(const msg: string; const exc: Exception);
+procedure TLoggerBase.Info(const msg: string; const e: Exception);
 begin
-  if (IsEnabled(TLogLevel.Info)) then
-    DoLog(TLogEntry.Create(TLogLevel.Info, msg, exc));
+  if IsEnabled(TLogLevel.Info) then
+    DoLog(TLogEntry.Create(TLogLevel.Info, msg, e));
 end;
 
 procedure TLoggerBase.Info(const msg: string);
 begin
-  if (IsEnabled(TLogLevel.Info)) then
+  if IsEnabled(TLogLevel.Info) then
     DoLog(TLogEntry.Create(TLogLevel.Info, msg));
 end;
 
 procedure TLoggerBase.Info(const fmt: string; const args: array of const;
-  const exc: Exception);
+  const e: Exception);
 begin
-  if (IsEnabled(TLogLevel.Info)) then
-    DoLog(TLogEntry.Create(TLogLevel.Info, Format(fmt, args), exc));
+  if IsEnabled(TLogLevel.Info) then
+    DoLog(TLogEntry.Create(TLogLevel.Info, Format(fmt, args), e));
 end;
 
 procedure TLoggerBase.Info(const fmt: string; const args: array of const);
 begin
-  if (IsEnabled(TLogLevel.Info)) then
+  if IsEnabled(TLogLevel.Info) then
     DoLog(TLogEntry.Create(TLogLevel.Info, Format(fmt, args)));
 end;
 
@@ -651,7 +619,7 @@ end;
 
 function TLoggerBase.IsEnabled(level: TLogLevel): Boolean;
 begin
-  Result:=fEnabled and (level in fLevels);
+  Result := fEnabled and (level in fLevels);
 end;
 
 function TLoggerBase.IsErrorEnabled: Boolean;
@@ -686,155 +654,151 @@ end;
 
 procedure TLoggerBase.Log(const entry: TLogEntry);
 begin
-  if (IsEnabled(entry.Level)) then
+  if IsEnabled(entry.Level) then
     DoLog(entry);
 end;
 
 procedure TLoggerBase.Log(level: TLogLevel; const msg: string;
-  const exc: Exception);
+  const e: Exception);
 begin
-  if (IsEnabled(level)) then
-    DoLog(TLogEntry.Create(level, msg, exc));
+  if IsEnabled(level) then
+    DoLog(TLogEntry.Create(level, msg, e));
 end;
 
 procedure TLoggerBase.Log(level: TLogLevel; const msg: string);
 begin
-  if (IsEnabled(level)) then
+  if IsEnabled(level) then
     DoLog(TLogEntry.Create(level, msg));
 end;
 
 procedure TLoggerBase.Log(level: TLogLevel; const fmt: string;
   const args: array of const);
 begin
-  if (IsEnabled(level)) then
+  if IsEnabled(level) then
     DoLog(TLogEntry.Create(level, Format(fmt, args)));
 end;
 
 procedure TLoggerBase.Leaving(level: TLogLevel; const classType: TClass;
   const methodName: string);
 begin
-  if (IsEnabled(level)) then
-    DoLog(TLogEntry.Create(level, TLogEntryType.Leaving, methodName,
-      classType));
+  if IsEnabled(level) then
+    DoLog(TLogEntry.Create(level, TLogEntryType.Leaving, methodName, classType));
 end;
 
 procedure TLoggerBase.Log(level: TLogLevel; const fmt: string;
-  const args: array of const; const exc: Exception);
+  const args: array of const; const e: Exception);
 begin
-  if (IsEnabled(level)) then
-    DoLog(TLogEntry.Create(level, Format(fmt, args), exc));
+  if IsEnabled(level) then
+    DoLog(TLogEntry.Create(level, Format(fmt, args), e));
 end;
 
 procedure TLoggerBase.SetEnabled(value: Boolean);
 begin
-  Enabled := value;
+  fEnabled := value;
 end;
 
 procedure TLoggerBase.SetLevels(value: TLogLevels);
 begin
-  Levels := value;
+  fLevels := value;
 end;
 
 procedure TLoggerBase.Text(const fmt: string; const args: array of const);
 begin
-  if (IsEnabled(TLogLevel.Text)) then
+  if IsEnabled(TLogLevel.Text) then
     DoLog(TLogEntry.Create(TLogLevel.Text, Format(fmt, args)));
 end;
 
 procedure TLoggerBase.Text(const fmt: string; const args: array of const;
-  const exc: Exception);
+  const e: Exception);
 begin
-  if (IsEnabled(TLogLevel.Text)) then
-    DoLog(TLogEntry.Create(TLogLevel.Text, Format(fmt, args), exc));
+  if IsEnabled(TLogLevel.Text) then
+    DoLog(TLogEntry.Create(TLogLevel.Text, Format(fmt, args), e));
 end;
 
 function TLoggerBase.Track(level: TLogLevel; const classType: TClass;
   const methodName: string): IInterface;
 begin
-  if (IsEnabled(level)) then
-  begin
-    Entering(level, classType, methodName);
-    Result := TTrackingImpl.Create(Self, level, classType, methodName);
-  end
-  else Result := nil;
+  if IsEnabled(level) then
+    Result := TLogTracking.Create(Self, level, classType, methodName, [])
+  else
+    Result := nil;
 end;
 
 function TLoggerBase.Track(level: TLogLevel; const classType: TClass;
   const methodName: string; const arguments: array of TValue): IInterface;
 begin
-  if (IsEnabled(level)) then
-  begin
-    Entering(level, classType, methodName, arguments);
-    Result := TTrackingImpl.Create(Self, level, classType, methodName);
-  end
-  else Result := nil;
+  if IsEnabled(level) then
+    Result := TLogTracking.Create(Self, level, classType, methodName, arguments)
+  else
+    Result := nil;
 end;
 
 procedure TLoggerBase.Text(const msg: string);
 begin
-  if (IsEnabled(TLogLevel.Text)) then
+  if IsEnabled(TLogLevel.Text) then
     DoLog(TLogEntry.Create(TLogLevel.Text, msg));
 end;
 
-procedure TLoggerBase.Text(const msg: string; const exc: Exception);
+procedure TLoggerBase.Text(const msg: string; const e: Exception);
 begin
-  if (IsEnabled(TLogLevel.Text)) then
-    DoLog(TLogEntry.Create(TLogLevel.Text, msg, exc));
+  if IsEnabled(TLogLevel.Text) then
+    DoLog(TLogEntry.Create(TLogLevel.Text, msg, e));
 end;
 
 procedure TLoggerBase.Verbose(const fmt: string; const args: array of const);
 begin
-  if (IsEnabled(TLogLevel.Verbose)) then
+  if IsEnabled(TLogLevel.Verbose) then
     DoLog(TLogEntry.Create(TLogLevel.Verbose, Format(fmt, args)));
 end;
 
 procedure TLoggerBase.Verbose(const fmt: string; const args: array of const;
-  const exc: Exception);
+  const e: Exception);
 begin
-  if (IsEnabled(TLogLevel.Verbose)) then
-    DoLog(TLogEntry.Create(TLogLevel.Verbose, Format(fmt, args), exc));
+  if IsEnabled(TLogLevel.Verbose) then
+    DoLog(TLogEntry.Create(TLogLevel.Verbose, Format(fmt, args), e));
 end;
 
 procedure TLoggerBase.Verbose(const msg: string);
 begin
-  if (IsEnabled(TLogLevel.Verbose)) then
+  if IsEnabled(TLogLevel.Verbose) then
     DoLog(TLogEntry.Create(TLogLevel.Verbose, msg));
 end;
 
-procedure TLoggerBase.Verbose(const msg: string; const exc: Exception);
+procedure TLoggerBase.Verbose(const msg: string; const e: Exception);
 begin
-  if (IsEnabled(TLogLevel.Verbose)) then
-    DoLog(TLogEntry.Create(TLogLevel.Verbose, msg, exc));
+  if IsEnabled(TLogLevel.Verbose) then
+    DoLog(TLogEntry.Create(TLogLevel.Verbose, msg, e));
 end;
 
 procedure TLoggerBase.Warn(const fmt: string; const args: array of const);
 begin
-  if (IsEnabled(TLogLevel.Warning)) then
+  if IsEnabled(TLogLevel.Warning) then
     DoLog(TLogEntry.Create(TLogLevel.Warning, Format(fmt, args)));
 end;
 
 procedure TLoggerBase.Warn(const fmt: string; const args: array of const;
-  const exc: Exception);
+  const e: Exception);
 begin
-  if (IsEnabled(TLogLevel.Warning)) then
-    DoLog(TLogEntry.Create(TLogLevel.Warning, Format(fmt, args), exc));
+  if IsEnabled(TLogLevel.Warning) then
+    DoLog(TLogEntry.Create(TLogLevel.Warning, Format(fmt, args), e));
 end;
 
 procedure TLoggerBase.Warn(const msg: string);
 begin
-  if (IsEnabled(TLogLevel.Warning)) then
+  if IsEnabled(TLogLevel.Warning) then
     DoLog(TLogEntry.Create(TLogLevel.Warning, msg));
 end;
 
-procedure TLoggerBase.Warn(const msg: string; const exc: Exception);
+procedure TLoggerBase.Warn(const msg: string; const e: Exception);
 begin
-  if (IsEnabled(TLogLevel.Warning)) then
-    DoLog(TLogEntry.Create(TLogLevel.Warning, msg, exc));
+  if IsEnabled(TLogLevel.Warning) then
+    DoLog(TLogEntry.Create(TLogLevel.Warning, msg, e));
 end;
+
 {$ENDREGION}
 
+
 {$REGION 'TLogger'}
-{ TLogger }
 
 constructor TLogger.Create(const controller: ILoggerController);
 begin
@@ -848,24 +812,31 @@ procedure TLogger.DoLog(const entry: TLogEntry);
 begin
   fController.Send(entry);
 end;
+
 {$ENDREGION}
 
-{ TTrackingImpl }
 
-constructor TTrackingImpl.Create(const logger: ILogger; level: TLogLevel;
-  const classType: TClass; const methodName: string);
+{$REGION 'TLoggerBase.TLogTracking'}
+
+constructor TLoggerBase.TLogTracking.Create(const logger: ILogger;
+  level: TLogLevel; const classType: TClass; const methodName: string;
+  const arguments: array of TValue);
 begin
   inherited Create;
   fLogger := logger;
   fLevel := level;
   fClassType := classType;
   fMethodName := methodName;
+  fLogger.Entering(fLevel, fClassType, fMethodName, arguments);
 end;
 
-destructor TTrackingImpl.Destroy;
+destructor TLoggerBase.TLogTracking.Destroy;
 begin
   fLogger.Leaving(fLevel, fClassType, fMethodName);
   inherited;
 end;
+
+{$ENDREGION}
+
 
 end.

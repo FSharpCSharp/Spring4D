@@ -29,9 +29,9 @@ unit Spring.Logging.Appenders;
 interface
 
 uses
-  SysUtils,
-  SyncObjs,
   Classes,
+  SyncObjs,
+  SysUtils,
 {$IFDEF FMX}
   FMX.Platform,
 {$ENDIF}
@@ -51,6 +51,7 @@ type
     property Format: string read FFormat write FFormat;
   end;
   {$ENDREGION}
+
 
   {$REGION 'TTextLogAppender'}
   /// <summary>
@@ -75,6 +76,7 @@ type
   end;
   {$ENDREGION}
 
+
   {$REGION 'TStreamLogAppender'}
   TStreamLogAppender = class(TLogAppenderWithTimeStampFormat)
   private
@@ -87,11 +89,12 @@ type
   protected
     procedure DoSend(const entry: TLogEntry); override;
   public
-    constructor Create(const stream: TStream; ownsStream: Boolean = true;
+    constructor Create(const stream: TStream; ownsStream: Boolean = True;
       const encoding: TEncoding = nil);
     destructor Destroy; override;
   end;
   {$ENDREGION}
+
 
   {$REGION 'TTraceLogAppender'}
 {$IFDEF MSWINDOWS}
@@ -101,6 +104,7 @@ type
   end;
 {$ENDIF}
  {$ENDREGION}
+
 
   {$REGION 'TFMXLogAppender'}
 {$IFDEF FMX}
@@ -114,6 +118,7 @@ type
   end;
 {$ENDIF}
   {$ENDREGION}
+
 
   {$REGION 'TAndroidLogAppender'}
 {$IFDEF ANDROID}
@@ -133,10 +138,11 @@ type
 {$ENDIF}
   {$ENDREGION}
 
+
   {$REGION 'Default log appender assignment'}
 {$IFDEF MSWINDOWS}
  {$IFDEF CONSOLE}
-  TDefaultLogAppender = TConsoleLogAppender;
+  TDefaultLogAppender = TTextLogAppender;
  {$ELSE !CONSOLE}
     TDefaultLogAppender = TTraceLogAppender;
  {$ENDIF CONSOLE}
@@ -148,25 +154,25 @@ type
     TDefaultLogAppender = TFMXLogAppender
   {$ENDIF ANDROID}
  {$ELSE !FMX}
-    TDefaultLogAppender = TConsoleLogAppender;
+    TDefaultLogAppender = TTextLogAppender;
  {$ENDIF FMX}
 {$ENDIF MSWINDOWS}
   {$ENDREGION}
 
+
 implementation
 
 uses
-  Spring
 {$IFDEF MSWINDOWS}
-  ,Windows
+  Windows,
 {$ENDIF}
 {$IFDEF ANDROID}
-  ,Androidapi.Log
+  Androidapi.Log,
 {$ENDIF}
-  ;
+  Spring;
+
 
 {$REGION 'TLogAppenderWithTimeStampFormat'}
-{ TLogAppenderWithTimeStampFormat }
 
 constructor TLogAppenderWithTimeStampFormat.Create;
 begin
@@ -179,10 +185,11 @@ function TLogAppenderWithTimeStampFormat.FormatTimeStamp(
 begin
   Result := FormatDateTime(Format, timeStamp);
 end;
+
 {$ENDREGION}
 
+
 {$REGION 'TTextLogAppender'}
-{ TTextLogAppender }
 
 constructor TTextLogAppender.Create(output: PTextFile);
 begin
@@ -201,31 +208,33 @@ begin
     LEVEL_FIXED[entry.Level], ' ', FormatMsg(entry));
   Flush(fFile^);
 end;
+
 {$ENDREGION}
 
+
 {$REGION 'TStreamLogAppender'}
-{ TStreamLogAppender }
 
 constructor TStreamLogAppender.Create(const stream: TStream;
   ownsStream: Boolean; const encoding: TEncoding);
 begin
-  inherited Create;
-
   Guard.CheckNotNull(stream, 'stream');
+
+  inherited Create;
   fStream := stream;
 {$IFNDEF AUTOREFCOUNT}
   fOwnsStream := ownsStream;
 {$ENDIF}
-  if (encoding <> nil) then
+  if Assigned(encoding) then
     fEncoding := encoding
-  else fEncoding := TEncoding.UTF8;
+  else
+    fEncoding := TEncoding.UTF8;
   fLock := TCriticalSection.Create;
 end;
 
 destructor TStreamLogAppender.Destroy;
 begin
 {$IFNDEF AUTOREFCOUNT}
-  if (fOwnsStream) then
+  if fOwnsStream then
     fStream.Free;
 {$ENDIF}
   fLock.Free;
@@ -234,40 +243,44 @@ end;
 
 procedure TStreamLogAppender.DoSend(const entry: TLogEntry);
 var
-  buff: TBytes;
+  buffer: TBytes;
 begin
   fLock.Enter;
   try
-    buff := fEncoding.GetBytes(FormatTimeStamp(entry.TimeStamp) + ': ' +
+    buffer := fEncoding.GetBytes(FormatTimeStamp(entry.TimeStamp) + ': ' +
       LEVEL_FIXED[entry.Level] + ' ' + FormatMsg(entry));
-    fStream.WriteBuffer(buff, Length(buff));
+    fStream.WriteBuffer(buffer[0], Length(buffer));
   finally
     fLock.Leave;
   end;
 end;
+
 {$ENDREGION}
 
+
 {$REGION 'TTraceLogAppender'}
-{ TTraceLogAppender }
 
 {$IFDEF MSWINDOWS}
 procedure TTraceLogAppender.DoSend(const entry: TLogEntry);
-var buff: string;
+var
+  buffer: string;
 begin
-  buff := FormatTimeStamp(entry.TimeStamp) + ': ' + LEVEL[entry.Level] + ' ' +
+  buffer := FormatTimeStamp(entry.TimeStamp) + ': ' + LEVEL[entry.Level] + ' ' +
     FormatMsg(entry);
-  OutputDebugString(PChar(buff));
+  OutputDebugString(PChar(buffer));
 end;
 {$ENDIF}
+
 {$ENDREGION}
 
+
 {$REGION 'TFMXLogAppender'}
-{ TFMXLogAppender }
 
 {$IFDEF FMX}
 constructor TFMXLogAppender.Create;
 begin
-  fService:=TPlatformServices.Current.GetPlatformService(IFMXLoggingService) as IFMXLoggingService;
+  fService := TPlatformServices.Current.GetPlatformService(
+    IFMXLoggingService) as IFMXLoggingService;
 end;
 
 procedure TFMXLogAppender.DoSend(const entry: TLogEntry);
@@ -276,10 +289,11 @@ begin
     FormatMsg(entry), []);
 end;
 {$ENDIF}
+
 {$ENDREGION}
 
+
 {$REGION 'TAndroidLogAppender'}
-{ TAndroidLogAppender }
 
 {$IFDEF ANDROID}
 constructor TAndroidLogAppender.Create(const tag: string);
@@ -290,7 +304,7 @@ end;
 
 procedure TAndroidLogAppender.DoSend(const entry: TLogEntry);
 const
-  LEVEL : array[TLogLevel] of android_LogPriority = (
+  LEVEL: array[TLogLevel] of android_LogPriority = (
     ANDROID_LOG_UNKNOWN,
     ANDROID_LOG_VERBOSE,
     ANDROID_LOG_DEBUG,  //CallStack
@@ -304,12 +318,14 @@ const
   );
 var
   m: TMarshaller;
-  buff: string;
+  buffer: string;
 begin
-  buff:=FormatTimeStamp(entry.TimeStamp) + ': ' + FormatMsg(entry);
-  __android_log_write(LEVEL[entry.Level], fTag, M.AsAnsi(buff).ToPointer);
+  buffer := FormatTimeStamp(entry.TimeStamp) + ': ' + FormatMsg(entry);
+  __android_log_write(LEVEL[entry.Level], fTag, m.AsAnsi(buffer).ToPointer);
 end;
 {$ENDIF}
+
 {$ENDREGION}
+
 
 end.

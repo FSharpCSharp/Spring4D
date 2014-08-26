@@ -24,26 +24,25 @@
 
 unit Spring.Tests.Logging;
 
-{$I Spring.inc}
 {$I Spring.Tests.inc}
 
 interface
 
 uses
-  SysUtils,
-  StrUtils,
-  TypInfo,
   Classes,
   Rtti,
+  StrUtils,
+  SysUtils,
+  TypInfo,
   TestFramework,
   Spring,
-  Spring.Reflection,
   Spring.Collections,
+  Spring.Reflection,
   Spring.Logging,
-  Spring.Logging.Extensions,
-  Spring.Logging.Appenders.Base,
   Spring.Logging.Appenders,
+  Spring.Logging.Appenders.Base,
   Spring.Logging.Controller,
+  Spring.Logging.Extensions,
   Spring.Logging.Loggers,
   Spring.Tests.Logging.Types;
 
@@ -65,6 +64,7 @@ type
   end;
   {$ENDREGION}
 
+
   {$REGION 'TTestLogger'}
   TTestLogger = class(TTestCase)
   private
@@ -76,7 +76,7 @@ type
     procedure TearDown; override;
 
     procedure CheckEvent(enabled: Boolean; level: TLogLevel; const msg: string;
-      const exc: Exception = nil);
+      const e: Exception = nil);
     procedure TestLogEntry(enabled: Boolean); overload;
     procedure TestLog(enabled: Boolean); overload;
     procedure TestFatal(enabled: Boolean); overload;
@@ -119,6 +119,7 @@ type
   end;
   {$ENDREGION}
 
+
   {$REGION 'TAppenderTestCase'}
   TAppenderTestCase = class abstract(TTestCase)
   protected
@@ -131,6 +132,7 @@ type
   end;
   {$ENDREGION}
 
+
   {$REGION 'TTestLogAppenderBase'}
   TTestLogAppenderBase = class(TTestCase)
   published
@@ -139,6 +141,7 @@ type
     procedure TestFormatMsg;
   end;
   {$ENDREGION}
+
 
   {$REGION 'TTestStreamLogAppender'}
   TTestStreamLogAppender = class(TAppenderTestCase)
@@ -153,7 +156,9 @@ type
   end;
   {$ENDREGION}
 
+
 implementation
+
 
 {$REGION 'Internal test classes and helpers'}
 type
@@ -179,8 +184,8 @@ begin
 end;
 {$ENDREGION}
 
+
 {$REGION 'TTestLoggerController'}
-{ TTestLoggerController }
 
 procedure TTestLoggerController.SetUp;
 begin
@@ -276,11 +281,11 @@ begin
   intf := appender;
   fController.AddAppender(intf);
 
-  TLoggerController(fController).Enabled := false;
+  TLoggerController(fController).Enabled := False;
   fController.Send(TLogEntry.Create(TLogLevel.Fatal, MSG));
   CheckFalse(appender.WriteCalled);
 
-  TLoggerController(fController).Enabled := true;
+  TLoggerController(fController).Enabled := True;
   TLoggerController(fController).Levels := [];
   fController.Send(TLogEntry.Create(TLogLevel.Fatal, MSG));
   CheckFalse(appender.WriteCalled);
@@ -313,7 +318,7 @@ begin
   CheckEquals(Ord(TLogLevel.Fatal), Ord(appender.Entry.Level));
 
   //... or is disabled
-  appender.Enabled := false;
+  appender.Enabled := False;
   appender.Levels := [TLogLevel.Fatal, TLogLevel.SerializedData];
   fController.Send(TLogEntry.Create(TLogLevel.Fatal, TLogEntryType.Text, 'test',
     nil, -1));
@@ -321,7 +326,7 @@ begin
   CheckEquals(0, serializer.HandlesTypeCount);
 
   //Finally test that we dispatch the call and both messages are logged
-  appender.Enabled := true;
+  appender.Enabled := True;
   fController.Send(TLogEntry.Create(TLogLevel.Fatal, TLogEntryType.Text, 'test',
     nil, -1));
   CheckEquals(3, appender.WriteCount);
@@ -331,11 +336,11 @@ end;
 
 {$ENDREGION}
 
+
 {$REGION 'TTestLogger'}
-{ TTestLogger }
 
 procedure TTestLogger.CheckEvent(enabled: Boolean; level: TLogLevel;
-  const msg: string; const exc: Exception = nil);
+  const msg: string; const e: Exception = nil);
 begin
   CheckEquals(enabled, Controller.LastEntry.Level <> TLogLevel.Unknown);
   if (not enabled) then
@@ -344,7 +349,7 @@ begin
   CheckEquals(Ord(level), Ord(Controller.LastEntry.Level));
   CheckEquals(Ord(TLogEntryType.Text), Ord(Controller.LastEntry.EntryType));
   CheckEquals(msg, Controller.LastEntry.Msg);
-  CheckSame(exc, Controller.LastEntry.Exc);
+  CheckSame(e, Controller.LastEntry.Exception);
 end;
 
 procedure TTestLogger.SetUp;
@@ -381,9 +386,9 @@ end;
 procedure TTestLogger.TestDebug;
 begin
   Logger.Levels := [TLogLevel.Debug];
-  TestDebug(true);
+  TestDebug(True);
   Logger.Levels := [];
-  TestDebug(false);
+  TestDebug(False);
 end;
 
 procedure TTestLogger.TestDebug(enabled: Boolean);
@@ -407,10 +412,10 @@ end;
 
 procedure TTestLogger.TestEnabled;
 begin
-  Logger.Enabled := false;
+  Logger.Enabled := False;
   CheckFalse(Logger.Enabled);
 
-  Logger.Enabled := true;
+  Logger.Enabled := True;
   CheckTrue(Logger.Enabled);
 end;
 
@@ -418,11 +423,11 @@ procedure TTestLogger.TestEntering;
 begin
   Controller.Reset;
 
-  Logger.Enabled := false;
+  Logger.Enabled := False;
   fLogger.Entering(TLogLevel.Info, nil, '');
   CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
-  Logger.Enabled := true;
+  Logger.Enabled := True;
   Logger.Levels := [TLogLevel.Warning];
   fLogger.Entering(TLogLevel.Info, nil, '');
   CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
@@ -433,11 +438,11 @@ begin
 
   Controller.Reset;
 
-  Logger.Enabled := false;
+  Logger.Enabled := False;
   fLogger.Entering(TLogLevel.Info, nil, '', [TValue.Empty]);
   CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
-  Logger.Enabled := true;
+  Logger.Enabled := True;
   Logger.Levels := [TLogLevel.Warning];
   fLogger.Entering(TLogLevel.Info, nil, '', [TValue.Empty]);
   CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
@@ -470,9 +475,9 @@ end;
 procedure TTestLogger.TestError;
 begin
   Logger.Levels := [TLogLevel.Error];
-  TestError(true);
+  TestError(True);
   Logger.Levels := [];
-  TestError(false);
+  TestError(False);
 end;
 
 procedure TTestLogger.TestFatal(enabled: Boolean);
@@ -497,9 +502,9 @@ end;
 procedure TTestLogger.TestFatal;
 begin
   Logger.Levels := [TLogLevel.Fatal];
-  TestFatal(true);
+  TestFatal(True);
   Logger.Levels := [];
-  TestFatal(false);
+  TestFatal(False);
 end;
 
 procedure TTestLogger.TestInfo(enabled: Boolean);
@@ -524,9 +529,9 @@ end;
 procedure TTestLogger.TestInfo;
 begin
   Logger.Levels := [TLogLevel.Info];
-  TestInfo(true);
+  TestInfo(True);
   Logger.Levels := [];
-  TestInfo(false);
+  TestInfo(False);
 end;
 
 procedure TTestLogger.TestIsDebugEnabled;
@@ -537,7 +542,7 @@ begin
   Logger.Levels := [TLogLevel.Debug];
   CheckTrue(fLogger.IsDebugEnabled);
 
-  Logger.Enabled := false;
+  Logger.Enabled := False;
   CheckFalse(fLogger.IsDebugEnabled);
 end;
 
@@ -546,7 +551,7 @@ var l: TLogLevel;
 begin
   for l in LOG_ALL_LEVELS do
     CheckEquals(l in Logger.Levels, Logger.IsEnabled(l));
-  Logger.Enabled := false;
+  Logger.Enabled := False;
   for l in LOG_ALL_LEVELS do
     CheckFalse(Logger.IsEnabled(l));
 end;
@@ -559,7 +564,7 @@ begin
   Logger.Levels := [TLogLevel.Error];
   CheckTrue(fLogger.IsErrorEnabled);
 
-  Logger.Enabled := false;
+  Logger.Enabled := False;
   CheckFalse(fLogger.IsErrorEnabled);
 end;
 
@@ -571,7 +576,7 @@ begin
   Logger.Levels := [TLogLevel.Fatal];
   CheckTrue(fLogger.IsFatalEnabled);
 
-  Logger.Enabled := false;
+  Logger.Enabled := False;
   CheckFalse(fLogger.IsFatalEnabled);
 end;
 
@@ -583,7 +588,7 @@ begin
   Logger.Levels := [TLogLevel.Info];
   CheckTrue(fLogger.IsInfoEnabled);
 
-  Logger.Enabled := false;
+  Logger.Enabled := False;
   CheckFalse(fLogger.IsInfoEnabled);
 end;
 
@@ -595,7 +600,7 @@ begin
   Logger.Levels := [TLogLevel.Text];
   CheckTrue(fLogger.IsTextEnabled);
 
-  Logger.Enabled := false;
+  Logger.Enabled := False;
   CheckFalse(fLogger.IsTextEnabled);
 end;
 
@@ -607,7 +612,7 @@ begin
   Logger.Levels := [TLogLevel.Verbose];
   CheckTrue(fLogger.IsVerboseEnabled);
 
-  Logger.Enabled := false;
+  Logger.Enabled := False;
   CheckFalse(fLogger.IsVerboseEnabled);
 end;
 
@@ -619,7 +624,7 @@ begin
   Logger.Levels := [TLogLevel.Warning];
   CheckTrue(fLogger.IsWarnEnabled);
 
-  Logger.Enabled := false;
+  Logger.Enabled := False;
   CheckFalse(fLogger.IsWarnEnabled);
 end;
 
@@ -627,11 +632,11 @@ procedure TTestLogger.TestLeaving;
 begin
   Controller.Reset;
 
-  Logger.Enabled := false;
+  Logger.Enabled := False;
   fLogger.Leaving(TLogLevel.Info, nil, '');
   CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
-  Logger.Enabled := true;
+  Logger.Enabled := True;
   Logger.Levels := [TLogLevel.Warning];
   fLogger.Leaving(TLogLevel.Info, nil, '');
   CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
@@ -664,9 +669,9 @@ end;
 procedure TTestLogger.TestLogEntry;
 begin
   Logger.Levels := [TLogLevel.Fatal, TLogLevel.Error];
-  TestLogEntry(true);
+  TestLogEntry(True);
   Logger.Levels := [];
-  TestLogEntry(false);
+  TestLogEntry(False);
 end;
 
 procedure TTestLogger.TestLoggerProperties;
@@ -675,16 +680,16 @@ var
 begin
   props := Logger as ILoggerProperties;
 
-  Logger.Enabled := false;
+  Logger.Enabled := False;
   CheckFalse(props.Enabled);
 
-  Logger.Enabled := true;
+  Logger.Enabled := True;
   CheckTrue(props.Enabled);
 
-  props.Enabled := false;
+  props.Enabled := False;
   CheckFalse(Logger.Enabled);
 
-  props.Enabled := true;
+  props.Enabled := True;
   CheckTrue(Logger.Enabled);
 
   Logger.Levels := [];
@@ -703,9 +708,9 @@ end;
 procedure TTestLogger.TestText;
 begin
   Logger.Levels := [TLogLevel.Text];
-  TestText(true);
+  TestText(True);
   Logger.Levels := [];
-  TestText(false);
+  TestText(False);
 end;
 
 procedure TTestLogger.TestTrack;
@@ -714,12 +719,12 @@ var
 begin
   Controller.Reset;
 
-  Logger.Enabled := false;
+  Logger.Enabled := False;
   result := fLogger.Track(TLogLevel.Info, nil, '');
   CheckNull(result);
   CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
-  Logger.Enabled := true;
+  Logger.Enabled := True;
   Logger.Levels := [TLogLevel.Warning];
   result := fLogger.Track(TLogLevel.Info, nil, '');
   CheckNull(result);
@@ -728,20 +733,20 @@ begin
   result := fLogger.Track(TLogLevel.Warning, nil, '');
   CheckNotNull(result);
   CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.LastEntry.Level));
-  CheckEquals(Ord(TLogEntryType.Entering),  Ord(Controller.LastEntry.EntryType));
+  CheckEquals(Ord(TLogEntryType.Entering), Ord(Controller.LastEntry.EntryType));
   Controller.Reset;
   result := nil;
   CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.LastEntry.Level));
-  CheckEquals(Ord(TLogEntryType.Leaving),  Ord(Controller.LastEntry.EntryType));
+  CheckEquals(Ord(TLogEntryType.Leaving), Ord(Controller.LastEntry.EntryType));
 
   Controller.Reset;
 
-  Logger.Enabled := false;
+  Logger.Enabled := False;
   result := fLogger.Track(TLogLevel.Info, nil, '', [TValue.Empty]);
   CheckNull(result);
   CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
-  Logger.Enabled := true;
+  Logger.Enabled := True;
   Logger.Levels := [TLogLevel.Warning];
   result := fLogger.Track(TLogLevel.Info, nil, '', [TValue.Empty]);
   CheckNull(result);
@@ -750,12 +755,12 @@ begin
   result := fLogger.Track(TLogLevel.Warning, nil, '', ['value']);
   CheckNotNull(result);
   CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.LastEntry.Level));
-  CheckEquals(Ord(TLogEntryType.Entering),  Ord(Controller.LastEntry.EntryType));
+  CheckEquals(Ord(TLogEntryType.Entering), Ord(Controller.LastEntry.EntryType));
   CheckEquals('value', Controller.LastEntry.Data.AsType<TArray<TValue>>[0].AsString);
   Controller.Reset;
   result := nil;
   CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.LastEntry.Level));
-  CheckEquals(Ord(TLogEntryType.Leaving),  Ord(Controller.LastEntry.EntryType));
+  CheckEquals(Ord(TLogEntryType.Leaving), Ord(Controller.LastEntry.EntryType));
 end;
 
 procedure TTestLogger.TestText(enabled: Boolean);
@@ -780,9 +785,9 @@ end;
 procedure TTestLogger.TestVerbose;
 begin
   Logger.Levels := [TLogLevel.Verbose];
-  TestVerbose(true);
+  TestVerbose(True);
   Logger.Levels := [];
-  TestVerbose(false);
+  TestVerbose(False);
 end;
 
 procedure TTestLogger.TestVerbose(enabled: Boolean);
@@ -807,9 +812,9 @@ end;
 procedure TTestLogger.TestWarn;
 begin
   Logger.Levels := [TLogLevel.Warning];
-  TestWarn(true);
+  TestWarn(True);
   Logger.Levels := [];
-  TestWarn(false);
+  TestWarn(False);
 end;
 
 procedure TTestLogger.TestWarn(enabled: Boolean);
@@ -853,14 +858,15 @@ end;
 procedure TTestLogger.TestLog;
 begin
   Logger.Levels := [TLogLevel.Fatal, TLogLevel.Error];
-  TestLog(true);
+  TestLog(True);
   Logger.Levels := [];
-  TestLog(false);
+  TestLog(False);
 end;
+
 {$ENDREGION}
 
+
 {$REGION 'TAppenderTestCase'}
-{ TAppenderTestCase }
 
 procedure TAppenderTestCase.SetUp;
 begin
@@ -876,10 +882,11 @@ begin
   fController := nil;
   fAppender := nil;
 end;
+
 {$ENDREGION}
 
+
 {$REGION 'TTestLogAppenderBase'}
-{ TTestLogAppenderBase }
 
 procedure TTestLogAppenderBase.TestFormatMethodName;
 var
@@ -891,9 +898,12 @@ begin
     result := TLogAppenderBase.FormatMethodName(ClassType, 'MethodName');
     CheckEquals('Spring.Tests.Logging.TTestLogAppenderBase.MethodName', result);
 end;
+
 {$ENDREGION}
 
+
 {$REGION 'TTestStreamLogAppender'}
+
 procedure TTestLogAppenderBase.TestFormatMsg;
 {$IF sizeof(Pointer) = 4}
 const ZEROS = '00000000';
@@ -942,8 +952,6 @@ begin
   CheckEquals('Leaving: message', result);
 end;
 
-{ TTestStreamLogAppender }
-
 procedure TTestStreamLogAppender.SetUp;
 begin
   inherited;
@@ -981,6 +989,7 @@ begin
   fLogger.Info('Test');
   CheckTrue(EndsStr('[INFO ] Test', fStream.DataString));
 end;
+
 {$ENDREGION}
 
 end.

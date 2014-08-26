@@ -24,7 +24,6 @@
 
 unit Spring.Tests.Logging.Serializers;
 
-{$I Spring.inc}
 {$I Spring.Tests.inc}
 
 interface
@@ -53,6 +52,7 @@ type
   end;
   {$ENDREGION}
 
+
   {$REGION 'TTestSimpleTypeSerializer'}
   TTestSimpleTypeSerializer = class(TSerializerTestCase)
   private
@@ -80,6 +80,7 @@ type
   end;
   {$ENDREGION}
 
+
   {$REGION 'TTestReflectionTypeSerializer'}
   TTestReflectionTypeSerializer = class(TSerializerTestCase)
   protected
@@ -92,6 +93,7 @@ type
     procedure TestUnsupported;
   end;
   {$ENDREGION}
+
 
   {$REGION 'TTestInterfaceSerializer'}
   TTestInterfaceSerializer = class(TSerializerTestCase)
@@ -106,6 +108,7 @@ type
   end;
   {$ENDREGION}
 
+
   {$REGION 'TTestArrayOfValueSerializer'}
   TTestArrayOfValueSerializer = class(TSerializerTestCase)
   published
@@ -115,10 +118,10 @@ type
   end;
   {$ENDREGION}
 
+
 implementation
 
 {$REGION 'TSerializerTestCase'}
-{ TSerializerTestCase }
 
 procedure TSerializerTestCase.TearDown;
 begin
@@ -139,10 +142,11 @@ begin
     CheckFalse(fSerializer.HandlesType(@typeInfo));
   end;
 end;
+
 {$ENDREGION}
 
+
 {$REGION 'TTestSimpleTypeSerializer'}
-{ TTestSimpleTypeSerializer }
 
 procedure TTestSimpleTypeSerializer.CheckValue(const expected: string;
   const value: TValue; kind: TTypeKind);
@@ -166,7 +170,7 @@ end;
 procedure TTestSimpleTypeSerializer.TestClassRef;
 begin
   CheckValue('(class ''TSampleObject'' @ ' +
-    IntToHex(NativeInt(TSampleObject), sizeof(Pointer) * 2) + ')',
+    IntToHex(NativeInt(TSampleObject), SizeOf(Pointer) * 2) + ')',
     TValue.From(TClass(TSampleObject)), tkClassRef);
 end;
 
@@ -178,14 +182,19 @@ end;
 
 procedure TTestSimpleTypeSerializer.TestFloat;
 begin
-  CheckValue('3' + FormatSettings.DecimalSeparator + '14', TValue.From(3.14),
-    tkFloat);
+{$IFDEF DELPHI2010}
+  CheckValue('3' + DecimalSeparator + '14',
+    TValue.From<Double>(3.14), tkFloat);
+{$ELSE}
+  CheckValue('3' + FormatSettings.DecimalSeparator + '14',
+    TValue.From<Double>(3.14), tkFloat);
+{$ENDIF}
 end;
 
 procedure TTestSimpleTypeSerializer.TestInt64;
 begin
-  CheckValue('12345678901234567890', TValue.From(UInt64(12345678901234567890)),
-    tkInt64);
+  CheckValue('12345678901234567890',
+    TValue.From<UInt64>(12345678901234567890), tkInt64);
 end;
 
 procedure TTestSimpleTypeSerializer.TestInteger;
@@ -195,9 +204,9 @@ end;
 
 procedure TTestSimpleTypeSerializer.TestPointer;
 begin
-{$IF sizeof(Pointer) = 4}
+{$IF SizeOf(Pointer) = 4}
   CheckValue('(pointer @ 12345678)', TValue.From(Pointer($12345678)), tkPointer);
-{$ELSEIF sizeof(Pointer) = 8}
+{$ELSEIF SizeOf(Pointer) = 8}
   CheckValue('(pointer @ 1234567890ABCDEF)',
     TValue.From(Pointer($1234567890ABCDEF)), tkPointer);
 {$ELSE}
@@ -248,10 +257,11 @@ procedure TTestSimpleTypeSerializer.TestWChar;
 begin
   CheckValue('A', TValue.From(WideChar('A')), tkWChar);
 end;
+
 {$ENDREGION}
 
+
 {$REGION 'TTestReflectionTypeSerializer'}
-{ TTestReflectionTypeSerializer }
 
 procedure TTestReflectionTypeSerializer.SetUp;
 begin
@@ -272,7 +282,7 @@ begin
     o.fString := 'test';
     result := fSerializer.Serialize(nil, o);
     s :=
-      '(TSampleObject @ ' + IntToHex(NativeInt(o), sizeof(Pointer) * 2) + ')('#$A +
+      '(TSampleObject @ ' + IntToHex(NativeInt(o), SizeOf(Pointer) * 2) + ')('#$A +
       '  fObject = (empty)'#$A +
       '  fString = test'#$A +
       '  PObject = (empty)'#$A +
@@ -305,7 +315,7 @@ var
 begin
   controller := TLoggerController.Create;
   controller.AddSerializer(fSerializer);
-  fSerializer := TReflectionTypeSerializer.Create([mvPublic], true);
+  fSerializer := TReflectionTypeSerializer.Create([mvPublic], True);
   o := TSampleObject.Create;
   try
 {$IFDEF AUTOREFCOUNT}
@@ -317,7 +327,7 @@ begin
     value := o;
     result := fSerializer.Serialize(controller, value);
 
-    s := IntToHex(NativeInt(o), sizeof(Pointer) * 2);
+    s := IntToHex(NativeInt(o), SizeOf(Pointer) * 2);
     s := '(TSampleObject @ ' + s + ')';
     c := s + '('#$A +
       '    fObject = ' + s + #$A +
@@ -365,7 +375,7 @@ var
   o: TSampleObject;
   result: string;
 begin
-  fSerializer := TReflectionTypeSerializer.Create([mvPublic], true);
+  fSerializer := TReflectionTypeSerializer.Create([mvPublic], True);
   controller := TLoggerController.Create;
   controller.AddSerializer(fSerializer);
   o := TSampleObject.Create;
@@ -405,10 +415,11 @@ procedure TTestReflectionTypeSerializer.TestUnsupported;
 begin
   CheckUnsupported([tkRecord, tkClass]);
 end;
+
 {$ENDREGION}
 
+
 {$REGION 'TTestInterfaceSerializer'}
-{ TTestInterfaceSerializer }
 
 procedure TTestInterfaceSerializer.SetUp;
 begin
@@ -448,7 +459,7 @@ begin
   result := fSerializer.Serialize(fController, value);
 
   s :=
-    '(IInterface): (TSampleObject @ ' + IntToHex(NativeInt(o), sizeof(Pointer) * 2) + ')('#$A +
+    '(IInterface): (TSampleObject @ ' + IntToHex(NativeInt(o), SizeOf(Pointer) * 2) + ')('#$A +
     '  fObject = (empty)'#$A +
     '  fString = test'#$A +
     '  PObject = (empty)'#$A +
@@ -475,10 +486,11 @@ procedure TTestInterfaceSerializer.TestUnsupported;
 begin
   CheckUnsupported([tkInterface]);
 end;
+
 {$ENDREGION}
 
+
 {$REGION 'TTestArrayOfValueSerializer'}
-{ TTestArrayOfValueSerializer }
 
 procedure TTestArrayOfValueSerializer.TestNested;
 var
@@ -488,7 +500,7 @@ var
   i: IInterface;
   s: string;
 begin
-  fSerializer := TArrayOfValueSerializer.Create(true);
+  fSerializer := TArrayOfValueSerializer.Create(True);
   controller := TLoggerController.Create;
   controller.AddSerializer(TReflectionTypeSerializer.Create);
   controller.AddSerializer(TInterfaceSerializer.Create);
@@ -499,7 +511,7 @@ begin
   result := fSerializer.Serialize(controller, TValue.From(values));
 
   s :=
-    '(IInterface): (TSampleObject @ ' + IntToHex(NativeInt(TObject(i)), sizeof(Pointer) * 2) + ')('#$A +
+    '(IInterface): (TSampleObject @ ' + IntToHex(NativeInt(TObject(i)), SizeOf(Pointer) * 2) + ')('#$A +
     '  fObject = (empty)'#$A +
     '  fString = '#$A +
     '  PObject = (empty)'#$A +
@@ -509,7 +521,11 @@ begin
       '5'#$A +
       '  Disposed = False' +
 {$ELSE}
+{$IFDEF DELPHI2010}
+      '5' +
+{$ELSE}
       '3' +
+{$ENDIF}
 {$ENDIF}
       ')';
   values := nil;
@@ -538,6 +554,8 @@ begin
   fSerializer := TArrayOfValueSerializer.Create;
   CheckUnsupported([tkInterface]);
 end;
+
 {$ENDREGION}
+
 
 end.

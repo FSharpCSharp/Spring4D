@@ -29,8 +29,8 @@ unit Spring.Logging.Container;
 interface
 
 uses
-  TypInfo,
   Rtti,
+  TypInfo,
   Spring.Container,
   Spring.Container.Core,
   Spring.Container.Resolvers,
@@ -47,6 +47,7 @@ type
   end;
   {$ENDREGION}
 
+
   {$REGION 'TLoggerResolver'}
   /// <summary>
   ///   Subresolver that will inject proper logger defined by the configuration.
@@ -60,7 +61,8 @@ type
   /// </summary>
   TLoggerResolver = class(TSubDependencyResolverBase)
   private
-    [Unsafe] fConfiguration: TLoggingConfiguration;
+    {$IFDEF WEAKREF}[Unsafe]{$ENDIF}
+    fConfiguration: TLoggingConfiguration;
     procedure EnsureConfiguration; inline;
   public
     function CanResolve(const context: ICreationContext;
@@ -72,13 +74,14 @@ type
   end;
   {$ENDREGION}
 
+
 implementation
 
 uses
   Spring.Logging.Controller;
 
+
 {$REGION 'TLoggingContainerHelper'}
-{ TLoggingContainerHelper }
 
 class procedure TLoggingContainerHelper.RegisterAllAppenders(
   const container: TContainer);
@@ -107,10 +110,11 @@ begin
     .AsSingleton;
   RegisterLogging(container);
 end;
+
 {$ENDREGION}
 
+
 {$REGION 'TLoggerResolver'}
-{ TLoggerResolver }
 
 function TLoggerResolver.CanResolve(const context: ICreationContext;
   const model: TComponentModel; const dependency: TDependencyModel;
@@ -118,20 +122,19 @@ function TLoggerResolver.CanResolve(const context: ICreationContext;
 var
   componentType: TRttiType;
 begin
-  Result :=
-    (dependency.TypeInfo = System.TypeInfo(ILogger)) and
-    (dependency.TypeInfo <> argument.TypeInfo) and
-    (argument.IsEmpty) and //this is true for injections and even false for named injections
-    (dependency.Target <> nil) and (dependency.target.parent <> nil);
+  Result := (dependency.TypeInfo = System.TypeInfo(ILogger))
+    and (dependency.TypeInfo <> argument.TypeInfo)
+    and (argument.IsEmpty) // this is true for injections and even false for named injections
+    and Assigned(dependency.Target) and Assigned(dependency.target.parent);
   if Result then
   begin
     EnsureConfiguration;
     componentType := model.ComponentType;
     Result := fConfiguration.HasLogger(componentType.Handle);
 
-    if (not Result) and componentType.IsInstance then
+    if not Result and componentType.IsInstance then
     begin
-      while (not Result) and (TRttiInstanceType(componentType).BaseType <> nil) do
+      while not Result and Assigned(TRttiInstanceType(componentType).BaseType) do
       begin
         componentType := TRttiInstanceType(componentType).BaseType;
         Result := fConfiguration.HasLogger(componentType.Handle);
@@ -147,7 +150,7 @@ end;
 
 procedure TLoggerResolver.EnsureConfiguration;
 begin
-  if (fConfiguration = nil) then
+  if not Assigned(fConfiguration) then
     fConfiguration := (Kernel as IKernelInternal).Resolve(
       TypeInfo(TLoggingConfiguration)).AsType<TLoggingConfiguration>;
 end;
@@ -159,15 +162,16 @@ var
   handle: PTypeInfo;
   componentType: TRttiType;
 begin
-  Assert(fConfiguration <> nil);
+  Assert(Assigned(fConfiguration));
 
   componentType := model.ComponentType;
-  if (fConfiguration.HasLogger(componentType.Handle)) then
+  if fConfiguration.HasLogger(componentType.Handle) then
     handle := componentType.Handle
-  else begin
+  else
+  begin
     handle := nil;
     Assert(componentType.IsInstance);
-    while (TRttiInstanceType(componentType).BaseType <> nil) do
+    while Assigned(TRttiInstanceType(componentType).BaseType) do
     begin
       componentType := TRttiInstanceType(componentType).BaseType;
       if fConfiguration.HasLogger(componentType.Handle) then
@@ -178,10 +182,11 @@ begin
     end;
   end;
 
-  Assert(Handle <> nil);
-  Result:=(Kernel as IKernelInternal).Resolve(
-    fConfiguration.GetLogger(handle));
+  Assert(Assigned(handle));
+  Result := (Kernel as IKernelInternal).Resolve(fConfiguration.GetLogger(handle));
 end;
+
 {$ENDREGION}
+
 
 end.

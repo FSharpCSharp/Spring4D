@@ -1103,7 +1103,7 @@ var
 begin
   ExpectedException := ECircularDependencyException;
   chicken := fContainer.Resolve<IChicken>;
-  Check(true, 'This must pass');
+  FCheckCalled := True;
 end;
 
 {$ENDREGION}

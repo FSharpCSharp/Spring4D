@@ -29,9 +29,9 @@ unit Spring.Logging.Configuration.Builder;
 interface
 
 uses
+  Rtti,
   SysUtils,
   TypInfo,
-  Rtti,
   Spring,
   Spring.Logging;
 
@@ -127,6 +127,7 @@ type
   end;
   {$ENDREGION}
 
+
 implementation
 
 const
@@ -141,6 +142,7 @@ const
 type
   TBuilderState = (bsRoot, bsAppender, bsController, bsLogger, bsDone);
   TBuilderStates = set of TBuilderState;
+
 
 {$REGION 'TBuilder'}
   TBuilder = class(TInterfacedObject, TLoggingConfigurationBuilder.IBuilder)
@@ -167,7 +169,6 @@ type
     function ToString: string; override;
   end;
 
-{ TBuilder }
 
 procedure TBuilder.BeginAppender(const name: string; const className: string);
 begin
@@ -250,8 +251,8 @@ begin
 end;
 {$ENDREGION}
 
+
 {$REGION 'TLoggingConfigurationBuilder'}
-{ TLoggingConfigurationBuilder }
 
 function TLoggingConfigurationBuilder.BeginAppender(const name,
   className: string): TAppenderBuilder;
@@ -264,16 +265,17 @@ function TLoggingConfigurationBuilder.BeginAppender(const name: string;
   const classType: TClass): TAppenderBuilder;
 begin
   Guard.CheckNotNull(classType, 'classType');
-  fBuilder.BeginAppender(name, classType.QualifiedClassName);
+  fBuilder.BeginAppender(name, GetQualifiedClassName(classType));
   Result.fBuilder := fBuilder;
 end;
 
 function TLoggingConfigurationBuilder.BeginController(const name,
   className: string): TControllerBuilder;
 begin
-  if (name = '') then
+  if name = '' then
     fBuilder.BeginController(SDefault, className)
-  else fBuilder.BeginController(name, className);
+  else
+    fBuilder.BeginController(name, className);
   Result.fBuilder := fBuilder;
 end;
 
@@ -281,16 +283,17 @@ function TLoggingConfigurationBuilder.BeginController(const name: string;
   const classType: TClass): TControllerBuilder;
 begin
   Guard.CheckNotNull(classType, 'classType');
-  fBuilder.BeginController(name, classType.QualifiedClassName);
+  fBuilder.BeginController(name, GetQualifiedClassName(classType));
   Result.fBuilder := fBuilder;
 end;
 
 function TLoggingConfigurationBuilder.BeginLogger(const name,
   className: string): TLoggerBuilder;
 begin
-  if (name = '') then
+  if name = '' then
     fBuilder.BeginLogger(SDefault, className)
-  else fBuilder.BeginLogger(name, className);
+  else
+    fBuilder.BeginLogger(name, className);
   Result.fBuilder := fBuilder;
 end;
 
@@ -298,7 +301,7 @@ function TLoggingConfigurationBuilder.BeginLogger(const name: string;
   const classType: TClass): TLoggerBuilder;
 begin
   Guard.CheckNotNull(classType, 'classType');
-  fBuilder.BeginLogger(name, classType.QualifiedClassName);
+  fBuilder.BeginLogger(name, GetQualifiedClassName(classType));
   Result.fBuilder := fBuilder;
 end;
 
@@ -311,10 +314,11 @@ function TLoggingConfigurationBuilder.ToString: string;
 begin
   Result := fBuilder.ToString;
 end;
+
 {$ENDREGION}
 
+
 {$REGION 'TLoggingConfigurationBuilder.TAppenderBuilder'}
-{ TLoggingConfigurationBuilder.TAppenderBuilder }
 
 function TLoggingConfigurationBuilder.TAppenderBuilder.Enabled(
   value: Boolean): TAppenderBuilder;
@@ -349,10 +353,11 @@ begin
   fBuilder.Prop(name, TValue.From<E>(value));
   Result := Self;
 end;
+
 {$ENDREGION}
 
+
 {$REGION 'TLoggingConfigurationBuilder.TControllerBuilder'}
-{ TLoggingConfigurationBuilder.TControllerBuilder }
 
 function TLoggingConfigurationBuilder.TControllerBuilder.AddAppender(
   const name: string): TControllerBuilder;
@@ -373,7 +378,7 @@ function TLoggingConfigurationBuilder.TControllerBuilder.AddSerializer(
   const classType: TClass): TControllerBuilder;
 begin
   Guard.checkNotNull(classType, 'classType');
-  fBuilder.Prop(SSerializer, classType.QualifiedClassName);
+  fBuilder.Prop(SSerializer, GetQualifiedClassName(classType));
   Result := Self;
 end;
 
@@ -410,10 +415,11 @@ begin
   fBuilder.Prop(name, TValue.From<E>(value));
   Result := Self;
 end;
+
 {$ENDREGION}
 
+
 {$REGION 'TLoggingConfigurationBuilder.TLoggerBuilder'}
-{ TLoggingConfigurationBuilder.TLoggerBuilder }
 
 function TLoggingConfigurationBuilder.TLoggerBuilder.Assign(
   const className: string): TLoggerBuilder;
@@ -427,7 +433,7 @@ function TLoggingConfigurationBuilder.TLoggerBuilder.Assign(
   const classType: TClass): TLoggerBuilder;
 begin
   Guard.CheckNotNull(classType, 'classType');
-  fBuilder.Prop(SAssign, classType.QualifiedClassName);
+  fBuilder.Prop(SAssign, GetQualifiedClassName(classType));
   Result := Self;
 end;
 
@@ -471,6 +477,8 @@ begin
   fBuilder.Prop(name, TValue.From<E>(value));
   Result := Self;
 end;
+
 {$ENDREGION}
+
 
 end.

@@ -41,7 +41,7 @@ type
   private
     fSerializers: IList<ITypeSerializer>;
     fStackTraceCollector: IStackTraceCollector;
-    fStackTraceFromatter: IStackTraceFormatter;
+    fStackTraceFormatter: IStackTraceFormatter;
     fAppenders: IList<ILogAppender>;
   protected
     procedure DoSend(const entry: TLogEntry); override;
@@ -60,13 +60,22 @@ type
   end;
   {$ENDREGION}
 
+
 implementation
 
 uses
   Spring;
 
+
 {$REGION 'TLoggerController'}
-{ TLoggerController }
+
+constructor TLoggerController.Create;
+begin
+  inherited Create;
+
+  fAppenders := TCollections.CreateInterfaceList<ILogAppender>;
+  fSerializers := TCollections.CreateInterfaceList<ITypeSerializer>;
+end;
 
 procedure TLoggerController.AddAppender(const appender: ILogAppender);
 begin
@@ -76,35 +85,26 @@ end;
 
 procedure TLoggerController.AddSerializer(const serializer: ITypeSerializer);
 begin
-  if (fSerializers = nil) then
-    fSerializers := TCollections.CreateInterfaceList<ITypeSerializer>;
   fSerializers.Add(serializer);
-end;
-
-constructor TLoggerController.Create;
-begin
-  inherited;
-
-  fAppenders := TCollections.CreateInterfaceList<ILogAppender>;
 end;
 
 procedure TLoggerController.DoSend(const entry: TLogEntry);
 var
   appender: ILogAppender;
 begin
-  //After serialization or stack logging is added, and if such action is required
-  //(we have a serializer capable of serializing given data or AddStack and
-  //StackCollector) log the message first then go though all appenders first
-  //and get their level and enabled state to check if there is something to
-  //do in the first place
+  // After serialization or stack logging is added, and if such action is
+  // required (we have a serializer capable of serializing given data or
+  // AddStack and StackCollector) log the message first then go though all
+  // appenders first and get their level and enabled state to check if there is
+  // something to do in the first place
   for appender in fAppenders do
     appender.Send(entry);
 
   if not entry.Data.IsEmpty and IsLoggable(TLogLevel.SerializedData) then
     SendData(entry);
 
-  if entry.AddStackValue and (fStackTraceCollector <> nil) and
-    (fStackTraceFromatter <> nil) and IsLoggable(TLogLevel.CallStack) then
+  if entry.AddStackValue and Assigned(fStackTraceCollector)
+    and Assigned(fStackTraceFormatter) and IsLoggable(TLogLevel.CallStack) then
       SendStack(entry);
 end;
 
@@ -112,22 +112,22 @@ function TLoggerController.FindSerializer(typeInfo: PTypeInfo): ITypeSerializer;
 var
   serializer: ITypeSerializer;
 begin
-  if (fSerializers <> nil) then
-    for serializer in fSerializers do
-      if (serializer.HandlesType(typeInfo)) then
-        Exit(serializer);
+  for serializer in fSerializers do
+    if serializer.HandlesType(typeInfo) then
+      Exit(serializer);
 
   Result := nil;
 end;
 
 function TLoggerController.IsLoggable(level: TLogLevel): Boolean;
-var appender: ILogAppender;
+var
+  appender: ILogAppender;
 begin
   for appender in fAppenders do
-    if (appender.Enabled and (level in appender.Levels)) then
-      Exit(true);
+    if appender.Enabled and (level in appender.Levels) then
+      Exit(True);
 
-  Result := false;
+  Result := False;
 end;
 
 procedure TLoggerController.SendData(const entry: TLogEntry);
@@ -136,7 +136,7 @@ var
 begin
   serializer := FindSerializer(entry.Data.TypeInfo);
 
-  if serializer <> nil then
+  if Assigned(serializer) then
     DoSend(TLogEntry.Create(TLogLevel.SerializedData,
       serializer.Serialize(Self, entry.Data)));
 end;
@@ -144,20 +144,22 @@ end;
 procedure TLoggerController.SendStack(const entry: TLogEntry);
 var
   stack: TArray<Pointer>;
-  formatted: TStringDynArray;
+  formatted: TArray<string>;
   i: Integer;
   s: string;
 begin
   stack := fStackTraceCollector.Collect;
-  formatted := fStackTraceFromatter.Format(stack);
+  formatted := fStackTraceFormatter.Format(stack);
 
-  if Length(stack) < 1 then
+  if Length(stack) = 0 then
     Exit;
 
   s := formatted[0];
   for i := 1 to High(formatted) do
     s := s + #$A + formatted[i];
 end;
+
 {$ENDREGION}
+
 
 end.

@@ -30,23 +30,24 @@ unit Spring.Tests.Container.Logging;
 interface
 
 uses
-  SysUtils,
-  StrUtils,
-  TypInfo,
   Classes,
   Rtti,
-  Spring.Reflection,
+  StrUtils,
+  SysUtils,
+  TypInfo,
+  Spring,
   Spring.Collections,
   Spring.Container,
   Spring.Container.Common,
   Spring.Logging,
-  Spring.Logging.Extensions,
   Spring.Logging.Appenders,
-  Spring.Logging.Controller,
-  Spring.Logging.Loggers,
-  Spring.Logging.Container,
   Spring.Logging.Configuration,
   Spring.Logging.Configuration.Builder,
+  Spring.Logging.Container,
+  Spring.Logging.Controller,
+  Spring.Logging.Extensions,
+  Spring.Logging.Loggers,
+  Spring.Reflection,
   Spring.Tests.Container,
   Spring.Tests.Logging.Types;
 
@@ -58,6 +59,7 @@ type
     procedure TestChainedControllers;
   end;
   {$ENDREGION}
+
 
   {$REGION 'TTestLogSubResolverAndConfiguration'}
   TTestLogSubResolverAndConfiguration = class(TContainerTestCase)
@@ -74,6 +76,7 @@ type
     procedure TestLazy;
   end;
   {$ENDREGION}
+
 
   {$REGION 'TTestLoggingConfiguration'}
   TTestLoggingConfiguration = class(TContainerTestCase)
@@ -110,6 +113,7 @@ type
   end;
   {$ENDREGION}
 
+
   {$REGION 'TTestLoggingConfigurationBuilder'}
   TTestLoggingConfigurationBuilder = class(TContainerTestCase)
   private const
@@ -127,25 +131,27 @@ type
   end;
   {$ENDREGION}
 
+
 implementation
 
+
 {$REGION 'Internal test helpers'}
+
 type
   TStringsHelper = class helper for TStrings
     function Add(const s: string): TStrings;
   end;
-
-{ TStringsHelper }
 
 function TStringsHelper.Add(const s: string): TStrings;
 begin
   TStringList(Self).Add(s);
   Result := Self;
 end;
+
 {$ENDREGION}
 
+
 {$REGION 'TTestLogInsideContainer'}
-{ TTestLogInsideContainer }
 
 procedure TTestLogInsideContainer.TestChainedControllers;
 begin
@@ -163,7 +169,7 @@ begin
   fContainer.Resolve<Ilogger>;
   fContainer.Resolve<Ilogger>('l2');
 
-  Check(true); //If there are any errors this won't get called
+  FCheckCalled := True;
 end;
 
 procedure TTestLogInsideContainer.TestLog;
@@ -180,10 +186,11 @@ begin
   fContainer.Resolve<ILogger>.Warn('Test');
   CheckTrue(EndsStr('[WARN ] Test', stream.DataString));
 end;
+
 {$ENDREGION}
 
+
 {$REGION 'TTestLogSubResolverAndConfiguration'}
-{ TTestLogSubResolverAndConfiguration }
 
 procedure TTestLogSubResolverAndConfiguration.SetUp;
 begin
@@ -296,10 +303,11 @@ begin
   CheckIs(obj.Logger1, TLoggerDefault);
   CheckIs(obj.Logger2, TLogger2);
 end;
+
 {$ENDREGION}
 
+
 {$REGION 'TTestLoggingConfiguration'}
-{ TTestLoggingConfiguration }
 
 procedure TTestLoggingConfiguration.SetUp;
 begin
@@ -317,7 +325,7 @@ procedure TTestLoggingConfiguration.TestLeak;
 begin
   //If done incorrectly this test will create a leak
   TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
-  Check(true);
+  FCheckCalled := True;
 end;
 
 procedure TTestLoggingConfiguration.TestMultipleConfiguration;
@@ -410,7 +418,7 @@ begin
   fStrings
     .Add('[appenders\appender1]')
     .Add('class = Spring.Tests.Logging.Types.TAppenderMock')
-    .Add('enabled = false')
+    .Add('enabled = False')
     .Add('someInt = 1')
     .Add('someString = test')
     .Add('someEnum = Warning')
@@ -479,7 +487,7 @@ begin
   fStrings
     .Add('[appenders\appender1]')
     .Add('class = Spring.Tests.Logging.Types.TAppenderMock')
-    .Add('notExistent = false');
+    .Add('notExistent = False');
   ExpectedException := EPropertyError;
   TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
 end;
@@ -606,9 +614,9 @@ begin
   controller2 := fContainer.Resolve<ILoggerController>('logging.controller2.controller');
 
   serializer1 := fContainer.Resolve<ITypeSerializer>(
-    TTypeSerializerMock.QualifiedClassName);
+    GetQualifiedClassName(TTypeSerializerMock));
   serializer2 := fContainer.Resolve<ITypeSerializer>(
-    TTypeSerializerMock2.QualifiedClassName);
+    GetQualifiedClassName(TTypeSerializerMock2));
 
   f := TType.GetType<TLoggerController>.GetField('fSerializers');
 
@@ -773,10 +781,11 @@ begin
   CheckSame(fContainer.Resolve<ILogAppender>('appender1'), appenders[1]);
   CheckSame(fContainer.Resolve<ILogAppender>, appenders[2]);
 end;
+
 {$ENDREGION}
 
+
 {$REGION 'TTestLoggingConfigurationBuilder'}
-{ TTestLoggingConfigurationBuilder }
 
 procedure TTestLoggingConfigurationBuilder.SetUp;
 begin
@@ -789,9 +798,9 @@ var
 begin
   builder := TLoggingConfigurationBuilder.Create
     .BeginAppender('app1', TAppenderMock)
-      .Enabled(false)
+      .Enabled(False)
       .Levels([TLogLevel.Warning])
-      .Prop('someProp', true)
+      .Prop('someProp', True)
     .EndAppender
 
     .BeginAppender('app2', 'TSomeAppender')
@@ -892,7 +901,7 @@ var
 begin
   builder := TLoggingConfigurationBuilder.Create
     .BeginController
-      .Enabled(true)
+      .Enabled(True)
       .Levels([TLogLevel.Fatal, TLogLevel.Error])
       .AddAppender('app1')
       .Prop('test', 0)
@@ -939,7 +948,7 @@ var
 begin
   builder := TLoggingConfigurationBuilder.Create
     .BeginLogger
-      .Enabled(true)
+      .Enabled(True)
       .Levels([TLogLevel.Error, TLogLevel.Debug])
       .Controller('ctl1')
       .Prop('test', TLogLevel.Verbose)
@@ -973,6 +982,8 @@ begin
     'assign = TSomeClass' + NL +
     NL, builder.ToString);
 end;
+
 {$ENDREGION}
+
 
 end.

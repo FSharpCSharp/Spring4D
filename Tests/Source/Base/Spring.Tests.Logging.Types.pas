@@ -24,22 +24,22 @@
 
 unit Spring.Tests.Logging.Types;
 
-{$I Spring.inc}
+{$I Spring.Tests.inc}
 
 interface
 
 uses
-  TypInfo,
   Classes,
   Rtti,
   TestFramework,
+  TypInfo,
   Spring,
+  Spring.Container.Common,
   Spring.Logging,
-  Spring.Logging.Extensions,
   Spring.Logging.Appenders.Base,
   Spring.Logging.Controller,
-  Spring.Logging.Loggers,
-  Spring.Container.Common;
+  Spring.Logging.Extensions,
+  Spring.Logging.Loggers;
 
 type
   TAppenderMock = class(TLogAppenderBase)
@@ -131,7 +131,6 @@ type
   end;
 
   TSomeRecord = record
-
   end;
 
   TTypeSerializerMock = class(TInterfacedObject, ITypeSerializer)
@@ -151,7 +150,8 @@ type
   private
     FROProp: Boolean;
   public
-    [Weak] fObject: TObject;
+    {$IFDEF WEAKREF}[Weak]{$ENDIF}
+    fObject: TObject;
     fString: string;
     property PObject: TObject read fObject;
     property PString: string read fString write fString;
@@ -168,7 +168,8 @@ type
 
 implementation
 
-{ TAppenderMock }
+
+{$REGION 'TAppenderMock'}
 
 procedure TAppenderMock.DoSend(const entry: TLogEntry);
 begin
@@ -181,21 +182,30 @@ begin
   Result := fWriteCount > 0;
 end;
 
-{ TObjProc }
+{$ENDREGION}
+
+
+{$REGION 'TObjProc'}
 
 procedure TObjProc.SetLoggger(const logger: ILogger);
 begin
   fLogger := logger;
 end;
 
-{ TObjCtor }
+{$ENDREGION}
+
+
+{$REGION 'TObjCtor'}
 
 constructor TObjCtor.Create(const logger: ILogger);
 begin
   fLogger := logger;
 end;
 
-{ TLoggerControllerMock }
+{$ENDREGION}
+
+
+{$REGION 'TLoggerControllerMock'}
 
 procedure TLoggerControllerMock.AddAppender(const appedner: ILogAppender);
 begin
@@ -204,7 +214,7 @@ end;
 
 function TLoggerControllerMock.GetEnabled: Boolean;
 begin
-  Result := true;
+  Result := True;
 end;
 
 function TLoggerControllerMock.GetLevels: TLogLevels;
@@ -222,14 +232,19 @@ begin
   fLastEntry := entry;
 end;
 
-{ TAppenderMock2 }
+{$ENDREGION}
+
+
+{$REGION 'TAppenderMock2'}
 
 procedure TAppenderMock2.DoSend(const entry: TLogEntry);
 begin
-
 end;
 
-{ TTypeSerializerMock }
+{$ENDREGION}
+
+
+{$REGION 'TTypeSerializerMock'}
 
 function TTypeSerializerMock.HandlesType(typeInfo: PTypeInfo): Boolean;
 begin
@@ -242,5 +257,8 @@ function TTypeSerializerMock.Serialize(const controller: ISerializerController;
 begin
   Result := '';
 end;
+
+{$ENDREGION}
+
 
 end.
