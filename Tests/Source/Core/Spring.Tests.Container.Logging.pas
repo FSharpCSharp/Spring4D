@@ -433,7 +433,7 @@ begin
   CheckFalse(appender.Enabled);
   CheckEquals(1, appender.SomeInt);
   CheckEquals('test', appender.SomeString);
-  CheckEquals(Ord(TLogLevel.Warning), Ord(appender.SomeEnum));
+  CheckEquals(Ord(TLogLevel.Warn), Ord(appender.SomeEnum));
   Check([TLogLevel.Error, TLogLevel.Info] = appender.Levels);
 end;
 
@@ -799,7 +799,7 @@ begin
   builder := TLoggingConfigurationBuilder.Create
     .BeginAppender('app1', TAppenderMock)
       .Enabled(False)
-      .Levels([TLogLevel.Warning])
+      .Levels([TLogLevel.Warn])
       .Prop('someProp', True)
     .EndAppender
 
@@ -839,7 +839,7 @@ begin
     .EndAppender
 
     .BeginAppender('appender2', 'TAppenderMock2')
-      .Levels([TLogLevel.Warning, TLogLevel.Fatal, TLogLevel.Error])
+      .Levels([TLogLevel.Warn, TLogLevel.Fatal, TLogLevel.Error])
     .EndAppender
 
     .BeginController
@@ -951,7 +951,7 @@ begin
       .Enabled(True)
       .Levels([TLogLevel.Error, TLogLevel.Debug])
       .Controller('ctl1')
-      .Prop('test', TLogLevel.Verbose)
+      .Prop('test', TLogLevel.Trace)
     .EndLogger
 
     .BeginLogger('log2', 'TSomeLogger')

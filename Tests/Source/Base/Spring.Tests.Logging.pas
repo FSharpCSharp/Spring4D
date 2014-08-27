@@ -85,7 +85,7 @@ type
     procedure TestInfo(enabled: Boolean); overload;
     procedure TestText(enabled: Boolean); overload;
     procedure TestDebug(enabled: Boolean); overload;
-    procedure TestVerbose(enabled: Boolean); overload;
+    procedure TestTrace(enabled: Boolean); overload;
   published
     procedure TestCreate;
     procedure TestLevels;
@@ -98,7 +98,7 @@ type
     procedure TestIsInfoEnabled;
     procedure TestIsTextEnabled;
     procedure TestIsDebugEnabled;
-    procedure TestIsVerboseEnabled;
+    procedure TestIsTraceEnabled;
 
     procedure TestLoggerProperties;
 
@@ -111,7 +111,7 @@ type
     procedure TestInfo; overload;
     procedure TestText; overload;
     procedure TestDebug; overload;
-    procedure TestVerbose; overload;
+    procedure TestTrace; overload;
 
     procedure TestEntering;
     procedure TestLeaving;
@@ -428,29 +428,28 @@ begin
   CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
   Logger.Enabled := True;
-  Logger.Levels := [TLogLevel.Warning];
+  Logger.Levels := [TLogLevel.Warn];
   fLogger.Entering(TLogLevel.Info, nil, '');
   CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
-  fLogger.Entering(TLogLevel.Warning, nil, '');
-  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.LastEntry.Level));
+  fLogger.Entering(TLogLevel.Warn, nil, '');
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
   CheckEquals(Ord(TLogEntryType.Entering),  Ord(Controller.LastEntry.EntryType));
 
   Controller.Reset;
 
   Logger.Enabled := False;
-  fLogger.Entering(TLogLevel.Info, nil, '', [TValue.Empty]);
+  fLogger.Entering(TLogLevel.Info, nil, '');
   CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
   Logger.Enabled := True;
-  Logger.Levels := [TLogLevel.Warning];
-  fLogger.Entering(TLogLevel.Info, nil, '', [TValue.Empty]);
+  Logger.Levels := [TLogLevel.Warn];
+  fLogger.Entering(TLogLevel.Info, nil, '');
   CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
-  fLogger.Entering(TLogLevel.Warning, nil, '', ['value']);
-  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.LastEntry.Level));
+  fLogger.Entering(TLogLevel.Warn, nil, '');
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
   CheckEquals(Ord(TLogEntryType.Entering),  Ord(Controller.LastEntry.EntryType));
-  CheckEquals('value', Controller.LastEntry.Data.AsType<TArray<TValue>>[0].AsString);
 end;
 
 procedure TTestLogger.TestError(enabled: Boolean);
@@ -604,24 +603,24 @@ begin
   CheckFalse(fLogger.IsTextEnabled);
 end;
 
-procedure TTestLogger.TestIsVerboseEnabled;
+procedure TTestLogger.TestIsTraceEnabled;
 begin
-  Logger.Levels := LOG_ALL_LEVELS - [TLogLevel.Verbose];
-  CheckFalse(fLogger.IsVerboseEnabled);
+  Logger.Levels := LOG_ALL_LEVELS - [TLogLevel.Trace];
+  CheckFalse(fLogger.IsTraceEnabled);
 
-  Logger.Levels := [TLogLevel.Verbose];
-  CheckTrue(fLogger.IsVerboseEnabled);
+  Logger.Levels := [TLogLevel.Trace];
+  CheckTrue(fLogger.IsTraceEnabled);
 
   Logger.Enabled := False;
-  CheckFalse(fLogger.IsVerboseEnabled);
+  CheckFalse(fLogger.IsTraceEnabled);
 end;
 
 procedure TTestLogger.TestIsWarnEnabled;
 begin
-  Logger.Levels := LOG_ALL_LEVELS - [TLogLevel.Warning];
+  Logger.Levels := LOG_ALL_LEVELS - [TLogLevel.Warn];
   CheckFalse(fLogger.IsWarnEnabled);
 
-  Logger.Levels := [TLogLevel.Warning];
+  Logger.Levels := [TLogLevel.Warn];
   CheckTrue(fLogger.IsWarnEnabled);
 
   Logger.Enabled := False;
@@ -637,12 +636,12 @@ begin
   CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
   Logger.Enabled := True;
-  Logger.Levels := [TLogLevel.Warning];
+  Logger.Levels := [TLogLevel.Warn];
   fLogger.Leaving(TLogLevel.Info, nil, '');
   CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
-  fLogger.Leaving(TLogLevel.Warning, nil, '');
-  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.LastEntry.Level));
+  fLogger.Leaving(TLogLevel.Warn, nil, '');
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
   CheckEquals(Ord(TLogEntryType.Leaving),  Ord(Controller.LastEntry.EntryType));
 end;
 
@@ -725,41 +724,40 @@ begin
   CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
   Logger.Enabled := True;
-  Logger.Levels := [TLogLevel.Warning];
+  Logger.Levels := [TLogLevel.Warn];
   result := fLogger.Track(TLogLevel.Info, nil, '');
   CheckNull(result);
   CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
-  result := fLogger.Track(TLogLevel.Warning, nil, '');
+  result := fLogger.Track(TLogLevel.Warn, nil, '');
   CheckNotNull(result);
-  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.LastEntry.Level));
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
   CheckEquals(Ord(TLogEntryType.Entering), Ord(Controller.LastEntry.EntryType));
   Controller.Reset;
   result := nil;
-  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.LastEntry.Level));
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
   CheckEquals(Ord(TLogEntryType.Leaving), Ord(Controller.LastEntry.EntryType));
 
   Controller.Reset;
 
   Logger.Enabled := False;
-  result := fLogger.Track(TLogLevel.Info, nil, '', [TValue.Empty]);
+  result := fLogger.Track(TLogLevel.Info, nil, '');
   CheckNull(result);
   CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
   Logger.Enabled := True;
-  Logger.Levels := [TLogLevel.Warning];
-  result := fLogger.Track(TLogLevel.Info, nil, '', [TValue.Empty]);
+  Logger.Levels := [TLogLevel.Warn];
+  result := fLogger.Track(TLogLevel.Info, nil, '');
   CheckNull(result);
   CheckTrue(TLogLevel.Unknown = Controller.LastEntry.Level);
 
-  result := fLogger.Track(TLogLevel.Warning, nil, '', ['value']);
+  result := fLogger.Track(TLogLevel.Warn, nil, '');
   CheckNotNull(result);
-  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.LastEntry.Level));
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
   CheckEquals(Ord(TLogEntryType.Entering), Ord(Controller.LastEntry.EntryType));
-  CheckEquals('value', Controller.LastEntry.Data.AsType<TArray<TValue>>[0].AsString);
   Controller.Reset;
   result := nil;
-  CheckEquals(Ord(TLogLevel.Warning), Ord(Controller.LastEntry.Level));
+  CheckEquals(Ord(TLogLevel.Warn), Ord(Controller.LastEntry.Level));
   CheckEquals(Ord(TLogEntryType.Leaving), Ord(Controller.LastEntry.EntryType));
 end;
 
@@ -782,36 +780,36 @@ begin
   CheckEvent(enabled, TLogLevel.Text, 'T4', fException);
 end;
 
-procedure TTestLogger.TestVerbose;
+procedure TTestLogger.TestTrace;
 begin
-  Logger.Levels := [TLogLevel.Verbose];
-  TestVerbose(True);
+  Logger.Levels := [TLogLevel.Trace];
+  TestTrace(True);
   Logger.Levels := [];
-  TestVerbose(False);
+  TestTrace(False);
 end;
 
-procedure TTestLogger.TestVerbose(enabled: Boolean);
+procedure TTestLogger.TestTrace(enabled: Boolean);
 begin
   Controller.Reset;
-  fLogger.Verbose('V1');
-  CheckEvent(enabled, TLogLevel.Verbose, 'V1');
+  fLogger.Trace('V1');
+  CheckEvent(enabled, TLogLevel.Trace, 'V1');
 
   Controller.Reset;
-  fLogger.Verbose('V2', fException);
-  CheckEvent(enabled, TLogLevel.Verbose, 'V2', fException);
+  fLogger.Trace('V2', fException);
+  CheckEvent(enabled, TLogLevel.Trace, 'V2', fException);
 
   Controller.Reset;
-  fLogger.Verbose('V%d', [3]);
-  CheckEvent(enabled, TLogLevel.Verbose, 'V3');
+  fLogger.Trace('V%d', [3]);
+  CheckEvent(enabled, TLogLevel.Trace, 'V3');
 
   Controller.Reset;
-  fLogger.Verbose('V%d', [4], fException);
-  CheckEvent(enabled, TLogLevel.Verbose, 'V4', fException);
+  fLogger.Trace('V%d', [4], fException);
+  CheckEvent(enabled, TLogLevel.Trace, 'V4', fException);
 end;
 
 procedure TTestLogger.TestWarn;
 begin
-  Logger.Levels := [TLogLevel.Warning];
+  Logger.Levels := [TLogLevel.Warn];
   TestWarn(True);
   Logger.Levels := [];
   TestWarn(False);
@@ -821,19 +819,19 @@ procedure TTestLogger.TestWarn(enabled: Boolean);
 begin
   Controller.Reset;
   fLogger.Warn('W1');
-  CheckEvent(enabled, TLogLevel.Warning, 'W1');
+  CheckEvent(enabled, TLogLevel.Warn, 'W1');
 
   Controller.Reset;
   fLogger.Warn('W2', fException);
-  CheckEvent(enabled, TLogLevel.Warning, 'W2', fException);
+  CheckEvent(enabled, TLogLevel.Warn, 'W2', fException);
 
   Controller.Reset;
   fLogger.Warn('W%d', [3]);
-  CheckEvent(enabled, TLogLevel.Warning, 'W3');
+  CheckEvent(enabled, TLogLevel.Warn, 'W3');
 
   Controller.Reset;
   fLogger.Warn('W%d', [4], fException);
-  CheckEvent(enabled, TLogLevel.Warning, 'W4', fException);
+  CheckEvent(enabled, TLogLevel.Warn, 'W4', fException);
 end;
 
 procedure TTestLogger.TestLog(enabled: Boolean);

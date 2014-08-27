@@ -68,7 +68,7 @@ type
     ///   Excluded from all states and should never be used!
     /// </summary>
     Unknown,
-    Verbose,
+    Trace,
     /// <summary>
     ///   Should only be called if stack is sent to the appender. The appender
     ///   may treat it in a specific way. No one else should use this level.
@@ -87,7 +87,7 @@ type
     Debug,
     Text,
     Info,
-    Warning,
+    Warn,
     Error,
     Fatal
   );
@@ -97,7 +97,7 @@ const
   LOG_ALL_LEVELS = [Low(TLogLevel)..High(TLogLevel)] - [TLogLevel.Unknown];
   LOG_BASIC_LEVELS = [
     TLogLevel.Info,
-    TLogLevel.Warning,
+    TLogLevel.Warn,
     TLogLevel.Error,
     TLogLevel.Fatal
   ];
@@ -105,6 +105,7 @@ const
 type
   TLogEntryType = (
     Text,
+    Value,
     Entering,
     Leaving
   );
@@ -206,76 +207,86 @@ type
     ['{8655E906-C12D-4EB3-8291-30CEAB769B26}']
     procedure Log(const entry: TLogEntry); overload;
 
-    procedure Log(level: TLogLevel; const msg : string); overload;
-    procedure Log(level: TLogLevel; const msg : string;
-      const e: Exception); overload;
-    procedure Log(level: TLogLevel; const fmt : string;
-      const args : array of const); overload;
-    procedure Log(level: TLogLevel; const fmt : string;
-      const args : array of const; const e: Exception); overload;
+    procedure LogValue(const name: string; const value: TValue); overload;
+    procedure LogValue(level: TLogLevel; const name: string;
+      const value: TValue); overload;
 
-    procedure Fatal(const msg : string); overload;
-    procedure Fatal(const msg : string; const e: Exception); overload;
-    procedure Fatal(const fmt : string; const args : array of const); overload;
-    procedure Fatal(const fmt : string; const args : array of const;
-      const e: Exception); overload;
+    procedure Log(const msg: string); overload;
+    procedure Log(const msg: string; const e: Exception); overload;
+    procedure Log(const fmt: string; const args: array of const); overload;
+    procedure Log(const fmt: string;
+      const args: array of const; const e: Exception); overload;
 
-    procedure Error(const msg : string); overload;
-    procedure Error(const msg : string; const e: Exception); overload;
-    procedure Error(const fmt : string; const args : array of const); overload;
-    procedure Error(const fmt : string; const args : array of const;
+    procedure Log(level: TLogLevel; const msg: string); overload;
+    procedure Log(level: TLogLevel; const msg: string;
       const e: Exception); overload;
+    procedure Log(level: TLogLevel; const fmt: string;
+      const args: array of const); overload;
+    procedure Log(level: TLogLevel; const fmt: string;
+      const args: array of const; const e: Exception); overload;
 
-    procedure Warn(const msg : string); overload;
-    procedure Warn(const msg : string; const e: Exception); overload;
-    procedure Warn(const fmt : string; const args : array of const); overload;
-    procedure Warn(const fmt : string; const args : array of const;
+    procedure Fatal(const msg: string); overload;
+    procedure Fatal(const msg: string; const e: Exception); overload;
+    procedure Fatal(const fmt: string; const args: array of const); overload;
+    procedure Fatal(const fmt: string; const args: array of const;
       const e: Exception); overload;
 
-    procedure Info(const msg : string); overload;
-    procedure Info(const msg : string; const e: Exception); overload;
-    procedure Info(const fmt : string; const args : array of const); overload;
-    procedure Info(const fmt : string; const args : array of const;
+    procedure Error(const msg: string); overload;
+    procedure Error(const msg: string; const e: Exception); overload;
+    procedure Error(const fmt: string; const args: array of const); overload;
+    procedure Error(const fmt: string; const args: array of const;
       const e: Exception); overload;
 
-    procedure Text(const msg : string); overload;
-    procedure Text(const msg : string; const e: Exception); overload;
-    procedure Text(const fmt : string; const args : array of const); overload;
-    procedure Text(const fmt : string; const args : array of const;
+    procedure Warn(const msg: string); overload;
+    procedure Warn(const msg: string; const e: Exception); overload;
+    procedure Warn(const fmt: string; const args: array of const); overload;
+    procedure Warn(const fmt: string; const args: array of const;
       const e: Exception); overload;
 
-    procedure Debug(const msg : string); overload;
-    procedure Debug(const msg : string; const e: Exception); overload;
-    procedure Debug(const fmt : string; const args : array of const); overload;
-    procedure Debug(const fmt : string; const args : array of const;
+    procedure Info(const msg: string); overload;
+    procedure Info(const msg: string; const e: Exception); overload;
+    procedure Info(const fmt: string; const args: array of const); overload;
+    procedure Info(const fmt: string; const args: array of const;
       const e: Exception); overload;
 
-    procedure Verbose(const msg : string); overload;
-    procedure Verbose(const msg : string; const e: Exception); overload;
-    procedure Verbose(const fmt : string; const args : array of const); overload;
-    procedure Verbose(const fmt : string; const args : array of const;
+    procedure Text(const msg: string); overload;
+    procedure Text(const msg: string; const e: Exception); overload;
+    procedure Text(const fmt: string; const args: array of const); overload;
+    procedure Text(const fmt: string; const args: array of const;
       const e: Exception); overload;
 
-    procedure Entering(level: TLogLevel; const classType: TClass;
+    procedure Debug(const msg: string); overload;
+    procedure Debug(const msg: string; const e: Exception); overload;
+    procedure Debug(const fmt: string; const args: array of const); overload;
+    procedure Debug(const fmt: string; const args: array of const;
+      const e: Exception); overload;
+
+    procedure Trace(const msg: string); overload;
+    procedure Trace(const msg: string; const e: Exception); overload;
+    procedure Trace(const fmt: string; const args: array of const); overload;
+    procedure Trace(const fmt: string; const args: array of const;
+      const e: Exception); overload;
+
+    procedure Entering(const classType: TClass;
+      const methodName: string); overload;
+    procedure Entering(const instance: TObject;
       const methodName: string); overload;
     procedure Entering(level: TLogLevel; const classType: TClass;
-      const methodName: string; const arguments: array of TValue); overload;
+      const methodName: string); overload;
 
+    procedure Leaving(const classType: TClass;
+      const methodName: string); overload;
+    procedure Leaving(const instance: TObject;
+      const methodName: string); overload;
     procedure Leaving(level: TLogLevel; const classType: TClass;
       const methodName: string); overload;
 
-    /// <summary>
-    ///   Will log entering and return an interface, when this interface gets
-    ///   out of scope, it will log leaving.
-    /// </summary>
+    function Track(const classType: TClass;
+      const methodName: string): IInterface; overload;
+    function Track(const instance: TObject;
+      const methodName: string): IInterface; overload;
     function Track(level: TLogLevel; const classType: TClass;
       const methodName: string): IInterface; overload;
-    /// <summary>
-    ///   Will log entering and return an interface, when this interface gets
-    ///   out of scope, it will log leaving.
-    /// </summary>
-    function Track(level: TLogLevel; const classType: TClass;
-      const methodName: string; const arguments: array of TValue): IInterface; overload;
 
     function IsEnabled(level: TLogLevel): Boolean;
     function IsFatalEnabled: Boolean;
@@ -284,7 +295,7 @@ type
     function IsInfoEnabled: Boolean;
     function IsTextEnabled: Boolean;
     function IsDebugEnabled: Boolean;
-    function IsVerboseEnabled: Boolean;
+    function IsTraceEnabled: Boolean;
   end;
   {$ENDREGION}
 
@@ -313,14 +324,17 @@ type
   /// </summary>
   ILoggerProperties = interface
     ['{6514ADA8-A0A0-4234-A5EE-FBAFE34B58F2}']
-    function GetLevels: TLogLevels;
+    function GetDefaultLevel: TLogLevel;
     function GetEnabled: Boolean;
+    function GetLevels: TLogLevels;
 
-    procedure SetLevels(value: TLogLevels);
+    procedure SetDefaultLevel(value: TLogLevel);
     procedure SetEnabled(value: Boolean);
+    procedure SetLevels(value: TLogLevels);
 
-    property Levels: TLogLevels read GetLevels write SetLevels;
+    property DefaultLevel: TLogLevel read GetDefaultLevel write SetDefaultLevel;
     property Enabled: Boolean read GetEnabled write SetEnabled;
+    property Levels: TLogLevels read GetLevels write SetLevels;
   end;
   {$ENDREGION}
 

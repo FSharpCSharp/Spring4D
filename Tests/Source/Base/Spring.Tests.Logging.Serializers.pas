@@ -176,7 +176,7 @@ end;
 
 procedure TTestSimpleTypeSerializer.TestEnumeration;
 begin
-  CheckValue('Warning', TValue.From(TLogLevel.Warning), tkEnumeration);
+  CheckValue('Warning', TValue.From(TLogLevel.Warn), tkEnumeration);
   CheckValue('True', TValue.From(True), tkEnumeration);
 end;
 

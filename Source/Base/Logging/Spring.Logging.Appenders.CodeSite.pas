@@ -1,63 +1,59 @@
+{***************************************************************************}
+{                                                                           }
+{           Spring Framework for Delphi                                     }
+{                                                                           }
+{           Copyright (c) 2009-2014 Spring4D Team                           }
+{                                                                           }
+{           http://www.spring4d.org                                         }
+{                                                                           }
+{***************************************************************************}
+{                                                                           }
+{  Licensed under the Apache License, Version 2.0 (the "License");          }
+{  you may not use this file except in compliance with the License.         }
+{  You may obtain a copy of the License at                                  }
+{                                                                           }
+{      http://www.apache.org/licenses/LICENSE-2.0                           }
+{                                                                           }
+{  Unless required by applicable law or agreed to in writing, software      }
+{  distributed under the License is distributed on an "AS IS" BASIS,        }
+{  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. }
+{  See the License for the specific language governing permissions and      }
+{  limitations under the License.                                           }
+{                                                                           }
+{***************************************************************************}
+
 unit Spring.Logging.Appenders.CodeSite;
+
+{$I Spring.inc}
 
 interface
 
 uses
-  Spring.Logging;
+  Spring.Logging,
+  Spring.Logging.Appenders.Base;
 
 type
-  TCodeSiteAppender = class(TInterfacedObject, ILogAppender, ILoggerProperties)
-  private
-    fEnabled: Boolean;
-    fLevels: TLogLevels;
-  public
-    constructor Create;
-
-    function GetLevels: TLogLevels;
-    function GetEnabled: Boolean;
-
-    procedure SetLevels(value: TLogLevels);
-    procedure SetEnabled(value: Boolean);
-
-    procedure Send(const entry: TLogEntry);
-
-    property Enabled: Boolean read GetEnabled write fEnabled;
-    property Levels: TLogLevels read fLevels write fLevels;
+  TCodeSiteAppender = class(TLogAppenderBase)
+  protected
+    procedure DoSend(const entry: TLogEntry); override;
   end;
 
 implementation
 
 uses
   SysUtils,
-  Spring.Logging.Appenders.Base,
+  TypInfo,
   CodeSiteLogging;
 
-{ TCodeSiteAppender }
 
-constructor TCodeSiteAppender.Create;
+{$REGION 'TCodeSiteAppender'}
+
+procedure TCodeSiteAppender.DoSend(const entry: TLogEntry);
 begin
-  inherited;
-  fEnabled := true;
-  fLevels := LOG_BASIC_LEVELS;
-end;
-
-function TCodeSiteAppender.GetEnabled: Boolean;
-begin
-  Result := fEnabled and CodeSite.Enabled;
-end;
-
-function TCodeSiteAppender.GetLevels: TLogLevels;
-begin
-  Result := fLevels;
-end;
-
-procedure TCodeSiteAppender.Send(const entry: TLogEntry);
-begin
-  if not (entry.Level in Levels) or not Enabled then Exit;
-
   if entry.Color = clDefault then
     CodeSite.CategoryColor := $FFFFFF
-  else CodeSite.CategoryColor := entry.Color;
+  else
+    CodeSite.CategoryColor := entry.Color;
 
   case entry.EntryType of
     TLogEntryType.Text:
@@ -67,7 +63,7 @@ begin
         case entry.Level of
           TLogLevel.Unknown: ;
 
-          TLogLevel.Verbose:
+          TLogLevel.Trace:
             CodeSite.SendNote(entry.Msg);
 
           TLogLevel.Debug,
@@ -79,7 +75,7 @@ begin
           TLogLevel.Info:
             CodeSite.SendReminder(entry.Msg);
 
-          TLogLevel.Warning:
+          TLogLevel.Warn:
             CodeSite.SendWarning(entry.Msg);
 
           TLogLevel.Error,
@@ -87,24 +83,24 @@ begin
             CodeSite.SendError(entry.Msg);
         end;
 
+    TLogEntryType.Value:
+      case entry.Data.Kind of
+        tkClass: CodeSite.Send(entry.Msg, entry.Data.AsObject);
+      else
+        CodeSite.Send(entry.Msg, entry.Data.ToString);
+      end;
+
     TLogEntryType.Entering:
-      CodeSite.EnterMethod(TLogAppenderBase.FormatMethodName(entry.ClassType,
-        entry.Msg));
+      CodeSite.EnterMethod(
+        TLogAppenderBase.FormatMethodName(entry.ClassType, entry.Msg));
 
     TLogEntryType.Leaving:
-      CodeSite.ExitMethod(TLogAppenderBase.FormatMethodName(entry.ClassType,
-        entry.Msg));
+      CodeSite.ExitMethod(
+        TLogAppenderBase.FormatMethodName(entry.ClassType, entry.Msg));
   end;
 end;
 
-procedure TCodeSiteAppender.SetEnabled(value: Boolean);
-begin
-  fEnabled := value;
-end;
+{$ENDREGION}
 
-procedure TCodeSiteAppender.SetLevels(value: TLogLevels);
-begin
-  fLevels := value;
-end;
 
 end.

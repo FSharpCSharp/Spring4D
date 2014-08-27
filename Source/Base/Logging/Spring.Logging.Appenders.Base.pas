@@ -40,14 +40,17 @@ type
   {$REGION 'TLogAppenderBase'}
   TLogAppenderBase = class(TInterfacedObject, ILogAppender, ILoggerProperties)
   private
+    fDefaultLevel: TLogLevel;
     fEnabled: Boolean;
     fLevels: TLogLevels;
 
-    function GetLevels: TLogLevels;
+    function GetDefaultLevel: TLogLevel;
     function GetEnabled: Boolean;
+    function GetLevels: TLogLevels;
 
-    procedure SetLevels(value: TLogLevels);
+    procedure SetDefaultLevel(value: TLogLevel);
     procedure SetEnabled(value: Boolean);
+    procedure SetLevels(value: TLogLevels);
   {$REGION 'Helper constants and functions'}
   protected const
     //May or may not be used by descendants, its here just for convenience
@@ -94,8 +97,9 @@ type
 
     procedure Send(const entry: TLogEntry);
 
-    property Enabled: Boolean read fEnabled write fEnabled;
-    property Levels: TLogLevels read fLevels write fLevels;
+    property DefaultLevel: TLogLevel read GetDefaultLevel write SetDefaultLevel;
+    property Enabled: Boolean read GetEnabled write SetEnabled;
+    property Levels: TLogLevels read GetLevels write SetLevels;
   end;
   {$ENDREGION}
 
@@ -170,6 +174,11 @@ begin
   end;
 end;
 
+function TLogAppenderBase.GetDefaultLevel: TLogLevel;
+begin
+  Result := fDefaultLevel;
+end;
+
 function TLogAppenderBase.GetEnabled: Boolean;
 begin
   Result := fEnabled;
@@ -189,6 +198,11 @@ procedure TLogAppenderBase.Send(const entry: TLogEntry);
 begin
   if IsEnabled(entry.Level) then
     DoSend(entry);
+end;
+
+procedure TLogAppenderBase.SetDefaultLevel(value: TLogLevel);
+begin
+  fDefaultLevel := value;
 end;
 
 procedure TLogAppenderBase.SetEnabled(value: Boolean);
