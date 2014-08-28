@@ -1848,7 +1848,7 @@ end;
 
 procedure TTestObjectList.TestObjectListCreate;
 begin
-  SUT := TObjectList<TPersistent>.Create(nil);
+  SUT := TObjectList<TPersistent>.Create(nil) as IList<TPersistent>;
   CheckNotNull(SUT.Comparer);
 end;
 
@@ -1892,7 +1892,7 @@ end;
 
 procedure TTestInterfaceList.TestInterfaceListCreate;
 begin
-  SUT := TInterfaceList<IInvokable>.Create(nil);
+  SUT := TInterfaceList<IInvokable>.Create(nil) as IList<IInvokable>;
   CheckNotNull(SUT.Comparer);
 end;
 
