@@ -15,18 +15,12 @@ uses
   SysUtils,
   Variants,
   Windows,
-
-{$IF CompilerVersion > 23}
-  System.Actions,
-{$IFEND}
-
   Spring.Collections,
   SQLiteTable3,
-
   Core.Interfaces,
   Core.Session,
-
-  ProductModel;
+  ProductModel,
+  System.Actions;
 
 
 type
@@ -92,7 +86,6 @@ uses
   Core.DatabaseManager,
   Core.ConnectionFactory,
   Adapters.SQLite,
-
   ViewEditProduct;
 
 {$R *.dfm}

@@ -144,7 +144,7 @@ uses
   ,Core.Reflection
   ,Core.EntityCache
   ,Core.Utils
-  ,Core.Collections
+  ,Core.CollectionAdapterResolver
   ,SysUtils
   ,Math
   ,Classes
@@ -1235,7 +1235,7 @@ begin
   
   if TUtils.IsEnumerable(LDeepValue.TypeInfo, LEnumMethod) then
   begin
-    LCollectionAdapter := TCollectionAdapter<TObject>.Wrap(LDeepValue);
+    LCollectionAdapter := TCollectionAdapterResolver.Resolve<TObject>(LDeepValue);
 
     for LCurrent in LCollectionAdapter do
     begin

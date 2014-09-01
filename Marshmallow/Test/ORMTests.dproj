@@ -181,7 +181,7 @@
         <DCCReference Include="..\External\delphi-oop\Core\SvTesting.DUnit.pas"/>
         <DCCReference Include="..\Core.Criteria.Criterion.PropertyExpression.pas"/>
         <DCCReference Include="..\Core.Criteria.Criterion.BetweenExpression.pas"/>
-        <DCCReference Include="..\Core.Collections.pas"/>
+        <DCCReference Include="..\Core.RttiCollectionAdapter.pas"/>
         <DCCReference Include="TestCoreCollections.pas"/>
         <DCCReference Include="..\Core.Collections.Enumerator.pas"/>
         <DCCReference Include="TestObjectDataset.pas"/>
@@ -223,6 +223,9 @@
         <DCCReference Include="..\Adapters.FieldCache.pas"/>
         <DCCReference Include="..\Adapters.FireDAC.pas"/>
         <DCCReference Include="TestFireDACAdapter.pas"/>
+        <DCCReference Include="TestCollectionsAdapterResolver.pas"/>
+        <DCCReference Include="..\Core.CollectionAdapterResolver.pas"/>
+        <DCCReference Include="..\Core.SpringCollectionAdapter.pas"/>
         <None Include="Profiling\AQtimeModule1.aqt"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>

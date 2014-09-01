@@ -3,7 +3,7 @@ unit TestCoreCollections;
 interface
 
 uses
-  TestFramework, Rtti, Core.Collections, uModels;
+  TestFramework, Rtti, Core.RttiCollectionAdapter, Core.SpringCollectionAdapter, uModels;
 
 type
   // Test methods for class ICollectionAdapter
@@ -32,7 +32,7 @@ type
 
   TestTCollectionAdapter = class(TBaseCollectionTestCase)
   private
-    FCollectionAdapter: TCollectionAdapter<TCustomer>;
+    FCollectionAdapter: TRttiCollectionAdapter<TCustomer>;
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -47,7 +47,7 @@ type
 
   TestTSpringCollectionAdapter = class(TBaseSpringCollectionTestCase)
   private
-    FCollectionAdapter: TCollectionAdapter<TCustomer>;
+    FCollectionAdapter: TSpringCollectionAdapter<TCustomer>;
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -103,7 +103,7 @@ end;
 procedure TestTCollectionAdapter.SetUp;
 begin
   inherited;
-  FCollectionAdapter := TCollectionAdapter<TCustomer>.Create(Collection);
+  FCollectionAdapter := TRttiCollectionAdapter<TCustomer>.Create(Collection);
 end;
 
 procedure TestTCollectionAdapter.TearDown;
@@ -195,7 +195,7 @@ end;
 procedure TestTSpringCollectionAdapter.SetUp;
 begin
   inherited;
-  FCollectionAdapter := TCollectionAdapter<TCustomer>.Create(Collection);
+  FCollectionAdapter := TSpringCollectionAdapter<TCustomer>.Create(Collection);
 end;
 
 procedure TestTSpringCollectionAdapter.TearDown;

@@ -1,4 +1,4 @@
-unit Core.Collections;
+unit Core.RttiCollectionAdapter;
 
 interface
 
@@ -14,7 +14,7 @@ type
   ///	  a need to load results into different collection types.
   ///	</summary>
   {$ENDREGION}
-  TCollectionAdapter<T: class, constructor> = class(TInterfacedObject, ICollectionAdapter<T>)
+  TRttiCollectionAdapter<T: class, constructor> = class(TInterfacedObject, ICollectionAdapter<T>)
   private
     FCollection: TValue;
     FAddMethod: TRttiMethod;
@@ -22,10 +22,9 @@ type
     FCountProp: TRttiProperty;
     FCountMethod: TRttiMethod;
   protected
-    constructor Create(const ACollection: TValue); virtual;
     procedure GetMethodsFromRtti(); virtual;
   public
-    class function Wrap(const ACollection: TValue): ICollectionAdapter<T>;
+    constructor Create(const ACollection: TValue); virtual;
 
     procedure Add(AEntity: T);
     procedure Clear();
@@ -46,17 +45,17 @@ uses
 
 { TCollectionAdapter<T> }
 
-procedure TCollectionAdapter<T>.Add(AEntity: T);
+procedure TRttiCollectionAdapter<T>.Add(AEntity: T);
 begin
   FAddMethod.Invoke(FCollection, [AEntity]);
 end;
 
-procedure TCollectionAdapter<T>.Clear;
+procedure TRttiCollectionAdapter<T>.Clear;
 begin
   FClearMethod.Invoke(FCollection, []);
 end;
 
-function TCollectionAdapter<T>.Count: Integer;
+function TRttiCollectionAdapter<T>.Count: Integer;
 begin
   if Assigned(FCountMethod) then
     Result := FCountMethod.Invoke(FCollection, []).AsInteger
@@ -66,7 +65,7 @@ begin
     raise EORMContainerDoesNotHaveCountMethod.CreateFmt('Count method not found for container type "%S"', [FCollection.ToString]);
 end;
 
-constructor TCollectionAdapter<T>.Create(const ACollection: TValue);
+constructor TRttiCollectionAdapter<T>.Create(const ACollection: TValue);
 begin
   inherited Create();
   FCollection := ACollection;
@@ -77,12 +76,12 @@ begin
   GetMethodsFromRtti();
 end;
 
-function TCollectionAdapter<T>.GetEnumerator: ICollectionEnumerator<T>;
+function TRttiCollectionAdapter<T>.GetEnumerator: ICollectionEnumerator<T>;
 begin
   Result := TCollectionEnumerator<T>.Create(FCollection);
 end;
 
-procedure TCollectionAdapter<T>.GetMethodsFromRtti;
+procedure TRttiCollectionAdapter<T>.GetMethodsFromRtti;
 begin
   TRttiExplorer.TryGetMethod(FCollection.TypeInfo, 'Add', FAddMethod, 1);
   TRttiExplorer.TryGetMethod(FCollection.TypeInfo, 'Clear', FClearMethod, 0);
@@ -90,14 +89,9 @@ begin
   FCountProp := TRttiContext.Create.GetType(FCollection.TypeInfo).GetProperty('Count');
 end;
 
-function TCollectionAdapter<T>.IsAddSupported: Boolean;
+function TRttiCollectionAdapter<T>.IsAddSupported: Boolean;
 begin
   Result := Assigned(FAddMethod) and Assigned(FClearMethod);
-end;
-
-class function TCollectionAdapter<T>.Wrap(const ACollection: TValue): ICollectionAdapter<T>;
-begin
-  Result := TCollectionAdapter<T>.Create(ACollection);
 end;
 
 end.

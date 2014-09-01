@@ -32,13 +32,14 @@
         <Base>true</Base>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
+        <Manifest_File>None</Manifest_File>
         <SanitizedProjectName>GettingStarted</SanitizedProjectName>
         <DCC_Define>USE_SPRING;$(DCC_Define)</DCC_Define>
         <VerInfo_Locale>1063</VerInfo_Locale>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <DCC_Namespace>Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Datasnap;Web;Soap;Winapi;$(DCC_Namespace)</DCC_Namespace>
         <VerInfo_Keys>CompanyName=&quot;Vikarina&quot;;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
-        <DCC_UnitSearchPath>..\..\;..\..\External\SQLite3\Source;..\..\External\Spring\Source\Base;..\..\External\Spring\Source\Base\Collections;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>..\..\;..\..\External\SQLite3\Source;..\..\..\Source\Base;..\..\..\Source\Base\Collections;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <DCC_MapFile>3</DCC_MapFile>
         <DCC_UsePackage>rtl;vcl;dbrtl;dbvt;adortl;VirtualTreesR;pck_FindFile_XE;vcldb;pckVikDBSaverDsgnXE;JvCore;vclimg;vclx;pckVikGridEditorXE;JvRuntimeDesign;JvDlgs;JvStdCtrls;Jcl;JvXPCtrls;PngComponents;EhLib11;maControls;CodeSiteExpressVcl;vclactnband;vcldbx;bdertl;xmlrtl;dsnap;dsnapcon;dbxcds;dbexpress;DbxCommonDriver;DBXInterBaseDriver;DBXMySQLDriver;vclib;ibxpress;vclie;inet;IndyProtocols;inetdbbde;inetdbxpress;webdsnap;vclribbon;VclSmp;soaprtl;svnui;svn;vcltouch;inetdb;websnap;frxADO15;frxBDE15;frxcs15;frx15;frxDB15;frxDBX15;frxe15;frxIBX15;frxTee15;fsADO15;fs15;fsBDE15;fsDB15;fsIBX15;fsTee15;IndyCore;IndySystem;JclVcl;JvSystem;JvAppFrm;JvBands;JvDB;JvBDE;JvControls;JvCustom;JvDocking;JvDotNetCtrls;JvCrypt;JvGlobus;JvHMI;JvPascalInterpreter;JvJans;JvManagedThreads;JvCmp;JvMM;JvNet;JvPageComps;JclDeveloperTools;JvPluginSystem;JvPrintPreview;JvTimeFramework;JvWizards;mxProtector_d15;EasyListviewD15;psc_d15_runtime;Rave90VCL;SMCmpntXE;TeeUI;TeeDB;Tee;O407br;O407_r;intrawebdb_110_150;Intraweb_110_150;pckVikStruView;pckVikBar;$(DCC_UsePackage)</DCC_UsePackage>
         <DCC_ImageBase>00400000</DCC_ImageBase>
@@ -67,8 +68,7 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="..\..\Adapters.SQLite.pas">
-        </DCCReference>
+        <DCCReference Include="..\..\Adapters.SQLite.pas"/>
         <DCCReference Include="Source\ProductModel.pas"/>
         <DCCReference Include="Views\ViewEditProduct.pas">
             <Form>ProductEditForm</Form>

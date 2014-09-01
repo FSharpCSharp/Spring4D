@@ -95,7 +95,7 @@ uses
   SvTesting.DUnit in '..\External\delphi-oop\Core\SvTesting.DUnit.pas',
   Core.Criteria.Criterion.PropertyExpression in '..\Core.Criteria.Criterion.PropertyExpression.pas',
   Core.Criteria.Criterion.BetweenExpression in '..\Core.Criteria.Criterion.BetweenExpression.pas',
-  Core.Collections in '..\Core.Collections.pas',
+  Core.RttiCollectionAdapter in '..\Core.RttiCollectionAdapter.pas',
   TestCoreCollections in 'TestCoreCollections.pas',
   Core.Collections.Enumerator in '..\Core.Collections.Enumerator.pas',
   TestObjectDataset in 'TestObjectDataset.pas',
@@ -134,7 +134,10 @@ uses
   Core.Repository.Proxy in '..\Core.Repository.Proxy.pas',
   Adapters.FieldCache in '..\Adapters.FieldCache.pas',
   Adapters.FireDAC in '..\Adapters.FireDAC.pas',
-  TestFireDACAdapter in 'TestFireDACAdapter.pas';
+  TestFireDACAdapter in 'TestFireDACAdapter.pas',
+  TestCollectionsAdapterResolver in 'TestCollectionsAdapterResolver.pas',
+  Core.CollectionAdapterResolver in '..\Core.CollectionAdapterResolver.pas',
+  Core.SpringCollectionAdapter in '..\Core.SpringCollectionAdapter.pas';
 
 {$R *.RES}
 

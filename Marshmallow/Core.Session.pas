@@ -423,7 +423,7 @@ uses
   ,Core.Relation.ManyToOne
   ,Core.Consts
   ,Core.Criteria
-  ,Core.Collections
+  ,Core.CollectionAdapterResolver
   ,Core.ListSession
   ;
 
@@ -496,7 +496,7 @@ var
   LCurrent: T;
   LCollectionAdapter: ICollectionAdapter<T>;
 begin
-  LCollectionAdapter := TCollectionAdapter<T>.Wrap(ACollection);
+  LCollectionAdapter := TCollectionAdapterResolver.Resolve<T>(ACollection);
   if not LCollectionAdapter.IsAddSupported then
     raise EORMContainerDoesNotHaveAddMethod.Create('Container does not have "Add" method.');
 
