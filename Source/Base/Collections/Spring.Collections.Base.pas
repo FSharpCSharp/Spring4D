@@ -219,8 +219,8 @@ type
     procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
   public
     constructor Create; override;
-    constructor Create(const collection: array of T); overload;
-    constructor Create(const collection: IEnumerable<T>); overload;
+    constructor Create(const collection: array of T); overload; virtual;
+    constructor Create(const collection: IEnumerable<T>); overload; virtual;
 
     procedure Add(const item: T);
     procedure AddRange(const collection: array of T); overload; virtual;

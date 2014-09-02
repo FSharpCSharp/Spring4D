@@ -98,6 +98,8 @@ type
     function EnsureCapacity(value: Integer): Integer;
   public
     constructor Create; override;
+    constructor Create(const collection: array of T); override;
+    constructor Create(const collection: IEnumerable<T>); override;
     destructor Destroy; override;
 
     function GetEnumerator: IEnumerator<T>; override;
@@ -266,6 +268,38 @@ begin
   else
 {$ENDIF}
     fArrayManager := TMoveArrayManager<T>.Create;
+end;
+
+constructor TList<T>.Create(const collection: array of T);
+var
+  i: Integer;
+begin
+  Create;
+  fCount := Length(collection);
+  if fCount > 0 then
+  begin
+    SetLength(fItems, fCount);
+    for i := Low(collection) to High(collection) do
+      fItems[i] := collection[i];
+  end;
+end;
+
+constructor TList<T>.Create(const collection: IEnumerable<T>);
+var
+  c: ICollection<T>;
+begin
+  if Supports(collection, ICollection<T>, c) then
+  begin
+    Create;
+    fCount := c.Count;
+    if fCount > 0 then
+    begin
+      SetLength(fItems, fCount);
+      c.CopyTo(fItems, 0);
+    end;
+  end
+  else
+    inherited;
 end;
 
 destructor TList<T>.Destroy;
@@ -568,12 +602,18 @@ begin
 end;
 
 procedure TList<T>.CopyTo(var values: TArray<T>; index: Integer);
+var
+  i: Integer;
 begin
 {$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange(Length(values), index, fCount);
 {$ENDIF}
 
-  fArrayManager.Move(fItems, TArrayOfT(values), 0, index, fCount);
+  for i := 0 to fCount - 1 do
+  begin
+    values[index] := fItems[i];
+    Inc(index);
+  end;
 end;
 
 function TList<T>.ToArray: TArray<T>;

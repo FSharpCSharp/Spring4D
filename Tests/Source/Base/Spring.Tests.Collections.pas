@@ -322,6 +322,7 @@ type
   published
     procedure TestInterfaceListCreate;
     procedure TestGetElementType;
+    procedure TestCopyTo;
   end;
 
   TMyCollectionItem = class(TCollectionItem);
@@ -1883,6 +1884,23 @@ end;
 procedure TTestInterfaceList.SetUp;
 begin
   SUT := TInterfaceList<IInvokable>.Create as IList<IInvokable>;
+end;
+
+type
+  TInvokable = class(TInterfacedObject, IInvokable);
+
+procedure TTestInterfaceList.TestCopyTo;
+var
+  values: TArray<IInvokable>;
+  i: Integer;
+begin
+  for i := 0 to MaxItems - 1 do
+    SUT.Add(IInvokable(TInvokable.Create));
+  SetLength(values, MaxItems);
+  SUT.CopyTo(values, 0);
+  CheckEquals(MaxItems, Length(values));
+  CheckSame(SUT.First, values[0]);
+  CheckSame(SUT.Last, values[MaxItems-1]);
 end;
 
 procedure TTestInterfaceList.TestGetElementType;
