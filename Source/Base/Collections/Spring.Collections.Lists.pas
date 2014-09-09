@@ -129,11 +129,12 @@ type
 {$IFDEF SUPPORTS_GENERIC_FOLDING}
   TObjectList<T: class> = class(TList<TObject>, ICollectionOwnership, IObjectList)
 {$ELSE}
-  TObjectList<T: class> = class(TList<T>, ICollectionOwnership)
+  TObjectList<T: class> = class(TList<T>, ICollectionOwnership, IObjectList)
 {$ENDIF}
   private
     fOwnsObjects: Boolean;
   {$REGION 'Property Accessors'}
+    function GetObjectList: IObjectList;
     function GetOwnsObjects: Boolean;
     procedure SetOwnsObjects(const value: Boolean);
   {$ENDREGION}
@@ -144,6 +145,7 @@ type
 {$ELSE}
     procedure Changed(const item: T; action: TCollectionChangedAction); override;
 {$ENDIF}
+    property ObjectList: IObjectList read GetObjectList implements IObjectList;
   public
     constructor Create; override;
     constructor Create(ownsObjects: Boolean); overload;
@@ -705,6 +707,11 @@ begin
   Result := TypeInfo(T);
 end;
 {$ENDIF}
+
+function TObjectList<T>.GetObjectList: IObjectList;
+begin
+  IList<T>(Result) := Self;
+end;
 
 function TObjectList<T>.GetOwnsObjects: Boolean;
 begin
