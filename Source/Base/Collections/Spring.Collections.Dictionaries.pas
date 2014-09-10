@@ -149,6 +149,20 @@ type
   {$ENDREGION}
   end;
 
+  TContainedDictionary<TKey, TValue> = class(TDictionary<TKey, TValue>)
+  private
+    fController: Pointer;
+    function GetController: IInterface;
+  protected
+  {$REGION 'Implements IInterface'}
+    function _AddRef: Integer; override;
+    function _Release: Integer; override;
+  {$ENDREGION}
+  public
+    constructor Create(const controller: IInterface);
+    property Controller: IInterface read GetController;
+  end;
+
 implementation
 
 uses
@@ -493,6 +507,33 @@ end;
 function TDictionary<TKey, TValue>.TValueCollection.GetCount: Integer;
 begin
   Result := fDictionary.Count;
+end;
+
+{$ENDREGION}
+
+
+{$REGION 'TContainedDictionary<TKey, TValue>'}
+
+constructor TContainedDictionary<TKey, TValue>.Create(
+  const controller: IInterface);
+begin
+  inherited Create;
+  fController := Pointer(controller);
+end;
+
+function TContainedDictionary<TKey, TValue>.GetController: IInterface;
+begin
+  Result := IInterface(fController);
+end;
+
+function TContainedDictionary<TKey, TValue>._AddRef: Integer;
+begin
+  Result := IInterface(FController)._AddRef;
+end;
+
+function TContainedDictionary<TKey, TValue>._Release: Integer;
+begin
+  Result := IInterface(FController)._Release;
 end;
 
 {$ENDREGION}

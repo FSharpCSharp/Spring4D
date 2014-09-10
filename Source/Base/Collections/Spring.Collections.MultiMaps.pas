@@ -32,7 +32,8 @@ uses
   Generics.Collections,
   Generics.Defaults,
   Spring.Collections,
-  Spring.Collections.Base;
+  Spring.Collections.Base,
+  Spring.Collections.Dictionaries;
 
 type
   TMultiMapBase<TKey, TValue> = class abstract(TMapBase<TKey, TValue>, IMultiMap<TKey, TValue>)
@@ -81,7 +82,7 @@ type
       {$ENDREGION}
       end;
   private
-    fDictionary: IDictionary<TKey, ICollection<TValue>>;
+    fDictionary: TDictionary<TKey, ICollection<TValue>>;
     fCount: Integer;
     fEmpty: ICollection<TValue>;
     fValues: TValueCollection;
@@ -94,7 +95,7 @@ type
   {$ENDREGION}
     procedure AddInternal(const item: TGenericPair); overload; override;
     function CreateCollection: ICollection<TValue>; virtual; abstract;
-    function CreateDictionary: IDictionary<TKey, ICollection<TValue>>; virtual; abstract;
+    function CreateDictionary: TDictionary<TKey, ICollection<TValue>>; virtual; abstract;
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -136,7 +137,7 @@ type
       Action: TCollectionChangedAction);
   protected
     function CreateCollection: ICollection<TValue>; override;
-    function CreateDictionary: IDictionary<TKey, ICollection<TValue>>; override;
+    function CreateDictionary: TDictionary<TKey, ICollection<TValue>>; override;
   end;
 
   TObjectMultiMap<TKey, TValue> = class(TMultiMap<TKey, TValue>)
@@ -157,7 +158,6 @@ uses
   SysUtils,
   TypInfo,
   Spring,
-  Spring.Collections.Dictionaries,
   Spring.Collections.Lists,
   Spring.ResourceStrings;
 
@@ -175,6 +175,7 @@ end;
 destructor TMultiMapBase<TKey, TValue>.Destroy;
 begin
   fValues.Free;
+  fDictionary.Free;
   inherited;
 end;
 
@@ -447,9 +448,9 @@ begin
   Result := list;
 end;
 
-function TMultiMap<TKey, TValue>.CreateDictionary: IDictionary<TKey, ICollection<TValue>>;
+function TMultiMap<TKey, TValue>.CreateDictionary: TDictionary<TKey, ICollection<TValue>>;
 begin
-  Result := TDictionary<TKey, ICollection<TValue>>.Create;
+  Result := TContainedDictionary<TKey, ICollection<TValue>>.Create(Self);
   Result.OnKeyChanged.Add(DoKeyChanged);
 end;
 
