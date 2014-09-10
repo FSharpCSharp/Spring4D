@@ -1414,13 +1414,15 @@ end;
 procedure TMapBase<TKey, T>.KeyChanged(const Item: TKey;
   Action: TCollectionChangedAction);
 begin
-  fOnKeyChanged.Invoke(Self, Item, Action)
+  if Assigned(fOnKeyChanged) then
+    fOnKeyChanged.Invoke(Self, Item, Action)
 end;
 
 procedure TMapBase<TKey, T>.ValueChanged(const Item: T;
   Action: TCollectionChangedAction);
 begin
-  fOnValueChanged.Invoke(Self, Item, Action)
+  if Assigned(fOnValueChanged) then
+    fOnValueChanged.Invoke(Self, Item, Action)
 end;
 
 {$ENDREGION}
