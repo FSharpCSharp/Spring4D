@@ -29,7 +29,6 @@ unit Spring.Container.LifetimeManager;
 interface
 
 uses
-  Classes,
   SysUtils,
   Spring,
   Spring.Collections,
@@ -37,7 +36,7 @@ uses
   Spring.Container.Pool;
 
 type
-  TLifetimeManagerBase = class abstract(TInterfacedObject, ILifetimeManager, IInterface)
+  TLifetimeManagerBase = class abstract(TInterfacedObject, ILifetimeManager)
   private
     {$IFDEF WEAKREF}[Weak]{$ENDIF}
     fModel: TComponentModel;
@@ -50,53 +49,59 @@ type
     property ComponentActivator: IComponentActivator read GetActivator;
     property Model: TComponentModel read fModel;
   public
-    constructor Create(const model: TComponentModel);
-    function GetInstance(const resolver: IDependencyResolver): TValue; overload; virtual; abstract;
-    procedure ReleaseInstance(const instance: TValue); virtual; abstract;
+    constructor Create(const model: TComponentModel); virtual;
+    function Resolve(const context: ICreationContext): TValue; overload; virtual; abstract;
+    procedure Release(const instance: TValue); virtual; abstract;
   end;
+
+  TLifetimeManagerClass = class of TLifetimeManagerBase;
 
   TSingletonLifetimeManager = class(TLifetimeManagerBase)
   private
     fInstance: TFunc<TValue>;
   public
     destructor Destroy; override;
-    function GetInstance(const resolver: IDependencyResolver): TValue; override;
-    procedure ReleaseInstance(const instance: TValue); override;
+    function Resolve(const context: ICreationContext): TValue; override;
+    procedure Release(const instance: TValue); override;
   end;
 
   TTransientLifetimeManager = class(TLifetimeManagerBase)
   public
-    function GetInstance(const resolver: IDependencyResolver): TValue; override;
-    procedure ReleaseInstance(const instance: TValue); override;
+    function Resolve(const context: ICreationContext): TValue; override;
+    procedure Release(const instance: TValue); override;
   end;
 
   TSingletonPerThreadLifetimeManager = class(TLifetimeManagerBase)
   private
     fInstances: IDictionary<TThreadID, TFunc<TValue>>;
   protected
-    procedure HandleValueChanged(sender: TObject; const item: TFunc<TValue>; action: TCollectionChangedAction);
+    procedure HandleValueChanged(sender: TObject; const item: TFunc<TValue>;
+      action: TCollectionChangedAction);
     function CreateHolder(const instance: TValue): TFunc<TValue>; virtual;
   public
-    constructor Create(const model: TComponentModel);
-    function GetInstance(const resolver: IDependencyResolver): TValue; override;
-    procedure ReleaseInstance(const instance: TValue); override;
+    constructor Create(const model: TComponentModel); override;
+    function Resolve(const context: ICreationContext): TValue; override;
+    procedure Release(const instance: TValue); override;
   end;
 
   TPooledLifetimeManager = class(TLifetimeManagerBase)
   private
     fPool: IObjectPool;
   public
-    constructor Create(const model: TComponentModel);
-    function GetInstance(const resolver: IDependencyResolver): TValue; override;
-    procedure ReleaseInstance(const instance: TValue); override;
+    constructor Create(const model: TComponentModel); override;
+    function Resolve(const context: ICreationContext): TValue; override;
+    procedure Release(const instance: TValue); override;
   end;
 
 implementation
 
 uses
+  Classes,
   Rtti,
   TypInfo,
-  Spring.Services;
+  Spring.Container.Common,
+  Spring.Container.ResourceStrings,
+  Spring.Helpers;
 
 
 {$REGION 'TLifetimeManagerBase'}
@@ -178,30 +183,31 @@ end;
 
 destructor TSingletonLifetimeManager.Destroy;
 begin
-  if Assigned(fInstance) then
-  begin
-    DoBeforeDestruction(fInstance);
-    fInstance:=nil;
-  end;
+  Release(nil);
   inherited Destroy;
 end;
 
-function TSingletonLifetimeManager.GetInstance(
-  const resolver: IDependencyResolver): TValue;
+function TSingletonLifetimeManager.Resolve(
+  const context: ICreationContext): TValue;
 var
   newInstance: TValue;
 begin
   if not Assigned(fInstance) then
   begin
-    newInstance := ComponentActivator.CreateInstance(resolver);
+    newInstance := ComponentActivator.CreateInstance(context);
     fInstance := TValueHolder.Create(newInstance, Model.RefCounting);
     DoAfterConstruction(fInstance);
   end;
   Result := fInstance;
 end;
 
-procedure TSingletonLifetimeManager.ReleaseInstance(const instance: TValue);
+procedure TSingletonLifetimeManager.Release(const instance: TValue);
 begin
+  if Assigned(fInstance) then
+  begin
+    DoBeforeDestruction(fInstance);
+    fInstance := nil;
+  end;
 end;
 
 {$ENDREGION}
@@ -209,14 +215,14 @@ end;
 
 {$REGION 'TTransientLifetimeManager'}
 
-function TTransientLifetimeManager.GetInstance(
-  const resolver: IDependencyResolver): TValue;
+function TTransientLifetimeManager.Resolve(
+  const context: ICreationContext): TValue;
 begin
-  Result := ComponentActivator.CreateInstance(resolver);
+  Result := ComponentActivator.CreateInstance(context);
   DoAfterConstruction(Result);
 end;
 
-procedure TTransientLifetimeManager.ReleaseInstance(const instance: TValue);
+procedure TTransientLifetimeManager.Release(const instance: TValue);
 begin
   Guard.CheckNotNull(instance, 'instance');
   DoBeforeDestruction(instance);
@@ -238,7 +244,8 @@ begin
   fInstances.OnValueChanged.Add(HandleValueChanged);
 end;
 
-function TSingletonPerThreadLifetimeManager.CreateHolder(const instance: TValue): TFunc<TValue>;
+function TSingletonPerThreadLifetimeManager.CreateHolder(
+  const instance: TValue): TFunc<TValue>;
 begin
   Result := TValueHolder.Create(instance, Model.RefCounting);
 end;
@@ -252,8 +259,8 @@ begin
   end;
 end;
 
-function TSingletonPerThreadLifetimeManager.GetInstance(
-  const resolver: IDependencyResolver): TValue;
+function TSingletonPerThreadLifetimeManager.Resolve(
+  const context: ICreationContext): TValue;
 var
   threadID: THandle;
   instance: TValue;
@@ -264,7 +271,7 @@ begin
   try
     if not fInstances.TryGetValue(threadID, holder) then
     begin
-      instance := ComponentActivator.CreateInstance(resolver);
+      instance := ComponentActivator.CreateInstance(context);
       holder := CreateHolder(instance);
       fInstances.AddOrSetValue(threadID, holder);
       DoAfterConstruction(holder);
@@ -275,7 +282,7 @@ begin
   Result := holder;
 end;
 
-procedure TSingletonPerThreadLifetimeManager.ReleaseInstance(const instance: TValue);
+procedure TSingletonPerThreadLifetimeManager.Release(const instance: TValue);
 begin
 end;
 
@@ -285,18 +292,31 @@ end;
 {$REGION 'TPooledLifetimeManager'}
 
 constructor TPooledLifetimeManager.Create(const model: TComponentModel);
+
+  procedure CheckPoolingSupported(const componentType: TRttiType);
+  begin
+    if not (componentType.IsInstance
+      and (componentType.AsInstance.MetaclassType.InheritsFrom(TInterfacedObject)
+      or Supports(componentType.AsInstance.MetaclassType, IRefCounted))) then
+      raise ERegistrationException.CreateResFmt(@SPoolingNotSupported, [
+        componentType.DefaultName]);
+  end;
+
 begin
+  CheckPoolingSupported(model.ComponentType);
   inherited Create(model);
-  fPool := TSimpleObjectPool.Create(model.ComponentActivator, model.MinPoolsize, model.MaxPoolsize);
+  fPool := TSimpleObjectPool.Create(
+    model.ComponentActivator, model.MinPoolsize, model.MaxPoolsize);
 end;
 
-function TPooledLifetimeManager.GetInstance(const resolver: IDependencyResolver): TValue;
+function TPooledLifetimeManager.Resolve(
+  const context: ICreationContext): TValue;
 begin
-  Result := fPool.GetInstance(resolver);
+  Result := fPool.GetInstance(context);
   DoAfterConstruction(Result);
 end;
 
-procedure TPooledLifetimeManager.ReleaseInstance(const instance: TValue);
+procedure TPooledLifetimeManager.Release(const instance: TValue);
 begin
   Guard.CheckNotNull(instance, 'instance');
   DoBeforeDestruction(instance);
@@ -304,5 +324,6 @@ begin
 end;
 
 {$ENDREGION}
+
 
 end.

@@ -37,7 +37,7 @@ uses
 type
   TAbstractTestHelper = class helper for TAbstractTest
   public
-    procedure CheckException(AExceptionType: ExceptionClass; ACode: TProc; const AMessage: string = '');
+    procedure CheckException(expected: ExceptionClass; method: TProc; const msg: string = '');
   end;
 
   TTestDecorator = class(TAbstractTest)
@@ -81,30 +81,38 @@ implementation
 procedure ProcessTestResult(const ATestResult: TTestResult);
 begin
 {$IFNDEF AUTOREFCOUNT}
-  ATestResult.Free();
+  ATestResult.Free;
 {$ENDIF}
 end;
+
+{$IFNDEF DELPHIXE2_UP}
+function ReturnAddress: Pointer; inline;
+begin
+  Result := CallerAddr;
+end;
+{$ENDIF}
 
 {$REGION 'TAbstractTestHelper'}
 
 procedure TAbstractTestHelper.CheckException(
-  AExceptionType: ExceptionClass; ACode: TProc; const AMessage: string);
-var
-  WasException: Boolean;
+  expected: ExceptionClass; method: TProc; const msg: string);
 begin
-  WasException := False;
+  FCheckCalled := True;
   try
-    aCode;
+    method;
   except
     on E: Exception do
     begin
-      if E is aExceptionType then
-      begin
-        WasException := True;
-      end;
+      if not Assigned(expected) then
+        raise
+      else if not E.InheritsFrom(expected) then
+        FailNotEquals(expected.ClassName, E.ClassName, msg, ReturnAddress)
+      else
+        expected := nil;
     end;
   end;
-  Check(WasException, aMessage);
+  if Assigned(expected) then
+    FailNotEquals(expected.ClassName, 'nothing', msg, ReturnAddress);
 end;
 
 {$ENDREGION}

@@ -48,9 +48,8 @@ procedure RegisterInjectionTestServices(aSpecialTypeString: string);
 implementation
 
 uses
-       Spring.Container
-     , Spring.Services
-     ;
+  Spring.Container,
+  Spring.Container.Common;
 
 type
   TPropertyInjectionDemo = class(TInterfacedObject, IMyInterface)

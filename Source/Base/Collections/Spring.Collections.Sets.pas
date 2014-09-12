@@ -44,8 +44,8 @@ type
       TGenericDictionary = Generics.Collections.TDictionary<T, Integer>;
   private
     fDictionary: TGenericDictionary;
-  public
-    procedure Add(const item: T); override;
+  protected
+    procedure AddInternal(const item: T); override;
   end;
 
   ///	<summary>
@@ -259,7 +259,7 @@ uses
 
 {$REGION 'THashSetBase<T>'}
 
-procedure THashSetBase<T>.Add(const item: T);
+procedure THashSetBase<T>.AddInternal(const item: T);
 begin
   fDictionary.AddOrSetValue(item, 0);
 end;
@@ -299,7 +299,14 @@ end;
 function THashSet<T>.Extract(const item: T): T;
 begin
   if fDictionary.ContainsKey(item) then
+{$IFDEF DELPHIXE2_UP}
     Result := fDictionary.ExtractPair(item).Key
+{$ELSE}
+  begin
+    Result := item;
+    fDictionary.ExtractPair(item);
+  end
+{$ENDIF}
   else
     Result := Default(T);
 end;
@@ -325,7 +332,9 @@ procedure THashSet<T>.ExceptWith(const other: IEnumerable<T>);
 var
   item: T;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
+{$ENDIF}
 
   for item in other do
     fDictionary.Remove(item);
@@ -336,7 +345,9 @@ var
   item: T;
   list: IList<T>;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
+{$ENDIF}
 
   list := TList<T>.Create;
   for item in Self do
@@ -351,7 +362,9 @@ function THashSet<T>.IsSubsetOf(const other: IEnumerable<T>): Boolean;
 var
   item: T;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
+{$ENDIF}
 
   for item in Self do
     if not other.Contains(item) then
@@ -364,7 +377,9 @@ function THashSet<T>.IsSupersetOf(const other: IEnumerable<T>): Boolean;
 var
   item: T;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
+{$ENDIF}
 
   for item in other do
     if not Contains(item) then
@@ -377,7 +392,9 @@ procedure THashSet<T>.UnionWith(const other: IEnumerable<T>);
 var
   item: T;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
+{$ENDIF}
 
   for item in other do
     Add(item);
@@ -387,7 +404,9 @@ function THashSet<T>.Overlaps(const other: IEnumerable<T>): Boolean;
 var
   item: T;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
+{$ENDIF}
 
   for item in other do
     if Contains(item) then
@@ -401,7 +420,9 @@ var
   item: T;
   localSet: ISet<T>;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(other), 'other');
+{$ENDIF}
 
   localSet := THashSet<T>.Create;
 

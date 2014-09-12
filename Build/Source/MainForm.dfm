@@ -418,20 +418,6 @@ object frmMain: TfrmMain
     UseVisualStyle = True
     OnLinkClick = lblHomepageLinkClick
   end
-  object grpConfiguration: TRadioGroup
-    Left = 359
-    Top = 8
-    Width = 146
-    Height = 64
-    Anchors = [akLeft, akTop, akRight]
-    Caption = 'Build C&onfiguration'
-    ItemIndex = 1
-    Items.Strings = (
-      'Debug'
-      'Release')
-    TabOrder = 1
-    OnClick = grpConfigurationClick
-  end
   object grpBuildOptions: TGroupBox
     Left = 359
     Top = 78
@@ -473,6 +459,17 @@ object frmMain: TfrmMain
       TabOrder = 2
       OnClick = chkPauseAfterEachStepClick
     end
+    object chkRunTestsAsConsole: TCheckBox
+      Left = 80
+      Top = 21
+      Width = 57
+      Height = 17
+      Hint = 'Compile unit tests as console application'
+      Caption = 'Console'
+      Enabled = False
+      TabOrder = 3
+      OnClick = chkRunTestsAsConsoleClick
+    end
   end
   object btnClean: TButton
     Left = 359
@@ -483,6 +480,32 @@ object frmMain: TfrmMain
     Caption = '&Clean'
     TabOrder = 3
     OnClick = btnCleanClick
+  end
+  object grpBuildConfigurations: TGroupBox
+    Left = 359
+    Top = 8
+    Width = 146
+    Height = 64
+    Caption = 'Build C&onfigurations'
+    TabOrder = 1
+    object chkDebug: TCheckBox
+      Left = 9
+      Top = 18
+      Width = 128
+      Height = 17
+      Caption = 'Debug'
+      TabOrder = 0
+      OnClick = chkDebugClick
+    end
+    object chkRelease: TCheckBox
+      Left = 9
+      Top = 41
+      Width = 97
+      Height = 17
+      Caption = 'Release'
+      TabOrder = 1
+      OnClick = chkReleaseClick
+    end
   end
   object BalloonHint1: TBalloonHint
     Left = 32

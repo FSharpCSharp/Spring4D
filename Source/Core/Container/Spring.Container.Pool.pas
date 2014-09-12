@@ -37,13 +37,13 @@ uses
 type
   IObjectPool = interface
     ['{E5842280-3750-46C0-8C91-0888EFFB0ED5}']
-    procedure Initialize(const resolver: IDependencyResolver);
-    function GetInstance(const resolver: IDependencyResolver): TObject;
+    procedure Initialize(const context: ICreationContext);
+    function GetInstance(const context: ICreationContext): TObject;
     procedure ReleaseInstance(instance: TObject);
   end;
 
   IObjectPool<T> = interface(IObjectPool)
-    function GetInstance(const resolver: IDependencyResolver): T;
+    function GetInstance(const context: ICreationContext): T;
     procedure ReleaseInstance(instance: T);
   end;
 
@@ -71,7 +71,7 @@ type
     fInstances: IList<TObject>;
     fInitialized: Boolean;
   protected
-    function AddNewInstance(const resolver: IDependencyResolver): TObject;
+    function AddNewInstance(const context: ICreationContext): TObject;
     procedure CollectInactiveInstances;
     function GetAvailableObject: TObject;
     procedure InstancesChanged(Sender: TObject; const item: TObject;
@@ -81,8 +81,8 @@ type
   public
     constructor Create(const activator: IComponentActivator; minPoolSize, maxPoolSize: Integer);
     destructor Destroy; override;
-    procedure Initialize(const resolver: IDependencyResolver); virtual;
-    function GetInstance(const resolver: IDependencyResolver): TObject; virtual;
+    procedure Initialize(const context: ICreationContext); virtual;
+    function GetInstance(const context: ICreationContext): TObject; virtual;
     procedure ReleaseInstance(instance: TObject); virtual;
   end;
 
@@ -90,7 +90,7 @@ implementation
 
 uses
   SysUtils,
-  Spring.Services;
+  Spring.Container.Common;
 
 type
   TInterfacedObjectAccess = class(TInterfacedObject);
@@ -124,11 +124,11 @@ begin
   inherited;
 end;
 
-function TSimpleObjectPool.AddNewInstance(const resolver: IDependencyResolver): TObject;
+function TSimpleObjectPool.AddNewInstance(const context: ICreationContext): TObject;
 var
   refCounted: IRefCounted;
 begin
-  Result := fActivator.CreateInstance(resolver).AsObject;
+  Result := fActivator.CreateInstance(context).AsObject;
   if Result.InheritsFrom(TInterfacedObject) then
     TInterfacedObjectAccess(Result)._AddRef
   else if Supports(Result, IRefCounted, refCounted) then
@@ -159,7 +159,7 @@ begin
   end;
 end;
 
-procedure TSimpleObjectPool.Initialize(const resolver: IDependencyResolver);
+procedure TSimpleObjectPool.Initialize(const context: ICreationContext);
 var
   i: Integer;
   instance: TObject;
@@ -168,7 +168,7 @@ begin
     Exit;
   for i := 0 to fMinPoolsize.Value - 1 do
   begin
-    instance := AddNewInstance(resolver);
+    instance := AddNewInstance(context);
     fAvailableList.Enqueue(instance);
   end;
   fInitialized := True;
@@ -199,12 +199,12 @@ begin
   Result := fAvailableList.Dequeue;
 end;
 
-function TSimpleObjectPool.GetInstance(const resolver: IDependencyResolver): TObject;
+function TSimpleObjectPool.GetInstance(const context: ICreationContext): TObject;
 begin
   fLock.Acquire;
   try
     if not fInitialized then
-      Initialize(resolver);
+      Initialize(context);
 
     if fAvailableList.IsEmpty then
       CollectInactiveInstances;
@@ -212,7 +212,7 @@ begin
     if not fAvailableList.IsEmpty then
       Result := GetAvailableObject
     else
-      Result := AddNewInstance(resolver);
+      Result := AddNewInstance(context);
 
     fActiveList.Add(Result);
   finally

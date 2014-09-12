@@ -34,6 +34,7 @@ resourcestring
   SNotImplementedException     = '%s is not implemented.';
   SNotSupportedOperation       = 'Not supported operation.';
   SNoDelegateAssigned          = 'No delegate has been assigned.';
+  SNotClassType                = '"%s" is not a class type.';
 
   SArgumentOutOfRangeException = 'Specified argument was out of the range of valid values: %s';
   SArgumentNullException       = 'Specified argument cannot be nil: %s';
@@ -56,6 +57,8 @@ resourcestring
   SInsufficientMemoryException    = 'Insufficient memory.';
 
   SUnexpectedArgumentLength = 'Unexpected parameter length.';
+
+  SCriticalSectionNotInitialized = 'Critical section was not initialized';
 
   SServiceLocatorNotInitialized = 'The global ServiceLocator has not been initialized.';
 
@@ -109,6 +112,8 @@ resourcestring
 
   {$REGION 'Spring.Helpers'}
 
+  SNotGenericType = 'Type "%s" is not a generic type.';
+
   SInvalidOperation_GetValue = 'The GetValue method works only for properties/fields.';
   SInvalidOperation_SetValue = 'The SetValue method works only for properties/fields.';
   SInvalidGuidArray = 'Byte array for GUID must be exactly %d bytes long';
@@ -128,7 +133,7 @@ resourcestring
   SInvalidExpressionPath          = 'Invalid expression path %s.';
   SUnexpectedToken                = 'Unexpected expression part %s.';
   SInvalidExpressionSyntax        = 'Invalid expression syntax %s.';
-  SCouldNotFindPath               = 'Coould not find expression path %s.';
+  SCouldNotFindPath               = 'Could not find expression path %s.';
 
   {$ENDREGION}
 

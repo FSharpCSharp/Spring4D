@@ -39,7 +39,6 @@ type
     lbTargets: TCheckListBox;
     lblHomepage: TLinkLabel;
     BalloonHint1: TBalloonHint;
-    grpConfiguration: TRadioGroup;
     btnClean: TButton;
     chkRunTests: TCheckBox;
     grpBuildOptions: TGroupBox;
@@ -48,11 +47,14 @@ type
     PopupMenu1: TPopupMenu;
     mniCheckAll: TMenuItem;
     mniUncheckAll: TMenuItem;
+    grpBuildConfigurations: TGroupBox;
+    chkDebug: TCheckBox;
+    chkRelease: TCheckBox;
+    chkRunTestsAsConsole: TCheckBox;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure btnBuildClick(Sender: TObject);
     procedure btnCleanClick(Sender: TObject);
-    procedure grpConfigurationClick(Sender: TObject);
     procedure lbTargetsClickCheck(Sender: TObject);
     procedure lblHomepageLinkClick(Sender: TObject; const Link: string;
       LinkType: TSysLinkType);
@@ -61,6 +63,9 @@ type
     procedure chkPauseAfterEachStepClick(Sender: TObject);
     procedure mniCheckAllClick(Sender: TObject);
     procedure mniUncheckAllClick(Sender: TObject);
+    procedure chkDebugClick(Sender: TObject);
+    procedure chkReleaseClick(Sender: TObject);
+    procedure chkRunTestsAsConsoleClick(Sender: TObject);
   private
     fBuildEngine: TBuildEngine;
   end;
@@ -88,14 +93,18 @@ begin
   fBuildEngine := TBuildEngine.Create;
   fBuildEngine.ConfigureCompilers(ApplicationPath + CCompilerSettingsFileName);
   fBuildEngine.LoadSettings(ApplicationPath + CBuildSettingsFileName);
-  grpConfiguration.ItemIndex := Ord(fBuildEngine.ConfigurationType);
+  chkDebug.Checked := TBuildConfig.Debug in fBuildEngine.BuildConfigs;
+  chkRelease.Checked := TBuildConfig.Release in fBuildEngine.BuildConfigs;
   chkPauseAfterEachStep.Checked := fBuildEngine.PauseAfterEachStep;
   chkRunTests.Checked := fBuildEngine.RunTests;
+  chkRunTestsAsConsole.Checked := fBuildEngine.RunTestsAsConsole;
   chkModifyDelphiRegistrySettings.Checked := fBuildEngine.ModifyDelphiRegistrySettings;
 
   lbTargets.Clear;
   for task in fBuildEngine.Tasks do
   begin
+    if fBuildEngine.OnlyShowInstalledVersions and not task.CanBuild then
+      Continue;
     index := lbTargets.Items.AddObject(task.Name, task);
     lbTargets.ItemEnabled[index] := task.CanBuild;
     lbTargets.Checked[index] := fBuildEngine.SelectedTasks.Contains(task);
@@ -109,11 +118,6 @@ procedure TfrmMain.FormDestroy(Sender: TObject);
 begin
   fBuildEngine.SaveSettings(ApplicationPath + CBuildSettingsFileName);
   fBuildEngine.Free;
-end;
-
-procedure TfrmMain.grpConfigurationClick(Sender: TObject);
-begin
-  fBuildEngine.ConfigurationType := TConfigurationType(grpConfiguration.ItemIndex);
 end;
 
 procedure TfrmMain.lblHomepageLinkClick(Sender: TObject; const Link: string;
@@ -161,9 +165,31 @@ begin
   lbTargetsClickCheck(lbTargets);
 end;
 
+procedure TfrmMain.chkReleaseClick(Sender: TObject);
+begin
+  if chkRelease.Checked then
+    fBuildEngine.BuildConfigs := fBuildEngine.BuildConfigs + [TBuildConfig.Release]
+  else
+    fBuildEngine.BuildConfigs := fBuildEngine.BuildConfigs - [TBuildConfig.Release];
+end;
+
+procedure TfrmMain.chkRunTestsAsConsoleClick(Sender: TObject);
+begin
+  fBuildEngine.RunTestsAsConsole := chkRunTestsAsConsole.Checked;
+end;
+
 procedure TfrmMain.chkRunTestsClick(Sender: TObject);
 begin
   fBuildEngine.RunTests := chkRunTests.Checked;
+  chkRunTestsAsConsole.Enabled := chkRunTests.Checked;
+end;
+
+procedure TfrmMain.chkDebugClick(Sender: TObject);
+begin
+  if chkDebug.Checked then
+    fBuildEngine.BuildConfigs := fBuildEngine.BuildConfigs + [TBuildConfig.Debug]
+  else
+    fBuildEngine.BuildConfigs := fBuildEngine.BuildConfigs - [TBuildConfig.Debug];
 end;
 
 procedure TfrmMain.chkModifyDelphiRegistrySettingsClick(Sender: TObject);

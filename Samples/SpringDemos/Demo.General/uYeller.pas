@@ -25,6 +25,6 @@ end;
 
 initialization
   GlobalContainer.RegisterType<TYeller>;
-
+  GlobalContainer.Build;
 
 end.

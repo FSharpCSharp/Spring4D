@@ -33,6 +33,7 @@ uses
   Rtti,
   Spring,
   Spring.Collections,
+  Spring.Container.Common,
   Spring.Container.Core,
   Spring.Container.Registration,
   Spring.Services;
@@ -41,37 +42,32 @@ type
   ///	<summary>
   ///	  Represents a Dependency Injection Container.
   ///	</summary>
-  TContainer = class(TInterfaceBase, IContainerContext, IInterface)
+  TContainer = class(TInterfaceBase, IKernel, IKernelInternal, IContainer)
   private
     fRegistry: IComponentRegistry;
     fBuilder: IComponentBuilder;
-    fServiceResolver: IServiceResolver;
-    fDependencyResolver: IDependencyResolver;
-    fInjectionFactory: IInjectionFactory;
+    fInjector: IDependencyInjector;
     fRegistrationManager: TRegistrationManager;
+    fResolver: IDependencyResolver;
     fExtensions: IList<IContainerExtension>;
     class var GlobalInstance: TContainer;
-    function GetContext: IContainerContext;
+    function GetKernel: IKernel;
     type
       TValueArray = array of TValue;
   protected
     class constructor Create;
     class destructor Destroy;
-  {$REGION 'Implements IContainerContext'}
-    function GetComponentBuilder: IComponentBuilder;
-    function GetComponentRegistry: IComponentRegistry;
-    function GetDependencyResolver: IDependencyResolver;
-    function GetInjectionFactory: IInjectionFactory;
-    function GetServiceResolver: IServiceResolver;
+  {$REGION 'Implements IKernel'}
+    function GetBuilder: IComponentBuilder;
+    function GetInjector: IDependencyInjector;
+    function GetRegistry: IComponentRegistry;
+    function GetResolver: IDependencyResolver;
   {$ENDREGION}
-    procedure CheckPoolingSupported(componentType: TRttiType);
-    function CreateLifetimeManager(const model: TComponentModel): ILifetimeManager;
     procedure InitializeInspectors; virtual;
-    property ComponentBuilder: IComponentBuilder read GetComponentBuilder;
-    property ComponentRegistry: IComponentRegistry read GetComponentRegistry;
-    property DependencyResolver: IDependencyResolver read GetDependencyResolver;
-    property InjectionFactory: IInjectionFactory read GetInjectionFactory;
-    property ServiceResolver: IServiceResolver read GetServiceResolver;
+    property Builder: IComponentBuilder read GetBuilder;
+    property Injector: IDependencyInjector read GetInjector;
+    property Registry: IComponentRegistry read GetRegistry;
+    property Resolver: IDependencyResolver read GetResolver;
   public
     constructor Create;
     destructor Destroy; override;
@@ -79,34 +75,32 @@ type
     procedure AddExtension(const extension: IContainerExtension); overload;
     procedure AddExtension<T: IContainerExtension, constructor>; overload;
 
-    function RegisterInstance<TServiceType>(const instance: TServiceType): TRegistration<TServiceType>; overload;
+    function RegisterInstance<TServiceType>(const instance: TServiceType;
+      const name: string = ''): TRegistration<TServiceType>; overload;
 
     function RegisterType<TComponentType>: TRegistration<TComponentType>; overload;
-    function RegisterType(componentType: PTypeInfo): TRegistration; overload;
+    function RegisterType(componentType: PTypeInfo): IRegistration; overload;
     function RegisterType<TServiceType, TComponentType>(
       const name: string = ''): TRegistration<TComponentType>; overload;
     function RegisterType(serviceType, componentType: PTypeInfo;
-      const name: string = ''): TRegistration; overload;
-
-    function RegisterComponent<TComponentType>: TRegistration<TComponentType>; overload; deprecated 'Use RegisterType';
-    function RegisterComponent(componentType: PTypeInfo): TRegistration; overload; deprecated 'Use RegisterType';
+      const name: string = ''): IRegistration; overload;
 
     procedure Build;
 
     function Resolve<T>: T; overload;
-    function Resolve<T>(resolverOverride: IResolverOverride): T; overload;
+    function Resolve<T>(const arguments: array of TValue): T; overload;
     function Resolve<T>(const name: string): T; overload;
-    function Resolve<T>(const name: string; resolverOverride: IResolverOverride): T; overload;
-    function Resolve(typeInfo: PTypeInfo): TValue; overload;
-    function Resolve(typeInfo: PTypeInfo; resolverOverride: IResolverOverride): TValue; overload;
+    function Resolve<T>(const name: string;
+      const arguments: array of TValue): T; overload;
+    function Resolve(serviceType: PTypeInfo): TValue; overload;
+    function Resolve(serviceType: PTypeInfo;
+      const arguments: array of TValue): TValue; overload;
     function Resolve(const name: string): TValue; overload;
-    function Resolve(const name: string; resolverOverride: IResolverOverride): TValue; overload;
+    function Resolve(const name: string;
+      const arguments: array of TValue): TValue; overload;
 
     function ResolveAll<TServiceType>: TArray<TServiceType>; overload;
     function ResolveAll(serviceType: PTypeInfo): TArray<TValue>; overload;
-
-    function HasService(serviceType: PTypeInfo): Boolean; overload;
-    function HasService(const name: string): Boolean; overload;
 
 {$IFNDEF AUTOREFCOUNT}
     { Experimental Release Methods }
@@ -117,7 +111,7 @@ type
     // passing as var is not possible here
 {$ENDIF}
 
-    property Context: IContainerContext read GetContext;
+    property Kernel: IKernel read GetKernel;
   end;
 
   ///	<summary>
@@ -150,7 +144,6 @@ type
   EContainerException = Spring.Container.Core.EContainerException;
   ERegistrationException = Spring.Container.Core.ERegistrationException;
   EResolveException = Spring.Container.Core.EResolveException;
-  EUnsatisfiedDependencyException = Spring.Container.Core.EUnsatisfiedDependencyException;
   ECircularDependencyException = Spring.Container.Core.ECircularDependencyException;
   EActivatorException = Spring.Container.Core.EActivatorException;
 
@@ -158,18 +151,11 @@ type
 
 procedure CleanupGlobalContainer;
 
-///<summary>
-///    Returns global instance of the container, calling this function in ARC
-///    environment will cause TContainer to increment the reference count for
-///    each call.
-///    Most functions will therefore decrement the reference count upon exiting,
-///    this may not be a problem for most functions but poses a problem for main
-///    function that (on mobile platofrms) may never exit thus making it
-///    impossible to release global container prior exit.
-///</summary>
-//TODO: It may be better to create a record that wraps the container in order to stop
-//ARC from incrementing/decrementing the count each time GlobalCOntainer is accessed
-function GlobalContainer: TContainer; inline;
+/// <summary>
+///   Returns global instance of the container.
+/// </summary>
+{$IFDEF AUTOREFCOUNT}[Result: Unsafe]{$ENDIF}
+function GlobalContainer: TContainer; {$IFNDEF AUTOREFCOUNT}inline;{$ENDIF}
 
 implementation
 
@@ -177,11 +163,14 @@ uses
   SysUtils,
   TypInfo,
   Spring.Container.Builder,
+  Spring.Container.CreationContext,
   Spring.Container.Injection,
   Spring.Container.LifetimeManager,
   Spring.Container.Resolvers,
   Spring.Container.ResourceStrings,
-  Spring.Helpers;
+  Spring.Helpers,
+  Spring.Reflection;
+
 
 function GlobalContainer: TContainer;
 begin
@@ -205,13 +194,16 @@ constructor TContainer.Create;
 begin
   inherited Create;
   fRegistry := TComponentRegistry.Create(Self);
-  fBuilder := TComponentBuilder.Create(Self, fRegistry);
-  fServiceResolver := TServiceResolver.Create(Self, fRegistry);
-  fDependencyResolver := TDependencyResolver.Create(Self, fRegistry);
-  fInjectionFactory := TInjectionFactory.Create;
-  fRegistrationManager := TRegistrationManager.Create(fRegistry);
+  fBuilder := TComponentBuilder.Create(Self);
+  fInjector := TDependencyInjector.Create;
+  fRegistrationManager := TRegistrationManager.Create(Self);
+  fResolver := TDependencyResolver.Create(Self);
   fExtensions := TCollections.CreateInterfaceList<IContainerExtension>;
   InitializeInspectors;
+
+  fResolver.AddSubResolver(TLazyResolver.Create(Self));
+  fResolver.AddSubResolver(TDynamicArrayResolver.Create(Self));
+  fResolver.AddSubResolver(TListResolver.Create(Self));
 end;
 
 destructor TContainer.Destroy;
@@ -224,12 +216,11 @@ begin
   // Android required) to release these interfaces here rather than in
   // CleanupInstance (which on android produces a lots of AVs probably due
   // to calling virtual __ObjRelease on almost destroyed object)
-  fExtensions:=nil;
-  fInjectionFactory:=nil;
-  fDependencyResolver:=nil;
-  fServiceResolver:=nil;
-  fBuilder:=nil;
-  fRegistry:=nil;
+  fExtensions := nil;
+  fResolver := nil;
+  fInjector := nil;
+  fBuilder := nil;
+  fRegistry := nil;
 
   inherited Destroy;
 end;
@@ -254,21 +245,6 @@ begin
   fBuilder.BuildAll;
 end;
 
-procedure TContainer.CheckPoolingSupported(componentType: TRttiType);
-begin
-  if not (componentType.IsInstance
-    and (componentType.AsInstance.MetaclassType.InheritsFrom(TInterfacedObject)
-    or Supports(componentType.AsInstance.MetaclassType, IRefCounted))) then
-  begin
-    if componentType.IsPublicType then
-      raise ERegistrationException.CreateResFmt(@SPoolingNotSupported, [
-        componentType.QualifiedName])
-    else
-      raise ERegistrationException.CreateResFmt(@SPoolingNotSupported, [
-        componentType.Name]);
-  end;
-end;
-
 procedure TContainer.InitializeInspectors;
 var
   inspectors: TArray<IBuilderInspector>;
@@ -285,136 +261,83 @@ begin
     TFieldInspector.Create
   );
   for inspector in inspectors do
-  begin
     fBuilder.AddInspector(inspector);
-  end;
 end;
 
-function TContainer.CreateLifetimeManager(
-  const model: TComponentModel): ILifetimeManager;
-begin
-  Guard.CheckNotNull(model, 'model');
-  case model.LifetimeType of
-    TLifetimeType.Singleton:
-    begin
-      Result := TSingletonLifetimeManager.Create(model);
-    end;
-    TLifetimeType.Transient:
-    begin
-      Result := TTransientLifetimeManager.Create(model);
-    end;
-    TLifetimeType.SingletonPerThread:
-    begin
-      Result := TSingletonPerThreadLifetimeManager.Create(model);
-    end;
-    TLifetimeType.Pooled:
-    begin
-      CheckPoolingSupported(model.ComponentType);
-      Result := TPooledLifetimeManager.Create(model);
-    end;
-  else
-    raise ERegistrationException.CreateRes(@SUnexpectedLifetimeType);
-  end;
-end;
-
-function TContainer.GetComponentBuilder: IComponentBuilder;
+function TContainer.GetBuilder: IComponentBuilder;
 begin
   Result := fBuilder;
 end;
 
-function TContainer.GetComponentRegistry: IComponentRegistry;
+function TContainer.GetRegistry: IComponentRegistry;
 begin
   Result := fRegistry;
 end;
 
-function TContainer.GetContext: IContainerContext;
+function TContainer.GetInjector: IDependencyInjector;
+begin
+  Result := fInjector;
+end;
+
+function TContainer.GetKernel: IKernel;
 begin
   Result := Self;
 end;
 
-function TContainer.GetDependencyResolver: IDependencyResolver;
+function TContainer.GetResolver: IDependencyResolver;
 begin
-  Result := fDependencyResolver;
+  Result := fResolver;
 end;
 
-function TContainer.GetInjectionFactory: IInjectionFactory;
+function TContainer.RegisterInstance<TServiceType>(const instance: TServiceType;
+  const name: string): TRegistration<TServiceType>;
 begin
-  Result := fInjectionFactory;
-end;
-
-function TContainer.GetServiceResolver: IServiceResolver;
-begin
-  Result := fServiceResolver;
-end;
-
-function TContainer.RegisterComponent(componentType: PTypeInfo): TRegistration;
-begin
-  Result := fRegistrationManager.RegisterComponent(componentType);
-end;
-
-function TContainer.RegisterComponent<TComponentType>: TRegistration<TComponentType>;
-begin
-  Result := fRegistrationManager.RegisterComponent<TComponentType>;
-end;
-
-function TContainer.RegisterInstance<TServiceType>(
-  const instance: TServiceType): TRegistration<TServiceType>;
-begin
-  Result := fRegistrationManager.RegisterComponent<TServiceType>;
+  Result := fRegistrationManager.RegisterType<TServiceType>;
   Result := Result.DelegateTo(
     function: TServiceType
     begin
       Result := instance;
     end);
+  Result := Result.Implements<TServiceType>(name);
 end;
 
 function TContainer.RegisterType<TComponentType>: TRegistration<TComponentType>;
 begin
-  Result := fRegistrationManager.RegisterComponent<TComponentType>;
+  Result := fRegistrationManager.RegisterType<TComponentType>;
 end;
 
 function TContainer.RegisterType<TServiceType, TComponentType>(
   const name: string): TRegistration<TComponentType>;
 begin
-  Result := fRegistrationManager.RegisterComponent<TComponentType>;
+  Result := fRegistrationManager.RegisterType<TComponentType>;
   Result := Result.Implements<TServiceType>(name);
 end;
 
-function TContainer.RegisterType(componentType: PTypeInfo): TRegistration;
+function TContainer.RegisterType(componentType: PTypeInfo): IRegistration;
 begin
-  Result := fRegistrationManager.RegisterComponent(componentType);
+  Result := fRegistrationManager.RegisterType(componentType);
 end;
 
 function TContainer.RegisterType(serviceType, componentType: PTypeInfo;
-  const name: string): TRegistration;
+  const name: string): IRegistration;
 begin
-  Result := fRegistrationManager.RegisterComponent(componentType);
+  Result := fRegistrationManager.RegisterType(componentType);
   Result := Result.Implements(serviceType, name);
-end;
-
-function TContainer.HasService(serviceType: PTypeInfo): Boolean;
-begin
-  Result := fRegistry.HasService(serviceType);
-end;
-
-function TContainer.HasService(const name: string): Boolean;
-begin
-  Result := fRegistry.HasService(name);
 end;
 
 function TContainer.Resolve<T>: T;
 var
   value: TValue;
 begin
-  value := Resolve(TypeInfo(T));
+  value := Resolve(TypeInfo(T), []);
   Result := value.AsType<T>;
 end;
 
-function TContainer.Resolve<T>(resolverOverride: IResolverOverride): T;
+function TContainer.Resolve<T>(const arguments: array of TValue): T;
 var
   value: TValue;
 begin
-  value := Resolve(TypeInfo(T), resolverOverride);
+  value := Resolve(TypeInfo(T), arguments);
   Result := value.AsType<T>;
 end;
 
@@ -422,39 +345,59 @@ function TContainer.Resolve<T>(const name: string): T;
 var
   value: TValue;
 begin
-  value := Resolve(name);
+  value := Resolve(name, []);
   Result := value.AsType<T>;
 end;
 
 function TContainer.Resolve<T>(const name: string;
-  resolverOverride: IResolverOverride): T;
+  const arguments: array of TValue): T;
 var
   value: TValue;
 begin
-  value := Resolve(name, resolverOverride);
+  value := Resolve(name, arguments);
   Result := value.AsType<T>;
 end;
 
-function TContainer.Resolve(typeInfo: PTypeInfo): TValue;
+function TContainer.Resolve(serviceType: PTypeInfo): TValue;
 begin
-  Result := fServiceResolver.Resolve(typeInfo);
+  Result := Resolve(serviceType, []);
 end;
 
-function TContainer.Resolve(typeInfo: PTypeInfo;
-  resolverOverride: IResolverOverride): TValue;
+function TContainer.Resolve(serviceType: PTypeInfo;
+  const arguments: array of TValue): TValue;
+var
+  componentModel: TComponentModel;
+  context: ICreationContext;
+  targetType: TRttiType;
 begin
-  Result := fServiceResolver.Resolve(typeInfo, resolverOverride);
+  componentModel := fRegistry.FindDefault(serviceType);
+  context := TCreationContext.Create(componentModel, arguments);
+  targetType := TType.GetType(serviceType);
+  Result := fResolver.Resolve(
+    context, componentModel, TDependencyModel.Create(targetType, nil), nil);
 end;
 
 function TContainer.Resolve(const name: string): TValue;
 begin
-  Result := fServiceResolver.Resolve(name);
+  Result := Resolve(name, []);
 end;
 
 function TContainer.Resolve(const name: string;
-  resolverOverride: IResolverOverride): TValue;
+  const arguments: array of TValue): TValue;
+var
+  componentModel: TComponentModel;
+  context: ICreationContext;
+  serviceType: PTypeInfo;
+  targetType: TRttiType;
 begin
-  Result := fServiceResolver.Resolve(name, resolverOverride);
+  componentModel := fRegistry.FindOne(name);
+  if not Assigned(componentModel) then
+    raise EResolveException.CreateResFmt(@SServiceNotFound, [name]);
+  context := TCreationContext.Create(componentModel, arguments);
+  serviceType := componentModel.GetServiceType(name);
+  targetType := TType.GetType(serviceType);
+  Result := fResolver.Resolve(
+    context, componentModel, TDependencyModel.Create(targetType, nil), name);
 end;
 
 function TContainer.ResolveAll<TServiceType>: TArray<TServiceType>;
@@ -462,15 +405,33 @@ var
   values: TArray<TValue>;
   i: Integer;
 begin
-  values := fServiceResolver.ResolveAll(TypeInfo(TServiceType));
+  values := ResolveAll(TypeInfo(TServiceType));
   SetLength(Result, Length(values));
   for i := Low(values) to High(values) do
     Result[i] := TValueArray(values)[i].AsType<TServiceType>;
 end;
 
 function TContainer.ResolveAll(serviceType: PTypeInfo): TArray<TValue>;
+var
+  targetType: TRttiType;
+  models: TArray<TComponentModel>;
+  i: Integer;
+  context: ICreationContext;
+  serviceName: string;
 begin
-  Result := fServiceResolver.ResolveAll(serviceType);
+  targetType := TType.GetType(serviceType);
+  // TODO: remove dependency on lazy type
+  if TType.IsLazy(serviceType) then
+    serviceType := targetType.GetGenericArguments[0].Handle;
+  models := fRegistry.FindAll(serviceType).ToArray;
+  SetLength(Result, Length(models));
+  for i := Low(models) to High(models) do
+  begin
+    context := TCreationContext.Create(models[i], []);
+    serviceName := models[i].GetServiceName(serviceType);
+    Result[i] := fResolver.Resolve(
+      context, models[i], TDependencyModel.Create(targetType, nil), serviceName);
+  end;
 end;
 
 {$IFNDEF AUTOREFCOUNT}
@@ -482,10 +443,8 @@ begin
 
   model := fRegistry.FindOne(instance.ClassInfo);
   if model = nil then
-  begin
-    raise EContainerException.CreateRes(@SComponentNotFound);
-  end;
-  model.LifetimeManager.ReleaseInstance(instance);
+    raise EContainerException.CreateResFmt(@STypeNotFound, [instance.ClassName]);
+  model.LifetimeManager.Release(instance);
 end;
 
 procedure TContainer.Release(instance: IInterface);
@@ -529,15 +488,13 @@ end;
 function TServiceLocatorAdapter.GetService(serviceType: PTypeInfo;
   const args: array of TValue): TValue;
 begin
-  Result := fContainer.Resolve(serviceType,
-    TOrderedParametersOverride.Create(args));
+  Result := fContainer.Resolve(serviceType, args);
 end;
 
 function TServiceLocatorAdapter.GetService(serviceType: PTypeInfo;
   const name: string; const args: array of TValue): TValue;
 begin
-  Result := fContainer.Resolve({serviceType, }name,
-    TOrderedParametersOverride.Create(args));
+  Result := fContainer.Resolve({serviceType, }name, args);
 end;
 
 function TServiceLocatorAdapter.GetAllServices(serviceType: PTypeInfo): TArray<TValue>;
@@ -547,12 +504,12 @@ end;
 
 function TServiceLocatorAdapter.HasService(serviceType: PTypeInfo): Boolean;
 begin
-  Result := fContainer.HasService(serviceType);
+  Result := fContainer.Registry.HasService(serviceType);
 end;
 
 function TServiceLocatorAdapter.HasService(serviceType: PTypeInfo; const name: string): Boolean;
 begin
-  Result := fContainer.HasService({serviceType, }name);
+  Result := fContainer.Registry.HasService(serviceType, name);
 end;
 
 {$ENDREGION}
@@ -560,7 +517,7 @@ end;
 
 procedure CleanupGlobalContainer;
 begin
-  TServiceLocatorAdapter.GlobalInstance:=nil;
+  TServiceLocatorAdapter.GlobalInstance := nil;
   FreeAndNil(TContainer.GlobalInstance);
 end;
 

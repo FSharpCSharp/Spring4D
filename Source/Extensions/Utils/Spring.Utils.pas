@@ -523,19 +523,19 @@ type
     class procedure SetCurrentDirectory(const value: string); static;
   strict private
 {$IFDEF MSWINDOWS}
-    class procedure OpenEnvironmentVariableKey(registry: TRegistry;
+    class procedure OpenEnvironmentVariableKey(const registry: TRegistry;
       target: TEnvironmentVariableTarget; keyAccess: Cardinal); static;
 {$ENDIF MSWINDOWS}
 {$IFDEF MSWINDOWS}
     class function GetCurrentVersionKey: string; static;
 {$ENDIF MSWINDOWS}
-    class procedure GetProcessEnvironmentVariables(list: TStrings); static;
+    class procedure GetProcessEnvironmentVariables(const list: TStrings); static;
   public
     ///	<summary>
     ///	  Returns a string array containing the command-line arguments for the
     ///	  current process.
     ///	</summary>
-    class function  GetCommandLineArgs: TStringDynArray; overload; static;
+    class function GetCommandLineArgs: TStringDynArray; overload; static;
 
     // TODO: Consider using Extract*** insteading of Get*** for the methods with a
     // TString parameter.
@@ -551,7 +551,7 @@ type
     ///	  Returns an array of string containing the names of the logical drives
     ///	  on the current computer.
     ///	</summary>
-    class function  GetLogicalDrives: TStringDynArray; overload; static;
+    class function GetLogicalDrives: TStringDynArray; overload; static;
 
     class procedure GetLogicalDrives(list: TStrings); overload; static;
 {$ENDIF MSWINDOWS}
@@ -561,14 +561,14 @@ type
     ///	  Gets the path to the system special folder that is identified by the
     ///	  specified enumeration.
     ///	</summary>
-    class function  GetFolderPath(const folder: TSpecialFolder): string; static;
+    class function GetFolderPath(const folder: TSpecialFolder): string; static;
 {$ENDIF MSWINDOWS}
 
     ///	<summary>
     ///	  Retrieves the value of an environment variable from the current
     ///	  process.
     ///	</summary>
-    class function  GetEnvironmentVariable(const variable: string): string; overload; static;
+    class function GetEnvironmentVariable(const variable: string): string; overload; static;
 
 {$IFDEF MSWINDOWS}
     ///	<summary>
@@ -576,7 +576,8 @@ type
     ///	  process or from the Windows operating system registry key for the
     ///	  current user or local machine.
     ///	</summary>
-    class function  GetEnvironmentVariable(const variable: string; target: TEnvironmentVariableTarget): string; overload; static;
+    class function GetEnvironmentVariable(const variable: string;
+      target: TEnvironmentVariableTarget): string; overload; static;
 {$ENDIF MSWINDOWS}
 
     ///	<summary>
@@ -591,7 +592,8 @@ type
     ///	  process or from the Windows operating system registry key for the
     ///	  current user or local machine.
     ///	</summary>
-    class procedure GetEnvironmentVariables(list: TStrings; target: TEnvironmentVariableTarget); overload; static;
+    class procedure GetEnvironmentVariables(list: TStrings;
+      target: TEnvironmentVariableTarget); overload; static;
 {$ENDIF MSWINDOWS}
 
     ///	<summary>
@@ -606,7 +608,8 @@ type
     ///	  current process or in the Windows operating system registry key
     ///	  reserved for the current user or local machine.
     ///	</summary>
-    class procedure SetEnvironmentVariable(const variable, value: string; target: TEnvironmentVariableTarget); overload; static;
+    class procedure SetEnvironmentVariable(const variable, value: string;
+      target: TEnvironmentVariableTarget); overload; static;
 {$ENDIF MSWINDOWS}
 
 {$IFDEF MSWINDOWS}
@@ -725,9 +728,9 @@ type
     class function StartsText(const s: string): TPredicate<string>;
     class function EndsText(const s: string): TPredicate<string>;
     class function SameText(const s: string): TPredicate<string>;
-    class function InStrings(const strings: TStrings): TPredicate<string>;
-    class function InArray(const collection: array of string): TPredicate<string>;
-    class function InCollection(const collection: IEnumerable<string>): TPredicate<string>; overload;
+    class function InStrings(const values: TStrings): TPredicate<string>;
+    class function InArray(const values: array of string): TPredicate<string>;
+    class function InCollection(const values: IEnumerable<string>): TPredicate<string>; overload;
   end;
 
   {$ENDREGION}
@@ -899,7 +902,7 @@ type
   ///	  Raised if <paramref name="strings" /> is nil or <paramref name="proc" />
   ///	  is not assigned.
   ///	</exception>
-  procedure UpdateStrings(strings: TStrings; proc: TProc); // inline;
+  procedure UpdateStrings(const strings: TStrings; const proc: TProc); // inline;
 
 {$IFDEF MSWINDOWS}
   ///	<summary>
@@ -1224,7 +1227,7 @@ begin
   Lock(obj, proc);
 end;
 
-procedure UpdateStrings(strings: TStrings; proc: TProc);
+procedure UpdateStrings(const strings: TStrings; const proc: TProc);
 begin
   Guard.CheckNotNull(strings, 'strings');
   Guard.CheckNotNull(Assigned(proc), 'proc');
@@ -1289,30 +1292,21 @@ var
 begin
   components := SplitString(versionString, ['.']);
   if not (Length(components) in [2..4]) then
-  begin
     raise EArgumentException.Create('version');
-  end;
   try
     major := StrToInt(components[0]);
     minor := StrToInt(components[1]);
     if Length(components) >= 3 then
-    begin
-      build := StrToInt(components[2]);
-    end
+      build := StrToInt(components[2])
     else
-    begin
       build := -1;
-    end;
     if Length(components) = 4 then
-    begin
-      reversion := StrToInt(components[3]);
-    end
+      reversion := StrToInt(components[3])
     else
-    begin
       reversion := -1;
-    end;
-  except on e: Exception do
-    raise EFormatException.Create(e.Message);
+  except
+    on e: Exception do
+      raise EFormatException.Create(e.Message);
   end;
   InternalCreate(Length(components), major, minor, build, reversion);
 end;
@@ -1334,7 +1328,7 @@ end;
 
 constructor TVersion.InternalCreate(defined, major, minor, build, reversion: Integer);
 begin
-  Assert(defined in [2, 3, 4], '"defined" should be in [2, 3, 4].');
+  Guard.CheckTrue(defined in [2, 3, 4], '"defined" should be in [2, 3, 4]');
   Guard.CheckRange(IsDefined(major), 'major');
   Guard.CheckRange(IsDefined(minor), 'minor');
   fMajor := major;
@@ -1374,21 +1368,13 @@ end;
 function TVersion.CompareComponent(a, b: Integer): Integer;
 begin
   if IsDefined(a) and IsDefined(b) then
-  begin
-    Result := a - b;
-  end
+    Result := a - b
   else if IsDefined(a) and not IsDefined(b) then
-  begin
-    Result := 1;
-  end
+    Result := 1
   else if not IsDefined(a) and IsDefined(b) then
-  begin
-    Result := -1;
-  end
+    Result := -1
   else
-  begin
     Result := 0;
-  end;
 end;
 
 function TVersion.CompareTo(const version: TVersion): Integer;
@@ -1401,9 +1387,7 @@ begin
     begin
       Result := CompareComponent(Build, version.Build);
       if Result = 0 then
-      begin
         Result := CompareComponent(Reversion, version.Reversion);
-      end;
     end;
   end;
 end;
@@ -1463,8 +1447,7 @@ begin
   Result := left.CompareTo(right) > 0;
 end;
 
-class operator TVersion.GreaterThanOrEqual(const left,
-  right: TVersion): Boolean;
+class operator TVersion.GreaterThanOrEqual(const left, right: TVersion): Boolean;
 begin
   Result := left.CompareTo(right) >= 0;
 end;
@@ -1853,12 +1836,9 @@ begin
     var
       i: Integer;
     begin
-      for i := 0 to High(args) do
-      begin
+      for i := Low(args) to High(args) do
         list.Add(args[i]);
-      end;
-    end
-  );
+    end);
 end;
 
 {$IFDEF MSWINDOWS}
@@ -1884,11 +1864,8 @@ begin
       drive: string;
     begin
       for drive in drives do
-      begin
         list.Add(drive);
-      end;
-    end
-  );
+    end);
 end;
 {$ENDIF MSWINDOWS}
 
@@ -1924,13 +1901,14 @@ end;
 {$ENDIF MSWINDOWS}
 
 {$IFDEF MSWINDOWS}
-class procedure TEnvironment.OpenEnvironmentVariableKey(registry: TRegistry;
+class procedure TEnvironment.OpenEnvironmentVariableKey(const registry: TRegistry;
   target: TEnvironmentVariableTarget; keyAccess: Cardinal);
 var
   key: string;
 begin
-  Assert(registry <> nil, 'registry should not be nil.');
-  Assert(target in [evtUser, evtMachine], Format('Illegal target: %d.', [Integer(target)]));
+  Guard.CheckNotNull(registry, 'registry');
+  Guard.CheckTrue(target in [evtUser, evtMachine],
+    Format('Illegal target: %d.', [Integer(target)]));
   if target = evtUser then
   begin
     registry.RootKey := HKEY_CURRENT_USER;
@@ -1943,14 +1921,11 @@ begin
   end;
   registry.Access := keyAccess;
   if not registry.OpenKey(key, False) then
-  begin
     raise EOSError.CreateResFmt(@SCannotAccessRegistryKey, [key]);
-  end;
 end;
 {$ENDIF MSWINDOWS}
 
-class function TEnvironment.GetEnvironmentVariable(
-  const variable: string): string;
+class function TEnvironment.GetEnvironmentVariable(const variable: string): string;
 {$IFDEF MSWINDOWS}
 begin
   Result := TEnvironment.GetEnvironmentVariable(variable, evtProcess);
@@ -1993,19 +1968,18 @@ var
 
   function GetProcessEnvironmentVariable: string;
   var
-    len: DWORD;
+    len: Cardinal;
   begin
     len := Windows.GetEnvironmentVariable(PChar(variable), nil, 0);
-    if len > 0 then
+    if len > 1 then // len includes #0 when nil was passed as buffer
     begin
       SetLength(Result, len - 1);
       Windows.GetEnvironmentVariable(PChar(variable), PChar(Result), len);
     end
     else
-    begin
       Result := '';
-    end;
   end;
+
 begin
   Guard.CheckEnum<TEnvironmentVariableTarget>(target, 'target');
   if target = evtProcess then
@@ -2017,13 +1991,9 @@ begin
   try
     OpenEnvironmentVariableKey(registry, target, KEY_READ);
     if registry.ValueExists(variable) then
-    begin
-      Result := registry.GetDataAsString(variable);
-    end
+      Result := registry.GetDataAsString(variable)
     else
-    begin
       Result := '';
-    end;
   finally
     registry.Free;
   end;
@@ -2038,7 +2008,7 @@ type
 {$ENDIF POSIX}
 {$ENDIF DELPHIXE2}
 
-class procedure TEnvironment.GetProcessEnvironmentVariables(list: TStrings);
+class procedure TEnvironment.GetProcessEnvironmentVariables(const list: TStrings);
 var
 {$IFDEF MSWINDOWS}
   p: PChar;
@@ -2049,7 +2019,7 @@ var
   current: string;
 {$ENDIF POSIX}
 begin
-  Assert(list <> nil, 'list should not be nil.');
+  Guard.CheckNotNull(list, 'list');
 {$IFDEF MSWINDOWS}
   p := Windows.GetEnvironmentStrings;
   try
@@ -2060,14 +2030,9 @@ begin
         s: string;
       begin
         for s in strings do
-        begin
           if (Length(s) > 0) and (s[1] <> '=') then // Skip entries start with '='
-          begin
             list.Add(s);
-          end;
-        end;
-      end
-    );
+      end);
   finally
     Win32Check(Windows.FreeEnvironmentStrings(p));
   end;
@@ -2171,20 +2136,22 @@ begin
   Guard.CheckEnum<TEnvironmentVariableTarget>(target, 'target');
   if target = evtProcess then
   begin
-    Win32Check(Windows.SetEnvironmentVariable(PChar(variable), PChar(value)));
+    if value = '' then
+      Win32Check(Windows.SetEnvironmentVariable(PChar(variable), nil))
+    else
+      Win32Check(Windows.SetEnvironmentVariable(PChar(variable), PChar(value)));
     Exit;
   end;
   registry := TRegistry.Create;
   try
     OpenEnvironmentVariableKey(registry, target, KEY_WRITE);
-    if Pos('%', value) > 0 then
-    begin
-      registry.WriteExpandString(variable, value);
-    end
+    if value = '' then
+      registry.DeleteValue(variable)
     else
-    begin
-      registry.WriteString(variable, value);
-    end;
+      if Pos('%', value) > 0 then
+        registry.WriteExpandString(variable, value)
+      else
+        registry.WriteString(variable, value);
     SendMessage(HWND_BROADCAST, WM_SETTINGCHANGE, 0, Integer(PChar('Environment')));
   finally
     registry.Free;
@@ -2527,7 +2494,7 @@ end;
 class function TStringMatchers.ContainsText(const s: string): TPredicate<string>;
 begin
   Result :=
-    function (const value: string): Boolean
+    function(const value: string): Boolean
     begin
       Result := StrUtils.ContainsText(value, s);
     end;
@@ -2536,7 +2503,7 @@ end;
 class function TStringMatchers.StartsText(const s: string): TPredicate<string>;
 begin
   Result :=
-    function (const value: string): Boolean
+    function(const value: string): Boolean
     begin
       Result := StrUtils.StartsText(s, value);
     end;
@@ -2545,7 +2512,7 @@ end;
 class function TStringMatchers.EndsText(const s: string): TPredicate<string>;
 begin
   Result :=
-    function (const value: string): Boolean
+    function(const value: string): Boolean
     begin
       Result := StrUtils.EndsText(s, value);
     end;
@@ -2554,53 +2521,47 @@ end;
 class function TStringMatchers.SameText(const s: string): TPredicate<string>;
 begin
   Result :=
-    function (const value: string): Boolean
+    function(const value: string): Boolean
     begin
       Result := SysUtils.SameText(s, value);
     end;
 end;
 
 class function TStringMatchers.InArray(
-  const collection: array of string): TPredicate<string>;
+  const values: array of string): TPredicate<string>;
 var
-  localArray: TArray<string>;
-  i: Integer;
+  localValues: TArray<string>;
 begin
-  SetLength(localArray, Length(collection));
-  for i := 0 to High(collection) do
-    localArray[i] := collection[i];
-
+  localValues := TArray.Copy<string>(values);
   Result :=
-    function (const value: string): Boolean
+    function(const value: string): Boolean
     var
       s: string;
     begin
-      for s in localArray do
-      begin
+      for s in localValues do
         if SysUtils.SameText(s, value) then
           Exit(True);
-      end;
       Result := False;
     end;
 end;
 
 class function TStringMatchers.InStrings(
-  const strings: TStrings): TPredicate<string>;
+  const values: TStrings): TPredicate<string>;
 begin
   Result :=
-    function (const value: string): Boolean
+    function(const value: string): Boolean
     begin
-      Result := strings.IndexOf(value) > -1;
+      Result := values.IndexOf(value) > -1;
     end;
 end;
 
 class function TStringMatchers.InCollection(
-  const collection: IEnumerable<string>): TPredicate<string>;
+  const values: IEnumerable<string>): TPredicate<string>;
 begin
   Result :=
-    function (const value: string): Boolean
+    function(const value: string): Boolean
     begin
-      Result := collection.Contains(value);
+      Result := values.Contains(value);
     end;
 end;
 

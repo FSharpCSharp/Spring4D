@@ -40,7 +40,7 @@
 ///	  </list>
 ///	</summary>
 ///	<preliminary />
-unit Spring.DesignPatterns;  // experimental
+unit Spring.DesignPatterns;
 
 {$I Spring.inc}
 
@@ -159,7 +159,7 @@ type
   {$ENDREGION}
 
 
-  {$REGION 'Specification Pattern (Experimental)'}
+  {$REGION 'Specification Pattern'}
 
 //  ISpecification = interface
 //    ['{9029A971-3A6C-4241-A246-C0F613ABE51C}']
@@ -170,7 +170,8 @@ type
   ///	  Defines the core methods of a specification interface.
   ///	</summary>
   ISpecification<T> = interface
-    function IsSatisfiedBy(const obj: T): Boolean;
+    function IsSatisfiedBy(const item: T): Boolean;
+    // DO NOT ADD ANY METHODS HERE!!!
   end;
 
   ///	<summary>
@@ -180,7 +181,8 @@ type
   private
     fSpecification: ISpecification<T>;
   public
-    function IsSatisfiedBy(const obj: T): Boolean;
+    function IsSatisfiedBy(const item: T): Boolean;
+
     class operator Implicit(const specification: ISpecification<T>): TSpecification<T>;
     class operator Implicit(const specification: TSpecification<T>): ISpecification<T>;
     class operator Implicit(const specification: TSpecification<T>): TPredicate<T>;
@@ -188,18 +190,16 @@ type
     class operator Explicit(const specification: TSpecification<T>): ISpecification<T>;
     class operator LogicalAnd(const left, right: TSpecification<T>): TSpecification<T>;
     class operator LogicalOr(const left, right: TSpecification<T>): TSpecification<T>;
-    class operator LogicalNot(const value:TSpecification<T>) : TSpecification<T>;
+    class operator LogicalNot(const value: TSpecification<T>): TSpecification<T>;
   end;
 
   ///	<summary>
   ///	  Provides the abstract base class for Specification.
   ///	</summary>
-  TSpecificationBase<T> = class abstract(TInterfacedObject, ISpecification<T>, TPredicate<T>, IInterface)
+  TSpecificationBase<T> = class abstract(TInterfacedObject, ISpecification<T>, TPredicate<T>)
   protected
-    { TPredicate<T> }
-    function Invoke(const value: T): Boolean; virtual;
-  public
-    function IsSatisfiedBy(const obj: T): Boolean; virtual; abstract;
+    function TPredicate<T>.Invoke = IsSatisfiedBy;
+    function IsSatisfiedBy(const item: T): Boolean; virtual; abstract;
   end;
 
   TUnarySpecification<T> = class abstract(TSpecificationBase<T>)
@@ -210,8 +210,8 @@ type
   end;
 
   TLogicalNotSpecification<T> = class sealed(TUnarySpecification<T>)
-  public
-    function IsSatisfiedBy(const obj: T): Boolean; override;
+  protected
+    function IsSatisfiedBy(const item: T): Boolean; override;
   end;
 
   TBinarySpecification<T> = class abstract(TSpecificationBase<T>)
@@ -223,13 +223,13 @@ type
   end;
 
   TLogicalAndSpecification<T> = class sealed(TBinarySpecification<T>)
-  public
-    function IsSatisfiedBy(const obj: T): Boolean; override;
+  protected
+    function IsSatisfiedBy(const item: T): Boolean; override;
   end;
 
   TLogicalOrSpecification<T> = class sealed(TBinarySpecification<T>)
-  public
-    function IsSatisfiedBy(const obj: T): Boolean; override;
+  protected
+    function IsSatisfiedBy(const item: T): Boolean; override;
   end;
 
   {$ENDREGION}
@@ -305,6 +305,7 @@ type
 
 
   {$ENDREGION}
+
 
 implementation
 
@@ -479,21 +480,11 @@ end;
 {$ENDREGION}
 
 
-{$REGION 'TSpecificationBase<T>'}
-
-function TSpecificationBase<T>.Invoke(const value: T): Boolean;
-begin
-  Result := IsSatisfiedBy(value);
-end;
-
-{$ENDREGION}
-
-
 {$REGION 'TSpecification<T>'}
 
-function TSpecification<T>.IsSatisfiedBy(const obj: T): Boolean;
+function TSpecification<T>.IsSatisfiedBy(const item: T): Boolean;
 begin
-  Result := (fSpecification <> nil) and fSpecification.IsSatisfiedBy(obj)
+  Result := Assigned(fSpecification) and fSpecification.IsSatisfiedBy(item);
 end;
 
 class operator TSpecification<T>.Implicit(
@@ -510,26 +501,8 @@ end;
 
 class operator TSpecification<T>.Implicit(
   const specification: TSpecification<T>): TPredicate<T>;
-var
-  internalSpecification: ISpecification<T>;
 begin
-  internalSpecification := specification;
-  if internalSpecification is TSpecificationBase<T> then
-  begin
-    Result := internalSpecification as TSpecificationBase<T>;
-  end
-  else if internalSpecification <> nil then
-  begin
-    Result :=
-      function(const arg: T): Boolean
-      begin
-        Result := internalSpecification.IsSatisfiedBy(arg);
-      end;
-  end
-  else
-  begin
-    Result := nil;
-  end;
+  ISpecification<T>(Result) := specification.fSpecification;
 end;
 
 class operator TSpecification<T>.Explicit(
@@ -546,31 +519,23 @@ end;
 
 class operator TSpecification<T>.LogicalAnd(const left,
   right: TSpecification<T>): TSpecification<T>;
-var
-  specification: ISpecification<T>;
 begin
-  specification := TLogicalAndSpecification<T>.Create(ISpecification<T>(left),
-    ISpecification<T>(right));
-  Result := TSpecification<T>(specification);
+  Result.fSpecification := TLogicalAndSpecification<T>.Create(
+    left.fSpecification, right.fSpecification)
 end;
 
 class operator TSpecification<T>.LogicalOr(const left,
   right: TSpecification<T>): TSpecification<T>;
-var
-  specification: ISpecification<T>;
 begin
-  specification := TLogicalOrSpecification<T>.Create(ISpecification<T>(left),
-    ISpecification<T>(right));
-  Result := TSpecification<T>(specification);
+  Result.fSpecification := TLogicalOrSpecification<T>.Create(
+    left.fSpecification, right.fSpecification);
 end;
 
 class operator TSpecification<T>.LogicalNot(
   const value: TSpecification<T>): TSpecification<T>;
-var
-  specification: ISpecification<T>;
 begin
-  specification := TLogicalNotSpecification<T>.Create(ISpecification<T>(value));
-  Result := TSpecification<T>(specification);
+  Result.fSpecification := TLogicalNotSpecification<T>.Create(
+    value.fSpecification);
 end;
 
 {$ENDREGION}
@@ -580,8 +545,7 @@ end;
 
 { TUnarySpecification<T> }
 
-constructor TUnarySpecification<T>.Create(
-  const specification: ISpecification<T>);
+constructor TUnarySpecification<T>.Create(const specification: ISpecification<T>);
 begin
   inherited Create;
   fSpecification := specification;
@@ -589,8 +553,7 @@ end;
 
 { TBinarySpecification<T> }
 
-constructor TBinarySpecification<T>.Create(const left,
-  right: ISpecification<T>);
+constructor TBinarySpecification<T>.Create(const left, right: ISpecification<T>);
 begin
   inherited Create;
   fLeft := left;
@@ -599,23 +562,23 @@ end;
 
 { TLogicalAndSpecification<T> }
 
-function TLogicalAndSpecification<T>.IsSatisfiedBy(const obj: T): Boolean;
+function TLogicalAndSpecification<T>.IsSatisfiedBy(const item: T): Boolean;
 begin
-  Result := fLeft.IsSatisfiedBy(obj) and fRight.IsSatisfiedBy(obj);
+  Result := fLeft.IsSatisfiedBy(item) and fRight.IsSatisfiedBy(item);
 end;
 
 { TLogicalOrSpecification<T> }
 
-function TLogicalOrSpecification<T>.IsSatisfiedBy(const obj: T): Boolean;
+function TLogicalOrSpecification<T>.IsSatisfiedBy(const item: T): Boolean;
 begin
-  Result := fLeft.IsSatisfiedBy(obj) or fRight.IsSatisfiedBy(obj);
+  Result := fLeft.IsSatisfiedBy(item) or fRight.IsSatisfiedBy(item);
 end;
 
 { TLogicalNotSpecification<T> }
 
-function TLogicalNotSpecification<T>.IsSatisfiedBy(const obj: T): Boolean;
+function TLogicalNotSpecification<T>.IsSatisfiedBy(const item: T): Boolean;
 begin
-  Result := not fSpecification.IsSatisfiedBy(obj);
+  Result := not fSpecification.IsSatisfiedBy(item);
 end;
 
 {$ENDREGION}
@@ -730,5 +693,6 @@ begin
 end;
 
 {$ENDREGION}
+
 
 end.

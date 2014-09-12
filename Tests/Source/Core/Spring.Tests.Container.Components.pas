@@ -32,7 +32,7 @@ uses
   TestFramework,
   Spring,
   Spring.Collections,
-  Spring.Services,
+  Spring.Container.Common,
   Spring.Container.Core,
   Spring.Tests.Container.Interfaces;
 
@@ -49,7 +49,7 @@ type
     ['{C39760F7-C5E6-48BC-A890-FB0103E4AD39}']
   end;
 
-  TNameService = class(TInterfacedObject, INameService, IInterface)
+  TNameService = class(TInterfacedObject, INameService)
   private
     fName: string;
     function GetName: string;
@@ -64,7 +64,7 @@ type
     Spring.Tests.Container.Interfaces.INameService)
   end;
 
-  TAnotherNameService = class(TInterfacedObject, INameService, IInterface)
+  TAnotherNameService = class(TInterfacedObject, INameService)
   private
     fName: string;
     function GetName: string;
@@ -167,6 +167,14 @@ type
     function GetAge: Integer;
   end;
 
+  TAgeServiceDecorator2 = class(TInterfacedObject, IAgeService)
+  private
+    fAgeServive: IAgeService;
+  public
+    constructor Create(const ageService: IAgeService);
+    function GetAge: Integer;
+  end;
+
   {$ENDREGION}
 
 
@@ -245,7 +253,7 @@ type
     property StringArg: string read GetStringArg;
   end;
 
-  TPrimitiveComponent = class(TInterfacedObject, IPrimitive, IInterface)
+  TPrimitiveComponent = class(TInterfacedObject, IPrimitive)
   private
     fNameService: INameService;
     fIntegerArg: Integer;
@@ -368,7 +376,7 @@ type
   INonGuid<T> = interface
   end;
 
-  TNonGuid<T> = class(TInterfacedObject, INonGuid<T>, IInterface)
+  TNonGuid<T> = class(TInterfacedObject, INonGuid<T>)
   end;
 
   {$ENDREGION}
@@ -495,6 +503,11 @@ type
   public
     [Inject]
     constructor Create(const collectionItems: TArray<TFunc<ICollectionItem>>);
+  end;
+
+  TCollectionServiceD = class(TCollectionService)
+  public
+    constructor Create(const collectionItem: ICollectionItem);
   end;
 
   {$ENDREGION}
@@ -871,6 +884,18 @@ begin
   Result := fAgeServive.Age;
 end;
 
+{ TAgeServiceDecorator2 }
+
+constructor TAgeServiceDecorator2.Create(const ageService: IAgeService);
+begin
+  fAgeServive := ageService;
+end;
+
+function TAgeServiceDecorator2.GetAge: Integer;
+begin
+  Result := fAgeServive.Age;
+end;
+
 { TCollectionService }
 
 function TCollectionService.GetCollectionItems: TArray<ICollectionItem>;
@@ -921,6 +946,15 @@ begin
       fCollectionItems[i] := fCollectionItemFactories[i]();
   end;
   Result := fCollectionItems;
+end;
+
+{ TCollectionServiceD }
+
+constructor TCollectionServiceD.Create(const collectionItem: ICollectionItem);
+begin
+  inherited Create;;
+  SetLength(fCollectionItems, 1);
+  fCollectionItems[0] := collectionItem;
 end;
 
 end.

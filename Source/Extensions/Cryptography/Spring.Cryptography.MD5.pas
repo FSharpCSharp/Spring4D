@@ -107,7 +107,7 @@ procedure TMD5.HashInit;
 var
   i: Byte;
 begin
-  for i := 0 to High(fDigest) do
+  for i := Low(fDigest) to High(fDigest) do
   begin
     fDigest[i] := i + 1;
   end;

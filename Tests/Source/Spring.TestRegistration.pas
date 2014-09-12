@@ -38,9 +38,10 @@ uses
   Spring.Tests.Base,
   Spring.Tests.Collections,
   Spring.Tests.Collections.Extensions,
-  Spring.Tests.SysUtils,
+  Spring.Tests.SystemUtils,
   Spring.Tests.DesignPatterns,
   Spring.Tests.Helpers,
+  Spring.Tests.Reflection,
   Spring.Tests.Reflection.ValueConverters,
   Spring.Tests.Container,
   Spring.Tests.Container.LifetimeManager,
@@ -59,7 +60,10 @@ begin
     TTestMulticastEvent.Suite,
     TTestMulticastEventStackSize.Suite,
 {$ENDIF}
-    TTestSpringEventsMethods.Suite,
+    TTestSpringEventsMethods.Suite
+  ]);
+
+  RegisterTests('Spring.Base.Collections', [
     TTestEmptyHashSet.Suite,
     TTestNormalHashSet.Suite,
     TTestIntegerList.Suite,
@@ -74,10 +78,13 @@ begin
     TTestListOfIntegerAsIEnumerable.Suite,
     TTestLinkedList.Suite,
     TTestObjectList.Suite,
-    TTestCollectionList.Suite
+    TTestInterfaceList.Suite,
+    TTestCollectionList.Suite,
+    TTestEnumerable.Suite,
+    TTestListAdapter.Suite
   ]);
 
-  RegisterTests('Spring.Base.Collections', [
+  RegisterTests('Spring.Base.Collections.Extensions', [
     TTestWhere.Suite,
     TTestSelect.Suite,
     TTestRange.Suite,
@@ -110,19 +117,17 @@ begin
     TTestMaxBy.Suite
   ]);
 
-  RegisterTests('Spring.Base.SysUtils', [
-    TTestSplitString.Suite,
-    TTestTryConvertStrToDateTime.Suite,
-    TTestSplitNullTerminatedStrings.Suite,
-    TTestEnum.Suite
-  ]);
-
   RegisterTests('Spring.Base.DesignPatterns', [
     TTestSingleton.Suite
   ]);
 
   RegisterTests('Spring.Base.Helpers', [
-    TTestGuidHelper.Suite
+    TTestGuidHelper.Suite,
+    TTestRttiTypeHelper.Suite
+  ]);
+
+  RegisterTests('Spring.Base.Reflection', [
+    TTestType.Suite
   ]);
 
   RegisterTests('Spring.Base.Reflection.ValueConverters', [
@@ -137,7 +142,9 @@ begin
     TTestFromBoolean.Suite,
     TTestFromEnum.Suite,
     TTestFromFloat.Suite,
+{$IFNDEF SPRING_DISABLE_GRAPHICS}
     TTestFromColor.Suite,
+{$ENDIF}
     TTestFromCurrency.Suite,
     TTestFromDateTime.Suite,
     TTestFromObject.Suite,
@@ -146,11 +153,21 @@ begin
     TTestCustomTypes.Suite
   ]);
 
+  RegisterTests('Spring.Base.SystemUtils', [
+    TTestSplitString.Suite,
+    TTestTryConvertStrToDateTime.Suite,
+    TTestSplitNullTerminatedStrings.Suite,
+    TTestEnum.Suite
+  ]);
+
 //  RegisterTests('Spring.Base.Reflection.ValueExpression', [
 //    TTestValueExpression.Suite
 //  ]);
 
   RegisterTests('Spring.Core.Container', [
+{$IFDEF AUTOREFCOUNT}
+    TTestGlobalContainer.Suite,
+{$ENDIF}
     TTestEmptyContainer.Suite,
     TTestSimpleContainer.Suite,
     TTestDifferentServiceImplementations.Suite,

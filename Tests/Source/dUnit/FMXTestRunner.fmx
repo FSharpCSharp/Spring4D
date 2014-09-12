@@ -155,7 +155,6 @@ object FMXTestRunner: TFMXTestRunner
           OnClick = ListBoxItemCheckInvert
         end
         object chkFailIfMemoryLeaked: TListBoxItem
-          Enabled = False
           Height = 44.000000000000000000
           Position.Y = 118.000000000000000000
           StyleLookup = 'listboxitemnodetail'
@@ -164,7 +163,6 @@ object FMXTestRunner: TFMXTestRunner
           OnClick = ListBoxItemCheckInvert
         end
         object chkIngnoreLeaksInSetupTeardown: TListBoxItem
-          Enabled = False
           Height = 44.000000000000000000
           Position.Y = 162.000000000000000000
           StyleLookup = 'listboxitemnodetail'

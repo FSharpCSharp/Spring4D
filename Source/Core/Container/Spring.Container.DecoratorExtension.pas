@@ -45,21 +45,21 @@ type
 
   TDecoratorInspector = class(TInspectorBase)
   protected
-    procedure DoProcessModel(const context: IContainerContext; const model: TComponentModel); override;
+    procedure DoProcessModel(const kernel: IKernel; const model: TComponentModel); override;
   end;
 
   TDecoratorComponentActivator = class(TInterfacedObject, IComponentActivator)
   private
-    fContext: IContainerContext;
+    fKernel: IKernel;
     fComponentActivator: IComponentActivator;
-    fDecoratorActivator: IComponentActivator;
+    fDecoratorModel: TComponentModel;
     fServiceType: PTypeInfo;
   public
-    constructor Create(const context: IContainerContext;
+    constructor Create(const kernel: IKernel;
       const componentActivator: IComponentActivator;
-      const decoratorActivator: IComponentActivator; serviceType: PTypeInfo);
+      const decoratorModel: TComponentModel; serviceType: PTypeInfo);
 
-    function CreateInstance(const resolver: IDependencyResolver): TValue;
+    function CreateInstance(const context: ICreationContext): TValue;
   end;
 
 implementation
@@ -76,7 +76,7 @@ uses
 
 procedure TDecoratorContainerExtension.Initialize;
 begin
-  Context.ComponentBuilder.AddInspector(TDecoratorInspector.Create);
+  Kernel.Builder.AddInspector(TDecoratorInspector.Create);
 end;
 
 {$ENDREGION}
@@ -84,7 +84,7 @@ end;
 
 {$REGION 'TDecoratorInspector'}
 
-procedure TDecoratorInspector.DoProcessModel(const context: IContainerContext;
+procedure TDecoratorInspector.DoProcessModel(const kernel: IKernel;
   const model: TComponentModel);
 var
   serviceType: PTypeInfo;
@@ -99,7 +99,7 @@ begin
     predicate := TMethodFilters.IsConstructor
       and TMethodFilters.ContainsParameterType(serviceType);
     decoratorModel := nil;
-    for componentModel in context.ComponentRegistry.FindAll.Where(
+    for componentModel in kernel.Registry.FindAll.Where(
       function(const model: TComponentModel): Boolean
       begin
         Result := model.HasService(serviceType);
@@ -107,8 +107,8 @@ begin
     begin
       if Assigned(decoratorModel) and (model = componentModel) then
       begin
-        model.ComponentActivator := TDecoratorComponentActivator.Create(context,
-          model.ComponentActivator, decoratorModel.ComponentActivator, serviceType);
+        model.ComponentActivator := TDecoratorComponentActivator.Create(kernel,
+          model.ComponentActivator, decoratorModel, serviceType);
       end
       else
         if componentModel.ComponentType.Methods.Any(predicate) then
@@ -122,19 +122,19 @@ end;
 
 {$REGION 'TComponentActivatorDecorator'}
 
-constructor TDecoratorComponentActivator.Create(const context: IContainerContext;
+constructor TDecoratorComponentActivator.Create(const kernel: IKernel;
   const componentActivator: IComponentActivator;
-  const decoratorActivator: IComponentActivator; serviceType: PTypeInfo);
+  const decoratorModel: TComponentModel; serviceType: PTypeInfo);
 begin
   inherited Create;
-  fContext := context;
+  fKernel := kernel;
   fComponentActivator := componentActivator;
-  fDecoratorActivator := decoratorActivator;
+  fDecoratorModel := decoratorModel;
   fServiceType := serviceType;
 end;
 
 function TDecoratorComponentActivator.CreateInstance(
-  const resolver: IDependencyResolver): TValue;
+  const context: ICreationContext): TValue;
 
 {$IFDEF DELPHI2010}
   function ConvClass2Inf(const AObject: TObject; ATarget: PTypeInfo): TValue;
@@ -146,16 +146,14 @@ function TDecoratorComponentActivator.CreateInstance(
   end;
 {$ENDIF}
 
-var
-  dependencyOverride: IResolverOverride;
 begin
-  Result := fComponentActivator.CreateInstance(resolver);
+  Result := fComponentActivator.CreateInstance(context);
 {$IFDEF DELPHI2010}
   if Result.IsObject and (fServiceType.Kind = tkInterface) then
     Result := ConvClass2Inf(Result.AsObject, fServiceType);
 {$ENDIF}
-  dependencyOverride := TDependencyOverride.Create(fServiceType, Result);
-  Result := fDecoratorActivator.CreateInstance(dependencyOverride.GetResolver(fContext));
+  context.AddArgument(TTypedValue.Create(fServiceType, Result));
+  Result := fDecoratorModel.ComponentActivator.CreateInstance(context);
 end;
 
 {$ENDREGION}

@@ -2,15 +2,13 @@ unit uCalculator;
 
 interface
 
-
 implementation
 
 uses
-           uMathInterfaces
-         , uServiceNames
-         , Spring.Container
-         , Spring.Services
-         ;
+  uMathInterfaces,
+  uServiceNames,
+  Spring.Container,
+  Spring.Container.Common;
 
 type
   TCalculator = class(TInterfacedObject, ICalculator)

@@ -40,6 +40,7 @@ type
     fSource: ICollection<T>;
 
     function GetIsReadOnly: Boolean;
+    function GetOnChanged: IEvent;
 
     procedure Add(const item: TValue);
     procedure AddRange(const collection: array of TValue); overload;
@@ -67,9 +68,12 @@ type
   private
     fSource: IList<T>;
 
+    function GetCapacity: Integer;
     function GetItem(index: Integer): TValue;
-    function GetOnChanged: IEvent;
+    procedure SetCapacity(value: Integer);
     procedure SetItem(index: Integer; const item: TValue);
+
+    function Add(const item: TValue): Integer;
 
     procedure Insert(index: Integer; const item: TValue);
     procedure InsertRange(index: Integer; const collection: array of TValue); overload;
@@ -95,6 +99,7 @@ type
     function LastIndexOf(const item: TValue; index, count: Integer): Integer; overload;
 
     function AsReadOnlyList: IReadOnlyList;
+    procedure TrimExcess;
   protected
     function QueryInterface(const IID: TGUID; out Obj): HResult; override;
   public
@@ -274,6 +279,11 @@ begin
   Result := fSource.IsReadOnly;
 end;
 
+function TCollectionAdapter<T>.GetOnChanged: IEvent;
+begin
+  Result := fSource.OnChanged;
+end;
+
 function TCollectionAdapter<T>.QueryInterface(const IID: TGUID;
   out Obj): HResult;
 begin
@@ -319,6 +329,11 @@ begin
   fSource := source;
 end;
 
+function TListAdapter<T>.Add(const item: TValue): Integer;
+begin
+  Result := fSource.Add(item.AsType<T>);
+end;
+
 function TListAdapter<T>.AsReadOnlyList: IReadOnlyList;
 begin
   Result := Self;
@@ -339,14 +354,14 @@ begin
   fSource.Exchange(index1, index2);
 end;
 
+function TListAdapter<T>.GetCapacity: Integer;
+begin
+  Result := fSource.Capacity;
+end;
+
 function TListAdapter<T>.GetItem(index: Integer): TValue;
 begin
   Result := TValue.From<T>(fSource[index]);
-end;
-
-function TListAdapter<T>.GetOnChanged: IEvent;
-begin
-  Result := fSource.OnChanged;
 end;
 
 function TListAdapter<T>.IndexOf(const item: TValue): Integer;
@@ -375,7 +390,9 @@ procedure TListAdapter<T>.InsertRange(index: Integer;
 var
   item: TValue;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= Count), 'index');
+{$ENDIF}
 
   for item in collection do
   begin
@@ -389,7 +406,9 @@ procedure TListAdapter<T>.InsertRange(index: Integer;
 var
   item: TValue;
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckRange((index >= 0) and (index <= Count), 'index');
+{$ENDIF}
 
   for item in collection do
   begin
@@ -440,6 +459,11 @@ begin
   fSource.Reverse(index, count);
 end;
 
+procedure TListAdapter<T>.SetCapacity(value: Integer);
+begin
+  fSource.Capacity := value;
+end;
+
 procedure TListAdapter<T>.SetItem(index: Integer; const item: TValue);
 begin
   fSource[index] := item.AsType<T>;
@@ -448,6 +472,11 @@ end;
 procedure TListAdapter<T>.Sort;
 begin
   fSource.Sort;
+end;
+
+procedure TListAdapter<T>.TrimExcess;
+begin
+  fSource.TrimExcess;
 end;
 
 {$ENDREGION}

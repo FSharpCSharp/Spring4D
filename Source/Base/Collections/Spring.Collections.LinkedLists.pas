@@ -60,7 +60,6 @@ type
         procedure Reset; override;
       end;
   private
-    fOnChanged: ICollectionChangedEvent<T>;
     fFirstFree: TLinkedListNode<T>;
     fCount: Integer;
     fVersion: Integer;
@@ -81,14 +80,11 @@ type
     function GetLast: TLinkedListNode<T>;
     function GetOnChanged: ICollectionChangedEvent<T>;
   {$ENDREGION}
-    procedure Changed(const item: T; action: TCollectionChangedAction); virtual;
+    procedure AddInternal(const item: T); override;
   public
-    constructor Create; override;
     destructor Destroy; override;
 
     function GetEnumerator: IEnumerator<T>; override;
-
-    procedure Add(const item: T); override;
 
     procedure AddAfter(const node: TLinkedListNode<T>; const newNode: TLinkedListNode<T>); overload;
     function AddAfter(const node: TLinkedListNode<T>; const value: T): TLinkedListNode<T>; overload;
@@ -124,19 +120,13 @@ uses
 
 {$REGION 'TLinkedList<T>'}
 
-constructor TLinkedList<T>.Create;
-begin
-  inherited Create;
-  fOnChanged := TCollectionChangedEventImpl<T>.Create;
-end;
-
 destructor TLinkedList<T>.Destroy;
 begin
   Clear;
   inherited Destroy;
 end;
 
-procedure TLinkedList<T>.Add(const item: T);
+procedure TLinkedList<T>.AddInternal(const item: T);
 begin
   AddLast(item);
 end;
@@ -217,12 +207,6 @@ begin
     InternalInsertNodeBefore(fHead, Result);
 end;
 
-procedure TLinkedList<T>.Changed(const item: T;
-  action: TCollectionChangedAction);
-begin
-  fOnChanged.Invoke(Self, item, action);
-end;
-
 procedure TLinkedList<T>.Clear;
 var
   oldItems: array of T;
@@ -253,7 +237,7 @@ begin
   end;
   IncreaseVersion;
 
-  for i := 0 to Length(oldItems) - 1 do
+  for i := Low(oldItems) to High(oldItems) do
     Changed(oldItems[i], caRemoved);
 end;
 
@@ -462,14 +446,20 @@ end;
 
 procedure TLinkedList<T>.ValidateNewNode(const node: TLinkedListNode<T>);
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(node), 'node');
+{$ENDIF}
+
   if Assigned(node.fList) then
     raise EInvalidOperationException.CreateRes(@SLinkedListNodeIsAttached);
 end;
 
 procedure TLinkedList<T>.ValidateNode(const node: TLinkedListNode<T>);
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(Assigned(node), 'node');
+{$ENDIF}
+
   if node.fList <> Pointer(Self) then
     raise EInvalidOperationException.CreateRes(@SLinkedListNodeIsAttached);
 end;

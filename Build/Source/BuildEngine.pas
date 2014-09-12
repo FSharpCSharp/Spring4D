@@ -35,14 +35,17 @@ uses
 type
   {$SCOPEDENUMS ON}
 
-  TConfigurationType = (
+  TBuildConfig = (
     Debug,
     Release
   );
 
+  TBuildConfigs = set of TBuildConfig;
+
   TCompilerTargetBase = class
   private
     fBrowsingPaths: TStrings;
+    fDebugDCUPaths: TStrings;
     fDisplayName: string;
     fEnvironmentVariables: TStrings;
     fExists: Boolean;
@@ -55,6 +58,7 @@ type
     destructor Destroy; override;
 
     property BrowsingPaths: TStrings read fBrowsingPaths;
+    property DebugDCUPaths: TStrings read fDebugDCUPaths;
     property DisplayName: string read fDisplayName;
     property EnvironmentVariables: TStrings read fEnvironmentVariables;
     property Exists: Boolean read fExists;
@@ -78,6 +82,7 @@ type
         RootDir: string;
         LibraryPath: string;
         BrowsingPath: string;
+        DebugDCUPath: string;
       end;
   private
     fRegistry: TRegistry;
@@ -118,10 +123,12 @@ type
 
   TBuildEngineBase = class
   private
-    fConfigurationType: TConfigurationType;
+    fBuildConfigs: TBuildConfigs;
     fModifyDelphiRegistrySettings: Boolean;
-    FPauseAfterEachStep: Boolean;
+    fOnlyShowInstalledVersions: Boolean;
+    fPauseAfterEachStep: Boolean;
     fRunTests: Boolean;
+    fRunTestsAsConsole: Boolean;
     fSelectedTasks: IList<TBuildTask>;
     fSourcePaths: TStrings;
     fTargets: IList<TCompilerTarget>;
@@ -130,12 +137,14 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    property ConfigurationType: TConfigurationType
-      read fConfigurationType write fConfigurationType;
+    property BuildConfigs: TBuildConfigs read fBuildConfigs write fBuildConfigs;
     property ModifyDelphiRegistrySettings: Boolean
       read fModifyDelphiRegistrySettings write fModifyDelphiRegistrySettings;
+    property OnlyShowInstalledVersions: Boolean
+      read fOnlyShowInstalledVersions write fOnlyShowInstalledVersions;
     property PauseAfterEachStep: Boolean read FPauseAfterEachStep write FPauseAfterEachStep;
     property RunTests: Boolean read fRunTests write fRunTests;
+    property RunTestsAsConsole: Boolean read fRunTestsAsConsole write fRunTestsAsConsole;
     property SelectedTasks: IList<TBuildTask> read fSelectedTasks;
     property SourcePaths: TStrings read fSourcePaths;
     property Targets: IList<TCompilerTarget> read fTargets;
@@ -146,7 +155,7 @@ type
   private
     fSourceBaseDir: string;
   protected
-    procedure BuildTarget(const task: TBuildTask);
+    procedure BuildTarget(const task: TBuildTask; buildConfig: TBuildConfig);
     procedure ExecuteCommandLine(const applicationName, commandLine: string;
       var exitCode: Cardinal; const workingDir: string = ''); virtual;
     procedure RemoveRelatedEntries(const baseDir: string; const entries: TStrings); virtual;
@@ -174,6 +183,7 @@ implementation
 uses
   IniFiles,
   IOUtils,
+  StrUtils,
   Windows,
   Spring,
   Spring.Utils;
@@ -192,7 +202,7 @@ type
 
 const
   SPause = ' pause';
-  ConfigurationNames: array[TConfigurationType] of string = (
+  ConfigNames: array[TBuildConfig] of string = (
     'Debug',
     'Release'
   );
@@ -270,6 +280,10 @@ begin
   fBrowsingPaths.Delimiter := ';';
   fBrowsingPaths.StrictDelimiter := True;
 
+  fDebugDCUPaths := TStringList.Create;
+  fDebugDCUPaths.Delimiter := ';';
+  fDebugDCUPaths.StrictDelimiter := True;
+
   fEnvironmentVariables := TStringList.Create;
   fEnvironmentVariables.Delimiter := ';';
   fEnvironmentVariables.StrictDelimiter := True;
@@ -282,6 +296,7 @@ end;
 destructor TCompilerTargetBase.Destroy;
 begin
   fBrowsingPaths.Free;
+  fDebugDCUPaths.Free;
   fEnvironmentVariables.Free;
   fLibraryPaths.Free;
 
@@ -316,6 +331,7 @@ begin
   fNames.LibraryPath := properties.GetValueOrDefault('Names.LibraryPath', 'Search Path');
   fNames.BrowsingPath := properties.GetValueOrDefault('Names.BrowsingPath', 'Browsing Path');
   fNames.RootDir := properties.GetValueOrDefault('Names.RootDir', 'RootDir');
+  fNames.DebugDCUPath := properties.GetValueOrDefault('Names.DebugDCUPath', 'Debug DCU Path');
 
   fExists := fRegistry.KeyExists(fKeys.BDS);
   if fExists then
@@ -400,6 +416,8 @@ begin
     LibraryPaths.DelimitedText := path;
     path := fRegistry.ReadString(Names.BrowsingPath);
     BrowsingPaths.DelimitedText := path;
+    path := fRegistry.ReadString(Names.DebugDCUPath);
+    DebugDCUPaths.DelimitedText := path;
   finally
     fRegistry.CloseKey;
   end;
@@ -413,6 +431,7 @@ begin
   try
     fRegistry.WriteString(Names.LibraryPath, LibraryPaths.DelimitedText);
     fRegistry.WriteString(Names.BrowsingPath, BrowsingPaths.DelimitedText);
+    fRegistry.WriteString(Names.DebugDCUPath, DebugDCUPaths.DelimitedText);
   finally
     fRegistry.CloseKey;
   end;
@@ -546,7 +565,7 @@ constructor TBuildEngine.Create;
 begin
   inherited Create;
 
-  fConfigurationType := TConfigurationType.Release;
+  fBuildConfigs := [TBuildConfig.Debug, TBuildConfig.Release];
 end;
 
 procedure TBuildEngine.ExecuteCommandLine(const applicationName, commandLine: string;
@@ -583,18 +602,21 @@ end;
 procedure TBuildEngine.BuildAll;
 var
   task: TBuildTask;
+  buildConfig: TBuildConfig;
 begin
   for task in SelectedTasks do
-    BuildTarget(task);
+    for buildConfig in fBuildConfigs do
+      BuildTarget(task, buildConfig);
 end;
 
-procedure TBuildEngine.BuildTarget(const task: TBuildTask);
+procedure TBuildEngine.BuildTarget(const task: TBuildTask; buildConfig: TBuildConfig);
 var
   projectPath: string;
   unitOutputPath: string;
-  configurationName: string;
+  configName: string;
   projectName: string;
   cmdFileName: string;
+  defines: string;
   commandLine: string;
   exitCode: Cardinal;
   targetPlatform: string;
@@ -606,18 +628,25 @@ begin
   target := task.Compiler;
 
   projectPath := ExtractFilePath(ParamStr(0));
-  configurationName := ConfigurationNames[ConfigurationType];
+  configName := ConfigNames[buildConfig];
 
   RemoveRelatedEntries(projectPath, target.LibraryPaths);
   RemoveRelatedEntries(projectPath, target.BrowsingPaths);
+  if buildConfig = TBuildConfig.Debug then
+    RemoveRelatedEntries(projectPath, target.DebugDCUPaths);
 
-  unitOutputPath := projectPath + task.UnitOutputPath;
-  unitOutputPath := StringReplace(unitOutputPath, '$(Config)', configurationName, [rfIgnoreCase, rfReplaceAll]);
+  if TPath.IsRelativePath(task.UnitOutputPath) then
+    unitOutputPath := projectPath + task.UnitOutputPath
+  else
+    unitOutputPath := task.UnitOutputPath;
+  unitOutputPath := StringReplace(unitOutputPath, '$(Config)', configName, [rfIgnoreCase, rfReplaceAll]);
   targetPlatform := target.TargetPlatform;
   unitOutputPath := StringReplace(unitOutputPath, '$(Platform)', targetPlatform, [rfIgnoreCase, rfReplaceAll]);
 
   target.LibraryPaths.AddIfNotContains(unitOutputPath);
   target.BrowsingPaths.AddIfNotContains(SourcePaths);
+  if buildConfig = TBuildConfig.Debug then
+    target.DebugDCUPaths.AddIfNotContains(unitOutputPath);
   if fModifyDelphiRegistrySettings then
     target.SaveOptions;
 
@@ -625,8 +654,10 @@ begin
   rsVars := IncludeTrailingPathDelimiter(target.RootDir) + 'bin\rsvars.bat';
   for projectName in task.Projects do
   begin
-    commandLine := Format('/C BuildHelper "%0:s" "%1:s" "Config=%2:s" "Platform=%3:s"', [
-      rsVars, projectName, configurationName, targetPlatform]);
+    if fRunTestsAsConsole then
+      defines := 'CONSOLE_TESTRUNNER';
+    commandLine := Format('/C BuildHelper "%0:s" "%1:s" "Config=%2:s" "Platform=%3:s" "DCC_DcuOutput=%4:s" "DCC_Define=%5:s"', [
+      rsVars, projectName, configName, targetPlatform, unitOutputPath, defines]);
     if fPauseAfterEachStep then
       commandLine := commandLine + SPause;
     ExecuteCommandLine(cmdFileName, commandLine, exitCode);
@@ -640,7 +671,7 @@ begin
     begin
       commandLine := Format('%0:s\Tests\Bin\%1:s\Spring.Tests.exe', [
         ExcludeTrailingPathDelimiter(projectPath),
-        StringReplace(task.Compiler.TypeName, '.', '\', [])]);
+        StringReplace(TPath.Combine(task.Compiler.TypeName, configName), '.', '\', [])]);
       ExecuteCommandLine(commandLine, '', exitCode, ExtractFileDir(commandLine));
     end;
   end;
@@ -707,7 +738,9 @@ begin
   selectedTasks.Delimiter := ';';
   try
     config := iniFile.ReadString('Globals', 'Config', 'Debug');
-    fConfigurationType := TEnum.Parse<TConfigurationType>(config);
+    fBuildConfigs := [];
+    for config in SplitString(config, ',') do
+      Include(fBuildConfigs, TEnum.Parse<TBuildConfig>(config));
     fSourceBaseDir := iniFile.ReadString('Globals', 'SourceBaseDir', '');
     fSourceBaseDir := ApplicationPath + fSourceBaseDir;
     fSourcePaths.DelimitedText := iniFile.ReadString('Globals', 'SourcePaths', '');
@@ -716,7 +749,9 @@ begin
     selectedTasks.DelimitedText := iniFile.ReadString('Globals', 'SelectedTasks', '');
     fPauseAfterEachStep := iniFile.ReadBool('Globals', 'PauseAfterEachStep', False);
     fRunTests := iniFile.ReadBool('Globals', 'RunTests', False);
+    fRunTestsAsConsole := iniFile.ReadBool('Globals', 'RunTestsAsConsole', False);
     fModifyDelphiRegistrySettings := iniFile.ReadBool('Globals', 'ModifyDelphiRegistrySettings', False);
+    fOnlyShowInstalledVersions := iniFile.ReadBool('Globals', 'OnlyShowInstalledVersions', False);
 
     for target in Targets do
     begin
@@ -760,6 +795,8 @@ var
   iniFile: TCustomIniFile;
   selectedTasks: TStrings;
   task: TBuildTask;
+  configType: TBuildConfig;
+  config: string;
 begin
   iniFile := TIniFile.Create(fileName);
   selectedTasks := TStringList.Create;
@@ -767,11 +804,18 @@ begin
   try
     for task in fSelectedTasks do
       selectedTasks.Add(task.Compiler.TypeName);
-    iniFile.WriteString('Globals', 'Config', ConfigurationNames[ConfigurationType]);
+    for configType in fBuildConfigs do
+    begin
+      if config <> '' then
+        config := config + ',';
+      config := config + ConfigNames[configType];
+    end;
+    iniFile.WriteString('Globals', 'Config', config);
     iniFile.WriteString('Globals', 'SelectedTasks', selectedTasks.DelimitedText);
-    iniFile.WriteBool('Globals', 'PauseAfterEachStep', PauseAfterEachStep);
-    iniFile.WriteBool('Globals', 'RunTests', RunTests);
-    iniFile.WriteBool('Globals', 'ModifyDelphiRegistrySettings', ModifyDelphiRegistrySettings);
+    iniFile.WriteBool('Globals', 'PauseAfterEachStep', fPauseAfterEachStep);
+    iniFile.WriteBool('Globals', 'RunTests', fRunTests);
+    iniFile.WriteBool('Globals', 'RunTestsAsConsole', fRunTestsAsConsole);
+    iniFile.WriteBool('Globals', 'ModifyDelphiRegistrySettings', fModifyDelphiRegistrySettings);
   finally
     selectedTasks.Free;
     iniFile.Free;

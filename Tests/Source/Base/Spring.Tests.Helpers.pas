@@ -45,8 +45,24 @@ type
     procedure TestToQuotedString;
   end;
 
+  TTestRttiTypeHelper = class(TTestCase)
+  published
+    procedure TestGetGenericArguments;
+  end;
+
+type
+  IDict<TKey,TValue> = interface
+  end;
+
+var
+  dummy1: IDict<string,TObject>;
+  dummy2: IDict<string,IDict<string,TObject>>;
 
 implementation
+
+uses
+  Rtti,
+  Spring.Reflection;
 
 
 {$REGION 'TTestGuidHelper'}
@@ -106,5 +122,35 @@ end;
 {$WARNINGS ON}
 
 {$ENDREGION}
+
+
+{$REGION 'TTestRttiTypeHelper'}
+
+procedure TTestRttiTypeHelper.TestGetGenericArguments;
+var
+  t: TRttiType;
+  types: TArray<TRttiType>;
+begin
+  t := TType.GetType(TypeInfo(IDict<string,TObject>));
+  types := t.GetGenericArguments;
+  CheckEquals(2, Length(types));
+  Check(TypeInfo(string) = types[0].Handle);
+  Check(TypeInfo(TObject) = types[1].Handle);
+
+  t := TType.GetType(TypeInfo(IDict<string,IDict<string,TObject>>));
+  types := t.GetGenericArguments;
+  CheckEquals(2, Length(types));
+  Check(TypeInfo(string) = types[0].Handle);
+  Check(TypeInfo(IDict<string,TObject>) = types[1].Handle);
+
+  t := TType.GetType(TypeInfo(IDict<string,IDict<string,IDict<string,TObject>>>));
+  types := t.GetGenericArguments;
+  CheckEquals(2, Length(types));
+  Check(TypeInfo(string) = types[0].Handle);
+  Check(TypeInfo(IDict<string,IDict<string,TObject>>) = types[1].Handle);
+end;
+
+{$ENDREGION}
+
 
 end.

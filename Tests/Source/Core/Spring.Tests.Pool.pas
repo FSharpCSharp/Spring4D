@@ -45,7 +45,7 @@ type
   private
     fLastID: Integer;
   public
-    function CreateInstance(const resolver: IDependencyResolver): TValue;
+    function CreateInstance(const context: ICreationContext): TValue;
     property LastID: Integer read fLastID;
   end;
 
@@ -68,7 +68,7 @@ implementation
 
 { TMockActivator }
 
-function TMockActivator.CreateInstance(const resolver: IDependencyResolver): TValue;
+function TMockActivator.CreateInstance(const context: ICreationContext): TValue;
 begin
   Inc(fLastID);
   Result := TMockIDObject.Create(fLastID);
