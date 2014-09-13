@@ -80,12 +80,11 @@ type
     function GetLast: TLinkedListNode<T>;
     function GetOnChanged: ICollectionChangedEvent<T>;
   {$ENDREGION}
+    procedure AddInternal(const item: T); override;
   public
     destructor Destroy; override;
 
     function GetEnumerator: IEnumerator<T>; override;
-
-    procedure Add(const item: T); override;
 
     procedure AddAfter(const node: TLinkedListNode<T>; const newNode: TLinkedListNode<T>); overload;
     function AddAfter(const node: TLinkedListNode<T>; const value: T): TLinkedListNode<T>; overload;
@@ -127,7 +126,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TLinkedList<T>.Add(const item: T);
+procedure TLinkedList<T>.AddInternal(const item: T);
 begin
   AddLast(item);
 end;

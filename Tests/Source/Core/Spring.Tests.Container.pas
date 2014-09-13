@@ -62,7 +62,7 @@ type
 
   TTestEmptyContainer = class(TContainerTestCase)
   published
-    procedure TestResolveUnknownIntferfaceService;
+    procedure TestResolveUnknownInterfaceService;
 //    procedure TestResolveUnknownClassService;
     procedure TestRegisterNonGuidInterfaceService;
     procedure TestRegisterGenericInterfaceService;
@@ -245,6 +245,7 @@ type
     procedure TestResolveWithClass;
     procedure TestResolveWithMultipleParams;
     procedure TestResolveWithDependency;
+    procedure TestResolveWithDependencySubClass;
   end;
 
   TTestRegisterInterfaceTypes = class(TContainerTestCase)
@@ -370,7 +371,7 @@ end;
 
 {$REGION 'TTestEmptyContainer'}
 
-procedure TTestEmptyContainer.TestResolveUnknownIntferfaceService;
+procedure TTestEmptyContainer.TestResolveUnknownInterfaceService;
 begin
   ExpectedException := EResolveException;
   fContainer.Resolve<INameService>;
@@ -1471,6 +1472,24 @@ begin
   service := fContainer.Resolve<INameService>([fDummy]);
   CheckEquals(fdummy.ClassName, service.Name);
   CheckNotNull((service as TDynamicNameService).AgeService);
+
+  service := fContainer.Resolve<INameService>([TNamedValue.From('obj', fDummy)]);
+  CheckEquals(fdummy.ClassName, service.Name);
+  CheckNotNull((service as TDynamicNameService).AgeService);
+end;
+
+procedure TTestResolverOverride.TestResolveWithDependencySubClass;
+var
+  service: INameService;
+begin
+  fContainer.RegisterType<TDynamicNameService>.Implements<INameService>('dynamic')
+    .InjectField('fAgeService');
+  fContainer.RegisterType<TNameAgeComponent>.Implements<IAgeService>;
+  fContainer.Build;
+
+  // ctor requires TObject but we pass a sub class
+  fDummy.Free;
+  fDummy := TPersistent.Create;
 
   service := fContainer.Resolve<INameService>([TNamedValue.From('obj', fDummy)]);
   CheckEquals(fdummy.ClassName, service.Name);

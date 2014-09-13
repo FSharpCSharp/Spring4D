@@ -58,6 +58,8 @@ resourcestring
 
   SUnexpectedArgumentLength = 'Unexpected parameter length.';
 
+  SCriticalSectionNotInitialized = 'Critical section was not initialized';
+
   SServiceLocatorNotInitialized = 'The global ServiceLocator has not been initialized.';
 
   SNoTypeInfo          = 'No type information found.';

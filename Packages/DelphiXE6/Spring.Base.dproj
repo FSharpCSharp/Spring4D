@@ -57,6 +57,8 @@
         <Base>true</Base>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
+        <DllSuffix>.DelphiXE6</DllSuffix>
+        <SanitizedProjectName>Spring_Base</SanitizedProjectName>
         <DCC_Define>SPRING_NO_WARNING;$(DCC_Define)</DCC_Define>
         <GenPackage>true</GenPackage>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;Vcl;$(DCC_Namespace)</DCC_Namespace>
