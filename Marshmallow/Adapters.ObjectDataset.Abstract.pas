@@ -134,7 +134,9 @@ type
     function IsCursorOpen: Boolean; override;
     procedure SetBookmarkFlag(Buffer: TRecordBuffer; Value: TBookmarkFlag);
       override;
-    {$IF CompilerVersion >=24}
+    {$IF CompilerVersion >=27}
+    procedure SetBookmarkData(Buffer: TRecBuf; Data: TBookmark); overload; override;
+    {$ELSEIF CompilerVersion >=24}
     procedure SetBookmarkData(Buffer: TRecordBuffer; Data: TBookmark); overload; override;
     {$ELSE}
     procedure SetBookmarkData(Buffer: TRecordBuffer; Data: Pointer); overload; override;
@@ -481,7 +483,11 @@ begin
     Finalize(PVariantList(FOldValueBuffer + sizeof(TArrayRecInfo))^,
       Fields.Count);
 
+  {$IF CompilerVersion >= 27}
+  InitRecord(NativeInt(FOldValueBuffer));
+  {$ELSE}
   InitRecord(FOldValueBuffer);
+  {$IFEND}
   inherited DoOnNewRecord;
 end;
 
@@ -786,7 +792,11 @@ begin
       PArrayRecInfo(Buffer)^.BookmarkFlag := bfCurrent;
 
       Finalize(PVariantList(Buffer + sizeof(TArrayRecInfo))^, Fields.Count);
+      {$IF CompilerVersion >= 27}
+      GetCalcFields(NativeInt(Buffer));
+      {$ELSE}
       GetCalcFields(Buffer);
+      {$IFEND}
     end;
 
   except
@@ -943,24 +953,16 @@ begin
   end;
 end;
 
-{$IF CompilerVersion >=24}
+{$IF CompilerVersion >=27}
+procedure TAbstractObjectDataset.SetBookmarkData(Buffer: TRecBuf; Data: TBookmark);
+{$ELSEIF CompilerVersion >=24}
 procedure TAbstractObjectDataset.SetBookmarkData(Buffer: TRecordBuffer;
   Data: TBookmark);
 {$ELSE}
 procedure TAbstractObjectDataset.SetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);
 {$IFEND}
-{var
-  LValue: TValue;}
 begin
   inherited;
-  //we dont need this method because we get FInsertIndex OnBeforeInsert event
-  {if PArrayRecInfo(Buffer)^.BookmarkFlag in [bfCurrent, bfInserted] then
-  begin
-    LValue := PObject(Data)^;
-    PArrayRecInfo(Buffer)^.Index := IndexList.IndexOfModel(LValue);
-  end
-  else
-    PArrayRecInfo(Buffer)^.Index := -1;}
 end;
 
 procedure TAbstractObjectDataset.SetBookmarkFlag(Buffer: TRecordBuffer; Value: TBookmarkFlag);

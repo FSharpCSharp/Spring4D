@@ -587,7 +587,9 @@ procedure TObjectDataset.InternalOpen;
 begin
   inherited InternalOpen;
 
-  if DefaultFields then
+
+  if {$IF CompilerVersion >=27}((FieldOptions.AutoCreateMode <> acExclusive) or not (lcPersistent in Fields.LifeCycles))
+    {$ELSE}DefaultFields{$IFEND} then
     CreateFields;
 
   Reserved := Pointer(FieldListCheckSum);

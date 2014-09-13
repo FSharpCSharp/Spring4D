@@ -54,6 +54,9 @@ type
   TConnectionFactory = class sealed
   private
     class var FRegistered: IDictionary<TDBDriverType, TClass>;
+
+    class function GetJsonPair(const AJsonObject: TJSONObject; const AIndex: Integer): TJSONPair;
+    class function GetJsonObjectCount(const AJsonObject: TJSONObject): Integer;
   protected
     class function ConcreteCreate(AClass: TClass; AConcreteConnection: TObject): IDBConnection; overload;
     class function ConcreteCreate(AClass: TClass): TObject; overload;
@@ -159,11 +162,11 @@ begin
   if Assigned(LJsonObj) then
   begin
     try
-      sQualifiedName := LJsonObj.Get(0).JsonString.Value;
+      sQualifiedName := GetJsonPair(LJsonObj, 0).JsonString.Value;
       LType := GetConnectionType(sQualifiedName);
       //try to create instance
       LConcreteConnection := ConcreteCreate(LType.AsInstance.MetaclassType);
-      SetConnectionProperties(LConcreteConnection, LJsonObj.Get(0).JsonValue as TJSONObject);
+      SetConnectionProperties(LConcreteConnection, GetJsonPair(LJsonObj, 0).JsonValue as TJSONObject);
       SetConnectionConnected(sQualifiedName, LConcreteConnection);
     finally
       LJsonObj.Free;
@@ -186,6 +189,25 @@ begin
   finally
     LFileStream.Free;
   end;
+end;
+
+class function TConnectionFactory.GetJsonObjectCount(
+  const AJsonObject: TJSONObject): Integer;
+begin
+  {$IF CompilerVersion >=27 }
+  Result := AJsonObject.Count;
+  {$ELSE}
+  Result := AJsonObject.Size;
+  {$IFEND}
+end;
+
+class function TConnectionFactory.GetJsonPair(const AJsonObject: TJSONObject; const AIndex: Integer): TJSONPair;
+begin
+  {$IF CompilerVersion >=27 }
+  Result := AJsonObject.Pairs[0];
+  {$ELSE}
+  Result := AJsonObject.Get(0);
+  {$IFEND}
 end;
 
 class function TConnectionFactory.GetInstance(AKey: TDBDriverType;
@@ -224,9 +246,9 @@ var
   LConverted: TValue;
 begin
   //set properties from json config
-  for i := 0 to AJsonObj.Size - 1 do
+  for i := 0 to GetJsonObjectCount(AJsonObj) - 1 do
   begin
-    LPair := AJsonObj.Get(i);
+    LPair := GetJsonPair(AJsonObj, i);
     LValue := LPair.JsonValue.Value;
     if LValue.TryConvert(TRttiExplorer.GetMemberTypeInfo(AConcreteConnection.ClassType, LPair.JsonString.Value), LConverted, bFree) then
       LValue := LConverted;
