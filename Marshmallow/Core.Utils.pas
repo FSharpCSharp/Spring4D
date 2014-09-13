@@ -284,9 +284,7 @@ begin
     LValueField := LFields[1]; // LRttiType.GetField('FHasValue');
     LRef := ANullable.GetReferenceToRawData;
     LHasValue := LValueField.GetValue(LRef);
-    Result := ((LHasValue.TypeInfo = TypeInfo(Boolean)) and (LHasValue.AsBoolean)) //Marshmallow Nullable
-      or
-     ((LHasValue.TypeInfo = TypeInfo(string)) and ((LHasValue.AsString = '@'))); //Spring Nullable
+    Result := ((LHasValue.TypeInfo = TypeInfo(string)) and ((LHasValue.AsString = '@'))); //Spring Nullable
 
     if Result then
     begin
@@ -473,20 +471,12 @@ begin
     LResultRef := AResult.GetReferenceToRawData;
     if AFrom.IsEmpty then
     begin
-      if (LHasValueField.FieldType.TypeKind in [tkString, tkUString]) then
-        TValue.From<string>('').ExtractRawData(PByte(LResultRef) + LHasValueField.Offset)
-       // LHasValueField.SetValue(LResultRef, '') //Spring Nullable
-      else
-        TValue.From<Boolean>(False).ExtractRawData(PByte(LResultRef) + LHasValueField.Offset);
-       // LHasValueField.SetValue(LResultRef, False);//Marshmallow Nullable
+      TValue.From<string>('').ExtractRawData(PByte(LResultRef) + LHasValueField.Offset); // LHasValueField.SetValue(LResultRef, '') //Spring Nullable
     end
     else
     begin
-      if (LHasValueField.FieldType.TypeKind in [tkString, tkUString]) then
-        TValue.From<string>('@').ExtractRawData(PByte(LResultRef) + LHasValueField.Offset)
+      TValue.From<string>('@').ExtractRawData(PByte(LResultRef) + LHasValueField.Offset);
         //LHasValueField.SetValue(LResultRef, '@')  //Spring Nullable
-      else   //Marshmallow Nullable
-        PBoolean(PByte(LResultRef) + (AResult.DataSize - SizeOf(Boolean)))^ := True; //faster than LHasValueField.SetValue(LResultRef, True);
 
       //get type from Nullable<T> and set value to this type
       if AFrom.TryConvert(LValueField.FieldType.Handle, LValue, bFree) then

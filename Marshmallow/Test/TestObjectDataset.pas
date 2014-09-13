@@ -711,7 +711,7 @@ begin
   CheckEquals(1, LOrders.First.Customer_ID);
   CheckEquals(Today, LOrders.First.Date_Order_Placed);
   CheckEquals(150, LOrders.First.Order_Status_Code);
-  CheckTrue(LOrders.First.Total_Order_Price.IsNull);
+  CheckFalse(LOrders.First.Total_Order_Price.HasValue);
 end;
 
 procedure TestTObjectDataset.QuickSortTest;

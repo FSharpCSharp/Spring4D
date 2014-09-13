@@ -111,8 +111,8 @@ var
   bOK: Boolean;
   LRttiMember: TRttiMember;
   LEntity: TCustomer;
-  LValue: Core.Types.Nullable<Double>;
-  LSpringValue: Spring.Nullable<string>;
+  LValue: Nullable<Double>;
+  LSpringValue: Nullable<string>;
   LOrder: TCustomer_Orders;
 begin
   //Spring Nullable
@@ -123,7 +123,7 @@ begin
     bOK := TUtils.TryConvert(LFrom, nil, LRttiMember, LEntity, LResult);
     CheckTrue(bOK);
     CheckEquals('Nullable<System.string>', string(LResult.TypeInfo.Name));
-    CheckTrue(LResult.TryAsType<Spring.Nullable<string>>(LSpringValue));
+    CheckTrue(LResult.TryAsType<Nullable<string>>(LSpringValue));
     CheckTrue(LSpringValue.HasValue);
 
     CheckTrue(TUtils.TryGetNullableTypeValue(LResult, LFrom));
@@ -139,7 +139,7 @@ begin
     bOK := TUtils.TryConvert(LFrom, nil, LRttiMember, LOrder, LResult);
     CheckTrue(bOK);
     CheckEquals('Nullable<System.Double>', string(LResult.TypeInfo.Name));
-    CheckTrue(LResult.TryAsType<Core.Types.Nullable<Double>>(LValue));
+    CheckTrue(LResult.TryAsType<Nullable<Double>>(LValue));
     CheckTrue(LValue.HasValue);
     CheckEquals(256.12, LValue.Value, 0.001);
 

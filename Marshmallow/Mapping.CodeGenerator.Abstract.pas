@@ -3,8 +3,9 @@ unit Mapping.CodeGenerator.Abstract;
 interface
 
 uses
-  Generics.Collections
+  Spring.Collections
   ,Core.Types
+  ,Spring
   ;
 
 type
@@ -49,7 +50,7 @@ type
   private
     FTableName: string;
     FSchemaName: string;
-    FColumns: TObjectList<TColumnData>;
+    FColumns: IList<TColumnData>;
   public
     constructor Create(); virtual;
     destructor Destroy; override;
@@ -60,7 +61,7 @@ type
     property SchemaName: string read FSchemaName write FSchemaName;
 
 
-    property Columns: TObjectList<TColumnData> read FColumns;
+    property Columns: IList<TColumnData> read FColumns;
   end;
 
   TAbstractCodeGenerator = class(TInterfacedObject)
@@ -83,12 +84,11 @@ uses
 constructor TEntityModelData.Create;
 begin
   inherited Create;
-  FColumns := TObjectList<TColumnData>.Create(True);
+  FColumns := TCollections.CreateObjectList<TColumnData>(True);
 end;
 
 destructor TEntityModelData.Destroy;
 begin
-  FColumns.Free;
   inherited Destroy;
 end;
 

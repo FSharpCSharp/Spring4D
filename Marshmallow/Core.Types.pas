@@ -56,39 +56,6 @@ type
     property Value: T read GetValue write SetValue;
   end;
 
-  /// <summary>
-  /// Nullable type
-  /// </summary>
- // {$TYPEINFO ON}
-  Nullable<T> = packed record
-  private
-    FValue: T;
-    FHasValue: Boolean;
-    function GetValue: T;
-    procedure SetValue(const Value: T);
-    function GetIsNull: Boolean;
-    function GetValueOrDef: T;
-    procedure SetIsNull(const Value: Boolean);
-  public
-    constructor Create(const AValue: T);
-
-    function GetValueOrDefault(): T; overload;
-    function GetValueOrDefault(const ADef: T): T; overload;
-    function ToString(): string;
-
-    property HasValue: Boolean read FHasValue;
-    property IsNull: Boolean read GetIsNull write SetIsNull;
-    property Value: T read GetValue write SetValue;
-    property ValueOrDef: T read GetValueOrDef;
-
-    class operator Implicit(const Value: T): Nullable<T>;
-    class operator Implicit(const Value: Nullable<T>): T;
-
-    class operator Equal(const Left, Right: Nullable<T>): Boolean;
-    class operator NotEqual(const Left, Right: Nullable<T>): Boolean;
-
-  end;
-
   ISvLazy<T> = interface(IInvokable)
     ['{433C34BB-E5F3-4594-814C-70F02C415CB8}']
     function OwnsObjects: Boolean;
@@ -290,98 +257,6 @@ end;
 function TEnum<T>.ToString: string;
 begin
   Result := GetEnumName(TypeInfo(T), FValue);
-end;
-
-{ Nullable<T> }
-
-constructor Nullable<T>.Create(const AValue: T);
-begin
-  FValue := AValue;
-end;
-
-class operator Nullable<T>.Equal(const Left, Right: Nullable<T>): Boolean;
-var
-  LLeft, LRight: TValue;
-begin
-  LLeft := TValue.From<T>(Left);
-  LRight := TValue.From<T>(Right);
-
-  Result := SameValue(LLeft, LRight);
-//  Result := LLeft.IsSameAs(LRight);
-end;
-
-function Nullable<T>.GetIsNull: Boolean;
-begin
-  Result := not (FHasValue) ;
-end;
-
-function Nullable<T>.GetValue: T;
-begin
-  Result := FValue;
-end;
-
-function Nullable<T>.GetValueOrDef: T;
-begin
-  if FHasValue then
-    Result := FValue
-  else
-    Result := System.Default(T);
-end;
-
-function Nullable<T>.GetValueOrDefault: T;
-begin
-  Result := GetValueOrDefault(System.Default(T));
-end;
-
-function Nullable<T>.GetValueOrDefault(const ADef: T): T;
-begin
-  if FHasValue then
-    Result := FValue
-  else
-    Result := ADef;
-end;
-
-class operator Nullable<T>.Implicit(const Value: T): Nullable<T>;
-begin
-  Result.Value := Value;
-end;
-
-class operator Nullable<T>.Implicit(const Value: Nullable<T>): T;
-begin
-  Result := Value.Value;
-end;
-
-class operator Nullable<T>.NotEqual(const Left, Right: Nullable<T>): Boolean;
-var
-  LLeft, LRight: TValue;
-begin
-  LLeft := TValue.From<T>(Left);
-  LRight := TValue.From<T>(Right);
-
-  Result := not SameValue(LLeft, LRight); // LLeft.IsSameAs(LRight);
-end;
-
-procedure Nullable<T>.SetIsNull(const Value: Boolean);
-begin
-  FHasValue := not Value;
-end;
-
-procedure Nullable<T>.SetValue(const Value: T);
-begin
-  FValue := Value;
-  FHasValue := True;
-end;
-
-function Nullable<T>.ToString: string;
-var
-  LValue: TValue;
-begin
-  Result := '';
-  if FHasValue then
-  begin
-    LValue := TValue.From<T>(FValue);
-    Result := TValue.ToString(LValue);
-  end;
 end;
 
 { TSvLazy<T> }

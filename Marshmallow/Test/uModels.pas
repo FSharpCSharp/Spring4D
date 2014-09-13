@@ -69,7 +69,7 @@ type
     FHeight: Double;
     FLastEdited: TDateTime;
     FEmail: string;
-    FMiddleName: Spring.Nullable<string>;
+    FMiddleName: Nullable<string>;
 
     [OneToMany(False, [ctCascadeAll], 'FID')]
     FOrders: LazyObject<TObjectList<TCustomer_Orders>>;
@@ -106,7 +106,7 @@ type
     [Column('EMAIL', [], 50, 0, 0, 'E-mail address')]
     property EMail: string read FEmail write FEmail;
     [Column('MIDDLENAME', [], 50, 0, 0, 'Middle name')]
-    property MiddleName: Spring.Nullable<string> read FMiddleName write FMiddleName;
+    property MiddleName: Nullable<string> read FMiddleName write FMiddleName;
     [Column('CUSTTYPE', [cpHidden], 0, 0, 0, 'Customers type')]
     property CustomerType: TCustomerType read FCustomerType write FCustomerType;
     property Products: TSvObjectList<TProduct> read GetProducts write SetProducts;

@@ -96,6 +96,7 @@ uses
   ,SQL.Params
   ,SvDesignPatterns
   ,SvRttiUtils
+  ,Spring
   ,Spring.Collections
   ,Generics.Collections
   ,Core.Reflection
@@ -547,7 +548,7 @@ begin
   try
     LCustomer := FManager.SingleOrDefault<TCustomer>('select * from ' + TBL_PEOPLE, []);
     try
-      CheckTrue(LCustomer.AvatarLazy.IsNull);
+      CheckFalse(LCustomer.AvatarLazy.HasValue);
     finally
       LCustomer.Free;
     end;
@@ -556,7 +557,7 @@ begin
 
     LCustomer := FManager.SingleOrDefault<TCustomer>('select * from ' + TBL_PEOPLE, []);
     try
-      CheckFalse(LCustomer.AvatarLazy.IsNull);
+      CheckTrue(LCustomer.AvatarLazy.HasValue);
     finally
       LCustomer.Free;
     end;
@@ -820,7 +821,7 @@ begin
     LForeignCustomer := FManager.FindOne<TForeignCustomer>(LCustomer.ID);
 
     CheckEquals('Foo', LForeignCustomer.Name);
-    CheckTrue(LForeignCustomer.Country.IsNull);
+    CheckFalse(LForeignCustomer.Country.HasValue);
   finally
     LForeignCustomer.Free;
     LCustomer.Free;
