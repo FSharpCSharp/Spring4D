@@ -408,8 +408,8 @@ begin
     LField := LFields[i];
     if LField.FieldType.IsInstance then
     begin
-      //LValueTo := TRttiExplorer.CreateType(LField.FieldType.AsInstance.MetaclassType);
-      LValueTo := LField.FieldType.AsInstance.MetaclassType.Create;
+      LValueTo := TRttiExplorer.CreateType(LField.FieldType.AsInstance.MetaclassType);
+      //LValueTo := LField.FieldType.AsInstance.MetaclassType.Create;
       LValueFrom := LField.GetValue(AEntityFrom).AsObject;
       if LValueTo.AsObject is TPersistent then
       begin
@@ -463,9 +463,7 @@ begin
       if (AMethCreate.IsConstructor) and (Length(AMethCreate.GetParameters) = 0) then
       begin
         instanceType := rType.AsInstance;
-
         Result := AMethCreate.Invoke(instanceType.MetaclassType, []).AsType<T>;
-
         Break;
       end;
     end;
@@ -508,9 +506,7 @@ begin
       if (AMethCreate.IsConstructor) and (Length(AMethCreate.GetParameters) = 0) then
       begin
         instanceType := rType.AsInstance;
-
         Result := AMethCreate.Invoke(instanceType.MetaclassType, []).AsObject;
-
         Exit;
       end;
     end;
@@ -529,32 +525,9 @@ begin
 end;
 
 class procedure TRttiExplorer.DestroyClass<T>(var AObject: T);
-var
-  rType: TRttiType;
-  AMethDestroy: TRttiMethod;
-  LObject: TValue;
-  LObj: TObject;
 begin
-  rType := FRttiCache.GetType(TypeInfo(T));
-  if rType.IsInstance then
-  begin
-    LObject := TValue.From<T>(AObject);
-    if LObject.IsObject then
-    begin
-      LObj := LObject.AsObject;
-      if Assigned(LObj) then
-      begin
-        for AMethDestroy in rType.GetMethods do
-        begin
-          if (AMethDestroy.IsDestructor) and (Length(AMethDestroy.GetParameters) = 0) then
-          begin
-            AMethDestroy.Invoke(LObj, []);
-            Break;
-          end;
-        end;
-      end;
-    end;
-  end;
+  if PTypeInfo(TypeInfo(T)).Kind = tkClass then
+    PObject(@AObject)^.Free;
 end;
 
 class function TRttiExplorer.EntityChanged(AEntity1, AEntity2: TObject): Boolean;

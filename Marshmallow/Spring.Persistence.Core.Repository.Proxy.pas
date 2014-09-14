@@ -4,13 +4,13 @@ unit Spring.Persistence.Core.Repository.Proxy;
 
 interface
 
-{$IF CompilerVersion < 23}
-{$Message Fatal 'Proxy repository supports XE2 or higher'}
+{$IF CompilerVersion < 22}
+{$Message Fatal 'Proxy repository supports XE or higher'}
 {$IFEND}
 
 uses
   Rtti, TypInfo, Spring.Persistence.Core.Interfaces, Spring.Persistence.Core.Session
-  , Spring.Persistence.Core.Repository.Simple, Spring.Collections
+  , Spring.Persistence.Core.Repository.Simple, Spring.Collections, Spring.Reflection.Compatibility
   ;
 
 type
@@ -18,7 +18,7 @@ type
 
   TConstArray = array of TVarRec;
 
-  TProxyRepository<T: class, constructor; TID> = class(TVirtualInterface)
+  TProxyRepository<T: class, constructor; TID> = class(Spring.Reflection.Compatibility.TVirtualInterface)
   private
     FSimpleRepository: IPagedRepository<T,TID>;
     FSession: TSession;
