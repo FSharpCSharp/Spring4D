@@ -421,7 +421,7 @@ end;
 procedure TestTMongoStatementAdapter.TestSetParams;
 begin
   // TODO: Setup method call parameters
-//  FMongoStatementAdapter.SetParams(Params);
+ // FMongoStatementAdapter.SetParams(Params);
   // TODO: Validate method results
 end;
 

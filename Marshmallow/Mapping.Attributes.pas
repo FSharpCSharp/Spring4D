@@ -49,7 +49,7 @@ type
   TColumnProperties = set of TColumnProperty;
 
   TDiscriminatorType = (dtString, dtInteger);
-  {TODO -oLinas -cGeneral : finish defining enums}
+
   TInheritenceStrategy = (isJoined, isSingleTable, isTablePerClass);
 
   TMemberType = (mtField, mtProperty, mtClass);

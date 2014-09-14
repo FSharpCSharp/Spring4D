@@ -15,7 +15,7 @@ interface
 
 uses
   TestFramework, Windows, Forms, Dialogs, Controls, Classes, SysUtils,
-  Variants, Graphics, Messages, StdCtrls, Core.Session, Core.Interfaces
+  Variants, Graphics, Messages, StdCtrls, Core.Session, Core.DetachedSession, Core.Interfaces
   ,uModels, Rtti, SQLiteTable3;
 
 type

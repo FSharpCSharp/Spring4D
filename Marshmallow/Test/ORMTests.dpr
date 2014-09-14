@@ -137,7 +137,9 @@ uses
   TestFireDACAdapter in 'TestFireDACAdapter.pas',
   TestCollectionsAdapterResolver in 'TestCollectionsAdapterResolver.pas',
   Core.CollectionAdapterResolver in '..\Core.CollectionAdapterResolver.pas',
-  Core.SpringCollectionAdapter in '..\Core.SpringCollectionAdapter.pas';
+  Core.SpringCollectionAdapter in '..\Core.SpringCollectionAdapter.pas',
+  Core.AbstractSession in '..\Core.AbstractSession.pas',
+  Core.DetachedSession in '..\Core.DetachedSession.pas';
 
 {$R *.RES}
 

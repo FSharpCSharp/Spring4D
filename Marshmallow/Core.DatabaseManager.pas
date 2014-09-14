@@ -143,7 +143,6 @@ begin
   begin
     LFkCreator := GetFKCreateExecutor(LEntityClass, Connection);
     try
-      LFkCreator.EntityClass := LEntityClass;
       LFkCreator.CreateForeignKeys(LEntityClass);
     finally
       LFkCreator.Free;
@@ -160,7 +159,6 @@ begin
   begin
     LSequenceCreator := GetSequenceCreateExecutor(LEntityClass, Connection);
     try
-      LSequenceCreator.EntityClass := LEntityClass;
       LSequenceCreator.CreateSequence(LEntityClass);
     finally
       LSequenceCreator.Free;
@@ -177,7 +175,6 @@ begin
   begin
     LTableCreator := GetTableCreateExecutor(LEntityClass, Connection);
     try
-      LTableCreator.EntityClass := LEntityClass;
       LTableCreator.CreateTables(LEntityClass);
     finally
       LTableCreator.Free;

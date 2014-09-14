@@ -225,6 +225,8 @@
         <DCCReference Include="TestCollectionsAdapterResolver.pas"/>
         <DCCReference Include="..\Core.CollectionAdapterResolver.pas"/>
         <DCCReference Include="..\Core.SpringCollectionAdapter.pas"/>
+        <DCCReference Include="..\Core.AbstractSession.pas"/>
+        <DCCReference Include="..\Core.DetachedSession.pas"/>
         <None Include="Profiling\AQtimeModule1.aqt"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>

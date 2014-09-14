@@ -39,7 +39,6 @@ object MainForm: TMainForm
         Width = 80
       end>
     GridLines = True
-    HotTrack = True
     OwnerData = True
     ReadOnly = True
     RowSelect = True

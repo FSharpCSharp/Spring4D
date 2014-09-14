@@ -78,6 +78,7 @@ function TCommandFactory.GetCommand<T>(AClass: TClass; const AConnection: IDBCon
 begin
   Result := T.Create;
   Result.Connection := AConnection;
+  Result.EntityClass := AClass;
   Result.Build(AClass);
 end;
 

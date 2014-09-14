@@ -370,7 +370,6 @@ begin
   FGroupByFields.Clear;
   FOrderByFields.Clear;
 
-  {TODO -oLinas -cGeneral : add all select fields}
   for LColumn in AColumns do
   begin
     LSelectField := TSQLSelectField.Create(LColumn.Name, FTable);

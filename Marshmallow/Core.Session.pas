@@ -31,7 +31,7 @@ unit Core.Session;
 interface
 
 uses
-  Core.AbstractManager, Core.EntityMap, Core.Interfaces, Rtti, TypInfo
+  Core.AbstractSession, Core.EntityMap, Core.Interfaces, Rtti, TypInfo
   ,Core.EntityCache
   ,Spring.Collections
   ,SQL.Params
@@ -56,59 +56,21 @@ type
   ///	  SessionFactory.
   ///	</summary>
   {$ENDREGION}
-  TSession = class(TAbstractManager)
+  TSession = class(TAbstractSession)
   private
     FOldStateEntities: TEntityMap;
     FStartedTransaction: IDBTransaction;
   protected
     function GetPager(APage, AItemsInPage: Integer): TObject;
-  protected
-    procedure SetEntityColumns(AEntity: TObject; AColumns: TColumnDataList; AResultset: IDBResultset); overload; virtual;
-    procedure SetEntityColumns(AEntity: TObject; AColumns: IList<ManyValuedAssociation>; AResultset: IDBResultset); overload; virtual;
-    procedure SetLazyColumns(AEntity: TObject; AEntityData: TEntityData);
-    procedure SetAssociations(AEntity: TObject; AResultset: IDBResultset; AEntityData: TEntityData); virtual;
-
-    procedure DoSetEntity(var AEntityToCreate: TObject; AResultset: IDBResultset; ARealEntity: TObject); virtual;
-    procedure DoSetEntityValues(var AEntityToCreate: TObject; AResultset: IDBResultset; AColumns: TColumnDataList; AEntityData: TEntityData); virtual;
-    procedure DoFetch<T: class, constructor>(AResultset: IDBResultset; const ACollection: TValue);
-
-    function GetOne<T: class, constructor>(AResultset: IDBResultset; AEntity: TObject): T; overload;
-    function GetOne(AResultset: IDBResultset; AClass: TClass): TObject; overload;
-    function GetObjectList<T: class, constructor>(AResultset: IDBResultset): T;
-    procedure SetInterfaceList<T>(var AValue: T; AResultset: IDBResultset); overload;
-    procedure SetInterfaceList(var AValue: IInterface; AResultset: IDBResultset; AClassInfo: PTypeInfo); overload;
-    procedure SetSimpleInterfaceList(var AValue: IInterface; AResultset: IDBResultset; AClassInfo: PTypeInfo);
-    procedure SetOne<T>(var AValue: T; AResultset: IDBResultset; AEntity: TObject);
-    function DoGetLazy<T>(const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute; out AIsEnumerable: Boolean): IDBResultset;
-
-    function GetSelector(AClass: TClass): TObject;
-
     function GetQueryCountSql(const ASql: string): string;
     function GetQueryCount(const ASql: string; const AParams: array of const): Int64; overload;
     function GetQueryCount(const ASql: string; AParams:IList<TDBParam>): Int64; overload;
 
-    procedure AttachEntity(AEntity: TObject); virtual;
-    procedure DetachEntity(AEntity: TObject); virtual;
+    procedure AttachEntity(AEntity: TObject); override;
+    procedure DetachEntity(AEntity: TObject); override;
   public
     constructor Create(AConnection: IDBConnection); override;
     destructor Destroy; override;
-
-    function GetLazyValueClass<T: class, constructor>(const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute): T;
-    procedure SetLazyValue<T>(var AValue: T; const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute);
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Gets the <c>Resultset</c> from SQL statement.
-    ///	</summary>
-    {$ENDREGION}
-    function GetResultset(const ASql: string; const AParams: array of const): IDBResultset; overload;
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Gets the <c>Resultset</c> from SQL statement.
-    ///	</summary>
-    {$ENDREGION}
-    function GetResultset(const ASql: string; AParams: IList<TDBParam>): IDBResultset; overload;
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -233,39 +195,6 @@ type
     ///	</summary>
     {$ENDREGION}
     function SingleOrDefault<T: class, constructor>(const ASql: string; const AParams: array of const): T;
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Retrieves multiple models from the sql statement into the Collection (
-    ///	  <c>TObjectList&lt;T&gt;</c> or Spring <c>ICollection&lt;T&gt;</c>).
-    ///	</summary>
-    {$ENDREGION}
-    procedure Fetch<T: class, constructor>(const ASql: string;
-      const AParams: array of const; ACollection: ICollection<T>); overload;
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Retrieves multiple models from the <c>Resultset</c> into the
-    ///	  Collection (<c>TObjectList&lt;T&gt;</c> or Spring
-    ///	  <c>ICollection&lt;T&gt;).</c>
-    ///	</summary>
-    {$ENDREGION}
-    procedure Fetch<T: class, constructor>(AResultset: IDBResultset; ACollection: ICollection<T>); overload;
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Retrieves multiple models from the <c>Resultset</c> into the any
-    ///	  Collection. Collection must contain <c>Add</c> method with single
-    ///	  parameter.
-    ///	</summary>
-    {$ENDREGION}
-    procedure Fetch<T: class, constructor>(AResultset: IDBResultset; const ACollection: TValue); overload;
-
-    {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Retrieves multiple models from the <c>resultset</c>.
-    ///	</summary>
-    {$ENDREGION}
-    function GetList<T: class, constructor>(AResultset: IDBResultset): IList<T>; overload;
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -405,46 +334,31 @@ type
     property OldStateEntities: TEntityMap read FOldStateEntities;
   end;
 
-  {$REGION 'Documentation'}
-    ///	<summary>
-    ///	  Represents detached session. Detached session doesn't hold any history of loaded, saved, deleted entities,
-    ///   so Save method always inserts new entity, because it doesn't know the state of an entity.
-    ///  Detached session could be useful in those scenarios where you always know what action should be done (insert, update, or delete).
-    ///  Also it is faster than ordinary session (no need to save entities state).
-    ///	</summary>
-    {$ENDREGION}
-  TDetachedSession = class(TSession)
-  protected
-    procedure AttachEntity(AEntity: TObject); override;
-    procedure DetachEntity(AEntity: TObject); override;
-  end;
-
-
 implementation
 
-uses
-  SQL.Commands.Insert
-  ,SQL.Commands.Select
-  ,SQL.Commands.Update
-  ,SQL.Commands.Delete
-  ,SQL.Commands.Page
-  ,SQL.Register
-  ,SQL.Interfaces
-  ,Core.Exceptions
-  ,SQL.Commands.Factory
-  ,Mapping.RttiExplorer
-  ,Core.Reflection
-  ,Core.Utils
-  ,Core.Base
-  ,SysUtils
-  ,Core.Relation.ManyToOne
-  ,Core.Consts
-  ,Core.Criteria
-  ,Core.CollectionAdapterResolver
-  ,Core.ListSession
-  ;
+{$REGION 'Implementation uses'}
+  uses
+    SQL.Commands.Insert
+    ,SQL.Commands.Select
+    ,SQL.Commands.Update
+    ,SQL.Commands.Delete
+    ,SQL.Commands.Page
+    ,SQL.Register
+    ,SQL.Interfaces
+    ,Core.Exceptions
+    ,SQL.Commands.Factory
+    ,Mapping.RttiExplorer
+    ,Core.Reflection
+    ,Core.Utils
+    ,Core.Base
+    ,SysUtils
+    ,Core.Consts
+    ,Core.Criteria
+    ,Core.ListSession
+    ;
+{$ENDREGION}
 
-{ TEntityManager }
+{ TSession }
 
 procedure TSession.AttachEntity(AEntity: TObject);
 begin
@@ -493,7 +407,6 @@ var
 begin
   LDeleter := CommandFactory.GetCommand<TDeleteExecutor>(AEntity.ClassType, Connection);
   try
-    LDeleter.EntityClass := AEntity.ClassType;
     LDeleter.Execute(AEntity);
   finally
     LDeleter.Free;
@@ -516,98 +429,6 @@ destructor TSession.Destroy;
 begin
   FOldStateEntities.Free;
   inherited Destroy;
-end;
-
-procedure TSession.DoFetch<T>(AResultset: IDBResultset; const ACollection: TValue);
-var
-  LCurrent: T;
-  LCollectionAdapter: ICollectionAdapter<T>;
-begin
-  LCollectionAdapter := TCollectionAdapterResolver.Resolve<T>(ACollection);
-  if not LCollectionAdapter.IsAddSupported then
-    raise EORMContainerDoesNotHaveAddMethod.Create('Container does not have "Add" method.');
-
-  while not AResultset.IsEmpty do
-  begin
-    LCurrent := GetOne<T>(AResultset, nil);
-    LCollectionAdapter.Add(LCurrent);
-    AResultset.Next;
-  end;
-end;
-
-function TSession.DoGetLazy<T>(const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute; out AIsEnumerable: Boolean): IDBResultset;
-var
-  LSelecter: TSelectExecutor;
-  LBaseEntityClass, LEntityClass: TClass;
-  LEnumMethod: TRttiMethod;
-begin
-  LBaseEntityClass := AEntity.ClassType;
-  if not TRttiExplorer.TryGetEntityClass(TypeInfo(T), LEntityClass) then
-  begin
-    //we are fetching from the same table - AEntity
-    LEntityClass := LBaseEntityClass;
-  end;
-
-  LSelecter := GetSelector(LEntityClass) as TSelectExecutor;
-  try
-    LSelecter.EntityClass := LEntityClass;
-   // LSelecter.Connection := Connection;
-    LSelecter.ID := AID;
-    LSelecter.LazyColumn := AColumn;
-    AIsEnumerable := TUtils.IsEnumerable(TypeInfo(T), LEnumMethod);
-    Result := LSelecter.Select(AEntity, LBaseEntityClass);
-  finally
-    LSelecter.Free;
-  end;
-end;
-
-procedure TSession.DoSetEntity(var AEntityToCreate: TObject; AResultset: IDBResultset; ARealEntity: TObject);
-var
-  LEntityData: TEntityData;
-  LResult, LValue: TValue;
-  LVal: Variant;
-begin
-  LEntityData := TEntityCache.Get(AEntityToCreate.ClassType);
-  {TODO -oLinas -cGeneral : if AEntity class type is not our real Entity type, simply just set value}
-  if not LEntityData.IsTableEntity and Assigned(ARealEntity) then
-  begin
-    if not AResultset.IsEmpty then
-    begin
-      LVal := AResultset.GetFieldValue(0);
-      LValue := TUtils.FromVariant(LVal);
-
-      if TUtils.TryConvert(LValue, Self,
-        TRttiExplorer.GetRttiType(AEntityToCreate.ClassType), ARealEntity, LResult) then
-      begin
-        if AEntityToCreate <> nil then
-          FreeAndNil(AEntityToCreate);
-        AEntityToCreate := LResult.AsObject;
-        FreeValueObject(LValue);
-      end;
-    end;
-  end
-  else
-  begin
-    DoSetEntityValues(AEntityToCreate, AResultset, LEntityData.ColumnsData, LEntityData);
-  end;
-end;
-
-procedure TSession.DoSetEntityValues(var AEntityToCreate: TObject; AResultset: IDBResultset;
-  AColumns: TColumnDataList; AEntityData: TEntityData);
-var
-  LEntityData: TEntityData;
-begin
-  SetEntityColumns(AEntityToCreate, AColumns, AResultset);
-  //we need to set internal values for the lazy type field
-  LEntityData := AEntityData;
-  if (AEntityToCreate.ClassType <> AEntityData.EntityClass) then
-    LEntityData := TEntityCache.Get(AEntityToCreate.ClassType);
-
-  SetLazyColumns(AEntityToCreate, LEntityData);
-
-  SetAssociations(AEntityToCreate, AResultset, LEntityData);
-
-  AttachEntity(AEntityToCreate);
 end;
 
 function TSession.Execute(const ASql: string; const AParams: array of const): NativeUInt;
@@ -643,38 +464,10 @@ begin
   end;
 end;
 
-procedure TSession.Fetch<T>(const ASql: string; const AParams: array of const;
-  ACollection: ICollection<T>);
-var
-  LResults: IDBResultset;
-begin
-  LResults := GetResultset(ASql, AParams);
-  Fetch<T>(LResults, ACollection);
-end;
-
 function TSession.GetList<T>(const ASql: string; const AParams: array of const): IList<T>;
 begin
   Result := TCollections.CreateList<T>(True);
   Fetch<T>(ASql, AParams, Result);
-end;
-
-procedure TSession.Fetch<T>(AResultset: IDBResultset; ACollection: ICollection<T>);
-var
-  LCollection: TValue;
-begin
-  LCollection := TValue.From(ACollection);
-  DoFetch<T>(AResultset, LCollection);
-end;
-
-function TSession.GetList<T>(AResultset: IDBResultset): IList<T>;
-begin
-  Result := TCollections.CreateList<T>(True);
-  Fetch<T>(AResultset, Result);
-end;
-
-procedure TSession.Fetch<T>(AResultset: IDBResultset; const ACollection: TValue);
-begin
-  DoFetch<T>(AResultset, ACollection);
 end;
 
 function TSession.FindAll<T>: IList<T>;
@@ -691,8 +484,6 @@ begin
 
   LSelecter := GetSelector(LEntityClass) as TSelectExecutor;
   try
-    LSelecter.EntityClass := LEntityClass;
-    LSelecter.LazyColumn := nil;
     LResults := LSelecter.SelectAll(nil, LEntityClass);
     Result := GetList<T>(LResults);
   finally
@@ -715,9 +506,7 @@ begin
 
   LSelecter := GetSelector(LEntityClass) as TSelectExecutor;
   try
-    LSelecter.EntityClass := LEntityClass;
     LSelecter.ID := AID;
-    LSelecter.LazyColumn := nil;
     LResults := LSelecter.Select(nil, LEntityClass);
     if not LResults.IsEmpty then
     begin
@@ -740,168 +529,6 @@ begin
     Result := System.Default(T);
 end;
 
-procedure TSession.SetSimpleInterfaceList(var AValue: IInterface; AResultset: IDBResultset; AClassInfo: PTypeInfo);
-var
-  LAddMethod: TRttiMethod;
-  LValue, LCurrent: TValue;
-  LIndex: Integer;
-begin
-  if not TRttiExplorer.TryGetBasicMethod(METHODNAME_CONTAINER_ADD, AClassInfo, LAddMethod) then
-    raise EORMContainerDoesNotHaveAddMethod.Create(EXCEPTION_CONTAINER_DOESNOTHAVE_ADD);
-
-  LValue := TValue.From(AValue);
-  LIndex := 0;
-  while not AResultset.IsEmpty do
-  begin
-    LCurrent := TUtils.FromVariant( AResultset.GetFieldValue(LIndex) );
-    LAddMethod.Invoke(LValue, [LCurrent]);
-    AResultset.Next;
-    Inc(LIndex);
-  end;
-end;
-
-procedure TSession.SetInterfaceList(var AValue: IInterface; AResultset: IDBResultset; AClassInfo: PTypeInfo);
-var
-  LCurrent: TObject;
-  LEntityClass: TClass;
-  LAddMethod: TRttiMethod;
-  LAddParameters: TArray<TRttiParameter>;
-  LValue: TValue;
-begin
-  if not (AClassInfo.Kind = tkInterface) then
-    raise EORMUnsupportedType.Create(EXCEPTION_UNSUPPORTED_CONTAINER_TYPE);
-
-  if not TRttiExplorer.TryGetEntityClass(AClassInfo, LEntityClass) then
-    raise EORMUnsupportedType.Create(EXCEPTION_UNSUPPORTED_CONTAINER_TYPE);
-
-  if not TRttiExplorer.TryGetBasicMethod(METHODNAME_CONTAINER_ADD, AClassInfo, LAddMethod) then
-    raise EORMContainerDoesNotHaveAddMethod.Create(EXCEPTION_CONTAINER_DOESNOTHAVE_ADD);
-
-
-  LAddParameters := LAddMethod.GetParameters;
-  if (Length(LAddParameters) <> 1) then
-    raise EORMContainerAddMustHaveOneParameter.Create(EXCEPTION_CONTAINER_ADD_ONE_PARAM);
-
-  case LAddParameters[0].ParamType.TypeKind of
-    tkClass, tkClassRef, tkInterface, tkPointer, tkRecord:
-    else
-      raise EORMContainerItemTypeNotSupported.Create(EXCEPTION_CONTAINER_ITEM_TYPE_NOTSUPPORTED);
-  end;
-
-  LValue := TValue.From(AValue);
-
-  while not AResultset.IsEmpty do
-  begin
-    LCurrent := GetOne(AResultset, LEntityClass);
-
-    LAddMethod.Invoke(LValue, [LCurrent]);
-
-    AResultset.Next;
-  end;
-end;
-
-procedure TSession.SetInterfaceList<T>(var AValue: T; AResultset: IDBResultset);
-var
-  LCurrent: TObject;
-  LEntityClass: TClass;
-  LAddMethod: TRttiMethod;
-  LAddParameters: TArray<TRttiParameter>;
-  LValue: TValue;
-begin
-  if not (PTypeInfo(TypeInfo(T)).Kind = tkInterface) then
-    raise EORMUnsupportedType.Create(EXCEPTION_UNSUPPORTED_CONTAINER_TYPE);
-
-  if not TRttiExplorer.TryGetEntityClass(TypeInfo(T), LEntityClass) then
-    raise EORMUnsupportedType.Create(EXCEPTION_UNSUPPORTED_CONTAINER_TYPE);
-
-  if not TRttiExplorer.TryGetBasicMethod(METHODNAME_CONTAINER_ADD, TypeInfo(T), LAddMethod) then
-    raise EORMContainerDoesNotHaveAddMethod.Create(EXCEPTION_CONTAINER_DOESNOTHAVE_ADD);
-
-
-  LAddParameters := LAddMethod.GetParameters;
-  if (Length(LAddParameters) <> 1) then
-    raise EORMContainerAddMustHaveOneParameter.Create(EXCEPTION_CONTAINER_ADD_ONE_PARAM);
-
-  case LAddParameters[0].ParamType.TypeKind of
-    tkClass, tkClassRef, tkInterface, tkPointer, tkRecord:
-    else
-      raise EORMContainerItemTypeNotSupported.Create(EXCEPTION_CONTAINER_ITEM_TYPE_NOTSUPPORTED);
-  end;
-
-  LValue := TValue.From<T>(AValue);
-
-  while not AResultset.IsEmpty do
-  begin
-    LCurrent := GetOne(AResultset, LEntityClass);
-
-    LAddMethod.Invoke(LValue, [LCurrent]);
-
-    AResultset.Next;
-  end;
-end;
-
-procedure TSession.SetLazyValue<T>(var AValue: T; const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute);
-var
-  IsEnumerable: Boolean;
-  LResults: IDBResultset;
-begin
-  if not Assigned(AEntity) or AID.IsEmpty then
-  begin
-    Exit();
-  end;
-
-  case PTypeInfo(TypeInfo(T)).Kind of
-    tkClass, tkClassRef, tkPointer, tkRecord, tkUnknown:
-    begin
-      raise EORMUnsupportedType.CreateFmt(EXCEPTION_UNSUPPORTED_LAZY_TYPE, [string(PTypeInfo(TypeInfo(T)).Name)]);
-    end;
-  end;
-
-  LResults := DoGetLazy<T>(AID, AEntity, AColumn, IsEnumerable);
-
-  if IsEnumerable then
-    SetInterfaceList<T>(AValue, LResults)
-  else
-    SetOne<T>(AValue, LResults, AEntity);
-end;
-
-procedure TSession.SetOne<T>(var AValue: T; AResultset: IDBResultset; AEntity: TObject);
-var
-  LValue, LConverted: TValue;
-  LType: TRttiType;
-  LColumn: ColumnAttribute;
-  LVal: Variant;
-begin
-  LType := TRttiExplorer.GetEntityRttiType(TypeInfo(T));
-  //{TODO -oLinas -cGeneral : maybe introduce new attribute for specifying simple lazy types. Maybe with SQL parameter}
-
-  if TRttiExplorer.TryGetColumnByMemberName(AEntity.ClassType, LType.Name, LColumn) then
-  begin
-    if not AResultset.IsEmpty then
-    begin
-      LVal := AResultset.GetFieldValue(LColumn.Name);
-      LValue := TUtils.FromVariant(LVal);
-      TRttiExplorer.SetMemberValue(Self, AEntity, LColumn, LValue);
-    end;
-  end;
-end;
-
-function TSession.GetLazyValueClass<T>(const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute): T;
-var
-  IsEnumerable: Boolean;
-  LResults: IDBResultset;
-begin
-  if not Assigned(AEntity) or AID.IsEmpty then
-    Exit(System.Default(T));
-
-  LResults := DoGetLazy<T>(AID, AEntity, AColumn, IsEnumerable);
-
-  if IsEnumerable then
-    Result := GetObjectList<T>(LResults)
-  else
-    Result := GetOne<T>(LResults, AEntity);
-end;
-
 function TSession.GetPager(APage, AItemsInPage: Integer): TObject;
 var
   LPager: TPager;
@@ -910,57 +537,6 @@ begin
   LPager := TPager(Result);
   LPager.Page := APage;
   LPager.ItemsPerPage := AItemsInPage;
-end;
-
-function TSession.GetObjectList<T>(AResultset: IDBResultset): T;
-var
-  LCurrent: TObject;
-  LEntityClass: TClass;
-  LAddMethod: TRttiMethod;
-  LProp: TRttiProperty;
-  LAddParameters: TArray<TRttiParameter>;
-begin
-  Result := T.Create;
-
-  if not TRttiExplorer.TryGetEntityClass(TypeInfo(T), LEntityClass) then
-    LEntityClass := T;
-
-  if not TRttiExplorer.TryGetBasicMethod(METHODNAME_CONTAINER_ADD, TypeInfo(T), LAddMethod) then
-    raise EORMContainerDoesNotHaveAddMethod.Create(EXCEPTION_CONTAINER_DOESNOTHAVE_ADD);
-
-  LAddParameters := LAddMethod.GetParameters;
-  if (Length(LAddParameters) <> 1) then
-    raise EORMContainerAddMustHaveOneParameter.Create(EXCEPTION_CONTAINER_ADD_ONE_PARAM);
-
-  if Result.TryGetProperty(METHODNAME_CONTAINER_OWNSOBJECTS, LProp) then
-    LProp.SetValue(TObject(Result), True);
-
-  case LAddParameters[0].ParamType.TypeKind of
-    tkClass, tkClassRef, tkInterface, tkPointer, tkRecord:
-    else
-      raise EORMContainerItemTypeNotSupported.Create(EXCEPTION_CONTAINER_ITEM_TYPE_NOTSUPPORTED);
-  end;
-
-  while not AResultset.IsEmpty do
-  begin
-    LCurrent := GetOne(AResultset, LEntityClass);
-
-    LAddMethod.Invoke(Result, [LCurrent]);
-
-    AResultset.Next;
-  end;
-end;
-
-function TSession.GetOne(AResultset: IDBResultset; AClass: TClass): TObject;
-begin
-  Result := AClass.Create;
-  DoSetEntity(Result, AResultset, nil);
-end;
-
-function TSession.GetOne<T>(AResultset: IDBResultset; AEntity: TObject): T;
-begin
-  Result := T.Create;
-  DoSetEntity(TObject(Result), AResultset, AEntity);
 end;
 
 function TSession.GetQueryCount(const ASql: string; const AParams: array of const): Int64;
@@ -999,47 +575,12 @@ begin
   Result := LGenerator.GenerateGetQueryCount(ASql);
 end;
 
-function TSession.GetResultset(const ASql: string;
-  const AParams: array of const): IDBResultset;
-var
-  LParams: IList<TDBParam>;
-begin
-  LParams := TCollections.CreateObjectList<TDBParam>();
-  if (Length(AParams) > 0) then
-  begin
-    ConvertParams(AParams, LParams);
-  end;
-  Result := GetResultset(ASql, LParams);
-end;
-
-function TSession.GetResultset(const ASql: string;
-  AParams: IList<TDBParam>): IDBResultset;
-var
-  LStmt: IDBStatement;
-begin
-  Assert(Assigned(AParams), 'Parameters must be assigned');
-  LStmt := Connection.CreateStatement();
-  LStmt.SetSQLCommand(ASql);
-
-  if (AParams.Count > 0) then
-  begin
-    LStmt.SetParams(AParams);
-  end;
-  Result := LStmt.ExecuteQuery();
-end;
-
-function TSession.GetSelector(AClass: TClass): TObject;
-begin
-  Result := CommandFactory.GetCommand<TSelectExecutor>(AClass, Connection);
-end;
-
 procedure TSession.Insert(AEntity: TObject);
 var
   LInserter: TInsertExecutor;
 begin
   LInserter := CommandFactory.GetCommand<TInsertExecutor>(AEntity.ClassType, Connection);
   try
-    LInserter.EntityClass := AEntity.ClassType;
     LInserter.Execute(AEntity);
 
     SetLazyColumns(AEntity, TEntityCache.Get(AEntity.ClassType));
@@ -1144,103 +685,6 @@ begin
   end;
 end;
 
-procedure TSession.SetAssociations(AEntity: TObject; AResultset: IDBResultset; AEntityData: TEntityData);
-var
-  LCol: TORMAttribute;
-  LManyToOne: TManyToOneRelation;
-begin
-  if AEntityData.HasManyToOneRelations then
-  begin
-    LManyToOne := TManyToOneRelation.Create;
-    try
-      for LCol in AEntityData.ManyToOneColumns do
-      begin
-        LManyToOne.SetAssociation(LCol, AEntity, AResultset);
-        DoSetEntityValues(LManyToOne.NewEntity, AResultset, LManyToOne.NewColumns, AEntityData);
-      end;
-    finally
-      LManyToOne.Free;
-    end;
-  end;
-end;
-
-procedure TSession.SetEntityColumns(AEntity: TObject; AColumns: IList<ManyValuedAssociation>;
-  AResultset: IDBResultset);
-var
-  LCol: ManyValuedAssociation;
-  LVal: Variant;
-  LValue: TValue;
-begin
-  for LCol in AColumns do
-  begin
-    LVal := AResultset.GetFieldValue(LCol.MappedBy);
-    LValue := TUtils.FromVariant(LVal);
-    TRttiExplorer.SetMemberValue(Self, AEntity, LCol.ClassMemberName, LValue);
-  end;
-end;
-
-procedure TSession.SetLazyColumns(AEntity: TObject; AEntityData: TEntityData);
-var
-  LCol: ManyValuedAssociation;
-  LValue: TValue;
-  LColumns: IList<OneToManyAttribute>;
-begin
-  if not AEntityData.HasOneToManyRelations then
-    Exit;
-  LColumns := AEntityData.OneToManyColumns;
-  for LCol in LColumns do
-  begin
-    LValue := TRttiExplorer.GetMemberValue(AEntity, LCol.MappedBy); //get foreign key value
-    TRttiExplorer.SetMemberValue(Self, AEntity, LCol.ClassMemberName, LValue);
-  end;
-end;
-
-procedure TSession.SetEntityColumns(AEntity: TObject; AColumns: TColumnDataList; AResultset: IDBResultset);
-var
-  LCol: TColumnData;
-  LVal: Variant;
-  LValue, LPrimaryKey: TValue;
-  LTypeInfo: PTypeInfo;
-  i: Integer;
-begin
-  if AColumns.TryGetPrimaryKeyColumn(LCol) then
-  begin
-    try
-      LVal := AResultset.GetFieldValue(LCol.Name);
-    except
-      raise EORMColumnNotFound.CreateFmt(EXCEPTION_PRIMARYKEY_NOTFOUND, [LCol.Name]);
-    end;
-    LPrimaryKey := TUtils.FromVariant(LVal);
-    TRttiExplorer.SetMemberValue(Self, AEntity, LCol.ClassMemberName, LPrimaryKey);
-  end;
-
-  for i := 0 to AColumns.Count - 1 do
-  begin
-    LCol := AColumns[i];
-    if LCol.IsPrimaryKey then
-    begin
-      Continue;
-    end;
-
-    LTypeInfo := LCol.ColTypeInfo; //  GetTypeInfo(AEntity.ClassInfo);
-    if (LTypeInfo <> nil) and (TUtils.IsLazyType(LTypeInfo)) then
-    begin
-      LValue := LPrimaryKey; //assign primary key value to lazy type, later convert procedure will assign it to lazy type's private field
-    end
-    else
-    begin
-      try
-        LVal := AResultset.GetFieldValue(LCol.Name);
-      except
-        raise EORMColumnNotFound.CreateFmt(EXCEPTION_COLUMN_NOTFOUND, [LCol.Name]);
-      end;
-      LValue := TUtils.ColumnFromVariant(LVal, LCol, Self, AEntity);
-    end;
-
-    TRttiExplorer.SetMemberValue(Self, AEntity, LCol.ClassMemberName, LValue);
-  end;
-end;
-
 function TSession.Single<T>(const ASql: string; const AParams: array of const): T;
 begin
   Result := First<T>(ASql, AParams);
@@ -1267,7 +711,6 @@ var
 begin
   LUpdater := CommandFactory.GetCommand<TUpdateExecutor>(AEntity.ClassType, Connection);
   try
-    LUpdater.EntityClass := AEntity.ClassType;
     LUpdater.EntityMap := FOldStateEntities;
     LUpdater.Execute(AEntity);
 
@@ -1286,18 +729,6 @@ begin
   begin
     Update(LEntity);
   end;
-end;
-
-{ TDetachedSession }
-
-procedure TDetachedSession.AttachEntity(AEntity: TObject);
-begin
-  //do nothing
-end;
-
-procedure TDetachedSession.DetachEntity(AEntity: TObject);
-begin
-  //do nothing
 end;
 
 end.

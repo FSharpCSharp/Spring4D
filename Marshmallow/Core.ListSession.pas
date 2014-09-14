@@ -66,8 +66,6 @@ var
 begin
   LDeleter := CommandFactory.GetCommand<TDeleteByValueExecutor>(T, (FOwner as TSession).Connection );
   try
-    LDeleter.EntityClass := T;
-
     for LKey in FPrimaryKeys do
     begin
       LDeleter.PrimaryKeyValue := LKey.Key;

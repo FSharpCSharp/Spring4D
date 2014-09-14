@@ -156,7 +156,6 @@ var
 begin
   LExecutor := CommandFactory.GetCommand<TSelectExecutor>(FEntityClass, FSession.Connection);
   try
-    LExecutor.EntityClass := FEntityClass;
     LExecutor.LazyColumn := nil;
 
     for LCriterion in Criterions do
