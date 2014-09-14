@@ -3,7 +3,7 @@ unit ProductModel;
 interface
 
 uses
-  Mapping.Attributes
+  Spring.Persistence.Mapping.Attributes
   ;
 
 type

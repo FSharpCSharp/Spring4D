@@ -3,7 +3,8 @@ unit TestCoreCollections;
 interface
 
 uses
-  TestFramework, Rtti, Core.RttiCollectionAdapter, Core.SpringCollectionAdapter, uModels;
+  TestFramework, Rtti, Spring.Persistence.Core.RttiCollectionAdapter
+  , Spring.Persistence.Core.SpringCollectionAdapter, uModels;
 
 type
   // Test methods for class ICollectionAdapter

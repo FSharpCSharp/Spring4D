@@ -3,9 +3,10 @@ unit TestFireDACAdapter;
 interface
 
 uses
-  TestFramework, Adapters.FireDAC, Core.Base, SysUtils,
-  SQL.Params, Core.Interfaces, SQL.Generator.Ansi, Core.Session
-  ,uModels, Classes, FireDAC.Comp.Client, Mapping.Attributes;
+  TestFramework, Spring.Persistence.Adapters.FireDAC, Spring.Persistence.Core.Base, SysUtils,
+  Spring.Persistence.SQL.Params, Spring.Persistence.Core.Interfaces
+  , Spring.Persistence.SQL.Generator.Ansi, Spring.Persistence.Core.Session
+  ,uModels, Classes, FireDAC.Comp.Client, Spring.Persistence.Mapping.Attributes;
 
 type
   [Table('CUSTOMERS')]
@@ -40,9 +41,9 @@ type
 implementation
 
 uses
-  Core.ConnectionFactory
+  Spring.Persistence.Core.ConnectionFactory
   ,FireDAC.Phys.SQLite
-  ,SQL.Interfaces
+  ,Spring.Persistence.SQL.Interfaces
   ;
 
 { TestFireDACSession }

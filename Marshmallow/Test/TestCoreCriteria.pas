@@ -14,10 +14,10 @@ interface
 {$I sv.inc}
 
 uses
-  TestFramework, Spring.Collections, Core.Criteria, Generics.Collections, Core.Interfaces,
-  Core.Criteria.Criterion, Core.Criteria.Abstract, uModels, Core.Criteria.Restrictions
-  ,Core.Session
-
+  TestFramework, Spring.Collections, Spring.Persistence.Core.Criteria, Generics.Collections
+  , Spring.Persistence.Core.Interfaces, Spring.Persistence.Core.Criteria.Criterion
+  , Spring.Persistence.Core.Criteria.Abstract, uModels, Spring.Persistence.Core.Criteria.Restrictions
+  ,Spring.Persistence.Core.Session
   ;
 
 type
@@ -56,12 +56,12 @@ type
 implementation
 
 uses
-  Core.ConnectionFactory
-  ,Core.Criteria.Order
-  ,Core.Criteria.Properties
+  Spring.Persistence.Core.ConnectionFactory
+  ,Spring.Persistence.Core.Criteria.Order
+  ,Spring.Persistence.Core.Criteria.Properties
   ,TestSession
-  ,SQL.Types
-  ,SQL.Params
+  ,Spring.Persistence.SQL.Types
+  ,Spring.Persistence.SQL.Params
   ,TestConsts
   ,SysUtils
   ,Variants

@@ -6,8 +6,8 @@ interface
 
 uses
   TestFramework, Windows, Forms, Dialogs, Controls, Classes, SysUtils,
-  Variants, Graphics, Messages, StdCtrls, Core.Session, Core.Interfaces
-  ,uModels, Rtti, SQLiteTable3, Mapping.Attributes, Core.Repository.Proxy;
+  Variants, Graphics, Messages, StdCtrls, Spring.Persistence.Core.Session, Spring.Persistence.Core.Interfaces
+  ,uModels, Rtti, SQLiteTable3, Spring.Persistence.Mapping.Attributes, Spring.Persistence.Core.Repository.Proxy;
 
 type
   ICustomerRepository = interface(IPagedRepository<TCustomer, Integer>)
@@ -54,19 +54,19 @@ type
 implementation
 
 uses
-  Adapters.SQLite
-  ,Core.ConnectionFactory
-  ,SQL.Register
-  ,SQL.Params
+  Spring.Persistence.Adapters.SQLite
+  ,Spring.Persistence.Core.ConnectionFactory
+  ,Spring.Persistence.SQL.Register
+  ,Spring.Persistence.SQL.Params
   ,SvDesignPatterns
   ,SvRttiUtils
   ,Spring.Collections
-  ,Core.Reflection
+  ,Spring.Persistence.Core.Reflection
   ,TestConsts
   ,TestSession
-  ,Core.Criteria.Properties
+  ,Spring.Persistence.Core.Criteria.Properties
   ,Diagnostics
-  ,Core.Repository.Simple
+  ,Spring.Persistence.Core.Repository.Simple
   ,Generics.Collections
   ;
 

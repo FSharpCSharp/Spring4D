@@ -3,8 +3,9 @@ unit TestAdaptersOracle;
 interface
 
 uses
-  TestFramework, Adapters.Oracle, SysUtils, Adapters.ADO, ADODB, Core.Interfaces, uModels
-  ,Generics.Collections, Core.Session, SQL.Generator.Oracle;
+  TestFramework, Spring.Persistence.Adapters.Oracle, SysUtils, Spring.Persistence.Adapters.ADO
+  , ADODB, Spring.Persistence.Core.Interfaces, uModels
+  ,Generics.Collections, Spring.Persistence.Core.Session, Spring.Persistence.SQL.Generator.Oracle;
 
 type
   TestOracleConnectionAdapter = class(TTestCase)
@@ -33,12 +34,12 @@ type
 implementation
 
 uses
-  Core.ConnectionFactory
-  ,Core.DatabaseManager
+  Spring.Persistence.Core.ConnectionFactory
+  ,Spring.Persistence.Core.DatabaseManager
   ,SvDesignPatterns
   ,Spring.Collections
-  ,Core.Criteria.Properties
-  ,SQL.Params
+  ,Spring.Persistence.Core.Criteria.Properties
+  ,Spring.Persistence.SQL.Params
   ,Variants
   ;
 

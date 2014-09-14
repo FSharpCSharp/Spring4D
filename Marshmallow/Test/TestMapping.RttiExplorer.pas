@@ -5,7 +5,8 @@ unit TestMapping.RttiExplorer;
 interface
 
 uses
-  TestFramework, Mapping.Attributes, Generics.Collections, Mapping.RttiExplorer,
+  TestFramework, Spring.Persistence.Mapping.Attributes, Generics.Collections
+  , Spring.Persistence.Mapping.RttiExplorer,
   Rtti, uModels;
 
 type

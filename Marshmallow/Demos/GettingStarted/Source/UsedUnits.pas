@@ -4,7 +4,7 @@ unit UsedUnits;
 interface
 
 uses
-  Adapters.SQLite
+  Spring.Persistence.Adapters.SQLite
   ;
 
 implementation

@@ -3,7 +3,7 @@ unit VARTOTMASTModel;
 interface
 
 uses
-  Mapping.Attributes, Core.Types, Graphics, Spring;
+  Spring.Persistence.Mapping.Attributes, Spring.Persistence.Core.Types, Graphics, Spring;
 
 type
  // [Entity]

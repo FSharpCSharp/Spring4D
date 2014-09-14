@@ -12,8 +12,8 @@ unit TestDatabaseManager;
 interface
 
 uses
-  TestFramework, Core.AbstractManager, SysUtils, Core.Interfaces,
-  Core.DatabaseManager;
+  TestFramework, Spring.Persistence.Core.AbstractManager, SysUtils, Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.Core.DatabaseManager;
 
 type
   // Test methods for class TDatabaseManager
@@ -34,7 +34,7 @@ type
 implementation
 
 uses
-  Core.ConnectionFactory
+  Spring.Persistence.Core.ConnectionFactory
   ,uModels
   ,SQLiteTable3
   ;

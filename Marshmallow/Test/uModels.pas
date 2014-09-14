@@ -32,7 +32,8 @@ unit uModels;
 interface
 
 uses
-  Mapping.Attributes, Generics.Collections, Spring, Core.Types, Graphics, Spring.Collections, Classes
+  Spring.Persistence.Mapping.Attributes, Generics.Collections, Spring, Spring.Persistence.Core.Types
+  , Graphics, Spring.Collections, Classes
   , SvSerializer, SvContainers ;
 
 

@@ -4,8 +4,8 @@ interface
 
 uses
   TestFramework
-  ,Mapping.CodeGenerator
-  ,Mapping.CodeGenerator.Abstract
+  ,Spring.Persistence.Mapping.CodeGenerator
+  ,Spring.Persistence.Mapping.CodeGenerator.Abstract
   ;
 
 type

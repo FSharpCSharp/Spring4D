@@ -3,11 +3,13 @@
 interface
 
 uses
-  TestFramework, Core.Interfaces, bsonDoc, Generics.Collections, MongoDB, Core.Base, SvSerializer,
-  SysUtils, Mapping.Attributes, SQL.Params, Adapters.MongoDB, mongoId, Core.Session.MongoDB
-  , SQL.Interfaces, MongoBson, Core.Repository.MongoDB, Spring.Collections, Rtti
+  TestFramework, Spring.Persistence.Core.Interfaces, bsonDoc, Generics.Collections, MongoDB
+  , Spring.Persistence.Core.Base, SvSerializer,
+  SysUtils, Spring.Persistence.Mapping.Attributes, Spring.Persistence.SQL.Params
+  , Spring.Persistence.Adapters.MongoDB, mongoId, Spring.Persistence.Core.Session.MongoDB
+  , Spring.Persistence.SQL.Interfaces, MongoBson, Spring.Persistence.Core.Repository.MongoDB, Spring.Collections, Rtti
   {$IF CompilerVersion > 21}
-  ,Core.Repository.Proxy
+  ,Spring.Persistence.Core.Repository.Proxy
   {$IFEND}
 
   ;
@@ -257,12 +259,12 @@ uses
   ,ShellAPI
   ,Forms
   ,Messages
-  ,Core.ConnectionFactory
-  ,Core.Exceptions
-  ,Core.Criteria.Properties
-  ,Core.Criteria.Restrictions
-  ,Core.Session
-  ,SQL.Generator.MongoDB
+  ,Spring.Persistence.Core.ConnectionFactory
+  ,Spring.Persistence.Core.Exceptions
+  ,Spring.Persistence.Core.Criteria.Properties
+  ,Spring.Persistence.Core.Criteria.Restrictions
+  ,Spring.Persistence.Core.Session
+  ,Spring.Persistence.SQL.Generator.MongoDB
   ,Variants
   ,Diagnostics
   ;

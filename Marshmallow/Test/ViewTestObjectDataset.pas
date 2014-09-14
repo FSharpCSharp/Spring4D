@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ExtCtrls, DBCtrls, Grids, DBGrids, DB, StdCtrls, ComCtrls
-  ,Adapters.ObjectDataset
+  ,Spring.Persistence.Adapters.ObjectDataset
   ;
 
 type

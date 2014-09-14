@@ -12,7 +12,7 @@ unit TestCoreEntityMap;
 interface
 
 uses
-  TestFramework, Generics.Collections, Rtti, Core.EntityMap, uModels;
+  TestFramework, Generics.Collections, Rtti, Spring.Persistence.Core.EntityMap, uModels;
 
 type
   // Test methods for class TEntityMap
@@ -40,8 +40,8 @@ implementation
 
 uses
   SysUtils
-  ,Mapping.Attributes
-  ,Mapping.RttiExplorer
+  ,Spring.Persistence.Mapping.Attributes
+  ,Spring.Persistence.Mapping.RttiExplorer
   ,Diagnostics
   ;
 

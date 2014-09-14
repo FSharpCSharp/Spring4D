@@ -4,7 +4,7 @@ interface
 
 uses
   TestFramework
-  ,Core.Utils
+  ,Spring.Persistence.Core.Utils
   ;
 
 type
@@ -31,7 +31,7 @@ uses
   ,Diagnostics
   ,SysUtils
   ,Spring
-  ,Core.Types
+  ,Spring.Persistence.Core.Types
   ,Spring.Collections
   ;
 

@@ -12,8 +12,8 @@ unit TestConnectionFactory;
 interface
 
 uses
-  TestFramework, Core.Interfaces, Generics.Collections, SysUtils,
-  Core.ConnectionFactory;
+  TestFramework, Spring.Persistence.Core.Interfaces, Generics.Collections, SysUtils,
+  Spring.Persistence.Core.ConnectionFactory;
 
 type
   // Test methods for class TConnectionFactory
@@ -32,7 +32,7 @@ implementation
 
 uses
   SQLiteTable3
-  ,Adapters.SQLite
+  ,Spring.Persistence.Adapters.SQLite
   ,uModels
   ;
 

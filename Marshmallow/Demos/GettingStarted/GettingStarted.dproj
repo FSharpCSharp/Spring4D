@@ -58,7 +58,7 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="..\..\Adapters.SQLite.pas"/>
+        <DCCReference Include="..\..\Spring.Persistence.Adapters.SQLite.pas"/>
         <DCCReference Include="Source\ProductModel.pas"/>
         <DCCReference Include="Views\ViewEditProduct.pas">
             <Form>ProductEditForm</Form>

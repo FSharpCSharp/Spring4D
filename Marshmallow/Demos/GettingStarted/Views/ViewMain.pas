@@ -17,8 +17,8 @@ uses
   Windows,
   Spring.Collections,
   SQLiteTable3,
-  Core.Interfaces,
-  Core.Session,
+  Spring.Persistence.Core.Interfaces,
+  Spring.Persistence.Core.Session,
   ProductModel,
   System.Actions;
 
@@ -83,9 +83,9 @@ var
 implementation
 
 uses
-  Core.DatabaseManager,
-  Core.ConnectionFactory,
-  Adapters.SQLite,
+  Spring.Persistence.Core.DatabaseManager,
+  Spring.Persistence.Core.ConnectionFactory,
+  Spring.Persistence.Adapters.SQLite,
   ViewEditProduct;
 
 {$R *.dfm}

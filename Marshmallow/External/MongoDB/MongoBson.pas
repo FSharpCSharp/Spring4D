@@ -416,8 +416,8 @@ uses
   bsonUtils,
   uInt64OleVariant
   ,superobject
-  ,Core.EmbeddedEntity
-  ,Core.Interfaces
+  ,Spring.Persistence.Core.EmbeddedEntity
+  ,Spring.Persistence.Core.Interfaces
   ;
 {$IF not declared(UTF8ToWideString)}
 

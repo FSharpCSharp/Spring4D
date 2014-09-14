@@ -145,7 +145,7 @@ uses
   Variants
  ,DB
  ,SvSerializerRtti
- ,Mapping.Attributes
+ ,Spring.Persistence.Mapping.Attributes
   ;
 
 

@@ -12,8 +12,9 @@ unit TestSQLiteAdapter;
 interface
 
 uses
-  TestFramework, Core.Interfaces, Spring.Collections, Adapters.SQLite, Core.Base,
-  SysUtils, SQL.Params, SQLiteTable3;
+  TestFramework, Spring.Persistence.Core.Interfaces, Spring.Collections
+  , Spring.Persistence.Adapters.SQLite, Spring.Persistence.Core.Base,
+  SysUtils, Spring.Persistence.SQL.Params, SQLiteTable3;
 
 type
   // Test methods for class TSQLiteResultSetAdapter

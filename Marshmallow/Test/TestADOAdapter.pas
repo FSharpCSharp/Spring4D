@@ -14,9 +14,12 @@ interface
 {$I sv.inc}
 
 uses
-  TestFramework, ADODB, Generics.Collections, Adapters.ADO, Core.Base, SysUtils,
-  SQL.Params, Core.Interfaces, SQL.Generator.Ansi, Adapters.MSSQL, Core.Session
-  ,uModels, VARTOTMASTModel, SQL.Generator.MSSQL, Core.DatabaseManager, Classes;
+  TestFramework, ADODB, Generics.Collections, Spring.Persistence.Adapters.ADO
+  , Spring.Persistence.Core.Base, SysUtils,
+  Spring.Persistence.SQL.Params, Spring.Persistence.Core.Interfaces
+  , Spring.Persistence.SQL.Generator.Ansi, Spring.Persistence.Adapters.MSSQL
+  , Spring.Persistence.Core.Session, uModels, VARTOTMASTModel
+  , Spring.Persistence.SQL.Generator.MSSQL, Spring.Persistence.Core.DatabaseManager, Classes;
 
 type
   // Test methods for class TADOResultSetAdapter
@@ -133,10 +136,10 @@ type
 implementation
 
 uses
-  Core.ConnectionFactory
+  Spring.Persistence.Core.ConnectionFactory
   ,SvDesignPatterns
-  ,SQL.Register
-  ,SQL.Interfaces
+  ,Spring.Persistence.SQL.Register
+  ,Spring.Persistence.SQL.Interfaces
   {$IFDEF USE_SPRING} ,Spring.Collections {$ENDIF}
   ,DB
   ,Diagnostics

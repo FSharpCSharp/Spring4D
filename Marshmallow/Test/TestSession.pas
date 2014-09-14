@@ -15,7 +15,8 @@ interface
 
 uses
   TestFramework, Windows, Forms, Dialogs, Controls, Classes, SysUtils,
-  Variants, Graphics, Messages, StdCtrls, Core.Session, Core.DetachedSession, Core.Interfaces
+  Variants, Graphics, Messages, StdCtrls, Spring.Persistence.Core.Session, Spring.Persistence.Core.DetachedSession
+  , Spring.Persistence.Core.Interfaces
   ,uModels, Rtti, SQLiteTable3;
 
 type
@@ -108,19 +109,19 @@ function GetTableRecordCount(const ATablename: string; AConnection: TSQLiteDatab
 implementation
 
 uses
-  Adapters.SQLite
-  ,Core.ConnectionFactory
-  ,SQL.Register
-  ,SQL.Params
+  Spring.Persistence.Adapters.SQLite
+  ,Spring.Persistence.Core.ConnectionFactory
+  ,Spring.Persistence.SQL.Register
+  ,Spring.Persistence.SQL.Params
   ,SvDesignPatterns
   ,SvRttiUtils
   ,Spring
   ,Spring.Collections
   ,Generics.Collections
-  ,Core.Reflection
+  ,Spring.Persistence.Core.Reflection
   ,TestConsts
-  ,Core.Criteria.Properties
-  ,Core.Exceptions
+  ,Spring.Persistence.Core.Criteria.Properties
+  ,Spring.Persistence.Core.Exceptions
   ,Diagnostics
   ;
 

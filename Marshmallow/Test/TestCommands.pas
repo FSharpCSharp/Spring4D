@@ -3,8 +3,9 @@ unit TestCommands;
 interface
 
 uses
-  TestFramework, SQL.Commands.TableCreator, SQL.AbstractCommandExecutor, SQL.Commands, SQL.Types
-  ,Core.Interfaces
+  TestFramework, Spring.Persistence.SQL.Commands.TableCreator, Spring.Persistence.SQL.AbstractCommandExecutor
+  , Spring.Persistence.SQL.Commands, Spring.Persistence.SQL.Types
+  ,Spring.Persistence.Core.Interfaces
   ;
 
 type
@@ -22,7 +23,7 @@ implementation
 
 uses
   TestSession
-  ,Core.ConnectionFactory
+  ,Spring.Persistence.Core.ConnectionFactory
   ,uModels
   ,TestConsts
   ;

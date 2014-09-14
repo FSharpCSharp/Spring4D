@@ -12,8 +12,9 @@ unit TestAdaptersASA;
 interface
 
 uses
-  TestFramework, Adapters.ASA, SysUtils, Adapters.ADO, ADODB, Core.Interfaces, uModels
-  ,Generics.Collections, Core.Session, SQL.Generator.ASA;
+  TestFramework, Spring.Persistence.Adapters.ASA, SysUtils
+  , Spring.Persistence.Adapters.ADO, ADODB, Spring.Persistence.Core.Interfaces, uModels
+  ,Generics.Collections, Spring.Persistence.Core.Session, Spring.Persistence.SQL.Generator.ASA;
 
 type
   // Test methods for class TASAConnectionAdapter
@@ -54,8 +55,8 @@ type
 implementation
 
 uses
-  Core.ConnectionFactory
-  ,Core.DatabaseManager
+  Spring.Persistence.Core.ConnectionFactory
+  ,Spring.Persistence.Core.DatabaseManager
   ,SvDesignPatterns
   ,TestADOAdapter
   ;
