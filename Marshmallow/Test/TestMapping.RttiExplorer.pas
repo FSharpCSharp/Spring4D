@@ -37,7 +37,9 @@ type
     procedure TestGetChangedMembers;
     procedure TestCopyFieldValues;
     procedure TestClone;
+    {$IFDEF PERFORMANCE_TESTS}
     procedure TestCloneSpeed;
+    {$ENDIF}
     procedure GetPrimaryKey();
     procedure TestGetEntities();
     procedure TryGetMethod();
@@ -374,6 +376,7 @@ begin
   end;
 end;
 
+{$IFDEF PERFORMANCE_TESTS}
 procedure TestTRttiExplorer.TestCloneSpeed;
 var
   LCustomer, LCloned: TCustomer;
@@ -448,6 +451,7 @@ begin
   Status(Format('Cloned %D simple objects in %D ms.',
     [iMax, sw.ElapsedMilliseconds]));
 end;
+{$ENDIF}
 
 initialization
   // Register any test cases with the test runner

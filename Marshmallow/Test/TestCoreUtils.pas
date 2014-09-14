@@ -16,9 +16,11 @@ type
     procedure TearDown; override;
   published
     procedure TryConvert_Nullable();
-    procedure TryConvert_Nullable_Speed();
     procedure TryConvert_Lazy();
+    {$IFDEF PERFORMANCE_TESTS}
+    procedure TryConvert_Nullable_Speed();
     procedure TryConvert_Lazy_Speed();
+    {$ENDIF}
   end;
 
 implementation
@@ -70,6 +72,7 @@ begin
   end;
 end;
 
+{$IFDEF PERFORMANCE_TESTS}
 procedure TTestCoreUtils.TryConvert_Lazy_Speed;
 var
   LCustomer: TCustomer;
@@ -104,6 +107,7 @@ begin
     LCustomer.Free;
   end;
 end;
+{$ENDIF}
 
 procedure TTestCoreUtils.TryConvert_Nullable;
 var
@@ -150,6 +154,7 @@ begin
   end;
 end;
 
+{$IFDEF PERFORMANCE_TESTS}
 procedure TTestCoreUtils.TryConvert_Nullable_Speed;
 var
   LFrom, LResult: TValue;
@@ -209,6 +214,7 @@ begin
     LOrder.Free;
   end;
 end;
+{$ENDIF}
 
 initialization
   RegisterTest(TTestCoreUtils.Suite);

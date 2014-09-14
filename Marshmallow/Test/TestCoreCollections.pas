@@ -42,7 +42,9 @@ type
     procedure TestCount;
     procedure TestGetEnumerator;
     procedure TestIsSupported;
+    {$IFDEF PERFORMANCE_TESTS}
     procedure Performance();
+    {$ENDIF}
   end;
 
   TestTSpringCollectionAdapter = class(TBaseSpringCollectionTestCase)
@@ -68,7 +70,7 @@ uses
   ,SysUtils
   ;
 
-
+{$IFDEF PERFORMANCE_TESTS}
 procedure TestTCollectionAdapter.Performance;
 var
   i, iterations: Integer;
@@ -99,6 +101,7 @@ begin
     LDefault.Free;
   end;
 end;
+{$ENDIF}
 
 procedure TestTCollectionAdapter.SetUp;
 begin

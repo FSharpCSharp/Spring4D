@@ -86,6 +86,9 @@ type
     function GetQueryCountSql(const ASql: string): string;
     function GetQueryCount(const ASql: string; const AParams: array of const): Int64; overload;
     function GetQueryCount(const ASql: string; AParams:IList<TDBParam>): Int64; overload;
+
+    procedure AttachEntity(AEntity: TObject); virtual;
+    procedure DetachEntity(AEntity: TObject); virtual;
   public
     constructor Create(AConnection: IDBConnection); override;
     destructor Destroy; override;
@@ -292,14 +295,14 @@ type
     ///	  Inserts model to the database .
     ///	</summary>
     {$ENDREGION}
-    procedure Insert(AEntity: TObject); overload;
+    procedure Insert(AEntity: TObject);
 
     {$REGION 'Documentation'}
     ///	<summary>
     ///	  Inserts models to the database.
     ///	</summary>
     {$ENDREGION}
-    procedure InsertList<T: class, constructor>(ACollection: ICollection<T>); overload;
+    procedure InsertList<T: class, constructor>(ACollection: ICollection<T>);
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -314,28 +317,28 @@ type
     ///	  Updates model in a database.
     ///	</summary>
     {$ENDREGION}
-    procedure Update(AEntity: TObject); overload;
+    procedure Update(AEntity: TObject);
 
     {$REGION 'Documentation'}
     ///	<summary>
     ///	  Updates multiple models in a database.
     ///	</summary>
     {$ENDREGION}
-    procedure UpdateList<T: class, constructor>(ACollection: ICollection<T>); overload;
+    procedure UpdateList<T: class, constructor>(ACollection: ICollection<T>);
 
     {$REGION 'Documentation'}
     ///	<summary>
     ///	  Removes model from the database.
     ///	</summary>
     {$ENDREGION}
-    procedure Delete(AEntity: TObject); overload;
+    procedure Delete(AEntity: TObject);
 
     {$REGION 'Documentation'}
     ///	<summary>
     ///	  Removes models from the database.
     ///	</summary>
     {$ENDREGION}
-    procedure DeleteList<T: class, constructor>(ACollection: ICollection<T>); overload;
+    procedure DeleteList<T: class, constructor>(ACollection: ICollection<T>);
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -370,7 +373,7 @@ type
     ///	  based on the entity state.
     ///	</summary>
     {$ENDREGION}
-    procedure Save(AEntity: TObject); overload;
+    procedure Save(AEntity: TObject);
 
     {$REGION 'Documentation'}
     ///	<summary>
@@ -397,9 +400,23 @@ type
     ///	  on the entity state.
     ///	</summary>
     {$ENDREGION}
-    procedure SaveList<T: class, constructor>(ACollection: ICollection<T>); overload;
+    procedure SaveList<T: class, constructor>(ACollection: ICollection<T>);
 
     property OldStateEntities: TEntityMap read FOldStateEntities;
+  end;
+
+  {$REGION 'Documentation'}
+    ///	<summary>
+    ///	  Represents detached session. Detached session doesn't hold any history of loaded, saved, deleted entities,
+    ///   so Save method always inserts new entity, because it doesn't know the state of an entity.
+    ///  Detached session could be useful in those scenarios where you always know what action should be done (insert, update, or delete).
+    ///  Also it is faster than ordinary session (no need to save entities state).
+    ///	</summary>
+    {$ENDREGION}
+  TDetachedSession = class(TSession)
+  protected
+    procedure AttachEntity(AEntity: TObject); override;
+    procedure DetachEntity(AEntity: TObject); override;
   end;
 
 
@@ -428,6 +445,11 @@ uses
   ;
 
 { TEntityManager }
+
+procedure TSession.AttachEntity(AEntity: TObject);
+begin
+  FOldStateEntities.AddOrReplace(TRttiExplorer.Clone(AEntity));
+end;
 
 function TSession.BeginListSession<T>(AList: IList<T>): IListSession<T>;
 begin
@@ -460,6 +482,11 @@ begin
   Result := TCriteria<T>.Create(Self);
 end;
 
+procedure TSession.DetachEntity(AEntity: TObject);
+begin
+  FOldStateEntities.Remove(AEntity);
+end;
+
 procedure TSession.Delete(AEntity: TObject);
 var
   LDeleter: TDeleteExecutor;
@@ -472,7 +499,7 @@ begin
     LDeleter.Free;
   end;
 
-  FOldStateEntities.Remove(AEntity);
+  DetachEntity(AEntity);
 end;
 
 procedure TSession.DeleteList<T>(ACollection: ICollection<T>);
@@ -569,7 +596,6 @@ procedure TSession.DoSetEntityValues(var AEntityToCreate: TObject; AResultset: I
   AColumns: TColumnDataList; AEntityData: TEntityData);
 var
   LEntityData: TEntityData;
-  LClonedObject: TObject;
 begin
   SetEntityColumns(AEntityToCreate, AColumns, AResultset);
   //we need to set internal values for the lazy type field
@@ -581,8 +607,7 @@ begin
 
   SetAssociations(AEntityToCreate, AResultset, LEntityData);
 
-  LClonedObject := TRttiExplorer.Clone(AEntityToCreate);
-  FOldStateEntities.AddOrReplace(LClonedObject);
+  AttachEntity(AEntityToCreate);
 end;
 
 function TSession.Execute(const ASql: string; const AParams: array of const): NativeUInt;
@@ -624,7 +649,6 @@ var
   LResults: IDBResultset;
 begin
   LResults := GetResultset(ASql, AParams);
-
   Fetch<T>(LResults, ACollection);
 end;
 
@@ -1019,7 +1043,7 @@ begin
     LInserter.Execute(AEntity);
 
     SetLazyColumns(AEntity, TEntityCache.Get(AEntity.ClassType));
-    FOldStateEntities.AddOrReplace(TRttiExplorer.Clone(AEntity));
+    AttachEntity(AEntity);
   finally
     LInserter.Free;
   end;
@@ -1248,7 +1272,7 @@ begin
     LUpdater.Execute(AEntity);
 
     SetLazyColumns(AEntity, TEntityCache.Get(AEntity.ClassType));
-    FOldStateEntities.AddOrReplace(TRttiExplorer.Clone(AEntity));
+    AttachEntity(AEntity);
   finally
     LUpdater.Free;
   end;
@@ -1262,6 +1286,18 @@ begin
   begin
     Update(LEntity);
   end;
+end;
+
+{ TDetachedSession }
+
+procedure TDetachedSession.AttachEntity(AEntity: TObject);
+begin
+  //do nothing
+end;
+
+procedure TDetachedSession.DetachEntity(AEntity: TObject);
+begin
+  //do nothing
 end;
 
 end.

@@ -37,6 +37,7 @@ type
     procedure TearDown; override;
 
     procedure GetLazyNullable();
+    class procedure InsertProducts(iCount: Integer);
 
     property Session: TMockSession read FSession write FSession;
   published
@@ -65,10 +66,27 @@ type
     procedure ManyToOne();
     procedure Transactions();
     procedure Transactions_Nested();
+    {$IFDEF PERFORMANCE_TESTS}
     procedure GetOne();
+    {$ENDIF}
     procedure FetchCollection();
     procedure Versioning();
     procedure ListSession_Begin_Commit();
+  end;
+
+  TestTDetachedSession = class(TTestCase)
+  private
+    FConnection: IDBConnection;
+    FSession: TDetachedSession;
+  public
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure SaveAlwaysInsertsEntity();
+    procedure Update();
+    {$IFDEF PERFORMANCE_TESTS}
+    procedure Performance();
+    {$ENDIF}
   end;
 
   TInsertData = record
@@ -665,6 +683,7 @@ begin
   end;
 end;
 
+{$IFDEF PERFORMANCE_TESTS}
 procedure TestTSession.GetOne;
 var
   LResultset: IDBResultset;
@@ -689,13 +708,7 @@ begin
   end;
   TestDB.Commit;
 
-  //insert products
-  TestDB.BeginTransaction;
-  for i := 1 to iCount do
-  begin
-    InsertProduct('Product ' + IntToStr(i), i);
-  end;
-  TestDB.Commit;
+  InsertProducts(iCount);
 
 
   sw := TStopwatch.StartNew;
@@ -784,6 +797,7 @@ begin
   Status(Format('Resultset %D objects in %D ms. %S',
     [iCount, sw.ElapsedMilliseconds, LVal2]));
 end;
+{$ENDIF}
 
 procedure TestTSession.Inheritance_Simple_Customer;
 var
@@ -945,6 +959,19 @@ begin
   CheckEquals(9, LCustomers[1].Age);
   CheckEquals(10, LCustomers[2].Age);
   CheckEquals('Edited Foo', LCustomers[2].Name);
+end;
+
+class procedure TestTSession.InsertProducts(iCount: Integer);
+var
+  Local_i: Integer;
+begin
+  //insert products
+  TestDB.BeginTransaction;
+  for Local_i := 1 to iCount do
+  begin
+    InsertProduct('Product ' + IntToStr(Local_i), Local_i);
+  end;
+  TestDB.Commit;
 end;
 
 const
@@ -1460,9 +1487,75 @@ begin
 end;
 
 
+{ TestTDetachedSession }
+
+{$IFDEF PERFORMANCE_TESTS}
+procedure TestTDetachedSession.Performance;
+var
+  LCount: Integer;
+  LStopWatch: TStopwatch;
+  LProducts: IList<TProduct>;
+begin
+  LCount := 50000;
+  TestTSession.InsertProducts(LCount);
+
+  LStopWatch := TStopwatch.StartNew;
+  LProducts := FSession.FindAll<TProduct>;
+  LStopWatch.Stop;
+  Status(Format('Loaded %d simple products in %d ms', [LCount, LStopWatch.ElapsedMilliseconds]));
+  CheckEquals(LCount, LProducts.Count);
+end;
+{$ENDIF}
+
+procedure TestTDetachedSession.SaveAlwaysInsertsEntity;
+var
+  LCustomer: TCustomer;
+begin
+  LCustomer := TCustomer.Create;
+  LCustomer.Name := 'Foo';
+  FSession.Insert(LCustomer);
+
+  LCustomer.Name := 'Bar';
+  FSession.Save(LCustomer);
+  LCustomer.Free;
+
+  CheckEquals(2, FSession.FindAll<TCustomer>.Count);
+end;
+
+procedure TestTDetachedSession.SetUp;
+begin
+  FConnection := TConnectionFactory.GetInstance(dtSQLite, TestDB);
+  FSession := TDetachedSession.Create(FConnection);
+end;
+
+procedure TestTDetachedSession.TearDown;
+begin
+  ClearTable(TBL_PEOPLE);
+  ClearTable(TBL_ORDERS);
+  ClearTable(TBL_PRODUCTS);
+  FSession.Free;
+end;
+
+procedure TestTDetachedSession.Update;
+var
+  LCustomer: TCustomer;
+begin
+  LCustomer := TCustomer.Create;
+  LCustomer.Name := 'Foo';
+  FSession.Insert(LCustomer);
+
+  LCustomer.Name := 'Bar';
+  FSession.Update(LCustomer);
+  LCustomer.Free;
+
+  CheckEquals('Bar', FSession.FindAll<TCustomer>.First.Name);
+  CheckEquals(1, FSession.FindAll<TCustomer>.Count);
+end;
+
 initialization
   // Register any test cases with the test runner
   RegisterTest(TestTSession.Suite);
+  RegisterTest(TestTDetachedSession.Suite);
 
   TestDB := TSQLiteDatabase.Create(':memory:');
   TestDB.OnAfterOpen := TSQLiteEvents.DoOnAfterOpen;

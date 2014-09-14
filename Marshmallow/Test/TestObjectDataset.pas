@@ -48,7 +48,10 @@ type
     procedure Filter_Custom_Functions();
     procedure Filter_DateTime();
     procedure Filter_Null();
+    {$IFDEF PERFORMANCE_TESTS}
     procedure Filter_Performance_Test();
+    procedure InsertionSort_Speed();
+    {$ENDIF}
     procedure Filter_Without_Brackets();
     procedure GetCurrentModel_Filtered();
     procedure GetCurrentModel_Simple();
@@ -65,8 +68,9 @@ type
     procedure SimpleSort();
     procedure Sort();
     procedure Sort_Regression();
-    procedure InsertionSort_Speed();
+    {$IFDEF GUI_TESTS}
     procedure TestGUI;
+    {$ENDIF}
   end;
 
 
@@ -556,6 +560,7 @@ begin
   CheckEquals('Bar', FDataset.FieldByName('Name').AsString);
 end;
 
+{$IFDEF PERFORMANCE_TESTS}
 procedure TestTObjectDataset.InsertionSort_Speed;
 var
   LCustomers: IList<TCustomer>;
@@ -579,6 +584,7 @@ begin
     [swMerge.ElapsedMilliseconds, swInsertion.ElapsedMilliseconds]));
   CheckTrue(swMerge.ElapsedMilliseconds > swInsertion.ElapsedMilliseconds);
 end;
+{$ENDIF}
 
 procedure TestTObjectDataset.Insert_Simple;
 var
@@ -1025,6 +1031,7 @@ begin
   CheckEquals(4, FDataset.RecordCount);
 end;
 
+{$IFDEF PERFORMANCE_TESTS}
 procedure TestTObjectDataset.Filter_Performance_Test;
 var
   LCustomers: IList<TCustomer>;
@@ -1041,6 +1048,7 @@ begin
   CheckEquals(7, FDataset.RecordCount);
   Status(Format('%D records in %D ms', [LCustomers.Count, sw.ElapsedMilliseconds]));
 end;
+{$ENDIF}
 
 procedure TestTObjectDataset.Filter_Without_Brackets;
 var
@@ -1145,6 +1153,7 @@ begin
   end;
 end;
 
+{$IFDEF GUI_TESTS}
 procedure TestTObjectDataset.TestGUI;
 var
   LCustomers: IList<TCustomer>;
@@ -1178,6 +1187,7 @@ begin
     LClonedDataset.Free;
   end;
 end;
+{$ENDIF}
 
 initialization
   RegisterTest(TestTObjectDataset.Suite);

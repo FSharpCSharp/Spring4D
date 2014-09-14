@@ -27,7 +27,9 @@ type
     procedure TestIsMapped;
     procedure TestAdd;
     procedure TestAddOrReplace;
+    {$IFDEF PERFORMANCE_TESTS}
     procedure TestAddOrReplace_Clone_Speed();
+    {$ENDIF}
     procedure TestGet;
     procedure TestRemove;
     procedure TestClear;
@@ -147,6 +149,7 @@ begin
   end;
 end;
 
+{$IFDEF PERFORMANCE_TESTS}
 procedure TestTEntityMap.TestAddOrReplace_Clone_Speed;
 var
   iCount: Integer;
@@ -177,6 +180,7 @@ begin
     LCustomers.Free;
   end;
 end;
+{$ENDIF}
 
 procedure TestTEntityMap.TestGet;
 var
