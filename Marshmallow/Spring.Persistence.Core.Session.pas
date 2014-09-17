@@ -486,7 +486,7 @@ begin
   LSelecter := GetSelector(LEntityClass) as TSelectExecutor;
   try
     LResults := LSelecter.SelectAll(nil, LEntityClass);
-    Result := GetList<T>(LResults);
+    Result := GetListFromResultset<T>(LResults);
   finally
     LSelecter.Free;
   end;

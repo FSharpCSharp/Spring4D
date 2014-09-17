@@ -56,7 +56,7 @@ implementation
 
 constructor TCriteria<T>.Create(ASession: TSession);
 begin
-  inherited Create(T, ASession);
+  inherited Create(ASession);
 end;
 
 destructor TCriteria<T>.Destroy;

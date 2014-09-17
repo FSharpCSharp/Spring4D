@@ -52,11 +52,9 @@ type
     FOrders: IList<IOrder>;
     FSession: TSession;
   protected
-    constructor Create(AEntityClass: TClass; ASession: TSession); virtual;
+    constructor Create(ASession: TSession); virtual;
 
     function GenerateSqlStatement(AParams: IList<TDBParam>): string;
-    function CreateList(): IList<T>; virtual;
-    procedure DoFetch(const ACollection: TValue); virtual;
     function Page(APage: Integer; AItemsPerPage: Integer): IDBPage<T>; virtual;
   public
     destructor Destroy; override;
@@ -67,7 +65,6 @@ type
     procedure Clear(); virtual;
     function Count(): Integer; virtual;
     function ToList(): IList<T>;
-    procedure Fetch(const ACollection: TValue);
 
     property Criterions: IList<ICriterion> read FCriterions;
     property EntityClass: TClass read FEntityClass;
@@ -78,9 +75,10 @@ implementation
 
 uses
   SysUtils
-  ,Spring.Persistence.SQL.Commands.Select
-  ,Spring.Persistence.SQL.Commands.Factory
   ,Spring.Persistence.SQL.Types
+  ,Spring.Persistence.SQL.Commands
+  ,Spring.Persistence.SQL.Interfaces
+  ,Spring.Persistence.SQL.Register
   ;
 
 { TAbstractCriteria }
@@ -110,10 +108,10 @@ begin
   Result := FCriterions.Count;
 end;
 
-constructor TAbstractCriteria<T>.Create(AEntityClass: TClass; ASession: TSession);
+constructor TAbstractCriteria<T>.Create(ASession: TSession);
 begin
   inherited Create;
-  FEntityClass := AEntityClass;
+  FEntityClass := T;
   FSession := ASession;
   FCriterions := TCollections.CreateList<ICriterion>();
   FOrders := TCollections.CreateList<IOrder>();
@@ -124,65 +122,44 @@ begin
   inherited Destroy;
 end;
 
-procedure TAbstractCriteria<T>.DoFetch(const ACollection: TValue);
-var
-  LParams: IList<TDBParam>;
-  LSql: string;
-  LResults: IDBResultset;
-begin
-  LParams := TCollections.CreateObjectList<TDBParam>(True);
-  LSql := GenerateSqlStatement(LParams);
-  LResults := Session.GetResultset(LSql, LParams);
-  Session.Fetch<T>(LResults, ACollection);
-end;
-
-function TAbstractCriteria<T>.CreateList: IList<T>;
-begin
-  Result := TCollections.CreateList<T>(True);
-end;
-
-procedure TAbstractCriteria<T>.Fetch(const ACollection: TValue);
-begin
-  DoFetch(ACollection);
-end;
-
 function TAbstractCriteria<T>.GenerateSqlStatement(AParams: IList<TDBParam>): string;
 var
   LCriterion: ICriterion;
-  LExecutor: TSelectExecutor;
   LWhereField: TSQLWhereField;
   LOrderField: TSQLOrderField;
   LOrder: IOrder;
+  LCommand: TSelectCommand;
+  LGenerator: ISQLGenerator;
 begin
-  LExecutor := CommandFactory.GetCommand<TSelectExecutor>(FEntityClass, FSession.Connection);
+  LCommand := TSelectCommand.Create(FEntityClass);
+  LGenerator := TSQLGeneratorRegister.GetGenerator(FSession.Connection.GetQueryLanguage);
   try
-    LExecutor.LazyColumn := nil;
-
     for LCriterion in Criterions do
     begin
-      LCriterion.ToSqlString(AParams, LExecutor.Command, LExecutor.Generator, True);
+      LCriterion.ToSqlString(AParams, LCommand, LGenerator, True);
     end;
 
     for LOrder in FOrders do
     begin
-      LOrderField := TSQLOrderField.Create(LOrder.GetPropertyName, LExecutor.Command.FindTable(LOrder.GetEntityClass));
+      LOrderField := TSQLOrderField.Create(LOrder.GetPropertyName, LCommand.FindTable(LOrder.GetEntityClass));
       LOrderField.OrderType := LOrder.GetOrderType;
-      LExecutor.Command.OrderByFields.Add(LOrderField);
+      LCommand.OrderByFields.Add(LOrderField);
     end;
 
-    Result := LExecutor.Generator.GenerateSelect(LExecutor.Command);
+    Result := LGenerator.GenerateSelect(LCommand);
   finally
-    LExecutor.Free;
+    LCommand.Free;
   end;
 end;
 
 function TAbstractCriteria<T>.ToList: IList<T>;
 var
-  LCollection: TValue;
+  LParams: IList<TDBParam>;
+  LSql: string;
 begin
-  Result := CreateList();
-  LCollection := TValue.From<IList<T>>(Result);
-  DoFetch(LCollection);
+  LParams := TCollections.CreateObjectList<TDBParam>(True);
+  LSql := GenerateSqlStatement(LParams);
+  Result := Session.GetList<T>(LSql, LParams);
 end;
 
 function TAbstractCriteria<T>.Page(APage, AItemsPerPage: Integer): IDBPage<T>;

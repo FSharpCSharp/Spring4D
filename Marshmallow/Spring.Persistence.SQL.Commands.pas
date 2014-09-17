@@ -82,8 +82,10 @@ type
     FPrimaryKeyColumn: ColumnAttribute;
     FForeignColumn: ForeignJoinColumnAttribute;
     FTables: IList<TSQLTable>;
+    FOwnedTable: Boolean;
   public
-    constructor Create(ATable: TSQLTable); override;
+    constructor Create(ATable: TSQLTable); overload; override;
+    constructor Create(AEntityClass: TClass); reintroduce; overload;
     destructor Destroy; override;
 
     function FindTable(AClass: TClass): TSQLTable;
@@ -237,8 +239,23 @@ begin
   FForeignColumn := nil;
 end;
 
+constructor TSelectCommand.Create(AEntityClass: TClass);
+var
+  LEntityData: TEntityData;
+begin
+  FOwnedTable := True;
+  LEntityData := TEntityCache.Get(AEntityClass);
+  FTable := TSQLTable.CreateFromClass(AEntityClass);
+  Create(FTable);
+  SetTable(LEntityData.Columns);
+  PrimaryKeyColumn := LEntityData.PrimaryKeyColumn;
+  SetAssociations(AEntityClass);
+end;
+
 destructor TSelectCommand.Destroy;
 begin
+  if FOwnedTable then
+    FTable.Free;
   inherited Destroy;
 end;
 

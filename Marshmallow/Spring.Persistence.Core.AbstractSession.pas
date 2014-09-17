@@ -39,7 +39,8 @@ type
     ///	  Retrieves multiple models from the <c>resultset</c>.
     ///	</summary>
     {$ENDREGION}
-    function GetList<T: class, constructor>(AResultset: IDBResultset): IList<T>; overload;
+    function GetListFromResultset<T: class, constructor>(AResultset: IDBResultset): IList<T>;
+    function GetList<T: class, constructor>(const AQuery: string; const AParams: IList<TDBParam>): IList<T>; overload;
 
     procedure AttachEntity(AEntity: TObject); virtual; abstract;
     procedure DetachEntity(AEntity: TObject); virtual; abstract;
@@ -241,9 +242,19 @@ begin
     Result := GetOne<T>(LResults, AEntity);
 end;
 
-function TAbstractSession.GetList<T>(AResultset: IDBResultset): IList<T>;
+function TAbstractSession.GetList<T>(const AQuery: string;
+  const AParams: IList<TDBParam>): IList<T>;
+var
+  LResults: IDBResultset;
 begin
-  Result := TCollections.CreateList<T>(True);
+  Result := TCollections.CreateObjectList<T>(True);
+  LResults := GetResultset(AQuery, AParams);
+  Fetch<T>(LResults, Result);
+end;
+
+function TAbstractSession.GetListFromResultset<T>(AResultset: IDBResultset): IList<T>;
+begin
+  Result := TCollections.CreateObjectList<T>(True);
   Fetch<T>(AResultset, Result);
 end;
 

@@ -157,13 +157,6 @@ type
 
     {$REGION 'Documentation'}
     ///	<summary>
-    ///	  fetch the results into the collection.
-    ///	</summary>
-    {$ENDREGION}
-    procedure Fetch(const ACollection: TValue);
-
-    {$REGION 'Documentation'}
-    ///	<summary>
     ///	  Get the results in pages.
     ///	</summary>
     ///	<param name="APage">
