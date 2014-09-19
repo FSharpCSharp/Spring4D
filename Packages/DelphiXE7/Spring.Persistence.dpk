@@ -1,0 +1,121 @@
+package Spring.Persistence;
+
+{$R *.res}
+{$IFDEF IMPLICITBUILDING This IFDEF should not be used by users}
+{$ALIGN 8}
+{$ASSERTIONS ON}
+{$BOOLEVAL OFF}
+{$DEBUGINFO OFF}
+{$EXTENDEDSYNTAX ON}
+{$IMPORTEDDATA ON}
+{$IOCHECKS ON}
+{$LOCALSYMBOLS ON}
+{$LONGSTRINGS ON}
+{$OPENSTRINGS ON}
+{$OPTIMIZATION OFF}
+{$OVERFLOWCHECKS OFF}
+{$RANGECHECKS OFF}
+{$REFERENCEINFO ON}
+{$SAFEDIVIDE OFF}
+{$STACKFRAMES ON}
+{$TYPEDADDRESS OFF}
+{$VARSTRINGCHECKS ON}
+{$WRITEABLECONST OFF}
+{$MINENUMSIZE 1}
+{$IMAGEBASE $400000}
+{$DEFINE DEBUG}
+{$ENDIF IMPLICITBUILDING}
+{$DESCRIPTION 'Spring Persistence - ORM'}
+{$LIBSUFFIX '.DelphiXE7'}
+{$RUNONLY}
+{$IMPLICITBUILD OFF}
+
+requires
+  dbrtl,
+  DbxCommonDriver,
+  vcl,
+  vclimg,
+  Spring.Base;
+
+contains
+  Spring.Persistence.Adapters.FieldCache in '..\..\Marshmallow\Spring.Persistence.Adapters.FieldCache.pas',
+  Spring.Persistence.Adapters.ObjectDataset in '..\..\Marshmallow\Spring.Persistence.Adapters.ObjectDataset.pas',
+  Spring.Persistence.Adapters.ObjectDataset.Abstract in '..\..\Marshmallow\Spring.Persistence.Adapters.ObjectDataset.Abstract.pas',
+  Spring.Persistence.Adapters.ObjectDataset.ActiveX in '..\..\Marshmallow\Spring.Persistence.Adapters.ObjectDataset.ActiveX.pas',
+  Spring.Persistence.Adapters.ObjectDataset.Blobs in '..\..\Marshmallow\Spring.Persistence.Adapters.ObjectDataset.Blobs.pas',
+  Spring.Persistence.Adapters.ObjectDataset.ExprParser in '..\..\Marshmallow\Spring.Persistence.Adapters.ObjectDataset.ExprParser.pas',
+  Spring.Persistence.Adapters.ObjectDataset.ExprParser.Functions in '..\..\Marshmallow\Spring.Persistence.Adapters.ObjectDataset.ExprParser.Functions.pas',
+  Spring.Persistence.Adapters.ObjectDataset.IndexList in '..\..\Marshmallow\Spring.Persistence.Adapters.ObjectDataset.IndexList.pas',
+  Spring.Persistence.Core.AbstractManager in '..\..\Marshmallow\Spring.Persistence.Core.AbstractManager.pas',
+  Spring.Persistence.Core.AbstractSession in '..\..\Marshmallow\Spring.Persistence.Core.AbstractSession.pas',
+  Spring.Persistence.Core.Algorythms.Sort in '..\..\Marshmallow\Spring.Persistence.Core.Algorythms.Sort.pas',
+  Spring.Persistence.Core.Base in '..\..\Marshmallow\Spring.Persistence.Core.Base.pas',
+  Spring.Persistence.Core.CollectionAdapterResolver in '..\..\Marshmallow\Spring.Persistence.Core.CollectionAdapterResolver.pas',
+  Spring.Persistence.Core.Collections.Enumerator in '..\..\Marshmallow\Spring.Persistence.Core.Collections.Enumerator.pas',
+  Spring.Persistence.Core.Comparers in '..\..\Marshmallow\Spring.Persistence.Core.Comparers.pas',
+  Spring.Persistence.Core.ConnectionFactory in '..\..\Marshmallow\Spring.Persistence.Core.ConnectionFactory.pas',
+  Spring.Persistence.Core.Consts in '..\..\Marshmallow\Spring.Persistence.Core.Consts.pas',
+  Spring.Persistence.Core.Criteria in '..\..\Marshmallow\Spring.Persistence.Core.Criteria.pas',
+  Spring.Persistence.Core.Criteria.Abstract in '..\..\Marshmallow\Spring.Persistence.Core.Criteria.Abstract.pas',
+  Spring.Persistence.Core.Criteria.AbstractCriterion in '..\..\Marshmallow\Spring.Persistence.Core.Criteria.AbstractCriterion.pas',
+  Spring.Persistence.Core.Criteria.Criterion in '..\..\Marshmallow\Spring.Persistence.Core.Criteria.Criterion.pas',
+  Spring.Persistence.Core.Criteria.Criterion.BetweenExpression in '..\..\Marshmallow\Spring.Persistence.Core.Criteria.Criterion.BetweenExpression.pas',
+  Spring.Persistence.Core.Criteria.Criterion.Conjunction in '..\..\Marshmallow\Spring.Persistence.Core.Criteria.Criterion.Conjunction.pas',
+  Spring.Persistence.Core.Criteria.Criterion.Disjunction in '..\..\Marshmallow\Spring.Persistence.Core.Criteria.Criterion.Disjunction.pas',
+  Spring.Persistence.Core.Criteria.Criterion.InExpression in '..\..\Marshmallow\Spring.Persistence.Core.Criteria.Criterion.InExpression.pas',
+  Spring.Persistence.Core.Criteria.Criterion.Junction in '..\..\Marshmallow\Spring.Persistence.Core.Criteria.Criterion.Junction.pas',
+  Spring.Persistence.Core.Criteria.Criterion.LikeExpression in '..\..\Marshmallow\Spring.Persistence.Core.Criteria.Criterion.LikeExpression.pas',
+  Spring.Persistence.Core.Criteria.Criterion.LogicalExpression in '..\..\Marshmallow\Spring.Persistence.Core.Criteria.Criterion.LogicalExpression.pas',
+  Spring.Persistence.Core.Criteria.Criterion.NullExpression in '..\..\Marshmallow\Spring.Persistence.Core.Criteria.Criterion.NullExpression.pas',
+  Spring.Persistence.Core.Criteria.Criterion.PropertyExpression in '..\..\Marshmallow\Spring.Persistence.Core.Criteria.Criterion.PropertyExpression.pas',
+  Spring.Persistence.Core.Criteria.Criterion.SimpleExpression in '..\..\Marshmallow\Spring.Persistence.Core.Criteria.Criterion.SimpleExpression.pas',
+  Spring.Persistence.Core.Criteria.Order in '..\..\Marshmallow\Spring.Persistence.Core.Criteria.Order.pas',
+  Spring.Persistence.Core.Criteria.Properties in '..\..\Marshmallow\Spring.Persistence.Core.Criteria.Properties.pas',
+  Spring.Persistence.Core.Criteria.Restrictions in '..\..\Marshmallow\Spring.Persistence.Core.Criteria.Restrictions.pas',
+  Spring.Persistence.Core.DatabaseManager in '..\..\Marshmallow\Spring.Persistence.Core.DatabaseManager.pas',
+  Spring.Persistence.Core.EmbeddedEntity in '..\..\Marshmallow\Spring.Persistence.Core.EmbeddedEntity.pas',
+  Spring.Persistence.Core.EntityCache in '..\..\Marshmallow\Spring.Persistence.Core.EntityCache.pas',
+  Spring.Persistence.Core.EntityMap in '..\..\Marshmallow\Spring.Persistence.Core.EntityMap.pas',
+  Spring.Persistence.Core.EntitySerializer in '..\..\Marshmallow\Spring.Persistence.Core.EntitySerializer.pas',
+  Spring.Persistence.Core.Exceptions in '..\..\Marshmallow\Spring.Persistence.Core.Exceptions.pas',
+  Spring.Persistence.Core.Interfaces in '..\..\Marshmallow\Spring.Persistence.Core.Interfaces.pas',
+  Spring.Persistence.Core.ListSession in '..\..\Marshmallow\Spring.Persistence.Core.ListSession.pas',
+  Spring.Persistence.Core.Reflection in '..\..\Marshmallow\Spring.Persistence.Core.Reflection.pas',
+  Spring.Persistence.Core.Relation.Abstract in '..\..\Marshmallow\Spring.Persistence.Core.Relation.Abstract.pas',
+  Spring.Persistence.Core.Relation.ManyToOne in '..\..\Marshmallow\Spring.Persistence.Core.Relation.ManyToOne.pas',
+  Spring.Persistence.Core.Repository.Simple in '..\..\Marshmallow\Spring.Persistence.Core.Repository.Simple.pas',
+  Spring.Persistence.Core.RttiCollectionAdapter in '..\..\Marshmallow\Spring.Persistence.Core.RttiCollectionAdapter.pas',
+  Spring.Persistence.Core.Session in '..\..\Marshmallow\Spring.Persistence.Core.Session.pas',
+  Spring.Persistence.Core.SpringCollectionAdapter in '..\..\Marshmallow\Spring.Persistence.Core.SpringCollectionAdapter.pas',
+  Spring.Persistence.Core.Types in '..\..\Marshmallow\Spring.Persistence.Core.Types.pas',
+  Spring.Persistence.Core.Utils in '..\..\Marshmallow\Spring.Persistence.Core.Utils.pas',
+  Spring.Persistence.Mapping.Attributes in '..\..\Marshmallow\Spring.Persistence.Mapping.Attributes.pas',
+  Spring.Persistence.Mapping.RttiExplorer in '..\..\Marshmallow\Spring.Persistence.Mapping.RttiExplorer.pas',
+  Spring.Persistence.SQL.AbstractCommandExecutor in '..\..\Marshmallow\Spring.Persistence.SQL.AbstractCommandExecutor.pas',
+  Spring.Persistence.SQL.AbstractSQLGenerator in '..\..\Marshmallow\Spring.Persistence.SQL.AbstractSQLGenerator.pas',
+  Spring.Persistence.SQL.Commands in '..\..\Marshmallow\Spring.Persistence.SQL.Commands.pas',
+  Spring.Persistence.SQL.Commands.Delete in '..\..\Marshmallow\Spring.Persistence.SQL.Commands.Delete.pas',
+  Spring.Persistence.SQL.Commands.Factory in '..\..\Marshmallow\Spring.Persistence.SQL.Commands.Factory.pas',
+  Spring.Persistence.SQL.Commands.FKCreator in '..\..\Marshmallow\Spring.Persistence.SQL.Commands.FKCreator.pas',
+  Spring.Persistence.SQL.Commands.Insert in '..\..\Marshmallow\Spring.Persistence.SQL.Commands.Insert.pas',
+  Spring.Persistence.SQL.Commands.Page in '..\..\Marshmallow\Spring.Persistence.SQL.Commands.Page.pas',
+  Spring.Persistence.SQL.Commands.Select in '..\..\Marshmallow\Spring.Persistence.SQL.Commands.Select.pas',
+  Spring.Persistence.SQL.Commands.SeqCreator in '..\..\Marshmallow\Spring.Persistence.SQL.Commands.SeqCreator.pas',
+  Spring.Persistence.SQL.Commands.TableCreator in '..\..\Marshmallow\Spring.Persistence.SQL.Commands.TableCreator.pas',
+  Spring.Persistence.SQL.Commands.Update in '..\..\Marshmallow\Spring.Persistence.SQL.Commands.Update.pas',
+  Spring.Persistence.SQL.Generator.Ansi in '..\..\Marshmallow\Spring.Persistence.SQL.Generator.Ansi.pas',
+  Spring.Persistence.SQL.Generator.ASA in '..\..\Marshmallow\Spring.Persistence.SQL.Generator.ASA.pas',
+  Spring.Persistence.SQL.Generator.Firebird in '..\..\Marshmallow\Spring.Persistence.SQL.Generator.Firebird.pas',
+  Spring.Persistence.SQL.Generator.MSSQL in '..\..\Marshmallow\Spring.Persistence.SQL.Generator.MSSQL.pas',
+  Spring.Persistence.SQL.Generator.MySQL in '..\..\Marshmallow\Spring.Persistence.SQL.Generator.MySQL.pas',
+  Spring.Persistence.SQL.Generator.NoSQL in '..\..\Marshmallow\Spring.Persistence.SQL.Generator.NoSQL.pas',
+  Spring.Persistence.SQL.Generator.Oracle in '..\..\Marshmallow\Spring.Persistence.SQL.Generator.Oracle.pas',
+  Spring.Persistence.SQL.Generator.PostgreSQL in '..\..\Marshmallow\Spring.Persistence.SQL.Generator.PostgreSQL.pas',
+  Spring.Persistence.SQL.Generator.SQLite3 in '..\..\Marshmallow\Spring.Persistence.SQL.Generator.SQLite3.pas',
+  Spring.Persistence.SQL.Generators.Register in '..\..\Marshmallow\Spring.Persistence.SQL.Generators.Register.pas',
+  Spring.Persistence.SQL.Interfaces in '..\..\Marshmallow\Spring.Persistence.SQL.Interfaces.pas',
+  Spring.Persistence.SQL.Params in '..\..\Marshmallow\Spring.Persistence.SQL.Params.pas',
+  Spring.Persistence.SQL.Register in '..\..\Marshmallow\Spring.Persistence.SQL.Register.pas',
+  Spring.Persistence.SQL.Types in '..\..\Marshmallow\Spring.Persistence.SQL.Types.pas';
+
+end.
