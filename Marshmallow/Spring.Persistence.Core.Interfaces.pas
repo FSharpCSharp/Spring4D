@@ -476,7 +476,7 @@ type
 
 implementation
 
-uses
-  Spring.Persistence.RttiPatch;
+//uses
+//  Spring.Persistence.RttiPatch;
 
 end.

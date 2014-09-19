@@ -1,16 +1,17 @@
 unit Spring.Persistence.Adapters.ObjectDataset.Abstract;
 
+{$I Spring.inc}
+
 interface
 
 uses
-  DB
-  ,Classes
-  ,Spring.Collections
-  ,Rtti
-  ,Spring.Persistence.Core.Algorythms.Sort
-  ,Generics.Collections
-  ,Spring.Persistence.Adapters.ObjectDataset.IndexList
-  ;
+  Classes,
+  DB,
+  Generics.Collections,
+  Rtti,
+  Spring.Collections,
+  Spring.Persistence.Adapters.ObjectDataset.IndexList,
+  Spring.Persistence.Core.Algorythms.Sort;
 
 type
   PVariantList = ^TVariantList;
@@ -53,9 +54,9 @@ type
     FFilterCache: IDictionary<string, Variant>;
     FIndexList: TODIndexList;
     FInsertIndex: Integer;
-    {$IF CompilerVersion >=24}
+    {$IFDEF DELPHIXE3_UP}
     FReserved: Pointer;
-    {$IFEND}
+    {$ENDIF}
     function GetIndex: Integer;
     procedure SetIndex(const Value: Integer);
   protected
@@ -102,10 +103,12 @@ type
     // Abstract overrides
     function AllocRecordBuffer: TRecordBuffer; override;
     procedure FreeRecordBuffer(var Buffer: TRecordBuffer); override;
-    {$IFNDEF NEXTGEN}
+    {$IFDEF DELPHIXE5_UP}
     procedure GetBookmarkData(Buffer: TRecBuf; Data: TBookmark); overload; override;
     {$ENDIF}
+    {$IFNDEF NEXTGEN}
     procedure GetBookmarkData(Buffer: TRecordBuffer; Data: Pointer); overload; override;
+    {$ENDIF}
 
     function GetBookmarkFlag(Buffer: TRecordBuffer): TBookmarkFlag; override;
     function GetRecord(Buffer: TRecordBuffer; GetMode: TGetMode;
@@ -113,11 +116,11 @@ type
     function GetRecordSize: Word; override;
     procedure BindFields(Binding: Boolean); override;
 
-    {$IF CompilerVersion >=24}
+    {$IFDEF DELPHIXE3_UP}
     procedure InternalAddRecord(Buffer: TRecordBuffer; Append: Boolean); override;
     {$ELSE}
     procedure InternalAddRecord(Buffer: Pointer; Append: Boolean); override;
-    {$IFEND}
+    {$ENDIF}
     procedure InternalClose; override;
     procedure InternalDelete; override;
     procedure InternalFirst; override;
@@ -132,28 +135,20 @@ type
     procedure InternalPost; override;
     procedure InternalSetToRecord(Buffer: TRecordBuffer); override;
     function IsCursorOpen: Boolean; override;
-    procedure SetBookmarkFlag(Buffer: TRecordBuffer; Value: TBookmarkFlag);
-      override;
-    {$IF CompilerVersion >=27}
-    procedure SetBookmarkData(Buffer: TRecBuf; Data: TBookmark); overload; override;
-    {$ELSEIF CompilerVersion >=24}
-    procedure SetBookmarkData(Buffer: TRecordBuffer; Data: TBookmark); overload; override;
-    {$ELSE}
-    procedure SetBookmarkData(Buffer: TRecordBuffer; Data: Pointer); overload; override;
-    {$IFEND}
+    procedure SetBookmarkFlag(Buffer: TRecordBuffer; Value: TBookmarkFlag); override;
 
     function InternalGetRecord(Buffer: TRecordBuffer; GetMode: TGetMode; DoCheck: Boolean): TGetResult; virtual;
-    {$IF CompilerVersion >=24}
+    {$IFDEF DELPHIXE3_UP}
     procedure VariantToBuffer(Field: TField; Data: Variant; Buffer: TValueBuffer; NativeFormat: Boolean); virtual;
     {$ELSE}
     procedure VariantToBuffer(Field: TField; Data: Variant; Buffer: Pointer; NativeFormat: Boolean); virtual;
-    {$IFEND}
+    {$ENDIF}
     function FieldListCheckSum(): NativeInt; virtual;
   protected
     property FilterCache: IDictionary<string, Variant> read FFilterCache write FFilterCache;
-    {$IF CompilerVersion >=24}
+    {$IFDEF DELPHIXE3_UP}
     property Reserved: Pointer read FReserved write FReserved;
-    {$IFEND}
+    {$ENDIF}
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -188,11 +183,11 @@ type
     function CompareBookmarks(Bookmark1, Bookmark2: TBookmark): Integer; override;
     function CreateBlobStream(Field: TField; Mode: TBlobStreamMode): TStream; override;
 
-    {$IF CompilerVersion >= 23}
+    {$IFDEF DELPHIXE2_UP}
     procedure DataEvent(Event: TDataEvent; Info: NativeInt); override;
     {$ELSE}
     procedure DataEvent(Event: TDataEvent; Info: LongInt); override;
-    {$IFEND}
+    {$ENDIF}
 
     function GetBlobFieldData(FieldNo: Integer; var Buffer: TBlobByteData): Integer; override;
     function Locate(const KeyFields: string; const KeyValues: Variant;
@@ -200,17 +195,17 @@ type
     function Lookup(const KeyFields: string; const KeyValues: Variant;
       const ResultFields: string): Variant; override;
     function GetActiveRecBuf(var RecBuf: TRecordBuffer): Boolean; virtual;
-    {$IF CompilerVersion >= 25}
+    {$IF Defined(DELPHIXE4_UP)}
     function GetFieldData(Field: TField; var Buffer: TValueBuffer): Boolean; override;
     function GetFieldData(Field: TField; var Buffer: TValueBuffer; NativeFormat: Boolean): Boolean; override;
-    {$ELSEIF CompilerVersion >= 24}
+    {$ELSEIF Defined(DELPHIXE3_UP)}
     function GetFieldData(Field: TField; Buffer: TValueBuffer): Boolean; override;
     function GetFieldData(Field: TField; Buffer: TValueBuffer; NativeFormat: Boolean): Boolean; override;
     {$ELSE}
     function GetFieldData(Field: TField; Buffer: Pointer): Boolean; override;
     function GetFieldData(Field: TField; Buffer: Pointer; NativeFormat: Boolean): Boolean; override;
     {$IFEND}
-    {$IF CompilerVersion >= 24}
+    {$IF Defined(DELPHIXE3_UP)}
     procedure SetFieldData(Field: TField; Buffer: TValueBuffer); override;
     procedure SetFieldData(Field: TField; Buffer: TValueBuffer; NativeFormat: Boolean); override;
     {$ELSE}
@@ -251,23 +246,22 @@ resourcestring
 implementation
 
 uses
-  Variants
-  ,SysUtils
-  ,Math
-  ,DBConsts
-  ,FMTBcd
-  ,WideStrUtils
-  ,Spring.Persistence.Mapping.Attributes
-  ,Spring.Persistence.Adapters.ObjectDataset.Blobs
-  ,Spring.Persistence.Adapters.ObjectDataset.ActiveX
-  ,Contnrs
-  ,Generics.Defaults
-  ,Spring.Persistence.Core.Reflection
-  {$IFDEF MSWINDOWS}
-  ,Windows
-  ,ActiveX
-  {$ENDIF}
-  ;
+  Contnrs,
+  DBConsts,
+  Generics.Defaults,
+  Math,
+  FMTBcd,
+  SysUtils,
+  Variants,
+  WideStrUtils,
+{$IFDEF MSWINDOWS}
+  ActiveX,
+  Windows,
+{$ENDIF}
+  Spring.Persistence.Mapping.Attributes,
+  Spring.Persistence.Adapters.ObjectDataset.Blobs,
+  Spring.Persistence.Adapters.ObjectDataset.ActiveX,
+  Spring.Persistence.Core.Reflection;
 
 type
   EAbstractObjectDatasetException = class(Exception);
@@ -276,7 +270,7 @@ function DataSetLocateThrough(DataSet: TDataSet; const KeyFields: string;
   const KeyValues: Variant; Options: TLocateOptions): Boolean;
 var
   FieldCount: Integer;
-  Fields: TObjectList{$IF CompilerVersion >= 24}<TField>{$IFEND};
+  Fields: TObjectList{$IFDEF DELPHIXE3_UP}<TField>{$ENDIF};
   Fld: TField;
   Bookmark: TBookmark;
 
@@ -329,7 +323,7 @@ begin
   if DataSet.IsEmpty then
     Exit;
 
-  Fields := TObjectList{$IF CompilerVersion >= 24}<TField>{$IFEND}.Create(False);
+  Fields := TObjectList{$IFDEF DELPHIXE3_UP}<TField>{$ENDIF}.Create(False);
   try
     DataSet.GetFieldList(Fields, KeyFields);
     FieldCount := Fields.Count;
@@ -439,11 +433,11 @@ begin
   Result := TSvBlobStream.Create(Field as TBlobField, Mode);
 end;
 
-{$IF CompilerVersion >=23}
+{$IFDEF DELPHIXE2_UP}
 procedure TAbstractObjectDataset.DataEvent(Event: TDataEvent; Info: NativeInt);
 {$ELSE}
 procedure TAbstractObjectDataset.DataEvent(Event: TDataEvent; Info: LongInt);
-{$IFEND}
+{$ENDIF}
 begin
   case Event of
     deLayoutChange:
@@ -483,11 +477,11 @@ begin
     Finalize(PVariantList(FOldValueBuffer + sizeof(TArrayRecInfo))^,
       Fields.Count);
 
-  {$IF CompilerVersion >= 27}
+  {$IFDEF DELPHIXE5_UP}
   InitRecord(NativeInt(FOldValueBuffer));
   {$ELSE}
   InitRecord(FOldValueBuffer);
-  {$IFEND}
+  {$ENDIF}
   inherited DoOnNewRecord;
 end;
 
@@ -546,18 +540,19 @@ begin
   Result := inherited GetBlobFieldData(FieldNo, Buffer);
 end;
 
-{$IFNDEF NEXTGEN}
+{$IFDEF DELPHIXE5_UP}
 procedure TAbstractObjectDataset.GetBookmarkData(Buffer: TRecBuf; Data: TBookmark);
 begin
   PObject(Data)^ := IndexList.GetModel(PArrayRecInfo(Buffer)^.Index).AsObject;
 end;
 {$ENDIF}
 
+{$IFNDEF NEXTGEN}
 procedure TAbstractObjectDataset.GetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);
 begin
   PObject(Data)^ := IndexList.GetModel(PArrayRecInfo(Buffer)^.Index).AsObject;
- // PInteger(Data)^ := IndexList[PArrayRecInfo(Buffer)^.Index];
 end;
+{$ENDIF}
 
 function TAbstractObjectDataset.GetBookmarkFlag(Buffer: TRecordBuffer): TBookmarkFlag;
 begin
@@ -579,10 +574,10 @@ begin
   Result := inherited GetFieldClass(FieldDef);
 end;
 
-{$IF CompilerVersion >= 25}
+{$IF Defined(DELPHIXE4_UP)}
 function TAbstractObjectDataset.GetFieldData(Field: TField; var Buffer: TValueBuffer;
   NativeFormat: Boolean): Boolean;
-{$ELSEIF CompilerVersion >= 24}
+{$ELSEIF Defined(DELPHIXE3_UP)}
 function TAbstractObjectDataset.GetFieldData(Field: TField; Buffer: TValueBuffer;
   NativeFormat: Boolean): Boolean;
 {$ELSE}
@@ -637,9 +632,9 @@ begin
     VariantToBuffer(Field, LData, Buffer, NativeFormat);
 end;
 
-{$IF CompilerVersion >= 25}
+{$IF Defined(DELPHIXE4_UP)}
 function TAbstractObjectDataset.GetFieldData(Field: TField; var Buffer: TValueBuffer): Boolean;
-{$ELSEIF CompilerVersion >= 24}
+{$ELSEIF Defined(DELPHIXE3_UP)}
 function TAbstractObjectDataset.GetFieldData(Field: TField; Buffer: TValueBuffer): Boolean;
 {$ELSE}
 function TAbstractObjectDataset.GetFieldData(Field: TField; Buffer: Pointer): Boolean;
@@ -692,12 +687,11 @@ begin
   Result := sizeof(TArrayRecInfo);
 end;
 
-
-{$IF CompilerVersion >=24}
+{$IFDEF DELPHIXE3_UP}
 procedure TAbstractObjectDataset.InternalAddRecord(Buffer: TRecordBuffer; Append: Boolean);
 {$ELSE}
 procedure TAbstractObjectDataset.InternalAddRecord(Buffer: Pointer; Append: Boolean);
-{$IFEND}
+{$ENDIF}
 begin
   DoPostRecord(Current, Append);
 end;
@@ -792,11 +786,11 @@ begin
       PArrayRecInfo(Buffer)^.BookmarkFlag := bfCurrent;
 
       Finalize(PVariantList(Buffer + sizeof(TArrayRecInfo))^, Fields.Count);
-      {$IF CompilerVersion >= 27}
+      {$IFDEF DELPHIXE5_UP}
       GetCalcFields(NativeInt(Buffer));
       {$ELSE}
       GetCalcFields(Buffer);
-      {$IFEND}
+      {$ENDIF}
     end;
 
   except
@@ -953,18 +947,6 @@ begin
   end;
 end;
 
-{$IF CompilerVersion >=27}
-procedure TAbstractObjectDataset.SetBookmarkData(Buffer: TRecBuf; Data: TBookmark);
-{$ELSEIF CompilerVersion >=24}
-procedure TAbstractObjectDataset.SetBookmarkData(Buffer: TRecordBuffer;
-  Data: TBookmark);
-{$ELSE}
-procedure TAbstractObjectDataset.SetBookmarkData(Buffer: TRecordBuffer; Data: Pointer);
-{$IFEND}
-begin
-  inherited;
-end;
-
 procedure TAbstractObjectDataset.SetBookmarkFlag(Buffer: TRecordBuffer; Value: TBookmarkFlag);
 begin
   PArrayRecInfo(Buffer)^.BookmarkFlag := Value;
@@ -975,22 +957,22 @@ begin
   FCurrent := AValue;
 end;
 
-{$IF CompilerVersion >= 24}
+{$IFDEF DELPHIXE3_UP}
 procedure TAbstractObjectDataset.SetFieldData(Field: TField; Buffer: TValueBuffer);
 {$ELSE}
 procedure TAbstractObjectDataset.SetFieldData(Field: TField; Buffer: Pointer);
-{$IFEND}
+{$ENDIF}
 begin
   SetFieldData(Field, Buffer, True);
 end;
 
-{$IF CompilerVersion >= 24}
+{$IFDEF DELPHIXE3_UP}
 procedure TAbstractObjectDataset.SetFieldData(Field: TField; Buffer: TValueBuffer; NativeFormat: Boolean);
 {$ELSE}
 procedure TAbstractObjectDataset.SetFieldData(Field: TField; Buffer: Pointer; NativeFormat: Boolean);
-{$IFEND}
+{$ENDIF}
 
-  {$IF CompilerVersion >= 24}
+  {$IFDEF DELPHIXE3_UP}
   procedure BufferToVar(var AData: Variant);
   var
     LUnknown: IUnknown;
@@ -1115,7 +1097,7 @@ procedure TAbstractObjectDataset.SetFieldData(Field: TField; Buffer: Pointer; Na
         Field.DisplayName]);
     end;
   end;
-  {$IFEND}
+  {$ENDIF}
 
 var
   LData: Variant;
@@ -1206,7 +1188,7 @@ begin
   end;
 end;
 
-{$IF CompilerVersion >=24}
+{$IFDEF DELPHIXE3_UP}
 procedure TAbstractObjectDataset.VariantToBuffer(Field: TField; Data: Variant; Buffer: TValueBuffer;
   NativeFormat: Boolean);
 var
@@ -1226,7 +1208,6 @@ var
     else
       TBitConverter.FromCurrency(C, Buffer);
   end;
-
 
 begin
   case Field.DataType of
@@ -1324,7 +1305,6 @@ end;
 procedure TAbstractObjectDataset.VariantToBuffer(Field: TField; Data: Variant; Buffer: Pointer;
   NativeFormat: Boolean);
 
-
   procedure CurrToBuffer(const C: Currency);
     begin
       if NativeFormat then
@@ -1335,7 +1315,6 @@ procedure TAbstractObjectDataset.VariantToBuffer(Field: TField; Data: Variant; B
 
 var
   LLength: Integer;
-
 begin
   case Field.DataType of
     ftGuid, ftFixedChar, ftString:
@@ -1349,17 +1328,10 @@ begin
         end
         else
         begin
-          {$IF CompilerVersion >= 20}
-          LLength := Length(Data);
-          {$ELSE}
-          l := SysStringLen(tagVariant(Data).bStrVal);
-          {$IFEND}
-          if LLength = 0 then
+          if Length(Data) = 0 then
             PAnsiChar(Buffer)[0] := #0
           else
             StrCopy(Buffer, tagVariant(Data).bStrVal);
-          //  WideCharToMultiByte(0, 0, tagVariant(Data).bStrVal, LLength + 1, Buffer,
-           //   Field.Size, nil, nil);
         end;
       end;
     ftFixedWideChar, ftWideString:
@@ -1426,7 +1398,8 @@ begin
   end;
 
 end;
-{$IFEND}
+{$ENDIF}
+
 { TObjectDatasetFieldDefs }
 
 function TObjectDatasetFieldDefs.GetFieldDefClass: TFieldDefClass;
@@ -1435,7 +1408,6 @@ begin
 end;
 
 { TObjectDatasetFieldDef }
-
 
 function TObjectDatasetFieldDef.GetDisplayName: string;
 begin

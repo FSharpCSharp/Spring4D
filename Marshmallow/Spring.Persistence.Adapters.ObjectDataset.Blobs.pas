@@ -3,10 +3,9 @@ unit Spring.Persistence.Adapters.ObjectDataset.Blobs;
 interface
 
 uses
-  Spring.Persistence.Adapters.ObjectDataset.Abstract
-  ,DB
-  ,Classes
-  ;
+  Classes,
+  DB,
+  Spring.Persistence.Adapters.ObjectDataset.Abstract;
 
 type
   TSvBlobStream = class(TMemoryStream)
@@ -31,10 +30,8 @@ type
 implementation
 
 uses
-  DBConsts
-  ,Forms
-  ,Variants
-  ;
+  DBConsts,
+  Variants;
 
 { TSvBlobStream }
 
@@ -64,13 +61,11 @@ end;
 destructor TSvBlobStream.Destroy;
 begin
   if FModified then
-    try
-      FDataSet.SetFieldData(FField, @FData);
-      FField.Modified := True;
-      FDataSet.DataEvent(deFieldChange, Longint(FField));
-    except
-      Application.HandleException(Self);
-    end;
+  begin
+    FDataSet.SetFieldData(FField, @FData);
+    FField.Modified := True;
+    FDataSet.DataEvent(deFieldChange, Longint(FField));
+  end;
   inherited Destroy;
 end;
 

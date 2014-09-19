@@ -219,8 +219,8 @@ var
 begin
   inherited;
   LStmt := TADODataSet.Create(nil);
-  if AServerSideCursor then
-    LStmt.CursorLocation := clUseServer;
+//  if AServerSideCursor then
+//    LStmt.CursorLocation := clUseServer;
   LStmt.CursorType := ctOpenForwardOnly;
   LStmt.CacheSize := 50;
   LStmt.Connection := Statement.Connection;
