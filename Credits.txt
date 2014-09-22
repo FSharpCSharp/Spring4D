@@ -8,6 +8,9 @@ Current team members
 * Stefan Glienke (Stefan)
 * Honza Rameš (Honza)
 * Jeroen Wiert Pluimers (Jeroen)
+* Nick Hodges (Nick)
+* Linas Naginionis (Linas)
+* Cesar Romero (Cesar)
 
 Commiters
 * Baoquan Zuo (Baoquan)
@@ -18,11 +21,11 @@ Contributors
 * Ryan Huang
 * Chris Liu
 * wr960204
-* Nick Hodges
 
 Acknowledgements:
 * Nick Hodges
 * Alexandr Demcenko (Many classes in the Spring.Cryptography are based on his native cryptographical code implementation)
+* Linas Naginionis is the original author of the Marshmallow ORM which Spring Persistence is based on
 
 Donations
 * Documentation Insight

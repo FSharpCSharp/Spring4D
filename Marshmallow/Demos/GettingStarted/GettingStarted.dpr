@@ -2,7 +2,7 @@ program GettingStarted;
 
 uses
   Forms,
-  Spring.Persistence.Adapters.SQLite in '..\..\Spring.Persistence.Adapters.SQLite.pas',
+  Spring.Persistence.Adapters.SQLite,
   ProductModel in 'Source\ProductModel.pas',
   ViewEditProduct in 'Views\ViewEditProduct.pas' {ProductEditForm},
   ViewMain in 'Views\ViewMain.pas' {MainForm};
