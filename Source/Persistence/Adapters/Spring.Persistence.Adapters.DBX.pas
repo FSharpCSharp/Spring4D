@@ -31,7 +31,7 @@ interface
 uses
   SqlExpr, DB, Spring.Collections, Spring.Persistence.Core.Interfaces
   , Spring.Persistence.Core.Base, Spring.Persistence.SQL.Params, SysUtils
-  , Spring.Persistence.SQL.Generator.Ansi, DBXCommon, Spring.Persistence.Adapters.FieldCache
+  , Spring.Persistence.SQL.Generators.Ansi, DBXCommon, Spring.Persistence.Adapters.FieldCache
   ;
 
 type

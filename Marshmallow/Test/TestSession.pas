@@ -120,7 +120,7 @@ uses
   ,Generics.Collections
   ,Spring.Persistence.Core.Reflection
   ,TestConsts
-  ,Spring.Persistence.Core.Criteria.Properties
+  ,Spring.Persistence.Criteria.Properties
   ,Spring.Persistence.Core.Exceptions
   ,Diagnostics
   ;

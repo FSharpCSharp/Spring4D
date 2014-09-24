@@ -12,8 +12,8 @@ unit TestAnsiSQLGenerator;
 interface
 
 uses
-  TestFramework, Spring.Persistence.SQL.AbstractSQLGenerator
-  , Spring.Persistence.SQL.Generator.Ansi, Spring.Persistence.SQL.Commands
+  TestFramework, Spring.Persistence.SQL.Generators.Abstract
+  , Spring.Persistence.SQL.Generators.Ansi, Spring.Persistence.SQL.Commands
   , Spring.Persistence.SQL.Types, Spring.Collections;
 
 type

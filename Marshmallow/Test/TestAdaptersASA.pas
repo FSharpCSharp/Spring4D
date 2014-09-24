@@ -14,7 +14,7 @@ interface
 uses
   TestFramework, Spring.Persistence.Adapters.ASA, SysUtils
   , Spring.Persistence.Adapters.ADO, ADODB, Spring.Persistence.Core.Interfaces, uModels
-  ,Generics.Collections, Spring.Persistence.Core.Session, Spring.Persistence.SQL.Generator.ASA;
+  ,Generics.Collections, Spring.Persistence.Core.Session, Spring.Persistence.SQL.Generators.ASA;
 
 type
   // Test methods for class TASAConnectionAdapter

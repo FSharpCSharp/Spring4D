@@ -64,7 +64,7 @@ uses
   ,Spring.Persistence.Core.Reflection
   ,TestConsts
   ,TestSession
-  ,Spring.Persistence.Core.Criteria.Properties
+  ,Spring.Persistence.Criteria.Properties
   ,Diagnostics
   ,Spring.Persistence.Core.Repository.Simple
   ,Generics.Collections

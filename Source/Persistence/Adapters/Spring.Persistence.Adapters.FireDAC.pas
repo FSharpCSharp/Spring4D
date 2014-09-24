@@ -53,7 +53,7 @@ uses
   Spring.Persistence.Adapters.FieldCache,
   Spring.Persistence.Mapping.Attributes,
   Spring.Collections,
-  Spring.Persistence.SQL.Generator.Ansi,
+  Spring.Persistence.SQL.Generators.Ansi,
   Spring.Persistence.SQL.Params;
 
 type

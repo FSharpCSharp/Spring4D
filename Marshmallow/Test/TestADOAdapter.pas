@@ -17,9 +17,9 @@ uses
   TestFramework, ADODB, Generics.Collections, Spring.Persistence.Adapters.ADO
   , Spring.Persistence.Core.Base, SysUtils,
   Spring.Persistence.SQL.Params, Spring.Persistence.Core.Interfaces
-  , Spring.Persistence.SQL.Generator.Ansi, Spring.Persistence.Adapters.MSSQL
+  , Spring.Persistence.SQL.Generators.Ansi, Spring.Persistence.Adapters.MSSQL
   , Spring.Persistence.Core.Session, uModels, VARTOTMASTModel
-  , Spring.Persistence.SQL.Generator.MSSQL, Spring.Persistence.Core.DatabaseManager, Classes;
+  , Spring.Persistence.SQL.Generators.MSSQL, Spring.Persistence.Core.DatabaseManager, Classes;
 
 type
   // Test methods for class TADOResultSetAdapter

@@ -3,7 +3,7 @@ unit TestCommands;
 interface
 
 uses
-  TestFramework, Spring.Persistence.SQL.Commands.TableCreator, Spring.Persistence.SQL.AbstractCommandExecutor
+  TestFramework, Spring.Persistence.SQL.Commands.TableCreator, Spring.Persistence.SQL.Commands.Abstract
   , Spring.Persistence.SQL.Commands, Spring.Persistence.SQL.Types
   ,Spring.Persistence.Core.Interfaces
   ;

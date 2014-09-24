@@ -261,10 +261,10 @@ uses
   ,Messages
   ,Spring.Persistence.Core.ConnectionFactory
   ,Spring.Persistence.Core.Exceptions
-  ,Spring.Persistence.Core.Criteria.Properties
-  ,Spring.Persistence.Core.Criteria.Restrictions
+  ,Spring.Persistence.Criteria.Properties
+  ,Spring.Persistence.Criteria.Restrictions
   ,Spring.Persistence.Core.Session
-  ,Spring.Persistence.SQL.Generator.MongoDB
+  ,Spring.Persistence.SQL.Generators.MongoDB
   ,Variants
   ,Diagnostics
   ;

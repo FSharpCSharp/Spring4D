@@ -5,7 +5,7 @@ interface
 uses
   TestFramework, Spring.Persistence.Adapters.FireDAC, Spring.Persistence.Core.Base, SysUtils,
   Spring.Persistence.SQL.Params, Spring.Persistence.Core.Interfaces
-  , Spring.Persistence.SQL.Generator.Ansi, Spring.Persistence.Core.Session
+  , Spring.Persistence.SQL.Generators.Ansi, Spring.Persistence.Core.Session
   ,uModels, Classes, FireDAC.Comp.Client, Spring.Persistence.Mapping.Attributes;
 
 type

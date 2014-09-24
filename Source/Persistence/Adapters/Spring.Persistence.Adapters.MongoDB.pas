@@ -167,7 +167,7 @@ implementation
 uses
   StrUtils
   ,Spring.Persistence.Core.ConnectionFactory
-  ,Spring.Persistence.SQL.Generator.MongoDB
+  ,Spring.Persistence.SQL.Generators.MongoDB
   ,Variants
   ,TypInfo
   ,Spring.Persistence.SQL.Commands

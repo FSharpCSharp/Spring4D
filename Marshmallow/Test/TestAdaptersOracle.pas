@@ -5,7 +5,7 @@ interface
 uses
   TestFramework, Spring.Persistence.Adapters.Oracle, SysUtils, Spring.Persistence.Adapters.ADO
   , ADODB, Spring.Persistence.Core.Interfaces, uModels
-  ,Generics.Collections, Spring.Persistence.Core.Session, Spring.Persistence.SQL.Generator.Oracle;
+  ,Generics.Collections, Spring.Persistence.Core.Session, Spring.Persistence.SQL.Generators.Oracle;
 
 type
   TestOracleConnectionAdapter = class(TTestCase)
@@ -38,7 +38,7 @@ uses
   ,Spring.Persistence.Core.DatabaseManager
   ,SvDesignPatterns
   ,Spring.Collections
-  ,Spring.Persistence.Core.Criteria.Properties
+  ,Spring.Persistence.Criteria.Properties
   ,Spring.Persistence.SQL.Params
   ,Variants
   ;

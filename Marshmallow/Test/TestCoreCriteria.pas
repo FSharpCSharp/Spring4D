@@ -14,9 +14,9 @@ interface
 {$I sv.inc}
 
 uses
-  TestFramework, Spring.Collections, Spring.Persistence.Core.Criteria, Generics.Collections
-  , Spring.Persistence.Core.Interfaces, Spring.Persistence.Core.Criteria.Criterion
-  , Spring.Persistence.Core.Criteria.Abstract, uModels, Spring.Persistence.Core.Criteria.Restrictions
+  TestFramework, Spring.Collections, Spring.Persistence.Criteria, Generics.Collections
+  , Spring.Persistence.Core.Interfaces, Spring.Persistence.Criteria.Criterion.Abstract
+  , Spring.Persistence.Criteria.Abstract, uModels, Spring.Persistence.Criteria.Restrictions
   ,Spring.Persistence.Core.Session
   ;
 
@@ -56,8 +56,8 @@ implementation
 
 uses
   Spring.Persistence.Core.ConnectionFactory
-  ,Spring.Persistence.Core.Criteria.Order
-  ,Spring.Persistence.Core.Criteria.Properties
+  ,Spring.Persistence.Criteria.Order
+  ,Spring.Persistence.Criteria.Properties
   ,TestSession
   ,Spring.Persistence.SQL.Types
   ,Spring.Persistence.SQL.Params

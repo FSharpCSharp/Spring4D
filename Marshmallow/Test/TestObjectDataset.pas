@@ -5,7 +5,7 @@ unit TestObjectDataset;
 interface
 
 uses
-  TestFramework, Spring.Persistence.Adapters.ObjectDataset, Spring.Collections, uModels;
+  TestFramework, Spring.Persistence.ObjectDataset, Spring.Collections, uModels;
 
 type
   TMockObjectDataset = class(TObjectDataset)

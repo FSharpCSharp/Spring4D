@@ -1,11 +1,11 @@
-unit Spring.Persistence.SQL.Generator.MongoDB;
+unit Spring.Persistence.SQL.Generators.MongoDB;
 
 interface
 
 uses
-  Spring.Persistence.SQL.Generator.NoSQL, Spring.Persistence.SQL.Interfaces
+  Spring.Persistence.SQL.Generators.NoSQL, Spring.Persistence.SQL.Interfaces
   , Spring.Persistence.SQL.Commands, Spring.Persistence.Mapping.Attributes
-  ,Spring.Persistence.SQL.AbstractSQLGenerator, Spring.Persistence.SQL.Types
+  ,Spring.Persistence.SQL.Generators.Abstract, Spring.Persistence.SQL.Types
   , SvSerializer;
 
 type

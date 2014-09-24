@@ -176,7 +176,7 @@ end;
 
 function TSQLiteSQLGenerator.GenerateGetLastInsertId(AIdentityColumn: ColumnAttribute): string;
 begin
-  Result := 'SELECT last_insert_rowid;';
+  Result := 'SELECT last_insert_rowid();';
 end;
 
 function TSQLiteSQLGenerator.GetQueryLanguage: TQueryLanguage;
