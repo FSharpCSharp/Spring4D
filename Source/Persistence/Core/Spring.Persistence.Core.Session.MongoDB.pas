@@ -39,7 +39,7 @@ begin
     for LEntity in ACollection do
     begin
       SetLazyColumns(LEntity, TEntityCache.Get(T));
-      OldStateEntities.AddOrReplace(TRttiExplorer.Clone(LEntity));
+      AttachEntity(LEntity);
     end;
     LInserter.BulkExecute<T>(ACollection);
   finally

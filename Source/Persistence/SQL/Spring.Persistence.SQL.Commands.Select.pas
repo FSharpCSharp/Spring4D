@@ -100,7 +100,7 @@ begin
   FColumns.AddRange(LCache.Columns);
 
   FCommand.PrimaryKeyColumn := LCache.PrimaryKeyColumn;
-  FCommand.SetTable(FColumns);
+  FCommand.SetCommandFieldsFromColumns(FColumns);
   FCommand.SetAssociations(EntityClass);
 end;
 
@@ -194,8 +194,6 @@ begin
   if SQLParameters.Count > 0 then
     LStmt.SetParams(SQLParameters);
 
-  Execute(AEntity);
-
   Result := LStmt.ExecuteQuery;
 end;
 
@@ -213,8 +211,6 @@ begin
  { BuildParams(AEntity);
   if SQLParameters.Count > 0 then
     LStmt.SetParams(SQLParameters); }
-
-  Execute(AEntity);
 
   Result := LStmt.ExecuteQuery;
 end;

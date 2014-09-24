@@ -79,7 +79,7 @@ begin
     raise ETableNotSpecified.Create('Table not specified');
 
   FTable.SetFromAttribute(LAtrTable);
-  FCommand.SetTable(LEntityData.Columns);
+  FCommand.SetCommandFieldsFromColumns(LEntityData.Columns);
   FCommand.TableExists := TableExists(FTable.Name);
   if FCommand.TableExists then
   begin
@@ -123,9 +123,6 @@ begin
 
     LStmt := Connection.CreateStatement;
     LStmt.SetSQLCommand(SQL);
-    //inherited only when SQL's are constructed
-    inherited Execute(AEntity);
-
     LStmt.Execute;
   end;
 end;

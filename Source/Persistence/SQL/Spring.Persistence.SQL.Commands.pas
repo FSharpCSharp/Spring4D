@@ -45,7 +45,7 @@ type
     FEntity: TObject;
     FParameterNames: IDictionary<string,Integer>;
   protected
-    procedure SetTable(AColumns: IList<ColumnAttribute>); virtual; abstract;
+    procedure SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>); virtual; abstract;
   public
     constructor Create(ATable: TSQLTable); virtual;
     destructor Destroy; override;
@@ -91,7 +91,7 @@ type
     function FindCorrespondingTable(ATable: TSQLTable): TSQLTable;
 
     procedure SetAssociations(AEntityClass: TClass); virtual;
-    procedure SetTable(AColumns: IList<ColumnAttribute>); override;
+    procedure SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>); override;
     procedure SetFromPrimaryColumn;
     procedure SetFromForeignColumn(ABaseTableClass, AForeignTableClass: TClass);
 
@@ -118,7 +118,7 @@ type
     constructor Create(ATable: TSQLTable); override;
     destructor Destroy; override;
 
-    procedure SetTable(AColumns: IList<ColumnAttribute>); override;
+    procedure SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>); override;
 
     property InsertFields: IList<TSQLField> read FInsertFields;
     property Sequence: SequenceAttribute read FSequence write FSequence;
@@ -136,7 +136,7 @@ type
   public
     constructor Create(ATable: TSQLTable); override;
 
-    procedure SetTable(AColumns: IList<ColumnAttribute>); override;
+    procedure SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>); override;
 
     property PrimaryKeyColumn: ColumnAttribute read FPrimaryKeyColumn write FPrimaryKeyColumn;
     property UpdateFields: IList<TSQLField> read FUpdateFields;
@@ -150,12 +150,13 @@ type
   TDeleteCommand = class(TWhereCommand)
   private
     FPrimaryKeyColumnName: string;
+    procedure SetPrimaryKeyColumnName(const Value: string);
   public
     constructor Create(ATable: TSQLTable); override;
 
-    procedure SetTable(AColumns: IList<ColumnAttribute>); override;
+    procedure SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>); override;
 
-    property PrimaryKeyColumnName: string read FPrimaryKeyColumnName write FPrimaryKeyColumnName;
+    property PrimaryKeyColumnName: string read FPrimaryKeyColumnName write SetPrimaryKeyColumnName;
   end;
 
   {$REGION 'Documentation'}
@@ -172,7 +173,7 @@ type
     constructor Create(ATable: TSQLTable); override;
     destructor Destroy; override;
 
-    procedure SetTable(AColumns: IList<ColumnAttribute>); override;
+    procedure SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>); override;
 
     property TableExists: Boolean read FTableExists write FTableExists;
     property DbColumns: IList<string> read FDbColumns;
@@ -191,7 +192,7 @@ type
     constructor Create(ATable: TSQLTable); override;
     destructor Destroy; override;
 
-    procedure SetTable(AColumns: IList<ColumnAttribute>); override;
+    procedure SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>); override;
 
     property ForeignKeys: IList<TSQLForeignKeyField> read FForeigns;
   end;
@@ -242,7 +243,7 @@ begin
   LEntityData := TEntityCache.Get(AEntityClass);
   FTable := TSQLTable.CreateFromClass(AEntityClass);
   Create(FTable);
-  SetTable(LEntityData.Columns);
+  SetCommandFieldsFromColumns(LEntityData.Columns);
   PrimaryKeyColumn := LEntityData.PrimaryKeyColumn;
   SetAssociations(AEntityClass);
 end;
@@ -362,7 +363,7 @@ begin
   end;
 end;
 
-procedure TSelectCommand.SetTable(AColumns: IList<ColumnAttribute>);
+procedure TSelectCommand.SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>);
 var
   LColumn: ColumnAttribute;
   LSelectField: TSQLSelectField;
@@ -395,7 +396,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TInsertCommand.SetTable(AColumns: IList<ColumnAttribute>);
+procedure TInsertCommand.SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>);
 var
   LField: TSQLField;
   LColumn: ColumnAttribute;
@@ -423,7 +424,7 @@ begin
   FPrimaryKeyColumn := nil;
 end;
 
-procedure TUpdateCommand.SetTable(AColumns: IList<ColumnAttribute>);
+procedure TUpdateCommand.SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>);
 var
   LField: TSQLField;
   LWhereField: TSQLWhereField;
@@ -460,14 +461,18 @@ begin
   FPrimaryKeyColumnName := '';
 end;
 
-procedure TDeleteCommand.SetTable(AColumns: IList<ColumnAttribute>);
+procedure TDeleteCommand.SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>);
+begin
+  SetPrimaryKeyColumnName(FPrimaryKeyColumnName);
+end;
+
+procedure TDeleteCommand.SetPrimaryKeyColumnName(const Value: string);
 var
   LWhereField: TSQLWhereField;
 begin
+  FPrimaryKeyColumnName := Value;
   Assert(FPrimaryKeyColumnName <> '', 'Primary key column name is not specified for deletion');
-  //add fields
   WhereFields.Clear;
-
   LWhereField := TSQLWhereField.Create(FPrimaryKeyColumnName, FTable);
   LWhereField.ParamName := GetAndIncParameterName(FPrimaryKeyColumnName);
   WhereFields.Add(LWhereField);
@@ -540,7 +545,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TCreateTableCommand.SetTable(AColumns: IList<ColumnAttribute>);
+procedure TCreateTableCommand.SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>);
 var
   LCol: ColumnAttribute;
   LField: TSQLCreateField;
@@ -569,13 +574,13 @@ begin
   inherited Destroy;
 end;
 
-procedure TCreateFKCommand.SetTable(AColumns: IList<ColumnAttribute>);
+procedure TCreateFKCommand.SetCommandFieldsFromColumns(AColumns: IList<ColumnAttribute>);
 var
   LCol: ColumnAttribute;
   LForeignKeyColumn: ForeignJoinColumnAttribute;
   LFKField: TSQLForeignKeyField;
 begin
-  inherited SetTable(AColumns);
+  inherited SetCommandFieldsFromColumns(AColumns);
   FForeigns.Clear;
   for LCol in AColumns do
   begin

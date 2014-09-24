@@ -93,10 +93,7 @@ begin
   FTable.SetFromAttribute(LAtrTable);
 
   FPrimaryKeyColumnName := TRttiExplorer.GetPrimaryKeyColumnName(EntityClass);
-   //add fields to tsqltable
   FCommand.PrimaryKeyColumnName := FPrimaryKeyColumnName;
-  FCommand.SetTable(nil);
-
   SQL := Generator.GenerateDelete(FCommand);
 end;
 
@@ -136,9 +133,6 @@ begin
   BuildParams(AEntity);
   try
     LStmt.SetParams(SQLParameters);
-
-    inherited Execute(AEntity);
-
     LStmt.Execute;
   finally
     LStmt := nil;
@@ -174,7 +168,6 @@ begin
   BuildParams(AEntity);
   try
     LStmt.SetParams(SQLParameters);
-
     LStmt.Execute;
   finally
     LStmt := nil;

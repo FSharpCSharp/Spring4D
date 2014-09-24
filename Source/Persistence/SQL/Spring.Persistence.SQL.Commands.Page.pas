@@ -80,7 +80,7 @@ end;
 
 procedure TPageExecutor.Execute(AEntity: TObject);
 begin
-  inherited Execute(AEntity);
+  //do nothing
 end;
 
 function TPageExecutor.GetCommand: TDMLCommand;

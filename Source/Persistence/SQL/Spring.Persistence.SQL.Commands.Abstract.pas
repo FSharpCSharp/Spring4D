@@ -57,7 +57,7 @@ type
     function TableExists(const ATablename: string): Boolean; virtual;
     procedure FillDbTableColumns(const ATablename: string; AColumns: IList<string>); virtual;
 
-    procedure Execute(AEntity: TObject); virtual;
+    procedure Execute(AEntity: TObject); virtual; abstract;
     procedure Build(AClass: TClass); virtual; abstract;
     procedure BuildParams(AEntity: TObject); virtual;
 
@@ -165,7 +165,6 @@ end;
 
 destructor TAbstractCommandExecutor.Destroy;
 begin
- // FExecutionListeners.Free;
   FConnection := nil;
   FGenerator := nil;
   inherited Destroy;
@@ -176,11 +175,6 @@ begin
   Result := TDBParam.Create;
   Result.Name := Command.GetExistingParameterName(AColumn.Name);
   Result.Value := AValue;
-end;
-
-procedure TAbstractCommandExecutor.Execute(AEntity: TObject);
-begin
-  //
 end;
 
 procedure TAbstractCommandExecutor.FillDbTableColumns(const ATablename: string; AColumns: IList<string>);

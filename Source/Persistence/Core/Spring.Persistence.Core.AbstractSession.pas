@@ -72,6 +72,10 @@ type
 
     procedure AttachEntity(AEntity: TObject); virtual; abstract;
     procedure DetachEntity(AEntity: TObject); virtual; abstract;
+
+    procedure DoInsert(AEntity: TObject; AExecutor: TObject); virtual;
+    procedure DoUpdate(AEntity: TObject; AExecutor: TObject); virtual;
+    procedure DoDelete(AEntity: TObject; AExecutor: TObject); virtual;
   public
     {$REGION 'Documentation'}
     ///	<summary>
@@ -128,9 +132,21 @@ uses
   Spring.Persistence.Core.Utils,
   Spring.Persistence.Mapping.RttiExplorer,
   Spring.Persistence.SQL.Commands.Select,
+  Spring.Persistence.SQL.Commands.Insert,
+  Spring.Persistence.SQL.Commands.Update,
+  Spring.Persistence.SQL.Commands.Delete,
   Spring.Persistence.SQL.Commands.Factory;
 
 { TAbstractSession }
+
+procedure TAbstractSession.DoDelete(AEntity, AExecutor: TObject);
+var
+  LDeleter: TDeleteExecutor;
+begin
+  LDeleter := AExecutor as TDeleteExecutor;
+  LDeleter.Execute(AEntity);
+  DetachEntity(AEntity);
+end;
 
 procedure TAbstractSession.DoFetch<T>(AResultset: IDBResultset;
   const ACollection: TValue);
@@ -175,6 +191,16 @@ begin
   finally
     LSelecter.Free;
   end;
+end;
+
+procedure TAbstractSession.DoInsert(AEntity, AExecutor: TObject);
+var
+  LInserter: TInsertExecutor;
+begin
+  LInserter := AExecutor as TInsertExecutor;
+  LInserter.Execute(AEntity);
+  SetLazyColumns(AEntity, TEntityCache.Get(AEntity.ClassType));
+  AttachEntity(AEntity);
 end;
 
 procedure TAbstractSession.DoSetEntity(var AEntityToCreate: TObject;
@@ -226,6 +252,16 @@ begin
   SetAssociations(AEntityToCreate, AResultset, LEntityData);
 
   AttachEntity(AEntityToCreate);
+end;
+
+procedure TAbstractSession.DoUpdate(AEntity, AExecutor: TObject);
+var
+  LUpdater: TUpdateExecutor;
+begin
+  LUpdater := AExecutor as TUpdateExecutor;
+  LUpdater.Execute(AEntity);
+  SetLazyColumns(AEntity, TEntityCache.Get(AEntity.ClassType));
+  AttachEntity(AEntity);
 end;
 
 procedure TAbstractSession.Fetch<T>(const ASql: string;

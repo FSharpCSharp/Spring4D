@@ -53,7 +53,6 @@ type
     FColumns: IList<ColumnAttribute>;
     FEntityMap: TEntityMap;
     FEntityCache: TEntityData;
-    FMapped: Boolean;
   protected
     function GetCommand: TDMLCommand; override;
     function TryIncrementVersionFor(AEntity: TObject): Boolean; virtual;
@@ -65,7 +64,6 @@ type
     procedure BuildParams(AEntity: TObject); override;
 
     procedure Execute(AEntity: TObject); override;
-    procedure Update(AEntity: TObject; AEntity2: TObject); overload;
 
     property EntityMap: TEntityMap read FEntityMap write FEntityMap;
   end;
@@ -86,6 +84,7 @@ procedure TUpdateExecutor.Execute(AEntity: TObject);
 var
   LStmt: IDBStatement;
   LDirtyObject: TObject;
+  LSql: string;
 begin
   Assert(Assigned(AEntity));
 
@@ -93,33 +92,36 @@ begin
     raise EORMOptimisticLockException.Create(AEntity);
 
   LStmt := Connection.CreateStatement;
+  LSql := SQL;
 
-  FMapped := FEntityMap.IsMapped(AEntity);
-  if FMapped then
+  FColumns.Clear;
+  if FEntityMap.IsMapped(AEntity) then
   begin
     LDirtyObject := FEntityMap.Get(AEntity);
-    FColumns.Clear;
     TRttiExplorer.GetChangedMembers(AEntity, LDirtyObject, FColumns);
     if (FColumns.Count = 1) and (FColumns.First.IsVersionColumn) then
       Exit;
+    FCommand.SetCommandFieldsFromColumns(FColumns);
+    LSql := Generator.GenerateUpdate(FCommand);
+  end
+  else
+  begin
+    FColumns.AddRange(FEntityCache.Columns);
   end;
 
-  FCommand.SetTable(FColumns);
   FCommand.Entity := AEntity;
+  //NoSQL db generators can't prebuild query without entity object, so they return empty string.
+  if (LSql = '') then
+    LSql := Generator.GenerateUpdate(FCommand);
 
-  SQL := Generator.GenerateUpdate(FCommand);
-
-  if (SQL = '') then
+  if (LSql = '') then
     Exit;
 
-  LStmt.SetSQLCommand(SQL);
+  LStmt.SetSQLCommand(LSql);
 
   BuildParams(AEntity);
   try
     LStmt.SetParams(SQLParameters);
-
-    inherited Execute(AEntity);
-
     LStmt.Execute;
   finally
     LStmt := nil;
@@ -174,9 +176,8 @@ begin
 
   FCommand.PrimaryKeyColumn := FEntityCache.PrimaryKeyColumn;
    //add fields to tsqltable
-//  FCommand.SetTable(FColumns);
-
- // SQL := Generator.GenerateUpdate(FCommand);
+  FCommand.SetCommandFieldsFromColumns(FColumns);
+  SQL := Generator.GenerateUpdate(FCommand);
 end;
 
 procedure TUpdateExecutor.BuildParams(AEntity: TObject);
@@ -215,11 +216,6 @@ begin
   FTable.Free;
   FCommand.Free;
   inherited Destroy;
-end;
-
-procedure TUpdateExecutor.Update(AEntity, AEntity2: TObject);
-begin
-  raise EORMMethodNotImplemented.Create('Method not implemented');
 end;
 
 end.

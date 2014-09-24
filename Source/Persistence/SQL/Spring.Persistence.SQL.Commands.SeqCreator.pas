@@ -103,9 +103,6 @@ begin
 
   LStmt := Connection.CreateStatement;
   LStmt.SetSQLCommand(SQL);
-  //inherited only when SQL's are constructed
-  inherited Execute(AEntity);
-
   LStmt.Execute;
 end;
 

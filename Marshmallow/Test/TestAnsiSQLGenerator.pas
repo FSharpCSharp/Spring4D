@@ -340,7 +340,7 @@ begin
   LCommand := TCreateTableCommand.Create(LTable);
   try
     LCols := TRttiExplorer.GetColumns(TCustomer);
-    LCommand.SetTable(LCols);
+    LCommand.SetCommandFieldsFromColumns(LCols);
 
     ReturnValue := FAnsiSQLGenerator.GenerateCreateTable(LCommand);
     CheckTrue(ReturnValue.Count > 0);
@@ -361,7 +361,7 @@ begin
   LCommand := TCreateFKCommand.Create(LTable);
   try
     LCols := TRttiExplorer.GetColumns(TCustomer);
-    LCommand.SetTable(LCols);
+    LCommand.SetCommandFieldsFromColumns(LCols);
     LCommand.ForeignKeys.Add(
       TSQLForeignKeyField.Create('FKColumn', LTable, 'RefColumn', 'RefTable', [fsOnDeleteCascade, fsOnUpdateCascade]
       )

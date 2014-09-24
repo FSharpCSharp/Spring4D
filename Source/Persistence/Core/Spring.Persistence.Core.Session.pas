@@ -410,21 +410,25 @@ var
 begin
   LDeleter := CommandFactory.GetCommand<TDeleteExecutor>(AEntity.ClassType, Connection);
   try
-    LDeleter.Execute(AEntity);
+    DoDelete(AEntity, LDeleter);
   finally
     LDeleter.Free;
   end;
-
-  DetachEntity(AEntity);
 end;
 
 procedure TSession.DeleteList<T>(ACollection: ICollection<T>);
 var
   LEntity: T;
+  LDeleter: TDeleteExecutor;
 begin
-  for LEntity in ACollection do
-  begin
-    Delete(LEntity);
+  LDeleter := CommandFactory.GetCommand<TDeleteExecutor>(T, Connection);
+  try
+    for LEntity in ACollection do
+    begin
+      DoDelete(LEntity, LDeleter);
+    end;
+  finally
+    LDeleter.Free;
   end;
 end;
 
@@ -578,10 +582,7 @@ var
 begin
   LInserter := CommandFactory.GetCommand<TInsertExecutor>(AEntity.ClassType, Connection);
   try
-    LInserter.Execute(AEntity);
-
-    SetLazyColumns(AEntity, TEntityCache.Get(AEntity.ClassType));
-    AttachEntity(AEntity);
+    DoInsert(AEntity, LInserter);
   finally
     LInserter.Free;
   end;
@@ -590,10 +591,16 @@ end;
 procedure TSession.InsertList<T>(ACollection: ICollection<T>);
 var
   LEntity: T;
+  LInserter: TInsertExecutor;
 begin
-  for LEntity in ACollection do
-  begin
-    Insert(LEntity);
+  LInserter := CommandFactory.GetCommand<TInsertExecutor>(T, Connection);
+  try
+    for LEntity in ACollection do
+    begin
+      DoInsert(LEntity, LInserter);
+    end;
+  finally
+    LInserter.Free;
   end;
 end;
 
@@ -675,11 +682,21 @@ end;
 procedure TSession.SaveList<T>(ACollection: ICollection<T>);
 var
   LEntity: T;
+  LInserts, LUpdates: IList<T>;
 begin
+  LInserts := TCollections.CreateList<T>;
+  LUpdates := TCollections.CreateList<T>;
   for LEntity in ACollection do
   begin
-    Save(LEntity);
+    if IsNew(LEntity) then
+      LInserts.Add(LEntity)
+    else
+      LUpdates.Add(LEntity);
   end;
+  if not LInserts.IsEmpty then
+    InsertList<T>(LInserts);
+  if not LUpdates.IsEmpty then
+    UpdateList<T>(LUpdates);
 end;
 
 function TSession.Single<T>(const ASql: string; const AParams: array of const): T;
@@ -709,10 +726,7 @@ begin
   LUpdater := CommandFactory.GetCommand<TUpdateExecutor>(AEntity.ClassType, Connection);
   try
     LUpdater.EntityMap := FOldStateEntities;
-    LUpdater.Execute(AEntity);
-
-    SetLazyColumns(AEntity, TEntityCache.Get(AEntity.ClassType));
-    AttachEntity(AEntity);
+    DoUpdate(AEntity, LUpdater);
   finally
     LUpdater.Free;
   end;
@@ -721,10 +735,17 @@ end;
 procedure TSession.UpdateList<T>(ACollection: ICollection<T>);
 var
   LEntity: T;
+  LUpdater: TUpdateExecutor;
 begin
-  for LEntity in ACollection do
-  begin
-    Update(LEntity);
+  LUpdater := CommandFactory.GetCommand<TUpdateExecutor>(T, Connection);
+  try
+    LUpdater.EntityMap := FOldStateEntities;
+    for LEntity in ACollection do
+    begin
+      DoUpdate(LEntity, LUpdater);
+    end;
+  finally
+    LUpdater.Free;
   end;
 end;
 

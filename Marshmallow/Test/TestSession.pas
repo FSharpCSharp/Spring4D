@@ -69,6 +69,7 @@ type
     procedure Transactions_Nested();
     {$IFDEF PERFORMANCE_TESTS}
     procedure GetOne();
+    procedure InsertList();
     {$ENDIF}
     procedure FetchCollection();
     procedure Versioning();
@@ -798,6 +799,68 @@ begin
   Status(Format('Resultset %D objects in %D ms. %S',
     [iCount, sw.ElapsedMilliseconds, LVal2]));
 end;
+
+procedure TestTSession.InsertList;
+var
+  LCustomers: IList<TCustomer>;
+  LCustomer: TCustomer;
+  i, LCount: Integer;
+  LStopwatch: TStopwatch;
+begin
+  LCount := 10000;
+  FConnection.ClearExecutionListeners;
+  LCustomers := TCollections.CreateObjectList<TCustomer>;
+  for i := 1 to LCount do
+  begin
+    LCustomer := TCustomer.Create;
+    LCustomer.Age := i;
+    LCustomers.Add(LCustomer);
+  end;
+  LStopwatch := TStopwatch.StartNew;
+  FManager.BeginTransaction;
+  FManager.SaveList<TCustomer>(LCustomers);
+  FManager.CommitTransaction;
+  LStopwatch.Stop;
+  CheckEquals(LCount, GetTableRecordCount(TBL_PEOPLE));
+  Status(Format('Save List %d customers in %d ms', [LCount, LStopwatch.ElapsedMilliseconds]));
+
+  ClearTable(TBL_PEOPLE);
+  LCustomers.Clear;
+  for i := 1 to LCount do
+  begin
+    LCustomer := TCustomer.Create;
+    LCustomer.Age := i;
+    LCustomers.Add(LCustomer);
+  end;
+  LStopwatch := TStopwatch.StartNew;
+  FManager.BeginTransaction;
+  FManager.InsertList<TCustomer>(LCustomers);
+  FManager.CommitTransaction;
+  LStopwatch.Stop;
+  CheckEquals(LCount, GetTableRecordCount(TBL_PEOPLE));
+  Status(Format('Insert List %d customers in %d ms', [LCount, LStopwatch.ElapsedMilliseconds]));
+
+  for LCustomer in LCustomers do
+  begin
+    LCustomer.Age :=  LCount + 1;
+  end;
+  LStopwatch := TStopwatch.StartNew;
+  FManager.BeginTransaction;
+  FManager.UpdateList<TCustomer>(LCustomers);
+  FManager.CommitTransaction;
+  LStopwatch.Stop;
+  CheckEquals(LCount, GetTableRecordCount(TBL_PEOPLE));
+  Status(Format('Update List %d customers in %d ms', [LCount, LStopwatch.ElapsedMilliseconds]));
+
+  LStopwatch := TStopwatch.StartNew;
+  FManager.BeginTransaction;
+  FManager.DeleteList<TCustomer>(LCustomers);
+  FManager.CommitTransaction;
+  LStopwatch.Stop;
+  CheckEquals(0, GetTableRecordCount(TBL_PEOPLE));
+  Status(Format('Delete List %d customers in %d ms', [LCount, LStopwatch.ElapsedMilliseconds]));
+end;
+
 {$ENDIF}
 
 procedure TestTSession.Inheritance_Simple_Customer;
