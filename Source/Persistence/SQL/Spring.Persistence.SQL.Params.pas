@@ -46,11 +46,13 @@ type
     FParamType: TFieldType;
     FValue: Variant;
     FTypeInfo: PTypeInfo;
-  private
-    function GetName: string;
-    procedure SetName(const Value: string);
-    procedure SetValue(const Value: Variant);
+  protected
+    function GetName: string; virtual;
+    procedure SetName(const Value: string); virtual;
+    procedure SetValue(const Value: Variant); virtual;
   public
+    constructor Create; overload; virtual;
+    constructor Create(const AName: string; const AValue: Variant); overload; virtual;
     destructor Destroy; override;
 
     procedure SetFromTValue(const AValue: TValue);
@@ -179,6 +181,18 @@ begin
 end;
 
 { TDBParam }
+
+constructor TDBParam.Create(const AName: string; const AValue: Variant);
+begin
+  Create;
+  FName := AName;
+  SetValue(AValue);
+end;
+
+constructor TDBParam.Create;
+begin
+  inherited Create;
+end;
 
 destructor TDBParam.Destroy;
 begin

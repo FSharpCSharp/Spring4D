@@ -45,12 +45,9 @@ type
   private
     FTable: TSQLTable;
     FCommand: TDeleteCommand;
-    FPrimaryKeyColumnName: string;
-    FEntity: TObject;
   protected
     function GetCommand: TDMLCommand; override;
-
-    function GetPrimaryKeyValue: TValue; virtual;
+    function GetPrimaryKeyValue(AEntity: TObject): TValue; virtual;
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -65,7 +62,7 @@ type
   private
     FPrimaryKeyValue: TValue;
   protected
-    function GetPrimaryKeyValue: TValue; override;
+    function GetPrimaryKeyValue(AEntity: TObject): TValue; override;
   public
     procedure Execute(AEntity: TObject); override;
 
@@ -77,39 +74,32 @@ implementation
 uses
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Core.Utils,
-  Spring.Persistence.Mapping.RttiExplorer;
+  Spring.Persistence.Mapping.RttiExplorer
+  ;
 
 { TDeleteCommand }
 
 procedure TDeleteExecutor.Build(AClass: TClass);
-var
-  LAtrTable: TableAttribute;
 begin
-  EntityClass := AClass;
-  LAtrTable := TRttiExplorer.GetTable(EntityClass);
-  if not Assigned(LAtrTable) then
+  inherited Build(AClass);
+  if not EntityData.IsTableEntity then
     raise ETableNotSpecified.CreateFmt('Table not specified for class "%S"', [AClass.ClassName]);
 
-  FTable.SetFromAttribute(LAtrTable);
-
-  FPrimaryKeyColumnName := TRttiExplorer.GetPrimaryKeyColumnName(EntityClass);
-  FCommand.PrimaryKeyColumnName := FPrimaryKeyColumnName;
+  FTable.SetFromAttribute(EntityData.EntityTable);
+  FCommand.PrimaryKeyColumnName := EntityData.PrimaryKeyColumn.Name;
   SQL := Generator.GenerateDelete(FCommand);
 end;
 
 procedure TDeleteExecutor.BuildParams(AEntity: TObject);
 var
   LParam: TDBParam;
-  LVal: TValue;
 begin
-  Assert(FPrimaryKeyColumnName <> '');
-  FEntity := AEntity;
+  Assert(EntityData.PrimaryKeyColumn <> nil);
   inherited BuildParams(AEntity);
 
-  LParam := TDBParam.Create;
-  LParam.Name := Command.GetExistingParameterName(FPrimaryKeyColumnName);
-  LVal :=  GetPrimaryKeyValue;
-  LParam.Value := TUtils.AsVariant(LVal);
+  LParam := TDBParam.Create(
+    Command.GetExistingParameterName(EntityData.PrimaryKeyColumn.Name),
+    TUtils.AsVariant(GetPrimaryKeyValue(AEntity)));
   SQLParameters.Add(LParam);
 end;
 
@@ -118,7 +108,6 @@ begin
   inherited Create;
   FTable := TSQLTable.Create;
   FCommand := TDeleteCommand.Create(FTable);
-  FPrimaryKeyColumnName := '';
 end;
 
 procedure TDeleteExecutor.Execute(AEntity: TObject);
@@ -129,7 +118,6 @@ begin
 
   LStmt := Connection.CreateStatement;
   LStmt.SetSQLCommand(SQL);
-
   BuildParams(AEntity);
   try
     LStmt.SetParams(SQLParameters);
@@ -144,9 +132,9 @@ begin
   Result := FCommand;
 end;
 
-function TDeleteExecutor.GetPrimaryKeyValue: TValue;
+function TDeleteExecutor.GetPrimaryKeyValue(AEntity: TObject): TValue;
 begin
-  Result := TRttiExplorer.GetPrimaryKeyValue(FEntity);
+  Result := TRttiExplorer.GetPrimaryKeyValue(AEntity);
 end;
 
 destructor TDeleteExecutor.Destroy;
@@ -164,7 +152,6 @@ var
 begin
   LStmt := Connection.CreateStatement;
   LStmt.SetSQLCommand(SQL);
-
   BuildParams(AEntity);
   try
     LStmt.SetParams(SQLParameters);
@@ -174,7 +161,7 @@ begin
   end;
 end;
 
-function TDeleteByValueExecutor.GetPrimaryKeyValue: TValue;
+function TDeleteByValueExecutor.GetPrimaryKeyValue(AEntity: TObject): TValue;
 begin
   Result := FPrimaryKeyValue;
 end;

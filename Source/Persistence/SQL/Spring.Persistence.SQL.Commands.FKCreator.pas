@@ -68,25 +68,19 @@ uses
 { TForeignKeyCreateCommand }
 
 procedure TForeignKeyCreateExecutor.Build(AClass: TClass);
-var
-  LAtrTable: TableAttribute;
-  LEntityData: TEntityData;
 begin
-  EntityClass := AClass;
-  LEntityData := TEntityCache.Get(AClass);
-  LAtrTable := LEntityData.EntityTable;
-  if not Assigned(LAtrTable) then
-    raise ETableNotSpecified.Create('Table not specified');
+  inherited Build(AClass);
+  if not EntityData.IsTableEntity then
+    raise ETableNotSpecified.Create('Table not specified for class: ' + AClass.ClassName);
 
-  FTable.SetFromAttribute(LAtrTable);
-  FCommand.SetCommandFieldsFromColumns(LEntityData.Columns);
+  FTable.SetFromAttribute(EntityData.EntityTable);
+  FCommand.SetCommandFieldsFromColumns(EntityData.Columns);
   FCommand.TableExists := TableExists(FTable.Name);
   if FCommand.TableExists then
   begin
     //get current columns from db table
     FillDbTableColumns(FTable.Name, FCommand.DbColumns);
   end;
-
   FSQLs := Generator.GenerateCreateFK(FCommand);
 end;
 

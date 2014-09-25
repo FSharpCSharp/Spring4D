@@ -33,7 +33,9 @@ uses
   Spring.Persistence.SQL.Commands,
   Spring.Persistence.SQL.Interfaces,
   Spring.Persistence.SQL.Params,
-  Spring.Persistence.SQL.Types;
+  Spring.Persistence.SQL.Types,
+  Spring.Persistence.Core.EntityCache
+  ;
 
 type
   TAbstractCommandExecutor = class
@@ -42,6 +44,7 @@ type
     FGenerator: ISQLGenerator;
     FClass: TClass;
     FSQL: string;
+    FEntityData: TEntityData;
     FParams: IList<TDBParam>;
     procedure SetConnection(const Value: IDBConnection);
   protected
@@ -58,11 +61,12 @@ type
     procedure FillDbTableColumns(const ATablename: string; AColumns: IList<string>); virtual;
 
     procedure Execute(AEntity: TObject); virtual; abstract;
-    procedure Build(AClass: TClass); virtual; abstract;
+    procedure Build(AClass: TClass); virtual;
     procedure BuildParams(AEntity: TObject); virtual;
 
     property Command: TDMLCommand read GetCommand;
     property Connection: IDBConnection read FConnection write SetConnection;
+    property EntityData: TEntityData read FEntityData write FEntityData;
     property Generator: ISQLGenerator read FGenerator;
     property EntityClass: TClass read FClass write FClass;
     property SQLParameters: IList<TDBParam> read FParams;
@@ -81,6 +85,12 @@ uses
   Spring.Persistence.SQL.Register;
 
 { TAbstractCommandExecutor }
+
+procedure TAbstractCommandExecutor.Build(AClass: TClass);
+begin
+  FEntityData := TEntityCache.Get(AClass);
+  EntityClass := AClass;
+end;
 
 procedure TAbstractCommandExecutor.BuildParams(AEntity: TObject);
 begin
