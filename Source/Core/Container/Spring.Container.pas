@@ -33,6 +33,7 @@ uses
   Rtti,
   Spring,
   Spring.Collections,
+  Spring.Logging,
   Spring.Container.Core,
   Spring.Container.Registration,
   Spring.Services;
@@ -49,6 +50,7 @@ type
     fRegistrationManager: TRegistrationManager;
     fResolver: IDependencyResolver;
     fExtensions: IList<IContainerExtension>;
+    fLogger: ILogger;
     class var GlobalInstance: TContainer;
     function GetKernel: IKernel;
     type
@@ -61,6 +63,8 @@ type
     function GetInjector: IDependencyInjector;
     function GetRegistry: IComponentRegistry;
     function GetResolver: IDependencyResolver;
+    function GetLogger: ILogger;
+    procedure SetLogger(const logger: ILogger);
   {$ENDREGION}
     procedure InitializeInspectors; virtual;
     property Builder: IComponentBuilder read GetBuilder;
@@ -109,6 +113,10 @@ type
     // Dangerous since the instance should be cleared by this function but
     // passing as var is not possible here
 {$ENDIF}
+
+    procedure Log(const entry: TLogEntry);
+    function LogIsEnabled(level: TLogLevel;
+      entryTypes: TLogEntryTypes = [TLogEntryType.Text]): Boolean;
 
     property Kernel: IKernel read GetKernel;
   end;
@@ -264,6 +272,21 @@ begin
     fBuilder.AddInspector(inspector);
 end;
 
+procedure TContainer.Log(const entry: TLogEntry);
+begin
+  if Assigned(fLogger) then
+    fLogger.Log(entry);
+end;
+
+function TContainer.LogIsEnabled(level: TLogLevel;
+  entryTypes: TLogEntryTypes): Boolean;
+begin
+  if Assigned(fLogger) then
+    Result := fLogger.IsEnabled(level, entryTypes)
+  else
+    Result := false;
+end;
+
 function TContainer.GetBuilder: IComponentBuilder;
 begin
   Result := fBuilder;
@@ -282,6 +305,11 @@ end;
 function TContainer.GetKernel: IKernel;
 begin
   Result := Self;
+end;
+
+function TContainer.GetLogger: ILogger;
+begin
+  Result := fLogger;
 end;
 
 function TContainer.GetResolver: IDependencyResolver;
@@ -453,6 +481,11 @@ begin
   {TODO -oOwner -cGeneral : Release instance of IInterface }
 end;
 {$ENDIF}
+
+procedure TContainer.SetLogger(const logger: ILogger);
+begin
+  fLogger := logger;
+end;
 
 {$ENDREGION}
 
