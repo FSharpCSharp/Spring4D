@@ -1,0 +1,231 @@
+﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+		<PropertyGroup>
+			<ProjectGuid>{6EDC1B36-73B6-4C60-BD18-6C13B4A55CD8}</ProjectGuid>
+			<MainSource>ORMTests.dpr</MainSource>
+			<Base>True</Base>
+			<Config Condition="'$(Config)'==''">Debug</Config>
+			<Platform>Win32</Platform>
+			<AppType>Application</AppType>
+			<FrameworkType>VCL</FrameworkType>
+			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
+			<ProjectVersion>12.3</ProjectVersion>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_1)'!=''">
+			<Cfg_1>true</Cfg_1>
+			<CfgParent>Base</CfgParent>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_2)'!=''">
+			<Cfg_2>true</Cfg_2>
+			<CfgParent>Base</CfgParent>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Base)'!=''">
+			<DCC_UnitSearchPath>..\..\Source\Base;..\..\Source\Base\Collections;..\..\Source\Base\Reflection;..\External\delphi-oop\Core;..\External\delphi-oop\Persistence;..\External\FastMM;..\External\MongoDB;..\External\uib\Source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_ExeOutput>.\$(Config)\$(Platform)</DCC_ExeOutput>
+			<DCC_DcuOutput>.\$(Config)\$(Platform)\DCU</DCC_DcuOutput>
+			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
+			<DCC_F>false</DCC_F>
+			<DCC_K>false</DCC_K>
+			<DCC_ImageBase>00400000</DCC_ImageBase>
+			<DCC_N>false</DCC_N>
+			<DCC_E>false</DCC_E>
+			<DCC_S>false</DCC_S>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_1)'!=''">
+			<DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
+			<DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
+			<DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
+			<DCC_DebugInformation>false</DCC_DebugInformation>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_2)'!=''">
+			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
+			<DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>
+			<DCC_Optimize>false</DCC_Optimize>
+		</PropertyGroup>
+		<ItemGroup>
+			<DelphiCompile Include="ORMTests.dpr">
+				<MainSource>MainSource</MainSource>
+			</DelphiCompile>
+			<DCCReference Include="CodeGeneratorTest.pas"/>
+			<DCCReference Include="EntityModelDataLoaderTests.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.ADO.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.ASA.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.DBX.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.FieldCache.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.MongoDB.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.MSSQL.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.Oracle.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.SQLite.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.AbstractManager.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.AbstractSession.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Base.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.CollectionAdapterResolver.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Collections.Enumerator.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.ConnectionFactory.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Consts.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.DatabaseManager.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.DetachedSession.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.EmbeddedEntity.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.EntityCache.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.EntityMap.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.EntitySerializer.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Exceptions.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Interfaces.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.ListSession.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Reflection.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Relation.Abstract.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Relation.ManyToOne.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Repository.MongoDB.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Repository.Proxy.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Repository.Simple.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.RttiCollectionAdapter.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Session.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Session.MongoDB.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.SpringCollectionAdapter.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Types.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Core\Spring.Persistence.Core.Utils.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Abstract.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Criterion.Abstract.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Criterion.BetweenExpression.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Criterion.Conjunction.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Criterion.Disjunction.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Criterion.InExpression.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Criterion.Junction.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Criterion.LikeExpression.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Criterion.LogicalExpression.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Criterion.NullExpression.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Criterion.PropertyExpression.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Criterion.SimpleExpression.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Order.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Properties.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Criteria\Spring.Persistence.Criteria.Restrictions.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Mapping\Spring.Persistence.Mapping.Attributes.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Mapping\Spring.Persistence.Mapping.CodeGenerator.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Mapping\Spring.Persistence.Mapping.CodeGenerator.Abstract.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Mapping\Spring.Persistence.Mapping.CodeGenerator.DB.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\Mapping\Spring.Persistence.Mapping.RttiExplorer.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\ObjectDataset\Spring.Persistence.ObjectDataset.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\ObjectDataset\Spring.Persistence.ObjectDataset.Abstract.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\ObjectDataset\Spring.Persistence.ObjectDataset.ActiveX.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\ObjectDataset\Spring.Persistence.ObjectDataset.Algorithms.Sort.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\ObjectDataset\Spring.Persistence.ObjectDataset.Blobs.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\ObjectDataset\Spring.Persistence.ObjectDataset.ExprParser.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\ObjectDataset\Spring.Persistence.ObjectDataset.ExprParser.Functions.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\ObjectDataset\Spring.Persistence.ObjectDataset.IndexList.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.Abstract.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.BulkInsert.MongoDB.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.Delete.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.Factory.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.FKCreator.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.Insert.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.Page.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.Select.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.SeqCreator.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.TableCreator.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.Update.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Generators.Abstract.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Generators.Ansi.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Generators.ASA.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Generators.Firebird.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Generators.MongoDB.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Generators.MSSQL.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Generators.MySQL.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Generators.NoSQL.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Generators.Oracle.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Generators.PostgreSQL.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Generators.Register.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Generators.SQLite3.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Interfaces.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Params.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Register.pas"/>
+			<DCCReference Include="..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Types.pas"/>
+			<DCCReference Include="..\External\SQLite3\Source\SQLite3.pas"/>
+			<DCCReference Include="..\External\SQLite3\Source\SQLiteTable3.pas"/>
+			<DCCReference Include="TestAdapterMongoDB.pas"/>
+			<DCCReference Include="TestAdaptersASA.pas"/>
+			<DCCReference Include="TestAdaptersOracle.pas"/>
+			<DCCReference Include="TestADOAdapter.pas"/>
+			<DCCReference Include="TestAnsiSQLGenerator.pas"/>
+			<DCCReference Include="TestCollectionsAdapterResolver.pas"/>
+			<DCCReference Include="TestCommands.pas"/>
+			<DCCReference Include="TestConnectionFactory.pas"/>
+			<DCCReference Include="TestConsts.pas"/>
+			<DCCReference Include="TestCoreCollections.pas"/>
+			<DCCReference Include="TestCoreCriteria.pas"/>
+			<DCCReference Include="TestCoreEntityMap.pas"/>
+			<DCCReference Include="TestCoreUtils.pas"/>
+			<DCCReference Include="TestDatabaseManager.pas"/>
+			<DCCReference Include="TestMapping.RttiExplorer.pas"/>
+			<DCCReference Include="TestObjectDataset.pas"/>
+			<DCCReference Include="TestPersistence.pas"/>
+			<DCCReference Include="TestSession.pas"/>
+			<DCCReference Include="TestSimpleRepository.pas"/>
+			<DCCReference Include="TestSQLiteAdapter.pas"/>
+			<DCCReference Include="uModels.pas"/>
+			<DCCReference Include="VARTOTMASTModel.pas"/>
+			<DCCReference Include="ViewTestObjectDataset.pas">
+				<Form>frmObjectDatasetTest</Form>
+			</DCCReference>
+			<BuildConfiguration Include="Debug">
+				<Key>Cfg_2</Key>
+				<CfgParent>Base</CfgParent>
+			</BuildConfiguration>
+			<BuildConfiguration Include="Base">
+				<Key>Base</Key>
+			</BuildConfiguration>
+			<BuildConfiguration Include="Release">
+				<Key>Cfg_1</Key>
+				<CfgParent>Base</CfgParent>
+			</BuildConfiguration>
+		</ItemGroup>
+		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')" Project="$(BDS)\Bin\CodeGear.Delphi.Targets"/>
+		<Import Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')" Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj"/>
+		<ProjectExtensions>
+			<Borland.Personality>Delphi.Personality.12</Borland.Personality>
+			<Borland.ProjectType>VCLApplication</Borland.ProjectType>
+			<BorlandProject>
+				<Delphi.Personality>
+					<Source>
+						<Source Name="MainSource">ORMTests.dpr</Source>
+					</Source>
+					<VersionInfo>
+						<VersionInfo Name="IncludeVerInfo">False</VersionInfo>
+						<VersionInfo Name="AutoIncBuild">False</VersionInfo>
+						<VersionInfo Name="MajorVer">1</VersionInfo>
+						<VersionInfo Name="MinorVer">0</VersionInfo>
+						<VersionInfo Name="Release">0</VersionInfo>
+						<VersionInfo Name="Build">0</VersionInfo>
+						<VersionInfo Name="Debug">False</VersionInfo>
+						<VersionInfo Name="PreRelease">False</VersionInfo>
+						<VersionInfo Name="Special">False</VersionInfo>
+						<VersionInfo Name="Private">False</VersionInfo>
+						<VersionInfo Name="DLL">False</VersionInfo>
+						<VersionInfo Name="Locale">1031</VersionInfo>
+						<VersionInfo Name="CodePage">1252</VersionInfo>
+					</VersionInfo>
+					<VersionInfoKeys>
+						<VersionInfoKeys Name="CompanyName"/>
+						<VersionInfoKeys Name="FileDescription"/>
+						<VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys>
+						<VersionInfoKeys Name="InternalName"/>
+						<VersionInfoKeys Name="LegalCopyright"/>
+						<VersionInfoKeys Name="LegalTrademarks"/>
+						<VersionInfoKeys Name="OriginalFilename"/>
+						<VersionInfoKeys Name="ProductName"/>
+						<VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys>
+						<VersionInfoKeys Name="Comments"/>
+					</VersionInfoKeys>
+				</Delphi.Personality>
+				<Platforms>
+					<Platform value="Win32">True</Platform>
+				</Platforms>
+			</BorlandProject>
+			<ProjectFileVersion>12</ProjectFileVersion>
+		</ProjectExtensions>
+	</Project>

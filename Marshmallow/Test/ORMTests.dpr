@@ -5,21 +5,28 @@ program ORMTests;
 {$IFDEF CONSOLE_TESTRUNNER}
 {$APPTYPE CONSOLE}
 {$ENDIF}
-{$I sv.inc}
+{$I Spring.inc}
 uses
   Forms,
+{$IFNDEF DELPHIXE2_UP}
+  RttiPatch,
+{$ENDIF}
   SysUtils,
   TestFramework,
   GUITestRunner,
   TextTestRunner,
+{$IFDEF DELPHIXE5_UP}
   FireDAC.VCLUI.Wait,
+{$ENDIF}
   CodeGeneratorTest in 'CodeGeneratorTest.pas',
   EntityModelDataLoaderTests in 'EntityModelDataLoaderTests.pas',
   Spring.Persistence.Adapters.ADO in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.ADO.pas',
   Spring.Persistence.Adapters.ASA in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.ASA.pas',
   Spring.Persistence.Adapters.DBX in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.DBX.pas',
   Spring.Persistence.Adapters.FieldCache in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.FieldCache.pas',
+{$IFDEF DELPHIXE5_UP}
   Spring.Persistence.Adapters.FireDAC in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.FireDAC.pas',
+{$ENDIF}
   Spring.Persistence.Adapters.MongoDB in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.MongoDB.pas',
   Spring.Persistence.Adapters.MSSQL in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.MSSQL.pas',
   Spring.Persistence.Adapters.Oracle in '..\..\Source\Persistence\Adapters\Spring.Persistence.Adapters.Oracle.pas',
@@ -110,7 +117,6 @@ uses
   Spring.Persistence.SQL.Types in '..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Types.pas',
   SQLite3 in '..\External\SQLite3\Source\SQLite3.pas',
   SQLiteTable3 in '..\External\SQLite3\Source\SQLiteTable3.pas',
-  SvTesting.DUnit in '..\External\delphi-oop\Core\SvTesting.DUnit.pas',
   TestAdapterMongoDB in 'TestAdapterMongoDB.pas',
   TestAdaptersASA in 'TestAdaptersASA.pas',
   TestAdaptersOracle in 'TestAdaptersOracle.pas',
@@ -125,7 +131,9 @@ uses
   TestCoreEntityMap in 'TestCoreEntityMap.pas',
   TestCoreUtils in 'TestCoreUtils.pas',
   TestDatabaseManager in 'TestDatabaseManager.pas',
+{$IFDEF DELPHIXE5_UP}
   TestFireDACAdapter in 'TestFireDACAdapter.pas',
+{$ENDIF}
   TestMapping.RttiExplorer in 'TestMapping.RttiExplorer.pas',
   TestObjectDataset in 'TestObjectDataset.pas',
   TestPersistence in 'TestPersistence.pas',
@@ -135,10 +143,6 @@ uses
   uModels in 'uModels.pas',
   VARTOTMASTModel in 'VARTOTMASTModel.pas',
   ViewTestObjectDataset in 'ViewTestObjectDataset.pas' {frmObjectDatasetTest};
-
-{$R *.RES}
-
-
 
 begin
   Application.Initialize;
@@ -158,7 +162,7 @@ begin
   else
   begin
     ReportMemoryLeaksOnShutdown := True;
-    TSvGUITestRunner.RunRegisteredTests;
+    TGUITestRunner.RunRegisteredTests;
   end;
 end.
 
