@@ -134,12 +134,14 @@ end;
 
 procedure TestTSQLiteResultSetAdapter.SetUp;
 begin
+  DeleteAllCustomers;
   FDataset := TestDB.GetUniTableIntf(SQL_SELECT_ALL);
   FSQLiteResultSetAdapter := TSQLiteResultSetAdapter.Create(FDataset);
 end;
 
 procedure TestTSQLiteResultSetAdapter.TearDown;
 begin
+  DeleteAllCustomers;
   FSQLiteResultSetAdapter.Free;
   FSQLiteResultSetAdapter := nil;
   FDataset := nil;
