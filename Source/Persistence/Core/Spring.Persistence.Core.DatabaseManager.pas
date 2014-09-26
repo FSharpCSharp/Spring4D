@@ -83,7 +83,7 @@ uses
   {$ENDIF}
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Mapping.RttiExplorer,
-  Spring.Persistence.SQL.Commands.Factory,
+  Spring.Persistence.SQL.Commands.Abstract,
   Spring.Persistence.SQL.Commands.FKCreator,
   Spring.Persistence.SQL.Commands.SeqCreator,
   Spring.Persistence.SQL.Commands.TableCreator;
@@ -97,19 +97,29 @@ const
   SQL_FETCH_NEXT = 1;
   SQL_FETCH_FIRST = 2;
 
+procedure BuildExecutor(AExecutor: TAbstractCommandExecutor; AClass: TClass; AConnection: IDBConnection);
+begin
+  AExecutor.EntityClass := AClass;
+  AExecutor.Connection := AConnection;
+  AExecutor.Build(AClass);
+end;
+
 function GetTableCreateExecutor(AClass: TClass; AConnection: IDBConnection): TTableCreateExecutor;
 begin
-  Result := CommandFactory.GetCommand<TTableCreateExecutor>(AClass, AConnection);
+  Result := TTableCreateExecutor.Create;
+  BuildExecutor(Result, AClass, AConnection);
 end;
 
 function GetFKCreateExecutor(AClass: TClass; AConnection: IDBConnection): TForeignKeyCreateExecutor;
 begin
-  Result := CommandFactory.GetCommand<TForeignKeyCreateExecutor>(AClass, AConnection);
+  Result := TForeignKeyCreateExecutor.Create;
+  BuildExecutor(Result, AClass, AConnection);
 end;
 
 function GetSequenceCreateExecutor(AClass: TClass; AConnection: IDBConnection): TSequenceCreateExecutor;
 begin
-  Result := CommandFactory.GetCommand<TSequenceCreateExecutor>(AClass, AConnection);
+  Result := TSequenceCreateExecutor.Create;
+  BuildExecutor(Result, AClass, AConnection);
 end;
 
 { TDatabaseManager }

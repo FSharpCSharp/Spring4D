@@ -3,9 +3,8 @@ unit Spring.Persistence.Core.Session.MongoDB;
 interface
 
 uses
+  Spring.Collections,
   Spring.Persistence.Core.Session
-  ,Spring.Collections
-  ,Spring.Persistence.SQL.Commands.BulkInsert.MongoDB
   ;
 
 type
@@ -18,10 +17,9 @@ type
 implementation
 
 uses
-  Spring.Persistence.Adapters.MongoDB
-  ,Spring.Persistence.SQL.Commands.Factory
-  ,Spring.Persistence.Core.EntityCache
-  ,Spring.Persistence.Mapping.RttiExplorer
+  Spring.Persistence.Adapters.MongoDB,
+  Spring.Persistence.Core.EntityCache,
+  Spring.Persistence.SQL.Commands.BulkInsert.MongoDB
   ;
 
 { TMongoDBSession }

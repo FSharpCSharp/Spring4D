@@ -30,13 +30,17 @@ interface
 
 uses
   Rtti,
-  TypInfo,
   Spring.Collections,
   Spring.Persistence.Core.AbstractManager,
   Spring.Persistence.Core.EntityCache,
   Spring.Persistence.Core.Interfaces,
   Spring.Persistence.Mapping.Attributes,
-  Spring.Persistence.SQL.Params;
+  Spring.Persistence.SQL.Commands.Delete,
+  Spring.Persistence.SQL.Commands.Insert,
+  Spring.Persistence.SQL.Commands.Select,
+  Spring.Persistence.SQL.Commands.Update,
+  Spring.Persistence.SQL.Params,
+  TypInfo;
 
 type
   TAbstractSession = class(TAbstractManager)
@@ -59,7 +63,6 @@ type
     procedure SetSimpleInterfaceList(var AValue: IInterface; AResultset: IDBResultset; AClassInfo: PTypeInfo);
     procedure SetOne<T>(var AValue: T; AResultset: IDBResultset; AEntity: TObject);
 
-    function GetSelector(AClass: TClass): TObject;
     function DoGetLazy<T>(const AID: TValue; AEntity: TObject; AColumn: ColumnAttribute; out AIsEnumerable: Boolean): IDBResultset;
 
     {$REGION 'Documentation'}
@@ -76,6 +79,11 @@ type
     procedure DoInsert(AEntity: TObject; AExecutor: TObject); virtual;
     procedure DoUpdate(AEntity: TObject; AExecutor: TObject); virtual;
     procedure DoDelete(AEntity: TObject; AExecutor: TObject); virtual;
+
+    function GetInsertCommandExecutor(AClass: TClass): TInsertExecutor; virtual;
+    function GetUpdateCommandExecutor(AClass: TClass): TUpdateExecutor; virtual;
+    function GetSelectCommandExecutor(AClass: TClass): TSelectExecutor; virtual;
+    function GetDeleteCommandExecutor(AClass: TClass): TDeleteExecutor; virtual;
   public
     {$REGION 'Documentation'}
     ///	<summary>
@@ -130,12 +138,7 @@ uses
   Spring.Persistence.Core.Reflection,
   Spring.Persistence.Core.Relation.ManyToOne,
   Spring.Persistence.Core.Utils,
-  Spring.Persistence.Mapping.RttiExplorer,
-  Spring.Persistence.SQL.Commands.Select,
-  Spring.Persistence.SQL.Commands.Insert,
-  Spring.Persistence.SQL.Commands.Update,
-  Spring.Persistence.SQL.Commands.Delete,
-  Spring.Persistence.SQL.Commands.Factory;
+  Spring.Persistence.Mapping.RttiExplorer;
 
 { TAbstractSession }
 
@@ -180,10 +183,9 @@ begin
     LEntityClass := LBaseEntityClass;
   end;
 
-  LSelecter := GetSelector(LEntityClass) as TSelectExecutor;
+  LSelecter := GetSelectCommandExecutor(LEntityClass);
   try
-    LSelecter.EntityClass := LEntityClass;
-   // LSelecter.Connection := Connection;
+
     LSelecter.ID := AID;
     LSelecter.LazyColumn := AColumn;
     AIsEnumerable := TUtils.IsEnumerable(TypeInfo(T), LEnumMethod);
@@ -286,6 +288,22 @@ procedure TAbstractSession.Fetch<T>(AResultset: IDBResultset;
   const ACollection: TValue);
 begin
   DoFetch<T>(AResultset, ACollection);
+end;
+
+function TAbstractSession.GetDeleteCommandExecutor(AClass: TClass): TDeleteExecutor;
+begin
+  Result := TDeleteExecutor.Create;
+  Result.Connection := Connection;
+  Result.EntityClass := AClass;
+  Result.Build(AClass);
+end;
+
+function TAbstractSession.GetInsertCommandExecutor(AClass: TClass): TInsertExecutor;
+begin
+  Result := TInsertExecutor.Create;
+  Result.Connection := Connection;
+  Result.EntityClass := AClass;
+  Result.Build(AClass);
 end;
 
 function TAbstractSession.GetLazyValueClass<T>(const AID: TValue;
@@ -401,13 +419,21 @@ begin
   Result := LStmt.ExecuteQuery;
 end;
 
-function TAbstractSession.GetSelector(AClass: TClass): TObject;
-var
-  LSelectExecutor: TSelectExecutor;
+function TAbstractSession.GetSelectCommandExecutor(AClass: TClass): TSelectExecutor;
 begin
-  LSelectExecutor := CommandFactory.GetCommand<TSelectExecutor>(AClass, Connection);
-  LSelectExecutor.LazyColumn := nil;
-  Result := LSelectExecutor;
+  Result := TSelectExecutor.Create;
+  Result.Connection := Connection;
+  Result.EntityClass := AClass;
+  Result.Build(AClass);
+  Result.LazyColumn := nil;
+end;
+
+function TAbstractSession.GetUpdateCommandExecutor(AClass: TClass): TUpdateExecutor;
+begin
+  Result := TUpdateExecutor.Create;
+  Result.Connection := Connection;
+  Result.EntityClass := AClass;
+  Result.Build(AClass);
 end;
 
 procedure TAbstractSession.SetAssociations(AEntity: TObject;

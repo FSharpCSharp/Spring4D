@@ -38,8 +38,6 @@ uses
   Spring.Persistence.SQL.Types;
 
 type
-  TSelectType = (stOne, stList, stObjectList);
-
   {$REGION 'Documentation'}
   ///	<summary>
   ///	  Represents <c>select</c> executor. Responsible for building and
@@ -60,12 +58,13 @@ type
     constructor Create; override;
     destructor Destroy; override;
 
+    procedure Execute(AEntity: TObject); override;
     procedure DoExecute(AEntity: TObject); virtual;
     procedure Build(AClass: TClass); override;
     procedure BuildParams(AEntity: TObject); override;
 
     function Select(AEntity: TObject; AEntityClassType: TClass): IDBResultset;
-    function SelectAll(AEntity: TObject; AEntityClassType: TClass): IDBResultset;
+    function SelectAll(AEntityClassType: TClass): IDBResultset;
 
     property Command: TSelectCommand read FCommand;
     property ID: TValue read FID write FID;
@@ -84,22 +83,16 @@ uses
 { TSelectCommand }
 
 procedure TSelectExecutor.Build(AClass: TClass);
-var
-  LAtrTable: TableAttribute;
-  LCache: TEntityData;
 begin
-  EntityClass := AClass;
-  LCache := TEntityCache.Get(EntityClass);
-  LAtrTable := LCache.EntityTable;
-
-  if not Assigned(LAtrTable) then
+  inherited Build(AClass);
+  if not EntityData.IsTableEntity then
     raise ETableNotSpecified.CreateFmt('Table not specified for class "%S"', [AClass.ClassName]);
 
-  FTable.SetFromAttribute(LAtrTable);
+  FTable.SetFromAttribute(EntityData.EntityTable);
   FColumns.Clear;
-  FColumns.AddRange(LCache.Columns);
+  FColumns.AddRange(EntityData.Columns);
 
-  FCommand.PrimaryKeyColumn := LCache.PrimaryKeyColumn;
+  FCommand.PrimaryKeyColumn := EntityData.PrimaryKeyColumn;
   FCommand.SetCommandFieldsFromColumns(FColumns);
   FCommand.SetAssociations(EntityClass);
 end;
@@ -176,6 +169,11 @@ begin
     SQL := Generator.GenerateSelect(FCommand);
 end;
 
+procedure TSelectExecutor.Execute(AEntity: TObject);
+begin
+  //do nothing
+end;
+
 function TSelectExecutor.GetCommand: TDMLCommand;
 begin
   Result := FCommand;
@@ -197,7 +195,7 @@ begin
   Result := LStmt.ExecuteQuery;
 end;
 
-function TSelectExecutor.SelectAll(AEntity: TObject; AEntityClassType: TClass): IDBResultset;
+function TSelectExecutor.SelectAll(AEntityClassType: TClass): IDBResultset;
 var
   LStmt: IDBStatement;
 begin
@@ -207,11 +205,6 @@ begin
 
   LStmt := Connection.CreateStatement;
   LStmt.SetSQLCommand(SQL);
-
- { BuildParams(AEntity);
-  if SQLParameters.Count > 0 then
-    LStmt.SetParams(SQLParameters); }
-
   Result := LStmt.ExecuteQuery;
 end;
 

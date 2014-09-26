@@ -347,7 +347,6 @@ uses
   Spring.Persistence.Criteria,
   Spring.Persistence.Mapping.RttiExplorer,
   Spring.Persistence.SQL.Commands.Delete,
-  Spring.Persistence.SQL.Commands.Factory,
   Spring.Persistence.SQL.Commands.Insert,
   Spring.Persistence.SQL.Commands.Page,
   Spring.Persistence.SQL.Commands.Select,
@@ -408,7 +407,7 @@ procedure TSession.Delete(AEntity: TObject);
 var
   LDeleter: TDeleteExecutor;
 begin
-  LDeleter := CommandFactory.GetCommand<TDeleteExecutor>(AEntity.ClassType, Connection);
+  LDeleter := GetDeleteCommandExecutor(AEntity.ClassType);
   try
     DoDelete(AEntity, LDeleter);
   finally
@@ -421,7 +420,7 @@ var
   LEntity: T;
   LDeleter: TDeleteExecutor;
 begin
-  LDeleter := CommandFactory.GetCommand<TDeleteExecutor>(T, Connection);
+  LDeleter := GetDeleteCommandExecutor(T);
   try
     for LEntity in ACollection do
     begin
@@ -483,9 +482,9 @@ begin
     LEntityClass := T;
   end;
 
-  LSelecter := GetSelector(LEntityClass) as TSelectExecutor;
+  LSelecter := GetSelectCommandExecutor(LEntityClass);
   try
-    LResults := LSelecter.SelectAll(nil, LEntityClass);
+    LResults := LSelecter.SelectAll(LEntityClass);
     Result := GetListFromResultset<T>(LResults);
   finally
     LSelecter.Free;
@@ -505,7 +504,7 @@ begin
     LEntityClass := T;
   end;
 
-  LSelecter := GetSelector(LEntityClass) as TSelectExecutor;
+  LSelecter := GetSelectCommandExecutor(LEntityClass);
   try
     LSelecter.ID := AID;
     LResults := LSelecter.Select(nil, LEntityClass);
@@ -580,7 +579,7 @@ procedure TSession.Insert(AEntity: TObject);
 var
   LInserter: TInsertExecutor;
 begin
-  LInserter := CommandFactory.GetCommand<TInsertExecutor>(AEntity.ClassType, Connection);
+  LInserter := GetInsertCommandExecutor(AEntity.ClassType);
   try
     DoInsert(AEntity, LInserter);
   finally
@@ -593,7 +592,7 @@ var
   LEntity: T;
   LInserter: TInsertExecutor;
 begin
-  LInserter := CommandFactory.GetCommand<TInsertExecutor>(T, Connection);
+  LInserter := GetInsertCommandExecutor(T);
   try
     for LEntity in ACollection do
     begin
@@ -723,7 +722,7 @@ procedure TSession.Update(AEntity: TObject);
 var
   LUpdater: TUpdateExecutor;
 begin
-  LUpdater := CommandFactory.GetCommand<TUpdateExecutor>(AEntity.ClassType, Connection);
+  LUpdater := GetUpdateCommandExecutor(AEntity.ClassType);
   try
     LUpdater.EntityMap := FOldStateEntities;
     DoUpdate(AEntity, LUpdater);
@@ -737,7 +736,7 @@ var
   LEntity: T;
   LUpdater: TUpdateExecutor;
 begin
-  LUpdater := CommandFactory.GetCommand<TUpdateExecutor>(T, Connection);
+  LUpdater := GetUpdateCommandExecutor(T);
   try
     LUpdater.EntityMap := FOldStateEntities;
     for LEntity in ACollection do

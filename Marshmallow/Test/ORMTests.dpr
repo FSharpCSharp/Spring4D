@@ -85,7 +85,6 @@ uses
   Spring.Persistence.SQL.Commands.Abstract in '..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.Abstract.pas',
   Spring.Persistence.SQL.Commands.BulkInsert.MongoDB in '..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.BulkInsert.MongoDB.pas',
   Spring.Persistence.SQL.Commands.Delete in '..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.Delete.pas',
-  Spring.Persistence.SQL.Commands.Factory in '..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.Factory.pas',
   Spring.Persistence.SQL.Commands.FKCreator in '..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.FKCreator.pas',
   Spring.Persistence.SQL.Commands.Insert in '..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.Insert.pas',
   Spring.Persistence.SQL.Commands.Page in '..\..\Source\Persistence\SQL\Spring.Persistence.SQL.Commands.Page.pas',

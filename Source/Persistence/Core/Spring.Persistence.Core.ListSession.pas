@@ -58,8 +58,7 @@ uses
   Generics.Collections,
   Spring.Persistence.Core.Exceptions,
   Spring.Persistence.Mapping.RttiExplorer,
-  Spring.Persistence.SQL.Commands.Delete,
-  Spring.Persistence.SQL.Commands.Factory;
+  Spring.Persistence.SQL.Commands.Delete;
 
 { TListSession }
 
@@ -88,14 +87,16 @@ var
   LDeleter: TDeleteByValueExecutor;
   LKey: TPair<TValue, Boolean>;
 begin
-  LDeleter := CommandFactory.GetCommand<TDeleteByValueExecutor>(T, (FOwner as TSession).Connection );
+  LDeleter := TDeleteByValueExecutor.Create;
+  LDeleter.Connection := (FOwner as TSession).Connection;
+  LDeleter.EntityClass := T;
+  LDeleter.Build(T);
   try
     for LKey in FPrimaryKeys do
     begin
       LDeleter.PrimaryKeyValue := LKey.Key;
       LDeleter.Execute(nil);
     end;
-
   finally
     LDeleter.Free;
   end;
