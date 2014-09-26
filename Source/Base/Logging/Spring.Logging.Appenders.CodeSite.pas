@@ -67,8 +67,6 @@ begin
             CodeSite.SendNote(entry.Msg);
 
           TLogLevel.Debug,
-          TLogLevel.CallStack,
-          TLogLevel.SerializedData,
           TLogLevel.Text:
             CodeSite.SendMsg(entry.Msg);
 
@@ -97,6 +95,10 @@ begin
     TLogEntryType.Leaving:
       CodeSite.ExitMethod(
         TLogAppenderBase.FormatMethodName(entry.ClassType, entry.Msg));
+
+    TLogEntryType.CallStack,
+    TLogEntryType.SerializedData:
+      CodeSite.Send(entry.Msg);
   end;
 end;
 

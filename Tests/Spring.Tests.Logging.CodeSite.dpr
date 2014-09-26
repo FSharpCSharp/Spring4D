@@ -4,6 +4,7 @@ program Spring.Tests.Logging.CodeSite;
 
 uses
   System.SysUtils,
+  System.Classes,
   Spring.Logging,
   Spring.Logging.Controller,
   Spring.Logging.Loggers,
@@ -50,6 +51,22 @@ begin
   end;
 end;
 
+procedure TestValues;
+var
+  c: TComponent;
+begin
+  log.Track(nil, 'TestValue');
+  c := TComponent.Create(nil);
+  try
+    c.Name := 'SomeName';
+    log.LogValue('c', c);
+  finally
+    c.Free;
+  end;
+
+  log.LogValue('integer', 5);
+end;
+
 begin
   log := InitLog;
   log.Entering(TLogLevel.Info, nil, 'Spring.Tests.Logging.CodeSite');
@@ -58,8 +75,9 @@ begin
   log.Info('Info message');
   log.Text('Text message');
   log.Debug('Debug message');
-  log.Verbose('Verbose message');
+  log.Trace('Verbose message');
   TestTrack;
   TestException;
+  TestValues;
   log.Leaving(TLogLevel.Info, nil, 'Spring.Tests.Logging.CodeSite');
 end.

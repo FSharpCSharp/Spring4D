@@ -65,6 +65,7 @@ type
 
       function Enabled(value: Boolean): TAppenderBuilder;
       function Levels(value: TLogLevels): TAppenderBuilder;
+      function EntryTypes(value: TLogEntryTypes): TAppenderBuilder;
       function Prop(const name: string; const value: TValue): TAppenderBuilder; overload;
       function Prop<E>(const name: string; const value: E): TAppenderBuilder; overload;
     end;
@@ -79,6 +80,7 @@ type
 
       function Enabled(value: Boolean): TControllerBuilder;
       function Levels(value: TLogLevels): TControllerBuilder;
+      function EntryTypes(value: TLogEntryTypes): TControllerBuilder;
       function AddAppender(const name: string): TControllerBuilder;
       function AddSerializer(const className: string): TControllerBuilder; overload;
       function AddSerializer(const classType: TClass): TControllerBuilder; overload;
@@ -96,6 +98,7 @@ type
 
       function Enabled(value: Boolean): TLoggerBuilder;
       function Levels(value: TLogLevels): TLoggerBuilder;
+      function EntryTypes(value: TLogEntryTypes): TLoggerBuilder;
       function Controller(const name: string): TLoggerBuilder;
       function Assign(const className: string): TLoggerBuilder; overload;
       function Assign(const classType: TClass): TLoggerBuilder; overload;
@@ -134,6 +137,7 @@ const
   SClass = 'class = %s';
   SEnabled = 'enabled';
   SLevels = 'levels';
+  SEntryTypes = 'entryTypes';
   SAppender = 'appender';
   SController = 'controller';
   SSerializer = 'serializer';
@@ -333,6 +337,13 @@ begin
   Result.fBuilder := fBuilder;
 end;
 
+function TLoggingConfigurationBuilder.TAppenderBuilder.EntryTypes(
+  value: TLogEntryTypes): TAppenderBuilder;
+begin
+  fBuilder.Prop(SEntryTypes, TValue.From(value));
+  Result := Self;
+end;
+
 function TLoggingConfigurationBuilder.TAppenderBuilder.Levels(
   value: TLogLevels): TAppenderBuilder;
 begin
@@ -395,6 +406,13 @@ begin
   Result.fBuilder := fBuilder;
 end;
 
+function TLoggingConfigurationBuilder.TControllerBuilder.EntryTypes(
+  value: TLogEntryTypes): TControllerBuilder;
+begin
+  fBuilder.Prop(SEntryTypes, TValue.From(value));
+  Result := Self;
+end;
+
 function TLoggingConfigurationBuilder.TControllerBuilder.Levels(
   value: TLogLevels): TControllerBuilder;
 begin
@@ -455,6 +473,13 @@ function TLoggingConfigurationBuilder.TLoggerBuilder.EndLogger: TLoggingConfigur
 begin
   fBuilder.EndLogger;
   Result.fBuilder := fBuilder;
+end;
+
+function TLoggingConfigurationBuilder.TLoggerBuilder.EntryTypes(
+  value: TLogEntryTypes): TLoggerBuilder;
+begin
+  fBuilder.Prop(SEntryTypes, TValue.From(value));
+  Result := Self;
 end;
 
 function TLoggingConfigurationBuilder.TLoggerBuilder.Levels(

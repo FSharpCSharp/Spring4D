@@ -31,6 +31,7 @@ interface
 uses
   SysUtils,
   Rtti,
+  Spring,
   Spring.Logging;
 
 type
@@ -42,8 +43,9 @@ type
   public
     function GetEnabled: Boolean;
     function GetLevels: TLogLevels;
+    function GetEntryTypes: TLogEntryTypes;
 
-    function IsEnabled(level: TLogLevel): Boolean; inline;
+    function IsEnabled(level: TLogLevel; entryTypes: TLogEntryTypes): Boolean; inline;
     function IsFatalEnabled: Boolean;
     function IsErrorEnabled: Boolean;
     function IsWarnEnabled: Boolean;
@@ -159,14 +161,17 @@ type
     fDefaultLevel: TLogLevel;
     fEnabled: Boolean;
     fLevels: TLogLevels;
+    fEntryTypes: TLogEntryTypes;
 
     function GetDefaultLevel: TLogLevel;
     function GetEnabled: Boolean;
     function GetLevels: TLogLevels;
+    function GetEntryTypes: TLogEntryTypes;
 
     procedure SetDefaultLevel(value: TLogLevel);
     procedure SetEnabled(value: Boolean);
     procedure SetLevels(value: TLogLevels);
+    procedure SetEntryTypes(value: TLogEntryTypes);
   protected
     procedure DoLog(const entry: TLogEntry); virtual; abstract;
 
@@ -174,7 +179,8 @@ type
   public
     constructor Create;
 
-    function IsEnabled(level: TLogLevel): Boolean; inline;
+    function IsEnabled(level: TLogLevel;
+      entryTypes: TLogEntryTypes = [TLogEntryType.Text]): Boolean; inline;
     function IsFatalEnabled: Boolean;
     function IsErrorEnabled: Boolean;
     function IsWarnEnabled: Boolean;
@@ -269,6 +275,7 @@ type
     property DefaultLevel: TLogLevel read GetDefaultLevel write SetDefaultLevel;
     property Enabled: Boolean read GetEnabled write SetEnabled;
     property Levels: TLogLevels read GetLevels write SetLevels;
+    property EntryTypes: TLogEntryTypes read GetEntryTypes write SetEntryTypes;
   end;
   {$M-}
   {$ENDREGION}
@@ -289,7 +296,6 @@ type
 implementation
 
 uses
-  Spring,
   Spring.Collections;
 
 
@@ -376,6 +382,11 @@ begin
   Result := False;
 end;
 
+function TNullLogger.GetEntryTypes: TLogEntryTypes;
+begin
+  Result := [];
+end;
+
 function TNullLogger.GetLevels: TLogLevels;
 begin
   Result := [];
@@ -407,7 +418,7 @@ begin
   Result := False;
 end;
 
-function TNullLogger.IsEnabled(level: TLogLevel): Boolean;
+function TNullLogger.IsEnabled(level: TLogLevel; entryTypes: TLogEntryTypes): Boolean;
 begin
   Result := False;
 end;
@@ -570,6 +581,7 @@ begin
   fDefaultLevel := TLogLevel.Info;
   fEnabled := True;
   fLevels := LOG_BASIC_LEVELS;
+  fEntryTypes := LOG_BASIC_ENTRY_TYPES;
 end;
 
 procedure TLoggerBase.Debug(const fmt: string; const args: array of const);
@@ -606,20 +618,23 @@ end;
 procedure TLoggerBase.Entering(level: TLogLevel; const classType: TClass;
   const methodName: string);
 begin
-  if IsEnabled(level) then
+  if IsEnabled(level, [TLogEntryType.Entering]) then
     DoLog(TLogEntry.Create(level, TLogEntryType.Entering, methodName, classType));
 end;
 
 procedure TLoggerBase.Entering(const classType: TClass;
   const methodName: string);
 begin
-  Entering(classType, methodName);
+  Entering(fDefaultLevel, classType, methodName);
 end;
 
 procedure TLoggerBase.Entering(const instance: TObject;
   const methodName: string);
 begin
-  Entering(instance, methodName);
+  if Assigned(instance) then
+    Entering(instance.ClassType, methodName)
+  else
+    Entering(TClass(nil), methodName)
 end;
 
 procedure TLoggerBase.Error(const fmt: string; const args: array of const;
@@ -654,21 +669,6 @@ begin
     DoLog(TLogEntry.Create(TLogLevel.Fatal, Format(fmt, args), e));
 end;
 
-function TLoggerBase.GetDefaultLevel: TLogLevel;
-begin
-  Result := fDefaultLevel;
-end;
-
-function TLoggerBase.GetEnabled: Boolean;
-begin
-  Result := fEnabled;
-end;
-
-function TLoggerBase.GetLevels: TLogLevels;
-begin
-  Result := fLevels;
-end;
-
 procedure TLoggerBase.Fatal(const msg: string);
 begin
   if IsEnabled(TLogLevel.Fatal) then
@@ -679,6 +679,26 @@ procedure TLoggerBase.Fatal(const msg: string; const e: Exception);
 begin
   if IsEnabled(TLogLevel.Fatal) then
     DoLog(TLogEntry.Create(TLogLevel.Fatal, msg, e));
+end;
+
+function TLoggerBase.GetDefaultLevel: TLogLevel;
+begin
+  Result := fDefaultLevel;
+end;
+
+function TLoggerBase.GetEnabled: Boolean;
+begin
+  Result := fEnabled;
+end;
+
+function TLoggerBase.GetEntryTypes: TLogEntryTypes;
+begin
+  Result := fEntryTypes;
+end;
+
+function TLoggerBase.GetLevels: TLogLevels;
+begin
+  Result := fLevels;
 end;
 
 procedure TLoggerBase.Info(const msg: string; const e: Exception);
@@ -708,66 +728,73 @@ end;
 
 function TLoggerBase.IsDebugEnabled: Boolean;
 begin
-  Result := IsEnabled(TLogLevel.Debug);
+  Result := IsEnabled(TLogLevel.Debug, LOG_ALL_ENTRY_TYPES);
 end;
 
-function TLoggerBase.IsEnabled(level: TLogLevel): Boolean;
+function TLoggerBase.IsEnabled(level: TLogLevel; entryTypes: TLogEntryTypes): Boolean;
 begin
-  Result := fEnabled and (level in fLevels);
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckTrue(entryTypes <> [], 'entryTypes');
+{$ENDIF}
+  Result := fEnabled and (level in fLevels)
+    and (entryTypes * fEntryTypes <> []);
 end;
 
 function TLoggerBase.IsErrorEnabled: Boolean;
 begin
-  Result := IsEnabled(TLogLevel.Error);
+  Result := IsEnabled(TLogLevel.Error, LOG_ALL_ENTRY_TYPES);
 end;
 
 function TLoggerBase.IsFatalEnabled: Boolean;
 begin
-  Result := IsEnabled(TLogLevel.Fatal);
+  Result := IsEnabled(TLogLevel.Fatal, LOG_ALL_ENTRY_TYPES);
 end;
 
 function TLoggerBase.IsInfoEnabled: Boolean;
 begin
-  Result := IsEnabled(TLogLevel.Info);
+  Result := IsEnabled(TLogLevel.Info, LOG_ALL_ENTRY_TYPES);
 end;
 
 function TLoggerBase.IsTextEnabled: Boolean;
 begin
-  Result := IsEnabled(TLogLevel.Text);
+  Result := IsEnabled(TLogLevel.Text, LOG_ALL_ENTRY_TYPES);
 end;
 
 function TLoggerBase.IsTraceEnabled: Boolean;
 begin
-  Result := IsEnabled(TLogLevel.Trace);
+  Result := IsEnabled(TLogLevel.Trace, LOG_ALL_ENTRY_TYPES);
 end;
 
 function TLoggerBase.IsWarnEnabled: Boolean;
 begin
-  Result := IsEnabled(TLogLevel.Warn);
+  Result := IsEnabled(TLogLevel.Warn, LOG_ALL_ENTRY_TYPES);
 end;
 
 procedure TLoggerBase.Leaving(level: TLogLevel; const classType: TClass;
   const methodName: string);
 begin
-  if IsEnabled(level) then
+  if IsEnabled(level, [TLogEntryType.Leaving]) then
     DoLog(TLogEntry.Create(level, TLogEntryType.Leaving, methodName, classType));
 end;
 
 procedure TLoggerBase.Leaving(const instance: TObject;
   const methodName: string);
 begin
-  Leaving(instance.ClassType, methodName);
+  if Assigned(instance) then
+    Leaving(instance.ClassType, methodName)
+  else
+    Leaving(TClass(nil), methodName)
 end;
 
 procedure TLoggerBase.Leaving(const classType: TClass;
   const methodName: string);
 begin
-  Leaving(classType, methodName);
+  Leaving(fDefaultLevel, classType, methodName);
 end;
 
 procedure TLoggerBase.Log(const entry: TLogEntry);
 begin
-  if IsEnabled(entry.Level) then
+  if IsEnabled(entry.Level, [entry.EntryType]) then
     DoLog(entry);
 end;
 
@@ -822,7 +849,7 @@ end;
 procedure TLoggerBase.LogValue(level: TLogLevel; const name: string;
   const value: TValue);
 begin
-  if IsEnabled(level) then
+  if IsEnabled(level, [TLogEntryType.Value]) then
     DoLog(TLogEntry.Create(level, TLogEntryType.Value, name, nil, value));
 end;
 
@@ -839,6 +866,11 @@ end;
 procedure TLoggerBase.SetEnabled(value: Boolean);
 begin
   fEnabled := value;
+end;
+
+procedure TLoggerBase.SetEntryTypes(value: TLogEntryTypes);
+begin
+  fEntryTypes := value;
 end;
 
 procedure TLoggerBase.SetLevels(value: TLogLevels);
@@ -874,7 +906,7 @@ end;
 function TLoggerBase.Track(level: TLogLevel; const classType: TClass;
   const methodName: string): IInterface;
 begin
-  if IsEnabled(level) then
+  if IsEnabled(level, [TLogEntryType.Entering, TLogEntryType.Leaving]) then
     Result := TLogTracking.Create(Self, level, classType, methodName)
   else
     Result := nil;
@@ -883,13 +915,16 @@ end;
 function TLoggerBase.Track(const instance: TObject;
   const methodName: string): IInterface;
 begin
-  Result := Track(instance.ClassType, methodName);
+  if Assigned(instance) then
+    Result := Track(instance.ClassType, methodName)
+  else
+    Result := Track(TClass(nil), methodName)
 end;
 
 function TLoggerBase.Track(const classType: TClass;
   const methodName: string): IInterface;
 begin
-  Result := Track(classType, methodName);
+  Result := Track(fDefaultLevel, classType, methodName);
 end;
 
 procedure TLoggerBase.Trace(const fmt: string; const args: array of const);

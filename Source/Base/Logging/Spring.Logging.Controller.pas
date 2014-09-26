@@ -49,7 +49,11 @@ type
     procedure SendData(const entry: TLogEntry);
     procedure SendStack(const entry: TLogEntry);
 
-    function IsLoggable(level: TLogLevel): Boolean;
+    /// <summary>
+    ///   Returns <c>true</c> if level is enabled and any of the <c>entryTypes</c>
+    ///    is enabled in any of the appenders or <c>false</c> otherwise
+    /// </summary>
+    function IsLoggable(level: TLogLevel; entryTypes: TLogEntryTypes): Boolean;
   public
     constructor Create;
 
@@ -79,7 +83,9 @@ end;
 
 procedure TLoggerController.AddAppender(const appender: ILogAppender);
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
   Guard.CheckNotNull(appender, 'appender');
+{$ENDIF}
   fAppenders.Add(appender);
 end;
 
@@ -100,11 +106,13 @@ begin
   for appender in fAppenders do
     appender.Send(entry);
 
-  if not entry.Data.IsEmpty and IsLoggable(TLogLevel.SerializedData) then
-    SendData(entry);
+  if not entry.Data.IsEmpty
+    and IsLoggable(entry.Level, [TLogEntryType.SerializedData]) then
+      SendData(entry);
 
   if entry.AddStackValue and Assigned(fStackTraceCollector)
-    and Assigned(fStackTraceFormatter) and IsLoggable(TLogLevel.CallStack) then
+    and Assigned(fStackTraceFormatter)
+    and IsLoggable(entry.Level, [TLogEntryType.CallStack]) then
       SendStack(entry);
 end;
 
@@ -119,13 +127,15 @@ begin
   Result := nil;
 end;
 
-function TLoggerController.IsLoggable(level: TLogLevel): Boolean;
+function TLoggerController.IsLoggable(level: TLogLevel;
+  entryTypes: TLogEntryTypes): Boolean;
 var
   appender: ILogAppender;
 begin
   for appender in fAppenders do
-    if appender.Enabled and (level in appender.Levels) then
-      Exit(True);
+    if appender.Enabled and (level in appender.Levels)
+      and (entryTypes * appender.EntryTypes <> []) then
+        Exit(True);
 
   Result := False;
 end;
@@ -137,7 +147,7 @@ begin
   serializer := FindSerializer(entry.Data.TypeInfo);
 
   if Assigned(serializer) then
-    DoSend(TLogEntry.Create(TLogLevel.SerializedData,
+    DoSend(TLogEntry.Create(entry.Level, TLogEntryType.SerializedData,
       serializer.Serialize(Self, entry.Data)));
 end;
 

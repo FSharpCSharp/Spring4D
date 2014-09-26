@@ -78,6 +78,7 @@ type
     procedure Reset;
     function GetEnabled: Boolean;
     function GetLevels: TLogLevels;
+    function GetEntryTypes: TLogEntryTypes;
     property LastEntry: TLogEntry read FLastEntry;
   end;
 
@@ -215,6 +216,11 @@ end;
 function TLoggerControllerMock.GetEnabled: Boolean;
 begin
   Result := True;
+end;
+
+function TLoggerControllerMock.GetEntryTypes: TLogEntryTypes;
+begin
+  Result := LOG_ALL_ENTRY_TYPES;
 end;
 
 function TLoggerControllerMock.GetLevels: TLogLevels;

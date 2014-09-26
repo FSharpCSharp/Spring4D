@@ -38,27 +38,29 @@ uses
 
 type
   {$REGION 'TLogAppenderBase'}
-  TLogAppenderBase = class(TInterfacedObject, ILogAppender, ILoggerProperties)
+  TLogAppenderBase = class abstract(TInterfacedObject, ILogAppender,
+    ILoggerProperties)
   private
     fDefaultLevel: TLogLevel;
     fEnabled: Boolean;
     fLevels: TLogLevels;
+    fEntryTypes: TLogEntryTypes;
 
     function GetDefaultLevel: TLogLevel;
     function GetEnabled: Boolean;
     function GetLevels: TLogLevels;
+    function GetEntryTypes: TLogEntryTypes;
 
     procedure SetDefaultLevel(value: TLogLevel);
     procedure SetEnabled(value: Boolean);
     procedure SetLevels(value: TLogLevels);
+    procedure SetEntryTypes(value: TLogEntryTypes);
   {$REGION 'Helper constants and functions'}
   protected const
     //May or may not be used by descendants, its here just for convenience
     LEVEL: array[TLogLevel] of string = (
       '[UNKNOWN]',
       '[VERBOSE]',
-      '', //CallStack
-      '', //SerializedData
       '[DEBUG]',
       '[TEXT]',
       '[INFO]',
@@ -69,8 +71,6 @@ type
     LEVEL_FIXED: array[TLogLevel] of string = (
       '[UNK  ]',
       '[VERB ]',
-      '', //CallStack
-      '', //SerializedData
       '[DEBUG]',
       '[TEXT ]',
       '[INFO ]',
@@ -90,7 +90,8 @@ type
       const methodName: string): string; static; inline;
   {$ENDREGION}
   protected
-    function IsEnabled(level: TLogLevel): Boolean; inline;
+    function IsEnabled(level: TLogLevel;
+      entryType: TLogEntryType): Boolean; inline;
     procedure DoSend(const entry: TLogEntry); virtual; abstract;
   public
     constructor Create;
@@ -100,6 +101,7 @@ type
     property DefaultLevel: TLogLevel read GetDefaultLevel write SetDefaultLevel;
     property Enabled: Boolean read GetEnabled write SetEnabled;
     property Levels: TLogLevels read GetLevels write SetLevels;
+    property EntryTypes: TLogEntryTypes read GetEntryTypes write SetEntryTypes;
   end;
   {$ENDREGION}
 
@@ -117,6 +119,7 @@ begin
   inherited;
   fEnabled := True;
   fLevels := LOG_BASIC_LEVELS;
+  fEntryTypes := LOG_BASIC_ENTRY_TYPES;
 end;
 
 class function TLogAppenderBase.FormatEntering(classType: TClass;
@@ -163,7 +166,9 @@ end;
 class function TLogAppenderBase.FormatText(const entry: TLogEntry): string;
 begin
   case entry.EntryType of
-    TLogEntryType.Text:
+    TLogEntryType.Text,
+    TLogEntryType.SerializedData,
+    TLogEntryType.CallStack:
       Result := entry.Msg;
 
     TLogEntryType.Entering:
@@ -184,19 +189,25 @@ begin
   Result := fEnabled;
 end;
 
+function TLogAppenderBase.GetEntryTypes: TLogEntryTypes;
+begin
+  Result := fEntryTypes;
+end;
+
 function TLogAppenderBase.GetLevels: TLogLevels;
 begin
   Result := fLevels;
 end;
 
-function TLogAppenderBase.IsEnabled(level: TLogLevel): Boolean;
+function TLogAppenderBase.IsEnabled(level: TLogLevel;
+  entryType: TLogEntryType): Boolean;
 begin
-  Result := fEnabled and (level in fLevels);
+  Result := fEnabled and (level in fLevels) and (entryType in fEntryTypes);
 end;
 
 procedure TLogAppenderBase.Send(const entry: TLogEntry);
 begin
-  if IsEnabled(entry.Level) then
+  if IsEnabled(entry.Level, entry.EntryType) then
     DoSend(entry);
 end;
 
@@ -208,6 +219,11 @@ end;
 procedure TLogAppenderBase.SetEnabled(value: Boolean);
 begin
   fEnabled := value;
+end;
+
+procedure TLogAppenderBase.SetEntryTypes(value: TLogEntryTypes);
+begin
+  fEntryTypes := value;
 end;
 
 procedure TLogAppenderBase.SetLevels(value: TLogLevels);

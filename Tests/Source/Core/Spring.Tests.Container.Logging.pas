@@ -421,8 +421,9 @@ begin
     .Add('enabled = False')
     .Add('someInt = 1')
     .Add('someString = test')
-    .Add('someEnum = Warning')
-    .Add('levels = Error, Info');
+    .Add('someEnum = Warn')
+    .Add('levels = Error, Info')
+    .Add('entryTypes = Text, Entering');
   TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
 
   fContainer.Build;
@@ -435,6 +436,7 @@ begin
   CheckEquals('test', appender.SomeString);
   CheckEquals(Ord(TLogLevel.Warn), Ord(appender.SomeEnum));
   Check([TLogLevel.Error, TLogLevel.Info] = appender.Levels);
+  Check([TLogEntryType.Text, TLogEntryType.Entering] = appender.EntryTypes);
 end;
 
 procedure TTestLoggingConfiguration.TestReadSingleControllerAsDefault;
@@ -649,7 +651,8 @@ begin
   fStrings
     .Add('[appenders\appender2]')
     .Add('class = Spring.Tests.Logging.Types.TAppenderMock2')
-    .Add('levels = Fatal, Error, Warning');
+    .Add('levels = Fatal, Error, Warn')
+    .Add('entryTypes = Text, Value');
 
   fStrings
     .Add('[controllers\default]')
@@ -659,7 +662,8 @@ begin
     .Add('[controllers\controller2]')
     .Add('class = Spring.Tests.Logging.Types.TLoggerController2')
     .Add('appender = appender2')
-    .Add('levels = Fatal, Error');
+    .Add('levels = Fatal, Error')
+    .Add('entryTypes = Text, SerializedData');
 
   fStrings
     .Add('[loggers\default]');
@@ -668,6 +672,7 @@ begin
     .Add('class = Spring.Tests.Logging.Types.TLogger2')
     .Add('controller = controller2')
     .Add('levels = Fatal')
+    .Add('entryTypes = Leaving')
     .Add('assign = Spring.Tests.Logging.Types.TImpl');
 
   TLoggingConfiguration.LoadFromStrings(fContainer, fStrings);
@@ -800,6 +805,7 @@ begin
     .BeginAppender('app1', TAppenderMock)
       .Enabled(False)
       .Levels([TLogLevel.Warn])
+      .EntryTypes([TLogEntryType.Text])
       .Prop('someProp', True)
     .EndAppender
 
@@ -810,7 +816,8 @@ begin
     '[appenders\app1]' + NL +
     'class = Spring.Tests.Logging.Types.TAppenderMock' + NL +
     'enabled = False' + NL +
-    'levels = [Warning]' + NL +
+    'levels = [Warn]' + NL +
+    'entryTypes = [Text]' + NL +
     'someProp = True' + NL +
     NL +
     '[appenders\app2]' + NL +
@@ -903,6 +910,7 @@ begin
     .BeginController
       .Enabled(True)
       .Levels([TLogLevel.Fatal, TLogLevel.Error])
+      .EntryTypes([TLogEntryType.Text, TLogEntryType.Value])
       .AddAppender('app1')
       .Prop('test', 0)
     .EndController
@@ -921,6 +929,7 @@ begin
     '[controllers\default]' + NL +
     'enabled = True' + NL +
     'levels = [Error,Fatal]' + NL +
+    'entryTypes = [Text,Value]' + NL +
     'appender = app1' + NL +
     'test = 0' + NL +
     NL +
@@ -950,6 +959,7 @@ begin
     .BeginLogger
       .Enabled(True)
       .Levels([TLogLevel.Error, TLogLevel.Debug])
+      .EntryTypes([TLogEntryType.Text, TLogEntryType.Value])
       .Controller('ctl1')
       .Prop('test', TLogLevel.Trace)
     .EndLogger
@@ -968,8 +978,9 @@ begin
     '[loggers\default]' + NL +
     'enabled = True' + NL +
     'levels = [Debug,Error]' + NL +
+    'entryTypes = [Text,Value]' + NL +
     'controller = ctl1' + NL +
-    'test = Verbose' + NL +
+    'test = Trace' + NL +
     NL +
     '[loggers\log2]' + NL +
     'class = TSomeLogger' + NL +

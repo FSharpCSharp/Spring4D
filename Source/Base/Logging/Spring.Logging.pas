@@ -69,21 +69,6 @@ type
     /// </summary>
     Unknown,
     Trace,
-    /// <summary>
-    ///   Should only be called if stack is sent to the appender. The appender
-    ///   may treat it in a specific way. No one else should use this level.
-    ///   If this level is not set, callstack logging will be disabled
-    ///   completely, this may have significant performance impact on some
-    ///   platforms.
-    /// </summary>
-    CallStack,
-    /// <summary>
-    ///   Should only be called if serialized data (object, record, etc.) is
-    ///   sent to the appender. The appender may treat it in a specific way.
-    ///   No one else should use this level. If this level is not set,
-    ///   data serialization logging will be disabled completely.
-    /// </summary>
-    SerializedData,
     Debug,
     Text,
     Info,
@@ -104,12 +89,42 @@ const
 
 type
   TLogEntryType = (
+    /// <summary>
+    ///   Is the most basic logging type all loggers should keep enabled
+    /// </summary>
     Text,
     Value,
+    /// <summary>
+    ///   Should only be called if stack is sent to the appender. The appender
+    ///   may treat it in a specific way. No one else should use this entry
+    ///   type.
+    ///   If this entry type is not set, callstack logging will be disabled
+    ///   completely, this may have significant performance impact on some
+    ///   platforms.
+    /// </summary>
+    CallStack,
+    /// <summary>
+    ///   Should only be called if serialized data (object, record, etc.) is
+    ///   sent to the appender. The appender may treat it in a specific way.
+    ///   No one else should use this entry type. If this level is not set,
+    ///   data serialization logging will be disabled completely.
+    /// </summary>
+    SerializedData,
     Entering,
     Leaving
   );
+  TLogEntryTypes = set of TLogEntryType;
 
+const
+  LOG_ALL_ENTRY_TYPES = [Low(TLogEntryType)..High(TLogEntryType)];
+  LOG_BASIC_ENTRY_TYPES = [
+    TLogEntryType.Text,
+    TLogEntryType.Value,
+    TLogEntryType.Entering,
+    TLogEntryType.Leaving
+  ];
+
+type
   TLogStyle = (
     Bold,
     Italic,
@@ -159,6 +174,8 @@ type
     fTag: NativeInt;
   public
     constructor Create(level: TLogLevel; const msg: string); overload;
+    constructor Create(level: TLogLevel; entryType: TLogEntryType;
+      const msg: string); overload;
     constructor Create(level: TLogLevel; const msg: string;
       const e: Exception); overload;
     constructor Create(level: TLogLevel; entryType: TLogEntryType;
@@ -194,9 +211,11 @@ type
   {$REGION 'ILoggerBase'}
   ILoggerBase = interface
     function GetLevels: TLogLevels;
+    function GetEntryTypes: TLogEntryTypes;
     function GetEnabled: Boolean;
 
     property Levels: TLogLevels read GetLevels;
+    property EntryTypes: TLogEntryTypes read GetEntryTypes;
     property Enabled: Boolean read GetEnabled;
   end;
   {$ENDREGION}
@@ -288,7 +307,16 @@ type
     function Track(level: TLogLevel; const classType: TClass;
       const methodName: string): IInterface; overload;
 
-    function IsEnabled(level: TLogLevel): Boolean;
+    /// <summary>
+    ///   Returns <c>true</c> if level is enabled and any of the <c>entryTypes</c>
+    ///    is enabled or <c>false</c> otherwise.
+    /// </summary>
+    /// <param name="entryTypes">
+    ///   Specifies entry types to check, <b>must not be empty</b>! Defaults to
+    ///   <c>Text</c>.
+    /// </param>
+    function IsEnabled(level: TLogLevel;
+      entryTypes: TLogEntryTypes = [TLogEntryType.Text]): Boolean;
     function IsFatalEnabled: Boolean;
     function IsErrorEnabled: Boolean;
     function IsWarnEnabled: Boolean;
@@ -327,14 +355,17 @@ type
     function GetDefaultLevel: TLogLevel;
     function GetEnabled: Boolean;
     function GetLevels: TLogLevels;
+    function GetEntryTypes: TLogEntryTypes;
 
     procedure SetDefaultLevel(value: TLogLevel);
     procedure SetEnabled(value: Boolean);
     procedure SetLevels(value: TLogLevels);
+    procedure SetEntryTypes(value: TLogEntryTypes);
 
     property DefaultLevel: TLogLevel read GetDefaultLevel write SetDefaultLevel;
     property Enabled: Boolean read GetEnabled write SetEnabled;
     property Levels: TLogLevels read GetLevels write SetLevels;
+    property EntryTypes: TLogEntryTypes read GetEntryTypes write SetEntryTypes;
   end;
   {$ENDREGION}
 
@@ -383,6 +414,13 @@ constructor TLogEntry.Create(level: TLogLevel; entryType: TLogEntryType;
 begin
   Create(level, entryType, msg, classType);
   fData := data;
+end;
+
+constructor TLogEntry.Create(level: TLogLevel; entryType: TLogEntryType;
+  const msg: string);
+begin
+  Create(level, msg);
+  fEntryType := entryType;
 end;
 
 function TLogEntry.SetColor(color: TColor): TLogEntry;

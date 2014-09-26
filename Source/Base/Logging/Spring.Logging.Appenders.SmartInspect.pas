@@ -72,8 +72,6 @@ begin
           TLogLevel.Debug:
             SiMain.LogDebug(entry.Msg);
 
-          TLogLevel.CallStack,
-          TLogLevel.SerializedData,
           TLogLevel.Text,
           TLogLevel.Info:
             SiMain.LogMessage(entry.Msg);
@@ -102,6 +100,10 @@ begin
     TLogEntryType.Leaving:
       SiMain.LeaveMethod(
         TLogAppenderBase.FormatMethodName(entry.ClassType, entry.Msg));
+
+    TLogEntryType.CallStack,
+    TLogEntryType.SerializedData:
+      SiMain.LogMessage(entry.Msg);
   end;
 end;
 

@@ -176,7 +176,7 @@ end;
 
 procedure TTestSimpleTypeSerializer.TestEnumeration;
 begin
-  CheckValue('Warning', TValue.From(TLogLevel.Warn), tkEnumeration);
+  CheckValue('Warn', TValue.From(TLogLevel.Warn), tkEnumeration);
   CheckValue('True', TValue.From(True), tkEnumeration);
 end;
 
@@ -216,7 +216,7 @@ end;
 
 procedure TTestSimpleTypeSerializer.TestSet;
 begin
-  CheckValue('[SerializedData]', TValue.From([TLogLevel.SerializedData]), tkSet);
+  CheckValue('[SerializedData]', TValue.From([TLogEntryType.SerializedData]), tkSet);
 end;
 
 {$IFNDEF NEXTGEN}
