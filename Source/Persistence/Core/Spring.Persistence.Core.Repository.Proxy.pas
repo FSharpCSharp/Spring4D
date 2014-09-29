@@ -235,12 +235,12 @@ begin
     begin
       Result := fRepository.Count;
     end);
-  RegisterMethod(Format('function Page(APage: Integer; AItemsPerPage: Integer): IDBPage<%s>', [fQualifiedTypeName]),
+  RegisterMethod(Format('function Page(page: Integer; itemsPerPage: Integer): IDBPage<%s>', [fQualifiedTypeName]),
     function(const Args: TArray<TValue>): TValue
     begin
       Result := TValue.From<IDBPage<T>>(fRepository.Page(Args[1].AsInteger, Args[2].AsInteger));
     end);
-  RegisterMethod(Format('function FindOne(const AID: %s): %s', [fIdTypeName, fTypeName]),
+  RegisterMethod(Format('function FindOne(const id: %s): %s', [fIdTypeName, fTypeName]),
     function(const Args: TArray<TValue>): TValue
     begin
       Result := fRepository.FindOne(Args[1].AsType<TID>);
@@ -250,42 +250,42 @@ begin
     begin
       Result := TValue.From<IList<T>>(fRepository.FindAll);
     end);
-  RegisterMethod(Format('function Exists(const AId: %s): Boolean', [fIdTypeName]),
+  RegisterMethod(Format('function Exists(const id: %s): Boolean', [fIdTypeName]),
     function(const Args: TArray<TValue>): TValue
     begin
       Result := fRepository.Exists(Args[1].AsType<TID>);
     end);
-  RegisterMethod(Format('procedure Insert(AEntity: %s)', [fTypeName]),
+  RegisterMethod(Format('procedure Insert(const entity: %s)', [fTypeName]),
     function(const Args: TArray<TValue>): TValue
     begin
       fRepository.Insert(Args[1].AsType<T>);
     end);
-  RegisterMethod(Format('procedure Insert(AEntities: ICollection<%s>)', [fQualifiedTypeName]),
+  RegisterMethod(Format('procedure Insert(const entities: ICollection<%s>)', [fQualifiedTypeName]),
     function(const Args: TArray<TValue>): TValue
     begin
       fRepository.Insert(Args[1].AsInterface as ICollection<T>);
     end);
-  RegisterMethod(Format('function Save(AEntity: %0:S): %0:S', [fTypeName]),
+  RegisterMethod(Format('function Save(const entity: %0:S): %0:S', [fTypeName]),
     function(const Args: TArray<TValue>): TValue
     begin
       Result := fRepository.Save(Args[1].AsType<T>);
     end);
-  RegisterMethod(Format('function Save(AEntities: ICollection<%0:S>): ICollection<%0:S>', [fQualifiedTypeName]),
+  RegisterMethod(Format('function Save(const entities: ICollection<%0:S>): ICollection<%0:S>', [fQualifiedTypeName]),
     function(const Args: TArray<TValue>): TValue
     begin
       Result := TValue.From<ICollection<T>>(fRepository.Save(Args[1].AsInterface as ICollection<T>));
     end);
-  RegisterMethod(Format('procedure SaveCascade(AEntity: %s)', [fTypeName]),
+  RegisterMethod(Format('procedure SaveCascade(const entity: %s)', [fTypeName]),
     function(const Args: TArray<TValue>): TValue
     begin
       fRepository.SaveCascade(Args[1].AsType<T>);
     end);
-  RegisterMethod(Format('procedure Delete(AEntity: %s)', [fTypeName]),
+  RegisterMethod(Format('procedure Delete(const entity: %s)', [fTypeName]),
     function(const Args: TArray<TValue>): TValue
     begin
       fRepository.Delete(Args[1].AsType<T>);
     end);
-  RegisterMethod(Format('procedure Delete(AEntities: ICollection<%s>)', [fQualifiedTypeName]),
+  RegisterMethod(Format('procedure Delete(const entities: ICollection<%s>)', [fQualifiedTypeName]),
     function(const Args: TArray<TValue>): TValue
     begin
       fRepository.Delete(Args[1].AsInterface as ICollection<T>);
@@ -295,7 +295,7 @@ begin
     begin
       fRepository.DeleteAll;
     end);
-  RegisterMethod(Format('function Query(const AQuery: string; const AParams: TVarRec): IList<%s>', [fQualifiedTypeName]),
+  RegisterMethod(Format('function Query(const query: string; const params: TVarRec): IList<%s>', [fQualifiedTypeName]),
     function(const Args: TArray<TValue>): TValue
     var
       LConstArray: TArray<TVarRec>;
@@ -307,7 +307,7 @@ begin
         FinalizeVarRecArray(LConstArray);
       end;
     end);
-  RegisterMethod('function Execute(const AQuery: string; const AParams: TVarRec): NativeUInt',
+  RegisterMethod('function Execute(const query: string; const params: TVarRec): NativeUInt',
     function(const Args: TArray<TValue>): TValue
     var
       LConstArray: TArray<TVarRec>;
