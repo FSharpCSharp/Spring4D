@@ -86,9 +86,6 @@ type
     procedure SetLogger(const logger: ILogger);
   {$ENDREGION}
     procedure AddExtension(const extension: IContainerExtension);
-    procedure Log(const entry: TLogEntry);
-    function LogIsEnabled(level: TLogLevel;
-      entryTypes: TLogEntryTypes = [TLogEntryType.Text]): Boolean;
 
     property Builder: IComponentBuilder read GetBuilder;
     property Injector: IDependencyInjector read GetInjector;

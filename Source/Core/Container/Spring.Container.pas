@@ -114,11 +114,8 @@ type
     // passing as var is not possible here
 {$ENDIF}
 
-    procedure Log(const entry: TLogEntry);
-    function LogIsEnabled(level: TLogLevel;
-      entryTypes: TLogEntryTypes = [TLogEntryType.Text]): Boolean;
-
     property Kernel: IKernel read GetKernel;
+    property Logger: ILogger read GetLogger write SetLogger;
   end;
 
   ///	<summary>
@@ -177,6 +174,7 @@ uses
   Spring.Container.Resolvers,
   Spring.Container.ResourceStrings,
   Spring.Helpers,
+  Spring.Logging.NullLogger,
   Spring.Reflection;
 
 
@@ -201,6 +199,7 @@ end;
 constructor TContainer.Create;
 begin
   inherited Create;
+  fLogger := TNullLogger.GlobalInstance;
   fRegistry := TComponentRegistry.Create(Self);
   fBuilder := TComponentBuilder.Create(Self);
   fInjector := TDependencyInjector.Create;
@@ -270,21 +269,6 @@ begin
   );
   for inspector in inspectors do
     fBuilder.AddInspector(inspector);
-end;
-
-procedure TContainer.Log(const entry: TLogEntry);
-begin
-  if Assigned(fLogger) then
-    fLogger.Log(entry);
-end;
-
-function TContainer.LogIsEnabled(level: TLogLevel;
-  entryTypes: TLogEntryTypes): Boolean;
-begin
-  if Assigned(fLogger) then
-    Result := fLogger.IsEnabled(level, entryTypes)
-  else
-    Result := false;
 end;
 
 function TContainer.GetBuilder: IComponentBuilder;
@@ -484,6 +468,9 @@ end;
 
 procedure TContainer.SetLogger(const logger: ILogger);
 begin
+{$IFDEF SPRING_ENABLE_GUARD}
+  Guard.CheckNotNull(logger, 'logger');
+{$ENDIF}
   fLogger := logger;
 end;
 

@@ -267,11 +267,11 @@ begin
   CheckFalse(controller.IsLoggable(TLogLevel.Fatal, [TLogEntryType.Text]));
 
   appender := TAppenderMock.Create;
-  appender.Enabled := false;
+  appender.Enabled := False;
   controller.AddAppender(appender);
   CheckFalse(controller.IsLoggable(TLogLevel.Fatal, [TLogEntryType.Text]));
 
-  appender.Enabled := true;
+  appender.Enabled := True;
   appender.Levels := [];
   CheckFalse(controller.IsLoggable(TLogLevel.Fatal, [TLogEntryType.Text]));
 
@@ -1127,10 +1127,10 @@ begin
     //Just make sure we have the right parent class
     Assert(appender is TLogAppenderBase);
 
-    appender.Enabled := false;
+    appender.Enabled := False;
     CheckFalse(appender.IsEnabled(TLogLevel.Fatal, TLogEntryType.Text));
 
-    appender.Enabled := true;
+    appender.Enabled := True;
     appender.Levels := [];
     CheckFalse(appender.IsEnabled(TLogLevel.Fatal, TLogEntryType.Text));
 
