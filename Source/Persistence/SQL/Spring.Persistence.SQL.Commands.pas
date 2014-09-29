@@ -321,11 +321,11 @@ var
   LWhereField: TSQLWhereField;
 begin
   FForeignColumn := nil;
-  LPrimaryKeyColumn := TEntityCache.Get(ABaseTableClass).PrimaryKeyColumn;
+  LPrimaryKeyColumn := TEntityCache.Get(AForeignTableClass).PrimaryKeyColumn;
   if not Assigned(LPrimaryKeyColumn) then
     Exit;
 
-  FForeignColumn := TRttiExplorer.GetForeignKeyColumn(AForeignTableClass, LPrimaryKeyColumn);
+  FForeignColumn := TRttiExplorer.GetForeignKeyColumn(ABaseTableClass, LPrimaryKeyColumn);
   if not Assigned(FForeignColumn) then
     Exit;
 

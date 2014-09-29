@@ -75,7 +75,7 @@ type
       const entity: TObject);
 
     function DoGetLazy<T>(const id: TValue; const entity: TObject;
-      const column: ColumnAttribute; out isEnumerable: Boolean): IDBResultSet;
+      const column: ColumnAttribute): IDBResultSet;
 
     /// <summary>
     ///   Retrieves multiple models from the <c>resultset</c>.
@@ -84,6 +84,8 @@ type
       const resultSet: IDBResultSet): IList<T>;
     function GetList<T: class, constructor>(const query: string;
       const params: IList<TDBParam>): IList<T>; overload;
+
+    function GetResultsetById(entityClass: TClass; const id: TValue; foreignEntityClass: TClass = nil; const selectColumn: ColumnAttribute = nil): IDBResultSet;
 
     procedure AttachEntity(const entity: TObject); virtual; abstract;
     procedure DetachEntity(const entity: TObject); virtual; abstract;
@@ -95,6 +97,7 @@ type
     function GetInsertCommandExecutor(entityClass: TClass): TInsertExecutor; virtual;
     function GetUpdateCommandExecutor(entityClass: TClass): TUpdateExecutor; virtual;
     function GetSelectCommandExecutor(entityClass: TClass): TSelectExecutor; virtual;
+    function GetSelectByIdCommandExecutor(entityClass: TClass; const id: TValue; const selectColumn: ColumnAttribute = nil): TSelectExecutor; virtual;
     function GetDeleteCommandExecutor(entityClass: TClass): TDeleteExecutor; virtual;
   public
     /// <summary>
@@ -180,26 +183,18 @@ begin
 end;
 
 function TAbstractSession.DoGetLazy<T>(const id: TValue; const entity: TObject;
-  const column: ColumnAttribute; out isEnumerable: Boolean): IDBResultSet;
+  const column: ColumnAttribute): IDBResultSet;
 var
-  LSelecter: TSelectExecutor;
-  LBaseEntityClass, LEntityClass: TClass;
-  LEnumMethod: TRttiMethod;
+  LBaseEntityClass, LEntityToLoadClass: TClass;
 begin
   LBaseEntityClass := entity.ClassType;
-  if not TRttiExplorer.TryGetEntityClass(TypeInfo(T), LEntityClass) then
-    // we are fetching from the same table - AEntity
-    LEntityClass := LBaseEntityClass;
+  if not TRttiExplorer.TryGetEntityClass(TypeInfo(T), LEntityToLoadClass) then
+    LEntityToLoadClass := LBaseEntityClass; // we are fetching from the same table - AEntity
 
-  LSelecter := GetSelectCommandExecutor(LEntityClass);
-  try
-    LSelecter.ID := id;
-    LSelecter.LazyColumn := column;
-    isEnumerable := TUtils.IsEnumerable(TypeInfo(T), LEnumMethod);
-    Result := LSelecter.Select(entity, LBaseEntityClass);
-  finally
-    LSelecter.Free;
-  end;
+  if LEntityToLoadClass = LBaseEntityClass then
+    LBaseEntityClass := nil;
+
+  Result := GetResultsetById(LEntityToLoadClass, id, LBaseEntityClass, column);
 end;
 
 procedure TAbstractSession.DoInsert(const entity, executor: TObject);
@@ -220,7 +215,7 @@ var
   LVal: Variant;
 begin
   LEntityData := TEntityCache.Get(entityToCreate.ClassType);
-  {TODO -oLinas -cGeneral : if AEntity class type is not our real Entity type, simply just set value}
+  {TODO -oLinas -cGeneral : if entityToCreate class type is not our annotated ORM Entity type (it can be e.g. TPicture, TStream, etc.), simply just set value}
   if not LEntityData.IsTableEntity and Assigned(realEntity) then
   begin
     if not resultSet.IsEmpty then
@@ -318,18 +313,17 @@ end;
 function TAbstractSession.GetLazyValueClass<T>(const id: TValue;
   const entity: TObject; const column: ColumnAttribute): T;
 var
-  IsEnumerable: Boolean;
   LResults: IDBResultSet;
 begin
   if not Assigned(entity) or id.IsEmpty then
     Exit(System.Default(T));
 
-  LResults := DoGetLazy<T>(id, entity, column, IsEnumerable);
+  LResults := DoGetLazy<T>(id, entity, column);
 
-  if IsEnumerable then
+  if TUtils.IsEnumerable(TypeInfo(T)) then
     Result := GetObjectList<T>(LResults)
   else
-    Result := GetOne<T>(LResults, entity);
+    Result := GetOne<T>(LResults, entity);  {TODO -oOwner -cGeneral : get one with arg entity is needed only for lazy loading}
 end;
 
 function TAbstractSession.GetList<T>(const query: string;
@@ -423,6 +417,29 @@ begin
   if not params.IsEmpty then
     LStmt.SetParams(params);
   Result := LStmt.ExecuteQuery;
+end;
+
+function TAbstractSession.GetResultsetById(entityClass: TClass;
+  const id: TValue; foreignEntityClass: TClass; const selectColumn: ColumnAttribute): IDBResultSet;
+var
+  LSelecter: TSelectExecutor;
+begin
+  LSelecter := GetSelectByIdCommandExecutor(entityClass, id, selectColumn);
+  try
+    LSelecter.ForeignEntityClass := foreignEntityClass;
+    Result := LSelecter.Select;
+  finally
+    LSelecter.Free;
+  end;
+end;
+
+function TAbstractSession.GetSelectByIdCommandExecutor(entityClass: TClass;
+  const id: TValue; const selectColumn: ColumnAttribute): TSelectExecutor;
+begin
+  Result := TSelectExecutor.Create(id, selectColumn);
+  Result.Connection := Connection;
+  Result.EntityClass := entityClass;
+  Result.Build(entityClass);
 end;
 
 function TAbstractSession.GetSelectCommandExecutor(
@@ -618,7 +635,6 @@ end;
 procedure TAbstractSession.SetLazyValue<T>(var value: T; const id: TValue;
   const entity: TObject; const column: ColumnAttribute);
 var
-  IsEnumerable: Boolean;
   LResults: IDBResultSet;
 begin
   if not Assigned(entity) or id.IsEmpty then
@@ -630,9 +646,9 @@ begin
         PTypeInfo(TypeInfo(T)).TypeName]);
   end;
 
-  LResults := DoGetLazy<T>(id, entity, column, IsEnumerable);
+  LResults := DoGetLazy<T>(id, entity, column);
 
-  if IsEnumerable then
+  if TUtils.IsEnumerable(TypeInfo(T)) then
     SetInterfaceList<T>(value, LResults)
   else
     SetOne<T>(value, LResults, entity);

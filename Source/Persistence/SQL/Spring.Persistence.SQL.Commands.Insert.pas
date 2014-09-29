@@ -201,7 +201,7 @@ begin
   if CanGetSequenceValue then
   begin
     // add sequence param value
-    SQLParameters.Add(DoCreateParam(EntityData.PrimaryKeyColumn, LSequenceValue));
+    SQLParameters.Add(DoCreateParam(EntityData.PrimaryKeyColumn.Name, LSequenceValue));
   end;
 
   if CanClientAutogenerateValue then

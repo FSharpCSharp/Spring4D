@@ -62,6 +62,7 @@ type
 
     class function IsEnumerable(AObject: TObject; out AEnumeratorMethod: TRttiMethod): Boolean; overload;
     class function IsEnumerable(ATypeInfo: PTypeInfo; out AEnumeratorMethod: TRttiMethod): Boolean; overload;
+    class function IsEnumerable(ATypeInfo: PTypeInfo): Boolean; overload;
     class function IsNullableType(ATypeInfo: PTypeInfo): Boolean;
     class function IsLazyType(ATypeInfo: PTypeInfo): Boolean;
     class function IsPageType(ATypeInfo: PTypeInfo): Boolean;
@@ -325,6 +326,13 @@ var
 begin
   AEnumeratorMethod := LCtx.GetType(ATypeInfo).GetMethod('GetEnumerator');
   Result := Assigned(AEnumeratorMethod);
+end;
+
+class function TUtils.IsEnumerable(ATypeInfo: PTypeInfo): Boolean;
+var
+  LEnumeratorMethod: TRttiMethod;
+begin
+  Result := IsEnumerable(ATypeInfo, LEnumeratorMethod);
 end;
 
 class function TUtils.IsLazyType(ATypeInfo: PTypeInfo): Boolean;

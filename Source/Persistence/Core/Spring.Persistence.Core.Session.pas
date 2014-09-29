@@ -452,15 +452,11 @@ var
 begin
   Result := System.Default(T);
   if not TRttiExplorer.TryGetEntityClass(TypeInfo(T), LEntityClass) then
-  begin
-    //we are fetching from the same table - AEntity
-    LEntityClass := T;
-  end;
+    raise EORMUnsupportedType.CreateFmt('Entity (%s) is not supported.', [PTypeInfo(TypeInfo(T)).Name]);
 
-  LSelecter := GetSelectCommandExecutor(LEntityClass);
+  LSelecter := GetSelectByIdCommandExecutor(LEntityClass, id);
   try
-    LSelecter.ID := id;
-    LResults := LSelecter.Select(nil, LEntityClass);
+    LResults := LSelecter.Select;
     if not LResults.IsEmpty then
     begin
       Result := GetOne<T>(LResults, nil);

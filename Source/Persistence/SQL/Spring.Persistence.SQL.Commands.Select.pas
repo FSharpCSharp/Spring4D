@@ -48,25 +48,28 @@ type
     fCommand: TSelectCommand;
     fColumns: IList<ColumnAttribute>;
     fID: TValue;
-    fLazyColumn: ColumnAttribute;
-    fSelectEntityClass: TClass;
+    fSelectColumn: ColumnAttribute;
+    fForeignEntityClass: TClass;
   protected
     function GetCommand: TDMLCommand; override;
+    function ShouldFetchFromOneColumn: Boolean;
   public
-    constructor Create; override;
+    constructor Create; overload; override;
+    constructor Create(const id: TValue; selectColumn: ColumnAttribute); reintroduce; overload;
     destructor Destroy; override;
 
     procedure Execute(const entity: TObject); override;
-    procedure DoExecute(const entity: TObject); virtual;
+    procedure DoExecute; virtual;
     procedure Build(entityClass: TClass); override;
     procedure BuildParams(const entity: TObject); override;
 
-    function Select(const entity: TObject; selectEntityClass: TClass): IDBResultset;
+    function Select: IDBResultset;
     function SelectAll(selectEntityClass: TClass): IDBResultset;
 
     property Command: TSelectCommand read fCommand;
     property ID: TValue read fID write fID;
-    property LazyColumn: ColumnAttribute read fLazyColumn write fLazyColumn;
+    property ForeignEntityClass: TClass read fForeignEntityClass write fForeignEntityClass;
+    property SelectColumn: ColumnAttribute read fSelectColumn write fSelectColumn;
   end;
 
 implementation
@@ -103,8 +106,11 @@ begin
     raise ETableNotSpecified.CreateFmt('Table not specified for class "%S"', [entityClass.ClassName]);
 
   fTable.SetFromAttribute(EntityData.EntityTable);
-  fColumns.Clear;
-  fColumns.AddRange(EntityData.Columns);
+
+  if ShouldFetchFromOneColumn then
+    fColumns.Add(fSelectColumn)
+  else
+    fColumns.AddRange(EntityData.Columns);
 
   fCommand.PrimaryKeyColumn := EntityData.PrimaryKeyColumn;
   fCommand.SetCommandFieldsFromColumns(fColumns);
@@ -114,57 +120,42 @@ end;
 procedure TSelectExecutor.BuildParams(const entity: TObject);
 var
   LParam: TDBParam;
+  LColumnName: string;
 begin
   inherited BuildParams(entity);
+  Assert(not Assigned(entity), 'Entity should not be assigned here');
 
-  if Assigned(fCommand.ForeignColumn) then
-  begin
-    LParam := CreateParam(entity, fCommand.ForeignColumn);
-    SQLParameters.Add(LParam);
-  end
-  else if Assigned(fCommand.PrimaryKeyColumn) then
-  begin
-    if entity = nil then
-      LParam := DoCreateParam(fCommand.PrimaryKeyColumn, TUtils.AsVariant(fID))
-    else
-      LParam := CreateParam(entity, fCommand.PrimaryKeyColumn);
-    SQLParameters.Add(LParam);
-  end;
+  LColumnName := fCommand.PrimaryKeyColumn.Name;
+  if Assigned(fForeignEntityClass) then
+    LColumnName := fCommand.ForeignColumn.Name;
+
+  LParam := DoCreateParam(LColumnName, TUtils.AsVariant(fID));
+  SQLParameters.Add(LParam);
 end;
 
-procedure TSelectExecutor.DoExecute(const entity: TObject);
-var
-  LSelects: IList<TSQLSelectField>;
+constructor TSelectExecutor.Create(const id: TValue;
+  selectColumn: ColumnAttribute);
 begin
-  //add where fields if needed
-  fCommand.WhereFields.Clear;
-  {DONE -oLinas -cGeneral : Must know for what column to set where condition field and value. Setting always for primary key is not good for foreign key tables}
-   //AEntity - base table class type
-   //EntityClass - can be foreign table class type
-  if EntityClass = fSelectEntityClass then
-    fCommand.SetFromPrimaryColumn  //select from the same as base table
-  else
-    fCommand.SetFromForeignColumn(fSelectEntityClass, EntityClass);
+  Create;
+  fID := id;
+  fSelectColumn := selectColumn;
+end;
 
-  if Assigned(fLazyColumn) then
-  begin
-    LSelects := TCollections.CreateList<TSQLSelectField>;
-    LSelects.AddRange(fCommand.SelectFields);
-    (fCommand.SelectFields as ICollectionOwnership).OwnsObjects := False;
-    fCommand.SelectFields.Clear;
-    fCommand.SelectFields.Add(TSQLSelectField.Create(fLazyColumn.Name, fTable));
-    SQL := Generator.GenerateSelect(fCommand);
-    (fCommand.SelectFields as ICollectionOwnership).OwnsObjects := True;
-    fCommand.SelectFields.Clear;
-    fCommand.SelectFields.AddRange(LSelects);
-  end
+procedure TSelectExecutor.DoExecute;
+begin
+  fCommand.WhereFields.Clear;
+
+  if Assigned(fForeignEntityClass) then
+    fCommand.SetFromForeignColumn(EntityClass, fForeignEntityClass)
   else
-    SQL := Generator.GenerateSelect(fCommand);
+    fCommand.SetFromPrimaryColumn;
+
+  SQL := Generator.GenerateSelect(fCommand);
 end;
 
 procedure TSelectExecutor.Execute(const entity: TObject);
 begin
-  // do nothing
+  // do nothing - possible LSP violation, needs refactoring
 end;
 
 function TSelectExecutor.GetCommand: TDMLCommand;
@@ -172,17 +163,15 @@ begin
   Result := fCommand;
 end;
 
-function TSelectExecutor.Select(const entity: TObject;
-  selectEntityClass: TClass): IDBResultset;
+function TSelectExecutor.Select: IDBResultset;
 var
   LStmt: IDBStatement;
 begin
-  fSelectEntityClass := selectEntityClass;
-  DoExecute(entity);
+  DoExecute;
   LStmt := Connection.CreateStatement;
   LStmt.SetSQLCommand(SQL);
 
-  BuildParams(entity);
+  BuildParams(nil);
   if SQLParameters.Any then
     LStmt.SetParams(SQLParameters);
 
@@ -193,7 +182,6 @@ function TSelectExecutor.SelectAll(selectEntityClass: TClass): IDBResultSet;
 var
   LStmt: IDBStatement;
 begin
-  fSelectEntityClass := selectEntityClass;
   fCommand.WhereFields.Clear;
   SQL := Generator.GenerateSelect(fCommand);
 
@@ -202,7 +190,11 @@ begin
   Result := LStmt.ExecuteQuery;
 end;
 
-{$ENDREGION}
+function TSelectExecutor.ShouldFetchFromOneColumn: Boolean;
+begin
+  Result := Assigned(fSelectColumn);
+end;
 
+{$ENDREGION}
 
 end.

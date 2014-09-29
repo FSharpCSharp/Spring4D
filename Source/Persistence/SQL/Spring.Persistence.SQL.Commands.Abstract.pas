@@ -49,7 +49,7 @@ type
     fParams: IList<TDBParam>;
     procedure SetConnection(const value: IDBConnection);
   protected
-    function DoCreateParam(const attribute: ColumnAttribute;
+    function DoCreateParam(const columnName: string;
       const value: Variant): TDBParam; virtual;
     function CanUpdateParamFieldType(const value: Variant): Boolean; virtual;
     function CreateParam(const entity: TObject;
@@ -170,10 +170,10 @@ begin
 end;
 
 function TAbstractCommandExecutor.DoCreateParam(
-  const attribute: ColumnAttribute; const value: Variant): TDBParam;
+  const columnName: string; const value: Variant): TDBParam;
 begin
   Result := TDBParam.Create;
-  Result.Name := Command.GetExistingParameterName(attribute.Name);
+  Result.Name := Command.GetExistingParameterName(columnName);
   Result.Value := value;
 end;
 

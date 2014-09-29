@@ -61,6 +61,7 @@ type
     procedure GetLazyValueClass();
     procedure GetLazyValue();
     procedure FindOne();
+    procedure When_FindOne_UnannotatedEntity_throwException;
     procedure FindAll();
     procedure Enums();
     procedure Streams();
@@ -1535,6 +1536,27 @@ begin
   LModel.Free;
   LModelLoaded.Free;
   LModelOld.Free;
+end;
+
+type
+  TUnanotatedEntity = class
+  private
+    FName: string;
+  public
+    property Name: string read FName write FName;
+  end;
+
+procedure TestTSession.When_FindOne_UnannotatedEntity_throwException;
+begin
+  try
+    FSession.FindOne<TUnanotatedEntity>(1);
+    Fail('Should not succeed if entity is not annotated');
+  except
+    on E:Exception do
+    begin
+      CheckIs(E, EORMUnsupportedType);
+    end;
+  end;
 end;
 
 type

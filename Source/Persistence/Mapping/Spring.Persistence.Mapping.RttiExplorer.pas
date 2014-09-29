@@ -895,6 +895,8 @@ var
   LCurrType: TRttiType;
 begin
   LRttiType := FRttiCache.GetType(ATypeInfo);
+  if LRttiType = nil then
+    Exit(nil);
   for LCurrType in LRttiType.GetGenericArguments do
   begin
     if LCurrType.IsInstance then
